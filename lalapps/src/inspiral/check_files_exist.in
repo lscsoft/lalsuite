@@ -1,0 +1,172 @@
+#!/usr/bin/python
+
+"""
+Check a cache file to see which files actually exist and which are missing
+$Id$
+
+"""
+
+
+import sys
+from glue import lal
+import gzip
+from optparse import *
+import ConfigParser
+from pylal import InspiralUtils
+from glue.ligolw import ligolw
+from glue.ligolw import table
+from glue.ligolw import lsctables
+sys.path.append('@PYTHONLIBDIR@')
+
+usage = """usage: %prog [options]
+"""
+
+parser = OptionParser( usage )
+
+parser.add_option("-c","--cache-file",action="store",type="string",\
+  default=None,metavar="INPUT",\
+  help="supply a cache file")
+parser.add_option("-u", "--user-tag",action="store",type="string",\
+  default=None, metavar="USER-TAG", \
+  help="give the user-tag, such as PLAYGROUND, INJ001, etc..." )
+parser.add_option("-s", "--subdag-type",action="store",type="string",\
+  default=None, metavar="SUBDAG-TYPE", \
+  help="give the subdag-type, such as PLAYGROUND, INJECTIONS..." )
+
+
+command_line = sys.argv[1:]
+(opts,args) = parser.parse_args()
+
+# Set the configuration file to cp
+cp = ConfigParser.ConfigParser()
+
+ifocombos = ["H1H2","H1L1","H1V1","H2L1","H2V1","L1V1","H1H2L1","H1H2V1","H1L1V1","H2L1V1","H1H2L1V1"]
+
+if opts.subdag_type != "PLAYGROUND" and opts.subdag_type != "INJECTIONS":
+  print "subdag_type must be set to PLAYGROUND or INJECTIONS"
+  sys.exit(0)
+
+# Check each file type for missing files that appear in the cache.
+# Add any missing files to the appropriate list
+tmpltbank = lal.Cache().fromfile(open(opts.cache_file)).sieve(description = ("TMPLTBANK"))
+missing_tmpltbank = tmpltbank.checkfilesexist()[1].pfnlist()
+found_tmpltbank = tmpltbank.checkfilesexist()[0].pfnlist()
+
+inspiral_first = lal.Cache().fromfile(open(opts.cache_file)).sieve(description = ("INSPIRAL*FIRST"))
+missing_inspiral_first = inspiral_first.checkfilesexist()[1].pfnlist()
+found_inspiral_first = inspiral_first.checkfilesexist()[0].pfnlist()
+
+thinca_first = lal.Cache().fromfile(open(opts.cache_file)).sieve(description = ("THINCA_FIRST"))
+missing_thinca_first = thinca_first.checkfilesexist()[1].pfnlist()
+found_thinca_first = thinca_first.checkfilesexist()[0].pfnlist()
+
+sire_first = lal.Cache().fromfile(open(opts.cache_file)).sieve(description = ("SIRE*FIRST"))
+missing_sire_first = sire_first.checkfilesexist()[1].pfnlist()
+found_sire_first = sire_first.checkfilesexist()[0].pfnlist()
+
+inspiral_second = lal.Cache().fromfile(open(opts.cache_file)).sieve(description = ("INSPIRAL*SECOND"))
+missing_inspiral_second = inspiral_second.checkfilesexist()[1].pfnlist()
+found_inspiral_second = inspiral_second.checkfilesexist()[0].pfnlist()
+
+thinca_second = lal.Cache().fromfile(open(opts.cache_file)).sieve(description = ("THINCA_SECOND"))
+missing_thinca_second = thinca_second.checkfilesexist()[1].pfnlist()
+found_thinca_second = thinca_second.checkfilesexist()[0].pfnlist()
+
+sire_second = lal.Cache().fromfile(open(opts.cache_file)).sieve(description = ("SIRE*SECOND"))
+missing_sire_second = sire_second.checkfilesexist()[1].pfnlist()
+found_sire_second = sire_second.checkfilesexist()[0].pfnlist()
+
+cohbank = lal.Cache().fromfile(open(opts.cache_file)).sieve(description = ("COHBANK"))
+missing_cohbank = cohbank.checkfilesexist()[1].pfnlist()
+found_cohbank = cohbank.checkfilesexist()[0].pfnlist()
+
+coherent = lal.Cache().fromfile(open(opts.cache_file)).sieve(description = ("COHERENT"))
+missing_coherent = coherent.checkfilesexist()[1].pfnlist()
+found_coherent = coherent.checkfilesexist()[0].pfnlist()
+
+inspiral_coh = lal.Cache().fromfile(open(opts.cache_file)).sieve(description = ("INSPIRAL*C_"))
+missing_inspiral_coh = inspiral_coh.checkfilesexist()[1].pfnlist()
+found_inspiral_coh = inspiral_coh.checkfilesexist()[0].pfnlist()
+
+if opts.subdag_type == "PLAYGROUND":
+  coire_first = lal.Cache().fromfile(open(opts.cache_file)).sieve(description = ("COIRE_FIRST"))
+  coire_second = lal.Cache().fromfile(open(opts.cache_file)).sieve(description = ("COIRE_SECOND"))
+  coire_slide_first = lal.Cache().fromfile(open(opts.cache_file)).sieve(description = ("COIRE_SLIDE_FIRST"))
+  coire_slide_second = lal.Cache().fromfile(open(opts.cache_file)).sieve(description = ("COIRE_SLIDE_SECOND")) 
+  thinca_slide_first = lal.Cache().fromfile(open(opts.cache_file)).sieve(description = ("THINCA_SLIDE_FIRST"))
+  thinca_slide_second = lal.Cache().fromfile(open(opts.cache_file)).sieve(description = ("THINCA_SLIDE_SECOND"))
+
+  missing_coire_first = coire_first.checkfilesexist()[1].pfnlist()
+  found_coire_first = coire_first.checkfilesexist()[0].pfnlist()
+  
+  missing_coire_second = coire_second.checkfilesexist()[1].pfnlist()
+  found_coire_second = coire_second.checkfilesexist()[0].pfnlist()
+
+  missing_coire_slide_first = coire_slide_first.checkfilesexist()[1].pfnlist()
+  found_coire_slide_first = coire_slide_first.checkfilesexist()[0].pfnlist()
+
+  missing_coire_slide_second = coire_slide_second.checkfilesexist()[1].pfnlist()
+  found_coire_slide_second = coire_slide_second.checkfilesexist()[0].pfnlist()
+
+  missing_thinca_slide_first = thinca_slide_first.checkfilesexist()[1].pfnlist()
+  found_thinca_slide_first = thinca_slide_first.checkfilesexist()[0].pfnlist()
+
+  missing_thinca_slide_second = thinca_slide_second.checkfilesexist()[1].pfnlist()
+  found_thinca_slide_second = thinca_slide_second.checkfilesexist()[0].pfnlist()
+
+if opts.subdag_type == "INJECTIONS":
+  coire_first = lal.Cache().fromfile(open(opts.cache_file)).sieve(description = ("COIRE*FIRST"))
+  coire_second = lal.Cache().fromfile(open(opts.cache_file)).sieve(description = ("COIRE*SECOND"))
+
+  missing_coire_first = coire_first.checkfilesexist()[1].pfnlist()
+  found_coire_first = coire_first.checkfilesexist()[0].pfnlist()
+
+  missing_coire_second = coire_second.checkfilesexist()[1].pfnlist()
+  found_coire_second = coire_second.checkfilesexist()[0].pfnlist()
+
+missing_trigbank = []
+missing_trigbank_coh = []
+found_trigbank = []
+found_trigbank_coh = []
+
+for i in range(0,len(ifocombos)):
+ 
+  temp_trigbank_descrip = "TRIGBANK_%s_%s" %(ifocombos[i],opts.user_tag)
+  temp_trigbank = lal.Cache().fromfile(open(opts.cache_file)).sieve(description = (temp_trigbank_descrip)) 
+  temp_trigbank_missing = temp_trigbank.checkfilesexist()[1].pfnlist()
+  missing_trigbank.extend(temp_trigbank_missing)
+  temp_trigbank_found = temp_trigbank.checkfilesexist()[0].pfnlist()
+  found_trigbank.extend(temp_trigbank_found)
+
+  temp_trigbank_coh_descrip = "TRIGBANK_%sC_%s" %(ifocombos[i],opts.user_tag)
+  temp_trigbank_coh = lal.Cache().fromfile(open(opts.cache_file)).sieve(description = (temp_trigbank_coh_descrip))
+  temp_trigbank_coh_missing = temp_trigbank_coh.checkfilesexist()[1].pfnlist()
+  missing_trigbank_coh.extend(temp_trigbank_coh_missing)
+  temp_trigbank_coh_found = temp_trigbank_coh.checkfilesexist()[0].pfnlist()
+  found_trigbank_coh.extend(temp_trigbank_coh_found)
+
+print "*****"
+print "number of missing_tmpltbank = " + str(len(missing_tmpltbank)) + " of " + str(len(found_tmpltbank)+len(missing_tmpltbank))
+print "number of missing_inspiral_first = " + str(len(missing_inspiral_first))  + " of " + str(len(found_inspiral_first)+len(missing_inspiral_first))
+print "number of missing_thinca_first = " + str(len(missing_thinca_first)) + " of " + str(len(found_thinca_first)+len(missing_thinca_first))
+print "number of missing_sire_first = " + str(len(missing_sire_first)) + " of " + str(len(found_sire_first)+len(missing_sire_first))
+print "number of missing_coire_first = " + str(len(missing_coire_first)) + " of " + str(len(found_coire_first)+len(missing_coire_first))
+if opts.subdag_type != "INJECTIONS":
+  print "number of missing_thinca_slide_first = " + str(len(missing_thinca_slide_first)) + " of " + str(len(found_thinca_slide_first)+len(missing_thinca_slide_first))
+  print "number of missing_coire_slide_first = " + str(len(missing_coire_slide_first)) + " of " + str(len(found_coire_slide_first)+len(missing_coire_slide_first))
+print "*****"
+print "number of missing_trigbank = " + str(len(missing_trigbank)) + " of " + str(len(found_trigbank)+len(missing_trigbank)) 
+print "number of missing_inspiral_second = " + str(len(missing_inspiral_second)) + " of " + str(len(found_inspiral_second)+len(missing_inspiral_second))
+print "number of missing_thinca_second = " + str(len(missing_thinca_second)) + " of " + str(len(found_thinca_second)+len(missing_thinca_second))
+print "number of missing_sire_second = " + str(len(missing_sire_second)) + " of " + str(len(found_sire_second)+len(missing_sire_second))
+print "number of missing_coire_second = " + str(len(missing_coire_second)) + " of " + str(len(found_coire_second)+len(missing_coire_second))
+if opts.subdag_type != "INJECTIONS":
+  print "number of missing_thinca_slide_second = " + str(len(missing_thinca_slide_second)) + " of " + str(len(found_thinca_slide_second)+len(missing_thinca_slide_second))
+  print "number of missing_coire_slide_second = " + str(len(missing_coire_slide_second)) + " of " + str(len(found_coire_slide_second)+len(missing_coire_slide_second))
+print "*****"
+print "number of missing_cohbank = " + str(len(missing_cohbank)) + " of " + str(len(found_cohbank)+len(missing_cohbank))
+print "number of missing_coherent = " + str(len(missing_coherent)) + " of " + str(len(found_coherent)+len(missing_coherent))
+print "number of missing_inspiral_coh = " + str(len(missing_inspiral_coh)) + " of " + str(len(found_inspiral_coh)+len(missing_inspiral_coh))
+print "number of missing_trigbank_coh = " + str(len(missing_trigbank_coh)) + " of " + str(len(found_trigbank_coh)+len(missing_trigbank_coh))
+
+
