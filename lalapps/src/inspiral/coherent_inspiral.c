@@ -161,7 +161,6 @@ REAL4  cohSNRThresh         = -1;
 UINT4  maximizeOverChirp    = 0;    /* default is no clustering */
 INT4   verbose              = 0;
 CHAR   outputPath[FILENAME_MAX];
-CHAR  *frInType         = NULL;         /* type of data frames          */
 UINT4  outCompress = 0;
 INT4   numCohTrigs      = 400; /*optional argument that can be reset */
 INT8  gpsStartTimeNS   = 0;         /* input data GPS start time ns */
@@ -217,6 +216,8 @@ int main( int argc, char *argv[] )
   CHAR   xmlname[FILENAME_MAX];
   CHAR   cohdataStr[LALNameLength];
   CHAR   caseIDChars[6][LIGOMETA_IFOS_MAX] = {"0","0","0","0","0","0"};
+  /* type of channels, e.g., LSC-STRAIN, in c-data frames          */
+  CHAR   channelNameArray[6][LALNameLength] = {"0","0","0","0","0","0"}; 
   CHAR  *ifo = NULL;
 
   INT4   cohSegLength     = 1; /* This should match hardcoded value of 1s in inspiral.c */
@@ -418,6 +419,7 @@ int main( int argc, char *argv[] )
 		  kmax = k; /* final trigger's k value */
 		  caseID[k] = 1;
 		  memcpy( caseIDChars[k], &thisCoinc->snglInspiral[k]->ifo, sizeof(caseIDChars[k] - 1) );
+                  LALSnprintf( channelNameArray[k], LALNameLength*sizeof(CHAR), "%s", &thisCoinc->snglInspiral[k]->channel );
 		  eventID = thisCoinc->snglInspiral[k]->event_id->id;
 		  if( vrbflg ) fprintf(stdout,"eventID = %Ld\n",eventID );
 		  
@@ -429,7 +431,7 @@ int main( int argc, char *argv[] )
 		  /* Store CData frame name now for reading its frame-file 
 		     later, within thisCoinc-ident loop
 		  */
-		  LALSnprintf( nameArrayCData[k], LALNameLength*sizeof(CHAR), "%s:%s_CData_%Ld", caseIDChars[k],frInType,eventID );
+		  LALSnprintf( nameArrayCData[k], LALNameLength*sizeof(CHAR), "%s:%s_CData_%Ld", caseIDChars[k], channelNameArray[k], eventID );
 		}
 	    }/* Closes loop for k; finished noting the participating ifos 
 		and the eventID for this coincident trigger*/
@@ -1346,8 +1348,6 @@ int main( int argc, char *argv[] )
 
  cleanexit:
 
-  if ( frInType )    free( frInType );
-  
   if ( vrbflg ) fprintf( stdout, "checking memory leaks and exiting\n" );
   LALCheckMemoryLeaks();
   exit(0);
@@ -1394,7 +1394,6 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 "  [--numCohTrigs]   numCohTrigs number of coherent snr frames per output frame-file\n"\
 "  --cohsnr-threshold RHO       set signal-to-noise threshold to RHO\n"\
 "  --maximize-over-chirp        do clustering\n"\
-"  --frame-type TAG             input data is contained in frames of type TAG\n"\
 "  --gps-start-time SEC         GPS second of data start time (needed if globbing)\n"\
 "  --gps-end-time SEC           GPS second of data end time (needed if globbing)\n"\
 "\n"
@@ -1451,7 +1450,6 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
      {"V1-framefile",             required_argument, 0,                 'V'},
      {"G1-framefile",             required_argument, 0,                 'G'},
      {"T1-framefile",             required_argument, 0,                 'T'},
-     {"frame-type",               required_argument, 0,                 'S'},
      {0, 0, 0, 0}
    };
 
@@ -1465,7 +1463,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
        size_t optarg_len;
 
        c = getopt_long_only( argc, argv,
-           "A:B:a:b:G:I:L:l:e:g:W:X:Y:t:w:n:P:S:T:V:Z:d:f:h:p:r:u:v:",
+           "A:B:a:b:G:I:L:l:e:g:W:X:Y:t:w:n:P:T:V:Z:d:f:h:p:r:u:v:",
            long_options, &option_index );
 
        if ( c == -1 )
@@ -1558,13 +1556,6 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
            ADD_PROCESS_PARAM( "string", "%s", outputPath );
            break;
 	   
-	 case 'S':
-	   optarg_len = strlen( optarg ) + 1;
-	   frInType = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
-	   memcpy( frInType, optarg, optarg_len );
-	   ADD_PROCESS_PARAM( "string", "%s", optarg );
-	   break;
-
          case 'd': /* set debuglevel */
            set_debug_level( optarg );
            ADD_PROCESS_PARAM( "string", "%s", optarg );
@@ -1859,13 +1850,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
        fprintf( stderr, "--cohsnr-threshold must be specified\n" );
        exit( 1 );
      }
-   /* check that a channel has been requested, and fill the ifo */
-   if ( ! frInType )
-     {
-       fprintf( stderr, "--channel-name must be specified\n" );
-       exit( 1 );
-     }
-   
+
    if( !ifoTag )
      {
        fprintf(stderr, "--ifo-tag must be specified for file naming\n" );
