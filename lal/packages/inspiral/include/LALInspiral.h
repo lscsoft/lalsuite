@@ -970,7 +970,6 @@ LALInspiralInit(
 void LALInspiralWaveTaper(
      LALStatus    *status,
      REAL4Vector  *signal,
-     UINT4	        n,
      UINT4	  bookends
      );
 
