@@ -1,6 +1,6 @@
 universe   = standard 
 executable = $ENV(COMPUTEFSTATV2_PATH)/ComputeFStatistic_v2 
-log =   logs/ComputeFStatistic_v2_$(jobID).log 
+log =   ComputeFStatistic_v2.log 
 error = logs/ComputeFStatistic_v2_$(jobID).err
 output = logs/ComputeFStatistic_v2_$(jobID).out
 
