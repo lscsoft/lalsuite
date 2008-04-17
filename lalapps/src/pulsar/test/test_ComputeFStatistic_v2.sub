@@ -1,0 +1,8 @@
+universe   = standard 
+executable = $ENV(COMPUTEFSTATV2_PATH)/ComputeFStatistic_v2 
+log =   logs/ComputeFStatistic_v2_$(jobID).log 
+error = logs/ComputeFStatistic_v2_$(jobID).err
+output = logs/ComputeFStatistic_v2_$(jobID).out
+
+arguments  = $(argList)
+queue

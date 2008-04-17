@@ -1,0 +1,8 @@
+universe   = vanilla 
+executable = $ENV(MAKEFAKEDATA_PATH)/lalapps_Makefakedata 
+log =   Makefakedata.log 
+error = logs/Makefakedata_$(jobID).err
+output = logs/Makefakedata_$(jobID).out
+
+arguments  = $(argList)
+queue
