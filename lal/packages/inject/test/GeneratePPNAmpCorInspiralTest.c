@@ -31,6 +31,7 @@ Generates a parametrized post-Newtonian inspiral waveform.
 \begin{verbatim}
 GeneratePPNAmpCorInspiralTest [-m m1 m2] [-r dist] [-i inc phii psi] [-f fmin fmax]
                         [-t dt] [-p order amp] [-d debuglevel] [-o outfile] [-g FF FFTfile]
+                        [-s taper]
 \end{verbatim}
 
 ****************************************** </lalLaTeX><lalErrTable> */
@@ -40,7 +41,7 @@ GeneratePPNAmpCorInspiralTest [-m m1 m2] [-r dist] [-i inc phii psi] [-f fmin fm
 #define GENERATEPPNINSPIRALTESTC_EVAL   3
 #define GENERATEPPNINSPIRALTESTC_EFILE  4
 #define GENERATEPPNINSPIRALTESTC_EPRINT 5
-#define DEBUG 1
+#define DEBUG 0
 #define BUFFSIZE 1024     /* Number of timesteps buffered */
 
 #define GENERATEPPNINSPIRALTESTC_MSGENORM  "Normal exit"
@@ -98,7 +99,7 @@ int lalDebugLevel = 1;
 #define AMP (5)
 
 /* Usage format string. */
-#define USAGE "Usage: %s [-g FFToutfile] [-m m1 m2] [-r dist] [-i inc phii psi]\n\t[-f fmin fmax] [-t dt] [-p order amp] [-d debuglevel] [-o outfile]\n"
+#define USAGE "Usage: %s [-g FFToutfile] [-m m1 m2] [-r dist] [-i inc phii psi]\n\t[-f fmin fmax] [-t dt] [-p order amp] [-d debuglevel] [-o outfile]\n\t [-s taper]"
 
 /* Maximum output message length. */
 #define MSGLENGTH (1024)
@@ -160,7 +161,6 @@ if ( ( (val) < (lower) ) || ( (val) > (upper) ) )                    \
 }                                                                    \
 while (0)
 
-/* EXPANSION ********************************************************************************************** */
 
 /* Definition of a data buffer list for storing the waveform. */
 typedef struct tagPPNInspiralBuffer {
@@ -182,7 +182,6 @@ do {                                                                 \
   }                                                                  \
 } while (0)
 
-/* END EXPANSION ****************************************************************************************** */
 
 
 /* A global pointer for debugging. */
@@ -202,7 +201,7 @@ main(int argc, char **argv)
   int arg;                      /* command-line argument counter */
   static LALStatus stat;        /* status structure */
   CHAR *outfile = NULL;         /* name of outfile */
-  CHAR *fftout  = NULL; 	/* EXPANSION outfile */
+  CHAR *fftout  = NULL; 	/* FFT outfile */
   REAL4 m1 = M1, m2 = M2;       /* binary masses */
   REAL4 dist = DIST;            /* binary distance */
   REAL4 inc = 0.0, phii = 0.0, psi = LAL_PI_2;  /* inclination, coalescence phase, and polarization angle */
@@ -210,6 +209,7 @@ main(int argc, char **argv)
   REAL8 dt = DT;                /* sampling interval */
   INT4 order = ORDER;           /* PN order */
   INT4 amp = AMP;               /* Amplitude switches */
+  INT4 taper = NULL;		/* Taper switch (Off = NULL) */
 
   /* Other variables. */
   UINT4 i;                      /* index */
@@ -230,7 +230,7 @@ main(int argc, char **argv)
   RealFFTPlan    *fwdRealPlan    = NULL;
   RealFFTPlan    *revRealPlan    = NULL;
   REAL8 t = 0.0; /* time */
-  REAL8 f = 0.0; 
+  REAL8 f = 0.0;
 
 
 
@@ -329,7 +329,7 @@ main(int argc, char **argv)
         return GENERATEPPNINSPIRALTESTC_EARG;
       }
     }
-    /* EXPANSION Parse FFToutput file option. */
+    /* Parse FFToutput file option. */
     else if ( !strcmp( argv[arg], "-g" ) ) {
       if ( argc > arg + 1 ) {
 	arg++;
@@ -346,6 +346,18 @@ main(int argc, char **argv)
       if ( argc > arg + 1 ) {
 	arg++;
 	lalDebugLevel = atoi( argv[arg++] );
+      }else{
+	ERROR( GENERATEPPNINSPIRALTESTC_EARG,
+	       GENERATEPPNINSPIRALTESTC_MSGEARG, 0 );
+        LALPrintError( USAGE, *argv );
+        return GENERATEPPNINSPIRALTESTC_EARG;
+      }
+    }
+    /* Parse tapering option. */
+    else if ( !strcmp( argv[arg], "-s" ) ) {
+      if ( argc > arg + 1 ) {
+	arg++;
+	taper = atoi( argv[arg++] );
       }else{
 	ERROR( GENERATEPPNINSPIRALTESTC_EARG,
 	       GENERATEPPNINSPIRALTESTC_MSGEARG, 0 );
@@ -410,8 +422,7 @@ main(int argc, char **argv)
   /* Generate waveform. */
   SUB( LALGeneratePPNAmpCorInspiral( &stat, &waveform, &params ), &stat );
 
-  /*   EXPANSION  to produce h(t), H(f)         *
-   *                                            *
+   /*                                            *
    ********************************************************************************************************
    * This Test file now calculates the polar response functions for the detector and sky position defined *
    * below. It also performs the fourier transform to produce H(f).                                       *
@@ -422,8 +433,6 @@ main(int argc, char **argv)
   /*************************** h(t)*/
   LALCreateVector( &stat, &hoft, waveform.h->data->length);
 
-  fprintf(stderr,"\n length = %d ", waveform.h->data->length);
- 
   /* fake detector */
   /* This one is overhead */
   detector.location[0] = 0.;
@@ -486,7 +495,8 @@ main(int argc, char **argv)
   }	
 
   /* Taper hoft */
-  /* LALInspiralWaveTaper(&stat, hoft, 30, 3);
+  if( taper ) 
+    LALInspiralWaveTaper(&stat, hoft, 3);
 
   /*********************** End h(t)*/
   
@@ -521,14 +531,6 @@ main(int argc, char **argv)
   LALFreqTimeRealFFT( &stat, &ht, &Hf, revRealPlan );
 
   /*********************** End H(f)*/
-
-#if DEBUG
-  printf("\n\n Expansion code finished \n\n");
-#endif
-
-  /******************************************
-   * END EXPANSION                          *
-   ******************************************/
 
   /* Print termination information. */
   LALSnprintf( message, MSGLENGTH, "%d: %s", params.termCode,
