@@ -1,0 +1,11 @@
+To run testPulsar_H1H2L1_Makefakedata_ComputeFStatv2.dag from a condor submit host:
+
+1. Set the environmental variable COMPUTEFSTATV2_PATH to the path to ComputeFStatistic_v2.
+
+2. Set the environmental variable MAKEFAKEDATA_PATH to the path to lalapps_Makefakedata.
+
+3. Change the universe in test_ComputeFStatistic_v2.sub and test_lalapps_Makefakedata.sub to standard or vanilla as needed.
+
+4. If on an NFS filesystem set the environmental variable _CONDOR_DAGMAN_LOG_ON_NFS_IS_ERROR to False.
+
+5. Run condor_submit_dag testPulsar_H1H2L1_Makefakedata_ComputeFStatv2.dag.
