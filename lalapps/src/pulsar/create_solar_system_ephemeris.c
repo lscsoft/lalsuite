@@ -68,8 +68,11 @@
 " --year              year over which to calculate the ephemeris e.g. 2008 \n"\
 " --interval          time step between successive output ephemeris points\n\
                      (in integer hours)\n"\
+" --num-years         number of years over which the ephemeris will be\n\
+                     created (integer)\n"\
 " --overlap           number of days overlap with previous and next year\n"\
 " --target            the target solar system body (e.g. SUN, EARTH)\n"\
+"\n"\
 " --test              compare output with current ephemeris files\n"\
 "\n"
 
@@ -112,6 +115,7 @@ typedef struct taginputParams{
   INT4 year;  /* year of ephemeris file to extract */
   INT4 nhre;  /* number of hours between successive data point for output */
   INT4 noverlap; /* number of days overlap with previos years */
+  INT4 nyears; /* number of years over which to create ephemeris */
 
   INT4 target; /* the solar system body */
   CHAR *targName;
@@ -161,7 +165,7 @@ int main(int argc, char **argv){
   REAL8 fgps=0.; /* float version of gps */
   REAL8 time[2], R[6], A[3], gps_JD[2];
   REAL8 Vlast[3], Vnow[3], Vnext[3], Rnow[3];
-  INT4 nyr=0, nhr=0;
+  INT4 nyr=0, nhr=0, ndays=0;
 
   REAL8 finterval=0, halfinterval_jd=0;
 
@@ -171,9 +175,9 @@ int main(int argc, char **argv){
   REAL8 halfhour_jd=1800./86400.;
   REAL8 gps_JD_start1=0.;
 
-  INT4 leapdays=0;
+  INT4 leapdays=0, extraleaps=0;
 
-  INT4 nentries_e=0;
+  INT4 nentries=0;
 
   INT4 i=0;
 
@@ -208,6 +212,7 @@ int main(int argc, char **argv){
     inputs.target = EARTH;
     inputs.year = 1998;
     inputs.nhre = 4;
+    inputs.nyears = 1;
     inputs.noverlap = 10;
 
     if((fpe = fopen(earthEphem, "r")) == NULL){
@@ -223,6 +228,7 @@ int main(int argc, char **argv){
 inputs.ephemfile);
     fprintf(stderr, "  Targeting solar system body:- %s\n", inputs.targName);
     fprintf(stderr, "  Ephemeris year:- %d\n", inputs.year);
+    fprintf(stderr, "  Number of years:- %d\n", inputs.nyears);
     fprintf(stderr, "  Output interval (hours):- %d\n", inputs.nhre);
     fprintf(stderr, "  Outout overlap with adjacent years (days):- %d\n",
 inputs.noverlap);
@@ -237,13 +243,24 @@ inputs.noverlap);
   else
     leapdays = -(INT4)(2000-nyr)/4;
 
+  /* work out how many leap days there will be over the period of the ephemeris
+     - nyears */
+  if(nyr + inputs.nyears >= 2001)
+    extraleaps = (INT4)(nyr + inputs.nyears - 1997)/4;
+  else
+    extraleaps = -(INT4)(2000 - (nyr + inputs.nyears))/4;
+
+  extraleaps -= leapdays;
+  ndays = 365*inputs.nyears + extraleaps;
+
   gps_yr = gps_2000 + day*(365*(nyr-2000) + leapdays);
   gps_start = gps_yr - inputs.noverlap*day;
   gps_JD_start1 = jd_2000 + 365.*(REAL8)(nyr-2000.) + (REAL8)leapdays -
     (REAL8)inputs.noverlap;
 
   /* calculate the number of entries in each ephemeris */
-  nentries_e = (INT4)((8760 + inputs.noverlap*48)/inputs.nhre) + 1;
+  /* nentries = (INT4)((8760 + inputs.noverlap*48)/inputs.nhre) + 1; */
+  nentries = (INT4)((ndays*24 + inputs.noverlap*48)/inputs.nhre) + 1;
 
   /* open ephemeris file for reading */
   if((fp = fopen(inputs.ephemfile, "r")) == NULL){
@@ -275,7 +292,7 @@ inputs.noverlap);
     
     /* check that values are the same as in the existing ephemeris file */
     if(gps_yr - title[0] != 0. || inputs.nhre*hour - title[1] != 0. ||
-       nentries_e - title[2] != 0.){
+       nentries - title[2] != 0.){
       fprintf(stderr, "Start time, or length of ephemeris is not the same as \
 in the existing file!\n");
       return TESTFAIL;
@@ -289,7 +306,7 @@ writing!\n");
       exit(1);
     }
 
-    fprintf(fpe, "\t%d\t%lf\t%d\n", gps_yr, inputs.nhre*hour, nentries_e);
+    fprintf(fpe, "\t%d\t%lf\t%d\n", gps_yr, inputs.nhre*hour, nentries);
   }
 
   nhr = inputs.nhre;
@@ -368,7 +385,7 @@ A[0], A[1], A[2]);
   Vlast[1] = Vnext[1];
   Vlast[2] = Vnext[2];
 
-  for(i=1;i< 1 + (8760 + 48*inputs.noverlap)/nhr;i++){
+  for(i=1;i< nentries;i++){
     gps_JD[1] += halfinterval_jd;
 
     if(gps_JD[1] >= 1.){
@@ -439,6 +456,9 @@ A[1], A[2]);
   /* free memory */
   fclose(fp);
   fclose(fpe);
+
+  if(test && verbose)
+    fprintf(stderr, "The code has passed the test. Hoorah!\n");
 
   return 0;
 }
@@ -759,11 +779,12 @@ void get_input_args(inputParams *inputParams, INT4 argc, CHAR *argv[]){
     { "interval",      required_argument, 0, 'i'},
     { "overlap",       required_argument, 0, 'n'},
     { "target",        required_argument, 0, 't'},
+    { "num-years",     required_argument, 0, 'N'},
     { "test",          no_argument, &test, 1},
     { 0, 0, 0, 0 }
   };
 
-  CHAR args[] = "he:E:y:i:n:t:";
+  CHAR args[] = "he:E:y:i:n:t:N:";
   CHAR *program = argv[0];
 
   if(argc == 1){
@@ -774,7 +795,8 @@ void get_input_args(inputParams *inputParams, INT4 argc, CHAR *argv[]){
   /* set defaults */
   inputParams->nhre = 4; /* default to 4 hours between points */
 
-  inputParams->noverlap = 0; /* default to overlap */
+  inputParams->noverlap = 0; /* default to no overlap */
+  inputParams->nyears = 1;   /* default to one year of data */
 
   /* parse input arguements */
   while ( 1 ){
@@ -843,6 +865,9 @@ void get_input_args(inputParams *inputParams, INT4 argc, CHAR *argv[]){
           fprintf(stderr, "You must enter a valid solar system body!\n");
           exit(0);
         }
+        break;
+      case 'N':
+        inputParams->nyears = atoi(optarg);
         break;
       case '?':
         fprintf(stderr, "Unknown error while parsing options\n");
