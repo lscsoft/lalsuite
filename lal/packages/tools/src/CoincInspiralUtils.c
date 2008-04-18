@@ -2444,7 +2444,7 @@ XLALRateStatCalcOneCoincInspiral (
     {
       CoincInspiralTable *tmpEvent = thisSlideEvent;
 
-      if ( XLALCoincInspiralStat(tmpEvent,coincStat,bittenLParams) > thisStat )
+      if ( XLALCoincInspiralStat(tmpEvent,coincStat,bittenLParams) >= thisStat )
       {
         /* count this slide coinc towards the rate */
         thisRate += 1.;
@@ -2509,7 +2509,7 @@ XLALRateStatCalcCoincInspiral (
         thisSlideStat =
             XLALCoincInspiralStat(thisSlideEvent, coincStat, bittenLParams);
 
-        if ( thisSlideStat > thisStat )
+        if ( thisSlideStat >= thisStat )
         {
           /* count this slide coinc towards the rate */
           thisRate += 1.;
