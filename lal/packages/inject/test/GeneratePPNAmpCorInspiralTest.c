@@ -209,7 +209,7 @@ main(int argc, char **argv)
   REAL8 dt = DT;                /* sampling interval */
   INT4 order = ORDER;           /* PN order */
   INT4 amp = AMP;               /* Amplitude switches */
-  INT4 taper = NULL;		/* Taper switch (Off = NULL) */
+  UINT4 taper = 0;		/* Taper switch (On > 0) */
 
   /* Other variables. */
   UINT4 i;                      /* index */
@@ -495,7 +495,7 @@ main(int argc, char **argv)
   }	
 
   /* Taper hoft */
-  if( taper ) 
+  if( taper > 0 ) 
     LALInspiralWaveTaper(&stat, hoft, 3);
 
   /*********************** End h(t)*/
