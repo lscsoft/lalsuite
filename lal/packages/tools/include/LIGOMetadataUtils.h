@@ -910,7 +910,7 @@ XLALCoincInspiralTimeNS (
 
 REAL4
 XLALCoincInspiralStat(
-    CoincInspiralTable         *coincInspiral,
+    const CoincInspiralTable   *coincInspiral,
     CoincInspiralStatistic      coincStat,
     CoincInspiralBittenLParams *bittenLParams
     );
