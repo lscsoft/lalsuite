@@ -462,8 +462,8 @@ main(int argc, char **argv)
     htaper2->data[i] = waveform.h->data->data[2*i+1];
   }
 
-  LALInspiralWaveTaper(&stat, htaper1, 4, 3);
-  LALInspiralWaveTaper(&stat, htaper2, 4, 3);
+  LALInspiralWaveTaper(&stat, htaper1, 3);
+  LALInspiralWaveTaper(&stat, htaper2, 3);
 
   for(i = 0; i < wlength; i++){
     waveform.h->data->data[2*i] = htaper1->data[i];
