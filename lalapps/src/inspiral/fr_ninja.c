@@ -102,6 +102,7 @@ INT4 main(INT4 argc, CHAR **argv)
   CHAR *spin2x = NULL;
   CHAR *spin2y = NULL;
   CHAR *spin2z = NULL;
+  CHAR *freqStart22 = NULL;
   CHAR *wf_name[MAX_L][(2*MAX_L) + 1];
 
   /* metadata */
@@ -116,6 +117,7 @@ INT4 main(INT4 argc, CHAR **argv)
   CHAR s2x[HISTORY_COMMENT];
   CHAR s2y[HISTORY_COMMENT];
   CHAR s2z[HISTORY_COMMENT];
+  CHAR freq[HISTORY_COMMENT];
   CHAR creator[HISTORY_COMMENT];
 
   /* channel names */
@@ -295,6 +297,7 @@ INT4 main(INT4 argc, CHAR **argv)
   LAL_CALL(LALReadConfigSTRINGVariable(&status, &spin2x, meta_file, "spin2x", &wasRead), &status);
   LAL_CALL(LALReadConfigSTRINGVariable(&status, &spin2y, meta_file, "spin2y", &wasRead), &status);
   LAL_CALL(LALReadConfigSTRINGVariable(&status, &spin2z, meta_file, "spin2z", &wasRead), &status);
+  LAL_CALL(LALReadConfigSTRINGVariable(&status, &freqStart22, meta_file, "freqStart22", &wasRead), &status);
 
   /* set waveform metadata */
   LALSnprintf(sim, HISTORY_COMMENT, "simulation-details:%s", simulation_details);
@@ -307,6 +310,7 @@ INT4 main(INT4 argc, CHAR **argv)
   LALSnprintf(s2x, HISTORY_COMMENT, "spin2x:%s", spin2x);
   LALSnprintf(s2y, HISTORY_COMMENT, "spin2y:%s", spin2y);
   LALSnprintf(s2z, HISTORY_COMMENT, "spin2z:%s", spin2z);
+  LALSnprintf(freq, HISTORY_COMMENT, "freqStart22:%s", freqStart22);
   LALSnprintf(creator, HISTORY_COMMENT, "creator:$Id$");
 
   /* define frame */
@@ -323,6 +327,7 @@ INT4 main(INT4 argc, CHAR **argv)
   XLALFrHistoryAdd(frame, "spin2x", s2x);
   XLALFrHistoryAdd(frame, "spin2y", s2y);
   XLALFrHistoryAdd(frame, "spin2z", s2z);
+  XLALFrHistoryAdd(frame, "freqStart22", freq);
   XLALFrHistoryAdd(frame, "creator", creator);
 
   /* loop over l & m values */
