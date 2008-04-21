@@ -343,11 +343,9 @@ class hipe_run(object):
     """
     Return a CondorDAGNode that represents this entire DAG.
     """
-    job = pipeline.CondorDAGManJob(self.get_dag_path())
+    dir, fname = os.path.split(self.get_dag_path())
+    job = pipeline.CondorDAGManJob(fname, dir)
     node = pipeline.CondorDAGNode(job)
-    
-    # hack to make rescue possible
-    inspiralutils.fix_rescue(node)
     return node
   
   def finalize(self, uberdag=None, parent=None):
@@ -416,9 +414,10 @@ def make_ligolw_add(orig_cache, pattern, outfile, logdir, cp, ligolw_job=None):
 
   if ligolw_job is None:
     ligolw_job = pipeline.LigolwAddJob(logdir, cp)
-    ligolw_job.set_stdout_file(outfile)
 
   node = pipeline.LigolwAddNode(ligolw_job)
+  node.add_output_file(outfile)
+  node.add_var_opt("output", outfile)
   for sub_file in sub_files:
     node.add_file_arg(sub_file)
 
@@ -571,6 +570,12 @@ length = ( n * s - ( s - 1 ) * o ) / r
 overlap = o / r
 minsciseg = length + 2 * paddata
 
+trial_len = opts.onsource_left + opts.onsource_right
+if (opts.num_trials * trial_len + 2*opts.padding_time) < minsciseg:
+    print >>sys.stderr, "requested number of trials too small; require at "\
+        " least %d" \
+        % int(math.ceil((minsciseg - 2*opts.padding_time) / trial_len))
+
 ##############################################################################
 # Read in all the segment lists, filtering for sufficiently long segments
 segdict = segments.segmentlistdict()
@@ -635,9 +640,6 @@ if opts.do_dataquality:
 tag = opts.config_file.rstrip(".ini")
 uberdag = pipeline.CondorDAG("%s/%s_uberdag.log" % (opts.log_path, tag))
 uberdag.set_dag_file("%s_uberdag" % tag)
-
-# hack to enable somewhat clean rescues
-inspiralutils.write_rescue()
 
 ##############################################################################
 # loop over the GRBs and construct their required sub-DAGs
@@ -836,8 +838,8 @@ for grb in ext_trigs:
       ligolw_added_cache_filename = injection_cache_filename.replace("HIPE",
         "HIPE_LIGOLW_ADDED")
       
-      found_filename = "%s-COIRE_INJECTION_FOUND_SECOND_%s_%s-%d-%d.xml" % \
-        ("".join(grb_ifolist), "".join(grb_ifolist), usertag,
+      found_filename = "%s/%s-COIRE_INJECTION_FOUND_SECOND_%s_%s-%d-%d.xml" %\
+        (hipe_dir, "".join(grb_ifolist), "".join(grb_ifolist), usertag,
          offSourceSegment[0], abs(offSourceSegment))
       ligolw_add_1, new_cache = make_ligolw_add(injection_cache,
                                      "COIRE_*_FOUND", found_filename,
