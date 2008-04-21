@@ -17,6 +17,17 @@
 *  MA  02111-1307  USA
 */
 
+/**
+ * \author Matt Pitkin, Reinhard Prix
+ * \date 2006
+ * \file
+ * \ingroup pulsar
+ * \brief Functions to calculate binary system time delays and read TEMPO pulsar parameter files
+ *
+ * $Id$
+ *
+ */
+
 /* LAL functions to calculate the timing differences needed to
    take into account binary pulsar orbits
    Models are taken from Taylor and Weisberg (1989) and use the
@@ -103,12 +114,52 @@
 /******* DEFINE RCS ID STRING ************/
 NRCSID( BINARYPULSARTIMINGC, "$Id$" );
 
+/** Calculate the binary system time delay using the pulsar parameters in 
+ *  \c params
+ */
 void
 LALBinaryPulsarDeltaT( LALStatus            *status,
                        BinaryPulsarOutput   *output,
                        BinaryPulsarInput    *input,
-                       BinaryPulsarParams   *params )
+                       BinaryPulsarParams   *params ){
+  INITSTATUS(status, "LALBinaryPulsarDeltaT", BINARYPULSARTIMINGC);
+  ATTATCHSTATUSPTR(status);
+
+  /* Check input arguments */
+  ASSERT(input != (BinaryPulsarInput *)NULL, status, 
+  BINARYPULSARTIMINGH_ENULLINPUT, BINARYPULSARTIMINGH_MSGENULLINPUT);
+
+  ASSERT(output != (BinaryPulsarOutput *)NULL, status, 
+  BINARYPULSARTIMINGH_ENULLOUTPUT, BINARYPULSARTIMINGH_MSGENULLOUTPUT);
+
+  ASSERT(params != (BinaryPulsarParams *)NULL, status, 
+  BINARYPULSARTIMINGH_ENULLPARAMS, BINARYPULSARTIMINGH_MSGENULLPARAMS);
+
+  ASSERT((!strcmp(params->model, "BT")) ||
+         (!strcmp(params->model, "BT1P")) ||
+         (!strcmp(params->model, "BT2P")) ||
+         (!strcmp(params->model, "BTX")) ||
+         (!strcmp(params->model, "ELL1")) ||
+         (!strcmp(params->model, "DD")) ||
+         (!strcmp(params->model, "MSS")), status,
+         BINARYPULSARTIMINGH_ENULLBINARYMODEL, 
+         BINARYPULSARTIMINGH_MSGNULLBINARYMODEL);
+
+  XLALBinaryPulsarDeltaT( output, input, params );
+
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
+}
+
+/** XLAL function to compute the binary time delay
+  */
+void
+XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
+                        BinaryPulsarInput    *input,
+                        BinaryPulsarParams   *params )
 {
+  const CHAR *fn = "XLALBinaryPulsarDeltaT()";
+
   REAL8 dt=0.; /* binary pulsar deltaT */
   REAL8 x, xdot;	/* x = asini/c */
   REAL8 w;  /* longitude of periastron */
@@ -131,25 +182,28 @@ LALBinaryPulsarDeltaT( LALStatus            *status,
   
   CHAR *model = params->model;
 
-  INITSTATUS(status, "LALBinaryPulsarDeltaT", BINARYPULSARTIMINGC);
-  ATTATCHSTATUSPTR(status);
-
   /* Check input arguments */
-  ASSERT(input != (BinaryPulsarInput *)NULL, status, 
-  BINARYPULSARTIMINGH_ENULLINPUT, BINARYPULSARTIMINGH_MSGENULLINPUT);
+  if( input == (BinaryPulsarInput *)NULL ){
+    XLAL_ERROR_VOID( fn, BINARYPULSARTIMINGH_ENULLINPUT );
+  }
 
-  ASSERT(output != (BinaryPulsarOutput *)NULL, status, 
-  BINARYPULSARTIMINGH_ENULLOUTPUT, BINARYPULSARTIMINGH_MSGENULLOUTPUT);
+  if( output == (BinaryPulsarOutput *)NULL ){
+    XLAL_ERROR_VOID( fn, BINARYPULSARTIMINGH_ENULLOUTPUT );
+  }
 
-  ASSERT(params != (BinaryPulsarParams *)NULL, status, 
-  BINARYPULSARTIMINGH_ENULLPARAMS, BINARYPULSARTIMINGH_MSGENULLPARAMS);
+  if( params == (BinaryPulsarParams *)NULL ){
+    XLAL_ERROR_VOID( fn, BINARYPULSARTIMINGH_ENULLPARAMS );
+  }
 
-  ASSERT((strstr(params->model, "BT") != NULL) || 
-         (strstr(params->model, "ELL1") != NULL) ||
-         (strstr(params->model, "DD") != NULL) ||
-         (strstr(params->model, "MSS") != NULL), status,
-         BINARYPULSARTIMINGH_ENULLBINARYMODEL, 
-         BINARYPULSARTIMINGH_MSGNULLBINARYMODEL);
+  if((!strcmp(params->model, "BT")) &&
+     (!strcmp(params->model, "BT1P")) &&
+     (!strcmp(params->model, "BT2P")) &&
+     (!strcmp(params->model, "BTX")) &&
+     (!strcmp(params->model, "ELL1")) &&
+     (!strcmp(params->model, "DD")) &&
+     (!strcmp(params->model, "MSS"))){
+    XLAL_ERROR_VOID( fn, BINARYPULSARTIMINGH_ENULLBINARYMODEL );
+  }
 
   /* convert certain params to SI units */
   w0 = params->w0*LAL_PI_180; /* convert w to rads from degs */
@@ -497,31 +551,48 @@ this isn't defined for either of the two pulsars currently using this model */
     output->deltaT = -Dbb;
   }
 
-  /* for DDGR model */
-  
+  /* for DDGR model */  
+
   /* for Epstein-Haugan (EH) model - see Haugan, ApJ (1985) eqs 69 and 71 */
   
-  /* other models, e.g. BT2P for 1 binary pulsar in current catalogue */
-  
-  DETATCHSTATUSPTR(status);
-  RETURN(status);
+  /* check that the returned value is not a NaN */
+  if( isnan(output->deltaT) ){
+    XLAL_ERROR_VOID( fn, BINARYPULSARTIMINGH_ENAN );
+  }
 }
+
 
 void
 LALReadTEMPOParFile(  LALStatus *status,
                       BinaryPulsarParams *output,
                       CHAR      *pulsarAndPath )
 {
-  FILE *fp=NULL;
-  CHAR val[500][40]; /* string array to hold all the read in values 
-                        500 strings of max 40 characters is enough */
-  INT4 i=0, j=1, k;
-
   INITSTATUS(status, "LALReadTEMPOParFile", BINARYPULSARTIMINGC);
   ATTATCHSTATUSPTR(status);
   
   ASSERT(output != (BinaryPulsarParams *)NULL, status, 
   BINARYPULSARTIMINGH_ENULLOUTPUT, BINARYPULSARTIMINGH_MSGENULLOUTPUT);
+
+  XLALReadTEMPOParFile( output, pulsarAndPath );
+
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
+}
+
+void
+XLALReadTEMPOParFile( BinaryPulsarParams *output,
+                      CHAR      *pulsarAndPath )
+{
+  const CHAR *fn = "XLALReadTEMPOParFile()";
+
+  FILE *fp=NULL;
+  CHAR val[500][40]; /* string array to hold all the read in values 
+                        500 strings of max 40 characters is enough */
+  INT4 i=0, j=1, k;
+
+  if( output == (BinaryPulsarParams *)NULL ){
+    XLAL_ERROR_VOID( fn, XLAL_EFAULT );
+  }
 
   output->model = NULL; /* set binary model to null - incase not a binary */
   
@@ -646,10 +717,9 @@ LALReadTEMPOParFile(  LALStatus *status,
   output->x3Err=0.0;
   output->T03Err=0.0;
 
-  fp = fopen(pulsarAndPath, "r");
-  
-  ASSERT(fp!=NULL, status, BINARYPULSARTIMINGH_EPARFILEERROR,
-       BINARYPULSARTIMINGH_MSGEPARFILEERROR);
+  if((fp = fopen(pulsarAndPath, "r")) == NULL){
+    XLAL_ERROR_VOID( fn, XLAL_EIO );
+  }
 
   /* read all the pulsar data into the string array */
   while(!feof(fp)){
@@ -1274,9 +1344,6 @@ LALReadTEMPOParFile(  LALStatus *status,
   
   /*fprintf(stderr, "Have I got to the end of LALReadPARFile.\n");*/
   fclose(fp);
-
-  DETATCHSTATUSPTR(status);
-  RETURN(status);
 }
 
 /* function to print out to screen all the pulsar parameters and there associated errors */
@@ -1497,7 +1564,7 @@ REAL8 LALTCBMJDtoGPS(REAL8 MJD){
   if(MJD < 44244.){
     fprintf(stderr, "Input time is not in range.\n");
     exit(0);
-  } 
+  }
 
   /* from Seidelmann and Fukushima */
   Tdiff = MJD + (2400000.5 - 2443144.5)*86400.;
