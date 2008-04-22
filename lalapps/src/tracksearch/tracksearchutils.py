@@ -1561,6 +1561,8 @@ class candidateList:
         10 Integrated Power
         """
         summary=[]
+        if not self.sortedByTime:
+            self.__timeOrderCurve__()
         for lineInfo in self.curves:
             curveID,l,p=lineInfo.getKurveHeader()
             #See notes in methods below for explaination
