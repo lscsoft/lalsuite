@@ -125,7 +125,6 @@ char *lalWatch;
     REAL8 vel2[3];
     REAL8 pos1[3];
     REAL8 pos2[3];
-    REAL8 a1, a2, b1, b2;
   } SingleSFTpair;
 
   /** vector of SFT pairs */
@@ -163,7 +162,6 @@ void CreateSFTPairs(LALStatus                *status,
 		    SFTPairVec               *out,
 		    MultiSFTVector           *inputSFTs,
 		    MultiDetectorStateSeries *mdetStates,
-		    MultiAMCoeffs            *multiAMcoef,
 		    SFTPairParams            *par);
 
 
@@ -173,8 +171,6 @@ void CreateSFTPairsFrom2SFTvectors(LALStatus                 *status,
 				   const SFTVector           *in2,
 				   const DetectorStateSeries *det1,
 				   const DetectorStateSeries *det2,
-				   const AMCoeffs            *amc1,
-				   const AMCoeffs            *amc2,
 				   SFTPairParams             *par);
 
 
@@ -183,11 +179,7 @@ void FillSFTPair(LALStatus                 *status,
 		 COMPLEX8FrequencySeries   *sft1, 
 		 COMPLEX8FrequencySeries   *sft2, 
 		 DetectorState             *det1,
-		 DetectorState             *det2,
-		 REAL8                     a1,
-		 REAL8                     a2,
-		 REAL8                     b1,
-		 REAL8                     b2);
+		 DetectorState             *det2);
 
 
 /* ****************************************************** */

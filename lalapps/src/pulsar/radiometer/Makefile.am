@@ -7,4 +7,4 @@ LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
 bin_PROGRAMS = lalapps_pulsar_radiometer
 
-lalapps_pulsar_radiometer_SOURCES = radiometer_sfts.c radiometer.h 
+lalapps_pulsar_radiometer_SOURCES = radiometer_aux.c radiometer_sfts.c radiometer.h 
