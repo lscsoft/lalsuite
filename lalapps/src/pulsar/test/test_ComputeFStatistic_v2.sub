@@ -1,4 +1,4 @@
-universe   = standard 
+universe   = vanilla 
 executable = $ENV(COMPUTEFSTATV2_PATH)/ComputeFStatistic_v2 
 log =   ComputeFStatistic_v2.log 
 error = logs/ComputeFStatistic_v2_$(jobID).err
