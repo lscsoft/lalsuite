@@ -1,0 +1,44 @@
+%% $Id$
+%%  --Alpha=3.4 --Delta=-1.2 --Freq=59.499 --f1dot=-7.4598537911e-10 --f2dot=2.4847e-20 --FreqBand=0.0005 --f1dotBand=3e-13 --f2dotBand=1e-23 --dFreq=5.556e-05 --df1dot=1.2359e-13 --df2dot=5.6432e-22 --DataFiles="sfts/*.sft" --ephemDir="edata" --ephemYear="03-06" --SignalOnly=TRUE --TwoFthreshold=0.0 --outputLabel="pulsarTest_H1H2L1_0" --outputFstat="pulsarTest_H1H2L1_result_0.txt" --outputLoudest="pulsarTest_H1H2L1_loudest_0.txt"
+%% Started search: Wed Apr 23 23:42:55 2008
+%% Loaded SFTs: [ L1:10, H2:10, H1:10 ]
+%% Start GPS time tStart = 823411772.000    (Wed Feb  8 05:29:18 2006 GMT)
+%% Total time spanned    =    18000.000 s  (5.0 hours)
+%% Pulsar-params refTime = 823411772.000 
+%% InternalRefTime       = 823411772.000 
+%% Spin-range at internalRefTime: fkdot = [ 59.499:59.4995, -7.4598537911e-10:-7.4568537911e-10, 2.4847e-20:2.4857e-20, 0:0 ]
+
+refTime  =  823411772;
+
+h0       =  0.000692655;
+dh0      =  0.0279027;
+cosi     = -0.122482;
+dcosi    =  25.3184;
+phi0     =  5.89529;
+dphi0    =  42.8157;
+psi      =  0.779713;
+dpsi     =  25.704;
+
+Alpha    =  3.4;
+Delta    = -1.2;
+Freq     =  59.49938892;
+f1dot    = -7.4598537911e-10;
+f2dot    =  2.4847e-20;
+f3dot    =  0;
+
+Ad       =  4.03518;
+Bd       =  6.11123;
+Cd       = -0.581865;
+Sinv_Tsft=  3600;
+
+Fa       = -0.00912275  -0.00738424i;
+Fb       =  0.0602177  -0.0228141i;
+twoF     =  0.00140873;
+
+AmpFisher = \
+ [ \
+1.61043815, -0.0179228149, 0.00074125178, -0.000123887385;
+-0.0179228149, 0.00176037385, -0.000130691256, 6.19099152e-05;
+-0.00074125178, -1.21709091e-06, 0.000695376427, -0.000537184678;
+0.00637661826, -2.95971131e-05, -0.000537184678, 0.00192940646;
+ ];
