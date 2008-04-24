@@ -1,24 +1,49 @@
 # $Id$
 JOB Makefakedata_H1 test_lalapps_Makefakedata.sub
-VARS Makefakedata_H1 jobID="Makefakedata_H1" argList="-n sfts -I H1 -E edata -y 03-06 -G 823411772 --duration 18000 --fmin 58.0 --Band 2.0 --Tsft 1800 --Alpha 3.4 --Delta -1.2 --h0 4.0 --cosi 1.0 --psi 0.0 --phi0 1.5 --Freq 59.0 --f1dot -1.0e-10"
+VARS Makefakedata_H1 jobID="MFDH1" argList="-n sfts -I H1 -E edata -y 03-06 -G 823411772 --duration 18000 --fmin 58.0 --Band 2.0 --Tsft 1800 --Alpha 3.4 --Delta -1.2 --h0 4.0 --cosi 1.0 --psi 0.0 --phi0 1.5 --Freq 59.0 --f1dot -1.0e-10"
 
 JOB Makefakedata_H2 test_lalapps_Makefakedata.sub
-VARS Makefakedata_H2 jobID="Makefakedata_H2" argList="-n sfts -I H2 -E edata -y 03-06 -G 823411772 --duration 18000 --fmin 58.0 --Band 2.0 --Tsft 1800 --Alpha 3.4 --Delta -1.2 --h0 4.0 --cosi 1.0 --psi 0.0 --phi0 1.5 --Freq 59.0 --f1dot -1.0e-10"
+VARS Makefakedata_H2 jobID="MFDH2" argList="-n sfts -I H2 -E edata -y 03-06 -G 823411772 --duration 18000 --fmin 58.0 --Band 2.0 --Tsft 1800 --Alpha 3.4 --Delta -1.2 --h0 4.0 --cosi 1.0 --psi 0.0 --phi0 1.5 --Freq 59.0 --f1dot -1.0e-10"
 
 JOB Makefakedata_L1 test_lalapps_Makefakedata.sub
-VARS Makefakedata_L1 jobID="Makefakedata_L1" argList="-n sfts -I L1 -E edata -y 03-06 -G 823411772 --duration 18000 --fmin 58.0 --Band 2.0 --Tsft 1800 --Alpha 3.4 --Delta -1.2 --h0 4.0 --cosi 1.0 --psi 0.0 --phi0 1.5 --Freq 59.0 --f1dot -1.0e-10"
+VARS Makefakedata_L1 jobID="MFDL1" argList="-n sfts -I L1 -E edata -y 03-06 -G 823411772 --duration 18000 --fmin 58.0 --Band 2.0 --Tsft 1800 --Alpha 3.4 --Delta -1.2 --h0 4.0 --cosi 1.0 --psi 0.0 --phi0 1.5 --Freq 59.0 --f1dot -1.0e-10"
 
 JOB ComputeFStatv2_0 test_ComputeFStatistic_v2.sub
-VARS ComputeFStatv2_0 jobID="ComputeFStatv2_0" argList="-a 3.4 -d -1.2 -f 59.4990 -b 5.0e-04 -s -7.4598537911e-10 --f1dotBand 3.0000000000e-13 --f2dot 2.4847000000e-20 --f2dotBand 1.0000000000e-23 --dFreq 5.556e-05 --df1dot 1.2359e-13 --df2dot 5.6432e-22 --DataFiles=sfts/*.sft -E edata -y 03-06 -F 0 -o pulsarTest_H1H2L1_0 --outputLoudest pulsarTest_H1H2L1_loudest_0.txt --outputFstat pulsarTest_H1H2L1_result_0.txt -S"
+VARS ComputeFStatv2_0 jobID="CFSv2_0" argList="-a 3.4 -d -1.2 -f 59.4990 -b 5.0e-04 -s -7.4598537911e-10 --f1dotBand 3.0000000000e-13 --f2dot 2.4847000000e-20 --f2dotBand 1.0000000000e-23 --dFreq 5.556e-05 --df1dot 1.2359e-13 --df2dot 5.6432e-22 --DataFiles=sfts/*.sft -E edata -y 03-06 -F 0 -o tmpPulsarTest_H1H2L1_0 --outputLoudest tmpPulsarTest_H1H2L1_loudest_0.txt --outputFstat tmpPulsarTest_H1H2L1_result_0.txt -S"
 
 JOB ComputeFStatv2_1 test_ComputeFStatistic_v2.sub
-VARS ComputeFStatv2_1 jobID="ComputeFStatv2_1" argList="-a 3.4 -d -1.2 -f 59.4995 -b 5.0e-04 -s -7.4598537911e-10 --f1dotBand 3.0000000000e-13 --f2dot 2.4847000000e-20 --f2dotBand 1.0000000000e-23 --dFreq 5.556e-05 --df1dot 1.2359e-13 --df2dot 5.6432e-22 --DataFiles=sfts/*.sft -E edata -y 03-06 -F 0 -o pulsarTest_H1H2L1_1 --outputLoudest pulsarTest_H1H2L1_loudest_1.txt --outputFstat pulsarTest_H1H2L1_result_1.txt -S"
+VARS ComputeFStatv2_1 jobID="CFSv2_1" argList="-a 3.4 -d -1.2 -f 59.4995 -b 5.0e-04 -s -7.4598537911e-10 --f1dotBand 3.0000000000e-13 --f2dot 2.4847000000e-20 --f2dotBand 1.0000000000e-23 --dFreq 5.556e-05 --df1dot 1.2359e-13 --df2dot 5.6432e-22 --DataFiles=sfts/*.sft -E edata -y 03-06 -F 0 -o tmpPulsarTest_H1H2L1_1 --outputLoudest tmpPulsarTest_H1H2L1_loudest_1.txt --outputFstat tmpPulsarTest_H1H2L1_result_1.txt -S"
 
 JOB ComputeFStatv2_2 test_ComputeFStatistic_v2.sub
-VARS ComputeFStatv2_2 jobID="ComputeFStatv2_2" argList="-a 3.4 -d -1.2 -f 59.5000 -b 5.0e-04 -s -7.4598537911e-10 --f1dotBand 3.0000000000e-13 --f2dot 2.4847000000e-20 --f2dotBand 1.0000000000e-23 --dFreq 5.556e-05 --df1dot 1.2359e-13 --df2dot 5.6432e-22 --DataFiles=sfts/*.sft -E edata -y 03-06 -F 0 -o pulsarTest_H1H2L1_2 --outputLoudest pulsarTest_H1H2L1_loudest_2.txt --outputFstat pulsarTest_H1H2L1_result_2.txt -S"
+VARS ComputeFStatv2_2 jobID="CFSv2_2" argList="-a 3.4 -d -1.2 -f 59.5000 -b 5.0e-04 -s -7.4598537911e-10 --f1dotBand 3.0000000000e-13 --f2dot 2.4847000000e-20 --f2dotBand 1.0000000000e-23 --dFreq 5.556e-05 --df1dot 1.2359e-13 --df2dot 5.6432e-22 --DataFiles=sfts/*.sft -E edata -y 03-06 -F 0 -o tmpPulsarTest_H1H2L1_2 --outputLoudest tmpPulsarTest_H1H2L1_loudest_2.txt --outputFstat tmpPulsarTest_H1H2L1_result_2.txt -S"
 
 JOB ComputeFStatv2_3 test_ComputeFStatistic_v2.sub
-VARS ComputeFStatv2_3 jobID="ComputeFStatv2_3" argList="-a 3.4 -d -1.2 -f 59.5005 -b 5.0e-04 -s -7.4598537911e-10 --f1dotBand 3.0000000000e-13 --f2dot 2.4847000000e-20 --f2dotBand 1.0000000000e-23 --dFreq 5.556e-05 --df1dot 1.2359e-13 --df2dot 5.6432e-22 --DataFiles=sfts/*.sft -E edata -y 03-06 -F 0 -o pulsarTest_H1H2L1_3 --outputLoudest pulsarTest_H1H2L1_loudest_3.txt --outputFstat pulsarTest_H1H2L1_result_3.txt -S"
+VARS ComputeFStatv2_3 jobID="CFSv2_3" argList="-a 3.4 -d -1.2 -f 59.5005 -b 5.0e-04 -s -7.4598537911e-10 --f1dotBand 3.0000000000e-13 --f2dot 2.4847000000e-20 --f2dotBand 1.0000000000e-23 --dFreq 5.556e-05 --df1dot 1.2359e-13 --df2dot 5.6432e-22 --DataFiles=sfts/*.sft -E edata -y 03-06 -F 0 -o tmpPulsarTest_H1H2L1_3 --outputLoudest tmpPulsarTest_H1H2L1_loudest_3.txt --outputFstat 
+tmpPulsarTest_H1H2L1_result_3.txt -S"
+
+JOB numdiff_result_0 test_numdiff.sub
+VARS numdiff_result_0 jobID="diff_result_0" argList="tmpPulsarTest_H1H2L1_result_0.txt pulsarTest_H1H2L1_result_0.txt.ref -iC % -f 1.e-5"
+
+JOB numdiff_result_1 test_numdiff.sub
+VARS numdiff_result_1 jobID="diff_result_1" argList="tmpPulsarTest_H1H2L1_result_1.txt pulsarTest_H1H2L1_result_1.txt.ref -iC % -f 1.e-5"
+
+JOB numdiff_result_2 test_numdiff.sub
+VARS numdiff_result_2 jobID="diff_result_2" argList="tmpPulsarTest_H1H2L1_result_2.txt pulsarTest_H1H2L1_result_2.txt.ref -iC % -f 1.e-5"
+
+JOB numdiff_result_3 test_numdiff.sub
+VARS numdiff_result_3 jobID="diff_result_3" argList="tmpPulsarTest_H1H2L1_result_3.txt pulsarTest_H1H2L1_result_3.txt.ref -iC % -f 1.e-5"
+
+JOB numdiff_loudest_0 test_numdiff.sub
+VARS numdiff_loudest_0 jobID="diff_loudest_0" argList="tmpPulsarTest_H1H2L1_loudest_0.txt pulsarTest_H1H2L1_loudest_0.txt.ref -iC % -f 1.e-5"
+
+JOB numdiff_loudest_1 test_numdiff.sub
+VARS numdiff_loudest_1 jobID="diff_loudest_1" argList="tmpPulsarTest_H1H2L1_loudest_1.txt pulsarTest_H1H2L1_loudest_1.txt.ref -iC % -f 1.e-5"
+
+JOB numdiff_loudest_2 test_numdiff.sub
+VARS numdiff_loudest_2 jobID="diff_loudest_2" argList="tmpPulsarTest_H1H2L1_loudest_2.txt pulsarTest_H1H2L1_loudest_2.txt.ref -iC % -f 1.e-5"
+
+JOB numdiff_loudest_3 test_numdiff.sub
+VARS numdiff_loudest_3 jobID="diff_loudest_3" argList="tmpPulsarTest_H1H2L1_loudest_3.txt pulsarTest_H1H2L1_loudest_3.txt.ref -iC % -f 1.e-5"
 
 PARENT Makefakedata_H1 CHILD ComputeFStatv2_0
 PARENT Makefakedata_H2 CHILD ComputeFStatv2_0
@@ -35,3 +60,15 @@ PARENT Makefakedata_L1 CHILD ComputeFStatv2_2
 PARENT Makefakedata_H1 CHILD ComputeFStatv2_3
 PARENT Makefakedata_H2 CHILD ComputeFStatv2_3
 PARENT Makefakedata_L1 CHILD ComputeFStatv2_3
+
+PARENT ComputeFStatv2_0 CHILD numdiff_result_0
+PARENT ComputeFStatv2_0 CHILD numdiff_loudest_0
+
+PARENT ComputeFStatv2_1 CHILD numdiff_result_1
+PARENT ComputeFStatv2_1 CHILD numdiff_loudest_1
+
+PARENT ComputeFStatv2_2 CHILD numdiff_result_2
+PARENT ComputeFStatv2_2 CHILD numdiff_loudest_2
+
+PARENT ComputeFStatv2_2 CHILD numdiff_result_2
+PARENT ComputeFStatv2_2 CHILD numdiff_loudest_2
