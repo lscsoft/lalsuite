@@ -20,10 +20,10 @@ proc Exit {code} {
 }
 
 proc printDifference {lineItems1 lineItems2 lineNumber1 lineNumber2 lineCount} {
-     puts "Difference found comparing line $lineNumber1 of file 1 with line $lineNumber2 of file 2:"
-     puts "< $lineItems1";
-     puts "> $lineItems2";
-     puts " ";
+     puts stderr "Difference found comparing line $lineNumber1 of file 1 with line $lineNumber2 of file 2:"
+     puts stderr "< $lineItems1";
+     puts stderr "> $lineItems2";
+     puts stderr " ";
 }
 
 proc PrintHelp {} {
@@ -90,7 +90,7 @@ foreach element [lrange $argv 2 end] {
                 }
         } else {
                 if {$opt == "unknown"} {
-                   puts "Unknown option: $element";
+                   puts stderr "Unknown option: $element";
                    Exit 2;
                 } elseif {$opt == "-iL"} {
                         set ignoreNumLines $element;
@@ -129,7 +129,7 @@ if {[file exists $filename1]} {
     set buffer [read $fid];
     close $fid;
 } else {
-    puts "Error: filename1 = $filename1 does not exist.";
+    puts stderr "Error: filename1 = $filename1 does not exist.";
     Exit 2;
 }
 set lineList1 [split $buffer "\n"];
@@ -141,7 +141,7 @@ if {[file exists $filename2]} {
     set buffer [read $fid];
     close $fid;
 } else {
-    puts "Error: filename2 = $filename2 does not exist.";
+    puts stderr "Error: filename2 = $filename2 does not exist.";
     Exit 2;
 }
 set lineList2 [split $buffer "\n"];
@@ -184,7 +184,7 @@ foreach line [lrange $lineList2 $ignoreNumLines end] {
 }
 
 if {[llength $fileLines1] != [llength $fileLines2]} {
-   puts "Files have a different number of lines to compare! Exiting..."
+   puts stderr "Files have a different number of lines to compare! Exiting..."
    Exit 3;
 }
 
@@ -274,7 +274,7 @@ foreach line1 $fileLines1 {
                      }
                    } else {
                      # Should not be able to happen, but just for safety:
-                     puts "ERROR: tolerance given but with invalid option: $numericComparisonType. This must be -a, -f, or -n. Exiting...";
+                     puts stderr "ERROR: tolerance given but with invalid option: $numericComparisonType. This must be -a, -f, or -n. Exiting...";
                      Exit 3;
                    }
                    # END if {$numericComparisonType == "-a"} elseif...
