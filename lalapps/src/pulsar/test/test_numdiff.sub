@@ -1,0 +1,8 @@
+universe   = vanilla 
+executable = $ENV(NUMDIFF_PATH)/numdiff.tcl 
+log =   numdiff.log 
+error = logs/numdiff_$(jobID).err
+output = logs/numdiff_$(jobID).out
+
+arguments  = $(argList)
+queue
