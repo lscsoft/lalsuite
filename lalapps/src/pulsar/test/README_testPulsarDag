@@ -4,8 +4,14 @@ To run testPulsar_H1H2L1_Makefakedata_ComputeFStatv2.dag from a condor submit ho
 
 2. Set the environmental variable MAKEFAKEDATA_PATH to the path to lalapps_Makefakedata.
 
-3. Change the universe in test_ComputeFStatistic_v2.sub and test_lalapps_Makefakedata.sub to standard or vanilla as needed.
+3. Set the environmental variable NUMDIFF_PATH to the pat to numdiff.tcl.
 
-4. If on an NFS filesystem set the environmental variable _CONDOR_DAGMAN_LOG_ON_NFS_IS_ERROR to False.
+4. Change the universe in test_ComputeFStatistic_v2.sub and test_lalapps_Makefakedata.sub to standard or vanilla as needed.
 
-5. Run condor_submit_dag testPulsar_H1H2L1_Makefakedata_ComputeFStatv2.dag.
+5. Change the universe in test_numdiff.sub to vanilla, scheduler, or local as needed.
+
+6. If on an NFS filesystem set the environmental variable _CONDOR_DAGMAN_LOG_ON_NFS_IS_ERROR to False.
+
+7. Run condor_submit_dag testPulsar_H1H2L1_Makefakedata_ComputeFStatv2.dag.
+
+8. When the jobs finish, check the logs/*.err files for errors.
