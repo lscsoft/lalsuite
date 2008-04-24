@@ -179,7 +179,10 @@ static int XLALLIGOLwFindColumn(
 
 /**
  * Convenience function to extract the integer part of an ilwd:char ID
- * string with some error checking.
+ * string with some error checking.  If either of ilwd_char_table_name or
+ * ilwd_char_column_name is not NULL, then the corresponding portion of the
+ * ilwd:char string must match it exactly.  The return value is the
+ * recovered integer suffix or < 0 on failure.
  */
 
 
@@ -201,11 +204,11 @@ static long XLALLIGOLwParseIlwdChar(
 	if(!fmt)
 		XLAL_ERROR(func, XLAL_ENOMEM);
 
-	sprintf(fmt, "%s:%s:%%ld", ilwd_char_table_name, ilwd_char_column_name);
+	sprintf(fmt, "%s:%s:%%ld", ilwd_char_table_name ? ilwd_char_table_name : "%*[^:]", ilwd_char_column_name ? ilwd_char_column_name : "%*[^:]");
 
 	if(sscanf(ilwd_char, fmt, &id) < 1) {
 		free(fmt);
-		XLALPrintError("%s(): invalid %s \"%s\" for %s\n", func, ilwd_char_column_name, ilwd_char, ilwd_char_table_name);
+		XLALPrintError("%s(): invalid %s \"%s\" for %s\n", func, ilwd_char_column_name ? ilwd_char_column_name : "ID", ilwd_char, ilwd_char_table_name ? ilwd_char_table_name : "table");
 		XLAL_ERROR(func, XLAL_EIO);
 	}
 
