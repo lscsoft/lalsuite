@@ -19,8 +19,8 @@ proc Exit {code} {
      exit $code;
 }
 
-proc printDifference {lineItems1 lineItems2 lineNumber1 lineNumber2 lineCount} {
-     puts stderr "Difference found comparing line $lineNumber1 of file 1 with line $lineNumber2 of file 2:"
+proc printDifference {lineItems1 lineItems2 lineNumber1 lineNumber2 filename1 filename2 lineCount} {
+     puts stderr "Line $lineNumber1 of $filename1 and line $lineNumber2 of $filename2 differ:"
      puts stderr "< $lineItems1";
      puts stderr "> $lineItems2";
      puts stderr " ";
@@ -184,7 +184,7 @@ foreach line [lrange $lineList2 $ignoreNumLines end] {
 }
 
 if {[llength $fileLines1] != [llength $fileLines2]} {
-   puts stderr "Files have a different number of lines to compare! Exiting..."
+   puts stderr "Files $filename1 and $filename2 have a different number of lines to compare! Exiting..."
    Exit 3;
 }
 
@@ -204,7 +204,7 @@ foreach line1 $fileLines1 {
    #puts "< $lineItems1";
    #puts "> $lineItems2";
    if {[llength $lineItems1] != [llength $lineItems2]} {
-      printDifference $lineItems1 $lineItems2 $lineNumber1 $lineNumber2 $lineCount; set exitCode 3;
+      printDifference $lineItems1 $lineItems2 $lineNumber1 $lineNumber2 $filename1 $filename2 $lineCount; set exitCode 3;
    }  else {
       set itemCount 0;
       foreach item1 $lineItems1 {
@@ -232,7 +232,7 @@ foreach line1 $fileLines1 {
              #puts " ";
              # Check that items are of the same type
              if {$item1IsNumber != $item2IsNumber} {
-                printDifference $lineItems1 $lineItems2 $lineNumber1 $lineNumber2 $lineCount; set exitCode 3;
+                printDifference $lineItems1 $lineItems2 $lineNumber1 $lineNumber2 $filename1 $filename2 $lineCount; set exitCode 3;
                 break;
              } else {
                # Handle items depending on whether numerical or not
@@ -240,7 +240,7 @@ foreach line1 $fileLines1 {
                    if {$numericComparisonType == "-a"} {
                      # Compare absolute difference
                      if { [expr {abs($item1 - $item2) > $tolerance}] } {
-                        printDifference $lineItems1 $lineItems2 $lineNumber1 $lineNumber2 $lineCount; set exitCode 3;
+                        printDifference $lineItems1 $lineItems2 $lineNumber1 $lineNumber2 $filename1 $filename2 $lineCount; set exitCode 3;
                         break;
                      }
                    } elseif {$numericComparisonType == "-f"} {
@@ -249,7 +249,7 @@ foreach line1 $fileLines1 {
                      # if meanValue is 0 then both numbers are zero and equal to each other.
                      if {$meanValue > 0} {
                        if { [expr {abs($item1 - $item2)/$meanValue > $tolerance}] } {
-                          printDifference $lineItems1 $lineItems2 $lineNumber1 $lineNumber2 $lineCount; set exitCode 3;
+                          printDifference $lineItems1 $lineItems2 $lineNumber1 $lineNumber2 $filename1 $filename2 $lineCount; set exitCode 3;
                           break;
                        }
                      } 
@@ -260,14 +260,14 @@ foreach line1 $fileLines1 {
                      set len2 [string length $item2];
                      set len2 [expr $len2 - 1 - $tolerance];
                      if {$len1 != $len2} {
-                        printDifference $lineItems1 $lineItems2 $lineNumber1 $lineNumber2 $lineCount; set exitCode 3;
+                        printDifference $lineItems1 $lineItems2 $lineNumber1 $lineNumber2 $filename1 $filename2 $lineCount; set exitCode 3;
                         break;
                      } else {
                        if {$len1 > -1} {
                           set item1 [string range $item1 0 $len1];
                           set item2 [string range $item2 0 $len2];
                           if {$item1 != $item2} {
-                             printDifference $lineItems1 $lineItems2 $lineNumber1 $lineNumber2 $lineCount; set exitCode 3;
+                             printDifference $lineItems1 $lineItems2 $lineNumber1 $lineNumber2 $filename1 $filename2 $lineCount; set exitCode 3;
                              break;
                           }
                        }
@@ -280,7 +280,7 @@ foreach line1 $fileLines1 {
                    # END if {$numericComparisonType == "-a"} elseif...
                } else {
                  if {$item1 != $item2} {
-                   printDifference $lineItems1 $lineItems2 $lineNumber1 $lineNumber2 $lineCount; set exitCode 3;
+                   printDifference $lineItems1 $lineItems2 $lineNumber1 $lineNumber2 $filename1 $filename2 $lineCount; set exitCode 3;
                    break;
                  }
                }
@@ -289,7 +289,7 @@ foreach line1 $fileLines1 {
              # END if {$item1IsNumber != $item2IsNumber} else
            } else {
              if {$item1 != $item2} {
-                printDifference $lineItems1 $lineItems2 $lineNumber1 $lineNumber2 $lineCount; set exitCode 3;
+                printDifference $lineItems1 $lineItems2 $lineNumber1 $lineNumber2 $filename1 $filename2 $lineCount; set exitCode 3;
                 break;
              }
            }
