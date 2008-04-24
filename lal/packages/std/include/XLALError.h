@@ -141,6 +141,9 @@ int XLALPrintInfo( const char *fmt, ... );
 /** Prints a progress bar at the "info" verbosity level. */
 int XLALPrintProgressBar( double );
 
+/** Prints a deprecation warning at the "warning" verbosity level. */
+int XLALPrintDeprecationWarning( const char *old, const char *replacement );
+
 
 /* silence gcc warnings about certain (possibly) unused symbols */
 #ifdef __GNUC__

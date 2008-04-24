@@ -97,6 +97,15 @@ int XLALPrintProgressBar( double fraction )
   return XLALPrintInfo("[%s%s %.1f%%", mrk + l - offset, spc + offset, 100.0 * fraction);
 }
 
+/**
+ * Prints a deprecation warning at the "warning" verbosity level.
+ */
+
+int XLALPrintDeprecationWarning( const char *old, const char *replacement )
+{
+  return XLALPrintWarning("DEPRECATION WARNING:  program has invoked obsolete function %s().  Please see %s() for information about a replacement.\n", old, replacement);
+}
+
 
 /*
  *
