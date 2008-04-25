@@ -93,10 +93,7 @@ NRCSID (RADIOMETERH, "$Id$");
 #define RADIOMETER_MSGENULL "Null pointer"
 #define RADIOMETER_MSGENONULL "Non-null pointer"
 
-/* A global pointer for debugging. */
-#ifndef NDEBUG
-char *lalWatch;
-#endif
+
 
 #define PIXELFACTOR  2 
 

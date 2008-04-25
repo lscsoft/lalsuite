@@ -243,7 +243,6 @@ int main(int argc, char *argv[]){
     static SFTConstraints constraints;
 
     REAL8 doppWings, fmin, fmax;
-    INT4 k;
 
     /* set detector constraint */
     constraints.detector = NULL;
