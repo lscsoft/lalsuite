@@ -1354,7 +1354,7 @@ static SnglBurst **analyze_series(SnglBurst **addpoint, REAL8TimeSeries *series,
 	unsigned i;
 
 	if((unsigned) psd_length > series->data->length) {
-		XLALPrintWarning("%s(): warning: PSD average length exceeds available data, skipping series\n", func);
+		XLALPrintWarning("%s(): warning: PSD length (%.9lf s) exceeds available data (%.9lf s), skipping series\n", func, psd_length * series->deltaT, series->data->length * series->deltaT);
 		return addpoint;
 	}
 
