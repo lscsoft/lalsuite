@@ -29,30 +29,6 @@ RCSID( "$Id$");
 
 
 
-/* globals, constants and defaults */
-
-
-extern int lalDebugLevel;
-
-
-#define EARTHEPHEMERIS "/Users/artax/work/opt/lscsoft/lal/share/lal/earth05-09.dat"
-#define SUNEPHEMERIS "/Users/artax/work/opt/lscsoft/lal/share/lal/sun05-09.dat"
-
-#define F0 100
-#define FBAND 1
-
-#define BLOCKSRNGMED 51
-#define MAXFILENAMELENGTH 512 /* maximum # of characters  of a filename */
-
-#define DIROUT "./out"   /* output directory */
-#define BASENAMEOUT "radio"    /* prefix file output */
-
-#define SKYFILE "./skypatchfile"      
-#define SKYREGION "allsky" 
-
-#define TRUE (1==1)
-#define FALSE (1==0)
-
 void CreateSFTPairsIndicesFrom2SFTvectors(LALStatus                *status,
 					 INT4VectorSequence        *out,
 					 const SFTVector           *in1,
