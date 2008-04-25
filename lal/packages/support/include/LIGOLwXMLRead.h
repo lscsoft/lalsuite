@@ -159,29 +159,32 @@ LALCreateMetaTableDir(
 </lalLaTeX>
 #endif
 
-ProcessTable* XLALProcessTableFromLIGOLw (
-    CHAR               *fileName
-    );
+ProcessTable *
+XLALProcessTableFromLIGOLw (
+    const char *filename
+);
 
-ProcessParamsTable* XLALProcessParamsTableFromLIGOLw (
-    CHAR               *fileName
-    );
-
-MultiInspiralTable* XLALMultiInspiralTableFromLIGOLw (
-    CHAR               *fileName
-    );
+ProcessParamsTable *
+XLALProcessParamsTableFromLIGOLw (
+    const char *filename
+);
 
 SnglBurst *
 XLALSnglBurstTableFromLIGOLw(
-    const CHAR *filename
+    const char *filename
 );
 
 SimBurst *
 XLALSimBurstTableFromLIGOLw (
-    const CHAR *filename,
+    const char *filename,
     const LIGOTimeGPS *start,
     const LIGOTimeGPS *end
 );
+
+
+MultiInspiralTable* XLALMultiInspiralTableFromLIGOLw (
+    CHAR               *fileName
+    );
 
 int
 LALSnglInspiralTableFromLIGOLw (
