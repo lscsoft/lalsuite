@@ -265,7 +265,7 @@ int XLALPopulateProcessTable(
 	snprintf(ptable->domain, LIGOMETA_DOMAIN_MAX, "lalapps");
 
 	/*
-	 * process id, username and host
+	 * unix process id, username, host, and process_id ID
 	 */
 
 	ptable->unix_procid = getpid();
@@ -280,6 +280,7 @@ int XLALPopulateProcessTable(
 		snprintf(ptable->username, LIGOMETA_USERNAME_MAX, "%d", uid);
 	else
 		snprintf(ptable->username, LIGOMETA_USERNAME_MAX, "%s", pw->pw_name);
+	ptable->process_id = 0;
 
 	/*
 	 * done
