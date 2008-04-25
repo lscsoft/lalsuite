@@ -464,21 +464,20 @@ static int all_required_arguments_present(char *prog, struct option *long_option
  */
 
 
-static ProcessParamsTable **add_process_param(ProcessParamsTable **proc_param, const char *type, const char *param, const char *value)
+static ProcessParamsTable **add_process_param(ProcessParamsTable **proc_param, const ProcessTable *process, const char *type, const char *param, const char *value)
 {
-	*proc_param = XLALCalloc(1, sizeof(**proc_param));
-	(*proc_param)->next = NULL;
-	snprintf((*proc_param)->program, LIGOMETA_PROGRAM_MAX, PROGRAM_NAME);
-	snprintf((*proc_param)->type, LIGOMETA_TYPE_MAX, type);
-	snprintf((*proc_param)->param, LIGOMETA_PARAM_MAX, "--%s", param);
-	snprintf((*proc_param)->value, LIGOMETA_VALUE_MAX, "%s", value ? value : "");
+	*proc_param = XLALCreateProcessParamsTableRow(process);
+	snprintf((*proc_param)->program, sizeof((*proc_param)->program), PROGRAM_NAME);
+	snprintf((*proc_param)->type, sizeof((*proc_param)->type), type);
+	snprintf((*proc_param)->param, sizeof((*proc_param)->param), "--%s", param);
+	snprintf((*proc_param)->value, sizeof((*proc_param)->value), "%s", value ? value : "");
 
 	return &(*proc_param)->next;
 }
 
 
-#define ADD_PROCESS_PARAM(type) \
-	do { paramaddpoint = add_process_param(paramaddpoint, type, long_options[option_index].name, optarg); } while(0)
+#define ADD_PROCESS_PARAM(process, type) \
+	do { paramaddpoint = add_process_param(paramaddpoint, process, type, long_options[option_index].name, optarg); } while(0)
 
 
 /*
@@ -541,7 +540,7 @@ static int parse_command_line_debug(int argc, char *argv[])
  */
 
 
-static struct options *parse_command_line(int argc, char *argv[], ProcessParamsTable **paramaddpoint)
+static struct options *parse_command_line(int argc, char *argv[], const ProcessTable *process, ProcessParamsTable **paramaddpoint)
 {
 	struct options *options;
 	char msg[240];
@@ -604,23 +603,23 @@ static struct options *parse_command_line(int argc, char *argv[], ProcessParamsT
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
-		ADD_PROCESS_PARAM("int");
+		ADD_PROCESS_PARAM(process, "int");
 		break;
 
 	case 'B':
 		options->cal_cache_filename = optarg;
-		ADD_PROCESS_PARAM("string");
+		ADD_PROCESS_PARAM(process, "string");
 		break;
 
 	case 'C':
 		options->channel_name = optarg;
 		memcpy(options->ifo, optarg, sizeof(options->ifo) - 1);
-		ADD_PROCESS_PARAM("string");
+		ADD_PROCESS_PARAM(process, "string");
 		break;
 
 	case 'D':
 		/* only add --debug-level to params table in this pass */
-		ADD_PROCESS_PARAM("string");
+		ADD_PROCESS_PARAM(process, "string");
 		break;
 
 	case 'F':
@@ -630,22 +629,22 @@ static struct options *parse_command_line(int argc, char *argv[], ProcessParamsT
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
-		ADD_PROCESS_PARAM("int");
+		ADD_PROCESS_PARAM(process, "int");
 		break;
 
 	case 'G':
 		options->cache_filename = optarg;
-		ADD_PROCESS_PARAM("string");
+		ADD_PROCESS_PARAM(process, "string");
 		break;
 
 	case 'I':
 		options->sim_inspiral_filename = optarg;
-		ADD_PROCESS_PARAM("string");
+		ADD_PROCESS_PARAM(process, "string");
 		break;
 
 	case 'J':
 		options->calibrated = TRUE;
-		ADD_PROCESS_PARAM("string");
+		ADD_PROCESS_PARAM(process, "string");
 		break;
 
 	case 'K':
@@ -654,7 +653,7 @@ static struct options *parse_command_line(int argc, char *argv[], ProcessParamsT
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
-		ADD_PROCESS_PARAM("string");
+		ADD_PROCESS_PARAM(process, "string");
 		break;
 
 	case 'M':
@@ -663,7 +662,7 @@ static struct options *parse_command_line(int argc, char *argv[], ProcessParamsT
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
-		ADD_PROCESS_PARAM("string");
+		ADD_PROCESS_PARAM(process, "string");
 		break;
 
 	case 'O':
@@ -673,7 +672,7 @@ static struct options *parse_command_line(int argc, char *argv[], ProcessParamsT
 
 	case 'P':
 		options->sim_burst_filename = optarg;
-		ADD_PROCESS_PARAM("string");
+		ADD_PROCESS_PARAM(process, "string");
 		break;
 
 	case 'Q':
@@ -683,17 +682,17 @@ static struct options *parse_command_line(int argc, char *argv[], ProcessParamsT
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
-		ADD_PROCESS_PARAM("float");
+		ADD_PROCESS_PARAM(process, "float");
 		break;
 
 	case 'R':
 		options->mdc_cache_filename = optarg;
-		ADD_PROCESS_PARAM("string");
+		ADD_PROCESS_PARAM(process, "string");
 		break;
 
 	case 'S':
 		options->mdc_channel_name = optarg;
-		ADD_PROCESS_PARAM("string");
+		ADD_PROCESS_PARAM(process, "string");
 		break;
 
 	case 'V':
@@ -703,7 +702,7 @@ static struct options *parse_command_line(int argc, char *argv[], ProcessParamsT
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
-		ADD_PROCESS_PARAM("float");
+		ADD_PROCESS_PARAM(process, "float");
 		break;
 
 	case 'W':
@@ -722,7 +721,7 @@ static struct options *parse_command_line(int argc, char *argv[], ProcessParamsT
 			/* silence "missing required argument" message */
 			options->window = (void *) 1;
 		}
-		ADD_PROCESS_PARAM("int");
+		ADD_PROCESS_PARAM(process, "int");
 		}
 		break;
 
@@ -741,7 +740,7 @@ static struct options *parse_command_line(int argc, char *argv[], ProcessParamsT
 
 	case 'Z':
 		options->psd_length = atoi(optarg);
-		ADD_PROCESS_PARAM("int");
+		ADD_PROCESS_PARAM(process, "int");
 		break;
 
 	case 'a':
@@ -756,17 +755,17 @@ static struct options *parse_command_line(int argc, char *argv[], ProcessParamsT
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
-		ADD_PROCESS_PARAM("int");
+		ADD_PROCESS_PARAM(process, "int");
 		break;
 
 	case 'b':
 		options->output_filename = optarg;
-		ADD_PROCESS_PARAM("lstring");
+		ADD_PROCESS_PARAM(process, "string");
 		break;
 
 	case 'c':
 		options->seed = atol(optarg);
-		ADD_PROCESS_PARAM("long");
+		ADD_PROCESS_PARAM(process, "long");
 		break;
 
 	case 'e':
@@ -776,7 +775,7 @@ static struct options *parse_command_line(int argc, char *argv[], ProcessParamsT
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
-		ADD_PROCESS_PARAM("int");
+		ADD_PROCESS_PARAM(process, "int");
 		break;
 
 	case 'f':
@@ -786,7 +785,7 @@ static struct options *parse_command_line(int argc, char *argv[], ProcessParamsT
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
-		ADD_PROCESS_PARAM("float");
+		ADD_PROCESS_PARAM(process, "float");
 		break;
 
 	case 'g':
@@ -796,12 +795,12 @@ static struct options *parse_command_line(int argc, char *argv[], ProcessParamsT
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
-		ADD_PROCESS_PARAM("float");
+		ADD_PROCESS_PARAM(process, "float");
 		break;
 
 	case 'h':
 		options->comment = optarg;
-		ADD_PROCESS_PARAM("string");
+		ADD_PROCESS_PARAM(process, "string");
 		break;
 
 	case 'j':
@@ -811,7 +810,7 @@ static struct options *parse_command_line(int argc, char *argv[], ProcessParamsT
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
-		ADD_PROCESS_PARAM("int");
+		ADD_PROCESS_PARAM(process, "int");
 		break;
 
 	case 'l':
@@ -821,7 +820,7 @@ static struct options *parse_command_line(int argc, char *argv[], ProcessParamsT
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
-		ADD_PROCESS_PARAM("float");
+		ADD_PROCESS_PARAM(process, "float");
 		break;
 
 	case 'm':
@@ -831,7 +830,7 @@ static struct options *parse_command_line(int argc, char *argv[], ProcessParamsT
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
-		ADD_PROCESS_PARAM("float");
+		ADD_PROCESS_PARAM(process, "float");
 		break;
 
 	case 'o':
@@ -841,13 +840,13 @@ static struct options *parse_command_line(int argc, char *argv[], ProcessParamsT
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
-		ADD_PROCESS_PARAM("float");
+		ADD_PROCESS_PARAM(process, "float");
 		break;
 
 	/* option sets a flag */
 	case 0:
 		optarg = NULL;
-		ADD_PROCESS_PARAM("string");
+		ADD_PROCESS_PARAM(process, "string");
 		break;
 
 	/* end of arguments */
@@ -1404,7 +1403,7 @@ static SnglBurst **analyze_series(SnglBurst **addpoint, REAL8TimeSeries *series,
  */
 
 
-static void output_results(LALStatus *stat, char *file, ProcessTable *_process_table, ProcessParamsTable *_process_params_table, SearchSummaryTable *_search_summary_table, SnglBurst *head)
+static void output_results(LALStatus *stat, char *file, const ProcessTable *_process_table, const ProcessParamsTable *_process_params_table, const SearchSummaryTable *_search_summary_table, const SnglBurst *_sngl_burst_table)
 {
 	LIGOLwXMLStream xml;
 
@@ -1442,7 +1441,7 @@ static void output_results(LALStatus *stat, char *file, ProcessTable *_process_t
 	 * burst table
 	 */
 
-	if(XLALWriteLIGOLwXMLSnglBurstTable(&xml, head)) {
+	if(XLALWriteLIGOLwXMLSnglBurstTable(&xml, _sngl_burst_table)) {
 		/* FIXME:  error occured. do something smarter */
 		exit(1);
 	}
@@ -1477,7 +1476,7 @@ int main(int argc, char *argv[])
 	SnglBurst **EventAddPoint = &burstEvent;
 	/* the ugly underscores are because some badger put global symbols
 	 * in LAL by exactly these names. it's a mad house, a maad house */
-	ProcessTable _process_table;
+	ProcessTable *_process_table;
 	ProcessParamsTable *_process_params_table = NULL;
 	SearchSummaryTable _search_summary_table;
 	gsl_rng *rng = NULL;
@@ -1495,18 +1494,18 @@ int main(int argc, char *argv[])
 	 * Create the process and process params tables.
 	 */
 
-	memset(&_process_table, 0, sizeof(_process_table));
-	if(XLALPopulateProcessTable(&_process_table, PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE))
+	_process_table = XLALCreateProcessTableRow();
+	if(XLALPopulateProcessTable(_process_table, PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE))
 		exit(1);
-	LAL_CALL(LALGPSTimeNow(&stat, &_process_table.start_time, &accuracy), &stat);
+	LAL_CALL(LALGPSTimeNow(&stat, &_process_table->start_time, &accuracy), &stat);
 
 	/*
 	 * Parse arguments and fill _process_params_table table.
 	 */
 
-	options = parse_command_line(argc, argv, &_process_params_table);
-	snprintf(_process_table.ifos, LIGOMETA_IFOS_MAX, "%s", options->ifo);
-	snprintf(_process_table.comment, LIGOMETA_COMMENT_MAX, "%s", options->comment);
+	options = parse_command_line(argc, argv, _process_table, &_process_params_table);
+	snprintf(_process_table->ifos, sizeof(_process_table->ifos), "%s", options->ifo);
+	snprintf(_process_table->comment, sizeof(_process_table->comment), "%s", options->comment);
 
 	/*
 	 * Create the search summary table.  The number of nodes for a
@@ -1514,8 +1513,8 @@ int main(int argc, char *argv[])
 	 */
 
 	memset(&_search_summary_table, 0, sizeof(_search_summary_table));
-	snprintf(_search_summary_table.comment, LIGOMETA_COMMENT_MAX, "%s", options->comment);
-	snprintf(_search_summary_table.ifos, LIGOMETA_IFOS_MAX, "%s", options->ifo);
+	snprintf(_search_summary_table.comment, sizeof(_search_summary_table.comment), "%s", options->comment);
+	snprintf(_search_summary_table.ifos, sizeof(_search_summary_table.ifos), "%s", options->ifo);
 	_search_summary_table.nnodes = 1;
 	_search_summary_table.in_start_time = options->gps_start;
 	_search_summary_table.in_end_time = options->gps_end;
@@ -1705,8 +1704,8 @@ int main(int argc, char *argv[])
 	 * Output the results.
 	 */
 
-	LAL_CALL(LALGPSTimeNow(&stat, &_process_table.end_time, &accuracy), &stat);
-	output_results(&stat, options->output_filename, &_process_table, _process_params_table, &_search_summary_table, burstEvent);
+	LAL_CALL(LALGPSTimeNow(&stat, &_process_table->end_time, &accuracy), &stat);
+	output_results(&stat, options->output_filename, _process_table, _process_params_table, &_search_summary_table, burstEvent);
 
 	/*
 	 * Final cleanup.
