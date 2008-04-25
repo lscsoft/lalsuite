@@ -2,10 +2,10 @@
 noinst_LTLIBRARIES = libtools.la
 libtools_la_SOURCES = \
   UnitDefs.c UnitNormalize.c UnitRaise.c UnitMultiply.c UnitCompare.c \
-  CreateDetector.c DetResponse.c LALCalibration.c ComputeTransfer.c CoherentEstimation.c \
-  ResampleTimeSeries.c SnglInspiralUtils.c MultiInspiralUtils.c SnglBurstUtils.c \
-  SnglRingdownUtils.c \
-  BurstUtils.c CoincInspiralUtils.c CoincRingdownUtils.c SimInspiralUtils.c \
+  CreateDetector.c DetResponse.c LALCalibration.c ComputeTransfer.c \
+  CoherentEstimation.c ResampleTimeSeries.c SnglInspiralUtils.c \
+  MultiInspiralUtils.c SnglBurstUtils.c SnglRingdownUtils.c \
+  CoincInspiralUtils.c CoincRingdownUtils.c SimInspiralUtils.c \
   ComputeCalibrationFactors.c LIGOMetadataUtils.c \
   NDTemplateBank.c ComputeStrain.c ComputeStrainDMT.c \
   Sequence.c TimeSeries.c FrequencySeries.c \
