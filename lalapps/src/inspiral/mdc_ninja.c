@@ -50,6 +50,8 @@
 #include <lal/LALFrameIO.h>
 #include <lal/FrameStream.h>
 #include <lal/FindChirp.h>
+#include <lal/Random.h>
+#include <lal/LALNoiseModels.h>
 
 #include "inspiral.h"
 
@@ -74,6 +76,18 @@ static void output_multi_channel_frame( INT4 num_ifos, INT4 gpsStart,
 static void write_mdc_log_file( CHAR *filename, SimInspiralTable *injections,
     INT4 gps_start, CHAR *set_name );
 
+int get_spectrum(REAL8Sequence *spectrum,
+		 InterferometerNumber ifoNumber,
+		 REAL8         deltaF,
+		 REAL8         strainHighPassFreq,
+		 REAL8         dynRange);
+
+void add_colored_noise(LALStatus       *status,
+		       REAL4TimeSeries *chan,
+		       INT4            ifoNumber,
+		       RandomParams    *randParams,
+		       REAL8           dynRange);
+
 
 /* getopt flags */
 extern int vrbflg;
@@ -81,7 +95,7 @@ INT4 ifosFlag  = 0;
 INT4 frameFlag = 0;
 INT4 mdcFlag   = 0;
 INT4 noNR      = 0;
-
+INT4 addNoise  = 0;
 
 /* main program entry */
 INT4 main( INT4 argc, CHAR *argv[] )
@@ -119,6 +133,10 @@ INT4 main( INT4 argc, CHAR *argv[] )
   INT4 sampleRate = -1;
   REAL4TimeSeries *injData[LAL_NUM_IFO];
 
+  /* random seed for producing gaussian noise if required */
+  RandomParams  *randParams = NULL;
+  INT4  randomSeed = 0; 
+
   /* response function */
   COMPLEX8FrequencySeries *response = NULL;
   const LALUnit strainPerCount = {0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
@@ -136,6 +154,7 @@ INT4 main( INT4 argc, CHAR *argv[] )
     {"write-frame",             no_argument,       &frameFlag,        1 },
     {"write-mdc-log",           no_argument,       &mdcFlag,          1 },
     {"no-numerical",            no_argument,       &noNR,             1 },
+    {"simulate-noise",          no_argument,       &addNoise,         1 },
     /* these options don't set a flag */
     {"debug-level",             required_argument, 0,                'D'},
     {"gps-start-time",          required_argument, 0,                'a'},
@@ -441,6 +460,10 @@ INT4 main( INT4 argc, CHAR *argv[] )
     exit( 1 );
   }
 
+  /* create random parameters to be used later for adding 
+     simulated noise if required */
+  LAL_CALL( LALCreateRandomParams( &status, &randParams, randomSeed ), &status ); 
+
   if ( frameFlag )
   {
 
@@ -456,11 +479,15 @@ INT4 main( INT4 argc, CHAR *argv[] )
       injData[i] = XLALCreateREAL4TimeSeries( "", &gpsStartTime, 0, 1./sampleRate,
           &lalADCCountUnit, sampleRate * (gpsEndSec - gpsStartSec) );
       memset( injData[i]->data->data, 0.0, injData[i]->data->length * sizeof(REAL4) );
+
+      if (addNoise)  {
+	LAL_CALL( add_colored_noise( &status, injData[i], i, randParams, dynRange), &status);
+      }
     }
 
     /* setup a unity response frequency series */
     if ( noNR != 0 )
-    {
+      {
       if (vrbflg)
         fprintf(stdout, "generating unity response...\n");
 
@@ -536,6 +563,8 @@ INT4 main( INT4 argc, CHAR *argv[] )
   if ( injectionFile )
     free( injectionFile );
 
+  LAL_CALL( LALDestroyRandomParams( &status, &randParams ), &status );
+
   if ( ifo )
     free( ifo );
 
@@ -581,6 +610,7 @@ static void print_usage( CHAR *program )
       "  --mdc-log         mdc_log     name of file for MDC log file\n"\
       "  --write-frame                 write h(t) waveform to a frame file\n"\
       "  --no-numerical                the injections are not numerical\n"\
+      "  --simulate-noise              add simulated colored Gaussian noise\n"\
       "\n", program );
 }
 
@@ -795,3 +825,170 @@ static void write_mdc_log_file(CHAR *filename, SimInspiralTable *injections, INT
   /* close output file */
   fclose(output);
 }
+
+
+void add_colored_noise(LALStatus       *status,
+		       REAL4TimeSeries *chan,
+		       INT4            ifoNumber,
+		       RandomParams    *randParams,
+		       REAL8           dynRange)
+{
+
+  UINT4 k;
+  REAL4 strainHighPassFreq = -1;       
+  COMPLEX8Sequence *ntilde         = NULL;
+  REAL4Sequence    *ntilde_re      = NULL;
+  REAL4Sequence    *ntilde_im      = NULL;
+  REAL8Sequence    *spectrum       = NULL;
+  REAL4FFTPlan     *invPlan        = NULL;
+  INT4              length         = chan->data->length;
+  REAL8             deltaT         = chan->deltaT;
+  REAL8             deltaF         = 1.0 / (deltaT * (REAL8) length);
+
+  INITSTATUS( status, "add_colored_noise", rcsid);
+  ATTATCHSTATUSPTR( status );
+  
+  /* Generate white Gaussian noise with unit variance */  
+  TRY( LALSCreateVector( status->statusPtr, &ntilde_re, length / 2 + 1 ), status );
+
+  TRY( LALNormalDeviates( status->statusPtr, ntilde_re, randParams ), status );
+  TRY( LALSCreateVector( status->statusPtr, &ntilde_im, length / 2 + 1 ), status );
+  TRY( LALNormalDeviates( status->statusPtr, ntilde_im, randParams ), status );
+  
+  /* create storage for the frequency domain noise and psd*/
+  TRY( LALCCreateVector( status->statusPtr, &ntilde, length / 2 + 1 ), status );
+  TRY( LALDCreateVector( status->statusPtr, &spectrum, length / 2 + 1 ), status );
+
+  get_spectrum( spectrum, ifoNumber, deltaF, strainHighPassFreq, dynRange);
+
+  /* Color white noise with given psd */
+  for ( k=0; k < ntilde->length; k++ )
+    {   
+      ntilde->data[k].re = ntilde_re->data[k] * sqrt(( (REAL4) length * 0.25 /
+						       (REAL4) deltaT ) * (REAL4) spectrum->data[k] );
+      ntilde->data[k].im = ntilde_im->data[k] * sqrt(( (REAL4) length * 0.25 / 
+						       (REAL4) deltaT ) * (REAL4) spectrum->data[k] );
+    }  
+  /* setting d.c. and Nyquist to zero */
+  ntilde->data[0].im = ntilde->data[length / 2].im = 0.0;
+  
+  /* Fourier transform back in the time domain */
+  TRY( LALCreateReverseRealFFTPlan( status->statusPtr, &invPlan, length, 0 ), status );
+  TRY( LALReverseRealFFT( status->statusPtr, chan->data, ntilde, invPlan ), status);
+  
+  /* normalize the noise */
+  for ( k = 0; k < (UINT4)length; ++k )
+    {
+      chan->data->data[k] /= (REAL4) length ;
+    }
+  
+  if ( vrbflg ) fprintf( stdout, "done\n" );
+  
+  TRY( LALSDestroyVector( status->statusPtr, &ntilde_re ), status);
+  TRY( LALSDestroyVector( status->statusPtr, &ntilde_im ), status);
+  TRY( LALCDestroyVector( status->statusPtr, &ntilde ), status);
+  TRY( LALDDestroyVector( status->statusPtr, &spectrum), status);
+  TRY( LALDestroyRealFFTPlan( status->statusPtr, &invPlan), status);
+  
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
+
+}
+
+
+int get_spectrum(REAL8Sequence *spectrum,
+		 InterferometerNumber ifoNumber,
+		 REAL8         deltaF,
+		 REAL8         strainHighPassFreq,
+		 REAL8         dynRange)
+{
+  UINT4 k;
+  INT4 kmin = strainHighPassFreq / deltaF > 1 ? strainHighPassFreq / deltaF : 1 ;
+
+  if ( (ifoNumber == LAL_IFO_H1) || (ifoNumber == LAL_IFO_L1) )
+    {  
+      /* set the spectrum to the Initial LIGO design noise curve */
+      REAL8 psd_value;
+      LALLIGOIPsd( NULL, &psd_value, strainHighPassFreq );
+      for ( k = 0; k < (UINT4)kmin ; ++k )
+	{  
+	  spectrum->data[k] = 9.0e-46 * psd_value * dynRange * dynRange;
+	}
+      for ( k = kmin; k < spectrum->length ; ++k )
+	{  
+	  REAL8 psd_freq = (REAL8) k * deltaF;
+	  LALLIGOIPsd( NULL, &psd_value, psd_freq );
+	  spectrum->data[k] = 9.0e-46 * psd_value * dynRange * dynRange;
+	}
+    }
+  else if ( ifoNumber == LAL_IFO_V1)
+    {  
+      /* set the spectrum to the Advanced LIGO design noise curve */
+      REAL8 psd_value;
+      LALVIRGOPsd( NULL, &psd_value, strainHighPassFreq );
+      for ( k = 0; k < (UINT4)kmin ; ++k )
+	{  
+	  spectrum->data[k] = 9.0e-46 * psd_value * dynRange * dynRange;
+	}
+      for ( k = kmin; k < spectrum->length ; ++k )
+	{  
+	  REAL8 psd_freq = (REAL8) k * deltaF;
+	  LALAdvLIGOPsd( NULL, &psd_value, psd_freq );
+	  spectrum->data[k] = 9.0e-46 * psd_value * dynRange * dynRange;
+	}
+    }
+  else if ( ifoNumber == LAL_IFO_T1 )
+    {
+      /* set the spectrum to the Advanced LIGO design noise curve */
+      REAL8 psd_value;
+      LALTAMAPsd( NULL, &psd_value, strainHighPassFreq );
+      for ( k = 0; k < (UINT4)kmin ; ++k )
+	{  
+	  spectrum->data[k] = 9.0e-46 * psd_value * dynRange * dynRange;
+	}
+      for ( k = kmin; k < spectrum->length ; ++k )
+	{  
+	  REAL8 psd_freq = (REAL8) k * deltaF;
+	  LALAdvLIGOPsd( NULL, &psd_value, psd_freq );
+	  spectrum->data[k] = 9.0e-46 * psd_value * dynRange * dynRange;
+	}
+    }
+  else if ( ifoNumber == LAL_IFO_G1 )
+    {
+      /* set the spectrum to the Advanced LIGO design noise curve */
+      REAL8 psd_value;
+      LALGEOPsd( NULL, &psd_value, strainHighPassFreq );
+      for ( k = 0; k < (UINT4)kmin ; ++k )
+	{  
+	  spectrum->data[k] = 9.0e-46 * psd_value * dynRange * dynRange;
+	}
+      for ( k = kmin; k < spectrum->length ; ++k )
+	{  
+	  REAL8 psd_freq = (REAL8) k * deltaF;
+	  LALAdvLIGOPsd( NULL, &psd_value, psd_freq );
+	  spectrum->data[k] = 9.0e-46 * psd_value * dynRange * dynRange;
+	}
+    }
+  else if ( ifoNumber == LAL_IFO_H2 )
+    {
+      /* set the spectrum to the Advanced LIGO design noise curve */
+      REAL8 psd_value;
+      LALLIGOIPsd( NULL, &psd_value, strainHighPassFreq );
+      for ( k = 0; k < (UINT4)kmin ; ++k )
+	{  
+	  spectrum->data[k] = 2.0 * 9.0e-46 * psd_value * dynRange * dynRange;
+	}
+      for ( k = kmin; k < spectrum->length ; ++k )
+	{  
+	  REAL8 psd_freq = (REAL8) k * deltaF;
+	  LALAdvLIGOPsd( NULL, &psd_value, psd_freq );
+	  spectrum->data[k] = 2.0 * 9.0e-46 * psd_value * dynRange * dynRange;
+	}
+    }
+  else 
+    return -1;
+
+  return 0;
+
+}
+
