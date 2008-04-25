@@ -281,6 +281,7 @@ tagProcessParamsTable
 {
   struct tagProcessParamsTable *next;
   CHAR          program[LIGOMETA_PROGRAM_MAX];
+  long          process_id;
   CHAR          param[LIGOMETA_PARAM_MAX];
   CHAR          type[LIGOMETA_TYPE_MAX];
   CHAR          value[LIGOMETA_VALUE_MAX];
