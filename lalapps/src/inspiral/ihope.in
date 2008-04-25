@@ -234,13 +234,24 @@ sys.stdout.flush()
 
 ##############################################################################
 # Determine the segments to analyze
+
+# first, copy the segment files and make sure that the ini file reflects the
+# new path, relative to the DAG directories.
 inspiralutils.mkdir("segments")
 os.chdir("..")
-for (vetoes, file) in cp.items("segments"):
+for vetoes, infile in cp.items("segments"):
+  outfile = analysisDirectory + "/segments/" + os.path.basename(infile)
+  rel_outfile = "../segments/" + os.path.basename(infile)
   if "veto-file" in vetoes:
-    shutil.copy( file, analysisDirectory + "/segments" )
-    file = "../segments/" + file.split("/")[-1]
-    cp.set("segments", vetoes, file)
+    if infile == "":
+      print >>sys.stderr, "warning: " + vetoes + " left blank; proceeding "\
+        "without DQ vetoes"
+      outfile += vetoes + "_BLANK.txt"
+      rel_outfile += vetoes + "_BLANK.txt"
+      open(outfile, "w").write("")  # touch
+    else:
+      shutil.copy(infile, outfile)
+    cp.set("segments", vetoes, rel_outfile)
 os.chdir(analysisDirectory)
 os.chdir("segments")
 
@@ -366,58 +377,40 @@ if opts.run_data_quality:
 # Set up the directories for plotting and run lalapps_plot
 if opts.run_plots:
   if opts.run_play_analysis:
+
+    # set up parents correctly
+    if opts.run_search: 
+      parentNodes = [hipePlayNode]
+    else: parentNodes = None
+
+    if opts.run_data_quality:
+      parentVetoNodes = [hipePlayVetoNode[2]]
+    else: parentVetoNodes = None
+    
+    # make the playground slide/zerolag plots
     print "Making plots depending only on the playground"
-    # single ifo
-    plotcp = copy.deepcopy(cp)
-    plotcp.add_section("plot-arguments")
-    plotcp.set("plot-arguments","plotinspiralrange","")
-    plotcp.set("plot-arguments","plotnumtemplates","")
-    plotcp.set("plot-arguments","plotinspiral","")
-    plotcp.set("plot-arguments","write-script","")
-    playPlotNode = inspiralutils.plot_setup("playground_summary_plots", \
-        plotcp, opts.log_path, "both", "", "PLAYGROUND", "PLAYGROUND", \
-        "PLAYGROUND", "../" + cachefilename, tag="SNGL" )
-    if opts.do_dag_categories:
-      playPlotNode.set_category('plotting')
-    dag.add_node(playPlotNode)
-    if opts.run_search and opts.run_play_analysis:
-      playPlotNode.add_parent(hipePlayNode)
+    dag = inspiralutils.zeroSlidePlots(dag, "playground_summary_plots", cp, \
+        opts.log_path, "PLAYGROUND", "PLAYGROUND", "../" + cachefilename, \
+        opts.do_dag_categories, parentNodes, parentVetoNodes, 2)
 
-    # coincs
-    plotcp = copy.deepcopy(cp)
-    plotcp.add_section("plot-arguments")
-    plotcp.set("plot-arguments","plotthinca","")
-    plotcp.set("plot-arguments","write-script","")
-    playPlotCoincNode = inspiralutils.plot_setup("playground_summary_plots", 
-        plotcp, opts.log_path, "first", "", "PLAYGROUND", "PLAYGROUND", \
-        "PLAYGROUND", "../" + cachefilename, tag="COINC" )
-    if opts.do_dag_categories:
-      playPlotCoincNode.set_category('plotting')
-    dag.add_node(playPlotCoincNode)
-    if opts.run_search and opts.run_play_analysis:
-      playPlotCoincNode.add_parent(hipePlayNode)
-    if not opts.do_dag_categories:
-      playPlotNode.add_parent(playPlotNode)
+  if opts.run_play_analysis and opts.run_full_data:
 
-    # coincs second (require DQ)
-    plotcp = copy.deepcopy(cp)
-    plotcp.add_section("plot-arguments")
-    plotcp.set("plot-arguments","plotthinca","")
-    plotcp.set("plot-arguments","write-script","")
-    playPlotVetoNode = inspiralutils.plot_setup("playground_summary_plots", 
-        plotcp, opts.log_path, "second", "", "PLAYGROUND_CAT_2_VETO", \
-        "PLAYGROUND_CAT_2_VETO", "PLAYGROUND_CAT_2_VETO", \
-        "../" + cachefilename, tag="COINC_CAT_2" )
-    if opts.do_dag_categories:
-      playPlotVetoNode.set_category('plotting')
-    dag.add_node(playPlotVetoNode)
+    # set up parents correctly
+    if opts.run_search: 
+      parentNodes = [hipePlayNode, hipeAnalysisNode]
+    else: parentNodes = None
+
     if opts.run_data_quality and opts.run_play_analysis:
-      playPlotVetoNode.add_parent(hipePlayVetoNode[2])
-    if not opts.do_dag_categories:
-      playPlotVetoNode.add_parent(playPlotCoincNode)
+      parentVetoNodes = [hipePlayVetoNode[2], hipeAnalysisVetoNode[2]]
+    else: parentVetoNodes = None
 
-# Setting up plots for injection run.
+    # make the playground slide/zerolag plots
+    print "Making plots with full data slides, playground zero lag"
+    dag = inspiralutils.zeroSlidePlots(dag, "full_data_slide_summary_plots", \
+        cp, opts.log_path, "PLAYGROUND", "FULL_DATA", "../" + cachefilename, \
+        opts.do_dag_categories, parentNodes, parentVetoNodes, 2)
 
+  # Setting up plots for injection run.
   if opts.run_injections:
     injPlotNode = {}
     injPlotCoincNode = {}
@@ -427,8 +420,6 @@ if opts.run_plots:
       # single ifo
       plotcp = copy.deepcopy(cp)
       plotcp.add_section("plot-arguments")
-      plotcp.set("plot-arguments","plotinspiralrange","")
-      plotcp.set("plot-arguments","plotnumtemplates","")
       plotcp.set("plot-arguments","plotinspinj","")
       plotcp.set("plot-arguments","plotsnrchi","")
       plotcp.set("plot-arguments","write-script","")
@@ -493,8 +484,6 @@ if opts.run_plots:
     # single ifo
     plotcp = copy.deepcopy(cp)
     plotcp.add_section("plot-arguments")
-    plotcp.set("plot-arguments","plotinspiralrange","")
-    plotcp.set("plot-arguments","plotnumtemplates","")
     plotcp.set("plot-arguments","plotinspinj","")
     plotcp.set("plot-arguments","plotsnrchi","")
     plotcp.set("plot-arguments","write-script","")

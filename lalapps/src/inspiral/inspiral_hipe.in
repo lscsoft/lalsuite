@@ -1147,12 +1147,16 @@ parser.add_option("-j", "--coherent-bank",action="store_true",default=False,\
     help="run lalapps_coherentbank to make coherent bank")
 parser.add_option("-k", "--coherent-inspiral",action="store_true",
     default=False,help="run lalapps_coherent_inspiral for coherent analysis")
-parser.add_option("-X", "--summary-trigger-files",action="store_true", \
+parser.add_option("-Y", "--summary-inspiral-triggers",action="store_true", \
     default=False, \
     help="Produce summary triggers from run.  This will produce "
-    "sire (first inspiral) and coire (second coincidence) files "
-    "containing triggers from the whole run.  Use with care, "
-    "as files can become very large.")
+    "sire (first inspiral) files containing triggers from the whole run. "
+    "Use with care, as files can become very large.")
+parser.add_option("-X", "--summary-coinc-triggers",action="store_true", \
+    default=False, \
+    help="Produce summary triggers from run.  This will produce "
+    "coire (second coincidence) files containing triggers from the whole run. "
+    "Use with care, as files can become very large.")
 
 parser.add_option("-R", "--read-cache",action="store_true",default=False,\
     help="read cache file from ini-file (if LSCDataFind is broken)")
@@ -1249,14 +1253,14 @@ if not opts.datafind and not opts.template_bank and \
      not opts.td_follow_inspiral and not opts.second_coinc and \
      not opts.coire_second_coinc and not opts.sire_second_coinc and \
      not opts.coherent_bank and not opts.coherent_inspiral and \
-     not opts.summary_trigger_files: 
+     not opts.summary_inspiral_triggers and not opts.summary_coinc_triggers: 
   print >> sys.stderr, """  No steps of the pipeline specified.
   Please specify at least one of
   --datafind, --template-bank, --inspiral, --sire-inspiral, --coincidence, 
   --coire-coincidence, --trigbank, --inspiral-veto, --sire-inspiral-veto,
   --td-follow-bank, --td-follow-inspiral, --second-coinc, 
   --coire-second-coinc, --sire-second-coinc, --coherent-bank, 
-  --coherent-inspiral, --summary-trigger-files"""
+  --coherent-inspiral, --summary-inspiral-triggers --summary-coinc-triggers"""
   sys.exit(1)
    
 ifo_list = ['H1','H2','L1','V1','G1']
@@ -1922,9 +1926,9 @@ for ifo in ifo_list:
 
   if len(sire_nodes):
     sire_segments(sire_nodes, sire_summary_job, dag, 
-        opts.summary_trigger_files, opts.sire_inspiral, ifo, gps_start_time, 
-        gps_end_time, inj_file = inj_file, ifotag="SUMMARY_FIRST", 
-        usertag = usertag, write_input_file = True)
+        opts.summary_inspiral_triggers, opts.sire_inspiral, ifo, 
+        gps_start_time, gps_end_time, inj_file = inj_file, 
+        ifotag="SUMMARY_FIRST", usertag = usertag, write_input_file = True)
 
   print "done" 
 
@@ -2085,7 +2089,7 @@ for ifos in ifo_coincs:
  
       if len(coire_nodes):
         coire_segments(coire_nodes, coire_summary_job, dag,
-            opts.summary_trigger_files, 
+            opts.summary_coinc_triggers, 
             opts.coire_second_coinc, ifos, gps_start_time, gps_end_time, 
             inj_file=inj_file, ifotag="SUMMARY_SECOND_" + ifos, usertag=usertag,
             write_input_file = True)
@@ -2124,14 +2128,12 @@ for ifos in ifo_coincs:
             num_slides=num_slides, ifotag="SECOND_" + ifos,
             usertag=usertag)
 
-      
         if len(coire_slide_nodes):
           coire_segments(coire_slide_nodes, coire_slide_summary_job, dag, 
-              opts.summary_trigger_files, opts.coire_second_coinc, ifos, 
+              opts.summary_coinc_triggers, opts.coire_second_coinc, ifos, 
               gps_start_time, gps_end_time, num_slides=num_slides, 
               ifotag="SUMMARY_SECOND_" + ifos, usertag=usertag, 
               write_input_file = True)
-
 
         for ifo in ifo_list:
           if ifo in ifos: 

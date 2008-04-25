@@ -103,7 +103,7 @@ parser.add_option("-R", "--five-ifo",action="store_true",default=False,\
     help="analyze five intereferometer data")
 
 parser.add_option("-a", "--analyze-all",action="store_true",default=False,\
-    help="analyze all ifos and all data (over-rides above)")
+    help="analyze all combinations of IFOs (overrides --n-ifo options)")
 
 parser.add_option("-i", "--plotinspiral" ,action="store_true",default=False,\
     help="run plotinspiral to summarize filtering output")
@@ -183,38 +183,31 @@ if not opts.log_path:
   print >> sys.stderr, "Use --log-path PATH to specify a location."
   sys.exit(1)
 
-# Checks for atleast one ifo is specified  
+# Checks for at least one ifo is specified  
 if not opts.g1_data and not opts.h1_data and not opts.h2_data and \
-    not opts.l1_data and not opts.analyze_all:
+    not opts.l1_data and not opts.v1_data:
   print >> sys.stderr, "No ifos specified.  Please specify at least one of"
-  print >> sys.stderr, "--g1-data, --h1-data, --h2-data, --l1-data"
+  print >> sys.stderr, "--g1-data, --h1-data, --h2-data, --l1-data, --v1-data"
   print >> sys.stderr, "or use --analyze-all to analyze all ifos all data"
   sys.exit(1)
 
 # Checks for consistency when running ploteffdistcut
 
-if not opts.h1_data and not opys.h2_data and opts.ploteffdistcut:
+if not opts.h1_data and not opts.h2_data and opts.ploteffdistcut:
   print >> sys.stderr, "How can I plot effdistcut when H1 and H2 are not"
   print >> sys.stderr, "being analysed??? I will not run ploteffdistcut."
   opts.ploteffdistcut = False
 
-# Checks for ifos dependind on plotting routine.
-# Checks for plots which require more than two ifos.
+# Checks for plots which require more than two ifos
 if ((opts.plotthinca or opts.plotethinca or opts.plotinspmissed or \
      opts.plotinjnum or opts.plotinspinj \
      or opts.plotsnrchi or opts.ploteffdistcut ) and \
-     not (opts.two_ifo or opts.three_ifo or opts.four_ifo or opts.analyze_all)):
+     not (opts.two_ifo or opts.three_ifo or opts.four_ifo \
+          or opts.analyze_all)):
   print >> sys.stderr, "No number of ifos given. Please specify at least two"
   print >> sys.stderr, "--two-ifo, --three-ifo, --four-ifo"
   print >> sys.stderr, "or use --analyze-all to analyze all ifos all data"
   sys.exit(1)
- 
-
-if ((opts.plotnumtemplates or opts.plotinspiral or opts.plotinspiralrange) and not (opts.g1_data or opts.h1_data or opts.h2_data or\
-    opts.l1_data)):
-  print >> sys.stderr, "--g1-data, --h1-data, --h2-data, --l1-data"
-  sys.exit(1)
-
 
 ##############################################################################
 # create the config parser object and read in the ini file
@@ -329,7 +322,8 @@ if opts.plotinspiral:
       job.add_opt("ifo-times", ifo)
       job.add_opt("ifo-tag", "FIRST_" + ifo)
       job.set_sub_file( basename + '.plotinspiral_FIRST_' + ifo + subsuffix )
-      pattern_dict = inspiralutils.determine_sieve_patterns(cp, "plotinspiral", "FIRST", input_user_tag)
+      pattern_dict = inspiralutils.determine_sieve_patterns(cp, "plotinspiral",
+        "FIRST", input_user_tag)
       for opt, val in pattern_dict.iteritems():
         val = val.replace("CAT_4","")
         val = val.replace("CAT_2","")
@@ -806,22 +800,7 @@ if opts.write_script:
 # write a message telling the user that the DAG has been written
 print "\nCreated a DAG file which can be submitted by executing"
 print "\n   condor_submit_dag", dag.get_dag_file()
-print """\nfrom a condor submit machine (e.g. hydra.phys.uwm.edu)\n
-If you are running LSCdataFind jobs, do not forget to initialize your grid 
-proxy certificate on the condor submit machine by running the commands
-
-  unset X509_USER_PROXY
-  grid-proxy-init -hours 72
-
-Enter your pass phrase when promted. The proxy will be valid for 72 hours. 
-If you expect the LSCdataFind jobs to take longer to complete, increase the
-time specified in the -hours option to grid-proxy-init. You can check that 
-the grid proxy has been sucessfully created by executing the command:
-
-  grid-cert-info -all -file /tmp/x509up_u`id -u`
-
-This will also give the expiry time of the proxy. 
-"""
+print "\nfrom a condor submit machine (e.g. hydra.phys.uwm.edu)"
 
 ##############################################################################
 # write out a log file for this script

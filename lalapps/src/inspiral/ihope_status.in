@@ -129,22 +129,22 @@ parser.add_option( "--dag-file", \
 
 print 'Parsing ' +options.scandag + '...'
 time.sleep(1)
-dagFile = open(options.scandag, 'r')
-line = dagFile.readline()
-filenames = []
-while line:
-  if line.find('SCRIPT') >=0:
-    if line.endswith('\n'):
-      line = line.strip()
-    thisline = line.split(' ')
-    # we assume that the last field is the one we want. 
-    this= thisline[len(thisline)-1]
 
-    filenames.append(this)
-    ## we can check this assumption by searching for the string .dag
-    if this.find('dag')>0:
-      print 'Found ' + this 
-  line = dagFile.readline()
+dagFile = open(options.scandag, 'r')
+filenames = []
+lines = dagFile.readlines()
+for line in lines:
+  if "JOB" in line:
+    strs = line.split()
+    if "DIR" in strs:
+      fname = strs[-1] + "/"
+    else:
+      fname = ""
+    for string in strs:
+      if "dag" in string:
+        fname += string.strip(".condor.sub")
+    filenames.append(fname)
+    print 'Found ' + fname
 dagFile.close()
 
 if len(filenames)==0:

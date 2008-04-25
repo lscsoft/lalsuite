@@ -33,10 +33,13 @@ def functionId(nFramesUp):
 
 # ***************************************************************************
 # ***************************************************************************
-def logText(logfile, text, tag="done", debug=True):
+def logText(logfile, text, tag="done"):
   """
+  This function writes in a logfile, the text provided as an argument with color code according to the third argument. 
+  It also print on the stdout/stderr relevant the same text.
+  @param tag is in {done,warning,error} 
   """ 
-  
+
   if tag=="warning":
     msg= "<"+tag+">"+text+"</"+tag+">\n"
     logfile.write(msg)
@@ -69,20 +72,24 @@ def make_external_call(command, show_stdout=False, show_command=False, show_erro
   """
   Run a program on the shell and print informative messages on failure.
   """
-  if show_command and opts.verbose is True: print command
+  if show_command and opts.verbose is True: 
+    print "--- Trying this command :" + command
 
   stdin, out, err = os.popen3(command)
   pid, status = os.wait()
   this_output = out.read()
   if show_error & status != 0:
-      print >>sys.stderr, "External call failed."
-      print >>sys.stderr, "  status: %d" % status
-      print >>sys.stderr, "  stdout: %s" % this_output
-      print >>sys.stderr, "  stderr: %s" % err.read()
-      print >>sys.stderr, "  command: %s" % command
-      sys.exit(status)
+    print >>sys.stderr, "External call failed."
+    print >>sys.stderr, "  status: %d" % status
+    print >>sys.stderr, "  stdout: %s" % this_output
+    print >>sys.stderr, "  stderr: %s" % err.read()
+    print >>sys.stderr, "  command: %s" % command
+    sys.exit(status)
   if show_stdout:
+    if this_output[0:1]=='\n': 
       print  this_output[1:]  #first character is \n
+    else:
+      print this_output
 
   stdin.close()
   out.close()
@@ -97,7 +104,9 @@ def mkdir( newdir ):
 
   newdir = name of directory to be created
   """
-  if os.path.isdir(newdir): pass
+  if os.path.isdir(newdir): 
+    print >>sys.stdout , "WARNING: this directory already exists (" + newdir +")."
+    pass
   elif os.path.isfile(newdir):
     raise OSError("a file with the same name as the desired " \
                   "dir, '%s', already exists." % newdir)
@@ -217,9 +226,10 @@ def write_general(page,opts):
   text=  'This page summarizes the analysis of the data segment from GPS time %s up to %s' % (opts.gps_start_time,  opts.gps_end_time)
   page.add(text)
 
-  # The search parameters 
+  # The search parameters
+  if opts.verbose is True: print "Extracting the version and tag of the executables..." 
   try:
-    # todo : get this information from the ini file
+    # todo : get the list of executables  from the ini file
     executables = ("inspiral", "tmpltbank", "sire", "thinca", "trigbank", "coire" , "inspinj")
     page.h3("The search used the following resources:")
     
@@ -235,7 +245,7 @@ def write_general(page,opts):
     page.add("<li>Segment information (see the Data Information section for more details):") #section section
     page.ul()
     for this in get_ifos():
-        seg = this +'-SELECTED_SEGS-'+opts.gps_start_time+'-'+opts.duration+'.txt'
+        seg = this +'-SELECTED_SEGS'+opts.txt_suffix
         this_ref = webdir + '/segments/'+seg
         page.li(e.a(seg,href=this_ref) )
     page.ul.close()
@@ -308,6 +318,7 @@ def write_summary(page,opts):
   page.add("<!-- beginning data summary section-->")
   page.div(class_="encadre") #(1)
   page.div(class_="contenu") #(2)
+
   # title with a div to toggle on/off the content 
   page = write_title(page, html_sections['summary'], "verlaine")
   
@@ -360,7 +371,7 @@ set. The times analyzed according to ihope/hipe are provided here below""")
      
 
   for tag in ["SCIENCE_SEGMENTS", "RDS_C03_L2", "MISSED_SEGS"] :
-    page = heading(page, tag +"summary ") #(4)
+    page = heading(page, tag +" summary ") #(4)
     page.add("The science segments (category 1) according to hipe are "+tag+": <br/>")
     page.table()
     segs = get_segments_tag(tag)
@@ -470,7 +481,7 @@ def write_tuning(page,opts):
   page.div(id="div_ronsard", style='display:none')
   page.add("This section summarizes the tuning with e-thinca, r-sqaure, chi-square and h1-h2 cuts.<br/>")
   
-  #---------------------------- EThinca
+  #---------------------------- Tuning
 
   titles = [\
   	"Ethinca",\
@@ -553,7 +564,6 @@ def write_analysis(page,opts, thisSearch='playground'):
     page.p("The times analyzed accoring to hipe are:")
     coincs = get_coincident_segments(thisSearch)  
     ## here is the table. The first column is another table with the durations, 
-    ## and the second one is the venn diagram  
     page.add("<table><tr><td>\n")
     page.table()
     page.tr();
@@ -589,7 +599,7 @@ def write_analysis(page,opts, thisSearch='playground'):
       comment = comment + " "+ coinc
     page = add_figure(page, fnames =[thisSearch+"/venn_"+thisSearch+".png"], caption=comment, size="half")
     page.add("</td></tr></table>")
-    page.add("here below is the detail of the data and ligo-data section of ihope.ini ")
+    page.add("Here below is the detail of the data and ligo-data section of ihope.ini ")
     page = add_config_section(page, "data")
     page = add_config_section(page, "ligo-data")
     page.div.close()  
@@ -598,11 +608,17 @@ def write_analysis(page,opts, thisSearch='playground'):
     pass
  
   
-  #---------------------------- the first inspiral stage (no veto)
+  #---------------------------- the playground pictures
+  # title will be the name of the section.
+  # tags is a tag to search for the relevant cache file (will use the first one found)
+  # imagetags. if not none, will only pu a subset of images corresponding to the list provided. 
+  # captions is the text to be written in the caption
+  # configs : is not none, the part of the ini file corresponding to this config name will be written in the web page
   titles = [\
   	"Inspiral range plots",\
 	"Variation in template bank and triggered template size",\
   	"First inspiral stage",\
+  	"First coincidence stage",\
 	'Second inspiral stage',\
 	'Second thinca step (all ifo combinaison and category 2)'\
 	]
@@ -610,14 +626,16 @@ def write_analysis(page,opts, thisSearch='playground'):
   	'*inspiralrange*',\
 	'*plotnumtemplates*',\
 	'*plotinspiral_FIRST_*PLAYGROUND*',\
+	'*plotthinca_FIRST_*PLAYGROUND*',\
 	'*plotinspiral_SECOND_*PLAYGROUND*',\
 	'*plotthinca_SECOND_*_PLAYGROUND*CAT_2*'\
 	]
   imagetags=[\
 	None,\
 	None,\
-	None,\
-	['snr_vs_time','snr_vs_chisq_log','snr_cum_hist','snr_histogram'],\
+	['snr_vs_time','snr_cum_hist','snr_histogram'],\
+	['dummy_on_purpose'],\
+	['snr_vs_time','snr_vs_chisq_log','snr_histogram'],\
 	['plot_slide_trigs', 'cum_hist_effective_snr']\
 	]
   captions = [\
@@ -627,22 +645,63 @@ def write_analysis(page,opts, thisSearch='playground'):
        expected horizon distance for any total mass, using an SNR=8."""  ,\
   	"Variation in template bank and triggered template bank size",\
         "Trigger rate at first inspiral stage",\
+        "Trigger rate at first coincidence stage",\
 	"Trigger rate at second inspiral stage",\
-	'Trigger rate at second inspiral stage'\
+	'Trigger rate at second coincidence stage'\
 	]
+
+  comments = [\
+  None,\
+  None,\
+  None,\
+  "This section has no images (on purpose). To obtain the first thinca stage images, see the links here below",\
+  None,\
+  "This section shows the plotthinca results for the category 2 only.  "\
+  ]
+
   configs = [	\
 	None,\
 	'tmpltbank',\
 	'inspiral',\
-	'inspiral',\
-	'thinca'\
+	'thinca',\
+	'veto-inspiral',\
+	'thinca-2'\
 	]
-  for title, tag, caption,config,image_tag in zip(titles, tags, captions, configs,imagetags):
+
+  for title, tag, caption,config,image_tag,comment in \
+        zip(titles, tags, captions, configs, imagetags,comments):
       page = heading(page, title)
+      if comment is not None:
+        page.p(comment)
       page = add_config_section(page, config)
       page = fom(page, opts, cachefile_tag=tag, caption=caption,\
 	 	image_tag=image_tag, directory=images_dir)
-      page.div.close() # for each heading 
+      page.div.close() # for each heading
+
+
+  page = heading(page, "Final COIRE Summary files ")
+  
+  for eachifo in get_ifo_coinc():
+    if len(eachifo)>2:
+      file = opts.datadir + '/'+thisSearch+'/'+eachifo+'-COIRE_SUMMARY_SECOND_'+eachifo+'_'+thisSearch.upper() +opts.txt_suffix      
+      tmp = open(file, "r")
+      this = tmp.read()
+      tmp.close()
+      page.add( "<p>COIRE Summary file "+eachifo+".<pre>"+file+"<br/>"+this+"</pre></p>")
+      # the SLIDE case
+      file = opts.datadir + '/'+thisSearch+'/'+eachifo+'-COIRE_SLIDE_SUMMARY_SECOND_'+eachifo+'_'+thisSearch.upper() +opts.txt_suffix      
+      tmp = open(file, "r")
+      this = tmp.read()
+      tmp.close()
+      page.add( "<p>COIRE Summary file "+eachifo+" (slide).<pre>"+file+"<br/>"+this+"</pre></p>")
+
+
+  page.add("All COIRE files are available here <a href=\""+ webdir +'/' +thisSearch+"\">here</a>")
+  page.div.close() # for each heading
+
+  #copy all SUMMARY COIRE file 
+  command  = "cp "+opts.datadir+'/'+thisSearch+'/'+"*COIRE*SUMMARY*xml* " + opts.physdir+"/"+thisSearch
+  make_external_call(command, opts.debug, opts.debug, True)   
  
 
   page.div.close()#hugo
@@ -670,40 +729,59 @@ def write_injection(page, opts):
   images_dirs=['/bbhinj_summary_plots/']
 
   
-  #---------------------------- the first inspiral stage (no veto)
+  #---------------------------- the injection section
+  # title will be the name of the section.
+  # tags is a tag to search for the relevant cache file (will use the first one found)
+  # imagetags. if not none, will only pu a subset of images corresponding to the list provided. 
+  # captions is the text to be written in the caption
+  # configs : is not none, the part of the ini file corresponding to this config name will be written in the web page
   titles = [\
-  	"Closeby missed injections",\
-  	"Efficiencies",\
-  	"Accuraciess"\
+  	"Efficiency, Found and Missed plots (first stage)",\
+  	"Closeby missed injections (Second coincidence stage and CAT2)",\
+  	"Efficiencies (second stage)",\
+  	"Accuracies (Second stage)"\
 	]
   tags = [\
-  	'*plotinspmissed_SECOND',\
-  	'*plotinspmissed*',\
-  	'*plotinspinj*'\
+  	'*plotinspmissed_FIRST*',\
+  	'*plotinspmissed_SECOND*',\
+  	'*plotinspmissed_SECOND*',\
+  	'*plotinspinj_SECOND*'\
 	]
   imagetags=[\
-	['followup'],\
-        ['efficiency'],\
-        ['scatter']
+        ['dummy_on_purpose_so_that_no_images_is_passed_to_the_web_page'],\
+	['map'],\
+        ['efficiency-eff_dist'],\
+        ['mchirp_vs_snr_accuracy_scatter_totalmass']
 	]
   captions = [\
-	'Closeby missed injections',\
-	'Efficiencies',\
-        'accuracies'
+        "Found and Missed injections links (first stage)",\
+	'Found and Missed injections. Effective distance versus chirp mass',\
+	'Efficiencies (Second stage)',\
+        'Accuracy plots (second stage)'
 	]
-  configs = [	\
-	None,\
-	None,\
-	'plotinspmissed'\
+  configs = [\
+        None,\
+	'plotinspmissed',\
+	'plotinspmissed',\
+	'plotinspinj'\
 	]
+
+  print titles
+  print tags
+  print captions
+  print configs
+  print imagetags
+
   for images_dir in images_dirs:
     for title, tag, caption,config,image_tag in zip(titles, tags, captions, configs,imagetags):
+      print title
       page = heading(page, title)
       page = add_config_section(page, config)
 #      page = add_config_section(page, config+-'meta')
       page = fom(page, opts, cachefile_tag=tag, caption=caption,\
 	 	image_tag=image_tag, directory=images_dir)
       page.div.close() # for each heading 
+      print "done"
  
 
   page.div.close()
@@ -827,9 +905,9 @@ def add_figure(page,fnames="test", caption="add a caption", size="full", alt="no
     title = " title=\""+alt[this_count]+"\""
     page.add("\t<a href=\"" + source.replace("_thumb", "")+"\"" +  title + ">\n" )
     try:
-      page.img(class_=size ,src=fnam, alt=alt[this_count] )
+      page.img(class_=size ,src=source, alt=alt[this_count] )
     except:
-      page.img(class_=size ,src=fnam )
+      page.img(class_=size ,src=source )
       
     page.add("</a>")
     this_count = this_count +1
@@ -881,7 +959,7 @@ def get_coincident_segments(tag):
   ifos = get_ifos()
   thisdata = {}
   thisdata['segments'] = ['duration(days)' ,'duration (s)']
-  duration = str((int(opts.gps_end_time) - int(opts.gps_start_time)))
+  #duration = str((int(opts.gps_end_time) - int(opts.gps_start_time)))
   output={}
   ifo_coincs = get_ifo_coinc()  
 
@@ -892,7 +970,7 @@ def get_coincident_segments(tag):
       elif tag=="analysis":
         command = "awk \'{sum=sum+$4} END {print sum}\' "+opts.datadir+ tag +"/"+coinc+"_segs_analyzed.txt"
 
-      output[coinc], status = make_external_call(command, opts.debug,opts.debug, True)
+      output[coinc], status = make_external_call(command, False,opts.debug, True)
     logText(logfile, '...Get the analyzed segments duration...')
   except:
     logText(logfile , 'problem(s) while parsnig the coincident segments', "error")
@@ -908,40 +986,46 @@ def get_segments_tag(tag):
   """
   reads segment files and return table of duration for each ifo
   """
+  # some variables
   datadir = opts.datadir
   ifos = get_ifos()
   thisdata = {}
-  thisdata['segments'] = ['duration(days)' ,'duration (s)']
-  duration = str((int(opts.gps_end_time) - int(opts.gps_start_time)))
-  duration.split('.')
-  this_tag  = '-' + tag + '-' + opts.gps_start_time + '-' + str(duration) + '.txt'
+  directory = datadir+'/segments/'
+  thisdata['segments'] = ['filename', 'duration(days)' ,'duration (s)']
+#  duration = str((int(opts.gps_end_time) - int(opts.gps_start_time)))
+  #duration.split('.')
+
+  # the name of the files (except for the ifo)
+  this_tag  = '-' + tag + opts.txt_suffix
   if tag=="RDS_C03_L2":
-    this_tag  = '_' + tag + '-' + opts.gps_start_time + '-' + str(duration) + '.txt'
+    this_tag  = '_' + tag + opts.txt_suffix
+
+  #reading the segments files and extract the duration
   command = 'awk \'{print NF}\' ' +  datadir +'/segments/' + ifos[1] + this_tag
   try:
     ncols, status = make_external_call(command, False, opts.debug, True)
     ncols = ncols[len(ncols)-2]
     # some files may be empty, so the first line (the comment 
-    # which has 5 cols)will be read, which explaine the >= and not strict ==. 
+    # which has 5 cols) will be read, which explain the >= and not strict ==. 
     if float(ncols)>=4:  
       for ifo in ifos:
-        command = 'awk \'{sum=sum+$4} END {print sum/3600/24}\' ' +  datadir +'/segments/' + ifo + this_tag
-        output_days, status = make_external_call(command, opts.debug, opts.debug, True)
-        command = 'awk \'{sum=sum+$4} END {print sum}\' ' +  datadir +'/segments/' + ifo + this_tag
-        output_seconds, status = make_external_call(command, opts.debug, opts.debug, True)
-        thisdata[ifo] = [ output_days, output_seconds]
+        thisfile = ifo + this_tag
+        command = 'awk \'{sum=sum+$4} END {print sum/3600/24}\' ' +  directory + thisfile
+        output_days, status = make_external_call(command, False, opts.debug, True)
+        command = 'awk \'{sum=sum+$4} END {print sum}\' ' +  directory + thisfile
+        output_seconds, status = make_external_call(command, False, opts.debug, True)
+        thisdata[ifo] = [thisfile, output_days, output_seconds]
     # unfortunately, right now, there is no standard, so some files have only 2 columns
     elif float(ncols)==2:
       for ifo in ifos:
-        command = 'awk \'{sum=sum+$2-$1} END {print sum/3600/24}\' ' +  datadir +'/segments/' + ifo + this_tag
-        output_days, status = make_external_call(command,opts.debug,opts.debug, True)
-        command = 'awk \'{sum=sum+$2-$1} END {print sum}\' ' +  datadir +'/segments/' + ifo + this_tag
-        output_seconds, status = make_external_call(command, opts.debug, opts.debug, True)
-        thisdata[ifo] = [ output_days, output_seconds]
+        thisfile = ifo + this_tag
+        command = 'awk \'{sum=sum+$2-$1} END {print sum/3600/24}\' ' +  directory + thisfile
+        output_days, status = make_external_call(command,False,opts.debug, True)
+        command = 'awk \'{sum=sum+$2-$1} END {print sum}\' ' +  directory + thisfile
+        output_seconds, status = make_external_call(command, False, opts.debug, True)
+        thisdata[ifo] = [thisfile, output_days, output_seconds]
   except:
     logText(logfile,  'Error while parsing the segment duration files', "error")
- # else:
-#    logText(logfile,  '...Get the segment duration for '+tag+'...')
 
   return thisdata
 
@@ -1056,72 +1140,39 @@ def get_version(executable):
 #### function to copy the segment files in the appropriate directory
 def copy_segments():
   """
-  
+  This function simply copies the segments list into the web page directory 
   """
-
+  msg =   "Copying segments into the web page directory (in yoururl/segments)"
+  logText(logfile, msg)
+  # first we create this directory      
+  mkdir(opts.physdir+'/segments')
 
   # parsing the ini file, find the cat file and thenread the ./segments directory
-  valid="done"
   try:
-    stdout= '...... 1 - the category files into /catlists'
-    cats = hipecp.items("segments")
-    location = opts.physdir+'/catlists/'
-    mkdir(location)
-    for file in cats:
-      if file[0].find('analyze')<=0:
-        command = 'cp '+opts.datadir +'/segments/'+  file[1] +' ' + location
-        dummy,status = make_external_call(command, False, opts.debug, True)
-        if status>0:
-          stdout += " WARNING:: could not copy a category segment list"
-          valid="warning"
-          break
+    location = opts.physdir + '/segments/'
+    command = 'cp '+opts.datadir +'/segments/* ' + location
+    dummy,status = make_external_call(command, opts.debug, opts.debug, True)
   except:
-    stdout +=" ERROR:: problem while copying category segment list. passing..."    
-    logText(logfile,  stdout, "warning") # we do not want to quit here. just a warning
+    logText(logfile, "Could not copy the segment files", "error")
     pass
-  else: 
-    logText(logfile,  stdout, valid)
-
- #  the segment files
-  valid="done"
-  try :
-    stdout ='...... 2 - the segments files into /segments'
-    for this in get_ifos():
-        seg = this +'-SELECTED_SEGS-'+opts.gps_start_time+'-'+opts.duration+'.txt'
-        try:
-          mkdir(opts.physdir+'/segments')
-        except:raise
-  
-        command = 'cp '+opts.datadir+'/segments/'+  seg + ' '+opts.physdir+'/segments/'
-        dummy,status = make_external_call(command, True, opts.debug, True)
-        if status>0:
-          stdout += " WARNING:: could not copy a segment list"
-          valid="warning"
-          break
-  except:
-    stdout +=" WARNING:: problem while copying segment list. passing..."    
-    logText(logfile,  stdout, "warning") # we do not want to quit here. just a warning
-    pass
-  else: 
-    logText(logfile,  stdout, valid)
 
  #  the selected segment files
-  for thisSearch in ['playground', 'analysis']:
+  for thisSearch in ['playground', 'full_data']:
+    mkdir(opts.physdir+'/'+thisSearch)
     try :
-      stdout ='...... 3 - the selected segments files into /'+thisSearch
+      stdout ='Copying the selected segments files into /'+thisSearch
       for this in get_ifo_coinc():
           if thisSearch=='playground':
             seg = '/'+thisSearch+'/'+this +'_play_segs_analyzed.txt'
           elif thisSearch=='full_data':
             seg = '/'+thisSearch+'/'+this +'_segs_analyzed.txt'
-          mkdir(opts.physdir+'/'+thisSearch)
           command = 'cp '+opts.datadir + seg + ' '+opts.physdir+'/' +thisSearch +'/'
           dummy,status = make_external_call(command, opts.debug, opts.debug, True)
           if status>0:
-            stdout += " WARNING:: could not copy a selected segment (playground)"
+            stdout += " WARNING:: could not copy a selected segment (from playground or full_data directory)"
             break
     except:
-      stdout +=" WARNING:: problem while copying a selected segment (playground). passing..."    
+      stdout +=" WARNING:: problem while copying a selected segment (from playground or full_data). passing..."    
       logText(logfile,  stdout, "warning")
       pass
     else: 
@@ -1133,54 +1184,66 @@ def fom(page, opts, cachefile_tag=None, caption="fix me",\
   """
 
   dir = opts.datadir+'/'+directory+'/' 
+
   # create the div that will contain the figure 
   page.div(class_="figure")
+
   # search for the cache file that contain the tag in
   # the directory considered (given as fifth argument)
   thisglob = dir + cachefile_tag +'cache'
   filenames =  glob.glob(thisglob)
+
+  if opts.verbose is True: 
+    print "        Searching for files with this(ese) tag(s): " +str(image_tag)
+
   # and parse this cache files searching for images
   for eachcache in filenames:
     this = open(eachcache, "r")
     fnameList = []
+    #for each file in the cachefile
     for filename in this:
+      # check that the file is an image ending in png
       validFile = True
       if filename.find('png')<0:
         validFile = False
         
-
+      #if so, keep going if and only if image_tag exists
       if image_tag is not None:
         found = False
-        for each_tag in image_tag:
+        for each_tag in image_tag:          
 	  if each_tag in filename :
-            print each_tag+' found in' + filename
+            if opts.verbose is True : print "        --> Copying " + filename
 	    found = True
         if found is False: 
           validFile = False
-      # we create a link to the main page only if requeste.
+      # we create a link to the main page only if requested.
       if validFile is True:
         fnameList.append(filename.replace(".png", "_thumb.png"))
-      #however, we still want to copy all the files contained in the cache files 
+      
+      if opts.verbose is True : print "        --> Copying files..."
+      # however, we still want to copy all the files contained in the cache files 
       command = 'cp ' + dir + filename+' ' +opts.physdir +'/Images/'       
-      make_external_call(command.replace("\n", " "), False, opts.debug, True)
+      make_external_call(command.replace("\n", " "), opts.debug, opts.debug, True)
       command = 'cp ' + dir + filename.replace(".png","_thumb.png")+\
 		' ' +opts.physdir  + '/Images/' 
-      make_external_call(command.replace("\n", " "), False, opts.debug, True)
+      make_external_call(command.replace("\n", " "), opts.debug, opts.debug, True)
     this.close()
     
     this = open(eachcache, "r")
     for filename in this:
       if filename.find('html')>=0:
         command = 'cp ' + dir + filename+' ' +opts.physdir        
-        make_external_call(command.replace("\n", " "), False, opts.debug, True)
+        make_external_call(command.replace("\n", " "), opts.debug, opts.debug, True)
         msg =" <a href=\""+filename.replace("/pictures", "")+\
-            "\"> --Click here to get all pictures (full resolution) as well as the pylal arguments used to generate the plots</a> "
+            """\"> <br/><pre> --- <b>Click here</b> to get all pictures (full resolution) 
+            as well as the pylal arguments used to generate the plots</a> """
+        break
     this.close()
   
     source =  eachcache.split('/') 
-    #source = directory+'</br>'+ + source[len(source)-1]
     source =  source[len(source)-1]
-    page = add_figure(page, fnames=fnameList, caption=(caption+' '+msg+'\nSource:'+source), size="third", alt=fnameList)
+    page = add_figure(page, fnames=fnameList, \
+      caption=(caption+' '+msg+'<br/><b>Source:</b>'+source+"</pre>"), size="third", alt=fnameList)
 
     this.close()
   page.div.close()
@@ -1290,18 +1353,14 @@ opts.config = config # save the name of the ini file, why ?
 configcp = ConfigParser.ConfigParser()
 configcp.read(config)
 
-#----------------------------------------
+print >>sys.stdout, "|------------------- Initialisation"
 # First, we open an xml file, for the log file
-print >>sys.stdout,"Openning the log file"
-try :
-  logfile = open(__name__+".xml", "w")
-  logfile.write("""<?xml version="1.0" encoding="ISO-8859-1"?>
+logfile_name = __name__+".xml"
+print >>sys.stdout,"Openning the log file (" +logfile_name+")."
+logfile = open(logfile_name, "w")
+logfile.write("""<?xml version="1.0" encoding="ISO-8859-1"?>
 <?xml-stylesheet type="text/xsl" href="write_ihope_page.xsl"?>
-<log>
-""")
-except:
-  print >>sys.stderr, "Could not create the log file...quitting"
-  raise 
+<log>""")
 
 
 #---------------------------------------
@@ -1318,26 +1377,27 @@ try:
   opts.output	 	= configcp.get("main", "output")
   opts.home_directory 	= configcp.get("main", "home-directory")
 except:
-  print >>sys.stderr, "ERROR::The ini file does not have the proper field in the [main] section" 
-  print >> sys.stderr,"       Consider adding those fields if missing: ihope-ini-file, gps-start-time,gps-end-time, ihope-directory, title,url, username, output"
+  print >> sys.stderr, "ERROR::The ini file does not have the proper field in the [main] section" 
+  print >> sys.stderr, """       Consider adding one of those fields if missing: ihope-ini-file, \
+	gps-start-time,gps-end-time, ihope-directory, title,url, username, output"""
   raise
   
 #------------------------------------
 #sub-products of the ini file parsing
-print >>sys.stdout,"Creating sub-product variables"
 opts.gpsdir =  '/'+str(opts.gps_start_time)+'-'+str(opts.gps_end_time)+'/'
 opts.duration = str(int(opts.gps_end_time) - int(opts.gps_start_time))
 opts.webdir = 'http://' + opts.url + '/~' + opts.username  + opts.gpsdir
 opts.datadir = opts.ihope_directory + opts.gpsdir
 opts.physdir = opts.home_directory+'/'+opts.username+'/public_html/'+ opts.gpsdir
+opts.txt_suffix = '-'+opts.gps_start_time+'-'+opts.duration+'.txt'
   
 #------------------------------------------------------------------------------------
 #read the different css style available and copy the style files in the web directory.
-print >>sys.stdout,"Getting the CSS style"
+print >>sys.stdout,"Searching for the CSS style"
 try:
   opts.style = set_style()
   for this in opts.style:
-    print >> sys.stdout, "   Found " + this
+    print >> sys.stdout, "---Found " + this
 except:
   logText(logfile, "Problem with the style file. (either not copied or not found)", "warning")
   raise
@@ -1356,33 +1416,20 @@ except:
 
 #-----------------------------------------
 # here is the directory we want to extract information from
-msg = "Entering " + opts.datadir
+msg = "Entering this directory (where we will get all the relevant information)" + opts.datadir
 print >> sys.stdout, msg
 if not  os.path.isdir(opts.datadir):
   raise  "%s is not a valid directory. Check your gps time." % opts.datadir
 # which physical name is 
-if not os.path.isdir(opts.physdir):
-  "%s is not a valid directory. Trying to create it." % opts.physdir
-  try:
-    os.mkdir(opts.physdir)
-    logText(logfile, "##Warning:: directory "+opts.physdir+" created","warning" )
-    os.mkdir(opts.physdir+'/Images')
-    logText(logfile, "##Warning:: directory "+opts.physdir+"/Images created","warning" )
-  except: pass
-else: 
-  print opts.physdir +'already exists'
-if not os.path.isdir(opts.physdir+'Images'):
-  "%s is not a valid directory. Trying to create it." % opts.physdir
-  try:
-    os.mkdir(opts.physdir+'/Images')
-    logText(logfile, "##Warning:: directory "+opts.physdir+"/Images created","warning" )
-  except: pass
-else: 
-  print opts.physdir+'/Images' +'already exists'
+msg = "We will copy all images and HTML documents into this directory " +opts.physdir
+logText(logfile, msg,"done")
+mkdir(opts.physdir)
+mkdir(opts.physdir+'/Images')
+
 
 #-----------------------------------------
-# now we can parse the ihope.ini file
-msg =   "...Parsing the ihope ini file (" + opts.config_file+")"
+# now we can parse the ihope.ini file itself
+msg =   "Parsing the ihope ini file (" + opts.config_file+")"
 logText(logfile, msg)
 hipe   = opts.ihope_directory+'/'+opts.config_file
 hipecp = ConfigParser.ConfigParser()
@@ -1391,8 +1438,6 @@ make_external_call( 'cp '+opts.config_file + ' ' + opts.physdir, False, opts.deb
 
 #-----------------------------------------
 # now we copy the segments to the web directory and other relevant information
-msg =   "Copying segments"
-logText(logfile, msg)
 copy_segments()
 
 
