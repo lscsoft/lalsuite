@@ -1414,6 +1414,15 @@ LALEOBWaveformEngine (
    ASSERT(ak.totalmass/LAL_MTSUN_SI > 0.4, status, 
    	LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
 
+   /* Check order is consistent if using EOBNR */
+   if ( params->approximant == EOBNR && params->order != pseudoFourPN )
+   {
+     LALSnprintf( message, 256, "Order must be pseudoFourPN for approximant EOBNR." ); 
+     LALError( status, message );
+     ABORT( status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE );
+   }
+
+
    if (signal1) length = signal1->length; else if (ff) length = ff->length;
 
 /* Allocate all the memory required to dummy and then point the various
@@ -1522,7 +1531,9 @@ LALEOBWaveformEngine (
        funcParams2 = (void *) &pr3in;
        break;
      default:
-       fprintf(stderr, "There are no EOB waveforms implemented at order %d\n", params->order);
+       LALSnprintf(message, 256, 
+               "There are no EOB waveforms implemented at order %d\n", params->order);
+       LALError( status, message );
        LALFree(dummy.data);
        ABORT( status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE); 
      }
@@ -1585,7 +1596,8 @@ LALEOBWaveformEngine (
        in4.function = LALHCapDerivativesP4PN;
        break;
      default:
-       fprintf(stderr, "There are no EOB waveforms at order %d\n", params->order);
+       LALSnprintf( message, 256, "There are no EOB waveforms at order %d\n", params->order);
+       LALError( status, message );
        LALFree(dummy.data);
        ABORT(status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
    }
