@@ -1,147 +1,321 @@
 /*
-*  Copyright (C) 2007 Duncan Brown, Jolien Creighton, Kipp Cannon, Reinhard Prix
-*
-*  This program is free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
-*
-*  This program is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
-*  along with with program; see the file COPYING. If not, write to the
-*  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-*  MA  02111-1307  USA
-*/
+ * Copyright (C) 2007 Duncan Brown, Jolien Creighton, Kipp Cannon, Reinhard
+ * Prix
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation; either version 2 of the License, or (at your
+ * option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with with program; see the file COPYING. If not, write to the Free
+ * Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+ * 02111-1307  USA
+ */
 
+
+#include <ctype.h>
+#include <pwd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
-#include <errno.h>
 #include <sys/types.h>
-#include <fcntl.h>
-#include <regex.h>
-#include <pwd.h>
-#include <unistd.h>
 #include <time.h>
-#include <lalapps.h>
+#include <unistd.h>
 
-#include <lal/LALStatusMacros.h>
-#include <lal/LALStdio.h>
-#include <lal/LALStdlib.h>
+
 #include <lal/Date.h>
 #include <lal/LIGOMetadataTables.h>
+#include <lal/XLALError.h>
 
+
+#include <lalapps.h>
 #include "processtable.h"
 
-#define CVS_REV_STR "$Revision "
-#define CVS_SOURCE_STR "$Source "
-#define CVS_DATE_STR "$Date "
-#define CVS_DATE_FMT "\%Y/\%m/\%d \%T"
-#define CVS_DELIM " $"
 
-/* int gethostname(char *name, size_t len); */
-char *strptime(const char *s, const char  *format,  struct tm *tm);
+/**
+ * Parses a cvs keyword string in the form $keyword:value$, returning a
+ * newly-malloc()'ed string containing just the value.  Leading and
+ * trailing whitespace is removed from the value string.  Returns NULL on
+ * parse or malloc() failure.
+ */
 
-NRCSID( PROCESSTABLEC, "$Id$" );
 
-void
-populate_process_table (
-    LALStatus           *status,
-    ProcessTable        *ptable,
-    const CHAR          *program_name,
-    const CHAR          *cvs_revision,
-    const CHAR          *cvs_source,
-    const CHAR          *cvs_date
-    )
+static char *cvs_get_keyword_value(const char *cvs_string)
 {
-  const char source_str[] = CVS_SOURCE_STR;
-  const char rev_str[] = CVS_REV_STR;
-  const char date_str[] = CVS_DATE_STR;
-  const char cvs_date_format[] = CVS_DATE_FMT;
-  char date_string[256];
-  size_t cvsstrlen;
-  uid_t userid;
-  struct passwd *pwent;
-  const char *cvsstrstart, *cvsstrend;
-  LALDate laldate;
-  LALLeapSecAccuracy accuracy = LALLEAPSEC_LOOSE;
+	const char *value_start;
+	const char *value_end;
+	char *value;
 
-  INITSTATUS( status, "populate_process_table", PROCESSTABLEC );
-  ATTATCHSTATUSPTR( status );
-  ASSERT( ptable, status, 1, "Process table pointer is null" );
+	/*
+	 * check for input
+	 */
 
-  /* program name entry */
-  LALSnprintf( ptable->program, LIGOMETA_PROGRAM_MAX, program_name );
+	if(!cvs_string)
+		return NULL;
 
-  /* cvs version */
-  memset( ptable->version, 0, LIGOMETA_VERSION_MAX );
-  cvsstrstart = cvs_revision + (size_t) strlen(rev_str) + 1;
-  cvsstrend = strstr( cvs_revision, CVS_DELIM );
-  cvsstrlen = cvsstrend - cvsstrstart;
-  memcpy( ptable->version, cvsstrstart, 
-      cvsstrlen < LIGOMETA_VERSION_MAX - 1 ? 
-      cvsstrlen : LIGOMETA_VERSION_MAX - 1 );
+	/*
+	 * string must start with '$'
+	 */
 
-  /* cvs repository */
-  memset( ptable->cvs_repository, 0, LIGOMETA_CVS_REPOSITORY_MAX );
-  cvsstrstart = cvs_source + (size_t) strlen(source_str) + 1;
-  cvsstrend = strstr( cvs_source, ",v" CVS_DELIM );
-  cvsstrlen = cvsstrend - cvsstrstart;
-  memcpy( ptable->cvs_repository, cvsstrstart, 
-      cvsstrlen < LIGOMETA_CVS_REPOSITORY_MAX - 4 ?
-      cvsstrlen : LIGOMETA_CVS_REPOSITORY_MAX - 4 );
-  sprintf( ptable->cvs_repository + cvsstrlen, "\\,v" );
+	value_start = strchr(cvs_string, '$');
+	if(!value_start)
+		return NULL;
 
-  /* cvs check in time */
-  memset( date_string, 0, 256 );
-  cvsstrstart = cvs_date + (size_t) strlen(date_str) + 1;
-  cvsstrend = strstr( cvs_source, " $" );
-  cvsstrlen = cvsstrend - cvsstrstart;
-  memcpy( date_string, cvsstrstart, 
-      cvsstrlen < 255 ? cvsstrlen : 255 );
-  if ( ! strptime( date_string, cvs_date_format, &(laldate.unixDate) ) )
-  {
-    fprintf( stderr, "could not determine cvs checkin date\n" );
-    exit( 1 );
-  }
-  laldate.residualNanoSeconds = 0;
-  LALUTCtoGPS( status->statusPtr, &(ptable->cvs_entry_time), &laldate, 
-      &accuracy );
-  CHECKSTATUSPTR( status );
+	/*
+	 * keyword ends at ':'
+	 */
 
-  /* put blank space in comment */
-  LALSnprintf( ptable->comment, LIGOMETA_COMMENT_MAX, " " );
+	value_start = strchr(value_start, ':');
+	if(!value_start)
+		return NULL;
 
-  /* online flag and domain */
-  ptable->is_online = 0;
-  LALSnprintf( ptable->domain, LIGOMETA_DOMAIN_MAX , "lalapps" );
-  
-  /* process id, username and host */
-  ptable->unix_procid = getpid();
-  if ( ! ptable->unix_procid )
-  {
-    ptable->unix_procid = getppid();
-  }
-  if ( gethostname( ptable->node, LIGOMETA_NODE_MAX ) < 0 )
-  {
-    perror( "could not determine host name" );
-    exit( 1 );
-  }
-  userid = geteuid();
-  if ( ! (pwent = getpwuid( userid )) )
-  {
-    LALSnprintf( ptable->username, LIGOMETA_USERNAME_MAX - 1, "%d", userid );
-  }
-  else
-  {
-    strncpy( ptable->username, pwent->pw_name, LIGOMETA_USERNAME_MAX - 1);
-  }
+	/*
+	 * skip leading white space
+	 */
 
-  DETATCHSTATUSPTR( status );
-  RETURN( status );
+	while(isspace(*++value_start));
+	if(!*value_start)
+		return NULL;
+
+	/*
+	 * string must end with '$'
+	 */
+
+	value_end = strchr(value_start, '$');
+	if(!value_end)
+		return NULL;
+
+	/*
+	 * skip trailing white space
+	 */
+
+	while(isspace(*--value_end));
+	value_end++;
+	if(value_end - value_start < 0)
+		value_end = value_start;
+
+	/*
+	 * extract value.  +1 for the '\0' to be added
+	 */
+
+	value = malloc((value_end - value_start + 1) * sizeof(*value));
+	if(!value)
+		return NULL;
+	memcpy(value, value_start, (value_end - value_start) * sizeof(*value));
+	value[value_end - value_start] = '\0';
+
+	/*
+	 * done
+	 */
+
+	return value;
+}
+
+
+/**
+ * Replace "," substrings with "\\,".  The string is modified in place and
+ * resized with realloc().  The return value is the new string or NULL on
+ * failure.  The pointer passed as input is invalid unconditionally after
+ * this function (either it has been realloc()'ed or free()'ed on failure).
+ */
+
+
+static char *escape_commas(char *s)
+{
+	char *comma = s;
+
+	/*
+	 * check for input
+	 */
+
+	if(!s)
+		return NULL;
+
+	/*
+	 * while a ',' can be found in the remainder of the string
+	 */
+
+	while((comma = strchr(comma, ','))) {
+		/*
+		 * allocate new string.  +1 for the '\0', and +2 for the
+		 * "\\" to be added
+		 */
+
+		char *new = malloc((strlen(s) + 3) * sizeof(*new));
+		if(!new) {
+			free(s);
+			return NULL;
+		}
+
+		/*
+		 * null-terminate the string preceding the comma
+		 */
+
+		s[comma - s] = '\0';
+
+		/*
+		 * {text preceding comma} + "\\," + {text following comma}
+		 */
+
+		sprintf(new, "%s\\\\,%s", s, ++comma);
+
+		/*
+		 * point pointers at new string and free old one
+		 */
+
+		comma = new + (comma - s) + 2;
+		free(s);
+		s = new;
+	}
+
+	/*
+	 * done
+	 */
+
+	return s;
+}
+
+
+/**
+ * Populate a pre-allocated ProcessTable structure.
+ */
+
+
+int XLALPopulateProcessTable(
+	ProcessTable *ptable,
+	const char *program_name,
+	const char *cvs_revision,
+	const char *cvs_source,
+	const char *cvs_date
+)
+{
+	static const char func[] = "XLALPopulateProcessTable";
+	char *cvs_keyword_value;
+	uid_t uid;
+	struct passwd *pw;
+	struct tm utc;
+
+	/*
+	 * program name entry
+	 */
+
+	snprintf(ptable->program, LIGOMETA_PROGRAM_MAX, "%s", program_name);
+
+	/*
+	 * cvs version
+	 */
+
+	cvs_keyword_value = cvs_get_keyword_value(cvs_revision);
+	if(!cvs_keyword_value) {
+		XLALPrintError("%s(): cannot parse \"%s\"\n", func, cvs_revision);
+		XLAL_ERROR(func, XLAL_EINVAL);
+	}
+	snprintf(ptable->version, LIGOMETA_VERSION_MAX, "%s", cvs_keyword_value);
+	free(cvs_keyword_value);
+
+	/*
+	 * cvs repository
+	 */
+
+	cvs_keyword_value = escape_commas(cvs_get_keyword_value(cvs_source));
+	if(!cvs_keyword_value) {
+		XLALPrintError("%s(): cannot parse \"%s\"\n", func, cvs_source);
+		XLAL_ERROR(func, XLAL_EINVAL);
+	}
+	snprintf(ptable->cvs_repository, LIGOMETA_CVS_REPOSITORY_MAX, "%s", cvs_keyword_value);
+	free(cvs_keyword_value);
+
+	/*
+	 * cvs check-in time
+	 */
+
+	cvs_keyword_value = cvs_get_keyword_value(cvs_date);
+	if(!cvs_keyword_value) {
+		XLALPrintError("%s(): cannot parse \"%s\"\n", func, cvs_date);
+		XLAL_ERROR(func, XLAL_EINVAL);
+	}
+	if(!strptime(cvs_keyword_value, "%Y/%m/%d %T", &utc)) {
+		XLALPrintError("%s(): cannot parse \"%s\"\n", func, cvs_keyword_value);
+		free(cvs_keyword_value);
+		XLAL_ERROR(func, XLAL_EINVAL);
+	}
+	free(cvs_keyword_value);
+	XLALClearErrno();
+	XLALGPSSet(&ptable->cvs_entry_time, XLALUTCToGPS(&utc), 0);
+	if(XLALGetBaseErrno())
+		XLAL_ERROR(func, XLAL_EFUNC);
+
+	/*
+	 * comment
+	 */
+
+	snprintf(ptable->comment, LIGOMETA_COMMENT_MAX, "");
+
+	/*
+	 * online flag and domain
+	 */
+
+	ptable->is_online = 0;
+	snprintf(ptable->domain, LIGOMETA_DOMAIN_MAX, "lalapps");
+
+	/*
+	 * process id, username and host
+	 */
+
+	ptable->unix_procid = getpid();
+	if(!ptable->unix_procid)
+		ptable->unix_procid = getppid();
+	if(gethostname(ptable->node, LIGOMETA_NODE_MAX) < 0) {
+		perror("could not determine host name");
+		XLAL_ERROR(func, XLAL_ESYS);
+	}
+	uid = geteuid();
+	if(!(pw = getpwuid(uid)))
+		snprintf(ptable->username, LIGOMETA_USERNAME_MAX, "%d", uid);
+	else
+		snprintf(ptable->username, LIGOMETA_USERNAME_MAX, "%s", pw->pw_name);
+
+	/*
+	 * done
+	 */
+
+	return 0;
+}
+
+
+/**
+ * Legacy compatibility wrapper.  Remove when not used.
+ */
+
+
+#include <lal/LALStatusMacros.h>
+
+
+NRCSID(PROCESSTABLEC, "$Id$");
+
+
+void populate_process_table(
+	LALStatus *status,
+	ProcessTable *ptable,
+	const CHAR *program_name,
+	const CHAR *cvs_revision,
+	const CHAR *cvs_source,
+	const CHAR *cvs_date
+)
+{
+	INITSTATUS(status, "populate_process_table", PROCESSTABLEC);
+	ATTATCHSTATUSPTR(status);
+
+	XLALPrintDeprecationWarning("populate_process_table", "XLALPopulateProcessTable");
+
+	ASSERT(!XLALPopulateProcessTable(ptable, program_name, cvs_revision, cvs_source, cvs_date), status, LAL_EXLAL, LAL_MSGEXLAL);
+
+	DETATCHSTATUSPTR(status);
+	RETURN(status);
 }
