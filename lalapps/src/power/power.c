@@ -1472,8 +1472,8 @@ int main(int argc, char *argv[])
 	LIGOTimeGPS boundepoch;
 	int overlap;
 	REAL8TimeSeries *series = NULL;
-	SnglBurst *burstEvent = NULL;
-	SnglBurst **EventAddPoint = &burstEvent;
+	SnglBurst *_sngl_burst_table = NULL;
+	SnglBurst **EventAddPoint = &_sngl_burst_table;
 	/* the ugly underscores are because some badger put global symbols
 	 * in LAL by exactly these names. it's a mad house, a maad house */
 	ProcessTable *_process_table;
@@ -1687,14 +1687,14 @@ int main(int argc, char *argv[])
 	 * Sort the events, and assign IDs.
 	 */
 
-	XLALSortSnglBurst(&burstEvent, XLALCompareSnglBurstByStartTimeAndLowFreq);
-	XLALSnglBurstAssignIDs(burstEvent, 0, 0);
+	XLALSortSnglBurst(&_sngl_burst_table, XLALCompareSnglBurstByStartTimeAndLowFreq);
+	XLALSnglBurstAssignIDs(_sngl_burst_table, 0, 0);
 
 	/*
 	 * Check event rate limit.
 	 */
 
-	_search_summary_table.nevents = XLALSnglBurstTableLength(burstEvent);
+	_search_summary_table.nevents = XLALSnglBurstTableLength(_sngl_burst_table);
 	if((options->max_event_rate > 0) && (_search_summary_table.nevents > XLALGPSDiff(&_search_summary_table.out_end_time, &_search_summary_table.out_start_time) * options->max_event_rate)) {
 		XLALPrintError("%s: event rate limit exceeded!", argv[0]);
 		exit(1);
@@ -1705,7 +1705,7 @@ int main(int argc, char *argv[])
 	 */
 
 	LAL_CALL(LALGPSTimeNow(&stat, &_process_table->end_time, &accuracy), &stat);
-	output_results(&stat, options->output_filename, _process_table, _process_params_table, &_search_summary_table, burstEvent);
+	output_results(&stat, options->output_filename, _process_table, _process_params_table, &_search_summary_table, _sngl_burst_table);
 
 	/*
 	 * Final cleanup.
@@ -1714,13 +1714,9 @@ int main(int argc, char *argv[])
 	if(rng)
 		gsl_rng_free(rng);
 
-	while(_process_params_table) {
-		ProcessParamsTable *next = _process_params_table->next;
-		XLALFree(_process_params_table);
-		_process_params_table = next;
-	}
-
-	XLALDestroySnglBurstTable(burstEvent);
+	XLALDestroyProcessTable(_process_table);
+	XLALDestroyProcessParamsTable(_process_params_table);
+	XLALDestroySnglBurstTable(_sngl_burst_table);
 
 	if(options->diagnostics)
 		LAL_CALL(LALCloseLIGOLwXMLFile(&stat, options->diagnostics->LIGOLwXMLStream), &stat);
