@@ -121,6 +121,8 @@ char *lalWatch;
   typedef struct tagSingleSFTpair{
     COMPLEX8FrequencySeries  *sft1; 
     COMPLEX8FrequencySeries  *sft2; 
+    REAL8FrequencySeries     *psd1;
+    REAL8FrequencySeries     *psd2;
     REAL8 vel1[3];
     REAL8 vel2[3];
     REAL8 pos1[3];
@@ -161,6 +163,7 @@ void SetUpRadiometerSkyPatches(LALStatus *status,
 void CreateSFTPairs(LALStatus                *status,
 		    SFTPairVec               *out,
 		    MultiSFTVector           *inputSFTs,
+		    MultiPSDVector	     *inputPSDs,
 		    MultiDetectorStateSeries *mdetStates,
 		    SFTPairParams            *par);
 
@@ -169,6 +172,8 @@ void CreateSFTPairsFrom2SFTvectors(LALStatus                 *status,
 				   SFTPairVec                *out,
 				   const SFTVector           *in1,
 				   const SFTVector           *in2,
+				   const PSDVector	     *psdin1,
+				   const PSDVector	     *psdin2,
 				   const DetectorStateSeries *det1,
 				   const DetectorStateSeries *det2,
 				   SFTPairParams             *par);
@@ -178,6 +183,8 @@ void FillSFTPair(LALStatus                 *status,
 		 SingleSFTpair             *out,
 		 COMPLEX8FrequencySeries   *sft1, 
 		 COMPLEX8FrequencySeries   *sft2, 
+		 REAL8FrequencySeries	   *psd1,
+		 REAL8FrequencySeries	   *psd2,
 		 DetectorState             *det1,
 		 DetectorState             *det2);
 

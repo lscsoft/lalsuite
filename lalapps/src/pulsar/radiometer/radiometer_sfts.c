@@ -69,19 +69,29 @@ void GetSignalFrequencyInSFT(LALStatus                *status,
 			     PulsarDopplerParams      *dopp,
 			     REAL8Vector              *vel);
 
-void GetSignalPhaseInSFT(LALStatus            *status,
-			 REAL8                *out,
-			 LIGOTimeGPS          *epoch,
-			 PulsarDopplerParams  *dopp,
-			 REAL8Vector          *pos);
+void GetSignalPhaseInSFT(LALStatus               *status,
+			 REAL8                   *out,
+			 COMPLEX8FrequencySeries *sft1,
+			 PulsarDopplerParams     *dopp,
+			 REAL8Vector             *pos);
 
 void CreateSFTIndexPairs(LALStatus                *status,
 			 INT4VectorSequence       *out,
 			 MultiSFTVector           *inputSFTs,
 			 SFTPairParams            *par);
 
-
-
+void CalculateWeights(LALStatus *status,
+		      COMPLEX16	*out,
+		      REAL8	*Aplus,
+		      REAL8	*Across,
+		      REAL8	*phiI,
+		      REAL8	*phiJ,
+		      REAL8	*FplusI,
+		      REAL8	*FplusJ,
+		      REAL8	*FcrossI,
+		      REAL8	*FcrossJ,
+		      REAL8FrequencySeries *psd1,
+		      REAL8FrequencySeries *psd2);
 
 
 
@@ -91,18 +101,23 @@ int main(int argc, char *argv[]){
   
   /* sft related variables */ 
   MultiSFTVector *inputSFTs = NULL;
-  REAL8 deltaF, timeBase, freq = 0, *freq1 = &freq; 
+  REAL8 deltaF, timeBase, freq = 0, *freq1 = &freq;
+  REAL8 phase = 0, *phase1 = &phase, psi = 0.0; 
   INT8  fLastBin, f0Bin;
   UINT4 binsSFT, numSearchBins, numsft, counter, index1, index2;
   COMPLEX8FrequencySeries *sft, *sft1, *sft2;
-  COMPLEX16Vector yalpha;
+  REAL8FrequencySeries *psd1, *psd2;
+  COMPLEX16Vector yalpha, galpha;
+  REAL8VectorSequence Fplus, Fcross;
+  REAL8 Aplus = sqrt(7.0/15.0), Across = sqrt(1.0/3.0); 
+  /*A's are averaged over cos i... need to change this later!*/ 
 
   SFTPairVec sftPairs;
   SFTPairParams pairParams;
   
   /* information about all the ifos */
   MultiDetectorStateSeries *mdetStates = NULL;
-  MultiPSDVector *multPSD = NULL;  
+  MultiPSDVector *multiPSD = NULL;  
   UINT4 numifo;
 
   LIGOTimeGPS firstTimeStamp, lastTimeStamp;
@@ -120,10 +135,10 @@ int main(int argc, char *argv[]){
   SkyPatchesInfo skyInfo;
 
   static INT4VectorSequence  sftPairIndexList;
-  static REAL8VectorSequence frequencyShiftList;
+  static REAL8VectorSequence frequencyShiftList, signalPhaseList;
   INT4  j, k;
   static PulsarDopplerParams  thisPoint;
-  static REAL8Vector thisVel;
+  static REAL8Vector thisVel, thisPos;
 
   /* sft constraint variables */
   LIGOTimeGPS startTimeGPS, endTimeGPS;
@@ -147,8 +162,7 @@ int main(int argc, char *argv[]){
   FILE	   *skytest=NULL;
 
 
- 
- /* SkyPosition skypos; */
+  SkyPosition skypos; 
 
 
   /* LAL error-handler */
@@ -336,9 +350,10 @@ printf("observation time is %f\n",tObs);
   skySizeAlpha = skyInfo.alphaSize;
   skySizeDelta = skyInfo.deltaSize;
  
-  /* normalize sfts */
-  LAL_CALL( LALNormalizeMultiSFTVect (&status, &multPSD, inputSFTs, uvar_blocksRngMed), &status);
-  
+  /* normalize sfts - does this give the PSD??*/
+  LAL_CALL( LALNormalizeMultiSFTVect (&status, &multiPSD, inputSFTs, uvar_blocksRngMed), &status);
+ 
+ 
   /* get information about all detectors including velocity and timestamps */
   /* note that this function returns the velocity at the 
      mid-time of the SFTs -- should not make any difference */
@@ -353,41 +368,29 @@ printf("observation time is %f\n",tObs);
 
   /* create sft pairs  */
   
-  LAL_CALL( CreateSFTPairs( &status, &sftPairs, inputSFTs, mdetStates, &pairParams), &status); 
+  LAL_CALL( CreateSFTPairs( &status, &sftPairs, inputSFTs, multiPSD, mdetStates, &pairParams), &status); 
 
   
-  /*   /\* loop over sky patches -- main calculations *\/ */
+
+
+  /*    loop over sky patches -- main calculations  */
     for (skyCounter = 0; skyCounter < nSkyPatches; skyCounter++) 
        { 
+
+     MultiAMCoeffs *multiAMcoef = NULL; 
+
 
   /* initialize Doppler parameters of the potential source */
      thisPoint.Alpha = skyAlpha[skyCounter]; 
      thisPoint.Delta = skyDelta[skyCounter]; 
      thisPoint.fkdot[0] = uvar_f0;
      thisPoint.fkdot[1] = uvar_fdot; 
+     thisPoint.refTime = inputSFTs->data[0]->data->epoch; /*must be changed!*/
 
 printf("coordinate is %f, %f\n",thisPoint.Alpha, thisPoint.Delta);
  
   thisVel.length = 3;
-  /* loop over each SFT to get frequency, then store in frequencyShiftList */
-
-  frequencyShiftList.length = numifo;
-  frequencyShiftList.vectorLength = inputSFTs->data[0]->length;
-  frequencyShiftList.data =  LALCalloc(frequencyShiftList.vectorLength * frequencyShiftList.length, sizeof(REAL8));
-  counter = 0;
-  for (j=0; j < (INT4)numifo; j++) {
-     for (k = 0; k < (INT4)inputSFTs->data[j]->length; k++) {
-      
-	 thisVel.data = mdetStates->data[j]->data[k].vDetector;
- 	 sft = inputSFTs->data[j]->data;
-         LAL_CALL( GetSignalFrequencyInSFT( &status, freq1, sft, &thisPoint, &thisVel), &status);
-
-	 frequencyShiftList.data[counter++] = *freq1; 
-printf("shifted frequencies %f\n",frequencyShiftList.data[counter-1]);
-      } 
-    
-    }
-
+  thisPos.length = 3;
   
   /*     set sky positions and skypatch sizes  */
          patchSizeX = skySizeDelta[skyCounter]; 
@@ -395,37 +398,100 @@ printf("shifted frequencies %f\n",frequencyShiftList.data[counter-1]);
   
   
   /*        get the amplitude modulation coefficients */
-  /*       skypos.longitude = alpha; */
-  /*       skypos.latitude = delta; */
-  /*       skypos.system = COORDINATESYSTEM_EQUATORIAL; */
-  /*       LAL_CALL ( LALGetMultiAMCoeffs ( &status, &multiAMcoef, mdetStates, skypos), &status); */
+         skypos.longitude = thisPoint.Alpha; 
+         skypos.latitude = thisPoint.Delta; 
+         skypos.system = COORDINATESYSTEM_EQUATORIAL; 
+         LAL_CALL ( LALGetMultiAMCoeffs ( &status, &multiAMcoef, mdetStates, skypos), &status); 
+
+printf("a, B %f %f\n",multiAMcoef->data[0]->A, multiAMcoef->data[0]->B);
+
+
+  /* loop over each SFT to get frequency, then store in frequencyShiftList */
+
+
+  /*initialise frequency and phase vectors */
+  frequencyShiftList.length = numifo;
+  frequencyShiftList.vectorLength = inputSFTs->data[0]->length;
+  frequencyShiftList.data =  LALCalloc(frequencyShiftList.vectorLength * frequencyShiftList.length, sizeof(REAL8));
+
+  signalPhaseList.length = numifo;
+  signalPhaseList.vectorLength = inputSFTs->data[0]->length;
+  signalPhaseList.data =  LALCalloc(signalPhaseList.vectorLength * signalPhaseList.length, sizeof(REAL8));
+
+
+  /* initialise F_+, F_x vectors */
+  Fplus.length = numifo;
+  Fcross.length = numifo;
+  Fplus.vectorLength = inputSFTs->data[0]->length;
+  Fcross.vectorLength = inputSFTs->data[0]->length;
+  Fplus.data = LALCalloc( Fplus.length * Fplus.vectorLength, sizeof(REAL8)); 
+  Fcross.data = LALCalloc( Fcross.length * Fplus.vectorLength, sizeof(REAL8)); 
+
+
+  counter = 0;
+  for (j=0; j < (INT4)numifo; j++) {
+     for (k = 0; k < (INT4)inputSFTs->data[j]->length; k++) {
+      
+	 thisVel.data = mdetStates->data[j]->data[k].vDetector;
+ 	 thisPos.data = mdetStates->data[j]->data[k].rDetector;
+	 sft = inputSFTs->data[j]->data;
+
+         LAL_CALL( GetSignalFrequencyInSFT( &status, freq1, sft, &thisPoint, &thisVel), &status);
+         LAL_CALL( GetSignalPhaseInSFT( &status, phase1, sft, &thisPoint, &thisPos), &status);
+
+	 frequencyShiftList.data[counter] = *freq1; 
+	 signalPhaseList.data[counter] = *phase1;
+printf("shifted frequencies %f\n",frequencyShiftList.data[counter]);
+printf("signal phases %f\n", signalPhaseList.data[counter]);
+
+	Fplus.data[counter] = (multiAMcoef->data[j]->a->data[k] * cos(2.0*psi))
+		 	     + (multiAMcoef->data[j]->b->data[k] * sin(2.0*psi));
+
+	Fcross.data[counter] = (multiAMcoef->data[j]->b->data[k] * cos(2.0*psi))
+			     - (multiAMcoef->data[j]->a->data[k] * sin(2.0*psi));
+
+printf("fplus, fcross %f %f\n", Fplus.data[counter], Fcross.data[counter]);
+	counter++;
+      } 
+    
+    }
+
   
   /* loop over SFT pairs */
     counter = 0;
     yalpha.length = sftPairs.length;
     yalpha.data = LALCalloc(yalpha.length, sizeof(COMPLEX16));
+    galpha.length = sftPairs.length;
+    galpha.data = LALCalloc(galpha.length, sizeof(COMPLEX16));
 
     for (j=0; j < (INT4)sftPairs.length; j++) {
   
      /*  correlate sft pairs  */
  
 	index1 = sftPairIndexList.data[counter++];
-	index2 = sftPairIndexList.data[counter++];
+	index2 = sftPairIndexList.data[counter++] + inputSFTs->data[0]->length;
 
 	sft1 = sftPairs.data[j].sft1;
 	sft2 = sftPairs.data[j].sft2;
+	psd1 = sftPairs.data[j].psd1;
+	psd2 = sftPairs.data[j].psd2;
 /*printf("f0_1 %f f0_2 %f\n",sft1->f0, sft2->f0);*/
   	LAL_CALL( CorrelateSingleSFTPair( &status, &yalpha.data[j], sft1, sft2, &frequencyShiftList.data[index1], &frequencyShiftList.data[index2]), &status);
 
-/*printf("%i real %f imaginary %f\n",j,yalpha.data[j].re, yalpha.data[j].im);  */
+ 	LAL_CALL( CalculateWeights (&status, &galpha.data[j], &Aplus, &Across, &signalPhaseList.data[index1], &signalPhaseList.data[index2], &Fplus.data[index1], &Fplus.data[index2], &Fcross.data[index1], &Fcross.data[index2], psd1, psd2), &status);
+
+printf("Y %i real %f imaginary %f\n",j,yalpha.data[j].re, yalpha.data[j].im);  
+printf("G %i real %f imaginary %f\n",j,galpha.data[j].re, galpha.data[j].im);  
+
 
   /*   select candidates  */
   
   
-  
-  /*       XLALDestroyMultiAMCoeffs ( multiAMcoef ); */
-  
+             
     }
+
+   XLALDestroyMultiAMCoeffs ( multiAMcoef ); 
+
   } /* finish loop over skypatches */ 
   
   
@@ -434,7 +500,7 @@ printf("shifted frequencies %f\n",frequencyShiftList.data[counter-1]);
   LALFree(sftPairs.data);
 
   XLALDestroyMultiDetectorStateSeries ( mdetStates );
-  LAL_CALL ( LALDestroyMultiPSDVector  ( &status, &multPSD), &status);
+  LAL_CALL ( LALDestroyMultiPSDVector  ( &status, &multiPSD), &status);
 
   LALFree(edat->ephemE);
   LALFree(edat->ephemS);
@@ -446,6 +512,8 @@ printf("shifted frequencies %f\n",frequencyShiftList.data[counter-1]);
   LALFree(skySizeDelta);
   LALFree(yalpha.data);
   LALFree(frequencyShiftList.data);
+  LALFree(Fcross.data);
+  LALFree(Fplus.data);
 
   LAL_CALL (LALDestroyUserVars(&status), &status);
 

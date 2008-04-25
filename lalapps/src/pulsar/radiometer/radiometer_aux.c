@@ -209,6 +209,7 @@ void CreateSFTPairsIndicesFrom2SFTvectors(LALStatus                *status,
 void CreateSFTPairs(LALStatus                *status,
 		    SFTPairVec               *out,
 		    MultiSFTVector           *inputSFTs,
+		    MultiPSDVector	     *inputPSDs,
 		    MultiDetectorStateSeries *mdetStates,
 		    SFTPairParams            *par)
 {  
@@ -220,6 +221,7 @@ void CreateSFTPairs(LALStatus                *status,
 
   ASSERT (out, status, RADIOMETER_ENULL, RADIOMETER_MSGENULL);
   ASSERT (inputSFTs, status, RADIOMETER_ENULL, RADIOMETER_MSGENULL);
+  ASSERT (inputPSDs, status, RADIOMETER_ENULL, RADIOMETER_MSGENULL);
   ASSERT (mdetStates, status, RADIOMETER_ENULL, RADIOMETER_MSGENULL);
   ASSERT (inputSFTs->length == mdetStates->length, status, RADIOMETER_EBAD, RADIOMETER_MSGEBAD);
 
@@ -230,7 +232,8 @@ void CreateSFTPairs(LALStatus                *status,
   }
 
   TRY( CreateSFTPairsFrom2SFTvectors(status->statusPtr, out, inputSFTs->data[0], 
-				     inputSFTs->data[1], mdetStates->data[0], 
+				     inputSFTs->data[1], inputPSDs->data[0], 
+				     inputPSDs->data[1], mdetStates->data[0], 
 				     mdetStates->data[1], par), status);
 
   DETATCHSTATUSPTR (status);
@@ -248,6 +251,8 @@ void CreateSFTPairsFrom2SFTvectors(LALStatus                 *status,
 				   SFTPairVec                *out,
 				   const SFTVector           *in1,
 				   const SFTVector           *in2,
+				   const PSDVector	     *psdin1,
+				   const PSDVector	     *psdin2,
 				   const DetectorStateSeries *det1,
 				   const DetectorStateSeries *det2,
 				   SFTPairParams             *par)
@@ -255,7 +260,8 @@ void CreateSFTPairsFrom2SFTvectors(LALStatus                 *status,
   
   UINT4 i, j, numsft1, numsft2, numPairs, numsftMin, counter=0;
 
-  COMPLEX8FrequencySeries  *thisSFT1, *thisSFT2;	       
+  COMPLEX8FrequencySeries  *thisSFT1, *thisSFT2;
+  REAL8FrequencySeries 	*thisPSD1, *thisPSD2;	       
   DetectorState *thisDetState1, *thisDetState2;
   SingleSFTpair *thisPair = NULL;
 
@@ -265,6 +271,9 @@ void CreateSFTPairsFrom2SFTvectors(LALStatus                 *status,
   ASSERT (out, status, RADIOMETER_ENULL, RADIOMETER_MSGENULL);
   ASSERT (in1, status, RADIOMETER_ENULL, RADIOMETER_MSGENULL);
   ASSERT (in2, status, RADIOMETER_ENULL, RADIOMETER_MSGENULL);
+  ASSERT (psdin1, status, RADIOMETER_ENULL, RADIOMETER_MSGENULL);
+  ASSERT (psdin2, status, RADIOMETER_ENULL, RADIOMETER_MSGENULL);
+
   ASSERT (det1, status, RADIOMETER_ENULL, RADIOMETER_MSGENULL);
   ASSERT (det2, status, RADIOMETER_ENULL, RADIOMETER_MSGENULL);
   ASSERT (par, status, RADIOMETER_ENULL, RADIOMETER_MSGENULL);
@@ -288,9 +297,10 @@ printf("second detector start time %i\n",det2->data->tGPS.gpsSeconds);
 
   /* go over all sfts in first vector */
   for (i=0; i<numsft1; i++) {
-
     thisSFT1 = in1->data + i;
+    thisPSD1 = psdin1->data + i;
     thisDetState1 = det1->data + i;
+
     
     /* go over all sfts in second vector and check if it should be paired with thisSFT1 */
     /* this can be made more efficient if necessary */
@@ -300,7 +310,8 @@ printf("second detector start time %i\n",det2->data->tGPS.gpsSeconds);
       REAL8 timeDiff;
 
       thisSFT2 = in2->data + j;
-      thisDetState2 = det2->data + i;
+      thisPSD2 = psdin2->data + j;
+      thisDetState2 = det2->data + j;
 
       /* calculate time difference */      
       t1 = thisSFT1->epoch;
@@ -319,7 +330,7 @@ printf("second detector start time %i\n",det2->data->tGPS.gpsSeconds);
 
 
 
-	  TRY( FillSFTPair( status->statusPtr, thisPair, thisSFT1, thisSFT2, thisDetState1, thisDetState2), status);
+	  TRY( FillSFTPair( status->statusPtr, thisPair, thisSFT1, thisSFT2, thisPSD1, thisPSD2, thisDetState1, thisDetState2), status);
 	out->data[counter] = *thisPair;
 	counter++;
 /*printf("counter %i\n",counter);*/
@@ -332,7 +343,7 @@ printf("second detector start time %i\n",det2->data->tGPS.gpsSeconds);
 
 /*	  thisPair++;*/
 
-	  TRY( FillSFTPair( status->statusPtr, thisPair, thisSFT1, thisSFT2, thisDetState1, thisDetState2), status);
+	  TRY( FillSFTPair( status->statusPtr, thisPair, thisSFT1, thisSFT2, thisPSD1, thisPSD2, thisDetState1, thisDetState2), status);
 	out->data[counter] = *thisPair;
 	counter++;
 	}
@@ -362,6 +373,8 @@ void FillSFTPair(LALStatus                 *status,
 		 SingleSFTpair             *out,
 		 COMPLEX8FrequencySeries   *sft1, 
 		 COMPLEX8FrequencySeries   *sft2, 
+		 REAL8FrequencySeries	   *psd1,
+       		 REAL8FrequencySeries      *psd2,
 		 DetectorState             *det1,
 		 DetectorState             *det2)
 {  
@@ -371,6 +384,9 @@ void FillSFTPair(LALStatus                 *status,
 
   out->sft1 = sft1;
   out->sft2 = sft2;
+
+  out->psd1 = psd1;
+  out->psd2 = psd2;
 
   out->vel1[0] = det1->vDetector[0];
   out->vel1[1] = det1->vDetector[1];
@@ -389,7 +405,6 @@ void FillSFTPair(LALStatus                 *status,
   out->pos2[2] = det2->rDetector[2];
 
   DETATCHSTATUSPTR (status);
-	
   /* normal exit */	
   RETURN (status);
 
@@ -414,10 +429,10 @@ void CorrelateSingleSFTPair(LALStatus                *status,
   /* assume both sfts have the same freq. resolution */
   deltaF = sft1->deltaF;
 
-  bin1 = (UINT8)( (*freq1 - sft1->f0) / deltaF);
-  bin2 = (UINT8)( (*freq2 - sft2->f0)/ deltaF);
+  bin1 = (UINT8)( (*freq1 - sft1->f0)*(sft1->data->length) / (sft1->data->length * deltaF));
+  bin2 = (UINT8)( (*freq2 - sft2->f0)*(sft2->data->length)/ (sft2->data->length * deltaF));
 
-/*printf("freq1 %f freq2 %f\n", *freq1, *freq2);
+/*printf("f01 %f, bin location %f, total bins %i\n", sft1->f0, *freq1 - sft1->f0, sft1->data->length);
 printf("bin1 %i bin2 %i\n", (INT4)bin1, (INT4)bin2);*/
 
   re1 = sft1->data->data[bin1].re;
@@ -486,11 +501,11 @@ void GetSignalFrequencyInSFT(LALStatus                *status,
 
 
 /** Get signal phase at a given epoch */
-void GetSignalPhaseInSFT(LALStatus            *status,
-			 REAL8                *out,
-			 LIGOTimeGPS          *epoch,
-			 PulsarDopplerParams  *dopp,
-			 REAL8Vector          *pos)
+void GetSignalPhaseInSFT(LALStatus               *status,
+			 REAL8                   *out,
+			 COMPLEX8FrequencySeries *sft1,
+			 PulsarDopplerParams     *dopp,
+			 REAL8Vector             *pos)
 {  
   UINT4 k;
   REAL8 alpha, delta;
@@ -506,9 +521,14 @@ void GetSignalPhaseInSFT(LALStatus            *status,
     + sin(delta) * sin(alpha) * pos->data[1]
     + cos(delta) * pos->data[2];
 
-  /* now calculate the intrinsic signal frequency in the SFT */
-  /* fhat = f_0 + f_1(t-t0) + f_2(t-t0)^2/2 + ... */
-  timeDiff = XLALDeltaFloatGPS( epoch, &(dopp->refTime));
+  rDotn /= LAL_C_SI;	/* is this right? */ 
+
+  /* now calculate the phase of the SFT */
+  /* phi(t) = phi_0 + 2pi(f_0 t + 0.5 f_1 t^2) + 2pi (f_0 + f_1 t) r.n/c */
+  /* this is an approximation... need to change in the future? */
+
+  /* this is the sft reference time  - the pulsar reference time */
+  timeDiff = XLALDeltaFloatGPS( &(sft1->epoch), &(dopp->refTime));
 
   fhat = dopp->fkdot[0]; /* initialization */
   phihat = 0.0;
@@ -516,10 +536,14 @@ void GetSignalPhaseInSFT(LALStatus            *status,
   factor = 1.0;
   for (k = 1;  k < PULSAR_MAX_SPINS; k++) {
     factor *= timeDiff / k;  
-
     fhat += dopp->fkdot[k] * factor;
     phihat += dopp->fkdot[k-1] * factor;
+
   }
+
+    factor *= timeDiff / k;
+    phihat += dopp->fkdot[k-1] * factor;
+
 
   *out = LAL_TWOPI * ( phihat + fhat * rDotn);
 
@@ -528,5 +552,58 @@ void GetSignalPhaseInSFT(LALStatus            *status,
 	
   /* normal exit */	
   RETURN (status);
+}
+
+/** Calculate pair weights (G_alpha) **/
+void CalculateWeights(LALStatus *status,
+		      COMPLEX16	*out,
+		      REAL8	*Aplus,
+		      REAL8	*Across,
+		      REAL8	*phiI,
+		      REAL8	*phiJ,
+		      REAL8	*FplusI,
+		      REAL8	*FplusJ,
+		      REAL8	*FcrossI,
+		      REAL8	*FcrossJ,
+		      REAL8FrequencySeries *psd1,
+		      REAL8FrequencySeries *psd2)
+{
+  REAL8 deltaPhi;
+  REAL8 re, im;
+    
+  INITSTATUS (status, "CalculateWeights", rcsid);
+  ATTATCHSTATUSPTR (status);
+
+  deltaPhi = *phiI - *phiJ;
+
+  re = 0.25 * cos(deltaPhi) * ((*FplusI * (*FplusJ) * (*Aplus) * (*Aplus)) 
+			    + (*FcrossI * (*FcrossJ) * (*Across) * (*Across)) );
+  im = 0.25 * sin(-deltaPhi) * ((*FplusI * (*FcrossJ) - (*FcrossI) * (*FplusJ)) 
+				 * (*Aplus) * (*Across) );
+
+/*  bin1 = (UINT8)( (*freq1 - psd1->f0)*(psd1->data->length) / (sft1->data->length * deltaF));
+  bin2 = (UINT8)( (*freq2 - sft2->f0)*(sft2->data->length)/ (sft2->data->length * deltaF));
+*/
+
+  out->re = re;
+  out->im = im;
+
+/* from psd.c
+00118        Loop over frequency bins in each SFT      
+00119       for (j=0;j<header.nsamples;j++)
+00120          {
+00121            int jre=2*j;
+00122            int jim=jre+1;
+00123 
+00124            po[j]=po[j]+(p[jre]*p[jre]+p[jim]*p[jim])/((REAL8) SFTno);
+		Sh = 2.0*deltaT/N*po[j]
+00125          }
+*/
+
+  DETATCHSTATUSPTR (status);
+	
+  /* normal exit */	
+  RETURN (status);
+
 }
 
