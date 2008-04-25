@@ -24,15 +24,11 @@
 
 
 #include <lal/LALDatatypes.h>
-#include <lal/LALRCSID.h>
 
 
 #ifdef  __cplusplus   /* C++ protection. */
 extern "C" {
 #endif
-
-
-NRCSID (THRESHOLDSH, "$Id$");
 
 
 REAL8 XLALChisqCdf(

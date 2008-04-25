@@ -19,12 +19,6 @@
  */
 
 
-#include <lal/LALRCSID.h>
-
-
-NRCSID(CREATETFPLANEC, "$Id$");
-
-
 #include <math.h>
 #include <lal/FrequencySeries.h>
 #include <lal/LALAtomicDatatypes.h>

@@ -20,10 +20,6 @@
 
 
 #include <math.h>
-#include <lal/LALRCSID.h>
-
-
-NRCSID (COMPUTEFREQUENCYSERIESC, "$Id$");
 
 
 #include <lal/FrequencySeries.h>

@@ -26,7 +26,6 @@
 #include <lal/LALDatatypes.h>
 #include <lal/Window.h>
 #include <lal/RealFFT.h>
-#include <lal/LALRCSID.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/Sequence.h>
 
@@ -34,9 +33,6 @@
 #ifdef  __cplusplus		/* C++ protection. */
 extern "C" {
 #endif
-
-
-NRCSID(TFTRANSFORMH, "$Id$");
 
 
 /*

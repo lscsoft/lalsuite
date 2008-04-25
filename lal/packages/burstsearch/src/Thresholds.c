@@ -21,10 +21,6 @@
 
 #include <math.h>
 #include <stdlib.h>
-#include <lal/LALRCSID.h>
-
-
-NRCSID(THRESHOLDSC, "$Id$");
 
 
 #include <gsl/gsl_cdf.h>

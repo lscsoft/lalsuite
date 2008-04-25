@@ -25,7 +25,6 @@
 #include <lal/EPSearch.h>
 #include <lal/FrequencySeries.h>
 #include <lal/LALDatatypes.h>
-#include <lal/LALRCSID.h>
 #include <lal/LALStatusMacros.h>
 #include <lal/LALStdlib.h>
 #include <lal/LIGOMetadataTables.h>
@@ -36,9 +35,6 @@
 #include <lal/TimeSeries.h>
 #include <lal/Units.h>
 #include <lal/XLALError.h>
-
-
-NRCSID(EPSEARCHC, "$Id$");
 
 
 /*

@@ -22,12 +22,6 @@
 #include <math.h>
 
 
-#include <lal/LALRCSID.h>
-
-
-NRCSID(FREQSERIESTOTFPLANEC, "$Id$");
-
-
 #include <lal/Date.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LIGOMetadataTables.h>
