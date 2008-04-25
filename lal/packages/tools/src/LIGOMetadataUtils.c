@@ -1106,3 +1106,53 @@ void XLALDestroyProcessTable(ProcessTable *head)
 		head = next;
 	}
 }
+
+
+/**
+ * Create a ProcessParamsTable structure.
+ */
+
+
+ProcessParamsTable *XLALCreateProcessParamsTableRow(void)
+{
+	static const char func[] = "XLALCreateProcessParamsTableRow";
+	ProcessParamsTable *new = XLALMalloc(sizeof(*new));
+
+	if(!new)
+		XLAL_ERROR_NULL(func, XLAL_EFUNC);
+
+	new->next = NULL;
+	memset(new->program, 0, sizeof(new->program));
+	new->process_id = -1;
+	memset(new->param, 0, sizeof(new->param));
+	memset(new->type, 0, sizeof(new->type));
+	memset(new->value, 0, sizeof(new->value));
+
+	return new;
+}
+
+
+/**
+ * Destroy a ProcessParamsTable structure.
+ */
+
+
+void XLALDestroyProcessParamsTableRow(ProcessParamsTable *process_params)
+{
+	XLALFree(process_params);
+}
+
+
+/**
+ * Destroy a ProcessParamsTable linked list.
+ */
+
+
+void XLALDestroyProcessParamsTable(ProcessParamsTable *head)
+{
+	while(head) {
+		ProcessParamsTable *next = head->next;
+		XLALDestroyProcessParamsTableRow(head);
+		head = next;
+	}
+}
