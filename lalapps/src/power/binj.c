@@ -220,24 +220,23 @@ static void print_usage(void)
 }
 
 
-static ProcessParamsTable **add_process_param(ProcessParamsTable **proc_param, const char *type, const char *param, const char *value)
+static ProcessParamsTable **add_process_param(ProcessParamsTable **proc_param, const ProcessTable *process, const char *type, const char *param, const char *value)
 {
-	*proc_param = XLALCalloc(1, sizeof(**proc_param));
-	(*proc_param)->next = NULL;
-	snprintf((*proc_param)->program, LIGOMETA_PROGRAM_MAX, PROGRAM_NAME);
-	snprintf((*proc_param)->type, LIGOMETA_TYPE_MAX, type);
-	snprintf((*proc_param)->param, LIGOMETA_PARAM_MAX, "--%s", param);
-	snprintf((*proc_param)->value, LIGOMETA_VALUE_MAX, value);
+	*proc_param = XLALCreateProcessParamsTableRow(process);
+	snprintf((*proc_param)->program, sizeof((*proc_param)->program), PROGRAM_NAME);
+	snprintf((*proc_param)->type, sizeof((*proc_param)->type), type);
+	snprintf((*proc_param)->param, sizeof((*proc_param)->param), "--%s", param);
+	snprintf((*proc_param)->value, sizeof((*proc_param)->value), value);
 
 	return(&(*proc_param)->next);
 }
 
 	
-#define ADD_PROCESS_PARAM(type) \
-	do { paramaddpoint = add_process_param(paramaddpoint, type, long_options[option_index].name, optarg); } while(0)
+#define ADD_PROCESS_PARAM(process, type) \
+	do { paramaddpoint = add_process_param(paramaddpoint, process, type, long_options[option_index].name, optarg); } while(0)
 
 
-static struct options parse_command_line(int *argc, char **argv[], ProcessParamsTable **paramaddpoint)
+static struct options parse_command_line(int *argc, char **argv[], const ProcessTable *process, ProcessParamsTable **paramaddpoint)
 {
 	struct options options = options_defaults();
 	int c;
@@ -279,7 +278,7 @@ static struct options parse_command_line(int *argc, char **argv[], ProcessParams
 			fprintf(stderr, "invalid --%s (%s specified)\n", long_options[option_index].name, optarg);
 			exit(1);
 		}
-		ADD_PROCESS_PARAM("lstring");
+		ADD_PROCESS_PARAM(process, "lstring");
 		break;
 
 	case 'B':
@@ -293,7 +292,7 @@ static struct options parse_command_line(int *argc, char **argv[], ProcessParams
 			fprintf(stderr, "invalid --%s (%s specified)\n", long_options[option_index].name, optarg);
 			exit(1);
 		}
-		ADD_PROCESS_PARAM("lstring");
+		ADD_PROCESS_PARAM(process, "lstring");
 		break;
 
 	case 'C':
@@ -302,52 +301,52 @@ static struct options parse_command_line(int *argc, char **argv[], ProcessParams
 
 	case 'D':
 		options.maxA = atof(optarg);
-		ADD_PROCESS_PARAM("real_8");
+		ADD_PROCESS_PARAM(process, "real_8");
 		break;
 
 	case 'E':
 		options.minA = atof(optarg);
-		ADD_PROCESS_PARAM("real_8");
+		ADD_PROCESS_PARAM(process, "real_8");
 		break;
 
 	case 'F':
 		options.maxbandwidth = atof(optarg);
-		ADD_PROCESS_PARAM("real_8");
+		ADD_PROCESS_PARAM(process, "real_8");
 		break;
 
 	case 'G':
 		options.minbandwidth = atof(optarg);
-		ADD_PROCESS_PARAM("real_8");
+		ADD_PROCESS_PARAM(process, "real_8");
 		break;
 
 	case 'H':
 		options.maxduration = atof(optarg);
-		ADD_PROCESS_PARAM("real_8");
+		ADD_PROCESS_PARAM(process, "real_8");
 		break;
 
 	case 'I':
 		options.minduration = atof(optarg);
-		ADD_PROCESS_PARAM("real_8");
+		ADD_PROCESS_PARAM(process, "real_8");
 		break;
 
 	case 'J':
 		options.maxf = atof(optarg);
-		ADD_PROCESS_PARAM("real_8");
+		ADD_PROCESS_PARAM(process, "real_8");
 		break;
 
 	case 'K':
 		options.minf = atof(optarg);
-		ADD_PROCESS_PARAM("real_8");
+		ADD_PROCESS_PARAM(process, "real_8");
 		break;
 
 	case 'L':
 		options.maxhrss = atof(optarg);
-		ADD_PROCESS_PARAM("real_8");
+		ADD_PROCESS_PARAM(process, "real_8");
 		break;
 
 	case 'M':
 		options.minhrss = atof(optarg);
-		ADD_PROCESS_PARAM("real_8");
+		ADD_PROCESS_PARAM(process, "real_8");
 		break;
 
 	case 'N':
@@ -361,37 +360,37 @@ static struct options parse_command_line(int *argc, char **argv[], ProcessParams
 			fprintf(stderr, "error: unrecognized population \"%s\"", optarg);
 			exit(1);
 		}
-		ADD_PROCESS_PARAM("lstring");
+		ADD_PROCESS_PARAM(process, "lstring");
 		break;
 
 	case 'O':
 		options.q = atof(optarg);
-		ADD_PROCESS_PARAM("real_8");
+		ADD_PROCESS_PARAM(process, "real_8");
 		break;
 
 	case 'P':
 		options.seed = atol(optarg);
-		ADD_PROCESS_PARAM("int_8u");
+		ADD_PROCESS_PARAM(process, "int_8u");
 		break;
 
 	case 'Q':
 		options.time_step = atof(optarg) / LAL_PI;
-		ADD_PROCESS_PARAM("real_8");
+		ADD_PROCESS_PARAM(process, "real_8");
 		break;
 
 	case 'R':
 		options.user_tag = optarg;
-		ADD_PROCESS_PARAM("lstring");
+		ADD_PROCESS_PARAM(process, "lstring");
 		break;
 
 	case 'S':
 		options.maxEoverr2 = atof(optarg);
-		ADD_PROCESS_PARAM("real_8");
+		ADD_PROCESS_PARAM(process, "real_8");
 		break;
 
 	case 'T':
 		options.minEoverr2 = atof(optarg);
-		ADD_PROCESS_PARAM("real_8");
+		ADD_PROCESS_PARAM(process, "real_8");
 		break;
 
 	case 'U':
@@ -412,7 +411,7 @@ static struct options parse_command_line(int *argc, char **argv[], ProcessParams
 				exit(1);
 			}
 		}
-		ADD_PROCESS_PARAM("lstring");
+		ADD_PROCESS_PARAM(process, "lstring");
 		break;
 
 	case 0:
@@ -814,7 +813,7 @@ static SimBurst *random_all_sky_sineGaussian(double minf, double maxf, double q,
  */
 
 
-static void write_xml(ProcessTable *proctable, ProcessParamsTable *procparams, SearchSummaryTable *searchsumm, const SimBurst *sim_burst, struct options options)
+static void write_xml(const ProcessTable *process_table_head, const ProcessParamsTable *process_params_table_head, const SearchSummaryTable *searchsumm, const SimBurst *sim_burst, struct options options)
 {
 	LALStatus status = blank_status;
 	char fname[256];
@@ -830,13 +829,13 @@ static void write_xml(ProcessTable *proctable, ProcessParamsTable *procparams, S
 	LAL_CALL(LALOpenLIGOLwXMLFile(&status, &xmlfp, fname), &status);
 
 	/* process table */
-	if(XLALWriteLIGOLwXMLProcessTable(&xmlfp, proctable)) {
+	if(XLALWriteLIGOLwXMLProcessTable(&xmlfp, process_table_head)) {
 		/* error occured.  ?? do anything else ?? */
 		exit(1);
 	}
 
 	/* process params table */
-	if(XLALWriteLIGOLwXMLProcessParamsTable(&xmlfp, procparams)) {
+	if(XLALWriteLIGOLwXMLProcessParamsTable(&xmlfp, process_params_table_head)) {
 		/* error occured.  ?? do anything else ?? */
 		exit(1);
 	}
@@ -871,11 +870,11 @@ int main(int argc, char *argv[])
 	struct options options;
 	INT8 tinj;
 	gsl_rng *rng;
-	ProcessTable proctable;
-	ProcessParamsTable *procparams = NULL;
+	ProcessTable *process_table_head;
+	ProcessParamsTable *process_params_table_head = NULL;
 	SearchSummaryTable searchsumm;
-	SimBurst *sim_burst_head = NULL;
-	SimBurst **sim_burst = &sim_burst_head;
+	SimBurst *sim_burst_table_head = NULL;
+	SimBurst **sim_burst = &sim_burst_table_head;
 
 
 	/*
@@ -888,25 +887,25 @@ int main(int argc, char *argv[])
 
 
 	/*
-	 * Process params table and command line.
-	 */
-
-
-	options = parse_command_line(&argc, &argv, &procparams);
-
-
-	/*
 	 * Process table
 	 */
 
 
-	memset(&proctable, 0, sizeof(proctable));
-	if(XLALPopulateProcessTable(&proctable, PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE))
+	process_table_head = XLALCreateProcessTableRow();
+	if(XLALPopulateProcessTable(process_table_head, PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE))
 		exit(1);
-	XLALGPSTimeNow(&proctable.start_time);
-	snprintf(proctable.ifos, LIGOMETA_IFOS_MAX, "H1,H2,L1");
+	XLALGPSTimeNow(&process_table_head->start_time);
+	snprintf(process_table_head->ifos, sizeof(process_table_head->ifos), "H1,H2,L1");
+
+
+	/*
+	 * Command line and process params table.
+	 */
+
+
+	options = parse_command_line(&argc, &argv, process_table_head, &process_params_table_head);
 	if(options.user_tag)
-		snprintf(proctable.comment, LIGOMETA_COMMENT_MAX, "%s", options.user_tag);
+		snprintf(process_table_head->comment, sizeof(process_table_head->comment), "%s", options.user_tag);
 
 
 	/*
@@ -916,11 +915,11 @@ int main(int argc, char *argv[])
 
 	memset(&searchsumm, 0, sizeof(searchsumm));
 	if(options.user_tag)
-		snprintf(searchsumm.comment, LIGOMETA_COMMENT_MAX, "%s", options.user_tag);
+		snprintf(searchsumm.comment, sizeof(searchsumm.comment), "%s", options.user_tag);
 	searchsumm.nnodes = 1;
 	searchsumm.out_start_time = *XLALINT8NSToGPS(&searchsumm.in_start_time, options.gps_start_time);
 	searchsumm.out_end_time = *XLALINT8NSToGPS(&searchsumm.in_end_time, options.gps_end_time);
-	snprintf(searchsumm.ifos, LIGOMETA_IFOS_MAX, proctable.ifos);
+	snprintf(searchsumm.ifos, sizeof(searchsumm.ifos), process_table_head->ifos);
 	searchsumm.nevents = 0;
 
 
@@ -992,12 +991,15 @@ int main(int argc, char *argv[])
 
 	/* output */
 
-	XLALGPSTimeNow(&proctable.end_time);
-	searchsumm.nevents = XLALSimBurstAssignIDs(sim_burst_head, 0, 0);
-	write_xml(&proctable, procparams, &searchsumm, sim_burst_head, options);
+	XLALGPSTimeNow(&process_table_head->end_time);
+	searchsumm.nevents = XLALSimBurstAssignIDs(sim_burst_table_head, 0, 0);
+	write_xml(process_table_head, process_params_table_head, &searchsumm, sim_burst_table_head, options);
 
 	/* done */
 
 	gsl_rng_free(rng);
+	XLALDestroyProcessTable(process_table_head);
+	XLALDestroyProcessParamsTable(process_params_table_head);
+	XLALDestroySimBurstTable(sim_burst_table_head);
 	exit(0);
 }
