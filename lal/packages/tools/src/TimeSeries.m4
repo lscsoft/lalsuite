@@ -33,6 +33,7 @@
 #include <lal/XLALError.h>
 
 
+#include <lal/LALRCSID.h>
 NRCSID(TIMESERIESC, "$Id$");
 
 

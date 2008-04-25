@@ -31,6 +31,10 @@
 #include <lal/LALDatatypes.h>
 
 
+#include <lal/LALRCSID.h>
+NRCSID(LALSIMBURSTH, "$Id:");
+
+
 /*
  * ============================================================================
  *

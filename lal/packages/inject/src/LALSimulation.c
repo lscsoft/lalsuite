@@ -43,6 +43,10 @@
 #include "check_series_macros.h"
 
 
+#include <lal/LALRCSID.h>
+NRCSID(LALSIMULATIONC, "$Id:");
+
+
 /*
  * ============================================================================
  *

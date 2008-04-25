@@ -29,6 +29,7 @@
 #include <lal/XLALError.h>
 
 
+#include <lal/LALRCSID.h>
 NRCSID(SEQUENCEC, "$Id$");
 
 

@@ -26,6 +26,8 @@
 #include <stddef.h>
 #include <lal/LALDatatypes.h>
 
+#include <lal/LALRCSID.h>
+NRCSID(FREQUENCYSERIESH, "$Id:");
 
 define(`DATATYPE',COMPLEX8)
 include(FrequencySeriesH.m4)

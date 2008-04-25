@@ -33,6 +33,10 @@
 #include <lal/XLALError.h>
 
 
+#include <lal/LALRCSID.h>
+NRCSID(THRESHOLDSC, "$Id:");
+
+
 /**
  * Cumulative Probability Distribution for Chi Squared distribution.
  *

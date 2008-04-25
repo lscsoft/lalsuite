@@ -35,6 +35,10 @@ extern "C" {
 #endif
 
 
+#include <lal/LALRCSID.h>
+NRCSID(EPSEARCHH, "$Id:");
+
+
 /*
  * liblal.so can't resolve symbols from liblalsupport.so, so to call
  * diagnostics dump functions from lal, they have to be passed in as

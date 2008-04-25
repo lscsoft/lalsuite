@@ -35,6 +35,10 @@ extern "C" {
 #endif
 
 
+#include <lal/LALRCSID.h>
+NRCSID(TFTRANSFORMH, "$Id:");
+
+
 /*
  * A time-frequency plane
  */

@@ -37,6 +37,10 @@
 #include <lal/XLALError.h>
 
 
+#include <lal/LALRCSID.h>
+NRCSID(EPSEARCHC, "$Id:");
+
+
 /*
  * Generate a linked list of burst events from a time series.
  */

@@ -26,6 +26,9 @@
 #include <stddef.h>
 #include <lal/LALDatatypes.h>
 
+#include <lal/LALRCSID.h>
+NRCSID(TIMESERIESH, "$Id:");
+
 define(`DATATYPE',COMPLEX8)
 include(TimeSeriesH.m4)
 

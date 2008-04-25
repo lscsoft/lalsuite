@@ -19,6 +19,15 @@
  */
 
 
+/*
+ * ============================================================================
+ *
+ *                                  Preamble
+ *
+ * ============================================================================
+ */
+
+
 #include <math.h>
 #include <lal/FrequencySeries.h>
 #include <lal/LALAtomicDatatypes.h>
@@ -30,6 +39,10 @@
 #include <lal/Units.h>
 #include <lal/Window.h>
 #include <lal/XLALError.h>
+
+
+#include <lal/LALRCSID.h>
+NRCSID(CREATETFPLANEC, "$Id:");
 
 
 /*

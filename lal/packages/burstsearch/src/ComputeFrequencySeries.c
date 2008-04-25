@@ -31,6 +31,10 @@
 #include <lal/XLALError.h>
 
 
+#include <lal/LALRCSID.h>
+NRCSID(COMPUTEFREQUENCYSERIESC, "$Id:");
+
+
 /**
  * This function accepts a time series and a window function, and computes
  * and returns the Fourier transform of the windowed time series.  The

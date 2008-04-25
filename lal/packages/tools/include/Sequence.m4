@@ -26,6 +26,9 @@
 #include <stddef.h>
 #include <lal/LALDatatypes.h>
 
+#include <lal/LALRCSID.h>
+NRCSID(SEQUENCEH, "$Id:");
+
 define(`DATATYPE',COMPLEX8)
 define(`SQUAREDATATYPE',REAL4)
 include(SequenceH.m4)

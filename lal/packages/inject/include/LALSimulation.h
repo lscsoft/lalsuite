@@ -22,6 +22,10 @@
 #include <lal/LALDetectors.h>
 
 
+#include <lal/LALRCSID.h>
+NRCSID(LALSIMULATIONH, "$Id:");
+
+
 REAL8TimeSeries *XLALSimDetectorStrainREAL8TimeSeries(
 	const REAL8TimeSeries *hplus,
 	const REAL8TimeSeries *hcross,
