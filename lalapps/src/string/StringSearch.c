@@ -1067,7 +1067,8 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   /* create the process and process params tables */
   procTable.processTable = LALCalloc(1, sizeof(ProcessTable));
   LALGPSTimeNow(&status, &(procTable.processTable->start_time), &accuracy);
-  populate_process_table(&status, procTable.processTable, PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE);
+  if(XLALPopulateProcessTable(procTable.processTable, PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE))
+    exit(1);
   procparams.processParamsTable = NULL;
   /* create the search summary table */
   searchsumm.searchSummaryTable = LALCalloc(1, sizeof(SearchSummaryTable));
