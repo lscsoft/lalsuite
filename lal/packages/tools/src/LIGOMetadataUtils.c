@@ -1046,3 +1046,63 @@ LALTimeSortSummValue (
   RETURN( status );
 }
 
+
+
+/**
+ * Create a ProcessTable structure.
+ */
+
+
+ProcessTable *XLALCreateProcessTableRow(void)
+{
+	static const char func[] = "XLALCreateProcessTableRow";
+	ProcessTable *new = XLALMalloc(sizeof(*new));
+
+	if(!new)
+		XLAL_ERROR_NULL(func, XLAL_EFUNC);
+
+	new->next = NULL;
+	memset(new->program, 0, sizeof(new->program));
+	memset(new->version, 0, sizeof(new->version));
+	memset(new->cvs_repository, 0, sizeof(new->cvs_repository));
+	XLALGPSSet(&new->cvs_entry_time, 0, 0);
+	memset(new->comment, 0, sizeof(new->comment));
+	new->is_online = 0;
+	memset(new->node, 0, sizeof(new->node));
+	memset(new->username, 0, sizeof(new->username));
+	XLALGPSSet(&new->start_time, 0, 0);
+	XLALGPSSet(&new->end_time, 0, 0);
+	new->jobid = 0;
+	memset(new->domain, 0, sizeof(new->domain));
+	new->unix_procid = 0;
+	memset(new->ifos, 0, sizeof(new->ifos));
+	new->process_id = -1;
+
+	return new;
+}
+
+
+/**
+ * Destroy a ProcessTable structure.
+ */
+
+
+void XLALDestroyProcessTableRow(ProcessTable *process)
+{
+	XLALFree(process);
+}
+
+
+/**
+ * Destroy a ProcessTable linked list.
+ */
+
+
+void XLALDestroyProcessTable(ProcessTable *head)
+{
+	while(head) {
+		ProcessTable *next = head->next;
+		XLALDestroyProcessTableRow(head);
+		head = next;
+	}
+}
