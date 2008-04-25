@@ -186,6 +186,47 @@ void FillSFTPair(LALStatus                 *status,
 		 DetectorState             *det2);
 
 
+void CorrelateSingleSFTPair(LALStatus                *status,
+			    COMPLEX16                *out,
+			    COMPLEX8FrequencySeries  *sft1,
+			    COMPLEX8FrequencySeries  *sft2,
+			    REAL8                    *freq1,
+			    REAL8                    *freq2);
+
+
+void GetSignalFrequencyInSFT(LALStatus                *status,
+			     REAL8                    *out,
+			     COMPLEX8FrequencySeries  *sft1,
+			     PulsarDopplerParams      *dopp,
+			     REAL8Vector              *vel);
+
+void GetSignalPhaseInSFT(LALStatus               *status,
+			 REAL8                   *out,
+			 COMPLEX8FrequencySeries *sft1,
+			 PulsarDopplerParams     *dopp,
+			 REAL8Vector             *pos);
+
+void CreateSFTIndexPairs(LALStatus                *status,
+			 INT4VectorSequence       *out,
+			 MultiSFTVector           *inputSFTs,
+			 SFTPairParams            *par);
+
+void CalculateWeights(LALStatus *status,
+		      COMPLEX16	*out,
+		      REAL8	*Aplus,
+		      REAL8	*Across,
+		      REAL8	*phiI,
+		      REAL8	*phiJ,
+		      REAL8	*FplusI,
+		      REAL8	*FplusJ,
+		      REAL8	*FcrossI,
+		      REAL8	*FcrossJ,
+		      REAL8FrequencySeries *psd1,
+		      REAL8FrequencySeries *psd2);
+
+
+
+
 /* ****************************************************** */
 
 #ifdef  __cplusplus
