@@ -408,7 +408,7 @@ ProcessParamsTable *XLALProcessParamsTableFromLIGOLw(
 	while((miostatus = MetaioGetRow(&env)) > 0) {
 		/* create a new row */
 
-		ProcessParamsTable *row = XLALCreateProcessParamsTableRow();
+		ProcessParamsTable *row = XLALCreateProcessParamsTableRow(NULL);
 
 		if(!row) {
 			XLALDestroyProcessParamsTable(head);

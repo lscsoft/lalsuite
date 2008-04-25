@@ -368,7 +368,7 @@ ProcessTable *XLALCreateProcessTableRow(void);
 void XLALDestroyProcessTableRow(ProcessTable *);
 void XLALDestroyProcessTable(ProcessTable *);
 
-ProcessParamsTable *XLALCreateProcessParamsTableRow(void);
+ProcessParamsTable *XLALCreateProcessParamsTableRow(const ProcessTable *);
 void XLALDestroyProcessParamsTableRow(ProcessParamsTable *);
 void XLALDestroyProcessParamsTable(ProcessParamsTable *);
 

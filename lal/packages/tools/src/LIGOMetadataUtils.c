@@ -1113,7 +1113,7 @@ void XLALDestroyProcessTable(ProcessTable *head)
  */
 
 
-ProcessParamsTable *XLALCreateProcessParamsTableRow(void)
+ProcessParamsTable *XLALCreateProcessParamsTableRow(const ProcessTable *process)
 {
 	static const char func[] = "XLALCreateProcessParamsTableRow";
 	ProcessParamsTable *new = XLALMalloc(sizeof(*new));
@@ -1123,7 +1123,10 @@ ProcessParamsTable *XLALCreateProcessParamsTableRow(void)
 
 	new->next = NULL;
 	memset(new->program, 0, sizeof(new->program));
-	new->process_id = -1;
+	if(process)
+		new->process_id = process->process_id;
+	else
+		new->process_id = -1;
 	memset(new->param, 0, sizeof(new->param));
 	memset(new->type, 0, sizeof(new->type));
 	memset(new->value, 0, sizeof(new->value));
