@@ -34,6 +34,7 @@
 
 
 #include <lal/AVFactories.h>
+#include <lal/BandPassTimeSeries.h>
 #include <lal/Date.h>
 #include <lal/EPSearch.h>
 #include <lal/FindChirp.h>
