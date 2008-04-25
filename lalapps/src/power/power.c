@@ -1053,6 +1053,63 @@ static REAL8TimeSeries *get_time_series(const char *cachefilename, const char *c
 
 
 /*
+ * Condition the time series prior to analysis by the power code
+ */
+
+
+static int XLALEPConditionData(
+	REAL8TimeSeries *series,
+	REAL8 flow,
+	REAL8 resampledeltaT,
+	INT4 corruption
+)
+{
+	static const char func[] = "XLALEPConditionData";
+	const REAL8 epsilon = 1.0e-3;
+
+	XLALPrintInfo("%s(): conditioning %u samples (%.9f s) at GPS time %d%.09u s ...\n", func, series->data->length, series->data->length * series->deltaT, series->epoch.gpsSeconds, series->epoch.gpsNanoSeconds);
+
+	/*
+	 * High-pass filter the time series.
+	 */
+
+	if(flow > 0.0) {
+		PassBandParamStruc highpassParam;
+		highpassParam.nMax = 8;
+		highpassParam.f2 = flow;
+		highpassParam.f1 = -1.0;
+		highpassParam.a2 = 0.9;
+		highpassParam.a1 = -1.0;
+		if(XLALButterworthREAL8TimeSeries(series, &highpassParam))
+			XLAL_ERROR(func, XLAL_EFUNC);
+	}
+
+	/*
+	 * Resample the time series if necessary
+	 */
+
+	if(fabs(resampledeltaT - series->deltaT) / series->deltaT >= epsilon)
+		if(XLALResampleREAL8TimeSeries(series, resampledeltaT))
+			XLAL_ERROR(func, XLAL_EFUNC);
+
+	/*
+	 * Chop off the ends of the time series.
+	 */
+
+	if(!XLALShrinkREAL8TimeSeries(series, corruption, series->data->length - 2 * corruption))
+		XLAL_ERROR(func, XLAL_EFUNC);
+
+	/*
+	 * Done.
+	 */
+
+	XLALPrintInfo("%s(): %u samples (%.9f s) at GPS time %d.%09u s remain after conditioning\n", func, series->data->length, series->data->length * series->deltaT, series->epoch.gpsSeconds, series->epoch.gpsNanoSeconds);
+
+	return(0);
+}
+
+
+/*
  * ============================================================================
  *
  *                    Fill a time series with white noise
