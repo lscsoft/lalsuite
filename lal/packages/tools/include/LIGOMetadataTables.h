@@ -262,6 +262,7 @@ tagProcessTable
   CHAR          domain[LIGOMETA_DOMAIN_MAX];
   INT4          unix_procid;
   CHAR          ifos[LIGOMETA_IFOS_MAX];
+  long          process_id;
 }
 ProcessTable;
 /* </lalVerbatim> */
