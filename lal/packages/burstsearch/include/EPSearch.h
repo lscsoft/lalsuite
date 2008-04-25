@@ -72,14 +72,6 @@ SnglBurst *XLALEPSearch(
 );
 
 
-int XLALEPConditionData(
-	REAL8TimeSeries  *series,
-	REAL8             flow,
-	REAL8             resampledeltaT,
-	INT4              corruption
-);
-
-
 COMPLEX8FrequencySeries *XLALWindowedREAL4ForwardFFT(
 	const REAL4TimeSeries *tseries,
 	const REAL4Window *window,
