@@ -25,17 +25,9 @@
 #include <lal/DopplerScan.h>
 #include <gsl/gsl_permutation.h>
 
+
+
 RCSID( "$Id$");
-
-
-
-void CreateSFTPairsIndicesFrom2SFTvectors(LALStatus                *status,
-					 INT4VectorSequence        *out,
-					 const SFTVector           *in1,
-					 const SFTVector           *in2,
-					  SFTPairParams             *par);
-
-
 
 
 /** create pairs of sfts */
@@ -408,8 +400,7 @@ void CorrelateSingleSFTPair(LALStatus                *status,
   bin1 = (UINT8)( (*freq1 - sft1->f0)*(sft1->data->length) / (sft1->data->length * deltaF));
   bin2 = (UINT8)( (*freq2 - sft2->f0)*(sft2->data->length)/ (sft2->data->length * deltaF));
 
-/*printf("f01 %f, bin location %f, total bins %i\n", sft1->f0, *freq1 - sft1->f0, sft1->data->length);
-printf("bin1 %i bin2 %i\n", (INT4)bin1, (INT4)bin2);*/
+/*printf("f01 %f, bin location %f, total bins %i\n", sft1->f0, *freq1 - sft1->f0, sft1->data->length);*/
 
   re1 = sft1->data->data[bin1].re;
   im1 = sft1->data->data[bin1].im;
@@ -531,7 +522,7 @@ void GetSignalPhaseInSFT(LALStatus               *status,
 }
 
 /** Calculate pair weights (G_alpha) **/
-void CalculateWeights(LALStatus *status,
+void CalculateUalpha(LALStatus *status,
 		      COMPLEX16	*out,
 		      REAL8	*Aplus,
 		      REAL8	*Across,
@@ -541,15 +532,20 @@ void CalculateWeights(LALStatus *status,
 		      REAL8	*FplusJ,
 		      REAL8	*FcrossI,
 		      REAL8	*FcrossJ,
+		      REAL8 	*freq1,
+		      REAL8	*freq2,
 		      REAL8FrequencySeries *psd1,
 		      REAL8FrequencySeries *psd2)
 {
   REAL8 deltaPhi;
-  REAL8 re, im;
+  UINT8 bin1, bin2;
+  REAL8 deltaF;
+  REAL8 re, im, sigmasq;
     
-  INITSTATUS (status, "CalculateWeights", rcsid);
+  INITSTATUS (status, "CalculateUalpha", rcsid);
   ATTATCHSTATUSPTR (status);
 
+  deltaF = psd1->deltaF;
   deltaPhi = *phiI - *phiJ;
 
   re = 0.25 * cos(deltaPhi) * ((*FplusI * (*FplusJ) * (*Aplus) * (*Aplus)) 
@@ -557,24 +553,14 @@ void CalculateWeights(LALStatus *status,
   im = 0.25 * sin(-deltaPhi) * ((*FplusI * (*FcrossJ) - (*FcrossI) * (*FplusJ)) 
 				 * (*Aplus) * (*Across) );
 
-/*  bin1 = (UINT8)( (*freq1 - psd1->f0)*(psd1->data->length) / (sft1->data->length * deltaF));
-  bin2 = (UINT8)( (*freq2 - sft2->f0)*(sft2->data->length)/ (sft2->data->length * deltaF));
-*/
+  bin1 = (UINT8)( (*freq1 - psd1->f0)*(psd1->data->length) / (psd1->data->length * deltaF));
+  bin2 = (UINT8)( (*freq2 - psd2->f0)*(psd2->data->length)/ (psd2->data->length * deltaF));
 
-  out->re = re;
-  out->im = im;
+  sigmasq = 0.25 * deltaF * deltaF * psd1->data->data[bin1] * psd2->data->data[bin2];
 
-/* from psd.c
-00118        Loop over frequency bins in each SFT      
-00119       for (j=0;j<header.nsamples;j++)
-00120          {
-00121            int jre=2*j;
-00122            int jim=jre+1;
-00123 
-00124            po[j]=po[j]+(p[jre]*p[jre]+p[jim]*p[jim])/((REAL8) SFTno);
-		Sh = 2.0*deltaT/N*po[j]
-00125          }
-*/
+  out->re = re/sigmasq;
+  out->im = -im/sigmasq;
+
 
   DETATCHSTATUSPTR (status);
 	
@@ -582,4 +568,33 @@ void CalculateWeights(LALStatus *status,
   RETURN (status);
 
 }
+
+void CalculateWeights(LALStatus       *status,
+		      REAL8Vector     *out,
+		      COMPLEX16Vector *yalpha,
+		      COMPLEX16Vector *ualpha)
+{
+  INT4 i;
+
+  INITSTATUS (status, "CalculateWeights", rcsid);
+  ATTATCHSTATUSPTR (status);
+
+  ASSERT (out, status, RADIOMETER_ENULL, RADIOMETER_MSGENULL);
+  ASSERT (yalpha, status, RADIOMETER_ENULL, RADIOMETER_MSGENULL);
+/*  ASSERT (ualpha, status, RADIOMETER_ENULL, RADIOMETER_MSGENULL);
+*/
+
+  for (i=0; i < (INT4)out->length; i++) {
+
+  out->data[i] = 2.0 * (yalpha->data[i].re * ualpha->data[i].re + yalpha->data[i].im * ualpha->data[i].im);
+
+  }
+
+  DETATCHSTATUSPTR (status);
+	
+  /* normal exit */	
+  RETURN (status);
+
+}
+
 

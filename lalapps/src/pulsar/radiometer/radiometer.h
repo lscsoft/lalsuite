@@ -38,6 +38,7 @@
 #include <time.h>
 #include <errno.h> 
 
+#include <lal/AVFactories.h>
 #include <lal/Date.h>
 #include <lal/DetectorSite.h>
 #include <lal/LALDatatypes.h>
@@ -54,6 +55,7 @@
 #include <lal/SFTClean.h>
 #include <lalapps.h>
 #include <gsl/gsl_cdf.h>
+
 
 
 /******************************************************
@@ -156,6 +158,13 @@ void SetUpRadiometerSkyPatches(LALStatus *status,
 			       REAL8 dAlpha, 
 			       REAL8 dDelta);
 
+void CreateSFTPairsIndicesFrom2SFTvectors(LALStatus                *status,
+					 INT4VectorSequence        *out,
+					 const SFTVector           *in1,
+					 const SFTVector           *in2,
+					  SFTPairParams             *par);
+
+
 
 void CreateSFTPairs(LALStatus                *status,
 		    SFTPairVec               *out,
@@ -211,19 +220,25 @@ void CreateSFTIndexPairs(LALStatus                *status,
 			 MultiSFTVector           *inputSFTs,
 			 SFTPairParams            *par);
 
-void CalculateWeights(LALStatus *status,
-		      COMPLEX16	*out,
-		      REAL8	*Aplus,
-		      REAL8	*Across,
-		      REAL8	*phiI,
-		      REAL8	*phiJ,
-		      REAL8	*FplusI,
-		      REAL8	*FplusJ,
-		      REAL8	*FcrossI,
-		      REAL8	*FcrossJ,
-		      REAL8FrequencySeries *psd1,
-		      REAL8FrequencySeries *psd2);
+void CalculateUalpha(LALStatus *status,
+		     COMPLEX16	*out,
+		     REAL8	*Aplus,
+		     REAL8	*Across,
+		     REAL8	*phiI,
+		     REAL8	*phiJ,
+		     REAL8	*FplusI,
+		     REAL8	*FplusJ,
+		     REAL8	*FcrossI,
+		     REAL8	*FcrossJ,
+		     REAL8	*freq1,
+		     REAL8	*freq2,
+		     REAL8FrequencySeries *psd1,
+		     REAL8FrequencySeries *psd2);
 
+void CalculateWeights(LALStatus       *status,
+		      REAL8Vector     *out,
+		      COMPLEX16Vector *yalpha,
+		      COMPLEX16Vector *ualpha);
 
 
 

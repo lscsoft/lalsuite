@@ -54,9 +54,6 @@ extern int lalDebugLevel;
 #define FALSE (1==0)
 
 
-
-
-
 int main(int argc, char *argv[]){
   /* LALStatus pointer */
   static LALStatus  status;  
@@ -66,12 +63,12 @@ int main(int argc, char *argv[]){
   REAL8 deltaF, timeBase, freq = 0, *freq1 = &freq;
   REAL8 phase = 0, *phase1 = &phase, psi = 0.0; 
   INT8  fLastBin, f0Bin;
-  UINT4 binsSFT, numSearchBins, numsft, counter, index1, index2;
+  UINT4 binsSFT, numSearchBins, numsft, counter, index1, index2, paircounter;
   COMPLEX8FrequencySeries *sft, *sft1, *sft2;
   REAL8FrequencySeries *psd1, *psd2;
-  COMPLEX16Vector yalpha, galpha;
+  COMPLEX16Vector *yalpha, *ualpha;
   REAL8VectorSequence Fplus, Fcross;
-  REAL8 Aplus = sqrt(7.0/15.0), Across = sqrt(1.0/3.0); 
+  REAL8 Aplus = sqrt(7.0/15.0), Across = sqrt(1.0/3.0), rho0 = 0.0; 
   /*A's are averaged over cos i... need to change this later!*/ 
 
   SFTPairVec sftPairs;
@@ -100,7 +97,7 @@ int main(int argc, char *argv[]){
   static REAL8VectorSequence frequencyShiftList, signalPhaseList;
   INT4  j, k;
   static PulsarDopplerParams  thisPoint;
-  static REAL8Vector thisVel, thisPos;
+  static REAL8Vector thisVel, thisPos, weights;
 
   /* sft constraint variables */
   LIGOTimeGPS startTimeGPS, endTimeGPS;
@@ -331,7 +328,35 @@ printf("observation time is %f\n",tObs);
   
   LAL_CALL( CreateSFTPairs( &status, &sftPairs, inputSFTs, multiPSD, mdetStates, &pairParams), &status); 
 
-  
+
+  /* initialise F_+, F_x vectors */
+  Fplus.length = numifo;
+  Fcross.length = numifo;
+  Fplus.vectorLength = inputSFTs->data[0]->length;
+  Fcross.vectorLength = inputSFTs->data[0]->length;
+  Fplus.data = LALCalloc( Fplus.length * Fplus.vectorLength, sizeof(REAL8)); 
+  Fcross.data = LALCalloc( Fcross.length * Fplus.vectorLength, sizeof(REAL8)); 
+
+  /*initialise frequency and phase vectors */
+  frequencyShiftList.length = numifo;
+  frequencyShiftList.vectorLength = inputSFTs->data[0]->length;
+  frequencyShiftList.data =  LALCalloc(frequencyShiftList.vectorLength * frequencyShiftList.length, sizeof(REAL8));
+
+  signalPhaseList.length = numifo;
+  signalPhaseList.vectorLength = inputSFTs->data[0]->length;
+  signalPhaseList.data =  LALCalloc(signalPhaseList.vectorLength * signalPhaseList.length, sizeof(REAL8));
+
+  /* initialise Y, u, weight vectors */
+    weights.length = sftPairs.length;
+    weights.data = LALCalloc(weights.length, sizeof(REAL8));
+
+    yalpha = (COMPLEX16Vector *) LALCalloc(1, sizeof(COMPLEX16));
+    yalpha->length = sftPairs.length;
+    yalpha->data = LALCalloc(yalpha->length, sizeof(COMPLEX16));
+    ualpha = (COMPLEX16Vector *) LALCalloc(1, sizeof(COMPLEX16));
+    ualpha->length = sftPairs.length;
+    ualpha->data = LALCalloc(ualpha->length, sizeof(COMPLEX16));
+
 
 
   /*    loop over sky patches -- main calculations  */
@@ -370,23 +395,8 @@ printf("a, B %f %f\n",multiAMcoef->data[0]->A, multiAMcoef->data[0]->B);
   /* loop over each SFT to get frequency, then store in frequencyShiftList */
 
 
-  /*initialise frequency and phase vectors */
-  frequencyShiftList.length = numifo;
-  frequencyShiftList.vectorLength = inputSFTs->data[0]->length;
-  frequencyShiftList.data =  LALCalloc(frequencyShiftList.vectorLength * frequencyShiftList.length, sizeof(REAL8));
-
-  signalPhaseList.length = numifo;
-  signalPhaseList.vectorLength = inputSFTs->data[0]->length;
-  signalPhaseList.data =  LALCalloc(signalPhaseList.vectorLength * signalPhaseList.length, sizeof(REAL8));
 
 
-  /* initialise F_+, F_x vectors */
-  Fplus.length = numifo;
-  Fcross.length = numifo;
-  Fplus.vectorLength = inputSFTs->data[0]->length;
-  Fcross.vectorLength = inputSFTs->data[0]->length;
-  Fplus.data = LALCalloc( Fplus.length * Fplus.vectorLength, sizeof(REAL8)); 
-  Fcross.data = LALCalloc( Fcross.length * Fplus.vectorLength, sizeof(REAL8)); 
 
 
   counter = 0;
@@ -420,10 +430,7 @@ printf("fplus, fcross %f %f\n", Fplus.data[counter], Fcross.data[counter]);
   
   /* loop over SFT pairs */
     counter = 0;
-    yalpha.length = sftPairs.length;
-    yalpha.data = LALCalloc(yalpha.length, sizeof(COMPLEX16));
-    galpha.length = sftPairs.length;
-    galpha.data = LALCalloc(galpha.length, sizeof(COMPLEX16));
+
 
     for (j=0; j < (INT4)sftPairs.length; j++) {
   
@@ -437,28 +444,46 @@ printf("fplus, fcross %f %f\n", Fplus.data[counter], Fcross.data[counter]);
 	psd1 = sftPairs.data[j].psd1;
 	psd2 = sftPairs.data[j].psd2;
 /*printf("f0_1 %f f0_2 %f\n",sft1->f0, sft2->f0);*/
-  	LAL_CALL( CorrelateSingleSFTPair( &status, &yalpha.data[j], sft1, sft2, &frequencyShiftList.data[index1], &frequencyShiftList.data[index2]), &status);
+  	LAL_CALL( CorrelateSingleSFTPair( &status, &yalpha->data[j], sft1, sft2, &frequencyShiftList.data[index1], &frequencyShiftList.data[index2]), &status);
 
- 	LAL_CALL( CalculateWeights (&status, &galpha.data[j], &Aplus, &Across, &signalPhaseList.data[index1], &signalPhaseList.data[index2], &Fplus.data[index1], &Fplus.data[index2], &Fcross.data[index1], &Fcross.data[index2], psd1, psd2), &status);
+ 	LAL_CALL( CalculateUalpha (&status, &ualpha->data[j], &Aplus, &Across, &signalPhaseList.data[index1], &signalPhaseList.data[index2], &Fplus.data[index1], &Fplus.data[index2], &Fcross.data[index1], &Fcross.data[index2], &frequencyShiftList.data[index1], &frequencyShiftList.data[index2], psd1, psd2), &status);
 
-printf("Y %i real %f imaginary %f\n",j,yalpha.data[j].re, yalpha.data[j].im);  
-printf("G %i real %f imaginary %f\n",j,galpha.data[j].re, galpha.data[j].im);  
+printf("Y %i real %f imaginary %f\n", j, yalpha->data[j].re, yalpha->data[j].im);  
+printf("U %i real %f imaginary %f\n", j, ualpha->data[j].re, ualpha->data[j].im);  
 
+    }
+
+  /* calculate rho (weights) from Yalpha and Ualpha */
+	LAL_CALL( CalculateWeights( &status, &weights, yalpha, ualpha), &status);
 
   /*   select candidates  */
-  
-  
-             
+
+    counter = 0;
+    paircounter = 0;
+printf("Final array of candidate pairs:\n");
+    for (j=0; j < (INT4)weights.length; j++) {
+
+     if (weights.data[j] >= rho0) {
+printf("\tPair index: %i %i, weight: %f\n", sftPairIndexList.data[paircounter], sftPairIndexList.data[paircounter+1], weights.data[j]);
+
+     }
+    paircounter++;
     }
 
    XLALDestroyMultiAMCoeffs ( multiAMcoef ); 
+
+
 
   } /* finish loop over skypatches */ 
   
   
   /* free memory */
+  XLALDestroyCOMPLEX16Vector(yalpha);
+  XLALDestroyCOMPLEX16Vector(ualpha);
+
   LAL_CALL (LALDestroyMultiSFTVector(&status, &inputSFTs), &status );
   LALFree(sftPairs.data);
+  LALFree(sftPairIndexList.data);
 
   XLALDestroyMultiDetectorStateSeries ( mdetStates );
   LAL_CALL ( LALDestroyMultiPSDVector  ( &status, &multiPSD), &status);
@@ -471,10 +496,12 @@ printf("G %i real %f imaginary %f\n",j,galpha.data[j].re, galpha.data[j].im);
   LALFree(skyDelta);
   LALFree(skySizeAlpha);
   LALFree(skySizeDelta);
-  LALFree(yalpha.data);
+
   LALFree(frequencyShiftList.data);
   LALFree(Fcross.data);
   LALFree(Fplus.data);
+  LALFree(weights.data);
+
 
   LAL_CALL (LALDestroyUserVars(&status), &status);
 
