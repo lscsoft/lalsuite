@@ -22,7 +22,6 @@
 #include <math.h>
 #include <stdio.h>
 #include <lal/LALAtomicDatatypes.h>
-#include <lal/BandPassTimeSeries.h>
 #include <lal/EPSearch.h>
 #include <lal/FrequencySeries.h>
 #include <lal/LALDatatypes.h>
@@ -32,7 +31,6 @@
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataUtils.h>
 #include <lal/RealFFT.h>
-#include <lal/ResampleTimeSeries.h>
 #include <lal/TFTransform.h>
 #include <lal/TimeFreqFFT.h>
 #include <lal/TimeSeries.h>

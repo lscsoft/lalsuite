@@ -24,7 +24,6 @@
 
 
 #include <lal/LALDatatypes.h>
-#include <lal/LALRCSID.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/Random.h>
 #include <lal/TimeFreqFFT.h>
@@ -34,9 +33,6 @@
 #ifdef  __cplusplus   /* C++ protection. */
 extern "C" {
 #endif
-
-
-NRCSID(EPSEARCHH, "$Id$");
 
 
 /*
