@@ -1466,7 +1466,6 @@ static void output_results(LALStatus *stat, char *file, const ProcessTable *_pro
 int main(int argc, char *argv[])
 {
 	LALStatus stat;
-	LALLeapSecAccuracy accuracy = LALLEAPSEC_LOOSE;
 	struct options *options;
 	LIGOTimeGPS epoch;
 	LIGOTimeGPS boundepoch;
@@ -1497,7 +1496,7 @@ int main(int argc, char *argv[])
 	_process_table = XLALCreateProcessTableRow();
 	if(XLALPopulateProcessTable(_process_table, PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE))
 		exit(1);
-	LAL_CALL(LALGPSTimeNow(&stat, &_process_table->start_time, &accuracy), &stat);
+	XLALGPSTimeNow(&_process_table->start_time);
 
 	/*
 	 * Parse arguments and fill _process_params_table table.
@@ -1704,7 +1703,7 @@ int main(int argc, char *argv[])
 	 * Output the results.
 	 */
 
-	LAL_CALL(LALGPSTimeNow(&stat, &_process_table->end_time, &accuracy), &stat);
+	XLALGPSTimeNow(&_process_table->end_time);
 	output_results(&stat, options->output_filename, _process_table, _process_params_table, &_search_summary_table, _sngl_burst_table);
 
 	/*
