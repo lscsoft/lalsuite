@@ -237,9 +237,8 @@ static ProcessParamsTable **add_process_param(ProcessParamsTable **proc_param, c
 	do { paramaddpoint = add_process_param(paramaddpoint, type, long_options[option_index].name, optarg); } while(0)
 
 
-static struct options parse_command_line(int *argc, char **argv[], MetadataTable *procparams)
+static struct options parse_command_line(int *argc, char **argv[], ProcessParamsTable **paramaddpoint)
 {
-	ProcessParamsTable **paramaddpoint = &procparams->processParamsTable;
 	struct options options = options_defaults();
 	int c;
 	int option_index;
@@ -815,7 +814,7 @@ static SimBurst *random_all_sky_sineGaussian(double minf, double maxf, double q,
  */
 
 
-static void write_xml(MetadataTable proctable, MetadataTable procparams, MetadataTable searchsumm, const SimBurst *sim_burst, struct options options)
+static void write_xml(ProcessTable *proctable, ProcessParamsTable *procparams, SearchSummaryTable *searchsumm, const SimBurst *sim_burst, struct options options)
 {
 	LALStatus status = blank_status;
 	char fname[256];
@@ -831,25 +830,27 @@ static void write_xml(MetadataTable proctable, MetadataTable procparams, Metadat
 	LAL_CALL(LALOpenLIGOLwXMLFile(&status, &xmlfp, fname), &status);
 
 	/* process table */
-	XLALGPSTimeNow(&proctable.processTable->end_time);
-	LAL_CALL(LALBeginLIGOLwXMLTable(&status, &xmlfp, process_table), &status);
-	LAL_CALL(LALWriteLIGOLwXMLTable(&status, &xmlfp, proctable, process_table), &status);
-	LAL_CALL(LALEndLIGOLwXMLTable(&status, &xmlfp), &status);
+	if(XLALWriteLIGOLwXMLProcessTable(&xmlfp, proctable)) {
+		/* error occured.  ?? do anything else ?? */
+		exit(1);
+	}
 
 	/* process params table */
-	LAL_CALL(LALBeginLIGOLwXMLTable(&status, &xmlfp, process_params_table), &status);
-	LAL_CALL(LALWriteLIGOLwXMLTable(&status, &xmlfp, procparams, process_params_table), &status);
-	LAL_CALL(LALEndLIGOLwXMLTable(&status, &xmlfp), &status);
+	if(XLALWriteLIGOLwXMLProcessParamsTable(&xmlfp, procparams)) {
+		/* error occured.  ?? do anything else ?? */
+		exit(1);
+	}
 
 	/* search summary table */
-	LAL_CALL(LALBeginLIGOLwXMLTable(&status, &xmlfp, search_summary_table), &status);
-	LAL_CALL(LALWriteLIGOLwXMLTable(&status, &xmlfp, searchsumm, search_summary_table), &status);
-	LAL_CALL(LALEndLIGOLwXMLTable(&status, &xmlfp), &status);
+	if(XLALWriteLIGOLwXMLSearchSummaryTable(&xmlfp, searchsumm)) {
+		/* error occured.  ?? do anything else ?? */
+		exit(1);
+	}
 
 	/* sim burst table */
 	if(XLALWriteLIGOLwXMLSimBurstTable(&xmlfp, sim_burst)) {
 		/* error occured.  ?? do anything else ?? */
-		return;
+		exit(1);
 	}
 
 	LAL_CALL(LALCloseLIGOLwXMLFile(&status, &xmlfp), &status);
@@ -867,13 +868,12 @@ static void write_xml(MetadataTable proctable, MetadataTable procparams, Metadat
 
 int main(int argc, char *argv[])
 {
-	LALStatus status = blank_status;
 	struct options options;
 	INT8 tinj;
 	gsl_rng *rng;
-	MetadataTable proctable;
-	MetadataTable procparams;
-	MetadataTable searchsumm;
+	ProcessTable proctable;
+	ProcessParamsTable *procparams = NULL;
+	SearchSummaryTable searchsumm;
 	SimBurst *sim_burst_head = NULL;
 	SimBurst **sim_burst = &sim_burst_head;
 
@@ -892,7 +892,6 @@ int main(int argc, char *argv[])
 	 */
 
 
-	procparams.processParamsTable = NULL;
 	options = parse_command_line(&argc, &argv, &procparams);
 
 
@@ -901,12 +900,13 @@ int main(int argc, char *argv[])
 	 */
 
 
-	proctable.processTable = calloc(1, sizeof(*proctable.processTable));
-	XLALGPSTimeNow(&proctable.processTable->start_time);
-	LAL_CALL(populate_process_table(&status, proctable.processTable, PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE), &status);
-	snprintf(proctable.processTable->ifos, LIGOMETA_IFOS_MAX, "H1,H2,L1");
+	memset(&proctable, 0, sizeof(proctable));
+	if(XLALPopulateProcessTable(&proctable, PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE))
+		exit(1);
+	XLALGPSTimeNow(&proctable.start_time);
+	snprintf(proctable.ifos, LIGOMETA_IFOS_MAX, "H1,H2,L1");
 	if(options.user_tag)
-		snprintf(proctable.processTable->comment, LIGOMETA_COMMENT_MAX, "%s", options.user_tag);
+		snprintf(proctable.comment, LIGOMETA_COMMENT_MAX, "%s", options.user_tag);
 
 
 	/*
@@ -914,14 +914,14 @@ int main(int argc, char *argv[])
 	 */
 
 
-	searchsumm.searchSummaryTable = calloc(1, sizeof(*searchsumm.searchSummaryTable));
+	memset(&searchsumm, 0, sizeof(searchsumm));
 	if(options.user_tag)
-		snprintf(searchsumm.searchSummaryTable->comment, LIGOMETA_COMMENT_MAX, "%s", options.user_tag);
-	searchsumm.searchSummaryTable->nnodes = 1;
-	searchsumm.searchSummaryTable->out_start_time = *XLALINT8NSToGPS(&searchsumm.searchSummaryTable->in_start_time, options.gps_start_time);
-	searchsumm.searchSummaryTable->out_end_time = *XLALINT8NSToGPS(&searchsumm.searchSummaryTable->in_end_time, options.gps_end_time);
-	snprintf(searchsumm.searchSummaryTable->ifos, LIGOMETA_IFOS_MAX, proctable.processTable->ifos);
-	searchsumm.searchSummaryTable->nevents = 0;
+		snprintf(searchsumm.comment, LIGOMETA_COMMENT_MAX, "%s", options.user_tag);
+	searchsumm.nnodes = 1;
+	searchsumm.out_start_time = *XLALINT8NSToGPS(&searchsumm.in_start_time, options.gps_start_time);
+	searchsumm.out_end_time = *XLALINT8NSToGPS(&searchsumm.in_end_time, options.gps_end_time);
+	snprintf(searchsumm.ifos, LIGOMETA_IFOS_MAX, proctable.ifos);
+	searchsumm.nevents = 0;
 
 
 	/*
@@ -992,8 +992,9 @@ int main(int argc, char *argv[])
 
 	/* output */
 
-	searchsumm.searchSummaryTable->nevents = XLALSimBurstAssignIDs(sim_burst_head, 0, 0);
-	write_xml(proctable, procparams, searchsumm, sim_burst_head, options);
+	XLALGPSTimeNow(&proctable.end_time);
+	searchsumm.nevents = XLALSimBurstAssignIDs(sim_burst_head, 0, 0);
+	write_xml(&proctable, procparams, &searchsumm, sim_burst_head, options);
 
 	/* done */
 

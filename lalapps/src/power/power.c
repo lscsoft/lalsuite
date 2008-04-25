@@ -540,14 +540,13 @@ static int parse_command_line_debug(int argc, char *argv[])
  */
 
 
-static struct options *parse_command_line(int argc, char *argv[], MetadataTable *_process_params_table)
+static struct options *parse_command_line(int argc, char *argv[], ProcessParamsTable **paramaddpoint)
 {
 	struct options *options;
 	char msg[240];
 	int args_are_bad = FALSE;
 	int c;
 	int option_index;
-	ProcessParamsTable **paramaddpoint = &_process_params_table->processParamsTable;
 	struct option long_options[] = {
 		{"bandwidth", required_argument, NULL, 'A'},
 		{"burstinjection-file", required_argument, NULL, 'P'},
@@ -1347,10 +1346,9 @@ static SnglBurst **analyze_series(SnglBurst **addpoint, REAL8TimeSeries *series,
  */
 
 
-static void output_results(LALStatus *stat, char *file, const char *ifo, MetadataTable *_process_table, MetadataTable *_process_params_table, MetadataTable *_search_summary_table, SnglBurst *head)
+static void output_results(LALStatus *stat, char *file, ProcessTable *_process_table, ProcessParamsTable *_process_params_table, SearchSummaryTable *_search_summary_table, SnglBurst *head)
 {
 	LIGOLwXMLStream xml;
-	LALLeapSecAccuracy accuracy = LALLEAPSEC_LOOSE;
 
 	memset(&xml, 0, sizeof(LIGOLwXMLStream));
 	LAL_CALL(LALOpenLIGOLwXMLFile(stat, &xml, file), stat);
@@ -1359,28 +1357,28 @@ static void output_results(LALStatus *stat, char *file, const char *ifo, Metadat
 	 * process table
 	 */
 
-	LAL_CALL(LALGPSTimeNow(stat, &(_process_table->processTable->end_time), &accuracy), stat);
-	LAL_CALL(LALBeginLIGOLwXMLTable(stat, &xml, process_table), stat);
-	LAL_CALL(LALWriteLIGOLwXMLTable(stat, &xml, *_process_table, process_table), stat);
-	LAL_CALL(LALEndLIGOLwXMLTable(stat, &xml), stat);
+	if(XLALWriteLIGOLwXMLProcessTable(&xml, _process_table)) {
+		/* FIXME:  error occured. do something smarter */
+		exit(1);
+	}
 
 	/*
 	 * process params table
 	 */
 
-	LAL_CALL(LALBeginLIGOLwXMLTable(stat, &xml, process_params_table), stat);
-	LAL_CALL(LALWriteLIGOLwXMLTable(stat, &xml, *_process_params_table, process_params_table), stat);
-	LAL_CALL(LALEndLIGOLwXMLTable(stat, &xml), stat);
+	if(XLALWriteLIGOLwXMLProcessParamsTable(&xml, _process_params_table)) {
+		/* FIXME:  error occured. do something smarter */
+		exit(1);
+	}
 
 	/*
 	 * search summary table
 	 */
 
-	snprintf(_search_summary_table->searchSummaryTable->ifos, LIGOMETA_IFOS_MAX, "%s", ifo);
-	_search_summary_table->searchSummaryTable->nevents = XLALSnglBurstTableLength(head);
-	LAL_CALL(LALBeginLIGOLwXMLTable(stat, &xml, search_summary_table), stat);
-	LAL_CALL(LALWriteLIGOLwXMLTable(stat, &xml, *_search_summary_table, search_summary_table), stat);
-	LAL_CALL(LALEndLIGOLwXMLTable(stat, &xml), stat);
+	if(XLALWriteLIGOLwXMLSearchSummaryTable(&xml, _search_summary_table)) {
+		/* FIXME:  error occured. do something smarter */
+		exit(1);
+	}
 
 	/*
 	 * burst table
@@ -1388,7 +1386,7 @@ static void output_results(LALStatus *stat, char *file, const char *ifo, Metadat
 
 	if(XLALWriteLIGOLwXMLSnglBurstTable(&xml, head)) {
 		/* FIXME:  error occured. do something smarter */
-		return;
+		exit(1);
 	}
 
 	/*
@@ -1421,9 +1419,9 @@ int main(int argc, char *argv[])
 	SnglBurst **EventAddPoint = &burstEvent;
 	/* the ugly underscores are because some badger put global symbols
 	 * in LAL by exactly these names. it's a mad house, a maad house */
-	MetadataTable _process_table;
-	MetadataTable _process_params_table;
-	MetadataTable _search_summary_table;
+	ProcessTable _process_table;
+	ProcessParamsTable *_process_params_table = NULL;
+	SearchSummaryTable _search_summary_table;
 	gsl_rng *rng = NULL;
 
 	/*
@@ -1439,29 +1437,30 @@ int main(int argc, char *argv[])
 	 * Create the process and process params tables.
 	 */
 
-	_process_table.processTable = XLALCalloc(1, sizeof(ProcessTable));
-	LAL_CALL(LALGPSTimeNow(&stat, &(_process_table.processTable->start_time), &accuracy), &stat);
-	LAL_CALL(populate_process_table(&stat, _process_table.processTable, PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE), &stat);
-	_process_params_table.processParamsTable = NULL;
+	memset(&_process_table, 0, sizeof(_process_table));
+	if(XLALPopulateProcessTable(&_process_table, PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE))
+		exit(1);
+	LAL_CALL(LALGPSTimeNow(&stat, &_process_table.start_time, &accuracy), &stat);
 
 	/*
 	 * Parse arguments and fill _process_params_table table.
 	 */
 
 	options = parse_command_line(argc, argv, &_process_params_table);
-	snprintf(_process_table.processTable->ifos, LIGOMETA_IFOS_MAX, "%s", options->ifo);
-	snprintf(_process_table.processTable->comment, LIGOMETA_COMMENT_MAX, "%s", options->comment);
+	snprintf(_process_table.ifos, LIGOMETA_IFOS_MAX, "%s", options->ifo);
+	snprintf(_process_table.comment, LIGOMETA_COMMENT_MAX, "%s", options->comment);
 
 	/*
 	 * Create the search summary table.  The number of nodes for a
 	 * standalone job is always 1
 	 */
 
-	_search_summary_table.searchSummaryTable = XLALCalloc(1, sizeof(SearchSummaryTable));
-	snprintf(_search_summary_table.searchSummaryTable->comment, LIGOMETA_COMMENT_MAX, "%s", options->comment);
-	_search_summary_table.searchSummaryTable->nnodes = 1;
-	_search_summary_table.searchSummaryTable->in_start_time = options->gps_start;
-	_search_summary_table.searchSummaryTable->in_end_time = options->gps_end;
+	memset(&_search_summary_table, 0, sizeof(_search_summary_table));
+	snprintf(_search_summary_table.comment, LIGOMETA_COMMENT_MAX, "%s", options->comment);
+	snprintf(_search_summary_table.ifos, LIGOMETA_IFOS_MAX, "%s", options->ifo);
+	_search_summary_table.nnodes = 1;
+	_search_summary_table.in_start_time = options->gps_start;
+	_search_summary_table.in_end_time = options->gps_end;
 
 	/*
 	 * determine the input time series post-conditioning overlap, and
@@ -1598,12 +1597,12 @@ int main(int argc, char *argv[])
 		 * gets analyzed.
 		 */
 
-		if(!_search_summary_table.searchSummaryTable->out_start_time.gpsSeconds) {
-			_search_summary_table.searchSummaryTable->out_start_time = series->epoch;
-			XLALGPSAdd(&_search_summary_table.searchSummaryTable->out_start_time, series->deltaT * options->window_pad);
+		if(!_search_summary_table.out_start_time.gpsSeconds) {
+			_search_summary_table.out_start_time = series->epoch;
+			XLALGPSAdd(&_search_summary_table.out_start_time, series->deltaT * options->window_pad);
 		}
-		_search_summary_table.searchSummaryTable->out_end_time = series->epoch;
-		XLALGPSAdd(&_search_summary_table.searchSummaryTable->out_end_time, series->deltaT * (series->data->length - options->window_pad));
+		_search_summary_table.out_end_time = series->epoch;
+		XLALGPSAdd(&_search_summary_table.out_end_time, series->deltaT * (series->data->length - options->window_pad));
 
 		/*
 		 * Analyze the data
@@ -1638,7 +1637,8 @@ int main(int argc, char *argv[])
 	 * Check event rate limit.
 	 */
 
-	if((options->max_event_rate > 0) && (XLALSnglBurstTableLength(burstEvent) > XLALGPSDiff(&_search_summary_table.searchSummaryTable->out_end_time, &_search_summary_table.searchSummaryTable->out_start_time) * options->max_event_rate)) {
+	_search_summary_table.nevents = XLALSnglBurstTableLength(burstEvent);
+	if((options->max_event_rate > 0) && (_search_summary_table.nevents > XLALGPSDiff(&_search_summary_table.out_end_time, &_search_summary_table.out_start_time) * options->max_event_rate)) {
 		XLALPrintError("%s: event rate limit exceeded!", argv[0]);
 		exit(1);
 	}
@@ -1647,7 +1647,8 @@ int main(int argc, char *argv[])
 	 * Output the results.
 	 */
 
-	output_results(&stat, options->output_filename, options->ifo, &_process_table, &_process_params_table, &_search_summary_table, burstEvent);
+	LAL_CALL(LALGPSTimeNow(&stat, &_process_table.end_time, &accuracy), &stat);
+	output_results(&stat, options->output_filename, &_process_table, _process_params_table, &_search_summary_table, burstEvent);
 
 	/*
 	 * Final cleanup.
@@ -1655,13 +1656,11 @@ int main(int argc, char *argv[])
 
 	if(rng)
 		gsl_rng_free(rng);
-	XLALFree(_process_table.processTable);
-	XLALFree(_search_summary_table.searchSummaryTable);
 
-	while(_process_params_table.processParamsTable) {
-		ProcessParamsTable *table = _process_params_table.processParamsTable;
-		_process_params_table.processParamsTable = table->next;
-		XLALFree(table);
+	while(_process_params_table) {
+		ProcessParamsTable *next = _process_params_table->next;
+		XLALFree(_process_params_table);
+		_process_params_table = next;
 	}
 
 	XLALDestroySnglBurstTable(burstEvent);
