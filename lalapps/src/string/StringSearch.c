@@ -440,14 +440,14 @@ int OutputEvents(struct CommandLineArgsTag CLA)
   /* process table */
   snprintf(procTable.processTable->ifos, LIGOMETA_IFOS_MAX, "%s", ifo);
   LALGPSTimeNow(&status, &(procTable.processTable->start_time), &accuracy);
-  LALBeginLIGOLwXMLTable(&status, &xml, process_table);
-  LALWriteLIGOLwXMLTable(&status, &xml, procTable, process_table);
-  LALEndLIGOLwXMLTable(&status, &xml);
+  if(XLALWriteLIGOLwXMLProcessTable(&xml, procTable.processTable)) {
+    return -1;
+  }
 
   /* process params table */
-  LALBeginLIGOLwXMLTable(&status, &xml, process_params_table);
-  LALWriteLIGOLwXMLTable(&status, &xml, procparams, process_params_table);
-  LALEndLIGOLwXMLTable(&status, &xml);
+  if(XLALWriteLIGOLwXMLProcessParamsTable(&xml, procparams.processParamsTable)) {
+    return -1;
+  }
 
   /* search summary table */
   snprintf(searchsumm.searchSummaryTable->ifos, LIGOMETA_IFOS_MAX, "%s", ifo);
