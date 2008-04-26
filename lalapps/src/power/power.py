@@ -1275,7 +1275,7 @@ def make_injection_segment_fragment(dag, datafindnodes, binjnodes, instrument, s
 		print >>sys.stderr, "Injections split: " + str(seglist)
 	nodes = set()
 	for seg in seglist:
-		nodes |= make_power_fragment(dag, datafindnodes | binjnodes, instrument, seg, tag, framecache, injargs = {"burstinjection-file": simfile})
+		nodes |= make_power_fragment(dag, datafindnodes | binjnodes, instrument, seg, tag, framecache, injargs = {"injection-file": simfile})
 	return nodes
 
 
