@@ -213,7 +213,7 @@ InspiralTmpltBankFromLIGOLw (
 int
 SimInspiralTableFromLIGOLw (
     SimInspiralTable   **simHead,
-    CHAR                *fileName,
+    const CHAR          *fileName,
     INT4                 startTime,
     INT4                 endTime
     );

@@ -156,8 +156,19 @@ files.
  * Returns > 0 if the document contains the table, 0 if the document does
  * not contain the table, and < 0 on error.
  *
- * BUGS:  This function can't tell the difference between a missing table
- * and an unparseable document.  This is a limitation in libmetaio.
+ * BUGS:
+ *
+ * - This function can't tell the difference between a missing table and an
+ *   unparseable document.  This is a limitation in libmetaio.
+ *
+ * - This function parses the entire file to determine if the table is
+ *   present, which is slow.
+ *
+ * - This entire approach to XML I/O is the wrong way to go.  What's needed
+ *   is a "load document" function, and a "save document" function.  DO NOT
+ *   attempt to write such functions by using this function to test for
+ *   every possible table one-by-one and loading the ones that are found.
+ *   Put the time into writing a proper XML I/O layer!!
  */
 
 
@@ -1976,7 +1987,7 @@ InspiralTmpltBankFromLIGOLw (
 int
 SimInspiralTableFromLIGOLw (
     SimInspiralTable   **simHead,
-    CHAR                *fileName,
+    const CHAR          *fileName,
     INT4                 startTime,
     INT4                 endTime
     )
