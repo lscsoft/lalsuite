@@ -1514,7 +1514,7 @@ int main(int argc, char *argv[])
 	 * in LAL by exactly these names. it's a mad house, a maad house */
 	ProcessTable *_process_table;
 	ProcessParamsTable *_process_params_table = NULL;
-	SearchSummaryTable _search_summary_table;
+	SearchSummaryTable *_search_summary_table;
 	gsl_rng *rng = NULL;
 
 	/*
@@ -1554,12 +1554,12 @@ int main(int argc, char *argv[])
 	 * standalone job is always 1
 	 */
 
-	memset(&_search_summary_table, 0, sizeof(_search_summary_table));
-	snprintf(_search_summary_table.comment, sizeof(_search_summary_table.comment), "%s", options->comment);
-	snprintf(_search_summary_table.ifos, sizeof(_search_summary_table.ifos), "%s", options->ifo);
-	_search_summary_table.nnodes = 1;
-	_search_summary_table.in_start_time = options->gps_start;
-	_search_summary_table.in_end_time = options->gps_end;
+	_search_summary_table = XLALCreateSearchSummaryTableRow(_process_table);
+	snprintf(_search_summary_table->comment, sizeof(_search_summary_table->comment), "%s", options->comment);
+	snprintf(_search_summary_table->ifos, sizeof(_search_summary_table->ifos), "%s", options->ifo);
+	_search_summary_table->nnodes = 1;
+	_search_summary_table->in_start_time = options->gps_start;
+	_search_summary_table->in_end_time = options->gps_end;
 
 	/*
 	 * determine the input time series post-conditioning overlap, and
@@ -1692,12 +1692,12 @@ int main(int argc, char *argv[])
 		 * gets analyzed.
 		 */
 
-		if(!_search_summary_table.out_start_time.gpsSeconds) {
-			_search_summary_table.out_start_time = series->epoch;
-			XLALGPSAdd(&_search_summary_table.out_start_time, series->deltaT * options->window_pad);
+		if(!_search_summary_table->out_start_time.gpsSeconds) {
+			_search_summary_table->out_start_time = series->epoch;
+			XLALGPSAdd(&_search_summary_table->out_start_time, series->deltaT * options->window_pad);
 		}
-		_search_summary_table.out_end_time = series->epoch;
-		XLALGPSAdd(&_search_summary_table.out_end_time, series->deltaT * (series->data->length - options->window_pad));
+		_search_summary_table->out_end_time = series->epoch;
+		XLALGPSAdd(&_search_summary_table->out_end_time, series->deltaT * (series->data->length - options->window_pad));
 
 		/*
 		 * Analyze the data
@@ -1732,8 +1732,8 @@ int main(int argc, char *argv[])
 	 * Check event rate limit.
 	 */
 
-	_search_summary_table.nevents = XLALSnglBurstTableLength(_sngl_burst_table);
-	if((options->max_event_rate > 0) && (_search_summary_table.nevents > XLALGPSDiff(&_search_summary_table.out_end_time, &_search_summary_table.out_start_time) * options->max_event_rate)) {
+	_search_summary_table->nevents = XLALSnglBurstTableLength(_sngl_burst_table);
+	if((options->max_event_rate > 0) && (_search_summary_table->nevents > XLALGPSDiff(&_search_summary_table->out_end_time, &_search_summary_table->out_start_time) * options->max_event_rate)) {
 		XLALPrintError("%s: event rate limit exceeded!", argv[0]);
 		exit(1);
 	}
@@ -1743,7 +1743,7 @@ int main(int argc, char *argv[])
 	 */
 
 	XLALGPSTimeNow(&_process_table->end_time);
-	output_results(&stat, options->output_filename, _process_table, _process_params_table, &_search_summary_table, _sngl_burst_table);
+	output_results(&stat, options->output_filename, _process_table, _process_params_table, _search_summary_table, _sngl_burst_table);
 
 	/*
 	 * Final cleanup.
@@ -1754,6 +1754,7 @@ int main(int argc, char *argv[])
 
 	XLALDestroyProcessTable(_process_table);
 	XLALDestroyProcessParamsTable(_process_params_table);
+	XLALDestroySearchSummaryTable(_search_summary_table);
 	XLALDestroySnglBurstTable(_sngl_burst_table);
 
 	if(options->diagnostics)

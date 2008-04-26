@@ -813,7 +813,7 @@ static SimBurst *random_all_sky_sineGaussian(double minf, double maxf, double q,
  */
 
 
-static void write_xml(const ProcessTable *process_table_head, const ProcessParamsTable *process_params_table_head, const SearchSummaryTable *searchsumm, const SimBurst *sim_burst, struct options options)
+static void write_xml(const ProcessTable *process_table_head, const ProcessParamsTable *process_params_table_head, const SearchSummaryTable *search_summary_head, const SimBurst *sim_burst, struct options options)
 {
 	LALStatus status = blank_status;
 	char fname[256];
@@ -841,7 +841,7 @@ static void write_xml(const ProcessTable *process_table_head, const ProcessParam
 	}
 
 	/* search summary table */
-	if(XLALWriteLIGOLwXMLSearchSummaryTable(&xmlfp, searchsumm)) {
+	if(XLALWriteLIGOLwXMLSearchSummaryTable(&xmlfp, search_summary_head)) {
 		/* error occured.  ?? do anything else ?? */
 		exit(1);
 	}
@@ -872,7 +872,7 @@ int main(int argc, char *argv[])
 	gsl_rng *rng;
 	ProcessTable *process_table_head;
 	ProcessParamsTable *process_params_table_head = NULL;
-	SearchSummaryTable searchsumm;
+	SearchSummaryTable *search_summary_head;
 	SimBurst *sim_burst_table_head = NULL;
 	SimBurst **sim_burst = &sim_burst_table_head;
 
@@ -913,14 +913,13 @@ int main(int argc, char *argv[])
 	 */
 
 
-	memset(&searchsumm, 0, sizeof(searchsumm));
+	search_summary_head = XLALCreateSearchSummaryTableRow(process_table_head);
 	if(options.user_tag)
-		snprintf(searchsumm.comment, sizeof(searchsumm.comment), "%s", options.user_tag);
-	searchsumm.nnodes = 1;
-	searchsumm.out_start_time = *XLALINT8NSToGPS(&searchsumm.in_start_time, options.gps_start_time);
-	searchsumm.out_end_time = *XLALINT8NSToGPS(&searchsumm.in_end_time, options.gps_end_time);
-	snprintf(searchsumm.ifos, sizeof(searchsumm.ifos), process_table_head->ifos);
-	searchsumm.nevents = 0;
+		snprintf(search_summary_head->comment, sizeof(search_summary_head->comment), "%s", options.user_tag);
+	search_summary_head->nnodes = 1;
+	search_summary_head->out_start_time = *XLALINT8NSToGPS(&search_summary_head->in_start_time, options.gps_start_time);
+	search_summary_head->out_end_time = *XLALINT8NSToGPS(&search_summary_head->in_end_time, options.gps_end_time);
+	snprintf(search_summary_head->ifos, sizeof(search_summary_head->ifos), process_table_head->ifos);
 
 
 	/*
@@ -992,14 +991,15 @@ int main(int argc, char *argv[])
 	/* output */
 
 	XLALGPSTimeNow(&process_table_head->end_time);
-	searchsumm.nevents = XLALSimBurstAssignIDs(sim_burst_table_head, process_table_head->process_id, 0);
-	write_xml(process_table_head, process_params_table_head, &searchsumm, sim_burst_table_head, options);
+	search_summary_head->nevents = XLALSimBurstAssignIDs(sim_burst_table_head, process_table_head->process_id, 0);
+	write_xml(process_table_head, process_params_table_head, search_summary_head, sim_burst_table_head, options);
 
 	/* done */
 
 	gsl_rng_free(rng);
 	XLALDestroyProcessTable(process_table_head);
 	XLALDestroyProcessParamsTable(process_params_table_head);
+	XLALDestroySearchSummaryTable(search_summary_head);
 	XLALDestroySimBurstTable(sim_burst_table_head);
 	exit(0);
 }
