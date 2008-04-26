@@ -453,9 +453,9 @@ int OutputEvents(struct CommandLineArgsTag CLA)
   snprintf(searchsumm.searchSummaryTable->ifos, LIGOMETA_IFOS_MAX, "%s", ifo);
   searchsumm.searchSummaryTable->nevents = Nevents;
 
-  LALBeginLIGOLwXMLTable(&status, &xml, search_summary_table);
-  LALWriteLIGOLwXMLTable(&status, &xml, searchsumm, search_summary_table);
-  LALEndLIGOLwXMLTable(&status, &xml);
+  if(XLALWriteLIGOLwXMLSearchSummaryTable(&xml, searchsumm.searchSummaryTable)) {
+    return -1;
+  }
 
   /* burst table */
   if(XLALWriteLIGOLwXMLSnglBurstTable(&xml, events)) {
@@ -466,21 +466,10 @@ int OutputEvents(struct CommandLineArgsTag CLA)
   
   /* free event list, process table, search summary and process params */
 
-  while ( events )
-  {
-    SnglBurst *next = events->next;
-    LALFree( events );
-    events = next;
-  }
-
-  LALFree(procTable.processTable);
-  LALFree(searchsumm.searchSummaryTable);
-
-  while(procparams.processParamsTable) {
-    ProcessParamsTable *table = procparams.processParamsTable;
-    procparams.processParamsTable = table->next;
-    LALFree(table);
-  }
+  XLALDestroySnglBurstTable(events);
+  XLALDestroyProcessTable(procTable.processTable);
+  XLALDestroySearchSummaryTable(searchsumm.searchSummaryTable);
+  XLALDestroyProcessParamsTable(procparams.processParamsTable);
 
   return 0;
 }
@@ -1071,7 +1060,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     exit(1);
   procparams.processParamsTable = NULL;
   /* create the search summary table */
-  searchsumm.searchSummaryTable = LALCalloc(1, sizeof(SearchSummaryTable));
+  searchsumm.searchSummaryTable = XLALCreateSearchSummaryTableRow(procTable.processTable);
   /* the number of nodes for a standalone job is always 1 */
   searchsumm.searchSummaryTable->nnodes = 1;
 
