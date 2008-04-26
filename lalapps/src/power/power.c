@@ -1199,91 +1199,94 @@ static COMPLEX8FrequencySeries *generate_response(const char *cachefile, const c
 
 
 /*
- * Support for sim_burst tables.
+ * Load file
  */
 
 
-static int add_burst_injections(REAL8TimeSeries *h, const char *filename, COMPLEX16FrequencySeries *response, LIGOTimeGPS start, LIGOTimeGPS end)
+struct injection_document {
+	ProcessTable *process_table_head;
+	ProcessParamsTable *process_params_table_head;
+	SearchSummaryTable *search_summary_table_head;
+	int has_sim_burst_table;
+	SimBurst *sim_burst_table_head;
+	int has_sim_inspiral_table;
+	SimInspiralTable *sim_inspiral_table_head;
+};
+
+
+static void destroy_injection_document(struct injection_document *doc)
 {
-	static const char func[] = "add_burst_injections";
-	SimBurst *sim_burst;
-
-	XLALPrintInfo("%s(): reading sim_burst table from %s\n", func, filename);
-
-	sim_burst = XLALSimBurstTableFromLIGOLw(filename, &start, &end);
-	if(!sim_burst)
-		XLAL_ERROR(func, XLAL_EFUNC);
-
-	XLALPrintInfo("%s(): computing injections and adding to input time series\n", func);
-	if(XLALBurstInjectSignals(h, sim_burst, response)) {
-		XLALDestroySimBurstTable(sim_burst);
-		XLAL_ERROR(func, XLAL_EFUNC);
+	if(doc) {
+		XLALDestroyProcessTable(doc->process_table_head);
+		XLALDestroyProcessParamsTable(doc->process_params_table_head);
+		XLALDestroySearchSummaryTable(doc->search_summary_table_head);
+		XLALDestroySimBurstTable(doc->sim_burst_table_head);
+		while(doc->sim_inspiral_table_head) {
+			SimInspiralTable *next = doc->sim_inspiral_table_head->next;
+			XLALFree(doc->sim_inspiral_table_head);
+			doc->sim_inspiral_table_head = next;
+		}
 	}
-
-	XLALDestroySimBurstTable(sim_burst);
-	XLALPrintInfo("%s(): done\n", func);
-
-	return 0;
 }
 
 
-/*
- * Support from sim_inspiral tables.  LAL can only generate
- * single-precision injections so we have to do the injections into a
- * temporary array of zeros, and then add it into the double-precision time
- * series
- */
-
-
-static int add_inspiral_injections(REAL8TimeSeries *series, const char *filename, COMPLEX8FrequencySeries *response, LIGOTimeGPS start, LIGOTimeGPS end)
+static struct injection_document *load_injection_file(const char *filename, LIGOTimeGPS start, LIGOTimeGPS end)
 {
-	static const char func[] = "add_inspiral_injections";
-	SimInspiralTable *sim_inspiral;
-	REAL4TimeSeries *mdc = XLALCreateREAL4TimeSeries(series->name, &series->epoch, series->f0, series->deltaT, &series->sampleUnits, series->data->length);
-	int n_injections;
-	unsigned i;
+	static const char func[] = "load_injection_file";
+	struct injection_document *new = malloc(sizeof(*new));
 
-	if(!mdc)
-		XLAL_ERROR(func, XLAL_EFUNC);
-	memset(mdc->data->data, 0, mdc->data->length * sizeof(*mdc->data->data));
+	if(!new)
+		XLAL_ERROR_NULL(func, XLAL_ENOMEM);
 
-	if(!response) {
-		XLALDestroyREAL4TimeSeries(mdc);
-		XLALPrintError("%s(): error: must supply calibration information for injections\n", func);
-		XLAL_ERROR(func, XLAL_EINVAL);
+	/*
+	 * load required tables
+	 */
+
+	new->process_table_head = XLALProcessTableFromLIGOLw(filename);
+	new->process_params_table_head = XLALProcessParamsTableFromLIGOLw(filename);
+	new->search_summary_table_head = XLALSearchSummaryTableFromLIGOLw(filename);
+
+	/*
+	 * load optional sim_burst table
+	 */
+
+	new->has_sim_burst_table = XLALLIGOLwHasTable(filename, "sim_burst");
+	if(new->has_sim_burst_table) {
+		new->sim_burst_table_head = XLALSimBurstTableFromLIGOLw(filename, &start, &end);
+	} else
+		new->sim_burst_table_head = NULL;
+
+	/*
+	 * load optional sim_inspiral table
+	 */
+
+	new->has_sim_inspiral_table = XLALLIGOLwHasTable(filename, "sim_inspiral");
+	if(new->has_sim_inspiral_table) {
+		if(SimInspiralTableFromLIGOLw(&new->sim_inspiral_table_head, filename, start.gpsSeconds, end.gpsSeconds) < 0)
+			new->sim_inspiral_table_head = NULL;
+	} else
+		new->sim_inspiral_table_head = NULL;
+
+	/*
+	 * did we get it all?
+	 */
+
+	if(
+		!new->process_table_head ||
+		!new->process_params_table_head ||
+		!new->search_summary_table_head ||
+		(new->has_sim_burst_table && !new->sim_burst_table_head) ||
+		(new->has_sim_inspiral_table && !new->sim_inspiral_table_head)
+	) {
+		destroy_injection_document(new);
+		XLAL_ERROR_NULL(func, XLAL_EFUNC);
 	}
 
-	XLALPrintInfo("%s(): reading sim_inspiral table ...\n", func);
+	/*
+	 * success
+	 */
 
-	n_injections = SimInspiralTableFromLIGOLw(&sim_inspiral, filename, start.gpsSeconds, end.gpsSeconds);
-
-	if(n_injections < 0) {
-		XLALDestroyREAL4TimeSeries(mdc);
-		XLALPrintError("%s(): error: cannot read injection file\n", func);
-		XLAL_ERROR(func, XLAL_EFUNC);
-	}
-
-	XLALPrintInfo("%s(): computing injections ...\n", func);
-
-	if(n_injections > 0) {
-		LALStatus stat;
-		memset(&stat, 0, sizeof(stat));
-		LAL_CALL(LALFindChirpInjectSignals(&stat, mdc, sim_inspiral, response), &stat);
-	}
-
-	XLALPrintInfo("%s(): done\n", func);
-
-	while(sim_inspiral) {
-		SimInspiralTable *next = sim_inspiral->next;
-		XLALFree(sim_inspiral);
-		sim_inspiral = next;
-	}
-
-	for(i = 0; i < series->data->length; i++)
-		series->data->data[i] += mdc->data->data[i];
-	XLALDestroyREAL4TimeSeries(mdc);
-
-	return 0;
+	return new;
 }
 
 
@@ -1295,41 +1298,68 @@ static int add_inspiral_injections(REAL8TimeSeries *series, const char *filename
 static int add_xml_injections(REAL8TimeSeries *h, const char *filename, COMPLEX8FrequencySeries *response)
 {
 	static const char func[] = "add_xml_injections";
+	struct injection_document *injection_document;
 	/* hard-coded speed hack.  only injections whose "times" are within
 	 * this many seconds of the time series will be loaded */
 	const double longest_injection = 600.0;
 	LIGOTimeGPS start = h->epoch;
 	LIGOTimeGPS end = h->epoch;
-	int has_table;
 
 	XLALGPSAdd(&start, -longest_injection);
 	XLALGPSAdd(&end, h->data->length * h->deltaT + longest_injection);
 
 	/*
+	 * load document
+	 */
+
+	injection_document = load_injection_file(filename, start, end);
+	if(!injection_document)
+		XLAL_ERROR(func, XLAL_EFUNC);
+
+	/*
 	 * sim_burst
 	 */
 
-	has_table = XLALLIGOLwHasTable(filename, "sim_burst");
-	if(has_table < 0)
-		XLAL_ERROR(func, XLAL_EFUNC);
-	if(has_table)
-		if(add_burst_injections(h, filename, NULL, start, end))
+	if(injection_document->sim_burst_table_head) {
+		XLALPrintInfo("%s(): computing sim_burst injections ...\n", func);
+		if(XLALBurstInjectSignals(h, injection_document->sim_burst_table_head, NULL)) {
+			destroy_injection_document(injection_document);
 			XLAL_ERROR(func, XLAL_EFUNC);
+		}
+		XLALPrintInfo("%s(): done\n", func);
+	}
 
 	/*
 	 * sim_inspiral
 	 */
 
-	has_table = XLALLIGOLwHasTable(filename, "sim_inspiral");
-	if(has_table < 0)
-		XLAL_ERROR(func, XLAL_EFUNC);
-	if(has_table)
-		if(add_inspiral_injections(h, filename, response, start, end))
+	if(injection_document->sim_inspiral_table_head) {
+		LALStatus stat;
+		REAL4TimeSeries *mdc;
+		unsigned i;
+
+		mdc = XLALCreateREAL4TimeSeries(h->name, &h->epoch, h->f0, h->deltaT, &h->sampleUnits, h->data->length);
+		if(!mdc) {
+			destroy_injection_document(injection_document);
 			XLAL_ERROR(func, XLAL_EFUNC);
+		}
+		memset(mdc->data->data, 0, mdc->data->length * sizeof(*mdc->data->data));
+		memset(&stat, 0, sizeof(stat));
+
+		XLALPrintInfo("%s(): computing sim_inspiral injections ...\n", func);
+		LAL_CALL(LALFindChirpInjectSignals(&stat, mdc, injection_document->sim_inspiral_table_head, response), &stat);
+		XLALPrintInfo("%s(): done\n", func);
+
+		for(i = 0; i < h->data->length; i++)
+			h->data->data[i] += mdc->data->data[i];
+		XLALDestroyREAL4TimeSeries(mdc);
+	}
 
 	/*
 	 * done
 	 */
+
+	destroy_injection_document(injection_document);
 
 	return 0;
 }
