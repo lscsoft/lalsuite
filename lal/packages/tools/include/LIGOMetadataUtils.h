@@ -364,7 +364,7 @@ RingdownAccuracyList;
  *
  */
 
-ProcessTable *XLALCreateProcessTableRow(void);
+ProcessTable *XLALCreateProcessTableRow(long);
 void XLALDestroyProcessTableRow(ProcessTable *);
 void XLALDestroyProcessTable(ProcessTable *);
 
