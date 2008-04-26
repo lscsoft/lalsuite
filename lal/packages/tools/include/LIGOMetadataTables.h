@@ -305,6 +305,7 @@ typedef struct
 tagSearchSummaryTable
 {
   struct tagSearchSummaryTable *next;
+  long          process_id;
   CHAR          comment[LIGOMETA_COMMENT_MAX];
   LIGOTimeGPS   in_start_time;
   LIGOTimeGPS   in_end_time;
