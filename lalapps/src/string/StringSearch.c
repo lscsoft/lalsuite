@@ -76,8 +76,6 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <lal/GenerateBurst.h>
 
 
-#include <lal/BurstUtils.h>
-
 #include <lalapps.h>
 #include <processtable.h>
 
