@@ -891,7 +891,7 @@ int main(int argc, char *argv[])
 	 */
 
 
-	process_table_head = XLALCreateProcessTableRow();
+	process_table_head = XLALCreateProcessTableRow(0);
 	if(XLALPopulateProcessTable(process_table_head, PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE))
 		exit(1);
 	XLALGPSTimeNow(&process_table_head->start_time);
