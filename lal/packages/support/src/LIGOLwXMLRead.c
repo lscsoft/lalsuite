@@ -152,6 +152,54 @@ files.
 
 
 /**
+ * Test a LIGO Light Weight XML file for the presence of a specific table.
+ * Returns > 0 if the document contains the table, 0 if the document does
+ * not contain the table, and < 0 on error.
+ *
+ * BUGS:  This function can't tell the difference between a missing table
+ * and an unparseable document.  This is a limitation in libmetaio.
+ */
+
+
+int XLALLIGOLwHasTable(const char *filename, const char *table_name)
+{
+	static const char func[] = "XLALLIGOLwHasTable";
+	struct MetaioParseEnvironment env;
+	int has_table;
+
+	/*
+	 * open the file and find table
+	 */
+
+	if(MetaioOpenFile(&env, filename)) {
+		XLALPrintError("%s(): error opening \"%s\"\n", func, filename);
+		XLAL_ERROR(func, XLAL_EIO);
+	}
+
+	/*
+	 * find table (parse error is interpreted as table is missing)
+	 */
+
+	has_table = !MetaioOpenTableOnly(&env, table_name);
+
+	/*
+	 * close
+	 */
+
+	if(MetaioClose(&env)) {
+		XLALPrintError("%s(): error parsing document after %s table\n", func, table_name);
+		XLAL_ERROR(func, XLAL_EIO);
+	}
+
+	/*
+	 * done
+	 */
+
+	return has_table;
+}
+
+
+/**
  * Convenience wrapper for MetaioFindColumn(), translating to XLAL-style
  * error reporting and printing useful error messages on failure.  Returns
  * the integer index of the column, or a negative integer if the column is

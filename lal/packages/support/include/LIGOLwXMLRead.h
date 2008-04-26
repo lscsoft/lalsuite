@@ -159,6 +159,12 @@ LALCreateMetaTableDir(
 </lalLaTeX>
 #endif
 
+int
+XLALLIGOLwHasTable(
+    const char *filename,
+    const char *table_name
+);
+
 ProcessTable *
 XLALProcessTableFromLIGOLw (
     const char *filename
