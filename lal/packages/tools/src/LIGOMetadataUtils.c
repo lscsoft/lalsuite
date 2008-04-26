@@ -1087,9 +1087,9 @@ ProcessTable *XLALCreateProcessTableRow(void)
  */
 
 
-void XLALDestroyProcessTableRow(ProcessTable *process)
+void XLALDestroyProcessTableRow(ProcessTable *row)
 {
-	XLALFree(process);
+	XLALFree(row);
 }
 
 
@@ -1140,9 +1140,9 @@ ProcessParamsTable *XLALCreateProcessParamsTableRow(const ProcessTable *process)
  */
 
 
-void XLALDestroyProcessParamsTableRow(ProcessParamsTable *process_params)
+void XLALDestroyProcessParamsTableRow(ProcessParamsTable *row)
 {
-	XLALFree(process_params);
+	XLALFree(row);
 }
 
 
@@ -1156,6 +1156,63 @@ void XLALDestroyProcessParamsTable(ProcessParamsTable *head)
 	while(head) {
 		ProcessParamsTable *next = head->next;
 		XLALDestroyProcessParamsTableRow(head);
+		head = next;
+	}
+}
+
+
+/**
+ * Create a SearchSummaryTable structure.
+ */
+
+
+SearchSummaryTable *XLALCreateSearchSummaryTableRow(const ProcessTable *process)
+{
+	static const char func[] = "XLALCreateSearchSummaryTableRow";
+	SearchSummaryTable *new = XLALMalloc(sizeof(*new));
+
+	if(!new)
+		XLAL_ERROR_NULL(func, XLAL_EFUNC);
+
+	new->next = NULL;
+	if(process)
+		new->process_id = process->process_id;
+	else
+		new->process_id = -1;
+	memset(new->comment, 0, sizeof(new->comment));
+	XLALGPSSet(&new->in_start_time, 0, 0);
+	XLALGPSSet(&new->in_end_time, 0, 0);
+	XLALGPSSet(&new->out_start_time, 0, 0);
+	XLALGPSSet(&new->out_end_time, 0, 0);
+	new->nevents = -1;
+	new->nnodes = -1;
+	memset(new->ifos, 0, sizeof(new->ifos));
+
+	return new;
+}
+
+
+/**
+ * Destroy a SearchSummaryTable structure.
+ */
+
+
+void XLALDestroySearchSummaryTableRow(SearchSummaryTable *row)
+{
+	XLALFree(row);
+}
+
+
+/**
+ * Destroy a SearchSummaryTable linked list.
+ */
+
+
+void XLALDestroySearchSummaryTable(SearchSummaryTable *head)
+{
+	while(head) {
+		SearchSummaryTable *next = head->next;
+		XLALDestroySearchSummaryTableRow(head);
 		head = next;
 	}
 }

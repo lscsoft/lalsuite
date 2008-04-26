@@ -372,6 +372,10 @@ ProcessParamsTable *XLALCreateProcessParamsTableRow(const ProcessTable *);
 void XLALDestroyProcessParamsTableRow(ProcessParamsTable *);
 void XLALDestroyProcessParamsTable(ProcessParamsTable *);
 
+SearchSummaryTable *XLALCreateSearchSummaryTableRow(const ProcessTable *);
+void XLALDestroySearchSummaryTableRow(SearchSummaryTable *);
+void XLALDestroySearchSummaryTable(SearchSummaryTable *);
+
 int 
 XLALCountProcessTable(
     ProcessTable *head
