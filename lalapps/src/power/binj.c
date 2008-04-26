@@ -891,8 +891,8 @@ int main(int argc, char *argv[])
 	 */
 
 
-	process_table_head = XLALCreateProcessTableRow(0);
-	if(XLALPopulateProcessTable(process_table_head, PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE))
+	process_table_head = XLALCreateProcessTableRow();
+	if(XLALPopulateProcessTable(process_table_head, PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE, 0))
 		exit(1);
 	XLALGPSTimeNow(&process_table_head->start_time);
 	snprintf(process_table_head->ifos, sizeof(process_table_head->ifos), "H1,H2,L1");
@@ -992,7 +992,7 @@ int main(int argc, char *argv[])
 	/* output */
 
 	XLALGPSTimeNow(&process_table_head->end_time);
-	searchsumm.nevents = XLALSimBurstAssignIDs(sim_burst_table_head, 0, 0);
+	searchsumm.nevents = XLALSimBurstAssignIDs(sim_burst_table_head, process_table_head->process_id, 0);
 	write_xml(process_table_head, process_params_table_head, &searchsumm, sim_burst_table_head, options);
 
 	/* done */

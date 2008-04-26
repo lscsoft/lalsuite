@@ -298,7 +298,7 @@ int main(int argc,char *argv[])
      XLALSortSnglBurst(&events, XLALCompareSnglBurstByPeakTimeAndSNR);
    }
 
- XLALSnglBurstAssignIDs(events, 0, 0);
+ XLALSnglBurstAssignIDs(events, procTable.processTable->process_id, 0);
 
  if (OutputEvents(CommandLineArgs)) return 12;
 
@@ -1065,9 +1065,9 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   optarg = NULL;
   /* set up xml output stuff */
   /* create the process and process params tables */
-  procTable.processTable = XLALCreateProcessTableRow(0);
+  procTable.processTable = XLALCreateProcessTableRow();
   LALGPSTimeNow(&status, &(procTable.processTable->start_time), &accuracy);
-  if(XLALPopulateProcessTable(procTable.processTable, PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE))
+  if(XLALPopulateProcessTable(procTable.processTable, PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE, 0))
     exit(1);
   procparams.processParamsTable = NULL;
   /* create the search summary table */

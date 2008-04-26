@@ -1536,8 +1536,8 @@ int main(int argc, char *argv[])
 	 * tables from thsi process.
 	 */
 
-	_process_table = XLALCreateProcessTableRow(9);
-	if(XLALPopulateProcessTable(_process_table, PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE))
+	_process_table = XLALCreateProcessTableRow();
+	if(XLALPopulateProcessTable(_process_table, PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE, 9))
 		exit(1);
 	XLALGPSTimeNow(&_process_table->start_time);
 
@@ -1726,7 +1726,7 @@ int main(int argc, char *argv[])
 	 */
 
 	XLALSortSnglBurst(&_sngl_burst_table, XLALCompareSnglBurstByStartTimeAndLowFreq);
-	XLALSnglBurstAssignIDs(_sngl_burst_table, 0, 0);
+	XLALSnglBurstAssignIDs(_sngl_burst_table, _process_table->process_id, 0);
 
 	/*
 	 * Check event rate limit.
