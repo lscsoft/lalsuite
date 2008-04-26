@@ -90,8 +90,8 @@ int vsnprintf(char *str, size_t size, const char *format, va_list ap);
 #define TESTSTATUS( pstat ) \
   if ( (pstat)->statusCode ) { REPORTSTATUS(pstat); return 100; } else ((void)0)
 
-#define ADD_PROCESS_PARAM(type) \
-	do { paramaddpoint = add_process_param(paramaddpoint, type, long_options[option_index].name, optarg); } while(0)
+#define ADD_PROCESS_PARAM(process, type) \
+	do { paramaddpoint = add_process_param(paramaddpoint, process, type, long_options[option_index].name, optarg); } while(0)
 
 #define SCALE 1e20
 #define MAXTEMPLATES 1000
@@ -401,11 +401,11 @@ int AddInjections(struct CommandLineArgsTag CLA)
 
 /*******************************************************************************/
 
-static ProcessParamsTable **add_process_param(ProcessParamsTable **proc_param, 
+static ProcessParamsTable **add_process_param(ProcessParamsTable **proc_param,
+					      const ProcessTable *process,
 					      const char *type, const char *param, const char *value)
 {
-  *proc_param = LALCalloc(1, sizeof(**proc_param));
-  (*proc_param)->next = NULL;
+  *proc_param = XLALCreateProcessParamsTableRow(process);
   snprintf((*proc_param)->program, LIGOMETA_PROGRAM_MAX, PROGRAM_NAME);
   snprintf((*proc_param)->type, LIGOMETA_TYPE_MAX, type);
   snprintf((*proc_param)->param, LIGOMETA_PARAM_MAX, "--%s", param);
@@ -1065,7 +1065,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   optarg = NULL;
   /* set up xml output stuff */
   /* create the process and process params tables */
-  procTable.processTable = LALCalloc(1, sizeof(ProcessTable));
+  procTable.processTable = XLALCreateProcessTableRow(0);
   LALGPSTimeNow(&status, &(procTable.processTable->start_time), &accuracy);
   if(XLALPopulateProcessTable(procTable.processTable, PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE))
     exit(1);
@@ -1121,133 +1121,133 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     case 'f':
       /* low frequency cutoff */
       CLA->flow=atof(optarg);
-      ADD_PROCESS_PARAM("float");
+      ADD_PROCESS_PARAM(procTable.processTable, "float");
       break;
     case 's':
       /* low frequency cutoff */
       CLA->samplerate=atof(optarg);
-      ADD_PROCESS_PARAM("float");
+      ADD_PROCESS_PARAM(procTable.processTable, "float");
       break;
     case 'H':
       /* lowest high frequency cutoff */
       CLA->fbankhighfcutofflow=atof(optarg);
-      ADD_PROCESS_PARAM("float");
+      ADD_PROCESS_PARAM(procTable.processTable, "float");
       break;
     case 'L':
       /* low frequency cutoff */
       CLA->fbankstart=atof(optarg);
-      ADD_PROCESS_PARAM("float");
+      ADD_PROCESS_PARAM(procTable.processTable, "float");
       break;
     case 't':
       /* low frequency cutoff */
       CLA->threshold=atof(optarg);
-      ADD_PROCESS_PARAM("float");
+      ADD_PROCESS_PARAM(procTable.processTable, "float");
       break;
     case 'F':
       /* name of frame cache file */
       CLA->FrCacheFile=optarg;
-      ADD_PROCESS_PARAM("string");
+      ADD_PROCESS_PARAM(procTable.processTable, "string");
       break;
     case 'C':
       /* name channel */
       CLA->ChannelName=optarg;
       memcpy(ifo, optarg, sizeof(ifo) - 1);
-      ADD_PROCESS_PARAM("string");
+      ADD_PROCESS_PARAM(procTable.processTable, "string");
       break;
     case 'i':
       /* name of xml injection file */
       CLA->InjectionFile=optarg;
-      ADD_PROCESS_PARAM("string");
+      ADD_PROCESS_PARAM(procTable.processTable, "string");
       break;
     case 'o':
       /* name of xml injection file */
       CLA->outputFileName=optarg;
-      ADD_PROCESS_PARAM("string");
+      ADD_PROCESS_PARAM(procTable.processTable, "string");
       break;
     case 'S':
       /* GPS start time of search */
        CLA->GPSStart=atof(optarg);
-      ADD_PROCESS_PARAM("int");
+      ADD_PROCESS_PARAM(procTable.processTable, "int");
       break;
     case 'E':
        /* GPS end time time of search */
       CLA->GPSEnd=atof(optarg);
-      ADD_PROCESS_PARAM("int");
+      ADD_PROCESS_PARAM(procTable.processTable, "int");
       break;
     case 'd':
        /* Number of segment to break-up search into */
       CLA->ShortSegDuration=atoi(optarg);
-      ADD_PROCESS_PARAM("int");
+      ADD_PROCESS_PARAM(procTable.processTable, "int");
       break;
     case 'T':
       /* Half the number of seconds that are trown out at the start and at the end of a short chunk */
       CLA->TruncSecs=atof(optarg);
-      ADD_PROCESS_PARAM("int");
+      ADD_PROCESS_PARAM(procTable.processTable, "int");
       break;
     case 'g':
       /* start time of allowed triggers */
       CLA->trigstarttime=atof(optarg);
-      ADD_PROCESS_PARAM("int");
+      ADD_PROCESS_PARAM(procTable.processTable, "int");
       break;
     case 'p':
       /* start time of allowed triggers */
       CLA->pad=atoi(optarg);
-      ADD_PROCESS_PARAM("int");
+      ADD_PROCESS_PARAM(procTable.processTable, "int");
       break;
     case 'c':
       /* cusp power law */
       CLA->power=-4.0/3.0;
-      ADD_PROCESS_PARAM("string");
+      ADD_PROCESS_PARAM(procTable.processTable, "string");
       break;
     case 'k':
       /* kink power law */
       CLA->power=-5.0/3.0;
-      ADD_PROCESS_PARAM("string");
+      ADD_PROCESS_PARAM(procTable.processTable, "string");
       break;
     case 'n':
       /* fake gaussian noise flag */
       CLA->fakenoiseflag=1;
-      ADD_PROCESS_PARAM("string");
+      ADD_PROCESS_PARAM(procTable.processTable, "string");
       break;
     case 'w':
       /* fake gaussian noise flag */
       CLA->whitespectrumflag=1;
-      ADD_PROCESS_PARAM("string");
+      ADD_PROCESS_PARAM(procTable.processTable, "string");
       break;
     case 'l':
       /* fake gaussian noise flag */
       CLA->cluster=atof(optarg);
-      ADD_PROCESS_PARAM("string");
+      ADD_PROCESS_PARAM(procTable.processTable, "string");
       break;
     case 'a':
       /* fake gaussian noise flag */
       CLA->printspectrumflag=1;
-      ADD_PROCESS_PARAM("string");
+      ADD_PROCESS_PARAM(procTable.processTable, "string");
       break;
     case 'b':
       /* fake gaussian noise flag */
       CLA->printfilterflag=1;
-      ADD_PROCESS_PARAM("string");
+      ADD_PROCESS_PARAM(procTable.processTable, "string");
       break;
     case 'r':
       /* fake gaussian noise flag */
       CLA->printsnrflag=1;
-      ADD_PROCESS_PARAM("string");
+      ADD_PROCESS_PARAM(procTable.processTable, "string");
       break;
     case 'x':
       /* fake gaussian noise flag */
       CLA->printfirflag=1;
-      ADD_PROCESS_PARAM("string");
+      ADD_PROCESS_PARAM(procTable.processTable, "string");
       break;
     case 'y':
       /* fake gaussian noise flag */
       CLA->printdataflag=1;
-      ADD_PROCESS_PARAM("string");
+      ADD_PROCESS_PARAM(procTable.processTable, "string");
       break;
     case 'z':
       /* fake gaussian noise flag */
       CLA->printinjectionflag=1;
-      ADD_PROCESS_PARAM("string");
+      ADD_PROCESS_PARAM(procTable.processTable, "string");
       break;
     case 'h':
       /* print usage/help message */
