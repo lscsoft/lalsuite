@@ -117,7 +117,6 @@ real or simulated gravitational wave detector data.
 \item[Synopsis]
 \prog{lalapps\_power} \newline \hspace*{0.5in}
 \option{--bandwidth}~\parm{Hz} \newline \hspace*{0.5in}
-[\option{--burstinjection-file}~\parm{file name}] \newline \hspace*{0.5in}
 [\option{--calibrated-data}] \newline \hspace*{0.5in}
 [\option{--calibration-cache}~\parm{cache file}] \newline \hspace*{0.5in}
 \option{--channel-name}~\parm{string} \newline \hspace*{0.5in}
@@ -131,7 +130,7 @@ real or simulated gravitational wave detector data.
 \option{--gps-start-time}~\parm{seconds} \newline \hspace*{0.5in}
 [\option{--help}] \newline \hspace*{0.5in}
 \option{--high-pass}~\parm{Hz} \newline \hspace*{0.5in}
-[\option{--inspiralinjection-file}~\parm{file name}] \newline \hspace*{0.5in}
+[\option{--injection-file}~\parm{file name}] \newline \hspace*{0.5in}
 \option{--low-freq-cutoff}~\parm{Hz} \newline \hspace*{0.5in}
 [\option{--max-event-rate}~\parm{Hz}] \newline \hspace*{0.5in}
 \option{--max-tile-bandwidth}~\parm{Hz} \newline \hspace*{0.5in}
@@ -202,11 +201,6 @@ gzip-compressed.
 Set the bandwidth in which the search is to be performed.  This must be an
 integer power of 2.  This and the \option{--low-freq-cutoff} option
 together set the frequency band to be searched.
-
-\item[\option{--burstinjection-file} \parm{file name}]
-Read the sim\_burst table from the LIGO\_LW XML file \parm{file name}, and
-add the software injections described therein to the input time series
-prior to analysis.
 
 \item[\option{--calibrated-data}]
 When the \option{--calibrated-data} option is supplied, input time series
@@ -287,12 +281,12 @@ In older versions of the program, this frequency was hard-coded to be
 \unit{10}{\hertz} below the lower bound of the frequency band being
 searched or \unit{150}{Hz}, which ever was lower.
 
-\item[\option{--inspiralinjection-file} \parm{file name}]
-Use \parm{file name} as a LIGO lightweight XML file containing a list of inspiral
-injections to be made.   The file should contain a \verb+sim_inspiral+ table
-which is used to set information about the types of inspiral injections to be made.
-This file may be constructed by hand, the
-\verb+lalapps_bbhinj+ program described in the Inspiral package   
+\item[\option{--injection-file} \parm{file name}]
+Read lists of injections from the LIGO\_LW XML file \parm{file name}, and
+adds the software injections described therein to the input time series
+prior to analysis.  \verb+sim_burst+ and \verb+sim_inspiral+ injection
+tables are supported.  See \prog{lalapps\_bin} and \prog{lalapps\_bbhinj}
+for information on constructing injection lists.
 
 \item[\option{--low-freq-cutoff} \parm{Hz}]
 Set the lower bound for the frequency band in which to search for
