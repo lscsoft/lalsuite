@@ -354,7 +354,7 @@ ProcessTable *XLALProcessTableFromLIGOLw(
 	while((miostatus = MetaioGetRow(&env)) > 0) {
 		/* create a new row */
 
-		ProcessTable *row = XLALCreateProcessTableRow(-1);
+		ProcessTable *row = XLALCreateProcessTableRow();
 
 		if(!row) {
 			XLALDestroyProcessTable(head);

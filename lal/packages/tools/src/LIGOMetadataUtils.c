@@ -1053,7 +1053,7 @@ LALTimeSortSummValue (
  */
 
 
-ProcessTable *XLALCreateProcessTableRow(long id)
+ProcessTable *XLALCreateProcessTableRow(void)
 {
 	static const char func[] = "XLALCreateProcessTableRow";
 	ProcessTable *new = XLALMalloc(sizeof(*new));
@@ -1076,7 +1076,7 @@ ProcessTable *XLALCreateProcessTableRow(long id)
 	memset(new->domain, 0, sizeof(new->domain));
 	new->unix_procid = 0;
 	memset(new->ifos, 0, sizeof(new->ifos));
-	new->process_id = id;
+	new->process_id = -1;
 
 	return new;
 }
