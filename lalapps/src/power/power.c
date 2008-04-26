@@ -20,6 +20,15 @@
  */
 
 
+/*
+ * ============================================================================
+ *
+ *                                  Preamble
+ *
+ * ============================================================================
+ */
+
+
 #include <getopt.h>
 #include <lalapps.h>
 #include <math.h>
@@ -78,8 +87,8 @@ int snprintf(char *str, size_t size, const char *format, ...);
 int vsnprintf(char *str, size_t size, const char *format, va_list ap);
 
 
-NRCSID(POWERC, "power $Id$");
-RCSID("power $Id$");
+NRCSID(POWERC, "$Id$");
+RCSID("$Id$");
 
 
 #define PROGRAM_NAME "lalapps_power"
@@ -222,10 +231,8 @@ struct options {
 	char *mdc_cache_filename;
 	/* mdc signal only channnel info */
 	char *mdc_channel_name;
-	/* file with list of burst injections */
-	char *sim_burst_filename;
-	/* file with list of inspiral injections */
-	char *sim_inspiral_filename;
+	/* XML file with list(s) of injections */
+	char *injection_filename;
 
 	/*
 	 * XLALEPSearch() parmaters
@@ -284,8 +291,7 @@ static struct options *options_new(void)
 		.high_pass = -1.0,	/* impossible */
 		.max_event_rate = 0,	/* default == disable */
 		.output_filename = NULL,	/* impossible */
-		.sim_burst_filename = NULL,	/* default == disable */
-		.sim_inspiral_filename = NULL,	/* default == disable */
+		.injection_filename = NULL,	/* default == disable */
 		.cache_filename = NULL,	/* default == disable */
 		.confidence_threshold = XLAL_REAL8_FAIL_NAN,	/* impossible */
 		.bandwidth = 0,	/* impossible */
@@ -325,7 +331,6 @@ static void print_usage(const char *program)
 "The following options are recognized.  Options not surrounded in [] are\n" \
 "required.\n" \
 "	 --bandwidth <Hz>\n" \
-"	[--burstinjection-file <XML file name>]\n" \
 "	[--calibrated-data]\n" \
 "	[--calibration-cache <cache file name>]\n" \
 "	 --channel-name <name>\n" \
@@ -340,7 +345,7 @@ static void print_usage(const char *program)
 "	 --gps-start-time <seconds>\n" \
 "	[--help]\n" \
 "	 --high-pass <Hz>\n" \
-"	[--inspiralinjection-file <XML file name>]\n" \
+"	[--injection-file <XML file name>]\n" \
 "	 --low-freq-cutoff <Hz>\n" \
 "	[--max-event-rate <Hz>]\n" \
 "	 --max-tile-bandwidth <Hz>\n" \
@@ -549,7 +554,7 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 	int option_index;
 	struct option long_options[] = {
 		{"bandwidth", required_argument, NULL, 'A'},
-		{"burstinjection-file", required_argument, NULL, 'P'},
+		{"injection-file", required_argument, NULL, 'P'},
 		{"calibrated-data", no_argument, NULL, 'J'},
 		{"calibration-cache", required_argument, NULL, 'B'},
 		{"channel-name", required_argument, NULL, 'C'},
@@ -563,7 +568,6 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 		{"gps-start-time", required_argument, NULL, 'M'},
 		{"help", no_argument, NULL, 'O'},
 		{"high-pass", required_argument, NULL, 'o'},
-		{"inspiralinjection-file", required_argument, NULL, 'I'},
 		{"low-freq-cutoff", required_argument, NULL, 'Q'},
 		{"max-event-rate", required_argument, NULL, 'F'},
 		{"max-tile-bandwidth", required_argument, NULL, 'l'},
@@ -637,11 +641,6 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 		ADD_PROCESS_PARAM(process, "string");
 		break;
 
-	case 'I':
-		options->sim_inspiral_filename = optarg;
-		ADD_PROCESS_PARAM(process, "string");
-		break;
-
 	case 'J':
 		options->calibrated = TRUE;
 		ADD_PROCESS_PARAM(process, "string");
@@ -671,7 +670,7 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 		break;
 
 	case 'P':
-		options->sim_burst_filename = optarg;
+		options->injection_filename = optarg;
 		ADD_PROCESS_PARAM(process, "string");
 		break;
 
@@ -1193,24 +1192,21 @@ static COMPLEX8FrequencySeries *generate_response(const char *cachefile, const c
 /*
  * ============================================================================
  *
- *                              Burst injections
+ *                                 Injections
  *
  * ============================================================================
  */
 
 
-static int add_burst_injections(REAL8TimeSeries *h, const char *filename)
+/*
+ * Support for sim_burst tables.
+ */
+
+
+static int add_burst_injections(REAL8TimeSeries *h, const char *filename, COMPLEX16FrequencySeries *response, LIGOTimeGPS start, LIGOTimeGPS end)
 {
 	static const char func[] = "add_burst_injections";
-	/* hard-coded speed hack.  only injections whose "times" are within
-	 * this many seconds of the time series will be loaded */
-	const double longest_injection = 600.0;
-	LIGOTimeGPS start = h->epoch;
-	LIGOTimeGPS end = h->epoch;
 	SimBurst *sim_burst;
-
-	XLALGPSAdd(&start, -longest_injection);
-	XLALGPSAdd(&end, h->data->length * h->deltaT + longest_injection);
 
 	XLALPrintInfo("%s(): reading sim_burst table from %s\n", func, filename);
 
@@ -1219,7 +1215,7 @@ static int add_burst_injections(REAL8TimeSeries *h, const char *filename)
 		XLAL_ERROR(func, XLAL_EFUNC);
 
 	XLALPrintInfo("%s(): computing injections and adding to input time series\n", func);
-	if(XLALBurstInjectSignals(h, sim_burst, NULL)) {
+	if(XLALBurstInjectSignals(h, sim_burst, response)) {
 		XLALDestroySimBurstTable(sim_burst);
 		XLAL_ERROR(func, XLAL_EFUNC);
 	}
@@ -1232,69 +1228,110 @@ static int add_burst_injections(REAL8TimeSeries *h, const char *filename)
 
 
 /*
- * ============================================================================
- *
- *                              Inspiral injections
- *
- * ============================================================================
+ * Support from sim_inspiral tables.  LAL can only generate
+ * single-precision injections so we have to do the injections into a
+ * temporary array of zeros, and then add it into the double-precision time
+ * series
  */
 
 
-/*
- * LAL can only generate single-precision injections so we have to do the
- * injections into a temporary array of zeros, and then add it into the
- * double-precision time series
- */
-
-
-static REAL8TimeSeries *add_inspiral_injections(LALStatus *stat, char *filename, REAL8TimeSeries *series, COMPLEX8FrequencySeries *response)
+static int add_inspiral_injections(REAL8TimeSeries *series, const char *filename, COMPLEX8FrequencySeries *response, LIGOTimeGPS start, LIGOTimeGPS end)
 {
 	static const char func[] = "add_inspiral_injections";
-	INT4 start_time = series->epoch.gpsSeconds;
-	INT4 stop_time = start_time + series->data->length * series->deltaT;
-	SimInspiralTable *injections = NULL;
-	REAL4TimeSeries *zeroes = XLALCreateREAL4TimeSeries(series->name, &series->epoch, series->f0, series->deltaT, &series->sampleUnits, series->data->length);
-	INT4 numInjections = 0;
+	SimInspiralTable *sim_inspiral;
+	REAL4TimeSeries *mdc = XLALCreateREAL4TimeSeries(series->name, &series->epoch, series->f0, series->deltaT, &series->sampleUnits, series->data->length);
+	int n_injections;
 	unsigned i;
 
-	if(!zeroes)
-		XLAL_ERROR_NULL(func, XLAL_EFUNC);
-	memset(zeroes->data->data, 0, zeroes->data->length * sizeof(*zeroes->data->data));
+	if(!mdc)
+		XLAL_ERROR(func, XLAL_EFUNC);
+	memset(mdc->data->data, 0, mdc->data->length * sizeof(*mdc->data->data));
 
 	if(!response) {
-		XLALDestroyREAL4TimeSeries(zeroes);
+		XLALDestroyREAL4TimeSeries(mdc);
 		XLALPrintError("%s(): error: must supply calibration information for injections\n", func);
-		exit(1);
+		XLAL_ERROR(func, XLAL_EINVAL);
 	}
 
 	XLALPrintInfo("%s(): reading sim_inspiral table ...\n", func);
 
-	numInjections = SimInspiralTableFromLIGOLw(&injections, filename, start_time, stop_time);
+	n_injections = SimInspiralTableFromLIGOLw(&sim_inspiral, filename, start.gpsSeconds, end.gpsSeconds);
 
-	if(numInjections < 0) {
-		XLALDestroyREAL4TimeSeries(zeroes);
+	if(n_injections < 0) {
+		XLALDestroyREAL4TimeSeries(mdc);
 		XLALPrintError("%s(): error: cannot read injection file\n", func);
-		exit(1);
+		XLAL_ERROR(func, XLAL_EFUNC);
 	}
 
 	XLALPrintInfo("%s(): computing injections ...\n", func);
 
-	if(numInjections > 0)
-		LAL_CALL(LALFindChirpInjectSignals(stat, zeroes, injections, response), stat);
+	if(n_injections > 0) {
+		LALStatus stat;
+		memset(&stat, 0, sizeof(stat));
+		LAL_CALL(LALFindChirpInjectSignals(&stat, mdc, sim_inspiral, response), &stat);
+	}
 
 	XLALPrintInfo("%s(): done\n", func);
 
-	while(injections) {
-		SimInspiralTable *thisEvent = injections;
-		injections = injections->next;
-		XLALFree(thisEvent);
+	while(sim_inspiral) {
+		SimInspiralTable *next = sim_inspiral->next;
+		XLALFree(sim_inspiral);
+		sim_inspiral = next;
 	}
 
 	for(i = 0; i < series->data->length; i++)
-		series->data->data[i] += zeroes->data->data[i];
-	XLALDestroyREAL4TimeSeries(zeroes);
+		series->data->data[i] += mdc->data->data[i];
+	XLALDestroyREAL4TimeSeries(mdc);
 
-	return series;
+	return 0;
+}
+
+
+/*
+ * This is the function that gets called.
+ */
+
+
+static int add_xml_injections(REAL8TimeSeries *h, const char *filename, COMPLEX8FrequencySeries *response)
+{
+	static const char func[] = "add_xml_injections";
+	/* hard-coded speed hack.  only injections whose "times" are within
+	 * this many seconds of the time series will be loaded */
+	const double longest_injection = 600.0;
+	LIGOTimeGPS start = h->epoch;
+	LIGOTimeGPS end = h->epoch;
+	int has_table;
+
+	XLALGPSAdd(&start, -longest_injection);
+	XLALGPSAdd(&end, h->data->length * h->deltaT + longest_injection);
+
+	/*
+	 * sim_burst
+	 */
+
+	has_table = XLALLIGOLwHasTable(filename, "sim_burst");
+	if(has_table < 0)
+		XLAL_ERROR(func, XLAL_EFUNC);
+	if(has_table)
+		if(add_burst_injections(h, filename, NULL, start, end))
+			XLAL_ERROR(func, XLAL_EFUNC);
+
+	/*
+	 * sim_inspiral
+	 */
+
+	has_table = XLALLIGOLwHasTable(filename, "sim_inspiral");
+	if(has_table < 0)
+		XLAL_ERROR(func, XLAL_EFUNC);
+	if(has_table)
+		if(add_inspiral_injections(h, filename, response, start, end))
+			XLAL_ERROR(func, XLAL_EFUNC);
+
+	/*
+	 * done
+	 */
+
+	return 0;
 }
 
 
@@ -1491,9 +1528,15 @@ int main(int argc, char *argv[])
 
 	/*
 	 * Create the process and process params tables.
+	 *
+	 * FIXME:  hard-coded process ID 9 is used to avoid conflicts with
+	 * input injection files.  9 is high-enough for current use cases,
+	 * but a better solution would be to set it to 0 and find a way to
+	 * merge injection tables with existing process and process params
+	 * tables from thsi process.
 	 */
 
-	_process_table = XLALCreateProcessTableRow();
+	_process_table = XLALCreateProcessTableRow(9);
 	if(XLALPopulateProcessTable(_process_table, PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE))
 		exit(1);
 	XLALGPSTimeNow(&_process_table->start_time);
@@ -1608,11 +1651,10 @@ int main(int argc, char *argv[])
 		}
 
 		/*
-		 * Add burst/inspiral injections into the time series if
-		 * requested.
+		 * Add XML injections into the time series if requested.
 		 */
 
-		if(options->sim_burst_filename || options->sim_inspiral_filename) {
+		if(options->injection_filename) {
 			COMPLEX8FrequencySeries *response;
 
 			/* Create the response function (generates unity
@@ -1621,12 +1663,9 @@ int main(int argc, char *argv[])
 			if(!response)
 				exit(1);
 
-			/* perform injections */
-			if(options->sim_burst_filename)
-				if(add_burst_injections(series, options->sim_burst_filename))
-					exit(1);
-			if(options->sim_inspiral_filename)
-				add_inspiral_injections(&stat, options->sim_inspiral_filename, series, response);
+			/* perform XML injections */
+			if(add_xml_injections(series, options->injection_filename, response))
+				exit(1);
 
 			/* clean up */
 			XLALDestroyCOMPLEX8FrequencySeries(response);
