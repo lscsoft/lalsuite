@@ -1103,9 +1103,10 @@ int XLALWriteLIGOLwXMLSearchSummaryTable(
 	/* rows */
 
 	for(; search_summary; search_summary = search_summary->next) {
-		if(fprintf(xml->fp, "%s\"process:process_id:0\",\"standalone\",\"\",\"%s\",\"%s\",\"%s\",%d,%d,%d,%d,%d,%d,%d,%d,%d,%d",
+		if(fprintf(xml->fp, "%s\"process:process_id:%ld\",\"standalone\",\"\",\"%s\",\"%s\",\"%s\",%d,%d,%d,%d,%d,%d,%d,%d,%d,%d",
 			row_head,
 			lalCVSTag,
+			search_summary->process_id,
 			search_summary->comment,
 			search_summary->ifos,
 			search_summary->in_start_time.gpsSeconds,
