@@ -192,7 +192,8 @@ int XLALPopulateProcessTable(
 	const char *program_name,
 	const char *cvs_revision,
 	const char *cvs_source,
-	const char *cvs_date
+	const char *cvs_date,
+	long process_id
 )
 {
 	static const char func[] = "XLALPopulateProcessTable";
@@ -265,7 +266,7 @@ int XLALPopulateProcessTable(
 	snprintf(ptable->domain, LIGOMETA_DOMAIN_MAX, "lalapps");
 
 	/*
-	 * unix process id, username, host, and process_id ID
+	 * unix process id, username, host, and process_id
 	 */
 
 	ptable->unix_procid = getpid();
@@ -280,7 +281,7 @@ int XLALPopulateProcessTable(
 		snprintf(ptable->username, LIGOMETA_USERNAME_MAX, "%d", uid);
 	else
 		snprintf(ptable->username, LIGOMETA_USERNAME_MAX, "%s", pw->pw_name);
-	ptable->process_id = 0;
+	ptable->process_id = process_id;
 
 	/*
 	 * done
@@ -315,7 +316,7 @@ void populate_process_table(
 
 	XLALPrintDeprecationWarning("populate_process_table", "XLALPopulateProcessTable");
 
-	ASSERT(!XLALPopulateProcessTable(ptable, program_name, cvs_revision, cvs_source, cvs_date), status, LAL_EXLAL, LAL_MSGEXLAL);
+	ASSERT(!XLALPopulateProcessTable(ptable, program_name, cvs_revision, cvs_source, cvs_date, 0), status, LAL_EXLAL, LAL_MSGEXLAL);
 
 	DETATCHSTATUSPTR(status);
 	RETURN(status);

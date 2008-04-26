@@ -35,7 +35,8 @@ int XLALPopulateProcessTable(
 	const char *program_name,
 	const char *cvs_revision,
 	const char *cvs_source,
-	const char *cvs_date
+	const char *cvs_date,
+	long process_id
 );
 
 
