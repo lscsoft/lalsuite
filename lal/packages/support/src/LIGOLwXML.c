@@ -968,7 +968,7 @@ int XLALWriteLIGOLwXMLProcessTable(
 	/* rows */
 
 	for(; process; process = process->next) {
-		if(fprintf(xml->fp, "%s\"%s\",\"%s\",\"%s\",%d,\"%s\",%d,\"%s\",\"%s\",%d,%d,%d,%d,\"%s\",\"%s\",\"process:process_id:0\"",
+		if(fprintf(xml->fp, "%s\"%s\",\"%s\",\"%s\",%d,\"%s\",%d,\"%s\",\"%s\",%d,%d,%d,%d,\"%s\",\"%s\",\"process:process_id:%ld\"",
 			row_head,
 			process->program,
 			process->version,
@@ -983,7 +983,8 @@ int XLALWriteLIGOLwXMLProcessTable(
 			process->end_time.gpsSeconds,
 			process->jobid,
 			process->domain,
-			process->ifos
+			process->ifos,
+			process->process_id
 		) < 0)
 			XLAL_ERROR(func, XLAL_EFUNC);
 		row_head = ",\n\t\t\t";
@@ -1034,9 +1035,10 @@ int XLALWriteLIGOLwXMLProcessParamsTable(
 	/* rows */
 
 	for(; process_params; process_params = process_params->next) {
-		if(fprintf(xml->fp, "%s\"%s\",\"process:process_id:0\",\"%s\",\"%s\",\"%s\"",
+		if(fprintf(xml->fp, "%s\"%s\",\"process:process_id:%ld\",\"%s\",\"%s\",\"%s\"",
 			row_head,
 			process_params->program,
+			process_params->process_id,
 			process_params->param,
 			process_params->type,
 			process_params->value
