@@ -1230,13 +1230,24 @@ static void destroy_injection_document(struct injection_document *doc)
 }
 
 
-static struct injection_document *load_injection_file(const char *filename, LIGOTimeGPS start, LIGOTimeGPS end)
+static struct injection_document *load_injection_document(const char *filename, LIGOTimeGPS start, LIGOTimeGPS end)
 {
-	static const char func[] = "load_injection_file";
-	struct injection_document *new = malloc(sizeof(*new));
+	static const char func[] = "load_injection_document";
+	struct injection_document *new;
+	/* hard-coded speed hack.  only injections whose "times" are within
+	 * this many seconds of the requested interval will be loaded */
+	const double longest_injection = 600.0;
 
+	new = malloc(sizeof(*new));
 	if(!new)
 		XLAL_ERROR_NULL(func, XLAL_ENOMEM);
+
+	/*
+	 * adjust start and end times
+	 */
+
+	XLALGPSAdd(&start, -longest_injection);
+	XLALGPSAdd(&end, longest_injection);
 
 	/*
 	 * load required tables
@@ -1262,7 +1273,7 @@ static struct injection_document *load_injection_file(const char *filename, LIGO
 
 	new->has_sim_inspiral_table = XLALLIGOLwHasTable(filename, "sim_inspiral");
 	if(new->has_sim_inspiral_table) {
-		if(SimInspiralTableFromLIGOLw(&new->sim_inspiral_table_head, filename, start.gpsSeconds, end.gpsSeconds) < 0)
+		if(SimInspiralTableFromLIGOLw(&new->sim_inspiral_table_head, filename, start.gpsSeconds - 1, end.gpsSeconds + 1) < 0)
 			new->sim_inspiral_table_head = NULL;
 	} else
 		new->sim_inspiral_table_head = NULL;
@@ -1299,20 +1310,16 @@ static int add_xml_injections(REAL8TimeSeries *h, const char *filename, COMPLEX8
 {
 	static const char func[] = "add_xml_injections";
 	struct injection_document *injection_document;
-	/* hard-coded speed hack.  only injections whose "times" are within
-	 * this many seconds of the time series will be loaded */
-	const double longest_injection = 600.0;
-	LIGOTimeGPS start = h->epoch;
-	LIGOTimeGPS end = h->epoch;
-
-	XLALGPSAdd(&start, -longest_injection);
-	XLALGPSAdd(&end, h->data->length * h->deltaT + longest_injection);
+	LIGOTimeGPS start;
+	LIGOTimeGPS end;
 
 	/*
 	 * load document
 	 */
 
-	injection_document = load_injection_file(filename, start, end);
+	start = end = h->epoch;
+	XLALGPSAdd(&end, h->data->length * h->deltaT);
+	injection_document = load_injection_document(filename, start, end);
 	if(!injection_document)
 		XLAL_ERROR(func, XLAL_EFUNC);
 
@@ -1541,7 +1548,8 @@ int main(int argc, char *argv[])
 	SnglBurst *_sngl_burst_table = NULL;
 	SnglBurst **EventAddPoint = &_sngl_burst_table;
 	/* the ugly underscores are because some badger put global symbols
-	 * in LAL by exactly these names. it's a mad house, a maad house */
+	 * in LAL with exactly these names. it's a mad house, a maad house
+	 * */
 	ProcessTable *_process_table;
 	ProcessParamsTable *_process_params_table = NULL;
 	SearchSummaryTable *_search_summary_table;
