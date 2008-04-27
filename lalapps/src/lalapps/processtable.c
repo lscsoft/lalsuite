@@ -119,7 +119,7 @@ static char *cvs_get_keyword_value(const char *cvs_string)
 
 
 /**
- * Replace "," substrings with "\\,".  The string is modified in place and
+ * Replace "," substrings with "\,".  The string is modified in place and
  * resized with realloc().  The return value is the new string or NULL on
  * failure.  The pointer passed as input is invalid unconditionally after
  * this function (either it has been realloc()'ed or free()'ed on failure).
@@ -160,10 +160,10 @@ static char *escape_commas(char *s)
 		s[comma - s] = '\0';
 
 		/*
-		 * {text preceding comma} + "\\," + {text following comma}
+		 * {text preceding comma} + "\," + {text following comma}
 		 */
 
-		sprintf(new, "%s\\\\,%s", s, ++comma);
+		sprintf(new, "%s\\,%s", s, ++comma);
 
 		/*
 		 * point pointers at new string and free old one
