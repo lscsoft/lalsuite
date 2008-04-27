@@ -143,11 +143,11 @@ static char *escape_commas(char *s)
 
 	while((comma = strchr(comma, ','))) {
 		/*
-		 * allocate new string.  +1 for the '\0', and +2 for the
-		 * "\\" to be added
+		 * allocate new string.  +1 for the '\0', and +1 for the
+		 * "\" to be added
 		 */
 
-		char *new = malloc((strlen(s) + 3) * sizeof(*new));
+		char *new = malloc((strlen(s) + 2) * sizeof(*new));
 		if(!new) {
 			free(s);
 			return NULL;
@@ -157,19 +157,19 @@ static char *escape_commas(char *s)
 		 * null-terminate the string preceding the comma
 		 */
 
-		s[comma - s] = '\0';
+		*(comma++) = '\0';
 
 		/*
 		 * {text preceding comma} + "\," + {text following comma}
 		 */
 
-		sprintf(new, "%s\\,%s", s, ++comma);
+		sprintf(new, "%s\\,%s", s, comma);
 
 		/*
 		 * point pointers at new string and free old one
 		 */
 
-		comma = new + (comma - s) + 2;
+		comma = new + (comma - s) + 1;
 		free(s);
 		s = new;
 	}
