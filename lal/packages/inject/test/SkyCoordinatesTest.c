@@ -108,7 +108,7 @@ LALMalloc()                     LALFree()
 LALGeocentricToGeodetic()       LALGeodeticToGeocentric()
 LALGPStoINT8()                  LALINT8toGPS()
 LALGPStoUTC()                   LALDateString()
-LALGPStoGMST1()                 LALJulianDate()
+LALGPStoGMST1()
 LALCHARCreateVector()           LALCHARDestroyVector()
 LALCreateRandomParams()         LALDestroyRandomParams()
 LALUniformDeviate()             LALConvertSkyCoordinates()
@@ -527,7 +527,6 @@ main( int argc, char **argv )
     /* Convert to UTC timestamp. */
     if ( gpsTime.gpsSeconds >= 0 ) {
       CHARVector *timeStamp = NULL; /* date string */
-      REAL8 jDate;                  /* Julian date */
       /* don't bomb if leap second table isn't up to date */
       LALLeapSecAccuracy acc = LALLEAPSEC_LOOSE;
       LALMSTUnitsAndAcc uAcc;
@@ -541,10 +540,6 @@ main( int argc, char **argv )
       SUB( LALDateString( &stat, timeStamp, &date ), &stat );
       fprintf( stdout, "UTC time: %s\n", timeStamp->data );
       SUB( LALCHARDestroyVector( &stat, &timeStamp ), &stat );
-
-      /* Convert to Julian date. */
-      SUB( LALJulianDate( &stat, &jDate, &date ), &stat );
-      fprintf( stdout, "Julian date: J%.4f\n", 1.0*jDate );
 
       /* Convert to Greenwich mean sidereal time. */
       SUB( LALGPStoGMST1( &stat, &gmst, &gpsTime, &uAcc ), &stat );
