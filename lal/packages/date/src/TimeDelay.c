@@ -87,6 +87,7 @@ a GMST which gives us the orientation of the Earth.
 #include <lal/Date.h>
 #include <lal/SkyCoordinates.h>
 #include <lal/TimeDelay.h>
+#include <lal/XLALError.h>
 
 NRCSID( TIMEDELAYC, "$Id$" );
 
@@ -107,7 +108,7 @@ XLALArrivalTimeDiff(
 	const LIGOTimeGPS *gpstime
 )
 { /* </lalVerbatim> */
-	static const char *func = "XLALArrivalTimeDiff";
+	static const char func[] = "XLALArrivalTimeDiff";
 	double delta_xyz[3];
 	double ehat_src[3];
 	const double greenwich_hour_angle = XLALGreenwichMeanSiderealTime(gpstime) - source_right_ascension_radians;
@@ -156,6 +157,8 @@ LALTimeDelay(
 	ASSERT(p_time_diff, stat, TIMEDELAYH_ENUL, TIMEDELAYH_MSGENUL);
 	ASSERT(p_dets_time_and_source, stat, TIMEDELAYH_ENUL, TIMEDELAYH_MSGENUL);
 
+	XLALPrintDeprecationWarning("LALTimeDelay", "XLALArrivalTimeDiff");
+
 	*p_time_diff = -XLALArrivalTimeDiff(p_dets_time_and_source->p_det_and_time1->p_detector->location, p_dets_time_and_source->p_det_and_time2->p_detector->location, p_dets_time_and_source->p_source->longitude, p_dets_time_and_source->p_source->latitude, p_dets_time_and_source->p_det_and_time1->p_gps);
 
 	ASSERT(!XLAL_IS_REAL8_FAIL_NAN(*p_time_diff), stat, DATEH_ERANGEGPSABS, DATEH_MSGERANGEGPSABS);
@@ -195,6 +198,8 @@ void LALTimeDelayFromEarthCenter(
 	ATTATCHSTATUSPTR(stat);
 	ASSERT(p_time_diff, stat, TIMEDELAYH_ENUL, TIMEDELAYH_MSGENUL);
 	ASSERT(p_det_time_and_source, stat, TIMEDELAYH_ENUL, TIMEDELAYH_MSGENUL);
+
+	XLALPrintDeprecationWarning("LALTimeDelayFromEarthCenter", "XLALTimeDelayFromEarthCenter");
 
 	*p_time_diff = XLALTimeDelayFromEarthCenter(p_det_time_and_source->p_det_and_time->p_detector->location, p_det_time_and_source->p_source->longitude, p_det_time_and_source->p_source->latitude, p_det_time_and_source->p_det_and_time->p_gps);
 
