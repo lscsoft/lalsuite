@@ -58,6 +58,7 @@ wrong by the same amount.
 
 #include <time.h>
 #include <lal/Date.h>
+#include <lal/XLALError.h>
 
 NRCSID( GPSTIMENOWC, "$Id$" );
 
@@ -68,7 +69,7 @@ XLALGPSTimeNow (
     )
 /* </lalVerbatim> */
 {
-  static const char *func = "XLALGPSTimeNow";
+  static const char func[] = "XLALGPSTimeNow";
   time_t ticks = time(NULL);
 
   gpstime->gpsSeconds = XLALUTCToGPS(gmtime(&ticks));
@@ -98,6 +99,8 @@ LALGPSTimeNow (
   ASSERT( accuracy, status, DATEH_ENULLINPUT, DATEH_MSGENULLINPUT );
   
   ASSERT( XLALGPSTimeNow(gpstime), status, DATEH_EDATETOOEARLY, DATEH_MSGEDATETOOEARLY );
+
+  XLALPrintDeprecationWarning("LALGPSTimeNow", "XLALGPSTimeNow");
   
   DETATCHSTATUSPTR( status );
   RETURN( status );
