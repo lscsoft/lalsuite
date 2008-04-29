@@ -67,6 +67,7 @@ nanoseconds, and the other, from \texttt{INT8} nanoseconds to
 
 #include <lal/LALStdlib.h>
 #include <lal/Date.h>
+#include <lal/XLALError.h>
 
 NRCSID( GPSTOINT8C, "$Id$" );
 
@@ -99,6 +100,8 @@ LALINT8toGPS (
 {
   INITSTATUS( status, "LALINT8toGPS", GPSTOINT8C );
 
+  XLALPrintDeprecationWarning("LALINT8toGPS", "XLALINT8toGPS");
+
   XLALINT8toGPS( output, *input );
 
   RETURN( status );
@@ -127,6 +130,8 @@ LALGPStoINT8 (
 /* </lalVerbatim> */
 {
   INITSTATUS( status, "LALGPStoINT8", GPSTOINT8C );
+
+  XLALPrintDeprecationWarning("LALGPStoINT8", "XLALGPStoINT8");
   
   *output = XLALGPStoINT8( input );
 
