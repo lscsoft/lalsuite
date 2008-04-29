@@ -61,7 +61,7 @@ int main(int argc, char *argv[])
 
   if (realTime != 987654321.123456789)
     {
-      fprintf(stderr, "TestGPStoFloat: LALGPStoFloat() returned wrong value; expected %g, got %g\n",
+      fprintf(stderr, "TestGPStoFloat: LALGPStoFloat() returned wrong value; expected %.17g, got %.17g\n",
               987654321.123456789, realTime);
       return 1;
     }
