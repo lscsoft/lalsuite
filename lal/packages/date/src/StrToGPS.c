@@ -93,14 +93,14 @@ static int isbinaryexp(const char *s)
 }
 
 
-/*
+/**
  * Parse an ASCII string into a LIGOTimeGPS structure.
  */
 
 
 int XLALStrToGPS(LIGOTimeGPS *t, const char *nptr, char **endptr)
 {
-	const char *func = "XLALStrToGPS";
+	static const char func[] = "XLALStrToGPS";
 	union { char *s; const char *cs; } pconv; /* this is bad */
 	int olderrno;
 	int radix;
@@ -273,10 +273,10 @@ int XLALStrToGPS(LIGOTimeGPS *t, const char *nptr, char **endptr)
 }
 
 
-/*
+/**
  * Return a string containing the ASCII base 10 representation of a
  * LIGOTimeGPS.  If s is not NULL, then the string is written to that
- * location which must be large enough to hold the string plus a NULL
+ * location which must be large enough to hold the string plus a '\0'
  * terminator.  If s is NULL then a new buffer is allocated, and the string
  * written to it.  The return value is the address of the string or NULL on
  * failure.
