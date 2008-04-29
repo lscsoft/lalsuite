@@ -226,6 +226,7 @@ NRCSID (LMST1C, "$Id$");
 #include <lal/LALStdio.h>
 #include <lal/Date.h>
 #include "date_value.h"
+#include <lal/XLALError.h>
 
 #define INFOSTR_LEN 256
 
@@ -307,6 +308,8 @@ LALGPStoGMST1( LALStatus         *status,
    */
   ASSERT (p_gmst != (REAL8 *)NULL, status,
           DATEH_ENULLOUTPUT, DATEH_MSGENULLOUTPUT);
+
+  XLALPrintDeprecationWarning("LALGPStoGMST1", "XLALGreenwichMeanSiderealTime");
 
   /*
    * Compute GMST for GPS on given date in seconds 
