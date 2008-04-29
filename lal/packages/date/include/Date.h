@@ -798,7 +798,7 @@ LALGPSTimeNow (
 </lalLaTeX> */
 int
 XLALINT8NanoSecIsPlayground ( 
-    INT8               *ns
+    const INT8         *ns
     );
 
 void
