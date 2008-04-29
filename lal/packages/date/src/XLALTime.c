@@ -61,8 +61,7 @@ LIGOTimeGPS * XLALGPSSet( LIGOTimeGPS *epoch, INT4 gpssec, INT4 gpsnan )
 {
   INT8 ns;
   ns = XLAL_BILLION_INT8 * (INT8)gpssec + (INT8)gpsnan;
-  XLALINT8NSToGPS( epoch, ns );
-  return epoch;
+  return XLALINT8NSToGPS( epoch, ns );
 }
 
 
@@ -79,7 +78,7 @@ LIGOTimeGPS * XLALGPSSetREAL8( LIGOTimeGPS *epoch, REAL8 t )
 /** Returns the GPS time as a REAL8. */
 REAL8 XLALGPSGetREAL8( const LIGOTimeGPS *epoch )
 {
-  return XLALGPSToINT8NS( epoch ) / XLAL_BILLION_REAL8;
+  return epoch->gpsSeconds + (epoch->gpsNanoSeconds / XLAL_BILLION_REAL8);
 }
 
 
@@ -94,27 +93,25 @@ LIGOTimeGPS * XLALGPSAdd( LIGOTimeGPS *epoch, REAL8 dt )
   INT8 ns;
   ns  = XLALGPSToINT8NS( epoch );
   ns += (INT8)floor( XLAL_BILLION_REAL8 * dt + 0.5 );
-  XLALINT8NSToGPS( epoch, ns );
-  return epoch;
+  return XLALINT8NSToGPS( epoch, ns );
 }
 
 
 /** Adds two GPS times. */
 LIGOTimeGPS * XLALGPSAddGPS( LIGOTimeGPS *epoch, const LIGOTimeGPS *dt )
 {
-  XLALINT8NSToGPS( epoch, XLALGPSToINT8NS( epoch ) + XLALGPSToINT8NS( dt ) );
-  return epoch;
+  return XLALINT8NSToGPS( epoch, XLALGPSToINT8NS( epoch ) + XLALGPSToINT8NS( dt ) );
 }
 
 
 /** Difference between two GPS times. */
 REAL8 XLALGPSDiff( const LIGOTimeGPS *t1, const LIGOTimeGPS *t0 )
 {
-  REAL8 dt;
-  INT8  ns;
-  ns = XLALGPSToINT8NS( t1 ) - XLALGPSToINT8NS( t0 );
-  dt = (REAL8)ns / XLAL_BILLION_REAL8; 
-  return dt;
+  LIGOTimeGPS diff;
+
+  XLALINT8NSToGPS(&diff, XLALGPSToINT8NS( t1 ) - XLALGPSToINT8NS( t0 ));
+
+  return XLALGPSGetREAL8(&diff);
 }
 
 
