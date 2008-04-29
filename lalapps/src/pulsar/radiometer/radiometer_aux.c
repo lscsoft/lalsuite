@@ -31,126 +31,92 @@ RCSID( "$Id$");
 
 
 /** create pairs of sfts */
+/*
 void CreateSFTIndexPairs(LALStatus                *status,
 			 INT4VectorSequence       *out,
-			 MultiSFTVector           *inputSFTs,
+			 SFTVector           *inputSFTs,
 			 SFTPairParams            *par)
 {  
 
 
-  UINT4 numifo;
+  UINT4 numpairs;
   UINT4 i;
   INITSTATUS (status, "CreateSFTIndexPairs", rcsid);
   ATTATCHSTATUSPTR (status);
 
-  ASSERT (out, status, RADIOMETER_ENULL, RADIOMETER_MSGENULL);
-  ASSERT (inputSFTs, status, RADIOMETER_ENULL, RADIOMETER_MSGENULL);
 
-  numifo = inputSFTs->length;
-  /* for now require exactly 2 ifos -- to be relaxed very soon in the future */
-  if ( numifo != 2) {
-    ABORT ( status, RADIOMETER_EBAD, RADIOMETER_MSGEBAD );
-  }
+  numpairs = inputSFTs->length; 
 
-  TRY( CreateSFTPairsIndicesFrom2SFTvectors(status->statusPtr, out, inputSFTs->data[0], 
-					    inputSFTs->data[1], par), status);
-
-
-  for (i=0; i<numifo; i++) {
-	printf("ifo %i is %s\n",i+1,inputSFTs->data[i]->data->name);
-  }
+  TRY( CreateSFTPairsIndicesFrom2SFTvectors(status->statusPtr, out, inputSFTs, 
+					    par), status);
 
 
   DETATCHSTATUSPTR (status);
 	
-  /* normal exit */	
+   normal exit 	
   RETURN (status);
-} /* CreateSFTIndexPairs */
-
+} CreateSFTIndexPairs 
+*/
 
 void CreateSFTPairsIndicesFrom2SFTvectors(LALStatus                *status,
-					 INT4VectorSequence        *out,
-					 const SFTVector           *in1,
-					 const SFTVector           *in2,
+					 INT4VectorSequence        **out,
+					 SFTVector           *in,
 					 SFTPairParams             *par)
 {
   
-  UINT4 i, j, numsft1, numsft2, numPairs, numsftMin;
+  UINT4 i, j, numsft, numPairs;
   INT4 thisPair;
+  INT4Vector *List1, *List2;
+  INT4VectorSequence *ret;
   COMPLEX8FrequencySeries  *thisSFT1, *thisSFT2;	       
+
 
   INITSTATUS (status, "CreateSFTPairsIndicesFrom2SFTvectors", rcsid);
   ATTATCHSTATUSPTR (status);
 
-  ASSERT (out, status, RADIOMETER_ENULL, RADIOMETER_MSGENULL);
-  ASSERT (in1, status, RADIOMETER_ENULL, RADIOMETER_MSGENULL);
-  ASSERT (in2, status, RADIOMETER_ENULL, RADIOMETER_MSGENULL);
+  ASSERT (in, status, RADIOMETER_ENULL, RADIOMETER_MSGENULL);
   ASSERT (par, status, RADIOMETER_ENULL, RADIOMETER_MSGENULL);
 
-  /* number of SFTs from the two ifos */
-  numsft1 = in1->length;
-  numsft2 = in2->length;
-  numsftMin = (numsft1 < numsft2)? numsft1 : numsft2;
+  /* number of SFTs */
+  numsft = in->length;
+  
+  List1 = XLALCreateINT4Vector(numsft*numsft);
+  List2 = XLALCreateINT4Vector(numsft*numsft);
 
-  out->length = numsft1*numsft2;
-
-  numPairs = out->length; /* initialization */
+  numPairs = 0; /* initialization */
 
   /* increase length of sftpair vector */
-  out->length += numsftMin;
-  out->data = LALRealloc(out->data, out->length * out->vectorLength * sizeof(out->data[0]));
 
   thisPair = 0;
 
   
-  /* go over all sfts in first vector */
-  for (i=0; i<numsft1; i++) {
+  /* go over all sfts */
+  for (i=0; i<numsft; i++) {
 
-    thisSFT1 = in1->data + i;
+    thisSFT1 = in->data + i;
     
-    /* go over all sfts in second vector and check if it should be paired with thisSFT1 */
+    /* go over all sfts again and check if it should be paired with thisSFT1 */
     /* this can be made more efficient if necessary */
-    for (j=0; j<numsft2; j++) {
+    for (j=i; j<numsft; j++) {
 
       LIGOTimeGPS t1, t2;
       REAL8 timeDiff;
 
-      thisSFT2 = in2->data + j;
+      thisSFT2 = in->data + j;
 
       /* calculate time difference */      
       t1 = thisSFT1->epoch;
       t2 = thisSFT2->epoch;
-      timeDiff = XLALDeltaFloatGPS( &t1, &t2);
+      timeDiff = XLALGPSDiff( &t1, &t2);
 
       /* decide whether to add this pair or not */
       if ( fabs(timeDiff) < par->lag ) {
 
 	numPairs++;
 
-	if ( numPairs < out->length) {
-	  /* there is enough memory 
-	  thisPair++;
-	  *thisPair = i;
-	  thisPair++;
-	  *thisPair = j;*/
-	out->data[thisPair++] = i;
-	out->data[thisPair++] = j;
-/*printf("pair indices %i %i\n", out->data[thisPair-2], out->data[thisPair-1]);*/
+	List1->data[thisPair] = i;
+	List2->data[thisPair++] = j;
 
-	} 
-	else {
-	  /* there not enough memory -- allocate memory and add the pair */
-	  out->length += numsftMin;
-	  out->data = LALRealloc(out->data, out->length * out->vectorLength * sizeof(out->data[0]));
-
-	 /* thisPair++;
-	  *thisPair = i;
-	  thisPair++;
-	  *thisPair = j;*/
-	out->data[thisPair++] = i;
-	out->data[thisPair++] = j;
-
-	}
 
       } /* if ( numPairs < out->length)  */
     } /* end loop over second sft set */
@@ -158,10 +124,22 @@ void CreateSFTPairsIndicesFrom2SFTvectors(LALStatus                *status,
 
 
 
-  /* realloc memory -- reduce to exact number of pairs*/
-  out->length = numPairs;
-  out->data = LALRealloc(out->data, out->length * out->vectorLength * sizeof(out->data[0]));
+  /* initialise pair list vector*/
+  ret = (INT4VectorSequence *) LALCalloc(1, sizeof(INT4VectorSequence));
+  ret->length = 2;
+  ret->vectorLength = numPairs;
+  ret->data = LALCalloc(ret->length * ret->vectorLength, sizeof(INT4));
 
+  for (i=0; i < numPairs; i++) {
+
+  ret->data[i] = List1->data[i];
+  ret->data[i+numPairs] = List2->data[i];
+  }
+
+  (*out) = ret;
+
+  XLALDestroyINT4Vector(List1);
+  XLALDestroyINT4Vector(List2);
 
   DETATCHSTATUSPTR (status);
 	
@@ -172,13 +150,13 @@ void CreateSFTPairsIndicesFrom2SFTvectors(LALStatus                *status,
 
 
 
-
-/** create pairs of sfts */
+/*
+\** create pairs of sfts *\/
 void CreateSFTPairs(LALStatus                *status,
 		    SFTPairVec               *out,
-		    MultiSFTVector           *inputSFTs,
-		    MultiPSDVector	     *inputPSDs,
-		    MultiDetectorStateSeries *mdetStates,
+		    SFTVector           *inputSFTs,
+		    PSDVector	     *inputPSDs,
+		    DetectorStateSeries *mdetStates,
 		    SFTPairParams            *par)
 {  
 
@@ -194,19 +172,19 @@ void CreateSFTPairs(LALStatus                *status,
   ASSERT (inputSFTs->length == mdetStates->length, status, RADIOMETER_EBAD, RADIOMETER_MSGEBAD);
 
   numifo = inputSFTs->length;
-  /* for now require exactly 2 ifos -- to be relaxed very soon in the future */
+  \* for now require exactly 2 ifos -- to be relaxed very soon in the future *\/
   if ( numifo != 2) {
     ABORT ( status, RADIOMETER_EBAD, RADIOMETER_MSGEBAD );
   }
 
-  TRY( CreateSFTPairsFrom2SFTvectors(status->statusPtr, out, inputSFTs->data[0], 
-				     inputSFTs->data[1], inputPSDs->data[0], 
-				     inputPSDs->data[1], mdetStates->data[0], 
-				     mdetStates->data[1], par), status);
+  TRY( CreateSFTPairsFrom2SFTvectors(status->statusPtr, out, inputSFTs, 
+				     inputPSDs, 
+				     mdetStates, 
+				     par), status);
 
   DETATCHSTATUSPTR (status);
 	
-  /* normal exit */	
+  \* normal exit *\/	
   RETURN (status);
 }
 
@@ -214,15 +192,12 @@ void CreateSFTPairs(LALStatus                *status,
 
 
 
-/** create pairs of sfts from a pair of sft vectors*/
+\** create pairs of sfts from a pair of sft vectors*\/
 void CreateSFTPairsFrom2SFTvectors(LALStatus                 *status,
 				   SFTPairVec                *out,
 				   const SFTVector           *in1,
-				   const SFTVector           *in2,
 				   const PSDVector	     *psdin1,
-				   const PSDVector	     *psdin2,
 				   const DetectorStateSeries *det1,
-				   const DetectorStateSeries *det2,
 				   SFTPairParams             *par)
 {
   
@@ -246,32 +221,32 @@ void CreateSFTPairsFrom2SFTvectors(LALStatus                 *status,
   ASSERT (det2, status, RADIOMETER_ENULL, RADIOMETER_MSGENULL);
   ASSERT (par, status, RADIOMETER_ENULL, RADIOMETER_MSGENULL);
 
-  /* number of SFTs from the two ifos */
+  \* number of SFTs from the two ifos *\/
   numsft1 = in1->length;
   numsft2 = in2->length;
   numsftMin = (numsft1 < numsft2)? numsft1 : numsft2;
 
-  numPairs = out->length; /* initialization */
+  numPairs = out->length; \* initialization *\/
 
-  /* increase length of sftpair vector */
+  \* increase length of sftpair vector *\/
   out->length += numsftMin;
   out->data = LALRealloc(out->data, out->length * sizeof(out->data[0]));
 
-  /* need to allocate memory for singleSFTpair */
+  \* need to allocate memory for singleSFTpair *\/
   thisPair = (SingleSFTpair *) LALCalloc(1, sizeof(out->data[0]));
 
-printf("first detector start time %i\n", det1->data->tGPS.gpsSeconds);
+printf("first detector start time %i\n", det1->data[0].tGPS.gpsSeconds);
 printf("second detector start time %i\n",det2->data->tGPS.gpsSeconds);
+printf("cf sft epoch %i\n",in1->data[0].epoch.gpsSeconds);
 
-  /* go over all sfts in first vector */
+  \* go over all sfts in first vector *\/
   for (i=0; i<numsft1; i++) {
     thisSFT1 = in1->data + i;
     thisPSD1 = psdin1->data + i;
     thisDetState1 = det1->data + i;
 
     
-    /* go over all sfts in second vector and check if it should be paired with thisSFT1 */
-    /* this can be made more efficient if necessary */
+    \* go over all sfts in second vector and check if it should be paired with thisSFT1 *\/
     for (j=0; j<numsft2; j++) {
 
       LIGOTimeGPS t1, t2;
@@ -281,35 +256,29 @@ printf("second detector start time %i\n",det2->data->tGPS.gpsSeconds);
       thisPSD2 = psdin2->data + j;
       thisDetState2 = det2->data + j;
 
-      /* calculate time difference */      
+      \* calculate time difference *\/      
       t1 = thisSFT1->epoch;
       t2 = thisSFT2->epoch;
-      timeDiff = XLALDeltaFloatGPS( &t1, &t2);
+      timeDiff = XLALGPSDiff( &t1, &t2);
 
-      /* decide whether to add this pair or not */
+      \* decide whether to add this pair or not *\/
       if ( fabs(timeDiff) < par->lag ) {
 	numPairs++;
 
 
 	if ( numPairs < out->length) {
-	  /* there is enough memory */
-/*	  thisPair++;*/
-
-
-
+	  \* there is enough memory *\/
 
 	  TRY( FillSFTPair( status->statusPtr, thisPair, thisSFT1, thisSFT2, thisPSD1, thisPSD2, thisDetState1, thisDetState2), status);
 	out->data[counter] = *thisPair;
 	counter++;
-/*printf("counter %i\n",counter);*/
 	} 
 	else {
-	  /* there not enough memory -- allocate memory and add the pair */
+	  \* there not enough memory -- allocate memory and add the pair *\/
 
 	  out->length += numsftMin;
 	  out->data = LALRealloc(out->data, out->length * sizeof(out->data[0]));
 
-/*	  thisPair++;*/
 
 	  TRY( FillSFTPair( status->statusPtr, thisPair, thisSFT1, thisSFT2, thisPSD1, thisPSD2, thisDetState1, thisDetState2), status);
 	out->data[counter] = *thisPair;
@@ -317,17 +286,17 @@ printf("second detector start time %i\n",det2->data->tGPS.gpsSeconds);
 	}
 
       }
-    } /* end loop over second sft set */
-  } /* end loop over first sft set */ 
+    } \* end loop over second sft set *\/
+  } \* end loop over first sft set *\/ 
 
 
-  /* realloc memory */
+  \* realloc memory *\/
   out->length = numPairs;
   out->data = LALRealloc(out->data, out->length * sizeof(out->data[0]));
 
   DETATCHSTATUSPTR (status);
 	
-  /* normal exit */	
+  \* normal exit *\/	
   RETURN (status);
 
 }
@@ -336,7 +305,7 @@ printf("second detector start time %i\n",det2->data->tGPS.gpsSeconds);
 
 
 
-/** little helper function for filling up sft pair */
+\* little helper function for filling up sft pair *\/
 void FillSFTPair(LALStatus                 *status,
 		 SingleSFTpair             *out,
 		 COMPLEX8FrequencySeries   *sft1, 
@@ -373,11 +342,11 @@ void FillSFTPair(LALStatus                 *status,
   out->pos2[2] = det2->rDetector[2];
 
   DETATCHSTATUSPTR (status);
-  /* normal exit */	
+   normal exit 	
   RETURN (status);
 
 }
-
+*/
 
 /** Correlate a single pair of SFT at a parameter space point*/
 void CorrelateSingleSFTPair(LALStatus                *status,
@@ -396,7 +365,6 @@ void CorrelateSingleSFTPair(LALStatus                *status,
 
   /* assume both sfts have the same freq. resolution */
   deltaF = sft1->deltaF;
-
   bin1 = (UINT8)( (*freq1 - sft1->f0)*(sft1->data->length) / (sft1->data->length * deltaF));
   bin2 = (UINT8)( (*freq2 - sft2->f0)*(sft2->data->length)/ (sft2->data->length * deltaF));
 
@@ -448,7 +416,7 @@ void GetSignalFrequencyInSFT(LALStatus                *status,
   /* fhat = f_0 + f_1(t-t0) + f_2(t-t0)^2/2 + ... */
 
   /* this is the sft reference time  - the pulsar reference time */
-  timeDiff = XLALDeltaFloatGPS( &(sft1->epoch), &(dopp->refTime));
+  timeDiff = XLALGPSDiff( &(sft1->epoch), &(dopp->refTime));
 
   fhat = dopp->fkdot[0]; /* initialization */
   factor = 1.0;
@@ -495,7 +463,7 @@ void GetSignalPhaseInSFT(LALStatus               *status,
   /* this is an approximation... need to change in the future? */
 
   /* this is the sft reference time  - the pulsar reference time */
-  timeDiff = XLALDeltaFloatGPS( &(sft1->epoch), &(dopp->refTime));
+  timeDiff = XLALGPSDiff( &(sft1->epoch), &(dopp->refTime));
 
   fhat = dopp->fkdot[0]; /* initialization */
   phihat = 0.0;

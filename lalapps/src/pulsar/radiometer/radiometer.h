@@ -159,18 +159,17 @@ void SetUpRadiometerSkyPatches(LALStatus *status,
 			       REAL8 dDelta);
 
 void CreateSFTPairsIndicesFrom2SFTvectors(LALStatus                *status,
-					 INT4VectorSequence        *out,
-					 const SFTVector           *in1,
-					 const SFTVector           *in2,
+					 INT4VectorSequence        **out,
+					 SFTVector           *in1,
 					  SFTPairParams             *par);
 
-
+/*
 
 void CreateSFTPairs(LALStatus                *status,
 		    SFTPairVec               *out,
-		    MultiSFTVector           *inputSFTs,
-		    MultiPSDVector	     *inputPSDs,
-		    MultiDetectorStateSeries *mdetStates,
+		    SFTVector           *inputSFTs,
+		    PSDVector	     *inputPSDs,
+		    DetectorStateSeries *mdetStates,
 		    SFTPairParams            *par);
 
 
@@ -193,7 +192,7 @@ void FillSFTPair(LALStatus                 *status,
 		 REAL8FrequencySeries	   *psd2,
 		 DetectorState             *det1,
 		 DetectorState             *det2);
-
+*/
 
 void CorrelateSingleSFTPair(LALStatus                *status,
 			    COMPLEX16                *out,
@@ -214,12 +213,12 @@ void GetSignalPhaseInSFT(LALStatus               *status,
 			 COMPLEX8FrequencySeries *sft1,
 			 PulsarDopplerParams     *dopp,
 			 REAL8Vector             *pos);
-
+/*
 void CreateSFTIndexPairs(LALStatus                *status,
 			 INT4VectorSequence       *out,
-			 MultiSFTVector           *inputSFTs,
+			 SFTVector           *inputSFTs,
 			 SFTPairParams            *par);
-
+*/
 void CalculateUalpha(LALStatus *status,
 		     COMPLEX16	*out,
 		     REAL8	*Aplus,
