@@ -46,7 +46,6 @@ Determines if a given time (or segment) is playground data.
 \idx{LALINT8NanoSecIsPlayground()}
 \idx{XLALINT8NanoSecIsPlayground()}
 \idx{LALGPSIsPlayground()}
-\idx{LALSegmentIsPlayground()}
 
 \subsubsection*{Description}
 
@@ -138,28 +137,6 @@ LALGPSIsPlayground (
   LALINT8NanoSecIsPlayground( status->statusPtr, playground, &ns );
   CHECKSTATUSPTR( status );
   
-  DETATCHSTATUSPTR( status );
-  RETURN( status );
-}
-
-/* <lalVerbatim file="PlaygroundCP"> */
-void
-LALSegmentIsPlayground (
-    LALStatus          *status,
-    INT4               *playground,
-    LIGOTimeGPS        *gpsStart,
-    LIGOTimeGPS        *gpsEnd
-    )
-/* </lalVerbatim> */
-{
-  INITSTATUS( status, "LALSegmentIsPlayground", PLAYGROUNDC );
-  ATTATCHSTATUSPTR( status );
-
-  /* JC: THIS FUNCTION DOESN'T SEEM TO DO MUCH... I GUESS IT SHOULD DO SOMETHING*/
-  playground=NULL;
-  gpsStart=NULL;
-  gpsEnd=NULL;
-
   DETATCHSTATUSPTR( status );
   RETURN( status );
 }

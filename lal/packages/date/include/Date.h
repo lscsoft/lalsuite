@@ -832,14 +832,6 @@ LALGPSIsPlayground (
     LIGOTimeGPS        *gpstime
     );
 
-void
-LALSegmentIsPlayground (
-    LALStatus          *status,
-    INT4               *playground,
-    LIGOTimeGPS        *gpsStart,
-    LIGOTimeGPS        *gpsEnd
-    );
-
 #ifdef  __cplusplus
 }
 #endif
