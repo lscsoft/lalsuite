@@ -599,23 +599,6 @@ int XLALStrToGPS(LIGOTimeGPS *t, const char *nptr, char **endptr);
 char *XLALGPSToStr(char *, const LIGOTimeGPS *t);
 
 /* <lalLaTeX>
-\newpage\input{JulianC}
-</lalLaTeX> */
-
-void LALJulianDay(LALStatus     *status,
-                  INT4          *jDay,
-                  const LALDate *date);
-
-void LALJulianDate (LALStatus     *status,
-                    REAL8         *jDateOut,
-                    const LALDate *date);
-
-void LALModJulianDate (LALStatus     *status,
-                       REAL8         *modJDate,
-                       const LALDate *date);
-
-
-/* <lalLaTeX>
 \newpage\input{DateStringC}
 </lalLaTeX> */
 

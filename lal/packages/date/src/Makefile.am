@@ -1,7 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 noinst_LTLIBRARIES = libdate.la
-libdate_la_SOURCES = Julian.c \
-                     GPStoUTC.c \
+libdate_la_SOURCES = GPStoUTC.c \
                      DateString.c LMST1.c \
                      SecsToLALDate.c date_value.h TimeDelay.c \
                      GPStoFloat.c GPStoINT8.c IncrementGPS.c GPSTimeNow.c \
