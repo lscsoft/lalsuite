@@ -28,14 +28,15 @@
 NRCSID(STRINGCONVERTTESTC, "$Id$");
 
 
+int lalDebugLevel = 0;
+
+
 struct TESTCASE {
 	const char *string;
 	int sec, ns;
 	const char *remainder;
 	int xlal_errno;
 };
-
-int lalDebugLevel = 0;
 
 
 static int runtest(const struct TESTCASE *testcase)
@@ -51,24 +52,20 @@ static int runtest(const struct TESTCASE *testcase)
 	XLALClearErrno();
 	retval = XLALStrToGPS(&gps, testcase->string, &endptr);
 
-	fprintf(stdout, "Input = \"%s\"\n\tOutput =\t%" LAL_INT8_FORMAT " ns with \"%s\" remainder, errno %d\n\tCorrect =\t%" LAL_INT8_FORMAT " ns with \"%s\" remainder, errno %d\n\t\t===>", testcase->string, XLALGPSToINT8NS(&gps), endptr, XLALGetBaseErrno(), XLALGPSToINT8NS(&gpsCorrect), testcase->remainder, testcase->xlal_errno);
-
 	if(retval == 0 && testcase->xlal_errno == 0) {
 		if(XLALGPSCmp(&gps, &gpsCorrect) || strcmp(endptr, testcase->remainder))
 			failure = 1;
 	} else if(XLALGetBaseErrno() != testcase->xlal_errno)
 		failure = 1;
 
-	if(failure)
-		fprintf(stdout, "*** FAIL ***\n");
-	else
-		fprintf(stdout, "Pass\n");
+	if(lalDebugLevel || failure)
+		fprintf(stdout, "Input = \"%s\"\n\tOutput =\t%" LAL_INT8_FORMAT " ns with \"%s\" remainder, errno %d\n\tCorrect =\t%" LAL_INT8_FORMAT " ns with \"%s\" remainder, errno %d\n\t\t===> %s\n", testcase->string, XLALGPSToINT8NS(&gps), endptr, XLALGetBaseErrno(), XLALGPSToINT8NS(&gpsCorrect), testcase->remainder, testcase->xlal_errno, failure ? "*** FAIL ***" : "Pass");
 
-	return(failure);
+	return failure;
 }
 
 
-int main(void)
+int main(int argc, char *argv[])
 {
 	/* Most of these test were shamelessly stolen from Peter's original
 	 * code for testing LALStringToGPS() */
@@ -173,6 +170,10 @@ int main(void)
 	};
 	struct TESTCASE *testcase;
 	int failures = 0;
+
+	/* set lalDebugLevel */
+	if(argc > 1)
+		lalDebugLevel = atoi(argv[1]);
 
 	/* run tests that all platforms must pass */
 	for(testcase = general_testcases; testcase->string; testcase++)
