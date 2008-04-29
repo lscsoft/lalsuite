@@ -29,6 +29,34 @@ INT4 lalDebugLevel = 0;
 
 NRCSID (LALTESTGPSTOFLOATC, "$Id$");
 
+
+static int test_random_doubles(unsigned int seed)
+{
+	int i;
+
+	srandom(seed);
+
+	for(i = 0; i < 1000000; i++) {
+		double in;
+		double out;
+		LIGOTimeGPS gps;
+
+		in = random() * 1e-12;
+
+		out = XLALGPSGetREAL8(XLALGPSSetREAL8(&gps, in));
+
+		/* error must not exceed 0.5001 ns */
+		if(fabs(in - out) > .5001e-9) {
+			fprintf(stderr, "XLALGPSSetREAL8() + XLALGPSGetREAL8() failed:  input = %.17g s, output = %.17g s, difference = %.16g ns\n", in, out, (in - out) * 1e9);
+			return -1;
+		}
+	}
+
+	return 0;
+}
+
+
+
 int main(int argc, char *argv[])
 {
   static LALStatus   status;
@@ -143,6 +171,11 @@ int main(int argc, char *argv[])
               interval.nanoSeconds);
       return 4;
     }
+
+  /* 5 */
+  if(test_random_doubles(0)) {
+      return 5;
+  }
 
   return 0;
 }
