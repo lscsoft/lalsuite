@@ -120,7 +120,7 @@ static int delta_tai_utc( INT4 gpssec )
 /** Returns the leap seconds TAI-UTC at a given GPS second. */
 int XLALLeapSeconds( INT4 gpssec /**< [In] Seconds relative to GPS epoch.*/ )
 {
-  static const char *func = "XLALLeapSeconds";
+  static const char func[] = "XLALLeapSeconds";
   int leap;
 
   if ( gpssec < leaps[0].gpssec )
@@ -141,7 +141,7 @@ int XLALLeapSeconds( INT4 gpssec /**< [In] Seconds relative to GPS epoch.*/ )
 /** Returns the leap seconds TAI-UTC for a given UTC broken down time. */
 int XLALLeapSecondsUTC( const struct tm *utc /**< [In] UTC as a broken down time.*/ )
 {
-  static const char *func = "XLALLeapSecondsUTC";
+  static const char func[] = "XLALLeapSecondsUTC";
   REAL8 jd;
   int leap;
 
@@ -168,7 +168,7 @@ int XLALLeapSecondsUTC( const struct tm *utc /**< [In] UTC as a broken down time
  * specified UTC time structure. */
 INT4 XLALUTCToGPS( const struct tm *utc /**< [In] UTC time in a broken down time structure. */ )
 {
-  static const char *func = "XLALUTCToGPS";
+  static const char func[] = "XLALUTCToGPS";
   time_t unixsec;
   INT4 gpssec;
   int leapsec;
@@ -200,7 +200,7 @@ struct tm * XLALGPSToUTC(
     INT4 gpssec /**< [In] Seconds since the GPS epoch. */
     )
 {
-  static const char * func = "XLALGPSToUTC";
+  static const char func[] = "XLALGPSToUTC";
   time_t unixsec;
   int leapsec;
   int delta;
@@ -219,10 +219,69 @@ struct tm * XLALGPSToUTC(
 
 
 /** Returns the Julian Day (JD) corresponding to the date given in a broken
- * down time structure. */
+ * down time structure.
+ *
+ * See \cite{esaa:1992} and \cite{green:1985} for details.  First, some
+ * definitions:
+ *
+ * Mean Julian Year = 365.25 days
+ * Julian Epoch = 1 Jan 4713BCE, 12:00 GMT (4713 BC Jan 01d.5 GMT)
+ * Fundamental Epoch J2000.0 = 2001-01-01.5 TDB
+ *
+ * Julian Date is the amount of time elapsed since the Julian Epoch,
+ * measured in days and fractions of a day.  There are a couple of
+ * complications arising from the length of a year:  the Tropical Year is
+ * 365.2422 days.  First, the Gregorian correction where 10 days
+ * (1582-10-05 through 1582-10-14) were eliminated.  Second, leap years:
+ * years ending with two zeroes (e.g., 1700, 1800) are leap only if
+ * divisible by 400;  so, 400 civil years contain 400 * 365.25 - 3 = 146097
+ * days.  So, the Julian Date of J2000.0 is JD 2451545.0, and thus the
+ * Julian Epoch = J2000.0 + (JD - 2451545) / 365.25, i.e., number of years
+ * elapsed since J2000.0.
+ *
+ * One algorithm for computing the Julian Day is from \cite{vfp:1979} based
+ * on a formula in \cite{esaa:1992} where the algorithm is due to
+ * \cite{fvf:1968} and ``compactified'' by P. M. Muller and R. N. Wimberly.
+ * The formula is
+ *
+ * jd = 367 \times y - 7 \times (y + (m + 9)/12)/4 - 3 \times ((y + (m -
+ * 9)/7)/100 + 1)/4 + 275 \times m/9 + d + 1721029
+ *
+ * where jd is the Julian day number, y is the year, m is the month (1-12),
+ * and d is the day (1-31).  This formula is valid only for JD > 0, i.e.,
+ * after -4713 Nov 23 = 4712 BCE Nov 23.
+ *
+ * A shorter formula from the same reference, but which only works for
+ * dates since 1900 March is:
+ *
+ * jd = 367 \times y - 7 \times (y + (m + 9)/12)/4 + 275 \times m/9 + d +
+ * 1721014
+ *
+ * We will use this shorter formula since there is unlikely to be any
+ * analyzable data from before 1900 March.
+ *
+ *
+ * References:
+ *
+ * \bibitem{esaa:1992} \textit{Explanatory Supplement to the Astronomical
+ * Almanac}, P.~K. Seidelmann, \textit{ed.} (University Science Books, Mill
+ * Valley, 1992)
+ *
+ * \bibitem{green:1985} R.~M. Green, \textit{Spherical Astronomy}
+ * (Cambridge University Press, Cambridge, 1985)
+ *
+ * \bibitem{vfp:1979} T.~C. Van Flandern, and K.~F. Pulkkinen,
+ * \textit{Astrophysical Journal Supplement Series}, \textbf{41}, 391-411,
+ * 1979 Nov.
+ *
+ * \bibitem{fvf:1968} Fliegen, and Van~Flandern, \textit{Communications of
+ * the ACM}, \textbf{11}, 657, 1968
+ */
+
+
 REAL8 XLALJulianDay( const struct tm *utc /**< [In] UTC time in a broken down time structure. */ )
 {
-  static const char * func = "XLALJulianDay";
+  static const char func[] = "XLALJulianDay";
   const int sec_per_day = 60 * 60 * 24; /* seconds in a day */
   int year, month, day, sec;
   REAL8 jd;
@@ -260,7 +319,7 @@ REAL8 XLALJulianDay( const struct tm *utc /**< [In] UTC time in a broken down ti
  */
 INT4 XLALModifiedJulianDay( const struct tm *utc /**< [In] UTC time in a broken down time structure. */ )
 {
-  static const char * func = "XLALModifiedJulianDay";
+  static const char func[] = "XLALModifiedJulianDay";
   REAL8 jd;
   INT4 mjd;
   jd = XLALJulianDay( utc );
