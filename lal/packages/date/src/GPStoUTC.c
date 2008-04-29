@@ -124,6 +124,7 @@ NRCSID (GPSTOUTCC, "$Id$");
 #include <lal/LALStdio.h>
 #include <lal/Date.h>
 #include "date_value.h"
+#include <lal/XLALError.h>
 
 #define INFOSTR_LEN 256
 
@@ -225,6 +226,8 @@ LALGPStoUTC (LALStatus                *status,
 
   ASSERT (p_utcDate != (LALDate *)NULL, status,
           DATEH_ENULLOUTPUT, DATEH_MSGENULLOUTPUT);
+
+  XLALPrintDeprecationWarning("LALGPStoUTC", "XLALGPSToUTC");
 
   /* we use Unix epoch as our origin */
   unixTime = p_gpsTime->gpsSeconds + UNIXGPS;
@@ -471,6 +474,8 @@ LALUTCtoGPS (LALStatus                *status,
   int i = 0;
   char infostr[256];
   static const int nleaps = sizeof(leap_sec_data)/sizeof(leap_sec_t);
+
+  XLALPrintDeprecationWarning("LALUTCtoGPS", "XLALUTCToGPS");
 
   /* When GPS began */
   gpsref.unixDate.tm_sec  = 0;
@@ -726,7 +731,8 @@ LALLeapSecs (LALStatus                    *status,
            p_formatAndAcc->accuracy == LALLEAPSEC_STRICT),
           status, DATEH_EACCPARAMOUTOFRANGE,
           DATEH_MSGEACCPARAMOUTOFRANGE);
-  
+
+  XLALPrintDeprecationWarning("LALLeapSecs", "XLALLeapSeconds");
 
   if (lalDebugLevel & LALINFO)
   {
