@@ -68,10 +68,7 @@ LIGOTimeGPS * XLALGPSSet( LIGOTimeGPS *epoch, INT4 gpssec, INT4 gpsnan )
 /** Sets GPS time given GPS seconds as a REAL8. */
 LIGOTimeGPS * XLALGPSSetREAL8( LIGOTimeGPS *epoch, REAL8 t )
 {
-  INT8 ns;
-  ns = (INT8)floor( XLAL_BILLION_REAL8 * t + 0.5 );
-  XLALINT8NSToGPS( epoch, ns );
-  return epoch;
+  return XLALINT8NSToGPS(epoch, floor(XLAL_BILLION_REAL8 * t + 0.5));
 }
 
 
