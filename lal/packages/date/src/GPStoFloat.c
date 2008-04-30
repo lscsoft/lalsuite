@@ -83,9 +83,6 @@ LALGPStoFloat( LALStatus         *stat,
                REAL8             *p_flt_time, /* output - floating point GPS seconds */
                const LIGOTimeGPS *p_gps_time) /* input - GPS seconds */
 {  /* </lalVerbatim> */
-
-  INT4 secs, nanosecs;
-
   INITSTATUS(stat, "GPStoFloat", GPSTOFLOATC);
   ATTATCHSTATUSPTR(stat);
 
@@ -95,45 +92,13 @@ LALGPStoFloat( LALStatus         *stat,
   ASSERT(p_flt_time != NULL, stat, DATEH_ENULLOUTPUT,
          DATEH_MSGENULLOUTPUT);
 
-  secs        = p_gps_time->gpsSeconds;
-  nanosecs    = p_gps_time->gpsNanoSeconds;
-  *p_flt_time = (REAL8)secs + (REAL8)nanosecs * 1.e-9;
+  XLALPrintDeprecationWarning("LALGPStoFloat", "XLALGPSGetREAL8");
+
+  *p_flt_time = XLALGPSGetREAL8(p_gps_time);
 
   DETATCHSTATUSPTR(stat);  
   RETURN(stat);
 }  /* END: GPStoFloat() */
-
-
-
-/* <lalVerbatim file="GPStoFloatCP"> */
-void
-XLALFloatToGPS( LIGOTimeGPS *p_gps_time,  /* output - GPS time */
-                const REAL8 flt_time)     /* input - floating point GPS seconds */
-{  /* </lalVerbatim> */
-  INT4 secs, ns;
-  REAL8 inTime;
-
-  /* be generous and allow negative times */
-  if ( flt_time < 0)
-    inTime = -flt_time;
-  else
-    inTime = flt_time;
-
-  secs = (INT4) inTime;
-  ns  = (INT4) ( ( inTime - secs ) * oneBillion + 0.5);	 /* round properly! */
-
-  /* flip sign if time was negative */
-  if ( flt_time < 0)
-    {
-      secs *= -1;
-      ns *= -1;
-    }
-
-  /* return values */
-  p_gps_time->gpsSeconds     = secs;
-  p_gps_time->gpsNanoSeconds = ns;
-}  /* END: XLALFloatToGPS() */
-
 
 
 /* <lalVerbatim file="GPStoFloatCP"> */
@@ -148,7 +113,9 @@ LALFloatToGPS( LALStatus   *stat,
   ASSERT(p_flt_time != NULL, stat, DATEH_ENULLINPUT, DATEH_MSGENULLINPUT);
   ASSERT(p_gps_time != NULL, stat, DATEH_ENULLINPUT, DATEH_MSGENULLINPUT);
 
-  XLALFloatToGPS(p_gps_time, *p_flt_time);
+  XLALPrintDeprecationWarning("LALFloatToGPS", "XLALGPSSetREAL8");
+
+  XLALGPSSetREAL8(p_gps_time, *p_flt_time);
 
   DETATCHSTATUSPTR(stat);
   RETURN(stat);

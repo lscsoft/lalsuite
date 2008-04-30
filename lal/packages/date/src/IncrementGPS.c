@@ -45,10 +45,8 @@ Routines to perform arithmetic and comparisons on \texttt{LIGOTimeGPS} and
 \idx{LALIncrementGPS()}
 \idx{LALDecrementGPS()}
 \idx{LALAddFloatToGPS()}
-\idx{XLALAddFloatToGPS()}
 \idx{LALDeltaGPS()}
 \idx{LALDeltaFloatGPS()}
-\idx{XLALDeltaFloatGPS()}
 
 \subsubsection*{Description}
 
@@ -60,10 +58,8 @@ the GPS times they operate on into a floating point representation.
   \item \texttt{LALIncrementGPS()} increments a GPS time by a time interval
   \item \texttt{LALDecrementGPS()} decrements a GPS time by a time interval
   \item \texttt{LALAddFloatToGPS()} adds a REAL8 interval (in seconds) to a GPS time
-  \item \texttt{XLALAddFloatToGPS()} adds a REAL8 interval (in seconds) to a GPS time
   \item \texttt{LALDeltaGPS()} returns the difference between two GPS times as a \texttt{LALTimeInterval}.
   \item \texttt{LALDeltaFloatGPS()} returns the difference between two GPS times in seconds as a \texttt{REAL8}.
-  \item \texttt{XLALDeltaFloatGPS()} returns the difference between two GPS times in seconds as a \texttt{REAL8}.
 \end{itemize}
 
 \subsubsection*{Algorithm}
@@ -335,37 +331,6 @@ LALCompareGPS(LALStatus           *status,
 
 /* Increment a GPS time by a float-interval */
 /* <lalVerbatim file="IncrementGPSCP"> */
-LIGOTimeGPS *
-XLALAddFloatToGPS(
-	LIGOTimeGPS *gps,
-	REAL8 deltaT
-)
-/*  </lalVerbatim> */
-{
-  INT4 secs = deltaT;
-
-  if(!gps)
-	  return(NULL);
-
-  gps->gpsSeconds += secs;
-  gps->gpsNanoSeconds += (INT4) ((deltaT - secs) * oneBillion); /* truncate, not round!*/
-
-  if (gps->gpsNanoSeconds >= oneBillion)
-    {
-      gps->gpsNanoSeconds -= oneBillion;
-      gps->gpsSeconds++;
-    }
-  else if (gps->gpsNanoSeconds < 0)
-    {
-      gps->gpsNanoSeconds += oneBillion;
-      gps->gpsSeconds--;
-    }
-
-  return(gps);
-} /* XLALAddFloatToGPS() */
-
-/* Increment a GPS time by a float-interval */
-/* <lalVerbatim file="IncrementGPSCP"> */
 void
 LALAddFloatToGPS(
     LALStatus          *status,
@@ -377,25 +342,14 @@ LALAddFloatToGPS(
 {
   INITSTATUS( status, "LALAddFloatToGPS", INCREMENTGPSC );
 
+  XLALPrintDeprecationWarning("LALAddFloatToGPS", "XLALGPSAdd");
+
   *outputGPS = *startGPS;
-  XLALAddFloatToGPS(outputGPS, deltaT);
+  XLALGPSAdd(outputGPS, deltaT);
 
   RETURN( status );
 
 } /* LALAddFloatToGPS() */
-
-
-/* Return GPS1 - GPS2 as a REAL8 !*/
-/* <lalVerbatim file="IncrementGPSCP"> */
-REAL8
-XLALDeltaFloatGPS(
-	const LIGOTimeGPS *GPS1,
-	const LIGOTimeGPS *GPS2
-)
-/* </lalVerbatim> */
-{
-  return(GPS1->gpsSeconds - GPS2->gpsSeconds + (REAL8) 1e-9 * (GPS1->gpsNanoSeconds - GPS2->gpsNanoSeconds));
-} /* XLALDeltaFloatGPS() */
 
 
 /* Return GPS1 - GPS2 as a REAL8 !*/
@@ -413,8 +367,10 @@ LALDeltaFloatGPS (LALStatus    *status,
   ASSERT(deltaT, status, DATEH_ENULLOUTPUT, DATEH_MSGENULLOUTPUT);
   ASSERT(GPS1, status, DATEH_ENULLINPUT, DATEH_MSGENULLINPUT);
   ASSERT(GPS2, status, DATEH_ENULLINPUT, DATEH_MSGENULLINPUT);
+
+  XLALPrintDeprecationWarning("LALDeltaFloatGPS", "XLALGPSDiff");
   
-  *deltaT = XLALDeltaFloatGPS(GPS1, GPS2);
+  *deltaT = XLALGPSDiff(GPS1, GPS2);
 
   RETURN( status );
 

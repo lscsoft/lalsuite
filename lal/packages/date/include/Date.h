@@ -674,9 +674,6 @@ void LALGPStoFloat (LALStatus *status,
                     REAL8     *output, 
                     const LIGOTimeGPS *input);
 
-void XLALFloatToGPS(LIGOTimeGPS *output, 
-                    const REAL8 input);
-
 void LALFloatToGPS(LALStatus *status, 
                    LIGOTimeGPS *output, 
                    const REAL8 *input);
@@ -753,23 +750,11 @@ LALCompareGPS (LALStatus *status,
                const LIGOTimeGPS *pGPS1, /* input: GPS1 */
                const LIGOTimeGPS *pGPS2); /* input: GPS2 */
 
-LIGOTimeGPS *
-XLALAddFloatToGPS(
-	LIGOTimeGPS *gps,
-	REAL8 deltaT
-);
-
 void
 LALAddFloatToGPS (LALStatus             *status,
 		  LIGOTimeGPS           *outputGPS,	/* outputGPS = startGPS + deltaT */
 		  const LIGOTimeGPS     *startGPS, 	/* input: GPS time */
 		  REAL8 		deltaT); 	/* input: interval to increment by in seconds*/
-
-REAL8
-XLALDeltaFloatGPS(
-	const LIGOTimeGPS *GPS1,
-	const LIGOTimeGPS *GPS2
-);
 
 void
 LALDeltaFloatGPS (LALStatus    *status,
