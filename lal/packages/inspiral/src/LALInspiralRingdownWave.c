@@ -469,6 +469,7 @@ INT4 XLALInspiralAttachRingdownWave (
       errcode = XLALGenerateQNMFreq( modefreqs, params, l, m, nmodes );
       if ( errcode != XLAL_SUCCESS )
       {
+        XLALDestroyCOMPLEX8Vector( modefreqs );
         XLAL_ERROR( func, XLAL_EFUNC );
       }
 
@@ -488,6 +489,7 @@ INT4 XLALInspiralAttachRingdownWave (
       if ( attpos < ( Npatch + 1 ) / 2 || attpos + (Npatch - 1) / 2 >= signal1->length )
       {
         XLALPrintError( "Value of attpos inconsistent with given value of Npatch.\n" );
+        XLALDestroyCOMPLEX8Vector( modefreqs );
         XLAL_ERROR( func, XLAL_EFAILED );
       }
 
