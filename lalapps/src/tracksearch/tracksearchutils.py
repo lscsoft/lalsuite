@@ -707,13 +707,13 @@ class candidateList:
         for entry in self.curves:
             if not entry.sortedByTime:
                 entry.__timeOrderCurve__()
-            keyList.append([entry.gpsStart.getAsFloat(),entry.gpsStop.getAsFloat(),index])
+            keyList.append([float(entry.printStartGPS()),float(entry.printStopGPS()),index])
             index=index+1
         #Sort the key list.
-        keyList.sort
+        keyList.sort()
         sortedLibrary=list()
         for entry in keyList:
-            sortedLibrary.append(self.curves[entry[3]])
+            sortedLibrary.append(self.curves[entry[2]])
         #Swap sorted list for original list
         self.curves=sortedLibrary
         self.sorted=True
@@ -910,7 +910,8 @@ class candidateList:
     def sortList(self):
         """
         This sorts the input curves into an order with lowest gpsStart time
-        first.  The sorting keys only on the curves start time.
+        first.  The sorting keys only on the curves start time. MAY BE
+        DEPRICATED IN FUTURE, USE __timeOrderLibrary__() calls instead.
         """
         if True:
             #Use the new method __timeOrderLibrary__()
@@ -1561,8 +1562,8 @@ class candidateList:
         10 Integrated Power
         """
         summary=[]
-        if not self.sortedByTime:
-            self.__timeOrderCurve__()
+        if not self.sorted:
+            self.__timeOrderLibrary__()
         for lineInfo in self.curves:
             curveID,l,p=lineInfo.getKurveHeader()
             #See notes in methods below for explaination
@@ -2082,11 +2083,15 @@ class candidateList:
             [entries,bins,patches]=pylab.hist(powList,colCount,bottom=1,log=True)
         except:
             sys.stderr.writelines('Error trying to create log scale histogram.\n')
-            sys.stderr.writelines('Using restrictive linear scale instead.\n')
+            #sys.stderr.writelines('Using restrictive linear scale instead.\n')
+            sys.stderr.writelines('Attempting to plot the data with semilogy function, with step linestyles instead!\n')
             sys.stderr.flush()
             pylab.close()
             pylab.figure()
             [entries,bins,patches]=pylab.hist(powList,colCount)
+            pylab.close()
+            pylab.figure()
+            pylab.semilogy(bin,entries,'o',linestyle='steps')
         if max(powList) > max(bins):
             patches[patches.__len__()-1].set_edgecolor('green')
             patches[patches.__len__()-1].set_linewidth(5)
