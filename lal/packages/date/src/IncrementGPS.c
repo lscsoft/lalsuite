@@ -49,7 +49,6 @@ Routines to perform arithmetic and comparisons on \texttt{LIGOTimeGPS} and
 \idx{LALDeltaGPS()}
 \idx{LALDeltaFloatGPS()}
 \idx{XLALDeltaFloatGPS()}
-\idx{LALCompareGPS()}
 
 \subsubsection*{Description}
 
@@ -65,7 +64,6 @@ the GPS times they operate on into a floating point representation.
   \item \texttt{LALDeltaGPS()} returns the difference between two GPS times as a \texttt{LALTimeInterval}.
   \item \texttt{LALDeltaFloatGPS()} returns the difference between two GPS times in seconds as a \texttt{REAL8}.
   \item \texttt{XLALDeltaFloatGPS()} returns the difference between two GPS times in seconds as a \texttt{REAL8}.
-  \item \texttt{LALCompareGPS()} compares two GPS times, and returns a \texttt{LALGPSCompareResult} indicating if the first GPS time is earlier than, equal to,  or later than the second GPS time
 \end{itemize}
 
 \subsubsection*{Algorithm}
@@ -102,6 +100,7 @@ structure as input and output, \textit{e.g.}
 #include <lal/LALStdlib.h>
 #include <lal/Date.h>
 #include <math.h>
+#include <lal/XLALError.h>
 
 NRCSID( INCREMENTGPSC, "$Id$" );
 
@@ -324,21 +323,9 @@ LALCompareGPS(LALStatus           *status,
   ASSERT(pGPS1, status, DATEH_ENULLINPUT, DATEH_MSGENULLINPUT);
   ASSERT(pGPS2, status, DATEH_ENULLINPUT, DATEH_MSGENULLINPUT);
 
-  /*  Cases: (see DeltaGPS above, with some amendments) */
+  XLALPrintDeprecationWarning("LALCompareGPS", "XLALGPSCmp");
 
-  if (pGPS1->gpsSeconds == pGPS2->gpsSeconds) /* 1 */
-    {
-      if (pGPS1->gpsNanoSeconds == pGPS2->gpsNanoSeconds)
-          *pResult = 0;
-      else if (pGPS1->gpsNanoSeconds > pGPS2->gpsNanoSeconds) /* a */
-          *pResult = 1;
-      else
-          *pResult = -1;
-    }
-  else if (pGPS1->gpsSeconds > pGPS2->gpsSeconds) /* a */
-      *pResult = 1;
-  else
-      *pResult = -1;
+  *pResult = XLALGPSCmp(pGPS1, pGPS2);
 
   DETATCHSTATUSPTR(status);
   RETURN( status );
