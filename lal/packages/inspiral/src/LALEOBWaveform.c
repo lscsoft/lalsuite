@@ -1399,6 +1399,9 @@ LALEOBWaveformEngine (
   
    CHAR message[256];
 
+   /* For checking XLAL return codes */
+   INT4 xlalStatus;
+
    /* Variables used in injection */
    REAL8 unitHz;
    REAL8 cosI;/* cosine of system inclination */
@@ -1544,8 +1547,8 @@ LALEOBWaveformEngine (
     
    if (a && r < 6)
    {
-     sprintf(message, "EOB:initialCondition:Initial r found = %f ",r);
-     sprintf(message, "too small (below 6 no waveform is generated)\n");
+     LALSnprintf( message, 256, "EOB:initialCondition:Initial r found = %f "
+           "too small (below 6 no waveform is generated)\n", r );
      LALWarning(status->statusPtr, message);
      RETURN( status );
    }
@@ -1623,6 +1626,17 @@ LALEOBWaveformEngine (
    freq = XLALCreateREAL4Vector ( length );
    phse = XLALCreateREAL8Vector ( length );
 
+   if ( !sig1 || !sig2 || !ampl || !freq || !phse )
+   {
+     if ( sig1 ) XLALDestroyREAL4Vector( sig1 );
+     if ( sig2 ) XLALDestroyREAL4Vector( sig2 );
+     if ( ampl ) XLALDestroyREAL4Vector( ampl );
+     if ( freq ) XLALDestroyREAL4Vector( freq );
+     if ( phse ) XLALDestroyREAL8Vector( phse );
+     LALFree( dummy.data );
+     ABORT( status, LALINSPIRALH_EMEM, LALINSPIRALH_MSGEMEM );
+   }
+
    memset(sig1->data, 0, sig1->length * sizeof( REAL4 ));
    memset(sig2->data, 0, sig2->length * sizeof( REAL4 ));
    memset(ampl->data, 0, ampl->length * sizeof( REAL4 ));
@@ -1632,6 +1646,11 @@ LALEOBWaveformEngine (
    /* Initialize the GSL integrator */
    if (!(integrator = XLALRungeKutta4Init(nn, &in4)))
    {
+     XLALDestroyREAL4Vector( sig1 );
+     XLALDestroyREAL4Vector( sig2 );
+     XLALDestroyREAL4Vector( ampl );
+     XLALDestroyREAL4Vector( freq );
+     XLALDestroyREAL8Vector( phse );
      LALFree(dummy.data);
      ABORT(status, LALINSPIRALH_EMEM, LALINSPIRALH_MSGEMEM);
    }
@@ -1655,6 +1674,11 @@ LALEOBWaveformEngine (
       if (count > length)
       {
         XLALRungeKutta4Free( integrator );
+        XLALDestroyREAL4Vector( sig1 );
+        XLALDestroyREAL4Vector( sig2 );
+        XLALDestroyREAL4Vector( ampl );
+        XLALDestroyREAL4Vector( freq );
+        XLALDestroyREAL8Vector( phse );
 	LALFree(dummy.data);
 	ABORT(status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
       }
@@ -1697,14 +1721,22 @@ LALEOBWaveformEngine (
       }
       
       in4.function(&values, &dvalues, funcParams3);
-      CHECKSTATUSPTR(status);
 
       omega = dvalues.data[1];
       in4.dydx = &dvalues;
       in4.x = t/m;
       LALRungeKutta4(status->statusPtr, &newvalues, integrator, funcParams3);
-      CHECKSTATUSPTR(status);
-
+      BEGINFAIL( status )
+      {
+        XLALRungeKutta4Free( integrator );
+        XLALDestroyREAL4Vector( sig1 );
+        XLALDestroyREAL4Vector( sig2 );
+        XLALDestroyREAL4Vector( ampl );
+        XLALDestroyREAL4Vector( freq );
+        XLALDestroyREAL8Vector( phse );
+        LALFree(dummy.data);
+      }
+      ENDFAIL( status );
 
       r = values.data[0] = newvalues.data[0];
       s = values.data[1] = newvalues.data[1];
@@ -1742,7 +1774,16 @@ LALEOBWaveformEngine (
      -------------------------------------------------------------*/
    if (params->approximant == EOBNR)
    {
-     XLALInspiralAttachRingdownWave( freq, sig1, sig2, params );
+     xlalStatus = XLALInspiralAttachRingdownWave( freq, sig1, sig2, params );
+     if (xlalStatus != XLAL_SUCCESS )
+     {
+       XLALDestroyREAL4Vector( sig1 );
+       XLALDestroyREAL4Vector( sig2 );
+       XLALDestroyREAL4Vector( ampl );
+       XLALDestroyREAL4Vector( freq );
+       XLALDestroyREAL8Vector( phse );
+       ABORTXLAL( status );
+     }
    }
 
    /*-------------------------------------------------------------------
@@ -1760,9 +1801,29 @@ LALEOBWaveformEngine (
     *----------------------------------------*/
    modeL = 2;
    modeM = 2;
-   XLALSphHarm( &MultSphHarmP, modeL, modeM, inclination, coa_phase );
+   xlalStatus = XLALSphHarm( &MultSphHarmP, modeL, modeM, inclination, coa_phase );
+   if (xlalStatus != XLAL_SUCCESS )
+   {
+     XLALDestroyREAL4Vector( sig1 );
+     XLALDestroyREAL4Vector( sig2 );
+     XLALDestroyREAL4Vector( ampl );
+     XLALDestroyREAL4Vector( freq );
+     XLALDestroyREAL8Vector( phse );
+     ABORTXLAL( status );
+   }
+
    modeM = -2;
-   XLALSphHarm( &MultSphHarmM, modeL, modeM, inclination, coa_phase );
+   xlalStatus = XLALSphHarm( &MultSphHarmM, modeL, modeM, inclination, coa_phase );
+   if (xlalStatus != XLAL_SUCCESS )
+   {
+     XLALDestroyREAL4Vector( sig1 );
+     XLALDestroyREAL4Vector( sig2 );
+     XLALDestroyREAL4Vector( ampl );
+     XLALDestroyREAL4Vector( freq );
+     XLALDestroyREAL8Vector( phse );
+     ABORTXLAL( status );
+   }
+
    y1 =   MultSphHarmP.re + MultSphHarmM.re;
    y2 =   MultSphHarmM.im - MultSphHarmP.im;
    z1 = - MultSphHarmM.im - MultSphHarmP.im;
