@@ -29,6 +29,8 @@ import os
 import string
 import sys
 import time
+import copy
+
 sys.path.append('@PYTHONLIBDIR@')
 from tracksearchutils import *
 
@@ -43,7 +45,7 @@ except Exception, errorInfo:
     sys.stderr.write("Exception Instance :%s\n"%(str(type(errorInfo))))
     sys.stderr.write("Exception Args     :%s\n"%(str(errorInfo.args)))
     sys.stderr.write("Pylab functionality unavailable!\n")
-
+    sys.stderr.write("Function calls requiring graphics may FAIL!\n")
 # Need to add import for pylab and if the import fails disable the
 # printing options available from the command line with error messages
 # to the user.
@@ -76,7 +78,7 @@ def buildCandidateGlob(fileList,verboseSwitch=False):
         tmpCandidate.__loadfileQuick__(entry)
         newCandidateObject=newCandidateObject.globList(tmpCandidate,True)
         del tmpCandidate
-    return copy.deepcopy(newCandidateObject)
+    return newCandidateObject
 #End method
 
 def gnuplotScriptFile(filename):
@@ -376,7 +378,7 @@ elif ((expThreshold != "") and (canList.__len__() >=1)):
                     outfile=singleThreshold+outfile
                 candidateResults.writefile(outfile)
                 if verboseSwitch:
-                    print "Wrote file :",saveFiles
+                    print "Wrote file :",outfile
                 if dumpSummaryDisk:
                     candidateResults.writeSummary(outfile)
                 if glitchdb:
