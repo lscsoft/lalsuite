@@ -1042,8 +1042,8 @@ void GenerateSideBandTemplate (LALStatus *status,
   if (lalDebugLevel) printf ("\nComputed signal amplitudes in BinaryFDTemplate.\n");
   
   /* compute orbital phase (for circular orbit only) */
-  /* tp = XLALDeltaFloatGPS(&(TParams->tstart),&(BSParams->TimeofSSBPeriapsePassage)); */            /* compute the time since periapse passage */
-  /* tp = XLALDeltaFloatGPS(&(BSParams->TimeofSSBPeriapsePassage),&(TParams->tstart));   */          /* compute the time since periapse passage */
+  /* tp = XLALGPSDiff(&(TParams->tstart),&(BSParams->TimeofSSBPeriapsePassage)); */            /* compute the time since periapse passage */
+  /* tp = XLALGPSDiff(&(BSParams->TimeofSSBPeriapsePassage),&(TParams->tstart));   */          /* compute the time since periapse passage */
   /* printf("tpSSB = %d %d\n",BSParams->TimeofSSBPeriapsePassage.gpsSeconds,BSParams->TimeofSSBPeriapsePassage.gpsNanoSeconds);
      printf("tstartSSB = %d %d\n",TParams->tstartSSB.gpsSeconds,TParams->tstartSSB.gpsNanoSeconds); */
   

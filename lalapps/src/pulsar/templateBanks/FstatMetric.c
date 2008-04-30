@@ -987,12 +987,12 @@ InitCode (LALStatus *status, ConfigVariables *cfg, const UserVariables_t *uvar)
   ATTATCHSTATUSPTR (status);
 
   /* ----- determine start-time from user-input */
-  XLALFloatToGPS( &(cfg->startTime), uvar->startTime );
+  XLALGPSSetREAL8( &(cfg->startTime), uvar->startTime );
   /* if refTime wasn't set, use startTime ! */
   if ( LALUserVarWasSet ( &uvar->refTime ) )
-    XLALFloatToGPS( &(cfg->refTime), uvar->refTime );
+    XLALGPSSetREAL8( &(cfg->refTime), uvar->refTime );
   else
-    XLALFloatToGPS( &(cfg->refTime), uvar->startTime );
+    XLALGPSSetREAL8( &(cfg->refTime), uvar->startTime );
 
 
   { /* ----- load ephemeris-data ----- */
@@ -1088,7 +1088,7 @@ InitCode (LALStatus *status, ConfigVariables *cfg, const UserVariables_t *uvar)
     /* convert REAL8-times into LIGOTimeGPS-times */
     for ( i=0; i < (UINT4)uvar->numSteps; i ++ )
       {
-	XLALFloatToGPS ( &(GLtimestamps->data[i]), ti->data[i] );
+	XLALGPSSetREAL8 ( &(GLtimestamps->data[i]), ti->data[i] );
 	cfg->GLweights->data[i] *= Tinv;
       }
 

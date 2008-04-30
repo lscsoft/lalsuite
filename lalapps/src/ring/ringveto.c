@@ -276,7 +276,7 @@ static REAL4TimeSeries *ring_get_data( struct ring_params *params )
 
   /* compute the start and duration needed to pad data */
   params->frameDataStartTime = params->startTime;
-  XLALAddFloatToGPS( &params->frameDataStartTime, -1.0 * params->padData );
+  XLALGPSAdd( &params->frameDataStartTime, -1.0 * params->padData );
   params->frameDataDuration = params->duration + 2.0 * params->padData;
 
   if ( params->getData )

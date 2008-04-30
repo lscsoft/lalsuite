@@ -424,7 +424,7 @@ InitCode (LALStatus *status, ConfigVariables *cfg, const UserVariables_t *uvar)
   ATTATCHSTATUSPTR (status);
 
   /* ----- determine start-time from user-input */
-  XLALFloatToGPS( &(cfg->startTime), uvar->startTime );
+  XLALGPSSetREAL8( &(cfg->startTime), uvar->startTime );
 
   if ( (cfg->edat = InitEphemeris ( uvar->ephemEarth, uvar->ephemSun )) == NULL ) {
     LogPrintf (LOG_CRITICAL, "Failed to initialize ephemeris data!\n");

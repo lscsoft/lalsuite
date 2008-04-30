@@ -793,9 +793,9 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
 	/* use all additional constraints user might have given */
 	if ( haveStart && haveDuration )
 	  {
-	    XLALFloatToGPS ( &minStartTime, uvar_startTime );
+	    XLALGPSSetREAL8 ( &minStartTime, uvar_startTime );
 	    constraints.startTime = &minStartTime;
-	    XLALFloatToGPS ( &maxEndTime, uvar_startTime + uvar_duration );
+	    XLALGPSSetREAL8 ( &maxEndTime, uvar_startTime + uvar_duration );
 	    constraints.endTime = &maxEndTime;
 	    if ( lalDebugLevel ) 
 	      printf ( "\nWARNING: only noise-SFTs between GPS [%d, %d] will be used!\n", 
@@ -848,7 +848,7 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
 	    ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);	    
 	  }
 	/* internally always use timestamps, so we generate them  */
-	XLALFloatToGPS ( &tStart, uvar_startTime );
+	XLALGPSSetREAL8 ( &tStart, uvar_startTime );
 	TRY( LALMakeTimestamps ( status->statusPtr, &(cfg->timestamps), tStart, uvar_duration, tStep ), status);
       } /* if !cfg->timestamps */
 
@@ -986,7 +986,7 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
 	  /* convert MJD peripase to GPS using Matt Pitkins code found at lal/packages/pulsar/src/BinaryPulsarTimeing.c */
 	  REAL8 GPSfloat;
 	  GPSfloat = LALTDBMJDtoGPS(uvar_orbitTpSSBMJD);
-	  XLALFloatToGPS(&(orbit->tp),GPSfloat);
+	  XLALGPSSetREAL8(&(orbit->tp),GPSfloat);
 	}
       else if ((set5 && set6) && !set7)
 	{
@@ -1045,7 +1045,7 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
       /* convert MJD to GPS using Matt Pitkins code found at lal/packages/pulsar/src/BinaryPulsarTimeing.c */
       REAL8 GPSfloat;
       GPSfloat = LALTDBMJDtoGPS(uvar_refTimeMJD);
-      XLALFloatToGPS(&(cfg->pulsar.Doppler.refTime),GPSfloat);
+      XLALGPSSetREAL8(&(cfg->pulsar.Doppler.refTime),GPSfloat);
     }
 
 

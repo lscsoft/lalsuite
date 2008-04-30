@@ -355,7 +355,7 @@ int main(int argc,char *argv[])
 	  /* convert MJD peripase to GPS using Matt Pitkins code found at lal/packages/pulsar/src/BinaryPulsarTimeing.c */
 	  REAL8 GPSfloat;
 	  GPSfloat = LALTDBMJDtoGPS(uvar.orbitTpSSBMJD);
-	  XLALFloatToGPS(&(orbitalParams->tp),GPSfloat);
+	  XLALGPSSetREAL8(&(orbitalParams->tp),GPSfloat);
 	}
       else
 	{
@@ -841,7 +841,7 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
   cfg->Tsft = 1.0 / catalog->data[0].header.deltaF;
   startTime = catalog->data[0].header.epoch;
   endTime   = catalog->data[numSFTs-1].header.epoch;
-  XLALAddFloatToGPS(&endTime, cfg->Tsft);	/* add on Tsft to last SFT start-time */
+  XLALGPSAdd(&endTime, cfg->Tsft);	/* add on Tsft to last SFT start-time */
 
   /* ----- get reference-times (from user if given, use startTime otherwise): ----- */
   if ( LALUserVarWasSet(&uvar->refTime)) 
@@ -853,7 +853,7 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
       /* convert MJD peripase to GPS using Matt Pitkins code found at lal/packages/pulsar/src/BinaryPulsarTimeing.c */
       REAL8 GPSfloat;
       GPSfloat = LALTDBMJDtoGPS(uvar->refTimeMJD);
-      XLALFloatToGPS(&(cfg->refTime),GPSfloat);
+      XLALGPSSetREAL8(&(cfg->refTime),GPSfloat);
     }
   else
     cfg->refTime = startTime;

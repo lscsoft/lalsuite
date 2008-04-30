@@ -87,7 +87,7 @@ int frEvent2snglInspiral(SnglInspiralTable **snglInspiralEvent,
     snglEvt->end_time.gpsSeconds = frEvt->GTimeS;
     snglEvt->end_time.gpsNanoSeconds = frEvt->GTimeN;
 		timeAfter = frEvt->timeAfter;
-		XLALAddFloatToGPS(&snglEvt->end_time,timeAfter);
+		XLALGPSAdd(&snglEvt->end_time,timeAfter);
     snglEvt->eff_distance = FrEventGetParam ( frEvt, "distance (Mpc)");
     snglEvt->mass1 = FrEventGetParam ( frEvt, "mass1");
     snglEvt->mass2 = FrEventGetParam ( frEvt, "mass2" );

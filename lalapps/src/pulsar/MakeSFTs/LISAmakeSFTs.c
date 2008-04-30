@@ -478,7 +478,7 @@ ConvertLISAtimeseries2LAL ( LALStatus *status, MultiREAL4TimeSeries **lalTs, con
       name[LALNameLength-1] = 0; /* close string if it was truncated */
 
       /* Workaround for LISAsim metadata error: read start time from t column of data */
-      XLALFloatToGPS( &epoch, lisaTs->Data[0]->data[0] );
+      XLALGPSSetREAL8( &epoch, lisaTs->Data[0]->data[0] );
 
       epoch.gpsSeconds += LISA_TIME_ORIGIN;	/* offset for convenience of GPS-time ranges */
 

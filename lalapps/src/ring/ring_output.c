@@ -230,9 +230,9 @@ static SearchSummaryTable *ring_create_search_summary( struct ring_params *param
   searchSummary->in_start_time  = params->startTime;
   searchSummary->in_end_time    = params->endTime;
   searchSummary->out_start_time = outStartTime;
-  XLALAddFloatToGPS( &searchSummary->out_start_time, -1.0 * params->padData );
+  XLALGPSAdd( &searchSummary->out_start_time, -1.0 * params->padData );
   searchSummary->out_end_time   = outEndTime;
-  XLALAddFloatToGPS( &searchSummary->out_end_time, 1.0 * params->padData);
+  XLALGPSAdd( &searchSummary->out_end_time, 1.0 * params->padData);
   searchSummary->nevents        = params->numEvents;
 
   return searchSummary;

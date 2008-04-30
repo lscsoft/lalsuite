@@ -63,7 +63,7 @@ REAL4TimeSeries *get_ligo_data(FrStream *stream,
     fprintf(stdout, "Resizing \"%s\" series...\n", channel);
 
   /* resize series to the correct number of samples */
-  length = floor((XLALDeltaFloatGPS(&end, &start) / series->deltaT) + 0.5);
+  length = floor((XLALGPSDiff(&end, &start) / series->deltaT) + 0.5);
   XLALResizeREAL4TimeSeries(series, 0, length);
 
   if (vrbflg)
@@ -114,7 +114,7 @@ REAL4TimeSeries *get_geo_data(FrStream *stream,
     fprintf(stdout, "Resizing \"%s\" series...\n", channel);
 
   /* resize series to the correct number of samples */
-  length = floor((XLALDeltaFloatGPS(&end, &start) / geo->deltaT) + 0.5);
+  length = floor((XLALGPSDiff(&end, &start) / geo->deltaT) + 0.5);
   XLALResizeREAL8TimeSeries(geo, 0, length);
 
   if (vrbflg)
@@ -250,7 +250,7 @@ REAL4TimeSeries *get_time_series(CHAR *ifo,
     end.gpsSeconds -= buffer;
 
     /* calculate required length */
-    length = floor((XLALDeltaFloatGPS(&end, &start) / series->deltaT) + 0.5);
+    length = floor((XLALGPSDiff(&end, &start) / series->deltaT) + 0.5);
 
     /* remove resample buffer */
     XLALShrinkREAL4TimeSeries(series, buffer / series->deltaT, length);

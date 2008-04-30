@@ -640,7 +640,7 @@ InitialiseLambda(LALStatus *status,SideBandMCMCVector *lambda,SideBandMCMCRanges
     temp = ranges.tpmin.gpsSeconds+1e-9*ranges.tpmin.gpsNanoSeconds + 
       (REAL8)vector->data[2]*(ranges.tpmax.gpsSeconds+1e-9*ranges.tpmax.gpsNanoSeconds 
 			      - ranges.tpmin.gpsSeconds-1e-9*ranges.tpmin.gpsNanoSeconds);
-    XLALFloatToGPS(&(lambda->tp),temp);
+    XLALGPSSetREAL8(&(lambda->tp),temp);
   }
   else {
     lambda->tp.gpsSeconds = ranges.tpmin.gpsSeconds;

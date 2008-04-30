@@ -841,7 +841,7 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
   cfg->Tsft = 1.0 / catalog->data[0].header.deltaF;
   startTime = catalog->data[0].header.epoch;
   endTime   = catalog->data[numSFTs-1].header.epoch;
-  XLALAddFloatToGPS(&endTime, cfg->Tsft);	/* add on Tsft to last SFT start-time */
+  XLALGPSAdd(&endTime, cfg->Tsft);	/* add on Tsft to last SFT start-time */
 
   /* ----- get reference-times (from user if given, use startTime otherwise): ----- */
   if ( LALUserVarWasSet(&uvar_refTime)) {
