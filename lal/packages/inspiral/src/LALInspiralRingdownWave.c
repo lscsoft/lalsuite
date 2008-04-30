@@ -113,9 +113,15 @@ INT4 XLALInspiralRingdownWave (
 	)
 /* </lalVerbatim> */
 {
+
+  static const char *func = "XLALInspiralRingdownWave";
+
   /* XLAL error handling */
   INT4 errcode = XLAL_SUCCESS;
   
+  /* For checking GSL return codes */
+  INT4 gslStatus;
+
   UINT4 i, j, k;
   
   /* Sampling rate from input */
@@ -133,18 +139,27 @@ INT4 XLALInspiralRingdownWave (
   if ( inspwave1->length != nmodes || inspwave2->length != nmodes || 
 		modefreqs->length != nmodes )
   {
-	errcode = 0;
-	fprintf( stdout, "Wrong number of waveform derivatives, or frequencies of QNMs.\n");
-	exit(1);
+    XLAL_ERROR( func, XLAL_EBADLEN );
   }
   
   /* Solving the linear system for QNMs amplitude coefficients using gsl routine */
   /* Initiate matrices and supporting variables */
-  coef = (gsl_matrix *) gsl_matrix_alloc(2 * nmodes, 2 * nmodes);
-  hderivs = (gsl_vector *) gsl_vector_alloc(2 * nmodes);
-  x = (gsl_vector *) gsl_vector_alloc(2 * nmodes);
-  p = (gsl_permutation *) gsl_permutation_alloc(2 * nmodes);
-  
+  XLAL_CALLGSL( coef = (gsl_matrix *) gsl_matrix_alloc(2 * nmodes, 2 * nmodes) );
+  XLAL_CALLGSL( hderivs = (gsl_vector *) gsl_vector_alloc(2 * nmodes) );
+  XLAL_CALLGSL( x = (gsl_vector *) gsl_vector_alloc(2 * nmodes) );
+  XLAL_CALLGSL( p = (gsl_permutation *) gsl_permutation_alloc(2 * nmodes) );
+
+  /* Check all matrices and variables were allocated */
+  if ( !coef || !hderivs || !x || !p )
+  {
+    if (coef)    gsl_matrix_free(coef);
+    if (hderivs) gsl_vector_free(hderivs);
+    if (x)       gsl_vector_free(x);
+    if (p)       gsl_permutation_free(p);  
+
+    XLAL_ERROR( func, XLAL_ENOMEM );
+  }
+
   /* Define the linear system Ax=y */
   /* Matrix A (2*n by 2*n) has block symmetry. Define half of A here as "coef" */
   /* Define y here as "hderivs" */
@@ -172,11 +187,33 @@ INT4 XLALInspiralRingdownWave (
   }
   
   /* Call gsl LU decomposition to solve the linear system */
-  gsl_linalg_LU_decomp(coef, p, &s);
-  gsl_linalg_LU_solve(coef, p, hderivs, x);
+  XLAL_CALLGSL( gslStatus = gsl_linalg_LU_decomp(coef, p, &s) );
+  if ( gslStatus == GSL_SUCCESS )
+  { 
+    XLAL_CALLGSL( gslStatus = gsl_linalg_LU_solve(coef, p, hderivs, x) );
+  }
+
+  if ( gslStatus != GSL_SUCCESS )
+  {
+    gsl_matrix_free(coef);
+    gsl_vector_free(hderivs);
+    gsl_vector_free(x);
+    gsl_permutation_free(p);
+    XLAL_ERROR( func, XLAL_EFUNC );
+  }
   
   /* Putting solution to an XLAL vector */
   modeamps = XLALCreateREAL8Vector(2 * nmodes);
+  
+  if ( !modeamps )
+  {
+    gsl_matrix_free(coef);
+    gsl_vector_free(hderivs);
+    gsl_vector_free(x);
+    gsl_permutation_free(p);
+    XLAL_ERROR( func, XLAL_ENOMEM );
+  }
+
   for (i = 0; i < nmodes; ++i)
   {
 	modeamps->data[i] = gsl_vector_get(x, i);
@@ -219,12 +256,18 @@ INT4 XLALGenerateWaveDerivatives (
 	)
 /* </lalVerbatim> */
 {
+  static const char *func = "XLALGenerateWaveDerivatives";
+  
   /* XLAL error handling */
   INT4 errcode = XLAL_SUCCESS;
+
+  /* For checking GSL return codes */
+  INT4 gslStatus;
   
   UINT4 j;
   REAL8 dt;
   double *x, *y;
+  double dy, dy2;
   gsl_interp_accel *acc;
   gsl_spline *spline;
   
@@ -233,31 +276,70 @@ INT4 XLALGenerateWaveDerivatives (
   
   /* Getting interpolation and derivatives of the waveform using gsl spline routine */
   /* Initiate arrays and supporting variables for gsl */
-  x = (double *) malloc(wave->length * sizeof(double));
-  y = (double *) malloc(wave->length * sizeof(double));
+  x = (double *) LALMalloc(wave->length * sizeof(double));
+  y = (double *) LALMalloc(wave->length * sizeof(double));
+
+  if ( !x || !y )
+  {
+    if ( x ) LALFree (x);
+    if ( y ) LALFree (y);
+    XLAL_ERROR( func, XLAL_ENOMEM );
+  }
+
   for (j = 0; j < wave->length; ++j)
   {
 	x[j] = j;
 	y[j] = wave->data[j];
   }
-  acc = (gsl_interp_accel*) gsl_interp_accel_alloc();
-  spline = (gsl_spline*) gsl_spline_alloc(gsl_interp_cspline, wave->length);
+
+  XLAL_CALLGSL( acc = (gsl_interp_accel*) gsl_interp_accel_alloc() );
+  XLAL_CALLGSL( spline = (gsl_spline*) gsl_spline_alloc(gsl_interp_cspline, wave->length) );
+  if ( !acc || !spline )
+  {
+    if ( acc )    gsl_interp_accel_free(acc);
+    if ( spline ) gsl_spline_free(spline);
+    LALFree( x );
+    LALFree( y );
+    XLAL_ERROR( func, XLAL_ENOMEM );
+  }
   
   /* Gall gsl spline interpolation */
-  gsl_spline_init(spline, x, y, wave->length);
+  XLAL_CALLGSL( gslStatus = gsl_spline_init(spline, x, y, wave->length) );
+  if ( gslStatus != GSL_SUCCESS )
+  {
+    gsl_spline_free(spline);
+    gsl_interp_accel_free(acc);
+    LALFree( x );
+    LALFree( y );
+    XLAL_ERROR( func, XLAL_EFUNC );
+  }
   
   /* Getting first and second order time derivatives from gsl interpolations */
   for (j = 0; j < wave->length; ++j)
   {
-	dwave->data[j] = gsl_spline_eval_deriv(spline, j, acc) / dt;
-	ddwave->data[j] = gsl_spline_eval_deriv2(spline, j, acc) / dt / dt;
+    XLAL_CALLGSL(gslStatus = gsl_spline_eval_deriv_e( spline, j, acc, &dy ) );
+    if ( gslStatus == GSL_SUCCESS )
+    {
+      XLAL_CALLGSL(gslStatus = gsl_spline_eval_deriv2_e(spline, j, acc, &dy2 ) );
+    }
+    if (gslStatus != GSL_SUCCESS )
+    {
+      gsl_spline_free(spline);
+      gsl_interp_accel_free(acc);
+      LALFree( x );
+      LALFree( y );
+      XLAL_ERROR( func, XLAL_EFUNC );
+    }
+    dwave->data[j]  = (REAL4)(dy / dt);
+    ddwave->data[j] = (REAL4)(dy2 / dt / dt);
+
   }
   
   /* Free gsl variables */
   gsl_spline_free(spline);
   gsl_interp_accel_free(acc);
-  free(x);
-  free(y);
+  LALFree(x);
+  LALFree(y);
   
   return errcode;
 }
@@ -290,8 +372,7 @@ INT4 XLALGenerateQNMFreq(
   errcode = XLALFinalMassSpin(&finalMass, &finalSpin, params);
   if ( errcode != XLAL_SUCCESS )
   {
-	  fprintf( stderr, "XLALFinalMassSpin failed\n" );
-      exit( 1 );
+	  XLAL_ERROR( "XLALGenerateQNMFreq", XLAL_EFUNC );
   }
   
   /* QNM frequencies from the fitting given in PRD73, 064030 */
@@ -336,6 +417,9 @@ INT4 XLALInspiralAttachRingdownWave (
       REAL4Vector 	*signal2,
       InspiralTemplate 	*params)
 {
+
+      static const char *func = "XLALInspiralAttachRingdownWave";
+
       COMPLEX8Vector *modefreqs;
       UINT4 Nrdwave, Npatch;
       UINT4 attpos = 0;
@@ -377,11 +461,15 @@ INT4 XLALInspiralAttachRingdownWave (
       l = 2;
       m = 2;
       modefreqs = XLALCreateCOMPLEX8Vector( nmodes );
+      if ( !modefreqs )
+      {
+        XLAL_ERROR( func, XLAL_ENOMEM );
+      }
+
       errcode = XLALGenerateQNMFreq( modefreqs, params, l, m, nmodes );
       if ( errcode != XLAL_SUCCESS )
       {
-        fprintf( stderr, "XLALGenerateQNMFreq failed\n" );
-        exit( 1 );
+        XLAL_ERROR( func, XLAL_EFUNC );
       }
 
       /*
@@ -396,6 +484,13 @@ INT4 XLALInspiralAttachRingdownWave (
       /* Patch length, centered around the matching point "attpos" */
       Npatch = 11;
       
+      /* Check the value of attpos, to prevent memory access problems later */
+      if ( attpos < ( Npatch + 1 ) / 2 || attpos + (Npatch - 1) / 2 >= signal1->length )
+      {
+        XLALPrintError( "Value of attpos inconsistent with given value of Npatch.\n" );
+        XLAL_ERROR( func, XLAL_EFAILED );
+      }
+
       /* Create memory for the ring-down and full waveforms, and derivatives of inspirals */
       
       rdwave1 = XLALCreateREAL4Vector( Nrdwave );
@@ -406,6 +501,21 @@ INT4 XLALInspiralAttachRingdownWave (
       inspwaves1 = XLALCreateREAL4VectorSequence( 3, (Npatch + 1) / 2 );
       inspwaves2 = XLALCreateREAL4VectorSequence( 3, (Npatch + 1) / 2 );
     
+      /* Check memory was allocated */
+      if ( !rdwave1 || !rdwave2 || !inspwave || !dinspwave || !ddinspwave
+           || !inspwaves1 || !inspwaves2 )
+      {
+        XLALDestroyCOMPLEX8Vector( modefreqs );
+        if (rdwave1)    XLALDestroyREAL4Vector( rdwave1 );
+        if (rdwave2)    XLALDestroyREAL4Vector( rdwave2 );
+        if (inspwave)   XLALDestroyREAL4Vector( inspwave );
+        if (dinspwave)  XLALDestroyREAL4Vector( dinspwave );
+        if (ddinspwave) XLALDestroyREAL4Vector( ddinspwave );
+        if (inspwaves1) XLALDestroyREAL4VectorSequence( inspwaves1 );
+        if (inspwaves2) XLALDestroyREAL4VectorSequence( inspwaves2 );
+        XLAL_ERROR( func, XLAL_ENOMEM );
+      }
+
       /* Generate derivatives of the last part of inspiral waves */
       /* Take the last part of signal1 */
       for (j = 0; j < Npatch; j++)
@@ -416,8 +526,15 @@ INT4 XLALInspiralAttachRingdownWave (
       errcode = XLALGenerateWaveDerivatives( dinspwave, ddinspwave, inspwave, params );
       if ( errcode != XLAL_SUCCESS )
       {
-        fprintf( stderr, "XLALGenerateQNMFreq failed\n" );
-        exit( 1 );
+        XLALDestroyCOMPLEX8Vector( modefreqs );
+        XLALDestroyREAL4Vector( rdwave1 );
+        XLALDestroyREAL4Vector( rdwave2 );
+        XLALDestroyREAL4Vector( inspwave );
+        XLALDestroyREAL4Vector( dinspwave );
+        XLALDestroyREAL4Vector( ddinspwave );
+        XLALDestroyREAL4VectorSequence( inspwaves1 );
+        XLALDestroyREAL4VectorSequence( inspwaves2 );
+        XLAL_ERROR( func, XLAL_EFUNC );
       }
       for (j = 0; j < (Npatch + 1) / 2; j++)
       {
@@ -435,8 +552,15 @@ INT4 XLALInspiralAttachRingdownWave (
       errcode = XLALGenerateWaveDerivatives( dinspwave, ddinspwave, inspwave, params );
       if ( errcode != XLAL_SUCCESS )
       {
-        fprintf( stderr, "XLALGenerateQNMFreq failed\n" );
-        exit( 1 );
+        XLALDestroyCOMPLEX8Vector( modefreqs );
+        XLALDestroyREAL4Vector( rdwave1 );
+        XLALDestroyREAL4Vector( rdwave2 );
+        XLALDestroyREAL4Vector( inspwave );
+        XLALDestroyREAL4Vector( dinspwave );
+        XLALDestroyREAL4Vector( ddinspwave );
+        XLALDestroyREAL4VectorSequence( inspwaves1 );
+        XLALDestroyREAL4VectorSequence( inspwaves2 );
+        XLAL_ERROR( func, XLAL_EFUNC );
       }
       for (j = 0; j < (Npatch + 1) / 2; j++)
       {
@@ -451,8 +575,15 @@ INT4 XLALInspiralAttachRingdownWave (
 								      modefreqs, nmodes );
       if ( errcode != XLAL_SUCCESS )
       {
-        fprintf( stderr, "XLALInspiralComputePTFWDeriv failed\n" );
-        exit( 1 );
+        XLALDestroyCOMPLEX8Vector( modefreqs );
+        XLALDestroyREAL4Vector( rdwave1 );
+        XLALDestroyREAL4Vector( rdwave2 );
+        XLALDestroyREAL4Vector( inspwave );
+        XLALDestroyREAL4Vector( dinspwave );
+        XLALDestroyREAL4Vector( ddinspwave );
+        XLALDestroyREAL4VectorSequence( inspwaves1 );
+        XLALDestroyREAL4VectorSequence( inspwaves2 );
+        XLAL_ERROR( func, XLAL_EFUNC );
       }
       /* Generate full waveforms, by stitching inspiral and ring-down waveforms */
       for (j = 1; j < Nrdwave; ++j)
@@ -472,4 +603,4 @@ INT4 XLALInspiralAttachRingdownWave (
       XLALDestroyREAL4VectorSequence( inspwaves2 );
 
       return errcode;
-   }
+}
