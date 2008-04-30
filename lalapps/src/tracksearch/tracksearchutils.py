@@ -2091,7 +2091,7 @@ class candidateList:
             [entries,bins,patches]=pylab.hist(powList,colCount)
             pylab.close()
             pylab.figure()
-            pylab.semilogy(bin,entries,'o',linestyle='steps')
+            pylab.semilogy(bins,entries,'o',linestyle='steps')
         if max(powList) > max(bins):
             patches[patches.__len__()-1].set_edgecolor('green')
             patches[patches.__len__()-1].set_linewidth(5)
