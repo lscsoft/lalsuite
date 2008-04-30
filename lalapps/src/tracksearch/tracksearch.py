@@ -298,7 +298,7 @@ class tracksearchConvertSegList:
     from data in the original segments file.  It is this file from where we
     construct an analysis DAG for each line item.
     """
-    def __init__(self,segmentFileName,newDuration,configOpts,rubberBlock=False):
+    def __init__(self,segmentFileName,newDuration,configOpts,rubberBlock=False,overrideBurn=False):
         self.origSegObject=pipeline.ScienceData()
         self.newSegObject=pipeline.ScienceData()
         self.newSegFilename=segmentFileName+'.revised'
@@ -306,6 +306,7 @@ class tracksearchConvertSegList:
         self.duration=newDuration
         self.cp=configOpts
         self.rubberBlock=rubberBlock
+        self.overrideBurnBorderReset=overrideBurn
     #End __init__()
     
     def writeSegList(self):
@@ -365,8 +366,11 @@ class tracksearchConvertSegList:
         print "Number of segments loaded :"+str(self.origSegObject.__len__())
         for bigChunks in self.origSegObject:
             #Burn off data from bigChunks
-            bigChunks.set_start(bigChunks.start()+dataToBurn)
-            bigChunks.set_end(bigChunks.end()-dataToBurn)
+            #Flag to ignore burn options.  Set to true if the input
+            #list is the unused data of previous pipe setup1
+            if not self.overrideBurnBorderReset:
+                bigChunks.set_start(bigChunks.start()+dataToBurn)
+                bigChunks.set_end(bigChunks.end()-dataToBurn)
             largestBlockAllowed=int(float(str.strip(self.cp.get('layerconfig','layerTopBlockSize'))))
             smallestBlockAllowed=self.duration
             if self.rubberBlock:
@@ -386,7 +390,10 @@ class tracksearchConvertSegList:
             totalTimeInSegmentList=totalTimeInSegmentList+bigChunks.dur()
             totalTimeLostDueToMinBlockSize=totalTimeLostDueToMinBlockSize+bigChunks.unused()
         print "Total time available in segment list       :"+str(totalTimeInSegmentList)
-        print "Total time burned from data segments       :"+str(totalTimeBurned)
+        if not self.overrideBurnBorderReset:
+            print "Total time burned from data segments       :"+str(totalTimeBurned)
+        else:
+            print "Total time burned not applicable, using override."
         print "Total time lost due to min Block Size req  :"+str(totalTimeLostDueToMinBlockSize)
         output_fp.close
 

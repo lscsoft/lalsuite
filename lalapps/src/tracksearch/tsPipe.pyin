@@ -70,7 +70,12 @@ parser.add_option("-e","--specific_event",dest="specificGPS",
                   default='0',
                   help="Mechanism to setup a tracksearch pipeline for a specific GPS time stamp.  This method uses the INI file specified to setup an appropriate segment list for the run such that the GPS time specified is approximately centered in the middle of the data to be analyzed.  The amount of surrounding data (durations) etc are all defined in the INI file. Using this option will implicity set the flag associated with --unique_path unless it has already been set to something by the user.",
                   )
-                  
+parser.add_option("-d","--override_burn",dest="overrideBurn",
+                  default=False,
+                  action="store_true",
+                  help="Specify this flag to override the burn data option in ini file.   You may want to invoke this if the input segment list is the left over data from a previous pipe construction.  The previous pipe built a data used list with the edges already burned.  This does not affect the actual analysis pipeline.  It still uses the data padding (burn durations).  This keeps from discarding good data multiple time from same segment."
+                  )
+
 (options,args) = parser.parse_args()
 
 iniFile=os.path.abspath(os.path.expanduser(str(options.iniFile)))
@@ -78,6 +83,7 @@ segmentList=os.path.abspath(os.path.expanduser(str(options.segmentList)))
 injectFileFlag=bool(options.invokeInject)
 removepipeline=bool(options.removepipeline)
 verbose=bool(options.verbose)
+overrideBurn=bool(options.overrideBurn)
 topBlockFloat=bool(options.topBlockFloat)
 uniquePath=str(options.uniquePath)
 specificGPS=float(options.specificGPS)
@@ -148,7 +154,7 @@ segmentListName=segmentList
 dataBlockSize=int(float(str.strip(cp.get('layerconfig','layerTopBlockSize'))))
 if not(topBlockFloat):
     #Convert the segment list to smaller blocks
-    reformatSegList=tracksearch.tracksearchConvertSegList(segmentList,dataBlockSize,cp,topBlockFloat)
+    reformatSegList=tracksearch.tracksearchConvertSegList(segmentList,dataBlockSize,cp,topBlockFloat,overrideBurn)
     reformatSegList.writeSegList()
     segmentListName=reformatSegList.getSegmentName()
     allData=pipeline.ScienceData()
@@ -168,7 +174,7 @@ else:
             print "Error found additional layerconfig options for multi-resolution search."
             print "Aborting pipeline construction."
             os.abort
-    rubberSegList=tracksearch.tracksearchConvertSegList(segmentList,minSize,cp,topBlockFloat)
+    rubberSegList=tracksearch.tracksearchConvertSegList(segmentList,minSize,cp,topBlockFloat,overrideBurn)
     rubberSegList.writeSegList()
     rubberSegListName=rubberSegList.getSegmentName()
     allData=pipeline.ScienceData()
@@ -194,7 +200,7 @@ indexA=0
 # stored independently
 
 #Write out the data chunks actually configured for search.
-print "Writing the actually segment list to disk for reference."
+print "Writing the actual segment list to disk for reference."
 tracksearch.writeChunkListToDisk(allData,str(segmentListName+".dataUsed"))
 
 ##### New initialization method
@@ -206,6 +212,8 @@ if allData.__len__() == 0:
     print "Please check your segment list."
     print "Also check INI files option in section [layerconfig]"
     os.abort()
+else:
+    print "Building :"+str(allData.__len__())+" blocks into pipe."
 for block in allData:
     progress.updateSpinner()
     tracksearchBlock.createJobs(block)

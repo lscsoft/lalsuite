@@ -82,6 +82,7 @@ parser.add_option("-d","--dag_locks",dest="dagLockPath",
 
 (options,args)=parser.parse_args()
 dagLocks=str(os.path.normpath(options.dagLockPath))
+buildDir(dagLocks)
 outputName=str(os.path.normpath(options.outputName))
 outputPath=str(os.path.normpath(options.outputPath))
 outputResultsPath=str(os.path.normpath(outputPath+"/"+outputName+".RESULTS"))
@@ -105,18 +106,25 @@ cp= ConfigParser.ConfigParser()
 cp.read(iniFile)
 
 #Setup DAG
-outputPath=os.path.normpath(outputPath)
-dagLog=outputPath+"/"+outputName+"_$(cluster).LOG"
+outputPath=os.path.abspath(os.path.normpath(outputPath))
+dagLog=os.path.normpath(dagLocks+"/"+outputName+".LOG")
 myDag=pipeline.CondorDAG(os.path.normpath(dagLog))
 myDag.set_dag_file(os.path.normpath(str(outputName)))
 
 #Setup SUB
-myJob=pipeline.CondorDAGJob(cp.get('condor','clustertool_universe'),cp.get('condor','clustertool'))
+tsHandler=os.path.expanduser(cp.get('condor','clustertool'))
+tsUniverse=str(cp.get('condor','clustertool_universe')).lower()
+if not os.path.exists(str(tsHandler)):
+    print "ERROR: Can't find tracksearch handler executable."
+    os.abort()
+    
+
+myJob=pipeline.CondorDAGJob(tsUniverse,tsHandler)
 myJob.set_sub_file(str(outputName)+".sub")
 logDir=os.path.normpath(outputPath+"/logs/")
 buildDir(logDir)
-myJob.set_stdout_file(os.path.normpath(logDir+"/log_$(cluster)_$(process).out"))
-myJob.set_stderr_file(os.path.normpath(logDir+"/log_$(cluster)_$(process).err"))
+myJob.set_stdout_file(os.path.abspath(os.path.normpath(logDir+"/log_$(cluster)_$(process).out")))
+myJob.set_stderr_file(os.path.abspath(os.path.normpath(logDir+"/log_$(cluster)_$(process).err")))
 
 
 #All all the proper options and macro handles
@@ -124,28 +132,36 @@ if not cp.has_section('candidatethreshold'):
     print "NO [candidatethreshold] section!\n"
     os.abort()
 else:
-    if cp.has_option('candidatethreshold','expression_threshold'):
-        newVal=cp.get('candidatethreshold','expression_threshold')
-        newVal=str(newVal).strip('\\').replace('"','\\"')
-        cp.set('candidatethreshold','expression_threshold',newVal)
+    if cp.has_option('candidatethreshold','expression-threshold'):
+        newVal=cp.get('candidatethreshold','expression-threshold')
+        if (newVal.__contains__('"') and not newVal.__contains__('\\')):
+            newVal=str(newVal).replace('"','\\"')
+        cp.set('candidatethreshold','expression-threshold',newVal)
     myJob.add_ini_opts(cp,'candidatethreshold')
 
-if not cp.has_section('graphicsthreshold'):
-    print "NO [graphicsthreshold] section!\n"
-    os.abort()
-else:
-    myJob.add_ini_opts(cp,'graphicsthreshold')
+if not (not buildFigures and not plotTriggers):
+    if not cp.has_section('graphicsthreshold'):
+        print "NO [graphicsthreshold] section!\n"
+        os.abort()
+    else:
+        if not plotTriggers:
+            cp.remove_option('graphicsthreshold','line-plot')
+            cp.remove_option('graphicsthreshold','print')
+            cp.remove_option('graphicsthreshold','timescale')
+        if not buildFigures:
+            cp.remove_option('graphicsthreshold','histogram')
+            cp.remove_option('graphicsthreshold','trigger_property')
+
+        myJob.add_ini_opts(cp,'graphicsthreshold')
 
 #Add options for filename to process
-file2process="*.candidates"
-myJob.add_opt('file',file2process)
+myJob.add_opt('file','$(macroFileToProcess)')
 
 #Use condor file transfer mechanism to move candidate files into
 #position
 myJob.add_condor_cmd('transfer_input_files','$(macroFileList)')
-myJob.add_condor_cmd('when_to_tranfer_output','on_exit')
+myJob.add_condor_cmd('when_to_transfer_output','on_exit')
 myJob.add_condor_cmd('initialdir',outputResultsPath)
-myJob.add_condor_cmd('lock',dagLocks)
 buildDir(outputResultsPath)
 
 #Setup dag nodes
@@ -154,11 +170,19 @@ if not cp.has_section('pylibraryfiles'):
     print "NO [pylibraryfiles] section!\n"
     os.abort()
 else:
-    libraryFile=os.path.normpath(cp.get('pylibraryfiles','pyutilfile'))
+    libraryFile=os.path.expanduser(cp.get('pylibraryfiles','pyutilfile'))
+    if not os.path.exists(str(libraryFile)):
+                         print "ERROR: Library file not found."
+                         os.abort()
 
 for thisFile in listOfFiles:
+    myFile=thisFile.strip("\n")
     thisNode=pipeline.CondorDAGNode(myJob)
-    thisNode.add_macro('macroFileList',thisFile+","+libraryFile)
+    thisNode.add_macro('macroFileList',str(myFile)+","+libraryFile)
+    if tsUniverse == 'local':
+        thisNode.add_macro('macroFileToProcess',myFile)
+    else:
+        thisNode.add_macro('macroFileToProcess',os.path.basename(myFile))
     myDag.add_node(thisNode)
 
 #Write out the files that constitute the dag
