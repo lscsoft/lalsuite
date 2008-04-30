@@ -769,7 +769,7 @@ void LALInjectStrainGW( LALStatus                 *status,
 
   XLALFindNRCoalescenceTime( &offset, htData);
 
-  XLALAddFloatToGPS( &(htData->epoch), -offset);
+  XLALGPSAdd( &(htData->epoch), -offset);
 
   /* inject the htData into injection time stream */
   TRY( LALSSInjectTimeSeries( status->statusPtr, injData, htData ),
@@ -834,7 +834,7 @@ void LALInjectStrainGWREAL8( LALStatus                 *status,
 						 &det);
 
   XLALFindNRCoalescenceTimeREAL8( &offset, htData);
-  XLALAddFloatToGPS( &(htData->epoch), -offset);
+  XLALGPSAdd( &(htData->epoch), -offset);
 
   XLALSimAddInjectionREAL8TimeSeries( injData, htData, NULL);
   

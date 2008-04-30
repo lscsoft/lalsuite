@@ -213,7 +213,7 @@ int XLALComputeDetAMResponseSeries(
 
 	for(i = 0; i < n; i++) {
 		t = *start;
-		gmst = XLALGreenwichMeanSiderealTime(XLALAddFloatToGPS(&t, i * deltaT));
+		gmst = XLALGreenwichMeanSiderealTime(XLALGPSAdd(&t, i * deltaT));
 		if(XLAL_IS_REAL8_FAIL_NAN(gmst)) {
 			XLALDestroyREAL4TimeSeries(*fplus);
 			XLALDestroyREAL4TimeSeries(*fcross);

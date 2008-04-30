@@ -192,7 +192,7 @@ CW_am1_am2_Phi_i_Phi_j ( double tt, void *params )
       skypos.latitude  = par->dopplerPoint->Delta;
 
       ttSI = par->startTime + tt * par->Tspan;	/* current GPS time in seconds */
-      XLALFloatToGPS( &ttGPS, ttSI );
+      XLALGPSSetREAL8( &ttGPS, ttSI );
 
       if ( XLALComputeAntennaPatternCoeffs ( &ai, &bi, &skypos, &ttGPS, par->site, par->edat ) ) {
 	XLALPrintError ( "%s: Call to XLALComputeAntennaPatternCoeffs() failed!\n", fn);
@@ -271,7 +271,7 @@ CWPhaseDeriv_i ( double tt, void *params )
   nn[2] = sind;
 
   ttSI = par->startTime + tt * par->Tspan;	/* current GPS time in seconds */
-  XLALFloatToGPS( &ttGPS, ttSI );
+  XLALGPSSetREAL8( &ttGPS, ttSI );
 
   if ( XLALDetectorPosVel ( &posvel, &ttGPS, par->site, par->edat, par->detMotionType ) ) {
     XLALPrintError ( "%s: Call to XLALDetectorPosVel() failed!\n", fn);

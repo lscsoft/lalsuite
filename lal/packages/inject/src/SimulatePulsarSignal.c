@@ -274,7 +274,7 @@ LALSimulateExactPulsarSignal (LALStatus *status,
       LIGOTimeGPS newEpoch;
       PulsarSpins fkdotOld, fkdotNew;
       
-      XLALFloatToGPS( &newEpoch, startTimeSSB );
+      XLALGPSSetREAL8( &newEpoch, startTimeSSB );
 
       fkdotOld[0] = f0;
       fkdotOld[1] = f1dot;

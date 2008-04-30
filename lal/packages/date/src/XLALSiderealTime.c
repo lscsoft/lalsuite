@@ -33,13 +33,14 @@
 NRCSID (XLALSIDEREALTIMEC,"$Id$");
 
 
-/*
+/**
  * Returns the Greenwich Sidereal Time IN RADIANS corresponding to a
  * specified GPS time.  Aparent sidereal time is computed by providing the
  * equation of equinoxes in units of seconds.  For mean sidereal time, set
  * this parameter to 0.
  *
- * The output of this code is in radians in the range [0,2pi).
+ * This function returns the sidereal time in radians measured from the
+ * Julian epoch (current J2000).  The result is NOT modulo 2 pi.
  *
  * Inspired by the function sidereal_time() in the NOVAS-C library, version
  * 2.0.1, which is dated December 10th, 1999, and carries the following
@@ -63,7 +64,7 @@ REAL8 XLALGreenwichSiderealTime(
 	REAL8 equation_of_equinoxes
 )
 {
-	static const char *func = "XLALGreenwichSiderealTime";
+	static const char func[] = "XLALGreenwichSiderealTime";
 	struct tm utc;
 	double julian_day;
 	double t_hi, t_lo;
@@ -127,12 +128,26 @@ REAL8 XLALGreenwichSiderealTime(
 }
 
 
+/**
+ * Convenience wrapper, calling XLALGreenwichSiderealTime() with the
+ * equation of equinoxes set to 0.
+ */
+
+
 REAL8 XLALGreenwichMeanSiderealTime(
 	const LIGOTimeGPS *gpstime
 )
 {
 	return XLALGreenwichSiderealTime(gpstime, 0.0);
 }
+
+
+/**
+ * Inverse of XLALGreenwichMeanSiderealTime().  The input is sidereal time
+ * in radians since the Julian epoch (currently J2000 for LAL), and the
+ * output is the corresponding GPS time.  The algorithm uses a naive
+ * iterative root-finder, so it's slow.
+ */
 
 
 LIGOTimeGPS *XLALGreenwichMeanSiderealTimeToGPS(
@@ -152,10 +167,16 @@ LIGOTimeGPS *XLALGreenwichMeanSiderealTimeToGPS(
 		error = gmst - XLALGreenwichMeanSiderealTime(gps);
 		if(fabs(error / gmst) <= precision)
 			return gps;
-		XLALAddFloatToGPS(gps, error * gps_seconds_per_sidereal_radian);
+		XLALGPSAdd(gps, error * gps_seconds_per_sidereal_radian);
 	} while(--iterations);
 	XLAL_ERROR_NULL(func, XLAL_EMAXITER);
 }
+
+
+/**
+ * Convenience wrapper of XLALGreenwichMeanSiderealTimeToGPS(), adjusting
+ * the input by the equation of equinoxes.
+ */
 
 
 LIGOTimeGPS *XLALGreenwichSiderealTimeToGPS(

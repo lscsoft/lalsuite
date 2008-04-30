@@ -126,7 +126,7 @@ LALDTEphemeris( LALStatus             *status,
 
   /* Set the GPS time: */
   tGPS = tev->epoch;
-  XLALAddFloatToGPS ( &tGPS, var->data[0] );	/* time relative to epoch */
+  XLALGPSAdd ( &tGPS, var->data[0] );	/* time relative to epoch */
  
   /* Set the ephemeris data: */
   eph = tev->ephemeris;
@@ -159,7 +159,7 @@ LALDTEphemeris( LALStatus             *status,
   /* Now assemble output: */
 
   /* Subtract off epoch: => barycentered time since epoch */
-  drv->data[0] = XLALDeltaFloatGPS( &(emit.te), &(tev->epoch) );
+  drv->data[0] = XLALGPSDiff( &(emit.te), &(tev->epoch) );
 
   /* ---------- calculate only the requested derivatives ---------- */
 

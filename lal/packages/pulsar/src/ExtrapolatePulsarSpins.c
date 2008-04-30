@@ -147,7 +147,7 @@ LALExtrapolatePulsarSpins (LALStatus   *status,
 
   ASSERT ( fkdot1, status, EXTRAPOLATEPULSARSPINS_ENULL, EXTRAPOLATEPULSARSPINS_MSGENULL);
 
-  dtau = XLALDeltaFloatGPS( &epoch1, &epoch0 );
+  dtau = XLALGPSDiff( &epoch1, &epoch0 );
 
   if ( XLALExtrapolatePulsarSpins ( fkdot1, fkdot0, dtau ) ) {
     ABORT ( status,  EXTRAPOLATEPULSARSPINS_EXLAL,  EXTRAPOLATEPULSARSPINS_MSGEXLAL );
@@ -221,7 +221,7 @@ LALExtrapolatePulsarPhase (LALStatus *status,
   ASSERT ( phi1, status, EXTRAPOLATEPULSARSPINS_ENULL, EXTRAPOLATEPULSARSPINS_MSGENULL);
 
   kFact = 1;
-  dTau = XLALDeltaFloatGPS( &epoch0, &epoch1 );
+  dTau = XLALGPSDiff( &epoch0, &epoch1 );
   dTauk = 1.0;
   frac_cycles = 0;
 

@@ -464,8 +464,8 @@ INT4 main ( INT4 argc, CHAR *argv[] ) {
 
   /* Set t = 0 at the merger (defined as the max of the NR wave) */
   XLALFindNRCoalescenceTime( &offset, hP);
-  XLALAddFloatToGPS( &(hP->epoch), -offset);
-  XLALAddFloatToGPS( &(hC->epoch), -offset);
+  XLALGPSAdd( &(hP->epoch), -offset);
+  XLALGPSAdd( &(hC->epoch), -offset);
 
   /* Print waveforms to file */
   LALPrintHPlusCross( hP, hC, outFileLong );
@@ -503,7 +503,7 @@ void LALPrintHPlusCross(
 
   n = hp->data->length;
   dt = hp->deltaT;
-  XLALFloatToGPS( &(hp->epoch), off);
+  XLALGPSSetREAL8( &(hp->epoch), off);
 
   file = LALFopen(out, "w");
   fprintf (file, "#   t(1/M)\t    h_+\t\t   h_x\n"); 
