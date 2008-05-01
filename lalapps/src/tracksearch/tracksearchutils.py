@@ -28,6 +28,8 @@ import string
 import sys
 import time
 import copy
+import cPickle
+import gzip
 disableGraphics=False
 import numarray
 try:
@@ -86,10 +88,13 @@ class kurve:
         for entry in keyList:
             sortedCurve.append(self.element[entry[1]])
         #Swap sorted data into element field.
-        self.element=sortedCurve
+        self.element=[]
+        self.element=copy.copy(sortedCurve)
         #Set Boolean key to True
         self.sortedByTime=True
         self.sortedByFreq=False
+        del keyList
+        del sortedCurve
     #End method __timeOrderCurve__()
 
     def getSymmetryFactor(self,inputPixel,weight=1):
@@ -587,8 +592,10 @@ class candidateList:
         self.freqWidth=float(0)
         self.gpsWidth=gpsInt(0,0)
         self.sorted=False
+        self.pickleExtension=".traitSummary"
         #Should be list of objects of class kurve
         self.curves=[]
+        self.traitSummary=[]
         self.qualities=[["curveid","Curve ID","getKurveHeader()[0]"],
                         ["l","Curve Length","getKurveHeader()[1]"],
                         ["p","Integrated Power","getKurveHeader()[2]"],
@@ -637,6 +644,27 @@ class candidateList:
         """
         self.filename=[]
         self.filename.append(newfilename)
+
+    def __getTraitField__(self,curveSummary='',field='curveID'):
+        """
+        This method is the traitSummary analog of __getCurveField__()
+        it behaves much like its counterpart.  It is required to access
+        the trait summary data stored in self.traitSummary.
+        """
+        indexToUse=0
+        traitList=[]
+        for element in self.qualities:
+            traitList.append(element[0])
+        try:
+            indexToUse=traitList.index(field.lower())
+        except ValueError:
+            return [0,"NULL"]
+        if curveSummary == '':
+            output = 0
+        else:
+            output = curveSummary[indexToUse]
+        return [output,self.qualities[indexToUse][1]]
+    #End __getTraitField__()
 
     def __getCurveField__(self,curve='',field='curveID'):
         """
@@ -801,6 +829,8 @@ class candidateList:
                  print "Possible problem, Inconsistent file :",inputFilename
         else:
             print "No candidate entries found in:",inputFilename
+        self.createTraitSummary()
+        self.__propertypickler__()
     #End loadfile method
 
     def __loadfileQuick__(self,inputFilename):
@@ -878,6 +908,8 @@ class candidateList:
                 self.curves=[]
                 self.gpsWidth=gpsInt(0,0)
                 self.freqWidth=float(0)
+        self.createTraitSummary()
+        self.__propertypickler__()
     #End __loadfileQuick__ method
 
     def writefile(self,outputFilename):
@@ -904,6 +936,8 @@ class candidateList:
                       ';'+str(elements[2].__diskPrint__())+','\
                       +str(elements[3])+','+str(elements[4]))
             output_fp.write(str(':').join(data)+'\n')
+        self.createTraitSummary()
+        self.__propertypickler__()
         spinner.closeSpinner()
     #End writefile method
 
@@ -1274,7 +1308,7 @@ class candidateList:
         """
         scl=secondCurveLibrary
         #Check to see if lists are time sorted.
-        if not self.sorted:
+        if (self.sorted != True):
             self.__timeOrderLibrary__()
         if not scl.sorted:
             scl.__timeOrderLibrary__()
@@ -1540,6 +1574,89 @@ class candidateList:
         return statList
     #end method candidateStatsOnDisk
     
+    def __propertypickler__(self):
+        """
+        This method writes a pickle which represents the traits that
+        can be used to create a histogram from the candidate file.
+        This saves time when viewing multiple historgram or deciding 
+        to adjust bins etc.
+        """
+        #Time order the triggers
+        if not self.sorted:
+            self.__timeOrderLibrary__()
+        ###
+        pickleFile=self.filename[0]+self.pickleExtension
+        output_fp=gzip.open(pickleFile,'wb')
+        for line in self.traitSummary:
+            output_fp.write(str(line).strip("[").strip("]").replace(",",'').replace("'",'')+"\n")
+        output_fp.close()
+#         #Set pickle file name
+#         fp=gzip.open(pickleFile,'wb')
+#         #Aways read as binary!
+#         cPickle.dump(self.traitSummary,fp,2)
+#         fp.close()
+    #end __propertypickler__()
+
+    def __propertyunpickler__(self,filename=''):
+        """
+        This method loads a pickle file if present.  It should be
+        called when you are sure you don't need all the data in 
+        the corresponding candidate library file.  This is 
+        for creation of quick histograms, summary files, or glitchDBs.
+        If pickled file is older than candidate file then it loads the
+        candidate file as expected and creates an up to date propery
+        pickle.
+
+        """
+        if filename == '':
+            filename=self.filename[0]
+        else:
+            if self.filename.__len__() == 0:
+                self.filename.append(filename)
+            else:
+                self.filename[0]=filename
+
+        if self.verboseMode:
+            sys.stdout.write("Looking to load trait summary file.\n")
+        dTime=os.path.getmtime(filename)
+        pTime=dTime-1
+        pickleName=filename+self.pickleExtension
+        if os.path.isfile(pickleName):
+            pTime=os.path.getmtime(pickleName)
+        if dTime<=pTime:
+            input_fp=gzip.open(pickleName,'rb')
+            line=str(' ')
+            elementCount=0
+            while line:
+                line=input_fp.readline()
+                if line != '':
+                    self.traitSummary.append(map(float,line.split()))
+            input_fp.close()
+            #Reorganize the traitSummary Structure into floats
+            
+#             fp=gzip.open(pickleName,'rb')
+#             self.traitSummary=cPickle.load(fp)
+#             fp.close()
+        else:
+            if self.verboseMode:
+                sys.stderr.write("Error could not load trait summary file. Loading full candidate list file instead!\n")
+            self.__loadfileQuick__(filename)
+    #end __propertyunpickler__()
+        
+    def createTraitSummary(self):
+        """
+        Method takes the data in self.curves and uses it to create
+        the summary of trigger properties used for creating histograms,
+        summary files and glitchDB files.
+        """
+        for element in self.curves:
+            tmpTrait=[]
+            for property in self.qualities:
+                tmpData=self.__getCurveField__(element,property[0])
+                tmpTrait.append(tmpData[0])
+            self.traitSummary.append(tmpTrait)
+            del tmpTrait
+    #end createTraitSummary()
 
     def dumpCandidateKurveSummary(self):
         """
@@ -1730,6 +1847,7 @@ class candidateList:
         outputObject.__cloneCandidateList__(self)
         outputObject.curves=copy.deepcopy(resultsList)
         outputObject.totalCount=resultsList.__len__()
+        outputObject.createTraitSummary()
         spinner.closeSpinner()
         return outputObject
     #end applyAbitraryThresholds method
@@ -2074,11 +2192,22 @@ class candidateList:
         """
         histList=[]
         powList=[]
-        for trigger in self.curves:
-            fieldValue=self.__getCurveField__(trigger,triggerTrait)[0]
-            fieldID=self.__getCurveField__(trigger,"curveID")[0]
-            histList.append([fieldValue,fieldID])
-            powList.append(fieldValue)
+        if 1:
+            #Load properties out of the traitSummary variable!
+            if self.traitSummary.__len__() == 0:
+                sys.stderr.write("Trait summary field empty! Exiting function\n")
+                return [[],[],[]]
+            for triggerSummary in self.traitSummary:
+                fieldValue=self.__getTraitField__(triggerSummary,triggerTrait)[0]
+                fieldID=self.__getTraitField__(triggerSummary,"curveID")[0]
+                histList.append([fieldValue,fieldID])
+                powList.append(fieldValue)
+        else:
+            for trigger in self.curves:
+                fieldValue=self.__getCurveField__(trigger,triggerTrait)[0]
+                fieldID=self.__getCurveField__(trigger,"curveID")[0]
+                histList.append([fieldValue,fieldID])
+                powList.append(fieldValue)
         try:
             [entries,bins,patches]=pylab.hist(powList,colCount,bottom=1,log=True)
         except:

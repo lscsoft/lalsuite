@@ -101,6 +101,11 @@ def wrapperGraphTriggers(candidateObject):
     global timescale
     global graph2file
     try:
+        if candidateObject.curves==[]:
+            if candidateObject.verboseMode:
+                sys.stdout.write("Only trait summary for triggers in memory.\n")
+                sys.stdout.write("Loading entire candidate list.\n")
+            candidateObject.__loadfileQuick__(candidateObject.filename[0])
         candidateObject.graphTriggers(graph2file,graphGPSoffset,timescale)
     except Exception, errorInfo:
         sys.stderr.write("Problem trying to create plot, %s !\n"%(os.path.basename(graph2file)))
@@ -350,7 +355,7 @@ elif (createHistogram and (canList.__len__() >=1)):
         graph2file='AUTO'
     for entry in canList:
         candidateObject=candidateList(verboseSwitch)
-        candidateObject.__loadfileQuick__(entry)
+        candidateObject.__propertyunpickler__(entry)
         wrapperShowHistogram(candidateObject)
         if linePlot:
             wrapperGraphTriggers(candidateObject)
