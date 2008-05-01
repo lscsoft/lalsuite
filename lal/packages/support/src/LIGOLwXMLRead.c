@@ -1,21 +1,24 @@
 /*
-*  Copyright (C) 2007 Andres C. Rodriguez, Alexander Dietz, Duncan Brown, Jolien Creighton, Kipp Cannon, Lisa M. Goggin, Patrick Brady, Robert Adam Mercer, Saikat Ray-Majumder, Anand Sengupta, Stephen Fairhurst, Xavier Siemens, Craig Robinson , Sean Seader, Thomas Cokelaer
-*
-*  This program is free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
-*
-*  This program is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
-*  along with with program; see the file COPYING. If not, write to the
-*  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-*  MA  02111-1307  USA
-*/
+ * Copyright (C) 2007 Andres C. Rodriguez, Alexander Dietz, Duncan Brown,
+ * Jolien Creighton, Kipp Cannon, Lisa M. Goggin, Patrick Brady, Robert
+ * Adam Mercer, Saikat Ray-Majumder, Anand Sengupta, Stephen Fairhurst,
+ * Xavier Siemens, Craig Robinson , Sean Seader, Thomas Cokelaer
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation; either version 2 of the License, or (at your
+ * option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with with program; see the file COPYING. If not, write to the Free
+ * Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+ * 02111-1307  USA
+ */
 
 /*----------------------------------------------------------------------- 
  * 
@@ -183,7 +186,7 @@ int XLALLIGOLwHasTable(const char *filename, const char *table_name)
 	 */
 
 	if(MetaioOpenFile(&env, filename)) {
-		XLALPrintError("%s(): error opening \"%s\"\n", func, filename);
+		XLALPrintError("%s(): error opening \"%s\": %s\n", func, filename, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
 		XLAL_ERROR(func, XLAL_EIO);
 	}
 
@@ -198,7 +201,7 @@ int XLALLIGOLwHasTable(const char *filename, const char *table_name)
 	 */
 
 	if(MetaioClose(&env)) {
-		XLALPrintError("%s(): error parsing document after %s table\n", func, table_name);
+		XLALPrintError("%s(): error parsing document after %s table: %s\n", func, table_name, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
 		XLAL_ERROR(func, XLAL_EIO);
 	}
 
@@ -214,23 +217,34 @@ int XLALLIGOLwHasTable(const char *filename, const char *table_name)
  * Convenience wrapper for MetaioFindColumn(), translating to XLAL-style
  * error reporting and printing useful error messages on failure.  Returns
  * the integer index of the column, or a negative integer if the column is
- * not found.  If required is non-zero, then an XLAL error is reported if
- * the column is missing, but if required is zero then no error is
- * generated for missing columns.
+ * not found or has the wrong type.  If required is non-zero, then an XLAL
+ * error is reported if the column is missing, but if required is zero then
+ * no error is generated for missing columns.  When a column is found, it's
+ * type is checked and an XLAL error is reported if it does not match the
+ * requested type.  Passing METAIO_TYPE_UNKNOWN disables the column type
+ * test.
  */
 
 
 static int XLALLIGOLwFindColumn(
 	struct MetaioParseEnvironment *env,
 	const char *name,
+	enum METAIO_Type type,
 	int required
 )
 {
 	static const char func[] = "XLALLIGOLwFindColumn";
 	int pos = MetaioFindColumn(env, name);
-	if(pos < 0 && required) {
+	if(pos >= 0) {
+		/* column was found, check type */
+		if(type != METAIO_TYPE_UNKNOWN && env->ligo_lw.table.col[pos].data_type != type) {
+			XLALPrintError("%s(): column \"%s\" has wrong type\n", func, name);
+			XLAL_ERROR(func, XLAL_EDATA);
+		}
+	} else if(required) {
+		/* required column is missing */
 		XLALPrintError("%s(): missing required column \"%s\"\n", func, name);
-		XLAL_ERROR(func, XLAL_EIO);
+		XLAL_ERROR(func, XLAL_EDATA);
 	}
 	return pos;
 }
@@ -268,7 +282,7 @@ static long XLALLIGOLwParseIlwdChar(
 	if(sscanf(ilwd_char, fmt, &id) < 1) {
 		free(fmt);
 		XLALPrintError("%s(): invalid %s \"%s\" for %s\n", func, ilwd_char_column_name ? ilwd_char_column_name : "ID", ilwd_char, ilwd_char_table_name ? ilwd_char_table_name : "table");
-		XLAL_ERROR(func, XLAL_EIO);
+		XLAL_ERROR(func, XLAL_EDATA);
 	}
 
 	free(fmt);
@@ -288,6 +302,7 @@ ProcessTable *XLALProcessTableFromLIGOLw(
 )
 {
 	static const char func[] = "XLALProcessTableFromLIGOLw";
+	static const char table_name[] = "process";
 	int miostatus;
 	ProcessTable *head = NULL;
 	ProcessTable **next = &head;
@@ -313,39 +328,39 @@ ProcessTable *XLALProcessTableFromLIGOLw(
 	/* open the file and find table */
 
 	if(MetaioOpenFile(&env, filename)) {
-		XLALPrintError("%s(): error opening \"%s\"\n", func, filename);
+		XLALPrintError("%s(): error opening \"%s\": %s\n", func, filename, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
 		XLAL_ERROR_NULL(func, XLAL_EIO);
 	}
-	if(MetaioOpenTableOnly(&env, "process")) {
+	if(MetaioOpenTableOnly(&env, table_name)) {
 		MetaioAbort(&env);
-		XLALPrintError("%s(): cannot find process table\n", func);
+		XLALPrintError("%s(): cannot find %s table: %s\n", func, table_name, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
 		XLAL_ERROR_NULL(func, XLAL_EIO);
 	}
 
 	/* find columns */
 
 	XLALClearErrno();
-	column_pos.program = XLALLIGOLwFindColumn(&env, "program", 1);
-	column_pos.version = XLALLIGOLwFindColumn(&env, "version", 1);
-	column_pos.cvs_repository = XLALLIGOLwFindColumn(&env, "cvs_repository", 1);
-	column_pos.cvs_entry_time = XLALLIGOLwFindColumn(&env, "cvs_entry_time", 1);
-	column_pos.comment = XLALLIGOLwFindColumn(&env, "comment", 1);
-	column_pos.is_online = XLALLIGOLwFindColumn(&env, "is_online", 1);
-	column_pos.node = XLALLIGOLwFindColumn(&env, "node", 1);
-	column_pos.username = XLALLIGOLwFindColumn(&env, "username", 1);
-	column_pos.unix_procid = XLALLIGOLwFindColumn(&env, "unix_procid", 1);
-	column_pos.start_time = XLALLIGOLwFindColumn(&env, "start_time", 1);
-	column_pos.end_time = XLALLIGOLwFindColumn(&env, "end_time", 1);
-	column_pos.jobid = XLALLIGOLwFindColumn(&env, "jobid", 1);
-	column_pos.domain = XLALLIGOLwFindColumn(&env, "domain", 1);
-	column_pos.ifos = XLALLIGOLwFindColumn(&env, "ifos", 1);
-	column_pos.process_id = XLALLIGOLwFindColumn(&env, "process_id", 1);
+	column_pos.program = XLALLIGOLwFindColumn(&env, "program", METAIO_TYPE_LSTRING, 1);
+	column_pos.version = XLALLIGOLwFindColumn(&env, "version", METAIO_TYPE_LSTRING, 1);
+	column_pos.cvs_repository = XLALLIGOLwFindColumn(&env, "cvs_repository", METAIO_TYPE_LSTRING, 1);
+	column_pos.cvs_entry_time = XLALLIGOLwFindColumn(&env, "cvs_entry_time", METAIO_TYPE_INT_4S, 1);
+	column_pos.comment = XLALLIGOLwFindColumn(&env, "comment", METAIO_TYPE_LSTRING, 1);
+	column_pos.is_online = XLALLIGOLwFindColumn(&env, "is_online", METAIO_TYPE_INT_4S, 1);
+	column_pos.node = XLALLIGOLwFindColumn(&env, "node", METAIO_TYPE_LSTRING, 1);
+	column_pos.username = XLALLIGOLwFindColumn(&env, "username", METAIO_TYPE_LSTRING, 1);
+	column_pos.unix_procid = XLALLIGOLwFindColumn(&env, "unix_procid", METAIO_TYPE_INT_4S, 1);
+	column_pos.start_time = XLALLIGOLwFindColumn(&env, "start_time", METAIO_TYPE_INT_4S, 1);
+	column_pos.end_time = XLALLIGOLwFindColumn(&env, "end_time", METAIO_TYPE_INT_4S, 1);
+	column_pos.jobid = XLALLIGOLwFindColumn(&env, "jobid", METAIO_TYPE_INT_4S, 1);
+	column_pos.domain = XLALLIGOLwFindColumn(&env, "domain", METAIO_TYPE_LSTRING, 1);
+	column_pos.ifos = XLALLIGOLwFindColumn(&env, "ifos", METAIO_TYPE_LSTRING, 1);
+	column_pos.process_id = XLALLIGOLwFindColumn(&env, "process_id", METAIO_TYPE_ILWD_CHAR, 1);
 
 	/* check for failure (== a required column is missing) */
 
 	if(XLALGetBaseErrno()) {
 		MetaioAbort(&env);
-		XLALPrintError("%s(): failure reading process table\n", func);
+		XLALPrintError("%s(): failure reading %s table\n", func, table_name);
 		XLAL_ERROR_NULL(func, XLAL_EFUNC);
 	}
 
@@ -392,7 +407,7 @@ ProcessTable *XLALProcessTableFromLIGOLw(
 	if(miostatus < 0) {
 		XLALDestroyProcessTable(head);
 		MetaioAbort(&env);
-		XLALPrintError("%s(): I/O error parsing process table\n", func);
+		XLALPrintError("%s(): I/O error parsing %s table: %s\n", func, table_name, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
 		XLAL_ERROR_NULL(func, XLAL_EIO);
 	}
 
@@ -400,7 +415,7 @@ ProcessTable *XLALProcessTableFromLIGOLw(
 
 	if(MetaioClose(&env)) {
 		XLALDestroyProcessTable(head);
-		XLALPrintError("%s(): error parsing document after process table\n", func);
+		XLALPrintError("%s(): error parsing document after %s table: %s\n", func, table_name, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
 		XLAL_ERROR_NULL(func, XLAL_EIO);
 	}
 
@@ -421,6 +436,7 @@ ProcessParamsTable *XLALProcessParamsTableFromLIGOLw(
 )
 {
 	static const char func[] = "XLALProcessParamsTableFromLIGOLw";
+	static const char table_name[] = "process_params";
 	int miostatus;
 	ProcessParamsTable *head = NULL;
 	ProcessParamsTable **next = &head;
@@ -436,29 +452,29 @@ ProcessParamsTable *XLALProcessParamsTableFromLIGOLw(
 	/* open the file and find table */
 
 	if(MetaioOpenFile(&env, filename)) {
-		XLALPrintError("%s(): error opening \"%s\"\n", func, filename);
+		XLALPrintError("%s(): error opening \"%s\": %s\n", func, filename, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
 		XLAL_ERROR_NULL(func, XLAL_EIO);
 	}
-	if(MetaioOpenTableOnly(&env, "process")) {
+	if(MetaioOpenTableOnly(&env, table_name)) {
 		MetaioAbort(&env);
-		XLALPrintError("%s(): cannot find process_params table\n", func);
+		XLALPrintError("%s(): cannot find %s table: %s\n", func, table_name, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
 		XLAL_ERROR_NULL(func, XLAL_EIO);
 	}
 
 	/* find columns */
 
 	XLALClearErrno();
-	column_pos.program = XLALLIGOLwFindColumn(&env, "program", 1);
-	column_pos.process_id = XLALLIGOLwFindColumn(&env, "process_id", 1);
-	column_pos.param = XLALLIGOLwFindColumn(&env, "param", 1);
-	column_pos.type = XLALLIGOLwFindColumn(&env, "type", 1);
-	column_pos.value = XLALLIGOLwFindColumn(&env, "value", 1);
+	column_pos.program = XLALLIGOLwFindColumn(&env, "program", METAIO_TYPE_LSTRING, 1);
+	column_pos.process_id = XLALLIGOLwFindColumn(&env, "process_id", METAIO_TYPE_ILWD_CHAR, 1);
+	column_pos.param = XLALLIGOLwFindColumn(&env, "param", METAIO_TYPE_LSTRING, 1);
+	column_pos.type = XLALLIGOLwFindColumn(&env, "type", METAIO_TYPE_LSTRING, 1);
+	column_pos.value = XLALLIGOLwFindColumn(&env, "value", METAIO_TYPE_LSTRING, 1);
 
 	/* check for failure (== a required column is missing) */
 
 	if(XLALGetBaseErrno()) {
 		MetaioAbort(&env);
-		XLALPrintError("%s(): failure reading process_params table\n", func);
+		XLALPrintError("%s(): failure reading %s table\n", func, table_name);
 		XLAL_ERROR_NULL(func, XLAL_EFUNC);
 	}
 
@@ -495,7 +511,7 @@ ProcessParamsTable *XLALProcessParamsTableFromLIGOLw(
 	if(miostatus < 0) {
 		XLALDestroyProcessParamsTable(head);
 		MetaioAbort(&env);
-		XLALPrintError("%s(): I/O error parsing process_params table\n", func);
+		XLALPrintError("%s(): I/O error parsing %s table: %s\n", func, table_name, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
 		XLAL_ERROR_NULL(func, XLAL_EIO);
 	}
 
@@ -503,7 +519,142 @@ ProcessParamsTable *XLALProcessParamsTableFromLIGOLw(
 
 	if(MetaioClose(&env)) {
 		XLALDestroyProcessParamsTable(head);
-		XLALPrintError("%s(): error parsing document after process_params table\n", func);
+		XLALPrintError("%s(): error parsing document after %s table: %s\n", func, table_name, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
+		XLAL_ERROR_NULL(func, XLAL_EIO);
+	}
+
+	/* done */
+
+	return head;
+}
+
+
+/**
+ * Read the search_summary table from a LIGO Light Weight XML file into a
+ * linked list of SearchSummaryTable structures.
+ */
+
+
+SearchSummaryTable *XLALSearchSummaryTableFromLIGOLw(
+	const char *filename
+)
+{
+	static const char func[] = "XLALSearchSummaryTableFromLIGOLw";
+	static const char table_name[] = "search_summary";
+	int miostatus;
+	SearchSummaryTable *head = NULL;
+	SearchSummaryTable **next = &head;
+	struct MetaioParseEnvironment env;
+	struct {
+		int process_id;
+		int shared_object;
+		int lalwrapper_cvs_tag;
+		int lal_cvs_tag;
+		int comment;
+		int ifos;
+		int in_start_time;
+		int in_start_time_ns;
+		int in_end_time;
+		int in_end_time_ns;
+		int out_start_time;
+		int out_start_time_ns;
+		int out_end_time;
+		int out_end_time_ns;
+		int nevents;
+		int nnodes;
+	} column_pos;
+
+	/* open the file and find table */
+
+	if(MetaioOpenFile(&env, filename)) {
+		XLALPrintError("%s(): error opening \"%s\": %s\n", func, filename, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
+		XLAL_ERROR_NULL(func, XLAL_EIO);
+	}
+	if(MetaioOpenTableOnly(&env, table_name)) {
+		MetaioAbort(&env);
+		XLALPrintError("%s(): cannot find %s table: %s\n", func, table_name, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
+		XLAL_ERROR_NULL(func, XLAL_EIO);
+	}
+
+	/* find columns */
+
+	XLALClearErrno();
+	column_pos.process_id = XLALLIGOLwFindColumn(&env, "process_id", METAIO_TYPE_ILWD_CHAR, 1);
+	column_pos.shared_object = XLALLIGOLwFindColumn(&env, "shared_object", METAIO_TYPE_LSTRING, 1);
+	column_pos.lalwrapper_cvs_tag = XLALLIGOLwFindColumn(&env, "lalwrapper_cvs_tag", METAIO_TYPE_LSTRING, 1);
+	column_pos.lal_cvs_tag = XLALLIGOLwFindColumn(&env, "lal_cvs_tag", METAIO_TYPE_LSTRING, 1);
+	column_pos.comment = XLALLIGOLwFindColumn(&env, "comment", METAIO_TYPE_LSTRING, 1);
+	column_pos.ifos = XLALLIGOLwFindColumn(&env, "ifos", METAIO_TYPE_LSTRING, 1);
+	column_pos.in_start_time = XLALLIGOLwFindColumn(&env, "in_start_time", METAIO_TYPE_INT_4S, 1);
+	column_pos.in_start_time_ns = XLALLIGOLwFindColumn(&env, "in_start_time_ns", METAIO_TYPE_INT_4S, 1);
+	column_pos.in_end_time = XLALLIGOLwFindColumn(&env, "in_end_time", METAIO_TYPE_INT_4S, 1);
+	column_pos.in_end_time_ns = XLALLIGOLwFindColumn(&env, "in_end_time_ns", METAIO_TYPE_INT_4S, 1);
+	column_pos.out_start_time = XLALLIGOLwFindColumn(&env, "out_start_time", METAIO_TYPE_INT_4S, 1);
+	column_pos.out_start_time_ns = XLALLIGOLwFindColumn(&env, "out_start_time_ns", METAIO_TYPE_INT_4S, 1);
+	column_pos.out_end_time = XLALLIGOLwFindColumn(&env, "out_end_time", METAIO_TYPE_INT_4S, 1);
+	column_pos.out_end_time_ns = XLALLIGOLwFindColumn(&env, "out_end_time_ns", METAIO_TYPE_INT_4S, 1);
+	column_pos.nevents = XLALLIGOLwFindColumn(&env, "nevents", METAIO_TYPE_INT_4S, 1);
+	column_pos.nnodes = XLALLIGOLwFindColumn(&env, "nnodes", METAIO_TYPE_INT_4S, 1);
+
+	/* check for failure (== a required column is missing) */
+
+	if(XLALGetBaseErrno()) {
+		MetaioAbort(&env);
+		XLALPrintError("%s(): failure reading %s table\n", func, table_name);
+		XLAL_ERROR_NULL(func, XLAL_EFUNC);
+	}
+
+	/* loop over the rows in the file */
+
+	while((miostatus = MetaioGetRow(&env)) > 0) {
+		/* create a new row */
+
+		SearchSummaryTable *row = XLALCreateSearchSummaryTableRow(NULL);
+
+		if(!row) {
+			XLALDestroySearchSummaryTable(head);
+			MetaioAbort(&env);
+			XLAL_ERROR_NULL(func, XLAL_EFUNC);
+		}
+
+		/* append to linked list */
+
+		*next = row;
+		next = &(*next)->next;
+
+		/* populate the columns */
+
+		if((row->process_id = XLALLIGOLwParseIlwdChar(&env, column_pos.process_id, "process", "process_id")) < 0) {
+			XLALDestroySearchSummaryTable(head);
+			MetaioAbort(&env);
+			XLAL_ERROR_NULL(func, XLAL_EFUNC);
+		}
+		/* FIXME:  structure definition does not include elements
+		 * for these columns */
+		/*strncpy(row->shared_object, env.ligo_lw.table.elt[column_pos.shared_object].data.lstring.data, sizeof(row->shared_object) - 1);*/
+		/*strncpy(row->lalwrapper_cvs_tag, env.ligo_lw.table.elt[column_pos.lalwrapper_cvs_tag].data.lstring.data, sizeof(row->lalwrapper_cvs_tag) - 1);*/
+		/*strncpy(row->lal_cvs_tag, env.ligo_lw.table.elt[column_pos.lal_cvs_tag].data.lstring.data, sizeof(row->lal_cvs_tag) - 1);*/
+		strncpy(row->comment, env.ligo_lw.table.elt[column_pos.comment].data.lstring.data, sizeof(row->comment) - 1);
+		strncpy(row->ifos, env.ligo_lw.table.elt[column_pos.ifos].data.lstring.data, sizeof(row->ifos) - 1);
+		XLALGPSSet(&row->in_start_time, env.ligo_lw.table.elt[column_pos.in_start_time].data.int_4s, env.ligo_lw.table.elt[column_pos.in_start_time_ns].data.int_4s);
+		XLALGPSSet(&row->in_end_time, env.ligo_lw.table.elt[column_pos.in_end_time].data.int_4s, env.ligo_lw.table.elt[column_pos.in_end_time_ns].data.int_4s);
+		XLALGPSSet(&row->out_start_time, env.ligo_lw.table.elt[column_pos.out_start_time].data.int_4s, env.ligo_lw.table.elt[column_pos.out_start_time_ns].data.int_4s);
+		XLALGPSSet(&row->out_end_time, env.ligo_lw.table.elt[column_pos.out_end_time].data.int_4s, env.ligo_lw.table.elt[column_pos.out_end_time_ns].data.int_4s);
+		row->nevents = env.ligo_lw.table.elt[column_pos.nevents].data.int_4s;
+		row->nnodes = env.ligo_lw.table.elt[column_pos.nnodes].data.int_4s;
+	}
+	if(miostatus < 0) {
+		XLALDestroySearchSummaryTable(head);
+		MetaioAbort(&env);
+		XLALPrintError("%s(): I/O error parsing %s table: %s\n", func, table_name, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
+		XLAL_ERROR_NULL(func, XLAL_EIO);
+	}
+
+	/* close file */
+
+	if(MetaioClose(&env)) {
+		XLALDestroySearchSummaryTable(head);
+		XLALPrintError("%s(): error parsing document after %s table: %s\n", func, table_name, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
 		XLAL_ERROR_NULL(func, XLAL_EIO);
 	}
 
@@ -524,6 +675,7 @@ SnglBurst *XLALSnglBurstTableFromLIGOLw(
 )
 {
 	static const char func[] = "XLALSnglBurstTableFromLIGOLw";
+	static const char table_name[] = "sngl_burst";
 	int miostatus;
 	SnglBurst *head = NULL;
 	SnglBurst **next = &head;
@@ -549,39 +701,39 @@ SnglBurst *XLALSnglBurstTableFromLIGOLw(
 	/* open the file and find table */
 
 	if(MetaioOpenFile(&env, filename)) {
-		XLALPrintError("%s(): error opening \"%s\"\n", func, filename);
+		XLALPrintError("%s(): error opening \"%s\": %s\n", func, filename, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
 		XLAL_ERROR_NULL(func, XLAL_EIO);
 	}
 	if(MetaioOpenTableOnly(&env, "sngl_burst")) {
 		MetaioAbort(&env);
-		XLALPrintError("%s(): cannot find sngl_burst table\n", func);
+		XLALPrintError("%s(): cannot find %s table: %s\n", func, table_name, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
 		XLAL_ERROR_NULL(func, XLAL_EIO);
 	}
 
 	/* find columns */
 
 	XLALClearErrno();
-	column_pos.process_id = XLALLIGOLwFindColumn(&env, "process_id", 1);
-	column_pos.ifo = XLALLIGOLwFindColumn(&env, "ifo", 1);
-	column_pos.search = XLALLIGOLwFindColumn(&env, "search", 1);
-	column_pos.channel = XLALLIGOLwFindColumn(&env, "channel", 1);
-	column_pos.start_time = XLALLIGOLwFindColumn(&env, "start_time", 1);
-	column_pos.start_time_ns = XLALLIGOLwFindColumn(&env, "start_time_ns", 1);
-	column_pos.peak_time = XLALLIGOLwFindColumn(&env, "peak_time", 1);
-	column_pos.peak_time_ns = XLALLIGOLwFindColumn(&env, "peak_time_ns", 1);
-	column_pos.duration = XLALLIGOLwFindColumn(&env, "duration", 1);
-	column_pos.central_freq = XLALLIGOLwFindColumn(&env, "central_freq", 1);
-	column_pos.bandwidth = XLALLIGOLwFindColumn(&env, "bandwidth", 1);
-	column_pos.amplitude = XLALLIGOLwFindColumn(&env, "amplitude", 1);
-	column_pos.snr = XLALLIGOLwFindColumn(&env, "snr", 1);
-	column_pos.confidence = XLALLIGOLwFindColumn(&env, "confidence", 1);
-	column_pos.event_id = XLALLIGOLwFindColumn(&env, "event_id", 1);
+	column_pos.process_id = XLALLIGOLwFindColumn(&env, "process_id", METAIO_TYPE_ILWD_CHAR, 1);
+	column_pos.ifo = XLALLIGOLwFindColumn(&env, "ifo", METAIO_TYPE_LSTRING, 1);
+	column_pos.search = XLALLIGOLwFindColumn(&env, "search", METAIO_TYPE_LSTRING, 1);
+	column_pos.channel = XLALLIGOLwFindColumn(&env, "channel", METAIO_TYPE_LSTRING, 1);
+	column_pos.start_time = XLALLIGOLwFindColumn(&env, "start_time", METAIO_TYPE_INT_4S, 1);
+	column_pos.start_time_ns = XLALLIGOLwFindColumn(&env, "start_time_ns", METAIO_TYPE_INT_4S, 1);
+	column_pos.peak_time = XLALLIGOLwFindColumn(&env, "peak_time", METAIO_TYPE_INT_4S, 1);
+	column_pos.peak_time_ns = XLALLIGOLwFindColumn(&env, "peak_time_ns", METAIO_TYPE_INT_4S, 1);
+	column_pos.duration = XLALLIGOLwFindColumn(&env, "duration", METAIO_TYPE_REAL_4, 1);
+	column_pos.central_freq = XLALLIGOLwFindColumn(&env, "central_freq", METAIO_TYPE_REAL_4, 1);
+	column_pos.bandwidth = XLALLIGOLwFindColumn(&env, "bandwidth", METAIO_TYPE_REAL_4, 1);
+	column_pos.amplitude = XLALLIGOLwFindColumn(&env, "amplitude", METAIO_TYPE_REAL_4, 1);
+	column_pos.snr = XLALLIGOLwFindColumn(&env, "snr", METAIO_TYPE_REAL_4, 1);
+	column_pos.confidence = XLALLIGOLwFindColumn(&env, "confidence", METAIO_TYPE_REAL_4, 1);
+	column_pos.event_id = XLALLIGOLwFindColumn(&env, "event_id", METAIO_TYPE_ILWD_CHAR, 1);
 
 	/* check for failure (== a required column is missing) */
 
 	if(XLALGetBaseErrno()) {
 		MetaioAbort(&env);
-		XLALPrintError("%s(): failure reading sngl_burst table\n", func);
+		XLALPrintError("%s(): failure reading %s table\n", func, table_name);
 		XLAL_ERROR_NULL(func, XLAL_EFUNC);
 	}
 
@@ -630,7 +782,7 @@ SnglBurst *XLALSnglBurstTableFromLIGOLw(
 	if(miostatus < 0) {
 		XLALDestroySnglBurstTable(head);
 		MetaioAbort(&env);
-		XLALPrintError("%s(): I/O error parsing sngl_burst table\n", func);
+		XLALPrintError("%s(): I/O error parsing %s table: %s\n", func, table_name, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
 		XLAL_ERROR_NULL(func, XLAL_EIO);
 	}
 
@@ -638,7 +790,7 @@ SnglBurst *XLALSnglBurstTableFromLIGOLw(
 
 	if(MetaioClose(&env)) {
 		XLALDestroySnglBurstTable(head);
-		XLALPrintError("%s(): error parsing document after sngl_burst table\n", func);
+		XLALPrintError("%s(): error parsing document after %s table: %s\n", func, table_name, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
 		XLAL_ERROR_NULL(func, XLAL_EIO);
 	}
 
@@ -663,6 +815,7 @@ SimBurst *XLALSimBurstTableFromLIGOLw(
 )
 {
 	static const char func[] = "XLALSimBurstTableFromLIGOLw";
+	static const char table_name[] = "sim_burst";
 	int miostatus;
 	SimBurst *head = NULL;
 	SimBurst **next = &head;
@@ -692,43 +845,44 @@ SimBurst *XLALSimBurstTableFromLIGOLw(
 	/* open the file and find table */
 
 	if(MetaioOpenFile(&env, filename)) {
-		XLALPrintError("%s(): error opening \"%s\"\n", func, filename);
+		XLALPrintError("%s(): error opening \"%s\": %s\n", func, filename, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
 		XLAL_ERROR_NULL(func, XLAL_EIO);
 	}
-	if(MetaioOpenTableOnly(&env, "sim_burst")) {
+	if(MetaioOpenTableOnly(&env, table_name)) {
 		MetaioAbort(&env);
-		XLALPrintError("%s(): cannot find sim_burst table\n", func);
+		XLALPrintError("%s(): cannot find %s table: %s\n", func, table_name, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
 		XLAL_ERROR_NULL(func, XLAL_EIO);
 	}
 
 	/* find columns */
 
 	XLALClearErrno();
-	column_pos.process_id = XLALLIGOLwFindColumn(&env, "process_id", 1);
-	column_pos.waveform = XLALLIGOLwFindColumn(&env, "waveform", 1);
-	column_pos.ra = XLALLIGOLwFindColumn(&env, "ra", 0);
-	column_pos.dec = XLALLIGOLwFindColumn(&env, "dec", 0);
-	column_pos.psi = XLALLIGOLwFindColumn(&env, "psi", 0);
-	column_pos.time_geocent_gps = XLALLIGOLwFindColumn(&env, "time_geocent_gps", 1);
-	column_pos.time_geocent_gps_ns = XLALLIGOLwFindColumn(&env, "time_geocent_gps_ns", 1);
-	column_pos.time_geocent_gmst = XLALLIGOLwFindColumn(&env, "time_geocent_gmst", 0);
-	column_pos.duration = XLALLIGOLwFindColumn(&env, "duration", 0);
-	column_pos.frequency = XLALLIGOLwFindColumn(&env, "frequency", 0);
-	column_pos.bandwidth = XLALLIGOLwFindColumn(&env, "bandwidth", 0);
-	column_pos.q = XLALLIGOLwFindColumn(&env, "q", 0);
-	column_pos.pol_ellipse_angle = XLALLIGOLwFindColumn(&env, "pol_ellipse_angle", 0);
-	column_pos.pol_ellipse_e = XLALLIGOLwFindColumn(&env, "pol_ellipse_e", 0);
-	column_pos.amplitude = XLALLIGOLwFindColumn(&env, "amplitude", 0);
-	column_pos.hrss = XLALLIGOLwFindColumn(&env, "hrss", 0);
-	column_pos.egw_over_rsquared = XLALLIGOLwFindColumn(&env, "egw_over_rsquared", 0);
-	column_pos.waveform_number = XLALLIGOLwFindColumn(&env, "waveform_number", 0);
-	column_pos.simulation_id = XLALLIGOLwFindColumn(&env, "simulation_id", 1);
+	column_pos.process_id = XLALLIGOLwFindColumn(&env, "process_id", METAIO_TYPE_ILWD_CHAR, 1);
+	column_pos.waveform = XLALLIGOLwFindColumn(&env, "waveform", METAIO_TYPE_LSTRING, 1);
+	column_pos.ra = XLALLIGOLwFindColumn(&env, "ra", METAIO_TYPE_REAL_8, 0);
+	column_pos.dec = XLALLIGOLwFindColumn(&env, "dec", METAIO_TYPE_REAL_8, 0);
+	column_pos.psi = XLALLIGOLwFindColumn(&env, "psi", METAIO_TYPE_REAL_8, 0);
+	column_pos.time_geocent_gps = XLALLIGOLwFindColumn(&env, "time_geocent_gps", METAIO_TYPE_INT_4S, 1);
+	column_pos.time_geocent_gps_ns = XLALLIGOLwFindColumn(&env, "time_geocent_gps_ns", METAIO_TYPE_INT_4S, 1);
+	column_pos.time_geocent_gmst = XLALLIGOLwFindColumn(&env, "time_geocent_gmst", METAIO_TYPE_REAL_8, 0);
+	column_pos.duration = XLALLIGOLwFindColumn(&env, "duration", METAIO_TYPE_REAL_8, 0);
+	column_pos.frequency = XLALLIGOLwFindColumn(&env, "frequency", METAIO_TYPE_REAL_8, 0);
+	column_pos.bandwidth = XLALLIGOLwFindColumn(&env, "bandwidth", METAIO_TYPE_REAL_8, 0);
+	column_pos.q = XLALLIGOLwFindColumn(&env, "q", METAIO_TYPE_REAL_8, 0);
+	column_pos.pol_ellipse_angle = XLALLIGOLwFindColumn(&env, "pol_ellipse_angle", METAIO_TYPE_REAL_8, 0);
+	column_pos.pol_ellipse_e = XLALLIGOLwFindColumn(&env, "pol_ellipse_e", METAIO_TYPE_REAL_8, 0);
+	column_pos.amplitude = XLALLIGOLwFindColumn(&env, "amplitude", METAIO_TYPE_REAL_8, 0);
+	column_pos.hrss = XLALLIGOLwFindColumn(&env, "hrss", METAIO_TYPE_REAL_8, 0);
+	column_pos.egw_over_rsquared = XLALLIGOLwFindColumn(&env, "egw_over_rsquared", METAIO_TYPE_REAL_8, 0);
+	/* FIXME:  type should be METAIO_TYPE_INT_8U */
+	column_pos.waveform_number = XLALLIGOLwFindColumn(&env, "waveform_number", METAIO_TYPE_INT_8S, 0);
+	column_pos.simulation_id = XLALLIGOLwFindColumn(&env, "simulation_id", METAIO_TYPE_ILWD_CHAR, 1);
 
 	/* check for failure (== a required column is missing) */
 
 	if(XLALGetBaseErrno()) {
 		MetaioAbort(&env);
-		XLALPrintError("%s(): failure reading sim_burst table\n", func);
+		XLALPrintError("%s(): failure reading %s table\n", func, table_name);
 		XLAL_ERROR_NULL(func, XLAL_EFUNC);
 	}
 
@@ -775,7 +929,7 @@ SimBurst *XLALSimBurstTableFromLIGOLw(
 				XLALDestroySimBurst(row);
 				XLALDestroySimBurstTable(head);
 				MetaioAbort(&env);
-				XLALPrintError("%s(): missing required column in sim_burst table\n", func);
+				XLALPrintError("%s(): missing required column in %s table\n", func, table_name);
 				XLAL_ERROR_NULL(func, XLAL_EIO);
 			}
 			row->duration = env.ligo_lw.table.elt[column_pos.duration].data.real_8;
@@ -786,7 +940,7 @@ SimBurst *XLALSimBurstTableFromLIGOLw(
 				XLALDestroySimBurst(row);
 				XLALDestroySimBurstTable(head);
 				MetaioAbort(&env);
-				XLALPrintError("%s(): missing required column in sim_burst table\n", func);
+				XLALPrintError("%s(): missing required column in %s table\n", func, table_name);
 				XLAL_ERROR_NULL(func, XLAL_EIO);
 			}
 			row->duration = env.ligo_lw.table.elt[column_pos.duration].data.real_8;
@@ -801,7 +955,7 @@ SimBurst *XLALSimBurstTableFromLIGOLw(
 				XLALDestroySimBurst(row);
 				XLALDestroySimBurstTable(head);
 				MetaioAbort(&env);
-				XLALPrintError("%s(): missing required column in sim_burst table\n", func);
+				XLALPrintError("%s(): missing required column in %s table\n", func, table_name);
 				XLAL_ERROR_NULL(func, XLAL_EIO);
 			}
 			row->duration = env.ligo_lw.table.elt[column_pos.duration].data.real_8;
@@ -816,7 +970,7 @@ SimBurst *XLALSimBurstTableFromLIGOLw(
 			XLALDestroySimBurst(row);
 			XLALDestroySimBurstTable(head);
 			MetaioAbort(&env);
-			XLALPrintError("%s(): unrecognized waveform \"%s\" in sim_burst table\n", func, row->waveform);
+			XLALPrintError("%s(): unrecognized waveform \"%s\" in %s table\n", func, row->waveform, table_name);
 			XLAL_ERROR_NULL(func, XLAL_EIO);
 		}
 
@@ -835,7 +989,7 @@ SimBurst *XLALSimBurstTableFromLIGOLw(
 	if(miostatus < 0) {
 		XLALDestroySimBurstTable(head);
 		MetaioAbort(&env);
-		XLALPrintError("%s(): I/O error parsing sim_burst table\n", func);
+		XLALPrintError("%s(): I/O error parsing %s table: %s\n", func, table_name, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
 		XLAL_ERROR_NULL(func, XLAL_EIO);
 	}
 
@@ -843,7 +997,7 @@ SimBurst *XLALSimBurstTableFromLIGOLw(
 
 	if(MetaioClose(&env)) {
 		XLALDestroySimBurstTable(head);
-		XLALPrintError("%s(): error parsing document after sim_burst table\n", func);
+		XLALPrintError("%s(): error parsing document after %s table: %s\n", func, table_name, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
 		XLAL_ERROR_NULL(func, XLAL_EIO);
 	}
 
@@ -2365,133 +2519,6 @@ SimInspiralTableFromLIGOLw (
 }
 
 #undef CLOBBER_SIM
-
-
-/* <lalVerbatim file="LIGOLwXMLReadCP"> */
-SearchSummaryTable *
-XLALSearchSummaryTableFromLIGOLw (
-    const CHAR *fileName
-)
-/* </lalVerbatim> */
-{
-  const char *func = "XLALSearchSummaryTableFromLIGOLw";
-  SearchSummaryTable *head = NULL;
-  SearchSummaryTable *oldhead;
-  struct MetaioParseEnvironment parser;
-  MetaTableDirectory tableDir[] = {
-    {"comment",           -1, 0},
-    {"ifos",              -1, 1},
-    {"in_start_time",     -1, 2},
-    {"in_start_time_ns",  -1, 3},
-    {"in_end_time",       -1, 4},
-    {"in_end_time_ns",    -1, 5},
-    {"out_start_time",    -1, 6},
-    {"out_start_time_ns", -1, 7},
-    {"out_end_time",      -1, 8},
-    {"out_end_time_ns",   -1, 9},
-    {"nevents",           -1, 10},
-    {"nnodes",            -1, 11},
-    {NULL,                 0, 0}
-  };
-  int i;
-
-  /* open the search_summary table */
-  if(MetaioOpenTable(&parser, fileName, "search_summary")) {
-    XLALPrintError("error opening search_summary table from file %s\n", fileName);
-    XLAL_ERROR_NULL(func, XLAL_EIO);
-  }
-
-  /* determine column positions */
-  for(i = 0; tableDir[i].name; i++)
-    if((tableDir[i].pos = MetaioFindColumn(&parser, tableDir[i].name)) < 0) {
-      /* no optional columns! */
-      XLALPrintError("unable to find column %s\n", tableDir[i].name);
-      MetaioClose(&parser);
-      XLAL_ERROR_NULL(func, XLAL_EIO);
-    }
-
-  /* loop over rows */
-  do switch(MetaioGetRow(&parser)) {
-  case -1: /* error */
-  default: /* ??? */
-    XLALPrintError("error parsing row\n");
-    while(head) {
-      oldhead = head;
-      head = head->next;
-      LALFree(oldhead);
-    }
-    MetaioClose(&parser);
-    XLAL_ERROR_NULL(func, XLAL_EIO);
-
-  case 0: /* end of table */
-    MetaioClose(&parser);
-    return head;
-
-  case 1: /* found a row */
-    /* prepend an entry to the linked list */
-    oldhead = head;
-    head = LALCalloc(1, sizeof(*head));
-    head->next = oldhead;
-
-    /* loop over columns */
-    for(i = 0; tableDir[i].name; i++) {
-      /* was column found in table? */
-      if(tableDir[i].pos < 0)
-        continue;
-
-      /* which is it? */
-      switch(tableDir[i].idx) {
-      case 0:
-        LALSnprintf(head->comment, LIGOMETA_COMMENT_MAX * sizeof(CHAR), "%s", parser.ligo_lw.table.elt[tableDir[i].pos].data.lstring.data);
-        break;
-
-      case 1:
-        LALSnprintf(head->ifos, LIGOMETA_COMMENT_MAX * sizeof(CHAR), "%s", parser.ligo_lw.table.elt[tableDir[i].pos].data.lstring.data );
-        break;
-
-      case 2:
-        head->in_start_time.gpsSeconds = parser.ligo_lw.table.elt[tableDir[i].pos].data.int_4s;
-        break;
-
-      case 3:
-        head->in_start_time.gpsNanoSeconds = parser.ligo_lw.table.elt[tableDir[i].pos].data.int_4s;
-        break;
-
-      case 4:
-        head->in_end_time.gpsSeconds = parser.ligo_lw.table.elt[tableDir[i].pos].data.int_4s;
-        break;
-
-      case 5:
-        head->in_end_time.gpsNanoSeconds = parser.ligo_lw.table.elt[tableDir[i].pos].data.int_4s;
-        break;
-
-      case 6:
-        head->out_start_time.gpsSeconds = parser.ligo_lw.table.elt[tableDir[i].pos].data.int_4s;
-        break;
-
-      case 7:
-        head->out_start_time.gpsNanoSeconds = parser.ligo_lw.table.elt[tableDir[i].pos].data.int_4s;
-        break;
-
-      case 8:
-        head->out_end_time.gpsSeconds = parser.ligo_lw.table.elt[tableDir[i].pos].data.int_4s;
-        break;
-
-      case 9:
-        head->out_end_time.gpsNanoSeconds = parser.ligo_lw.table.elt[tableDir[i].pos].data.int_4s;
-        break;
-
-      case 10:
-        head->nevents = parser.ligo_lw.table.elt[tableDir[i].pos].data.int_4s;
-        break;
-
-      case 11:
-        head->nnodes = parser.ligo_lw.table.elt[tableDir[i].pos].data.int_4s;
-        break;
-      }
-    }
-  } while(1);
-}
 
 
 #define CLOBBER_VAL \
