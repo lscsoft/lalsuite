@@ -25,8 +25,7 @@
 #include <lal/DopplerScan.h>
 #include <gsl/gsl_permutation.h>
 
-#define MYROUND(x) ( floor( (x) + 0.5 ) )
-#define GPSEQUAL(gps1,gps2) (((gps1).gpsSeconds == (gps2).gpsSeconds) && ((gps1).gpsNanoSeconds == (gps2).gpsNanoSeconds))
+
 
 RCSID( "$Id$");
 
