@@ -235,9 +235,6 @@ int main(int argc, char *argv[]){
       exit(1);
     }
   
-    for (j=0; j < catalog->length; j++){
-printf("sft name %s, %i\n", catalog->data[j].header.name, catalog->data[j].header.epoch.gpsSeconds);
-    } 
 
     /* first some sft parameters */
     deltaF = catalog->data[0].header.deltaF;  /* frequency resolution */
@@ -259,6 +256,9 @@ printf("sft name %s, %i\n", catalog->data[j].header.name, catalog->data[j].heade
     numifo = inputSFTs->length;    
 
 printf("there are %i sfts\n",catalog->length);
+    for (j=0; j < catalog->length; j++){
+printf("sft epochs %i\n", inputSFTs->data[j].epoch.gpsSeconds);
+    } 
 
 
     /* find number of sfts */
@@ -460,7 +460,7 @@ printf("signal phases %f\n", signalPhaseList.data[counter]);*/
 
  	LAL_CALL( CalculateUalpha (&status, &ualpha->data[j], &Aplus, &Across, &signalPhaseList->data[index1], &signalPhaseList->data[index2], &Fplus->data[index1], &Fplus->data[index2], &Fcross->data[index1], &Fcross->data[index2], &frequencyShiftList->data[index1], &frequencyShiftList->data[index2], psd1, psd2), &status);
 
-printf("Y %i real %1.11f imaginary %f\n", j, yalpha->data[j].re, yalpha->data[j].im);  
+/*printf("Y %i real %1.11f imaginary %f\n", j, yalpha->data[j].re, yalpha->data[j].im);  */
 /*printf("U %i real %f imaginary %f\n", j, ualpha->data[j].re, ualpha->data[j].im);  */
 
     }

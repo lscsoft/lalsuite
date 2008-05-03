@@ -35,6 +35,7 @@ void LoadAllSFTs ( LALStatus *status,
 	      REAL8 length)
 {
   SFTVector *ret;
+  SFTtype *tmpsft = NULL;
   INT4 j,k, counter = 0;
 
 
@@ -50,11 +51,36 @@ void LoadAllSFTs ( LALStatus *status,
   for (j=0; j < (INT4)multiSFTs->length; j++) {
  	for (k=0; k < (INT4)multiSFTs->data[j]->length; k++) {
 		TRY (LALCopySFT(status->statusPtr, &(ret->data[counter++]), &(multiSFTs->data[j]->data[k])), status);
-/*		ret->data[counter++] = multiSFTs->data[j]->data[k];*/
   	}
-
   }
 
+  /* now sort the sfts according to epoch using insertion sort... inefficient?*/
+
+  /*initialise tmp SFT */
+/*  sft = (COMPLEX8FrequencySeries *) LALCalloc(1, sizeof(COMPLEX8FrequencySeries));*/
+
+  TRY (LALCreateSFTtype(status->statusPtr, &tmpsft, 0), status);
+  
+
+  for (j=1; j < length; j++) {
+	tmpsft->data = NULL;
+ 	TRY (LALCopySFT(status->statusPtr, tmpsft, &(ret->data[j])), status);
+	k = j-1;
+	while ( (k >= 0) && (XLALGPSDiff(&(ret->data[k].epoch), &(tmpsft->epoch)) > 0) ) {
+printf("here");
+
+		ret->data[k+1].data = NULL;
+
+		TRY (LALCopySFT(status->statusPtr, &(ret->data[k+1]), &(ret->data[k])), status);
+
+		k = k-1;
+		ret->data[k+1].data = NULL;
+		TRY (LALCopySFT(status->statusPtr, &(ret->data[k+1]), tmpsft), status);
+
+    	} 
+  }
+
+  TRY (LALDestroySFTtype(status->statusPtr, &tmpsft),status);
   (*outsfts) = ret;
 
 
