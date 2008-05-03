@@ -85,6 +85,8 @@ NRCSID (RADIOMETERH, "$Id$");
 #define RADIOMETER_EDIR 4
 #define RADIOMETER_ENULL 5
 #define RADIOMETER_ENONULL 6
+#define RADIOMETER_EVAL 5
+#define RADIOMETER_EMEM 14
 
 #define RADIOMETER_MSGENORM "Normal exit"
 #define RADIOMETER_MSGESUB  "Subroutine failed"
@@ -94,8 +96,8 @@ NRCSID (RADIOMETERH, "$Id$");
 #define RADIOMETER_MSGEDIR  "Could not create directory"
 #define RADIOMETER_MSGENULL "Null pointer"
 #define RADIOMETER_MSGENONULL "Non-null pointer"
-
-
+#define RADIOMETER_MSGEVAL "Invalid value"
+#define RADIOMETER_MSGEMEM "Out of memory"
 
 #define PIXELFACTOR  2 
 
@@ -150,6 +152,13 @@ NRCSID (RADIOMETERH, "$Id$");
  *  Functions Declarations (i.e., prototypes).
  */
 
+void LoadAllSFTs ( LALStatus *status,
+	      SFTVector **outsfts,	   
+	      MultiSFTVector *multiSFTs,  
+	      REAL8 length);		   
+
+
+
 
 void SetUpRadiometerSkyPatches(LALStatus *status, 
 			       SkyPatchesInfo *out,  
@@ -163,36 +172,6 @@ void CreateSFTPairsIndicesFrom2SFTvectors(LALStatus                *status,
 					 SFTVector           *in1,
 					  SFTPairParams             *par);
 
-/*
-
-void CreateSFTPairs(LALStatus                *status,
-		    SFTPairVec               *out,
-		    SFTVector           *inputSFTs,
-		    PSDVector	     *inputPSDs,
-		    DetectorStateSeries *mdetStates,
-		    SFTPairParams            *par);
-
-
-void CreateSFTPairsFrom2SFTvectors(LALStatus                 *status,
-				   SFTPairVec                *out,
-				   const SFTVector           *in1,
-				   const SFTVector           *in2,
-				   const PSDVector	     *psdin1,
-				   const PSDVector	     *psdin2,
-				   const DetectorStateSeries *det1,
-				   const DetectorStateSeries *det2,
-				   SFTPairParams             *par);
-
-
-void FillSFTPair(LALStatus                 *status,
-		 SingleSFTpair             *out,
-		 COMPLEX8FrequencySeries   *sft1, 
-		 COMPLEX8FrequencySeries   *sft2, 
-		 REAL8FrequencySeries	   *psd1,
-		 REAL8FrequencySeries	   *psd2,
-		 DetectorState             *det1,
-		 DetectorState             *det2);
-*/
 
 void CorrelateSingleSFTPair(LALStatus                *status,
 			    COMPLEX16                *out,
@@ -213,12 +192,7 @@ void GetSignalPhaseInSFT(LALStatus               *status,
 			 COMPLEX8FrequencySeries *sft1,
 			 PulsarDopplerParams     *dopp,
 			 REAL8Vector             *pos);
-/*
-void CreateSFTIndexPairs(LALStatus                *status,
-			 INT4VectorSequence       *out,
-			 SFTVector           *inputSFTs,
-			 SFTPairParams            *par);
-*/
+
 void CalculateUalpha(LALStatus *status,
 		     COMPLEX16	*out,
 		     REAL8	*Aplus,

@@ -63,6 +63,7 @@ int main(int argc, char *argv[]){
   /* sft related variables */ 
 
   SFTVector *inputSFTs = NULL;
+  MultiSFTVector *multiSFTs = NULL;
   REAL8 deltaF, timeBase, freq = 0, *freq1 = &freq;
   REAL8 phase = 0, *phase1 = &phase, psi = 0.0; 
   INT8  fLastBin, f0Bin;
@@ -104,7 +105,7 @@ int main(int argc, char *argv[]){
   static PulsarDopplerParams  thisPoint;
   static REAL8Vector thisVel, thisPos, *weights;
 
-    REAL8 doppWings, fmin, fmax;
+    REAL8 doppWings, fMin, fMax;
 
   AMCoeffs *multiAMcoef = NULL; 
 
@@ -112,7 +113,7 @@ int main(int argc, char *argv[]){
 
   /* sft constraint variables */
   LIGOTimeGPS startTimeGPS, endTimeGPS;
-  LIGOTimeGPSVector *inputTimeStampsVector=NULL, *ts=NULL;
+  LIGOTimeGPSVector *ts=NULL;
 
   /* user input variables */
   BOOLEAN  uvar_help;
@@ -127,7 +128,6 @@ int main(int argc, char *argv[]){
   CHAR     *uvar_dirnameOut=NULL;
   CHAR     *uvar_fbasenameOut=NULL;
   CHAR     *uvar_skyfile=NULL;
-  CHAR     *uvar_timeStampsFile=NULL;
   CHAR     *uvar_skyRegion=NULL;
   FILE	   *skytest=NULL;
 
@@ -175,7 +175,6 @@ int main(int argc, char *argv[]){
   LAL_CALL( LALRegisterREALUserVar( &status, "fBand",            'b', UVAR_OPTIONAL, "Search frequency band", &uvar_fBand), &status);
   LAL_CALL( LALRegisterREALUserVar( &status, "startTime",         0,  UVAR_OPTIONAL, "GPS start time of observation", &uvar_startTime), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "endTime",         0,  UVAR_OPTIONAL, "GPS end time of observation", &uvar_endTime), &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "timeStampsFile",  0,  UVAR_OPTIONAL, "Input time-stamps file", &uvar_timeStampsFile),   &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "skyRegion",       0,  UVAR_OPTIONAL, "sky-region polygon (or 'allsky')", &uvar_skyRegion), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "dAlpha",          0,  UVAR_OPTIONAL, "Sky resolution (flat/isotropic) (rad)", &uvar_dAlpha), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "dDelta",          0,  UVAR_OPTIONAL, "Sky resolution (flat/isotropic) (rad)", &uvar_dDelta), &status);
@@ -206,7 +205,6 @@ int main(int argc, char *argv[]){
     exit(1);
   }
  
-
     
   /* read sfts */
   {
@@ -217,6 +215,7 @@ int main(int argc, char *argv[]){
 
     /* set detector constraint */
     constraints.detector = NULL;
+    constraints.timestamps = NULL;
 
     if ( LALUserVarWasSet( &uvar_startTime ) ) {
       LAL_CALL ( LALFloatToGPS( &status, &startTimeGPS, &uvar_startTime), &status);
@@ -228,10 +227,6 @@ int main(int argc, char *argv[]){
       constraints.endTime = &endTimeGPS;
     }
 
-    if ( LALUserVarWasSet( &uvar_timeStampsFile ) ) {
-      LAL_CALL ( LALReadTimestampsFile ( &status, &inputTimeStampsVector, uvar_timeStampsFile), &status);
-      constraints.timestamps = inputTimeStampsVector;
-    }
     
     /* get sft catalog */
     LAL_CALL( LALSFTdataFind( &status, &catalog, uvar_sftDir, &constraints), &status);
@@ -239,11 +234,10 @@ int main(int argc, char *argv[]){
       fprintf (stderr,"Unable to match any SFTs with pattern '%s'\n", uvar_sftDir );
       exit(1);
     }
-
-    /* now we can free the inputTimeStampsVector */
-    if ( LALUserVarWasSet( &uvar_timeStampsFile ) ) {
-      LALFree( inputTimeStampsVector->data );
-    }
+  
+    for (j=0; j < catalog->length; j++){
+printf("sft name %s, %i\n", catalog->data[j].header.name, catalog->data[j].header.epoch.gpsSeconds);
+    } 
 
     /* first some sft parameters */
     deltaF = catalog->data[0].header.deltaF;  /* frequency resolution */
@@ -255,16 +249,17 @@ int main(int argc, char *argv[]){
     /* read sft files making sure to add extra bins for running median */
     /* add wings for Doppler modulation and running median block size*/
     doppWings = (uvar_f0 + uvar_fBand) * VTOT;    
-    fmin = uvar_f0 - doppWings - uvar_blocksRngMed * deltaF;
-    fmax = uvar_f0 + uvar_fBand + doppWings + uvar_blocksRngMed * deltaF;
+    fMin = uvar_f0 - doppWings - uvar_blocksRngMed * deltaF;
+    fMax = uvar_f0 + uvar_fBand + doppWings + uvar_blocksRngMed * deltaF;
     
     /* read the sfts */
-
-    LAL_CALL( LALLoadSFTs ( &status, &inputSFTs, catalog, fmin, fmax), &status);
+    /* first load them into a MultiSFTVector, then concatenate the various vectors into one*/
+    LAL_CALL( LALLoadMultiSFTs ( &status, &multiSFTs, catalog, fMin, fMax), &status);
+    LAL_CALL (LoadAllSFTs (&status, &inputSFTs, multiSFTs, catalog->length), &status);
     numifo = inputSFTs->length;    
 
 printf("there are %i sfts\n",catalog->length);
-printf("and %i ifos\n",numifo);
+
 
     /* find number of sfts */
     /* loop over ifos and calculate number of sfts */
@@ -272,8 +267,6 @@ printf("and %i ifos\n",numifo);
        because SFTs might be segmented in frequency */
     numsft = inputSFTs->length; /* initialization */
 
-/*printf("length %i\n",sftPairIndexList->length);    
-printf("there are really %i sfts\n", numsft);*/
 
     /* catalog is ordered in time so we can get start, end time and tObs*/
     firstTimeStamp = catalog->data[0].header.epoch;
@@ -284,6 +277,8 @@ printf("observation time is %f\n",tObs);
 
     /* SFT info -- assume all SFTs have same length */
     binsSFT = inputSFTs->data->data->length;
+
+    LAL_CALL(LALDestroyMultiSFTVector(&status, &multiSFTs), &status);
 
     LAL_CALL( LALDestroySFTCatalog( &status, &catalog ), &status);  	
 
@@ -331,14 +326,11 @@ printf("observation time is %f\n",tObs);
   mdetStates->data = (DetectorState *) LALCalloc (mdetStates->length, sizeof(DetectorState));
 
   ts = XLALCreateTimestampVector (1);
-/*  LAL_CALL (LALCreateTimestampVector(&status, &ts, 1), &status);*/
-/*  LAL_CALL (LALGetSFTtimestamps(&status,&ts, inputSFTs), &status);*/
   tOffs = 0.5/deltaF;
 
   /*loop over all sfts and get the PSDs and detector states */
   for (j=0; j < (INT4)inputSFTs->length; j++) {
 	tmpDetState = NULL;
-
   	multiPSD->data[j].data = NULL;
 	multiPSD->data[j].data = (REAL8Sequence *)LALCalloc (1,sizeof(REAL8Sequence));
 	multiPSD->data[j].data->length = inputSFTs->data[j].data->length;
@@ -360,14 +352,14 @@ printf("epoch %i\n",tmpDetState->data[0].tGPS.gpsSeconds);
 
   pairParams.lag = uvar_maxlag;  
 
+  /* create sft pair indices */
 
   LAL_CALL ( CreateSFTPairsIndicesFrom2SFTvectors( &status, &sftPairIndexList, inputSFTs, &pairParams), &status);
 printf("number of pairs %i\n",sftPairIndexList->vectorLength);
 
-  /* create sft pairs  */
+
   
-/*  LAL_CALL( CreateSFTPairs( &status, &sftPairs, inputSFTs, multiPSD, mdetStates, &pairParams), &status); 
-*/
+
 
   /* initialise F_+, F_x vectors */
 
@@ -401,6 +393,7 @@ printf("number of pairs %i\n",sftPairIndexList->vectorLength);
      thisPoint.fkdot[0] = uvar_f0;
      thisPoint.fkdot[1] = uvar_fdot; 
      thisPoint.refTime = inputSFTs->data->epoch; /*must be changed!*/
+
 
 printf("coordinate is %f, %f\n",thisPoint.Alpha, thisPoint.Delta);
  
@@ -445,7 +438,7 @@ printf("signal phases %f\n", signalPhaseList.data[counter]);*/
 	Fcross->data[j] = (multiAMcoef->b->data[j] * cos(2.0*psi))
 			     - (multiAMcoef->a->data[j] * sin(2.0*psi));
 
-printf("fplus, fcross %f %f\n", Fplus->data[j], Fcross->data[j]);
+/*printf("fplus, fcross %f %f\n", Fplus->data[j], Fcross->data[j]);*/
 
       } 
     
