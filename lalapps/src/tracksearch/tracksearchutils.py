@@ -593,6 +593,8 @@ class candidateList:
         self.gpsWidth=gpsInt(0,0)
         self.sorted=False
         self.pickleExtension=".traitSummary"
+        self.histogramType=''
+        self.histogramTypes=['default','logy','logxy']
         #Should be list of objects of class kurve
         self.curves=[]
         self.traitSummary=[]
@@ -1975,7 +1977,8 @@ class candidateList:
         Show a histogram of integrated power for each trigger in the
         trigger library.  It uses a input filename if needed and a 
         parameter of number of bins to
-        break the trigger library into.
+        break the trigger library into.  If colCount is a vector
+        we assume that it define the bin edges to bin with
         """
         pylab.figure()
         [entries,bins,patches]=self. __triggerHistogramPrimative__(triggerTrait,
@@ -2181,6 +2184,20 @@ class candidateList:
     # END  __triggerLinePlotPrimative__
 
 
+    def setHistogramType(self,Htype='default'):
+        """
+        Method that should be called before __triggerHistogramPrimative__()
+        Pass in a text string specifiying any of the options listed in 
+        self.histogramTypes
+        """
+        self.histogramType='default'
+        if not self.histogramTypes.__contains__(Htype):
+            sys.stderr.write("Selected histogram type not available.\n")
+            sys.stderr.write("Choose from the following :%s\n",self.histogramTypes)
+        else:
+            self.histogramType=Htype
+    # End setHistogramType()
+
     def __triggerHistogramPrimative__(self,triggerTrait='p',colCount=50,statReport=False):
         """
         This method plots a histogram of the triggers present in a
@@ -2208,19 +2225,34 @@ class candidateList:
                 fieldID=self.__getCurveField__(trigger,"curveID")[0]
                 histList.append([fieldValue,fieldID])
                 powList.append(fieldValue)
-        try:
-            [entries,bins,patches]=pylab.hist(powList,colCount,bottom=1,log=True)
-        except:
-            sys.stderr.writelines('Error trying to create log scale histogram.\n')
-            #sys.stderr.writelines('Using restrictive linear scale instead.\n')
-            sys.stderr.writelines('Attempting to plot the data with semilogy function, with step linestyles instead!\n')
+        if  self.histogramType==self.histogramTypes[2]: #line logxy
+            try:
+                [entries,bins,patches]=pylab.hist(powList,colCount,bottom=1)
+                pylab.close()
+                pylab.figure()
+                pylab.loglog(bins,entries,linestyle='steps')
+            except:
+                sys.stderr.writelines('Error trying to create histogram.\n')
+        elif self.histogramType==self.histogramTypes[1]: #bar logy
+            try:
+                [entries,bins,patches]=pylab.hist(powList,colCount,bottom=1,log=True)
+            except:
+                sys.stderr.writelines('Error trying to create log scale histogram.\n')
+                sys.stderr.writelines('Using restrictive linear scale instead.\n')
+                sys.stderr.writelines('Attempting to plot the data with semilogy function, with step linestyles instead!\n')
+        else: #default
+            try:
+                [entries,bins,patches]=pylab.hist(powList,colCount,bottom=1)
+            except:
+                sys.stderr.writelines('Error trying to create histogram.\n')
+            
             sys.stderr.flush()
-            pylab.close()
-            pylab.figure()
-            [entries,bins,patches]=pylab.hist(powList,colCount)
-            pylab.close()
-            pylab.figure()
-            pylab.semilogy(bins,entries,'o',linestyle='steps')
+#             pylab.close()
+#             pylab.figure()
+#             [entries,bins,patches]=pylab.hist(powList,colCount)
+#             pylab.close()
+#             pylab.figure()
+#             pylab.semilogy(bins,entries,'o',linestyle='steps')
         if max(powList) > max(bins):
             patches[patches.__len__()-1].set_edgecolor('green')
             patches[patches.__len__()-1].set_linewidth(5)

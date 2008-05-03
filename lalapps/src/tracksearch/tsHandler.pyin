@@ -146,6 +146,7 @@ def wrapperShowHistogram(candidateObject):
             sys.stdout.write("Creating histogram for %s \n"%
                              (property[1]))
         try:
+            candidateObject.setHistogramType(histogramType)
             candidateObject.showHistogram(myTrait,
                                           graph2file,
                                           newHistCol,
@@ -251,6 +252,11 @@ parser.add_option("-P","--top-percentile",
                   default=0.05,
                   dest="topPercentile",
                   help="This options set the histogram top percentile option for the histogram. In floating point style 1% --> 0.01")
+parser.add_option("-z","--histogram-type",
+                  default='default',
+                  dest="histogramType",
+                  help="This sets the type of histrogram to create if a histogram is invoked for creation either to screen or disk.  The options are default, logy logxy."
+                  )
 
 (options,args)=parser.parse_args()
 filename=str(options.filename)
@@ -273,6 +279,7 @@ measureStats=str(options.stats)
 glue=bool(options.glue)
 timescale=str(options.timescale).lower()
 topTol=float(options.topPercentile)
+histogramType=str(options.histogramType).lower()
 
 if verboseSwitch:
     print "Setting verbose mode to candidateHandler call."
