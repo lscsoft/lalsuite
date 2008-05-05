@@ -29,7 +29,7 @@
 
 RCSID( "$Id$");
 
-void LoadAllSFTs ( LALStatus *status,
+void CombineAllSFTs ( LALStatus *status,
 	      SFTVector **outsfts,	   
 	      MultiSFTVector *multiSFTs,  
 	      REAL8 length)
@@ -39,7 +39,7 @@ void LoadAllSFTs ( LALStatus *status,
   INT4 j,k, counter = 0;
 
 
-  INITSTATUS (status, "LoadAllSFTs", rcsid);
+  INITSTATUS (status, "CombineAllSFTs", rcsid);
   ATTATCHSTATUSPTR (status);
 
 
@@ -57,30 +57,32 @@ void LoadAllSFTs ( LALStatus *status,
   /* now sort the sfts according to epoch using insertion sort... inefficient?*/
 
   /*initialise tmp SFT */
-/*  sft = (COMPLEX8FrequencySeries *) LALCalloc(1, sizeof(COMPLEX8FrequencySeries));*/
-
-  TRY (LALCreateSFTtype(status->statusPtr, &tmpsft, 0), status);
-  
 
   for (j=1; j < length; j++) {
+  TRY (LALCreateSFTtype(status->statusPtr, &tmpsft, 0), status);
+
 	tmpsft->data = NULL;
  	TRY (LALCopySFT(status->statusPtr, tmpsft, &(ret->data[j])), status);
 	k = j-1;
 	while ( (k >= 0) && (XLALGPSDiff(&(ret->data[k].epoch), &(tmpsft->epoch)) > 0) ) {
-printf("here");
 
+		/*need to destroy the sfttype before copying otherwise will cause memory leak*/
+		XLALDestroyCOMPLEX8Sequence(ret->data[k+1].data);
 		ret->data[k+1].data = NULL;
 
 		TRY (LALCopySFT(status->statusPtr, &(ret->data[k+1]), &(ret->data[k])), status);
 
 		k = k-1;
+
+		XLALDestroyCOMPLEX8Sequence(ret->data[k+1].data);
 		ret->data[k+1].data = NULL;
 		TRY (LALCopySFT(status->statusPtr, &(ret->data[k+1]), tmpsft), status);
 
     	} 
+  TRY (LALDestroySFTtype(status->statusPtr, &tmpsft),status);
+
   }
 
-  TRY (LALDestroySFTtype(status->statusPtr, &tmpsft),status);
   (*outsfts) = ret;
 
 
@@ -153,7 +155,11 @@ void CreateSFTPairsIndicesFrom2SFTvectors(LALStatus                *status,
 
 
       } /* if ( numPairs < out->length)  */
+	
+      thisSFT2 = NULL;
     } /* end loop over second sft set */
+     
+    thisSFT1 = NULL;
   } /* end loop over first sft set */ 
 
 
@@ -174,6 +180,8 @@ void CreateSFTPairsIndicesFrom2SFTvectors(LALStatus                *status,
 
   XLALDestroyINT4Vector(List1);
   XLALDestroyINT4Vector(List2);
+  thisSFT1 = NULL;
+  thisSFT2 = NULL;  
 
   DETATCHSTATUSPTR (status);
 	

@@ -55,7 +55,8 @@
 #include <lal/SFTClean.h>
 #include <lalapps.h>
 #include <gsl/gsl_cdf.h>
-
+#include <lal/FrequencySeries.h>
+#include <lal/Sequence.h>
 
 
 /******************************************************
@@ -152,7 +153,7 @@ NRCSID (RADIOMETERH, "$Id$");
  *  Functions Declarations (i.e., prototypes).
  */
 
-void LoadAllSFTs ( LALStatus *status,
+void CombineAllSFTs ( LALStatus *status,
 	      SFTVector **outsfts,	   
 	      MultiSFTVector *multiSFTs,  
 	      REAL8 length);		   

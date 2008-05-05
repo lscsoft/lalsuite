@@ -57,157 +57,156 @@ extern int lalDebugLevel;
 
 
 int main(int argc, char *argv[]){
-  /* LALStatus pointer */
-  static LALStatus  status;  
+   /* LALStatus pointer */
+   static LALStatus  status;  
   
-  /* sft related variables */ 
+   /* sft related variables */ 
 
-  SFTVector *inputSFTs = NULL;
-  MultiSFTVector *multiSFTs = NULL;
-  REAL8 deltaF, timeBase, freq = 0, *freq1 = &freq;
-  REAL8 phase = 0, *phase1 = &phase, psi = 0.0; 
-  INT8  fLastBin, f0Bin;
-  UINT4 binsSFT, numSearchBins, numsft, counter, paircounter;
-  INT4 index1, index2;
-  COMPLEX8FrequencySeries *sft, *sft1, *sft2;
-  REAL8FrequencySeries *psd1, *psd2;
-  COMPLEX16Vector *yalpha, *ualpha;
-  REAL8Vector *Fplus, *Fcross;
-  REAL8 Aplus = sqrt(7.0/15.0), Across = sqrt(1.0/3.0), rho0 = 0.0; 
-  /*A's are averaged over cos i... need to change this later!*/ 
+   SFTVector *inputSFTs = NULL;
+   MultiSFTVector *multiSFTs = NULL;
+   REAL8 deltaF, timeBase, freq = 0, *freq1 = &freq;
+   REAL8 phase = 0, *phase1 = &phase, psi = 0.0; 
+   INT8  fLastBin, f0Bin;
+   UINT4 binsSFT, numSearchBins, numsft, counter, paircounter;
+   COMPLEX8FrequencySeries *sft = NULL, *sft1 = NULL, *sft2 = NULL;
+   INT4 index1, index2;
+   REAL8FrequencySeries *psd1, *psd2;
+   COMPLEX16Vector *yalpha, *ualpha;
+   REAL8Vector *Fplus, *Fcross;
+   REAL8 Aplus = sqrt(7.0/15.0), Across = sqrt(1.0/3.0), rho0 = 0.0; 
+   /*A's are averaged over cos i... need to change this later!*/ 
 
-  /*SFTPairVec sftPairs;*/
-  SFTPairParams pairParams;
+   /*SFTPairVec sftPairs;*/
+   SFTPairParams pairParams;
+   
+   /* information about all the ifos */
+   DetectorStateSeries *detStates = NULL, *tmpDetState = NULL;
+   PSDVector *psdVec = NULL;  
+   LALDetector *det;
+ 
+   LIGOTimeGPS firstTimeStamp, lastTimeStamp;
+   REAL8 tObs, tOffs;
+   REAL8 patchSizeX, patchSizeY;
+ 
+   /* ephemeris */
+   EphemerisData    *edat=NULL;
+   INT4 tmpLeap;
+   LALLeapSecFormatAndAcc  lsfas = {LALLEAPSEC_GPSUTC, LALLEAPSEC_LOOSE};
+
+   /* skypatch info */
+   REAL8  *skyAlpha=NULL, *skyDelta=NULL, *skySizeAlpha=NULL, *skySizeDelta=NULL; 
+   INT4   nSkyPatches, skyCounter=0; 
+   SkyPatchesInfo skyInfo;
+
+   static INT4VectorSequence  *sftPairIndexList;
+   static REAL8Vector *frequencyShiftList, *signalPhaseList;
+   INT4  j;
+   static PulsarDopplerParams  thisPoint;
+   static REAL8Vector thisVel, thisPos, *weights;
+
+   REAL8 doppWings, fMin, fMax;
+
+   AMCoeffs *AMcoef = NULL; 
+
+
+
+   /* sft constraint variables */
+   LIGOTimeGPS startTimeGPS, endTimeGPS;
+   LIGOTimeGPSVector *ts=NULL;
+
+   /* user input variables */
+   BOOLEAN  uvar_help;
+   INT4     uvar_blocksRngMed; 
+   REAL8    uvar_startTime, uvar_endTime;
+   REAL8    uvar_f0, uvar_fdot, uvar_fBand;
+   REAL8    uvar_dAlpha, uvar_dDelta; /* resolution for isotropic sky-grid */
+   REAL8    uvar_maxlag;
+   CHAR     *uvar_earthEphemeris=NULL;
+   CHAR     *uvar_sunEphemeris=NULL;
+   CHAR     *uvar_sftDir=NULL;
+   CHAR     *uvar_dirnameOut=NULL;
+   CHAR     *uvar_fbasenameOut=NULL;
+   CHAR     *uvar_skyfile=NULL;
+   CHAR     *uvar_skyRegion=NULL;
+   FILE	   *skytest=NULL;
+ 
+ 
+   SkyPosition skypos; 
+ 
+
+   /* LAL error-handler */
+   lal_errhandler = LAL_ERR_EXIT;
   
-  /* information about all the ifos */
-  DetectorStateSeries *mdetStates = NULL, *tmpDetState = NULL;
-  PSDVector *psdVec = NULL;  
-  UINT4 numifo;
-  LALDetector *det;
-
-  LIGOTimeGPS firstTimeStamp, lastTimeStamp;
-  REAL8 tObs, tOffs;
-  REAL8 patchSizeX, patchSizeY;
-
-  /* ephemeris */
-  EphemerisData    *edat=NULL;
-  INT4 tmpLeap;
-  LALLeapSecFormatAndAcc  lsfas = {LALLEAPSEC_GPSUTC, LALLEAPSEC_LOOSE};
-
-  /* skypatch info */
-  REAL8  *skyAlpha=NULL, *skyDelta=NULL, *skySizeAlpha=NULL, *skySizeDelta=NULL; 
-  INT4   nSkyPatches, skyCounter=0; 
-  SkyPatchesInfo skyInfo;
-
-  static INT4VectorSequence  *sftPairIndexList;
-  static REAL8Vector *frequencyShiftList, *signalPhaseList;
-  INT4  j;
-  static PulsarDopplerParams  thisPoint;
-  static REAL8Vector thisVel, thisPos, *weights;
-
-    REAL8 doppWings, fMin, fMax;
-
-  AMCoeffs *AMcoef = NULL; 
-
-
-
-  /* sft constraint variables */
-  LIGOTimeGPS startTimeGPS, endTimeGPS;
-  LIGOTimeGPSVector *ts=NULL;
-
-  /* user input variables */
-  BOOLEAN  uvar_help;
-  INT4     uvar_blocksRngMed; 
-  REAL8    uvar_startTime, uvar_endTime;
-  REAL8    uvar_f0, uvar_fdot, uvar_fBand;
-  REAL8    uvar_dAlpha, uvar_dDelta; /* resolution for isotropic sky-grid */
-  REAL8    uvar_maxlag;
-  CHAR     *uvar_earthEphemeris=NULL;
-  CHAR     *uvar_sunEphemeris=NULL;
-  CHAR     *uvar_sftDir=NULL;
-  CHAR     *uvar_dirnameOut=NULL;
-  CHAR     *uvar_fbasenameOut=NULL;
-  CHAR     *uvar_skyfile=NULL;
-  CHAR     *uvar_skyRegion=NULL;
-  FILE	   *skytest=NULL;
-
-
-  SkyPosition skypos; 
-
-
-  /* LAL error-handler */
-  lal_errhandler = LAL_ERR_EXIT;
-  
-  lalDebugLevel = 0;  /* LALDebugLevel must be called before anything else */
-  LAL_CALL( LALGetDebugLevel( &status, argc, argv, 'd'), &status);
-  
-  uvar_maxlag = 100000;
-
-  uvar_help = FALSE;
-  uvar_blocksRngMed = BLOCKSRNGMED;
-  uvar_f0 = F0;
-  uvar_startTime = 0.0;
-  uvar_endTime = LAL_INT4_MAX;
-  uvar_fdot = 0.0;
-  uvar_fBand = FBAND;
-  uvar_dAlpha = 0.2;
-  uvar_dDelta = 0.2;
-
-  uvar_earthEphemeris = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
-  strcpy(uvar_earthEphemeris,EARTHEPHEMERIS);
-
-  uvar_sunEphemeris = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
-  strcpy(uvar_sunEphemeris,SUNEPHEMERIS);
-
-  uvar_dirnameOut = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
-  strcpy(uvar_dirnameOut,DIROUT);
-
-  uvar_fbasenameOut = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
-  strcpy(uvar_fbasenameOut,BASENAMEOUT);
-
-  uvar_skyfile = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
-  strcpy(uvar_skyfile,SKYFILE);
-
-  /* register user input variables */
-  LAL_CALL( LALRegisterBOOLUserVar( &status, "help",             'h', UVAR_HELP,     "Print this message", &uvar_help), &status);  
-  LAL_CALL( LALRegisterREALUserVar( &status, "f0",               'f', UVAR_OPTIONAL, "Start search frequency", &uvar_f0), &status);
-  LAL_CALL( LALRegisterREALUserVar( &status, "fdot",               0, UVAR_OPTIONAL, "Start search frequency derivative", &uvar_fdot), &status);
-  LAL_CALL( LALRegisterREALUserVar( &status, "fBand",            'b', UVAR_OPTIONAL, "Search frequency band", &uvar_fBand), &status);
-  LAL_CALL( LALRegisterREALUserVar( &status, "startTime",         0,  UVAR_OPTIONAL, "GPS start time of observation", &uvar_startTime), &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "endTime",         0,  UVAR_OPTIONAL, "GPS end time of observation", &uvar_endTime), &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "skyRegion",       0,  UVAR_OPTIONAL, "sky-region polygon (or 'allsky')", &uvar_skyRegion), &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "dAlpha",          0,  UVAR_OPTIONAL, "Sky resolution (flat/isotropic) (rad)", &uvar_dAlpha), &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "dDelta",          0,  UVAR_OPTIONAL, "Sky resolution (flat/isotropic) (rad)", &uvar_dDelta), &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "skyfile",         0,  UVAR_OPTIONAL, "Alternative: input skypatch file", &uvar_skyfile),     &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "earthEphemeris", 'E', UVAR_OPTIONAL, "Earth Ephemeris file",  &uvar_earthEphemeris),  &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "sunEphemeris",   'S', UVAR_OPTIONAL, "Sun Ephemeris file", &uvar_sunEphemeris), &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "sftDir",         'D', UVAR_REQUIRED, "SFT filename pattern", &uvar_sftDir), &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "maxlag",          0,  UVAR_OPTIONAL, "Maximum time lag for correlating sfts", &uvar_maxlag), &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "dirnameOut",     'o', UVAR_OPTIONAL, "Output directory", &uvar_dirnameOut), &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "fbasenameOut",    0,  UVAR_OPTIONAL, "Output file basename", &uvar_fbasenameOut), &status);
-  LAL_CALL( LALRegisterINTUserVar(    &status, "blocksRngMed",    0,  UVAR_OPTIONAL, "Running Median block size", &uvar_blocksRngMed), &status);
-
-
-  /* read all command line variables */
-  LAL_CALL( LALUserVarReadAllInput(&status, argc, argv), &status);
-  /* exit if help was required */
-  if (uvar_help)
-    exit(0); 
-
-  /* very basic consistency checks on user input */
-  if ( uvar_f0 < 0 ) {
+   lalDebugLevel = 0;  /* LALDebugLevel must be called before anything else */
+   LAL_CALL( LALGetDebugLevel( &status, argc, argv, 'd'), &status);
+   
+   uvar_maxlag = 100000;
+ 
+   uvar_help = FALSE;
+   uvar_blocksRngMed = BLOCKSRNGMED;
+   uvar_f0 = F0;
+   uvar_startTime = 0.0;
+   uvar_endTime = LAL_INT4_MAX;
+   uvar_fdot = 0.0;
+   uvar_fBand = FBAND;
+   uvar_dAlpha = 0.2;
+   uvar_dDelta = 0.2;
+ 
+   uvar_earthEphemeris = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
+   strcpy(uvar_earthEphemeris,EARTHEPHEMERIS);
+ 
+   uvar_sunEphemeris = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
+   strcpy(uvar_sunEphemeris,SUNEPHEMERIS);
+ 
+   uvar_dirnameOut = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
+   strcpy(uvar_dirnameOut,DIROUT);
+ 
+   uvar_fbasenameOut = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
+   strcpy(uvar_fbasenameOut,BASENAMEOUT);
+ 
+   uvar_skyfile = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
+   strcpy(uvar_skyfile,SKYFILE);
+ 
+   /* register user input variables */
+   LAL_CALL( LALRegisterBOOLUserVar( &status, "help",             'h', UVAR_HELP,     "Print this message", &uvar_help), &status);  
+   LAL_CALL( LALRegisterREALUserVar( &status, "f0",               'f', UVAR_OPTIONAL, "Start search frequency", &uvar_f0), &status);
+   LAL_CALL( LALRegisterREALUserVar( &status, "fdot",               0, UVAR_OPTIONAL, "Start search frequency derivative", &uvar_fdot), &status);
+   LAL_CALL( LALRegisterREALUserVar( &status, "fBand",            'b', UVAR_OPTIONAL, "Search frequency band", &uvar_fBand), &status);
+   LAL_CALL( LALRegisterREALUserVar( &status, "startTime",         0,  UVAR_OPTIONAL, "GPS start time of observation", &uvar_startTime), &status);
+   LAL_CALL( LALRegisterREALUserVar(   &status, "endTime",         0,  UVAR_OPTIONAL, "GPS end time of observation", &uvar_endTime), &status);
+   LAL_CALL( LALRegisterSTRINGUserVar( &status, "skyRegion",       0,  UVAR_OPTIONAL, "sky-region polygon (or 'allsky')", &uvar_skyRegion), &status);
+   LAL_CALL( LALRegisterREALUserVar(   &status, "dAlpha",          0,  UVAR_OPTIONAL, "Sky resolution (flat/isotropic) (rad)", &uvar_dAlpha), &status);
+   LAL_CALL( LALRegisterREALUserVar(   &status, "dDelta",          0,  UVAR_OPTIONAL, "Sky resolution (flat/isotropic) (rad)", &uvar_dDelta), &status);
+   LAL_CALL( LALRegisterSTRINGUserVar( &status, "skyfile",         0,  UVAR_OPTIONAL, "Alternative: input skypatch file", &uvar_skyfile),     &status);
+   LAL_CALL( LALRegisterSTRINGUserVar( &status, "earthEphemeris", 'E', UVAR_OPTIONAL, "Earth Ephemeris file",  &uvar_earthEphemeris),  &status);
+   LAL_CALL( LALRegisterSTRINGUserVar( &status, "sunEphemeris",   'S', UVAR_OPTIONAL, "Sun Ephemeris file", &uvar_sunEphemeris), &status);
+   LAL_CALL( LALRegisterSTRINGUserVar( &status, "sftDir",         'D', UVAR_REQUIRED, "SFT filename pattern", &uvar_sftDir), &status);
+   LAL_CALL( LALRegisterREALUserVar(   &status, "maxlag",          0,  UVAR_OPTIONAL, "Maximum time lag for correlating sfts", &uvar_maxlag), &status);
+   LAL_CALL( LALRegisterSTRINGUserVar( &status, "dirnameOut",     'o', UVAR_OPTIONAL, "Output directory", &uvar_dirnameOut), &status);
+   LAL_CALL( LALRegisterSTRINGUserVar( &status, "fbasenameOut",    0,  UVAR_OPTIONAL, "Output file basename", &uvar_fbasenameOut), &status);
+   LAL_CALL( LALRegisterINTUserVar(    &status, "blocksRngMed",    0,  UVAR_OPTIONAL, "Running Median block size", &uvar_blocksRngMed), &status);
+ 
+ 
+   /* read all command line variables */
+   LAL_CALL( LALUserVarReadAllInput(&status, argc, argv), &status);
+   /* exit if help was required */
+   if (uvar_help)
+     exit(0); 
+ 
+   /* very basic consistency checks on user input */
+   if ( uvar_f0 < 0 ) {
     fprintf(stderr, "start frequency must be positive\n");
     exit(1);
-  }
+   }
 
-  if ( uvar_fBand < 0 ) {
+   if ( uvar_fBand < 0 ) {
     fprintf(stderr, "search frequency band must be positive\n");
     exit(1);
-  }
+   }
  
     
-  /* read sfts */
-  {
+   /* read sfts */
+   {
     /* new SFT I/O data types */
     SFTCatalog *catalog = NULL;
     static SFTConstraints constraints;
@@ -252,11 +251,10 @@ int main(int argc, char *argv[]){
     /* read the sfts */
     /* first load them into a MultiSFTVector, then concatenate the various vectors into one*/
     LAL_CALL( LALLoadMultiSFTs ( &status, &multiSFTs, catalog, fMin, fMax), &status);
-    LAL_CALL (LoadAllSFTs (&status, &inputSFTs, multiSFTs, catalog->length), &status);
-    numifo = inputSFTs->length;    
+    LAL_CALL (CombineAllSFTs (&status, &inputSFTs, multiSFTs, catalog->length), &status);
 
 printf("there are %i sfts\n",catalog->length);
-    for (j=0; j < catalog->length; j++){
+    for (j=0; j < (INT4)catalog->length; j++){
 printf("sft epochs %i\n", inputSFTs->data[j].epoch.gpsSeconds);
     } 
 
@@ -265,8 +263,7 @@ printf("sft epochs %i\n", inputSFTs->data[j].epoch.gpsSeconds);
     /* loop over ifos and calculate number of sfts */
     /* note that we can't use the catalog to determine the number of SFTs
        because SFTs might be segmented in frequency */
-    numsft = inputSFTs->length; /* initialization */
-
+    numsft = inputSFTs->length; 
 
     /* catalog is ordered in time so we can get start, end time and tObs*/
     firstTimeStamp = catalog->data[0].header.epoch;
@@ -316,20 +313,20 @@ printf("observation time is %f\n",tObs);
   /* note that this function returns the velocity at the 
      mid-time of the SFTs -- should not make any difference */
   psdVec = (PSDVector *) LALCalloc(1, sizeof(PSDVector)); 
-  psdVec->length = inputSFTs->length;
+  psdVec->length = numsft;
 
   psdVec->data = (REAL8FrequencySeries *)LALCalloc (psdVec->length, sizeof(REAL8FrequencySeries));
 
 
-  mdetStates = (DetectorStateSeries *) LALCalloc(1, sizeof(DetectorStateSeries));
-  mdetStates->length = inputSFTs->length;
-  mdetStates->data = (DetectorState *) LALCalloc (mdetStates->length, sizeof(DetectorState));
+  detStates = (DetectorStateSeries *) LALCalloc(1, sizeof(DetectorStateSeries));
+  detStates->length = numsft;
+  detStates->data = (DetectorState *) LALCalloc (detStates->length, sizeof(DetectorState));
 
   ts = XLALCreateTimestampVector (1);
   tOffs = 0.5/deltaF;
 
   /*loop over all sfts and get the PSDs and detector states */
-  for (j=0; j < (INT4)inputSFTs->length; j++) {
+  for (j=0; j < (INT4)numsft; j++) {
 	tmpDetState = NULL;
   	psdVec->data[j].data = NULL;
 	psdVec->data[j].data = (REAL8Sequence *)LALCalloc (1,sizeof(REAL8Sequence));
@@ -344,8 +341,10 @@ printf("observation time is %f\n",tObs);
 	LAL_CALL ( LALGetDetectorStates ( &status, &tmpDetState, ts, det, edat, tOffs), &status);
 
 printf("epoch %i\n",tmpDetState->data[0].tGPS.gpsSeconds);
-  	mdetStates->data[j] = tmpDetState->data[0];
+  	detStates->data[j] = tmpDetState->data[0];
 
+	XLALDestroyDetectorStateSeries(tmpDetState);
+	LALFree(det);
 	
   }
 
@@ -406,7 +405,7 @@ printf("coordinate is %f, %f\n",thisPoint.Alpha, thisPoint.Delta);
          skypos.longitude = thisPoint.Alpha; 
          skypos.latitude = thisPoint.Delta; 
          skypos.system = COORDINATESYSTEM_EQUATORIAL; 
-         LAL_CALL ( LALGetAMCoeffs ( &status, AMcoef, mdetStates, skypos), &status); 
+         LAL_CALL ( LALGetAMCoeffs ( &status, AMcoef, detStates, skypos), &status); 
 
 printf("A, B %f %f\n",AMcoef->A, AMcoef->B);
 
@@ -417,8 +416,9 @@ printf("A, B %f %f\n",AMcoef->A, AMcoef->B);
   counter = 0;
   for (j=0; j < (INT4)numsft; j++) {
       
-	 thisVel.data = mdetStates->data[j].vDetector;
- 	 thisPos.data = mdetStates->data[j].rDetector;
+
+	 thisVel.data = detStates->data[j].vDetector;
+ 	 thisPos.data = detStates->data[j].rDetector;
 	 sft = &(inputSFTs->data[j]);
 
          LAL_CALL( GetSignalFrequencyInSFT( &status, freq1, sft, &thisPoint, &thisVel), &status);
@@ -437,6 +437,7 @@ printf("signal phases %f\n", signalPhaseList.data[counter]);*/
 
 /*printf("fplus, fcross %f %f\n", Fplus->data[j], Fcross->data[j]);*/
 
+	sft = NULL;
       } 
     
      
@@ -499,8 +500,10 @@ printf("\tPair index: %i %i, weight: %f\n", sftPairIndexList->data[paircounter],
   LAL_CALL (LALDestroySFTVector(&status, &inputSFTs), &status );
 /*  LALFree(sftPairs.data);*/
   LALFree(sftPairIndexList->data);
+  LALFree(sftPairIndexList);
 
-  XLALDestroyDetectorStateSeries ( mdetStates );
+  XLALDestroyDetectorStateSeries ( detStates );
+
   LAL_CALL ( LALDestroyPSDVector  ( &status, &psdVec), &status);
 
   LALFree(edat->ephemE);
@@ -512,10 +515,11 @@ printf("\tPair index: %i %i, weight: %f\n", sftPairIndexList->data[paircounter],
   LALFree(skySizeAlpha);
   LALFree(skySizeDelta);
 
-  LALFree(frequencyShiftList->data);
-  LALFree(Fcross->data);
-  LALFree(Fplus->data);
-  LALFree(weights->data);
+  XLALDestroyREAL8Vector(frequencyShiftList);
+  XLALDestroyREAL8Vector(signalPhaseList);
+  XLALDestroyREAL8Vector(Fcross);
+  XLALDestroyREAL8Vector(Fplus);
+  XLALDestroyREAL8Vector(weights);
 
 
   LAL_CALL (LALDestroyUserVars(&status), &status);
