@@ -1,6 +1,6 @@
-#!/usr/bin/env @PYTHONPROG@
+#!/usr/bin/env /usr/bin/python
 """
-boise_comp_pipe - standalone noise comparison pipeline driver script
+noise_comp_pipe - standalone noise comparison pipeline driver script
 
 $Id$
 
@@ -15,77 +15,54 @@ __version__ = '$Revision$'[11:-2]
 
 # import standard modules and append the lalapps prefix to the python path
 import sys, os, shutil 
+import optparse
+from optparse import *
 import getopt, re, string
 import tempfile
 import ConfigParser
-sys.path.append('@PYTHONLIBDIR@')
+sys.path.append('/archive/home/channa/opt/lalapps/lib/python2.4/site-packages/lalapps')
 
 # import the modules we need to build the pipeline
 from glue import pipeline
 import strain
 
-def usage():
-  msg = """\
-Usage: lalapps_noisecomp_pipe [options]
+########## Option Parser ######################################################
 
-  -h, --help               display this message
-  -v, --version            print version information and exit
-  -S, --segment-file       segments file
-  -f, --dag-file           basename for .dag file (excluding the .dag)
-"""
-  print >> sys.stderr, msg
+usage = """usage: %prog [options]"""
+parser = OptionParser( usage )
 
-# parse the command line options to figure out what we should do
-shortop = "hv:S:f:"
-longop = [
-  "help",
-  "version",
-  "segment-file=",
-  "dag-file=",
-  ]
+parser.add_option("-l", "--log-path",action="store",type="string",\
+    metavar=" PATH",help="directory to write condor log file")
 
-try:
-  opts, args = getopt.getopt(sys.argv[1:], shortop, longop)
-except getopt.GetoptError:
-  usage()
-  sys.exit(1)
+parser.add_option("-i", "--config-file",action="store",type="string",\
+    metavar=" FILE",help="ini file")
 
-config_file = None
-log_path = None
-basename = None
-segment_filename = None
+parser.add_option("-f", "--basename",action="store",type="string",\
+    metavar=" STR",help="basename for .dag file (excluding the .dag)")
 
-for o, a in opts:
-  if o in ("-v", "--version"):
-    print "$Id$"
-    sys.exit(0)
-  elif o in ("-h", "--help"):
-    usage()
-    sys.exit(0)
-  elif o in ("-S", "--segment-file"):
-    segment_filename = a
-  elif o in ("-f", "--dag-file"):
-    basename = os.path.splitext(a)[0]
-    config_file = a	
-  else:
-    print >> sys.stderr, "Unknown option:", o
-    usage()
-    sys.exit(1)
+parser.add_option("-S", "--segment-filename",action="store",type="string",\
+    metavar=" FILE",help="segments file")
 
-log_path = '/people/siemens/'
+parser.add_option("-w", "--write-script",action="store_true",default=False,\
+    help="write out a shell script workflow")
+
+# parse the command line
+(opts,args) = parser.parse_args()
+
+# Should this be an option to set in the INI FILE ?
 df_pad=128
 
-if not config_file:
+if not opts.config_file:
   print >> sys.stderr, "No configuration file specified."
   print >> sys.stderr, "Use --help for usage details."
   sys.exit(1)
 
-if not segment_filename:
+if not opts.segment_filename:
   print >> sys.stderr, "No segment filename specified."
   print >> sys.stderr, "Use --help for usage details."
   sys.exit(1)
 
-if not basename:
+if not opts.basename:
   print >> sys.stderr, "No dag file base name specified."
   print >> sys.stderr, "Use --help for usage details."
   sys.exit(1)
@@ -99,18 +76,18 @@ except: pass
 
 # create the config parser object and read in the ini file
 cp = ConfigParser.ConfigParser()
-cp.read(config_file)
+cp.read(opts.config_file)
 
 # create a log file that the Condor jobs will write to
-tempfile.tempdir = log_path
-tempfile.template = basename + '.log'
+tempfile.tempdir = opts.log_path
+tempfile.template = opts.basename + '.log'
 logfile = tempfile.mktemp()
 fh = open( logfile, "w" )
 fh.close()
 
 # create the DAG writing the log to the specified directory
 dag = pipeline.CondorDAG(logfile)
-dag.set_dag_file(basename)
+dag.set_dag_file(opts.basename)
 
 # create the Condor jobs that will be used in the DAG
 df_job = pipeline.LSCDataFindJob('cache','logs',cp)
@@ -118,90 +95,122 @@ noise_job = strain.NoiseJob(cp)
 
 # submit files
 subsuffix = '.sub'
-df_job.set_sub_file( basename + '.datafind'+ subsuffix )
-noise_job.set_sub_file( basename + '.noisecomp' + subsuffix )
+df_job.set_sub_file( opts.basename + '.datafind'+ subsuffix )
+noise_job.set_sub_file( opts.basename + '.noisecomp' + subsuffix )
   
 # get the pad and chunk lengths from the values in the ini file
 length = int(cp.get('pipeline', 'segment-length'))
-
-# read science segs that are greater or equal to a chunk from the input file
-data = pipeline.ScienceData()
-data.read(segment_filename,0)
-
-# create the chunks from the science segments
-data.make_chunks(length,0,0,0,0)
-data.make_short_chunks_from_unused(0,0,0,0,0)
-#make_short_chunks_from_unused(self, min_length, overlap=0, play=0, sl=0, excl_play=0)
-#I don't really know why the min length needs to be set to 0 but it does.
 
 # get the ifo to filter
 ifo = cp.get('pipeline','ifo')
 datatype_hoft = cp.get('input','type-hoft')
 datatype_derr = cp.get('input','type-derr')
 
-# create all the LSCdataFind jobs to run in sequence
-prev_df1 = None
-prev_df2 = None
-segment_no = -1
-for seg in data: 
-  segment_no = segment_no + 1
-  # find all the h(t) data
-  df1 = pipeline.LSCDataFindNode(df_job)
-  df1.set_start(str( int(seg.start())-df_pad ) )
-  df1.set_end(str( int(seg.end())+df_pad )  )
-  df1.set_observatory(ifo[0])
-  df1.set_type(datatype_hoft)
-  df1.set_name("df1_"+ifo+"_"+str(segment_no))
+# read in data that is specific to calibration epochs	
+epochs = strain.EpochData(cp,opts)
+
+epoch_cnt = 0;
+
+# loop over the segments defined by the calibration epochs
+print "\n"
+for epoch in epochs.epoch_segs():
+  print "setting up jobs for calibration epoch " + str(epoch[1])+" - "+str(epoch[2]) + "..."
+  # Make a ScienceData class for the calibration epochs
+  epoch_data = pipeline.ScienceData()
+  epoch_data.append_from_tuple(epoch)
+  # read science segs that are greater or equal to a chunk from the input file
+  data = pipeline.ScienceData()
+  data.read(opts.segment_filename,0)
+  # intersect the science segments with the calibration epoch
+  data.intersection(epoch_data)
+  # create the chunks from the science segments
+  data.make_chunks(length,0,0,0,0)
+  data.make_short_chunks_from_unused(0,0,0,0,0)
+
+  # create all the LSCdataFind jobs to run in sequence
+  prev_df1 = None
+  prev_df2 = None
+  segment_no = -1
+  for seg in data: 
+    segment_no = segment_no + 1
+    # find all the h(t) data
+    df1 = pipeline.LSCDataFindNode(df_job)
+    df1.set_start(str( int(seg.start())-df_pad ) )
+    df1.set_end(str( int(seg.end())+df_pad )  )
+    df1.set_observatory(ifo[0])
+    df1.set_type(datatype_hoft)
+    df1.set_name("df1_"+ifo+"_"+str(segment_no))
   
-  if prev_df1: 
-    df1.add_parent(prev_df1)
-  dag.add_node(df1)
-  prev_df1 = df1
+    if prev_df1: 
+      df1.add_parent(prev_df1)
+    dag.add_node(df1)
+    prev_df1 = df1
 
-  # find all the DARM_ERR data
-  df2 = pipeline.LSCDataFindNode(df_job)
-  df2.set_start(str( int(seg.start())-df_pad ) )
-  df2.set_end(str( int(seg.end())+df_pad )  )
-  df2.set_observatory(ifo[0])
-  df2.set_type(datatype_derr)
-  df2.set_name("df2_"+ifo+"_"+str(segment_no))
+    # find all the DARM_ERR data
+    df2 = pipeline.LSCDataFindNode(df_job)
+    df2.set_start(str( int(seg.start())-df_pad ) )
+    df2.set_end(str( int(seg.end())+df_pad )  )
+    df2.set_observatory(ifo[0])
+    df2.set_type(datatype_derr)
+    df2.set_name("df2_"+ifo+"_"+str(segment_no))
   
-  if prev_df2: 
-    df2.add_parent(prev_df2)
-  dag.add_node(df2)
-  prev_df2 = df2
+    if prev_df2: 
+      df2.add_parent(prev_df2)
+    dag.add_node(df2)
+    prev_df2 = df2
 
-  #noise jobs
-  chunk_number=-1
-  for chunk in seg:
-    chunk_number=chunk_number+1
-
-    #make the directory where the data's going to go
-    gps_str=str(chunk.start())
+    #noise jobs
+    chunk_number=-1
+    for chunk in seg:
+      chunk_number=chunk_number+1
+      # throw out small jobs
+      if chunk.end()-chunk.start() < int(cp.get('noisecomp','time')):
+        continue
+      #make the directory where the data's going to go
+      gps_str=str(chunk.start())
       
-    #Noise job for first ifo  
-    noise1 = strain.NoiseNode(noise_job)
-    noise1.set_start(chunk.start())
-    noise1.set_end(chunk.end())
-    noise1.add_var_opt('hoft-cache',df1.get_output()) 
-    noise1.add_var_opt('derr-cache',df2.get_output())
-    noise1.add_var_opt('output-file','out-'+gps_str+'-'+str(len(chunk))+'.txt')
-    noise1.set_name("noise_"+ifo+"_"+str(segment_no)+"_"+str(chunk_number))
-    noise1.add_parent(df1)
-    noise1.add_parent(df2)
-    dag.add_node(noise1)
+      #Noise job for first ifo  
+      noise1 = strain.NoiseNode(noise_job)
+      noise1.set_start(chunk.start())
+      noise1.set_end(chunk.end())
+      noise1.add_var_opt('olg-re',epochs.epoch_data[epoch_cnt][4])
+      noise1.add_var_opt('olg-im',epochs.epoch_data[epoch_cnt][5])
+      noise1.add_var_opt('servo-re',epochs.epoch_data[epoch_cnt][6])
+      noise1.add_var_opt('servo-im',epochs.epoch_data[epoch_cnt][7])
+      noise1.add_var_opt('whitener-re',epochs.epoch_data[epoch_cnt][8])
+      noise1.add_var_opt('whitener-im',epochs.epoch_data[epoch_cnt][9])
+      noise1.add_var_opt('olg-file',epochs.epoch_data[epoch_cnt][11])
+      noise1.add_var_opt('sensing-file',epochs.epoch_data[epoch_cnt][12])
+      noise1.add_var_opt('hoft-cache',df1.get_output()) 
+      noise1.add_var_opt('derr-cache',df2.get_output())
+      noise1.add_var_opt('output-file','out-'+gps_str+'-'+str(len(chunk))+'.txt')
+      noise1.set_name("noise_"+ifo+"_"+str(segment_no)+"_"+str(chunk_number))
+      noise1.add_parent(df1)
+      noise1.add_parent(df2)
+      dag.add_node(noise1)
+  #increment the epoch counter
+  epoch_cnt+=1
 
 # write out the DAG
 dag.write_sub_files()
 dag.write_dag()
+if opts.write_script: dag.write_script()
+
+print "\nDAG contains " + str(len(dag.get_nodes())) + " nodes.\n"
 
 # write out a log file for this script
-log_fh = open(basename + '.pipeline.log', 'w')
+log_fh = open(opts.basename + '.pipeline.log', 'w')
   
 log_fh.write( "$Id$" + "\n\n" )
 log_fh.write( "Invoked with arguments:\n" )
-for o, a in opts:
-  log_fh.write( o + ' ' + a + '\n' )
+
+classattrs = dir(optparse.Values)
+for name in [_ for _ in dir(opts) if _ not in classattrs]:
+    log_fh.write("--"+name.replace('_','-')+"="+ str(getattr(opts, name))+"\n")
+
+#for o, a in opts:
+#  log_fh.write( o + ' ' + a + '\n' )
+
 log_fh.write( "\n" )
 log_fh.write( "Parsed " + str(len(data)) + " science segments\n" )
 total_data = 0
