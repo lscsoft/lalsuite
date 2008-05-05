@@ -748,7 +748,7 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 		 * guestimated limit on the length of a time series to read
 		 * in.
 		 */
-		options->max_series_length = atoi(optarg) * 1024 * 1024 / (8 * sizeof(REAL4));
+		options->max_series_length = atoi(optarg) * 1024 * 1024 / (8 * sizeof(REAL8));
 		if(options->max_series_length <= 0) {
 			sprintf(msg, "must be greater than 0 (%i specified)", atoi(optarg));
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
@@ -1481,7 +1481,7 @@ static void output_results(LALStatus *stat, char *file, const ProcessTable *_pro
 {
 	LIGOLwXMLStream xml;
 
-	memset(&xml, 0, sizeof(LIGOLwXMLStream));
+	memset(&xml, 0, sizeof(xml));
 	LAL_CALL(LALOpenLIGOLwXMLFile(stat, &xml, file), stat);
 
 	/*
