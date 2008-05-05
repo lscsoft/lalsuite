@@ -96,7 +96,25 @@ class NoiseJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     self.set_stdout_file('logs/noisecomp-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out')
     self.set_stderr_file('logs/noisecomp-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
     self.set_sub_file('noisecomp.sub')
-    
+
+class EpochData(object):
+  """ 
+  Holds calibration data epochs
+  """
+  def __init__(self,cp,opts):
+    self.file = open(cp.get('epochs','epochs_data'),'r')
+    self.epoch_data = []
+    for line in self.file:
+      if line.strip()[0] != '#':
+        self.epoch_data.append(line.split())  
+    self.epoch_data.sort()
+
+  def epoch_segs(self):
+    tmpList = []
+    for line in self.epoch_data:
+      tmpList.append(tuple(map(int,(line[0:4]))))
+    return tmpList
+     
 class DataFindNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
   """
   A DataFindNode runs an instance of datafind in a Condor DAG.
