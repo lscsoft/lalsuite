@@ -961,7 +961,9 @@ int main(int argc, char**argv) {
   /* dummy for keeping the RCSIDs */
   HSBOINCEXTRASCRCSID = HSBOINCEXTRASHRCSID;
 
-  LogPrintf(LOG_NORMAL, "Built at: " __DATE__ " " __TIME__ "\n");
+  LogPrintf(LOG_NORMAL, "This program is published under the GNU General Public License, version 2\n");
+  LogPrintf(LOG_NORMAL, "For details see http://einstein.phys.uwm.edu/license.php\n");
+  LogPrintf(LOG_NORMAL, "This Einstein@home App was built at: " __DATE__ " " __TIME__ "\n");
 
   /* pass argc/v to the worker via global vars */
   global_argc = argc;
