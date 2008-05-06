@@ -52,7 +52,22 @@ def set_common_options(cp, this_section):
 
   return cp 
 
+def addVetoFileForPlotinspiral( job, veto_file ):
+   """
+   Add another veto_file to the option "veto-file" for plotinspiral
+   to veto the on-source segment in the case of the external trigger search.
+   Might insert the following function into pipeline.py to make
+   this more sophisticated:
+   """
 
+   # see if there is already an value set for this option
+   value = job.get_opt( "veto-file" )
+
+   # then add this veto_file or set a new option
+   if value:
+     job.add_opt( "veto-file", value+','+veto_file )
+   else:
+     job.add_opt( "veto-file", veto_file )
 
 
 #############################################################################
@@ -265,6 +280,23 @@ elif cp.has_option("pipeline", "user-tag"):
   usertag = string.strip(cp.get('pipeline','user-tag'))
 else:
   usertag = None
+
+##############################################################################
+ # if exttrig flag is specified create trigger xml filename
+if cp.has_option("pipeline", "exttrig"):
+
+  # get the path to the GRB analysis directory
+  exttrig_path = string.strip(cp.get('pipeline','exttrig'))
+
+  # extract the usertag: its the last name in the path
+  usertag =  exttrig_path.split('/')[-1]
+
+  # create the external trigger filename and the onsource file
+  exttrig_file = exttrig_path+'/trigger'+usertag+'.xml'
+  exttrig_onsource = exttrig_path+'/onSourceSeg.txt'
+else:
+  exttrig_file = None
+  exttrig_onsource = None
   
 ##############################################################################
 # create a log file that the Condor jobs will write to
@@ -322,6 +354,7 @@ if opts.plotinspiral:
       job.add_opt("ifo-times", ifo)
       job.add_opt("ifo-tag", "FIRST_" + ifo)
       job.set_sub_file( basename + '.plotinspiral_FIRST_' + ifo + subsuffix )
+      if exttrig_onsource: addVetoFileForPlotinspiral( job, exttrig_onsource)
       pattern_dict = inspiralutils.determine_sieve_patterns(cp, "plotinspiral",
         "FIRST", input_user_tag)
       for opt, val in pattern_dict.iteritems():
@@ -335,7 +368,8 @@ if opts.plotinspiral:
       job = inspiral.PlotInspiralJob(cp_second)
       job.add_opt("ifo-times", ifo)
       job.add_opt("ifo-tag", "SECOND_" + ifo)
-      job.set_sub_file( basename + '.plotinspiral_SECOND_' + ifo + subsuffix )
+      job.set_sub_file( basename + '.plotinspiral_SECOND_' + ifo + subsuffix)
+      if exttrig_onsource: addVetoFileForPlotinspiral( job, exttrig_onsource)
       pattern_dict = inspiralutils.determine_sieve_patterns(cp_second, "plotinspiral", "SECOND", input_user_tag)
       for opt, val in pattern_dict.iteritems():
         job.add_opt(opt, val)
