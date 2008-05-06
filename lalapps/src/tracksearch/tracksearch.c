@@ -1691,6 +1691,7 @@ void LALappsDoTrackSearch(
   CHARVector            *outputFilename=NULL;
   CHARVector            *outputFilenameMask=NULL;
   CHARVector            *outputCandidateFilename=NULL;
+  int                    errCode=0;
   /*************************************************************/
   /* 
    * The LALTracksearch seems to map the 
@@ -1747,9 +1748,15 @@ void LALappsDoTrackSearch(
 	    status);
   
   /* Perform the analysis on the data seg given.*/
-  LAL_CALL( LALSignalTrackSearch(status,&outputCurves,tfmap,&tsInputs),
+  lal_errhandler = LAL_ERR_RTRN;
+  errCode = LAL_CALL( LALSignalTrackSearch(status,&outputCurves,tfmap,&tsInputs),
 	    status);
-
+  if ( errCode != 0 )
+    {
+      fprintf(stderr,"Error calling LALSignalTrackSearch!\n");
+      fprintf(stderr,"%s\n",status->statusDescription);
+    }
+  
   /* 
    * Call tracksearch again to free any temporary ram in 
    * variable outputCurves which is no longer required
