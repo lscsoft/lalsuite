@@ -1096,6 +1096,10 @@ void LALappsGetFrameData(LALStatus*          status,
   PassBandParamStruc    bandPassParams;
   UINT4                 loadPoints=0;
   UINT4                 i=0;
+  UINT4                 extraResampleTime=1; /*Seconds of extra data
+					       to always load on each
+					       end of segment prior to
+					       resampling!*/
   LALTYPECODE           dataTypeCode=0;
   ResampleTSParams      resampleParams;
   INT4                  errCode=0;
@@ -1104,7 +1108,14 @@ void LALappsGetFrameData(LALStatus*          status,
   LIGOTimeGPS           bufferedDataStopGPS;
   REAL8                 bufferedDataStop=0;
   REAL8                 bufferedDataTimeInterval=0;
-
+  /*
+   * Clean up this section of code via a m4 file which is compiled
+   * as a set of possible functions using 
+   * **REAL4TimeSeries
+   * TSSearchParams
+   * FrStream
+   * FrChanIn
+   */
   /* Set all variables from params structure here */
   channelIn.name = params->channelName;
   channelIn.type = params->channelNameType;
@@ -1186,7 +1197,6 @@ void LALappsGetFrameData(LALStatus*          status,
 	   * This will load the correct number of points.
 	   */
 	  loadPoints=loadPoints+(params->SamplingRateOriginal*2*(params->SegBufferPoints/params->SamplingRate));
-
 	  LAL_CALL(
 		   LALCreateREAL4TimeSeries(status,
 					    &tmpData,
@@ -1282,14 +1292,14 @@ void LALappsGetFrameData(LALStatus*          status,
 	   * the input data stream if requested
 	   */
 	  if (params->verbosity >= verbose)
-	    fprintf(stdout,"Frame Reader needs to high pass input for casting!\n");
+	    fprintf(stdout,"Frame Reader needs to high pass input(>=40Hz) for casting!\n");
 
 	  if (params->lowPass > 0)
 	    {
 	      if (params->verbosity >= verbose)
 		fprintf(stdout,"FRAME READER: You requested a low pass filter of the data at %f Hz\n",params->lowPass);
 	      bandPassParams.name=NULL;
-	      bandPassParams.nMax=10;
+	      bandPassParams.nMax=20;
 	      /* F < f1 kept, F > f2 kept */
 	      bandPassParams.f1=params->lowPass;
 	      bandPassParams.f2=0;
@@ -1307,9 +1317,14 @@ void LALappsGetFrameData(LALStatus*          status,
 	  if (params->highPass > 0)
 	    {
 	      if (params->verbosity >= verbose)
-		fprintf(stdout,"FRAME READER: You requested a high pass filter of the data at %f Hz\n",params->highPass);
+		fprintf(stdout,"FRAME READER: You requested a high pass filter of the data at %f Hz,\n",params->highPass);
+	      if (params->highPass < 40)
+		{
+		  fprintf(stdout,"FRAME READER: For proper casting high pass filtering of data at 40Hz!\n");
+		  params->highPass = 40;
+		}
 	      bandPassParams.name=NULL;
-	      bandPassParams.nMax=10;
+	      bandPassParams.nMax=20;
 	      /* F < f1 kept, F > f2 kept */
 	      bandPassParams.f1=0;
 	      bandPassParams.f2=params->highPass;
@@ -3108,7 +3123,7 @@ void LALappsTrackSearchBandPassing( LALStatus           *status,
 	fprintf(stdout,"You requested a low pass filter of the data at %f Hz\n",params.lowPass);
 
       bandPassParams.name=NULL;
-      bandPassParams.nMax=10;
+      bandPassParams.nMax=20;
       /* F < f1 kept, F > f2 kept */
       bandPassParams.f1=params.lowPass;
       bandPassParams.f2=0;
@@ -3132,7 +3147,7 @@ void LALappsTrackSearchBandPassing( LALStatus           *status,
 	fprintf(stdout,"You requested a high pass filter of the data at %f Hz\n",params.highPass);
 
       bandPassParams.name=NULL;
-      bandPassParams.nMax=10;
+      bandPassParams.nMax=20;
       /* F < f1 kept, F > f2 kept */
       bandPassParams.f1=0;
       bandPassParams.f2=params.highPass;
