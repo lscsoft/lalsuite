@@ -160,7 +160,7 @@ for epoch in epochs.epoch_segs():
       if opts.check_datafind_jobs:
         try: df1cache = lal.Cache.fromfile(open(df1.get_output(),'r'))
         except: df1cache = None
-        if df1cache: found,missed = df1cache.checkfilesexist()
+        if df1cache: found,missed = df1cache.checkfilesexist("ignore")
         else: missed = True
       else: missed = True
       
@@ -180,7 +180,7 @@ for epoch in epochs.epoch_segs():
       if opts.check_datafind_jobs:
         try: df2cache = lal.Cache.fromfile(open(df2.get_output(),'r'))
         except: df2cache = None
-        if df2cache: found,missed = df2cache.checkfilesexist()
+        if df2cache: found,missed = df2cache.checkfilesexist("ignore")
         else: missed = True
       else: missed = True
  
