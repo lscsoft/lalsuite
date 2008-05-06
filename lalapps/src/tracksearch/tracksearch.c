@@ -676,13 +676,13 @@ void LALappsTrackSearchInitialize(
 	    /*Create string reader code*/
 	    /* Implement Spectrogram type selection via einteger later */
 	    /* For now we rely on numeric representation */
-	    if (!strcmp(optarg,"Spectrogram"))
+	    if (strcmp(optarg,"Spectrogram"))
 	      params->TransformType=Spectrogram;
-	    else if (!strcmp(optarg,"RSpectrogram"))
+	    else if (strcmp(optarg,"RSpectrogram"))
 	      params->TransformType=RSpectrogram;
-	    else if (!strcmp(optarg,"WignerVille"))
+	    else if (strcmp(optarg,"WignerVille"))
 	      params->TransformType=WignerVille;
-	    else if (!strcmp(optarg,"PSWignerVille"))
+	    else if (strcmp(optarg,"PSWignerVille"))
 	      params->TransformType=PSWignerVille;
 	    else{
 	      fprintf(stderr,"Invald TF Transform selected using Spectrogram.\n");
@@ -1706,9 +1706,6 @@ void LALappsDoTrackSearch(
 	  tsMarkers.mapStartGPS.gpsNanoSeconds,
 	  tsMarkers.mapStopGPS.gpsSeconds,
 	  tsMarkers.mapStopGPS.gpsNanoSeconds);
-  /* Flag to prepare structure inside LALTrackSearch */
-  tsInputs.allocFlag = 1; 
-
   outputCurves.curves = NULL;
   outputCurves.numberOfCurves=0;
   outputCurves.minPowerCut=params.MinPower;
@@ -1743,7 +1740,13 @@ void LALappsDoTrackSearch(
       outputCurves.linePThreshCut=tsInputs.low;
 
     }
-  /* Catch the error code here and abort */
+  /* Allocate structure for analysis */
+  /* Flag to prepare structure inside LALTrackSearch */
+  tsInputs.allocFlag = 1; 
+  LAL_CALL( LALSignalTrackSearch(status,&outputCurves,tfmap,&tsInputs),
+	    status);
+  
+  /* Perform the analysis on the data seg given.*/
   LAL_CALL( LALSignalTrackSearch(status,&outputCurves,tfmap,&tsInputs),
 	    status);
 
