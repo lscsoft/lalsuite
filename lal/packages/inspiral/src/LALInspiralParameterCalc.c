@@ -139,7 +139,9 @@ LALInspiralParameterCalc (
 { /* </lalVerbatim> */
 
    REAL8 m1, m2, totalMass, eta, mu, piFl, etamin, tiny, ieta;
-   REAL8 x1, x2, A0, A2, A3, A4, B2, B4, C4;
+   REAL8 x1, x2, A0, A2, A3, A4, B2, B4, C4,v,tN;
+   REAL8 theta = -11831.L/9240.L;
+   REAL8 lambda = -1987.L/3080.L;
    static REAL8 oneby4;
    void *pars;
    DFindRootIn rootIn;
@@ -381,12 +383,26 @@ LALInspiralParameterCalc (
 	   params->eta-=tiny;
 	}
    totalMass 	= totalMass*LAL_MTSUN_SI;
-   params->t0 	= 5.0/(256.0*eta*pow(totalMass,fiveby3)*pow(piFl,eightby3));
-   params->t2 	= (3715.0 + (4620.0*ieta*eta))/(64512.0*eta*totalMass*pow(piFl,2.0));
+
+   /* Should use the coefficients from LALInspiraSetup.c to avoid errors. 
+    * */
+   v = pow(piFl * totalMass, 1.L/3.L);
+   tN = 5.L/256.L / eta * totalMass / pow(v,8.L);
+   
+   params->t0 	= 5.0L/(256.0L*eta*pow(totalMass,fiveby3)*pow(piFl,eightby3));
+   params->t2 	= (3715.0L + (4620.0L*ieta*eta))/(64512.0*eta*totalMass*pow(piFl,2.0));
    params->t3 	= LAL_PI/(8.0*eta*pow(totalMass,twoby3)*pow(piFl,fiveby3));
    params->t4 	= (5.0/(128.0*eta*pow(totalMass,oneby3)*pow(piFl,fourby3)))
               	* (3058673./1016064. + 5429.*ieta*eta/1008. +617.*ieta*eta*eta/144.);
-   params->t5 	= 5.*(7729./252. + ieta*eta)/(256.*eta*params->fLower); 
+   params->t5 	= -5.*(7729./252. - 13./3.*ieta*eta)/(256.*eta*params->fLower);
+   /* This is a ddraft. t6 and t7 need to be checked propely*/
+   params->t6 =  -10052469856691./23471078400. + 128./3.*LAL_PI*LAL_PI
+     +(15335597827.L/15240960.L-451.L/12.L*LAL_PI*LAL_PI+352./3.*theta-2464.L/9.L*lambda)*ieta*eta
+     +6848.L/105.L* LAL_GAMMA
+     -15211.L/1728.L*ieta*eta*eta+25565.L/1296.L*eta*eta*eta*ieta;
+   params->t6 = tN * (params->t6  + 6848.L/105.L*log(4.*v)) * pow(v,6);    
+   params->t7 = (-15419335.L/127008.L-75703.L/756.L*ieta*eta+14809.L/378.L*ieta*eta*eta) * LAL_PI * tN * pow(v,7);
+     
    params->psi0 = 3.L/(128.L * eta * pow(LAL_PI * totalMass, fiveby3));
    params->psi3 = -3.L * LAL_PI/(8.L * eta * pow(LAL_PI * totalMass, twoby3));
    
@@ -397,29 +413,55 @@ LALInspiralParameterCalc (
          params->t2=0.0;
 /*       params->t3=0.0;*/        
          params->t4=0.0;
+         params->t5=0.0;
+         params->t6=0.0;
+         params->t7=0.0;
          params->tC = params->t0;
       break;
 
       case onePN:
          params->t3=0.0;
          params->t4=0.0;
+         params->t5=0.0;
+         params->t6=0.0;
+         params->t7=0.0;
          params->tC = params->t0 + params->t2;
       break;
 
       case onePointFivePN:
          params->t4=0.0;
          params->t5=0.0;
+         params->t6=0.0;
+         params->t7=0.0;
          params->tC = params->t0 + params->t2 - params->t3;
       break;
 
       case twoPN:
          params->t5=0.0;
+         params->t6=0.0;
+         params->t7=0.0;
          params->tC = params->t0 + params->t2 - params->t3 + params->t4;
       break;
 
       case twoPointFivePN:
-      default:
+         params->t6 = 0.0;
+         params->t7 = 0.0;
          params->tC = params->t0 + params->t2 - params->t3 + params->t4 - params->t5;
+      
+      case threePN:
+         /*check the initialisation and then comment the next line. For now we
+          * set t6=0*/
+         params->t6 = 0;
+         params->t7 = 0.0;
+         params->tC = params->t0 + params->t2 - params->t3 + params->t4 - params->t5 + params->t6;
+      
+      case threePointFivePN:
+      default:
+         /*check the initialisation and then comment the next line. For now we
+          * set t6=0 and t7=0*/
+         params->t6 = 0;
+         params->t7 = 0.0;
+         params->tC = params->t0 + params->t2 - params->t3 + params->t4 - params->t5 + params->t6 - params->t7;
       break;
    }
 
