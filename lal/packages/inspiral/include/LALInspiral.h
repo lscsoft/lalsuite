@@ -256,6 +256,8 @@ The inspiral waveform parameter structure containing information about the
   \item \texttt { t3:} 1.5 post-Newtonian chirp time in seconds (input/output).
   \item \texttt { t4:} second post-Newtonian chirp time in seconds (output).
   \item \texttt { t5:} 2.5 post-Newtonian chirp time in seconds (output).
+  \item \texttt { t6:} third post-Newtonian chirp time in seconds (output).
+  \item \texttt { t7:} 3.5 post-Newtonian chirp time in seconds (output).
   \item \texttt { tC:} total chirp time seconds (output).
   \item \texttt { mu:} reduced mass (in solar mass) (input/output)
   \item \texttt { fLower:} lower frequency cutoff of the detector in Hz (input)
@@ -555,6 +557,8 @@ tagInspiralTemplate
   REAL8 t3; 
   REAL8 t4; 
   REAL8 t5; 
+  REAL8 t6; 
+  REAL8 t7; 
   REAL8 tC; 
  
 /* Note that tc and fFinal are computed during waveform generation!!! */
