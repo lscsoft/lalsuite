@@ -1,4 +1,4 @@
-/*
+	/*
 *  Copyright (C) 2007 David Churches, B.S. Sathyaprakash
 *
 *  This program is free software; you can redistribute it and/or modify
@@ -120,6 +120,16 @@ LALInspiralWaveCorrelate
 
         buff.data[i] = (r1*r2 + i1*i2) / (0.5*psd);
         buff.data[k] = (i1*r2 - r1*i2) / (0.5*psd);
+        /* reversed chirp analysis needs to simply change a sign in i2*/
+        /*r1 = corrin.signal1.data[i];
+        r2 = corrin.signal2.data[i];
+        i1 = corrin.signal1.data[k];
+        i2 = corrin.signal2.data[k];
+
+        buff.data[i] = (r1*r2 - i1*i2) / (0.5*psd);
+        buff.data[k] = (i1*r2 + r1*i2) / (0.5*psd);
+        */
+        
 	/*
 	 * printf("%d %e %e\n", i, buff.data[i], buff.data[k]);
 	 */
