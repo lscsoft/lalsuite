@@ -116,6 +116,7 @@ REAL4 meanMass2=-1.0;
 REAL4 massStdev1=-1.0;
 REAL4 massStdev2=-1.0;
 REAL4 inclStd=-1.0;
+REAL4 inclFixed=0.0;
 int spinInjections=-1;
 REAL4 minSpin1=-1.0;
 REAL4 maxSpin1=-1.0;
@@ -228,7 +229,9 @@ static void print_usage(char *program)
       "  --i-distr INCDIST        set the inclination distribution, must be either\n"\
       "                           uniform: distribute uniformly over arccos(i)\n"\
       "                           gaussian: gaussian distributed in arccos(i)\n"\
+      "                           fixed: no distribution, fixed valued of (i)\n"\
       " [--inclStd]  incStd       std dev for gaussian inclination dist\n"\
+      " [--inclFixed]  inclFixed   read inclination dist if fixed value\n"\
       " [--source-file] sources   read source parameters from sources\n"\
       "                           requires enable/disable milkyway\n"\
       " [--enable-milkyway] lum   enables MW injections, set MW luminosity\n"\
@@ -617,7 +620,7 @@ int main( int argc, char *argv[] )
   gpsEndTime.gpsSeconds=-1;
 
   /* getopt arguments */
-  /* available letters: c q v x y z C H Q R S T W X Y  */
+  /* available letters: q v x y z H Q R S T W X Y  */
   struct option long_options[] =
   {
     {"help",                          no_argument, 0,                'h'},
@@ -651,6 +654,7 @@ int main( int argc, char *argv[] )
     {"l-distr",                 required_argument, 0,                'l'},
     {"i-distr",                 required_argument, 0,                'I'},
     {"inclStd",                 required_argument, 0,                'B'},
+    {"inclFixed",               required_argument, 0,                'C'},
     {"enable-milkyway",         required_argument, 0,                'M'},
     {"disable-milkyway",        no_argument,       0,                'D'},
     {"min-spin1",               required_argument, 0,                'g'},
@@ -1127,12 +1131,16 @@ int main( int argc, char *argv[] )
         else if (!strcmp(dummy, "gaussian")) 
         {
           iDistr=gaussianInclDist;        
-        } 
+        }
+        else if (!strcmp(dummy, "fixed"))
+        {
+          iDistr=fixedInclDist;
+        }
         else
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "unknown inclination distribution: "
-              "%s must be one of (uniform, gaussian)\n", 
+              "%s must be one of (uniform, gaussian, fixed)\n", 
               long_options[option_index].name, optarg );
           exit( 1 );
         }
@@ -1155,6 +1163,20 @@ int main( int argc, char *argv[] )
           next_process_param( long_options[option_index].name, 
               "float", "%e", inclStd );
         break;
+      
+                        case 'C':
+        /* fixed angle of inclination */
+        inclFixed = (REAL4) atof( optarg );
+        if ( inclFixed < 0.0 || inclFixed > LAL_PI )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "inclination fixed must be between 0 and Pi. \n ",
+              long_options[option_index].name );
+          exit( 1 );
+        }
+        this_proc_param = this_proc_param->next = 
+          next_process_param( long_options[option_index].name, 
+              "float", "%e", inclFixed );
 
       case 'P':
         optarg_len = strlen( optarg ) + 1;
@@ -1178,6 +1200,7 @@ int main( int argc, char *argv[] )
           next_process_param( long_options[option_index].name,
               "float", "%le", maxSpin1 );
         break;
+                                
 
       case 'u':
         minSpin2 = atof( optarg );
@@ -1564,10 +1587,14 @@ int main( int argc, char *argv[] )
     }
 
     /* populate orientations */
-    do {
+    if ( iDistr == fixedInclDist )
+    {
+      simTable->inclination = inclFixed;
+    }
+    else
+    {                               
       simTable=XLALRandomInspiralOrientation(simTable, randParams,
           iDistr, inclStd);
-
     } while ( ! strcmp(waveform, "SpinTaylorthreePointFivePN") &&
         ( simTable->inclination < eps ||
           simTable->inclination > LAL_PI-eps) );
