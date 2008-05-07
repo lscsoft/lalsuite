@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2008 Lucia Santamaria, Robert Adam Mercer, Badri Krishnan
+*  Copyright (C) 2008 Lucia Santamaria, Robert Adam Mercer, Badri Krishnan, P. Ajith
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -204,8 +204,8 @@ INT4 main ( INT4 argc, CHAR *argv[] ) {
   COMPLEX8 num;
 
   REAL4Vector      *hPlus = NULL, *hCross = NULL;
-  REAL4TimeSeries  *hPlusSeries = NULL, *hCrossSeries = NULL;
   REAL4TimeSeries  *hP = NULL, *hC = NULL;
+//  REAL4TimeSeries  *hP = NULL, *hC = NULL;
   REAL4FFTPlan     *prevPlus = NULL, *prevCross = NULL;
   
   REAL4Vector      *Freq = NULL;
@@ -319,7 +319,8 @@ INT4 main ( INT4 argc, CHAR *argv[] ) {
   eta = massRatio / pow(1. + massRatio, 2.);
 
   /* This freq low is the one used for the FFT */
-  fLow = 2.E-3/(totalMass*LAL_MTSUN_SI);
+//  fLow = 2.E-3/(totalMass*LAL_MTSUN_SI);
+  fLow = lowFreq;       // Changed by Ajith. 5 May 2008
 
   /* Phenomenological coefficients as in Ajith et. al */
   GetPhenomCoeffsLongJena( &coeffs );
@@ -383,17 +384,17 @@ INT4 main ( INT4 argc, CHAR *argv[] ) {
   outFileLong = (CHAR *)calloc(optarg_len, sizeof(CHAR));
   strcpy(outFileLong, tail);
  
-  /* dt chosen well above the Nyquist */
   /* check sample rate is enough */
-  if (1/sampleRate < 8.*params.fCut)
+  if (sampleRate > 4.*params.fCut)          // Changed by Ajith. 5 May 2008
     {
       dt = 1./sampleRate;
     }
   else
     {
-      dt = 1/(8.*params.fCut);
+      sampleRate = 4.*params.fCut;
+      dt = 1./sampleRate;
     }
-      
+
   /* Estimation of the time duration of the binary           */
   /* See Sathya (1994) for the Newtonian and PN1 chirp times */
   /* The merger time is overestimated                        */
@@ -446,21 +447,35 @@ INT4 main ( INT4 argc, CHAR *argv[] ) {
   epoch.gpsSeconds = 0;
   epoch.gpsNanoSeconds = 0;
 
-  hPlusSeries = 
+  hP = 
     XLALCreateREAL4TimeSeries("", &epoch, 0, dt, &lalDimensionlessUnit, numPts);
-  hPlusSeries->data = hPlus;
-  hCrossSeries = 
+  hP->data = hPlus;
+  hC = 
     XLALCreateREAL4TimeSeries("", &epoch, 0, dt, &lalDimensionlessUnit, numPts);
-  hCrossSeries->data = hCross;
+  hC->data = hCross;
 
-  /* Cutting off the part of the waveform with f < fLow */
-  Freq = XLALComputeFreq( hPlusSeries, hCrossSeries);
-  hP = XLALCutAtFreq( hPlusSeries, Freq, lowFreq);
-  hC = XLALCutAtFreq( hCrossSeries, Freq, lowFreq);
+//  /* Cutting off the part of the waveform with f < fLow */
+//  Freq = XLALComputeFreq( hP, hC);
+//  hP = XLALCutAtFreq( hP, Freq, lowFreq);
+//  hC = XLALCutAtFreq( hC, Freq, lowFreq);
+  
+  /* multiply the last few samples of the time-series by a linearly 
+   * dropping window function in order to avid edges in the data
+   * Added by Ajith 6 May 2008 */
+  INT4 windowLength, hPLength;
+  REAL8 linearWindow;
 
-  /* Convert t column to units of (1/M) */
-  offset *= (1./(totalMass * LAL_MTSUN_SI));
-  hP->deltaT *= (1./(totalMass * LAL_MTSUN_SI));
+  hPLength = hP->data->length;
+  windowLength = (INT4) (20.*totalMass * LAL_MTSUN_SI/dt);
+  for (i=1; i<= windowLength; i++){
+    linearWindow =  (i-1.)/windowLength;
+    hP->data->data[hPLength-i] *= linearWindow;
+    hC->data->data[hPLength-i] *= linearWindow;
+  }
+
+//  /* Convert t column to units of (1/M) */
+//  offset *= (1./(totalMass * LAL_MTSUN_SI));
+//  hP->deltaT *= (1./(totalMass * LAL_MTSUN_SI));
 
   /* Set t = 0 at the merger (defined as the max of the NR wave) */
   XLALFindNRCoalescenceTime( &offset, hP);
@@ -480,10 +495,10 @@ INT4 main ( INT4 argc, CHAR *argv[] ) {
 
   XLALDestroyCOMPLEX8Vector(uFPlus);
   XLALDestroyCOMPLEX8Vector(uFCross);
-  XLALDestroyREAL4TimeSeries(hPlusSeries);
-  XLALDestroyREAL4TimeSeries(hCrossSeries);
   XLALDestroyREAL4TimeSeries(hP);
   XLALDestroyREAL4TimeSeries(hC);
+//  XLALDestroyREAL4TimeSeries(hP);
+//  XLALDestroyREAL4TimeSeries(hC);
 
   return(0);
 
@@ -506,11 +521,11 @@ void LALPrintHPlusCross(
   XLALGPSSetREAL8( &(hp->epoch), off);
 
   file = LALFopen(out, "w");
-  fprintf (file, "#   t(1/M)\t    h_+\t\t   h_x\n"); 
+  fprintf (file, "#   t[sec]\t    h_+\t\t   h_x\n"); 
   for (i=0; i < n; i++) 
     {
-      fprintf (file, "%e\t%e\t%e\t\n", 
-	       i*dt+off, hp->data->data[i], hc->data->data[i]);
+      fprintf (file, "%10.8e\t%le\t%le\t%le\n", 
+	       i*dt+off, hp->data->data[i], hc->data->data[i], dt);
     }
 }
 
@@ -785,10 +800,11 @@ XLALHybridP1Amplitude(
   softfLow = fLow - 3.5;
   softfCut = fCut + 3.5;
 
+  INT4 sharpNess = 1;
   for( k = 0 ; k < n ; k++ ) {
 
     fNorm = f / fMerg;
-    softFact = (1+tanh(f-fLow))*(1-tanh(f-fCut))/4.;
+    softFact = (1+tanh(sharpNess*(f-fLow)))*(1-tanh(sharpNess*(f-fCut)))/4.;
 
     if ( f <= softfLow || f > softfCut ) {
        Aeff->data->data[k] = 0.0; 
@@ -914,10 +930,17 @@ print_usage( CHAR *program )
       "  --total-mass     M       set total mass (in M_sun) of the binary "\
 	   "system\n"\
       "  --low-freq (Hz)  fLow    set the lower frequency (in Hz) of the "\
-	   "hybrid wave\n"\
-      "  --sample-rate            set the sample rate of the output waveform " \
+	   "hybrid wave (see below for recommended values)\n"\
+      "  --sample-rate (Hz)       set the sample rate of the output waveform " \
 	   "hybrid wave\n"\
       "  --output-file            output file name\n\n"\
-      " Recommended use: 1 < M < 100 (M_sun) and 1 < mRatio < 4\n"\
+      " Recommended use: 5 < total-mass < 400 (M_sun) and 1 < mass-ratio < 4\n"\
+      " Recommended values for low-freq:\n"\
+        "\t\t35 Hz for total-mass <= 50 M_sun;\n"\
+        "\t\t20 Hz for 50 M_sun < total-mass <= 100 M_sun;\n"\
+        "\t\t15 Hz for 100 M_sun < total-mass <= 200 M_sun;\n"\
+        "\t\t8 Hz for 200 M_sun < total-mass <= 400 M_sun;\n"\
+        "\t\t5 Hz for total-mass > 400 M_sun.\n\n"\
+      " NOTE: Output time-series is in units of seconds.\n"\
       "\n", program );
 }
