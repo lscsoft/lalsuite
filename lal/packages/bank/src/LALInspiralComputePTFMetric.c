@@ -149,6 +149,7 @@ INT4 XLALInspiralComputePTFIntrinsicMetric (
   REAL8Vector		Q[5];
   COMPLEX16Vector	Qtilde[5];
 
+  FILE *derivsfile;
   /* should really check that deltaT from the template agrees with N */
   /* and deltaF from the power spectrum                              */
 
@@ -173,7 +174,7 @@ INT4 XLALInspiralComputePTFIntrinsicMetric (
   REAL8Vector		*invpsd;
   REAL8Vector		*tempnorm;
   COMPLEX16Vector	*tempnormtilde;
-  REAL8 wavenorm = fullmetric->data[2];
+  REAL8 wavenorm;
   
   PTFQ = XLALCreateREAL8VectorSequence( 5, N );
   PTFQtilde = XLALCreateCOMPLEX16VectorSequence( 5, N / 2 + 1 );
@@ -183,6 +184,7 @@ INT4 XLALInspiralComputePTFIntrinsicMetric (
   PTFe2 = XLALCreateVectorSequence( 3, N );
   fwdPlan = XLALCreateForwardREAL8FFTPlan( N, 0 );
   revPlan = XLALCreateReverseREAL8FFTPlan( N, 0 );
+  
   
   /* call the PTF waveform code */
   errcode = XLALFindChirpPTFWaveform( PTFphi, PTFomega_2_3, PTFe1, PTFe2,
@@ -298,6 +300,9 @@ INT4 XLALInspiralComputePTFIntrinsicMetric (
   intrinsicderiv = XLALCreateCOMPLEX16Vector(N / 2 + 1);
   derivs = XLALCreateCOMPLEX16VectorSequence(9, N / 2 + 1);
   
+  fprintf(stdout,"%e   %e   %e\n", fsig0->data[0].re, fsig0->data[1].re, fsig0->data[8192].re);
+  fprintf(stdout,"%e   %e   %e\n", fsig0->data[0].im, fsig0->data[1].im, fsig0->data[8192].im);
+  
   /* Compute extrinsic derivatives */
   for (k = 0; k < N / 2 + 1; ++k)
   {
@@ -355,6 +360,27 @@ INT4 XLALInspiralComputePTFIntrinsicMetric (
 	derivs->data[i * (N / 2 + 1) + N / 2].im = (cos(phi0) + sin(phi0)) * intrinsicderiv->data[N / 2].im;
   }
   
+ 
+  derivsfile = fopen( "myderivs.dat", "w" );
+  
+  if( derivsfile != NULL )
+  {
+	for (j = 0; j < N / 2 + 1; ++j)
+	{
+	  fprintf( derivsfile, "%f   %f   %f   %f   %f   %f   %f   %f   %f   %f   %f   %f   %f   %f   %f   %f   %f   %f\n", 
+			   derivs->data[j].re, derivs->data[j].im, 
+			   derivs->data[(N / 2 + 1) + j].re, derivs->data[(N / 2 + 1) + j].im, 
+			   derivs->data[2 * (N / 2 + 1) + j].re, derivs->data[2 * (N / 2 + 1) + j].im, 
+			   derivs->data[3 * (N / 2 + 1) + j].re, derivs->data[3 * (N / 2 + 1) + j].im, 
+			   derivs->data[4 * (N / 2 + 1) + j].re, derivs->data[4 * (N / 2 + 1) + j].im, 
+			   derivs->data[5 * (N / 2 + 1) + j].re, derivs->data[5 * (N / 2 + 1) + j].im, 
+			   derivs->data[6 * (N / 2 + 1) + j].re, derivs->data[6 * (N / 2 + 1) + j].im, 
+			   derivs->data[7 * (N / 2 + 1) + j].re, derivs->data[7 * (N / 2 + 1) + j].im, 
+			   derivs->data[8 * (N / 2 + 1) + j].re, derivs->data[8 * (N / 2 + 1) + j].im);
+	}
+  }
+  fclose(derivsfile);
+  
   /* Compute full metric */
   invpsd		= XLALCreateREAL8Vector(N / 2 + 1);
   tempnorm		= XLALCreateREAL8Vector(N);
@@ -367,6 +393,10 @@ INT4 XLALInspiralComputePTFIntrinsicMetric (
 	else
 	  invpsd->data[k] = 1.0 / psd->data->data[k];
   }
+  
+  fprintf(stdout, "PSD: %e   %e   %e   %e   %e   %e\n", 
+					psd->data->data[0], psd->data->data[1], psd->data->data[2],
+					psd->data->data[1000], psd->data->data[1001], psd->data->data[1002]);
   
   for (i = 0; i < 9; ++i)
   {
@@ -389,6 +419,7 @@ INT4 XLALInspiralComputePTFIntrinsicMetric (
 	}
   }
   
+  wavenorm = fullmetric->data[2];
   for (i = 0; i < 45; ++i)
   {
 	fullmetric->data[i] /= wavenorm;
@@ -891,3 +922,4 @@ INT4 XLALInspiralComputePTFQDeriv (
 {
   return XLAL_SUCCESS;
 }
+
