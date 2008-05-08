@@ -205,10 +205,13 @@ INT4 main ( INT4 argc, CHAR *argv[] ) {
 
   REAL4Vector      *hPlus = NULL, *hCross = NULL;
   REAL4TimeSeries  *hP = NULL, *hC = NULL;
-//  REAL4TimeSeries  *hP = NULL, *hC = NULL;
+  /*  REAL4TimeSeries  *hP = NULL, *hC = NULL;*/
   REAL4FFTPlan     *prevPlus = NULL, *prevCross = NULL;
   
   REAL4Vector      *Freq = NULL;
+
+  INT4 windowLength, hPLength;
+  REAL8 linearWindow;
 
   /* getopt arguments */
   struct option long_options[] = 
@@ -319,8 +322,8 @@ INT4 main ( INT4 argc, CHAR *argv[] ) {
   eta = massRatio / pow(1. + massRatio, 2.);
 
   /* This freq low is the one used for the FFT */
-//  fLow = 2.E-3/(totalMass*LAL_MTSUN_SI);
-  fLow = lowFreq;       // Changed by Ajith. 5 May 2008
+  /* fLow = 2.E-3/(totalMass*LAL_MTSUN_SI); */
+  fLow = lowFreq;       /* Changed by Ajith. 5 May 2008 */
 
   /* Phenomenological coefficients as in Ajith et. al */
   GetPhenomCoeffsLongJena( &coeffs );
@@ -385,7 +388,7 @@ INT4 main ( INT4 argc, CHAR *argv[] ) {
   strcpy(outFileLong, tail);
  
   /* check sample rate is enough */
-  if (sampleRate > 4.*params.fCut)          // Changed by Ajith. 5 May 2008
+  if (sampleRate > 4.*params.fCut)   /* Changed by Ajith. 5 May 2008 */
     {
       dt = 1./sampleRate;
     }
@@ -454,16 +457,14 @@ INT4 main ( INT4 argc, CHAR *argv[] ) {
     XLALCreateREAL4TimeSeries("", &epoch, 0, dt, &lalDimensionlessUnit, numPts);
   hC->data = hCross;
 
-//  /* Cutting off the part of the waveform with f < fLow */
-//  Freq = XLALComputeFreq( hP, hC);
-//  hP = XLALCutAtFreq( hP, Freq, lowFreq);
-//  hC = XLALCutAtFreq( hC, Freq, lowFreq);
+  /* Cutting off the part of the waveform with f < fLow */
+  /*  Freq = XLALComputeFreq( hP, hC);
+      hP = XLALCutAtFreq( hP, Freq, lowFreq);
+      hC = XLALCutAtFreq( hC, Freq, lowFreq); */
   
   /* multiply the last few samples of the time-series by a linearly 
    * dropping window function in order to avid edges in the data
    * Added by Ajith 6 May 2008 */
-  INT4 windowLength, hPLength;
-  REAL8 linearWindow;
 
   hPLength = hP->data->length;
   windowLength = (INT4) (20.*totalMass * LAL_MTSUN_SI/dt);
@@ -473,9 +474,9 @@ INT4 main ( INT4 argc, CHAR *argv[] ) {
     hC->data->data[hPLength-i] *= linearWindow;
   }
 
-//  /* Convert t column to units of (1/M) */
-//  offset *= (1./(totalMass * LAL_MTSUN_SI));
-//  hP->deltaT *= (1./(totalMass * LAL_MTSUN_SI));
+  /* Convert t column to units of (1/M) */
+  /*  offset *= (1./(totalMass * LAL_MTSUN_SI));
+      hP->deltaT *= (1./(totalMass * LAL_MTSUN_SI)); */
 
   /* Set t = 0 at the merger (defined as the max of the NR wave) */
   XLALFindNRCoalescenceTime( &offset, hP);
@@ -497,8 +498,8 @@ INT4 main ( INT4 argc, CHAR *argv[] ) {
   XLALDestroyCOMPLEX8Vector(uFCross);
   XLALDestroyREAL4TimeSeries(hP);
   XLALDestroyREAL4TimeSeries(hC);
-//  XLALDestroyREAL4TimeSeries(hP);
-//  XLALDestroyREAL4TimeSeries(hC);
+  /*  XLALDestroyREAL4TimeSeries(hP); */
+  /*  XLALDestroyREAL4TimeSeries(hC); */
 
   return(0);
 
@@ -772,6 +773,8 @@ XLALHybridP1Amplitude(
 
   LIGOTimeGPS epoch;
 
+  INT4 sharpNess;
+
   fMerg = params->fMerger;
   fCut = params->fCut;
   fRing = params->fRing;
@@ -800,7 +803,7 @@ XLALHybridP1Amplitude(
   softfLow = fLow - 3.5;
   softfCut = fCut + 3.5;
 
-  INT4 sharpNess = 1;
+  sharpNess = 1;
   for( k = 0 ; k < n ; k++ ) {
 
     fNorm = f / fMerg;
@@ -930,10 +933,10 @@ print_usage( CHAR *program )
       "  --total-mass     M       set total mass (in M_sun) of the binary "\
 	   "system\n"\
       "  --low-freq (Hz)  fLow    set the lower frequency (in Hz) of the "\
-	   "hybrid wave (see below for recommended values)\n"\
-      "  --sample-rate (Hz)       set the sample rate of the output waveform " \
-	   "hybrid wave\n"\
-      "  --output-file            output file name\n\n"\
+	   "hybrid wave\n\t\t\t (see below for recommended values)\n"\
+      "  --sample-rate (Hz)       set the sample rate of the output waveform\n" \
+      "  --output-file            output file name\n\n", program);
+  fprintf( stderr,
       " Recommended use: 5 < total-mass < 400 (M_sun) and 1 < mass-ratio < 4\n"\
       " Recommended values for low-freq:\n"\
         "\t\t35 Hz for total-mass <= 50 M_sun;\n"\
@@ -942,5 +945,5 @@ print_usage( CHAR *program )
         "\t\t8 Hz for 200 M_sun < total-mass <= 400 M_sun;\n"\
         "\t\t5 Hz for total-mass > 400 M_sun.\n\n"\
       " NOTE: Output time-series is in units of seconds.\n"\
-      "\n", program );
+      "\n");
 }
