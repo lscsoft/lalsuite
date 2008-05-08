@@ -199,7 +199,7 @@ void CorrelateSingleSFTPair(LALStatus                *status,
 			    REAL8                    *freq1,
 			    REAL8                    *freq2)
 {  
-  UINT8 bin1, bin2;
+  INT4 bin1, bin2;
   REAL8 deltaF;
   REAL8 re1, re2, im1, im2;
 
@@ -208,10 +208,9 @@ void CorrelateSingleSFTPair(LALStatus                *status,
 
   /* assume both sfts have the same freq. resolution */
   deltaF = sft1->deltaF;
-  bin1 = (UINT8)( (*freq1 - sft1->f0)*(sft1->data->length) / (sft1->data->length * deltaF));
-  bin2 = (UINT8)( (*freq2 - sft2->f0)*(sft2->data->length)/ (sft2->data->length * deltaF));
+  bin1 = (INT4)ceil( (*freq1 - sft1->f0) / (deltaF));
+  bin2 = (INT4)ceil( (*freq2 - sft2->f0)/ (deltaF));
 
-/*printf("f01 %f, bin location %f, total bins %i\n", sft1->f0, *freq1 - sft1->f0, sft1->data->length);*/
 
   re1 = sft1->data->data[bin1].re;
   im1 = sft1->data->data[bin1].im;
@@ -251,8 +250,8 @@ void GetSignalFrequencyInSFT(LALStatus                *status,
   alpha = dopp->Alpha;
   delta = dopp->Delta;
 
-  vDotn = sin(delta) * cos(alpha) * vel->data[0]
-    + sin(delta) * sin(alpha) * vel->data[1]
+  vDotn = sin(delta) * sin(alpha) * vel->data[0]
+    + sin(delta) * cos(alpha) * vel->data[1]
     + cos(delta) * vel->data[2];
 
   /* now calculate the intrinsic signal frequency in the SFT */
@@ -260,6 +259,7 @@ void GetSignalFrequencyInSFT(LALStatus                *status,
 
   /* this is the sft reference time  - the pulsar reference time */
   timeDiff = XLALGPSDiff( &(sft1->epoch), &(dopp->refTime));
+
 
   fhat = dopp->fkdot[0]; /* initialization */
   factor = 1.0;
@@ -269,6 +269,8 @@ void GetSignalFrequencyInSFT(LALStatus                *status,
   }
 
   *out = fhat * (1 + vDotn);  
+
+/*printf("fhat = %f\n", *out);*/
 
   DETATCHSTATUSPTR (status);
 	
@@ -295,11 +297,10 @@ void GetSignalPhaseInSFT(LALStatus               *status,
   alpha = dopp->Alpha;
   delta = dopp->Delta;
 
-  rDotn = sin(delta) * cos(alpha) * pos->data[0]
-    + sin(delta) * sin(alpha) * pos->data[1]
+  rDotn = sin(delta) * sin(alpha) * pos->data[0]
+    + sin(delta) * cos(alpha) * pos->data[1]
     + cos(delta) * pos->data[2];
 
-  rDotn /= LAL_C_SI;	/* is this right? */ 
 
   /* now calculate the phase of the SFT */
   /* phi(t) = phi_0 + 2pi(f_0 t + 0.5 f_1 t^2) + 2pi (f_0 + f_1 t) r.n/c */
@@ -332,7 +333,34 @@ void GetSignalPhaseInSFT(LALStatus               *status,
   RETURN (status);
 }
 
-/** Calculate pair weights (G_alpha) **/
+void CalculateSigmaAlphaSq(LALStatus *status,
+			   REAL8	*out,
+			   REAL8 	*freq1,
+	  	           REAL8	*freq2,
+		           REAL8FrequencySeries *psd1,
+		           REAL8FrequencySeries *psd2)
+{			   
+  INT8 bin1, bin2;
+  REAL8 deltaF;
+
+  INITSTATUS (status, "CalculateSigmaAlphaSq", rcsid);
+  ATTATCHSTATUSPTR (status);
+ 
+  deltaF = psd1->deltaF;
+
+
+  bin1 = (INT8)ceil( (*freq1 - psd1->f0) / (deltaF));
+  bin2 = (INT8)ceil( (*freq2 - psd2->f0)/ (deltaF));
+
+  *out = psd1->data->data[bin1] * psd2->data->data[bin2];
+  DETATCHSTATUSPTR (status);
+	
+  /* normal exit */	
+  RETURN (status);
+
+}
+
+/** Calculate pair weights (U_alpha) **/
 void CalculateUalpha(LALStatus *status,
 		      COMPLEX16	*out,
 		      REAL8	*Aplus,
@@ -343,34 +371,24 @@ void CalculateUalpha(LALStatus *status,
 		      REAL8	*FplusJ,
 		      REAL8	*FcrossI,
 		      REAL8	*FcrossJ,
-		      REAL8 	*freq1,
-		      REAL8	*freq2,
-		      REAL8FrequencySeries *psd1,
-		      REAL8FrequencySeries *psd2)
+		      REAL8 	*sigmasq)
 {
   REAL8 deltaPhi;
-  UINT8 bin1, bin2;
-  REAL8 deltaF;
-  REAL8 re, im, sigmasq;
+  REAL8 re, im;
     
   INITSTATUS (status, "CalculateUalpha", rcsid);
   ATTATCHSTATUSPTR (status);
 
-  deltaF = psd1->deltaF;
   deltaPhi = *phiI - *phiJ;
 
   re = 0.25 * cos(deltaPhi) * ((*FplusI * (*FplusJ) * (*Aplus) * (*Aplus)) 
 			    + (*FcrossI * (*FcrossJ) * (*Across) * (*Across)) );
-  im = 0.25 * sin(-deltaPhi) * ((*FplusI * (*FcrossJ) - (*FcrossI) * (*FplusJ)) 
+  im = 0.25 * sin(-deltaPhi) * (-(*FplusI * (*FcrossJ) - (*FcrossI) * (*FplusJ)) 
 				 * (*Aplus) * (*Across) );
+/*printf("fplusi, fplusj, fcrossi, fcrossj %f %f %f %f\n",*FplusI, *FplusJ, *FcrossI, *FcrossJ);*/
 
-  bin1 = (UINT8)( (*freq1 - psd1->f0)*(psd1->data->length) / (psd1->data->length * deltaF));
-  bin2 = (UINT8)( (*freq2 - psd2->f0)*(psd2->data->length)/ (psd2->data->length * deltaF));
-
-  sigmasq = 0.25 * deltaF * deltaF * psd1->data->data[bin1] * psd2->data->data[bin2];
-
-  out->re = re/sigmasq;
-  out->im = -im/sigmasq;
+  out->re = re/(*sigmasq);
+  out->im = -im/(*sigmasq);
 
 
   DETATCHSTATUSPTR (status);
@@ -380,24 +398,28 @@ void CalculateUalpha(LALStatus *status,
 
 }
 
-void CalculateWeights(LALStatus       *status,
-		      REAL8Vector     *out,
+
+
+void CalculateCrossCorrPower(LALStatus       *status,
+		      REAL8		     *out,
 		      COMPLEX16Vector *yalpha,
 		      COMPLEX16Vector *ualpha)
 {
   INT4 i;
 
-  INITSTATUS (status, "CalculateWeights", rcsid);
+  INITSTATUS (status, "CalculateCrossCorrPower", rcsid);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (out, status, RADIOMETER_ENULL, RADIOMETER_MSGENULL);
   ASSERT (yalpha, status, RADIOMETER_ENULL, RADIOMETER_MSGENULL);
   ASSERT (ualpha, status, RADIOMETER_ENULL, RADIOMETER_MSGENULL);
 
+  *out = 0;
+  
+  for (i=0; i < (INT4)yalpha->length; i++) {
 
-  for (i=0; i < (INT4)out->length; i++) {
+  *out += 2.0 * (yalpha->data[i].re * ualpha->data[i].re + yalpha->data[i].im * ualpha->data[i].im);
 
-  out->data[i] = 2.0 * (yalpha->data[i].re * ualpha->data[i].re + yalpha->data[i].im * ualpha->data[i].im);
 
   }
 
@@ -407,4 +429,38 @@ void CalculateWeights(LALStatus       *status,
   RETURN (status);
 
 }
+
+void NormaliseCrossCorrPower(LALStatus 		  *status,
+			     REAL8		  *out,
+			     COMPLEX16Vector 	  *ualpha,
+		    	     REAL8Vector	  *sigmasq)
+{
+  INT4 i;
+  REAL8 variance = 0;
+
+  INITSTATUS (status, "NormaliseCrossCorrPower", rcsid);
+  ATTATCHSTATUSPTR (status);
+
+  ASSERT (out, status, RADIOMETER_ENULL, RADIOMETER_MSGENULL);
+  ASSERT (ualpha, status, RADIOMETER_ENULL, RADIOMETER_MSGENULL);
+  ASSERT (sigmasq, status, RADIOMETER_ENULL, RADIOMETER_MSGENULL);
+
+
+  for (i=0; i < (INT4)ualpha->length; i++) {
+	variance += (pow(ualpha->data[i].re, 2) + pow(ualpha->data[i].im, 2)) * sigmasq->data[i];
+  }
+  
+  variance *= 2.0;
+
+  *out = *out/variance;
+ 
+
+  DETATCHSTATUSPTR (status);
+	
+  /* normal exit */	
+  RETURN (status);
+
+
+}
+
 

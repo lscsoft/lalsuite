@@ -194,6 +194,14 @@ void GetSignalPhaseInSFT(LALStatus               *status,
 			 PulsarDopplerParams     *dopp,
 			 REAL8Vector             *pos);
 
+void CalculateSigmaAlphaSq(LALStatus *status,
+			   REAL8	*out,
+			   REAL8 	*freq1,
+	  	           REAL8	*freq2,
+		           REAL8FrequencySeries *psd1,
+		           REAL8FrequencySeries *psd2);
+
+
 void CalculateUalpha(LALStatus *status,
 		     COMPLEX16	*out,
 		     REAL8	*Aplus,
@@ -204,15 +212,17 @@ void CalculateUalpha(LALStatus *status,
 		     REAL8	*FplusJ,
 		     REAL8	*FcrossI,
 		     REAL8	*FcrossJ,
-		     REAL8	*freq1,
-		     REAL8	*freq2,
-		     REAL8FrequencySeries *psd1,
-		     REAL8FrequencySeries *psd2);
+	 	     REAL8	*sigmasq);
 
-void CalculateWeights(LALStatus       *status,
-		      REAL8Vector     *out,
+void CalculateCrossCorrPower(LALStatus       *status,
+		      REAL8     *out,
 		      COMPLEX16Vector *yalpha,
 		      COMPLEX16Vector *ualpha);
+
+void NormaliseCrossCorrPower(LALStatus 		  *status,
+			     REAL8 	  *out,
+			     COMPLEX16Vector 	  *ualpha,
+		    	     REAL8Vector	  *sigmasq);
 
 
 
