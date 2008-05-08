@@ -352,7 +352,7 @@ void CalculateSigmaAlphaSq(LALStatus *status,
   bin1 = (INT8)ceil( (*freq1 - psd1->f0) / (deltaF));
   bin2 = (INT8)ceil( (*freq2 - psd2->f0)/ (deltaF));
 
-  *out = psd1->data->data[bin1] * psd2->data->data[bin2];
+  *out = pow(deltaF, 4) * psd1->data->data[bin1] * psd2->data->data[bin2];
   DETATCHSTATUSPTR (status);
 	
   /* normal exit */	
@@ -418,7 +418,7 @@ void CalculateCrossCorrPower(LALStatus       *status,
   
   for (i=0; i < (INT4)yalpha->length; i++) {
 
-  *out += 2.0 * (yalpha->data[i].re * ualpha->data[i].re + yalpha->data[i].im * ualpha->data[i].im);
+  *out += 2.0 * ((yalpha->data[i].re * ualpha->data[i].re) - (yalpha->data[i].im * ualpha->data[i].im));
 
 
   }
