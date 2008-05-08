@@ -2733,8 +2733,6 @@ int main( int argc, char *argv[] )
   LAL_CALL( LALFindChirpChisqVetoFinalize( &status, 
         fcFilterParams->chisqParams, fcInitParams->numChisqBins ), 
       &status );
-  fcFilterParams->qVec = NULL;
-  fcFilterParams->qtildeVec = NULL;
 
   if ( numTmplts > 0 )
   {
@@ -2754,9 +2752,10 @@ int main( int argc, char *argv[] )
     XLALDestroyVector( bankVetoData.ccMat );
     XLALDestroyVector( bankVetoData.normMat );
     /* XLALDestroyVector( bankVetoData.normMat ); */
+    fcFilterParams->qVec = NULL;
+    fcFilterParams->qtildeVec = NULL;
   }
 
-  fcFilterParams->qtildeVec = NULL;
 
   if ( fcFilterParams->filterOutputVetoParams ) 
   {
