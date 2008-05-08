@@ -119,16 +119,17 @@ static char *cvs_get_keyword_value(const char *cvs_string)
 
 
 /**
- * Replace "," substrings with "\,".  The string is modified in place and
- * resized with realloc().  The return value is the new string or NULL on
- * failure.  The pointer passed as input is invalid unconditionally after
- * this function (either it has been realloc()'ed or free()'ed on failure).
+ * Precede special characters with a '\'.  The string is modified in place
+ * and resized with realloc().  The return value is the new string or NULL
+ * on failure.  The pointer passed as input is invalid unconditionally
+ * after this function (either it has been realloc()'ed or free()'ed on
+ * failure).
  */
 
 
-static char *escape_commas(char *s)
+static char *escape_specials(char *s, char special)
 {
-	char *comma = s;
+	char *pos = s;
 
 	/*
 	 * check for input
@@ -138,10 +139,10 @@ static char *escape_commas(char *s)
 		return NULL;
 
 	/*
-	 * while a ',' can be found in the remainder of the string
+	 * while a special can be found in the remainder of the string
 	 */
 
-	while((comma = strchr(comma, ','))) {
+	while((pos = strchr(pos, special))) {
 		/*
 		 * allocate new string.  +1 for the '\0', and +1 for the
 		 * "\" to be added
@@ -154,22 +155,23 @@ static char *escape_commas(char *s)
 		}
 
 		/*
-		 * null-terminate the string preceding the comma
+		 * null-terminate the string preceding the special
 		 */
 
-		*(comma++) = '\0';
+		*(pos++) = '\0';
 
 		/*
-		 * {text preceding comma} + "\," + {text following comma}
+		 * {text preceding special} + "\special" + {text following
+		 * special}
 		 */
 
-		sprintf(new, "%s\\,%s", s, comma);
+		sprintf(new, "%s\\%c%s", s, special, pos);
 
 		/*
 		 * point pointers at new string and free old one
 		 */
 
-		comma = new + (comma - s) + 1;
+		pos = new + (pos - s) + 1;
 		free(s);
 		s = new;
 	}
@@ -224,7 +226,7 @@ int XLALPopulateProcessTable(
 	 * cvs repository
 	 */
 
-	cvs_keyword_value = escape_commas(cvs_get_keyword_value(cvs_source));
+	cvs_keyword_value = escape_specials(cvs_get_keyword_value(cvs_source), ',');
 	if(!cvs_keyword_value) {
 		XLALPrintError("%s(): cannot parse \"%s\"\n", func, cvs_source);
 		XLAL_ERROR(func, XLAL_EINVAL);
