@@ -599,13 +599,14 @@ static void print_usage( CHAR *program )
       "  [--verbose]                   print progress information\n"\
       "  [--version]                   print version information and exit\n"\
       "  --debug-level     lvl         set debug level to 'lvl'\n"\
-      "  --injection-file  inj_file    read injection details from xml sim-inspiral inj_file\n"\
+      "  --injection-file  inj_file    read inj details from xml sim-insp inj_file\n"\
       "  --ifo             ifo         IFO for which to generate injections\n"\
       "  --all-ifos                    create injections for all IFOs\n"\
       "  --gps-start-time  start       start time of output file\n"\
       "  --gps-end-time    end         end time of output file\n"\
       "  --sample-rate     rate        the sample rate used to generate injections\n"\
       "  --write-mdc-log               write an MDC log file\n"\
+      "  --frame-type      TYPE        set the name of the output frame\n"\
       "  --set-name        set_name    set the injection set name\n"\
       "  --mdc-log         mdc_log     name of file for MDC log file\n"\
       "  --write-frame                 write h(t) waveform to a frame file\n"\
