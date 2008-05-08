@@ -59,9 +59,6 @@ int main(int argc, char *argv[]){
 
   INT4Vector *starts=NULL, *stops=NULL; /* science segment start and stop times */
   INT4 numSegs=0;
-  CHAR *smalllist=NULL; /* list of frame files for a science segment */
-  
-  REAL8Vector *times=NULL; /* times of data read from coarse heterodyne file */
   
   FilterResponse filtresp; /* variable to hold the filter response function */
   
@@ -150,7 +147,7 @@ message:\n\t%s.\n", status.statusCode, status.statusDescription);
     fprintf(stderr, "Error... Can't open input data file!\n");
     return 1;
   }
-  
+ 
   if(inputParams.heterodyneflag == 0 || inputParams.heterodyneflag == 3){ 
     /* input comes from frame files so read in frame filenames */
     CHAR det[3]; /* detector from cache file */
@@ -171,7 +168,7 @@ number of frame files to read in.\n");
     
     if(verbose){  fprintf(stderr, "I've read in the frame list.\n");  }
   }
-    
+  
   if(inputParams.heterodyneflag == 1 || inputParams.heterodyneflag == 2){
     if(inputParams.filterknee == 0.){
       fprintf(stderr, "Error... need to know the filter knee frequency used in \
@@ -197,10 +194,14 @@ the coarse heterodyne stage.\n");
     set_filters(&iirFilters, inputParams.filterknee, inputParams.samplerate);
     if(verbose){  fprintf(stderr, "I've set up the filters.\n");  }
   }
-  
+
   /* the outputdir string contains the GPS start and end time of the analysis
      so use this in the filename */
-  pos = strrchr(inputParams.outputdir, '/');
+  if((pos = strrchr(inputParams.outputdir, '/'))==NULL){
+    fprintf(stderr, "Error... output directory path must contain a final \
+directory of the form /GPS_START_TIME-GPS_END_TIME!\n");
+    return 1;
+  }
   
   if(inputParams.heterodyneflag == 0){
     sprintf(outputfile, "%s/coarsehet_%s_%s_%s", inputParams.outputdir,
@@ -226,31 +227,32 @@ heterodyne.\n");  }
      heterodyned it will be complex and we can read the whole file in in one go
      as it should be significantly downsampled */
   do{
-    COMPLEX16TimeSeries *data; /* data for heterodyning */
-    COMPLEX16TimeSeries *resampData; /* resampled data */
+    COMPLEX16TimeSeries *data=NULL; /* data for heterodyning */
+    COMPLEX16TimeSeries *resampData=NULL; /* resampled data */
+    REAL8Vector *times=NULL; /*times of data read from coarse heterodyne file*/ 
     INT4 i;
-
-    data = LALCalloc(1, sizeof(*data));
 
     if(inputParams.heterodyneflag == 0 || inputParams.heterodyneflag == 3){
       /* i.e. reading from frame files */
       REAL8 gpstime;
       INT4 duration;
-      REAL8TimeSeries *datareal;
-      
+      REAL8TimeSeries *datareal=NULL;
+      CHAR *smalllist=NULL; /* list of frame files for a science segment */ 
+      LIGOTimeGPS epochdummy; 
+
+      epochdummy.gpsSeconds = 0;
+      epochdummy.gpsNanoSeconds = 0;
+
       /* if the seg list has segment before the start time of the available
          data frame then increment the segment and continue */
       if( stops->data[count] <= cache.starttime[0] ){
         count++;
-        LALFree(data);
         continue;
       }
       /* if there are segments after the last available data from then break */
       if( cache.starttime[frcount-1] + cache.duration[frcount-1] <=
-          starts->data[count] ){
-        LALFree(data);
+          starts->data[count] )
         break;
-      }
         
       if((duration = stops->data[count] - starts->data[count]) > MAXDATALENGTH)
         duration = MAXDATALENGTH; /* if duration of science segment is large
@@ -263,7 +265,6 @@ heterodyne.\n");  }
       hetParams.length = inputParams.samplerate * duration;
       gpstime = (REAL8)starts->data[count];
 
-      smalllist = NULL;
       /* if there was no frame file for that segment move on */
       if((smalllist = set_frame_files(&starts->data[count], &stops->data[count],
         cache, frcount, &count))==NULL){
@@ -281,49 +282,54 @@ heterodyne.\n");  }
       }
         
       /* make vector (make sure imaginary parts are set to zero) */
-      data->data = NULL;
-      data->data = XLALCreateCOMPLEX16Vector(inputParams.samplerate * duration);
+      data = XLALCreateCOMPLEX16TimeSeries( "", &epochdummy, hetParams.het.f0,
+        1./inputParams.samplerate, &lalSecondUnit, (INT4)inputParams.samplerate
+        * duration );
 
       /* read in frame data */
-      if((datareal = get_frame_data(smalllist, channel, gpstime,
+      if( (datareal = get_frame_data(smalllist, channel, gpstime,
         inputParams.samplerate * duration, duration, inputParams.scaleFac, 
-        inputParams.highPass))== NULL){
+        inputParams.highPass)) == NULL ){
         fprintf(stderr, "Error... could not open frame files between %d and \
 %d.\n", (INT4)gpstime, (INT4)gpstime + duration);
 
-        if(count < numSegs){
+        if( count < numSegs ){
           count++;/*if not finished reading in all data try next set of frames*/
           
-          XLALDestroyCOMPLEX16Vector( data->data );
-          LALFree(data);
+          XLALDestroyCOMPLEX16TimeSeries( data );
           
-          free(smalllist);
+          XLALFree( smalllist );
           
           continue;
         }
-        else
+        else{
           break; /* if at the end of data anyway then break */
+          XLALDestroyCOMPLEX16TimeSeries( data );
+        }
       }
-
+      
       /* put data into COMPLEX16 vector and set imaginary parts to zero */
-      for(i=0;i<inputParams.samplerate * duration;i++){
+      for( i=0;i<inputParams.samplerate * duration;i++ ){
         data->data->data[i].re = (REAL8)datareal->data->data[i];
         data->data->data[i].im = 0.;
       }
 
-      XLALDestroyREAL8Vector(datareal->data);
-      LALFree(datareal);
+      XLALDestroyREAL8TimeSeries( datareal );
 
-      free(smalllist);
+      XLALFree( smalllist );
       count++;
     }
     else if( inputParams.heterodyneflag == 1 || 
       inputParams.heterodyneflag == 2 ){
       /* i.e. reading from a heterodyned file */
       REAL8 temptime=0.; /* temporary time storage variable */
-      
-      data->data = NULL;
-      data->data = XLALCreateCOMPLEX16Vector( MAXLENGTH );
+      LIGOTimeGPS epochdummy; 
+
+      epochdummy.gpsSeconds = 0;
+      epochdummy.gpsNanoSeconds = 0;
+
+      data = XLALCreateCOMPLEX16TimeSeries( "", &epochdummy, hetParams.het.f0,
+        1./inputParams.samplerate, &lalSecondUnit, MAXLENGTH );
 
       times = XLALCreateREAL8Vector( MAXLENGTH );
       i=0;
@@ -334,6 +340,12 @@ heterodyne.\n");  }
       /* read in file - depends on if file is binary or not */
       if(inputParams.binaryinput){
         do{       
+          if( i >= MAXLENGTH ){
+            fprintf(stderr, "Error... data files is longer than the maximum \
+allowed file size %d!\n", MAXLENGTH);
+            exit(0);
+          }
+
           fread((void*)&times->data[i], sizeof(REAL8), 1, fpin);
           fread((void*)&data->data->data[i].re, sizeof(REAL8), 1, fpin);
           fread((void*)&data->data->data[i].im, sizeof(REAL8), 1, fpin);
@@ -344,28 +356,34 @@ heterodyne.\n");  }
           }
           
           /* make sure data doesn't overlap previous data */
-          if(times->data[i] > temptime){
+          if( times->data[i] > temptime ){
             temptime = times->data[i];
             i++;
           }
 
           /* if there is an error during read in then exit */
-          if(ferror(fpin)){
+          if( ferror(fpin) ){
             fprintf(stderr, "Error... problem reading in binary data file!\n");
             exit(0);
           }
-        }while(!feof(fpin));
+        }while( !feof(fpin) );
       }
       else{
-        while(fscanf(fpin, "%lf%lf%lf",&times->data[i],&data->data->data[i].re,
-            &data->data->data[i].im) != EOF){
-          if(inputParams.scaleFac > 1.0){
+        while( fscanf(fpin, "%lf%lf%lf",&times->data[i],&data->data->data[i].re,
+            &data->data->data[i].im) != EOF ){
+          if( i >= MAXLENGTH ){
+            fprintf(stderr, "Error... data files is longer than the maximum \
+allowed file size %d!\n", MAXLENGTH);
+            exit(0);
+          }
+
+          if( inputParams.scaleFac > 1.0 ){
             data->data->data[i].re *= inputParams.scaleFac;
             data->data->data[i].im *= inputParams.scaleFac;
           }
 
           /* make sure data doesn't overlap previous data */
-          if(times->data[i] > temptime){
+          if( times->data[i] > temptime ){
             temptime = times->data[i];
             i++;
           }
@@ -377,12 +395,12 @@ heterodyne.\n");  }
       hetParams.timestamp = times->data[0]; /* set initial time stamp */
       
       /* resize vector to actual size */
-      data->data = XLALResizeCOMPLEX16Vector(data->data, i);
+      data = XLALResizeCOMPLEX16TimeSeries( data, 1, i );
       hetParams.length = i;
 
       times = XLALResizeREAL8Vector(times, i);
       
-      if(verbose) fprintf(stderr, "I've read in the fine heterodyne data.\n");
+      if( verbose ) fprintf(stderr, "I've read in the fine heterodyne data.\n");
     }
     else{
       fprintf(stderr, "Error... Heterodyne flag = %d, should be 0, 1, 2 or \
@@ -390,44 +408,40 @@ heterodyne.\n");  }
       return 0;
     }
 
-    data->deltaT = 1./inputParams.samplerate;
     data->epoch.gpsSeconds = (UINT4)floor(hetParams.timestamp);
     data->epoch.gpsNanoSeconds = (UINT4)(1.e9*(hetParams.timestamp -
       floor(hetParams.timestamp)));
     
     /* heterodyne data */
     heterodyne_data(data, times, hetParams, inputParams.freqfactor, &filtresp);
-    if(verbose){ fprintf(stderr, "I've heterodyned the data.\n"); }
+    if( verbose ){ fprintf(stderr, "I've heterodyned the data.\n"); }
  
     /* filter data */
-    if(inputParams.filterknee > 0.){ /* filter if knee frequency is not zero */
+    if( inputParams.filterknee > 0. ){/* filter if knee frequency is not zero */
       filter_data(data, &iirFilters);
            
-      if(verbose){  fprintf(stderr, "I've low pass filtered the \
+      if( verbose ){  fprintf(stderr, "I've low pass filtered the \
 data at %.2lf Hz\n", inputParams.filterknee);  }
     }
 
-    if(inputParams.heterodyneflag==0 || inputParams.heterodyneflag==3){
-      times = NULL;
+    if( inputParams.heterodyneflag==0 || inputParams.heterodyneflag==3 )
       times = XLALCreateREAL8Vector( MAXLENGTH );
-    }
 
     /* resample data and data times */
     resampData = resample_data(data, times, starts, stops,
       inputParams.samplerate, inputParams.resamplerate,
       inputParams.heterodyneflag);
-    if(verbose){  fprintf(stderr, "I've resampled the data from \
+    if( verbose ){  fprintf(stderr, "I've resampled the data from \
 %.1lf to %.4lf Hz\n", inputParams.samplerate, inputParams.resamplerate);  }
 
-    XLALDestroyCOMPLEX16Vector( data->data );
-    LALFree(data);
+    XLALDestroyCOMPLEX16TimeSeries( data );
 
     /*perform outlier removal twice incase very large outliers skew the stddev*/
-    if(inputParams.stddevthresh != 0.){
+    if( inputParams.stddevthresh != 0. ){
       INT4 numOutliers=0;
       numOutliers = remove_outliers(resampData, times,
         inputParams.stddevthresh);
-      if(verbose){  
+      if( verbose ){  
         fprintf(stderr, "I've removed %lf%% of data above the threshold %.1lf \
 sigma for 1st time.\n",
           100.*(double)numOutliers/(double)resampData->data->length,
@@ -436,19 +450,19 @@ sigma for 1st time.\n",
     }
     
     /* calibrate */
-    if(inputParams.calibrate){
+    if( inputParams.calibrate ){
       calibrate(resampData, times, inputParams.calibfiles,
         inputParams.freqfactor*hetParams.het.f0);
-      if(verbose){  fprintf(stderr, "I've calibrated the data at \
+      if( verbose ){  fprintf(stderr, "I've calibrated the data at \
 %.1lf Hz\n", inputParams.freqfactor*hetParams.het.f0);  }
     }
       
     /* remove outliers above our threshold */
-    if(inputParams.stddevthresh != 0.){
+    if( inputParams.stddevthresh != 0. ){
       INT4 numOutliers = 0;
       numOutliers = remove_outliers(resampData, times,
         inputParams.stddevthresh);
-      if(verbose){  
+      if( verbose ){  
         fprintf(stderr, "I've removed %lf%% of data above the threshold %.1lf \
 sigma for 2nd time.\n",
           100.*(double)numOutliers/(double)resampData->data->length,
@@ -457,26 +471,26 @@ sigma for 2nd time.\n",
     }
     
     /* output data */
-    if(inputParams.binaryoutput){
+    if( inputParams.binaryoutput ){
       if((fpout = fopen(outputfile, "ab"))==NULL){
         fprintf(stderr, "Error... can't open output file %s!\n", outputfile);
         return 0;
       }
     }
     else{
-    if((fpout = fopen(outputfile, "a"))==NULL){
+    if( (fpout = fopen(outputfile, "a")) == NULL ){
         fprintf(stderr, "Error... can't open output file %s!\n", outputfile);
         return 0;
       }
     }
 
-    for(i=0;i<resampData->data->length;i++){
+    for( i=0;i<resampData->data->length;i++ ){
       /* if data has been scaled then undo scaling for output */
       
-      if(inputParams.binaryoutput){
+      if( inputParams.binaryoutput ){
         /*FIXME: maybe add header info to binary output - or output to frames!*/
         /* binary output will be same as ASCII text - time real imag */
-        if(inputParams.scaleFac > 1.0){
+        if( inputParams.scaleFac > 1.0 ){
           REAL8 tempreal, tempimag;
       
           tempreal = resampData->data->data[i].re/inputParams.scaleFac;
@@ -492,14 +506,14 @@ sigma for 2nd time.\n",
           fwrite(&resampData->data->data[i].im, sizeof(REAL8), 1, fpout);
         }
         
-        if(ferror(fpout)){
+        if( ferror(fpout) ){
           fprintf(stderr, "Error... problem writing out data to binary \
 file!\n");
           exit(0);
         }
       }
       else{
-        if(inputParams.scaleFac > 1.0){
+        if( inputParams.scaleFac > 1.0 ){
           fprintf(fpout, "%lf\t%le\t%le\n", times->data[i],
                   resampData->data->data[i].re/inputParams.scaleFac,
                   resampData->data->data[i].im/inputParams.scaleFac);
@@ -511,22 +525,21 @@ file!\n");
       }
       
     }
-    if(verbose){  fprintf(stderr, "I've output the data.\n"); }
+    if( verbose ){ fprintf(stderr, "I've output the data.\n"); }
 
     fclose(fpout);
-    XLALDestroyCOMPLEX16Vector(resampData->data);
-    LALFree(resampData);
+    XLALDestroyCOMPLEX16TimeSeries( resampData );
 
-    XLALDestroyREAL8Vector(times);
-  }while(count < numSegs && (inputParams.heterodyneflag==0 ||
-    inputParams.heterodyneflag==3));
+    XLALDestroyREAL8Vector( times );
+  }while( count < numSegs && (inputParams.heterodyneflag==0 ||
+    inputParams.heterodyneflag==3) );
 
   fprintf(stderr, "Heterodyning complete.\n");
 
-  XLALDestroyINT4Vector(stops);
-  XLALDestroyINT4Vector(starts);
-  
-  if(inputParams.filterknee > 0.){
+  XLALDestroyINT4Vector( stops );
+  XLALDestroyINT4Vector( starts );
+ 
+  if( inputParams.filterknee > 0. ){
     LALDestroyREAL8IIRFilter( &status, &iirFilters.filter1Re );
     LALDestroyREAL8IIRFilter( &status, &iirFilters.filter1Im ); 
     LALDestroyREAL8IIRFilter( &status, &iirFilters.filter2Re );
@@ -534,9 +547,9 @@ file!\n");
     LALDestroyREAL8IIRFilter( &status, &iirFilters.filter3Re );
     LALDestroyREAL8IIRFilter( &status, &iirFilters.filter3Im );
   
-    if(verbose){ fprintf(stderr, "I've destroyed all filters.\n"); }
+    if( verbose ){ fprintf(stderr, "I've destroyed all filters.\n"); }
   }
-    
+  
   return 0;
 }
 
@@ -647,6 +660,9 @@ pulsar spin frequency */
             denominator = XLALStringDuplicate(loc+1);
             
             inputParams->filterknee = atof(numerator)/atof(denominator);
+          
+            XLALFree(loc);
+            XLALFree(denominator);
           }
           else
             inputParams->filterknee = atof(optarg);
@@ -665,6 +681,9 @@ pulsar spin frequency */
             denominator = XLALStringDuplicate(loc+1);
 
             inputParams->samplerate = atof(numerator)/atof(denominator);
+          
+            XLALFree(loc);
+            XLALFree(denominator);
           }
           else
             inputParams->samplerate = atof(optarg);
@@ -684,6 +703,9 @@ pulsar spin frequency */
             denominator = XLALStringDuplicate(loc+1);
 
             inputParams->resamplerate = atof(numerator)/atof(denominator);
+          
+            XLALFree(loc);
+            XLALFree(denominator);
           }
           else
             inputParams->resamplerate = atof(optarg);
@@ -738,9 +760,12 @@ pulsar spin frequency */
             denominator = XLALStringDuplicate(loc+1);
 
             inputParams->freqfactor = atof(numerator)/atof(denominator);
+          
+            XLALFree(loc);
+            XLALFree(denominator);
           }
           else
-            inputParams->freqfactor = atof(optarg);
+            inputParams->freqfactor = atof(optarg);   
         }
         break;
       case 'G':
@@ -837,7 +862,7 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
 
   /* set up ephemeris files */
   if( hetParams.heterodyneflag > 0){
-    edat = (EphemerisData *)LALMalloc(sizeof(EphemerisData));
+    edat = XLALMalloc(sizeof(*edat));
 
     (*edat).ephiles.earthEphemeris = hetParams.earthfile;
     (*edat).ephiles.sunEphemeris = hetParams.sunfile;
@@ -854,7 +879,7 @@ message:\n\t%s.\n",
     baryinput.site.location[1] = hetParams.detector.location[1]/LAL_C_SI;
     baryinput.site.location[2] = hetParams.detector.location[2]/LAL_C_SI;
   }
-    
+
   for(i=0;i<hetParams.length;i++){
    
 /******************************************************************************/
@@ -1047,9 +1072,9 @@ and message:\n\t%s.\n",
   }
 
   if(hetParams.heterodyneflag > 0){
-    LALFree(edat->ephemE);
-    LALFree(edat->ephemS);
-    LALFree(edat);
+    XLALFree(edat->ephemE);
+    XLALFree(edat->ephemS);
+    XLALFree(edat);
   }
 
   /* check LALstatus error code in case any of the barycntring code has had a
@@ -1085,7 +1110,7 @@ void get_frame_times(CHAR *framefile, REAL8 *gpstime, INT4 *duration){
 /* function to read in frame data given a framefile and data channel */
 REAL8TimeSeries *get_frame_data(CHAR *framefile, CHAR *channel, REAL8 time,
   REAL8 length, INT4 duration, REAL8 scalefac, REAL8 highpass){
-  REAL8TimeSeries *dblseries;
+  REAL8TimeSeries *dblseries=NULL;
 
   FrFile *frfile=NULL;
   FrVect *frvect=NULL;
@@ -1097,18 +1122,12 @@ REAL8TimeSeries *get_frame_data(CHAR *framefile, CHAR *channel, REAL8 time,
   if((frfile = FrFileINew(framefile)) == NULL)
     return NULL; /* couldn't open frame file */
   
-  /* create data memory */
-  dblseries = LALCalloc(1, sizeof(*dblseries));
-  dblseries->data = XLALCreateREAL8Vector( length );
-  
   epoch.gpsSeconds = (UINT4)floor(time);
   epoch.gpsNanoSeconds = (UINT4)(1.e9*(time-floor(time)));
-  dblseries->epoch = epoch;
   
-  /* assume frames always sampled at 16384 Hz */
-  dblseries->deltaT = 1./16384.;
-  
-  strncpy( dblseries->name, channel, sizeof( dblseries->name ) - 1 );
+  /* create data memory */
+  dblseries = XLALCreateREAL8TimeSeries( channel, &epoch, 0., 1./16384.,
+    &lalSecondUnit, (INT4)length );
 
   /* get data */
   /* read in frame data */
@@ -1116,7 +1135,7 @@ REAL8TimeSeries *get_frame_data(CHAR *framefile, CHAR *channel, REAL8 time,
     NULL){
     FrFileIEnd(frfile);
     XLALDestroyREAL8Vector(dblseries->data);
-    LALFree(dblseries);
+    XLALFree(dblseries);
     return NULL; /* couldn't read frame data */
   }
   
@@ -1124,7 +1143,7 @@ REAL8TimeSeries *get_frame_data(CHAR *framefile, CHAR *channel, REAL8 time,
   if(frvect->next){
     FrFileIEnd(frfile);
     XLALDestroyREAL8Vector(dblseries->data);
-    LALFree(dblseries);
+    XLALFree(dblseries);
     return NULL; /* couldn't read frame data */
   }
     
@@ -1238,20 +1257,24 @@ void filter_data(COMPLEX16TimeSeries *data, Filters *iirFilters){
 COMPLEX16TimeSeries *resample_data(COMPLEX16TimeSeries *data, 
   REAL8Vector *times, INT4Vector *starts, INT4Vector *stops, REAL8 sampleRate,
   REAL8 resampleRate, INT4 hetflag){
-  COMPLEX16TimeSeries *series;
+  COMPLEX16TimeSeries *series=NULL;
   INT4 i=0, j=0, k=0, length;
   COMPLEX16 tempData;
   INT4 size;
 
   INT4 count=0;
+  LIGOTimeGPS epoch;
 
-  length = (INT4)floor(ROUND(resampleRate*data->data->length)/sampleRate);
-  size = (INT4)ROUND(sampleRate/resampleRate);
+  epoch.gpsSeconds = 0;
+  epoch.gpsNanoSeconds = 0;
+
+  length = (INT4)floor( ROUND( resampleRate*data->data->length )/sampleRate );
+  size = (INT4)ROUND( sampleRate/resampleRate );
     
-  series = LALCalloc(1, sizeof(*series));
-  series->data = XLALCreateCOMPLEX16Vector( length );
-  
-  if(hetflag == 0 || hetflag == 3 ){ /* coarse heterodyne */
+  series = XLALCreateCOMPLEX16TimeSeries( "", &epoch, 0., 1./resampleRate,
+    &lalSecondUnit, length );
+
+  if( hetflag == 0 || hetflag == 3 ){ /* coarse heterodyne */
     for(i=0;i<data->data->length-size+1;i+=size){
       tempData.re = 0.;
       tempData.im = 0.;
@@ -1277,34 +1300,34 @@ COMPLEX16TimeSeries *resample_data(COMPLEX16TimeSeries *data,
       count++;
     }
   }
-  else if(hetflag == 1 || hetflag == 2){ /* need to calculate how many chunks of
-    data at the new sample rate will fit into each science segment (starts and
-    stops) */
-    INT4 duration; /* duration of a science segment */
-    INT4 remainder; /* number of data points lost */
-    INT4 prevdur=0; /* duration of previous segment */
+  else if( hetflag == 1 || hetflag == 2 ){ /* need to calculate how many chunks
+    of data at the new sample rate will fit into each science segment (starts
+    and stops) */
+    INT4 duration=0;  /* duration of a science segment */
+    INT4 remainder=0; /* number of data points lost */
+    INT4 prevdur=0;   /* duration of previous segment */
 
     count=0;
     j=0;
     
-    for(i=0;i<starts->length;i++){
+    for( i=0;i<starts->length;i++ ){
       /* find first bit of data within a segment */
-      if(starts->data[i] < times->data[j] && stops->data[i] <= times->data[j]){
+      if( starts->data[i] <times->data[j] && stops->data[i] <= times->data[j] ){
         /* if the segmemt is before the jth data point then continue */
         continue;
       }
-      if(starts->data[i] < times->data[j] && stops->data[i] > times->data[j]){
+      if( starts->data[i] < times->data[j] && stops->data[i] > times->data[j] ){
         /* if the segment overlaps the jth data point then use as much as
            possible */
         starts->data[i] = times->data[j] - ((1./sampleRate)/2.);
       }
-      if(starts->data[i] < times->data[times->length-1] && stops->data[i] >
-        times->data[times->length-1]){
+      if( starts->data[i] < times->data[times->length-1] && stops->data[i] >
+        times->data[times->length-1] ){
         /* if starts is before the end of the data but stops is after the end of
            the data then shorten the segment */
         stops->data[i] = times->data[times->length-1] + ((1./sampleRate)/2.);
       }
-      if(starts->data[i] >= times->data[times->length-1]){
+      if( starts->data[i] >= times->data[times->length-1] ){
         /* segment is outside of data time, so exit */
         fprintf(stderr, "Segment %d to %d is outside the times of the data!\n",
           starts->data[i], stops->data[i]);
@@ -1312,7 +1335,7 @@ COMPLEX16TimeSeries *resample_data(COMPLEX16TimeSeries *data,
         break;
       }
       
-      while(times->data[j] < starts->data[i])
+      while( times->data[j] < starts->data[i] )
         j++;
         
       starts->data[i] = times->data[j] - ((1./sampleRate)/2.);
@@ -1320,13 +1343,13 @@ COMPLEX16TimeSeries *resample_data(COMPLEX16TimeSeries *data,
       duration = stops->data[i] - starts->data[i];
       
       /* check duration is not negative */
-      if(duration <= 0)
+      if( duration <= 0 )
         continue;
       
       /* check that data is contiguous within a segment - if not split in two */
-      for(k=0;k<(INT4)(duration*sampleRate)-1;k++){
+      for( k=0;k<(INT4)(duration*sampleRate)-1;k++ ){
         /* check for break in the data */
-        if((times->data[j+k+1] - times->data[j+k] > 1./sampleRate)){        
+        if( (times->data[j+k+1] - times->data[j+k]) > 1./sampleRate ){        
           /* get duration of segment up until time of split */
           duration = times->data[j+k] - starts->data[i] - ((1./sampleRate)/2.);
              
@@ -1335,14 +1358,14 @@ COMPLEX16TimeSeries *resample_data(COMPLEX16TimeSeries *data,
           
           /* check that the new point is still in the same segment or not - if
              we are then redo new segment, if not then move on to next segment*/
-          if(starts->data[i] < stops->data[i] && duration > 0)
+          if( starts->data[i] < stops->data[i] && duration > 0 )
             i--; /* reset i so it redoes the new segment */
           
           break;
         }
       }
 
-      if(duration < size){
+      if( duration < size ){
         j += (INT4)(duration*sampleRate);
         continue; /* if segment is smaller than the number of samples needed
                      then skip to next */
@@ -1351,12 +1374,12 @@ COMPLEX16TimeSeries *resample_data(COMPLEX16TimeSeries *data,
       remainder = (INT4)(duration*sampleRate)%size;
       
       prevdur = j;
-      for(j=prevdur+floor(remainder/2);j<prevdur + (INT4)(duration*sampleRate)
-          -ceil(remainder/2) - 1;j+=size){
+      for( j=prevdur+floor(remainder/2);j<prevdur + (INT4)(duration*sampleRate)
+          -ceil(remainder/2) - 1;j+=size ){
         tempData.re = 0.;
         tempData.im = 0.;
 
-        for(k=0;k<size;k++){
+        for( k=0;k<size;k++ ){
           tempData.re += data->data->data[j+k].re;
           tempData.im += data->data->data[j+k].im;
         }
@@ -1370,8 +1393,11 @@ COMPLEX16TimeSeries *resample_data(COMPLEX16TimeSeries *data,
     }
   }
 
-  times = XLALResizeREAL8Vector(times, count);
-  series->data = XLALResizeCOMPLEX16Vector(series->data, count);
+  if( times->length > count )
+    times = XLALResizeREAL8Vector( times, count );
+  
+  if( series->data->length > count )
+    series = XLALResizeCOMPLEX16TimeSeries( series, 1, count );
 
   /* create time stamps */
   series->deltaT = 1./resampleRate;
@@ -1444,21 +1470,21 @@ CHAR *set_frame_files(INT4 *starts, INT4 *stops, FrameCache cache,
   INT4 check=0;
   CHAR *smalllist=NULL;
 
-  smalllist = (CHAR *)calloc(MAXLISTLENGTH, sizeof(CHAR));
+  smalllist = XLALMalloc(MAXLISTLENGTH*sizeof(CHAR));
   
   durlock = *stops - *starts;
   tempstart = *starts;
   tempstop = *stops;
   
   /*if lock stretch is long can't read whole thing in at once so only do a bit*/
-  if(durlock > MAXDATALENGTH)
+  if( durlock > MAXDATALENGTH )
     tempstop = tempstart + MAXDATALENGTH;
 
-  for(i=0;i<numFrames;i++){
+  for( i=0;i<numFrames;i++ ){
     if(tempstart >= cache.starttime[i] && tempstart <
       cache.starttime[i]+cache.duration[i] &&
       cache.starttime[i] < tempstop){
-      if(check == 0){
+      if( check == 0 ){
         sprintf(smalllist, "%s %d %d ", cache.framelist[i], cache.starttime[i],
           cache.duration[i]);
         check++;
@@ -1470,20 +1496,22 @@ CHAR *set_frame_files(INT4 *starts, INT4 *stops, FrameCache cache,
       tempstart += cache.duration[i];
     }
     /* break out the loop when we have all the files for the segment */
-    else if(cache.starttime[i] > tempstop)
+    else if( cache.starttime[i] > tempstop )
       break;
   }
 
-  if(durlock > MAXDATALENGTH){ /* set starts to its value plus MAXDATALENGTH */
+  if( durlock > MAXDATALENGTH ){/* set starts to its value plus MAXDATALENGTH*/
     (*position)--; /* move position counter back one */
     *starts = tempstop;
   }
 
   /* if no data was found at all set small list to NULL */
-  if(check == 0)
+  if( check == 0 ){
+    XLALFree(smalllist);
     return NULL;
+  }
 
-  if(strlen(smalllist) > MAXLISTLENGTH){
+  if( strlen(smalllist) > MAXLISTLENGTH ){
     fprintf(stderr, "Error... small list of frames files is too long.\n");
     exit(0);
   }
@@ -1664,7 +1692,6 @@ greater than %d.\n", MAXCALIBLENGTH);
     }
   }while(!feof(fp) && freq < frequency); /* stop when we've read in response for
                                             our frequency*/
-
   fclose(fp);
 }
 
@@ -1715,7 +1742,7 @@ INT4 remove_outliers(COMPLEX16TimeSeries *data, REAL8Vector *times,
   }
   
   /* resize data and times */
-  data->data = XLALResizeCOMPLEX16Vector(data->data, j);
+  data = XLALResizeCOMPLEX16TimeSeries(data, 1, j);
   times = XLALResizeREAL8Vector(times, j);
   
   return data->data->length - j;
