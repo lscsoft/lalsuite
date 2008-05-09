@@ -292,7 +292,7 @@ main(int argc, char **argv)
         /* IFO */
         {
           LALSnprintf( ifo, sizeof(ifo), optarg);
-          ADD_PROCESS_PARAM( "ifo", "%s", ifo );
+          ADD_PROCESS_PARAM( "string", "%s", ifo );
         }
         break;
 
