@@ -86,12 +86,15 @@ void AddNumRelStrainModes( LALStatus              *status,
 			   REAL4TimeVectorSeries  **outStrain,
 			   SimInspiralTable *thisinj);
 
-void InjectNumRelWaveforms (LALStatus              *status,
-			    REAL4TimeSeries        *chan, 
-			    SimInspiralTable       *injections,
-			    CHAR                    ifo[3],    
-			    REAL8                   dynRange); 
 
+void InjectNumRelWaveforms (LALStatus              *status,
+			    REAL4TimeSeries         *chan,      
+			    SimInspiralTable        *injections,
+			    CHAR                    ifo[3],     
+			    REAL8                   dynRange,
+			    REAL8                   freqLowCutoff);
+
+REAL8 start_freq_from_frame_url(CHAR  *url);
 
 #ifdef  __cplusplus
 }                /* Close C++ protection */

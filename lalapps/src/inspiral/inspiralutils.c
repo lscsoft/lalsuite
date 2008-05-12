@@ -19,9 +19,9 @@
 
 /*----------------------------------------------------------------------- 
  * 
- * File Name: inspiral.c
+ * File Name: inspiralutils.c
  *
- * Author: Brown, D. A.
+ * Author: Brown, D. A., B. Krishnan
  * 
  * Revision: $Id$
  * 
@@ -80,6 +80,7 @@
 #include "inspiral.h"
 
 RCSID( "$Id$" );
+
 
 REAL4 compute_candle_distance(REAL4 candleM1, REAL4 candleM2,
     REAL4 snr, REAL8 chanDeltaT, INT4 nPoints, 
@@ -278,15 +279,17 @@ void AddNumRelStrainModes(  LALStatus              *status,
     timeseries for a specified ifo and a dynamic range factor.
 */
 void InjectNumRelWaveforms (LALStatus              *status,
-			   REAL4TimeSeries         *chan,       /**< [out] the output time series */
-			   SimInspiralTable        *injections, /**< [in] list of injections */
-			   CHAR                    ifo[3],      /**< [in] 2 char code for interferometer */
-			   REAL8                   dynRange)    /**< [in] dynamic range factor for scaling time series */
+			    REAL4TimeSeries         *chan,       /**< [out] the output time series */
+			    SimInspiralTable        *injections, /**< [in] list of injections */
+			    CHAR                    ifo[3],      /**< [in] 2 char code for interferometer */
+			    REAL8                   dynRange,    /**< [in] dynamic range factor for scaling time series */ 
+			    REAL8                   freqLowCutoff) /**< [in] Lower cutoff frequency */  
 {
 
   REAL4TimeVectorSeries *tempStrain=NULL;
   SimInspiralTable    *thisInj = NULL;
-
+  REAL8 startFreq, startFreqHz, massTotal;
+  
   INITSTATUS (status, "InjectNumRelWaveforms", rcsid);
   ATTATCHSTATUSPTR (status); 
   
@@ -296,21 +299,68 @@ void InjectNumRelWaveforms (LALStatus              *status,
   /* loop over injections */
   for ( thisInj = injections; thisInj; thisInj = thisInj->next )
     {
-      TRY( AddNumRelStrainModes( status->statusPtr, &tempStrain, thisInj), 
-	   status);
+
+      startFreq = start_freq_from_frame_url( thisInj->numrel_data);
+      massTotal = (thisInj->mass1 + thisInj->mass2) * LAL_MTSUN_SI;
+      startFreqHz = startFreq / ( LAL_TWOPI * massTotal);
       
-      TRY( LALInjectStrainGW( status->statusPtr, chan, tempStrain, thisInj, 
-			      ifo, dynRange), status);
+      if (startFreqHz < freqLowCutoff) 
+	{
+	  TRY( AddNumRelStrainModes( status->statusPtr, &tempStrain, thisInj), 
+	       status);
       
-      XLALDestroyREAL4VectorSequence ( tempStrain->data);
-      tempStrain->data = NULL;
-      LALFree(tempStrain);
-      tempStrain = NULL;
-      
+	  TRY( LALInjectStrainGW( status->statusPtr, chan, tempStrain, thisInj, 
+				  ifo, dynRange), status);
+	
+	  XLALDestroyREAL4VectorSequence ( tempStrain->data);
+	  tempStrain->data = NULL;
+	  LALFree(tempStrain);
+	  tempStrain = NULL;
+	}
+
     } /* loop over injectionsj */
 
   DETATCHSTATUSPTR(status);
   RETURN(status);
 
+}
+
+
+REAL8 start_freq_from_frame_url(CHAR  *url)
+{
+
+  FrameH *frame=NULL;
+  FrFile *frFile=NULL;
+  FrHistory *frHist=NULL;
+  FrHistory *thisHist;
+  CHAR *comment=NULL;
+  CHAR *token=NULL;
+  REAL8 ret = -1.;
+
+  frFile =  XLALFrOpenURL( url );
+  frame = FrameRead (frFile);
+  frHist = frame->history;  
+
+  thisHist = frHist;
+  while (thisHist) {
+
+    /* get history comment string and parse it */
+    comment = LALCalloc(1, 128*sizeof(CHAR));
+    strcpy(comment, thisHist->comment);
+
+    token = strtok(comment,":");
+
+    if (strstr(token,"freqStart22")) {
+      token = strtok(NULL,":");
+      ret = atof(token);
+    }
+
+    LALFree(comment);
+    comment = NULL;
+
+    thisHist = thisHist->next;
+  }
+
+  return ret;
 }
 
