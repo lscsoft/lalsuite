@@ -267,8 +267,7 @@ int main( int argc, char *argv[] )
     /* destroy structures that need to be resized */
     LALDestroyRealFFTPlan( &status, &avgSpecParams.plan );
     TestStatus( &status, CODES( 0 ), 1 );
-    LALDestroyREAL4Window( &status, &avgSpecParams.window );
-    TestStatus( &status, CODES( 0 ), 1 );
+    XLALDestroyREAL4Window( avgSpecParams.window );
     LALDestroyVector( &status, &y.data );
     TestStatus( &status, CODES( 0 ), 1 );
     LALDestroyVector( &status, &Y.data );

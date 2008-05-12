@@ -114,8 +114,7 @@ int main( void )
 
 
   /* cleanup */
-  LALDestroyREAL4Window( &status, &specpar.window );
-  TESTSTATUS( &status );
+  XLALDestroyREAL4Window( specpar.window );
   LALDestroyRealFFTPlan( &status, &specpar.plan );
   TESTSTATUS( &status );
   LALDestroyVector( &status, &fseries.data );
