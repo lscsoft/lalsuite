@@ -64,6 +64,8 @@
 #include <lal/LogPrintf.h>
 
 #include <processtable.h>
+#include "inspiral.h"
+
 
 RCSID( "$Id$" );
 
@@ -111,6 +113,7 @@ typedef struct {
   REAL8 sz1Max;
   REAL8 sz2Min; 
   REAL8 sz2Max; 
+  REAL8 freqStart22min;
   INT4 numGroups;
   NumRelGroup *grouplist;
 } NrParRange;
@@ -122,6 +125,7 @@ typedef struct
   REAL8 spin1[3];  /**< Spin of m1 */
   REAL8 spin2[3];  /**< Spin of m2 */
   INT4  mode[2];   /**< l and m values */
+  REAL8 freqStart22; /**< start frequency of 22 mode */
   CHAR  filename[LALNameLength]; /**< filename where data is stored */
   NumRelGroup group;
 } NinjaMetaData;
@@ -177,6 +181,7 @@ int main( INT4 argc, CHAR *argv[] )
   REAL8 uvar_minSx1=-1, uvar_minSx2=-1, uvar_maxSx1=1, uvar_maxSx2=1;
   REAL8 uvar_minSy1=-1, uvar_minSy2=-1, uvar_maxSy1=1, uvar_maxSy2=1;
   REAL8 uvar_minSz1=-1, uvar_minSz2=-1, uvar_maxSz1=1, uvar_maxSz2=1;
+  REAL8 uvar_freqLo = 40;
   INT4 uvar_minMode = 2, uvar_maxMode = 2;
 
   /* default debug level */
@@ -211,6 +216,8 @@ int main( INT4 argc, CHAR *argv[] )
   LAL_CALL( LALRegisterREALUserVar( &status, "min-sz2", 0, UVAR_OPTIONAL, "Min. z-Spin of second BH", &uvar_minSz2),  &status);
   LAL_CALL( LALRegisterREALUserVar( &status, "max-sz1", 0, UVAR_OPTIONAL, "Max. z-spin of first BH", &uvar_maxSz1),  &status);
   LAL_CALL( LALRegisterREALUserVar( &status, "max-sz2", 0, UVAR_OPTIONAL, "Max. z-spin of second BH", &uvar_maxSz2),  &status);
+
+  LAL_CALL( LALRegisterREALUserVar( &status, "freq-lo", 0, UVAR_OPTIONAL, "Lower cutoff frequency", &uvar_freqLo),  &status);
 
   LAL_CALL( LALRegisterINTUserVar( &status, "min-mode", 0, UVAR_OPTIONAL, "Min mode value to be injected", &uvar_minMode),  &status);
   LAL_CALL( LALRegisterINTUserVar( &status, "max-mode", 0, UVAR_OPTIONAL, "Max mode value to be injected", &uvar_maxMode),  &status);
@@ -325,7 +332,10 @@ int main( INT4 argc, CHAR *argv[] )
 
   /* first the process table */
   proctable.processTable = (ProcessTable *)LALCalloc( 1, sizeof(ProcessTable) );
-  LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->start_time), &accuracy ), &status );
+
+  /*LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->start_time), &accuracy ), &status );*/
+  XLALGPSTimeNow ( &(proctable.processTable->start_time) );
+
   LAL_CALL( populate_process_table( &status, proctable.processTable, PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE ), &status );
   LALSnprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX, " " );
 
@@ -413,11 +423,11 @@ int get_nr_metadata_from_framehistory(NinjaMetaData *data,
 				      FrHistory *history)
 {
 
-  UINT4 strlen=128;
+  UINT4 stringlen=128;
   CHAR *comment=NULL; /* the comments string */
   FrHistory *localhist;
 
-  comment = LALMalloc(strlen*sizeof(CHAR));
+  comment = LALMalloc(stringlen*sizeof(CHAR));
 
   localhist = history;
   while (localhist) {
@@ -489,6 +499,13 @@ int get_metadata_from_string(NinjaMetaData *data,
   if (strstr(token,"mass-ratio")) {
     token = strtok(NULL,":");
     data->massRatio = atof(token);
+    LALFree(thiscomment);
+    return 0;
+  }
+
+  if (strstr(token,"freqStart22")) {
+    token = strtok(NULL,":");
+    data->freqStart22 = atof(token);
     LALFree(thiscomment);
     return 0;
   }
@@ -672,4 +689,5 @@ int parse_group_list ( NrParRange *range,
   return numGroups;
 
 }
+
 
