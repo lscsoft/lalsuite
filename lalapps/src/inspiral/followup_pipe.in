@@ -133,6 +133,9 @@ parser.add_option("-p", "--plots",action="store_true",default=False,\
 parser.add_option("-C", "--mcmc",action="store_true",default=False,\
     help="Do MCMC on the followup trigs (experimental)")
 
+parser.add_option("-P", "--plot-mcmc",action="store_true",default=False,\
+    help="Plot MCMC results (experimental)")
+
 parser.add_option("-H", "--inspiral-head",action="store_true",default=False,\
     help="Run a job using inspiral from HEAD (to get bank and cont. chisq) (experimental)")
 
@@ -166,7 +169,8 @@ if not opts.write_to_iulgroup and not opts.generate_fu_cache and \
   opts.generate_segments and not opts.analyse_qscan and not \
   opts.analyse_seis_qscan and not opts.analyse_hoft_qscan and not \
   opts.mcmc and not opts.frame_check and not opts.inspiral_head and not \
-  opts.ifo_status_check and not opts.single_qevent and not opts.H1H2_qevent:
+  opts.ifo_status_check and not opts.single_qevent and not opts.H1H2_qevent \
+  and not opts.plot_mcmc :
   print >> sys.stderr, "No steps of the pipeline specified."
   print >> sys.stderr, "Please specify at least one of"
   print >> sys.stderr, "--generate-fu-cache, --trig-bank, --inspiral, --plots,"
@@ -175,8 +179,8 @@ if not opts.write_to_iulgroup and not opts.generate_fu_cache and \
   print >> sys.stderr, "--background-seis-qscan, --hoft-datafind,"
   print >> sys.stderr, "--generate-segments, --frame-check,"
   print >> sys.stderr, "--analyse-qscan, --analyse-seis-qscan,"
-  print >> sys.stderr, "--analyse-hoft-qscan, --mcmci --ifo-status-check"
-  print >> sys.stderr, "--single-qevent, --H1H2-qevent"
+  print >> sys.stderr, "--analyse-hoft-qscan, --mcmc, --plot-mcmc,"
+  print >> sys.stderr, "--ifo-status-check, --single-qevent, --H1H2-qevent"
   print >> sys.stderr, "or --write-to-iulgroup (use this option alone for now)"  
   sys.exit(1)
 
@@ -222,13 +226,13 @@ if not opts.disable_followup:
   anaQscanJob     = analyseQscanJob(opts,cp)
   frcheckJob      = FrCheckJob(opts,cp)
   statusJob       = IFOstatus_checkJob(opts,cp)
-  MCMCJob 	  = mcmcJob(opts,cp)  
+  MCMCJob 	  = mcmcJob(opts,cp)
+  PLOTMCMCJob     = plotmcmcJob(opts,cp)
   headInspJob     = followUpInspJob(cp, 'head')
   h1h2QJob        = h1h2QeventJob(opts,cp)   
 
 dataJob         = qscanDataFindJob(cp,'futrig')
 qscanBgJob      = qscanLiteJob(opts,cp)
-anaQscanJob     = analyseQscanJob(opts,cp)
 
 prev_dNode = None
 
@@ -314,6 +318,9 @@ if not opts.disable_followup:
 
       # MCMC JOBS
       MCMCNode = mcmcNode(MCMCJob,inspiral_process_params[ifo], ifo, trig, cp, opts, dag)
+
+      # PLOT MCMC JOBS
+      PLOTMCMCNode = plotmcmcNode(PLOTMCMCJob,ifo,trig,cp,opts,dag,MCMCNode)
 
       # SETUP STATUS SUMMARY PLOT JOBS
       statusNode = IFOstatus_checkNode(statusJob, ifo, trig, cp, opts, dag)
