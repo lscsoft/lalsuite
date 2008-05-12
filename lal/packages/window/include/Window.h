@@ -101,7 +101,6 @@ typedef struct tagLALWindowParams {
 
 void LALWindow(LALStatus *, REAL4Vector *, LALWindowParams *);
 void LALCreateREAL4Window(LALStatus *, REAL4Window **, LALWindowParams *);
-void LALDestroyREAL4Window(LALStatus *, REAL4Window **);
 
 
 #ifdef  __cplusplus
