@@ -425,7 +425,7 @@ REAL8Window *XLALCreateKaiserREAL8Window(UINT4 length, REAL8 beta)
 	 * note that in many places the window is defined with pi
 	 * multiplying beta in the numerator and denominator, but not here.
 	 *
-	 * The asymptotic forms for large beta is derived from the
+	 * The asymptotic forms for large beta are derived from the
 	 * asymptotic form of I0(x) which is
 	 *
 	 * I0(x) --> exp(x) / sqrt(2 pi x)
@@ -734,6 +734,8 @@ static REAL4Window *XLALCreateREAL4Window(UINT4 length, WindowType type, REAL4 b
 	static const char func[] = "XLALCreateREAL4Window";
 	REAL4Window *window;
 
+	XLALPrintDeprecationWarning(func, "XLALCreateRectangularREAL4Window(), XLALCreateHannREAL4Window(), XLALCreateWelchREAL4Window(), XLALCreateBartlettREAL4Window(), XLALCreateParzenREAL4Window(), XLALCreatePapoulisREAL4Window(), XLALCreateHammingREAL4Window(), XLALCreateKaiserREAL4Window(), XLALCreateCreightonREAL4Window(), or XLALCreateTukeyREAL4Window");
+
 	switch (type) {
 	case Rectangular:
 		window = XLALCreateRectangularREAL4Window(length);
@@ -797,6 +799,8 @@ void LALWindow(
 	INITSTATUS(status, "LALWindow", WINDOWC);
 	ATTATCHSTATUSPTR(status);
 
+	XLALPrintDeprecationWarning("LALWindow", "XLALCreateRectangularREAL4Window(), XLALCreateHannREAL4Window(), XLALCreateWelchREAL4Window(), XLALCreateBartlettREAL4Window(), XLALCreateParzenREAL4Window(), XLALCreatePapoulisREAL4Window(), XLALCreateHammingREAL4Window(), XLALCreateKaiserREAL4Window(), XLALCreateCreightonREAL4Window(), or XLALCreateTukeyREAL4Window");
+
 	window = XLALCreateREAL4Window(parameters->length, parameters->type, parameters->beta);
 	if(!window) {
 		ABORT(status, WINDOWH_EEALLOCATE, WINDOWH_MSGEEALLOCATE);
@@ -819,6 +823,8 @@ void LALCreateREAL4Window(
 	INITSTATUS(status, "LALCreateREAL4Window", WINDOWC);
 	ATTATCHSTATUSPTR(status);
 
+	XLALPrintDeprecationWarning("LALCreateREAL4Window", "XLALCreateRectangularREAL4Window(), XLALCreateHannREAL4Window(), XLALCreateWelchREAL4Window(), XLALCreateBartlettREAL4Window(), XLALCreateParzenREAL4Window(), XLALCreatePapoulisREAL4Window(), XLALCreateHammingREAL4Window(), XLALCreateKaiserREAL4Window(), XLALCreateCreightonREAL4Window(), or XLALCreateTukeyREAL4Window");
+
 	*output = XLALCreateREAL4Window(params->length, params->type, params->beta);
 	if(!*output) {
 		ABORT(status, WINDOWH_EEALLOCATE, WINDOWH_MSGEEALLOCATE);
@@ -826,16 +832,4 @@ void LALCreateREAL4Window(
 
 	DETATCHSTATUSPTR(status);
 	RETURN(status);
-}
-
-
-void LALDestroyREAL4Window(
-	LALStatus * status,
-	REAL4Window ** output
-)
-{
-	/* emulate legacy code */
-	status = status;	/* silence compiler warning */
-	XLALDestroyREAL4Window(*output);
-	*output = NULL;
 }
