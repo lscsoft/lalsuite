@@ -536,7 +536,7 @@ INT4 main( INT4 argc, CHAR *argv[] )
       {
         /* now we can finally inject the numerical waveforms */
         LAL_CALL( InjectNumRelWaveforms ( &status, injData[i], injections, ifo, 
-  	  		dynRange), &status);
+					  dynRange,0), &status);
       }
 
       /* set strain as unit */
@@ -992,4 +992,6 @@ int get_spectrum(REAL8Sequence *spectrum,
   return 0;
 
 }
+
+
 
