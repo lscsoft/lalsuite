@@ -125,7 +125,7 @@ INT4 main( INT4 argc, CHAR *argv[] )
   LIGOTimeGPS gpsStartTime  = {0, 0};
   LIGOTimeGPS gpsEndTime    = {0, 0};
 
-  REAL8 freqLowCutoff = 40;
+  REAL8 freqLowCutoff = -1;
 
   /* injections */
   SimInspiralTable *injections = NULL;
@@ -372,6 +372,12 @@ INT4 main( INT4 argc, CHAR *argv[] )
    *
    */
 
+
+  if ( freqLowCutoff < 0 )
+    {
+      fprintf( stderr, "ERROR: --freq-low-cutoff must be specified\n" );
+      exit( 1 );
+    }
 
   if ( frameFlag )
   {
