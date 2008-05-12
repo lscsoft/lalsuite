@@ -125,6 +125,8 @@ INT4 main( INT4 argc, CHAR *argv[] )
   LIGOTimeGPS gpsStartTime  = {0, 0};
   LIGOTimeGPS gpsEndTime    = {0, 0};
 
+  REAL8 freqLowCutoff = 40;
+
   /* injections */
   SimInspiralTable *injections = NULL;
   INT4 numInjections           = 0;
@@ -165,6 +167,7 @@ INT4 main( INT4 argc, CHAR *argv[] )
     {"frame-type",              required_argument, 0,                't'},
     {"set-name",                required_argument, 0,                'n'},
     {"mdc-log",                 required_argument, 0,                'o'},
+    {"freq-low-cutoff",         required_argument, 0,                'l'},
     {"help",                    no_argument,       0,                'h'},
     {"version",                 no_argument,       0,                'V'},
     {0, 0, 0, 0}
@@ -322,6 +325,19 @@ INT4 main( INT4 argc, CHAR *argv[] )
         mdcFileName = (CHAR *)calloc(optarg_len, sizeof(CHAR));
         memcpy(mdcFileName, optarg, optarg_len);
         break;
+
+      case 'l':
+	/* set lower cutoff frequency */
+	freqLowCutoff = atof(optarg);
+	if (freqLowCutoff < 0 ) 
+	  {
+	    fprintf(stderr, "invalid argument to --%s:\n"
+		    "lower cutoff frequency must be positive: "
+		    "(%f specified) \n",
+		    long_options[option_index].name, freqLowCutoff);
+	    exit(1);
+	  }
+	break;
 
       case 'D':
         /* set debug level */
@@ -536,7 +552,7 @@ INT4 main( INT4 argc, CHAR *argv[] )
       {
         /* now we can finally inject the numerical waveforms */
         LAL_CALL( InjectNumRelWaveforms ( &status, injData[i], injections, ifo, 
-					  dynRange,0), &status);
+					  dynRange, freqLowCutoff), &status);
       }
 
       /* set strain as unit */
@@ -612,6 +628,7 @@ static void print_usage( CHAR *program )
       "  --write-frame                 write h(t) waveform to a frame file\n"\
       "  --no-numerical                the injections are not numerical\n"\
       "  --simulate-noise              add simulated colored Gaussian noise\n"\
+      "  --freq-low-cutoff freq        lower cutoff frequency for injections\n"\
       "\n", program );
 }
 
