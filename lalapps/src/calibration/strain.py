@@ -6,7 +6,7 @@ __author__ = 'Xavier Siemens<siemens@gravity.phys.uwm.edu>'
 __date__ = '$Date$'
 __version__ = '$Revision$'[11:-2]
 
-import string
+import string,sys
 import exceptions
 from glue import pipeline
 
@@ -79,14 +79,14 @@ class NoiseJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
   runs in the universe specified in the ini file. The path to the executable
   is determined from the ini file.
   """
-  def __init__(self,cp):
+  def __init__(self,cp,dax=False):
     """
     cp = ConfigParser object from which options are read.
     """
     self.__executable = cp.get('condor','noise')
     self.__universe = cp.get('condor','universe')
     pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
-    pipeline.AnalysisJob.__init__(self,cp)
+    pipeline.AnalysisJob.__init__(self,cp,dax)
 
     for sec in ['noisecomp']:
       self.add_ini_opts(cp,sec)
@@ -200,5 +200,47 @@ class NoiseNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     pipeline.CondorDAGNode.__init__(self,job)
     pipeline.AnalysisNode.__init__(self)
 
+  def add_cache(self,file,frame):
+    if isinstance( file, str ):
+      # the name of a lal cache file created by a datafind node
+      self.add_var_opt(frame, file)
+      self.add_input_file(file)
+    else:
+      cacheFileName = 'cache/'+self.get_name()+'-'+frame+'-'+str(self.get_start())+'-'+str(self.get_end())+'.cache'
+      cacheFile = open(cacheFileName,'w')
+      self.add_var_opt(frame, cacheFileName)
+      self.add_input_file(cacheFileName)
+      # check we have an LFN list
+      from glue import LDRdataFindClient
+      if isinstance( file, LDRdataFindClient.lfnlist ):
+        #self.add_var_opt('glob-frame-data',' ')
+        # only add the LFNs that actually overlap with this job
+        for lfn in file:
+          a, b, c, d = lfn.split('.')[0].split('-')
+          t_start = int(c)
+          t_end = int(c) + int(d)
+          if ( t_start <= self.get_end() and t_end >= self.get_start() ):
+            self.add_input_file(lfn)
+            cacheFile.write(a+' '+b+' '+c+' '+d+' '+lfn+'\n')
+        # set the frame type based on the LFNs returned by datafind
+        #self.add_var_opt('frame-type',b)
+      else:
+        raise CondorDAGNodeError, "Unknown LFN cache format"
 
+# Convenience functions to cat together noise output files.
+def open_noise_cat_file(dir):
+  outfilename = dir + '/' + dir + '.cat'
+  try:  outfile = open(outfilename,'w')
+  except: 
+    sys.stderr.write('Could not open '+outfilename+' for writing')
+    sys.exit(1)
+  return outfile
+
+def cat_noise_jobs(file,node):
+  out = node.get_output_files()
+  tmpfile = open(out[0],'r')
+  tmpstr = ''.join( tmpfile.readlines() ) 
+  try:  file.write(tmpstr)
+  except: pass
+  return
 
