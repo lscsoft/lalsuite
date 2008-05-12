@@ -3780,8 +3780,7 @@ void LALComputeWindowSpectrum(LALStatus *status,
 				  &wpars ), status->statusPtr );
   LAL_CALL( LALREAL4AverageSpectrum( status->statusPtr, spec, chan, &avgSpecParams ),
 	    status->statusPtr );
-  LAL_CALL( LALDestroyREAL4Window( status->statusPtr, &(avgSpecParams.window) ), 
-	    status->statusPtr );
+  XLALDestroyREAL4Window( avgSpecParams.window );
   LAL_CALL( LALDestroyRealFFTPlan( status->statusPtr, &(avgSpecParams.plan) ), status->statusPtr );
 
   strcpy( spec->name, chan->name );

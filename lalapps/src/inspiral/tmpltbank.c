@@ -733,8 +733,7 @@ int main ( int argc, char *argv[] )
         &wpars ), &status );
   LAL_CALL( LALREAL4AverageSpectrum( &status, &spec, &chan, &avgSpecParams ),
       &status );
-  LAL_CALL( LALDestroyREAL4Window( &status, &(avgSpecParams.window) ), 
-      &status );
+  XLALDestroyREAL4Window( avgSpecParams.window );
   LAL_CALL( LALDestroyRealFFTPlan( &status, &(avgSpecParams.plan) ), &status );
 
   if ( specType == 3 )

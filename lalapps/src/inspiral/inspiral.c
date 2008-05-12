@@ -1651,8 +1651,7 @@ int main( int argc, char *argv[] )
         &wpars ), &status );
   LAL_CALL( LALREAL4AverageSpectrum( &status, &spec, &chan, &avgSpecParams ),
       &status );
-  LAL_CALL( LALDestroyREAL4Window( &status, &(avgSpecParams.window) ), 
-      &status );
+  XLALDestroyREAL4Window( avgSpecParams.window );
   strcpy( spec.name, chan.name );
   
   if ( specType == 2 )

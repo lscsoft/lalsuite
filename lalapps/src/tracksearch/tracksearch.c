@@ -2013,8 +2013,7 @@ LALappsDoTSeriesSearch(LALStatus         *status,
        * Destroy window memory 
        * Destroy TF params also
        */
-      LAL_CALL( LALDestroyREAL4Window(status,&tempWindow),
-		status);
+      XLALDestroyREAL4Window(tempWindow);
       LAL_CALL( LALDestroyTimeFreqParam(status,&autoparams),
 		status);
     }
@@ -3761,9 +3760,7 @@ void LALappsTrackSearchWhitenSegments( LALStatus        *status,
 		    status);
 	}
       if (windowPSD)
-	LAL_CALL( LALDestroyREAL4Window(status,
-					&windowPSD),
-		  status);
+	XLALDestroyREAL4Window(windowPSD);
 
       if (averagePSD)
 	LAL_CALL(LALDestroyREAL4FrequencySeries(status,averagePSD),
