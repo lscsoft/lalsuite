@@ -99,7 +99,7 @@ int main (int argc, char *argv[])
 
   /* SET LAL DEBUG STUFF */
   /*set_debug_level("ERROR | WARNING | MEMDBG");*/
-    set_debug_level("NONE");
+    set_debug_level("ERROR | WARNING");
     memset(&status, 0, sizeof(status));
   /*lal_errhandler = LAL_ERR_EXIT;*/
   lal_errhandler = LAL_ERR_ABRT;
@@ -267,15 +267,10 @@ void LALappsTrackSearchPrepareData( LALStatus        *status,
 
   if (params.numLinesToRemove > 0)
     {
-      if (params.verbosity >= verbose)
-	{
-	  fprintf(stdout,"Lines and Harmonics will be removed.\n");
-	  fprintf(stdout,"LINES CAN NOT BE REMOVED FUNCTION NOT WORKING!\n");
-	}
       if (params.verbosity >= printFiles)
 	print_real4tseries(dataSet,"Pre_LineRemoval_TimeDomain.diag");
       fprintf(stdout,"Harmonic removal sub-routine SKIPPED!\n");
-      /*LALappsTracksearchRemoveHarmonics(status,dataSet,params);*/
+      LALappsTracksearchRemoveHarmonics(status,dataSet,params);
       if (params.verbosity >= printFiles)
 	print_real4tseries(dataSet,"Post_LineRemoval_TimeDomain.diag");
     }

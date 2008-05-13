@@ -939,7 +939,7 @@ class candidateList:
                       +str(elements[3])+','+str(elements[4]))
             output_fp.write(str(':').join(data)+'\n')
         self.createTraitSummary()
-        self.__propertypickler__()
+        self.__propertypickler__(outputFilename)
         spinner.closeSpinner()
     #End writefile method
 
@@ -1576,7 +1576,7 @@ class candidateList:
         return statList
     #end method candidateStatsOnDisk
     
-    def __propertypickler__(self):
+    def __propertypickler__(self,filename=''):
         """
         This method writes a pickle which represents the traits that
         can be used to create a histogram from the candidate file.
@@ -1587,6 +1587,13 @@ class candidateList:
         if not self.sorted:
             self.__timeOrderLibrary__()
         ###
+        if filename == '':
+            filename=self.filename[0]
+        else:
+            if self.filename.__len__() == 0:
+                self.filename.append(filename)
+            else:
+                self.filename[0]=filename
         pickleFile=self.filename[0]+self.pickleExtension
         output_fp=gzip.open(pickleFile,'wb')
         for line in self.traitSummary:
@@ -2238,8 +2245,12 @@ class candidateList:
                 [entries,bins,patches]=pylab.hist(powList,colCount,bottom=1,log=True)
             except:
                 sys.stderr.writelines('Error trying to create log scale histogram.\n')
-                sys.stderr.writelines('Using restrictive linear scale instead.\n')
+                sys.stderr.writelines('Using semilogy plot instead.\n')
                 sys.stderr.writelines('Attempting to plot the data with semilogy function, with step linestyles instead!\n')
+                [entries,bins,patches]=pylab.hist(powList,colCount,bottom=1)
+                pylab.close()
+                pylab.figure()
+                pylab.semilogy(bins,entries,linestyle='steps')
         else: #default
             try:
                 [entries,bins,patches]=pylab.hist(powList,colCount,bottom=1)
@@ -2247,12 +2258,7 @@ class candidateList:
                 sys.stderr.writelines('Error trying to create histogram.\n')
             
             sys.stderr.flush()
-#             pylab.close()
-#             pylab.figure()
-#             [entries,bins,patches]=pylab.hist(powList,colCount)
-#             pylab.close()
-#             pylab.figure()
-#             pylab.semilogy(bins,entries,'o',linestyle='steps')
+        pylab.grid(True)
         if max(powList) > max(bins):
             patches[patches.__len__()-1].set_edgecolor('green')
             patches[patches.__len__()-1].set_linewidth(5)

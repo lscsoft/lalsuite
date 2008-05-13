@@ -494,8 +494,13 @@ class tracksearchTimeJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         #self.currenchannel!=''
         if (channel!=''):
             cp.set('tracksearchtime','channel_name',channel)
+        #IF ini file has remove_line part in tracksearchtime
+        if cp.has_option('tracksearchtime','remove_lines'):
+            for line in str(cp.get('tracksearchtime','remove_lines')).split(','):
+                self.add_arg('--remove_line '+line)
+            cp.remove_option('tracksearchtime','remove_lines')
         for sec in ['tracksearchtime']:
-            self.add_ini_opts(cp,sec)
+                    self.add_ini_opts(cp,sec)
         #Check the type of job this is and add in the injection options
         #if needed!
         if (self.jobType == self.validJobTypes[1]):
