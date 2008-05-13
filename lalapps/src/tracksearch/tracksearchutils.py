@@ -2108,6 +2108,9 @@ class candidateList:
             logColorScale=pylab.matplotlib.colors.normalize(math.log(minValue),math.log(maxValue))
         else:
             logColorScale=linearColorScale
+            sys.stderr.write("Unable to properly colormap using log scaling.\n")
+            sys.stderr.write("Switching to linear color scaling instead!\n")
+            useLogColors=False
         #If we are using version 0.80.0 of below
         version800=int(str('0.80.0').replace('.',''))
         if matplotlibVersion<=version800:

@@ -99,7 +99,7 @@ int main (int argc, char *argv[])
 
   /* SET LAL DEBUG STUFF */
   /*set_debug_level("ERROR | WARNING | MEMDBG");*/
-    set_debug_level("ERROR | WARNING");
+    set_debug_level("ERROR");
     memset(&status, 0, sizeof(status));
   /*lal_errhandler = LAL_ERR_EXIT;*/
   lal_errhandler = LAL_ERR_ABRT;
@@ -265,17 +265,6 @@ void LALappsTrackSearchPrepareData( LALStatus        *status,
   else if (params.verbosity >= verbose)
     fprintf(stdout,"No bandpassing requensted.\n");
 
-  if (params.numLinesToRemove > 0)
-    {
-      if (params.verbosity >= printFiles)
-	print_real4tseries(dataSet,"Pre_LineRemoval_TimeDomain.diag");
-      fprintf(stdout,"Harmonic removal sub-routine SKIPPED!\n");
-      LALappsTracksearchRemoveHarmonics(status,dataSet,params);
-      if (params.verbosity >= printFiles)
-	print_real4tseries(dataSet,"Post_LineRemoval_TimeDomain.diag");
-    }
-  else if (params.verbosity >= verbose)
-    	fprintf(stdout,"Lines and Harmonics will NOT be removed.\n");
   /*
    * Perform injections when inject structure has data.
    */
@@ -293,6 +282,17 @@ void LALappsTrackSearchPrepareData( LALStatus        *status,
       if (params.verbosity >= printFiles)
 	print_real4tseries(dataSet,"Post_SoftwareInjectDataSet.diag");
     }
+
+  if (params.numLinesToRemove > 0)
+    {
+      if (params.verbosity >= printFiles)
+	print_real4tseries(dataSet,"Pre_LineRemoval_TimeDomain.diag");
+      LALappsTracksearchRemoveHarmonics(status,dataSet,params);
+      if (params.verbosity >= printFiles)
+	print_real4tseries(dataSet,"Post_LineRemoval_TimeDomain.diag");
+    }
+  else if (params.verbosity >= verbose)
+    	fprintf(stdout,"Lines and Harmonics will NOT be removed.\n");
   /*
    * Split incoming data into Segment Vector
    * Adjust the segmenter to make orignal segments with
@@ -668,21 +668,27 @@ void LALappsTrackSearchInitialize(
 	case 'p':
 	  /* Choose transform type */
 	  {
-	    /*Create string reader code*/
-	    /* Implement Spectrogram type selection via einteger later */
-	    /* For now we rely on numeric representation */
-	    if (strcmp(optarg,"Spectrogram"))
-	      params->TransformType=Spectrogram;
-	    else if (strcmp(optarg,"RSpectrogram"))
-	      params->TransformType=RSpectrogram;
-	    else if (strcmp(optarg,"WignerVille"))
-	      params->TransformType=WignerVille;
-	    else if (strcmp(optarg,"PSWignerVille"))
-	      params->TransformType=PSWignerVille;
-	    else{
-	      fprintf(stderr,"Invald TF Transform selected using Spectrogram.\n");
-	      params->TransformType=Spectrogram;
-	    };
+	    if (strcmp(optarg,"Spectrogram")==0)
+	      {
+		params->TransformType=Spectrogram;
+	      }
+	    else if (strcmp(optarg,"RSpectrogram")==0)
+	      {
+		params->TransformType=RSpectrogram;
+	      }
+	    else if (strcmp(optarg,"WignerVille")==0)
+	      {
+		params->TransformType=WignerVille;
+	      }
+	    else if (strcmp(optarg,"PSWignerVille")==0)
+	      {
+		params->TransformType=PSWignerVille;
+	      }
+	    else
+	      {
+		fprintf(stdout,"\n Invald TF Transform selected defaulting to Spectrogram!\n");
+		params->TransformType=Spectrogram;
+	      };
 	  }
 	  break;
 
@@ -1736,13 +1742,14 @@ void LALappsDoTrackSearch(
       outputCurves.linePThreshCut=tsInputs.low;
 
     }
-  /* Allocate structure for analysis */
-  /* Flag to prepare structure inside LALTrackSearch */
-  tsInputs.allocFlag = 1; 
-  LAL_CALL( LALSignalTrackSearch(status,&outputCurves,tfmap,&tsInputs),
-	    status);
+/*   /\* Allocate structure for analysis *\/ */
+/*   /\* Flag to prepare structure inside LALTrackSearch *\/ */
+
+/*   LAL_CALL( LALSignalTrackSearch(status,&outputCurves,tfmap,&tsInputs), */
+/* 	    status); */
   
   /* Perform the analysis on the data seg given.*/
+  tsInputs.allocFlag = 1;
   lal_errhandler = LAL_ERR_RTRN;
   errCode = LAL_CALL( LALSignalTrackSearch(status,&outputCurves,tfmap,&tsInputs),
 	    status);
@@ -2178,6 +2185,7 @@ LALappsDoTimeSeriesAnalysis(LALStatus          *status,
   LIGOTimeGPS       edgeOffsetGPS;
   REAL8             originalFloatTime=0;
   REAL8             newFloatTime=0;
+  CHARVector       *dataLabel=NULL;
   /* Set to zero to use ascii files */
   /*
    * Check for nonNULL directory path Ptr to frame files
@@ -2312,15 +2320,29 @@ LALappsDoTimeSeriesAnalysis(LALStatus          *status,
     }
 
   j=0;
+  if (params.verbosity >= verbose)
+    printf("Analyzing a total of %i subsegments of data.\n",params.NumSeg);
   for(i = 0;i < params.NumSeg;i++)
     {
-      printf(".");
+      if (params.verbosity >= verbose)
+	printf("Analyzing Segment %i of %i\n",i+1,params.NumSeg);
       /*
        * Call to prepare tSeries search
        * Rewrite functions inside to CROP maps and adjust time marks
        * according to the uncropped parts of TFR. Ignore segment
        * buffers....
        */
+      if (params.verbosity >= printFiles)
+	{
+	  LAL_CALL(LALCHARCreateVector(status,&dataLabel,128),
+		   status);
+	  sprintf(dataLabel->data,"SegmentAnalyzed_%i.diag",i);
+	  print_real4tseries(SegVec->dataSeg[j],dataLabel->data);
+	  sprintf(dataLabel->data,"SegmentAnalyzed_%i_Units.diag",i);
+	  print_lalUnit(SegVec->dataSeg[j]->sampleUnits,dataLabel->data);
+	  LAL_CALL(LALCHARDestroyVector(status,&dataLabel),
+		   status);
+	}
       LALappsDoTSeriesSearch(status,SegVec->dataSeg[j],params,j);
       j++;
     };
@@ -3201,7 +3223,7 @@ void LALappsTracksearchRemoveHarmonics( LALStatus             *status,
        */
       if (params.verbosity > quiet)
 	{
-	  fprintf(stdout,"Removing requested coherent lines.\n");
+	  fprintf(stdout,"Removing requested coherent lines, if possible.\n");
 	  for (i=0;i<params.numLinesToRemove;i++)
 	    fprintf(stdout," %f, ",params.listLinesToRemove[i]);
 	  fprintf(stdout,"\n");
@@ -3287,66 +3309,73 @@ void LALappsTracksearchRemoveHarmonics( LALStatus             *status,
 	}
       for (j=0;j<params.numLinesToRemove;j++)
 	{
-	  if (params.verbosity > quiet)
+	  /* Create reference signal IFF Line to remove is less than Fnyq*/
+	  if (params.listLinesToRemove[j] < (params.SamplingRate/2))
 	    {
-	      fprintf(stdout,"Creating reference signal :%f\n",params.listLinesToRemove[j]);
-	    }
-	  /* Create reference signal */
-	  tmpHarmonicCount=params.maxHarmonics;
-	  tmpLineFreq=params.listLinesToRemove[j];
-	  if ((params.SamplingRate/tmpLineFreq) < tmpHarmonicCount)
-	    tmpHarmonicCount=floor(params.SamplingRate/tmpLineFreq);
+	      tmpHarmonicCount=params.maxHarmonics;
+	      tmpLineFreq=params.listLinesToRemove[j];
+	      if ((params.SamplingRate/(2*tmpLineFreq)) <  tmpHarmonicCount)
+		{
+		  tmpHarmonicCount=floor(params.SamplingRate/(2*tmpLineFreq));
+		  if ((tmpHarmonicCount*tmpLineFreq) >= (params.SamplingRate/2))
+		    tmpHarmonicCount=tmpHarmonicCount-1;
+		}
+	      if (params.verbosity > quiet)
+		{
+		  fprintf(stdout,"Reference %f, Max Harmonics to remove %i\n",tmpLineFreq,tmpHarmonicCount);
+		}
       
-	  LAL_CALL(LALI4CreateVector(status,
-				     &harmonicIndex,
-				     tmpHarmonicCount),
-		   status);
-	  LAL_CALL(LALI4CreateVector(status,
-				     &harmonicIndexCompliment,
-				     3*tmpHarmonicCount),
-		   status);
-	  for (i=0;i<tmpHarmonicCount;i++)
-	    harmonicIndex->data[i]=i+1;
-
-	  inputTVectorCLR->fLine = tmpLineFreq;
-	  inputFVectorCLR->fLine = tmpLineFreq;
-
-	  LAL_CALL( LALHarmonicFinder(status,
-				      harmonicIndexCompliment,
-				      inputFVectorCLR,
-				      harmonicIndex),
-		    status);
-
-	  LAL_CALL( LALRefInterference(status,
-				       tmpReferenceSignal,
-				       signalFFT_harmonic->data,
-				       harmonicIndexCompliment),
-		    status);
-
-
-
-	  if (harmonicIndexCompliment)
-	    {
-	      LAL_CALL(LALI4DestroyVector(status,
-					  &harmonicIndexCompliment),
+	      LAL_CALL(LALI4CreateVector(status,
+					 &harmonicIndex,
+					 tmpHarmonicCount),
 		       status);
-	    }
-
-	  if (harmonicIndex)
-	    {
-	      LAL_CALL(LALI4DestroyVector(status,
-					  &harmonicIndex),
+	      LAL_CALL(LALI4CreateVector(status,
+					 &harmonicIndexCompliment,
+					 3*tmpHarmonicCount),
 		       status);
-	    }
-	  /* Copy this temp reference into global reference signal variable??*/
-	  for (k=0;k < referenceSignal->length;k++)
-	    {
-	      referenceSignal->data[k].re=
-		referenceSignal->data[k].re +
-		tmpReferenceSignal->data[k].re;
-	      referenceSignal->data[k].im=
-		referenceSignal->data[k].im +
-		tmpReferenceSignal->data[k].im;
+	      for (i=0;i<tmpHarmonicCount;i++)
+		harmonicIndex->data[i]=i+1;
+
+	      inputTVectorCLR->fLine = tmpLineFreq;
+	      inputFVectorCLR->fLine = tmpLineFreq;
+
+	      LAL_CALL( LALHarmonicFinder(status,
+					  harmonicIndexCompliment,
+					  inputFVectorCLR,
+					  harmonicIndex),
+			status);
+
+	      LAL_CALL( LALRefInterference(status,
+					   tmpReferenceSignal,
+					   signalFFT_harmonic->data,
+					   harmonicIndexCompliment),
+			status);
+
+
+
+	      if (harmonicIndexCompliment)
+		{
+		  LAL_CALL(LALI4DestroyVector(status,
+					      &harmonicIndexCompliment),
+			   status);
+		}
+
+	      if (harmonicIndex)
+		{
+		  LAL_CALL(LALI4DestroyVector(status,
+					      &harmonicIndex),
+			   status);
+		}
+	      /* Copy this temp reference into global reference signal variable??*/
+	      for (k=0;k < referenceSignal->length;k++)
+		{
+		  referenceSignal->data[k].re=
+		    referenceSignal->data[k].re +
+		    tmpReferenceSignal->data[k].re;
+		  referenceSignal->data[k].im=
+		    referenceSignal->data[k].im +
+		    tmpReferenceSignal->data[k].im;
+		}
 	    }
 	}
       /* Clean up input time series with global reference signal */
