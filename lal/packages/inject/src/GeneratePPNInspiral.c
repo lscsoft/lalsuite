@@ -314,21 +314,32 @@ typedef struct tagFreqDiffParamStruc {
 static void
 FreqDiff( LALStatus *stat, REAL4 *y, REAL4 x, void *p )
 {
-  INT4 i;     /* index over PN coefficients */
-  REAL4 f;    /* normalized frequency */
-  REAL4 *c;   /* PN coefficients of frequency series */
-  BOOLEAN *b; /* whether to include each PN term */
+  FreqDiffParamStruc *par;        /* *p cast to its proper type */
+  REAL4 c0, c1, c2, c3, c4, c5;   /* PN frequency coefficients */
+  BOOLEAN b0, b1, b2, b3, b4, b5; /* whether each order is nonzero */
+  REAL4 x2, x3, x4, x5;           /* x^2, x^3, x^4, and x^5 */
 
   INITSTATUS( stat, "FreqDiff", GENERATEPPNINSPIRALC );
   ASSERT( p, stat, 1, "Null pointer" );
 
-  c = ( (FreqDiffParamStruc *)p )->c;
-  b = ( (FreqDiffParamStruc *)p )->b;
-  f = 0.0;
-  for ( i = 0; i < MAXORDER; i++ )
-    if ( b[i] )
-      f += c[i]*pow( x, i + 3.0 );
-  *y = f - ( (FreqDiffParamStruc *)p )->y0;
+  /* Set constants used by FREQ() macro. */
+  par = (FreqDiffParamStruc *)( p );
+  c0 = par->c[0];
+  c1 = par->c[1];
+  c2 = par->c[2];
+  c3 = par->c[3];
+  c4 = par->c[4];
+  c5 = par->c[5];
+  b0 = par->b[0];
+  b1 = par->b[1];
+  b2 = par->b[2];
+  b3 = par->b[3];
+  b4 = par->b[4];
+  b5 = par->b[5];
+
+  /* Evaluate frequency and compare with reference. */
+  FREQ( *y, x );
+  *y -= par->y0;
   RETURN( stat );
 }
 
