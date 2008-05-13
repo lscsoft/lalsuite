@@ -177,8 +177,8 @@ class hipe_run(object):
   This class is intended to represent single run of lalapps_inspiral_hipe.
   """
   def __init__(self, hipe_dir, base_cp, ifos, log_path, source_file,
-               dag_base_name, span, exttrig_analyze=None, usertag=None,
-               verbose=False, only_run=None, dont_run=None):
+               dag_base_name, span, exttrig_analyze=None, exttrig_seg=None, 
+               usertag=None, verbose=False, only_run=None, dont_run=None):
     self._hipe_dir = hipe_dir
     self._log_path = log_path
     self._cp = copy.deepcopy(base_cp)
@@ -217,7 +217,7 @@ class hipe_run(object):
 
     # set the on-source segment
     if exttrig_analyze is not None:
-      self._cp.set('input','exttrig-segments', '../onSourceSeg.txt')
+      self._cp.set('input','exttrig-segments', exttrig_seg)
       self._cp.set('input','exttrig-analyze', exttrig_analyze)
     else:
       self._cp.set('input', 'exttrig-analyze', 'all')
@@ -499,6 +499,14 @@ parser.add_option("-a","--onsource-left",action="store",type="int",\
 parser.add_option("-b","--onsource-right",action="store",type="int",\
     default=60, metavar=" ONRIGHT",\
     help="Specifies the right onsource time window (default:60)")
+parser.add_option("-c","--number-buffer-left",action="store",type="int",\
+    default=0, metavar=" BUFFERLEFT",\
+    help="Specifies the number of buffers to the left of the onsource segment "\
+    " in units of trials (default: 0)")
+parser.add_option("-d","--number-buffer-right",action="store",type="int",\
+    default=0, metavar=" BUFFERRIGHT",\
+    help="Specifies the number of buffers to the right of the onsource segment "\
+    " in units of trials (default: 0)")
 parser.add_option("-t", "--padding-time", type="int", default=0,
   help="padding time on each side of an analysis segment")
 parser.add_option("-n", "--num-trials", type="int",
@@ -696,6 +704,12 @@ for grb in ext_trigs:
   onsource_segfile = idirectory + "/onSourceSeg.txt"
   segmentsUtils.tosegwizard(file(onsource_segfile, "w"),
                             segments.segmentlist([onSourceSegment]))
+  segLen = abs( onSourceSegment )
+  bufferSegment = segments.segment( onSourceSegment[0]-opts.number_buffer_left*segLen,\
+                                    onSourceSegment[1]+opts.number_buffer_right*segLen)
+  buffer_segfile = idirectory + "/bufferSeg.txt"
+  segmentsUtils.tosegwizard(file(buffer_segfile, "w"),
+                            segments.segmentlist([bufferSegment]))
   
   if opts.verbose:
     print "on-source segment: ", onSourceSegment
@@ -747,7 +761,8 @@ for grb in ext_trigs:
     if opts.verbose: print "Creating datafind DAG"
     datafind_dag = hipe_run(idirectory + "/datafind", cp, grb_ifolist,
                             opts.log_path, source_file, "datafind",
-                            offSourceSegment, usertag=idirectory + "_DATAFIND",
+                            offSourceSegment, exttrig_seg = '../../'+onsource_segfile, 
+                            usertag=idirectory + "_DATAFIND",
                             verbose=opts.verbose, only_run=["datafind"])
     datafind_node = datafind_dag.finalize(uberdag=uberdag, parent=None)
   else:
@@ -757,7 +772,7 @@ for grb in ext_trigs:
   if opts.verbose: print "Creating DAG for offsource analysis"
   offsource_analysis = hipe_run(idirectory + "/offsource", cp, grb_ifolist,
                             opts.log_path, source_file, "offsource",
-                            offSourceSegment,
+                            offSourceSegment, exttrig_seg = '../../'+buffer_segfile,
                             usertag=idirectory + "_OFFSOURCE_CATEGORY_1",
                             exttrig_analyze="off_source", verbose=opts.verbose,
                             dont_run=["datafind"])
@@ -775,6 +790,7 @@ for grb in ext_trigs:
   onsource_analysis = hipe_run(idirectory + "/onsource", cp, grb_ifolist,
                                opts.log_path, source_file, "onsource",
                                onSourceSegment, exttrig_analyze="on_source",
+                               exttrig_seg = '../../'+onsource_segfile,
                                usertag=idirectory + "_ONSOURCE_CATEGORY_1",
                                verbose=opts.verbose, dont_run=["datafind"])
   onsource_node = onsource_analysis.finalize(uberdag=uberdag,
@@ -800,8 +816,8 @@ for grb in ext_trigs:
       hipe_dir = os.path.join(idirectory, injrun)
       usertag = idirectory + "_" + injrun
       injection_analysis = hipe_run(hipe_dir, cp, grb_ifolist,
-        opts.log_path, source_file, injrun, offSourceSegment, usertag=usertag,
-        verbose=opts.verbose, exttrig_analyze="off_source",
+        opts.log_path, source_file, injrun, offSourceSegment, exttrig_seg = '../../'+buffer_segfile,
+        usertag=usertag, verbose=opts.verbose, exttrig_analyze="off_source",
         dont_run=["datafind", "sire-inspiral", "sire-inspiral-veto",
                   "coire-coincidence"])
 
