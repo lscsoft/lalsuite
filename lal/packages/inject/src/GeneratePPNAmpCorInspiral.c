@@ -88,8 +88,8 @@ NRCSID( GENERATEPPNAMPCORINSPIRALC, "$Id$" );
    overhead of a function call.  The following variables are required
    to be defined and set outside of the macro:
 
-   REAL4 c0, c1, c2, c3, c4, c5, c6, c7;   PN frequency coefficients
-   BOOLEAN b0, b1, b2, b3, b4, b5, b6, b7; whether to include each PN term
+   REAL4 c0, c1, c2, c3, c4, c5, c6, c7, p6; PN frequency coefficients
+   BOOLEAN b0, b1, b2, b3, b4, b5, b6, b7;   whether to include each PN term
 
    The following variables must be defined outside the macro, but are
    set inside it:
@@ -117,7 +117,7 @@ do {                                                                 \
   if ( b5 )                                                          \
     (f) += c5*x5;                                                    \
   if ( b6 )                                                          \
-    (f) += (c6 + p[6]*( -107.0/2240.0*(-8.0)*(log(2.0*x))))*x6;      \
+    (f) += (c6 + p6*( -107.0/2240.0*(-8.0)*(log(2.0*x))))*x6;        \
   if ( b7 )                                                          \
     (f) += c7*x7;                                                    \
   (f) *= x3;                                                         \
@@ -127,6 +127,7 @@ do {                                                                 \
 typedef struct tagFreqDiffParamStruc {
   REAL4 *c;   /* PN coefficients of frequency series */
   BOOLEAN *b; /* whether to include each PN term */
+  REAL4 p6;   /* synonym for p[6] */
   REAL4 y0;   /* normalized frequency being sought */
 } FreqDiffParamStruc;
 
@@ -135,24 +136,37 @@ typedef struct tagFreqDiffParamStruc {
 static void
 FreqDiff( LALStatus *stat, REAL4 *y, REAL4 x, void *p )
 {
-  INT4 i;     /* index over PN coefficients */
-  REAL4 f;    /* normalized frequency */
-  REAL4 *c;   /* PN coefficients of frequency series */
-  BOOLEAN *b; /* whether to include each PN term */
+  FreqDiffParamStruc *par;                  /* *p cast to its proper type */
+  REAL4 c0, c1, c2, c3, c4, c5, c6, c7, p6; /* PN frequency coefficients */
+  BOOLEAN b0, b1, b2, b3, b4, b5, b6, b7;   /* whether each order is nonzero */
+  REAL4 x2, x3, x4, x5, x6, x7;             /* x^2, x^3, x^4, x^5, x^6, and x^7 */
 
   INITSTATUS( stat, "FreqDiff", GENERATEPPNAMPCORINSPIRALC );
   ASSERT( p, stat, 1, "Null pointer" );
 
-  c = ( (FreqDiffParamStruc *)p )->c;
-  b = ( (FreqDiffParamStruc *)p )->b;
-  f = 0.0;
-  for ( i = 0; i < MAXORDER; i++ )
-    if ( b[i] ){
-      f += c[i]*pow( x, i + 3.0 );
-      if (i == 6)
-	f += ( -107.0/2240.0*(-8.0)*log(2.0*x))*pow( x, i + 3.0);
-    }	
-  *y = f - ( (FreqDiffParamStruc *)p )->y0;
+  /* Set constants used by FREQ() macro. */
+  par = (FreqDiffParamStruc *)( p );
+  c0 = par->c[0];
+  c1 = par->c[1];
+  c2 = par->c[2];
+  c3 = par->c[3];
+  c4 = par->c[4];
+  c5 = par->c[5];
+  c6 = par->c[6];
+  c7 = par->c[7];
+  b0 = par->b[0];
+  b1 = par->b[1];
+  b2 = par->b[2];
+  b3 = par->b[3];
+  b4 = par->b[4];
+  b5 = par->b[5];
+  b6 = par->b[6];
+  b7 = par->b[7];
+  p6 = par->p6;
+
+  /* Evaluate frequency and compare with reference. */
+  FREQ( *y, x );
+  *y -= par->y0;
   RETURN( stat );
 }
 
@@ -197,6 +211,7 @@ LALGeneratePPNAmpCorInspiral( LALStatus     *stat,
   REAL4 e0, e1, e2, e3, e4, e5, e6, e7;   /* PN dy/dx coefficients */
   REAL4 p[MAXORDER];                      /* PN parameter values in phase */
   REAL4 q[AMPMAXORDER];                   /* PN parameter values in amplitude */ 
+  REAL4 p6;                               /* synonym for p[6] */
   UINT4 ampOrder;			  /* Amplitude Order */
   INT4 Harmonics;                         /* Number of harmonics */
   REAL4 mTot, mu;      /* total mass and reduced mass */
@@ -463,6 +478,7 @@ LALGeneratePPNAmpCorInspiral( LALStatus     *stat,
   /* Compute PN expansion coefficients. 
      - Correction to the c5 term berlow in accordance with erratum BFIJ, PRD 71 129902  
      - c6 does not include log at this stage but is added later 
+     - p6 = p[6] used in FREQ() macro
   */
   c0 = c[0] = p[0];
   c1 = c[1] = p[1];
@@ -476,6 +492,7 @@ LALGeneratePPNAmpCorInspiral( LALStatus     *stat,
 	           + eta*eta*30913.0/1835008.0
 	           + eta*eta*eta*235925.0/1769472.0);	   
   c7 = c[7] = -p[7]*LAL_PI*(377033378.0/867041280.0 + eta*977650.0/2580480.0 - eta*eta*283538.0/2580480.0);
+  p6 = p[6];
  
   /* Compute expansion coefficients for series in phi and dy/dx. */
   d0 = c0;
@@ -484,7 +501,7 @@ LALGeneratePPNAmpCorInspiral( LALStatus     *stat,
   d3 = c3*5.0/2.0;
   d4 = c4*5.0;
   d5 = c5*5.0/8.0;
-  d6 = p[6]*(831032450749357.0/57682522275840.0 - LAL_PI*LAL_PI*53.0/40.0 - 107.0*LAL_GAMMA/56.0 
+  d6 = p6*(831032450749357.0/57682522275840.0 - LAL_PI*LAL_PI*53.0/40.0 - 107.0*LAL_GAMMA/56.0 
           + eta*(-123292747421.0/4161798144.0 + LAL_PI*LAL_PI*2255.0/2048.0 + 385.0/48.0*(-1987.0/3080)
 	         -55.0/16.0*(-11831.0/9240.0))
 	  + eta*eta*(154565.0/1835008.0 - eta*1179625.0/1769472.0));
@@ -603,6 +620,7 @@ LALGeneratePPNAmpCorInspiral( LALStatus     *stat,
       in.function = FreqDiff;
       par.c = c;
       par.b = b;
+      par.p6 = p6;
       par.y0 = yStart;
 
       TRY( LALSBisectionFindRoot( stat->statusPtr, &(xStart), &in,
