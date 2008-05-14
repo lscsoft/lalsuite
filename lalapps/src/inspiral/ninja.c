@@ -323,6 +323,8 @@ int main( INT4 argc, CHAR *argv[] )
 
     } /* end if (metadata is in range) */   
 
+    FrFileIEnd( frFile );
+
   } /* end loop over framefiles */
   LogPrintfVerbatim (LOG_NORMAL, "done\n");
 
