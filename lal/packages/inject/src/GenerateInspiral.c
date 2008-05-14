@@ -177,12 +177,6 @@ LALGenerateInspiral(
       }
     }
     
-    /* Currently ppnParams->ampOrder cannot be set by the
-       user. By choosing a negative value the order will be
-       set the same as the phase order.
-    */
-    ppnParams->ampOrder = -1;
-
     /* generate PPN waveform */
     LALGeneratePPNAmpCorInspiral(status->statusPtr, waveform, ppnParams);
     CHECKSTATUSPTR(status);
@@ -429,11 +423,12 @@ LALGenerateInspiralPopulatePPN(
   ATTATCHSTATUSPTR( status );
 
   /* input fields */
-  ppnParams->mTot = thisEvent->mass1 + thisEvent->mass2;
-  ppnParams->eta  = thisEvent->eta;
-  ppnParams->d    = thisEvent->distance* 1.0e6 * LAL_PC_SI; /*in Mpc*/
-  ppnParams->inc  = thisEvent->inclination;
-  ppnParams->phi  = thisEvent->coa_phase;
+  ppnParams->mTot     = thisEvent->mass1 + thisEvent->mass2;
+  ppnParams->eta      = thisEvent->eta;
+  ppnParams->d        = thisEvent->distance* 1.0e6 * LAL_PC_SI; /*in Mpc*/
+  ppnParams->inc      = thisEvent->inclination;
+  ppnParams->phi      = thisEvent->coa_phase;
+  ppnParams->ampOrder = thisEvent->amp_order;
 
   /* frequency cutoffs */
   if ( thisEvent->f_lower > 0 )
