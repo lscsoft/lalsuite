@@ -95,7 +95,7 @@ INT4 main(INT4 argc, CHAR **argv)
   CHAR *simulation_details = NULL;
   CHAR *nr_group = NULL;
   CHAR *email = NULL;
-  CHAR *mass_ratio = NULL;;
+  CHAR *mass_ratio = NULL;
   CHAR *spin1x = NULL;
   CHAR *spin1y = NULL;
   CHAR *spin1z = NULL;
@@ -137,10 +137,6 @@ INT4 main(INT4 argc, CHAR **argv)
   INT4 duration;
   INT4 detector_flags;
 
-  /* default debug level */
-  lal_errhandler = LAL_ERR_EXIT;
-  set_debug_level("33");
-
   /* getopt arguments */
   struct option long_options[] =
   {
@@ -155,6 +151,10 @@ INT4 main(INT4 argc, CHAR **argv)
     {"version", no_argument, 0, 'V'},
     {0, 0, 0, 0}
   };
+
+  /* default debug level */
+  lal_errhandler = LAL_ERR_EXIT;
+  set_debug_level("33");
 
   /* parse the arguments */
   while(1)
