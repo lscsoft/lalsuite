@@ -2207,6 +2207,7 @@ SimInspiralTableFromLIGOLw (
     {"numrel_mode_min",     -1, 50},
     {"numrel_mode_max",     -1, 51},
     {"numrel_data",         -1, 52},
+    {"amp_order",           -1, 53},
     {NULL,                   0, 0}
   };
 
@@ -2491,6 +2492,10 @@ SimInspiralTableFromLIGOLw (
 	{
           LALSnprintf(thisSim->numrel_data, LIGOMETA_STRING_MAX * sizeof(CHAR),
               "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data);
+	}
+	else if ( tableDir[j].idx == 53 )
+	{
+	  thisSim->amp_order = i4colData;
 	}
         else
         {
