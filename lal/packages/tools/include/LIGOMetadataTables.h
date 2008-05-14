@@ -626,6 +626,7 @@ tagSimInspiralTable
   INT4           numrel_mode_min;
   INT4           numrel_mode_max;
   CHAR           numrel_data[LIGOMETA_STRING_MAX];
+  INT4           amp_order;
 }
 SimInspiralTable;
 /* </lalVerbatim> */
