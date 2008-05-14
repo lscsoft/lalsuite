@@ -113,6 +113,7 @@ NRCSID( LIGOMETADATATABLESH, "$Id$" );
 \idx[Type]{SnglRingdownTable}
 \idx[Type]{SummValueTable}
 \idx[Type]{CoincInspiralTable}
+\idx[Type]{CoincInspiralSlideTable}
 \idx[Type]{CoincRingdownTable}
 \idx[Type]{StochasticTable}
 \idx[Type]{StochSummTable}
@@ -660,6 +661,30 @@ each ifo.  In addition the table, it contains a field in which to store the
 number and names of the IFOs which have non-null SnglInspiralTables.  Finally, 
 it contains a pointer to an associated \texttt{SimInspiral}.  This table is 
 meant to provide a simple way to manipulate coincident triggers.
+
+
+\subsubsection*{Type \texttt{CoincInspiralSlides}}
+  
+</lalLaTeX>
+#endif
+/* <lalVerbatim> */
+typedef struct
+tagCoincInspiralSlideTable
+{
+  struct tagCoincInspiralSlideTable *next;
+  REAL4               slideTimeAnalyzed;
+  INT4                slideNum;
+  REAL4               currentRate;
+  CoincInspiralTable  *coincInspiral;
+}
+CoincInspiralSlideTable;/* </lalVerbatim> */
+#if 0
+<lalLaTeX>
+The \texttt{CoincInspiralSlideTable} contains a pointer to a CoincInspiral
+table meant for a particular time slide.  In addition to the table, it
+contains a field in which to store the time slide number, the analyzed time for
+this time slide, and a pointer to the next \texttt{CoincInspiralSlideTable} for
+a different time slide.
 
 
 \subsubsection*{Type \texttt{SimBurst}}
