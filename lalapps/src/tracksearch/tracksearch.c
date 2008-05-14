@@ -283,16 +283,6 @@ void LALappsTrackSearchPrepareData( LALStatus        *status,
 	print_real4tseries(dataSet,"Post_SoftwareInjectDataSet.diag");
     }
 
-  if (params.numLinesToRemove > 0)
-    {
-      if (params.verbosity >= printFiles)
-	print_real4tseries(dataSet,"Pre_LineRemoval_TimeDomain.diag");
-      LALappsTracksearchRemoveHarmonics(status,dataSet,params);
-      if (params.verbosity >= printFiles)
-	print_real4tseries(dataSet,"Post_LineRemoval_TimeDomain.diag");
-    }
-  else if (params.verbosity >= verbose)
-    	fprintf(stdout,"Lines and Harmonics will NOT be removed.\n");
   /*
    * Split incoming data into Segment Vector
    * Adjust the segmenter to make orignal segments with
@@ -303,6 +293,40 @@ void LALappsTrackSearchPrepareData( LALStatus        *status,
 				       dataSegments,
 				       params),
 	   status);
+  /*
+   * NOTE:
+   * Tina, due to the comment in LSD about removing lines in data
+   * stretches seconds to minutes we will now attempt line removal
+   * on the individual segments.  For ASQ data and other high fs
+   * data these stretches will be minutes and not tens of minutes in 
+   * duration... This should work (I HOPE).
+   */
+
+  if (params.numLinesToRemove > 0)
+    {
+      if (0)
+	{
+	  if (params.verbosity >= printFiles)
+	    print_real4tseries(dataSet,"Pre_LineRemoval_TimeDomain.diag");
+	  LALappsTracksearchRemoveHarmonics(status,dataSet,params);
+	  if (params.verbosity >= printFiles)
+	    print_real4tseries(dataSet,"Post_LineRemoval_TimeDomain.diag");
+	}
+      else
+	{
+	  if (params.verbosity >= verbose)
+	    fprintf(stdout,
+		    "Preparing to remove lines from data segments.\n");
+	  LALappsTracksearchRemoveHarmonicsFromSegments(status,
+							dataSet,
+							dataSegments,
+							params);
+	}
+    }
+  else if (params.verbosity >= verbose)
+    	fprintf(stdout,"Lines and Harmonics will NOT be removed.\n");
+
+
   /*
    * If we are to whiten first let us calculate the 
    * average PSD using the non segment data structure
@@ -3188,6 +3212,47 @@ void LALappsTrackSearchBandPassing( LALStatus           *status,
 }
 /*
  * End Butterworth Band passing
+ */
+/* 
+ * Variation that removes harmonics from individual data segments
+ */ 
+void LALappsTracksearchRemoveHarmonicsFromSegments(LALStatus       *status,
+						   REAL4TimeSeries *dataSet,
+						   TSSegmentVector *dataSegments,
+						   TSSearchParams   params)
+{
+  UINT4             j=0;
+  REAL4TimeSeries  *tmpSegmentPtr=NULL;
+  CHARVector       *dataLabel=NULL;
+
+  for (j=0;j<dataSegments->length;j++)
+    {
+      if (params.verbosity > quiet)
+	fprintf(stdout,"Removing lines from segment %i.\n",j+1);
+      tmpSegmentPtr=(dataSegments->dataSeg[j]);
+      LAL_CALL(LALCHARCreateVector(status,&dataLabel,128),
+	       status);
+	sprintf(dataLabel->data,"Pre_LineRemovalTimeDomainDataSeg_%i.diag",j);
+      if (params.verbosity >= printFiles)
+	print_real4tseries(tmpSegmentPtr,dataLabel->data);
+      sprintf(dataLabel->data,"Pre_LineRemovalTimeDomainDataSeg_%i_Units.diag",j);
+      if (params.verbosity >= printFiles)
+	print_lalUnit(tmpSegmentPtr->sampleUnits,dataLabel->data);
+      LALappsTracksearchRemoveHarmonics(status,tmpSegmentPtr,params);
+      sprintf(dataLabel->data,"Post_LineRemovalTimeDomainDataSeg_%i.diag",j);
+      if (params.verbosity >= printFiles)
+	print_real4tseries(tmpSegmentPtr,dataLabel->data);
+      sprintf(dataLabel->data,"Post_LineRemovalTimeDomainDataSeg_%i_Units.diag",j);
+      if (params.verbosity >= printFiles)
+	print_lalUnit(tmpSegmentPtr->sampleUnits,dataLabel->data);
+      LAL_CALL(LALCHARDestroyVector(status,&dataLabel),
+		   status);
+      tmpSegmentPtr=NULL;
+    }
+}
+
+/*
+ * End Harmonics line removal variant
  */
 /*
  * Removing harmonic lines from data

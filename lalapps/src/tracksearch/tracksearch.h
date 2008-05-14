@@ -116,6 +116,10 @@ LALappsTracksearchRemoveHarmonics( LALStatus*,
 				   REAL4TimeSeries*,
 				   TSSearchParams);
 
+void LALappsTracksearchRemoveHarmonicsFromSegments(LALStatus*,
+						   REAL4TimeSeries*,
+						   TSSegmentVector*,
+						   TSSearchParams);
 void 
 LALappsTrackSearchPerformInjection( LALStatus*,
 				    REAL4TimeSeries*,
