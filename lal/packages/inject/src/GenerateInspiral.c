@@ -230,21 +230,21 @@ LALGenerateInspiral(
   /* Some info should add everything (spin and so on) */
   LALSnprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
       "Injected waveform parameters:\n"
-      "ppnParams->mTot\t= %e\n"
-      "ppnParams->eta\t= %e\n"
-      "ppnParams->d\t= %e\n"
-      "ppnParams->inc\t= %e\n"
-      "ppnParams->phi\t= %e\n"
-      "ppnParams->psi\t= %e\n"
-      "ppnParams->fStartIn\t= %e\n"
-      "ppnParams->fStopIn\t= %e\n"
-      "ppnParams->position.longitude\t= %e\n"
-      "ppnParams->position.latitude\t= %e\n"
-      "ppnParams->position.system\t= %e\n"
-      "ppnParams->epoch.gpsSeconds\t= %e\n" 
-      "ppnParams->epoch.gpsNanoSeconds\t= %e\n"
-      "ppnParams->tC\t= %e\n"
-      "ppnParams->dfdt\t =%e\n", 
+      "ppnParams->mTot\t= %"LAL_REAL4_FORMAT"\n"
+      "ppnParams->eta\t= %"LAL_REAL4_FORMAT"\n"
+      "ppnParams->d\t= %"LAL_REAL4_FORMAT"\n"
+      "ppnParams->inc\t= %"LAL_REAL4_FORMAT"\n"
+      "ppnParams->phi\t= %"LAL_REAL4_FORMAT"\n"
+      "ppnParams->psi\t= %"LAL_REAL4_FORMAT"\n"
+      "ppnParams->fStartIn\t= %"LAL_REAL4_FORMAT"\n"
+      "ppnParams->fStopIn\t= %"LAL_REAL4_FORMAT"\n"
+      "ppnParams->position.longitude\t= %"LAL_REAL8_FORMAT"\n"
+      "ppnParams->position.latitude\t= %"LAL_REAL8_FORMAT"\n"
+      "ppnParams->position.system\t= %d\n"
+      "ppnParams->epoch.gpsSeconds\t= %"LAL_INT4_FORMAT"\n" 
+      "ppnParams->epoch.gpsNanoSeconds\t= %"LAL_INT4_FORMAT"\n"
+      "ppnParams->tC\t= %"LAL_REAL8_FORMAT"\n"
+      "ppnParams->dfdt\t =%"LAL_REAL4_FORMAT"\n", 
       ppnParams->mTot, 
       ppnParams->eta, 
       ppnParams->d,
