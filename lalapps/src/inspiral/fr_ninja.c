@@ -60,7 +60,7 @@ RCSID("$Id$");
 
 /* minimum/maximum l values */
 #define MIN_L 2
-#define MAX_L 4
+#define MAX_L 8
 
 /* function prototypes */
 static void print_usage(FILE *ptr, CHAR *program);
