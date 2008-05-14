@@ -897,6 +897,21 @@ LALExtractSnglInspiralFromCoinc(
     );
 
 int
+XLALCreateCoincSlideTable(
+    CoincInspiralSlideTable   **slideTableHead,
+    INT4                        numSlides
+    );
+
+REAL4
+XLALSetupCoincSlideTable(
+    CoincInspiralSlideTable    *slideTableHead,
+    CoincInspiralTable         *coincSlideHead,
+    char                       *timeAnalyzedFileName,
+    REAL4                       timeModifier,
+    INT4                        numSlides
+    );
+
+int
 XLALRecreateCoincFromSngls(
     CoincInspiralTable        **coincPtr,
     SnglInspiralTable          *snglInspiral
@@ -990,9 +1005,20 @@ XLALStatCutCoincInspiral (
     REAL4                       statCut
     );
 
+int
+XLALCalcExpFitNLoudestBackground (
+    CoincInspiralTable         *coincSlideHead,
+    int                         fitNum,
+    CoincInspiralStatistic      coincStat,
+    CoincInspiralBittenLParams *bittenLParams,
+    REAL4                      *fitStat,
+    REAL4                      *fitA,
+    REAL4                      *fitB
+    );
+
 REAL4
-XLALRateStatCalcOneCoincInspiral (
-    CoincInspiralTable         *thisEvent,
+XLALRateCalcCoincInspiral (
+    CoincInspiralTable         *eventZeroHead,
     CoincInspiralTable         *eventSlideHead,
     CoincInspiralStatistic      coincStat,
     CoincInspiralBittenLParams *bittenLParams,
@@ -1003,11 +1029,12 @@ XLALRateStatCalcOneCoincInspiral (
     );
 
 REAL4
-XLALRateStatCalcCoincInspiral (
-    CoincInspiralTable         *thisEvent,
-    CoincInspiralTable         *eventSlideHead,
+XLALRateErrorCalcCoincInspiral (
+    CoincInspiralTable         *eventZeroHead,
+    CoincInspiralSlideTable    *eventSlideHead,
     CoincInspiralStatistic      coincStat,
     CoincInspiralBittenLParams *bittenLParams,
+    int                         numSlides,
     REAL4                       timeAnalyzed,
     REAL4                       fitStat,
     REAL4                       fitA,
@@ -1017,15 +1044,10 @@ XLALRateStatCalcCoincInspiral (
 CoincInspiralTable *
 XLALRateStatCutCoincInspiral (
     CoincInspiralTable         *eventZeroHead,
-    CoincInspiralTable         *eventSlideHead,
     CoincInspiralStatistic      coincStat,
     CoincInspiralBittenLParams *bittenLParams,
     REAL4                       statCut,
-    REAL4                       rateCut,
-    REAL4                       timeAnalyzed,
-    REAL4                       fitStat,
-    REAL4                       fitA,
-    REAL4                       fitB
+    REAL4                       rateCut
     );
 
 SnglInspiralTable *
