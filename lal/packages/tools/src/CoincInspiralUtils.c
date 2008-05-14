@@ -91,8 +91,8 @@ NRCSID( COINCINSPIRALUTILSC, "$Id$" );
 \idx{XLALSortCoincInspiral()}
 \idx{XLALCompareCoincInspiralByTime()}
 \idx{XLALCompareCoincInspiralByEffectiveSnr()}
-\idx{XLALRateStatCalcOneCoincInspiral()}
-\idx{XLALRateStatCalcCoincInspiral()}
+\idx{XLALRateCalcCoincInspiral()}
+\idx{XLALRateErrorCalcCoincInspiral()}
 \idx{XLALRateStatCutCoincInspiral()}
 \idx{XLALCountInspiralTable()}
 
@@ -956,6 +956,180 @@ XLALExtractSnglInspiralFromCoinc(
 
   return( snglHead );
         
+}
+
+
+/* <lalVerbatim file="CoincInspiralUtilsCP"> */
+int
+XLALCreateCoincSlideTable(
+    CoincInspiralSlideTable   **slideTableHead,
+    INT4                        numSlides
+    )
+/* </lalVerbatim> */
+{
+  static const char *func = "XLALCreateCoincSlideTable";
+  CoincInspiralSlideTable  *thisSlideTable = NULL;
+  CoincInspiralSlideTable  *prevSlideTable = NULL;
+  INT4                      idx = 0;
+  INT4                      slideNum = 0;
+
+  for ( idx = 0; idx < 2*numSlides; idx++ )
+  {
+    if ( idx < numSlides )
+    {
+      slideNum = idx + 1;
+    }
+    else
+    {
+      slideNum = idx - 2*numSlides;
+    }
+
+    if ( *slideTableHead )
+    {
+      prevSlideTable = thisSlideTable;
+      thisSlideTable->next = (CoincInspiralSlideTable*)
+          LALCalloc( 1, sizeof(CoincInspiralSlideTable) );
+      thisSlideTable = thisSlideTable->next;
+    }
+    else
+    {
+      *slideTableHead = thisSlideTable = (CoincInspiralSlideTable*)
+          LALCalloc( 1, sizeof(CoincInspiralSlideTable) );
+    }
+
+    if ( !thisSlideTable )
+    {
+      /* out of memory: free memory + exit*/
+      while ( *slideTableHead )
+      {
+        thisSlideTable = *slideTableHead;
+        *slideTableHead = (*slideTableHead)->next;
+        LALFree( thisSlideTable );
+      }
+
+      XLAL_ERROR( func,XLAL_ENOMEM );
+    }
+
+    thisSlideTable->coincInspiral = NULL;
+    thisSlideTable->slideNum = slideNum;
+    thisSlideTable->slideTimeAnalyzed = 0;
+    thisSlideTable->currentRate = 0;
+    thisSlideTable->next = NULL;
+  }
+
+  return( numSlides );
+}
+
+
+/* <lalVerbatim file="CoincInspiralUtilsCP"> */
+REAL4
+XLALSetupCoincSlideTable(
+    CoincInspiralSlideTable    *slideTableHead,
+    CoincInspiralTable         *coincSlideHead,
+    char                       *timeAnalyzedFileName,
+    REAL4                       timeModifier,    
+    INT4                        numSlides
+    )
+/* </lalVerbatim> */
+{
+  static const char *func = "XLALCreateCoincSlideTable";
+  CoincInspiralSlideTable  *thisSlideTable = NULL;
+  INT4                      idx = 0;
+  INT4                      slideNum = 0;
+  INT4                      thisSlideNum = 0;
+  FILE                     *timeAnalyzedFp = NULL;
+  int                       readVal = 0;
+  REAL4                     zeroLagTimeAnalyzed = 0;
+  REAL4                     thisSlideTimeAnalyzed = 0;
+
+  timeAnalyzedFp = fopen( timeAnalyzedFileName, "r" );
+  readVal = fscanf( timeAnalyzedFp, "%i %f\n", &thisSlideNum,
+      &zeroLagTimeAnalyzed );
+  if ( readVal != 2 )
+  {
+    /* should never get here */
+    XLALPrintError( "Error reading time analyzed file %s",
+        timeAnalyzedFileName );
+    XLAL_ERROR( func,XLAL_EIO );
+  }
+
+  if ( thisSlideNum )
+  {
+    /* should never get here */
+    fclose( timeAnalyzedFp );
+
+    XLALPrintError( "Have no analyzed time associated with zero lag" );
+    XLAL_ERROR( func,XLAL_EIO );
+  }
+
+  thisSlideTable = slideTableHead;
+  while ( thisSlideTable )
+  {
+    if ( idx < numSlides )
+    {
+      slideNum = idx + 1;
+    }
+    else
+    {
+      slideNum = idx - 2*numSlides;
+    }
+    idx++;
+
+    readVal = fscanf( timeAnalyzedFp, "%i %f\n", &thisSlideNum,
+        &thisSlideTimeAnalyzed );
+    if ( readVal != 2 )
+    {
+      /* should never get here */
+      fclose( timeAnalyzedFp );
+
+      XLALPrintError( "Error reading time analyzed file %s",
+          timeAnalyzedFileName );
+      XLAL_ERROR( func,XLAL_EIO );
+    }
+
+    if ( thisSlideNum != slideNum )
+    {
+      /* should never get here */
+      fclose( timeAnalyzedFp );
+
+      XLALPrintError( "Have no analyzed time associated with time slide %d",
+          thisSlideNum );
+      XLAL_ERROR( func,XLAL_EIO );
+    }
+
+    thisSlideTable->coincInspiral = XLALCoincInspiralSlideCut(
+            &coincSlideHead, slideNum);
+    thisSlideTable->slideNum = slideNum;
+    thisSlideTable->slideTimeAnalyzed = thisSlideTimeAnalyzed / timeModifier;
+    thisSlideTable->currentRate = 0;
+    thisSlideTable = thisSlideTable->next;
+  }
+
+  if ( coincSlideHead )
+  {
+    /* should never get here */
+    fclose( timeAnalyzedFp );
+
+    XLALPrintError(
+        "Have triggers not associated with a specified time slide" );
+    XLAL_ERROR( func,XLAL_EBADLEN );
+  }
+
+  readVal = fscanf( timeAnalyzedFp, "%i %f\n", &thisSlideNum,
+      &thisSlideTimeAnalyzed );
+  if ( readVal != EOF )
+  {
+    /* should never get here */
+    fclose( timeAnalyzedFp );
+
+    XLALPrintError( "Too many lines in time analyzed file %s",
+        timeAnalyzedFileName );
+    XLAL_ERROR( func,XLAL_EIO );
+  }
+
+  fclose( timeAnalyzedFp );
+
+  return( zeroLagTimeAnalyzed * timeModifier );
 }
 
 
@@ -2413,57 +2587,68 @@ XLALStatCutCoincInspiral (
   return( eventHead );
 }
 
-
 /* <lalVerbatim file="CoincInspiralUtilsCP"> */
-REAL4
-XLALRateStatCalcOneCoincInspiral (
-    CoincInspiralTable         *thisEvent,
+int
+XLALCalcExpFitNLoudestBackground (
     CoincInspiralTable         *coincSlideHead,
+    int                         fitNum,
     CoincInspiralStatistic      coincStat,
     CoincInspiralBittenLParams *bittenLParams,
-    REAL4                       timeAnalyzed,
-    REAL4                       fitStat,
-    REAL4                       fitA,
-    REAL4                       fitB
+    REAL4                      *fitStat,
+    REAL4                      *fitA,
+    REAL4                      *fitB
     )
 /* </lalVerbatim> */
 {
+  static const char *func = "XLALCalcExpFitAboveNLoudestBackground";
+
   CoincInspiralTable    *thisSlideEvent = coincSlideHead;
-
-  REAL4  thisStat;
-  REAL4  thisRate = 0;
-
-  thisStat = XLALCoincInspiralStat(thisEvent, coincStat, bittenLParams);
-  if ( (fitStat > 0) && (thisStat > fitStat) )
+  int idx = 0;                
+  REAL4 Delta = 0;
+  REAL4 X0 = 0;
+  REAL4 X1 = 0;
+  REAL4 X2 = 0;
+  REAL4 Y0 = 0;
+  REAL4 Y1 = 0;
+  REAL4 thisStat = 0;
+        
+  for (idx = 1, thisSlideEvent = coincSlideHead; idx <= fitNum; idx++,
+      thisSlideEvent = thisSlideEvent->next )
   {
-    thisRate = fitA * exp(fitB * thisStat);
-  }
-  else
-  {
-    while ( thisSlideEvent )
+    if ( ! thisSlideEvent )
     {
-      CoincInspiralTable *tmpEvent = thisSlideEvent;
-
-      if ( XLALCoincInspiralStat(tmpEvent,coincStat,bittenLParams) >= thisStat )
-      {
-        /* count this slide coinc towards the rate */
-        thisRate += 1.;
-        thisSlideEvent = thisSlideEvent->next;
-      }
-      else
-        break;
+      /* should never get here */
+      XLALPrintError( "Not enough Background Triggers: have %d, need %d",
+          idx - 1, fitNum );
+      XLAL_ERROR(func,XLAL_ERANGE);
     }
+
+    thisStat = XLALCoincInspiralStat(thisSlideEvent, coincStat, bittenLParams);
+    X0 += idx;
+    X1 += thisStat * idx;
+    X2 += pow(thisStat, 2.0) * idx;
+    Y0 += idx * log(idx);
+    Y1 += thisStat * idx * log(idx);
   }
 
-  thisRate /= timeAnalyzed;
+  *fitStat = thisStat;
 
-  return( thisRate );
+  Delta = X0 * X2 - X1 * X1;
+
+  *fitA = X2 * Y0 - X1 * Y1;
+  *fitA /= Delta;
+  *fitA = exp(*fitA);
+
+  *fitB = X0 * Y1 - X1 * Y0;
+  *fitB /= Delta;
+
+  return( fitNum );
 }
 
 
 /* <lalVerbatim file="CoincInspiralUtilsCP"> */
 REAL4
-XLALRateStatCalcCoincInspiral (
+XLALRateCalcCoincInspiral (
     CoincInspiralTable         *coincZeroHead,
     CoincInspiralTable         *coincSlideHead,
     CoincInspiralStatistic      coincStat,
@@ -2487,7 +2672,7 @@ XLALRateStatCalcCoincInspiral (
   {
     thisStat = XLALCoincInspiralStat(thisEvent, coincStat, bittenLParams);
 
-    if ( (fitStat > 0) && (thisStat > fitStat) )
+    if ( (fitStat > 0) && (thisStat >= fitStat) )
     {
       /* put thisRate in sngl_inspiral->alpha for thisEvent[ifo] 
        * for all ifos in thisEvent 
@@ -2525,7 +2710,7 @@ XLALRateStatCalcCoincInspiral (
           for ( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
           {
             if ( thisEvent->snglInspiral[ifoNumber] )
-              thisEvent->snglInspiral[ifoNumber]->alpha = thisRate/timeAnalyzed;
+              thisEvent->snglInspiral[ifoNumber]->alpha = thisRate;
           }
 
           break;
@@ -2537,6 +2722,165 @@ XLALRateStatCalcCoincInspiral (
     thisEvent = thisEvent->next;
   }
 
+  return( loudestRate );
+}
+
+
+/* <lalVerbatim file="CoincInspiralUtilsCP"> */
+REAL4
+XLALRateErrorCalcCoincInspiral (
+    CoincInspiralTable         *coincZeroHead,
+    CoincInspiralSlideTable    *slideHeads,
+    CoincInspiralStatistic      coincStat,
+    CoincInspiralBittenLParams *bittenLParams,
+    int                         numSlides,
+    REAL4                       timeAnalyzed,
+    REAL4                       fitStat,
+    REAL4                       fitA,
+    REAL4                       fitB
+    )
+/* </lalVerbatim> */
+{
+  static const char *func = "XLALRateErrorCalcCoincInspiral";
+
+  CoincInspiralSlideTable    *headSlideHeads = NULL;
+  CoincInspiralSlideTable    *thisSlideHead = NULL;
+  CoincInspiralSlideTable    *thisHeadSlideHead = NULL;
+  CoincInspiralSlideTable    *tmpSlideHead = NULL;
+  CoincInspiralTable         *thisEvent = coincZeroHead;
+
+  REAL4  thisStat;
+  REAL4  thisSlideStat;
+  REAL4  thisRate = 0.;
+  REAL4  thisRateNum = 0.;
+  REAL4  thisRateDenom = 0.;
+  REAL4  thisRateError = 0.;
+  REAL4  loudestRate = -1;
+
+  headSlideHeads = slideHeads;
+  XLALCreateCoincSlideTable( &thisHeadSlideHead, numSlides );
+  thisSlideHead = thisHeadSlideHead;
+
+  while ( thisSlideHead && slideHeads )
+  {
+    thisSlideHead->coincInspiral = slideHeads->coincInspiral;
+    thisSlideHead->slideTimeAnalyzed = slideHeads->slideTimeAnalyzed;
+    thisSlideHead->slideNum = slideHeads->slideNum;
+    thisSlideHead = thisSlideHead->next;
+    slideHeads = slideHeads->next;
+  }
+
+  while ( thisEvent )
+  {
+    thisStat = XLALCoincInspiralStat(thisEvent, coincStat, bittenLParams);
+
+    if ( (fitStat > 0) && (thisStat >= fitStat) )
+    {
+      /* put thisRate in sngl_inspiral->alpha for thisEvent[ifo] 
+       * for all ifos in thisEvent 
+       * FIXME in the future */
+      InterferometerNumber ifoNumber = LAL_UNKNOWN_IFO;
+
+      thisRate = fitA * exp(fitB * thisStat);
+      thisRateError = pow(thisRate, 0.5);
+      for ( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
+      {
+        if ( thisEvent->snglInspiral[ifoNumber] )
+        {
+          thisEvent->snglInspiral[ifoNumber]->alpha = thisRate;
+          thisEvent->snglInspiral[ifoNumber]->alpha1 =
+              thisRateError;
+        }
+      }
+    }
+    else
+    {
+      thisRate = 0.;
+      thisRateNum = 0.;
+      thisRateDenom = 0.;
+      thisRateError = 0.;
+
+      thisSlideHead = thisHeadSlideHead;
+      while ( thisSlideHead )
+      {
+        while ( thisSlideHead->coincInspiral )
+        {
+          thisSlideStat = XLALCoincInspiralStat(thisSlideHead->coincInspiral,
+              coincStat, bittenLParams);
+
+          if ( thisSlideStat >= thisStat )
+          {
+            /* count this slide coinc towards the rate */
+            thisSlideHead->currentRate += 1;
+            thisSlideHead->coincInspiral = thisSlideHead->coincInspiral->next;
+          }
+          else
+          {
+            /* no more slide triggers in this slide number with 
+             * stat>=thisStat so add this slide's current rate to thisRate */
+            thisRateNum += thisSlideHead->currentRate;
+            thisRateDenom += thisSlideHead->slideTimeAnalyzed;
+            break;
+          }
+        }
+
+        /* move on to the next slide number */
+        thisSlideHead = thisSlideHead->next;
+      }
+
+      thisRate = timeAnalyzed * thisRateNum / thisRateDenom;
+
+      thisSlideHead = thisHeadSlideHead;
+      while ( thisSlideHead )
+      {
+        /* calculate error on thisRate */
+        thisRateError += pow( timeAnalyzed * thisSlideHead->currentRate / \
+            thisSlideHead->slideTimeAnalyzed
+            - thisRate, 2.0 ) / \
+            (thisRateDenom / thisSlideHead->slideTimeAnalyzed);
+
+        /* move on to the next slide number */
+        thisSlideHead = thisSlideHead->next;
+      }
+      thisRateError = pow(thisRateError, 0.5);
+
+      {
+        /* put thisRate in sngl_inspiral->alpha for thisEvent[ifo] 
+         * for all ifos in thisEvent 
+         * FIXME in the future */
+        InterferometerNumber ifoNumber = LAL_UNKNOWN_IFO;
+
+        for ( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
+        {
+          if ( thisEvent->snglInspiral[ifoNumber] )
+          {
+            thisEvent->snglInspiral[ifoNumber]->alpha = thisRate;
+            thisEvent->snglInspiral[ifoNumber]->alpha1 = thisRateError;
+          }
+        }
+      }
+    }
+
+    if ( loudestRate < 0 ) loudestRate = thisRate;
+    thisEvent = thisEvent->next;
+  }
+
+  if ( thisEvent )
+  {
+    /* should never get here */
+    XLALPrintError( "Have events where FAR not calculated" );
+    XLAL_ERROR(func,XLAL_EIO);
+  }
+
+  /* free the CoincInspiralSlideTable thisSlideHead */
+  thisSlideHead = thisHeadSlideHead;
+  while ( thisSlideHead )
+  {
+    tmpSlideHead = thisSlideHead;
+    thisSlideHead = thisSlideHead->next;
+    LALFree( tmpSlideHead );
+  }
+
   return( loudestRate );  
 }
 
@@ -2545,15 +2889,10 @@ XLALRateStatCalcCoincInspiral (
 CoincInspiralTable *
 XLALRateStatCutCoincInspiral (
     CoincInspiralTable         *eventZeroHead,
-    CoincInspiralTable         *eventSlideHead,
     CoincInspiralStatistic      coincStat,
     CoincInspiralBittenLParams *bittenLParams,
     REAL4                       statCut,
-    REAL4                       rateCut,
-    REAL4                       timeAnalyzed,
-    REAL4                       fitStat,
-    REAL4                       fitA,
-    REAL4                       fitB
+    REAL4                       rateCut
     )
 /* </lalVerbatim> */     
 { 
@@ -2569,9 +2908,21 @@ XLALRateStatCutCoincInspiral (
   {
     CoincInspiralTable *tmpEvent = thisEvent;
     thisEvent = thisEvent->next;
-    thisRate = XLALRateStatCalcOneCoincInspiral( tmpEvent, eventSlideHead,
-                   coincStat, bittenLParams, timeAnalyzed, fitStat, fitA,
-                   fitB );
+    thisRate = 0;
+
+    {
+      /* get thisRate from sngl_inspiral->alpha for thisEvent[ifo] 
+       * FIXME in the future */
+      InterferometerNumber ifoNumber = LAL_UNKNOWN_IFO;
+
+      for ( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
+      {
+        if ( thisEvent->snglInspiral[ifoNumber] )
+        {
+          thisRate = thisEvent->snglInspiral[ifoNumber]->alpha;
+        }
+      }
+    }
     thisStat = XLALCoincInspiralStat(tmpEvent,coincStat,bittenLParams);
     if ( thisRate > rateCut )
     {
