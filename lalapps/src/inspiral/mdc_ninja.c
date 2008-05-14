@@ -177,6 +177,8 @@ INT4 main( INT4 argc, CHAR *argv[] )
   lal_errhandler = LAL_ERR_EXIT;
   set_debug_level( "33" );
 
+  XLALSetSilentErrorHandler();
+
   /* parse the arguments */
   while ( 1 )
   {

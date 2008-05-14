@@ -79,11 +79,12 @@
 
 #include "inspiral.h"
 
+
 RCSID( "$Id$" );
 
 
 REAL4 compute_candle_distance(REAL4 candleM1, REAL4 candleM2,
-    REAL4 snr, REAL8 chanDeltaT, INT4 nPoints, 
+    REAL4 thissnr, REAL8 chanDeltaT, INT4 nPoints, 
     REAL8FrequencySeries *spec, UINT4 cut)
 {
   UINT4 k;
@@ -112,7 +113,7 @@ REAL4 compute_candle_distance(REAL4 candleM1, REAL4 candleM2,
 
   sigmaSq *= sigmaSqSum;
 
-  distance = sqrt( sigmaSq ) / snr;
+  distance = sqrt( sigmaSq ) / thissnr;
 
   return distance;
 }
@@ -148,8 +149,9 @@ void AddNumRelStrainModes(  LALStatus              *status,
 			    SimInspiralTable *thisinj     /** [in]   injection data */)
 {
   INT4 modeL, modeM, modeLlo, modeLhi;
-  INT4 len, k;
-  CHAR *channel_name;
+  INT4 len, lenPlus, lenCross, k;
+  CHAR *channel_name_plus;
+  CHAR *channel_name_cross;
   FrStream  *frStream = NULL;
   FrCache frCache;
   LIGOTimeGPS epoch;
@@ -176,46 +178,56 @@ void AddNumRelStrainModes(  LALStatus              *status,
 
   /* the total mass of the binary in Mpc */
   massMpc = (thisinj->mass1 + thisinj->mass2) * LAL_MRSUN_SI / ( LAL_PC_SI * 1.0e6);
+
+  /* start time of waveform -- set it to something */
+  epoch.gpsSeconds = 0;
+  epoch.gpsNanoSeconds = 0;
   
   /* loop over l values */
   for ( modeL = modeLlo; modeL <= modeLhi; modeL++ ) {
 
     /* loop over m values */
     for ( modeM = -modeL; modeM <= modeL; modeM++ ) {
-
+	  
       /* read numrel waveform */ 
       /* first the plus polarization */
-      channel_name = XLALGetNinjaChannelName("plus", modeL, modeM);      
-
-      /*get number of data points */
-      len = XLALFrGetVectorLength ( channel_name, frStream );
-        
-      epoch.gpsSeconds = 0;
-      epoch.gpsNanoSeconds = 0;
+      channel_name_plus = XLALGetNinjaChannelName("plus", modeL, modeM);      
       
-      seriesPlus = XLALCreateREAL4TimeSeries ( channel_name, &epoch, 0, 0, &lalDimensionlessUnit, len);
+      /*get number of data points */
+      lenPlus = XLALFrGetVectorLength ( channel_name_plus, frStream );
+
+      /* now the cross polarization */
+      channel_name_cross = XLALGetNinjaChannelName("cross", modeL, modeM);      
+      
+      /*get number of data points */
+      lenCross = XLALFrGetVectorLength ( channel_name_cross, frStream );
+
+      /* skip on to next mode if mode doesn't exist */
+      if ( (lenPlus <= 0) || (lenCross <= 0) || (lenPlus != lenCross) ) {
+	XLALClearErrno();
+	LALFree(channel_name_plus);
+	LALFree(channel_name_cross);
+	continue;
+      }
+
+      /* note: lenPlus and lenCross must be equal if we got this far*/
+      len = lenPlus;
+
+      /* allocate and read the plus/cross time series */      
+      seriesPlus = XLALCreateREAL4TimeSeries ( channel_name_plus, &epoch, 0, 0, &lalDimensionlessUnit, len);
       memset(seriesPlus->data->data, 0, seriesPlus->data->length*sizeof(REAL4));
       
       XLALFrGetREAL4TimeSeries ( seriesPlus, frStream );  
       XLALFrRewind( frStream );
-      LALFree(channel_name);
-
-      /* now the cross polarization */
-      channel_name = XLALGetNinjaChannelName("cross", modeL, modeM);      
-
-      /*get number of data points */
-      len = XLALFrGetVectorLength ( channel_name, frStream );
-        
-      epoch.gpsSeconds = 0;
-      epoch.gpsNanoSeconds = 0;
+      LALFree(channel_name_plus);            
       
-      seriesCross = XLALCreateREAL4TimeSeries ( channel_name, &epoch, 0, 0, &lalDimensionlessUnit, len);
+      seriesCross = XLALCreateREAL4TimeSeries ( channel_name_cross, &epoch, 0, 0, &lalDimensionlessUnit, len);
       memset(seriesCross->data->data, 0, seriesCross->data->length*sizeof(REAL4));
       
       XLALFrGetREAL4TimeSeries ( seriesCross, frStream );
       XLALFrRewind( frStream );
-      LALFree(channel_name);
-
+      LALFree(channel_name_cross);
+      
       /* allocate memory for tempStrain */
       tempStrain = LALCalloc(1, sizeof(*tempStrain));	
       tempStrain->data = XLALCreateREAL4VectorSequence(2, len);
@@ -225,14 +237,14 @@ void AddNumRelStrainModes(  LALStatus              *status,
       
       /* now copy the data and scale amplitude corresponding to distance of 1Mpc*/ 
       for (k = 0; k < len; k++) {
-      	tempStrain->data->data[k] = massMpc * seriesPlus->data->data[k];
-      	tempStrain->data->data[len + k] = massMpc * seriesCross->data->data[k];	
+	tempStrain->data->data[k] = massMpc * seriesPlus->data->data[k];
+	tempStrain->data->data[len + k] = massMpc * seriesCross->data->data[k];	
       }
       
       /* we are done with seriesPlus and Cross for this iteration */
       XLALDestroyREAL4TimeSeries (seriesPlus);
       XLALDestroyREAL4TimeSeries (seriesCross);
-
+	  
       /* compute the h+ and hx for given inclination and coalescence phase*/
       tempStrain = XLALOrientNRWave( tempStrain, modeL, modeM, thisinj->inclination, thisinj->coa_phase );
       
@@ -252,17 +264,17 @@ void AddNumRelStrainModes(  LALStatus              *status,
       else {
 	sumStrain = XLALSumStrain( sumStrain, tempStrain );
       }
-            
+      
       /* clear memory for strain */
       XLALDestroyREAL4VectorSequence ( tempStrain->data );
       LALFree( tempStrain );
       tempStrain = NULL;
       
     } /* end loop over modeM values */
-    
+  
   } /* end loop over modeL values */
   
-
+  
   XLALFrClose( frStream );
   LALFree(frCache.frameFiles);
   
@@ -300,7 +312,7 @@ void InjectNumRelWaveforms (LALStatus              *status,
   for ( thisInj = injections; thisInj; thisInj = thisInj->next )
     {
 
-      startFreq = start_freq_from_frame_url( thisInj->numrel_data);
+      startFreq = start_freq_from_frame_url(thisInj->numrel_data);
       massTotal = (thisInj->mass1 + thisInj->mass2) * LAL_MTSUN_SI;
       startFreqHz = startFreq / ( LAL_TWOPI * massTotal);
       
@@ -335,7 +347,7 @@ REAL8 start_freq_from_frame_url(CHAR  *url)
   FrHistory *thisHist;
   CHAR *comment=NULL;
   CHAR *token=NULL;
-  REAL8 ret = -1.;
+  REAL8 ret;
 
   frFile =  XLALFrOpenURL( url );
   frame = FrameRead (frFile);
@@ -361,6 +373,7 @@ REAL8 start_freq_from_frame_url(CHAR  *url)
     thisHist = thisHist->next;
   }
 
+  FrFileIEnd( frFile );
   return ret;
 }
 
