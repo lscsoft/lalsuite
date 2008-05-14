@@ -116,7 +116,7 @@ REAL4 meanMass2=-1.0;
 REAL4 massStdev1=-1.0;
 REAL4 massStdev2=-1.0;
 REAL4 inclStd=-1.0;
-REAL4 inclFixed=0.0;
+REAL4 fixed_inc=0.0;
 int spinInjections=-1;
 REAL4 minSpin1=-1.0;
 REAL4 maxSpin1=-1.0;
@@ -206,6 +206,7 @@ static void print_usage(char *program)
       " [--seed] randomSeed       seed for random number generator (default : 1)\n"\
       "  --f-lower freq           lower cut-off frequency.\n"\
       "  --waveform wfm           set waveform type to wfm\n"\
+      "  --amp-order              set PN order in amplitude\n"\
       "\n"\
       "Time distribution information:\n"\
       "  --gps-start-time start   GPS start time for injections\n"\
@@ -231,7 +232,7 @@ static void print_usage(char *program)
       "                           gaussian: gaussian distributed in arccos(i)\n"\
       "                           fixed: no distribution, fixed valued of (i)\n"\
       " [--inclStd]  incStd       std dev for gaussian inclination dist\n"\
-      " [--inclFixed]  inclFixed   read inclination dist if fixed value\n"\
+      " [--fixed-inc]  fixed_inc  read inclination dist if fixed value\n"\
       " [--source-file] sources   read source parameters from sources\n"\
       "                           requires enable/disable milkyway\n"\
       " [--enable-milkyway] lum   enables MW injections, set MW luminosity\n"\
@@ -600,6 +601,7 @@ int main( int argc, char *argv[] )
   /* waveform */
   CHAR waveform[LIGOMETA_WAVEFORM_MAX];
   CHAR dummy[256];
+  INT4 amp_order = -1;
   /* xml output data */
   CHAR                  fname[256];
   CHAR                 *userTag = NULL;
@@ -620,7 +622,7 @@ int main( int argc, char *argv[] )
   gpsEndTime.gpsSeconds=-1;
 
   /* getopt arguments */
-  /* available letters: q v x y z H Q R S T W X Y  */
+  /* available letters: v x y z H Q R S T W X Y  */
   struct option long_options[] =
   {
     {"help",                          no_argument, 0,                'h'},
@@ -635,6 +637,7 @@ int main( int argc, char *argv[] )
     {"time-interval",           required_argument, 0,                'i'},
     {"seed",                    required_argument, 0,                's'},
     {"waveform",                required_argument, 0,                'w'},
+    {"amp-order",               required_argument, 0,                'q'},
     {"user-tag",                required_argument, 0,                'Z'},
     {"userTag",                 required_argument, 0,                'Z'},
     {"m-distr",                 required_argument, 0,                'd'},
@@ -654,7 +657,7 @@ int main( int argc, char *argv[] )
     {"l-distr",                 required_argument, 0,                'l'},
     {"i-distr",                 required_argument, 0,                'I'},
     {"inclStd",                 required_argument, 0,                'B'},
-    {"inclFixed",               required_argument, 0,                'C'},
+    {"fixed-inc",               required_argument, 0,                'C'},
     {"enable-milkyway",         required_argument, 0,                'M'},
     {"disable-milkyway",        no_argument,       0,                'D'},
     {"min-spin1",               required_argument, 0,                'g'},
@@ -848,6 +851,13 @@ int main( int argc, char *argv[] )
           next_process_param( long_options[option_index].name, "string", 
               "%s", optarg );
         break;
+
+      case 'q':
+        amp_order = atof( optarg );
+        this_proc_param = this_proc_param->next = 
+          next_process_param( long_options[option_index].name,
+            "int", "%ld", amp_order );
+      break;
 
       case 'M':
         /* set the luminosity of the Milky Way */
@@ -1164,10 +1174,10 @@ int main( int argc, char *argv[] )
               "float", "%e", inclStd );
         break;
       
-                        case 'C':
+      case 'C':
         /* fixed angle of inclination */
-        inclFixed = (REAL4) atof( optarg );
-        if ( inclFixed < 0.0 || inclFixed > LAL_PI )
+        fixed_inc = (REAL4) atof( optarg );
+        if ( fixed_inc < 0.0 || fixed_inc > LAL_PI )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "inclination fixed must be between 0 and Pi. \n ",
@@ -1176,7 +1186,7 @@ int main( int argc, char *argv[] )
         }
         this_proc_param = this_proc_param->next = 
           next_process_param( long_options[option_index].name, 
-              "float", "%e", inclFixed );
+              "float", "%e", fixed_inc );
 
       case 'P':
         optarg_len = strlen( optarg ) + 1;
@@ -1530,6 +1540,7 @@ int main( int argc, char *argv[] )
     memcpy( simTable->waveform, waveform, 
         sizeof(CHAR) * LIGOMETA_WAVEFORM_MAX );
     simTable->f_lower = fLower;
+    simTable->amp_order = amp_order;
 
     /* populate masses */
     if ( mDistr==massFromSourceFile )
@@ -1589,7 +1600,7 @@ int main( int argc, char *argv[] )
     /* populate orientations */
     if ( iDistr == fixedInclDist )
     {
-      simTable->inclination = inclFixed;
+      simTable->inclination = fixed_inc;
     }
     else
     {                               
