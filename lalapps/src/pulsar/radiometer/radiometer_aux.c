@@ -50,6 +50,7 @@ void CombineAllSFTs ( LALStatus *status,
  
   for (j=0; j < (INT4)multiSFTs->length; j++) {
  	for (k=0; k < (INT4)multiSFTs->data[j]->length; k++) {
+
 		TRY (LALCopySFT(status->statusPtr, &(ret->data[counter++]), &(multiSFTs->data[j]->data[k])), status);
   	}
   }
@@ -146,13 +147,12 @@ void CreateSFTPairsIndicesFrom2SFTvectors(LALStatus                *status,
       timeDiff = XLALGPSDiff( &t1, &t2);
 
       /* decide whether to add this pair or not */
-      if ( fabs(timeDiff) < par->lag ) {
+      if ( (fabs(timeDiff) < par->lag) && (i != j)) {
 
 	numPairs++;
 
 	List1->data[thisPair] = i;
 	List2->data[thisPair++] = j;
-
 
       } /* if ( numPairs < out->length)  */
 	
@@ -196,6 +196,8 @@ void CorrelateSingleSFTPair(LALStatus                *status,
 			    COMPLEX16                *out,
 			    COMPLEX8FrequencySeries  *sft1,
 			    COMPLEX8FrequencySeries  *sft2,
+	  	            REAL8FrequencySeries *psd1,
+		            REAL8FrequencySeries *psd2,
 			    REAL8                    *freq1,
 			    REAL8                    *freq2)
 {  
@@ -205,24 +207,28 @@ void CorrelateSingleSFTPair(LALStatus                *status,
 
   INITSTATUS (status, "CorrelateSingleSFTPair", rcsid);
   ATTATCHSTATUSPTR (status);
+  ASSERT (sft1, status, RADIOMETER_ENULL, RADIOMETER_MSGENULL);
+  ASSERT (sft2, status, RADIOMETER_ENULL, RADIOMETER_MSGENULL);
+  ASSERT (psd1, status, RADIOMETER_ENULL, RADIOMETER_MSGENULL);
+  ASSERT (psd2, status, RADIOMETER_ENULL, RADIOMETER_MSGENULL);
+
 
   /* assume both sfts have the same freq. resolution */
   deltaF = sft1->deltaF;
   bin1 = (INT4)ceil( (*freq1 - sft1->f0) / (deltaF));
   bin2 = (INT4)ceil( (*freq2 - sft2->f0)/ (deltaF));
 
-
   re1 = sft1->data->data[bin1].re;
   im1 = sft1->data->data[bin1].im;
   re2 = sft2->data->data[bin2].re;
   im2 = sft2->data->data[bin2].im;
 
-  out->re = deltaF * deltaF * (re1*re2 + im1*im2);
+  out->re = (deltaF * deltaF * sqrt(psd1->data->data[bin1] * psd2->data->data[bin2])) * (re1*re2 + im1*im2);
+  out->im = (deltaF * deltaF * sqrt(psd1->data->data[bin1] * psd2->data->data[bin2])) * (re1*im2 - re2*im1);
+
+/*  out->re = deltaF * deltaF * (re1*re2 + im2*im2);
   out->im = deltaF * deltaF * (re1*im2 - re2*im1);
-
-/*printf("real1, real2 %f %f, im1, im2, %f, %f\n",re1, re2, im1,im2);*/
-/*printf("real %f imaginary %f\n",out->re, out->im); */
-
+*/
   DETATCHSTATUSPTR (status);
 	
   /* normal exit */	
@@ -270,7 +276,6 @@ void GetSignalFrequencyInSFT(LALStatus                *status,
 
   *out = fhat * (1 + vDotn);  
 
-/*printf("fhat = %f\n", *out);*/
 
   DETATCHSTATUSPTR (status);
 	
@@ -335,8 +340,8 @@ void GetSignalPhaseInSFT(LALStatus               *status,
 
 void CalculateSigmaAlphaSq(LALStatus *status,
 			   REAL8	*out,
-			   REAL8 	*freq1,
-	  	           REAL8	*freq2,
+			   REAL8 	freq1,
+	  	           REAL8	freq2,
 		           REAL8FrequencySeries *psd1,
 		           REAL8FrequencySeries *psd2)
 {			   
@@ -345,13 +350,10 @@ void CalculateSigmaAlphaSq(LALStatus *status,
 
   INITSTATUS (status, "CalculateSigmaAlphaSq", rcsid);
   ATTATCHSTATUSPTR (status);
- 
   deltaF = psd1->deltaF;
 
-
-  bin1 = (INT8)ceil( (*freq1 - psd1->f0) / (deltaF));
-  bin2 = (INT8)ceil( (*freq2 - psd2->f0)/ (deltaF));
-
+  bin1 = (INT8)ceil( (freq1 - psd1->f0) / (deltaF));
+  bin2 = (INT8)ceil( (freq2 - psd2->f0)/ (deltaF));
   *out = pow(deltaF, 4) * psd1->data->data[bin1] * psd2->data->data[bin2];
   DETATCHSTATUSPTR (status);
 	
@@ -433,7 +435,7 @@ void CalculateCrossCorrPower(LALStatus       *status,
 void NormaliseCrossCorrPower(LALStatus 		  *status,
 			     REAL8		  *out,
 			     COMPLEX16Vector 	  *ualpha,
-		    	     REAL8Vector	  *sigmasq)
+		    	     REAL8Vector	  *sigmaAlphasq)
 {
   INT4 i;
   REAL8 variance = 0;
@@ -441,19 +443,16 @@ void NormaliseCrossCorrPower(LALStatus 		  *status,
   INITSTATUS (status, "NormaliseCrossCorrPower", rcsid);
   ATTATCHSTATUSPTR (status);
 
-  ASSERT (out, status, RADIOMETER_ENULL, RADIOMETER_MSGENULL);
   ASSERT (ualpha, status, RADIOMETER_ENULL, RADIOMETER_MSGENULL);
-  ASSERT (sigmasq, status, RADIOMETER_ENULL, RADIOMETER_MSGENULL);
+  ASSERT (sigmaAlphasq, status, RADIOMETER_ENULL, RADIOMETER_MSGENULL);
 
 
   for (i=0; i < (INT4)ualpha->length; i++) {
-	variance += (pow(ualpha->data[i].re, 2) + pow(ualpha->data[i].im, 2)) * sigmasq->data[i];
+	variance += (pow(ualpha->data[i].re, 2) + pow(ualpha->data[i].im, 2)) * sigmaAlphasq->data[i];
   }
   
   variance *= 2.0;
-
-  *out = *out/variance;
- 
+  *out = sqrt(variance);
 
   DETATCHSTATUSPTR (status);
 	

@@ -63,7 +63,6 @@ int main(int argc, char *argv[]){
    /* sft related variables */ 
 
    SFTVector *inputSFTs = NULL;
-   MultiSFTVector *multiSFTs = NULL;
    REAL8 deltaF, timeBase, freq = 0, *freq1 = &freq;
    REAL8 phase = 0, *phase1 = &phase, psi = 0.0; 
    UINT4 numsft, counter = 0; 
@@ -100,11 +99,13 @@ int main(int argc, char *argv[]){
    /* frequency loop info */
    INT4 nfreqLoops, freqCounter = 0;
    INT4 nParams = 0;
+   REAL8 *stddev, ualphacounter=0.0;
 
    static INT4VectorSequence  *sftPairIndexList;
-   static REAL8Vector *frequencyShiftList, *signalPhaseList, *sigmasq;
+   REAL8Vector *frequencyShiftList, *signalPhaseList, *sigmasq;
    static PulsarDopplerParams  thisPoint;
    static REAL8Vector thisVel, thisPos, *weights;
+ 
 
    REAL8 doppWings, fMin, fMax;
 
@@ -213,6 +214,7 @@ int main(int argc, char *argv[]){
     exit(1);
    }
  
+   fprintf(fp, "Frequency\t\t\tRaw Power \t\t Sigma \t\t Normalised Power\n");
     
    /* read sfts */
    
@@ -288,12 +290,14 @@ int main(int argc, char *argv[]){
    sigmasq = XLALCreateREAL8Vector(nParams);
    weights = XLALCreateREAL8Vector(nParams);
   
+   stddev = LALCalloc(1, sizeof(REAL8));
 
    /* start frequency loop */
 
    for (freqCounter = 0; freqCounter < nfreqLoops; freqCounter++) {
+/*printf("start of loop, nparams %i \n", nParams);*/
 
-    multiSFTs = NULL;
+   MultiSFTVector *multiSFTs = NULL;
 
     /* read the sfts */
     /* first load them into a MultiSFTVector, then concatenate the various vectors into one*/
@@ -303,7 +307,7 @@ int main(int argc, char *argv[]){
     fMin = uvar_f0 + (freqCounter*deltaF) - doppWings - uvar_blocksRngMed * deltaF;
     fMax = uvar_f0 + (freqCounter*deltaF) + uvar_fBand + doppWings + uvar_blocksRngMed * deltaF;
  
-printf("fmin, f0, fmax %f %f %f\n", fMin, uvar_f0 + (freqCounter*deltaF), fMax);  
+/*printf("fmin, fmax %f %f\n", fMin, fMax);*/
 
     LAL_CALL( LALLoadMultiSFTs ( &status, &multiSFTs, catalog, fMin, fMax), &status);
     LAL_CALL (CombineAllSFTs (&status, &inputSFTs, multiSFTs, catalog->length), &status);
@@ -314,8 +318,6 @@ printf("fmin, f0, fmax %f %f %f\n", fMin, uvar_f0 + (freqCounter*deltaF), fMax);
     /* note that we can't use the catalog to determine the number of SFTs
        because SFTs might be segmented in frequency */
     numsft = inputSFTs->length; 
-
- 	
 
     /* normalize sfts */
     /* get information about all detectors including velocity and timestamps */
@@ -333,7 +335,6 @@ printf("fmin, f0, fmax %f %f %f\n", fMin, uvar_f0 + (freqCounter*deltaF), fMax);
 
     ts = XLALCreateTimestampVector (1);
     tOffs = 0.5/deltaF;
-
     /*loop over all sfts and get the PSDs and detector states */
     for (j=0; j < (INT4)numsft; j++) {
 	tmpDetState = NULL;
@@ -356,11 +357,9 @@ printf("fmin, f0, fmax %f %f %f\n", fMin, uvar_f0 + (freqCounter*deltaF), fMax);
 	
     }
 
-
     pairParams.lag = uvar_maxlag;  
 
     /* create sft pair indices */
-
     LAL_CALL ( CreateSFTPairsIndicesFrom2SFTvectors( &status, &sftPairIndexList, inputSFTs, &pairParams), &status);
 
     /* initialise F_+, F_x vectors */
@@ -370,8 +369,7 @@ printf("fmin, f0, fmax %f %f %f\n", fMin, uvar_f0 + (freqCounter*deltaF), fMax);
     frequencyShiftList = XLALCreateREAL8Vector(numsft);
     signalPhaseList = XLALCreateREAL8Vector(numsft);
 
-    /*
-     * initialise frequency and phase vectors *
+    /* initialise frequency and phase vectors *
      * initialise Y, u, weight vectors */
     yalpha = (COMPLEX16Vector *) LALCalloc(1, sizeof(COMPLEX16));
     yalpha->length = sftPairIndexList->vectorLength;
@@ -384,8 +382,9 @@ printf("fmin, f0, fmax %f %f %f\n", fMin, uvar_f0 + (freqCounter*deltaF), fMax);
     AMcoef->a = XLALCreateREAL4Vector(numsft);
     AMcoef->b = XLALCreateREAL4Vector(numsft);
 
+/*printf("starting loops over sky patches\n");*/
 
-    /*    loop over sky patches -- main calculations  */
+    /* loop over sky patches -- main calculations  */
     for (skyCounter = 0; skyCounter < nSkyPatches; skyCounter++) 
        { 
 
@@ -412,7 +411,6 @@ printf("fmin, f0, fmax %f %f %f\n", fMin, uvar_f0 + (freqCounter*deltaF), fMax);
          LAL_CALL ( LALGetAMCoeffs ( &status, AMcoef, detStates, skypos), &status); 
 
     /* loop over each SFT to get frequency, then store in frequencyShiftList */
-
     for (j=0; j < (INT4)numsft; j++) {
       
 
@@ -438,7 +436,7 @@ printf("fmin, f0, fmax %f %f %f\n", fMin, uvar_f0 + (freqCounter*deltaF), fMax);
      
     /* loop over SFT pairs */
 
-
+ualphacounter = 0.0;
     for (j=0; j < (INT4)sftPairIndexList->vectorLength; j++) {
   
 	/*  correlate sft pairs  */
@@ -447,30 +445,47 @@ printf("fmin, f0, fmax %f %f %f\n", fMin, uvar_f0 + (freqCounter*deltaF), fMax);
 
 	sft1 = &(inputSFTs->data[index1]);
 	sft2 = &(inputSFTs->data[index2]);
+
 	psd1 = &(psdVec->data[index1]);
 	psd2 = &(psdVec->data[index2]);
+  	
+	LAL_CALL( CorrelateSingleSFTPair( &status, &(yalpha->data[j]), sft1, sft2, psd1, psd2,  &(frequencyShiftList->data[index1]), &(frequencyShiftList->data[index2])), &status);
+/*printf("freqs index%f %i\n", frequencyShiftList->data[index1], index1);*/
+
+
+ 	LAL_CALL( CalculateSigmaAlphaSq( &status, &sigmasq->data[j], frequencyShiftList->data[index1], frequencyShiftList->data[index2], psd1, psd2), &status);
+/*printf("freqs end %f\n", frequencyShiftList->data[index1]);*/
  
-  	LAL_CALL( CorrelateSingleSFTPair( &status, &(yalpha->data[j]), sft1, sft2, &(frequencyShiftList->data[index1]), &(frequencyShiftList->data[index2])), &status);
-
- 	LAL_CALL( CalculateSigmaAlphaSq( &status, &sigmasq->data[j], &frequencyShiftList->data[index1], &frequencyShiftList->data[index2], psd1, psd2), &status);
-
- 	LAL_CALL( CalculateUalpha (&status, &ualpha->data[j], &Aplus, &Across, &signalPhaseList->data[index1], &signalPhaseList->data[index2], &Fplus->data[index1], &Fplus->data[index2], &Fcross->data[index1], &Fcross->data[index2], &sigmasq->data[j]), &status);
-
+	LAL_CALL( CalculateUalpha (&status, &ualpha->data[j], &Aplus, &Across, &signalPhaseList->data[index1], &signalPhaseList->data[index2], &Fplus->data[index1], &Fplus->data[index2], &Fcross->data[index1], &Fcross->data[index2], &sigmasq->data[j]), &status);
+     	ualphacounter = ualphacounter + 1;
 
     }
+
 
     /* calculate rho (weights) from Yalpha and Ualpha */
     LAL_CALL( CalculateCrossCorrPower( &status, &(weights->data[counter]), yalpha, ualpha), &status);
 
     /* normalise rho by its variance (Eq 4.6) */
-    LAL_CALL( NormaliseCrossCorrPower( &status, &(weights->data[counter++]), ualpha, sigmasq), &status); 
+    LAL_CALL( NormaliseCrossCorrPower( &status, stddev, ualpha, sigmasq), &status); 
 
     /* select candidates  */
+    /* print all interesting variables to file */
+
+    fprintf(fp, "%1.5f\t%1.10f\t%1.10f\t%1.10f\n", uvar_f0 + (counter*deltaF), weights->data[counter], *stddev, weights->data[counter]/(*stddev));
+
+/*printf("%1.5f\t%1.10f\t%1.10f\t%1.10f\n", uvar_f0 + (counter*deltaF), weights->data[counter], *stddev, weights->data[counter]/(*stddev));*/
+
+    weights->data[counter] = weights->data[counter++]/(*stddev);
+
 
    } /* finish loop over skypatches */ 
+printf("Frequency %f\n", uvar_f0 + (counter*deltaF));
 
    /* free memory */
+
    LAL_CALL(LALDestroyMultiSFTVector(&status, &multiSFTs), &status);
+
+/*printf("end of freq loop\n");*/
 
    XLALDestroyTimestampVector(ts);
 
@@ -487,18 +502,10 @@ printf("fmin, f0, fmax %f %f %f\n", fMin, uvar_f0 + (freqCounter*deltaF), fMax);
    LALFree(sftPairIndexList);
 
    XLALDestroyDetectorStateSeries ( detStates );
-
    } /*finish loop over frequencies */
 
-   /* print all interesting variables to file */
-   fprintf(fp, "Frequency\t\t\tRho\n");
-
-   for (j = 0; j < (INT4)weights->length; j++) {
-	fprintf(fp, "%1.5f\t%1.10f\n", uvar_f0 + (j*deltaF), weights->data[j]);
-   }
   
    fclose (fp);
-
 
 
    LAL_CALL( LALDestroySFTCatalog( &status, &catalog ), &status);  
@@ -513,6 +520,7 @@ printf("fmin, f0, fmax %f %f %f\n", fMin, uvar_f0 + (freqCounter*deltaF), fMax);
    LALFree(skyDelta);
    LALFree(skySizeAlpha);
    LALFree(skySizeDelta);
+   LALFree(stddev);
 
    XLALDestroyREAL8Vector(weights);
    XLALDestroyREAL8Vector(sigmasq);

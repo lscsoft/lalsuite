@@ -178,6 +178,8 @@ void CorrelateSingleSFTPair(LALStatus                *status,
 			    COMPLEX16                *out,
 			    COMPLEX8FrequencySeries  *sft1,
 			    COMPLEX8FrequencySeries  *sft2,
+			    REAL8FrequencySeries     *psd1,
+			    REAL8FrequencySeries     *psd2,
 			    REAL8                    *freq1,
 			    REAL8                    *freq2);
 
@@ -196,8 +198,8 @@ void GetSignalPhaseInSFT(LALStatus               *status,
 
 void CalculateSigmaAlphaSq(LALStatus *status,
 			   REAL8	*out,
-			   REAL8 	*freq1,
-	  	           REAL8	*freq2,
+			   REAL8 	freq1,
+	  	           REAL8	freq2,
 		           REAL8FrequencySeries *psd1,
 		           REAL8FrequencySeries *psd2);
 
