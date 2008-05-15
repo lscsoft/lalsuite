@@ -758,8 +758,8 @@ static void worker (void) {
 	    /* if boinc_resolve() returns a symbolic link, resolve it outself */
 	    if (readlink(resultfile,targetpath,sizeof(targetpath)) != -1)
 	      strncpy(resultfile,targetpath,sizeof(resultfile));
-	    rargv[rarg] = resultfile;
 #endif
+	    rargv[rarg] = resultfile;
 	  }
 	}
     }
