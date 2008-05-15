@@ -551,7 +551,6 @@ static void worker (void) {
 				    HierarchicalSearch.c. Until we know better, we expect to
 				    pass the same number of arguments / options than we got */
   int arg, rarg;               /**< current command-line argument */
-  int i;                       /**< loop counter */
   int l;                       /**< length of matched string */
   int res = 0;                 /**< return value of a function call */
   char *startc,*endc;          /**< pointers for parsing a command-line argument */
@@ -824,10 +823,13 @@ static void worker (void) {
 
 #if DEBUG_COMMAND_LINE_MANGLING
   /* debug: dump the modified command line */
-  fprintf(stderr,"command line:");
-  for(i=0;i<rargc;i++)
-    fprintf(stderr," %s",rargv[i]);
-  fprintf(stderr,"\n");
+  {
+    int i;
+    fprintf(stderr,"command line:");
+    for(i=0;i<rargc;i++)
+      fprintf(stderr," %s",rargv[i]);
+    fprintf(stderr,"\n");
+  }
 #endif
 
 
