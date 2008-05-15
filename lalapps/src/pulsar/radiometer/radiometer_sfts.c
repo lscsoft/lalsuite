@@ -287,7 +287,7 @@ int main(int argc, char *argv[]){
 
    /* initialise output arrays */
    nParams = nSkyPatches * nfreqLoops;
-   sigmasq = XLALCreateREAL8Vector(nParams);
+
    weights = XLALCreateREAL8Vector(nParams);
   
    stddev = LALCalloc(1, sizeof(REAL8));
@@ -298,6 +298,7 @@ int main(int argc, char *argv[]){
 /*printf("start of loop, nparams %i \n", nParams);*/
 
    MultiSFTVector *multiSFTs = NULL;
+
 
     /* read the sfts */
     /* first load them into a MultiSFTVector, then concatenate the various vectors into one*/
@@ -377,6 +378,8 @@ int main(int argc, char *argv[]){
     ualpha = (COMPLEX16Vector *) LALCalloc(1, sizeof(COMPLEX16));
     ualpha->length = sftPairIndexList->vectorLength;
     ualpha->data = LALCalloc(ualpha->length, sizeof(COMPLEX16));
+
+    sigmasq = XLALCreateREAL8Vector(sftPairIndexList->vectorLength);
 
     AMcoef = (AMCoeffs *)LALCalloc(1, sizeof(AMCoeffs));
     AMcoef->a = XLALCreateREAL4Vector(numsft);
@@ -465,7 +468,7 @@ ualphacounter = 0.0;
     /* calculate rho (weights) from Yalpha and Ualpha */
     LAL_CALL( CalculateCrossCorrPower( &status, &(weights->data[counter]), yalpha, ualpha), &status);
 
-    /* normalise rho by its variance (Eq 4.6) */
+    /* calculate standard deviation of rho (Eq 4.6) */
     LAL_CALL( NormaliseCrossCorrPower( &status, stddev, ualpha, sigmasq), &status); 
 
     /* select candidates  */
@@ -500,7 +503,7 @@ printf("Frequency %f\n", uvar_f0 + (counter*deltaF));
    LAL_CALL (LALDestroySFTVector(&status, &inputSFTs), &status );
    LALFree(sftPairIndexList->data);
    LALFree(sftPairIndexList);
-
+   XLALDestroyREAL8Vector(sigmasq);
    XLALDestroyDetectorStateSeries ( detStates );
    } /*finish loop over frequencies */
 
@@ -523,7 +526,7 @@ printf("Frequency %f\n", uvar_f0 + (counter*deltaF));
    LALFree(stddev);
 
    XLALDestroyREAL8Vector(weights);
-   XLALDestroyREAL8Vector(sigmasq);
+
 
 
    LAL_CALL (LALDestroyUserVars(&status), &status);
