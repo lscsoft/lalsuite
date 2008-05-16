@@ -214,7 +214,7 @@ int main(int argc, char *argv[]){
     exit(1);
    }
  
-   fprintf(fp, "Frequency\t\t\tRaw Power \t\t Sigma \t\t Normalised Power\n");
+   fprintf(fp, "Alpha\tDelta\tFrequency\t\tRaw Power \t\t Sigma \t\t Normalised Power\n");
     
    /* read sfts */
    
@@ -474,7 +474,7 @@ ualphacounter = 0.0;
     /* select candidates  */
     /* print all interesting variables to file */
 
-    fprintf(fp, "%1.5f\t%1.10f\t%1.10f\t%1.10f\n", uvar_f0 + (counter*deltaF), weights->data[counter], *stddev, weights->data[counter]/(*stddev));
+    fprintf(fp, "%1.5f\t %1.5f\t %1.5f\t%1.10f\t%1.10f\t%1.10f\n", thisPoint.Alpha, thisPoint.Delta, uvar_f0 + (freqCounter*deltaF), weights->data[counter], *stddev, weights->data[counter]/(*stddev));
 
 /*printf("%1.5f\t%1.10f\t%1.10f\t%1.10f\n", uvar_f0 + (counter*deltaF), weights->data[counter], *stddev, weights->data[counter]/(*stddev));*/
 
@@ -482,7 +482,7 @@ ualphacounter = 0.0;
 
 
    } /* finish loop over skypatches */ 
-printf("Frequency %f\n", uvar_f0 + (counter*deltaF));
+printf("Frequency %f\n", uvar_f0 + (freqCounter*deltaF));
 
    /* free memory */
 
