@@ -32,7 +32,7 @@
 
 RCSID("$Id$");
 
-#define PROGRAM_NAME "stat"
+#define PROGRAM_NAME "corse"
 #define CVS_ID_STRING "$Id$"
 #define CVS_REVISION "$Revision$"
 #define CVS_SOURCE "$Source$"
@@ -88,7 +88,8 @@ static void print_usage(char *program)
       "\n"\
       "  --num-slides         slides   number of time slides performed \n"\
       "                                (slides * time = bkg time analyzed)\n"\
-      " [--time-analyzed]     time     the amount of time being analyzed\n"\
+      "  --time-analyzed-file file     file containing the amount of time\n"\
+      "                                analyzed per time slide\n"\
       "                                for the background estimation\n"\
       "                                (used in rate calculation)\n"\
       " [--background-modifier]\n"\
@@ -98,14 +99,11 @@ static void print_usage(char *program)
       "                                by 600/6370\n"\
       " [--zero-lag-exclude-play]      divides the background time analyzed\n"\
       "                                by 5770/6370\n"\
-      " [--fit-above-statsq]  statsq   use an exponential fit to calculate\n"\
-      "                                the FAR for triggers above statsq\n"\
-      " [--fit-a]             a        the a parameter in the fit\n"\
-      "                                FAR = a * exp(b * stat**2)\n"\
-      " [--fit-b]             b        the b parameter in the fit\n"\
-      "                                FAR = a * exp(b * stat**2)\n"\
+      " [--fit-num]           n        use an exponential fit to n loudest\n"\
+      "                                background triggers to calculate\n"\
+      "                                the FAR for triggers in tail\n"\
       " [--sort-triggers]              time sort the coincident triggers\n"\
-      " [--coinc-stat]        stat     use coinc statistic for cluster/cut\n"\
+      "  --coinc-stat         stat     use coinc statistic for cluster/cut\n"\
       "                       (snrsq|effective_snrsq|s3_snr_chi_stat|bitten_l)\n"\
       " [--stat-threshold]    thresh   discard all triggers with stat less than thresh\n"\
       " [--rate-threshold]    rate     discard all triggers with rate greater than thresh\n"\
@@ -136,6 +134,7 @@ int sortTriggers = 0;
 LALPlaygroundDataMask dataType;
 int zerolagPlayground = 0;
 int zerolagExcludePlay = 0;
+extern int vrbflg;
 
 int main( int argc, char *argv[] )
 {
@@ -144,7 +143,6 @@ int main( int argc, char *argv[] )
   LALStatus status = blank_status ;
 
   /*  program option variables */
-  extern int vrbflg;
   CHAR *userTag = NULL;
   CHAR comment[LIGOMETA_COMMENT_MAX];
   char *ifos = NULL;
@@ -153,9 +151,11 @@ int main( int argc, char *argv[] )
   char *inputGlobSlide = NULL;
   char *inputFileNameSlide = NULL;
   char *outputFileName = NULL;
+  char *timeAnalyzedFileName = NULL;
   char *summFileName = NULL;
   char *loudestFileName = NULL;
   CoincInspiralStatistic coincstat = no_stat;
+  int   fitNum = 0;
   REAL4 fitStat = -1;
   REAL4 fitA = 0;
   REAL4 fitB = 0;
@@ -285,10 +285,8 @@ int main( int argc, char *argv[] )
       {"loudest",                 required_argument,      0,              'L'},
       {"num-slides",              required_argument,      0,              'N'},
       {"background-modifier",     required_argument,      0,              't'},
-      {"fit-above-statsq",        required_argument,      0,              's'},
-      {"fit-a",                   required_argument,      0,              'a'},
-      {"fit-b",                   required_argument,      0,              'b'},
-      {"time-analyzed",           required_argument,      0,              'A'},
+      {"fit-num",                 required_argument,      0,              's'},
+      {"time-analyzed-file",      required_argument,      0,              'A'},
       {"coinc-stat",              required_argument,      0,              'C'},
       {"stat-threshold",          required_argument,      0,              'E'},
       {"rate-threshold",          required_argument,      0,              'R'},
@@ -311,9 +309,9 @@ int main( int argc, char *argv[] )
     int option_index = 0;
     size_t optarg_len;
 
-    c = getopt_long_only ( argc, argv, "a:b:c:d:g:hi:j:k:l:m:n:o:p:t:z:"
-                                       "A:C:D:E:I:N:S:T:VZ", long_options, 
-                                       &option_index );
+    c = getopt_long_only ( argc, argv, "a:b:c:f:g:hi:j:k:l:m:n:o:p:q:r:s:t:z:"
+                                       "A:C:D:E:G:I:L:N:R:S:T:VZ",
+                                       long_options, &option_index );
 
     /* detect the end of the options */
     if ( c == - 1 )
@@ -468,59 +466,25 @@ int main( int argc, char *argv[] )
         break;
 
       case 's':
-        /* store the fit-above-statsq */
-        fitStat = atof( optarg );
-        if ( fitStat <= 0 )
+        /* store the number to fit above */
+        fitNum = atoi( optarg );
+        if ( fitNum <= 1 )
         {
           fprintf( stdout, "invalid argument to --%s:\n"
-              "statsq > 0: "
-              "(%e specified)\n",
-              long_options[option_index].name, fitStat );
+              "fitNum > 1: "
+              "(%d specified)\n",
+              long_options[option_index].name, fitNum );
           exit( 1 );
         }
-        ADD_PROCESS_PARAM( "float", "%e", fitStat );
-        break;
-
-      case 'a':
-        /* store the fit-a */
-        fitA = atof( optarg );
-        if ( fitA <= 0 )
-        {
-          fprintf( stdout, "invalid argument to --%s:\n"
-              "a > 0: "
-              "(%e specified)\n",
-              long_options[option_index].name, fitA );
-          exit( 1 );
-        }
-        ADD_PROCESS_PARAM( "float", "%e", fitA );
-        break;
-
-      case 'b':
-        /* store the fit-b */
-        fitB = atof( optarg );
-        if ( fitB >= 0 )
-        {
-          fprintf( stdout, "invalid argument to --%s:\n"
-              "b < 0: "
-              "(%e specified)\n",
-              long_options[option_index].name, fitB );
-          exit( 1 );
-        }
-        ADD_PROCESS_PARAM( "float", "%e", fitB );
+        ADD_PROCESS_PARAM( "int", "%d", fitNum );
         break;
 
       case 'A':
-        /* store the time analyzed */
-        timeAnalyzed = atof( optarg );
-        if ( timeAnalyzed <= 0 )
-        {
-          fprintf( stdout, "invalid argument to --%s:\n"
-              "timeAnalyzed > 0: "
-              "(%e specified)\n",
-              long_options[option_index].name, timeAnalyzed );
-          exit( 1 );
-        }
-        ADD_PROCESS_PARAM( "float", "%e", timeAnalyzed );
+        /* create storage for the output file name */
+        optarg_len = strlen( optarg ) + 1;
+        timeAnalyzedFileName = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+        memcpy( timeAnalyzedFileName, optarg, optarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
       case 'N':
@@ -773,9 +737,9 @@ int main( int argc, char *argv[] )
     exit( 1 );
   }
 
-  if ( ! timeAnalyzed )
+  if ( ! timeAnalyzedFileName )
   {
-    fprintf( stderr, "--time-analyzed must be non-zero\n" );
+    fprintf( stderr, "--time-analyzed-file must be specified \n" );
     exit( 1 );
   }
 
@@ -1126,37 +1090,37 @@ int main( int argc, char *argv[] )
     exit( 1 );
   }
 
-  if (numSlides == 0) numSlides = 1;
-  else numSlides *= 2;
-  timeAnalyzed *= ((REAL4) numSlides)/timeModifier;
-  if ( zerolagPlayground ) timeAnalyzed /= 600./6370.;
-  if ( zerolagExcludePlay ) timeAnalyzed /= 5770./6370.;
+  if ( fitNum )
+  {
+    if ( vrbflg ) fprintf( stdout,
+        "Calculating background tail fit with %d loudest triggers...\n",
+        fitNum );
+    XLALCalcExpFitNLoudestBackground( coincSlideHead, fitNum, coincstat,
+        &bittenLParams, &fitStat, &fitA, &fitB );
+    if ( vrbflg ) fprintf( stdout,
+        "Got a fit of %1.2e * exp(%1.2e * stat**2) above a stat**2 of %6.2f\n",
+        fitA, fitB, fitStat );
+  }
 
-  /* perform the statistic cut */
-  if( rateThreshold >= 0 && statThreshold >= 0 )
+  if ( zerolagPlayground ) timeModifier *= 600./6370.;
+  if ( zerolagExcludePlay ) timeModifier *= 5770./6370.;
+
   {
-    coincZeroHead = XLALRateStatCutCoincInspiral ( coincZeroHead,
-        coincSlideHead, coincstat, &bittenLParams, statThreshold,
-        rateThreshold, timeAnalyzed, fitStat, fitA, fitB );
-    numEventsAboveThresh = XLALCountCoincInspiral( coincZeroHead );
-    if ( vrbflg ) fprintf( stdout,
-        "Kept %d coincs below a rate threshold of %6.2f\n"
-        "and above a statistic threshold of %6.2f\n", numEventsAboveThresh,
-        rateThreshold, statThreshold );
-  }
-  else if ( statThreshold >= 0 )
-  {
-    coincZeroHead = XLALStatCutCoincInspiral ( coincZeroHead, coincstat,
-        &bittenLParams, statThreshold );
-    numEventsAboveThresh = XLALCountCoincInspiral( coincZeroHead );
-    if ( vrbflg ) fprintf( stdout,
-        "Kept %d coincs above a statistic threshold of %6.2f\n",
-        numEventsAboveThresh, statThreshold );
-  }
-  else
-  {
-    loudestRate = XLALRateStatCalcCoincInspiral( coincZeroHead, coincSlideHead,
-        coincstat, &bittenLParams, timeAnalyzed, fitStat, fitA, fitB );
+    CoincInspiralSlideTable *slideHeads = NULL;
+    CoincInspiralSlideTable *thisSlideHead = NULL;
+    CoincInspiralTable      *thisEvent = NULL;
+    CoincInspiralTable      *prevEvent = NULL;
+
+    XLALCreateCoincSlideTable( &slideHeads, numSlides );
+
+    timeAnalyzed = XLALSetupCoincSlideTable( slideHeads, coincSlideHead,
+        timeAnalyzedFileName, timeModifier, numSlides );
+    thisSlideHead = slideHeads;
+
+    /* calculating the FAR for the coincs */
+    loudestRate = XLALRateErrorCalcCoincInspiral( coincZeroHead,
+        thisSlideHead, coincstat, &bittenLParams, numSlides, timeAnalyzed,
+        fitStat, fitA, fitB );
     numEventsAboveThresh = XLALCountCoincInspiral( coincZeroHead );
     if ( vrbflg ) fprintf( stdout,
         "Loudest zero-lag coinc has a rate of %6.2f\n", loudestRate );
@@ -1179,13 +1143,43 @@ int main( int argc, char *argv[] )
       /* free all but the loudest coinc inspirals */
       thisCoinc = coincZeroHead->next;
       while ( thisCoinc )
-      { 
+      {
         tmpCoinc = thisCoinc;
         thisCoinc= thisCoinc->next;
         XLALFreeCoincInspiral( &tmpCoinc );
-      } 
+      }
       coincZeroHead->next = NULL;
     }
+
+    /* free the CoincInspiralSlideTables from slideHeads */
+    while ( slideHeads )
+    {
+      thisSlideHead = slideHeads;
+
+      /* free all but the loudest coinc inspirals */
+      coincSlideHead = thisSlideHead->coincInspiral;
+      while ( coincSlideHead )
+      {
+        thisCoinc = coincSlideHead;
+        coincSlideHead = thisCoinc->next;
+        XLALFreeCoincInspiral( &thisCoinc );
+      }
+
+      slideHeads = slideHeads->next;
+      LALFree( thisSlideHead );
+    }
+  }
+
+  /* perform the statistic cut */
+  if( rateThreshold >= 0 && statThreshold >= 0 )
+  {
+    coincZeroHead = XLALRateStatCutCoincInspiral ( coincZeroHead,
+        coincstat, &bittenLParams, statThreshold, rateThreshold );
+    numEventsAboveThresh = XLALCountCoincInspiral( coincZeroHead );
+    if ( vrbflg ) fprintf( stdout,
+        "Kept %d coincs below a rate threshold of %6.2f\n"
+        "and above a statistic threshold of %6.2f\n", numEventsAboveThresh,
+        rateThreshold, statThreshold );
   }
 
   if ( vrbflg )
