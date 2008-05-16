@@ -215,7 +215,7 @@ void GetSFTNoiseWeights(LALStatus *status, REAL8Vector *out, MultiNoiseWeights  
 
 void GetPeakGramFromMultSFTVector(LALStatus *status, HOUGHPeakGramVector *out, MultiSFTVector *in, REAL8 thr);
 
-void SetUpSkyPatches(LALStatus *status, HoughSkyPatchesInfo *out, CHAR *skyFileName, CHAR *skyRegion, REAL8 dAlpha, REAL8 dDelta);
+void SetUpSkyPatches(LALStatus *status, HoughSkyPatchesInfo *out, CHAR *skyFileName, CHAR *skyRegion, REAL8 dAlpha, REAL8 dDelta, INT4 numSkyPartitions, INT4 partitionIndex);
 
 void GetAMWeights(LALStatus *status, REAL8Vector *out, MultiDetectorStateSeries *mdetStates, REAL8 alpha, REAL8 delta);
 
@@ -366,8 +366,14 @@ int main(int argc, char *argv[]){
   CHAR     *uvar_timeStampsFile=NULL;
   CHAR     *uvar_skyRegion=NULL;
   LALStringVector *uvar_linefiles=NULL;
+
   INT4     uvar_chiSqBins;
+
   INT4     uvar_spindownJump;
+
+  INT4 uvar_numSkyPartitions = 0;
+  INT4 uvar_partitionIndex = 0;
+
 
   /* Set up the default parameters */
 
@@ -439,10 +445,12 @@ int main(int argc, char *argv[]){
   LAL_CALL( LALRegisterINTUserVar(    &status, "nfSizeCylinder",  0,  UVAR_OPTIONAL, "Size of cylinder of PHMDs", &uvar_nfSizeCylinder),  &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "pixelFactor",    'p', UVAR_OPTIONAL, "sky resolution=1/v*pixelFactor*f*Tcoh", &uvar_pixelFactor), &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "numCand",         0,  UVAR_OPTIONAL, "No. of toplist candidates", &uvar_numCand), &status);
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printExtraInfo",  0,  UVAR_OPTIONAL, "Print HoughMaps, HoughStatistics, expected number count stdev", &uvar_EnableExtraInfo), &status);
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printExtraInfo",  0,  UVAR_OPTIONAL, "Print HoughMaps, HoughStatistics, expected number count stdev", &uvar_EnableExtraInfo), &status); 
   LAL_CALL( LALRegisterINTUserVar(    &status, "chiSqBins",       0,  UVAR_OPTIONAL, "Number of chi-square bins for veto tests",  &uvar_chiSqBins), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "enableChi2",      0,  UVAR_OPTIONAL, "Print Chi2 value for each element in the Toplist", &uvar_EnableChi2), &status);
-LAL_CALL( LALRegisterINTUserVar(    &status, "spindownJump",       0,  UVAR_OPTIONAL, "Jump to the next spin-down being analyzed (to avoid doing them all)",  &uvar_spindownJump), &status);
+  LAL_CALL( LALRegisterINTUserVar(    &status, "spindownJump",       0,  UVAR_OPTIONAL, "Jump to the next spin-down being analyzed (to avoid doing them all)",  &uvar_spindownJump), &status);
+  LAL_CALL( LALRegisterINTUserVar(    &status, "numSkyPartitions",0,UVAR_OPTIONAL, "Number of (equi-)partitions to split skygrid into", &uvar_numSkyPartitions), &status);
+  LAL_CALL( LALRegisterINTUserVar(    &status, "partitionIndex",0,UVAR_OPTIONAL, "Index [0,numSkyPartitions-1] of sky-partition to generate", &uvar_partitionIndex), &status);
 
 
   /* developer input variables */
@@ -497,7 +505,7 @@ LAL_CALL( LALRegisterINTUserVar(    &status, "spindownJump",       0,  UVAR_OPTI
 
   LogPrintf (LOG_NORMAL, "Setting up sky-patches...");
   /* set up skypatches */
-  LAL_CALL( SetUpSkyPatches( &status, &skyInfo, uvar_skyfile, uvar_skyRegion, uvar_dAlpha, uvar_dDelta), &status);
+  LAL_CALL( SetUpSkyPatches( &status, &skyInfo, uvar_skyfile, uvar_skyRegion, uvar_dAlpha, uvar_dDelta, uvar_numSkyPartitions, uvar_partitionIndex), &status);
   nSkyPatches = skyInfo.numSkyPatches;
   skyAlpha = skyInfo.alpha;
   skyDelta = skyInfo.delta;
@@ -1714,7 +1722,9 @@ void SetUpSkyPatches(LALStatus           *status,
 		     CHAR                *skyFileName, /**< name of skypatch file */
 		     CHAR                *skyRegion,  /**< skyregion (if isotropic grid is to be constructed) */
 		     REAL8               dAlpha,      /**< alpha resolution (if isotropic grid is to be constructed) */
-		     REAL8               dDelta)  /**< delta resolution (if isotropic grid is to be constructed) */
+		     REAL8               dDelta,  /**< delta resolution (if isotropic grid is to be constructed) */
+		     INT4                numSkyPartitions,/**<Number of (equi-)partitions to split skygrid into */                   
+                     INT4                partitionIndex)/**< Index [0,numSkyPartitions-1] of sky-partition to generate */
 {
 
   DopplerSkyScanInit scanInit = empty_DopplerSkyScanInit;   /* init-structure for DopperScanner */
@@ -1746,6 +1756,9 @@ void SetUpSkyPatches(LALStatus           *status,
     strcpy (scanInit.skyRegionString, skyRegion);
     /*   scanInit.Freq = usefulParams.spinRange_midTime.fkdot[0] +  usefulParams.spinRange_midTime.fkdotBand[0]; */
     
+    scanInit.numSkyPartitions = numSkyPartitions;
+    scanInit.partitionIndex = partitionIndex;
+
     /* set up the grid */
     TRY ( InitDopplerSkyScan ( status->statusPtr, &thisScan, &scanInit), status); 
     

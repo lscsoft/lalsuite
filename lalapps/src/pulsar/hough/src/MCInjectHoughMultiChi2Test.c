@@ -829,6 +829,7 @@ int main(int argc, char *argv[]){
     UINT4 	      k, numsft;
     
     weightsAM.length = mObsCoh;
+    weightsAM.data = NULL;
     weightsAM.data = (REAL8 *)LALCalloc(mObsCoh, sizeof(REAL8));
     skypos.system = COORDINATESYSTEM_EQUATORIAL;
     

@@ -63,8 +63,6 @@ extern int lalDebugLevel;
 #define ACCURACY 0.00000001 /* of the velocity calculation */
 #define MAXFILES 3000 /* maximum number of files to read in a directory */
  
- 
-#define IFO 2         /*  detector, 1:GEO, 2:LLO, 3:LHO */
 #define THRESHOLD 1.6 /* thresold for peak selection, with respect to the
                               the averaged power in the search band */
 #define F0 250.0          /*  frequency to build the LUT and start search */
@@ -86,11 +84,27 @@ extern int lalDebugLevel;
 #define SFTDIRECTORY "/local_data/sintes/SFT-S5-120-130/*SFT*.*"
 /* */
 #define DIROUT "./"   /* output directory */
-#define FILEOUT "/HoughMC"      /* prefix file output */
-#define SKYFILE "./skyfileS4c" 
+#define FILEOUT "/HoughMC"      /* prefix file output */ 
 
 #define TRUE (1==1)
 #define FALSE (1==0)
+
+
+/******************************************/
+void ComputeFoft_NM(LALStatus   *status,
+                 REAL8Vector          *foft,
+                 HoughTemplate        *pulsarTemplate,
+                 REAL8Vector          *timeDiffV,
+                 REAL8Cart3CoorVector *velV);
+
+
+void PrintLogFile2(LALStatus       *status, 
+                  CHAR            *dir, 
+		  CHAR            *basename,  
+		  LALStringVector *linefiles,
+		  CHAR            *executable );
+
+/******************************************/
 
 
 /******************************************************
@@ -123,12 +137,6 @@ int main(int argc, char *argv[]){
   SkyConstAndZeroPsiAMResponse      *pSkyConstAndZeroPsiAMResponse = NULL;
   SFTandSignalParams                *pSFTandSignalParams=NULL;
   
-  /* skypatch info */
-  REAL8  *skyAlpha, *skyDelta, *skySizeAlpha, *skySizeDelta; 
-  UINT4   nSkyPatches,  skyCounter=0; 
-  INT4   skyIndex; 
-  
-  static REAL8Cart3CoorVector skyPatchCenterV;
 
   /* standard pulsar sft types */ 
   MultiSFTVector *inputSFTs  = NULL;
@@ -141,8 +149,7 @@ int main(int argc, char *argv[]){
   UINT4     binsSFT;
 
   /* vector of weights */
-  REAL8Vector      weightsV, weightsNoise;
-  REAL8Vector     *weightsAMskyV = NULL;
+  REAL8Vector      weightsV, weightsNoise,  weightsAM;
   REAL8      alphaPeak, meanN, sigmaN, significance;
   
   REAL4TimeSeries   *signalTseries = NULL;
@@ -153,7 +160,7 @@ int main(int argc, char *argv[]){
   UINT4  msp = 1; /*number of spin-down parameters */ 
   REAL8  numberCount,maxNumberCount;
   REAL8  numberCountV[NTEMPLATES];
-  UINT4  nTemplates, controlN, controlNN, controlNH;
+  UINT4  nTemplates;
    
   UINT4  mObsCoh;
   REAL8  normalizeThr;
@@ -188,7 +195,6 @@ int main(int argc, char *argv[]){
   CHAR   *uvar_sftDir=NULL;
   CHAR   *uvar_dirnameOut=NULL;
   CHAR   *uvar_fnameOut=NULL;
-  CHAR   *uvar_skyfile=NULL;
   LALStringVector *uvar_linefiles=NULL;
   REAL8    uvar_startTime, uvar_endTime;
   CHAR     *uvar_timeStampsFile=NULL;
@@ -244,9 +250,6 @@ int main(int argc, char *argv[]){
   uvar_fnameOut = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
   strcpy(uvar_fnameOut, FILEOUT);
  
-  uvar_skyfile = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
-  strcpy(uvar_skyfile,SKYFILE);
-
 
   /******************************************************************/ 
   /*      register user input variables    */
@@ -270,7 +273,6 @@ int main(int argc, char *argv[]){
   LAL_CALL( LALRegisterREALUserVar(   &status, "h0Min",           'm', UVAR_OPTIONAL, "Smallest h0 to inject",         &uvar_h0Min),           &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "h0Max",           'M', UVAR_OPTIONAL, "Largest h0 to inject",          &uvar_h0Max),           &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "nh0",             'n', UVAR_OPTIONAL, "Number of h0 values to inject", &uvar_nh0),             &status);  
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "skyfile",          0,  UVAR_OPTIONAL, "Input skypatch file",           &uvar_skyfile),         &status);
   LAL_CALL( LALRegisterLISTUserVar(   &status, "linefiles",        0,  UVAR_OPTIONAL, "list of linefiles separated by commas", &uvar_linefiles),       &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "weighAM",          0,  UVAR_OPTIONAL, "Use amplitude modulation weights",      &uvar_weighAM),         &status);  
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "weighNoise",       0,  UVAR_OPTIONAL, "Use SFT noise weights",                 &uvar_weighNoise),      &status);  
@@ -317,60 +319,9 @@ int main(int argc, char *argv[]){
   /* write log file with command line arguments, cvs tags, and contents of skypatch file */
   /******************************************************************/ 
   if ( uvar_printLog ) {
-    LAL_CALL( PrintLogFile( &status, uvar_dirnameOut, uvar_fnameOut, uvar_skyfile, uvar_linefiles, argv[0]), &status);
+    LAL_CALL( PrintLogFile2( &status, uvar_dirnameOut, uvar_fnameOut, uvar_linefiles, argv[0]), &status);
   }
-  
-  /******************************************************************/ 
-  /* read skypatch info */
-  /******************************************************************/ 
-  {
-    FILE   *fpsky = NULL; 
-    INT4   r;
-    REAL8  temp1, temp2, temp3, temp4;
-    
-    if ( (fpsky = fopen(uvar_skyfile, "r")) == NULL)
-      {
-	fprintf(stderr, "Unable to find skyfile %s\n", uvar_skyfile);
-	return DRIVEHOUGHCOLOR_EFILE;
-      }
-        
-    nSkyPatches = 0;
-    do 
-      {
-	r = fscanf(fpsky,"%lf%lf%lf%lf\n", &temp1, &temp2, &temp3, &temp4);
-	/* make sure the line has the right number of entries or is EOF */
-	if (r==4) nSkyPatches++;
-      } while ( r != EOF);
-    rewind(fpsky);
-    
-    skyAlpha = (REAL8 *)LALCalloc(nSkyPatches, sizeof(REAL8));
-    skyDelta = (REAL8 *)LALCalloc(nSkyPatches, sizeof(REAL8));     
-    skySizeAlpha = (REAL8 *)LALCalloc(nSkyPatches, sizeof(REAL8));
-    skySizeDelta = (REAL8 *)LALCalloc(nSkyPatches, sizeof(REAL8));     
-    
-    for (skyCounter = 0; skyCounter < nSkyPatches; skyCounter++)
-      {
-	r = fscanf(fpsky,"%lf%lf%lf%lf\n", skyAlpha + skyCounter, skyDelta + skyCounter, 
-		   skySizeAlpha + skyCounter,  skySizeDelta + skyCounter);
-      }
-    
-    fclose(fpsky);     
-  } /* end skyfile reading block */
- 
-  /******************************************************************/ 
- /*  Converting skypatch centers into 3D cartessian coordinates*/
- /******************************************************************/ 
-  skyPatchCenterV.length =nSkyPatches;
-  skyPatchCenterV.data = NULL;
-  skyPatchCenterV.data = (REAL8Cart3Coor *)LALCalloc(nSkyPatches, sizeof(REAL8Cart3Coor));
-
-  for (skyCounter = 0; skyCounter < nSkyPatches; skyCounter++)
-    {
-	skyPatchCenterV.data[skyCounter].x= cos(skyDelta[skyCounter])*cos(skyAlpha[skyCounter]);
- 	skyPatchCenterV.data[skyCounter].y= cos(skyDelta[skyCounter])*sin(skyAlpha[skyCounter]);
- 	skyPatchCenterV.data[skyCounter].z= sin(skyDelta[skyCounter]);
-    }
- 
+   
   /******************************************************************/ 
   /* set fullsky flag */
   /******************************************************************/ 
@@ -600,62 +551,7 @@ int main(int argc, char *argv[]){
     LALFree(timeV.data); 
    
   }
-  
-  /******************************************************************/ 
-  /* initialize all weights to unity */
-  /******************************************************************/ 
-  
-  /* set up weights -- this should be done before normalizing the sfts */
-  weightsV.length = mObsCoh;
-  weightsV.data = (REAL8 *)LALCalloc(mObsCoh, sizeof(REAL8));
-  
-  weightsNoise.length = mObsCoh;
-  weightsNoise.data = (REAL8 *)LALCalloc(mObsCoh, sizeof(REAL8));
-  
-  /* initialize all weights to unity */
-  LAL_CALL( LALHOUGHInitializeWeights( &status, &weightsNoise), &status);
-  LAL_CALL( LALHOUGHInitializeWeights( &status, &weightsV), &status);
-  
-  /******************************************************************/ 
-  /*   setting the weights considering only the AM coefficients to be only
-       computed once  for all the different patches*/ 
-  /******************************************************************/ 
-  if (uvar_weighAM){
-    SkyPosition      skypos;
-    UINT4            iIFO, iSFT;
-    UINT4 	      k, numsft;
-    
-    weightsAMskyV = (REAL8Vector *)LALCalloc(nSkyPatches, sizeof(REAL8Vector));
-    skypos.system = COORDINATESYSTEM_EQUATORIAL;
-    
-    /* loop over sky patches */
-    for (skyCounter = 0; skyCounter < nSkyPatches; skyCounter++){
-      MultiAMCoeffs   *multiAMcoef = NULL;
-      
-      weightsAMskyV[skyCounter].length = mObsCoh;    
-      weightsAMskyV[skyCounter].data = NULL;
-      weightsAMskyV[skyCounter].data = (REAL8 *)LALCalloc(mObsCoh, sizeof(REAL8));
-      
-      skypos.longitude = skyAlpha[skyCounter];
-      skypos.latitude  = skyDelta[skyCounter];
-      LAL_CALL ( LALGetMultiAMCoeffs ( &status, &multiAMcoef, mdetStates, skypos), &status);
-      
-      /* loop over the weights and set them by the appropriate AM coefficients */
-      for ( k = 0, iIFO = 0; iIFO < numifo; iIFO++) {	  
-	numsft = mdetStates->data[iIFO]->length;	
-	for ( iSFT = 0; iSFT < numsft; iSFT++, k++) {	  
-	  REAL8 a, b;
-	  
-	  a = multiAMcoef->data[iIFO]->a->data[iSFT];
-	  b = multiAMcoef->data[iIFO]->b->data[iSFT];    
-	  weightsAMskyV[skyCounter].data[k] = (a*a + b*b);
-	} /* loop over SFTs */
-      } /* loop over IFOs */
-      
-      XLALDestroyMultiAMCoeffs ( multiAMcoef );
-    } /*loop over sky patches */
-   
-  }
+ 
 
   /******************************************************************/ 
   /* probability of selecting a peak and expected mean for noise only */
@@ -789,37 +685,29 @@ int main(int argc, char *argv[]){
   /*  HERE SHOULD START THE MONTE-CARLO */
   
   for(MCloopId=0; MCloopId < uvar_nMCloop; ++MCloopId){
-    
-    controlN=uvar_nh0; /* checks if near template corresponds to max number count*/
-    controlNN=0;/* checks if near template corresponds to max number count*/
-    controlNH=1;  /* checks if near template corresponds to max 
-		     number count for the highest h0 value */
-    
+     
     LAL_CALL( GenerateInjectParamsNoVeto(&status, &pulsarInject, &pulsarTemplate,
 					 &closeTemplates, &injectPar), &status );
-    
-    /* find the nearest patch in order to compute the weights accordingly */
-    LAL_CALL(FindNearestPatch( &status, pulsarInject.latitude,
-			       pulsarInject.longitude, &skyPatchCenterV, &skyIndex), &status );
-	     
+    	     
     /* writing the parameters into fpPar, following the format
        MCloopId  I.f0 H.f0 I.f1 H.f1 I.alpha H.alpha I.delta H.delta I.phi0  I.psi
        (not cos iota)  */
-	     
-    fprintf(fpPar," %d %f %f %g %g %f %f %f %f %f %f ", 
+
+    fprintf(fpPar," %d %f %f %g %g %f %f %f %f %f %f %f", 
 	    MCloopId, pulsarInject.f0, pulsarTemplate.f0,
 	    pulsarInject.spindown.data[0], pulsarTemplate.spindown.data[0],
 	    pulsarInject.longitude, pulsarTemplate.longitude,
 	    pulsarInject.latitude, pulsarTemplate.latitude,
-	    pulsarInject.phi0, pulsarInject.psi
+	    pulsarInject.phi0, pulsarInject.psi, (pulsarInject.aCross)/injectPar.h0
 	    );
+
 	     
    /* ****************************************************************/
    /* Computing the frequency path f(t) = f0(t)* (1+v/c.n)  for all the different templates */
 	     
-   /* the geometrically nearest template */
-   LAL_CALL( ComputeFoft(&status, &foft,&pulsarTemplate,&timeDiffV,&velV, timeBase), &status);
-    
+   /* the geometrically nearest template */ 
+   LAL_CALL( ComputeFoft_NM(&status, &foft,&pulsarTemplate,&timeDiffV,&velV), &status);
+
    /* for all the 16 near templates */
    {
      UINT4 j,i,k, itemplate;
@@ -832,8 +720,8 @@ int main(int argc, char *argv[]){
 	 for(k=0;k<4;++k){
 	   pulsarTemplate.latitude = closeTemplates.skytemp[k].delta;
 	   pulsarTemplate.longitude = closeTemplates.skytemp[k].alpha;
-	   LAL_CALL( ComputeFoft(&status, &(foftV[itemplate]),
-				 &pulsarTemplate,&timeDiffV,&velV, timeBase), &status);
+	   LAL_CALL( ComputeFoft_NM(&status, &(foftV[itemplate]),
+				 &pulsarTemplate,&timeDiffV,&velV), &status);
 	   ++itemplate;
 	 }
        }
@@ -896,7 +784,60 @@ int main(int argc, char *argv[]){
        }
      }   
    }
-   	     
+   
+ 
+  /******************************************************************/ 
+  /* initialize all weights to unity */
+  /******************************************************************/ 
+  
+  /* set up weights -- this should be done before normalizing the sfts */
+  weightsV.length = mObsCoh;
+  weightsV.data = (REAL8 *)LALCalloc(mObsCoh, sizeof(REAL8));
+  
+  weightsNoise.length = mObsCoh;
+  weightsNoise.data = (REAL8 *)LALCalloc(mObsCoh, sizeof(REAL8));
+  
+  /* initialize all weights to unity */
+  LAL_CALL( LALHOUGHInitializeWeights( &status, &weightsNoise), &status);
+  LAL_CALL( LALHOUGHInitializeWeights( &status, &weightsV), &status);
+  
+  /******************************************************************/ 
+  /*   setting the weights considering only the AM coefficients to be only
+       computed just where we need*/ 
+  /******************************************************************/ 
+  if (uvar_weighAM){
+    SkyPosition      skypos;
+    UINT4            iIFO, iSFT;
+    UINT4 	      k, numsft;
+    
+    weightsAM.length = mObsCoh;
+    weightsAM.data=NULL;
+    weightsAM.data = (REAL8 *)LALCalloc(mObsCoh, sizeof(REAL8));
+    skypos.system = COORDINATESYSTEM_EQUATORIAL;
+    
+    MultiAMCoeffs   *multiAMcoef = NULL;
+       
+    skypos.longitude = pulsarInject.longitude;
+    skypos.latitude  = pulsarInject.latitude;
+    LAL_CALL ( LALGetMultiAMCoeffs ( &status, &multiAMcoef, mdetStates, skypos), &status);
+      
+    /* loop over the weights and set them by the appropriate AM coefficients */
+    for ( k = 0, iIFO = 0; iIFO < numifo; iIFO++) {	  
+      numsft = mdetStates->data[iIFO]->length;	
+      for ( iSFT = 0; iSFT < numsft; iSFT++, k++) {	  
+	REAL8 a, b;
+	  
+	a = multiAMcoef->data[iIFO]->a->data[iSFT];
+	b = multiAMcoef->data[iIFO]->b->data[iSFT];    
+	weightsAM.data[k] = (a*a + b*b);
+      } /* loop over SFTs */
+    } /* loop over IFOs */
+      
+    XLALDestroyMultiAMCoeffs ( multiAMcoef );
+      
+  }
+
+	     
    /* ****************************************************************/
    /*  HERE THE LOOP FOR DIFFERENT h0 VALUES */
 	     
@@ -909,8 +850,6 @@ int main(int argc, char *argv[]){
       COMPLEX8   *noiseSFT;
       COMPLEX8   *signalSFT;
       COMPLEX8   *sumSFT;
-      
-      controlNN=0; 
       
       numberCount=0.0;
       for(itemplate=0; itemplate<nTemplates; ++itemplate){
@@ -1006,7 +945,7 @@ int main(int argc, char *argv[]){
 	
 	if (uvar_weighAM) {
 	  for (j=0; j<mObsCoh; j++){
-	    weightsV.data[j] = weightsV.data[j]*weightsAMskyV[skyIndex].data[j];
+	    weightsV.data[j] = weightsV.data[j]*weightsAM.data[j];
 	  }
 	}
 	
@@ -1051,12 +990,9 @@ int main(int argc, char *argv[]){
       for (itemplate=0; itemplate<nTemplates; ++itemplate) {
 	if( numberCountV[itemplate] > maxNumberCount ) {
 	  maxNumberCount = numberCountV[itemplate];
-	  controlNN=1;
-	  if (h0loop == (uvar_nh0-1)) controlNH=0;
 	}
       }
-      controlN-=controlNN; /* substracts 1 every the near template was not the
-			      best*/
+
       /******************************************************************/
       /* printing the significance in the proper file */
       /******************************************************************/
@@ -1065,16 +1001,15 @@ int main(int argc, char *argv[]){
       
     } /* closing loop for different h0 values */
     fprintf(fpNc, " \n");
-	     
-	     
 
-    /* ****************************************************************/
-    /* writing the parameters into fpPar, following the format
-       MCloopId  I.f0 H.f0 I.f1 H.f1 I.alpha H.alpha I.delta H.delta I.phi0  I.psi
-       (not cos iota) and now adding the 2 control */
-    /* ****************************************************************/   
-    fprintf(fpPar,"  %d %d \n",  controlN, controlNH );
-    
+
+  LALFree(weightsV.data);
+  LALFree(weightsNoise.data);
+  if (uvar_weighAM){ 
+      LALFree(weightsAM.data); 
+  }
+
+	        
   } /* Closing MC loop */
   
   /******************************************************************/
@@ -1117,7 +1052,6 @@ int main(int argc, char *argv[]){
    
   XLALDestroyMultiDetectorStateSeries ( mdetStates );
 
-  LALFree(skyPatchCenterV.data);
   LALFree(foft.data);
   LALFree(h0V.data);
   
@@ -1136,23 +1070,7 @@ int main(int argc, char *argv[]){
   LALFree(edat->ephemE);
   LALFree(edat->ephemS);
   LALFree(edat);
-  
-  LALFree(skyAlpha);
-  LALFree(skyDelta);
-  LALFree(skySizeAlpha);
-  LALFree(skySizeDelta);
-  
-
-  LALFree(weightsV.data);
-  LALFree(weightsNoise.data); 
-   
-  if (uvar_weighAM){
-    for (skyCounter = 0; skyCounter < nSkyPatches; skyCounter++){
-        LALFree(weightsAMskyV[skyCounter].data);
-      }
-    LALFree(weightsAMskyV);
-  }
-  
+      
   LAL_CALL(LALDestroyMultiSFTVector(&status, &inputSFTs),&status );
   LAL_CALL(LALDestroyMultiSFTVector(&status, &sumSFTs),&status );
   LAL_CALL(LALDestroyMultiSFTVector(&status, &signalSFTs),&status );
@@ -1605,18 +1523,17 @@ void GenerateInjectParamsNoVeto(LALStatus   *status,
 
 /* ****************************************************************/
 /* Computing the frequency path f(t) = f0(t)* (1+v/c.n)   */
+/* without mismatch                                       */
 /* ****************************************************************/   
 /******************************************************************/
-void ComputeFoft(LALStatus   *status,
+void ComputeFoft_NM(LALStatus   *status,
 		 REAL8Vector          *foft,
                  HoughTemplate        *pulsarTemplate,
 		 REAL8Vector          *timeDiffV,
-		 REAL8Cart3CoorVector *velV,
-                 REAL8                 timeBase){
+		 REAL8Cart3CoorVector *velV){
   
   INT4   mObsCoh;
   REAL8   f0new, vcProdn, timeDiffN;
-  INT4    f0newBin;
   REAL8   sourceDelta, sourceAlpha, cosDelta;
   INT4    j,i, nspin, factorialN; 
   REAL8Cart3Coor  sourceLocation;
@@ -1659,8 +1576,7 @@ void ComputeFoft(LALStatus   *status,
       f0new += pulsarTemplate->spindown.data[i]* timeDiffN / factorialN;
       timeDiffN *= timeDiffN;
     }
-    f0newBin = floor( f0new * timeBase + 0.5);
-    foft->data[j] = f0newBin * (1.0 +vcProdn) / timeBase;
+    foft->data[j] = f0new * (1.0 +vcProdn);
   }    
     
   DETATCHSTATUSPTR (status);
@@ -1668,74 +1584,19 @@ void ComputeFoft(LALStatus   *status,
   RETURN (status);
 }
 
-
-			
-/* ****************************************************************/
-/*    Finding the nearest patch center*/
-/* ****************************************************************/
-
-
-void FindNearestPatch( LALStatus      *status,
-		REAL8		      latitude,
-		REAL8		      longitude, 
-		REAL8Cart3CoorVector *skyPatchCenterV,
-                INT4		      *skyIndex){
-  
-  INT4    nSkyPatches, j; 
-  REAL8Cart3Coor  sourceLocation;
-  REAL8   cosDelta, escalarProd, escalarProdMax;
-  
-  /* --------------------------------------------- */
-  INITSTATUS (status, "FindNearestPatch", rcsid);
-  ATTATCHSTATUSPTR (status);
-  
-  /*   Make sure the arguments are not NULL: */
-  ASSERT (skyPatchCenterV,  status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
-  ASSERT (skyPatchCenterV->data,  status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
-  
-  cosDelta = cos(latitude);
-  *skyIndex = 0;
-  escalarProdMax = -1.0;
-
-  sourceLocation.x = cosDelta* cos(longitude);
-  sourceLocation.y = cosDelta* sin(longitude);
-  sourceLocation.z = sin(latitude);
-    
-  nSkyPatches = skyPatchCenterV->length;    
-  
-  for (j=0; j<nSkyPatches; ++j){  /* loop for all different sky patches */
-    escalarProd = skyPatchCenterV->data[j].x * sourceLocation.x
-    		+ skyPatchCenterV->data[j].y * sourceLocation.y
-    	        + skyPatchCenterV->data[j].z * sourceLocation.z;
-		
-    if(escalarProd > escalarProdMax){
-      escalarProdMax = escalarProd;
-      *skyIndex = j;
-    }	    
-  }    
-    
-  DETATCHSTATUSPTR (status);
-  /* normal exit */
-  RETURN (status);
-}
-
-
-   
 /******************************************************************/
 
-
-
 			
 /* ****************************************************************/
-/*    PrintLogFile  Copied from driver */
+/*    PrintLogFile2 (like in the Driver, but this one doesn't     */
+/*    copy the contents of skypatch file)                               */
 /* ****************************************************************/   
 /******************************************************************/
 
 
-void PrintLogFile (LALStatus       *status,
+void PrintLogFile2 (LALStatus       *status,
 		   CHAR            *dir,
 		   CHAR            *basename,
-		   CHAR            *skyfile,
 		   LALStringVector *linefiles,
 		   CHAR            *executable )
 {
@@ -1744,7 +1605,7 @@ void PrintLogFile (LALStatus       *status,
   CHAR *logstr=NULL; 
   UINT4 k;
 
-  INITSTATUS (status, "PrintLogFile", rcsid);
+  INITSTATUS (status, "PrintLogFile2", rcsid);
   ATTATCHSTATUSPTR (status);
   
   /* open log file for writing */
@@ -1785,16 +1646,6 @@ void PrintLogFile (LALStatus       *status,
   fprintf( fpLog, logstr);
   LALFree(logstr);
 
-  /* copy contents of skypatch file into logfile */
-  fprintf(fpLog, "\n\n# Contents of skypatch file:\n");
-  fclose(fpLog);
-  {
-    CHAR command[1024] = "";
-    sprintf(command, "cat %s >> %s", skyfile, fnameLog);
-    system(command);
-  }
-
-
   /* copy contents of linefile if necessary */
   if ( linefiles ) {
 
@@ -1831,5 +1682,4 @@ void PrintLogFile (LALStatus       *status,
   /* normal exit */
   RETURN (status);
 }    
-
 
