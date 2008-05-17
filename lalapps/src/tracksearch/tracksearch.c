@@ -3575,6 +3575,7 @@ void LALappsTrackSearchWhitenSegments( LALStatus        *status,
   REAL4Window              *windowPSD=NULL;
   UINT4                     i=0;
   UINT4                     j=0;
+  REAL4                     meanValue=0;
   const LIGOTimeGPS        gps_zero = LIGOTIMEGPSZERO;
 
   if (params.verbosity >= verbose )
@@ -3675,10 +3676,16 @@ void LALappsTrackSearchWhitenSegments( LALStatus        *status,
        */
       for (i=0;i<averagePSD->data->length;i++)
 	tmpExtendedAveragePSD->data[i]=averagePSD->data->data[i];
+      /*Determine average of last blocksize points in PSD estimate */
+      for (i=averagePSD->data->length-params.smoothAvgPSD;i<averagePSD->data->length;i++)
+	meanValue=meanValue+averagePSD->data->data[i];
+      meanValue=meanValue/params.smoothAvgPSD;
       for (i=averagePSD->data->length-1;
 	   i<tmpExtendedAveragePSD->length;
 	   i++)
-	tmpExtendedAveragePSD->data[i]=averagePSD->data->data[averagePSD->data->length-1];
+	tmpExtendedAveragePSD->data[i]=meanValue;
+      /*tmpExtendedAveragePSD->data[i]=averagePSD->data->data[averagePSD->data->length-1];*/
+
       /*
        * Setup running median parameters
        */

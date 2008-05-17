@@ -119,7 +119,7 @@ def wrapperShowHistogram(candidateObject):
     """
     global triggerTrait
     global verboseSwitch
-
+    minBinValue=0
     for singleTriggerTrait in triggerTrait:
         newHistCol=histogramcolumns
         if singleTriggerTrait.__contains__(":"):
@@ -127,14 +127,17 @@ def wrapperShowHistogram(candidateObject):
             myTrait=str(property[0])
             newHistCol=int(property[1])
             if property.__len__() > 2:
+                if str(property[2]).__contains__('!'):
+                    property[2]=property[2].strip('!')
+                    minBinValue=-1*float(property[2])
                 maxBinValue=float(property[2])
                 #Since we have a max bin and bin count
                 #make newHistCol not a number but vector of
                 #bins to histogram with.
-                resolution=maxBinValue/newHistCol
+                resolution=(maxBinValue-minBinValue)/newHistCol
                 binList=[]
                 for index in range(0,newHistCol,1):
-                    binList.append(index*resolution)
+                    binList.append((index*resolution)+minBinValue)
                 newHistCol=binList
             else:
                 maxBinValue=float(-1)
@@ -145,6 +148,12 @@ def wrapperShowHistogram(candidateObject):
             property=candidateObject.__getCurveField__('',myTrait)
             sys.stdout.write("Creating histogram for %s \n"%
                              (property[1]))
+
+        candidateObject.setHistogramType(histogramType)
+        candidateObject.showHistogram(myTrait,
+                                      graph2file,
+                                      newHistCol,
+                                      topTol)
         try:
             candidateObject.setHistogramType(histogramType)
             candidateObject.showHistogram(myTrait,
@@ -152,7 +161,7 @@ def wrapperShowHistogram(candidateObject):
                                           newHistCol,
                                           topTol)
         except Exception, errorInfo:
-            sys.stderr.write("Problem trying to create histogram plot, %s !\n"%(os.path.basename(graph2file)))
+            sys.stderr.write("Problem trying to create histogram plot ::: %s :::\n"%(os.path.basename(graph2file)))
             sys.stderr.write("Exception Instance :%s\n"%(str(type(errorInfo))))
             sys.stderr.write("Exception Args     :%s\n"%(str(errorInfo.args)))
             sys.stderr.write("Skipping this plot. Sorry.\n")
@@ -189,7 +198,7 @@ parser.add_option("-c","--clobber",dest="clobberFilename",
                    )
 parser.add_option("-T","--expression-threshold",dest="expThreshold",
                   default="",
-                  help="This is a flexible thresholding interface.  We are allowed to manipulate variables to build expressions. Variables allowed are:\n P ,power \n L ,curve length \n D , time duration in seconds \n B , frequency bandwith of kurve \n  T, start time float\n S, stop time float\n F, start Freq \n, G, stop Freq \n V, bright pixel frequency\n H, bright pixel time(float)\n J, power of bright pixel \n M, mean pixel power \n C, variance pixel power \n See the help for the candidateList class for better explaination of the valid syntax allowed. You can impose multiple threshold expresssions for one file operation.  This saves time lost to IO of running candidateHandler.py multiple times.  Use the comma as a delimiter B>10,L<100 would apply to thresholds and save them in two appropriately marked files. ENCLOSE THE EXPRESSION IN DOUBLE QUOTES",
+                  help="This is a flexible thresholding interface.  We are allowed to manipulate variables to build expressions. Variables allowed are:\n P ,power \n L ,curve length \n D , time duration in seconds \n B , frequency bandwith of kurve \n  T, start time float\n S, stop time float\n F, start Freq \n, G, stop Freq \n V, bright pixel frequency\n H, bright pixel time(float)\n J, power of bright pixel \n M, mean pixel power \n C, variance pixel power \n A, trigger angle \n See the help for the candidateList class for better explaination of the valid syntax allowed. You can impose multiple threshold expresssions for one file operation.  This saves time lost to IO of running candidateHandler.py multiple times.  Use the comma as a delimiter B>10,L<100 would apply to thresholds and save them in two appropriately marked files. ENCLOSE THE EXPRESSION IN DOUBLE QUOTES",
                   )
 parser.add_option("-s","--write-summary",dest="dumpSummaryDisk",
                   default=False,

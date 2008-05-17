@@ -97,6 +97,25 @@ class kurve:
         del sortedCurve
     #End method __timeOrderCurve__()
 
+    def getKurveAngle(self):
+        """
+        Estimates an angle theta from fstart,fstop,gpsStart,gpsStop, including
+        orientation in the measure
+        """
+        angle=0
+        slope=0
+        startF=self.printStartFreq()
+        stopF=self.printStopFreq()
+        duration=self.getCandidateDuration()
+        try:
+            slope=(stopF-startF)/duration
+            angle=math.atan(slope)*(180/math.pi)
+        except ZeroDivisionError:
+            slope=math.pow(10,10)
+            angle=math.atan(slope)*(180/math.pi)
+        return angle
+    #End get angle function
+
     def getSymmetryFactor(self,inputPixel,weight=1):
         """
         The default of weight 1 makes the inner product weight all
@@ -256,12 +275,12 @@ class kurve:
             for entry in self.element:
                 listFreq.append(entry[3])
             listFreq.sort()
-            minFreq=listFreq[0]
-            maxFreq=listFreq[listFreq.__len__()-1]
+            minFreq=min(listFreq)
+            maxFreq=max(listFreq)
         bandWidth=maxFreq-minFreq
         #Remember bandwidth above is middle bin to middle bin must and .5 and .5 bin edges!
         if getBounds:
-            return [abs(bandWidth),min([minFreq,maxFreq]),max([minFreq,maxFreq])]
+            return [abs(bandWidth),minFreq,maxFreq]
         else:
             return abs(bandWidth)
     #End method getCandidateBandwidth
@@ -611,7 +630,8 @@ class candidateList:
                         ["h","Bright GPS","getBrightPixelAndStats()[0][2].getAsFloat()"],
                         ["j","Bright Energy","getBrightPixelAndStats()[0][4]"],
                         ["m","Mean Brightness","getBrightPixelAndStats()[1]"],
-                        ["c","StdDev Brightness","getBrightPixelAndStats()[2]"]]
+                        ["c","StdDev Brightness","getBrightPixelAndStats()[2]"],
+                        ["a","Orientation Angle","getKurveAngle()"]]
                         
     #End init method
 
@@ -1639,16 +1659,18 @@ class candidateList:
             while line:
                 line=input_fp.readline()
                 if line != '':
-                    self.traitSummary.append(map(float,line.split()))
+                    try:
+                        self.traitSummary.append(map(float,line.split()))
+                    except ValueError:
+                        sys.stderr.write("Inconsistency in pickled trigger summary file found!\n")
+                        sys.stderr.write(str(line.split()))
+                        sys.stderr.write("Loading full candidate list to create new trigger pickle file.\n")
+                        input_fp.close()
+                        self.__loadfileQuick__(filename)
             input_fp.close()
-            #Reorganize the traitSummary Structure into floats
-            
-#             fp=gzip.open(pickleName,'rb')
-#             self.traitSummary=cPickle.load(fp)
-#             fp.close()
         else:
             if self.verboseMode:
-                sys.stderr.write("Error could not load trait summary file. Loading full candidate list file instead!\n")
+                sys.stderr.write("Trait summary pickle file older than candidate file or missing.  Rebuilding!\n")
             self.__loadfileQuick__(filename)
     #end __propertyunpickler__()
         
@@ -1826,8 +1848,8 @@ class candidateList:
         for lineInfo in self.curves:
             spinner.updateSpinner()
             curveID,l,p=lineInfo.getKurveHeader()
-            d=lineInfo.getCandidateDuration()
-            b=lineInfo.getCandidateBandwidth()
+            d=float(lineInfo.getCandidateDuration())
+            b=float(lineInfo.getCandidateBandwidth())
             t=float(lineInfo.printStartGPS())
             s=float(lineInfo.printStopGPS())
             f=float(lineInfo.printStartFreq())
@@ -1839,10 +1861,14 @@ class candidateList:
             j=float(tmpBrightnessInfo[0][4]) #Power of Bright Pixel
             m=float(tmpBrightnessInfo[1]) #Curve mean pixel brightness
             c=float(tmpBrightnessInfo[2]) #Curve stddev of pixel brightness
+            evalResult=False
             try:
                 evalResult=eval(testExp)
+            except ZeroDivisionError:
+                if self.verboseMode:
+                    sys.stdout.write("Division by zero encountered Ignoring trigger.\n")
             except :
-                print "Error with expression string syntax."
+                print "Unknown error with expression string syntax."
                 print "Received string:  ",str(testExp).upper()
                 os.abort()
             if evalResult:
@@ -2219,22 +2245,15 @@ class candidateList:
         """
         histList=[]
         powList=[]
-        if 1:
-            #Load properties out of the traitSummary variable!
-            if self.traitSummary.__len__() == 0:
-                sys.stderr.write("Trait summary field empty! Exiting function\n")
-                return [[],[],[]]
-            for triggerSummary in self.traitSummary:
-                fieldValue=self.__getTraitField__(triggerSummary,triggerTrait)[0]
-                fieldID=self.__getTraitField__(triggerSummary,"curveID")[0]
-                histList.append([fieldValue,fieldID])
-                powList.append(fieldValue)
-        else:
-            for trigger in self.curves:
-                fieldValue=self.__getCurveField__(trigger,triggerTrait)[0]
-                fieldID=self.__getCurveField__(trigger,"curveID")[0]
-                histList.append([fieldValue,fieldID])
-                powList.append(fieldValue)
+        #Load properties out of the traitSummary variable!
+        if self.traitSummary.__len__() == 0:
+            sys.stderr.write("Trait summary field empty! Exiting function\n")
+            return [[],[],[]]
+        for triggerSummary in self.traitSummary:
+            fieldValue=self.__getTraitField__(triggerSummary,triggerTrait)[0]
+            fieldID=self.__getTraitField__(triggerSummary,"curveID")[0]
+            histList.append([fieldValue,fieldID])
+            powList.append(fieldValue)
         if  self.histogramType==self.histogramTypes[2]: #line logxy
             try:
                 [entries,bins,patches]=pylab.hist(powList,colCount,bottom=1)
@@ -2242,7 +2261,7 @@ class candidateList:
                 pylab.figure()
                 pylab.loglog(bins,entries,linestyle='steps')
             except:
-                sys.stderr.writelines('Error trying to create histogram.\n')
+                sys.stderr.writelines('Error trying to create logxy histogram.\n')
         elif self.histogramType==self.histogramTypes[1]: #bar logy
             try:
                 [entries,bins,patches]=pylab.hist(powList,colCount,bottom=1,log=True)

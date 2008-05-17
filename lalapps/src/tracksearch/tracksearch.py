@@ -1419,6 +1419,12 @@ class tracksearch:
         if ((channelname=='') and (self.have_multichannel)):
             sys.stderr.write("Improper function call to __createSingleJob__() method")
             os.abort()
+        if not self.have_multichannel:
+            if self.cp.has_option('tracksearchtime','channel_name'):
+                channelname=str(self.cp.get('tracksearchtime','channel_name')).strip()
+            else:
+                sys.stderr.write("Improper function call to __createSingleJob__() appears ini file is missing either channel_name or section [multichannel]. Please check!\n")
+                os.abort()
         self.currentchannel=channelname
         layerID=1
         nodeLinkage=self.__startingSearchLayer__(layerID)
