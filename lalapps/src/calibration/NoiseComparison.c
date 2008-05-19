@@ -219,13 +219,13 @@ int main(int argc,char *argv[])
 {
   int i, N; 
 
-/*   fprintf(stdout,"Made it to: -4\n"); */
-/*   printmemuse();  */
+   fprintf(stdout,"Made it to: -4\n"); 
+   printmemuse();  
 
   if (ReadCommandLine(argc,argv,&CommandLineArgs)) return 1;
 
-/*   fprintf(stdout,"Made it to: -3\n"); */
-/*   printmemuse();  */
+   fprintf(stdout,"Made it to: -3\n"); 
+   printmemuse();  
 
   if (ReadCalFiles(CommandLineArgs)) return 2;
 
@@ -332,32 +332,32 @@ int Initialise(struct CommandLineArgsTag CLA)
     }
   /*   setvbuf( fpout, NULL, _IONBF, 0 );  */
   
-/*   fprintf(stdout,"Made it to: 0\n"); */
-/*   printmemuse();  */
+   fprintf(stdout,"Made it to: 0\n"); 
+   printmemuse();  
 
   LALCreateForwardREAL8FFTPlan( &status, &fftPlanDouble, hoft.data->length/4, 0 );
   TESTSTATUS( &status );
 
-/*   fprintf(stdout,"Made it to: 1\n"); */
-/*   printmemuse();  */
+   fprintf(stdout,"Made it to: 1\n"); 
+   printmemuse();  
 
   LALCreateForwardREAL4FFTPlan( &status, &fftPlan, derr.data->length/4, 0 );
   TESTSTATUS( &status );
 
-/*   fprintf(stdout,"Made it to: 2\n"); */
-/*   printmemuse();  */
+   fprintf(stdout,"Made it to: 2\n"); 
+   printmemuse();  
 
   LALZCreateVector( &status, &ffthtData, (hoft.data->length/4) / 2 + 1 );
   TESTSTATUS( &status );  
 
-/*   fprintf(stdout,"Made it to: 3\n"); */
-/*   printmemuse();  */
+   fprintf(stdout,"Made it to: 3\n"); 
+   printmemuse();  
 
   LALCCreateVector( &status, &fftderrData, (hoft.data->length/4) / 2 + 1 );
   TESTSTATUS( &status );  
   
-/*   fprintf(stdout,"Made it to: 4\n"); */
-/*   printmemuse();  */
+   fprintf(stdout,"Made it to: 4\n"); 
+   printmemuse();  
 
   return 0;
 }
@@ -531,8 +531,8 @@ int ComputeNoise(struct CommandLineArgsTag CLA, int n)
 {
 
   INT4 k,j;
-  REAL8 mean_Sh_derr;
-  REAL8 mean_Sh_hoft;
+  REAL8 mean_Sh_derr, mean_caldr, mean_caldi, ratio_r, ratio_i, var_r, var_i;
+  REAL8 mean_Sh_hoft, mean_hr, mean_hi;
   REAL4 mean_overlap, mean_r, mean_i;
   COMPLEX8 R,H,C;
 
@@ -566,20 +566,20 @@ int ComputeNoise(struct CommandLineArgsTag CLA, int n)
       return 1;
     }
 
-/*   fprintf(stdout,"Made it to: 5\n"); */
-/*   printmemuse();  */
+   fprintf(stdout,"Made it to: 5\n"); 
+   printmemuse();  
 
   XLALResampleREAL4TimeSeries( &derr, derr.deltaT*4);
   TESTSTATUS( &status );
 
-/*   fprintf(stdout,"Made it to: 6\n"); */
-/*   printmemuse();  */
+   fprintf(stdout,"Made it to: 6\n"); 
+   printmemuse();  
 
   XLALResampleREAL8TimeSeries( &hoft, hoft.deltaT*4);
   TESTSTATUS( &status );
 
-/*   fprintf(stdout,"Made it to: 7\n"); */
-/*   printmemuse();  */
+   fprintf(stdout,"Made it to: 7\n"); 
+   printmemuse();  
 
   /* Window the data */
   for(k=0;k<(INT4)(CLA.t/derr.deltaT +0.5);k++)
@@ -599,13 +599,13 @@ int ComputeNoise(struct CommandLineArgsTag CLA, int n)
   /* FFT the data */
   XLALREAL8ForwardFFT( ffthtData, hoft.data, fftPlanDouble );
 
-/*   fprintf(stdout,"Made it to: 8\n"); */
-/*   printmemuse();  */
+   fprintf(stdout,"Made it to: 8\n"); 
+   printmemuse();  
 
   XLALREAL4ForwardFFT( fftderrData, derr.data, fftPlan );
 
-/*   fprintf(stdout,"Made it to: 9\n"); */
-/*   printmemuse();  */
+   fprintf(stdout,"Made it to: 9\n"); 
+   printmemuse();  
 
 
   fprintf(fpout, "%d ", gpsepoch.gpsSeconds);
@@ -617,6 +617,14 @@ int ComputeNoise(struct CommandLineArgsTag CLA, int n)
       mean_Sh_hoft = 0.0;
       mean_overlap = 0.0;
       mean_r=mean_i=0.0;
+      mean_hr = 0.0;
+      mean_hi = 0.0;
+      mean_caldr = 0.0;
+      mean_caldi = 0.0;
+      ratio_r = 0.0;
+      ratio_i = 0.0;
+      var_r = 0.0;
+      var_i = 0.0;
       {
 	int firstbin=(INT4)(frequencies[j]*CLA.t+0.5);
 	int nsamples=(INT4)(CLA.b*CLA.t+0.5);
@@ -653,15 +661,40 @@ int ComputeNoise(struct CommandLineArgsTag CLA, int n)
 	    mean_r += (caldr-hr)/caldr/nsamples;
 	    mean_i += (caldi-hi)/caldi/nsamples;
 	    
+	    mean_hr += hr/nsamples;
+	    mean_hi += hi/nsamples;
+	    mean_caldr += caldr/nsamples;
+	    mean_caldi += caldi/nsamples;
+	    
+	    ratio_r += (hr/caldr)/nsamples;
+	    ratio_i += (hi/caldi)/nsamples;
+	    
+	    var_r += (pow(hr,2.0)/pow(caldr,2.0))/nsamples;
+	    var_i += (pow(hi,2.0)/pow(caldi,2.0))/nsamples;
+	    
 	    if(CLA.outputphase)
  	    fprintf(stdout,"%e %e %e %e \n",hr,hi,caldr,caldi); 
 
 	  }
 	mean_Sh_derr *= 2.0*derr.deltaT/(REAL4)derr.data->length;
 	mean_Sh_hoft *= 2.0*hoft.deltaT/(REAL4)hoft.data->length;
+	
+	mean_hr *= sqrt(2.0*hoft.deltaT/(REAL4)hoft.data->length);
+	mean_hi *= sqrt(2.0*hoft.deltaT/(REAL4)hoft.data->length);
+	mean_caldr *= sqrt(2.0*derr.deltaT/(REAL4)derr.data->length);
+	mean_caldi *= sqrt(2.0*derr.deltaT/(REAL4)derr.data->length);
+	
+	ratio_r *= sqrt(2.0*hoft.deltaT/(REAL4)hoft.data->length / 2.0*derr.deltaT/(REAL4)derr.data->length);
+	ratio_i *= sqrt(2.0*hoft.deltaT/(REAL4)hoft.data->length / 2.0*derr.deltaT/(REAL4)derr.data->length);
+	var_r *= 2.0*hoft.deltaT/(REAL4)hoft.data->length / 2.0*derr.deltaT/(REAL4)derr.data->length;
+	var_i *= 2.0*hoft.deltaT/(REAL4)hoft.data->length / 2.0*derr.deltaT/(REAL4)derr.data->length;
+	
+	var_r = var_r - pow(ratio_r,2.0);
+	var_i = var_i - pow(ratio_i,2.0);
+
+	
       }
-      fprintf(fpout, "%e %e %e ",sqrt(mean_Sh_hoft), sqrt(mean_Sh_derr), 
-	      sqrt(mean_Sh_hoft)/sqrt(mean_Sh_derr));
+      fprintf(fpout, "%e %e %e %e %e %e %e %e",mean_hr,mean_hi,mean_caldr,mean_caldi,ratio_r,ratio_i,var_r,var_i);
     }
   
   fprintf(fpout, "\n");
@@ -673,8 +706,8 @@ int ComputeNoise(struct CommandLineArgsTag CLA, int n)
   LALResizeREAL4TimeSeries(&status, &derr, 0,derr.data->length*4);
   derr.deltaT= derr.deltaT/4;
 
-/*   fprintf(stdout,"Made it to: 10\n"); */
-/*   printmemuse();  */
+   fprintf(stdout,"Made it to: 10\n"); 
+   printmemuse();  
 
   return 0;
 }
@@ -867,58 +900,58 @@ int ReadCalFiles(struct CommandLineArgsTag CLA)
 
 int Finalise(void)
 {
-/*   fprintf(stdout,"Made it to: 12\n"); */
-/*   printmemuse();  */
+   fprintf(stdout,"Made it to: 12\n"); 
+   printmemuse();  
 
   LALDDestroyVector(&status,&hoft.data);
   TESTSTATUS( &status );
 
-/*   fprintf(stdout,"Made it to: 11\n"); */
-/*   printmemuse();  */
+   fprintf(stdout,"Made it to: 11\n"); 
+   printmemuse();  
 
   LALDestroyVector(&status,&derr.data);
   TESTSTATUS( &status );
 
-/*   fprintf(stdout,"Made it to: 13\n"); */
-/*   printmemuse();  */
+   fprintf(stdout,"Made it to: 13\n"); 
+   printmemuse();  
 
   LALDestroyVector(&status,&derrwin);
   TESTSTATUS( &status );
 
-/*   fprintf(stdout,"Made it to: 14\n"); */
-/*   printmemuse();  */
+   fprintf(stdout,"Made it to: 14\n"); 
+   printmemuse();  
 
   LALZDestroyVector( &status, &ffthtData);
 
-/*   fprintf(stdout,"Made it to: 15\n"); */
-/*   printmemuse();  */
+   fprintf(stdout,"Made it to: 15\n"); 
+   printmemuse();  
 
   LALCDestroyVector( &status, &fftderrData);
 
-/*   fprintf(stdout,"Made it to: 16\n"); */
-/*   printmemuse();  */
+   fprintf(stdout,"Made it to: 16\n"); 
+   printmemuse();  
 
   LALDestroyREAL8FFTPlan( &status, &fftPlanDouble );
 
-/*   fprintf(stdout,"Made it to: 17\n"); */
-/*   printmemuse();  */
+   fprintf(stdout,"Made it to: 17\n"); 
+   printmemuse();  
 
   LALDestroyREAL4FFTPlan( &status, &fftPlan );
 
-/*   fprintf(stdout,"Made it to: 18\n"); */
-/*   printmemuse();  */
+   fprintf(stdout,"Made it to: 18\n"); 
+   printmemuse();  
 
   LALFrClose(&status,&derrframestream);
   TESTSTATUS( &status );
 
-/*   fprintf(stdout,"Made it to: 19\n"); */
-/*   printmemuse();  */
+   fprintf(stdout,"Made it to: 19\n"); 
+   printmemuse();  
 
   LALFrClose(&status,&hoftframestream);
   TESTSTATUS( &status );
 
-/*   fprintf(stdout,"Made it to: 20\n"); */
-/*   printmemuse();  */
+   fprintf(stdout,"Made it to: 20\n"); 
+   printmemuse();  
 
   fclose(fpout);
   
