@@ -694,7 +694,7 @@ int ComputeNoise(struct CommandLineArgsTag CLA, int n)
 
 	
       }
-      fprintf(fpout, "%e %e %e %e %e %e %e %e",mean_hr,mean_hi,mean_caldr,mean_caldi,ratio_r,ratio_i,var_r,var_i);
+      
     }
   
   fprintf(fpout, "\n");
