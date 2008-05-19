@@ -691,9 +691,10 @@ int ComputeNoise(struct CommandLineArgsTag CLA, int n)
 	
 	var_r = var_r - pow(ratio_r,2.0);
 	var_i = var_i - pow(ratio_i,2.0);
-
 	
       }
+      fprintf(fpout, "%e %e %e %e %e %e %e %e %e %e",sqrt(mean_Sh_hoft), sqrt(mean_Sh_derr),
+      mean_hr,mean_hi,mean_caldr,mean_caldi,ratio_r,ratio_i,sqrt(var_r),sqrt(var_i));
       
     }
   
