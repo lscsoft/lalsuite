@@ -64,7 +64,7 @@ int main(int argc, char *argv[]){
 
    SFTVector *inputSFTs = NULL;
    REAL8 deltaF, timeBase, freq = 0, *freq1 = &freq;
-   REAL8 phase = 0, *phase1 = &phase, psi = 0.0; 
+   REAL8 phase = 0, *phase1 = &phase, psi; 
    UINT4 numsft, counter = 0; 
    COMPLEX8FrequencySeries *sft = NULL, *sft1 = NULL, *sft2 = NULL;
    INT4 index1, index2;
@@ -77,7 +77,6 @@ int main(int argc, char *argv[]){
    SFTPairParams pairParams;
    
    /* information about all the ifos */
-   DetectorStateSeries *detStates = NULL, *tmpDetState = NULL;
    PSDVector *psdVec = NULL;  
    LALDetector *det;
  
@@ -125,6 +124,7 @@ int main(int argc, char *argv[]){
    REAL8    uvar_f0, uvar_fdot, uvar_fBand;
    REAL8    uvar_dAlpha, uvar_dDelta; /* resolution for isotropic sky-grid */
    REAL8    uvar_maxlag;
+   REAL8    uvar_psi;
    CHAR     *uvar_earthEphemeris=NULL;
    CHAR     *uvar_sunEphemeris=NULL;
    CHAR     *uvar_sftDir=NULL;
@@ -155,6 +155,7 @@ int main(int argc, char *argv[]){
    uvar_fBand = FBAND;
    uvar_dAlpha = 0.2;
    uvar_dDelta = 0.2;
+   uvar_psi = 0.0;
  
    uvar_earthEphemeris = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
    strcpy(uvar_earthEphemeris,EARTHEPHEMERIS);
@@ -181,6 +182,7 @@ int main(int argc, char *argv[]){
    LAL_CALL( LALRegisterSTRINGUserVar( &status, "skyRegion",       0,  UVAR_OPTIONAL, "sky-region polygon (or 'allsky')", &uvar_skyRegion), &status);
    LAL_CALL( LALRegisterREALUserVar(   &status, "dAlpha",          0,  UVAR_OPTIONAL, "Sky resolution (flat/isotropic) (rad)", &uvar_dAlpha), &status);
    LAL_CALL( LALRegisterREALUserVar(   &status, "dDelta",          0,  UVAR_OPTIONAL, "Sky resolution (flat/isotropic) (rad)", &uvar_dDelta), &status);
+   LAL_CALL( LALRegisterREALUserVar(   &status, "psi",             0,  UVAR_OPTIONAL, "Polarisation angle (rad)", &uvar_psi), &status);
    LAL_CALL( LALRegisterSTRINGUserVar( &status, "skyfile",         0,  UVAR_OPTIONAL, "Alternative: input skypatch file", &uvar_skyfile),     &status);
    LAL_CALL( LALRegisterSTRINGUserVar( &status, "earthEphemeris", 'E', UVAR_OPTIONAL, "Earth Ephemeris file",  &uvar_earthEphemeris),  &status);
    LAL_CALL( LALRegisterSTRINGUserVar( &status, "sunEphemeris",   'S', UVAR_OPTIONAL, "Sun Ephemeris file", &uvar_sunEphemeris), &status);
@@ -260,6 +262,8 @@ int main(int argc, char *argv[]){
 
    nfreqLoops = ceil(uvar_fBand/deltaF);
 
+
+
    /*  set up ephemeris  */
    edat = (EphemerisData *)LALCalloc(1, sizeof(EphemerisData));
    (*edat).ephiles.earthEphemeris = uvar_earthEphemeris;
@@ -270,6 +274,8 @@ int main(int argc, char *argv[]){
 
    LAL_CALL( LALInitBarycenter( &status, edat), &status);
 
+   /* polarisation angle */
+   psi = uvar_psi;
 
    /* set up skypatches */
    if ((skytest = fopen(uvar_skyfile, "r")) == NULL) {
@@ -329,32 +335,21 @@ int main(int argc, char *argv[]){
 
     psdVec->data = (REAL8FrequencySeries *)LALCalloc (psdVec->length, sizeof(REAL8FrequencySeries));
 
-
+/*
     detStates = (DetectorStateSeries *) LALCalloc(1, sizeof(DetectorStateSeries));
     detStates->length = numsft;
     detStates->data = (DetectorState *) LALCalloc (detStates->length, sizeof(DetectorState));
-
+*/
     ts = XLALCreateTimestampVector (1);
     tOffs = 0.5/deltaF;
     /*loop over all sfts and get the PSDs and detector states */
     for (j=0; j < (INT4)numsft; j++) {
-	tmpDetState = NULL;
   	psdVec->data[j].data = NULL;
 	psdVec->data[j].data = (REAL8Sequence *)LALCalloc (1,sizeof(REAL8Sequence));
 	psdVec->data[j].data->length = inputSFTs->data[j].data->length;
 	psdVec->data[j].data->data = (REAL8 *)LALCalloc (inputSFTs->data[j].data->length, sizeof(REAL8));
 
 	LAL_CALL( LALNormalizeSFT (&status, psdVec->data + j, inputSFTs->data + j, uvar_blocksRngMed), &status);
-
-	det = XLALGetSiteInfo (inputSFTs->data[j].name); 
-	ts->data[0] = inputSFTs->data[j].epoch;
-
-	LAL_CALL ( LALGetDetectorStates ( &status, &tmpDetState, ts, det, edat, tOffs), &status);
-
-  	detStates->data[j] = tmpDetState->data[0];
-
-	XLALDestroyDetectorStateSeries(tmpDetState);
-	LALFree(det);
 	
     }
 
@@ -381,10 +376,11 @@ int main(int argc, char *argv[]){
 
     sigmasq = XLALCreateREAL8Vector(sftPairIndexList->vectorLength);
 
-    AMcoef = (AMCoeffs *)LALCalloc(1, sizeof(AMCoeffs));
+
+  /*  AMcoef = (AMCoeffs *)LALCalloc(1, sizeof(AMCoeffs));
     AMcoef->a = XLALCreateREAL4Vector(numsft);
     AMcoef->b = XLALCreateREAL4Vector(numsft);
-
+*/
 /*printf("starting loops over sky patches\n");*/
 
     /* loop over sky patches -- main calculations  */
@@ -396,8 +392,7 @@ int main(int argc, char *argv[]){
 	thisPoint.Delta = skyDelta[skyCounter]; 
 	thisPoint.fkdot[0] = uvar_f0 + (freqCounter*deltaF);
 	thisPoint.fkdot[1] = uvar_fdot; 
-	thisPoint.refTime = inputSFTs->data->epoch; /*must be changed!*/
-
+	thisPoint.refTime = *(XLALGPSAdd(&firstTimeStamp, tObs/2)); 
  
 	thisVel.length = 3;
 	thisPos.length = 3;
@@ -411,14 +406,27 @@ int main(int argc, char *argv[]){
          skypos.longitude = thisPoint.Alpha; 
          skypos.latitude = thisPoint.Delta; 
          skypos.system = COORDINATESYSTEM_EQUATORIAL; 
-         LAL_CALL ( LALGetAMCoeffs ( &status, AMcoef, detStates, skypos), &status); 
 
     /* loop over each SFT to get frequency, then store in frequencyShiftList */
     for (j=0; j < (INT4)numsft; j++) {
-      
+	DetectorStateSeries *tmpDetState = NULL;
+    	AMcoef = (AMCoeffs *)LALCalloc(1, sizeof(AMCoeffs));
+    	AMcoef->a = XLALCreateREAL4Vector(1);
+    	AMcoef->b = XLALCreateREAL4Vector(1);
 
-	thisVel.data = detStates->data[j].vDetector;
- 	thisPos.data = detStates->data[j].rDetector;
+
+
+	det = XLALGetSiteInfo (inputSFTs->data[j].name); 
+	ts->data[0] = inputSFTs->data[j].epoch;
+
+	LAL_CALL ( LALGetDetectorStates ( &status, &tmpDetState, ts, det, edat, tOffs), &status);
+
+        tmpDetState->detector = *det;
+
+	LAL_CALL ( LALGetAMCoeffs ( &status, AMcoef, tmpDetState, skypos), &status); 
+
+	thisVel.data = tmpDetState->data[0].vDetector;
+ 	thisPos.data = tmpDetState->data[0].rDetector;
 	sft = &(inputSFTs->data[j]);
 
 
@@ -428,12 +436,17 @@ int main(int argc, char *argv[]){
 	frequencyShiftList->data[j] = *freq1; 
 	signalPhaseList->data[j] = *phase1;
 
-	Fplus->data[j] = (AMcoef->a->data[j] * cos(2.0*psi))
-		 	     + (AMcoef->b->data[j] * sin(2.0*psi));
+	Fplus->data[j] = (AMcoef->a->data[0] * cos(2.0*psi))
+		 	     + (AMcoef->b->data[0] * sin(2.0*psi));
 
-	Fcross->data[j] = (AMcoef->b->data[j] * cos(2.0*psi))
-			     - (AMcoef->a->data[j] * sin(2.0*psi));
+	Fcross->data[j] = (AMcoef->b->data[0] * cos(2.0*psi))
+			     - (AMcoef->a->data[0] * sin(2.0*psi));
 	sft = NULL;
+	
+	XLALDestroyDetectorStateSeries(tmpDetState);
+	LALFree(det);
+ 	XLALDestroyAMCoeffs ( AMcoef ); 
+
     } 
     
      
@@ -492,7 +505,6 @@ printf("Frequency %f\n", uvar_f0 + (freqCounter*deltaF));
 
    XLALDestroyTimestampVector(ts);
 
-   XLALDestroyAMCoeffs ( AMcoef ); 
    XLALDestroyCOMPLEX16Vector(yalpha);
    XLALDestroyCOMPLEX16Vector(ualpha);
    XLALDestroyREAL8Vector(frequencyShiftList);
@@ -504,7 +516,7 @@ printf("Frequency %f\n", uvar_f0 + (freqCounter*deltaF));
    LALFree(sftPairIndexList->data);
    LALFree(sftPairIndexList);
    XLALDestroyREAL8Vector(sigmasq);
-   XLALDestroyDetectorStateSeries ( detStates );
+ /*  XLALDestroyDetectorStateSeries ( detStates );*/
    } /*finish loop over frequencies */
 
   

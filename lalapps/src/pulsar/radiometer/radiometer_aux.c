@@ -215,8 +215,8 @@ void CorrelateSingleSFTPair(LALStatus                *status,
 
   /* assume both sfts have the same freq. resolution */
   deltaF = sft1->deltaF;
-  bin1 = (INT4)ceil( (*freq1 - sft1->f0) / (deltaF));
-  bin2 = (INT4)ceil( (*freq2 - sft2->f0)/ (deltaF));
+  bin1 = (INT4)floor( (*freq1 - sft1->f0) / (deltaF));
+  bin2 = (INT4)floor( (*freq2 - sft2->f0)/ (deltaF));
 
   re1 = sft1->data->data[bin1].re;
   im1 = sft1->data->data[bin1].im;
@@ -352,8 +352,8 @@ void CalculateSigmaAlphaSq(LALStatus *status,
   ATTATCHSTATUSPTR (status);
   deltaF = psd1->deltaF;
 
-  bin1 = (INT8)ceil( (freq1 - psd1->f0) / (deltaF));
-  bin2 = (INT8)ceil( (freq2 - psd2->f0)/ (deltaF));
+  bin1 = (INT8)floor( (freq1 - psd1->f0) / (deltaF));
+  bin2 = (INT8)floor( (freq2 - psd2->f0)/ (deltaF));
   *out = pow(deltaF, 4) * psd1->data->data[bin1] * psd2->data->data[bin2];
   DETATCHSTATUSPTR (status);
 	
