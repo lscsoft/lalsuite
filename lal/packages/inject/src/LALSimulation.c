@@ -225,10 +225,11 @@ REAL8TimeSeries *XLALSimDetectorStrainREAL8TimeSeries(
  * sub-sample re-interpolation to adjust the source time series epoch to
  * lie on an integer sample boundary in the target time series.  This
  * transformation is done in the frequency domain, so it is convenient to
- * allow a response function to be applied at the same time.  Note that the
- * source time series is modified in place by this function.  Passing NULL
+ * allow a response function to be applied at the same time.  Passing NULL
  * for the response function turns this feature off (i.e., uses a unit
  * response).
+ *
+ * NOTE:  the source time series is modified in place by this function!
  *
  * This function accepts source and target time series whose units are not
  * the same, and allows the two time series to be herterodyned (although it
@@ -360,7 +361,10 @@ int XLALSimAddInjectionREAL8TimeSeries(
 		tilde_h->data->data[i] = LAL_CMUL(tilde_h->data->data[i], fac);
 	}
 
-	/* adjust DC and Nyquist components */
+	/* adjust DC and Nyquist components.  the DC component must always
+	 * be real-valued.  because we have adjusted the source time series
+	 * to have a length that is an even integer (we've made it a power
+	 * of 2) the Nyquist component must also be real valued. */
 
 	if(response) {
 		/* a response function has been provided.  zero the DC and
@@ -372,11 +376,9 @@ int XLALSimAddInjectionREAL8TimeSeries(
 		/* no response has been provided.  set the phase of the DC
 		 * component to 0, set the imaginary component of the
 		 * Nyquist to 0 */
-		if(tilde_h->f0 == 0.0) {
-			tilde_h->data->data[0].re = LAL_CABS(tilde_h->data->data[0]);
-			tilde_h->data->data[0].im = 0.0;
-		}
-		tilde_h->data->data[tilde_h->data->length - 1].im = 0.0;
+		if(tilde_h->f0 == 0.0)
+			tilde_h->data->data[0] = XLALCOMPLEX16Rect(LAL_CABS(tilde_h->data->data[0]), 0.0);
+		tilde_h->data->data[tilde_h->data->length - 1] = XLALCOMPLEX16Rect(LAL_REAL(tilde_h->data->data[tilde_h->data->length - 1]), 0.0);
 	}
 
 	/* return to time domain */
