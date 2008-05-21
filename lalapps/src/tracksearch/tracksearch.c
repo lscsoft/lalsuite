@@ -99,7 +99,7 @@ int main (int argc, char *argv[])
 
   /* SET LAL DEBUG STUFF */
   /*set_debug_level("ERROR | WARNING | MEMDBG");*/
-    set_debug_level("ERROR");
+    set_debug_level("ERROR | WARNING");
     memset(&status, 0, sizeof(status));
   /*lal_errhandler = LAL_ERR_EXIT;*/
   lal_errhandler = LAL_ERR_ABRT;
@@ -284,16 +284,6 @@ void LALappsTrackSearchPrepareData( LALStatus        *status,
     }
 
   /*
-   * Split incoming data into Segment Vector
-   * Adjust the segmenter to make orignal segments with
-   * SegBufferPoints on each side of the segments.
-   */
-  LAL_CALL(LALTrackSearchDataSegmenter(status,
-				       dataSet,
-				       dataSegments,
-				       params),
-	   status);
-  /*
    * NOTE:
    * Tina, due to the comment in LSD about removing lines in data
    * stretches seconds to minutes we will now attempt line removal
@@ -304,16 +294,43 @@ void LALappsTrackSearchPrepareData( LALStatus        *status,
 
   if (params.numLinesToRemove > 0)
     {
-      if (0)
+      if (1)
+	/* 0 Do individual segment line removal */
+	/* 1 Do entire data set line removal */
 	{
+	  if (params.verbosity >= verbose)
+	    fprintf(stdout,
+		    "Preparing to remove lines from entire input data at one time.\n");
 	  if (params.verbosity >= printFiles)
 	    print_real4tseries(dataSet,"Pre_LineRemoval_TimeDomain.diag");
 	  LALappsTracksearchRemoveHarmonics(status,dataSet,params);
 	  if (params.verbosity >= printFiles)
 	    print_real4tseries(dataSet,"Post_LineRemoval_TimeDomain.diag");
+	  /*
+	   * Split incoming data into Segment Vector
+	   * Adjust the segmenter to make orignal segments with
+	   * SegBufferPoints on each side of the segments.
+	   */
+	  LAL_CALL(LALTrackSearchDataSegmenter(status,
+					       dataSet,
+					       dataSegments,
+					       params),
+		   status);
+
 	}
       else
 	{
+	  /*
+	   * Split incoming data into Segment Vector
+	   * Adjust the segmenter to make orignal segments with
+	   * SegBufferPoints on each side of the segments.
+	   */
+	  LAL_CALL(LALTrackSearchDataSegmenter(status,
+					       dataSet,
+					       dataSegments,
+					       params),
+		   status);
+
 	  if (params.verbosity >= verbose)
 	    fprintf(stdout,
 		    "Preparing to remove lines from data segments.\n");
@@ -3276,6 +3293,7 @@ void LALappsTracksearchRemoveHarmonics( LALStatus             *status,
   UINT4                    i=0;
   UINT4                    j=0;
   UINT4                    k=0;
+  UINT4                    l=0;
   const LIGOTimeGPS        gps_zero = LIGOTIMEGPSZERO;
   UINT4                    planLength=0;
 
@@ -3289,96 +3307,17 @@ void LALappsTracksearchRemoveHarmonics( LALStatus             *status,
       if (params.verbosity > quiet)
 	{
 	  fprintf(stdout,"Removing requested coherent lines, if possible.\n");
-	  for (i=0;i<params.numLinesToRemove;i++)
-	    fprintf(stdout," %f, ",params.listLinesToRemove[i]);
-	  fprintf(stdout,"\n");
-	  fprintf(stdout,"Up to %i harmonics for %i lines will be removed.\n",params.maxHarmonics,params.numLinesToRemove);
 	}
-      /* Loop over all lines */
-      /* Setup tmp reference signal */
-      /* Add tmp reference to global Reference */
-      /* Use global reference signal to clean input data */
-      /* Take input data to Fourier Domain */
-  
-      /* Setup both T and F domain input data structures */
-      inputTVectorCLR=(REAL4TVectorCLR*)LALMalloc(sizeof(REAL4TVectorCLR));
-      inputFVectorCLR=(REAL4FVectorCLR*)LALMalloc(sizeof(REAL4FVectorCLR));
-  
-      /* Take data to F domain */
-      planLength=dataSet->data->length;
-      LAL_CALL(LALCCreateVector(status,
-				&tmpReferenceSignal,
-				planLength),
-	       status);
-
-      LAL_CALL(LALCCreateVector(status,
-				&referenceSignal,
-				planLength),
-	       status);
-
-      LAL_CALL(
-	       LALCreateCOMPLEX8FrequencySeries(
-						status,
-						&signalFFT_harmonic,
-						"tmpSegPSD",
-						gps_zero,
-						0,
-						1/(dataSet->data->length*dataSet->deltaT),
-						dataSet->sampleUnits,
-						planLength/2+1),
-	       status);
-
-
-      LAL_CALL(  LALSCreateVector(status,
-				  &inputPSDVector,
-				  planLength/2+1),
-		 status);
-
-      LAL_CALL(  LALCreateForwardREAL4FFTPlan(status,
-					      &forwardPlan,
-					      planLength,
-					      0),
-		 status);
-
-  
-      LAL_CALL( LALForwardREAL4FFT(status,
-				   signalFFT_harmonic->data,
-				   dataSet->data,
-				   forwardPlan),
-		status);
-
-
-      LAL_CALL( LALRealPowerSpectrum(status,
-				     inputPSDVector,
-				     dataSet->data,
-				     forwardPlan),
-		status);
-      /*Assign CLR data structures*/
-      /* The  CLR Time Vector  */
-      inputTVectorCLR->length = dataSet->data->length;
-      inputTVectorCLR->data = dataSet->data->data;
-      inputTVectorCLR->deltaT = dataSet->deltaT; /* inverse of the sampling frequency */
-      inputTVectorCLR->fLine = 0.0;
-      /* The  CLR Frequency Vector  */
-      inputFVectorCLR->length = inputPSDVector->length;
-      inputFVectorCLR->data = inputPSDVector->data; 
-      inputFVectorCLR->deltaF = signalFFT_harmonic->deltaF;
-      inputFVectorCLR->fLine =  inputTVectorCLR->fLine;
-
-      for (i=0;i<referenceSignal->length;i++)
+      /* Iterative over each line to remove, subtracting one at a time*/
+      /* START OF NEW LOOP TO REMOVE ONE LINE AT A TIME */
+      for (l=0;l<params.numLinesToRemove;l++)
 	{
-	  referenceSignal->data[i].re=0;
-	  referenceSignal->data[i].im=0;
-	  tmpReferenceSignal->data[i].re=0;
-	  tmpReferenceSignal->data[i].im=0;
-	}
-      for (j=0;j<params.numLinesToRemove;j++)
-	{
+	  /*Setup the proper number of harmonics that should be done!*/
 	  /* Create reference signal IFF Line to remove is less than Fnyq*/
-	  if (params.listLinesToRemove[j] < (params.SamplingRate/2))
+	  if (params.listLinesToRemove[l] < (params.SamplingRate/2))
 	    {
 	      tmpHarmonicCount=params.maxHarmonics;
-	      tmpLineFreq=params.listLinesToRemove[j];
+	      tmpLineFreq=params.listLinesToRemove[l];
 	      if ((params.SamplingRate/(2*tmpLineFreq)) <  tmpHarmonicCount)
 		{
 		  tmpHarmonicCount=floor(params.SamplingRate/(2*tmpLineFreq));
@@ -3389,7 +3328,78 @@ void LALappsTracksearchRemoveHarmonics( LALStatus             *status,
 		{
 		  fprintf(stdout,"Reference %f, Max Harmonics to remove %i\n",tmpLineFreq,tmpHarmonicCount);
 		}
-      
+	      /* Setup both T and F domain input data structures */
+	      inputTVectorCLR=(REAL4TVectorCLR*)LALMalloc(sizeof(REAL4TVectorCLR));
+	      inputFVectorCLR=(REAL4FVectorCLR*)LALMalloc(sizeof(REAL4FVectorCLR));
+  
+	      /* Take data to F domain */
+	      planLength=dataSet->data->length;
+	      LAL_CALL(LALCCreateVector(status,
+					&tmpReferenceSignal,
+					planLength),
+		       status);
+
+	      LAL_CALL(LALCCreateVector(status,
+					&referenceSignal,
+					planLength),
+		       status);
+
+	      LAL_CALL(
+		       LALCreateCOMPLEX8FrequencySeries(
+							status,
+							&signalFFT_harmonic,
+							"tmpSegPSD",
+							gps_zero,
+							0,
+							1/(dataSet->data->length*dataSet->deltaT),
+							dataSet->sampleUnits,
+							planLength/2+1),
+		       status);
+
+
+	      LAL_CALL(  LALSCreateVector(status,
+					  &inputPSDVector,
+					  planLength/2+1),
+			 status);
+
+	      LAL_CALL(  LALCreateForwardREAL4FFTPlan(status,
+						      &forwardPlan,
+						      planLength,
+						      0),
+			 status);
+
+  
+	      LAL_CALL( LALForwardREAL4FFT(status,
+					   signalFFT_harmonic->data,
+					   dataSet->data,
+					   forwardPlan),
+			status);
+
+
+	      LAL_CALL( LALRealPowerSpectrum(status,
+					     inputPSDVector,
+					     dataSet->data,
+					     forwardPlan),
+			status);
+	      /*Assign CLR data structures*/
+	      /* The  CLR Time Vector  */
+	      inputTVectorCLR->length = dataSet->data->length;
+	      inputTVectorCLR->data = dataSet->data->data;
+	      inputTVectorCLR->deltaT = dataSet->deltaT; /* inverse of the sampling frequency */
+	      inputTVectorCLR->fLine = 0.0;
+	      /* The  CLR Frequency Vector  */
+	      inputFVectorCLR->length = inputPSDVector->length;
+	      inputFVectorCLR->data = inputPSDVector->data; 
+	      inputFVectorCLR->deltaF = signalFFT_harmonic->deltaF;
+	      inputFVectorCLR->fLine =  inputTVectorCLR->fLine;
+
+	      for (i=0;i<referenceSignal->length;i++)
+		{
+		  referenceSignal->data[i].re=0;
+		  referenceSignal->data[i].im=0;
+		  tmpReferenceSignal->data[i].re=0;
+		  tmpReferenceSignal->data[i].im=0;
+		}
 	      LAL_CALL(LALI4CreateVector(status,
 					 &harmonicIndex,
 					 tmpHarmonicCount),
@@ -3441,77 +3451,83 @@ void LALappsTracksearchRemoveHarmonics( LALStatus             *status,
 		    referenceSignal->data[k].im +
 		    tmpReferenceSignal->data[k].im;
 		}
+	    
+	    
+	      /* Clean up input time series with global reference signal */
+	      LAL_CALL(  LALSCreateVector(status,
+					  &cleanData,
+					  dataSet->data->length),
+			 status);
+  
+	      LAL_CALL( LALCleanAll(status,
+				    cleanData,
+				    referenceSignal,
+				    inputTVectorCLR),
+			status);
+
+	      /*Copy the clean data back into the variable dataSet */
+	      for (j=0;j<dataSet->data->length;j++)
+		dataSet->data->data[j]=cleanData->data[j];
+  
+
+	      if (cleanData)
+		{
+		  LAL_CALL(
+			   LALDestroyVector(status,
+					    &cleanData),
+			   status);
+		}
+
+	      if (signalFFT_harmonic)
+		{
+		  LAL_CALL( LALDestroyCOMPLEX8FrequencySeries(status,
+							      signalFFT_harmonic),
+			    status);
+		}
+
+	      if (inputPSDVector)
+		{
+		  LAL_CALL(
+			   LALDestroyVector(status,
+					    &inputPSDVector),
+			   status);
+		}
+	      if (forwardPlan)
+		{
+		  LAL_CALL(
+			   LALDestroyREAL4FFTPlan(status,
+						  &forwardPlan),
+			   status);
+		}
+	      if (tmpReferenceSignal)
+		{
+		  LAL_CALL(LALCDestroyVector(status,
+					     &tmpReferenceSignal),
+			   status);
+		}
+
+	      if (referenceSignal)
+		{
+		  LAL_CALL(LALCDestroyVector(status,
+					     &referenceSignal),
+			   status);
+		}
+
+	      if (inputTVectorCLR)
+		LALFree(inputTVectorCLR);
+
+	      if (inputFVectorCLR)
+		LALFree(inputFVectorCLR);
 	    }
+	  else
+	    {
+	      fprintf(stderr,"Ignoring line to remove can not be present in data! F_nyq:%f F_line: %f\n",params.SamplingRate/2,tmpLineFreq);
+	    }
+	  /* END OF NEW LOOP TO REMOVE ONE LINE AT A TIME */
+	  /*
+	   * END COHERENT LINE removal section
+	   */
 	}
-      /* Clean up input time series with global reference signal */
-      LAL_CALL(  LALSCreateVector(status,
-				  &cleanData,
-				  dataSet->data->length),
-		 status);
-  
-      LAL_CALL( LALCleanAll(status,
-			    cleanData,
-			    referenceSignal,
-			    inputTVectorCLR),
-		status);
-
-      /*Copy the clean data back into the variable dataSet */
-      for (j=0;j<dataSet->data->length;j++)
-	dataSet->data->data[j]=cleanData->data[j];
-  
-
-      if (cleanData)
-	{
-	  LAL_CALL(
-		   LALDestroyVector(status,
-				    &cleanData),
-		   status);
-	}
-
-      if (signalFFT_harmonic)
-	{
-	  LAL_CALL( LALDestroyCOMPLEX8FrequencySeries(status,
-						      signalFFT_harmonic),
-		    status);
-	}
-
-      if (inputPSDVector)
-	{
-	  LAL_CALL(
-		   LALDestroyVector(status,
-				    &inputPSDVector),
-		   status);
-	}
-      if (forwardPlan)
-	{
-	  LAL_CALL(
-		   LALDestroyREAL4FFTPlan(status,
-					  &forwardPlan),
-		   status);
-	}
-      if (tmpReferenceSignal)
-	{
-	  LAL_CALL(LALCDestroyVector(status,
-				     &tmpReferenceSignal),
-		   status);
-	}
-
-      if (referenceSignal)
-	{
-	  LAL_CALL(LALCDestroyVector(status,
-				     &referenceSignal),
-		   status);
-	}
-
-      if (inputTVectorCLR)
-	LALFree(inputTVectorCLR);
-
-      if (inputFVectorCLR)
-	LALFree(inputFVectorCLR);
-
-      /*
-       * END COHERENT LINE removal section
-       */
     }
   return;
 }
