@@ -537,74 +537,105 @@ v & = & \left\{\begin{array}{lr}
 		- \left(\sqrt{D}-\varpi Q\right)^{1/3} &
 		D\geq0 \\
 	2\sqrt{-P}\cos\left(\frac{1}{3}
-		\arccos\left[\frac{Q\varpi}{P\sqrt{-P}}\right]\right) &
+		\arccos\left[\frac{Q\varpi}{-P\sqrt{-P}}\right]\right) &
 		D\leq0 \end{array}\right.\nonumber\\
-G & = & \mbox{$\frac{1}{2}$}\left(E+\sqrt{E^2 + \varpi v}\right)\;,\nonumber\\
-H & = & \frac{\varpi^2 F - \varpi vG}{G^2(2G-E)} \;,\nonumber\\
-t & = & G\left(\sqrt{1+H}-1\right) \;.\nonumber
+W & = & \sqrt{E^2 + \varpi v} \nonumber\\[1ex]
+G & = & \mbox{$\frac{1}{2}$}\left(E+W\right)\;,\nonumber\\
+t & = & \sqrt{G^2+\frac{\varpi^2 F - \varpi vG}{W}}-G \;.\nonumber
 \end{eqnarray}
 Once we have $t$ and $\varpi$, we can compute the geodetic longitude
 $\lambda$, latitude $\phi$, and elevation $h$:
 \begin{eqnarray}
 \lambda & = & \arctan\!2(y,x) \; , \\
-\phi & = & \mathrm{sgn}({z})\arctan\left[\frac{2}{1-f}
+\phi & = & \mathrm{sgn}({z})\arctan\left[\frac{1}{2(1-f)}
 	\left(\frac{(\varpi-t)(\varpi+t)}{\varpi t}\right)\right] \; , \\
 h & = & r_e(\varpi-t/\varpi)\cos\phi
 	+ [z-\mathrm{sgn}({z})r_e(1-f)]\sin\phi \; .
 \end{eqnarray}
-These formulae, however, introduce certain concerns of numerical
-precision that have been only partially dealt with in this code.
-Specifically:
+These formulae still leave certain areas where coordinate
+singularities or numerical cancelations can occur.  Some of these have
+been dealt with in the code:
 \begin{itemize}
 \item There is a coordinate singularity at $\varpi=0$, which we deal
 with by setting $\phi=\pm90^\circ$ and $\lambda$ arbitrarily to
 $0^\circ$.  When $z=0$ as well, we arbitrarily choose the positive
-sign for $\phi$.  However, the computation of $h$ in particular has
-tricky cancelations as $\varpi\rightarrow0$, which may give rise to
-numerical errors.  These have not yet been thoroughly explored.
+sign for $\phi$.  As $\varpi\rightarrow0$, there are cancellations in
+the computation of $G$ and $t$, which call for special treatment
+(below).
 
-\item There is another coordinate singularity when $D\rightarrow0$,
-which defines an ellipsoid with equatorial radius
-$r_0=r_ef(2-f)=42.6977$km and axial height $z_0=r_e/(1-f)=42.8413$km.
-Within this ellipsoid, lines of constant latitude begin to cross one
-another.  The listed solution is an analytic continuation of the
-exterior solution which assigns these points a unique, if arbitrary,
-geodetic latitude.  This solution has some peculiar behaviour, such as
-giving points in the equatorial plane a positive latitude.  In
-practice, however, users will rarely be interested coordinate
-transformations deep within the Earth's core.
+\item There is another coordinate singularity when $p=0$, which
+defines an ellipsoid with equatorial radius $r_0=r_ef(2-f)=42.6977$km
+and axial height $z_0=r_0/(1-f)=42.8413$km.  Within this ellipsoid,
+lines of constant latitude begin to cross one another: a given point
+can be assigned two different latitudes.  The first equation for $v$
+specifies a definite and consistent (though arbitrary) latitude in
+these cases.  However, when $D<0$, in an involuted region inside this
+ellipsoid, the lines of constant latitude uncross again and the first
+expression for $v$ breaks down.  The second expression for $v$ is an
+analytic continuation that gives self-consistent results down to the
+coordinate origin.
 
-\item The equations for $v$ and $G$ have square and cube roots of
-expressions involving squares and cubes of numbers.  For formal
-robustness one should factor out the leading-order dependence, so that
-one is assured of taking squares and cubes of numbers near unity.
-However, we are using \verb@REAL8@ precision, and have already
-normalized our distances by the Earth's radius $r_e$, so the point is
-almost certainly irrelevant.
-
-\item The expression for $H$ may go to zero, leading to precision
-errors in $t$; the number of digits of precision lost is on the order
-of the number of leading zeros after the decimal place in $H$.  I
-arbitrarily state that we should not lose more than 4 of our 16
-decimal places of precision, meaning that we should series-expand the
-square root for $H<10^{-4}$.  To get our 12 places of precision back,
-we need an expansion to $H^3$:
+\item Near the equator we have $Q\rightarrow0$, and the first
+expression for $v$ becomes a difference of nearly-equal numbers,
+leading to loss of precision.  To deal with this, we write that
+expression for $v$ as:
 $$
-t \approx G\left(\frac{1}{2}H - \frac{3}{8}H^2
-	+ \frac{5}{16}H^3\right) \; .
+\begin{array}{rcl@{\qquad}c@{\qquad}l}
+  v &=& D^{1/6}\left[(1+B)^{1/3}-(1-B)^{1/3}\right]
+  &\mbox{where}& B \;\;=\;\; \displaystyle \frac{\varpi Q}{\sqrt{D}} \\
+  &\approx& D^{1/6}\left[\frac{2}{3}B+\frac{10}{81}B^3\right]
+  &\mbox{as}& B \;\;\rightarrow\;\;0
+\end{array}
 $$
 
-\item When computing $\phi$, we first compute $t-\varpi$, $t+\varpi$,
-$t^{-1}$, and $\varpi^{-1}$, sort them by order of magnitude, and
-alternately multiply large and small terms.  We note that if the
-argument of the $\arctan$ function is large we have
+The switch from the ``exact'' formula to the series expansion is done
+for $B<10^{-3}$ (within about $2^\circ$ of the equator).  This was
+found by experimentation to give the best behaviour, resulting in
+position errors of order 1 part in $10^{12}$ or less; i.e.\ about 3--4
+digits loss of precision.
+
+\item Near the axis within the singular ellipsoid, we have $E<0$ and
+$W\approx|E|$, so the expression for $G$ becomes a difference of
+nearly-equal numbers.  We write the expressions as:
 $$
-\arctan(x) = \mathrm{sgn}(x)\frac{\pi}{2}
-	- \arctan\left(\frac{1}{x}\right) \; ,
+\begin{array}{rcl@{\qquad}c@{\qquad}l}
+  W &=& |E|\sqrt{1+U}
+  &\mbox{where}& U \;\;=\;\; \displaystyle \frac{\varpi v}{E^2} \\
+  G &=& \frac{-E}{2}\left(\sqrt{1+U}-1\right)
+  &\mbox{for}& E \;\;<\;\;0 \\[1ex]
+  &\approx& \frac{-E}{2}\left(\frac{1}{2}U-\frac{1}{8}U^2
+  +\frac{1}{16}U^3\right) &\mbox{as}& U \;\;\rightarrow\;\;0
+\end{array}
 $$
-but the \verb@atan()@ function in the C math library should be smart
-enough to do this itself.
+
+We switch to the series expansion for $U<2\times10^{-5}$.  This
+formula converges better than the one for $v$ (above), resulting in no
+significant loss of precision.  Normally we wouldn't care about points
+inside the Earth, but points at or very near the coordinate origin
+have a tendency to crop up in test suites, and we would like the
+transformation to be well-behaved in that limit.
+
+\item Near the axis we also have the expression for $t$ becoming a
+difference of nearly-equal numbers.  Again we deal with this by
+series-expanding the expression:
+$$
+\begin{array}{rcl@{\qquad}c@{\qquad}l}
+  t &=& G\left(\sqrt{1+H}-1\right) &\mbox{where}& H \;\;=\;\; \displaystyle
+  \frac{\varpi^2 F - \varpi v G}{G^2 W} \\
+  &\approx& G\left(\frac{1}{2}H-\frac{1}{8}H^2+\frac{1}{16}H^3\right)
+  &\mbox{as}& H \;\;\rightarrow\;\;0
+\end{array}
+$$
+
+We switch to the series expansion for $|H|<2\times10^{-5}$, again
+leading to no significant loss of precision.
 \end{itemize}
+
+There is one known remaining set of points where errors can
+significantly exceed double-precision uncertainty: points on or very
+near the singular ellipsoid, but not near the polar axis or equatorial
+plane.  These points are not likely to come up in practice, so no
+effort has yet been made to resolve this numerical singularity.
 
 \paragraph{Ellipsoidal vs.\ orthometric elevation:} In this module it
 is assumed that all elevations refer heights above the reference
@@ -624,9 +655,7 @@ the geoid.
 
 \subsubsection*{Uses}
 \begin{verbatim}
-LALGPStoUTC()
 XLALGreenwichMeanSiderealTime()
-LALDHeapSort()
 \end{verbatim}
 
 \subsubsection*{Notes}
@@ -642,10 +671,12 @@ LALDHeapSort()
 #include <lal/Date.h>
 #include <lal/Sort.h>
 #include <lal/SkyCoordinates.h>
+#include <string.h>
 
 #define LAL_EARTHFLAT (0.00335281)
-#define LAL_HSERIES (0.0001) /* value H below which we expand
-                                sqrt(1-H) */
+#define LAL_HSERIES (0.00002) /* value H below which we expand t */
+#define LAL_BSERIES (0.001)   /* value B below which we expand v */
+#define LAL_USERIES (0.00002) /* value U below which we expand G */
 
 NRCSID( TERRESTRIALCOORDINATESC, "$Id$" );
 
@@ -659,7 +690,6 @@ LALEquatorialToGeographic( LALStatus   *stat,
   REAL8 gmst;            /* siderial time (radians) */
 
   INITSTATUS( stat, "LALEquatorialToGeographic", TERRESTRIALCOORDINATESC );
-  ATTATCHSTATUSPTR( stat );
 
   /* Make sure parameter structures exist. */
   ASSERT( input, stat, SKYCOORDINATESH_ENUL, SKYCOORDINATESH_MSGENUL );
@@ -680,7 +710,6 @@ LALEquatorialToGeographic( LALStatus   *stat,
   if ( output->longitude < 0.0 )
     output->longitude += LAL_TWOPI;
   output->latitude = input->latitude;
-  DETATCHSTATUSPTR( stat );
   RETURN( stat );
 }
 
@@ -695,7 +724,6 @@ LALGeographicToEquatorial( LALStatus   *stat,
   REAL8 gmst;            /* siderial time (radians) */
 
   INITSTATUS( stat, "LALEquatorialToGeographic", TERRESTRIALCOORDINATESC );
-  ATTATCHSTATUSPTR( stat );
 
   /* Make sure parameter structures exist. */
   ASSERT( input, stat, SKYCOORDINATESH_ENUL, SKYCOORDINATESH_MSGENUL );
@@ -716,7 +744,6 @@ LALGeographicToEquatorial( LALStatus   *stat,
   if ( output->longitude < 0.0 )
     output->longitude += LAL_TWOPI;
   output->latitude = input->latitude;
-  DETATCHSTATUSPTR( stat );
   RETURN( stat );
 }
 
@@ -898,7 +925,6 @@ LALGeocentricToGeodetic( LALStatus *stat, EarthPosition *location )
   const REAL8 f2 = LAL_EARTHFLAT*( 2.0 - LAL_EARTHFLAT );
 
   INITSTATUS( stat, "LALGeocentricToGeodetic", TERRESTRIALCOORDINATESC );
-  ATTATCHSTATUSPTR( stat );
 
   /* Make sure parameter structure exists. */
   ASSERT( location, stat, SKYCOORDINATESH_ENUL, SKYCOORDINATESH_MSGENUL );
@@ -908,22 +934,23 @@ LALGeocentricToGeodetic( LALStatus *stat, EarthPosition *location )
   y = rInv*location->y;
   z = rInv*location->z;
   pi = sqrt( x*x + y*y );
+  location->geodetic.system = COORDINATESYSTEM_GEOGRAPHIC;
+  location->geodetic.longitude = atan2( y, x );
+  location->radius = LAL_REARTH_SI*sqrt( x*x + y*y + z*z );
   if ( pi == 0.0 ) {
-    location->geodetic.system = COORDINATESYSTEM_GEOGRAPHIC;
-    location->geodetic.longitude = atan2( y, x );
     if ( z >= 0.0 ) {
       location->geodetic.latitude = LAL_PI_2;
       location->elevation = z - f1;
     } else {
       location->geodetic.latitude = -LAL_PI_2;
-      location->elevation = f1 - z;
+      location->elevation = -z - f1;
     }
     location->elevation *= LAL_REARTH_SI;
   }
 
   /* Do the general transformation even if z=0. */
   else {
-    REAL8 za, e, f, p, q, d, v, w, g, h, t, phi, tanP;
+    REAL8 za, e, f, p, q, d, d2, b, v, w, u, g, h, gh, t, phi, tanP;
     /* intermediate variables */
 
     /* See if we're inside the singular ellipsoid.
@@ -942,51 +969,49 @@ LALGeocentricToGeodetic( LALStatus *stat, EarthPosition *location )
     p = ( 4.0/3.0 )*( pi*pi + za*za - f2*f2 );
     q = 8.0*f2*za;
     d = p*p*p + pi*pi*q*q;
+
+    /* Compute v, using series expansion if necessary. */
     if ( d >= 0.0 ) {
-      v = pow( sqrt( d ) + pi*q, 1.0/3.0 );
-      v -= pow( sqrt( d ) - pi*q, 1.0/3.0 );
+      d2 = sqrt( d );
+      b = pi*q/d2;
+      if ( b < LAL_BSERIES )
+	v = pow( d2, 1.0/3.0 )*( b*( 2.0/3.0 + b*b*10.0/81.0 ) );
+      else if ( b < 1.0 )
+	v = pow( d2, 1.0/3.0 )*( pow( 1.0 + b, 1.0/3.0 ) -
+				 pow( 1.0 - b, 1.0/3.0 ) );
+      else
+	v = pow( d2, 1.0/3.0 )*( pow( b + 1.0, 1.0/3.0 ) +
+				 pow( b - 1.0, 1.0/3.0 ) );
     } else {
-      v = 2.0*sqrt( -p )*cos( acos( pi*q/( p*sqrt( -p ) ) )/3.0 );
+      v = 2.0*sqrt( -p )*cos( acos( pi*q/( -p*sqrt( -p ) ) )/3.0 );
     }
-    w = sqrt( e*e + v*pi );
-    g = 0.5*( e + w );
-    h = pi*( f*pi - v*g )/( g*g*w );
 
-    /* Compute t, expanding the square root if necessary. */
-    if ( fabs( h ) < LAL_HSERIES )
-      t = g*( 0.5*h + 0.375*h*h + 0.3125*h*h*h );
+    /* Compute t, using series expansion if necessary. */
+    u = v*pi/( e*e );
+    w = fabs( e )*sqrt( 1.0 + u );
+    if ( e > 0.0 || u > LAL_USERIES )
+      g = 0.5*( e + w );
     else
-      t = g*( sqrt( 1.0 + h ) - 1.0 );
-
-    /* Compute and sort the factors in the arctangent. */
-    {
-      REAL8 tanPFac[4];    /* factors of tanP */
-      REAL8Vector tanPVec; /* vector structure holding tanPFac */
-      tanPFac[0] = pi - t;
-      tanPFac[1] = pi + t;
-      tanPFac[2] = 1.0/pi;
-      tanPFac[3] = 1.0/t;
-      tanPVec.length = 4;
-      tanPVec.data = tanPFac;
-      TRY( LALDHeapSort( stat->statusPtr, &tanPVec ), stat );
-      tanP = tanPFac[0]*tanPFac[3];
-      tanP *= tanPFac[1]*tanPFac[2];
-      tanP /= 2.0*f1;
-    }
+      g = -0.25*e*u*( 1.0 - 0.25*u*( 1.0 - 0.5*u ) );      
+    gh = sqrt( fabs( pi*( f*pi - v*g )/w ) );
+    h = gh/g;
+    h *= h;
+    if ( fabs( h ) > LAL_HSERIES )
+      t = sqrt( g*g + gh*gh ) - g;
+    else
+      t = g*( h*( 0.5 - h*( 0.125 - h*0.0625 ) ) );
 
     /* Compute latitude, longitude, and elevation. */
+    tanP = ( pi - t )*( pi + t )/( 2.0*f1*pi*t );
     phi = atan( tanP );
-    location->geodetic.system = COORDINATESYSTEM_GEOGRAPHIC;
     location->geodetic.latitude = phi;
     if ( z < 0.0 )
       location->geodetic.latitude *= -1.0;
-    location->geodetic.longitude = atan2( y, x );
     location->elevation = ( pi - t/pi )*cos( phi );
     location->elevation += ( fabs( z ) - f1 )*sin( phi );
     location->elevation *= LAL_REARTH_SI;
   }
 
   /* Transformation complete. */
-  DETATCHSTATUSPTR( stat );
   RETURN( stat );
 }

@@ -7,7 +7,7 @@ NEED_METAIO =
 endif
 
 check_PROGRAMS = 	BasicInjectTest InjectTest GeneratePPNInspiralTest SimulateTaylorCWTest \
-			SimulateSBTest SkyCoordinatesTest SimulatePopcornTest GeneratePulsarSignalTest \
+			SimulateSBTest SkyCoordinatesTest GeocentricGeodeticTest SimulatePopcornTest GeneratePulsarSignalTest \
 			GeneratePPNAmpCorInspiralTest GeneratePPNAmpTruncInspiralTest $(NEED_METAIO)
 
 InjectTest_SOURCES      = InjectTest.c
@@ -22,6 +22,8 @@ SimulateSBTest_SOURCES  = SimulateSBTest.c CheckStatus.c
 SimulateSBTest_LDADD    = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 SkyCoordinatesTest_SOURCES = SkyCoordinatesTest.c
 SkyCoordinatesTest_LDADD   = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
+GeocentricGeodeticTest_SOURCES = GeocentricGeodeticTest.c
+GeocentricGeodeticTest_LDADD   = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 SimulatePopcornTest_SOURCES = SimulatePopcornTest.c
 SimulatePopcornTest_LDADD   = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 GeneratePulsarSignalTest_SOURCES = GeneratePulsarSignalTest.c
@@ -39,7 +41,7 @@ endif
 
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include 
 
-TESTS = BasicInjectTest GeneratePPNInspiralTest SimulateTaylorCWTest SimulateSBTest SkyCoordinatesTest GeneratePulsarSignalTest $(NEED_MEATIO)
+TESTS = BasicInjectTest GeneratePPNInspiralTest SimulateTaylorCWTest SimulateSBTest SkyCoordinatesTest GeocentricGeodeticTest GeneratePulsarSignalTest $(NEED_MEATIO)
 TESTS_ENVIRONMENT = 1>/dev/null LAL_DATA_PATH=$(top_srcdir)/packages/pulsar/test
 
 EXTRA_DIST = CheckStatus.c CheckStatus.h L1.dat H2.dat injection.xml

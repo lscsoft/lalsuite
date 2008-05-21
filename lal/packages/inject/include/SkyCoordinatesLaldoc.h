@@ -377,5 +377,9 @@ equatorial system).
 \newpage\input{SkyCoordinatesTestC}
 </lalLaTeX> */
 
+/* <lalLaTeX>
+\newpage\input{GeocentricGeodeticTestC}
+</lalLaTeX> */
+
 #include <lal/LALRCSID.h>
 NRCSID (SKYCOORDINATESLALDOCH,"$Id$");

@@ -10,7 +10,8 @@ DOCSOURCEFILES = inject.tex \
   inject_geodetic.eps inject_geodetic.pdf \
   inject_geographic.eps inject_geographic.pdf \
   inject_horizon.eps inject_horizon.pdf \
-  inject_lat_long.eps inject_lat_long.pdf
+  inject_lat_long.eps inject_lat_long.pdf \
+  inject_geodetictest.eps inject_geodetictest.pdf
 MOSTLYCLEANFILES = .dvi-dep
 CLEANFILES = main.dvi main.pdf main.ps
 EXTRA_DIST = $(DOCSOURCEFILES)
