@@ -63,7 +63,7 @@ BOOLEAN uvar_printEvents, uvar_printTemplates, uvar_printMaps, uvar_printStats, 
 #define SKYFILE "./sky1"      
 #define F0 505.0   /*  frequency to build the LUT and start search */
 #define FBAND 0.05   /* search frequency band  (in Hz) */
-#define NFSIZE  21   /* n-freq. span of the cylinder, to account for spin-down search */
+#define NFSIZE  51   /* n-freq. span of the cylinder, to account for spin-down search */
 #define BLOCKSRNGMED 101 /* Running median window size */
 
 #define TRUE (1==1)
@@ -136,11 +136,11 @@ int main(int argc, char *argv[]){
  
   uvar_help = FALSE;
   uvar_printLog = FALSE;
-  uvar_weighAM = TRUE;
-  uvar_weighNoise = TRUE; 
-  uvar_dumpAllW = TRUE;
-  uvar_dumpRelW = TRUE;
-  uvar_dumpNoise= FALSE;
+  uvar_weighAM = FALSE;
+  uvar_weighNoise = FALSE; 
+  uvar_dumpAllW = FALSE;
+  uvar_dumpRelW = FALSE;
+  uvar_dumpNoise= TRUE;
   uvar_blocksRngMed = BLOCKSRNGMED;
   uvar_f0 = F0;
   uvar_fSearchBand = FBAND;
@@ -336,7 +336,7 @@ int main(int argc, char *argv[]){
        mid-time of the SFTs -- should not make any difference */
     LAL_CALL ( LALGetMultiDetectorStates ( &status, &mdetStates, inputSFTs, edat), &status);
 
-    /* normalize sfts */
+    /* normalize sfts and get power running-median rngmed[ |data|^2] from SFTs */
     LAL_CALL( LALNormalizeMultiSFTVect (&status, &multPSD, inputSFTs, uvar_blocksRngMed), &status); 
 
     if ( uvar_weighNoise ) {      
@@ -354,10 +354,14 @@ int main(int argc, char *argv[]){
       LAL_CALL ( LALDestroyMultiNoiseWeights ( &status, &multweight), &status);
     }
  
-    if (uvar_dumpNoise)  { /* calculate sum of 1/Sn where Sn is avg psd of each sft */ 
-      REAL8 sumSn, sumSnInv=0.0;
+    if (uvar_dumpNoise)  { 
+    /* calculate (1/ (sum of 1/Sn^2) )^(1/4) where Sn is avg psd of each sft */ 
+      REAL8 sumSn, normPSD,sumSnInv=0.0;
       INT8 binsSFT;
 
+      /* nomalization factor to get proper single-sided PSD: Sn=(2/Tsft) rngmed[ |data|^2]*/
+      normPSD=2.0*deltaF;
+	
       for ( iIFO = 0; iIFO < numifo; iIFO++ ) {
         numsft = multPSD->data[iIFO]->length;
       
@@ -373,10 +377,10 @@ int main(int argc, char *argv[]){
       } /* end loop over IFOs */
        
       sumSnInv = sqrt(sumSnInv);
-      sumSnInv *= scalepow;
+      sumSnInv *= (scalepow/normPSD);
       sumSnInv = sqrt(sumSnInv);  
       fprintf(stdout, "%f  %g\n", uvar_f0, 1.0/sumSnInv);
-    } /* end block for 1/Sn calculation */
+    } /* end block for Sn-weights calculation */
 
     /* we are now done with the psd */
     LAL_CALL ( LALDestroyMultiPSDVector  ( &status, &multPSD), &status);
