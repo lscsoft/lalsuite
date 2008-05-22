@@ -300,7 +300,7 @@ void LALappsTrackSearchPrepareData( LALStatus        *status,
 	{
 	  if (params.verbosity >= verbose)
 	    fprintf(stdout,
-		    "Preparing to remove lines from entire input data at one time.\n");
+		    "Preparing to remove %i lines from entire input data at one time.\n",params.numLinesToRemove);
 	  if (params.verbosity >= printFiles)
 	    print_real4tseries(dataSet,"Pre_LineRemoval_TimeDomain.diag");
 	  LALappsTracksearchRemoveHarmonics(status,dataSet,params);
@@ -333,7 +333,8 @@ void LALappsTrackSearchPrepareData( LALStatus        *status,
 
 	  if (params.verbosity >= verbose)
 	    fprintf(stdout,
-		    "Preparing to remove lines from data segments.\n");
+		    "Preparing to remove %i lines from data segments.\n",
+		    params.numLinesToRemove);
 	  LALappsTracksearchRemoveHarmonicsFromSegments(status,
 							dataSet,
 							dataSegments,
@@ -394,7 +395,7 @@ void LALappsTrackSearchInitialize(
   INT4 len;
   REAL4 optWidth=0;
   const char lineDelimiters[]=",";
-  char *token=NULL;
+  char *token;
   CHARVector *lineTokens=NULL;
 
   /* Setup file option to read ascii types and not frames */
@@ -993,14 +994,14 @@ void LALappsTrackSearchInitialize(
 	  {
 	    LAL_CALL(LALCHARCreateVector(status,&lineTokens,maxFilenameLength),
 		     status);
+	    len = strlen(optarg) +1;
 	    memcpy((lineTokens->data),optarg,len);
 	    token=strtok(lineTokens->data,lineDelimiters);
 	    while (token!=NULL)
 	      {
-		params->listLinesToRemove[params->numLinesToRemove]=atof(token);
+		params->numLinesToRemove=params->numLinesToRemove+1;
+		params->listLinesToRemove[params->numLinesToRemove-1]=atof(token);
 		token=strtok(NULL,lineDelimiters);
-		if (token != NULL)
-		  params->numLinesToRemove=params->numLinesToRemove+1;
 	      }
 	    if (lineTokens)
 	      LAL_CALL(LALCHARDestroyVector(status,&lineTokens),
