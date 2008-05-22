@@ -995,7 +995,7 @@ void LALappsTrackSearchInitialize(
 	    LAL_CALL(LALCHARCreateVector(status,&lineTokens,maxFilenameLength),
 		     status);
 	    len = strlen(optarg) +1;
-	    memcpy((lineTokens->data),optarg,len);
+	    strncpy(lineTokens->data,optarg,len);
 	    token=strtok(lineTokens->data,lineDelimiters);
 	    while (token!=NULL)
 	      {
