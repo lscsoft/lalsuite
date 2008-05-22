@@ -2037,8 +2037,10 @@ class candidateList:
             else:
                 thisPatch.set_facecolor('blue')
             patchIndex=patchIndex+1
-        #
-        transitionValue=bins[index]
+        if (0<=index<=bins.__len__()-1):
+            transitionValue=bins[index]
+        else:
+            transitionValue=max(bins)
         if index==entries.__len__()-1:
             topPercentage=float(tally)/count
         plotLabel=str(self.__getCurveField__('',triggerTrait)[1])
@@ -2245,6 +2247,9 @@ class candidateList:
         """
         histList=[]
         powList=[]
+        entries=[]
+        bins=[]
+        patches=[]
         #Load properties out of the traitSummary variable!
         if self.traitSummary.__len__() == 0:
             sys.stderr.write("Trait summary field empty! Exiting function\n")
@@ -2278,12 +2283,15 @@ class candidateList:
                 [entries,bins,patches]=pylab.hist(powList,colCount,bottom=1)
             except:
                 sys.stderr.writelines('Error trying to create histogram.\n')
-            
+                print "Entries :",entries
+                print "Bins    :",bins
+                print "colCount:",colCount
             sys.stderr.flush()
         pylab.grid(True)
-        if max(powList) > max(bins):
-            patches[patches.__len__()-1].set_edgecolor('green')
-            patches[patches.__len__()-1].set_linewidth(5)
+        if bins.__len__() > 0 :
+            if max(powList) > max(bins):
+                patches[patches.__len__()-1].set_edgecolor('green')
+                patches[patches.__len__()-1].set_linewidth(5)
         if statReport:
             return [entries,bins,patches]
     # END __triggerHistogramPrimative__():

@@ -1,1487 +1,2498 @@
-"""
-  * Copyright (C) 2004, 2005 Cristina V. Torres
-  *
-  *  This program is free software; you can redistribute it and/or modify
-  *  it under the terms of the GNU General Public License as published by
-  *  the Free Software Foundation; either version 2 of the License, or
-  *  (at your option) any later version.
-  *
-  *  This program is distributed in the hope that it will be useful,
-  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  *  GNU General Public License for more details.
-  *
-  *  You should have received a copy of the GNU General Public License
-  *  along with with program; see the file COPYING. If not, write to the
-  *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-  *  MA  02111-1307  USA
-"""
+%!PS-Adobe-3.0
+%%Creator: (ImageMagick)
+%%Title: (tracksearch.py)
+%%CreationDate: (Thu May 22 14:37:02 2008)
+%%BoundingBox: 0 0 1024 26
+%%HiResBoundingBox: 0 0 1024 26
+%%DocumentData: Clean7Bit
+%%LanguageLevel: 1
+%%Orientation: Portrait
+%%PageOrder: Ascend
+%%Pages: 1
+%%EndComments
 
-"""
-Classes and methods for the tracksearch pipeline
-"""
+%%BeginDefaults
+%%EndDefaults
 
-__author__ = 'Cristina Torres <cristina@phys.utb.edu>'
-__date__ = '$Date$'
-__version__ = ''
+%%BeginProlog
+%
+% Display a color image.  The image is displayed in color on
+% Postscript viewers or printers that support color, otherwise
+% it is displayed as grayscale.
+%
+/DirectClassPacket
+{
+  %
+  % Get a DirectClass packet.
+  %
+  % Parameters:
+  %   red.
+  %   green.
+  %   blue.
+  %   length: number of pixels minus one of this color (optional).
+  %
+  currentfile color_packet readhexstring pop pop
+  compression 0 eq
+  {
+    /number_pixels 3 def
+  }
+  {
+    currentfile byte readhexstring pop 0 get
+    /number_pixels exch 1 add 3 mul def
+  } ifelse
+  0 3 number_pixels 1 sub
+  {
+    pixels exch color_packet putinterval
+  } for
+  pixels 0 number_pixels getinterval
+} bind def
 
-import os
-import sys
-import re
-import time
-import string
-import math
-import exceptions
-import ConfigParser
-from tracksearchutils import determineDataPadding
-from glue import pipeline
+/DirectClassImage
+{
+  %
+  % Display a DirectClass image.
+  %
+  systemdict /colorimage known
+  {
+    columns rows 8
+    [
+      columns 0 0
+      rows neg 0 rows
+    ]
+    { DirectClassPacket } false 3 colorimage
+  }
+  {
+    %
+    % No colorimage operator;  convert to grayscale.
+    %
+    columns rows 8
+    [
+      columns 0 0
+      rows neg 0 rows
+    ]
+    { GrayDirectClassPacket } image
+  } ifelse
+} bind def
 
+/GrayDirectClassPacket
+{
+  %
+  % Get a DirectClass packet;  convert to grayscale.
+  %
+  % Parameters:
+  %   red
+  %   green
+  %   blue
+  %   length: number of pixels minus one of this color (optional).
+  %
+  currentfile color_packet readhexstring pop pop
+  color_packet 0 get 0.299 mul
+  color_packet 1 get 0.587 mul add
+  color_packet 2 get 0.114 mul add
+  cvi
+  /gray_packet exch def
+  compression 0 eq
+  {
+    /number_pixels 1 def
+  }
+  {
+    currentfile byte readhexstring pop 0 get
+    /number_pixels exch 1 add def
+  } ifelse
+  0 1 number_pixels 1 sub
+  {
+    pixels exch gray_packet put
+  } for
+  pixels 0 number_pixels getinterval
+} bind def
 
-#Method to Build directory which is not present
-def buildDir(dirpath):
-    pathArray=[]
-    stopVar=0
-    #Check for trailing slash
-    oldDir=str(os.path.abspath(dirpath)).__add__('/')
-    while stopVar == 0:
-        splitContainer=os.path.split(oldDir)
-        newSec=splitContainer[0]
-        pathArray.append(newSec)
-        oldDir=newSec
-        if ((splitContainer[1] == '') and (splitContainer[0] == '/')):
-            stopVar=1
-    #Now reverse this list and recurse creating the pathing as needed
-    pathArray.reverse()
-    for pathBlock in pathArray:
-        if os.path.isfile(pathBlock):
-            sys.stderr.write('We have a problem the path requested may clobber an existing file!\n')
-            sys.stderr.write('File :'+str(pathBlock)+'\n')
-            os.abort()
-        if not os.path.isdir(pathBlock):
-           #sys.stdout.write('Making path:'+str(pathBlock)+'\n')
-           try:
-               os.mkdir(pathBlock)
-           except: pass
-    
-    #Now double check that directory exists else flag error
-    if not os.path.isdir(dirpath):
-        os.stderr.write('\n WARNING: Directory still not ready contain(s) '+str(pathArray.__len__())+' branches!\n')
-        os.stderr.write(str(dirpath))
-        os.stderr.write(str(pathArray))
-#End def
+/GrayPseudoClassPacket
+{
+  %
+  % Get a PseudoClass packet;  convert to grayscale.
+  %
+  % Parameters:
+  %   index: index into the colormap.
+  %   length: number of pixels minus one of this color (optional).
+  %
+  currentfile byte readhexstring pop 0 get
+  /offset exch 3 mul def
+  /color_packet colormap offset 3 getinterval def
+  color_packet 0 get 0.299 mul
+  color_packet 1 get 0.587 mul add
+  color_packet 2 get 0.114 mul add
+  cvi
+  /gray_packet exch def
+  compression 0 eq
+  {
+    /number_pixels 1 def
+  }
+  {
+    currentfile byte readhexstring pop 0 get
+    /number_pixels exch 1 add def
+  } ifelse
+  0 1 number_pixels 1 sub
+  {
+    pixels exch gray_packet put
+  } for
+  pixels 0 number_pixels getinterval
+} bind def
 
-def customAnalysisChunkBuilder(scienceSegment,smallestBlockAllowed,largestBlockAllowed):
-    """
-    A workaround to missing make_optimised_chunks inside a sciencesegment
-    assumes the segment has not analysischunks pre defined!
-    """
-    time_left=scienceSegment.dur()
-    chunk_start=scienceSegment.start()
-    while time_left > smallestBlockAllowed:
-        if time_left-largestBlockAllowed >=0:
-            chunk_end=chunk_start+largestBlockAllowed
-            scienceSegment.add_chunk(chunk_start,chunk_end)
-            chunk_start=chunk_end
-            time_left=time_left-largestBlockAllowed
-        else:
-            #Determine how much i*smallestBlockAllowed is available
-            #make that block
-            chunks_left=math.floor(time_left/smallestBlockAllowed)
-            chunk_duration=chunks_left*smallestBlockAllowed
-            chunk_end=chunk_start+chunk_duration
-            scienceSegment.add_chunk(chunk_start,chunk_end)
-            chunk_start=chunk_end
-            time_left=time_left-chunk_duration
-        scienceSegment.set_unused(time_left)
-#End customAnalysisChunkBuilder
+/PseudoClassPacket
+{
+  %
+  % Get a PseudoClass packet.
+  %
+  % Parameters:
+  %   index: index into the colormap.
+  %   length: number of pixels minus one of this color (optional).
+  %
+  currentfile byte readhexstring pop 0 get
+  /offset exch 3 mul def
+  /color_packet colormap offset 3 getinterval def
+  compression 0 eq
+  {
+    /number_pixels 3 def
+  }
+  {
+    currentfile byte readhexstring pop 0 get
+    /number_pixels exch 1 add 3 mul def
+  } ifelse
+  0 3 number_pixels 1 sub
+  {
+    pixels exch color_packet putinterval
+  } for
+  pixels 0 number_pixels getinterval
+} bind def
 
-def writeChunkListToDisk(data,filename='default'):
-    """
-    Write the gps stamps of the created search data chunks.
-    """
-    output_fp=open(filename,'w')
-    counter=0
-    for block in data:
-        for entry in block:
-            label="%d %d %d %d\n"%(counter,entry.start(),entry.end(),(entry.end()-entry.start()))
-            output_fp.write(label)
-            counter=counter+1
-    output_fp.close()
-#End def
+/PseudoClassImage
+{
+  %
+  % Display a PseudoClass image.
+  %
+  % Parameters:
+  %   class: 0-PseudoClass or 1-Grayscale.
+  %
+  currentfile buffer readline pop
+  token pop /class exch def pop
+  class 0 gt
+  {
+    currentfile buffer readline pop
+    token pop /depth exch def pop
+    /grays columns 8 add depth sub depth mul 8 idiv string def
+    columns rows depth
+    [
+      columns 0 0
+      rows neg 0 rows
+    ]
+    { currentfile grays readhexstring pop } image
+  }
+  {
+    %
+    % Parameters:
+    %   colors: number of colors in the colormap.
+    %   colormap: red, green, blue color packets.
+    %
+    currentfile buffer readline pop
+    token pop /colors exch def pop
+    /colors colors 3 mul def
+    /colormap colors string def
+    currentfile colormap readhexstring pop pop
+    systemdict /colorimage known
+    {
+      columns rows 8
+      [
+        columns 0 0
+        rows neg 0 rows
+      ]
+      { PseudoClassPacket } false 3 colorimage
+    }
+    {
+      %
+      % No colorimage operator;  convert to grayscale.
+      %
+      columns rows 8
+      [
+        columns 0 0
+        rows neg 0 rows
+      ]
+      { GrayPseudoClassPacket } image
+    } ifelse
+  } ifelse
+} bind def
 
-def isPowOf2(input):
-    inNum=int(input)
-    ans=inNum&(inNum-1)
-    if ans== 0:
-        return 1
-    else:
-        return 0
-#End def
+/DisplayImage
+{
+  %
+  % Display a DirectClass or PseudoClass image.
+  %
+  % Parameters:
+  %   x & y translation.
+  %   x & y scale.
+  %   label pointsize.
+  %   image label.
+  %   image columns & rows.
+  %   class: 0-DirectClass or 1-PseudoClass.
+  %   compression: 0-none or 1-RunlengthEncoded.
+  %   hex color packets.
+  %
+  gsave
+  /buffer 512 string def
+  /byte 1 string def
+  /color_packet 3 string def
+  /pixels 768 string def
 
-def powOf2Floor(input):
-    ans=0
-    inNum=int(input)
-    if inNum < 0:
-        sys.stderr.write("ERROR Unexpected negative value found!\n")
-    newPow2=1
-    expPow=1
-    if not isPowOf2(inNum):
-        while newPow2 < inNum:
-            newPow2=math.pow(2,expPow)
-            expPow+=1
-        expPow+=-1
-        ans=math.pow(2,expPow)
-    else:
-        ans=inNum
-    return ans
-
-def determineLayerPath(cp,blockID,layerID,channel=''):
-    """
-    Build the correct layer path for each layer of a multi-resolution search.
-    """
-    layerPath=os.path.normpath(str('%s/%s/'%(determineBlockPath(cp,blockID,channel),layerID)))
-    return str(layerPath)
-#End def
-
-def determineBlockPath(cp,blockID,channel=''):
-    """
-    Build the correct block path for each data segment to be searched.
-    """
-    blockPath=os.path.normpath(str('%s/%s/%s/'%(cp.get('filelayout','workpath'),blockID,channel)))
-    return str(blockPath)
-#End def
-
-class tracksearchCheckIniFile:
-    """
-    This class will check the ini file for appropriate arguements
-    where possible.  The errors will be listed upon request
-    Mainly we check for files which the job will need to run
-    executables and other aux files.
-    """
-
-    def __init__(self,cp):
-        self.iniOpts=cp
-        self.errList=[]
-    #End init
-
-    def checkOpts(self):
-        #Check for existance of [condor] section files
-        condorOptList=self.iniOpts.options('condor')
-        fileNotFound=False
-        homedirectory=os.path.abspath(str(os.getenv('HOME')))+'/'
-        for entry in condorOptList:
-            optValue=self.iniOpts.get('condor',entry)
-            if optValue.startswith('~/'):
-                newValue=os.path.normpath(optValue.replace('~/',homedirectory))
-                self.iniOpts.set('condor',entry,newValue)
-                optValue=newValue
-            if str(optValue).__contains__('/'):
-                if not os.path.exists(str(optValue)):
-                    self.errList.append('Can not find :'+str(entry)+':'+str(optValue))
-                    fileNotFound=True
-        if fileNotFound:
-            LALpath=os.getenv('PATH')
-            pathsToSearch=[]
-            self.errList.append('Try looking for [condor] program paths in:')
-            for entry in LALpath.split(':'):
-                if (entry.__contains__('lal') and entry.__contains__('bin')):
-                    self.errList.append(entry)
-                
-        #Check [tracksearchbase] section
-        lambdaH=0
-        lambdaL=1
-        lambdaH=self.iniOpts.get('tracksearchbase','start_threshold')
-        lambdaL=self.iniOpts.get('tracksearchbase','member_threshold')
-        if lambdaL > lambdaH :
-            self.errList.append('Error invalid choice for lambda parameters')
-            self.errList.append('Lh:'+str(lambdaH)+' Ll:'+str(lambdaL))
-        CL=float(self.iniOpts.get('tracksearchbase','length_threshold'))
-        if CL < 3:
-            self.errList.append('Error invalid choice for curve length threshold')
-        IP=float(self.iniOpts.get('tracksearchbase','power_threshold'))
-        if IP < 0:
-            self.errList.append('Error invalid choice for integrated power threshold')
-        #Check [tracksearchtime] section
-        WS=1
-        NOFB=0
-        WS=int(self.iniOpts.get('tracksearchtime','window_size'))
-        NOFB=int(self.iniOpts.get('tracksearchtime','number_of_freq_bins'))
-        if WS > NOFB:
-            self.errList.append('Error window length inconsistent!')
-        #Check [multichannel] section if present
-        if self.iniOpts.has_section('multichannel'):
-            for channel in self.iniOpts.options('multichannel'):
-                channelEntry=self.iniOpts.get('multichannel',channel).strip()
-                if (channelEntry==''):
-                    sys.stdout.write("Found blank channel line for,"+str(channel))
-                    sys.stdout.write("Deleting that key from installation.")
-                    self.iniOpts.remove_option('multichannel',channel)
-        #Check [layerconfig] section
-        LTBS=self.iniOpts.get('layerconfig','layerTopBlockSize')
-        layerOpts=self.iniOpts.options('layerconfig')
-        layerOpts.sort()
-        layerTimes=[]
-        layerTimesOrig=[]
-        layerTimesKey=[]
-        layerSetSizeKey=[]
-        topLayerBlock=LTBS
-        for entry in layerOpts:
-            optValue=float(self.iniOpts.get('layerconfig',entry))
-            if str(entry).lower().__contains__('timescale'):
-                layerTimes.append(optValue)
-                layerTimesOrig.append(optValue)
-                layerTimesKey.append([int(str(entry).lower().strip("layer").strip("timescale")),optValue])
-            if str(entry).lower().__contains__('setsize'):
-                layerSetSizeKey.append([int(str(entry).lower().strip("layer").strip("setsize")),optValue])
-        layerTimes.sort()
-        if layerTimesOrig != layerTimes:
-            self.errList.append('Error inconsistent layer time scales!')
-        #Check that the amount of work given is less than equal to available data in segment block
-        # know as the top layer block
-        layerSetSizeKey.sort()
-        layerTimesKey.sort()
-        for index in range(0,layerTimesKey.__len__()):
-            if float(layerSetSizeKey[index][1]) * float(layerTimesKey[index][1]) > topLayerBlock:
-                self.errList.append('Error inconsistent assigned workload for layerSetSize and layerTimeScale options. Level: '+str(index+1))
-        #Check [pylibraryfiles] section
-        condorOptList=self.iniOpts.options('pylibraryfiles')
-        for entry in condorOptList:
-            optValue=self.iniOpts.get('pylibraryfiles',entry)
-            if optValue.startswith('~/'):
-                newValue=os.path.normpath(optValue.replace('~/',homedirectory))
-                self.iniOpts.set('condor',entry,newValue)
-                optValue=newValue
-            if str(optValue).__contains__('/'):
-                if not os.path.exists(str(optValue)):
-                    self.errList.append('Can not find python library file:'+str(entry)+':'+str(optValue))
-
-    #end checkOpts def
-
-    def numberErrors(self):
-        return self.errList.__len__()
-    #end numberErrors def
-
-    def printErrorList(self):
-        sys.stderr.write(str(self.numberErrors())+' INI file Errors found!\n')
-        for error in self.errList:
-            sys.stderr.write(error+'\n')
-    #end printErrorList
-
-    def hasInjectSec(self):
-        injectSecFound=False
-        injectSecFound=self.iniOpts.has_section('tracksearchinjection')
-        #Check the [injectionsection] section if present searching for injection file.
-        if injectSecFound:
-            injectFile=self.iniOpts.get('tracksearchinjection','inject_file')
-            injectCount=int(self.iniOpts.get('tracksearchinjection','inject_count'))
-            injectLayerSize=int(self.iniOpts.get('layerconfig','layer1SetSize'))
-            injectLayerTimeScale=float(self.iniOpts.get('layerconfig','layer1TimeScale'))
-            injectTopBlockSize=float(self.iniOpts.get('layerconfig','layerTopBlockSize'))
-            totalJobNodes=injectTopBlockSize/(injectLayerTimeScale*injectLayerSize)
-            totalInjects=totalJobNodes*injectCount
-            sys.stdout.write("ESTIMATING INJECTION PROPERTIES!\n")
-            sys.stdout.write("Time Nodes with Injection:"+str(totalJobNodes)+"\n")
-            sys.stdout.write("Total Injections to do   :"+str(totalInjects)+"\n")
-            sys.stdout.write("Injects per Time Node    :"+str(injectCount)+"\n")
-            if not os.path.exists(injectFile):
-                self.errList.append('Can not find text file to inject :'+str(injectFile))
-                os.abort()
-        return injectSecFound
-    #end injectSecTest method
-#end Class
-
-            
-class tracksearchConvertSegList:
-    """
-    This class declaration is responsible for opening some segment
-    file and reparsing it into block sizes of exactly n seconds each
-    from data in the original segments file.  It is this file from where we
-    construct an analysis DAG for each line item.
-    """
-    def __init__(self,segmentFileName,newDuration,configOpts,rubberBlock=False,overrideBurn=False):
-        self.origSegObject=pipeline.ScienceData()
-        self.newSegObject=pipeline.ScienceData()
-        self.newSegFilename=segmentFileName+'.revised'
-        self.segFilename=segmentFileName
-        self.duration=newDuration
-        self.cp=configOpts
-        self.rubberBlock=rubberBlock
-        self.overrideBurnBorderReset=overrideBurn
-    #End __init__()
-    
-    def writeSegList(self):
-        #Read segents from file
-        try:
-            self.origSegObject.read(self.segFilename,self.duration)
-        except IndexError:
-            sys.stderr.write("Does not appear to SegWizard formatted file.\n")
-            sys.stderr.write("Trying to reparse it assuming two column GPS list.\n")
-            sys.stderr.write("No guarantee this will work.\n")
-            index=0
-            input_fp=open(self.segFilename,'r')
-            tmpFilename=self.segFilename+'_TMP'
-            tmp_fp=open(tmpFilename,'w')
-            for line in input_fp.readlines():
-                if (line[0] == '#'):
-                    tmp_fp.write(line)
-                else:
-                    fields=line.split(" ")
-                    tmp_fp.write(str(index)+" "+str(int(fields[0]))+" "+str(int(fields[1]))+" "+str(int(fields[1])-int(fields[0]))+"\n")
-                index=index+1
-            input_fp.close()
-            tmp_fp.close()
-            self.segFilename=tmpFilename
-            sys.stderr.write("Reparsed it.  Trying to load reparsed TMP file.\n")
-            self.origSegObject.read(self.segFilename,self.duration)
-        #    
-        #End Except section
-        #
-        #Read the file header
-        input_fp=open(self.segFilename,'r')
-        newHeading=[]
-        for headline in input_fp.readlines():
-            if str(headline)[0] == '#':
-                 newHeading.append(headline)
-        newHeading.append('# This file is a reprocessed list at new intervals.\n')
-        newHeading.append('# We drop sections were there is not enough of original data\n')
-        newHeading.append('# This file drawn from '+self.segFilename+'\n')
-        newHeading.append('# This file should be associated with appropriate INI file\n')
-        newHeading.append('# This revised segment list has the burned data removed\n')
-        if determineDataPadding(self.cp) > 0:
-            newHeading.append('#This file is to be used with a config file asking for data padding of '+str(determineDataPadding(self.cp))+'\n')
-        output_fp=open(self.newSegFilename,'w')
-        for newHeadline in newHeading:
-            output_fp.write(newHeadline)
-        #Write redivided list to file
-        index=0
-        #TO DO
-        #Integrate a data burning step to avoid starting any
-        #analysis at the exact start/end of science mode segment
-        #??? Check why the dataFind end time is off by bin_buffer seconds?
-        if self.cp.has_option('layerconfig','burndata'):
-            burnOption=int(self.cp.get('layerconfig','burndata'))
-        else:
-            burnOption=0
-        dataToBurn=max([determineDataPadding(self.cp),burnOption])
-        print "Number of segments loaded :"+str(self.origSegObject.__len__())
-        for bigChunks in self.origSegObject:
-            #Burn off data from bigChunks
-            #Flag to ignore burn options.  Set to true if the input
-            #list is the unused data of previous pipe setup1
-            if not self.overrideBurnBorderReset:
-                bigChunks.set_start(bigChunks.start()+dataToBurn)
-                bigChunks.set_end(bigChunks.end()-dataToBurn)
-            largestBlockAllowed=int(float(str.strip(self.cp.get('layerconfig','layerTopBlockSize'))))
-            smallestBlockAllowed=self.duration
-            if self.rubberBlock:
-                customAnalysisChunkBuilder(bigChunks,smallestBlockAllowed,largestBlockAllowed)
-            else:
-                bigChunks.make_chunks(self.duration)
-            #Save the unused chunk times to disk also
-            self.writeLostDataSegmentToDisk()
-            for newChunk in bigChunks:
-                index+=1
-                label="%d %d %d %d\n"%(index,newChunk.start(),newChunk.end(),newChunk.end()-newChunk.start())
-                output_fp.write(label)
-        totalTimeInSegmentList=0
-        totalTimeLostDueToMinBlockSize=0
-        totalTimeBurned=self.origSegObject.__len__()*2*dataToBurn
-        for bigChunks in self.origSegObject:
-            totalTimeInSegmentList=totalTimeInSegmentList+bigChunks.dur()
-            totalTimeLostDueToMinBlockSize=totalTimeLostDueToMinBlockSize+bigChunks.unused()
-        print "Total time available in segment list       :"+str(totalTimeInSegmentList)
-        if not self.overrideBurnBorderReset:
-            print "Total time burned from data segments       :"+str(totalTimeBurned)
-        else:
-            print "Total time burned not applicable, using override."
-        print "Total time lost due to min Block Size req  :"+str(totalTimeLostDueToMinBlockSize)
-        output_fp.close
-
-    def writeLostDataSegmentToDisk(self):
-        """
-        This consults the object segment list. It uses the unused
-        variable to note the GPS intervals that didn't get analyzed
-        using this search configuration specified by ConfigParser and
-        the segment list called.
-        """
-        output_fp=open(self.newSegFilename+".lost","w")
-        index=0
-        for bigChunk in self.origSegObject:
-            index+=1
-            newStart=bigChunk.end()-bigChunk.unused()
-            newEnd=bigChunk.end()
-            outputLine="%d %d %d %d\n"%(index,newStart,newEnd,newEnd-newStart)
-            output_fp.write(outputLine)
-        output_fp.close()
-    # done writeLostDataSegmentToDisk()
-
-    def getSegmentName(self):
-        #Return a string containing the name of the revised segment list
-        return(self.newSegFilename)
-
-class tracksearchHousekeeperJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
-    """
-    This class is responsible for cleaning out files that are not needed after an anaylsis run completes.
-    Clearing out these file wills save disk space.  Only files in the RESULTS directory which are
-    final data products will remain.  The MAP files and .candidates files in each level of the run
-    will be removed.  The candidate files will be tar.gzed and the MAP files will be scraped.
-    We will also remove the .diag files if they are present as well.  This is an umbrella feature.  It works on
-    clearing files from [filelayout],workpath and its subdirectories.  This is all blockIDs for the DAG.
-    """
-    def __init__(self,cp,block_id,dagDir,channel=''):
-        self.dagDirectory=dagDir
-        self.cp=cp
-        self.block_id=block_id
-        self.__executable = cp.get('condor','housekeeper')
-        self.__universe = cp.get('condor','housekeeper_universe')
-        pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
-        pipeline.AnalysisJob.__init__(self,cp)
-        for sec in ['housekeeper']:
-            #Check the ini file and warn that we are enabling the rescue of RESULTS directory!
-            ignorePathString=cp.get(sec,'ignore-path')
-            if not(ignorePathString.__contains__('RESULTS')):
-                cp.set(sec,'ignore-path',ignorePathString+',RESULTS')
-                sys.stderr.write("I noticed you were not omitting RESULTS directory from cleaning.\n")
-                sys.stderr.write("You would delete the RESULTS files, thereby wasting CPU time.\n")
-                sys.stderr.write("I'll assume you just forgot and we will keep those files.\n")
-            self.add_ini_opts(cp,sec)
-        workpath=cp.get('filelayout','workpath')
-        self.add_opt('parent-dir',workpath)
-        blockPath=determineBlockPath(cp,self.block_id,channel)
-        workpath=blockPath
-        workpath_logs=workpath+'/logs'
-        buildDir(workpath_logs)
-        self.set_stdout_file(os.path.normpath(workpath_logs+'/tracksearchHousekeeper-$(cluster)-$(process).out'))
-        self.set_stderr_file(os.path.normpath(workpath_logs+'/tracksearchHousekeeper-$(cluster)-$(process).err'))
-        filename="/tracksearchHousekeeper--"+str(channel)+".sub"
-        self.set_sub_file(os.path.normpath(self.dagDirectory+filename))
-        #End init
-    #End class tracksearchHousekeeperJob
-    
-class tracksearchTimeJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
-    """
-    The class running a TIME instance of the tracksearch code.  This
-    code must be invoked specifying the type of job to create.  The argument
-    is a string either -> normal  -> injection
-    Then the appropriate ini options will be used to create the job.
-    """
-    def __init__(self,cp,block_id,layer_id,dagDir,jobType,channel=''):
-        self.injectFile=""
-        self.jobType=jobType
-        self.dagDirectory=dagDir
-        #ConfigParser object -> cp
-        self.__executable = cp.get('condor','tracksearch')
-        self.__universe = cp.get('condor','tracksearch_universe');
-        self.validJobTypes=['normal','injection']
-        #If invalid type is requested display warning and
-        #assume a normal injection was requested
-        if not self.validJobTypes.__contains__(str(self.jobType).lower()):
-            sys.stderr.write("Warning: You requested invalid tracksearchTimeJob type!\n")
-            sys.stderr.write("Assuming you meant -> normal <- job type.\n")
-            self.jobType='normal'
-        pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
-        pipeline.AnalysisJob.__init__(self,cp)
-        blockID=block_id
-        layerID=layer_id
-        layerPath=determineLayerPath(cp,blockID,layerID,channel)
-        blockPath=determineBlockPath(cp,blockID,channel)
-        #THERE IS A PROBLEM WITH GPS START ARGUEMENT TO THE CODE
-        #Parse all the options from BASE and Timeseries Config sections
-        for sec in ['tracksearchbase']:
-            self.add_ini_opts(cp,sec)
-        #Readjust the channel name listed in tracksearch time
-        #to the current one from from multichannel if
-        #self.currenchannel!=''
-        if (channel!=''):
-            cp.set('tracksearchtime','channel_name',channel)
-        #IF ini file has remove_line part in tracksearchtime
-        if cp.has_option('tracksearchtime','remove_lines'):
-            for line in str(cp.get('tracksearchtime','remove_lines')).split(','):
-                self.add_arg('--remove_line '+line)
-            cp.remove_option('tracksearchtime','remove_lines')
-        for sec in ['tracksearchtime']:
-                    self.add_ini_opts(cp,sec)
-        #Check the type of job this is and add in the injection options
-        #if needed!
-        if (self.jobType == self.validJobTypes[1]):
-            for sec in ['tracksearchinjection']:
-                self.add_ini_opts(cp,sec)
-            self.injectFile=cp.get('tracksearchinjection','inject_file')
-            self.add_opt('inject_file',os.path.basename(self.injectFile))
-            self.add_condor_cmd('transfer_input_files',self.injectFile)
-        self.add_condor_cmd('should_transfer_files','yes')
-        self.add_condor_cmd('when_to_transfer_output','on_exit')
-        #Read expected job sampling rate
-        sampleRate=float(cp.get('tracksearchtime','sample_rate'))
-        #Read expected TF overlapping percentage
-        overlapPercentage=float(cp.get('layerconfig','layerOverlapPercent'))
-        #Set each trials total_time_point
-        setSize=int(cp.get('layerconfig','layer1SetSize'))
-        timeScale=float(cp.get('layerconfig','layer1TimeScale'))
-        totalTimePoints=int(sampleRate*setSize*timeScale)
-        self.add_opt('total_time_points',str(totalTimePoints))
-        #Set segment size for each TF map
-        segmentTimePoints=int(timeScale*sampleRate)
-        self.add_opt('segment_time_points',str(segmentTimePoints))
-        #Set overlap size for each TF map
-        overlap=int(math.floor(segmentTimePoints*overlapPercentage))
-        self.add_opt('overlap',str(overlap))
-
-        #Check for needed directories if not present make them!
-        buildDir(blockPath)
-        buildDir(layerPath)
-        buildDir(blockPath+'/logs')
-
-        #Set the condor submit initial directory option this
-        #should point to the block,layer location for output files
-        self.add_condor_cmd('initialdir',layerPath)
-        #Set log
-        channelName=string.strip(cp.get('tracksearchtime','channel_name'))
-        self.set_stdout_file(os.path.normpath(blockPath+'/logs/tracksearchTime-'+channelName+'-$(macrogpsstartseconds)_$(cluster)_$(process).out'))
-        self.set_stderr_file(os.path.normpath(blockPath+'/logs/tracksearchTime-'+channelName+'-$(macrogpsstartseconds)_$(cluster)_$(process).err'))
-        filename="/tracksearchTime--"+str(channel)+".sub"
-        self.set_sub_file(os.path.normpath(self.dagDirectory+filename))
-    #End init
-#End Class
-
-class tracksearchMapJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
-    """
-    The class running a MAP instance of the tracksearch code
-    """
-    def __init__(self,cp,block_id,layer_id,dagDir):
-        self.dagDirectory=dagDir
-        #ConfigParser object -> cp
-        self.__executable = cp.get('condor','tracksearch')
-        self.__universe = cp.get('condor','tracksearch_universe');
-        pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
-        pipeline.AnalysisJob.__init__(self,cp)
-        blockID=block_id
-        layerID=layer_id
-        ### WE NEED A CONDOR DAG VARIABLE TO THE INITIAL DIR ARGUMENT
-        layerPath=determineLayerPath(cp,blockID,layerID)
-        blockPath=determineBlockPath(cp,blockID)
-        #Parse all the options from BASE and Timeseries Config sections
-        for sec in ['tracksearchbase']:
-            self.add_ini_opts(cp,sec)
-        for sec in ['tracksearchmap']:
-            self.add_ini_opts(cp,sec)
-        #Check for needed directories if not present make them!
-        buildDir(blockPath)
-        buildDir(layerPath)
-        buildDir(blockPath+'/logs/')
-        #Set the condor submit initial directory option this
-        #should point to the block,layer location for output files
-        self.add_condor_cmd('initialdir','$(macroStartDir)')
-        #Set log
-        self.set_stdout_file(os.path.normpath(blockPath+'/logs/tracksearchMap-$(cluster)-$(process).out'))
-        self.set_stderr_file(os.path.normpath(blockPath+'/logs/tracksearchMap-$(cluster)-$(process).err'))
-        filename="/tracksearchMap--"+str(channel)+".sub"
-        self.set_sub_file(os.path.normpath(self.dagDirectory+filename))
-    #End init
-#End Class
-
-class tracksearchAveragerJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
-    """
-    The class that defines how we will perform an averager job.  The averager
-    jobs, are tasks that merge two TF maps into one.  This is performed on a
-    set of maps.  The set is then a new image of reduced dimesions specified
-    via input arguments
-    """
-    def __init__(self,cp,block_id,layer_id,dagDir,channel=''):
-        self.dagDirectory=dagDir
-    #Setup job options to take a cache of caches and build new maps
-            #ConfigParser object -> cp
-        self.__executable = cp.get('condor','averager')
-        self.__universe = cp.get('condor','averager_universe');
-        pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
-        pipeline.AnalysisJob.__init__(self,cp)
-        blockID=block_id
-        layerID=layer_id
-        layerPath=determineLayerPath(cp,blockID,layerID,channel)
-        blockPath=determineBlockPath(cp,blockID,channel)
-        #Parse all the options from BASE and Timeseries Config sections
-        for sec in ['averagerbase']:
-            self.add_ini_opts(cp,sec)
-        for sec in ['tracksearchmap']:
-            self.add_ini_opts(cp,sec)
-        #Check for needed directories if not present make them!
-        buildDir(blockPath)
-        buildDir(layerPath)
-        buildDir(blockPath+'/logs/')
-        #Set the condor submit initial directory option this
-        #should point to the block,layer location for output files
-        self.add_condor_cmd('initialdir','$(macroStartDir)')
-        #Set log
-        self.set_stdout_file(os.path.normpath(blockPath+'/logs/tracksearchAverager-$(cluster)-$(process).out'))
-        self.set_stderr_file(os.path.normpath(blockPath+'/logs/tracksearchAverager-$(cluster)-$(process).err'))
-        filename="/tracksearchAverager--"+str(channel)+".sub"
-        self.set_sub_file(os.path.normpath(self.dagDirectory+filename))
-    #End init
-#End Class
-
-class tracksearchMapCacheBuildJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
-    """
-    This is the class definition which will drive the compiled python file name
-    parsing code to create the layers of map building caches required
-    to complete the pipeline
-    """
-    def __init__(self,cp,block_id,layer_id,dagDir,channel=''):
-        self.dagDirectory=dagDir
-    #Setup job options to take a cache of caches and build new maps
-            #ConfigParser object -> cp
-        self.__executable = cp.get('condor','cachebuilder')
-        self.__universe = cp.get('condor','cachebuilder_universe');
-        pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
-        pipeline.AnalysisJob.__init__(self,cp)
-        blockID=block_id
-        layerID=layer_id
-        #WE NEED A DAG VARIABLE THE LAYERid FOR PROPER INITIAL DIR
-        layerPath=determineLayerPath(cp,blockID,layerID,channel)
-        blockPath=determineBlockPath(cp,blockID,channel)
-        #From ini sections [averagerbase] and [layerconfig] we will determine
-        # the proper arguments to give the mapCacheBuildJob
-        layerconfigOpts=[]
-        section='layerconfig'
-        for opt in cp.options(section):
-            arg=string.strip(cp.get(section,opt))
-            if str(opt).__contains__(str('TimeScale').lower()):
-                layerconfigOpts.append(arg)
-        if layerconfigOpts.__len__() <= 1:
-            sys.stderr.write("Error with section Layerconfig!\n")
-        if layerconfigOpts.__len__() < layerID:
-            sys.stderr.write("Error invoking mapBuilderObject: layerID problem!"+str(layerconfigOpts,layerID)+"\n")
-        layerconfigOpts.sort()
-        #Error condition layerID >= len(layerList)
-        #Determine overlap conditions from [tracksearchbase] as percentage
-        percentOverlap=float(string.strip(cp.get('layerconfig','layerOverlapPercent')))
-        #Get the overlap of new cache files.
-        layerSizeLabel='layer%sSetSize'%layerID
-        layerTimeLabel='layer%sTimeScale'%layerID
-        self.jobSetSize=cp.get('layerconfig',layerSizeLabel)
-        self.expectedTotalDuration=cp.get('layerconfig','layerTopBlockSize')
-        self.overlapTime=float(string.strip(cp.get('layerconfig',layerTimeLabel)))*percentOverlap
-        self.mapTime=float(string.strip(cp.get('layerconfig',layerTimeLabel)))
-#         #Work on all files listed
-#         #OK THIS IS INCORRECT SETTING OF MACROS
-#         #self.add_opt('file','$macroFile')
-#         #self.add_opt('start_time','$macroStartTime')
-#         #self.add_opt('map_set_duration','$macroMapSetDuration')
-#         #self.add_opt('new_map_duration','$macroNewMapDuration')
-#         #self.add_opt('overlap_maps','$macroOverlapMaps')
-        #Parse all the options from BASE and Timeseries Config sections
-        for sec in ['cachebuilder']:
-            self.add_ini_opts(cp,sec)
-        #Check for needed directories if not present make them!
-        buildDir(blockPath)
-        buildDir(layerPath)
-        buildDir(blockPath+'/logs/')
-        #Adjust initial dir so output ends up in proper place!
-        self.add_condor_cmd('initialdir','$(macroStartDir)')
-        #Add a condor macro variable for specialized value passing
-        #Set log
-        self.set_stdout_file(os.path.normpath(blockPath+'/logs/tracksearchCacheBuild-$(cluster)-$(process).out'))
-        self.set_stderr_file(os.path.normpath(blockPath+'/logs/tracksearchCacheBuild-$(cluster)-$(process).err'))
-        filename="/tracksearchCacheBuild--"+str(channel)+".sub"
-        self.set_sub_file(os.path.normpath(self.dagDirectory+filename))
-    #End init
-
-    def getJobTSAList(self):
-        #Generate the theoretical list of TSA cache names to process based
-        #on the configuration options given to the job.  This is then input
-        #into the tracksearchMAP code to batch process new maps.
-        outputList=[]
-        A=float(self.expectedTotalDuration)
-        B=float(self.mapTime)
-        C=float(self.overlapTime)
-        F=int(self.jobSetSize)
-        jobCacheNumEstimate=int(math.ceil(((A-C)/(B-C))/F))
-        if (jobCacheNumEstimate == 0):
-            sys.stderr.write("Error check object initialization.")
-            return outList
-        for num in range(1,jobCacheNumEstimate+1):
-            outputList.append('JobSet_'+str(num)+'.cacheTSA')
-        return outputList
-    #End getJobsetList
-
-    def getJobsetList(self):
-        #Generate the theoretical list of Jobset names to process based
-        #on the configuration options given to the job
-        outputList=[]
-        A=float(self.expectedTotalDuration)
-        B=float(self.mapTime)
-        C=float(self.overlapTime)
-        F=int(self.jobSetSize)
-        jobCacheNumEstimate=int(math.ceil(((A-C)/(B-C))/F))
-        if (jobCacheNumEstimate == 0):
-            sys.stderr.write("Error check object initialization.\n")
-            return outList
-        for num in range(1,jobCacheNumEstimate+1):
-            outputList.append('JobSet_'+str(num)+'.jobCache')
-        return outputList
-    #End getJobTSAList
-#End Class
-
-class tracksearchClusterJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
-    """
-    This calls is responsible for creating a generic cluster job.  The
-    cluster jobs will concatenate all results file into a single list.
-    The single lists will be saved in a special directory.
-    """
-    def __init__(self,cp,block_id,dagDir,channel=''):
-        self.dagDirectory=dagDir
-        self.__executable = cp.get('condor','clustertool')
-        #HACK SETB pool the job runs on the scheduler
-        self.__universe = cp.get('condor','clustertool_universe')
-        pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
-        pipeline.AnalysisJob.__init__(self,cp)
-        self.block_id=blockID=block_id
-        layerID='RESULTS_'+channel+'_'+str(blockID)
-        #Do not use channel information for initial dir.
-        #Set initial to RESULTS directory above CHANNEL dirs
-        self.initialDir=layerPath=determineLayerPath(cp,blockID,layerID)
-        blockPath=determineBlockPath(cp,blockID,channel)
-        #Setup needed directories for this job to write in!
-        buildDir(blockPath)
-        buildDir(layerPath)
-        buildDir(blockPath+'/logs')
-        self.set_stdout_file(os.path.normpath(blockPath+'/logs/tracksearchCluster-$(cluster)-$(process).out'))
-        self.set_stderr_file(os.path.normpath(blockPath+'/logs/tracksearchCluster-$(cluster)-$(process).err'))
-        filename="/tracksearchCluster--"+str(channel)+".sub"
-        self.set_sub_file(os.path.normpath(self.dagDirectory+filename))
-        #Load in the cluster configuration sections!
-        #Add the candidateUtils.py equivalent library to dag for proper
-        #execution!
-        self.candUtil=str(cp.get('pylibraryfiles','pyutilfile'))
-        self.add_condor_cmd('should_transfer_files','yes')
-        self.add_condor_cmd('when_to_transfer_output','on_exit')
-        self.add_condor_cmd('initialdir',self.initialDir)
-        #If the job is to run in the scheduler universe we set the proper ENV
-        #variables otherwise the submit file will transfer the py script.
-        if self.__universe == 'scheduler':
-            self.add_condor_cmd('environment','PYTHONPATH=$PYTHONPATH:'+os.path.abspath(os.path.dirname(self.candUtil)))
-        else:
-            self.add_condor_cmd('transfer_input_files',self.candUtil)
-        if cp.has_section('clusterconfig'):
-            for sec in ['clusterconfig']:
-                self.add_ini_opts(cp,sec)
-        #End __init__ method
-#End class tracksearchClusterJob
-
-class tracksearchThresholdJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
-    """
-    This class acts as a thresholding job.  Threshold can be done in the lalapps_tracksearch code
-    but we put it here to allow arbitrary rethresholding after a run.  The user may wish to play
-    with the trigger statistics.  This keeps the pipeline reruns to a minimum.
-    """
-    def __init__(self,cp,block_id,dagDir,channel=''):
-        self.dagDirectory=dagDir
-        self.__executable = cp.get('condor','clustertool')
-        self.__universe= cp .get('condor','clustertool_universe')
-        pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
-        pipeline.AnalysisJob.__init__(self,cp)
-        self.block_id=blockID=block_id
-        #layerID='RESULTS_'+str(blockID)
-        layerID='RESULTS_'+channel+'_'+str(blockID)
-        #Do not set channel name information here.  This puts all
-        #threshold output files into same place
-        self.initialDir=layerPath=determineLayerPath(cp,blockID,layerID)
-        blockPath=determineBlockPath(cp,blockID,channel)
-        #Setup needed directories for this job to write in!
-        buildDir(blockPath)
-        buildDir(layerPath)
-        buildDir(blockPath+'/logs')
-        self.set_stdout_file(os.path.normpath(blockPath+'/logs/tracksearchThreshold-$(cluster)-$(process).out'))
-        self.set_stderr_file(os.path.normpath(blockPath+'/logs/tracksearchThreshold-$(cluster)-$(process).err'))
-        filename="/tracksearchThreshold--"+str(channel)+".sub"
-        self.set_sub_file(os.path.normpath(self.dagDirectory+filename))
-        #Load in the cluster configuration sections!
-        #Add the candidateUtils.py equivalent library to dag for proper
-        #execution!
-        self.candUtil=str(cp.get('pylibraryfiles','pyutilfile'))
-        self.add_condor_cmd('should_transfer_files','yes')
-        self.add_condor_cmd('when_to_transfer_output','on_exit')
-        self.add_condor_cmd('transfer_input_files',self.candUtil)
-        self.add_condor_cmd('initialdir',self.initialDir)
-        #Setp escaping possible quotes in threshold string!
-        optionText=str('expression-threshold')
-        if cp.has_option('candidatethreshold',optionText):
-            newVal=val=cp.get('candidatethreshold',optionText)
-            #Introduce proper shell escapes for submit file to work...
-            if (newVal.__contains__('"') and not newVal.__contains__('\\')):
-                newVal=str(newVal).replace('"','\\"')
-                cp.set('candidatethreshold',optionText,newVal)
-        for sec in ['candidatethreshold']:
-                self.add_ini_opts(cp,sec)
-   #End __init__ method
-#End tracksearchThresholdJob class
-
-class tracksearchHousekeeperNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
-    """
-    The class acting as a generic template to do carry out the housekeeping job.
-    NOTE: This should be in local universe in most cases please check
-    the code in the corresponding job class above.
-    """
-    def __init__(self,job):
-        #Expects to run CondorDAGJob object for tracksearch
-        pipeline.CondorDAGNode.__init__(self,job)
-        pipeline.AnalysisNode.__init__(self)
-    #End init
-#End Class
-                                   
-class tracksearchTimeNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
-    """
-    The class acting as a generic template to do a Time search
-    """
-    def __init__(self,job):
-        #Expects to run CondorDAGJob object for tracksearch
-        pipeline.CondorDAGNode.__init__(self,job)
-        pipeline.AnalysisNode.__init__(self)
-        pipeline.CondorDAGNode.set_retry(self,3)
-    #End init
-#End Class
-
-class tracksearchMapNode(pipeline.CondorDAGNode,
-                         pipeline.AnalysisNode):
-    """
-    The class acting as a generic template to do a MAP search
-    """
-    def __init__(self,job):
-        #Expects to run CondorDAGJob object for tracksearch
-        pipeline.CondorDAGNode.__init__(self,job)
-        pipeline.AnalysisNode.__init__(self)
-    #End init
-#End Class
-
-class tracksearchAveragerNode(pipeline.CondorDAGNode,
-                         pipeline.AnalysisNode):
-    """
-    The class acting as a generic template to do a MAP merging from specified
-    input map cache file to process
-    """
-    def __init__(self,job):
-        #Expects to run CondorDAGJob object for tracksearch
-        pipeline.CondorDAGNode.__init__(self,job)
-        pipeline.AnalysisNode.__init__(self)
-    #End init
-#End Class      
-
-class tracksearchMapCacheBuildNode(pipeline.CondorDAGNode,
-                         pipeline.AnalysisNode):
-    """
-    The class acting as a generic template to do a MAP cache build.
-    It managaes a compiled python script to process a dir list of files.
-    """
-    def __init__(self,job):
-        #Expects to run CondorDAGJob object for tracksearch
-        pipeline.CondorDAGNode.__init__(self,job)
-        pipeline.AnalysisNode.__init__(self)
-    #End init
-#End Class
-
-class tracksearchClusterNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
-    """
-    The class acting as a generic template to allow building a cluster job.
-    It gives the needed features to setup a condor node to cluster/clobber
-    the ascii results files from tracksearch C code.
-    These jobs will always return success.  We will use /bin/true as a
-    post script to ensure this.
-    """
-    def __init__(self,job):
-        #Expects to run CondorDAGJob object for tracksearch
-        pipeline.CondorDAGNode.__init__(self,job)
-        pipeline.AnalysisNode.__init__(self)
-        #pipeline.CondorDAGNode.set_post_script(self,'/bin/true')
-        pipeline.CondorDAGNode.set_retry(self,3)
-    #End init
-#End Class
-
-class tracksearchThresholdNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
-    """
-    The class acting as a generic template to allow building a threshold job.
-    It gives the needed features to setup a condor node to cluster/clobber
-    the ascii results files from tracksearch C code.
-    """
-    def __init__(self,job):
-        #Expects to run CondorDAGJob object for tracksearch
-        pipeline.CondorDAGNode.__init__(self,job)
-        pipeline.AnalysisNode.__init__(self)
-    #End init
-#End Class
-        
-class tracksearch:
-    """
-    The class which wraps all X sized second blocks into a uniq DAG
-    we expect an input of a Science Segment of exactly n seconds
-    specified via the ini file
-    """
-    #TO HANDLE FUTURE COINCIDENT ANALYSIS WE NEED TO ADJUST DAGDIR FOR
-    #EACH IFO THEN MAKE A CLUSTERING DIR OR SOMETHING LIKE THAT
-    def __init__(self,cparser,injectFlag,logfile,scienceSegment='',rubberBlock=False):
-        # NEED TO HAVE A FLAG TO DELINATE A RUBBER BLOCK RUN SO THAT
-        # WE CAN READ TOPBLOCK FLAG THEN SCALE BACK TO PROPER SIZE
-        # BECAUSE THE NORM WILL HAVE THE AMOUNT OF DATA LESS THAN
-        # TOPBLOCKSIZE IN CONFIG OPTIONS! THAT VALUE WILL CHANGE TO
-        # MATCH THE DATA_CHUNK SIZE!!!!
-        #For large DAG of may possible data Blocks track each call
-        #to createJobs() which is called once per data Block for analysis
-        self.sciSeg=''
-        self.runStartTime=''
-        self.blockID=''
-        self.lastBlockID=''
-        self.rubberBlock=bool(False)
-        self.dagName=''
-        self.cp=cparser
-        self.resultPath=self.cp.get('filelayout','workpath')
-        self.globalDagName='tracksearchGlobal'
-        self.dagDirectory=''
-        if (scienceSegment==''):
-            self.dataSegmentCount=0
-            self.dagName=self.globalDagName
-            #Uses legacy getDagDirectory were blockID has not been assigned yet!
-            self.dagDirectory=os.path.normpath(self.getDagDirectory()+'/DAGS/');
-            self.dag = pipeline.CondorDAG(os.path.normpath(self.dagDirectory+'/'+logfile))
-        else:
-            self.dataSegmentCount=-1
-            self.__initializeBlock__(scienceSegment)
-            self.dag = pipeline.CondorDAG(os.path.normpath(self.dagDirectory+'/'+logfile))
-            self.dagName='tracksearchDAG_'+str(self.sciSeg.start())+'_duration_'+str(self.sciSeg.dur())
-        buildDir(self.dagDirectory)
-        self.dagFilename=self.dagDirectory+'/'+self.dagName
-        self.dag.set_dag_file(self.dagFilename)
-        self.injectFlag=False
-        self.injectFlag=injectFlag
-        self.jobType=""
-        #Injection relevant config
-        if self.injectFlag == True:
-            self.jobType='injection'
-        else:
-            self.jobType='normal'
-        #Check to see if Config object contains a multichannel
-        #section if so set the multichannel boolean to true and adjust
-        #dag construction accordingly
-        self.currentchannel=str('')
-        self.channellist=list()
-        self.have_multichannel=False
-        self.sec_multichannel=sec_multichannel="multichannel"
-        if self.cp.has_section(sec_multichannel):
-            self.have_multichannel=True
-            for channel in self.cp.options(sec_multichannel):
-                self.channellist.append(str(self.cp.get(sec_multichannel,channel)).strip())
-        else:
-            sys.stdout.write("Setting up standard single channel tracksearch pipe.\n")
-        #Variables that are common to all search layers
-        self.percentOverlap=float(string.strip(self.cp.get('layerconfig','layerOverlapPercent')))
-        self.layerTimeScaleInfo=[]
-        tempLib=[]
-        for opt in self.cp.options('layerconfig'):
-            section='layerconfig'
-            arg=string.strip(self.cp.get(section,opt))
-            if str(opt).__contains__(str('TimeScale').lower()):
-                entry=[]
-                entry.append(str(opt))
-                entry.append(str(arg))
-                tempLib.append(entry)
-        tempLib.sort()
-        self.layerTimeScaleInfo=tempLib
-        tempLib=[]
-        self.layerSetSizeInfo=[]
-        for opt in self.cp.options('layerconfig'):
-            section='layerconfig'
-            arg=string.strip(self.cp.get(section,opt))
-            if str(opt).__contains__(str('SetSize').lower()):
-                entry=[]
-                entry.append(str(arg))
-                tempLib.append(entry)
-        tempLib.sort()
-        self.layerSetSizeInfo=tempLib
-        if self.layerTimeScaleInfo.__len__()!=self.layerSetSizeInfo.__len__():
-            sys.stderr.write("ERROR with section [layerconfig]\n")
-        self.layerCount=self.layerTimeScaleInfo.__len__()
-        # Initialize the list of dataFind jobs df_job
-        # Initialize the list of dataFind nodes also
-        # Form in memory df_jobList=
-        # list(
-        #      tuple(dataFindInitialDir,
-        #            dataFindLogPath,
-        #            df_job,
-        #            list(tuple(start,stop,df_node))))
-        #
-        self.dataFindJobList=list()
-    #End Init
-
-    def __initializeBlock__(self,scienceSegment):
-        """
-        Initialized the DAG in preparation for incoming block of data to analyze.
-        This method should be called by only to other methods __init__().  When the DAG
-        will contain multiple smaller dags.  Or the more effective LARGE dag spanning all
-        data blocks feed into the method self.createjobs(dataBlock)
-        """
-        #Expects a fixed size PsuedoScience Segment
-        #The dag for this run will be then run from this data
-        self.dataSegmentCount=self.dataSegmentCount+1
-        self.sciSeg=scienceSegment
-        self.runStartTime=self.sciSeg.start()
-        self.blockID=str(self.sciSeg.start())+':'+str(self.sciSeg.dur())
-        self.lastBlockID='NONE'
-        #This is Legacy Variable name.  It is the directory where each blocks submit files should go!
-        self.dagDirectory=self.getDagDirectory()
-    #End __initializeBlock__()
-    
-    def __buildSubCacheFile__(self,masterCacheFile,subCachePath,startTime,endTime):
-        """
-        This method streamlines the masterCacheFile into smaller cache files to
-        streamline the access to data via a small cache files.  The small cache file
-        will be named via times and written to subCachePath directory.  The file will
-        contain all the gwfs which span the time interval requested.
-        """
-        fileContents=file(masterCacheFile).readlines()
-        fileContents.sort()
-        subCacheFile=os.path.normpath(subCachePath+'/Opt_'+str(startTime)+'_'+str(endTime)+'.cache')
-        startIndex=0
-        endIndex=fileContents.__len__()-1
-        newList=[]
-        for index in range(0,fileContents.__len__()):
-            timeStamp=int(fileContents[index].split(' ')[2])
-            timeOffset=int(fileContents[index].split(' ')[3])
-            frameStart=timeStamp
-            frameStop=timeStamp+timeOffset
-            if ((frameStart >= startTime) and (frameStop <= endTime)):
-                newList.append(fileContents[index])
-            elif ((frameStart < startTime) and (frameStop > startTime)):
-                newList.append(fileContents[index])
-            elif ((frameStart < endTime) and (frameStop > endTime)):
-                newList.append(fileContents[index])
-        if newList.__len__() == 0:
-            sys.stderr.write("ERROR! Inappropriate cache file conversion for "+str(startTime)+" to "+str(endTime)+"\n")
-            sys.stderr.write("Are you using correct dummy cache file?\n")
-            sys.stderr.write(str(masterCacheFile)+"\n")
-            os.abort()
-        newList.sort()
-        listStart=int(newList[0].split(' ')[2])
-        listEnd=int(newList[newList.__len__()-1].split(' ')[2])
-        listEndOffset=int(newList[newList.__len__()-1].split(' ')[3])
-        listEndAll=listEnd+listEndOffset
-        outFile=file(subCacheFile,'w')
-        outFile.writelines(newList)
-        outFile.close()
-        return subCacheFile
-    # End __buildSubCacheFile__
-
-
-    def getDagDirectory(self):
-        """
-        This function must set the dag directory variable.  It is controlled via the INI file.
-        See the entry [filelayout],dagpath.  Ideally this should be a nonNFS directory.  Condor may flag
-        error and refuse to run the dag otherwise.
-        """
-        try:
-            dagDirectory=str(self.cp.get('filelayout','dagpath')+'/'+self.blockID+'/')
-        except:
-            sys.stdout.write("Didn't find the dagpath option in [filelayout], defaulting to old behaviour.\n")
-            dagDirectory=str(self.resultPath+'/DAG_files/'+self.blockID+'/')
-        dagDirectory=os.path.normpath(dagDirectory)
-        return dagDirectory
-    #end def
-    def __getAssociatedDataFindNode__(self,dataFindInitialDir,dataFindLogPath,nodeStart,nodeEnd):
-        """
-        Method fetches pre-existing data find node to limit calls in
-        multichannel pipeline if the datafindnode does not exists it
-        creates it first and keeps a record of the datafindjob to
-        create future data find nodes as needed.  It returns a
-        datafind node to the calling method
-        """
-        #1 Check to see if we have a df_job related to input arguments
-        #  If NOT create the df_job else select the existing df_job
-        #2 Check to see if we have an existing df_node for this df_job
-        #  If NOT use selected df_job and create df_node return this
-        #  node
-        #  IF YES select the df_node and return it to calling function
-        # Do we have a dataFind job matching dataFindInitialDir,dataFindLogPath?
-        haveDataFindJob=False
-        indexJ=0
-        indexN=0
-        index=0
-        haveDataFindNode=False
-        newDataFindJobRecord=tuple()
-        newDataFindNodeRecord=tuple()
-        df_id=df_lp=df_job=df_jobNodeList=''
-        for entry in self.dataFindJobList:
-            df_id,df_lp,df_job,df_jobNodeList=entry
-            if (dataFindInitialDir == df_id) and (dataFindLogPath == df_lp):
-                haveDataFindJob=True
-                currentDataFindJob=df_job
-                currentDataFindNodeList=df_jobNodeList
-                indexJ=index
-            index=index+1
-        #If not dataFindJob found
-        if not(haveDataFindJob):
-            indexJ=index
-            #Create the needed dataFind job
-            buildDir(dataFindLogPath)
-            buildDir(dataFindInitialDir)
-            dataFindSubFileDir=os.path.normpath(self.dagDirectory+'/dataFindJobs/')
-            buildDir(dataFindSubFileDir)
-            currentDataFindJob=pipeline.LSCDataFindJob(dataFindInitialDir,dataFindLogPath,self.cp)
-            filename="/datafind--"+str(self.blockID)+".sub"
-            currentDataFindJob.set_sub_file(os.path.normpath(dataFindSubFileDir+filename))
-            currentDataFindJob.add_condor_cmd('initialdir',str(dataFindInitialDir))
-            currentDataFindNodeList=list()
-            #Save record of created df_job
-            newDataFindJobRecord=dataFindInitialDir,dataFindLogPath,currentDataFindJob,currentDataFindNodeList
-            self.dataFindJobList.append(newDataFindJobRecord)
-            haveDataFindJob=True
-        index=0
-        #Check the list from the datafind job for associated datafind nodes
-        currentDataFindJobRecord=self.dataFindJobList[indexJ]
-        #If the currentDataFindJob has not associated nodes
-        nodeFound=False
-        dataFindNodeList=list(currentDataFindJobRecord[3])
-        for entry in dataFindNodeList:
-            if (nodeStart == entry.get_start()) and (nodeEnd == entry.get_end()):
-                nodeFound=True
-                associatedDataFindNode=entry
-        if ((dataFindNodeList.__len__() == 0) or not(nodeFound)):
-            #Create a new associated dataFindNode
-            currentDataFindJob=currentDataFindJobRecord[2]
-            newDataFindNode=pipeline.LSCDataFindNode(currentDataFindJob)
-            newDataFindNode.set_start(nodeStart)
-            newDataFindNode.set_end(nodeEnd)
-            ifo=str(self.cp.get('datafind','observatory'))
-            newDataFindNode.set_observatory(ifo)
-            self.dataFindJobList[indexJ][3].append(newDataFindNode)
-            associatedDataFindNode=newDataFindNode
-            # Add node to the DAG
-            self.dag.add_node(associatedDataFindNode)
-        return associatedDataFindNode
-    #End __getAssociatedDataFindNode__()
-    
-    def __startingSearchLayer__(self,layerID):
-        """
-        This layer is responsible for initial data find jobs and the
-        tracksearch time jobs in a single layer search this would be
-        the only layer to actually be used
-        RETURNS the last node of this layer to satisify the
-        parent child relationship to next execution layer
-        layerID is expected to be a 1 Duh, first layer!
-        print 'Preparing layer ',layerID,' of block ',self.blockID
-        We need to make chunks of data from this sciSeg which are
-        layer1SetSize long in time
-        """
-        mapTime=float(self.cp.get('layerconfig','layer1TimeScale'))
-        overlapTime=mapTime*self.percentOverlap
-        setSize=float(self.cp.get('layerconfig','layer1SetSize'))
-        #If [tracksearchtime] has bin_buffer section.  Prepare blocks
-        #with proper padding data
-        padsize=determineDataPadding(self.cp)
-        #Create the chunk list that we will makeing data find jobs for
-        #If padding is requested implicity assume the data is available
-        try:
-            self.sciSeg.make_chunks((setSize*mapTime))
-        except:
-            if ((self.sciSeg.dur()>=self.sciSeg.unused()) and (self.sciSeg.__len__() <= 1)):
-                sys.stderr.write("\n")
-                sys.stderr.write("WARNING: Set Size and Map Time(s) seem inconsistent!\n")
-                sys.stderr.write("Set Size :"+str(setSize)+"\n")
-                sys.stderr.write("Map Time :"+str(mapTime)+"\n")
-                sys.stderr.write("Pad Size :"+str(padsize)+"\n")
-                sys.stderr.write("Pipeline may be incorrectly constructed! Check your inputs.\n")
-                sys.stderr.write("This segment reported bound : Start:%i End:%i\n"%(self.sciSeg.start(),self.sciSeg.end()))
-                sys.stderr.write("Reported duration %f with chunk count %i\n"%(self.sciSeg.dur(),self.sciSeg.__len__()))
-                sys.stderr.write("\n")
-            os.abort()
-        #Setup time marker for entire run
-        runStartTime=self.runStartTime
-        #What is name of dagDir location of dags and sub files
-        dagDir=self.dagDirectory
-        #Create dataFindJob
-        #This path is relative to the jobs initialDir arguments!
-        dataFindInitialDir=determineLayerPath(self.cp,self.blockID,"dataFind_Caches")
-        dataFindLogPath=determineLayerPath(self.cp,self.blockID,"dataFind_Logs")
-
-        #Setup the jobs after queries to LSCdataFind as equal children
-        block_id=self.blockID
-        layer_id=layerID
-        #
-        tracksearchTime_job=tracksearchTimeJob(self.cp,
-                                               block_id,
-                                               layer_id,
-                                               dagDir,
-                                               self.jobType,
-                                               self.currentchannel)
-        channel=self.currentchannel
-        prevLayerJobList=[]        
-        prev_df = None
-        if (self.sciSeg._ScienceSegment__chunks.__len__() < 1):
-            sys.stdout.write("WARNING: Data to be analyzed not properly divided or absent!\n")
-            sys.stdout.write("The input options must be WRONG!\n")
-        if not str(self.cp.get('condor','datafind')).lower().__contains__(str('LSCdataFind').lower()):
-            sys.stdout.write("Assuming we do not need standard data find job! Hardwiring in cache file to pipeline!\n")
-            sys.stdout.write("Looking for ini option: condor,datafind_fixcache\n")
-        # Pop first chunk off list to keep from repeating jobs!
-        # We do this because the for look has a repeat issue the first job
-        # seems to be a repeat of 2nd analysis chunk.  The for loop catches these types
-        # AnalysisSegment,
-        #<ScienceSegment: id 1, start 731488412, end 731554412, dur 66000, unused 0>
-        #<AnalysisChunk: start 731488412, end 731554412>
-        #<AnalysisChunk: start 731488412, end 731488742>
-        # Notice first analysis chunk has bounds of all data then second chunk bounds same
-        # start but the proper length.  The quick hack is to pop(0) the list of chunks
-        # as done above removing the first entry.  This must be unique to the way we create
-        # evenly spaced jobs in terms of samples and start times.  This saves 1 job per pipeline.
-        # Only works on datafind_fixcache jobs!!!! (Temp fix)
-        firstChunk=self.sciSeg.__getitem__(0)
-        if ((firstChunk.start() == self.sciSeg.start()) and (firstChunk.end() == self.sciSeg.end())):
-            self.sciSeg._ScienceSegment__chunks.pop(0)
-        for chunk in self.sciSeg:
-            #Method that creates a dataFind job if needed and returns
-            #appropriate new node entry if it doesn't exists for that
-            #time or returns the node that is used for finding that
-            #time interval
-            nodeStart=chunk.start()-padsize
-            nodeEnd=chunk.end()+padsize
-            #Set the node job time markers from chunk! This adjustment must
-            #reflect any buffering that might be specified on the command line.
-            tracksearchTime_node=tracksearchTimeNode(tracksearchTime_job)
-            #If executable name is anything but LSCdataFind we
-            #assume that the cache file should be hard wired!
-            if not str(self.cp.get('condor','datafind')).lower().__contains__(str('LSCdataFind').lower()):
-                fixCache=self.cp.get('condor','datafind_fixcache')
-                subCacheFile=self.__buildSubCacheFile__(fixCache,dataFindInitialDir,chunk.start(),chunk.end())
-                tracksearchTime_node.add_var_opt('cachefile',subCacheFile)
-            else:
-                #Setup a traditional pipe with a real data finding job
-                df_node=self.__getAssociatedDataFindNode__(dataFindInitialDir,dataFindLogPath,nodeStart,nodeEnd)
-                tracksearchTime_node.add_parent(df_node)
-                outputFileList=df_node.get_output_files()
-                tracksearchTime_node.add_var_opt('cachefile',outputFileList[0])
-            #Consider using Condor file transfer mechanism to
-            #transfer the frame cache file also.
-            #Originally the following was uncommented.
-            tracksearchTime_node.add_var_opt('gpsstart_seconds',chunk.start())
-            self.dag.add_node(tracksearchTime_node)
-            prevLayerJobList.append(tracksearchTime_node)
-        return prevLayerJobList
-
-    def __finalSearchLayer__(self,layerID,nodeLinks):
-        """
-        This layer will setup last nodes of dag.  These nodes
-        should perform a final map search.  No additional cache
-        building needs to be done here
-        RETURNS no node linkage
-        Setup file globbing for each layer
-        """
-        channel=self.currentchannel
-        tracksearchCluster_job=tracksearchClusterJob(self.cp,self.blockID,self.dagDirectory,channel)
-        #Loop through done search layers to glob
-        prevJobList=[]
-        globformat="Glob::%s::%s::%s.candidates"
-        clobformat="Clob::%s::%s::%s_%s.candidates"
-        for i in range(1,layerID):
-            tracksearchCluster_node=tracksearchClusterNode(tracksearchCluster_job)
-            layer2work=determineLayerPath(self.cp,self.blockID,i,channel)+"/*.candidates"
-            globFilename=globformat%(str(channel),str(self.blockID),str(i))
-            tracksearchCluster_node.add_var_opt('file',layer2work)
-            tracksearchCluster_node.add_var_opt('outfile',globFilename)
-            tracksearchCluster_node.add_var_arg("--glob")
-            #Setup the parents
-            for parents in nodeLinks:
-                tracksearchCluster_node.add_parent(parents)
-            self.dag.add_node(tracksearchCluster_node)
-            #Record job information these jobs are parent of clobbers
-            prevJobList.append(tracksearchCluster_node)
-        #Setup the appropriate globbed list clobbering jobs
-        tracksearchCluster_job2=tracksearchClusterJob(self.cp,self.blockID,self.dagDirectory,self.currentchannel)
-        filename="/tracksearchClobber--"+str(channel)+".sub"
-        tracksearchCluster_job2.set_sub_file(os.path.normpath(self.dagDirectory+filename))
-        tracksearchCluster_job.add_condor_cmd('initialdir',tracksearchCluster_job.initialDir)
-        nextJobList=[]
-        for i in range(1,layerID-1):
-            tracksearchCluster_node2=tracksearchClusterNode(tracksearchCluster_job2)
-            DLP=tracksearchCluster_job2.initialDir
-            file2clobber=globformat%(str(channel),str(self.blockID),str(i))
-            clobberWith=globformat%(str(channel),str(self.blockID),str(i+1))
-            clobFilename=clobformat%(str(channel),str(self.blockID),str(i),str(i+1))
-            tracksearchCluster_node2.add_var_opt('file',file2clobber)
-            tracksearchCluster_node2.add_var_opt('outfile',clobFilename)
-            tracksearchCluster_node2.add_var_opt('clobber',clobberWith)
-            for parents in prevJobList:
-                tracksearchCluster_node2.add_parent(parents)
-            self.dag.add_node(tracksearchCluster_node2)
-            nextJobList.append(tracksearchCluster_node2)
-        #Step that sets up the tracksearchHousekeeperJobs
-        #If housekeeper section has action = NO don't setup the jobs
-        if (self.cp.get('housekeeper','action').lower() == 'yes'):
-            tracksearchHousekeeper_job=tracksearchHousekeeperJob(self.cp,self.blockID,self.dagDirectory,self.currentchannel)
-            tracksearchHousekeeper_node=tracksearchHousekeeperNode(tracksearchHousekeeper_job)
-            for parents in prevJobList:
-                tracksearchHousekeeper_node.add_parent(parents)
-            self.dag.add_node(tracksearchHousekeeper_node)
-        #Only do setup the threshold jobs if the ini file has a threshold section!
-        if self.cp.has_section('candidatethreshold'):
-            tracksearchThreshold_job=tracksearchThresholdJob(self.cp,self.blockID,self.dagDirectory,self.currentchannel)
-            DLP=tracksearchThreshold_job.initialDir
-            tracksearchThreshold_node=tracksearchThresholdNode(tracksearchThreshold_job)
-            tracksearchThreshold_node.add_var_opt('file',os.path.normpath(str(DLP+'/*.candidates')))
-            if nextJobList!=[]:
-                for parents in nextJobList:
-                    tracksearchThreshold_node.add_parent(parents)
-            else:
-                for parents in prevJobList:
-                    tracksearchThreshold_node.add_parent(parents)
-            self.dag.add_node(tracksearchThreshold_node)
-    #end def finalsearchlayer method
-
-    def __intermediateSearchLayers__(self,layerID,nodeLinks):
-        """
-        This layer performs the required map cache building from
-        previous ith layer.  It is these caches which are joined into
-        new maps and placed as part of the i+1 layer and analyzed
-        RETURNS node linkage to possibly perform another search layer
-        """
-        layerNum=layerID
-        layerNumPrevious=layerID-1
-        layer_id = layerNum 
-        block_id=self.blockID
-        dagDir=self.dagDirectory
-        if (layerNumPrevious < 1):
-            sys.stderr.write("Error calling the intermediate search layer method!\n")
-        prevLayerJobList=nodeLinks
-        # Setup each additonal individual layer
-        # The cache build node list clear after first pass through loop
-        if (layerNum < 2):
-            prevLayerJobList=[]
-        cacheBuild_job=tracksearchMapCacheBuildJob(self.cp,block_id,layerNum,dagDir,self.channel)
-        cacheBuild_node=tracksearchMapCacheBuildNode(cacheBuild_job)
-        #Add directory to process code expects file but behavior will
-        #adjust to a directory listing if that is the case
-        #Specify directory contain map files to setup
-        #Should be previous layer already processed!
-        cacheBuildMapDir=determineLayerPath(self.cp,block_id,layerNumPrevious,self.channel)
-        cacheBuildWorkDir=determineLayerPath(self.cp,block_id,layerNum,self.channel)
-        cacheBuild_node.add_macro('macroStartDir',cacheBuildWorkDir)
-        cacheBuild_node.add_var_opt('file',cacheBuildMapDir)            
-        #Set the time of this run to start preping caches for
-        cacheBuild_node.add_var_opt('start_time',self.runStartTime)
-        #Lookup the proper layer options
-        layerMapNewDur=float(self.cp.get('layerconfig','layer'+str(layerNum)+'TimeScale'))
-        layerMapSetSize=int(self.cp.get('layerconfig','layer'+str(layerNum)+'SetSize'))
-        layerMapOverlap=float(self.percentOverlap*layerMapNewDur)
-        cacheBuild_node.add_var_opt('job_set_size',layerMapSetSize)
-        cacheBuild_node.add_var_opt('new_map_duration',layerMapNewDur)
-        cacheBuild_node.add_var_opt('overlap_maps',layerMapOverlap)
-        #Make this process the child of all frame analysis jobs
-        for parentJob in prevLayerJobList:
-            cacheBuild_node.add_parent(parentJob)
-        self.dag.add_node(cacheBuild_node)
-        
-        # The merge map
-        tracksearchAverager_job=tracksearchAveragerJob(self.cp,block_id,layerNum,dagDir,self.channel)
-        jobSetList=cacheBuild_job.getJobsetList()
-        jobTSAList=cacheBuild_job.getJobTSAList()
-        #Var to store copies of these objects to get right parent relation
-        averagerJobListing=[]
-        #Loop over all theoretical jobsets for map making
-        averagerWorkDir=determineLayerPath(self.cp,block_id,layerNum,self.channel)
-        averagerTimeLayerBinCount=int(self.cp.get('tracksearchtime','number_of_time_bins'))
-        for cacheSet in jobSetList:
-            tracksearchAverager_node=tracksearchAveragerNode(tracksearchAverager_job)
-            tracksearchAverager_node.add_var_opt('multi_cache',cacheSet)
-            tracksearchAverager_node.add_macro('macroStartDir',averagerWorkDir)
-            tracksearchAverager_node.add_var_opt('new_t_bins',averagerTimeLayerBinCount)
-            tracksearchAverager_node.add_parent(cacheBuild_node)
-            self.dag.add_node(tracksearchAverager_node)
-            averagerJobListing.append(tracksearchAverager_node)
-        #Run this new layer map analysis
-        nextLayerJobList=[]
-        #The results of this analysis should be stored in layerNum layer
-        tracksearchMap_job=tracksearchMapJob(self.cp,block_id,layerNum,dagDir)
-        #The entries in the JobSet file will be the input cache sets
-        #for this layer of the Analysis
-        for cacheSet in jobTSAList:
-            tracksearchMap_node=tracksearchMapNode(tracksearchMap_job)
-            tracksearchMap_node.add_var_opt('inject_map_cache',cacheSet)
-            tracksearchMap_node.add_macro('macroStartDir',determineLayerPath(self.cp,block_id,layerNum,self.channel))
-            for parent in averagerJobListing:
-                tracksearchMap_node.add_parent(parent)
-            self.dag.add_node(tracksearchMap_node)
-            nextLayerJobList.append(tracksearchMap_node)
-        prevLayerJobList=nextLayerJobList
-        return nextLayerJobList
-    #end def
-
-    def __createSingleJob__(self,channelname=''):
-        """
-        Wrapper which should be called once per channel in the
-        multichannel configuration section or just once if the only
-        channel mentioned is in the tracksearchtime section.  This
-        method should never be called without a specified channel name.
-        """
-        if ((channelname=='') and (self.have_multichannel)):
-            sys.stderr.write("Improper function call to __createSingleJob__() method")
-            os.abort()
-        if not self.have_multichannel:
-            if self.cp.has_option('tracksearchtime','channel_name'):
-                channelname=str(self.cp.get('tracksearchtime','channel_name')).strip()
-            else:
-                sys.stderr.write("Improper function call to __createSingleJob__() appears ini file is missing either channel_name or section [multichannel]. Please check!\n")
-                os.abort()
-        self.currentchannel=channelname
-        layerID=1
-        nodeLinkage=self.__startingSearchLayer__(layerID)
-        layerCount=self.layerCount
-        #set of numbers [i,j)
-        for layerNum in range(2,layerCount+1):
-            nodeLinkage=self.__intermediateSearchLayers__(layerNum,nodeLinkage)
-
-        self.__finalSearchLayer__(layerCount+1,nodeLinkage)
-    #End __createSingleJob___()
-    
-    def createJobs(self,scienceSegment='',rubberBlock=False):
-        """
-        This method will call all the needed jobs/node objects to create
-        a coherent job dag
-        CHECK TO MAKE SURE LAYERCONFIG IS VALID HAS ENTRIES
-        We need a consistency check between above and [tracksearchbase]
-        Need a new housekeeping method which will go to each step
-        deleting the MAP:*.dat files to save disk space
-        """
-        self.rubberBlock=rubberBlock
-        stype=type('')
-        if ((type(scienceSegment) != stype) and (self.dataSegmentCount<0)):
-            sys.stderr.write("Error Inconsistent calling of tracksearch pipe methods!\n")
-            return
-        if ((self.dataSegmentCount>-1) and (type(scienceSegment) != stype)):
-            self.__initializeBlock__(scienceSegment)
-        #
-        if self.have_multichannel:
-            for currentchannel in self.channellist:
-                #sys.stdout.write("Installing sub-pipe for channel:"+str(currentchannel)+"\n")
-                self.__createSingleJob__(currentchannel)
-        else:
-            self.__createSingleJob__()
-    #End createJobs
-
-    def writePipelineDAG(self,dagname=''):
-        """
-        Method that writes out the completed DAG and job files inside
-        the proper filespace hierarchy for running the tracksearch
-        pipeline
-        """
-        self.dag.write_sub_files()
-        self.dag.write_dag()
-        #Read in the resulting text file and prepend the DOT
-        #information writing the DAG back to disk.
-        input_fp=open(self.dag.get_dag_file(),'r')
-        contents=input_fp.readlines()
-        #Determine dot file name as dagfilename.DOT
-        [dotfilename,extension]=os.path.splitext(os.path.abspath(self.dag.get_dag_file()))
-        dotfilename=dotfilename+'.dot'
-        contents.insert(0,'DOT '+dotfilename+' UPDATE\n');
-        input_fp.close()
-        output_fp=open(self.dag.get_dag_file(),'w')
-        output_fp.writelines(contents)
-        output_fp.close()
-    #End writeTracksearchTopBlockPipe
-#End Class
-
- 
+  currentfile buffer readline pop
+  token pop /x exch def
+  token pop /y exch def pop
+  x y translate
+  currentfile buffer readline pop
+  token pop /x exch def
+  token pop /y exch def pop
+  currentfile buffer readline pop
+  token pop /pointsize exch def pop
+  /Times-Roman findfont pointsize scalefont setfont
+  x y scale
+  currentfile buffer readline pop
+  token pop /columns exch def
+  token pop /rows exch def pop
+  currentfile buffer readline pop
+  token pop /class exch def pop
+  currentfile buffer readline pop
+  token pop /compression exch def pop
+  class 0 gt { PseudoClassImage } { DirectClassImage } ifelse
+  grestore
+  showpage
+} bind def
+%%EndProlog
+%%Page:  1 1
+%%PageBoundingBox: 0 0 1024 26
+DisplayImage
+0 0
+1024 26
+12.000000
+1024 26
+0
+0
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEC7C7C7C7C7C7C7C7C7C7C7C7C7C7C7C7C7C7C7C7C7C7C7C7BEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEB2B6BA7690A53C6B9200457E00457E00457E
+00457E00457E155285A6AFB6BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBBBBBBBABABABDBDBDBBBBBBBDBDBD
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE867889
+48294D715D74B2AFB3BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBCBDBBB1BEBCB7
+BCBAB1BEBDB8BEBDB7BEBDB6BEBDB8BDBBB1BEBDB9BDBBB2C0BFBBBDBBB1BEBCB7BDBAB1
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE7F7F7FE4E4E4C6C6C6C6C6C6C6C6C6
+C6C6C6C6C6C6C6C6C6BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBABABA999A9A4B4C4D3637380E0E0E
+0E0E0E3435364E4F4FAAAAABBABABABEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE5F829E00457E00457E
+00457E00457E00457E00457E00457E00457E00457E00457E00457EBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBDBDBDB8B8B8B1B1B1AAAAAAA7A7A7B4B4B4BEBEBEBEBEBEB8B8B88F9295
+7F848A989CA1858B90A4A6A7BDBDBDBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBE76647A4121476D58718F829146274C4D3052ACA7ADBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+C0C0C0BBB7A2C2B468B8AF7CB2A251C2B989B8AD75BAAE70C2BA8FB1A14BBAB287C0B263
+B3AA82C2B468B8AF7CB2A352C2C2C2BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEB9B8BBACAAB6ACAAB6B9B9BCBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE7F7F7F
+E4E4E4C6C6C6C6C6C6C6C6C6C6C6C6C6C6C6C6C6C6BEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBE8A8A8A6C6442645D47B0B0B0BEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBCBCBDB4B4B6ADAEB1AFB0B2B8B8B9BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEB5B5B54F5050
+3637386A6C6F666B704D51554144474C535C393F4428292A676869B2B2B2BDBDBDBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEB7B7B7AFAFAFB9B9B9
+C1C1C1C3C3C3C4C4C4C2C2C2BFBFBFBBBBBBB6B6B6B5B5B5BEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEA6AFB6
+00457E00457E00457E00457E00457E00457E00457E105186608BAE80A2BF80A2BF608EB2
+00457E00457EB2B6BABEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBCBCBCB1B1B1A5A5A59A9A9A8484846868684C4C4C3F3F3F686868
+B2B2B2BEBEBEA0A1A24B647D25578B204B782051844E5C6BAEAEAEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBDBDBDB9B9B9
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEB9B8B967516B492A4E47274D3C1B4246254C593E5E
+7E6E81B2AEB2BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEACB4BCC2C8CEC2C8CEC2C8CEC2C8CEC2C8CEC2C8CEC2C8CEC2C8CEC2C8CE
+C2C8CEC2C8CDC2C8CEC2C8CEC2C8CEC2C8CEC2C8CEC2C8CEC2C8CEC2C8CEC2C8CEB1B8C0
+BEBEBEBEBEBEBEBEBEBEBEBEBDBDBDA9A27BBFAD40A8994CAA9525B5A75CA4943CAA993B
+B1A45EAB951FA59853BDAA3995863FBEAB3EA49549AB9629ADADACB9B9B9BEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEB9B8BC788FB05286B65192C37CBDE161A9D3
+478CC04575A97A84A5BABABDBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBE7F7F7FE4E4E4C5C5C5C5C5C5E4E4E4E4E4E47F7F7FC5C5C5BEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBABABA757353F8E77EDEB017676356
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBDBFBCB4BEB5A2BDB5A0BFBAACBFBDB9
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+AEB5BCC2C7CEC2C7CEC2C7CEC2C7CEC2C7CEC2C7CEC2C7CEC2C7CEC2C7CEC2C7CDC2C7CD
+C2C7CEC2C7CEC2C7CEC2C7CEC2C7CEC2C7CEC2C7CEC2C7CEC2C7CEB0B7C0BEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEACADB090929C8C8F9684878E7E828D868A9494969D91939B9A9CA3
+B6B6B8BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBDBDBD4243433A3B3D82878B95A0AB7A8C9E677C915168815C71886473844C545C
+212325575859B4B4B5BDBDBDBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+B1B1B17E7E7E696969A4A4A4D1D1D1D9D9D9D9D9D9CECECEBEBEBE9B9B9B767676858585
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEA6AFB600457E00457E00457E00457E00457E00457E00457E00457EDFE8EF
+FFFFFFFFFFFFFFFFFFFFFFFF60A5D200457E00457EB2B6BABEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEB9B9B99595957171715E5E5E585858777777
+A1A1A1D1D1D1DCDCDC6666666A6A6AABABAB898F962E5D8C3C96F5388EE73482D4334960
+A7A7A7BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEB8B8B8
+AAAAAAA9A9A9A2A2A2A2A2A2ABABABBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEA39CA54E30536A4B71917497
+A98EAEB69CBAAD93B2987C9F7C5D8147264D8F8291BEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEC4CBFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+FFFFFFFFFFFFFFFFFFFFFFFFFCFDFDFCFCFCFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+FFFFFFFFFFFFFFFFFFCBD0D5BEBEBEBEBEBEBEBEBEBEBEBEBDBDBCADAA94A3995D9C956A
+9D91549D976C98905F99915C99936A998D4D948E669B91528E875F9A8F5391895E968B4F
+A3A4A1B8B8B8BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEC3BCB2BFBDBB9AA1B42F77B15AA9D1
+7EBDDC80BFDDA8DCF3A2D8F07FBDDA8BA8A67A816486784EB1A9A7BEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE000000000000000000
+000000BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE7F7F7FE4E4E4C4C4C4C4C4C4E4E4E4
+C4C4C47F7F7FC4C4C4BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBABABA
+79703FF5D857E2B00C646051BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBBB8B1B8AB8DB99D5F
+AE801FA3771AAB8B45B29D6EBCAE8BC0B8A2BFBCB4BEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEC3C8CEFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+FFFFFFFFFFFFFCFCFCFBFBFBFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+FFFFFFCAD0D6BEBEBEBEBEBEBEBEBEBEBEBE9699A15259741D2566454B5A868789A9AAAC
+B1B1B384858A2D33582D346B686D81B1B1B4BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBDBDBD696A6A31323391979E6B7F95314E6C3D5874FCFDFD
+CFD6DD3B5673314E6C4C647E4A5561121415757677B6B6B6BDBDBDBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEB7B7B77C7C7C656565C4C4C4D1D1D1AFAFAF9797979191918A8A8A
+7E7E7E686868585858AEAEAEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE00457E00457E00457E00457E00457E00457E
+00457E00457EEFF3F7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFF4096CE0073BE00457E00457E
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEA6A6A65A5A5A
+969696BFBFBFD9D9D9DFDFDFDDDDDDDDDDDDE5E5E5DCDCDC6767676161616271813371B2
+3988DA3970A8496C90616A74B0B0B0BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBDBDBD
+B1B1B1A6A6A69C9C9CA1A1A1898989A2A2A28F8F8FAEAEAE858585ABABABBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE847487
+4B2B519A7D9FB59BBBB89EBDB69CBBB398B8B297B8B297B8B397B9AB90AF5D3E62654D69
+BDBDBDBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEC4CBFFFFFF
+FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFCFCFCF9FAFAFFFFFFFFFFFF
+FFFFFFFFFFFFFFFFFFFAFAFAFFFFFFFFFFFFFFFFFFCBD0D5BEBEBEBEBEBEBEBEBEBEBEBE
+C0C0C0F0F0EFF0F0ECF0F0EDEFEFECEFEFECEEEEEBEEEEEBEEEEEBEDECE9EDEDEAECEBE7
+EBEBE9EBEBE7E9E9E8E2E3E3D5D5D4BCBCBCBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEDA965C
+A68574125697348BBD7FABB4B3AB8372AEC494D3EF84C8E663B1D5679AB29A8852ECBC28
+F2BF2DCAB086C1BCB4BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE000000
+000000FFFFFFC0C0C0A0A0A4C0C0C0000000000000BEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE7F7F7F
+E4E4E4C3C3C3C3C3C3E4E4E4C3C3C37F7F7FC3C3C3BEBEBEBEBEBEBABABA999999777777
+777777777777777777777777777777777777777777777777777777777777777777777777
+777777777777919191B4B4B4BDBDBDBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBE52524EE1CF55987403888888BEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEB3B3B3838383535353535353
+B3B3B3BEBEBE6B6B6B2424243F454A3F454AB3B3B3BEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BAB9B7A3957B936C1D9060048757016B42006A4200805300956C12A6863FB19A65BCAB84
+C1B69BBFBBB1BEBEBDBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEC3C8CEFFFFFFFFFFFFFFFFFF
+FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFBFBFBF9F9F9FFFFFFFFFFFFFFFFFFFFFFFF
+FFFFFFFBFBFBFCFCFCFFFFFFFFFFFFCAD0D6BEBEBEBEBEBEBEBEBEBABABB555B6F0C1572
+040C8E262D674B5066585C68585C69434868121972030B8A141E5994969EBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE9F9FA03436387E80818393A4
+395471314E6C3A5673FCFDFDFBFCFCD0D7DE3C577435526F566C82292F352A2D2F9B9B9C
+BABABABEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEA6A6A6616161B8B8B8CDCDCD8B8B8B
+6565656B6B6B7474746767675B5B5B767676B3B3B3BEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEB3B3B3484848111111
+090909777777BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE5F829E00457E00457E
+00457E00457E00457E00457E00457E9FB9CFFFFFFFFFFFFFAFC5D7205C8E004882005C9E
+0073BE0073BE006DB600457E8298AABEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE888888000000A9A9A9BEBEBE888888
+000000A9A9A9BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBE888888000000A9A9A9BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE888888000000A9A9A9BEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBE9B9B9B555555F3F3F3EAEAEAE4E4E4E1E1E1DEDEDED6D6D6D3D3D3DDDDDD
+B9B9B95758582E41554979AC4D6B8B79828CA4A4A4B5B5B5BDBDBDBEBEBEBEBEBEBEBEBE
+BEBEBEBBBBBBA9A9A99C9C9CA1A1A1ABABAB9696969393938082858B929F7C87958A9094
+A4A4A4858585AAAAAABEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEA49EA54A2A50B096B4B69DBBB79DBCB59ABAB297B8B194B7AE91B5AD8EB3
+AA8BB2AD8FB3B399B969496E867789BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEAEAEAE9494947C7C7C646464767676
+B1B1B1BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEC4CBFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+F9FAFAF7F7F7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFAFAFAEAEAEAFFFFFFFFFFFFCBD0D5
+BEBEBEBEBEBEBEBEBEBFBFBFBDBDBDFCFCFCFBFBFBF8F8F8C2C2C2989898DFDFDFFAFAFA
+FAFAFAF8F8F8D2D2D2919191C6C6C6EBEEF2C1CFE1A2B9D4E1E1E1BEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBCBCBCD45B1FE08437C98C53D2995FDD812183785E6CADD16AB4DC5CA9D3
+70BAE175B6DC335880504B2DE5CF22F5D01CCEAF6DBDBDBDBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBE000000FFFFFFFFFFFFFFFFFFFFFFFF000000A0A0A4FFFFFFFFFFFF000000
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBE7F7F7FE4E4E4C2C2C2C2C2C2E4E4E4C2C2C27F7F7FC2C2C2BEBEBE
+BEBEBEABABAB3737374242427B7B7B7B7B7B7B7B7B7B7B7B7B7B7B7B7B7B7B7B7B7B7B7B
+7B7B7B7B7B7B7B7B7B7B7B7B7B7B7B4E4E4E3333338F8F8FBABABABEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBCBCBC58583DFEFE8EE5B7144F4730
+BDBDBDBEBEBEBEBEBEBDBDBD838383797979BCBCBCBEBEBEBEBEBEB3B3B3535353242424
+2929296060609B9B9B818181242424B3B3B3223445388DE53C96F42966A68F8F8FBEBEBE
+BEBEBEBEBEBEBEBEBEBDBDBDA9A2977C5F31764D087B520B82580B7B5309734C076D4502
+663F006942007A4F01906711AC8531BB9D57BDB297BEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+C3C8CEFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF9FAFAF7F7F8
+FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF7F7F7E8E8E8FFFFFFFFFFFFCAD0D6BEBEBEB7B7B7
+7C7C7C59595A31364C0D174E050D7A050D840C138D0D148E0D148F09108A040C7E071168
+111A45868993BDBDBDBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+6F6F70303234A6AEB749637D314E6C314E6C3A5672FCFDFDFCFDFDF9FBFBD1D8DE34516E
+3B5773394857111315757677B6B6B6BDBDBDBEBEBEBEBEBEBEBEBEBEBEBEBDBDBD979797
+646464E4E4E49F9F9F6161617777779D9D9DA6A6A6A6A6A6B8B8B8BEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE888888000000A9A9A9
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+9B9B9B1A1A1A767676565656484848181818BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+B2B6BA00457E00457E00457E00457E00457E00457E00457E00457EFFFFFFFFFFFFDFE8EF
+00457E00457E00457E00457E0062A60073BE0073BE00457E00457EBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEB6B6B60A0A0A040404AEAEAEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE888888
+000000A9A9A9BEBEBEBABABAACACACBDBDBDBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE888888
+000000ACACACBEBEBEBEBEBEBEBEBEBEBEBEBABABAACACACBDBDBDBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBE8888880000000000000000000D0D0D414141ADADADBEBEBEBEBEBE888888
+000000A9A9A9BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEA3A3A33F3F3F0F0F0F0202020D0D0D2D2D2D868686BEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBE888888000000ACACACBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE9999994B4B4BF3F3F3F3F3F3E1E1E1D5D5D5
+D7D7D7C8C8C8B6B6B6848689798C9F7A8B9C4B5E725B6D7F959595B7B7B7BEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBDBDBDAFAFAF828282696969AFAFAFA8A8A8858E99788AA4
+5A7194436A907598AB809894969C96A0A0A0878787A4A4A4BEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBBBABB4F31549A7F9FB292B8A776B3A46DB0A777B2
+AC87B4AD8FB3AD8EB3AA8AB1A888AFA785AEA888AFAE95B4492A50ABA6ABBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEB5B5B59999997D7D7D6969696B6B6B
+7373737B7B7B686C69676767656565B1B1B1BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEC4CBFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+E3E3E3FFFFFFFFFFFFFFFFFFF8F9F9F5F6F6FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+BDBDBDFFFFFFFFFFFFCBD0D5BEBEBEBEBEBEBEBEBEC0C0C0C3C3C3FAFAFAFAFAFAF0F0F0
+7070700C0C0C6A6A6AEDEDEDF8F8F8E1E1E1555555222222A9ABAE9EB5D0789AC287A4C9
+E5E5E5C0C0C0BEBEBEBEBEBEBEBEBEBEBEBEB9B7B5C85C17DF7613DF7616DE7416DE730D
+91523B8494A069A2C560ACDB5FAAD95DA4D55292C634669F5A655EF2BB01F5C135B4B0A8
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBE000000FFFFFFFFFFFFC0C0C0585858808080000000
+000000A0A0A4FFFFFFFFFFFF000000BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE7F7F7FE4E4E4C2C2C2C2C2C2E4E4E4
+C2C2C27F7F7FC2C2C2BEBEBEBEBEBEA2A2A2212121A4A4A4C0C0C0FBFBFBFBFBFBFBFBFB
+FBFBFBFCFCFCF9F9F9FCFCFCFAFAFAFCFCFCFBFBFBFBFBFBCECECE9090902D2D2D767676
+B3B3B3BDBDBDBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE8C8C8C
+999957FFFF8FF2CA2D906E017C7C7CAEAEAEA7A7A7787878AAA56CC0A94574736FBEBEBE
+BEBEBE535353777777C7C7C7E1E1E1DEDEDEDDDDDDEAEAEA909090242424224E7B3F98F6
+21548A122E4C9B9B9BBEBEBEBEBEBEBEBEBEBEBEBEBAB9B795877169440D784E0984590E
+8D6213916715946B16966C148F640F8258097B52048B5F08A2720EA5720CB2955BBFBCB4
+BEBEBEBEBEBEBEBEBEBEBEBEC3C8CEFFFFFFFFFFFFFFFFFFFDFDFDF1F1F1E6E6E6FFFFFF
+FFFFFFFFFFFFF7F8F8F4F5F5FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF6F6F6C9C9C9FCFCFC
+FFFFFFCAD0D6BEBEBE5D5D5D60606051525313412512A9200A592E102F3E0F2A3D102945
+1027430E253D0E2A3F083E390B3C39353E433D3D3D565656959595BABABABEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBE6365676D707274889C435E7973879B445E7A3B5673FCFDFD
+F2F4F6B4BFCAFBFCFCD2D8DE3E5A753D57711D2E40515152B0B0B0BCBCBCBEBEBEBEBEBE
+BEBEBEBEBEBEBBBBBB9090906E6E6EE3E3E37474744A4A4A6E6E6E6868686868688D8D8D
+B7B7B7BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBE000000000000000000000000000000000000000000000000000000
+BEBEBE888888000000A9A9A9BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+888888000000070707B4B4B4BEBEBEBEBEBEBEBEBE9C9C9C000000000000ACACACBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE5C5C5C
+2B2B2B0A0A0A0404041A1A1A5B5B5BB7B7B7BEBEBEBEBEBEBEBEBE5C5C5C2B2B2B0A0A0A
+0404041A1A1A5B5B5BB7B7B7BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE5C5C5C2B2B2B
+0A0A0A0404041A1A1A5B5B5BB7B7B7BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBE9999992D2D2D0E0E0E0202020F0F0F424242A8A8A8BEBEBEBEBEBE000000000000
+000000000000000000000000080808BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+8888880000000000000000000D0D0D414141ADADADBEBEBEBEBEBE888888000000070707
+B4B4B4BEBEBEBEBEBEBEBEBE9C9C9C000000000000ACACACBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBE9B9B9B1B1B1BBFBFBFA3A3A34D4D4D4E4E4E1A1A1A8F8F8FBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBE7690A500457E00457E00457E00457E00457E00457E00457E
+00457EFFFFFFFFFFFF8FAEC700457E00457E00457E00457E0053920073BE0073BE00457E
+00457EA6AFB6BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE727272
+101010191919656565BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBE888888000000A9A9A9BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBE888888000000ACACACBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE888888000000999999ACACAC9393931C1C1C
+323232BEBEBEBEBEBE888888000000A9A9A9BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEB7B7B7131313333333949494AAAAAA9B9B9B6D6D6D
+797979BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE888888000000ACACACBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE999999474747
+E8E8E8EEEEEED7D7D7BEBEBEBBBBBBB5B5B589898941608071A2D4A0BFE099A6B4686D76
+ACADB5BBBBBDBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBDBDBDA4A4A45E5B566C61515A5144
+787571A5A5A5646D795D7EAE5C84A29BC6C3C5E7D9B8DCC08DA78E919A92AFAFAF8E8E8E
+A9A9A9BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE8C7F8E6C5072B292B9
+AF7EB9EEE4F1F3EBF4C19BCAA46BB0A87EB1A98AB1A887AEA685ADA481AB9E75A69A66A5
+9562A16E5374BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEB9B9B98D8D8D5C5C5C5A5A5A
+6F6F6F8484848489857D8A807E978380A48785AE8DA2ACA4717171656565B0B0B0BEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEC4CBFFFFFF
+FFFFFFFFFFFFC3C3C32C2C2C5A5A5AFFFFFFFFFFFFFFFFFFF6F6F6F1F3F3FFFFFFFFFFFF
+FFFFFFFFFFFFFFFFFFFFFFFF989898FFFFFFFFFFFFCBD0D5BEBEBEBEBEBEBEBEBEC1C1C1
+CACACAF9F9F9F7F7F7F7F7F7DADADA3838380A0A0A8E8E8EF1F1F17D7D7D16161672777E
+88A5C57298C083A3C8B8C7DBE8E8E8C4C4C4BEBEBEBEBEBEBEBEBEBEBEBEC59D7DD86E18
+DE7513DE7316DF7417DE7315BF4F19E37C3575716D4E96CB458CC22C70A63271A84782BE
+53779BCE901FFACB24BAB284BEBEBEBEBEBEBEBEBEBEBEBE000000FFFFFFC0C0C0585858
+000000000000000000000000000000000000A0A0A4FFFFFFC0C0C0000000BEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE7F7F7F
+E4E4E4C1C1C1C1C1C1E4E4E4C1C1C17F7F7FC1C1C1BEBEBEBEBEBEA2A2A2313131E2E2E2
+9E9E9EB9B9B9F5F5F5F6F6F6F6F6F6F6F6F6F5F5F5F6F6F6F5F5F5F6F6F6F6F6F6CDCDCD
+898989A7A7A7414141717171AFAFAFBCBCBCBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBE4D4D48EDED85FFFF8FF5D845E5AE007A710C858111958F10A6A010
+DFC73DC49F1E716F6BBEBEBEBEBEBE303030BABABAEEEEEEE4E4E4E1E1E1D1D1D1BBBBBB
+8C8C8C2C2C2C4E7BAA1A2A3A777777BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBCBBBA
+ADA79E9A845D835B1172490677500B885F129A701BA57B20A97E20A87C1B986B0DA57611
+BC8C249D6B11A37722BCAE91BEBEBEBEBEBEBEBEBEBEBEBEC3C8CEFFFFFFFFFFFFFBFBFB
+B4B4B4474747616161FFFFFFFFFFFFFFFFFFF5F6F6F1F2F2FFFFFFFFFFFFFFFFFFFFFFFF
+FFFFFFFAFAFAB9B9B9E4E4E4FFFFFFCAD0D6BEBEBE3C3C3CB4B4B46B6B6D285A3805DF0A
+01ED070AD71711BF2514A72E139C330A8F310180320174391152448A9498C7C7C7B3B3B3
+6767678F8F8FBDBDBDBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE4B4E51949BA25069825E758C
+F8FAFADDE2E74F6882FCFDFDECF0F2637990D3DAE0FCFDFD647A9033506D22364A2E2F31
+ABABABBABABABEBEBEBEBEBEBEBEBEBEBEBEBDBDBD999999626262E4E4E48C8C8C4E4E4E
+5555555656564B4B4B4A4A4A5656568F8F8FB9B9B9BEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEACACACACACACACACAC7C7C7C000000
+9C9C9CACACACACACACACACACBEBEBE888888000000A9A9A9BEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBE888888000000161616737373BEBEBEBEBEBEBEBEBE535353
+161616000000ACACACBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBE2D2D2D7272729C9C9CA9A9A98383831515153B3B3BBEBEBEBEBEBE
+BEBEBE2D2D2D7272729C9C9CA9A9A98383831515153B3B3BBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBE2D2D2D7272729C9C9CA9A9A98383831515153B3B3BBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBE9F9F9F7979799C9C9CAAAAAA9191912727271C1C1C
+BDBDBDBEBEBEACACACACACACACACACACACACA8A8A80C0C0C4C4C4CBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBE888888000000999999ACACAC9393931C1C1C323232BEBEBE
+BEBEBE888888000000161616737373BEBEBEBEBEBEBEBEBE535353161616000000ACACAC
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEB3B3B35F5F5F181818C9C9C9FAFAFA787878515151
+5B5B5B3737375F5F5F49678D778AA0BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE3C6B9200457E00457E00457E
+00457E00457E00457E00457E00457EFFFFFFFFFFFF80A2BF00457E00457E00457E00457E
+005FA20073BE0073BE00457E00457E6B89A2BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBE2424245C5C5C686868181818BDBDBDBEBEBEBEBEBEBEBEBE888888
+0000008888882D2D2D060606151515696969BEBEBEBEBEBEBEBEBE888888000000888888
+2D2D2D060606151515696969BEBEBEBEBEBEBEBEBE888888000000A9A9A9BEBEBE888888
+000000A9A9A9BEBEBEBEBEBE7373732222220505050909092D2D2DA7A7A7BEBEBE757575
+2222220404040A0A0A404040AFAFAFBEBEBEBEBEBE000000000000000000000000000000
+BEBEBEBEBEBE888888000000A9A9A9BEBEBEBABABA5959591414140404041C1C1C717171
+BEBEBEBEBEBEBEBEBE8888880000008787872727270505052626269F9F9FBEBEBEBEBEBE
+808080242424050505040404191919696969BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE888888000000
+A9A9A9BEBEBEBEBEBE787878010101B7B7B7BEBEBE888888000000A9A9A9BEBEBE757575
+2222220404040A0A0A404040AFAFAFBEBEBEBEBEBEBEBEBE737373222222050505090909
+2D2D2DA7A7A7BEBEBEBDBDBD6969691C1C1C0404041414145C5C5CBBBBBBBEBEBEBEBEBE
+808080242424050505040404191919696969BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE8F8F8F000000A0A0A0
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE595959191919BDBDBDBEBEBEBEBEBEBEBEBE
+5F5F5F151515BCBCBCBEBEBE808080242424050505040404191919696969BEBEBEBEBEBE
+000000000000000000000000000000BEBEBEBEBEBEBDBDBD6969691C1C1C040404141414
+5C5C5CBBBBBBBEBEBEBEBEBE8888880000008787872828280606062525259F9F9F999999
+2929290505052525259F9F9FBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBE999999434343DBDBDBE0E0E0D3D3D3CACACAABABAB9A9A9A6666662F4F70
+82BCF8A5C9ED838E9B72747D9EA0B0A9AAB5BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEB7B7B7
+7E7C7973634CBFA176BB9D729E88699E9890ACADAF48576B3B66939FCEB4C6E7C8BEE3BF
+9ECDA86C958E949FA8AAAAAA888888AEAEAEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBE6F597294789AA97BB3D9C2DEFFFFFFFFFFFFFEFDFEB07FBBA570AFA786AEA684AD
+A381ABA17EA99865A4CCB1D2F1EAF3A282A7BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBDBDBD
+9898985454548E908F8D968F7E95837C9F837FAC877FB28878B18270AE7B71B07C84AF8C
+A6AFA86E6E6E656565B1B1B1BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEC4CBFFFFFFFFFFFFA4A4A4272727A1A1A1D7D7D7FFFFFFFFFFFFFFFFFF
+F4F5F5EEEFEFFFFFFFC6C6C6F1F1F1FFFFFFFFFFFFFFFFFFA5A5A5D2D2D2FFFFFFCBD0D5
+BEBEBEBEBEBEBEBEBEC2C2C2D0D0D0F6F6F6F6F6F6F5F5F5F3F3F3B7B7B7232323252525
+7676761E1E1F5F656C7290B46A91BB7EA0C6A2B7D2DEE3EAEBEBEBC6C6C6BEBEBEBEBEBE
+BEBEBEBEBEBECD7E42DD7617DE7314DF7417DF7417E27D20DF883952575F3C6F9C4687BF
+09477D0B44781042774074B339527DF9C42FFBE63ACBAC47BDBDBDBEBEBEBEBEBEBEBEBE
+000000C0C0C0585858000000000000000000000000000000000000000000000000C0C0C0
+FFFFFF000000BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBE7F7F7FE4E4E4C0C0C0C0C0C0E4E4E4C0C0C07F7F7FC0C0C0BEBEBE
+BEBEBEA2A2A2323232FAFAFADADADA9B9B9BBEBEBEF5F5F5F5F5F5F5F5F5F5F5F5F5F5F5
+F5F5F5F5F5F5CDCDCD7C7C7CA7A7A7C8C8C8444444707070AEAEAEBCBCBCBEBEBEBDBDBD
+9B9B9B9B9B9BBDBDBDBDBDBDABABAB7F7F7F545454666640FFFF8FFFFF8FF8E55EECB400
+FDF016FFF619FFF619D4CD144D4C3A757470BABABABEBEBEBEBEBE303030AFAFAFF7F7F7
+D2D2D2C4C4C49E9E9E353A3F507CAB84A0BC687A8D939498BEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBAAC8BA2771C8659007A5002724B04714B097F5811
+946C1B9F761D7C530796680BB28421A57819AB8B49BCB5A5BEBEBEBEBEBEBEBEBEBEBEBE
+C3C8CEFFFFFFFBFBFBA5A5A54D4D4DA1A1A1D5D5D5FFFFFFFFFFFFFFFFFFF4F4F4EEEFF0
+FFFFFFCCCCCCECECECFFFFFFFFFFFFFEFEFEB2B2B2CCCCCCFFFFFFCAD0D6BEBEBE414141
+AAAAAA73737526583605DF0A00EF0600DC0D00CB1400BA1B00A92200972A008431007338
+0C4D3F5862666868689F9F9F9F9F9F7B7B7BB4B4B4BEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+383B3E959DA646607B3D59758394A6F7F8F9DDE2E7FCFDFDEFF1F3A1AEBCFAFCFCDAE0E5
+47617B314E6C2134461D1F21A7A8A8B9B9B9BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEA2A2A2
+5656569B9B9B8181817070707272727676767474746A6A6A5B5B5B5A5A5A626262B9B9B9
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBE888888000000ACACACBEBEBEBEBEBEBEBEBEBEBEBE888888000000878787
+2727270505052626269F9F9FBEBEBEBEBEBE888888000000A9A9A9BEBEBEBEBEBE888888
+000000ACACACBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE8888880000005C5C5C2B2B2B
+BEBEBEBEBEBEBABABA0F0F0F5D5D5D000000ACACACBEBEBEBEBEBE757575222222040404
+0A0A0A404040AFAFAFBEBEBE595959191919BDBDBDBEBEBEBEBEBEBEBEBE5F5F5F151515
+BCBCBCBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+797979000000B4B4B4BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE797979000000
+B4B4B4BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE797979
+000000B4B4B4BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBE828282000000AFAFAFBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE7B7B7B000000
+9C9C9CBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE888888000000A9A9A9BEBEBE
+BEBEBE787878010101B7B7B7BEBEBE8888880000005C5C5C2B2B2BBEBEBEBEBEBEBABABA
+0F0F0F5D5D5D000000ACACACBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE4848485757579F9F9F
+E8E8E8EFEFEF5B5B5B5D5D5D696969555555535353B3B6B9194478A7ADB4BEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+00457E00457E00457E00457E00457E00457E00457E00457E00457EFFFFFFFFFFFF8FAEC7
+00457E00457E00457E0056960073BE0073BE0070BA00457E00457E5F829EBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE949494020202A8A8A8B1B1B1070707878787
+BEBEBEBEBEBEBEBEBE888888000000191919848484A8A8A8717171040404707070BEBEBE
+BEBEBE888888000000191919848484A8A8A8717171040404707070BEBEBEBEBEBE888888
+000000A9A9A9BEBEBE888888000000A9A9A9BEBEBE5E5E5E0707076F6F6FA5A5A5A2A2A2
+767676A4A4A4BEBEBE7777778E8E8EA8A8A88E8E8E1F1F1F3D3D3DBEBEBEBEBEBE7C7C7C
+0000009C9C9CACACACACACACBEBEBEBEBEBE888888000000A9A9A9BEBEBE4B4B4B0D0D0D
+828282A8A8A8717171040404707070BEBEBEBEBEBE8888880000002828289494949F9F9F
+2626262B2B2BBEBEBEA5A5A5020202595959A3A3A3A8A8A88D8D8D808080BEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBE888888000000A9A9A9BEBEBEBEBEBE7F7F7F000000B4B4B4BEBEBE888888
+000000A9A9A9BEBEBE7777778E8E8EA8A8A88E8E8E1F1F1F3D3D3DBEBEBEBEBEBE5E5E5E
+0707076F6F6FA5A5A5A2A2A2767676A4A4A4BEBEBE5959591A1A1A878787A9A9A98B8B8B
+161616565656BEBEBEA5A5A5020202595959A3A3A3A8A8A88D8D8D808080BEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEA1A1A1000000626262BABABABEBEBEBEBEBEBEBEBEBEBEBEBEBEBEA7A7A7010101
+8A8A8ABEBEBEBEBEBEBCBCBC1515155F5F5FBEBEBEA5A5A5020202595959A3A3A3A8A8A8
+8D8D8D808080BEBEBEBEBEBE7C7C7C0000009C9C9CACACACACACACBEBEBEBEBEBE595959
+1A1A1A878787A9A9A98B8B8B161616565656BEBEBEBEBEBE888888000000272727949494
+A1A1A12929292424242E2E2E949494A0A0A02727272B2B2BBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE9999993D3D3DC8C8CACACBCECBCCCED7D7D7
+C3C3C38D8D8D7E7E7E90959A505A6442484E373A439092A59B9DAF9B9DAFB6B7BBBEBEBE
+BEBEBEBEBEBEBEBEBEABABAB4C4843C7AE89E2BE89E2BE89DBB885B59B74B8B2A8B1B2B4
+283341538C9CA8D6A996C298527D5E44625F707982C3C3C3A2A2A2848484B4B4B4BEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBE513356AB91AFA670B0F3EBF4B6A5BB6D4A76B6A5BB
+D6BDDBA46BAFA583ACA380AAA17DA89D79A69962A4A48DA9704E79C0ADC4B6B4B7BEBEBE
+BEBEBEBEBEBEBEBEBEBABABA8787875D5D5DB8BAB9AFC3B380B68974B27F73B37E75B680
+7AB88492C39AABCEB1CDDFD0E0E2E1B9B9B9707070666666B1B1B1BEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEC4CBFFFFFFD1D1D11F1F1FE8E8E8FFFFFF
+FFFFFFFFFFFFFFFFFFFFFFFFF1F2F2EBECECFFFFFF404040EDEDEDFFFFFFFFFFFFFFFFFF
+CDCDCD949494FFFFFFCBD0D5BEBEBEBEBEBEBEBEBEC3C3C3D5D5D5F4F4F4F4F4F4F3F3F3
+F3F3F3F1F1F18A8A8A0606060101014B50576E8CB05F89B77CA0C77D9CC3C1CDDDEFEFEF
+EDEDEDC8C8C8BEBEBEBEBEBEBEBEBEBCBAB8CA6422DF7918DE7415DF7417D9711BCC6D26
+C8964F3C6898457EBA457FBB285D96053265052B5D20457E40547BF9CB0CFCE558D99F27
+B7B7B7BEBEBEBEBEBE000000C0C0C0808080000000000000000000000000000000000000
+000000000000C0C0C0FFFFFFFFFFFF808080000000BEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE7F7F7FE4E4E4BFBFBFBFBFBFE4E4E4
+BFBFBF7F7F7FBFBFBFBEBEBEBEBEBEA2A2A2323232FDFDFDF7F7F7DEDEDE919191C2C2C2
+F5F5F5F5F5F5F5F5F5F5F5F5F5F5F5D9D9D9747474A0A0A0D5D5D5D3D3D3444444707070
+AEAEAEBCBCBCBEBEBE73736FA4A379A096524746405252526F6F6FA5A5A5DCDCDCFCFCED
+FFFF99FFFF8FFBF276EDB601FEF318FFF619EEE6174E4D29B6B6B6BEBEBEBEBEBEBEBEBE
+BEBEBE303030A0A0A0E7E7E7B6B6B6AFAFAF6A6A6A2938476FABE9B8D9FB3F41469395AC
+AFB0B8BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBAAC8EAA7F1F9C6A00
+906100835600784D00704802674104644005653F008A5B01936304A07829B5A688BEBEBD
+BEBEBEBEBEBEBEBEBEBEBEBEC3C8CEFFFFFFC1C1C13F3F3FDADADAFFFFFFFFFFFFFFFFFF
+FFFFFFFFFFFFF1F2F2EAECECFFFFFF5F5F5FCACACAFFFFFFFFFFFFFFFFFFBCBCBCA7A7A7
+FFFFFFCAD0D6BEBEBE7A7A7A6B6B6B939495386B4804DD0900EF0600DC0D00CB1400BA1B
+00A92200972A0084310072370B46374B53565959596A6A6AB8B8B87F7F7FAEAEAEBEBEBE
+BEBEBEBEBEBEBEBEBEBDBDBD191A1B7C848D34506E314E6C34516E7D8FA2F4F6F8FCFDFD
+FCFDFDFCFDFDD9DEE4375471314E6C314E6C2134470A0B0CA3A3A4B7B7B7BDBDBDBEBEBE
+BEBEBEBEBEBEBEBEBEB1B1B16262624B4B4B7171717777777B7B7B727272767676A0A0A0
+C6C6C6CFCFCF707070626262B9B9B9BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE888888000000ACACACBEBEBEBEBEBEBEBEBE
+BEBEBE8888880000002828289494949F9F9F2626262B2B2BBEBEBEBEBEBE888888000000
+A9A9A9BEBEBEBEBEBE888888000000ACACACBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+8888880000009E9E9E070707A2A2A2BEBEBE7F7F7F1C1C1C888888000000ACACACBEBEBE
+BEBEBE7777778E8E8EA8A8A88E8E8E1F1F1F3D3D3DBEBEBEA7A7A70101018A8A8ABEBEBE
+BEBEBEBCBCBC1515155F5F5FBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBE6B6B6B090909BABABABEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBE6B6B6B090909BABABABEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBE6B6B6B090909BABABABEBEBEBEBEBE888888000000A9A9A9BEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEAEAEAE3A3A3A2B2B2BBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBE2B2B2B2D2D2DBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+888888000000A9A9A9BEBEBEBEBEBE7F7F7F000000B4B4B4BEBEBE8888880000009E9E9E
+070707A2A2A2BEBEBE7F7F7F1C1C1C888888000000ACACACBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBE1C1C1CE6E6E6D6D6D6D7D7D7DEDEDE7B7B7BD0D0D0959595616161303030BEBEBE
+778AA06B819BBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBE00457E00457E00457E00457E005FA22079B6BFD1DFBFD1DF
+BFD1DFFFFFFFFFFFFFFFFFFFBFD1DFBFD1DF80B6DB0073BE0073BE0073BE00599A00457E
+00457E5F829EBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE4646463B3B3B
+BEBEBEBEBEBE484848393939BEBEBEBEBEBEBEBEBE888888000000757575BEBEBEBEBEBE
+BEBEBE525252181818BEBEBEBEBEBE888888000000757575BEBEBEBEBEBEBEBEBE525252
+181818BEBEBEBEBEBE888888000000A9A9A9BEBEBE888888000000A9A9A9B3B3B3050505
+6B6B6BBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE7C7C7C
+040404BBBBBBBEBEBE888888000000ACACACBEBEBEBEBEBEBEBEBEBEBEBE888888000000
+A9A9A9AFAFAF020202737373BEBEBEBEBEBEBEBEBE525252171717BEBEBEBEBEBE888888
+000000888888BEBEBEBEBEBE787878010101B7B7B7919191000000919191BEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE888888000000A9A9A9BEBEBEAEAEAE2B2B2B
+232323BEBEBEBEBEBE888888000000A9A9A9BEBEBEBEBEBEBEBEBEBEBEBEBEBEBE7C7C7C
+040404BBBBBBB3B3B30505056B6B6BBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEB3B3B3040404
+8D8D8DBEBEBEBEBEBEBEBEBE767676090909BCBCBC919191000000919191BEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE6565650606060808082C2C2C545454959595
+BEBEBEBEBEBEBEBEBE3939393D3D3DBEBEBEBEBEBE848484030303AAAAAABEBEBE919191
+000000919191BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE888888000000ACACACBEBEBE
+BEBEBEBEBEBEB3B3B30404048D8D8DBEBEBEBEBEBEBEBEBE767676090909BCBCBCBEBEBE
+888888000000888888BEBEBEBEBEBE7979790000008B8B8BBEBEBEBEBEBE797979010101
+B7B7B7BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE9D9D9F43444F
+A6A7B3AFB0BBCBCBCCD9D9D9B3B3B37E7E7E818181707070B9B9B9ADADAD313237999BAE
+999BAE9FA0B1B3B4B9BEBEBEBEBEBEBEBEBEBCBCBC91918F5B5246E5C89EE2BE89E2BE89
+E2BE89DDBA86A68D6287837CB1B1B2222E355A6D748A8F8BB8BDB9C6C9C8AAABAC878787
+676767747474AAAAAABDBDBDBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE3E1F44B69CBAA46CB0
+EEE4F16D4A765C35666D4A76E3D2E7A470AFA27FABA07CA89E79A79C77A59660A05F3969
+5C35668E7396A29AA3BEBEBEBEBEBEBEBEBEBEBEBEBDBDBD9A9A9A3535359F9F9FB8BCB9
+A5C3AA90C199A8CEAFC6DCC9DCE5DDE6EBE7D4D8D5C9CAC9D2D2D2C6C6C6C6C6C6656565
+686868B4B4B4BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEC4CBFFFFFF
+4C4C4C969696FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFF0F0E6E8E8FFFFFF5D5D5D
+FFFFFFFBFBFB909090FEFEFEE2E2E2545454FFFFFFCBD0D5BEBEBEBEBEBEBEBEBEC3C3C3
+D9D9D9F3F3F3F2F2F2F2F2F2F2F2F2F1F1F1B5B5B50C0C0C000000415B7A678FBA6F95C0
+A8BCD5D0D8E3EAECEDEEEEEEEEEEEEC9C9C9BEBEBEBEBEBEBEBEBEBABABABC4F1BDF7815
+DF7417D061129D1D00782A1C28467438639F3E6EAF3E6EAF305C9A062658031C4C031544
+AA8542F8BC03FADC12CDA040B6B6B6BEBEBEBEBEBE000000808080000000000000000000
+000000000000808080000000000000A0A0A4FFFFFFFFFFFFFFFFFFA0A0A4000000BEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE7F7F7F
+E4E4E4BEBEBEBEBEBEE4E4E4BEBEBE7F7F7FBEBEBEBEBEBEBEBEBEA2A2A2323232FCFCFC
+F5F5F5F4F4F4E0E0E07E7E7EC6C6C6F5F5F5F5F5F5F5F5F5E0E0E0656565909090CCCCCC
+E3E3E3D4D4D4444444707070AEAEAEBCBCBCBEBEBE706A4AFAEB84F6DC60F4E2A0FFFEFD
+FFFFFFFFFFFFFFFFFFFFFFFFFFFFE5FFFF92FEFB88EFBE0AFFF619FCF4185956129E9E9E
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBE303030898A92B3B4C3C5C5C5DCDCDC686868515151
+3535351D1D1D4244579B9DAF9395ACBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEA6853BA47100A773009F6D00956400895B007F5300724900663F00653F00915F00
+A06B009462009D7C3DBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEC5CCD3FFFFFF636363828282
+FAFAFAFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEEEFEFE7E8E9FFFFFF6B6B6BF2F2F2EEEEEE
+ACACACEEEEEEC8C8C8757575FFFFFFCAD0D6BEBEBEAEAEAE6767675A5B5C36694704DF09
+00EF0600DC0D00CB1400BA1B00A92200972A008130014A2222302C68696A747474484848
+535353777777B4B4B4BEBEBEBEBEBEBEBEBEBEBEBEBCBDBD1314146E767F314E6C314E6C
+314E6C3A55728E9DAEFCFDFDFCFDFDDDE2E7415C77314E6C314E6C314E6C22364B090A0B
+A0A0A0B5B5B5BDBDBDBEBEBEBEBEBEBEBEBEBEBEBEB5B5B56E6E6E3E3E3E7171718B8B8B
+B1B1B1D5D5D5B6B6B6D0D0D0F8F8F8FBFBFBD3D3D3636363646464BABABABEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE888888000000
+ACACACBEBEBEBEBEBEBEBEBEBEBEBE888888000000888888BEBEBEBEBEBE787878010101
+B7B7B7BEBEBE888888000000A9A9A9BEBEBEBEBEBE888888000000ACACACBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBE888888000000A9A9A9434343595959BEBEBE363636656565
+888888000000ACACACBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE7C7C7C040404BBBBBB
+BEBEBE3939393D3D3DBEBEBEBEBEBE848484030303AAAAAABEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEA0A0A00D0D0D636363BEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEA0A0A00D0D0D636363BEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEA0A0A00D0D0D636363BEBEBEBEBEBEBEBEBE
+9191911D1D1DADADADBEBEBEBEBEBEBEBEBEBEBEBE3030300707070000002D2D2DB4B4B4
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBE9A9A9A0000007C7C7CBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBE888888000000A9A9A9BEBEBEAEAEAE2B2B2B232323BEBEBE
+BEBEBE888888000000A9A9A9434343595959BEBEBE363636656565888888000000ACACAC
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEA7A7A7343434D1D1D1C4C4C4C6C6C6CDCDCD8F8F8FD2D2D2
+A6A6A66F6F6F303030BEBEBE8F9BAA5F7896BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE00457E00457E004E8A0070BA
+0073BE4096CEFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFDFEEF70073BE
+0073BE005FA200457E00457E00457E5F829EBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEB0B0B00606068A8A8ABEBEBEBEBEBE989898010101A8A8A8BEBEBEBEBEBE888888
+000000A2A2A2BEBEBEBEBEBEBEBEBE818181000000B4B4B4BEBEBE888888000000A2A2A2
+BEBEBEBEBEBEBEBEBE818181000000B4B4B4BEBEBE888888000000A9A9A9BEBEBE888888
+000000A9A9A9919191000000A1A1A1BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE919191
+3030300F0F0F090909060606000000AEAEAEBEBEBE888888000000ACACACBEBEBEBEBEBE
+BEBEBEBEBEBE888888000000A9A9A98F8F8F000000A2A2A2BEBEBEBEBEBEBEBEBE818181
+000000B4B4B4BEBEBE888888000000A8A8A8BEBEBEBEBEBE888888000000ADADADBBBBBB
+3333330404043434345F5F5F959595BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE888888000000
+0707070808080101012323239D9D9DBEBEBEBEBEBE888888000000A9A9A9BEBEBE919191
+3030300F0F0F090909060606000000AEAEAE919191000000A1A1A1BEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBE919191000000070707080808080808080808060606000000AEAEAEBBBBBB
+3333330404043434345F5F5F959595BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEB3B3B3
+8585856060602F2F2F000000656565BEBEBEBEBEBE888888030303ABABABBEBEBE373737
+3C3C3CBEBEBEBEBEBEBBBBBB3333330404043434345F5F5F959595BEBEBEBEBEBEBEBEBE
+888888000000ACACACBEBEBEBEBEBEBEBEBE919191000000070707080808080808080808
+060606000000AEAEAEBEBEBE888888000000A8A8A8BEBEBEBEBEBE888888000000ABABAB
+BEBEBEBEBEBE888888000000ADADADBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBCBCBD92939D424557989AA9ADAEB4C7C7C7B7B7B7A6A6A6B9B9B9959595898989
+858585A5A5A626272D777A8A878A9D999CADB0B1B7BBBBBBBEBEBEBEBEBEB6B6B65F5E5C
+A59988E2C08EDCB981CFAC6EC4A15CBD9B51BC9B54A58E6083807BD5D5D5B2B2B2B0AEAC
+746F6764615C686868ABABABB9B9B9BABABABDBDBDBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBE412047B59BBCA56FB0CFB2D6B6A5BB6D4A76B6A5BBBE95C6A276ACA07CA79D78A6
+9C76A59972A39768A282598B6D4A77A184A7B5B3B6BEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+B8B8B87D7D7D4343439D9D9DBDBEBDD3D6D4EDEFEDDFE0E0AAAAAAD2D2D2D1D1D1E1E1E1
+D1D1D1E2E2E2C6C6C6B0B0B0606060727272B4B4B4BEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEC4CBFFFFFF1D1D1DBFBFBFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+EDEFEFE4E6E6FFFFFF717171FFFFFFA4A4A4000000BDBDBDD5D5D5303030FFFFFFCBD0D5
+BEBEBEBEBEBEBEBEBEB5B5B5DADADAF0F0F0F0F0F0EFEFEFEFEFEFD8D8D84242422F3235
+495E76668CB6708FB1A7B5C6EBEBECECECECECECECECECECEDEDEDB9B9B9BFBFBFBEBEBE
+BEBEBEB9B9B9B13C15DE7617DE7416C7500CB93100CC550F7C6D6F4962967573819C8C7C
+586C8D051949010E3C111F56E8BD4BF8B901F9CA11BDA965B9B9B9BEBEBEBEBEBE000000
+585858000000000000000000000000000000C0C0C0000000808080FFFFFFFFFFFFFFFFFF
+FFFFFFC0C0C0000000BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBE7F7F7FE4E4E4BEBEBEBEBEBEE4E4E4BEBEBE7F7F7FBEBEBEBEBEBE
+BEBEBEA2A2A2323232FDFDFDF8F8F8F5F5F5F2F2F2979797575757D5D5D5F4F4F4EDEDED
+5C5C5C747474B2B2B2E8E8E8ECECECD4D4D4444444707070AEAEAEBCBCBCBEBEBE6F6E66
+A38A29A1841D5C4805E1B71EFFE071FFF2C2FFFDFAFFFFFFFFFFFFFFFFD5FEFE90F3CE1E
+FEF51899850A696969BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE2F3349797B8BACADB8
+C3C3C39999999999997B7B7B5757570F253D1E4B7A122F4C1A325311171F5A5A5ABEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEB1A58FA57C21B17C00AC7800A370009A68008F6000
+835600774D00744A00956300A770009A7227ACA08CBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+C3C8CEFFFFFF363636A9A9A9FEFEFEFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEDEEEEE4E6E6
+FFFFFF757575FEFEFEA5A5A5080808B2B2B2C1C1C1484848FFFFFFCAD0D6BEBEBEBEBEBE
+BABABA95969734664403DD0800EF0600DC0D00CB1400BA1B00A922009529015D22233029
+797979A5A5A5BBBBBBD8D8D8ADADAD5757579A9A9ABEBEBEBEBEBEBEBEBEBEBEBEBCBDBD
+0F10116D767E314E6C314E6C314E6C3E59759DABB9FDFEFEFCFDFDE2E7EB455F7A314E6C
+314E6C314E6C24374D0D0E109E9E9EB4B4B5BDBDBDBEBEBEBEBEBEBEBEBEBEBEBEB5B5B5
+6E6E6E4040409A9A9ADFDFDFEEEEEEEDEDEDD3D3D3A2A2A2F2F2F2FEFEFEFAFAFAC8C8C8
+6060606D6D6DB8B8B8BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBE888888000000ACACACBEBEBEBEBEBEBEBEBEBEBEBE888888000000A8A8A8
+BEBEBEBEBEBE888888000000ADADADBEBEBE888888000000A9A9A9BEBEBEBEBEBE888888
+000000ACACACBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE888888000000A9A9A98C8C8C
+131313A8A8A8040404ABABAB888888000000ACACACBEBEBEBEBEBE9191913030300F0F0F
+090909060606000000AEAEAEBEBEBE888888030303ABABABBEBEBE3737373C3C3CBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE9C9C9C131313
+484848BDBDBDBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE9C9C9C131313484848BDBDBD
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE9C9C9C131313484848
+BDBDBDBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEA9A9A9
+A1A1A17F7F7F141414484848BEBEBEBEBEBEBEBEBEBEBEBEBEBEBE4B4B4B121212BABABA
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE888888000000070707080808
+0101012323239D9D9DBEBEBEBEBEBE888888000000A9A9A98C8C8C131313A8A8A8040404
+ABABAB888888000000ACACACBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE222222B3B3B3B0B0B0
+B5B5B5BBBBBB898989CFCFCFADADAD7B7B7B303030BEBEBE8392A55F7896BEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+00457E0048820070BA0073BE0073BE1079BEAFC8DBBFD1DFCFDCE7FFFFFFFFFFFFDFE8EF
+BFD1DFBFD1DF609CC6005FA2004E8A00457E00457E00457E00457E5F829EBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBE686868000000020202020202020202020202000000
+5C5C5CBEBEBEBEBEBE888888000000A2A2A2BEBEBEBEBEBEBEBEBE818181000000B4B4B4
+BEBEBE888888000000A2A2A2BEBEBEBEBEBEBEBEBE818181000000B4B4B4BEBEBE888888
+000000A9A9A9BEBEBE888888000000A9A9A9919191000000A1A1A1BEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEAFAFAF070707454545949494A2A2A2737373000000ACACACBEBEBE888888
+000000ACACACBEBEBEBEBEBEBEBEBEBEBEBE888888000000A9A9A98F8F8F000000A2A2A2
+BEBEBEBEBEBEBEBEBE818181000000B4B4B4BEBEBE888888000000A9A9A9BEBEBEBEBEBE
+888888000000ACACACBEBEBEBEBEBE9999996C6C6C404040060606484848BEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBE888888000000919191A4A4A4AFAFAFBEBEBEBEBEBEBEBEBEBEBEBE888888
+000000A9A9A9AFAFAF070707454545949494A2A2A2737373000000ACACAC919191000000
+A1A1A1BEBEBEBEBEBEBEBEBEBEBEBEBEBEBE8F8F8F0000008C8C8CA3A3A3A3A3A3A3A3A3
+A3A3A3A3A3A3BCBCBCBEBEBEBEBEBE9999996C6C6C404040060606484848BEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE595959060606BABABABEBEBEBDBDBD
+1A1A1A626262A8A8A80101018A8A8ABEBEBEBEBEBEBEBEBEBEBEBE9999996C6C6C404040
+060606484848BEBEBEBEBEBE888888000000ACACACBEBEBEBEBEBEBEBEBE8F8F8F000000
+8C8C8CA3A3A3A3A3A3A3A3A3A3A3A3A3A3A3BCBCBCBEBEBE888888000000A9A9A9BEBEBE
+BEBEBE888888000000ACACACBEBEBEBEBEBE888888000000ACACACBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEB6B7BB73768B2F31409193A7AFB0B1C2C2C2959595
+9F9F9FA6A6A6A8A8A87E7E7E6C6E702F4A642C70B62763A11E4D7E23466D31475E46515D
+9D9EA0BDBDBDB1B1B02F2B23CAB994BE9D57B9974CBE9C54C4A25DC4A25DC19F59BC9A51
+7B683C8B7E61917744B6986ADCB9849E8560565047949392BBBBBBBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBE432247B69CBBA77CB0A871B3D0B3D6F0E7F2CBACD2
+A272AD9F7BA89D78A69C76A3CF854D986FA0956C9E9767A19963A4633C6CBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEB9B9B97B7B7B494949969696BCBCBCD0D0D0E3E3E3
+EDEDEDC0C0C0E5E5E5D0D0D0B7B7B7C9C9C9E4E4E4D6D6D6B8B8B85D5D5D6F6F6FB1B1B1
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEC4CBFFFFFF3B3B3B6C6C6CFFFFFFFFFFFF
+FFFFFFFFFFFFFFFFFFFFFFFFE7E8E8E8EAEAFFFFFF575757FFFFFF4F4F4F030303797979
+A9A9A9292929FFFFFFCBD0D5BEBEBEBEBEBEBEBEBEB4B4B4DCDCDCEEEEEEEEEEEEEEEEEE
+E7E7E77D7D7D1F1F207181947195BD6A88AA243040535556D4D4D4EBEBEBEAEAEAEAEAEA
+ECECECBDBDBDBFBFBFBEBEBEBEBEBEBBBBBBA24839DA6B0EE07B1CDA6A12D94C00DF5A04
+D36614DD751BDA7017B85A15624F380005310105343C3754F7DC38F8AF0EFBE059A5946B
+BDBDBDBEBEBEBEBEBE000000585858000000000000000000000000C0C0C0FFFFFFC0C0C0
+FFFFFFFFFFFFFFFFFFFFFFFFA0A0A4A0A0A4000000BEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE7F7F7FE4E4E4BDBDBDBDBDBDE4E4E4
+BDBDBD7F7F7FBDBDBDBEBEBEBEBEBEA2A2A2323232FCFCFCF5F5F5EBEBEBA4A4A4A5A5A5
+BFBFBF717171CFCFCF656565A2A2A2BCBCBC969696CFCFCFEBEBEBD4D4D4444444707070
+AEAEAEBCBCBCBEBEBEBDBDBD9595959797979E9E9E413F32967601FAC400FFCE1CFFDF6C
+FFF0BDFFFDF7FFFFC4F8E23AEEC60E915800717171BEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BABABC3C3F59666985B9B9B9AEAEAE7777779595958686862B2B2B2E71B82D71B82D71B8
+3483D63C95F3303030BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEADA2919F7722B98200
+B98200B17C00A874009F6D00956500895B008457009B6900AC7500966F25A49A89BEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEC3C8CEFFFFFF464646717171F7F7F7FFFFFFFFFFFFFFFFFF
+FFFFFFFCFCFCE9EAEAE8E9EAFFFFFF626262FDFDFD545454030303727272A8A8A8323232
+FFFFFFCAD0D6BEBEBEBEBEBEBEBEBEB4B4B650816005DF0A00EF0600DC0D00CB1400BA1B
+00A922008C261935225656568080809D9D9DC2C2C2C8C8C8C4C4C4A2A2A2595959BEBEBE
+BEBEBEBEBEBEBEBEBEBDBDBD26292B6B747C314E6C324F6D435E79ADB8C5FAFBFCFCFDFD
+FBFCFCFAFCFCE8EBEE59708833506E314E6C263C51282C319E9E9EB4B4B5BDBDBDBEBEBE
+BEBEBEBEBEBEBEBEBEB6B6B66F6F6F3F3F3F989898DEDEDEF6F6F6F1F1F1ECECECB2B2B2
+BBBBBBFAFAFAF9F9F9EFEFEFBEBEBE5E5E5E6E6E6EB3B3B3BEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE888888000000ACACACBEBEBEBEBEBEBEBEBE
+BEBEBE888888000000A9A9A9BEBEBEBEBEBE888888000000ACACACBEBEBE898989000000
+A9A9A9BEBEBEBEBEBE878787000000ACACACBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+888888000000A9A9A9BDBDBD171717303030373737BEBEBE888888000000ACACACBEBEBE
+AFAFAF070707454545949494A2A2A2737373000000ACACACBEBEBEBDBDBD1A1A1A626262
+A8A8A80101018A8A8ABEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBE8A8A8A0A0A0A565656BDBDBDBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE8A8A8A
+0A0A0A565656BDBDBDBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+8A8A8A0A0A0A565656BDBDBDBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE777777010101B6B6B6BEBEBEBEBEBEBEBEBE
+B2B2B20707075D5D5DBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+888888000000919191A4A4A4AFAFAFBEBEBEBEBEBEBEBEBEBEBEBE888888000000A9A9A9
+BDBDBD171717303030373737BEBEBE888888000000ACACACBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBE303030747474969696A3A3A3AAAAAA676767A7A7A7A0A0A0838383303030BEBEBE
+3155829BA4AFBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBE00457E00599A0073BE0073BE0062A600488200457E00457E
+00457EFFFFFFFFFFFF80A2BF00457E00457E00457E00457E00457E00457E00457E00457E
+00457E8298AABEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBDBDBD1B1B1B5252529D9D9D
+9D9D9D9D9D9D9D9D9D606060121212BABABABEBEBE888888000000767676BEBEBEBEBEBE
+BEBEBE535353181818BEBEBEBEBEBE888888000000767676BEBEBEBEBEBEBEBEBE535353
+181818BEBEBEBEBEBE888888000000A9A9A9BEBEBE888888000000A9A9A9B2B2B2040404
+6B6B6BBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE8D8D8D000000A2A2A2BEBEBEBEBEBE626262
+000000ACACACBEBEBE8B8B8B000000ABABABBEBEBEBEBEBEBEBEBEBEBEBE888888000000
+A9A9A9B0B0B0020202747474BEBEBEBEBEBEBEBEBE525252181818BEBEBEBEBEBE888888
+000000A9A9A9BEBEBEBEBEBE888888000000ACACACBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+767676000000B4B4B4BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE888888000000A9A9A9BEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBE888888000000A9A9A98D8D8D000000A2A2A2BEBEBEBEBEBE626262
+000000ACACACB2B2B20404046B6B6BBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEB1B1B1040404
+747474BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+767676000000B4B4B4BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE7D7D7D
+000000B4B4B4BEBEBEBEBEBE6868681717175B5B5B1A1A1ABDBDBDBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBE767676000000B4B4B4BEBEBE8B8B8B000000ABABABBEBEBE
+BEBEBEBEBEBEB1B1B1040404747474BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+888888000000A9A9A9BEBEBEBEBEBE888888000000ACACACBEBEBEBEBEBE888888000000
+ACACACBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBDBDBEADAEB66A6D88353746
+9193A7B7B7B7C3C3C39999998A8A8A9E9E9EA4A4A45D5D5D6A707723568B307AC7327FCF
+3585D93484D7378AE02B6BAF818B95BABABAB3B2B2403E39AAA596CAB485C1A15DBE9C53
+BD9B52BC9A51B49245C6A461D4B175CEAB6CC2A05BC7A562D5B276D6B37C8F78535A544A
+989797BABABABEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE422248B59BBBA888B0
+A475AFA36DAFA36FAFA179A99F7AA8A889B0EBEAEAF0D2A8EB9027D2B2A993689DA482AC
+9D82A0674F6BBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEB6B6B6787878
+535353949494BDBDBDD9D9D9D7D7D7D7D7D7CFCFCFDDDDDDE5E5E5C5C5C5D1D1D1D8D8D8
+D5D5D5BDBDBD5B5B5B757575B3B3B3BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEC4CBFFFFFF
+C3C3C30E0E0E626262DEDEDEFFFFFFFFFFFFE9E9E9DADADAEEEFF0EBEDEDFFFFFF2F2F2F
+BCBCBC1212127373730A0A0A2A2A2A555555FFFFFFCBD0D5BEBEBEBEBEBEBEBEBEB1B1B1
+DDDDDDEDEDEDECECECEBEBEBBABABA1616165A5B5C93A4B982A0C3A9B3BF4041420C0C0C
+6D6D6DE1E1E1E9E9E9E8E8E8EAEAEAC0C0C0C0C0C0BEBEBEBEBEBEBEBEBE9E7572C84E0C
+E07A16DE7415DE6E0EE1690DBE57166D1C0B542019110F2D00022900022F503337B87A1E
+F6CD00FAD348F3E558938D86BEBEBEBEBEBEBEBEBEBEBEBE000000000000000000000000
+A0A0A4FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFC0C0C0000000000000BEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE7F7F7F
+E4E4E4BCBCBCBCBCBCE4E4E4BCBCBC7F7F7FBCBCBCBEBEBEBEBEBEA2A2A2323232FDFDFD
+EEEEEEABABABA7A7A7E8E8E8EBEBEBDCDCDC797979B3B3B3D2D2D2EAEAEAD6D6D6A9A9A9
+D9D9D9D4D4D4444444707070AEAEAEBCBCBCBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBDBDBD
+7878784E400FF3D02EFFDA30FFD92CFFDC41FFEB88F4D54AD78500B06A005C5C5CBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEAFB0B83C3F525B5F7FBFBFBFB6B6B65E5E5E7F7F7F4D4D4D
+19232D4795E7469CF63E98F6307AC72D71B76B6B6BBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEA89F919A7423BE8600C38900BC8400B57E00AC7700A37000996700926200A16E00
+B27A01976F22A29787BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEC3C8CEFFFFFFB9B9B92A2A2A
+6B6B6BCACACAE0E0E0E4E4E4E7E7E7E3E3E3EAEBEBECEDEDFFFFFF4444449C9C9C383838
+626262151515303030575757FFFFFFCAD0D6BEBEBEBEBEBEBEBEBEB4B4B650816005DF0A
+00EF0600DC0D00CB1400BA1B00A922047F25353836656253605E4E5B5B597D7D7D8E8E8E
+A7A7A7B4B4B43F3F3FBEBEBEBEBEBEBEBEBEBEBEBEBDBDBD414548626B73324E6C48627D
+A3B0BDFCFDFDD7DDE3FCFDFDEFF2F4D4DBE1FBFDFDEBEEF1526A83314E6C25384E353A3E
+9FA0A0B5B5B5BDBDBDBEBEBEBEBEBEBEBEBEBEBEBEBBBBBB7C7C7C333333949494D4D4D4
+F0F0F0F6F6F6F1F1F1D7D7D7989898E4E4E4DCDCDCD7D7D7CFCFCFACACAC6161617E7E7E
+B7B7B7BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE888888000000
+ACACACBEBEBEBEBEBEBEBEBEBEBEBE888888000000A9A9A9BEBEBEBEBEBE888888000000
+ACACACBEBEBE9494940000009A9A9ABEBEBEBEBEBE676767000000ACACACBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBE888888000000A9A9A9BEBEBE5F5F5F000000808080BEBEBE
+888888000000ACACACBEBEBE8D8D8D000000A2A2A2BEBEBEBEBEBE626262000000ACACAC
+BEBEBEBEBEBE6868681717175B5B5B1A1A1ABDBDBDBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBE737373040404686868BEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBE737373040404686868BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBE737373040404686868BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE767676010101
+B7B7B7BEBEBEBEBEBEBEBEBE6A6A6A030303AAAAAABEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBE888888000000A9A9A9BEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBE888888000000A9A9A9BEBEBE5F5F5F000000808080BEBEBE888888000000ACACAC
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBE9B9B9B1818182828288E8E8E9A9A9A6F6F6F838383
+9C9C9C7A7A7A5F5F5F546F9149678DBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE00457E0068AE0073BE0073BE
+00488200457E00457E00457E00457EFFFFFFFFFFFF80A2BF00457E00457E00457E00457E
+00457E00457E00457E00457E00457EB2B6BABEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+8A8A8A0000009F9F9FBEBEBEBEBEBEBEBEBEBEBEBEAEAEAE0202027E7E7EBEBEBE888888
+0000001B1B1B858585A8A8A87373730404046E6E6EBEBEBEBEBEBE8888880000001B1B1B
+858585A8A8A87373730404046E6E6EBEBEBEBEBEBE888888000000A9A9A9BEBEBE888888
+000000A9A9A9BEBEBE5C5C5C0707076F6F6FA5A5A5A2A2A2757575A5A5A5A5A5A5010101
+535353A6A6A6818181151515000000ACACACBEBEBEA2A2A2000000717171AEAEAEAFAFAF
+BEBEBEBEBEBE888888000000A9A9A9BEBEBE4B4B4B0F0F0F848484A8A8A8717171040404
+707070BEBEBEBEBEBE888888000000A9A9A9BEBEBEBEBEBE888888000000ACACAC8F8F8F
+646464969696A9A9A99A9A9A3B3B3B151515BCBCBCBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE888888000000
+A9A9A9BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE888888000000A9A9A9A5A5A5010101
+535353A6A6A6818181151515000000ACACACBEBEBE5C5C5C0707076F6F6FA5A5A5A2A2A2
+757575A5A5A5BEBEBE5B5B5B0C0C0C767676A6A6A6A4A4A47E7E7E5F5F5FBEBEBE8F8F8F
+646464969696A9A9A99A9A9A3B3B3B151515BCBCBCBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE8D8D8D434343828282
+A4A4A4A8A8A88484841A1A1A323232BEBEBEBEBEBEBEBEBEB1B1B1070707040404676767
+BEBEBEBEBEBEBEBEBE8F8F8F646464969696A9A9A99A9A9A3B3B3B151515BCBCBCBEBEBE
+A2A2A2000000717171AEAEAEAFAFAFBEBEBEBEBEBE5B5B5B0C0C0C767676A6A6A6A4A4A4
+7E7E7E5F5F5FBEBEBEBEBEBE888888000000A9A9A9BEBEBEBEBEBE888888000000ACACAC
+BEBEBEBEBEBE888888000000ACACACBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEA9AAB57B7E9963657473768BB2B2B3C8C8C89797977E7E7E7D7D7D6C6C6C8B8B8B
+54606E3C84CE3476BB2D69A7255C972359912B6DB1244D79969BA1BDBDBDBDBDBD989898
+545454AEA9A2E3CEAEDEBD88D3B073CAA866BD9D56DABA86DDBA83DBB881DBB87FD5B378
+C9A765C5A360C9A769897248595346939291BABABABEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBE44244AB59ABAA786AEA482ACA380AAA07CA9B6888BCC9370A97C93BB867EF1A848
+F19B2FD98233A86C72CE7D44A96742908592BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEB6B6B6747474575757939393BCBCBCD0D0D0EAEAEAD7D7D7C8C8C8
+D9D9D9D9D9D9D0D0D0D0D0D0C3C3C3B9B9B9B1B1B13F3F3F898989BEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEC4CBFFFFFFFFFFFFDBDBDB6262621919193A3A3A808080D2D2D2FFFFFF
+F4F5F5EFF0F0FFFFFF3333330101017F7F7FEFEFEF3C3C3C0A0A0ACCCCCCFFFFFFCBD0D5
+BEBEBEBEBEBEBEBEBEAEAEAEDEDEDEEBEBEBEAEAEAD9D9D9515151060606666666BEC0C2
+D2D6DCE7E7E8BBBBBB4F4F4F737373DDDDDDE7E7E7E7E7E7E7E7E7C3C3C3C0C0C0BEBEBE
+BEBEBEBEBEBEAEACAC9E2B1BD65F10E17E17DE730EDE7311DF7815B26E2D4A3A4629296C
+231D4C6D402ADA771DE88C07F1BA2AFBF635B8A430ABABABBEBEBEBEBEBEBEBEBEBEBEBE
+000000000000000000585858FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFC0C0C0000000
+000000000000BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBE7F7F7FE4E4E4BBBBBBBBBBBBE4E4E4BBBBBB7F7F7FBBBBBBBEBEBE
+BEBEBEA2A2A2323232F0F0F0B8B8B8B4B4B4E5E5E5EFEFEFEFEFEFEFEFEFE5E5E5E4E4E4
+EFEFEFEFEFEFEFEFEFD0D0D0AFAFAFC5C5C5444444707070AEAEAEBCBCBCBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBE3E3D37F3F07FFFFB85FFFB85FEFA84F7DF52ECB405
+DE9300CE7C00474644BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEB6B7BB7F829C4A4D6575767A
+ACACACA1A1A1777777737373324E6C1C2C3E24242438434F1A426B1E4B7BA7A7A7BEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEA9A1958F6C2AA67201B67F00BC8400BE8600B88100
+B07B00A773009F6D00A77300B77F00996F1FA29685BEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+C3C8CEFFFFFFFAFAFAC1C1C15F5F5F4444446C6C6CA3A3A3CECECEFAFAFAF4F5F5EFF0F0
+FFFFFF3B3B3B0C0C0C797979D9D9D9545454222222B5B5B5FFFFFFCAD0D6BEBEBEBEBEBE
+BEBEBEB4B4B650816005DF0A00EF0600DC0D00CB1400BA1B00A9220674233D372D8C743C
+7166434646443D3D3D3D3D37626259828282414141BEBEBEBEBEBEBEBEBEBEBEBEBDBDBD
+54575B454A50526A8362798FFCFDFDD4DBE146607BFCFDFDEDF0F3657A91EFF2F4FDFEFE
+61778E304D6A1E2E3E4A4E52A1A1A1B6B6B6BDBDBDBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+A2A2A2575757848484D8D8D8E6E6E6F0F0F0F6F6F6E5E5E5A7A7A7C4C4C4CFCFCFC4C4C4
+BCBCBCB3B3B39494946F6F6FA5A5A5BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBE888888000000ACACACBEBEBEBEBEBEBEBEBEBEBEBE888888000000A9A9A9
+BEBEBEBEBEBE888888000000ACACACBEBEBEB7B7B70B0B0B3F3F3FA5A5A5888888191919
+000000ACACACBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE888888000000A9A9A9BEBEBE
+BABABAAFAFAFBDBDBDBEBEBE888888000000ACACACBEBEBEA5A5A5010101535353A6A6A6
+818181151515000000ACACACBEBEBEBEBEBEB1B1B1070707040404676767BEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE595959010101686868ACACACACACAC
+ACACACACACACBDBDBDBEBEBEBEBEBE595959010101686868ACACACACACACACACACACACAC
+BDBDBDBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE595959010101686868ACACACACACACACACAC
+ACACACBDBDBDBEBEBEBEBEBE9191911D1D1DADADADBEBEBEBEBEBE767676858585A6A6A6
+A7A7A77F7F7F131313414141BEBEBEBEBEBEBEBEBEBDBDBD1C1C1C3E3E3EBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE888888000000A9A9A9BEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBE888888000000A9A9A9BEBEBEBABABAAFAFAFBDBDBD
+BEBEBE888888000000ACACACBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE535353
+323232878787717171818181999999565656777777A7ADB4BEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+00457E0068AE0073BE006DB600457E00457E00457E00457E105186FFFFFFFFFFFF80A2BF
+00457E00457E00457E00457E00457E00457E00457E00457E487397BEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBE3C3C3C232323BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+343434303030BEBEBE8888880000008888882B2B2B050505141414676767BEBEBEBEBEBE
+BEBEBE8888880000008888882B2B2B050505141414676767BEBEBEBEBEBEBEBEBE888888
+000000A9A9A9BEBEBE888888000000A9A9A9BEBEBEBEBEBE6F6F6F1F1F1F040404090909
+303030A8A8A8BEBEBE6E6E6E101010060606353535757575000000ACACACBEBEBEBEBEBE
+5E5E5E121212010101000000BEBEBEBEBEBE888888000000A9A9A9BEBEBEBABABA595959
+1414140404041C1C1C717171BEBEBEBEBEBEBEBEBE888888000000A9A9A9BEBEBEBEBEBE
+888888000000ACACAC9A9A9A3636361010100101010C0C0C3939399F9F9FBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBE888888000000A9A9A9BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE888888
+000000A9A9A9BEBEBE6E6E6E101010060606353535757575000000ACACACBEBEBEBEBEBE
+6F6F6F1F1F1F040404090909303030A8A8A8BEBEBEBEBEBE717171222222040404070707
+272727717171BEBEBE9A9A9A3636361010100101010C0C0C3939399F9F9FBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEA8A8A84C4C4C1F1F1F050505040404191919535353B2B2B2BEBEBEBEBEBEBEBEBE
+BEBEBE474747050505AFAFAFBEBEBEBEBEBEBEBEBE9A9A9A3636361010100101010C0C0C
+3939399F9F9FBEBEBEBEBEBEBEBEBE5E5E5E121212010101000000BEBEBEBEBEBEBEBEBE
+717171222222040404070707272727717171BEBEBEBEBEBE888888000000A9A9A9BEBEBE
+BEBEBE888888000000ACACACBEBEBEBEBEBE888888000000ACACACBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEB2B2B88C8FA89293A25E6075797A7FB6B6B6BCBCBC
+9E9E9E949494A6A6A6BDBDBD3D52684379B24B77A3497FB73A77B53377BD3585DA3E5B7A
+A9AAABBEBEBEBEBEBEBBBBBB9696965F5F5FABA69FE3CDACE3C290D9B67CD1B47CD9B984
+D7B67CD7B47AD6B479D5B379D4B378D2B175C9A969BC9D5C695730524E47ADADADBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBE45254AB49ABAA482ACA27FABA07CA89E79A79C77A4
+AF808CE5A153FCAF3EFCAF3EF7A738EB9027DE7A17D38445432149B7B5B8BEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEB4B4B4747474595959939393
+BDBDBDD3D3D3EEEEEED5D5D5B3B3B3C0C0C0B0B0B0ABABABACACACA8A8A89B9B9B4F4F4F
+6E6E6EBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEC4CBFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+FFFFFFFFFFFFFFFFFFFFFFFFF6F7F7F2F3F3FFFFFFD6D6D6B4B4B4FAFAFAFFFFFFFFFFFF
+F5F5F5FFFFFFFFFFFFCBD0D5BEBEBEBEBEBEBEBEBEAAAAAADFDFDFE9E9E9E7E7E7939393
+111111313131A3A3A3E2E2E2E1E1E1D8D8D8CECECEBEBEBEC1C1C1CECECED6D6D6DFDFDF
+E5E5E5C4C4C4C1C1C1BEBEBEBEBEBEBEBEBEBDBDBD8D6E6EB82704CE4B14DE7621DA680C
+DE740FDE730DDF7818DE7B21DF7B22E0791DDF6F11E78D00FAED26E8C508898171BDBDBD
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBE000000000000000000808080FFFFFFFFFFFFFFFFFF
+C0C0C0808080000000000000000000BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE7F7F7FE4E4E4BABABABABABAE4E4E4
+BABABA7F7F7FBABABABEBEBEBEBEBEA2A2A2282828B9B9B9A8A8A8D0D0D0D5D5D5D5D5D5
+D5D5D5D5D5D5D5D5D5D5D5D5D5D5D5D5D5D5D5D5D5D5D5D5B5B5B59B9B9B373737707070
+AEAEAEBCBCBCBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE43422CFFFB85FFFB85
+FCF8838481444E3D047F6000B38700D69000836106706C61BEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBE9EA0B09697AA3D3F4F8080805959592D4C6C44607C7FA5CB303030535353303030
+25568A223445BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEB4B0AA938369856B3E
+8E6A26976B10A06F02A97500AF7A00B27C00AB7701AC7700B98000966D1CA19582BEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEC3C8CEFFFFFFFFFFFFFEFEFEF4F4F4E9E9E9EAEAEAF6F6F6
+FEFEFEFFFFFFF6F7F7F2F3F3FFFFFFCCCCCCB3B3B3F0F0F0FEFEFEF0F0F0E6E6E6FAFAFA
+FFFFFFCAD0D6BEBEBEBEBEBEBEBEBEB4B4B650816005DF0A00EF0600DC0D00CB1400BA1B
+00A92201842430310E8B5D106A583B6D6D6D5B5A575E4D277F6F47575757787878BEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBE6A6C6D0C0D0E617386395572BEC8D136526F3A5672FCFDFD
+F5F7F8D9DFE4F8FAFB5D748C34506E253C540E12165D5F61A4A4A4B8B8B8BDBDBDBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEB7B7B7818181737373CACACAE6E6E6E6E6E6F0F0F0F5F5F5
+C6C6C6A3A3A3BFBFBFA2A2A29B9B9B9A9A9A8F8F8F6D6D6DA3A3A3BEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE888888000000ACACACBEBEBEBEBEBEBEBEBE
+BEBEBE888888000000A9A9A9BEBEBEBEBEBE888888000000ACACACBEBEBEBEBEBE868686
+191919050505343434767676000000ACACACBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+888888000000A9A9A9BEBEBEBEBEBEBEBEBEBEBEBEBEBEBE888888000000ACACACBEBEBE
+BEBEBE6E6E6E101010060606353535757575000000ACACACBEBEBEBEBEBEBEBEBE474747
+050505AFAFAFBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE000000
+000000000000000000000000000000000000ACACACBEBEBEBEBEBE000000000000000000
+000000000000000000000000ACACACBEBEBEBEBEBE888888000000A9A9A9BEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE000000000000
+000000000000000000000000000000ACACACBEBEBEBEBEBE888888000000A9A9A9BEBEBE
+BEBEBE7272722020200505050404041B1B1B5B5B5BB7B7B7BEBEBEBEBEBEBEBEBE898989
+0000008E8E8EBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+888888000000A9A9A9BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE888888000000A9A9A9
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBE888888000000ACACACBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBE2424243333337272727676769090901E1E1EA7A7A7BEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBE00457E0062A60073BE0073BE00518E00457E00457E00457E
+7096B6FFFFFFFFFFFF7096B600457E00457E00457E00457E00457E00457E00457E0C4D82
+A6AFB6BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE888888000000A9A9A9BEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBE888888000000A9A9A9BEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBE313131444444BEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBBBBBDA2A3B29C9EAF
+8D8F9C585862797A7BA8A8A8A2A2A28686866666664B4C4D415F7D4656688E8E8E858585
+74797F405770235A9465788CB3B3B3BEBEBEBEBEBEBEBEBEBBBBBB929292656565A9A39C
+E2CDAED1B176DAC294D5B67ED2B175D2B175D3B57CD2B57FC4A976A7906389754E736443
+665A425B5852ADADADBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE46264BB499B9A27EAA
+A07CA89D78A69C76A49972A39870A1966D9FAC7A87C98C69E9A24DDF9144AC7072B49BB9
+432148BBBABBBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEB4B4B4747474555555959595BCBCBCC4C4C4A9A9A9A3A3A3A5A5A59A9A9A878787
+7373735E5E5E585858484848969696BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEC0C7CDF9FBFB
+F9FBFBF9FBFBF9FBFBF9FBFBF9FBFBF9FBFBF9FBFBF9FBFBF2F5F5EFF1F1F9FBFBF9FBFB
+F9FBFBF9FBFBF9FBFBF9FBFBF9FBFBF9FBFBF9FBFBCDD2D7BEBEBEBEBEBEBEBEBEA6A6A6
+DFDFDFE7E7E7E0E0E06D6D6D242424B4B4B4E3E3E3E2E2E2D6D6D6C6C6C6B9B9B9AEAEAE
+ADADADB8B8B8C4C4C4D2D2D2E1E1E1C6C6C6C1C1C1BEBEBEBEBEBEBEBEBEBEBEBEB3B3B3
+834642B81E01C22C13C63313CC440ED66119D96618DC6E18DD7317DC740FE28D01F1D200
+EBBD04887347AEAEAEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE000000000000
+000000808080FFFFFFA0A0A4808080000000000000000000BEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE7F7F7F
+E4E4E4BABABABABABAE4E4E4BABABA7F7F7FBABABABEBEBEBEBEBEAAAAAA363636474747
+606060606060606060606060606060606060606060606060606060606060606060606060
+6060604848482E2E2E7E7E7EAFAFAFBCBCBCBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+AEAEAE605F35FFFB85EEEB7C5B5A36838383B7B7B79393936B6B6B6D5711F5DA5E665C36
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEB3B3B35353532235496EB1F89BCAFA
+7A8B9D0C0D0F86AFDB6DB1F8438CD8535353BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBDBDBDB6B3AFA79E919889738C77548D70388D671B8F6103976600996801
+986C13977D4DADA69BBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEC0C7CDF7F9FAF7F9FAF7F9FA
+F7F9FAF7F9FAF7F9FAF7F9FAF7F9FAF7F9FAF1F4F4EEF1F1F7F9FAF7F9FAF7F9FAF7F9FA
+F7F9FAF7F9FAF7F9FAF7F9FAF7F9FAC8CED4BEBEBEBEBEBEBEBEBEB4B4B650816005DF0A
+00EF0600DC0D00CB1400BA1B00A922008F2730591C7A611C292B194245455C58516A4309
+5D4828484848A4A4A4BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEA7A8A817191C545D6748627C
+314E6C314E6C3A5672FCFDFDFCFDFDF8F9FA6E839834506E2E4A67131E2A2D353C79797A
+AAAAAAB9B9B9BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEB1B1B18080807A7A7A
+9D9D9DD3D3D3E6E6E6F1F1F1DDDDDDACACACB3B3B39393938D8D8D8181818181816D6D6D
+A3A3A3BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBE313131444444BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE6E6E6E
+1E1E1EBBBBBBBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE5353530F0F0F3C3C3C
+4A4A4A3C3C3CBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE00457E0056960073BE0073BE
+1079BE4079A640749E80A2BFFFFFFFFFFFFFFFFFFF205C8E00457E00457E00457E00457E
+00457E00457E00457E7690A5BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE888888
+000000A9A9A9BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE888888000000A9A9A9
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEAFAFAF7D7D7D010101969696BEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEB9B9BCAEAFB7B7B7BB93949872727371717143494E2E445C344B643B4C5D
+7493B55F6367ACACAC8585857575754B6480234870868F99BCBCBCBEBEBEBEBEBEBEBEBE
+BEBEBEBABABA919191676767A9A39CD6C4A0E1CEAADAC395D4BD91B6A37E928364756851
+68604D6963556B675F706F6D8181819F9F9FBBBBBBBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBE47274CB499B9A07BA89D78A69B75A49972A2986FA0956C9F93699D91669B8F639A
+8D60988B5D96895B94A98AB16E51747A697DBDBDBDBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEB4B4B47575755151519696969D9D9D898989
+7474745E5E5E5050505555556060606A6A6A7474748E8E8EBABABABEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEC8D0D5E1EAEDE1EAEDE1EAEDE1EAEDE1EAEDE1EAEDE1EAEDE1EAEDE1EAED
+DDE6E9DCE5E8E1EAEDE1EAEDE1EAEDE1EAEDE1EAEDE1EAEDE1EAEDE1EAEDE1EAEDD2D8DD
+BEBEBEBEBEBEBEBEBEA1A1A1DFDFDFE5E5E5E2E2E2BDBDBDAEAEAEE2E2E2E3E3E3E1E1E1
+D9D9D9C9C9C9BFBFBFB6B6B6B5B5B5BDBDBDC9C9C9D6D6D6DFDFDFC5C5C5B6B6B6BEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEA9A9A97C4643A20804B30801B81208B91309BF270DC4380C
+C94A05D26B03DD8E01D08B0D7D6448A4A4A4BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBE000000000000000000A0A0A4808080000000000000000000BEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBE7F7F7FE4E4E4B9B9B9B9B9B9E4E4E4B9B9B97F7F7FB9B9B9BEBEBE
+BEBEBEB8B8B88B8B8B5C5C5C565656555555555555555555555555555555555555555555
+5555555555555555555555555555555555557171719C9C9CB4B4B4BDBDBDBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBDBDBD6B6A67908C49D3CF6E4A4A37A1A1A1BEBEBEBEBEBEBEBEBE
+BEBEBE7F7E7A6862488E8E8DBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBE535353314E6C4F667D303233484B4F8FBCEA6CB0F828517B9B9B9BBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEB9B7B4ADA69C
+9F9380927F628D73459177469C8C73B0AAA2BDBCBBBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BBC2C9E4ECEEE4ECEEE4ECEEE4ECEEE4ECEEE4ECEEE4ECEEE4ECEEE4ECEEE0E8EBDEE6E9
+E4ECEEE4ECEEE4ECEEE4ECEEE4ECEEE4ECEEE4ECEEE4ECEEE4ECEEC1C9D0BEBEBEBEBEBE
+BEBEBEB5B5B65077620FC91703EC0900DC0D01CB1500BA1B00A922009529016927093D22
+163A3A848C904F483C96620F50422E868686B9B9B9BEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+B8B8B865686C1F2123627588395471314E6C3A5673FCFDFDFBFCFC6C8196375370304C6A
+23374D16202A54585D969696B0B0B0BCBCBCBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEAEAEAE8181815A5A5A848484D8D8D8EBEBEBCDCDCD949494898989828282
+7878786868687777776D6D6DA3A3A3BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEAFAFAF7D7D7D010101969696BEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBE343434848484BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEA7A7A75F5F5F484848B3B3B3BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+00457E00457E0065AA0073BEAFD3EBFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF8FAEC700457E
+00457E00457E00457E00457E00457E00457E7690A5BEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBE888888000000A9A9A9BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBE888888000000A9A9A9BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE000000
+0C0C0C636363BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBDBDBDADADAD8B8B8B
+4864815C93CD7CAFE293B5D97C8EA27778796E7A886E90B35580AC4079B33F59759B9D9E
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBABABA919191636363938E839D9689726B5D
+5B564C64625B72706C7E7D7C8B8B8B9C9C9CAEAEAEBBBBBBBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBE48284DB297B89D77A69B74A39871A2976FA1956B9E
+93689D90659B8F63998D60978A5C95895A9486579291669BAD93B35430595F4563B4B2B5
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEB6B6B6
+7979794646464343434040405454546A6A6A7E7E7E919191A2A2A2B5B5B5BDBDBDBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEC8D0D5E1EAEDE1EAEDE1EAEDE1EAEDE1EAED
+E1EAEDE1EAEDE1EAEDE1EAEDDEE8EBDDE6E9E1EAEDE1EAEDE1EAEDE1EAEDE1EAEDE1EAED
+E1EAEDE1EAEDE1EAEDD2D8DDBEBEBEBEBEBEBDBDBD9D9D9DC8C8C8C8C8C8C8C8C8C8C8C8
+C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C6C6C6C2C2C2BEBEBEBEBEBEC2C2C2C6C6C6C7C7C7
+C8C8C8B7B7B7A5A5A5BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEAFAFAF7C6B6B7C2725
+9E130BB71509BA1608BD2509C03E08AE5514885C3275706CABABABBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE000000000000000000
+000000BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE7F7F7FE4E4E4B8B8B8B8B8B8E4E4E4
+B8B8B87F7F7FB8B8B8BEBEBEBEBEBEBEBEBEBABABAB2B2B2ACACACABABABABABABABABAB
+ABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABACACACB2B2B2
+BABABABEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE858585B2A861F0D24F4C452AB4B4B4
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEA7A7A79B9B9BBEBEBE9B9B9B3C3C3C303030
+838383BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBCBBBAB3AFA9B3AEA8BCBCBBBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEB9C1C9E1EAEDE1EAEDE1EAEDE1EAEDE1EAEDE1EAEDE1EAED
+E1EAEDE1EAEDDEE7EADDE6E9E1EAEDE1EAEDE1EAEDE1EAEDE1EAEDE1EAEDE1EAEDE1EAED
+E1EAEDC0C9CFBEBEBEBEBEBEBEBEBEBABABB818A8D4C8D5B1397250DAB2010AE2610AA2B
+119B310F81360D6739275F4E566A6FA2A5A97B7975766A508F8F8EBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBDBDBDB2B3B332363A292E335C6D7E3B5672445E79FDFEFE
+5B7289324F6D2F4B692A435E1A2734353C42898A8BA5A5A5B7B7B7BDBDBDBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEB8B8B89F9F9F6262627D7D7DE0E0E0
+C5C5C57676766969697272725858583A3A3A373737636363AAAAAABEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE0000000C0C0C636363
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBE00457E00457E004882005FA2AFD3EBFFFFFFFFFFFFFFFFFF
+FFFFFF80A2BF00457E00457E00457E00457E00457E00457E0C4D827690A5BEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEA5A5A5516E8D69A5E48FC3F9A9CAEC4E535985888B6B85A086BBF3
+67ACF34280C1697B8EAEAEAEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBABABA
+93939372706F7271708181808D8D8D9C9C9CACACACB9B9B9BEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE503257B198B8A07EA8
+9D7AA59D7AA69975A29973A297719F956F9E926C9B9069998E679A8D63988B61978A5F95
+9C78A5AE94B47B5B81543659A8A2A9BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEB6B6B69393938F8F8F9191919F9F9FAEAEAEBABABABEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEC8CED4E3EBEE
+E3EBEEE3EBEEE3EBEEE3EBEEE3EBEEE3EBEEE3EBEEE3EBEEE1EAEDE1E8EBE3EBEEE3EBEE
+E3EBEEE3EBEEE3EBEEE3EBEEE3EBEEE3EBEEE3EBEED2D7DCBEBEBEBEBEBEBEBEBE949494
+A0A0A0A1A1A19F9F9F9D9D9D9D9D9D9D9D9D9D9D9D9D9D9D9D9D9D9D9D9D9D9D9D9D9D9D
+9D9D9D9D9D9D9D9D9D9F9F9FA1A1A1979797AEAEAEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBBBBBBA5A5A5828282736764715D57705F59706C6A858585A7A7A7BBBBBB
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE7F7F7F
+E4E4E4B7B7B7B7B7B7E4E4E4B7B7B77F7F7FB7B7B7BEBEBEBEBEBEBEBEBEBDBDBDBCBCBC
+BABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABA
+BABABABABABABABABABCBCBCBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE858585
+AD9535DCB221665F4ABEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEB9C1C8DEE6EADEE6EADEE6EA
+DEE6EADEE6EADEE6EADEE6EADEE6EADEE6EADDE5E8DCE5E7DEE6EADEE6EADEE6EADEE6EA
+DEE6EADEE6EADEE6EADEE6EADEE6EABEC7CEBEBEBEBEBEBEBEBEBEBEBEBEBCBCBDA5A6AA
+7F8C8B6C8F7A618B7255836959826E66847A7486858E9399AFB0B2BDBDBDB8B8B8A8A8A8
+B9B9B9BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBCBCBC8C8D8F393E42
+24272A333B433A4B5A314459263B50253A501C2939161F28383F467273759E9E9EB1B1B1
+BBBBBBBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEA6A6A65959597D7D7DA2A2A24D4D4D313131363636555555707070868686A3A3A3
+BABABABEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE00457E00457E00457E00457E
+00457E608EB280A2BF608BAE10518600457E00457E00457E00457E00457E0C4D82487397
+A6AFB6BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBABABA7A7E83485B6E425568586068
+8D8D8D9193975D769085BDF862A5EB3F6A96899198BDBDBDBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBBBBBBB1B1B1B1B1B1B9B9B9BEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBE76607BB5A1B9AE98B4AC98B3AA95B0AA94B0A892ADA68FADA68EABA38BAAA28AA8
+A188A7A086A79E84A59E84A59E84A5A188A8AC96B29F87A47B6580AFABB0BEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEAEB3B9B2B8BEB2B8BEB2B8BEB2B8BEB2B8BEB2B8BEB2B8BEB2B8BEB2B8BE
+B2B8BEB2B8BEB2B8BEB2B8BEB2B8BEB2B8BEB2B8BEB2B8BEB2B8BEB2B8BEB2B8BEAEB4BA
+BEBEBEBEBEBEBEBEBEBFBFBFBFBFBFB2B2B29A9A9A9494948F8F8F8A8A8A868686838383
+8181818282828383838686868A8A8A8F8F8F9494949A9A9AB1B1B1BEBEBEBFBFBFBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBDBDBDBBBBBBBBBBBB
+BDBDBDBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBE7F7F7FE4E4E4B7B7B7B7B7B77F7F7F7F7F7F7F7F7FB7B7B7BEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBE7C7B796C6A63B1B1B1BEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+AFB4B9B2B7BDB2B7BDB2B7BDB2B7BDB2B7BDB2B7BDB2B7BDB2B7BDB2B7BDB2B7BDB2B7BD
+B2B7BDB2B7BDB2B7BDB2B7BDB2B7BDB2B7BDB2B7BDB2B7BDB2B7BDAEB3B9BEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBDBDBDB7B8B9B3B3B5AFB0B2B0B1B3B5B5B7BABBBBBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEB8B8B8999A9A5B5D6034393E242A30010101010202282F37444B524E5154
+7576779D9D9EAEAFAFB9B9B9BDBDBDBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEAEAEAE5E5E5E4444446969698B8B8BA3A3A3
+ADADADB6B6B6BDBDBDBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+B2B6BA00457E00457E00457E00457E00457E00457E00457E00457E00457E00457E00457E
+00457E1251846887A1BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+B7B7B7B0B1B2AFB0B2B0B1B1BABABAB3B3B47A7D8040464D444C547F8388B5B6B7BEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEA69DA7BBB4BEBDB5BFBBB4BEBBB3BDBAB2BCB9B1BB
+B8B0BBB6AEB9B6ADB9B4ACB7B4ABB7B3AAB6B3AAB6B3AAB6B3AAB6B3AAB6B3AAB6B5ACB7
+AFA5B2ACA7AEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BDBDBDBCBCBCBCBCBCBBBBBBB9B9B9BBBBBBBBBBBBBCBCBCBCBCBCBDBDBDBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE7F7F7FE4E4E4B6B6B6B6B6B6B6B6B6
+B6B6B6B6B6B6B6B6B6BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBDBDBDBABABAB2B3B3A8A9A99FA0A09A9A9B
+9697989798989B9C9CA0A0A0A9A9A9B2B2B2B9B9B9BDBDBDBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEB4B4B4
+AEAEAEB6B6B6BBBBBBBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEB5B5B5
+B5B5B5B5B5B5B5B5B5B5B5B5B5B5B5B5B5B5B5B5B5BEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBE
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585858585858585858585858585858585858585858585858585
+858585858585858585858585000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000
+%%PageTrailer
+%%Trailer
+%%EOF

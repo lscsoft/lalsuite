@@ -343,7 +343,7 @@ void LALappsTrackSearchPrepareData( LALStatus        *status,
   else 
     {
 	  /* REMEMBER: If we don't remove line we still need to
-	   * the data!!!
+	   * split the data!!!
 	   * Split incoming data into Segment Vector
 	   * Adjust the segmenter to make orignal segments with
 	   * SegBufferPoints on each side of the segments.
@@ -393,6 +393,9 @@ void LALappsTrackSearchInitialize(
   LIGOTimeGPS     tempGPS;
   INT4 len;
   REAL4 optWidth=0;
+  const char lineDelimiters[]=",";
+  char *token=NULL;
+  CHARVector *lineTokens=NULL;
 
   /* Setup file option to read ascii types and not frames */
   /* getop arguments */
@@ -988,9 +991,20 @@ void LALappsTrackSearchInitialize(
 
 	case 'S':
 	  {
-	    params->listLinesToRemove[params->numLinesToRemove]=
-	      atof(optarg);
-	    params->numLinesToRemove=params->numLinesToRemove+1;
+	    LAL_CALL(LALCHARCreateVector(status,&lineTokens,maxFilenameLength),
+		     status);
+	    memcpy((lineTokens->data),optarg,len);
+	    token=strtok(lineTokens->data,lineDelimiters);
+	    while (token!=NULL)
+	      {
+		params->listLinesToRemove[params->numLinesToRemove]=atof(token);
+		token=strtok(NULL,lineDelimiters);
+		if (token != NULL)
+		  params->numLinesToRemove=params->numLinesToRemove+1;
+	      }
+	    if (lineTokens)
+	      LAL_CALL(LALCHARDestroyVector(status,&lineTokens),
+		       status);
 	  }
 	  break;
 
@@ -3327,10 +3341,10 @@ void LALappsTracksearchRemoveHarmonics( LALStatus             *status,
 	{
 	  /*Setup the proper number of harmonics that should be done!*/
 	  /* Create reference signal IFF Line to remove is less than Fnyq*/
+	  tmpHarmonicCount=params.maxHarmonics;
+	  tmpLineFreq=params.listLinesToRemove[l];
 	  if (params.listLinesToRemove[l] < (params.SamplingRate/2))
 	    {
-	      tmpHarmonicCount=params.maxHarmonics;
-	      tmpLineFreq=params.listLinesToRemove[l];
 	      if ((params.SamplingRate/(2*tmpLineFreq)) <  tmpHarmonicCount)
 		{
 		  tmpHarmonicCount=floor(params.SamplingRate/(2*tmpLineFreq));
@@ -3534,7 +3548,7 @@ void LALappsTracksearchRemoveHarmonics( LALStatus             *status,
 	    }
 	  else
 	    {
-	      fprintf(stderr,"Ignoring line to remove can not be present in data! F_nyq:%f F_line: %f\n",params.SamplingRate/2,tmpLineFreq);
+	      fprintf(stderr,"Ignoring line to remove can not be present in data! F_nyq:%f F_line: %f\n",(params.SamplingRate/2),tmpLineFreq);
 	    }
 	  /* END OF NEW LOOP TO REMOVE ONE LINE AT A TIME */
 	  /*
