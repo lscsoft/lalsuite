@@ -199,7 +199,6 @@ while (0)
 char *lalWatch;
 #endif
 
-
 int
 main( int argc, char **argv )
 {
@@ -299,7 +298,6 @@ main( int argc, char **argv )
       return GEOCENTRICGEODETICTESTC_EARG;
     }
   } /* End of argument parsing loop. */
-
 
   /*******************************************************************
    * SET PARAMETERS                                                  *

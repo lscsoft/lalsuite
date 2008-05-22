@@ -529,15 +529,15 @@ F & = & (1-f)\left|\frac{z}{r_e}\right| + f(2-f) \;,\nonumber\\
 P & = & \frac{4}{3}\left( EF + \varpi^2 \right) \quad = \quad
 	\frac{4}{3}\left[ \varpi^2 + (1-f)^2\left(\frac{z}{r_e}\right)^2
 		- f^2(2-f)^2 \right] \;,\nonumber\\
-Q & = & 2(F^2 - E^2) \quad = \quad
-	8f(1-f)(2-f)\left|\frac{z}{r_e}\right| \;,\nonumber\\
-D & = & P^3 + \varpi^2 Q^2 \;,\nonumber\\
+Q & = & 2\varpi(F^2 - E^2) \quad = \quad
+	8\varpi f(1-f)(2-f)\left|\frac{z}{r_e}\right| \;,\nonumber\\
+D & = & P^3 + Q^2 \;,\nonumber\\
 v & = & \left\{\begin{array}{lr}
-	\left(\sqrt{D}+\varpi Q\right)^{1/3}
-		- \left(\sqrt{D}-\varpi Q\right)^{1/3} &
+	\left(\sqrt{D}+Q\right)^{1/3}
+		- \left(\sqrt{D}-Q\right)^{1/3} &
 		D\geq0 \\
 	2\sqrt{-P}\cos\left(\frac{1}{3}
-		\arccos\left[\frac{Q\varpi}{-P\sqrt{-P}}\right]\right) &
+		\arccos\left[\frac{Q}{-P\sqrt{-P}}\right]\right) &
 		D\leq0 \end{array}\right.\nonumber\\
 W & = & \sqrt{E^2 + \varpi v} \nonumber\\[1ex]
 G & = & \mbox{$\frac{1}{2}$}\left(E+W\right)\;,\nonumber\\
@@ -552,7 +552,18 @@ $\lambda$, latitude $\phi$, and elevation $h$:
 h & = & r_e(\varpi-t/\varpi)\cos\phi
 	+ [z-\mathrm{sgn}({z})r_e(1-f)]\sin\phi \; .
 \end{eqnarray}
-These formulae still leave certain areas where coordinate
+
+\begin{wrapfigure}{r}{0.47\textwidth}
+\vspace{-8ex}
+\begin{center}
+\resizebox{0.42\textwidth}{!}{\includegraphics{inject_geodeticsing}} \\
+\parbox{0.42\textwidth}{\caption{\label{fig:geodeticsing} Singular
+surfaces in the geodetic coordinate system.  The ellipticity of this
+spheroid has been exaggerated compared with the Earth.}}
+\end{center}
+\vspace{-7ex}
+\end{wrapfigure}
+\noindent These formulae still leave certain areas where coordinate
 singularities or numerical cancelations can occur.  Some of these have
 been dealt with in the code:
 \begin{itemize}
@@ -563,18 +574,18 @@ sign for $\phi$.  As $\varpi\rightarrow0$, there are cancellations in
 the computation of $G$ and $t$, which call for special treatment
 (below).
 
-\item There is another coordinate singularity when $p=0$, which
-defines an ellipsoid with equatorial radius $r_0=r_ef(2-f)=42.6977$km
-and axial height $z_0=r_0/(1-f)=42.8413$km.  Within this ellipsoid,
-lines of constant latitude begin to cross one another: a given point
-can be assigned two different latitudes.  The first equation for $v$
-specifies a definite and consistent (though arbitrary) latitude in
-these cases.  However, when $D<0$, in an involuted region inside this
-ellipsoid, the lines of constant latitude uncross again and the first
-expression for $v$ breaks down.  The second expression for $v$ is an
-analytic continuation that gives self-consistent results down to the
-coordinate origin.
+\item There is another coordinate singularity when $D\leq0$, where
+lines of constant geodetic latitude will cross each other, as shown in
+Fig.~\ref{fig:geodeticsing}.  That is, a given point within this
+region can be assigned a range of geodetic latitudes.  The
+multi-valued region lies within an inner ellipsoid $P\leq0$, which in
+the case of the Earth has equatorial radius $r_0=r_ef(2-f)=42.6977$km
+and axial height $z_0=r_0/(1-f)=42.8413$km.  The formula for $v$,
+above, has an analytic continuation to $D\leq0$, assigning consistent
+(though not unique) values of latitute and elevation to these points.
+\end{itemize}
 
+\begin{itemize}
 \item Near the equator we have $Q\rightarrow0$, and the first
 expression for $v$ becomes a difference of nearly-equal numbers,
 leading to loss of precision.  To deal with this, we write that
@@ -582,7 +593,7 @@ expression for $v$ as:
 $$
 \begin{array}{rcl@{\qquad}c@{\qquad}l}
   v &=& D^{1/6}\left[(1+B)^{1/3}-(1-B)^{1/3}\right]
-  &\mbox{where}& B \;\;=\;\; \displaystyle \frac{\varpi Q}{\sqrt{D}} \\
+  &\mbox{where}& B \;\;=\;\; \displaystyle \frac{Q}{\sqrt{D}} \\
   &\approx& D^{1/6}\left[\frac{2}{3}B+\frac{10}{81}B^3\right]
   &\mbox{as}& B \;\;\rightarrow\;\;0
 \end{array}
@@ -590,52 +601,42 @@ $$
 
 The switch from the ``exact'' formula to the series expansion is done
 for $B<10^{-3}$ (within about $2^\circ$ of the equator).  This was
-found by experimentation to give the best behaviour, resulting in
-position errors of order 1 part in $10^{12}$ or less; i.e.\ about 3--4
-digits loss of precision.
+found by experimentation to be the point where the inaccuracy of the
+series expansion is roughly equal to the imprecision in evaluating the
+``exact'' formula.  The resulting position errors are of order 1 part
+in $10^{12}$ or less; i.e.\ about 3--4 digits loss of precision.
 
-\item Near the axis within the singular ellipsoid, we have $E<0$ and
-$W\approx|E|$, so the expression for $G$ becomes a difference of
-nearly-equal numbers.  We write the expressions as:
+\item In some places we have expressions of the form $\sqrt{a^2+b}-a$,
+which becomes a difference of nearly equal numbers for $|b|\ll a^2$,
+resulting in loss of precision.  There are three distinct lines or
+surfaces where this occurs:
+\begin{enumerate}
+\item Near the ellipsoidal surface $P\approx0$, the expression $\sqrt{D}-Q$
+in the equation for $v$ becomes of this form.
+\item Near the polar axis $\varpi\approx0$, the expression for $t$
+becomes of this form.
+\item Near the polar axis $\varpi\approx0$ within the inner ellipsoid,
+we have $E<0$ and the expression for $G$ becomes of this form.
+\end{enumerate}
+In each case, we expand in the small parameter $H=b/a^2$, giving:
 $$
-\begin{array}{rcl@{\qquad}c@{\qquad}l}
-  W &=& |E|\sqrt{1+U}
-  &\mbox{where}& U \;\;=\;\; \displaystyle \frac{\varpi v}{E^2} \\
-  G &=& \frac{-E}{2}\left(\sqrt{1+U}-1\right)
-  &\mbox{for}& E \;\;<\;\;0 \\[1ex]
-  &\approx& \frac{-E}{2}\left(\frac{1}{2}U-\frac{1}{8}U^2
-  +\frac{1}{16}U^3\right) &\mbox{as}& U \;\;\rightarrow\;\;0
-\end{array}
-$$
-
-We switch to the series expansion for $U<2\times10^{-5}$.  This
-formula converges better than the one for $v$ (above), resulting in no
-significant loss of precision.  Normally we wouldn't care about points
-inside the Earth, but points at or very near the coordinate origin
-have a tendency to crop up in test suites, and we would like the
-transformation to be well-behaved in that limit.
-
-\item Near the axis we also have the expression for $t$ becoming a
-difference of nearly-equal numbers.  Again we deal with this by
-series-expanding the expression:
-$$
-\begin{array}{rcl@{\qquad}c@{\qquad}l}
-  t &=& G\left(\sqrt{1+H}-1\right) &\mbox{where}& H \;\;=\;\; \displaystyle
-  \frac{\varpi^2 F - \varpi v G}{G^2 W} \\
-  &\approx& G\left(\frac{1}{2}H-\frac{1}{8}H^2+\frac{1}{16}H^3\right)
-  &\mbox{as}& H \;\;\rightarrow\;\;0
-\end{array}
+\sqrt{a^2+b}-a \;\;\approx\;\; a\left(\mbox{$\frac{1}{2}$}H
+-\mbox{$\frac{1}{8}$}H^2+\mbox{$\frac{1}{16}$}H^3\right)
+\qquad\mbox{for}\qquad |H| = \left|\frac{b}{a^2}\right| \ll 1
 $$
 
-We switch to the series expansion for $|H|<2\times10^{-5}$, again
-leading to no significant loss of precision.
+We switch to the series expansion for $|H|<\times10^{-4}$, which again
+is the point where residual errors in the series expansion are about
+the same as the loss of precision without the expansion.  This formula
+converges much better than the one for $v$ (above), resulting in
+negligible loss of precision in the final position.
+
+\item The only remaining known numerical singularities are at the
+poles of the inner ellipsoid, shown as red dots in
+Fig.~\ref{fig:geodeticsing}.  These points stubbornly resist
+high-precision calculation.  However, they are extremely unlikely to
+come up in practice.
 \end{itemize}
-
-There is one known remaining set of points where errors can
-significantly exceed double-precision uncertainty: points on or very
-near the singular ellipsoid, but not near the polar axis or equatorial
-plane.  These points are not likely to come up in practice, so no
-effort has yet been made to resolve this numerical singularity.
 
 \paragraph{Ellipsoidal vs.\ orthometric elevation:} In this module it
 is assumed that all elevations refer heights above the reference
@@ -674,9 +675,8 @@ XLALGreenwichMeanSiderealTime()
 #include <string.h>
 
 #define LAL_EARTHFLAT (0.00335281)
-#define LAL_HSERIES (0.00002) /* value H below which we expand t */
-#define LAL_BSERIES (0.001)   /* value B below which we expand v */
-#define LAL_USERIES (0.00002) /* value U below which we expand G */
+#define LAL_HSERIES (0.0001) /* value H below which we expand sqrt(1+H)-1 */
+#define LAL_BSERIES (0.001)  /* value B below which we expand v */
 
 NRCSID( TERRESTRIALCOORDINATESC, "$Id$" );
 
@@ -950,7 +950,7 @@ LALGeocentricToGeodetic( LALStatus *stat, EarthPosition *location )
 
   /* Do the general transformation even if z=0. */
   else {
-    REAL8 za, e, f, p, q, d, d2, b, v, w, u, g, h, gh, t, phi, tanP;
+    REAL8 za, e, f, p, p3, q, q2, d, d2, b, v, w, g, h, gh, t, phi, tanP;
     /* intermediate variables */
 
     /* See if we're inside the singular ellipsoid.
@@ -967,39 +967,49 @@ LALGeocentricToGeodetic( LALStatus *stat, EarthPosition *location )
     e = za - f2;
     f = za + f2;
     p = ( 4.0/3.0 )*( pi*pi + za*za - f2*f2 );
-    q = 8.0*f2*za;
-    d = p*p*p + pi*pi*q*q;
+    p3 = p*p*p;
+    q = 8.0*pi*f2*za;
+    q2 = q*q;
+    h = p3/q2;
+    d = p3 + q2;
 
     /* Compute v, using series expansion if necessary. */
     if ( d >= 0.0 ) {
       d2 = sqrt( d );
-      b = pi*q/d2;
-      if ( b < LAL_BSERIES )
+      b = q/d2;
+      if ( fabs( h ) < LAL_HSERIES ) {
+	if ( h < 0.0 )
+	  v = pow( d2 + q, 1.0/3.0 )
+	    + pow( -0.5*q*h*( 1.0 - 0.25*h*( 1.0 - 0.5*h ) ), 1.0/3.0 );
+	else
+	  v = pow( d2 + q, 1.0/3.0 )
+	    - pow( 0.5*q*h*( 1.0 - 0.25*h*( 1.0 - 0.5*h ) ), 1.0/3.0 );
+      } else if ( b < LAL_BSERIES ) {
 	v = pow( d2, 1.0/3.0 )*( b*( 2.0/3.0 + b*b*10.0/81.0 ) );
-      else if ( b < 1.0 )
+      } else if ( b < 1.0 ) {
 	v = pow( d2, 1.0/3.0 )*( pow( 1.0 + b, 1.0/3.0 ) -
 				 pow( 1.0 - b, 1.0/3.0 ) );
-      else
+      } else {
 	v = pow( d2, 1.0/3.0 )*( pow( b + 1.0, 1.0/3.0 ) +
 				 pow( b - 1.0, 1.0/3.0 ) );
+      }
     } else {
-      v = 2.0*sqrt( -p )*cos( acos( pi*q/( -p*sqrt( -p ) ) )/3.0 );
+      v = 2.0*sqrt( -p )*cos( acos( q/( -p*sqrt( -p ) ) )/3.0 );
     }
 
     /* Compute t, using series expansion if necessary. */
-    u = v*pi/( e*e );
-    w = fabs( e )*sqrt( 1.0 + u );
-    if ( e > 0.0 || u > LAL_USERIES )
+    h = v*pi/( e*e );
+    w = fabs( e )*sqrt( 1.0 + h );
+    if ( e > 0.0 || h > LAL_HSERIES )
       g = 0.5*( e + w );
     else
-      g = -0.25*e*u*( 1.0 - 0.25*u*( 1.0 - 0.5*u ) );      
-    gh = sqrt( fabs( pi*( f*pi - v*g )/w ) );
-    h = gh/g;
-    h *= h;
+      g = -0.25*e*h*( 1.0 - 0.25*h*( 1.0 - 0.5*h ) );      
+    gh = fabs( pi*( f*pi - v*g )/w );
+    h = gh/( g*g );
     if ( fabs( h ) > LAL_HSERIES )
-      t = sqrt( g*g + gh*gh ) - g;
+      t = g*( sqrt( 1.0 + h ) - 1.0 );
     else
-      t = g*( h*( 0.5 - h*( 0.125 - h*0.0625 ) ) );
+      t = 0.5*g*h*( 1.0 - 0.25*h*( 1.0 - 0.5*h ) );
 
     /* Compute latitude, longitude, and elevation. */
     tanP = ( pi - t )*( pi + t )/( 2.0*f1*pi*t );
