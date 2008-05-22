@@ -531,7 +531,7 @@ int ComputeNoise(struct CommandLineArgsTag CLA, int n)
 {
 
   INT4 k,j;
-  REAL8 mean_Sh_derr, mean_caldr, mean_caldi, ratio_r, ratio_i, var_r, var_i;
+  REAL8 mean_Sh_derr, mean_caldr, mean_caldi, ratio_r, ratio_i, var_r, var_i,diff_r,diff_i;
   REAL8 mean_Sh_hoft, mean_hr, mean_hi;
   REAL4 mean_overlap, mean_r, mean_i;
   COMPLEX8 R,H,C;
@@ -617,14 +617,11 @@ int ComputeNoise(struct CommandLineArgsTag CLA, int n)
       mean_Sh_hoft = 0.0;
       mean_overlap = 0.0;
       mean_r=mean_i=0.0;
-      mean_hr = 0.0;
-      mean_hi = 0.0;
-      mean_caldr = 0.0;
-      mean_caldi = 0.0;
-      ratio_r = 0.0;
-      ratio_i = 0.0;
-      var_r = 0.0;
-      var_i = 0.0;
+      mean_hr = mean_hi = 0.0;
+      mean_caldr = mean_caldi = 0.0;
+      ratio_r =ratio_i= 0.0;
+      var_r=var_i=0.0;
+      diff_r = diff_i=0.0;
       {
 	int firstbin=(INT4)(frequencies[j]*CLA.t+0.5);
 	int nsamples=(INT4)(CLA.b*CLA.t+0.5);
@@ -671,6 +668,9 @@ int ComputeNoise(struct CommandLineArgsTag CLA, int n)
 	    
 	    var_r += (pow(hr,2.0)/pow(caldr,2.0))/nsamples;
 	    var_i += (pow(hi,2.0)/pow(caldi,2.0))/nsamples;
+
+            diff_r += pow((caldr*2.0*derr.deltaT/(REAL4)derr.data->length) - (hr*2.0*hoft.deltaT/(REAL4)hoft.data->length),2.0)/nsamples;
+            diff_i += pow((caldi*2.0*derr.deltaT/(REAL4)derr.data->length) - (hi*2.0*hoft.deltaT/(REAL4)hoft.data->length),2.0)/nsamples;
 	    
 	    if(CLA.outputphase)
  	    fprintf(stdout,"%e %e %e %e \n",hr,hi,caldr,caldi); 
@@ -688,13 +688,14 @@ int ComputeNoise(struct CommandLineArgsTag CLA, int n)
         ratio_i *= sqrt((2.0*hoft.deltaT/(REAL4)hoft.data->length) / (2.0*derr.deltaT/(REAL4)derr.data->length)); 
 	var_r *= 2.0*hoft.deltaT/(REAL4)hoft.data->length / 2.0*derr.deltaT/(REAL4)derr.data->length; 
 	var_i *= 2.0*hoft.deltaT/(REAL4)hoft.data->length / 2.0*derr.deltaT/(REAL4)derr.data->length; 
-	
+
+
 	var_r = var_r - pow(ratio_r,2.0);
 	var_i = var_i - pow(ratio_i,2.0);
 	
       }
-      fprintf(fpout, "%e %e %e %e %e %e %e %e %e %e ",sqrt(mean_Sh_hoft), sqrt(mean_Sh_derr),
-      mean_hr,mean_hi,mean_caldr,mean_caldi,ratio_r,ratio_i,sqrt(var_r),sqrt(var_i));
+      fprintf(fpout, "%e %e %e %e %e %e %e %e %e %e %e %e ",sqrt(mean_Sh_hoft), sqrt(mean_Sh_derr),
+	      mean_hr,mean_hi,mean_caldr,mean_caldi,ratio_r,ratio_i,sqrt(var_r),sqrt(var_i),diff_r,diff_i);
       
     }
   
