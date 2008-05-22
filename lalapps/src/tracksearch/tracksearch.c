@@ -340,9 +340,22 @@ void LALappsTrackSearchPrepareData( LALStatus        *status,
 							params);
 	}
     }
-  else if (params.verbosity >= verbose)
+  else 
+    {
+	  /* REMEMBER: If we don't remove line we still need to
+	   * the data!!!
+	   * Split incoming data into Segment Vector
+	   * Adjust the segmenter to make orignal segments with
+	   * SegBufferPoints on each side of the segments.
+	   */
+	  LAL_CALL(LALTrackSearchDataSegmenter(status,
+					       dataSet,
+					       dataSegments,
+					       params),
+		   status);
+      if (params.verbosity >= verbose)
     	fprintf(stdout,"Lines and Harmonics will NOT be removed.\n");
-
+    }
 
   /*
    * If we are to whiten first let us calculate the 
