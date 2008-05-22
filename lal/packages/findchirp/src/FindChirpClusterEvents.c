@@ -174,7 +174,7 @@ LALFindChirpClusterEvents (
   deltaF = 1.0 / ( (REAL4) params->deltaT * (REAL4) numPoints );
   kmax = input->fcTmplt->tmplt.fFinal / deltaF < numPoints/2 ?
     input->fcTmplt->tmplt.fFinal / deltaF : numPoints/2;
-
+  
   /* normalisation */
   norm = input->fcTmplt->norm; 
   BVLen = bankVetoData->length;
@@ -241,7 +241,7 @@ LALFindChirpClusterEvents (
      }
    }
 
-
+  
   /* look for an events in the filter output */
   for ( j = ignoreIndex; j < numPoints - ignoreIndex; ++j )
   {
@@ -267,12 +267,15 @@ LALFindChirpClusterEvents (
         params->chisqParams->norm        = norm;
 
         /* compute the chisq bin boundaries for this template */
-        if ( ! params->chisqParams->chisqBinVec->data )
+        if (params->chisqParams->chisqBinVec->data)
         {
-          LALFindChirpComputeChisqBins( status->statusPtr,
-            params->chisqParams->chisqBinVec, input->segment, kmax );
-          CHECKSTATUSPTR( status );
+          LALFree(params->chisqParams->chisqBinVec->data);
+          params->chisqParams->chisqBinVec->data = NULL;
         }
+        
+        LALFindChirpComputeChisqBins( status->statusPtr,
+            params->chisqParams->chisqBinVec, input->segment, kmax );
+            CHECKSTATUSPTR( status );
         
         /* compute the chisq threshold: this is slow! */
         LALFindChirpChisqVeto( status->statusPtr, params->chisqVec,
