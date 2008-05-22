@@ -2722,7 +2722,7 @@ LALappsWriteSearchResults(LALStatus      *status,
   INT4             j=0;
 
   totalFile=fopen(myFilename,"w");
-  fprintf(totalFile,"# Total Curves,Lh,Ll: %i,%f,%f\n",outCurve.numberOfCurves,outCurve.startThreshCut,outCurve.linePThreshCut);
+  fprintf(totalFile,"# Total Curves,Lh,Ll: %i,%e,%e\n",outCurve.numberOfCurves,outCurve.startThreshCut,outCurve.linePThreshCut);
   fprintf(totalFile,"# Legend: Col,Row;gpsSec,gpsNanoSec,Freq,depth\n");
   /*Form of solution FreqIndex,TimeIndex,GPSSec,GPSNano,Power*/
   for (i = 0;i < outCurve.numberOfCurves;i++)
