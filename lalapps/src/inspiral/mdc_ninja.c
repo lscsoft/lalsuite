@@ -506,7 +506,7 @@ INT4 main( INT4 argc, CHAR *argv[] )
       memset( injData[i]->data->data, 0.0, injData[i]->data->length * sizeof(REAL4) );
 
       if (addNoise)  {
-	LAL_CALL( add_colored_noise( &status, injData[i], i, randParams, dynRange, 10), &status);
+	LAL_CALL( add_colored_noise( &status, injData[i], i, randParams, dynRange, 40), &status);
       }
     }
 
@@ -871,6 +871,7 @@ void add_colored_noise(LALStatus       *status,
   INT4              length         = chan->data->length;
   REAL8             deltaT         = chan->deltaT;
   REAL8             deltaF         = 1.0 / (deltaT * (REAL8) length);
+  REAL8             tObs           = length * deltaT;
 
   FILE *fp=NULL;
 
@@ -889,22 +890,25 @@ void add_colored_noise(LALStatus       *status,
   TRY( LALDCreateVector( status->statusPtr, &spectrum, length / 2 + 1 ), status );
   
   get_spectrum( spectrum, ifoNumber, deltaF, strainHighPassFreq, dynRange);
-
-  fp = fopen("spectrum.dat", "w");
-  for ( k = 0; k < spectrum->length; k++)
-    fprintf(fp, "%e\n", spectrum->data[k]);
-  fclose(fp);
-
+  
   /* Color white noise with given psd */
   for ( k=0; k < ntilde->length; k++ )
     {
-      ntilde->data[k].re = ntilde_re->data[k] * sqrt(( (REAL4) length * 0.25 /
-						       (REAL4) deltaT ) * (REAL4) spectrum->data[k] );
-      ntilde->data[k].im = ntilde_im->data[k] * sqrt(( (REAL4) length * 0.25 /
-						       (REAL4) deltaT ) * (REAL4) spectrum->data[k] );
+      ntilde->data[k].re = ntilde_re->data[k] * sqrt( 0.25 * tObs * spectrum->data[k] );
+      ntilde->data[k].im = ntilde_im->data[k] * sqrt( 0.25 * tObs * spectrum->data[k] );
     }
   /* setting d.c. and Nyquist to zero */
   ntilde->data[0].im = ntilde->data[length / 2].im = 0.0;
+
+
+  /*   fp = fopen("ntilde.dat", "w"); */
+  /*   for ( k = 0; k < length/2 + 1; k++) */
+  /*     fprintf(fp, "%e   %e   %e   %e    %e   %e\n", k*deltaF,
+	 ntilde_re->data[k], 
+	 ntilde_im->data[k], ntilde->data[k].re, ntilde->data[k].im, 
+	 spectrum->data[k]); */
+  /*   fclose(fp); */
+
   
   /* Fourier transform back in the time domain */
   TRY( LALCreateReverseRealFFTPlan( status->statusPtr, &invPlan, length, 0 ), status );
