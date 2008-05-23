@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2007 Badri Krishnan, Iraj Gholami, Reinhard Prix, Karl Wette
+*  Copyright (C) 2007 Badri Krishnan, Iraj Gholami, Reinhard Prix, Karl Wette, Alicia Sintes
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -88,6 +88,8 @@ enum tagMATH_OP_TYPE {
   MATH_OP_ARITHMETIC_MEDIAN,    /** x_1 <= ... x_{n/2} <= .. <= x_n */
   MATH_OP_HARMONIC_SUM,         /** 1 / sum(1/x) */
   MATH_OP_HARMONIC_MEAN,        /** n / sum(1/x) */
+  MATH_OP_POWERMINUS2_SUM,        /** 1 / sqrt( sum(1/x/x) )*/
+  MATH_OP_POWERMINUS2_MEAN,        /** 1 / sqrt( sum(1/x/x) /n )*/
   MATH_OP_MINIMUM,              /** x_1 <= ... */
   MATH_OP_MAXIMUM,              /** ... <= x_n */
   MATH_OP_LAST
@@ -427,7 +429,7 @@ REAL8 math_op(REAL8* data, size_t length, INT4 type) {
 
   switch (type) {
 
-  case MATH_OP_ARITHMETIC_SUM: /* sum(data)/length  */
+  case MATH_OP_ARITHMETIC_SUM: /* sum(data) */
 
     for (i = 0; i < length; ++i) res += *(data++);
 
@@ -466,6 +468,20 @@ REAL8 math_op(REAL8* data, size_t length, INT4 type) {
 
     break;
 
+  case MATH_OP_POWERMINUS2_SUM: /*   1 / sqrt ( sum(1 / data/data) )*/
+
+    for (i = 0; i < length; ++i) res += 1.0 / (data[i]*data[i]);
+    res = 1.0 / sqrt(res);
+
+    break;
+ 
+   case MATH_OP_POWERMINUS2_MEAN: /*   1 / sqrt ( sum(1/data/data) / length )*/
+
+    for (i = 0; i < length; ++i) res += 1.0 / (data[i]*data[i]);
+    res = 1.0 / sqrt(res / (REAL8)length);
+
+    break;
+   
   case MATH_OP_MINIMUM: /* first element of sort(data) */
 
     gsl_sort(data, 1, length);
@@ -535,7 +551,7 @@ initUserVars (LALStatus *status, int argc, char *argv[], UserVariables_t *uvar)
   LALregSTRINGUserStruct ( status, 	timeStampsFile, 't', UVAR_OPTIONAL, 	"Time-stamps file");
 
   LALregINTUserStruct ( status, 	blocksRngMed,  	'w', UVAR_OPTIONAL, 	"Running Median window size");
-  LALregINTUserStruct ( status,         mthopOverSFTs,  'S', UVAR_OPTIONAL,     "Type of math. operation over SFTs: 0=arith-sum, 1=arith-mean, 2=arith-median, 3=harm-sum, 4=harm-mean, 5=min, 6=max");
+  LALregINTUserStruct ( status,         mthopOverSFTs,  'S', UVAR_OPTIONAL,     "Type of math. operation over SFTs:  0=arith-sum, 1=arith-mean, 2=arith-median, 3=harm-sum, 4=harm-mean, 5=power-2-sum, 6=power-2-mean, 7=min, 8=max");
   LALregINTUserStruct ( status,         mthopOverIFOs,  'I', UVAR_OPTIONAL,     "Type of math. operation over IFOs: as for mthopOverSFTs");
   LALregREALUserStruct( status,         finalPSDBinSize,'B', UVAR_OPTIONAL,     "Bin the final PSD into bins of size (default: no binning)");
   LALregINTUserStruct ( status,        finalPSDBinMthOp,'A', UVAR_OPTIONAL,     "If binning, type of math. operation over frequency bins: as for mthopOverSFTs");
