@@ -818,6 +818,8 @@ LALInspiralChooseModel(
    break;
  case Eccentricity:
    ak->tn = 5.*ak->totalmass/256./ak->eta/pow(LAL_PI*ak->totalmass*params->fLower/3.*2.,8./3.);
+   ak->flso = pow(ak->vlso,3.)/(LAL_PI * ak->totalmass);
+   
    break;
  default:
    ABORT( status, 9999, "Unknown case in switch." );
