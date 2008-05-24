@@ -39,20 +39,13 @@
 #include <lal/LALError.h>
 #include <lal/LALDatatypes.h>
 #include <lal/AVFactories.h>
-/*#include <lal/FrameStream.h>
-#include <lal/FrameCalibration.h>
-#include <lal/Window.h>
-#include <lal/TimeFreqFFT.h>
-#include <lal/IIRFilter.h>
-#include <lal/ResampleTimeSeries.h>
-#include <lal/BandPassTimeSeries.h>*/
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOLwXML.h>
 #include <lal/LIGOLwXMLRead.h>
 #include <lal/LIGOLwXMLInspiralHeaders.h>
 #include <lal/Date.h>
 #include <lal/Units.h>
-/*#include <lal/FindChirp.h>*/
+
 
 
 /* Here, I defined my own xml table outside the lal strcuture although
@@ -71,54 +64,32 @@
 "%f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %d %d %u %u"
 
 /*do not use capital here for future mysql migration */
-#define PRINT_LIGOLW_XML_BANKEFFICIENCY(fp) ( \
+#define PRINT_LIGOLW_XML_BANKEFFICIENCY(fp) (\
 fputs( "   <Table Name=\"bankefficiencygroup:bankefficiency:table\">\n", fp) == EOF || \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:psi0\"                  Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:psi3\"                  Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:psi0_sim\"              Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:psi3_sim\"              Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:tau0\"                  Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:tau3\"                  Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:tau0_sim\"              Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:tau3_sim\"              Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:ecc\"                   Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:ecc_sim\"               Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:ffinal\"                Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:ffinal_sim\"            Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:mass1_sim\"             Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:mass2_sim\"             Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:phase_sim\"             Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:snr\"                   Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:snr_at_ta\"             Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:phase\"                 Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:alpha_f\"               Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:time\"                  Type=\"int_4s\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:time_sim\"              Type=\"int_4s\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:nfast\"                 Type=\"int_4s\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:nfast_max\"                 Type=\"int_4s\"/>\n", fp) == EOF ||  \
-fputs( "      <Stream Name=\"bankefficiencygroup:bankefficiency:table\"                 Type=\"Local\" Delimiter=\",\">\n", fp) == EOF ) 
-/*
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:spin1_x_sim\"           Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:spin1_y_sim\"           Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:spin1_z_sim\"           Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:spin2_x_sim\"           Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:spin2_y_sim\"           Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:spin2_z_sim\"           Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:source_theta_sim\"      Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:source_phi_sim\"        Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:inclination_sim\"       Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:polarisationAngle_sim\" Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:spin1_x\"               Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:spin1_y\"               Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:spin1_z\"               Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:spin2_x\"               Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:spin2_y\"               Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:spin2_z\"               Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:source_theta\"          Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:source_phi\"            Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:inclination\"           Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:polarisationAngle\"     Type=\"real_4\"/>\n", fp) == EOF ||  \
- */
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:psi0\"               Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:psi3\"               Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:psi0_sim\"           Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:psi3_sim\"           Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:tau0\"               Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:tau3\"               Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:tau0_sim\"           Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:tau3_sim\"           Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:ecc\"                Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:ecc_sim\"            Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:ffinal\"             Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:ffinal_sim\"         Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:mass1_sim\"          Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:mass2_sim\"          Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:phase_sim\"          Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:snr\"                Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:snr_at_ta\"          Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:phase\"              Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:alpha_f\"            Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:time\"               Type=\"int_4s\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:time_sim\"           Type=\"int_4s\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:nfast\"              Type=\"int_4s\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:nfast_max\"          Type=\"int_4s\"/>\n", fp) == EOF ||  \
+fputs( "      <Stream Name=\"bankefficiencygroup:bankefficiency:table\"              Type=\"Local\" Delimiter=\",\">\n", fp) == EOF )
 
 
 #define CVS_ID_STRING      "$Id$"
@@ -149,73 +120,73 @@ fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:polarisationAngl
 
 /* --- Some constants --- 
  * useful to fill  InspiralTemplate, Bank and userParam structure */
-#define BANKEFFICIENCY_ALPHABANK       		0.01
-#define BANKEFFICIENCY_ALPHASIGNAL    		0.
-#define BANKEFFICIENCY_FLOWER       		40.
-#define BANKEFFICIENCY_HIGHGM                   6 
-#define BANKEFFICIENCY_IETA	                1
-#define BANKEFFICIENCY_IFLSO           		0.
-#define BANKEFFICIENCY_LOWGM                    3
-#define BANKEFFICIENCY_INSIDEPOLYGON            1
-#define BANKEFFICIENCY_MMCOARSE     		0.8
-#define BANKEFFICIENCY_MMFINE       		0.9
-#define BANKEFFICIENCY_MMIN            		5.
-#define BANKEFFICIENCY_MMAX           		20.
-#define BANKEFFICIENCY_NOISEMODEL           	"LIGOI"
-#define BANKEFFICIENCY_NENDPAD         		0
-#define BANKEFFICIENCY_NFCUT           		5
-#define BANKEFFICIENCY_NOISEAMPLITUDE  		1.
-#define BANKEFFICIENCY_NSTARTPAD  		1000
-#define BANKEFFICIENCY_NTRIALS         		1
-#define BANKEFFICIENCY_PSI0MIN        		10.
-#define BANKEFFICIENCY_PSI0MAX    		250000.
-#define BANKEFFICIENCY_PSI3MIN     		-2200.
-#define BANKEFFICIENCY_PSI3MAX       		-10.
-#define BANKEFFICIENCY_ORDER_SIGNAL     	twoPN
-#define BANKEFFICIENCY_ORDER_TEMPLATE   	twoPN
-#define BANKEFFICIENCY_SIGNAL  		       -1
-#define BANKEFFICIENCY_SIGNALAMPLITUDE 		10.
-#define BANKEFFICIENCY_SPACE    		Psi0Psi3
-#define BANKEFFICIENCY_STARTTIME       		0.
-#define BANKEFFICIENCY_STARTPHASE    		0.
-#define BANKEFFICIENCY_TEMPLATE        	       -1
-#define BANKEFFICIENCY_TYPE            		0
-#define BANKEFFICIENCY_TSAMPLING    		2048.
-#define BANKEFFICIENCY_USEED        		122888
+#define BANKEFFICIENCY_ALPHABANK            0.01
+#define BANKEFFICIENCY_ALPHASIGNAL          0.
+#define BANKEFFICIENCY_FLOWER               40.
+#define BANKEFFICIENCY_HIGHGM               6 
+#define BANKEFFICIENCY_IETA                 1
+#define BANKEFFICIENCY_IFLSO                0.
+#define BANKEFFICIENCY_LOWGM                3
+#define BANKEFFICIENCY_INSIDEPOLYGON        1
+#define BANKEFFICIENCY_MMCOARSE             0.8
+#define BANKEFFICIENCY_MMFINE               0.9
+#define BANKEFFICIENCY_MMIN                 5.
+#define BANKEFFICIENCY_MMAX                 20.
+#define BANKEFFICIENCY_NOISEMODEL           "LIGOI"
+#define BANKEFFICIENCY_NENDPAD              0
+#define BANKEFFICIENCY_NFCUT                5
+#define BANKEFFICIENCY_NOISEAMPLITUDE       1.
+#define BANKEFFICIENCY_NSTARTPAD            1000
+#define BANKEFFICIENCY_NTRIALS              1
+#define BANKEFFICIENCY_PSI0MIN              10.
+#define BANKEFFICIENCY_PSI0MAX              250000.
+#define BANKEFFICIENCY_PSI3MIN              -2200.
+#define BANKEFFICIENCY_PSI3MAX              -10.
+#define BANKEFFICIENCY_ORDER_SIGNAL         twoPN
+#define BANKEFFICIENCY_ORDER_TEMPLATE       twoPN
+#define BANKEFFICIENCY_SIGNAL               -1
+#define BANKEFFICIENCY_SIGNALAMPLITUDE      10.
+#define BANKEFFICIENCY_SPACE                Psi0Psi3
+#define BANKEFFICIENCY_STARTTIME            0.
+#define BANKEFFICIENCY_STARTPHASE           0.
+#define BANKEFFICIENCY_TEMPLATE             -1
+#define BANKEFFICIENCY_TYPE                 0
+#define BANKEFFICIENCY_TSAMPLING            2048.
+#define BANKEFFICIENCY_USEED                122888
 
-/* Other Parameters  1 = true ; 0 = false	*/
-#define BANKEFFICIENCY_ALPHAFCONSTRAINT         1       /* alphaF between 0 and 1	        */
-#define BANKEFFICIENCY_ALPHAFUNCONSTRAINT       0 	/* alphaF between 0 and 1	        */
-#define BANKEFFICIENCY_QUIETFLAG       	        0 	/* silent                               */ 
-#define BANKEFFICIENCY_FASTSIMULATION           0       /* cheating code (dont use template far 
-                                                           from injection; use with care        */
-#define BANKEFFICIENCY_PRINTOVERLAP             0	/* Print Best Overlap 			*/
-#define BANKEFFICIENCY_PRINTBESTOVERLAP         0	/* Print Best Overlap 			*/
-#define BANKEFFICIENCY_PRINTBESTTEMPLATE        0	/* Print Best Template 			*/
-#define BANKEFFICIENCY_PRINTSNRHISTO            0	/* Print histogram of the n template correlation.*/
-#define BANKEFFICIENCY_PRINTOVERLAP_FILE        "BE_BestOverlap.dat"	/* Print Best Overlap in a file */
-#define BANKEFFICIENCY_PRINTFILTER              0	/* Print corresponding Filter		*/
-#define BANKEFFICIENCY_PRINTBANK		0	/* print the template bank		*/
-#define BANKEFFICIENCY_PRINTBANK_FILEASCII	"BE_Bank.dat"		/* print template bank in a file*/
-#define BANKEFFICIENCY_PRINTBANKXML		0	/* print the template bank		*/
-#define BANKEFFICIENCY_PRINTBANK_FILEXML	"BE_Bank.xml"		/* print template bank in a file*/
-#define BANKEFFICIENCY_PRINTRESULT		1	/* print the result (ascii)		*/
-#define BANKEFFICIENCY_PRINTRESULTXML		0	/* print the template bank		*/
-#define BANKEFFICIENCY_PRINTRESULT_FILEXML	"BE_Result.xml"		/* print the result (xml file)  */
-#define BANKEFFICIENCY_PRINTPROTOTYPE		0	/* print the overlap of the templates	*/
-#define BANKEFFICIENCY_PRINTBANKOVERLAP		0	/* print the overlap of the templates	*/
-#define BANKEFFICIENCY_PRINTPSD                 0	/* print psd used in <x|x>      	*/
-#define BANKEFFICIENCY_PRINTPSD_FILE		"BE_PSD.dat"		/* Print Psd in a file	*/
-#define BANKEFFICIENCY_PRINTTEMPLATE    	0	/* print the  BCV final template	*/
-#define BANKEFFICIENCY_FAITHFULNESS             0				
-
-
-#define BANKEFFICIENCY_PRINTPROTO_FILEXML	"BE_Proto.xml"	/* print the result (xml file)  */
-
-#define BEASCII2XML_INPUT1 "Trigger.dat"
-#define BEASCII2XML_INPUT2 "BE_Proto.xml"
-#define BEASCII2XML_OUTPUT "Trigger.xml"
-#define BEASCII2XML_BANK   "BE_Bank.xml"
+/* Other Parameters  1 = true ; 0 = false   */
+#define BANKEFFICIENCY_ALPHAFCONSTRAINT     1 /* alphaF between 0 and 1       */
+#define BANKEFFICIENCY_ALPHAFUNCONSTRAINT   0 /* alphaF between 0 and 1       */
+#define BANKEFFICIENCY_QUIETFLAG            0 /* silent                       */ 
+#define BANKEFFICIENCY_FASTSIMULATION       0 /* cheating code (dont use temp
+                                                 late far from injection; use 
+                                                 with care                    */
+#define BANKEFFICIENCY_PRINTOVERLAP         0 /* Print Best Overlap           */
+#define BANKEFFICIENCY_PRINTBESTOVERLAP     0 /* Print Best Overlap           */
+#define BANKEFFICIENCY_PRINTBESTTEMPLATE    0 /* Print Best Template          */
+#define BANKEFFICIENCY_PRINTSNRHISTO        0 /* Print histogram of all SNRs. */
+#define BANKEFFICIENCY_PRINTFILTER          0 /* Print corresponding Filter   */
+#define BANKEFFICIENCY_PRINTBANK            0 /* print the template bank      */
+#define BANKEFFICIENCY_PRINTBANKXML         0 /* print the template bank      */
+#define BANKEFFICIENCY_PRINTRESULT          1 /* print the result (ascii)     */
+#define BANKEFFICIENCY_PRINTRESULTXML       0 /* print the template bank      */
+#define BANKEFFICIENCY_PRINTPROTOTYPE       0 /* print the prototype          */
+#define BANKEFFICIENCY_PRINTBANKOVERLAP     0 /* print template's overlap     */
+#define BANKEFFICIENCY_PRINTPSD             0 /* print psd used in <x|x>      */
+#define BANKEFFICIENCY_PRINTTEMPLATE        0 /* print BCV's final template   */
+#define BANKEFFICIENCY_FAITHFULNESS         0               
+#define BANKEFFICIENCY_PRINTPROTO_FILEXML   "BankEfficiency-Proto.xml"  
+#define BankEfficiencyASCII2XML_INPUT1      "Trigger.dat"
+#define BankEfficiencyASCII2XML_INPUT2      "BankEfficiency-Proto.xml"
+#define BankEfficiencyASCII2XML_OUTPUT      "Trigger.xml"
+#define BANKEFFICIENCY_OUTPUT_XML_BANK      "BankEfficiency-Bank.xml"
+#define BANKEFFICIENCY_OUTPUT_ASCII_SIGNAL  "BankEfficiency-Signal.dat"
+#define BANKEFFICIENCY_PRINTOVERLAP_FILE    "BankEfficiency-BestOverlap.dat"
+#define BANKEFFICIENCY_PRINTBANK_FILEASCII  "BankEfficiency-Bank.dat"       
+#define BANKEFFICIENCY_PRINTBANK_FILEXML    "BankEfficiency-Bank.xml"       
+#define BANKEFFICIENCY_PRINTRESULT_FILEXML  "BankEfficiency-Result.xml"     
+#define BANKEFFICIENCY_PRINTPSD_FILE        "BankEfficiency-PSD.dat"        
+#define BANKEFFICIENCY_SNRHISTOGRAM        "BankEfficiency-SNR_histrogram.dat"
 
 
 /* ==================== local structures ==================== */
@@ -240,42 +211,42 @@ typedef enum {
 
 /* what kind of noisemodel ?*/
 typedef enum{
-    UNITY,
-    LIGOI,
-    LIGOA,
-    GEO,
-    TAMA,
-    VIRGO,
-    REALPSD,
-    READPSD,
-    EGO
+  UNITY,
+  LIGOI,
+  LIGOA,
+  GEO,
+  TAMA,
+  VIRGO,
+  REALPSD,
+  READPSD,
+  EGO
 } DetectorName;
 
 
 typedef struct{
-  AlphaConstraint alphaFConstraint;     /* force alpha_F to be constriant between 0 and 1 */
-  INT4 signal;				/* name of the random signal to inject 	*/	
-  INT4 template;			/* name of the template in the bank 	*/
-  INT4 ntrials;				/* number of simulations		*/
-  INT4 fastSimulation;                  /* target the injection in the bank --> less 
-					   computation but Match might be less than the
-					   optimal  is noise is injected or template and 
-					   signal are not faithful (ie: BCV against physical
-					   template */
+  AlphaConstraint alphaFConstraint; /* force alpha_F to be  between 0 and 1   */
+  INT4 signal;                      /* name of the random signal to inject    */  
+  INT4 template;                    /* name of the template in the bank       */
+  INT4 ntrials;                     /* number of simulations                  */
+  INT4 fastSimulation;              /* target the injection in the bank --> less 
+                                       computation but Match might be less than 
+                                       the optimal  is noise is injected or 
+                                       template andsignal are not faithful (ie:
+                                       BCV against physical template          */
 
-  INT4 lengthFactor;			/* multiply estimated length of filters by that factor */
-  INT4 printSNRHisto;		
-  INT4 printBank;			/* print bank of templates 		*/
-  INT4 eccentricBank;			/* print bank of templates 		*/
+  INT4 lengthFactor;                /* multiply estimated length by this number*/
+  INT4 printSNRHisto;       
+  INT4 printBank;                   /* print bank of templates      */
+  INT4 eccentricBank;               /* print bank of templates      */
   INT4 printResultXml;
   INT4 printPrototype;
-  INT4 printPsd;                        /* print the psd used in <x|x>          */
-  BinaryInjection binaryInjection;      /*injection will be set by the mass-range*/
+  INT4 printPsd;                    /* print the psd used in <x|x>            */
+  BinaryInjection binaryInjection;  /*injection will be set by the mass-range */
   INT4 printBestOverlap, printBestTemplate, extraFinalPrinting ;
 
   INT4 faithfulness;
   INT4 snrAtCoaTime;
-  double m1,m2, psi0,psi3, tau0, tau3;
+  REAL8 m1,m2, psi0,psi3, tau0, tau3;
   DetectorName noiseModel;
   REAL4 maxTotalMass;
   REAL4 minTotalMass;
@@ -290,6 +261,7 @@ typedef struct{
   REAL8 mmFine;
   REAL8 t0FineMin, t0FineMax, t3FineMin, t3FineMax, t0FineBin, t3FineBin;
   REAL8 eccentricityMin, eccentricityMax;
+  CHAR tag[256];
 }
 UserParametersIn;
 
@@ -310,8 +282,6 @@ typedef struct{
   REAL4 polarisationAngle, inclination;
   InspiralTemplate bestUTemplate;
   REAL4 snrAtCoaTime; 
-  
-
 } OverlapOutputIn;
 
 /* structure to output the results */
@@ -343,7 +313,6 @@ typedef struct{
   REAL4 spin2_x, spin2_y,spin2_z;
   REAL4 sourceTheta0, sourcePhi0;
   REAL4 inclination, polarisationAngle;
-
 } ResultIn;
 
 
@@ -352,7 +321,7 @@ typedef struct{
   REAL4Vector a11;
   REAL4Vector a21;
   REAL4Vector a22;
-} BEMoments;
+} BankEfficiencyMoments;
 
 
 /* vectors for BCV storage*/
@@ -361,102 +330,105 @@ typedef struct{
   REAL4Vector fm2_3;
   REAL4Vector fm7_6;
   REAL4Vector fm1_2;
-} BEPowerVector;
+} BankEfficiencyPowerVector;
 
 
 /* As to be cleaned
  * Function to store the optimal  parameters of the overlap 
  * lmax : number of the layer
  * fMax : frequency cutoff of the template
- * jmax: number of the best template. use if one want to use the FMaximization option 
+ * jmax: number of the best template. use if one want to use the FMaximization 
+ * option. 
  * */
 void
-KeepHighestValues(OverlapOutputIn in , 
-		  OverlapOutputIn *out,
-		  InspiralTemplate insptmplt);
-
-
+BankEfficiencyKeepHighestValues(
+  OverlapOutputIn  in , 
+  OverlapOutputIn *out,
+  InspiralTemplate insptmplt);
+          
 /* function to create the filters in the BCV overlap.
- * Input: 	- Vectors F^(-5/3) and so on
- * 		- Matrix of the moments for the amplitude
- * 		- indice at which the template starts
- * 		- psi0 and psi3 for the phase
- * Output	- The two orthogonal filters 
+ * Input:   - Vectors F^(-5/3) and so on
+ *      - Matrix of the moments for the amplitude
+ *      - indice at which the template starts
+ *      - psi0 and psi3 for the phase
+ * Output   - The two orthogonal filters 
  * */
 void 
-LALCreateBCVFilters(REAL4Vector 	*Filter1,
-		    REAL4Vector 	*Filter2,
-		    BEPowerVector  *powerVector,
-		    BEMoments      *moments,
-		    UINT4 		kMin,
-		    UINT4 		kMax,
-		    REAL4 		psi0,
-		    REAL4 		psi3);
+BankEfficiencyCreateBCVFilters(
+  REAL4Vector               *Filter1,
+  REAL4Vector               *Filter2,
+  BankEfficiencyPowerVector *powerVector,
+  BankEfficiencyMoments     *moments,
+  UINT4                      kMin,
+  UINT4                      kMax,
+  REAL4                      psi0,
+  REAL4                      psi3);
 
 void
-LALCreateBCVSpinFilters(REAL4Vector 	*FilterBCVSpin1,
-			REAL4Vector 	*FilterBCVSpin2,
-			REAL4Vector 	*FilterBCVSpin3,
-			InspiralWaveOverlapIn   *overlapin,
-			BEPowerVector  *powerVector,
-			BEMoments      *moments,
-			UINT4 		kMin,
-			UINT4 		kMax);
-		
-void 
-LALBankPrintAscii(MetadataTable          templateBank ,
-		  UINT4                  numCoarse,
-		  InspiralCoarseBankIn   coarseBankIn );
-
-void
-LALBankPrintXML(MetadataTable templateBank,
-		InspiralCoarseBankIn   coarseBankIn,
-		RandomInspiralSignalIn randIn,
-		UserParametersIn           userParam);
-void
-CreateListfromTmplt(InspiralTemplate *insptmplt, 
-		    SnglInspiralTable *tmpltCurrent);
+BankEfficiencyCreateBCVSpinFilters(
+  REAL4Vector               *FilterBCVSpin1,
+  REAL4Vector               *FilterBCVSpin2,
+  REAL4Vector               *FilterBCVSpin3,
+  InspiralWaveOverlapIn     *overlapin,
+  BankEfficiencyPowerVector *powerVector,
+  BankEfficiencyMoments     *moments,
+  UINT4                      kMin,
+  UINT4                      kMax);
+        
+void BankEfficiencyBankPrintAscii(
+  MetadataTable          templateBank ,
+  UINT4                  numCoarse,
+  InspiralCoarseBankIn   coarseBankIn );
 
 
-void
-BEGenerateInputData(LALStatus *status,
-		    REAL4Vector * signal,
-		    RandomInspiralSignalIn  *randIn,
-		    UserParametersIn           userParam);
+void BankEfficiencyBankPrintXML(
+  MetadataTable          templateBank,
+  InspiralCoarseBankIn   coarseBankIn,
+  RandomInspiralSignalIn randIn,
+  UserParametersIn       userParam);
 
-void
-BEInitOverlapOutputIn(OverlapOutputIn *this);
+void BankEfficiencyCreateListfromTmplt(
+  InspiralTemplate  *insptmplt, 
+  SnglInspiralTable *tmpltCurrent);
+
+void BankEfficiencyGenerateInputData(
+  LALStatus              *status,
+  REAL4Vector            *signal,
+  RandomInspiralSignalIn *randIn,
+  UserParametersIn        userParam);
+
+void BankEfficiencyInitOverlapOutputIn(
+  OverlapOutputIn *this);
 
 /* Function to compute a orthogonal vector in BCV
  * */
-void
-LALGetOrthogonalFilter(REAL4Vector *filter);
+void BankEfficiencyGetOrthogonalFilter(
+  REAL4Vector *filter);
 
 
 /* Functon to compute the overlap between an injected signal 
  * and a set of templates based on BCV templates. 
  * It returns the overlap, the phase and alpha parameter. 
  * */
-void
-LALWaveOverlapBCV(LALStatus 		  *status,
-		  REAL4Vector             *correlation,
-		  InspiralWaveOverlapIn   *overlapin,
-		  REAL4Vector             *Filter1, 
-		  REAL4Vector             *Filter2,
-		  UserParametersIn        userParam, 
-		  OverlapOutputIn         *OverlapOutput,
-		  BEMoments               *moments);
+void BankEfficiencyWaveOverlapBCV(
+  LALStatus               *status,
+  REAL4Vector             *correlation,
+  InspiralWaveOverlapIn   *overlapin,
+  REAL4Vector             *Filter1, 
+  REAL4Vector             *Filter2,
+  UserParametersIn         userParam, 
+  OverlapOutputIn         *OverlapOutput,
+  BankEfficiencyMoments   *moments);
 
-void
-LALWaveOverlapBCVSpin(LALStatus 		  *status,
-		      REAL4Vector             *correlation,
-		      InspiralWaveOverlapIn   *overlapin,
-		      REAL4Vector             *Filter1, 
-		      REAL4Vector             *Filter2,
-		      REAL4Vector             *Filter3,
-		      UserParametersIn        userParam, 
-		      OverlapOutputIn         *OverlapOutput
-		      );
+void BankEfficiencyWaveOverlapBCVSpin(
+  LALStatus               *status,
+  REAL4Vector             *correlation,
+  InspiralWaveOverlapIn   *overlapin,
+  REAL4Vector             *Filter1, 
+  REAL4Vector             *Filter2,
+  REAL4Vector             *Filter3,
+  UserParametersIn         userParam, 
+  OverlapOutputIn         *OverlapOutput);
 
 
 /* Function to store the moments needed by the BCV overlap process 
@@ -464,266 +436,274 @@ LALWaveOverlapBCVSpin(LALStatus 		  *status,
  * of the matrix needed in the BCV maximization process. 
  * */
 void
-LALCreateBCVMomentVector(BEMoments            *moments,
-			 REAL8FrequencySeries *psd,
-			 REAL8 sampling, REAL8 fLower,
-			 INT4 length);
+BankEfficiencyCreateBCVMomentVector(
+  BankEfficiencyMoments *moments,
+  REAL8FrequencySeries  *psd,
+  REAL8                  sampling, 
+  REAL8                  fLower,
+  INT4                   length);
 
 /* Function to create Vectors of the form y(f)= f^(-a/b). 
  * where f is the frequency. 
  * */
-void 
-LALCreateVectorFreqPower( REAL4Vector	 	*vector,
-			  InspiralTemplate 	params,
-			  int 			a,
-			  int 			b);
+void BankEfficiencyCreateVectorFreqPower( 
+  REAL4Vector      *vector,
+  InspiralTemplate  params,
+  INT4              a,
+  INT4              b);
 
 
 /* function to generate waveform (has to be tested). 
  * */
-void
-LALGenerateWaveform(LALStatus 			*status,
-		    REAL4Vector 		*signal,
-		    RandomInspiralSignalIn 	*params);
+void BankEfficiencyGenerateWaveform(
+  LALStatus              *status,
+  REAL4Vector            *signal,
+  RandomInspiralSignalIn *params);
 
 
-void 
-GetResult(
-    LALStatus 			*status,
-    InspiralTemplate     	*list,
-    InspiralTemplate       	injected,
-    OverlapOutputIn 	        bestOverlapout, 
-    ResultIn                    *result,
-    UserParametersIn            userParam );
+void BankEfficiencyGetResult(
+  LALStatus        *status,
+  InspiralTemplate *list,
+  InspiralTemplate  injected,
+  OverlapOutputIn   bestOverlapout, 
+  ResultIn         *result,
+  UserParametersIn  userParam );
 
 /* Init the CoarseBank structure 
  * */
 void
-InitInspiralCoarseBankIn(
-    InspiralCoarseBankIn 	*coarseIn);
+BankEfficiencyInitInspiralCoarseBankIn(
+    InspiralCoarseBankIn    *coarseIn);
 
 /* Init the random structure 
  * */
-void
-InitRandomInspiralSignalIn(
-    RandomInspiralSignalIn 	*randIn);
+void BankEfficiencyInitRandomInspiralSignalIn(
+  RandomInspiralSignalIn *randIn);
 
 /* Init the UserParametersIn structure
  * */
-void
-InitUserParametersIn(
-    UserParametersIn    *userParam);
+void BankEfficiencyInitUserParametersIn(
+  UserParametersIn *userParam);
 
 /* Function to initialize the different strucutre */
-void
-ParametersInitialization(
-    InspiralCoarseBankIn        *coarseIn, 
-    RandomInspiralSignalIn	*randIn, 
-    UserParametersIn		*userParam);
+void BankEfficiencyParametersInitialization(
+  InspiralCoarseBankIn   *coarseIn, 
+  RandomInspiralSignalIn *randIn, 
+  UserParametersIn       *userParam);
+
 /* Parsing function 
  * */
-void
-ParseParameters(
-    int         *argc, 
-    char 	**argv,
-    InspiralCoarseBankIn 	*coarseIn,
-    RandomInspiralSignalIn 	*randIn,
-    UserParametersIn 		*userParam);		     
+void BankEfficiencyParseParameters(
+  INT4                    *argc, 
+  CHAR                   **argv,
+  InspiralCoarseBankIn    *coarseIn,
+  RandomInspiralSignalIn  *randIn,
+  UserParametersIn        *userParam);             
 
 /* function to check validity of some parameters
  * */
-void 	
-UpdateParams(InspiralCoarseBankIn 	*coarseIn,
-	     RandomInspiralSignalIn 	*randIn,
-	     UserParametersIn 		*userParam);
+void BankEfficiencyUpdateParams(
+  InspiralCoarseBankIn   *coarseIn,
+  RandomInspiralSignalIn *randIn,
+  UserParametersIn       *userParam);
 
 
 /* Default values
  * */
-void 
-SetDefault(InspiralCoarseBankIn 	*coarseIn, 
-	   RandomInspiralSignalIn 	*randIn,
-	   UserParametersIn 		*userParam);
+void BankEfficiencySetDefault(
+  InspiralCoarseBankIn   *coarseIn, 
+  RandomInspiralSignalIn *randIn,
+  UserParametersIn       *userParam);
 
 /* Help Function 
  * */
-void
-Help(void);
+void BankEfficiencyHelp(void);
 
 /* Print Function for final results 
  * */
-void
-PrintResults(
-    ResultIn                    result,
-    RandomInspiralSignalIn      randIn,
-    INT4                        n,
-    INT4                        N);
+void BankEfficiencyPrintResults(
+  ResultIn                    result,
+  RandomInspiralSignalIn      randIn,
+  INT4                        n,
+  INT4                        N);
 
 
 
 /* Print each  template bank overlap 
  * */
-void
-PrintBankOverlap(InspiralTemplateList 	**list,
-		 int 			sizeBank,
-		 float 			*overlap,
-		 InspiralCoarseBankIn 	coarseIn);
+void BankEfficiencyPrintBankOverlap(
+  InspiralTemplateList **list,
+  INT4                   sizeBank,
+  REAL4                 *overlap,
+  InspiralCoarseBankIn   coarseIn);
 
 /* Print the template bank coordinates in ascii format 
  * */
-void
-BEPrintBank(
-    InspiralCoarseBankIn 	coarse, 
-    InspiralTemplateList 	**list,
-    UINT4 			sizeBank);
+void BankEfficiencyPrintBank(
+  InspiralCoarseBankIn   coarse, 
+  InspiralTemplateList **list,
+  UINT4                  sizeBank);
 
 /* print the template bank coordinates  in xml format 
  * */
-void 
-BEPrintBankXml(
-    InspiralTemplateList        *coarseList,
-    UINT4 		        numCoarse,
-    InspiralCoarseBankIn        coarseIn,
-    RandomInspiralSignalIn      randIn,
-    UserParametersIn            userParam
-    );
+void BankEfficiencyPrintBankXml(
+  InspiralTemplateList  *coarseList,
+  UINT4                  numCoarse,
+  InspiralCoarseBankIn   coarseIn,
+  RandomInspiralSignalIn randIn,
+  UserParametersIn       userParam);
 
-void 
-BEGetMaximumSize(
-    LALStatus  *status, 		      
-    RandomInspiralSignalIn  randIn,
-    InspiralCoarseBankIn    coarseBankIn, 
-    UserParametersIn         userParam, 
-    UINT4 *length
-    );
+void BankEfficiencyGetMaximumSize(
+  LALStatus             *status,               
+  RandomInspiralSignalIn randIn,
+  InspiralCoarseBankIn   coarseBankIn, 
+  UserParametersIn       userParam, 
+  UINT4                 *length);
 
 
-void
-BECreatePsd(
-    LALStatus                   *status, 
-    InspiralCoarseBankIn        *coarseBankIn, 
-    RandomInspiralSignalIn      *randIn,
-    UserParametersIn            userParam);
+void BankEfficiencyCreatePsd(
+  LALStatus                   *status, 
+  InspiralCoarseBankIn        *coarseBankIn, 
+  RandomInspiralSignalIn      *randIn,
+  UserParametersIn             userParam);
 
 /* print an error  message 
  * */
-void 
-BEPrintError(char *chaine);
+void BankEfficiencyPrintError(char *error);
 
-void
-BEFillProc(
-    ProcessParamsTable          *proc,
-    InspiralCoarseBankIn        coarseIn,
-    RandomInspiralSignalIn      randIn,
-    UserParametersIn            userParam);
+void BankEfficiencyFillProc(
+  ProcessParamsTable          *proc,
+  InspiralCoarseBankIn        coarseIn,
+  RandomInspiralSignalIn      randIn,
+  UserParametersIn            userParam);
 
 /* xml file for the standalone code */
-void 
-BEPrintResultsXml( 
-    InspiralCoarseBankIn         coarseBankIn,
-    RandomInspiralSignalIn       randIn,
-    UserParametersIn             userParam,
-    ResultIn                     trigger,
-    UINT4                        itbest
-    );
+void BankEfficiencyPrintResultsXml( 
+  InspiralCoarseBankIn   coarseBankIn,
+  RandomInspiralSignalIn randIn,
+  UserParametersIn       userParam,
+  ResultIn               trigger,
+  UINT4                  itbest);
 
-void 
-BEPrintProtoXml(
-    InspiralCoarseBankIn          coarseIn,
-    RandomInspiralSignalIn        randIn,
-    UserParametersIn              userParam
-    );
+void BankEfficiencyPrintProtoXml(
+  InspiralCoarseBankIn   coarseIn,
+  RandomInspiralSignalIn randIn,
+  UserParametersIn       userParam);
 
-void
-BEReadXmlBank(  LALStatus  *status, 
-		CHAR *bankFileName, 
-		InspiralTemplateList **list,
-		INT4 *sizeBank, 
-		InspiralCoarseBankIn coarseIn);
+void BankEfficiencyReadXmlBank(  
+  LALStatus             *status, 
+  CHAR                  *bankFileName, 
+  InspiralTemplateList **list,
+  INT4                  *sizeBank, 
+  InspiralCoarseBankIn   coarseIn);
 
 
-void 
-BECreateBank(
-    LALStatus                   *status, 
-    InspiralCoarseBankIn        *coarseBankIn,	
-    InspiralTemplateList      	**list,
-    INT4                        *sizeBank);
+void BankEfficiencyCreateBank(
+  LALStatus             *status, 
+  InspiralCoarseBankIn  *coarseBankIn,  
+  InspiralTemplateList **list,
+  INT4                  *sizeBank);
 
 
-
-void
-BECreatePowerVector(
-    LALStatus              *status, 
-    BEPowerVector          *powerVector,
-    RandomInspiralSignalIn  randIn, 
-    INT4                    length);
+void BankEfficiencyCreatePowerVector(
+  LALStatus                 *status, 
+  BankEfficiencyPowerVector *powerVector,
+  RandomInspiralSignalIn     randIn,
+  INT4                       length);
 
 
 void 
-LALInspiralOverlapBCV(
-    LALStatus                   *status,
-    InspiralTemplate            *list,
-    BEPowerVector               *powerVector,
-    UserParametersIn            *userParam, 
-    RandomInspiralSignalIn      *randIn,
-    REAL4Vector                 *Filter1,
-    REAL4Vector                 *Filter2,
-    InspiralWaveOverlapIn       *overlapin,
-    OverlapOutputIn             *output,
-    REAL4Vector                 *correlation,
-    BEMoments                   *moments);
+BankEfficiencyInspiralOverlapBCV(
+  LALStatus                   *status,
+  InspiralTemplate            *list,
+  BankEfficiencyPowerVector   *powerVector,
+  UserParametersIn             userParam, 
+  RandomInspiralSignalIn      *randIn,
+  REAL4Vector                 *Filter1,
+  REAL4Vector                 *Filter2,
+  InspiralWaveOverlapIn       *overlapin,
+  OverlapOutputIn             *output,
+  REAL4Vector                 *correlation,
+  BankEfficiencyMoments       *moments);
 
 void 
-LALInspiralOverlapBCVSpin(
-    LALStatus                   *status,
-    InspiralTemplate            *list,
-    BEPowerVector               *powerVector,
-    UserParametersIn            *userParam, 
-    RandomInspiralSignalIn      *randIn,
-    REAL4Vector                 *Filter1,
-    REAL4Vector                 *Filter2,
-    REAL4Vector                 *Filter3,
-    InspiralWaveOverlapIn       *overlapin,
-    OverlapOutputIn             *output,
-    REAL4Vector                 *correlation,
-    BEMoments                   *moments);
+BankEfficiencyInspiralOverlapBCVSpin(
+  LALStatus                   *status,
+  InspiralTemplate            *list,
+  BankEfficiencyPowerVector   *powerVector,
+  UserParametersIn             userParam, 
+  RandomInspiralSignalIn      *randIn,
+  REAL4Vector                 *Filter1,
+  REAL4Vector                 *Filter2,
+  REAL4Vector                 *Filter3,
+  InspiralWaveOverlapIn       *overlapin,
+  OverlapOutputIn             *output,
+  REAL4Vector                 *correlation,
+  BankEfficiencyMoments       *moments);
 
 
 
 
-void BEParseGetInt( CHAR **argv, INT4 *index, INT4 *data);
-void BEParseGetDouble(CHAR **argv, INT4 *index, REAL8 *data);
-void BEParseGetDouble2(CHAR **argv, INT4 *index, REAL8 *data1, REAL8 *data2);
-void BEParseGetString(CHAR **argv, INT4 *index );
+void BankEfficiencyParseGetInt(
+  CHAR **argv,
+  INT4  *index,
+  INT4  *data);
+void BankEfficiencyParseGetDouble(
+  CHAR **argv, 
+  INT4  *index,
+  REAL8 *data);
+void BankEfficiencyParseGetDouble2(
+  CHAR **argv, 
+  INT4  *index, 
+  REAL8 *data1, 
+  REAL8 *data2);
+void BankEfficiencyParseGetString(
+  CHAR **argv, 
+  INT4  *index );
+
+CHAR* BankEfficiencyGetStringFromGridType(INT4 input);
+CHAR* BankEfficiencyGetStringFromSimulationType(INT4 input);
+CHAR* BankEfficiencyGetStringFromDetector(INT4 input);
+CHAR* BankEfficiencyGetStringFromTemplate(INT4 input);
+CHAR* BankEfficiencyGetStringFromNoiseModel(INT4 input);
+CHAR* BankEfficiencyGetStringFromScientificRun(INT4 input);
 
 
 
-CHAR* GetStringFromGridType(INT4 input);
-CHAR* GetStringFromSimulationType(INT4 input);
-CHAR* GetStringFromDetector(INT4 input);
-CHAR* GetStringFromTemplate(INT4 input);
-CHAR* GetStringFromNoiseModel(INT4 input);
-CHAR* GetStringFromScientificRun(INT4 input);
+void BankEfficiencyAscii2Xml(void);
+
+void BankEfficiencyInspiralBankGeneration(
+  LALStatus            *status,
+  InspiralCoarseBankIn *input,
+  SnglInspiralTable   **first,
+  INT4                 *ntiles,
+  UserParametersIn      userParam);
+
+void BankEfficiencyInspiralCreateFineBank(
+  LALStatus             *status,
+  InspiralTemplateList **outlist,
+  INT4                  *nlist,
+  InspiralFineBankIn     fineIn, 
+  UserParametersIn       param);
 
 
+void BankEfficiencyCreateTemplateBank(
+LALStatus              *status,
+  InspiralCoarseBankIn   *coarseBankIn,
+  MetadataTable          *templateBank,
+  SnglInspiralTable      **tmpltHead,
+  UserParametersIn        userParam,
+  RandomInspiralSignalIn *randIn,
+  INT4                   *sizeBank);
 
-void 
-BEAscii2Xml(void);
+void BankEfficiencyUpdateSNRHistogram(
+  REAL4Vector   *correlation,
+  gsl_histogram *histogramNoise);
 
-void
-LALInspiralBankGeneration2(
-     LALStatus *status,
-     InspiralCoarseBankIn *input,
-     SnglInspiralTable **first,
-     INT4 *ntiles,
-     UserParametersIn *userParam);
+REAL8 BankEfficiencyComputeMatch(
+  RandomInspiralSignalIn  *randIn,
+  SnglInspiralTable       *tmpltCurrent);
 
-void
-LALInspiralCreateFineBank2(
-    LALStatus  *status,
-    InspiralTemplateList **outlist,
-    INT4                 *nlist,
-    InspiralFineBankIn   fineIn, 
-    UserParametersIn *param);
+
 static int vrbflg = 0;
 
