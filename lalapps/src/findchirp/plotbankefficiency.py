@@ -78,7 +78,7 @@ for param,label in zip(['totalmass_sim','eta_sim','chirpmass_sim'],\
   plotting.plot(results[param],results['snr'])
   xlabel(r'Injected '+label, size='x-large')
   ylabel(r'Overlap (\%)', size='x-large')
-  mysavefig('plotbankefficiency_snr_versus_'+param)
+  mysavefig('plotbankefficiency_snr_versus_'+param+'.png')
 
 
 
@@ -97,14 +97,14 @@ xlabel(r'$\tau_0$ (seconds) ', size='x-large')
 ylabel(r'$\tau_3$ (seconds)', size='x-large')
 legend(['Simulated injection','template''s position'])
 title('Position of the injections')
-mysavefig('plotbankefficiency_bank')
+mysavefig('plotbankefficiency_bank.png')
 
 #----------------------------------------------------------SNR histogram and fit
 for this in ['snr','mass1_sim', 'mass2_sim']:
   plotting.plot_histogram_and_fit(results[this],100,fit=False)
   xlabel('SNR', size='x-large')
   ylabel(r'\#', size='x-large')
-  mysavefig('plotbankefficiency_hist_'+this)
+  mysavefig('plotbankefficiency_hist_'+this+'.png')
 
 # --------------------------------- scatter plot of SNR versus eccentricty and M
 if signal=='Eccentricity':
@@ -116,7 +116,7 @@ if signal=='Eccentricity':
   mysavefig('plotbankefficiency_scattersnr_totalMass_versus_ecc.png')
   # the eccentricity, and SNR
   plotting.plot(results['ecc_sim'],results['snr'],'ob')
-  mysavefig('plotbankefficiency_ecc_versus_snr')
+  mysavefig('plotbankefficiency_ecc_versus_snr.png')
 
 
 # ------------------------------------------------------------------------------
@@ -128,10 +128,12 @@ for param in ['totalmass', 'eta', 'chirpmass','tau0','phase']:
   mysavefig('plotbankefficiency_accuracy_snr_versus_'+param+'.png')
 
 
-plotting.vectors2image(results['totalmass_sim'],results['snr'],N=20)
-title(plotting.title+': probability density function of the overlaps')
-mysavefig('plotbankefficiency_PDF_snr_totalmass_sim.png')
-
+try:
+  plotting.vectors2image(results['totalmass_sim'],results['snr'],N=20)
+  title(plotting.title+': probability density function of the overlaps')
+  mysavefig('plotbankefficiency_PDF_snr_totalmass_sim.png')
+except:
+  pass
 
 # related to the fast option.
 plotting.plot(results['totalmass_sim'],results['nfast'])
@@ -139,6 +141,12 @@ title(plotting.title+': number of iterations to obtain the overlap computation')
 mysavefig('plotbankefficiency_totalmass_sim_fastoption.png')
 
 
+
+# accuracy of the chirp mass
+figure(plotting.figure_num)
+data = (results['chirpmass_sim']-results['chirpmass'])/results['chirpmass_sim']
+hist(data,50)
+mysavefig('plotbankefficiency_accuracy_chirpmass.png')
 
 
 if opts.show_plot:
