@@ -539,7 +539,7 @@ INT4 XLALSphHarm ( COMPLEX16 *out, /**< output */
 	  break;
 	  
 	case -2:
-	  deptheta = sqrt(7./4.*LAL_PI)*(2 + 3*cos(theta))*pow(sin(theta/2.),4);
+	  deptheta = sqrt(7./(4.*LAL_PI))*(2 + 3*cos(theta))*pow(sin(theta/2.),4);
 	  out->re = deptheta * cos( -2.0*phi );
 	  out->im = deptheta * sin( -2.0*phi );
 	  break;
