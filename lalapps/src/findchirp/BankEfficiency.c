@@ -17,6 +17,11 @@
 *  MA  02111-1307  USA
 */
 
+
+/*
+ * TODO
+ * - amplitude cor order of the template is not set
+ * */
 #include "BankEfficiency.h"
 /* --- version information ------------------------------------------------ */
 NRCSID( BANKEFFICIENCYC, "$Id$");
@@ -68,13 +73,12 @@ main (INT4 argc, CHAR **argv )
   REAL4Vector               FilterBCV2;
   BankEfficiencyPowerVector powerVector;
   BankEfficiencyMoments     moments;
-  InspiralWaveOverlapIn     overlapin;     
-  InspiralWaveOverlapOut    overlapout; 
+  InspiralWaveOverlapIn     overlapin;      
 
   /* --- results and data mining --- */
   ResultIn               result;
-  OverlapOutputIn        OverlapOutputThisTemplate;
-  OverlapOutputIn        OverlapOutputBestTemplate;
+  OverlapOutputIn        overlapOutputThisTemplate;
+  OverlapOutputIn        overlapOutputBestTemplate;
 
   /* --- fft related --- */
   RealFFTPlan           *fwdp = NULL;
@@ -89,11 +93,11 @@ main (INT4 argc, CHAR **argv )
       
   /* --- eccentricity related to the bank */
   REAL4                  eccentricityTemplate = 0;
-  REAL4                  EccentricityMin = 0;
-  REAL4                  EccentricityMax = 0.8;
-  REAL4                  eccentricityStep = 0.1;
-  REAL4                  eccentricityBins = 8;
-
+  REAL4                  EccentricityMin = 0.2;
+  REAL4                  EccentricityMax = 0.4;
+  REAL4                  eccentricityStep = 0.1; /*whatever, overwritten later*/
+  REAL4                  eccentricityBins = 30;
+  
   /* --- ambiguity function and statistics --- */
   gsl_histogram         *histogramNoise = gsl_histogram_alloc (200);  
   gsl_matrix            *amb1;
@@ -196,6 +200,7 @@ main (INT4 argc, CHAR **argv )
   overlapin.fwdp        = randIn.fwdp = fwdp;
   overlapin.revp        = revp;
   overlapin.ifExtOutput = 0;  /* new option from Anand's WaveOverlap */
+  overlapin.ifCorrelationOutput = 1; /* output of WaveOverlap is sqrt(x^2+y^2)*/
 
   /* --- Create Matrix for BCV Maximization once for all ------------------ */
   if ((userParam.template == BCV) )
@@ -212,14 +217,12 @@ main (INT4 argc, CHAR **argv )
   /* --- loop over the number of simulations (ntrials) --- */
   while (++ntrials <= userParam.ntrials) 
     {     
-      /* start to read templates, so currentTemplate is 0*/
-      UINT4 currentTemplate = 0;
       if (vrbflg){
         fprintf(stdout,"Simulation number %d/%d\n", ntrials, userParam.ntrials);
       }
       
       /* --- initialisation for each simulation --- */
-      BankEfficiencyInitOverlapOutputIn(&OverlapOutputBestTemplate);
+      BankEfficiencyInitOverlapOutputIn(&overlapOutputBestTemplate);
       
       /* --- set the fcutoff (signal,overlap) --- */
       randIn.param.fCutoff = userParam.signalfFinal; 
@@ -227,12 +230,11 @@ main (INT4 argc, CHAR **argv )
       /* --- generate the signal waveform --- */
       LAL_CALL(BankEfficiencyGenerateInputData(&status, 
           &signal, &randIn, userParam), &status);
-        
+          
       /* --- and populate the main structure of the overlap ---*/
       overlapin.signal = signal;
        
-      /* --- we can process the data through the bank now ---         */
-      /* -- first we populate the insptmplt with the random parameter (signal)*/ 
+      /*  we populate the insptmplt with the random parameter (signal) */ 
       /* -- !! Note that by doing so, the approximant is also overwritten. 
        * So, later, we must retrieve the approximant requested using 
        * userParam.template variable */     
@@ -243,18 +245,23 @@ main (INT4 argc, CHAR **argv )
       insptmplt.eccentricity = 0;            /* set eccentricity to zero. */
       filter_processed = 0;                  /* a counter to know how many 
                                                 templates are really used. */
-            
-      /* --- some code related to the eccentric case */
       
+           
+      /* --- some code related to the eccentric case */
       if (userParam.eccentricBank)
         eccentricityStep = (EccentricityMax - EccentricityMin)/eccentricityBins; 
       else
       {
-        eccentricityStep = 1;/*larger than max eccentricity so that only EccentricityMin is used, which we set to zero*/
+        eccentricityStep = 1; /* larger than max eccentricity so that only 
+                                 EccentricityMin is used, which we set to zero */
         EccentricityMin = 0;
         EccentricityMax = 1;
       }
-      for (eccentricityTemplate = EccentricityMin; eccentricityTemplate < EccentricityMax; eccentricityTemplate+=eccentricityStep)
+      
+      /* --- if eccentrity is not set on, this loop iterates only once --- */
+      for (eccentricityTemplate = EccentricityMin;
+           eccentricityTemplate < EccentricityMax;
+           eccentricityTemplate+=eccentricityStep)
       {
         insptmplt.eccentricity = eccentricityTemplate;
         /* -- finally, we loop through the bank itself */
@@ -265,47 +272,42 @@ main (INT4 argc, CHAR **argv )
         { 
           /* populate InspiralTemplateList with tmplt */
 
-          if (vrbflg){     
-            fprintf(stdout,".");fflush(stdout);
-          } 
           /* Set dummy values in the future output */
-          BankEfficiencyInitOverlapOutputIn(&OverlapOutputThisTemplate);
-
-          /* which template family to be used ? */
-          if (userParam.faithfulness)
-          {
-          	sizeBank                     = 1;
-          }  
+          BankEfficiencyInitOverlapOutputIn(&overlapOutputThisTemplate);
+    
+          if (userParam.faithfulness){
+          	sizeBank = 1;
+          }
+            
           switch(userParam.template)
-          {
+          {          	
             case BCV:      
               BankEfficiencyCreateListfromTmplt(&insptmplt, tmpltCurrent);
               insptmplt.massChoice = psi0Andpsi3;
               LAL_CALL(LALInspiralParameterCalc( &status,  &(insptmplt) ), &status);
-          
+              /* if faithfulness is required, the template parameters are 
+               * identical to the signal except for the name of the approximant.
+               *  */
               if (userParam.faithfulness)
               {
-                insptmplt = randIn.param;
+                insptmplt                    = randIn.param;
                 overlapin.param              = randIn.param;
-                overlapin.param.approximant  = userParam.template;
-           
+                overlapin.param.approximant  = userParam.template; 
                 insptmplt.fFinal = randIn.param.fFinal;
               }
      
               LAL_CALL(BankEfficiencyInspiralOverlapBCV(&status, 
-                         &insptmplt,
-                         &powerVector,
-                         userParam,
-                         &randIn, 
-                         &FilterBCV1,
-                         &FilterBCV2, 
-                         &overlapin,
-                         &OverlapOutputThisTemplate,
-                         &correlation, &moments), &status);
-
-              OverlapOutputThisTemplate.freq =  overlapin.param.fFinal;
-              OverlapOutputThisTemplate.templateNumber = thisTemplateIndex;
+                         &insptmplt, &powerVector, userParam, &randIn, 
+                         &FilterBCV1, &FilterBCV2, &overlapin,
+                         &overlapOutputThisTemplate, &correlation, &moments),
+                         &status);
+              /* keep track of what has been done in the overlap function */
+              
+              overlapOutputThisTemplate.freq =  overlapin.param.fFinal;
+              overlapOutputThisTemplate.templateNumber = thisTemplateIndex;
+              
               break;
+              
             case AmpCorPPN:
             case TaylorT1: 
             case Eccentricity:
@@ -322,29 +324,25 @@ main (INT4 argc, CHAR **argv )
               insptmplt.massChoice = t03;
               LAL_CALL(LALInspiralParameterCalc( &status,  &(insptmplt) ), &status);
           
+              /* --- set up the overlapin strucutre --- */
               overlapin.param = insptmplt;
               if( userParam.template == Eccentricity)
               {
                 insptmplt.massChoice = t03;
                 overlapin.param.order = 4; /*insptmplt does not contain the good approximant*/              
               }
-              else
-              {
-                overlapin.param.approximant = userParam.template; /*insptmplt does not contain the good approximant*/              
+              else{
+                overlapin.param.approximant = userParam.template;               
               }
               LAL_CALL(LALInspiralParameterCalc( &status,  &(overlapin.param) ), &status);
           
-              if( userParam.template == Eccentricity)
-              {
+              if( userParam.template == Eccentricity){
                 overlapin.param.order = coarseBankIn.order;               
               }
-              
-              overlapout.max    = -1.; /* let us be sure that it has a value */
+
               overlapin.param.fCutoff = coarseBankIn.fUpper;
-              
-              /* we need to set the fLower of the template and the SNR integral */
-              overlapin.param.fLower = coarseBankIn.fLower;
-              overlapin.param.fFinal = randIn.param.tSampling/2. - 1;
+              overlapin.param.fLower  = coarseBankIn.fLower;
+              overlapin.param.fFinal  = randIn.param.tSampling/2. - 1;
 
               /* the fast simulation option. We compute the match between the 
                * template and the signal */              
@@ -363,13 +361,10 @@ main (INT4 argc, CHAR **argv )
 
                 overlapin.param.approximant        = userParam.template;
                 overlapin.param.order              = tempOrder;
-           
               }
-                    
-               
               /* if we want to cut integration before the fFinal*/
-              /*overlapin.param.fCutoff = 512;*/
-           
+              overlapin.param.fCutoff = 1023;
+
               {
                 if (userParam.fastSimulation == 1 && (ematch < userParam.eMatch )  )
                 {                     
@@ -380,29 +375,25 @@ main (INT4 argc, CHAR **argv )
                 }       
               else
               {            
-                LAL_CALL(LALInspiralWaveOverlap(&status,
-                          &correlation,
-                          &overlapout,
-                          &overlapin), &status);
+              	
+              	LAL_CALL(BankEfficiencyWaveOverlap(&status, 
+              	          &correlation,
+                          &overlapin,
+                          &overlapOutputThisTemplate,
+                          randIn.param.nStartPad), &status);                
+                
+                overlapOutputThisTemplate.templateNumber = thisTemplateIndex;
 
-                /* we compute the averaged ambiguity function a t=ta and the averaged maximizaed ambiguity function over time*/
-                gsl_matrix_set(amb1,2,thisTemplateIndex, 
-                    gsl_matrix_get(amb1,2,thisTemplateIndex) + overlapout.max); 
-                gsl_matrix_set(amb1,3,thisTemplateIndex, 
-                    gsl_matrix_get(amb1,3,thisTemplateIndex) + 
-                        correlation.data[randIn.param.nStartPad]); 
-                gsl_matrix_set(amb1,0,thisTemplateIndex, insptmplt.t0); 
-                gsl_matrix_set(amb1,1,thisTemplateIndex, insptmplt.t3); 
-
-                OverlapOutputThisTemplate.rhoMax = overlapout.max;
-                OverlapOutputThisTemplate.templateNumber = currentTemplate;
-                OverlapOutputThisTemplate.phase = overlapout.phase;
-                OverlapOutputThisTemplate.rhoBin = overlapout.bin;
-                OverlapOutputThisTemplate.freq = overlapin.param.fFinal;
-                OverlapOutputThisTemplate.templateNumber = thisTemplateIndex;
+                BankEfficiencyPopulateAmbiguityFunction(
+                    amb1,correlation,thisTemplateIndex, 
+                    overlapOutputThisTemplate, randIn.param.nStartPad,
+                    insptmplt);
+                
+                
+                /* we compute the averaged ambiguity function a t=ta and 
+                 * the averaged maximizaed ambiguity function over time*/
+                
                 insptmplt.fFinal = overlapin.param.fFinal;
-                OverlapOutputThisTemplate.snrAtCoaTime = 
-                    correlation.data[randIn.param.nStartPad];
                 filter_processed++;      
               }
             }
@@ -417,86 +408,41 @@ main (INT4 argc, CHAR **argv )
         
       /* for the final results, we keep only the loudest SNR over the entire
        * template bank, for each simulations.*/ 
-      BankEfficiencyKeepHighestValues(
-          OverlapOutputThisTemplate, 
-          &OverlapOutputBestTemplate,
-          insptmplt);                
-      }/* --- end of  bank process --- */
-    } /* --- end of eccentricity --- */
+      BankEfficiencyKeepHighestValues( overlapOutputThisTemplate, 
+          &overlapOutputBestTemplate, insptmplt);                
+      }  /* --- end of  bank process --- */
+    }  /* --- end of eccentricity --- */
 
-    /* Then print the maximum overlap over the whole bank and the corresponding 
-     * parameter of the templates, injected signal and so on. This is the main 
-     * results. We'll print one line for each simulation (ntrials parameter)*/
-    thisTemplateIndex = 0;
-    for (tmpltCurrent  = tmpltHead, thisTemplateIndex = 0;
-       tmpltCurrent && thisTemplateIndex<OverlapOutputBestTemplate.templateNumber;
-       tmpltCurrent = tmpltCurrent->next, thisTemplateIndex++)
-    {
-      /* nothing to do, we just want to come back to template
-       * in list which gave the best SNR */
-    }
 
-    BankEfficiencyCreateListfromTmplt(&insptmplt, tmpltCurrent);
-    BankEfficiencyGetResult( 
-       &status, 
-       &insptmplt,
-       randIn.param, 
-       OverlapOutputBestTemplate, 
-       &result, 
-       userParam);
-    /* keep track of the number of templates actually used.*/
-    result.nfast  = filter_processed;
-    result.ntrial = ntrials;
-
-    BankEfficiencyPrintResults(result, randIn, ntrials, userParam.ntrials);
-      
-    if (userParam.printResultXml) 
-    {
-      BankEfficiencyPrintResultsXml(coarseBankIn,randIn,userParam,result, 0);    
-    }
-      
-      
-    /*Now we might want given the best template, to reproduce results and keep overlap, wavefom of the signal , template ...*/
-    /* save signal */
-    /* overlap     */
-    /* save template and correlation */
-      
+    /* --- print the results on stdout and xml file if requested --- */
+    LAL_CALL(BankEfficiencyFinalise(&status,tmpltHead,
+        overlapOutputBestTemplate,randIn,userParam,ntrials, 
+        filter_processed, coarseBankIn), &status);
+          
+        
     if (userParam.template == BCV) 
     {
       if (userParam.printBestOverlap || userParam.printBestTemplate) 
       {
         userParam.extraFinalPrinting = 1;
         LAL_CALL(BankEfficiencyInspiralOverlapBCV(&status, 
-                     &insptmplt,
-                     &powerVector,
-                     userParam,
-                     &randIn, 
-                     &FilterBCV1,
-                     &FilterBCV2, 
-                     &overlapin,
-                     &OverlapOutputThisTemplate,
-                     &correlation, &moments), 
-           &status);    
+                     &insptmplt, &powerVector, userParam, &randIn,
+                     &FilterBCV1, &FilterBCV2, &overlapin,
+                     &overlapOutputThisTemplate, &correlation, &moments),
+                     &status);    
       }
     }
 
-    if (userParam.template == EOB ) 
-    {
-      if (userParam.printBestOverlap ) 
-      {
-        Foutput=  fopen("BankEfficiency-correlation.dat","w");    
-        for (i=0; i<(INT4)correlation.length; i++)
-        {
-          fprintf(Foutput, "%e %e\n", 
-            (REAL4)i/randIn.param.tSampling,correlation.data[i]);               
-        }
-        fclose(Foutput);      
-      }
+    /* --- print correlation of the last computed correlation --- */
+    if (userParam.printBestOverlap ){
+    	BankEfficiencySaveVector("BankEfficiency-correlation.dat", correlation,
+    	    randIn.param.tSampling);
     }
+    	
   }  /* --- end while(trial) --- */
   
 
-
+  /* --- save histrogram of all the SNR output correlations --- */
   if (userParam.printSNRHisto)
   {
     Foutput = fopen(BANKEFFICIENCY_SNRHISTOGRAM,"w");
@@ -588,7 +534,7 @@ void BankEfficiencyKeepHighestValues(
     resultBestTemplate->alpha          = resultThisTemplate.alpha;
     resultBestTemplate->rhoBin         = resultThisTemplate.rhoBin;
     resultBestTemplate->freq           = resultThisTemplate.freq;
-    resultBestTemplate->templateNumber = resultThisTemplate.templateNumber;
+    resultBestTemplate->templateNumber = resultThisTemplate.templateNumber;    
     resultBestTemplate->snrAtCoaTime   = resultThisTemplate.snrAtCoaTime;
     resultBestTemplate->eccentricity   = insptmplt.eccentricity;
   }
@@ -883,8 +829,8 @@ void BankEfficiencyWaveOverlapBCV(
   REAL4Vector             *FilterBCV1,
   REAL4Vector             *FilterBCV2,
   UserParametersIn         userParam ,
-  OverlapOutputIn         *OverlapOutput, 
-  BankEfficiencyMoments               *moments)
+  OverlapOutputIn         *overlapOutput, 
+  BankEfficiencyMoments   *moments)
      /*  </lalVerbatim>  */
 {
   REAL4 rhoMaxConstraint = 0.;
@@ -1170,10 +1116,10 @@ void BankEfficiencyWaveOverlapBCV(
   }
 
   /* --- Finally get the alpha value corresponding to the best rho --- */ 
-  OverlapOutput->rhoMax     = rhoMaxConstraint;
-  OverlapOutput->rhoBin     = rhoBinConstraint;
-  OverlapOutput->alpha      = alphaConstraint;
-  OverlapOutput->phase      = phaseConstraint;
+  overlapOutput->rhoMax     = rhoMaxConstraint;
+  overlapOutput->rhoBin     = rhoBinConstraint;
+  overlapOutput->alpha      = alphaConstraint;
+  overlapOutput->phase      = phaseConstraint;
 
   /* --- The final template to be print  ---------------------------------- */
   if (userParam.printBestOverlap  && userParam.extraFinalPrinting)
@@ -1232,7 +1178,7 @@ void BankEfficiencyWaveOverlapBCV(
     Foutput=fopen("BankEfficiency_alpha.dat","w");
     for (i=0; i< correlation->length; i++)
     {
-      alpha = -(a22 * tan(phaseV.data[i]))              /* Compute the final alpha parameter    */
+      alpha = -(a22 * tan(phaseV.data[i]))/* Compute the final alpha parameter*/
     / (a11 + a21* tan(phaseV.data[i]));
       fprintf(Foutput, "%e \n",alpha*fp23);
     }
@@ -1272,12 +1218,13 @@ void BankEfficiencyWaveOverlapBCV(
     Foutput=fopen("BankEfficiency_Correlation.dat", "w");
     for (i=0; i< correlation->length; i++)
     {
-      fprintf(Foutput, "%e %e\n", i/corrin.samplingRate,fabs(correlation->data[i]));
+      fprintf(Foutput, "%e %e\n", i/corrin.samplingRate,
+          fabs(correlation->data[i]));
     }
     fclose(Foutput);
 
-
-    BankEfficiencyGetOrthogonalFilter(FilterBCV1);                     /* get the orthonormalized template     */
+    /* get the orthonormalized template     */
+    BankEfficiencyGetOrthogonalFilter(FilterBCV1); 
     corrin.signal2        = *FilterBCV1;
 
     for (i=0; i<(UINT4)correlation->length; i++) 
@@ -1292,8 +1239,8 @@ void BankEfficiencyWaveOverlapBCV(
 
     
     }
-
-    BankEfficiencyGetOrthogonalFilter(FilterBCV2);                     /* get the orthonormalized template     */
+    /* get the orthonormalized template     */
+    BankEfficiencyGetOrthogonalFilter(FilterBCV2);                    
     corrin.signal2        = *FilterBCV2;
 
     for (i=0; i<(UINT4)correlation->length; i++) 
@@ -1360,11 +1307,13 @@ void BankEfficiencyPrintBank(
   {
     case BCV:
       fprintf(output, "#psi0Min=%e, psi0Max=%e, psi3Min=%e, psi3Max=%e\n", 
-          coarseBankIn.psi0Min, coarseBankIn.psi0Max, coarseBankIn.psi3Min, coarseBankIn.psi3Max);
+          coarseBankIn.psi0Min, coarseBankIn.psi0Max,
+          coarseBankIn.psi3Min, coarseBankIn.psi3Max);
           fprintf(output, "#psi0 psi3  totalMass fFinal\n");
       break;
     default:
-      fprintf(output, "#mMin=%e, mMax=%e\n", coarseBankIn.mMin,coarseBankIn.mMax);
+      fprintf(output, "#mMin=%e, mMax=%e\n", 
+          coarseBankIn.mMin,coarseBankIn.mMax);
       fprintf(output, "#tau0, tau3, mass1, mass2\n");
       break;
   }
@@ -1681,11 +1630,11 @@ void BankEfficiencyPrintResultsXml(
   LALStatus             status = blank_status;
   CHAR                 *dest;
   MetadataTable         templateBank;
-  CHAR                  ifo[3];                     /* two character ifo code       */
+  CHAR                  ifo[3];               /* two character ifo code       */
   LIGOLwXMLStream       xmlStream;
   CHAR                  fname[256];
-  LIGOTimeGPS           gpsStartTime    = { 0, 0 }; /* input data GPS start time    */
-  LIGOTimeGPS           gpsEndTime  = { 0, 0 };     /* input data GPS end time      */
+  LIGOTimeGPS           gpsStartTime    = { 0, 0 }; /* input data GPS start time*/
+  LIGOTimeGPS           gpsEndTime  = { 0, 0 };     /* input data GPS end time*/
   CHAR                  comment[LIGOMETA_COMMENT_MAX];
   CHAR                  ifoName[MAXIFO][LIGOMETA_IFO_MAX];
 
@@ -1693,7 +1642,7 @@ void BankEfficiencyPrintResultsXml(
   ProcessParamsTable   *this_proc_param = NULL;
 
   LALSnprintf( fname, sizeof(fname), 
-           BANKEFFICIENCY_PRINTRESULT_FILEXML ,
+           BANKEFFICIENCY_XMLRESULTS ,
            "simulation",
            gpsStartTime.gpsSeconds,
            gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
@@ -1814,21 +1763,21 @@ BankEfficiencyPrintProtoXml(
   CHAR                  ifo[3];            /* two character ifo code       */
   LIGOLwXMLStream       xmlStream;
   CHAR                  fname[256];
-  LIGOTimeGPS           gpsStartTime    = { 0, 0 };/* input data GPS start time    */
-  LIGOTimeGPS           gpsEndTime  = { 0, 0 };    /* input data GPS end time      */
+  /*LIGOTimeGPS           gpsStartTime    = { 0, 0 };
+  LIGOTimeGPS           gpsEndTime  = { 0, 0 };    */
   CHAR                  comment[LIGOMETA_COMMENT_MAX];
   CHAR                  ifoName[MAXIFO][LIGOMETA_IFO_MAX];
 
   MetadataTable         processParamsTable;
   ProcessParamsTable   *this_proc_param = NULL;
-
-  LALSnprintf( fname, sizeof(fname), BANKEFFICIENCY_PRINTPROTO_FILEXML ,
-           ifo, gpsStartTime.gpsSeconds,
-           gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
-
-
-
-
+  
+  fprintf(stderr,"---%s\n",fname);
+  sprintf(fname, BANKEFFICIENCY_PROTOTYPE);
+  /*strcat(fname, "_");
+  strcat(fname, userParam.tag);
+  */
+  strcat(fname, ".xml");
+  
   strncpy( ifoName[0], "no", LIGOMETA_IFO_MAX * sizeof(CHAR) );
   strncpy( ifoName[1], "ne", LIGOMETA_IFO_MAX * sizeof(CHAR) );
   memset( ifo, 0, sizeof(ifo) );
@@ -1882,12 +1831,15 @@ BankEfficiencyPrintProtoXml(
 void BankEfficiencyInitOverlapOutputIn(
   OverlapOutputIn *this)
 {
+  if (vrbflg){     
+    fprintf(stdout,".");fflush(stdout);
+  }     
   this->rhoMax         = -1.;
   this->phase          = -1.;
-  this->rhoBin         = 0;
-  this->templateNumber = 0;
+  this->rhoBin         =  0;
+  this->templateNumber =  0;
   this->alpha          = -1.;
-  this->layer          = 0;
+  this->layer          =  0;
   this->freq           = -1.;
 }
 
@@ -1907,37 +1859,30 @@ void BankEfficiencyGetMaximumSize(
   ATTATCHSTATUSPTR( status );
   
   *length = 0;
-  randIn.param.massChoice   = m1Andm2;
-  if( randIn.param.approximant  == Eccentricity)
-  {
-    params.fLower /=1.;
-  }
-  else 
-  {
-    /* why ? because this is probably the longest template (stops at light
-     * ring) */
-    randIn.param.approximant    = EOB;
-  }
-  /* Here we do not care about the order, so let us set it to a value that wont
-   * cause any problems (Newtonian , 1PN not properly implemented eveywhere!*/
-  coarseBankIn.order = twoPN;
-  randIn.param.order = twoPN;
-
-  *length = 0;
- 
-  LAL_CALL(LALInspiralWaveLength(status->statusPtr, length, randIn.param), 
-       status->statusPtr);
+  /* first the longest template */
   params = randIn.param;
+  params.massChoice = m1Andm2;
   params.mass1 = params.mass2 = coarseBankIn.mMin;
-
+  params.order = twoPN;
+  LAL_CALL(LALInspiralWaveLength(status->statusPtr, length, params), 
+       status->statusPtr);
   
+  /* then the longest signal*/
+  params.mass1 = params.mass2 = randIn.mMin;
   LAL_CALL(LALInspiralWaveLength(status->statusPtr, &maxTmpltLength, params),
            status->statusPtr);
-
+  
   /* Now return the longest of max template or signal */
   if (maxTmpltLength > *length)
     *length = maxTmpltLength;
   
+  
+  /* ideally this should be implemented within lal.*/
+  if( randIn.param.approximant  == AmpCorPPN || userParam.template == AmpCorPPN)
+  {
+    *length *= pow(1./(1+randIn.param.ampOrder), -8./3.);
+  }
+          
   /* if --num-seconds is provided, we want a specified length of data.
    * Otherwise, we stick to a minimal size given by twice the length of the
    * maximal template length.*/
@@ -1956,6 +1901,7 @@ void BankEfficiencyGetMaximumSize(
     userParam.numSeconds = (INT4)(*length/randIn.param.tSampling);
   }
     
+  fprintf(stderr, "length vector = %d\n",*length);  
   DETATCHSTATUSPTR( status );
   RETURN( status );  
 
@@ -2082,7 +2028,8 @@ void BankEfficiencyGenerateInputData(
   /* randomize the input start time */ 
   if (randnStartPad==1)
   {
-    randIn->param.nStartPad = (int)((float)rand()/(float)RAND_MAX*signal->length/2);
+    randIn->param.nStartPad = (int)( (float)rand() / 
+        (float)RAND_MAX*signal->length/2);
   }
   
   trial = 0 ;
@@ -2105,7 +2052,8 @@ void BankEfficiencyGenerateInputData(
   if (userParam.eccentricityMin >=0 && (userParam.eccentricityMax <= 1))
   {
     u = XLALUniformDeviate(randParams);
-    randIn->param.eccentricity = userParam.eccentricityMin + u * (userParam.eccentricityMax-userParam.eccentricityMin);
+    randIn->param.eccentricity = userParam.eccentricityMin +
+        u * (userParam.eccentricityMax-userParam.eccentricityMin);
   }
   else
   {
@@ -2141,22 +2089,28 @@ void BankEfficiencyGenerateInputData(
             REAL8 fend = 10000000.;
             INT4 trials = 0; 
           
-            randIn->param.psi0 = randIn->psi0Min + epsilon1 * (randIn->psi0Max - randIn->psi0Min);
-            randIn->param.psi3 = randIn->psi3Min + epsilon2 * (randIn->psi3Max - randIn->psi3Min);
+            randIn->param.psi0 = randIn->psi0Min + 
+                epsilon1 * (randIn->psi0Max - randIn->psi0Min);
+            randIn->param.psi3 = randIn->psi3Min + 
+                epsilon2 * (randIn->psi3Max - randIn->psi3Min);
           
           
-            while (((fend > randIn->param.tSampling/2.) || ( fend < randIn->param.fLower)) && (trials < 10))
+            while (((fend > randIn->param.tSampling/2.) || 
+                ( fend < randIn->param.fLower)) && (trials < 10))
             {        
               REAL8 fLR, fLSO;
               REAL8 epsilon3 ;  
               epsilon3 = (REAL8) rand()/(REAL8)RAND_MAX;
               
-              randIn->param.totalMass = -randIn->param.psi3/(16.L*LAL_PI * LAL_PI * randIn->param.psi0);
+              randIn->param.totalMass = -randIn->param.psi3/(16.L*LAL_PI 
+                  * LAL_PI * randIn->param.psi0);
               randIn->param.totalMass *= 2 / LAL_MTSUN_SI;
     
     
-              fLR = 1.L/(LAL_PI * pow (3.L,1.5) * randIn->param.totalMass * LAL_MTSUN_SI); 
-              fLSO = 1.L/(LAL_PI * pow (6.L,1.5) * randIn->param.totalMass * LAL_MTSUN_SI);     
+              fLR = 1.L/(LAL_PI * pow (3.L,1.5) * randIn->param.totalMass 
+                  * LAL_MTSUN_SI); 
+              fLSO = 1.L/(LAL_PI * pow (6.L,1.5) * randIn->param.totalMass
+                  * LAL_MTSUN_SI);     
     
               fend = fLSO + (fLR - fLSO) * epsilon3;
               fend = fLSO + (fLR - fLSO) * epsilon3;
@@ -2261,7 +2215,7 @@ void BankEfficiencyGenerateInputData(
     INT4 i;
     
     fprintf(stdout,"... done\n");
-    Foutput=  fopen(BANKEFFICIENCY_OUTPUT_ASCII_SIGNAL,"w");
+    Foutput=  fopen(BANKEFFICIENCY_ASCIISIGNAL,"w");
     for (i=0; i<(INT4)signal->length; i++)
     {
       fprintf(Foutput, "%e %e %d\n", 
@@ -2463,7 +2417,7 @@ void BankEfficiencyBankPrintXML(
 
 
   /* --- first we create the filename --- */
-  LALSnprintf( fname, sizeof(fname), "TMPLTBANK.xml" ,
+  LALSnprintf( fname, sizeof(fname), BANKEFFICIENCY_XMLBANK ,
            ifo, gpsStartTime.gpsSeconds,
            gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
   
@@ -2510,7 +2464,7 @@ void BankEfficiencyBankPrintXML(
   /* finally write sngl inspiral table */
   if ( templateBank.snglInspiralTable )
     {
-      LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, sngl_inspiral_table ), 
+      LAL_CALL(LALBeginLIGOLwXMLTable(&status, &xmlStream, sngl_inspiral_table), 
         &status );
       LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, templateBank, 
                     sngl_inspiral_table ), &status );
@@ -2631,6 +2585,7 @@ void BankEfficiencyInitRandomInspiralSignalIn(
   randIn->param.nEndPad         = BANKEFFICIENCY_NENDPAD;
   randIn->NoiseAmp              = BANKEFFICIENCY_NOISEAMPLITUDE;
   randIn->param.eccentricity    = 0.;
+  randIn->param.ampOrder              = 5;
 }
 
 
@@ -2911,7 +2866,10 @@ void BankEfficiencyParseParameters(
     }
     else if (!strcmp(argv[i],   "--signal-alpha")){      
       BankEfficiencyParseGetDouble(argv,  &i, &(randIn->param.alpha));
-    } 
+    }
+    else if (!strcmp(argv[i],   "--signal-amp-order")){      
+      BankEfficiencyParseGetInt(argv,  &i, (INT4*)&(randIn->param.ampOrder));
+    }  
     else if (!strcmp(argv[i],   "--signal-alpha1")){         
       BankEfficiencyParseGetDouble(argv,  &i, &(randIn->param.alpha1));
     }
@@ -3034,6 +2992,9 @@ void BankEfficiencyParseParameters(
     }
     else if (!strcmp(argv[i],   "--template-order")) {
       BankEfficiencyParseGetInt(argv,  &i, (INT4*)(&(coarseBankIn->order)));
+    }
+    else if (!strcmp(argv[i],   "--template-amp-order")) {
+      BankEfficiencyParseGetInt(argv,  &i, (INT4*)(&(coarseBankIn->ampOrder)));
     }
     else if (!strcmp(argv[i], "--user-tag")) {
       BankEfficiencyParseGetString(argv, &i);
@@ -3659,40 +3620,53 @@ void BankEfficiencyHelp(void)
 void BankEfficiencyAscii2Xml(void)
 {
   UINT4 countline = 0, nfast_max=0;
+  
   UINT8  id = 0;
+  
   ResultIn trigger;
-  REAL4 tau0, tau3, tau0I, tau3I, psi0, psi3,phaseI, ecc, eccI
-; 
-  FILE *input1, *input2, *bank;
+  
+  REAL4 tau0, tau3, tau0I, tau3I, psi0, psi3,phaseI, ecc, eccI;
+   
+  FILE *input1;
+  FILE *input2;
+  FILE *bank;
   FILE *output;     
+  
   CHAR *dest;
+  
   SnglInspiralTable     *inputData = NULL;
-  INT4 numFileTriggers = 0, nStartPad;
+  
+  INT4 numFileTriggers = 0;
+  INT4 nStartPad;
 
   char sbuf[2048];
+  CHAR fname[256]="";
   
   /* Main program starts here */
   /* First we open the file containing the ascii results */
   fprintf(stderr,"opening the xml output data file -- %s",
-      BankEfficiencyASCII2XML_OUTPUT);
-  output = fopen(BankEfficiencyASCII2XML_OUTPUT,"w");
+      BANKEFFICIENCY_XMLRESULTS);
+  output = fopen(BANKEFFICIENCY_XMLRESULTS,"w");
   fprintf(stderr,"done\n");
 
-  fprintf(stderr,"opening the xml input data file -- %s",
-      BankEfficiencyASCII2XML_INPUT1);
-      
-  if  ( (input1  = fopen(BankEfficiencyASCII2XML_INPUT1,"r"))==NULL) {
+  
+  fprintf(stderr,"opening the input ascii file -- %s",
+      BANKEFFICIENCY_ASCIIRESULTS);    
+  if  ( (input1  = fopen(BANKEFFICIENCY_ASCIIRESULTS,"r"))==NULL) {
     fprintf(stderr,"error while opening input file %s\n",
-        BankEfficiencyASCII2XML_INPUT1);
+        BANKEFFICIENCY_ASCIIRESULTS);
     exit(0);
   }
   fprintf(stderr,"done\n");
 
   fprintf(stderr,"opening the xml prototype (argument of BankEfficiency code)");
-  if  ( (input2  = fopen(BankEfficiencyASCII2XML_INPUT2,"r"))==NULL)
+  sprintf(fname,BANKEFFICIENCY_PROTOTYPE);
+  strcat(fname,".xml");
+  
+  
+  if  ( (input2  = fopen(fname,"r"))==NULL)
     {
-      fprintf(stderr,"error while opening input file %s\n",
-          BankEfficiencyASCII2XML_INPUT2);
+      fprintf(stderr,"error while opening input file %s\n", fname);
       fprintf(stderr,"the xml file will not contains parameters information\n");
       dest = (CHAR*)PRINT_LIGOLW_XML_HEADER(output);
       fprintf(stderr,"creating the header file -- done\n");
@@ -3707,10 +3681,10 @@ void BankEfficiencyAscii2Xml(void)
     }
   
   /* insert the template bank here */
-  if  ( (bank  = fopen(BANKEFFICIENCY_OUTPUT_XML_BANK,"r"))==NULL)
+  if  ( (bank  = fopen(BANKEFFICIENCY_XMLBANK,"r"))==NULL)
     {
       fprintf(stderr,"Error while opening input file %s\n",
-          BANKEFFICIENCY_OUTPUT_XML_BANK);
+          BANKEFFICIENCY_XMLBANK);
       fprintf(stderr,"The XML file will not contain the bank table\n");
     }
   else 
@@ -3718,9 +3692,9 @@ void BankEfficiencyAscii2Xml(void)
       /* read prototype and save in outputfile */
       fprintf(stderr,"parsing the bank  -- ");
       fprintf( stdout, "reading triggers from file: %s\n",
-          BANKEFFICIENCY_OUTPUT_XML_BANK);
+          BANKEFFICIENCY_XMLBANK);
       numFileTriggers = LALSnglInspiralTableFromLIGOLw( &inputData,
-          BANKEFFICIENCY_OUTPUT_XML_BANK , 0, -1 );
+          BANKEFFICIENCY_XMLBANK , 0, -1 );
       
 
       fprintf(stderr," done %d\n", numFileTriggers);      
@@ -4177,3 +4151,151 @@ void BankEfficiencyCreateTemplateBank(
 
   DETATCHSTATUSPTR(status);
 }
+
+
+REAL4 GetMaxVector(REAL4 *vect, INT4 n)
+{
+  INT4 i; 
+  REAL4 max = -1e16;
+  for (i=0; i<n; i++){
+    if (vect[i] > max){
+      max = vect[i];
+    }
+  } 
+  return max;
+}
+
+REAL4 GetMinVectorNonZero(REAL4 *vect, INT4 n)
+{
+  INT4 i; 
+  REAL4 min = 1e16;
+  for (i=0; i<n; i++){
+    if ((vect[i] < min) && (vect[i]!=0)){
+      min = vect[i];
+    }
+  } 
+  return min;
+}
+
+
+
+void BankEfficiencyWaveOverlap(
+  LALStatus              *status,
+  REAL4Vector            *correlation, 
+  InspiralWaveOverlapIn  *overlapin,
+  OverlapOutputIn        *overlapOutputThisTemplate,
+  INT4                    startPad) 
+{
+  InspiralWaveOverlapOut    overlapout;
+	
+  INITSTATUS (status, "BankEfficiencyWaveOverlap", BANKEFFICIENCYC);
+  ATTATCHSTATUSPTR(status);
+
+  /* --- just to be sure a value has been computed --- */
+  overlapout.max = -1;  
+  
+  /* --- compute the output correlation between the signal (in overlapin)
+   * and the template in overlapin. --- */
+  LAL_CALL(LALInspiralWaveOverlap(status->statusPtr,
+      correlation, &overlapout, overlapin), status->statusPtr);
+      
+  /* --- store some results --- */
+  overlapOutputThisTemplate->rhoMax       = overlapout.max;
+  overlapOutputThisTemplate->phase        = overlapout.phase;
+  overlapOutputThisTemplate->rhoBin       = overlapout.bin;
+  overlapOutputThisTemplate->freq         = overlapin->param.fFinal;
+  overlapOutputThisTemplate->snrAtCoaTime = correlation->data[startPad];
+                                
+  DETATCHSTATUSPTR(status);
+}
+
+
+void BankEfficiencySaveVector(
+  CHAR        *filename, 
+  REAL4Vector  correlation, 
+  REAL4        tSampling)
+{
+  FILE *Foutput;
+  INT4 i;
+    
+  Foutput=  fopen(filename, "w");    
+  for (i=0; i<(INT4)correlation.length; i++)
+  {
+    fprintf(Foutput, "%e %e\n", 
+        (REAL4)i/tSampling,correlation.data[i]);               
+  }
+  
+  fclose(Foutput);        
+}
+
+
+void  BankEfficiencyFinalise(
+  LALStatus              *status,
+  SnglInspiralTable      *tmpltHead,
+  OverlapOutputIn         overlapOutputBestTemplate,
+  RandomInspiralSignalIn  randIn,
+  UserParametersIn        userParam,
+  INT4                    ntrials,
+  INT4                    filter_processed,
+  InspiralCoarseBankIn    coarseBankIn)
+{
+  INT4 thisTemplateIndex = 0;
+  InspiralTemplate       insptmplt;
+  SnglInspiralTable      *tmpltCurrent = NULL;
+  ResultIn                result;
+  
+  INITSTATUS (status, "BankEfficiencyWaveOverlap", BANKEFFICIENCYC);
+  ATTATCHSTATUSPTR(status);
+
+        
+   /*  print the maximum overlap over the whole bank and the corresponding 
+     * parameter of the templates, injected signal and so on. This is the main 
+     * results. We'll print one line for each simulation (ntrials parameter)*/
+  thisTemplateIndex = 0;
+  for (tmpltCurrent  = tmpltHead, thisTemplateIndex = 0;
+       tmpltCurrent && thisTemplateIndex<overlapOutputBestTemplate.templateNumber;
+       tmpltCurrent = tmpltCurrent->next, thisTemplateIndex++) {
+      /* nothing to do, we just want to come back to template
+       * in list which gave the best SNR */
+    }
+    
+    /* set the insptmplt structure */
+    insptmplt = randIn.param;
+    BankEfficiencyCreateListfromTmplt(&insptmplt, tmpltCurrent);
+    insptmplt.massChoice = t03;
+    LAL_CALL(LALInspiralParameterCalc( status->statusPtr,  &(insptmplt) ), status->statusPtr);
+    
+    LAL_CALL(BankEfficiencyGetResult( status->statusPtr, &insptmplt,
+       randIn.param, overlapOutputBestTemplate, &result, userParam),
+        status->statusPtr);
+    /* keep track of the number of templates actually used.*/
+    result.nfast  = filter_processed;
+    result.ntrial = ntrials;
+
+    BankEfficiencyPrintResults(result, randIn, ntrials, userParam.ntrials);
+      
+    if (userParam.printResultXml){
+      BankEfficiencyPrintResultsXml(coarseBankIn,randIn,userParam,result, 0);    
+    }
+
+    DETATCHSTATUSPTR(status);
+}
+
+
+void BankEfficiencyPopulateAmbiguityFunction(
+  gsl_matrix      *amb1,
+  REAL4Vector      correlation,
+  INT4             tmpltIndex,
+  OverlapOutputIn  outputTemplate,
+  INT4             startPad,
+  InspiralTemplate insptmplt
+)
+{
+	
+  gsl_matrix_set(amb1,2,tmpltIndex, gsl_matrix_get(amb1,2,tmpltIndex) + outputTemplate.rhoMax); 
+  gsl_matrix_set(amb1,3,tmpltIndex, gsl_matrix_get(amb1,3,tmpltIndex) + correlation.data[startPad]); 
+  gsl_matrix_set(amb1,0,tmpltIndex, insptmplt.t0); 
+  gsl_matrix_set(amb1,1,tmpltIndex, insptmplt.t3); 
+
+}
+  

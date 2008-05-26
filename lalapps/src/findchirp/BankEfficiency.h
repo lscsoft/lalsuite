@@ -175,18 +175,17 @@ fputs( "      <Stream Name=\"bankefficiencygroup:bankefficiency:table\"         
 #define BANKEFFICIENCY_PRINTPSD             0 /* print psd used in <x|x>      */
 #define BANKEFFICIENCY_PRINTTEMPLATE        0 /* print BCV's final template   */
 #define BANKEFFICIENCY_FAITHFULNESS         0               
-#define BANKEFFICIENCY_PRINTPROTO_FILEXML   "BankEfficiency-Proto.xml"  
-#define BankEfficiencyASCII2XML_INPUT1      "Trigger.dat"
-#define BankEfficiencyASCII2XML_INPUT2      "BankEfficiency-Proto.xml"
-#define BankEfficiencyASCII2XML_OUTPUT      "Trigger.xml"
-#define BANKEFFICIENCY_OUTPUT_XML_BANK      "BankEfficiency-Bank.xml"
-#define BANKEFFICIENCY_OUTPUT_ASCII_SIGNAL  "BankEfficiency-Signal.dat"
+#define BANKEFFICIENCY_PROTOTYPE            "BankEfficiency-Proto"  
+#define BANKEFFICIENCY_ASCIIRESULTS         "Trigger.dat"
+#define BANKEFFICIENCY_XMLBANK              "BankEfficiency-Bank.xml"
+#define BANKEFFICIENCY_ASCIIBANK            "BankEfficiency-Bank.dat"
+#define BANKEFFICIENCY_ASCIISIGNAL          "BankEfficiency-Signal.dat"
 #define BANKEFFICIENCY_PRINTOVERLAP_FILE    "BankEfficiency-BestOverlap.dat"
 #define BANKEFFICIENCY_PRINTBANK_FILEASCII  "BankEfficiency-Bank.dat"       
 #define BANKEFFICIENCY_PRINTBANK_FILEXML    "BankEfficiency-Bank.xml"       
-#define BANKEFFICIENCY_PRINTRESULT_FILEXML  "BankEfficiency-Result.xml"     
+#define BANKEFFICIENCY_XMLRESULTS           "BankEfficiency-Result.xml"     
 #define BANKEFFICIENCY_PRINTPSD_FILE        "BankEfficiency-PSD.dat"        
-#define BANKEFFICIENCY_SNRHISTOGRAM        "BankEfficiency-SNR_histrogram.dat"
+#define BANKEFFICIENCY_SNRHISTOGRAM         "BankEfficiency-SNR_histrogram.dat"
 
 
 /* ==================== local structures ==================== */
@@ -707,3 +706,42 @@ REAL8 BankEfficiencyComputeMatch(
 
 static int vrbflg = 0;
 
+
+REAL4 GetMaxVector(REAL4 *vect, INT4 n);
+REAL4 GetMinVectorNonZero(REAL4 *vect, INT4 n);
+
+void BankEfficiencyWaveOverlap(
+  LALStatus             *status,
+  REAL4Vector            *correlation, 
+  InspiralWaveOverlapIn  *overlapin,
+  OverlapOutputIn        *test,
+  INT4                    startPad);
+  
+  
+void BankEfficiencySaveVector(
+  CHAR        *filename, 
+  REAL4Vector  correlation, 
+  REAL4        tSampling);
+
+
+
+
+void  BankEfficiencyFinalise(
+  LALStatus              *status,
+  SnglInspiralTable      *tmpltHead,
+  OverlapOutputIn         overlapOutputBestTemplate,
+  RandomInspiralSignalIn  randIn,
+  UserParametersIn        userParam,
+  INT4                    ntrials, 
+  INT4                    filter_processed,
+  InspiralCoarseBankIn    coarseBankIn);
+  
+  
+void BankEfficiencyPopulateAmbiguityFunction(
+  gsl_matrix      *amb1,
+  REAL4Vector      correlation,
+  INT4             tmpltIndex,
+  OverlapOutputIn  outputTemplate,
+  INT4             startPad, 
+  InspiralTemplate insptmplt);
+    

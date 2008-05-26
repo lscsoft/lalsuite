@@ -7,6 +7,9 @@ __date__ = "$Date$"[7:-2]
 __name__ = "plotbankefficiency"
 __title__ = "Figure of merits for BankEfficiency results."
 
+
+
+  
 import getopt, sys, os, re, glob, exceptions, dircache, string
 from types    import *
 from optparse import *
@@ -15,10 +18,15 @@ from numpy import *
 from pylab import *
 from matplotlib import *
 from inspiraltools  import *
-
+import scipy
 #######################################################################
-def mysavefig(title):  
-  savefig(title.replace('.png','_'+opts.user_tag+'.png'))
+def myssavefig(opts, title):  
+  newtitle = title.replace('plotbankefficiency', \
+                        'plotbankefficiency_'+opts.user_tag)
+  if opts.verbose:
+    print '---saving picture ' + newtitle
+  
+  savefig(newtitle)
 ##############################################################################
 # parse options and arguments
 
@@ -78,7 +86,7 @@ for param,label in zip(['totalmass_sim','eta_sim','chirpmass_sim'],\
   plotting.plot(results[param],results['snr'])
   xlabel(r'Injected '+label, size='x-large')
   ylabel(r'Overlap (\%)', size='x-large')
-  mysavefig('plotbankefficiency_snr_versus_'+param+'.png')
+  myssavefig(opts,'plotbankefficiency_snr_versus_'+param+'.png')
 
 
 
@@ -97,14 +105,14 @@ xlabel(r'$\tau_0$ (seconds) ', size='x-large')
 ylabel(r'$\tau_3$ (seconds)', size='x-large')
 legend(['Simulated injection','template''s position'])
 title('Position of the injections')
-mysavefig('plotbankefficiency_bank.png')
+myssavefig(opts,'plotbankefficiency_bank.png')
 
 #----------------------------------------------------------SNR histogram and fit
 for this in ['snr','mass1_sim', 'mass2_sim']:
   plotting.plot_histogram_and_fit(results[this],100,fit=False)
   xlabel('SNR', size='x-large')
   ylabel(r'\#', size='x-large')
-  mysavefig('plotbankefficiency_hist_'+this+'.png')
+  myssavefig(opts,'plotbankefficiency_hist_'+this+'.png')
 
 # --------------------------------- scatter plot of SNR versus eccentricty and M
 if signal=='Eccentricity':
@@ -113,10 +121,12 @@ if signal=='Eccentricity':
                    results['snr'], markersize=30, alpha=1)
   xlabel(r'Eccentricity')
   ylabel(r'TotalMass ($M_\odot$)')
-  mysavefig('plotbankefficiency_scattersnr_totalMass_versus_ecc.png')
+  myssavefig(opts,'plotbankefficiency_scattersnr_totalMass_versus_ecc.png')
+
   # the eccentricity, and SNR
   plotting.plot(results['ecc_sim'],results['snr'],'ob')
-  mysavefig('plotbankefficiency_ecc_versus_snr.png')
+  pylab.axis([0,0.4,0.7,1])
+  myssavefig(opts,'plotbankefficiency_ecc_versus_snr.png')
 
 
 # ------------------------------------------------------------------------------
@@ -125,20 +135,20 @@ for param in ['totalmass', 'eta', 'chirpmass','tau0','phase']:
               markersize=10, marker='o', linewidth=0)
   xlabel(r'$\Delta$  ' + param)
   ylabel(r'$\rho$')
-  mysavefig('plotbankefficiency_accuracy_snr_versus_'+param+'.png')
+  myssavefig(opts,'plotbankefficiency_accuracy_snr_versus_'+param+'.png')
 
 
 try:
   plotting.vectors2image(results['totalmass_sim'],results['snr'],N=20)
   title(plotting.title+': probability density function of the overlaps')
-  mysavefig('plotbankefficiency_PDF_snr_totalmass_sim.png')
+  myssavefig(opts,'plotbankefficiency_PDF_snr_totalmass_sim.png')
 except:
   pass
 
 # related to the fast option.
 plotting.plot(results['totalmass_sim'],results['nfast'])
 title(plotting.title+': number of iterations to obtain the overlap computation')
-mysavefig('plotbankefficiency_totalmass_sim_fastoption.png')
+myssavefig(opts,'plotbankefficiency_totalmass_sim_fastoption.png')
 
 
 
@@ -146,8 +156,14 @@ mysavefig('plotbankefficiency_totalmass_sim_fastoption.png')
 figure(plotting.figure_num)
 data = (results['chirpmass_sim']-results['chirpmass'])/results['chirpmass_sim']
 hist(data,50)
-mysavefig('plotbankefficiency_accuracy_chirpmass.png')
+myssavefig(opts,'plotbankefficiency_accuracy_chirpmass.png')
 
+figure(100)
+scipy.histogram2d(results['totalmass_sim'],results['snr'])
+savefig('test.png')
 
 if opts.show_plot:
   show()
+
+
+

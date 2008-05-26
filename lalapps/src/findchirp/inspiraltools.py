@@ -8,7 +8,6 @@ __name__ = "plotinspmissed"
 __title__ = "Found and Missed plots for triggers"
     
 
-
 import sys
 import os
 import glob
@@ -24,6 +23,7 @@ def GetChirpMassEtaFromMasses(mass1, mass2):
   @param mass1: the first mass of the system
   @param mass2: the second mass of the system
   @return: the chirpMass and eta parameters
+  @author: Thomas Cokelaer
   """
   totalMass = mass1 + mass2
   eta = mass1 * mass2 / totalMass / totalMass
@@ -44,6 +44,7 @@ def GetChirpMassEtaFromTaus(tau0, tau3, fl):
   @type tau3: double
   @type tau0: double
   @type fl: double
+  @author: Thomas Cokelaer
   """
   m1, m2 = GetMassesFromTaus(tau0, tau3, fl)
   chirpMass, eta = GetChirpMassEtaFromMasses(m1, m2)
@@ -63,19 +64,64 @@ def GetMassesFromTaus(tau0, tau3, fl):
   @type tau3: double
   @type tau0: double
   @type fl: double
+  @author: Thomas Cokelaer
   """
+  epsilon = 1e-6
+  
   M = 5./32. / pi / pi / fl * tau3 / tau0 / mtsun
   eta = 1./8.* (32./5. * pi * tau0 / tau3)**(2./3) / tau3 / fl
+  
+  # we may want to round up the numerical errors because eta must be <=0.25
+  # of course if we have 0.30, this is another problem. One may want to adjust 
+  # the epsilonm which is set empirically for now.
+  try: 
+    size = len(eta)
+    for this,i in zip(eta,range(0,size)):
+      if (this<0.25+epsilon) & (this>0.25):
+        eta[i] = 0.25
+  except:
+    size = len([eta])
+    if (eta>0.25) & (eta<0.25+epsilon):
+        eta = 0.25
+  
   m1 = M/2.* (1.-sqrt(1.-4.*eta) )
   m2 = M/2.* (1.-sqrt(1.-4.*eta) )
   return m1, m2
 
+def GetTausFromMasses(m1,m2,fl):
+  """
+  Converts the mass parameters into components masses. Requires the lower 
+  cut-off frequency.
+  
+  @status: mature
+  @param m1: the individual mass1
+  @param m2: the individual mass2
+  @param fl: the lower cut off frequency in Hz
+  @return the tau parameters
+  @type m1: double
+  @type m2: double
+  @type fl: double
+  @author: Thomas Cokelaer
+  
+  """
+  M = (float)(m1 + m2)
+  M2 = M * M
+  eta = m1 * m2 / M2
+  piFl = pi * fl
+  
+  
+  M *= mtsun;
+  tau0 = 5.0 / (256.0 * eta * M**(5./3.) * piFl**(8./3.))
+  tau3 = pi / (8.0 * eta * M**(2./3.) * piFl**(5./3.))
+
+  return tau0,tau3
 
  #--------------------------------------------------------- ReadXMLFiles class
 class ReadXMLFiles:
   """
   A class that allows to read a XML file and returns tables such as sngl_inspiral,
   bankefficiency,process_params as dictionaries
+  @author: Thomas Cokelaer
   """
   def __init__(self, opts):
     """
@@ -92,6 +138,7 @@ class ReadXMLFiles:
     """
     param is a string corrsponding to the field "param" to be read within a
     table.
+    @author: Thomas Cokelaer
     """
     value = None
     
@@ -106,6 +153,7 @@ class ReadXMLFiles:
     tool to read an XML file and return the corresponding data 
     @param filename: the name of the input file.
     @param table: the table to read
+    @author: Thomas Cokelaer
     """
     file = open(filename, "r")
     line = file.readline()  
@@ -131,7 +179,6 @@ class ReadXMLFiles:
       line = file.readline()  
     count = 0
 
-    print table_summ
     # now parse the whole data and coutn the rows until "\Stream" is found 
     line = file.readline()  
     while line.find("Stream") < 0 :
@@ -142,7 +189,6 @@ class ReadXMLFiles:
           table_summ[key].append(float(field))
         except:
           table_summ[key].append((field))
-      print len(line)
       if len(line)==0: break
       line = file.readline()  
       
@@ -169,13 +215,15 @@ class ReadXMLFiles:
     """
     Method to read bankefficiency,sngl_inspiral and process_params tables in a 
     file that matches a user glob.
+    @author: Thomas Cokelaer
     """    
     # right now only one file can be read.
     if len(self.files)>1:
-        raise ValueError,"""More than 1 file match your --glob argument. Only 
-    is required. Try again."""
+        print "Warning: More than 1 file match your --glob argument. use the last one."
     
     for file in self.files:
+      if self.verbose is True:
+          print 'Reading ' + file
       # first we need to read the process_params, and extract Fl, the lower cut-
       # off frequency, which will be used later on  
       try:
@@ -282,6 +330,7 @@ class Plotting():
     @type markersize: integer
     @param alpha: the transparency
     @type alpha: float
+    @author: Thomas Cokelaer
     """
     fig = None
     handle = None
@@ -322,6 +371,7 @@ class Plotting():
     @type alpha: float
     @param linewidth: the transparency
     @type linewidth: float
+    @author: Thomas Cokelaer
     """
     fig = None
     handle = None
@@ -367,6 +417,7 @@ class Plotting():
     @type alpha: float
     @param linewidth: the transparency
     @type linewidth: float
+    @author: Thomas Cokelaer
     """
     fig = None
     handle = None
