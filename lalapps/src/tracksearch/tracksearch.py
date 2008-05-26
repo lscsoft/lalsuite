@@ -301,18 +301,44 @@ class tracksearchConvertSegList:
     def __init__(self,segmentFileName,newDuration,configOpts,rubberBlock=False,overrideBurn=False):
         self.origSegObject=pipeline.ScienceData()
         self.newSegObject=pipeline.ScienceData()
+        self.tmpSegObject=pipeline.ScienceData()
         self.newSegFilename=segmentFileName+'.revised'
         self.segFilename=segmentFileName
         self.duration=newDuration
         self.cp=configOpts
         self.rubberBlock=rubberBlock
         self.overrideBurnBorderReset=overrideBurn
+        self.unusedCompleteSegs=[]
+        self.unusedCompleteSegsTime=int(0)
     #End __init__()
     
+    def __readAllSegments__(self):
+        """
+        This is a method which tries to read the segment file twice.
+        Once to determine which segments (completed) can not be used
+        given the minimum time duration.  Then the method actually
+        loads only the segments that can be used ie which exceed the
+        minimum time requirements.
+        """
+        #Load data as expected ignoring tiny segments
+        self.origSegObject.read(self.segFilename,self.duration)
+        #Reload list to search to intervals that are to small 
+        #these intervals will be written to dataLost file
+        self.tmpSegObject.read(self.segFilename,1)
+        for bigChunks in self.tmpSegObject:
+            if bigChunks.dur < self.duration:
+                self.unusedCompleteSegs.append(bigChunks)
+                self.unusedCompleteSegsTime=self.unusedCompleteSegsTime+bigChunks.dur
+    #End
+
     def writeSegList(self):
         #Read segents from file
         try:
-            self.origSegObject.read(self.segFilename,self.duration)
+            #Fails to load segments that don't match a minimum
+            #duration of self.duration... This is how we lost 41days
+            #of S5 data in the analysis
+            self.__readAllSegments__(self.segFilename)
+            #self.origSegObject.read(self.segFilename,self.duration)
         except IndexError:
             sys.stderr.write("Does not appear to SegWizard formatted file.\n")
             sys.stderr.write("Trying to reparse it assuming two column GPS list.\n")
@@ -332,7 +358,8 @@ class tracksearchConvertSegList:
             tmp_fp.close()
             self.segFilename=tmpFilename
             sys.stderr.write("Reparsed it.  Trying to load reparsed TMP file.\n")
-            self.origSegObject.read(self.segFilename,self.duration)
+            self.__readAllSegments__(self.segFilename)
+            #self.origSegObject.read(self.segFilename,self.duration)
         #    
         #End Except section
         #
@@ -389,12 +416,17 @@ class tracksearchConvertSegList:
         for bigChunks in self.origSegObject:
             totalTimeInSegmentList=totalTimeInSegmentList+bigChunks.dur()
             totalTimeLostDueToMinBlockSize=totalTimeLostDueToMinBlockSize+bigChunks.unused()
+            totalTimeInSegmentList=totalTimeInSegmentList+self.unusedCompleteSegsTime
+            totalTimeLostDueToMinBlockSize=totalTimeLostDueToMinBlockSize+self.unusedCompleteSegsTime
+        percentTLDTMBS=float("%3.3f"%(totalTimeLostDueToMinBlockSize/float(totalTimeInSegmentList)))
         print "Total time available in segment list       :"+str(totalTimeInSegmentList)
         if not self.overrideBurnBorderReset:
-            print "Total time burned from data segments       :"+str(totalTimeBurned)
+            percentTTB=float("%3.3f"%(totalTimeBurned/float(totalTimeInSegmentList)))
+            print "Total time burned from data segments       :"+str(totalTimeBurned)+" Percentage: "+str(percentTTB)
+            percentTTB=float("%3.3f"%(totalTimeBurned/float(totalTimeInSegmentList)))
         else:
             print "Total time burned not applicable, using override."
-        print "Total time lost due to min Block Size req  :"+str(totalTimeLostDueToMinBlockSize)
+        print "Total time lost due to min Block Size req  :"+str(totalTimeLostDueToMinBlockSize)+" Percentage: "+str(percentTLDTMBS)
         output_fp.close
 
     def writeLostDataSegmentToDisk(self):
@@ -406,9 +438,21 @@ class tracksearchConvertSegList:
         """
         output_fp=open(self.newSegFilename+".lost","w")
         index=0
+        #Write fragments of segment times that could not be used.
+        #Do this by reading in file twice 1) with 1 sec min duration
+        #then extract times from this list 2) read file again with 
+        #proper self.duration values!
         for bigChunk in self.origSegObject:
             index+=1
             newStart=bigChunk.end()-bigChunk.unused()
+            newEnd=bigChunk.end()
+            outputLine="%d %d %d %d\n"%(index,newStart,newEnd,newEnd-newStart)
+            output_fp.write(outputLine)
+        #Write additional smaller segments that could not be used at
+        #all.
+        for bigChunk in self.unsedCompleteSegs:
+            index+=1
+            newStart=bigChunk.start()
             newEnd=bigChunk.end()
             outputLine="%d %d %d %d\n"%(index,newStart,newEnd,newEnd-newStart)
             output_fp.write(outputLine)
