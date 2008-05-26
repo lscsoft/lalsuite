@@ -205,9 +205,34 @@ class tracksearchCheckIniFile:
         WS=1
         NOFB=0
         WS=int(self.iniOpts.get('tracksearchtime','window_size'))
-        NOFB=int(self.iniOpts.get('tracksearchtime','number_of_freq_bins'))
+        if self.iniOpts.has_option('tracksearchtime','number_of_freq_bins'):
+            NOFB=int(self.iniOpts.get('tracksearchtime','number_of_freq_bins'))
+        else:
+            NOFB=0
+            self.errList.append('It appears that in section tracksearchtime option number_of_freq_bins is missing!')
         if WS > NOFB:
             self.errList.append('Error window length inconsistent!')
+        #Read expected job sampling rate
+        if self.iniOpts.has_option('tracksearchtime','sample_rate'):
+            sampleRate=float(self.iniOpts.get('tracksearchtime','sample_rate'))
+        else:
+            self.errList.append('It appears that sample_rate option is missing in ini file!.');
+            sampleRate=0
+        #Check for consistent PSD smoothing bin count!
+        if self.iniOpts.has_option('tracksearchtime','whiten_level'):
+            if self.iniOpts.get('tracksearchtime','whiten_level') > 0:
+                if self.iniOpts.has_option('tracksearchtime','smooth_average_spectrum'):
+                    SAP=int(self.iniOpts.get('tracksearchtime','smooth_average_spectrum'))
+                else:
+                    SAP=0
+                if self.iniOpts.has_option('layerconfig','layer1TimeScale'):
+                    LoTS=float(self.iniOpts.get('layerconfig','layer1TimeScale'))
+                else:
+                    LoTS=0
+                if (((LoTS*sampleRate)/2)<SAP):
+                    trySAP=int(((LoTS*sampleRate)/2.0)*0.05)
+                    self.errList.append('It appears that smooth_average_spectrum option is inconsistent! Try this value '+str(trySAP)+'. One rule of thumb is: ((fs*dT)/2)*0.05')
+                
         #Check [multichannel] section if present
         if self.iniOpts.has_section('multichannel'):
             for channel in self.iniOpts.options('multichannel'):
@@ -325,10 +350,11 @@ class tracksearchConvertSegList:
         #Reload list to search to intervals that are to small 
         #these intervals will be written to dataLost file
         self.tmpSegObject.read(self.segFilename,1)
+        self.unusedCompleteSegsTime=0
         for bigChunks in self.tmpSegObject:
-            if bigChunks.dur < self.duration:
+            if bigChunks.dur() < self.duration:
                 self.unusedCompleteSegs.append(bigChunks)
-                self.unusedCompleteSegsTime=self.unusedCompleteSegsTime+bigChunks.dur
+                self.unusedCompleteSegsTime+=bigChunks.dur()
     #End
 
     def writeSegList(self):
@@ -337,8 +363,7 @@ class tracksearchConvertSegList:
             #Fails to load segments that don't match a minimum
             #duration of self.duration... This is how we lost 41days
             #of S5 data in the analysis
-            self.__readAllSegments__(self.segFilename)
-            #self.origSegObject.read(self.segFilename,self.duration)
+            self.__readAllSegments__()
         except IndexError:
             sys.stderr.write("Does not appear to SegWizard formatted file.\n")
             sys.stderr.write("Trying to reparse it assuming two column GPS list.\n")
@@ -358,8 +383,7 @@ class tracksearchConvertSegList:
             tmp_fp.close()
             self.segFilename=tmpFilename
             sys.stderr.write("Reparsed it.  Trying to load reparsed TMP file.\n")
-            self.__readAllSegments__(self.segFilename)
-            #self.origSegObject.read(self.segFilename,self.duration)
+            self.__readAllSegments__()
         #    
         #End Except section
         #
@@ -390,7 +414,6 @@ class tracksearchConvertSegList:
         else:
             burnOption=0
         dataToBurn=max([determineDataPadding(self.cp),burnOption])
-        print "Number of segments loaded :"+str(self.origSegObject.__len__())
         for bigChunks in self.origSegObject:
             #Burn off data from bigChunks
             #Flag to ignore burn options.  Set to true if the input
@@ -413,15 +436,21 @@ class tracksearchConvertSegList:
         totalTimeInSegmentList=0
         totalTimeLostDueToMinBlockSize=0
         totalTimeBurned=self.origSegObject.__len__()*2*dataToBurn
+        totalTimeToAnalyze=0
         for bigChunks in self.origSegObject:
-            totalTimeInSegmentList=totalTimeInSegmentList+bigChunks.dur()
+            totalTimeInSegmentList+=bigChunks.dur()
+            totalTimeToAnalyze+=bigChunks.dur()-bigChunks.unused()
             totalTimeLostDueToMinBlockSize=totalTimeLostDueToMinBlockSize+bigChunks.unused()
-            totalTimeInSegmentList=totalTimeInSegmentList+self.unusedCompleteSegsTime
-            totalTimeLostDueToMinBlockSize=totalTimeLostDueToMinBlockSize+self.unusedCompleteSegsTime
-        percentTLDTMBS=float("%3.3f"%(totalTimeLostDueToMinBlockSize/float(totalTimeInSegmentList)))
+        totalTimeInSegmentList+=self.unusedCompleteSegsTime
+        totalTimeLostDueToMinBlockSize+=self.unusedCompleteSegsTime
+        percentTTTA=float("%3.3f"%(100*totalTimeToAnalyze/float(totalTimeInSegmentList)))
+        percentTLDTMBS=float("%3.3f"%(100*totalTimeLostDueToMinBlockSize/float(totalTimeInSegmentList)))
         print "Total time available in segment list       :"+str(totalTimeInSegmentList)
+        print "Segments ignored due to minimum segment length requirements :"+str(self.unusedCompleteSegs.__len__())
+        print "Total time ignored in these segments :"+str(self.unusedCompleteSegsTime)
+        print "Total time to be analyzed :"+str(totalTimeToAnalyze)+" Percentage :"+str(percentTTTA)
         if not self.overrideBurnBorderReset:
-            percentTTB=float("%3.3f"%(totalTimeBurned/float(totalTimeInSegmentList)))
+            percentTTB=float("%3.3f"%(100*totalTimeBurned/float(totalTimeInSegmentList)))
             print "Total time burned from data segments       :"+str(totalTimeBurned)+" Percentage: "+str(percentTTB)
             percentTTB=float("%3.3f"%(totalTimeBurned/float(totalTimeInSegmentList)))
         else:
@@ -450,7 +479,7 @@ class tracksearchConvertSegList:
             output_fp.write(outputLine)
         #Write additional smaller segments that could not be used at
         #all.
-        for bigChunk in self.unsedCompleteSegs:
+        for bigChunk in self.unusedCompleteSegs:
             index+=1
             newStart=bigChunk.start()
             newEnd=bigChunk.end()
@@ -1321,7 +1350,7 @@ class tracksearch:
             globFilename=globformat%(str(channel),str(self.blockID),str(i))
             tracksearchCluster_node.add_var_opt('file',layer2work)
             tracksearchCluster_node.add_var_opt('outfile',globFilename)
-            tracksearchCluster_node.add_var_arg("--glob --glue")
+            tracksearchCluster_node.add_var_arg("--glob ")
             #Setup the parents
             for parents in nodeLinks:
                 tracksearchCluster_node.add_parent(parents)
