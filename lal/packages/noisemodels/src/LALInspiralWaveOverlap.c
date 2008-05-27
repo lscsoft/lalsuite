@@ -242,10 +242,7 @@ LALInspiralWaveOverlap
    phase = overlapout->phase;
 
 
-   /*      For efficiency of the code, we replicate the loop as the case maybe 
-    *      This is done so that the if ( ) conditions can be placed outside the
-    *      loop 
-    */
+
 
    /* If an extended output is not requested - then just fill out the output
     * (as before). This can be indicated by setting overlapin->ifExtOutput to zero
@@ -253,13 +250,25 @@ LALInspiralWaveOverlap
 
    if (  !(overlapin->ifExtOutput) ) 
    {
-       /* No xcorrelation or filters requested on output - so just fill out
-        * output vector and exit
-        * */
-       for (i=0; i<(int)output->length; i++) { 
-           output->data[i] = cos(phase) * output1.data[i] 
-                   + sin(phase) * output2.data[i];
-       }
+        /* No xcorrelation or filters requested on output - so just fill out
+         * output vector and exit
+         * */
+        if ( overlapin->ifCorrelationOutput )
+        {
+         for (i=0; i<(int)output->length; i++) 
+          { 
+            output->data[i] = sqrt( output1.data[i] * output1.data[i] + 
+                output2.data[i] * output2.data[i]);
+          }
+        }
+        else
+        {
+          for (i=0; i<(int)output->length; i++) 
+          { 
+            output->data[i] = 
+                cos(phase) * output1.data[i] + sin(phase) * output2.data[i];
+          }
+        }
    }
    else { 
 
