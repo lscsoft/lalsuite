@@ -421,6 +421,7 @@ LALInspiralAmplitudeCorrectedWaveEngine(
    ppnParams.fStartIn = params->fLower;
    ppnParams.fStopIn = params->fCutoff;
    ppnParams.ppn = NULL;
+   ppnParams.ampOrder = params->ampOrder;
    /* set ther PN order of the flux */
    LALSCreateVector( status->statusPtr, &(ppnParams.ppn), params->order + 1 );
    ppnParams.ppn->data[0] = 1.0;
@@ -443,6 +444,7 @@ tion, that value must be zero*/
 
    memset( &waveform, 0, sizeof(CoherentGW) );
    LALGeneratePPNAmpCorInspiral( status->statusPtr, &waveform, &ppnParams );
+
 
    count = 0; 
   for (i=0;i<(INT4)waveform.h->data->length; i++)
@@ -475,7 +477,8 @@ tion, that value must be zero*/
     
  		count++;                       
    }
-  
+ 
+ 
    params->tC = count*dt;
    
    /* The highest harmonic has a frequency 3.5 times higher than the dominant */
