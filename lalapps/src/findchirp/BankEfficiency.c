@@ -363,7 +363,7 @@ main (INT4 argc, CHAR **argv )
                 overlapin.param.order              = tempOrder;
               }
               /* if we want to cut integration before the fFinal*/
-              overlapin.param.fCutoff = 1023;
+              /*overlapin.param.fCutoff = 1023;*/
 
               {
                 if (userParam.fastSimulation == 1 && (ematch < userParam.eMatch )  )
@@ -2976,7 +2976,10 @@ void BankEfficiencyParseParameters(
       else if (!strcmp(argv[i], "EOB")) 
         userParam->template = EOB;
       else if (!strcmp(argv[i], "EOBNR"))
-        userParam->template = EOBNR;
+        {
+          userParam->template = EOBNR;
+          coarseBankIn->order = pseudoFourPN;
+        }
       else if (!strcmp(argv[i], "BCV"))
         userParam->template = BCV;
       else 
