@@ -17,11 +17,11 @@
 *  MA  02111-1307  USA
 */
 
-#ifndef FSTATTOPLIST_H
-#define FSTATTOPLIST_H
+#ifndef HOUGHFSTATTOPLIST_H
+#define HOUGHFSTATTOPLIST_H
 
-#include "HierarchicalSearch.h"
 #include "HeapToplist.h"
+#include "HierarchicalSearch.h"
 
 
 
@@ -168,4 +168,4 @@ extern int read_hs_checkpoint(const char*filename, toplist_t*tl, UINT4*counter);
 */
 extern int write_hs_oputput(const char*filename, toplist_t*tl);
 
-#endif /* FSTATTOPLIST_H - double inclusion protection */
+#endif /* HOUGHFSTATTOPLIST_H - double inclusion protection */
