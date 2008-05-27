@@ -146,7 +146,7 @@ extern int houghFStat_cpt_file_compact(HoughFStatCheckpointFile*cptf);
     -2 if out of memory,
      0 otherwise (successful)
 */
-extern int write_hs_checkpoint(const char*filename, toplist_t*tl, UINT4 counter, BOOLEAN do_sync);
+extern int write_hfs_checkpoint(const char*filename, toplist_t*tl, UINT4 counter, BOOLEAN do_sync);
 
 /** tries to read a checkpoint
     - tries to open the file, returns 1 if no file found
@@ -159,13 +159,13 @@ extern int write_hs_checkpoint(const char*filename, toplist_t*tl, UINT4 counter,
     -1 in case of an I/O error
     -2 if the checksum was wrong or elems was unreasonable
 */
-extern int read_hs_checkpoint(const char*filename, toplist_t*tl, UINT4*counter);
+extern int read_hfs_checkpoint(const char*filename, toplist_t*tl, UINT4*counter);
 
 /** write the final output file:
     - re-sort the toplist into freq/alpha/delta/fdot order
     - write out the toplist in ASCII format with end marker to a temporary file
     - rename the file to the final name
 */
-extern int write_hs_oputput(const char*filename, toplist_t*tl);
+extern int write_hfs_oputput(const char*filename, toplist_t*tl);
 
 #endif /* HOUGHFSTATTOPLIST_H - double inclusion protection */
