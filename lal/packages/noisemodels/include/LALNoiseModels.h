@@ -259,12 +259,13 @@ extern "C" {
                 REAL8Vector      psd;
                 InspiralTemplate param;
                 RealFFTPlan      *fwdp;
-                RealFFTPlan      *revp;
+                RealFFTPlan      *revp;                               
                 UINT2            ifExtOutput;       /* A flag which takes values 0 or 1 to denote
                                                        if an extended output consisting of filter 
                                                        and xcorr vectors need to be filled out in 
                                                        the call to LALInspiralWaveOverlap ( )
                                                     */
+               UINT2             ifCorrelationOutput;/* a flag to fill the xcorr1 and xcorr2 outputs*/
             } 
     InspiralWaveOverlapIn; 
     /*  </lalVerbatim>  */
