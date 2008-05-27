@@ -102,7 +102,7 @@ int main(int argc, char *argv[]){
 
    static INT4VectorSequence  *sftPairIndexList;
    REAL8Vector *frequencyShiftList, *signalPhaseList, *sigmasq;
-   static PulsarDopplerParams  thisPoint;
+   PulsarDopplerParams  thisPoint;
    static REAL8Vector thisVel, thisPos, *weights;
  
 
@@ -335,11 +335,7 @@ int main(int argc, char *argv[]){
 
     psdVec->data = (REAL8FrequencySeries *)LALCalloc (psdVec->length, sizeof(REAL8FrequencySeries));
 
-/*
-    detStates = (DetectorStateSeries *) LALCalloc(1, sizeof(DetectorStateSeries));
-    detStates->length = numsft;
-    detStates->data = (DetectorState *) LALCalloc (detStates->length, sizeof(DetectorState));
-*/
+
     ts = XLALCreateTimestampVector (1);
     tOffs = 0.5/deltaF;
     /*loop over all sfts and get the PSDs and detector states */
@@ -392,7 +388,9 @@ int main(int argc, char *argv[]){
 	thisPoint.Delta = skyDelta[skyCounter]; 
 	thisPoint.fkdot[0] = uvar_f0 + (freqCounter*deltaF);
 	thisPoint.fkdot[1] = uvar_fdot; 
-	thisPoint.refTime = *(XLALGPSAdd(&firstTimeStamp, tObs/2)); 
+	thisPoint.fkdot[2] = 0.0;
+ 	thisPoint.fkdot[3] = 0.0;
+	thisPoint.refTime = firstTimeStamp;/*need to change this */
  
 	thisVel.length = 3;
 	thisPos.length = 3;
@@ -409,7 +407,10 @@ int main(int argc, char *argv[]){
 
     /* loop over each SFT to get frequency, then store in frequencyShiftList */
     for (j=0; j < (INT4)numsft; j++) {
-	DetectorStateSeries *tmpDetState = NULL;
+
+	/*only have 1 element in detectorStateSeries and AMCoeffs because
+	  the detector has to be updated for every SFT */
+	DetectorStateSeries *detState = NULL;
     	AMcoef = (AMCoeffs *)LALCalloc(1, sizeof(AMCoeffs));
     	AMcoef->a = XLALCreateREAL4Vector(1);
     	AMcoef->b = XLALCreateREAL4Vector(1);
@@ -419,18 +420,18 @@ int main(int argc, char *argv[]){
 	det = XLALGetSiteInfo (inputSFTs->data[j].name); 
 	ts->data[0] = inputSFTs->data[j].epoch;
 
-	LAL_CALL ( LALGetDetectorStates ( &status, &tmpDetState, ts, det, edat, tOffs), &status);
+	LAL_CALL ( LALGetDetectorStates ( &status, &detState, ts, det, edat, tOffs), &status);
 
-        tmpDetState->detector = *det;
+        detState->detector = *det;
 
-	LAL_CALL ( LALGetAMCoeffs ( &status, AMcoef, tmpDetState, skypos), &status); 
+	LAL_CALL ( LALGetAMCoeffs ( &status, AMcoef, detState, skypos), &status); 
 
-	thisVel.data = tmpDetState->data[0].vDetector;
- 	thisPos.data = tmpDetState->data[0].rDetector;
+	thisVel.data = detState->data[0].vDetector;
+ 	thisPos.data = detState->data[0].rDetector;
 	sft = &(inputSFTs->data[j]);
 
 
-        LAL_CALL( GetSignalFrequencyInSFT( &status, freq1, sft, &thisPoint, &thisVel), &status);
+        LAL_CALL( GetSignalFrequencyInSFT( &status, freq1, sft, &thisPoint, &thisVel, &thisPos, &firstTimeStamp), &status);
         LAL_CALL( GetSignalPhaseInSFT( &status, phase1, sft, &thisPoint, &thisPos), &status);
 
 	frequencyShiftList->data[j] = *freq1; 
@@ -443,7 +444,7 @@ int main(int argc, char *argv[]){
 			     - (AMcoef->a->data[0] * sin(2.0*psi));
 	sft = NULL;
 	
-	XLALDestroyDetectorStateSeries(tmpDetState);
+	XLALDestroyDetectorStateSeries(detState);
 	LALFree(det);
  	XLALDestroyAMCoeffs ( AMcoef ); 
 

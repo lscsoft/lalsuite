@@ -215,8 +215,8 @@ void CorrelateSingleSFTPair(LALStatus                *status,
 
   /* assume both sfts have the same freq. resolution */
   deltaF = sft1->deltaF;
-  bin1 = (INT4)floor( (*freq1 - sft1->f0) / (deltaF));
-  bin2 = (INT4)floor( (*freq2 - sft2->f0)/ (deltaF));
+  bin1 = (INT4)ceil( (*freq1 - sft1->f0) / (deltaF));
+  bin2 = (INT4)ceil( (*freq2 - sft2->f0)/ (deltaF));
 
   re1 = sft1->data->data[bin1].re;
   im1 = sft1->data->data[bin1].im;
@@ -244,17 +244,24 @@ void GetSignalFrequencyInSFT(LALStatus                *status,
 			     REAL8                    *out,
 			     COMPLEX8FrequencySeries  *sft1,
 			     PulsarDopplerParams      *dopp,
-			     REAL8Vector              *vel)
+			     REAL8Vector              *vel,
+			     REAL8Vector	      *pos,
+			     LIGOTimeGPS	      *firstTimeStamp)
 {  
   UINT4 k;
   REAL8 alpha, delta;
-  REAL8 vDotn, fhat, factor, timeDiff;
+  REAL8 vDotn, fhat, factor, timeDiff, rDotn;
   
   INITSTATUS (status, "GetSignalFrequencyInSFT", rcsid);
   ATTATCHSTATUSPTR (status);
 
   alpha = dopp->Alpha;
   delta = dopp->Delta;
+
+  rDotn = sin(delta) * sin(alpha) * pos->data[0]
+    + sin(delta) * cos(alpha) * pos->data[1]
+    + cos(delta) * pos->data[2];
+
 
   vDotn = sin(delta) * sin(alpha) * vel->data[0]
     + sin(delta) * cos(alpha) * vel->data[1]
@@ -264,8 +271,7 @@ void GetSignalFrequencyInSFT(LALStatus                *status,
   /* fhat = f_0 + f_1(t-t0) + f_2(t-t0)^2/2 + ... */
 
   /* this is the sft reference time  - the pulsar reference time */
-  timeDiff = XLALGPSDiff( &(sft1->epoch), &(dopp->refTime));
-
+  timeDiff = XLALGPSDiff( &(sft1->epoch), firstTimeStamp);
 
   fhat = dopp->fkdot[0]; /* initialization */
   factor = 1.0;
@@ -294,7 +300,8 @@ void GetSignalPhaseInSFT(LALStatus               *status,
 {  
   UINT4 k;
   REAL8 alpha, delta;
-  REAL8 rDotn, fhat, phihat, factor, timeDiff;
+  REAL8 rDotn, phihat, factor, timeDiff;
+  LIGOTimeGPS ssbt;
   
   INITSTATUS (status, "GetSignalPhaseInSFT", rcsid);
   ATTATCHSTATUSPTR (status);
@@ -312,15 +319,18 @@ void GetSignalPhaseInSFT(LALStatus               *status,
   /* this is an approximation... need to change in the future? */
 
   /* this is the sft reference time  - the pulsar reference time */
-  timeDiff = XLALGPSDiff( &(sft1->epoch), &(dopp->refTime));
+  XLALGPSSetREAL8(&ssbt, XLALGPSGetREAL8(&(sft1->epoch)) + rDotn);
+  timeDiff = XLALGPSDiff( &ssbt, &(dopp->refTime));
 
-  fhat = dopp->fkdot[0]; /* initialization */
+
+/*  fhat = dopp->fkdot[0];  initialization */
   phihat = 0.0;
 
   factor = 1.0;
-  for (k = 1;  k < PULSAR_MAX_SPINS; k++) {
+
+ for (k = 1;  k < PULSAR_MAX_SPINS; k++) {
     factor *= timeDiff / k;  
-    fhat += dopp->fkdot[k] * factor;
+/*    fhat += dopp->fkdot[k] * factor;*/
     phihat += dopp->fkdot[k-1] * factor;
 
   }
@@ -329,7 +339,7 @@ void GetSignalPhaseInSFT(LALStatus               *status,
     phihat += dopp->fkdot[k-1] * factor;
 
 
-  *out = LAL_TWOPI * ( phihat + fhat * rDotn);
+  *out = LAL_TWOPI * ( phihat );
 
 
   DETATCHSTATUSPTR (status);
@@ -352,8 +362,8 @@ void CalculateSigmaAlphaSq(LALStatus *status,
   ATTATCHSTATUSPTR (status);
   deltaF = psd1->deltaF;
 
-  bin1 = (INT8)floor( (freq1 - psd1->f0) / (deltaF));
-  bin2 = (INT8)floor( (freq2 - psd2->f0)/ (deltaF));
+  bin1 = (INT8)ceil( (freq1 - psd1->f0) / (deltaF));
+  bin2 = (INT8)ceil( (freq2 - psd2->f0)/ (deltaF));
   *out = pow(deltaF, 4) * psd1->data->data[bin1] * psd2->data->data[bin2];
   DETATCHSTATUSPTR (status);
 	

@@ -188,7 +188,9 @@ void GetSignalFrequencyInSFT(LALStatus                *status,
 			     REAL8                    *out,
 			     COMPLEX8FrequencySeries  *sft1,
 			     PulsarDopplerParams      *dopp,
-			     REAL8Vector              *vel);
+			     REAL8Vector              *vel,
+			     REAL8Vector	      *pos,
+			     LIGOTimeGPS	      *firstTimeStamp);
 
 void GetSignalPhaseInSFT(LALStatus               *status,
 			 REAL8                   *out,
