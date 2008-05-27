@@ -86,15 +86,20 @@ void AddNumRelStrainModes( LALStatus              *status,
 			   REAL4TimeVectorSeries  **outStrain,
 			   SimInspiralTable *thisinj);
 
-
-void InjectNumRelWaveforms (LALStatus              *status,
-			    REAL4TimeSeries         *chan,      
-			    SimInspiralTable        *injections,
-			    CHAR                    ifo[3],     
-			    REAL8                   dynRange,
-			    REAL8                   freqLowCutoff);
+void InjectNumRelWaveforms (LALStatus           *status,
+			    REAL4TimeSeries     *chan,        
+			    SimInspiralTable    *injections,  
+			    CHAR                ifo[3],       
+			    REAL8               dynRange,     
+			    REAL8               freqLowCutoff,
+			    REAL8               snrLow,       
+			    REAL8               snrHigh);
 
 REAL8 start_freq_from_frame_url(CHAR  *url);
+
+REAL8 calculate_ligo_snr_from_strain(  REAL4TimeVectorSeries *strain,
+				       SimInspiralTable      *thisInj,	  
+				       CHAR                  ifo[3]);
 
 #ifdef  __cplusplus
 }                /* Close C++ protection */
