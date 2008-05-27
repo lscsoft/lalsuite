@@ -108,9 +108,10 @@ title('Position of the injections')
 myssavefig(opts,'plotbankefficiency_bank.png')
 
 #----------------------------------------------------------SNR histogram and fit
-for this in ['snr','mass1_sim', 'mass2_sim']:
+for this,label in zip(['snr','mass1_sim', 'mass2_sim'],
+                      ['SNR', 'Mass1', 'Mass2']):
   plotting.plot_histogram_and_fit(results[this],100,fit=False)
-  xlabel('SNR', size='x-large')
+  xlabel(label, size='x-large')
   ylabel(r'\#', size='x-large')
   myssavefig(opts,'plotbankefficiency_hist_'+this+'.png')
 
@@ -158,9 +159,9 @@ data = (results['chirpmass_sim']-results['chirpmass'])/results['chirpmass_sim']
 hist(data,50)
 myssavefig(opts,'plotbankefficiency_accuracy_chirpmass.png')
 
-figure(100)
-scipy.histogram2d(results['totalmass_sim'],results['snr'])
-savefig('test.png')
+#figure(100)
+#scipy.histogram2d(results['totalmass_sim'],results['snr'])
+#savefig('test.png')
 
 if opts.show_plot:
   show()

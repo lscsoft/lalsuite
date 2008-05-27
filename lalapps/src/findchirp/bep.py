@@ -22,24 +22,27 @@ import ConfigParser
 user = os.getlogin()
 uname = os.uname()
 host = uname[1]
-#if host.find('explorer')>=0:
-
-
 
 def create_condor_file(configcp):
   """
   create a condor file for lalapps_bankefficiency
+  
+  @param configcp: the user ini file
+  @return: the list of arguments to be used with lalapps_Bankefficiency 
   """
+  # create the sub file
   fp = open('bep.sub','w');
   fp.write('Executable   = ' +configcp.get("main", "executable")+"\n")
   fp.write('Universe     = vanilla\n')
 
+  # test the environment, which may differ depending on the cluster/computer
   if host.find('coma')>=0:        
     fp.write('Environment  = LD_LIBRARY_PATH=/usr/lscsoft/non-lsc/lib\n')
   
   if host.find('explorer')>=0:        
     fp.write('Getenv = True\n')
      
+  # Here are the arguments/parameters provided by the user ini file.   
   arguments = ""
   for i in configcp.items("general"):
     arguments = arguments + ' --'+i[0] +' ' +i[1]
@@ -48,12 +51,12 @@ def create_condor_file(configcp):
   for i in configcp.items("signal"):
     arguments = arguments + ' --'+i[0] +' ' +i[1]
     
+  # in particular, the number of simulations and nodes to be used
   n = float(configcp.get("simulation", "ntrial"))
   N = float(configcp.get("simulation", "njobs"))
-  print n/N
-  
   arguments = arguments + ' --ntrial '+str( int(n/N))
 
+  # now we can update the sub file with the arguments that have just been read
   fp.write('Arguments = ' + arguments + ' --seed $(macroseed)')
   fp.write('\n\n')
   fp.write('priority = 10\n')
@@ -85,9 +88,13 @@ def create_condor_file(configcp):
 def create_bank(configcp, arguments):
   """
   create the template bank independantly 
+  @param param: the user ini file
+  @param param: the arguments of lalapps_BankEfficiency
   """
-  arguments = arguments + ' --n 1 --check --print-bank --print-xml'
+  # for the bank generation, we simply need to add these arguments
+  arguments = arguments + ' --n 1 --check --print-bank --xml-output'
   os.system('rm -f BE_Bank.dat BE_Bank.xml')
+  
   print '###'
   print ' We are creating the template bank for sanity check. Please wait'
   fp =open('BankEfficiency_createbank','w');
@@ -105,9 +112,11 @@ def create_bank(configcp, arguments):
 
 def create_dag_file(configcp):
   """ 
-  create the whole daga file containing jobs for the simulations and the
+  create the whole dag file containing jobs for the simulations and the
   output (finalise.sh)
+  @param configcp: the user ini file
   """
+  
   njobs = int(configcp.get("simulation", "njobs"))
   print '--- Generating the dag file'
   fp=open('bep.dag', 'w')
@@ -126,6 +135,7 @@ def create_dag_file(configcp):
 def create_finalise_condor(configcp):
   """
   create the sub file for finalise.sh
+  @param configcp: the user ini file
   """
   fp = open('finalise.sub', 'w')
   fp.write('Executable   = ./finalise.sh\n')
@@ -164,6 +174,7 @@ def create_finalise_script(configcp):
 
 def check_executable(configcp):
   """
+  A routine to check that the executable is accessible
   """
   try:
     print '--- Check that the executable ('+ configcp.get("main","executable")  +')is present in '+path
@@ -179,6 +190,7 @@ def check_executable(configcp):
 
 def parse_arguments():
   """
+  The user interface
   """
   print '--- Parsing user arguments'
   parser = OptionParser()
