@@ -127,6 +127,8 @@ INT4 main( INT4 argc, CHAR *argv[] )
   LIGOTimeGPS gpsEndTime    = {0, 0};
 
   REAL8 freqLowCutoff = -1;
+  REAL8 strainLowPassFreq = -1;
+  REAL8 snrLow, snrHigh;
 
   /* injections */
   SimInspiralTable *injections = NULL;
@@ -169,6 +171,9 @@ INT4 main( INT4 argc, CHAR *argv[] )
     {"set-name",                required_argument, 0,                'n'},
     {"mdc-log",                 required_argument, 0,                'o'},
     {"freq-low-cutoff",         required_argument, 0,                'l'},
+    {"strain-lowpass-freq",     required_argument, 0,                'L'},
+    {"snr-low",                 required_argument, 0,                's'},
+    {"snr-high",                required_argument, 0,                'S'},
     {"help",                    no_argument,       0,                'h'},
     {"version",                 no_argument,       0,                'V'},
     {0, 0, 0, 0}
@@ -342,6 +347,31 @@ INT4 main( INT4 argc, CHAR *argv[] )
 	  }
 	break;
 
+
+      case 'L':
+	/* set low-pass cutoff frequency for producing noise */
+	strainLowPassFreq = atof(optarg);
+	if (strainLowPassFreq < 0 ) 
+	  {
+	    fprintf(stderr, "invalid argument to --%s:\n"
+		    "low pass frequency must be positive: "
+		    "(%f specified) \n",
+		    long_options[option_index].name, strainLowPassFreq);
+	    exit(1);
+	  }
+	break;
+
+
+      case 's':
+	/* set low-pass cutoff frequency for producing noise */
+	snrLow = atof(optarg);
+	break;
+
+      case 'S':
+	/* set low-pass cutoff frequency for producing noise */
+	snrHigh = atof(optarg);
+	break;
+
       case 'D':
         /* set debug level */
         set_debug_level( optarg );
@@ -380,6 +410,18 @@ INT4 main( INT4 argc, CHAR *argv[] )
     {
       fprintf( stderr, "ERROR: --freq-low-cutoff must be specified\n" );
       exit( 1 );
+    }
+
+  if ( strainLowPassFreq < 0 )
+    {
+      fprintf( stderr, "ERROR: --strain-lowpass-freq must be specified\n" );
+      exit( 1 );
+    }
+
+  if (snrLow > snrHigh)
+    {
+      fprintf( stderr, "ERROR: --snr-low must be lesser than --snr-high\n");
+      exit(1);
     }
 
   if ( frameFlag )
@@ -463,6 +505,8 @@ INT4 main( INT4 argc, CHAR *argv[] )
     exit( 1 );
   }
 
+  
+
   /*
    *
    * Main Code
@@ -506,7 +550,8 @@ INT4 main( INT4 argc, CHAR *argv[] )
       memset( injData[i]->data->data, 0.0, injData[i]->data->length * sizeof(REAL4) );
 
       if (addNoise)  {
-	LAL_CALL( add_colored_noise( &status, injData[i], i, randParams, dynRange, 40), &status);
+	
+	LAL_CALL( add_colored_noise( &status, injData[i], i, randParams, dynRange, strainLowPassFreq), &status);
       }
     }
 
@@ -560,8 +605,11 @@ INT4 main( INT4 argc, CHAR *argv[] )
       else
       {
         /* now we can finally inject the numerical waveforms */
+        LALSnprintf(channel, LALNameLength, "%s:STRAIN", ifo);
+        strncpy(injData[i]->name, channel, LALNameLength);
+
         LAL_CALL( InjectNumRelWaveforms ( &status, injData[i], injections, ifo, 
-					  dynRange, freqLowCutoff), &status);
+					  dynRange, freqLowCutoff, snrLow, snrHigh), &status);
       }
 
       /* set strain as unit */
@@ -620,24 +668,27 @@ static void print_usage( CHAR *program )
       "Usage:  %s [options]\n"\
       "The following options are recognized.  Options not surrounded in [] are\n"\
       "required.\n"\
-      "  [--help]                      display this message\n"\
-      "  [--verbose]                   print progress information\n"\
-      "  [--version]                   print version information and exit\n"\
-      "  --debug-level     lvl         set debug level to 'lvl'\n"\
-      "  --injection-file  inj_file    read inj details from xml sim-insp inj_file\n"\
-      "  --ifo             ifo         IFO for which to generate injections\n"\
-      "  --all-ifos                    create injections for all IFOs\n"\
-      "  --gps-start-time  start       start time of output file\n"\
-      "  --gps-end-time    end         end time of output file\n"\
-      "  --sample-rate     rate        the sample rate used to generate injections\n"\
-      "  --write-mdc-log               write an MDC log file\n"\
-      "  --frame-type      TYPE        set the name of the output frame\n"\
-      "  --set-name        set_name    set the injection set name\n"\
-      "  --mdc-log         mdc_log     name of file for MDC log file\n"\
-      "  --write-frame                 write h(t) waveform to a frame file\n"\
-      "  --no-numerical                the injections are not numerical\n"\
-      "  --simulate-noise              add simulated colored Gaussian noise\n"\
-      "  --freq-low-cutoff freq        lower cutoff frequency for injections\n"\
+      "  [--help]                          display this message\n"\
+      "  [--verbose]                       print progress information\n"\
+      "  [--version]                       print version information and exit\n"\
+      "  --debug-level         lvl         set debug level to 'lvl'\n"\
+      "  --injection-file      inj_file    read inj details from xml sim-insp inj_file\n"\
+      "  --ifo                 ifo         IFO for which to generate injections\n"\
+      "  --all-ifos                        create injections for all IFOs\n"\
+      "  --gps-start-time      start       start time of output file\n"\
+      "  --gps-end-time        end         end time of output file\n"\
+      "  --sample-rate         rate        the sample rate used to generate injections\n"\
+      "  --write-mdc-log                   write an MDC log file\n"\
+      "  --frame-type          TYPE        set the name of the output frame\n"\
+      "  --set-name            set_name    set the injection set name\n"\
+      "  --mdc-log             mdc_log     name of file for MDC log file\n"\
+      "  --write-frame                     write h(t) waveform to a frame file\n"\
+      "  --no-numerical                    the injections are not numerical\n"\
+      "  --simulate-noise                  add simulated colored Gaussian noise\n"\
+      "  --freq-low-cutoff     freq        lower cutoff frequency for injections\n"\
+      "  --strain-lowpass-freq freq        lowpass frequency when noise is produced\n"\
+      "  --snr-low             snr_lo      lower cutoff on snr\n"\
+      "  --snr-high            snr_hi      upper cutoff on snr\n"\
       "\n", program );
 }
 
@@ -654,6 +705,7 @@ static void output_frame(CHAR *ifo,
   INT4 detectorFlags;
   FrameH *frame;
   CHAR creator[HISTORY_COMMENT];  
+  CHAR channel[LALNameLength];
 
   /* get frame filename */
   duration = gpsEnd - gpsStart;
@@ -678,6 +730,10 @@ static void output_frame(CHAR *ifo,
     fprintf( stderr, "ERROR: Unrecognised IFO: '%s'\n", ifo );
     exit( 1 );
   }
+
+  /* set the channel name */
+  LALSnprintf(channel, LALNameLength, "%s:STRAIN", ifo);
+  strncpy(injData->name, channel, LALNameLength);
 
   /* define frame */
   frame = XLALFrameNew( &injData->epoch, duration, "LIGO", 0, 1,
@@ -873,8 +929,6 @@ void add_colored_noise(LALStatus       *status,
   REAL8             deltaF         = 1.0 / (deltaT * (REAL8) length);
   REAL8             tObs           = length * deltaT;
 
-  FILE *fp=NULL;
-
   INITSTATUS( status, "add_colored_noise", rcsid);
   ATTATCHSTATUSPTR( status );
   
@@ -1014,7 +1068,7 @@ int get_spectrum(REAL8Sequence *spectrum,
       LALLIGOIPsd( NULL, &psd_value, strainHighPassFreq );
       for ( k = 0; k < (UINT4)kmin ; ++k )
 	{  
-	  spectrum->data[k] = 2.0 * 9.0e-46 * psd_value * dynRange * dynRange;
+	  spectrum->data[k] = 4.0 * 9.0e-46 * psd_value * dynRange * dynRange;
 	}
       for ( k = kmin; k < spectrum->length ; ++k )
 	{  
