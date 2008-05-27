@@ -17,6 +17,7 @@
 *  MA  02111-1307  USA
 */
 
+#include <stdio.h>
 #include <unistd.h>
 #include "HoughFStatToplist.h"
 #include "HeapToplist.h"
