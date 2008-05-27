@@ -689,9 +689,12 @@ tagInspiralCoarseBankIn
   6=S2BCV
   */
   GridSpacing                   gridSpacing;
-  /* post-Newtonian order and approximation */
+  
+  /* post-Newtonian order( phase), approximant, and amplitude PN order */
   Order                         order;        
   Approximant                   approximant;  
+  Order                         ampOrder;        
+  
   /* parameters for different/multiple freq. cutoffs */
   INT4                          NumFreqCut;
   FreqCut                       MaxFreqCut;
