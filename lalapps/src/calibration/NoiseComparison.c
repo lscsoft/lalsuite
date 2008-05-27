@@ -124,6 +124,7 @@ struct CommandLineArgsTag {
   char *asq_chan;          /* DARM_ERR channel name */ 
   char *hoft_chan;         /* h(t) channel name */
   char *noisefile;         /* output file for the noise */
+  char *noisefilebin;      /* output file for the individual bins */
   char *OLGFile;           /* open loop gain file */
   char *SensingFile;       /* sensing function file */
   INT4 GPSStart;           /* Start and end GPS times of the segment to be compared*/
@@ -173,6 +174,7 @@ REAL4Vector *derrwin=NULL,*hoftwin=NULL;
 
 LALWindowParams winparams;
 FILE *fpout=NULL;
+FILE *fpoutbin=NULL;
 COMPLEX16Vector *ffthtData = NULL;
 COMPLEX8Vector *fftderrData = NULL;
 REAL8FFTPlan *fftPlanDouble=NULL;
@@ -334,6 +336,18 @@ int Initialise(struct CommandLineArgsTag CLA)
   
    fprintf(stdout,"Made it to: 0\n"); 
    printmemuse();  
+
+   /* Open individual bin output file */
+   fpoutbin=fopen(CLA.noisefilebin,"w");
+   if (fpoutbin==NULL)
+     {
+       fprintf(stderr,"Could not open %s!\n",CLA.noisefilebin);
+       return 1;
+     }
+   
+   fprintf(stdout,"Made it to: 0b \n");
+   printmemuse();
+
 
   LALCreateForwardREAL8FFTPlan( &status, &fftPlanDouble, hoft.data->length/4, 0 );
   TESTSTATUS( &status );
@@ -609,6 +623,7 @@ int ComputeNoise(struct CommandLineArgsTag CLA, int n)
 
 
   fprintf(fpout, "%d ", gpsepoch.gpsSeconds);
+  fprintf(fpoutbin, "%d \n", gpsepoch.gpsSeconds);
 
   for (j=0; j < Nfrequencies; j++)  
     {
@@ -672,9 +687,10 @@ int ComputeNoise(struct CommandLineArgsTag CLA, int n)
             diff_r += pow((caldr*2.0*derr.deltaT/(REAL4)derr.data->length) - (hr*2.0*hoft.deltaT/(REAL4)hoft.data->length),2.0)/nsamples;
             diff_i += pow((caldi*2.0*derr.deltaT/(REAL4)derr.data->length) - (hi*2.0*hoft.deltaT/(REAL4)hoft.data->length),2.0)/nsamples;
 	    
-	    if(CLA.outputphase)
- 	    fprintf(stdout,"%e %e %e %e \n",hr,hi,caldr,caldi); 
-
+	    if(k==0)
+	      {
+ 	        fprintf(fpoutbin,"%e %e %e %e \n",hr,hi,caldr,caldi); 
+              }
 	  }
 	mean_Sh_derr *= 2.0*derr.deltaT/(REAL4)derr.data->length;
 	mean_Sh_hoft *= 2.0*hoft.deltaT/(REAL4)hoft.data->length;
@@ -956,6 +972,7 @@ int Finalise(void)
    printmemuse();  
 
   fclose(fpout);
+  fclose(fpoutbin);
   
   LALCheckMemoryLeaks();
 
@@ -982,6 +999,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     {"gps-start-time",       required_argument, NULL,           'l'},
     {"gps-end-time",         required_argument, NULL,           'm'},
     {"output-file",          required_argument, NULL,           'n'},
+    {"output-bin",           required_argument, NULL,           'B'},
     {"olg-file",             required_argument, NULL,           'o'},
     {"sensing-file",         required_argument, NULL,           'p'},
     {"olg-re",               required_argument, NULL,           'q'},
@@ -998,7 +1016,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     {"help",                 no_argument, NULL,                 'h'},
     {0, 0, 0, 0}
   };
-  char args[] = "ha:b:c:d:e:g:i:j:k:l:m:n:o:p:q:r:s:t:u:v:w:xy:zQ";
+  char args[] = "ha:b:c:d:e:g:i:j:k:l:m:n:B:o:p:q:r:s:t:u:v:w:xy:zQ";
 
   /* Initialize default values */
   CLA->freqfile=NULL;
@@ -1013,6 +1031,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   CLA->exc_chan=NULL;
   CLA->hoft_chan=NULL;
   CLA->noisefile=NULL;
+  CLA->noisefilebin=NULL;
   CLA->OLGFile=NULL;
   CLA->SensingFile=NULL;
   CLA->GPSStart = 0;
@@ -1093,6 +1112,10 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       /* real part of OLG */
       CLA->noisefile=optarg;
       break;
+    case 'B':
+      /* real part of OLG */
+      CLA->noisefilebin=optarg;
+      break;
     case 'o':
       /* real part of OLG */
       CLA->OLGFile=optarg;
@@ -1153,7 +1176,8 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stdout,"\t hoft-channel (-k)\tFLOAT\t h(t) channel name.\n");
       fprintf(stdout,"\t gps-start-time (-l)\tINT\t GPS start time.\n");
       fprintf(stdout,"\t gps-end-time (-m)\tINT\t GPS end time.\n");
-      fprintf(stdout,"\t ouput-file (-n)\tSTRING\t Name of output file.\n");
+      fprintf(stdout,"\t output-file (-n)\tSTRING\t Name of output file.\n");
+      fprintf(stdout,"\t output-bin (-B)\tSTRING\t Name of individual bin output file.\n");
       fprintf(stdout,"\t olg-file (-o)\tSTRING\t Name of open loop gain file.\n");
       fprintf(stdout,"\t sensing-file (-p)\tSTRING\t Name of sensing function file.\n");
       fprintf(stdout,"\tolg-re (-q)\tFLOAT\t Real part of the open loop gain at the calibration line frequency.\n");
@@ -1258,6 +1282,13 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stderr,"Try %s -h \n", argv[0]);
       return 1;
     }
+  if(CLA->noisefilebin==NULL)
+    {
+      fprintf(stderr,"No individual bin output file specified.\n");
+      fprintf(stderr,"Try %s -h \n", argv[0]);
+      return 1;
+    }
+
   if(CLA->OLGFile==NULL)
     {
       fprintf(stderr,"No response file specified.\n");
