@@ -3273,10 +3273,13 @@ fprintf( a, "  --rsq-veto-pow POW           set the r^2 veto power to POW\n");\
 fprintf( a, "\n");\
 fprintf( a, "  --bank-veto-subbank-size N   set the number of tmplts in a subbank to N\n");\
 fprintf( a, "\n");\
-fprintf( a, "  --maximization-interval msec set length of maximization interval\n");\
+fprintf( a, "  --maximization-interval MSEC set length of interval (in ms) for\n");\
+fprintf( a, "                                 maximization of triggers over the template bank.\n");\
+fprintf( a, "                                 Cannot be used with --ts-cluster.\n");\
 fprintf( a, "\n");\
 fprintf( a, "  --ts-cluster   MTHD          max over template and end time MTHD \n");\
 fprintf( a, "                                 (T0T3Tc|T0T3TcAS|Psi0Psi3Tc|Psi0Psi3TcAS) \n");\
+fprintf( a, "                                 Cannot be used with --maximization-interval.\n");\
 fprintf( a, "  --ts-endtime-interval msec   set end-time interval for TrigScan clustering\n");\
 fprintf( a, "  --ts-metric-scaling fac      scale the metric which defines the ellipsoids for TrigScan\n");\
 fprintf( a, "                               Scaling must be > 0\n");\
