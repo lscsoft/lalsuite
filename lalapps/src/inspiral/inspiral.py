@@ -502,14 +502,18 @@ class InspInjNode(InspiralAnalysisNode):
     Return the manually-set output name if it exists, otherwise, derive the
     name like other InspiralAnalysisNodes.
     """
-    if self.__outputName: return self.__outputName
+    if self.__outputName: 
+      self.add_output_file(self.__outputName)
+      return self.__outputName
     else:
       outputFile = "HL-INJECTIONS_" + str(self.get_seed())
       if self.get_user_tag():
         outputFile += "_" + self.get_user_tag()
       outputFile += "-" + str(self.get_start()) + "-" + str(self.get_end() - \
           self.get_start()) + ".xml"
+      self.add_output_file(outputFile)
       return(outputFile)
+   
 
 class BbhInjNode(InspiralAnalysisNode):
   """

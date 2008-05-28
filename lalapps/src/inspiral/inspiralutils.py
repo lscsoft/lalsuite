@@ -293,7 +293,7 @@ def findSegmentsToAnalyze(config,ifo,generate_segments=True,\
 ##############################################################################
 # Function to set up lalapps_inspiral_hipe
 def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dfOnly = False, \
-    playOnly = False, vetoCat = None, vetoFiles = None):
+    playOnly = False, vetoCat = None, vetoFiles = None, site = "local", dax=None):
   """
   run lalapps_inspiral_hipe and add job to dag
   hipeDir   = directory in which to run inspiral hipe
@@ -304,7 +304,8 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dfOnly = False, \
   vetoCat   = run this category of veto
   vetoFiles = dictionary of veto files
   """
-
+  # don't create a pegasus workflow for local dags
+  if site=="local": dax=None
   # make the directory for running hipe
   mkdir(hipeDir)
 
@@ -367,6 +368,13 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dfOnly = False, \
 
   # set the usertag
   hipecp.set("pipeline", "user-tag",usertag)
+
+  # setup the ldgsubmitdax specific stuff if it exists
+  try:
+    hipecp.add_section("ldgsubmitdax")
+    hipecp.set("ldgsubmitdax","gsiftp",config.get("ldgsubmitdax","gsiftp"))
+    hipecp.set("ldgsubmitdax","pool",config.get("ldgsubmitdax","pool"))
+  except: pass
 
   if injSeed:
     # copy over the arguments from the relevant injection section
@@ -441,7 +449,7 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dfOnly = False, \
 
   hipeCommand = test_and_add_hipe_arg(hipeCommand,"disable-dag-categories")
   hipeCommand = test_and_add_hipe_arg(hipeCommand,"disable-dag-priorities")
-
+  if dax: hipeCommand += "--dax " 
   # run lalapps_inspiral_hipe
   make_external_call(hipeCommand)
 
@@ -453,7 +461,29 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dfOnly = False, \
     except: pass
 
   # make hipe job/node
-  hipeDag = iniFile.rstrip("ini") + usertag + ".dag"
+  # check to see if it should be a dax
+  hipeDax = None
+  hipeDag = iniFile.rstrip("ini") + usertag + ".dag"  
+  if dax: 
+      hipeDax = iniFile.rstrip("ini") + usertag + ".dax"
+      hipeDag = iniFile.rstrip("ini") + usertag + ".dax-0.dag"
+  if hipeDax:
+     ldg_submit_dax_command = config.get("condor","ldgsubmitdax") + ' '
+     ldg_submit_dax_command += '--ini-file '+iniFile + ' '
+     ldg_submit_dax_command += '--pegasus-cache '+hipeDax + '.peg_cache '
+     ldg_submit_dax_command += '--no-submit '+ ' '
+     ldg_submit_dax_command += '--properties-file '+config.get("ldgsubmitdax","properties-file") + ' '
+     ldg_submit_dax_command += '--sites-file '+config.get("ldgsubmitdax","sites-file") + ' '
+     ldg_submit_dax_command += '--verbose '+' '
+     ldg_submit_dax_command += hipeDax +' '+ site
+
+     print ldg_submit_dax_command
+
+     make_external_call(ldg_submit_dax_command)
+ 
+  #print os.getcwd()
+  #print ldg_submit_dax_command
+ 
   hipeJob = pipeline.CondorDAGManJob(hipeDag, hipeDir)
   if vetoCat: hipeJob.add_opt("maxjobs", "5")
   hipeNode = pipeline.CondorDAGNode(hipeJob)
