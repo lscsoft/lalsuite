@@ -71,7 +71,7 @@ int main(int argc, char *argv[]){
    REAL8FrequencySeries *psd1, *psd2;
    COMPLEX16Vector *yalpha = NULL, *ualpha = NULL;
    REAL8Vector *Fplus, *Fcross;
-   REAL8 Aplus = sqrt(7.0/15.0), Across = sqrt(1.0/3.0); 
+   REAL8 Aplus, Across; 
    /*A's are averaged over cos i... need to change this later!*/ 
 
    SFTPairParams pairParams;
@@ -126,6 +126,7 @@ int main(int argc, char *argv[]){
    REAL8    uvar_maxlag;
    REAL8    uvar_psi;
    REAL8    uvar_refTime;
+   REAL8    uvar_cosi;
    CHAR     *uvar_earthEphemeris=NULL;
    CHAR     *uvar_sunEphemeris=NULL;
    CHAR     *uvar_sftDir=NULL;
@@ -158,6 +159,7 @@ int main(int argc, char *argv[]){
    uvar_dDelta = 0.2;
    uvar_psi = 0.0;
    uvar_refTime = 0.0;
+   uvar_cosi = 0.0;
  
    uvar_earthEphemeris = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
    strcpy(uvar_earthEphemeris,EARTHEPHEMERIS);
@@ -194,6 +196,7 @@ int main(int argc, char *argv[]){
    LAL_CALL( LALRegisterSTRINGUserVar( &status, "fbasenameOut",    0,  UVAR_OPTIONAL, "Output file basename", &uvar_fbasenameOut), &status);
    LAL_CALL( LALRegisterINTUserVar(    &status, "blocksRngMed",    0,  UVAR_OPTIONAL, "Running Median block size", &uvar_blocksRngMed), &status);
    LAL_CALL( LALRegisterREALUserVar(    &status, "refTime",    	   0,  UVAR_OPTIONAL, "Pulsar reference time (SSB)", &uvar_refTime), &status); 
+   LAL_CALL( LALRegisterREALUserVar(    &status, "cosi",    	   0,  UVAR_OPTIONAL, "cos(iota) inclination angle", &uvar_cosi), &status); 
  
    /* read all command line variables */
    LAL_CALL( LALUserVarReadAllInput(&status, argc, argv), &status);
@@ -282,6 +285,10 @@ int main(int argc, char *argv[]){
 
    /* polarisation angle */
    psi = uvar_psi;
+
+   /* curly As */
+   Aplus = (1.0 + uvar_cosi)/2.0;
+   Across = uvar_cosi;
 
    /* set up skypatches */
    if ((skytest = fopen(uvar_skyfile, "r")) == NULL) {
