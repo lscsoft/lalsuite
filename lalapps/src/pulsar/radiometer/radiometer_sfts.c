@@ -287,7 +287,7 @@ int main(int argc, char *argv[]){
    psi = uvar_psi;
 
    /* curly As */
-   Aplus = (1.0 + uvar_cosi)/2.0;
+   Aplus = (1.0 + (uvar_cosi*uvar_cosi))/2.0;
    Across = uvar_cosi;
 
    /* set up skypatches */
