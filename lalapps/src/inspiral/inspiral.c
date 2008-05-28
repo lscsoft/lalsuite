@@ -5277,9 +5277,10 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   }
   else if ( enableRsqVeto == 1 )
   {
-    if ( ( rsqVetoWindow < 0 ) || ( rsqVetoThresh < 0 ) )
+    if ( (rsqVetoWindow < 0) || (rsqVetoThresh < 0) || (numChisqBins < 2) )
     {
-      fprintf( stderr, "both --rsq-veto-window and --rsq-veto-thresh must\n"
+      fprintf( stderr, "\n rsq-veto-window, rsq-veto-thresh and chisq-bins "
+          " > 1\n must "
           "be specified if the --enable-rsq-veto argument is given\n" );
       exit( 1 );
     }
