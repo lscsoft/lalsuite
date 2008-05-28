@@ -2986,7 +2986,7 @@ int main( int argc, char *argv[] )
   /* free the search summary table after the summ_value table is written */
   free( searchsumm.searchSummaryTable );
 
-  /* write the sngl_inspiral triggers to the output xml */
+  /* cut triggers based on start/end times and do trig_scan clustering */
   if ( savedEvents.snglInspiralTable )
   {
     SnglInspiralTable *tmpEventHead = NULL;
@@ -3073,19 +3073,16 @@ int main( int argc, char *argv[] )
                           XLALCountSnglInspiral ( (savedEvents.snglInspiralTable) ));
         }
     }
-
-    /* if we haven't thrown all the triggers away, write sngl_inspiral table */
-    if ( savedEvents.snglInspiralTable )
-    {
-      if ( vrbflg ) fprintf( stdout, "  sngl_inspiral table...\n" );
-      LAL_CALL( LALBeginLIGOLwXMLTable( &status, 
-            &results, outputMask ), &status );
-      LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, savedEvents, 
-            outputMask ), &status );
-      LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
-    }
   }
-  
+
+  /* write sngl_inspiral table */
+  if ( vrbflg ) fprintf( stdout, "  sngl_inspiral table...\n" );
+  LAL_CALL( LALBeginLIGOLwXMLTable( &status, 
+        &results, outputMask ), &status );
+  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, savedEvents, 
+        outputMask ), &status );
+  LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
+
   while ( savedEvents.snglInspiralTable )
   {
     event = savedEvents.snglInspiralTable;
