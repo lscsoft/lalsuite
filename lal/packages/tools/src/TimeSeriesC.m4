@@ -70,7 +70,7 @@ SERIESTYPE *`XLALCreate'SERIESTYPE (
 	new->sampleUnits = *sampleUnits;
 	new->data = sequence;
 
-	return(new);
+	return new;
 }
 
 
@@ -118,7 +118,7 @@ SERIESTYPE *`XLALCut'SERIESTYPE (
 	new->data = sequence;
 	XLALGPSAdd(&new->epoch, first * new->deltaT);
 
-	return(new);
+	return new;
 }
 
 
@@ -221,6 +221,6 @@ SERIESTYPE *`XLALAdd'SERIESTYPE (
 		arg1->data->data[i] += arg2->data->data[j] * unit_ratio;)
 	}
 
-	return(arg1);
+	return arg1;
 }
 

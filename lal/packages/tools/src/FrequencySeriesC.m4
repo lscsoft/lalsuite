@@ -70,7 +70,7 @@ SERIESTYPE *`XLALCreate'SERIESTYPE (
 	new->sampleUnits = *sampleUnits;
 	new->data = sequence;
 
-	return(new);
+	return new;
 }
 
 
@@ -118,7 +118,7 @@ SERIESTYPE *`XLALCut'SERIESTYPE (
 	new->data = sequence;
 	new->f0 += first * new->deltaF;
 
-	return(new);
+	return new;
 }
 
 
@@ -202,7 +202,7 @@ SERIESTYPE *`XLALAdd'SERIESTYPE (
 		arg1->data->data[i] += arg2->data->data[j] * unit_ratio;)
 	}
 
-	return(arg1);
+	return arg1;
 }
 
 
@@ -212,7 +212,7 @@ SERIESTYPE *`XLALConjugate'SERIESTYPE (
 )
 {
 	`XLALConjugate'SEQUENCETYPE (series->data);
-	return(series);
+	return series;
 
 }
 , DATATYPE, COMPLEX16,
@@ -221,7 +221,7 @@ SERIESTYPE *`XLALConjugate'SERIESTYPE (
 )
 {
 	`XLALConjugate'SEQUENCETYPE (series->data);
-	return(series);
+	return series;
 }
 ,)
 
@@ -309,6 +309,6 @@ SERIESTYPE *`XLALMultiply'SERIESTYPE (
 		arg1->data->data[i] = 0.0;)
 	}
 
-	return(arg1);
+	return arg1;
 }
 
