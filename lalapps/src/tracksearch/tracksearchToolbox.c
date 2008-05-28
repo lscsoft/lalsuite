@@ -878,16 +878,18 @@ void LALappsCreateR4FromR8TimeSeries(LALStatus             *status,
 {
   UINT4 i;
   CHAR txtNumber[32];
-  LAL_CALL(
-	   LALCreateREAL4TimeSeries(status,
-				    R4TS,
-				    R8TS->name,
-				    R8TS->epoch,
-				    R8TS->f0,
-				    R8TS->deltaT,
-				    R8TS->sampleUnits,
-				    R8TS->data->length),
-                   status);
+  *R4TS = XLALCreateREAL4TimeSeries(
+    R8TS->name,
+    R8TS->epoch,
+    R8TS->f0,
+    R8TS->deltaT,
+    &R8TS->sampleUnits,
+    R8TS->data->length
+  );
+  if(!*R4TS)
+    {
+    /* ERROR */
+    }
   for (i=0;i<(*R4TS)->data->length;i++)
     /*    (*R4TS)->data->data[i]=((REAL4) R8TS->data->data[i]);*/
     {
@@ -914,15 +916,19 @@ void LALappsPSD_Check(REAL8TimeSeries       *dataIn)
   print_real4tseries(R4TimeSeries,"PostCast_REAL4_Tseries.diag");
 
   size=dataIn->data->length/2 +1;
-  LAL_CALL(LALCreateREAL8FrequencySeries(&status,
-					&avgPSDR8,
-					"psd",
-					gps_zero,
-					0,
-					1/(dataIn->deltaT*dataIn->data->length),
-					lalADCCountUnit,
-					size),
-	  &status);
+  avgPSDR8 = XLALCreateREAL8FrequencySeries(
+    "psd",
+    gps_zero,
+    0,
+    1/(dataIn->deltaT*dataIn->data->length),
+    &lalADCCountUnit,
+    size
+  );
+  if(!avgPSDR8)
+    {
+    /* ERROR */
+    }
+
 
  LAL_CALL(LALCreateForwardREAL8FFTPlan(&status,
 				       &fftplanR8,
@@ -936,16 +942,18 @@ void LALappsPSD_Check(REAL8TimeSeries       *dataIn)
 	  &status);
 
  print_real8fseries(avgPSDR8,"CastREAL4_REAL8_PSD.diag");
-
-  LAL_CALL(LALCreateREAL4FrequencySeries(&status,
-					&avgPSDR4,
-					"psd",
-					gps_zero,
-					0,
-					1/(dataIn->deltaT*dataIn->data->length),
-					lalADCCountUnit,
-					size),
-	  &status);
+  avgPSDR4 = XLALCreateREAL4FrequencySeries(
+    "psd",
+    gps_zero,
+    0,
+    1/(dataIn->deltaT*dataIn->data->length),
+    lalADCCountUnit,
+    size
+  );
+  if(!avgPSDR4)
+    {
+    /* ERROR */
+    }
 
  LAL_CALL(LALCreateForwardREAL4FFTPlan(&status,
 				       &fftplanR4,
@@ -961,15 +969,9 @@ void LALappsPSD_Check(REAL8TimeSeries       *dataIn)
  print_real4fseries(avgPSDR4,"CastREAL4_from_REAL8_PSD.diag");
  /****** FROM HERE ******* Edit above to REAL4 */
  
- if (R4TimeSeries != NULL)
-   LAL_CALL(LALDestroyREAL4TimeSeries(&status,R4TimeSeries),&status);
-
- if (avgPSDR8 != NULL)
-   LAL_CALL(LALDestroyREAL8FrequencySeries(&status,avgPSDR8),&status);
-
- if (avgPSDR4 != NULL)
-   LAL_CALL(LALDestroyREAL4FrequencySeries(&status,avgPSDR4),&status);
-
+  XLALDestroyREAL4TimeSeries(R4TimeSeries);
+  XLALDestroyREAL8FrequencySeries(avgPSDR8);
+  XLALDestroyREAL4FrequencySeries(avgPSDR4);
  if (fftplanR8 != NULL)
    LAL_CALL(LALDestroyREAL8FFTPlan(&status,&fftplanR8),&status);
 
