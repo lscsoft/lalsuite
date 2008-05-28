@@ -947,7 +947,7 @@ void LALappsPSD_Check(REAL8TimeSeries       *dataIn)
     gps_zero,
     0,
     1/(dataIn->deltaT*dataIn->data->length),
-    lalADCCountUnit,
+    &lalADCCountUnit,
     size
   );
   if(!avgPSDR4)
