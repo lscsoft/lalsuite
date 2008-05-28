@@ -320,7 +320,9 @@ void GetSignalPhaseInSFT(LALStatus               *status,
 
   /* this is the sft reference time  - the pulsar reference time */
   XLALGPSSetREAL8(&ssbt, XLALGPSGetREAL8(&(sft1->epoch)) + rDotn);
-  timeDiff = XLALGPSDiff( &ssbt, &(dopp->refTime));
+/*  refTime = XLALGPSAdd(&(dopp->refTime), rDotn);*/
+
+  timeDiff = XLALGPSDiff( &ssbt, &(dopp->refTime) );
 
 
 /*  fhat = dopp->fkdot[0];  initialization */

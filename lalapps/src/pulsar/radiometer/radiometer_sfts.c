@@ -114,7 +114,7 @@ int main(int argc, char *argv[]){
    FILE *fp = NULL;
 
    /* sft constraint variables */
-   LIGOTimeGPS startTimeGPS, endTimeGPS;
+   LIGOTimeGPS startTimeGPS, endTimeGPS, refTime;
    LIGOTimeGPSVector *ts=NULL;
 
    /* user input variables */
@@ -125,6 +125,7 @@ int main(int argc, char *argv[]){
    REAL8    uvar_dAlpha, uvar_dDelta; /* resolution for isotropic sky-grid */
    REAL8    uvar_maxlag;
    REAL8    uvar_psi;
+   REAL8    uvar_refTime;
    CHAR     *uvar_earthEphemeris=NULL;
    CHAR     *uvar_sunEphemeris=NULL;
    CHAR     *uvar_sftDir=NULL;
@@ -156,6 +157,7 @@ int main(int argc, char *argv[]){
    uvar_dAlpha = 0.2;
    uvar_dDelta = 0.2;
    uvar_psi = 0.0;
+   uvar_refTime = 0.0;
  
    uvar_earthEphemeris = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
    strcpy(uvar_earthEphemeris,EARTHEPHEMERIS);
@@ -191,7 +193,7 @@ int main(int argc, char *argv[]){
    LAL_CALL( LALRegisterSTRINGUserVar( &status, "dirnameOut",     'o', UVAR_OPTIONAL, "Output directory", &uvar_dirnameOut), &status);
    LAL_CALL( LALRegisterSTRINGUserVar( &status, "fbasenameOut",    0,  UVAR_OPTIONAL, "Output file basename", &uvar_fbasenameOut), &status);
    LAL_CALL( LALRegisterINTUserVar(    &status, "blocksRngMed",    0,  UVAR_OPTIONAL, "Running Median block size", &uvar_blocksRngMed), &status);
- 
+   LAL_CALL( LALRegisterREALUserVar(    &status, "refTime",    	   0,  UVAR_OPTIONAL, "Pulsar reference time (SSB)", &uvar_refTime), &status); 
  
    /* read all command line variables */
    LAL_CALL( LALUserVarReadAllInput(&status, argc, argv), &status);
@@ -216,7 +218,7 @@ int main(int argc, char *argv[]){
     exit(1);
    }
  
-   fprintf(fp, "Alpha\tDelta\tFrequency\t\tRaw Power \t\t Sigma \t\t Normalised Power\n");
+   fprintf(fp, "##Alpha\tDelta\tFrequency\t\tRaw Power \t\t Sigma \t\t Normalised Power\n");
     
    /* read sfts */
    
@@ -238,6 +240,11 @@ int main(int argc, char *argv[]){
      LAL_CALL ( LALFloatToGPS( &status, &endTimeGPS, &uvar_endTime), &status);
      constraints.endTime = &endTimeGPS;
    }
+
+   if (LALUserVarWasSet ( &uvar_refTime )) {
+	LAL_CALL(LALFloatToGPS(&status, &refTime, &uvar_refTime), &status);
+   }
+
 
     
    /* get sft catalog */
@@ -261,7 +268,6 @@ int main(int argc, char *argv[]){
    tObs = XLALGPSDiff( &lastTimeStamp, &firstTimeStamp ) + timeBase;
 
    nfreqLoops = ceil(uvar_fBand/deltaF);
-
 
 
    /*  set up ephemeris  */
@@ -390,7 +396,7 @@ int main(int argc, char *argv[]){
 	thisPoint.fkdot[1] = uvar_fdot; 
 	thisPoint.fkdot[2] = 0.0;
  	thisPoint.fkdot[3] = 0.0;
-	thisPoint.refTime = firstTimeStamp;/*need to change this */
+	thisPoint.refTime = refTime;
  
 	thisVel.length = 3;
 	thisPos.length = 3;
