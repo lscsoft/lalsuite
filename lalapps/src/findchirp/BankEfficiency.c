@@ -44,6 +44,8 @@ INT4          ascii2xml = 0;
 int
 main (INT4 argc, CHAR **argv )
 {  
+  Mybank mybank;
+  
   /* --- Local variables -------------------------------------------------- */  
   INT4                   ntrials = 0; /*number of simulations*/
   INT4                   i;
@@ -93,10 +95,7 @@ main (INT4 argc, CHAR **argv )
       
   /* --- eccentricity related to the bank */
   REAL4                  eccentricityTemplate = 0;
-  REAL4                  EccentricityMin = 0.2;
-  REAL4                  EccentricityMax = 0.4;
-  REAL4                  eccentricityStep = 0.1; /*whatever, overwritten later*/
-  REAL4                  eccentricityBins = 30;
+  
   
   /* --- ambiguity function and statistics --- */
   gsl_histogram         *histogramNoise = gsl_histogram_alloc (200);  
@@ -117,9 +116,12 @@ main (INT4 argc, CHAR **argv )
   BankEfficiencyParametersInitialization(&coarseBankIn, &randIn, &userParam);
   
   /* --- Read user parameters --- */
-  BankEfficiencyParseParameters(&argc, argv, 
-      &coarseBankIn, &randIn, &userParam);
+  BankEfficiencyParseParameters(&argc, argv,&coarseBankIn, &randIn, &userParam);
 
+  /* eccentric bank initialisation */
+  BankEfficiencyEccentricBankInit(&userParam);
+  
+  
   /* --- Check input parameters --- */
   BankEfficiencyUpdateParams(&coarseBankIn, &randIn, &userParam);
   
@@ -176,6 +178,10 @@ main (INT4 argc, CHAR **argv )
   LAL_CALL(BankEfficiencyCreateTemplateBank(&status, &coarseBankIn,
       &templateBank, &tmpltHead, userParam, &randIn, &sizeBank), &status);
 
+  /* --- populate MyBank strucuture --- */
+  BankEfficiencyInitMyBank(&mybank, &sizeBank, tmpltHead, userParam);
+    
+     
   /* --- Allocate memory for the ambiguity function ----------------------- */
   /* For each bank, we have t0,t3,and the maximum */
   amb1 = gsl_matrix_alloc(4,sizeBank); /*allocated t0,t3,max*/
@@ -186,12 +192,14 @@ main (INT4 argc, CHAR **argv )
       gsl_matrix_set(amb1, i, j, 0.); /* set it to zero */
     }
   }      
-   
+      
+    
   /* --- Estimate the fft's plans ----------------------------------------- */
   LAL_CALL(LALCreateForwardRealFFTPlan(&status, &fwdp, signal.length, 0), 
        &status);
   LAL_CALL(LALCreateReverseRealFFTPlan(&status, &revp, signal.length, 0), 
        &status);
+       
   
   /* --- The overlap structure -------------------------------------------- */
   overlapin.nBegin      = 0;
@@ -212,6 +220,8 @@ main (INT4 argc, CHAR **argv )
         &moments, &coarseBankIn.shf,randIn.param.tSampling, 
         randIn.param.fLower, signal.length);
   }
+  
+
   
   /* --- Main loop -------------------------------------------------------- */
   /* --- loop over the number of simulations (ntrials) --- */
@@ -247,23 +257,14 @@ main (INT4 argc, CHAR **argv )
                                                 templates are really used. */
       
            
-      /* --- some code related to the eccentric case */
-      if (userParam.eccentricBank)
-        eccentricityStep = (EccentricityMax - EccentricityMin)/eccentricityBins; 
-      else
-      {
-        eccentricityStep = 1; /* larger than max eccentricity so that only 
-                                 EccentricityMin is used, which we set to zero */
-        EccentricityMin = 0;
-        EccentricityMax = 1;
-      }
-      
       /* --- if eccentrity is not set on, this loop iterates only once --- */
-      for (eccentricityTemplate = EccentricityMin;
-           eccentricityTemplate < EccentricityMax;
-           eccentricityTemplate+=eccentricityStep)
+      for (eccentricityTemplate = userParam.eccentricBank.min;
+           eccentricityTemplate < userParam.eccentricBank.max;
+           eccentricityTemplate+= userParam.eccentricBank.step)
       {
+
         insptmplt.eccentricity = eccentricityTemplate;
+        
         /* -- finally, we loop through the bank itself */
       
         for (tmpltCurrent  = tmpltHead, thisTemplateIndex=0;
@@ -297,7 +298,7 @@ main (INT4 argc, CHAR **argv )
               }
      
               LAL_CALL(BankEfficiencyInspiralOverlapBCV(&status, 
-                         &insptmplt, &powerVector, userParam, &randIn, 
+                        &insptmplt, &powerVector, userParam, &randIn, 
                          &FilterBCV1, &FilterBCV2, &overlapin,
                          &overlapOutputThisTemplate, &correlation, &moments),
                          &status);
@@ -326,14 +327,15 @@ main (INT4 argc, CHAR **argv )
           
               /* --- set up the overlapin strucutre --- */
               overlapin.param = insptmplt;
-              if( userParam.template == Eccentricity)
+/*              if( userParam.template == Eccentricity)
               {
                 insptmplt.massChoice = t03;
-                overlapin.param.order = 4; /*insptmplt does not contain the good approximant*/              
+                overlapin.param.order = 4;               
               }
               else{
                 overlapin.param.approximant = userParam.template;               
               }
+*/              
               LAL_CALL(LALInspiralParameterCalc( &status,  &(overlapin.param) ), &status);
           
               if( userParam.template == Eccentricity){
@@ -418,15 +420,14 @@ main (INT4 argc, CHAR **argv )
     LAL_CALL(BankEfficiencyFinalise(&status,tmpltHead,
         overlapOutputBestTemplate,randIn,userParam,ntrials, 
         filter_processed, coarseBankIn), &status);
-          
-        
+                  
     if (userParam.template == BCV) 
     {
       if (userParam.printBestOverlap || userParam.printBestTemplate) 
       {
         userParam.extraFinalPrinting = 1;
         LAL_CALL(BankEfficiencyInspiralOverlapBCV(&status, 
-                     &insptmplt, &powerVector, userParam, &randIn,
+                    &insptmplt, &powerVector, userParam, &randIn,
                      &FilterBCV1, &FilterBCV2, &overlapin,
                      &overlapOutputThisTemplate, &correlation, &moments),
                      &status);    
@@ -510,7 +511,12 @@ main (INT4 argc, CHAR **argv )
   LALDestroyRealFFTPlan(&status,&revp);
   
   gsl_histogram_free(histogramNoise);
-   
+
+
+  free(mybank.mass1);
+  free(mybank.mass2);
+  /*todo  free other varaible in mybank*/
+  
   LALCheckMemoryLeaks();    
     
   return 0;
@@ -1391,8 +1397,10 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
       coarseBankIn.psi3Min, coarseBankIn.psi3Max);
   ADD_PROCESS_PARAM("string","%s","--bank-grid-spacing",
       BankEfficiencyGetStringFromGridType(coarseBankIn.gridSpacing));  
-  ADD_2PROCESS_PARAM("float","%f","--eccentricity-range",
-      userParam.eccentricityMin, userParam.eccentricityMax);
+  ADD_2PROCESS_PARAM("float","%f %f","--bank-eccentricity-range",
+      userParam.eccentricBank.min, userParam.eccentricBank.max);
+  ADD_PROCESS_PARAM("float","%f","--bank-eccentricity-nbin", 
+      userParam.eccentricBank.bins);  
   ADD_PROCESS_PARAM("float","%f","--fl",    
       coarseBankIn.fLower);
   ADD_PROCESS_PARAM("float","%f","--template-fl", 
@@ -1427,6 +1435,8 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
       randIn.SignalAmp);
   ADD_PROCESS_PARAM("float","%f","--signal-alpha",
       randIn.param.alpha);
+  ADD_2PROCESS_PARAM("float","%f %f","--signal-eccentricity-range",
+      userParam.eccentricSignal.min, userParam.eccentricSignal.max);
   ADD_PROCESS_PARAM("float","%f","--signal-ffinal",
       userParam.signalfFinal);
   ADD_PROCESS_PARAM("float","%f","--signal-fl",
@@ -1478,9 +1488,6 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
   }
   if (userParam.fastSimulation ){
     ADD_PROCESS_PARAM("float", "%s", "--fast-simulation"," ");
-  }
-  if (userParam.eccentricBank ){
-    ADD_PROCESS_PARAM("float", "%s", "--eccentric-bank"," ");
   }
   if (userParam.binaryInjection == BHNS){
     ADD_PROCESS_PARAM("float", "%s", "--bhns-injection", " ");
@@ -1880,7 +1887,7 @@ void BankEfficiencyGetMaximumSize(
   /* ideally this should be implemented within lal.*/
   if( randIn.param.approximant  == AmpCorPPN || userParam.template == AmpCorPPN)
   {
-    *length *= pow(1./(1+randIn.param.ampOrder), -8./3.);
+    *length *= pow(1./(1.+randIn.param.ampOrder/2.), -8./3.);
   }
           
   /* if --num-seconds is provided, we want a specified length of data.
@@ -2049,11 +2056,11 @@ void BankEfficiencyGenerateInputData(
   }
  
   
-  if (userParam.eccentricityMin >=0 && (userParam.eccentricityMax <= 1))
+  if (userParam.eccentricSignal.max >=0 && (userParam.eccentricSignal.max <= 1))
   {
     u = XLALUniformDeviate(randParams);
-    randIn->param.eccentricity = userParam.eccentricityMin +
-        u * (userParam.eccentricityMax-userParam.eccentricityMin);
+    randIn->param.eccentricity = userParam.eccentricSignal.min +
+        u * (userParam.eccentricSignal.max-userParam.eccentricSignal.min);
   }
   else
   {
@@ -2507,35 +2514,34 @@ void BankEfficiencyParametersInitialization(
 
 
 /* ****************************************************************************
- * CoarseIn initialization
+ * CoarseIn initialization (bank and template)
  ***************************************************************************/
 void BankEfficiencyInitInspiralCoarseBankIn(
   InspiralCoarseBankIn *coarseBankIn)
 {
-  coarseBankIn->fLower           = BANKEFFICIENCY_FLOWER;
+  coarseBankIn->fLower           = 40.;
   coarseBankIn->fUpper           = -1.;
-  coarseBankIn->tSampling        = BANKEFFICIENCY_TSAMPLING;
-  coarseBankIn->space            = BANKEFFICIENCY_SPACE;
-  coarseBankIn->mmCoarse         = BANKEFFICIENCY_MMCOARSE;
-  coarseBankIn->mmFine           = BANKEFFICIENCY_MMFINE;
-  coarseBankIn->iflso            = BANKEFFICIENCY_IFLSO ;
-  coarseBankIn->mMin             = BANKEFFICIENCY_MMIN;
-  coarseBankIn->mMax             = BANKEFFICIENCY_MMAX;
+  coarseBankIn->tSampling        = 2048;
+  coarseBankIn->space            = Tau0Tau3;
+  coarseBankIn->mmCoarse         = 0.80;
+  coarseBankIn->mmFine           = 0.90;
+  coarseBankIn->iflso            = 0.;
+  coarseBankIn->mMin             = 5.;
+  coarseBankIn->mMax             = 20.;
   coarseBankIn->MMax             = -1;
   coarseBankIn->massRange        = MinMaxComponentMass; 
   coarseBankIn->etamin           = -1;
-  coarseBankIn->psi0Min          = BANKEFFICIENCY_PSI0MIN;
-  coarseBankIn->psi0Max          = BANKEFFICIENCY_PSI0MAX;
-  coarseBankIn->psi3Min          = BANKEFFICIENCY_PSI3MIN;
-  coarseBankIn->psi3Max          = BANKEFFICIENCY_PSI3MAX;
-  coarseBankIn->alpha            = BANKEFFICIENCY_ALPHABANK;
-  /*unsigned variable ... */
-  coarseBankIn->numFcutTemplates = BANKEFFICIENCY_NFCUT;
-  coarseBankIn->approximant      = BANKEFFICIENCY_TEMPLATE;  
-  coarseBankIn->order            = BANKEFFICIENCY_ORDER_TEMPLATE;  
-  coarseBankIn->LowGM            = BANKEFFICIENCY_LOWGM;
-  coarseBankIn->insidePolygon    = BANKEFFICIENCY_INSIDEPOLYGON;
-  coarseBankIn->HighGM           = BANKEFFICIENCY_HIGHGM;
+  coarseBankIn->psi0Min          = 10.;
+  coarseBankIn->psi0Max          = 250000.;
+  coarseBankIn->psi3Min          = -2200.;
+  coarseBankIn->psi3Max          = -10.;
+  coarseBankIn->alpha            = 0.01;
+  coarseBankIn->numFcutTemplates = 5;
+  coarseBankIn->approximant      = EOB;  
+  coarseBankIn->order            = twoPN;  
+  coarseBankIn->LowGM            = 3;
+  coarseBankIn->insidePolygon    = 1;
+  coarseBankIn->HighGM           = 6;
   coarseBankIn->gridSpacing      = SquareNotOriented;
   coarseBankIn->computeMoments   = 0;
   coarseBankIn->NumFreqCut       = 1;
@@ -2550,42 +2556,41 @@ void BankEfficiencyInitInspiralCoarseBankIn(
 void BankEfficiencyInitRandomInspiralSignalIn(
   RandomInspiralSignalIn *randIn)
 {
-  randIn->useed                 = BANKEFFICIENCY_USEED; /* seed for MonteCarlo*/ 
-  randIn->type                  = BANKEFFICIENCY_TYPE;  /* type of simulation */
-  randIn->SignalAmp             = BANKEFFICIENCY_SIGNALAMPLITUDE;/*if x = n +h*/
-  randIn->param.order           = BANKEFFICIENCY_ORDER_SIGNAL;/* and its order*/
-  randIn->param.alpha           = BANKEFFICIENCY_ALPHASIGNAL;/* alpha paramBCV*/
-  randIn->param.ieta            = BANKEFFICIENCY_IETA; /*                   */
-  randIn->param.mass1           = BANKEFFICIENCY_MMIN;  /* To allocate memory */ 
-  randIn->param.mass2           = BANKEFFICIENCY_MMIN;  /* idem               */
-  randIn->param.fLower          = BANKEFFICIENCY_FLOWER;/* Lower freq.(templ) */
+  randIn->useed                 = 122888;  /* seed for MonteCarlo             */ 
+  randIn->type                  = 0;       /* type of simulation: signal only */
+  randIn->SignalAmp             = 10;      /* SNR of the signal if noise exits*/
+  randIn->param.order           = twoPN;/* and its order*/
+  randIn->param.alpha           = 0;/* alpha paramBCV*/
+  randIn->param.ieta            = 1; /*                   */
+  randIn->param.mass1           =-1;  /* To allocate memory */ 
+  randIn->param.mass2           =-1;  /* idem               */
+  randIn->param.fLower          = 40.;/* Lower freq.(templ) */
   randIn->param.OmegaS          = 0.;/* EOB parameter           */
   randIn->param.Theta           = 0.;/* EOB parameter           */
-  randIn->mMin                  = BANKEFFICIENCY_MMIN;/* min mass to inject   */
-  randIn->mMax                  = BANKEFFICIENCY_MMAX;/* max mass to inject   */
-  randIn->MMax                  = BANKEFFICIENCY_MMAX * 2;  /* total mass max */
-  randIn->t0Min                 = 0;/* min tau0 to inject                     */
-  randIn->t0Max                 = 0.;/* max tau0 to inject                    */
-  randIn->tnMin                 = 0.1;                  /* min tau3 to inject */
-  randIn->tnMax                 = 1.;                  /* max tau3 to inject  */
-  randIn->etaMin                = BANKEFFICIENCY_MMIN
-    * (BANKEFFICIENCY_MMAX - BANKEFFICIENCY_MMIN) 
-    / (BANKEFFICIENCY_MMAX * 2) / (BANKEFFICIENCY_MMAX * 2);
-  randIn->psi0Min               = BANKEFFICIENCY_PSI0MIN; /* psi0 range       */
-  randIn->psi0Max               = BANKEFFICIENCY_PSI0MAX;   
-  randIn->psi3Min               = BANKEFFICIENCY_PSI3MIN;   
-  randIn->psi3Max               = BANKEFFICIENCY_PSI3MAX;   
-  randIn->param.approximant     = BANKEFFICIENCY_SIGNAL; /* signal approximant*/
-  randIn->param.tSampling       = BANKEFFICIENCY_TSAMPLING; /* sampling       */
+  randIn->mMin                  = 5;/* min mass to inject   */
+  randIn->mMax                  = 20;/* max mass to inject   */
+  randIn->MMax                  = randIn->mMax * 2;  /* total mass max */
+  randIn->t0Min                 = 0;    /* min tau0 to inject                     */
+  randIn->t0Max                 = 0.;   /* max tau0 to inject                    */
+  randIn->tnMin                 = 0.1;  /* min tau3 to inject */
+  randIn->tnMax                 = 1.;   /* max tau3 to inject  */
+  randIn->etaMin                = randIn->mMin* (randIn->mMax - randIn->mMax) 
+    / (randIn->MMax ) / (randIn->MMax);
+  randIn->psi0Min               = 10.; /* psi0 range       */
+  randIn->psi0Max               = 250000.;   
+  randIn->psi3Min               = -2200;   
+  randIn->psi3Max               = -10;   
+  randIn->param.approximant     = EOB; /* signal approximant*/
+  randIn->param.tSampling       = 2048; /* sampling       */
   randIn->param.fCutoff         = 0.; /* will be populate when sampling is set*/
-  randIn->param.startTime       = BANKEFFICIENCY_STARTTIME; 
-  randIn->param.startPhase      = BANKEFFICIENCY_STARTPHASE; 
-  randIn->param.nStartPad       = BANKEFFICIENCY_NSTARTPAD;
-  randIn->param.signalAmplitude = BANKEFFICIENCY_SIGNALAMPLITUDE;
-  randIn->param.nEndPad         = BANKEFFICIENCY_NENDPAD;
-  randIn->NoiseAmp              = BANKEFFICIENCY_NOISEAMPLITUDE;
+  randIn->param.startTime       = 0; 
+  randIn->param.startPhase      = 0.; 
+  randIn->param.nStartPad       = 1000;
+  randIn->param.signalAmplitude = 10;
+  randIn->param.nEndPad         = 0;
+  randIn->NoiseAmp              = 1;
   randIn->param.eccentricity    = 0.;
-  randIn->param.ampOrder              = 5;
+  randIn->param.ampOrder        = 5;
 }
 
 
@@ -2595,16 +2600,19 @@ void BankEfficiencyInitRandomInspiralSignalIn(
 void BankEfficiencyInitUserParametersIn(
   UserParametersIn *userParam)
 {
-  userParam->eccentricityMin    = 0.;
-  userParam->eccentricityMax    = 0.;
-  userParam->alphaFConstraint   = ALPHAFConstraint;
+  userParam->eccentricBank.min      = 0.;
+  userParam->eccentricBank.max      = 0.1;
+  userParam->eccentricBank.bins     = 1;
+  userParam->eccentricSignal.min      = 0.;
+  userParam->eccentricSignal.max      = 0.4;
+  userParam->alphaFConstraint   = 1;
   userParam->extraFinalPrinting = 0; 
   userParam->eMatch             = 0.5; 
-  userParam->template           = BANKEFFICIENCY_TEMPLATE;
+  userParam->template           = -1;
   /*By default, this value is empty and will be populate with the sampling 
    * frequency later*/
   userParam->signalfFinal       =  0.;
-  userParam->signal             = BANKEFFICIENCY_SIGNAL;
+  userParam->signal             = -1;
   userParam->m1                 = -1;
   userParam->m2                 = -1;
   userParam->numSeconds         = -1;
@@ -2626,8 +2634,8 @@ void BankEfficiencyInitUserParametersIn(
   userParam->printResultXml     = BANKEFFICIENCY_PRINTRESULTXML;
   userParam->printPrototype     = BANKEFFICIENCY_PRINTPROTOTYPE;
   userParam->faithfulness       = BANKEFFICIENCY_FAITHFULNESS;
-  userParam->ntrials            = BANKEFFICIENCY_NTRIALS;
-  userParam->fastSimulation     = BANKEFFICIENCY_FASTSIMULATION;
+  userParam->ntrials            = 1;
+  userParam->fastSimulation     = 0;
   userParam->noiseModel         = LIGOI;
   userParam->binaryInjection    = NoUserChoice; 
   userParam->maxTotalMass       = -1;
@@ -2635,7 +2643,6 @@ void BankEfficiencyInitUserParametersIn(
   userParam->numSeconds         = -1;
   userParam->inputPSD           = NULL;
   userParam->ambiguity          = 0;
-  userParam->eccentricBank      = 0;
   sprintf(userParam->tag,"");
 }
 
@@ -2665,18 +2672,18 @@ void BankEfficiencyParseParameters(
   while(i < *argc)
   {
     if (!strcmp(argv[i],    "--bank-alpha")) {
-      BankEfficiencyParseGetDouble(argv,  &i, &(coarseBankIn->alpha)); 
+      BankEfficiencyParseGetDouble(argv, &i, &(coarseBankIn->alpha)); 
     }
     else if (!strcmp(argv[i],"--bank-fcut-range")) {
-      BankEfficiencyParseGetDouble2(argv,  &i, &tmp1, &tmp2);
+      BankEfficiencyParseGetDouble2(argv, &i, &tmp1, &tmp2);
       coarseBankIn->LowGM  = (REAL4)tmp1; 
       coarseBankIn->HighGM = (REAL4)tmp2;
     }
     else if (!strcmp(argv[i],   "--bank-ffinal")) {
-      BankEfficiencyParseGetDouble(argv,  &i, &(coarseBankIn->fUpper)); 
+      BankEfficiencyParseGetDouble(argv, &i, &(coarseBankIn->fUpper)); 
     }    
     else if (!strcmp(argv[i],   "--bank-inside-polygon")) {
-      BankEfficiencyParseGetInt(argv,  &i, 
+      BankEfficiencyParseGetInt(argv, &i, 
           (INT4*)&(coarseBankIn->insidePolygon)); 
     }
     else if (!strcmp(argv[i], "--bank-grid-spacing")) {
@@ -2703,56 +2710,59 @@ void BankEfficiencyParseParameters(
       }
     }        
     else if (!strcmp(argv[i],   "--bank-number-fcut")) {
-      BankEfficiencyParseGetInt(argv,  &i, 
+      BankEfficiencyParseGetInt(argv, &i, 
           (INT4*)&(coarseBankIn->numFcutTemplates)); 
     }
     else if (!strcmp(argv[i],"--bank-mass-range")) {
-      BankEfficiencyParseGetDouble2(argv,  &i, 
+      BankEfficiencyParseGetDouble2(argv, &i, 
            &(coarseBankIn->mMin), &(coarseBankIn->mMax));
     }
     else if (!strcmp(argv[i],"--bank-max-total-mass")) {
-      BankEfficiencyParseGetDouble(argv,  &i, &(coarseBankIn->MMax));
+      BankEfficiencyParseGetDouble(argv, &i, &(coarseBankIn->MMax));
     }
     else if (!strcmp(argv[i],"--bank-min-total-mass")) {
-      BankEfficiencyParseGetDouble(argv,  &i, &(coarseBankIn->MMin));
+      BankEfficiencyParseGetDouble(argv, &i, &(coarseBankIn->MMin));
     }
     else if (!strcmp(argv[i],   "--bank-psi0-range")) {
-      BankEfficiencyParseGetDouble2(argv,  &i, 
+      BankEfficiencyParseGetDouble2(argv, &i, 
           &(coarseBankIn->psi0Min), &(coarseBankIn->psi0Max));
     }
     else if (!strcmp(argv[i],   "--bank-psi3-range")) {
-      BankEfficiencyParseGetDouble2(argv,  &i,
+      BankEfficiencyParseGetDouble2(argv, &i,
           &(coarseBankIn->psi3Min), &(coarseBankIn->psi3Max));
     }
     else if (!strcmp(argv[i],"--debug")) {
-      BankEfficiencyParseGetInt(argv,  &i, &(lalDebugLevel)); 
+      BankEfficiencyParseGetInt(argv, &i, &(lalDebugLevel)); 
     }
-    else if (!strcmp(argv[i],"--eccentricity-range")){
-      BankEfficiencyParseGetDouble2(argv,  &i, 
-          &(userParam->eccentricityMin), &(userParam->eccentricityMax));
+    else if (!strcmp(argv[i],"--bank-eccentricity-range")){
+      BankEfficiencyParseGetDouble2(argv, &i, 
+          &(userParam->eccentricBank.min), &(userParam->eccentricBank.max));
+    }
+    else if (!strcmp(argv[i],"--bank-eccentricity-bins")){
+      BankEfficiencyParseGetInt(argv, &i ,&(userParam->eccentricBank.bins));
     }
     else if (!strcmp(argv[i], "--e-match")){
-      BankEfficiencyParseGetDouble(argv,  &i, &(userParam->eMatch));     
+      BankEfficiencyParseGetDouble(argv, &i, &(userParam->eMatch));     
     }
     else if (!strcmp(argv[i],"--signal-fl")) {
-      BankEfficiencyParseGetDouble(argv,  &i, &(randIn->param.fLower));
+      BankEfficiencyParseGetDouble(argv, &i, &(randIn->param.fLower));
     }
     else if  (!strcmp(argv[i],"--template-fl")) {
-      BankEfficiencyParseGetDouble(argv,  &i, &(coarseBankIn->fLower));
+      BankEfficiencyParseGetDouble(argv, &i, &(coarseBankIn->fLower));
     }
     else if  (!strcmp(argv[i],"--fl")) {
-      BankEfficiencyParseGetDouble(argv,  &i, &(coarseBankIn->fLower));
+      BankEfficiencyParseGetDouble(argv, &i, &(coarseBankIn->fLower));
       randIn->param.fLower = coarseBankIn->fLower;
     }  
     else if (!strcmp(argv[i], "--help") || !strcmp(argv[i],"--h")) {
       BankEfficiencyHelp();
     }
     else if (!strcmp(argv[i],"--signal-max-total-mass")) {
-      BankEfficiencyParseGetDouble(argv,  &i, &tmp1);
+      BankEfficiencyParseGetDouble(argv, &i, &tmp1);
       userParam->maxTotalMass = (REAL4)tmp1;    
     }
     else if (!strcmp(argv[i],"--signal-min-total-mass")) {
-      BankEfficiencyParseGetDouble(argv,  &i, &tmp1);
+      BankEfficiencyParseGetDouble(argv, &i, &tmp1);
       userParam->minTotalMass = (REAL4)tmp1;    
     }
     else if (!strcmp(argv[i],"--ascii2xml")) {       
@@ -2762,19 +2772,19 @@ void BankEfficiencyParseParameters(
       i = *argc+1;
     }
     else if (!strcmp(argv[i], "--m1")){
-      BankEfficiencyParseGetDouble(argv,  &i, &(userParam->m1));
+      BankEfficiencyParseGetDouble(argv, &i, &(userParam->m1));
     }
     else if (!strcmp(argv[i], "--m2")) {
-      BankEfficiencyParseGetDouble(argv,  &i, &(userParam->m2));
+      BankEfficiencyParseGetDouble(argv, &i, &(userParam->m2));
     }      
     else if (!strcmp(argv[i],   "--mm")){
-      BankEfficiencyParseGetDouble(argv,  &i, &(coarseBankIn->mmCoarse)); 
+      BankEfficiencyParseGetDouble(argv, &i, &(coarseBankIn->mmCoarse)); 
     }
     else if (!strcmp(argv[i],   "--n") || !strcmp(argv[i], "--ntrial")){
-      BankEfficiencyParseGetInt(argv,  &i, &(userParam->ntrials));
+      BankEfficiencyParseGetInt(argv, &i, &(userParam->ntrials));
     }
     else if (!strcmp(argv[i],   "--noise-amplitude")) {
-      BankEfficiencyParseGetDouble(argv,  &i, &(randIn->NoiseAmp)); 
+      BankEfficiencyParseGetDouble(argv, &i, &(randIn->NoiseAmp)); 
     }
     else if (!strcmp(argv[i],   "--noise-model")){  
       BankEfficiencyParseGetString(argv, &i);
@@ -2813,20 +2823,20 @@ void BankEfficiencyParseParameters(
       }
     }
     else if (!strcmp(argv[i], "--num-seconds")) {
-      BankEfficiencyParseGetInt(argv,  &i, &(userParam->numSeconds));
+      BankEfficiencyParseGetInt(argv, &i, &(userParam->numSeconds));
     }
     else if (!strcmp(argv[i], "--psi0")) {
-      BankEfficiencyParseGetDouble(argv,  &i, &(userParam->psi0));
+      BankEfficiencyParseGetDouble(argv, &i, &(userParam->psi0));
     }
     else if (!strcmp(argv[i], "--psi3")) {
-      BankEfficiencyParseGetDouble(argv,  &i, &(userParam->psi3));
+      BankEfficiencyParseGetDouble(argv, &i, &(userParam->psi3));
     }
     else if (!strcmp(argv[i],"--sampling")) {
-      BankEfficiencyParseGetDouble(argv,  &i, &(coarseBankIn->tSampling));
+      BankEfficiencyParseGetDouble(argv, &i, &(coarseBankIn->tSampling));
       randIn->param.tSampling = coarseBankIn->tSampling;
     }   
     else if (!strcmp(argv[i],"--seed")){
-      BankEfficiencyParseGetInt(argv,  &i, &(randIn->useed));
+      BankEfficiencyParseGetInt(argv, &i, &(randIn->useed));
     }
     else if (!strcmp(argv[i], "--signal")) {
       BankEfficiencyParseGetString(argv, &i);
@@ -2865,50 +2875,54 @@ void BankEfficiencyParseParameters(
       randIn->param.approximant = userParam->signal;
     }
     else if (!strcmp(argv[i],   "--signal-alpha")){      
-      BankEfficiencyParseGetDouble(argv,  &i, &(randIn->param.alpha));
+      BankEfficiencyParseGetDouble(argv, &i, &(randIn->param.alpha));
     }
     else if (!strcmp(argv[i],   "--signal-amp-order")){      
-      BankEfficiencyParseGetInt(argv,  &i, (INT4*)&(randIn->param.ampOrder));
+      BankEfficiencyParseGetInt(argv, &i, (INT4*)&(randIn->param.ampOrder));
     }  
     else if (!strcmp(argv[i],   "--signal-alpha1")){         
-      BankEfficiencyParseGetDouble(argv,  &i, &(randIn->param.alpha1));
+      BankEfficiencyParseGetDouble(argv, &i, &(randIn->param.alpha1));
     }
     else if (!strcmp(argv[i],   "--signal-alpha2")){         
-      BankEfficiencyParseGetDouble(argv,  &i, &(randIn->param.alpha2));
+      BankEfficiencyParseGetDouble(argv, &i, &(randIn->param.alpha2));
     }
     else if (!strcmp(argv[i],   "--signal-amplitude")) {
-      BankEfficiencyParseGetDouble(argv,  &i, &(randIn->SignalAmp));
+      BankEfficiencyParseGetDouble(argv, &i, &(randIn->SignalAmp));
+    }
+    else if (!strcmp(argv[i],"--signal-eccentricity-range")){
+      BankEfficiencyParseGetDouble2(argv, &i, 
+          &(userParam->eccentricSignal.min), &(userParam->eccentricSignal.max));
     }
     else if (!strcmp(argv[i],   "--signal-ffinal")) {
-      BankEfficiencyParseGetDouble(argv,  &i, &(randIn->param.fCutoff));
+      BankEfficiencyParseGetDouble(argv, &i, &(randIn->param.fCutoff));
       userParam->signalfFinal = randIn->param.fCutoff ;
     }
     else if (!strcmp(argv[i],   "--signal-mass-range")){    
-      BankEfficiencyParseGetDouble2(argv,  &i, 
+      BankEfficiencyParseGetDouble2(argv, &i, 
           &(randIn->mMin), &(randIn->mMax));
       randIn->param.mass1 = randIn->param.mass2 = randIn->mMin;
       /*default values for injection*/
     }   
     else if (!strcmp(argv[i], "--signal-tau0-range")){
-      BankEfficiencyParseGetDouble2(argv,  &i, 
+      BankEfficiencyParseGetDouble2(argv, &i, 
           &(randIn->t0Min), &(randIn->t0Max));
     }
     else if (!strcmp(argv[i], "--signal-tau3-range")){
-      BankEfficiencyParseGetDouble2(argv,  &i, 
+      BankEfficiencyParseGetDouble2(argv, &i, 
           &(randIn->tnMin), &(randIn->tnMax));
     }
     else if (!strcmp(argv[i],   "--signal-order")) {
-      BankEfficiencyParseGetInt(argv,  &i, (INT4*)&(randIn->param.order));
+      BankEfficiencyParseGetInt(argv, &i, (INT4*)&(randIn->param.order));
     }
     else if (!strcmp(argv[i],   "--signal-nstartpad")) {
-      BankEfficiencyParseGetInt(argv,  &i, (INT4*)&(randIn->param.nStartPad));
+      BankEfficiencyParseGetInt(argv, &i, (INT4*)&(randIn->param.nStartPad));
     }
     else if (!strcmp(argv[i],   "--signal-psi0-range")) {
-      BankEfficiencyParseGetDouble2(argv,  &i, 
+      BankEfficiencyParseGetDouble2(argv, &i, 
           &(randIn->psi0Min), &(randIn->psi0Max));
     }
     else if (!strcmp(argv[i],   "--signal-psi3-range")){
-      BankEfficiencyParseGetDouble2(argv,  &i, 
+      BankEfficiencyParseGetDouble2(argv, &i, 
           &(randIn->psi3Min), &(randIn->psi3Max));
     }  
     else if (!strcmp(argv[i],   "--signal-random-nstartpad")) {
@@ -2930,27 +2944,27 @@ void BankEfficiencyParseParameters(
       }
     }
     else if (!strcmp(argv[i], "--t0-fine-range")){
-      BankEfficiencyParseGetDouble2(argv,  &i, 
+      BankEfficiencyParseGetDouble2(argv, &i, 
           &(userParam->t0FineMin), &(userParam->t0FineMax));
     }
     else if (!strcmp(argv[i], "--t3-fine-range")){
-      BankEfficiencyParseGetDouble2(argv,  &i, 
+      BankEfficiencyParseGetDouble2(argv, &i, 
           &(userParam->t3FineMin), &(userParam->t3FineMax));
     }
     else if (!strcmp(argv[i], "--t0-fine-bin")){
-      BankEfficiencyParseGetDouble(argv,  &i, &(userParam->t0FineBin));
+      BankEfficiencyParseGetDouble(argv, &i, &(userParam->t0FineBin));
     }
     else if (!strcmp(argv[i], "--t3-fine-bin")){
-      BankEfficiencyParseGetDouble(argv,  &i, &(userParam->t3FineBin));
+      BankEfficiencyParseGetDouble(argv, &i, &(userParam->t3FineBin));
     }
     else if (!strcmp(argv[i], "--no-start-phase")){
       userParam->startPhase = 0;
     }
     else if (!strcmp(argv[i], "--tau0")) {
-      BankEfficiencyParseGetDouble(argv,  &i, &(userParam->tau0));
+      BankEfficiencyParseGetDouble(argv, &i, &(userParam->tau0));
     }
     else if (!strcmp(argv[i], "--tau3")) {
-      BankEfficiencyParseGetDouble(argv,  &i, &(userParam->tau3));
+      BankEfficiencyParseGetDouble(argv, &i, &(userParam->tau3));
     }
     else if (!strcmp(argv[i],"--template")) {
       BankEfficiencyParseGetString(argv, &i);
@@ -2994,10 +3008,10 @@ void BankEfficiencyParseParameters(
         coarseBankIn->space = Tau0Tau3;
     }
     else if (!strcmp(argv[i],   "--template-order")) {
-      BankEfficiencyParseGetInt(argv,  &i, (INT4*)(&(coarseBankIn->order)));
+      BankEfficiencyParseGetInt(argv, &i, (INT4*)(&(coarseBankIn->order)));
     }
     else if (!strcmp(argv[i],   "--template-amp-order")) {
-      BankEfficiencyParseGetInt(argv,  &i, (INT4*)(&(coarseBankIn->ampOrder)));
+      BankEfficiencyParseGetInt(argv, &i, (INT4*)(&(coarseBankIn->ampOrder)));
     }
     else if (!strcmp(argv[i], "--user-tag")) {
       BankEfficiencyParseGetString(argv, &i);
@@ -3044,9 +3058,6 @@ void BankEfficiencyParseParameters(
     }
     else if (!strcmp(argv[i],"--print-bank")) {
       userParam->printBank = 1;
-    }
-    else if (!strcmp(argv[i],"--eccentric-bank")) {
-      userParam->eccentricBank = 1;
     }
     else if (!strcmp(argv[i],"--compute-moments")) {
       coarseBankIn->computeMoments = 1;
@@ -3557,6 +3568,7 @@ void BankEfficiencyHelp(void)
   fprintf(stderr, "\t[--ascii2xml]\t\t\t read the file Trigger.dat, concatenation of one or several outputs\n");
   fprintf(stderr, "\t             \t\t\t BankEfficiency and creates a unique XML outputs.\n");
   fprintf(stderr, "\t[--bank-alpha<float>]\t\t set the BCV alpha value in the moments computation\n");
+  fprintf(stderr, "\t[--bank-eccentricity-range]\t\t set the range of eccentricity of the eccentric bank");
   fprintf(stderr, "\t[--bank-fcut-range<float float>] set the range of BCV fcut (in units of GM) \n");
   fprintf(stderr, "\t[--bank-ffinal<float>]\t\t set the final frequency to be used in the BCV moments computation\n");
   fprintf(stderr, "\t[--bank-grid-spacing <gridSpacing>]\t set the grid type of the BCV bank (Square, SquareNotOriented,\n\t\t HybridHexagonal,Hexagonal, HexagonalNotOriented\t\n");
@@ -3568,7 +3580,6 @@ void BankEfficiencyHelp(void)
   fprintf(stderr, "\t[--bank-psi3-range<float float>] psi_3 to be covered by the BCV bank\n");
   fprintf(stderr, "\t[--debug<integer>]\t\t set the debug level (same as in lal)\n");
   fprintf(stderr, "\t[--e-match<float>]\t\t set the e-match for the fast simulation\n");
-  fprintf(stderr, "\t[--eccentricity-range<float, float>]\t\t set the e-match for the fast simulation\n");
   fprintf(stderr, "\t[--fl-signal<float>]\t\t set the lower cut off frequency of signal to inject\n");
   fprintf(stderr, "\t[--fl-template<float>]\t\t set the lower cut off frequnecy of template \n");
   fprintf(stderr, "\t[--fl<float>]\t\t\t set both template and signal lower cutoff frequency \n");
@@ -3587,6 +3598,7 @@ void BankEfficiencyHelp(void)
   fprintf(stderr, "\t[--signal<string>]\t\t set signal approximant (TaylorT1, TaylorT2, TaylorT3, TaylorF2, PadeT1, EOB, SpinTaylor)\n");
   fprintf(stderr, "\t[--signal-alpha<float>]\t\t set alpha parameter of BCV injection\n");
   fprintf(stderr, "\t[--signal-amplitude<float>]\t set SNR of injection in the case NoiseandSignal simulation\n");
+  fprintf(stderr, "\t[--signal-eccentricity-range]\t\t set the range of eccentricity of the injection");
   fprintf(stderr, "\t[--signal-max-total-mass<float>]\t set maximum total mass to be injected !! ");
   fprintf(stderr, "\t               \t does not work with spin injection\n");
   fprintf(stderr, "\t[--signal-min-total-mass<float>]\t set minimum total mass to be injected\n");
@@ -4301,4 +4313,92 @@ void BankEfficiencyPopulateAmbiguityFunction(
   gsl_matrix_set(amb1,1,tmpltIndex, insptmplt.t3); 
 
 }
+
+
+void BankEfficiencyInitMyBank(
+  Mybank            *mybank, 
+  INT4              *sizeBank,
+  SnglInspiralTable *tmpltHead,
+  UserParametersIn   userParam)
+{
+  SnglInspiralTable      *tmpltCurrent = NULL;
+  INT4 i,j;
+  INT4 eccentricBins, eccentricMin,eccentricMax, eccentricStep;
+  INT4 thisIndex;
+  	
+  eccentricBins = userParam.eccentricBank.bins;
+  eccentricStep = userParam.eccentricBank.step;
+  eccentricMax  = userParam.eccentricBank.max;
+  eccentricMin  = userParam.eccentricBank.min;
+
+  *sizeBank *= eccentricBins;  
+    
+  /* Allocate memory for mybank vectors */
+  mybank->mass1  = (REAL4 *) malloc(*sizeBank * sizeof(REAL4*));
+  mybank->mass2  = (REAL4 *) malloc(*sizeBank * sizeof(REAL4*));
+  mybank->tau0   = (REAL4 *) malloc(*sizeBank * sizeof(REAL4*));
+  mybank->tau3   = (REAL4 *) malloc(*sizeBank * sizeof(REAL4*));
+  mybank->psi0   = (REAL4 *) malloc(*sizeBank * sizeof(REAL4*));
+  mybank->psi3   = (REAL4 *) malloc(*sizeBank * sizeof(REAL4*));
+  mybank->alpha  = (REAL4 *) malloc(*sizeBank * sizeof(REAL4*));
+  mybank->fFinal = (REAL4 *) malloc(*sizeBank * sizeof(REAL4*));
+  mybank->index  = (UINT4 *) malloc(*sizeBank * sizeof(UINT4*));
+  mybank->valid  = (UINT4 *) malloc(*sizeBank * sizeof(UINT4*));
+  mybank->eccentricity = (REAL4 *) malloc(*sizeBank * sizeof(REAL4*));
+  mybank->snr    = (REAL4 *) malloc(*sizeBank * sizeof(REAL4*));
   
+  for (tmpltCurrent = tmpltHead, i=0;
+       tmpltCurrent ;
+       tmpltCurrent = tmpltCurrent->next, i++)
+  {
+
+    for (j=0; j<(INT4)eccentricBins; j++)
+    {
+      thisIndex = i * eccentricBins + j;
+      mybank->mass1[thisIndex]  = tmpltCurrent->mass1;
+      mybank->mass2[thisIndex]  = tmpltCurrent->mass2;
+      mybank->tau0[thisIndex]   = tmpltCurrent->tau0;
+      mybank->tau3[thisIndex]   = tmpltCurrent->tau3;
+      mybank->psi0[thisIndex]   = tmpltCurrent->psi0;
+      mybank->psi3[thisIndex]   = tmpltCurrent->psi3;
+      mybank->tau0[thisIndex]   = tmpltCurrent->alpha;      
+      mybank->fFinal[thisIndex] = tmpltCurrent->f_final;
+      mybank->index[thisIndex]  = thisIndex;
+      mybank->valid[thisIndex]  = (INT4) 1;
+      mybank->eccentricity[thisIndex] = eccentricMin + (REAL4)j*eccentricStep; 
+      mybank->snr[thisIndex] = 0.;
+    }
+
+  }
+  mybank->size = (INT4) (*sizeBank);
+  if ( vrbflg )
+  {
+    fprintf(stdout, "done. Using %d layers of eccenticity.\n", eccentricBins);
+    fprintf(stdout, "The new bank size is Got %d templates\n", *sizeBank ); 
+    fflush(stdout);
+  }
+  
+}
+
+
+
+void BankEfficiencyEccentricBankInit(
+UserParametersIn *userParam)
+{
+  /* --- init eccentric bank parameters--- */
+  userParam->eccentricBank.step = (userParam->eccentricBank.max - 
+      userParam->eccentricBank.min) / userParam->eccentricBank.bins;
+       
+  if ( vrbflg )
+  {
+    fprintf(stdout, "Eccentric bank requested.\n");
+    fprintf(stdout, "--- minimum value = %f\n",userParam->eccentricBank.min);
+    fprintf(stdout, "--- maximum value = %f\n",userParam->eccentricBank.max);
+    fprintf(stdout, "--- number of bins = %d\n",userParam->eccentricBank.bins);
+    fprintf(stdout, "--- step between layers = %f\n",userParam->eccentricBank.step);
+    fflush(stdout);
+  }
+       
+  
+  
+}

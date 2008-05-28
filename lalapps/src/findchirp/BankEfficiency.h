@@ -118,43 +118,9 @@ fputs( "      <Stream Name=\"bankefficiencygroup:bankefficiency:table\"         
 #define BANKEFFICIENCY_MSGEMEM   "Out of memory"
 #define BANKEFFICIENCY_MSGPARSER "Missing arguments ??  "
 
-/* --- Some constants --- 
+/* --- Some flags --- 
  * useful to fill  InspiralTemplate, Bank and userParam structure */
-#define BANKEFFICIENCY_ALPHABANK            0.01
-#define BANKEFFICIENCY_ALPHASIGNAL          0.
-#define BANKEFFICIENCY_FLOWER               40.
-#define BANKEFFICIENCY_HIGHGM               6 
-#define BANKEFFICIENCY_IETA                 1
-#define BANKEFFICIENCY_IFLSO                0.
-#define BANKEFFICIENCY_LOWGM                3
-#define BANKEFFICIENCY_INSIDEPOLYGON        1
-#define BANKEFFICIENCY_MMCOARSE             0.8
-#define BANKEFFICIENCY_MMFINE               0.9
-#define BANKEFFICIENCY_MMIN                 5.
-#define BANKEFFICIENCY_MMAX                 20.
-#define BANKEFFICIENCY_NOISEMODEL           "LIGOI"
-#define BANKEFFICIENCY_NENDPAD              0
-#define BANKEFFICIENCY_NFCUT                5
-#define BANKEFFICIENCY_NOISEAMPLITUDE       1.
-#define BANKEFFICIENCY_NSTARTPAD            1000
-#define BANKEFFICIENCY_NTRIALS              1
-#define BANKEFFICIENCY_PSI0MIN              10.
-#define BANKEFFICIENCY_PSI0MAX              250000.
-#define BANKEFFICIENCY_PSI3MIN              -2200.
-#define BANKEFFICIENCY_PSI3MAX              -10.
-#define BANKEFFICIENCY_ORDER_SIGNAL         twoPN
-#define BANKEFFICIENCY_ORDER_TEMPLATE       twoPN
-#define BANKEFFICIENCY_SIGNAL               -1
-#define BANKEFFICIENCY_SIGNALAMPLITUDE      10.
-#define BANKEFFICIENCY_SPACE                Psi0Psi3
-#define BANKEFFICIENCY_STARTTIME            0.
-#define BANKEFFICIENCY_STARTPHASE           0.
-#define BANKEFFICIENCY_TEMPLATE             -1
-#define BANKEFFICIENCY_TYPE                 0
-#define BANKEFFICIENCY_TSAMPLING            2048.
-#define BANKEFFICIENCY_USEED                122888
 
-/* Other Parameters  1 = true ; 0 = false   */
 #define BANKEFFICIENCY_ALPHAFCONSTRAINT     1 /* alphaF between 0 and 1       */
 #define BANKEFFICIENCY_ALPHAFUNCONSTRAINT   0 /* alphaF between 0 and 1       */
 #define BANKEFFICIENCY_QUIETFLAG            0 /* silent                       */ 
@@ -191,6 +157,13 @@ fputs( "      <Stream Name=\"bankefficiencygroup:bankefficiency:table\"         
 /* ==================== local structures ==================== */
 /* 
  *  */
+typedef struct {
+  REAL8 min;
+  REAL8 max;
+  REAL8 step;
+  INT4 bins;
+} EccentricBank;
+  
 
 /* used in BCV for the choice of constraint or unconstraint SNR */
 typedef enum {
@@ -236,7 +209,6 @@ typedef struct{
   INT4 lengthFactor;                /* multiply estimated length by this number*/
   INT4 printSNRHisto;       
   INT4 printBank;                   /* print bank of templates      */
-  INT4 eccentricBank;               /* print bank of templates      */
   INT4 printResultXml;
   INT4 printPrototype;
   INT4 printPsd;                    /* print the psd used in <x|x>            */
@@ -259,7 +231,8 @@ typedef struct{
   REAL8 eMatch;
   REAL8 mmFine;
   REAL8 t0FineMin, t0FineMax, t3FineMin, t3FineMax, t0FineBin, t3FineBin;
-  REAL8 eccentricityMin, eccentricityMax;
+  EccentricBank eccentricBank;
+  EccentricBank eccentricSignal;
   CHAR tag[256];
 }
 UserParametersIn;
@@ -744,4 +717,32 @@ void BankEfficiencyPopulateAmbiguityFunction(
   OverlapOutputIn  outputTemplate,
   INT4             startPad, 
   InspiralTemplate insptmplt);
-    
+
+
+typedef struct {
+REAL4 *mass1;
+REAL4 *mass2;
+REAL4 *fFinal;
+REAL4 *tau0;
+REAL4 *tau3;
+REAL4 *psi0;
+REAL4 *psi3;
+REAL4 *alpha;
+UINT4 *index;
+UINT4 *valid;
+UINT4 size;
+REAL4 *eccentricity;
+REAL4 *snr;
+} Mybank;    
+
+  
+  
+void BankEfficiencyInitMyBank(
+  Mybank            *mybank, 
+  INT4              *sizeBank,
+  SnglInspiralTable *tmpltHead,
+  UserParametersIn   userParam);
+  
+  
+void BankEfficiencyEccentricBankInit(
+  UserParametersIn *userParam);
