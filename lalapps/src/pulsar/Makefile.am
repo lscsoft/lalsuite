@@ -5,7 +5,7 @@ INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
 
-SUBDIRS = Injections FDS_isolated FDS_griphyn hough FDS_binary MakeSFTs SideBand templateBanks radiometer TimingTests
+SUBDIRS = Injections FDS_isolated FDS_griphyn hough FDS_binary MakeSFTs SideBand templateBanks radiometer TimingTests TDS_isolated
 
 if FRAME
 FRAMEPROGS = lalapps_make_job_input_data lalapps_make_sfts
