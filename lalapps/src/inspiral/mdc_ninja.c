@@ -193,7 +193,7 @@ INT4 main( INT4 argc, CHAR *argv[] )
     size_t optarg_len;
 
     /* parse command line arguments */
-    c = getopt_long_only( argc, argv, "D:a:b:f:r:i:n:o:hV",
+    c = getopt_long_only( argc, argv, "D:a:b:f:r:i:t:n:o:l:L:s:S:hV",
         long_options, &option_index );
 
     /* detect the end of the options */
