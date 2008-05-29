@@ -77,17 +77,17 @@ static void write_mdc_log_file( CHAR *filename, SimInspiralTable *injections,
     INT4 gps_start, CHAR *set_name );
 
 int get_spectrum(REAL8Sequence *spectrum,
-		 InterferometerNumber ifoNumber,
-		 REAL8         deltaF,
-		 REAL8         strainHighPassFreq,
-		 REAL8         dynRange);
+    InterferometerNumber ifoNumber,
+    REAL8         deltaF,
+    REAL8         strainHighPassFreq,
+    REAL8         dynRange);
 
 void add_colored_noise(LALStatus       *status,
-		       REAL4TimeSeries *chan,
-		       INT4            ifoNumber,
-		       RandomParams    *randParams,
-		       REAL8           dynRange,
-		       REAL8           strainHighpassFreq);
+    REAL4TimeSeries *chan,
+    INT4            ifoNumber,
+    RandomParams    *randParams,
+    REAL8           dynRange,
+    REAL8           strainHighpassFreq);
 
 
 /* getopt flags */
@@ -335,42 +335,42 @@ INT4 main( INT4 argc, CHAR *argv[] )
         break;
 
       case 'l':
-	/* set lower cutoff frequency */
-	freqLowCutoff = atof(optarg);
-	if (freqLowCutoff < 0 ) 
-	  {
-	    fprintf(stderr, "invalid argument to --%s:\n"
-		    "lower cutoff frequency must be positive: "
-		    "(%f specified) \n",
-		    long_options[option_index].name, freqLowCutoff);
-	    exit(1);
-	  }
-	break;
+        /* set lower cutoff frequency */
+        freqLowCutoff = atof(optarg);
+        if (freqLowCutoff < 0 ) 
+        {
+          fprintf(stderr, "invalid argument to --%s:\n"
+              "lower cutoff frequency must be positive: "
+              "(%f specified) \n",
+              long_options[option_index].name, freqLowCutoff);
+          exit(1);
+        }
+        break;
 
 
       case 'L':
-	/* set low-pass cutoff frequency for producing noise */
-	strainLowPassFreq = atof(optarg);
-	if (strainLowPassFreq < 0 ) 
-	  {
-	    fprintf(stderr, "invalid argument to --%s:\n"
-		    "low pass frequency must be positive: "
-		    "(%f specified) \n",
-		    long_options[option_index].name, strainLowPassFreq);
-	    exit(1);
-	  }
-	break;
+        /* set low-pass cutoff frequency for producing noise */
+        strainLowPassFreq = atof(optarg);
+        if (strainLowPassFreq < 0 ) 
+        {
+          fprintf(stderr, "invalid argument to --%s:\n"
+              "low pass frequency must be positive: "
+              "(%f specified) \n",
+              long_options[option_index].name, strainLowPassFreq);
+          exit(1);
+        }
+        break;
 
 
       case 's':
-	/* set low-pass cutoff frequency for producing noise */
-	snrLow = atof(optarg);
-	break;
+        /* set low-pass cutoff frequency for producing noise */
+        snrLow = atof(optarg);
+        break;
 
       case 'S':
-	/* set low-pass cutoff frequency for producing noise */
-	snrHigh = atof(optarg);
-	break;
+        /* set low-pass cutoff frequency for producing noise */
+        snrHigh = atof(optarg);
+        break;
 
       case 'D':
         /* set debug level */
@@ -407,22 +407,22 @@ INT4 main( INT4 argc, CHAR *argv[] )
 
 
   if ( freqLowCutoff < 0 )
-    {
-      fprintf( stderr, "ERROR: --freq-low-cutoff must be specified\n" );
-      exit( 1 );
-    }
+  {
+    fprintf( stderr, "ERROR: --freq-low-cutoff must be specified\n" );
+    exit( 1 );
+  }
 
   if ( strainLowPassFreq < 0 )
-    {
-      fprintf( stderr, "ERROR: --strain-lowpass-freq must be specified\n" );
-      exit( 1 );
-    }
+  {
+    fprintf( stderr, "ERROR: --strain-lowpass-freq must be specified\n" );
+    exit( 1 );
+  }
 
   if (snrLow > snrHigh)
-    {
-      fprintf( stderr, "ERROR: --snr-low must be lesser than --snr-high\n");
-      exit(1);
-    }
+  {
+    fprintf( stderr, "ERROR: --snr-low must be lesser than --snr-high\n");
+    exit(1);
+  }
 
   if ( frameFlag )
   {
@@ -505,7 +505,7 @@ INT4 main( INT4 argc, CHAR *argv[] )
     exit( 1 );
   }
 
-  
+
 
   /*
    *
@@ -550,14 +550,14 @@ INT4 main( INT4 argc, CHAR *argv[] )
       memset( injData[i]->data->data, 0.0, injData[i]->data->length * sizeof(REAL4) );
 
       if (addNoise)  {
-	
-	LAL_CALL( add_colored_noise( &status, injData[i], i, randParams, dynRange, strainLowPassFreq), &status);
+
+        LAL_CALL( add_colored_noise( &status, injData[i], i, randParams, dynRange, strainLowPassFreq), &status);
       }
     }
 
     /* setup a unity response frequency series */
     if ( noNR != 0 )
-      {
+    {
       if (vrbflg)
         fprintf(stdout, "generating unity response...\n");
 
@@ -609,7 +609,7 @@ INT4 main( INT4 argc, CHAR *argv[] )
         strncpy(injData[i]->name, channel, LALNameLength);
 
         LAL_CALL( InjectNumRelWaveforms ( &status, injData[i], injections, ifo, 
-					  dynRange, freqLowCutoff, snrLow, snrHigh), &status);
+              dynRange, freqLowCutoff, snrLow, snrHigh), &status);
       }
 
       /* set strain as unit */
@@ -911,11 +911,11 @@ static void write_mdc_log_file(CHAR *filename, SimInspiralTable *injections, INT
 
 
 void add_colored_noise(LALStatus       *status,
-		       REAL4TimeSeries *chan,
-		       INT4            ifoNumber,
-		       RandomParams    *randParams,
-		       REAL8           dynRange,
-		       REAL8           strainHighPassFreq)
+    REAL4TimeSeries *chan,
+    INT4            ifoNumber,
+    RandomParams    *randParams,
+    REAL8           dynRange,
+    REAL8           strainHighPassFreq)
 {
 
   UINT4 k;
@@ -931,26 +931,26 @@ void add_colored_noise(LALStatus       *status,
 
   INITSTATUS( status, "add_colored_noise", rcsid);
   ATTATCHSTATUSPTR( status );
-  
+
   /* Generate white Gaussian noise with unit variance */  
   TRY( LALSCreateVector( status->statusPtr, &ntilde_re, length / 2 + 1 ), status );
 
   TRY( LALNormalDeviates( status->statusPtr, ntilde_re, randParams ), status );
   TRY( LALSCreateVector( status->statusPtr, &ntilde_im, length / 2 + 1 ), status );
   TRY( LALNormalDeviates( status->statusPtr, ntilde_im, randParams ), status );
-  
+
   /* create storage for the frequency domain noise and psd*/
   TRY( LALCCreateVector( status->statusPtr, &ntilde, length / 2 + 1 ), status );
   TRY( LALDCreateVector( status->statusPtr, &spectrum, length / 2 + 1 ), status );
-  
+
   get_spectrum( spectrum, ifoNumber, deltaF, strainHighPassFreq, dynRange);
-  
+
   /* Color white noise with given psd */
   for ( k=0; k < ntilde->length; k++ )
-    {
-      ntilde->data[k].re = ntilde_re->data[k] * sqrt( 0.25 * tObs * spectrum->data[k] );
-      ntilde->data[k].im = ntilde_im->data[k] * sqrt( 0.25 * tObs * spectrum->data[k] );
-    }
+  {
+    ntilde->data[k].re = ntilde_re->data[k] * sqrt( 0.25 * tObs * spectrum->data[k] );
+    ntilde->data[k].im = ntilde_im->data[k] * sqrt( 0.25 * tObs * spectrum->data[k] );
+  }
   /* setting d.c. and Nyquist to zero */
   ntilde->data[0].im = ntilde->data[length / 2].im = 0.0;
 
@@ -958,30 +958,30 @@ void add_colored_noise(LALStatus       *status,
   /*   fp = fopen("ntilde.dat", "w"); */
   /*   for ( k = 0; k < length/2 + 1; k++) */
   /*     fprintf(fp, "%e   %e   %e   %e    %e   %e\n", k*deltaF,
-	 ntilde_re->data[k], 
-	 ntilde_im->data[k], ntilde->data[k].re, ntilde->data[k].im, 
-	 spectrum->data[k]); */
+         ntilde_re->data[k], 
+         ntilde_im->data[k], ntilde->data[k].re, ntilde->data[k].im, 
+         spectrum->data[k]); */
   /*   fclose(fp); */
 
-  
+
   /* Fourier transform back in the time domain */
   TRY( LALCreateReverseRealFFTPlan( status->statusPtr, &invPlan, length, 0 ), status );
   TRY( LALReverseRealFFT( status->statusPtr, chan->data, ntilde, invPlan ), status);
-  
+
   /* normalize the noise */
   for ( k = 0; k < (UINT4)length; ++k )
-    {
-      chan->data->data[k] /= (REAL4) length ;
-    }
-  
+  {
+    chan->data->data[k] /= (REAL4) length ;
+  }
+
   if ( vrbflg ) fprintf( stdout, "done\n" );
-  
+
   TRY( LALSDestroyVector( status->statusPtr, &ntilde_re ), status);
   TRY( LALSDestroyVector( status->statusPtr, &ntilde_im ), status);
   TRY( LALCDestroyVector( status->statusPtr, &ntilde ), status);
   TRY( LALDDestroyVector( status->statusPtr, &spectrum), status);
   TRY( LALDestroyRealFFTPlan( status->statusPtr, &invPlan), status);
-  
+
   DETATCHSTATUSPTR (status);
   RETURN (status);
 
@@ -989,100 +989,97 @@ void add_colored_noise(LALStatus       *status,
 
 
 int get_spectrum(REAL8Sequence *spectrum,
-		 InterferometerNumber ifoNumber,
-		 REAL8         deltaF,
-		 REAL8         strainHighPassFreq,
-		 REAL8         dynRange)
+    InterferometerNumber ifoNumber,
+    REAL8         deltaF,
+    REAL8         strainHighPassFreq,
+    REAL8         dynRange)
 {
   UINT4 k;
   INT4 kmin = strainHighPassFreq / deltaF > 1 ? strainHighPassFreq / deltaF : 1 ;
 
   if ( (ifoNumber == LAL_IFO_H1) || (ifoNumber == LAL_IFO_L1) )
+  {  
+    /* set the spectrum to the Initial LIGO design noise curve */
+    REAL8 psd_value;
+    LALLIGOIPsd( NULL, &psd_value, strainHighPassFreq );
+    for ( k = 0; k < (UINT4)kmin ; ++k )
     {  
-      /* set the spectrum to the Initial LIGO design noise curve */
-      REAL8 psd_value;
-      LALLIGOIPsd( NULL, &psd_value, strainHighPassFreq );
-      for ( k = 0; k < (UINT4)kmin ; ++k )
-	{  
-	  spectrum->data[k] = 9.0e-46 * psd_value * dynRange * dynRange;
-	}
-      for ( k = kmin; k < spectrum->length ; ++k )
-	{  
-	  REAL8 psd_freq = (REAL8) k * deltaF;
-	  LALLIGOIPsd( NULL, &psd_value, psd_freq );
-	  spectrum->data[k] = 9.0e-46 * psd_value * dynRange * dynRange;
-	}
+      spectrum->data[k] = 9.0e-46 * psd_value * dynRange * dynRange;
     }
+    for ( k = kmin; k < spectrum->length ; ++k )
+    {  
+      REAL8 psd_freq = (REAL8) k * deltaF;
+      LALLIGOIPsd( NULL, &psd_value, psd_freq );
+      spectrum->data[k] = 9.0e-46 * psd_value * dynRange * dynRange;
+    }
+  }
   else if ( ifoNumber == LAL_IFO_V1)
+  {  
+    /* set the spectrum to the Advanced LIGO design noise curve */
+    REAL8 psd_value;
+    LALVIRGOPsd( NULL, &psd_value, strainHighPassFreq );
+    for ( k = 0; k < (UINT4)kmin ; ++k )
     {  
-      /* set the spectrum to the Advanced LIGO design noise curve */
-      REAL8 psd_value;
-      LALVIRGOPsd( NULL, &psd_value, strainHighPassFreq );
-      for ( k = 0; k < (UINT4)kmin ; ++k )
-	{  
-	  spectrum->data[k] = 9.0e-46 * psd_value * dynRange * dynRange;
-	}
-      for ( k = kmin; k < spectrum->length ; ++k )
-	{  
-	  REAL8 psd_freq = (REAL8) k * deltaF;
-	  LALAdvLIGOPsd( NULL, &psd_value, psd_freq );
-	  spectrum->data[k] = 9.0e-46 * psd_value * dynRange * dynRange;
-	}
+      spectrum->data[k] = 9.0e-46 * psd_value * dynRange * dynRange;
     }
+    for ( k = kmin; k < spectrum->length ; ++k )
+    {  
+      REAL8 psd_freq = (REAL8) k * deltaF;
+      LALAdvLIGOPsd( NULL, &psd_value, psd_freq );
+      spectrum->data[k] = 9.0e-46 * psd_value * dynRange * dynRange;
+    }
+  }
   else if ( ifoNumber == LAL_IFO_T1 )
-    {
-      /* set the spectrum to the Advanced LIGO design noise curve */
-      REAL8 psd_value;
-      LALTAMAPsd( NULL, &psd_value, strainHighPassFreq );
-      for ( k = 0; k < (UINT4)kmin ; ++k )
-	{  
-	  spectrum->data[k] = 9.0e-46 * psd_value * dynRange * dynRange;
-	}
-      for ( k = kmin; k < spectrum->length ; ++k )
-	{  
-	  REAL8 psd_freq = (REAL8) k * deltaF;
-	  LALAdvLIGOPsd( NULL, &psd_value, psd_freq );
-	  spectrum->data[k] = 9.0e-46 * psd_value * dynRange * dynRange;
-	}
+  {
+    /* set the spectrum to the Advanced LIGO design noise curve */
+    REAL8 psd_value;
+    LALTAMAPsd( NULL, &psd_value, strainHighPassFreq );
+    for ( k = 0; k < (UINT4)kmin ; ++k )
+    {  
+      spectrum->data[k] = 9.0e-46 * psd_value * dynRange * dynRange;
     }
+    for ( k = kmin; k < spectrum->length ; ++k )
+    {  
+      REAL8 psd_freq = (REAL8) k * deltaF;
+      LALAdvLIGOPsd( NULL, &psd_value, psd_freq );
+      spectrum->data[k] = 9.0e-46 * psd_value * dynRange * dynRange;
+    }
+  }
   else if ( ifoNumber == LAL_IFO_G1 )
-    {
-      /* set the spectrum to the Advanced LIGO design noise curve */
-      REAL8 psd_value;
-      LALGEOPsd( NULL, &psd_value, strainHighPassFreq );
-      for ( k = 0; k < (UINT4)kmin ; ++k )
-	{  
-	  spectrum->data[k] = 9.0e-46 * psd_value * dynRange * dynRange;
-	}
-      for ( k = kmin; k < spectrum->length ; ++k )
-	{  
-	  REAL8 psd_freq = (REAL8) k * deltaF;
-	  LALAdvLIGOPsd( NULL, &psd_value, psd_freq );
-	  spectrum->data[k] = 9.0e-46 * psd_value * dynRange * dynRange;
-	}
+  {
+    /* set the spectrum to the Advanced LIGO design noise curve */
+    REAL8 psd_value;
+    LALGEOPsd( NULL, &psd_value, strainHighPassFreq );
+    for ( k = 0; k < (UINT4)kmin ; ++k )
+    {  
+      spectrum->data[k] = 9.0e-46 * psd_value * dynRange * dynRange;
     }
+    for ( k = kmin; k < spectrum->length ; ++k )
+    {  
+      REAL8 psd_freq = (REAL8) k * deltaF;
+      LALAdvLIGOPsd( NULL, &psd_value, psd_freq );
+      spectrum->data[k] = 9.0e-46 * psd_value * dynRange * dynRange;
+    }
+  }
   else if ( ifoNumber == LAL_IFO_H2 )
-    {
-      /* set the spectrum to the Advanced LIGO design noise curve */
-      REAL8 psd_value;
-      LALLIGOIPsd( NULL, &psd_value, strainHighPassFreq );
-      for ( k = 0; k < (UINT4)kmin ; ++k )
-	{  
-	  spectrum->data[k] = 4.0 * 9.0e-46 * psd_value * dynRange * dynRange;
-	}
-      for ( k = kmin; k < spectrum->length ; ++k )
-	{  
-	  REAL8 psd_freq = (REAL8) k * deltaF;
-	  LALAdvLIGOPsd( NULL, &psd_value, psd_freq );
-	  spectrum->data[k] = 2.0 * 9.0e-46 * psd_value * dynRange * dynRange;
-	}
+  {
+    /* set the spectrum to the Advanced LIGO design noise curve */
+    REAL8 psd_value;
+    LALLIGOIPsd( NULL, &psd_value, strainHighPassFreq );
+    for ( k = 0; k < (UINT4)kmin ; ++k )
+    {  
+      spectrum->data[k] = 4.0 * 9.0e-46 * psd_value * dynRange * dynRange;
     }
+    for ( k = kmin; k < spectrum->length ; ++k )
+    {  
+      REAL8 psd_freq = (REAL8) k * deltaF;
+      LALAdvLIGOPsd( NULL, &psd_value, psd_freq );
+      spectrum->data[k] = 2.0 * 9.0e-46 * psd_value * dynRange * dynRange;
+    }
+  }
   else 
     return -1;
 
   return 0;
 
 }
-
-
-
