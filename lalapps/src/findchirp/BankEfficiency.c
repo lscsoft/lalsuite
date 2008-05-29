@@ -2143,10 +2143,10 @@ void BankEfficiencyGenerateInputData(
       randIn->param.polarisationAngle = randIn->polarisationAngleMin + u * 
           (randIn->polarisationAngleMax-randIn->polarisationAngleMin);
     
-      if (randIn->param.approximant==EOBNR)
+      if (randIn->param.approximant == EOBNR)
         randIn->param.order = pseudoFourPN;
       
-      if (randIn->param.approximant==SpinTaylor)
+      if (randIn->param.approximant == SpinTaylor)
       {  
         /*Now, we randomize the spin parameters only*/
         INT4 temp;
@@ -2162,8 +2162,6 @@ void BankEfficiencyGenerateInputData(
         randIn->sourcePhiMax = 1.;
         randIn->sourceThetaMin = 0.;
         randIn->sourceThetaMax = 1.;
-        randIn->polarisationAngleMin = 0.;
-        randIn->polarisationAngleMax = 1.;
         randIn->minDistance = 0.1;
         randIn->maxDistance = 1.;
         randIn->param.mass1 = 11; /*dummy but valid values overwritten later*/
@@ -2551,9 +2549,9 @@ void BankEfficiencyInitInspiralCoarseBankIn(
   coarseBankIn->HighGM           = 6;
   coarseBankIn->gridSpacing      = SquareNotOriented;
   coarseBankIn->computeMoments   = 0;
-  coarseBankIn->NumFreqCut       = 1;
-  coarseBankIn->MaxFreqCut       = SchwarzISCO;
-  coarseBankIn->MinFreqCut       = SchwarzISCO;
+  coarseBankIn->numFreqCut       = 1;
+  coarseBankIn->maxFreqCut       = SchwarzISCO;
+  coarseBankIn->minFreqCut       = SchwarzISCO;
 }
 
 
@@ -2598,6 +2596,9 @@ void BankEfficiencyInitRandomInspiralSignalIn(
   randIn->NoiseAmp              = 1;
   randIn->param.eccentricity    = 0.;
   randIn->param.ampOrder        = 5;
+  randIn->inclinationMin        = 0.;
+  randIn->inclinationMax        = LAL_PI;
+  
 }
 
 
@@ -2903,6 +2904,14 @@ void BankEfficiencyParseParameters(
     else if (!strcmp(argv[i],   "--signal-ffinal")) {
       BankEfficiencyParseGetDouble(argv, &i, &(randIn->param.fCutoff));
       userParam->signalfFinal = randIn->param.fCutoff ;
+    }
+    else if (!strcmp(argv[i],"--signal-inclination-range")){
+      BankEfficiencyParseGetDouble2(argv, &i, 
+          &(randIn->inclinationMin), &(randIn->inclinationMax));
+    }
+    else if (!strcmp(argv[i],"--signal-polarisation-range")){
+      BankEfficiencyParseGetDouble2(argv, &i, 
+          &(randIn->polarisationAngleMin), &(randIn->polarisationAngleMax));
     }
     else if (!strcmp(argv[i],   "--signal-mass-range")){    
       BankEfficiencyParseGetDouble2(argv, &i, 

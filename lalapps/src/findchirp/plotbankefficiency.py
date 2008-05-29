@@ -108,8 +108,9 @@ title('Position of the injections')
 myssavefig(opts,'plotbankefficiency_bank.png')
 
 #----------------------------------------------------------SNR histogram and fit
-for this,label in zip(['snr','mass1_sim', 'mass2_sim'],
-                      ['SNR', 'Mass1', 'Mass2']):
+for this,label in zip(\
+    ['snr','mass1_sim', 'mass2_sim', 'ecc_sim', 'totalmass_sim'],\
+    ['SNR', 'Mass1 (simulation)', 'Mass2(simulation)', 'Eccentricity(simulation)']):    
   plotting.plot_histogram_and_fit(results[this],100,fit=False)
   xlabel(label, size='x-large')
   ylabel(r'\#', size='x-large')
@@ -126,7 +127,7 @@ if signal=='Eccentricity':
 
   # the eccentricity, and SNR
   plotting.plot(results['ecc_sim'],results['snr'],'ob')
-  pylab.axis([0,0.4,0.7,1])
+  #pylab.axis([0,0.4,0.7,1])
   myssavefig(opts,'plotbankefficiency_ecc_versus_snr.png')
 
 
@@ -154,9 +155,11 @@ myssavefig(opts,'plotbankefficiency_totalmass_sim_fastoption.png')
 
 
 # accuracy of the chirp mass
-figure(plotting.figure_num)
+
 data = (results['chirpmass_sim']-results['chirpmass'])/results['chirpmass_sim']
-hist(data,50)
+plotting.plot_histogram_and_fit(data,50,False)
+xlabel(r'$\Delta \mathcal{M}$')
+ylabel(r'\#')
 myssavefig(opts,'plotbankefficiency_accuracy_chirpmass.png')
 
 #figure(100)
