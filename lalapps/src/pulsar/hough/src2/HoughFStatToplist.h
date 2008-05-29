@@ -21,8 +21,17 @@
 #define HOUGHFSTATTOPLIST_H
 
 #include "HeapToplist.h"
-#include "HierarchicalSearch.h"
+#include <lal/LALDatatypes.h>
 
+
+/** Type to hold the fields that will be kept in a "toplist"  */
+typedef struct {
+  REAL8 Freq;		/**< Frequency at maximum (?) of the cluster */
+  REAL8 f1dot;		/**< spindown value f1dot = df/dt */
+  REAL8 Alpha; 		/**< Skyposition: longitude in equatorial coords, radians */
+  REAL8 Delta;		/**< skyposition: latitude */
+  REAL8 HoughFStat;	/**< Hough significance */
+} HoughFStatOutputEntry;
 
 
 /* This has by now been reduced to an interface to the HeapToplist functions */

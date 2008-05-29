@@ -23,6 +23,7 @@
 #include "HeapToplist.h"
 #include <lal/StringInput.h> /* for LAL_REAL8_FORMAT etc. */
 
+#include <lal/LALConstants.h>
 #include <lal/LALStdio.h>
 #include <lal/LogPrintf.h>
 

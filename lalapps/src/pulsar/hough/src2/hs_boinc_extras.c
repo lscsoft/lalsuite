@@ -48,6 +48,8 @@
 #include "hs_boinc_extras.h"
 #include "hs_boinc_options.h"
 
+/* FIXME: we should probably eliminate the references to this */
+#include "ComputeFStatistic.h"
 
 char* HSBOINCEXTRASCRCSID = "$Id$";
 
@@ -366,13 +368,13 @@ void show_progress(double rac,  /**< right ascension */
   if(toplist->elems > 0) {
     /* take the last (rightmost) leaf of the heap tree - might not be the
        "best" candidate, but for the graphics it should be good enough */
-    FstatOutputEntry *line = (FstatOutputEntry*)(toplist->heap[toplist->elems - 1]);
+    HoughFStatOutputEntry *line = (HoughFStatOutputEntry*)(toplist->heap[toplist->elems - 1]);
 
     boincv6_progress.cand_frequency  = line->Freq;
     boincv6_progress.cand_spindown   = line->f1dot;
     boincv6_progress.cand_rac        = line->Alpha;
     boincv6_progress.cand_dec        = line->Delta;
-    boincv6_progress.cand_hough_sign = line->Fstat;
+    boincv6_progress.cand_hough_sign = line->HoughFStat;
     boincv6_progress.frequency       = freq;
     boincv6_progress.bandwidth       = fband;
   } else {
@@ -452,7 +454,7 @@ static int resolve_and_unzip(const char*filename, /**< filename to resolve */
     strncat(buf,LINKED_EXT,sizeof(buf));
     /* f**king BOINC's new symlink behavior returns no error if the link file doesn't,
        exist, so we need to check it manually */
-    if(fp=fopen(buf,"r")) {
+    if((fp=fopen(buf,"r"))) {
       fclose(fp);
       /* this could only be the remainder of a previous interrupted unzip */
       LogPrintf (LOG_NORMAL, "WARNING: found old link file '%s'\n", buf);
@@ -1242,7 +1244,7 @@ int init_and_read_checkpoint(toplist_t*tl     , /**< the toplist to checkpoint *
     strncat(cptfilename,CHECKPOINT_EXT,s);
   }
   
-  return(read_hs_checkpoint(cptfilename,toplist,count));
+  return(read_hfs_checkpoint(cptfilename,toplist,count));
 }
 
 
@@ -1257,7 +1259,7 @@ void set_checkpoint (void) {
   if (boinc_time_to_checkpoint())
 #endif
     {
-      write_hs_checkpoint(cptfilename,toplist,last_count, do_sync);
+      write_hfs_checkpoint(cptfilename,toplist,last_count, do_sync);
       fprintf(stderr,"c\n");
       boinc_checkpoint_completed();
     }
@@ -1268,7 +1270,7 @@ void set_checkpoint (void) {
     all structures related to the toplist. After that, the toplist is invalid.
  */
 void write_and_close_checkpointed_file (void) {
-  write_hs_oputput(outfilename,toplist);
+  write_hfs_oputput(outfilename,toplist);
 }
 
 /* Experimental and / or debugging stuff */

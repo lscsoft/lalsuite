@@ -113,6 +113,8 @@
 
 
 #include"HierarchicalSearch.h"
+
+
 /* This need to go here after HierarchicalSearch.h is included;
    StackSlideFstat.h needs SemiCohCandidateList defined. */
 #include "StackSlideFstat.h"
@@ -131,7 +133,7 @@ RCSID( "$Id$");
 #else
 #define HS_CHECKPOINTING 0 /* no checkpointing in the non-BOINC case (yet) */
 #define GET_CHECKPOINT(toplist,total,count,outputname,cptname) *total=0;
-#define INSERT_INTO_FSTAT_TOPLIST insert_into_fstat_toplist
+#define INSERT_INTO_HOUGHFSTAT_TOPLIST insert_into_houghFStat_toplist
 #define SHOW_PROGRESS(rac,dec,tpl_count,tpl_total,freq,fband)
 #define SET_CHECKPOINT
 #define MAIN  main
@@ -536,7 +538,7 @@ int MAIN( int argc, char *argv[]) {
   
   /* create toplist -- semiCohToplist has the same structure 
      as a fstat candidate, so treat it as a fstat candidate */
-  create_fstat_toplist(&semiCohToplist, uvar_nCand1);
+  create_houghFStat_toplist(&semiCohToplist, uvar_nCand1);
 
   /* write the log file */
   if ( uvar_log ) 
@@ -1199,8 +1201,8 @@ int MAIN( int argc, char *argv[]) {
 	return HIERARCHICALSEARCH_EFILE;
       }
     if ( uvar_printCand1 && uvar_semiCohToplist ) {
-      sort_fstat_toplist(semiCohToplist);
-      if ( write_fstat_toplist_to_fp( semiCohToplist, fpSemiCoh, NULL) < 0)
+      sort_houghFStat_toplist(semiCohToplist);
+      if ( write_houghFStat_toplist_to_fp( semiCohToplist, fpSemiCoh, NULL) < 0)
 	fprintf( stderr, "Error in writing toplist to file\n");
       /*     LAL_CALL( AppendFstatCandidates( &status, &fStatCand, fpFstat), &status); */
       if (fprintf(fpSemiCoh,"%%DONE\n") < 0)
@@ -1270,7 +1272,7 @@ int MAIN( int argc, char *argv[]) {
  
   /* free candidates */
   LALFree(semiCohCandList.list);
-  free_fstat_toplist(&semiCohToplist);
+  free_houghFStat_toplist(&semiCohToplist);
 
   LAL_CALL (LALDestroyUserVars(&status), &status);  
 
@@ -2729,7 +2731,7 @@ void GetFstatCandidates_toplist( LALStatus *status,
 {
   INT4 k, length, debug;
   REAL8 deltaF, f0;
-  FstatOutputEntry line;
+  HoughFStatOutputEntry line;
 
   INITSTATUS( status, "GetFstatCandidates_toplist", rcsid );
   ATTATCHSTATUSPTR (status);
@@ -2747,10 +2749,10 @@ void GetFstatCandidates_toplist( LALStatus *status,
   for ( k=0; k<length; k++)
     {
       
-      line.Fstat = in->data->data[k];
+      line.HoughFStat = in->data->data[k];
       line.Freq = f0 + k*deltaF;
       
-      debug = insert_into_fstat_toplist( list, line);
+      debug = insert_into_houghFStat_toplist( list, line);
 
     }
 
@@ -3151,7 +3153,7 @@ void GetSemiCohToplist(LALStatus            *status,
 {
 
   INT4 k, debug;
-  FstatOutputEntry line;
+  HoughFStatOutputEntry line;
 
   INITSTATUS( status, "GetSemiCohToplist", rcsid );
   ATTATCHSTATUSPTR (status);
@@ -3167,9 +3169,9 @@ void GetSemiCohToplist(LALStatus            *status,
     line.Alpha = in->list[k].alpha;
     line.Delta = in->list[k].delta;
     line.f1dot = in->list[k].fdot;
-    line.Fstat = (in->list[k].significance - meanN)/sigmaN;
+    line.HoughFStat = (in->list[k].significance - meanN)/sigmaN;
 
-    debug = INSERT_INTO_FSTAT_TOPLIST( list, line);
+    debug = INSERT_INTO_HOUGHFSTAT_TOPLIST( list, line);
 
   }
   

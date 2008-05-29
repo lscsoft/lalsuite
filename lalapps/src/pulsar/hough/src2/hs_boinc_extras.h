@@ -29,7 +29,7 @@
 
 #include <lal/LALError.h>
 #include <lal/LALRCSID.h>
-#include "FstatToplist.h"
+#include "HoughFStatToplist.h"
 
 #define HSBOINCEXTRASHRCSID "$Id$"
 
@@ -70,7 +70,7 @@ LocalComputeFstatHoughMap ( LALStatus *status,
 #define HS_CHECKPOINTING 1
 #endif
 
-#define INSERT_INTO_FSTAT_TOPLIST insert_into_fstat_toplist
+#define INSERT_INTO_HOUGHFSTAT_TOPLIST insert_into_houghFStat_toplist
 
 #if (HS_CHECKPOINTING)
 #define GET_CHECKPOINT(toplist,total,count,outputname,cptname)\

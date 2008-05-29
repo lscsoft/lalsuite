@@ -69,7 +69,7 @@
 #include <lalapps.h>
 
 /* more efficient toplist using heaps */
-#include <FstatToplist.h>
+#include "HoughFStatToplist.h"
 
 /******************************************************
  *   Protection against C++ name mangling
@@ -182,15 +182,6 @@ NRCSID( HIERARCHICALSEARCHH, "$Id$" );
     REAL8 significance;/**< significance */
   } SemiCohCandidate;  
 
-  /** Type to hold the fields that will be kept in a "toplist"  */
-  typedef struct {
-    REAL8 Freq;			/**< Frequency at maximum (?) of the cluster */
-    REAL8 f1dot;		/**< spindown value f1dot = df/dt */
-    REAL8 Alpha; 		/**< Skyposition: longitude in equatorial coords, radians */
-    REAL8 Delta;		/**< skyposition: latitude */
-    REAL8 HoughFStat;		/**< Hough significance */
-  } HoughFStatOutputEntry;
-
   /** structure for storing candidates produced by Hough search */
   typedef struct tagSemiCohCandidateList {
     LIGOTimeGPS refTime;       /**< reference time for candidates */
@@ -258,6 +249,4 @@ NRCSID( HIERARCHICALSEARCHH, "$Id$" );
 
 
 #endif     /* Close double-include protection _HIERARCHICALSEARCH_H */
-
-
 
