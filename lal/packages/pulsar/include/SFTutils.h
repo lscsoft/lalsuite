@@ -174,6 +174,7 @@ SFTVector* XLALExtractBandfromSFTs ( const SFTVector *sfts, REAL8 fMin, REAL8 fM
 void LALCopySFT (LALStatus *status, SFTtype *dest, const SFTtype *src);
 
 void LALSubtractSFTVectors (LALStatus *, SFTVector **outVect, const SFTVector *inVect1, const SFTVector *inVect2 );
+void LALLinearlyCombineSFTVectors (LALStatus *, SFTVector **outVect, SFTVector **inVects, const COMPLEX16Vector *weights, const CHAR *outName);
 void LALAppendSFT2Vector (LALStatus *, SFTVector *vect, const SFTtype *sft );
 
 LIGOTimeGPSVector *XLALCreateTimestampVector (UINT4 len);

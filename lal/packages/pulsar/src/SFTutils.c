@@ -639,6 +639,122 @@ LALSubtractSFTVectors (LALStatus *status,
 
 
 
+/** Linearly combine two or more SFT-vectors and put the results in a new one (which it allocates).
+ *
+ */
+void
+LALLinearlyCombineSFTVectors
+(LALStatus *status,
+ SFTVector **outVect,	          /**< [out] linear combo of SFT-vectors */
+ SFTVector **inVects,	  /**< array of SFT-vectors */
+ const COMPLEX16Vector *weights,  /**< vector of SFT-weights */
+ const CHAR *outName)             /**< name for output vector */
+{
+  UINT4 numSFTs, numSFTVects;
+  UINT4 i, j, k;
+  SFTVector *ret = NULL;
+
+  INITSTATUS( status, "LALLinearlyCombineSFTVectors", SFTUTILSC);
+  ATTATCHSTATUSPTR (status); 
+
+  ASSERT (outVect,  status, SFTUTILS_ENULL,  SFTUTILS_MSGENULL);
+  ASSERT ( *outVect == NULL,  status, SFTUTILS_ENONULL,  SFTUTILS_MSGENONULL);
+  ASSERT (inVects && inVects[0] && inVects[0]->data
+	  && inVects[0]->data[0].data,
+	  status, SFTUTILS_ENULL, SFTUTILS_MSGENULL);
+  ASSERT (weights && weights->data,
+	  status, SFTUTILS_ENULL,  SFTUTILS_MSGENULL);
+  numSFTVects = weights->length;
+
+  if ( numSFTVects < 1 )
+    {
+      LALPrintError ("\nERROR: must be combining at least one SFT Vector!\n\n");
+      ABORT ( status, SFTUTILS_EINPUT,  SFTUTILS_MSGEINPUT);
+    }
+
+  numSFTs = inVects[0] -> length;
+
+  TRY ( LALCreateSFTVector ( status->statusPtr, &ret, numSFTs, inVects[0]->data[0].data->length ), status );
+  
+  /* copy the SFTs from the first vector */
+  for (i=0; i < numSFTs; i ++)
+    {
+      UINT4 numBins1, numBins2;
+      LIGOTimeGPS epoch1, epoch2;
+      REAL8 Freq1, Freq2, deltaF1, deltaF2;
+      numBins1 = inVects[0]->data[i].data->length;
+      epoch1   = inVects[0]->data[i].epoch;
+      Freq1    = inVects[0]->data[i].f0;
+      deltaF1  = inVects[0]->data[i].deltaF;
+
+      /* copy header info */
+      ret->data[i].epoch  = epoch1;
+      ret->data[i].f0     = Freq1;
+      ret->data[i].deltaF = deltaF1;
+
+      for (k=0; k < numBins1; k++)
+	{
+	  ret->data[i].data->data[k].re
+	    = weights->data[0].re * inVects[0]->data[i].data->data[k].re
+	    - weights->data[0].im * inVects[0]->data[i].data->data[k].im;
+	  ret->data[i].data->data[k].re
+	    = weights->data[0].re * inVects[0]->data[i].data->data[k].im
+	    + weights->data[0].im * inVects[0]->data[i].data->data[k].re;
+	}  /* for k < numBins1 */
+
+      /* add in the other SFTs one-by-one */
+      for (j=1; j < numSFTVects; j++)
+	{
+	  numBins2 = inVects[j]->data[i].data->length;
+	  epoch2   = inVects[j]->data[i].epoch;
+	  Freq2    = inVects[j]->data[i].f0;
+	  deltaF2  = inVects[j]->data[i].deltaF;      
+
+	  if ( numBins1 != numBins2 ) {
+	    LALPrintError ("\nERROR: the SFTs must have the same number of frequency-bins!\n\n");
+	    goto failed;
+	  }
+	  if ( (epoch1.gpsSeconds != epoch2.gpsSeconds) || ( epoch1.gpsNanoSeconds != epoch2.gpsNanoSeconds ) ) {
+	    LALPrintError ("\nERROR: the SFTs must have the same epochs!\n\n");
+	    goto failed;
+	  }
+	  if ( Freq1 != Freq2 ) {
+	    LALPrintError ("\nERROR: the SFTs must have the same start frequency!\n\n");
+	    goto failed;
+	  }
+	  if ( deltaF1 != deltaF2 ) {
+	    LALPrintError ("\nERROR: the SFTs must have the same frequency-steps!\n\n");
+	    goto failed;
+	  }
+
+
+	  for (k=0; k < numBins1; k++)
+	    {
+	      ret->data[i].data->data[k].re
+		= weights->data[j].re * inVects[j]->data[i].data->data[k].re
+		- weights->data[j].im * inVects[j]->data[i].data->data[k].im;
+	      ret->data[i].data->data[k].re
+		= weights->data[j].re * inVects[j]->data[i].data->data[k].im
+		+ weights->data[j].im * inVects[j]->data[i].data->data[k].re;
+	    }  /* for k < numBins1 */
+	  
+	} /* for j < numSFTVects */
+      memcpy ( ret->data[i].name, outName, LALNameLength*sizeof(CHAR) );
+    } /* for i < numSFTs */
+
+  /* success: */
+  (*outVect) = ret;
+  DETATCHSTATUSPTR (status); 
+  RETURN (status);
+
+ failed:
+  LALDestroySFTVector (  status->statusPtr, &ret );
+  ABORT ( status, SFTUTILS_EINPUT,  SFTUTILS_MSGEINPUT);
+
+} /* LALLinearlyCombineSFTVectors() */
+
+
+
 /** Append the given SFTtype to the SFT-vector (no SFT-specific checks are done!) */
 void
 LALAppendSFT2Vector (LALStatus *status,
