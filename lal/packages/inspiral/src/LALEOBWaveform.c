@@ -1455,9 +1455,21 @@ LALEOBWaveformEngine (
    /* only used in injection case */
    unitHz = m*(REAL8)LAL_PI;
    cosI   = cos( params->inclination );
-   ampl0  = -sqrt(64.0*LAL_PI/5.) * eta * params->totalMass * LAL_MRSUN_SI/params->distance;
    apFac  = -2.0 * (1.0 + cosI*cosI) * eta * params->totalMass * LAL_MRSUN_SI/params->distance;
    acFac  = -4.0 * cosI * eta * params->totalMass * LAL_MRSUN_SI/params->distance;
+
+   /* Set the amplitude depending on whether the distance is given */
+   if ( params->distance > 0.0 )
+     ampl0  = -sqrt(64.0*LAL_PI/5.) * eta * params->totalMass * LAL_MRSUN_SI/params->distance;
+   else
+     ampl0  = params->signalAmplitude;
+
+   /* Check we get a sensible answer */
+   if ( ampl0 == 0.0 )
+   {
+     LALSnprintf( message, 256, "Generating waveform of zero amplitude!!" );
+     LALWarning( status, message );
+   }
 
    /* Find the initial velocity given the lower frequency */
    t = 0.0;
