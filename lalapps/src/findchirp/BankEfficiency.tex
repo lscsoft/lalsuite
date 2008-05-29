@@ -52,9 +52,9 @@
 
 BankEfficiency is a tool, which is available in lalapps/src/findchirp, that was primarely created to test efficiencies of template banks at detecting inspiralling compact binaries in the context of ground based detetectors. 
 
-Although it relies heavily on LAL packages such as bank, inspiral and noisemodels packages, nevertheless it has its own sets of routines, which makes BankEfficiency a pretty long piece of code (about 4,000 lines). However, this tool si quite modular, and the main core is pretty small (about 400 lines). It should therefore be easy to adapt it to your needs. 
+Although it relies heavily on LAL packages such as bank, inspiral and noisemodels packages, nevertheless it has its own sets of routines, which makes BankEfficiency a pretty long piece of code (about 4,000 lines) but also quite independant. BankEfficiency is quite modular, and the main core is pretty small (about 400 lines). It should therefore be easy to adapt it to your needs. 
 
-What BankEfficiency can do :
+\textbf{What BankEfficiency can do :}
 \begin{itemize}
  \item Compute overlaps between a signal and a template bank
  \item Perform large Monte-Carlo simulations using condor and dag technology.
@@ -64,7 +64,7 @@ What BankEfficiency can do :
  \item Use any noise model that is available in LAL noisemodel package
 \end{itemize}
 
-What BankEfficiency cannot do
+\textbf{What BankEfficiency cannot do }
 \begin{itemize}
  \item a multidetector anaylis
  \item analyse real noise, although implementation of an interface should be straigtforward.
@@ -77,14 +77,16 @@ BankEfficiency has become a powerful tool but it neccesiates a lot of input argu
 In the following we assume that the reader knows what is a template bank, what is matched filtering, what is a template, and what are the models such as EOB, PadeT1, TaylorT1 and so on. If not, you may look at one of the references in the bibliography 
 
 \section{Tutorial}
+In this section, I will introduce a few examples to show what type of simulations BankEfficiency and what is the ouput. 
+
 \subsection{First example and outputs}
-Let us start with a very simple example.
+Let us start with a very simple example that has only two input parameters. This is possible because all parameters have default values. 
 
 \code{lalapps\_BankEfficiency {-}{-}template EOB {-}{-}signal EOB}
 
-Here, we want to inject EOB waveforms (\textbf{{-}{-}signal EOB}), and filter them through a template bank that is made of EOB waveforms (\textbf{{-}{-}template EOB}). This command will return a bunch of numbers, among which the \textbf{overlaps} betweem the injected waveform and the template bank. 
+Here, we specify both the signal and templates model to be based on EOB model. To do so, we use (\textbf{{-}{-}signal EOB}) and (\textbf{{-}{-}template EOB}). The code will inject an EOB signal and filter it trough a template bank whose templates are also based on EOB signal. We'll come back on the template bank placement later on. This command returns a bunch of numbers on the screen. 
 
-The next step is to know what BankEfficiency returns. From the output on the screen this is cumbersome. Luckily, at the end of the previous command, one can add \textbf{--xml-output}:
+The next step is to understand what all these numbers are. From the output on the screen this is quite tedious. Luckily, at the end of the previous command, one can add \textbf{--xml-output}:
 
  \code{lalapps\_BankEfficiency {-}{-}template EOB {-}{-}signal EOB {-}{-}xml-output}
 
@@ -94,16 +96,18 @@ Here, we assume that you are familiar with \textbf{lwtprint} executables from li
 
 \code{lwtprint BankEfficiency-Result.xml -t bankefficiency -c mass1\_sim,mass2\_sim,snr}
 
-where \textbf{-t bankefficiency } parses the bankefficiency outputs and \textbf{-c snr,mass1\_sim,mass2\_sim} means you want to extract the columns labelled \textbf{snr}, \textbf{mass1\_sim} and \textbf{mass2\_sim}. Of course, you need to know what are the column's name. At the end of this document, we provied the list of columns and their meaning 
+where \textbf{-t bankefficiency } parses the bankefficiency outputs and \textbf{-c snr,mass1\_sim,mass2\_sim} means you want to extract the columns labelled \textbf{snr}, \textbf{mass1\_sim} and \textbf{mass2\_sim}. Of course, you need to know what are the column's name. At the end of this document, we provide the list of columns and their meaning 
+
+In the previous example, we extracted the component masses as well as the SNR. Actually, this is the overlap between the signal and the template bank that is a single number for each injected signal. This single number is therefore a maximisation over time and parameter space of all the correlation/matched filtering performed during a simulation.
 
 As you've probably noticed, the input parameters can be very succint. In this first example, we provide only 2 or 3 arguments. This simply means that many parameters are set by default. For instance the sampling is 2048Hz and  the template bank is based on a square placement. In order to know all the default values, you can consult the header of BankEfficiency. A nicer way is again to look at the XML file. Indeed, all the parameters used for the simulation are stored in the \textbf{process\_params} table togethre with the version of the code that has been used stored in \textbf{process} table, you should be able to reproduce your results. Finally, if you use \textbf{BankEfficiency} as a standalone and add the option \textbf{--print-bank}, you will also have the template bank stored in a file called \textbf{BankEfficiency-Bank.xml}.
 
 
 
 \subsection{Second example: testing a template bank}
-What you want to do to test that a template bank is well designed is large number of simulations. Imagine your template bank is made of about xx templates. Let us say that performing 10 times more injections is reasonable. This number of simulations can be specified with \textbf{--n 10000}. 
+What you want to do to test that a template bank is well designed is large number of simulations. The number of simulations can be specified with \textbf{--n 10000}. 
 
-Then, to be realistic, the minimal match of the bank is set to \textbf{-- mm 95\%}.
+Then, to be realistic, the minimal match of the bank is set to \textbf{-- mm 95\%} (by default it is set to 80\%).
 
 \code{lalapps\_BankEfficiency {-}{-}template EOB {-}{-}signal EOB {-}{-}mm 0.95 {-}{-}n 10000  {-}{-}xml-output {-}{-}print-bank}
 
@@ -113,7 +117,7 @@ Finally, what you really want to look at is some plots. BankEfficiency does not 
 
 \begin{figure}
 \centering
- \includegraphics[width=0.4\textwidth]{bankefficiencydoc_snr_versus_totalmass}
+ \includegraphics[width=0.4\textwidth]{bankefficiencydoc_snr_versus_totalmass.png}
 \caption{\label{fig:snr1} Overlaps versus total mass}
 \end{figure} 
 
@@ -204,6 +208,11 @@ run your simulation
 \item[nfast] number of templates really used
 \end{description}
 
+\section{The options and their default values}
+
+
+
+
 % bibliography : bank papers : square, hexa, bcvspin, S3SBBH, reinhard, owen, Sathya,
 \begin{thebibliography}{99}
 \bibitem{LIGO}
@@ -226,7 +235,16 @@ F.~Beauville et al, Class.\ Quant.\ Grav.\ \textbf{22}, 4285, (2005).
 D \textbf{60} 022002 (1998).
 
 \bibitem{squarebank}
-S.~Babak and R.~Balasubramanian and D.~Churches and T.~Cokelaer and
+S.~Babak and R.~Balasubramanian and D.~Churches and T.~Cokelaer and B.~S.~Sathyaprakash 2006 \textit{Class.\ Quantum Grav.\ }
+\textbf{23} 5477
+
+\bibitem{hexabank} T.~Cokelaer 2007 \textit{Gravitational Wave Detections of Inspiralling Compact Binaries: Hexagonal Template Placement and Physical Template Families}, (\textit{Preprint} gr-qc/0706.4437v1), Phys. Review D 76, 10, 2007 (15 Nov 2007) 
+
+
+\bibitem{bcvbank} T.Cokelaer, 2007, \textit{A template bank to search for gravitational waves from inspiralling compact binaries: II. Phenomenological model}
+Class. Quantum Grav. 24 (2007) 6227-6242 
+
+
 \bibitem{BDI95} L. Blanchet, T. Damour and B.R. Iyer, Phys.\ Rev.\ D {\bf 51},5360 (1995).
 
 \bibitem{LAL} LSC Algorithm Library LAL,\\
