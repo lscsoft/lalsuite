@@ -530,6 +530,9 @@ LALInspiralChooseModel(
       case onePN:
       switch (params->approximant) 
       {
+         case Eccentricity:
+            ABORT(status, LALINSPIRALH_EMSGORDERMISSING, LALINSPIRALH_MSGEORDERMISSING);
+            break;
          case AmpCorPPN:
          case TaylorT1:
          case TaylorT2:
@@ -560,6 +563,9 @@ LALInspiralChooseModel(
       case onePointFivePN:
       switch (params->approximant) 
       {
+         case Eccentricity:
+            ABORT(status, LALINSPIRALH_EMSGORDERMISSING, LALINSPIRALH_MSGEORDERMISSING);
+            break;
          case AmpCorPPN:
          case TaylorT1:
          case TaylorT2:
@@ -593,6 +599,9 @@ LALInspiralChooseModel(
       case twoPN:
       switch (params->approximant) 
       {
+         case Eccentricity:
+            ABORT(status, LALINSPIRALH_EMSGORDERMISSING, LALINSPIRALH_MSGEORDERMISSING);
+            break;
          case AmpCorPPN:
          case TaylorT1:
          case TaylorT2:
@@ -630,6 +639,9 @@ LALInspiralChooseModel(
       case twoPointFivePN:
       switch (params->approximant) 
       {
+         case Eccentricity:
+            ABORT(status, LALINSPIRALH_EMSGORDERMISSING, LALINSPIRALH_MSGEORDERMISSING);
+            break;
          case AmpCorPPN:
          case TaylorT1:
          case TaylorT2:
@@ -668,6 +680,9 @@ LALInspiralChooseModel(
       case threePN:
       switch (params->approximant) 
       {
+         case Eccentricity:
+            ABORT(status, LALINSPIRALH_EMSGORDERMISSING, LALINSPIRALH_MSGEORDERMISSING);
+            break;
          case AmpCorPPN:
          case TaylorT1:
          case TaylorT2:
@@ -706,6 +721,9 @@ LALInspiralChooseModel(
       case threePointFivePN:
       switch (params->approximant) 
       {
+         case Eccentricity:
+            ABORT(status, LALINSPIRALH_EMSGORDERMISSING, LALINSPIRALH_MSGEORDERMISSING);
+            break;
          case AmpCorPPN:
          case TaylorT1:
          case TaylorT2:
@@ -713,7 +731,7 @@ LALInspiralChooseModel(
          case TaylorF1:
          case TaylorF2:
          case SpinTaylorT3:
-      case SpinTaylor:
+         case SpinTaylor:
             ak->vn = ak->vlso = vlso = ak->vlsoT2;
             f->dEnergy = dEt6;
             f->flux = Ft7;
@@ -739,6 +757,9 @@ LALInspiralChooseModel(
       case pseudoFourPN:
       switch (params->approximant)
       {
+         case Eccentricity:
+            ABORT(status, LALINSPIRALH_EMSGORDERMISSING, LALINSPIRALH_MSGEORDERMISSING);
+            break;
          case EOB:
          case EOBNR:
             ak->vn = ak->vlso = vlso = ak->vlsoP6;
@@ -817,13 +838,15 @@ LALInspiralChooseModel(
    ak->tn = 100.;
    break;
  case Eccentricity:
+   /* The eccentric waveforms contain harmonic, so similarly to amplitude corrected waveforms
+    * the duration are longer than non eccentric waveform and starts at 2fl/3*/
    ak->tn = 5.*ak->totalmass/256./ak->eta/pow(LAL_PI*ak->totalmass*params->fLower/3.*2.,8./3.);
-   ak->flso = pow(ak->vlso,3.)/(LAL_PI * ak->totalmass);
-   
+   ak->flso = pow(ak->vlso,3.)/(LAL_PI * ak->totalmass);   
    break;
  default:
    ABORT( status, 9999, "Unknown case in switch." );
 }
+
    DETATCHSTATUSPTR(status);
    RETURN (status); 
 }
