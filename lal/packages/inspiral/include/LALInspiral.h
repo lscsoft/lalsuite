@@ -100,6 +100,7 @@ NRCSID( LALINSPIRALH, "$Id$" );
 #define LALINSPIRALH_EFLOWER        15  
 #define LALINSPIRALH_EVECTOR        16
 #define LALINSPIRALH_EFLOWERINJ     17
+#define LALINSPIRALH_EMSGORDERMISSING 18
 
 
 #define LALINSPIRALH_MSGENULL         "Arguments contained an unexpected null pointer"
@@ -119,6 +120,7 @@ NRCSID( LALINSPIRALH, "$Id$" );
 #define LALINSPIRALH_MSGEFLOWER       "fLower too low in comparison to flso"
 #define LALINSPIRALH_MSGEVECTOR       "Attempting to write beyond the end of vector"
 #define LALINSPIRALH_MSGEFLOWERINJ    "flower for the injection must be greater than zero"
+#define LALINSPIRALH_MSGEORDERMISSING "The PN order requested is not implemented for this approximant"
 
 /** ---------------------------------------------------------------------  </lalErrTable> */
 
