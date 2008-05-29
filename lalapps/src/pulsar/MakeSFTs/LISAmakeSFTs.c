@@ -80,6 +80,8 @@ RCSID ("$Id$");
 #define TRUE    (1==1)
 #define FALSE   (1==0)
 
+#define LAL_SQRT1_3   0.5773502691896257645091487805019575  /**< 1/sqrt(3) */
+
 /*---------- pseudo-LISA parameters ----------*/
 #define LISA_ARM_LENGTH_SECONDS 16.6782
 
@@ -104,6 +106,9 @@ BOOLEAN uvar_makeZ;
 BOOLEAN uvar_makeYminusZ;
 BOOLEAN uvar_makeZminusX;
 BOOLEAN uvar_makeXminusY;
+BOOLEAN uvar_makeA;
+BOOLEAN uvar_makeE;
+BOOLEAN uvar_makeT;
 CHAR *uvar_extraComment;
 CHAR *uvar_outputDir;
 CHAR *uvar_inputXML;
@@ -360,6 +365,131 @@ main(int argc, char *argv[])
 
   } /* if uvar_makeXminusY */
 
+  if ( uvar_makeA ) {
+    CHAR *desc;
+    CHAR comboname[MAX_FILENAME_LEN];
+    COMPLEX16Vector *weights = NULL;
+
+    LALSnprintf ( comboname, MAX_FILENAME_LEN,
+		  "Z7:A=(2{%s}-{%s}-{%s})/sqrt(3)", multiTs->data[0]->name,
+		  multiTs->data[1]->name, multiTs->data[2]->name );
+    if ( (desc = assembleDescription ( comboname, uvar_miscField )) == NULL )
+      return -1;
+    if ( multiTs->length != 3 )
+      {
+	LogPrintf (LOG_CRITICAL,
+		   "Need 3 input time series to make A; got %d\n",
+		   multiTs->length);
+	return LISAMAKESFTS_EINPUT;
+      }
+    SFTvect = NULL;
+
+    LAL_CALL ( LALZCreateVector ( &status, &weights, 3 ) , &status );
+    weights->data[0].re =  2.0 * LAL_SQRT1_3;
+    weights->data[1].re = -1.0 * LAL_SQRT1_3;
+    weights->data[2].re = -1.0 * LAL_SQRT1_3;
+    weights->data[0].im = 0;
+    weights->data[1].im = 0;
+    weights->data[2].im = 0;
+
+    LAL_CALL ( LALLinearlyCombineSFTVectors (&status, &SFTvect,
+					     SFTVectList, weights, comboname),
+	       &status );
+    for ( sidx=0; sidx < SFTvect->length; sidx++ )
+      {
+	SFTvect->data[sidx].name[0] = 'Z';
+	SFTvect->data[sidx].name[1] = '7';
+      }
+    LAL_CALL ( LALWriteSFTVector2Dir (&status, SFTvect, uvar_outputDir, add_comment, desc ), &status );
+    LAL_CALL ( LALZDestroyVector ( &status, &weights ) , &status );
+    LAL_CALL ( LALDestroySFTVector ( &status, &(SFTvect) ), &status );
+    LALFree ( desc );
+
+  } /* if uvar_makeA */
+
+  if ( uvar_makeE ) {
+    CHAR *desc;
+    CHAR comboname[MAX_FILENAME_LEN];
+    COMPLEX16Vector *weights = NULL;
+
+    LALSnprintf ( comboname, MAX_FILENAME_LEN,
+		  "Z7:E=({%s}-{%s})/sqrt(3)", multiTs->data[2]->name,
+		  multiTs->data[1]->name );
+    if ( (desc = assembleDescription ( comboname, uvar_miscField )) == NULL )
+      return -1;
+    if ( multiTs->length != 3 )
+      {
+	LogPrintf (LOG_CRITICAL,
+		   "Need 3 input time series to make E; got %d\n",
+		   multiTs->length);
+	return LISAMAKESFTS_EINPUT;
+      }
+    SFTvect = NULL;
+
+    LAL_CALL ( LALZCreateVector ( &status, &weights, 2 ) , &status );
+    weights->data[0].re = -1.0 * LAL_SQRT1_3;
+    weights->data[1].re =        LAL_SQRT1_3;
+    weights->data[0].im = 0;
+    weights->data[1].im = 0;
+
+    LAL_CALL ( LALLinearlyCombineSFTVectors (&status, &SFTvect,
+					     SFTVectList + 1,
+					     weights, comboname),
+	       &status );
+    for ( sidx=0; sidx < SFTvect->length; sidx++ )
+      {
+	SFTvect->data[sidx].name[0] = 'Z';
+	SFTvect->data[sidx].name[1] = '8';
+      }
+    LAL_CALL ( LALWriteSFTVector2Dir (&status, SFTvect, uvar_outputDir, add_comment, desc ), &status );
+    LAL_CALL ( LALZDestroyVector ( &status, &weights ) , &status );
+    LAL_CALL ( LALDestroySFTVector ( &status, &(SFTvect) ), &status );
+    LALFree ( desc );
+
+  } /* if uvar_makeE */
+
+  if ( uvar_makeT ) {
+    CHAR *desc;
+    CHAR comboname[MAX_FILENAME_LEN];
+    COMPLEX16Vector *weights = NULL;
+
+    LALSnprintf ( comboname, MAX_FILENAME_LEN,
+		  "Z7:A=sqrt(2)({%s}+{%s}+{%s})/3", multiTs->data[0]->name,
+		  multiTs->data[1]->name, multiTs->data[2]->name );
+    if ( (desc = assembleDescription ( comboname, uvar_miscField )) == NULL )
+      return -1;
+    if ( multiTs->length != 3 )
+      {
+	LogPrintf (LOG_CRITICAL,
+		   "Need 3 input time series to make T; got %d\n",
+		   multiTs->length);
+	return LISAMAKESFTS_EINPUT;
+      }
+    SFTvect = NULL;
+
+    LAL_CALL ( LALZCreateVector ( &status, &weights, 3 ) , &status );
+    weights->data[0].re = LAL_SQRT2 / 3.0;
+    weights->data[1].re = LAL_SQRT2 / 3.0;
+    weights->data[2].re = LAL_SQRT2 / 3.0;
+    weights->data[0].im = 0;
+    weights->data[1].im = 0;
+    weights->data[2].im = 0;
+
+    LAL_CALL ( LALLinearlyCombineSFTVectors (&status, &SFTvect,
+					     SFTVectList, weights, comboname),
+	       &status );
+    for ( sidx=0; sidx < SFTvect->length; sidx++ )
+      {
+	SFTvect->data[sidx].name[0] = 'Z';
+	SFTvect->data[sidx].name[1] = '9';
+      }
+    LAL_CALL ( LALWriteSFTVector2Dir (&status, SFTvect, uvar_outputDir, add_comment, desc ), &status );
+    LAL_CALL ( LALZDestroyVector ( &status, &weights ) , &status );
+    LAL_CALL ( LALDestroySFTVector ( &status, &(SFTvect) ), &status );
+    LALFree ( desc );
+
+  } /* if uvar_makeT */
+
   /* free memory */
   LALFree ( add_comment );
   for ( ifo = 0; ifo < multiTs->length ; ifo ++ )
@@ -400,6 +530,9 @@ initUserVars (LALStatus *status)
   uvar_makeYminusZ = 1;
   uvar_makeZminusX = 0;
   uvar_makeXminusY = 0;
+  uvar_makeA = 0;
+  uvar_makeE = 0;
+  uvar_makeT = 0;
 
   uvar_lisasim = FALSE;
   uvar_raCorrections = FALSE;
@@ -422,6 +555,10 @@ initUserVars (LALStatus *status)
   LALregBOOLUserVar(status,   makeYminusZ,	'x', UVAR_OPTIONAL, "Produce Y-Z (combination independent of X)");
   LALregBOOLUserVar(status,   makeZminusX,	'y', UVAR_OPTIONAL, "Produce Z-X (combination independent of Y)");
   LALregBOOLUserVar(status,   makeXminusY,	'z', UVAR_OPTIONAL, "Produce X-Y (combination independent of Z)");
+
+  LALregBOOLUserVar(status,   makeA,		'A', UVAR_OPTIONAL, "Produce (pseudo-)A");
+  LALregBOOLUserVar(status,   makeE,		'E', UVAR_OPTIONAL, "Produce (pseudo-)E");
+  LALregBOOLUserVar(status,   makeT,		'T', UVAR_OPTIONAL, "Produce (pseudo-)T");
 
   LALregBOOLUserVar(status,   help,		'h', UVAR_HELP,     "Print this help/usage message");
 
