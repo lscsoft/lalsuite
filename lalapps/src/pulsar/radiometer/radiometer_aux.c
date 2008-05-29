@@ -245,12 +245,11 @@ void GetSignalFrequencyInSFT(LALStatus                *status,
 			     COMPLEX8FrequencySeries  *sft1,
 			     PulsarDopplerParams      *dopp,
 			     REAL8Vector              *vel,
-			     REAL8Vector	      *pos,
 			     LIGOTimeGPS	      *firstTimeStamp)
 {  
   UINT4 k;
   REAL8 alpha, delta;
-  REAL8 vDotn, fhat, factor, timeDiff, rDotn;
+  REAL8 vDotn, fhat, factor, timeDiff;
   
   INITSTATUS (status, "GetSignalFrequencyInSFT", rcsid);
   ATTATCHSTATUSPTR (status);
@@ -258,14 +257,10 @@ void GetSignalFrequencyInSFT(LALStatus                *status,
   alpha = dopp->Alpha;
   delta = dopp->Delta;
 
-  rDotn = sin(delta) * sin(alpha) * pos->data[0]
-    + sin(delta) * cos(alpha) * pos->data[1]
-    + cos(delta) * pos->data[2];
 
-
-  vDotn = sin(delta) * sin(alpha) * vel->data[0]
-    + sin(delta) * cos(alpha) * vel->data[1]
-    + cos(delta) * vel->data[2];
+  vDotn = cos(delta) * cos(alpha) * vel->data[0]
+    + cos(delta) * sin(alpha)  * vel->data[1]
+    + sin(delta) * vel->data[2];
 
   /* now calculate the intrinsic signal frequency in the SFT */
   /* fhat = f_0 + f_1(t-t0) + f_2(t-t0)^2/2 + ... */
@@ -309,9 +304,9 @@ void GetSignalPhaseInSFT(LALStatus               *status,
   alpha = dopp->Alpha;
   delta = dopp->Delta;
 
-  rDotn = sin(delta) * sin(alpha) * pos->data[0]
-    + sin(delta) * cos(alpha) * pos->data[1]
-    + cos(delta) * pos->data[2];
+  rDotn = cos(delta) * cos(alpha) * pos->data[0]
+    + cos(delta) * sin(alpha) * pos->data[1]
+    + sin(delta) * pos->data[2];
 
 
   /* now calculate the phase of the SFT */

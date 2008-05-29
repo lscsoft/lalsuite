@@ -444,7 +444,7 @@ int main(int argc, char *argv[]){
 	sft = &(inputSFTs->data[j]);
 
 
-        LAL_CALL( GetSignalFrequencyInSFT( &status, freq1, sft, &thisPoint, &thisVel, &thisPos, &firstTimeStamp), &status);
+        LAL_CALL( GetSignalFrequencyInSFT( &status, freq1, sft, &thisPoint, &thisVel, &firstTimeStamp), &status);
         LAL_CALL( GetSignalPhaseInSFT( &status, phase1, sft, &thisPoint, &thisPos), &status);
 
 	frequencyShiftList->data[j] = *freq1; 
