@@ -26,6 +26,7 @@
 #ifndef HEAPTOPLIST_H
 #define HEAPTOPLIST_H
 
+#include <stddef.h>
 #include <lal/LALRCSID.h>
 
 static const char *HEAPTOPLISTHID  = "$Id$";
