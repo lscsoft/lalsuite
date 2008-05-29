@@ -88,7 +88,8 @@ in Equation (\ref{eq:ode2}).
 #include <lal/SeqFactories.h>
 #include <lal/GenerateInspiral.h>
 #include <lal/GeneratePPNInspiral.h>
-
+#include <lal/DetResponse.h>
+#include <lal/LIGOMetadataUtils.h>
 static void
 LALInspiralAmplitudeCorrectedWaveEngine(
    LALStatus        *status,
@@ -376,8 +377,14 @@ LALInspiralAmplitudeCorrectedWaveEngine(
    REAL8 fFac = 0; /* SI normalization for f and t */
    REAL8 f2aFac = 0;/* factor multiplying f in amplitude function */
    REAL8 apFac = 0, acFac = 0;/* extra factor in plus and cross amplitudes */
+ 
+   REAL4 hPlus, hCross;
+   double fPlus, fCross; 
   
-     
+  /* LALDetector det;
+   InterferometerNumber ifoNumber = LAL_UNKNOWN_IFO;
+   REAL4 longitude,latitude,polarization,gmst;
+*/
    INITSTATUS(status, "LALInspiralAmplitudeCorrectedWaveEngine", LALINSPIRALAMPLITUDECORRECTEDWAVEENGINEC);
    ATTATCHSTATUSPTR(status);
 
@@ -387,14 +394,31 @@ LALInspiralAmplitudeCorrectedWaveEngine(
    ASSERT (params->fLower > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
    ASSERT (params->tSampling > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
 
+
+   /* First, we compute the fplus and fcross*/
+/*   memset( &det, 0, sizeof(LALDetector));
+   ifoNumber = XLALIFONumber("H1");
+   XLALReturnDetector(&det, ifoNumber);
+   longitude = 0.4;
+   latitude = 0.4;
+   gmst = 0.4;
+   XLALComputeDetAMResponse(&fPlus, &fCross, det.response, longitude, latitude, params->polarisationAngle, gmst);
+  */
+  /* For  overhead injection, we just need to compute these 2 expresions for fplus and fcross */
+  fPlus = cos(2.*params->polarisationAngle);
+  fCross = sin(2.*params->polarisationAngle);
+
    dt = 1./params->tSampling;
-  
+
+   /* some values to be used to compute h(t)*/ 
    {
       mTot   = params->mass1 + params->mass2;
       etab   = params->mass1 * params->mass2;
       etab  /= mTot;
       etab  /= mTot;
       unitHz = mTot *LAL_MTSUN_SI*(REAL8)LAL_PI;
+      /*cosI and the following parameters are probably useless. apFac and acFac 
+       * are computed within GeneratePPNAmpCor*/
       cosI   = cos( params->inclination );
       mu     = etab * mTot;  
       fFac   = 1.0 / ( 4.0*LAL_TWOPI*LAL_MTSUN_SI*mTot );
@@ -405,21 +429,23 @@ LALInspiralAmplitudeCorrectedWaveEngine(
       params->nStartPad = 0;
    }
    
-   /* The following fields are used by GeneratePPNAmpCor function */
-   /* Fixed params */
+   /* this parameters are not used in GeneratePPNAmp*/
    ppnParams.position.latitude = ppnParams.position.longitude = 0.;
    ppnParams.position.system = COORDINATESYSTEM_EQUATORIAL;
    ppnParams.psi = 0.0;
    ppnParams.lengthIn = 0.0;
 
+   /* The following fields are used by GeneratePPNAmpCor function */
    /* Variable Parameters */
    ppnParams.mTot = mTot;
    ppnParams.eta = etab;
    ppnParams.d = LAL_PC_SI*1.0e3;
-   ppnParams.inc = 0;
+   ppnParams.inc = params->inclination;
+   /* GeneratePPN does not set the starting phase.*/
    ppnParams.phi = params->startPhase;
    ppnParams.fStartIn = params->fLower;
-   ppnParams.fStopIn = params->fCutoff;
+   /* set to zero so that GeneratePPNAmp recomputes the flso*/
+   ppnParams.fStopIn = 0.;
    ppnParams.ppn = NULL;
    ppnParams.ampOrder = params->ampOrder;
    /* set ther PN order of the flux */
@@ -430,7 +456,7 @@ LALInspiralAmplitudeCorrectedWaveEngine(
    for ( i = 2; i <= (INT4)( params->order ); i++ )
      ppnParams.ppn->data[i] = 1.0;
 	ppnParams.fStopIn = 0;
-	ppnParams.deltaT	= dt;
+	ppnParams.deltaT = dt;
 	
 
    count = 0;
@@ -446,13 +472,20 @@ tion, that value must be zero*/
    LALGeneratePPNAmpCorInspiral( status->statusPtr, &waveform, &ppnParams );
 
 
+  
+
+
    count = 0; 
   for (i=0;i<(INT4)waveform.h->data->length; i++)
   {
 	   /* Non-injection case */
       if (signal1)
       {
-         *(signal1->data + count) = (REAL4) waveform.h->data->data[2*i];
+         /* For amplitude corrected waveforms, we do not want only h+ or only hx but F+h+ + FxHx*/
+         hPlus  = (REAL4) waveform.h->data->data[2*i];
+         hCross = (REAL4) waveform.h->data->data[2*i+1];
+         *(signal1->data + count) = fPlus * hPlus + fCross * hCross;
+         /* todo: add an Abort if signal2<>0*/
 	 if (signal2)
 	 {
          *(signal2->data + count) = (REAL4) waveform.h->data->data[2*i+1];
@@ -481,9 +514,10 @@ tion, that value must be zero*/
  
    params->tC = count*dt;
    
-   /* The highest harmonic has a frequency 3.5 times higher than the dominant */
-   params->fFinal = 3.5*waveform.f->data->data[count-1]; 
-   
+   /* The final frequency needs to take into account the amplitude corrected order */
+   params->fFinal = waveform.f->data->data[count-1] * (params->ampOrder+2.)/2.; 
+  
+ 
    *countback = count;
 
 	/* destroy the waveform signal */
