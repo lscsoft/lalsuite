@@ -33,11 +33,18 @@
 #include <lal/Random.h>
 #include <lal/LALString.h>
 #include <lal/SFTutils.h>
+#include <lal/LALBarycenter.h>
+#include <lal/LALInitBarycenter.h>
+#include <lal/MatrixUtils.h>
+#include <lal/LALConstants.h>
+#include <lal/XLALError.h>
+#include <lal/LALRCSID.h>
+
+#include <lalapps.h>
 
 #ifdef  __cplusplus
 extern "C" {
 #endif
-
 
 /** define macros */
 #define ROUND(x) (floor(x+0.5))
@@ -50,7 +57,7 @@ extern "C" {
 "Usage: %s [options]\n\n"\
 " --help              display this message\n"\
 " --verbose           display all error messages\n"\
-" --detectors         all IFOs with data to be analysed e.g. H1,H2 \
+" --detectors         all IFOs with data to be analysed e.g. H1,H2\n\
                      (delimited by commas)\n"\
 " --pulsar            name of pulsar e.g. J0534+2200\n"\
 " --par-file          pulsar parameter (.par) file (full path) \n"\
@@ -82,6 +89,7 @@ extern "C" {
 " --time-bins         (INT4) no. of time bins in the time-psi lookup table\n"\
 "\n"\
 " Prior values:-\n"\
+" --use-priors        set to use priors in the posterior calculation\n"\
 " --h0prior           type of prior on h0 - uniform, jeffreys or gaussian\n"\
 " --h0mean            (REAL8) mean of a gaussian prior on h0\n"\
 " --h0sig             (REAL8) standard deviation of a gaussian prior on h0\n"\
@@ -114,9 +122,13 @@ extern "C" {
                      glitch an additional MCMC phase parameter will be used\n"\
 " --glitch-cut        (REAL8) the number of seconds of data to ignore\n\
                      before and after a glitch\n"\
+" --earth-ephem       Earth ephemeris file\n"\
+" --sun-ephem         Sun ephemeris file\n"\
+" --covariance        pulsar parameter covariance matrix file (.mat)\n"\
 "\n"
 
 #define MAXLENGTH 1000000
+#define MAXPARAMS 32
 
 /** define structures */
 
@@ -194,7 +206,8 @@ typedef struct tagPriorVals{
 typedef struct tagInputParams{
   CHAR detectors[40];
   CHAR pulsar[12];
-  CHAR parFile[256];
+  CHAR parFile[256];   /* pulsar parameter file */
+  CHAR *matrixFile;    /* pulsar parameter covariance matrix file */
   
   CHAR inputDir[256];
   CHAR outputDir[256];
@@ -202,6 +215,7 @@ typedef struct tagInputParams{
   LALSource psr; /* pulsar position values */
   
   /* prior values */
+  INT4 usepriors;
   PriorVals priors;
   
   /* grid values */
@@ -218,7 +232,10 @@ typedef struct tagInputParams{
   REAL8 dob;                      /* degree of belief for upper limit */
   
   INT4 outputPost; /* flag for whether of not to output the full posterior */
-                                      
+                  
+  CHAR earthfile[256];
+  CHAR sunfile[256];
+                    
   INT4 verbose;
 }InputParams;
 
@@ -266,6 +283,15 @@ typedef struct tagResults{
   REAL8 spinDown;        /* the ratio to the spin-down UL */
 }Results;
 
+typedef struct tagParamData{
+  CHAR *name;  /* parameter name as given by the conventions in the .mat file
+(see param variable in TEMPOs mxprt.f file */
+  REAL8 val;   /* parameter value */
+  REAL8 sigma; /* standard deviation on the parameter as read from the .par
+file */
+  INT4 matPos;  /* row position in the covariance matrix */
+}ParamData;
+
 /** define functions */
 
 /* function to get the input arguments from the command line */
@@ -273,7 +299,7 @@ void get_input_args(InputParams *inputParams, INT4 argc, CHAR *argv[]);
 
 /* function to allocate memory for a likelihood array - it will be index as
    logLike[phi][cosiota][psi][h0] */
-REAL8 **** allocate_likelihood_memory(MeshGrid mesh);
+REAL8 ****allocate_likelihood_memory(MeshGrid mesh);
 
 /* function to create a log likelihood array over the parameter grid */
 REAL8 create_likelihood_grid(DataStructure data, REAL8 ****logLike, 
@@ -282,7 +308,8 @@ REAL8 create_likelihood_grid(DataStructure data, REAL8 ****logLike,
 /* a function to compute the log likelihood of the data given some parameters 
 - this function loops over the h0 part of the likelihood array for speed */
 REAL8 log_likelihood(REAL8 *likeArray, DataStructure data,
-  IntrinsicPulsarVariables vars, MeshGrid mesh);
+  IntrinsicPulsarVariables vars, MeshGrid mesh, BinaryPulsarParams params[2],
+  BarycenterInput barys[2], EphemerisData *edat);
 
 /* a function to sum over the data */
 void sum_data(DataStructure data);
@@ -297,8 +324,8 @@ REAL8 log_posterior(REAL8 ****logLike, PriorVals prior, MeshGrid mesh,
 
 /* marginalise posterior over requested parameter and output the Results if
 requested */
-Results marginalise_posterior(REAL8 ****logPost, PriorVals prior, 
-  MeshGrid mesh, OutputParams output);
+Results marginalise_posterior(REAL8 ****logPost, MeshGrid mesh, 
+  OutputParams output);
   
 /* detector response lookup table function  - this function will output a lookup
 table of points in time and psi, covering a day from the start time (t0) and
@@ -322,10 +349,32 @@ REAL8 get_upper_limit(REAL8 *cumsum, REAL8 limit, MeshGrid mesh);
 
 /* function to perform the MCMC parameter estimation */
 void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets, 
-  CHAR *det);
+  CHAR *det, LALDetector *detpos, EphemerisData *edat );
 
 /* function to get the lengths of consecutive chunks of data */
 void get_chunk_lengths(DataStructure data);
+
+REAL8Array *CholeskyDecomp( REAL8Array *M, CHAR* uOrl );
+
+REAL8Array *CreateCovarianceMatrix( CHAR *matrixFile, 
+  BinaryPulsarParams params, ParamData *data );
+
+REAL8Array *XLALCheckPositiveDefinite( REAL8Array *matrix );
+
+REAL8Array *XLALConvertToPositiveDefinite( REAL8Array *nonposdef );
+
+ParamData *MultivariateNormalDeviates( REAL8Array *covmat, ParamData *means,
+  RandomParams *randomParams );
+
+/* function to take in a 2D matrix in a REAL8Array and output the value from
+   the ith row and jth column (starting from zero in the normal C converntion)*/
+REAL8 XLALGetREAL8MatrixValue( REAL8Array *matrix, INT4 i, INT4 j );
+
+/* function to take in a 2D matrix in a REAL8Array and set the value of
+   the ith row and jth column (starting from zero in the normal C converntion)*/
+void XLALSetREAL8MatrixValue( REAL8Array *matrix, INT4 i, INT4 j, REAL8 val );
+
+void SetMCMCPulsarParams( BinaryPulsarParams *pulsarParams, ParamData *data );
 
 #ifdef  __cplusplus
 }
