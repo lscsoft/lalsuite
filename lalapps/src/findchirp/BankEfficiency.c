@@ -249,6 +249,7 @@ main (INT4 argc, CHAR **argv )
        * So, later, we must retrieve the approximant requested using 
        * userParam.template variable */     
       insptmplt = randIn.param;  
+      insptmplt.approximant = userParam.template;
       insptmplt.order = coarseBankIn.order;  /* the order of the template is 
                                                 extracted from the template 
                                                 bank*/
@@ -271,6 +272,7 @@ main (INT4 argc, CHAR **argv )
          tmpltCurrent && thisTemplateIndex < sizeBank;
          tmpltCurrent = tmpltCurrent->next, thisTemplateIndex++)
         { 
+        	 
           /* populate InspiralTemplateList with tmplt */
 
           /* Set dummy values in the future output */
@@ -294,7 +296,7 @@ main (INT4 argc, CHAR **argv )
                 insptmplt                    = randIn.param;
                 overlapin.param              = randIn.param;
                 overlapin.param.approximant  = userParam.template; 
-                insptmplt.fFinal = randIn.param.fFinal;
+                insptmplt.fFinal             = randIn.param.fFinal;                
               }
      
               LAL_CALL(BankEfficiencyInspiralOverlapBCV(&status, 
@@ -321,27 +323,15 @@ main (INT4 argc, CHAR **argv )
             case PadeT1:
             case PadeF1:
             case SpinTaylor:
+
               BankEfficiencyCreateListfromTmplt(&insptmplt, tmpltCurrent);
               insptmplt.massChoice = t03;
               LAL_CALL(LALInspiralParameterCalc( &status,  &(insptmplt) ), &status);
           
               /* --- set up the overlapin strucutre --- */
               overlapin.param = insptmplt;
-/*              if( userParam.template == Eccentricity)
-              {
-                insptmplt.massChoice = t03;
-                overlapin.param.order = 4;               
-              }
-              else{
-                overlapin.param.approximant = userParam.template;               
-              }
-*/              
               LAL_CALL(LALInspiralParameterCalc( &status,  &(overlapin.param) ), &status);
           
-              if( userParam.template == Eccentricity){
-                overlapin.param.order = coarseBankIn.order;               
-              }
-
               overlapin.param.fCutoff = coarseBankIn.fUpper;
               overlapin.param.fLower  = coarseBankIn.fLower;
               overlapin.param.fFinal  = randIn.param.tSampling/2. - 1;
@@ -362,10 +352,13 @@ main (INT4 argc, CHAR **argv )
                 overlapin.param.fFinal = randIn.param.tSampling/2. - 1;
 
                 overlapin.param.approximant        = userParam.template;
+                /* we want to keep the original order except for eccentricity 
+                 * where order must be zero anyway*/
                 overlapin.param.order              = tempOrder;
+                
               }
               /* if we want to cut integration before the fFinal*/
-              /*overlapin.param.fCutoff = 1023;*/
+/*              overlapin.param.fCutoff = 1023;*/
 
               {
                 if (userParam.fastSimulation == 1 && (ematch < userParam.eMatch )  )
@@ -595,6 +588,8 @@ void BankEfficiencyGetResult(
     result->tau3_trigger = trigger.t3;
     result->tau0_inject  = injected.t0;
     result->tau3_inject  = injected.t3; 
+    result->polarisationAngle  = injected.polarisationAngle;
+    result->inclination  = injected.inclination;     
   }
 
   result->mass1_inject = injected.mass1;
@@ -635,11 +630,11 @@ void BankEfficiencyPrintResults(
       result.eccentricity, 
       randIn.param.eccentricity);
   
-  fprintf(stdout, "%e %e   %e %e %e ", 
+  fprintf(stdout, "%e %e   %e %e %e %e %e", 
       result.fend_trigger, 
       randIn.param.fFinal,
       randIn.param.mass1,
-      randIn.param.mass2,
+      randIn.param.mass2,randIn.param.inclination,randIn.param.polarisationAngle,
       randIn.param.startPhase);
 
   
@@ -1725,6 +1720,8 @@ void BankEfficiencyPrintResultsXml(
     trigger.fend_inject,
     trigger.mass1_inject,
     trigger.mass2_inject,
+    trigger.inclination,
+    trigger.polarisationAngle,
     randIn.param.startPhase,
     trigger.rho_final,
     trigger.snrAtCoaTime,
@@ -1867,10 +1864,10 @@ void BankEfficiencyGetMaximumSize(
   
   *length = 0;
   /* first the longest template */
-  params = randIn.param;
+  params            = randIn.param;
   params.massChoice = m1Andm2;
   params.mass1 = params.mass2 = coarseBankIn.mMin;
-  params.order = twoPN;
+  
   LAL_CALL(LALInspiralWaveLength(status->statusPtr, length, params), 
        status->statusPtr);
   
@@ -2134,9 +2131,21 @@ void BankEfficiencyGenerateInputData(
       }
     }
     else /* EOB , T1 and so on*/
-    {
+    {    	
+      randIn->inclinationMin = 0; /*inclination must be >0*/
+      randIn->inclinationMax = LAL_PI;
+      u = XLALUniformDeviate(randParams);    
+      randIn->param.inclination = randIn->inclinationMin + u * 
+          (randIn->inclinationMax-randIn->inclinationMin);
+      randIn->polarisationAngleMin = 0.;
+      randIn->polarisationAngleMax = LAL_PI;       
+      u = XLALUniformDeviate(randParams);    
+      randIn->param.polarisationAngle = randIn->polarisationAngleMin + u * 
+          (randIn->polarisationAngleMax-randIn->polarisationAngleMin);
+    
       if (randIn->param.approximant==EOBNR)
         randIn->param.order = pseudoFourPN;
+      
       if (randIn->param.approximant==SpinTaylor)
       {  
         /*Now, we randomize the spin parameters only*/
@@ -2149,8 +2158,6 @@ void BankEfficiencyGenerateInputData(
         randIn->spin1max = 1;
         randIn->spin2min = 0;
         randIn->spin2max = 1;
-        randIn->inclinationMin = 0; /*inclination must be >0*/
-        randIn->inclinationMax = 1;
         randIn->sourcePhiMin = 0.;
         randIn->sourcePhiMax = 1.;
         randIn->sourceThetaMin = 0.;
@@ -2608,11 +2615,11 @@ void BankEfficiencyInitUserParametersIn(
   userParam->alphaFConstraint   = 1;
   userParam->extraFinalPrinting = 0; 
   userParam->eMatch             = 0.5; 
-  userParam->template           = -1;
+  userParam->template           = EOB;
   /*By default, this value is empty and will be populate with the sampling 
    * frequency later*/
   userParam->signalfFinal       =  0.;
-  userParam->signal             = -1;
+  userParam->signal             = EOB;
   userParam->m1                 = -1;
   userParam->m2                 = -1;
   userParam->numSeconds         = -1;
@@ -3641,6 +3648,7 @@ void BankEfficiencyAscii2Xml(void)
   ResultIn trigger;
   
   REAL4 tau0, tau3, tau0I, tau3I, psi0, psi3,phaseI, ecc, eccI;
+  REAL4 polarisation,inclination;
    
   FILE *input1;
   FILE *input2;
@@ -3796,7 +3804,7 @@ void BankEfficiencyAscii2Xml(void)
         &trigger.psi0_trigger, &trigger.psi3_trigger, 
     &psi0, &psi3,  &tau0, &tau3, &tau0I, &tau3I, &ecc,&eccI,
     &trigger.fend_trigger, &trigger.fend_inject,
-    &trigger.mass1_inject, &trigger.mass2_inject,
+    &trigger.mass1_inject, &trigger.mass2_inject,&inclination,&polarisation,
     &phaseI, &trigger.rho_final, &trigger.snrAtCoaTime, &trigger.phase,
     &trigger.alphaF, &trigger.bin, &nStartPad, &trigger.nfast, &nfast_max); 
 
@@ -3805,7 +3813,7 @@ void BankEfficiencyAscii2Xml(void)
         trigger.psi0_trigger, trigger.psi3_trigger,
     psi0, psi3, tau0, tau3, tau0I, tau3I,ecc,eccI,
         trigger.fend_trigger, trigger.fend_inject,
-    trigger.mass1_inject, trigger.mass2_inject,
+    trigger.mass1_inject, trigger.mass2_inject,inclination, polarisation,
     phaseI, trigger.rho_final, trigger.snrAtCoaTime, trigger.phase, 
         trigger.alphaF, trigger.bin, nStartPad, trigger.nfast, nfast_max); 
     fprintf(output,",\n");
@@ -4047,6 +4055,8 @@ REAL8 BankEfficiencyComputeMatch(
   REAL8 g00, g01, g11;
   REAL8 match = 0;             
 
+
+ 
   
   dt0 = -(randIn->param.t0 - tmpltCurrent->tau0);
   dt3 = -(randIn->param.t3 - tmpltCurrent->tau3);
