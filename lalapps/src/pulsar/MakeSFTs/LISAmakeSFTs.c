@@ -370,9 +370,11 @@ main(int argc, char *argv[])
     CHAR comboname[MAX_FILENAME_LEN];
     COMPLEX16Vector *weights = NULL;
 
-    LALSnprintf ( comboname, MAX_FILENAME_LEN,
-		  "Z7:A=(2{%s}-{%s}-{%s})/sqrt(3)", multiTs->data[0]->name,
-		  multiTs->data[1]->name, multiTs->data[2]->name );
+    LALSnprintf ( comboname, MAX_FILENAME_LEN, multiTs->data[0]->name );
+
+    comboname[0] = 'Z';
+    comboname[1] = '7';
+    comboname[3] = 'A';
 
     if ( (desc = assembleDescription ( comboname, uvar_miscField )) == NULL )
       return -1;
@@ -386,22 +388,16 @@ main(int argc, char *argv[])
     SFTvect = NULL;
 
     LAL_CALL ( LALZCreateVector ( &status, &weights, 3 ) , &status );
-    weights->data[0].re =  2.0 * LAL_SQRT1_3;
-    weights->data[1].re = -1.0 * LAL_SQRT1_3;
-    weights->data[2].re = -1.0 * LAL_SQRT1_3;
-    weights->data[0].im = 0;
-    weights->data[1].im = 0;
-    weights->data[2].im = 0;
+    weights->data[0].re = (  2.0 / 3.0 );
+    weights->data[1].re = ( -1.0 / 3.0 );
+    weights->data[2].re = ( -1.0 / 3.0 );
+    weights->data[0].im = 0.0;
+    weights->data[1].im = 0.0;
+    weights->data[2].im = 0.0;
 
     LAL_CALL ( LALLinearlyCombineSFTVectors (&status, &SFTvect,
 					     SFTVectList, weights, comboname),
 	       &status );
-
-    for ( sidx=0; sidx < SFTvect->length; sidx++ )
-      {
-	SFTvect->data[sidx].name[0] = 'Z';
-	SFTvect->data[sidx].name[1] = '7';
-      }
 
     LAL_CALL ( LALWriteSFTVector2Dir (&status, SFTvect, uvar_outputDir, add_comment, desc ), &status );
     LAL_CALL ( LALZDestroyVector ( &status, &weights ) , &status );
@@ -415,9 +411,12 @@ main(int argc, char *argv[])
     CHAR comboname[MAX_FILENAME_LEN];
     COMPLEX16Vector *weights = NULL;
 
-    LALSnprintf ( comboname, MAX_FILENAME_LEN,
-		  "Z7:E=({%s}-{%s})/sqrt(3)", multiTs->data[2]->name,
-		  multiTs->data[1]->name );
+    LALSnprintf ( comboname, MAX_FILENAME_LEN, multiTs->data[0]->name );
+
+    comboname[0] = 'Z';
+    comboname[1] = '8';
+    comboname[3] = 'E';
+
     if ( (desc = assembleDescription ( comboname, uvar_miscField )) == NULL )
       return -1;
     if ( multiTs->length != 3 )
@@ -429,21 +428,18 @@ main(int argc, char *argv[])
       }
     SFTvect = NULL;
 
-    LAL_CALL ( LALZCreateVector ( &status, &weights, 2 ) , &status );
-    weights->data[0].re = -1.0 * LAL_SQRT1_3;
-    weights->data[1].re =        LAL_SQRT1_3;
-    weights->data[0].im = 0;
-    weights->data[1].im = 0;
+    LAL_CALL ( LALZCreateVector ( &status, &weights, 3 ) , &status );
+    weights->data[0].re = 0;
+    weights->data[1].re = (-1.0 * LAL_SQRT1_3);
+    weights->data[2].re =         LAL_SQRT1_3;
+    weights->data[0].im = 0.0;
+    weights->data[1].im = 0.0;
+    weights->data[2].im = 0.0;
 
     LAL_CALL ( LALLinearlyCombineSFTVectors (&status, &SFTvect,
-					     SFTVectList + 1,
-					     weights, comboname),
+					     SFTVectList, weights, comboname),
 	       &status );
-    for ( sidx=0; sidx < SFTvect->length; sidx++ )
-      {
-	SFTvect->data[sidx].name[0] = 'Z';
-	SFTvect->data[sidx].name[1] = '8';
-      }
+
     LAL_CALL ( LALWriteSFTVector2Dir (&status, SFTvect, uvar_outputDir, add_comment, desc ), &status );
     LAL_CALL ( LALZDestroyVector ( &status, &weights ) , &status );
     LAL_CALL ( LALDestroySFTVector ( &status, &(SFTvect) ), &status );
@@ -456,9 +452,12 @@ main(int argc, char *argv[])
     CHAR comboname[MAX_FILENAME_LEN];
     COMPLEX16Vector *weights = NULL;
 
-    LALSnprintf ( comboname, MAX_FILENAME_LEN,
-		  "Z7:A=sqrt(2)({%s}+{%s}+{%s})/3", multiTs->data[0]->name,
-		  multiTs->data[1]->name, multiTs->data[2]->name );
+    LALSnprintf ( comboname, MAX_FILENAME_LEN, multiTs->data[0]->name );
+
+    comboname[0] = 'Z';
+    comboname[1] = '9';
+    comboname[3] = 'T';
+
     if ( (desc = assembleDescription ( comboname, uvar_miscField )) == NULL )
       return -1;
     if ( multiTs->length != 3 )
@@ -471,12 +470,12 @@ main(int argc, char *argv[])
     SFTvect = NULL;
 
     LAL_CALL ( LALZCreateVector ( &status, &weights, 3 ) , &status );
-    weights->data[0].re = LAL_SQRT2 / 3.0;
-    weights->data[1].re = LAL_SQRT2 / 3.0;
-    weights->data[2].re = LAL_SQRT2 / 3.0;
-    weights->data[0].im = 0;
-    weights->data[1].im = 0;
-    weights->data[2].im = 0;
+    weights->data[0].re = ( LAL_SQRT2 / 3.0 );
+    weights->data[1].re = ( LAL_SQRT2 / 3.0 );
+    weights->data[2].re = ( LAL_SQRT2 / 3.0 );
+    weights->data[0].im = 0.0;
+    weights->data[1].im = 0.0;
+    weights->data[2].im = 0.0;
 
     LAL_CALL ( LALLinearlyCombineSFTVectors (&status, &SFTvect,
 					     SFTVectList, weights, comboname),
