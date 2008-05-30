@@ -697,7 +697,7 @@ LALLinearlyCombineSFTVectors
 	  ret->data[i].data->data[k].re
 	    = weights->data[0].re * inVects[0]->data[i].data->data[k].re
 	    - weights->data[0].im * inVects[0]->data[i].data->data[k].im;
-	  ret->data[i].data->data[k].re
+	  ret->data[i].data->data[k].im
 	    = weights->data[0].re * inVects[0]->data[i].data->data[k].im
 	    + weights->data[0].im * inVects[0]->data[i].data->data[k].re;
 	}  /* for k < numBins1 */
@@ -731,10 +731,10 @@ LALLinearlyCombineSFTVectors
 	  for (k=0; k < numBins1; k++)
 	    {
 	      ret->data[i].data->data[k].re
-		= weights->data[j].re * inVects[j]->data[i].data->data[k].re
+		+= weights->data[j].re * inVects[j]->data[i].data->data[k].re
 		- weights->data[j].im * inVects[j]->data[i].data->data[k].im;
-	      ret->data[i].data->data[k].re
-		= weights->data[j].re * inVects[j]->data[i].data->data[k].im
+	      ret->data[i].data->data[k].im
+		+= weights->data[j].re * inVects[j]->data[i].data->data[k].im
 		+ weights->data[j].im * inVects[j]->data[i].data->data[k].re;
 	    }  /* for k < numBins1 */
 	  
