@@ -67,7 +67,8 @@ parser.add_option("-C", "--cat-noise-jobs",action="store_true",default=False,\
 parser.add_option("-p", "--plot",action="store_true",default=False,\
     help="Plot the output of noise jobs (run this after they complete)")
 
-
+parser.add_option("-V", "--veto-list",action="store_true",default=False,\
+    help="Write a veto list of bad times")
 
 # parse the command line
 (opts,args) = parser.parse_args()
@@ -253,7 +254,7 @@ for epoch in epochs.epoch_segs():
       if opts.cat_noise_jobs: strain.cat_noise_jobs(catfile,noise1)
   #increment the epoch counter
   if opts.cat_noise_jobs: catfile.close()
-  if opts.plot: strain.plot_noise_jobs(noise_output_files,cp,epoch_dir,epochs.epoch_data[epoch_cnt],dag,qscan_job)
+  if opts.plot or opts.veto_list: strain.plot_noise_jobs(noise_output_files,cp,epoch_dir,epochs.epoch_data[epoch_cnt],dag,qscan_job,opts)
   noise_output_files = []
   epoch_cnt+=1
 
