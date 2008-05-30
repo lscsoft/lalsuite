@@ -32,11 +32,9 @@
    
 *******************************************************************************/
 
-
-static volatile const char *rcsid="$Id: pulsar_parameter_estimation.c,v 1.9 \
-2008/03/11 17:05:29 mpitkin Exp $";
-
 #include "pulsar_parameter_estimation.h"
+
+RCSID("$Id$");
 
 /* global variable */
 INT4 verbose=0;
