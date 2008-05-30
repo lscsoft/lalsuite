@@ -1927,9 +1927,6 @@ for ifo in ifo_list:
       usertag,inspinj)
   
   # Step 4S: Run sire on the single ifo triggers
-  print opts.sire_inspiral
-  print opts.inspiral
-  print inspinj,"\n\n"
   sire_nodes = sire_segments_individually(chunks_analyzed[ifo], sire_job, 
       dag, opts.sire_inspiral, opts.inspiral, ifo, inj_file = inj_file, 
       ifotag="FIRST", usertag = usertag, inspinjNode = inspinj)
