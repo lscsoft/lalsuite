@@ -373,6 +373,7 @@ main(int argc, char *argv[])
     LALSnprintf ( comboname, MAX_FILENAME_LEN,
 		  "Z7:A=(2{%s}-{%s}-{%s})/sqrt(3)", multiTs->data[0]->name,
 		  multiTs->data[1]->name, multiTs->data[2]->name );
+
     if ( (desc = assembleDescription ( comboname, uvar_miscField )) == NULL )
       return -1;
     if ( multiTs->length != 3 )
@@ -395,11 +396,13 @@ main(int argc, char *argv[])
     LAL_CALL ( LALLinearlyCombineSFTVectors (&status, &SFTvect,
 					     SFTVectList, weights, comboname),
 	       &status );
+
     for ( sidx=0; sidx < SFTvect->length; sidx++ )
       {
 	SFTvect->data[sidx].name[0] = 'Z';
 	SFTvect->data[sidx].name[1] = '7';
       }
+
     LAL_CALL ( LALWriteSFTVector2Dir (&status, SFTvect, uvar_outputDir, add_comment, desc ), &status );
     LAL_CALL ( LALZDestroyVector ( &status, &weights ) , &status );
     LAL_CALL ( LALDestroySFTVector ( &status, &(SFTvect) ), &status );
@@ -556,9 +559,9 @@ initUserVars (LALStatus *status)
   LALregBOOLUserVar(status,   makeZminusX,	'y', UVAR_OPTIONAL, "Produce Z-X (combination independent of Y)");
   LALregBOOLUserVar(status,   makeXminusY,	'z', UVAR_OPTIONAL, "Produce X-Y (combination independent of Z)");
 
-  LALregBOOLUserVar(status,   makeA,		'A', UVAR_OPTIONAL, "Produce (pseudo-)A");
-  LALregBOOLUserVar(status,   makeE,		'E', UVAR_OPTIONAL, "Produce (pseudo-)E");
-  LALregBOOLUserVar(status,   makeT,		'T', UVAR_OPTIONAL, "Produce (pseudo-)T");
+  LALregBOOLUserVar(status,   makeA,		'a', UVAR_OPTIONAL, "Produce (pseudo-)A");
+  LALregBOOLUserVar(status,   makeE,		'e', UVAR_OPTIONAL, "Produce (pseudo-)E");
+  LALregBOOLUserVar(status,   makeT,		't', UVAR_OPTIONAL, "Produce (pseudo-)T");
 
   LALregBOOLUserVar(status,   help,		'h', UVAR_HELP,     "Print this help/usage message");
 
@@ -654,7 +657,7 @@ assembleDescription ( const CHAR *name, const CHAR *miscField )
 {
   CHAR *desc, *ptr;
   UINT4 len;
-  const CHAR illegals[] = "-. {}";
+  const CHAR illegals[] = "-. {}()/";
 
   if ( !name )
     return NULL;
@@ -675,7 +678,7 @@ assembleDescription ( const CHAR *name, const CHAR *miscField )
     strcat ( desc, uvar_miscField );
   }
 
-  /* Now go through and replace all illegal characters ['-', '.', ' ', '{', '}'] by '_' */
+  /* Now go through and replace all illegal characters ['-', '.', ' ', '{', '}', '(', ')', '/'] by '_' */
   ptr = desc;
   while ( *ptr != 0 )
     {
