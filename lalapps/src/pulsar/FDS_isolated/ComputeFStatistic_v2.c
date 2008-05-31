@@ -207,6 +207,7 @@ typedef struct {
   CHAR *outputLogfile;		/**< write a log-file */
   CHAR *outputFstat;		/**< filename to output Fstatistic in */
   CHAR *outputLoudest;		/**< filename for loudest F-candidate plus parameter estimation */
+  BOOLEAN countTemplates;       /**< just count templates (if supported) instead of search */
 
   INT4 NumCandidatesToKeep;	/**< maximal number of toplist candidates to output */
   INT4 clusterOnScanline;	/**< number of points on "scanline" to use for 1-D local maxima finding */
@@ -367,6 +368,16 @@ int main(int argc,char *argv[])
   /* count number of templates */
   numTemplates = XLALNumDopplerTemplates ( GV.scanState );
 
+  /* print number of templates if user supplied --countTemplates */
+  if (uvar.countTemplates)
+    {
+      printf("Number of templates: ");
+      if (numTemplates < 0)
+	printf("<not implemented>\n");
+      else
+	printf("%0.0f\n", numTemplates);
+    }
+
   /*----------------------------------------------------------------------
    * main loop: demodulate data for each point in the sky-position grid
    * and for each value of the frequency-spindown
@@ -375,7 +386,8 @@ int main(int argc,char *argv[])
   tickCounter = 0;
   clock0 = time(NULL);
 
-  while ( XLALNextDopplerPos( &dopplerpos, GV.scanState ) == 0 )
+  /* skip search if user supplied --countTemplates */
+  while ( !uvar.countTemplates && (XLALNextDopplerPos( &dopplerpos, GV.scanState ) == 0) )
     {
       dopplerpos.orbit = orbitalParams;		/* temporary solution until binary-gridding exists */
       
@@ -625,6 +637,8 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
 
   uvar->outputFstat = NULL;
 
+  uvar->countTemplates = FALSE;
+
   uvar->gridFile = NULL;
 
   uvar->dopplermax =  1.05e-4;
@@ -720,6 +734,8 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
 
   LALregINTUserStruct(status,	upsampleSFTs,	 0,  UVAR_DEVELOPER, "(integer) Factor to up-sample SFTs by");
   LALregBOOLUserStruct(status, 	projectMetric, 	 0,  UVAR_DEVELOPER, "Use projected metric on Freq=const subspact");
+
+  LALregBOOLUserStruct(status, 	countTemplates,  0,  UVAR_DEVELOPER, "Count number of templates (if supported) instead of search"); 
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
