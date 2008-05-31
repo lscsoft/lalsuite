@@ -1115,12 +1115,26 @@ int main( int argc, char *argv[] )
 
     timeAnalyzed = XLALSetupCoincSlideTable( slideHeads, coincSlideHead,
         timeAnalyzedFileName, timeModifier, numSlides );
+    if( timeAnalyzed < 0 )
+    {
+      fprintf(stderr,
+          "Unable to setup CoincSlideTable from slide coincs");
+      exit( 1 );
+    }
+
     thisSlideHead = slideHeads;
 
     /* calculating the FAR for the coincs */
     loudestRate = XLALRateErrorCalcCoincInspiral( coincZeroHead,
         thisSlideHead, coincstat, &bittenLParams, numSlides, timeAnalyzed,
         fitStat, fitA, fitB );
+    if( loudestRate < 0 )
+    {
+      fprintf(stderr,
+          "Error in calculating the FAR");
+      exit( 1 );
+    }
+
     numEventsAboveThresh = XLALCountCoincInspiral( coincZeroHead );
     if ( vrbflg ) fprintf( stdout,
         "Loudest zero-lag coinc has a rate of %6.2f\n", loudestRate );
@@ -1156,7 +1170,7 @@ int main( int argc, char *argv[] )
     {
       thisSlideHead = slideHeads;
 
-      /* free all but the loudest coinc inspirals */
+      /* free all the coinc inspirals */
       coincSlideHead = thisSlideHead->coincInspiral;
       while ( coincSlideHead )
       {
