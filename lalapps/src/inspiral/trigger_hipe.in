@@ -168,6 +168,7 @@ def fix_numrel_columns(sims):
        sim.numrel_data="nan"
        sim.numrel_mode_max = 0
        sim.numrel_mode_min = 0
+       sim.amp_order = -1
 
 ##############################################################################
 # inspiral_hipe wrapper
