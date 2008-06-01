@@ -39,7 +39,7 @@
 #include <lal/FlatPulsarMetric.h>
 #include <lal/DopplerFullScan.h>
 #include <lal/DopplerLatticeCovering.h>
-#include <lal/FlatLatticeTiling.h>
+/* #include <lal/FlatLatticeTiling.h> */
 
 /*---------- DEFINES ----------*/
 #define MIN(x,y) (x < y ? x : y)
@@ -71,7 +71,7 @@ struct tagDopplerFullScanState {
   /* lattice scan state */
   DopplerLatticeScan *latticeScan;	/**< state of lattice Scan */
   /* spindown lattice tiling */
-  FlatLatticeTiling *spindownTiling;    /**< state of spindown lattice tiling */
+/*   FlatLatticeTiling *spindownTiling;    /\**< state of spindown lattice tiling *\/ */
 
   /* ----- emulate old-style factored grids */
   factoredGridScan_t *factoredScan;	/**< only used to emulate FACTORED grids sky x Freq x f1dot */
@@ -158,106 +158,6 @@ InitDopplerFullScan(LALStatus *status,
 
     case GRID_SPINDOWN_LATTICE: /* spindown lattice tiling */
       {
-
-	INT4 i;
-	INT4 dims = 0;
-	PulsarDopplerParams *zero_dims;
-	SkyRegion sky = empty_SkyRegion;
-	gsl_vector *start = NULL;
-	gsl_vector *width = NULL;
-
-	/* For now, check that the reference time is the same as the start time */
-	if (XLALGPSCmp(&init->searchRegion.refTime, &init->startTime) != 0) {
-	  LALPrintError("\nGRID_SPINDOWN_LATTICE: This option currently restricts "
-			"the reference time to be the same as the start time.\n");
-	  ABORT(status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT);
-	}
-
-	/* Work how many dimensions to use by finding the first non-zero spindown bands.
-	   Abort if none were found, or if there were higher non-zero spindown bands. */
-	for (dims = 0; init->searchRegion.fkdotBand[dims] != 0.0; ++dims);
-	if (dims == 0) {
-	  LALPrintError("\nGRID_SPINDOWN_LATTICE: All spindown bandwidths were zero! At least one must be non-zero.\n");
-	  ABORT(status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT);
-	}
-	LogPrintf(LOG_DETAIL, "Number of GRID_SPINDOWN_LATTICE dimensions: %i\n", dims);
-	for (i = dims; i < PULSAR_MAX_SPINS; ++i) {
-	  if (init->searchRegion.fkdotBand[i] != 0.0) {
-	    LALPrintError("\nGRID_SPINDOWN_LATTICE: A higher non-zero spindown band was found!"
-			  "The non-zero spindown bands must be contiguous.\n");
-	    ABORT(status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT);
-	  }
-	}
-
-	/* Create the flat lattice tiling structure */
-	if ((thisScan->spindownTiling = XLALCreateFlatLatticeTiling(dims)) == NULL) {
-	  LALPrintError("\nGRID_SPINDOWN_LATTICE: XLALCreateFlatLatticeTiling failed!\n");
-	  ABORT(status, DOPPLERSCANH_EXLAL, DOPPLERSCANH_MSGEXLAL);
-	}
-
-	/* Create an empty PulsarDopplerParams and store it in the user-defined field */
-	if ((zero_dims = LALMalloc(sizeof(PulsarDopplerParams))) == NULL) {
-	  LALPrintError("\nGRID_SPINDOWN_LATTICE: Failed to allocate a PulsarDopplerParams.\n");
-	  ABORT(status, DOPPLERSCANH_EMEM, DOPPLERSCANH_MSGEMEM);
-	}
-	thisScan->spindownTiling->user_defined = (void*)zero_dims;
-
-	/* Copy parameter space starting points */
-	for (i = 0; i < PULSAR_MAX_SPINS; ++i) {
-	  zero_dims->fkdot[i] = init->searchRegion.fkdot[i];
-	}
-
-	/* Parse the sky region string and check that it consists of only one point */
- 	TRY(ParseSkyRegionString(status->statusPtr, &sky, init->searchRegion.skyRegionString), status);
-	if (sky.numVertices != 1) {
-	  LALPrintError("\nGRID_SPINDOWN_LATTICE: This option can only handle a single sky position.\n");
-	  ABORT(status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT);
-	}
-	if (sky.vertices[0].system != COORDINATESYSTEM_EQUATORIAL) {
-	  LALPrintError("\nGRID_SPINDOWN_LATTICE: This option only understands COORDINATESYSTEM_EQUATORIAL\n");
-	  ABORT(status, DOPPLERSCANH_ESKYREGION, DOPPLERSCANH_MSGESKYREGION);
-	}
-	zero_dims->Alpha = sky.vertices[0].longitude;
-	zero_dims->Delta = sky.vertices[0].latitude;
-	LALFree(sky.vertices);
-
-	/* Set the metric */
-	if ((thisScan->spindownTiling->metric = XLALSpindownMetric(dims, init->Tspan)) == NULL) {
-	  LALPrintError("\nGRID_SPINDOWN_LATTICE: XLALSpindownMetric failed!\n");
-	  ABORT(status, DOPPLERSCANH_EXLAL, DOPPLERSCANH_MSGEXLAL);
-	}
-
-	/* Set the mismatch */
-	thisScan->spindownTiling->mismatch = init->metricMismatch;
-
-	/* Create square parameter space bounds */
-	start = gsl_vector_alloc(dims);
-	width = gsl_vector_alloc(dims);
-	for (i = 0; i < dims; ++i) {
-	  gsl_vector_set(start, i, init->searchRegion.fkdot[i]);
-	  gsl_vector_set(width, i, init->searchRegion.fkdotBand[i]);
-	}
-	if (XLALSquareParameterSpace(thisScan->spindownTiling, start, width) != XLAL_SUCCESS) {
-	  LALPrintError("\nGRID_SPINDOWN_LATTICE: XLALSquareParameterSpace failed!\n");
-	  ABORT(status, DOPPLERSCANH_EXLAL, DOPPLERSCANH_MSGEXLAL);
-	}
-
-	/* Set the lattice generator, hard-coded to A_{dims}^*. */
-	if ((thisScan->spindownTiling->generator = XLALAnstarLatticeGenerator(dims)) == NULL) {
-	  LALPrintError("\nGRID_SPINDOWN_LATTICE: XLALAnstarLatticeGenerator failed!\n");
-	  ABORT(status, DOPPLERSCANH_EXLAL, DOPPLERSCANH_MSGEXLAL);
-	}
-
-	/* Perform final tiling setup */
-	if (XLALSetupFlatLatticeTiling(thisScan->spindownTiling) != XLAL_SUCCESS) {
-	  LALPrintError("\nGRID_SPINDOWN_LATTICE: XLALSetupFlatLatticeTiling failed!\n");
-	  ABORT(status, DOPPLERSCANH_EXLAL, DOPPLERSCANH_MSGEXLAL);
-	}
-
-	/* Cleanup */
-	gsl_vector_free(start);
-	gsl_vector_free(width);
-      
       }
 
       break;
@@ -381,9 +281,6 @@ XLALNumDopplerTemplates ( DopplerFullScanState *scan)
 	  break;
 
 	case GRID_SPINDOWN_LATTICE: /* spindown lattice tiling */
-	  LogPrintf(LOG_DEBUG, "Number of templates in spindown lattice: (counting...) ");
-	  scan->numTemplates = (REAL8)XLALTotalNumberOfFlatLatticePoints(scan->spindownTiling);
-	  LogPrintfVerbatim(LOG_DEBUG, "%0.0f\n", scan->numTemplates);
 	  break;
 
 	default:
@@ -478,36 +375,6 @@ XLALNextDopplerPos(PulsarDopplerParams *pos, DopplerFullScanState *scan)
 
     case GRID_SPINDOWN_LATTICE: /* spindown lattice tiling */
       {
-
-	INT4 i;
-	PulsarDopplerParams *zero_dims = (PulsarDopplerParams*)scan->spindownTiling->user_defined;	
-
-	/* Advance to next template */
-	if (XLALNextFlatLatticePoint(scan->spindownTiling)) {
-
-	  /* There is a next point: fill in the PulsarDopplerParams structure */
-	  pos->refTime = scan->refTime;
-	  pos->Alpha = zero_dims->Alpha;
-	  pos->Delta = zero_dims->Delta;
-	  for (i = 0; i < scan->spindownTiling->dimension; ++i) {
-	    pos->fkdot[i] = XLALCurrentFlatLatticePoint(scan->spindownTiling, i);
-	  }
-	  for (; i < PULSAR_MAX_SPINS; ++i) {
-	    pos->fkdot[i] = zero_dims->fkdot[i];
-	  }
-
-	  return 0;
-
-	}
-	else {
-
-	  /* There are no more templates: set flag */
-	  scan->state = STATE_FINISHED;
-
-	  return 1;
-
-	}
-
       }
 
       break;
@@ -623,9 +490,9 @@ FreeDopplerFullScan (LALStatus *status, DopplerFullScanState **scan)
     XLALFreeDopplerLatticeScan ( &((*scan)->latticeScan) );
   }
 
-  if ((*scan)->spindownTiling) {
-    XLALDestroyFlatLatticeTiling((*scan)->spindownTiling);
-  }
+/*   if ((*scan)->spindownTiling) { */
+/*     XLALDestroyFlatLatticeTiling((*scan)->spindownTiling); */
+/*   } */
 
   LALFree ( (*scan) );
   (*scan) = NULL;
