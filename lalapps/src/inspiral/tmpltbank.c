@@ -153,9 +153,9 @@ Approximant approximant;                /* approximation method         */
 CoordinateSpace space;                  /* coordinate space used        */
 INT4    haveGridSpacing = 0;            /* flag to indicate gridspacing */
 INT4    computeMoments  = 1;
-FreqCut MaxFreqCut;                     /* Max. upper frequency cutoff  */
-FreqCut MinFreqCut;                     /* Min. upper frequency cutoff  */
-INT4    NumFreqCut      = 0;            /* # of upper freq. cuts to use */    
+FreqCut maxFreqCut;                     /* Max. upper frequency cutoff  */
+FreqCut minFreqCut;                     /* Min. upper frequency cutoff  */
+INT4    numFreqCut      = 0;            /* # of upper freq. cuts to use */    
 
 GridSpacing gridSpacing = SquareNotOriented; /* grid spacing (square or hexa)*/
 int     polygonFit      = 1;            /* fit a polygon around BCV bank */
@@ -1017,9 +1017,9 @@ int main ( int argc, char *argv[] )
   bankIn.LowGM            = -4.;
   bankIn.HighGM           = 6.;
   bankIn.computeMoments   = computeMoments; /* by default, gammas/moments are recomputed */
-  bankIn.MaxFreqCut       = MaxFreqCut;
-  bankIn.MinFreqCut       = MinFreqCut;
-  bankIn.NumFreqCut       = NumFreqCut; 
+  bankIn.maxFreqCut       = maxFreqCut;
+  bankIn.minFreqCut       = minFreqCut;
+  bankIn.numFreqCut       = numFreqCut; 
   
   /* generate the template bank */
   if ( vrbflg )
@@ -2284,31 +2284,31 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         break;
 
       case '1':
-        NumFreqCut = (INT4) atof( optarg );
-        if( NumFreqCut < 1 )
+        numFreqCut = (INT4) atof( optarg );
+        if( numFreqCut < 1 )
         {
           fprintf( stdout, "invalid argument to --%s:\n"
               "Value must be a positive integer "
               "(%d specified)\n",
-              long_options[option_index].name, NumFreqCut );
+              long_options[option_index].name, numFreqCut );
           exit( 1 );
         }
-        ADD_PROCESS_PARAM( "int", "%d", NumFreqCut );
+        ADD_PROCESS_PARAM( "int", "%d", numFreqCut );
         haveNumFcut = 1;
         break;
 
       case '2':
         if ( ! strcmp( "SchwarzISCO", optarg ) )
         {
-          MaxFreqCut = SchwarzISCO;
+          maxFreqCut = SchwarzISCO;
         }
         else if( ! strcmp( "BKLISCO", optarg ) )
         {
-          MaxFreqCut = BKLISCO;
+          maxFreqCut = BKLISCO;
         }
         else if ( ! strcmp( "ERD", optarg ) )
         {
-          MaxFreqCut = ERD;
+          maxFreqCut = ERD;
         }
         else
         {
@@ -2325,15 +2325,15 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
       case '3':
         if ( ! strcmp( "SchwarzISCO", optarg ) )
         {
-          MinFreqCut = SchwarzISCO;
+          minFreqCut = SchwarzISCO;
         }
         else if ( ! strcmp( "BKLISCO", optarg ) )
         {
-          MinFreqCut = BKLISCO;
+          minFreqCut = BKLISCO;
         }
         else if ( ! strcmp( "ERD", optarg ) )
         {
-          MinFreqCut = ERD;
+          minFreqCut = ERD;
         }
         else
         {
@@ -2859,9 +2859,9 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
       exit( 1 );
     }
   /* Check Min and Max upper freq. cuts are the same if NumFreqCut = 1 */
-  if ( NumFreqCut == 1 )
+  if ( numFreqCut == 1 )
   {
-    if( MaxFreqCut < MinFreqCut || MaxFreqCut > MinFreqCut )
+    if( maxFreqCut < minFreqCut || maxFreqCut > minFreqCut )
     {
       fprintf(stderr, "--max-high-freq-cutoff must equal --min-high-freq-cutoff when --num-freq-cutoffs = 1\n" );
       exit( 1 );
