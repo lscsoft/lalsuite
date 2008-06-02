@@ -56,6 +56,8 @@ LALInspiralBankGeneration(
           LALINSPIRALBANKH_MSGENULL );
   ASSERT( *first == NULL, status, LALINSPIRALBANKH_ENULL,
           LALINSPIRALBANKH_MSGENULL );
+  ASSERT( input->numFreqCut >= 1, status, LALINSPIRALBANKH_ENUMFCUT,
+          LALINSPIRALBANKH_MSGENUMFCUT );
 
   
   
@@ -215,7 +217,6 @@ LALInspiralBankGeneration(
       /* This calucation is only valid for the PN case. For EOB, we 
        * should use the correct value of v (close to lightring). What 
        * about the amplitude corrected one ? */
-
       fFinal = minfFinal + i *
 	(maxfFinal - minfFinal)/(input->numFreqCut - 1);
       if (fFinal > input->fUpper)
