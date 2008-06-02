@@ -106,42 +106,7 @@ typedef struct {
   toplist_t*list;    /**< toplist this file reflects */
 } HoughFStatCheckpointFile;
 
-/** creates a HoughFStatCheckpointFile */
-extern int houghFStat_cpt_file_create (HoughFStatCheckpointFile **cptf,
-				  CHAR  *filename,
-				  UINT4 bufsize,
-				  UINT4 maxsize,
-				  toplist_t*tl);
-
-/** destroys a HoughFStatCheckpointFile */
-extern int houghFStat_cpt_file_destroy (HoughFStatCheckpointFile **cptf);
-
-/** opens a file for checkpointing the desired toplist */
-extern int houghFStat_cpt_file_open (HoughFStatCheckpointFile *cptf);
-
-/** flushes the checkpoint file (only useful if buffered) */
-extern int houghFStat_cpt_file_flush (HoughFStatCheckpointFile *cptf);
-
-/** returns information for checkpointing */
-extern int houghFStat_cpt_file_info (HoughFStatCheckpointFile *cptf, CHAR**filename, UINT4*bytes, UINT4*checksum);
-
-/** adds an item to the toplist and keeps the file consistent, i.e.
-   adds the entry to the file if it was really inserted
-   and compacts the file if necessary */
-extern int houghFStat_cpt_file_add  (HoughFStatCheckpointFile*cptf, HoughFStatOutputEntry line);
-
-/** closes the file, reduces the precision, sorts the toplist,
-    finally rewrites the file (sorted and compact) with end marker */
-extern int houghFStat_cpt_file_close(HoughFStatCheckpointFile*cptf);
-
-/** reads a written checkpointed toplist back into memory */
-extern int houghFStat_cpt_file_read (HoughFStatCheckpointFile*cptf, UINT4 checksum, UINT4 maxbytes);
-
-/** compact a toplist file if the length has reached maxbytes */
-extern int houghFStat_cpt_file_compact(HoughFStatCheckpointFile*cptf);
-
 /** new, simpler checkpointing for HierarchicalSearch */
-
 
 /** writes a checkpoint:
     - constructs temporary filename (by appending .TMP)
