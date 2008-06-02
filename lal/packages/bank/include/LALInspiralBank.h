@@ -217,7 +217,7 @@ parameter structure but not in creating the template bank.
 
 \item \texttt{order}: Post-Newtonian order of the waveform 
 \item \texttt{approximant}: Approximant of the waveform 
-\item \texttt{NumFreqCut}: Number of different upper frequency cutoffs (spaced evenly between MinFreqCut and MaxFreqCut) to use when creating a template bank.
+\item \texttt{numFreqCut}: Number of different upper frequency cutoffs (spaced evenly between MinFreqCut and MaxFreqCut) to use when creating a template bank.
 \item \texttt{MaxFreqCut}: largest upper frequency cutoff to use
 \item \texttt{MinFreqCut}: smallest upper frequency cutoff to use
 \end{itemize}
@@ -696,9 +696,9 @@ tagInspiralCoarseBankIn
   Order                         ampOrder;        
   
   /* parameters for different/multiple freq. cutoffs */
-  INT4                          NumFreqCut;
-  FreqCut                       MaxFreqCut;
-  FreqCut                       MinFreqCut;
+  INT4                          numFreqCut;
+  FreqCut                       maxFreqCut;
+  FreqCut                       minFreqCut;
 
   InsidePolygon                 insidePolygon;  
   ComputeMoments                computeMoments;

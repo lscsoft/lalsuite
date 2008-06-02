@@ -40,8 +40,8 @@ LALInspiralBankGeneration(
   InspiralMomentsEtc moments;
   INT4 cnt        = 0;
   REAL8 fFinal    = 0;
-  REAL8 MinfFinal = 0;
-  REAL8 MaxfFinal = 0;
+  REAL8 minfFinal = 0;
+  REAL8 maxfFinal = 0;
   REAL8 q         = 0;
   INT4  chicnt    = 0;
   INT4  kappacnt  = 0;
@@ -87,12 +87,12 @@ LALInspiralBankGeneration(
     *first = bank;
     for( cnt = 0; cnt < *ntiles; cnt++ )
     {
-      /* Set the Min and Max fFinals using the appropriate formula*/
-      if( input->MaxFreqCut == SchwarzISCO )
+      /* Set the min and max fFinals using the appropriate formula*/
+      if( input->maxFreqCut == SchwarzISCO )
 	{
-	  MaxfFinal = 1.0 / (6.0 * sqrt(6.0)*LAL_PI*coarseList[cnt].params.totalMass*LAL_MTSUN_SI);
+	  maxfFinal = 1.0 / (6.0 * sqrt(6.0)*LAL_PI*coarseList[cnt].params.totalMass*LAL_MTSUN_SI);
 	}
-      else if( input->MaxFreqCut == BKLISCO )
+      else if( input->maxFreqCut == BKLISCO )
 	{
 	  if( coarseList[cnt].params.mass1 > coarseList[cnt].params.mass2 )
 	    {
@@ -100,20 +100,20 @@ LALInspiralBankGeneration(
 	    }
 	  else
 	      q = coarseList[cnt].params.mass1 / coarseList[cnt].params.mass2;
-	  MaxfFinal = 1.0 / (6.0 * sqrt(6.0)*LAL_PI*coarseList[cnt].params.totalMass*LAL_MTSUN_SI) * ( 1 + 2.8*q - 2.6*q*q + 0.8*q*q*q );
+	  maxfFinal = 1.0 / (6.0 * sqrt(6.0)*LAL_PI*coarseList[cnt].params.totalMass*LAL_MTSUN_SI) * ( 1 + 2.8*q - 2.6*q*q + 0.8*q*q*q );
 	}
-      else if( input->MaxFreqCut == ERD )
+      else if( input->maxFreqCut == ERD )
 	{
-	  MaxfFinal = 1.07*0.5326/(2*LAL_PI*0.955*coarseList[cnt].params.totalMass*LAL_MTSUN_SI);
+	  maxfFinal = 1.07*0.5326/(2*LAL_PI*0.955*coarseList[cnt].params.totalMass*LAL_MTSUN_SI);
 	}
       else
 	ABORT( status, LALINSPIRALBANKH_EFCUT, LALINSPIRALBANKH_MSGEFCUT );
 
-      if( input->MinFreqCut == SchwarzISCO )
+      if( input->minFreqCut == SchwarzISCO )
 	{
-	  MinfFinal = 1.0 / (6.0 * sqrt(6.0)*LAL_PI*coarseList[cnt].params.totalMass*LAL_MTSUN_SI);
+	  minfFinal = 1.0 / (6.0 * sqrt(6.0)*LAL_PI*coarseList[cnt].params.totalMass*LAL_MTSUN_SI);
 	}
-      else if( input->MinFreqCut == BKLISCO )
+      else if( input->minFreqCut == BKLISCO )
 	{
 	  if( coarseList[cnt].params.mass1 > coarseList[cnt].params.mass2 )
 	    {
@@ -121,19 +121,19 @@ LALInspiralBankGeneration(
 	    }
 	  else
 	      q = coarseList[cnt].params.mass1 / coarseList[cnt].params.mass2;
-	  MinfFinal = 1.0 / (6.0 * sqrt(6.0)*LAL_PI*coarseList[cnt].params.totalMass*LAL_MTSUN_SI) * ( 1 + 2.8*q - 2.6*q*q + 0.8*q*q*q );
+	  minfFinal = 1.0 / (6.0 * sqrt(6.0)*LAL_PI*coarseList[cnt].params.totalMass*LAL_MTSUN_SI) * ( 1 + 2.8*q - 2.6*q*q + 0.8*q*q*q );
 	}
-      else if( input->MinFreqCut == ERD )
+      else if( input->minFreqCut == ERD )
 	{
-	  MinfFinal = 1.07*0.5326/(2*LAL_PI*0.955*coarseList[cnt].params.totalMass*LAL_MTSUN_SI);
+	  minfFinal = 1.07*0.5326/(2*LAL_PI*0.955*coarseList[cnt].params.totalMass*LAL_MTSUN_SI);
 	}
       else
 	ABORT( status, LALINSPIRALBANKH_EFCUT, LALINSPIRALBANKH_MSGEFCUT );
 
       /* For 1 upper frequency cutoff, fill the bank as usual with the
-       * specified fFinal (checked MinFreqCut = MaxFreqCut in tmpltbank.c)
+       * specified fFinal (checked minFreqCut = maxFreqCut in tmpltbank.c)
        */
-      if( input->NumFreqCut == 1 )
+      if( input->numFreqCut == 1 )
 	{
 	  bank = bank->next = (SnglInspiralTable *) LALCalloc( 1, sizeof(
              SnglInspiralTable ) );
@@ -159,7 +159,7 @@ LALInspiralBankGeneration(
 	   * should use the correct value of v (close to lightring). What 
 	   * about the amplitude corrected one ? */
 
-	  fFinal = MinfFinal;
+	  fFinal = minfFinal;
 	  if (fFinal > input->fUpper)
 	    {
 	      fFinal = input->fUpper;
@@ -188,9 +188,9 @@ LALInspiralBankGeneration(
 	}
 
       /* If we have multiple frequency cutoffs, create duplicate
-       * templates evenly incremented between MinfFinal and MaxfFinal
+       * templates evenly incremented between minfFinal and maxfFinal
        */
-      else for( i = 0; i < input->NumFreqCut; i++ )
+      else for( i = 0; i < input->numFreqCut; i++ )
       {
       bank = bank->next = (SnglInspiralTable *) LALCalloc( 1, sizeof(
              SnglInspiralTable ) );
@@ -216,8 +216,8 @@ LALInspiralBankGeneration(
        * should use the correct value of v (close to lightring). What 
        * about the amplitude corrected one ? */
 
-      fFinal = MinfFinal + i *
-	(MaxfFinal - MinfFinal)/(input->NumFreqCut - 1);
+      fFinal = minfFinal + i *
+	(maxfFinal - minfFinal)/(input->numFreqCut - 1);
       if (fFinal > input->fUpper)
       {
         fFinal = input->fUpper;
