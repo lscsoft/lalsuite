@@ -261,10 +261,10 @@ CandidateList
 typedef struct CandidateListTag
 {
   REAL8 f;           /*  Frequency of the candidate */
-  REAL8 Alpha;       /*  right ascension of the candidate */
-  REAL8 Delta;       /*  declination  of the candidate */
-  REAL8 F1dot;       /*  spindown (d/dt f) of the candidate */
-  REAL8 TwoF;        /*  Maximum value of F for the cluster */
+  REAL4 Alpha;       /*  right ascension of the candidate */
+  REAL4 Delta;       /*  declination  of the candidate */
+  REAL4 F1dot;       /*  spindown (d/dt f) of the candidate */
+  REAL4 TwoF;        /*  Maximum value of F for the cluster */
   INT4 FileID;       /*  File ID to specify from which file the candidate under consideration originaly comes. */
   INT4 iFreq;        /*  Frequency index */
   INT4 iDelta;       /*  Declination index. This can be negative. */
@@ -2388,8 +2388,8 @@ ReadOneCandidateFileV2( LALStatus *lalStatus,
       }
       
       nread = sscanf (line1, 
-                     "%" LAL_INT4_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT 
-                     " %" LAL_REAL8_FORMAT "%c", 
+                     "%" LAL_INT4_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL4_FORMAT " %" LAL_REAL4_FORMAT " %" LAL_REAL4_FORMAT 
+                     " %" LAL_REAL4_FORMAT "%c", 
                      &(cl->FileID), &(cl->f), &(cl->Alpha), &(cl->Delta), &(cl->F1dot), &(cl->TwoF), &newline );
 
       /* check that values that are read in are sensible */
@@ -2650,8 +2650,8 @@ ReadOneCandidateFile( LALStatus *lalStatus,
       }
       
       nread = sscanf (line1, 
-                     "%" LAL_INT4_FORMAT "%" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT 
-                     " %" LAL_REAL8_FORMAT "%c", 
+                     "%" LAL_INT4_FORMAT "%" LAL_REAL8_FORMAT " %" LAL_REAL4_FORMAT " %" LAL_REAL4_FORMAT " %" LAL_REAL4_FORMAT 
+                     " %" LAL_REAL4_FORMAT "%c", 
                      &(cl->FileID), &(cl->f), &(cl->Alpha), &(cl->Delta), &(cl->F1dot), &(cl->TwoF), &newline );
 
       
