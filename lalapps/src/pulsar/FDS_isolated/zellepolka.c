@@ -257,13 +257,13 @@ CandidateList
 @param iAlpha        Right ascension index of this candidate event
 @param iF1dot        Spindwon index of this candidate event
 */
-#pragma pack(1)
+#pragma pack(1) 
 typedef struct CandidateListTag
 {
   REAL8 f;           /*  Frequency of the candidate */
+  REAL8 F1dot;       /*  spindown (d/dt f) of the candidate */
   REAL4 Alpha;       /*  right ascension of the candidate */
   REAL4 Delta;       /*  declination  of the candidate */
-  REAL4 F1dot;       /*  spindown (d/dt f) of the candidate */
   REAL4 TwoF;        /*  Maximum value of F for the cluster */
   INT4 FileID;       /*  File ID to specify from which file the candidate under consideration originaly comes. */
   INT4 iFreq;        /*  Frequency index */
@@ -291,8 +291,8 @@ struct int4_linked_list {
 Structure containg data in cells
 
 @param Freq          REAL8 Frequency index of the cell 
-@param Alpha         REAL8 Right ascension index of the cell
-@param Delta         REAL8 Declination index of the cell
+@param Alpha         REAL4 Right ascension index of the cell
+@param Delta         REAL4 Declination index of the cell
 @param F1dot         REAL8 Spindown index of the cell 
 @param iFreq         INT4 Frequency index of this candidate event
 @param iDelta        INT4 Declination index. This can be negative. 
@@ -302,14 +302,15 @@ Structure containg data in cells
 @param nCand;        INT4 number of the events in this cell
 @param CandID        int4_linked_list* linked structure that has candidate id-s of the candidates in this cell
 */
-#pragma pack(1)
+
+#pragma pack(1) 
 typedef struct CellDataTag
 {
   REAL8 Freq;          /*  Frequency index of the cell */
-  REAL8 Alpha;         /*  Right ascension index of the cell */
-  REAL8 Delta;         /*  Declination index of the cell */
-  REAL8 F1dot;          /*  Spindown index of the cell */  
-  REAL8 significance;  /*  minus log of joint false alarm of the candidates in this cell. */
+  REAL8 F1dot;          /*  Spindown index of the cell */
+  REAL4 Alpha;         /*  Right ascension index of the cell */
+  REAL4 Delta;         /*  Declination index of the cell */
+  REAL4 significance;  /*  minus log of joint false alarm of the candidates in this cell. */
   INT4 iFreq;          /*  Frequency index of this candidate event */
   INT4 iDelta;         /*  Declination index of this candidate event */
   INT4 iAlpha;         /*  Right ascension index of this candidate event */
@@ -1249,7 +1250,7 @@ void print_info_of_the_cell( LALStatus *lalStatus,
 	 cd[icell].significance > sig_thr && 
 	 cd[icell].nCand > ncand_thr ) 
     {
-      fprintf(fp,"%" LAL_REAL4_FORMAT "\t%" LAL_REAL4_FORMAT "\t%" LAL_REAL4_FORMAT "\t% g" " \t\t%" LAL_INT4_FORMAT "\t%" LAL_REAL4_FORMAT "\n", cd[icell].Freq, cd[icell].Delta, cd[icell].Alpha, cd[icell].F1dot, cd[icell].nCand, cd[icell].significance);
+      fprintf(fp,"%.6f\t%.6f\t%.6f\t%g\t\t%d\t%.6f\n", cd[icell].Freq, cd[icell].Delta, cd[icell].Alpha, cd[icell].F1dot, cd[icell].nCand, cd[icell].significance);
       icell++;
     }
 
@@ -1539,7 +1540,7 @@ void print_cand_of_most_coin_cell( LALStatus *lalStatus, CellData *cd, const Can
     if( CList[idx].Alpha < 0 ) {
       AlphaTmp = CList[idx].Alpha + LAL_TWOPI;
     }
-    fprintf(stderr,"  %" LAL_INT4_FORMAT "\t\t%" LAL_REAL4_FORMAT "\t%" LAL_REAL4_FORMAT "\t%" LAL_REAL4_FORMAT "\t% g" "\t\t%g \n", 
+    fprintf(stderr,"  %d\t\t%.6f\t%.6f\t%.6f\t%g\t\t%.6f\n", 
 	    CList[idx].FileID, CList[idx].f, CList[idx].Delta, AlphaTmp, CList[idx].F1dot, CList[idx].TwoF);
     
     p = p->next;
@@ -1606,8 +1607,7 @@ void print_Fstat_of_the_cell( LALStatus *lalStatus,
       while( p !=NULL && ic <= LINKEDSTR_MAX_DEPTH ) { 
 	idx = p->data;
 
-	fprintf(fp,"%" LAL_INT4_FORMAT "\t%" LAL_INT4_FORMAT "\t%" LAL_REAL8_FORMAT "\t%"\
-		LAL_REAL8_FORMAT "\t%" LAL_REAL8_FORMAT "\t%g \t%" LAL_REAL4_FORMAT "\n", 
+	fprintf(fp,"%d\t%d\t%.6f\t%.6f\t%.6f\t%g\t%.6f\n", 
 		icell, CList[idx].FileID, CList[idx].f, CList[idx].Alpha, CList[idx].Delta, CList[idx].F1dot, CList[idx].TwoF );
 
 	p = p->next;
@@ -2148,7 +2148,6 @@ ReadCandidateListFromZipFile( LALStatus *lalStatus,
 			&(cl->f), &(cl->Alpha), &(cl->Delta), &(cl->TwoF) );
 	cl->FileID = (*FileID) + section - 1; /* section can be either 1 or 2. */
 
-
 	/* ------------------------------------------------------------------------- */
 	/* check that values that are read in are sensible */
 	if (
@@ -2388,7 +2387,7 @@ ReadOneCandidateFileV2( LALStatus *lalStatus,
       }
       
       nread = sscanf (line1, 
-                     "%" LAL_INT4_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL4_FORMAT " %" LAL_REAL4_FORMAT " %" LAL_REAL4_FORMAT 
+                     "%" LAL_INT4_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL4_FORMAT " %" LAL_REAL4_FORMAT " %" LAL_REAL8_FORMAT 
                      " %" LAL_REAL4_FORMAT "%c", 
                      &(cl->FileID), &(cl->f), &(cl->Alpha), &(cl->Delta), &(cl->F1dot), &(cl->TwoF), &newline );
 
@@ -2650,11 +2649,11 @@ ReadOneCandidateFile( LALStatus *lalStatus,
       }
       
       nread = sscanf (line1, 
-                     "%" LAL_INT4_FORMAT "%" LAL_REAL8_FORMAT " %" LAL_REAL4_FORMAT " %" LAL_REAL4_FORMAT " %" LAL_REAL4_FORMAT 
+                     "%" LAL_INT4_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL4_FORMAT " %" LAL_REAL4_FORMAT " %" LAL_REAL8_FORMAT 
                      " %" LAL_REAL4_FORMAT "%c", 
                      &(cl->FileID), &(cl->f), &(cl->Alpha), &(cl->Delta), &(cl->F1dot), &(cl->TwoF), &newline );
 
-      
+           
       /* find number of candidates that are above the 2F threshold. */
       if ( cl->TwoF > myFthr ) {
 	numlinesFthr++;
@@ -3290,7 +3289,7 @@ void print_info_of_cell_and_ifo_S4R2a( LALStatus *lalStatus,
       }
 
 
-      fprintf(fp,"%" LAL_REAL4_FORMAT "\t%" LAL_REAL4_FORMAT "\t%" LAL_REAL4_FORMAT "\t% g" " \t\t%" LAL_INT4_FORMAT "\t%" LAL_REAL4_FORMAT "\t%" LAL_INT4_FORMAT "\t%" LAL_INT4_FORMAT "\n",\
+      fprintf(fp,"%.6f\t%.6f\t%.6f\t%g\t\t%d\t%.6f\t%d\t%d\n",\
 	      cd[icell].Freq, cd[icell].Delta, cd[icell].Alpha, cd[icell].F1dot, cd[icell].nCand, cd[icell].significance,cH1,cL1);
       icell++;
 
@@ -3384,7 +3383,7 @@ void print_info_of_cell_and_ifo_S5R1a( LALStatus *lalStatus,
 	exit(POLKA_EXIT_ERR);
 	}
       
-      fprintf(fp,"%" LAL_REAL4_FORMAT "\t%" LAL_REAL4_FORMAT "\t%" LAL_REAL4_FORMAT "\t% g" " \t\t%" LAL_INT4_FORMAT "\t%" LAL_REAL4_FORMAT "\t%" LAL_INT4_FORMAT "\t%" LAL_INT4_FORMAT "\n",\
+      fprintf(fp,"%.6f\t%.6f\t%.6f\t%g\t\t%d\t%.6f\t%d\t%d\n",\
 	      cd[icell].Freq, cd[icell].Delta, cd[icell].Alpha, cd[icell].F1dot, cd[icell].nCand, cd[icell].significance,cH1,cL1);
       icell++;
       
