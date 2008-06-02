@@ -466,7 +466,7 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dfOnly = False, \
   hipeDag = iniFile.rstrip("ini") + usertag + ".dag"  
   if dax: 
       hipeDax = iniFile.rstrip("ini") + usertag + ".dax"
-      hipeDag = iniFile.rstrip("ini") + usertag + ".dax-0.dag"
+      hipeDag = iniFile.rstrip("ini") + usertag + ".dax.dag"
   if hipeDax:
      ldg_submit_dax_command = config.get("condor","ldgsubmitdax") + ' '
      ldg_submit_dax_command += '--ini-file '+iniFile + ' '
