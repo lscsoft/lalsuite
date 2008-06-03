@@ -128,7 +128,8 @@ INT4 main( INT4 argc, CHAR *argv[] )
 
   REAL8 freqLowCutoff = -1;
   REAL8 strainLowPassFreq = -1;
-  REAL8 snrLow, snrHigh;
+  REAL8 snrLow = -1;
+  REAL8 snrHigh = -1;
 
   /* injections */
   SimInspiralTable *injections = NULL;
@@ -416,6 +417,18 @@ INT4 main( INT4 argc, CHAR *argv[] )
   {
     fprintf( stderr, "ERROR: --strain-lowpass-freq must be specified\n" );
     exit( 1 );
+  }
+
+  if (snrLow < 0)
+  {
+    fprintf(stderr, "ERROR: --snr-low must be be specified\n");
+    exit(1);
+  }
+
+  if (snrHigh < 0)
+  {
+    fprintf(stderr, "ERROR: --snr-high must be be specified\n");
+    exit(1);
   }
 
   if (snrLow > snrHigh)
