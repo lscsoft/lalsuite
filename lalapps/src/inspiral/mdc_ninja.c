@@ -96,7 +96,6 @@ INT4 ifosFlag  = 0;
 INT4 frameFlag = 0;
 INT4 mdcFlag   = 0;
 INT4 addNoise  = 0;
-CHAR *injectionType = NULL;
 
 /* main program entry */
 INT4 main( INT4 argc, CHAR *argv[] )
@@ -134,6 +133,7 @@ INT4 main( INT4 argc, CHAR *argv[] )
   /* injections */
   SimInspiralTable *injections = NULL;
   INT4 numInjections           = 0;
+  CHAR *injectionType = NULL;
 
   /* injection waveforms time series */
   INT4 sampleRate = -1;
@@ -419,21 +419,6 @@ INT4 main( INT4 argc, CHAR *argv[] )
     exit( 1 );
   }
 
-  if (injectionType == NULL)
-  {
-    fprintf(stderr, "ERROR: --injection-type must be specified\n");
-    exit(1);
-  }
-  else
-  {
-    if (!((strncmp(injectionType, "NR", strlen(injectionType) + 1) == 0) ||
-          (strncmp(injectionType, "approximant", strlen(injectionType) + 1) == 0)))
-    {
-      fprintf( stderr, "ERROR: --injection-type must be 'NR', or 'approximant'\n");
-      exit(1);
-    }
-  }
-
   if (addNoise)
   {
     if ( strainLowPassFreq < 0 )
@@ -445,6 +430,21 @@ INT4 main( INT4 argc, CHAR *argv[] )
 
   if ( frameFlag )
   {
+    if (injectionType == NULL)
+    {
+      fprintf(stderr, "ERROR: --injection-type must be specified\n");
+      exit(1);
+    }
+    else
+    {
+      if (!((strncmp(injectionType, "NR", strlen(injectionType) + 1) == 0) ||
+            (strncmp(injectionType, "approximant", strlen(injectionType) + 1) == 0)))
+      {
+        fprintf( stderr, "ERROR: --injection-type must be 'NR', or 'approximant'\n");
+        exit(1);
+      }
+    }
+
     /* check that sample rate has been specified */
     if ( sampleRate < 0 )
     {
@@ -669,7 +669,6 @@ INT4 main( INT4 argc, CHAR *argv[] )
   if ( mdcFlag )
     write_mdc_log_file(mdcFileName, injections, gpsStartSec, setName);
 
-
   /* free memeory */
   if ( injectionFile )
     free( injectionFile );
@@ -682,7 +681,7 @@ INT4 main( INT4 argc, CHAR *argv[] )
   for ( i = 0; i < num_ifos; i++ )
     XLALDestroyREAL4TimeSeries(injData[i]);
 
-  if (strncmp(injectionType, "approximant", strlen(injectionType) + 1) ==  0)
+  if (response != NULL)
     XLALDestroyCOMPLEX8FrequencySeries(response);
 
   while ( injections )
@@ -877,7 +876,7 @@ static void write_mdc_log_file(CHAR *filename, SimInspiralTable *injections, INT
   for (thisInj = injections; thisInj; thisInj = thisInj->next)
   {
     /* GravEn_SimID */
-    if (strncmp(injectionType, "NR", strlen(injectionType) + 1) == 0)
+    if (strncmp(thisInj->waveform, "NumRel", LIGOMETA_WAVEFORM_MAX) == 0)
       fprintf(output, "%s ", thisInj->numrel_data);
     else
       fprintf(output, "file ");
