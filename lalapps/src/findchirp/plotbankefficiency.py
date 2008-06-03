@@ -134,7 +134,7 @@ if signal=='Eccentricity':
                    results['snr'], markersize=30, alpha=1,vmin=0,vmax=1)
   xlabel(r'Eccentricity')
   ylabel(r'TotalMass ($M_\odot$)')
-  mysavefig(opts,'plotbankefficiency_scattersnr_totalMass_versus_ecc.png')
+  mysavefig(opts,'plotbankefficiency_scatter_snr_versus_totalmass_ecc.png')
 
   # the eccentricity, and SNR
   plotting.plot(results['ecc_sim'],results['snr'],'ob')
@@ -142,6 +142,15 @@ if signal=='Eccentricity':
   ylabel(r'Overlap(\%)')
   #pylab.axis([0,0.4,0.7,1])
   mysavefig(opts,'plotbankefficiency_snr_versus_ecc.png')
+
+  x = results['ecc_sim']
+  y = results['totalmass_sim']
+  z = results['snr']
+  plotting.surf(x,y,z,20,20,vmin=0.5,vmax=1)
+  xlabel(r'Eccentricity')
+  ylabel(r'Total mass $(M_\odot)$')
+  
+  mysavefig(opts,'plotbankefficiency_surf_snr_versus_totalmass_ecc.png')
 
 
 # --------------------------------------------------------------- accuracies
@@ -185,7 +194,9 @@ try:
   plotting.surf(x,y,z,20,20)
   colorbar()
   mysavefig(opts,'test.png')
-except: pass
+except: 
+  print "This plotting failed"
+  pass
 
 
 

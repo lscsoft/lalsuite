@@ -18,7 +18,6 @@ import numpy.core.ma as ma
 from numpy import *
 #from matplotlib import *
 
-
 mtsun = 4.92549095e-6
 
 def GetChirpMassEtaFromMasses(mass1, mass2):
@@ -409,7 +408,7 @@ class Plotting:
     gca().grid(True)
     return fig,handle
 
-  def surf(self,xdata,ydata,zdata,xbin=20,ybin=20):
+  def surf(self,xdata,ydata,zdata,xbin=20,ybin=20,vmin=0,vmax=1):
     """
     """
     fig = self.setfigure() 
@@ -431,9 +430,12 @@ class Plotting:
     zi = interp(xi,yi)
     zim = ma.masked_where(isnan(zi),zi)
     figure(figsize=(8,8))
-    p = pcolor(xi,yi,zim,shading='interp',cmap=cm.jet)
-    c = contour(xi,yi,zim,cmap=cm.jet)
+    p = pcolor(xi,yi,zim,shading='interp',cmap=cm.jet,
+               vmin=vmin,vmax=vmax)
     gca().grid(True)
+    #c = contour(xi,yi,zim,cmap=cm.jet)
+    #c = contour(xi,yi,zim)
+    colorbar()
     
 
 
