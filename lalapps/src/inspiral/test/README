@@ -1,0 +1,36 @@
+INSTRUCTIONS FOR RUNNING THE UNIT TEST
+
+###########
+## Make a directory where you will run the unit test.
+mkdir myunittest
+## Go into the test directory
+cd myunittest
+## Copy the following files from cvs:
+## These files are in lalapps/src/inspiral/test/
+cp inspiral*sub .
+cp HL-INJ*xml .
+cp test.dag .
+cp find_rms_diff.py .
+cp H1-TMPLTBANK_SINGLE*xml .
+## Make a directory for the log files
+mkdir logs
+## Make a directory for the cache files and copy them there
+## The cache files are currently set for UWM.
+mkdir cache
+cd cache
+cp *.cache .
+## Make a directory for the executables
+## Copy all of the executables from the version of
+## LAL and LALApps you are testing
+## COPY: lalapps_tmpltbank, lalapps_inspiral, lalapps_sire,
+## lalapps_thinca, lalapps_coire, lalapps_trigbank, 
+## plotinspiral
+cd ..
+mkdir executables
+cd executables
+cp {EXECUTABLES} .
+
+## Run the following command before you submit
+export _CONDOR_DAGMAN_LOG_ON_NFS_IS_ERROR=FALSE
+condor_submit_dag test.dag
+

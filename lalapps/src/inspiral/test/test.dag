@@ -1,0 +1,268 @@
+##########################################################
+# H1 FIRST STAGE (TMPLTBANK, INSPIRAL, SIRE)
+
+JOB 101 inspiral_hipe_inj001.tmpltbank_H1.INJ001.sub  
+VARS 101 macroframecache="cache/H-H1_RDS_C03_L2-867627384-867689594.cache" macrogpsendtime="867681280" macrochannelname="H1:LSC-STRAIN" macrogpsstarttime="867679232"
+
+JOB 102 inspiral_hipe_inj001.inspiral_H1.INJ001.sub 
+VARS 102 macrotrigendtime="0" macrobankfile="H1-TMPLTBANK_INJ001-867679232-2048.xml.gz" macrochannelname="H1:LSC-STRAIN" macrotrigstarttime="0" macroframecache="cache/H-H1_RDS_C03_L2-867627384-867689594.cache" macrogpsstarttime="867679232" macrogpsendtime="867681280" macroifotag="FIRST" macrousertag="INJ001"
+
+JOB 103 inspiral_hipe_inj001.sire.INJ001.sub 
+VARS 103 macroglob="H1-INSPIRAL_FIRST_INJ001-867679232-2048.xml.gz" macromissedinjections="H1-SIRE_INJECTIONS_1234_INJ001_MISSED_FIRST_INJ001-867679232-2048.xml" macrosummary="H1-SIRE_INJECTIONS_1234_INJ001_FOUND_FIRST_INJ001-867679232-2048.txt" macroinjectionfile="HL-INJECTIONS_1234_INJ001-866088014-2633400.xml" macrousertag="INJ001" macrooutput="H1-SIRE_INJECTIONS_1234_INJ001_FOUND_FIRST_INJ001-867679232-2048.xml" macroifocut="H1"
+
+##########################################################
+# H2 FIRST STAGE (TMPLTBANK, INSPIRAL, SIRE)
+
+JOB 104 inspiral_hipe_inj001.tmpltbank_H2.INJ001.sub  
+VARS 104 macroframecache="cache/H-H2_RDS_C03_L2-867630444-867687399.cache" macrogpsendtime="867680500" macrochannelname="H2:LSC-STRAIN" macrogpsstarttime="867678452"
+
+JOB 105 inspiral_hipe_inj001.inspiral_H2.INJ001.sub 
+VARS 105 macrotrigendtime="0" macrobankfile="H2-TMPLTBANK_INJ001-867678452-2048.xml.gz" macrochannelname="H2:LSC-STRAIN" macrotrigstarttime="0" macroframecache="cache/H-H2_RDS_C03_L2-867630444-867687399.cache" macrogpsstarttime="867678452" macrogpsendtime="867680500" macroifotag="FIRST" macrousertag="INJ001"
+
+JOB 106 inspiral_hipe_inj001.sire.INJ001.sub 
+VARS 106 macroglob="H2-INSPIRAL_FIRST_INJ001-867678452-2048.xml.gz" macromissedinjections="H2-SIRE_INJECTIONS_1234_INJ001_MISSED_FIRST_INJ001-867678452-2048.xml" macrosummary="H2-SIRE_INJECTIONS_1234_INJ001_FOUND_FIRST_INJ001-867678452-2048.txt" macroinjectionfile="HL-INJECTIONS_1234_INJ001-866088014-2633400.xml" macrousertag="INJ001" macrooutput="H2-SIRE_INJECTIONS_1234_INJ001_FOUND_FIRST_INJ001-867678452-2048.xml" macroifocut="H2"
+
+##########################################################
+# L1 FIRST STAGE (TMPLTBANK, INSPIRAL, SIRE)
+
+JOB 107 inspiral_hipe_inj001.tmpltbank_L1.INJ001.sub  
+VARS 107 macroframecache="cache/L-L1_RDS_C03_L2-867679973-867683644.cache" macrogpsendtime="867682029" macrochannelname="L1:LSC-STRAIN" macrogpsstarttime="867679981"
+
+JOB 108 inspiral_hipe_inj001.inspiral_L1.INJ001.sub 
+VARS 108 macrotrigendtime="0" macrobankfile="L1-TMPLTBANK_INJ001-867679981-2048.xml.gz" macrochannelname="L1:LSC-STRAIN" macrotrigstarttime="0" macroframecache="cache/L-L1_RDS_C03_L2-867679973-867683644.cache" macrogpsstarttime="867679981" macrogpsendtime="867682029" macroifotag="FIRST" macrousertag="INJ001"
+
+JOB 109 inspiral_hipe_inj001.sire.INJ001.sub 
+VARS 109 macroglob="L1-INSPIRAL_FIRST_INJ001-867679981-2048.xml.gz" macromissedinjections="L1-SIRE_INJECTIONS_1234_INJ001_MISSED_FIRST_INJ001-867679981-2048.xml" macrosummary="L1-SIRE_INJECTIONS_1234_INJ001_FOUND_FIRST_INJ001-867679981-2048.txt" macroinjectionfile="HL-INJECTIONS_1234_INJ001-866088014-2633400.xml" macrousertag="INJ001" macrooutput="L1-SIRE_INJECTIONS_1234_INJ001_FOUND_FIRST_INJ001-867679981-2048.xml" macroifocut="L1"
+
+##########################################################
+# V1 FIRST STAGE (TMPLTBANK, INSPIRAL, SIRE)
+
+JOB 110 inspiral_hipe_inj001.tmpltbank_V1.INJ001.sub  
+VARS 110 macroframecache="cache/V-HrecOnline-867676176-867709687.cache" macrogpsendtime="867682072" macrochannelname="V1:h_16384Hz" macrogpsstarttime="867680024"
+
+JOB 111 inspiral_hipe_inj001.inspiral_V1.INJ001.sub  
+VARS 111 macrotrigendtime="0" macrobankfile="V1-TMPLTBANK_INJ001-867680024-2048.xml.gz" macrochannelname="V1:h_16384Hz" macrotrigstarttime="0" macroframecache="cache/V-HrecOnline-867676176-867709687.cache" macrogpsstarttime="867680024" macrogpsendtime="867682072" macroifotag="FIRST" macrousertag="INJ001"
+
+JOB 112 inspiral_hipe_inj001.sire.INJ001.sub  
+VARS 112 macroglob="V1-INSPIRAL_FIRST_INJ001-867680024-2048.xml.gz" macromissedinjections="V1-SIRE_INJECTIONS_1234_INJ001_MISSED_FIRST_INJ001-867680024-2048.xml" macrosummary="V1-SIRE_INJECTIONS_1234_INJ001_FOUND_FIRST_INJ001-867680024-2048.txt" macroinjectionfile="HL-INJECTIONS_1234_INJ001-866088014-2633400.xml" macrousertag="INJ001" macrooutput="V1-SIRE_INJECTIONS_1234_INJ001_FOUND_FIRST_INJ001-867680024-2048.xml" macroifocut="V1"
+
+##########################################################
+# FIRST STAGE H1H2L1V1 (QUADRUPLE) COINCIDENCE
+
+JOB 113 inspiral_hipe_inj001.thinca_H1H2L1V1.INJ001.sub 
+VARS 113 macrov1triggers="" macrol1triggers="" macroh1triggers="" macrogpsstarttime="867680045" macrogpsendtime="867683572" macroh2triggers="" macroifotag="FIRST" macroarguments="H1-INSPIRAL_FIRST_INJ001-867679232-2048.xml.gz H2-INSPIRAL_FIRST_INJ001-867678452-2048.xml.gz L1-INSPIRAL_FIRST_INJ001-867679981-2048.xml.gz V1-INSPIRAL_FIRST_INJ001-867680024-2048.xml.gz"
+
+JOB 114 inspiral_hipe_inj001.coire.INJ001.sub 
+VARS 114 macroglob="H1H2L1V1-THINCA_FIRST_INJ001-867680045-3527.xml.gz" macromissedinjections="H1H2L1V1-COIRE_INJECTIONS_1234_INJ001_MISSED_FIRST_INJ001-867680045-3527.xml" macrosummary="H1H2L1V1-COIRE_INJECTIONS_1234_INJ001_FOUND_FIRST_INJ001-867680045-3527.txt" macroinjectionfile="HL-INJECTIONS_1234_INJ001-866088014-2633400.xml" macrousertag="INJ001" macrooutput="H1H2L1V1-COIRE_INJECTIONS_1234_INJ001_FOUND_FIRST_INJ001-867680045-3527.xml"
+
+##########################################################
+# H1 SECOND STAGE FOR H1H2L1V1 (QUADRUPLE) COINCIDENCE
+
+JOB 115 inspiral_hipe_inj001.trigbank.INJ001.sub 
+VARS 115 macrooutputifo="H1" macrogpsendtime="867681280" macroinputifo="H1" macrogpsstarttime="867679232" macroifotag="H1H2L1V1" macroarguments="H1H2L1V1-THINCA_FIRST_INJ001-867680045-3527.xml.gz"
+
+JOB 116 inspiral_hipe_inj001.inspiral_veto_H1.INJ001.sub 
+VARS 116 macrotrigendtime="0" macrobankfile="H1-TRIGBANK_H1H2L1V1_INJ001-867679232-2048.xml.gz" macrochannelname="H1:LSC-STRAIN" macrotrigstarttime="0" macroframecache="cache/H-H1_RDS_C03_L2-867627384-867689594.cache" macrogpsstarttime="867679232" macrogpsendtime="867681280" macroifotag="SECOND_H1H2L1V1" macrousertag="INJ001"
+
+JOB 117 inspiral_hipe_inj001.sire.INJ001.sub 
+VARS 117 macroglob="H1-INSPIRAL_SECOND_H1H2L1V1_INJ001-867679232-2048.xml.gz" macromissedinjections="H1-SIRE_INJECTIONS_1234_INJ001_MISSED_SECOND_H1_INJ001-867679232-2048.xml" macrosummary="H1-SIRE_INJECTIONS_1234_INJ001_FOUND_SECOND_H1_INJ001-867679232-2048.txt" macroinjectionfile="HL-INJECTIONS_1234_INJ001-866088014-2633400.xml" macrousertag="INJ001" macrooutput="H1-SIRE_INJECTIONS_1234_INJ001_FOUND_SECOND_H1_INJ001-867679232-2048.xml" macroifocut="H1"
+
+
+##########################################################
+# H2 SECOND STAGE FOR H1H2L1V1 (QUADRUPLE) COINCIDENCE
+
+JOB 118 inspiral_hipe_inj001.trigbank.INJ001.sub 
+VARS 118 macrooutputifo="H2" macrogpsendtime="867680500" macroinputifo="H2" macrogpsstarttime="867678452" macroifotag="H1H2L1V1" macroarguments="H1H2L1V1-THINCA_FIRST_INJ001-867680045-3527.xml.gz"
+
+JOB 119 inspiral_hipe_inj001.inspiral_veto_H2.INJ001.sub 
+VARS 119 macrotrigendtime="0" macrobankfile="H2-TRIGBANK_H1H2L1V1_INJ001-867678452-2048.xml.gz" macrochannelname="H2:LSC-STRAIN" macrotrigstarttime="0" macroframecache="cache/H-H2_RDS_C03_L2-867630444-867687399.cache" macrogpsstarttime="867678452" macrogpsendtime="867680500" macroifotag="SECOND_H1H2L1V1" macrousertag="INJ001"
+
+JOB 120 inspiral_hipe_inj001.sire.INJ001.sub 
+VARS 120 macroglob="H2-INSPIRAL_SECOND_H1H2L1V1_INJ001-867678452-2048.xml.gz" macromissedinjections="H2-SIRE_INJECTIONS_1234_INJ001_MISSED_SECOND_H2_INJ001-867678452-2048.xml" macrosummary="H2-SIRE_INJECTIONS_1234_INJ001_FOUND_SECOND_H2_INJ001-867678452-2048.txt" macroinjectionfile="HL-INJECTIONS_1234_INJ001-866088014-2633400.xml" macrousertag="INJ001" macrooutput="H2-SIRE_INJECTIONS_1234_INJ001_FOUND_SECOND_H2_INJ001-867678452-2048.xml" macroifocut="H2"
+
+##########################################################
+# L1 SECOND STAGE FOR H1H2L1V1 (QUADRUPLE) COINCIDENCE
+
+JOB 121 inspiral_hipe_inj001.trigbank.INJ001.sub 
+VARS 121 macrooutputifo="L1" macrogpsendtime="867682029" macroinputifo="L1" macrogpsstarttime="867679981" macroifotag="H1H2L1V1" macroarguments="H1H2L1V1-THINCA_FIRST_INJ001-867680045-3527.xml.gz"
+
+JOB 122 inspiral_hipe_inj001.inspiral_veto_L1.INJ001.sub 
+VARS 122 macrotrigendtime="0" macrobankfile="L1-TRIGBANK_H1H2L1V1_INJ001-867679981-2048.xml.gz" macrochannelname="L1:LSC-STRAIN" macrotrigstarttime="0" macroframecache="cache/L-L1_RDS_C03_L2-867679973-867683644.cache" macrogpsstarttime="867679981" macrogpsendtime="867682029" macroifotag="SECOND_H1H2L1V1" macrousertag="INJ001"
+
+JOB 123 inspiral_hipe_inj001.sire.INJ001.sub 
+VARS 123 macroglob="L1-INSPIRAL_SECOND_H1H2L1V1_INJ001-867679981-2048.xml.gz" macromissedinjections="L1-SIRE_INJECTIONS_1234_INJ001_MISSED_SECOND_L1_INJ001-867679981-2048.xml" macrosummary="L1-SIRE_INJECTIONS_1234_INJ001_FOUND_SECOND_L1_INJ001-867679981-2048.txt" macroinjectionfile="HL-INJECTIONS_1234_INJ001-866088014-2633400.xml" macrousertag="INJ001" macrooutput="L1-SIRE_INJECTIONS_1234_INJ001_FOUND_SECOND_L1_INJ001-867679981-2048.xml" macroifocut="L1"
+
+##########################################################
+# V1 SECOND STAGE FOR H1H2L1V1 (QUADRUPLE) COINCIDENCE
+
+JOB 124 inspiral_hipe_inj001.trigbank.INJ001.sub 
+VARS 124 macrooutputifo="V1" macrogpsendtime="867682072" macroinputifo="V1" macrogpsstarttime="867680024" macroifotag="H1H2L1V1" macroarguments="H1H2L1V1-THINCA_FIRST_INJ001-867680045-3527.xml.gz"
+
+JOB 125 inspiral_hipe_inj001.inspiral_veto_V1.INJ001.sub 
+VARS 125 macrotrigendtime="0" macrobankfile="V1-TRIGBANK_H1H2L1V1_INJ001-867680024-2048.xml.gz" macrochannelname="V1:h_16384Hz" macrotrigstarttime="0" macroframecache="cache/V-HrecOnline-867676176-867709687.cache" macrogpsstarttime="867680024" macrogpsendtime="867682072" macroifotag="SECOND_H1H2L1V1" macrousertag="INJ001"
+
+JOB 126 inspiral_hipe_inj001.sire.INJ001.sub 
+VARS 126 macroglob="V1-INSPIRAL_SECOND_H1H2L1V1_INJ001-867680024-2048.xml.gz" macromissedinjections="V1-SIRE_INJECTIONS_1234_INJ001_MISSED_SECOND_V1_INJ001-867680024-2048.xml" macrosummary="V1-SIRE_INJECTIONS_1234_INJ001_FOUND_SECOND_V1_INJ001-867680024-2048.txt" macroinjectionfile="HL-INJECTIONS_1234_INJ001-866088014-2633400.xml" macrousertag="INJ001" macrooutput="V1-SIRE_INJECTIONS_1234_INJ001_FOUND_SECOND_V1_INJ001-867680024-2048.xml" macroifocut="V1"
+
+##########################################################
+# SECOND STAGE H1H2L1V1 (QUADRUPLE) COINCIDENCE
+
+JOB 127 inspiral_hipe_inj001.thinca2_H1H2L1V1.INJ001.sub 
+VARS 127 macrov1triggers="" macrol1triggers="" macroh1triggers="" macrogpsstarttime="867680045" macrogpsendtime="867683572" macroh2triggers="" macroifotag="SECOND_H1H2L1V1" macroarguments="H1-INSPIRAL_SECOND_H1H2L1V1_INJ001-867679232-2048.xml.gz H2-INSPIRAL_SECOND_H1H2L1V1_INJ001-867678452-2048.xml.gz L1-INSPIRAL_SECOND_H1H2L1V1_INJ001-867679981-2048.xml.gz V1-INSPIRAL_SECOND_H1H2L1V1_INJ001-867680024-2048.xml.gz"
+
+JOB 128 inspiral_hipe_inj001.coire.INJ001.sub 
+VARS 128 macroglob="H1H2L1V1-THINCA_SECOND_H1H2L1V1_INJ001-867680045-3527.xml.gz" macromissedinjections="H1H2L1V1-COIRE_INJECTIONS_1234_INJ001_MISSED_SECOND_H1H2L1V1_INJ001-867680045-3527.xml" macrosummary="H1H2L1V1-COIRE_INJECTIONS_1234_INJ001_FOUND_SECOND_H1H2L1V1_INJ001-867680045-3527.txt" macroinjectionfile="HL-INJECTIONS_1234_INJ001-866088014-2633400.xml" macrousertag="INJ001" macrooutput="H1H2L1V1-COIRE_INJECTIONS_1234_INJ001_FOUND_SECOND_H1H2L1V1_INJ001-867680045-3527.xml"
+
+##########################################################
+# FIRST STAGE H1H2L1 (TRIPLE) COINCIDENCE
+
+JOB 129 inspiral_hipe_inj001.thinca_H1H2L1.INJ001.sub
+VARS 129 macrol1triggers="" macroh1triggers="" macrogpsstarttime="867680045" macrogpsendtime="867683572" macroh2triggers="" macroifotag="FIRST" macroarguments="H1-INSPIRAL_FIRST_INJ001-867679232-2048.xml.gz H2-INSPIRAL_FIRST_INJ001-867678452-2048.xml.gz L1-INSPIRAL_FIRST_INJ001-867679981-2048.xml.gz"
+
+JOB 130 inspiral_hipe_inj001.coire.INJ001.sub
+VARS 130 macroglob="H1H2L1-THINCA_FIRST_INJ001-867680045-3527.xml.gz" macromissedinjections="H1H2L1-COIRE_INJECTIONS_1234_INJ001_MISSED_FIRST_INJ001-867680045-3527.xml" macrosummary="H1H2L1-COIRE_INJECTIONS_1234_INJ001_FOUND_FIRST_INJ001-867680045-3527.txt" macroinjectionfile="HL-INJECTIONS_1234_INJ001-866088014-2633400.xml" macrousertag="INJ001" macrooutput="H1H2L1-COIRE_INJECTIONS_1234_INJ001_FOUND_FIRST_INJ001-867680045-3527.xml"
+
+##########################################################
+# H1 SECOND STAGE FOR H1H2L1 (TRIPLE) COINCIDENCE
+
+JOB 131 inspiral_hipe_inj001.trigbank.INJ001.sub
+VARS 131 macrooutputifo="H1" macrogpsendtime="867681280" macroinputifo="H1" macrogpsstarttime="867679232" macroifotag="H1H2L1" macroarguments="H1H2L1-THINCA_FIRST_INJ001-867680045-3527.xml.gz"
+
+JOB 132 inspiral_hipe_inj001.inspiral_veto_H1.INJ001.sub
+VARS 132 macrotrigendtime="0" macrobankfile="H1-TRIGBANK_H1H2L1_INJ001-867679232-2048.xml.gz" macrochannelname="H1:LSC-STRAIN" macrotrigstarttime="0" macroframecache="cache/H-H1_RDS_C03_L2-867627384-867689594.cache" macrogpsstarttime="867679232" macrogpsendtime="867681280" macroifotag="SECOND_H1H2L1" macrousertag="INJ001"
+
+JOB 133 inspiral_hipe_inj001.sire.INJ001.sub
+VARS 133 macroglob="H1-INSPIRAL_SECOND_H1H2L1_INJ001-867679232-2048.xml.gz" macromissedinjections="H1-SIRE_INJECTIONS_1234_INJ001_MISSED_SECOND_H1_INJ001-867679232-2048.xml" macrosummary="H1-SIRE_INJECTIONS_1234_INJ001_FOUND_SECOND_H1_INJ001-867679232-2048.txt" macroinjectionfile="HL-INJECTIONS_1234_INJ001-866088014-2633400.xml" macrousertag="INJ001" macrooutput="H1-SIRE_INJECTIONS_1234_INJ001_FOUND_SECOND_H1_INJ001-867679232-2048.xml" macroifocut="H1"
+
+##########################################################
+# H2 SECOND STAGE FOR H1H2L1 (TRIPLE) COINCIDENCE
+
+JOB 134 inspiral_hipe_inj001.trigbank.INJ001.sub
+VARS 134 macrooutputifo="H2" macrogpsendtime="867680500" macroinputifo="H2" macrogpsstarttime="867678452" macroifotag="H1H2L1" macroarguments="H1H2L1-THINCA_FIRST_INJ001-867680045-3527.xml.gz"
+
+JOB 135 inspiral_hipe_inj001.inspiral_veto_H2.INJ001.sub
+VARS 135 macrotrigendtime="0" macrobankfile="H2-TRIGBANK_H1H2L1_INJ001-867678452-2048.xml.gz" macrochannelname="H2:LSC-STRAIN" macrotrigstarttime="0" macroframecache="cache/H-H2_RDS_C03_L2-867630444-867687399.cache" macrogpsstarttime="867678452" macrogpsendtime="867680500" macroifotag="SECOND_H1H2L1" macrousertag="INJ001"
+
+JOB 136 inspiral_hipe_inj001.sire.INJ001.sub
+VARS 136 macroglob="H2-INSPIRAL_SECOND_H1H2L1_INJ001-867678452-2048.xml.gz" macromissedinjections="H2-SIRE_INJECTIONS_1234_INJ001_MISSED_SECOND_H2_INJ001-867678452-2048.xml" macrosummary="H2-SIRE_INJECTIONS_1234_INJ001_FOUND_SECOND_H2_INJ001-867678452-2048.txt" macroinjectionfile="HL-INJECTIONS_1234_INJ001-866088014-2633400.xml" macrousertag="INJ001" macrooutput="H2-SIRE_INJECTIONS_1234_INJ001_FOUND_SECOND_H2_INJ001-867678452-2048.xml" macroifocut="H2"
+
+##########################################################
+# L1 SECOND STAGE FOR H1H2L1 (TRIPLE) COINCIDENCE
+
+JOB 137 inspiral_hipe_inj001.trigbank.INJ001.sub
+VARS 137 macrooutputifo="L1" macrogpsendtime="867682029" macroinputifo="L1" macrogpsstarttime="867679981" macroifotag="H1H2L1" macroarguments="H1H2L1-THINCA_FIRST_INJ001-867680045-3527.xml.gz"
+
+JOB 138 inspiral_hipe_inj001.inspiral_veto_L1.INJ001.sub
+VARS 138 macrotrigendtime="0" macrobankfile="L1-TRIGBANK_H1H2L1_INJ001-867679981-2048.xml.gz" macrochannelname="L1:LSC-STRAIN" macrotrigstarttime="0" macroframecache="cache/L-L1_RDS_C03_L2-867679973-867683644.cache" macrogpsstarttime="867679981" macrogpsendtime="867682029" macroifotag="SECOND_H1H2L1" macrousertag="INJ001"
+
+JOB 139 inspiral_hipe_inj001.sire.INJ001.sub
+VARS 139 macroglob="L1-INSPIRAL_SECOND_H1H2L1_INJ001-867679981-2048.xml.gz" macromissedinjections="L1-SIRE_INJECTIONS_1234_INJ001_MISSED_SECOND_L1_INJ001-867679981-2048.xml" macrosummary="L1-SIRE_INJECTIONS_1234_INJ001_FOUND_SECOND_L1_INJ001-867679981-2048.txt" macroinjectionfile="HL-INJECTIONS_1234_INJ001-866088014-2633400.xml" macrousertag="INJ001" macrooutput="L1-SIRE_INJECTIONS_1234_INJ001_FOUND_SECOND_L1_INJ001-867679981-2048.xml" macroifocut="L1"
+
+
+##########################################################
+# SECOND STAGE H1H2L1 (TRIPLE) COINCIDENCE
+
+JOB 140 inspiral_hipe_inj001.thinca2_H1H2L1.INJ001.sub
+VARS 140 macrol1triggers="" macroh1triggers="" macrogpsstarttime="867680045" macrogpsendtime="867683572" macroh2triggers="" macroifotag="SECOND_H1H2L1" macroarguments="H1-INSPIRAL_SECOND_H1H2L1_INJ001-867679232-2048.xml.gz H2-INSPIRAL_SECOND_H1H2L1_INJ001-867678452-2048.xml.gz L1-INSPIRAL_SECOND_H1H2L1_INJ001-867679981-2048.xml.gz"
+
+JOB 141 inspiral_hipe_inj001.coire.INJ001.sub
+VARS 141 macroglob="H1H2L1-THINCA_SECOND_H1H2L1_INJ001-867680045-3527.xml.gz" macromissedinjections="H1H2L1-COIRE_INJECTIONS_1234_INJ001_MISSED_SECOND_H1H2L1_INJ001-867680045-3527.xml" macrosummary="H1H2L1-COIRE_INJECTIONS_1234_INJ001_FOUND_SECOND_H1H2L1_INJ001-867680045-3527.txt" macroinjectionfile="HL-INJECTIONS_1234_INJ001-866088014-2633400.xml" macrousertag="INJ001" macrooutput="H1H2L1-COIRE_INJECTIONS_1234_INJ001_FOUND_SECOND_H1H2L1_INJ001-867680045-3527.xml"
+
+##########################################################
+# FIRST STAGE PLOTINSPIRAL (snr vs time)
+
+JOB 201 inspiral_hipe_inj001.plotinspiral.sub
+VARS 201 macroifotag="FIRST" macrogpsstarttime="867679232" macrogpsendtime="867682072" macroinspiralglob="H1*INSPIRAL_FIRST*gz" macrotrigpattern="INSPIRAL_FIRST*_INJ001" macroifotimes="H1" macrousertag="INJ001"
+
+JOB 202 inspiral_hipe_inj001.plotinspiral.sub
+VARS 202 macroifotag="FIRST" macrogpsstarttime="867679232" macrogpsendtime="867682072" macroinspiralglob="H2*INSPIRAL_FIRST*gz" macrotrigpattern="INSPIRAL_FIRST*_INJ001" macroifotimes="H2" macrousertag="INJ001"
+
+JOB 203 inspiral_hipe_inj001.plotinspiral.sub
+VARS 203 macroifotag="FIRST" macrogpsstarttime="867679232" macrogpsendtime="867682072" macroinspiralglob="L1*INSPIRAL_FIRST*gz" macrotrigpattern="INSPIRAL_FIRST*_INJ001" macroifotimes="L1" macrousertag="INJ001"
+
+JOB 204 inspiral_hipe_inj001.plotinspiral.sub
+VARS 204 macroifotag="FIRST" macrogpsstarttime="867679232" macrogpsendtime="867682072" macroinspiralglob="V1*INSPIRAL_FIRST*gz" macrotrigpattern="INSPIRAL_FIRST*_INJ001" macroifotimes="V1" macrousertag="INJ001"
+
+##########################################################
+# SECOND STAGE (H1H2L1V1) PLOTINSPIRAL (snr vs time)
+
+JOB 205 inspiral_hipe_inj001.plotinspiral.sub
+VARS 205 macroifotag="SECOND" macrogpsstarttime="867679232" macrogpsendtime="867682072" macroinspiralglob="H1*INSPIRAL_SECOND_H1H2L1V1_*gz" macrotrigpattern="INSPIRAL_SECOND*_INJ001" macroifotimes="H1" macrousertag="H1H2L1V1_INJ001"
+
+JOB 206 inspiral_hipe_inj001.plotinspiral.sub
+VARS 206 macroifotag="SECOND" macrogpsstarttime="867679232" macrogpsendtime="867682072" macroinspiralglob="H2*INSPIRAL_SECOND_H1H2L1V1_*gz" macrotrigpattern="INSPIRAL_SECOND*_INJ001" macroifotimes="H2" macrousertag="H1H2L1V1_INJ001"
+
+JOB 207 inspiral_hipe_inj001.plotinspiral.sub
+VARS 207 macroifotag="SECOND" macrogpsstarttime="867679232" macrogpsendtime="867682072" macroinspiralglob="L1*INSPIRAL_SECOND_H1H2L1V1_*gz" macrotrigpattern="INSPIRAL_SECOND*_INJ001" macroifotimes="L1" macrousertag="H1H2L1V1_INJ001"
+
+JOB 208 inspiral_hipe_inj001.plotinspiral.sub
+VARS 208 macroifotag="SECOND" macrogpsstarttime="867679232" macrogpsendtime="867682072" macroinspiralglob="V1*INSPIRAL_SECOND_H1H2L1V1_**gz" macrotrigpattern="INSPIRAL_SECOND*_INJ001" macroifotimes="V1" macrousertag="H1H2L1V1_INJ001"
+
+##########################################################
+# SECOND STAGE (H1H2L1) PLOTINSPIRAL (snr vs time)
+
+JOB 209 inspiral_hipe_inj001.plotinspiral.sub
+VARS 209 macroifotag="SECOND" macrogpsstarttime="867679232" macrogpsendtime="867682072" macroinspiralglob="H1*INSPIRAL_SECOND_H1H2L1_*gz" macrotrigpattern="INSPIRAL_SECOND*_INJ001" macroifotimes="H1" macrousertag="H1H2L1_INJ001"
+
+JOB 210 inspiral_hipe_inj001.plotinspiral.sub
+VARS 210 macroifotag="SECOND" macrogpsstarttime="867679232" macrogpsendtime="867682072" macroinspiralglob="H2*INSPIRAL_SECOND_H1H2L1_*gz" macrotrigpattern="INSPIRAL_SECOND*_INJ001" macroifotimes="H2" macrousertag="H1H2L1_INJ001"
+
+JOB 211 inspiral_hipe_inj001.plotinspiral.sub
+VARS 211 macroifotag="SECOND" macrogpsstarttime="867679232" macrogpsendtime="867682072" macroinspiralglob="L1*INSPIRAL_SECOND_H1H2L1_*gz" macrotrigpattern="INSPIRAL_SECOND*_INJ001" macroifotimes="L1" macrousertag="H1H2L1_INJ001"
+
+
+##########################################################
+# FIND RMS DIFFERENCE BETWEEN H1H2L1 FILES AND REFERENCE
+# OUTPUT WRITTEN TO logs/find_rms_diff.out
+
+#JOB 301 inspiral_hipe_inj001.find_rms_diff.sub
+#VARS 301 macrooutputfile="rmssummary.txt"
+
+##########################################################
+# USE A SINGLE TEMPLATE AND WRITE OUT THE ENTIRE INSPIRAL TIME SERIES
+
+JOB 302 inspiral_hipe_inj001.singletmplt_inspiral_veto_H1.INJ001.sub
+VARS 302 macrotrigendtime="0" macrobankfile="H1-TMPLTBANK_SINGLE_INJ001-867679232-2048.xml.gz" macrochannelname="H1:LSC-STRAIN" macrotrigstarttime="0" macroframecache="cache/H-H1_RDS_C03_L2-867627384-867689594.cache" macrogpsstarttime="867679232" macrogpsendtime="867681280" macroifotag="FIRST_SINGLE" macrousertag="INJ001"
+
+##########################################################
+# WHO DEPENDS ON WHO
+
+PARENT 101 CHILD 102
+PARENT 102 CHILD 103 113 129
+PARENT 104 CHILD 105
+PARENT 105 CHILD 106 113 129
+PARENT 107 CHILD 108
+PARENT 108 CHILD 109 113 129
+PARENT 110 CHILD 111
+PARENT 111 CHILD 112 113
+PARENT 113 CHILD 114 115 118 121 124
+PARENT 115 CHILD 116
+PARENT 118 CHILD 119
+PARENT 121 CHILD 122
+PARENT 124 CHILD 125
+PARENT 116 CHILD 117 127
+PARENT 119 CHILD 120 127
+PARENT 122 CHILD 123 127
+PARENT 125 CHILD 126 127 
+PARENT 127 CHILD 128
+PARENT 102 CHILD 201
+PARENT 105 CHILD 202
+PARENT 108 CHILD 203
+PARENT 111 CHILD 204
+PARENT 116 CHILD 205
+PARENT 119 CHILD 206
+PARENT 122 CHILD 207
+PARENT 125 CHILD 208
+PARENT 132 CHILD 209
+PARENT 135 CHILD 210
+PARENT 138 CHILD 211
+PARENT 129 CHILD 130 131 134 137
+PARENT 131 CHILD 132
+PARENT 132 CHILD 133 140 209
+PARENT 134 CHILD 135 
+PARENT 135 CHILD 136 140 210
+PARENT 137 CHILD 138
+PARENT 138 CHILD 139 140 211
+PARENT 140 CHILD 141
+#PARENT 140 CHILD 301
+

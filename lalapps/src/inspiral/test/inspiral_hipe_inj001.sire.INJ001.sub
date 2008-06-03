@@ -1,0 +1,9 @@
+universe = standard
+executable = executables/lalapps_sire
+arguments = --injection-file $(macroinjectionfile) --ifo-cut $(macroifocut) --missed-injections $(macromissedinjections) --cluster-time 4000 --glob $(macroglob) --user-tag $(macrousertag) --summary $(macrosummary) --injection-window 50 --data-type all_data --cluster-algorithm snr --output $(macrooutput)
+environment = KMP_LIBRARY=serial;MKL_SERIAL=yes
+log = /people/jclayton/logs/RmpMoimny
+error = logs/sire-$(macroifo)-$(cluster)-$(process).err
+output = logs/sire-$(macroifo)-$(cluster)-$(process).out
+notification = never
+queue 1
