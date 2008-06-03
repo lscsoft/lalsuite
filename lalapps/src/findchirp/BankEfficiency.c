@@ -609,36 +609,19 @@ void BankEfficiencyPrintResults(
   INT4                   n,
   INT4                   N)
 {
-  fprintf(stdout, " %e %e %e %e ",  
-      result.psi0_trigger, 
-      result.psi3_trigger,
-      randIn.param.psi0,
-      randIn.param.psi3);
-  
-  fprintf(stdout, "%e %e %e %e %e %e ", 
-      result.tau0_trigger, 
-      result.tau3_trigger,
-      randIn.param.t0,
-      randIn.param.t3, 
-      result.eccentricity, 
-      randIn.param.eccentricity);
-  
-  fprintf(stdout, "%e %e   %e %e %e %e %e", 
-      result.fend_trigger, 
-      randIn.param.fFinal,
-      randIn.param.mass1,
-      randIn.param.mass2,randIn.param.inclination,randIn.param.polarisationAngle,
-      randIn.param.startPhase);
-
-  
-  fprintf(stdout, " %e %e  %e   %e %d %d %d %d/%d\n",
-      result.rho_final, 
-      result.snrAtCoaTime,
-      result.phase, 
-      result.alphaF,
-      result.bin , 
-      randIn.param.nStartPad, 
-      result.nfast, n,N);
+  fprintf(stdout, 
+  "%e %e %e %e %e %e %e %e %e %e %e %e %e %e %e %e %e  %e %e %e %e %d %d %d %d/%d\n",  
+      result.psi0_trigger, result.psi3_trigger,
+      randIn.param.psi0, randIn.param.psi3, 
+      result.tau0_trigger, result.tau3_trigger,
+      randIn.param.t0, randIn.param.t3, 
+      result.eccentricity, randIn.param.eccentricity,
+      result.fend_trigger, randIn.param.fFinal,
+      randIn.param.mass1,randIn.param.mass2,
+      randIn.param.inclination,randIn.param.polarisationAngle,
+      randIn.param.startPhase, result.rho_final, 
+      result.snrAtCoaTime, result.phase, 
+      result.alphaF,result.bin, randIn.param.nStartPad, result.nfast, n,N);
 
   fflush(stdout);
 }
@@ -1411,6 +1394,8 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
       BankEfficiencyGetStringFromNoiseModel(userParam.noiseModel));
   ADD_PROCESS_PARAM("int","%d","--num-seconds",
       userParam.numSeconds);
+  ADD_PROCESS_PARAM("int","%d","--multiply-length-by",
+      userParam.increaseVector);  
   ADD_PROCESS_PARAM("float","%f","--psi0",  
       userParam.psi0);
   ADD_PROCESS_PARAM("float","%f","--psi3",
@@ -1947,6 +1932,12 @@ void BankEfficiencyGetMaximumSize(
     userParam.numSeconds = (INT4)(*length/randIn.param.tSampling);
   }
     
+  if (userParam.increaseVector>1)
+  {
+  	userParam.numSeconds *= userParam.increaseVector;
+  	*length *= userParam.increaseVector;
+  }  
+    
   fprintf(stderr, "length vector = %d\n",*length);  
   DETATCHSTATUSPTR( status );
   RETURN( status );  
@@ -2049,7 +2040,6 @@ void BankEfficiencyCreatePsd(
     randIn->psd.data[i] = coarseBankIn->shf.data->data[i];
   }
 
-
   if (vrbflg){
     fprintf(stdout, " ... done \n");
   }
@@ -2117,10 +2107,6 @@ void BankEfficiencyGenerateInputData(
         randIn->param.psi0 = userParam.psi0;
         randIn->param.psi3 = userParam.psi3;
         randIn->param.massChoice = fixedPsi;
-        fprintf(stderr, "signal = %f %f %f\n", 
-                randIn->param.psi0,
-                randIn->param.psi3,
-                randIn->param.alpha1);
       }
       else /* random parameters*/
       {
@@ -2607,30 +2593,30 @@ void BankEfficiencyInitRandomInspiralSignalIn(
   randIn->useed                 = 122888;  /* seed for MonteCarlo             */ 
   randIn->type                  = 0;       /* type of simulation: signal only */
   randIn->SignalAmp             = 10;      /* SNR of the signal if noise exits*/
-  randIn->param.order           = twoPN;   /* and its order*/
-  randIn->param.alpha           = 0;       /* alpha paramBCV*/
-  randIn->param.ieta            = 1;       /*                   */
-  randIn->param.mass1           =-1;       /* To allocate memory */ 
-  randIn->param.mass2           =-1;       /* idem               */
-  randIn->param.fLower          = 40.;     /* Lower freq.(templ) */
-  randIn->param.OmegaS          = 0.;      /* EOB parameter           */
-  randIn->param.Theta           = 0.;      /* EOB parameter           */
-  randIn->mMin                  = 5;       /* min mass to inject   */
-  randIn->mMax                  = 20;      /* max mass to inject   */
-  randIn->MMax                  = randIn->mMax * 2;  /* total mass max */
-  randIn->t0Min                 = 0;       /* min tau0 to inject                     */
-  randIn->t0Max                 = 0.;   /* max tau0 to inject                    */
-  randIn->tnMin                 = 0.1;  /* min tau3 to inject */
-  randIn->tnMax                 = 1.;   /* max tau3 to inject  */
+  randIn->param.order           = twoPN;   /* and its order                   */
+  randIn->param.alpha           = 0;       /* alpha paramBCV                  */
+  randIn->param.ieta            = 1;       /*                                 */
+  randIn->param.mass1           =-1;       /* To allocate memory              */ 
+  randIn->param.mass2           =-1;       /* idem                            */
+  randIn->param.fLower          = 40.;     /* Lower freq.(templ)              */
+  randIn->param.OmegaS          = 0.;      /* EOB parameter                   */
+  randIn->param.Theta           = 0.;      /* EOB parameter                   */
+  randIn->mMin                  = 5;       /* min mass to inject              */
+  randIn->mMax                  = 20;      /* max mass to inject              */
+  randIn->MMax                  = randIn->mMax * 2;  /* total mass max        */
+  randIn->t0Min                 = 0;       /* min tau0 to inject              */
+  randIn->t0Max                 = 0.;      /* max tau0 to inject              */
+  randIn->tnMin                 = 0.1;     /* min tau3 to inject              */
+  randIn->tnMax                 = 1.;      /* max tau3 to inject              */
   randIn->etaMin                = randIn->mMin* (randIn->mMax - randIn->mMax) 
     / (randIn->MMax ) / (randIn->MMax);
-  randIn->psi0Min               = 10.; /* psi0 range       */
+  randIn->psi0Min               = 10.;     /* psi0 range                      */
   randIn->psi0Max               = 250000.;   
   randIn->psi3Min               = -2200;   
   randIn->psi3Max               = -10;   
-  randIn->param.approximant     = EOB; /* signal approximant*/
-  randIn->param.tSampling       = 2048; /* sampling       */
-  randIn->param.fCutoff         = 0.; /* will be populate when sampling is set*/
+  randIn->param.approximant     = EOB;     /* signal approximant              */
+  randIn->param.tSampling       = 2048;    /* sampling                        */
+  randIn->param.fCutoff         = 0.;      
   randIn->param.startTime       = 0; 
   randIn->param.startPhase      = 0.; 
   randIn->param.nStartPad       = 1000;
@@ -2651,49 +2637,49 @@ void BankEfficiencyInitRandomInspiralSignalIn(
 void BankEfficiencyInitUserParametersIn(
   UserParametersIn *userParam)
 {
-  userParam->eccentricBank.min      = 0.;
-  userParam->eccentricBank.max      = 0.1;
-  userParam->eccentricBank.bins     = 1;
-  userParam->eccentricSignal.min      = 0.;
-  userParam->eccentricSignal.max      = 0.4;
-  userParam->alphaFConstraint   = 1;
-  userParam->extraFinalPrinting = 0; 
-  userParam->eMatch             = 0.5; 
-  userParam->template           = EOB;
+  userParam->eccentricBank.min   = 0.;
+  userParam->eccentricBank.max   = 0.1;
+  userParam->eccentricBank.bins  = 1;
+  userParam->eccentricSignal.min = 0.;
+  userParam->eccentricSignal.max = 0.4;
+  userParam->alphaFConstraint    = 1;
+  userParam->extraFinalPrinting  = 0; 
+  userParam->eMatch              = 0.5; 
+  userParam->template            = EOB;
   /*By default, this value is empty and will be populate with the sampling 
    * frequency later*/
-  userParam->signalfFinal       =  0.;
-  userParam->signal             = EOB;
-  userParam->m1                 = -1;
-  userParam->m2                 = -1;
-  userParam->numSeconds         = -1;
-  userParam->psi0               = -1;
-  userParam->psi3               = -1;
-  userParam->tau0               = -1;
-  userParam->tau3               = -1;
-  userParam->t0FineMin          = 0;
-  userParam->t0FineMax          = 0;
-  userParam->t3FineMin          = 0;
-  userParam->t3FineMax          = 0;
-  userParam->t0FineBin          = 0;
-  userParam->t3FineBin          = 0;
-  userParam->printBestOverlap   = BANKEFFICIENCY_PRINTBESTOVERLAP;
-  userParam->printBestTemplate  = BANKEFFICIENCY_PRINTBESTTEMPLATE;
-  userParam->printSNRHisto      = BANKEFFICIENCY_PRINTSNRHISTO;
-  userParam->printPsd           = BANKEFFICIENCY_PRINTPSD;
-  userParam->printBank          = BANKEFFICIENCY_PRINTBANK;
-  userParam->printResultXml     = BANKEFFICIENCY_PRINTRESULTXML;
-  userParam->printPrototype     = BANKEFFICIENCY_PRINTPROTOTYPE;
-  userParam->faithfulness       = BANKEFFICIENCY_FAITHFULNESS;
-  userParam->ntrials            = 1;
-  userParam->fastSimulation     = 0;
-  userParam->noiseModel         = LIGOI;
-  userParam->binaryInjection    = NoUserChoice; 
-  userParam->maxTotalMass       = -1;
-  userParam->startPhase         = 1;
-  userParam->numSeconds         = -1;
-  userParam->inputPSD           = NULL;
-  userParam->ambiguity          = 0;
+  userParam->signalfFinal        =  0.;
+  userParam->signal              = EOB;
+  userParam->m1                  = -1;
+  userParam->m2                  = -1;
+  userParam->numSeconds          = -1;
+  userParam->increaseVector      =  1;
+  userParam->psi0                = -1;
+  userParam->psi3                = -1;
+  userParam->tau0                = -1;
+  userParam->tau3                = -1;
+  userParam->t0FineMin           = 0;
+  userParam->t0FineMax           = 0;
+  userParam->t3FineMin           = 0;
+  userParam->t3FineMax           = 0;
+  userParam->t0FineBin           = 0;
+  userParam->t3FineBin           = 0;
+  userParam->printBestOverlap    = BANKEFFICIENCY_PRINTBESTOVERLAP;
+  userParam->printBestTemplate   = BANKEFFICIENCY_PRINTBESTTEMPLATE;
+  userParam->printSNRHisto       = BANKEFFICIENCY_PRINTSNRHISTO;
+  userParam->printPsd            = BANKEFFICIENCY_PRINTPSD;
+  userParam->printBank           = BANKEFFICIENCY_PRINTBANK;
+  userParam->printResultXml      = BANKEFFICIENCY_PRINTRESULTXML;
+  userParam->printPrototype      = BANKEFFICIENCY_PRINTPROTOTYPE;
+  userParam->faithfulness        = BANKEFFICIENCY_FAITHFULNESS;
+  userParam->ntrials             = 1;
+  userParam->fastSimulation      = 0;
+  userParam->noiseModel          = LIGOI;
+  userParam->binaryInjection     = NoUserChoice; 
+  userParam->maxTotalMass        = -1;
+  userParam->startPhase          = 1;
+  userParam->inputPSD            = NULL;
+  userParam->ambiguity           = 0;
   sprintf(userParam->tag,"");
 }
 
@@ -2830,6 +2816,9 @@ void BankEfficiencyParseParameters(
     }      
     else if (!strcmp(argv[i],   "--mm")){
       BankEfficiencyParseGetDouble(argv, &i, &(coarseBankIn->mmCoarse)); 
+    }
+    else if (!strcmp(argv[i], "--multiply-length-by")) {
+      BankEfficiencyParseGetInt(argv, &i, &(userParam->increaseVector));
     }
     else if (!strcmp(argv[i],   "--n") || !strcmp(argv[i], "--ntrial")){
       BankEfficiencyParseGetInt(argv, &i, &(userParam->ntrials));
@@ -3148,12 +3137,13 @@ void BankEfficiencyParseGetInt(
   CHAR *tmp;
   CHAR msg[2048];
   CHAR *tmp1;
-  tmp1=argv[*index+1];
+  
+  tmp1 = argv[*index+1];
 
-  if (argv[*index+1]!=NULL)
-    {
-      *data = strtol(argv[*index+1], &tmp  , 10);
-      if (*data==0 && tmp1[0] != '0')
+  if ( argv[*index+1] != NULL )
+  {
+    *data = strtol(argv[*index+1], &tmp  , 10);
+    if (*data==0 && tmp1[0] != '0')
     {
       sprintf(msg, "Expect a float after option %s (got %s)\n ",
           argv[*index],
@@ -3161,15 +3151,15 @@ void BankEfficiencyParseGetInt(
       fprintf(stderr, msg);
       exit( 1 ); 
     }
-    }
+  }
   else  
-    {
-      sprintf(msg, "Expect a float after option %s (got %s)\n ",
-          argv[*index],
-          argv[*index+1]);
-      fprintf(stderr, msg);
-      exit( 1 ); 
-    }
+  {
+    sprintf(msg, "Expect a float after option %s (got %s)\n ",
+        argv[*index],
+        argv[*index+1]);
+    fprintf(stderr, msg);
+    exit( 1 ); 
+  }
   *index =*index + 1;
 }
 
@@ -3180,12 +3170,12 @@ void BankEfficiencyParseGetString(
   CHAR msg[2048];
   
   if (argv[*index+1]==NULL)
-    {
-      sprintf(msg, "Expect a string after %s\n ",
-          argv[*index] );
-      fprintf(stderr, msg);
-      exit( 1 );
-    }
+  {
+    sprintf(msg, "Expect a string after %s\n ",
+        argv[*index] );
+    fprintf(stderr, msg);
+    exit( 1 );
+  }
   *index =*index + 1;
 }
 
@@ -3201,23 +3191,23 @@ void BankEfficiencyParseGetDouble(
   tmp2 = argv[*index+1];
 
   if (argv[*index+1] != NULL)
-    {
-      *data = strtod(argv[*index+1], &tmp  );
-      if (*data == 0 && tmp2[0]!='0')
+  {
+    *data = strtod(argv[*index+1], &tmp  );
+    if (*data == 0 && tmp2[0]!='0')
     {
       sprintf(msg, "Expect a float after option %s (got %s)\n ",
           argv[*index],
           argv[*index+1]);
       fprintf(stderr, msg);
     }
-    }
+  }
   else  
-    {
-      sprintf(msg, "Expect a float after option %s (got %s)\n ",
-          argv[*index],
-          argv[*index+1]);
-      fprintf(stderr, msg);
-    }
+  {
+    sprintf(msg, "Expect a float after option %s (got %s)\n ",
+        argv[*index],
+        argv[*index+1]);
+    fprintf(stderr, msg);
+  }
   *index =*index + 1;
 }
 
@@ -3239,30 +3229,30 @@ void BankEfficiencyParseGetDouble2(
   *data2 = 0 ;
 
   if (argv[*index+1]!=NULL && argv[*index+2]!=NULL)
-    {
-      *data1 = strtod(argv[*index+1], &tmp  );
-      *data2 = strtod(argv[*index+2], &tmp  );
-      if ((!(*data1) && tmp1[0]!='0')
-    ||  (!(*data2) && tmp2[0]!='0'))
+  {
+    *data1 = strtod(argv[*index+1], &tmp  );
+    *data2 = strtod(argv[*index+2], &tmp  );
+    if ((!(*data1) && tmp1[0]!='0')
+       ||  (!(*data2) && tmp2[0]!='0'))
     {   
       sprintf(msg, "Expect 2 floats after option %s (got %s and %s)\n ",
           argv[*index],
           argv[*index+1],argv[*index+2]);
           fprintf(stderr,msg);
     }
-    }
+  }
   else  
-    {
-      sprintf(msg, "Expect 2 floats after option %s (got %s and %s)\n ",
-          argv[*index],
-          argv[*index+1],argv[*index+2]);
-      fprintf(stderr, msg);
-    }
+  {
+    sprintf(msg, "Expect 2 floats after option %s (got %s and %s)\n ",
+        argv[*index],
+        argv[*index+1],argv[*index+2]);
+    fprintf(stderr, msg);
+  }
   *index = *index +2 ;  
 }  
   
     
-    /* --- Function to check validity of some parsed parameters (TODO)--- */
+/* --- Function to check validity of some parsed parameters (TODO)--- */
 void BankEfficiencyUpdateParams(
   InspiralCoarseBankIn   *coarseBankIn,
   RandomInspiralSignalIn *randIn,
@@ -3283,7 +3273,6 @@ void BankEfficiencyUpdateParams(
   if (coarseBankIn->fUpper >=coarseBankIn->tSampling/2. -1.){
     coarseBankIn->fUpper = coarseBankIn->tSampling/2 -1.;
   }
- 
   /* -- the same for the fCutoff */
   if (randIn->param.fCutoff == 0){
       randIn->param.fCutoff = coarseBankIn->tSampling/2 -1.;
@@ -3293,22 +3282,22 @@ void BankEfficiencyUpdateParams(
     randIn->param.fCutoff = coarseBankIn->tSampling/2 -1.;
   }
 
-  /* -- Alpha_B for the bank must be positive*/
-  if (coarseBankIn->alpha < 0 )
-  {
-    sprintf(msg, 
-        "--bank-alpha (%f) parameter must be positive in the range [0,1] \n",
-        coarseBankIn->alpha);
-    fprintf(stderr, msg);
-  }
 
-  /* -- fLower must be below the cutoff frequencies */
-  BankEfficiencyCompare( coarseBankIn->fLower, coarseBankIn->fUpper, 
-       "--bank-ffinal and --fl don't agree");
+  /* BCV related */
+  BankEfficiencyValidity(coarseBankIn->alpha, 0, 1, "--bank-alpha");
+  BankEfficiencyCompare(coarseBankIn->psi0Min, coarseBankIn->psi0Max, "--bank-psi0-range");
+  BankEfficiencyCompare(coarseBankIn->psi3Min, coarseBankIn->psi3Max, "--bank-psi3-range");
+  BankEfficiencyValidity(coarseBankIn->psi0Min, 0, 1e13, "--bank-psi0-range min");
+  BankEfficiencyValidity(coarseBankIn->psi0Max, 0, 1e13, "--bank-psi0-range max");       
+  BankEfficiencyValidity(coarseBankIn->psi3Min, -1e13, 100, "--bank-psi3-range min");
+  BankEfficiencyValidity(coarseBankIn->psi3Max, -1e13, 100, "--bank-psi3-range max");       
+  BankEfficiencyCompare(coarseBankIn->LowGM, coarseBankIn->HighGM, "--bank-fcut-range");
+    
+  /* --- other --- */
   BankEfficiencyCompare( coarseBankIn->fUpper, coarseBankIn->tSampling/2, 
       "--bank-ffinal and --sampling don't agree");
   
-  
+  /* --- eccentricity related --- */
   BankEfficiencyCompare( userParam->eccentricSignal.min,
       userParam->eccentricSignal.max, "--signal-eccentricity-range");
   BankEfficiencyValidity( userParam->eccentricSignal.min, 0,1,
@@ -3344,53 +3333,17 @@ void BankEfficiencyUpdateParams(
   {
     coarseBankIn->MMax = 2 * coarseBankIn->mMax;
     coarseBankIn->MMin = 2 * coarseBankIn->mMin;
-
     coarseBankIn->massRange = MinMaxComponentMass;
   }
 
-
-       
+  /* --- fLower related --- */
+  BankEfficiencyCompare( coarseBankIn->fLower, coarseBankIn->fUpper, 
+       "--bank-ffinal and --fl don't agree");
+  BankEfficiencyValidity(coarseBankIn->fLower, 10, 1e6, "--fl --template-fl"); 
+  BankEfficiencyValidity(randIn->param.fLower, 10, 1e6, "--fl --signal-fl");
   
-  if (coarseBankIn->psi0Min <=0 
-      || coarseBankIn->psi0Min > coarseBankIn->psi0Max) 
-  {
-    sprintf(msg, 
-        "--bank-psi0-range (%f %f) paramter must be sorted and > 0 \n",
-        coarseBankIn->psi0Min, coarseBankIn->psi0Max);
-    fprintf(stderr, msg);
-  } 
-
-  if (coarseBankIn->psi3Min >=0 
-      || coarseBankIn->psi3Min > coarseBankIn->psi3Max) 
-  {
-    sprintf(msg,
-         "--bank-psi0-range (%f %f) paramter must be sorted and >= 0 \n",
-        coarseBankIn->psi3Min, coarseBankIn->psi3Max);
-    fprintf(stderr, msg);
-  }
-
-
-  if (coarseBankIn->LowGM > coarseBankIn->HighGM)
-    {
-      sprintf(msg, 
-          "--bank-fcut-range (%f %f) expect sorted , typically 3 and 6",
-          coarseBankIn->LowGM , coarseBankIn->HighGM);
-      fprintf(stderr, msg);
-      exit(1);
-    }
- 
-  if (coarseBankIn->fLower <10 || randIn->param.fLower < 10)
-    {
-      sprintf(msg, 
-          "--fl or --signal-fl or --template-fl must be >=10 Hz (%f %f)",
-          randIn->param.fLower , coarseBankIn->fLower);
-      fprintf(stderr, msg);
-      exit(1);
-    }
-
-
   if (userParam->maxTotalMass != -1)
-    {
+  {
       if (userParam->maxTotalMass < 2*randIn->mMin) 
     {   
       sprintf(msg, 
@@ -3399,17 +3352,17 @@ void BankEfficiencyUpdateParams(
           fprintf(stderr, msg);
           exit(1);
     }
-    }
+  }
   if (userParam->minTotalMass != -1)
-    {
-      if (userParam->minTotalMass > 2*randIn->mMax) 
-      {   
-        sprintf(msg, 
+  {
+    if (userParam->minTotalMass > 2*randIn->mMax) 
+    {   
+      sprintf(msg, 
           "--min-total-mass (%f) must be < twice the maximal mass (%f) ",
           userParam->maxTotalMass , randIn->mMax );
           fprintf(stderr, msg);
           exit(1);
-        }
+      }
     }
 
 
@@ -3472,30 +3425,10 @@ void BankEfficiencyUpdateParams(
   } 
 
 
- 
- if (coarseBankIn->mmCoarse <=0 || coarseBankIn->mmCoarse>=1){
-   sprintf(msg, "--mm (%f) must be in the range ]0 1[\n", 
-       coarseBankIn->mmCoarse);
-     fprintf(stderr, msg);  
-     exit(1);
- } 
-
- /* -- BCV related */
- if (coarseBankIn->numFcutTemplates <= 0){
-   sprintf(msg, "--bank-number-fcut (%d) must be > 0>\n",
-    coarseBankIn->numFcutTemplates);
-   fprintf(stderr, msg);  
-   exit(1);
- } 
- 
-
- if  ((randIn->mMin >= randIn->mMax ) || (randIn->mMin <=0)){
-    sprintf(msg, 
-        "--signal-mass-range (%f %f) paramter must be sorted and > 0 \n",
-        randIn->mMin, randIn->mMax);
-   fprintf(stderr, msg);  
-   exit(1);
- }
+  BankEfficiencyValidity(coarseBankIn->mmCoarse, 0, 1, "--mm");
+  BankEfficiencyValidity(coarseBankIn->numFcutTemplates, 0, 100, "--bank-number-fcut");  
+  BankEfficiencyCompare(randIn->mMin, randIn->mMax, "--signal-mass-range");
+  
  
  /* -- MMAX and MMIn must be redefined given the input parameters*/
  randIn->MMax = randIn->mMax * 2; 
@@ -3517,24 +3450,14 @@ void BankEfficiencyUpdateParams(
     }
   }
     
- 
-  if ((randIn->t0Min != 0 || randIn->t0Max != 0) && 
-        ((randIn->t0Min >= randIn->t0Max ) || (randIn->t0Min <=0))){
-    sprintf(msg, "--signal-tau0-range (%f %f) parameter must be sorted and > 0 \n",
-            randIn->t0Min, randIn->t0Max);
-    fprintf(stderr, msg);
-    exit(1);
-  }
-
-  if ((randIn->tnMin != 0 || randIn->tnMax != 0) && 
-        ((randIn->tnMin >= randIn->tnMax ) || (randIn->tnMin <=0))){
-    sprintf(msg, "--signal-tau3-range (%f %f) paramter must be sorted and > 0 \n",
-            randIn->tnMin, randIn->tnMax);
-    fprintf(stderr, msg);
-    exit(1);
-  }
-
-
+  BankEfficiencyCompare(randIn->t0Min, randIn->t0Max, "--signal-tau0-range");
+  BankEfficiencyCompare(randIn->tnMin, randIn->tnMax, "--signal-tau3-range");
+  BankEfficiencyValidity(randIn->t0Min, 0 ,1e6, "--signal-tau0-range min");
+  BankEfficiencyValidity(randIn->t0Max, 0 ,1e6, "--signal-tau0-range max");
+  BankEfficiencyValidity(randIn->tnMin, 0 ,1e6, "--signal-tau3-range min");
+  BankEfficiencyValidity(randIn->tnMax, 0 ,1e6, "--signal-tau3-range max");
+  
+  
   if (userParam->faithfulness ==1 && randIn->type == 1)
     {
       fprintf(stderr, "No injection performed so the check option can not be used (change simulation-type option)\n");
@@ -3548,22 +3471,17 @@ void BankEfficiencyUpdateParams(
     }
   }  
 
-  if (userParam->signalfFinal>0 
-      && userParam->signalfFinal< coarseBankIn->tSampling/2)
+  if (userParam->signalfFinal>0) 
   {
     randIn->param.fCutoff = userParam->signalfFinal;
+    BankEfficiencyCompare(userParam->signalfFinal, coarseBankIn->tSampling/2.,
+       "--signal-ffinal must be less than sampling by 2");
+    BankEfficiencyValidity(userParam->signalfFinal, randIn->param.fLower ,1e6, "--signal-ffinal");
   }
   
-  if (userParam->signalfFinal>0 
-      && userParam->signalfFinal>=coarseBankIn->tSampling/2)
-  {
-    fprintf(stderr, 
-        "--signal-ffinal must be less than the sampling/2. Replaced it with %f\n", 
-        coarseBankIn->tSampling/2);
-     exit(0)  ;
+  if (userParam->signalfFinal==0){
+    userParam->signalfFinal = randIn->param.fCutoff ;
   }
-  if (userParam->signalfFinal==0)
-  userParam->signalfFinal = randIn->param.fCutoff ;
 }
 
 
@@ -3967,21 +3885,21 @@ void BankEfficiencyInspiralBankGeneration(
         ABORT( status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM );
       }
       bank->mass1 = fineList[cnt].params.mass1;
-      bank->mass2 = fineList[cnt].params.mass2;
-      bank->mchirp = fineList[cnt].params.chirpMass;
-      bank->mtotal = fineList[cnt].params.totalMass;
-      bank->eta = fineList[cnt].params.eta;
-      bank->tau0 = fineList[cnt].params.t0;
-      bank->tau2 = fineList[cnt].params.t2;
-      bank->tau3 = fineList[cnt].params.t3;
-      bank->tau4 = fineList[cnt].params.t4;
-      bank->tau5 = fineList[cnt].params.t5;
-      bank->ttotal = fineList[cnt].params.tC;
-      bank->psi0 = fineList[cnt].params.psi0;
-      bank->psi3 = fineList[cnt].params.psi3;
+      bank->mass2   = fineList[cnt].params.mass2;
+      bank->mchirp  = fineList[cnt].params.chirpMass;
+      bank->mtotal  = fineList[cnt].params.totalMass;
+      bank->eta     = fineList[cnt].params.eta;
+      bank->tau0    = fineList[cnt].params.t0;
+      bank->tau2    = fineList[cnt].params.t2;
+      bank->tau3    = fineList[cnt].params.t3;
+      bank->tau4    = fineList[cnt].params.t4;
+      bank->tau5    = fineList[cnt].params.t5;
+      bank->ttotal  = fineList[cnt].params.tC;
+      bank->psi0    = fineList[cnt].params.psi0;
+      bank->psi3    = fineList[cnt].params.psi3;
       bank->f_final = fineList[cnt].params.fFinal;
-      bank->eta = fineList[cnt].params.eta;
-      bank->beta = fineList[cnt].params.beta;
+      bank->eta     = fineList[cnt].params.eta;
+      bank->beta    = fineList[cnt].params.beta;
       /* Copy the 10 metric co-efficients ... */
       memcpy (bank->Gamma, fineList[cnt].metric.Gamma, 10*sizeof(REAL4));
           
@@ -4483,19 +4401,7 @@ void BankEfficiencyInitMyBank(
 void BankEfficiencyEccentricBankInit(
 UserParametersIn *userParam)
 {
-  /* --- init eccentric bank parameters--- */
-  
-  /* --- les us check the range */
-  if ( userParam->eccentricBank.max < userParam->eccentricBank.min ){
-  	BankEfficiencyError("eccentricity range problem: max must be greater than min");
-  }
-  if ( userParam->eccentricBank.max > 1 ){
-  	BankEfficiencyError("maximum eccentricity must be less than 1");
-  }
-  if ( userParam->eccentricBank.max < 0 ){
-  	BankEfficiencyError("maximum eccentricity must be greater than 0");
-  }
-  
+  /* --- init eccentric bank parameters --- */
   /* if bins > 1, we compute the step */
   if (userParam->eccentricBank.bins > 1)
   {
@@ -4508,9 +4414,7 @@ UserParametersIn *userParam)
   	userParam->eccentricBank.step = 2*(userParam->eccentricBank.max - 
         userParam->eccentricBank.min);
   }
-       
-       
-       
+              
   if ( vrbflg && userParam->eccentricBank.bins>1)
   {
     fprintf(stdout, "Eccentric bank requested.\n");

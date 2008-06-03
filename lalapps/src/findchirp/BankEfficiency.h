@@ -225,6 +225,7 @@ typedef struct{
   REAL4 minTotalMass;
   INT4 startTime;
   INT4 numSeconds;
+  INT4 increaseVector;
   REAL4 signalfFinal;
   INT4 startPhase;
   CHAR *inputPSD;
