@@ -819,7 +819,7 @@ def sire_segments_individually(segments, sire_job, dag, do_sire, do_input, ifo,
         seg.get_chunk().start(), seg.get_chunk().end(), inj_file, ifotag, 
         usertag,False,inspinjNode=inspinjNode)
 
-    sire_analyzed.append(AnalyzedIFOData(seg,sire_node))
+    sire_analyzed.append(AnalyzedIFOData(seg.get_chunk(),sire_node))
 
   return sire_analyzed
 
@@ -920,8 +920,7 @@ def coire_segments_individually(segments, coire_job, dag, do_coire, do_input,
         seg.get_chunk().start(), seg.get_chunk().end(), inj_file = inj_file, 
         num_slides = num_slides, ifotag = ifotag, usertag = usertag,
         inspinjNode=inspinjNode)
-
-    coire_analyzed.append(AnalyzedIFOData(seg,coire_node))
+    coire_analyzed.append(AnalyzedIFOData(seg.get_chunk(),coire_node))
 
   return coire_analyzed
 
@@ -1165,6 +1164,11 @@ parser.add_option("-X", "--summary-coinc-triggers",action="store_true", \
     default=False, \
     help="Produce summary triggers from run.  This will produce "
     "coire (second coincidence) files containing triggers from the whole run. "
+    "Use with care, as files can become very large.")
+parser.add_option("-Z", "--summary-single-ifo-triggers",action="store_true", \
+    default=False, \
+    help="Produce summary triggers from run.  This will produce "
+    "sire (second coincidence) files containing triggers from the whole run. "
     "Use with care, as files can become very large.")
 
 parser.add_option("-R", "--read-cache",action="store_true",default=False,\
@@ -2058,8 +2062,8 @@ for ifos in ifo_coincs:
       
         sire_segments_individually(analyzed_coinc_data[ifos][ifo], sire_job, 
               dag, opts.sire_inspiral_veto, opts.inspiral_veto, ifo, 
-              inj_file = inj_file, usertag = usertag, ifotag="SECOND_" + ifo,
-              inspinjNode = inspinj)
+              inj_file = inj_file, usertag = usertag, 
+              ifotag="SNGL_SECOND_" + ifo, inspinjNode = inspinj)
 
       print "done"
 
@@ -2069,6 +2073,8 @@ for ifos in ifo_coincs:
 
 coinc2_nodes = {}
 coinc2_slide_nodes = {}
+coire2_nodes = {}
+coire2_slide_nodes = {}
 
 for ifos in ifo_coincs:
   print "setting up second thinca jobs on " + ifos + " data...",
@@ -2092,13 +2098,13 @@ for ifos in ifo_coincs:
       coire_job=coire_job, do_coire=opts.coire_second_coinc, ifotag=ifos)
 
     if not doExtTrig:
-      coire_nodes = coire_segments_individually(coinc2_nodes[ifos], coire_job, 
-          dag, opts.coire_second_coinc, opts.second_coinc, 
+      coire2_nodes[ifos] = coire_segments_individually(coinc2_nodes[ifos], 
+          coire_job, dag, opts.coire_second_coinc, opts.second_coinc, 
           ifos, inj_file=inj_file, ifotag="SECOND_" + ifos, usertag=usertag,
           inspinjNode=inspinj)
  
-      if len(coire_nodes):
-        coire_segments(coire_nodes, coire_summary_job, dag,
+      if len(coire2_nodes[ifos]):
+        coire_segments(coire2_nodes[ifos], coire_summary_job, dag,
             opts.summary_coinc_triggers, 
             opts.coire_second_coinc, ifos, gps_start_time, gps_end_time, 
             inj_file=inj_file, ifotag="SUMMARY_SECOND_" + ifos, usertag=usertag,
@@ -2106,10 +2112,18 @@ for ifos in ifo_coincs:
 
       for ifo in ifo_list:
         if ifo in ifos: 
-          sire_segments_individually(coinc2_nodes[ifos], sire_job, dag, 
-              opts.sire_second_coinc, opts.second_coinc, ifo, 
+          sire_nodes = sire_segments_individually(coire2_nodes[ifos], sire_job, 
+              dag, opts.sire_second_coinc, opts.coire_second_coinc, ifo, 
               inj_file=inj_file, ifotag="SECOND_" + ifos, usertag=usertag,
               inspinjNode = inspinj)
+
+          if len(sire_nodes):
+            sire_segments(sire_nodes, sire_summary_job, dag, 
+                opts.summary_single_ifo_triggers, opts.sire_second_coinc, ifo, 
+                gps_start_time, gps_end_time, inj_file = inj_file, 
+                ifotag="SUMMARY_SECOND_" + ifos, usertag = usertag, 
+                write_input_file = True)
+
 
   # Step 8slide: Time slides on the data
   if num_slides:
@@ -2133,14 +2147,14 @@ for ifos in ifo_coincs:
         do_coire=opts.coire_second_coinc, ifotag=ifos, slides=num_slides)
 
       if not doExtTrig:
-        coire_slide_nodes = coire_segments_individually(
+        coire2_slide_nodes[ifos] = coire_segments_individually(
             coinc2_slide_nodes[ifos], coire_slide_job, 
             dag, opts.coire_second_coinc, opts.second_coinc, ifos, 
             num_slides=num_slides, ifotag="SECOND_" + ifos,
             usertag=usertag, inspinjNode=inspinj)
 
-        if len(coire_slide_nodes):
-          coire_segments(coire_slide_nodes, coire_slide_summary_job, dag, 
+        if len(coire2_slide_nodes[ifos]):
+          coire_segments(coire2_slide_nodes[ifos], coire_slide_summary_job, dag, 
               opts.summary_coinc_triggers, opts.coire_second_coinc, ifos, 
               gps_start_time, gps_end_time, num_slides=num_slides, 
               ifotag="SUMMARY_SECOND_" + ifos, usertag=usertag, 
@@ -2148,10 +2162,18 @@ for ifos in ifo_coincs:
 
         for ifo in ifo_list:
           if ifo in ifos: 
-            sire_segments_individually(coinc2_slide_nodes[ifos], sire_job, dag, 
-                opts.sire_second_coinc, opts.second_coinc, ifo, 
-                inj_file = inj_file, ifotag="SECOND_SLIDE_" + ifos, 
+            sire_nodes = sire_segments_individually(coire2_slide_nodes[ifos], 
+                sire_job, dag, opts.sire_second_coinc, opts.coire_second_coinc,
+                ifo, inj_file = inj_file, ifotag="SLIDE_SECOND_" + ifos, 
                 usertag=usertag, inspinjNode = inspinj)
+
+            if len(sire_nodes):
+              sire_segments(sire_nodes, sire_summary_job, dag, 
+                  opts.summary_single_ifo_triggers, opts.sire_second_coinc, 
+                  ifo, gps_start_time, gps_end_time, inj_file = inj_file, 
+                  ifotag="SUMMARY_SECOND_" + ifos, usertag = usertag, 
+                  write_input_file = True)
+
 
   print "done"
 

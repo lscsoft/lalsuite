@@ -76,7 +76,10 @@ b) full data and full data time slides.  Skipped with --skip-full-data
 c) software injections. Skipped with --skip-injections
 """
 
-parser = optparse.OptionParser( usage )
+parser = optparse.OptionParser( usage=usage, \
+      version= "%prog CVS\n" +
+      "$Id$\n" +
+      "$Name$\n")
 
 # arguments
 parser.add_option("-f", "--config-file",action="store",type="string",\
@@ -333,6 +336,7 @@ if opts.run_data_quality:
   hipeInjVetoNode = {}
 
   for category in [2,3,4]:
+    hipeInjVetoNode[category] = {}
     print "Setting up the category " + str(category) + " veto dags"
 
     if opts.run_play_analysis:
@@ -366,18 +370,18 @@ if opts.run_data_quality:
     if opts.run_injections:
       print "Running inspiral hipe for injections with vetoes"
       for (injDir, injSeed) in cp.items("injections"):
-        if category == 2: hipeInjVetoNode[injDir] = {}
-        hipeInjVetoNode[injDir][category] = inspiralutils.hipe_setup(injDir, \
+        hipeInjVetoNode[category][injDir] = inspiralutils.hipe_setup(injDir, \
             cp, ifos, opts.log_path, \
-            injSeed= injSeed, vetoCat = category, vetoFiles = dqVetoes, dax=opts.dax, site=cp.get("sites",injDir))
-        for cacheFile in hipeInjVetoNode[injDir][category].get_output_files():
+            injSeed= injSeed, vetoCat = category, vetoFiles = dqVetoes, \
+            dax=opts.dax, site=cp.get("sites",injDir))
+        for cacheFile in hipeInjVetoNode[category][injDir].get_output_files():
           cachelist.append(injDir + "/" + cacheFile)
-        dag.add_node(hipeInjVetoNode[injDir][category])
+        dag.add_node(hipeInjVetoNode[category][injDir])
         if category==2 and opts.run_search: 
-          hipeInjVetoNode[injDir][category].add_parent(hipeInjNode[injDir])
+          hipeInjVetoNode[category][injDir].add_parent(hipeInjNode[injDir])
         elif category>2: 
-          hipeInjVetoNode[injDir][category].add_parent(\
-              hipeInjVetoNode[injDir][category-1])
+          hipeInjVetoNode[category][injDir].add_parent(\
+              hipeInjVetoNode[category-1][injDir])
 
 ##############################################################################
 # Set up the directories for plotting and run lalapps_plot
@@ -417,141 +421,41 @@ if opts.run_plots:
         opts.do_dag_categories, parentNodes, parentVetoNodes, 2)
 
   # Setting up plots for injection run.
-  if opts.run_injections:
-    injPlotNode = {}
-    injPlotCoincNode = {}
-    injPlotVetoNode = {}
+  if opts.run_injections and opts.run_play_analysis:
+    print "Making plots depending on the injection runs"
     for (injDir, injSeed) in cp.items("injections"):
-      print "Making plots depending on the injection runs"
-      # single ifo
-      plotcp = copy.deepcopy(cp)
-      plotcp.add_section("plot-arguments")
-      plotcp.set("plot-arguments","plotinspinj","")
-      plotcp.set("plot-arguments","plotsnrchi","")
-      plotcp.set("plot-arguments","write-script","")
-      injPlotNode[injDir] = inspiralutils.plot_setup(
-          injDir + "_summary_plots", \
-          plotcp, opts.log_path, "both", injDir.upper(), "PLAYGROUND", \
-          "PLAYGROUND", injDir.upper(), "../" + cachefilename, tag="SNGL" )
-      if opts.do_dag_categories:
-        injPlotNode[injDir].set_category('plotting')
-      dag.add_node(injPlotNode[injDir])
-      if opts.run_search and opts.run_play_analysis:
-        injPlotNode[injDir].add_parent(hipePlayNode)
-      if opts.run_search and opts.run_injections:
-        injPlotNode[injDir].add_parent(hipeInjNode[injDir])
+  
+      # set up parents correctly
+      if opts.run_search: 
+        parentNodes = [hipePlayNode, hipeInjNode[injDir]]
+      else: parentNodes = None
 
-      # coincs
-      plotcp = copy.deepcopy(cp)
-      plotcp.add_section("plot-arguments")
-      plotcp.set("plot-arguments","plotinjnum","")
-      plotcp.set("plot-arguments","plotinspmissed","")
-      plotcp.set("plot-arguments","ploteffdistcut","")
-      plotcp.set("plot-arguments","write-script","")
-      injPlotCoincNode[injDir] = inspiralutils.plot_setup(
-          injDir + "_summary_plots",\
-          plotcp, opts.log_path, "first", injDir.upper(), "PLAYGROUND" , \
-          "PLAYGROUND", injDir.upper(), "../" + cachefilename, tag="COINC" )
-      if opts.do_dag_categories:
-        injPlotCoincNode[injDir].set_category('plotting')
-      dag.add_node(injPlotCoincNode[injDir])
-      if opts.run_search and opts.run_injections:
-        injPlotCoincNode[injDir].add_parent(hipeInjNode[injDir])
-      if opts.run_search and opts.run_play_analysis:
-        injPlotCoincNode[injDir].add_parent(hipePlayNode)
-      if not opts.do_dag_categories:
-        injPlotCoincNode[injDir].add_parent(injPlotNode[injDir])
+      if opts.run_data_quality:
+        parentVetoNodes = [hipePlayVetoNode[2], hipeInjVetoNode[2][injDir]]
+      else: parentVetoNodes = None
 
-      # coincs second (require DQ)
-      plotcp = copy.deepcopy(cp)
-      plotcp.add_section("plot-arguments")
-      plotcp.set("plot-arguments","plotethinca","")
-      plotcp.set("plot-arguments","plotinjnum","")
-      plotcp.set("plot-arguments","plotinspmissed","")
-      plotcp.set("plot-arguments","ploteffdistcut","")
-      plotcp.set("plot-arguments","write-script","")
-      injPlotVetoNode[injDir] = inspiralutils.plot_setup(
-          injDir + "_summary_plots", \
-          plotcp, opts.log_path, "second", injDir.upper() + "_CAT_2_VETO", \
-          "PLAYGROUND" + "_CAT_2_VETO", \
-          "PLAYGROUND" + "_CAT_2_VETO", injDir.upper() + "_CAT_2_VETO", \
-          "../" + cachefilename, tag="COINC_CAT_2" )
-      if opts.do_dag_categories:
-        injPlotVetoNode[injDir].set_category('plotting')
-      dag.add_node(injPlotVetoNode[injDir])
-      if opts.run_data_quality and opts.run_play_analysis:
-        injPlotVetoNode[injDir].add_parent(hipePlayVetoNode[2])
-      if opts.run_data_quality and opts.run_injections:
-        injPlotVetoNode[injDir].add_parent(hipeInjVetoNode[injDir][2])
-      if not opts.do_dag_categories:
-        injPlotVetoNode[injDir].add_parent(injPlotCoincNode[injDir])
+      dag = inspiralutils.injZeroSlidePlots(dag, injDir + "_summary_plots", \
+          cp, opts.log_path, injDir.upper(), "PLAYGROUND", "PLAYGROUND", \
+          "../" + cachefilename, opts.do_dag_categories, parentNodes, 
+          parentVetoNodes, 2)
 
-    # Plotting all injections on the same graphs.    
-    # single ifo
-    plotcp = copy.deepcopy(cp)
-    plotcp.add_section("plot-arguments")
-    plotcp.set("plot-arguments","plotinspinj","")
-    plotcp.set("plot-arguments","plotsnrchi","")
-    plotcp.set("plot-arguments","write-script","")
-    allinjPlotNode = inspiralutils.plot_setup(
-        "allinj" + "_summary_plots", \
-        plotcp, opts.log_path, "both", "*INJ" , "PLAYGROUND", \
-        "PLAYGROUND", "*INJ" , "../" + cachefilename, tag="SNGL" )
-    if opts.do_dag_categories:
-      allinjPlotNode.set_category('plotting')
-    dag.add_node(allinjPlotNode)
-    if opts.run_search and opts.run_play_analysis:
-      allinjPlotNode.add_parent(hipePlayNode)
-    if opts.run_search and opts.run_injections:
-      for (injDir, injSeed) in cp.items("injections"):
-        allinjPlotNode.add_parent(hipeInjNode[injDir])
+    print "Making plots of all injection runs together"
 
-    # coincs
-    plotcp = copy.deepcopy(cp)
-    plotcp.add_section("plot-arguments")
-    plotcp.set("plot-arguments","plotinjnum","")
-    plotcp.set("plot-arguments","plotinspmissed","")
-    plotcp.set("plot-arguments","ploteffdistcut","")
-    plotcp.set("plot-arguments","write-script","")
-    allinjPlotCoincNode = inspiralutils.plot_setup(
-        "allinj" + "_summary_plots",\
-        plotcp, opts.log_path, "first", "*INJ" , "PLAYGROUND" , \
-        "PLAYGROUND", "*INJ", "../" + cachefilename, tag="COINC" )
-    if opts.do_dag_categories:
-      allinjPlotCoincNode.set_category('plotting')
-    dag.add_node(allinjPlotCoincNode)
-    if opts.run_search and opts.run_injections:
-      for (injDir, injSeed) in cp.items("injections"):
-        allinjPlotCoincNode.add_parent(hipeInjNode[injDir])
-    if opts.run_search and opts.run_play_analysis:
-      allinjPlotCoincNode.add_parent(hipePlayNode)
-    if not opts.do_dag_categories:
-      allinjPlotCoincNode.add_parent(allinjPlotNode)
+    # set up parents correctly
+    if opts.run_search: 
+      parentNodes = hipeInjNode.values()
+      parentNodes.append(hipePlayNode)
+    else: parentNodes = None
 
-    # coincs second (require DQ)
-    plotcp = copy.deepcopy(cp)
-    plotcp.add_section("plot-arguments")
-    plotcp.set("plot-arguments","plotethinca","")
-    plotcp.set("plot-arguments","plotinjnum","")
-    plotcp.set("plot-arguments","plotinspmissed","")
-    plotcp.set("plot-arguments","ploteffdistcut","")
-    plotcp.set("plot-arguments","write-script","")
-    allinjPlotVetoNode = inspiralutils.plot_setup(
-        "allinj" + "_summary_plots", \
-        plotcp, opts.log_path, "second", "*INJ" + "_CAT_2_VETO", \
-        "PLAYGROUND" + "_CAT_2_VETO", \
-        "PLAYGROUND" + "_CAT_2_VETO", "*INJ" + "_CAT_2_VETO", \
-        "../" + cachefilename, tag="COINC_CAT_2" )
-    if opts.do_dag_categories:
-      allinjPlotVetoNode.set_category('plotting')
-    dag.add_node(allinjPlotVetoNode)
-    if opts.run_data_quality and opts.run_play_analysis:
-      allinjPlotVetoNode.add_parent(hipePlayVetoNode[2])
-    if opts.run_data_quality and opts.run_injections:
-      for (injDir, injSeed) in cp.items("injections"):
-        allinjPlotVetoNode.add_parent(hipeInjVetoNode[injDir][2])
-    if not opts.do_dag_categories:
-      allinjPlotVetoNode.add_parent(allinjPlotCoincNode)
+    if opts.run_data_quality:
+        parentVetoNodes = hipeInjVetoNode[2].values()
+        parentVetoNodes.append(hipePlayVetoNode[2])
+    else: parentVetoNodes = None
+
+    dag = inspiralutils.injZeroSlidePlots(dag, "allinj_summary_plots", cp, \
+        opts.log_path, "*INJ", "PLAYGROUND", "PLAYGROUND", \
+        "../" + cachefilename, opts.do_dag_categories, parentNodes, 
+        parentVetoNodes, 2)
 
   if opts.do_dag_categories:
     dag.add_maxjobs_category('plotting',2)
