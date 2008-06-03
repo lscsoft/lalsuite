@@ -12,6 +12,12 @@ import sys
 import os
 import glob
 from pylab import *
+# for the delaunay and griddata
+from scipy.sandbox import delaunay
+import numpy.core.ma as ma
+from numpy import *
+#from matplotlib import *
+
 
 mtsun = 4.92549095e-6
 
@@ -281,7 +287,8 @@ class ReadXMLFiles:
     
     return self.results, self.bank, self.params, self.values
 
-class Plotting():
+
+class Plotting:
   def __init__(self, verbose=False):
     self.figure_num = 1
     self.options={}
@@ -293,9 +300,19 @@ class Plotting():
     self.title = None
     self.verbose = verbose
 
+  
   def settitle(self, text=None):
     self.title = text
-      
+    
+  def setfigure(self):
+    fig = None
+    if self.hold is False:
+      if self.verbose is True:
+        print 'Plotting '+ str(self.figure_num) +' in progress...'
+      fig = figure(self.figure_num)
+      self.figure_num += 1
+    return fig
+   
       
   def plot_histogram_and_fit(self,data, nbins=20,fit=True):
     """
@@ -321,7 +338,8 @@ class Plotting():
     except: print """Error while creating this plot"""
     return fig,handle
 
-  def scatter(self, xdata, ydata, zdata, markersize=None, alpha=None):
+  def scatter(self, xdata, ydata, zdata, markersize=None, alpha=None,\
+              vmin=None,vmax=None):
     """
     @param xdata: an x vector
     @param ydata: a y vector
@@ -332,18 +350,14 @@ class Plotting():
     @type alpha: float
     @author: Thomas Cokelaer
     """
-    fig = None
+    fig = self.setfigure()
     handle = None
-    if self.hold is False:
-      if self.verbose is True:
-        print 'Plotting '+ str(self.figure_num) +' in progress...'
     
-      figure(self.figure_num)
-      self.figure_num += 1
     if markersize==None:
       markersize = self.markersize
     if alpha==None:
       alpha = self.alpha
+      
     try:
       scatter(xdata,ydata, c=zdata,s=markersize, alpha=alpha)
       xlim(min(xdata), max(xdata))
@@ -373,15 +387,9 @@ class Plotting():
     @type linewidth: float
     @author: Thomas Cokelaer
     """
-    fig = None
+    fig = self.setfigure()
     handle = None
-    if self.hold is False:
-      if self.verbose is True:
-        print 'Plotting '+ str(self.figure_num) +' in progress...'
- 
-      figure(self.figure_num)
-      self.figure_num += 1
-      
+         
     if marker==None:
       marker = self.marker
     if alpha==None:
@@ -401,6 +409,33 @@ class Plotting():
     gca().grid(True)
     return fig,handle
 
+  def surf(self,xdata,ydata,zdata,xbin=20,ybin=20):
+    """
+    """
+    fig = self.setfigure() 
+    handle = None
+    
+    xmin = min(xdata)
+    xmax = max(xdata)
+    xstep = (xmax - xmin)/xbin
+    
+    ymin = min(ydata)
+    ymax = max(ydata)
+    ystep = (ymax - ymin)/ybin
+    
+    xi, yi = mgrid[xmin:xmax:xstep, ymin:ymax:ystep]
+    # triangulate data
+    tri = delaunay.Triangulation(xdata,ydata)
+    # interpolate data
+    interp = tri.nn_interpolator(zdata)
+    zi = interp(xi,yi)
+    zim = ma.masked_where(isnan(zi),zi)
+    figure(figsize=(8,8))
+    p = pcolor(xi,yi,zim,shading='interp',cmap=cm.jet)
+    c = contour(xi,yi,zim,cmap=cm.jet)
+    gca().grid(True)
+    
+
 
   def vectors2image(self, xdata,ydata, N=50):
     """
@@ -419,16 +454,8 @@ class Plotting():
     @type linewidth: float
     @author: Thomas Cokelaer
     """
-    fig = None
-    handle = None
-    if self.hold is False:
-      if self.verbose is True:
-        print 'Plotting '+ str(self.figure_num) +' in progress...'
- 
-      fig = figure(self.figure_num)
-      self.figure_num += 1
-      
-      
+    fig = self.setfigure()
+         
     xmin = floor(min(xdata)*100)/100
     xmax = ceil(max(xdata)*100)/100    
     

@@ -18,9 +18,12 @@ from numpy import *
 from pylab import *
 from matplotlib import *
 from inspiraltools  import *
-import scipy
+#import scipy
+
+
+
 #######################################################################
-def myssavefig(opts, title):  
+def mysavefig(opts, title):  
   newtitle = title.replace('plotbankefficiency', \
                         'plotbankefficiency_'+opts.user_tag)
   if opts.verbose:
@@ -47,7 +50,10 @@ def ParseParameters():
   parser.add_option("-g","--glob",action="store", type="string",\
       default=None, help="print information" )
   parser.add_option("-u","--user-tag",action="store", type="string",\
-      default="", help="pset a user tag for the figure's filename" )
+      default="", help="set a user tag for the figure's filename" )
+  parser.add_option("-a","--ambiguity",action="store", type="string",\
+      default="", help="the ambiguity function output file from BankEfficiency")
+  
   
   (opts,args) = parser.parse_args()
 
@@ -73,20 +79,23 @@ results, bank, params,values = xml.getTables()
 # now, we can easily extract any parameters from params_table
 signal = xml.getvalue("--signal ")
 
-  
+#-------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------  
 #the figures -------------------------------------------------------------------
 plotting = Plotting(opts.verbose)
 plotting.settitle(signal +' injections')
-
-
 #------------------------------------------------------ overlap versus parameter
-for param,label in zip(['totalmass_sim','eta_sim','chirpmass_sim'],\
-                       ['Total Mass ($M_\odot$)','eta','chirp mass ($M_\odot$)']):
+# the parameters
+params = ['totalmass_sim','eta_sim','chirpmass_sim','inclination_sim',\
+          'polarisation_sim','phase_sim']
+labels = ['Total Mass ($M_\odot$)','eta','chirp mass ($M_\odot$)',\
+          'inclination','polarisation','phase']
+for param,label in zip(params,labels):
   # plot the parmeter verus SNR, set the label and title
   plotting.plot(results[param],results['snr'])
   xlabel(r'Injected '+label, size='x-large')
   ylabel(r'Overlap (\%)', size='x-large')
-  myssavefig(opts,'plotbankefficiency_snr_versus_'+param+'.png')
+  mysavefig(opts,'plotbankefficiency_snr_versus_'+param+'.png')
 
 
 
@@ -105,69 +114,86 @@ xlabel(r'$\tau_0$ (seconds) ', size='x-large')
 ylabel(r'$\tau_3$ (seconds)', size='x-large')
 legend(['Simulated injection','template''s position'])
 title('Position of the injections')
-myssavefig(opts,'plotbankefficiency_bank.png')
+mysavefig(opts,'plotbankefficiency_bank.png')
 
 #----------------------------------------------------------SNR histogram and fit
 for this,label in zip(\
-    ['snr','mass1_sim', 'mass2_sim', 'ecc_sim', 'totalmass_sim'],\
-    ['SNR', 'Mass1 (simulation)', 'Mass2(simulation)', 'Eccentricity(simulation)']):    
+    ['snr','mass1_sim', 'mass2_sim', 'ecc_sim', 'totalmass_sim',
+     'polarisation_sim','inclination_sim'],\
+    ['SNR', 'Mass1 (simulation)', 'Mass2(simulation)', \
+     'Eccentricity(simulation)','total mass','polarisaton','inclination']):    
   plotting.plot_histogram_and_fit(results[this],100,fit=False)
   xlabel(label, size='x-large')
   ylabel(r'\#', size='x-large')
-  myssavefig(opts,'plotbankefficiency_hist_'+this+'.png')
+  mysavefig(opts,'plotbankefficiency_hist_'+this+'.png')
 
 # --------------------------------- scatter plot of SNR versus eccentricty and M
 if signal=='Eccentricity':
   # eccentricity, SNr and total mass
   plotting.scatter(results['ecc_sim'],results['totalmass_sim'], \
-                   results['snr'], markersize=30, alpha=1)
+                   results['snr'], markersize=30, alpha=1,vmin=0,vmax=1)
   xlabel(r'Eccentricity')
   ylabel(r'TotalMass ($M_\odot$)')
-  myssavefig(opts,'plotbankefficiency_scattersnr_totalMass_versus_ecc.png')
+  mysavefig(opts,'plotbankefficiency_scattersnr_totalMass_versus_ecc.png')
 
   # the eccentricity, and SNR
   plotting.plot(results['ecc_sim'],results['snr'],'ob')
+  xlabel(r'Eccentricity')
+  ylabel(r'Overlap(\%)')
   #pylab.axis([0,0.4,0.7,1])
-  myssavefig(opts,'plotbankefficiency_ecc_versus_snr.png')
+  mysavefig(opts,'plotbankefficiency_snr_versus_ecc.png')
 
 
-# ------------------------------------------------------------------------------
-for param in ['totalmass', 'eta', 'chirpmass','tau0','phase']:
+# --------------------------------------------------------------- accuracies
+for param in ['totalmass', 'eta', 'chirpmass','tau0','phase','ecc']:
   plotting.plot(results[param]-results[param+'_sim'], results['snr'],  \
               markersize=10, marker='o', linewidth=0)
   xlabel(r'$\Delta$  ' + param)
   ylabel(r'$\rho$')
-  myssavefig(opts,'plotbankefficiency_accuracy_snr_versus_'+param+'.png')
+  mysavefig(opts,'plotbankefficiency_accuracy_snr_versus_'+param+'.png')
 
 
+#------------------------------------------------------------------------ PDF
 try:
   plotting.vectors2image(results['totalmass_sim'],results['snr'],N=20)
   title(plotting.title+': probability density function of the overlaps')
-  myssavefig(opts,'plotbankefficiency_PDF_snr_totalmass_sim.png')
+  mysavefig(opts,'plotbankefficiency_PDF_snr_totalmass_sim.png')
 except:
   pass
 
-# related to the fast option.
+# ----------------------------------------------------related to the fast option.
 plotting.plot(results['totalmass_sim'],results['nfast'])
 title(plotting.title+': number of iterations to obtain the overlap computation')
-myssavefig(opts,'plotbankefficiency_totalmass_sim_fastoption.png')
+mysavefig(opts,'plotbankefficiency_totalmass_sim_fastoption.png')
 
 
 
-# accuracy of the chirp mass
-
+# ----------------------------------------------------accuracy of the chirp mass
 data = (results['chirpmass_sim']-results['chirpmass'])/results['chirpmass_sim']
 plotting.plot_histogram_and_fit(data,50,False)
 xlabel(r'$\Delta \mathcal{M}$')
 ylabel(r'\#')
-myssavefig(opts,'plotbankefficiency_accuracy_chirpmass.png')
+mysavefig(opts,'plotbankefficiency_accuracy_chirpmass.png')
 
-#figure(100)
-#scipy.histogram2d(results['totalmass_sim'],results['snr'])
-#savefig('test.png')
+
+
+# surf as a test function
+try:
+  x = results['tau0_sim']-results['tau0']
+  y = results['tau3_sim']-results['tau3']
+  z = results['snr']
+  plotting.surf(x,y,z,20,20)
+  colorbar()
+  mysavefig(opts,'test.png')
+except: pass
+
+
+
 
 if opts.show_plot:
   show()
+
+
 
 
 
