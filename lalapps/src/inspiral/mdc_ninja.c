@@ -419,6 +419,21 @@ INT4 main( INT4 argc, CHAR *argv[] )
     exit( 1 );
   }
 
+  if (injectionType == NULL)
+  {
+    fprintf(stderr, "ERROR: --injection-type must be specified\n");
+    exit(1);
+  }
+  else
+  {
+    if (!((strncmp(injectionType, "NR", strlen(injectionType) + 1) == 0) ||
+          (strncmp(injectionType, "approximant", strlen(injectionType) + 1) == 0)))
+    {
+      fprintf( stderr, "ERROR: --injection-type must be 'NR', or 'approximant'\n");
+      exit(1);
+    }
+  }
+
   if (addNoise)
   {
     if ( strainLowPassFreq < 0 )
@@ -527,21 +542,6 @@ INT4 main( INT4 argc, CHAR *argv[] )
     {
       fprintf( stderr, "ERROR: --mdc-log must be specified\n" );
       exit( 1 );
-    }
-  }
-
-  if (injectionType == NULL)
-  {
-    fprintf(stderr, "ERROR: --injection-type must be specified\n");
-    exit(1);
-  }
-  else
-  {
-    if (!((strncmp(injectionType, "NR", strlen(injectionType) + 1) == 0) ||
-          (strncmp(injectionType, "approximant", strlen(injectionType) + 1) == 0)))
-    {
-      fprintf( stderr, "ERROR: --injection-type must be 'NR', or 'approximant'\n");
-      exit(1);
     }
   }
 
