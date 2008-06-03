@@ -223,19 +223,25 @@ To use the maplitude corrected waveforms, one can simply set the AmpCorPPN in --
 Concerning the input parameter of the signal, one also need to set the range of inclination and polarisation.  --signal-inclination-rane --signal-polarisation-range
 Note however that because the signal are normalised with resepcte to their energy, the effect of the inclination on the amplitude of the signal wont be seen.
 
+The template bank is based on SPA placement.
+
+The filtering is the standard filtering in quadrature. 
+
 \subsection{others}\label{others}
 There are a few other options. Some of whihc can be useful.
 \subsubsection{force the length of the signal}
---num-seconds
+In principle BankEfficiency estimates the longest length of all templates and all possible signals and allocate memory such that the vectors are long enough. If you still want to increase the size you can either use \textbf{{-}{-}num-seconds} to fix the size yourself (but you need to know the optimal length) or multiply the standard values by a factor using \textbf{{-}{-}}.
 \subsubsection{lower cut off}
 --fl --fl-template  are equivalent and fix both the fl of the template and fl of the integration.
 
 --fl-signal
 \subsubsection{fast option}
---fast-simulation and --e-match 
+There is a fast option to perform the simulation that can be very powerful. It is based on the metric of the signal. So if the template and the signal are based on the same approximant, it can be used very safely. It is switch on by using \textbf{{-}{-}fast-simulation} and \textbf{{-}{-}e-match}, which is set to 0.5. Briefly, the match is unity when the signal and template are identical. As soon as they differ, the match decrease. Having a match of 0.5 means that the loss of SNR is 50\%. Since it is not normalised, it can take negative values.
+
 
 \subsubsection{BHNS injection}
---bhns-injection
+There are many ways to choose the parameters of the signal to be injected. By default, the total mass is uniformly distributed and the component masses are set using the option \textbf{{-}{-}signal-mass-range}. You can overwrite this option by using together the \textbf{{-}{-}m1} and \textbf{{-}{-}m2} options to force the component masses to be fixed. Similarly, if you prefer to work with the chirp times parameters, you can use 
+\textbf{{-}{-}tau3} and \textbf{{-}{-}tau0}. Finally, there is an option to force the masses to be such that the binary system is a BHNS system, that is the first component mass in in the range [1,3] and the second component mass is larger than 3. This option is \textbf{{-}{-}bhns-injection}. Of course you need to be sure that \textbf{{-}{-}signal-mass-range} has a range that include the value 3.
 
 \subsubsection{check the code}
 --check/faithfulness and --no-start-phase
