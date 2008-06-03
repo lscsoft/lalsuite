@@ -248,8 +248,7 @@ INT4 main(INT4 argc, CHAR *argv[]){
     /*========================================================================*/
     
     output.det = dets[i];
-    
-    fprintf(stderr, "allocating memory for look-up table\n");
+   
     /* create lookup table */
     data[k].lookupTable = NULL;
     data[k].lookupTable = XLALCalloc(1, sizeof(DetRespLookupTable));
@@ -260,7 +259,7 @@ INT4 main(INT4 argc, CHAR *argv[]){
     /* create memory for the lookup table */
     data[k].lookupTable->lookupTable = XLALCalloc(inputs.mesh.psiRangeSteps, 
       sizeof(LALDetAMResponse *));
-    fprintf(stderr, "still allocating memory for look-up table\n");
+
     for( j = 0 ; j < inputs.mesh.psiRangeSteps ; j++ ){
       data[k].lookupTable->lookupTable[j] =
         XLALCalloc(inputs.mesh.timeRangeSteps, sizeof(LALDetAMResponse));
@@ -268,8 +267,7 @@ INT4 main(INT4 argc, CHAR *argv[]){
 
     data[k].lookupTable->psiSteps = inputs.mesh.psiRangeSteps;
     data[k].lookupTable->timeSteps = inputs.mesh.timeRangeSteps;
-    
-    fprintf(stderr, "making look-up table\n");
+   
     /* create lookup table */
     response_lookup_table(data[k].times->data[0], detAndSource,
       data[k].lookupTable);
