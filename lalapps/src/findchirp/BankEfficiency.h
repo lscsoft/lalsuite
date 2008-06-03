@@ -738,7 +738,7 @@ REAL4 *snr;
 } Mybank;    
 
   
-  
+/* --- initialise and create a template bank structure for the fast option ---*/   
 void BankEfficiencyInitMyBank(
   Mybank            *mybank, 
   INT4              *sizeBank,
@@ -746,5 +746,18 @@ void BankEfficiencyInitMyBank(
   UserParametersIn   userParam);
   
   
+/* --- initialise the eccentric template bank parameters --- */  
 void BankEfficiencyEccentricBankInit(
   UserParametersIn *userParam);
+  
+/* --- print the ambiguity function in a file --- */  
+void BankEfficiencyPrintAmbiguity(
+  UserParametersIn userParam,
+  INT4             sizebank,
+  gsl_matrix       *amb1  
+);
+
+void BankEfficiencyError(CHAR * str);
+void BankEfficiencyCompare(REAL4 a, REAL4 b, CHAR *str);
+void BankEfficiencyValidity(REAL4 a,  REAL4 min,  REAL4 max,  CHAR * str);
+
