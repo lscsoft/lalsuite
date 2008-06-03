@@ -419,24 +419,6 @@ INT4 main( INT4 argc, CHAR *argv[] )
     exit( 1 );
   }
 
-  if (snrLow < 0)
-  {
-    fprintf(stderr, "ERROR: --snr-low must be be specified\n");
-    exit(1);
-  }
-
-  if (snrHigh < 0)
-  {
-    fprintf(stderr, "ERROR: --snr-high must be be specified\n");
-    exit(1);
-  }
-
-  if (snrLow > snrHigh)
-  {
-    fprintf( stderr, "ERROR: --snr-low must be lesser than --snr-high\n");
-    exit(1);
-  }
-
   if ( frameFlag )
   {
     /* check that sample rate has been specified */
@@ -458,6 +440,27 @@ INT4 main( INT4 argc, CHAR *argv[] )
     {
       fprintf( stderr, "ERROR: --frame-type must be specified\n");
       exit( 1 );
+    }
+  }
+
+  if ((frameFlag) && (noNR != 0))
+  {
+    if (snrLow < 0)
+    {
+      fprintf(stderr, "ERROR: --snr-low must be be specified\n");
+      exit(1);
+    }
+
+    if (snrHigh < 0)
+    {
+      fprintf(stderr, "ERROR: --snr-high must be be specified\n");
+      exit(1);
+    }
+
+    if (snrLow > snrHigh)
+    {
+      fprintf( stderr, "ERROR: --snr-low must be lesser than --snr-high\n");
+      exit(1);
     }
   }
 
