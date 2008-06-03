@@ -413,10 +413,13 @@ INT4 main( INT4 argc, CHAR *argv[] )
     exit( 1 );
   }
 
-  if ( strainLowPassFreq < 0 )
+  if (addNoise)
   {
-    fprintf( stderr, "ERROR: --strain-lowpass-freq must be specified\n" );
-    exit( 1 );
+    if ( strainLowPassFreq < 0 )
+    {
+      fprintf( stderr, "ERROR: --strain-lowpass-freq must be specified\n" );
+      exit( 1 );
+    }
   }
 
   if ( frameFlag )
