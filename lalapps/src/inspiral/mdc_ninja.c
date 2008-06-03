@@ -95,8 +95,8 @@ extern int vrbflg;
 INT4 ifosFlag  = 0;
 INT4 frameFlag = 0;
 INT4 mdcFlag   = 0;
-INT4 noNR      = 0;
 INT4 addNoise  = 0;
+CHAR *injectionType = NULL;
 
 /* main program entry */
 INT4 main( INT4 argc, CHAR *argv[] )
@@ -159,10 +159,10 @@ INT4 main( INT4 argc, CHAR *argv[] )
     {"all-ifos",                no_argument,       &ifosFlag,         1 },
     {"write-frame",             no_argument,       &frameFlag,        1 },
     {"write-mdc-log",           no_argument,       &mdcFlag,          1 },
-    {"no-numerical",            no_argument,       &noNR,             1 },
     {"simulate-noise",          no_argument,       &addNoise,         1 },
     /* these options don't set a flag */
     {"debug-level",             required_argument, 0,                'D'},
+    {"injection-type",          required_argument, 0,                'T'},
     {"gps-start-time",          required_argument, 0,                'a'},
     {"gps-end-time",            required_argument, 0,                'b'},
     {"injection-file",          required_argument, 0,                'f'},
@@ -194,7 +194,7 @@ INT4 main( INT4 argc, CHAR *argv[] )
     size_t optarg_len;
 
     /* parse command line arguments */
-    c = getopt_long_only( argc, argv, "D:a:b:f:r:i:t:n:o:l:L:s:S:hV",
+    c = getopt_long_only( argc, argv, "D:T:a:b:f:r:i:t:n:o:l:L:s:S:hV",
         long_options, &option_index );
 
     /* detect the end of the options */
@@ -231,6 +231,13 @@ INT4 main( INT4 argc, CHAR *argv[] )
             "CVS Version: %s\nCVS Tag: %s\n", PROGRAM_NAME, CVS_ID_STRING, \
             CVS_NAME_STRING );
         exit( 0 );
+        break;
+
+      case 'T':
+        /* create storage for the injection type */
+        optarg_len = strlen(optarg) + 1;
+        injectionType = (CHAR *)calloc(optarg_len, sizeof(CHAR));
+        memcpy(injectionType, optarg, optarg_len);
         break;
 
       case 'a':
@@ -439,7 +446,7 @@ INT4 main( INT4 argc, CHAR *argv[] )
     }
   }
 
-  if ((frameFlag) && (noNR != 0))
+  if ((frameFlag) && (strncmp(injectionType, "NR", strlen(injectionType) + 1) == 0))
   {
     if ( freqLowCutoff < 0 )
     {
@@ -523,7 +530,20 @@ INT4 main( INT4 argc, CHAR *argv[] )
     exit( 1 );
   }
 
-
+  if (injectionType == NULL)
+  {
+    fprintf(stderr, "ERROR: --injection-type must be specified\n");
+    exit(1);
+  }
+  else
+  {
+    if (!((strncmp(injectionType, "NR", strlen(injectionType) + 1) == 0) ||
+          (strncmp(injectionType, "approximant", strlen(injectionType) + 1) == 0)))
+    {
+      fprintf( stderr, "ERROR: --injection-type must be 'NR', or 'approximant'\n");
+      exit(1);
+    }
+  }
 
   /*
    *
@@ -574,7 +594,7 @@ INT4 main( INT4 argc, CHAR *argv[] )
     }
 
     /* setup a unity response frequency series */
-    if ( noNR != 0 )
+    if (strncmp(injectionType, "approximant", strlen(injectionType) + 1) == 0)
     {
       if (vrbflg)
         fprintf(stdout, "generating unity response...\n");
@@ -607,7 +627,7 @@ INT4 main( INT4 argc, CHAR *argv[] )
         fflush(stdout);
       }
 
-      if (noNR)
+      if (strncmp(injectionType, "approximant", strlen(injectionType) + 1) == 0)
       {
         /* set the channel name */
         LALSnprintf(channel, LALNameLength, "%s:STRAIN", ifo);
@@ -662,7 +682,7 @@ INT4 main( INT4 argc, CHAR *argv[] )
   for ( i = 0; i < num_ifos; i++ )
     XLALDestroyREAL4TimeSeries(injData[i]);
 
-  if ( noNR != 0 )
+  if (strncmp(injectionType, "approximant", strlen(injectionType) + 1) ==  0)
     XLALDestroyCOMPLEX8FrequencySeries(response);
 
   while ( injections )
@@ -690,6 +710,7 @@ static void print_usage( CHAR *program )
       "  [--verbose]                       print progress information\n"\
       "  [--version]                       print version information and exit\n"\
       "  --debug-level         lvl         set debug level to 'lvl'\n"\
+      "  --injection-type      type        set injection type ('approximant' or 'NR')\n"\
       "  --injection-file      inj_file    read inj details from xml sim-insp inj_file\n"\
       "  --ifo                 ifo         IFO for which to generate injections\n"\
       "  --all-ifos                        create injections for all IFOs\n"\
@@ -697,11 +718,10 @@ static void print_usage( CHAR *program )
       "  --gps-end-time        end         end time of output file\n"\
       "  --sample-rate         rate        the sample rate used to generate injections\n"\
       "  --write-mdc-log                   write an MDC log file\n"\
-      "  --frame-type          TYPE        set the name of the output frame\n"\
+      "  --frame-type          FR_TYPE     set the name of the output frame\n"\
       "  --set-name            set_name    set the injection set name\n"\
       "  --mdc-log             mdc_log     name of file for MDC log file\n"\
       "  --write-frame                     write h(t) waveform to a frame file\n"\
-      "  --no-numerical                    the injections are not numerical\n"\
       "  --simulate-noise                  add simulated colored Gaussian noise\n"\
       "  --freq-low-cutoff     freq        lower cutoff frequency for injections\n"\
       "  --strain-lowpass-freq freq        lowpass frequency when noise is produced\n"\
@@ -857,7 +877,7 @@ static void write_mdc_log_file(CHAR *filename, SimInspiralTable *injections, INT
   for (thisInj = injections; thisInj; thisInj = thisInj->next)
   {
     /* GravEn_SimID */
-    if (noNR != 0)
+    if (strncmp(injectionType, "NR", strlen(injectionType) + 1) == 0)
       fprintf(output, "%s ", thisInj->numrel_data);
     else
       fprintf(output, "file ");
