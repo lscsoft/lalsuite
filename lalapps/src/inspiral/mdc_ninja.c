@@ -406,13 +406,6 @@ INT4 main( INT4 argc, CHAR *argv[] )
    *
    */
 
-
-  if ( freqLowCutoff < 0 )
-  {
-    fprintf( stderr, "ERROR: --freq-low-cutoff must be specified\n" );
-    exit( 1 );
-  }
-
   if (addNoise)
   {
     if ( strainLowPassFreq < 0 )
@@ -448,6 +441,12 @@ INT4 main( INT4 argc, CHAR *argv[] )
 
   if ((frameFlag) && (noNR != 0))
   {
+    if ( freqLowCutoff < 0 )
+    {
+      fprintf( stderr, "ERROR: --freq-low-cutoff must be specified\n" );
+      exit( 1 );
+    }
+
     if (snrLow < 0)
     {
       fprintf(stderr, "ERROR: --snr-low must be be specified\n");
