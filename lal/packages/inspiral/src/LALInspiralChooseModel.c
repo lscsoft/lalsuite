@@ -531,7 +531,7 @@ LALInspiralChooseModel(
       switch (params->approximant) 
       {
          case Eccentricity:
-            ABORT(status, LALINSPIRALH_EMSGORDERMISSING, LALINSPIRALH_MSGEORDERMISSING);
+            ABORT(status, LALINSPIRALH_EORDERMISSING, LALINSPIRALH_MSGEORDERMISSING);
             break;
          case AmpCorPPN:
          case TaylorT1:

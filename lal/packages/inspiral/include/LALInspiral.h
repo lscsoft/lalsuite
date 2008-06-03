@@ -100,7 +100,7 @@ NRCSID( LALINSPIRALH, "$Id$" );
 #define LALINSPIRALH_EFLOWER        15  
 #define LALINSPIRALH_EVECTOR        16
 #define LALINSPIRALH_EFLOWERINJ     17
-#define LALINSPIRALH_EMSGORDERMISSING 18
+#define LALINSPIRALH_EORDERMISSING  18
 
 
 #define LALINSPIRALH_MSGENULL         "Arguments contained an unexpected null pointer"
