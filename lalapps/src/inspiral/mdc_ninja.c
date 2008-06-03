@@ -413,6 +413,12 @@ INT4 main( INT4 argc, CHAR *argv[] )
    *
    */
 
+  if (( mdcFlag == 0 ) && ( frameFlag == 0 ))
+  {
+    fprintf( stderr, "Nothing to do, exiting...\n" );
+    exit( 1 );
+  }
+
   if (addNoise)
   {
     if ( strainLowPassFreq < 0 )
@@ -522,12 +528,6 @@ INT4 main( INT4 argc, CHAR *argv[] )
       fprintf( stderr, "ERROR: --mdc-log must be specified\n" );
       exit( 1 );
     }
-  }
-
-  if (( mdcFlag == 0 ) && ( frameFlag == 0 ))
-  {
-    fprintf( stderr, "Nothing to do, exiting...\n" );
-    exit( 1 );
   }
 
   if (injectionType == NULL)
