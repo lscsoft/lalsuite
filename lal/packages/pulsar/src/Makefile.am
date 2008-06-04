@@ -11,7 +11,8 @@ libpulsar_la_SOURCES = \
   FitToPulsar.c BinaryPulsarTiming.c PulsarCat.c PulsarCatInput.c        \
   ComputeSkyBinary.c ExtrapolatePulsarSpins.c LatticeCovering.c		\
   ComputeFstat.c LISAspecifics.c SFTutils.c DetectorStates.c PulsarDataTypes.c 	\
-  FlatPulsarMetric.c ComplexAM.c UniversalDopplerMetric.c
+  FlatPulsarMetric.c ComplexAM.c UniversalDopplerMetric.c                \
+  FlatLatticeTilingPulsar.c
 
 
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
