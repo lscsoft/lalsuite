@@ -17,6 +17,8 @@ BUILT_SOURCES = gitID
 
 lalapps_testLatticeCovering_SOURCES = testLatticeCovering.c
 
+lalapps_testFlatLatticeTilingPulsar_SOURCES = testFlatLatticeTilingPulsar.c
+
 lalapps_skynet_SOURCES = skynet.c
 
 lalapps_getMetric_SOURCES = getMetric.c
