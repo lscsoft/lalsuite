@@ -144,7 +144,6 @@ void XLALReducedRowEchelonForm(
 {
   
   size_t ii, jj, i, maxi;
-  double x = 0.0;
   
   /* Loop over all columns */
   for (ii = 0, jj = 0; ii < m->size1 && jj < m->size2; ++jj) {
@@ -595,31 +594,6 @@ int XLALQuadraticSimplexMethodTableau(
   }
 
   return XLAL_SUCCESS;
-
-}
-
-/**
- * If vector represents a basic variable, return its index
- * otherwise return -1
- */
-static int BasicVariable(gsl_vector *v) {
-
-  int i;
-  double x;
-
-  /* Get length of vector */
-  gsl_blas_ddot(v, v, &x);
-
-  /* If vector has unit length */
-  if (gsl_fcmp(x, 1.0, GSL_DBL_EPSILON) == 0)
-    /* Search for unity element */
-    for (i = 0; i < (int)v->size; ++i)
-      if (gsl_fcmp(gsl_vector_get(v, i), 1.0, GSL_DBL_EPSILON) == 0)
-	/* Return index of basic variable */
-	return i;
-
-  /* Not a basic variable */
-  return -1;
 
 }
 

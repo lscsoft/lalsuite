@@ -419,7 +419,6 @@ static int SetGenerator(
 			)
 {
   
-  const int n = tiling->dimension;
   const int r = tiling->reduced_dim;
 
   /* Check tiling state */
@@ -709,11 +708,9 @@ int XLALNextFlatLatticeTile(
 			    )
 {
 
-  const int n = tiling->dimension;
   const int r = tiling->reduced_dim;
   REAL8 lower = 0.0;
   REAL8 upper = 0.0;
-  REAL8 point = 0.0;
   REAL8 dist = 0.0;
   int dlatt = 0;
 
