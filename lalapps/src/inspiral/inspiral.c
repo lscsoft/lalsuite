@@ -2439,20 +2439,6 @@ int main( int argc, char *argv[] )
               }
             }
 
-            if ( writeChisq )
-            {
-              CHAR chisqStr[LALNameLength];
-              REAL4TimeSeries chisqts;
-              LALSnprintf( chisqStr, LALNameLength*sizeof(CHAR), 
-                  "CHISQ_%d", nChisqFr++ );
-              chisqts.epoch = fcFilterInput->segment->data->epoch;
-              memcpy( &(chisqts.name), fcFilterInput->segment->data->name,
-                  LALNameLength * sizeof(CHAR) );
-              chisqts.deltaT = fcFilterInput->segment->deltaT;
-              chisqts.data = fcFilterParams->chisqVec;
-              outFrame = fr_add_proc_REAL4TimeSeries( outFrame, 
-                  &chisqts, "none", chisqStr );
-            }
             if ( vrbflg ) 
               fprintf( stdout, "epoch = %d\n",
                   fcFilterInput->segment->data->epoch.gpsSeconds );
@@ -2551,6 +2537,21 @@ int main( int argc, char *argv[] )
                 LAL_CALL( LALFindChirpClusterEvents( &status,
                       &eventList, fcFilterInput, fcFilterParams,
                       &bankVetoData, subBankIndex ), &status );
+
+                if ( writeChisq )
+                {
+                  CHAR chisqStr[LALNameLength];
+                  REAL4TimeSeries chisqts;
+                  LALSnprintf( chisqStr, LALNameLength*sizeof(CHAR),
+                      "CHISQ_%d", nChisqFr++ );
+                  chisqts.epoch = fcFilterInput->segment->data->epoch;
+                  memcpy( &(chisqts.name), fcFilterInput->segment->data->name,
+                      LALNameLength * sizeof(CHAR) );
+                  chisqts.deltaT = fcFilterInput->segment->deltaT;
+                  chisqts.data = fcFilterParams->chisqVec;
+                  outFrame = fr_add_proc_REAL4TimeSeries( outFrame,
+                      &chisqts, "none", chisqStr );
+                }
                 
                 /* apply the rsq veto to any surviving events */
                 if ( fcFilterParams->filterOutputVetoParams )
