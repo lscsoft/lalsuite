@@ -984,7 +984,7 @@ REAL8 log_likelihood( REAL8 *likeArray, DataStructure data,
           T01)*params[0].pmdec;
         barys[0].alpha = params[0].ra + (data.times->data[j] -
           T01)*params[0].pmra/cos(barys[0].delta);
-
+ 
         LAL_CALL( LALBarycenterEarth(&status, &earth, &barys[0].tgps, edat),
           &status ); 
         LAL_CALL( LALBarycenter(&status, &emit1, &barys[0], &earth), &status );
@@ -1683,7 +1683,6 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
   REAL8Array *covmat=NULL, *posdef=NULL, *chol=NULL;
   
   ParamData *paramData=NULL, *randVals=NULL, *vals=NULL;
-
   BarycenterInput baryinput[2];
 
   REAL8 prior=0., priorNew=0.;
@@ -1833,24 +1832,35 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
     matTrue = 1;
 
   if( matTrue ){
-    paramData = XLALMalloc(MAXPARAMS*sizeof(ParamData));
+    REAL8Array *cormat=NULL; /* correlation matrix */
 
-    /* get covariance matrix */
-    covmat = CreateCovarianceMatrix(input.matrixFile, pulsarParams, paramData);
+    paramData = XLALMalloc( MAXPARAMS*sizeof(ParamData) );
 
-    /* get covariance matrix, convert it to positive definite if necessary */
-    if( (posdef = XLALCheckPositiveDefinite( covmat )) == NULL ){
-      /* perform the cholesky decomposition of the matrix */
+    /* get correlation matrix */
+    cormat = ReadCorrelationMatrix( input.matrixFile, pulsarParams, paramData );
+
+    /* set covariance matrix */
+    covmat = CreateCovarianceMatrix( paramData, cormat );
+
+    /* check if correlation matrix is positive definite if necessary */
+    if( (posdef = XLALCheckPositiveDefinite( cormat )) == NULL ){
       chol = CholeskyDecomp(covmat, "lower");
     }
-    else
-      chol = CholeskyDecomp(posdef, "lower");
+    else{
+      REAL8Array *tempmat=NULL;
+      tempmat = CreateCovarianceMatrix( paramData, posdef );
+
+      chol = CholeskyDecomp(tempmat, "lower");
+      XLALDestroyREAL8Array( tempmat );
+    }
+
+    XLALDestroyREAL8Array( cormat );
 
     /* generate random parameters */
     randVals = MultivariateNormalDeviates( chol, paramData, randomParams );
   
-    vals = XLALMalloc(MAXPARAMS*sizeof(ParamData));
-    memcpy(vals, randVals, MAXPARAMS*sizeof(ParamData) );
+    vals = XLALMalloc( MAXPARAMS*sizeof(ParamData) );
+    memcpy( vals, randVals, MAXPARAMS*sizeof(ParamData) );
 
     /* set up initial pulsar parameters */
     memcpy( &pulsarParamsMCMC[0], &pulsarParams, sizeof(pulsarParams) );
@@ -1858,7 +1868,7 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
 
     SetMCMCPulsarParams( &pulsarParamsMCMC[1], randVals );
 
-    /* check eccentricities so that 0 <= e < 1 i.e. circular of elliptical
+    /* check eccentricities so that 0 <= e < 1 i.e. circular or elliptical
        orbits */
     if( pulsarParamsMCMC[1].e < 0. )
       pulsarParamsMCMC[1].e = fabs(pulsarParamsMCMC[1].e);
@@ -2117,7 +2127,7 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
     
     /* set single h0 value for log_likelihood function */
     input.mesh.h0Steps = 1;
-    
+
     /* calculate log likelihoods */
     /* only calculate the likelhood twice in the first loop */
     if( i == 0 ){
@@ -2160,7 +2170,7 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
         }
       }
     }
-      
+
     if( matTrue ){
       /* set new pulsar parameters */
       /* store originals */
@@ -2206,7 +2216,7 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
         }
       }
     }
-    
+
     /* most importantly use the covariance matrix as a prior on the pulsar
        parameters */
     prior = 0.;
@@ -2325,7 +2335,7 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
       
       fprintf(fp, "\n");
     }
-    
+
     count++;
     logL2 = 0.;
   }
@@ -2699,7 +2709,8 @@ ParamData *MultivariateNormalDeviates( REAL8Array *cholmat, ParamData *data,
    far as possible following the standard in the matrix files I have from
    Michael Kramer
 */
-REAL8Array *CreateCovarianceMatrix( CHAR *matrixFile, 
+/* read in the correlation matrix */
+REAL8Array *ReadCorrelationMatrix( CHAR *matrixFile, 
 BinaryPulsarParams params, ParamData *data ){
   FILE *fp=NULL;
 
@@ -2712,7 +2723,7 @@ BinaryPulsarParams params, ParamData *data ){
 
   INT4 arraySize=0;
 
-  REAL8Array *corMat=NULL, *covMat=NULL;
+  REAL8Array *corMat=NULL;
   UINT4Vector *matdims=NULL;
 
   INT4 DMpos=0, DM1pos=0; /* position of dispersion measure in matrix */
@@ -2823,7 +2834,6 @@ reading any correlation data!");
   matdims->data[0] = numParams;
   matdims->data[1] = numParams;
 
-  covMat = XLALCreateREAL8Array( matdims );
   corMat = XLALCreateREAL8Array( matdims );
 
   /* find positions of each parameter */
@@ -2889,31 +2899,30 @@ reading any correlation data!");
     }
   } */
 
+  XLALDestroyUINT4Vector( matdims );
+
+  return corMat;
+}
+
+/* turn the input correlation matrix into a covariance matrix */
+REAL8Array *CreateCovarianceMatrix( ParamData *data, REAL8Array *corMat ){
+  REAL8Array *covMat=NULL;
+  INT4 i=0, j=0;
+
+  covMat = XLALCreateREAL8Array( corMat->dimLength );
+
   /* convert correlation matrix into a covariance matrix */
-  for(i=0;i<arraySize;i++){
-    if( paramData[i].matPos != 0 ){
-      for(j=0;j<arraySize;j++){
-        if( paramData[j].matPos != 0 ){
-          /* get (co)variances */
-          XLALSetREAL8MatrixValue( covMat, paramData[i].matPos-1,
-paramData[j].matPos-1, XLALGetREAL8MatrixValue( corMat, paramData[i].matPos-1,
-paramData[j].matPos-1) * paramData[i].sigma * paramData[j].sigma );
+  for(i=0;i<MAXPARAMS;i++){
+    if( data[i].matPos != 0 ){
+      for(j=0;j<MAXPARAMS;j++){
+        if( data[j].matPos != 0 ){
+          XLALSetREAL8MatrixValue( covMat, data[i].matPos-1, data[j].matPos-1,
+          XLALGetREAL8MatrixValue( corMat, data[i].matPos-1, data[j].matPos-1) *
+            data[i].sigma * data[j].sigma );
         }
       }
     }
   }
-
-  /* if( verbose ){
-    fprintf(stderr, "\nCovariance matrix:\n");
-    for(i=0;i<numParams;i++){
-      for(j=0;j<numParams;j++)
-        fprintf(stderr, "%.2e  ", XLALGetREAL8MatrixValue(covMat,i,j));
-      fprintf(stderr, "\n");
-    }
-  } */
-
-  XLALDestroyUINT4Vector( matdims );
-  XLALDestroyREAL8Array( corMat );
 
   return covMat;
 }
@@ -2946,7 +2955,7 @@ REAL8Array *XLALCheckPositiveDefinite( REAL8Array *matrix ){
   for( i=0; i<(INT4)matrix->dimLength->data[0]; i++ ){
     /* first check if any eigen values are zero and if so convert to positive
        definite matrix */
-    if( eigenval->data[i] < 0. ){
+    if( eigenval->data[i] < 0. && fabs(eigenval->data[i]) > LAL_REAL8_EPS ){
       fprintf(stderr, "Eigenvalue is negative. Non-postive definite matrix!\n");
       posdef = XLALConvertToPositiveDefinite( matrix );
       break;
@@ -3009,7 +3018,7 @@ REAL8Array *XLALConvertToPositiveDefinite( REAL8Array *nonposdef ){
   if( verbose ) fprintf(stderr, "Converting to positive definite matrix\n");
 
   /* check that matrix is square */
-  if( nonposdef->dimLength->data[0] != nonposdef->dimLength->data[0] ){
+  if( nonposdef->dimLength->data[0] != nonposdef->dimLength->data[1] ){
     fprintf(stderr, "Error... matrix must be square!\n");
     exit(0);
   }
@@ -3037,7 +3046,6 @@ REAL8Array *XLALConvertToPositiveDefinite( REAL8Array *nonposdef ){
 
   /* calculate the eigen values and vectors */
   LAL_CALL( LALDSymmetricEigenVectors( &status, eigenval, eigenvec ), &status );
-  /* LALDSymmetricEigenVectors( &status, eigenval, eigenvec ); */
 
   /* if eigen value is > 0 set Lprime to that value i.e. have eigen values of 
      zero if eigen value is negative */
@@ -3094,6 +3102,7 @@ REAL8Array *XLALConvertToPositiveDefinite( REAL8Array *nonposdef ){
   /* check that the difference between new and old values are greater than the
      maximum precision between REAL8 values (LAL_REAL8_EPS) - if not use
      original value */
+  fprintf(stderr, "\nPositive definite matrix:\n");
   for( i=0; i<length; i++ ){
     for( j=0; j<length; j++ ){
       if( fabs(XLALGetREAL8MatrixValue( posdef, i, j ) -
@@ -3101,7 +3110,9 @@ REAL8Array *XLALConvertToPositiveDefinite( REAL8Array *nonposdef ){
         XLALSetREAL8MatrixValue( posdef, i, j, 
           XLALGetREAL8MatrixValue( nonposdef, i, j ) );
       }
+      fprintf(stderr, "%.5lf  ", XLALGetREAL8MatrixValue( posdef, i, j ));
     }
+    fprintf(stderr, "\n");
   }
 
   return posdef;

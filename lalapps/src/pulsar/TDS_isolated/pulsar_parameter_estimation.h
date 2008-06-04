@@ -356,8 +356,10 @@ void get_chunk_lengths(DataStructure data);
 
 REAL8Array *CholeskyDecomp( REAL8Array *M, CHAR* uOrl );
 
-REAL8Array *CreateCovarianceMatrix( CHAR *matrixFile, 
+REAL8Array *ReadCorrelationMatrix( CHAR *matrixFile, 
   BinaryPulsarParams params, ParamData *data );
+
+REAL8Array *CreateCovarianceMatrix( ParamData *data, REAL8Array *corMat );
 
 REAL8Array *XLALCheckPositiveDefinite( REAL8Array *matrix );
 
