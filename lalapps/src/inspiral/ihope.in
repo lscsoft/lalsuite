@@ -193,12 +193,19 @@ opts.do_dag_categories = not cp.has_option(
 ##############################################################################
 # create a directory called executables and copy them over
 inspiralutils.mkdir("executables")
+inspiralutils.mkdir("executables32")
 os.chdir("../")
 for (job, executable) in cp.items("condor"):
   if job != "universe":
-    shutil.copy( executable, analysisDirectory + "/executables" )
-    executable = "../executables/" + executable.split("/")[-1]
-    cp.set("condor", job, executable)
+    if job[-2:] != "32":
+      shutil.copy( executable, analysisDirectory + "/executables" )
+      executable = "../executables/" + executable.split("/")[-1]
+      cp.set("condor", job, executable)
+    else:
+      shutil.copy( executable, analysisDirectory + "/executables32" )
+      executable = "../executables32/" + executable.split("/")[-1]
+      cp.set("condor", job, executable)
+
 
 os.chdir(analysisDirectory)
 
