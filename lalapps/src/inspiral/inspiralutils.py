@@ -450,7 +450,7 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dfOnly = False, \
 
   hipeCommand = test_and_add_hipe_arg(hipeCommand,"disable-dag-categories")
   hipeCommand = test_and_add_hipe_arg(hipeCommand,"disable-dag-priorities")
-  if dax: hipeCommand += "--dax " 
+  if dax: hipeCommand += " --dax --datafind " 
   # run lalapps_inspiral_hipe
   make_external_call(hipeCommand)
 
