@@ -1650,6 +1650,8 @@ REAL8 get_upper_limit(REAL8 *cumsum, REAL8 limit, MeshGrid mesh){
 /* function to perform the MCMC parameter estimation */
 void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets, 
   CHAR *det, LALDetector *detPos, EphemerisData *edat ){
+  static LALStatus status;
+
   IntrinsicPulsarVariables vars, varsNew;
   
   /* extra h0 and phase parameter required if a glitch is obsevered */
@@ -1668,24 +1670,27 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
   RandomParams *randomParams=NULL;
   
   CHAR *pos1=NULL, *pos2=NULL;
-  INT4 i=0, j=0, k=0, n=0, count=0, m=0;
+  INT4 i=0, j=0, k=0, n=0, count=0;
   
   REAL8 like1[1], like2[1];
   REAL8 logL1=0., logL2=0.; /* log likelihoods */
-  REAL8 ratio;              /* logL2 - logL1 = log(L2/L1) */
-  
+  REAL8 prior=0., priorNew=0., priorTmp=0., priorTmpNew=0.;
+  REAL8 ratio;              /* logL2 - logL1 = log(L2/L1) */ 
+
   FILE *fp=NULL;
   CHAR outFile[256];
   
   /* variables for pulsar parameters */
   INT4 matTrue=0;
   BinaryPulsarParams pulsarParams, pulsarParamsNew;
-  REAL8Array *covmat=NULL, *posdef=NULL, *chol=NULL;
-  
-  ParamData *paramData=NULL, *randVals=NULL, *vals=NULL;
-  BarycenterInput baryinput[2];
 
-  REAL8 prior=0., priorNew=0.;
+  REAL8Array *chol=NULL, *invmat=NULL;
+  REAL8 determinant;  
+
+  ParamData *paramData=NULL, *randVals=NULL, *vals=NULL;
+  INT4Vector *matPos=NULL; /* position of parameters in ParamData */
+
+  BarycenterInput baryinput[2];
 
   /* read the TEMPO par file for the pulsar */
   XLALReadTEMPOParFile( &pulsarParams, input.parFile );
@@ -1832,7 +1837,7 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
     matTrue = 1;
 
   if( matTrue ){
-    REAL8Array *cormat=NULL; /* correlation matrix */
+    REAL8Array *cormat=NULL, *covmat=NULL, *posdef=NULL;
 
     paramData = XLALMalloc( MAXPARAMS*sizeof(ParamData) );
 
@@ -1842,19 +1847,33 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
     /* set covariance matrix */
     covmat = CreateCovarianceMatrix( paramData, cormat );
 
+    /* allocate memory for inverse matrix */
+    invmat = XLALCreateREAL8Array( covmat->dimLength );
+
     /* check if correlation matrix is positive definite if necessary */
     if( (posdef = XLALCheckPositiveDefinite( cormat )) == NULL ){
       chol = CholeskyDecomp(covmat, "lower");
+
+      /* calculate the matrix inverse */
+      LAL_CALL( LALDMatrixInverse( &status, &determinant, covmat, invmat ),
+        &status );
     }
     else{
       REAL8Array *tempmat=NULL;
       tempmat = CreateCovarianceMatrix( paramData, posdef );
 
       chol = CholeskyDecomp(tempmat, "lower");
+      
+      /* calculate the matrix inverse */
+      LAL_CALL( LALDMatrixInverse( &status, &determinant, tempmat, invmat ),
+        &status );
+
       XLALDestroyREAL8Array( tempmat );
+      XLALDestroyREAL8Array( posdef );
     }
 
     XLALDestroyREAL8Array( cormat );
+    XLALDestroyREAL8Array( covmat );
 
     /* generate random parameters */
     randVals = MultivariateNormalDeviates( chol, paramData, randomParams );
@@ -1862,11 +1881,24 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
     vals = XLALMalloc( MAXPARAMS*sizeof(ParamData) );
     memcpy( vals, randVals, MAXPARAMS*sizeof(ParamData) );
 
+    /* get the posistions of the parameters within paramData */
+    i=0;
+    j=0;
+    matPos = XLALCreateINT4Vector( MAXPARAMS );
+    while(i < MAXPARAMS){
+      if( paramData[i].matPos != 0 ){
+        matPos->data[j] = i;
+        j++;
+      }
+      i++;
+    }
+    matPos = XLALResizeINT4Vector(matPos, j);
+
     /* set up initial pulsar parameters */
     memcpy( &pulsarParamsMCMC[0], &pulsarParams, sizeof(pulsarParams) );
     memcpy( &pulsarParamsMCMC[1], &pulsarParams, sizeof(pulsarParams) );
 
-    SetMCMCPulsarParams( &pulsarParamsMCMC[1], randVals );
+    SetMCMCPulsarParams( &pulsarParamsMCMC[1], randVals, matPos );
 
     /* check eccentricities so that 0 <= e < 1 i.e. circular or elliptical
        orbits */
@@ -2037,9 +2069,9 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
         
         if( matTrue ){
           /* print out pulsar parameters */
-          for( j = 0 ; j < MAXPARAMS ; j++ ){
-            if( paramData[j].matPos != 0 )
-              fprintf(fp, "\t%.17le", vals[j].val-paramData[j].val);
+          for( j = 0 ; j < (INT4)matPos->length ; j++ ){
+            fprintf(fp, "\t%.17le", vals[matPos->data[j]].val -
+              paramData[matPos->data[j]].val);
           }
         }
         fprintf(fp, "\n");
@@ -2053,7 +2085,7 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
       /* generate new pulsars parameters from the pulsar parameter covariance */
       randVals = MultivariateNormalDeviates( chol, paramData, randomParams );
       memcpy(&pulsarParamsNew, &pulsarParams, sizeof(BinaryPulsarParams));
-      SetMCMCPulsarParams( &pulsarParamsNew, randVals );
+      SetMCMCPulsarParams( &pulsarParamsNew, randVals, matPos );
 
       /* check eccentricities so that 0 <= e < 1 i.e. circular of elliptical
        orbits */
@@ -2219,51 +2251,61 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
 
     /* most importantly use the covariance matrix as a prior on the pulsar
        parameters */
-    prior = 0.;
+
     priorNew = 0.;
     if( matTrue ){
-      n=0;
-      m=0;
-      for( j=0; j<MAXPARAMS ; j++){
-        if( paramData[j].matPos != 0 ){
-          for( k=0; k<MAXPARAMS ; k++){
-            if( paramData[k].matPos != 0 ){
-              /* log prior */
-              if( i == 0 ){ /* first likelihood */
-                prior -= (vals[k].val - paramData[k].val) *
-                  XLALGetREAL8MatrixValue(covmat, n, m) * (vals[j].val - 
-                  paramData[j].val);
-              }
-          
-              priorNew -= (randVals[k].val - paramData[k].val) *
-                XLALGetREAL8MatrixValue(covmat, n, m) * (randVals[j].val -
-                paramData[j].val);
+      for( j=0; j<(INT4)matPos->length ; j++){
+        if(i==0)
+          priorTmp = 0.;
 
-              m++;
-            }
+        priorTmpNew = 0.;
+        
+        for( k=0; k<(INT4)matPos->length ; k++){
+          if(i==0){
+            priorTmp += (vals[matPos->data[k]].val -
+              paramData[matPos->data[k]].val) * 
+              XLALGetREAL8MatrixValue(invmat, j, k);
           }
-          n++;
-        }
-      }
-    }
 
-    logL1 += prior;
-    logL2 += priorNew;
+          priorTmpNew += (randVals[matPos->data[k]].val -
+              paramData[matPos->data[k]].val) * 
+              XLALGetREAL8MatrixValue(invmat, j, k);
+        }
+        
+        if(i==0){
+          prior += priorTmp*(vals[matPos->data[j]].val -
+            paramData[matPos->data[j]].val);
+        }
+
+        priorNew += priorTmpNew*(randVals[matPos->data[j]].val -
+          paramData[matPos->data[j]].val);
+      }
+      
+      if(i==0){
+        prior *= -0.5;
+        logL1 += prior;
+      }
+
+      priorNew *= -0.5;
+      logL2 += priorNew;
+    }
 
     /* set and apply priors on h0, psi, cos(iota) and phi is requested */
     if( input.usepriors ){
-      input.priors.vars.h0 = vars.h0;
-      input.priors.vars.phi0 = vars.phi0;
-      input.priors.vars.ci = vars.ci;
-      input.priors.vars.psi = vars.psi;
+      if(i==0){
+        input.priors.vars.h0 = vars.h0;
+        input.priors.vars.phi0 = vars.phi0;
+        input.priors.vars.ci = vars.ci;
+        input.priors.vars.psi = vars.psi;
 
-      logL1 += log_prior(input.priors, input.mesh);
+        logL1 += log_prior(input.priors, input.mesh);
       
-      if( nGlitches > 0 ){
-        for( j = 0 ; j < nGlitches ; j++ ){
-          input.priors.vars.h0 = extraVars[j].h0;
+        if( nGlitches > 0 ){
+          for( j = 0 ; j < nGlitches ; j++ ){
+            input.priors.vars.h0 = extraVars[j].h0;
 
-          logL1 += log_prior(input.priors, input.mesh);
+            logL1 += log_prior(input.priors, input.mesh);
+          }
         }
       }
 
@@ -2301,7 +2343,7 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
       for( j = 0 ; j < nGlitches ; j++)
         extraVars[j] = extraVarsNew[j];
         
-      logL1 = logL2;     
+      logL1 = logL2;
     }
     /* otherwise accept with a certain probability */
     else if( log(XLALUniformDeviate(randomParams)) < ratio ){
@@ -2326,10 +2368,10 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
       
       if( matTrue ){
         /* print out pulsar parameters */
-        for( j = 0 ; j < MAXPARAMS ; j++ ){
+        for( j = 0 ; j < (INT4)matPos->length ; j++ ){
           /* output difference in parameter from heterodyne parameter */
-          if( paramData[j].matPos != 0 )
-            fprintf(fp, "\t%.17le", vals[j].val-paramData[j].val);
+          fprintf(fp, "\t%.17le", vals[matPos->data[j]].val -
+            paramData[matPos->data[j]].val);
         }
       }
       
@@ -2360,11 +2402,10 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
     XLALFree( vals );
     XLALFree( randVals );
 
-    XLALDestroyREAL8Array( covmat );
+    XLALDestroyREAL8Array( invmat );
     XLALDestroyREAL8Array( chol );
 
-    if( posdef != NULL )
-      XLALDestroyREAL8Array( posdef );
+    XLALDestroyINT4Vector( matPos );
   }
 
   fclose(fp);
@@ -2403,83 +2444,84 @@ void get_chunk_lengths(DataStructure data){
   data.chunkLengths = XLALResizeINT4Vector(data.chunkLengths, j);
 }
 
-void SetMCMCPulsarParams( BinaryPulsarParams *pulsarParams, ParamData *data ){
+void SetMCMCPulsarParams( BinaryPulsarParams *pulsarParams, ParamData *data,
+  INT4Vector *matPos ){
   INT4 i=0;
 
   /* go through params and set the next step in the MCMC */
-  for( i=0 ; i<MAXPARAMS; i++ ){
-    if( !strcmp(data[i].name, "f0") && data[i].matPos != 0 )
-      pulsarParams->f0 = data[i].val;
-    else if( !strcmp(data[i].name, "f1") && data[i].matPos != 0 )
-      pulsarParams->f1 = data[i].val;
-    else if( !strcmp(data[i].name, "f2") && data[i].matPos != 0 )
-      pulsarParams->f2 = data[i].val;
-    else if( !strcmp(data[i].name, "Dec") && data[i].matPos != 0 )
-      pulsarParams->dec = data[i].val;
-    else if( !strcmp(data[i].name, "RA") && data[i].matPos != 0 )
-      pulsarParams->ra = data[i].val;
-    else if( !strcmp(data[i].name, "pmdc") && data[i].matPos != 0 )
-      pulsarParams->pmdec = data[i].val;
-    else if( !strcmp(data[i].name, "pmra") && data[i].matPos != 0 )
-      pulsarParams->pmra = data[i].val;
-    else if( !strcmp(data[i].name, "x") && data[i].matPos != 0 )
-      pulsarParams->x = data[i].val;
-    else if( !strcmp(data[i].name, "e") && data[i].matPos != 0 )
-      pulsarParams->e = data[i].val;
-    else if( !strcmp(data[i].name, "T0") && data[i].matPos != 0 )
-      pulsarParams->T0 = data[i].val;
-    else if( !strcmp(data[i].name, "Pb") && data[i].matPos != 0 )
-      pulsarParams->Pb = data[i].val;
-    else if( !strcmp(data[i].name, "Om") && data[i].matPos != 0 )
-      pulsarParams->w0 = data[i].val;
-    else if( !strcmp(data[i].name, "Omdt") && data[i].matPos != 0 )
-      pulsarParams->wdot = data[i].val;
-    else if( !strcmp(data[i].name, "gamma") && data[i].matPos != 0 )
-      pulsarParams->gamma = data[i].val;
-    else if( !strcmp(data[i].name, "Pbdt") && data[i].matPos != 0 )
-      pulsarParams->Pbdot = data[i].val;
-    else if( !strcmp(data[i].name, "s") && data[i].matPos != 0 )
-      pulsarParams->s = data[i].val;
-    else if( !strcmp(data[i].name, "M") && data[i].matPos != 0 )
-      pulsarParams->M = data[i].val;
-    else if( !strcmp(data[i].name, "m2") && data[i].matPos != 0 )
-      pulsarParams->m2 = data[i].val;
-    else if( !strcmp(data[i].name, "dth") && data[i].matPos != 0 )
-      pulsarParams->dth = data[i].val;
-    else if( !strcmp(data[i].name, "xdot") && data[i].matPos != 0 )
-      pulsarParams->xdot = data[i].val;
-    else if( !strcmp(data[i].name, "edot") && data[i].matPos != 0 )
-      pulsarParams->edot = data[i].val;
-    else if( !strcmp(data[i].name, "x2") && data[i].matPos != 0 )
-      pulsarParams->x2 = data[i].val;
-    else if( !strcmp(data[i].name, "e2") && data[i].matPos != 0 )
-      pulsarParams->e2 = data[i].val;
-    else if( !strcmp(data[i].name, "T02") && data[i].matPos != 0 )
-      pulsarParams->T02 = data[i].val;
-    else if( !strcmp(data[i].name, "Pb2") && data[i].matPos != 0 )
-      pulsarParams->Pb2 = data[i].val;
-    else if( !strcmp(data[i].name, "Om2") && data[i].matPos != 0 )
-      pulsarParams->w02 = data[i].val;
-    else if( !strcmp(data[i].name, "x3") && data[i].matPos != 0 )
-      pulsarParams->x3 = data[i].val;
-    else if( !strcmp(data[i].name, "e3") && data[i].matPos != 0 )
-      pulsarParams->e3 = data[i].val;
-    else if( !strcmp(data[i].name, "T03") && data[i].matPos != 0 )
-      pulsarParams->T03 = data[i].val;
-    else if( !strcmp(data[i].name, "Pb3") && data[i].matPos != 0 )
-      pulsarParams->Pb3 = data[i].val;
-    else if( !strcmp(data[i].name, "Om3") && data[i].matPos != 0 )
-      pulsarParams->w03 = data[i].val;
-    else if( !strcmp(data[i].name, "Xpbd") && data[i].matPos != 0 )
-      pulsarParams->xpbdot = data[i].val;
-    else if( !strcmp(data[i].name, "eps1") && data[i].matPos != 0 )
-      pulsarParams->eps1 = data[i].val;
-    else if( !strcmp(data[i].name, "eps2") && data[i].matPos != 0 )
-      pulsarParams->eps2 = data[i].val;
-    else if( !strcmp(data[i].name, "e1dt") && data[i].matPos != 0 )
-      pulsarParams->eps1dot = data[i].val;
-    else if( !strcmp(data[i].name, "e2dt") && data[i].matPos != 0 )
-      pulsarParams->eps2dot = data[i].val;
+  for( i=0 ; i<(INT4)matPos->length; i++ ){
+    if( !strcmp(data[matPos->data[i]].name, "f0") )
+      pulsarParams->f0 = data[matPos->data[i]].val;
+    else if( !strcmp(data[matPos->data[i]].name, "f1") )
+      pulsarParams->f1 = data[matPos->data[i]].val;
+    else if( !strcmp(data[matPos->data[i]].name, "f2") )
+      pulsarParams->f2 = data[matPos->data[i]].val;
+    else if( !strcmp(data[matPos->data[i]].name, "Dec") )
+      pulsarParams->dec = data[matPos->data[i]].val;
+    else if( !strcmp(data[matPos->data[i]].name, "RA") )
+      pulsarParams->ra = data[matPos->data[i]].val;
+    else if( !strcmp(data[matPos->data[i]].name, "pmdc") )
+      pulsarParams->pmdec = data[matPos->data[i]].val;
+    else if( !strcmp(data[matPos->data[i]].name, "pmra") )
+      pulsarParams->pmra = data[matPos->data[i]].val;
+    else if( !strcmp(data[matPos->data[i]].name, "x") )
+      pulsarParams->x = data[matPos->data[i]].val;
+    else if( !strcmp(data[matPos->data[i]].name, "e") )
+      pulsarParams->e = data[matPos->data[i]].val;
+    else if( !strcmp(data[matPos->data[i]].name, "T0") )
+      pulsarParams->T0 = data[matPos->data[i]].val;
+    else if( !strcmp(data[matPos->data[i]].name, "Pb") )
+      pulsarParams->Pb = data[matPos->data[i]].val;
+    else if( !strcmp(data[matPos->data[i]].name, "Om") )
+      pulsarParams->w0 = data[matPos->data[i]].val;
+    else if( !strcmp(data[matPos->data[i]].name, "Omdt") )
+      pulsarParams->wdot = data[matPos->data[i]].val;
+    else if( !strcmp(data[matPos->data[i]].name, "gamma") )
+      pulsarParams->gamma = data[matPos->data[i]].val;
+    else if( !strcmp(data[matPos->data[i]].name, "Pbdt") )
+      pulsarParams->Pbdot = data[matPos->data[i]].val;
+    else if( !strcmp(data[matPos->data[i]].name, "s") )
+      pulsarParams->s = data[matPos->data[i]].val;
+    else if( !strcmp(data[matPos->data[i]].name, "M") )
+      pulsarParams->M = data[matPos->data[i]].val;
+    else if( !strcmp(data[matPos->data[i]].name, "m2") )
+      pulsarParams->m2 = data[matPos->data[i]].val;
+    else if( !strcmp(data[matPos->data[i]].name, "dth") )
+      pulsarParams->dth = data[matPos->data[i]].val;
+    else if( !strcmp(data[matPos->data[i]].name, "xdot") )
+      pulsarParams->xdot = data[matPos->data[i]].val;
+    else if( !strcmp(data[matPos->data[i]].name, "edot") )
+      pulsarParams->edot = data[matPos->data[i]].val;
+    else if( !strcmp(data[matPos->data[i]].name, "x2") )
+      pulsarParams->x2 = data[matPos->data[i]].val;
+    else if( !strcmp(data[matPos->data[i]].name, "e2") )
+      pulsarParams->e2 = data[matPos->data[i]].val;
+    else if( !strcmp(data[matPos->data[i]].name, "T02") )
+      pulsarParams->T02 = data[matPos->data[i]].val;
+    else if( !strcmp(data[matPos->data[i]].name, "Pb2") )
+      pulsarParams->Pb2 = data[matPos->data[i]].val;
+    else if( !strcmp(data[matPos->data[i]].name, "Om2") )
+      pulsarParams->w02 = data[matPos->data[i]].val;
+    else if( !strcmp(data[matPos->data[i]].name, "x3") )
+      pulsarParams->x3 = data[matPos->data[i]].val;
+    else if( !strcmp(data[matPos->data[i]].name, "e3") )
+      pulsarParams->e3 = data[matPos->data[i]].val;
+    else if( !strcmp(data[matPos->data[i]].name, "T03") )
+      pulsarParams->T03 = data[matPos->data[i]].val;
+    else if( !strcmp(data[matPos->data[i]].name, "Pb3") )
+      pulsarParams->Pb3 = data[matPos->data[i]].val;
+    else if( !strcmp(data[matPos->data[i]].name, "Om3") )
+      pulsarParams->w03 = data[matPos->data[i]].val;
+    else if( !strcmp(data[matPos->data[i]].name, "Xpbd") )
+      pulsarParams->xpbdot = data[matPos->data[i]].val;
+    else if( !strcmp(data[matPos->data[i]].name, "eps1") )
+      pulsarParams->eps1 = data[matPos->data[i]].val;
+    else if( !strcmp(data[matPos->data[i]].name, "eps2") )
+      pulsarParams->eps2 = data[matPos->data[i]].val;
+    else if( !strcmp(data[matPos->data[i]].name, "e1dt") )
+      pulsarParams->eps1dot = data[matPos->data[i]].val;
+    else if( !strcmp(data[matPos->data[i]].name, "e2dt") )
+      pulsarParams->eps2dot = data[matPos->data[i]].val;
   }
 }
 
@@ -2677,11 +2719,9 @@ ParamData *MultivariateNormalDeviates( REAL8Array *cholmat, ParamData *data,
   for(i=0;i<dim;i++)
     Z->data[i] = 0.;
 
-  for(i=0;i<dim;i++){
+  for(i=0;i<dim;i++)
     for(j=0;j<dim;j++)
       Z->data[i] += XLALGetREAL8MatrixValue(cholmat,i,j)*randNum->data[j];
-    /* fprintf(stderr, "Z->data[%d] = %le\n", i, Z->data[i]); */
-  }
 
   /* get the output random deviates by doing the mean plus Z */
   j=0;
@@ -2691,7 +2731,6 @@ ParamData *MultivariateNormalDeviates( REAL8Array *cholmat, ParamData *data,
     deviates[i].matPos = data[i].matPos;
     if( data[i].matPos != 0 ){
       deviates[i].val = data[i].val + Z->data[j];
-      
       j++;
     }
     else
@@ -2711,7 +2750,7 @@ ParamData *MultivariateNormalDeviates( REAL8Array *cholmat, ParamData *data,
 */
 /* read in the correlation matrix */
 REAL8Array *ReadCorrelationMatrix( CHAR *matrixFile, 
-BinaryPulsarParams params, ParamData *data ){
+  BinaryPulsarParams params, ParamData *data ){
   FILE *fp=NULL;
 
   CHAR matrixParams[MAXPARAMS][6]; /* parameters in the correlation matrix */
@@ -2955,7 +2994,7 @@ REAL8Array *XLALCheckPositiveDefinite( REAL8Array *matrix ){
   for( i=0; i<(INT4)matrix->dimLength->data[0]; i++ ){
     /* first check if any eigen values are zero and if so convert to positive
        definite matrix */
-    if( eigenval->data[i] < 0. && fabs(eigenval->data[i]) > LAL_REAL8_EPS ){
+    if( eigenval->data[i] < 0. && fabs(eigenval->data[i]) > 3.*LAL_REAL8_EPS ){
       fprintf(stderr, "Eigenvalue is negative. Non-postive definite matrix!\n");
       posdef = XLALConvertToPositiveDefinite( matrix );
       break;
@@ -2982,7 +3021,7 @@ REAL8Array *XLALCheckPositiveDefinite( REAL8Array *matrix ){
   LAL_CALL( LALDSymmetricEigenVectors( &status, eigenval, eigenvec ), &status );
 
   for( i=0; i<(INT4)matrix->dimLength->data[0]; i++ ){
-    if( eigenval->data[i] < 0. && fabs(eigenval->data[i]) > LAL_REAL8_EPS){
+    if( eigenval->data[i] < 0. && fabs(eigenval->data[i]) > 3.*LAL_REAL8_EPS){
       fprintf(stderr, "ABORT! Eigenvalue is negative. Non-postive definite \
 matrix!\n");
       exit(0);
@@ -3102,7 +3141,6 @@ REAL8Array *XLALConvertToPositiveDefinite( REAL8Array *nonposdef ){
   /* check that the difference between new and old values are greater than the
      maximum precision between REAL8 values (LAL_REAL8_EPS) - if not use
      original value */
-  fprintf(stderr, "\nPositive definite matrix:\n");
   for( i=0; i<length; i++ ){
     for( j=0; j<length; j++ ){
       if( fabs(XLALGetREAL8MatrixValue( posdef, i, j ) -
@@ -3110,9 +3148,7 @@ REAL8Array *XLALConvertToPositiveDefinite( REAL8Array *nonposdef ){
         XLALSetREAL8MatrixValue( posdef, i, j, 
           XLALGetREAL8MatrixValue( nonposdef, i, j ) );
       }
-      fprintf(stderr, "%.5lf  ", XLALGetREAL8MatrixValue( posdef, i, j ));
     }
-    fprintf(stderr, "\n");
   }
 
   return posdef;
