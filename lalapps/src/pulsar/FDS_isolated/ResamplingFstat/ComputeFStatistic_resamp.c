@@ -2022,6 +2022,7 @@ void CalcTimeSeries(MultiSFTVector *multiSFTs)
 
 	  REAL8 f0 = SFT_Vect->data[0].f0;
 	  REAL8 DtermsWings = (REAL8)(uvar_Dterms)*deltaF;
+	  /* LOOK HERE */
 	  REAL8 fullFBand = (SFT_Vect->data[0].data->length-1)*deltaF;
     
 	  /*Keep everything except for the Dirichlet Terms */
@@ -2087,6 +2088,7 @@ void CalcTimeSeries(MultiSFTVector *multiSFTs)
 		  /* Restart Cycle with this SFT being first */
 		  j--;      
 
+		  /*CHECK HERE*/
 		  /* Record the Gap between these two blocks */
 		  C.Gap[NumofBlocks] = TimeDiff-SFTTimeBaseline;
 
@@ -2190,7 +2192,8 @@ void CalcTimeSeries(MultiSFTVector *multiSFTs)
 	      /*fprintf(stderr,"Exactly one SFT\n");*/
 	    }
 	  
-	  /*PrintL(L,Fmin,deltaF/C.NumContinuous[k]);*/
+	  PrintL(L,Fmin,deltaF/C.NumContinuous[k]);
+	  exit(0);
 	  /*for(p=0;p<N;p++)
 	    printf("%g %g %g\n",p*deltaF+Fmin,L->data[p].re,L->data[p].im);*/
 
@@ -3013,7 +3016,7 @@ void ComputeFStat_resamp(LALStatus *status,REAL8FrequencySeries *fstatVector, co
       /*while(p<length)*/
 	{
 	  /*printf("%f \n",fabs(p*dF+Fmin - uvar_F));*/
-	  if(fabs(p*dF+Fmin - uvar_F) < dF/2.0)
+	  /*if(fabs(p*dF+Fmin - uvar_F) < dF/2.0)*/
 	    printf("%f %6.12f\n",p*dF+Fmin,fstatVector->data->data[p]+4.0);
 	  p++;
 	}
