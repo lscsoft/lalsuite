@@ -376,7 +376,8 @@ REAL8 XLALGetREAL8MatrixValue( REAL8Array *matrix, INT4 i, INT4 j );
    the ith row and jth column (starting from zero in the normal C converntion)*/
 void XLALSetREAL8MatrixValue( REAL8Array *matrix, INT4 i, INT4 j, REAL8 val );
 
-void SetMCMCPulsarParams( BinaryPulsarParams *pulsarParams, ParamData *data );
+void SetMCMCPulsarParams( BinaryPulsarParams *pulsarParams, ParamData *data,
+  INT4Vector *matPos );
 
 #ifdef  __cplusplus
 }
