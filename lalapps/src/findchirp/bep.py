@@ -113,7 +113,7 @@ def create_bank(configcp, arguments):
 def create_dag_file(configcp):
   """ 
   create the whole dag file containing jobs for the simulations and the
-  output (finalise.sh)
+  output (bep.dag)
   @param configcp: the user ini file
   """
   
@@ -164,10 +164,10 @@ def create_finalise_script(configcp):
   
   fp = open('finalise.sh', 'w')
   fp.write('#!/bin/sh\n')
-  fp.write('cp TMPLTBANK.xml BE_Bank.xml\n')
+  fp.write('cp BankEfficiency-Bank.xml BE_Bank.xml\n')
   fp.write('rm -f Trigger.dat ; ls bankefficiency*.out | awk \'{print "cat  " $1 ">> Trigger.dat"}\' > script.sh; chmod 755 script.sh ; ./script.sh; \n')
   fp.write(configcp.get("main", "executable") +' --ascii2xml \n')
-  fp.write('mv Trigger.xml Trigger_' + noise_model +'_'+fl+'_'+grid+'_'+template+'_'+signal+'_'+mm+'.xml')
+  fp.write('mv BankEfficiency-Result.xml Trigger_' + noise_model +'_'+fl+'_'+grid+'_'+template+'_'+signal+'_'+mm+'.xml')
   fp.close()
   os.system('chmod 755 finalise.sh')
         
@@ -196,23 +196,6 @@ def parse_arguments():
   parser = OptionParser()
   parser.add_option( "--config-file")
   
-  parser.add_option("--search",
-      dest='search',default='BNS',
-      help=" <BNS, BBH, PBH , BHNS, S5 (1,60)>")
-  parser.add_option("--bank-ffinal",
-      dest='bank_ffinal', default=2047, type='float',
-      help="upper frequency to be used" )
-  parser.add_option("--max-total-mass",
-      dest='max_total_mass', default=-1, type='float',
-      help="max total mass (injection)" )
-  parser.add_option("--fast-simulation",
-      action="store_true", default="false",
-      dest='fast_simulation', 
-      help="fast simulation option" )
-  parser.add_option("--bhns-injection",
-      action="store_true", default="false",
-      dest='bhns_injection', 
-      help="bhns injection only. If search arguments is set to BHNS, this parameter will always be used." )
 
 
 
