@@ -253,6 +253,7 @@ void LALRandomInspiralSignal
                     randIn->param.massChoice=m1Andm2;
                     LALInspiralParameterCalc(status->statusPtr, &(randIn->param));
                     CHECKSTATUSPTR(status);
+                    randIn->param.massChoice=bhns;
                     break;
 
                 case m1Andm2: 
@@ -345,18 +346,21 @@ void LALRandomInspiralSignal
                     randIn->param.massChoice = m1Andm2;
                     LALInspiralParameterCalc(status->statusPtr, &(randIn->param));
                     CHECKSTATUSPTR(status);
+                    randIn->param.massChoice = fixedMasses;
                     break;
 
                 case fixedPsi: /* the user has already given psi0/psi3*/
                     randIn->param.massChoice = psi0Andpsi3;
                     LALInspiralParameterCalc(status->statusPtr, &(randIn->param));
                     CHECKSTATUSPTR(status);
+                    randIn->param.massChoice = fixedPsi;
                     break;
 
                 case fixedTau: /* the user has already given tau0/tau3*/
                     randIn->param.massChoice = t03;
                     LALInspiralParameterCalc(status->statusPtr, &(randIn->param));
                     CHECKSTATUSPTR(status);
+                    randIn->param.massChoice = fixedTau;
                     break;
 
                 case t02: 
@@ -437,7 +441,11 @@ void LALRandomInspiralSignal
                     }
                      break;
                      
-                case m1Andm2: 
+                case fixedMasses:
+                case fixedTau:
+                  valid = 1;
+                  break; 
+                case m1Andm2:
                 case t03: 
                 case t02:
                     /*
