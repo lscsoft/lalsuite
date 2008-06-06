@@ -65,7 +65,7 @@ int XLALSetFlatLatticeTilingSpindownFstatMetric(
   
   int i, j;
   gsl_matrix *metric = NULL;
-  gsl_vector *conv_factors;
+  gsl_vector *to_real;
 
   /* Check input */
   if (Tspan <= 0.0)
@@ -73,9 +73,9 @@ int XLALSetFlatLatticeTilingSpindownFstatMetric(
 
   /* Allocate memory */
   ALLOC_GSL_MATRIX(metric, n, n, XLAL_ERROR);
-  ALLOC_GSL_VECTOR(conv_factors, n, XLAL_ERROR);
+  ALLOC_GSL_VECTOR(to_real, n, XLAL_ERROR);
   gsl_matrix_set_zero(metric);
-  gsl_vector_set_all(conv_factors, 1.0);
+  gsl_vector_set_all(to_real, 1.0);
 
   /* Calculate metric */
   for (i = 0; i < n - 2; ++i)
@@ -88,7 +88,7 @@ int XLALSetFlatLatticeTilingSpindownFstatMetric(
 
   /* Calculate conversion factors for frequency and spindowns */
   {
-    gsl_vector_view v = gsl_vector_subvector(conv_factors, 2, n - 2);
+    gsl_vector_view v = gsl_vector_subvector(to_real, 2, n - 2);
     double x = 1.0 / LAL_TWOPI;
     for (i = 0; i < n - 2; ++i) {
       x *= (i + 1) / Tspan;
@@ -97,15 +97,15 @@ int XLALSetFlatLatticeTilingSpindownFstatMetric(
   }
   
   /* Swap elements 0 and 2 to get the right order */
-  gsl_vector_swap_elements(conv_factors, 0, 2);
+  gsl_vector_swap_elements(to_real, 0, 2);
 
   /* Set the metric of the flat lattice tiling */
-  if (XLALSetFlatLatticeTilingMetric(tiling, metric, max_mismatch, conv_factors, TRUE) != XLAL_SUCCESS)
+  if (XLALSetFlatLatticeTilingMetric(tiling, metric, max_mismatch, to_real) != XLAL_SUCCESS)
     XLAL_ERROR("XLALSetFlatLatticeTilingMetric failed", XLAL_EFAILED);
 
   /* Cleanup */
   FREE_GSL_MATRIX(metric);
-  FREE_GSL_VECTOR(conv_factors);
+  FREE_GSL_VECTOR(to_real);
 
   return XLAL_SUCCESS;
 

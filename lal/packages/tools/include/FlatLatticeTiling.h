@@ -66,62 +66,66 @@ extern "C" {
     /* Linear bounds */
     gsl_matrix *linear_bound_A;
     gsl_vector *linear_bound_b;
-
-    /* For checking the linear bounds */
+    gsl_matrix *linear_vertices;
+    gsl_vector_int *linear_map;
+    gsl_vector *linear_min_vertex;
+    gsl_vector *linear_max_vertex;
     SimplexMethodTableau *linear_tableau;
+    gsl_matrix *linear_metric;
+    gsl_vector *linear_current;
     gsl_vector *linear_transl_b;
     gsl_vector *linear_optimal;
     gsl_vector *linear_temp;
 
     /* Quadratic bounds */
     gsl_matrix *quadratic_bound_Q;
+    gsl_vector_int *quadratic_map;
 
-    /* Metric of the full parameter space */
-    gsl_matrix *metric;
+    /* Inverse lookup for bound index maps */
+    gsl_vector_int *bound_inverse_map;
+
+    /* Carefully check bounds only on these dimensions */
+    gsl_vector_int *careful_linear;
+    gsl_vector_int *careful_quadratic;
+
+    /* Metric of the parameter space in normalised coordinates */
+    gsl_matrix *norm_metric;
+
+    /* Conversion from normalised to real parameter coordinates */
+    gsl_vector *norm_to_real_mul;
+    gsl_vector *norm_to_real_add;
 
     /* Maximum metric mismatch between the templates */
     REAL8 max_mismatch;
-
-    /* Normalisation factors applied to bounds, metric, and output points */
-    gsl_vector *norm_factors;
 
     /* Reduced dimension (singular dimensions excluded) */
     INT4 reduced_dim;
 
     /* Dimension map from reduced to full dimensions */
-    gsl_vector_int *dim_map;
+    gsl_vector_int *reduced_map;
 
-    /* Reduced metric */
-    gsl_matrix *reduced_metric;
+    /* Transformation from lattice coordinates to normalised space */
+    gsl_matrix *latt_to_norm;
 
-    /* Bounding box of the (reduced) metric ellipse */
-    gsl_vector *bound_box;
-
-    /* Orthonormal directions of the (reduced) metric */
-    gsl_matrix *directions;
-
-    /* Generator of the tiling lattice */
-    gsl_matrix *generator;
-
-    /* Transformation from lattice coordinates to parameter space */
-    gsl_matrix *latt_to_param;
-
-    /* State of the tiling */
-    int state;
+    /* Padding along each dimension */
+    gsl_vector *norm_padding;
 
     /* Current lattice point */
     gsl_vector_int *latt_current;
-    gsl_vector *param_current;
-
-    /* Parameter space offset */
-    gsl_vector *param_offset;
+    gsl_vector *norm_current;
 
     /* Bounds on current point */
-    gsl_vector *param_lower;
-    gsl_vector *param_upper;
+    gsl_vector *norm_lower;
+    gsl_vector *norm_upper;
 
-    /* Template count */
-    INT8 template_count;
+    /* Pointer to current point */
+    gsl_vector *current_tile;
+
+    /* Total number of points generated so far */
+    INT8 tile_count;
+
+    /* State of the tiling */
+    int state;
 
   } FlatLatticeTiling;
 
@@ -131,11 +135,12 @@ extern "C" {
   FlatLatticeTiling *XLALCreateFlatLatticeTiling(INT4);
   void XLALFreeFlatLatticeTiling(FlatLatticeTiling*);
   int XLALSetFlatLatticeTilingSingularBound(FlatLatticeTiling*, INT4, REAL8);
-  int XLALAddFlatLatticeTilingLinearBound(FlatLatticeTiling*, INT4, gsl_vector*, REAL8);
-  int XLALSetFlatLatticeTilingMetric(FlatLatticeTiling*, gsl_matrix*, REAL8, gsl_vector*, BOOLEAN);
-  int XLALSetCubicLatticeTiling(FlatLatticeTiling*);
-  int XLALSetAnstarLatticeTiling(FlatLatticeTiling*);
+  int XLALAddFlatLatticeTilingLinearBound(FlatLatticeTiling*, INT4, gsl_vector*, REAL8, BOOLEAN);
+  int XLALSetFlatLatticeTilingMetric(FlatLatticeTiling*, gsl_matrix*, REAL8, gsl_vector*);
+  int XLALSetCubicTilingLattice(FlatLatticeTiling*);
+  int XLALSetAnstarTilingLattice(FlatLatticeTiling*);
   int XLALNextFlatLatticeTile(FlatLatticeTiling*);
+  REAL8 XLALTotalFlatLatticeTileCount(FlatLatticeTiling*);
 
 #ifdef __cplusplus
 }
