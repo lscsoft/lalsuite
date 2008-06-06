@@ -192,7 +192,7 @@ void LALInspiralITStructureParseParameters(LALStatus *status,
 	params->fCutoff = atof(argv[++i]);}
       else if (strcmp(argv[i], "--order")==0){
 	params->order = atoi(argv[++i]);}
-      else if (strcmp(argv[i], "--ampOrder")==0){
+      else if (strcmp(argv[i], "--amp-order")==0){
 	params->ampOrder = atoi(argv[++i]);}
       else if (strcmp(argv[i], "--nStartPad")==0){
 	params->nStartPad = atoi(argv[++i]);}
@@ -216,25 +216,15 @@ void LALInspiralITStructureParseParameters(LALStatus *status,
 	params->tSampling = atof(argv[++i]); }
       else if (strcmp(argv[i],"--distance")==0){
 	params->distance = atof(argv[++i]); }
-      else if (strcmp(argv[i],"--mass1")==0){
-	params->mass1 = atof(argv[++i]);}
-      else if (strcmp(argv[i],"--mass2")==0){
-	params->mass2 = atof(argv[++i]);}
-      else if (strcmp(argv[i],"--massChoice")==0){
-	if (strcmp(argv[++i],"masses")==0){
-	  params->massChoice = m1Andm2;}
-	else if (strcmp(argv[i],"psi")==0){ 
-	  params->massChoice = psi0Andpsi3;}
-      }
       else if (strcmp(argv[i],"--startPhase")==0){
 	params->startPhase = atof(argv[++i]); }
       else if (strcmp(argv[i],"--startTime")==0){
 	params->startTime = atof(argv[++i]); }
       else if (strcmp(argv[i],"--eccentricity")==0){
 	params->eccentricity = atof(argv[++i]); }
-      else if (strcmp(argv[i],"--Theta")==0){
+      else if (strcmp(argv[i],"--theta")==0){
 	params->Theta = atof(argv[++i]); }
-      else if (strcmp(argv[i],"--Zeta2")==0){
+      else if (strcmp(argv[i],"--zeta2")==0){
 	params->Zeta2 = atof(argv[++i]); } 
       else if (strcmp(argv[i],"--alpha")==0){
 	params->alpha = atof(argv[++i]); }
