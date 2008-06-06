@@ -20,10 +20,12 @@
 
 /*
  * TODO
-1- make sure --fl,-fl-tempalte and --fl-signal give consisent results when being set.
+1 BCV filtering and EOB injection fails:
+ ./lalapps_BankEfficiency --template BCV --bank-alpha 0.01 --bank-psi0-range 10 250000 --bank-psi3-range -2000 -10  --bank-inside-polygon 1 --signal EOB --xml-output  --signal TaylorT1 --verbose 
 2- fast option for eccentric and amplcor cases.
 3 user-tag  for the output ?
 4 check seed effects
+
 7 use the sim_inspiral table as an input 
  * */
 #include "BankEfficiency.h"
@@ -2160,13 +2162,9 @@ void BankEfficiencyGenerateInputData(
     }
     else /* EOB , T1 and so on*/
     {    	
-      randIn->inclinationMin = 0; /*inclination must be >0*/
-      randIn->inclinationMax = LAL_PI;
       u = XLALUniformDeviate(randParams);    
       randIn->param.inclination = randIn->inclinationMin + u * 
           (randIn->inclinationMax-randIn->inclinationMin);
-      randIn->polarisationAngleMin = 0.;
-      randIn->polarisationAngleMax = LAL_PI;       
       u = XLALUniformDeviate(randParams);    
       randIn->param.polarisationAngle = randIn->polarisationAngleMin + u * 
           (randIn->polarisationAngleMax-randIn->polarisationAngleMin);
@@ -2627,6 +2625,8 @@ void BankEfficiencyInitRandomInspiralSignalIn(
   randIn->param.ampOrder        = 5;
   randIn->inclinationMin        = 0.;
   randIn->inclinationMax        = LAL_PI;
+  randIn->polarisationAngleMin = 0.;
+  randIn->polarisationAngleMax = LAL_PI;       
   
 }
 
