@@ -46,6 +46,7 @@ NRCSID( LISASPECIFICSC, "$Id$");
 #define SCALAR(u,v) ((u)[0]*(v)[0] + (u)[1]*(v)[1] + (u)[2]*(v)[2])
 #define SQ(x) ( (x) * (x) )
 #define GPS2REAL8(gps) (1.0 * (gps).gpsSeconds + 1.e-9 * (gps).gpsNanoSeconds )
+#define LAL_SQRT1_3   0.5773502691896257645091487805019575  /**< 1/sqrt(3) */
 /*----- SWITCHES -----*/
 
 /*---------- internal types ----------*/
@@ -64,12 +65,12 @@ static REAL4 safe_sinc ( REAL4 x );
 
 
 /** Set up the \em LALDetector struct representing LISA X, Y, Z TDI observables.
- * INPUT: channelNum = '1', '2', '3', '4', '5', '6': detector-tensor corresponding to TDIs X, Y, Z, Y-Z, Z-X, X-Y respectively.
+ * INPUT: channelNum = '1', '2', '3', '4', '5', '6', '7', '8', '9': detector-tensor corresponding to TDIs X, Y, Z, Y-Z, Z-X, X-Y, A, E, T respectively.
  * return -1 on ERROR, 0 if OK
  */
 int
 XLALcreateLISA (LALDetector *Detector,	/**< [out] LALDetector */
-		CHAR channelNum		/**< [in] which TDI observable: '1' = X, '2'= Y, '3' = Z, '4' = Y-Z, '5' = Z-X, '6' = X-Y */
+		CHAR channelNum		/**< [in] which TDI observable: '1' = X, '2'= Y, '3' = Z, '4' = Y-Z, '5' = Z-X, '6' = X-Y, '7' = A, '8' = E, '9' = T */
 		)
 {
   LALDetector Detector1 = empty_LALDetector;
@@ -103,8 +104,20 @@ XLALcreateLISA (LALDetector *Detector,	/**< [out] LALDetector */
       strcpy ( Detector1.frDetector.name, "Z6: LISA TDI X-Y" );
       strcpy ( Detector1.frDetector.prefix, "Z6");
       break;
+    case '7':
+      strcpy ( Detector1.frDetector.name, "Z7: LISA TDI A" );
+      strcpy ( Detector1.frDetector.prefix, "Z7");
+      break;
+    case '8':
+      strcpy ( Detector1.frDetector.name, "Z8: LISA TDI E" );
+      strcpy ( Detector1.frDetector.prefix, "Z8");
+      break;
+    case '9':
+      strcpy ( Detector1.frDetector.name, "Z9: LISA TDI T" );
+      strcpy ( Detector1.frDetector.prefix, "Z9");
+      break;
     default:
-      LALPrintError ("\nIllegal LISA TDI index '%c': must be one of {'1', '2', '3', '4', '5', '6'}.\n\n", channelNum );
+      LALPrintError ("\nIllegal LISA TDI index '%c': must be one of {'1', '2', '3', '4', '5', '6', '7', '8', '9'}.\n\n", channelNum );
       return -1;
       break;
     } /* switch (detIndex) */
@@ -258,6 +271,11 @@ XLALgetLISADetectorTensorLWL ( SymmTensor3 *detT, 		/**< [out]: LISA LWL detecto
     case '6':
       chan1 = '1'; chan2 = '2';
       break;
+    case '7':
+    case '8':
+    case '9':
+      chan2 = 'X';
+      break;
     default:	/* unknown */
       LALPrintError ("\nInvalid channel-number '%c' for LISA \n\n", channelNum );
       xlalErrno = XLAL_EINVAL;
@@ -267,8 +285,85 @@ XLALgetLISADetectorTensorLWL ( SymmTensor3 *detT, 		/**< [out]: LISA LWL detecto
 
   if (chan1 == 0)
     {
-      XLALSubtractSymmTensor3s ( detT, &(detArms[armA].basisT), &(detArms[armB].basisT) );
-      XLALScaleSymmTensor3 ( detT, detT, 0.5f );	/* (1/2)*(nA x nA - nB x nB ) */
+      if (chan2 == 0)
+	{
+	  XLALSubtractSymmTensor3s ( detT, &(detArms[armA].basisT), &(detArms[armB].basisT) );
+	  XLALScaleSymmTensor3 ( detT, detT, 0.5f );	/* (1/2)*(nA x nA - nB x nB ) */
+	}
+      else
+	{
+	  REAL8 weight1, weight2, weight3;
+	  SymmTensor3 detT3;
+
+	  if ( XLALgetLISADetectorTensorLWL ( &detT1, detArms, '1' ) != 0 ) {
+	    LALPrintError ("\nXLALgetLISADetectorTensorLWL() failed !\n\n");
+	    xlalErrno = XLAL_EINVAL;
+	    return -1;
+	  }
+	  if ( XLALgetLISADetectorTensorLWL ( &detT2, detArms, '2' ) != 0 ) {
+	    LALPrintError ("\nXLALgetLISADetectorTensorLWL() failed !\n\n");
+	    xlalErrno = XLAL_EINVAL;
+	    return -1;
+	  }
+	  if ( XLALgetLISADetectorTensorLWL ( &detT3, detArms, '3' ) != 0 ) {
+	    LALPrintError ("\nXLALgetLISADetectorTensorLWL() failed !\n\n");
+	    xlalErrno = XLAL_EINVAL;
+	    return -1;
+	  }
+	  switch ( channelNum )
+	    {
+	    case '7':
+	      weight1 = (  2.0 / 3.0 );
+	      weight2 = ( -1.0 / 3.0 );
+	      weight3 = ( -1.0 / 3.0 );
+	      break;
+	    case '8':
+	      weight1 = 0.0;
+	      weight2 = (-1.0 * LAL_SQRT1_3);
+	      weight3 =         LAL_SQRT1_3;
+	      break;
+	    case '9':
+	      /* Note that in the LWL this will give detT = 0 */
+	      weight1 = ( LAL_SQRT2 / 3.0 );
+	      weight2 = ( LAL_SQRT2 / 3.0 );
+	      weight3 = ( LAL_SQRT2 / 3.0 );
+	      break;
+	    default:
+	      /* should never get to default */
+	      LALPrintError ("\nInvalid channel-number '%c' for LISA \n\n", channelNum );
+	      xlalErrno = XLAL_EINVAL;
+	      return -1;
+	      break;
+	    }
+
+	  /* Note that the following in-place operations *are* safe */
+
+	  if ( XLALScaleSymmTensor3 ( &detT1, &detT1, weight1 ) != 0 ) {
+	    LALPrintError ("\nXLALScaleSymmTensor3() failed !\n\n");
+	    xlalErrno = XLAL_EINVAL;
+	    return -1;
+	  }
+	  if ( XLALScaleSymmTensor3 ( &detT2, &detT2, weight2 ) != 0 ) {
+	    LALPrintError ("\nXLALScaleSymmTensor3() failed !\n\n");
+	    xlalErrno = XLAL_EINVAL;
+	    return -1;
+	  }
+	  if ( XLALScaleSymmTensor3 ( &detT3, &detT3, weight3 ) != 0 ) {
+	    LALPrintError ("\nXLALScaleSymmTensor3() failed !\n\n");
+	    xlalErrno = XLAL_EINVAL;
+	    return -1;
+	  }
+	  if ( XLALAddSymmTensor3s ( &detT2, &detT2, &detT3 ) != 0 ) {
+	    LALPrintError ("\nXLALSumSymmTensor3s() failed !\n\n");
+	    xlalErrno = XLAL_EINVAL;
+	    return -1;
+	  }
+	  if ( XLALAddSymmTensor3s ( detT, &detT1, &detT2 ) != 0 ) {
+	    LALPrintError ("\nXLALSumSymmTensor3s() failed !\n\n");
+	    xlalErrno = XLAL_EINVAL;
+	    return -1;
+	  }	 
+	} /* if (chan2 != 0) */
     }
   else
     {
@@ -283,7 +378,11 @@ XLALgetLISADetectorTensorLWL ( SymmTensor3 *detT, 		/**< [out]: LISA LWL detecto
 	return -1;
       }
 
-      XLALSubtractSymmTensor3s ( detT, &detT1, &detT2 );	/* d_X - d_Y etc */
+      if ( XLALSubtractSymmTensor3s ( detT, &detT1, &detT2 ) != 0 ) {
+	LALPrintError ("\nXLALSubtractSymmTensor3s() failed !\n\n");
+	xlalErrno = XLAL_EINVAL;
+	return -1;
+      }	/* d_X - d_Y etc */
     } /* multi-channel "detector" such as 'X-Y' etc */
 
   return 0;

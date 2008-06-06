@@ -304,8 +304,30 @@ XLALSymmetricTensorProduct3 ( SymmTensor3 *vxw, REAL4 v[3], REAL4 w[3] )
 
 } /* XLALSymmTensorProduct() */
 
+/** Convenience function for adding two SymmTensor3s: aT + bT
+ * NOTE: it *is* safe to have sum point to the same tensor-struct as either aT or bT.
+ */
+int
+XLALAddSymmTensor3s ( SymmTensor3 *sum, const SymmTensor3 *aT, const SymmTensor3 *bT )
+{
+  if ( !sum || !aT || !bT )
+    return -1;
+
+  sum->d11 = aT->d11  + bT->d11;
+  sum->d12 = aT->d12  + bT->d12;
+  sum->d13 = aT->d13  + bT->d13;
+
+  sum->d22 = aT->d22  + bT->d22;
+  sum->d23 = aT->d23  + bT->d23;
+
+  sum->d33 = aT->d33  + bT->d33;
+
+  return 0;
+
+} /* XLALAddSymmTensor3s() */
+
 /** Convenience function for subtracting two SymmTensor3s: aT - bT
- * NOTE: it *is* save to have diff point to the same tensor-struct as either aT or bT.
+ * NOTE: it *is* safe to have diff point to the same tensor-struct as either aT or bT.
  */
 int
 XLALSubtractSymmTensor3s ( SymmTensor3 *diff, const SymmTensor3 *aT, const SymmTensor3 *bT )
@@ -346,7 +368,7 @@ XLALScaleSymmTensor3 ( SymmTensor3 *mult, const SymmTensor3 *aT, REAL4 factor )
 
   return 0;
 
-} /* XLALMultiplySymmTensor3() */
+} /* XLALScaleSymmTensor3() */
 
 /** Contract two symmetric tensors over both indices T1 : T2
  */
