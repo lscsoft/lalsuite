@@ -408,12 +408,7 @@ class Plotting:
     gca().grid(True)
     return fig,handle
 
-  def surf(self,xdata,ydata,zdata,xbin=20,ybin=20,vmin=0,vmax=1):
-    """
-    """
-    fig = self.setfigure() 
-    handle = None
-    
+  def griddata(self,xdata,ydata,zdata,xbin=20,ybin=20):
     xmin = min(xdata)
     xmax = max(xdata)
     xstep = (xmax - xmin)/xbin
@@ -428,15 +423,36 @@ class Plotting:
     # interpolate data
     interp = tri.nn_interpolator(zdata)
     zi = interp(xi,yi)
+
+    return xi,yi,zi
+
+  def surf(self,xdata,ydata,zdata,xbin=20,ybin=20,vmin=0,vmax=1):
+    """
+    """
+    fig = self.setfigure() 
+    handle = None
+   
+    xi,yi,zi = self.griddata(xdata,ydata,zdata,xbin,ybin) 
     zim = ma.masked_where(isnan(zi),zi)
     figure(figsize=(8,8))
     p = pcolor(xi,yi,zim,shading='interp',cmap=cm.jet,
                vmin=vmin,vmax=vmax)
     gca().grid(True)
     #c = contour(xi,yi,zim,cmap=cm.jet)
-    #c = contour(xi,yi,zim)
     colorbar()
-    
+    return p
+
+  def contourf(self,xdata,ydata,zdata,xbin=20,ybin=20,vmin=0,vmax=1):
+    fig = self.setfigure() 
+    handle = None
+   
+    xi,yi,zi = self.griddata(xdata,ydata,zdata,xbin,ybin) 
+    zim = ma.masked_where(isnan(zi),zi)
+    figure(figsize=(8,8))
+    c = contourf(xi,yi,zim,[0.5, 0.8, 0.9, 0.95 ,1])
+    gca().grid(True)
+    colorbar()
+    return c  
 
 
   def vectors2image(self, xdata,ydata, N=50):

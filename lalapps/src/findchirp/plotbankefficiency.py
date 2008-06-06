@@ -146,11 +146,16 @@ if signal=='Eccentricity':
   x = results['ecc_sim']
   y = results['totalmass_sim']
   z = results['snr']
-  plotting.surf(x,y,z,20,20,vmin=0.5,vmax=1)
+  
+  plotting.surf(x,y,z,40,40,vmin=0.5,vmax=1)
   xlabel(r'Eccentricity')
   ylabel(r'Total mass $(M_\odot)$')
-  
   mysavefig(opts,'plotbankefficiency_surf_snr_versus_totalmass_ecc.png')
+  
+  plotting.contourf(x,y,z,40,40,vmin=0.5,vmax=1)
+  xlabel(r'Eccentricity')
+  ylabel(r'Total mass $(M_\odot)$')
+  mysavefig(opts,'plotbankefficiency_contour_snr_versus_totalmass_ecc.png')
 
 
 # --------------------------------------------------------------- accuracies
