@@ -60,14 +60,14 @@ extern "C" {
    */
   void XLAL_VBXMLO_Header(VeryBasicXMLOutput*, INT4, INT4);
   void XLAL_VBXMLO_Indent(VeryBasicXMLOutput*);
-  void XLAL_VBXMLO_BeginTag(VeryBasicXMLOutput*, const char*, const char*, ...);
+  void XLAL_VBXMLO_BeginTag(VeryBasicXMLOutput*, const char*);
   void XLAL_VBXMLO_EndTag(VeryBasicXMLOutput*, const char*);
-  void XLAL_VBXMLO_Tag(VeryBasicXMLOutput*, const char*, const char*, const char*, ...);
+  void XLAL_VBXMLO_Tag(VeryBasicXMLOutput*, const char*, const char*, ...);
   void XLAL_VBXMLO_Printf(VeryBasicXMLOutput*, const char*, ...);
-  void XLAL_VBXMLO_gsl_vector(VeryBasicXMLOutput*, gsl_vector*, const char*, const char*, ...);
-  void XLAL_VBXMLO_gsl_vector_int(VeryBasicXMLOutput*, gsl_vector_int*, const char*, const char*, ...);
-  void XLAL_VBXMLO_gsl_matrix(VeryBasicXMLOutput*, gsl_matrix*, const char*, const char*, ...);
-  void XLAL_VBXMLO_gsl_matrix_Trans(VeryBasicXMLOutput*, gsl_matrix*, const char*, const char*, ...);
+  void XLAL_VBXMLO_gsl_vector(VeryBasicXMLOutput*, const char*, gsl_vector*);
+  void XLAL_VBXMLO_gsl_vector_int(VeryBasicXMLOutput*, const char*, gsl_vector_int*);
+  void XLAL_VBXMLO_gsl_matrix(VeryBasicXMLOutput*, const char*, gsl_matrix*);
+  void XLAL_VBXMLO_gsl_matrix_Trans(VeryBasicXMLOutput*, const char*, gsl_matrix*);
 
 #ifdef __cplusplus
 }
