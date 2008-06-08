@@ -1,3 +1,39 @@
+/*
+*  Copyright (C) 2007 Tania Regimbau
+*
+*  This program is free software; you can redistribute it and/or modify
+*  it under the terms of the GNU General Public License as published by
+*  the Free Software Foundation; either version 2 of the License, or
+*  (at your option) any later version.
+*
+*  This program is distributed in the hope that it will be useful,
+*  but WITHOUT ANY WARRANTY; without even the implied warranty of
+*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*  GNU General Public License for more details.
+*
+*  You should have received a copy of the GNU General Public License
+*  along with with program; see the file COPYING. If not, write to the
+*  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+*  MA  02111-1307  USA
+*/
+
+/*
+ * stochastic_preprocess.c 
+ *
+ * Tania Regimbau <regimbau@obs-nice.fr>  
+ *
+ *
+ * $Id$
+ */
+
+
+/*
+ gcc -Wall -o popcorn popcorn.c 
+ -I/opt/lscsoft/non-lsc/include  -I${LAL_PREFIX}/ include 
+ -L/usr/local/lib -L${LAL_PREFIX}/lib  -L/opt/lscsoft/libframe/lib  -L/opt/lscsoft/non-lsc/lib 
+ -lgsl -lgslcblas -lm -llal -lz -llalframe -lFrame
+*/
+
 #include <stdio.h>
 #include <math.h>
 #include <string.h>
@@ -81,7 +117,7 @@ INT4 main (INT4 argc, CHAR *argv[])
   
   int i, n;
   /* signal */
-  double var, varn, sigman,varmean, snr;
+  double var, varn, sigman, varmean, snr;
   double pmu[10];
   double var1, var2, sigmaref;
   double muest, sigmaest, varest, varmeanest, sigma1est, sigma2est;
@@ -115,7 +151,7 @@ INT4 main (INT4 argc, CHAR *argv[])
    /* set resample parameters */
    resampleFactor=(UINT4)(sampleRate/resampleRate);
    Npt0=Npt*resampleFactor;
-   resampleParams.deltaT = 1.0 / (REAL8)resampleRate;
+   resampleParams.deltaT = 1./(REAL8)resampleRate;
    resampleParams.filterType = defaultButterworth;
   }
 
@@ -245,7 +281,7 @@ INT4 main (INT4 argc, CHAR *argv[])
 	 }	
     }
    
-   /* normalize so that maximal variance = 1 **/ 
+   /* normalize so that maximal sigma1*sigma2 = 1 **/ 
    if(verbose_flag)
     fprintf(stdout, "calculate variances...\n");
    var1=0.;var2=0.;	   
@@ -255,11 +291,7 @@ INT4 main (INT4 argc, CHAR *argv[])
    }
    sigma1=sqrt(var1/Npt);
    sigma2=sqrt(var2/Npt);
-  
-   if(var1>var2)
-    sigmaref=sigma2;
-   else 
-    sigmaref=sigma1;
+   sigmaref=sqrt(sigma1*sigma2);
    if(verbose_flag)
     fprintf(stdout, "normalize noise...\n");	 
     
@@ -277,12 +309,12 @@ INT4 main (INT4 argc, CHAR *argv[])
   for(i=0;i<10;i++)
    pmu[i]=gsl_ran_poisson_pdf(i,mu);
 	
-  /* signal-to-noise ratio*/
+  /* signal-to-noise ratio rho = varmean*sqrt(N)/(sigma1*sigma2)*/
   var=sigma*sigma;
   varmean=0.; 
   for(i=1;i<10;i++)
    varmean=varmean+pmu[i]*var*i;
-  snr=varmean*sqrt(Npt)/(sigma1*sigma2);
+  snr=varmean*sqrt(Npt);
 
   if(verbose_flag)
    fprintf(stdout, "generate gw signal with signal to noise ratio %f...\n",snr);
@@ -576,9 +608,9 @@ void displayUsage(INT4 exitcode)
   fprintf(stderr, " --resample            resample data\n");
   fprintf(stderr, " -t                    GPS start time\n");
   fprintf(stderr, " -N                    number of points in data set\n");
-  fprintf(stderr, " -m                    mu\n");
-  fprintf(stderr, " -s                    sigma\n");
-  fprintf(stderr, " -g                    sigma2\n");
+  fprintf(stderr, " -m                    mu of injected gw signal\n");
+  fprintf(stderr, " -s                    sigma of injected gw signa\n");
+  fprintf(stderr, " -g                    sigma2 of gaussian noise \n");
   fprintf(stderr, " -c                    channel for first stream\n");
   fprintf(stderr, " -C                    channel for second stream\n");
   fprintf(stderr, " -d                    cache file for first stream\n");
