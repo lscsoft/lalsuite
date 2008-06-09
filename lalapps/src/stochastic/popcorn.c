@@ -82,8 +82,9 @@ static int frame_flag = 0;
 static int resample_flag = 0;
 static int test_flag = 0;
 
-UINT4 Npt =100000;
+UINT4 Npt =1000000;
 UINT8 startTime = 700000000;
+UINT8 stopTime = 700000150;
 CHAR frameCache1 [200]= "H1.cache";
 CHAR frameCache2[200] = "H2.cache";
 CHAR channel1[LALNameLength]= "H1:STRAIN";
@@ -92,7 +93,7 @@ UINT4 sampleRate = 16384;
 UINT4 resampleRate = 1024;
 
 REAL8 mu = 0.5;
-REAL8 sigma = 1.;
+REAL8 sigma = 1.2;
 REAL8 sigma1 = 1.;
 REAL8 sigma2 = 1.;
 REAL8 v1, v2;
@@ -111,13 +112,12 @@ INT4 main (INT4 argc, CHAR *argv[])
 
   /* minization */
   const gsl_multimin_fminimizer_type *T = gsl_multimin_fminimizer_nmsimplex;
-  gsl_multimin_fminimizer *s = NULL;
-  gsl_vector *ss=gsl_vector_alloc (4), *x=gsl_vector_alloc (4);
+  gsl_multimin_fminimizer *s;
   gsl_multimin_function minex_func;
   double size;
-  size_t iter = 0, k;
+  size_t iter, k;
   
-  int i, n;
+  int i, j, n;
   /* signal */
   double var, varn, sigman, varmean, snr;
   double pmu[10];
@@ -127,7 +127,7 @@ INT4 main (INT4 argc, CHAR *argv[])
   
   /* time series */
   UINT4 resampleFactor, Npt0;
-  UINT4 seglength;
+  UINT4 duration, seglength, nsegment=1;
   REAL8TimeSeries n1, n2;
   REAL4TimeSeries n1Temp, n2Temp;
 
@@ -159,58 +159,41 @@ INT4 main (INT4 argc, CHAR *argv[])
    resampleParams.filterType = defaultButterworth;
   }
   
-  /* set duration */
-  if(resample_flag){
-   seglength=(int)Npt/resampleRate;}
-  else{
-   seglength=(int)Npt/sampleRate;}
+   /* set duration and number of jobs */
+   duration = stopTime-startTime;
+   if(resample_flag){
+    seglength=(int)Npt/resampleRate;
+    nsegment= (duration-2)/seglength;
+   }
+   else{
+    seglength=(int)Npt/sampleRate;
+    nsegment= duration/seglength;
+   }
    
   if(verbose_flag){
-   fprintf(stdout, "will analyze  %d s of data...\n",seglength);}
+   fprintf(stdout, "will analyze %d segments of length %d s...\n",nsegment, seglength);}
    
-  /* allocate memory for time series */	 
-  h=NULL;n1.data=NULL; n2.data=NULL; s1=NULL; s2=NULL;e12=NULL;
-  
-  LALDCreateVector( &lalstatus, &h, Npt);
-  memset(h->data, 0,h->length * sizeof(*h->data));
-  LALDCreateVector( &lalstatus, &s1, Npt);
-  memset(s1->data, 0,s1->length * sizeof(*s1->data));
-  LALDCreateVector( &lalstatus, &s2, Npt);
-  memset(s2->data, 0,s2->length * sizeof(*s2->data));
-  LALDCreateVector( &lalstatus, &e12, Npt);
-  memset(e12->data, 0,e12->length * sizeof(*e12->data));
+   /* poisson coefficient */
+  for(i=0;i<10;i++)
+   pmu[i]=gsl_ran_poisson_pdf(i,mu);
+	
+  /* signal-to-noise ratio rho = varmean*sqrt(N)/(sigma1*sigma2)*/
+  var=sigma*sigma;
+  varmean=0.; 
+  for(i=1;i<10;i++)
+   varmean=varmean+pmu[i]*var*i;
+  snr=varmean*sqrt(Npt);
 
-  if(resample_flag){
-   printf("resample on");
-   LALDCreateVector( &lalstatus, &n1.data, Npt0);
-   memset(n1.data->data, 0,n1.data->length * sizeof(*n1.data->data));
-   LALDCreateVector( &lalstatus, &n2.data, Npt0);
-   memset(n2.data->data, 0,n2.data->length * sizeof(*n2.data->data));
-   
-   n1Temp.data=NULL; n2Temp.data=NULL;
-   LALCreateVector( &lalstatus, &n1Temp.data, Npt0);
-   memset(n1Temp.data->data, 0,n1Temp.data->length * sizeof(*n1Temp.data->data));
-   LALCreateVector( &lalstatus, &n2Temp.data, Npt0);
-   memset(n2Temp.data->data, 0,n2Temp.data->length * sizeof(*n2Temp.data->data));
-  }
-  else{
-   LALDCreateVector( &lalstatus, &n1.data, Npt);
-   memset(n1.data->data, 0,n1.data->length * sizeof(*n1.data->data));
-   LALDCreateVector( &lalstatus, &n2.data, Npt);
-   memset(n2.data->data, 0,n2.data->length * sizeof(*n2.data->data));
-  }
-  
   /* open data files */
   if(ascii_flag){
-   pf2=fopen("data/n1.dat","r");
-   pf3=fopen("data/n2.dat","r");
+   pf1=fopen("data/n1.dat","r");
+   pf2=fopen("data/n2.dat","r");
   }
   
-  if(frame_flag){
+  gpsStartTime.gpsSeconds = startTime;
+  gpsStartTime.gpsNanoSeconds = 0.;
   
-   gpsStartTime.gpsSeconds = startTime;
-   gpsStartTime.gpsNanoSeconds = 0.;
-   
+   if(frame_flag){
    /* set channels */
    frChanIn1.name = channel1;
    frChanIn2.name = channel2;
@@ -232,13 +215,52 @@ INT4 main (INT4 argc, CHAR *argv[])
   }
   
   /* open output file */
-  pf1=fopen("popcorn.txt","a");
+  pf3=fopen("popcorn.txt","a");
   
-  /** noise **/
+  fprintf(pf3,"number of segments=%d length of segments=%d s data point per segment=%d\n",nsegment,seglength,Npt);
+  if(resample_flag){
+   fprintf(pf3,"sampling rate=%d\n",resampleRate);}
+  else{
+   fprintf(pf3,"sampling rate=%d\n",sampleRate);}
+  fprintf(pf3,"mu=%f sigma=%f sigma1=%f sigma2=%f\n",mu,sigma,sigma1,sigma2);
+  fprintf(pf3,"\n");
 
-  if(gaussian_flag){
-   if(verbose_flag){
-   fprintf(stdout, "generate gaussian noise with variance sigma1=%f and sigma2=%f...\n",sigma1,sigma2);}
+  
+  /*** loop over segments ***/
+  
+  for(j=0;j<nsegment;j++){
+
+   /* allocate memory for time series */	 
+   h=NULL;n1.data=NULL; n2.data=NULL; s1=NULL; s2=NULL;e12=NULL;
+  
+   LALDCreateVector( &lalstatus, &h, Npt);
+   memset(h->data, 0,h->length * sizeof(*h->data));
+   LALDCreateVector( &lalstatus, &s1, Npt);
+   memset(s1->data, 0,s1->length * sizeof(*s1->data));
+   LALDCreateVector( &lalstatus, &s2, Npt);
+   memset(s2->data, 0,s2->length * sizeof(*s2->data));
+   LALDCreateVector( &lalstatus, &e12, Npt);
+   memset(e12->data, 0,e12->length * sizeof(*e12->data));
+
+   if(resample_flag){
+    LALDCreateVector( &lalstatus, &n1.data, Npt0);
+    memset(n1.data->data, 0,n1.data->length * sizeof(*n1.data->data));
+    LALDCreateVector( &lalstatus, &n2.data, Npt0);
+    memset(n2.data->data, 0,n2.data->length * sizeof(*n2.data->data));
+   }
+   else{
+    LALDCreateVector( &lalstatus, &n1.data, Npt);
+    memset(n1.data->data, 0,n1.data->length * sizeof(*n1.data->data));
+    LALDCreateVector( &lalstatus, &n2.data, Npt);
+    memset(n2.data->data, 0,n2.data->length * sizeof(*n2.data->data));
+   }
+  
+  
+   /** noise **/
+   gpsStartTime.gpsSeconds = startTime+j*seglength;
+   if(gaussian_flag){
+    if(verbose_flag){
+     fprintf(stdout, "generate gaussian noise with variance sigma1=%f and sigma2=%f...\n",sigma1,sigma2);}
    /* generate gaussian noise */ 
    for(i=0;i<Npt;i++){
     n1.data->data[i] = gsl_ran_gaussian (rrgn,sigma1);
@@ -254,16 +276,18 @@ INT4 main (INT4 argc, CHAR *argv[])
     if(verbose_flag){
 	 fprintf(stdout, "read data from ascii files...\n");}
 	for (i = 0; i < Npt; i++) {
-	 fscanf(pf2,"%lf",&value);
+	 fscanf(pf1,"%lf",&value);
 	 n1.data->data[i]=value;
 	}
     for (i = 0; i < Npt; i++) {
-     fscanf(pf3,"%lf",&value);
+     fscanf(pf2,"%lf",&value);
 	 n2.data->data[i]=value;
 	}
    }
    else{
+   
     /* read from frames */
+	
     /* read channels */
     if(verbose_flag){
      fprintf(stdout, "Reading in channel \"%s\"...\n", frChanIn1.name);}
@@ -274,16 +298,27 @@ INT4 main (INT4 argc, CHAR *argv[])
      fprintf(stdout, "Reading in channel \"%s\"...\n", frChanIn2.name);}
     LALFrSeek(&lalstatus, &gpsStartTime, frStream2);
     LALFrGetREAL8TimeSeries(&lalstatus, &n2,&frChanIn2, frStream2);
+	
+	 if(test_flag){
+   for(i=0;i<10;i++){
+    fprintf(stdout,"%e %e\n",n1.data->data[i],n2.data->data[i]);}}
     }
 	
 	if(resample_flag){
-	 /* cast to REAL4  */
+	 
+	 n1Temp.data=NULL; n2Temp.data=NULL;
+	 LALCreateVector( &lalstatus, &n1Temp.data, Npt0);
+	 memset(n1Temp.data->data, 0,n1Temp.data->length * sizeof(*n1Temp.data->data));
+	 LALCreateVector( &lalstatus, &n2Temp.data, Npt0);
+	 memset(n2Temp.data->data, 0,n2Temp.data->length * sizeof(*n2Temp.data->data));
+	 
+	 /* cast to REAL4  */ 
 	 if(verbose_flag){
-      fprintf(stdout, "cast to single precision...\n");}
-     for (i=0;i<Npt0;i++){           
+	  fprintf(stdout, "cast to single precision...\n");} 
+	 for (i=0;i<Npt0;i++){           
 	  n1Temp.data->data[i]= (REAL4)n1.data->data[i];         
 	  n2Temp.data->data[i]= (REAL4)n2.data->data[i];
-	 }
+	  }
      
      /* resample */
      if(verbose_flag){
@@ -300,11 +335,14 @@ INT4 main (INT4 argc, CHAR *argv[])
 	  n1.data->data[i]= (REAL8)n1Temp.data->data[i+resampleRate];
 	  n2.data->data[i]= (REAL8)n2Temp.data->data[i+resampleRate];
 	 }
+     LALDestroyVector(&lalstatus,&n1Temp.data);
+     LALDestroyVector(&lalstatus,&n2Temp.data);
+	 
 	}
 	 
    /* normalize so that maximal sigma1*sigma2 = 1 **/ 
    if(verbose_flag){
-    fprintf(stdout, "calculate variances...\n");}
+    fprintf(stdout, "calculate noise variances...\n");}
    var1=0.;var2=0.;	   
    for (i = 0; i < Npt; i++) {
     var1 = var1 + n1.data->data[i]*n1.data->data[i];
@@ -324,17 +362,6 @@ INT4 main (INT4 argc, CHAR *argv[])
   }
   	
   /** generate gw signal **/
-  
-  /* poisson coefficient */
-  for(i=0;i<10;i++)
-   pmu[i]=gsl_ran_poisson_pdf(i,mu);
-	
-  /* signal-to-noise ratio rho = varmean*sqrt(N)/(sigma1*sigma2)*/
-  var=sigma*sigma;
-  varmean=0.; 
-  for(i=1;i<10;i++)
-   varmean=varmean+pmu[i]*var*i;
-  snr=varmean*sqrt(Npt);
 
   if(verbose_flag){
    fprintf(stdout, "generate gw signal with signal to noise ratio %f...\n",snr);}
@@ -352,17 +379,18 @@ INT4 main (INT4 argc, CHAR *argv[])
    v1=v1+s1->data[i]*s1->data[i];
    v2=v2+s2->data[i]*s2->data[i];                               
   }
-
   v1=v1/Npt; v2=v2/Npt;
-  
+	
   /** maximize likelihood function for parameter estimation **/ 
   /* Nelder-Mead Simplex algorithm */
   
   if(verbose_flag){
    fprintf(stdout, "estimate parameters...\n");}
-   
+  
+  gsl_vector *ss=gsl_vector_alloc (4), *x=gsl_vector_alloc (4);
+  
   gsl_vector_set_all (ss, 0.1);
-  gsl_vector_set(x,0,0.1);
+  gsl_vector_set(x,0,0.5);
   gsl_vector_set(x,1,1.);
   gsl_vector_set(x,2,1.);
   gsl_vector_set(x,3,1.);
@@ -370,10 +398,12 @@ INT4 main (INT4 argc, CHAR *argv[])
   minex_func.f = &lambda;
   minex_func.n = 4;
   minex_func.params = NULL;
-
+  
+  s=NULL; 
   s = gsl_multimin_fminimizer_alloc (T, 4);
   gsl_multimin_fminimizer_set (s, &minex_func, x, ss);
   
+  iter=0;
   do{
    iter++;
    status = gsl_multimin_fminimizer_iterate(s);
@@ -381,22 +411,33 @@ INT4 main (INT4 argc, CHAR *argv[])
 	break;}
    size = gsl_multimin_fminimizer_size (s);
    status = gsl_multimin_test_size (size, 1.e-4);
-   if(verbose_flag){
+   if(test_flag){
 	if (status == GSL_SUCCESS){
-	  fprintf (stdout,"converged to minimum at\n");}
-	fprintf (stdout,"%5d ", iter);
+	 fprintf (stdout,"converged to minimum at\n");}
+	fprintf (stdout,"%5d ", (int)iter);
 	for (k = 0; k < 4; k++){
 	 fprintf (stdout,"%10.3e ", gsl_vector_get (s->x, k));}
-	fprintf (stdout,"f = %e size = %.3f\n", s->fval, size);
+	fprintf (stdout,"f = %e\n", s->fval);
    }
   }
  while (status == GSL_CONTINUE && iter < 300);
-  
+
  muest=gsl_vector_get (s->x, 0);
  sigmaest=gsl_vector_get (s->x, 1);
  sigma1est=gsl_vector_get (s->x, 2);
  sigma2est=gsl_vector_get (s->x, 3);
  
+ gsl_multimin_fminimizer_free (s);
+ gsl_vector_free(x);
+ gsl_vector_free(ss);
+ 
+ LALDDestroyVector(&lalstatus,&h);
+ LALDDestroyVector(&lalstatus,&n1.data);
+ LALDDestroyVector(&lalstatus,&n2.data);
+ LALDDestroyVector(&lalstatus,&s1);
+ LALDDestroyVector(&lalstatus,&s2);
+ LALDDestroyVector(&lalstatus,&e12);
+  
  /* poisson coefficient */
  for(i=0;i<10;i++){
   pmu[i]=gsl_ran_poisson_pdf(i,muest);}
@@ -407,24 +448,23 @@ INT4 main (INT4 argc, CHAR *argv[])
   
  
  if(verbose_flag){
-  fprintf(stdout,"N=%d snr=%f\n",Npt, snr);
-  fprintf(stdout,"mu=%f sigma=%f varmean=%f sigma1=%f sigma2=%f\n",mu, sigma, varmean,sigma1,sigma2);
-  fprintf(stdout,"muest=%f sigmaest=%f varmeanest=%f sigma1est=%f sigma2est=%f\n",muest, sigmaest, varmeanest, sigma1est,sigma2est);
- }
+  fprintf(stdout,"T=%d:",gpsStartTime.gpsSeconds);
+  fprintf(stdout,"mu=%f sigma=%f mean(var)=%f sigma1=%f sigma2=%f\n",mu,sigma,varmean,sigma1,sigma2);
+  fprintf(stdout,"muest=%f sigmaest=%f mean(varmest)=%f sigma1est=%f sigma2est=%f\n",muest,sigmaest,varmeanest,sigma1est,sigma2est);
+  fprintf(stdout,"snr=%f\n",snr);
+  fprintf(stdout,"\n");}
   
- fprintf(pf1,"N=%d snr=%f\n",Npt, snr);
- fprintf(pf1,"mu=%f sigma=%f varmean=%f sigma1=%f sigma2=%f\n",mu, sigma, varmean,sigma1,sigma2);
- fprintf(pf1,"muest=%f sigmaest=%f varmeanest=%f sigma1est=%f sigma2est=%f\n",muest, sigmaest, varmeanest, sigma1est,sigma2est);
- fprintf(pf1,"\n");
-  
+ fprintf(pf3,"T=%d:",gpsStartTime.gpsSeconds);
+ fprintf(pf3,"muest=%f sigmaest=%f varmeanest=%f sigma1est=%f sigma2est=%f\n",muest,sigmaest,varmeanest,sigma1est,sigma2est);
+ fprintf(pf3,"snr=%f\n",snr);
+
+ }  
   
  /** cleanup **/
  if(verbose_flag){
   fprintf(stdout,"cleanup and exit\n");}
   
- gsl_vector_free(x);
- gsl_vector_free(ss);
- gsl_multimin_fminimizer_free (s);
+ 
  gsl_rng_free (rrgn);
  
  fclose(pf1); fclose(pf2); fclose(pf3);
@@ -432,18 +472,6 @@ INT4 main (INT4 argc, CHAR *argv[])
  /* close frame cache */
  LALFrClose(&lalstatus, &frStream1);
  LALFrClose(&lalstatus, &frStream2);
- 
- LALDDestroyVector(&lalstatus,&h);
- LALDDestroyVector(&lalstatus,&n1.data);
- LALDDestroyVector(&lalstatus,&n2.data);
- LALDDestroyVector(&lalstatus,&s1);
- LALDDestroyVector(&lalstatus,&s2);
- LALDDestroyVector(&lalstatus,&e12);
- 
- if(resample_flag){
-  LALDestroyVector(&lalstatus,&n1Temp.data);
-  LALDestroyVector(&lalstatus,&n2Temp.data);
- }
  
  return 0;
 }
@@ -524,10 +552,12 @@ void parseOptions(INT4 argc, CHAR *argv[])
       /* options that don't set a flag */
       {"help", no_argument, 0, 'h'},
       {"gps-start-time", required_argument, 0, 't'},
+	   {"gps-stop-time", required_argument, 0, 'T'},
       {"number-points", required_argument, 0, 'N'},
       {"mu", required_argument, 0, 'm'},
       {"sigma", required_argument, 0, 's'},
-	  {"sigma2", required_argument, 0, 'g'},
+	  {"sigma1", required_argument, 0, 'g'},
+	  {"sigma2", required_argument, 0, 'G'},
       {"channel1", required_argument, 0, 'c'},
       {"channel2", required_argument, 0, 'C'},
       {"frame-cache1", required_argument, 0, 'd'},
@@ -540,7 +570,7 @@ void parseOptions(INT4 argc, CHAR *argv[])
     int option_index = 0;
 
     c = getopt_long(argc, argv, 
-                  "ht:N:m:s:g:c:C:d:D:v",
+                  "ht:T:N:m:s:g:G:c:C:d:D:v",
  		   long_options, &option_index);
 
     if (c == -1)
@@ -570,6 +600,11 @@ void parseOptions(INT4 argc, CHAR *argv[])
 			   /* start time */
 	           startTime = atoi(optarg);
 	           break;
+			   
+	  case 'T':
+			   /* stop time */
+	           stopTime = atoi(optarg);
+	           break;
 
       case 'N':
 			   /* number of points in time serie */
@@ -585,6 +620,10 @@ void parseOptions(INT4 argc, CHAR *argv[])
 	           break;
 			   
 	  case 'g':
+	           sigma1 = atof(optarg);
+	           break;
+			   
+	  case 'G':
 	           sigma2 = atof(optarg);
 	           break;
      
@@ -635,15 +674,18 @@ void displayUsage(INT4 exitcode)
   fprintf(stderr, " -h                    print this message\n");
   fprintf(stderr, " -v                    display version\n");
   fprintf(stderr, " --verbose             verbose mode\n");
-  fprintf(stderr, " --frame              read data from frames\n");
+  fprintf(stderr, " --test                test mode\n");
+  fprintf(stderr, " --frame               read data from frames\n");
   fprintf(stderr, " --ascii               read data from ascii files\n");
   fprintf(stderr, " --gaussian            simulate gaussian noise\n");
   fprintf(stderr, " --resample            resample data\n");
   fprintf(stderr, " -t                    GPS start time\n");
+  fprintf(stderr, " -T                    GPS stop time\n");
   fprintf(stderr, " -N                    number of points in data set\n");
   fprintf(stderr, " -m                    mu of injected gw signal\n");
   fprintf(stderr, " -s                    sigma of injected gw signa\n");
-  fprintf(stderr, " -g                    sigma2 of gaussian noise \n");
+  fprintf(stderr, " -g                    sigma1 of gaussian noise \n");
+  fprintf(stderr, " -G                    sigma2 of gaussian noise \n");
   fprintf(stderr, " -c                    channel for first stream\n");
   fprintf(stderr, " -C                    channel for second stream\n");
   fprintf(stderr, " -d                    cache file for first stream\n");
