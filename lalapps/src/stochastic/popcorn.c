@@ -364,7 +364,7 @@ INT4 main (INT4 argc, CHAR *argv[])
   /** generate gw signal **/
 
   if(verbose_flag){
-   fprintf(stdout, "generate gw signal with signal to noise ratio %f...\n",snr);}
+   fprintf(stdout, "generate gw signal with mu=%f and sigma=%f...\n",mu,sigma);}
    	
   v1=0.;v2=0.;	
   for (i = 0; i < Npt; i++) {
@@ -681,9 +681,9 @@ void displayUsage(INT4 exitcode)
   fprintf(stderr, " --resample            resample data\n");
   fprintf(stderr, " -t                    GPS start time\n");
   fprintf(stderr, " -T                    GPS stop time\n");
-  fprintf(stderr, " -N                    number of points in data set\n");
+  fprintf(stderr, " -N                    number of points per data segment\n");
   fprintf(stderr, " -m                    mu of injected gw signal\n");
-  fprintf(stderr, " -s                    sigma of injected gw signa\n");
+  fprintf(stderr, " -s                    sigma of injected gw signal\n");
   fprintf(stderr, " -g                    sigma1 of gaussian noise \n");
   fprintf(stderr, " -G                    sigma2 of gaussian noise \n");
   fprintf(stderr, " -c                    channel for first stream\n");
