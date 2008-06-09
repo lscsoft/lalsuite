@@ -93,9 +93,11 @@ UINT4 sampleRate = 16384;
 UINT4 resampleRate = 1024;
 
 REAL8 mu = 0.5;
-REAL8 sigma = 1.2;
+REAL8 sigma = 1.;
 REAL8 sigma1 = 1.;
 REAL8 sigma2 = 1.;
+REAL8 mu0 = 0.1;
+REAL8 sigma0 = 0.1;
 REAL8 v1, v2;
 REAL8Vector *h,*s1,*s2,*e12;
 
@@ -388,8 +390,8 @@ INT4 main (INT4 argc, CHAR *argv[])
   gsl_vector *ss=gsl_vector_alloc (4), *x=gsl_vector_alloc (4);
   
   gsl_vector_set_all (ss, 0.1);
-  gsl_vector_set(x,0,0.5);
-  gsl_vector_set(x,1,1.);
+  gsl_vector_set(x,0,mu0);
+  gsl_vector_set(x,1,sigma0);
   gsl_vector_set(x,2,1.);
   gsl_vector_set(x,3,1.);
 
@@ -453,7 +455,7 @@ INT4 main (INT4 argc, CHAR *argv[])
   fprintf(stdout,"\n");}
   
  fprintf(pf3,"T=%d:",gpsStartTime.gpsSeconds);
-  fprintf(stdout,"mean(var)=%f sigma1=%f sigma2=%f\n",mu,sigma,varmean,sigma1,sigma2);
+ fprintf(pf3,"mean(var)=%f sigma1=%f sigma2=%f\n",varmean,sigma1,sigma2);
  fprintf(pf3,"muest=%f sigmaest=%f varmeanest=%f sigma1est=%f sigma2est=%f\n",muest,sigmaest,varmeanest,sigma1est,sigma2est);
  fprintf(pf3,"snr=%f\n",snr);
 
@@ -551,10 +553,14 @@ void parseOptions(INT4 argc, CHAR *argv[])
       /* options that don't set a flag */
       {"help", no_argument, 0, 'h'},
       {"gps-start-time", required_argument, 0, 't'},
-	   {"gps-stop-time", required_argument, 0, 'T'},
+	  {"gps-stop-time", required_argument, 0, 'T'},
       {"number-points", required_argument, 0, 'N'},
+	  {"sampleRate", required_argument, 0, 'r'},
+      {"resampleRate", required_argument, 0, 'R'},
       {"mu", required_argument, 0, 'm'},
+	  {"mu0", required_argument, 0, 'M'},
       {"sigma", required_argument, 0, 's'},
+	  {"sigma0", required_argument, 0, 'S'},
 	  {"sigma1", required_argument, 0, 'g'},
 	  {"sigma2", required_argument, 0, 'G'},
       {"channel1", required_argument, 0, 'c'},
@@ -569,7 +575,7 @@ void parseOptions(INT4 argc, CHAR *argv[])
     int option_index = 0;
 
     c = getopt_long(argc, argv, 
-                  "ht:T:N:m:s:g:G:c:C:d:D:v",
+                  "ht:T:N:r:R:m:M:s:S:g:G:c:C:d:D:v",
  		   long_options, &option_index);
 
     if (c == -1)
@@ -610,13 +616,31 @@ void parseOptions(INT4 argc, CHAR *argv[])
 	           Npt = atoi(optarg);
 	           break;
 			   
+	  case 'r':
+			   /* sample rate */
+	           sampleRate = atof(optarg);
+	           break;
+			   
+	  case 'R':
+			   resampleRate= atof(optarg);
+	           break;
+			   
 	  case 'm':
 	           mu = atof(optarg);
+	           break;
+			   
+	  case 'M':
+	           mu0 = atof(optarg);
 	           break;
 			   
 	  case 's':
 	           sigma = atof(optarg);
 	           break;
+			   
+	  case 'S':
+	           sigma0 = atof(optarg);
+	           break;
+
 			   
 	  case 'g':
 	           sigma1 = atof(optarg);
@@ -681,8 +705,12 @@ void displayUsage(INT4 exitcode)
   fprintf(stderr, " -t                    GPS start time\n");
   fprintf(stderr, " -T                    GPS stop time\n");
   fprintf(stderr, " -N                    number of points per data segment\n");
+  fprintf(stderr, " -r                    sampleRate\n");
+  fprintf(stderr, " -R                    resampleRate\n");
   fprintf(stderr, " -m                    mu of injected gw signal\n");
+  fprintf(stderr, " -M                    initial mu for parameter estimation\n");
   fprintf(stderr, " -s                    sigma of injected gw signal\n");
+  fprintf(stderr, " -S                    initial sigma for parameter estimation\n");
   fprintf(stderr, " -g                    sigma1 of gaussian noise \n");
   fprintf(stderr, " -G                    sigma2 of gaussian noise \n");
   fprintf(stderr, " -c                    channel for first stream\n");
