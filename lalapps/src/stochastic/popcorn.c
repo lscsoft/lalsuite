@@ -18,7 +18,7 @@
 */
 
 /*
- * stochastic_preprocess.c 
+ * popcorn.c 
  *
  * Tania Regimbau <regimbau@obs-nice.fr>  
  *
@@ -222,9 +222,7 @@ INT4 main (INT4 argc, CHAR *argv[])
    fprintf(pf3,"sampling rate=%d\n",resampleRate);}
   else{
    fprintf(pf3,"sampling rate=%d\n",sampleRate);}
-  fprintf(pf3,"mu=%f sigma=%f sigma1=%f sigma2=%f\n",mu,sigma,sigma1,sigma2);
-  fprintf(pf3,"\n");
-
+  fprintf(pf3,"mu=%f sigma=%f\n",mu,sigma);
   
   /*** loop over segments ***/
   
@@ -455,6 +453,7 @@ INT4 main (INT4 argc, CHAR *argv[])
   fprintf(stdout,"\n");}
   
  fprintf(pf3,"T=%d:",gpsStartTime.gpsSeconds);
+  fprintf(stdout,"mean(var)=%f sigma1=%f sigma2=%f\n",mu,sigma,varmean,sigma1,sigma2);
  fprintf(pf3,"muest=%f sigmaest=%f varmeanest=%f sigma1est=%f sigma2est=%f\n",muest,sigmaest,varmeanest,sigma1est,sigma2est);
  fprintf(pf3,"snr=%f\n",snr);
 
