@@ -584,16 +584,8 @@ BankEfficiencyInspiralOverlapBCV(
   REAL4Vector                 *correlation,
   BankEfficiencyBCV           *bankefficiencyBCV);
 
-void BankEfficiencyParseGetInt(
-  CHAR **argv,
-  INT4  *index,
-  INT4  *data);
-
-void BankEfficiencyParseGetDouble(
-  CHAR **argv, 
-  INT4  *index,
-  REAL8 *data);
-
+void BankEfficiencyParseGetInt(CHAR **argv, INT4  *index, INT4 *data);
+void BankEfficiencyParseGetDouble(CHAR **argv, INT4  *index, REAL8 *data);
 void BankEfficiencyParseGetDouble2(
   CHAR **argv, 
   INT4  *index, 

@@ -2615,8 +2615,9 @@ void BankEfficiencyParseParameters(
       BankEfficiencyParseGetDouble(argv, &i, &(coarseBankIn->fUpper)); 
     }    
     else if (!strcmp(argv[i],   "--bank-inside-polygon")) {
-      BankEfficiencyParseGetInt(argv, &i, 
-          (INT4*)&(coarseBankIn->insidePolygon)); 
+      INT4 temp;
+      BankEfficiencyParseGetInt(argv, &i, &temp);
+      coarseBankIn->insidePolygon = (InsidePolygon)temp; 
     }
     else if (!strcmp(argv[i], "--bank-grid-spacing")) {
       BankEfficiencyParseGetString(argv, &i);
@@ -2809,11 +2810,13 @@ void BankEfficiencyParseParameters(
       }
       randIn->param.approximant = userParam->signal;
     }
-    else if (!strcmp(argv[i],   "--signal-alpha")){      
+    else if (!strcmp(argv[i],   "--signal-alpha")){
       BankEfficiencyParseGetDouble(argv, &i, &(randIn->param.alpha));
     }
-    else if (!strcmp(argv[i],   "--signal-amp-order")){      
-      BankEfficiencyParseGetInt(argv, &i, (INT4*)&(randIn->param.ampOrder));
+    else if (!strcmp(argv[i],   "--signal-amp-order")){
+      INT4 temp;      
+      BankEfficiencyParseGetInt(argv, &i, &temp);
+      randIn->param.ampOrder = (Order)temp;
     }  
     else if (!strcmp(argv[i],   "--signal-alpha1")){         
       BankEfficiencyParseGetDouble(argv, &i, &(randIn->param.alpha1));
@@ -2855,7 +2858,9 @@ void BankEfficiencyParseParameters(
           &(randIn->tnMin), &(randIn->tnMax));
     }
     else if (!strcmp(argv[i],   "--signal-order")) {
-      BankEfficiencyParseGetInt(argv, &i, (INT4*)&(randIn->param.order));
+      INT4 temp;
+      BankEfficiencyParseGetInt(argv, &i, &temp);
+      randIn->param.order = (Order)temp;
     }
     else if (!strcmp(argv[i],   "--signal-nstartpad")) {
       BankEfficiencyParseGetInt(argv, &i, (INT4*)&(randIn->param.nStartPad));
@@ -2951,10 +2956,14 @@ void BankEfficiencyParseParameters(
         coarseBankIn->space = Tau0Tau3;
     }
     else if (!strcmp(argv[i],   "--template-order")) {
-      BankEfficiencyParseGetInt(argv, &i, (INT4*)(&(coarseBankIn->order)));
+      INT4 temp;
+      BankEfficiencyParseGetInt(argv, &i, &temp);
+      coarseBankIn->order = (Order)temp;
     }
     else if (!strcmp(argv[i],   "--template-amp-order")) {
-      BankEfficiencyParseGetInt(argv, &i, (INT4*)(&(coarseBankIn->ampOrder)));
+      INT4 temp;
+      BankEfficiencyParseGetInt(argv, &i, &temp);
+      coarseBankIn->ampOrder = (Order)temp;
     }
     else if (!strcmp(argv[i], "--user-tag")) {
       BankEfficiencyParseGetString(argv, &i);
@@ -3040,7 +3049,7 @@ void BankEfficiencyParseGetInt(
     *data = strtol(argv[*index+1], &tmp  , 10);
     if (*data==0 && tmp1[0] != '0')
     {
-      sprintf(msg, "Expect a float after option %s (got %s)\n ",
+      sprintf(msg, "Expect a int after option %s (got %s)\n ",
           argv[*index],
           argv[*index+1]);
       fprintf(stderr, msg);
@@ -3049,7 +3058,7 @@ void BankEfficiencyParseGetInt(
   }
   else  
   {
-    sprintf(msg, "Expect a float after option %s (got %s)\n ",
+    sprintf(msg, "Expect a int after option %s (got %s)\n ",
         argv[*index],
         argv[*index+1]);
     fprintf(stderr, msg);
