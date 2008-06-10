@@ -58,10 +58,10 @@
 
 #define MAXIFO 2
 #define BANKEFFICIENCY_PARAMS_ROW \
-"       %f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d,%d,%u,%u"
+"       %f, %f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d,%d,%u,%u"
 
 #define BANKEFFICIENCY_PARAMS_ROW_SPACE \
-"%f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %d %d %u %u"
+"%f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %d %d %u %u"
 
 /*do not use capital here for future mysql migration */
 #define PRINT_LIGOLW_XML_BANKEFFICIENCY(fp) (\
@@ -76,6 +76,7 @@ fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:tau0_sim\"      
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:tau3_sim\"           Type=\"real_4\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:ecc\"                Type=\"real_4\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:ecc_sim\"            Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:ecc_sim_fl\"         Type=\"real_4\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:ffinal\"             Type=\"real_4\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:ffinal_sim\"         Type=\"real_4\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:mass1_sim\"          Type=\"real_4\"/>\n", fp) == EOF ||  \
@@ -308,6 +309,15 @@ typedef struct{
 } BankEfficiencyPowerVector;
 
 
+typedef struct{
+  BankEfficiencyPowerVector powerVector;
+  BankEfficiencyMoments     moments;
+  REAL4Vector               FilterBCV1;
+  REAL4Vector               FilterBCV2;
+} BankEfficiencyBCV;
+  	
+	
+
 /* As to be cleaned
  * Function to store the optimal  parameters of the overlap 
  * lmax : number of the layer
@@ -330,25 +340,11 @@ BankEfficiencyKeepHighestValues(
  * */
 void 
 BankEfficiencyCreateBCVFilters(
-  REAL4Vector               *Filter1,
-  REAL4Vector               *Filter2,
-  BankEfficiencyPowerVector *powerVector,
-  BankEfficiencyMoments     *moments,
-  UINT4                      kMin,
-  UINT4                      kMax,
-  REAL4                      psi0,
-  REAL4                      psi3);
-
-void
-BankEfficiencyCreateBCVSpinFilters(
-  REAL4Vector               *FilterBCVSpin1,
-  REAL4Vector               *FilterBCVSpin2,
-  REAL4Vector               *FilterBCVSpin3,
-  InspiralWaveOverlapIn     *overlapin,
-  BankEfficiencyPowerVector *powerVector,
-  BankEfficiencyMoments     *moments,
-  UINT4                      kMin,
-  UINT4                      kMax);
+  BankEfficiencyBCV *bankEfficiencyBCV,
+  UINT4              kMin,
+  UINT4              kMax,
+  REAL4              psi0,
+  REAL4              psi3);
         
 void BankEfficiencyBankPrintAscii(
   MetadataTable          templateBank ,
@@ -362,7 +358,8 @@ void BankEfficiencyBankPrintXML(
   RandomInspiralSignalIn randIn,
   UserParametersIn       userParam);
 
-void BankEfficiencyCreateListfromTmplt(
+void BankEfficiencyCreateListFromTmplt(
+  LALStatus         *status,
   InspiralTemplate  *insptmplt, 
   SnglInspiralTable *tmpltCurrent);
 
@@ -394,17 +391,6 @@ void BankEfficiencyWaveOverlapBCV(
   UserParametersIn         userParam, 
   OverlapOutputIn         *OverlapOutput,
   BankEfficiencyMoments   *moments);
-
-void BankEfficiencyWaveOverlapBCVSpin(
-  LALStatus               *status,
-  REAL4Vector             *correlation,
-  InspiralWaveOverlapIn   *overlapin,
-  REAL4Vector             *Filter1, 
-  REAL4Vector             *Filter2,
-  REAL4Vector             *Filter3,
-  UserParametersIn         userParam, 
-  OverlapOutputIn         *OverlapOutput);
-
 
 /* Function to store the moments needed by the BCV overlap process 
  * a11, a22, a21 are three vectors which stored the three components 
@@ -591,51 +577,30 @@ void
 BankEfficiencyInspiralOverlapBCV(
   LALStatus                   *status,
   InspiralTemplate            *list,
-  BankEfficiencyPowerVector   *powerVector,
   UserParametersIn             userParam, 
   RandomInspiralSignalIn      *randIn,
-  REAL4Vector                 *Filter1,
-  REAL4Vector                 *Filter2,
   InspiralWaveOverlapIn       *overlapin,
   OverlapOutputIn             *output,
   REAL4Vector                 *correlation,
-  BankEfficiencyMoments       *moments);
-
-void 
-BankEfficiencyInspiralOverlapBCVSpin(
-  LALStatus                   *status,
-  InspiralTemplate            *list,
-  BankEfficiencyPowerVector   *powerVector,
-  UserParametersIn             userParam, 
-  RandomInspiralSignalIn      *randIn,
-  REAL4Vector                 *Filter1,
-  REAL4Vector                 *Filter2,
-  REAL4Vector                 *Filter3,
-  InspiralWaveOverlapIn       *overlapin,
-  OverlapOutputIn             *output,
-  REAL4Vector                 *correlation,
-  BankEfficiencyMoments       *moments);
-
-
-
+  BankEfficiencyBCV           *bankefficiencyBCV);
 
 void BankEfficiencyParseGetInt(
   CHAR **argv,
   INT4  *index,
   INT4  *data);
+
 void BankEfficiencyParseGetDouble(
   CHAR **argv, 
   INT4  *index,
   REAL8 *data);
+
 void BankEfficiencyParseGetDouble2(
   CHAR **argv, 
   INT4  *index, 
   REAL8 *data1, 
   REAL8 *data2);
-void BankEfficiencyParseGetString(
-  CHAR **argv, 
-  INT4  *index );
 
+void BankEfficiencyParseGetString(CHAR **argv, INT4  *index );
 CHAR* BankEfficiencyGetStringFromGridType(INT4 input);
 CHAR* BankEfficiencyGetStringFromSimulationType(INT4 input);
 CHAR* BankEfficiencyGetStringFromDetector(INT4 input);
@@ -663,7 +628,7 @@ void BankEfficiencyInspiralCreateFineBank(
 
 
 void BankEfficiencyCreateTemplateBank(
-LALStatus              *status,
+  LALStatus              *status,
   InspiralCoarseBankIn   *coarseBankIn,
   MetadataTable          *templateBank,
   SnglInspiralTable      **tmpltHead,
@@ -699,7 +664,12 @@ void BankEfficiencySaveVector(
   REAL4Vector  correlation, 
   REAL4        tSampling);
 
+void BankEfficiencySaveVectorAppend(
+  CHAR        *filename, 
+  REAL4Vector  correlation, 
+  REAL4        tSampling);
 
+void BankEfficiencyPrintMessage(CHAR *str);
 
 
 void  BankEfficiencyFinalise(
@@ -761,4 +731,4 @@ void BankEfficiencyPrintAmbiguity(
 void BankEfficiencyError(CHAR * str);
 void BankEfficiencyCompare(REAL4 a, REAL4 b, CHAR *str);
 void BankEfficiencyValidity(REAL4 a,  REAL4 min,  REAL4 max,  CHAR * str);
-
+REAL4 BankEfficiencyRandom(REAL4 min, REAL4 max);
