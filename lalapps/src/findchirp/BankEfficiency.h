@@ -660,16 +660,16 @@ void BankEfficiencyWaveOverlap(
   
   
 void BankEfficiencySaveVector(
-  CHAR        *filename, 
+  const char  *filename, 
   REAL4Vector  correlation, 
   REAL4        tSampling);
 
 void BankEfficiencySaveVectorAppend(
-  CHAR        *filename, 
+  const char  *filename, 
   REAL4Vector  correlation, 
   REAL4        tSampling);
 
-void BankEfficiencyPrintMessage(CHAR *str);
+void BankEfficiencyPrintMessage(const char *str);
 
 
 void  BankEfficiencyFinalise(
@@ -728,7 +728,7 @@ void BankEfficiencyPrintAmbiguity(
   gsl_matrix       *amb1  
 );
 
-void BankEfficiencyError(CHAR * str);
-void BankEfficiencyCompare(REAL4 a, REAL4 b, CHAR *str);
-void BankEfficiencyValidity(REAL4 a,  REAL4 min,  REAL4 max,  CHAR * str);
+void BankEfficiencyError(const char * str);
+void BankEfficiencyCompare(REAL4 a, REAL4 b, const char *str);
+void BankEfficiencyValidity(REAL4 a,  REAL4 min,  REAL4 max, const char * str);
 REAL4 BankEfficiencyRandom(REAL4 min, REAL4 max);

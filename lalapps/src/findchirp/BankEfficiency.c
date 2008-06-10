@@ -3394,43 +3394,7 @@ void BankEfficiencyHelp(void)
   fprintf(stderr, "[VERSION %s]\n ", CVS_ID_STRING_C);
   fprintf(stderr, "[DESCRIPTION]\n");
   sprintf(msg, ""
-      "\t lalapps_BankEfficiency is a standalone code that can be used to    \n"
-      "\t test the efficiency of an inpiral template bank, in the framework  \n"
-      "\t of compact binary coalescence searches.                            \n"
-      "\t This code aimed at providing a test code to the template bank that \n"
-      "\t are used by the search pipeline                                    \n"
-      "\t For the LAL fans, you should know that BankEfficiency uses the same\n"
-      "\t functions as lalapps_tmpltbank uses. However, the filtering is     \n" 
-      "\t independant of the findchirp package.                              \n"
-      "\t It uses the noisemodel and inspiral packages instead.            \n");
-  fprintf(stderr, "%s",msg);
-  sprintf(msg, 
-      "\t BankEfficiency allows to test the template banks in 3 different ways:\n"  
-      "\t  * injection only, in other words, to compute matches \n"
-      "\t  * noise only, to get the background distribution\n"
-      "\t  * noise and signal \n\n"
-      "\t You can use any design sensitivity curve provided in lal/noisemodesl\n"
-      "\t such as LIGOI, VIRGO ...\n\n"
-      "\t Signal to be injected, or used for filtering are either physical \n"
-      "\t template families (e.g., TaylorT3) \n"
-      "\t or phenomenological (BCV).\n");
-  fprintf(stderr, "%s",msg);
-  sprintf(msg, "\t Concerning computation, there is a naive fast option for physical template families, that sets \n"
-      "\t a square of 0.3 seconds in tau_0 and 0.15 seconds in tau_3 around the injection\n\n"
-      "\t The code can be easily parallelised. See bep.py for an example of dag and sub condor file\n\n"
-      "\t A brief overview is given here. However, look at the option below, for more details. \n"
-      "\t Testing the bank requires to inject many signals. The number of trial is set with --n.\n" );
-  fprintf(stderr, "%s",msg);
-  sprintf(msg,"\t The --template and --signal options must be provided to specify the type of approximant to be used. The\n"
-      "\t randomization is done over the total mass, and within the --signal-mass-range and --bank-mass-range ranges.\n"
-      "\t By default xml results are not stored (although is could be a default option, usage in parallel would create\n"
-      "\t many xml files to be joined afterwards). The --check option replaces the template bank by a single template\n"
-      "\t which parameters are identical to the injection.\n\n\n");   
-  fprintf(stderr, "%s",msg);
-  sprintf(msg,  "\t The parameter are randomized on the initial phase (can be removed using --no-start-pahse), and the masses\n"
-        "\t By default the massesare randomized such  that total mass is uniform. One can set --signal-tau0-range\n"
-        "\t which makes the injections uniformly distributed in the tau0/tau3 plane.\n");
-
+      "\t For a detailled documentation, please see BankEfficiency.tex.\n");
   fprintf(stderr, "%s",msg);
   
   sprintf(msg, "[EXAMPLE]\n \t ./lalapps_BankEfficiency --template EOB --signal EOB --check --print-xml\n\n\n");
@@ -3515,7 +3479,7 @@ void BankEfficiencyAscii2Xml(void)
   
   ResultIn trigger;
   
-  REAL4 tau0, tau3, tau0I, tau3I, psi0, psi3,phaseI, ecc, eccI;
+  REAL4 tau0, tau3, tau0I, tau3I, psi0, psi3,phaseI, ecc, eccI,eccI_fl;
   REAL4 polarisation,inclination;
    
   FILE *input1;
@@ -3668,7 +3632,7 @@ void BankEfficiencyAscii2Xml(void)
   {
     sscanf(sbuf,BANKEFFICIENCY_PARAMS_ROW_SPACE,
         &trigger.psi0_trigger, &trigger.psi3_trigger, 
-    &psi0, &psi3,  &tau0, &tau3, &tau0I, &tau3I, &ecc,&eccI,
+    &psi0, &psi3,  &tau0, &tau3, &tau0I, &tau3I, &ecc,&eccI,&eccI_fl,
     &trigger.fend_trigger, &trigger.fend_inject,
     &trigger.mass1_inject, &trigger.mass2_inject,&inclination,&polarisation,
     &phaseI, &trigger.rho_final, &trigger.snrAtCoaTime, &trigger.phase,
@@ -3677,7 +3641,7 @@ void BankEfficiencyAscii2Xml(void)
       
     fprintf(output, BANKEFFICIENCY_PARAMS_ROW,
         trigger.psi0_trigger, trigger.psi3_trigger,
-    psi0, psi3, tau0, tau3, tau0I, tau3I,ecc,eccI,
+    psi0, psi3, tau0, tau3, tau0I, tau3I,ecc,eccI,eccI_fl,
         trigger.fend_trigger, trigger.fend_inject,
     trigger.mass1_inject, trigger.mass2_inject,inclination, polarisation,
     phaseI, trigger.rho_final, trigger.snrAtCoaTime, trigger.phase, 
@@ -4112,7 +4076,7 @@ void BankEfficiencyWaveOverlap(
 
 
 void BankEfficiencySaveVectorAppend(
-  CHAR        *filename,
+  const char  *filename,
   REAL4Vector  correlation,
   REAL4        tSampling)
 {
@@ -4129,7 +4093,7 @@ void BankEfficiencySaveVectorAppend(
 }
 
 void BankEfficiencySaveVector(
-  CHAR        *filename,
+  const char  *filename,
   REAL4Vector  correlation,
   REAL4        tSampling)
 {
@@ -4368,13 +4332,13 @@ void BankEfficiencyPrintAmbiguity(
   }
 }
 
-void BankEfficiencyError(CHAR * str)
+void BankEfficiencyError(const char *str)
 {
   fprintf(stderr,"%s", str);
   exit(1);
 }
 
-void BankEfficiencyCompare(REAL4 a, REAL4 b, CHAR *str)
+void BankEfficiencyCompare(REAL4 a, REAL4 b, const char *str)
 {
   CHAR str2[1024];
   sprintf(str2,"Error: the range provided (%s) is not sorted.\n",str);
@@ -4387,7 +4351,7 @@ void BankEfficiencyValidity(
   REAL4 a,
   REAL4 min,
   REAL4 max,
-  CHAR * str)
+  const char * str)
 {
    CHAR str2[1024];
    sprintf(str2,"Error: the range provided %s is not correct.\n",str); 
@@ -4396,7 +4360,7 @@ void BankEfficiencyValidity(
    }
  }
 
-void BankEfficiencyPrintMessage(CHAR *str)
+void BankEfficiencyPrintMessage(const char *str)
 {
   if (vrbflg){
   fprintf(stdout, "%s",str);fflush(stdout);
