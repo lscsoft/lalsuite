@@ -43,6 +43,11 @@
 #include "xmmintrin.h"
 #endif
 
+/* necessary for gcc on linux-powerpc, shouldn't hurt on Macs */
+#if (EAH_HOTLOOP_VARIANT == EAH_HOTLOOP_VARIANT_ALTIVEC)
+#include <altivec.h>
+#endif
+
 NRCSID( LOCALCOMPUTEFSTATC, "$Id$");
 
 
