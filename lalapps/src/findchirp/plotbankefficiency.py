@@ -1,14 +1,10 @@
 #!/usr/bin/python
-
 __Id__ = "$Id$"
 __author__ = "Thomas Cokelaer, Thomas.Cokelaer@astro.cf.ac.uk "
 __version__ = "$Revision$"[11:-2]
 __date__ = "$Date$"[7:-2]
 __name__ = "plotbankefficiency"
 __title__ = "Figure of merits for BankEfficiency results."
-
-
-
   
 import getopt, sys, os, re, glob, exceptions, dircache, string
 from types    import *
@@ -19,6 +15,55 @@ from pylab import *
 from matplotlib import *
 from inspiraltools  import *
 #import scipy
+
+def bcvRelated(results):
+  if opts.verbose:
+    print 'TEST'
+  plotting.plot(results['totalmass_sim'],results['alpha_f'])
+  xlabel('total mass')
+  ylabel('alpha\_F')
+  mysavefig(opts, 'plotbankefficiency_alphaf_vs_totalmass.png')
+
+def eccentricityRelated(results):  
+  totMass = results['totalmass_sim']
+  snr = results['snr'] 
+  # Scatter plots of the eccentricity versus SNR and total mass
+  plotting.scatter(results['ecc_sim'],totMass, snr,  markersize=30, alpha=1,vmin=0,vmax=1)
+  xlabel(r'Eccentricity')
+  ylabel(r'TotalMass ($M_\odot$)')
+  mysavefig(opts,'plotbankefficiency_scatter_snr_versus_totalmass_ecc.png')
+
+  # Simple 2D plot of the SNR versus eccentricity 
+  plotting.plot(results['ecc_sim'],snr,'ob')
+  xlabel(r'Eccentricity')
+  ylabel(r'Overlap(\%)')
+  #pylab.axis([0,0.4,0.7,1])
+  mysavefig(opts,'plotbankefficiency_snr_versus_ecc.png')
+
+  # contour plots of SNR versus eccentricity (at 2*fl/3) and SNR
+  plotting.surf(results['ecc_sim'], totMass, snr,40,40,vmin=0.5,vmax=1)
+  xlabel(r'Eccentricity')
+  ylabel(r'Total mass $(M_\odot)$')
+  mysavefig(opts,'plotbankefficiency_surf_snr_versus_totalmass_ecc.png')
+
+  # contour plots of SNR versus eccentricity (at 2*fl/3) and SNR
+  plotting.contourf(results['ecc_sim'], totMass, snr, 40,40,\
+      xmin=0, xmax=0.4, vmin=0.5,vmax=1)
+  xlabel(r'Eccentricity')
+  ylabel(r'Total mass $(M_\odot)$')
+  mysavefig(opts,'plotbankefficiency_contour_snr_versus_totalmass_ecc.png')
+  
+  # contour plots of SNR versus eccentricity (at fl) and SNR
+  plotting.contourf(results['ecc_sim_fl'], totMass, snr,40,40,vmin=0.5,vmax=1)
+  xlabel(r'Eccentricity')
+  ylabel(r'Total mass $(M_\odot)$')
+  mysavefig(opts,'plotbankefficiency_contour_snr_versus_totalmass_ecc_flower.png')
+  
+  # contour plots of SNR versus eccentricity (at fl) and SNR
+  plotting.contourf(results['ecc_sim_fl'], totMass, (snr)**(1./3.),40,40,vmin=0.5,vmax=1)
+  xlabel(r'Eccentricity')
+  ylabel(r'Total mass $(M_\odot)$')
+  mysavefig(opts,'plotbankefficiency_contour_detectaility_versus_totalmass_ecc_flower.png')
 
 
 
@@ -78,6 +123,7 @@ xml = ReadXMLFiles(opts)
 results, bank, params,values = xml.getTables()
 # now, we can easily extract any parameters from params_table
 signal = xml.getvalue("--signal ")
+template = xml.getvalue("--template ")
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------  
@@ -106,7 +152,7 @@ plotting.hold = True
 plotting.plot(results['tau0'],results['tau3'], \
               markersize=10, marker='rx', linewidth=0)
 try:
-  plot(bank['tau0'],bank['tau3'],  markersize=10, marker='x', linewidth=0)
+  plot(bank['tau0'],bank['tau3'],  markersize=15, marker='x', linewidth=0)
 except:
   pass
 plotting.hold = False
@@ -129,37 +175,13 @@ for this,label in zip(\
 
 # --------------------------------- scatter plot of SNR versus eccentricty and M
 if signal=='Eccentricity':
-  # eccentricity, SNr and total mass
-  plotting.scatter(results['ecc_sim'],results['totalmass_sim'], \
-                   results['snr'], markersize=30, alpha=1,vmin=0,vmax=1)
-  xlabel(r'Eccentricity')
-  ylabel(r'TotalMass ($M_\odot$)')
-  mysavefig(opts,'plotbankefficiency_scatter_snr_versus_totalmass_ecc.png')
+  eccentricityRelated(results)
 
-  # the eccentricity, and SNR
-  plotting.plot(results['ecc_sim'],results['snr'],'ob')
-  xlabel(r'Eccentricity')
-  ylabel(r'Overlap(\%)')
-  #pylab.axis([0,0.4,0.7,1])
-  mysavefig(opts,'plotbankefficiency_snr_versus_ecc.png')
-
-  x = results['ecc_sim']
-  y = results['totalmass_sim']
-  z = results['snr']
-  
-  plotting.surf(x,y,z,40,40,vmin=0.5,vmax=1)
-  xlabel(r'Eccentricity')
-  ylabel(r'Total mass $(M_\odot)$')
-  mysavefig(opts,'plotbankefficiency_surf_snr_versus_totalmass_ecc.png')
-  
-  plotting.contourf(x,y,z,40,40,vmin=0.5,vmax=1)
-  xlabel(r'Eccentricity')
-  ylabel(r'Total mass $(M_\odot)$')
-  mysavefig(opts,'plotbankefficiency_contour_snr_versus_totalmass_ecc.png')
-
+if template=='BCV':
+  bcvRelated(results)
 
 # --------------------------------------------------------------- accuracies
-for param in ['totalmass', 'eta', 'chirpmass','tau0','phase','ecc']:
+for param in ['totalmass', 'eta', 'chirpmass','tau0','tau3','phase','ecc','ffinal']:
   plotting.plot(results[param]-results[param+'_sim'], results['snr'],  \
               markersize=10, marker='o', linewidth=0)
   xlabel(r'$\Delta$  ' + param)
@@ -197,7 +219,6 @@ try:
   y = results['tau3_sim']-results['tau3']
   z = results['snr']
   plotting.surf(x,y,z,20,20)
-  colorbar()
   mysavefig(opts,'test.png')
 except: 
   print "This plotting failed"

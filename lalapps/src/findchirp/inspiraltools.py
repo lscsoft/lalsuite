@@ -442,7 +442,11 @@ class Plotting:
     colorbar()
     return p
 
-  def contourf(self,xdata,ydata,zdata,xbin=20,ybin=20,vmin=0,vmax=1):
+  def contourf(self,xdata,ydata,zdata,xbin=20,ybin=20,xmin=0, xmax=0.4,vmin=0,vmax=1):
+    """
+     function to call contour plot
+     the vmin option is harcoded for the time being using [0.5 0.8 0.9 0.95 and 1]
+    """
     fig = self.setfigure() 
     handle = None
    
@@ -450,6 +454,9 @@ class Plotting:
     zim = ma.masked_where(isnan(zi),zi)
     figure(figsize=(8,8))
     c = contourf(xi,yi,zim,[0.5, 0.8, 0.9, 0.95 ,1])
+    ylims = ylim()
+    print ylims[0]
+    axis([xmin, xmax, floor(ylims[0]), ceil(ylims[1])])
     gca().grid(True)
     colorbar()
     return c  
