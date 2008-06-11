@@ -155,7 +155,7 @@ void CreateSFTPairsIndicesFrom2SFTvectors(LALStatus                *status,
       if (detChoice == 2) { sameDet = detChoice; }
 
       /* decide whether to add this pair or not */
-      if ((sameDet == detChoice) && (fabs(timeDiff) <= par->lag) && (i != j) && (fabs(timeDiff) == par->lag) ) {
+      if ((sameDet == detChoice) && (fabs(timeDiff) <= par->lag) && (i != j) ) {
 	numPairs++;
 
 	List1->data[thisPair] = i;
