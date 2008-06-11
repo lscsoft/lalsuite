@@ -98,11 +98,13 @@ void CombineAllSFTs ( LALStatus *status,
 void CreateSFTPairsIndicesFrom2SFTvectors(LALStatus                *status,
 					 INT4VectorSequence        **out,
 					 SFTVector           *in,
-					 SFTPairParams             *par)
+					 SFTPairParams             *par,
+					 INT4 			   detChoice)
 {
   
   UINT4 i, j, numsft, numPairs;
   INT4 thisPair;
+  INT4 sameDet = 0;
   INT4Vector *List1, *List2;
   INT4VectorSequence *ret;
   COMPLEX8FrequencySeries  *thisSFT1, *thisSFT2;	       
@@ -145,15 +147,19 @@ void CreateSFTPairsIndicesFrom2SFTvectors(LALStatus                *status,
       t1 = thisSFT1->epoch;
       t2 = thisSFT2->epoch;
       timeDiff = XLALGPSDiff( &t1, &t2);
+      
+      sameDet = strcmp(thisSFT1->name, thisSFT2->name);
+
+      if (sameDet != 0) { sameDet = 1; }
+      
+      if (detChoice == 2) { sameDet = detChoice; }
 
       /* decide whether to add this pair or not */
-      if ( (fabs(timeDiff) < par->lag) && (i != j)) {
-
+      if ((sameDet == detChoice) && (fabs(timeDiff) <= par->lag) && (i != j) && (fabs(timeDiff) == par->lag) ) {
 	numPairs++;
 
 	List1->data[thisPair] = i;
 	List2->data[thisPair++] = j;
-
       } /* if ( numPairs < out->length)  */
 	
       thisSFT2 = NULL;

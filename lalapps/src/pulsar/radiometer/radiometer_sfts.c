@@ -120,6 +120,7 @@ int main(int argc, char *argv[]){
    /* user input variables */
    BOOLEAN  uvar_help;
    INT4     uvar_blocksRngMed; 
+   INT4     uvar_detChoice;
    REAL8    uvar_startTime, uvar_endTime;
    REAL8    uvar_f0, uvar_fdot, uvar_fBand;
    REAL8    uvar_dAlpha, uvar_dDelta; /* resolution for isotropic sky-grid */
@@ -150,6 +151,7 @@ int main(int argc, char *argv[]){
  
    uvar_help = FALSE;
    uvar_blocksRngMed = BLOCKSRNGMED;
+   uvar_detChoice = 2;
    uvar_f0 = F0;
    uvar_startTime = 0.0;
    uvar_endTime = LAL_INT4_MAX;
@@ -195,6 +197,7 @@ int main(int argc, char *argv[]){
    LAL_CALL( LALRegisterSTRINGUserVar( &status, "dirnameOut",     'o', UVAR_OPTIONAL, "Output directory", &uvar_dirnameOut), &status);
    LAL_CALL( LALRegisterSTRINGUserVar( &status, "fbasenameOut",    0,  UVAR_OPTIONAL, "Output file basename", &uvar_fbasenameOut), &status);
    LAL_CALL( LALRegisterINTUserVar(    &status, "blocksRngMed",    0,  UVAR_OPTIONAL, "Running Median block size", &uvar_blocksRngMed), &status);
+   LAL_CALL( LALRegisterINTUserVar(    &status, "detChoice",       0,  UVAR_OPTIONAL, "0: Correlate SFTs from same IFOs only; 1: different IFOs only; 2: all IFOs", &uvar_detChoice), &status);
    LAL_CALL( LALRegisterREALUserVar(    &status, "refTime",    	   0,  UVAR_OPTIONAL, "Pulsar reference time (SSB)", &uvar_refTime), &status); 
    LAL_CALL( LALRegisterREALUserVar(    &status, "cosi",    	   0,  UVAR_OPTIONAL, "cos(iota) inclination angle", &uvar_cosi), &status); 
  
@@ -365,7 +368,7 @@ int main(int argc, char *argv[]){
     pairParams.lag = uvar_maxlag;  
 
     /* create sft pair indices */
-    LAL_CALL ( CreateSFTPairsIndicesFrom2SFTvectors( &status, &sftPairIndexList, inputSFTs, &pairParams), &status);
+    LAL_CALL ( CreateSFTPairsIndicesFrom2SFTvectors( &status, &sftPairIndexList, inputSFTs, &pairParams, uvar_detChoice), &status);
 
     /* initialise F_+, F_x vectors */
 
@@ -466,7 +469,7 @@ int main(int argc, char *argv[]){
      
     /* loop over SFT pairs */
 
-ualphacounter = 0.0;
+    ualphacounter = 0.0;
     for (j=0; j < (INT4)sftPairIndexList->vectorLength; j++) {
   
 	/*  correlate sft pairs  */

@@ -170,8 +170,9 @@ void SetUpRadiometerSkyPatches(LALStatus *status,
 
 void CreateSFTPairsIndicesFrom2SFTvectors(LALStatus                *status,
 					 INT4VectorSequence        **out,
-					 SFTVector           *in1,
-					  SFTPairParams             *par);
+					 SFTVector                  *in1,
+					 SFTPairParams             *par,
+					 INT4			    detChoice);
 
 
 void CorrelateSingleSFTPair(LALStatus                *status,
