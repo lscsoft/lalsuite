@@ -13,7 +13,12 @@ import os
 import glob
 from pylab import *
 # for the delaunay and griddata
-from scipy.sandbox import delaunay
+try:
+    from scipy.sandbox import delaunay
+except:
+    print """"Warning: the delaunay package could not be imported. 
+    Functionalities such as the contour or surf plots will not be available. 
+    Fix your configuration and packages."""    
 import numpy.core.ma as ma
 from numpy import *
 #from matplotlib import *

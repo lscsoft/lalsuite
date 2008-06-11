@@ -41,29 +41,38 @@ def eccentricityRelated(results):
   mysavefig(opts,'plotbankefficiency_snr_versus_ecc.png')
 
   # contour plots of SNR versus eccentricity (at 2*fl/3) and SNR
-  plotting.surf(results['ecc_sim'], totMass, snr,40,40,vmin=0.5,vmax=1)
-  xlabel(r'Eccentricity')
-  ylabel(r'Total mass $(M_\odot)$')
-  mysavefig(opts,'plotbankefficiency_surf_snr_versus_totalmass_ecc.png')
-
+  try:
+    plotting.surf(results['ecc_sim'], totMass, snr,40,40,vmin=0.5,vmax=1)
+    xlabel(r'Eccentricity')
+    ylabel(r'Total mass $(M_\odot)$')
+    mysavefig(opts,'plotbankefficiency_surf_snr_versus_totalmass_ecc.png')
+  except: pass
+  
   # contour plots of SNR versus eccentricity (at 2*fl/3) and SNR
-  plotting.contourf(results['ecc_sim'], totMass, snr, 40,40,\
-      xmin=0, xmax=0.4, vmin=0.5,vmax=1)
-  xlabel(r'Eccentricity')
-  ylabel(r'Total mass $(M_\odot)$')
-  mysavefig(opts,'plotbankefficiency_contour_snr_versus_totalmass_ecc.png')
+  try:
+    plotting.contourf(results['ecc_sim'], totMass, snr, 40,40,\
+        xmin=0, xmax=0.4, vmin=0.5,vmax=1)
+    xlabel(r'Eccentricity')
+    ylabel(r'Total mass $(M_\odot)$')
+    mysavefig(opts,'plotbankefficiency_contour_snr_versus_totalmass_ecc.png')
+  except: pass
+  
   
   # contour plots of SNR versus eccentricity (at fl) and SNR
-  plotting.contourf(results['ecc_sim_fl'], totMass, snr,40,40,vmin=0.5,vmax=1)
-  xlabel(r'Eccentricity')
-  ylabel(r'Total mass $(M_\odot)$')
-  mysavefig(opts,'plotbankefficiency_contour_snr_versus_totalmass_ecc_flower.png')
+  try:      
+    plotting.contourf(results['ecc_sim_fl'], totMass, snr,40,40,vmin=0.5,vmax=1)
+    xlabel(r'Eccentricity')
+    ylabel(r'Total mass $(M_\odot)$')
+    mysavefig(opts,'plotbankefficiency_contour_snr_versus_totalmass_ecc_flower.png')
+  except: pass
   
-  # contour plots of SNR versus eccentricity (at fl) and SNR
-  plotting.contourf(results['ecc_sim_fl'], totMass, (snr)**(1./3.),40,40,vmin=0.5,vmax=1)
-  xlabel(r'Eccentricity')
-  ylabel(r'Total mass $(M_\odot)$')
-  mysavefig(opts,'plotbankefficiency_contour_detectaility_versus_totalmass_ecc_flower.png')
+  # plots of SNR versus eccentricity (at fl) and SNR
+  try:
+    plotting.contourf(results['ecc_sim_fl'], totMass, (snr)**(1./3.),40,40,vmin=0.5,vmax=1)
+    xlabel(r'Eccentricity')
+    ylabel(r'Total mass $(M_\odot)$')
+    mysavefig(opts,'plotbankefficiency_contour_detectaility_versus_totalmass_ecc_flower.png')
+  except: pass
 
 
 
