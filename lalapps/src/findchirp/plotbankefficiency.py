@@ -88,11 +88,11 @@ def mysavefig(opts, title):
 # parse options and arguments
 
 def ParseParameters():
-  usage = """Usage: %prog [options] [trigs1 missed1 trigs2 missed2]
+  usage = """Usage: %prog [options]
 
-  Generate found and missed trig plots
+  Generate figures of merits using the XML output of BankEfficieny
 
-  Example: plotinspmissed --time-dist --show-plot found.xml missed.xml
+  Example: python plotbankefficiency.py --glob 'BankEfficiency-Results.xml' --verbose --user-tag tag1
   """
   parser = OptionParser( usage=usage, \
       version="%prog CVS $Id$ \n" \
