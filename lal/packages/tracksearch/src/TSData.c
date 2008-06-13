@@ -562,6 +562,13 @@ LALTrackSearchWhitenCOMPLEX8FrequencySeries(
   /*
    * Error checking 
    */
+
+  /* 
+   * Need to add error check to see that deltaF for PSD matches
+   * fSeries deltaF with TOL if not issue warning and match the PSD
+   * to the fSeries otherwise throw error.
+   * I.E.  Run if fSeries.deltaF>=PSD.deltaF matching as needed!
+   */
   ASSERT(level > 0, status,TSDATA_EINVA,TSDATA_MSGEINVA);
 
   for (i=0;i<fSeries->data->length;i++)
