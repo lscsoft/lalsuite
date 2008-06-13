@@ -117,7 +117,7 @@ int main (int argc, char *argv[])
 	case 'a':
 	  /* Setting the GPS start time parameter */
 	  {
-	    LAL_CALL(LALCHARCreateVector(&status,&file2convert,512),&status);
+	    file2convert=XLALCreateCHARVector(512);
 	    strncpy(file2convert->data,optarg,strlen(optarg)+1);
 	  }
 	  break;
@@ -144,7 +144,7 @@ int main (int argc, char *argv[])
     }
   if (file2convert)
     {
-      LAL_CALL(LALCHARDestroyVector(&status,&file2convert),&status);
+      XLALDestroyCHARVector(file2convert);
     }
    LALCheckMemoryLeaks();
   return 0;

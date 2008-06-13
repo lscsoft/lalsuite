@@ -635,6 +635,19 @@ class candidateList:
                         
     #End init method
 
+    def __getKurveProperty__(self,thisKurveSummary,propertyList=["curveid"]):
+        """
+        This method returns a list of property values given an input
+        list of property value that are characters from the variable
+        candidateList.qualities structure.
+        """
+        outputData=[]
+        for thisProperty in propertyList:
+            thisValue=self.__getTraitField__(thisKurveSummary,thisProperty)[0]
+            outputData.append(thisValue)
+        return outputData
+    #End __getKurvProperty__()
+
     def __cloneCandidateList__(self,doner,all=False):
         """
         This is a smarter way of copying data from a previously
@@ -691,7 +704,14 @@ class candidateList:
     def __getCurveField__(self,curve='',field='curveID'):
         """
         This method takes a Kurve instance and a field entry
-        it returns the {Value,TxtLabel} in return.
+        it returns the {Value,TxtLabel} in return.  It is the method
+        which returns the property label and value for a data in a
+        kurve instance.  It is the non-ShortCut equivalent to 
+        candidateList.__getTraitField__(), except we do not use
+        candidateList.traitSummary data fields.  Hence, when in doubt
+        the accuracy of candidateList.traitSummary data 
+        use this method to check the properties of kurves contained in
+        a candidateList class.
         """
         for entry in self.qualities:
             if field.lower().strip() == entry[0]:
@@ -930,6 +950,7 @@ class candidateList:
                 self.curves=[]
                 self.gpsWidth=gpsInt(0,0)
                 self.freqWidth=float(0)
+        self.__timeOrderLibrary__()
         self.createTraitSummary()
         self.__propertypickler__()
     #End __loadfileQuick__ method
@@ -1684,7 +1705,7 @@ class candidateList:
             tmpTrait=[]
             for property in self.qualities:
                 tmpData=self.__getCurveField__(element,property[0])
-                tmpTrait.append(tmpData[0])
+                tmpTrait.append(float(tmpData[0]))
             self.traitSummary.append(tmpTrait)
             del tmpTrait
     #end createTraitSummary()
@@ -1713,28 +1734,26 @@ class candidateList:
         if not self.sorted:
             self.__timeOrderLibrary__()
         for lineInfo in self.curves:
-            curveID,l,p=lineInfo.getKurveHeader()
-            #See notes in methods below for explaination
-            #Offsets in d,F are likely
-            #wrong...Tina-Thu-Oct-04-2007:200710041448 
-            #revised Tue-Mar-04-2008:200803041544 
-            d=lineInfo.getCandidateDuration()
+            curveid=(self.__getCurveField__(lineInfo,"curveid")[0])
+            l=float(self.__getCurveField__(lineInfo,"l")[0])
+            p=float(self.__getCurveField__(lineInfo,"p")[0])
+            a=float(self.__getCurveField__(lineInfo,"a")[0])
+            d=float(self.__getCurveField__(lineInfo,"d")[0])
+            b=float(self.__getCurveField__(lineInfo,"b")[0])
+            t=float(self.__getCurveField__(lineInfo,"t")[0])
+            s=float(self.__getCurveField__(lineInfo,"s")[0])
+            f=float(self.__getCurveField__(lineInfo,"f")[0])
+            g=float(self.__getCurveField__(lineInfo,"g")[0])
+            v=float(self.__getCurveField__(lineInfo,"v")[0])
+            h=float(self.__getCurveField__(lineInfo,"h")[0])
+            j=float(self.__getCurveField__(lineInfo,"j")[0])
+            m=float(self.__getCurveField__(lineInfo,"m")[0])
+            c=float(self.__getCurveField__(lineInfo,"c")[0])
             if d == 0:
                 d=d+self.gpsWidth.getAsFloat()
-            F=lineInfo.getCandidateBandwidth()
-            if F == 0:
-                F=F+self.freqWidth
-            t=float(lineInfo.printStartGPS())
-            S=float(lineInfo.printStopGPS())
-            f=float(lineInfo.printStartFreq())
-            g=float(lineInfo.printStopFreq())
-            tmp=lineInfo.getBrightPixelAndStats()
-            v=tmp[0][3] #Freq of Bright Pixel
-            h=tmp[0][2].getAsFloat() #GPS time of Bright Pixel
-            j=tmp[0][4] #The pixel power value for brightest pixel
-            m=tmp[1] #Mean power of pixels in curve
-            s=tmp[2] #stddev^2 of pixel power in curve
-            summary.append([t,d,f,g,F,h,v,j,m,s,l,p])
+            if b == 0:
+                b=b+self.freqWidth
+            summary.append([t,d,f,g,b,h,v,j,m,s,l,p])
         return summary
     #End dumpCandidateKurveSummary()
 
@@ -1770,6 +1789,75 @@ class candidateList:
         return output
     #End createSummaryStructure method
     
+    def writeDQtable(self,padding=0,filename=''):
+        """
+        Invoking this method creates a file FILENAME or default ext
+        with name in structure of candidateList with extension
+        DQFlag.  
+        """
+        if filename=='':
+            sourceFile=self.filename[0]
+        else:
+            sourceFile=override
+        outRoot,outExt=os.path.splitext(sourceFile)
+        outFile=outRoot+'.dqList'
+        dqListOrig=[]
+        propertyList=["t","d"]
+        for lineSummary in self.traitSummary:
+            dqListOrig.append(self.__getKurveProperty__(lineSummary,propertyList))
+        oldList=[[x[0],x[0]+x[1]] for x in dqListOrig]
+        oldList.sort()
+        if self.verboseMode:
+            sys.stdout.write("Creating DQ list from %i triggers.\n"%(oldList.__len__()))
+
+        #Take projection of triggers into single time axis... Uniq the list
+        #To DO Mon-Jun-09-2008:200806091545  
+        #We must both 'unique' the trigger list and
+        #remove any overlaps so that the remain list is truly independent
+        #stretches of time information
+        #(1)Unique The List
+        newInputList=[]
+        while oldList.__len__() > 0:
+            repeatCount=oldList.count(oldList[0])
+            newInputList.append(oldList[0])
+            oldList.__delslice__(0,repeatCount)
+        oldList=newInputList
+        #(2)Examine segments to remove overlaps and write this as list of
+        # segments for examination
+        
+        joinList=[]
+        newList=[]
+        padSize=int(padding)
+        for i in range(0,oldList.__len__()-1):
+            if oldList[i][1]+padSize>=oldList[i+1][0]:
+                joinList.append(True)
+            else:
+                joinList.append(False)
+        #Always append False to end the looping chain
+        #Since no other segments to join
+        joinList.append(False)
+        i=0
+        while i < joinList.__len__():
+            myStart=oldList[i][0]
+            while joinList[i]:
+                i=i+1
+            myEnd=oldList[i][1]
+            newList.append([myStart,myEnd])
+            i=i+1
+        deadTime=sum([x[1]-x[0] for x in newList])
+        for i in range(0,newList.__len__()-1):
+            if newList[i][1]+padSize>=newList[i+1][0]:
+                sys.stderr.write("FOUND ERROR :%f\n"%(newList[i][1]))
+                sys.stderr.write("DQ List forgotten, output file will be empty.\n")
+                newList=[]
+        if self.verboseMode:
+            sys.stdout.write("Deadtime of data quality list with pad size %i is %f hours.\n"%(padSize,deadTime/3600))
+        fp=open(outFile,'w')
+        outputText=[str(x[0])+' '+str(x[1])+'\n' for x in newList]
+        fp.writelines(outputText)
+        fp.close()
+    #End write DQlist file
+
     def writeSummary(self,override=''):
         """
         Method to write summary with formatting specified in
@@ -1826,6 +1914,7 @@ class candidateList:
         J     Bright Pow
         M     mean Bright
         C     std Bright
+        A     angle measure of trigger atan(Fband/Tband)
         Example:
         P>10 and L < 5
         D >=2 or P>12
@@ -1847,20 +1936,21 @@ class candidateList:
         #print "String to threshold with :",testExp
         for lineInfo in self.curves:
             spinner.updateSpinner()
-            curveID,l,p=lineInfo.getKurveHeader()
-            d=float(lineInfo.getCandidateDuration())
-            b=float(lineInfo.getCandidateBandwidth())
-            t=float(lineInfo.printStartGPS())
-            s=float(lineInfo.printStopGPS())
-            f=float(lineInfo.printStartFreq())
-            g=float(lineInfo.printStopFreq())
-            #Additional eval stuff?
-            tmpBrightnessInfo=lineInfo.getBrightPixelAndStats()
-            v=float(tmpBrightnessInfo[0][3]) #Freq of Bright Pixel
-            h=float(tmpBrightnessInfo[0][2].getAsFloat()) #float Time of Bright Pixel
-            j=float(tmpBrightnessInfo[0][4]) #Power of Bright Pixel
-            m=float(tmpBrightnessInfo[1]) #Curve mean pixel brightness
-            c=float(tmpBrightnessInfo[2]) #Curve stddev of pixel brightness
+            curveid=(self.__getCurveField__(lineInfo,"curveid")[0])
+            l=float(self.__getCurveField__(lineInfo,"l")[0])
+            p=float(self.__getCurveField__(lineInfo,"p")[0])
+            a=float(self.__getCurveField__(lineInfo,"a")[0])
+            d=float(self.__getCurveField__(lineInfo,"d")[0])
+            b=float(self.__getCurveField__(lineInfo,"b")[0])
+            t=float(self.__getCurveField__(lineInfo,"t")[0])
+            s=float(self.__getCurveField__(lineInfo,"s")[0])
+            f=float(self.__getCurveField__(lineInfo,"f")[0])
+            g=float(self.__getCurveField__(lineInfo,"g")[0])
+            v=float(self.__getCurveField__(lineInfo,"v")[0])
+            h=float(self.__getCurveField__(lineInfo,"h")[0])
+            j=float(self.__getCurveField__(lineInfo,"j")[0])
+            m=float(self.__getCurveField__(lineInfo,"m")[0])
+            c=float(self.__getCurveField__(lineInfo,"c")[0])
             evalResult=False
             try:
                 evalResult=eval(testExp)

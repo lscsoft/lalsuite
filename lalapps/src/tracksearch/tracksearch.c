@@ -76,12 +76,12 @@ int main (int argc, char *argv[])
 {
   /* Global Variable Declarations */
   /* Variables that will be in final produciton code */
-  LALStatus         status;/* Error containing structure */
-  TSSearchParams   *params;/*Large struct for all params*/
+  LALStatus           status;/* Error containing structure */
+  TSSearchParams     *params;/*Large struct for all params*/
   TSappsInjectParams *injectParams;/*Struct for performing injects*/
-  CHARVector       *cachefile=NULL;/* name of file with frame cache info */
-  CHAR            *cachefileDataField=NULL;/*field of cachefile*/
-  CHARVector       *dirpath=NULL;
+  CHARVector         *cachefile=NULL;/* name of file with frame cache info */
+  CHAR               *cachefileDataField=NULL;/*field of cachefile*/
+  CHARVector         *dirpath=NULL;
 
   /*
    *Sleep for Attaching DDD 
@@ -112,8 +112,8 @@ int main (int argc, char *argv[])
    * Initialize status structure 
    */
   
-  params=LALMalloc(sizeof(TSSearchParams));
-  injectParams=LALMalloc(sizeof(TSappsInjectParams));
+  params=XLALMalloc(sizeof(TSSearchParams));
+  injectParams=XLALMalloc(sizeof(TSappsInjectParams));
 
   /* 
    * Parse incoming search arguments initialize variables 
@@ -166,26 +166,25 @@ int main (int argc, char *argv[])
    */
 
   if (dirpath)
-    LAL_CALL(LALCHARDestroyVector(&status,&dirpath),&status);
+    XLALDestroyCHARVector(dirpath);
   if (cachefile)
-    LAL_CALL(LALCHARDestroyVector(&status,&cachefile),&status);
+    XLALDestroyCHARVector(cachefile);
   if (params->channelName)
-    LALFree(params->channelName);
+    XLALFree(params->channelName);
   if (params->auxlabel)
-    LALFree(params->auxlabel);
+    XLALFree(params->auxlabel);
   if (params->numSlaves)
-    LALFree(params->numSlaves);
+    XLALFree(params->numSlaves);
   if (params->injectMapCache)
-    LALFree(params->injectMapCache);
+    XLALFree(params->injectMapCache);
   if (params->injectSingleMap)
-    LALFree(params->injectSingleMap);
+    XLALFree(params->injectSingleMap);
   if (params)
-    LALFree(params);   
+    XLALFree(params);   
   if (injectParams->injectTxtFile)
-    LAL_CALL(LALCHARDestroyVector(&status,&(injectParams->injectTxtFile)),
-	     &status);
+    XLALDestroyCHARVector(injectParams->injectTxtFile);
   if (injectParams)
-    LALFree(injectParams);
+    XLALFree(injectParams);
   /* 
    * Done freeing for search params struct memory
    */
@@ -311,6 +310,7 @@ void LALappsTrackSearchPrepareData( LALStatus        *status,
 	   * Adjust the segmenter to make orignal segments with
 	   * SegBufferPoints on each side of the segments.
 	   */
+	  /*DO I CONVERT TO XLALish type?*/
 	  LAL_CALL(LALTrackSearchDataSegmenter(status,
 					       dataSet,
 					       dataSegments,
@@ -325,6 +325,7 @@ void LALappsTrackSearchPrepareData( LALStatus        *status,
 	   * Adjust the segmenter to make orignal segments with
 	   * SegBufferPoints on each side of the segments.
 	   */
+	  /*DO I CONVERT TO XLALish type?*/
 	  LAL_CALL(LALTrackSearchDataSegmenter(status,
 					       dataSet,
 					       dataSegments,
@@ -349,6 +350,7 @@ void LALappsTrackSearchPrepareData( LALStatus        *status,
 	   * Adjust the segmenter to make orignal segments with
 	   * SegBufferPoints on each side of the segments.
 	   */
+	  /*DO I CONVERT TO XLALish type?*/
 	  LAL_CALL(LALTrackSearchDataSegmenter(status,
 					       dataSet,
 					       dataSegments,
@@ -568,11 +570,7 @@ void LALappsTrackSearchInitialize(
 	  {
 	    /* Allow intepreting float values */
 	    REAL8 startTime = atof(optarg);
-	    LAL_CALL(
-		     LALFloatToGPS(status,
-				   &tempGPS,
-				   &startTime),
-		     status);
+	    XLALFloatToGPS(&tempGPS,startTime);
 	    params->GPSstart.gpsSeconds = tempGPS.gpsSeconds;
 	    params->GPSstart.gpsNanoSeconds = tempGPS.gpsNanoSeconds;
 	  }
@@ -590,7 +588,7 @@ void LALappsTrackSearchInitialize(
 	  {
 	    /* Change the name field to be a integer instead of *char */
 	    char *name = NULL;
-	    name = (CHAR*) LALMalloc(strlen(optarg)+1);
+	    name = (CHAR*) XLALMalloc(strlen(optarg)+1);
 	    if (!name)
 	      {
 		fprintf(stderr,TRACKSEARCHC_MSGEMEM);
@@ -648,7 +646,7 @@ void LALappsTrackSearchInitialize(
 	case 'i':
 	  /* Setting data source name to look for CHANNEL */
 	  {
-	    params->channelName = (CHAR*) LALMalloc(strlen(optarg)+1);
+	    params->channelName = (CHAR*) XLALMalloc(strlen(optarg)+1);
 	    if (!(params->channelName))
 	      {
 		fprintf(stderr,TRACKSEARCHC_MSGEMEM);
@@ -759,7 +757,7 @@ void LALappsTrackSearchInitialize(
 
 	case 'r':
 	  {/* Auxlabel file name to read in */
-	    params->auxlabel = (CHAR*) LALMalloc(strlen(optarg)+1);
+	    params->auxlabel = (CHAR*) XLALMalloc(strlen(optarg)+1);
 	    if (!(params->auxlabel))
 	      {
 		fprintf(stderr,TRACKSEARCHC_MSGEMEM);
@@ -772,9 +770,7 @@ void LALappsTrackSearchInitialize(
 	case 's':
 	  {
 	    /*Setup structure for path or cachefile name temp*/
-	    LAL_CALL(LALCHARCreateVector(status,dPtrDirPath,maxFilenameLength),
-		     status);
-
+	    *(dPtrDirPath)=XLALCreateCHARVector(maxFilenameLength);
 	    len= strlen(optarg) +1;
 	    strncpy((*dPtrDirPath)->data,optarg,len);
 	  }
@@ -795,8 +791,7 @@ void LALappsTrackSearchInitialize(
 	case 'v':
 	  { /* Setting up aux label if present */
 	    /* Insert string copy code here */
-	    LAL_CALL(LALCHARCreateVector(status,dPtrCachefile,maxFilenameLength),
-		     status);
+	    *dPtrCachefile=XLALCreateCHARVector(maxFilenameLength);
 	    len = strlen(optarg) +1;
 	    memcpy((*dPtrCachefile)->data,optarg,len);
 	  }
@@ -812,7 +807,7 @@ void LALappsTrackSearchInitialize(
 	  {
 	    len=strlen(optarg)+1;
 	    params->detectorPSDCache=(CHAR *)
-	      LALCalloc(len,sizeof(CHAR));
+	      XLALCalloc(len,sizeof(CHAR));
 	    memcpy(params->detectorPSDCache,optarg,len);
 	  }
 	  break;
@@ -835,7 +830,7 @@ void LALappsTrackSearchInitialize(
 	  { /* Setting up aux label if present */
 	    /* Insert string copy code here */
 	    len = strlen(optarg) +1;
-	    params->calFrameCache = (CHAR *) LALCalloc(len,sizeof(CHAR));
+	    params->calFrameCache = (CHAR *) XLALCalloc(len,sizeof(CHAR));
 	    memcpy(params->calFrameCache,optarg,len);
 	    params->calibrate=1;
 	  }
@@ -848,13 +843,13 @@ void LALappsTrackSearchInitialize(
 	case 'B':
 	  {
 	    len = strlen(optarg) +1;
-	    params->pgmColorMapFile = (CHAR *) LALCalloc(len,sizeof(CHAR));
+	    params->pgmColorMapFile = (CHAR *) XLALCalloc(len,sizeof(CHAR));
 	    memcpy(params->pgmColorMapFile,optarg,len);
 	  }
 	case 'C':
 	  {
 	    params->injectMapCache=
-	      (CHAR*) LALCalloc(strlen(optarg)+1,sizeof(CHAR));
+	      (CHAR*) XLALCalloc(strlen(optarg)+1,sizeof(CHAR));
 	    memcpy(params->injectMapCache,optarg,strlen(optarg)+1);
 	    /*
 	     * Turn off tseries flag
@@ -866,7 +861,7 @@ void LALappsTrackSearchInitialize(
 	case 'D':
 	  {
 	    params->injectSingleMap=
-	      (CHAR*) LALCalloc(strlen(optarg)+1,sizeof(CHAR));
+	      (CHAR*) XLALCalloc(strlen(optarg)+1,sizeof(CHAR));
 	    memcpy(params->injectSingleMap,optarg,strlen(optarg)+1);
 	    /*
 	     * Turn off tseries flag
@@ -941,10 +936,7 @@ void LALappsTrackSearchInitialize(
 
 	case 'M':
 	  {
-	    LAL_CALL(LALCHARCreateVector(status,
-					 &(injectParams->injectTxtFile),
-					 strlen(optarg)+1),
-		     status);
+	    injectParams->injectTxtFile=XLALCreateCHARVector(strlen(optarg)+1);
 	    memcpy(injectParams->injectTxtFile->data,optarg,strlen(optarg)+1);
 	  }
 	  break;
@@ -992,8 +984,7 @@ void LALappsTrackSearchInitialize(
 
 	case 'S':
 	  {
-	    LAL_CALL(LALCHARCreateVector(status,&lineTokens,maxFilenameLength),
-		     status);
+	    lineTokens=XLALCreateCHARVector(maxFilenameLength);
 	    len = strlen(optarg) +1;
 	    strncpy(lineTokens->data,optarg,len);
 	    token=strtok(lineTokens->data,lineDelimiters);
@@ -1004,8 +995,7 @@ void LALappsTrackSearchInitialize(
 		token=strtok(NULL,lineDelimiters);
 	      }
 	    if (lineTokens)
-	      LAL_CALL(LALCHARDestroyVector(status,&lineTokens),
-		       status);
+	      XLALDestroyCHARVector(lineTokens);
 	  }
 	  break;
 
@@ -1031,6 +1021,10 @@ void LALappsTrackSearchInitialize(
   /* 
    * Tabulate the number of segments to create for specified overlap
    * Check for valid overlap number which < segment length number 
+   */
+  /* 
+   * Cristina Fri-May-30-2008:200805302036 
+   * Fix code that calculates segment lengths given overlap params
    */
   /* 
    *If doing a MAP analysis skip these checks these options should
@@ -1178,6 +1172,7 @@ void LALappsGetFrameData(LALStatus*          status,
   LIGOTimeGPS           bufferedDataStopGPS;
   REAL8                 bufferedDataStop=0;
   REAL8                 bufferedDataTimeInterval=0;
+  int                   errcode=0;
   /*
    * Clean up this section of code via a m4 file which is compiled
    * as a set of possible functions using 
@@ -1195,35 +1190,28 @@ void LALappsGetFrameData(LALStatus*          status,
       if(dirname)
 	{
 	  /* Open frame stream */
-	  LAL_CALL( LALFrOpen( status, &stream, dirname->data, "*.gwf" ), status);
+	  stream=XLALFrOpen(dirname->data,"*.gwf");
 	}
       else if (cachefile)
 	{
 	  /* Open frame cache */
 	  lal_errhandler = LAL_ERR_EXIT;
 	  LAL_CALL( LALFrCacheImport( status, &frameCache, cachefile ), status);
-	  LAL_CALL( LALFrCacheOpen( status, &stream, frameCache ), status);
+	  stream=XLALFrCacheOpen(frameCache);
 	  LAL_CALL( LALDestroyFrCache( status, &frameCache ), status );
 	}
       lal_errhandler = LAL_ERR_EXIT;
       /* Set verbosity of stream so user sees frame read problems! */
-      LAL_CALL( LALFrSetMode(status,LAL_FR_VERBOSE_MODE,stream),status);
+      XLALFrSetMode(stream,LAL_FR_VERBOSE_MODE);
       /*DataIn->epoch SHOULD and MUST equal params->startGPS - (params.SegBufferPoints/params.SamplingRate)*/
       memcpy(&bufferedDataStartGPS,&(DataIn->epoch),sizeof(LIGOTimeGPS));
-      LAL_CALL(
-	       LALGPStoFloat(status,
-			     &bufferedDataStart,
-			     &bufferedDataStartGPS),
+      LAL_CALL(LALGPStoFloat(status,&bufferedDataStart,&bufferedDataStartGPS),
 	       status);
       /* 
        * Seek to end of requested data makes sure that all stream is complete!
        */
       bufferedDataStop=bufferedDataStart+(DataIn->data->length * DataIn->deltaT);
-      LAL_CALL(
-	       LALFloatToGPS(status,
-			     &bufferedDataStopGPS,
-			     &bufferedDataStop),
-	       status);
+      XLALFloatToGPS(&bufferedDataStopGPS,bufferedDataStop);
       bufferedDataTimeInterval=bufferedDataStop-bufferedDataStart;
       if (params->verbosity >= verbose)
 	{
@@ -1239,8 +1227,7 @@ void LALappsGetFrameData(LALStatus*          status,
       /*
        * Determine the variable type of data in the frame file.
        */
-      LAL_CALL( LALFrGetTimeSeriesType(status, &dataTypeCode, &channelIn, stream),status);
-      
+      dataTypeCode=XLALFrGetTimeSeriesType(channelIn.name, stream);
 
       if (dataTypeCode == LAL_S_TYPE_CODE)
 	{
@@ -1250,11 +1237,14 @@ void LALappsGetFrameData(LALStatus*          status,
 	    fprintf(stderr,"NO conversion of frame REAL4 data needed.\n");
 
 	  lal_errhandler = LAL_ERR_EXIT;
-	  LAL_CALL( LALFrGetREAL4TimeSeriesMetadata( status, 
-						     DataIn, 
-						     &channelIn, 
-						     stream), 
-		    status);
+	  /*Make sure label of fseries matches channel to read!*/
+	  errcode=XLALFrGetREAL4TimeSeriesMetadata(DataIn,stream);
+	  if (errcode!=0)
+	    {
+	      fprintf(stderr,"Failure getting REAL4 metadata.\n");
+	      exit(errcode);
+	    }
+
 	  /*
 	   * Determine the sampling rate and assuming the params.sampling rate
 	   * how many of these points do we load to get the same time duration
@@ -1267,28 +1257,26 @@ void LALappsGetFrameData(LALStatus*          status,
 	   * This will load the correct number of points.
 	   */
 	  loadPoints=loadPoints+(params->SamplingRateOriginal*2*(params->SegBufferPoints/params->SamplingRate));
-	  LAL_CALL(
-		   LALCreateREAL4TimeSeries(status,
-					    &tmpData,
-					    "Higher Sampling Tmp Data",
-					    bufferedDataStartGPS,
+	  tmpData=XLALCreateREAL4TimeSeries(params->channelName,
+					    &bufferedDataStartGPS,
 					    0,
 					    1/params->SamplingRateOriginal,
-					    lalADCCountUnit,
-					    loadPoints),
-		   status);
+					    &lalADCCountUnit,
+					    loadPoints);
 	  /* get the data */
-	  LAL_CALL( LALFrSeek(status, &(tmpData->epoch), stream), status);
+	  errcode=XLALFrSeek(stream,&(tmpData->epoch));
+	  if (errcode !=0)
+	    {
+	      fprintf(stderr,"Can not seek to beginning of stream data unavailable.\n");
+	      exit(errcode);
+	    }
+
 	  lal_errhandler = LAL_ERR_RTRN;
-	  errCode=LAL_CALL( LALFrGetREAL4TimeSeries( status, 
-						     tmpData, 
-						     &channelIn, 
-						     stream), 
-			    status);
-	  if (errCode != 0)
+	  errcode=XLALFrGetREAL4TimeSeries(tmpData,stream);
+	  if (errcode != 0)
 	    {
 	      fprintf(stderr,"The span of REAL4TimeSeries data is not available in frame stream!\n");
-	      exit(errCode);
+	      exit(errcode);
 	    }
 	} /*End of reading type REAL4TimeSeries*/
       else if (dataTypeCode == LAL_D_TYPE_CODE)
@@ -1300,24 +1288,22 @@ void LALappsGetFrameData(LALStatus*          status,
 	  /* Create temporary space use input REAL4TimeSeries traits!*/
 	  if (params->verbosity >= verbose)
 	    fprintf(stderr,"Must convert frame REAL8 data to REAL4 data for analysis!\n");
-	  LAL_CALL(
-		   LALCreateREAL8TimeSeries(status,
-					    &tmpREAL8Data,
-					    "tmp space",
-					    bufferedDataStartGPS,
-					    0,
-					    DataIn->deltaT,
-					    lalADCCountUnit,
-					    DataIn->data->length),
-		   status);
+	  tmpREAL8Data=XLALCreateREAL8TimeSeries(params->channelName,
+						 &(bufferedDataStartGPS),
+						 0,
+						 DataIn->deltaT,
+						 &(lalADCCountUnit),
+						 DataIn->data->length);
 
 	  /* Load the metadata to check the frame sampling rate */
 	  lal_errhandler = LAL_ERR_EXIT;
-	  LAL_CALL( LALFrGetREAL8TimeSeriesMetadata( status, 
-						     tmpREAL8Data, 
-						     &channelIn, 
-						     stream), 
-		    status);
+	  errcode=XLALFrGetREAL8TimeSeriesMetadata(tmpREAL8Data,stream);
+	  if (errcode != 0)
+	    {
+	      fprintf(stderr,"Can not load the interval of data requested.\n");
+	      exit(errcode);
+	    }
+
 	  /*
 	   * Determine the sampling rate and assuming the params.sampling rate
 	   * how many of these points do we load to get the same time duration
@@ -1326,28 +1312,24 @@ void LALappsGetFrameData(LALStatus*          status,
  	  params->SamplingRateOriginal=1/(tmpREAL8Data->deltaT);
  	  loadPoints=params->SamplingRateOriginal*(params->TimeLengthPoints/params->SamplingRate);
 	  loadPoints=loadPoints+(params->SamplingRateOriginal*2*(params->SegBufferPoints/params->SamplingRate));
-	  LAL_CALL(
-		   LALCreateREAL8TimeSeries(status,
-					    &convertibleREAL8Data,
-					    "Higher Sampling Tmp Data",
-					    bufferedDataStartGPS,
-					    0,
-					    1/params->SamplingRateOriginal,
-					    lalADCCountUnit,
-					    loadPoints),
-		   status);
+	  convertibleREAL8Data=XLALCreateREAL8TimeSeries(params->channelName,
+							 &(bufferedDataStartGPS),
+							 0,
+							 1/params->SamplingRateOriginal,
+							 &(lalADCCountUnit),
+							 loadPoints);
 	  /* get the data */
-	  LAL_CALL( LALFrSeek(status, &(tmpREAL8Data->epoch), stream), status);
-	  lal_errhandler = LAL_ERR_RTRN;
-	  errCode=LAL_CALL( LALFrGetREAL8TimeSeries( status, 
-						     convertibleREAL8Data, 
-						     &channelIn, 
-						     stream), 
-			    status);
-	  if (errCode != 0)
+	  errcode=XLALFrSeek(stream,&(tmpREAL8Data->epoch));
+	  if (errcode !=0)
 	    {
-	      fprintf(stderr,"The span of REAL8TimeSeries data is not available in framestream!\n");
-	      exit(errCode);
+	      fprintf(stderr,"Can not seek to beginning of stream data unavailable.\n");
+	      exit(errcode);
+	    }
+	  errcode=XLALFrGetREAL8TimeSeries(convertibleREAL8Data,stream);
+	  if (errcode !=0)
+	    {
+	      fprintf(stderr,"Could not load data from frame stream.\n");
+	      exit(errcode);
 	    }
 	  /*
 	   * REAL8-->REAL4 Workaround (tmp solution factor into units struct!)
@@ -1379,10 +1361,14 @@ void LALappsGetFrameData(LALStatus*          status,
 	       * Band pass is achieved by low pass first then high pass!
 	       * Call the low pass filter function.
 	       */
-	      LAL_CALL(LALButterworthREAL8TimeSeries(status,
-						     convertibleREAL8Data, 
-						     &bandPassParams),
-		       status);
+	      errcode=XLALButterworthREAL8TimeSeries(convertibleREAL8Data, 
+						     &bandPassParams);
+	      if (errcode != 0)
+		{
+		  fprintf(stderr,"Low pass filter in frame reading routine failed.\n");
+		  exit(errcode);
+		}
+
 	    }
 	  if (params->highPass > 0)
 	    {
@@ -1400,10 +1386,14 @@ void LALappsGetFrameData(LALStatus*          status,
 	      bandPassParams.f2=params->highPass;
 	      bandPassParams.a1=0;
 	      bandPassParams.a2=0.9;
-	      LAL_CALL(LALButterworthREAL8TimeSeries(status,
-						     convertibleREAL8Data, 
-						     &bandPassParams),
-		       status);
+	      errcode=XLALButterworthREAL8TimeSeries(convertibleREAL8Data, 
+						     &bandPassParams);
+	      if (errcode != 0)
+		{
+		  fprintf(stderr,"High pass filter in frame reading routine failed.\n");
+		  exit(errcode);
+		}
+
 	      /*
 	       * End Butterworth filtering
 	       */
@@ -1412,7 +1402,7 @@ void LALappsGetFrameData(LALStatus*          status,
 	    {
 	      fprintf(stdout,"WARNING! Input data should be high pass filtered!\n");
 	      fprintf(stdout,"Use knee frequency of 30Hz minimum!\n");
-	      fprintf(stderr,"PSD estimate and results are questionable!\n");
+	      fprintf(stderr,"Without this the PSD estimate and results are questionable!\n");
 	    };
 	  if ((params->verbosity >= printFiles) && ((params->highPass > 0)||(params->lowPass)))
 	    {
@@ -1454,11 +1444,10 @@ void LALappsGetFrameData(LALStatus*          status,
 	  /* Copy REAL8 data into new REAL4 Structure */
 	  LALappsCreateR4FromR8TimeSeries(status,&tmpData,convertibleREAL8Data);
 	  if (tmpREAL8Data)
-	    LAL_CALL(LALDestroyREAL8TimeSeries(status,tmpREAL8Data),
-		     status); 
+	    XLALDestroyREAL8TimeSeries(tmpREAL8Data);
 	  if (convertibleREAL8Data)
-	    LAL_CALL(LALDestroyREAL8TimeSeries(status,convertibleREAL8Data),
-		     status); 
+	    XLALDestroyREAL8TimeSeries(convertibleREAL8Data);
+
 	}/*End of reading type REAL8TimeSeries*/
       else if  (dataTypeCode == LAL_I2_TYPE_CODE)
 	{
@@ -1466,24 +1455,21 @@ void LALappsGetFrameData(LALStatus*          status,
 	  /* Create temporary space use input REAL4TimeSeries traits!*/
 	  if (params->verbosity >= verbose)
 	    fprintf(stderr,"Must convert frame INT2 data to REAL4 data for analysis!\n");
-	  LAL_CALL( 
-		   LALCreateINT2TimeSeries(status,
-					   &tmpINT2Data,
-					   "tmp space",
-					   bufferedDataStartGPS,
-					   0,
-					   DataIn->deltaT,
-					   lalADCCountUnit,
-					   DataIn->data->length),
-		   status);
+	  tmpINT2Data=XLALCreateINT2TimeSeries(params->channelName,
+					       &bufferedDataStartGPS,
+					       0,
+					       DataIn->deltaT,
+					       &lalADCCountUnit,
+					       DataIn->data->length);
 
 	  /* Load the metadata to check the frame sampling rate */
 	  lal_errhandler = LAL_ERR_EXIT;
-	  LAL_CALL( LALFrGetINT2TimeSeriesMetadata( status, 
-						    tmpINT2Data, 
-						    &channelIn, 
-						    stream), 
-		    status);
+	  errcode=XLALFrGetINT2TimeSeriesMetadata(tmpINT2Data,stream);
+	  if (errcode!=0)
+	    {
+	      fprintf(stderr,"Failure getting INT2 metadata.\n");
+	      exit(errcode);
+	    }
 	  /*
 	   * Determine the sampling rate and assuming the params.sampling rate
 	   * how many of these points do we load to get the same time duration
@@ -1492,50 +1478,43 @@ void LALappsGetFrameData(LALStatus*          status,
 	  params->SamplingRateOriginal=1/(tmpINT2Data->deltaT);
 	  loadPoints=params->SamplingRateOriginal*(params->TimeLengthPoints/params->SamplingRate);
 	  loadPoints=loadPoints+(params->SamplingRateOriginal*2*(params->SegBufferPoints/params->SamplingRate));
-	  LAL_CALL(
-		   LALCreateINT2TimeSeries(status,
-					   &convertibleINT2Data,
-					   "Tmp Data",
-					   bufferedDataStartGPS,
-					   0,
-					   1/params->SamplingRateOriginal,
-					   lalADCCountUnit,
-					   loadPoints),
-		   status);
+	  convertibleINT2Data=XLALCreateINT2TimeSeries(params->channelName,
+						       &bufferedDataStartGPS,
+						       0,
+						       1/params->SamplingRateOriginal,
+						       &lalADCCountUnit,
+						       loadPoints);
+	  
 	  /* get the data */
-	  LAL_CALL( LALFrSeek(status, &(tmpINT2Data->epoch), stream), status);
-	  lal_errhandler = LAL_ERR_RTRN;
-	  errCode=LAL_CALL( LALFrGetINT2TimeSeries( status, 
-						    convertibleINT2Data, 
-						    &channelIn, 
-						    stream), 
-			    status);
-	  if (errCode != 0)
+	  errcode=XLALFrSeek(stream,&(tmpINT2Data->epoch));
+	  if (errcode !=0)
 	    {
-	      fprintf(stderr,"The span of INT2TimeSeries data is not available in framestream!\n");
-	      exit(errCode);
+	      fprintf(stderr,"Can not seek to beginning of stream data unavailable.\n");
+	      exit(errcode);
+	    }
+	  errcode=XLALFrGetINT2TimeSeries(convertibleINT2Data,stream);
+	  if (errcode !=0)
+	    {
+	      fprintf(stderr,"Can not load data interval requested from stream.\n");
+	      exit(errcode);
 	    }
 	  /* Create high sampled REAL4 variable */
-	  LAL_CALL(
-		   LALCreateREAL4TimeSeries(status,
-					    &tmpData,
-					    "Higher Sampling REAL4 Data",
-					    bufferedDataStartGPS,
+	  tmpData=XLALCreateREAL4TimeSeries("Higher Sampling REAL4 Data",
+					    &(bufferedDataStartGPS),
 					    0,
 					    1/params->SamplingRateOriginal,
-					    lalADCCountUnit,
-					    loadPoints),
-		   status);
+					    &(lalADCCountUnit),
+					    loadPoints);
+
+
 	  /* Prepare to copy/cast REAL8 data into REAL4 structure */
 	  for (i=0;i<tmpData->data->length;i++)
 	    tmpData->data->data[i] = (REAL4) convertibleINT2Data->data->data[i];
 	  tmpData->sampleUnits=convertibleINT2Data->sampleUnits;
 	  if (convertibleINT2Data)
-	    LAL_CALL(LALDestroyINT2TimeSeries(status,convertibleINT2Data),
-		     status); 
+	    XLALDestroyINT2TimeSeries(convertibleINT2Data);
 	  if (tmpINT2Data)
-	    LAL_CALL(LALDestroyINT2TimeSeries(status,tmpINT2Data),
-		     status); 
+	    XLALDestroyINT2TimeSeries(tmpINT2Data);
 	}
       else if  (dataTypeCode == LAL_I4_TYPE_CODE)
 	{
@@ -1543,24 +1522,25 @@ void LALappsGetFrameData(LALStatus*          status,
 	  /* Create temporary space use input REAL4TimeSeries traits!*/
 	  if (params->verbosity >= verbose)
 	    fprintf(stderr,"Must convert frame INT4 data to REAL4 data for analysis!\n");
-	  LAL_CALL( 
-		   LALCreateINT4TimeSeries(status,
-					   &tmpINT4Data,
-					   "REAL8 tmp space",
-					   bufferedDataStartGPS,
-					   0,
-					   DataIn->deltaT,
-					   lalADCCountUnit,
-					   DataIn->data->length),
-		   status);
+
+	  tmpINT4Data=XLALCreateINT4TimeSeries(params->channelName,
+					       &bufferedDataStartGPS,
+					       0,
+					       DataIn->deltaT,
+					       &lalADCCountUnit,
+					       DataIn->data->length);
 
 	  /* Load the metadata to check the frame sampling rate */
 	  lal_errhandler = LAL_ERR_EXIT;
-	  LAL_CALL( LALFrGetINT4TimeSeriesMetadata( status, 
-						    tmpINT4Data, 
-						    &channelIn, 
-						    stream), 
-		    status);
+
+	  errcode = XLALFrGetINT4TimeSeriesMetadata(tmpINT4Data,
+						    stream);
+	  if (errcode != 0)
+	    {
+	      fprintf(stderr,"Failure getting metadata.\n");
+	      exit(errcode);
+	    }
+
 	  /*
 	   * Determine the sampling rate and assuming the params.sampling rate
 	   * how many of these points do we load to get the same time duration
@@ -1569,50 +1549,44 @@ void LALappsGetFrameData(LALStatus*          status,
 	  params->SamplingRateOriginal=1/(tmpINT4Data->deltaT);
 	  loadPoints=params->SamplingRateOriginal*(params->TimeLengthPoints/params->SamplingRate);
 	  loadPoints=loadPoints+(params->SamplingRateOriginal*2*(params->SegBufferPoints/params->SamplingRate));
-	  LAL_CALL(
-		   LALCreateINT4TimeSeries(status,
-					   &convertibleINT4Data,
-					   "Tmp Data",
-					   bufferedDataStartGPS,
-					   0,
-					   1/params->SamplingRateOriginal,
-					   lalADCCountUnit,
-					   loadPoints),
-		   status);
+	  convertibleINT4Data=XLALCreateINT4TimeSeries(params->channelName,
+						       &bufferedDataStartGPS,
+						       0,
+						       1/params->SamplingRateOriginal,
+						       &lalADCCountUnit,
+						       loadPoints);
+
 	  /* get the data */
-	  LAL_CALL( LALFrSeek(status, &(tmpINT4Data->epoch), stream), status);
+	  errcode = XLALFrSeek(stream,&(tmpINT4Data->epoch));
+	  if (errcode !=0)
+	    {
+	      fprintf(stderr,"Can not seek to beginning of stream data unavailable.\n");
+	      exit(errcode);
+	    }
+	  
 	  lal_errhandler = LAL_ERR_RTRN;
-	  errCode=LAL_CALL( LALFrGetINT4TimeSeries( status, 
-						    convertibleINT4Data, 
-						    &channelIn, 
-						    stream), 
-			    status);
-	  if (errCode != 0)
+	  errcode=XLALFrGetINT4TimeSeries(convertibleINT4Data,stream);
+	  if (errcode != 0)
 	    {
 	      fprintf(stderr,"The span of INT2TimeSeries data is not available in framestream!\n");
 	      exit(errCode);
 	    }
 	  /* Create high sampled REAL4 variable */
-	  LAL_CALL(
-		   LALCreateREAL4TimeSeries(status,
-					    &tmpData,
-					    "Higher Sampling REAL4 Data",
-					    bufferedDataStartGPS,
+	  tmpData=XLALCreateREAL4TimeSeries(params->channelName,
+					    &bufferedDataStartGPS,
 					    0,
 					    1/params->SamplingRateOriginal,
-					    lalADCCountUnit,
-					    loadPoints),
-		   status);
+					    &lalADCCountUnit,
+					    loadPoints);
+
 	  /* Prepare to copy/cast REAL8 data into REAL4 structure */
 	  for (i=0;i<tmpData->data->length;i++)
 	    tmpData->data->data[i] = (REAL4) convertibleINT4Data->data->data[i];
 	  tmpData->sampleUnits=convertibleINT4Data->sampleUnits;
 	  if (convertibleINT4Data)
-	    LAL_CALL(LALDestroyINT4TimeSeries(status,convertibleINT4Data),
-		     status); 
+	    XLALDestroyINT4TimeSeries(convertibleINT4Data);
 	  if (tmpINT4Data)
-	    LAL_CALL(LALDestroyINT4TimeSeries(status,tmpINT4Data),
-		     status); 
+	    XLALDestroyINT4TimeSeries(tmpINT4Data);
 	}
       else
 	{
@@ -1643,11 +1617,12 @@ void LALappsGetFrameData(LALStatus*          status,
 	  resampleParams.deltaT=1/params->SamplingRate;
 	  resampleParams.filterType=defaultButterworth;
 	  /*resampleParams->filterParams*/
-	  LAL_CALL(
-		   LALResampleREAL4TimeSeries(status,
-					      tmpData,
-					      &resampleParams),
-		   status);
+	  errcode=XLALResampleREAL4TimeSeries(tmpData,resampleParams.deltaT);
+	  if (errcode != 0)
+	    {
+	      fprintf(stderr,"Problem trying to resample input data.\n");
+	      exit(errcode);
+	    }
 	  if (params->verbosity >= printFiles)
 	    {
 	      print_real4tseries(tmpData,"ResampledOriginalInputTimeSeries.diag");
@@ -1696,14 +1671,18 @@ void LALappsGetFrameData(LALStatus*          status,
        * Release the memory for the temporary time series
        */
       if (tmpData)
-	LAL_CALL(LALDestroyREAL4TimeSeries(status,tmpData),
-		 status);
+	XLALDestroyREAL4TimeSeries(tmpData);
     }
 
   if (stream)
     {
       /*Close the frame stream if found open*/
-      LAL_CALL(LALFrClose(status,&stream),status);
+      errcode=XLALFrClose(stream);
+      if (errcode != 0)
+	{
+	  fprintf(stderr,"Problem trying to close the frame stream!\n");
+	  exit(errcode);
+	}
     }
 }
 
@@ -1767,8 +1746,8 @@ void LALappsDoTrackSearch(
    * The LALTracksearch seems to map the 
    * width to tCol and the height to fRow
    */
-  LAL_CALL(LALCHARCreateVector(status,&outputFilename,maxFilenameLength),status);
-  LAL_CALL(LALCHARCreateVector(status,&outputFilenameMask,maxFilenameLength),status);
+  outputFilename=XLALCreateCHARVector(maxFilenameLength);
+  outputFilenameMask=XLALCreateCHARVector(maxFilenameLength);
   /*
    * Setup file mask for output filenames
    */
@@ -1918,14 +1897,11 @@ void LALappsDoTrackSearch(
 				 &(outputCurvesThreshold.curves),
 				 outputCurvesThreshold.numberOfCurves);
   if (outputFilename)
-    LAL_CALL(LALCHARDestroyVector(status,&outputFilename),
-	     status);
+    XLALDestroyCHARVector(outputFilename);
   if (outputFilenameMask)
-    LAL_CALL(LALCHARDestroyVector(status,&outputFilenameMask),
-	     status);
+    XLALDestroyCHARVector(outputFilenameMask);
   if (outputCandidateFilename)
-    LAL_CALL(LALCHARDestroyVector(status,&outputCandidateFilename),
-	     status);
+    XLALDestroyCHARVector(outputCandidateFilename);
 
   /*************************************************************/
 }
@@ -2017,9 +1993,55 @@ LALappsDoTSeriesSearch(LALStatus         *status,
 	}
       windowParams.length = params.windowsize;
       windowParams.type = params.window;
+      /*Create selected type of window*/
+      switch (params.window) {
+	case Rectangular:
+		tempWindow = XLALCreateRectangularREAL4Window(params.windowsize);
+		break;
 
-      LAL_CALL(LALCreateREAL4Window(status,&(tempWindow),&(windowParams)),
-	       status);
+	case Hann:
+		tempWindow = XLALCreateHannREAL4Window(params.windowsize);
+		break;
+
+	case Welch:
+		tempWindow = XLALCreateWelchREAL4Window(params.windowsize);
+		break;
+
+	case Bartlett:
+		tempWindow = XLALCreateBartlettREAL4Window(params.windowsize);
+		break;
+
+	case Parzen:
+		tempWindow = XLALCreateParzenREAL4Window(params.windowsize);
+		break;
+
+	case Papoulis:
+		tempWindow = XLALCreatePapoulisREAL4Window(params.windowsize);
+		break;
+
+	case Hamming:
+		tempWindow = XLALCreateHammingREAL4Window(params.windowsize);
+		break;
+
+	case Kaiser:
+		tempWindow = XLALCreateKaiserREAL4Window(params.windowsize, 1000);
+		fprintf(stdout,"For Kaiser beta hard wired to 1,000\n");
+		break;
+
+	case Creighton:
+		tempWindow = XLALCreateCreightonREAL4Window(params.windowsize, 1000);
+		fprintf(stdout,"For Creighton beta hard wired to 1,000\n");
+		break;
+
+	case Tukey:
+		tempWindow = XLALCreateTukeyREAL4Window(params.windowsize, 1000);
+		fprintf(stdout,"For Tukey beta hard wired to 1,000\n");
+		break;
+
+	default:
+	  fprintf(stderr,"Window specified not allowed.\n");
+	  exit(TRACKSEARCHC_EVAL);
+	}
 
       /* 
        * Case statment that look to do the various TF Reps 
@@ -2138,7 +2160,7 @@ LALappsDoTSeriesSearch(LALStatus         *status,
    * TFR.  MAKE SURE to account for proper TFR dims and time/freq
    * information.
    */
-  tmpTSA=LALMalloc(sizeof(TSAMap));
+  tmpTSA=XLALMalloc(sizeof(TSAMap));
   tmpTSA->imageCreateParams=tfInputs;
   tmpTSA->clippedWith=0;
   tmpTSA->imageBorders=mapMarkerParams;
@@ -2158,7 +2180,7 @@ LALappsDoTSeriesSearch(LALStatus         *status,
   if (params.verbosity >= printFiles)
     LALappsTSAWritePGM(status,tmpTSA,NULL); 
   tfmap=tmpTSA->imageRep;
-  LALFree(tmpTSA);
+  XLALFree(tmpTSA);
 
   /*
    * Fill in LALSignalTrackSearch params structure via the use of
@@ -2170,15 +2192,6 @@ LALappsDoTSeriesSearch(LALStatus         *status,
   inputs.low=params.LinePThresh;
   inputs.width=((tfmap->fRow/2)+1);
   inputs.height=tfmap->tCol;
-/*   if (params.verbosity >= verbose) */
-/*     { */
-/*       fprintf(stderr,"Map related search parameters\n"); */
-/*       fprintf(stderr,"Sigma\t\t%f\n",inputs.sigma); */
-/*       fprintf(stderr,"High\t\t%f\n",inputs.high); */
-/*       fprintf(stderr,"Low\t\t%f\n",inputs.low); */
-/*       fprintf(stderr,"Width\t\t%i\t\t%i\n",inputs.width,(tfmap->fRow/2)+1); */
-/*       fprintf(stderr,"Height\t\t%i\t\t%i\n",inputs.height,tfmap->tCol); */
-/*     } */
 
   /* If requested to the auto lambda determination */
 
@@ -2195,8 +2208,7 @@ LALappsDoTSeriesSearch(LALStatus         *status,
    */
   if (1==1)
     {
-      LAL_CALL(LALCHARCreateVector(status,&binaryFilename,maxFilenameLength),
-	       status);
+      binaryFilename=XLALCreateCHARVector(maxFilenameLength);
       /*
        * Set filename
        */
@@ -2204,7 +2216,7 @@ LALappsDoTSeriesSearch(LALStatus         *status,
       /*
        * Assemble a tsaMap structure 
        */
-      mapBuilder=LALMalloc(sizeof(TSAMap));
+      mapBuilder=XLALMalloc(sizeof(TSAMap));
       mapBuilder->imageCreateParams=tfInputs;
       mapBuilder->clippedWith=0;
       mapBuilder->imageBorders=mapMarkerParams;
@@ -2223,9 +2235,10 @@ LALappsDoTSeriesSearch(LALStatus         *status,
       LALappsTSAWriteMapFile(status,
 			     mapBuilder,
 			     NULL);
-      LAL_CALL(LALCHARDestroyVector(status,&binaryFilename),
-	       status);
-      LALFree(mapBuilder);
+      if (binaryFilename)
+	XLALDestroyCHARVector(binaryFilename);
+
+      XLALFree(mapBuilder);
     }
   /* 
    * Destroy the memory holding the actual TF map
@@ -2286,21 +2299,15 @@ LALappsDoTimeSeriesAnalysis(LALStatus          *status,
 			   &(params.GPSstart)),
 	     status);
     newFloatTime=originalFloatTime-(params.SegBufferPoints/params.SamplingRate);
-    LAL_CALL(
-	     LALFloatToGPS(status,
-			   &edgeOffsetGPS,
-			   &newFloatTime),
-	     status);
-  LAL_CALL(
-	   LALCreateREAL4TimeSeries(status,
-				    &dataset,
-				    "Uninitialized",
-				    edgeOffsetGPS,
-				    0,
-				    1/params.SamplingRate,
-				    lalADCCountUnit,
-				    (params.TimeLengthPoints+(2*params.SegBufferPoints))),
-	   status);
+    XLALFloatToGPS(&edgeOffsetGPS,
+		   newFloatTime);
+    
+    dataset=XLALCreateREAL4TimeSeries(params.channelName,
+				      &edgeOffsetGPS,
+				      0,
+				      1/params.SamplingRate,
+				      &lalADCCountUnit,
+				      (params.TimeLengthPoints+(2*params.SegBufferPoints)));
   if (productioncode == 1) /* Use production frame file inputs */
     {
       if (params.makenoise < 1 )
@@ -2377,15 +2384,11 @@ LALappsDoTimeSeriesAnalysis(LALStatus          *status,
    */
   if (dataset)
     {
-      LAL_CALL(LALDestroyREAL4TimeSeries(status,dataset),
-	       status);
-      dataset=NULL;
+      XLALDestroyREAL4TimeSeries(dataset);
     }
   if (injectSet)
     {
-      LAL_CALL(LALDestroyREAL4TimeSeries(status,injectSet),
-	       status);
-      injectSet=NULL;
+      XLALDestroyREAL4TimeSeries(injectSet);
     }
 
   j=0;
@@ -2403,14 +2406,12 @@ LALappsDoTimeSeriesAnalysis(LALStatus          *status,
        */
       if (params.verbosity >= printFiles)
 	{
-	  LAL_CALL(LALCHARCreateVector(status,&dataLabel,128),
-		   status);
+	  dataLabel=XLALCreateCHARVector(maxFilenameLength);
 	  sprintf(dataLabel->data,"SegmentAnalyzed_%i.diag",i);
 	  print_real4tseries(SegVec->dataSeg[j],dataLabel->data);
 	  sprintf(dataLabel->data,"SegmentAnalyzed_%i_Units.diag",i);
 	  print_lalUnit(SegVec->dataSeg[j]->sampleUnits,dataLabel->data);
-	  LAL_CALL(LALCHARDestroyVector(status,&dataLabel),
-		   status);
+	  XLALDestroyCHARVector(dataLabel);
 	}
       LALappsDoTSeriesSearch(status,SegVec->dataSeg[j],params,j);
       j++;
@@ -2419,14 +2420,13 @@ LALappsDoTimeSeriesAnalysis(LALStatus          *status,
   /* Free some of the memory used to do the analysis */
   if (params.dataSegVec)
     {
-      LALDestroyTSDataSegmentVector(status,(params.dataSegVec));
-      params.dataSegVec=NULL;
+      LAL_CALL(LALDestroyTSDataSegmentVector(status,(params.dataSegVec)),
+	       status);
     }
   if (SegVec)
     {
       LAL_CALL(LALDestroyTSDataSegmentVector(status,SegVec),
 	       status);
-      SegVec=NULL;
     }
 }
 /*
@@ -2457,14 +2457,16 @@ LALappsDoTSAMapAnalysis(LALStatus        *status,
    * Open a map cache and sequentially loop through the entries 
    * performing the analysis
    */
-  LAL_CALL(LALCHARCreateVector(status,&mapFilenameVec,maxFilenameLength),
-	   status);
+  mapFilenameVec=XLALCreateCHARVector(maxFilenameLength);
+
   strcpy(mapFilenameVec->data,params.injectMapCache);
+
   LALappsTSALoadCacheFile(status,
 			  mapFilenameVec,
 			  &mapCache);
-  LAL_CALL(LALCHARDestroyVector(status,&mapFilenameVec),
-	   status);
+
+  XLALDestroyCHARVector(mapFilenameVec);
+
   if (mapCache->numMapFilenames < 1)
     {
       fprintf(stderr,"Cache file has no entries!\n");
@@ -2555,34 +2557,35 @@ LALappsWriteCurveList(LALStatus            *status,
 
 
   /* Output Breve file */
-  LAL_CALL(LALCHARCreateVector(status,&breveName,maxFilenameLength),status);
+  breveName=XLALCreateCHARVector(maxFilenameLength);
   sprintf(breveName->data,"%s.breve",filename);
   LALappsWriteBreveResults(status,
 			   breveName->data,
 			   outCurve);
   if (breveName)
-    LAL_CALL(LALCHARDestroyVector(status,&breveName),status);
+    XLALDestroyCHARVector(breveName);
 
   /* Output Total file */
-  LAL_CALL(LALCHARCreateVector(status,&totalName,maxFilenameLength),status);
+  totalName=XLALCreateCHARVector(maxFilenameLength);
+
   sprintf(totalName->data,"%s.full",filename);
   LALappsWriteSearchResults(status,
 			    totalName->data,
 			    outCurve);
   if (totalName)
-    LAL_CALL(LALCHARDestroyVector(status,&totalName),status);
+    XLALDestroyCHARVector(totalName);
+
   /* If possible output configuration information */
   if (params!=NULL)
     {
-      LAL_CALL(LALCHARCreateVector(status,&configName,maxFilenameLength),
-	       status);
+      configName=XLALCreateCHARVector(maxFilenameLength);
       sprintf(configName->data,"%s.config",filename);
       LALappsWriteSearchConfig(status->statusPtr,
 			       configName->data,
 			       *params);
     }     
   if (configName)
-    LAL_CALL(LALCHARDestroyVector(status,&configName),status);
+    XLALDestroyCHARVector(configName);
 
   return;
 }
@@ -2824,7 +2827,7 @@ void LALappsCreateCurveDataSection(LALStatus    *status,
  
   INITSTATUS (status, "fixCurveStrucAllocation", TRACKSEARCHC);
   ATTATCHSTATUSPTR (status);
-  *curvein = curve = LALMalloc(MAX_NUMBER_OF_CURVES * sizeof(Curve));
+  *curvein = curve = XLALMalloc(MAX_NUMBER_OF_CURVES * sizeof(Curve));
   for (counter = 0; counter < MAX_NUMBER_OF_CURVES;counter++)
     {
       curve[counter].n = 0;
@@ -2833,9 +2836,9 @@ void LALappsCreateCurveDataSection(LALStatus    *status,
       curve[counter].row = NULL;
       curve[counter].col = NULL;
       curve[counter].depth = NULL;
-      curve[counter].row = LALMalloc(MAX_CURVE_LENGTH * sizeof(INT4));
-      curve[counter].col = LALMalloc(MAX_CURVE_LENGTH * sizeof(INT4));
-      curve[counter].depth = LALMalloc(MAX_CURVE_LENGTH * sizeof(REAL4));
+      curve[counter].row = XLALMalloc(MAX_CURVE_LENGTH * sizeof(INT4));
+      curve[counter].col = XLALMalloc(MAX_CURVE_LENGTH * sizeof(INT4));
+      curve[counter].depth = XLALMalloc(MAX_CURVE_LENGTH * sizeof(REAL4));
       if (curve[counter].row == NULL)
 	{
 	  ABORT(status,TRACKSEARCHC_EMEM,TRACKSEARCHC_MSGEMEM);
@@ -2873,17 +2876,17 @@ void LALappsDestroyCurveDataSection(LALStatus    *status,
 
   for (counter = 0; counter < numCurves;counter++)
     {
-      LALFree(curve[counter].fBinHz);
-      LALFree(curve[counter].row);
-      LALFree(curve[counter].col);
-      LALFree(curve[counter].depth);
-      LALFree(curve[counter].gpsStamp);
+      XLALFree(curve[counter].fBinHz);
+      XLALFree(curve[counter].row);
+      XLALFree(curve[counter].col);
+      XLALFree(curve[counter].depth);
+      XLALFree(curve[counter].gpsStamp);
       /* Need to gracefully exit here by unallocating later */
       /* Just in case there is an error in deallocation */
     };
   if (numCurves > 0)
     {
-      LALFree(curve);
+      XLALFree(curve);
     }
   DETATCHSTATUSPTR(status);
   RETURN(status);
@@ -2941,8 +2944,9 @@ void LALappsCreateInjectableData(LALStatus           *status,
   /*
    * Allocate RAM to load up values
    */
-  LAL_CALL(LALCreateVector(status,&domain,lineCount),status);
-  LAL_CALL(LALCreateVector(status,&range,lineCount),status);
+  domain=XLALCreateREAL4Vector(lineCount);
+  range=XLALCreateREAL4Vector(lineCount);
+
   /*
    * Expecting 2C data tstep and amp
    */
@@ -2967,8 +2971,8 @@ void LALappsCreateInjectableData(LALStatus           *status,
   newLineCount=params.sampleRate*fileDuration;
   offSetPoints=params.sampleRate*params.startTimeOffset;
   timePoints=params.sampleRate*params.injectSpace;
-  LAL_CALL(LALCreateVector(status,&waveDomain,newLineCount),status);
-  LAL_CALL(LALCreateVector(status,&waveRange,newLineCount),status);
+  waveDomain=XLALCreateREAL4Vector(newLineCount);
+  waveRange=XLALCreateREAL4Vector(newLineCount);
 
   for (i=0;i<waveDomain->length;i++)
     {
@@ -2991,16 +2995,13 @@ void LALappsCreateInjectableData(LALStatus           *status,
   LALappsTSassert((pointLength>0),
 		  TRACKSEARCHC_EARGS,
 		  TRACKSEARCHC_MSGEARGS);
-  LAL_CALL(
-	   LALCreateREAL4TimeSeries(status,
-				    injectSet,
-				    "Injections",
-				    gps_zero,
-				    0,
-				    1/params.sampleRate,
-				    lalADCCountUnit,
-				    pointLength),
-	   status);
+  *injectSet=XLALCreateREAL4TimeSeries("Injections",
+				      &gps_zero,
+				      0,
+				      1/params.sampleRate,
+				      &lalADCCountUnit,
+				      pointLength);
+
   /*
    * Copy the data into a new variable to be returned
    */
@@ -3030,13 +3031,17 @@ void LALappsCreateInjectableData(LALStatus           *status,
 	}
     }
   if (domain)
-    LAL_CALL(LALDestroyVector(status,&domain),status);
+    XLALDestroyREAL4Vector(domain);
+
   if (range)
-    LAL_CALL(LALDestroyVector(status,&range),status);
+    XLALDestroyREAL4Vector(range);
+
   if (waveRange)
-    LAL_CALL(LALDestroyVector(status,&waveRange),status);
+    XLALDestroyREAL4Vector(waveRange);
+
   if (waveDomain)
-    LAL_CALL(LALDestroyVector(status,&waveDomain),status);
+    XLALDestroyREAL4Vector(waveDomain);
+
   return;
 }
 /*
@@ -3070,15 +3075,12 @@ void LALappsTrackSearchCalibrate( LALStatus          *status,
   /* 
    * Implicity set Epoch, Unit and df for Response extract
    */
-  LAL_CALL( LALCreateCOMPLEX8FrequencySeries(status,
-					     &response,
-					     "tmpResponse",
-					     dataSet->epoch,
+  response=XLALCreateCOMPLEX8FrequencySeries("tmpResponse",
+					     &(dataSet->epoch),
 					     0,
 					     1/(dataSet->deltaT*dataSet->data->length),
-					     strainPerCount,
-					     segmentPoints/2+1),
-	    status);
+					     &strainPerCount,
+					     segmentPoints/2+1);
 
   LAL_CALL(LALFrCacheImport(status,
 			    &calcache, 
@@ -3106,7 +3108,7 @@ void LALappsTrackSearchCalibrate( LALStatus          *status,
   /*
    * Destroy IFO text pointer
    */
-  LALFree(calfacts.ifo);
+  XLALFree(calfacts.ifo);
   /*
    * Destroy frame cache
    */
@@ -3118,31 +3120,25 @@ void LALappsTrackSearchCalibrate( LALStatus          *status,
   /*
    * Allocate frequency series for Set FFT
    */
-  LAL_CALL(
-	   LALCreateCOMPLEX8FrequencySeries(status,
-					    &dataSetFFT,
-					    "Entire data FFTed",
-					    dataSet->epoch,
-					    0,
-					    (dataSet->deltaT*dataSet->data->length),
-					    dataSet->sampleUnits,
-					    dataSet->data->length/2+1),
-	   status);
+  dataSetFFT=XLALCreateCOMPLEX8FrequencySeries("Entire data FFTed",
+					       &(dataSet->epoch),
+					       0,
+					       (dataSet->deltaT*dataSet->data->length),
+					       &(dataSet->sampleUnits),
+					       dataSet->data->length/2+1);
   /*
    * FFT input unsegmented data set
    */
-  LAL_CALL( LALCreateForwardREAL4FFTPlan(status,
-					 &dataSetPlan,
-					 dataSet->data->length,
-					 0),
-	    status);
+  dataSetPlan=XLALCreateForwardREAL4FFTPlan(dataSet->data->length,0);
+
   LAL_CALL( LALForwardREAL4FFT(status,
 			       dataSetFFT->data,
 			       dataSet->data,
 			       dataSetPlan),
 	    status);
   if (dataSetPlan)
-    LAL_CALL(LALDestroyREAL4FFTPlan(status,&dataSetPlan),status);
+    XLALDestroyREAL4FFTPlan(dataSetPlan);
+
 
   if (params.verbosity >= printFiles)
     {
@@ -3166,11 +3162,8 @@ void LALappsTrackSearchCalibrate( LALStatus          *status,
   dataSetFFT->data->data[dataSetFFT->data->length-1].im=0;
   dataSetFFT->data->data[dataSetFFT->data->length].im=0;
       
-  LAL_CALL(LALCreateReverseREAL4FFTPlan(status,
-					&dataSetPlan,
-					dataSet->data->length,
-					0),
-	   status);
+  dataSetPlan=XLALCreateReverseREAL4FFTPlan(dataSet->data->length,0);
+
   LAL_CALL(LALReverseREAL4FFT(status,
 			      dataSet->data,
 			      dataSetFFT->data,
@@ -3192,11 +3185,11 @@ void LALappsTrackSearchCalibrate( LALStatus          *status,
    * Free the FFT memory space
    */
   if (dataSetFFT)
-    LAL_CALL(LALDestroyCOMPLEX8FrequencySeries(status,dataSetFFT),
-	     status);
+    XLALDestroyCOMPLEX8FrequencySeries(dataSetFFT);
+
   if (response)
-    LAL_CALL(LALDestroyCOMPLEX8FrequencySeries(status,response),
-	     status);
+    XLALDestroyCOMPLEX8FrequencySeries(response);
+
   return;
 }
 /*
@@ -3211,7 +3204,7 @@ void LALappsTrackSearchBandPassing( LALStatus           *status,
 				    TSSearchParams       params)
 {
   PassBandParamStruc       bandPassParams;
-
+  int                      errcode=0;
   if (params.lowPass > 0)
     {
       if (params.verbosity >= verbose)
@@ -3228,10 +3221,12 @@ void LALappsTrackSearchBandPassing( LALStatus           *status,
        * Band pass is achieved by low pass first then high pass!
        * Call the low pass filter function.
        */
-      LAL_CALL(LALButterworthREAL4TimeSeries(status,
-					     dataSet,
-					     &bandPassParams),
-	       status);
+      errcode=XLALButterworthREAL4TimeSeries(dataSet,&bandPassParams);
+      if (errcode !=0)
+	{
+	  fprintf(stderr,"Error trying to Butterworth filter data (lowPass).\n");
+	  exit(errcode);
+	}
     }
   /*
    * Call the high pass filter function.
@@ -3248,10 +3243,12 @@ void LALappsTrackSearchBandPassing( LALStatus           *status,
       bandPassParams.f2=params.highPass;
       bandPassParams.a1=0;
       bandPassParams.a2=0.9;
-      LAL_CALL(LALButterworthREAL4TimeSeries(status,
-					     dataSet,
-					     &bandPassParams),
-	       status);
+      errcode=XLALButterworthREAL4TimeSeries(dataSet,&bandPassParams);
+      if (errcode !=0)
+	{
+	  fprintf(stderr,"Error trying to Butterworth filter data (lowPass).\n");
+	  exit(errcode);
+	}
     }
   return;
 }
@@ -3275,8 +3272,7 @@ void LALappsTracksearchRemoveHarmonicsFromSegments(LALStatus       *status,
       if (params.verbosity > quiet)
 	fprintf(stdout,"Removing lines from segment %i.\n",j+1);
       tmpSegmentPtr=(dataSegments->dataSeg[j]);
-      LAL_CALL(LALCHARCreateVector(status,&dataLabel,128),
-	       status);
+      dataLabel=XLALCreateCHARVector(128);
 	sprintf(dataLabel->data,"Pre_LineRemovalTimeDomainDataSeg_%i.diag",j);
       if (params.verbosity >= printFiles)
 	print_real4tseries(tmpSegmentPtr,dataLabel->data);
@@ -3290,8 +3286,7 @@ void LALappsTracksearchRemoveHarmonicsFromSegments(LALStatus       *status,
       sprintf(dataLabel->data,"Post_LineRemovalTimeDomainDataSeg_%i_Units.diag",j);
       if (params.verbosity >= printFiles)
 	print_lalUnit(tmpSegmentPtr->sampleUnits,dataLabel->data);
-      LAL_CALL(LALCHARDestroyVector(status,&dataLabel),
-		   status);
+      XLALDestroyCHARVector(dataLabel);
       tmpSegmentPtr=NULL;
     }
 }
@@ -3357,45 +3352,25 @@ void LALappsTracksearchRemoveHarmonics( LALStatus             *status,
 		  fprintf(stdout,"Reference %f, Max Harmonics to remove %i\n",tmpLineFreq,tmpHarmonicCount);
 		}
 	      /* Setup both T and F domain input data structures */
-	      inputTVectorCLR=(REAL4TVectorCLR*)LALMalloc(sizeof(REAL4TVectorCLR));
-	      inputFVectorCLR=(REAL4FVectorCLR*)LALMalloc(sizeof(REAL4FVectorCLR));
+	      inputTVectorCLR=(REAL4TVectorCLR*)XLALMalloc(sizeof(REAL4TVectorCLR));
+	      inputFVectorCLR=(REAL4FVectorCLR*)XLALMalloc(sizeof(REAL4FVectorCLR));
   
 	      /* Take data to F domain */
 	      planLength=dataSet->data->length;
-	      LAL_CALL(LALCCreateVector(status,
-					&tmpReferenceSignal,
-					planLength),
-		       status);
+	      
+	      tmpReferenceSignal=XLALCreateCOMPLEX8Vector(planLength);
 
-	      LAL_CALL(LALCCreateVector(status,
-					&referenceSignal,
-					planLength),
-		       status);
+	      referenceSignal=XLALCreateCOMPLEX8Vector(planLength);
 
-	      LAL_CALL(
-		       LALCreateCOMPLEX8FrequencySeries(
-							status,
-							&signalFFT_harmonic,
-							"tmpSegPSD",
-							gps_zero,
-							0,
-							1/(dataSet->data->length*dataSet->deltaT),
-							dataSet->sampleUnits,
-							planLength/2+1),
-		       status);
+	      signalFFT_harmonic=XLALCreateCOMPLEX8FrequencySeries("tmpSegPSD",
+								   &gps_zero,
+								   0,
+								   1/(dataSet->data->length*dataSet->deltaT),
+								   &(dataSet->sampleUnits),
+								   planLength/2+1);
+	      inputPSDVector=XLALCreateREAL4Vector(planLength/2+1);
 
-
-	      LAL_CALL(  LALSCreateVector(status,
-					  &inputPSDVector,
-					  planLength/2+1),
-			 status);
-
-	      LAL_CALL(  LALCreateForwardREAL4FFTPlan(status,
-						      &forwardPlan,
-						      planLength,
-						      0),
-			 status);
-
+	      forwardPlan=XLALCreateForwardREAL4FFTPlan(planLength,0);
   
 	      LAL_CALL( LALForwardREAL4FFT(status,
 					   signalFFT_harmonic->data,
@@ -3428,14 +3403,10 @@ void LALappsTracksearchRemoveHarmonics( LALStatus             *status,
 		  tmpReferenceSignal->data[i].re=0;
 		  tmpReferenceSignal->data[i].im=0;
 		}
-	      LAL_CALL(LALI4CreateVector(status,
-					 &harmonicIndex,
-					 tmpHarmonicCount),
-		       status);
-	      LAL_CALL(LALI4CreateVector(status,
-					 &harmonicIndexCompliment,
-					 3*tmpHarmonicCount),
-		       status);
+	      harmonicIndex=XLALCreateINT4Vector(tmpHarmonicCount);
+
+	      harmonicIndexCompliment=XLALCreateINT4Vector(3*tmpHarmonicCount);
+
 	      for (i=0;i<tmpHarmonicCount;i++)
 		harmonicIndex->data[i]=i+1;
 
@@ -3457,18 +3428,11 @@ void LALappsTracksearchRemoveHarmonics( LALStatus             *status,
 
 
 	      if (harmonicIndexCompliment)
-		{
-		  LAL_CALL(LALI4DestroyVector(status,
-					      &harmonicIndexCompliment),
-			   status);
-		}
+		  XLALDestroyINT4Vector(harmonicIndexCompliment);
 
 	      if (harmonicIndex)
-		{
-		  LAL_CALL(LALI4DestroyVector(status,
-					      &harmonicIndex),
-			   status);
-		}
+		XLALDestroyINT4Vector(harmonicIndex);
+
 	      /* Copy this temp reference into global reference signal variable??*/
 	      for (k=0;k < referenceSignal->length;k++)
 		{
@@ -3482,10 +3446,7 @@ void LALappsTracksearchRemoveHarmonics( LALStatus             *status,
 	    
 	    
 	      /* Clean up input time series with global reference signal */
-	      LAL_CALL(  LALSCreateVector(status,
-					  &cleanData,
-					  dataSet->data->length),
-			 status);
+	      cleanData=XLALCreateREAL4Vector(dataSet->data->length);
   
 	      LAL_CALL( LALCleanAll(status,
 				    cleanData,
@@ -3499,53 +3460,28 @@ void LALappsTracksearchRemoveHarmonics( LALStatus             *status,
   
 
 	      if (cleanData)
-		{
-		  LAL_CALL(
-			   LALDestroyVector(status,
-					    &cleanData),
-			   status);
-		}
+		XLALDestroyREAL4Vector(cleanData);
 
 	      if (signalFFT_harmonic)
-		{
-		  LAL_CALL( LALDestroyCOMPLEX8FrequencySeries(status,
-							      signalFFT_harmonic),
-			    status);
-		}
+		XLALDestroyCOMPLEX8FrequencySeries(signalFFT_harmonic);
 
 	      if (inputPSDVector)
-		{
-		  LAL_CALL(
-			   LALDestroyVector(status,
-					    &inputPSDVector),
-			   status);
-		}
+		XLALDestroyREAL4Vector(inputPSDVector);
+
 	      if (forwardPlan)
-		{
-		  LAL_CALL(
-			   LALDestroyREAL4FFTPlan(status,
-						  &forwardPlan),
-			   status);
-		}
+		XLALDestroyREAL4FFTPlan(forwardPlan);
+
 	      if (tmpReferenceSignal)
-		{
-		  LAL_CALL(LALCDestroyVector(status,
-					     &tmpReferenceSignal),
-			   status);
-		}
+		XLALDestroyCOMPLEX8Vector(tmpReferenceSignal);
 
 	      if (referenceSignal)
-		{
-		  LAL_CALL(LALCDestroyVector(status,
-					     &referenceSignal),
-			   status);
-		}
+		XLALDestroyCOMPLEX8Vector(referenceSignal);
 
 	      if (inputTVectorCLR)
-		LALFree(inputTVectorCLR);
+		XLALFree(inputTVectorCLR);
 
 	      if (inputFVectorCLR)
-		LALFree(inputFVectorCLR);
+		XLALFree(inputFVectorCLR);
 	    }
 	  else
 	    {
@@ -3620,30 +3556,73 @@ void LALappsTrackSearchWhitenSegments( LALStatus        *status,
   UINT4                     i=0;
   UINT4                     j=0;
   REAL4                     meanValue=0;
+  UINT4                     stride=0;
+  INT4                      segCount=0;
+  int                       errcode=0;
   const LIGOTimeGPS        gps_zero = LIGOTIMEGPSZERO;
 
   if (params.verbosity >= verbose )
     fprintf(stdout,"Estimating PSD for whitening\n");
-  LAL_CALL(
-	   LALCreateREAL4FrequencySeries(status,
-					 &averagePSD,
-					 "averagePSD",
-					 gps_zero,
-					 0,
-					 1/((params.SegLengthPoints+(2*params.SegBufferPoints))*dataSet->deltaT),
-					 lalDimensionlessUnit,
-					 (params.SegLengthPoints+(2*params.SegBufferPoints))/2+1),
-	   status);
+  averagePSD=XLALCreateREAL4FrequencySeries("averagePSD",
+					    &gps_zero,
+					    0,
+					    1/((params.SegLengthPoints+(2*params.SegBufferPoints))*dataSet->deltaT),
+					    &lalDimensionlessUnit,
+					    (params.SegLengthPoints+(2*params.SegBufferPoints))/2+1);
   /*
    * The given units above need to be correct to truly reflect the
    * units stored in the frame file
    */
-  windowParamsPSD.length=(params.SegLengthPoints+(2*params.SegBufferPoints));
-  windowParamsPSD.type=params.avgSpecWindow;
-  LAL_CALL( LALCreateREAL4Window(status,
-				 &windowPSD,
-				 &windowParamsPSD),
-	    status);
+  switch (params.avgSpecWindow) 
+    {
+    case Rectangular:
+      windowPSD = XLALCreateRectangularREAL4Window((params.SegLengthPoints+(2*params.SegBufferPoints)));
+      break;
+
+    case Hann:
+      windowPSD = XLALCreateHannREAL4Window((params.SegLengthPoints+(2*params.SegBufferPoints)));
+      break;
+
+    case Welch:
+      windowPSD = XLALCreateWelchREAL4Window((params.SegLengthPoints+(2*params.SegBufferPoints)));
+      break;
+
+    case Bartlett:
+      windowPSD = XLALCreateBartlettREAL4Window((params.SegLengthPoints+(2*params.SegBufferPoints)));
+      break;
+
+    case Parzen:
+      windowPSD = XLALCreateParzenREAL4Window((params.SegLengthPoints+(2*params.SegBufferPoints)));
+      break;
+
+    case Papoulis:
+      windowPSD = XLALCreatePapoulisREAL4Window((params.SegLengthPoints+(2*params.SegBufferPoints)));
+      break;
+
+    case Hamming:
+      windowPSD = XLALCreateHammingREAL4Window((params.SegLengthPoints+(2*params.SegBufferPoints)));
+      break;
+
+    case Kaiser:
+      windowPSD = XLALCreateKaiserREAL4Window((params.SegLengthPoints+(2*params.SegBufferPoints)), 1000);
+      fprintf(stdout,"For Kaiser beta hard wired to 1,000\n");
+      break;
+
+    case Creighton:
+      windowPSD = XLALCreateCreightonREAL4Window((params.SegLengthPoints+(2*params.SegBufferPoints)), 1000);
+      fprintf(stdout,"For Creighton beta hard wired to 1,000\n");
+      break;
+
+    case Tukey:
+      windowPSD = XLALCreateTukeyREAL4Window((params.SegLengthPoints+(2*params.SegBufferPoints)), 1000);
+      fprintf(stdout,"For Tukey beta hard wired to 1,000\n");
+      break;
+
+    default:
+      fprintf(stderr,"Window specified not allowed.\n");
+      exit(TRACKSEARCHC_EVAL);
+    }
+
   /* If we only do one map we need to something special here*/
   if (params.NumSeg < 2)
     avgPSDParams.overlap=1;
@@ -3660,29 +3639,86 @@ void LALappsTrackSearchWhitenSegments( LALStatus        *status,
 	avgPSDParams.overlap=2*params.SegBufferPoints;
     }
       
-
   avgPSDParams.window=windowPSD;
   avgPSDParams.method=params.avgSpecMethod;
   /* Set PSD plan length and plan*/
-  LAL_CALL( LALCreateForwardREAL4FFTPlan(status,
-					 &averagePSDPlan,
-					 params.SegLengthPoints+(2*params.SegBufferPoints),
-					 0),
-	    status);
+  averagePSDPlan=XLALCreateForwardREAL4FFTPlan(params.SegLengthPoints+(2*params.SegBufferPoints),
+					       0);
+
   avgPSDParams.plan=averagePSDPlan;
+ 
+  /*
+   * Stride is fixed by 
+   * params.NumSeg = 1 + (dataSet->data->length - params.SegLengthPoints)/stride
+   * We have not direct control over stride length (correlation amount) of
+   * each individual PSD estimate to the mean PSD requested.  Advantage
+   * we will make the least correlated PSD estimate possible.  So 
+   * numSegs for PSD estimate <= numSegs to analyze
+   */
+  stride=params.SegLengthPoints;
+  segCount=1+(dataSet->data->length - params.SegLengthPoints)/stride;
 
-  LAL_CALL(  LALREAL4AverageSpectrum(status,
-				     averagePSD,
-				     dataSet,
-				     &avgPSDParams),
-	     status);
-
-  if (averagePSDPlan)
+  switch (params.avgSpecMethod)
     {
-      LAL_CALL( LALDestroyREAL4FFTPlan(status,&averagePSDPlan),
-		status);
+    case useMean:
+      if (segCount%2 !=0)
+	stride=floor((dataSet->data->length - params.SegLengthPoints)
+		     /params.NumSeg);
+      
+      if ((params.verbosity > quiet) && segCount%2 !=0)
+	{
+	  fprintf(stderr,"We have %i segments of data to analyze.  To estimate our PSD we need an even number of segments to work with.  We will adjust the stride so that we have %i segments to estimate the data's PSD.  Since we need a even segment number for this operation.\n",params.NumSeg,segCount+1);
+	  fprintf(stderr,"Stride changed from %i to %i.\n",params.SegLengthPoints,stride);
+	}
+      errcode=XLALREAL4AverageSpectrumMedianMean(averagePSD,
+						 dataSet,
+						 params.SegLengthPoints,
+						 stride,
+						 windowPSD,
+						 averagePSDPlan);
+      if (errcode !=0)
+	{
+	  fprintf(stderr,"Problem calculating average PSD using mean method.\n");
+	  fprintf(stderr," Dataset :%i\n PSD :%i\n Seglen :%i\n Stride :%i\n",
+		  dataSet->data->length,
+		  averagePSD->data->length,
+		  params.SegLengthPoints,
+		  stride);
+	  exit(errcode);
+	}
+      break;
+    
+    case useMedian:
+      errcode=XLALREAL4AverageSpectrumMedian(averagePSD,
+					     dataSet,
+					     params.SegLengthPoints,
+					     stride,
+					     windowPSD,
+					     averagePSDPlan);
+      if (errcode !=0)
+	{
+	  fprintf(stderr,"Problem calculating average PSD using median method.\n");
+	  fprintf(stderr," Dataset :%i\n PSD :%i\n Seglen :%i\n Stride :%i\n",
+		  dataSet->data->length,
+		  averagePSD->data->length,
+		  params.SegLengthPoints,
+		  stride);
+	  exit(errcode);
+	}
+      break;
+ 
+    case useUnity:
+      fprintf(stderr,"This method has been removed!\n");
+      exit(TRACKSEARCHC_EVAL);
+      break;
+
+    default:
+	fprintf(stderr,"Method requested to estimate PSD is not allowed.\n");
+      exit(TRACKSEARCHC_EVAL);
     }
 
+  if (averagePSDPlan)
+    XLALDestroyREAL4FFTPlan(averagePSDPlan);
 
   if (params.smoothAvgPSD > 2)
     {
@@ -3705,14 +3741,10 @@ void LALappsTrackSearchWhitenSegments( LALStatus        *status,
        * Perform running median on the average PSD using
        * blocks of size n
        */
-      LAL_CALL(LALSCreateVector(status,
-				&smoothedAveragePSD,
-				averagePSD->data->length),
-	       status);
-      LAL_CALL(LALSCreateVector(status,
-				&tmpExtendedAveragePSD,
-				averagePSD->data->length+params.smoothAvgPSD-1),
-	       status);
+      smoothedAveragePSD=XLALCreateREAL4Vector(averagePSD->data->length);
+
+      tmpExtendedAveragePSD=XLALCreateREAL4Vector(averagePSD->data->length+params.smoothAvgPSD-1);
+
       /*
        * Build a buffered PSD rep so that median estimate
        * returned will have m points equal to the n points of the 
@@ -3728,7 +3760,6 @@ void LALappsTrackSearchWhitenSegments( LALStatus        *status,
 	   i<tmpExtendedAveragePSD->length;
 	   i++)
 	tmpExtendedAveragePSD->data[i]=meanValue;
-      /*tmpExtendedAveragePSD->data[i]=averagePSD->data->data[averagePSD->data->length-1];*/
 
       /*
        * Setup running median parameters
@@ -3756,15 +3787,10 @@ void LALappsTrackSearchWhitenSegments( LALStatus        *status,
 	averagePSD->data->data[i]=smoothedAveragePSD->data[i];
 
       if (smoothedAveragePSD)
-	LAL_CALL(LALSDestroyVector(status,
-				   &smoothedAveragePSD),
-		 status);
+	XLALDestroyREAL4Vector(smoothedAveragePSD);
 
       if (tmpExtendedAveragePSD)
-	LAL_CALL(LALSDestroyVector(status,
-				   &tmpExtendedAveragePSD),
-		 status);
-	  
+	XLALDestroyREAL4Vector(tmpExtendedAveragePSD);
 	  
     }
   if (params.verbosity == printFiles)
@@ -3777,31 +3803,23 @@ void LALappsTrackSearchWhitenSegments( LALStatus        *status,
    * Setup global FFT plans 
    */
   planLength=params.SegLengthPoints+(2*params.SegBufferPoints);
-  LAL_CALL(  LALCreateForwardREAL4FFTPlan(status,
-					  &forwardPlan,
-					  planLength,
-					  0),
-	     status);
-  LAL_CALL( LALCreateReverseREAL4FFTPlan(status,
-					 &reversePlan,
-					 planLength,
-					 0),
-	    status);
+  
+  forwardPlan=XLALCreateForwardREAL4FFTPlan(planLength,
+					    0);
+
+  reversePlan=XLALCreateReverseREAL4FFTPlan(planLength,
+					    0);
+
   /*
    * Allocate Frequency Struture to use as memory space for 
    * subsequent ffts of segments
    */
-  LAL_CALL(
-	   LALCreateCOMPLEX8FrequencySeries(
-					    status,
-					    &signalFFT,
-					    "tmpSegPSD",
-					    gps_zero,
-					    0,
-					    1/(dataSegments->dataSeg[0]->deltaT * dataSegments->dataSeg[0]->data->length),
-					    dataSegments->dataSeg[0]->sampleUnits,
-					    planLength/2+1),
-	   status);
+  signalFFT=XLALCreateCOMPLEX8FrequencySeries("tmpSegPSD",
+					      &gps_zero,
+					      0,
+					      1/(dataSegments->dataSeg[0]->deltaT * dataSegments->dataSeg[0]->data->length),
+					      &(dataSegments->dataSeg[0]->sampleUnits),
+					      planLength/2+1);
   /*
    * Grab original units for manipulations later
    */
@@ -3817,14 +3835,12 @@ void LALappsTrackSearchWhitenSegments( LALStatus        *status,
       for (i=0;i<dataSegments->length;i++)
 	{
 	  tmpSignalPtr=(dataSegments->dataSeg[i]);
-	  LAL_CALL(LALCHARCreateVector(status,&dataLabel,128),
-		   status);
+	  dataLabel=XLALCreateCHARVector(128);
 	  sprintf(dataLabel->data,"Pre_WhitenTimeDomainDataSeg_%i.diag",i);
 	  print_real4tseries(tmpSignalPtr,dataLabel->data);
 	  sprintf(dataLabel->data,"Pre_WhitenTimeDomainDataSeg_%i_Units.diag",i);
 	  print_lalUnit(tmpSignalPtr->sampleUnits,dataLabel->data);
-	  LAL_CALL(LALCHARDestroyVector(status,&dataLabel),
-		   status);
+	  XLALDestroyCHARVector(dataLabel);
 	}
       tmpSignalPtr=NULL;
 
@@ -3834,22 +3850,23 @@ void LALappsTrackSearchWhitenSegments( LALStatus        *status,
 	  /*
 	   * FFT segment
 	   */
-	  LAL_CALL( LALForwardREAL4FFT(status,
-				       signalFFT->data,
-				       tmpSignalPtr->data,
-				       forwardPlan),
-		    status);
+	  errcode = XLALREAL4ForwardFFT(signalFFT->data,
+					tmpSignalPtr->data,
+					forwardPlan);
+	  if (errcode !=0)
+	    {
+	      fprintf(stderr,"Error trying to fft input!\n");
+	      exit(errcode);
+	    }
 	  /*
 	   * Whiten
 	   */
 	  if (params.verbosity >= printFiles)
 	    {
-	      LAL_CALL(LALCHARCreateVector(status,&dataLabel,128),
-		       status);
+	      dataLabel=XLALCreateCHARVector(128);
 	      sprintf(dataLabel->data,"Pre_whitenSignalFFT_%i.diag",i);
 	      print_complex8fseries(signalFFT,dataLabel->data);
-	      LAL_CALL(LALCHARDestroyVector(status,&dataLabel),
-		       status);
+	      XLALDestroyCHARVector(dataLabel);
 	    }
 	  if (params.verbosity >= verbose)
 	    fprintf(stdout,"Whitening data segment: %i of %i\n",i+1,dataSegments->length);
@@ -3860,23 +3877,25 @@ void LALappsTrackSearchWhitenSegments( LALStatus        *status,
 		   status);
 	  if (params.verbosity >= printFiles)
 	    {
-	      LAL_CALL(LALCHARCreateVector(status,&dataLabel,128),
-		       status);
+	      dataLabel=XLALCreateCHARVector(128);
 	      sprintf(dataLabel->data,"Post_whitenSignalFFT_%i.diag",i);
 	      print_complex8fseries(signalFFT,dataLabel->data);
-	      LAL_CALL(LALCHARDestroyVector(status,&dataLabel),
-		       status);
+	      XLALDestroyCHARVector(dataLabel);
 	    }
 		
 	    
 	  /*
 	   * Reverse FFT
 	   */
-	  LAL_CALL( LALReverseREAL4FFT(status,
-				       tmpSignalPtr->data,
-				       signalFFT->data,
-				       reversePlan),
-		    status);
+	  errcode=XLALREAL4ReverseFFT(tmpSignalPtr->data,
+				      signalFFT->data,
+				      reversePlan);
+	  if (errcode != 0)
+	    {
+	      fprintf(stderr,"Error trying to inverse fft input!\n");
+	      exit(errcode);
+	    }
+
 	  /* 
 	   * Normalize the IFFT by 1/n factor
 	   * See lsd-5 p259 10.1 for explaination
@@ -3895,28 +3914,20 @@ void LALappsTrackSearchWhitenSegments( LALStatus        *status,
        * Free temporary Frequency Series
        */
       if (signalFFT)
-	{
-	  LAL_CALL( LALDestroyCOMPLEX8FrequencySeries(status,signalFFT),
-		    status);
-	}
+	XLALDestroyCOMPLEX8FrequencySeries(signalFFT);
+
       if (windowPSD)
 	XLALDestroyREAL4Window(windowPSD);
 
       if (averagePSD)
-	LAL_CALL(LALDestroyREAL4FrequencySeries(status,averagePSD),
-		 status);
+	XLALDestroyREAL4FrequencySeries(averagePSD);
 
       if (forwardPlan)
-	{
-	  LAL_CALL(
-		   LALDestroyREAL4FFTPlan(status,&forwardPlan),
-		   status);
-	}
+	XLALDestroyREAL4FFTPlan(forwardPlan);
+
       if (reversePlan)
-	{
-	  LAL_CALL( LALDestroyREAL4FFTPlan(status,&reversePlan),
-		    status);
-	}
+	XLALDestroyREAL4FFTPlan(reversePlan);
+
     }
   if (params.verbosity >= printFiles)
     {
@@ -3924,14 +3935,12 @@ void LALappsTrackSearchWhitenSegments( LALStatus        *status,
       for (i=0;i<dataSegments->length;i++)
 	{
 	  tmpSignalPtr=(dataSegments->dataSeg[i]);
-	  LAL_CALL(LALCHARCreateVector(status,&dataLabel,128),
-		   status);
+	  dataLabel=XLALCreateCHARVector(128);
 	  sprintf(dataLabel->data,"Post_WhitenTimeDomainDataSeg_%i.diag",i);
 	  print_real4tseries(tmpSignalPtr,dataLabel->data);
 	  sprintf(dataLabel->data,"Post_WhitenTimeDomainDataSeg_%i_Units.diag",i);
 	  print_lalUnit(tmpSignalPtr->sampleUnits,dataLabel->data);
-	  LAL_CALL(LALCHARDestroyVector(status,&dataLabel),
-		   status);
+	  XLALDestroyCHARVector(dataLabel);
 	}
     }
   return;
@@ -4082,20 +4091,28 @@ void fakeDataGeneration(LALStatus              *status,
   INT4               k;
   REAL4Vector       *fd = NULL;
   RandomParams      *RP = NULL;
+  int                errcode = 0;
+
   INITSTATUS (status, "makefakenoise", TRACKSEARCHC);
   ATTATCHSTATUSPTR (status);
   seed = 0;
-  LALCreateVector(status->statusPtr,&fd,pointnum);
-  LALCreateRandomParams(status->statusPtr,&RP,seed);
-  LALNormalDeviates(status->statusPtr,fd,RP);
-  LALDestroyRandomParams(status->statusPtr,&RP);
+  fd=XLALCreateREAL4Vector(pointnum);
+
+  RP=XLALCreateRandomParams(seed);
+  errcode=XLALNormalDeviates(fd,RP);
+  if (errcode != 0)
+    {
+      fprintf(stderr,"Error generating random data for injection.\n");
+      exit(errcode);
+    }
+  XLALDestroyRandomParams(RP);
   fakeData->data = NULL;
-  LALCreateVector(status->statusPtr,&(fakeData->data),pointnum);
+  fakeData->data=XLALCreateREAL4Vector(pointnum);
   for (k = 0;k < ((INT4) fd->length);k++)
     {
       fakeData->data->data[k] = fd->data[k];
     }
-  LALDestroyVector(status->statusPtr,&fd);
+  XLALDestroyREAL4Vector(fd);
   DETATCHSTATUSPTR (status);
   RETURN (status);
 }

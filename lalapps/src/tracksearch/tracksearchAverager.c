@@ -88,19 +88,14 @@ int main(int argc, char *argv[])
        */
       for (i=0;i<multiSetCache->numMapFilenames;i++)
 	{
-	  LAL_CALL(LALCHARCreateVector(&status,
-				       &(params.cacheFilename),
-				       maxFilenameLength),
-		   &status);
+	  params.cacheFilename=XLALCreateCHARVector(maxFilenameLength);
 	  strcpy(params.cacheFilename->data,multiSetCache->filename[i]->data);
 	  LALappsTSAProcessSingleCache(&status,
 				       &params);
 	  if (params.cacheFilename)
-	    LAL_CALL(LALCHARDestroyVector(&status,
-					  &(params.cacheFilename))
-		     ,&status);
-	
+	    XLALDestroyCHARVector(params.cacheFilename);
 	}
+
       if (multiSetCache)
 	LALappsTSADestroyCache(&status,
 			       &multiSetCache);
@@ -115,12 +110,11 @@ int main(int argc, char *argv[])
     }
   
   if (params.cacheFilename)
-    LAL_CALL(LALCHARDestroyVector(&status,&(params.cacheFilename)),&status);
+    XLALDestroyCHARVector(params.cacheFilename);
   
   if (params.multiCacheFilename)
-    LAL_CALL(LALCHARDestroyVector(&status,
-				  &(params.multiCacheFilename))
-	     ,&status);
+    XLALDestroyCHARVector(params.multiCacheFilename);
+
   LALCheckMemoryLeaks();
   return 0;
 }
@@ -202,8 +196,7 @@ LALappsTSAInitialize(LALStatus        *status,
 
 	case 'a':
 	  {
-	    LAL_CALL(LALCHARCreateVector(status,&(params->cacheFilename),maxFilenameLength),
-		     status);
+	    params->cacheFilename=XLALCreateCHARVector(maxFilenameLength);
 	    strcpy(params->cacheFilename->data,optarg);
 	  }
 	  break;
@@ -231,10 +224,7 @@ LALappsTSAInitialize(LALStatus        *status,
 	    /*
 	     * If we are sending a txt cache of cache's
 	     */
-	    LAL_CALL(LALCHARCreateVector(status,
-					 &(params->multiCacheFilename),
-					 maxFilenameLength),
-		     status);
+	    params->multiCacheFilename=XLALCreateCHARVector(maxFilenameLength);
 	    strcpy(params->multiCacheFilename->data,optarg);
 	  }
 	  break;
@@ -906,7 +896,7 @@ tsaTest(
       fprintf(stderr,"Allocating\n");
       LALappsTSACreateMap(status,&testMapA,&markerParams,&createParams);
       fprintf(stderr,"Writing to disk\n");
-      LAL_CALL(LALCHARCreateVector(status,&fileNameVector,64),status);
+      fileNameVector=XLALCreateCHARVector(64);
       strcpy(fileNameVector->data,"TestFile.dat");
       LALappsTSAWriteMapFile(status,testMapA,fileNameVector);
       fprintf(stderr,"Reading from disk\n");
@@ -945,7 +935,7 @@ tsaTest(
       LALappsTSADestroyMap(status,&testMapA);
       LALappsTSADestroyMap(status,&testMapB);
       LALappsTSADestroyMap(status,&testMapMerge);
-      LAL_CALL(LALCHARDestroyVector(status,&fileNameVector),status);
+      XLALDestroyCHARVector(fileNameVector);
       fprintf(stderr,"Done\n");
     }
   return;

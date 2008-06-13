@@ -110,16 +110,16 @@ int main (int argc, char *argv[])
   /* If default params left untouched we skip this */
   if ((1==1)||(params.quiet != params.noiseOnly) || (params.externalSignal))
     {
-      LALCreateVector(&status,&dataX,params.numSamplePoints);
-      LALCreateVector(&status,&dataY,params.numSamplePoints);
+      dataX=XLALCreateVector(params.numSamplePoints);
+      dataY=XLALCreateVector(params.numSamplePoints);
       createdata(&status,dataX,dataY,params);
       generateoutput(&status,dataX,dataY,params);
-      LALDestroyVector(&status,&dataY);
-      LALDestroyVector(&status,&dataX);
+      XLALDestroyVector(dataX);
+      XLALDestroyVector(dataY);
       if (params.signalFileName)
-	LALFree(params.signalFileName);
+	XLALFree(params.signalFileName);
       if (params.name)
-	LALFree(params.name);
+	XLALFree(params.name);
     }
   /*Make and write out the PSD */
   /*If default arguments changed by user */
@@ -288,7 +288,7 @@ int intializeArgs(
 
 	case 'h':
 	  { /* Read in data file name to create */
-	    params->name = (CHAR*) LALMalloc(strlen(optarg)+1);
+	    params->name = (CHAR*) XLALMalloc(strlen(optarg)+1);
 	    strcpy(params->name,optarg);
 	  }
 	  break;
@@ -313,7 +313,7 @@ int intializeArgs(
 
 	case 'l':
 	  { /* Set flag for external Signal and path/filename */
-	    params->signalFileName = (CHAR*) LALMalloc(strlen(optarg)+1);
+	    params->signalFileName = (CHAR*) XLALMalloc(strlen(optarg)+1);
 	    strcpy(params->signalFileName,optarg);
 	    params->externalSignal=1;
 	  }
@@ -453,18 +453,18 @@ void createdata(
   /* Add unit noise to signal to achieve desired SNR (white)*/
   if (!params.quiet) 
     {
-      LALCreateVector(status->statusPtr,&nd,dataY->length);
+      nd=XLALCreateVector(dataY->length);
       printf("My seed is %i\n",params.seed);
-      LALCreateRandomParams(status->statusPtr,&RP,params.seed);
-      LALNormalDeviates(status->statusPtr,nd,RP);
-      LALDestroyRandomParams(status->statusPtr,&RP);
+      RP=XLALCreateRandomParams(params.seed);
+      XLALNormalDeviates(nd,RP);
+      XLALDestroyRandomParams(RP);
       /* Setting Perm Noise Amp of 1 */
       params.noiseAmp = 1.0;
       for ( j = 0; j < dataY->length; j++)
 	{
 	  dataY->data[j] = dataY->data[j] + (params.noiseAmp * nd->data[j]);
 	};
-      LALDestroyVector(status->statusPtr,&nd);
+      XLALDestroyVector(nd);
     };
 
   DETATCHSTATUSPTR (status);
@@ -669,8 +669,8 @@ void writePSD(
  filetxtname = (CHAR *) LALCalloc(32,sizeof(CHAR));
   sprintf(filetxtname,"Ascii--%s-%i-%i.txt",
 	  frameheader.description,
-	  PSD->f0,
-	  ((INT4) (PSD->deltaF*PSD->data->length)));
+	  ((INT4) PSD->f0),
+	  ((INT4)(PSD->deltaF*PSD->data->length)));
   fp = fopen(filetxtname,"w");
   for (j=0; j < (INT4) PSD->data->length;j++)
     {
@@ -680,7 +680,7 @@ void writePSD(
   fclose(fp);
   /* Deallocate Ram */
   LALFree(filetxtname);
-  LALDestroyREAL8FrequencySeries(status->statusPtr,PSD);
+  XLALDestroyREAL8FrequencySeries(PSD);
   DETATCHSTATUSPTR (status);
   return;
 }

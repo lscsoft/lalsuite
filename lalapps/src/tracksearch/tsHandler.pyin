@@ -264,8 +264,11 @@ parser.add_option("-P","--top-percentile",
 parser.add_option("-z","--histogram-type",
                   default='default',
                   dest="histogramType",
-                  help="This sets the type of histrogram to create if a histogram is invoked for creation either to screen or disk.  The options are default, logy logxy."
-                  )
+                  help="This sets the type of histrogram to create if a histogram is invoked for creation either to screen or disk.  The options are default, logy logxy." )
+parser.add_option("-D","--dqlist",
+                  default=-1,
+                  dest="makeDQlist",
+                  help="This creates a file of DQ flags from candidateList object using a padsize specified as the argument.")
 
 (options,args)=parser.parse_args()
 filename=str(options.filename)
@@ -289,6 +292,7 @@ glue=bool(options.glue)
 timescale=str(options.timescale).lower()
 topTol=float(options.topPercentile)
 histogramType=str(options.histogramType).lower()
+dqList=int(options.makeDQlist)
 
 if verboseSwitch:
     print "Setting verbose mode to candidateHandler call."
@@ -446,6 +450,15 @@ elif ((canList.__len__() >=1) and dumpSummaryScreen):
         candidateObject.__loadfileQuick__(entry)
         candidateObject.printSummary()
         del entry
+
+elif ((canList.__len__() >=1) and dqList >= 0):
+    for entry in canList:
+        candidateObject=candidateList(verboseSwitch)
+        candidateObject.__propertyunpickler__(entry)
+        if ((outfile != "") and (canList.__len__() == 1)):
+            candidateObject.writeDQtable(dqList,outfile)
+        else:
+            candidateObject.writeDQtable(dqList)
 
     #IF there are no files to work on found.    
 elif (canList.__len__() < 0):

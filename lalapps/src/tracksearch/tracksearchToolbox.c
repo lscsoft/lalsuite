@@ -40,7 +40,6 @@ LALappsTSACropMap(
   TSAMap                       *tmpMap=NULL;
   CreateTimeFreqIn              tmpCreateParams;
   TrackSearchMapMarkingParams   tmpMarkingParams;
-  TSAMap                       *map=NULL;
   INT4                         i=0;
   INT4                         j=0;
   REAL8                         startTime=0;
@@ -54,7 +53,7 @@ LALappsTSACropMap(
 		  TRACKSEARCHAVERAGERC_EDIMS,
 		  TRACKSEARCHAVERAGERC_MSGEDIMS);
 
-   LAL_CALL(LALCHARCreateVector(status,&name,1024),status); 
+  name=XLALCreateCHARVector(1024);
 /*    strcpy(name->data,"Uncroppedmap");  */
 /*    LALappsTSAWritePGM(status,(*inputMap),name);  */
 
@@ -76,23 +75,21 @@ LALappsTSACropMap(
 			 &startTime,
 			 &tmpMarkingParams.mapStartGPS),
 	   status);
+
   startTime=startTime+(tmpMarkingParams.deltaT*binsToCrop);
-  LAL_CALL(
-	   LALFloatToGPS(status,
-			 &tmpMarkingParams.mapStartGPS,
-			 &startTime),
-	   status);
+
+  XLALFloatToGPS(&tmpMarkingParams.mapStartGPS,startTime);
+
   LAL_CALL(
 	   LALGPStoFloat(status,
 			 &stopTime,
 			 &tmpMarkingParams.mapStopGPS),
 	   status);
+
   stopTime=stopTime-(tmpMarkingParams.deltaT*binsToCrop);
-  LAL_CALL(
-	   LALFloatToGPS(status,
-			 &tmpMarkingParams.mapStopGPS,
-			 &stopTime)
-	   ,status);
+
+  XLALFloatToGPS(&tmpMarkingParams.mapStopGPS,stopTime);
+
   LALappsTSACreateMap(status,
 		      &tmpMap,
 		      &tmpMarkingParams,
@@ -108,9 +105,6 @@ LALappsTSACropMap(
     tmpMap->imageRep->freqBin[i]=(*inputMap)->imageRep->freqBin[i];
   for (i=0;(i<tmpMap->imageRep->tCol);i++)
     tmpMap->imageRep->timeInstant[i]=(*inputMap)->imageRep->timeInstant[i+binsToCrop];
-
-/*   strcpy(name->data,"temporarymap"); */
-/*   LALappsTSAWritePGM(status,tmpMap,name); */
 
   /*
    * Copy the newly created information into the structure.
@@ -137,11 +131,8 @@ LALappsTSACropMap(
     for(j=0;(j<(*inputMap)->imageRep->tCol);j++)
       (*inputMap)->imageRep->map[j][i]=tmpMap->imageRep->map[j][i];
 
-/*   strcpy(name->data,"finalmap"); */
-/*   LALappsTSAWritePGM(status,*inputMap,name); */
-
   if (name)
-    LAL_CALL(LALCHARDestroyVector(status,&name),status);
+    XLALDestroyCHARVector(name);
 
   if (tmpMap)
     LALappsTSADestroyMap(status,&tmpMap);
@@ -416,7 +407,8 @@ void LALappsTSAWriteMapFile( LALStatus         *status,
    * Deallocation of local ram
    */
   if (dflag==1)
-    LAL_CALL(LALCHARDestroyVector(status,&thisFilename),status);
+    XLALDestroyCHARVector(thisFilename);
+
   return;
 }
 /* 
@@ -435,10 +427,8 @@ LALappsDetermineFilename(LALStatus                   *status,
   LALappsTSassert((*thisFilename == NULL),
 		  TRACKSEARCHTOOLBOXC_EFAIL,
 		  TRACKSEARCHTOOLBOXC_EMSGFAIL);
-  LAL_CALL(LALCHARCreateVector(status,
-			       thisFilename,
-			       maxFilenameLength),
-	   status);
+  *thisFilename=XLALCreateCHARVector(maxFilenameLength);
+
   sprintf((*thisFilename)->data,
 	  "MAP:Start:%i,%i:Stop:%i,%i:TF:%i,%i:%s",
 	  imageBorders.mapStartGPS.gpsSeconds,
@@ -478,7 +468,7 @@ LALappsTSACreateMap(LALStatus                    *status,
   /*
    * Allocate the memory for TSAMap variable
    */
-  *map = (TSAMap*)LALMalloc(sizeof(TSAMap));
+  *map = (TSAMap*) XLALMalloc(sizeof(TSAMap));
   LALappsTSassert((*map)!=NULL,
 		  TRACKSEARCHTOOLBOXC_EALLOC,
 		  TRACKSEARCHTOOLBOXC_EMSGALLOC);
@@ -557,15 +547,15 @@ LALappsTSAWritePGM(LALStatus  *status,
   /*
    * Build filenames
    */
-  LAL_CALL(LALCHARCreateVector(status,&pgmFile,maxFilenameLength),status);
-  LAL_CALL(LALCHARCreateVector(status,&auxFile,maxFilenameLength),status);
-  LAL_CALL(LALCHARCreateVector(status,&rawFile,maxFilenameLength),status);
+  pgmFile=XLALCreateCHARVector(maxFilenameLength);
+  auxFile=XLALCreateCHARVector(maxFilenameLength);
+  rawFile=XLALCreateCHARVector(maxFilenameLength);
   /*
    * Setup filename mask
    */
   if (overrideMask != NULL)
     {
-      LAL_CALL(LALCHARCreateVector(status,&basicMask,maxFilenameLength),status);
+      basicMask=XLALCreateCHARVector(maxFilenameLength);
       strcpy(basicMask->data,overrideMask->data);
     }
   else
@@ -676,17 +666,17 @@ LALappsTSAWritePGM(LALStatus  *status,
   fprintf(fp,"FreqBins %i\n",map->imageBorders.mapFreqBins);
   fclose(fp);
   if (auxFile)
-    LAL_CALL(LALCHARDestroyVector(status,&auxFile),
-	     status);
+    XLALDestroyCHARVector(auxFile);
+
   if (rawFile)
-    LAL_CALL(LALCHARDestroyVector(status,&rawFile),
-	     status);
+    XLALDestroyCHARVector(rawFile);
+
   if (pgmFile)
-    LAL_CALL(LALCHARDestroyVector(status,&pgmFile),
-	     status);
+    XLALDestroyCHARVector(pgmFile);
+
   if (basicMask)
-    LAL_CALL(LALCHARDestroyVector(status,&basicMask),
-	     status);
+    XLALDestroyCHARVector(basicMask);
+
   return;
 }
 /* 
@@ -701,7 +691,6 @@ LALappsTSASortCache(LALStatus   *status,
   TSAMap      *tempMap=NULL;
   UINT4        i=0;
   UINT4        index=0;
-  UINT4        lastIndex=0;
   UINT4        STOP=0;
   REAL8        tmpTime=0;
   CHARVector  *tmpFilename=NULL;
@@ -730,10 +719,7 @@ LALappsTSASortCache(LALStatus   *status,
 			   &tempMap);
     }
 
-  LAL_CALL(LALCHARCreateVector(status,
-			       &tmpFilename,
-			       inputCache->filename[0]->length),
-	   status);
+  tmpFilename=XLALCreateCHARVector(inputCache->filename[0]->length);
   
   /*
    * Perform the bubble sort to put the maps in cronological order
@@ -766,9 +752,8 @@ LALappsTSASortCache(LALStatus   *status,
 	}
       index=0;
     }
-  LAL_CALL(LALCHARDestroyVector(status,
-				&tmpFilename),
-	   status);
+  XLALDestroyCHARVector(tmpFilename);
+
   return;
 }
 /*
@@ -782,7 +767,7 @@ LALappsTSALoadCacheFile(LALStatus    *status,
 {
   UINT4       i=0;
   UINT4       lineCount=0;
-  INT4       errCode=0;
+  INT4        errCode=0;
   CHAR        scanString[512];
   FILE       *inputFilePtr=NULL; 
 
@@ -809,19 +794,16 @@ LALappsTSALoadCacheFile(LALStatus    *status,
   /*
    * Allocate RAM for cache file
    */
-  (*mapCache)=LALMalloc(sizeof(TSAcache));
+  (*mapCache)=XLALMalloc(sizeof(TSAcache));
   (*mapCache)->numMapFilenames=lineCount;
   (*mapCache)->mapStartTime=LALMalloc(sizeof(REAL8)*
 					   (*mapCache)->numMapFilenames);
-  (*mapCache)->filename=(CHARVector**) LALMalloc((*mapCache)->numMapFilenames*sizeof(CHARVector*));
+  (*mapCache)->filename=(CHARVector**) XLALMalloc((*mapCache)->numMapFilenames*sizeof(CHARVector*));
   for (i=0;i<(*mapCache)->numMapFilenames;i++)
     {
       (*mapCache)->mapStartTime[i]=-1;
       (*mapCache)->filename[i]=NULL;
-      LAL_CALL(LALCHARCreateVector(status,
-				   &((*mapCache)->filename[i]),
-				   maxFilenameLength),
-	       status);
+      (*mapCache)->filename[i]=XLALCreateCHARVector(maxFilenameLength);
     }
   /*
    * 2nd Pass reopen the file and read in the entries
@@ -857,14 +839,12 @@ LALappsTSADestroyCache(LALStatus       *status,
 		  TRACKSEARCHTOOLBOXC_EMSGFAIL);
 
   for (i=0;i<(*cache)->numMapFilenames;i++)
-    LAL_CALL(
-	     LALCHARDestroyVector(status,
-				  &((*cache)->filename[i])),
-	     status);
-  LALFree((*cache)->filename);
-  LALFree((*cache)->mapStartTime);
+    XLALDestroyCHARVector(((*cache)->filename[i]));
+
+  XLALFree((*cache)->filename);
+  XLALFree((*cache)->mapStartTime);
   (*cache)->numMapFilenames=0;
-  LALFree(*cache);
+  XLALFree(*cache);
   return;
 }
 /*
@@ -880,7 +860,7 @@ void LALappsCreateR4FromR8TimeSeries(LALStatus             *status,
   CHAR txtNumber[32];
   *R4TS = XLALCreateREAL4TimeSeries(
     R8TS->name,
-    R8TS->epoch,
+    &(R8TS->epoch),
     R8TS->f0,
     R8TS->deltaT,
     &R8TS->sampleUnits,
@@ -918,7 +898,7 @@ void LALappsPSD_Check(REAL8TimeSeries       *dataIn)
   size=dataIn->data->length/2 +1;
   avgPSDR8 = XLALCreateREAL8FrequencySeries(
     "psd",
-    gps_zero,
+    &(gps_zero),
     0,
     1/(dataIn->deltaT*dataIn->data->length),
     &lalADCCountUnit,
@@ -929,42 +909,27 @@ void LALappsPSD_Check(REAL8TimeSeries       *dataIn)
     /* ERROR */
     }
 
+  fftplanR8=XLALCreateForwardREAL8FFTPlan(dataIn->data->length,0);
+  XLALREAL8PowerSpectrum(avgPSDR8->data,(dataIn->data),fftplanR8);
 
- LAL_CALL(LALCreateForwardREAL8FFTPlan(&status,
-				       &fftplanR8,
-				       dataIn->data->length,
-				       0),
-	  &status);
- LAL_CALL(LALREAL8PowerSpectrum(&status,
-				avgPSDR8->data,
-				dataIn->data,
-				fftplanR8),
-	  &status);
+  print_real8fseries(avgPSDR8,"CastREAL4_REAL8_PSD.diag");
 
- print_real8fseries(avgPSDR8,"CastREAL4_REAL8_PSD.diag");
   avgPSDR4 = XLALCreateREAL4FrequencySeries(
-    "psd",
-    gps_zero,
-    0,
-    1/(dataIn->deltaT*dataIn->data->length),
-    &lalADCCountUnit,
-    size
-  );
+					    "psd",
+					    &(gps_zero),
+					    0,
+					    1/(dataIn->deltaT*dataIn->data->length),
+					    &lalADCCountUnit,
+					    size
+					    );
   if(!avgPSDR4)
     {
     /* ERROR */
     }
-
- LAL_CALL(LALCreateForwardREAL4FFTPlan(&status,
-				       &fftplanR4,
-				       R4TimeSeries->data->length,
-				       0),
-	  &status);
- LAL_CALL(LALREAL4PowerSpectrum(&status,
-				avgPSDR4->data,
-				R4TimeSeries->data,
-				fftplanR4),
-	  &status);
+  fftplanR4=XLALCreateForwardREAL4FFTPlan(R4TimeSeries->data->length,0);
+  XLALREAL4PowerSpectrum(avgPSDR4->data,
+			 R4TimeSeries->data,
+			 fftplanR4);
 
  print_real4fseries(avgPSDR4,"CastREAL4_from_REAL8_PSD.diag");
  /****** FROM HERE ******* Edit above to REAL4 */
@@ -973,10 +938,11 @@ void LALappsPSD_Check(REAL8TimeSeries       *dataIn)
   XLALDestroyREAL8FrequencySeries(avgPSDR8);
   XLALDestroyREAL4FrequencySeries(avgPSDR4);
  if (fftplanR8 != NULL)
-   LAL_CALL(LALDestroyREAL8FFTPlan(&status,&fftplanR8),&status);
+   XLALDestroyREAL8FFTPlan(fftplanR8);
 
  if (fftplanR4 != NULL)
-   LAL_CALL(LALDestroyREAL4FFTPlan(&status,&fftplanR4),&status);
+   XLALDestroyREAL4FFTPlan(fftplanR4);
+
 }
 /* LALappsPSD_CHECK */
 
@@ -1107,12 +1073,12 @@ void print_lalUnit(LALUnit unit,const char *file)
   CHARVector *unitString=NULL;
   LALStatus  status=blank_status;
 
-  LAL_CALL(LALCHARCreateVector(&status,&unitString,maxFilenameLength),&status);
-  LAL_CALL(LALUnitAsString(&status,unitString,&unit),&status);
+  unitString=XLALCreateCHARVector(maxFilenameLength);
+  XLALUnitAsString(unitString->data,unitString->length,&unit);
   if (fp)
     fprintf(fp,"%s\n",unitString->data);
   fclose(fp);
-  LAL_CALL(LALCHARDestroyVector(&status,&unitString),&status);
+  XLALDestroyCHARVector(unitString);
 }
 /*
  * End diagnostic code
