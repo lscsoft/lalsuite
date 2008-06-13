@@ -1060,9 +1060,28 @@ void LALappsTrackSearchInitialize(
 	   * uniform segments to make maps with
 	   */
 	  params->TimeLengthPoints=params->TimeLengthPoints-params->discardTLP;
-	  if ((params->verbosity >= verbose))
-	    fprintf(stdout,"We need to throw away %i trailing data points for %i, evenly matched data segments\n",params->discardTLP,params->NumSeg);
-	};
+	}
+	  if (params->verbosity >= verbose)
+	    {
+	      fprintf(stdout,
+		      "Need to trim %i subsegment lengths.\n",
+		      params->NumSeg);
+	      fprintf(stdout,
+		      "Total data points requested :%i\n",
+		      params->TimeLengthPoints+params->discardTLP);
+	      fprintf(stdout,
+		      "Subsegment length in data points requested :%i\n",
+		      params->SegLengthPoints);
+	      fprintf(stdout,
+		      "Segment overlap in points :%i\n",
+		      params->overlapFlag);
+	      fprintf(stdout,
+		      "Points to discard from total data requested : %i\n",
+		      params->discardTLP);
+	      fprintf(stdout,
+		      "Total data points that will be processed :%i\n",
+		      params->TimeLengthPoints);
+	    }
       /* 
        * Determine the number of additional points required to negate
        * edge effects in first and last TFR
@@ -1077,8 +1096,7 @@ void LALappsTrackSearchInitialize(
 	  fprintf(stderr,TRACKSEARCHC_MSGEARGS);
 	  exit(TRACKSEARCHC_EARGS);
 	}
-    }
-  /*
+    }  /*
    * Do following checks
    */
   /* If not auto lambda choosen then */
@@ -3558,6 +3576,8 @@ void LALappsTrackSearchWhitenSegments( LALStatus        *status,
   REAL4                     meanValue=0;
   UINT4                     stride=0;
   INT4                      segCount=0;
+  INT4                      originalDataLength=0;
+  INT4                      segmentLength=0;
   int                       errcode=0;
   const LIGOTimeGPS        gps_zero = LIGOTIMEGPSZERO;
 
@@ -3655,40 +3675,87 @@ void LALappsTrackSearchWhitenSegments( LALStatus        *status,
    * we will make the least correlated PSD estimate possible.  So 
    * numSegs for PSD estimate <= numSegs to analyze
    */
-  stride=params.SegLengthPoints;
-  segCount=1+(dataSet->data->length - params.SegLengthPoints)/stride;
+/*   stride=params.SegLengthPoints; */
+/*   segCount=1+(dataSet->data->length - params.SegLengthPoints)/stride; */
 
   switch (params.avgSpecMethod)
     {
     case useMean:
-      if (segCount%2 !=0)
-	stride=floor((dataSet->data->length - params.SegLengthPoints)
-		     /params.NumSeg);
-      
-      if ((params.verbosity > quiet) && segCount%2 !=0)
+      segmentLength=params.SegLengthPoints+(2*params.SegBufferPoints);
+      if ((params.NumSeg%2 !=0))
 	{
-	  fprintf(stderr,"We have %i segments of data to analyze.  To estimate our PSD we need an even number of segments to work with.  We will adjust the stride so that we have %i segments to estimate the data's PSD.  Since we need a even segment number for this operation.\n",params.NumSeg,segCount+1);
-	  fprintf(stderr,"Stride changed from %i to %i.\n",params.SegLengthPoints,stride);
+	  segCount=params.NumSeg;
+	  /* Add one to odd number segCount to make it even for this method*/
+	  stride=floor((dataSet->data->length - segmentLength)
+		       /((segCount+1)-1));
+	  segCount=segCount+1;
 	}
-      errcode=XLALREAL4AverageSpectrumMedianMean(averagePSD,
-						 dataSet,
-						 params.SegLengthPoints,
-						 stride,
-						 windowPSD,
-						 averagePSDPlan);
+      else
+	{
+	  segCount=params.NumSeg;
+	  stride=floor((dataSet->data->length - segmentLength)
+		       /((segCount)-1));
+	}
+
+      /*Worakaround "HACK" for proper spanning of data*/
+      /* See AverageSpectrum.c line 845 */
+      if ((dataSet->data->length-((segCount-1)*stride+segmentLength))>=1)
+	  fprintf(stdout,"Notice: We can not estimate the PSD using XLALREAL4AverageSpectrumMedianMean because the segment length, bin buffer, and overlap combing to form a data interval that isn't spanned correctly.  See documentation for the above XLAL function.  We are off by %i points to span the data properly.\n",
+		  (dataSet->data->length-((segCount-1)*stride+segmentLength)));
+
+      if (
+	  (dataSet->data->length-((segCount-1)*stride+segmentLength)
+	   <
+	   floor(segmentLength*0.0001))
+	&&
+	  (dataSet->data->length-((segCount-1)*stride+segmentLength)
+	   >
+	   0)
+	  )
+	{
+	  fprintf(stderr,"WARNING!!! To estimate PSD for whitening we are ignoring the last data %i points in the input data used to make the PSD estimate.\n",
+		  (dataSet->data->length-((segCount-1)*stride+segmentLength)));
+	  originalDataLength=dataSet->data->length;	
+	  dataSet->data->length=originalDataLength-(dataSet->data->length-((segCount-1)*stride+segmentLength));
+	  errcode=XLALREAL4AverageSpectrumMedianMean(averagePSD,
+						     dataSet,
+						     segmentLength,
+						     stride,
+						     windowPSD,
+						     averagePSDPlan);
+	  dataSet->data->length=originalDataLength;
+	}
+      else
+	{
+	  errcode=XLALREAL4AverageSpectrumMedianMean(averagePSD,
+						     dataSet,
+						     segmentLength,
+						     stride,
+						     windowPSD,
+						     averagePSDPlan);
+	}
+	
       if (errcode !=0)
 	{
 	  fprintf(stderr,"Problem calculating average PSD using mean method.\n");
-	  fprintf(stderr," Dataset :%i\n PSD :%i\n Seglen :%i\n Stride :%i\n",
+	  fprintf(stderr," SegCount Caculated :%i\n Segments :%i\n Dataset :%i\n PSD :%i\n Seglen :%i\n Seglen with buffer bin points :%i\n Stride Caculated:%i\n",
+		  segCount,
+		  params.NumSeg,
 		  dataSet->data->length,
 		  averagePSD->data->length,
 		  params.SegLengthPoints,
+		  params.SegLengthPoints+(2*params.SegBufferPoints),
 		  stride);
 	  exit(errcode);
 	}
       break;
     
     case useMedian:
+      /* This case not yet debugged!!! */
+      /*Fri-Jun-13-2008:200806131546 */
+      fprintf(stderr,"The option useMedian, not yet debugged. Behavior unknown!\n");
+      segmentLength=params.SegLengthPoints+(2*params.SegBufferPoints);
+
       errcode=XLALREAL4AverageSpectrumMedian(averagePSD,
 					     dataSet,
 					     params.SegLengthPoints,
@@ -3702,6 +3769,7 @@ void LALappsTrackSearchWhitenSegments( LALStatus        *status,
 		  dataSet->data->length,
 		  averagePSD->data->length,
 		  params.SegLengthPoints,
+		  params.SegLengthPoints+(2*params.SegBufferPoints),
 		  stride);
 	  exit(errcode);
 	}
