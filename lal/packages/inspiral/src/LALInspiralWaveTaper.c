@@ -19,7 +19,7 @@
 
 /*  <lalVerbatim file="LALInspiralWaveTaperCV">
  *  Author:  McKechan D J A
-</lalVerbatim>  */
+ *  </lalVerbatim>  */
 
 /*  <lalLaTeX>
  *
@@ -32,6 +32,10 @@
  *  of the signal, in case there are null data points at either end. It then
  *  tapers the wave from the ends to the second maxima in the waveform, 
  *  according to formula 3.35 of gr-qc/0001023.
+ *
+ *  If the waveform does has less than 4 peaks such that it cannot be tapered
+ *  from the both ends to the second peak then the central point is tapered to 
+ *  insted.
  *
  *  The bookends option allows the user to specify whether just the start, 
  *  just the end or both the start and end of the signal are tapered. 
@@ -60,18 +64,18 @@
 #include <stdio.h>
 #include <math.h>
 
-NRCSID(LALINSPIRALWAVETAPERC, "$Id$"); 
+NRCSID(LALINSPIRALWAVETAPERC, 
+		  "$Id$"); 
 
 /*  <lalVerbatim file="LALInspiralWaveTaperCP"> */
 void LALInspiralWaveTaper(
-	 	LALStatus        *status,
-	      	REAL4Vector      *signal,
-		UINT4		 bookends
-			    )
+                   LALStatus   *status,
+                   REAL4Vector *signal,
+                   UINT4       bookends)
 { /* </lalVerbatim>  */
 
-  UINT4 i, start, end, n; /* indices */
-  UINT4 flag;
+  UINT4 i, start, end, mid, n; /* indices */
+  UINT4 flag, safe = 1;
   UINT4 length;   
   REAL4 z, sigma;          
   REAL4 realN, realI;  /* REAL4 values of n & i used for the calculations */
@@ -84,100 +88,121 @@ void LALInspiralWaveTaper(
 
   length = signal->length;
 
-  
   if(bookends < 1 || bookends > 3)
-    bookends = 3;	  
+    bookends = 3;    
 
   
-  /* If requested search index for start of signal */
-  if(bookends != 2)
+  /* Search for start and end of signal */
+  flag = 0;
+  i = 0;
+  while(flag == 0)
   {
-    flag = 0;
-    i = 0;
-    while(flag == 0)
+    if( signal->data[i] != 0.)
     {
-      if( signal->data[i] != 0.)
+      start = i;
+      flag = 1;
+    }
+    i++;
+  }  
+  
+  flag = 0;
+  i = length - 1;
+  while(flag == 0)
+  {
+    if( signal->data[i] != 0.)
+    {
+      end = i;
+      flag = 1;
+    }
+    i--;
+  }        
+  /* Check we have more than 2 data points */
+	if((end - start) <= 1)
+  {
+    LALWarning( status, "Data less than 3 points, cannot taper!" );
+	  safe = 0;
+	}
+
+	if( safe == 1)
+	{
+	  /* Calculate middle point in case of short waveform */    
+    mid = (start+end)/2;
+
+  
+	  /* If requested search for second peak from start and taper */
+    if( bookends != 2 )
+    {
+      flag = 0;
+      i = start+1;
+      while( flag < 2 && i != mid)
       {
-        start = i;
-        flag = 1;
+        if( fabs(signal->data[i]) >= fabs(signal->data[i-1]) )
+          if( fabs(signal->data[i]) >= fabs(signal->data[i+1]) )
+          {
+            if( fabs(signal->data[i]) == fabs(signal->data[i+1]) )
+              i++;
+              flag++;
+              n = i - start;
+          }
+        i++;
       }
-      i++;
-    }       
-    
-    /* Search for second peak from start */
-    flag = 0;
-    i = start+1;
-    while( flag < 2 )
-    {
-      if( fabs(signal->data[i]) >= fabs(signal->data[i-1]) )
+      /* Have we reached the middle? */
+      if( flag < 2)
+        n = mid;
+
+		  /* Taper to that point */
+      realN = (REAL4)(n);
+      signal->data[start] = 0.0;
+      for(i=start+1; i < n-1; i++)
+      {
+        realI = (REAL4)(i);
+        z = (realN - 1.0)/realI + (realN - 1.0)/(realI - (realN - 1.0));
+        sigma = 1.0/(exp(z) + 1.0);
+        signal->data[i] = signal->data[i]*sigma;
+      }
+    }     
+  
+
+	  /* If requested search for second peak from end */
+    if( bookends > 1 )
+    {    
+      i = end - 1;
+      flag = 0;
+      while( flag < 2 && i != mid )
+      {
         if( fabs(signal->data[i]) >= fabs(signal->data[i+1]) )
-     	{
-       	  if( fabs(signal->data[i]) == fabs(signal->data[i+1]) )
-            i++;
-       	  flag++;
-       	  n = i - start;
-          realN = (REAL4)(n);
-	}
-      i++;
-    }
-  	
-    /* Taper to that point */
-    signal->data[start] = 0.0;
-    for(i=start+1; i < n-1; i++)
-    {
-      realI = (REAL4)(i);
-      z = (realN - 1.0)/realI + (realN - 1.0)/(realI - (realN - 1.0));
-      sigma = 1.0/(exp(z) + 1.0);
-      signal->data[i] = signal->data[i]*sigma;
-    }
-
-  }     
-
-  /* If requested search index for end of signal */
-  if( bookends > 1)
-  {
-    flag = 0;
-    i = length - 1;
-    while(flag == 0)
-    {
-      if( signal->data[i] != 0.)
+          if( fabs(signal->data[i]) >= fabs(signal->data[i-1]) )
+          {
+            if( fabs(signal->data[i]) == fabs(signal->data[i-1]) )
+              i--;
+            flag++;
+            n = end - i;
+          }
+        i--;
+      }     
+      /* Have we reached the middle? */
+      if( flag < 2)
       {
-        end = i;
-        flag = 1;
+		    n = mid;
+        /* Was it an even length vector? */
+			  if( mid*2 < end )
+		      mid++;
       }
-      i--;
-    }        
-  
-    /* Search for second peak from end */
-    i = end - 1;
-    flag = 0;
-    while( flag < 2 )
-    {
-      if( fabs(signal->data[i]) >= fabs(signal->data[i+1]) )
-       	if( fabs(signal->data[i]) >= fabs(signal->data[i-1]) )
-       	{
-          if( fabs(signal->data[i]) == fabs(signal->data[i-1]) )
-            i--;
-          flag++;
-          n = end - i;
-	  realN = (REAL4)(n);
-	}
-      i--;
-    }  	
 
-    /* Taper to that point */
-    signal->data[end] = 0.0;   
-    for(i=end-1; i > end-n+1; i--)
-    {
-      realI = (REAL4)(end - i);
-      z = (realN - 1.0)/realI + (realN - 1.0)/(realI - (realN-1.0));
-      sigma = 1.0/(exp(z) + 1.0);
-      signal->data[i] = signal->data[i]*sigma;
+      /* Taper to that point */
+      realN = (REAL4)(n);
+      signal->data[end] = 0.0;   
+      for(i=end-1; i > end-n+1; i--)
+      {
+        realI = (REAL4)(end - i);
+        z = (realN - 1.0)/realI + (realN - 1.0)/(realI - (realN-1.0));
+        sigma = 1.0/(exp(z) + 1.0);
+        signal->data[i] = signal->data[i]*sigma;
+      }
     }
   }
 
   CHECKSTATUSPTR(status);
-	    
   DETATCHSTATUSPTR(status);
   RETURN (status);
 }
