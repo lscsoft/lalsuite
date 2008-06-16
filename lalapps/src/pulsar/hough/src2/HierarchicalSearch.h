@@ -180,6 +180,10 @@ NRCSID( HIERARCHICALSEARCHH, "$Id$" );
     REAL8 dDelta ;     /**< delta error */
     REAL8 dFdot;       /**< fdot error */
     REAL8 significance;/**< significance */
+    REAL8 alphaBest;   /**< alpha for best candidate in hough map */
+    REAL8 deltaBest;   /**< delta for best candidate in hough map */
+    REAL8 meanSig;     /**< mean of significance values in hough map */
+    REAL8 varianceSig; /**< variance of significance values in Hough map */
   } SemiCohCandidate;  
 
   /** structure for storing candidates produced by Hough search */

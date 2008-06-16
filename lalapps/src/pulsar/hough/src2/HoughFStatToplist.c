@@ -292,12 +292,16 @@ static int print_houghFStatline_to_str(HoughFStatOutputEntry fline, char* buf, i
 		   * f1dot:1e-5
 		   * F:1e-6 
 		   */
-		  "%.13g %.7g %.7g %.5g %.6g\n",
-		  fline.Freq,
-		  fline.Alpha,
-		  fline.Delta,
-		  fline.f1dot,
-		  fline.HoughFStat));
+		     "%.13g %.7g %.7g %.5g %.6g %.7g %.7g %.3g %.3g\n",
+		     fline.Freq,
+		     fline.Alpha,
+		     fline.Delta,
+		     fline.f1dot,
+		     fline.HoughFStat,
+		     fline.AlphaBest,
+		     fline.DeltaBest,
+		     fline.MeanSig,
+		     fline.VarianceSig));
 }
 
 

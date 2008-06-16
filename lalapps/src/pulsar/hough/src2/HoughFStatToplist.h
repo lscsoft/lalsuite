@@ -31,6 +31,10 @@ typedef struct {
   REAL8 Alpha; 		/**< Skyposition: longitude in equatorial coords, radians */
   REAL8 Delta;		/**< skyposition: latitude */
   REAL8 HoughFStat;	/**< Hough significance */
+  REAL8 AlphaBest;      /**< skyposition of best candidate: longitude */
+  REAL8 DeltaBest;      /**< skyposition of best candidate: latitude */
+  REAL8 MeanSig;        /**< mean of significance values in hough map*/
+  REAL8 VarianceSig;    /**< variance of significance values in hough map*/
 } HoughFStatOutputEntry;
 
 

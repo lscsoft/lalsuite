@@ -2472,7 +2472,7 @@ void GetHoughCandidates_threshold(LALStatus            *status,
 				  HOUGHDemodPar        *parDem,
 				  REAL8                threshold)
 {
-  REAL8UnitPolarCoor sourceLocation;
+  REAL8UnitPolarCoor sourceLocation, sourceLocationBest;
   REAL8 deltaF, f0, fdot, dFdot, patchSizeX, patchSizeY;
   INT8 f0Bin;  
   INT4 i,j, xSide, ySide, numCandidates;
@@ -2574,6 +2574,7 @@ void GetHoughCandidates_threshold(LALStatus            *status,
 
     REAL8 currentMax;
     INT4 jMax, iMax;
+    REAL8 meanSig, varianceSig;
 
     currentMax = 0.0;
     jMax = iMax = 0;
@@ -2604,6 +2605,15 @@ void GetHoughCandidates_threshold(LALStatus            *status,
     thisCandidate.dAlpha = 3.0 * patchSizeX / ((REAL8)xSide);
     thisCandidate.dDelta = 3.0 * patchSizeY / ((REAL8)ySide);  
 
+    TRY( LALStereo2SkyLocation (status->statusPtr, &sourceLocationBest, 
+				jMax, iMax, patch, parDem), status);
+
+    thisCandidate.alphaBest = sourceLocationBest.alpha + LAL_PI;
+    thisCandidate.deltaBest = sourceLocationBest.delta;
+    
+    TRY( LALHoughmapMeanVariance( status->statusPtr, &meanSig, &varianceSig, ht), status);
+    thisCandidate.meanSig = meanSig;
+    thisCandidate.varianceSig = varianceSig;
 	    
     /* realloc list if necessary */
     if (numCandidates >= out->length) {
@@ -3170,6 +3180,11 @@ void GetSemiCohToplist(LALStatus            *status,
     line.Delta = in->list[k].delta;
     line.f1dot = in->list[k].fdot;
     line.HoughFStat = (in->list[k].significance - meanN)/sigmaN;
+
+    line.AlphaBest = in->list[k].alphaBest;
+    line.DeltaBest = in->list[k].deltaBest;
+    line.MeanSig = (in->list[k].meanSig - meanN) / sigmaN;
+    line.VarianceSig = in->list[k].varianceSig / sigmaN;
 
     debug = INSERT_INTO_HOUGHFSTAT_TOPLIST( list, line);
 
