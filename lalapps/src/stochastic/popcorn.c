@@ -83,6 +83,7 @@ static int resample_flag = 0;
 static int test_flag = 0;
 static int montecarlo_flag = 0;
 static int condor_flag = 0;
+static int post_flag = 0;
 
 UINT4 job=1;
 UINT4 Npt =1000000;
@@ -173,7 +174,8 @@ INT4 main (INT4 argc, CHAR *argv[])
    if(condor_flag){
     startTime=startTime+job*duration;
 	if(stopTime>startTime+duration)
-	  stopTime=startTime+duration;
+	  stopTime=
+	  startTime+duration;
    }
    else
     duration = stopTime-startTime;
@@ -231,7 +233,7 @@ INT4 main (INT4 argc, CHAR *argv[])
   }
   
   /* open output file */
-  LALSnprintf(fileName, LALNameLength,"stat_%d.dat",job);
+  LALSnprintf(fileName, LALNameLength,"output/stat_%d.dat",job);
   pf3 = fopen(fileName,"w");
   //pf3=fopen("p1b.dat","a");
   /*
@@ -478,12 +480,14 @@ INT4 main (INT4 argc, CHAR *argv[])
 
  muestMean=muestMean+muest;
  sigmaestMean=sigmaestMean+sigmaest;
+ varmeanestMean=varmeanestMean+varmeanest;
  sigma1estMean=sigma1estMean+sigma1est;
  sigma2estMean=sigma2estMean+sigma2est;
  }  
  
  /** postprocessing **/
- fprintf(stdout,"muest=%f sigmaest=%f mean(varest)=%f sigma1est=%f sigma2est=%f\n",muestMean/nsegment,sigmaestMean/nsegment,varmeanest/nsegment,sigma1estMean/nsegment,sigma2estMean/nsegment);
+ if(post_flag)
+  fprintf(stdout,"muest=%f sigmaest=%f mean(varest)=%f sigma1est=%f sigma2est=%f\n",muestMean/nsegment,sigmaestMean/nsegment,varmeanestMean/nsegment,sigma1estMean/nsegment,sigma2estMean/nsegment);
  
  /** cleanup **/
  if(verbose_flag){
@@ -576,8 +580,9 @@ void parseOptions(INT4 argc, CHAR *argv[])
 	  {"frame", no_argument, &frame_flag, 1},
 	  {"resample", no_argument, &resample_flag, 1},
 	  {"test", no_argument, &test_flag, 1},
-	  {"montecarlo", no_argument, &test_flag, 1},
+	  {"montecarlo", no_argument, &montecarlo_flag, 1},
 	  {"condor", no_argument, &test_flag, 1},
+	   {"post", no_argument, &montecarlo_flag, 1},
       /* options that don't set a flag */
       {"help", no_argument, 0, 'h'},
 	  {"job-number", required_argument, 0, 'n'},
@@ -744,6 +749,7 @@ void displayUsage(INT4 exitcode)
   fprintf(stderr, " --resample            resample data\n");
   fprintf(stderr, " --montecarlo          inject gw signal\n");
   fprintf(stderr, " --condor              run on cluster\n");
+  fprintf(stderr, " --post                crude post processing\n");
   fprintf(stderr, " -n                    job number\n");
   fprintf(stderr, " -t                    GPS start time\n");
   fprintf(stderr, " -T                    GPS stop time\n");
