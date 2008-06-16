@@ -702,8 +702,8 @@ int ComputeNoise(struct CommandLineArgsTag CLA, int n)
 	
         ratio_r *= sqrt((2.0*hoft.deltaT/(REAL4)hoft.data->length) / (2.0*derr.deltaT/(REAL4)derr.data->length)); 
         ratio_i *= sqrt((2.0*hoft.deltaT/(REAL4)hoft.data->length) / (2.0*derr.deltaT/(REAL4)derr.data->length)); 
-	var_r *= 2.0*hoft.deltaT/(REAL4)hoft.data->length / 2.0*derr.deltaT/(REAL4)derr.data->length; 
-	var_i *= 2.0*hoft.deltaT/(REAL4)hoft.data->length / 2.0*derr.deltaT/(REAL4)derr.data->length; 
+	var_r *= (2.0*hoft.deltaT/(REAL4)hoft.data->length) / (2.0*derr.deltaT/(REAL4)derr.data->length); 
+	var_i *= (2.0*hoft.deltaT/(REAL4)hoft.data->length) / (2.0*derr.deltaT/(REAL4)derr.data->length); 
 
 
 	var_r = var_r - pow(ratio_r,2.0);
