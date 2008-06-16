@@ -81,10 +81,14 @@ static int ascii_flag = 0;
 static int frame_flag = 0;
 static int resample_flag = 0;
 static int test_flag = 0;
+static int montecarlo_flag = 0;
+static int condor_flag = 0;
 
+UINT4 job=1;
 UINT4 Npt =1000000;
 UINT8 startTime = 700000000;
 UINT8 stopTime = 700000150;
+UINT4 duration = 10000;
 CHAR frameCache1 [200]= "H1.cache";
 CHAR frameCache2[200] = "H2.cache";
 CHAR channel1[LALNameLength]= "H1:STRAIN";
@@ -92,8 +96,8 @@ CHAR channel2[LALNameLength]= "H2:STRAIN";
 UINT4 sampleRate = 16384;
 UINT4 resampleRate = 1024;
 
-REAL8 mu = 0.5;
-REAL8 sigma = 1.;
+REAL8 mu = 0.2;
+REAL8 sigma = 0.8;
 REAL8 sigma1 = 1.;
 REAL8 sigma2 = 1.;
 REAL8 mu0 = 0.1;
@@ -125,11 +129,12 @@ INT4 main (INT4 argc, CHAR *argv[])
   double pmu[10];
   double var1, var2, sigmaref;
   double muest, sigmaest, varest, varmeanest, sigma1est, sigma2est;
+  double muestMean, sigmaestMean, varmeanestMean, sigma1estMean, sigma2estMean;
   double value;
   
   /* time series */
   UINT4 resampleFactor, Npt0;
-  UINT4 duration, seglength, nsegment=1;
+  UINT4 seglength, nsegment=1;
   REAL8TimeSeries n1, n2;
   REAL4TimeSeries n1Temp, n2Temp;
 
@@ -141,7 +146,9 @@ INT4 main (INT4 argc, CHAR *argv[])
   ResampleTSParams resampleParams;
   
   FILE *pf1,*pf2,*pf3;
-  
+  /* output file name */
+  CHAR fileName[LALNameLength];
+
   int status;
   static LALStatus lalstatus;
   
@@ -162,7 +169,14 @@ INT4 main (INT4 argc, CHAR *argv[])
   }
   
    /* set duration and number of jobs */
-   duration = stopTime-startTime;
+   
+   if(condor_flag){
+    startTime=startTime+job*duration;
+	if(stopTime>startTime+duration)
+	  stopTime=startTime+duration;
+   }
+   else
+    duration = stopTime-startTime;
    if(resample_flag){
     seglength=(int)Npt/resampleRate;
     nsegment= (duration-2)/seglength;
@@ -217,17 +231,19 @@ INT4 main (INT4 argc, CHAR *argv[])
   }
   
   /* open output file */
-  pf3=fopen("popcorn.txt","a");
-  
+  LALSnprintf(fileName, LALNameLength,"stat_%d.dat",job);
+  pf3 = fopen(fileName,"w");
+  //pf3=fopen("p1b.dat","a");
+  /*
   fprintf(pf3,"number of segments=%d length of segments=%d s data point per segment=%d\n",nsegment,seglength,Npt);
   if(resample_flag){
    fprintf(pf3,"sampling rate=%d\n",resampleRate);}
   else{
    fprintf(pf3,"sampling rate=%d\n",sampleRate);}
   fprintf(pf3,"mu=%f sigma=%f\n",mu,sigma);
-  
+  */
   /*** loop over segments ***/
-  
+  muestMean=0.;sigmaestMean=0.;varmeanestMean=0.;sigma1estMean=0.;sigma2estMean=0.;
   for(j=0;j<nsegment;j++){
 
    /* allocate memory for time series */	 
@@ -368,19 +384,22 @@ INT4 main (INT4 argc, CHAR *argv[])
    	
   v1=0.;v2=0.;	
   for (i = 0; i < Npt; i++) {
-   n = gsl_ran_poisson (rrgn,mu);           
-   if(n>0){
-	varn = var*(double)n;                                          
-	sigman = sqrt(varn);        
-	h->data[i] = gsl_ran_gaussian (rrgn,sigman);
+   if(montecarlo_flag){
+    n = gsl_ran_poisson (rrgn,mu);           
+    if(n>0){
+     varn = var*(double)n;                                          
+     sigman = sqrt(varn);        
+     h->data[i] = gsl_ran_gaussian (rrgn,sigman);
+    }
    }
+   
    s1->data[i] = n1.data->data[i]+h->data[i];                                 
    s2->data[i] = n2.data->data[i]+h->data[i];
    v1=v1+s1->data[i]*s1->data[i];
    v2=v2+s2->data[i]*s2->data[i];                               
   }
   v1=v1/Npt; v2=v2/Npt;
-	
+ 
   /** maximize likelihood function for parameter estimation **/ 
   /* Nelder-Mead Simplex algorithm */
   
@@ -426,7 +445,7 @@ INT4 main (INT4 argc, CHAR *argv[])
  sigmaest=gsl_vector_get (s->x, 1);
  sigma1est=gsl_vector_get (s->x, 2);
  sigma2est=gsl_vector_get (s->x, 3);
- 
+
  gsl_multimin_fminimizer_free (s);
  gsl_vector_free(x);
  gsl_vector_free(ss);
@@ -445,8 +464,7 @@ INT4 main (INT4 argc, CHAR *argv[])
  varmeanest=0.; 
  for(i=1;i<10;i++){
   varmeanest=varmeanest+pmu[i]*varest*i;}
-  
- 
+   
  if(verbose_flag){
   fprintf(stdout,"T=%d:",gpsStartTime.gpsSeconds);
   fprintf(stdout,"mu=%f sigma=%f mean(var)=%f sigma1=%f sigma2=%f\n",mu,sigma,varmean,sigma1,sigma2);
@@ -454,25 +472,33 @@ INT4 main (INT4 argc, CHAR *argv[])
   fprintf(stdout,"snr=%f\n",snr);
   fprintf(stdout,"\n");}
   
- fprintf(pf3,"T=%d:",gpsStartTime.gpsSeconds);
- fprintf(pf3,"mean(var)=%f sigma1=%f sigma2=%f\n",varmean,sigma1,sigma2);
- fprintf(pf3,"muest=%f sigmaest=%f varmeanest=%f sigma1est=%f sigma2est=%f\n",muest,sigmaest,varmeanest,sigma1est,sigma2est);
- fprintf(pf3,"snr=%f\n",snr);
+ fprintf(pf3,"%d ",gpsStartTime.gpsSeconds);
+ fprintf(pf3,"%f %f ",sigma1,sigma2);
+ fprintf(pf3,"%f %f %f %f %f\n",muest,sigmaest,varmeanest,sigma1est,sigma2est);
 
+ muestMean=muestMean+muest;
+ sigmaestMean=sigmaestMean+sigmaest;
+ sigma1estMean=sigma1estMean+sigma1est;
+ sigma2estMean=sigma2estMean+sigma2est;
  }  
-  
+ 
+ /** postprocessing **/
+ fprintf(stdout,"muest=%f sigmaest=%f mean(varest)=%f sigma1est=%f sigma2est=%f\n",muestMean/nsegment,sigmaestMean/nsegment,varmeanest/nsegment,sigma1estMean/nsegment,sigma2estMean/nsegment);
+ 
  /** cleanup **/
  if(verbose_flag){
   fprintf(stdout,"cleanup and exit\n");}
-  
- 
+
  gsl_rng_free (rrgn);
+ if(ascii_flag){ 
+  fclose(pf1); fclose(pf2);}
+ fclose(pf3);
  
- fclose(pf1); fclose(pf2); fclose(pf3);
- 
+ if(frame_flag){
  /* close frame cache */
  LALFrClose(&lalstatus, &frStream1);
  LALFrClose(&lalstatus, &frStream2);
+ }
  
  return 0;
 }
@@ -493,7 +519,7 @@ INT4 main (INT4 argc, CHAR *argv[])
   psigma1=gsl_vector_get(x,2);
   psigma2=gsl_vector_get(x,3);
 
-  if((pmu>0.)&&(pmu<1.)&&(psigma>0.)&&(psigma1>0.)&&(psigma2>0.)){
+  if((pmu>0.)&&(psigma>0.)&&(psigma1>0.)&&(psigma2>0.)){
 
    pv=psigma*psigma;
    pv1=psigma1*psigma1;
@@ -550,10 +576,14 @@ void parseOptions(INT4 argc, CHAR *argv[])
 	  {"frame", no_argument, &frame_flag, 1},
 	  {"resample", no_argument, &resample_flag, 1},
 	  {"test", no_argument, &test_flag, 1},
+	  {"montecarlo", no_argument, &test_flag, 1},
+	  {"condor", no_argument, &test_flag, 1},
       /* options that don't set a flag */
       {"help", no_argument, 0, 'h'},
+	  {"job-number", required_argument, 0, 'n'},
       {"gps-start-time", required_argument, 0, 't'},
 	  {"gps-stop-time", required_argument, 0, 'T'},
+	  {"duration", required_argument, 0, 'l'},
       {"number-points", required_argument, 0, 'N'},
 	  {"sampleRate", required_argument, 0, 'r'},
       {"resampleRate", required_argument, 0, 'R'},
@@ -575,7 +605,7 @@ void parseOptions(INT4 argc, CHAR *argv[])
     int option_index = 0;
 
     c = getopt_long(argc, argv, 
-                  "ht:T:N:r:R:m:M:s:S:g:G:c:C:d:D:v",
+                  "hn:t:T:l:N:r:R:m:M:s:S:g:G:c:C:d:D:v",
  		   long_options, &option_index);
 
     if (c == -1)
@@ -600,7 +630,12 @@ void parseOptions(INT4 argc, CHAR *argv[])
                /* HELP!!! */
                displayUsage(0);
                break;
-
+			   
+      case 'n':
+			   /* jub number */
+	           job = atoi(optarg);
+	           break;
+			   
       case 't':
 			   /* start time */
 	           startTime = atoi(optarg);
@@ -609,6 +644,11 @@ void parseOptions(INT4 argc, CHAR *argv[])
 	  case 'T':
 			   /* stop time */
 	           stopTime = atoi(optarg);
+	           break;
+			   
+	  case 'l':
+			   /* duration if condor flag */
+	           duration = atoi(optarg);
 	           break;
 
       case 'N':
@@ -702,8 +742,12 @@ void displayUsage(INT4 exitcode)
   fprintf(stderr, " --ascii               read data from ascii files\n");
   fprintf(stderr, " --gaussian            simulate gaussian noise\n");
   fprintf(stderr, " --resample            resample data\n");
+  fprintf(stderr, " --montecarlo          inject gw signal\n");
+  fprintf(stderr, " --condor              run on cluster\n");
+  fprintf(stderr, " -n                    job number\n");
   fprintf(stderr, " -t                    GPS start time\n");
   fprintf(stderr, " -T                    GPS stop time\n");
+  fprintf(stderr, " -l                    length of data set\n");
   fprintf(stderr, " -N                    number of points per data segment\n");
   fprintf(stderr, " -r                    sampleRate\n");
   fprintf(stderr, " -R                    resampleRate\n");
