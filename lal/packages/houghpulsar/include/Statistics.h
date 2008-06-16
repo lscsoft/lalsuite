@@ -176,6 +176,11 @@ void LALHoughHistogram(LALStatus       *status,
 		       UINT8Vector     *out,  /**< histogram */ 
 		       HOUGHMapTotal   *in);  /**< hough map*/
 
+void LALHoughmapMeanVariance( LALStatus     *status,
+			      REAL8         *mean,
+			      REAL8         *variance,
+			      HOUGHMapTotal *in);
+
 /* ****************************************************** */
 
 #ifdef  __cplusplus

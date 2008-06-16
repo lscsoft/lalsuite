@@ -191,6 +191,59 @@ void LALHoughStatistics( LALStatus     *status,
 
 
 
+void LALHoughmapMeanVariance( LALStatus     *status,
+			      REAL8         *mean,
+			      REAL8         *variance,
+			      HOUGHMapTotal *in)
+{ /*-------------------------------------------------</lalVerbatim> */
+
+  INT4   i,j, xSide, ySide, mObsCoh, nPixel; 
+  REAL8  sum, tempVariance, tempMean, ep, temp;
+  /*--------------------------------------------------------------- */
+	
+  INITSTATUS (status, "LALHoughmapMeanVariance", STATISTICSC);
+  ATTATCHSTATUSPTR (status);
+
+
+  xSide = in->xSide;
+  ySide = in->ySide;
+  nPixel = 1.0 * xSide * ySide;
+
+
+  sum = 0.0;
+  /* loop over hough map and calculate statistics */
+  for (i = 0; i < ySide; i++){
+    for (j = 0; j < xSide; j++){
+      /* read the current number count */
+      sum += in->map[i*xSide + j];
+    }
+  }
+
+  tempMean = sum/nPixel;
+
+  tempVariance = 0.0;
+  ep = 0.0;
+  for (i = 0; i < ySide; i++){
+    for (j = 0; j < xSide; j++){
+      temp = (REAL4) (in->map[i*xSide + j]) - tempMean;
+      ep += temp;
+      tempVariance += temp*temp;
+    }
+  }
+  /* the ep is supposed to reduce the rounding off errors */ 
+  tempVariance = (tempVariance - ep*ep/nPixel)/(nPixel-1);  
+
+  *mean = tempMean;
+  *variance = tempVariance;
+
+  DETATCHSTATUSPTR (status);
+	
+  /* normal exit */	
+  RETURN (status);
+}
+
+
+
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
 /** given a total hough map, this function produces a histogram of
    the number counts */
