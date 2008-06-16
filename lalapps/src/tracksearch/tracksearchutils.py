@@ -602,6 +602,7 @@ class candidateList:
 
     def __init__(self,verboseMode=False):
         self.verboseMode=verboseMode
+        self.spinnerVerboseMode=verboseMode
         self.totalCount=int(0)
         self.filename=list()
         self.numFbins=int(-1)
@@ -894,7 +895,7 @@ class candidateList:
         line=str(' ')
         curveCount=0
         try:
-            spinner=progressSpinner(self.verboseMode)
+            spinner=progressSpinner(self.spinnerVerboseMode)
             spinner.setTag('Reading')
             while line:
                 line=input_fp.readline()
@@ -965,7 +966,7 @@ class candidateList:
         output_fp.write(textLine)
         output_fp.write('# Legend: Col,Row;gpsSec,gpsNanoSec,Freq,depth\n')
         output_fp.write('#\n')
-        spinner=progressSpinner(self.verboseMode)
+        spinner=progressSpinner(self.spinnerVerboseMode)
         spinner.setTag('Writing')
         for entry in self.curves:
             CurveId,Length,Power=entry.getKurveHeader()
@@ -1926,7 +1927,7 @@ class candidateList:
             print "Warning no information to threshold."
             return self
         #If verbose call setup spinner
-        spinner=progressSpinner(self.verboseMode)
+        spinner=progressSpinner(self.spinnerVerboseMode)
         spinner.setTag('Stats')
         #There is no error checking.  We rely on eval to do this for us!
         testExp=expressionString
@@ -2201,7 +2202,7 @@ class candidateList:
         if timescale.lower().__contains__("day"):
             conversionFactor=60*60*24
             timeLabel="(days)"
-        spinner=progressSpinner(self.verboseMode)
+        spinner=progressSpinner(self.spinnerVerboseMode)
         spinner.setTag('Plotting')
         elementIPlist=[]
         #Cycle through all trigger IP values to set color scaling
@@ -2308,6 +2309,7 @@ class candidateList:
             sys.stderr.write("Error setting colorbar! Sorry, figure will have no colorbar.\n")
             sys.stderr.write("Using matlibplot version :"+pylab.matplotlib.__version__+"\n")
         pylab.grid(True)
+        pylab.axis('tight')
         spinner.closeSpinner()
     # END  __triggerLinePlotPrimative__
 

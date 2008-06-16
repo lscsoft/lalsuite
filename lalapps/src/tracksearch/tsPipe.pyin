@@ -166,7 +166,7 @@ else:
     setSize=int(cp.get('layerconfig','layer1SetSize'))
     timeScale=float(cp.get('layerconfig','layer1TimeScale'))
     minSize=setSize*timeScale
-    print "Building pipe with rubber to block size."
+    print "Building pipe with rubber block size option enabled."
     print "Minimum duration block: "+str(minSize)
     print "Maximum duration block: "+str(dataBlockSize)
     for opt in cp.options('layerconfig'):

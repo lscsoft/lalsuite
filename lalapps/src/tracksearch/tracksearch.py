@@ -229,7 +229,11 @@ class tracksearchCheckIniFile:
                     LoTS=float(self.iniOpts.get('layerconfig','layer1TimeScale'))
                 else:
                     LoTS=0
-                if (((LoTS*sampleRate)/2)<SAP):
+                if self.iniOpts.has_option('layerconfig','layer1SetSize'):
+                    LOSS=float(self.iniOpts.get('layerconfig','layer1SetSize'))
+                else:
+                    LOSS=0
+                if (((LOSS*LoTS*sampleRate)/2)<SAP):
                     trySAP=int(((LoTS*sampleRate)/2.0)*0.05)
                     self.errList.append('It appears that smooth_average_spectrum option is inconsistent! Try this value '+str(trySAP)+'. One rule of thumb is: ((fs*dT)/2)*0.05')
                 

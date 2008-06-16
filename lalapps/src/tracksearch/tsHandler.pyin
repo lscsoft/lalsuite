@@ -243,6 +243,10 @@ parser.add_option("-v","--verbose",dest="verbose",
                   default=False,
                   action="store_true",
                   help="Sets up the verbose features. Prints diagnostic messages and progress meters where appropriate.")
+parser.add_option("-V","--mute-spinner",dest="muteSpinner",
+                  default=False,
+                  action="store_true",
+                  help="Setting this option leaves all diagnostic messages, if they are set.  It turns off the progress meter.")
 parser.add_option("-n","--bin-count",
                   default=50,
                   dest="histCol",
@@ -287,6 +291,7 @@ outfile=str(options.outfile)
 dumpSummaryScreen=bool(options.dumpSummaryScreen)
 dumpSummaryDisk=bool(options.dumpSummaryDisk)
 verboseSwitch=bool(options.verbose)
+muteSpinner=bool(options.muteSpinner)
 measureStats=str(options.stats)
 glue=bool(options.glue)
 timescale=str(options.timescale).lower()
@@ -343,6 +348,8 @@ elif (clobberFilename != '') and (canList.__len__() == 1):
     newCandidateClobberObject=buildCandidateGlob(clobberList,verboseSwitch)
     #Create candidate list to clobber.
     clobberVictim=candidateList(verboseSwitch)
+    if muteSpinner:
+        clobberVictim.spinnerVerboseMode=False
     clobberVictim.__loadfileQuick__(canList[0])
     #Clobber the Victim
     newClobberedList=clobberVictim.clusterClobberWith(newCandidateClobberObject)
@@ -366,6 +373,8 @@ elif (linePlot and not createHistogram and (canList.__len__() >=1) and ((graph2s
         graph2file='AUTO'
     for entry in canList:
         candidateObject=candidateList(verboseSwitch)
+        if muteSpinner:
+            candidateObject.spinnerVerboseMode=False
         candidateObject.__loadfileQuick__(entry)
         wrapperGraphTriggers(candidateObject)
         del candidateObject
@@ -375,6 +384,8 @@ elif (createHistogram and (canList.__len__() >=1)):
         graph2file='AUTO'
     for entry in canList:
         candidateObject=candidateList(verboseSwitch)
+        if muteSpinner:
+            candidateObject.spinnerVerboseMode=False
         candidateObject.__propertyunpickler__(entry)
         wrapperShowHistogram(candidateObject)
         if linePlot:
@@ -386,6 +397,8 @@ elif ((expThreshold != "") and (canList.__len__() >=1)):
     #Carry out thresholding on all entries in canList
     for entry in canList:
         candidateObject=candidateList(verboseSwitch)
+        if muteSpinner:
+            candidateObject.spinnerVerboseMode=False        
         candidateObject.__loadfileQuick__(entry)
         #Build Threshold list
         if expThreshold.__contains__('"'):
@@ -431,6 +444,8 @@ elif ((expThreshold != "") and (canList.__len__() >=1)):
 elif ((canList.__len__() >=1) and (dumpSummaryDisk or glitchdb) and (expThreshold =="") ):
     for entry in canList:
         candidateObject=candidateList(verboseSwitch)
+        if muteSpinner:
+            candidateObject.spinnerVerboseMode=False        
         if verboseSwitch:
             print "Processing:",entry
         candidateObject.__loadfileQuick__(entry)
@@ -447,6 +462,8 @@ elif ((canList.__len__() >=1) and (dumpSummaryDisk or glitchdb) and (expThreshol
 elif ((canList.__len__() >=1) and dumpSummaryScreen):
     for entry in canList:
         candidateObject=candidateList(verboseSwitch)
+        if muteSpinner:
+            candidateObject.spinnerVerboseMode=False
         candidateObject.__loadfileQuick__(entry)
         candidateObject.printSummary()
         del entry

@@ -98,15 +98,15 @@ int main (int argc, char *argv[])
   /* End Global Variable Declarations */
 
   /* SET LAL DEBUG STUFF */
-  /*set_debug_level("ERROR | WARNING | MEMDBG");*/
-    set_debug_level("ERROR | WARNING");
-    memset(&status, 0, sizeof(status));
+  set_debug_level("ERROR");
+  /*  set_debug_level("ERROR | WARNING | MEMDBG");*/
+  /* set_debug_level("ERROR | WARNING | TRACE ");*/
+  memset(&status, 0, sizeof(status));
   /*lal_errhandler = LAL_ERR_EXIT;*/
   lal_errhandler = LAL_ERR_ABRT;
   /*lal_errhandler = LAL_ERR_RTRN;*/
   /*  set_debug_level("ERROR | WARNING | MEMDBG");*/
-  /*  set_debug_level("ERROR | WARNING ");*/
-  /*set_debug_level("ALLDBG");*/
+  /* set_debug_level("ALLDBG");*/
 
   /*
    * Initialize status structure 
@@ -188,6 +188,11 @@ int main (int argc, char *argv[])
   /* 
    * Done freeing for search params struct memory
    */
+  /* 
+   * Added CVT Only as hack until memory leak found, seems related to
+   * segmentation not sure.
+   */
+
   LALCheckMemoryLeaks();
   return 0;
 }
@@ -3315,7 +3320,7 @@ void LALappsTracksearchRemoveHarmonicsFromSegments(LALStatus       *status,
 /*
  * Removing harmonic lines from data
  */
-void LALappsTracksearchRemoveHarmonics( LALStatus             *status,
+void LALappsTracksearchRemoveHarmonics( LALStatus             *statusX,
 				        REAL4TimeSeries       *dataSet,
 				        TSSearchParams         params)
 {
@@ -3337,6 +3342,9 @@ void LALappsTracksearchRemoveHarmonics( LALStatus             *status,
   UINT4                    l=0;
   const LIGOTimeGPS        gps_zero = LIGOTIMEGPSZERO;
   UINT4                    planLength=0;
+  int                      code=0;
+  LALStatus                status=blank_status;
+
 
   if (params.numLinesToRemove > 0)
     {
@@ -3367,7 +3375,7 @@ void LALappsTracksearchRemoveHarmonics( LALStatus             *status,
 		}
 	      if (params.verbosity > quiet)
 		{
-		  fprintf(stdout,"Reference %f, Max Harmonics to remove %i\n",tmpLineFreq,tmpHarmonicCount);
+		  fprintf(stdout,"Reference %f, Max Harmonics to remove %i ",tmpLineFreq,tmpHarmonicCount);
 		}
 	      /* Setup both T and F domain input data structures */
 	      inputTVectorCLR=(REAL4TVectorCLR*)XLALMalloc(sizeof(REAL4TVectorCLR));
@@ -3375,7 +3383,7 @@ void LALappsTracksearchRemoveHarmonics( LALStatus             *status,
   
 	      /* Take data to F domain */
 	      planLength=dataSet->data->length;
-	      
+
 	      tmpReferenceSignal=XLALCreateCOMPLEX8Vector(planLength);
 
 	      referenceSignal=XLALCreateCOMPLEX8Vector(planLength);
@@ -3390,18 +3398,17 @@ void LALappsTracksearchRemoveHarmonics( LALStatus             *status,
 
 	      forwardPlan=XLALCreateForwardREAL4FFTPlan(planLength,0);
   
-	      LAL_CALL( LALForwardREAL4FFT(status,
+	      LAL_CALL( LALForwardREAL4FFT(&status,
 					   signalFFT_harmonic->data,
 					   dataSet->data,
 					   forwardPlan),
-			status);
+			&status);
 
-
-	      LAL_CALL( LALRealPowerSpectrum(status,
+	      code=LAL_CALL( LALRealPowerSpectrum(&status,
 					     inputPSDVector,
 					     dataSet->data,
 					     forwardPlan),
-			status);
+			&status);
 	      /*Assign CLR data structures*/
 	      /* The  CLR Time Vector  */
 	      inputTVectorCLR->length = dataSet->data->length;
@@ -3421,6 +3428,7 @@ void LALappsTracksearchRemoveHarmonics( LALStatus             *status,
 		  tmpReferenceSignal->data[i].re=0;
 		  tmpReferenceSignal->data[i].im=0;
 		}
+
 	      harmonicIndex=XLALCreateINT4Vector(tmpHarmonicCount);
 
 	      harmonicIndexCompliment=XLALCreateINT4Vector(3*tmpHarmonicCount);
@@ -3431,20 +3439,27 @@ void LALappsTracksearchRemoveHarmonics( LALStatus             *status,
 	      inputTVectorCLR->fLine = tmpLineFreq;
 	      inputFVectorCLR->fLine = tmpLineFreq;
 
-	      LAL_CALL( LALHarmonicFinder(status,
+	      code=LAL_CALL( LALHarmonicFinder(&status,
 					  harmonicIndexCompliment,
 					  inputFVectorCLR,
 					  harmonicIndex),
-			status);
+			&status);
+	      fprintf(stdout,"ERRCODE HarmonicFinder: %i\n",code);
+	      fprintf(stdout,"Error with  LALHarmonicFinder\n");
+	      fprintf(stdout,"ErrCode = %i\n",code);
+	      fprintf(stdout,"ErrMsg  = %s\n",status.statusDescription);
 
-	      LAL_CALL( LALRefInterference(status,
+	      code=LAL_CALL( LALRefInterference(&status,
 					   tmpReferenceSignal,
 					   signalFFT_harmonic->data,
 					   harmonicIndexCompliment),
-			status);
+			&status);
 
-
-
+	      fprintf(stdout,"ERRCODE Interference: %i\n",code);
+	      fprintf(stdout,"Error with  LALRefInterference\n");
+	      fprintf(stdout,"ErrCode = %i\n",code);
+	      fprintf(stdout,"ErrMsg  = %s\n",status.statusDescription);
+	      
 	      if (harmonicIndexCompliment)
 		  XLALDestroyINT4Vector(harmonicIndexCompliment);
 
@@ -3466,17 +3481,16 @@ void LALappsTracksearchRemoveHarmonics( LALStatus             *status,
 	      /* Clean up input time series with global reference signal */
 	      cleanData=XLALCreateREAL4Vector(dataSet->data->length);
   
-	      LAL_CALL( LALCleanAll(status,
+	      LAL_CALL( LALCleanAll(&status,
 				    cleanData,
 				    referenceSignal,
 				    inputTVectorCLR),
-			status);
+			&status);
 
 	      /*Copy the clean data back into the variable dataSet */
 	      for (j=0;j<dataSet->data->length;j++)
 		dataSet->data->data[j]=cleanData->data[j];
   
-
 	      if (cleanData)
 		XLALDestroyREAL4Vector(cleanData);
 
@@ -3519,7 +3533,7 @@ void LALappsTracksearchRemoveHarmonics( LALStatus             *status,
 /*
  * Perform software injections if data is available
  */
-void LALappsTrackSearchPerformInjection( LALStatus       *status,
+void LALappsTrackSearchPerformInjection(LALStatus        *status,
 					REAL4TimeSeries  *dataSet,
 					REAL4TimeSeries  *injectSet,
 					TSSearchParams     params)

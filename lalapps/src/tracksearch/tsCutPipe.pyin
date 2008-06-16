@@ -146,12 +146,12 @@ if not (not buildFigures and not plotTriggers):
     else:
         if not plotTriggers:
             cp.remove_option('graphicsthreshold','line-plot')
-            cp.remove_option('graphicsthreshold','print')
             cp.remove_option('graphicsthreshold','timescale')
         if not buildFigures:
             cp.remove_option('graphicsthreshold','histogram')
             cp.remove_option('graphicsthreshold','trigger_property')
-
+        if not plotTriggers and not buildFigures:
+            cp.remove_option('graphicsthreshold','print')
         myJob.add_ini_opts(cp,'graphicsthreshold')
 
 #Add options for filename to process
