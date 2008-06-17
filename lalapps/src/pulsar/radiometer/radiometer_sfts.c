@@ -35,8 +35,8 @@ RCSID( "$Id$");
 extern int lalDebugLevel;
 
 
-#define EARTHEPHEMERIS "${LAL_{PREFIX}/share/lal/earth05-09.dat"
-#define SUNEPHEMERIS "${LAL_PREFIX}/lal/share/lal/sun05-09.dat"
+#define EARTHEPHEMERIS "/Users/artax/work/opt/lscsoft/lal/share/lal/earth05-09.dat"
+#define SUNEPHEMERIS "/Users/artax/work/opt/lscsoft/lal/share/lal/sun05-09.dat"
 
 #define F0 100
 #define FBAND 1
