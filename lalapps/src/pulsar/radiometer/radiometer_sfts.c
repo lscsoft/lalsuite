@@ -35,8 +35,8 @@ RCSID( "$Id$");
 extern int lalDebugLevel;
 
 
-#define EARTHEPHEMERIS "/Users/artax/work/opt/lscsoft/lal/share/lal/earth05-09.dat"
-#define SUNEPHEMERIS "/Users/artax/work/opt/lscsoft/lal/share/lal/sun05-09.dat"
+#define EARTHEPHEMERIS "${LAL_{PREFIX}/share/lal/earth05-09.dat"
+#define SUNEPHEMERIS "${LAL_PREFIX}/lal/share/lal/sun05-09.dat"
 
 #define F0 100
 #define FBAND 1
@@ -124,7 +124,7 @@ int main(int argc, char *argv[]){
    REAL8    uvar_startTime, uvar_endTime;
    REAL8    uvar_f0, uvar_fdot, uvar_fBand;
    REAL8    uvar_dAlpha, uvar_dDelta; /* resolution for isotropic sky-grid */
-   REAL8    uvar_minlag;
+   REAL8    uvar_maxlag;
    REAL8    uvar_psi;
    REAL8    uvar_refTime;
    REAL8    uvar_cosi;
@@ -147,7 +147,7 @@ int main(int argc, char *argv[]){
    lalDebugLevel = 0;  /* LALDebugLevel must be called before anything else */
    LAL_CALL( LALGetDebugLevel( &status, argc, argv, 'd'), &status);
    
-   uvar_minlag = 0;
+   uvar_maxlag = 0;
  
    uvar_help = FALSE;
    uvar_blocksRngMed = BLOCKSRNGMED;
@@ -193,7 +193,7 @@ int main(int argc, char *argv[]){
    LAL_CALL( LALRegisterSTRINGUserVar( &status, "earthEphemeris", 'E', UVAR_OPTIONAL, "Earth Ephemeris file",  &uvar_earthEphemeris),  &status);
    LAL_CALL( LALRegisterSTRINGUserVar( &status, "sunEphemeris",   'S', UVAR_OPTIONAL, "Sun Ephemeris file", &uvar_sunEphemeris), &status);
    LAL_CALL( LALRegisterSTRINGUserVar( &status, "sftDir",         'D', UVAR_REQUIRED, "SFT filename pattern", &uvar_sftDir), &status);
-   LAL_CALL( LALRegisterREALUserVar(   &status, "minlag",          0,  UVAR_OPTIONAL, "Miniimum time lag for correlating sfts", &uvar_minlag), &status);
+   LAL_CALL( LALRegisterREALUserVar(   &status, "maxlag",          0,  UVAR_OPTIONAL, "Maximum time lag for correlating sfts", &uvar_maxlag), &status);
    LAL_CALL( LALRegisterSTRINGUserVar( &status, "dirnameOut",     'o', UVAR_OPTIONAL, "Output directory", &uvar_dirnameOut), &status);
    LAL_CALL( LALRegisterSTRINGUserVar( &status, "fbasenameOut",    0,  UVAR_OPTIONAL, "Output file basename", &uvar_fbasenameOut), &status);
    LAL_CALL( LALRegisterINTUserVar(    &status, "blocksRngMed",    0,  UVAR_OPTIONAL, "Running Median block size", &uvar_blocksRngMed), &status);
@@ -219,7 +219,8 @@ int main(int argc, char *argv[]){
    }
 
    /* open output file */
-   if ((fp = fopen("Radiometer_out.txt", "w")) == NULL) {
+   strcpy(uvar_dirnameOut, "Radiometer_out.txt");
+   if ((fp = fopen(uvar_dirnameOut, "w")) == NULL) {
     fprintf(stderr, "error opening output file\n");
     exit(1);
    }
@@ -365,7 +366,7 @@ int main(int argc, char *argv[]){
 	
     }
 
-    pairParams.lag = uvar_minlag;  
+    pairParams.lag = uvar_maxlag;  
 
     /* create sft pair indices */
     LAL_CALL ( CreateSFTPairsIndicesFrom2SFTvectors( &status, &sftPairIndexList, inputSFTs, &pairParams, uvar_detChoice), &status);
