@@ -219,7 +219,8 @@ int main(int argc, char *argv[]){
    }
 
    /* open output file */
-   strcpy(uvar_dirnameOut, "Radiometer_out.txt");
+   strcat(uvar_dirnameOut, "Radiometer_out.txt");
+
    if ((fp = fopen(uvar_dirnameOut, "w")) == NULL) {
     fprintf(stderr, "error opening output file\n");
     exit(1);
