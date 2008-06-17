@@ -581,8 +581,8 @@ void parseOptions(INT4 argc, CHAR *argv[])
 	  {"resample", no_argument, &resample_flag, 1},
 	  {"test", no_argument, &test_flag, 1},
 	  {"montecarlo", no_argument, &montecarlo_flag, 1},
-	  {"condor", no_argument, &test_flag, 1},
-	   {"post", no_argument, &montecarlo_flag, 1},
+	  {"condor", no_argument, &condor_flag, 1},
+	  {"post", no_argument, &post_flag, 1},
       /* options that don't set a flag */
       {"help", no_argument, 0, 'h'},
 	  {"job-number", required_argument, 0, 'n'},
