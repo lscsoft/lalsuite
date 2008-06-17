@@ -235,7 +235,7 @@ ComputeFStat ( LALStatus *status,
       if ( cfBuffer->multiAMcoef )
 	multiAMcoef = cfBuffer->multiAMcoef;
 
-      /* re-use RAA AM coefficients *only* if buffereRAA is TRUE !*/
+      /* re-use RAA AM coefficients *only* if bufferedRAA is TRUE !*/
       if ( params->bufferedRAA && cfBuffer->multiCmplxAMcoef  )
 	multiCmplxAMcoef = cfBuffer->multiCmplxAMcoef;
 
