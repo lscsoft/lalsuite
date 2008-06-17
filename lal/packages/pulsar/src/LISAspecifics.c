@@ -1,6 +1,6 @@
 /*
- * Copyright (C) 2006 Reinhard Prix
- * Copyright (C) 2006 John T. Whelan
+ * Copyright (C) 2006, 2007 Reinhard Prix
+ * Copyright (C) 2006, 2007, 2008 John T. Whelan
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -431,6 +431,11 @@ XLALgetLISADetectorTensorRAA ( CmplxDetectorTensor *detT, 	/**< [out]: LISA LWL 
     case '6':
       chan1 = '1'; chan2 = '2';
       break;
+    case '7':
+    case '8':
+    case '9':
+      chan2 = 'X';
+      break;
     default:	/* unknown */
       LALPrintError ("\nInvalid channel-number '%c' for LISA \n\n", channelNum );
       xlalErrno = XLAL_EINVAL;
@@ -438,20 +443,129 @@ XLALgetLISADetectorTensorRAA ( CmplxDetectorTensor *detT, 	/**< [out]: LISA LWL 
       break;
     } /* switch channel[1] */
 
-  if (chan1 == 0) {
-    if ( XLALgetLISAtwoArmRAAIFO ( detT, &(detArms[armA]), &(detArms[armB]), freq_skypos ) != 0 ) {
-      LALPrintError ("\nXLALgetLISAtwoArmRAAIFO() failed !\n\n");
-      xlalErrno = XLAL_EINVAL;
-      return -1;
-    }
+  if (chan1 == 0)
+    {
+      if (chan2 == 0)
+	{
+	  if ( XLALgetLISAtwoArmRAAIFO ( detT, &(detArms[armA]),
+					 &(detArms[armB]), freq_skypos )
+	       != 0 )
+	    {
+	      LALPrintError ("\nXLALgetLISAtwoArmRAAIFO() failed !\n\n");
+	      xlalErrno = XLAL_EINVAL;
+	      return -1;
+	    }
+	}
+      else
+	{
+	  REAL8 weight1, weight2, weight3;
+	  CmplxDetectorTensor detT3;
+
+	  if ( XLALgetLISADetectorTensorRAA ( &detT1, detArms, '1',
+					      freq_skypos ) != 0 ) {
+	    LALPrintError ("\nXLALgetLISADetectorTensorRAA() failed !\n\n");
+	    xlalErrno = XLAL_EINVAL;
+	    return -1;
+	  }
+	  if ( XLALgetLISADetectorTensorRAA ( &detT2, detArms, '2',
+					      freq_skypos ) != 0 ) {
+	    LALPrintError ("\nXLALgetLISADetectorTensorRAA() failed !\n\n");
+	    xlalErrno = XLAL_EINVAL;
+	    return -1;
+	  }
+	  if ( XLALgetLISADetectorTensorRAA ( &detT3, detArms, '3',
+					      freq_skypos ) != 0 ) {
+	    LALPrintError ("\nXLALgetLISADetectorTensorRAA() failed !\n\n");
+	    xlalErrno = XLAL_EINVAL;
+	    return -1;
+	  }
+	  switch ( channelNum )
+	    {
+	    case '7':
+	      weight1 = (  2.0 / 3.0 );
+	      weight2 = ( -1.0 / 3.0 );
+	      weight3 = ( -1.0 / 3.0 );
+	      break;
+	    case '8':
+	      weight1 = 0.0;
+	      weight2 = (-1.0 * LAL_SQRT1_3);
+	      weight3 =         LAL_SQRT1_3;
+	      break;
+	    case '9':
+	      /* Note that in the RAA this will give detT != 0 */
+	      weight1 = ( LAL_SQRT2 / 3.0 );
+	      weight2 = ( LAL_SQRT2 / 3.0 );
+	      weight3 = ( LAL_SQRT2 / 3.0 );
+	      break;
+	    default:
+	      /* should never get to default */
+	      LALPrintError ("\nInvalid channel-number '%c' for LISA \n\n", channelNum );
+	      xlalErrno = XLAL_EINVAL;
+	      return -1;
+	      break;
+	    }
+
+	  /* Note that the following in-place operations *are* safe */
+
+	  if ( XLALScaleSymmTensor3 ( &detT1.re, &detT1.re, weight1 ) != 0 ) {
+	    LALPrintError ("\nXLALScaleSymmTensor3() failed !\n\n");
+	    xlalErrno = XLAL_EINVAL;
+	    return -1;
+	  }
+	  if ( XLALScaleSymmTensor3 ( &detT1.im, &detT1.im, weight1 ) != 0 ) {
+	    LALPrintError ("\nXLALScaleSymmTensor3() failed !\n\n");
+	    xlalErrno = XLAL_EINVAL;
+	    return -1;
+	  }
+	  if ( XLALScaleSymmTensor3 ( &detT2.re, &detT2.re, weight2 ) != 0 ) {
+	    LALPrintError ("\nXLALScaleSymmTensor3() failed !\n\n");
+	    xlalErrno = XLAL_EINVAL;
+	    return -1;
+	  }
+	  if ( XLALScaleSymmTensor3 ( &detT2.im, &detT2.im, weight2 ) != 0 ) {
+	    LALPrintError ("\nXLALScaleSymmTensor3() failed !\n\n");
+	    xlalErrno = XLAL_EINVAL;
+	    return -1;
+	  }
+	  if ( XLALScaleSymmTensor3 ( &detT3.re, &detT3.re, weight3 ) != 0 ) {
+	    LALPrintError ("\nXLALScaleSymmTensor3() failed !\n\n");
+	    xlalErrno = XLAL_EINVAL;
+	    return -1;
+	  }
+	  if ( XLALScaleSymmTensor3 ( &detT3.im, &detT3.im, weight3 ) != 0 ) {
+	    LALPrintError ("\nXLALScaleSymmTensor3() failed !\n\n");
+	    xlalErrno = XLAL_EINVAL;
+	    return -1;
+	  }
+	  if ( XLALAddSymmTensor3s ( &detT2.re, &detT2.re, &detT3.re ) != 0 ) {
+	    LALPrintError ("\nXLALSumSymmTensor3s() failed !\n\n");
+	    xlalErrno = XLAL_EINVAL;
+	    return -1;
+	  }
+	  if ( XLALAddSymmTensor3s ( &detT2.im, &detT2.im, &detT3.im ) != 0 ) {
+	    LALPrintError ("\nXLALSumSymmTensor3s() failed !\n\n");
+	    xlalErrno = XLAL_EINVAL;
+	    return -1;
+	  }
+	  if ( XLALAddSymmTensor3s ( &detT->re, &detT1.re, &detT2.re ) != 0 ) {
+	    LALPrintError ("\nXLALSumSymmTensor3s() failed !\n\n");
+	    xlalErrno = XLAL_EINVAL;
+	    return -1;
+	  }	 
+	  if ( XLALAddSymmTensor3s ( &detT->im, &detT1.im, &detT2.im ) != 0 ) {
+	    LALPrintError ("\nXLALSumSymmTensor3s() failed !\n\n");
+	    xlalErrno = XLAL_EINVAL;
+	    return -1;
+	  }	 
+	} /* if (chan2 != 0) */
   } else {
     if ( XLALgetLISADetectorTensorRAA ( &detT1, detArms, chan1, freq_skypos ) != 0 ) {
-      LALPrintError ("\nXLALgetCmplxLISADetectorTensorRAA() failed !\n\n");
+      LALPrintError ("\nXLALgetLISADetectorTensorRAA() failed !\n\n");
       xlalErrno = XLAL_EINVAL;
       return -1;
     }
     if ( XLALgetLISADetectorTensorRAA ( &detT2, detArms, chan2, freq_skypos ) != 0 ) {
-      LALPrintError ("\nXLALgetCmplxLISADetectorTensorRAA() failed !\n\n");
+      LALPrintError ("\nXLALgetLISADetectorTensorRAA() failed !\n\n");
       xlalErrno = XLAL_EINVAL;
       return -1;
     }
