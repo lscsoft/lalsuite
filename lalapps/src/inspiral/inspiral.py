@@ -10,7 +10,7 @@ __version__ = '$Revision$'[11:-2]
 
 import string
 import exceptions
-import sys
+import sys,os
 from glue import pipeline
 
 
@@ -249,11 +249,38 @@ class ThincaJob(InspiralAnalysisJob):
     cp = ConfigParser object from which options are read.
     """
     exec_name = 'thinca'
-    sections = ['thinca']
+    #sections = ['thinca']
+    sections = []
     extension = 'xml'
     InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
+    if cp.has_section('thinca'):
+      self.add_ini_opts(cp,'thinca')
 
 
+  def add_ini_opts(self, cp, section):
+    """
+    Parse command line options from a given section in an ini file and
+    pass to the executable.
+    @param cp: ConfigParser object pointing to the ini file.
+    @param section: section of the ini file to add to the options.
+    """
+    for opt in cp.options(section):
+      arg = string.strip(cp.get(section,opt))
+      #self.add_opt(opt,arg)
+      if opt[-4:] == "file":
+        fname = os.path.split(arg)[-1]
+        if fname not in os.listdir('.'):
+          try:
+            os.symlink(arg,os.path.split(arg)[-1])
+            self.add_file_opt(opt,fname)
+          except:
+            print >>sys.stderr, "sym link failed for " + arg + " grid workflows might be broken"
+            self.add_file_opt(opt,arg)
+        else:
+          self.add_file_opt(opt,fname)
+      else:
+        self.add_opt(opt,arg)
+  
 class SireJob(InspiralAnalysisJob):
   """
   A lalapps_sire job used by the inspiral pipeline. The stdout and stderr from
