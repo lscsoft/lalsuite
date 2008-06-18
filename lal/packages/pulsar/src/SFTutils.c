@@ -1023,7 +1023,8 @@ XLALGetChannelPrefix ( const CHAR *name )
     } /* if LHO */
   /* LISA channel names are simply left unchanged */
   else if ( strstr(name, "Z1") || strstr(name, "Z2") || strstr(name, "Z3")
-	    || strstr(name, "Z4") || strstr(name, "Z5") || strstr(name, "Z6") )
+	    || strstr(name, "Z4") || strstr(name, "Z5") || strstr(name, "Z6")
+	    || strstr(name, "Z7") || strstr(name, "Z8") || strstr(name, "Z9") )
     {
       strncpy ( channel, name, 2);
       channel[2] = 0;
