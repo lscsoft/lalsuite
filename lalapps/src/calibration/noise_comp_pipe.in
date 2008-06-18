@@ -67,6 +67,9 @@ parser.add_option("-C", "--cat-noise-jobs",action="store_true",default=False,\
 parser.add_option("-p", "--plot",action="store_true",default=False,\
     help="Plot the output of noise jobs (run this after they complete)")
 
+parser.add_option("-s", "--plot-systematics",action="store_true",default=False,\
+    help="plot the systematic errors")
+
 parser.add_option("-V", "--veto-list",action="store_true",default=False,\
     help="Write a veto list of bad times")
 
@@ -145,6 +148,7 @@ epoch_cnt = 0;
 print "\n"
 for epoch in epochs.epoch_segs():
   noise_output_files = []
+  noise_output_files2 = []
   print "setting up jobs for calibration epoch " + str(epoch[1])+" - "+str(epoch[2]) + "..."
   #output the epochs in their own directories
   epoch_dir = 'EPOCH'+'-'+str(epoch[1])+'-'+str(epoch[2])
@@ -243,6 +247,8 @@ for epoch in epochs.epoch_segs():
       noise1.add_input_file(cp.get('noisecomp','freq-file'))
       noise1.add_var_opt('output-file',epoch_dir+'/out-'+gps_str+'-'+str(len(chunk))+'.txt')
       noise1.add_output_file(epoch_dir+'/out-'+gps_str+'-'+str(len(chunk))+'.txt')
+      noise1.add_var_opt('output-bin',epoch_dir+'/out-bin-'+gps_str+'-'+str(len(chunk))+'.txt')
+      noise1.add_output_file(epoch_dir+'/out-bin-'+gps_str+'-'+str(len(chunk))+'.txt')
       noise1.set_name("noise_"+ifo+"_"+str(epoch_cnt)+str(segment_no)+"_"+str(chunk_number))
       # only add data find jobs as parents if requested on command line
       if opts.write_dax: noise1.add_parent(mkdir_node2)
@@ -254,6 +260,7 @@ for epoch in epochs.epoch_segs():
       if opts.cat_noise_jobs: strain.cat_noise_jobs(catfile,noise1)
   #increment the epoch counter
   if opts.cat_noise_jobs: catfile.close()
+  if opts.plot_systematics: strain.plot_systematics(noise_output_files,cp,epoch_dir,epochs.epoch_data[epoch_cnt],dag,opts)
   if opts.plot or opts.veto_list: strain.plot_noise_jobs(noise_output_files,cp,epoch_dir,epochs.epoch_data[epoch_cnt],dag,qscan_job,opts)
   noise_output_files = []
   epoch_cnt+=1

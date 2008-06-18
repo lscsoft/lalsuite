@@ -6,7 +6,7 @@ __author__ = 'Xavier Siemens<siemens@gravity.phys.uwm.edu>'
 __date__ = '$Date$'
 __version__ = '$Revision$'[11:-2]
 
-import string,sys
+import string,sys,os
 import exceptions
 from glue import pipeline
 from pylab import *
@@ -246,9 +246,141 @@ def cat_noise_jobs(file,node):
   except: pass
   return
 
+def plot_systematics(filelist,cp,dir,epoch,dag,opts):
+  flist = []
+  for file in filelist:
+    if os.path.split(file)[-1][:8] == "out-bin-":
+      flist.append(file)
+  freq = []
+  freqfile = cp.get('noisecomp','freq-file')
+  for line in open(freqfile,'r').readlines():
+    freq.append(float(line.strip()))
+  
+  hfr1 = {}
+  hfi1 = {}
+  htr1 = {}
+  hti1 = {}
+  Ai = {}
+  Ar = {}
+  N = 0.0
+
+  for f in freq:
+    hfr1[f] = 0.0
+    hfi1[f] = 0.0
+    htr1[f] = 0.0
+    hti1[f] = 0.0
+    Ai[f] = 0.0
+    Ar[f] = 0.0
+
+  freqcnt = 0;
+  
+  for file in flist:
+    try: input = open(file,'r')
+    except:
+      print "WARNING: file " + file + " doesn't exist"
+      continue
+    for line in input.readlines():
+      tmp = line.split()
+      if len(tmp) == 1: continue
+      N += 1.0
+      htr1[freq[freqcnt]] += float(tmp[0])
+      hti1[freq[freqcnt]] += float(tmp[1])
+      hfr1[freq[freqcnt]] += float(tmp[2])
+      hfi1[freq[freqcnt]] += float(tmp[3])
+      freqcnt += 1
+      if freqcnt >= len(freq): freqcnt = 0 
+    #if N > 10: break
+  #Actually make it the mean
+
+  for f in freq:
+    htr1[f] /= N
+    hti1[f] /= N
+    hfr1[f] /= N
+    hfi1[f] /= N    
+    Ai[f] = ((hti1[f]-hfi1[f])*hfr1[f] - (htr1[f]-hfr1[f])*hfi1[f]) / (hfi1[f]*hfi1[f]+hfr1[f]*hfr1[f])
+    Ar[f] =  (htr1[f] - hfr1[f] + Ai[f]*hfi1[f]) / hfr1[f] + 1.0
+
+  fname = "Ar_Ai_"+epoch[1]+"-"+epoch[2]+".txt"
+  fl = open(fname,'w')
+  fl.write("#freq h(t) re sys\th(t) im sys\th(t) mag sys\th(t) phase sys\n")
+  for f in freq:
+    mag = sqrt(Ar[f]*Ar[f]+Ai[f]*Ai[f])
+    phase = atan2(Ai[f],Ar[f])
+    fl.write(str(f) + "\t"+str(Ar[f])+"\t"+str(Ai[f])+"\t"+str(mag)+"\t"+str(phase)+"\n")
+  fl.close()
+
+
+  xr1 = {}
+  xi1 = {}
+  xr2 = {}
+  xi2 = {}
+  xr3 = {}
+  xi3 = {}
+  xr4 = {}
+  xi4 = {}
+  N = 0.0
+
+  for f in freq:
+    xr1[f] = 0.0
+    xi1[f] = 0.0
+    xr2[f] = 0.0
+    xi2[f] = 0.0
+    xr3[f] = 0.0
+    xi3[f] = 0.0
+    xr4[f] = 0.0
+    xi4[f] = 0.0
+
+  freqcnt = 0;
+
+  for file in flist:
+    try: input = open(file,'r')
+    except:
+      print "WARNING: file " + file + " doesn't exist"
+      continue
+    for line in input.readlines():
+      tmp = line.split()
+      if len(tmp) == 1: continue
+      N += 1.0
+      htr = float(tmp[0])
+      hti = float(tmp[1])
+      hfr = float(tmp[2])
+      hfi = float(tmp[3])
+      xr = htr-Ar[freq[freqcnt]]*hfr + Ai[freq[freqcnt]]*hfi
+      xi = hti-Ar[freq[freqcnt]]*hfi - Ai[freq[freqcnt]]*hfr
+      xr1[freq[freqcnt]] += xr
+      xi1[freq[freqcnt]] += xi
+      xr2[freq[freqcnt]] += xr*xr
+      xi2[freq[freqcnt]] += xi*xi
+      xr3[freq[freqcnt]] += xr*xr*xr
+      xi3[freq[freqcnt]] += xi*xi*xi      
+      xr4[freq[freqcnt]] += xr*xr*xr*xr
+      xi4[freq[freqcnt]] += xi*xi*xi*xi
+      freqcnt += 1
+      if freqcnt >= len(freq): freqcnt = 0
+    #if N > 10: break
+  #Actually make it the mean
+
+  for f in freq:
+    xr1[f] /= N
+    xi1[f] /= N
+    xr2[f] /= N
+    xi2[f] /= N
+    xr3[f] /= N
+    xi3[f] /= N
+    xr4[f] /= N
+    xi4[f] /= N
+
+  fname = "x1_x2_x3_x4_"+epoch[1]+"-"+epoch[2]+".txt"
+  fl = open(fname,'w')
+  fl.write("#freq \t xr \t xi \t xr^2 \t xi^2 \t xr^3 \t xi^3 \t xr^4 \t xi^4 \n")
+  for f in freq:
+    fl.write(str(f) + '\t' + str(xr1[f]) + '\t' + str(xi1[f]) + '\t' + str(xr2[f]) + '\t' + str(xi2[f]) + '\t' + str(xr3[f]) + '\t' + str(xi3[f]) + '\t' + str(xr4[f]) + '\t' + str(xi4[f]) + '\n')
+  fl.close()
+
+
+    
 def plot_noise_jobs(filelist,cp,dir,epoch,dag,qjob,opts):
   qfile = write_qscan_conf(dir,cp)
-  web = open(dir+'/'+'index.html','w')
   filelist.sort()
   ifo = cp.get('pipeline','ifo')
   duration = cp.get('plot','duration')
