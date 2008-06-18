@@ -2417,8 +2417,10 @@ int main( int argc, char *argv[] )
                 {
                   cDataForFrame = 1;
                   LALSnprintf( cdataStr, LALNameLength*sizeof(CHAR),
-                      "CData_%Ld", bankCurrent->event_id->id );
-                  strcpy( coherentInputData->name, chan.name );
+			       "%Ld", bankCurrent->event_id->id );
+                  LALSnprintf( coherentInputData->name,
+			       LALNameLength*sizeof(CHAR), 
+			       "%s:CBC-CData", ifo );
                   if ( ! coherentFrames )
                   {
                     thisCoherentFrame = coherentFrames = (FrameHNode *) 
