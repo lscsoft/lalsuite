@@ -98,6 +98,9 @@ parser.add_option("-e", "--gps-end-time",action="store",type="int",\
 parser.add_option("-D", "--use-available-data",action="store_true",\
     default=False, help="analyze only the data available on the cluster")
 
+parser.add_option("-R", "--reverse-analysis",action="store_true",\
+    default=False, help="do the entrire analysis using reverse chirp method")
+
 parser.add_option("-S", "--skip-generate-segments",action="store_false",\
     default=True, dest="generate_segments", \
     help="skip generation segments for analysis")
@@ -335,6 +338,48 @@ if opts.run_search:
       if opts.run_datafind:
         hipeInjNode[injDir].add_parent(hipeDfNode)
 
+################################################################################
+# Setting up directories for reverse analysis
+
+if opts.reverse_analysis:
+
+  if opts.run_play_analysis:
+    cp.set ("inspiral","reverse-chirp-bank","")
+    print "Running inspiral hipe for reverse playground run"
+    hipePlayNode = inspiralutils.hipe_setup("playground_reverse", cp, ifos, \
+         opts.log_path, playOnly = True, dax = opts.dax, \
+         site = cp.get("sites","playground"))
+    for cacheFile in hipePlayNode.get_output_files():
+      cachelist.append("playground_reverse/" + cacheFile)
+    dag.add_node(hipePlayNode)
+    if opts.run_datafind:
+      hipePlayNode.add_parent(hipeDfNode)
+
+  if opts.run_full_data:
+    cp.set ("inspiral","reverse-chirp-bank","")
+    print "Running inspiral hipe for reverse analysis run"
+    hipeAnalysisNode = inspiralutils.hipe_setup("full_data_reverse", cp, ifos, \
+        opts.log_path, dax=opts.dax, site = cp.get("sites","full_data"))
+    for cacheFile in hipeAnalysisNode.get_output_files():
+      cachelist.append("full_data_reverse/" + cacheFile)
+    dag.add_node(hipeAnalysisNode)
+    if opts.run_datafind:
+      hipeAnalysisNode.add_parent(hipeDfNode)
+
+  if opts.run_injections:
+    hipeInjNode = {}
+    cp.set ("inspiral","reverse-chirp-bank","")
+    print "Running inspiral hipe for reverse injection runs"
+    for (injDir, injSeed) in cp.items("injections_reverse"):
+      hipeInjNode[injDir] = inspiralutils.hipe_setup(injDir, cp, ifos, \
+           opts.log_path, injSeed, dax=opts.dax, \
+           site= cp.get("sites",injDir))
+      for cacheFile in hipeInjNode[injDir].get_output_files():
+        cachelist.append(injDir + "/" + cacheFile)
+      dag.add_node(hipeInjNode[injDir])
+      if opts.run_datafind:
+        hipeInjNode[injDir].add_parent(hipeDfNode)
+
 ##############################################################################
 # Run the data quality vetoes
 if opts.run_data_quality:
@@ -389,6 +434,62 @@ if opts.run_data_quality:
         elif category>2: 
           hipeInjVetoNode[category][injDir].add_parent(\
               hipeInjVetoNode[category-1][injDir])
+
+#############################################################################
+# run the data quality vetoes for reverse chirp analysis
+
+if opts.reverse_analysis:
+  if opts.run_data_quality:
+    hipePlayVetoNode = {}
+    hipeAnalysisVetoNode = {}
+    hipeInjVetoNode = {}
+
+    for category in [2,3,4]:
+      print "Setting up the category " + str(category) + " veto dags" + " for reverse chirp analysis"
+      cp.set ("inspiral","reverse-chirp-bank","")
+      if opts.run_play_analysis:
+        print "Running inspiral hipe for playground  with vetoes for reverse analysis"
+
+        hipePlayVetoNode[category] = inspiralutils.hipe_setup("playground_reverse", cp, \
+            ifos, opts.log_path, playOnly = True, vetoCat = category, \
+            vetoFiles = dqVetoes)
+        for cacheFile in hipePlayVetoNode[category].get_output_files():
+          cachelist.append("playground-reverse/" + cacheFile)
+        dag.add_node(hipePlayVetoNode[category])
+        if category==2 and opts.run_search:
+          hipePlayVetoNode[category].add_parent(hipePlayNode)
+        elif category>2:
+          hipePlayVetoNode[category].add_parent(hipePlayVetoNode[category-1])
+
+
+      if opts.run_full_data:
+        print "Running inspiral hipe for full data with vetoes for reverse analysis"
+        hipeAnalysisVetoNode[category] = inspiralutils.hipe_setup("full_data_reverse", \
+            cp, ifos, opts.log_path, vetoCat = category, vetoFiles = dqVetoes)
+        for cacheFile in hipeAnalysisVetoNode[category].get_output_files():
+          cachelist.append("full_data_reverse/" + cacheFile)
+        dag.add_node(hipeAnalysisVetoNode[category])
+        if category==2 and opts.run_search:
+          hipeAnalysisVetoNode[category].add_parent(hipeAnalysisNode)
+        elif category>2:
+          hipeAnalysisVetoNode[category].add_parent( \
+              hipeAnalysisVetoNode[category-1])
+
+      if opts.run_injections:
+        print "Running inspiral hipe for injections with vetoes for reverse analysis"
+        for (injDir, injSeed) in cp.items("injections-reverse"):
+          if category == 2: hipeInjVetoNode[injDir] = {}
+          hipeInjVetoNode[injDir][category] = inspiralutils.hipe_setup(injDir, \
+              cp, ifos, opts.log_path, \
+              injSeed= injSeed, vetoCat = category, vetoFiles = dqVetoes)
+          for cacheFile in hipeInjVetoNode[injDir][category].get_output_files():
+            cachelist.append(injDir + "/" + cacheFile)
+          dag.add_node(hipeInjVetoNode[injDir][category])
+          if category==2 and opts.run_search:
+            hipeInjVetoNode[injDir][category].add_parent(hipeInjNode[injDir])
+          elif category>2:
+            hipeInjVetoNode[injDir][category].add_parent(\
+                hipeInjVetoNode[injDir][category-1])
 
 ##############################################################################
 # Set up the directories for plotting and run lalapps_plot
