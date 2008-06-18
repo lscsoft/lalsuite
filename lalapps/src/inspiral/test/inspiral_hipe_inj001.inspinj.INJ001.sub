@@ -1,0 +1,9 @@
+universe = standard
+executable = executables/lalapps_inspinj
+arguments = --i-distr fixed --fixed-inc 2.118716 --max-mass1 30.25313 --max-mass2 3.603677 --m-distr componentMass --disable-spin --min-mtotal 2.0 --gps-start-time $(macrogpsstarttime) --user-tag INJ001 --max-mtotal 35.0 --f-lower 30 --seed $(macroseed) --min-mass2 3.603677 --l-distr random --d-distr log10 --min-mass1 30.25313 --min-distance 1.206083 --waveform GeneratePPNtwoPN --gps-end-time $(macrogpsendtime) --max-distance 1.206083 --output HLV-INJ001.xml
+environment = KMP_LIBRARY=serial;MKL_SERIAL=yes
+log = /people/jclayton/logs/tmpMoimny
+error = logs/inspinj-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err
+output = logs/inspinj-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out
+notification = never
+queue 1
