@@ -431,7 +431,7 @@ int main( int argc, char *argv[] )
 		  /* Store CData frame name now for reading its frame-file 
 		     later, within thisCoinc-ident loop
 		  */
-		  LALSnprintf( nameArrayCData[k], LALNameLength*sizeof(CHAR), "%s:%s_CData_%Ld", caseIDChars[k], channelNameArray[k], eventID );
+		  LALSnprintf( nameArrayCData[k], LALNameLength*sizeof(CHAR), "%s:CBC-CData_%Ld", caseIDChars[k], eventID );
 		}
 	    }/* Closes loop for k; finished noting the participating ifos 
 		and the eventID for this coincident trigger*/
@@ -483,7 +483,7 @@ int main( int argc, char *argv[] )
 	  if( !(cohInspInitParams = (CoherentInspiralInitParams *) calloc(1,sizeof(CoherentInspiralInitParams)) ))
 	    {
 	      fprintf( stdout, "could not allocate memory for coherentInspiral init params\n" );
-	      goto cleanexit;
+	      exit(1);
 	    }
 	  
 	  /* Initialize the coherent param structure for thisCoinc trigger */      
@@ -591,7 +591,7 @@ int main( int argc, char *argv[] )
 		    if(!filePtr[w])
 		      {
 			fprintf(stderr,"The file %s containing the coefficients could not be found - exiting...\n",nameArrayBeam[j]);
-			goto cleanexit;
+			exit(1);
 		      }
 		    for ( l=0 ; l < (INT4) numBeamPoints ; l++)
 		      { 
@@ -620,7 +620,7 @@ int main( int argc, char *argv[] )
 
 		if ( !(frfileIn[j]= XLALFrOpenURL( ifoframefile[j] )) ) {
 		  XLALPrintError( "XLAL Error: could not open frame file %s - exiting...\n", ifoframefile[j] );
-		  goto cleanexit;
+		  exit(1);
 		}		
 		while( ! proc && (ifoFrame = FrameRead( frfileIn[j] )) ) {
 		  proc = ifoFrame->procData;
@@ -634,7 +634,7 @@ int main( int argc, char *argv[] )
 		if ( ! proc ) {
 		  XLALPrintError( "XLAL Error: could not find channel %s in file %s - exiting...\n", nameArrayCData[j], ifoframefile[j] );
 		  FrFileIEnd( frfileIn[j] );
-		  goto cleanexit;
+		  exit(1);
 		}
 		
 		XLALGPSSet( &tmpEpoch, ifoFrame->GTimeS, ifoFrame->GTimeN );
@@ -651,7 +651,7 @@ int main( int argc, char *argv[] )
 		if ( ! cohInspCVec->cData[l] ) {
 		  FrFileIEnd( frfileIn[j] );
 		  XLALPrintError( "XLAL Error: could not create cData from channel %s in file %s - exiting...\n", nameArrayCData[j], ifoframefile[j] );
-		  goto cleanexit;
+		  exit(1);
 		}
 		
 		memcpy( cohInspCVec->cData[l]->data->data, proc->data->data, cohInspCVec->cData[l]->data->length * sizeof( *(cohInspCVec->cData[l])->data->data ) );
@@ -1344,14 +1344,11 @@ int main( int argc, char *argv[] )
     LALFree( thisCoinc );
   }
 
-  goto cleanexit;
-
- cleanexit:
-
   if ( vrbflg ) fprintf( stdout, "checking memory leaks and exiting\n" );
   LALCheckMemoryLeaks();
-  exit(0);
-  
+ 
+  return 0;
+ 
 }/* main function end */
 
 
