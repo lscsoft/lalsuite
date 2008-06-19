@@ -620,13 +620,13 @@ y:g:G:K:N:X:O:J:M:r:" ;
         break;
       case 'T': /* standard deviation of Gaussian h0 prior */
         inputParams->priors.stdh0 = atof(optarg);
-        break;      
+        break;
       case 'v': /* mean of phi0 Gaussian prior */
         inputParams->priors.meanphi = atof(optarg);
         break;
       case 'V': /* standard deviation of Gaussian phi0 prior */
         inputParams->priors.stdphi = atof(optarg);
-        break;        
+        break;
       case 'z': /* mean of psi Gaussian prior */
         inputParams->priors.meanpsi = atof(optarg);
         break;
@@ -703,27 +703,27 @@ y:g:G:K:N:X:O:J:M:r:" ;
     fprintf(stderr, "Error... h0 grid range is wrong!\n");
     exit(0);
   }
-  
+
   if( inputParams->mesh.minVals.phi0 < 0. || inputParams->mesh.maxVals.phi0 >
       LAL_TWOPI || inputParams->mesh.maxVals.phi0 <
       inputParams->mesh.minVals.phi0 ){
     fprintf(stderr, "Error... phi0 grid range is wrong!\n");
     exit(0);
   }
-  
+
   if( inputParams->mesh.minVals.psi < -LAL_PI/4. ||
       inputParams->mesh.maxVals.psi >  LAL_PI/4. ||
       inputParams->mesh.maxVals.psi < inputParams->mesh.minVals.psi ){
     fprintf(stderr, "Error... psi grid range is wrong!\n");
     exit(0);
   }
-  
+
   if( inputParams->mesh.minVals.ci < -1. || inputParams->mesh.maxVals.ci > 1. ||
       inputParams->mesh.maxVals.ci < inputParams->mesh.minVals.ci ){
     fprintf(stderr, "Error... cos(iota) grid range is wrong!\n");
     exit(0);
   }
-  
+
   /* set mesh step sizes */
   if( inputParams->mesh.h0Steps > 1 ){
     inputParams->mesh.delta.h0 = (inputParams->mesh.maxVals.h0 -
@@ -731,21 +731,21 @@ y:g:G:K:N:X:O:J:M:r:" ;
   }
   else
     inputParams->mesh.delta.h0 = 1.;
-  
+
   if( inputParams->mesh.phiSteps > 1 ){
     inputParams->mesh.delta.phi0 = (inputParams->mesh.maxVals.phi0 -
       inputParams->mesh.minVals.phi0)/(REAL8)(inputParams->mesh.phiSteps - 1.);
   }
   else
     inputParams->mesh.delta.phi0 = 1.;
-  
+
   if( inputParams->mesh.psiSteps > 1 ){
     inputParams->mesh.delta.psi = (inputParams->mesh.maxVals.psi -
       inputParams->mesh.minVals.psi)/(REAL8)(inputParams->mesh.psiSteps - 1.);
   }
   else
     inputParams->mesh.delta.psi = 1.;
-  
+
   if( inputParams->mesh.ciotaSteps > 1 ){
     inputParams->mesh.delta.ci = (inputParams->mesh.maxVals.ci -
       inputParams->mesh.minVals.ci)/(REAL8)(inputParams->mesh.ciotaSteps - 1.);
@@ -860,7 +860,7 @@ void sum_data(DataStructure data){
 
   length = (INT4)data.data->length + 1 - 
            data.chunkLengths->data[(INT4)data.chunkLengths->length-1];
-           
+
   for( i = 0 ; i < length ; i+= chunkLength ){
     chunkLength = data.chunkLengths->data[count];
     data.sumData->data[count] = 0.;
@@ -872,7 +872,7 @@ void sum_data(DataStructure data){
       /* sum up the data */
       data.sumData->data[count] += (REAL8)(B.re*B.re + B.im*B.im);
     }
-    
+
     count++;
   }
 }
@@ -899,11 +899,11 @@ REAL8 log_likelihood( REAL8 *likeArray, DataStructure data,
 
   REAL8 exclamation[data.chunkMax+1]; /* all factorials up to chunkMax */
   REAL8 log2=log(2.);
-  
+
   REAL8 noiseEvidence=0.; /* the log evidence that the data is just noise */
 
   INT4 first=0, through=0;
-  
+
   /* variables for delta phi caused by parameter uncertainties */
   EmissionTime emit1, emit2;
   EarthState earth;
@@ -916,14 +916,14 @@ REAL8 log_likelihood( REAL8 *likeArray, DataStructure data,
   /* to save time get all log factorials up to chunkMax */
   for( i = 0 ; i < data.chunkMax+1 ; i++ )
     exclamation[i] = log_factorial(i);
-  
+
   /* set the psi bin for the lookup table */
   psibin = (INT4)ROUND( ( vars.psi + LAL_PI/4. )
            *(REAL8)(data.lookupTable->psiSteps-1.)/LAL_PI_2 );
-           
+
   length = (INT4)data.data->length + 1 - 
            data.chunkLengths->data[(INT4)data.chunkLengths->length-1];
-           
+
   tstart = data.times->data[0]; /* time of first B_k */
 
   /* set the position and frequency epochs if not already set */
@@ -979,14 +979,14 @@ REAL8 log_likelihood( REAL8 *likeArray, DataStructure data,
         barys[0].tgps.gpsSeconds = (UINT8)floor(data.times->data[j]);
         barys[0].tgps.gpsNanoSeconds =
           (UINT8)floor((fmod(data.times->data[j],1.0)*1.e9));
-      
+
         barys[0].delta = params[0].dec + (data.times->data[j] -
           T01)*params[0].pmdec;
         barys[0].alpha = params[0].ra + (data.times->data[j] -
           T01)*params[0].pmra/cos(barys[0].delta);
- 
+
         LAL_CALL( LALBarycenterEarth(&status, &earth, &barys[0].tgps, edat),
-          &status ); 
+          &status );
         LAL_CALL( LALBarycenter(&status, &emit1, &barys[0], &earth), &status );
 
         /* if sky positions aren't the same then work out new one */
@@ -1008,7 +1008,7 @@ REAL8 log_likelihood( REAL8 *likeArray, DataStructure data,
         }
         else
           emit2.deltaT = emit1.deltaT;
-      
+
         if(params[0].model!=NULL){
           binInput1.tb = data.times->data[j] + emit1.deltaT;
           binInput2.tb = data.times->data[j] + emit2.deltaT;
@@ -1177,51 +1177,51 @@ REAL8 log_posterior(REAL8 ****logLike, PriorVals prior, MeshGrid mesh,
   OutputParams output){
   REAL8 maxPost=-1.e200, mP=0.;
   REAL8 logPi=0.;
-  
+
   INT4 i=0, j=0, k=0, n=0;
-  
+
   CHAR outputFile[256];
   FILE *fp=NULL;
-  
+
   /* if outputPost != NULL then print out the log Posterior to a file */
   if( output.outPost == 1 ){
     sprintf(outputFile, "%s/log_posterior.%s.%s", output.outputDir, output.psr,
       output.det);
-    
+
     if( ( fp = fopen(outputFile, "w") ) == NULL ){
       fprintf(stderr, "Error... Can't output posterior file!");
     }
   }
-  
+
   /* create posterior */
   for( i = 0 ; i < mesh.phiSteps ; i++ ){
     prior.vars.phi0 = mesh.minVals.phi0 + (REAL8)i*mesh.delta.phi0;
-    
+
     for( j = 0 ; j < mesh.ciotaSteps ; j++ ){
       prior.vars.ci = mesh.minVals.ci + (REAL8)j*mesh.delta.ci;
-      
+
       for( k = 0 ; k < mesh.psiSteps ; k++ ){
         prior.vars.psi = mesh.minVals.psi + (REAL8)k*mesh.delta.psi;
-        
+
         for( n = 0 ; n < mesh.h0Steps ; n++ ){
           prior.vars.h0 = mesh.minVals.h0 + (REAL8)n*mesh.delta.h0;
-          
+
           logPi = log_prior(prior, mesh);
-          
+
           /* posterior \propto log(likelihood) + log(prior) */
           logLike[i][j][k][n] += logPi;
           mP = logLike[i][j][k][n];
-          
+
           if( mP > maxPost )
             maxPost = mP;
-            
+
           if( output.outPost == 1 && fp != NULL )
-            fprintf(fp, "%le\n", mP);            
+            fprintf(fp, "%le\n", mP);
         }
       }
     }
   }
-  
+
   return maxPost;
 }
 
@@ -1231,9 +1231,9 @@ requested */
 Results marginalise_posterior(REAL8 ****logPost, MeshGrid mesh, 
   OutputParams output){
   REAL8 dval1=0., dval2=0., dval3=0., dval4=0.;
- 
+
   REAL8 post1=0., post2=0.;
-  
+
   REAL8 ***evSum1=NULL;      /* first integral */
   REAL8 **evSum2=NULL;       /* second integral */
   REAL8 *evSum3=NULL;        /* third integral */
@@ -1241,24 +1241,24 @@ Results marginalise_posterior(REAL8 ****logPost, MeshGrid mesh,
   REAL8 evSum4=-1.e200;      /* fouth integral */
   REAL8 maxPost=-1.e200;
   REAL8 evVal=0., sumVal=0.;
-  
+
   Results results={0.,0.,0.,0.}; /* the results structure */
-  
+
   INT4 numSteps1=0, numSteps2=0, numSteps3=0, numSteps4=0;
   REAL8 step=0., minVal=0.;
-  
+
   INT4 i=0, j=0, k=0, n=0;
-  
+
   CHAR outputFile[256];  /* filname to output the marginalised pdf */
   FILE *fp=NULL;
-  
+
   /* check which parameter we will not be integrating over for the output */
   if( strcmp( output.margParam, "h0" ) == 0 ){
     numSteps1 = mesh.h0Steps;
     numSteps2 = mesh.phiSteps;
     numSteps3 = mesh.ciotaSteps;
     numSteps4 = mesh.psiSteps;
-    
+
     dval1 = mesh.delta.h0; dval2 = mesh.delta.phi0; dval3 = mesh.delta.ci;
     dval4 = mesh.delta.psi;
     minVal = mesh.minVals.h0;
@@ -1268,7 +1268,7 @@ Results marginalise_posterior(REAL8 ****logPost, MeshGrid mesh,
     numSteps2 = mesh.ciotaSteps;
     numSteps3 = mesh.psiSteps;
     numSteps4 = mesh.h0Steps;
-    
+
     dval1 = mesh.delta.phi0; dval2 = mesh.delta.ci; dval3 = mesh.delta.psi;
     dval4 = mesh.delta.h0;
     minVal = mesh.minVals.phi0;
@@ -1278,7 +1278,7 @@ Results marginalise_posterior(REAL8 ****logPost, MeshGrid mesh,
     numSteps2 = mesh.phiSteps;
     numSteps3 = mesh.ciotaSteps;
     numSteps4 = mesh.h0Steps;
-    
+
     dval1 = mesh.delta.psi; dval2 = mesh.delta.phi0; dval3 = mesh.delta.ci;
     dval4 = mesh.delta.h0;
     minVal = mesh.minVals.psi;
@@ -1297,10 +1297,10 @@ Results marginalise_posterior(REAL8 ****logPost, MeshGrid mesh,
     fprintf(stderr, "Error... No parameter selected for posterior output!\n");
     exit(0);
   }
-   
+
   /* allocate memory for integration */
   evSum1 = calloc(numSteps1, sizeof(REAL8 **));
-  
+
   /* perform first integral */
   for( i = 0 ; i < numSteps1 ; i++ ){
     evSum1[i] = calloc(numSteps2, sizeof(REAL8 *));
@@ -1308,7 +1308,7 @@ Results marginalise_posterior(REAL8 ****logPost, MeshGrid mesh,
       evSum1[i][j] = calloc(numSteps3, sizeof(REAL8));
       for( k = 0 ; k < numSteps3 ; k++ ){
         evSum1[i][j][k] = -1.e200; /* initialise */
-        
+
         /* if we only have one point in the parameter space */
         if( numSteps4 == 1 ){
           if( strcmp( output.margParam, "h0" ) == 0 ) 
@@ -1320,12 +1320,12 @@ Results marginalise_posterior(REAL8 ****logPost, MeshGrid mesh,
           else if( strcmp( output.margParam, "ciota" ) == 0 )
             evSum1[i][j][k] = logPost[j][i][k][0];
         }
-        else{  
+        else{
           for( n = 0 ; n < numSteps4 - 1 ; n++ ){
             if( strcmp( output.margParam, "h0" ) == 0 ){
               post1 = logPost[j][k][n][i];
               post2 = logPost[j][k][n+1][i];
-  
+
               /* use trapezium rule for intergration */
               evVal = evSum1[i][j][k];
               sumVal = log_trapezium(post1, post2, dval4);
@@ -1334,7 +1334,7 @@ Results marginalise_posterior(REAL8 ****logPost, MeshGrid mesh,
             else if( strcmp( output.margParam, "phi" ) == 0 ){
               post1 = logPost[i][j][k][n];
               post2 = logPost[i][j][k][n+1];
-  
+
               evVal = evSum1[i][j][k];
               sumVal = log_trapezium(post1, post2, dval4);
               evSum1[i][j][k] = PLUS(sumVal, evVal);
@@ -1342,7 +1342,7 @@ Results marginalise_posterior(REAL8 ****logPost, MeshGrid mesh,
             else if( strcmp( output.margParam, "psi" ) == 0 ){
               post1 = logPost[j][k][i][n];
               post2 = logPost[j][k][i][n+1];
-  
+
               evVal = evSum1[i][j][k];
               sumVal = log_trapezium(post1, post2, dval4);
               evSum1[i][j][k] = PLUS(sumVal, evVal);
@@ -1350,7 +1350,7 @@ Results marginalise_posterior(REAL8 ****logPost, MeshGrid mesh,
             else if( strcmp( output.margParam, "ciota" ) == 0 ){
               post1 = logPost[j][i][k][n];
               post2 = logPost[j][i][k][n+1];
-  
+
               evVal = evSum1[i][j][k];
               sumVal = log_trapezium(post1, post2, dval4);
               evSum1[i][j][k] = PLUS(sumVal, evVal);
@@ -1359,28 +1359,28 @@ Results marginalise_posterior(REAL8 ****logPost, MeshGrid mesh,
 /*           for( n = 0 ; n < numSteps4 - 1 ; n++ ){
              if( strcmp( output.margParam, "h0" ) == 0 ){
               post1 = logPost[j][k][n][i];
- 
+
               evVal = evSum1[i][j][k];
               sumVal = post1 + log(dval4);
               evSum1[i][j][k] = PLUS(sumVal, evVal);
             }
             else if( strcmp( output.margParam, "phi" ) == 0 ){
               post1 = logPost[i][j][k][n];
-  
+
               evVal = evSum1[i][j][k];
               sumVal = post1 + log(dval4);
               evSum1[i][j][k] = PLUS(sumVal, evVal);
             }
             else if( strcmp( output.margParam, "psi" ) == 0 ){
               post1 = logPost[j][k][i][n];
-  
+
               evVal = evSum1[i][j][k];
               sumVal = post1 + log(dval4);
               evSum1[i][j][k] = PLUS(sumVal, evVal);
             }
             else if( strcmp( output.margParam, "ciota" ) == 0 ){
               post1 = logPost[j][i][k][n];
-  
+
               evVal = evSum1[i][j][k];
               sumVal = post1 + log(dval4);
               evSum1[i][j][k] = PLUS(sumVal, evVal);
@@ -1390,16 +1390,16 @@ Results marginalise_posterior(REAL8 ****logPost, MeshGrid mesh,
       }
     }
   }
-  
+
   /* allocate memory for second integral */
   evSum2 = calloc(numSteps1, sizeof(REAL8 *));
-  
+
   /* perform the second integration */
   for( i = 0 ; i < numSteps1 ; i++ ){
     evSum2[i] = calloc(numSteps2, sizeof(REAL8));
     for( j = 0 ; j < numSteps2 ; j++ ){
       evSum2[i][j] = -1.e200;
-      
+
       if( numSteps3 == 1 ) evSum2[i][j] = evSum1[i][j][0];
       else{  
         for( k = 0 ; k <numSteps3 - 1 ; k++ ){
@@ -1415,14 +1415,14 @@ Results marginalise_posterior(REAL8 ****logPost, MeshGrid mesh,
       }
     }
   }
-  
+
   /* allocate memory for third integration */
   evSum3 = calloc(numSteps1, sizeof(REAL8));
-  
+
   /* perform third integration */
   for( i = 0 ; i < numSteps1 ; i++ ){
     evSum3[i] = -1.e200;
-    
+
     if( numSteps2 == 1 ) evSum3[i] = evSum2[i][0];
     else{
       for( j = 0 ; j < numSteps2 - 1 ; j++ ){
@@ -1436,11 +1436,11 @@ Results marginalise_posterior(REAL8 ****logPost, MeshGrid mesh,
            evSum3[i] = PLUS(sumVal, evVal);
          } */
     }
-    
+
     if( evSum3[i] > maxPost )
       maxPost = evSum3[i];
   }
-  
+
   if( numSteps1 == 1 ) evSum4 = evSum3[0];
   else{
     /* perform final integration to get the log evidence */
@@ -1448,14 +1448,14 @@ Results marginalise_posterior(REAL8 ****logPost, MeshGrid mesh,
       evVal = evSum4;
       sumVal = log_trapezium(evSum3[i], evSum3[i+1], dval1);
       evSum4 = PLUS(sumVal, evVal);
-    }    
+    }
 /*     for( i = 0 ; i < numSteps1 - 1 ; i++ ){
          evVal = evSum4;
          sumVal = evSum3[i] + log(dval1);
          evSum4 = PLUS(sumVal, evVal);
        } */
   }
-  
+
   /* create the file to output the marginalise posterior to */
   sprintf(outputFile, "%s/pdf_%s.%s.%s", output.outputDir, output.margParam,
     output.psr, output.det);
@@ -1464,19 +1464,19 @@ Results marginalise_posterior(REAL8 ****logPost, MeshGrid mesh,
       output.margParam);
     exit(0);
   }
-  
+
   /* allocate memory for cumulative sum (needed when we want to produce an UL */
   cumsum = calloc(numSteps1, sizeof(REAL8));
-  
+
   /* normalise the marginalised pdf using the evidence and free memory */
   for( i = 0 ; i < numSteps1 ; i++ ){
     for( j = 0 ; j < numSteps2 ; j++ ){
       free(evSum1[i][j]);
     }
-    
+
     /* the parameter value at a given point */
     step = minVal + (REAL8)i*dval1;
-  
+
     /* calculate the cumulative probability */
     if( numSteps1 == 1 ) cumsum[i] = exp(evSum3[0] - evSum4);
     else{
@@ -1491,17 +1491,17 @@ dval1) - evSum4);
     }
     /* print out marginalised posterior */
     fprintf(fp, "%le\t%le\t%le\n", step, exp(evSum3[i] - evSum4), cumsum[i]);
-    
+
     free(evSum1[i]);
     free(evSum2[i]);
   }
-  
+
   results.evidence = evSum4;
-  
+
   /* get the h0 upper limit if required */
   if( strcmp( output.margParam, "h0" ) == 0 && output.dob != 0 )
     results.h0UpperLimit = get_upper_limit(cumsum, output.dob, mesh); 
-  
+
   fclose(fp);
 
   free(evSum1);
@@ -1516,11 +1516,11 @@ dval1) - evSum4);
 /* function to do the trapezium rule for integration on logs  */
 REAL8 log_trapezium(REAL8 logHeight1, REAL8 logHeight2, REAL8 width){
   REAL8 area=0.;
-  
-  /* area = 0.5*(height1 + height2)*width 
+
+  /* area = 0.5*(height1 + height2)*width
      logarea = log(0.5) + log(width) + log(exp(logHeight1) + exp(logHeight2)) */
   area = log(0.5) + log(width) + PLUS(logHeight1, logHeight2);
-  
+
   return area;
 }
 
@@ -1532,7 +1532,7 @@ void response_lookup_table(REAL8 t0, LALDetAndSource detAndSource,
   DetRespLookupTable *lookupTable){ 
   LIGOTimeGPS gps;
   REAL8 T=0;
-  
+
   REAL8 fplus=0., fcross=0.;
 
   INT4 i=0, j=0;
@@ -1544,7 +1544,7 @@ void response_lookup_table(REAL8 t0, LALDetAndSource detAndSource,
     for( j = 0 ; j < lookupTable->timeSteps ; j++ ){
       /* one day is 86400 seconds */
       T = t0 + (REAL8)j*86400./(REAL8)lookupTable->timeSteps;
-    
+
       gps.gpsSeconds = (INT4)floor(T);
       gps.gpsNanoSeconds = (INT4)floor((fmod(T,1.0)*1.e9));
 
@@ -1566,9 +1566,9 @@ void response_lookup_table(REAL8 t0, LALDetAndSource detAndSource,
 REAL8 log_factorial(INT4 num){
   INT4 i=0;
   REAL8 logFac=0.;
-  
+
   for( i=2 ; i <= num ; i++ ) logFac += (REAL8)i;
-  
+
   return logFac;
 }
 
@@ -1578,14 +1578,14 @@ REAL8 log_factorial(INT4 num){
 REAL8 get_upper_limit(REAL8 *cumsum, REAL8 limit, MeshGrid mesh){
   REAL8 ul1=0., ul2=0.;
   INT4 i=0;
-  
+
   INT4 point1=0, point2=0;
   REAL8 vals[3]={0., 0., 0.};
   REAL8 h0s[3]={0., 0., 0.};  
   REAL8 x[3]={0., 0., 0.}, y[3]={0., 0., 0.};
-  
+
   REAL8 det=0., c[3]={0., 0., 0.};
-  
+
   /* find the point above and below the required upper limit */
   for( i = 0 ; i < mesh.h0Steps ; i++ ){
     if( cumsum[i] < limit/100. ){
@@ -1599,12 +1599,12 @@ REAL8 get_upper_limit(REAL8 *cumsum, REAL8 limit, MeshGrid mesh){
       break;
     }
   }
-  
+
   /* couldn't calculate an upper limit! */
   if( point2 == 0. ){
     fprintf(stderr, "Couldn't calculate a %.1lf%% upper limit!\n", limit);
-  } 
- 
+  }
+
   h0s[0] = mesh.minVals.h0 + (REAL8)(point1*mesh.delta.h0);
   h0s[1] = mesh.minVals.h0 + (REAL8)(point2*mesh.delta.h0);
 
@@ -1621,7 +1621,7 @@ REAL8 get_upper_limit(REAL8 *cumsum, REAL8 limit, MeshGrid mesh){
     x[0] = h0s[0]; x[1] = h0s[1]; x[2] = h0s[2];
     y[0] = vals[0]; y[1] = vals[1]; y[2] = vals[2];
   }
-  
+
   /* calculate determinant and quadratic coefficients */
   det = x[0]*x[0]*(x[1]-x[2])-x[0]*(x[1]*x[1]-x[2]*x[2])+(x[1]*x[1]*x[2]
         - x[1]*x[2]*x[2]);
@@ -1631,7 +1631,7 @@ REAL8 get_upper_limit(REAL8 *cumsum, REAL8 limit, MeshGrid mesh){
   c[2] = ( (x[1]*x[1]*x[2]-x[2]*x[2]*x[1])*y[0] -
            (x[0]*x[0]*x[2]-x[0]*x[2]*x[2])*y[1] +
            (x[0]*x[0]*x[1]-x[0]*x[1]*x[1])*y[2] )/det;
-  
+
   /* put equation in the form ax^2 + bx + c = 0 */
   c[2] -= limit/100.;
 
@@ -1653,7 +1653,7 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
   static LALStatus status;
 
   IntrinsicPulsarVariables vars, varsNew;
-  
+
   /* extra h0 and phase parameter required if a glitch is obsevered */
   IntrinsicPulsarVariables *extraVars=NULL, *extraVarsNew=NULL;
   BinaryPulsarParams pulsarParamsMCMC[2];
@@ -1662,16 +1662,16 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
   INT4 nGlitches=input.mcmc.nGlitches;
   INT4 **g1=NULL, **g2=NULL; /* start - end positions of each glitch segment */
   DataStructure **glitchData=NULL;
-  
+
   INT4 below0=0;
-  
+
   REAL4Vector *randNum=NULL; /* LAL random variable params */
   UINT4 seed=0;              /* set to get seed from clock time */
   RandomParams *randomParams=NULL;
-  
+
   CHAR *pos1=NULL, *pos2=NULL;
   INT4 i=0, j=0, k=0, n=0, count=0;
-  
+
   REAL8 like1[1], like2[1];
   REAL8 logL1=0., logL2=0.; /* log likelihoods */
   REAL8 prior=0., priorNew=0., priorTmp=0., priorTmpNew=0.;
@@ -1679,13 +1679,13 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
 
   FILE *fp=NULL;
   CHAR outFile[256];
-  
+
   /* variables for pulsar parameters */
   INT4 matTrue=0;
   BinaryPulsarParams pulsarParams, pulsarParamsNew;
 
   REAL8Array *chol=NULL, *invmat=NULL;
-  REAL8 determinant;  
+  REAL8 determinant;
 
   ParamData *paramData=NULL, *randVals=NULL, *vals=NULL;
   INT4Vector *matPos=NULL; /* position of parameters in ParamData */
@@ -1698,21 +1698,21 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
   if( verbose ){
     fprintf(stderr, "Performing an MCMC for %s with %d iterations.\n",
       det, input.mcmc.iterations);
-  }  
+  }
 
   /* set up random parameters */
   randomParams = XLALCreateRandomParams( seed );
- 
+
   /* work out how many glitches have been input */
   if( input.mcmc.nGlitches > 0 ){
     extraVars = calloc(nGlitches, sizeof(IntrinsicPulsarVariables));
     extraVarsNew = calloc(nGlitches, sizeof(IntrinsicPulsarVariables));
     glitchTimes = calloc(nGlitches, sizeof(REAL8));
-    
+
     /* start and end point of the data before each glitch */
     g1 = XLALCalloc(numDets, sizeof(INT4 *));
     g2 = XLALCalloc(numDets, sizeof(INT4 *));
-    
+
     for( j = 0 ; j < numDets ; j++ ){
         g1[j] = XLALCalloc(nGlitches + 1, sizeof(INT4));
         g2[j] = XLALCalloc(nGlitches + 1, sizeof(INT4));
@@ -1727,23 +1727,23 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
           pos1 = input.mcmc.glitchTimes;/*string starts "*/
         else
           pos1 = pos2+1; /* first position equals the previous value */
-        
+
         gtimestr = NULL;
         gtimestr = malloc(256*sizeof(CHAR));
-          
-        /* values are delimited by commas , */        
+
+        /* values are delimited by commas , */
         if( i < nGlitches - 1 ){
           pos2 = strchr(pos1, ',');
           XLALStringCopy(gtimestr, pos1, (pos2-pos1)+1);/*copy time of glitch*/
         }
         else
           gtimestr = XLALStringDuplicate(pos1);
-         
+
         glitchTimes[i] = LALTDBMJDtoGPS(atof(gtimestr)); /* convert to GPS */
-        
+
         XLALFree(gtimestr);
       }
-      
+
       /* set initial values for extra params (all start at same point) */
       if( i==0 ){
         extraVars[i].h0 = input.mesh.minVals.h0 +
@@ -1759,79 +1759,79 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
       }
 
       /* find the position before and after the glitch +/- the cut-off time/2 */
-      for( j = 0 ; j < numDets ; j++ ){        
+      for( j = 0 ; j < numDets ; j++ ){
         if( i == 0 )
           g1[j][i] = 0;
-         
+
         for( k = 0 ; k < (INT4)data[j].times->length ; k++ ){
           /* first point after the last glitch */
-          if( i > 0 && data[j].times->data[k] < glitchTimes[i-1] + 
+          if( i > 0 && data[j].times->data[k] < glitchTimes[i-1] +
               input.mcmc.glitchCut/2.){
               g1[j][i] = k;
            }
-          
+
           /* first point before current glitch */
           if( data[j].times->data[k] > glitchTimes[i] - 
             input.mcmc.glitchCut/2. ){
             g2[j][i] = k;
-            
+
             if(i != nGlitches - 1)
-              break;           
+              break;
           }
-          
+
           /* point from final glitch to end of data */
           if( data[j].times->data[k] > glitchTimes[i] +
              input.mcmc.glitchCut/2. && i == nGlitches - 1 ){
             g1[j][i+1] = k;
             g2[j][i+1] = data[j].times->length;
-            
+
             break;
           }
         }
       }
     }
-    
+
     /* put each section of data into a new structure */
     glitchData = XLALCalloc(numDets, sizeof(DataStructure *));
-    
+
     for( i = 0 ; i < numDets ; i++ ){
       glitchData[i] = XLALCalloc(nGlitches + 1, sizeof(DataStructure));
-      
+
       for( j = 0 ; j < nGlitches + 1 ; j++ ){
         glitchData[i][j].data = NULL;
         glitchData[i][j].data = XLALCreateCOMPLEX16Vector(g2[i][j]-g1[i][j]+1);
-        
+
         glitchData[i][j].times = NULL;
         glitchData[i][j].times = XLALCreateREAL8Vector(g2[i][j]-g1[i][j]+1);
-        
+
         glitchData[i][j].chunkLengths = NULL;
         glitchData[i][j].chunkLengths =
           XLALCreateINT4Vector(g2[i][j]-g1[i][j]+1);
         glitchData[i][j].chunkMin = data[i].chunkMin;
         glitchData[i][j].chunkMax = data[i].chunkMax;
-        
+
         n=0;
         for( k = g1[i][j] ; k < g2[i][j] ; k++ ){
           glitchData[i][j].data->data[n] = data[i].data->data[k];
           glitchData[i][j].times->data[n] = data[i].times->data[k];
           n++;
         }
-        
+
         /* get chunk lengths and data sums */
         get_chunk_lengths(glitchData[i][j]);
-        
+
         glitchData[i][j].sumData = NULL;
         glitchData[i][j].sumData =
           XLALCreateREAL8Vector(glitchData[i][j].chunkLengths->length);
-        
+
         sum_data(glitchData[i][j]);
-        
+
         /* set lookup tables */
         glitchData[i][j].lookupTable = data[i].lookupTable;
       }
     }
   }
-  
+
   /* if there's an input covarince matrix file then set up parameters */
   if( input.matrixFile != NULL )
     matTrue = 1;
@@ -1863,7 +1863,7 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
       tempmat = CreateCovarianceMatrix( paramData, posdef );
 
       chol = CholeskyDecomp(tempmat, "lower");
-      
+
       /* calculate the matrix inverse */
       LAL_CALL( LALDMatrixInverse( &status, &determinant, tempmat, invmat ),
         &status );
@@ -1877,7 +1877,7 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
 
     /* generate random parameters */
     randVals = MultivariateNormalDeviates( chol, paramData, randomParams );
-  
+
     vals = XLALMalloc( MAXPARAMS*sizeof(ParamData) );
     memcpy( vals, randVals, MAXPARAMS*sizeof(ParamData) );
 
@@ -1941,7 +1941,7 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
   vars.Xcsinphi_2 = 0.5*vars.Xcross*sin(vars.phi0);
   vars.Xpcosphi_2 = 0.5*vars.Xplus*cos(vars.phi0);
   vars.Xccosphi_2 = 0.5*vars.Xcross*cos(vars.phi0);
-  
+
   for( i = 0 ; i < nGlitches ; i++ ){
     extraVars[i].Xpsinphi_2 = 0.5*vars.Xplus * sin(extraVars[i].phi0);
     extraVars[i].Xcsinphi_2 = 0.5*vars.Xcross * sin(extraVars[i].phi0);
@@ -1949,12 +1949,12 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
     extraVars[i].Xccosphi_2 = 0.5*vars.Xcross * cos(extraVars[i].phi0);
     extraVars[i].psi = vars.psi;
   }
-  
+
   input.mesh.h0Steps = 1;
   input.mesh.phiSteps = 1;
   input.mesh.ciotaSteps = 1;
   input.mesh.psiSteps = 1;
- 
+
   /* get data chunk lengths - only if no glitches here */
   if( nGlitches == 0 ){
     for( k = 0 ; k < numDets ; k++ ){
@@ -1962,13 +1962,13 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
       data[k].chunkLengths = NULL;
       data[k].chunkLengths = XLALCreateINT4Vector(
       (INT4)ceil(data[k].data->length/data[k].chunkMin) );
-       
+
       get_chunk_lengths(data[k]);
-     
+
       /* allocate memory for summations */
       data[k].sumData = NULL;
       data[k].sumData = XLALCreateREAL8Vector(data[k].chunkLengths->length);
-      
+
       sum_data(data[k]);
     }
   }
@@ -1997,7 +1997,7 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
 
   /* create vector for random Gaussian numbers */
   randNum = XLALCreateREAL4Vector(4+2*nGlitches);
-  
+
   count = 0;
 
   if( matTrue && numDets == 1 ){
@@ -2024,21 +2024,21 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
     /* get new values of parameters using Gaussian proposal distributions */
     XLALNormalDeviates(randNum, randomParams);
     varsNew.h0 = vars.h0 + input.mcmc.sigmas.h0*randNum->data[0];
-    
+
     below0 = 0;
     for( j = 0 ; j < nGlitches ; j++ ){
       extraVarsNew[j].h0 = extraVars[j].h0 +
         input.mcmc.sigmas.h0*randNum->data[4+2*j];
       extraVarsNew[j].phi0 = extraVars[j].phi0 +
         input.mcmc.sigmas.phi0*randNum->data[4+2*j+1];
-      
+
       if( extraVarsNew[j].phi0 < 0. ){
         extraVarsNew[j].phi0 = fmod(extraVarsNew[j].phi0, LAL_TWOPI);
         extraVarsNew[j].phi0 += LAL_TWOPI;
       }
       else if( extraVarsNew[j].phi0 > LAL_TWOPI )
         extraVarsNew[j].phi0 = fmod(extraVarsNew[j].phi0, LAL_TWOPI);
-      
+
       /* if any of the h0 jump below zero then write out data below */
       if( extraVarsNew[j].h0 < 0. )
         below0 = 1;
@@ -2055,7 +2055,7 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
           below0 = 1;
       }
     }
-    
+
     /* if h0 jumps negative then this is equivalent to having jumped outside
        our prior range so the likelihood is always zero and this move always
        rejected */
@@ -2063,10 +2063,10 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
       if( fmod(count, input.mcmc.outputRate) == 0. && i > input.mcmc.burnIn-1 ){
         fprintf(fp, "%le\t%le\t%lf\t%lf\t%lf", logL1, vars.h0, vars.phi0,
           vars.ci, vars.psi);
-         
+
         for( j = 0 ; j < nGlitches ; j++ )
           fprintf(fp, "\t%le\t%lf", extraVars[j].h0, extraVars[j].phi0);
-        
+
         if( matTrue ){
           /* print out pulsar parameters */
           for( j = 0 ; j < (INT4)matPos->length ; j++ ){
@@ -2076,18 +2076,18 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
         }
         fprintf(fp, "\n");
       }
-      
+
       count++;
       continue;
     }
 
     if( matTrue ){
       /* generate new pulsars parameters from the pulsar parameter covariance */
-      randVals = MultivariateNormalDeviates( chol, paramData, randomParams );
+      randVals = MultivariateNormalDeviates( chol, vals, randomParams );
       memcpy(&pulsarParamsNew, &pulsarParams, sizeof(BinaryPulsarParams));
       SetMCMCPulsarParams( &pulsarParamsNew, randVals, matPos );
 
-      /* check eccentricities so that 0 <= e < 1 i.e. circular of elliptical
+      /* check eccentricities so that 0 <= e < 1 i.e. circular or elliptical
        orbits */
       if( pulsarParamsNew.e < 0. )
         pulsarParamsNew.e = fabs(pulsarParamsNew.e);
@@ -2108,35 +2108,35 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
     varsNew.phi0 = vars.phi0 + input.mcmc.sigmas.phi0*randNum->data[1];
     varsNew.psi = vars.psi + input.mcmc.sigmas.psi*randNum->data[2];
     varsNew.ci = vars.ci + input.mcmc.sigmas.ci*randNum->data[3];
-    
+
     /* wrap parameters around or bounce */
     if( varsNew.ci > 1.0 )
       varsNew.ci = 1. - fmod(varsNew.ci, 1.);
     else if( varsNew.ci < -1.0 )
       varsNew.ci = -1. - fmod(varsNew.ci, 1.);
-      
+
     if( varsNew.phi0 < 0. ){
       varsNew.phi0 = fmod(varsNew.phi0, LAL_TWOPI);
       varsNew.phi0 += LAL_TWOPI;
     }
     else if( varsNew.phi0 > LAL_TWOPI )
       varsNew.phi0 = fmod(varsNew.phi0, LAL_TWOPI);
-      
+
     if( varsNew.psi > LAL_PI/4. ){
       varsNew.psi = fmod(varsNew.psi, LAL_PI/4.) - LAL_PI/4.;
       varsNew.phi0 = fmod(varsNew.phi0 + LAL_PI, LAL_TWOPI);
-      
+
       for( j = 0 ; j < nGlitches ; j++ )
         extraVarsNew[j].phi0 = fmod(extraVarsNew[j].phi0 + LAL_PI, LAL_TWOPI);
     }
     else if(varsNew.psi < -LAL_PI/4.){
       varsNew.psi = fmod(varsNew.psi, LAL_PI/4.) + LAL_PI/4.;
       varsNew.phi0 = fmod(varsNew.phi0 + LAL_PI, LAL_TWOPI);
-      
+
       for( j = 0 ; j < nGlitches ; j++ )
         extraVarsNew[j].phi0 = fmod(extraVarsNew[j].phi0 + LAL_PI, LAL_TWOPI);
     }
-    
+
     /* set combined parameters */
     varsNew.Xplus = 0.5*(1.+varsNew.ci*varsNew.ci);
     varsNew.Xcross = varsNew.ci;
@@ -2144,7 +2144,7 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
     varsNew.Xcsinphi_2 = 0.5*varsNew.Xcross*sin(varsNew.phi0);
     varsNew.Xpcosphi_2 = 0.5*varsNew.Xplus*cos(varsNew.phi0);
     varsNew.Xccosphi_2 = 0.5*varsNew.Xcross*cos(varsNew.phi0);
-    
+
     for( j = 0 ; j < nGlitches ; j++ ){
       extraVarsNew[j].Xpsinphi_2 = 0.5*varsNew.Xplus *
                                    sin(extraVarsNew[j].phi0);
@@ -2156,7 +2156,7 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
                                    cos(extraVarsNew[j].phi0);
       extraVarsNew[j].psi = varsNew.psi;
     }
-    
+
     /* set single h0 value for log_likelihood function */
     input.mesh.h0Steps = 1;
 
@@ -2188,7 +2188,7 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
           for( j = 0 ; j < nGlitches + 1 ; j++ ){
             if( j == 0 ){
               input.mesh.minVals.h0 = vars.h0;
-              
+
               log_likelihood(like1, glitchData[k][j], vars, input.mesh,
                 pulsarParamsMCMC, baryinput, edat);
             }
@@ -2206,10 +2206,9 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
     if( matTrue ){
       /* set new pulsar parameters */
       /* store originals */
-      memcpy(&pulsarParams, &pulsarParamsMCMC[1], sizeof(BinaryPulsarParams));
       memcpy(&pulsarParamsMCMC[1], &pulsarParamsNew,
         sizeof(BinaryPulsarParams));
-    }  
+    }
 
     for( k = 0 ; k < numDets ; k++ ){
       /* second likelihood - for new position in parameter space */
@@ -2243,15 +2242,14 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
             input.mesh.minVals.h0 = extraVarsNew[j-1].h0;
             log_likelihood(like2, glitchData[k][j], extraVarsNew[j-1],
               input.mesh, pulsarParamsMCMC, baryinput, edat);
-          }  
-          logL2 += *like2;          
+          }
+          logL2 += *like2;
         }
       }
     }
 
     /* most importantly use the covariance matrix as a prior on the pulsar
        parameters */
-
     priorNew = 0.;
     if( matTrue ){
       for( j=0; j<(INT4)matPos->length ; j++){
@@ -2259,7 +2257,7 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
           priorTmp = 0.;
 
         priorTmpNew = 0.;
-        
+
         for( k=0; k<(INT4)matPos->length ; k++){
           if(i==0){
             priorTmp += (vals[matPos->data[k]].val -
@@ -2271,7 +2269,7 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
               paramData[matPos->data[k]].val) * 
               XLALGetREAL8MatrixValue(invmat, j, k);
         }
-        
+
         if(i==0){
           prior += priorTmp*(vals[matPos->data[j]].val -
             paramData[matPos->data[j]].val);
@@ -2280,7 +2278,7 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
         priorNew += priorTmpNew*(randVals[matPos->data[j]].val -
           paramData[matPos->data[j]].val);
       }
-      
+
       if(i==0){
         prior *= -0.5;
         logL1 += prior;
@@ -2299,7 +2297,7 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
         input.priors.vars.psi = vars.psi;
 
         logL1 += log_prior(input.priors, input.mesh);
-      
+
         if( nGlitches > 0 ){
           for( j = 0 ; j < nGlitches ; j++ ){
             input.priors.vars.h0 = extraVars[j].h0;
@@ -2333,28 +2331,33 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
     }
     else
       ratio = logL2 - logL1;
-      
+
     if( ratio >= 0. ){ /* always accept new value */
       vars = varsNew;
-      /* update vals structure */ 
-      if( matTrue )
+
+      /* update vals structure */
+      if( matTrue ){
         memcpy(vals, randVals, MAXPARAMS*sizeof(ParamData));
+        memcpy(&pulsarParams, &pulsarParamsNew, sizeof(BinaryPulsarParams));
+      }
 
       for( j = 0 ; j < nGlitches ; j++)
         extraVars[j] = extraVarsNew[j];
-        
+
       logL1 = logL2;
     }
     /* otherwise accept with a certain probability */
     else if( log(XLALUniformDeviate(randomParams)) < ratio ){
       vars = varsNew;
-      
-      if( matTrue )
-        memcpy(vals, randVals, MAXPARAMS*sizeof(ParamData));   
+
+      if( matTrue ){
+        memcpy(vals, randVals, MAXPARAMS*sizeof(ParamData));
+        memcpy(&pulsarParams, &pulsarParamsNew, sizeof(BinaryPulsarParams));
+      }
 
       for( j = 0 ; j < nGlitches ; j++)
         extraVars[j] = extraVarsNew[j];
-        
+
       logL1 = logL2;
     }
 
@@ -2362,10 +2365,10 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
     if( fmod(count, input.mcmc.outputRate) == 0. && i > input.mcmc.burnIn-1 ){
       fprintf(fp, "%le\t%le\t%lf\t%lf\t%lf", logL1, vars.h0, vars.phi0, vars.ci,
         vars.psi);
-         
+
       for( j = 0 ; j < nGlitches ; j++ )
         fprintf(fp, "\t%le\t%lf", extraVars[j].h0, extraVars[j].phi0);
-      
+
       if( matTrue ){
         /* print out pulsar parameters */
         for( j = 0 ; j < (INT4)matPos->length ; j++ ){
@@ -2374,7 +2377,7 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
             paramData[matPos->data[j]].val);
         }
       }
-      
+
       fprintf(fp, "\n");
     }
 
@@ -2384,10 +2387,10 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
   /*==========================================================================*/
 
   if( verbose ) fprintf(stderr, "\n");
-  
+
   /* destroy vectors */
   XLALDestroyREAL4Vector(randNum);
- 
+
   for( j = 0 ; j < nGlitches ; j++ ){
     for( i = 0 ; i < numDets ; i++ ){
       XLALDestroyCOMPLEX16Vector(glitchData[i][j].data);
@@ -2419,7 +2422,7 @@ void get_chunk_lengths(DataStructure data){
   /* create vector of data segment length */
   while( 1 ){
     count++; /* counter */
-    
+
     /* break clause */
     if( i > (INT4)data.data->length - 2 ){
       /* set final value of chunkLength */
@@ -2429,18 +2432,18 @@ void get_chunk_lengths(DataStructure data){
     }
 
     i++;
-    
+
     /* if consecutive points are within 180 seconds of each other count as in
        the same chunk */
     if( data.times->data[i] - data.times->data[i-1] > 180. || count ==
       data.chunkMax ){
       data.chunkLengths->data[j] = count;
       count = 0; /* reset counter */
-           
+
       j++;
     }
   }
-  
+
   data.chunkLengths = XLALResizeINT4Vector(data.chunkLengths, j);
 }
 
@@ -2527,17 +2530,17 @@ void SetMCMCPulsarParams( BinaryPulsarParams *pulsarParams, ParamData *data,
 
 /* this function perform Cholesky decomposition on M and outputs the
    lower, or upper triagular matrix depending if uOrl is set to "upper" or
-   "lower" - if nothing is specified then the default is lower 
+   "lower" - if nothing is specified then the default is lower
    This is pretty much copied from the GSL function gsl_linalg_cholesky_decomp
    although this works with floats rather than doubles
-*/ 
+*/
 REAL8Array *CholeskyDecomp(REAL8Array *M, CHAR* uOrl){
   INT4 i=0, j=0, k=0;
 
   REAL8 A_00=0., L_00=0.;
 
   REAL8Array *A=NULL;
-  
+
   INT4 length=0;
 
   if( verbose ) fprintf(stderr, "Performing Cholesky decomposition of \
@@ -2594,10 +2597,10 @@ matrix\n");
 
     for( i=0; i<k; i++ ){
       REAL8 sum = 0.;
-      
+
       REAL8 A_ki = XLALGetREAL8MatrixValue( A, k, i );
       REAL8 A_ii = XLALGetREAL8MatrixValue( A, i, i );
-    
+
       REAL8 ci[length];
       REAL8 ck[length];
 
@@ -2618,7 +2621,7 @@ matrix\n");
     {
       REAL8 sum = 0.;
       REAL8 diag = 0.;
-      
+
       for( j=0; j<k; j++ ){
         sum += XLALGetREAL8MatrixValue( A, k, j )*
           XLALGetREAL8MatrixValue( A, k, j );
@@ -2648,9 +2651,9 @@ matrix\n");
            so I'll just set it to zero manually */
         diag = 0.;
       }
-      
+
       XLALSetREAL8MatrixValue( A, k, k, sqrt(diag) );
-      
+
     }
   }
 
@@ -2688,15 +2691,14 @@ matrix\n");
 
 /* this function will draw a set of random numbers from a multivariate Gaussian
 distribution, with a cholesky decomposed covariance matrix given by cholmat and
-parameter mean
-values */
+parameter mean values */
 ParamData *MultivariateNormalDeviates( REAL8Array *cholmat, ParamData *data,
   RandomParams *randomParams ){
   REAL4Vector *randNum=NULL;
 
   ParamData *deviates=NULL;
 
-  INT4 dim=cholmat->dimLength->data[0]; /* covariance matrix dimensions */ 
+  INT4 dim=cholmat->dimLength->data[0]; /* covariance matrix dimensions */
 
   INT4 i=0, j=0;
   REAL8Vector *Z=NULL;
@@ -2877,13 +2879,13 @@ reading any correlation data!");
 
   /* find positions of each parameter */
   /* the strings that represent parameters in a matrix are given in the paraem
-     variable in the tempo code mxprt.f */  
+     variable in the tempo code mxprt.f */
   /* read in matrix */
   k=0;
   for(i=0;i<numParams+numDM;i++){
-    n=0; 
+    n=0;
     fscanf(fp, "%s%s", tmpStr, tmpStr2);
-    
+
     /* if its a dispersion measure then just skip the line */
     if( (DMpos != 0 && i == DMpos) || (DM1pos != 0 && i == DM1pos) ){
       fscanf(fp, "%*[^\n]");
@@ -2897,7 +2899,7 @@ reading any correlation data!");
         n--;
         continue;
       }
-      
+
       fscanf(fp, "%lf", &corTemp);
       XLALSetREAL8MatrixValue( corMat, k, n, corTemp );
       if(n != k)
@@ -3017,7 +3019,7 @@ REAL8Array *XLALCheckPositiveDefinite( REAL8Array *matrix ){
     }
     eigenval->data[i] = 0.;
   }
-  
+
   LAL_CALL( LALDSymmetricEigenVectors( &status, eigenval, eigenvec ), &status );
 
   for( i=0; i<(INT4)matrix->dimLength->data[0]; i++ ){
@@ -3043,7 +3045,7 @@ REAL8Array *XLALConvertToPositiveDefinite( REAL8Array *nonposdef ){
 
   REAL8Vector *eigenval=NULL;
   REAL8Array *eigenvec=NULL;
-  
+
   REAL8Array *posdef = NULL; /* output positive definite matrix */
 
   REAL8Array *Lprime=NULL;
@@ -3137,7 +3139,7 @@ REAL8Array *XLALConvertToPositiveDefinite( REAL8Array *nonposdef ){
   XLALDestroyREAL8Array( Bprime );
   XLALDestroyREAL8Array( B );
   XLALDestroyREAL8Array( Btrans );
-  
+
   /* check that the difference between new and old values are greater than the
      maximum precision between REAL8 values (LAL_REAL8_EPS) - if not use
      original value */
