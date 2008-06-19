@@ -1152,18 +1152,18 @@ int main( int argc, char *argv[] )
       {
         fprintf( out, "stat-threshold = %f\n",
             XLALCoincInspiralStat(coincZeroHead, coincstat, &bittenLParams) );
+
+        /* free all but the loudest coinc inspirals */
+        thisCoinc = coincZeroHead->next;
+        while ( thisCoinc )
+        {
+          tmpCoinc = thisCoinc;
+          thisCoinc= thisCoinc->next;
+          XLALFreeCoincInspiral( &tmpCoinc );
+        }
+        coincZeroHead->next = NULL;
       }
       fclose( out );
-
-      /* free all but the loudest coinc inspirals */
-      thisCoinc = coincZeroHead->next;
-      while ( thisCoinc )
-      {
-        tmpCoinc = thisCoinc;
-        thisCoinc= thisCoinc->next;
-        XLALFreeCoincInspiral( &tmpCoinc );
-      }
-      coincZeroHead->next = NULL;
     }
 
     /* free the CoincInspiralSlideTables from slideHeads */
