@@ -259,7 +259,7 @@ static int XLALLIGOLwFindColumn(
  */
 
 
-static long XLALLIGOLwParseIlwdChar(
+static long long XLALLIGOLwParseIlwdChar(
 	const struct MetaioParseEnvironment *env,
 	int column_number,
 	const char *ilwd_char_table_name,
@@ -269,15 +269,18 @@ static long XLALLIGOLwParseIlwdChar(
 	static const char func[] = "XLALLIGOLwParseIlwdChar";
 	char *fmt;
 	const char *ilwd_char = (char *) env->ligo_lw.table.elt[column_number].data.ilwd_char.data;
-	long id;
+	long long id;
 
-	/* +1 for the '\0', +2 for the ':' characters, and +4 for the
-	 * "%%ld" string */
-	fmt = malloc(strlen(ilwd_char_table_name) + strlen(ilwd_char_column_name) + 7);
+	/*
+	 * 8 = 1 for the '\0', 2 for the ':' characters, and 5 for the
+	 * "%%lld" string
+	 */
+
+	fmt = malloc(strlen(ilwd_char_table_name ? ilwd_char_table_name : "%*[^:]") + strlen(ilwd_char_column_name ? ilwd_char_column_name : "%*[^:]") + 8);
 	if(!fmt)
 		XLAL_ERROR(func, XLAL_ENOMEM);
 
-	sprintf(fmt, "%s:%s:%%ld", ilwd_char_table_name ? ilwd_char_table_name : "%*[^:]", ilwd_char_column_name ? ilwd_char_column_name : "%*[^:]");
+	sprintf(fmt, "%s:%s:%%lld", ilwd_char_table_name ? ilwd_char_table_name : "%*[^:]", ilwd_char_column_name ? ilwd_char_column_name : "%*[^:]");
 
 	if(sscanf(ilwd_char, fmt, &id) < 1) {
 		free(fmt);
@@ -1072,10 +1075,11 @@ MultiInspiralTable    * XLALMultiInspiralTableFromLIGOLw (
     /* parse the contents of the row into the InspiralTemplate structure */
     for ( j = 0; tableDir[j].name; ++j )
     {
+      enum METAIO_Type column_type = env->ligo_lw.table.col[tableDir[j].pos].data_type;
       REAL4 r4colData = env->ligo_lw.table.elt[tableDir[j].pos].data.real_4;
       REAL8 r8colData = env->ligo_lw.table.elt[tableDir[j].pos].data.real_8; 
       INT4  i4colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_4s;
-      UINT8 i8colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_8s;
+
       if ( tableDir[j].idx == 0 )
       {
         LALSnprintf( thisEvent->ifos, LIGOMETA_IFO_MAX * sizeof(CHAR), 
@@ -1232,12 +1236,23 @@ MultiInspiralTable    * XLALMultiInspiralTableFromLIGOLw (
       }
       else if ( tableDir[j].idx == 38 )
       {
-        if ( tableDir[j].pos > 0 && i8colData )
+        if ( tableDir[j].pos > 0 )
         {
-          thisEvent->event_id = (EventIDColumn *)
-            LALCalloc( 1, sizeof(EventIDColumn) );
-          thisEvent->event_id->id = i8colData;
-          thisEvent->event_id->multiInspiralTable = thisEvent;
+          UINT8 i8colData;
+          if ( column_type == METAIO_TYPE_INT_8S )
+            i8colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_8s;
+          else
+          {
+            i8colData = XLALLIGOLwParseIlwdChar(env, tableDir[j].pos, "multi_inspiral", "event_id");
+            if ( i8colData < 0 )
+              XLAL_ERROR_NULL( func, XLAL_EFUNC );
+          }
+          if ( i8colData )
+          {
+            thisEvent->event_id = LALCalloc( 1, sizeof(*thisEvent->event_id) );
+            thisEvent->event_id->id = i8colData;
+            thisEvent->event_id->multiInspiralTable = thisEvent;
+          }
         }
       }
       else if ( tableDir[j].idx == 39 )
@@ -1506,10 +1521,10 @@ LALSnglInspiralTableFromLIGOLw (
       /* parse the contents of the row into the InspiralTemplate structure */
       for ( j = 0; tableDir[j].name; ++j )
       {
+        enum METAIO_Type column_type = env->ligo_lw.table.col[tableDir[j].pos].data_type;
         REAL4 r4colData = env->ligo_lw.table.elt[tableDir[j].pos].data.real_4;
         REAL8 r8colData = env->ligo_lw.table.elt[tableDir[j].pos].data.real_8;
         INT4  i4colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_4s;
-        UINT8 i8colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_8s;
 
         if ( tableDir[j].pos < 0 ) continue;
 
@@ -1694,12 +1709,23 @@ LALSnglInspiralTableFromLIGOLw (
         }
         else if ( tableDir[j].idx == 44 )
         {
-          if ( tableDir[j].pos > 0 && i8colData )
+          if ( tableDir[j].pos > 0 )
           {
-            thisEvent->event_id = (EventIDColumn *) 
-              LALCalloc( 1, sizeof(EventIDColumn) );
-            thisEvent->event_id->id = i8colData;
-            thisEvent->event_id->snglInspiralTable = thisEvent;
+            UINT8 i8colData;
+            if ( column_type == METAIO_TYPE_INT_8S )
+              i8colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_8s;
+            else
+            {
+              i8colData = XLALLIGOLwParseIlwdChar(env, tableDir[j].pos, "sngl_inspiral", "event_id");
+              if ( i8colData < 0 )
+                return -1;
+            }
+            if ( i8colData )
+            {
+              thisEvent->event_id = LALCalloc( 1, sizeof(*thisEvent->event_id) );
+              thisEvent->event_id->id = i8colData;
+              thisEvent->event_id->snglInspiralTable = thisEvent;
+            }
           }
         }
         else if ( tableDir[j].idx == 45 )
@@ -1960,9 +1986,10 @@ InspiralTmpltBankFromLIGOLw (
       /* parse the contents of the row into the InspiralTemplate structure */
       for ( j = 0; tableDir[j].name; ++j )
       {
+        enum METAIO_Type column_type = env->ligo_lw.table.col[tableDir[j].pos].data_type;
         REAL4 colData = env->ligo_lw.table.elt[tableDir[j].pos].data.real_4;
         INT4 i4colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_4s;
-        UINT8 i8colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_8s;
+
         if ( tableDir[j].pos < 0 ) continue;
         if ( tableDir[j].idx == 0 )
         {
@@ -2030,12 +2057,23 @@ InspiralTmpltBankFromLIGOLw (
         }
         else if ( tableDir[j].idx == 16 )
         {
-          if ( tableDir[j].pos > 0 && i8colData )
+          if ( tableDir[j].pos > 0 )
           {
-            thisTmplt->event_id = (EventIDColumn *) 
-              LALCalloc( 1, sizeof(EventIDColumn) );
-            thisTmplt->event_id->id = i8colData;
-            thisTmplt->event_id->inspiralTemplate = thisTmplt;
+            UINT8 i8colData;
+            if ( column_type == METAIO_TYPE_INT_8S )
+              i8colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_8s;
+            else
+            {
+              i8colData = XLALLIGOLwParseIlwdChar(env, tableDir[j].pos, "sngl_inspiral", "event_id");
+              if ( i8colData < 0 )
+                return -1;
+            }
+            if ( i8colData )
+            {
+              thisTmplt->event_id = LALCalloc( 1, sizeof(*thisTmplt->event_id) );
+              thisTmplt->event_id->id = i8colData;
+              thisTmplt->event_id->inspiralTemplate = thisTmplt;
+            }
           }
         }
         else if ( tableDir[j].idx == 17 )
@@ -3817,10 +3855,10 @@ LALMultiInspiralTableFromLIGOLw (
     /* parse the contents of the row into the MultiInspiralTable structure */
     for ( j = 0; tableDir[j].name; ++j )
     {
+      enum METAIO_Type column_type = env->ligo_lw.table.col[tableDir[j].pos].data_type;
       REAL4 r4colData = env->ligo_lw.table.elt[tableDir[j].pos].data.real_4;
       REAL8 r8colData = env->ligo_lw.table.elt[tableDir[j].pos].data.real_8;
       INT4  i4colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_4s;
-      UINT8 i8colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_8s;
 
       if ( tableDir[j].pos < 0 ) continue;
 
@@ -3981,12 +4019,23 @@ LALMultiInspiralTableFromLIGOLw (
       }
       else if ( tableDir[j].idx == 38 )
       {
-        if ( tableDir[j].pos > 0 && i8colData )
+        if ( tableDir[j].pos > 0 )
         {
-          thisEvent->event_id = (EventIDColumn *)
-            LALCalloc( 1, sizeof(EventIDColumn) );
-          thisEvent->event_id->id = i8colData;
-          thisEvent->event_id->multiInspiralTable = thisEvent;
+          UINT8 i8colData;
+          if ( column_type == METAIO_TYPE_INT_8S )
+            i8colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_8s;
+          else
+          {
+            i8colData = XLALLIGOLwParseIlwdChar(env, tableDir[j].pos, "multi_inspiral", "event_id");
+            if ( i8colData < 0 )
+              return -1;
+          }
+          if ( i8colData )
+          {
+            thisEvent->event_id = LALCalloc( 1, sizeof(*thisEvent->event_id) );
+            thisEvent->event_id->id = i8colData;
+            thisEvent->event_id->multiInspiralTable = thisEvent;
+          }
         }
       }
       else if ( tableDir[j].idx == 39 )
