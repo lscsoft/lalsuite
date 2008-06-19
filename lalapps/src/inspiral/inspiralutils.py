@@ -317,7 +317,8 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dfOnly = False, \
   elif vetoCat:
     hipeSections = ["condor", "pipeline", "input", "data", "ligo-data", \
         "inspiral", "thinca", "thinca-2", "datafind", "virgo-data", \
-        "thinca-slide", "coire", "coire-inj", "sire", "sire-inj"]
+        "thinca-slide", "coire", "coire-1", "coire-2","coire-inj", "sire", \
+        "sire-inj"]
   else:
     hipeSections = ["condor", "pipeline", "input", "calibration", "datafind",\
         "ligo-data", "virgo-data", "geo-data", "data", "tmpltbank", \
@@ -325,9 +326,9 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dfOnly = False, \
         "l1-tmpltbank", "v1-tmpltbank", "g1-tmpltbank", "no-veto-inspiral", \
         "veto-inspiral", "inspiral", "h1-inspiral", "h2-inspiral", \
         "l1-inspiral", "g1-inspiral", "v1-inspiral", "thinca", "thinca-1", \
-        "thinca-2", "thinca-slide", "trigbank", "sire", "sire-inj", \
-        "coire", "coire-inj", "cohbank", "coh-trig", "chia", \
-        "coherent-inspiral"]
+        "thinca-2", "thinca-slide", "trigbank", "sire",  \
+        "sire-inj", "coire", "coire-1", "coire-2", "coire-inj", \
+        "cohbank", "coh-trig", "chia", "coherent-inspiral"]
 
   for seg in hipecp.sections():
     if not seg in hipeSections: hipecp.remove_section(seg)
