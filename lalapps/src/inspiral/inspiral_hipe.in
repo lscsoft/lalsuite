@@ -1578,10 +1578,22 @@ coire_slide_summary_job = inspiral.CoireJob(cp)
 coire_slide_summary_job.set_sub_file( basename + '.coire_slide_summary' + \
     subsuffix )
 
+# coire2:
+coire2_job = inspiral.CoireJob(cp)
+coire2_job.set_sub_file( basename + '.coire2' + subsuffix )
+coire2_slide_job = inspiral.CoireJob(cp)
+coire2_slide_job.set_sub_file( basename + '.coire2_slide' + subsuffix )
+coire2_summary_job = inspiral.CoireJob(cp)
+coire2_summary_job.set_sub_file( basename + '.coire2_summary' + subsuffix )
+coire2_slide_summary_job = inspiral.CoireJob(cp)
+coire2_slide_summary_job.set_sub_file( basename + '.coire2_slide_summary' + \
+    subsuffix )
+
 
 all_jobs = [inspinj_job, single_inca_job, trig_job, cb_job, sire_job, 
-  sire_summary_job, coire_job, coire_slide_job, coire_summary_job, 
-  coire_slide_summary_job]
+  sire_summary_job, coire_job,
+  coire_slide_job, coire_summary_job, coire_slide_summary_job, coire2_job,
+  coire2_slide_job, coire2_summary_job, coire2_slide_summary_job]
 all_jobs.extend(tmplt_jobs.values())
 all_jobs.extend(insp_jobs.values())
 all_jobs.extend(thinca_jobs.values())
@@ -1651,8 +1663,9 @@ try:
 except:
   play_data_mask = None
 
-play_jobs = [trig_job, sire_job, sire_summary_job, coire_job, coire_slide_job,
-  coire_summary_job, coire_slide_summary_job]
+play_jobs = [trig_job, sire_job, sire_summary_job, 
+  coire_job, coire_slide_job, coire_summary_job, coire_slide_summary_job,
+  coire2_job, coire2_slide_job, coire2_summary_job, coire2_slide_summary_job]
 play_jobs.extend(thinca_jobs.values())
 play_jobs.extend(thinca_slide_jobs.values())
 play_jobs.extend(thinca2_jobs.values())
@@ -1893,8 +1906,9 @@ else:
 
 # add the injection details to inspiral/sire/coire jobs  
 if inj_file:
-  inj_jobs = [sire_job, sire_summary_job, coire_job, coire_slide_job, 
-    coire_summary_job, coire_slide_summary_job]
+  inj_jobs = [sire_job, sire_summary_job, 
+    coire_job, coire_slide_job, coire_summary_job, coire_slide_summary_job, 
+    coire2_job, coire2_slide_job, coire2_summary_job, coire2_slide_summary_job]
   inj_jobs.extend(insp_jobs.values())
   inj_jobs.extend(insp_veto_jobs.values())
   inj_jobs.extend(insp_coh_jobs.values())
@@ -1914,6 +1928,10 @@ if inj_file or doExtTrig:
     coire_slide_job.add_ini_opts(cp,'coire-inj')
     coire_summary_job.add_ini_opts(cp,'coire-inj')
     coire_slide_summary_job.add_ini_opts(cp,'coire-inj')
+    coire2_job.add_ini_opts(cp,'coire-inj')
+    coire2_slide_job.add_ini_opts(cp,'coire-inj')
+    coire2_summary_job.add_ini_opts(cp,'coire-inj')
+    coire2_slide_summary_job.add_ini_opts(cp,'coire-inj')  
   except: pass
 
 ##############################################################################
@@ -1929,7 +1947,7 @@ for ifo in ifo_list:
   (prev_df,chunks_analyzed[ifo]) = analyze_ifo(ifo,data[ifo],data_to_do[ifo],  
       tmplt_jobs[ifo],insp_jobs[ifo],df_job,prev_df,dag,exttrigInjections,
       usertag,inspinj)
-  
+
   # Step 4S: Run sire on the single ifo triggers
   sire_nodes = sire_segments_individually(chunks_analyzed[ifo], sire_job, 
       dag, opts.sire_inspiral, opts.inspiral, ifo, inj_file = inj_file, 
@@ -1976,6 +1994,12 @@ for ifos in ifo_coincs:
   sys.stdout.flush()
 
   if cp.has_section('thinca-1'): thinca_jobs[ifos].add_ini_opts(cp, 'thinca-1')
+  if cp.has_section('coire-1'):
+    coire_job.add_ini_opts(cp, 'coire-1')
+    coire_slide_job.add_ini_opts(cp, 'coire-1')
+    coire_summary_job.add_ini_opts(cp, 'coire-1')
+    coire_slide_summary_job.add_ini_opts(cp, 'coire-1')
+
   coinc_nodes[ifos] = thinca_coinc(ifos,chunks_analyzed,analyzed_data[ifos],
       thinca_jobs[ifos],dag,opts.coincidence,opts.inspiral,exttrigInjections,
       usertag, coire_job=coire_job, do_coire=opts.coire_coincidence)
@@ -1993,6 +2017,12 @@ for ifos in ifo_coincs:
   if num_slides:
     if cp.has_section('thinca-1'): 
       thinca_slide_jobs[ifos].add_ini_opts(cp, 'thinca-1')
+    if cp.has_section('coire-1'):
+      coire_job.add_ini_opts(cp, 'coire-1')
+      coire_slide_job.add_ini_opts(cp, 'coire-1')
+      coire_summary_job.add_ini_opts(cp, 'coire-1')
+      coire_slide_summary_job.add_ini_opts(cp, 'coire-1')
+
     coinc_slide_nodes[ifos] = thinca_coinc(ifos,chunks_analyzed,
         analyzed_data[ifos],thinca_slide_jobs[ifos],dag,opts.coincidence,
         opts.inspiral,exttrigInjections, usertag, coire_job=coire_slide_job, 
@@ -2082,29 +2112,34 @@ for ifos in ifo_coincs:
 
   if cp.has_section('thinca-2'):
     thinca2_jobs[ifos].add_ini_opts(cp, 'thinca-2')
+  if cp.has_section('coire-2'):
+    coire2_job.add_ini_opts(cp, 'coire-2')
+    coire2_slide_job.add_ini_opts(cp, 'coire-2')
+    coire2_summary_job.add_ini_opts(cp, 'coire-2')
+    coire2_slide_summary_job.add_ini_opts(cp, 'coire-2')
   if opts.td_follow_inspiral:
     for this_approx in approximants:
       this_approx = this_approx.strip()
       coinc2_nodes[ifos] = thinca_coinc(ifos, analyzed_coinc_data[ifos],
           analyzed_data[ifos], thinca2_jobs[ifos], dag, opts.second_coinc,
           opts.td_follow_inspiral, exttrigInjections, usertag=usertag,
-          coire_job=coire_job, do_coire=opts.coire_second_coinc, 
+          coire_job=coire2_job, do_coire=opts.coire_second_coinc, 
           ifotag=ifos + "_" + this_approx)
 
   else:
     coinc2_nodes[ifos] = thinca_coinc(ifos, analyzed_coinc_data[ifos],
       analyzed_data[ifos], thinca2_jobs[ifos], dag, opts.second_coinc,
       opts.inspiral_veto, exttrigInjections, usertag=usertag,
-      coire_job=coire_job, do_coire=opts.coire_second_coinc, ifotag=ifos)
+      coire_job=coire2_job, do_coire=opts.coire_second_coinc, ifotag=ifos)
 
     if not doExtTrig:
       coire2_nodes[ifos] = coire_segments_individually(coinc2_nodes[ifos], 
-          coire_job, dag, opts.coire_second_coinc, opts.second_coinc, 
+          coire2_job, dag, opts.coire_second_coinc, opts.second_coinc, 
           ifos, inj_file=inj_file, ifotag="SECOND_" + ifos, usertag=usertag,
           inspinjNode=inspinj)
  
       if len(coire2_nodes[ifos]):
-        coire_segments(coire2_nodes[ifos], coire_summary_job, dag,
+        coire_segments(coire2_nodes[ifos], coire2_summary_job, dag,
             opts.summary_coinc_triggers, 
             opts.coire_second_coinc, ifos, gps_start_time, gps_end_time, 
             inj_file=inj_file, ifotag="SUMMARY_SECOND_" + ifos, usertag=usertag,
@@ -2112,6 +2147,7 @@ for ifos in ifo_coincs:
 
       for ifo in ifo_list:
         if ifo in ifos: 
+
           sire_nodes = sire_segments_individually(coire2_nodes[ifos], sire_job, 
               dag, opts.sire_second_coinc, opts.coire_second_coinc, ifo, 
               inj_file=inj_file, ifotag="SECOND_" + ifos, usertag=usertag,
@@ -2137,31 +2173,31 @@ for ifos in ifo_coincs:
           analyzed_coinc_data[ifos], analyzed_data[ifos],
           thinca2_slide_jobs[ifos], dag, opts.second_coinc,
           opts.inspiral_veto, exttrigInjections, usertag=usertag,
-          coire_job=coire_slide_job, do_coire=opts.coire_second_coinc, 
+          coire_job=coire2_slide_job, do_coire=opts.coire_second_coinc, 
           ifotag=ifos+'_'+this_approx, slides=num_slides)
     else: 
       coinc2_slide_nodes[ifos] = thinca_coinc(ifos,
         analyzed_coinc_data[ifos], analyzed_data[ifos],
         thinca2_slide_jobs[ifos], dag, opts.second_coinc, opts.inspiral_veto,
-        exttrigInjections, usertag=usertag, coire_job=coire_slide_job,
+        exttrigInjections, usertag=usertag, coire_job=coire2_slide_job,
         do_coire=opts.coire_second_coinc, ifotag=ifos, slides=num_slides)
 
       if not doExtTrig:
         coire2_slide_nodes[ifos] = coire_segments_individually(
-            coinc2_slide_nodes[ifos], coire_slide_job, 
+            coinc2_slide_nodes[ifos], coire2_slide_job, 
             dag, opts.coire_second_coinc, opts.second_coinc, ifos, 
             num_slides=num_slides, ifotag="SECOND_" + ifos,
             usertag=usertag, inspinjNode=inspinj)
 
         if len(coire2_slide_nodes[ifos]):
-          coire_segments(coire2_slide_nodes[ifos], coire_slide_summary_job, dag, 
+          coire_segments(coire2_slide_nodes[ifos], coire2_slide_summary_job, dag, 
               opts.summary_coinc_triggers, opts.coire_second_coinc, ifos, 
               gps_start_time, gps_end_time, num_slides=num_slides, 
               ifotag="SUMMARY_SECOND_" + ifos, usertag=usertag, 
               write_input_file = True,inspinjNode=inspinj)
 
         for ifo in ifo_list:
-          if ifo in ifos: 
+          if ifo in ifos:
             sire_nodes = sire_segments_individually(coire2_slide_nodes[ifos], 
                 sire_job, dag, opts.sire_second_coinc, opts.coire_second_coinc,
                 ifo, inj_file = inj_file, ifotag="SLIDE_SECOND_" + ifos, 
@@ -2183,7 +2219,6 @@ for ifos in ifo_coincs:
 for ifos in ifo_coincs:
   print "setting up coherent jobs on " + ifos + " data...",
   sys.stdout.flush()
- 
   if num_slides:
     coherent_analysis(ifos,data,cb_job,trig_coh_jobs,
       insp_coh_jobs,cohinsp_jobs[ifos],dag,coinc2_nodes[ifos],
