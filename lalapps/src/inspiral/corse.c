@@ -79,7 +79,8 @@ static void print_usage(char *program)
       " [--input-slide]       input    read list of input XML files from input\n"\
       "\n"\
       "  --output             output   write output data to file: output\n"\
-      "  --summary-file       summ     write trigger analysis summary to summ\n"\
+      " [--summary-file]      summ     write trigger analysis summary to summ\n"\
+      " [--loudest]           file     write file only containing loudest triggers\n"\
       "\n"\
       "  --data-type          datatype data type of zero-lag, must be one of\n"\
       "                                (playground_only|exclude_play|all_data)\n"\
@@ -1128,7 +1129,7 @@ int main( int argc, char *argv[] )
     loudestRate = XLALRateErrorCalcCoincInspiral( coincZeroHead,
         thisSlideHead, coincstat, &bittenLParams, numSlides, timeAnalyzed,
         fitStat, fitA, fitB );
-    if( loudestRate < 0 )
+    if( loudestRate < 0 && coincZeroHead )
     {
       fprintf(stderr,
           "Error in calculating the FAR");
