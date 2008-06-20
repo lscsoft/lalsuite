@@ -2702,20 +2702,22 @@ XLALRateCalcCoincInspiral (
         }
         else
         {
-          /* put thisRate in sngl_inspiral->alpha for thisEvent[ifo] 
-           * for all ifos in thisEvent 
-           * FIXME in the future */
-          InterferometerNumber ifoNumber = LAL_UNKNOWN_IFO;
-
-          for ( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
-          {
-            if ( thisEvent->snglInspiral[ifoNumber] )
-              thisEvent->snglInspiral[ifoNumber]->alpha = thisRate;
-          }
-
+          /* no more slide triggers with stat>=thisStat so break */ 
           break;
         }
       }
+    {
+      /* put thisRate in sngl_inspiral->alpha for thisEvent[ifo] 
+       * for all ifos in thisEvent 
+       * FIXME in the future */
+      InterferometerNumber ifoNumber = LAL_UNKNOWN_IFO;
+
+      for ( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
+      {
+        if ( thisEvent->snglInspiral[ifoNumber] )
+          thisEvent->snglInspiral[ifoNumber]->alpha = thisRate;
+      }
+    }
     }
 
     if ( loudestRate < 0 ) loudestRate = thisRate/timeAnalyzed;
@@ -2817,12 +2819,13 @@ XLALRateErrorCalcCoincInspiral (
           else
           {
             /* no more slide triggers in this slide number with 
-             * stat>=thisStat so add this slide's current rate to thisRate */
-            thisRateNum += thisSlideHead->currentRate;
-            thisRateDenom += thisSlideHead->slideTimeAnalyzed;
+             * stat>=thisStat so break */
             break;
           }
         }
+        /* add this slide's current rate to thisRate */
+        thisRateNum += thisSlideHead->currentRate;
+        thisRateDenom += thisSlideHead->slideTimeAnalyzed;
 
         /* move on to the next slide number */
         thisSlideHead = thisSlideHead->next;
