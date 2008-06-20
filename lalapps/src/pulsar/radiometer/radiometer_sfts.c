@@ -58,7 +58,7 @@ extern int lalDebugLevel;
 
 int main(int argc, char *argv[]){
    /* LALStatus pointer */
-   static LALStatus  status;  
+   static LALStatus status;  
   
    /* sft related variables */ 
 
@@ -100,9 +100,13 @@ int main(int argc, char *argv[]){
    INT4 nParams = 0;
    REAL8 *stddev, ualphacounter=0.0;
 
+   /* frequency derivative loop info */
+   INT4 nfdotLoops = 1, fdotCounter = 0;
+   REAL8 fdot_current = 0.0, delta_fdot = 0.0; 
+
    static INT4VectorSequence  *sftPairIndexList;
    REAL8Vector *frequencyShiftList, *signalPhaseList, *sigmasq;
-   PulsarDopplerParams  thisPoint;
+   PulsarDopplerParams thisPoint;
    static REAL8Vector thisVel, thisPos, *weights;
  
 
@@ -122,7 +126,8 @@ int main(int argc, char *argv[]){
    INT4     uvar_blocksRngMed; 
    INT4     uvar_detChoice;
    REAL8    uvar_startTime, uvar_endTime;
-   REAL8    uvar_f0, uvar_fdot, uvar_fBand;
+   REAL8    uvar_f0, uvar_fdot, uvar_fBand, uvar_fdotBand;
+   REAL8    uvar_fdotResolution;
    REAL8    uvar_dAlpha, uvar_dDelta; /* resolution for isotropic sky-grid */
    REAL8    uvar_maxlag;
    REAL8    uvar_psi;
@@ -156,6 +161,8 @@ int main(int argc, char *argv[]){
    uvar_startTime = 0.0;
    uvar_endTime = LAL_INT4_MAX;
    uvar_fdot = 0.0;
+   uvar_fdotBand = 0.0;
+   uvar_fdotResolution = 0.0;
    uvar_fBand = FBAND;
    uvar_dAlpha = 0.2;
    uvar_dDelta = 0.2;
@@ -183,6 +190,8 @@ int main(int argc, char *argv[]){
    LAL_CALL( LALRegisterREALUserVar( &status, "f0",               'f', UVAR_OPTIONAL, "Start search frequency", &uvar_f0), &status);
    LAL_CALL( LALRegisterREALUserVar( &status, "fdot",               0, UVAR_OPTIONAL, "Start search frequency derivative", &uvar_fdot), &status);
    LAL_CALL( LALRegisterREALUserVar( &status, "fBand",            'b', UVAR_OPTIONAL, "Search frequency band", &uvar_fBand), &status);
+   LAL_CALL( LALRegisterREALUserVar( &status, "fdotBand",            '0', UVAR_OPTIONAL, "Search frequency derivative band", &uvar_fdotBand), &status);
+   LAL_CALL( LALRegisterREALUserVar( &status, "fdotRes",            'r', UVAR_OPTIONAL, "Search frequency derivative resolution", &uvar_fdotResolution), &status);
    LAL_CALL( LALRegisterREALUserVar( &status, "startTime",         0,  UVAR_OPTIONAL, "GPS start time of observation", &uvar_startTime), &status);
    LAL_CALL( LALRegisterREALUserVar(   &status, "endTime",         0,  UVAR_OPTIONAL, "GPS end time of observation", &uvar_endTime), &status);
    LAL_CALL( LALRegisterSTRINGUserVar( &status, "skyRegion",       0,  UVAR_OPTIONAL, "sky-region polygon (or 'allsky')", &uvar_skyRegion), &status);
@@ -218,6 +227,11 @@ int main(int argc, char *argv[]){
     exit(1);
    }
 
+   if (uvar_fdotResolution < 0) {
+    fprintf(stderr, "frequency derivative resolution must be positive\n");
+    exit(1);
+   }
+
    /* open output file */
    strcat(uvar_dirnameOut, "Radiometer_out.txt");
 
@@ -226,8 +240,10 @@ int main(int argc, char *argv[]){
     exit(1);
    }
  
-   fprintf(fp, "##Alpha\tDelta\tFrequency\t\tRaw Power \t\t Sigma \t\t Normalised Power\n");
-    
+/*   fprintf(fp, "##Alpha\tDelta\tFrequency\t\tRaw Power \t\t Sigma \t\t Normalised Power\n");*/
+
+    fprintf(fp, "##Alpha\tDelta\tFrequency\t Fdot \t Normalised Power\n");
+
    /* read sfts */
    
     /* new SFT I/O data types */
@@ -277,6 +293,13 @@ int main(int argc, char *argv[]){
 
    nfreqLoops = ceil(uvar_fBand/deltaF);
 
+   /* only loop through more than 1 fdot value if fdotBand and fdotRes are non-zero */
+   if (uvar_fdotBand != 0 && uvar_fdotResolution > 0) {
+      nfdotLoops = 1 + abs(ceil(uvar_fdotBand/uvar_fdotResolution));
+
+      delta_fdot = (uvar_fdotBand > 0) ? uvar_fdotResolution : -(uvar_fdotResolution);
+
+   }
 
    /*  set up ephemeris  */
    edat = (EphemerisData *)LALCalloc(1, sizeof(EphemerisData));
@@ -287,6 +310,8 @@ int main(int argc, char *argv[]){
    (*edat).leap = (INT2)tmpLeap;
 
    LAL_CALL( LALInitBarycenter( &status, edat), &status);
+
+
 
    /* polarisation angle */
    psi = uvar_psi;
@@ -308,9 +333,9 @@ int main(int argc, char *argv[]){
    skySizeAlpha = skyInfo.alphaSize;
    skySizeDelta = skyInfo.deltaSize;
 
-
    /* initialise output arrays */
-   nParams = nSkyPatches * nfreqLoops;
+   nParams = nSkyPatches * nfreqLoops *nfdotLoops;
+   fdot_current = uvar_fdot;
 
    weights = XLALCreateREAL8Vector(nParams);
   
@@ -319,7 +344,12 @@ int main(int argc, char *argv[]){
    /* start frequency loop */
 
    for (freqCounter = 0; freqCounter < nfreqLoops; freqCounter++) {
-/*printf("start of loop, nparams %i \n", nParams);*/
+
+
+   /* frequency derivative loop */
+   for (fdotCounter = 0; fdotCounter < nfdotLoops; fdotCounter++) {
+
+   fdot_current = uvar_fdot + (delta_fdot*fdotCounter);
 
    MultiSFTVector *multiSFTs = NULL;
 
@@ -332,7 +362,6 @@ int main(int argc, char *argv[]){
     fMin = uvar_f0 + (freqCounter*deltaF) - doppWings - uvar_blocksRngMed * deltaF;
     fMax = uvar_f0 + (freqCounter*deltaF) + uvar_fBand + doppWings + uvar_blocksRngMed * deltaF;
  
-/*printf("fmin, fmax %f %f\n", fMin, fMax);*/
 
     LAL_CALL( LALLoadMultiSFTs ( &status, &multiSFTs, catalog, fMin, fMax), &status);
     LAL_CALL (CombineAllSFTs (&status, &inputSFTs, multiSFTs, catalog->length), &status);
@@ -405,7 +434,7 @@ int main(int argc, char *argv[]){
 	thisPoint.Alpha = skyAlpha[skyCounter]; 
 	thisPoint.Delta = skyDelta[skyCounter]; 
 	thisPoint.fkdot[0] = uvar_f0 + (freqCounter*deltaF);
-	thisPoint.fkdot[1] = uvar_fdot; 
+	thisPoint.fkdot[1] = fdot_current; 
 	thisPoint.fkdot[2] = 0.0;
  	thisPoint.fkdot[3] = 0.0;
 	thisPoint.refTime = refTime;
@@ -506,7 +535,9 @@ int main(int argc, char *argv[]){
     /* select candidates  */
     /* print all interesting variables to file */
 
-    fprintf(fp, "%1.5f\t %1.5f\t %1.5f\t%1.10f\t%1.10f\t%1.10f\n", thisPoint.Alpha, thisPoint.Delta, uvar_f0 + (freqCounter*deltaF), weights->data[counter], *stddev, weights->data[counter]/(*stddev));
+fprintf(fp, "%1.5f\t %1.5f\t %1.5f\t%e\t%1.10f\n", thisPoint.Alpha, thisPoint.Delta, uvar_f0 + (freqCounter*deltaF), fdot_current, weights->data[counter]/(*stddev));
+
+/*    fprintf(fp, "%1.5f\t %1.5f\t %1.5f\t%1.10f\t%1.10f\t%1.10f\n", thisPoint.Alpha, thisPoint.Delta, uvar_f0 + (freqCounter*deltaF), weights->data[counter], *stddev, weights->data[counter]/(*stddev));*/
 
 /*printf("%1.5f\t%1.10f\t%1.10f\t%1.10f\n", uvar_f0 + (counter*deltaF), weights->data[counter], *stddev, weights->data[counter]/(*stddev));*/
 
@@ -520,7 +551,7 @@ printf("Frequency %f\n", uvar_f0 + (freqCounter*deltaF));
 
    LAL_CALL(LALDestroyMultiSFTVector(&status, &multiSFTs), &status);
 
-/*printf("end of freq loop\n");*/
+
 
    XLALDestroyTimestampVector(ts);
 
@@ -536,6 +567,9 @@ printf("Frequency %f\n", uvar_f0 + (freqCounter*deltaF));
    LALFree(sftPairIndexList);
    XLALDestroyREAL8Vector(sigmasq);
  /*  XLALDestroyDetectorStateSeries ( detStates );*/
+
+   } /*finish loop over frequency derivatives*/
+
    } /*finish loop over frequencies */
 
   
@@ -558,8 +592,6 @@ printf("Frequency %f\n", uvar_f0 + (freqCounter*deltaF));
 
    XLALDestroyREAL8Vector(weights);
 
-
-
    LAL_CALL (LALDestroyUserVars(&status), &status);
 
    LALCheckMemoryLeaks();
@@ -568,6 +600,7 @@ printf("Frequency %f\n", uvar_f0 + (freqCounter*deltaF));
     REPORTSTATUS ( &status);
 
    return status.statusCode;
+
 } /* main */
 
 
@@ -589,7 +622,8 @@ void SetUpRadiometerSkyPatches(LALStatus           *status,
   DopplerSkyScanInit scanInit = empty_DopplerSkyScanInit;   /* init-structure for DopperScanner */
   DopplerSkyScanState thisScan = empty_DopplerSkyScanState; /* current state of the Doppler-scan */
   UINT4 nSkyPatches, skyCounter;
-  PulsarDopplerParams dopplerpos;	  
+  PulsarDopplerParams dopplerpos;
+  
   
   INITSTATUS (status, "SetUpRadiometerSkyPatches", rcsid);
   ATTATCHSTATUSPTR (status);
