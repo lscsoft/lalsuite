@@ -246,6 +246,18 @@ def cat_noise_jobs(file,node):
   except: pass
   return
 
+def bin(binVec,histVec,number):
+  if number < binVec[0]: 
+    histVec[0] += 1
+    return
+  if number > binVec[-1]: 
+    histVec[-1] += 1
+    return
+  histVec[int(ceil(number/(binVec[-2]-binVec[-1])))+int(len(binVec)/2-1)] += 1
+  #for i in range(1,len(binVec)):
+    #if number > binVec[i-1] and number < binVec[i]:
+      #histVec[i] += 1
+  
 def plot_systematics(filelist,cp,dir,epoch,dag,opts):
   flist = []
   for file in filelist:
@@ -274,6 +286,7 @@ def plot_systematics(filelist,cp,dir,epoch,dag,opts):
 
   freqcnt = 0;
   
+  print "\tfirst pass through systematics files..."
   for file in flist:
     try: input = open(file,'r')
     except:
@@ -289,7 +302,7 @@ def plot_systematics(filelist,cp,dir,epoch,dag,opts):
       hfi1[freq[freqcnt]] += float(tmp[3])
       freqcnt += 1
       if freqcnt >= len(freq): freqcnt = 0 
-    #if N > 10: break
+    #if N > 100000: break
   #Actually make it the mean
 
   for f in freq:
@@ -303,10 +316,12 @@ def plot_systematics(filelist,cp,dir,epoch,dag,opts):
   fname = "Ar_Ai_"+epoch[1]+"-"+epoch[2]+".txt"
   fl = open(fname,'w')
   fl.write("#freq h(t) re sys\th(t) im sys\th(t) mag sys\th(t) phase sys\n")
+  mag = {}
+  phase = {}
   for f in freq:
-    mag = sqrt(Ar[f]*Ar[f]+Ai[f]*Ai[f])
-    phase = atan2(Ai[f],Ar[f])
-    fl.write(str(f) + "\t"+str(Ar[f])+"\t"+str(Ai[f])+"\t"+str(mag)+"\t"+str(phase)+"\n")
+    mag[f] = sqrt(Ar[f]*Ar[f]+Ai[f]*Ai[f])
+    phase[f] = atan2(Ai[f],Ar[f])
+    fl.write(str(f) + "\t"+str(Ar[f])+"\t"+str(Ai[f])+"\t"+str(mag[f])+"\t"+str(phase[f])+"\n")
   fl.close()
 
 
@@ -318,6 +333,7 @@ def plot_systematics(filelist,cp,dir,epoch,dag,opts):
   xi3 = {}
   xr4 = {}
   xi4 = {}
+  amp = {}
   N = 0.0
 
   for f in freq:
@@ -331,7 +347,17 @@ def plot_systematics(filelist,cp,dir,epoch,dag,opts):
     xi4[f] = 0.0
 
   freqcnt = 0;
+  realHistVecs = {}
+  imagHistVecs = {}
+  binVec = []
 
+  for f in freq: 
+    realHistVecs[f] = zeros(2000)
+    imagHistVecs[f] = zeros(2000)
+  for b in range(-1000,1000): binVec.append(float(b)*.001)
+
+  print "\tsecond pass through systematics files..."
+  #Compute the moments of the distribution
   for file in flist:
     try: input = open(file,'r')
     except:
@@ -345,8 +371,11 @@ def plot_systematics(filelist,cp,dir,epoch,dag,opts):
       hti = float(tmp[1])
       hfr = float(tmp[2])
       hfi = float(tmp[3])
+      amp[freq[freqcnt]] = sqrt(htr*htr+hti*hti)
       xr = htr-Ar[freq[freqcnt]]*hfr + Ai[freq[freqcnt]]*hfi
       xi = hti-Ar[freq[freqcnt]]*hfi - Ai[freq[freqcnt]]*hfr
+      bin(binVec,realHistVecs[freq[freqcnt]],xr/amp[freq[freqcnt]])
+      bin(binVec,imagHistVecs[freq[freqcnt]],xi/amp[freq[freqcnt]])
       xr1[freq[freqcnt]] += xr
       xi1[freq[freqcnt]] += xi
       xr2[freq[freqcnt]] += xr*xr
@@ -357,28 +386,143 @@ def plot_systematics(filelist,cp,dir,epoch,dag,opts):
       xi4[freq[freqcnt]] += xi*xi*xi*xi
       freqcnt += 1
       if freqcnt >= len(freq): freqcnt = 0
-    #if N > 10: break
-  #Actually make it the mean
+    #if N > 100000: break
 
+  
+  #Put them in units of the noise amplitude
   for f in freq:
     xr1[f] /= N
     xi1[f] /= N
-    xr2[f] /= N
-    xi2[f] /= N
-    xr3[f] /= N
-    xi3[f] /= N
-    xr4[f] /= N
-    xi4[f] /= N
+    xr2[f] = sqrt(xr2[f]/N)/amp[f]
+    xi2[f] = sqrt(xi2[f]/N)/amp[f]
+    if xr3[f]:
+      xr3[f] = pow(abs(xr3[f]/N),1.0/3.0)/amp[f]*xr3[f]/abs(xr3[f])
+    else: xr3[f] = 0.0
+    if xi3[f]:
+      xi3[f] = pow(abs(xi3[f]/N),1.0/3.0)/amp[f]*xi3[f]/abs(xi3[f])
+    else: xi3[f] = 0.0
+    xr4[f] = pow(abs(xr4[f]/N-3.0*pow(xr2[f]*amp[f],4)),1.0/4.0)/amp[f]*(xr4[f]/N-3.0*pow(xr2[f]*amp[f],4))/abs(xr4[f]/N-3.0*pow(xr2[f]*amp[f],4))
+    xi4[f] = pow(abs(xi4[f]/N-3.0*pow(xi2[f]*amp[f],4)),1.0/4.0)/amp[f]*(xi4[f]/N-3.0*pow(xi2[f]*amp[f],4))/abs(xi4[f]/N-3.0*pow(xi2[f]*amp[f],4))
 
   fname = "x1_x2_x3_x4_"+epoch[1]+"-"+epoch[2]+".txt"
   fl = open(fname,'w')
   fl.write("#freq \t xr \t xi \t xr^2 \t xi^2 \t xr^3 \t xi^3 \t xr^4 \t xi^4 \n")
   for f in freq:
     fl.write(str(f) + '\t' + str(xr1[f]) + '\t' + str(xi1[f]) + '\t' + str(xr2[f]) + '\t' + str(xi2[f]) + '\t' + str(xr3[f]) + '\t' + str(xi3[f]) + '\t' + str(xr4[f]) + '\t' + str(xi4[f]) + '\n')
+    
   fl.close()
+ 
+  # Plot the results
+  print "\tplotting..."
+  # Plot the systematic in magnitude
+  magfigname = "sys_mag"+epoch[1]+"-"+epoch[2]+".png"
+  figure(1)
+  plot(mag.keys(),mag.values())
+  title('h(t) and h(f) magnitude systematics '+epoch[1]+"-"+epoch[2]+'\n')
+  xlabel('Freq')
+  ylabel('Mag')
+  savefig(dir + '/'+ magfigname)
+  thumb = 'thumb-'+magfigname
+  savefig(dir + '/'+ thumb,dpi=20)
+  clf()
+  close()
+
+ # Plot the systematic in phase
+  phasefigname = "sys_phase"+epoch[1]+"-"+epoch[2]+".png"
+  figure(1)
+  plot(phase.keys(),phase.values())
+  title('h(t) and h(f) phase systematics '+epoch[1]+"-"+epoch[2]+'\n')
+  xlabel('Freq')
+  ylabel('Phase')
+  savefig(dir + '/'+ phasefigname)
+  thumb = 'thumb-'+phasefigname
+  savefig(dir + '/'+ thumb,dpi=20)
+  clf()
+  close()
+  
+ # Plot the residual moments
+  x2figname = "sys_x2_"+epoch[1]+"-"+epoch[2]+".png"
+  figure(1)
+  plot(xr2.keys(),xr2.values())
+  plot(xi2.keys(),xi2.values(),'r')
+  legend(['real','imaginary'])
+  title('residual noise sqrt of second moment '+epoch[1]+"-"+epoch[2]+'\n')
+  xlabel('Freq')
+  ylabel('sigma')
+  savefig(dir + '/'+ x2figname)
+  thumb = 'thumb-'+x2figname
+  savefig(dir + '/'+ thumb,dpi=20)
+  clf()
+  close()
+
+ # Plot the residual moments
+  x3figname = "sys_x3_"+epoch[1]+"-"+epoch[2]+".png"
+  figure(1)
+  plot(xr3.keys(),xr3.values())
+  plot(xi3.keys(),xi3.values(),'r')
+  legend(['real','imaginary'])
+  title('residual noise cube root of third moment '+epoch[1]+"-"+epoch[2]+'\n')
+  xlabel('Freq')
+  ylabel('cube root of skew')
+  savefig(dir + '/'+ x3figname)
+  thumb = 'thumb-'+x3figname
+  savefig(dir + '/'+ thumb,dpi=20)
+  clf()
+  close()
+
+ # Plot the residual moments
+  x4figname = "sys_x4_"+epoch[1]+"-"+epoch[2]+".png"
+  figure(1)
+  plot(xr4.keys(),xr4.values())
+  plot(xi4.keys(),xi4.values(),'r')
+  legend(['real','imaginary'])
+  title('residual noise fourth root of excess kurtosis '+epoch[1]+"-"+epoch[2]+'\n')
+  xlabel('Freq')
+  ylabel('fourth root of excess kurtosis')
+  savefig(dir + '/'+ x4figname)
+  thumb = 'thumb-'+x4figname
+  savefig(dir + '/'+ thumb,dpi=20)
+  clf()
+  close()
+
+  pgname = dir + '/' + "sys_plots"+epoch[1]+"-"+epoch[2]+".html"
+  page = open(pgname,'w')
+  page.write('<h2>Plots of systematic errors between h(t) and h(f) '+epoch[1]+"-"+epoch[2]+'</h2><hr><br><br>\n')
+  page.write('<h3>Systematics in magnitude and phase and moments of the residual distributions</h3><hr>\n')
+  page.write('<img src='+magfigname+' width=600>\n')
+  page.write('<img src='+phasefigname+' width=600>\n')
+  page.write('<img src='+x2figname+' width=600>\n')
+  page.write('<img src='+x3figname+' width=600>\n')
+  page.write('<img src='+x4figname+' width=600><br><br>\n')
+  page.write('<h3>Raw distribution of residual noise</h3><hr><br>\n')
+  for f in freq:
+    figname = "n_hist_"+str(f)+'_'+epoch[1]+"-"+epoch[2]+".png"
+    figure(1)
+    plot(binVec,realHistVecs[f])
+    plot(binVec,imagHistVecs[f],'r')
+    legend(['real','imaginary'])
+    title('residual noise distribution '+epoch[1]+"-"+epoch[2]+'\n'+'freq = '+str(f))
+    ylabel('Number')
+    xlabel('n / amp of h(t)')
+    savefig(dir + '/'+ figname)
+    thumb = 'thumb-'+figname
+    savefig(dir + '/'+ thumb,dpi=20)
+    clf()
+    close()
+    page.write('<a href='+figname+'><img src='+thumb+'></a>\n')
+
+  page.close
+
+
+
+
+
+
 
 
     
+
+
 def plot_noise_jobs(filelist,cp,dir,epoch,dag,qjob,opts):
   qfile = write_qscan_conf(dir,cp)
   filelist.sort()
