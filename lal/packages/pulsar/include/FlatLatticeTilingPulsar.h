@@ -31,7 +31,7 @@
 
 #include <lal/LALRCSID.h>
 #include <lal/LALDatatypes.h>
-#include "FlatLatticeTiling.h"
+#include <lal/FlatLatticeTiling.h>
 
 #ifdef __cplusplus
 extern "C" {

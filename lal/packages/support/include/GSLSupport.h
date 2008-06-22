@@ -20,11 +20,11 @@
 /**
  * \author Karl Wette
  * \file
- * \brief Support routines for FlatLatticeTiling
+ * \brief Support routines for GSL
  */
 
-#ifndef _FLATLATTICETILINGSUPPORT_H
-#define _FLATLATTICETILINGSUPPORT_H
+#ifndef _GSLSUPPORT_H
+#define _GSLSUPPORT_H
 
 #include <gsl/gsl_vector.h>
 #include <gsl/gsl_matrix.h>
@@ -36,48 +36,15 @@
 extern "C" {
 #endif
 
-  NRCSID(FLATLATTICETILINGSUPPORTH, "$Id$");
+  NRCSID(GSLSUPPORTH, "$Id$");
 
-  /**
-   * Structures
-   */
-  typedef struct tagTableau {
-
-    /**< Number of constraints */
-    int m;
-    
-    /**< Dimension of solution space */
-    int n;
-    
-    /**< Tableau matrix */
-    gsl_matrix *T;
-
-    /**< Working copy of tableau matrix */
-    gsl_matrix *work_T;
-    
-    /**< Basic variables */
-    gsl_vector_int *basic;
-
-  } SimplexMethodTableau;
-  
   /**
    * Functions
    */
   gsl_vector *XLALGSLVectorFromVAList(INT4, REAL8, ...);
   gsl_vector *XLALGSLVectorFromLALStringVector(LALStringVector*);
-  void XLALGaussianPivot(gsl_matrix*, size_t, size_t);
-  void XLALReducedRowEchelonForm(gsl_matrix*);
   gsl_matrix *XLALResizeGSLMatrix(gsl_matrix*, size_t, size_t);
   gsl_vector *XLALResizeGSLVector(gsl_vector*, size_t);
-  int XLALPolytopeVertices(gsl_matrix*, gsl_vector*, gsl_matrix**);
-  int XLALPolytopeFromVertices(gsl_matrix*, gsl_matrix**, gsl_vector**);
-  int XLALQuadraticSimplexMethodTableau(int, gsl_matrix*, gsl_vector*, gsl_matrix*, gsl_vector*, SimplexMethodTableau**);
-  int XLALQuadraticSimplexMethod(SimplexMethodTableau*, gsl_vector*);
-  void XLALFreeSimplexMethodTableau(SimplexMethodTableau*);
-  gsl_vector *XLALMetricEllipseBoundingBox(gsl_matrix*, REAL8);
-  int XLALOrthonormaliseWRTMetric(gsl_matrix*, gsl_matrix*);
-  gsl_matrix *XLALSquareLowerTriangularLatticeGenerator(gsl_matrix*);
-  int XLALNormaliseLatticeGenerator(gsl_matrix*, REAL8, REAL8);
   
 #ifdef __cplusplus
 }
@@ -104,6 +71,14 @@ extern "C" {
 #define FREE_GSL_VECTOR(vector)						\
   if (vector != NULL)							\
     gsl_vector_free(vector);
+
+/* Allocate and free gsl_matrix_int */
+#define ALLOC_GSL_MATRIX_INT(matrix_int, m, n, xlalerr)			\
+  if ((matrix_int = gsl_matrix_int_alloc(m, n)) == NULL)		\
+    xlalerr("Could not allocate '" #matrix_int "'", XLAL_ENOMEM);
+#define FREE_GSL_MATRIX_INT(matrix_int)					\
+  if (matrix_int != NULL)						\
+    gsl_matrix_int_free(matrix_int);
 
 /* Allocate and free gsl_vector_int */
 #define ALLOC_GSL_VECTOR_INT(vector_int, n, xlalerr)			\

@@ -31,7 +31,7 @@
 
 #include <lal/LALRCSID.h>
 #include <lal/LALDatatypes.h>
-#include <lal/FlatLatticeTilingSupport.h>
+#include <lal/GSLSupport.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -42,13 +42,47 @@ extern "C" {
   /**
    * Types of parameter space bounds
    */
-  enum tagFlatLatticeTilingParamSpaceBoundType {
-    FLT_PSBT_Undefined,
-    FLT_PSBT_Singular,
-    FLT_PSBT_Linear,
-    FLT_PSBT_Quadratic
-  };
+  typedef enum tagFlatLatticeTilingBoundType {
+    FLT_BT_Undefined,
+    FLT_BT_Singular,
+    FLT_BT_Polynomial
+  } FlatLatticeTilingBoundType;
+
+  /**
+   * Description of parameter space bounds
+   */
+  typedef struct tagFlatLatticeTilingBound {
+
+    /* Dimension on which bound applies */
+    INT4 index;
+
+    /* Zone within dimension on which bound applies */
+    INT4 zone;
+
+    /* Type of bound */
+    FlatLatticeTilingBoundType type;
+
+    /* Singular bound variables */
+    REAL8 singular_value;
+
+    /* Polynomial bound variables */
+    gsl_vector *poly_lower_const;
+    gsl_matrix_int *poly_lower_exp;
+    gsl_vector *poly_upper_const;
+    gsl_matrix_int *poly_upper_exp;
+
+  } FlatLatticeTilingBound;
   
+  /**
+   * State of the tiling
+   */
+  typedef enum tagFlatLatticeTilingState {
+    FLT_S_NotInitialised,
+    FLT_S_NotStarted,
+    FLT_S_InProgress,
+    FLT_S_Finished
+  } FlatLatticeTilingState;
+
   /**
    * Information for the flat lattice tiling algorithm 
    */
@@ -57,43 +91,18 @@ extern "C" {
     /* Dimension of the parameter space */
     INT4 dimension;
 
-    /* Type of parameter space bound on each dimension */
-    gsl_vector_int *bound_type;
+    /* Parameter space bounds */
+    INT4 num_bounds;
+    FlatLatticeTilingBound *bounds;
 
-    /* Singular bounds */
-    gsl_vector *singular_bound;
-
-    /* Linear bounds */
-    gsl_matrix *linear_bound_A;
-    gsl_vector *linear_bound_b;
-    gsl_matrix *linear_vertices;
-    gsl_vector_int *linear_map;
-    gsl_vector *linear_min_vertex;
-    gsl_vector *linear_max_vertex;
-    SimplexMethodTableau *linear_tableau;
-    gsl_matrix *linear_metric;
-    gsl_vector *linear_current;
-    gsl_vector *linear_transl_b;
-    gsl_vector *linear_optimal;
-    gsl_vector *linear_temp;
-
-    /* Quadratic bounds */
-    gsl_matrix *quadratic_bound_Q;
-    gsl_vector_int *quadratic_map;
-
-    /* Inverse lookup for bound index maps */
-    gsl_vector_int *bound_inverse_map;
-
-    /* Carefully check bounds only on these dimensions */
-    gsl_vector_int *careful_linear;
-    gsl_vector_int *careful_quadratic;
+    /* Index of current bound zone */
+    gsl_vector_int *bound_zone;
 
     /* Metric of the parameter space in normalised coordinates */
     gsl_matrix *norm_metric;
 
     /* Conversion from normalised to real parameter coordinates */
-    gsl_vector *norm_to_real_mul;
-    gsl_vector *norm_to_real_add;
+    gsl_vector *norm_to_real;
 
     /* Maximum metric mismatch between the templates */
     REAL8 max_mismatch;
@@ -101,16 +110,18 @@ extern "C" {
     /* Reduced dimension (singular dimensions excluded) */
     INT4 reduced_dim;
 
-    /* Dimension map from reduced to full dimensions */
+    /* Dimension map to/from reduced and full dimensions */
     gsl_vector_int *reduced_map;
+    gsl_vector_int *dimension_map;
 
-    /* Transformation from lattice coordinates to normalised space */
+    /* Transformation to/from lattice coordinates and normalised space */
     gsl_matrix *latt_to_norm;
+    gsl_matrix *norm_to_latt;
 
-    /* Padding along each dimension */
-    gsl_vector *norm_padding;
+    /* Metric of the parameter space in lattice coordinates */
+    gsl_matrix *latt_metric;
 
-    /* Current lattice point */
+    /* Current point */
     gsl_vector_int *latt_current;
     gsl_vector *norm_current;
 
@@ -118,30 +129,49 @@ extern "C" {
     gsl_vector *norm_lower;
     gsl_vector *norm_upper;
 
-    /* Pointer to current point */
-    gsl_vector *current_tile;
+    /* Padding of bounds along each dimension */
+    gsl_vector *norm_padding;
+
+    /* Current template point */
+    gsl_vector *current;
 
     /* Total number of points generated so far */
-    INT8 tile_count;
+    INT8 count;
 
     /* State of the tiling */
-    int state;
+    FlatLatticeTilingState state;
 
   } FlatLatticeTiling;
 
   /**
-   * Functions 
+   * Core functions 
    */
-  FlatLatticeTiling *XLALCreateFlatLatticeTiling(INT4);
+  FlatLatticeTiling* XLALCreateFlatLatticeTiling(INT4);
   void XLALFreeFlatLatticeTiling(FlatLatticeTiling*);
-  int XLALSetFlatLatticeTilingSingularBound(FlatLatticeTiling*, INT4, REAL8);
-  int XLALAddFlatLatticeTilingLinearBound(FlatLatticeTiling*, INT4, gsl_vector*, REAL8, BOOLEAN);
   int XLALSetFlatLatticeTilingMetric(FlatLatticeTiling*, gsl_matrix*, REAL8, gsl_vector*);
-  int XLALSetCubicTilingLattice(FlatLatticeTiling*);
-  int XLALSetAnstarTilingLattice(FlatLatticeTiling*);
-  int XLALNextFlatLatticeTile(FlatLatticeTiling*);
-  REAL8 XLALTotalFlatLatticeTileCount(FlatLatticeTiling*);
-
+  int XLALAddFlatLatticeTilingSingularBound(FlatLatticeTiling*, INT4, INT4, REAL8);
+  int XLALAddFlatLatticeTilingPolynomialBound(FlatLatticeTiling*, INT4, INT4, gsl_vector*, gsl_matrix_int*, gsl_vector*, gsl_matrix_int*);
+  int XLALFinaliseFlatLatticeTilingBounds(FlatLatticeTiling*);
+  int XLALSetFlatTilingLattice(FlatLatticeTiling*, gsl_matrix*, REAL8);
+  int XLALIsPointInFlatLatticeParamSpace(FlatLatticeTiling*, gsl_vector*);
+  int XLALNextFlatLatticePoint(FlatLatticeTiling*);
+  REAL8 XLALTotalFlatLatticePointCount(FlatLatticeTiling*);
+  
+  /**
+   * Supplementary function
+   */
+  gsl_vector* XLALMetricEllipseBoundingBox(gsl_matrix*, REAL8);
+  int XLALOrthonormaliseWRTMetric(gsl_matrix*, gsl_matrix*);
+  gsl_matrix* XLALSquareLowerTriangularLatticeGenerator(gsl_matrix*);
+  int XLALNormaliseLatticeGenerator(gsl_matrix*, REAL8, REAL8);
+  
+  /**
+   * Specific lattices and parameter spaces
+   */
+  int XLALSetFlatTilingCubicLattice(FlatLatticeTiling*);
+  int XLALSetFlatTilingAnstarLattice(FlatLatticeTiling*);
+  int XLALFlatLatticeTilingSquareParamSpace(FlatLatticeTiling**, gsl_vector*);
+  
 #ifdef __cplusplus
 }
 #endif

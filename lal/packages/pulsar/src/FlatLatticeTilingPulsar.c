@@ -39,13 +39,30 @@
 #include <lal/LALMalloc.h>
 #include <lal/LALConstants.h>
 #include <lal/XLALError.h>
-#include "FlatLatticeTilingPulsar.h"
-#include "FlatLatticeTilingSupport.h"
+#include <lal/GSLSupport.h>
+#include <lal/FlatLatticeTilingPulsar.h>
 
 NRCSID(FLATLATTICETILINGPULSARC, "$Id$");
 
 static const BOOLEAN TRUE  = (1==1);
 static const BOOLEAN FALSE = (0==1);
+
+/**
+ * Calculate the factorial of an integer
+ */
+static INT4 factorial(
+		      INT4 i
+		      )
+{
+  
+  INT4 f = 1;
+  
+  while (i > 1)
+    f *= i--;
+  
+  return f;
+  
+}
 
 /**
  * Setup a flat lattice tiling to use the spindown Fstat metric
@@ -64,48 +81,41 @@ int XLALSetFlatLatticeTilingSpindownFstatMetric(
   const int n = tiling->dimension;
   
   int i, j;
-  gsl_matrix *metric = NULL;
-  gsl_vector *to_real;
+  gsl_matrix *norm_metric = NULL;
+  gsl_vector *norm_to_real;
 
   /* Check input */
   if (Tspan <= 0.0)
     XLAL_ERROR("Tspan must be strictly positive", XLAL_EINVAL);
 
   /* Allocate memory */
-  ALLOC_GSL_MATRIX(metric, n, n, XLAL_ERROR);
-  ALLOC_GSL_VECTOR(to_real, n, XLAL_ERROR);
-  gsl_matrix_set_zero(metric);
-  gsl_vector_set_all(to_real, 1.0);
+  ALLOC_GSL_MATRIX(norm_metric, n, n, XLAL_ERROR);
+  ALLOC_GSL_VECTOR(norm_to_real,   n, XLAL_ERROR);
+  gsl_matrix_set_zero(norm_metric);
+  gsl_vector_set_all(norm_to_real, 1.0);
 
-  /* Calculate metric */
-  for (i = 0; i < n - 2; ++i)
+  /* Calculate metric and conversion factors */
+  for (i = 0; i < n - 2; ++i) {
+
     for (j = 0; j < n - 2; ++j)
-      gsl_matrix_set(metric, i + 2, j + 2, (1.0 * (i + 1) * (j + 1)) / ((i + 2) * (j + 2) * (i + j + 3)));
+      gsl_matrix_set(norm_metric, i + 2, j + 2, (1.0 * (i + 1) * (j + 1)) / ((i + 2) * (j + 2) * (i + j + 3)));
 
-  /* Swap row/column 0 and row/column 2 to get right order */
-  gsl_matrix_swap_rows(metric, 0, 2);
-  gsl_matrix_swap_columns(metric, 0, 2);
+    gsl_vector_set(norm_to_real, i + 2, 1.0 / (LAL_TWOPI * pow(Tspan, i + 1) / factorial(i + 1)));
 
-  /* Calculate conversion factors for frequency and spindowns */
-  {
-    gsl_vector_view v = gsl_vector_subvector(to_real, 2, n - 2);
-    double x = 1.0 / LAL_TWOPI;
-    for (i = 0; i < n - 2; ++i) {
-      x *= (i + 1) / Tspan;
-      gsl_vector_set(&v.vector, i, x);
-    }
   }
-  
-  /* Swap elements 0 and 2 to get the right order */
-  gsl_vector_swap_elements(to_real, 0, 2);
+
+  /* Swap rows/columns 0 and 2 to get right order */
+  gsl_matrix_swap_rows(norm_metric, 0, 2);
+  gsl_matrix_swap_columns(norm_metric, 0, 2);
+  gsl_vector_swap_elements(norm_to_real, 0, 2);
 
   /* Set the metric of the flat lattice tiling */
-  if (XLALSetFlatLatticeTilingMetric(tiling, metric, max_mismatch, to_real) != XLAL_SUCCESS)
+  if (XLALSetFlatLatticeTilingMetric(tiling, norm_metric, max_mismatch, norm_to_real) != XLAL_SUCCESS)
     XLAL_ERROR("XLALSetFlatLatticeTilingMetric failed", XLAL_EFAILED);
 
   /* Cleanup */
-  FREE_GSL_MATRIX(metric);
-  FREE_GSL_VECTOR(to_real);
+  FREE_GSL_MATRIX(norm_metric);
+  FREE_GSL_VECTOR(norm_to_real);
 
   return XLAL_SUCCESS;
 
