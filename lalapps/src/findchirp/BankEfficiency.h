@@ -57,13 +57,16 @@
 #define myfprintf(fp,oldmacro) PRINT_ ## oldmacro(fp)
 
 #define MAXIFO 2
+
+/* --- the macro to read/print the results --- */
 #define BANKEFFICIENCY_PARAMS_ROW \
-"       %f, %f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d,%d,%u,%u"
+"       %f, %f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d,%d,%u,%u,%f"
 
+/* --- the macro to read/print the results --- */
 #define BANKEFFICIENCY_PARAMS_ROW_SPACE \
-"%f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %d %d %u %u"
+"%f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %d %d %u %u %f"
 
-/*do not use capital here for future mysql migration */
+/* --- the XML output --- */
 #define PRINT_LIGOLW_XML_BANKEFFICIENCY(fp) (\
 fputs( "   <Table Name=\"bankefficiencygroup:bankefficiency:table\">\n", fp) == EOF || \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:psi0\"               Type=\"real_4\"/>\n", fp) == EOF ||  \
@@ -82,7 +85,7 @@ fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:ffinal_sim\"    
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:mass1_sim\"          Type=\"real_4\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:mass2_sim\"          Type=\"real_4\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:inclination_sim\"    Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:polarisation_sim\"  Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:polarisation_sim\"   Type=\"real_4\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:phase_sim\"          Type=\"real_4\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:snr\"                Type=\"real_4\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:snr_at_ta\"          Type=\"real_4\"/>\n", fp) == EOF ||  \
@@ -92,16 +95,18 @@ fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:time\"          
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:time_sim\"           Type=\"int_4s\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:nfast\"              Type=\"int_4s\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:nfast_max\"          Type=\"int_4s\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:ematch\"             Type=\"real_4\"/>\n", fp) == EOF ||  \
 fputs( "      <Stream Name=\"bankefficiencygroup:bankefficiency:table\"              Type=\"Local\" Delimiter=\",\">\n", fp) == EOF )
 
 
+
+/* --- some CVS macros --- */
 #define CVS_ID_STRING      "$Id$"
 #define CVS_NAME_STRING    "$Name$"
 #define CVS_REVISION       "$Revision$"
 #define CVS_SOURCE         "$Source$"
 #define CVS_DATE           "$Date$"
 #define PROGRAM_NAME       "BankEfficiency"
-
 
 /* --- Some Error messages --- */
 #define BANKEFFICIENCY_ENORM  0
@@ -121,9 +126,7 @@ fputs( "      <Stream Name=\"bankefficiencygroup:bankefficiency:table\"         
 #define BANKEFFICIENCY_MSGEMEM   "Out of memory"
 #define BANKEFFICIENCY_MSGPARSER "Missing arguments ??  "
 
-/* --- Some flags --- 
- * useful to fill  InspiralTemplate, Bank and userParam structure */
-
+/* --- Some flags --- */
 #define BANKEFFICIENCY_ALPHAFCONSTRAINT     1 /* alphaF between 0 and 1       */
 #define BANKEFFICIENCY_ALPHAFUNCONSTRAINT   0 /* alphaF between 0 and 1       */
 #define BANKEFFICIENCY_QUIETFLAG            0 /* silent                       */ 
@@ -160,6 +163,8 @@ fputs( "      <Stream Name=\"bankefficiencygroup:bankefficiency:table\"         
 /* ==================== local structures ==================== */
 /* 
  *  */
+ 
+/* --- Eccentric bank parameters --- */
 typedef struct {
   REAL8 min;
   REAL8 max;
@@ -168,7 +173,7 @@ typedef struct {
 } EccentricBank;
   
 
-/* used in BCV for the choice of constraint or unconstraint SNR */
+/* --- Type of BCV filtering--- */
 typedef enum {
   ALPHAFConstraint,
   ALPHAFUnconstraint,
@@ -176,7 +181,7 @@ typedef enum {
 } AlphaConstraint;
 
 
-/* what kind of injections to be performed ? */
+/* --- Type of injections */
 typedef enum {
   NoUserChoice,
   BBH,
@@ -184,7 +189,7 @@ typedef enum {
   BHNS
 } BinaryInjection;
 
-/* what kind of noisemodel ?*/
+/* --- type of noisemodels --- */
 typedef enum{
   UNITY,
   LIGOI,
@@ -197,13 +202,19 @@ typedef enum{
   EGO
 } DetectorName;
 
+/* --- type of fast option --- */
+typedef enum{
+  None,
+  EMatch,
+  Heuristic1    
+} FastOption;
 
 typedef struct{
   AlphaConstraint alphaFConstraint; /* force alpha_F to be  between 0 and 1   */
   INT4 signal;                      /* name of the random signal to inject    */  
   INT4 template;                    /* name of the template in the bank       */
   INT4 ntrials;                     /* number of simulations                  */
-  INT4 fastSimulation;              /* target the injection in the bank --> less 
+  FastOption fastSimulation;              /* target the injection in the bank --> less 
                                        computation but Match might be less than 
                                        the optimal  is noise is injected or 
                                        template andsignal are not faithful (ie:
@@ -316,7 +327,28 @@ typedef struct{
   REAL4Vector               FilterBCV2;
 } BankEfficiencyBCV;
   	
+typedef struct{
+  INT4  filteringIndex;
+  INT4  ntrials;     /* number of simulations done                            */
+  INT4  N;           /* number of simulations to be done                      */
+  REAL4 lastEMatch;  /* keep the last value of ematch (reset for each simulation)*/
+  INT4  filter_processed;/* number of filtering done in each simulation       */
+  INT4  stop;            /* flag to carry on the current simulation           */
+  REAL4 bestSNR;         /* keep the best SNR                                 */
+  INT4  bestSNRIndex;    /* keep the best SNR index                           */
+  REAL4 tau0best;
+  REAL4 tau3best;
+  INT4  SNRMax; /* Index to know how many filtering ago the max SNr was found */
+  INT4  fastParam1;    /* param1 of the heuristic fast option                 */
+  INT4  fastParam2 ;   /* param2 of the heuristic fast option                 */
+  REAL4 eMatch;        /* keep track of the original requested ematch         */
+  REAL4 bestEMatch;    /* keep track of the best ematch for a given simulation*/
+  RandomInspiralSignalIn randIn; 
+} BankEfficiencySimulation;
 	
+
+      
+    
 
 /* As to be cleaned
  * Function to store the optimal  parameters of the overlap 
@@ -358,10 +390,6 @@ void BankEfficiencyBankPrintXML(
   RandomInspiralSignalIn randIn,
   UserParametersIn       userParam);
 
-void BankEfficiencyCreateListFromTmplt(
-  LALStatus         *status,
-  InspiralTemplate  *insptmplt, 
-  SnglInspiralTable *tmpltCurrent);
 
 void BankEfficiencyGenerateInputData(
   LALStatus              *status,
@@ -485,9 +513,7 @@ void BankEfficiencyHelp(void);
 void BankEfficiencyPrintResults(
   ResultIn                    result,
   RandomInspiralSignalIn      randIn,
-  INT4                        n,
-  INT4                        N);
-
+  BankEfficiencySimulation    simulation);
 
 
 /* Print each  template bank overlap 
@@ -540,11 +566,11 @@ void BankEfficiencyFillProc(
 
 /* xml file for the standalone code */
 void BankEfficiencyPrintResultsXml( 
-  InspiralCoarseBankIn   coarseBankIn,
-  RandomInspiralSignalIn randIn,
-  UserParametersIn       userParam,
-  ResultIn               trigger,
-  UINT4                  itbest);
+  InspiralCoarseBankIn     coarseBankIn,
+  RandomInspiralSignalIn   randIn,
+  UserParametersIn         userParam,
+  ResultIn                 trigger,
+  BankEfficiencySimulation simulation);
 
 void BankEfficiencyPrintProtoXml(
   InspiralCoarseBankIn   coarseIn,
@@ -586,10 +612,7 @@ BankEfficiencyInspiralOverlapBCV(
 
 void BankEfficiencyParseGetInt(CHAR **argv, INT4  *index, INT4 *data);
 void BankEfficiencyParseGetDouble(CHAR **argv, INT4  *index, REAL8 *data);
-void BankEfficiencyParseGetDouble2(
-  CHAR **argv, 
-  INT4  *index, 
-  REAL8 *data1, 
+void BankEfficiencyParseGetDouble2(CHAR **argv, INT4  *index, REAL8 *data1, 
   REAL8 *data2);
 
 void BankEfficiencyParseGetString(CHAR **argv, INT4  *index );
@@ -599,7 +622,7 @@ CHAR* BankEfficiencyGetStringFromDetector(INT4 input);
 CHAR* BankEfficiencyGetStringFromTemplate(INT4 input);
 CHAR* BankEfficiencyGetStringFromNoiseModel(INT4 input);
 CHAR* BankEfficiencyGetStringFromScientificRun(INT4 input);
-
+CHAR* BankEfficiencyGetStringFromFastSimulation(INT4 input);
 
 
 void BankEfficiencyAscii2Xml(void);
@@ -632,13 +655,7 @@ void BankEfficiencyUpdateSNRHistogram(
   REAL4Vector   *correlation,
   gsl_histogram *histogramNoise);
 
-REAL8 BankEfficiencyComputeMatch(
-  RandomInspiralSignalIn  *randIn,
-  SnglInspiralTable       *tmpltCurrent);
-
-
 static int vrbflg = 0;
-
 
 REAL4 GetMaxVector(REAL4 *vect, INT4 n);
 REAL4 GetMinVectorNonZero(REAL4 *vect, INT4 n);
@@ -649,7 +666,6 @@ void BankEfficiencyWaveOverlap(
   InspiralWaveOverlapIn  *overlapin,
   OverlapOutputIn        *test,
   INT4                    startPad);
-  
   
 void BankEfficiencySaveVector(
   const char  *filename, 
@@ -664,15 +680,6 @@ void BankEfficiencySaveVectorAppend(
 void BankEfficiencyPrintMessage(const char *str);
 
 
-void  BankEfficiencyFinalise(
-  LALStatus              *status,
-  SnglInspiralTable      *tmpltHead,
-  OverlapOutputIn         overlapOutputBestTemplate,
-  RandomInspiralSignalIn  randIn,
-  UserParametersIn        userParam,
-  INT4                    ntrials, 
-  INT4                    filter_processed,
-  InspiralCoarseBankIn    coarseBankIn);
   
   
 void BankEfficiencyPopulateAmbiguityFunction(
@@ -694,10 +701,17 @@ REAL4 *psi0;
 REAL4 *psi3;
 REAL4 *alpha;
 UINT4 *index;
-UINT4 *valid;
+UINT4 *used;
 UINT4 size;
 REAL4 *eccentricity;
 REAL4 *snr;
+REAL4 *gamma0;
+REAL4 *gamma1;
+REAL4 *gamma2;
+REAL4 *gamma3;
+REAL4 *gamma4;
+REAL4 *gamma5;
+Approximant approximant;
 } Mybank;    
 
   
@@ -724,3 +738,31 @@ void BankEfficiencyError(const char * str);
 void BankEfficiencyCompare(REAL4 a, REAL4 b, const char *str);
 void BankEfficiencyValidity(REAL4 a,  REAL4 min,  REAL4 max, const char * str);
 REAL4 BankEfficiencyRandom(REAL4 min, REAL4 max);
+
+
+void GetClosestValidTemplate(Mybank bank, RandomInspiralSignalIn randIn, 
+    UINT4 *fast_index);
+  
+void GetTau03FromMasses(RandomInspiralSignalIn randIn,REAL4 *tau0, REAL4 *tau3);
+  
+REAL4 BankEfficiencyComputeEMatch(
+  RandomInspiralSignalIn *randIn, Mybank mybank, INT4 index);
+
+void BankEfficiencyCreateListFromTmplt(
+  LALStatus         *status,
+  InspiralTemplate  *insptmplt, 
+  Mybank             mybank,
+  INT4               index);
+
+void  BankEfficiencyFinalise(
+  LALStatus              *status,
+  Mybank                  mybank,
+  OverlapOutputIn         overlapOutputBestTemplate,
+  RandomInspiralSignalIn  randIn,
+  UserParametersIn        userParam,
+  BankEfficiencySimulation simulation,
+  InspiralCoarseBankIn    coarseBankIn);
+
+void BankEfficiencyInitAmbiguity(gsl_matrix *amb, INT4 sizeBank);
+
+ 
