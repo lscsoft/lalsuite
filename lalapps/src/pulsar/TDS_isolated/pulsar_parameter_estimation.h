@@ -130,6 +130,9 @@ extern "C" {
 #define MAXLENGTH 1000000
 #define MAXPARAMS 32
 
+#define SIXTH 0.166666666666666666666666666666666666666667L
+#define TWENTYFOURTH 0.04166666666666666666666666666666666666666667L
+
 /** define structures */
 
 /* a structure to hold the four instrinsic pulsar parameters */
@@ -138,7 +141,7 @@ typedef struct tagIntrinsicPulsarVariables{
   REAL8 phi0;       /* initial GW phase */
   REAL8 ci;         /* cos(inclination angle) */
   REAL8 psi;        /* polarisation angle */
-  
+
   /* derived variables to allow quicker computation on the grid */
   /* MUST BE DEFINED PRIOR TO THE LIKELIHOOD CALCULATION */
   REAL8 Xplus;      /* 0.5*(1+cos^2(iota)) */
@@ -147,7 +150,7 @@ typedef struct tagIntrinsicPulsarVariables{
   REAL8 Xcsinphi_2; /* 0.5*Xcross*sin(phi) */
   REAL8 Xpcosphi_2; /* 0.5*Xplus*cos(phi) */
   REAL8 Xccosphi_2; /* 0.5*Xcross*cos(phi) */
-  
+
   REAL8 Aplus;      /* 0.5*h0*(1+cos^2(iota)) */
   REAL8 Across;     /* h0*cos(iota) */
   REAL8 Apsinphi_2; /* 0.5*Aplus*sin(phi) */
@@ -160,9 +163,9 @@ typedef struct tagMeshGrid{
   IntrinsicPulsarVariables minVals;
   IntrinsicPulsarVariables maxVals;
   IntrinsicPulsarVariables delta; /* parameter step sizes */
-  
+
   INT4 h0Steps, phiSteps, psiSteps, ciotaSteps;
-  
+
   /* the number of steps in the range for the lookup table */
   INT4 psiRangeSteps;
   INT4 timeRangeSteps;
@@ -178,10 +181,10 @@ typedef struct tagMCMCParams{
                                       burn in */
   IntrinsicPulsarVariables sigmas; /* standard deviations of the proposal
                                       distributions */
-  
+
   INT4 outputRate;                 /* rate at which to output chain e.g. 10
                                       means output every tenth sample */
-                                                                          
+
   CHAR glitchTimes[500];           /* string containing the times of glitches
                                       in MJD */
   INT4 nGlitches;                  /* the number of glitches */
@@ -208,34 +211,34 @@ typedef struct tagInputParams{
   CHAR pulsar[12];
   CHAR parFile[256];   /* pulsar parameter file */
   CHAR *matrixFile;    /* pulsar parameter covariance matrix file */
-  
+
   CHAR inputDir[256];
   CHAR outputDir[256];
-  
+
   LALSource psr; /* pulsar position values */
-  
+
   /* prior values */
   INT4 usepriors;
   PriorVals priors;
-  
+
   /* grid values */
   MeshGrid mesh;
-  
+
   /* maximum and minumum length of time over which we assume stationarity of
      the data e.g. min 5 mins and max 30 mins */
   INT4 chunkMin;
   INT4 chunkMax;
-  
+
   /* parameters for an MCMC */
   MCMCParams mcmc;
-  
+
   REAL8 dob;                      /* degree of belief for upper limit */
-  
+
   INT4 outputPost; /* flag for whether of not to output the full posterior */
-                  
+
   CHAR earthfile[256];
   CHAR sunfile[256];
-                    
+
   INT4 verbose;
 }InputParams;
 
@@ -266,9 +269,9 @@ typedef struct tagOutputParams{
   CHAR *outputDir;  /* directory to output files to */
   CHAR *psr;        /* pulsar name */
   CHAR *det;        /* detector e.g. H1, H2, L1, G1, V1, Joint */
-  
+
   CHAR *margParam;  /* parameter over which to not marginalise */
-  
+
   INT4 outPost;      /* flag for whether to output the full posterior 1=yes,
                        0=no */
   REAL8 dob;       /* the degree-of-belief for an upper limits calculation -
@@ -308,8 +311,7 @@ REAL8 create_likelihood_grid(DataStructure data, REAL8 ****logLike,
 /* a function to compute the log likelihood of the data given some parameters 
 - this function loops over the h0 part of the likelihood array for speed */
 REAL8 log_likelihood(REAL8 *likeArray, DataStructure data,
-  IntrinsicPulsarVariables vars, MeshGrid mesh, BinaryPulsarParams params[2],
-  BarycenterInput barys[2], EphemerisData *edat);
+  IntrinsicPulsarVariables vars, MeshGrid mesh, REAL8Vector *dphi);
 
 /* a function to sum over the data */
 void sum_data(DataStructure data);
@@ -326,7 +328,7 @@ REAL8 log_posterior(REAL8 ****logLike, PriorVals prior, MeshGrid mesh,
 requested */
 Results marginalise_posterior(REAL8 ****logPost, MeshGrid mesh, 
   OutputParams output);
-  
+
 /* detector response lookup table function  - this function will output a lookup
 table of points in time and psi, covering a day from the start time (t0) and
 from -pi/4 to pi/4 in psi */
@@ -335,7 +337,7 @@ void response_lookup_table(REAL8 t0, LALDetAndSource detAndSource,
 
 /* function to do the trapezium rule for integration on logs  */
 REAL8 log_trapezium(REAL8 logHeight1, REAL8 logHeight2, REAL8 width);
-  
+
 /* factorial function */
 REAL8 log_factorial(INT4 num);
 
@@ -350,6 +352,10 @@ REAL8 get_upper_limit(REAL8 *cumsum, REAL8 limit, MeshGrid mesh);
 /* function to perform the MCMC parameter estimation */
 void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets, 
   CHAR *det, LALDetector *detpos, EphemerisData *edat );
+
+/* function to get a vector of phases for all the points in data */
+REAL8Vector *get_phi(DataStructure data, BinaryPulsarParams params,
+  BarycenterInput bary, EphemerisData *edat );
 
 /* function to get the lengths of consecutive chunks of data */
 void get_chunk_lengths(DataStructure data);

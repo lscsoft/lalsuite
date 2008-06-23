@@ -19,17 +19,17 @@
 
 /*******************************************************************************
   Matt Pitkin - 08/08/07
- 
+
   pulsar_parameter_estimation.c
- 
+
   This code will be used to produce a posterior probability distribution for
   the four unknown pulsar parameters:  h0, cosiota, psi and phi0. The code can
   output either the full posterior or the marginalised posteriors. This can be
   for multiple detector or a single detector. The log(evidence) or "marginalised
   posterior" can also be output.
-  
+
   This code can also use a Markov Chain Monte Carlo to produce the posterior.
-   
+
 *******************************************************************************/
 
 #include "pulsar_parameter_estimation.h"
@@ -41,51 +41,51 @@ INT4 verbose=0;
 
 INT4 main(INT4 argc, CHAR *argv[]){
   static LALStatus status;
-  
+
   REAL8 ****singleLike=NULL;
   REAL8 ****jointLike=NULL;
-  
+
   InputParams inputs;
   BinaryPulsarParams pulsar;
   LALDetAndSource detAndSource;
-  
+
   INT4 numDets=0; /* number of detectors */
   CHAR dets[5][3]; /* we'll have a max of five detectors */
   LALDetector detPos[5];
-  
+
   INT4 i=0, j=0, k=0, n=0;
-  
+
   DataStructure *data=NULL;
   REAL8 times=0.;
   COMPLEX16 dataVals;
   REAL8 stdh0=0.;       /* approximate h0 limit from data */
-  
+
   FILE *fp=NULL;
   CHAR dataFile[256];
   CHAR outputFile[256];
-  
+
   OutputParams output;
   REAL8 maxPost=0.;
   REAL8 logNoiseEv[5]; /* log evidence for noise only (no signal) */
   Results results;
-  REAL8 h0ul=0.;  
+  REAL8 h0ul=0.;
 
   CHAR *params[]={"h0", "phi", "psi", "ciota"};
-  
+
   EphemerisData *edat=NULL;
 
   /*===================== GET AND SET THE INPUT PARAMETER ====================*/
   get_input_args(&inputs, argc, argv);
-  
-  /* if we want to output in verbose mode set global variable */ 
+
+  /* if we want to output in verbose mode set global variable */
   if(inputs.verbose) verbose = 1;
-  
+
   /* get the pulsar parameters */
   XLALReadTEMPOParFile(&pulsar, inputs.parFile);
   inputs.psr.equatorialCoords.longitude = pulsar.ra;
-  inputs.psr.equatorialCoords.latitude = pulsar.dec;	      
+  inputs.psr.equatorialCoords.latitude = pulsar.dec;
   inputs.psr.equatorialCoords.system = COORDINATESYSTEM_EQUATORIAL;
- 
+
   /* find the number of detectors being used */
   if( strstr(inputs.detectors, "H1") != NULL ){
     sprintf(dets[numDets], "H1");
@@ -120,7 +120,7 @@ INT4 main(INT4 argc, CHAR *argv[]){
     fprintf(stderr, "\n");
   }
   /*==========================================================================*/
-  
+
   /*====================== SET OUTPUT PARAMETERS =============================*/
   output.outputDir = inputs.outputDir;
   output.psr = inputs.pulsar;
@@ -128,18 +128,18 @@ INT4 main(INT4 argc, CHAR *argv[]){
   output.outPost = inputs.outputPost;
   sprintf(outputFile, "%s/evidence_%s", output.outputDir, output.psr);
   /*==========================================================================*/
-  
+
   if( inputs.mcmc.doMCMC == 0 ){
     /* allocate likelihood memory */
     singleLike = allocate_likelihood_memory(inputs.mesh);
-  
+
     /* if more than one detector create a joint likelihood */
     if( numDets > 1 )
       jointLike = allocate_likelihood_memory(inputs.mesh);
-    
-    if( verbose ) 
-      fprintf(stderr, "I've allocated the memory for the likelihood.\n"); 
-    
+
+    if( verbose )
+      fprintf(stderr, "I've allocated the memory for the likelihood.\n");
+
     /* if we're doing the grid search we only need to store one data set at a
        time */
     data = XLALMalloc(sizeof(DataStructure));
@@ -160,35 +160,35 @@ INT4 main(INT4 argc, CHAR *argv[]){
     else
       edat = NULL;
   }
-  
+
   k = -1;
-  
+
   /* read in data for each detector in turn an compute the likelihood */
   for( i = 0 ; i < numDets ; i++ ){
     /*============================ GET DATA ==================================*/
     /* get detector B_ks data file in form finehet_JPSR_DET */
     sprintf(dataFile, "%s/data%s/finehet_%s_%s", inputs.inputDir, dets[i],
       inputs.pulsar, dets[i]);
-    
+
     /* open data file */
     if((fp = fopen(dataFile, "r"))==NULL){
       fprintf(stderr, "Error... can't open data file %s!\n", dataFile);
       exit(0);
     }
-    
+
     j=0;
-    
+
     /* only store one set of data for grid search (saves memory), but store
        them all for the MCMC */
     if( inputs.mcmc.doMCMC == 0 ) k = 0;
-    else k++;      
-    
+    else k++;
+
     /* read in data */
     data[k].data = NULL;
     data[k].data = XLALCreateCOMPLEX16Vector( MAXLENGTH );
     data[k].times = NULL;
     data[k].times = XLALCreateREAL8Vector( MAXLENGTH );
-    
+
     /* set the minimum and maximum data segments lengths */
     data[k].chunkMin = inputs.chunkMin;
     data[k].chunkMax = inputs.chunkMax;
@@ -202,60 +202,60 @@ INT4 main(INT4 argc, CHAR *argv[]){
       if( fabs(dataVals.re) > 1.e-28 && fabs(dataVals.im) > 1.e-28 ){
         data[k].times->data[j] = times;
         data[k].data->data[j] = dataVals;
-        
+
         /* get the power from the time series */
         stdh0 += dataVals.re*dataVals.re + dataVals.im*dataVals.im;
-        
+
         j++;
       }
     }
-    
+
     fclose(fp);
-    
+
     if( verbose )
       fprintf(stderr, "I've read in the data for %s.\n", dets[i]);
-    
+
     data[k].data = XLALResizeCOMPLEX16Vector(data[k].data, j);
     data[k].times = XLALResizeREAL8Vector(data[k].times, j);
-    
+
     /* if there is no input range for h0 then estimate it from the data */
     /* only do this once if performing grid search, but do for each seperate
        data set if doing MCMC */
     if( ( inputs.mesh.maxVals.h0 == 0 || inputs.mcmc.sigmas.h0 == 0 ) && (
-          inputs.mcmc.doMCMC != 0 || i == 0 ) ){      
+          inputs.mcmc.doMCMC != 0 || i == 0 ) ){
       if( verbose ) fprintf(stderr, "Calculating h0 UL estimate: ");
-      
+
       /* get the power spectral density power/bandwidth (1/60 Hz) */
       stdh0 = stdh0/((REAL8)j*(1./60.));
-     
+
       /* upper limit estimate comes from ~ h0 = 10.8*sqrt(Sn/T) */
       stdh0 = 10.8*sqrt(stdh0/((REAL8)j*60.));
-      
+
       /* set h0 max value for the grid at 5 times the expected ul */
       if( inputs.mesh.maxVals.h0 == 0 ){
         inputs.mesh.maxVals.h0 = 5.*stdh0;
         inputs.mesh.delta.h0 = (inputs.mesh.maxVals.h0 -
           inputs.mesh.minVals.h0)/(REAL8)(inputs.mesh.h0Steps - 1.);
       }
-      
+
       /* set the MCMC h0 proposal step size at stdh0/20 */
       if( inputs.mcmc.doMCMC != 0 )
         inputs.mcmc.sigmas.h0 = stdh0/20.;
-      
+
       if( verbose ) fprintf(stderr, "%le\n", stdh0);
     }
 
     /*========================================================================*/
-    
+
     output.det = dets[i];
-   
+
     /* create lookup table */
     data[k].lookupTable = NULL;
     data[k].lookupTable = XLALCalloc(1, sizeof(DetRespLookupTable));
     data[k].lookupTable->lookupTable=NULL;
     detAndSource.pSource = &inputs.psr;
     detAndSource.pDetector = &detPos[i];
-    
+
     /* create memory for the lookup table */
     data[k].lookupTable->lookupTable = XLALCalloc(inputs.mesh.psiRangeSteps, 
       sizeof(LALDetAMResponse *));
@@ -267,20 +267,20 @@ INT4 main(INT4 argc, CHAR *argv[]){
 
     data[k].lookupTable->psiSteps = inputs.mesh.psiRangeSteps;
     data[k].lookupTable->timeSteps = inputs.mesh.timeRangeSteps;
-   
+
     /* create lookup table */
     response_lookup_table(data[k].times->data[0], detAndSource,
       data[k].lookupTable);
-    
+
     if( verbose ) fprintf(stderr, "Created look-up table.\n");
 
     /*======================== CALCULATE LIKELIHOOD ==========================*/
     if( inputs.mcmc.doMCMC == 0 ){
       logNoiseEv[i] = create_likelihood_grid(data[k], singleLike, inputs.mesh);
-    
+
       if( verbose )
         fprintf(stderr, "I've calculated the likelihood for %s.\n", dets[i]);
-    
+
       /* if there's more than one detector calculate the joint likelihood */
       if( numDets > 1 ){
         /* add the single detector log likelihood onto the joint likelihood */
@@ -288,51 +288,51 @@ INT4 main(INT4 argc, CHAR *argv[]){
         output.outPost = 0; /* don't output individual detector posteriors */
       }
       /*======================================================================*/
-    
+
       /*========== CREATE THE SINGLE DETECTOR POSTERIORS =====================*/
       maxPost = log_posterior(singleLike, inputs.priors, inputs.mesh, output);
-    
+
       /* marginalise over each parameter and output the data */
       for( n = 0 ; n < 4 ; n++ ){
         output.margParam = params[n];
         if( verbose )
           fprintf(stderr, "Marginalising over %s.\n", output.margParam);
-    
+
         results = marginalise_posterior(singleLike, inputs.mesh, output);
 
         if( output.dob != 0. && strcmp( output.margParam, "h0" ) == 0)
-          h0ul = results.h0UpperLimit;       
+          h0ul = results.h0UpperLimit;
       }
-      
+
       /* open file to output the evidence */
       if((fp = fopen(outputFile, "a"))==NULL){
         fprintf(stderr, "Error... can't open file %s!\n", outputFile);
         return 0;
       }
-    
+
       /* output the log odds ratio and an UL if requested */
       fprintf(fp, "%s\t%le\n", output.det, results.evidence-logNoiseEv[i]);
       if( output.dob != 0. )
         fprintf(fp, "%.1lf%% h0 upper limit = %le\n", output.dob, h0ul);
-      
+
       fclose(fp);
-    
+
       XLALDestroyCOMPLEX16Vector(data[k].data);
       XLALDestroyREAL8Vector(data[k].times);
     }
     /*========================================================================*/
-  
+
     /*================== PERFORM THE MCMC ====================================*/
     if( inputs.mcmc.doMCMC != 0 )
       perform_mcmc(&data[k], inputs, 1, dets[i], &detPos[i], edat);
-              
+
     /*========================================================================*/
   }
 
   /*=================== CREATE THE JOINT POSTERIOR IF REQUIRED ===============*/
   if( numDets > 1 ){
     output.det = "Joint";
-    
+
     if( inputs.mcmc.doMCMC == 0 ){
       REAL8 totLogNoiseEv=0.;
 
@@ -340,26 +340,26 @@ INT4 main(INT4 argc, CHAR *argv[]){
 
       output.outPost = inputs.outputPost; /* set for whether we want to output
                                             the full posterior */
-   
+
       maxPost = log_posterior(jointLike, inputs.priors, inputs.mesh, output);
       if( verbose )
         fprintf(stderr, "I've calculated the joint posterior.\n");
-    
+
       /* marginalise over each parameter and output the data */
       for( n = 0 ; n < 4 ; n++ ){
         output.margParam = params[n];
         if( verbose )
           fprintf(stderr, "Marginalising over %s.\n", output.margParam);
-      
+
         results = marginalise_posterior(jointLike, inputs.mesh, output);
       }
-    
+
       /* open file to output the evidence */
       if((fp = fopen(outputFile, "a"))==NULL){
         fprintf(stderr, "Error... can't open file %s!\n", outputFile);
         return 0;
       }
-    
+
       /* output the evidence */
       fprintf(fp, "%s\t%le\n", output.det, results.evidence - totLogNoiseEv);
       if( output.dob != 0. ){
@@ -369,11 +369,11 @@ INT4 main(INT4 argc, CHAR *argv[]){
       fclose(fp);
     }
     /*========================================================================*/
-  
+
     /*======================= PERFORM JOINT MCMC =============================*/
     if( inputs.mcmc.doMCMC != 0 ){
       perform_mcmc(data, inputs, numDets, output.det, detPos, edat);
-    
+
       /* destroy data */
       for( i = 0 ; i < numDets ; i++ ){
         XLALDestroyCOMPLEX16Vector(data[i].data);
@@ -388,29 +388,29 @@ INT4 main(INT4 argc, CHAR *argv[]){
       for( j = 0 ; j < inputs.mesh.ciotaSteps ; j++ ){
         if( numDets > 1 )
           free(jointLike[i][j]);
-        
+
         free(singleLike[i][j]);
       }
       if( numDets > 1 )
         free(jointLike[i]);
-      
+
       free(singleLike[i]);
     }
-  
+
     if( numDets > 1 )
       free(jointLike);
-    
+
     free(singleLike);
   }
   /*=========================================================================*/ 
-                                            
+
   return 0;
 }
 
 
 /* function to get the input arguments from the command line */
 void get_input_args(InputParams *inputParams, INT4 argc, CHAR *argv[]){
-  struct option long_options[] = 
+  struct option long_options[] =
   {
     { "help",         no_argument,       0, 'h' },
     { "verbose",      no_argument, &inputParams->verbose, 1 },
@@ -467,42 +467,42 @@ void get_input_args(InputParams *inputParams, INT4 argc, CHAR *argv[]){
     { "use-priors",   no_argument, &inputParams->usepriors, 1 },
     { 0, 0, 0, 0 }
   };
-  
+
   CHAR args[] =
 "hD:p:P:i:o:a:A:j:b:B:k:s:S:m:c:C:n:l:L:q:Q:U:u:Y:T:v:V:z:Z:e:E:d:I:x:t:H:w:W:\
 y:g:G:K:N:X:O:J:M:r:" ;
   CHAR *program = argv[0];
-  
+
   /* set defaults */
   inputParams->mcmc.doMCMC = 0;/* by default don't perform an MCMC */
   inputParams->verbose = 0;    /* by default don't do verbose */
   inputParams->outputPost = 0; /* by default don't output the full posterior */
   inputParams->dob = 0.;       /* by default don't calculate an upper limit */
-  
+
   inputParams->chunkMin = 5;   /* default to 5 minute minimum chunk length */
   inputParams->chunkMax = 30;  /* default to 30 minute maximum chunk length */
-  
+
   /* default grid 50x50x50x50 = 6250000 points ~ 50 Mbytes */
   inputParams->mesh.minVals.h0 = 0.;     /* 0 <= h0 <= estimate */
   inputParams->mesh.maxVals.h0 = 0.;     /* estimate h0 from data by default */
   inputParams->mesh.h0Steps = 50;
-  
+
   inputParams->mesh.minVals.phi0 = 0.;        /* 0 <= phi0 <= 2pi */
   inputParams->mesh.maxVals.phi0 = LAL_TWOPI;
   inputParams->mesh.phiSteps = 50;
-  
+
   inputParams->mesh.minVals.psi = -LAL_PI/4.; /* -pi/4 <= psi < pi/4 */
   inputParams->mesh.maxVals.psi = LAL_PI/4.;
   inputParams->mesh.psiSteps = 50;
-  
+
   inputParams->mesh.minVals.ci = -1.;         /* -1 <= cos(iota) < 1 */
   inputParams->mesh.maxVals.ci = 1.;
   inputParams->mesh.ciotaSteps = 50;
-  
+
   /* default psi-time lookup table grid size 50x1440 (one per minute) */
   inputParams->mesh.psiRangeSteps = 50;
   inputParams->mesh.timeRangeSteps = 1440;
-  
+
   inputParams->usepriors = 0;   /* by default don't use priors on h0, phi,
                                    iota, psi */
 
@@ -511,31 +511,31 @@ y:g:G:K:N:X:O:J:M:r:" ;
   inputParams->priors.phiPrior = "uniform";
   inputParams->priors.psiPrior = "uniform";
   inputParams->priors.ciotaPrior = "uniform";
-  
+
   /* default MCMC parameters */
   inputParams->mcmc.sigmas.h0 = 0.;           /* estimate from data */
   inputParams->mcmc.sigmas.phi0 = LAL_PI/10.; /* 20th of phi range */
   inputParams->mcmc.sigmas.psi = LAL_PI/40.;  /* 20th of psi range */
   inputParams->mcmc.sigmas.ci = 0.1;          /* 20th of cosi range */
   inputParams->mcmc.outputRate = 1;           /* output every sample */
-  
+
   inputParams->mcmc.iterations = 10000;       /* default 10000 points */
   inputParams->mcmc.temperature = 1;          /* default annealing */
   inputParams->mcmc.burnIn = 1000;            /* default burn in time */
-  
+
   inputParams->mcmc.nGlitches = 0;            /* no glitches is default */
-  
+
   inputParams->matrixFile = NULL;             /* no covriance file */
 
   /* parse input arguments */
   while( 1 ){
     INT4 option_index = 0;
     INT4 c;
-    
+
     c = getopt_long_only( argc, argv, args, long_options, &option_index );
     if( c == -1 ) /* end of options */
       break;
-      
+
     switch( c ){
       case 0:
         if( long_options[option_index].flag )
@@ -696,7 +696,7 @@ y:g:G:K:N:X:O:J:M:r:" ;
         fprintf(stderr, "Unknown error while parsing options\n");
     }
   }
-  
+
   /* check parameters for wierd values */
   if( inputParams->mesh.minVals.h0 < 0. || inputParams->mesh.maxVals.h0 < 0. ||
       inputParams->mesh.maxVals.h0 < inputParams->mesh.minVals.h0 ){
@@ -766,23 +766,23 @@ y:g:G:K:N:X:O:J:M:r:" ;
 REAL8 ****allocate_likelihood_memory(MeshGrid mesh){
   INT4 i=0, j=0, k=0;
   REAL8 ****logLike=NULL;
-  
+
   /* allocate the h0 positions using calloc (i.e. array will be initialise to 
      zero */
   logLike = calloc(mesh.phiSteps, sizeof(REAL8 ***));
 
   for( i = 0 ; i < mesh.phiSteps ; i++ ){
     logLike[i] = calloc(mesh.ciotaSteps, sizeof(REAL8 **));
-    
+
     for( j = 0 ; j < mesh.ciotaSteps ; j++ ){
       logLike[i][j] = calloc(mesh.psiSteps, sizeof(REAL8 *));
-      
+
       for( k = 0 ; k < mesh.psiSteps ; k++ ){
         logLike[i][j][k] = calloc(mesh.h0Steps, sizeof(REAL8));
       }
     }
   }
-  
+
   return logLike;
 }
 
@@ -791,9 +791,9 @@ REAL8 ****allocate_likelihood_memory(MeshGrid mesh){
 REAL8 create_likelihood_grid(DataStructure data, REAL8 ****logLike, 
   MeshGrid mesh){
   IntrinsicPulsarVariables vars;
- 
+
   INT4 i=0, j=0, k=0;
-  
+
   REAL8 cosphi=0., sinphi=0.;
 
   REAL8 noiseEvidence=0.;
@@ -808,19 +808,19 @@ REAL8 create_likelihood_grid(DataStructure data, REAL8 ****logLike,
   /* allocate memory for summations */
   data.sumData = NULL;
   data.sumData = XLALCreateREAL8Vector(data.chunkLengths->length);
-  
+
   /* get the sum over the data */
   sum_data(data);
-  
+
   /* calculate likelihood array */
   for( i = 0 ; i < mesh.phiSteps ; i++ ){
-    if( verbose ) 
+    if( verbose )
       fprintf(stderr, "In phi0 loop %d of %d.\n", i+1, mesh.phiSteps);
-    
+
     vars.phi0 = mesh.minVals.phi0 + (REAL8)i*mesh.delta.phi0;
     cosphi = cos(vars.phi0);
     sinphi = sin(vars.phi0);
-    
+
     for( j = 0 ; j < mesh.ciotaSteps ; j++ ){
       vars.ci = mesh.minVals.ci + (REAL8)j*mesh.delta.ci;
       vars.Xplus = 0.5*(1.+vars.ci*vars.ci);
@@ -831,34 +831,27 @@ REAL8 create_likelihood_grid(DataStructure data, REAL8 ****logLike,
       vars.Xccosphi_2 = 0.5*vars.Xcross*cosphi;
 
       for( k = 0 ; k < mesh.psiSteps ; k++ ){
-        /* set up these parameters as they need to be passed to log_likelihood
-           function - although tey aren't used in the grid-based search */
-        BinaryPulsarParams params[2]; 
-        BarycenterInput barys[2]; 
-        EphemerisData *edat=NULL;
-
         vars.psi = mesh.minVals.psi + (REAL8)k*mesh.delta.psi;
-        
+
         /* perform final loop over h0 within log_likelihood function */
         noiseEvidence = log_likelihood(logLike[i][j][k], data, vars, mesh,
-params, barys, edat);
+          NULL);
       }
     }
   }
 
-  /* free memory */ 
+  /* free memory */
   XLALDestroyREAL8Vector(data.sumData);
 
   return noiseEvidence;
 }
-
 
 /* a function to sum over the data */
 void sum_data(DataStructure data){
   INT4 chunkLength=0, length=0, i=0, j=0, count=0;
   COMPLEX16 B;
 
-  length = (INT4)data.data->length + 1 - 
+  length = (INT4)data.data->length + 1 -
            data.chunkLengths->data[(INT4)data.chunkLengths->length-1];
 
   for( i = 0 ; i < length ; i+= chunkLength ){
@@ -880,9 +873,7 @@ void sum_data(DataStructure data){
 
 REAL8 log_likelihood( REAL8 *likeArray, DataStructure data,
   IntrinsicPulsarVariables vars, MeshGrid mesh,
-  BinaryPulsarParams params[2], BarycenterInput barys[2], EphemerisData *edat ){
-  static LALStatus status;
-
+  REAL8Vector *dphi ){
   INT4 i=0, j=0, count=0, k=0;
   INT4 length=0;
   REAL8 chunkLength=0.;
@@ -904,15 +895,6 @@ REAL8 log_likelihood( REAL8 *likeArray, DataStructure data,
 
   INT4 first=0, through=0;
 
-  /* variables for delta phi caused by parameter uncertainties */
-  EmissionTime emit1, emit2;
-  EarthState earth;
-  REAL8 phi1=0., phi2=0., dphi=0.;
-
-  BinaryPulsarInput binInput1, binInput2;
-  BinaryPulsarOutput binOutput1, binOutput2;
-  REAL8 T01=0., T02=0., dt1=0., dt2=0.;
-
   /* to save time get all log factorials up to chunkMax */
   for( i = 0 ; i < data.chunkMax+1 ; i++ )
     exclamation[i] = log_factorial(i);
@@ -921,123 +903,51 @@ REAL8 log_likelihood( REAL8 *likeArray, DataStructure data,
   psibin = (INT4)ROUND( ( vars.psi + LAL_PI/4. )
            *(REAL8)(data.lookupTable->psiSteps-1.)/LAL_PI_2 );
 
-  length = (INT4)data.data->length + 1 - 
+  length = (INT4)data.data->length + 1 -
            data.chunkLengths->data[(INT4)data.chunkLengths->length-1];
 
   tstart = data.times->data[0]; /* time of first B_k */
-
-  /* set the position and frequency epochs if not already set */
-  if(params[0].pepoch == 0. && params[0].posepoch != 0.)
-    params[0].pepoch = params[0].posepoch;
-  else if(params[0].posepoch == 0. && params[0].pepoch != 0.)
-    params[0].posepoch = params[0].pepoch;
-
-  if(params[1].pepoch == 0. && params[1].posepoch != 0.)
-    params[1].pepoch = params[1].posepoch;
-  else if(params[1].posepoch == 0. && params[1].pepoch != 0.)
-    params[1].posepoch = params[1].pepoch;
 
   for( i = 0 ; i < length ; i += chunkLength ){
     chunkLength = (REAL8)data.chunkLengths->data[count];
 
     if( chunkLength < data.chunkMin ){
       count++;
-      
+
       if( through == 0 ) first = 0;
-      
+
       continue;
     }
-    
+
     through = 1;
-    
+
     sumModel = 0.;
     sumDataModel = 0.;
-    
+
     for( j = i ; j < i + chunkLength ; j++){
       /* set the time bin for the lookup table */
       T = fmod(data.times->data[j] - tstart, 86400.);
       timebin = (INT4)fmod(ROUND(T*(REAL8)data.lookupTable->timeSteps/86400.),
         data.lookupTable->timeSteps);
-      
+
       plus = data.lookupTable->lookupTable[psibin][timebin].plus;
       cross = data.lookupTable->lookupTable[psibin][timebin].cross;
-      
+
       B.re = data.data->data[j].re;
       B.im = data.data->data[j].im;
 
       /*********************************************************/
       /* stuff for phase offset due to parameter uncertainties - MCMC only */
-      if( edat != NULL ){
-        if(data.times->data[j] <= 820108813)
-          (*edat).leap = 13;
-        else
-          (*edat).leap = 14;
-
-        T01 = params[0].pepoch;
-        T02 = params[1].pepoch;
-
-        barys[0].tgps.gpsSeconds = (UINT8)floor(data.times->data[j]);
-        barys[0].tgps.gpsNanoSeconds =
-          (UINT8)floor((fmod(data.times->data[j],1.0)*1.e9));
-
-        barys[0].delta = params[0].dec + (data.times->data[j] -
-          T01)*params[0].pmdec;
-        barys[0].alpha = params[0].ra + (data.times->data[j] -
-          T01)*params[0].pmra/cos(barys[0].delta);
-
-        LAL_CALL( LALBarycenterEarth(&status, &earth, &barys[0].tgps, edat),
-          &status );
-        LAL_CALL( LALBarycenter(&status, &emit1, &barys[0], &earth), &status );
-
-        /* if sky positions aren't the same then work out new one */
-        if( params[0].ra != params[1].ra || params[0].dec != params[1].dec ||
-            params[0].pmra != params[1].pmra || params[0].pmdec !=
-            params[1].pmdec ){
-          barys[1].tgps.gpsSeconds = (UINT8)floor(data.times->data[j]);
-          barys[1].tgps.gpsNanoSeconds =
-            (UINT8)floor((fmod(data.times->data[j],1.0)*1.e9));
-
-          barys[1].delta = params[1].dec + (data.times->data[j] -
-            T01)*params[1].pmdec;
-          barys[1].alpha = params[1].ra + (data.times->data[j] -
-            T01)*params[1].pmra/cos(barys[1].delta);
-
-          LAL_CALL( LALBarycenterEarth(&status, &earth, &barys[1].tgps, edat),
-            &status ); 
-          LAL_CALL(LALBarycenter(&status, &emit2, &barys[1], &earth), &status);
-        }
-        else
-          emit2.deltaT = emit1.deltaT;
-
-        if(params[0].model!=NULL){
-          binInput1.tb = data.times->data[j] + emit1.deltaT;
-          binInput2.tb = data.times->data[j] + emit2.deltaT;
-
-          XLALBinaryPulsarDeltaT(&binOutput1, &binInput1, &params[0]);
-          XLALBinaryPulsarDeltaT(&binOutput2, &binInput2, &params[1]);
-          
-          dt1 = (data.times->data[j] - T01) + emit1.deltaT + binOutput1.deltaT;
-          dt2 = (data.times->data[j] - T02) + emit2.deltaT + binOutput2.deltaT;
-        }
-        else{
-          dt1 = (data.times->data[j] - T01) + emit1.deltaT;
-          dt2 = (data.times->data[j] - T02) + emit2.deltaT;
-        }
-
-        /* work out phase */
-        phi1 = 2.*(params[0].f0*dt1 + 0.5*params[0].f1*dt1*dt1 +
-  (1./6.)*params[0].f2*dt1*dt1*dt1 + (1./24.)*params[0].f3*dt1*dt1*dt1*dt1);
-
-        phi2 = 2.*(params[1].f0*dt2 + 0.5*params[1].f1*dt2*dt2 +
-  (1./6.)*params[1].f2*dt2*dt2*dt2 + (1./24.)*params[1].f3*dt2*dt2*dt2*dt2);
-      
-        dphi = phi2 - phi1;
+      if( dphi != NULL ){
+        REAL8 cphi=0., sphi=0.;
 
         /* create the signal model */
-        model.re = (plus*vars.Xpcosphi_2 + cross*vars.Xcsinphi_2)*cos(-dphi) +
-                 (cross*vars.Xccosphi_2 - plus*vars.Xpsinphi_2)*sin(-dphi);
-        model.im = (plus*vars.Xpsinphi_2 - cross*vars.Xccosphi_2)*cos(-dphi) +
-                 (cross*vars.Xcsinphi_2 + plus*vars.Xpcosphi_2)*sin(-dphi);
+        cphi = cos(-dphi->data[j]);
+        sphi = sin(-dphi->data[j]);
+        model.re = (plus*vars.Xpcosphi_2 + cross*vars.Xcsinphi_2)*cphi +
+                 (cross*vars.Xccosphi_2 - plus*vars.Xpsinphi_2)*sphi;
+        model.im = (plus*vars.Xpsinphi_2 - cross*vars.Xccosphi_2)*cphi +
+                 (cross*vars.Xcsinphi_2 + plus*vars.Xpcosphi_2)*sphi;
       }
       /*********************************************************/
       else{
@@ -1052,23 +962,23 @@ REAL8 log_likelihood( REAL8 *likeArray, DataStructure data,
       /* sum over that data and model */
       sumDataModel += B.re*model.re + B.im*model.im;
     }
-    
+
     for( k = 0 ; k < mesh.h0Steps ; k++ ){
       vars.h0 = mesh.minVals.h0 + (REAL8)k*mesh.delta.h0;
-      
+
       chiSquare = data.sumData->data[count];
       chiSquare -= 2.*vars.h0*sumDataModel;
       chiSquare += vars.h0*vars.h0*sumModel;
-      
+
       /* log(likelihood)
          logL = (m-1)log(2) + m! - m*sum((Bk - yk)^2) */
-         
+
       /* reset array if first time in loop - else joint likelihoods
          will be wrong */
       if( first == 0 && through == 1 ) 
         likeArray[k] = (chunkLength - 1.)*log2;
       else likeArray[k] += (chunkLength - 1.)*log2;
-        
+
       likeArray[k] += exclamation[(INT4)chunkLength];
       likeArray[k] -= chunkLength*log(chiSquare);
 
@@ -1079,7 +989,7 @@ REAL8 log_likelihood( REAL8 *likeArray, DataStructure data,
         noiseEvidence -= chunkLength*log(data.sumData->data[count]);
       }
     }
-    
+
     first++;
     count++;
   }
@@ -1093,7 +1003,7 @@ REAL8 log_likelihood( REAL8 *likeArray, DataStructure data,
 void combine_likelihoods(REAL8 ****logLike1, REAL8 ****logLike2, 
   MeshGrid mesh){
   INT4 i=0, j=0, k=0, n=0;
-  
+
   for( i = 0 ; i < mesh.phiSteps ; i++ ){
     for( j = 0 ; j < mesh.ciotaSteps ; j++ ){
       for( k = 0 ; k < mesh.psiSteps ; k++ ){
@@ -1109,9 +1019,9 @@ void combine_likelihoods(REAL8 ****logLike1, REAL8 ****logLike2,
 /* calculate the log prior */
 REAL8 log_prior(PriorVals prior, MeshGrid mesh){
   REAL8 pri=1.;
-  
+
   /* FIXME: Add ability to read in a old pdf file to use as a prior */
-  
+
   if(strcmp(prior.h0Prior, "uniform") == 0){
     pri *= 1.; /* set h0 prior to be one for all values if uniform */
     /* pri *= 1./(mesh.maxVals.h0 - mesh.minVals.h0); */
@@ -1123,7 +1033,7 @@ REAL8 log_prior(PriorVals prior, MeshGrid mesh){
 prior.meanh0)*(prior.vars.h0 -
     prior.meanh0)/(2.*prior.stdh0*prior.stdh0));
   }
-  
+
   if(strcmp(prior.phiPrior, "uniform") == 0){
     pri *= 1./(mesh.maxVals.phi0 - mesh.minVals.phi0);
   }
@@ -1133,12 +1043,12 @@ prior.meanh0)*(prior.vars.h0 -
       prior.vars.phi0 += LAL_TWOPI;
     else if( prior.meanphi + LAL_PI < prior.vars.phi0 )
       prior.vars.phi0 -= LAL_TWOPI;
-    
+
     pri *= ( 1./ (prior.stdphi*sqrt(2.*LAL_PI) ) )*exp( -( prior.vars.phi0 -
             prior.meanphi ) * ( prior.vars.phi0 - prior.meanphi ) /
            ( 2.*prior.stdphi*prior.stdphi ) );
   }
-  
+
   if(strcmp(prior.psiPrior, "uniform") == 0){
     pri *= 1./(mesh.maxVals.psi - mesh.minVals.psi);
   }
@@ -1147,12 +1057,12 @@ prior.meanh0)*(prior.vars.h0 -
       prior.vars.psi += LAL_PI/2.;
     else if( prior.meanpsi + LAL_PI/4. < prior.vars.psi )
       prior.vars.psi -= LAL_PI/2.;
-    
+
     pri *= ( 1./ (prior.stdpsi*sqrt(2.*LAL_PI) ) )*exp( -( prior.vars.psi -
             prior.meanpsi ) * ( prior.vars.psi - prior.meanpsi ) / 
            ( 2.*prior.stdpsi*prior.stdpsi ) );
   }
-  
+
   if(strcmp(prior.ciotaPrior, "uniform") == 0){
     pri *= 1./(mesh.maxVals.ci - mesh.minVals.ci);
   }
@@ -1161,7 +1071,7 @@ prior.meanh0)*(prior.vars.h0 -
       prior.vars.ci += 2.;
     else if( prior.meanciota + 1. < prior.vars.ci )
       prior.vars.ci -= 2.;
-    
+
     pri *= ( 1./ (prior.stdciota*sqrt(2.*LAL_PI) ) ) * exp( -( prior.vars.ci -
             prior.meanciota ) * ( prior.vars.ci - prior.meanciota ) / 
            ( 2.*prior.stdciota*prior.stdciota ) );
@@ -1485,7 +1395,7 @@ Results marginalise_posterior(REAL8 ****logPost, MeshGrid mesh,
       }
       else{
         cumsum[i] = cumsum[i-1] + exp(log_trapezium(evSum3[i-1], evSum3[i],
-dval1) - evSum4); 
+dval1) - evSum4);
 /*         cumsum[i] = cumsum[i-1] + exp(evSum3[i-1] - evSum4) * dval1; */
       }
     }
@@ -1549,10 +1459,10 @@ void response_lookup_table(REAL8 t0, LALDetAndSource detAndSource,
       gps.gpsNanoSeconds = (INT4)floor((fmod(T,1.0)*1.e9));
 
       XLALComputeDetAMResponse(&fplus, &fcross,
-        detAndSource.pDetector->response,   
-        detAndSource.pSource->equatorialCoords.longitude,     
-        detAndSource.pSource->equatorialCoords.latitude,     
-        detAndSource.pSource->orientation,     
+        detAndSource.pDetector->response,
+        detAndSource.pSource->equatorialCoords.longitude,
+        detAndSource.pSource->equatorialCoords.latitude,
+        detAndSource.pSource->orientation,
         XLALGreenwichMeanSiderealTime(&gps));
 
       lookupTable->lookupTable[i][j].plus = fplus;
@@ -1656,7 +1566,7 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
 
   /* extra h0 and phase parameter required if a glitch is obsevered */
   IntrinsicPulsarVariables *extraVars=NULL, *extraVarsNew=NULL;
-  BinaryPulsarParams pulsarParamsMCMC[2];
+  BinaryPulsarParams pulsarParamsFixed;
   REAL8 *glitchTimes=NULL;
   CHAR *gtimestr=NULL;
   INT4 nGlitches=input.mcmc.nGlitches;
@@ -1675,7 +1585,7 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
   REAL8 like1[1], like2[1];
   REAL8 logL1=0., logL2=0.; /* log likelihoods */
   REAL8 prior=0., priorNew=0., priorTmp=0., priorTmpNew=0.;
-  REAL8 ratio;              /* logL2 - logL1 = log(L2/L1) */ 
+  REAL8 ratio;              /* logL2 - logL1 = log(L2/L1) */
 
   FILE *fp=NULL;
   CHAR outFile[256];
@@ -1690,10 +1600,11 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
   ParamData *paramData=NULL, *randVals=NULL, *vals=NULL;
   INT4Vector *matPos=NULL; /* position of parameters in ParamData */
 
-  BarycenterInput baryinput[2];
+  BarycenterInput baryinput;
+  REAL8Vector *phi1[numDets], *phi2=NULL;
 
   /* read the TEMPO par file for the pulsar */
-  XLALReadTEMPOParFile( &pulsarParams, input.parFile );
+  XLALReadTEMPOParFile( &pulsarParamsFixed, input.parFile );
 
   if( verbose ){
     fprintf(stderr, "Performing an MCMC for %s with %d iterations.\n",
@@ -1842,7 +1753,8 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
     paramData = XLALMalloc( MAXPARAMS*sizeof(ParamData) );
 
     /* get correlation matrix */
-    cormat = ReadCorrelationMatrix( input.matrixFile, pulsarParams, paramData );
+    cormat = ReadCorrelationMatrix( input.matrixFile, pulsarParamsFixed,
+paramData );
 
     /* set covariance matrix */
     covmat = CreateCovarianceMatrix( paramData, cormat );
@@ -1895,33 +1807,31 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
     matPos = XLALResizeINT4Vector(matPos, j);
 
     /* set up initial pulsar parameters */
-    memcpy( &pulsarParamsMCMC[0], &pulsarParams, sizeof(pulsarParams) );
-    memcpy( &pulsarParamsMCMC[1], &pulsarParams, sizeof(pulsarParams) );
+    memcpy( &pulsarParams, &pulsarParamsFixed, sizeof(pulsarParamsFixed) );
 
-    SetMCMCPulsarParams( &pulsarParamsMCMC[1], randVals, matPos );
+    SetMCMCPulsarParams( &pulsarParams, randVals, matPos );
 
     /* check eccentricities so that 0 <= e < 1 i.e. circular or elliptical
        orbits */
-    if( pulsarParamsMCMC[1].e < 0. )
-      pulsarParamsMCMC[1].e = fabs(pulsarParamsMCMC[1].e);
-    else if( pulsarParamsMCMC[1].e >= 1. )
-      pulsarParamsMCMC[1].e = 1. - fmod(pulsarParamsMCMC[1].e, 1.);
+    if( pulsarParams.e < 0. )
+      pulsarParams.e = fabs(pulsarParams.e);
+    else if( pulsarParams.e >= 1. )
+      pulsarParams.e = 1. - fmod(pulsarParams.e, 1.);
 
-    if( pulsarParamsMCMC[1].e2 < 0. )
-      pulsarParamsMCMC[1].e2 = fabs(pulsarParamsMCMC[1].e2);
-    else if( pulsarParamsMCMC[1].e2 >= 1. )
-      pulsarParamsMCMC[1].e2 = 1. - fmod(pulsarParamsMCMC[1].e2, 1.);
+    if( pulsarParams.e2 < 0. )
+      pulsarParams.e2 = fabs(pulsarParams.e2);
+    else if( pulsarParams.e2 >= 1. )
+      pulsarParams.e2 = 1. - fmod(pulsarParams.e2, 1.);
 
-    if( pulsarParamsMCMC[1].e3 < 0. )
-      pulsarParamsMCMC[1].e3 = fabs(pulsarParamsMCMC[1].e3);
-    else if( pulsarParamsMCMC[1].e3 >= 1. )
-      pulsarParamsMCMC[1].e3 = 1. - fmod(pulsarParamsMCMC[1].e3, 1.);
+    if( pulsarParams.e3 < 0. )
+      pulsarParams.e3 = fabs(pulsarParams.e3);
+    else if( pulsarParams.e3 >= 1. )
+      pulsarParams.e3 = 1. - fmod(pulsarParams.e3, 1.);
   }
-  else{
-    /* make sure edat is NULL as this is what is used by the log_likelihood
-       function to determine if a covariance matrix has been used or not */
-    edat = NULL;
-  }
+  else
+    edat = NULL; /* make sure edat is NULL as this is how later functions
+                             decide whether or not to perform MCMC over all
+                             parameters */
 
   /* set initial chain parameters */
   vars.h0 = input.mesh.minVals.h0 + (REAL8)XLALUniformDeviate(randomParams) *
@@ -2002,20 +1912,20 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
 
   if( matTrue && numDets == 1 ){
     /* set up detector location - if not doing joint analysis */
-    baryinput[0].site = *detPos;
-    baryinput[0].site.location[0] /= LAL_C_SI;
-    baryinput[0].site.location[1] /= LAL_C_SI;
-    baryinput[0].site.location[2] /= LAL_C_SI;
+    baryinput.site = *detPos;
+    baryinput.site.location[0] /= LAL_C_SI;
+    baryinput.site.location[1] /= LAL_C_SI;
+    baryinput.site.location[2] /= LAL_C_SI;
 
-    baryinput[1].site = *detPos;
-    baryinput[1].site.location[0] /= LAL_C_SI;
-    baryinput[1].site.location[1] /= LAL_C_SI;
-    baryinput[1].site.location[2] /= LAL_C_SI;
+    /* set phase of initial heterodyne */
+    phi1[0] = get_phi( data[0], pulsarParams, baryinput, edat );
   }
 
-  /*====================== MCMC LOOP =========================================*/
+  fprintf(stderr, "Entering MCMC stage\n");
+
+  /*=================== MCMC LOOP =====================*/
   for( i = 0 ; i < input.mcmc.iterations + input.mcmc.burnIn ; i++ ){
-    if( verbose ){ 
+    if( verbose ){
       fprintf(stderr, "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
       fprintf(stderr, "%06.2lf%% complete", ((double)(i)+1.)*100. /
         (double)(input.mcmc.iterations + input.mcmc.burnIn));
@@ -2166,22 +2076,25 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
       for( k = 0 ; k < numDets ; k++ ){
         if( matTrue && numDets > 1 ){
           /* set up detector location for joint likelihood */
-          baryinput[0].site = detPos[k];
-          baryinput[0].site.location[0] /= LAL_C_SI;
-          baryinput[0].site.location[1] /= LAL_C_SI;
-          baryinput[0].site.location[2] /= LAL_C_SI;
+          baryinput.site = detPos[k];
+          baryinput.site.location[0] /= LAL_C_SI;
+          baryinput.site.location[1] /= LAL_C_SI;
+          baryinput.site.location[2] /= LAL_C_SI;
 
-          baryinput[1].site = detPos[k];
-          baryinput[1].site.location[0] /= LAL_C_SI;
-          baryinput[1].site.location[1] /= LAL_C_SI;
-          baryinput[1].site.location[2] /= LAL_C_SI;
+          phi1[k] = get_phi( data[k], pulsarParamsFixed, baryinput, edat );
         }
+
+        /* get new phase */
+        phi2 = get_phi( data[k], pulsarParams, baryinput, edat );
+
+        /* set up the deltaphi, and put it into the phi2 variable */
+        for( j=0; j<(INT4)data[k].times->length; j++ )
+          phi2->data[j] = phi2->data[j] - phi1[k]->data[j];
 
         /* first likelihood */
         if( nGlitches == 0 ){
           input.mesh.minVals.h0 = vars.h0;
-          log_likelihood(like1, data[k], vars, input.mesh, pulsarParamsMCMC,
-            baryinput, edat);
+          log_likelihood(like1, data[k], vars, input.mesh, phi2);
           logL1 += *like1;
         }
         else{
@@ -2189,63 +2102,59 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
             if( j == 0 ){
               input.mesh.minVals.h0 = vars.h0;
 
-              log_likelihood(like1, glitchData[k][j], vars, input.mesh,
-                pulsarParamsMCMC, baryinput, edat);
+              log_likelihood(like1, glitchData[k][j], vars, input.mesh, phi2);
             }
             else{
               input.mesh.minVals.h0 = extraVars[j-1].h0;
               log_likelihood(like1, glitchData[k][j], extraVars[j-1],
-                input.mesh, pulsarParamsMCMC, baryinput, edat);
+                input.mesh, phi2);
             }
             logL1 += *like1;
           }
         }
+        XLALDestroyREAL8Vector( phi2 );
+        phi2 = NULL;
       }
-    }
-
-    if( matTrue ){
-      /* set new pulsar parameters */
-      /* store originals */
-      memcpy(&pulsarParamsMCMC[1], &pulsarParamsNew,
-        sizeof(BinaryPulsarParams));
     }
 
     for( k = 0 ; k < numDets ; k++ ){
       /* second likelihood - for new position in parameter space */
       if( matTrue && numDets > 1 ){
         /* set up detector location for joint likelihood */
-        baryinput[0].site = detPos[k];
-        baryinput[0].site.location[0] /= LAL_C_SI;
-        baryinput[0].site.location[1] /= LAL_C_SI;
-        baryinput[0].site.location[2] /= LAL_C_SI;
-
-        baryinput[1].site = detPos[k];
-        baryinput[1].site.location[0] /= LAL_C_SI;
-        baryinput[1].site.location[1] /= LAL_C_SI;
-        baryinput[1].site.location[2] /= LAL_C_SI;
+        baryinput.site = detPos[k];
+        baryinput.site.location[0] /= LAL_C_SI;
+        baryinput.site.location[1] /= LAL_C_SI;
+        baryinput.site.location[2] /= LAL_C_SI;
       }
+
+      /* get new phase */
+      phi2 = get_phi( data[k], pulsarParamsNew, baryinput, edat );
+
+      /* set up the deltaphi, and put it into the phi2 variable */
+      for( j=0; j<(INT4)data[k].times->length; j++ )
+        phi2->data[j] = phi2->data[j] - phi1[k]->data[j];
 
       if( nGlitches == 0 ){
         input.mesh.minVals.h0 = varsNew.h0;
-        log_likelihood(like2, data[k], varsNew, input.mesh, pulsarParamsMCMC,
-          baryinput, edat);
+        log_likelihood(like2, data[k], varsNew, input.mesh, phi2);
         logL2 += *like2;
       }
       else{
         for( j = 0 ; j < nGlitches + 1 ; j++ ){
           if( j == 0 ){
             input.mesh.minVals.h0 = varsNew.h0;
-            log_likelihood(like2, glitchData[k][j], varsNew, input.mesh,
-              pulsarParamsMCMC, baryinput, edat);
+            log_likelihood(like2, glitchData[k][j], varsNew, input.mesh, phi2);
           }
           else{
             input.mesh.minVals.h0 = extraVarsNew[j-1].h0;
             log_likelihood(like2, glitchData[k][j], extraVarsNew[j-1],
-              input.mesh, pulsarParamsMCMC, baryinput, edat);
+              input.mesh, phi2);
           }
           logL2 += *like2;
         }
       }
+      XLALDestroyREAL8Vector( phi2 );
+      phi2 = NULL;
     }
 
     /* most importantly use the covariance matrix as a prior on the pulsar
@@ -2261,12 +2170,12 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
         for( k=0; k<(INT4)matPos->length ; k++){
           if(i==0){
             priorTmp += (vals[matPos->data[k]].val -
-              paramData[matPos->data[k]].val) * 
+              paramData[matPos->data[k]].val) *
               XLALGetREAL8MatrixValue(invmat, j, k);
           }
 
           priorTmpNew += (randVals[matPos->data[k]].val -
-              paramData[matPos->data[k]].val) * 
+              paramData[matPos->data[k]].val) *
               XLALGetREAL8MatrixValue(invmat, j, k);
         }
 
@@ -2384,7 +2293,7 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
     count++;
     logL2 = 0.;
   }
-  /*==========================================================================*/
+  /*===============================================*/
 
   if( verbose ) fprintf(stderr, "\n");
 
@@ -2409,11 +2318,89 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
     XLALDestroyREAL8Array( chol );
 
     XLALDestroyINT4Vector( matPos );
+
+    for( i=0; i < numDets; i++ )
+      XLALDestroyREAL8Vector( phi1[i] );
   }
 
   fclose(fp);
 }
 
+/* function to return a vector of the pulsar phase for each data point */
+REAL8Vector *get_phi( DataStructure data, BinaryPulsarParams params,
+  BarycenterInput bary, EphemerisData *edat ){
+  static LALStatus status;
+
+  INT4 i=0;
+
+  REAL8 T0=0., DT=0., deltat=0., deltat2=0.;
+
+  EarthState earth;
+  EmissionTime emit;
+
+  BinaryPulsarInput binput;
+  BinaryPulsarOutput boutput;
+
+  REAL8Vector *phis=NULL;
+
+  /* if edat is NULL then return a NULL poniter */
+  if( edat == NULL)
+    return NULL;
+
+   /* set the position and frequency epochs if not already set */
+  if(params.pepoch == 0. && params.posepoch != 0.)
+    params.pepoch = params.posepoch;
+  else if(params.posepoch == 0. && params.pepoch != 0.)
+    params.posepoch = params.pepoch;
+
+  if(params.pepoch == 0. && params.posepoch != 0.)
+    params.pepoch = params.posepoch;
+  else if(params.posepoch == 0. && params.pepoch != 0.)
+    params.posepoch = params.pepoch;
+
+  /* allocate memory for phases */
+  phis = XLALCreateREAL8Vector( data.times->length );
+
+  for( i=0; i<(INT4)data.times->length; i++){
+    DT = data.times->data[i] - T0;
+
+    if(data.times->data[i] <= 820108813)
+      (*edat).leap = 13;
+    else
+      (*edat).leap = 14;
+
+    T0 = params.pepoch;
+
+    bary.tgps.gpsSeconds = (UINT8)floor(data.times->data[i]);
+    bary.tgps.gpsNanoSeconds = (UINT8)floor((fmod(data.times->data[i],1.)*1e9));
+
+    bary.delta = params.dec + DT*params.pmdec;
+    bary.alpha = params.ra + DT*params.pmra/cos(bary.delta);
+
+    /* call barycentring routines */
+    LAL_CALL( LALBarycenterEarth(&status, &earth, &bary.tgps, edat), &status );
+    LAL_CALL( LALBarycenter(&status, &emit, &bary, &earth), &status );
+
+    /* check if need to perform binary barycentring */
+    if( params.model != NULL ){
+      binput.tb = data.times->data[i] + emit.deltaT;
+
+      XLALBinaryPulsarDeltaT( &boutput, &binput, &params );
+
+      deltat = DT + emit.deltaT + boutput.deltaT;
+    }
+    else
+      deltat = DT + emit.deltaT;
+
+    /* work out phase */
+    deltat2 = deltat*deltat;
+    phis->data[i] = 2.*(params.f0*deltat + 0.5*params.f1*deltat2 +
+      SIXTH*params.f2*deltat*deltat2 +
+      TWENTYFOURTH*params.f3*deltat2*deltat2);
+  }
+
+  return phis;
+}
 
 /* function to get the lengths of consecutive chunks of data */
 void get_chunk_lengths(DataStructure data){
@@ -2840,7 +2827,7 @@ REAL8Array *ReadCorrelationMatrix( CHAR *matrixFile,
   while(fscanf(fp, "%s", paramTmp)){
     if(strchr(paramTmp, '-') != NULL)
       break;
-    
+
     if(feof(fp)){
       fprintf(stderr, "Error... I've reached the end of the file without \
 reading any correlation data!");
