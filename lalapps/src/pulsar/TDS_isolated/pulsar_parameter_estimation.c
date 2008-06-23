@@ -2088,8 +2088,10 @@ paramData );
         phi2 = get_phi( data[k], pulsarParams, baryinput, edat );
 
         /* set up the deltaphi, and put it into the phi2 variable */
-        for( j=0; j<(INT4)data[k].times->length; j++ )
-          phi2->data[j] = phi2->data[j] - phi1[k]->data[j];
+        if( matTrue ){
+          for( j=0; j<(INT4)data[k].times->length; j++ )
+            phi2->data[j] = phi2->data[j] - phi1[k]->data[j];
+        }
 
         /* first likelihood */
         if( nGlitches == 0 ){
@@ -2131,8 +2133,10 @@ paramData );
       phi2 = get_phi( data[k], pulsarParamsNew, baryinput, edat );
 
       /* set up the deltaphi, and put it into the phi2 variable */
-      for( j=0; j<(INT4)data[k].times->length; j++ )
-        phi2->data[j] = phi2->data[j] - phi1[k]->data[j];
+      if( matTrue ){
+        for( j=0; j<(INT4)data[k].times->length; j++ )
+          phi2->data[j] = phi2->data[j] - phi1[k]->data[j];
+      }
 
       if( nGlitches == 0 ){
         input.mesh.minVals.h0 = varsNew.h0;
