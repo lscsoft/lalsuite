@@ -274,7 +274,9 @@ def plot_systematics(filelist,cp,dir,epoch,dag,opts):
   hti1 = {}
   Ai = {}
   Ar = {}
-  N = 0.0
+  N = {}
+  amp = {}
+
 
   for f in freq:
     hfr1[f] = 0.0
@@ -283,6 +285,8 @@ def plot_systematics(filelist,cp,dir,epoch,dag,opts):
     hti1[f] = 0.0
     Ai[f] = 0.0
     Ar[f] = 0.0
+    N[f] = 0.0
+    amp[f] = 0.0
 
   freqcnt = 0;
   
@@ -295,23 +299,26 @@ def plot_systematics(filelist,cp,dir,epoch,dag,opts):
     for line in input.readlines():
       tmp = line.split()
       if len(tmp) == 1: continue
-      N += 1.0
+      N[freq[freqcnt]] += 1.0
+      amp[freq[freqcnt]] += float(tmp[0])**2/2.0 + float(tmp[1])**2/2.0 + float(tmp[2])**2/2.0 + float(tmp[3])**2/2.0
       htr1[freq[freqcnt]] += float(tmp[0])
       hti1[freq[freqcnt]] += float(tmp[1])
       hfr1[freq[freqcnt]] += float(tmp[2])
       hfi1[freq[freqcnt]] += float(tmp[3])
       freqcnt += 1
       if freqcnt >= len(freq): freqcnt = 0 
-    #if N > 100000: break
+    #if N[freq[freqcnt]] > 10000: break
   #Actually make it the mean
 
   for f in freq:
-    htr1[f] /= N
-    hti1[f] /= N
-    hfr1[f] /= N
-    hfi1[f] /= N    
-    Ai[f] = ((hti1[f]-hfi1[f])*hfr1[f] - (htr1[f]-hfr1[f])*hfi1[f]) / (hfi1[f]*hfi1[f]+hfr1[f]*hfr1[f])
-    Ar[f] =  (htr1[f] - hfr1[f] + Ai[f]*hfi1[f]) / hfr1[f] + 1.0
+    htr1[f] /= N[f]
+    hti1[f] /= N[f]
+    hfr1[f] /= N[f]
+    hfi1[f] /= N[f]   
+    Ai[f] = (hti1[f]*hfr1[f]-htr1[f]*hfi1[f])/(hfi1[f]**2+hfr1[f]**2)
+    Ar[f] =  (htr1[f]*hfr1[f]+hti1[f]*hfi1[f])/(hfi1[f]**2+hfr1[f]**2)
+    amp[f] = sqrt(amp[f]/N[f])
+
 
   fname = "Ar_Ai_"+epoch[1]+"-"+epoch[2]+".txt"
   fl = open(fname,'w')
@@ -320,7 +327,7 @@ def plot_systematics(filelist,cp,dir,epoch,dag,opts):
   phase = {}
   for f in freq:
     mag[f] = sqrt(Ar[f]*Ar[f]+Ai[f]*Ai[f])
-    phase[f] = atan2(Ai[f],Ar[f])
+    phase[f] = atan2(Ai[f],Ar[f])*180.0/3.14159
     fl.write(str(f) + "\t"+str(Ar[f])+"\t"+str(Ai[f])+"\t"+str(mag[f])+"\t"+str(phase[f])+"\n")
   fl.close()
 
@@ -333,8 +340,7 @@ def plot_systematics(filelist,cp,dir,epoch,dag,opts):
   xi3 = {}
   xr4 = {}
   xi4 = {}
-  amp = {}
-  N = 0.0
+  N = {}
 
   for f in freq:
     xr1[f] = 0.0
@@ -345,6 +351,7 @@ def plot_systematics(filelist,cp,dir,epoch,dag,opts):
     xi3[f] = 0.0
     xr4[f] = 0.0
     xi4[f] = 0.0
+    N[f] = 0.0
 
   freqcnt = 0;
   realHistVecs = {}
@@ -366,12 +373,14 @@ def plot_systematics(filelist,cp,dir,epoch,dag,opts):
     for line in input.readlines():
       tmp = line.split()
       if len(tmp) == 1: continue
-      N += 1.0
+      N[freq[freqcnt]] += 1.0
       htr = float(tmp[0])
       hti = float(tmp[1])
       hfr = float(tmp[2])
       hfi = float(tmp[3])
-      amp[freq[freqcnt]] = sqrt(htr*htr+hti*hti)
+      #print str(freq[freqcnt])
+      #print "bin by bin " + str(sqrt(htr*htr+hti*hti))
+      #print "average" + str(amp[freq[freqcnt]])
       xr = htr-Ar[freq[freqcnt]]*hfr + Ai[freq[freqcnt]]*hfi
       xi = hti-Ar[freq[freqcnt]]*hfi - Ai[freq[freqcnt]]*hfr
       bin(binVec,realHistVecs[freq[freqcnt]],xr/amp[freq[freqcnt]])
@@ -386,23 +395,23 @@ def plot_systematics(filelist,cp,dir,epoch,dag,opts):
       xi4[freq[freqcnt]] += xi*xi*xi*xi
       freqcnt += 1
       if freqcnt >= len(freq): freqcnt = 0
-    #if N > 100000: break
+    #if N[freq[freqcnt]] > 10000: break
 
   
   #Put them in units of the noise amplitude
   for f in freq:
-    xr1[f] /= N
-    xi1[f] /= N
-    xr2[f] = sqrt(xr2[f]/N)/amp[f]
-    xi2[f] = sqrt(xi2[f]/N)/amp[f]
+    xr1[f] /= N[f]
+    xi1[f] /= N[f]
+    xr2[f] = sqrt(xr2[f]/N[f])/amp[f]
+    xi2[f] = sqrt(xi2[f]/N[f])/amp[f]
     if xr3[f]:
-      xr3[f] = pow(abs(xr3[f]/N),1.0/3.0)/amp[f]*xr3[f]/abs(xr3[f])
+      xr3[f] = pow(abs(xr3[f]/N[f]),1.0/3.0)/amp[f]*xr3[f]/abs(xr3[f])
     else: xr3[f] = 0.0
     if xi3[f]:
-      xi3[f] = pow(abs(xi3[f]/N),1.0/3.0)/amp[f]*xi3[f]/abs(xi3[f])
+      xi3[f] = pow(abs(xi3[f]/N[f]),1.0/3.0)/amp[f]*xi3[f]/abs(xi3[f])
     else: xi3[f] = 0.0
-    xr4[f] = pow(abs(xr4[f]/N-3.0*pow(xr2[f]*amp[f],4)),1.0/4.0)/amp[f]*(xr4[f]/N-3.0*pow(xr2[f]*amp[f],4))/abs(xr4[f]/N-3.0*pow(xr2[f]*amp[f],4))
-    xi4[f] = pow(abs(xi4[f]/N-3.0*pow(xi2[f]*amp[f],4)),1.0/4.0)/amp[f]*(xi4[f]/N-3.0*pow(xi2[f]*amp[f],4))/abs(xi4[f]/N-3.0*pow(xi2[f]*amp[f],4))
+    xr4[f] = pow(abs(xr4[f]/N[f]-3.0*pow(xr2[f]*amp[f],4)),1.0/4.0)/amp[f]*(xr4[f]/N[f]-3.0*pow(xr2[f]*amp[f],4))/abs(xr4[f]/N[f]-3.0*pow(xr2[f]*amp[f],4))
+    xi4[f] = pow(abs(xi4[f]/N[f]-3.0*pow(xi2[f]*amp[f],4)),1.0/4.0)/amp[f]*(xi4[f]/N[f]-3.0*pow(xi2[f]*amp[f],4))/abs(xi4[f]/N[f]-3.0*pow(xi2[f]*amp[f],4))
 
   fname = "x1_x2_x3_x4_"+epoch[1]+"-"+epoch[2]+".txt"
   fl = open(fname,'w')
@@ -421,6 +430,7 @@ def plot_systematics(filelist,cp,dir,epoch,dag,opts):
   title('h(t) and h(f) magnitude systematics '+epoch[1]+"-"+epoch[2]+'\n')
   xlabel('Freq')
   ylabel('Mag')
+  grid()
   savefig(dir + '/'+ magfigname)
   thumb = 'thumb-'+magfigname
   savefig(dir + '/'+ thumb,dpi=20)
@@ -433,7 +443,8 @@ def plot_systematics(filelist,cp,dir,epoch,dag,opts):
   plot(phase.keys(),phase.values())
   title('h(t) and h(f) phase systematics '+epoch[1]+"-"+epoch[2]+'\n')
   xlabel('Freq')
-  ylabel('Phase')
+  ylabel('Phase (degrees)')
+  grid()
   savefig(dir + '/'+ phasefigname)
   thumb = 'thumb-'+phasefigname
   savefig(dir + '/'+ thumb,dpi=20)
@@ -449,6 +460,7 @@ def plot_systematics(filelist,cp,dir,epoch,dag,opts):
   title('residual noise sqrt of second moment '+epoch[1]+"-"+epoch[2]+'\n')
   xlabel('Freq')
   ylabel('sigma')
+  grid()
   savefig(dir + '/'+ x2figname)
   thumb = 'thumb-'+x2figname
   savefig(dir + '/'+ thumb,dpi=20)
@@ -464,6 +476,7 @@ def plot_systematics(filelist,cp,dir,epoch,dag,opts):
   title('residual noise cube root of third moment '+epoch[1]+"-"+epoch[2]+'\n')
   xlabel('Freq')
   ylabel('cube root of skew')
+  grid()
   savefig(dir + '/'+ x3figname)
   thumb = 'thumb-'+x3figname
   savefig(dir + '/'+ thumb,dpi=20)
@@ -479,6 +492,7 @@ def plot_systematics(filelist,cp,dir,epoch,dag,opts):
   title('residual noise fourth root of excess kurtosis '+epoch[1]+"-"+epoch[2]+'\n')
   xlabel('Freq')
   ylabel('fourth root of excess kurtosis')
+  grid()
   savefig(dir + '/'+ x4figname)
   thumb = 'thumb-'+x4figname
   savefig(dir + '/'+ thumb,dpi=20)
@@ -504,9 +518,10 @@ def plot_systematics(filelist,cp,dir,epoch,dag,opts):
     title('residual noise distribution '+epoch[1]+"-"+epoch[2]+'\n'+'freq = '+str(f))
     ylabel('Number')
     xlabel('n / amp of h(t)')
-    savefig(dir + '/'+ figname)
     thumb = 'thumb-'+figname
     savefig(dir + '/'+ thumb,dpi=20)
+    grid()
+    savefig(dir + '/'+ figname)
     clf()
     close()
     page.write('<a href='+figname+'><img src='+thumb+'></a>\n')
