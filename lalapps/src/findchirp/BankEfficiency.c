@@ -273,8 +273,7 @@ main (INT4 argc, CHAR **argv )
       LAL_CALL(BankEfficiencyCreateListFromTmplt(&status, 
              &insptmplt, mybank, fast_index), &status); 
       thisTemplateIndex = fast_index;
-    
-            
+                
       switch(userParam.template)
       {          	
         case BCV:
@@ -431,13 +430,15 @@ main (INT4 argc, CHAR **argv )
             }
             
             if (overlapOutputThisTemplate.rhoMax > simulation.bestSNR)
-            {
-              
+            {              
               simulation.bestSNR  = overlapOutputThisTemplate.rhoMax;
               simulation.bestSNRIndex = simulation.filteringIndex; 
               simulation.SNRMax = 0;
-              simulation.randIn.param.t0 = insptmplt.t0;
-              simulation.randIn.param.t3 = insptmplt.t3;
+              if (userParam.fastSimulation == Heuristic1)
+              {
+                simulation.randIn.param.t0 = insptmplt.t0;
+                simulation.randIn.param.t3 = insptmplt.t3;
+              }
               simulation.bestEMatch      = simulation.lastEMatch;                            
             }
             else
