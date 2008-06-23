@@ -1668,6 +1668,8 @@ void LALappsGetFrameData(LALStatus*          status,
 			  TRACKSEARCHC_MSGEDATA);
 	  for (i=0;i<DataIn->data->length;i++)
 	    DataIn->data->data[i]=tmpData->data->data[i];
+	  if (params->verbosity >= verbose)
+		fprintf(stdout,"Done Resampling input data.\n");
 	}
       else
 	{
