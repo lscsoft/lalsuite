@@ -50,14 +50,13 @@ int main(int argc, char *argv[]) {
   LALStatus status = blank_status;
   BOOLEAN help = FALSE;
   LALStringVector *square = NULL;
-  BOOLEAN no_check_linear = FALSE;
-  INT4 metric_type = 0;
   REAL8 max_mismatch = 0.25;
   INT4 lattice_type = 0;
   BOOLEAN only_count = FALSE;
   REAL8 Tspan = 12.0 * 86400.0;
   CHAR *output_file = NULL;
 
+  int i;
   VeryBasicXMLOutput xml = empty_VeryBasicXMLOutput;
   int spaces = 0;
   gsl_vector *bounds = NULL;
@@ -70,7 +69,6 @@ int main(int argc, char *argv[]) {
   /* Register command line arguments */
   LAL_CALL(LALRegisterBOOLUserVar  (&status, "help",           'h', UVAR_HELP, "Print this help message", &help), &status);
   LAL_CALL(LALRegisterLISTUserVar  (&status, "square",          0 , UVAR_OPTIONAL, "Square parameter space: start,width,...", &square), &status);
-  LAL_CALL(LALRegisterINTUserVar   (&status, "metric",         'M', UVAR_OPTIONAL, "Metric: 0=spindown, 1=eye", &metric_type), &status);
   LAL_CALL(LALRegisterREALUserVar  (&status, "max-mismatch",   'X', UVAR_OPTIONAL, "Maximum allowed mismatch between the templates", &max_mismatch), &status);
   LAL_CALL(LALRegisterINTUserVar   (&status, "lattice",        'L', UVAR_OPTIONAL, "Lattice: 0=Anstar, 1=cubic", &lattice_type), &status);
   LAL_CALL(LALRegisterBOOLUserVar  (&status, "only-count",     'c', UVAR_OPTIONAL, "Only count number of templates", &only_count), &status);
@@ -81,7 +79,6 @@ int main(int argc, char *argv[]) {
   LAL_CALL(LALUserVarReadAllInput(&status, argc, argv), &status);
   if (help)
     return EXIT_SUCCESS;
-  spaces = 0;
   
   /* Open XML output file */
   if (output_file)
@@ -114,35 +111,20 @@ int main(int argc, char *argv[]) {
     LALPrintError("Exactly one of --square must be specified\n");
     return EXIT_FAILURE;
   }
+
+  /* Output tiling dimension */
+  XLAL_VBXMLO_Tag(&xml, "dimension", "%i", tiling->dimensions);
   
   /* Set metric */
-  switch (metric_type) {
-  case 0:
-    if (XLAL_SUCCESS != XLALSetFlatLatticeTilingSpindownFstatMetric(tiling, max_mismatch, Tspan)) {
-      LALPrintError("XLALSetFlatLatticeTilingSpindownFstatMetric failed\n");
-      return EXIT_FAILURE;
-    }
-    break;
-  case 1:
-    {
-      gsl_matrix *metric = NULL;
-      if ((metric = gsl_matrix_alloc(tiling->dimension, tiling->dimension)) == NULL) {
-	LALPrintError("Failed to allocate a gsl_matrix\n");
-	return EXIT_FAILURE;
-      }
-      gsl_matrix_set_identity(metric);
-      if (XLAL_SUCCESS != XLALSetFlatLatticeTilingMetric(tiling, metric, max_mismatch, NULL)) {
- 	LALPrintError("XLALSetFlatLatticeTilingMetric failed\n");
-	return EXIT_FAILURE;
-      }
-      gsl_matrix_free(metric);
-    }
-    break;
-  default:
-    LALPrintError("Invalid value for --metric\n");
+  if (XLAL_SUCCESS != XLALSetFlatLatticeTilingSpindownFstatMetric(tiling, max_mismatch, Tspan)) {
+    LALPrintError("XLALSetFlatLatticeTilingSpindownFstatMetric failed\n");
     return EXIT_FAILURE;
   }
 
+  /* Output metric */
+  XLAL_VBXMLO_gsl_matrix(&xml, "norm_metric", "%g", tiling->norm_metric);
+  XLAL_VBXMLO_gsl_vector(&xml, "norm_to_real", "%g", tiling->norm_to_real);
+  
   /* Set square parameter space bounds */
   if (square) {
     if (XLAL_SUCCESS != XLALFlatLatticeTilingSquareParamSpace(&tiling, bounds)) {
@@ -150,6 +132,49 @@ int main(int argc, char *argv[]) {
       return EXIT_FAILURE;
     }
   }
+
+  /* Output parameter space bounds */
+  XLAL_VBXMLO_BeginTag(&xml, "bounds");
+  for (i = 0; i < tiling->num_bounds; ++i) {
+    const FlatLatticeTilingBound *this = &tiling->bounds[i];
+    XLAL_VBXMLO_BeginTag(&xml, "bound");
+    XLAL_VBXMLO_Tag(&xml, "dimension", "%i", this->dimension);
+    switch (this->type) {
+    case FLT_BT_Singular:
+
+      /* Singular bound */
+      XLAL_VBXMLO_BeginTag(&xml, "singular");
+      XLAL_VBXMLO_Tag(&xml, "value", "%g", this->singular_value);
+      XLAL_VBXMLO_EndTag(&xml, "singular");      
+      break;
+      
+    case FLT_BT_Polynomial:
+
+      /* Polynomial bound */
+      XLAL_VBXMLO_BeginTag(&xml, "polynomial");
+      XLAL_VBXMLO_BeginTag(&xml, "lower");
+      XLAL_VBXMLO_gsl_vector(&xml, "const", "%g", this->poly_lower_const);
+      if (this->poly_lower_exp)
+	XLAL_VBXMLO_gsl_matrix_int(&xml, "exp", "%i", this->poly_lower_exp);
+      XLAL_VBXMLO_EndTag(&xml, "lower");
+      XLAL_VBXMLO_BeginTag(&xml, "upper");
+      XLAL_VBXMLO_gsl_vector(&xml, "const", "%g", this->poly_upper_const);
+      if (this->poly_upper_exp)
+	XLAL_VBXMLO_gsl_matrix_int(&xml, "exp", "%i", this->poly_upper_exp);
+      XLAL_VBXMLO_EndTag(&xml, "upper");
+      XLAL_VBXMLO_EndTag(&xml, "polynomial");
+      break;
+
+    default:
+      break;
+    }
+    XLAL_VBXMLO_EndTag(&xml, "bound");
+  }
+  XLAL_VBXMLO_EndTag(&xml, "bounds");
+
+  /* Output dimension maps */
+  XLAL_VBXMLO_Tag(&xml, "reduced_dims", "%i", tiling->reduced_dims);
+  XLAL_VBXMLO_gsl_vector_int(&xml, "reduced_map", "%i", tiling->reduced_map);
   
   /* Set lattice */
   switch (lattice_type) {
@@ -167,11 +192,14 @@ int main(int argc, char *argv[]) {
     break;
   }
 
+  /* Output lattice transformations */
+  XLAL_VBXMLO_gsl_matrix(&xml, "latt_to_norm", "%e", tiling->latt_to_norm);
+
   /* Generate templates */
   if (!only_count) {
     XLAL_VBXMLO_BeginTag(&xml, "templates");
     while (XLALNextFlatLatticePoint(tiling) == XLAL_SUCCESS) {
-      XLAL_VBXMLO_gsl_vector(&xml, "row", tiling->current);
+      XLAL_VBXMLO_gsl_vector(&xml, "row", "%g", tiling->current);
       fflush(xml.file);
     }
     XLAL_VBXMLO_EndTag(&xml, "templates");
@@ -185,9 +213,11 @@ int main(int argc, char *argv[]) {
 
   /* Cleanup */
   LALDestroyUserVars(&status);
-  gsl_vector_free(bounds);
+  if (bounds)
+    gsl_vector_free(bounds);
   XLALFreeFlatLatticeTiling(tiling);
+  LALCheckMemoryLeaks();
 
-  return XLAL_SUCCESS;
+  return EXIT_SUCCESS;
 
 }

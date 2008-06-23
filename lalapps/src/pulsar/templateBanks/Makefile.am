@@ -6,7 +6,7 @@ LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
 bin_PROGRAMS = lalapps_skynet lalapps_getMetric lalapps_testFlatPulsarMetric lalapps_matchGrids \
 	lalapps_getMesh lalapps_FstatMetric lalapps_testLatticeCovering  \
-	lalapps_FstatMetric_v2 lalapps_testFlatLatticeTilingPulsar
+	lalapps_FstatMetric_v2 #lalapps_testFlatLatticeTilingPulsar
 
 ## make sure LALAPPSgitID.h is re-generated at every 'make'
 .PHONY: gitID
