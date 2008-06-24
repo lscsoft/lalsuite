@@ -34,10 +34,10 @@
 #include <lal/LALStdlib.h>
 #include <lal/LALError.h>
 #include <lal/UserInput.h>
+#include <lal/GSLSupport.h>
+#include <lal/VeryBasicXMLOutput.h>
 #include <lal/FlatLatticeTiling.h>
 #include <lal/FlatLatticeTilingPulsar.h>
-#include <lal/FlatLatticeTilingSupport.h>
-#include <lal/VeryBasicXMLOutput.h>
 #include <lalapps.h>
 
 RCSID("$Id$");
