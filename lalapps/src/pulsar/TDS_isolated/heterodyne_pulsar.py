@@ -72,6 +72,7 @@ class heterodyneNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     self.__pulsar = None
     self.__high_pass = None
     self.__scale_fac = None
+    self.__manual_epoch = None
       
   def set_data_file(self,data_file):
     # set file containing data to be heterodyne (either list of frames or coarse het output)
@@ -106,6 +107,11 @@ class heterodyneNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
   def set_param_file_update(self, param_file_update):
     # set file containing updated pulsar parameters
     self.add_var_opt('param-file-update',param_file_update)
+    
+  def set_manual_epoch(self, manual_epoch)
+      # set manual pulsar epoch
+      self.add_var_opt('manual-epoch',manual_epoch)
+      self.__manual_epoch = manual_epoch
     
   def set_ephem_earth_file(self, ephem_earth_file):
     # set the file containing the earth's ephemeris
