@@ -528,17 +528,12 @@ def plot_systematics(filelist,cp,dir,epoch,dag,opts):
 
   page.close
 
-
-
-
-
-
-
-
-    
-
-
 def plot_noise_jobs(filelist,cp,dir,epoch,dag,qjob,opts):
+  flist = []
+  for file in filelist:
+    if os.path.split(file)[-1][:8] != "out-bin-":
+      flist.append(file)
+  filelist = flist
   qfile = write_qscan_conf(dir,cp)
   filelist.sort()
   ifo = cp.get('pipeline','ifo')
@@ -584,9 +579,9 @@ def plot_noise_jobs(filelist,cp,dir,epoch,dag,qjob,opts):
         specList = []
         timeFreqTuple = []
       specCol = []
-      for ix in range(0,len(freq)):
-        timeFreqTuple.append((float(tmp[0]),float(freq[ix]),float(tmp[3+3*ix])))
-        specCol.append(float(tmp[3+3*ix]))
+      for ix in range(0,len(freq)):        
+        timeFreqTuple.append((float(tmp[0]),float(freq[ix]),float(tmp[1+12*ix])/float(tmp[2+12*ix]) ))
+        specCol.append(float(tmp[1+12*ix])/float(tmp[2+12*ix]))
       specList.append(specCol)
     input.close() 
   fignames.sort(reverse=True)
@@ -702,7 +697,7 @@ def plot_noise_spec(specList,cp,dir,dag,qjob,qfile,tftuple):
   
 def write_qscan_conf(epoch,cp):
   duration = cp.get('noisecomp','time')
-  qdur = pow(2,ceil(log(60,float(duration))))
+  qdur = pow(2,ceil(log(float(duration),2)))
   qdur = str(qdur)
   stdArgs = '''  sampleFrequency:\t\t2048
   searchTimeRange:\t\t'''
