@@ -322,7 +322,7 @@ int main(int argc, char *argv[]){
 
    /* set up skypatches */
    if ((skytest = fopen(uvar_skyfile, "r")) == NULL) {
-	fprintf(stderr, "skyfile doesn't exist\n");
+/*	fprintf(stderr, "skyfile doesn't exist\n");*/
    }
 
 
@@ -545,7 +545,7 @@ fprintf(fp, "%1.5f\t %1.5f\t %1.5f\t%e\t%1.10f\n", thisPoint.Alpha, thisPoint.De
 
 
    } /* finish loop over skypatches */ 
-printf("Frequency %f\n", uvar_f0 + (freqCounter*deltaF));
+/*printf("Frequency %f\n", uvar_f0 + (freqCounter*deltaF));*/
 
    /* free memory */
 
