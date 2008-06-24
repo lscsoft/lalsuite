@@ -17,9 +17,8 @@
 *  MA  02111-1307  USA
 */
 
-/* 
+/*
   Author: Pitkin, M. D.
-  $Id$
 */
 
 /* Matt Pitkin - 07/02/06 ------------- heterodyne_pulsar.c */
@@ -34,13 +33,13 @@ and reheterodyne with this phase difference. */
 
 #include "heterodyne_pulsar.h"
 
+RCSID("$Id$");
+
 /* define a macro to round a number without having to use the C round function */
 #define ROUND(a) (floor(a+0.5))
 
 /* verbose global variable */
 INT4 verbose=0;
-
-INT4 lalDebugLevel=1;
 
 int main(int argc, char *argv[]){
   static LALStatus status;
@@ -68,21 +67,22 @@ int main(int argc, char *argv[]){
   get_input_args(&inputParams, argc, argv);
 
   if( inputParams.verbose ) verbose=1;
-  
+
   hetParams.heterodyneflag = inputParams.heterodyneflag; /* set type of heterodyne */
 
   /* read in pulsar data */
-  LALReadTEMPOParFile(&status, &hetParams.het, inputParams.paramfile);
-  
-  /* check whether the file has been read in  */
-  if(status.statusCode){
-    fprintf(stderr, "Error... function returned returned error code %d and \
-message:\n\t%s.\n",
-    status.statusCode, status.statusDescription);
-    return 0;
+  XLALReadTEMPOParFile( &hetParams.het, inputParams.paramfile );
+
+  /* if there is an epoch given manually (i.e. not from the pulsar parameter
+     file) then set it here and overwrite any other value - this is used, for
+     example, with the pulsar hardware injections in which this should be set
+     at 751680013.0 */
+  if(inputParams.manualEpoch != 0.){
+    hetParams.het.pepoch = inputParams.manualEpoch;
+    hetParams.het.posepoch = inputParams.manualEpoch;
   }
-  
-  if(verbose){  
+
+  if(verbose){
     fprintf(stderr, "I've read in the pulsar parameters for %s.\n",
       inputParams.pulsar);
     fprintf(stderr, "alpha = %lf rads, delta = %lf rads.\n", hetParams.het.ra,
@@ -105,23 +105,22 @@ pulsars spin frequency.\n", inputParams.freqfactor);
 
   /* set detector */
   hetParams.detector = *XLALGetSiteInfo( inputParams.ifo );
-    
+
   if(verbose){  fprintf(stderr, "I've set the detector location for\
  %s.\n", inputParams.ifo); }
 
   if(inputParams.heterodyneflag == 2){ /* if updating parameters read in updated
                                           par file */
-    LALReadTEMPOParFile(&status, &hetParams.hetUpdate,
-      inputParams.paramfileupdate);
+    XLALReadTEMPOParFile( &hetParams.hetUpdate, inputParams.paramfileupdate );
 
-    /* check whether the file has been read in  */
-    if(status.statusCode){
-      fprintf(stderr, "Error... function returned returned error code %d and \
-message:\n\t%s.\n", status.statusCode, status.statusDescription);
-      return 0;
+    /* if there is an epoch given manually (i.e. not from the pulsar parameter
+       file) then set it here and overwrite any other value */
+    if(inputParams.manualEpoch != 0.){
+      hetParams.hetUpdate.pepoch = inputParams.manualEpoch;
+      hetParams.hetUpdate.posepoch = inputParams.manualEpoch;
     }
-    
-    if(verbose){  
+
+    if(verbose){
       fprintf(stderr, "I've read the updated parameters for %s.\n",
         inputParams.pulsar);
       fprintf(stderr, "alpha = %lf rads, delta = %lf rads.\n",
@@ -131,7 +130,7 @@ message:\n\t%s.\n", status.statusCode, status.statusDescription);
         hetParams.hetUpdate.pepoch); 
     }
   }
-    
+
   /* get science segment lists - allocate initial memory for starts and stops */
   starts = XLALCreateINT4Vector(MAXNUMFRAMES);
   stops = XLALCreateINT4Vector(MAXNUMFRAMES);
@@ -323,7 +322,7 @@ heterodyne.\n");  }
       inputParams.heterodyneflag == 2 ){
       /* i.e. reading from a heterodyned file */
       REAL8 temptime=0.; /* temporary time storage variable */
-      LIGOTimeGPS epochdummy; 
+      LIGOTimeGPS epochdummy;
 
       epochdummy.gpsSeconds = 0;
       epochdummy.gpsNanoSeconds = 0;
@@ -339,7 +338,7 @@ heterodyne.\n");  }
 
       /* read in file - depends on if file is binary or not */
       if(inputParams.binaryinput){
-        do{       
+        do{
           if( i >= MAXLENGTH ){
             fprintf(stderr, "Error... data files is longer than the maximum \
 allowed file size %d!\n", MAXLENGTH);
@@ -349,12 +348,12 @@ allowed file size %d!\n", MAXLENGTH);
           fread((void*)&times->data[i], sizeof(REAL8), 1, fpin);
           fread((void*)&data->data->data[i].re, sizeof(REAL8), 1, fpin);
           fread((void*)&data->data->data[i].im, sizeof(REAL8), 1, fpin);
-                  
+
           if(inputParams.scaleFac > 1.0){
             data->data->data[i].re *= inputParams.scaleFac;
             data->data->data[i].im *= inputParams.scaleFac;
           }
-          
+
           /* make sure data doesn't overlap previous data */
           if( times->data[i] > temptime ){
             temptime = times->data[i];
@@ -484,7 +483,7 @@ sigma for 2nd time.\n",
       }
     }
 
-    for( i=0;i<resampData->data->length;i++ ){
+    for( i=0;i<(INT4)resampData->data->length;i++ ){
       /* if data has been scaled then undo scaling for output */
       
       if( inputParams.binaryoutput ){
@@ -581,15 +580,16 @@ void get_input_args(InputParams *inputParams, int argc, char *argv[]){
     { "freq-factor",              required_argument,  0, 'm' },
     { "scale-factor",             required_argument,  0, 'G' },
     { "high-pass-freq",           required_argument,  0, 'H' },
+    { "manual-epoch",           required_argument,  0, 'M' },
     { "binary-input",             no_argument, &inputParams->binaryinput, 1 },
     { "binary-output",            no_argument, &inputParams->binaryoutput, 1 },
     { "verbose",                  no_argument, &inputParams->verbose, 1 },
     { 0, 0, 0, 0 }
   };
-  
-  char args[] = "hi:p:z:f:g:k:s:r:d:c:o:e:S:l:R:C:F:O:T:m:G:H:";
+
+  char args[] = "hi:p:z:f:g:k:s:r:d:c:o:e:S:l:R:C:F:O:T:m:G:H:M:";
   char *program = argv[0];
-  
+
   /* set defaults */
   inputParams->filterknee = 0.; /* default is not to filter */
   inputParams->resamplerate = 0.; /* resample to 1 Hz */
@@ -604,13 +604,16 @@ file */
   inputParams->calibfiles.sensingfunctionfile = NULL;
   inputParams->calibfiles.openloopgainfile = NULL;
   inputParams->calibfiles.responsefunctionfile = NULL;
-  
+
   inputParams->freqfactor = 2.0; /* default is to look for gws at twice the
 pulsar spin frequency */
-  
+
   inputParams->scaleFac = 1.0; /* default scaling for calibrated GEO data */
   inputParams->highPass = 0.; /* default to not high-pass GEO data */
-  
+
+  inputParams->manualEpoch = 0.; /* default to zero i.e. it takes the epoch from
+the pulsar parameter file */
+
   /* get input arguments */
   while(1){
     int option_index = 0;
@@ -658,9 +661,9 @@ pulsar spin frequency */
 
             /*set the denominator i.e. the point after / */
             denominator = XLALStringDuplicate(loc+1);
-            
+
             inputParams->filterknee = atof(numerator)/atof(denominator);
-          
+
             XLALFree(loc);
             XLALFree(denominator);
           }
@@ -681,7 +684,7 @@ pulsar spin frequency */
             denominator = XLALStringDuplicate(loc+1);
 
             inputParams->samplerate = atof(numerator)/atof(denominator);
-          
+
             XLALFree(loc);
             XLALFree(denominator);
           }
@@ -703,7 +706,7 @@ pulsar spin frequency */
             denominator = XLALStringDuplicate(loc+1);
 
             inputParams->resamplerate = atof(numerator)/atof(denominator);
-          
+
             XLALFree(loc);
             XLALFree(denominator);
           }
@@ -760,7 +763,7 @@ pulsar spin frequency */
             denominator = XLALStringDuplicate(loc+1);
 
             inputParams->freqfactor = atof(numerator)/atof(denominator);
-          
+
             XLALFree(loc);
             XLALFree(denominator);
           }
@@ -773,6 +776,9 @@ pulsar spin frequency */
         break;
       case 'H':
         inputParams->highPass = atof(optarg);
+        break;
+      case 'M':
+        inputParams->manualEpoch = atof(optarg);
         break;
       case '?':
         fprintf(stderr, "unknown error while parsing options\n" );
@@ -866,14 +872,8 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
 
     (*edat).ephiles.earthEphemeris = hetParams.earthfile;
     (*edat).ephiles.sunEphemeris = hetParams.sunfile;
-    LALInitBarycenter(&status, edat);
-    if(status.statusCode){
-      fprintf(stderr, "Error... function returned returned error code %d and \
-message:\n\t%s.\n",
-      status.statusCode, status.statusDescription);
-      exit(0);
-    }
-   
+    LAL_CALL( LALInitBarycenter(&status, edat), &status );
+
     /* set up location of detector */
     baryinput.site.location[0] = hetParams.detector.location[0]/LAL_C_SI;
     baryinput.site.location[1] = hetParams.detector.location[1]/LAL_C_SI;
@@ -881,7 +881,7 @@ message:\n\t%s.\n",
   }
 
   for(i=0;i<hetParams.length;i++){
-   
+
 /******************************************************************************/
 
     /* produce initial heterodyne phase for coarse heterodyne with no time 
@@ -915,14 +915,9 @@ message:\n\t%s.\n",
       baryinput.tgps.gpsSeconds = (UINT8)floor(t);
       baryinput.tgps.gpsNanoSeconds = (UINT8)floor((fmod(t,1.0)*1.e9));	
 
-      LALBarycenterEarth(&status, &earth, &baryinput.tgps, edat); 
-      LALBarycenter(&status, &emit, &baryinput, &earth);
-      if(status.statusCode){
-        fprintf(stderr, "Error... function returned returned error code %d and \
-message:\n\t%s.\n",
-        status.statusCode, status.statusDescription);
-        exit(0);
-      }
+      LAL_CALL( LALBarycenterEarth(&status, &earth, &baryinput.tgps, edat),
+        &status );
+      LAL_CALL( LALBarycenter(&status, &emit, &baryinput, &earth), &status );
 
       /* if binary pulsar add extra time delay */
       if(hetParams.het.model!=NULL){
@@ -930,14 +925,8 @@ message:\n\t%s.\n",
         binInput.tb = t + emit.deltaT;
 
         /* calculate binary time delay */
-        LALBinaryPulsarDeltaT(&status, &binOutput, &binInput, &hetParams.het);
-        if(status.statusCode){
-          fprintf(stderr, "Error... function returned returned error code %d \
-and message:\n\t%s.\n",
-          status.statusCode, status.statusDescription);
-          exit(0);
-        }
-        
+        XLALBinaryPulsarDeltaT( &binOutput, &binInput, &hetParams.het );
+
         /* add binary time delay */
         tdt = (t - T0) + emit.deltaT +  binOutput.deltaT;
       }
@@ -945,7 +934,7 @@ and message:\n\t%s.\n",
         tdt = t - T0 + emit.deltaT;
       }
     }
-       
+
     /* multiply by 2 to get gw phase */
     phaseCoarse = freqfactor*(hetParams.het.f0*tdt +
       0.5*hetParams.het.f1*tdt*tdt + (1./6.)*hetParams.het.f2*tdt*tdt*tdt +
@@ -953,7 +942,7 @@ and message:\n\t%s.\n",
 
     fcoarse = freqfactor*(hetParams.het.f0 + hetParams.het.f1*tdt +
       0.5*hetParams.het.f2*tdt*tdt + (1./6.)*hetParams.het.f3*tdt*tdt*tdt);
-    
+
 /******************************************************************************/
     /* produce second phase for fine heterodyne */
     if(hetParams.heterodyneflag == 1 || hetParams.heterodyneflag == 2){
@@ -968,9 +957,9 @@ and message:\n\t%s.\n",
       baryinput.dInv = 0.0;  /* no parallax */
 
       t = times->data[i]; /* get data time */
-     
+
       t2 = times->data[i] + 1.; /* just add a second to get the gradient */
-        
+
       /* set leap seconds noting that for all runs prior to S5 that the number
          of leap seconds was 13 and that 1 more leap seconds was added on 31st
          Dec 2005 24:00:00 i.e. GPS 820108813 */
@@ -987,24 +976,24 @@ and message:\n\t%s.\n",
       baryinput2.tgps.gpsSeconds = (UINT8)floor(t2);
       baryinput2.tgps.gpsNanoSeconds = (UINT8)floor((fmod(t2,1.0)*1.e9));
       
-      LALBarycenterEarth(&status, &earth, &baryinput.tgps, edat); 
-      LALBarycenter(&status, &emit, &baryinput, &earth);
-      
-      LALBarycenterEarth(&status, &earth2, &baryinput2.tgps, edat); 
-      LALBarycenter(&status, &emit2, &baryinput2, &earth2);
-           
+      LAL_CALL( LALBarycenterEarth(&status, &earth, &baryinput.tgps, edat),
+        &status );
+      LAL_CALL( LALBarycenter(&status, &emit, &baryinput, &earth), &status );
+
+      LAL_CALL( LALBarycenterEarth(&status, &earth2, &baryinput2.tgps, edat),
+        &status );
+      LAL_CALL( LALBarycenter(&status, &emit2, &baryinput2, &earth2), &status );
+
       /* if binary pulsar add extra time delay */
       if(hetParams.hetUpdate.model!=NULL){
         /* input SSB time into binary timing function */
         binInput.tb = t + emit.deltaT;
         binInput2.tb = t2 + emit2.deltaT;
-        
+
         /* calculate binary time delay */
-        LALBinaryPulsarDeltaT(&status, &binOutput, &binInput,
-          &hetParams.hetUpdate);
-        LALBinaryPulsarDeltaT(&status, &binOutput2, &binInput2,
-          &hetParams.hetUpdate);
-        
+        XLALBinaryPulsarDeltaT( &binOutput, &binInput, &hetParams.hetUpdate );
+        XLALBinaryPulsarDeltaT( &binOutput2, &binInput2, &hetParams.hetUpdate );
+
         /* add binary time delay */
         tdt = (t - T0Update) + emit.deltaT + binOutput.deltaT;
       }
@@ -1083,7 +1072,7 @@ and message:\n\t%s.\n",
     fprintf(stderr, "Error... got error code %d and message:\n\t%s\n", 
     status.statusCode, status.statusDescription);
     exit(0);
-  } 
+  }
 }
 
 /* function to extract the frame time and duration from the file name */
@@ -1197,7 +1186,7 @@ void set_filters(Filters *iirFilters, REAL8 filterKnee, REAL8 samplerate){
 
   /* set zero pole gain values */
   wc = tan(LAL_PI * filterKnee/samplerate);
-  LALCreateCOMPLEX16ZPGFilter(&status, &zpg, 0, 3);
+  LAL_CALL( LALCreateCOMPLEX16ZPGFilter(&status, &zpg, 0, 3), &status );
   zpg->poles->data[0].re = wc*sqrt(3.)/2.;
   zpg->poles->data[0].im = wc*0.5;
   zpg->poles->data[1].re = 0.0;
@@ -1206,26 +1195,32 @@ void set_filters(Filters *iirFilters, REAL8 filterKnee, REAL8 samplerate){
   zpg->poles->data[2].im = wc*0.5;
   zpg->gain.re = 0.0;
   zpg->gain.im = wc*wc*wc;
-  LALWToZCOMPLEX16ZPGFilter( &status, zpg );
+  LAL_CALL( LALWToZCOMPLEX16ZPGFilter( &status, zpg ), &status );
 
   /* create IIR filters */
   iirFilters->filter1Re = NULL;
   iirFilters->filter1Im = NULL;
-  LALCreateREAL8IIRFilter( &status, &iirFilters->filter1Re, zpg );
-  LALCreateREAL8IIRFilter( &status, &iirFilters->filter1Im, zpg );
+  LAL_CALL( LALCreateREAL8IIRFilter( &status, &iirFilters->filter1Re, zpg ),
+    &status);
+  LAL_CALL( LALCreateREAL8IIRFilter( &status, &iirFilters->filter1Im, zpg ),
+    &status );
 
   iirFilters->filter2Re = NULL;
   iirFilters->filter2Im = NULL;
-  LALCreateREAL8IIRFilter( &status, &iirFilters->filter2Re, zpg );
-  LALCreateREAL8IIRFilter( &status, &iirFilters->filter2Im, zpg );
+  LAL_CALL( LALCreateREAL8IIRFilter( &status, &iirFilters->filter2Re, zpg ),
+    &status );
+  LAL_CALL( LALCreateREAL8IIRFilter( &status, &iirFilters->filter2Im, zpg ),
+    &status) ;
 
   iirFilters->filter3Re = NULL;
   iirFilters->filter3Im = NULL;
-  LALCreateREAL8IIRFilter( &status, &iirFilters->filter3Re, zpg );
-  LALCreateREAL8IIRFilter( &status, &iirFilters->filter3Im, zpg );
+  LAL_CALL( LALCreateREAL8IIRFilter( &status, &iirFilters->filter3Re, zpg ),
+    &status );
+  LAL_CALL( LALCreateREAL8IIRFilter( &status, &iirFilters->filter3Im, zpg ),
+    &status );
 
   /* destroy zpg filter */
-  LALDestroyCOMPLEX16ZPGFilter( &status, &zpg );
+  LAL_CALL( LALDestroyCOMPLEX16ZPGFilter( &status, &zpg ), &status );
 }
 
 /* function to low-pass filter the data using three third order Butterworth IIR
@@ -1233,10 +1228,10 @@ void set_filters(Filters *iirFilters, REAL8 filterKnee, REAL8 samplerate){
 void filter_data(COMPLEX16TimeSeries *data, Filters *iirFilters){
   COMPLEX16 tempData;
   INT4 i=0;
-  
-  for(i=0;i<data->data->length;i++){
+
+  for(i=0;i<(INT4)data->data->length;i++){
     tempData.re = 0.;
-    tempData.im = 0.; 
+    tempData.im = 0.;
 
     tempData.re = LALDIIRFilter(data->data->data[i].re, iirFilters->filter1Re);
     tempData.im = LALDIIRFilter(data->data->data[i].im, iirFilters->filter1Im);
@@ -1246,11 +1241,11 @@ void filter_data(COMPLEX16TimeSeries *data, Filters *iirFilters){
 
     tempData.re = LALDIIRFilter(data->data->data[i].re, iirFilters->filter3Re);
     tempData.im = LALDIIRFilter(data->data->data[i].im, iirFilters->filter3Im);
-      
+
     data->data->data[i].re = tempData.re;
     data->data->data[i].im = tempData.im;
-  } 
-  
+  }
+
 }
 
 /* function to average the data at one sample rate down to a new sample rate */
@@ -1275,7 +1270,7 @@ COMPLEX16TimeSeries *resample_data(COMPLEX16TimeSeries *data,
     &lalSecondUnit, length );
 
   if( hetflag == 0 || hetflag == 3 ){ /* coarse heterodyne */
-    for(i=0;i<data->data->length-size+1;i+=size){
+    for(i=0;i<(INT4)data->data->length-size+1;i+=size){
       tempData.re = 0.;
       tempData.im = 0.;
 
@@ -1310,7 +1305,7 @@ COMPLEX16TimeSeries *resample_data(COMPLEX16TimeSeries *data,
     count=0;
     j=0;
     
-    for( i=0;i<starts->length;i++ ){
+    for( i=0;i<(INT4)starts->length;i++ ){
       /* find first bit of data within a segment */
       if( starts->data[i] <times->data[j] && stops->data[i] <= times->data[j] ){
         /* if the segmemt is before the jth data point then continue */
@@ -1393,10 +1388,10 @@ COMPLEX16TimeSeries *resample_data(COMPLEX16TimeSeries *data,
     }
   }
 
-  if( times->length > count )
+  if( (INT4)times->length > count )
     times = XLALResizeREAL8Vector( times, count );
   
-  if( series->data->length > count )
+  if( (INT4)series->data->length > count )
     series = XLALResizeCOMPLEX16TimeSeries( series, 1, count );
 
   /* create time stamps */
@@ -1542,7 +1537,7 @@ Assume calibration coefficients are 1 and use the response funtcion.\n");
       frequency);
 
     /* calibrate using response function */
-    for(i=0;i<series->data->length;i++){
+    for(i=0;i<(INT4)series->data->length;i++){
       tempData = series->data->data[i];
       series->data->data[i].re =
         Rfunc*(tempData.re*cos(Rphase)-tempData.im*sin(Rphase));
@@ -1608,7 +1603,7 @@ data.\n");
     }
 
     /* calibrate */
-    for(j=0;j<series->data->length;j++){
+    for(j=0;j<(INT4)series->data->length;j++){
       for(k=ktemp;k<i;k++){
         /* get alpha and gamma values closest to the data, assuming a value a
            minute */
@@ -1616,12 +1611,12 @@ data.\n");
           /* if the coefficients were outside a range then they are bad so don't
              use */
           if((alpha[k] < ALPHAMIN || alpha[k] > ALPHAMAX) && j <
-              series->data->length-1){
+              (INT4)series->data->length-1){
             ktemp = k;
             break;
           }
           else if((alpha[k] < ALPHAMIN || alpha[k] > ALPHAMAX) &&
-            j==series->data->length-1)
+            j==(INT4)series->data->length-1)
             break;
 
           Resp.re = (cos(Cphase) + gamma[k]*G*cos(Gphase -
@@ -1719,7 +1714,7 @@ INT4 remove_outliers(COMPLEX16TimeSeries *data, REAL8Vector *times,
   /* calculate standard deviation */
   stddev.re = 0.;
   stddev.im = 0.;
-  for(i=0;i<data->data->length;i++){
+  for(i=0;i<(INT4)data->data->length;i++){
     stddev.re += (data->data->data[i].re - mean.re)*(data->data->data[i].re -
       mean.re);
     stddev.im += (data->data->data[i].im - mean.im)*(data->data->data[i].im -
@@ -1731,7 +1726,7 @@ INT4 remove_outliers(COMPLEX16TimeSeries *data, REAL8Vector *times,
   
   /* exclude those points who's absolute value is greater than our
      stddevthreshold */
-  for(i=0;i<data->data->length;i++){
+  for(i=0;i<(INT4)data->data->length;i++){
     if(fabs(data->data->data[i].re) < stddev.re*stddevthresh &&
       fabs(data->data->data[i].im) < stddev.im*stddevthresh){
       data->data->data[j].re = data->data->data[i].re;

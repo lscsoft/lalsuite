@@ -20,7 +20,7 @@
 /*
   Author: Pitkin, M. D.
   $Id$
-*/ 
+*/
 
 /* Matt Pitkin 09/02/06 -------------- heterodyne_pulsar.h */
 
@@ -59,6 +59,11 @@
 #include <lal/LALString.h>
 #include <lal/Units.h>
 #include <lal/TimeSeries.h>
+#include <lal/XLALError.h>
+#include <lal/LALRCSID.h>
+
+/* lalapps header */
+#include <lalapps.h>
 
 /* frame headers */
 #include <FrIO.h>
@@ -80,6 +85,9 @@ extern "C" {
 " --param-file        name of file containing initial pulsar parameters\n\
                      (.par file)\n"\
 " --param-file-update name of file containing updated pulsar parameters\n"\
+" --manual-epoch      a hardwired epoch for the pulsar frequency and position\n\
+                     (for use when dealing with hardware injections when this\n\
+                     should be set to 751680013.0)\n"\
 " --ephem-earth-file  name of file containing the earth ephemeris\n"\
 " --ephem-sun-file    name of file containing the sun ephemeris\n"\
 " --filter-knee       knee frequency of low-pass filter (don't filter if = 0)\n"\
@@ -140,6 +148,7 @@ typedef struct tagInputParams{
   INT4 heterodyneflag;
   CHAR paramfile[256];
   CHAR paramfileupdate[256];
+  REAL8 manualEpoch;
 
   REAL8 freqfactor;
   
