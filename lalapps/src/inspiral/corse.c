@@ -96,10 +96,6 @@ static void print_usage(char *program)
       " [--background-modifier]\n"\
       "                       mod      the background modifier divides\n"\
       "                                the background time analyzed by mod\n"\
-      " [--zero-lag-playground]        divides the background time analyzed\n"\
-      "                                by 600/6370\n"\
-      " [--zero-lag-exclude-play]      divides the background time analyzed\n"\
-      "                                by 5770/6370\n"\
       " [--fit-num]           n        use an exponential fit to n loudest\n"\
       "                                background triggers to calculate\n"\
       "                                the FAR for triggers in tail\n"\
@@ -133,8 +129,6 @@ static char *get_next_line( char *line, size_t size, FILE *fp )
 
 int sortTriggers = 0;
 LALPlaygroundDataMask dataType;
-int zerolagPlayground = 0;
-int zerolagExcludePlay = 0;
 extern int vrbflg;
 
 int main( int argc, char *argv[] )
@@ -268,8 +262,6 @@ int main( int argc, char *argv[] )
     {
       {"verbose",                 no_argument,       &vrbflg,              1 },
       {"sort-triggers",           no_argument,  &sortTriggers,             1 },
-      {"zero-lag-playground",     no_argument,  &zerolagPlayground,        1 },
-      {"zero-lag-exclude-play",   no_argument,  &zerolagExcludePlay,       1 },
       {"help",                    no_argument,            0,              'h'},
       {"debug-level",             required_argument,      0,              'z'},
       {"user-tag",                required_argument,      0,              'Z'},
@@ -1102,9 +1094,6 @@ int main( int argc, char *argv[] )
         "Got a fit of %1.2e * exp(%1.2e * stat**2) above a stat**2 of %6.2f\n",
         fitA, fitB, fitStat );
   }
-
-  if ( zerolagPlayground ) timeModifier *= 600./6370.;
-  if ( zerolagExcludePlay ) timeModifier *= 5770./6370.;
 
   {
     CoincInspiralSlideTable *slideHeads = NULL;
