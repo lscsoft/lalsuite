@@ -78,7 +78,7 @@ int XLALSetFlatLatticeTilingSpindownFstatMetric(
 						)
 {
   
-  const int n = tiling->dimension;
+  const int n = tiling->dimensions;
   
   int i, j;
   gsl_matrix *norm_metric = NULL;

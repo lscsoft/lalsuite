@@ -54,7 +54,7 @@ extern "C" {
   typedef struct tagFlatLatticeTilingBound {
 
     /* Dimension on which bound applies */
-    INT4 index;
+    INT4 dimension;
 
     /* Zone within dimension on which bound applies */
     INT4 zone;
@@ -89,7 +89,7 @@ extern "C" {
   typedef struct tagFlatLatticeTiling {
 
     /* Dimension of the parameter space */
-    INT4 dimension;
+    INT4 dimensions;
 
     /* Parameter space bounds */
     INT4 num_bounds;
@@ -108,7 +108,7 @@ extern "C" {
     REAL8 max_mismatch;
 
     /* Reduced dimension (singular dimensions excluded) */
-    INT4 reduced_dim;
+    INT4 reduced_dims;
 
     /* Dimension map to/from reduced and full dimensions */
     gsl_vector_int *reduced_map;
@@ -130,7 +130,7 @@ extern "C" {
     gsl_vector *norm_upper;
 
     /* Padding of bounds along each dimension */
-    gsl_vector *norm_padding;
+    gsl_vector *padding;
 
     /* Current template point */
     gsl_vector *current;

@@ -51,29 +51,29 @@ static const BOOLEAN FALSE = (0==1);
  * Create a new flat lattice tiling structure
  */
 FlatLatticeTiling *XLALCreateFlatLatticeTiling(
-	 				       INT4 dimension /**< Dimension of the parameter space */
+	 				       INT4 dimensions /**< Dimensionality of the parameter space */
 					       )
 {
 
   FlatLatticeTiling *tiling = NULL;
 
   /* Check dimension */
-  if (dimension < 1)
-    XLAL_ERROR_NULL("'dimension' must be non-zero", XLAL_EINVAL);
+  if (dimensions < 1)
+    XLAL_ERROR_NULL("'dimensions' must be non-zero", XLAL_EINVAL);
 
   /* Allocate memory */
   if ((tiling = (FlatLatticeTiling*)LALMalloc(sizeof(FlatLatticeTiling))) == NULL)
     XLAL_ERROR_NULL("Could not allocate 'tiling'", XLAL_ENOMEM);
 
   /* Initialise structure */
-  tiling->dimension = dimension;
+  tiling->dimensions = dimensions;
   tiling->num_bounds = 0;
   tiling->bounds = NULL;
   tiling->bound_zone = NULL;
   tiling->norm_metric = NULL;
   tiling->norm_to_real = NULL;
   tiling->max_mismatch = 0.0;
-  tiling->reduced_dim = -1;
+  tiling->reduced_dims = -1;
   tiling->reduced_map = NULL;
   tiling->dimension_map = NULL;
   tiling->latt_to_norm = NULL;
@@ -83,7 +83,7 @@ FlatLatticeTiling *XLALCreateFlatLatticeTiling(
   tiling->norm_current = NULL;
   tiling->norm_lower = NULL;
   tiling->norm_upper = NULL;
-  tiling->norm_padding = NULL;
+  tiling->padding = NULL;
   tiling->current = NULL;
   tiling->count = 0;
   tiling->state = FLT_S_NotInitialised;
@@ -126,7 +126,7 @@ void XLALFreeFlatLatticeTiling(
     FREE_GSL_VECTOR(tiling->norm_current);
     FREE_GSL_VECTOR(tiling->norm_lower);
     FREE_GSL_VECTOR(tiling->norm_upper);
-    FREE_GSL_VECTOR(tiling->norm_padding);
+    FREE_GSL_VECTOR(tiling->padding);
     FREE_GSL_VECTOR(tiling->current);
 
     LALFree(tiling);
@@ -146,7 +146,7 @@ int XLALSetFlatLatticeTilingMetric(
 				   )
 {
 
-  const int n = tiling->dimension;
+  const int n = tiling->dimensions;
   
   int i, j;
   
@@ -178,7 +178,6 @@ int XLALSetFlatLatticeTilingMetric(
   ALLOC_GSL_VECTOR(tiling->norm_upper,        n, XLAL_ERROR);
   ALLOC_GSL_VECTOR(tiling->current,           n, XLAL_ERROR);
   ALLOC_GSL_VECTOR_INT(tiling->bound_zone,    n, XLAL_ERROR);
-  ALLOC_GSL_VECTOR_INT(tiling->dimension_map, n, XLAL_ERROR);
 
   /* Copy metric, normalised to real conversion, and mismatch */
   gsl_matrix_memcpy(tiling->norm_metric, metric);
@@ -197,13 +196,13 @@ int XLALSetFlatLatticeTilingMetric(
  */
 static FlatLatticeTilingBound *AddFlatLatticeTilingBound(
 							 FlatLatticeTiling *tiling,      /**< Tiling structure */
-							 INT4 index,                 /**< Dimension on which bound applies */
+							 INT4 dimension,                 /**< Dimension on which bound applies */
 							 INT4 zone,                      /**< Zone within dimension on which bound applies */
 							 FlatLatticeTilingBoundType type /**< Type of bound */
 							 )
 {
 
-  const int n = tiling->dimension;
+  const int n = tiling->dimensions;
 
   int k;
   int max_zone;
@@ -216,13 +215,13 @@ static FlatLatticeTilingBound *AddFlatLatticeTilingBound(
     XLAL_ERROR_NULL("'XLALSetFlatLatticeTilingMetric' has not been called", XLAL_EFAILED);
 
   /* Check input */
-  if (index < 0 || n <= index)
-    XLAL_ERROR_NULL("'index' is out of range", XLAL_EFAILED);
+  if (dimension < 0 || n <= dimension)
+    XLAL_ERROR_NULL("'dimension' is out of range", XLAL_EFAILED);
   if (zone < 0)
     XLAL_ERROR_NULL("'zone' is out of range", XLAL_EFAILED);
   max_zone = -1;
   for (k = 0; k < tiling->num_bounds; ++k)
-    if (tiling->bounds[k].index == index && tiling->bounds[k].zone > max_zone)
+    if (tiling->bounds[k].dimension == dimension && tiling->bounds[k].zone > max_zone)
       max_zone = tiling->bounds[k].zone;
   if (zone - max_zone > 1)
     XLAL_ERROR_NULL("'zone' is discontinuous", XLAL_EFAILED);  
@@ -236,7 +235,7 @@ static FlatLatticeTilingBound *AddFlatLatticeTilingBound(
 
   /* Initialise last element */
   last = &tiling->bounds[tiling->num_bounds - 1];
-  last->index = index;
+  last->dimension = dimension;
   last->zone = zone;
   last->type = type;
   last->singular_value = 0.0;
@@ -254,7 +253,7 @@ static FlatLatticeTilingBound *AddFlatLatticeTilingBound(
  */
 int XLALAddFlatLatticeTilingSingularBound(
 					  FlatLatticeTiling *tiling, /**< Tiling structure */
-					  INT4 index,                /**< Dimension on which bound applies */
+					  INT4 dimension,            /**< Dimension on which bound applies */
 					  INT4 zone,                 /**< Zone within dimension on which bound applies */
 					  REAL8 value                /**< Value of the singular bound */
 					  )
@@ -263,14 +262,14 @@ int XLALAddFlatLatticeTilingSingularBound(
   FlatLatticeTilingBound *bound = NULL;
 
   /* Add bound to tiling */
-  if ((bound = AddFlatLatticeTilingBound(tiling, index, zone, FLT_BT_Singular)) == NULL)
+  if ((bound = AddFlatLatticeTilingBound(tiling, dimension, zone, FLT_BT_Singular)) == NULL)
     XLAL_ERROR("AddFlatLatticeTilingBound failed", XLAL_EFAILED);
 
   /* Copy singular bound */
   bound->singular_value = value;
 
   /* Normalise singular bound */
-  bound->singular_value /= gsl_vector_get(tiling->norm_to_real, index);
+  bound->singular_value /= gsl_vector_get(tiling->norm_to_real, dimension);
 
   return XLAL_SUCCESS;
 
@@ -281,7 +280,7 @@ int XLALAddFlatLatticeTilingSingularBound(
  */
 int XLALAddFlatLatticeTilingPolynomialBound(
 					    FlatLatticeTiling *tiling, /**< Tiling structure */
-					    INT4 index,                /**< Dimension on which bound applies */
+					    INT4 dimension,            /**< Dimension on which bound applies */
 					    INT4 zone,                 /**< Zone within dimension on which bound applies */
 					    gsl_vector *lower_const,   /**< Constants for each term of lower polynomial */
 					    gsl_matrix_int *lower_exp, /**< Exponents (columns) for each term of lower polynomial */
@@ -302,18 +301,18 @@ int XLALAddFlatLatticeTilingPolynomialBound(
   if (lower_exp) {
     if (lower_exp->size2 != lower_const->size)
       XLAL_ERROR("'lower_exp' and 'lower_const' are inconsistent sizes", XLAL_EFAILED);
-    if (lower_exp->size1 != (size_t)index)
+    if (lower_exp->size1 != (size_t)dimension)
       XLAL_ERROR("'lower_exp' has incorrect number of rows", XLAL_EFAILED);
   }
   if (upper_exp) {
     if (upper_exp->size2 != upper_const->size)
       XLAL_ERROR("'upper_exp' and 'upper_const' are inconsistent sizes", XLAL_EFAILED);
-    if (upper_exp->size1 != (size_t)index)
+    if (upper_exp->size1 != (size_t)dimension)
       XLAL_ERROR("'lower_exp' has incorrect number of rows", XLAL_EFAILED);
   }
 
   /* Add bound to tiling */
-  if ((bound = AddFlatLatticeTilingBound(tiling, index, zone, FLT_BT_Singular)) == NULL)
+  if ((bound = AddFlatLatticeTilingBound(tiling, dimension, zone, FLT_BT_Polynomial)) == NULL)
     XLAL_ERROR("AddFlatLatticeTilingBound failed", XLAL_EFAILED);
 
   /* Copy polynomial bound */
@@ -331,8 +330,8 @@ int XLALAddFlatLatticeTilingPolynomialBound(
   }
 
   /* Normalise polynomial bound */
-  gsl_vector_scale(bound->poly_lower_const, 1.0 / gsl_vector_get(tiling->norm_to_real, index));
-  gsl_vector_scale(bound->poly_upper_const, 1.0 / gsl_vector_get(tiling->norm_to_real, index));
+  gsl_vector_scale(bound->poly_lower_const, 1.0 / gsl_vector_get(tiling->norm_to_real, dimension));
+  gsl_vector_scale(bound->poly_upper_const, 1.0 / gsl_vector_get(tiling->norm_to_real, dimension));
 
   return XLAL_SUCCESS;
 
@@ -347,9 +346,9 @@ int XLALFinaliseFlatLatticeTilingBounds(
 {
   
   const int N = tiling->num_bounds;
-  const int n = tiling->dimension;
+  const int n = tiling->dimensions;
   
-  int i, k;
+  int ii, k;
   gsl_vector_int *is_bound = NULL;
   gsl_vector_int *is_singular = NULL;
   
@@ -368,25 +367,25 @@ int XLALFinaliseFlatLatticeTilingBounds(
     XLAL_ERROR("No parameter space bounds have been added", XLAL_EFAILED);
   gsl_vector_int_set_all(is_bound, FALSE);
   for (k = 0; k < N; ++k)
-    gsl_vector_int_set(is_bound, tiling->bounds[k].index, TRUE);    
-  for (i = 0; i < n; ++i)
-    if (!gsl_vector_int_get(is_bound, i))
+    gsl_vector_int_set(is_bound, tiling->bounds[k].dimension, TRUE);    
+  for (ii = 0; ii < n; ++ii)
+    if (!gsl_vector_int_get(is_bound, ii))
       XLAL_ERROR("No all dimensions have been bounded", XLAL_EFAILED);
   
   /* Check for singular dimensions */
   gsl_vector_int_set_all(is_singular, TRUE);
   for (k = 0; k < N; ++k)
     if (tiling->bounds[k].type != FLT_BT_Singular)
-      gsl_vector_int_set(is_bound, tiling->bounds[k].index, FALSE);
-  tiling->reduced_dim = n;
-  for (i = 0; i < n; ++i)
-    if (gsl_vector_int_get(is_singular, i))
-      --tiling->reduced_dim;
+      gsl_vector_int_set(is_singular, tiling->bounds[k].dimension, FALSE);
+  tiling->reduced_dims = n;
+  for (ii = 0; ii < n; ++ii)
+    if (gsl_vector_int_get(is_singular, ii))
+      --tiling->reduced_dims;
   
   {
-    const int r = tiling->reduced_dim;
+    const int r = tiling->reduced_dims;
 
-    int ii;
+    int i;
 
     /* Allocate memory */
     if (r > 0)
@@ -396,7 +395,7 @@ int XLALFinaliseFlatLatticeTilingBounds(
     /* Make maps to/from reduced and full dimensions */
     gsl_vector_int_set_all(tiling->dimension_map, -1);
     for (i = 0, ii = 0; i < r; ++i, ++ii) {
-      while (gsl_vector_int_get(is_singular, i))
+      while (gsl_vector_int_get(is_singular, ii))
 	++ii;
       if (r > 0)
 	gsl_vector_int_set(tiling->reduced_map, i, ii);
@@ -444,7 +443,7 @@ static REAL8 CalculateBoundPolynomial(
  */
 static int GetBounds(
 		     FlatLatticeTiling *tiling, /**< Tiling structure */
-		     INT4 index,                /**< Dimension on which bound applies */
+		     INT4 dimension,            /**< Dimension on which bound applies */
 		     INT4 zone,                 /**< Zone within dimension on which bound applies */
 		     gsl_vector *point,         /**< Point on which to find bounds */
 		     REAL8 *lower,              /**< Lower bound on dimension */
@@ -461,8 +460,8 @@ static int GetBounds(
   gsl_vector *partial = NULL;
 
   /* Get partial view of point (should only use this part) */
-  if (index > 0) {
-    partial_view = gsl_vector_subvector(point, 0, index);
+  if (dimension > 0) {
+    partial_view = gsl_vector_subvector(point, 0, dimension);
     partial = &partial_view.vector;
   }
   else
@@ -479,8 +478,8 @@ static int GetBounds(
 
     REAL8 lower_k, upper_k;
 
-    /* Filter on dimension index and zone */
-    if (this->index != index)
+    /* Filter on dimension and zone */
+    if (this->dimension != dimension)
       continue;
     if (this->zone > max_zone)
       max_zone = this->zone;
@@ -521,7 +520,7 @@ static int GetBounds(
     return XLAL_FAILURE;
 
   /* Return if bounds were found and are sensible */
-  if (!gsl_finite(*lower) || !gsl_finite(*upper) || lower > upper)
+  if (!gsl_finite(*lower) || !gsl_finite(*upper))
     XLAL_ERROR("Bounds are nonsensical", XLAL_EFAILED);
 
   return XLAL_SUCCESS;
@@ -542,7 +541,7 @@ int XLALSetFlatTilingLattice(
 
 
   
-  const int r = tiling->reduced_dim;
+  const int r = tiling->reduced_dims;
   
   /* Check for non-singular dimensions */
   if (r > 0) {
@@ -576,7 +575,7 @@ int XLALSetFlatTilingLattice(
     }
 
     /* Use reduced metric ellipse bounding box as padding */
-    if (NULL == (tiling->norm_padding = XLALMetricEllipseBoundingBox(reduced_metric, tiling->max_mismatch)))
+    if (NULL == (tiling->padding = XLALMetricEllipseBoundingBox(reduced_metric, tiling->max_mismatch)))
       XLAL_ERROR("XLALMetricEllipseBoundingBox failed", XLAL_EFAILED);
 
     /* Find orthonormal directions of reduced metric */
@@ -629,7 +628,7 @@ static void UpdateNormCurrent(
 			      )
 {
   
-  const int r = tiling->reduced_dim;
+  const int r = tiling->reduced_dims;
 
   int i, j;
   
@@ -656,18 +655,18 @@ static int ReturnToFirstPoint(
 			      )
 {
   
-  const int n = tiling->reduced_dim;
+  const int n = tiling->dimensions;
 
   int ii;
   REAL8 lower, upper;
 
   for (ii = dimension; ii < n; ++ii) {
     
-    /* Get reduced dimension index */
+    /* Get reduced dimension */
     const int i = gsl_vector_int_get(tiling->dimension_map, ii);
 
     /* Return to first zone */
-    gsl_vector_int_set(tiling->bound_zone, i, 0);
+    gsl_vector_int_set(tiling->bound_zone, ii, 0);
 	  
     /* Get and store bounds */
     switch (GetBounds(tiling, ii, gsl_vector_int_get(tiling->bound_zone, ii), tiling->norm_current, &lower, &upper)) {
@@ -686,15 +685,20 @@ static int ReturnToFirstPoint(
     }
     gsl_vector_set(tiling->norm_lower, ii, lower);
     gsl_vector_set(tiling->norm_upper, ii, upper);
-	  
+    
     /* Move the current point to the lower bound minus the padding */
     if (i >= 0) {
-      const int latt = -1 * (int)ceil(gsl_vector_get(tiling->norm_padding, i) / 
-				      gsl_matrix_get(tiling->latt_to_norm, i, i));
+      /* YOU IDIOT need to adjust the etc etc. */
+      const int latt = (int)ceil(gsl_vector_get(tiling->padding, i) / 
+				 gsl_matrix_get(tiling->latt_to_norm, i, i));
       gsl_vector_int_set(tiling->latt_current, i, -latt);
       UpdateNormCurrent(tiling);
     }
     
+  }
+  for (ii = 0; ii < n; ++ii) {
+    printf("# bounds on dim %i: %g -> %g\n", ii, gsl_vector_get(tiling->norm_lower, ii)*gsl_vector_get(tiling->norm_to_real, ii),
+	   gsl_vector_get(tiling->norm_upper, ii)*gsl_vector_get(tiling->norm_to_real, ii));
   }
 
   return XLAL_SUCCESS;
@@ -711,20 +715,20 @@ int XLALIsPointInFlatLatticeParamSpace(
 				       )
 {
 
-  int ii = gsl_vector_int_get(tiling->dimension_map, 0);
-  ii *= (int)gsl_vector_get(norm_point, 0);
+  const int r = tiling->reduced_dims;
 
-  /* Check whether point is in parameter space
-     and whether to do careful bound checking */
-/*   for (i = 0; i < r; ++i) { */
-/*     const int ii = gsl_vector_int_get(tiling->reduced_map, i); */
-/*     const double lower = gsl_vector_get(tiling->norm_lower, i); */
-/*     const double point = gsl_vector_get(norm_point, ii); */
-/*     const double upper = gsl_vector_get(tiling->norm_upper, i); */
-/*     if (point < lower || upper < point) { */
-/*       in_bounds = FALSE; */
-/*     } */
-/*   } */
+  int i;
+
+  /* Check whether point is in parameter space */
+  for (i = 0; i < r; ++i) {
+    const int ii = gsl_vector_int_get(tiling->reduced_map, i);
+    const double lower = gsl_vector_get(tiling->norm_lower, ii);
+    const double point = gsl_vector_get(norm_point, ii);
+    const double upper = gsl_vector_get(tiling->norm_upper, ii);
+    if (point < lower || upper < point) {
+      return XLAL_FAILURE;
+    }
+  }
 
   return XLAL_SUCCESS;
 
@@ -738,8 +742,8 @@ int XLALNextFlatLatticePoint(
 			     )
 {
   
-  const int n = tiling->dimension;
-  const int r = tiling->reduced_dim;
+  const int n = tiling->dimensions;
+  const int r = tiling->reduced_dims;
 
   int ii;
 
@@ -773,6 +777,17 @@ int XLALNextFlatLatticePoint(
   ii = n - 1;
   do {
 
+    {
+      int i;
+      printf("# latt_curent:");
+      for (i = 0; i < r; ++i)
+	printf(" %i", gsl_vector_int_get(tiling->latt_current, i));
+      printf("\n# norm_curent: ");
+      for (i = 0; i < n; ++i)
+	printf(" %g", gsl_vector_get(tiling->norm_current, i));
+      printf("\n");
+    }
+
     /* If first point, test in loop condition */
     if (tiling->state == FLT_S_NotStarted) {
       tiling->state = FLT_S_InProgress;
@@ -782,7 +797,7 @@ int XLALNextFlatLatticePoint(
     /* Check for non-singular dimensions */
     if (r > 0) {
       
-      /* Get reduced dimension index */
+      /* Get reduced dimension */
       const int i = gsl_vector_int_get(tiling->dimension_map, ii);
 
       /* If this is a non-singular dimension */
@@ -797,9 +812,10 @@ int XLALNextFlatLatticePoint(
 	
 	/* If point is still in bounds */
 	{
-	  const double point = gsl_vector_get(tiling->norm_current, i);
-	  const double upper = gsl_vector_get(tiling->norm_upper, i);
-	  const double padding = gsl_vector_get(tiling->norm_padding, i);
+	  const double point = gsl_vector_get(tiling->norm_current, ii);
+	  const double upper = gsl_vector_get(tiling->norm_upper, ii);
+	  const double padding = gsl_vector_get(tiling->padding, i);
+	  printf("# (i %i ii %i) point %g upper+padding %g\n", i, ii, point, upper + padding);
 	  if (point <= upper + padding)
 
 	    /* Test point in loop condition */
@@ -818,7 +834,7 @@ int XLALNextFlatLatticePoint(
     }
     
     /* Move point back to lower bound in higher dimensions */
-    switch (ReturnToFirstPoint(tiling, ii + 1)) {
+    switch (ReturnToFirstPoint(tiling, ii)) {
 
     case XLAL_SUCCESS:
       
@@ -893,7 +909,6 @@ REAL8 XLALTotalFlatLatticePointCount(
   return (REAL8) tiling->count;
   
 }
-
 
 /**
  * Find the bounding box of the mismatch ellipses of a metric
@@ -1130,7 +1145,6 @@ int XLALNormaliseLatticeGenerator(
   
 }
 
-
 /**
  * Set the tiling to a cubic lattice generator
  */
@@ -1139,7 +1153,7 @@ int XLALSetFlatTilingCubicLattice(
 				  )
 {
   
-  const int r = tiling->reduced_dim;
+  const int r = tiling->reduced_dims;
   
   gsl_matrix *generator = NULL;
   REAL8 norm_thickness = 0.0;
@@ -1177,7 +1191,7 @@ int XLALSetFlatTilingAnstarLattice(
 				   )
 {
   
-  const int r = tiling->reduced_dim;
+  const int r = tiling->reduced_dims;
 
   gsl_matrix *generator = NULL;
   REAL8 norm_thickness = 0.0;
@@ -1216,8 +1230,6 @@ int XLALSetFlatTilingAnstarLattice(
 
 }
 
-
-
 /**
  * Create a flat lattice tiling with a simple square parameter space
  */
@@ -1243,7 +1255,7 @@ int XLALFlatLatticeTilingSquareParamSpace(
   /* Otherwise create square parameter space */
   else {
 
-    const int n = (*tiling)->dimension;
+    const int n = (*tiling)->dimensions;
 
     int i;
     gsl_vector *lower_const = NULL;
@@ -1289,5 +1301,3 @@ int XLALFlatLatticeTilingSquareParamSpace(
   return XLAL_SUCCESS;
 
 }	     
-
-

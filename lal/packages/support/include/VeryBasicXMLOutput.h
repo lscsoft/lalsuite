@@ -52,6 +52,9 @@ extern "C" {
     /* Indent level */
     INT4 indent;
 
+    /* Separator */
+    CHAR separator;
+
   } VeryBasicXMLOutput;
   extern const VeryBasicXMLOutput empty_VeryBasicXMLOutput;
 
@@ -64,10 +67,10 @@ extern "C" {
   void XLAL_VBXMLO_EndTag(VeryBasicXMLOutput*, const char*);
   void XLAL_VBXMLO_Tag(VeryBasicXMLOutput*, const char*, const char*, ...);
   void XLAL_VBXMLO_Printf(VeryBasicXMLOutput*, const char*, ...);
-  void XLAL_VBXMLO_gsl_vector(VeryBasicXMLOutput*, const char*, gsl_vector*);
-  void XLAL_VBXMLO_gsl_vector_int(VeryBasicXMLOutput*, const char*, gsl_vector_int*);
-  void XLAL_VBXMLO_gsl_matrix(VeryBasicXMLOutput*, const char*, gsl_matrix*);
-  void XLAL_VBXMLO_gsl_matrix_Trans(VeryBasicXMLOutput*, const char*, gsl_matrix*);
+  void XLAL_VBXMLO_gsl_vector(VeryBasicXMLOutput*, const char*, const char*, gsl_vector*);
+  void XLAL_VBXMLO_gsl_vector_int(VeryBasicXMLOutput*, const char*, const char*, gsl_vector_int*);
+  void XLAL_VBXMLO_gsl_matrix(VeryBasicXMLOutput*, const char*, const char*, gsl_matrix*);
+  void XLAL_VBXMLO_gsl_matrix_int(VeryBasicXMLOutput*, const char*, const char*, gsl_matrix_int*);
 
 #ifdef __cplusplus
 }

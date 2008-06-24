@@ -30,7 +30,7 @@
 
 NRCSID(VERYBASICXMLOUTPUTC, "$Id");
 
-const VeryBasicXMLOutput empty_VeryBasicXMLOutput = {NULL, 0};
+const VeryBasicXMLOutput empty_VeryBasicXMLOutput = {NULL, 0, ' '};
 
 /**
  * Write XML header
@@ -163,6 +163,7 @@ void XLAL_VBXMLO_Printf(
 void XLAL_VBXMLO_gsl_vector(
 			    VeryBasicXMLOutput *xml, /**< [in] XML structure */
 			    const char *name,        /**< [in] Tag name */
+			    const char *format,      /**< [in] Value format */
 			    gsl_vector *v            /**< [in] Vector */
 			    )
 {
@@ -174,8 +175,11 @@ void XLAL_VBXMLO_gsl_vector(
 
   XLAL_VBXMLO_BeginTag(xml, name);
   XLAL_VBXMLO_Indent(xml);
-  for (i = 0; i < v->size; ++i)
-    fprintf(xml->file, "% 0.18g ", gsl_vector_get(v, i));
+  for (i = 0; i < v->size; ++i) {
+    if (i > 0)
+      fprintf(xml->file, "%c", xml->separator);
+    fprintf(xml->file, format, gsl_vector_get(v, i));
+  }
   fprintf(xml->file, "\n");
   XLAL_VBXMLO_EndTag(xml, name);
 
@@ -187,6 +191,7 @@ void XLAL_VBXMLO_gsl_vector(
 void XLAL_VBXMLO_gsl_vector_int(
 				VeryBasicXMLOutput *xml, /**< [in] XML structure */
 				const char *name,        /**< [in] Tag name */
+				const char *format,      /**< [in] Value format */
 				gsl_vector_int *v        /**< [in] Vector */
 				)
 {
@@ -198,19 +203,23 @@ void XLAL_VBXMLO_gsl_vector_int(
 
   XLAL_VBXMLO_BeginTag(xml, name);
   XLAL_VBXMLO_Indent(xml);
-  for (i = 0; i < v->size; ++i)
-    fprintf(xml->file, "% i ", gsl_vector_int_get(v, i));
+  for (i = 0; i < v->size; ++i) {
+    if (i > 0)
+      fprintf(xml->file, "%c", xml->separator);
+    fprintf(xml->file, format, gsl_vector_int_get(v, i));
+  }
   fprintf(xml->file, "\n");
   XLAL_VBXMLO_EndTag(xml, name);
 
 }
 
 /**
- * Print a gsl_matrix by rows
+ * Print a gsl_matrix
  */
 void XLAL_VBXMLO_gsl_matrix(
 			    VeryBasicXMLOutput *xml, /**< [in] XML structure */
 			    const char *name,        /**< [in] Tag name */
+			    const char *format,      /**< [in] Value format */
 			    gsl_matrix *m            /**< [in] Matrix */
 			    )
 {
@@ -223,31 +232,32 @@ void XLAL_VBXMLO_gsl_matrix(
   XLAL_VBXMLO_BeginTag(xml, name);
   for (i = 0; i < m->size1; ++i) {
     gsl_vector_view row = gsl_matrix_row(m, i);
-    XLAL_VBXMLO_gsl_vector(xml, "row", &row.vector);
+    XLAL_VBXMLO_gsl_vector(xml, "row", format, &row.vector);
   }
   XLAL_VBXMLO_EndTag(xml, name);
 
 }
 
 /**
- * Print the transpose of a gsl_matrix
+ * Print a gsl_matrix_int
  */
-void XLAL_VBXMLO_gsl_matrix_Trans(
-				  VeryBasicXMLOutput *xml, /**< [in] XML structure */
-				  const char *name,        /**< [in] Tag name */
-				  gsl_matrix *m            /**< [in] Matrix */
-				  )
+void XLAL_VBXMLO_gsl_matrix_int(
+				VeryBasicXMLOutput *xml, /**< [in] XML structure */
+				const char *name,        /**< [in] Tag name */
+				const char *format,      /**< [in] Value format */
+				gsl_matrix_int *m        /**< [in] Matrix */
+				)
 {
-
-  size_t j;
   
+  size_t i;
+
   if (!xml->file) 
     return;
-  
+
   XLAL_VBXMLO_BeginTag(xml, name);
-  for (j = 0; j < m->size2; ++j) {
-    gsl_vector_view column = gsl_matrix_column(m, j);
-    XLAL_VBXMLO_gsl_vector(xml, "row", &column.vector);
+  for (i = 0; i < m->size1; ++i) {
+    gsl_vector_int_view row = gsl_matrix_int_row(m, i);
+    XLAL_VBXMLO_gsl_vector_int(xml, "row", format, &row.vector);
   }
   XLAL_VBXMLO_EndTag(xml, name);
 
