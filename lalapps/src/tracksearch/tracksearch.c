@@ -99,14 +99,13 @@ int main (int argc, char *argv[])
 
   /* SET LAL DEBUG STUFF */
   set_debug_level("ERROR");
-  /*  set_debug_level("ERROR | WARNING | MEMDBG");*/
-  /* set_debug_level("ERROR | WARNING | TRACE ");*/
-  memset(&status, 0, sizeof(status));
-  /*lal_errhandler = LAL_ERR_EXIT;*/
-  lal_errhandler = LAL_ERR_ABRT;
-  /*lal_errhandler = LAL_ERR_RTRN;*/
+  set_debug_level("ERROR | WARNING | TRACE");
   /*  set_debug_level("ERROR | WARNING | MEMDBG");*/
   /* set_debug_level("ALLDBG");*/
+  memset(&status, 0, sizeof(status));
+  lal_errhandler = LAL_ERR_ABRT;
+  lal_errhandler = LAL_ERR_DFLT;
+  lal_errhandler = LAL_ERR_RTRN;
 
   /*
    * Initialize status structure 
@@ -126,7 +125,10 @@ int main (int argc, char *argv[])
 			       &(cachefile),
 			       &(dirpath));
   if (params->verbosity >= verbose)
-    fprintf(stdout,"Done initializing input structure.\n");
+    {
+      fprintf(stdout,"Done initializing input structure.\n");
+      fflush(stdout);
+    }
   /*
    * Check params structure what analysis are we doing?
    * Do we look for tseries data files or map data files?
@@ -139,14 +141,20 @@ int main (int argc, char *argv[])
       if (cachefile != NULL)
 	cachefileDataField=cachefile->data;
       if (params->verbosity >= verbose)
-	fprintf(stdout,"Doing a time series analysis.\n");
+	{
+	  fprintf(stdout,"Doing a time series analysis.\n");
+	  fflush(stdout);
+	}
       LALappsDoTimeSeriesAnalysis(&status,
 				  *params,
 				  *injectParams,
 				  cachefileDataField,
 				  dirpath);
       if (params->verbosity >= verbose)
-	fprintf(stdout,"Done performing a time series analysis.\n");
+	{
+	  fprintf(stdout,"Done performing a time series analysis.\n");
+	  fflush(stdout);
+	}
     }
   else
     {
@@ -155,10 +163,16 @@ int main (int argc, char *argv[])
        * analysis instead
        */
       if (params->verbosity >= verbose)
-	fprintf(stdout,"Performing a TF Map analysis.\n");
+	{
+	  fprintf(stdout,"Performing a TF Map analysis.\n");
+	  fflush(stdout);
+	}
       LALappsDoTSAMapAnalysis(&status,*params);
       if (params->verbosity >= verbose)
-	fprintf(stdout,"Done performing a TF Map analysis.\n");
+	{
+	  fprintf(stdout,"Done performing a TF Map analysis.\n");
+	  fflush(stdout);
+	}
     }
   /* 
    * Free searchParams input arguement structure from InitializeRoutine
@@ -193,7 +207,7 @@ int main (int argc, char *argv[])
    * segmentation not sure.
    */
 
-  LALCheckMemoryLeaks();
+  /*LALCheckMemoryLeaks();*/
   return 0;
 }
 /* End Main Code Body */
@@ -234,7 +248,10 @@ void LALappsTrackSearchPrepareData( LALStatus        *status,
   if (params.calibrate)
     {
       if (params.verbosity >= verbose)
-	fprintf(stdout,"Performing calibration on input data\n");
+	{
+	  fprintf(stdout,"Performing calibration on input data\n");
+	  fflush(stdout);
+	}
 
       if (params.verbosity >= printFiles)
 	{
@@ -259,7 +276,10 @@ void LALappsTrackSearchPrepareData( LALStatus        *status,
   if ((params.highPass > 0)||(params.lowPass > 0))
     {
       if (params.verbosity >= verbose)
-	fprintf(stdout,"Bandpassing requensted.\n");
+	{
+	  fprintf(stdout,"Bandpassing requested.\n");
+	  fflush(stdout);
+	}
       if (params.verbosity >= printFiles)
 	print_real4tseries(dataSet,"Pre_ButterworthFiltered_TimeDomain.diag");
       LALappsTrackSearchBandPassing(status,dataSet,params);
@@ -267,7 +287,10 @@ void LALappsTrackSearchPrepareData( LALStatus        *status,
 	print_real4tseries(dataSet,"Post_ButterworthFiltered_TimeDomain.diag");
     }
   else if (params.verbosity >= verbose)
-    fprintf(stdout,"No bandpassing requensted.\n");
+    {
+      fprintf(stdout,"No bandpassing requensted.\n");
+      fflush(stdout);
+    }
 
   /*
    * Perform injections when inject structure has data.
@@ -279,6 +302,7 @@ void LALappsTrackSearchPrepareData( LALStatus        *status,
 	  fprintf(stdout,"Making requested injections.\n");
 	  fprintf(stderr,"If frame was REAL8 data converted to REAL4 data.\n");
 	  fprintf(stderr,"Potential problem with possibly prefactored input data.\n");
+	  fflush(stdout);
 	}
       if (params.verbosity >= printFiles)
 	print_real4tseries(dataSet,"Pre_SoftwareInjectDataSet.diag");
@@ -298,13 +322,16 @@ void LALappsTrackSearchPrepareData( LALStatus        *status,
 
   if (params.numLinesToRemove > 0)
     {
-      if (1)
+      if (0)
 	/* 0 Do individual segment line removal */
 	/* 1 Do entire data set line removal */
 	{
 	  if (params.verbosity >= verbose)
-	    fprintf(stdout,
-		    "Preparing to remove %i lines from entire input data at one time.\n",params.numLinesToRemove);
+	    {
+	      fprintf(stdout,
+		      "Preparing to remove %i lines from entire input data at one time.\n",params.numLinesToRemove);
+	      fflush(stdout);
+	    }
 	  if (params.verbosity >= printFiles)
 	    print_real4tseries(dataSet,"Pre_LineRemoval_TimeDomain.diag");
 	  LALappsTracksearchRemoveHarmonics(status,dataSet,params);
@@ -339,7 +366,7 @@ void LALappsTrackSearchPrepareData( LALStatus        *status,
 
 	  if (params.verbosity >= verbose)
 	    fprintf(stdout,
-		    "Preparing to remove %i lines from data segments.\n",
+		    "Preparing to remove %i lines from individual data segments.\n",
 		    params.numLinesToRemove);
 	  LALappsTracksearchRemoveHarmonicsFromSegments(status,
 							dataSet,
@@ -362,7 +389,10 @@ void LALappsTrackSearchPrepareData( LALStatus        *status,
 					       params),
 		   status);
       if (params.verbosity >= verbose)
-    	fprintf(stdout,"Lines and Harmonics will NOT be removed.\n");
+	{
+	  fprintf(stdout,"Lines and Harmonics will NOT be removed.\n");
+	  fflush(stdout);
+	}
     }
 
   /*
@@ -372,14 +402,23 @@ void LALappsTrackSearchPrepareData( LALStatus        *status,
   if (params.whiten !=0 )
     {
       if (params.verbosity >= verbose)
-	fprintf(stdout,"Preparing to whiten data segments.\n");
+	{
+	  fprintf(stdout,"Preparing to whiten data segments.\n");
+	  fflush(stdout);
+	}
       LALappsTrackSearchWhitenSegments(status,dataSet,dataSegments,params);
     }
   else if (params.verbosity >= verbose)
-    fprintf(stdout,"No data whitening will be done.\n");
+    {
+      fprintf(stdout,"No data whitening will be done.\n");
+      fflush(stdout);
+    }
 
   if (params.verbosity >= verbose)
-    fprintf(stdout,"Done preparing input data.\n");
+    {
+      fprintf(stdout,"Done preparing input data.\n");
+      fflush(stdout);
+    }
   return;
 }
   /* End the LALappsTrackSearchPrepareData routine */
@@ -748,6 +787,7 @@ void LALappsTrackSearchInitialize(
 	    else
 	      {
 		fprintf(stdout,"\n Invald TF Transform selected defaulting to Spectrogram!\n");
+		fflush(stdout);
 		params->TransformType=Spectrogram;
 	      };
 	  }
@@ -1066,27 +1106,28 @@ void LALappsTrackSearchInitialize(
 	   */
 	  params->TimeLengthPoints=params->TimeLengthPoints-params->discardTLP;
 	}
-	  if (params->verbosity >= verbose)
-	    {
-	      fprintf(stdout,
-		      "Need to trim %i subsegment lengths.\n",
-		      params->NumSeg);
-	      fprintf(stdout,
-		      "Total data points requested :%i\n",
-		      params->TimeLengthPoints+params->discardTLP);
-	      fprintf(stdout,
-		      "Subsegment length in data points requested :%i\n",
-		      params->SegLengthPoints);
-	      fprintf(stdout,
-		      "Segment overlap in points :%i\n",
-		      params->overlapFlag);
-	      fprintf(stdout,
-		      "Points to discard from total data requested : %i\n",
-		      params->discardTLP);
-	      fprintf(stdout,
-		      "Total data points that will be processed :%i\n",
+      if (params->verbosity > quiet)
+	{
+	  fprintf(stdout,
+		  "Need to trim %i subsegment lengths.\n",
+		  params->NumSeg);
+	  fprintf(stdout,
+		  "Total data points requested :%i\n",
+		  params->TimeLengthPoints+params->discardTLP);
+	  fprintf(stdout,
+		  "Subsegment length in data points requested :%i\n",
+		  params->SegLengthPoints);
+	  fprintf(stdout,
+		  "Segment overlap in points :%i\n",
+		  params->overlapFlag);
+	  fprintf(stdout,
+		  "Points to discard from total data requested : %i\n",
+		  params->discardTLP);
+	  fprintf(stdout,
+		  "Total data points that will be processed :%i\n",
 		      params->TimeLengthPoints);
-	    }
+	  fflush(stdout);
+	}
       /* 
        * Determine the number of additional points required to negate
        * edge effects in first and last TFR
@@ -1094,8 +1135,10 @@ void LALappsTrackSearchInitialize(
       params->SegBufferPoints=((params->TimeLengthPoints/params->TimeBins)*params->colsToClip);
       params->SegBufferPoints=((params->SegLengthPoints/params->TimeBins)*params->colsToClip);
       if ((params->verbosity >= verbose))
-	fprintf(stdout,"As a result of bin buffering requests an additional %i points are needed to negate TFR edge effects, %i points before and then after the data set to analyze.\n",2*params->SegBufferPoints,params->SegBufferPoints);
-
+	{
+	  fprintf(stdout,"As a result of bin buffering requests an additional %i points are needed to negate TFR edge effects, %i points before and then after the data set to analyze.\n",2*params->SegBufferPoints,params->SegBufferPoints);
+	  fflush(stdout);
+	}
       if (params->whiten > 2 )
 	{
 	  fprintf(stderr,TRACKSEARCHC_MSGEARGS);
@@ -1367,12 +1410,18 @@ void LALappsGetFrameData(LALStatus*          status,
 	   * the input data stream if requested
 	   */
 	  if (params->verbosity >= verbose)
-	    fprintf(stdout,"Frame Reader needs to high pass input(>=40Hz) for casting!\n");
+	    {
+	      fprintf(stdout,"Frame Reader needs to high pass input(>=40Hz) for casting!\n");
+	      fflush(stdout);
+	    }
 
 	  if (params->lowPass > 0)
 	    {
 	      if (params->verbosity >= verbose)
-		fprintf(stdout,"FRAME READER: You requested a low pass filter of the data at %f Hz\n",params->lowPass);
+		{
+		  fprintf(stdout,"FRAME READER: You requested a low pass filter of the data at %f Hz\n",params->lowPass);
+		  fflush(stdout);
+		}
 	      bandPassParams.name=NULL;
 	      bandPassParams.nMax=20;
 	      /* F < f1 kept, F > f2 kept */
@@ -1396,10 +1445,13 @@ void LALappsGetFrameData(LALStatus*          status,
 	  if (params->highPass > 0)
 	    {
 	      if (params->verbosity >= verbose)
-		fprintf(stdout,"FRAME READER: You requested a high pass filter of the data at %f Hz,\n",params->highPass);
+		{
+		  fprintf(stdout,"FRAME READER: You requested a high pass filter of the data at %f Hz,\n",params->highPass);
+		  fflush(stdout);
+		}
 	      if (params->highPass < 40)
 		{
-		  fprintf(stdout,"FRAME READER: For proper casting high pass filtering of data at 40Hz!\n");
+		  fprintf(stderr,"FRAME READER: For proper casting high pass filtering of data at 40Hz!\n");
 		  params->highPass = 40;
 		}
 	      bandPassParams.name=NULL;
@@ -1424,8 +1476,9 @@ void LALappsGetFrameData(LALStatus*          status,
 	  if (params->highPass < 30)
 	    {
 	      fprintf(stdout,"WARNING! Input data should be high pass filtered!\n");
-	      fprintf(stdout,"Use knee frequency of 30Hz minimum!\n");
+	      fprintf(stdout,"Use knee frequency of 30Hz minimum on DARM data!\n");
 	      fprintf(stderr,"Without this the PSD estimate and results are questionable!\n");
+	      fflush(stdout);
 	    };
 	  if ((params->verbosity >= printFiles) && ((params->highPass > 0)||(params->lowPass)))
 	    {
@@ -1646,6 +1699,11 @@ void LALappsGetFrameData(LALStatus*          status,
 	      fprintf(stderr,"Problem trying to resample input data.\n");
 	      exit(errcode);
 	    }
+	  if (params->verbosity >= verbose)
+	    {
+		fprintf(stdout,"Done Resampling input data.\n");
+		fflush(stdout);
+	    }
 	  if (params->verbosity >= printFiles)
 	    {
 	      print_real4tseries(tmpData,"ResampledOriginalInputTimeSeries.diag");
@@ -1666,17 +1724,30 @@ void LALappsGetFrameData(LALStatus*          status,
 			   DataIn->data->length),
 			  TRACKSEARCHC_EDATA,
 			  TRACKSEARCHC_MSGEDATA);
+	  if (params->verbosity > quiet)
+	    {
+	      fprintf(stdout,"Filling input frequency series with resampled data.\n");
+	      fflush(stdout);
+	    }
 	  for (i=0;i<DataIn->data->length;i++)
 	    DataIn->data->data[i]=tmpData->data->data[i];
-	  if (params->verbosity >= verbose)
-		fprintf(stdout,"Done Resampling input data.\n");
 	}
       else
 	{
+	  /* Add error check to exit if requested sampling rate above available data rate!*/
+	  if (params->SamplingRateOriginal < params->SamplingRate)
+	    {
+	      fprintf(stderr,"Requested sampling rate above available sampling rate!\n");
+	      fprintf(stderr,"%s\n",TRACKSEARCHC_MSGEVAL);
+	      exit(TRACKSEARCHC_EVAL);
+	    }
 	  if (params->verbosity >= verbose)
-	    fprintf(stdout,"Resampling to %f, not possible we have %f sampling rate in the frame file.\n",
-		    params->SamplingRate,
-		    params->SamplingRateOriginal);
+	    {
+	      fprintf(stdout,"Resampling to %f, not possible we have %f sampling rate in the frame file.\n",
+		      params->SamplingRate,
+		      params->SamplingRateOriginal);
+	      fflush(stdout);
+	    }
 	  /*
 	   * Straight copy the data over to returnable structure
 	   */
@@ -2050,17 +2121,17 @@ LALappsDoTSeriesSearch(LALStatus         *status,
 
 	case Kaiser:
 		tempWindow = XLALCreateKaiserREAL4Window(params.windowsize, 1000);
-		fprintf(stdout,"For Kaiser beta hard wired to 1,000\n");
+		fprintf(stderr,"For Kaiser beta hard wired to 1,000\n");
 		break;
 
 	case Creighton:
 		tempWindow = XLALCreateCreightonREAL4Window(params.windowsize, 1000);
-		fprintf(stdout,"For Creighton beta hard wired to 1,000\n");
+		fprintf(stderr,"For Creighton beta hard wired to 1,000\n");
 		break;
 
 	case Tukey:
 		tempWindow = XLALCreateTukeyREAL4Window(params.windowsize, 1000);
-		fprintf(stdout,"For Tukey beta hard wired to 1,000\n");
+		fprintf(stderr,"For Tukey beta hard wired to 1,000\n");
 		break;
 
 	default:
@@ -2338,11 +2409,16 @@ LALappsDoTimeSeriesAnalysis(LALStatus          *status,
       if (params.makenoise < 1 )
 	{  
 	  if (params.verbosity >= verbose)
-	    fprintf(stdout,"Reading frame files.\n");
+	    {
+	      fprintf(stdout,"Reading frame files.\n");
+	      fflush(stdout);
+	    }
 	  LALappsGetFrameData(status,&params,dataset,dirpath,cachefile);
 	  if (params.verbosity >= verbose)
-	    fprintf(stdout,"Reading frame complete.\n");
-
+	    {
+	      fprintf(stdout,"Reading frame complete.\n");
+	      fflush(stdout);
+	    }
 	}
       else
 	{
@@ -3233,7 +3309,10 @@ void LALappsTrackSearchBandPassing( LALStatus           *status,
   if (params.lowPass > 0)
     {
       if (params.verbosity >= verbose)
-	fprintf(stdout,"You requested a low pass filter of the data at %f Hz\n",params.lowPass);
+	{
+	  fprintf(stdout,"You requested a low pass filter of the data at %f Hz\n",params.lowPass);
+	  fflush(stdout);
+	}
 
       bandPassParams.name=NULL;
       bandPassParams.nMax=20;
@@ -3259,8 +3338,10 @@ void LALappsTrackSearchBandPassing( LALStatus           *status,
   if (params.highPass > 0)
     {
       if (params.verbosity >= verbose)
-	fprintf(stdout,"You requested a high pass filter of the data at %f Hz\n",params.highPass);
-
+	{
+	  fprintf(stdout,"You requested a high pass filter of the data at %f Hz\n",params.highPass);
+	  fflush(stdout);
+	}
       bandPassParams.name=NULL;
       bandPassParams.nMax=20;
       /* F < f1 kept, F > f2 kept */
@@ -3295,7 +3376,10 @@ void LALappsTracksearchRemoveHarmonicsFromSegments(LALStatus       *status,
   for (j=0;j<dataSegments->length;j++)
     {
       if (params.verbosity > quiet)
-	fprintf(stdout,"Removing lines from segment %i.\n",j+1);
+	{
+	  fprintf(stdout,"Removing lines from segment %i.\n",j+1);
+	  fflush(stdout);
+	}
       tmpSegmentPtr=(dataSegments->dataSeg[j]);
       dataLabel=XLALCreateCHARVector(128);
 	sprintf(dataLabel->data,"Pre_LineRemovalTimeDomainDataSeg_%i.diag",j);
@@ -3333,14 +3417,12 @@ void LALappsTracksearchRemoveHarmonics( LALStatus             *statusX,
   REAL4FFTPlan             *forwardPlan=NULL;
   INT4Vector              *harmonicIndex=NULL;
   INT4Vector              *harmonicIndexCompliment=NULL;
-  COMPLEX8Vector          *tmpReferenceSignal=NULL;
   REAL4TVectorCLR         *inputTVectorCLR=NULL;
   REAL4FVectorCLR         *inputFVectorCLR=NULL;
   REAL4Vector             *inputPSDVector=NULL;
   REAL4Vector             *cleanData=NULL;
   UINT4                    i=0;
   UINT4                    j=0;
-  UINT4                    k=0;
   UINT4                    l=0;
   const LIGOTimeGPS        gps_zero = LIGOTIMEGPSZERO;
   UINT4                    planLength=0;
@@ -3348,6 +3430,7 @@ void LALappsTracksearchRemoveHarmonics( LALStatus             *statusX,
   LALStatus                status=blank_status;
 
 
+  /*lal_errhandler=LAL_ERR_RTRN;*/
   if (params.numLinesToRemove > 0)
     {
       /*
@@ -3358,6 +3441,7 @@ void LALappsTracksearchRemoveHarmonics( LALStatus             *statusX,
       if (params.verbosity > quiet)
 	{
 	  fprintf(stdout,"Removing requested coherent lines, if possible.\n");
+	  fflush(stdout);
 	}
       /* Iterative over each line to remove, subtracting one at a time*/
       /* START OF NEW LOOP TO REMOVE ONE LINE AT A TIME */
@@ -3378,6 +3462,7 @@ void LALappsTracksearchRemoveHarmonics( LALStatus             *statusX,
 	      if (params.verbosity > quiet)
 		{
 		  fprintf(stdout,"Reference %f, Max Harmonics to remove %i ",tmpLineFreq,tmpHarmonicCount);
+		  fflush(stdout);
 		}
 	      /* Setup both T and F domain input data structures */
 	      inputTVectorCLR=(REAL4TVectorCLR*)XLALMalloc(sizeof(REAL4TVectorCLR));
@@ -3385,32 +3470,46 @@ void LALappsTracksearchRemoveHarmonics( LALStatus             *statusX,
   
 	      /* Take data to F domain */
 	      planLength=dataSet->data->length;
-
-	      tmpReferenceSignal=XLALCreateCOMPLEX8Vector(planLength);
-
 	      referenceSignal=XLALCreateCOMPLEX8Vector(planLength);
-
+	      if (params.verbosity > quiet){fprintf(stdout,".");fflush(stdout);}/*2*/
 	      signalFFT_harmonic=XLALCreateCOMPLEX8FrequencySeries("tmpSegPSD",
 								   &gps_zero,
 								   0,
 								   1/(dataSet->data->length*dataSet->deltaT),
 								   &(dataSet->sampleUnits),
 								   planLength/2+1);
+	      if (params.verbosity > quiet){fprintf(stdout,".");fflush(stdout);}/*3*/
 	      inputPSDVector=XLALCreateREAL4Vector(planLength/2+1);
-
+	      if (params.verbosity > quiet){fprintf(stdout,".");fflush(stdout);}/*4*/
 	      forwardPlan=XLALCreateForwardREAL4FFTPlan(planLength,0);
-  
-	      LAL_CALL( LALForwardREAL4FFT(&status,
+  	      if (params.verbosity > quiet){fprintf(stdout,".");fflush(stdout);}/*5*/
+	      code=LAL_CALL( LALForwardREAL4FFT(&status,
 					   signalFFT_harmonic->data,
 					   dataSet->data,
 					   forwardPlan),
 			&status);
-
+	      if (params.verbosity > quiet){fprintf(stdout,".");fflush(stdout);}/*6*/
+	      if (code != 0)
+		{
+		  fprintf(stdout,"FAILED!\n");
+		  fflush(stdout);
+		  fprintf(stderr,"Error: LALForwardReal4FFT\n");
+		  exit(TRACKSEARCHC_EMISC);
+		}
 	      code=LAL_CALL( LALRealPowerSpectrum(&status,
 					     inputPSDVector,
 					     dataSet->data,
 					     forwardPlan),
 			&status);
+	      if (params.verbosity > quiet){fprintf(stdout,".");fflush(stdout);}/*7*/
+	      if (code != 0)
+		{
+		  fprintf(stdout,"FAILED!\n");
+		  fflush(stdout);
+		  fprintf(stderr,"Error: LALRealPowerSpectrum\n");
+		  exit(TRACKSEARCHC_EMISC);
+		}
+
 	      /*Assign CLR data structures*/
 	      /* The  CLR Time Vector  */
 	      inputTVectorCLR->length = dataSet->data->length;
@@ -3423,99 +3522,108 @@ void LALappsTracksearchRemoveHarmonics( LALStatus             *statusX,
 	      inputFVectorCLR->deltaF = signalFFT_harmonic->deltaF;
 	      inputFVectorCLR->fLine =  inputTVectorCLR->fLine;
 
+	      inputTVectorCLR->fLine = tmpLineFreq;
+	      inputFVectorCLR->fLine = tmpLineFreq;
+
 	      for (i=0;i<referenceSignal->length;i++)
 		{
 		  referenceSignal->data[i].re=0;
 		  referenceSignal->data[i].im=0;
-		  tmpReferenceSignal->data[i].re=0;
-		  tmpReferenceSignal->data[i].im=0;
 		}
-
+	      if (params.verbosity > quiet){fprintf(stdout,".");fflush(stdout);}/*8*/
 	      harmonicIndex=XLALCreateINT4Vector(tmpHarmonicCount);
-
+	      if  (harmonicIndex == NULL)
+		{
+		  fprintf(stderr,"Memory allocation problem in line removal subroutine.\n");
+		}
+	      if (params.verbosity > quiet){fprintf(stdout,"A");fflush(stdout);}/*9*/
 	      harmonicIndexCompliment=XLALCreateINT4Vector(3*tmpHarmonicCount);
-
-	      for (i=0;i<tmpHarmonicCount;i++)
+	      if  (harmonicIndexCompliment == NULL)
+		{
+		  fprintf(stderr,"Memory allocation problem in line removal subroutine.\n");
+		}
+	      if (params.verbosity > quiet){fprintf(stdout,"B");fflush(stdout);}/*10*/
+	      for (i=0;i<harmonicIndex->length;i++)
 		harmonicIndex->data[i]=i+1;
-
-	      inputTVectorCLR->fLine = tmpLineFreq;
-	      inputFVectorCLR->fLine = tmpLineFreq;
-
+	      if (params.verbosity > quiet){fprintf(stdout,"C");fflush(stdout);}/*11*/
+	      /*Unknown code failure for following function call!!!!*/
 	      code=LAL_CALL( LALHarmonicFinder(&status,
-					  harmonicIndexCompliment,
-					  inputFVectorCLR,
-					  harmonicIndex),
+					       harmonicIndexCompliment,
+					       inputFVectorCLR,
+					       harmonicIndex),
 			&status);
-	      fprintf(stdout,"ERRCODE HarmonicFinder: %i\n",code);
-	      fprintf(stdout,"Error with  LALHarmonicFinder\n");
-	      fprintf(stdout,"ErrCode = %i\n",code);
-	      fprintf(stdout,"ErrMsg  = %s\n",status.statusDescription);
-
+	      if (params.verbosity > quiet){fprintf(stdout,"D");fflush(stdout);}/*12*/
+	      if (code != 0)
+		{
+		  fprintf(stdout,"FAILED!\n");
+		  fflush(stdout);
+		  fprintf(stderr,"Error: LALHarmonicFinder\n");
+		  exit(TRACKSEARCHC_EMISC);
+		}
 	      code=LAL_CALL( LALRefInterference(&status,
-					   tmpReferenceSignal,
+					   referenceSignal,
 					   signalFFT_harmonic->data,
 					   harmonicIndexCompliment),
 			&status);
-
-	      fprintf(stdout,"ERRCODE Interference: %i\n",code);
-	      fprintf(stdout,"Error with  LALRefInterference\n");
-	      fprintf(stdout,"ErrCode = %i\n",code);
-	      fprintf(stdout,"ErrMsg  = %s\n",status.statusDescription);
-	      
+	      if (params.verbosity > quiet){fprintf(stdout,"E");fflush(stdout);}/*13*/
+	      if (code != 0)
+		{
+		  fprintf(stdout,"FAILED!\n");
+		  fflush(stdout);
+		  fprintf(stderr,"Error: LALRefInterference\n");
+		  exit(TRACKSEARCHC_EMISC);
+		}
 	      if (harmonicIndexCompliment)
 		  XLALDestroyINT4Vector(harmonicIndexCompliment);
-
+	      if (params.verbosity > quiet){fprintf(stdout,".");fflush(stdout);}/*14*/
 	      if (harmonicIndex)
 		XLALDestroyINT4Vector(harmonicIndex);
-
-	      /* Copy this temp reference into global reference signal variable??*/
-	      for (k=0;k < referenceSignal->length;k++)
-		{
-		  referenceSignal->data[k].re=
-		    referenceSignal->data[k].re +
-		    tmpReferenceSignal->data[k].re;
-		  referenceSignal->data[k].im=
-		    referenceSignal->data[k].im +
-		    tmpReferenceSignal->data[k].im;
-		}
-	    
-	    
+	      if (params.verbosity > quiet){fprintf(stdout,".");fflush(stdout);}/*15*/
 	      /* Clean up input time series with global reference signal */
 	      cleanData=XLALCreateREAL4Vector(dataSet->data->length);
-  
-	      LAL_CALL( LALCleanAll(&status,
-				    cleanData,
-				    referenceSignal,
-				    inputTVectorCLR),
-			&status);
-
+  	      if (params.verbosity > quiet){fprintf(stdout,".");fflush(stdout);}
+	      code=LAL_CALL( LALCleanAll(&status,
+					 cleanData,
+					 referenceSignal,
+					 inputTVectorCLR),
+			     &status);
+	      if (params.verbosity > quiet){fprintf(stdout,".");fflush(stdout);}/*17*/
+	      if (code != 0)
+		{
+		  fprintf(stdout,"FAILED!\n");
+		  fflush(stdout);
+		  fprintf(stderr,"Error: LALCleanAll\n");
+		  exit(TRACKSEARCHC_EMISC);
+		}
 	      /*Copy the clean data back into the variable dataSet */
 	      for (j=0;j<dataSet->data->length;j++)
 		dataSet->data->data[j]=cleanData->data[j];
-  
+  	      if (params.verbosity > quiet){fprintf(stdout,".");fflush(stdout);}/*18*/
 	      if (cleanData)
 		XLALDestroyREAL4Vector(cleanData);
-
+	      if (params.verbosity > quiet){fprintf(stdout,".");fflush(stdout);}/*19*/
 	      if (signalFFT_harmonic)
 		XLALDestroyCOMPLEX8FrequencySeries(signalFFT_harmonic);
-
+	      if (params.verbosity > quiet){fprintf(stdout,".");fflush(stdout);}/*20*/
 	      if (inputPSDVector)
 		XLALDestroyREAL4Vector(inputPSDVector);
-
+	      if (params.verbosity > quiet){fprintf(stdout,".");fflush(stdout);}
 	      if (forwardPlan)
 		XLALDestroyREAL4FFTPlan(forwardPlan);
-
-	      if (tmpReferenceSignal)
-		XLALDestroyCOMPLEX8Vector(tmpReferenceSignal);
-
+	      if (params.verbosity > quiet){fprintf(stdout,".");fflush(stdout);}
 	      if (referenceSignal)
 		XLALDestroyCOMPLEX8Vector(referenceSignal);
-
+	      if (params.verbosity > quiet){fprintf(stdout,".");fflush(stdout);}
 	      if (inputTVectorCLR)
 		XLALFree(inputTVectorCLR);
-
+	      if (params.verbosity > quiet){fprintf(stdout,".");fflush(stdout);}
 	      if (inputFVectorCLR)
 		XLALFree(inputFVectorCLR);
+	      if (params.verbosity > quiet)
+		{
+		  fprintf(stdout,"Removed!\n");
+		  fflush(stdout);
+		}
 	    }
 	  else
 	    {
@@ -3527,6 +3635,7 @@ void LALappsTracksearchRemoveHarmonics( LALStatus             *statusX,
 	   */
 	}
     }
+  /*lal_errhandler=LAL_ERR_DFLT;*/
   return;
 }
 /*
@@ -3598,7 +3707,10 @@ void LALappsTrackSearchWhitenSegments( LALStatus        *status,
   const LIGOTimeGPS        gps_zero = LIGOTIMEGPSZERO;
 
   if (params.verbosity >= verbose )
-    fprintf(stdout,"Estimating PSD for whitening\n");
+    {
+      fprintf(stdout,"Estimating PSD for whitening\n");
+      fflush(stdout);
+    }
   averagePSD=XLALCreateREAL4FrequencySeries("averagePSD",
 					    &gps_zero,
 					    0,
@@ -3641,17 +3753,17 @@ void LALappsTrackSearchWhitenSegments( LALStatus        *status,
 
     case Kaiser:
       windowPSD = XLALCreateKaiserREAL4Window((params.SegLengthPoints+(2*params.SegBufferPoints)), 1000);
-      fprintf(stdout,"For Kaiser beta hard wired to 1,000\n");
+      fprintf(stderr,"For Kaiser beta hard wired to 1,000\n");
       break;
 
     case Creighton:
       windowPSD = XLALCreateCreightonREAL4Window((params.SegLengthPoints+(2*params.SegBufferPoints)), 1000);
-      fprintf(stdout,"For Creighton beta hard wired to 1,000\n");
+      fprintf(stderr,"For Creighton beta hard wired to 1,000\n");
       break;
 
     case Tukey:
       windowPSD = XLALCreateTukeyREAL4Window((params.SegLengthPoints+(2*params.SegBufferPoints)), 1000);
-      fprintf(stdout,"For Tukey beta hard wired to 1,000\n");
+      fprintf(stderr,"For Tukey beta hard wired to 1,000\n");
       break;
 
     default:
@@ -3716,8 +3828,11 @@ void LALappsTrackSearchWhitenSegments( LALStatus        *status,
       /*Worakaround "HACK" for proper spanning of data*/
       /* See AverageSpectrum.c line 845 */
       if ((dataSet->data->length-((segCount-1)*stride+segmentLength))>=1)
+	{
 	  fprintf(stdout,"Notice: We can not estimate the PSD using XLALREAL4AverageSpectrumMedianMean because the segment length, bin buffer, and overlap combing to form a data interval that isn't spanned correctly.  See documentation for the above XLAL function.  We are off by %i points to span the data properly.\n",
 		  (dataSet->data->length-((segCount-1)*stride+segmentLength)));
+	  fflush(stdout);
+	}
 
       if (
 	  (dataSet->data->length-((segCount-1)*stride+segmentLength)
@@ -3781,7 +3896,7 @@ void LALappsTrackSearchWhitenSegments( LALStatus        *status,
       if (errcode !=0)
 	{
 	  fprintf(stderr,"Problem calculating average PSD using median method.\n");
-	  fprintf(stderr," Dataset :%i\n PSD :%i\n Seglen :%i\n Stride :%i\n",
+	  fprintf(stderr," Dataset :%i\n PSD :%i\n Seglen :%i\n Seglen + Buff :%i\n Stride :%i\n",
 		  dataSet->data->length,
 		  averagePSD->data->length,
 		  params.SegLengthPoints,
@@ -3813,6 +3928,7 @@ void LALappsTrackSearchWhitenSegments( LALStatus        *status,
 	{
 	  fprintf(stdout,"We will do the running median smoothing of the average PSD with block size of %i\n",
 		  params.smoothAvgPSD);
+	  fflush(stdout);
 	}
       if (params.verbosity >= printFiles)
 	{
@@ -3953,7 +4069,10 @@ void LALappsTrackSearchWhitenSegments( LALStatus        *status,
 	      XLALDestroyCHARVector(dataLabel);
 	    }
 	  if (params.verbosity >= verbose)
-	    fprintf(stdout,"Whitening data segment: %i of %i\n",i+1,dataSegments->length);
+	    {
+	      fprintf(stdout,"Whitening data segment: %i of %i\n",i+1,dataSegments->length);
+	      fflush(stdout);
+	    }
 	  LAL_CALL(LALTrackSearchWhitenCOMPLEX8FrequencySeries(status,
 							       signalFFT,
 							       averagePSD,
