@@ -4,7 +4,7 @@ __Id__ = "$Id$"
 __author__ = "Thomas Cokelaer <Thomas.Cokelaer@astro.cf.ac.uk>"
 __version__ = "$Revision$"[11:-2]
 __date__ = "$Date$"[7:-2]
-__name__ = "plotinspmissed"
+__name__ = "inspiraltools"
 __title__ = "Found and Missed plots for triggers"
     
 
@@ -19,9 +19,9 @@ except:
     print """"Warning: the delaunay package could not be imported. 
     Functionalities such as the contour or surf plots will not be available. 
     Fix your configuration and packages."""    
-import numpy.core.ma as ma
+#import numpy.core.ma as ma
 from numpy import *
-#from matplotlib import *
+from math import log10
 
 mtsun = 4.92549095e-6
 
@@ -129,22 +129,27 @@ def GetTausFromMasses(m1,m2,fl):
  #--------------------------------------------------------- ReadXMLFiles class
 class ReadXMLFiles:
   """
-  A class that allows to read a XML file and returns tables such as sngl_inspiral,
-  bankefficiency,process_params as dictionaries
+  read a XML file and returns tables (e.g., sngl_inspiral) as dictionaries
+  
   @author: Thomas Cokelaer
   """
   def __init__(self, opts):
     """
+    @param opts: field requireda are verbose, glob
     """
-    self.files = glob.glob(opts.glob)
+    self.files = glob.glob(opts.glob)    
     self.verbose = opts.verbose
     self.results = None
     self.bank = None
     self.params = None
     self.values = None
-    self.fl = None
+    self.fl = None    
+    try:
+      self.nlines_to_read = opts.n
+    except:
+      self.nlines_to_read = 1e16
 
-  def getvalue(self,param):      
+  def getvalue(self, param):      
     """
     param is a string corrsponding to the field "param" to be read within a
     table.
@@ -165,16 +170,16 @@ class ReadXMLFiles:
     @param table: the table to read
     @author: Thomas Cokelaer
     """
+        
     file = open(filename, "r")
     line = file.readline()  
-    
     # first, we search for the requested table
     if self.verbose : print "searching for the table "+table 
     while line and line.find(table) < 0:
       line = file.readline() 
     
 
-    if self.verbose: print "rebuilding the dictionary"
+    if self.verbose: print "reading the data..."
     if not line:
       return None
     # create a dictionary using the parameters of the xml table as keys
@@ -190,8 +195,11 @@ class ReadXMLFiles:
     count = 0
 
     # now parse the whole data and coutn the rows until "\Stream" is found 
-    line = file.readline()  
-    while line.find("Stream") < 0 :
+    line = file.readline()
+    
+    
+    
+    while line.find("Stream") < 0:
       count = count + 1
       fields = line.split(",")
       for field,key in zip(fields,sortDict):
@@ -200,10 +208,17 @@ class ReadXMLFiles:
         except:
           table_summ[key].append((field))
       if len(line)==0: break
+      # if the table is bank efficiency and the user provided a limited 
+      # number of lines to be read, then we break
+      if table=='bankefficiency':
+        if count >= self.nlines_to_read: break
+      
+        
       line = file.readline()  
+    
       
     # check that the file was properly closed with a </stream> tag
-    if self.verbose: print "Found "+str(count )+" elements"
+    if self.verbose: print "Found "+str(count-1)+" elements"
       
     #convert  
     if self.verbose : print "converting to arrays"
@@ -221,7 +236,7 @@ class ReadXMLFiles:
     return table_summ
 
 
-  def getTables(self):
+  def getTables(self, name=None):
     """
     Method to read bankefficiency,sngl_inspiral and process_params tables in a 
     file that matches a user glob.
@@ -229,39 +244,40 @@ class ReadXMLFiles:
     """    
     # right now only one file can be read.
     if len(self.files)>1:
-        print "Warning: More than 1 file match your --glob argument. use the last one."
+        print "Warning: More than 1 file match your --glob argument. use the last one. Fix me"
+    
+    if len(self.files)==0:
+      print 'Error, no file to read. check the spelling'
+      sys.exit(1)
     
     for file in self.files:
       if self.verbose is True:
           print 'Reading ' + file
       # first we need to read the process_params, and extract Fl, the lower cut-
       # off frequency, which will be used later on  
-      try:
-        process = self.readXML(file, 'process_params')
-        self.params = process['param']
-        self.values = process['value']
-        self.fl = float(self.getvalue('--fl'))
-      except:
-        self.params = None
-        self.values = None
-        raise ValueError, """ The XMl file must contain a process_params table 
+      if name is None:
+        try:
+          process = self.readXML(file, 'process_params')
+          self.params = process['param']
+          self.values = process['value']
+          self.fl = float(self.getvalue('--fl'))
+        except:
+          self.params = None
+          self.values = None
+          raise ValueError, """ The XMl file must contain a process_params table 
     with the --fl option at least. It does not seem to be present in the file 
     provide."""
 
-      
-        
-        
-      try:
+        #try:
         results = self.readXML(file, 'bankefficiency')
-        # some data products that are not in the original table.
-        results['totalmass_sim'] = results['mass1_sim'] + results['mass2_sim']
-        
+          
+          # some data products that are not in the original table.
+        results['totalmass_sim'] = results['mass1_sim'] + results['mass2_sim']        
         results['eta_sim'] = results['mass1_sim'] * results['mass2_sim'] / \
-            results['totalmass_sim'] / \
-            results['totalmass_sim']
-        # note the dummy variable. Indeed, these functions returns 2 values and 
-        # therefore we need 2 outputs. Otherwise, the function returns a tuple and
-        # not an array.
+          results['totalmass_sim'] / results['totalmass_sim']
+          # note the dummy variable. Indeed, these functions returns 2 values and 
+          # therefore we need 2 outputs. Otherwise, the function returns a tuple and
+          # not an array.
         results['chirpmass'],dummy = GetChirpMassEtaFromTaus(\
                                    array(results['tau0']),\
                                    array(results['tau3']), self.fl)
@@ -273,21 +289,28 @@ class ReadXMLFiles:
         results['totalmass'] = m1+m2
         results['eta'] = m1*m2/(m1+m2)/(m1+m2)
         self.results = results
-      except:
-        self.results = None
-        pass
+        #except:
+        #  self.results = None
+        #  pass
         
-      # reading the sngl_inspiral table
-      try:
-        self.bank = self.readXML(file, 'sngl_inspiral')
-      except:
-        self.bank = None
-        pass
+        # reading the sngl_inspiral table
+        try:
+          self.bank = self.readXML(file, 'sngl_inspiral')
+        except:
+          self.bank = None
+          pass
     
       if self.bank is None:
         print \
 """Warning: no sngl_inspiral table found. so,no information
          related to the template bank can be extracted"""
+    
+    if name is not None:
+      try:
+        self.results = self.readXML(file, name)
+      except:
+        self.results = None
+        pass
     
     return self.results, self.bank, self.params, self.values
 
@@ -302,8 +325,7 @@ class Plotting:
     self.linewidth = 1
     self.hold = False
     self.title = None
-    self.verbose = verbose
-
+    self.verbose = verbose    
   
   def settitle(self, text=None):
     self.title = text
@@ -312,7 +334,7 @@ class Plotting:
     fig = None
     if self.hold is False:
       if self.verbose is True:
-        print 'Plotting '+ str(self.figure_num) +' in progress...'
+        print 'Plotting '+ str(self.figure_num) +' in progress...',
       fig = figure(self.figure_num)
       self.figure_num += 1
     return fig
@@ -321,13 +343,8 @@ class Plotting:
   def plot_histogram_and_fit(self,data, nbins=20,fit=True):
     """
     """
-    fig = None
+    fig = self.setfigure()
     handle = None
-    if self.hold is False:
-      if self.verbose is True:
-        print 'Plotting '+ str(self.figure_num) +' in progress...'
-      figure(self.figure_num)
-      self.figure_num += 1
       
     try:
       n, bins, patches = hist(data, nbins, normed=1)
@@ -339,7 +356,7 @@ class Plotting:
         if self.title is not None:
           title(self.title) 
       gca().grid(True)
-    except: print """Error while creating this plot"""
+    except: print """Error inside histogram """ 
     return fig,handle
 
   def scatter(self, xdata, ydata, zdata, markersize=None, alpha=None,\
@@ -363,14 +380,22 @@ class Plotting:
       alpha = self.alpha
       
     try:
-      scatter(xdata,ydata, c=zdata,s=markersize, alpha=alpha)
+      if type=='log':
+        scatter(xdata,ydata, c=log10(zdata),s=markersize, alpha=alpha,vmin=vmin,vmax=vmax)
+        colorbar()
+      else:  
+        scatter(xdata,ydata, c=zdata,s=markersize, alpha=alpha,vmin=vmin,vmax=vmax)
+        colorbar()
       xlim(min(xdata), max(xdata))
       ylim(min(ydata), max(ydata))
+      
       gca().grid(True)
-      colorbar()
+      
       if self.title is not None:
           title(self.title) 
-    except: print """Error while creating this plot"""
+    except: 
+      print """Error inside scatter plots"""      
+      
     return fig,handle
     
   def plot(self, xdata,ydata, 
@@ -391,6 +416,7 @@ class Plotting:
     @type linewidth: float
     @author: Thomas Cokelaer
     """
+    
     fig = self.setfigure()
     handle = None
          
@@ -408,27 +434,34 @@ class Plotting:
            markersize=markersize,alpha=alpha,linewidth=linewidth)
       if self.title is not None:
           title(self.title) 
-    except: print """Error while creating this plot"""
+    except: print """Error inside plot"""
     
     gca().grid(True)
     return fig,handle
 
   def griddata(self,xdata,ydata,zdata,xbin=20,ybin=20):
+    
+    #if self.verbose: print 'Entering griddata...',
+    
     xmin = min(xdata)
     xmax = max(xdata)
     xstep = (xmax - xmin)/xbin
-    
+
     ymin = min(ydata)
     ymax = max(ydata)
     ystep = (ymax - ymin)/ybin
     
     xi, yi = mgrid[xmin:xmax:xstep, ymin:ymax:ystep]
     # triangulate data
-    tri = delaunay.Triangulation(xdata,ydata)
-    # interpolate data
-    interp = tri.nn_interpolator(zdata)
-    zi = interp(xi,yi)
+    
+    try:
+      tri = delaunay.Triangulation(xdata,ydata)
+      interp = tri.nn_interpolator(zdata)    
+      zi = interp(xi,yi)
+    except:
+      print 'Problem in griddata'
 
+    #if self.verbose: print 'Done'
     return xi,yi,zi
 
   def surf(self,xdata,ydata,zdata,xbin=20,ybin=20,vmin=0,vmax=1):
@@ -447,20 +480,40 @@ class Plotting:
     colorbar()
     return p
 
-  def contourf(self,xdata,ydata,zdata,xbin=20,ybin=20,xmin=0, xmax=0.4,vmin=0,vmax=1):
+  def contourf(self,xdata,ydata,zdata,\
+               xbin=20,ybin=20,xmin=0, xmax=0.4,vmin=0,vmax=1,\
+               colormap=None):
     """
      function to call contour plot
      the vmin option is harcoded for the time being using [0.5 0.8 0.9 0.95 and 1]
+     @param nbin
+     @param colormap: a list to set the colormap
     """
     fig = self.setfigure() 
     handle = None
    
-    xi,yi,zi = self.griddata(xdata,ydata,zdata,xbin,ybin) 
+    xi,yi,zi = self.griddata(xdata,ydata,zdata,xbin,ybin)       
+        
     zim = ma.masked_where(isnan(zi),zi)
     figure(figsize=(8,8))
-    c = contourf(xi,yi,zim,[0.5, 0.8, 0.9, 0.95 ,1])
+    
+
+    
+    if colormap is None:
+        map = [0.5, 0.8, 0.9, 0.95 ,0.965,1]
+        c = contourf(xi,yi,zim,map)
+    elif colormap=='cube':
+        
+        map = [0.5**3., 0.8**3., 0.9**3.,0.95**3., 0.965**3.,1]
+        print map
+        #map = [0.5, 0.8, 0.9, 0.95 ,0.965,1]
+        
+        c = contourf(xi,yi,zim,map)
+    else:
+        print colormap,
+        c = contourf(xi,yi,zim,colormap)
+            
     ylims = ylim()
-    print ylims[0]
     axis([xmin, xmax, floor(ylims[0]), ceil(ylims[1])])
     gca().grid(True)
     colorbar()
