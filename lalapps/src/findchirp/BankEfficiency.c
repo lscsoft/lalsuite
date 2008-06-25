@@ -110,11 +110,11 @@ main (INT4 argc, CHAR **argv )
   /* --- Read user parameters --- */
   BankEfficiencyParseParameters(&argc, argv,&coarseBankIn, &randIn, &userParam);
 
-  /* eccentric bank initialisation */
-  BankEfficiencyEccentricBankInit(&userParam);
-  
   /* --- Check input parameters --- */
   BankEfficiencyUpdateParams(&coarseBankIn, &randIn, &userParam);
+  
+  /* eccentric bank initialisation */
+  BankEfficiencyEccentricBankInit(&userParam);
   
   /* --- Init a random structure using the user seed --- */  
   randParams = XLALCreateRandomParams(randIn.useed );
@@ -255,6 +255,7 @@ main (INT4 argc, CHAR **argv )
     simulation.SNRMax           = 0; /* For how long have we the best SNR     */
     simulation.fastParam1       = 6; /* param 1 for the heuristic fast option */
     simulation.fastParam2       = 50;/* param 2 for the heuristic fast option */
+    simulation.fastParam2 *= 1.+log10(userParam.eccentricBank.bins);
     simulation.eMatch           = userParam.eMatch; /* reset the ematch       */
     simulation.bestEMatch       = -1e16; /* reset ematch to small value*/
     simulation.randIn           = randIn;        
@@ -4119,13 +4120,15 @@ void BankEfficiencyWaveOverlap(
   LAL_CALL(LALInspiralWaveOverlap(status->statusPtr,
       correlation, &overlapout, overlapin), status->statusPtr);
   
+#if 1
   if (overlapin->param.approximant == Eccentricity)
   {
    	overlapin->param.startPhase += LAL_PI;
     LAL_CALL(LALInspiralWaveOverlap(status->statusPtr,
       correlation, &overlapout2, overlapin), status->statusPtr);
-    fprintf(stderr,"overlaps = %f and %f and e=%f\n",overlapout.max,overlapout2.max,overlapin->param.eccentricity);
+    /*fprintf(stderr,"overlaps = %f and %f and e=%f\n",overlapout.max,overlapout2.max,overlapin->param.eccentricity);*/
   }
+#endif
         
               
   /* --- store some results --- */
@@ -4275,10 +4278,11 @@ void BankEfficiencyInitMyBank(
 {
   SnglInspiralTable      *tmpltCurrent = NULL;
   INT4 i,j;
-  INT4 eccentricBins, eccentricMin,eccentricMax, eccentricStep;
+  INT4 eccentricBins;
+  REAL4 eccentricMin,eccentricMax, eccentricStep;
   INT4 thisIndex;
   
-  /* --- first get the eccentric parameters --- */	
+  /* --- first get the eccentric parameters --- */  
   eccentricBins = userParam.eccentricBank.bins;
   eccentricStep = userParam.eccentricBank.step;
   eccentricMax  = userParam.eccentricBank.max;
@@ -4337,6 +4341,7 @@ void BankEfficiencyInitMyBank(
       mybank->snr[thisIndex]    = 0.;
     }
   }
+  
   mybank->size = (INT4) (*sizeBank);
   mybank->approximant = userParam.template;
   if ( vrbflg )
@@ -4367,7 +4372,7 @@ UserParametersIn *userParam)
         userParam->eccentricBank.min);
   }
               
-  if ( vrbflg && userParam->eccentricBank.bins>1)
+  if ( vrbflg && userParam->eccentricBank.bins>=1)
   {
     fprintf(stdout, "Eccentric bank requested.\n");
     fprintf(stdout, "--- minimum value = %f\n",userParam->eccentricBank.min);
