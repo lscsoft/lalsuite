@@ -150,11 +150,6 @@ LALFindChirpPTFTemplate (
   }
   LALInfo( status, "Generating template using FindChirpPTF" );
 
-  fprintf( stderr, 
-      "LALFindChirpPTFTemplate() called with "
-      "m1 = %e, m2 = %e, chi = %e, kappa = %e\n", 
-      InspTmplt->mass1, InspTmplt->mass2, InspTmplt->chi, InspTmplt->kappa );
-
   /* copy the template parameters to the finchirp template structure */
   memcpy( &(fcTmplt->tmplt), InspTmplt, sizeof(InspiralTemplate) );
   fcTmplt->tmplt.approximant = params->approximant;
@@ -286,9 +281,6 @@ LALFindChirpPTFNormalize(
   }
 
   /* output is B_{IJ}^{-1} */
-  fprintf( stderr, 
-      "LALFindChirpPTFNormalize() called with wtilde at %p, PTFQtilde at %p\n",
-      (void*) wtilde, (void*) PTFQtilde );
 
   /*
    *
