@@ -98,6 +98,9 @@ extern "C" {
     /* Index of current bound zone */
     gsl_vector_int *bound_zone;
 
+    /* Maximum number of bound zones */
+    gsl_vector_int *max_bound_zone;
+
     /* Metric of the parameter space in normalised coordinates */
     gsl_matrix *norm_metric;
 
