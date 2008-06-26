@@ -110,7 +110,6 @@ LALFindChirpPTFTemplate (
    *
    */
 
-
   /* check that the output structures exist */
   ASSERT( fcTmplt, status, 
       FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
