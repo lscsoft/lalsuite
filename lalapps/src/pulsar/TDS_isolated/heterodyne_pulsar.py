@@ -108,7 +108,7 @@ class heterodyneNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     # set file containing updated pulsar parameters
     self.add_var_opt('param-file-update',param_file_update)
     
-  def set_manual_epoch(self, manual_epoch)
+  def set_manual_epoch(self, manual_epoch):
       # set manual pulsar epoch
       self.add_var_opt('manual-epoch',manual_epoch)
       self.__manual_epoch = manual_epoch
