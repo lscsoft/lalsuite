@@ -1600,6 +1600,12 @@ INT4 XLALInspiralAttachRingdownWave (
         REAL4Vector  	 *signal2,
         InspiralTemplate *params);
 
+int XLALInspiralGetApproximantString( CHAR        *output,
+                                      UINT4       length,
+                                      Approximant approx,
+                                      Order       order
+                                    );
+
 #ifdef  __cplusplus
 }
 #endif
