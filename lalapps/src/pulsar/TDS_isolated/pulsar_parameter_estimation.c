@@ -1682,7 +1682,7 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
            }
 
           /* first point before current glitch */
-          if( data[j].times->data[k] > glitchTimes[i] - 
+          if( data[j].times->data[k] > glitchTimes[i] -
             input.mcmc.glitchCut/2. ){
             g2[j][i] = k;
 
@@ -1970,7 +1970,7 @@ paramData );
        our prior range so the likelihood is always zero and this move always
        rejected */
     if( varsNew.h0 < 0. || below0 == 1 ){
-      if( fmod(count, input.mcmc.outputRate) == 0. && i > input.mcmc.burnIn-1 ){
+      if( fmod(count, input.mcmc.outputRate) == 0. && i>input.mcmc.burnIn-1 ){
         fprintf(fp, "%le\t%le\t%lf\t%lf\t%lf", logL1, vars.h0, vars.phi0,
           vars.ci, vars.psi);
 
@@ -2275,7 +2275,7 @@ paramData );
     }
 
     /* printf out chains */
-    if( fmod(count, input.mcmc.outputRate) == 0. && i > input.mcmc.burnIn-1 ){
+    if( fmod(count, input.mcmc.outputRate) == 0. && i>input.mcmc.burnIn-1 ){
       fprintf(fp, "%le\t%le\t%lf\t%lf\t%lf", logL1, vars.h0, vars.phi0, vars.ci,
         vars.psi);
 
@@ -2337,10 +2337,12 @@ REAL8Vector *get_phi( DataStructure data, BinaryPulsarParams params,
 
   INT4 i=0;
 
-  REAL8 T0=0., DT=0., deltat=0., deltat2=0.;
+  REAL8 T0=0., DT=0., DTplus=0., deltat=0., deltat2=0.;
+  REAL8 interptime = 600.; /* calulate every 10 mins (600 secs) */
 
-  EarthState earth;
-  EmissionTime emit;
+  EarthState earth, earth2;
+  EmissionTime emit, emit2;
+  REAL8 emitdt=0.;
 
   BinaryPulsarInput binput;
   BinaryPulsarOutput boutput;
@@ -2366,6 +2368,8 @@ REAL8Vector *get_phi( DataStructure data, BinaryPulsarParams params,
   phis = XLALCreateREAL8Vector( data.times->length );
 
   for( i=0; i<(INT4)data.times->length; i++){
+    T0 = params.pepoch;
+
     DT = data.times->data[i] - T0;
 
     if(data.times->data[i] <= 820108813)
@@ -2373,28 +2377,47 @@ REAL8Vector *get_phi( DataStructure data, BinaryPulsarParams params,
     else
       (*edat).leap = 14;
 
-    T0 = params.pepoch;
+    /* only do call the barycentring routines every 10 minutes, otherwise just
+       linearly interpolate between them */
+    if( i==0 || DT > DTplus ){
+      bary.tgps.gpsSeconds = (UINT8)floor(data.times->data[i]);
+      bary.tgps.gpsNanoSeconds =
+(UINT8)floor((fmod(data.times->data[i],1.)*1e9));
 
-    bary.tgps.gpsSeconds = (UINT8)floor(data.times->data[i]);
-    bary.tgps.gpsNanoSeconds = (UINT8)floor((fmod(data.times->data[i],1.)*1e9));
+      bary.delta = params.dec + DT*params.pmdec;
+      bary.alpha = params.ra + DT*params.pmra/cos(bary.delta);
 
-    bary.delta = params.dec + DT*params.pmdec;
-    bary.alpha = params.ra + DT*params.pmra/cos(bary.delta);
+      /* call barycentring routines */
+      LAL_CALL( LALBarycenterEarth(&status, &earth, &bary.tgps, edat),
+        &status );
+      LAL_CALL( LALBarycenter(&status, &emit, &bary, &earth), &status );
 
-    /* call barycentring routines */
-    LAL_CALL( LALBarycenterEarth(&status, &earth, &bary.tgps, edat), &status );
-    LAL_CALL( LALBarycenter(&status, &emit, &bary, &earth), &status );
+      /* add 10 minutes (600secs) to the time */
+      DTplus = DT + interptime;
+      bary.tgps.gpsSeconds = (UINT8)floor(data.times->data[i]+interptime);
+      bary.tgps.gpsNanoSeconds =
+(UINT8)floor((fmod(data.times->data[i]+interptime,1.)*1e9));
+
+      /* No point in updating the positions as difference will be tiny */
+      LAL_CALL( LALBarycenterEarth(&status, &earth2, &bary.tgps, edat),
+        &status );
+      LAL_CALL( LALBarycenter(&status, &emit2, &bary, &earth2), &status );
+    }
+
+    /* linearly interpolate to get emitdt */
+    emitdt = (data.times->data[i] - (DTplus - interptime)) *
+      (emit2.deltaT - emit.deltaT)/interptime;
 
     /* check if need to perform binary barycentring */
     if( params.model != NULL ){
-      binput.tb = data.times->data[i] + emit.deltaT;
+      binput.tb = data.times->data[i] + emitdt;
 
       XLALBinaryPulsarDeltaT( &boutput, &binput, &params );
 
-      deltat = DT + emit.deltaT + boutput.deltaT;
+      deltat = DT + emitdt + boutput.deltaT;
     }
     else
-      deltat = DT + emit.deltaT;
+      deltat = DT + emitdt;
 
     /* work out phase */
     deltat2 = deltat*deltat;
