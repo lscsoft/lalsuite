@@ -32,8 +32,6 @@
 #include <lal/LALDatatypes.h>
 #include <lal/ComplexFFT.h>
 #include <lal/DataBuffer.h>
-#include <lal/LIGOMetadataTables.h>
-#include <lal/LIGOMetadataUtils.h>
 #include <lal/LALInspiral.h>
 #include <lal/LALInspiralBank.h>
 #include <lal/GeneratePPNInspiral.h>
@@ -44,12 +42,9 @@
 #include <lal/LALStdlib.h>
 #include <lal/LALError.h>
 #include <lal/LALDatatypes.h>
-#include <lal/LIGOMetadataUtils.h>
-#include <lal/LIGOMetadataTables.h>
 #include <lal/AVFactories.h>
 #include <lal/NRWaveIO.h>
 #include <lal/NRWaveInject.h>
-#include <lal/LIGOLwXMLRead.h>
 #include <lal/Inject.h>
 #include <lal/FileIO.h>
 #include <lal/Units.h>
@@ -58,7 +53,6 @@
 #include <lal/TimeFreqFFT.h>
 #include <lal/VectorOps.h>
 #include <lal/LALDetectors.h>
-#include <lal/LALFrameIO.h>
 #include <lal/ComplexFFT.h>
 
 #ifdef  __cplusplus
