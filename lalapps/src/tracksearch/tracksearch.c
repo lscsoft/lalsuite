@@ -99,7 +99,7 @@ int main (int argc, char *argv[])
 
   /* SET LAL DEBUG STUFF */
   set_debug_level("ERROR");
-  set_debug_level("ERROR | WARNING | TRACE");
+  /*set_debug_level("ERROR | WARNING | TRACE");*/
   /*  set_debug_level("ERROR | WARNING | MEMDBG");*/
   /* set_debug_level("ALLDBG");*/
   memset(&status, 0, sizeof(status));
@@ -322,7 +322,7 @@ void LALappsTrackSearchPrepareData( LALStatus        *status,
 
   if (params.numLinesToRemove > 0)
     {
-      if (0)
+      if (1)
 	/* 0 Do individual segment line removal */
 	/* 1 Do entire data set line removal */
 	{
@@ -3471,24 +3471,19 @@ void LALappsTracksearchRemoveHarmonics( LALStatus             *statusX,
 	      /* Take data to F domain */
 	      planLength=dataSet->data->length;
 	      referenceSignal=XLALCreateCOMPLEX8Vector(planLength);
-	      if (params.verbosity > quiet){fprintf(stdout,".");fflush(stdout);}/*2*/
 	      signalFFT_harmonic=XLALCreateCOMPLEX8FrequencySeries("tmpSegPSD",
 								   &gps_zero,
 								   0,
 								   1/(dataSet->data->length*dataSet->deltaT),
 								   &(dataSet->sampleUnits),
 								   planLength/2+1);
-	      if (params.verbosity > quiet){fprintf(stdout,".");fflush(stdout);}/*3*/
 	      inputPSDVector=XLALCreateREAL4Vector(planLength/2+1);
-	      if (params.verbosity > quiet){fprintf(stdout,".");fflush(stdout);}/*4*/
 	      forwardPlan=XLALCreateForwardREAL4FFTPlan(planLength,0);
-  	      if (params.verbosity > quiet){fprintf(stdout,".");fflush(stdout);}/*5*/
 	      code=LAL_CALL( LALForwardREAL4FFT(&status,
 					   signalFFT_harmonic->data,
 					   dataSet->data,
 					   forwardPlan),
 			&status);
-	      if (params.verbosity > quiet){fprintf(stdout,".");fflush(stdout);}/*6*/
 	      if (code != 0)
 		{
 		  fprintf(stdout,"FAILED!\n");
@@ -3496,17 +3491,15 @@ void LALappsTracksearchRemoveHarmonics( LALStatus             *statusX,
 		  fprintf(stderr,"Error: LALForwardReal4FFT\n");
 		  exit(TRACKSEARCHC_EMISC);
 		}
-	      code=LAL_CALL( LALRealPowerSpectrum(&status,
-					     inputPSDVector,
-					     dataSet->data,
-					     forwardPlan),
-			&status);
-	      if (params.verbosity > quiet){fprintf(stdout,".");fflush(stdout);}/*7*/
+	      /* May need to use XLALREAL[4,8]PowerSpectrum */
+	      code=XLALREAL4PowerSpectrum(inputPSDVector,
+					  dataSet->data,
+					  forwardPlan);
 	      if (code != 0)
 		{
 		  fprintf(stdout,"FAILED!\n");
 		  fflush(stdout);
-		  fprintf(stderr,"Error: LALRealPowerSpectrum\n");
+		  fprintf(stderr,"Error: XLALREAL4PowerSpectrum\n");
 		  exit(TRACKSEARCHC_EMISC);
 		}
 
@@ -3519,7 +3512,7 @@ void LALappsTracksearchRemoveHarmonics( LALStatus             *statusX,
 	      /* The  CLR Frequency Vector  */
 	      inputFVectorCLR->length = inputPSDVector->length;
 	      inputFVectorCLR->data = inputPSDVector->data; 
-	      inputFVectorCLR->deltaF = signalFFT_harmonic->deltaF;
+	      inputFVectorCLR->deltaF = 1.0/(dataSet->data->length*dataSet->deltaT);
 	      inputFVectorCLR->fLine =  inputTVectorCLR->fLine;
 
 	      inputTVectorCLR->fLine = tmpLineFreq;
@@ -3530,29 +3523,26 @@ void LALappsTracksearchRemoveHarmonics( LALStatus             *statusX,
 		  referenceSignal->data[i].re=0;
 		  referenceSignal->data[i].im=0;
 		}
-	      if (params.verbosity > quiet){fprintf(stdout,".");fflush(stdout);}/*8*/
 	      harmonicIndex=XLALCreateINT4Vector(tmpHarmonicCount);
 	      if  (harmonicIndex == NULL)
 		{
 		  fprintf(stderr,"Memory allocation problem in line removal subroutine.\n");
 		}
-	      if (params.verbosity > quiet){fprintf(stdout,"A");fflush(stdout);}/*9*/
 	      harmonicIndexCompliment=XLALCreateINT4Vector(3*tmpHarmonicCount);
 	      if  (harmonicIndexCompliment == NULL)
 		{
 		  fprintf(stderr,"Memory allocation problem in line removal subroutine.\n");
 		}
-	      if (params.verbosity > quiet){fprintf(stdout,"B");fflush(stdout);}/*10*/
 	      for (i=0;i<harmonicIndex->length;i++)
 		harmonicIndex->data[i]=i+1;
-	      if (params.verbosity > quiet){fprintf(stdout,"C");fflush(stdout);}/*11*/
 	      /*Unknown code failure for following function call!!!!*/
+	      /*Introduced simple change to code to fix this contacted */
+	      /*author via email to notify of changes.Thu-Jun-26-2008:200806261734 */
 	      code=LAL_CALL( LALHarmonicFinder(&status,
 					       harmonicIndexCompliment,
 					       inputFVectorCLR,
 					       harmonicIndex),
 			&status);
-	      if (params.verbosity > quiet){fprintf(stdout,"D");fflush(stdout);}/*12*/
 	      if (code != 0)
 		{
 		  fprintf(stdout,"FAILED!\n");
@@ -3565,7 +3555,7 @@ void LALappsTracksearchRemoveHarmonics( LALStatus             *statusX,
 					   signalFFT_harmonic->data,
 					   harmonicIndexCompliment),
 			&status);
-	      if (params.verbosity > quiet){fprintf(stdout,"E");fflush(stdout);}/*13*/
+
 	      if (code != 0)
 		{
 		  fprintf(stdout,"FAILED!\n");
@@ -3575,19 +3565,18 @@ void LALappsTracksearchRemoveHarmonics( LALStatus             *statusX,
 		}
 	      if (harmonicIndexCompliment)
 		  XLALDestroyINT4Vector(harmonicIndexCompliment);
-	      if (params.verbosity > quiet){fprintf(stdout,".");fflush(stdout);}/*14*/
 	      if (harmonicIndex)
 		XLALDestroyINT4Vector(harmonicIndex);
-	      if (params.verbosity > quiet){fprintf(stdout,".");fflush(stdout);}/*15*/
+
 	      /* Clean up input time series with global reference signal */
 	      cleanData=XLALCreateREAL4Vector(dataSet->data->length);
-  	      if (params.verbosity > quiet){fprintf(stdout,".");fflush(stdout);}
+
 	      code=LAL_CALL( LALCleanAll(&status,
 					 cleanData,
 					 referenceSignal,
 					 inputTVectorCLR),
 			     &status);
-	      if (params.verbosity > quiet){fprintf(stdout,".");fflush(stdout);}/*17*/
+
 	      if (code != 0)
 		{
 		  fprintf(stdout,"FAILED!\n");
@@ -3598,25 +3587,25 @@ void LALappsTracksearchRemoveHarmonics( LALStatus             *statusX,
 	      /*Copy the clean data back into the variable dataSet */
 	      for (j=0;j<dataSet->data->length;j++)
 		dataSet->data->data[j]=cleanData->data[j];
-  	      if (params.verbosity > quiet){fprintf(stdout,".");fflush(stdout);}/*18*/
+
 	      if (cleanData)
 		XLALDestroyREAL4Vector(cleanData);
-	      if (params.verbosity > quiet){fprintf(stdout,".");fflush(stdout);}/*19*/
+
 	      if (signalFFT_harmonic)
 		XLALDestroyCOMPLEX8FrequencySeries(signalFFT_harmonic);
-	      if (params.verbosity > quiet){fprintf(stdout,".");fflush(stdout);}/*20*/
+
 	      if (inputPSDVector)
 		XLALDestroyREAL4Vector(inputPSDVector);
-	      if (params.verbosity > quiet){fprintf(stdout,".");fflush(stdout);}
+
 	      if (forwardPlan)
 		XLALDestroyREAL4FFTPlan(forwardPlan);
-	      if (params.verbosity > quiet){fprintf(stdout,".");fflush(stdout);}
+
 	      if (referenceSignal)
 		XLALDestroyCOMPLEX8Vector(referenceSignal);
-	      if (params.verbosity > quiet){fprintf(stdout,".");fflush(stdout);}
+
 	      if (inputTVectorCLR)
 		XLALFree(inputTVectorCLR);
-	      if (params.verbosity > quiet){fprintf(stdout,".");fflush(stdout);}
+
 	      if (inputFVectorCLR)
 		XLALFree(inputFVectorCLR);
 	      if (params.verbosity > quiet)
