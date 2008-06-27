@@ -101,6 +101,7 @@ LALFindChirpTDData (
     case GeneratePPN:
     case PadeT1:
     case EOB:
+    case EOBNR:
     case BCVSpin:
     case FindChirpPTF:
       /* store the input approximant */

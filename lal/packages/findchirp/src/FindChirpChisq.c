@@ -181,7 +181,7 @@ LALFindChirpComputeChisqBins(
 
   /* the last bin boundary is at can be at Nyquist since   */
   /* qtilde is zero above the ISCO of the current template */
-  chisqBin[numChisqBins] = fcSeg->data->data->length;
+  chisqBin[numChisqBins] = fcSeg->data->data->length; 
 
 
   /* normal exit */
@@ -278,6 +278,7 @@ LALFindChirpChisqVeto (
     case GeneratePPN:
     case PadeT1:
     case EOB:
+    case EOBNR:
     case FindChirpSP:
       break;
     default:

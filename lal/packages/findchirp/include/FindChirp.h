@@ -203,6 +203,7 @@ tagFindChirpInitParams
   BOOLEAN                       createRhosqVec;
   BOOLEAN                       createCVec;
   Approximant                   approximant;
+  Order                         order;
 }
 FindChirpInitParams;
 /* </lalVerbatim> */
@@ -500,6 +501,7 @@ tagFindChirpFilterParams
   UINT4                         ignoreIndex;
   Clustering                    clusterMethod;          
   Approximant                   approximant;
+  Order                         order;
   COMPLEX8Vector               *qVec;
   COMPLEX8Vector               *qVecBCV;
   COMPLEX8Vector               *qVecBCVSpin1;

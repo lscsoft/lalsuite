@@ -168,6 +168,10 @@ LALFindChirpTDTemplate (
       LALInfo( status, "Generating template using EOB" );
       break;
 
+    case EOBNR:
+      LALInfo( status, "Generating template using EOBNR" );
+      break;
+
     default:
       ABORT( status, FINDCHIRPTDH_EMAPX, FINDCHIRPTDH_MSGEMAPX );
       break;
@@ -268,7 +272,7 @@ LALFindChirpTDTemplate (
     sampleRate = 1.0 / deltaT;
     tmplt->ieta            = 1;
     tmplt->approximant     = params->approximant;
-    tmplt->order           = twoPN;
+    tmplt->order           = params->order;
     tmplt->massChoice      = m1Andm2;
     tmplt->tSampling       = sampleRate;
     tmplt->fLower          = params->fLow;
@@ -390,6 +394,7 @@ LALFindChirpTDNormalize(
     case GeneratePPN:
     case PadeT1:
     case EOB:
+    case EOBNR:
       break;
     default:
       ABORT( status, FINDCHIRPTDH_EMAPX, FINDCHIRPTDH_MSGEMAPX );

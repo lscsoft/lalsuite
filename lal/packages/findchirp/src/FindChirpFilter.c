@@ -209,6 +209,7 @@ LALFindChirpFilterSegment (
     case GeneratePPN:
     case PadeT1:
     case EOB:
+    case EOBNR:
     case FindChirpSP:
       break;
 

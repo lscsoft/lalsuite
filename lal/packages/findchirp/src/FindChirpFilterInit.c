@@ -99,6 +99,7 @@ LALCreateFindChirpInput (
     case GeneratePPN:
     case PadeT1:
     case EOB:
+    case EOBNR:
     case FindChirpSP:
     case FindChirpPTF:
     case BCV:
@@ -351,6 +352,7 @@ LALFindChirpFilterInit (
     case GeneratePPN:
     case PadeT1:
     case EOB:
+    case EOBNR:
     case FindChirpSP:
     case FindChirpPTF:  
     case BCV:
@@ -390,6 +392,8 @@ LALFindChirpFilterInit (
   /* store the filter approximant in the filter and chisq params */
   outputPtr->approximant = outputPtr->chisqParams->approximant = 
     params->approximant;
+
+  outputPtr->order = params->order;
 
   /* create memory for the chisq input */
   outputPtr->chisqInput = (FindChirpChisqInput *)

@@ -1586,6 +1586,7 @@ int main( int argc, char *argv[] )
   fcInitParams->createRhosqVec = writeRhosq;
   fcInitParams->ovrlap         = ovrlap;
   fcInitParams->approximant    = approximant;
+  fcInitParams->order          = order;
   fcInitParams->createCVec     = writeCData;
 
 
@@ -1913,6 +1914,7 @@ int main( int argc, char *argv[] )
       case GeneratePPN:
       case PadeT1:
       case EOB:
+      case EOBNR:
       case FindChirpPTF:
         if ( vrbflg ) 
           fprintf( stdout, "findchirp conditioning data for TD or PTF\n" );
@@ -2197,6 +2199,7 @@ int main( int argc, char *argv[] )
           case GeneratePPN:
           case PadeT1:
           case EOB:
+          case EOBNR:
             LAL_CALL( LALFindChirpTDTemplate( &status, fcFilterInput->fcTmplt, 
                   bankCurrent, fcTmpltParams ), &status );
             break;
@@ -2327,6 +2330,7 @@ int main( int argc, char *argv[] )
               case GeneratePPN:
               case PadeT1:
               case EOB:
+              case EOBNR:
                 /* construct normalization for time domain templates... */
                 LAL_CALL( LALFindChirpTDNormalize( &status, 
                       fcFilterInput->fcTmplt, fcFilterInput->segment, 
@@ -2534,6 +2538,7 @@ int main( int argc, char *argv[] )
               case GeneratePPN:
               case PadeT1:
               case EOB:
+              case EOBNR:
               case FindChirpSP:
                 /* find any events in the time series of snr and chisq */
                 LAL_CALL( LALFindChirpClusterEvents( &status,
@@ -2632,6 +2637,7 @@ int main( int argc, char *argv[] )
         case GeneratePPN:
         case PadeT1:
         case EOB:
+        case EOBNR:
         case FindChirpSP:
           /* the chisq bins need to be re-computed for the next template */
           for ( i = 0; i < fcSegVec->length ; ++i )
@@ -3957,6 +3963,10 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         else if ( ! strcmp( "EOB", optarg ) )
         {
           approximant = EOB;
+        }
+        else if ( ! strcmp( "EOBNR", optarg ) )
+        {
+          approximant = EOBNR;
         }
         else if ( ! strcmp( "FindChirpSP", optarg ) )
         {

@@ -65,6 +65,9 @@ LALFindChirpClusterEvents (
     )
 /* </lalVerbatim> */
 {
+
+  int                   xlalRetCode = 0;
+
   UINT4                 numPoints = 0;
   UINT4                 ignoreIndex = 0;
   UINT4                 eventStartIdx = 0;
@@ -101,56 +104,12 @@ LALFindChirpClusterEvents (
   ASSERT( !*eventList, status, FINDCHIRPH_ENNUL, FINDCHIRPH_MSGENNUL );
 
   /* check the allowed approximants */
-  switch ( params->approximant )
+  xlalRetCode = XLALInspiralGetApproximantString( searchName, LIGOMETA_SEARCH_MAX,
+                 params->approximant, params->order );
+
+  if ( xlalRetCode == XLAL_FAILURE )
   {
-    case TaylorT1:
-      LALSnprintf( searchName, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
-          "TaylorT1twoPN" );
-      break;
-
-    case TaylorT2:
-      LALSnprintf( searchName, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
-          "TaylorT2twoPN" );
-      break;
-
-    case TaylorT3:
-      LALSnprintf( searchName, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
-          "TaylorT3twoPN" );
-      break;
-
-    case TaylorF2:
-      LALSnprintf( searchName, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
-          "TaylorF2twoPN" );
-      break;
-
-    case GeneratePPN:
-      LALSnprintf( searchName, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
-          "GeneratePPNtwoPN" );
-      break;
-
-    case PadeT1:
-      LALSnprintf( searchName, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
-          "PadeT1twoPN" );
-      break;
-
-    case EOB:
-      LALSnprintf( searchName, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
-          "EOBtwoPN" );
-      break;
-
-    case FindChirpSP:
-      LALSnprintf( searchName, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
-          "FindChirpSPtwoPN" );
-      break;
-
-    case FindChirpPTF:
-      LALSnprintf( searchName, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
-          "FindChirpPTFthreePointFivePN" );
-      break;
-
-    default:
-      ABORT( status, FINDCHIRPH_EUAPX, FINDCHIRPH_MSGEUAPX );
-      break;
+    ABORTXLAL( status );
   }
 
   /* make sure the approximant in the tmplt and segment agree */

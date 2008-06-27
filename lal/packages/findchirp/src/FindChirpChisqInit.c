@@ -135,6 +135,7 @@ LALFindChirpChisqVetoInit (
     case FindChirpPTF:
     case PadeT1:
     case EOB:
+    case EOBNR:
     case BCV:
     case BCVSpin:
       break;
@@ -322,6 +323,7 @@ LALFindChirpChisqVetoFinalize (
     case FindChirpPTF:
     case PadeT1:
     case EOB:
+    case EOBNR:
     case BCV:
     case BCVSpin:
       break;
