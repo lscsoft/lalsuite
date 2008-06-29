@@ -1173,7 +1173,7 @@ int MAIN( int argc, char *argv[]) {
 	  XLALNextDopplerSkyPos( &dopplerpos, &thisScan );
 	}
 
-	} /* end while loop over 1st stage coarse skygrid */
+    } /* end while loop over 1st stage coarse skygrid */
 
 #ifdef OUTPUT_TIMING
   {
@@ -1190,7 +1190,7 @@ int MAIN( int argc, char *argv[]) {
   LogPrintfVerbatim ( LOG_DEBUG, " done.\n");
 
   LogPrintf(LOG_DETAIL, "Finished analysis and now printing results and cleaning up...");
-	
+  
 
 #if (!HS_CHECKPOINTING)
   /* print 1st stage candidates */  
@@ -2553,7 +2553,7 @@ void GetHoughCandidates_threshold(LALStatus            *status,
 	      
 	      /* the above function uses atan2() which returns alpha in
 		 the range [-pi,pi] => add pi to it */
-	      thisCandidate.alpha = sourceLocation.alpha + LAL_PI;
+	      thisCandidate.alpha = sourceLocation.alpha;
 	      thisCandidate.delta = sourceLocation.delta;
 	      
 	      out->list[numCandidates] = thisCandidate;
@@ -2608,7 +2608,7 @@ void GetHoughCandidates_threshold(LALStatus            *status,
     TRY( LALStereo2SkyLocation (status->statusPtr, &sourceLocationBest, 
 				jMax, iMax, patch, parDem), status);
 
-    thisCandidate.alphaBest = sourceLocationBest.alpha + LAL_PI;
+    thisCandidate.alphaBest = sourceLocationBest.alpha;
     thisCandidate.deltaBest = sourceLocationBest.delta;
     
     TRY( LALHoughmapMeanVariance( status->statusPtr, &meanSig, &varianceSig, ht), status);
@@ -3184,7 +3184,7 @@ void GetSemiCohToplist(LALStatus            *status,
     line.AlphaBest = in->list[k].alphaBest;
     line.DeltaBest = in->list[k].deltaBest;
     line.MeanSig = (in->list[k].meanSig - meanN) / sigmaN;
-    line.VarianceSig = in->list[k].varianceSig / sigmaN;
+    line.VarianceSig = in->list[k].varianceSig / (sigmaN * sigmaN);
 
     debug = INSERT_INTO_HOUGHFSTAT_TOPLIST( list, line);
 
