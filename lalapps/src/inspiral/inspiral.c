@@ -2539,6 +2539,16 @@ int main( int argc, char *argv[] )
               case PadeT1:
               case EOB:
               case EOBNR:
+                /* recompute the template norm since it has been over written */
+                /* ( When doing the chisq test and the bank veto for          */
+                /* time domain searches that don't use the                    */
+                /* the template power vec that goes as f^-(7/3) )             */
+                if (numChisqBins > 0 && subBankCurrent->subBankSize > 1)
+                {
+                LAL_CALL( LALFindChirpTDNormalize( &status,
+                      fcFilterInput->fcTmplt, fcFilterInput->segment,
+                      fcDataParams ), &status );
+                }
               case FindChirpSP:
                 /* find any events in the time series of snr and chisq */
                 LAL_CALL( LALFindChirpClusterEvents( &status,
