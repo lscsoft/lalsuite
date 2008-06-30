@@ -58,11 +58,11 @@ int main(int argc, char *argv[]){
 
   INT4Vector *starts=NULL, *stops=NULL; /* science segment start and stop times */
   INT4 numSegs=0;
-  
+
   FilterResponse filtresp; /* variable to hold the filter response function */
-  
+
   CHAR *pos=NULL;
-  
+
   /* get input options */
   get_input_args(&inputParams, argc, argv);
 
@@ -394,7 +394,7 @@ allowed file size %d!\n", MAXLENGTH);
       hetParams.timestamp = times->data[0]; /* set initial time stamp */
       
       /* resize vector to actual size */
-      data = XLALResizeCOMPLEX16TimeSeries( data, 1, i );
+      data = XLALResizeCOMPLEX16TimeSeries( data, 0, i );
       hetParams.length = i;
 
       times = XLALResizeREAL8Vector(times, i);
@@ -799,7 +799,7 @@ defined.\n");
     fprintf(stderr, "Error... sample rate is less than the resample rate.\n");
     exit(0);
   }
-  
+
   /* FIXME: This check (fmod) doesn't work if any optimisation flags are set
     when compiling!! */
   /* check that sample rate / resample rate is an integer */
@@ -807,12 +807,12 @@ defined.\n");
     fprintf(stderr, "Error... invalid sample rates.\n");
     exit(0);
   }*/
-  
+
   if(inputParams->freqfactor < 0.){
     fprintf(stderr, "Error... frequency factor must be greater than zero.\n");
     exit(0);
   }
-  
+
   /* check that we're not trying to set a binary file input for a coarse
      heterodyne */
   if(inputParams->binaryinput){
@@ -841,13 +841,13 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
 
   BinaryPulsarInput binInput, binInput2;
   BinaryPulsarOutput binOutput, binOutput2;
-   
+
   COMPLEX16 dataTemp, dataTemp2;
-  
+
   REAL8 df=0., fcoarse=0., resp=0., srate=0.;
   REAL8 filtphase=0.;
   UINT4 position=0, middle=0;
-   
+
   /* set the position and frequency epochs if not already set */
   if(hetParams.het.pepoch == 0. && hetParams.het.posepoch != 0.)
     hetParams.het.pepoch = hetParams.het.posepoch;
@@ -860,7 +860,7 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
     else if(hetParams.hetUpdate.posepoch == 0. && 
       hetParams.hetUpdate.pepoch != 0.)
       hetParams.hetUpdate.posepoch = hetParams.hetUpdate.pepoch;
-      
+
     T0Update = hetParams.hetUpdate.pepoch;
   }
 
@@ -1265,7 +1265,7 @@ COMPLEX16TimeSeries *resample_data(COMPLEX16TimeSeries *data,
 
   length = (INT4)floor( ROUND( resampleRate*data->data->length )/sampleRate );
   size = (INT4)ROUND( sampleRate/resampleRate );
-    
+
   series = XLALCreateCOMPLEX16TimeSeries( "", &epoch, 0., 1./resampleRate,
     &lalSecondUnit, length );
 
@@ -1287,7 +1287,7 @@ COMPLEX16TimeSeries *resample_data(COMPLEX16TimeSeries *data,
       /* take the middle point - if just resampling rather than averaging */
       /*series->data->data[count].re = data->data->data[i + size/2].re;
       series->data->data[count].im = data->data->data[i + size/2].im;*/
-      
+
       times->data[count] = (REAL8)data->epoch.gpsSeconds +
         (REAL8)data->epoch.gpsNanoSeconds/1.e9 + (1./resampleRate)/2. +
         ((REAL8)count/resampleRate);
@@ -1304,7 +1304,7 @@ COMPLEX16TimeSeries *resample_data(COMPLEX16TimeSeries *data,
 
     count=0;
     j=0;
-    
+
     for( i=0;i<(INT4)starts->length;i++ ){
       /* find first bit of data within a segment */
       if( starts->data[i] <times->data[j] && stops->data[i] <= times->data[j] ){
@@ -1329,7 +1329,7 @@ COMPLEX16TimeSeries *resample_data(COMPLEX16TimeSeries *data,
         fprintf(stderr, "End resampling\n");
         break;
       }
-      
+
       while( times->data[j] < starts->data[i] )
         j++;
         
@@ -1344,7 +1344,7 @@ COMPLEX16TimeSeries *resample_data(COMPLEX16TimeSeries *data,
       /* check that data is contiguous within a segment - if not split in two */
       for( k=0;k<(INT4)(duration*sampleRate)-1;k++ ){
         /* check for break in the data */
-        if( (times->data[j+k+1] - times->data[j+k]) > 1./sampleRate ){        
+        if( (times->data[j+k+1] - times->data[j+k]) > 1./sampleRate ){
           /* get duration of segment up until time of split */
           duration = times->data[j+k] - starts->data[i] - ((1./sampleRate)/2.);
              
@@ -1365,12 +1365,13 @@ COMPLEX16TimeSeries *resample_data(COMPLEX16TimeSeries *data,
         continue; /* if segment is smaller than the number of samples needed
                      then skip to next */
       }
-      
+
       remainder = (INT4)(duration*sampleRate)%size;
-      
+
       prevdur = j;
+
       for( j=prevdur+floor(remainder/2);j<prevdur + (INT4)(duration*sampleRate)
-          -ceil(remainder/2) - 1;j+=size ){
+          -ceil(remainder/2)-1 ; j+=size ){
         tempData.re = 0.;
         tempData.im = 0.;
 
@@ -1390,9 +1391,9 @@ COMPLEX16TimeSeries *resample_data(COMPLEX16TimeSeries *data,
 
   if( (INT4)times->length > count )
     times = XLALResizeREAL8Vector( times, count );
-  
+
   if( (INT4)series->data->length > count )
-    series = XLALResizeCOMPLEX16TimeSeries( series, 1, count );
+    series = XLALResizeCOMPLEX16TimeSeries( series, 0, count );
 
   /* create time stamps */
   series->deltaT = 1./resampleRate;
@@ -1737,7 +1738,7 @@ INT4 remove_outliers(COMPLEX16TimeSeries *data, REAL8Vector *times,
   }
   
   /* resize data and times */
-  data = XLALResizeCOMPLEX16TimeSeries(data, 1, j);
+  data = XLALResizeCOMPLEX16TimeSeries(data, 0, j);
   times = XLALResizeREAL8Vector(times, j);
   
   return data->data->length - j;
