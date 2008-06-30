@@ -41,7 +41,6 @@ GeneratePPNAmpCorInspiralTest [-m m1 m2] [-r dist] [-i inc phii psi] [-f fmin fm
 #define GENERATEPPNINSPIRALTESTC_EVAL   3
 #define GENERATEPPNINSPIRALTESTC_EFILE  4
 #define GENERATEPPNINSPIRALTESTC_EPRINT 5
-#define DEBUG 0
 #define BUFFSIZE 1024     /* Number of timesteps buffered */
 
 #define GENERATEPPNINSPIRALTESTC_MSGENORM  "Normal exit"
@@ -576,11 +575,10 @@ main(int argc, char **argv)
   LALFree( waveform.f );
   LALFree( waveform.phi );
 
-  /* Housekeeping of the extension */
-  LALDestroyVector(&stat, &hoft);
-  LALSDestroyVector(&stat, &(am_response_series.pPlus->data));
-  LALSDestroyVector(&stat, &(am_response_series.pCross->data));
-  LALSDestroyVector(&stat, &(am_response_series.pScalar->data));
+  LALDestroyVector( &stat, &hoft );
+  LALSDestroyVector( &stat, &(am_response_series.pPlus->data) );
+  LALSDestroyVector( &stat, &(am_response_series.pCross->data) );
+  LALSDestroyVector( &stat, &(am_response_series.pScalar->data) );
   LALDestroyRealFFTPlan( &stat, &fwdRealPlan );
   LALDestroyRealFFTPlan( &stat, &revRealPlan );
   LALCDestroyVector( &stat, &Hf.data );
