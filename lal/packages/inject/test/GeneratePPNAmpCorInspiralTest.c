@@ -201,7 +201,7 @@ main(int argc, char **argv)
   int arg;                      /* command-line argument counter */
   static LALStatus stat;        /* status structure */
   CHAR *outfile = NULL;         /* name of outfile */
-  CHAR *fftout  = NULL; 	/* FFT outfile */
+  CHAR *fftout  = NULL; 	      /* FFT outfile */
   REAL4 m1 = M1, m2 = M2;       /* binary masses */
   REAL4 dist = DIST;            /* binary distance */
   REAL4 inc = 0.0, phii = 0.0, psi = LAL_PI_2;  /* inclination, coalescence phase, and polarization angle */
@@ -209,7 +209,7 @@ main(int argc, char **argv)
   REAL8 dt = DT;                /* sampling interval */
   INT4 order = ORDER;           /* PN order */
   INT4 amp = AMP;               /* Amplitude switches */
-  UINT4 taper = 0;		/* Taper switch (On > 0) */
+  UINT4 taper = 0;		          /* Taper switch (On > 0) */
 
   /* Other variables. */
   UINT4 i;                      /* index */
@@ -217,7 +217,7 @@ main(int argc, char **argv)
   PPNParamStruc params;         /* input parameters */
   CoherentGW waveform;          /* output waveform */
   FILE *fp;                     /* output file pointer */
-  static REAL4Vector	    *hoft;
+  static REAL4Vector	      *hoft;
   LALDetAMResponseSeries    am_response_series = {NULL,NULL,NULL};
   REAL4TimeSeries           plus_series, cross_series, scalar_series;
   LALTimeIntervalAndNSample time_info;
@@ -425,9 +425,8 @@ main(int argc, char **argv)
    /*                                            *
    ********************************************************************************************************
    * This Test file now calculates the polar response functions for the detector and sky position defined *
-   * below. It also performs the fourier transform to produce H(f).                                       *
+   * below. It also performs the fourier transform to produce H(f) if an FFToutfie is specified.          *
    *                                                                                                      *
-   * The output now has hPlus, hCross instead of aPlus and aCross. It also has h(t), ReH(f) and ImH(f)    *
    ********************************************************************************************************/
 
   /*************************** h(t)*/
@@ -477,60 +476,40 @@ main(int argc, char **argv)
                                 &am_response_series,
                                 &det_and_pulsar,
                                 &time_info);
-  
-
-  for ( i = 0; i < waveform.h->data->length; i++){
-    hoft->data[i] = waveform.h->data->data[2*i]*am_response_series.pPlus->data->data[i] +
+ 
+  for ( i = 0; i < waveform.h->data->length; i++)
+  {
+      hoft->data[i] = waveform.h->data->data[2*i]*am_response_series.pPlus->data->data[i] +
                         waveform.h->data->data[2*i+1]*am_response_series.pCross->data->data[i];
-#if DEBUG
-    if(i <5){
-      printf("\n\n  hplus = %e   hcross = %e    pplus = %e    pcross = %e \n", 
-              waveform.h->data->data[2*i],
-              waveform.h->data->data[2*i+1],
-              am_response_series.pPlus->data->data[i],
-              am_response_series.pCross->data->data[i]);		  
-      printf("  hoft %e", hoft->data[i]);
-    } 
-#endif
   }	
 
-  /* Taper hoft */
-  if( taper > 0 ) 
-    LALInspiralWaveTaper(&stat, hoft, 3);
+  if( fftout )
+	{
+    /* Taper hoft */
+    if( taper > 0 ) 
+      LALInspiralWaveTaper(&stat, hoft, 3);
 
-  /*********************** End h(t)*/
+    LALSCreateVector( &stat, &ht.data, waveform.h->data->length );
+    LALCCreateVector( &stat, &Hf.data, waveform.h->data->length / 2 + 1 );
   
-  /*************************** H(F)*/
-
-
-  LALSCreateVector( &stat, &ht.data, waveform.h->data->length );
-  LALCCreateVector( &stat, &Hf.data, waveform.h->data->length / 2 + 1 );
+    LALCreateForwardRealFFTPlan( &stat, &fwdRealPlan, waveform.h->data->length, 0 );
+    LALCreateReverseRealFFTPlan( &stat, &revRealPlan, waveform.h->data->length, 0 );
   
-  LALCreateForwardRealFFTPlan( &stat, &fwdRealPlan, waveform.h->data->length, 0 );
-  LALCreateReverseRealFFTPlan( &stat, &revRealPlan, waveform.h->data->length, 0 );
-  
-  ht.f0 = 0;
-  ht.deltaT = dt;
-  for( i = 0; i < waveform.h->data->length ; i++)
-    ht.data->data[i] = hoft->data[i];
+    ht.f0 = 0;
+    ht.deltaT = dt;
+    for( i = 0; i < waveform.h->data->length ; i++)
+      ht.data->data[i] = hoft->data[i];
     
-  LALTimeFreqRealFFT( &stat, &Hf, &ht, fwdRealPlan );
+    LALTimeFreqRealFFT( &stat, &Hf, &ht, fwdRealPlan );
 
-#if DEBUG
-  printf("\n\n h(t)length = %d\n H(F)length = %d\n ", waveform.h->data->length, Hf.data->length);
-  printf("\n  Writing FFT data to fourier file...\n\n");
-#endif  
+    if( ( fourier = fopen(fftout, "w")) == NULL)
+      fourier = fopen("fftout", "w");
 
-  if( ( fourier = fopen(fftout, "w")) == NULL)
-    fourier = fopen("fftout", "w");
+    for(i = 0; i < waveform.h->data->length/ 2 + 1; i++, f+=Hf.deltaF) 
+      fprintf(fourier," %f %1.6e %1.6e\n", f, Hf.data->data[i].re, Hf.data->data[i].im);	  
+    fclose(fourier);
 
-  for(i = 0; i < waveform.h->data->length/ 2 + 1; i++, f+=Hf.deltaF) 
-    fprintf(fourier," %f %10.3e %10.3e\n", f, Hf.data->data[i].re, Hf.data->data[i].im);	  
-  fclose(fourier);
-
-  LALFreqTimeRealFFT( &stat, &ht, &Hf, revRealPlan );
-
-  /*********************** End H(f)*/
+  }
 
   /* Print termination information. */
   LALSnprintf( message, MSGLENGTH, "%d: %s", params.termCode,
@@ -572,15 +551,14 @@ main(int argc, char **argv)
       return GENERATEPPNINSPIRALTESTC_EFILE;
     }
 
-    /* t phi f h+ hx ht Hfre Hfim ht? */
+    /* t phi f h+ hx ht  */
     for ( i = 0; i < waveform.h->data->length; i++, t += dt )
-      fprintf( fp, "%f %.3e %10.3e %10.3e %10.3e %10.3e %10.3e\n", t,
+      fprintf( fp, "%f %.3e %1.6e %1.6e %1.6e %1.6e \n", t,
                   waveform.phi->data->data[i],
 		  waveform.f->data->data[i],
 		  waveform.h->data->data[2*i],
 		  waveform.h->data->data[2*i+1],
-		  hoft->data[i],
-		  ht.data->data[i]);
+		  hoft->data[i]);
     
     fclose( fp );
   }
