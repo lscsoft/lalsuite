@@ -709,8 +709,8 @@ int main( int argc, char *argv[] )
     /* use glob() to get a list of the input file names */
     if ( glob( inputGlob, GLOB_ERR, NULL, &globbedFiles ) )
     {
-      fprintf( stderr, "error globbing files from %s\n", inputGlob );
       perror( "error:" );
+      fprintf( stderr, "error globbing files from %s\n", inputGlob );
       exit( 1 );
     }
 
@@ -728,8 +728,8 @@ int main( int argc, char *argv[] )
     fp = fopen( inputFileName, "r" );
     if ( ! fp )
     {
-      fprintf( stderr, "could not open file containing list of xml files\n" );
       perror( "error:" );
+      fprintf( stderr, "could not open file containing list of xml files\n" );
       exit( 1 );
     }
 

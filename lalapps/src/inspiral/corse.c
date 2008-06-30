@@ -767,8 +767,8 @@ int main( int argc, char *argv[] )
     /* use glob() to get a list of the input file names */
     if ( glob( inputGlobZero, GLOB_ERR, NULL, &globbedZeroFiles ) )
     {
-      fprintf( stderr, "error globbing files from %s\n", inputGlobZero );
       perror( "error:" );
+      fprintf( stderr, "error globbing files from %s\n", inputGlobZero );
       exit( 1 );
     }
 
@@ -787,9 +787,9 @@ int main( int argc, char *argv[] )
     fp = fopen( inputFileNameZero, "r" );
     if ( ! fp )
     {
+      perror( "error:" );
       fprintf( stderr,
           "could not open file containing list of zero-lag xml files\n" );
-      perror( "error:" );
       exit( 1 );
     }
 
@@ -833,8 +833,8 @@ int main( int argc, char *argv[] )
     /* use glob() to get a list of the input file names */
     if ( glob( inputGlobSlide, GLOB_ERR, NULL, &globbedSlideFiles ) )
     {
-      fprintf( stderr, "error globbing files from %s\n", inputGlobSlide );
       perror( "error:" );
+      fprintf( stderr, "error globbing files from %s\n", inputGlobSlide );
       exit( 1 );
     }
 
@@ -853,9 +853,9 @@ int main( int argc, char *argv[] )
     fp = fopen( inputFileNameSlide, "r" );
     if ( ! fp )
     {
+      perror( "error:" );
       fprintf( stderr,
           "could not open file containing list of slide xml files\n" );
-      perror( "error:" );
       exit( 1 );
     }
 
