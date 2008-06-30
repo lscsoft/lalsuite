@@ -69,6 +69,9 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <FrameL.h>
 #include <series.h>
 
+
+/* #define DEBUG 1 */  /* Uncomment this line to enable debugging fprintfs and mem usage */
+
 double hypot(double, double);
 
 extern char *optarg;
@@ -220,14 +223,18 @@ int Finalise(void);
 int main(int argc,char *argv[])
 {
   int i, N; 
-
-   fprintf(stdout,"Made it to: -4\n"); 
-   printmemuse();  
+   
+   #ifdef DEBUG
+     fprintf(stdout,"Made it to: -4\n"); 
+     printmemuse();  
+   #endif
 
   if (ReadCommandLine(argc,argv,&CommandLineArgs)) return 1;
 
-   fprintf(stdout,"Made it to: -3\n"); 
-   printmemuse();  
+   #ifdef DEBUG
+     fprintf(stdout,"Made it to: -3\n"); 
+     printmemuse();
+   #endif
 
   if (ReadCalFiles(CommandLineArgs)) return 2;
 
@@ -333,10 +340,10 @@ int Initialise(struct CommandLineArgsTag CLA)
       return 1;
     }
   /*   setvbuf( fpout, NULL, _IONBF, 0 );  */
-  
-   fprintf(stdout,"Made it to: 0\n"); 
-   printmemuse();  
-
+   #ifdef DEBUG
+     fprintf(stdout,"Made it to: 0\n"); 
+     printmemuse();  
+   #endif
    /* Open individual bin output file */
    fpoutbin=fopen(CLA.noisefilebin,"w");
    if (fpoutbin==NULL)
@@ -344,35 +351,37 @@ int Initialise(struct CommandLineArgsTag CLA)
        fprintf(stderr,"Could not open %s!\n",CLA.noisefilebin);
        return 1;
      }
-   
-   fprintf(stdout,"Made it to: 0b \n");
-   printmemuse();
-
+   #ifdef DEBUG
+     fprintf(stdout,"Made it to: 0b \n");
+     printmemuse();
+   #endif
 
   LALCreateForwardREAL8FFTPlan( &status, &fftPlanDouble, hoft.data->length/4, 0 );
   TESTSTATUS( &status );
-
-   fprintf(stdout,"Made it to: 1\n"); 
-   printmemuse();  
-
+   
+   #ifdef DEBUG
+     fprintf(stdout,"Made it to: 1\n"); 
+     printmemuse();  
+   #endif
   LALCreateForwardREAL4FFTPlan( &status, &fftPlan, derr.data->length/4, 0 );
   TESTSTATUS( &status );
-
-   fprintf(stdout,"Made it to: 2\n"); 
-   printmemuse();  
-
+   #ifdef DEBUG
+     fprintf(stdout,"Made it to: 2\n"); 
+     printmemuse();  
+   #endif
   LALZCreateVector( &status, &ffthtData, (hoft.data->length/4) / 2 + 1 );
   TESTSTATUS( &status );  
-
-   fprintf(stdout,"Made it to: 3\n"); 
-   printmemuse();  
-
+   
+   #ifdef DEBUG
+     fprintf(stdout,"Made it to: 3\n"); 
+     printmemuse();  
+   #endif
   LALCCreateVector( &status, &fftderrData, (hoft.data->length/4) / 2 + 1 );
   TESTSTATUS( &status );  
-  
-   fprintf(stdout,"Made it to: 4\n"); 
-   printmemuse();  
-
+   #ifdef DEBUG
+     fprintf(stdout,"Made it to: 4\n"); 
+     printmemuse();  
+   #endif
   return 0;
 }
 
@@ -545,9 +554,8 @@ int ComputeNoise(struct CommandLineArgsTag CLA, int n)
 {
 
   INT4 k,j;
-  REAL8 mean_Sh_derr, mean_caldr, mean_caldi, ratio_r, ratio_i, var_r, var_i,diff_r,diff_i;
-  REAL8 mean_Sh_hoft, mean_hr, mean_hi;
-  REAL4 mean_overlap, mean_r, mean_i;
+  REAL8 mean_Sh_derr;
+  REAL8 mean_Sh_hoft;
   COMPLEX8 R,H,C;
 
   /* Fill data vectors with data */
@@ -579,21 +587,27 @@ int ComputeNoise(struct CommandLineArgsTag CLA, int n)
 	      derr.epoch.gpsSeconds, hoft.epoch.gpsSeconds, gpsepoch.gpsSeconds);
       return 1;
     }
-
-   fprintf(stdout,"Made it to: 5\n"); 
-   printmemuse();  
+   
+    #ifdef DEBUG
+     fprintf(stdout,"Made it to: 5\n"); 
+     printmemuse();  
+    #endif
 
   XLALResampleREAL4TimeSeries( &derr, derr.deltaT*4);
   TESTSTATUS( &status );
-
-   fprintf(stdout,"Made it to: 6\n"); 
-   printmemuse();  
+   
+   #ifdef DEBUG
+     fprintf(stdout,"Made it to: 6\n"); 
+     printmemuse();  
+   #endif
 
   XLALResampleREAL8TimeSeries( &hoft, hoft.deltaT*4);
   TESTSTATUS( &status );
 
-   fprintf(stdout,"Made it to: 7\n"); 
-   printmemuse();  
+   #ifdef DEBUG
+     fprintf(stdout,"Made it to: 7\n"); 
+     printmemuse();  
+   #endif
 
   /* Window the data */
   for(k=0;k<(INT4)(CLA.t/derr.deltaT +0.5);k++)
@@ -605,22 +619,26 @@ int ComputeNoise(struct CommandLineArgsTag CLA, int n)
       hoft.data->data[k] *= 2.0*derrwin->data[k];
     }
 
-/*   for(k=0;k<(INT4)(CLA.t/hoft.deltaT +0.5);k++) */
-/*     { */
-/*       fprintf(stdout,"%e\n",hoft.data->data[k]); */
-/*     } */
+  #ifdef DEBUG
+  for(k=0;k<(INT4)(CLA.t/hoft.deltaT +0.5);k++) 
+    { 
+      fprintf(stdout,"%e\n",hoft.data->data[k]); 
+    } 
+  #endif
 
   /* FFT the data */
   XLALREAL8ForwardFFT( ffthtData, hoft.data, fftPlanDouble );
 
-   fprintf(stdout,"Made it to: 8\n"); 
-   printmemuse();  
-
+   #ifdef DEBUG
+     fprintf(stdout,"Made it to: 8\n"); 
+     printmemuse();  
+   #endif
   XLALREAL4ForwardFFT( fftderrData, derr.data, fftPlan );
 
-   fprintf(stdout,"Made it to: 9\n"); 
-   printmemuse();  
-
+   #ifdef DEBUG
+     fprintf(stdout,"Made it to: 9\n"); 
+     printmemuse();  
+   #endif
 
   fprintf(fpout, "%d ", gpsepoch.gpsSeconds);
   fprintf(fpoutbin, "%d \n", gpsepoch.gpsSeconds);
@@ -630,13 +648,6 @@ int ComputeNoise(struct CommandLineArgsTag CLA, int n)
       /* Compute the noise */
       mean_Sh_derr = 0.0;
       mean_Sh_hoft = 0.0;
-      mean_overlap = 0.0;
-      mean_r=mean_i=0.0;
-      mean_hr = mean_hi = 0.0;
-      mean_caldr = mean_caldi = 0.0;
-      ratio_r =ratio_i= 0.0;
-      var_r=var_i=0.0;
-      diff_r = diff_i=0.0;
       {
 	int firstbin=(INT4)(frequencies[j]*CLA.t+0.5);
 	int nsamples=(INT4)(CLA.b*CLA.t+0.5);
@@ -669,49 +680,18 @@ int ComputeNoise(struct CommandLineArgsTag CLA, int n)
 	    
 	    mean_Sh_derr += dpsq/nsamples;
 	    mean_Sh_hoft += hpsq/nsamples;
-      
-	    mean_r += (caldr-hr)/caldr/nsamples;
-	    mean_i += (caldi-hi)/caldi/nsamples;
-	    
-	    mean_hr += hr/nsamples;
-	    mean_hi += hi/nsamples;
-	    mean_caldr += caldr/nsamples;
-	    mean_caldi += caldi/nsamples;
-	    
-	    ratio_r += (hr/caldr)/nsamples;
-	    ratio_i += (hi/caldi)/nsamples;
-	    
-	    var_r += (pow(hr,2.0)/pow(caldr,2.0))/nsamples;
-	    var_i += (pow(hi,2.0)/pow(caldi,2.0))/nsamples;
-
-            diff_r += pow((caldr*2.0*derr.deltaT/(REAL4)derr.data->length) - (hr*2.0*hoft.deltaT/(REAL4)hoft.data->length),2.0)/nsamples;
-            diff_i += pow((caldi*2.0*derr.deltaT/(REAL4)derr.data->length) - (hi*2.0*hoft.deltaT/(REAL4)hoft.data->length),2.0)/nsamples;
-	    
+	   
 	    if(k==0)
 	      {
- 	        fprintf(fpoutbin,"%e %e %e %e \n",hr,hi,caldr,caldi); 
+ 	        fprintf(fpoutbin,"%e %e %e %e \n",hr*sqrt(2.0*hoft.deltaT/(REAL4)hoft.data->length),hi*sqrt(2.0*hoft.deltaT/(REAL4)hoft.data->length),caldr*sqrt(2.0*derr.deltaT/(REAL4)derr.data->length),caldi*sqrt(2.0*derr.deltaT/(REAL4)derr.data->length)); 
               }
 	  }
 	mean_Sh_derr *= 2.0*derr.deltaT/(REAL4)derr.data->length;
 	mean_Sh_hoft *= 2.0*hoft.deltaT/(REAL4)hoft.data->length;
 	
-	mean_hr *= sqrt(2.0*hoft.deltaT/(REAL4)hoft.data->length); 
-        mean_hi *= sqrt(2.0*hoft.deltaT/(REAL4)hoft.data->length);  
-	mean_caldr *= sqrt(2.0*derr.deltaT/(REAL4)derr.data->length);  
-	mean_caldi *= sqrt(2.0*derr.deltaT/(REAL4)derr.data->length); 
-	
-        ratio_r *= sqrt((2.0*hoft.deltaT/(REAL4)hoft.data->length) / (2.0*derr.deltaT/(REAL4)derr.data->length)); 
-        ratio_i *= sqrt((2.0*hoft.deltaT/(REAL4)hoft.data->length) / (2.0*derr.deltaT/(REAL4)derr.data->length)); 
-	var_r *= (2.0*hoft.deltaT/(REAL4)hoft.data->length) / (2.0*derr.deltaT/(REAL4)derr.data->length); 
-	var_i *= (2.0*hoft.deltaT/(REAL4)hoft.data->length) / (2.0*derr.deltaT/(REAL4)derr.data->length); 
-
-
-	var_r = var_r - pow(ratio_r,2.0);
-	var_i = var_i - pow(ratio_i,2.0);
 	
       }
-      fprintf(fpout, "%e %e %e %e %e %e %e %e %e %e %e %e ",sqrt(mean_Sh_hoft), sqrt(mean_Sh_derr),
-	      mean_hr,mean_hi,mean_caldr,mean_caldi,ratio_r,ratio_i,sqrt(var_r),sqrt(var_i),diff_r,diff_i);
+      fprintf(fpout, "%e %e ",sqrt(mean_Sh_hoft), sqrt(mean_Sh_derr));
       
     }
   
@@ -724,9 +704,10 @@ int ComputeNoise(struct CommandLineArgsTag CLA, int n)
   LALResizeREAL4TimeSeries(&status, &derr, 0,derr.data->length*4);
   derr.deltaT= derr.deltaT/4;
 
-   fprintf(stdout,"Made it to: 10\n"); 
-   printmemuse();  
-
+   #ifdef DEBUG
+     fprintf(stdout,"Made it to: 10\n"); 
+     printmemuse();  
+   #endif
   return 0;
 }
 
@@ -918,58 +899,80 @@ int ReadCalFiles(struct CommandLineArgsTag CLA)
 
 int Finalise(void)
 {
+
+   #ifdef DEBUG
    fprintf(stdout,"Made it to: 12\n"); 
-   printmemuse();  
+   printmemuse(); 
+   #endif 
 
   LALDDestroyVector(&status,&hoft.data);
   TESTSTATUS( &status );
 
+   #ifdef DEBUG
    fprintf(stdout,"Made it to: 11\n"); 
    printmemuse();  
+   #endif 
 
   LALDestroyVector(&status,&derr.data);
   TESTSTATUS( &status );
 
+   #ifdef DEBUG
    fprintf(stdout,"Made it to: 13\n"); 
    printmemuse();  
+   #endif 
 
   LALDestroyVector(&status,&derrwin);
   TESTSTATUS( &status );
 
+
+   #ifdef DEBUG
    fprintf(stdout,"Made it to: 14\n"); 
    printmemuse();  
+   #endif 
 
   LALZDestroyVector( &status, &ffthtData);
 
+   #ifdef DEBUG
    fprintf(stdout,"Made it to: 15\n"); 
    printmemuse();  
+   #endif 
 
   LALCDestroyVector( &status, &fftderrData);
 
+   #ifdef DEBUG
    fprintf(stdout,"Made it to: 16\n"); 
-   printmemuse();  
+   printmemuse(); 
+   #endif  
 
   LALDestroyREAL8FFTPlan( &status, &fftPlanDouble );
 
+   #ifdef DEBUG
    fprintf(stdout,"Made it to: 17\n"); 
    printmemuse();  
+   #endif 
 
   LALDestroyREAL4FFTPlan( &status, &fftPlan );
 
+   #ifdef DEBUG
    fprintf(stdout,"Made it to: 18\n"); 
-   printmemuse();  
+   printmemuse(); 
+   #endif  
 
   LALFrClose(&status,&derrframestream);
   TESTSTATUS( &status );
 
+   #ifdef DEBUG
    fprintf(stdout,"Made it to: 19\n"); 
-   printmemuse();  
+   printmemuse(); 
+   #endif  
 
   LALFrClose(&status,&hoftframestream);
   TESTSTATUS( &status );
 
+   #ifdef DEBUG
    fprintf(stdout,"Made it to: 20\n"); 
    printmemuse();  
+   #endif 
 
   fclose(fpout);
   fclose(fpoutbin);
