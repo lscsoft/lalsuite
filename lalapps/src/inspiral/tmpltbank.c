@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2007 Alexander Dietz, Duncan Brown, Eirini Messaritaki, Gareth Jones, Benjamin Owen, Patrick Brady, Robert Adam Mercer, Stephen Fairhurst, Craig Robinson , Thomas Cokelaer
+*  Copyright (C) 2007 Alexander Dietz, Duncan Brown, Eirini Messaritaki, Gareth Jones, Benjamin Owen, Patrick Brady, Robert Adam Mercer, Stephen Fairhurst, Craig Robinson , Thomas Cokelaer, Evan Ochsner
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -1338,13 +1338,13 @@ fprintf(a, "                                 (newtonian|oneHalfPN|onePN|onePoint
 fprintf(a, "                                 twoPN|twoPointFive|threePN|threePointFivePN)\n");\
 fprintf(a, "  --approximant APPROX         set approximant of the waveform to APPROX\n");\
 fprintf(a, "                                 (TaylorT1|TaylorT2|TaylorT3|TaylorF1|TaylorF2|\n");\
-fprintf(a, "                                 PadeT1|PadeT2|EOB|BCV|SpinTaylorT3|BCVSpin)\n");\
+fprintf(a, "                                 PadeT1|PadeT2|EOB|EOBNR|BCV|SpinTaylorT3|BCVSpin)\n");\
 fprintf(a, " --num-freq-cutoffs Ncut       create a template bank with Ncut different upper \n");\
 fprintf(a, "                                 frequency cutoffs (must be a positive integer) \n");\
 fprintf(a, " --max-high-freq-cutoff MAX    formula to compute the largest high freq. cutoff\n");\
-fprintf(a, "                                 possible choices in ascending order: (SchwarzISCO|BKLISCO|ERD)\n");\
+fprintf(a, "                                 possible choices in ascending order: (SchwarzISCO|BKLISCO|LightRing|FRD|ERD|LRD)\n");\
 fprintf(a, " --min-high-freq-cutoff MIN    formula to compute the smallest high freq. cutoff\n");\
-fprintf(a, "                                 possible choices in ascending order: (SchwarzISCO|BKLISCO|ERD)\n");\
+fprintf(a, "                                 possible choices in ascending order: (SchwarzISCO|BKLISCO|LightRing|FRD|ERD|LRD)\n");\
 fprintf(a, "  --space SPACE                grid up template bank with mass parameters SPACE\n");\
 fprintf(a, "                                 (Tau0Tau2|Tau0Tau3|Psi0Psi3)\n");\
 fprintf(a, "  --grid-spacing GRIDSPACING   grid up template bank with GRIDSPACING\n");\
@@ -2084,6 +2084,10 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         {
           approximant = EOB;
         }
+        else if ( ! strcmp( "EOBNR", optarg ) )
+        {
+          approximant = EOBNR;
+        }
         else if ( ! strcmp( "BCV", optarg ) )
         {
           approximant = BCV;
@@ -2105,7 +2109,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
           fprintf( stderr, "invalid argument to --%s:\n"
               "unknown order specified: "
               "%s (must be one of: TaylorT1, TaylorT2, TaylorT3, TaylorF1,\n"
-              "TaylorF2, PadeT1, PadeF1, EOB, BCV, SpinTaylorT3, or BCVSpin)\n", 
+              "TaylorF2, PadeT1, PadeF1, EOB, EOBNR, BCV, SpinTaylorT3, or BCVSpin)\n", 
               long_options[option_index].name, optarg );
           exit( 1 );
         }
@@ -2306,15 +2310,27 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         {
           maxFreqCut = BKLISCO;
         }
+        else if ( ! strcmp( "LightRing", optarg ) )
+        {
+          maxFreqCut = LightRing;
+        }
+        else if ( ! strcmp( "FRD", optarg ) )
+        {
+          maxFreqCut = FRD;
+        }
         else if ( ! strcmp( "ERD", optarg ) )
         {
           maxFreqCut = ERD;
+        }
+        else if ( ! strcmp( "LRD", optarg ) )
+        {
+          maxFreqCut = LRD;
         }
         else
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "unknown cutoff frequency specified: "
-              "%s (must be one of: SchwarzISCO, BKLISCO, or ERD)\n", 
+              "%s (must be one of: SchwarzISCO, BKLISCO, LightRing, FRD, ERD or LRD)\n", 
               long_options[option_index].name, optarg );
           exit( 1 );
         }
@@ -2331,15 +2347,27 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         {
           minFreqCut = BKLISCO;
         }
+        else if ( ! strcmp( "LightRing", optarg ) )
+        {
+          minFreqCut = LightRing;
+        }
+        else if ( ! strcmp( "FRD", optarg ) )
+        {
+          minFreqCut = FRD;
+        }
         else if ( ! strcmp( "ERD", optarg ) )
         {
           minFreqCut = ERD;
+        }
+        else if ( ! strcmp( "LRD", optarg ) )
+        {
+          minFreqCut = LRD;
         }
         else
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "unknown cutoff frequency specified: "
-              "%s (must be one of: SchwarzISCO, BKLISCO, or ERD)\n", 
+              "%s (must be one of: SchwarzISCO, BKLISCO, LightRing, FRD, ERD, or LRD)\n", 
               long_options[option_index].name, optarg );
           exit( 1 );
         }
