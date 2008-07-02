@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2007 Chad Hanna, Duncan Brown, Benjamin Owen, B.S. Sathyaprakash, Anand Sengupta, Thomas Cokelaer
+*  Copyright (C) 2007 Chad Hanna, Duncan Brown, Benjamin Owen, B.S. Sathyaprakash, Anand Sengupta, Thomas Cokelaer, Evan Ochsner
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -92,7 +92,8 @@ LALInspiralBankGeneration(
       /* Set the min and max fFinals using the appropriate formula*/
       if( input->maxFreqCut == SchwarzISCO )
 	{
-	  maxfFinal = 1.0 / (6.0 * sqrt(6.0)*LAL_PI*coarseList[cnt].params.totalMass*LAL_MTSUN_SI);
+	  maxfFinal = 1.0 / (6.0 * sqrt(6.0)*LAL_PI
+                      *coarseList[cnt].params.totalMass*LAL_MTSUN_SI);
 	}
       else if( input->maxFreqCut == BKLISCO )
 	{
@@ -104,16 +105,40 @@ LALInspiralBankGeneration(
 	      q = coarseList[cnt].params.mass1 / coarseList[cnt].params.mass2;
 	  maxfFinal = 1.0 / (6.0 * sqrt(6.0)*LAL_PI*coarseList[cnt].params.totalMass*LAL_MTSUN_SI) * ( 1 + 2.8*q - 2.6*q*q + 0.8*q*q*q );
 	}
+      if( input->maxFreqCut == LightRing )
+	{
+	  maxfFinal = 1.0 / (3.0 * sqrt(3.0)*LAL_PI
+                      *coarseList[cnt].params.totalMass*LAL_MTSUN_SI);
+	}
       else if( input->maxFreqCut == ERD )
 	{
 	  maxfFinal = 1.07*0.5326/(2*LAL_PI*0.955*coarseList[cnt].params.totalMass*LAL_MTSUN_SI);
+	}
+      else if( input->maxFreqCut == FRD )
+	{
+	  maxfFinal = ( 1. - 0.63*pow(1. - 3.4641016*coarseList[cnt].params.eta
+                    + 2.9*coarseList[cnt].params.eta*coarseList[cnt].params.eta
+                    , 0.3) )/( 2.*LAL_PI*(1. - 0.057191
+                    *coarseList[cnt].params.eta - 0.498
+                    *coarseList[cnt].params.eta*coarseList[cnt].params.eta)
+                    *coarseList[cnt].params.totalMass*LAL_MTSUN_SI );
+	}
+      else if( input->maxFreqCut == LRD )
+	{
+	  maxfFinal = 1.2* ( 1. - 0.63*pow(1. - 3.4641016*coarseList[cnt].params.eta
+                    + 2.9*coarseList[cnt].params.eta*coarseList[cnt].params.eta
+                    , 0.3) )/( 2.*LAL_PI*(1. - 0.057191
+                    *coarseList[cnt].params.eta - 0.498
+                    *coarseList[cnt].params.eta*coarseList[cnt].params.eta)
+                    *coarseList[cnt].params.totalMass*LAL_MTSUN_SI );
 	}
       else
 	ABORT( status, LALINSPIRALBANKH_EFCUT, LALINSPIRALBANKH_MSGEFCUT );
 
       if( input->minFreqCut == SchwarzISCO )
 	{
-	  minfFinal = 1.0 / (6.0 * sqrt(6.0)*LAL_PI*coarseList[cnt].params.totalMass*LAL_MTSUN_SI);
+	  minfFinal = 1.0 / (6.0 * sqrt(6.0)*LAL_PI
+                      *coarseList[cnt].params.totalMass*LAL_MTSUN_SI);
 	}
       else if( input->minFreqCut == BKLISCO )
 	{
@@ -125,9 +150,32 @@ LALInspiralBankGeneration(
 	      q = coarseList[cnt].params.mass1 / coarseList[cnt].params.mass2;
 	  minfFinal = 1.0 / (6.0 * sqrt(6.0)*LAL_PI*coarseList[cnt].params.totalMass*LAL_MTSUN_SI) * ( 1 + 2.8*q - 2.6*q*q + 0.8*q*q*q );
 	}
+      if( input->minFreqCut == LightRing )
+	{
+	  minfFinal = 1.0 / (3.0 * sqrt(3.0)*LAL_PI
+                      *coarseList[cnt].params.totalMass*LAL_MTSUN_SI);
+	}
       else if( input->minFreqCut == ERD )
 	{
 	  minfFinal = 1.07*0.5326/(2*LAL_PI*0.955*coarseList[cnt].params.totalMass*LAL_MTSUN_SI);
+	}
+      else if( input->minFreqCut == FRD )
+	{
+	  minfFinal = ( 1. - 0.63*pow(1. - 3.4641016*coarseList[cnt].params.eta
+                    + 2.9*coarseList[cnt].params.eta*coarseList[cnt].params.eta
+                    , 0.3) )/( 2.*LAL_PI*(1. - 0.057191
+                    *coarseList[cnt].params.eta - 0.498
+                    *coarseList[cnt].params.eta*coarseList[cnt].params.eta)
+                    *coarseList[cnt].params.totalMass*LAL_MTSUN_SI );
+	}
+      else if( input->minFreqCut == LRD )
+	{
+	  minfFinal = 1.2* ( 1. - 0.63*pow(1. - 3.4641016*coarseList[cnt].params.eta
+                    + 2.9*coarseList[cnt].params.eta*coarseList[cnt].params.eta
+                    , 0.3) )/( 2.*LAL_PI*(1. - 0.057191
+                    *coarseList[cnt].params.eta - 0.498
+                    *coarseList[cnt].params.eta*coarseList[cnt].params.eta)
+                    *coarseList[cnt].params.totalMass*LAL_MTSUN_SI );
 	}
       else
 	ABORT( status, LALINSPIRALBANKH_EFCUT, LALINSPIRALBANKH_MSGEFCUT );
@@ -157,10 +205,7 @@ LALInspiralBankGeneration(
 	  bank->psi0 = coarseList[cnt].params.psi0;
 	  bank->psi3 = coarseList[cnt].params.psi3;
       
-	  /* This calucation is only valid for the PN case. For EOB, we 
-	   * should use the correct value of v (close to lightring). What 
-	   * about the amplitude corrected one ? */
-
+          /* If fFinal > fNyquist, end template at fNyquist */
 	  fFinal = minfFinal;
 	  if (fFinal > input->fUpper)
 	    {
