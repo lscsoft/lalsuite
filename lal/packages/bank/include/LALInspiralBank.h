@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2007 Chad Hanna, David Churches, Duncan Brown, Jolien Creighton, Benjamin Owen, B.S. Sathyaprakash, Anand Sengupta, Craig Robinson , Thomas Cokelaer
+*  Copyright (C) 2007 Chad Hanna, David Churches, Duncan Brown, Jolien Creighton, Benjamin Owen, B.S. Sathyaprakash, Anand Sengupta, Craig Robinson , Thomas Cokelaer, Evan Ochsner
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -88,7 +88,7 @@ NRCSID(LALINSPIRALBANKH, "$Id$" );
 #define LALINSPIRALBANKH_MSGEORDER  "Inappropriate PN order"
 #define LALINSPIRALBANKH_MSGEGRIDSPACING "Inappropriate grid spacing parameter [SquareNotOriented or Hexagonal]"
 #define LALINSPIRALBANKH_MSGEHEXAINIT "Empty bank. abnormal behaviour in HexaBank generation."
-#define LALINSPIRALBANKH_MSGEFCUT   "Inappropriate cutoff frequency [SchwarzISCO, BKLISCO or ERD]"
+#define LALINSPIRALBANKH_MSGEFCUT   "Inappropriate cutoff frequency [SchwarzISCO, BKLISCO, LightRing, ERD, FRD or LRD]"
 #define LALINSPIRALBANKH_MSGEFHIGH  "Final frequency is less than the low frequency cutoff."
 #define LALINSPIRALBANKH_MSGENUMFCUT "Number of fcut must be greater or equal to 1"    
 
@@ -129,7 +129,21 @@ maximum of the component masses is fixed by \texttt{mMax} of the
 
 \item\texttt{FreqCut:}
 \input{LALFreqCutH}
-An enum that lists all the formulas that can be used to specify an upper frequency cutoff. From lowest to highest, the choices are: SchwarzISCO, the innermost stable circular orbit (ISCO) for a test particle orbiting a Schwarzschild black hole. BKLISCO, a mass ratio dependent ISCO derived from estimates of the final spin of a merged black found in a paper by Buonanno, Kidder, and Lehner (arXiv:0709.3839). ERD, an effective ringdown frequency studied in Pan et al (arXiv:0704.1964) that was found to give good fit between stationary-phase templates and  numerical relativity waveforms.
+An enum that lists all the formulas that can be used to specify an upper 
+frequency cutoff. From lowest to highest, the choices are: SchwarzISCO, 
+the innermost stable circular orbit (ISCO) for a test particle orbiting a 
+Schwarzschild black hole. BKLISCO, a mass ratio dependent ISCO derived from 
+estimates of the final spin of a merged black found in a paper by Buonanno, 
+Kidder, and Lehner (arXiv:0709.3839). LightRing, the unstable circular orbit 
+for photons orbiting a Schwarzschild black hole. FRD, the "Fundamental 
+RingDown" frequency which is calculated from the Berti, Cardoso and Will 
+(arXiv:gr-qc/0512160) value for the $\omega_{220}$ QNM frequency using mass 
+ratio dependent fits to the final BH mass and spin from Buonanno et al 
+(arXiv:0706.3732). ERD, an effective ringdown 
+frequency studied in Pan et al (arXiv:0704.1964) that was found to give good 
+fit between stationary-phase templates and  numerical relativity waveforms. LRD, 
+the "Lorentzian RingDown" frequency = 1.2*FRD which captures part of the 
+Lorentzian tail from the decay of the QNMs.
 
 \item\texttt{GridSpacing:}
 \input{LALGridSpacingH}
@@ -219,9 +233,9 @@ parameter structure but not in creating the template bank.
 
 \item \texttt{order}: Post-Newtonian order of the waveform 
 \item \texttt{approximant}: Approximant of the waveform 
-\item \texttt{numFreqCut}: Number of different upper frequency cutoffs (spaced evenly between MinFreqCut and MaxFreqCut) to use when creating a template bank.
-\item \texttt{MaxFreqCut}: largest upper frequency cutoff to use
-\item \texttt{MinFreqCut}: smallest upper frequency cutoff to use
+\item \texttt{numFreqCut}: Number of different upper frequency cutoffs (spaced evenly between minFreqCut and maxFreqCut) to use when creating a template bank.
+\item \texttt{maxFreqCut}: largest upper frequency cutoff to use
+\item \texttt{minFreqCut}: smallest upper frequency cutoff to use
 \end{itemize}
 
 \item \texttt{InspiralFineBankIn}
@@ -465,7 +479,10 @@ typedef enum
 {
   SchwarzISCO,
   BKLISCO,
-  ERD
+  LightRing,
+  ERD,
+  FRD,
+  LRD
 }
 FreqCut;
 /* </lalVerbatim> */
