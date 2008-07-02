@@ -2170,8 +2170,8 @@ XLALCompareCoincInspiralByEffectiveSnr (
     ) 
 /* </lalVerbatim> */
 {
-  const CoincInspiralTable *aPtr = *((CoincInspiralTable * const *)a);
-  const CoincInspiralTable *bPtr = *((CoincInspiralTable * const *)b);
+  const CoincInspiralTable *aPtr = *((const CoincInspiralTable * const *)a);
+  const CoincInspiralTable *bPtr = *((const CoincInspiralTable * const *)b);
   REAL4 ta, tb;
 
   CoincInspiralStatistic coincStat = effective_snrsq;
