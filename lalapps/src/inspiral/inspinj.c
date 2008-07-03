@@ -122,6 +122,10 @@ REAL4 minSpin1=-1.0;
 REAL4 maxSpin1=-1.0;
 REAL4 minSpin2=-1.0;
 REAL4 maxSpin2=-1.0;
+REAL4 minKappa1=-1.0;
+REAL4 maxKappa1=1.0;
+REAL4 minabsKappa1=0.0;
+REAL4 maxabsKappa1=1.0;
 
 static LALStatus status;
 static RandomParams* randParams=NULL;
@@ -273,6 +277,14 @@ static void print_usage(char *program)
       "  [--max-spin1] spin1max   Set the maximum spin1 to spin1max (0.0)\n"\
       "  [--min-spin2] spin2min   Set the minimum spin2 to spin2min (0.0)\n"\
       "  [--max-spin2] spin2max   Set the maximum spin2 to spin2max (0.0)\n"\
+      "  [--min-kappa1] kappa1min Set the minimum cos(S1.L_N) to kappa1min (-1.0)\n"\
+      "  [--max-kappa1] kappa1max Set the maximum cos(S1.L_N) to kappa1max (1.0)\n"\
+      "  [--min-abskappa1] abskappa1min \n"\
+      "                           Set the minimum absolute value of cos(S1.L_N)\n"\
+      "                           to abskappa1min (0.0)\n"\
+      "  [--max-abskappa1] abskappa1max \n"\
+      "                           Set the maximum absolute value of cos(S1.L_N) \n"\
+      "                           to abskappa1max (1.0)\n"\
       "\n");
 }
 
@@ -661,6 +673,10 @@ int main( int argc, char *argv[] )
     {"enable-milkyway",         required_argument, 0,                'M'},
     {"disable-milkyway",        no_argument,       0,                'D'},
     {"min-spin1",               required_argument, 0,                'g'},
+    {"min-kappa1",              required_argument, 0,                'Q'},
+    {"max-kappa1",              required_argument, 0,                'R'},
+    {"min-abskappa1",           required_argument, 0,                'X'},
+    {"max-abskappa1",           required_argument, 0,                'Y'},
     {"max-spin1",               required_argument, 0,                'G'},
     {"min-spin2",               required_argument, 0,                'u'},
     {"max-spin2",               required_argument, 0,                'U'},
@@ -1211,7 +1227,34 @@ int main( int argc, char *argv[] )
               "float", "%le", maxSpin1 );
         break;
                                 
+      case 'Q':
+        minKappa1 = atof( optarg );
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name,
+              "float", "%le", minKappa1 );
+        break;
+        
+      case 'R':
+        maxKappa1 = atof( optarg );
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name,
+              "float", "%le", maxKappa1 );
+        break;
 
+      case 'X':
+        minabsKappa1 = atof( optarg );
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name,
+              "float", "%le", minabsKappa1 );
+        break;
+        
+      case 'Y':
+        maxabsKappa1 = atof( optarg );
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name,
+              "float", "%le", maxabsKappa1 );
+        break;
+        
       case 'u':
         minSpin2 = atof( optarg );
         this_proc_param = this_proc_param->next =
@@ -1482,8 +1525,49 @@ int main( int argc, char *argv[] )
           "Minimal spins must be less than maximal spins.\n" );    
       exit( 1 );
     }
+   
+    /* check that selection criteria for kappa are unique */
+    if ( (minKappa1 > -1.0 || maxKappa1 < 1.0) && 
+        (minabsKappa1 > 0.0 || maxabsKappa1 < 1.0) )
+    {
+      fprintf( stderr,
+          "Either the options [--min-kappa1,--max-kappa1] or\n"\ 
+          "[--min-abskappa1,--max-abskappa1] can be specified\n" );
+      exit( 1 );
+    }
+
+    /* check that kappa is in range */
+    if (minKappa1 < -1.0 || maxKappa1 > 1.0)
+    {
+      fprintf( stderr,
+          "Kappa can only take values between -1 and +1\n" );
+      exit( 1 );
+    }
+    /* check that kappa min-max are set correctly */
+    if (minKappa1 > maxKappa1)
+    {
+      fprintf( stderr,
+          "Minimal kappa must be less than maximal kappa\n" );
+      exit( 1 );
+    }
+    /* check that abskappa is in range */
+    if (minabsKappa1 < 0.0 || maxabsKappa1 > 1.0)
+    {
+      fprintf( stderr,
+      "The absolute value of kappa can only take values between 0 and +1\n" );
+      exit( 1 );
+    }
+    /* check that kappa min-max are set correctly */
+    if (minabsKappa1 > maxabsKappa1)
+    {
+      fprintf( stderr,
+          "Minimal kappa must be less than maximal kappa\n" );
+      exit( 1 );
+    }
   }
 
+  
+  
   if ( userTag && outCompress )
   {
     LALSnprintf( fname, sizeof(fname), "HL-INJECTIONS_%d_%s-%d-%d.xml.gz",
@@ -1615,7 +1699,9 @@ int main( int argc, char *argv[] )
     {
       simTable = XLALRandomInspiralSpins( simTable, randParams, 
           minSpin1, maxSpin1,
-          minSpin2, maxSpin2);
+          minSpin2, maxSpin2,
+          minKappa1, maxKappa1,
+          minabsKappa1, maxabsKappa1);
     }
 
     /* populate the site specific information */
