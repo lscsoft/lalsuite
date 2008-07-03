@@ -312,14 +312,21 @@ SimInspiralTable* XLALRandomInspiralTotalMassRatio(
 }
 
 /** Generates spins for an inspiral injection.  Spin magnitudes lie between the
- * specified max and min values.  Orientations are random */
+ * specified max and min values.  Orientation for spin1 can be constrained by
+ * the specified values of kappa1, otherwise are random. Orientation for spin2
+ * are random 
+ */
 SimInspiralTable* XLALRandomInspiralSpins( 
     SimInspiralTable *inj,   /**< injection for which spins will be set*/
     RandomParams *randParams,/**< random parameter details*/
     REAL4  spin1Min,         /**< minimum magnitude of spin1 */
     REAL4  spin1Max,         /**< maximum magnitude of spin1 */
     REAL4  spin2Min,         /**< minimum magnitude of spin2 */
-    REAL4  spin2Max          /**< maximum magnitude of spin2 */ 
+    REAL4  spin2Max,          /**< maximum magnitude of spin2 */
+    REAL4  kappa1Min,
+    REAL4  kappa1Max,
+    REAL4  abskappa1Min,
+    REAL4  abskappa1Max
     )
 {       
   REAL4 spin1Mag;
@@ -328,22 +335,62 @@ SimInspiralTable* XLALRandomInspiralSpins(
   REAL4 r2;
   REAL4 phi1;
   REAL4 phi2;
-
+  REAL4 kappa;
+  REAL4 sintheta;
+  REAL4 zmin;
+  REAL4 zmax;
+  REAL4 inc;
+  REAL4 cosinc;
+  REAL4 sininc;
+  REAL4 sgn;
+  
+  inc      = inj->inclination;
+  cosinc   = cos( inc );
+  sininc   = sin( inc );
+  kappa    = -2.0;
+  
   /* spin1Mag */
   spin1Mag =  spin1Min + XLALUniformDeviate( randParams ) * 
     (spin1Max - spin1Min);
+  
+  /* Check if initial spin orientation is specified by user */
+  if ( (kappa1Min > -1.0) || (kappa1Max < 1.0) )
+  {
+    kappa = kappa1Min + XLALUniformDeviate( randParams ) * 
+        ( kappa1Max - kappa1Min );
+  }
+  else if ( (abskappa1Min > 0.0) || (abskappa1Max < 1.0) )
+  {
+    kappa = abskappa1Min + XLALUniformDeviate( randParams ) * 
+        ( abskappa1Max - abskappa1Min );
+    sgn = XLALUniformDeviate( randParams ) - 0.5;
+    sgn = (sgn > 0.0) ? 1.0 : -1.0;
+    kappa = kappa * sgn;    
+  }
+  if (kappa > -2.0)
+  {
+    sintheta = sqrt( 1 - kappa * kappa );
+    zmin = spin1Mag * ( cosinc * kappa - sininc * sintheta );
+    zmax = spin1Mag * ( cosinc * kappa + sininc * sintheta );
+    
+    /* spin1z */
+    inj->spin1z = zmin + XLALUniformDeviate( randParams ) * (zmax - zmin);
 
-  /* spin1z */
-  inj->spin1z = (XLALUniformDeviate( randParams ) - 0.5) * 2 * (spin1Mag);
-  r1 = pow( ((spin1Mag * spin1Mag) - (inj->spin1z * inj->spin1z)) , 
-      0.5); 
-
-  /* phi1 */
-  phi1 = XLALUniformDeviate( randParams ) * LAL_TWOPI;
-
-  /* spin1x and spin1y */  
-  inj->spin1x = r1 * cos(phi1);
-  inj->spin1y = r1 * sin(phi1);
+    /* spin1x and spin1y */
+    inj->spin1x = (kappa * spin1Mag - inj->spin1z * cosinc) / sininc ;
+    inj->spin1y = pow( ((spin1Mag * spin1Mag) - (inj->spin1z * inj->spin1z) - 
+          (inj->spin1x * inj->spin1x)) , 0.5);
+  }
+  else
+  {
+    /* spin1z */
+    inj->spin1z = (XLALUniformDeviate( randParams ) - 0.5) * 2 * (spin1Mag);
+    /* phi1 */
+    r1 = pow( ((spin1Mag * spin1Mag) - (inj->spin1z * inj->spin1z)) , 0.5);
+    phi1 = XLALUniformDeviate( randParams ) * LAL_TWOPI;
+    inj->spin1x = r1 * cos(phi1);
+    inj->spin1y = r1 * sin(phi1);
+  }
 
   /* spin2Mag */
   spin2Mag =  spin2Min + XLALUniformDeviate( randParams ) * 
@@ -360,7 +407,6 @@ SimInspiralTable* XLALRandomInspiralSpins(
   /* spin2x and spin2y */  
   inj->spin2x = r2 * cos(phi2);
   inj->spin2y = r2 * sin(phi2);
-
 
   return ( inj );
 }
