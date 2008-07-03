@@ -238,6 +238,9 @@ static SnglRingdownTable * find_events(
   UINT4 jmin;
   UINT4 jmax;
   UINT4 j;
+  INT8  t0;
+  INT8  tpeak;
+  INT8  tmp;
  /* LALMSTUnitsAndAcc     gmstUnits = { MST_HRS, LALLEAPSEC_STRICT };*/
 
   /* compute filter duration: sum of rindown duration and spec trunc duration */
@@ -269,9 +272,6 @@ static SnglRingdownTable * find_events(
   jmin = segmentStride/2;
   jmax = jmin + segmentStride;
 
-  INT8  t0;
-  INT8  tpeak;
-  INT8  tmp;
   for ( j = jmin; j < jmax; ++j )
     if ( fabs( result->data->data[j] ) > threshold ) /* threshold crossing */
     {
