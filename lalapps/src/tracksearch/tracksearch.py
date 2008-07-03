@@ -908,7 +908,7 @@ class tracksearchTimeNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
         #Expects to run CondorDAGJob object for tracksearch
         pipeline.CondorDAGNode.__init__(self,job)
         pipeline.AnalysisNode.__init__(self)
-        pipeline.CondorDAGNode.set_retry(self,3)
+        pipeline.CondorDAGNode.set_retry(self,1)
     #End init
 #End Class
 
@@ -963,7 +963,7 @@ class tracksearchClusterNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
         pipeline.CondorDAGNode.__init__(self,job)
         pipeline.AnalysisNode.__init__(self)
         #pipeline.CondorDAGNode.set_post_script(self,'/bin/true')
-        pipeline.CondorDAGNode.set_retry(self,3)
+        pipeline.CondorDAGNode.set_retry(self,1)
     #End init
 #End Class
 

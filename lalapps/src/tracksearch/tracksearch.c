@@ -1171,7 +1171,7 @@ void LALappsTrackSearchInitialize(
 	}
     }
 
-  if (params->MinLength =< 2)
+  if (params->MinLength < 3)
     {
       fprintf(stderr,"Minimum length threshold invalid!\n");
       fprintf(stderr,TRACKSEARCHC_MSGEARGS);
@@ -1263,7 +1263,7 @@ void LALappsGetFrameData(LALStatus*          status,
 	  /* Open frame cache */
 	  lal_errhandler = LAL_ERR_EXIT;
 	  LAL_CALL( LALFrCacheImport( status, &frameCache, cachefile ), status);
-	  stream=XLALFrCacheOpen(frameCache);
+	  stream=XLALFrCacheOpen(frameCache);	  
 	  LAL_CALL( LALDestroyFrCache( status, &frameCache ), status );
 	}
       lal_errhandler = LAL_ERR_EXIT;
