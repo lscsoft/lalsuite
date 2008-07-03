@@ -996,6 +996,7 @@ class tracksearch:
         # MATCH THE DATA_CHUNK SIZE!!!!
         #For large DAG of may possible data Blocks track each call
         #to createJobs() which is called once per data Block for analysis
+        self.timestamp=str(time.localtime()).replace(" ","").replace(",","_")
         self.sciSeg=''
         self.runStartTime=''
         self.blockID=''
@@ -1539,6 +1540,11 @@ class tracksearch:
         the proper filespace hierarchy for running the tracksearch
         pipeline
         """
+        if ((dagname !='') and type(dagname) == type('')):
+            self.globalDagName=dagname
+            self.dagName=self.globalDagName
+            self.dagFilename=self.dagDirector+'/'+self.dagName+"_"+self.timestamp
+            self.dag.set_dag_file(self.dagFilename)
         self.dag.write_sub_files()
         self.dag.write_dag()
         #Read in the resulting text file and prepend the DOT

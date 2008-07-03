@@ -1171,7 +1171,7 @@ void LALappsTrackSearchInitialize(
 	}
     }
 
-  if (params->MinLength < 2)
+  if (params->MinLength =< 2)
     {
       fprintf(stderr,"Minimum length threshold invalid!\n");
       fprintf(stderr,TRACKSEARCHC_MSGEARGS);
