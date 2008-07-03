@@ -12,6 +12,7 @@ from glue import pipeline
 from pylab import *
 import operator
 from math import *
+import numpy
 
 class StringError(exceptions.Exception):
   def __init__(self, args=None):
@@ -272,22 +273,31 @@ def plot_systematics(filelist,cp,dir,epoch,dag,opts):
   hfi1 = {}
   htr1 = {}
   hti1 = {}
+  htrfr = {}
+  htifi = {}
+  htrfi = {}
+  htifr = {}
   Ai = {}
   Ar = {}
   N = {}
   amp = {}
-
+  amphf  = {}
+  Nt = 0
 
   for f in freq:
     hfr1[f] = 0.0
     hfi1[f] = 0.0
     htr1[f] = 0.0
     hti1[f] = 0.0
+    htrfr[f] = 0
+    htifi[f] = 0
+    htrfi[f] = 0
+    htifr[f] = 0
     Ai[f] = 0.0
     Ar[f] = 0.0
     N[f] = 0.0
     amp[f] = 0.0
-
+    amphf[f] = 0.0
   freqcnt = 0;
   
   print "\tfirst pass through systematics files..."
@@ -298,25 +308,37 @@ def plot_systematics(filelist,cp,dir,epoch,dag,opts):
       continue
     for line in input.readlines():
       tmp = line.split()
-      if len(tmp) == 1: continue
+      if len(tmp) == 1: 
+        Nt += 1
+        continue
+      
+      ampt = float(tmp[0])**2 + float(tmp[1])**2  
+      ampf = float(tmp[2])**2 + float(tmp[3])**2
       N[freq[freqcnt]] += 1.0
-      amp[freq[freqcnt]] += float(tmp[0])**2/2.0 + float(tmp[1])**2/2.0 + float(tmp[2])**2/2.0 + float(tmp[3])**2/2.0
+      amp[freq[freqcnt]] += ampt/2.0 + ampf/2.0
+      amphf[freq[freqcnt]] += ampf
       htr1[freq[freqcnt]] += float(tmp[0])
       hti1[freq[freqcnt]] += float(tmp[1])
       hfr1[freq[freqcnt]] += float(tmp[2])
       hfi1[freq[freqcnt]] += float(tmp[3])
+      htrfr[freq[freqcnt]] += float(tmp[0])*float(tmp[2])/ampf
+      htifi[freq[freqcnt]] += float(tmp[1])*float(tmp[3])/ampf
+      htrfi[freq[freqcnt]] += float(tmp[0])*float(tmp[3])/ampf
+      htifr[freq[freqcnt]] += float(tmp[1])*float(tmp[2])/ampf
+
       freqcnt += 1
       if freqcnt >= len(freq): freqcnt = 0 
-    #if N[freq[freqcnt]] > 10000: break
+    #if N[freq[freqcnt]] > 100: break
   #Actually make it the mean
-
   for f in freq:
+    #print "...found " + str(N[f]) + " of " + str(Nt) + " for "  + str(f)
     htr1[f] /= N[f]
     hti1[f] /= N[f]
     hfr1[f] /= N[f]
-    hfi1[f] /= N[f]   
-    Ai[f] = (hti1[f]*hfr1[f]-htr1[f]*hfi1[f])/(hfi1[f]**2+hfr1[f]**2)
-    Ar[f] =  (htr1[f]*hfr1[f]+hti1[f]*hfi1[f])/(hfi1[f]**2+hfr1[f]**2)
+    hfi1[f] /= N[f]  
+    Ai[f] = (htifr[f]-htrfi[f])/N[f]
+    Ar[f] = (htrfr[f]+htifi[f])/N[f]
+
     amp[f] = sqrt(amp[f]/N[f])
 
 
@@ -330,6 +352,16 @@ def plot_systematics(filelist,cp,dir,epoch,dag,opts):
     phase[f] = atan2(Ai[f],Ar[f])*180.0/3.14159
     fl.write(str(f) + "\t"+str(Ar[f])+"\t"+str(Ai[f])+"\t"+str(mag[f])+"\t"+str(phase[f])+"\n")
   fl.close()
+
+
+  realHistVecs = {}
+  imagHistVecs = {}
+  binVec = []
+  nbins = int(ceil(float(N.values()[0])/50.0));
+  for f in freq:
+    realHistVecs[f] = zeros(2*nbins)
+    imagHistVecs[f] = zeros(2*nbins)
+  for b in range(-nbins,nbins): binVec.append(float(b)/nbins)
 
 
   xr1 = {}
@@ -354,15 +386,7 @@ def plot_systematics(filelist,cp,dir,epoch,dag,opts):
     N[f] = 0.0
 
   freqcnt = 0;
-  realHistVecs = {}
-  imagHistVecs = {}
-  binVec = []
-
-  for f in freq: 
-    realHistVecs[f] = zeros(2000)
-    imagHistVecs[f] = zeros(2000)
-  for b in range(-1000,1000): binVec.append(float(b)*.001)
-
+ 
   print "\tsecond pass through systematics files..."
   #Compute the moments of the distribution
   for file in flist:
@@ -373,14 +397,12 @@ def plot_systematics(filelist,cp,dir,epoch,dag,opts):
     for line in input.readlines():
       tmp = line.split()
       if len(tmp) == 1: continue
+
       N[freq[freqcnt]] += 1.0
       htr = float(tmp[0])
       hti = float(tmp[1])
       hfr = float(tmp[2])
       hfi = float(tmp[3])
-      #print str(freq[freqcnt])
-      #print "bin by bin " + str(sqrt(htr*htr+hti*hti))
-      #print "average" + str(amp[freq[freqcnt]])
       xr = htr-Ar[freq[freqcnt]]*hfr + Ai[freq[freqcnt]]*hfi
       xi = hti-Ar[freq[freqcnt]]*hfi - Ai[freq[freqcnt]]*hfr
       bin(binVec,realHistVecs[freq[freqcnt]],xr/amp[freq[freqcnt]])
@@ -395,13 +417,13 @@ def plot_systematics(filelist,cp,dir,epoch,dag,opts):
       xi4[freq[freqcnt]] += xi*xi*xi*xi
       freqcnt += 1
       if freqcnt >= len(freq): freqcnt = 0
-    #if N[freq[freqcnt]] > 10000: break
+    #if N[freq[freqcnt]] > 100: break
 
   
   #Put them in units of the noise amplitude
   for f in freq:
-    xr1[f] /= N[f]
-    xi1[f] /= N[f]
+    xr1[f] /= N[f]*amp[f]
+    xi1[f] /= N[f]*amp[f]
     xr2[f] = sqrt(xr2[f]/N[f])/amp[f]
     xi2[f] = sqrt(xi2[f]/N[f])/amp[f]
     if xr3[f]:
@@ -418,15 +440,20 @@ def plot_systematics(filelist,cp,dir,epoch,dag,opts):
   fl.write("#freq \t xr \t xi \t xr^2 \t xi^2 \t xr^3 \t xi^3 \t xr^4 \t xi^4 \n")
   for f in freq:
     fl.write(str(f) + '\t' + str(xr1[f]) + '\t' + str(xi1[f]) + '\t' + str(xr2[f]) + '\t' + str(xi2[f]) + '\t' + str(xr3[f]) + '\t' + str(xi3[f]) + '\t' + str(xr4[f]) + '\t' + str(xi4[f]) + '\n')
-    
+  
+  rootN = []
+  rootNdeg = []
+  for f in N.values():
+    rootN.append(1/sqrt(f))
+    rootNdeg.append(180/sqrt(f)/3.14159)
+  
   fl.close()
- 
   # Plot the results
   print "\tplotting..."
   # Plot the systematic in magnitude
   magfigname = "sys_mag"+epoch[1]+"-"+epoch[2]+".png"
   figure(1)
-  plot(mag.keys(),mag.values())
+  errorbar(mag.keys(),mag.values(),rootN)
   title('h(t) and h(f) magnitude systematics '+epoch[1]+"-"+epoch[2]+'\n')
   xlabel('Freq')
   ylabel('Mag')
@@ -440,13 +467,29 @@ def plot_systematics(filelist,cp,dir,epoch,dag,opts):
  # Plot the systematic in phase
   phasefigname = "sys_phase"+epoch[1]+"-"+epoch[2]+".png"
   figure(1)
-  plot(phase.keys(),phase.values())
+  errorbar(phase.keys(),phase.values(),rootNdeg)
   title('h(t) and h(f) phase systematics '+epoch[1]+"-"+epoch[2]+'\n')
   xlabel('Freq')
   ylabel('Phase (degrees)')
   grid()
   savefig(dir + '/'+ phasefigname)
   thumb = 'thumb-'+phasefigname
+  savefig(dir + '/'+ thumb,dpi=20)
+  clf()
+  close()
+
+ # Plot the residual moments
+  x1figname = "sys_x1_"+epoch[1]+"-"+epoch[2]+".png"
+  figure(1)
+  plot(xr1.keys(),xr1.values())
+  plot(xi1.keys(),xi1.values(),'r')
+  legend(['real','imaginary'])
+  title('mean '+epoch[1]+"-"+epoch[2]+'\n')
+  xlabel('Freq')
+  ylabel('mean')
+  grid()
+  savefig(dir + '/'+ x1figname)
+  thumb = 'thumb-'+x1figname
   savefig(dir + '/'+ thumb,dpi=20)
   clf()
   close()
@@ -505,6 +548,7 @@ def plot_systematics(filelist,cp,dir,epoch,dag,opts):
   page.write('<h3>Systematics in magnitude and phase and moments of the residual distributions</h3><hr>\n')
   page.write('<img src='+magfigname+' width=600>\n')
   page.write('<img src='+phasefigname+' width=600>\n')
+  page.write('<img src='+x1figname+' width=600>\n')
   page.write('<img src='+x2figname+' width=600>\n')
   page.write('<img src='+x3figname+' width=600>\n')
   page.write('<img src='+x4figname+' width=600><br><br>\n')
