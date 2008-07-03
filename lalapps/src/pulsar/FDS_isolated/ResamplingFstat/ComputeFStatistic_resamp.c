@@ -1981,14 +1981,14 @@ void CalcTimeSeries(MultiSFTVector *multiSFTs)
       /* Also calculate the Fmin and Fmax */
       if(i == 0)
 	{
-	  StartTime = GPS2REAL8(SFT_Vect->data[0].epoch);
-	  EndTime = GPS2REAL8(SFT_Vect->data[NumofSFTs-1].epoch)+SFTTimeBaseline;
-
 	  REAL8 f0 = SFT_Vect->data[0].f0;
 	  REAL8 DtermsWings = (REAL8)(uvar_Dterms)*deltaF;
 	  /* -1 comes from the fact that SFT_Vect gives us both DC and Ny*/
 	  REAL8 fullFBand = (SFT_Vect->data[0].data->length-1)*deltaF;
-    
+
+    StartTime = GPS2REAL8(SFT_Vect->data[0].epoch);
+	  EndTime = GPS2REAL8(SFT_Vect->data[NumofSFTs-1].epoch)+SFTTimeBaseline;
+
 	  /*Keep everything except for the Dirichlet Terms */
 	  Fmin = f0+DtermsWings;
 	  Fmax = f0+fullFBand-DtermsWings;
