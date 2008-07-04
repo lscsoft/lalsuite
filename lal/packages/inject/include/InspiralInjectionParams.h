@@ -144,7 +144,11 @@ SimInspiralTable* XLALRandomInspiralSpins( SimInspiralTable *inj,
     REAL4  spin1Min,
     REAL4  spin1Max,
     REAL4  spin2Min,
-    REAL4  spin2Max );
+    REAL4  spin2Max,
+    REAL4  kappa1Min,
+    REAL4  kappa1Max,
+    REAL4  abskappa1Min,
+    REAL4  abskappa1Max);
 
 SimInspiralTable* XLALRandomNRInjectTotalMass( 
     SimInspiralTable *inj,  
