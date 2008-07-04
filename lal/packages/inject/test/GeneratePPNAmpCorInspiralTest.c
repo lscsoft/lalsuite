@@ -227,7 +227,6 @@ main(int argc, char **argv)
   static REAL4TimeSeries         ht;
   static COMPLEX8FrequencySeries Hf;
   RealFFTPlan    *fwdRealPlan    = NULL;
-  RealFFTPlan    *revRealPlan    = NULL;
   REAL8 t = 0.0; /* time */
   REAL8 f = 0.0;
 
@@ -492,7 +491,6 @@ main(int argc, char **argv)
     LALCCreateVector( &stat, &Hf.data, waveform.h->data->length / 2 + 1 );
   
     LALCreateForwardRealFFTPlan( &stat, &fwdRealPlan, waveform.h->data->length, 0 );
-    LALCreateReverseRealFFTPlan( &stat, &revRealPlan, waveform.h->data->length, 0 );
   
     ht.f0 = 0;
     ht.deltaT = dt;
@@ -580,7 +578,6 @@ main(int argc, char **argv)
   LALSDestroyVector( &stat, &(am_response_series.pCross->data) );
   LALSDestroyVector( &stat, &(am_response_series.pScalar->data) );
   LALDestroyRealFFTPlan( &stat, &fwdRealPlan );
-  LALDestroyRealFFTPlan( &stat, &revRealPlan );
   LALCDestroyVector( &stat, &Hf.data );
   LALSDestroyVector( &stat, &ht.data );
 
