@@ -657,15 +657,12 @@ the pulsar parameter file */
 
           if((loc = strchr(optarg, '/'))!=NULL){
             n = loc-optarg; /* length of numerator i.e. bit before / */
-            strncpy(numerator, optarg, n);
+            XLALStringCopy(numerator, optarg, n+1);
 
             /*set the denominator i.e. the point after / */
             denominator = XLALStringDuplicate(loc+1);
 
             inputParams->filterknee = atof(numerator)/atof(denominator);
-
-            XLALFree(loc);
-            XLALFree(denominator);
           }
           else
             inputParams->filterknee = atof(optarg);
@@ -679,14 +676,11 @@ the pulsar parameter file */
 
           if((loc = strchr(optarg, '/'))!=NULL){
             n = loc-optarg; /* length of numerator i.e. bit before / */
-            strncpy(numerator, optarg, n);
+            XLALStringCopy(numerator, optarg, n+1);
 
             denominator = XLALStringDuplicate(loc+1);
 
             inputParams->samplerate = atof(numerator)/atof(denominator);
-
-            XLALFree(loc);
-            XLALFree(denominator);
           }
           else
             inputParams->samplerate = atof(optarg);
@@ -699,16 +693,12 @@ the pulsar parameter file */
           INT4 n;
 
           if((loc = strchr(optarg, '/'))!=NULL){
-            n = loc-optarg; /* length of numerator i.e. bit before / */
-
-            strncpy(numerator, optarg, n);
-
+            n = loc-optarg; /* length of numerator i.e. bit before / */         
+            XLALStringCopy(numerator, optarg, n+1);
+            
             denominator = XLALStringDuplicate(loc+1);
-
+            
             inputParams->resamplerate = atof(numerator)/atof(denominator);
-
-            XLALFree(loc);
-            XLALFree(denominator);
           }
           else
             inputParams->resamplerate = atof(optarg);
@@ -758,14 +748,11 @@ the pulsar parameter file */
           if((loc = strchr(optarg, '/'))!=NULL){
             n = loc-optarg; /* length of numerator i.e. bit before / */
 
-            strncpy(numerator, optarg, n);
+            XLALStringCopy(numerator, optarg, n+1);
 
             denominator = XLALStringDuplicate(loc+1);
 
             inputParams->freqfactor = atof(numerator)/atof(denominator);
-
-            XLALFree(loc);
-            XLALFree(denominator);
           }
           else
             inputParams->freqfactor = atof(optarg);   
