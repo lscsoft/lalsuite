@@ -1005,7 +1005,7 @@ class tracksearch:
         self.dagName=''
         self.cp=cparser
         self.resultPath=self.cp.get('filelayout','workpath')
-        self.globalDagName='tracksearchGlobal'
+        self.globalDagName='tracksearchGlobal_'+self.timestamp
         self.dagDirectory=''
         if (scienceSegment==''):
             self.dataSegmentCount=0
