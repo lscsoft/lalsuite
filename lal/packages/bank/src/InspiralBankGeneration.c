@@ -105,7 +105,7 @@ LALInspiralBankGeneration(
 	      q = coarseList[cnt].params.mass1 / coarseList[cnt].params.mass2;
 	  maxfFinal = 1.0 / (6.0 * sqrt(6.0)*LAL_PI*coarseList[cnt].params.totalMass*LAL_MTSUN_SI) * ( 1 + 2.8*q - 2.6*q*q + 0.8*q*q*q );
 	}
-      if( input->maxFreqCut == LightRing )
+      else if( input->maxFreqCut == LightRing )
 	{
 	  maxfFinal = 1.0 / (3.0 * sqrt(3.0)*LAL_PI
                       *coarseList[cnt].params.totalMass*LAL_MTSUN_SI);
@@ -150,7 +150,7 @@ LALInspiralBankGeneration(
 	      q = coarseList[cnt].params.mass1 / coarseList[cnt].params.mass2;
 	  minfFinal = 1.0 / (6.0 * sqrt(6.0)*LAL_PI*coarseList[cnt].params.totalMass*LAL_MTSUN_SI) * ( 1 + 2.8*q - 2.6*q*q + 0.8*q*q*q );
 	}
-      if( input->minFreqCut == LightRing )
+      else if( input->minFreqCut == LightRing )
 	{
 	  minfFinal = 1.0 / (3.0 * sqrt(3.0)*LAL_PI
                       *coarseList[cnt].params.totalMass*LAL_MTSUN_SI);
