@@ -170,52 +170,53 @@ for epoch in epochs.epoch_segs():
   # create all the LSCdataFind jobs to run in sequence
   prev_df1 = None
   prev_df2 = None
-  segment_no = -1
-  for seg in data: 
-    segment_no = segment_no + 1
-    # only do data find jobs if requested
-    # find all the h(t) data
-    df1 = pipeline.LSCDataFindNode(df_job)
-    df1.set_start(str( int(seg.start())-df_pad ) )
-    df1.set_end(str( int(seg.end()) +df_pad ) )
-    df1.set_observatory(ifo[0])
-    df1.set_type(datatype_hoft)
-    df1.set_name("df1_"+ifo+"_"+str(epoch_cnt)+str(segment_no))
-    # see if the cache files laying around are still okay
-    if opts.check_datafind_jobs:
-      try: df1cache = lal.Cache.fromfile(open(df1.get_output(),'r'))
-      except: df1cache = None
-      if df1cache: found,missed = df1cache.checkfilesexist("ignore")
-      else: missed = True
+  # only do data find jobs if requested
+  # find all the h(t) data
+  df1 = pipeline.LSCDataFindNode(df_job)
+  df1.set_start(str( int(epoch[1])-df_pad ) )
+  df1.set_end(str( int(epoch[2]) +df_pad ) )
+  df1.set_observatory(ifo[0])
+  df1.set_type(datatype_hoft)
+  df1.set_name("df1_"+ifo+"_"+str(epoch_cnt))
+  # see if the cache files laying around are still okay
+  if opts.check_datafind_jobs:
+    try: df1cache = lal.Cache.fromfile(open(df1.get_output(),'r'))
+    except: df1cache = None
+    if df1cache: found,missed = df1cache.checkfilesexist("ignore")
     else: missed = True
+  else: missed = True
       
-    if opts.data_find and missed and opts.write_dax: df1.add_parent(mkdir_node)
-    if prev_df1 and opts.data_find and missed: 
-      df1.add_parent(prev_df1)
-    if opts.data_find and missed: dag.add_node(df1)
-    prev_df1 = df1
+  if opts.data_find and missed and opts.write_dax: df1.add_parent(mkdir_node)
+  if prev_df1 and opts.data_find and missed: 
+    df1.add_parent(prev_df1)
+  if opts.data_find and missed: dag.add_node(df1)
+  prev_df1 = df1
 
-    # find all the DARM_ERR data
-    df2 = pipeline.LSCDataFindNode(df_job)
-    df2.set_start(str( int(seg.start())-df_pad ) )
-    df2.set_end(str( int(seg.end())+df_pad )  )
-    df2.set_observatory(ifo[0])
-    df2.set_type(datatype_derr)
-    df2.set_name("df2_"+ifo+"_"+str(epoch_cnt)+str(segment_no))
-    #df2.add_var_opt("no-proxy"," ")
-    #df2.add_output_file(df2.get_output_cache()) 
-    # see if the cache files laying around are still okay
-    if opts.check_datafind_jobs:
-      try: df2cache = lal.Cache.fromfile(open(df2.get_output(),'r'))
-      except: df2cache = None
-      if df2cache: found,missed = df2cache.checkfilesexist("ignore")
-      else: missed = True
+  # find all the DARM_ERR data
+  df2 = pipeline.LSCDataFindNode(df_job)
+  df2.set_start(str( int(epoch[1])-df_pad ) )
+  df2.set_end(str( int(epoch[2])+df_pad )  )
+  df2.set_observatory(ifo[0])
+  df2.set_type(datatype_derr)
+  df2.set_name("df2_"+ifo+"_"+str(epoch_cnt))
+  #df2.add_var_opt("no-proxy"," ")
+  #df2.add_output_file(df2.get_output_cache()) 
+  # see if the cache files laying around are still okay
+  if opts.check_datafind_jobs:
+    try: df2cache = lal.Cache.fromfile(open(df2.get_output(),'r'))
+    except: df2cache = None
+    if df2cache: found,missed = df2cache.checkfilesexist("ignore")
     else: missed = True
-    if opts.data_find and missed and opts.write_dax: df2.add_parent(mkdir_node)
-    if prev_df2 and opts.data_find and missed: 
-      df2.add_parent(prev_df2)
-    if opts.data_find and missed: dag.add_node(df2)
-    prev_df2 = df2
+  else: missed = True
+  if opts.data_find and missed and opts.write_dax: df2.add_parent(mkdir_node)
+  if prev_df2 and opts.data_find and missed: 
+    df2.add_parent(prev_df2)
+  if opts.data_find and missed: dag.add_node(df2)
+  prev_df2 = df2
+
+  segment_no = -1
+  for seg in data:
+    segment_no = segment_no + 1
 
     #noise jobs
     chunk_number=-1
