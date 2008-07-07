@@ -398,7 +398,7 @@ LALInspiralEccentricityEngine(
    
    REAL8 amp, m, dt, t,  h1, h2, f,  fHigh, piM, fu;
    REAL8Vector dummy, values, dvalues, valuesNew, yt, dym, dyt;
-
+   INT4 done=0;
    rk4In in4;
    rk4GSLIntegrator *integrator;
    void *funcParams;
@@ -496,13 +496,12 @@ LALInspiralEccentricityEngine(
 */
    
 
+   /* e0 is set at fmin */
    e0 = params->eccentricity;
-   fmin = params->fLower * 3./2.;  /* fmin is the minimumn orbital frequency (factor 2) of the third harmonic (factor3)*/
-   fmin = params->fLower /2.*3.;  /* fmin is the minimumn orbital frequency (factor 2) of the third harmonic (factor3)*/
 
-   fmin = params->fLower ;
+   /* the second harmonic will start at fLower*2/3 */
+   fmin = params->fLower;
    iota = params->inclination; /*overwritten later */
-   /*actually fLower if 3 times less */
    
    beta = 0.;
    twoBeta = 2.* beta;
@@ -562,7 +561,10 @@ LALInspiralEccentricityEngine(
       fHigh = ak.flso;
       
    f = 1./(pow(orbital_element_p, 3./2.))/piM;
-  
+ 
+
+   /*fprintf(stderr, "fFinal = %f %f %f %f\n", fu,fHigh,f,ak.flso);*/
+ done = 0;
    do {
       /* Free up memory and abort if writing beyond the end of vector*/
       /*if ((signal1 && (UINT4)count >= signal1->length) || (ff && (UINT4)count >= ff->length))*/
@@ -588,8 +590,14 @@ LALInspiralEccentricityEngine(
         h1 = amp * ( ( 2. * cos(twoPhim2Beta) + 2.5 * orbital_element_e * cos(phim2Beta) 
           + 0.5 * orbital_element_e * cos(threePhim2Beta) + orbital_element_e_squared * cos2Beta) * onepCosSqI +
           + ( orbital_element_e * cos(orbital_element_p) + orbital_element_e_squared) * SinSqI);
-/*        fprintf(stderr, "p=%e, e=%e, phase = %e\n", orbital_element_p, orbital_element_e, phase);fflush(stderr);*/
-/*         if (f>=params->fLower)*/
+        if (f>=params->fLower & done==0)
+        {
+        /*fprintf(stderr, "freq=%e p=%e, e=%e, phase = %e\n", f,orbital_element_p, orbital_element_e, phase);fflush(stderr);
+*/
+        params->alpha1 =  orbital_element_e;
+        done = 1;
+         }
+         /*if (f>=params->fLower)*/
         {
           *(signal1->data + count) = (REAL4) h1;
          }
@@ -603,7 +611,6 @@ LALInspiralEccentricityEngine(
               *(signal2->data + count) = (REAL4) h2;
             }
 	 }
-         /*fprintf(stderr, "t=%.8e h1=%.8e\n", t,h1);fflush(stderr);*/
       }
 
       /* Injection case */
@@ -634,28 +641,24 @@ LALInspiralEccentricityEngine(
       *(values.data+1) = phase = *(valuesNew.data+1);
       *(values.data+2) = orbital_element_e = *(valuesNew.data+2);
 
-/*      if (f>=params->fLower)*/
-      {
       t = (++count-params->nStartPad) * dt;
-      }
       /* v^3 is equal to p^(3/2)*/
       f = 1./(pow(orbital_element_p, 3./2.))/piM;
 /*      fprintf(stderr, "p=%e, e=%e, phase = %e\n", orbital_element_p, orbital_element_e, phase);
       fflush(stderr);*/
       rbyM = orbital_element_p/(1.+orbital_element_e * cos(phase));
-/*      fprintf(stderr, "rbyM=%e rbyMFlso=%e t=%e, ak.tn=%e\n",rbyM, rbyMFlso, t, ak.tn);
+      /*fprintf(stderr, "rbyM=%e rbyMFlso=%e t=%e, ak.tn=%e f=%e e=%e\n",rbyM, rbyMFlso, t, ak.tn,f,orbital_element_e);
       fflush(stderr);*/
       
    } while ( (t < ak.tn) && (rbyM>rbyMFlso) && (f<fHigh));
 
 
-/*    fprintf(stderr, "t=%e ak.tn=%e rbyM=%e rbyMFlso=%e f=%f fHigh=%f", t, ak.tn, rbyM, rbyMFlso, f, fHigh);*/
+   /*fprintf(stderr, "t=%e ak.tn=%e rbyM=%e rbyMFlso=%e f=%f fHigh=%f", t, ak.tn, rbyM, rbyMFlso, f, fHigh);*/
    
    /*also need to add for the fupper nyquist frequency**/
    params->vFinal = orbital_element_p;
    params->fFinal = f;
    params->tC = t;
-
    *countback = count;
 
    XLALRungeKutta4Free( integrator );
