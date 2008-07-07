@@ -56,7 +56,7 @@ def GetChirpMassEtaFromTaus(tau0, tau3, fl):
   @type fl: double
   @author: Thomas Cokelaer
   """
-  m1, m2 = GetMassesFromTaus(tau0, tau3, fl)
+  m1, m2, M, eta, dummy = GetMassesFromTaus(tau0, tau3, fl)
   chirpMass, eta = GetChirpMassEtaFromMasses(m1, m2)
   return chirpMass,eta
 
@@ -70,17 +70,17 @@ def GetMassesFromTaus(tau0, tau3, fl):
   @param tau0: the tau0 parameter in seconds
   @param tau3: the tau3 parameter in seconds
   @param fl: the lower cut off frequency in Hz
-  @return the mass1 and mass2
+  @return the mass1 and mass2 , total mass and eta
   @type tau3: double
   @type tau0: double
   @type fl: double
   @author: Thomas Cokelaer
   """
-  epsilon = 1e-6
+  epsilon = 0.01
   
   M = 5./32. / pi / pi / fl * tau3 / tau0 / mtsun
   eta = 1./8.* (32./5. * pi * tau0 / tau3)**(2./3) / tau3 / fl
-  
+  chirpMass = M * eta**(3./5.)
   # we may want to round up the numerical errors because eta must be <=0.25
   # of course if we have 0.30, this is another problem. One may want to adjust 
   # the epsilonm which is set empirically for now.
@@ -89,14 +89,16 @@ def GetMassesFromTaus(tau0, tau3, fl):
     for this,i in zip(eta,range(0,size)):
       if (this<0.25+epsilon) & (this>0.25):
         eta[i] = 0.25
+        
   except:
     size = len([eta])
     if (eta>0.25) & (eta<0.25+epsilon):
         eta = 0.25
   
+  
   m1 = M/2.* (1.-sqrt(1.-4.*eta) )
-  m2 = M/2.* (1.-sqrt(1.-4.*eta) )
-  return m1, m2
+  m2 = M/2.* (1.+sqrt(1.-4.*eta) )
+  return m1, m2, M, eta, chirpMass
 
 def GetTausFromMasses(m1,m2,fl):
   """
@@ -284,14 +286,16 @@ class ReadXMLFiles:
         results['chirpmass_sim'],dummy = GetChirpMassEtaFromMasses(\
                                      array(results['mass1_sim']),\
                                      array(results['mass2_sim']))
-        m1,m2 = GetMassesFromTaus(array(results['tau0']),\
-                                  array(results['tau3']),self.fl)
-        results['totalmass'] = m1+m2
-        results['eta'] = m1*m2/(m1+m2)/(m1+m2)
+        m1,m2,M,eta, chirpMass = GetMassesFromTaus(array(results['tau0']),\
+                                  array(results['tau3']),self.fl)        
+        results['totalmass'] = M
+        results['eta'] = eta
+        results['mass1'] = m1
+        results['mass2'] = m2
+        results['chirpmass'] = chirpMass
+        # it is better to get chirpmass from M and eta instead of tau0/tau3
+        
         self.results = results
-        #except:
-        #  self.results = None
-        #  pass
         
         # reading the sngl_inspiral table
         try:
@@ -342,25 +346,38 @@ class Plotting:
       
   def plot_histogram_and_fit(self,data, nbins=20,fit=True):
     """
+    @param data: the data to look at
+    @param nbins: number of bins for the histogram
+    @param fit: create a fit on top of the histogram
     """
     fig = self.setfigure()
     handle = None
       
     try:
       n, bins, patches = hist(data, nbins, normed=1)
-      if fit is True:
+    except:
+      print """Error inside histogram (hist function)""" 
+        
+    if fit is True:
+      try:
         y = normpdf( bins, mean(data), 1./max(n))
-        plotting.hold = True
-        plotting.plot(bins, y, 'r--', linewidth=2)
-        plotting.hold = False
-        if self.title is not None:
-          title(self.title) 
-      gca().grid(True)
-    except: print """Error inside histogram """ 
+        plotting.hold = True        
+        try:
+          plotting.plot(bins, y, 'r--', linewidth=2)          
+          plotting.hold = False
+        except:pass
+        
+      except:
+        print """Error inside histogram (normpdf function)""" 
+    if self.title is not None:
+      title(self.title) 
+    
+    gca().grid(True)
+    
     return fig,handle
 
-  def scatter(self, xdata, ydata, zdata, markersize=None, alpha=None,\
-              vmin=None,vmax=None):
+  def scatter(self, xdata, ydata, zdata, markersize=10, alpha=1,\
+              vmin=None,vmax=None,type='normal'):
     """
     @param xdata: an x vector
     @param ydata: a y vector
@@ -378,14 +395,15 @@ class Plotting:
       markersize = self.markersize
     if alpha==None:
       alpha = self.alpha
-      
+    
     try:
       if type=='log':
         scatter(xdata,ydata, c=log10(zdata),s=markersize, alpha=alpha,vmin=vmin,vmax=vmax)
         colorbar()
       else:  
-        scatter(xdata,ydata, c=zdata,s=markersize, alpha=alpha,vmin=vmin,vmax=vmax)
+        scatter(xdata, ydata, c=zdata,s=markersize, alpha=alpha,vmin=vmin,vmax=vmax)
         colorbar()
+        
       xlim(min(xdata), max(xdata))
       ylim(min(ydata), max(ydata))
       
@@ -441,7 +459,7 @@ class Plotting:
 
   def griddata(self,xdata,ydata,zdata,xbin=20,ybin=20):
     
-    #if self.verbose: print 'Entering griddata...',
+    if self.verbose: print 'Entering griddata...',
     
     xmin = min(xdata)
     xmax = max(xdata)
@@ -450,18 +468,23 @@ class Plotting:
     ymin = min(ydata)
     ymax = max(ydata)
     ystep = (ymax - ymin)/ybin
-    
+    print xmin,xmax,xstep,ymin,ymax,ystep
     xi, yi = mgrid[xmin:xmax:xstep, ymin:ymax:ystep]
     # triangulate data
     
     try:
+        
+      print 'here1'  
       tri = delaunay.Triangulation(xdata,ydata)
+      print 'here2'
       interp = tri.nn_interpolator(zdata)    
+      print 'here3'
       zi = interp(xi,yi)
+      print 'here4'
     except:
       print 'Problem in griddata'
 
-    #if self.verbose: print 'Done'
+    if self.verbose: print 'Done'
     return xi,yi,zi
 
   def surf(self,xdata,ydata,zdata,xbin=20,ybin=20,vmin=0,vmax=1):
@@ -482,7 +505,7 @@ class Plotting:
 
   def contourf(self,xdata,ydata,zdata,\
                xbin=20,ybin=20,xmin=0, xmax=0.4,vmin=0,vmax=1,\
-               colormap=None):
+               colormap=None,colorbar_title='',fontsize=16):
     """
      function to call contour plot
      the vmin option is harcoded for the time being using [0.5 0.8 0.9 0.95 and 1]
@@ -491,9 +514,9 @@ class Plotting:
     """
     fig = self.setfigure() 
     handle = None
-   
+    
     xi,yi,zi = self.griddata(xdata,ydata,zdata,xbin,ybin)       
-        
+    
     zim = ma.masked_where(isnan(zi),zi)
     figure(figsize=(8,8))
     
@@ -502,21 +525,20 @@ class Plotting:
     if colormap is None:
         map = [0.5, 0.8, 0.9, 0.95 ,0.965,1]
         c = contourf(xi,yi,zim,map)
-    elif colormap=='cube':
-        
+    elif colormap=='cube':    
         map = [0.5**3., 0.8**3., 0.9**3.,0.95**3., 0.965**3.,1]
-        print map
-        #map = [0.5, 0.8, 0.9, 0.95 ,0.965,1]
-        
-        c = contourf(xi,yi,zim,map)
+        c = contourf(xi,yi,zim,map)        
     else:
-        print colormap,
         c = contourf(xi,yi,zim,colormap)
             
     ylims = ylim()
-    axis([xmin, xmax, floor(ylims[0]), ceil(ylims[1])])
+    axis([xmin, xmax, ylims[0], ylims[1]])
+
+    
     gca().grid(True)
-    colorbar()
+    h = colorbar(format='%.3f')
+    h.set_label(colorbar_title, fontsize=fontsize)
+        
     return c  
 
 
