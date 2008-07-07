@@ -307,7 +307,7 @@ def analyze_ifo(ifo_name,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
              else:
                 insp.set_bank(bank.get_output())
              if opts.datafind: insp.add_parent(df)
-             if inspinjNode and opts.inspiral: insp.add_parent(inspinjNode) 
+             if inspinjNode and opts.inspinj: insp.add_parent(inspinjNode) 
              if (opts.template_bank and not GeoBank): insp.add_parent(bank)
              if inj>0:
                 insp.add_parent(inspinj)
@@ -561,7 +561,7 @@ def trig_inspiral(ifo_data,ifo_name,coinc_data,coinc_ifos,trig_job,\
               insp.set_bank(trigbank.get_output())
               if opts.datafind: insp.add_parent(seg.get_df_node())
               if opts.trigbank: insp.add_parent(trigbank)
-              if inspinjNode: insp.add_parent(inspinjNode)
+              if inspinjNode and opts.inspinj: insp.add_parent(inspinjNode)
               if opts.inspiral_veto: dag.add_node(insp)
 
               # store this chunk in the list of filtered data
@@ -768,7 +768,7 @@ def sire_segments(segments, sire_job, dag, do_sire, do_input, ifo,
     f = open(input_file, 'w') 	
     sire.add_input_file(input_file) 
 
-  if inspinjNode: sire.add_parent(inspinjNode)
+  if inspinjNode and opts.inspinj: sire.add_parent(inspinjNode)
 
   for seg in segments:
     # set the glob file for sire
@@ -862,7 +862,7 @@ def coire_segments(segments, coire_job, dag, do_coire, do_input, ifos,
   coire.set_start(coire_start)
   coire.set_end(coire_end)
 
-  if inspinjNode: coire.add_parent(inspinjNode)
+  if inspinjNode and opts.inspinj: coire.add_parent(inspinjNode)
 
   if write_input_file:
     input_file = coire.get_output().replace(".xml", ".input") 	 
@@ -1123,6 +1123,8 @@ parser.add_option("-A", "--analyze-all",action="store_true",default=False,\
 
 parser.add_option("-d", "--datafind",action="store_true",default=False,\
     help="run LSCdataFind to create frame cache files")
+parser.add_option("-I", "--inspinj",action="store_true",default=False,\
+    help="run lalapps_inspinj to generate injection files")
 parser.add_option("-t", "--template-bank",action="store_true",default=False,\
     help="run lalapps_tmpltbank to generate template banks")
 parser.add_option("-i", "--inspiral" ,action="store_true",default=False,\
@@ -1897,8 +1899,7 @@ if seed:
   inspinj.set_start(gps_start_time)
   inspinj.set_end(gps_end_time)
   inspinj.set_seed(seed)
-  #if opts.inspiral: dag.add_node(inspinj)
-  dag.add_node(inspinj)
+  if opts.inspinj: dag.add_node(inspinj)
   inj_file = inspinj.get_output()
 else: 
   inj_file = None
