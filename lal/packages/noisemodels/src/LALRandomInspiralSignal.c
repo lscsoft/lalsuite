@@ -486,13 +486,18 @@ void LALRandomInspiralSignal
                         valid = 1;
                     }
                     break; 
-
+                case fixedPsi:
+                    randIn->param.massChoice = psi0Andpsi3;
+                    LALInspiralParameterCalc(status->statusPtr, &(randIn->param));
+                    CHECKSTATUSPTR(status);
+                    randIn->param.massChoice = fixedPsi;
+                    valid = 1; 
                 case psi0Andpsi3: 
                     /* 
                      * the following makes sure that the BCV has
                      * a well defined end-frequency
                      */
-
+                    randIn->param.massChoice = psi0Andpsi3;
                     LALInspiralParameterCalc(status->statusPtr, &(randIn->param));
                     CHECKSTATUSPTR(status);
                     valid = 1; 
