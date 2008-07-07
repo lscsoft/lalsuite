@@ -254,8 +254,7 @@ main (INT4 argc, CHAR **argv )
     simulation.bestSNRIndex     = 0; /* index of the template that has the best SNR*/
     simulation.SNRMax           = 0; /* For how long have we the best SNR     */
     simulation.fastParam1       = 6; /* param 1 for the heuristic fast option */
-    simulation.fastParam2       = 50;/* param 2 for the heuristic fast option */
-    simulation.fastParam2 *= 1.+log10(userParam.eccentricBank.bins);
+    simulation.fastParam1 *= 1.+log10(userParam.eccentricBank.bins);
     simulation.eMatch           = userParam.eMatch; /* reset the ematch       */
     simulation.bestEMatch       = -1e16; /* reset ematch to small value*/
     simulation.randIn           = randIn;        
@@ -382,7 +381,7 @@ main (INT4 argc, CHAR **argv )
               simulation.eMatch = simulation.lastEMatch-1;
             }
             /* --- if SNRMax has reached the max iteration, we stop --- */
-            if (simulation.SNRMax >= simulation.fastParam2 
+            if (simulation.SNRMax >= simulation.fastParam1 
                && userParam.fastSimulation){
               simulation.stop = 1;
             }
@@ -2613,6 +2612,7 @@ void BankEfficiencyInitUserParametersIn(
   userParam->startPhase          = 1;
   userParam->inputPSD            = NULL;
   userParam->ambiguity           = 0;
+  userParam->fastParam1          = 50;
   sprintf(userParam->tag,"");
 }
 
@@ -2736,6 +2736,9 @@ void BankEfficiencyParseParameters(
     else if  (!strcmp(argv[i],"--template-fl")) {
       BankEfficiencyParseGetDouble(argv, &i, &(coarseBankIn->fLower));
     }
+    else if  (!strcmp(argv[i],"--fast-param1")) {
+      BankEfficiencyParseGetInt(argv, &i, &(userParam->fastParam1));
+    }  
     else if  (!strcmp(argv[i],"--fl")) {
       BankEfficiencyParseGetDouble(argv, &i, &(coarseBankIn->fLower));
       randIn->param.fLower = coarseBankIn->fLower;
@@ -3915,7 +3918,8 @@ void BankEfficiencyInspiralCreateFineBank(
   bins1 = userParam.t3FineBin;
   bankPars->dx0 = (x0FineMax - x0FineMin)/((REAL4)bins0 -1);
   bankPars->dx1 = (x1FineMax - x1FineMin)/((REAL4)bins1 -1);
-    
+  
+
   bankPars->x1 = x1FineMin;
   for(i=0; i<=bins1; i++) {
     bankPars->x0 = x0FineMin;
@@ -3923,6 +3927,7 @@ void BankEfficiencyInspiralCreateFineBank(
       LALInspiralValidTemplate(status->statusPtr, 
           &validPars, *bankPars, fineIn.coarseIn);
       CHECKSTATUSPTR(status);
+
       if (validPars) {
         LALInspiralComputeParams(status->statusPtr, 
             tempPars, *bankPars, fineIn.coarseIn);
@@ -3942,7 +3947,11 @@ void BankEfficiencyInspiralCreateFineBank(
     }
     bankPars->x1+=bankPars->dx1;
   }
-  
+  if  (*nlist==0){
+    fprintf(stderr, "No valid templates found in the range mMin=%f and mMax=%f you may want to extedn --bank-mass-range\n",
+      fineIn.coarseIn.mMin, fineIn.coarseIn.mMax);
+
+  }
   if (tempPars!=NULL) LALFree(tempPars);
   if (bankPars!=NULL) LALFree(bankPars);
   
@@ -4114,40 +4123,45 @@ void BankEfficiencyWaveOverlap(
   /* --- just to be sure a value has been computed --- */
   overlapout.max = -1;  
   overlapout2.max = -1;
+
   /* --- compute the output correlation between the signal (in overlapin)
    * and the template in overlapin. --- */
   overlapin->param.startPhase = 0.;
   LAL_CALL(LALInspiralWaveOverlap(status->statusPtr,
       correlation, &overlapout, overlapin), status->statusPtr);
-  
-#if 1
+/*BankEfficiencySaveVector("corr.dat",*correlation,2048);  */
+/*      fprintf(stderr,"phase= %f and overlap(0)= %f and thisoverlap= %f e= %f\n",
+        0., overlapout.max, overlapout2.max, overlapin->param.eccentricity);
+*/
+#if 0
   if (overlapin->param.approximant == Eccentricity)
   {
-   	overlapin->param.startPhase += LAL_PI;
-    LAL_CALL(LALInspiralWaveOverlap(status->statusPtr,
-      correlation, &overlapout2, overlapin), status->statusPtr);
-    /*fprintf(stderr,"overlaps = %f and %f and e=%f\n",overlapout.max,overlapout2.max,overlapin->param.eccentricity);*/
-  }
+    INT4 N;
+    REAL4 step;
+    REAL4 phase;
+    N=5;
+    step = LAL_PI/(N-1.);
+   	for (phase=step; phase<=LAL_PI+1e-6; phase+=step)
+    {
+      overlapin->param.startPhase = phase;
+      LAL_CALL(LALInspiralWaveOverlap(status->statusPtr,
+        correlation, &overlapout2, overlapin), status->statusPtr);
+       
+      fprintf(stderr,"phase= %f and overlap(0)= %f and thisoverlap= %f e= %f step=%f\n",
+        phase, overlapout.max, overlapout2.max, overlapin->param.eccentricity,step);
+    
+      if (overlapout2.max>overlapout.max) {overlapout=overlapout2;}
+    }    
+  } 
 #endif
-        
-              
-  /* --- store some results --- */
-  if (overlapout.max > overlapout2.max)
-  {
-    overlapOutputThisTemplate->rhoMax       = overlapout.max;
-    overlapOutputThisTemplate->phase        = overlapout.phase;
-    overlapOutputThisTemplate->rhoBin       = overlapout.bin;
-    overlapOutputThisTemplate->freq         = overlapin->param.fFinal;
-    overlapOutputThisTemplate->snrAtCoaTime = correlation->data[startPad];
-  }
-  else
-  {
-    overlapOutputThisTemplate->rhoMax       = overlapout2.max;
-    overlapOutputThisTemplate->phase        = overlapout2.phase;
-    overlapOutputThisTemplate->rhoBin       = overlapout2.bin;
-    overlapOutputThisTemplate->freq         = overlapin->param.fFinal;
-    overlapOutputThisTemplate->snrAtCoaTime = correlation->data[startPad];
-  }
+
+
+  overlapOutputThisTemplate->rhoMax       = overlapout.max;
+  overlapOutputThisTemplate->phase       = overlapout.phase;
+  overlapOutputThisTemplate->rhoBin       = overlapout.bin;
+  overlapOutputThisTemplate->freq         = overlapin->param.fFinal;
+  overlapOutputThisTemplate->snrAtCoaTime = correlation->data[startPad];
+  
                                 
   DETATCHSTATUSPTR(status);
 }
