@@ -35,6 +35,14 @@ RCSID( "$Id$");
 #define INIT_MEM(x) memset(&(x), 0, sizeof((x)))
 
 
+#ifdef OUTPUT_TIMING
+extern time_t clock0;
+extern UINT4 nSFTs;
+extern UINT4 nStacks;
+extern UINT4 nSkyRefine;
+#endif
+
+
 /* comparison function for the toplist */
 static int smallerHough(const void *a,const void *b) {
   SemiCohCandidate a1, b1;
