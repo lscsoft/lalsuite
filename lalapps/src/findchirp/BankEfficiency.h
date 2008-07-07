@@ -249,6 +249,7 @@ typedef struct{
   EccentricBank eccentricBank;
   EccentricBank eccentricSignal;
   CHAR tag[256];
+  INT4 fastParam1;
 }
 UserParametersIn;
 
@@ -339,11 +340,10 @@ typedef struct{
   REAL4 tau0best;
   REAL4 tau3best;
   INT4  SNRMax; /* Index to know how many filtering ago the max SNr was found */
-  INT4  fastParam1;    /* param1 of the heuristic fast option                 */
-  INT4  fastParam2 ;   /* param2 of the heuristic fast option                 */
   REAL4 eMatch;        /* keep track of the original requested ematch         */
   REAL4 bestEMatch;    /* keep track of the best ematch for a given simulation*/
-  RandomInspiralSignalIn randIn; 
+  RandomInspiralSignalIn randIn;
+  INT4 fastParam1; 
 } BankEfficiencySimulation;
 	
 

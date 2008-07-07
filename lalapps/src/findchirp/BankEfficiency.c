@@ -18,14 +18,6 @@
 */
 
 
-/*
- * TODO
- * 1 - major changes have been done, need to recheck BCV searches
- * 2 - fast option for eccentric and amplcor cases.
- * set fast-simulation to  either ematch or hybrid
- * 3 - user-tag  for the output ?
- * 4 - use the sim_inspiral table as an input
- * */
 #include "BankEfficiency.h"
 /* --- version information ------------------------------------------------ */
 NRCSID( BANKEFFICIENCYC, "$Id$");
@@ -253,7 +245,7 @@ main (INT4 argc, CHAR **argv )
     simulation.bestSNR          = 0; /* value of the best SNR                 */
     simulation.bestSNRIndex     = 0; /* index of the template that has the best SNR*/
     simulation.SNRMax           = 0; /* For how long have we the best SNR     */
-    simulation.fastParam1       = 6; /* param 1 for the heuristic fast option */
+    simulation.fastParam1 = userParam.fastParam1;
     simulation.fastParam1 *= 1.+log10(userParam.eccentricBank.bins);
     simulation.eMatch           = userParam.eMatch; /* reset the ematch       */
     simulation.bestEMatch       = -1e16; /* reset ematch to small value*/
@@ -1394,6 +1386,8 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
       userParam.eMatch);
   ADD_PROCESS_PARAM("string", "%s", "--fast-simulation",
         BankEfficiencyGetStringFromFastSimulation(userParam.fastSimulation));
+  ADD_PROCESS_PARAM("int", "%d", "--fast-param1",
+        userParam.fastParam1);
   
       
   if (userParam.printResultXml){
@@ -3534,7 +3528,8 @@ void BankEfficiencyHelp(void)
   fprintf(stderr, "\t[--print-bank]\t\t\t print the bank in ascii and xml format\n");
   fprintf(stderr, "\t[--print-xml]\t\t\t print the results in an xml file\n");
   fprintf(stderr, "\t[--print-prototype]\t\t print a prototype to be used by condor script\n");
-  fprintf(stderr, "\t[--fast-simulation]\t\t perform fast simulation in the case of SPA abnk\n");
+  fprintf(stderr, "\t[--fast-simulation]\t\t perform fast simulation [None, EMatch,Heuristic1]\n");
+  fprintf(stderr, "\t[--fast-param1]\t\t set maximum number of matches to compute without finding a greater match (Heuristic1 method)\n");
   exit(1);
 }
 
