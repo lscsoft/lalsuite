@@ -1007,16 +1007,18 @@ class tracksearch:
         self.resultPath=self.cp.get('filelayout','workpath')
         self.globalDagName='tracksearchGlobal_'+self.timestamp
         self.dagDirectory=''
+        self.dagLogFile=logfile
+        self.dagLogFile=self.dagLogFile+"_"+self.timestamp
         if (scienceSegment==''):
             self.dataSegmentCount=0
             self.dagName=self.globalDagName
             #Uses legacy getDagDirectory were blockID has not been assigned yet!
             self.dagDirectory=os.path.normpath(self.getDagDirectory()+'/DAGS/');
-            self.dag = pipeline.CondorDAG(os.path.normpath(self.dagDirectory+'/'+logfile))
+            self.dag = pipeline.CondorDAG(os.path.normpath(self.dagDirectory+'/'+self.dagLogFile))
         else:
             self.dataSegmentCount=-1
             self.__initializeBlock__(scienceSegment)
-            self.dag = pipeline.CondorDAG(os.path.normpath(self.dagDirectory+'/'+logfile))
+            self.dag = pipeline.CondorDAG(os.path.normpath(self.dagDirectory+'/'+self.dagLogFile))
             self.dagName='tracksearchDAG_'+str(self.sciSeg.start())+'_duration_'+str(self.sciSeg.dur())
         buildDir(self.dagDirectory)
         self.dagFilename=self.dagDirectory+'/'+self.dagName
