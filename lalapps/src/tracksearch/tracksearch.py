@@ -996,7 +996,7 @@ class tracksearch:
         # MATCH THE DATA_CHUNK SIZE!!!!
         #For large DAG of may possible data Blocks track each call
         #to createJobs() which is called once per data Block for analysis
-        self.timestamp=str(time.localtime()).replace(" ","").replace(",","_")
+        self.timestamp=str(time.localtime()).replace(" ","").replace(",","_").strip(")").strip("(")
         self.sciSeg=''
         self.runStartTime=''
         self.blockID=''
