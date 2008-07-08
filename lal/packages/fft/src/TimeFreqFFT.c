@@ -652,6 +652,7 @@ LALTimeFreqRealFFT(
     )
 { /* </lalVerbatim> */
   INITSTATUS( status, "LALTimeFreqRealFFT", TIMEFREQFFTC );
+  XLALPrintDeprecationWarning("LALTimeFreqRealFFT", "XLALREAL4TimeFreqFFT");
 
   ASSERT( plan, status, TIMEFREQFFTH_ENULL, TIMEFREQFFTH_MSGENULL );
   ASSERT( freq, status, TIMEFREQFFTH_ENULL, TIMEFREQFFTH_MSGENULL );
@@ -682,6 +683,7 @@ LALFreqTimeRealFFT(
     )
 { /* </lalVerbatim> */
   INITSTATUS( status, "LALFreqTimeRealFFT", TIMEFREQFFTC );
+  XLALPrintDeprecationWarning("LALFreqTimeRealFFT", "XLALREAL4FreqTimeFFT");
   ATTATCHSTATUSPTR( status );
 
   ASSERT( plan, status, TIMEFREQFFTH_ENULL, TIMEFREQFFTH_MSGENULL );
@@ -804,6 +806,7 @@ LALREAL4AverageSpectrum (
   /* RAT4                  negRootTwo = { -1, 1 }; */
 
   INITSTATUS (status, "LALREAL4AverageSpectrum", TIMEFREQFFTC);
+  XLALPrintDeprecationWarning("LALREAL4AverageSpectrum", "XLALREAL4AverageSpectrumWelch");
   ATTATCHSTATUSPTR (status);
 
   /* check the input and output data pointers are non-null */
@@ -1028,6 +1031,7 @@ LALCOMPLEX8AverageSpectrum (
   /* RAT4                  negRootTwo = { -1, 1 }; */
 
   INITSTATUS (status, "LALCOMPLEX8AverageSpectrum", TIMEFREQFFTC);
+  XLALPrintDeprecationWarning("LALCOMPLEX8AverageSpectrum", "XLALREAL8AverageSpectrumWelch");
   ATTATCHSTATUSPTR (status);
 
   /* check the input and output data pointers are non-null */
@@ -1192,6 +1196,7 @@ LALTimeFreqComplexFFT(
   UINT4 n;
 
   INITSTATUS( status, "LALTimeFreqComplexFFT", TIMEFREQFFTC );
+  XLALPrintDeprecationWarning("LALTimeFreqComplexFFT", "XLALCOMPLEX8TimeFreqFFT");
 
   ASSERT( plan, status, TIMEFREQFFTH_ENULL, TIMEFREQFFTH_MSGENULL );
   ASSERT( freq, status, TIMEFREQFFTH_ENULL, TIMEFREQFFTH_MSGENULL );
@@ -1224,6 +1229,7 @@ LALFreqTimeComplexFFT(
   UINT4 n;
 
   INITSTATUS( status, "LALFreqTimeComplexFFT", TIMEFREQFFTC );
+  XLALPrintDeprecationWarning("LALFreqTimeComplexFFT", "XLALCOMPLEX8FreqTimeFFT");
 
   ASSERT( plan, status, TIMEFREQFFTH_ENULL, TIMEFREQFFTH_MSGENULL );
   ASSERT( time, status, TIMEFREQFFTH_ENULL, TIMEFREQFFTH_MSGENULL );
@@ -1242,8 +1248,3 @@ LALFreqTimeComplexFFT(
 
   RETURN( status );
 }
-
-
-
-
-

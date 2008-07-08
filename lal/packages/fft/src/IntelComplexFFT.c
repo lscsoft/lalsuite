@@ -74,6 +74,7 @@ LALCreateForwardComplexFFTPlan(
 #endif
 
   INITSTATUS( status, "LALCreateForwardComplexFFTPlan", COMPLEXFFTC );
+  XLALPrintDeprecationWarning("LALCreateForwardComplexFFTPlan", "XLALCreateForwardComplexFFTPlan");
 
   ASSERT( plan, status, COMPLEXFFTH_ENULL, COMPLEXFFTH_MSGENULL );
   ASSERT( ! *plan, status, COMPLEXFFTH_ENNUL, COMPLEXFFTH_MSGENNUL );
@@ -123,6 +124,7 @@ LALCreateReverseComplexFFTPlan(
 #endif
 
   INITSTATUS( status, "LALCreateReverseComplexFFTPlan", COMPLEXFFTC );
+  XLALPrintDeprecationWarning("LALCreateReverseComplexFFTPlan", "XLALCreateReverseComplexFFTPlan");
 
   ASSERT( plan, status, COMPLEXFFTH_ENULL, COMPLEXFFTH_MSGENULL );
   ASSERT( ! *plan, status, COMPLEXFFTH_ENNUL, COMPLEXFFTH_MSGENNUL );
@@ -170,6 +172,7 @@ LALDestroyComplexFFTPlan (
 #endif
 
   INITSTATUS( status, "LALDestroyComplexFFTPlan", COMPLEXFFTC );
+  XLALPrintDeprecationWarning("LALDestroyComplexFFTPlan", "XLALDestroyComplexFFTPlan");
 
   ASSERT( plan, status, COMPLEXFFTH_ENULL, COMPLEXFFTH_MSGENULL );
   ASSERT( *plan, status, COMPLEXFFTH_ENULL, COMPLEXFFTH_MSGENULL );
@@ -199,6 +202,7 @@ LALCOMPLEX8VectorFFT (
 #endif
 
   INITSTATUS( status, "LALCOMPLEX8VectorFFT", COMPLEXFFTC );
+  XLALPrintDeprecationWarning("LALCOMPLEX8VectorFFT", "XLALCOMPLEX8VectorFFT");
 
   ASSERT( output, status, COMPLEXFFTH_ENULL, COMPLEXFFTH_MSGENULL );
   ASSERT( input, status, COMPLEXFFTH_ENULL, COMPLEXFFTH_MSGENULL );
