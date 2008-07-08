@@ -3,7 +3,7 @@
 \usepackage{color}
 \usepackage{fancyhdr}
 \usepackage[pdftex]{graphicx}
-
+\usepackage[]{graphicx}
 \def\RCS$#1: #2 ${\expandafter\def\csname RCS#1\endcsname{#2}}
 \RCS$Date$
 \RCS$Revision$
@@ -78,7 +78,7 @@ colorlinks=true,pdfstartview=FitV,linkcolor=blue,citecolor=blue,urlcolor=blue]{h
 \tableofcontents
 %\addcontentsline{toc}{section}{References}
 \section{Introduction}
-\be is a tool written in C that is available in \textsc{lalapps/src/findchirp/}. It was primary developped to test efficiencies of the template banks coded in LAL, in the context of detection of  inspiralling compact binaries in ground based detetectors. 
+\be is a tool written in C that is available in \textsc{lalapps/src/findchirp/}. It was primary developped to test efficiencies of the template bank placement coded in LAL, in the context of detection of inspiralling compact binaries in ground based detetectors. 
 
 Although \be heavily relies on LAL packages such as the \bank, \insp and \noise packages, nevertheless it has its own sets of routines, which makes \be a pretty long piece of code (about 4,000 lines) but also a quite independant one.  Despite this relative length, I tried to make \be as modular as possible; the main core is only about 400 lines. It should therefore be easy to adapt it to your needs if you know the packages mentionned here above. 
 
@@ -109,12 +109,12 @@ Although \be heavily relies on LAL packages such as the \bank, \insp and \noise 
 \end{itemize}
 
 
-\be has become a powerful tool. However, its complexity implies a lot of input arguments, most of them having default values hardcoded. This documentation has three main objectives :
+\be has become a powerful tool. However, its complexity implies a lot of input arguments, most of them having default values hardcoded. This documentation is aimed at
 \begin{enumerate}
- \item Explain what type of simulations you can performed by showing concrete examples.
- \item Describe the input parameters in details.
- \item Describe the output files.
- \item Explain how to run simulations using CONDOR/DAG.
+ \item Explaining what type of simulations you can performed by showing concrete examples.
+ \item Describing the input parameters in details.
+ \item Describing the output files.
+ \item Explaining how to run simulations using CONDOR/DAG.
 \end{enumerate}
 
 In the following we assume that the reader knows what is a template bank, what is matched filtering, what is a template, and what are the models such as EOB, PadeT1, TaylorT1 and so on. If not, you may look at one of the references in the bibliography.
@@ -128,13 +128,13 @@ Let us start with a very simple example that has only two input parameters. This
 \code{lalapps\_BankEfficiency {-}{-}template EOB {-}{-}signal EOB}
 
 Concerning the signal there is no ambiguity:  the argument 
-(\textbf{{-}{-}signal EOB}) means that all injected waveform are based on EOB. However, concerning the argument (\textbf{{-}{-}template EOB}) arguments, one need to understand that it specifies both the template approximant and the template bank. For instance, if the template is BCV, then the template bank is a BCV template bank as well. For all other approximant such as EOB, PadeT1, TaylorF2 (physical models) then it is the standard SPA template bank that is used. We'll come back on this issue and the template bank placement in the next sections.
+\textbf{{-}{-}signal EOB} means that all injected waveforms are based on EOB model. However, concerning the argument \textbf{{-}{-}template EOB}, one need to understand that it sets both the template model and the template bank placement. For instance, if the template is BCV, then the template bank is a BCV template bank as well. For all other approximant such as EOB, PadeT1, TaylorF2 (physical models) then the template bank is the standard SPA template bank. We'll come back on template bank placement in the next sections.
 
 Note that the component masses of the injected signal are randomised so that the total mass is uniformly distributed. By default, component masses are between 5 and 20 solar masses. The phase order of both the signal and templates are set to 2PN order by default. There are many other default values such as the sampling, the minimal match of the template bank\dots We'll see in Sec.\ref{default} how to change all these default values.
 
-\textbf{Note that by default the initial phase of the signal is randomised but can be switch off using \textbf{{-}{-}no-start-phase} option}
+\textbf{Note that by default the initial phase of the signal is randomised but can be switch off (and set to zero) using \textbf{{-}{-}no-start-phase} option}
 
-The previous command returns a bunch of numbers on the screen. If not, most probably there was an error in the code.You may use the option \textbf{{-}{-}debug 33} to check any standard LAL errors. I would advice to always use this option
+The previous command returns a bunch of numbers on the screen. If not, most probably there was an error in the code.You may use the option \textbf{{-}{-}debug 33} to check any standard LAL errors. I would advice to always use this option.
 
 The next step is to understand what all these numbers are. From the output on the screen this is quite tedious. Luckily, at the end of the previous command, one can add an option to stored results in an XML file : \textbf{--xml-output} such as in the following example
 
@@ -144,13 +144,13 @@ This option will create a file called \textbf{BankEfficiency-Result.xml} that co
 
 \code{lwtprint BankEfficiency-Result.xml -t bankefficiency -c mass1\_sim, mass2\_sim, snr}
 
-where \textbf{-t bankefficiency } parses the \be outputs and \textbf{-c snr,mass1\_sim,mass2\_sim} means you want to extract the columns labelled \textbf{snr}, \textbf{mass1\_sim} and \textbf{mass2\_sim}. Of course, you need to know what are the column's name. At the end of this document (Sec.~\ref{default}), we provide the list of columns and their meaning 
+where \textbf{-t bankefficiency } parses the \be outputs and \textbf{-c snr,mass1\_sim,mass2\_sim} means you want to extract the columns labelled \textbf{snr}, \textbf{mass1\_sim} and \textbf{mass2\_sim}. Of course, you need to know what are the column's name. At the end of this document (Sec.~\ref{default}), we provide the list of columns and their meanings. You can also edit the XML file and figure out by yourself.  
 
-In the previous example, we extracted the component masses as well as the SNR. By SNR, we mean the overlap between the injected signal and the template bank. This is a single number for each injected signal. This number is the maximisation over time and parameter space of all the correlations. 
+In the previous example, we extracted the component masses as well as the field called \textbf{snr}. By SNR, we actually mean the max SNR over the entire template bank. This is a single number for each injected signal. This number is the maximisation over time and parameter space of all the correlations. 
 
-As you've probably noticed, the input parameters can be very succint. In this first example, we provide only 2 or 3 arguments. This simply means that many parameters are set by default. For instance the sampling is 2048Hz and  the template bank is based on a square placement and so on. In order to know all the default values, you can consult the header of \be. A nicer way is again to look at the XML file. Indeed, all the parameters used for the simulation are stored in the \textbf{process\_params} table together with the version of the code that has been used, which is stored in the \textbf{process} table. So, using the process\_params table you should be able to reproduce your results. 
+As you've probably noticed, the input parameters can be very succint. In the first example, we provided only 2 or 3 arguments. This simply means that many parameters are set by default. For instance the sampling is 2048Hz and  the template bank is based on a square placement and so on. In order to know all the default values, you can consult the header of \be. A nicer way is again to look at the XML file. Indeed, all the parameters used for the simulation are stored in the \textbf{process\_params} table together with the version of the code that has been used, which is stored in the \textbf{process} table. So, using the process\_params table you should be able to reproduce your results. 
 
-If you use \textbf{BankEfficiency} as a standalone code and add the option \textbf{--print-bank}, you will also have the template bank stored in a file called \textbf{BankEfficiency-Bank.xml}.
+If you use \textbf{BankEfficiency} as a standalone code and add the option \textbf{--print-bank}, you will also have the template bank stored in a file called \textbf{BankEfficiency-Bank.xml} as welll as in ASCII format (\textbf{BankEfficiency-Bank.dat}).
 
 There are a few other possible outputs and we will come back to this later in this document.
 
@@ -169,7 +169,7 @@ The two last points seem similar (dealing with the template) but are completely 
 
 Nothing prevent you to use this SPA template bank (the grid) with model based on something that can be very different such as Eccentric or amplitude corrected waveforms.
 
-So, coming back to the template bank test, one really need to inject many signals to be able to quantify the efficiency of the template bank, that is the distribution of the overlaps in the parameter space. To do so, you can set the numner of simulations using  \textbf{--n 10000}. 
+So, coming back to the template bank test, one really need to inject many signals to be able to quantify the efficiency of the template bank, that is the distribution of the overlaps in the parameter space. To do so, you can set the number of simulations using  \textbf{--n 10000}. 
 
 Then, to be realistic, the minimal match of the bank is set to \textbf{-- mm 95\%} (by default it is set to 80\%).
 
@@ -183,14 +183,14 @@ This command returns 10000 lines of numbers. So again, it is better to work with
 
 \begin{figure}
 \centering
- \includegraphics[width=0.4\textwidth]{bankefficiencydoc_snr_versus_totalmass.png}
+ \includegraphics[width=0.4\textwidth]{bankefficiencydoc_snr_versus_totalmass}
 \caption{\label{fig:snr1} Overlaps versus total mass of the injected signals.}
 \end{figure} 
 
 Note that the XML table does not contains all the physical information you may want. It is quite light though because only 2 mass parameters are stored for the injection and for the template that gives the best SNR. Indeed, other set of parameters can be computed a posteriori.
 
 \subsection{Noise and Signal}\label{model}
-In the two previous examples, we considered noiseless simulations. \be was indeed created to check the overlaps between a template bank and injections. So there was no need for noise. However, the \textsc{noisemodel} package has also th e possibility to inject a signal into noise (you can even set the signal amplitude to be null so as to study only the noise).  This can be done as follows : 
+In the two previous examples, we considered noiseless simulations. \be was indeed created to check the overlaps between a template bank and injections. So there was no need for noise. However, the \textsc{noisemodel} package has also the possibility to inject a signal into noise (you can even set the signal amplitude to be null so as to study only the noise).  This can be done as follows : 
 \code{lalapps\_BankEfficiency {-}{-}template EOB {-}{-}signal EOB {-}{-}debug 33  {-}{-}mm 0.95 {-}{-}n 10000  {-}{-}xml-output {-}{-}print-bank  {-}{-}simulation-type NoiseAndSignal {-}{-}signal-amplitude 25}
 
 The \textbf{{-}{-}simulation-type} can be set to [NoiseOnly,NoiseAndSignal,SignalOnly(default)]. The last option \textbf{{-}{-}signal-amplitude} set the average SNR of the signal. The default spectrum used inside the matched filtering or to define the noise spectrum is the initial LIGO by default.
@@ -199,7 +199,7 @@ The NoiseAndSignal case is very useful to perform test of the Fisher matrix by t
 
 \code{lalapps\_BankEfficiency {-}{-}template EOB {-}{-}signal EOB {-}{-}mm 0.95 {-}{-}n 10000  {-}{-}xml-output {-}{-}print-bank  {-}{-}simulation-type NoiseAndSignal {-}{-}signal-amplitude 25 {-}{-}m1 10 {-}{-}m2 10}
 
-Another option related to the noise is that you may want to specify different type of colored noise, which currently are LIGOI, LIGOA, VIRGO, EGO, TAMA for initial LIGO, advanced LIGO, VIRGO, Einstein Telescope and TAMA, which can be fixed by \textbf{{-}{-}noise-model}.
+Another option related to the noise is that you may want to specify different type of colored noise, which currently are LIGOI, LIGOA, VIRGO, EGO, TAMA for initial LIGO, advanced LIGO, VIRGO, Einstein Telescope and TAMA, which can be set using \textbf{{-}{-}noise-model}.
 
 
 \code{lalapps\_BankEfficiency {-}{-}template EOB {-}{-}signal EOB {-}{-}mm 0.95 {-}{-}n 10000  {-}{-}xml-output {-}{-}print-bank  {-}{-}simulation-type NoiseAndSignal {-}{-}signal-amplitude 25 {-}{-}m1 10 {-}{-}m2 10 {-}{-}noise-model LIGOA}
@@ -209,18 +209,18 @@ Using the \textbf{{-}{-}print-psd} option, the PSD will be saved in \textbf{Bank
 \subsection{Template bank related}\label{bank}
 Let us now look in more details at the parameters related to the template bank itself.
 
-First of all, there are only two specific type of template bank available at the moment that are in the LAL \bank package. The first template bank is the SPA template bank for physical models such as EOB, Taylor, Pade model. The second one is a BCV template bank that is being called if \textbf{{-}{-}template} is set to \textbf{BCV}. Let us focus on the SPA template bank for now. 
+First of all, there are only two specific type of template bank available at the moment that are in the LAL \bank package. The first template bank is the SPA template bank for physical models such as EOB, Taylor, Pade model. The second one is a BCV template bank that is created if \textbf{{-}{-}template} is set to \textbf{BCV}. Let us focus on the SPA template bank for now. 
 
-There are two types of placement : square and hexagonal. Historically, square placement was implemented and can be called using \textbf{{-}{-}bank-grid-spacing SquareNotOriented}. Then hexagonal placement was imlemented later on and can be called using \textbf{{-}{-}bank-grid-spacing Hexagonal}
+There are two types of placements : square and hexagonal. Historically, square placement was implemented first and can be called using \textbf{{-}{-}bank-grid-spacing SquareNotOriented}. Then hexagonal placement was imlemented and can be called using \textbf{{-}{-}bank-grid-spacing Hexagonal}
 
 \textbf{Technical:}
-A template bank is constructed using the metric components of the signal/template manifold. The metric components are computed by calculating quantities such as the moments, which in turn are integrals from a lower cut-off frequency to an upper cutoff frequency. The latter is  by default set to the  Nyquist frequency (so be aware that the sampling is 2048Hz by default). One can force the upper cut-off frequency to be a fixed value by setting \textbf{{-}{-}bank-ffinal}. One can also recompute the moments for each template so that the upper cutoff frequency used to compute the moments is the last stable orbit instead of the Nyquist frequency. This option is not yet fully implemented within the template bank code but can be set on for the Gammas only (does not change the placement) using \textbf{{-}{-}compute-moments}.
+A template bank is constructed using the metric components of the signal/template manifold. The metric components are computed by calculating quantities such as the moments, which in turn are integrals from a lower cut-off frequency to an upper cutoff frequency. The latter is  by default set to the  Nyquist frequency (so be aware that the sampling is 2048Hz by default). One can force the upper cut-off frequency to be a fixed value by setting \textbf{{-}{-}bank-ffinal}. One can also recompute the moments for each template so that the upper cutoff frequency used to compute the moments is the last stable orbit instead of the Nyquist frequency. This option is not yet fully implemented within the template bank code but can be set on for the Gammas only (does not change the placement but affect the gammas and therefore the ematch values) using \textbf{{-}{-}compute-moments}.
 
 By default the minimal match of the template bank is 80\% but you can change it using \textbf{{-}{-}mm} option.
 
 To set the masse range to which the bank is efficient, use \textbf{{-}{-}bank-mass-range a b}, where \textbf{a} and \textbf{b} are 2 sorted values of component mass.
 
-There is also the possibility to create a template bank that has a fine grid. The fine grid is implemented within \be and requires this parameters: 
+There is also the possibility to create a template bank, which is a simple box in $\tau_0/\tau_3$ that has a fine grid. The fine grid is implemented within \be and requires these parameters: 
 \begin{itemize}
  \item \textbf{{-}{-}t0-fine-range} Two values to set the t0 range.
 \item \textbf{{-}{-}t3-fine-range} Two values to set the tau3 range.
@@ -231,7 +231,7 @@ There is also the possibility to create a template bank that has a fine grid. Th
 
 
 \subsection{Eccentricity related}\label{eccentricity}
-If the signal is set to \textbf{Eccentricity} (using the {-}{-}signal option), then you can set the eccentricity of the simulated signals by using a range. The eccentricity will be uniformly distributed witin the two values that define this range. For instance :
+If the signal is set to \textbf{Eccentricity} (using the {-}{-}signal option), then you can set the initial eccentricity of the simulated signals by using a range. The eccentricity will be uniformly distributed witin the two values that define this range. For instance :
 \code{lalapps\_BankEfficiency {-}{-}template TaylorT3 {-}{-}signal Eccentricity {-}{-}mm 0.95 {-}{-}n 10000  {-}{-}xml-output --signal-eccentricity-range 0 0.4}
 
 Note that the Eccentric model is only implemented at the Newtonian order for the moment. Therefore, one must specify the Newtonian order on the command line argument (by default the 2PN is used). If not, the code will fail. 
@@ -248,16 +248,18 @@ There is no proper eccentric template bank. However, one can set the template ba
 \subsection{BCV related functions}\label{bcv}
 In this section, we show how to test a template bank based on BCV template and how a BCV template bank can detect signals based on other models such as EOB, PadeT1, \dots. 
 
-I will not described the placement itself nethier the filtering (see for instance Ref.~\cite{bcvbank}). Here is just a simple example: 
+I will not described the placement itself neither the filtering (see for instance Ref.~\cite{bcvbank}). Here is just a simple example: 
 
-\code{./lalapps\_BankEfficiency --template BCV --bank-alpha 0.01 --bank-psi0-range 10 250000 --bank-psi3-range -2000 -10 --bank-fcut-range 2 6 --bank-number-fcuts 3 --bank-inside-polygon 1 --signal EOB --signal-mass-range 5 20 --xml-output}
+\code{./lalapps\_BankEfficiency --template BCV --bank-alpha 0.01 --bank-psi0-range 10 250000 --bank-psi3-range -2000 -10 --bank-fcut-range 2 6 --bank-number-fcut 3 --bank-inside-polygon 1 --signal EOB --signal-mass-range 5 20 --xml-output}
 
 The BCV signal can be injected as well. We can force the psi0/psi values using \textbf{{-}{-}psi0} and \textbf{{-}{-}psi3} options. 
-otherwise the \textbf{{-}{-}signal-psi0-range} and \textbf{{-}{-}signal-psi3-range} need to be fixed or default values will be used instead.
+Otherwise the \textbf{{-}{-}signal-psi0-range} and \textbf{{-}{-}signal-psi3-range} need to be fixed or default values will be used instead.
 
 Concerning the filtering there is an option to avoid the alpha constraint to be used \textbf{{-}{-}no-alpha-constraint} \textbf{{-}{-}alpha-constraint}.
 
+The template bank can be either Hexagonal or Square, but only the Hexagonal case has been tested exhaustively. 
 
+The filtering may fail if the psi0/psi3 pair gives an ending frequency lower than the lower cut-off frequency. 
 
 \subsection{Amplitude Corrected related}\label{ampcor}
 To use the amplitude corrected waveforms, one can simply set the signal to be \textbf{AmpCorPPN}. The order needs also to be set by using \textbf{{-}{-}signal-amp-order}  and \textbf{{-}{-}template-amp-order}
@@ -279,18 +281,24 @@ In principle \be estimates the longest length of all templates and all possible 
 To set the lower cut-off frequency, use \textbf{{-}{-}fl}, which affects both the signal and template lower cut-off frequency. You can independantly set the template/bank cut-off frequency and signal lower cut off frequency using \textbf{{-}{-}template} and \textbf{{-}{-}signal}.
 
 \subsubsection{Fast option}
-There is a fast option to perform the simulation that can be very powerful. It is based on the metric of the signal. So if the template and the signal are based on the same approximant, it can be used very safely. It is switched on by using \textbf{{-}{-}fast-simulation} and \textbf{{-}{-}e-match}, which is set to 0.5 by default
+There is a fast option to perform the simulation quicker that can be very powerful. It is based on the metric of the signal. So if the template and the signal are based on the same approximant, it can be used very safely. It is switched on by using \textbf{{-}{-}fast-simulation EMatch} and \textbf{{-}{-}e-match}, which is set to 0.5 by default
 
-\code{./lalapps\_BankEfficiency --fast-simulation --e-match 0.5 --xml-output}
+\code{./lalapps\_BankEfficiency --fast-simulation EMatch --e-match 0.5 --xml-output}
 
 
 The match is unity when the signal and template are identical. As soon as they differ, the match decreases. Since it is not normalised, it can take negative values. Also, in the xml table, we store the number of templates that have been used in the \textbf{nfast} field.
 
-There is such option for BCV or eccentric template bank,
+How does the EMatch option works ? First, we know the position of the signal $s$. So, we compute the Ematch between this signal and a template. If the ematch value is greater than the ematch parameter (e.g. 0.5), then we compute the overlap between the signal and the template otherwise we skip the filtering. 
+
+Another fast option is the Heuristic1 one. This is very similar to the EMatch case but the ematch value is computed between the template and the position of the template that gave the best SNR up to now. The ematch argument is not used. The consequence is that we can go much farther that the original position of the signal. This is useful in the presence of noise or when signal and template differ significantly. Typically, I use this option when signal is Eccentricity and template is non Eccentric waveforms. If you use this option, you also need to stop the simulation at some point. This is done by setting the \textbf{--fast-param1} option (default of 50). THis argument means that if after 50 iterations, no filtering gave a larger SNR that the current maximum SNR then we stop the template bank parsing.
+
+
+
+ 
 
 \subsubsection{BHNS injections}
 There are many ways to choose the parameters of the signal to be injected. By default, the total mass is uniformly distributed and the component masses are set using the option \textbf{{-}{-}signal-mass-range}. You can overwrite this option by using together the \textbf{{-}{-}m1} and \textbf{{-}{-}m2} options to force the component masses to be fixed. Similarly, if you prefer to work with the chirp times parameters, you can use 
-\textbf{{-}{-}tau3} and \textbf{{-}{-}tau0}. Finally, there is an option to force the masses to be such that the binary system is a BHNS system, that is the first component mass in in the range [1,3] and the second component mass is larger than 3. This option is \textbf{{-}{-}bhns-injection}. Of course you need to be sure that \textbf{{-}{-}signal-mass-range} has a range that include the value 3.
+\textbf{{-}{-}tau3} and \textbf{{-}{-}tau0}. Finally, there is an option to force the masses to be such that the binary system is a BHNS system, that is the first component mass in in the range $[1,3]M_\odot$ and the second component mass is larger than $3M_\odot$. This option is \textbf{{-}{-}bhns-injection}. Of course you need to be sure that \textbf{{-}{-}signal-mass-range} has a range that include the value 3.
 
 \subsubsection{Check the code}
 There is a special option that is \textbf{{-}{-}check} or equivalently \textbf{{}-{-}faithfulness}. This is a very powerful option that set the template parameter to be identical to the signal. So, you can compute the faithfulness and check your code. Ideally, the output SNRs must be equal to 1. If not something is wrong in your code, or different between the template and signal parameters. 
@@ -329,7 +337,7 @@ ntrial=1000
 njobs=100
 \end{verbatim}
 
-change it to your need. The structure of the ini file  requires to have 5 sections as shown above ([main], [bank], ...). The content of the main section must contain the argument ztextybf{executables}. Other than that there is no rules with respect to the order of the arguments as far as it is a valid  argument. 
+change it to your need. The structure of the ini file  requires to have 5 sections as shown above ([main], [bank], ...). The content of the main section must contain the argument \textbf{executables}. Other than that there is no rules with respect to the order of the arguments as far as it is a valid  argument. 
 
 \subsection{Generate the dag files.}\label{dag}
 \code{python bep.py --config-file bep.ini}
@@ -337,7 +345,7 @@ change it to your need. The structure of the ini file  requires to have 5 sectio
 \subsection{Submit the dag}
 This command 
 \code{condor\_submit\_dag -maxjobs 100  -f bep.dag}
-will start the \textsc{DAG}. You can see the status as usual using \textbf{condor\_q}. Once done, the \textsc{DAG} will merge all the files (bankefficiency*out) together using the script \textbf{finalise.sh}. Nothing prevent you to use it while simulations are still running. This is very convenient for the busiest of you who wants to study the efficiencies even though all your simulations are not over. 
+will start the \textsc{DAG}. You can see the status as usual using \textbf{condor\_q}. Once done, the \textsc{DAG} will merge all the files (bankefficiency*out) together using the script \textbf{finalise.sh}. Nothing prevent you to use it while simulations are still running. This is very convenient for those of you who wants to study the efficiencies even though all the simulations are not over. 
 
 
 \section{Meaning of the bankefficiency XML table}\label{xml}
@@ -353,7 +361,8 @@ Here is the list of the current field contained within the bankefficiency XML ta
 \item[tau0\_sim] The first mass parameter of the injection
 \item[tau3\_sim] The second mass parameter of the injection
 \item[ecc] eccentricity of the best templates
-\item[ecc\_sim] eccentricity of the signal
+\item[ecc\_sim] eccentricity of the signal at 2FL\_3 
+\item[ecc\_sim\_fl] eccentricity of the signal at F\_L
 \item[ffinal] final frequency  of the best template
 \item[ffinal\_sim] final frequency of the injection
 \item[mass1\_sim] The first mass parameter of the injection
@@ -366,9 +375,10 @@ Here is the list of the current field contained within the bankefficiency XML ta
 \item[time] the time of arrival of the best template
 \item[time\_sim] the starting time of the signal (does not work for some models such as BCV)
 \item[nfast] number of templates really used
+\item[nfast] number of templates after which the max SNR was found. 
 \end{description}
 
-\subsection{How to add your own}
+\subsection{How to add your own field}
 Here is the brief procedure to add a new field in the table:
 \begin{enumerate}
  \item Change the macros in BankEfficiency.h
@@ -481,7 +491,8 @@ argument &  description & number of argument required &default value \\ \hline
 --compute-moments &Recompute the gamma of the template &0&None\\\hline
 --xml-output &print results in an xml file BankEfficiency-Result.xml&0&None\\\hline
 --print-prototype &internal usage only&0&None\\\hline
---fast-simulation &Set the fast simulation non. Use with care.&0&None\\\hline
+--fast-simulation &Set the fast simulation on [None, EMatch, Heuristic1]. Use with care.&0&None\\\hline
+--fast-param1 &Set the heuristic1 maximum consecutive filtering without increasing the SNR.&0&None\\\hline
 \end{tabular}
 \end{center}
 
