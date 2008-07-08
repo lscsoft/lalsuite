@@ -890,7 +890,7 @@ LALREAL4AverageSpectrum (
   if ( params->method == useMedian )
   {
     /* create enough storage for the indivdiual power spectra */
-    psdSeg = (REAL4 *) LALCalloc( numSeg, fLength * sizeof(REAL4) );
+    psdSeg = XLALCalloc( numSeg, fLength * sizeof(REAL4) );
   }
 
   /* compute each of the power spectra used in the average */
@@ -979,7 +979,7 @@ LALREAL4AverageSpectrum (
       ( bias * params->window->sumofsquares );
 
     /* allocate memory array for insert sort */
-    s = LALMalloc( numSeg * sizeof(REAL4) );
+    s = XLALMalloc( numSeg * sizeof(REAL4) );
     if ( ! s )
     {
       ABORT( status, TIMEFREQFFTH_EMALLOC, TIMEFREQFFTH_MSGEMALLOC );
@@ -993,10 +993,10 @@ LALREAL4AverageSpectrum (
     }
 
     /* free memory used for sort array */
-    LALFree( s );
+    XLALFree( s );
 
     /* destroy the storage for the individual spectra */
-    LALFree( psdSeg );
+    XLALFree( psdSeg );
   }
 
   DETATCHSTATUSPTR( status );

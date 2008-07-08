@@ -220,14 +220,14 @@ REAL4FFTPlan * XLALCreateREAL4FFTPlan( UINT4 size, int fwdflg, int measurelvl )
   }
 
   /* allocate memory for the plan and the temporary arrays */
-  plan = LALMalloc( sizeof( *plan ) );
-  tmp1 = LALMalloc( size * sizeof( *tmp1 ) );
-  tmp2 = LALMalloc( size * sizeof( *tmp2 ) );
+  plan = XLALMalloc( sizeof( *plan ) );
+  tmp1 = XLALMalloc( size * sizeof( *tmp1 ) );
+  tmp2 = XLALMalloc( size * sizeof( *tmp2 ) );
   if ( ! plan || ! tmp1 || ! tmp2 )
   {
-    if ( plan ) LALFree( plan );
-    if ( tmp1 ) LALFree( tmp1 );
-    if ( tmp2 ) LALFree( tmp2 );
+    XLALFree( plan );
+    XLALFree( tmp1 );
+    XLALFree( tmp2 );
     XLAL_ERROR_NULL( func, XLAL_ENOMEM );
   }
 
@@ -239,13 +239,13 @@ REAL4FFTPlan * XLALCreateREAL4FFTPlan( UINT4 size, int fwdflg, int measurelvl )
   LAL_FFTW_PTHREAD_MUTEX_UNLOCK;
 
   /* free temporary arrays */
-  LALFree( tmp2 );
-  LALFree( tmp1 );
+  XLALFree( tmp2 );
+  XLALFree( tmp1 );
 
   /* check to see success of plan creation */
   if ( ! plan->plan )
   {
-    LALFree( plan );
+    XLALFree( plan );
     XLAL_ERROR_NULL( func, XLAL_EFAILED );
   }
 
@@ -290,7 +290,7 @@ void XLALDestroyREAL4FFTPlan( REAL4FFTPlan *plan )
   fftwf_destroy_plan( plan->plan );
   LAL_FFTW_PTHREAD_MUTEX_UNLOCK;
   memset( plan, 0, sizeof( *plan ) );
-  LALFree( plan );
+  XLALFree( plan );
   return;
 }
 
@@ -311,7 +311,7 @@ int XLALREAL4ForwardFFT( COMPLEX8Vector *output, const REAL4Vector *input,
     XLAL_ERROR( func, XLAL_EBADLEN );
 
   /* create temporary storage space */
-  tmp = LALMalloc( plan->size * sizeof( *tmp ) );
+  tmp = XLALMalloc( plan->size * sizeof( *tmp ) );
   if ( ! tmp )
     XLAL_ERROR( func, XLAL_ENOMEM );
 
@@ -338,7 +338,7 @@ int XLALREAL4ForwardFFT( COMPLEX8Vector *output, const REAL4Vector *input,
     output->data[plan->size/2].im = 0.0;
   }
 
-  LALFree( tmp );
+  XLALFree( tmp );
   return 0;
 }
 
@@ -364,7 +364,7 @@ int XLALREAL4ReverseFFT( REAL4Vector *output, const COMPLEX8Vector *input,
     XLAL_ERROR( func, XLAL_EDOM );  /* imaginary part of Nyquist must be zero */
 
   /* create temporary storage space */
-  tmp = LALMalloc( plan->size * sizeof( *tmp ) );
+  tmp = XLALMalloc( plan->size * sizeof( *tmp ) );
   if ( ! tmp )
     XLAL_ERROR( func, XLAL_ENOMEM );
 
@@ -388,7 +388,7 @@ int XLALREAL4ReverseFFT( REAL4Vector *output, const COMPLEX8Vector *input,
   fftwf_execute_r2r( plan->plan, tmp, output->data );
 
   /* cleanup and exit */
-  LALFree( tmp );
+  XLALFree( tmp );
   return 0;
 }
 
@@ -429,7 +429,7 @@ int XLALREAL4PowerSpectrum( REAL4Vector *spec, const REAL4Vector *data,
     XLAL_ERROR( func, XLAL_EBADLEN );
 
   /* allocate temporary storage space */
-  tmp = LALMalloc( plan->size * sizeof( *tmp ) );
+  tmp = XLALMalloc( plan->size * sizeof( *tmp ) );
   if ( ! tmp )
     XLAL_ERROR( func, XLAL_ENOMEM );
 
@@ -455,7 +455,7 @@ int XLALREAL4PowerSpectrum( REAL4Vector *spec, const REAL4Vector *data,
     spec->data[k] = tmp[k] * tmp[k];
 
   /* clenup and exit */
-  LALFree( tmp );
+  XLALFree( tmp );
   return 0;
 }
 
@@ -499,14 +499,14 @@ REAL8FFTPlan * XLALCreateREAL8FFTPlan( UINT4 size, int fwdflg, int measurelvl )
   }
 
   /* allocate memory for the plan and the temporary arrays */
-  plan = LALMalloc( sizeof( *plan ) );
-  tmp1 = LALMalloc( size * sizeof( *tmp1 ) );
-  tmp2 = LALMalloc( size * sizeof( *tmp2 ) );
+  plan = XLALMalloc( sizeof( *plan ) );
+  tmp1 = XLALMalloc( size * sizeof( *tmp1 ) );
+  tmp2 = XLALMalloc( size * sizeof( *tmp2 ) );
   if ( ! plan || ! tmp1 || ! tmp2 )
   {
-    if ( plan ) LALFree( plan );
-    if ( tmp1 ) LALFree( tmp1 );
-    if ( tmp2 ) LALFree( tmp2 );
+    XLALFree( plan );
+    XLALFree( tmp1 );
+    XLALFree( tmp2 );
     XLAL_ERROR_NULL( func, XLAL_ENOMEM );
   }
 
@@ -518,13 +518,13 @@ REAL8FFTPlan * XLALCreateREAL8FFTPlan( UINT4 size, int fwdflg, int measurelvl )
   LAL_FFTW_PTHREAD_MUTEX_UNLOCK;
 
   /* free temporary arrays */
-  LALFree( tmp2 );
-  LALFree( tmp1 );
+  XLALFree( tmp2 );
+  XLALFree( tmp1 );
 
   /* check to see success of plan creation */
   if ( ! plan->plan )
   {
-    LALFree( plan );
+    XLALFree( plan );
     XLAL_ERROR_NULL( func, XLAL_EFAILED );
   }
 
@@ -569,7 +569,7 @@ void XLALDestroyREAL8FFTPlan( REAL8FFTPlan *plan )
   fftw_destroy_plan( plan->plan );
   LAL_FFTW_PTHREAD_MUTEX_UNLOCK;
   memset( plan, 0, sizeof( *plan ) );
-  LALFree( plan );
+  XLALFree( plan );
   return;
 }
 
@@ -590,7 +590,7 @@ int XLALREAL8ForwardFFT( COMPLEX16Vector *output, REAL8Vector *input,
     XLAL_ERROR( func, XLAL_EBADLEN );
 
   /* create temporary storage space */
-  tmp = LALMalloc( plan->size * sizeof( *tmp ) );
+  tmp = XLALMalloc( plan->size * sizeof( *tmp ) );
   if ( ! tmp )
     XLAL_ERROR( func, XLAL_ENOMEM );
 
@@ -617,7 +617,7 @@ int XLALREAL8ForwardFFT( COMPLEX16Vector *output, REAL8Vector *input,
     output->data[plan->size/2].im = 0.0;
   }
 
-  LALFree( tmp );
+  XLALFree( tmp );
   return 0;
 }
 
@@ -643,7 +643,7 @@ int XLALREAL8ReverseFFT( REAL8Vector *output, COMPLEX16Vector *input,
     XLAL_ERROR( func, XLAL_EDOM );  /* imaginary part of Nyquist must be zero */
 
   /* create temporary storage space */
-  tmp = LALMalloc( plan->size * sizeof( *tmp ) );
+  tmp = XLALMalloc( plan->size * sizeof( *tmp ) );
   if ( ! tmp )
     XLAL_ERROR( func, XLAL_ENOMEM );
 
@@ -667,7 +667,7 @@ int XLALREAL8ReverseFFT( REAL8Vector *output, COMPLEX16Vector *input,
   fftw_execute_r2r( plan->plan, tmp, output->data );
 
   /* cleanup and exit */
-  LALFree( tmp );
+  XLALFree( tmp );
   return 0;
 }
 
@@ -708,7 +708,7 @@ int XLALREAL8PowerSpectrum( REAL8Vector *spec, REAL8Vector *data,
     XLAL_ERROR( func, XLAL_EBADLEN );
 
   /* allocate temporary storage space */
-  tmp = LALMalloc( plan->size * sizeof( *tmp ) );
+  tmp = XLALMalloc( plan->size * sizeof( *tmp ) );
   if ( ! tmp )
     XLAL_ERROR( func, XLAL_ENOMEM );
 
@@ -734,7 +734,7 @@ int XLALREAL8PowerSpectrum( REAL8Vector *spec, REAL8Vector *data,
     spec->data[plan->size/2] = tmp[plan->size/2] * tmp[plan->size/2];
 
   /* clenup and exit */
-  LALFree( tmp );
+  XLALFree( tmp );
   return 0;
 }
 

@@ -446,7 +446,7 @@ static void median_cleanup_REAL4( REAL4FrequencySeries *work, UINT4 n )
   for ( i = 0; i < n; ++i )
     if ( work[i].data )
       XLALDestroyREAL4Vector( work[i].data );
-  LALFree( work );
+  XLALFree( work );
   xlalErrno = saveErrno;
   return;
 }
@@ -457,7 +457,7 @@ static void median_cleanup_REAL8( REAL8FrequencySeries *work, UINT4 n )
   for ( i = 0; i < n; ++i )
     if ( work[i].data )
       XLALDestroyREAL8Vector( work[i].data );
-  LALFree( work );
+  XLALFree( work );
   xlalErrno = saveErrno;
   return;
 }
@@ -534,7 +534,7 @@ int XLALREAL4AverageSpectrumMedian(
   }
 
   /* create frequency series data workspaces */
-  work = LALCalloc( numseg, sizeof( *work ) );
+  work = XLALCalloc( numseg, sizeof( *work ) );
   if ( ! work )
     XLAL_ERROR( func, XLAL_ENOMEM );
   for ( seg = 0; seg < numseg; ++seg )
@@ -574,7 +574,7 @@ int XLALREAL4AverageSpectrumMedian(
   }
 
   /* create array to hold a particular frequency bin data */
-  bin = LALMalloc( numseg * sizeof( *bin ) );
+  bin = XLALMalloc( numseg * sizeof( *bin ) );
   if ( ! bin )
   {
     median_cleanup_REAL4( work, numseg ); /* cleanup */
@@ -612,7 +612,7 @@ int XLALREAL4AverageSpectrumMedian(
   spectrum->sampleUnits = work->sampleUnits;
 
   /* free the workspace data */
-  LALFree( bin );
+  XLALFree( bin );
   median_cleanup_REAL4( work, numseg );
 
   return 0;
@@ -675,7 +675,7 @@ int XLALREAL8AverageSpectrumMedian(
   }
 
   /* create frequency series data workspaces */
-  work = LALCalloc( numseg, sizeof( *work ) );
+  work = XLALCalloc( numseg, sizeof( *work ) );
   if ( ! work )
     XLAL_ERROR( func, XLAL_ENOMEM );
   for ( seg = 0; seg < numseg; ++seg )
@@ -715,7 +715,7 @@ int XLALREAL8AverageSpectrumMedian(
   }
 
   /* create array to hold a particular frequency bin data */
-  bin = LALMalloc( numseg * sizeof( *bin ) );
+  bin = XLALMalloc( numseg * sizeof( *bin ) );
   if ( ! bin )
   {
     median_cleanup_REAL8( work, numseg ); /* cleanup */
@@ -753,7 +753,7 @@ int XLALREAL8AverageSpectrumMedian(
   spectrum->sampleUnits = work->sampleUnits;
 
   /* free the workspace data */
-  LALFree( bin );
+  XLALFree( bin );
   median_cleanup_REAL8( work, numseg );
 
   return 0;
@@ -779,8 +779,8 @@ static void median_mean_cleanup_REAL4( REAL4FrequencySeries *even, REAL4Frequenc
     if ( odd[i].data )
       XLALDestroyREAL4Vector( odd[i].data );
   }
-  LALFree( even );
-  LALFree( odd );
+  XLALFree( even );
+  XLALFree( odd );
   xlalErrno = saveErrno;
   return;
 }
@@ -795,8 +795,8 @@ static void median_mean_cleanup_REAL8( REAL8FrequencySeries *even, REAL8Frequenc
     if ( odd[i].data )
       XLALDestroyREAL8Vector( odd[i].data );
   }
-  LALFree( even );
-  LALFree( odd );
+  XLALFree( even );
+  XLALFree( odd );
   xlalErrno = saveErrno;
   return;
 }
@@ -865,10 +865,10 @@ int XLALREAL4AverageSpectrumMedianMean(
   }
 
   /* create frequency series data workspaces */
-  even = LALCalloc( halfnumseg, sizeof( *even ) );
+  even = XLALCalloc( halfnumseg, sizeof( *even ) );
   if ( ! even )
     XLAL_ERROR( func, XLAL_ENOMEM );
-  odd = LALCalloc( halfnumseg, sizeof( *odd ) );
+  odd = XLALCalloc( halfnumseg, sizeof( *odd ) );
   if ( ! odd )
     XLAL_ERROR( func, XLAL_ENOMEM );
   for ( seg = 0; seg < halfnumseg; ++seg )
@@ -924,7 +924,7 @@ int XLALREAL4AverageSpectrumMedianMean(
   }
 
   /* create array to hold a particular frequency bin data */
-  bin = LALMalloc( halfnumseg * sizeof( *bin ) );
+  bin = XLALMalloc( halfnumseg * sizeof( *bin ) );
   if ( ! bin )
   {
     median_mean_cleanup_REAL4( even, odd, halfnumseg ); /* cleanup */
@@ -977,7 +977,7 @@ int XLALREAL4AverageSpectrumMedianMean(
   spectrum->sampleUnits = even->sampleUnits;
 
   /* free the workspace data */
-  LALFree( bin );
+  XLALFree( bin );
   median_mean_cleanup_REAL4( even, odd, halfnumseg );
 
   return 0;
@@ -1047,10 +1047,10 @@ int XLALREAL8AverageSpectrumMedianMean(
   }
 
   /* create frequency series data workspaces */
-  even = LALCalloc( halfnumseg, sizeof( *even ) );
+  even = XLALCalloc( halfnumseg, sizeof( *even ) );
   if ( ! even )
     XLAL_ERROR( func, XLAL_ENOMEM );
-  odd = LALCalloc( halfnumseg, sizeof( *odd ) );
+  odd = XLALCalloc( halfnumseg, sizeof( *odd ) );
   if ( ! odd )
     XLAL_ERROR( func, XLAL_ENOMEM );
   for ( seg = 0; seg < halfnumseg; ++seg )
@@ -1106,7 +1106,7 @@ int XLALREAL8AverageSpectrumMedianMean(
   }
 
   /* create array to hold a particular frequency bin data */
-  bin = LALMalloc( halfnumseg * sizeof( *bin ) );
+  bin = XLALMalloc( halfnumseg * sizeof( *bin ) );
   if ( ! bin )
   {
     median_mean_cleanup_REAL8( even, odd, halfnumseg ); /* cleanup */
@@ -1159,7 +1159,7 @@ int XLALREAL8AverageSpectrumMedianMean(
   spectrum->sampleUnits = even->sampleUnits;
 
   /* free the workspace data */
-  LALFree( bin );
+  XLALFree( bin );
   median_mean_cleanup_REAL8( even, odd, halfnumseg );
 
   return 0;

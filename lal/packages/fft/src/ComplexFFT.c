@@ -186,14 +186,14 @@ COMPLEX8FFTPlan * XLALCreateCOMPLEX8FFTPlan( UINT4 size, int fwdflg, int measure
   }
 
   /* allocate memory for the plan and the temporary arrays */
-  plan = LALMalloc( sizeof( *plan ) );
-  tmp1 = LALMalloc( size * sizeof( *tmp1 ) );
-  tmp2 = LALMalloc( size * sizeof( *tmp2 ) );
+  plan = XLALMalloc( sizeof( *plan ) );
+  tmp1 = XLALMalloc( size * sizeof( *tmp1 ) );
+  tmp2 = XLALMalloc( size * sizeof( *tmp2 ) );
   if ( ! plan || ! tmp1 || ! tmp2 )
   {
-    if ( plan ) LALFree( plan );
-    if ( tmp1 ) LALFree( tmp1 );
-    if ( tmp2 ) LALFree( tmp2 );
+    XLALFree( plan );
+    XLALFree( tmp1 );
+    XLALFree( tmp2 );
     XLAL_ERROR_NULL( func, XLAL_ENOMEM );
   }
 
@@ -205,13 +205,13 @@ COMPLEX8FFTPlan * XLALCreateCOMPLEX8FFTPlan( UINT4 size, int fwdflg, int measure
   LAL_FFTW_PTHREAD_MUTEX_UNLOCK;
 
   /* free temporary arrays */
-  LALFree( tmp2 );
-  LALFree( tmp1 );
+  XLALFree( tmp2 );
+  XLALFree( tmp1 );
 
   /* check to see success of plan creation */
   if ( ! plan->plan )
   {
-    LALFree( plan );
+    XLALFree( plan );
     XLAL_ERROR_NULL( func, XLAL_EFAILED );
   }
 
@@ -256,7 +256,7 @@ void XLALDestroyCOMPLEX8FFTPlan( COMPLEX8FFTPlan *plan )
   fftwf_destroy_plan( plan->plan );
   LAL_FFTW_PTHREAD_MUTEX_UNLOCK;
   memset( plan, 0, sizeof( *plan ) );
-  LALFree( plan );
+  XLALFree( plan );
   return;
 }
 
@@ -322,14 +322,14 @@ COMPLEX16FFTPlan * XLALCreateCOMPLEX16FFTPlan( UINT4 size, int fwdflg, int measu
   }
 
   /* allocate memory for the plan and the temporary arrays */
-  plan = LALMalloc( sizeof( *plan ) );
-  tmp1 = LALMalloc( size * sizeof( *tmp1 ) );
-  tmp2 = LALMalloc( size * sizeof( *tmp2 ) );
+  plan = XLALMalloc( sizeof( *plan ) );
+  tmp1 = XLALMalloc( size * sizeof( *tmp1 ) );
+  tmp2 = XLALMalloc( size * sizeof( *tmp2 ) );
   if ( ! plan || ! tmp1 || ! tmp2 )
   {
-    if ( plan ) LALFree( plan );
-    if ( tmp1 ) LALFree( tmp1 );
-    if ( tmp2 ) LALFree( tmp2 );
+    XLALFree( plan );
+    XLALFree( tmp1 );
+    XLALFree( tmp2 );
     XLAL_ERROR_NULL( func, XLAL_ENOMEM );
   }
 
@@ -341,13 +341,13 @@ COMPLEX16FFTPlan * XLALCreateCOMPLEX16FFTPlan( UINT4 size, int fwdflg, int measu
   LAL_FFTW_PTHREAD_MUTEX_UNLOCK;
 
   /* free temporary arrays */
-  LALFree( tmp2 );
-  LALFree( tmp1 );
+  XLALFree( tmp2 );
+  XLALFree( tmp1 );
 
   /* check to see success of plan creation */
   if ( ! plan->plan )
   {
-    LALFree( plan );
+    XLALFree( plan );
     XLAL_ERROR_NULL( func, XLAL_EFAILED );
   }
 
@@ -392,7 +392,7 @@ void XLALDestroyCOMPLEX16FFTPlan( COMPLEX16FFTPlan *plan )
   fftw_destroy_plan( plan->plan );
   LAL_FFTW_PTHREAD_MUTEX_UNLOCK;
   memset( plan, 0, sizeof( *plan ) );
-  LALFree( plan );
+  XLALFree( plan );
   return;
 }
 
