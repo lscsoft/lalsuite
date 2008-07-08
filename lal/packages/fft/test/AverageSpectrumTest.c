@@ -38,7 +38,6 @@ int main( void )
 {
   const UINT4 n = 65536;
   const UINT4 m = 8;
-  static LALWindowParams winpar;
   static AverageSpectrumParams specpar;
   static REAL4FrequencySeries fseries;
   static REAL4TimeSeries tseries;
@@ -69,19 +68,13 @@ int main( void )
   LALDestroyRandomParams( &status, &randpar );
   TESTSTATUS( &status );
 
-  /* prepare window paramers */
-  winpar.length = n;
-  winpar.type = Welch;
-  /* winpar.type = Rectangular; */
-
   /* prepare average spectrum parameters */
   specpar.method  = useMedian;
   specpar.overlap = n / 2;
   /* specpar.overlap = 0; */
   LALCreateForwardRealFFTPlan( &status, &specpar.plan, n, 0 );
   TESTSTATUS( &status );
-  LALCreateREAL4Window( &status, &specpar.window, &winpar );
-  TESTSTATUS( &status );
+  specpar.window = XLALCreateWelchREAL4Window(n);
 
   /* compute spectrum */
   LALREAL4AverageSpectrum( &status, &fseries, &tseries, &specpar );

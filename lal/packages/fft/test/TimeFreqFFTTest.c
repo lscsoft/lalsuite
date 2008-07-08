@@ -121,7 +121,6 @@ int main( int argc, char *argv[] )
   ComplexFFTPlan *revComplexPlan = NULL;
   RandomParams   *randpar        = NULL;
 
-  LALWindowParams       wpars;
   AverageSpectrumParams avgSpecParams;
 
   UINT4 srate[] = { 4096, 9000 };
@@ -194,7 +193,6 @@ int main( int argc, char *argv[] )
    */
 
 
-  wpars.type = Hann;
   avgSpecParams.method = useMean;
 
   for ( np = 0; np < sizeof(npts)/sizeof(*npts) ; ++np )
@@ -208,10 +206,7 @@ int main( int argc, char *argv[] )
     avgSpecParams.overlap = npts[np] / 2;
 
     /* create the window */
-    wpars.length = npts[np];
-    avgSpecParams.window = NULL;
-    LALCreateREAL4Window( &status, &avgSpecParams.window, &wpars );
-    TestStatus( &status, CODES( 0 ), 1 );
+    avgSpecParams.window = XLALCreateHannREAL4Window(npts[np]);
     avgSpecParams.plan = NULL;
     LALCreateForwardRealFFTPlan( &status, &avgSpecParams.plan, npts[np], 0 );
     TestStatus( &status, CODES( 0 ), 1 );

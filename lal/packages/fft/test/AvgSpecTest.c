@@ -46,7 +46,6 @@ int main( void )
 
   static LALStatus status;
 
-  static LALWindowParams        winpar;
   static AverageSpectrumParams  specpar;
   static REAL4FrequencySeries   fseries;
   static REAL4TimeSeries        tseries;
@@ -99,17 +98,12 @@ int main( void )
   LALDButterworthREAL4TimeSeries( &status, &tseries, &highpasspar );
   TESTSTATUS( &status );
 
-  winpar.length = seglen;
-  winpar.type   = Welch;
-  winpar.type   = Rectangular;
-
   specpar.method  = useMean;
   specpar.overlap = seglen - stride;
 
   LALCreateForwardRealFFTPlan( &status, &specpar.plan, seglen, 0 );
   TESTSTATUS( &status );
-  LALCreateREAL4Window( &status, &specpar.window, &winpar );
-  TESTSTATUS( &status );
+  specpar.window = XLALCreateRectangularREAL4Window(seglen);
 
   /* compute spectrum */
   LALREAL4AverageSpectrum( &status, &fseries, &tseries, &specpar );
