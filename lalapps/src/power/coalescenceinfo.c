@@ -43,8 +43,6 @@ RCSID("$Id$");
         "--flow low_freq(Hz)" \
 	"[--help]\n"
 
-#define TRUE  1
-#define FALSE 0
 #define MSUNINSEC ( 4.9255*1e-6 )  /* solar mass in sec */
 
 
@@ -121,7 +119,7 @@ struct options_t {
 
 static void set_option_defaults(struct options_t *options)
 {
-	options->verbose = FALSE;
+	options->verbose = 0;
 	options->mass1 = 0.0;
 	options->mass2 = 0.0;
 	options->flow = 0.0;	

@@ -97,10 +97,6 @@ RCSID("$Id$");
 #define CVS_DATE "$Date$"
 
 
-#define TRUE       1
-#define FALSE      0
-
-
 /*
  * ============================================================================
  *
@@ -287,7 +283,7 @@ static struct options *options_new(void)
 		.resample_rate = 0,	/* impossible */
 		.seed = 0,	/* default == use system clock */
 		.max_series_length = 0,	/* default == disable */
-		.calibrated = FALSE,	/* default */
+		.calibrated = 0,	/* default */
 		.high_pass = -1.0,	/* impossible */
 		.max_event_rate = 0,	/* default == disable */
 		.output_filename = NULL,	/* impossible */
@@ -446,18 +442,18 @@ static int all_required_arguments_present(char *prog, struct option *long_option
 			break;
 
 		default:
-			arg_is_missing = FALSE;
+			arg_is_missing = 0;
 			break;
 		}
 		if(arg_is_missing) {
 			print_missing_argument(prog, long_options[index].name);
-			got_all_arguments = FALSE;
+			got_all_arguments = 0;
 		}
 	}
 
 	if(!!options->cache_filename + (options->noise_rms > 0.0) != 1) {
 		XLALPrintError("%s: must provide exactly one of --frame-cache or --gaussian-noise-rms\n", prog);
-		got_all_arguments = FALSE;
+		got_all_arguments = 0;
 	}
 
 	return got_all_arguments;
@@ -493,7 +489,7 @@ static ProcessParamsTable **add_process_param(ProcessParamsTable **proc_param, c
 static int parse_command_line_debug(int argc, char *argv[])
 {
 	char msg[240];
-	int args_are_bad = FALSE;
+	int args_are_bad = 0;
 	int c;
 	int option_index;
 	struct option long_options[] = {
@@ -549,7 +545,7 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 {
 	struct options *options;
 	char msg[240];
-	int args_are_bad = FALSE;
+	int args_are_bad = 0;
 	int c;
 	int option_index;
 	struct option long_options[] = {
