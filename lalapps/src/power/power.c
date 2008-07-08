@@ -118,10 +118,10 @@ static size_t min(size_t a, size_t b)
 
 
 /*
- * Return TRUE if the given integer is an integer power of 2.  The trick
- * here is that integer powers of 2 (and only integer powers of 2) share
- * exactly 0 bits with the integer 1 less than themselves, so we check to
- * see if that's the case.
+ * Return non-zero if the given integer is an integer power of 2.  The
+ * trick here is that integer powers of 2 (and only integer powers of 2)
+ * share exactly 0 bits with the integer 1 less than themselves, so we
+ * check to see if that's the case.
  */
 
 
@@ -132,7 +132,7 @@ static int is_power_of_2(int x)
 
 
 /*
- * Return TRUE if the given double is an integer power of 2.
+ * Return non-zero if the given double is an integer power of 2.
  */
 
 
@@ -380,7 +380,7 @@ static void print_missing_argument(const char *prog, const char *arg)
 static int all_required_arguments_present(char *prog, struct option *long_options, const struct options *options)
 {
 	int index;
-	int got_all_arguments = TRUE;
+	int got_all_arguments = 1;
 	int arg_is_missing;
 
 	for(index = 0; long_options[index].name; index++) {
@@ -524,7 +524,7 @@ static int parse_command_line_debug(int argc, char *argv[])
 		else {
 			sprintf(msg, "must be one of \"info\", \"warn\", \"error\", or \"off\"");
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
-			args_are_bad = TRUE;
+			args_are_bad = 1;
 		}
 		break;
 
@@ -601,7 +601,7 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 		if(options->bandwidth <= 0 || !double_is_power_of_2(options->bandwidth)) {
 			sprintf(msg, "must be greater than 0 and a power of 2 (%g specified)", options->bandwidth);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
-			args_are_bad = TRUE;
+			args_are_bad = 1;
 		}
 		ADD_PROCESS_PARAM(process, "int");
 		break;
@@ -627,7 +627,7 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 		if(options->max_event_rate < 0) {
 			sprintf(msg, "must not be negative (%d specified)", options->max_event_rate);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
-			args_are_bad = TRUE;
+			args_are_bad = 1;
 		}
 		ADD_PROCESS_PARAM(process, "int");
 		break;
@@ -638,7 +638,7 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 		break;
 
 	case 'J':
-		options->calibrated = TRUE;
+		options->calibrated = 1;
 		ADD_PROCESS_PARAM(process, "string");
 		break;
 
@@ -646,7 +646,7 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 		if(XLALStrToGPS(&options->gps_end, optarg, NULL)) {
 			sprintf(msg, "range error parsing \"%s\"", optarg);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
-			args_are_bad = TRUE;
+			args_are_bad = 1;
 		}
 		ADD_PROCESS_PARAM(process, "string");
 		break;
@@ -655,7 +655,7 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 		if(XLALStrToGPS(&options->gps_start, optarg, NULL)) {
 			sprintf(msg, "range error parsing \"%s\"", optarg);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
-			args_are_bad = TRUE;
+			args_are_bad = 1;
 		}
 		ADD_PROCESS_PARAM(process, "string");
 		break;
@@ -675,7 +675,7 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 		if(options->flow < 0) {
 			sprintf(msg, "must not be negative (%f Hz specified)", options->flow);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
-			args_are_bad = TRUE;
+			args_are_bad = 1;
 		}
 		ADD_PROCESS_PARAM(process, "float");
 		break;
@@ -695,7 +695,7 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 		if(options->noise_rms <= 0.0) {
 			sprintf(msg, "must be greater than 0 (%f specified)", options->noise_rms);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
-			args_are_bad = TRUE;
+			args_are_bad = 1;
 		}
 		ADD_PROCESS_PARAM(process, "float");
 		break;
@@ -706,13 +706,13 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 		if((window_length < 4) || !is_power_of_2(window_length)) {
 			sprintf(msg, "must be greater than or equal to 4 and a power of 2 (%i specified)", window_length);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
-			args_are_bad = TRUE;
+			args_are_bad = 1;
 		}
 		options->window = XLALCreateHannREAL8Window(window_length);
 		if(!options->window) {
 			sprintf(msg, "failure generating %d sample Hann window", window_length);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
-			args_are_bad = TRUE;
+			args_are_bad = 1;
 			/* silence "missing required argument" message */
 			options->window = (void *) 1;
 		}
@@ -748,7 +748,7 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 		if(options->max_series_length <= 0) {
 			sprintf(msg, "must be greater than 0 (%i specified)", atoi(optarg));
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
-			args_are_bad = TRUE;
+			args_are_bad = 1;
 		}
 		ADD_PROCESS_PARAM(process, "int");
 		break;
@@ -768,7 +768,7 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 		if(options->resample_rate < 2 || options->resample_rate > 16384 || !is_power_of_2(options->resample_rate)) {
 			sprintf(msg, "must be a power of 2 in the rage [2,16384] (%d specified)", options->resample_rate);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
-			args_are_bad = TRUE;
+			args_are_bad = 1;
 		}
 		ADD_PROCESS_PARAM(process, "int");
 		break;
@@ -778,7 +778,7 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 		if(options->fractional_stride > 1 || !double_is_power_of_2(options->fractional_stride)) {
 			sprintf(msg, "must be less than or equal to 1 and a power of 2 (%g specified)", options->fractional_stride);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
-			args_are_bad = TRUE;
+			args_are_bad = 1;
 		}
 		ADD_PROCESS_PARAM(process, "float");
 		break;
@@ -788,7 +788,7 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 		if(options->confidence_threshold < 0) {
 			sprintf(msg, "must not be negative (%g specified)", options->confidence_threshold);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
-			args_are_bad = TRUE;
+			args_are_bad = 1;
 		}
 		ADD_PROCESS_PARAM(process, "float");
 		break;
@@ -803,7 +803,7 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 		if(options->filter_corruption < 0) {
 			sprintf(msg, "must not be negative (%d specified)", options->filter_corruption);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
-			args_are_bad = TRUE;
+			args_are_bad = 1;
 		}
 		ADD_PROCESS_PARAM(process, "int");
 		break;
@@ -813,7 +813,7 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 		if((options->maxTileBandwidth <= 0) || !double_is_power_of_2(options->maxTileBandwidth)) {
 			sprintf(msg, "must be greater than 0 and a power of 2 (%f specified)", options->maxTileBandwidth);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
-			args_are_bad = TRUE;
+			args_are_bad = 1;
 		}
 		ADD_PROCESS_PARAM(process, "float");
 		break;
@@ -823,7 +823,7 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 		if((options->maxTileDuration <= 0) || !double_is_power_of_2(options->maxTileDuration)) {
 			sprintf(msg, "must be greater than 0 and a power of 2 (%f specified)", options->maxTileDuration);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
-			args_are_bad = TRUE;
+			args_are_bad = 1;
 		}
 		ADD_PROCESS_PARAM(process, "float");
 		break;
@@ -833,7 +833,7 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 		if(options->high_pass < 0) {
 			sprintf(msg, "must not be negative (%f Hz specified)", options->high_pass);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
-			args_are_bad = TRUE;
+			args_are_bad = 1;
 		}
 		ADD_PROCESS_PARAM(process, "float");
 		break;
@@ -864,7 +864,7 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 	 */
 
 	if(!all_required_arguments_present(argv[0], long_options, options))
-		args_are_bad = TRUE;
+		args_are_bad = 1;
 
 	/*
 	 * Check the order of the start and stop times.
@@ -872,7 +872,7 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 
 	if(XLALGPSCmp(&options->gps_start, &options->gps_end) > 0) {
 		XLALPrintError("%s: error: GPS start time > GPS stop time\n", argv[0]);
-		args_are_bad = TRUE;
+		args_are_bad = 1;
 	}
 
 	/*
@@ -884,7 +884,7 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 		XLALPrintWarning("warning: no calibration cache is provided:  software injections and hrss will be computed with unit response\n");
 	} else if(options->calibrated) {
 		XLALPrintError("error: calibration cache provided for use with calibrated data!\n");
-		args_are_bad = TRUE;
+		args_are_bad = 1;
 	}
 
 	/*
@@ -1389,7 +1389,7 @@ static REAL8TimeSeries *add_mdc_injections(const char *mdccachefile, const char 
 	stop = series->epoch;
 	XLALGPSAdd(&stop, series->data->length * series->deltaT);
 
-	mdc = get_time_series(mdccachefile, channel_name, series->epoch, stop, 0, TRUE);
+	mdc = get_time_series(mdccachefile, channel_name, series->epoch, stop, 0, 1);
 	if(!mdc)
 		XLAL_ERROR_NULL(func, XLAL_EFUNC);
 
