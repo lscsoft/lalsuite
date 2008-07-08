@@ -34,6 +34,7 @@ void `LALDestroy'SERIESTYPE (
 )
 {
 	INITSTATUS(status, "`LALDestroy'SERIESTYPE", FREQUENCYSERIESC);
+	XLALPrintDeprecationWarning ("`LALDestroy'SERIESTYPE", "`XLALDestroy'SERIESTYPE");
 	`XLALDestroy'SERIESTYPE (series);
 	RETURN(status);
 }
@@ -86,6 +87,7 @@ void `LALCreate'SERIESTYPE (
 )
 {
 	INITSTATUS(status, "`LALCreate'SERIESTYPE", FREQUENCYSERIESC);
+	XLALPrintDeprecationWarning ("`LALCreate'SERIESTYPE", "`XLALCreate'SERIESTYPE");
 	ASSERT(output != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
 	*output = `XLALCreate'SERIESTYPE (name, &epoch, f0, deltaF, &sampleUnits, length);
 	if(*output == NULL) {

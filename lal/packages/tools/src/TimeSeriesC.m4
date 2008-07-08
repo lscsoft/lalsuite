@@ -34,6 +34,7 @@ void `LALDestroy'SERIESTYPE (
 )
 {
 	INITSTATUS(status, "`LALDestroy'SERIESTYPE", TIMESERIESC);
+	XLALPrintDeprecationWarning ("`LALDestroy'SERIESTYPE", "`XLALDestroy'SERIESTYPE");
 	`XLALDestroy'SERIESTYPE (series);
 	RETURN(status);
 }
@@ -86,6 +87,7 @@ void `LALCreate'SERIESTYPE (
 )
 {
 	INITSTATUS(status, "`LALCreate'SERIESTYPE", TIMESERIESC);
+	XLALPrintDeprecationWarning ("`LALCreate'SERIESTYPE", "`XLALCreate'SERIESTYPE");
 	ASSERT(output != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
 	*output = `XLALCreate'SERIESTYPE (name, &epoch, f0, deltaT, &sampleUnits, length);
 	if(*output == NULL) {
@@ -146,7 +148,7 @@ void `LALResize'SERIESTYPE (
 )
 {
 	INITSTATUS(status, "`LALResize'SERIESTYPE", TIMESERIESC);
-
+	XLALPrintDeprecationWarning ("`LALResize'SERIESTYPE", "`XLALResize'SERIESTYPE");
 	ASSERT(series != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
 	ASSERT(series->data != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
 	if(!`XLALResize'SERIESTYPE (series, first, length)) {
