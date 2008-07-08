@@ -134,7 +134,7 @@ static void parse_command_line(int argc, char **argv, struct options_t *options)
 {
 	struct option long_options[] = {
 		/* these options set a flag */
-		{"verbose",         no_argument,        &options->verbose, TRUE},
+		{"verbose",         no_argument,        &options->verbose, 1},
 		/* parameters which determine the output xml file */
 		{"mass1",        required_argument,  NULL,  'a'},
 		{"mass2",        required_argument,  NULL,  'b'},
