@@ -321,10 +321,10 @@ def plot_systematics(filelist,cp,dir,epoch,dag,opts):
       hti1[freq[freqcnt]] += float(tmp[1])
       hfr1[freq[freqcnt]] += float(tmp[2])
       hfi1[freq[freqcnt]] += float(tmp[3])
-      htrfr[freq[freqcnt]] += float(tmp[0])*float(tmp[2])/ampf
-      htifi[freq[freqcnt]] += float(tmp[1])*float(tmp[3])/ampf
-      htrfi[freq[freqcnt]] += float(tmp[0])*float(tmp[3])/ampf
-      htifr[freq[freqcnt]] += float(tmp[1])*float(tmp[2])/ampf
+      htrfr[freq[freqcnt]] += float(tmp[0])*float(tmp[2])#/ampf
+      htifi[freq[freqcnt]] += float(tmp[1])*float(tmp[3])#/ampf
+      htrfi[freq[freqcnt]] += float(tmp[0])*float(tmp[3])#/ampf
+      htifr[freq[freqcnt]] += float(tmp[1])*float(tmp[2])#/ampf
 
       freqcnt += 1
       if freqcnt >= len(freq): freqcnt = 0 
@@ -336,9 +336,10 @@ def plot_systematics(filelist,cp,dir,epoch,dag,opts):
     hti1[f] /= N[f]
     hfr1[f] /= N[f]
     hfi1[f] /= N[f]  
-    Ai[f] = (htifr[f]-htrfi[f])/N[f]
-    Ar[f] = (htrfr[f]+htifi[f])/N[f]
-
+    #Ai[f] = (htifr[f]-htrfi[f])/N[f]
+    #Ar[f] = (htrfr[f]+htifi[f])/N[f]
+    Ai[f] = (htifr[f]-htrfi[f])/(amp[f])
+    Ar[f] = (htrfr[f]+htifi[f])/(amp[f])
     amp[f] = sqrt(amp[f]/N[f])
 
 
