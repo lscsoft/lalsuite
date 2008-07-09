@@ -451,7 +451,7 @@ sigma for 1st time.\n",
     /* calibrate */
     if( inputParams.calibrate ){
       calibrate(resampData, times, inputParams.calibfiles,
-        inputParams.freqfactor*hetParams.het.f0);
+        inputParams.freqfactor*hetParams.het.f0, inputParams.channel);
       if( verbose ){  fprintf(stderr, "I've calibrated the data at \
 %.1lf Hz\n", inputParams.freqfactor*hetParams.het.f0);  }
     }
@@ -613,6 +613,8 @@ pulsar spin frequency */
 
   inputParams->manualEpoch = 0.; /* default to zero i.e. it takes the epoch from
 the pulsar parameter file */
+  /* channel defaults to DARM_ERR */
+  sprintf(inputParams->channel, "DARM_ERR");
 
   /* get input arguments */
   while(1){
@@ -1505,7 +1507,7 @@ CHAR *set_frame_files(INT4 *starts, INT4 *stops, FrameCache cache,
 /* function to read in the calibration files and calibrate the data at that (gw)
 frequency */
 void calibrate(COMPLEX16TimeSeries *series, REAL8Vector *datatimes,
-  CalibrationFiles calfiles, REAL8 frequency){
+  CalibrationFiles calfiles, REAL8 frequency, CHAR *channel){
   FILE *fpcoeff=NULL;
   REAL8 Rfunc, Rphase;
   REAL8 C, Cphase; /* sensing function */
@@ -1544,7 +1546,7 @@ Assume calibration coefficients are 1 and use the response funtcion.\n");
 Assume calibration coefficients are 1 and use the response funtcion.\n",
         calfiles.calibcoefficientfile);
       exit(0);
-    }    
+    }
 
     /* open sensing function file for reading */
     get_calibration_values(&C, &Cphase, calfiles.sensingfunctionfile,
@@ -1560,7 +1562,7 @@ Assume calibration coefficients are 1 and use the response funtcion.\n",
       if(fscanf(fpcoeff, "%s", jnkstr) == EOF){ /* scan in value and check if ==
                                                   to % */
         break;
-      }  
+      }
       if(strstr(jnkstr, "%")){
         fscanf(fpcoeff, "%*[^\n]");   /* if == % then skip to the end of the
                                          line */
@@ -1607,10 +1609,27 @@ data.\n");
             j==(INT4)series->data->length-1)
             break;
 
-          Resp.re = (cos(Cphase) + gamma[k]*G*cos(Gphase -
-            Cphase))/(alpha[k]*C);
-          Resp.im = (-sin(Cphase) + gamma[k]*G*sin(Gphase -
-            Cphase))/(alpha[k]*C);
+          /* response function for DARM_ERR is
+              R(f) = (1 + \gamma*G)/\gamma*C */
+          if(strstr(channel, "DER_DATA") == NULL){
+            Resp.re = (cos(Cphase) + gamma[k]*G*cos(Gphase -
+              Cphase))/(gamma[k]*C);
+            Resp.im = (-sin(Cphase) + gamma[k]*G*sin(Gphase -
+              Cphase))/(gamma[k]*C);
+          }
+          /* response function for AS_Q is
+              R(f) = (1 + \gamma*G)/\alpha*C */
+          else if(strstr(channel, "AS_Q") == NULL){
+            Resp.re = (cos(Cphase) + gamma[k]*G*cos(Gphase -
+              Cphase))/(alpha[k]*C);
+            Resp.im = (-sin(Cphase) + gamma[k]*G*sin(Gphase -
+              Cphase))/(alpha[k]*C);
+          }
+          else{
+            fprintf(stderr, "Error... data channel is not set. Give either AS_Q\
+ or DARM_ERR!\n");
+            exit(0);
+          }
 
           tempData = series->data->data[j];
           series->data->data[counter].re = tempData.re*Resp.re -
@@ -1618,7 +1637,7 @@ data.\n");
           series->data->data[counter].im = tempData.re*Resp.im +
             tempData.im*Resp.re;
           datatimes->data[counter] = datatimes->data[j];
-          
+
           counter++;
           ktemp = k;
           break;

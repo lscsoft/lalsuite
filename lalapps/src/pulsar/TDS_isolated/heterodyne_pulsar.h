@@ -113,7 +113,7 @@ extern "C" {
 " --binary-output     output data to a binary file\n"\
 "\n"
 
-#define MAXLENGTH 840000 /* max number of lines in heterodyned data file */
+#define MAXLENGTH 8400000 /* max number of lines in heterodyned data file */
 #define MAXDATALENGTH 256 /* maximum length of data to be read from frames */
 #define MAXSTRLENGTH 100 /* maximum number of characters in a frame filename */
 #define MAXNUMFRAMES 35000 /* maximum number of frame files in data file */
@@ -239,7 +239,7 @@ CHAR *set_frame_files(INT4 *starts, INT4 *stops, FrameCache cache, INT4 numFrame
 
 /* calibrate data */
 void calibrate(COMPLEX16TimeSeries *series, REAL8Vector *datatimes, CalibrationFiles calfiles,
-REAL8 frequency);
+REAL8 frequency, CHAR *channel);
 
 /* function to extract the correct calibration values from the files */
 void get_calibration_values(REAL8 *magnitude, REAL8 *phase, CHAR *calibfilename, REAL8
