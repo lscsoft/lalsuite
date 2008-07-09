@@ -100,7 +100,8 @@ REAL4 tmpx, tmpy;
 
 #define MAXLINESRS   60000     /* Maximum # of lines in a Response file */
 #define MAXFACTORS   100000       /* Maximum # of factors to be computed */
-#define MAXFREQUENCIES 100       /* Maximum number of frequemcies for which to do the comparison */
+#define MAXFREQUENCIES 200       /* Maximum number of frequemcies for which to do the comparison */
+#define DECIMATE 4 /*Factor by which to decimate the data when the -D (decimate) flag is used */
 
 NRCSID( NOISECOMPARISONC, "NoiseComparison $Id$");
 RCSID( "NoiseComparison $Id$");
@@ -141,6 +142,7 @@ struct CommandLineArgsTag {
   REAL8 gamma_fudgefactor; /* fudge factor to divide gammas by */
   INT4 nofactors;
   INT4 outputphase;
+  INT4 decimate;
 } CommandLineArgs;
 
 typedef struct ResponseFunctionTag
@@ -321,16 +323,33 @@ int Initialise(struct CommandLineArgsTag CLA)
   LALDCreateVector(&status,&hoft.data,(UINT4)(CLA.t/(hoft.deltaT) +0.5));
   TESTSTATUS( &status );
 
-  /* Create Window vectors */
-  LALCreateVector(&status,&derrwin,(UINT4)(CLA.t/(derr.deltaT*4) +0.5));
-  TESTSTATUS( &status );
 
-  winparams.type=Hann;
+  if (CLA.decimate == 1)
+    {
+    /* Create Window vectors */
+    LALCreateVector(&status,&derrwin,(UINT4)(CLA.t/(derr.deltaT*DECIMATE) +0.5));
+    TESTSTATUS( &status );
+
+    winparams.type=Hann;
    
-  /* make window  */
-  winparams.length=(INT4)(CLA.t/(derr.deltaT*4) +0.5);
-  LALWindow(&status,derrwin,&winparams);
-  TESTSTATUS( &status );
+    /* make window  */
+    winparams.length=(INT4)(CLA.t/(derr.deltaT*DECIMATE) +0.5);
+    LALWindow(&status,derrwin,&winparams);
+    TESTSTATUS( &status );
+    }
+  else
+    {
+    /* Create Window vectors */
+    LALCreateVector(&status,&derrwin,(UINT4)(CLA.t/(derr.deltaT) +0.5));
+    TESTSTATUS( &status );
+
+    winparams.type=Hann;
+   
+    /* make window  */
+    winparams.length=(INT4)(CLA.t/(derr.deltaT) +0.5);
+    LALWindow(&status,derrwin,&winparams);
+    TESTSTATUS( &status );
+    }
 
   /* Open output file */
   fpout=fopen(CLA.noisefile,"w");
@@ -356,32 +375,64 @@ int Initialise(struct CommandLineArgsTag CLA)
      printmemuse();
    #endif
 
-  LALCreateForwardREAL8FFTPlan( &status, &fftPlanDouble, hoft.data->length/4, 0 );
-  TESTSTATUS( &status );
+  if (CLA.decimate == 1)
+    {
+    LALCreateForwardREAL8FFTPlan( &status, &fftPlanDouble, hoft.data->length/DECIMATE, 0 );
+    TESTSTATUS( &status );
    
-   #ifdef DEBUG
-     fprintf(stdout,"Made it to: 1\n"); 
-     printmemuse();  
-   #endif
-  LALCreateForwardREAL4FFTPlan( &status, &fftPlan, derr.data->length/4, 0 );
-  TESTSTATUS( &status );
-   #ifdef DEBUG
-     fprintf(stdout,"Made it to: 2\n"); 
-     printmemuse();  
-   #endif
-  LALZCreateVector( &status, &ffthtData, (hoft.data->length/4) / 2 + 1 );
-  TESTSTATUS( &status );  
+     #ifdef DEBUG
+       fprintf(stdout,"Made it to: 1\n"); 
+       printmemuse();  
+     #endif
+    LALCreateForwardREAL4FFTPlan( &status, &fftPlan, derr.data->length/DECIMATE, 0 );
+    TESTSTATUS( &status );
+     #ifdef DEBUG
+       fprintf(stdout,"Made it to: 2\n"); 
+       printmemuse();  
+     #endif
+    LALZCreateVector( &status, &ffthtData, (hoft.data->length/DECIMATE) / 2 + 1 );
+    TESTSTATUS( &status );  
    
-   #ifdef DEBUG
-     fprintf(stdout,"Made it to: 3\n"); 
-     printmemuse();  
-   #endif
-  LALCCreateVector( &status, &fftderrData, (hoft.data->length/4) / 2 + 1 );
-  TESTSTATUS( &status );  
-   #ifdef DEBUG
-     fprintf(stdout,"Made it to: 4\n"); 
-     printmemuse();  
-   #endif
+     #ifdef DEBUG
+       fprintf(stdout,"Made it to: 3\n"); 
+       printmemuse();  
+     #endif
+    LALCCreateVector( &status, &fftderrData, (hoft.data->length/DECIMATE) / 2 + 1 );
+    TESTSTATUS( &status );  
+     #ifdef DEBUG
+       fprintf(stdout,"Made it to: 4\n"); 
+       printmemuse();  
+     #endif
+     }
+  else
+    {
+    LALCreateForwardREAL8FFTPlan( &status, &fftPlanDouble, hoft.data->length, 0 );
+    TESTSTATUS( &status );
+   
+     #ifdef DEBUG
+       fprintf(stdout,"Made it to: 1\n"); 
+       printmemuse();  
+     #endif
+    LALCreateForwardREAL4FFTPlan( &status, &fftPlan, derr.data->length, 0 );
+    TESTSTATUS( &status );
+     #ifdef DEBUG
+       fprintf(stdout,"Made it to: 2\n"); 
+       printmemuse();  
+     #endif
+    LALZCreateVector( &status, &ffthtData, (hoft.data->length) / 2 + 1 );
+    TESTSTATUS( &status );  
+   
+     #ifdef DEBUG
+       fprintf(stdout,"Made it to: 3\n"); 
+       printmemuse();  
+     #endif
+    LALCCreateVector( &status, &fftderrData, (hoft.data->length) / 2 + 1 );
+    TESTSTATUS( &status );  
+     #ifdef DEBUG
+       fprintf(stdout,"Made it to: 4\n"); 
+       printmemuse();  
+     #endif
+     }
   return 0;
 }
 
@@ -697,17 +748,21 @@ int ComputeNoise(struct CommandLineArgsTag CLA, int n)
   
   fprintf(fpout, "\n");
 
-  /* resize the time series back to original length */
-  LALResizeREAL8TimeSeries(&status, &hoft, 0,hoft.data->length*4);
-  hoft.deltaT= hoft.deltaT/4;
-  
-  LALResizeREAL4TimeSeries(&status, &derr, 0,derr.data->length*4);
-  derr.deltaT= derr.deltaT/4;
+  if (CLA.decimate == 1)
+    {
+    /* resize the time series back to original length */
+    LALResizeREAL8TimeSeries(&status, &hoft, 0,hoft.data->length*DECIMATE);
+    hoft.deltaT= hoft.deltaT/DECIMATE;
+   
+    LALResizeREAL4TimeSeries(&status, &derr, 0,derr.data->length*DECIMATE);
+    derr.deltaT= derr.deltaT/DECIMATE;
 
-   #ifdef DEBUG
-     fprintf(stdout,"Made it to: 10\n"); 
-     printmemuse();  
-   #endif
+     #ifdef DEBUG
+       fprintf(stdout,"Made it to: 10\n"); 
+       printmemuse();  
+     #endif
+     }
+
   return 0;
 }
 
@@ -1015,11 +1070,12 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     {"version",              no_argument, NULL,                 'x'},
     {"gamma-fudge-factor",   required_argument, NULL,           'y'},
     {"no-factors",           no_argument, NULL,                 'z'},
-    {"output-phase",         no_argument, NULL,                 'Q'},    
+    {"output-phase",         no_argument, NULL,                 'Q'},
+    {"decimate",             required_argument, NULL,           'D'},    
     {"help",                 no_argument, NULL,                 'h'},
     {0, 0, 0, 0}
   };
-  char args[] = "ha:b:c:d:e:g:i:j:k:l:m:n:B:o:p:q:r:s:t:u:v:w:xy:zQ";
+  char args[] = "ha:b:c:d:e:g:i:j:k:l:m:n:B:o:p:q:r:s:t:u:v:w:xy:zQD";
 
   /* Initialize default values */
   CLA->freqfile=NULL;
@@ -1048,6 +1104,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   CLA->gamma_fudgefactor=1.0;
   CLA->outputphase=0;
   CLA->nofactors=0;
+  CLA->decimate=0;
 
   /* Scan through list of command line arguments */
   while ( 1 )
@@ -1164,6 +1221,9 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     case 'Q':
       CLA->outputphase=1;
       break;
+    case 'D':
+      CLA->decimate=1;
+      break;
     case 'h':
       /* print usage/help message */
       fprintf(stdout,"Arguments are:\n");
@@ -1193,6 +1253,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stdout,"\tgamma-fudge-factor (-y)\tFLAG\t Fudge factor used to adjust factor values. Gamma is divided by this value.\n");
       fprintf(stdout,"\tno-factors (-z)\tFLAG\t Set factors to 1.\n");
       fprintf(stdout,"\toutput-phase (-Q)\tFLAG\t Outputs real and imaginary parts of each frequency bin (careful! will make big files!).\n");
+      fprintf(stdout,"\tdecimate (-D)\tFLAG\t Decimates the data by a factor of 4.\n");
       fprintf(stdout,"\thelp (-h)\tFLAG\t This message\n");    
       exit(0);
       break;
