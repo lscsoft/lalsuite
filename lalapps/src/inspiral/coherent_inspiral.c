@@ -209,8 +209,6 @@ int main( int argc, char *argv[] )
   REAL4 inj_alpha = 0;
   REAL4 inj_alphabeta = 0;
 
-  FILE *filePtr[4];
-
   CHAR   fileName[FILENAME_MAX];
   CHAR   framename[FILENAME_MAX];
   CHAR   xmlname[FILENAME_MAX];
@@ -223,7 +221,7 @@ int main( int argc, char *argv[] )
   INT4   cohSegLength     = 1; /* This should match hardcoded value of 1s in inspiral.c */
   INT4   numPoints        = 0;
   UINT4  numSegments      = 1; /* CHECK: number of segments; hardwired to 1 */
-  UINT4  numBeamPoints    = 3721;       /* number of sky position templates */
+  UINT4  numBeamPoints    = 0; /* CHECK: number of sky position templates; now redundant */
   UINT8  eventID          = 0;
   REAL8  cohSeriesLength;
 
@@ -239,7 +237,6 @@ int main( int argc, char *argv[] )
   /* counters and other variables */
   INT4   j,k,l,w, cohtrigs, cohtriglimit;
   INT4   kmax = 0;
-  REAL4  theta,phi,vPlus,vMinus;
   UINT4  numDetectors     = 0;
   REAL8  tempTime[6]      = {0.0,0.0,0.0,0.0,0.0,0.0};
   INT4   timeptDiff[5]    = {0,0,0,0,0};
@@ -281,7 +278,6 @@ int main( int argc, char *argv[] )
   MetadataTable                 savedEvents;
   COMPLEX8TimeSeries            tempSnippet;
 
-  char nameArrayBeam[6][256] = {"0","0","0","0","0","0"}; /* beam files */
   char nameArrayCData[6][256] = {"0","0","0","0","0","0"}; /* cData chan names */
 
   /* set default debugging level */
@@ -475,7 +471,7 @@ int main( int argc, char *argv[] )
 	  l = 0;
 	  
 	  if( vrbflg ) fprintf(stdout,"numDetectors = %d\n", numDetectors);
-	  if( vrbflg ) fprintf(stdout,"caseID = %d %d %d %d %d %d (G1,H1,H2,L1,V1,T1)\n", caseID[0], caseID[1], caseID[2], caseID[3], caseID[4], caseID[5]);
+	  if( vrbflg ) fprintf(stdout,"caseID = %d %d %d %d %d %d (G1,H1,H2,L1,T1,V1)\n", caseID[0], caseID[1], caseID[2], caseID[3], caseID[4], caseID[5]);
 	  
 	  
 	  /* Initialize the necessary structures for thisCoinc-ident trigger*/
@@ -566,7 +562,7 @@ int main( int argc, char *argv[] )
 	     ~XLALReadIfo functions in the future. 
 	     Also note that the ifo orders in InterferometerNumber and 
 	     lalCachedDetectors are different:
-	     caseID[0,..,5]=(G1,H1,H2,L1,V1,T1), whereas
+	     caseID[0,..,5]=(G1,H1,H2,L1,T1,V1), whereas
 	     lalCachedDetectors[0,...]=(T1(0),V1(1),G1(2),H2(3),H1(4),L1(5),...
 	     ...,LAL_NUM_DETECTORS=12)*/
 	  w=0;
@@ -574,37 +570,8 @@ int main( int argc, char *argv[] )
 	  if( caseID[1] ) cohInspFilterParams->detectorVec->detector[w++] = lalCachedDetectors[4];
 	  if( caseID[2] ) cohInspFilterParams->detectorVec->detector[w++] = lalCachedDetectors[3];
 	  if( caseID[3] ) cohInspFilterParams->detectorVec->detector[w++] = lalCachedDetectors[5];
-	  if( caseID[4] ) cohInspFilterParams->detectorVec->detector[w++] = lalCachedDetectors[1];
-	  if( caseID[5] ) cohInspFilterParams->detectorVec->detector[w++] = lalCachedDetectors[0];
-	  
-	  /* Get beam pattern coefficients if necessary */
-	  if ( (numDetectors == 3 && !( caseID[1] && caseID[2])) || numDetectors == 4 )
-	    {
-	      cohInspBeamVec = cohInspFilterInput->beamVec;
-	      w=0;
-	      if( vrbflg ) fprintf(stdout, "This network requires beam-pattern coefficients - reading them in...\n");
-	      for ( j=0; j<LAL_NUM_IFO; j++ ) {
-		if ( caseID[j] ) 
-		  {
-		    LALSnprintf( nameArrayBeam[j], LALNameLength*sizeof(CHAR), "%sBeamCoeff.dat", caseIDChars[j]);
-		    filePtr[w] = fopen(nameArrayBeam[j], "r");
-		    if(!filePtr[w])
-		      {
-			fprintf(stderr,"The file %s containing the coefficients could not be found - exiting...\n",nameArrayBeam[j]);
-			exit(1);
-		      }
-		    for ( l=0 ; l < (INT4) numBeamPoints ; l++)
-		      { 
-			fscanf(filePtr[w],"%f %f %f %f",&theta,&phi,&vPlus,&vMinus);
-			cohInspBeamVec->detBeamArray[w].thetaPhiVs[l].data->data[0] = theta;
-			cohInspBeamVec->detBeamArray[w].thetaPhiVs[l].data->data[1] = phi;
-			cohInspBeamVec->detBeamArray[w].thetaPhiVs[l].data->data[2] = vPlus;
-			cohInspBeamVec->detBeamArray[w].thetaPhiVs[l].data->data[3] = vMinus;
-		      }
-		    fclose(filePtr[w++]);
-		  }
-	      } 
-	    }
+	  if( caseID[4] ) cohInspFilterParams->detectorVec->detector[w++] = lalCachedDetectors[0];
+	  if( caseID[5] ) cohInspFilterParams->detectorVec->detector[w++] = lalCachedDetectors[1];
 	  
 	  /* Read in the snippets associated with thisCoinc trigger */
 	  l = 0; /* A counter to step through the cohInspCVec-tors */
@@ -1099,11 +1066,11 @@ int main( int argc, char *argv[] )
       
       /* Write the summary information */
       if ( userTag )	{
-	  LALSnprintf( fileName, FILENAME_MAX, "%s-COH_H1H2_SNR_%s-%d-%d-%d", ifoTag, userTag, 
+	  LALSnprintf( fileName, FILENAME_MAX, "%s-COHEREMT_INSPIRAL_H1H2_COHSNR_%s-%d-%d-%d", ifoTag, userTag, 
 		       gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds, cohFileID ); 
       }
       else	  {
-	  LALSnprintf( fileName, FILENAME_MAX, "%s-COH_H1H2_SNR-%d-%d-%d", ifoTag, 
+	  LALSnprintf( fileName, FILENAME_MAX, "%s-COHEREMT_INSPIRAL_H1H2_COHSNR-%d-%d-%d", ifoTag, 
 		       gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds, cohFileID ); 
       }
       
@@ -1127,11 +1094,11 @@ int main( int argc, char *argv[] )
 	}
       
       if ( userTag )	{
-	  LALSnprintf( fileName, FILENAME_MAX, "%s-COH_NULL_STAT_%s-%d-%d-%d", ifoTag, userTag, 
+	  LALSnprintf( fileName, FILENAME_MAX, "%s-COHEREMT_INSPIRAL_NULL_STAT_%s-%d-%d-%d", ifoTag, userTag, 
 		       gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds, cohFileID ); 
       }
       else	{
-	  LALSnprintf( fileName, FILENAME_MAX, "%s-COH_NULL_STAT-%d-%d-%d", ifoTag, 
+	  LALSnprintf( fileName, FILENAME_MAX, "%s-COHEREMT_INSPIRAL_NULL_STAT-%d-%d-%d", ifoTag, 
 		       gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds, cohFileID ); 
       }
 
@@ -1155,11 +1122,11 @@ int main( int argc, char *argv[] )
       }
   
       if ( userTag )	  {
-	  LALSnprintf( fileName, FILENAME_MAX, "%s-COHERENT_%s-%d-%d-%d", ifoTag, userTag, 
+	  LALSnprintf( fileName, FILENAME_MAX, "%s-COHERENT_INSPIRAL_%s-%d-%d-%d", ifoTag, userTag, 
 		       gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds, cohFileID ); 
       }
       else	{
-	  LALSnprintf( fileName, FILENAME_MAX, "%s-COHERENT-%d-%d-%d", ifoTag, 
+	  LALSnprintf( fileName, FILENAME_MAX, "%s-COHERENT_INSPIRAL-%d-%d-%d", ifoTag, 
 		       gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds, cohFileID ); 
       }
       
