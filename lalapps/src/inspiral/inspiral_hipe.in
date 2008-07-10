@@ -925,52 +925,22 @@ def coire_segments_individually(segments, coire_job, dag, do_coire, do_input,
   return coire_analyzed
 
 ##############################################################################
-# function to set up the cohbank and cohinspiral jobs for a network of ifos
-
-def coherent_analysis(ifos,single_ifo_segments,cb_job,trig_coh_jobs,
-                      insp_coh_jobs,cohinsp_job,dag,coinc_nodes,
-                      coinc_slide_nodes=None):
+# function to set up the cohbank jobs for a network of ifos
+def coherent_bank(ifos,cb_job,dag,coinc_nodes,coinc_slide_nodes=None):
   """
-  Do a coherent analysis
+  Create template banks from coincident trigger parameters for 
+  coherent analysis.
 
   ifos                = ordered set of ifo identifiers
-  single_ifo_segments = dictionary of data segments for the singl ifos
-  coinc_nodes         = The coincident nodes for this ifo combination
-  coinc_slide_nodes   = The coincident slide nodes for this ifo combination
+  coinc_nodes         = the coincident nodes for this ifo combination
+  coinc_slide_nodes   = the coincident slide nodes for this ifo combination
   cb_job              = coherent bank job
-  trig_coh_jobs       = dictionary of trigbank jobs
-  insp_coh_jobs       = dictionary of inspiral jobs to produce c-data 
-  cohinsp_job         = the coherent_inspiral job
   dag                 = name of the dag
   """
 
-  data_opts = {}
-  for ifo in ifo_list:
-    if ifo in ifos:
-      # set up the trigbanks
-      
-      if cp.has_section('coh-trig'):
-        trig_coh_jobs[ifo].add_ini_opts(cp,'coh-trig')
-      # set up inspirals:
-      if cp.has_section('coherent-inspiral'):
-        insp_coh_jobs[ifo].add_ini_opts(cp,'coherent-inspiral')
-      if cp.has_section(ifo.lower() + '-inspiral'): 
-        insp_coh_jobs[ifo].add_ini_opts(cp,ifo.lower() + '-inspiral')
-      if ifo == 'G1':
-        data_opts[ifo] = 'geo-data'
-        chan = cp.get('input','geo-channel')
-      elif ifo == 'V1':
-        data_opts[ifo] = 'virgo-data'
-        chan = cp.get('input','virgo-channel')
-      else:
-        data_opts[ifo] = 'ligo-data'
-        chan = cp.get('input','ligo-channel')
-      if cp.has_section(data_opts[ifo]):
-        insp_coh_jobs[ifo].add_ini_opts(cp,data_opts[ifo])
-      insp_coh_jobs[ifo].set_channel(chan)
+  ifotag = 'COHERENT_' + ifos
 
-      
-  ifotag = ifos + 'C'
+  cohbank_analyzed = []
 
   for coinc_done in coinc_nodes:
     # set up cohbank
@@ -989,24 +959,132 @@ def coherent_analysis(ifos,single_ifo_segments,cb_job,trig_coh_jobs,
     if coinc_slide_nodes:
       done_this_coinc = 0
       for coinc_slide_done in coinc_slide_nodes:
-        if ( coinc_slide_done.get_chunk().start() == coinc_done.get_chunk().start() ):
+        if ( coinc_slide_done.get_chunk().start() == \
+            coinc_done.get_chunk().start() ):
           if not done_this_coinc:
             done_this_coinc = 1
             cohbank.add_file_arg(coinc_slide_done.get_dag_node().get_output())
-            if opts.second_coinc: cohbank.add_parent(coinc_slide_done.get_dag_node())
+            if opts.second_coinc: 
+              cohbank.add_parent(coinc_slide_done.get_dag_node())
 
     if opts.coherent_bank: dag.add_node(cohbank)
-    
+    cohbank_analyzed.append(AnalyzedIFOData(coinc_done.get_chunk(),cohbank))
+
+  return cohbank_analyzed  
+
+##############################################################################
+# function to set up trigbank jobs for coherent analysis with a network of ifos
+def coherent_trig_inspiral(ifo_data,ifo_name,cohbank_data,ifos,trig_coh_jobs,
+  insp_coh_jobs,dag,calibrated,usertag=None):
+  """
+  Perform the trigbank and third inspiral steps for the single ifo triggers
+  appearing in the cohbank templates.  
+
+  ifo_data      = the master science segs for the IFO
+  ifo_name      = the name of the ifo
+  cohbank_data  = the coincident science segments and cohbank jobs
+  ifos          = the list of ifos in the coincident times
+  trig_coh_jobs = the triggered coherent bank job we should use 
+  insp_coh_jobs = inspiral jobs to produce c-data 
+  dag           = the DAG to attach the nodes to
+
+  usertag = the usertag to add to the job names
+  """
+ 
+  ifotag = 'COHERENT_' + ifos
+
+  trig_coh_chunks_analyzed = []
+
+  # loop over the master science segments
+  for seg in ifo_data:
+
+    # loop over the master analysis chunks in the science segment
+    for chunk in seg:
+
+      done_this_chunk = 0
+      # now loop over all the data that we need to filter
+      for coinc_done in cohbank_data:
+
+        # if the current chunk is in one of the segments we need to filter
+        if inspiral.overlap_test(chunk,coinc_done.get_chunk()):
+
+          if not done_this_chunk:
+            # make sure we only filter the master chunk once
+            done_this_chunk = 1
+
+            # make a trigbank job for the master chunk
+            trigbank = inspiral.TrigbankNode(trig_coh_jobs)
+            if not opts.disable_dag_categories:
+              trigbank.set_category('trigbank2')
+            if not opts.disable_dag_priorities:
+              trigbank.set_priority(9)
+            trigbank.set_ifo_tag(ifotag)
+            trigbank.set_output_ifo(ifo_name)
+            trigbank.set_input_ifo(ifo_name)
+            trigbank.set_start(chunk.start())
+            trigbank.set_end(chunk.end())
+            if opts.coherent_bank: dag.add_node(trigbank)
+        
+            # make an inspiral job for the master chunk
+            insp = inspiral.InspiralNode(insp_coh_jobs)
+            if not opts.disable_dag_categories:
+              insp.set_category('inspiral3')
+            if not opts.disable_dag_priorities:
+              insp.set_priority(10)
+            insp.set_start(chunk.start())
+            insp.set_end(chunk.end())
+            insp.set_ifo(ifo_name)
+            insp.set_ifo_tag(ifotag)
+            insp.add_var_opt('write-cdata','')
+            insp.set_vds_group(ifo_name[0] + str(chunk.start()))
+            if not opts.read_cache: 
+              insp.set_cache(seg.get_df_node().get_output())
+            else: insp.set_cache(cp.get('datafind',ifo_name+'-cache')) 
+            if not calibrated: insp.calibration()
+            insp.set_bank(trigbank.get_output())
+
+            if opts.coherent_bank: insp.add_parent(trigbank)
+            if opts.coherent_bank: dag.add_node(insp)
+
+            # store this chunk in the list of filtered data
+            trig_coh_chunks_analyzed.append(AnalyzedIFOData(chunk,insp))
+
+          # jobs already set up, just add the var_arg and parent to trigbank
+          trigbank.add_file_arg(coinc_done.get_dag_node().get_output())
+          if opts.coherent_bank: 
+            trigbank.add_parent(coinc_done.get_dag_node())
+
+  return trig_coh_chunks_analyzed
+
+##############################################################################
+# function to set up the cohinspiral jobs for a network of ifos
+def coherent_analysis(ifos,single_ifo_segments,cohinsp_job,dag,cohbank_data,
+  cohtrig_data):
+  """
+  Do a coherent analysis
+
+  ifos                = ordered set of ifo identifiers
+  single_ifo_segments = dictionary of data segments for the single ifos
+  cohinsp_job         = the coherent_inspiral job
+  dag                 = name of the dag
+  cohbank_data        = the coicident science segments and cohbank jobs
+  cohtrig_data        = dictionary of single ifo (inspiral3) data analyzed
+  """
+
+  ifotag = 'COHERENT_' + ifos
+
+  for cohbank_done in cohbank_data:
+
     # set up cohinsp
     cohinsp = inspiral.ChiaNode(cohinsp_job)
     if not opts.disable_dag_categories:
       cohinsp.set_category('cohinsp')
     if not opts.disable_dag_priorities:
       cohinsp.set_priority(7)
-    cohinsp.set_bank(cohbank.get_output())
-    cohinsp.set_start(coinc_done.get_chunk().start())
-    cohinsp.set_end(coinc_done.get_chunk().end())
-    cohinsp.set_ifo_tag(ifotag)
+    cohinsp.set_bank(cohbank_done.get_dag_node().get_output())
+    cohinsp.set_start(cohbank_done.get_chunk().start())
+    cohinsp.set_end(cohbank_done.get_chunk().end())
+    cohinsp.set_ifo_tag(ifos)
     cohinsp.add_var_opt('ifo-tag',ifotag)
     
     # set up trigbank and inspiral
@@ -1020,62 +1098,23 @@ def coherent_analysis(ifos,single_ifo_segments,cb_job,trig_coh_jobs,
           frjoin.set_priority(8)
         outputName = ifo + '-INSPIRAL_' + ifotag
         if usertag: outputName += '_' + usertag
-        outputName += '-' + str(coinc_done.get_chunk().start()) + \
-            '-' + str(coinc_done.get_chunk().end() - \
-            coinc_done.get_chunk().start()) + '.gwf'
+        outputName += '-' + str(cohbank_done.get_chunk().start()) + \
+            '-' + str(cohbank_done.get_chunk().end() - \
+            cohbank_done.get_chunk().start()) + '.gwf'
         frjoin.set_output(outputName)
 
-        for seg in single_ifo_segments[ifo]:
-          
-          for chunk in seg:
-            if inspiral.overlap_test(coinc_done.get_chunk(),chunk):
-              
-              # set up the trigbank
-              trigbank = inspiral.TrigbankNode(trig_coh_jobs[ifo])
-              if not opts.disable_dag_categories:
-                trigbank.set_category('trigbank2')
-              if not opts.disable_dag_priorities:
-                trigbank.set_priority(9)
-              trigbank.set_ifo_tag(ifotag)
-              trigbank.set_output_ifo(ifo)
-              trigbank.set_input_ifo(ifo)
-              trigbank.set_start(chunk.start())
-              trigbank.set_end(chunk.end())
-              trigbank.add_file_arg(cohbank.get_output())
-              if opts.coherent_bank: trigbank.add_parent(cohbank)
-              if opts.coherent_bank: dag.add_node(trigbank)
-
-              # set up the inspiral
-              insp = inspiral.InspiralNode(insp_coh_jobs[ifo])
-              if not opts.disable_dag_categories:
-                insp.set_category('inspiral3')
-              if not opts.disable_dag_priorities:
-                insp.set_priority(10)
-              insp.set_start(chunk.start())
-              insp.set_end(chunk.end())
-              insp.set_ifo(ifo)
-              insp.set_ifo_tag(ifotag)
-              insp.add_var_opt('write-cdata','')
-              # see if we are using calibrated data
-              if not cp.has_section(data_opts[ifo]) or \
-                  not cp.has_option(data_opts[ifo],'calibrated-data'):
-                insp.calibration()
-              if not opts.read_cache: 
-                insp.set_cache(seg.get_df_node().get_output())
-              else: insp.set_cache(cp.get('datafind',ifo + "-cache"))
-              insp.set_bank(trigbank.get_output())
-              frjoin.add_file_arg( insp.get_froutput() )
-
-              if opts.coherent_bank: insp.add_parent(trigbank)
-              if opts.coherent_bank: frjoin.add_parent(insp)
-              if opts.coherent_bank: dag.add_node(insp)
+        for done in cohtrig_data[ifo]:
+          if inspiral.overlap_test(cohbank_done.get_chunk(), \
+              done.get_chunk()):
+            frjoin.add_file_arg( done.get_dag_node().get_froutput() )
+            if opts.coherent_inspiral: frjoin.add_parent(done.get_dag_node())
 
         cohinsp.add_var_opt( ifo + '-framefile', frjoin.get_output() )
-        if opts.coherent_bank: dag.add_node(frjoin)
+        if opts.coherent_inspiral: dag.add_node(frjoin)
         if opts.coherent_inspiral: cohinsp.add_parent(frjoin)
 
     if opts.coherent_inspiral: dag.add_node(cohinsp)
-     
+
   return 0
 
 ##############################################################################
@@ -2215,24 +2254,87 @@ for ifos in ifo_coincs:
   print "done"
 
 ##############################################################################
-# Step 9: Do the coherent analyses:
+# Step 9: Create coherent (template) banks:
+
+cohbank_nodes = {}
 
 for ifos in ifo_coincs:
-  print "setting up coherent jobs on " + ifos + " data...",
+  print "setting up coherent-bank jobs on " + ifos + " data...",
   sys.stdout.flush()
+
   if num_slides:
-    coherent_analysis(ifos,data,cb_job,trig_coh_jobs,
-      insp_coh_jobs,cohinsp_jobs[ifos],dag,coinc2_nodes[ifos],
-      coinc2_slide_nodes[ifos])
+    cohbank_nodes[ifos] = coherent_bank(ifos,cb_job,dag,coinc2_nodes[ifos],
+        coinc2_slide_nodes[ifos])
   else:
-    coherent_analysis(ifos,data,cb_job,trig_coh_jobs,
-      insp_coh_jobs,cohinsp_jobs[ifos],dag,coinc2_nodes[ifos],0)
+    cohbank_nodes[ifos] = coherent_bank(ifos,cb_job,dag,coinc2_nodes[ifos],0)
 
   print "done"
 
+##############################################################################
+# Step 10: Construct single-ifo CData frame files for the coherent analyses:
+
+analyzed_trig_coh_data = {}
+data_opts = {}
+
+for ifos in ifo_coincs:
+  analyzed_trig_coh_data[ifos] = {}
+ 
+  for ifo in ifo_list:
+    if ifo in ifos:
+      data_opts[ifo] = {}
+
+      print "setting up jobs to filter " + ifo + \
+        " data with cohbank templates from " + ifos + " times ...",
+      sys.stdout.flush()
+
+      # add ifo specific options
+      if ifo == 'G1':
+        data_opts[ifo] = 'geo-data'
+        channel = cp.get('input','geo-channel')
+      elif ifo == 'V1':
+        data_opts[ifo] = 'virgo-data'
+        channel = cp.get('input','virgo-channel')
+      else:
+        data_opts[ifo] = 'ligo-data'
+        channel = cp.get('input','ligo-channel')
+
+      # set up the trigbanks
+      if cp.has_section('coh-trig'):
+        trig_coh_jobs[ifo].add_ini_opts(cp,'coh-trig')
+      # set up inspirals:
+      if cp.has_section('coherent-inspiral'):
+        insp_coh_jobs[ifo].add_ini_opts(cp,'coherent-inspiral')
+      if cp.has_section(ifo.lower() + '-inspiral'): 
+        insp_coh_jobs[ifo].add_ini_opts(cp,ifo.lower() + '-inspiral')
+      if cp.has_section(data_opts[ifo]):
+        insp_coh_jobs[ifo].add_ini_opts(cp,data_opts[ifo])
+      insp_coh_jobs[ifo].set_channel(channel)
+      # see if we are using calibrated data
+      if cp.has_section(data_opts[ifo]) and \
+          cp.has_option(data_opts[ifo],'calibrated-data'):
+        calibrated = True
+      else: calibrated = False
+
+      analyzed_trig_coh_data[ifos][ifo] = coherent_trig_inspiral(data[ifo],
+          ifo,cohbank_nodes[ifos],ifos,trig_coh_jobs[ifo],insp_coh_jobs[ifo],
+          dag,calibrated,usertag)
+
+      print "done"
 
 ##############################################################################
-# Step 10: Write out the LAL cache files for the various output data
+# Step 11: Do the coherent analyses:
+
+for ifos in ifo_coincs:
+  print "setting up coherent-analysis jobs on " + ifos + " data...",
+  sys.stdout.flush()
+ 
+  coherent_analysis(ifos,data,cohinsp_jobs[ifos],dag,cohbank_nodes[ifos],
+      analyzed_trig_coh_data[ifos])
+
+  print "done"
+
+##############################################################################
+# Step 12: Write out the LAL cache files for the various output data
 
 if gps_start_time is not None and gps_end_time is not None:
   print "generating cache files for output data products...",
@@ -2266,7 +2368,7 @@ else:
 
 
 ##############################################################################
-# Step 11: Setup the Maximum number of jobs for different categories
+# Step 13: Setup the Maximum number of jobs for different categories
 if not opts.disable_dag_categories:
   if opts.datafind:
     dag.add_maxjobs_category('datafind',10)
@@ -2280,7 +2382,7 @@ if not opts.disable_dag_categories:
     dag.add_maxjobs_category('sire',20)
 
 ##############################################################################
-# Step 12: Write out the DAG, help message and log file
+# Step 14: Write out the DAG, help message and log file
 dag.write_sub_files()
 dag.write_dag()
 if opts.dax:
