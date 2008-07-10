@@ -1293,11 +1293,9 @@ LALCoherentInspiralFilterSegment (
   INT4                                caseID[6] = {0,0,0,0,0,0};
   REAL8                              *sigmasq = NULL;
   INT4                                i,q,w,m,j,k,l;
-  INT4                                wTemp = 0;
-  INT4                                qTemp = 0;
-  INT4                                mTemp = 0;
-  INT4                                jTemp = 0;
+  INT4                                decIdx,raIdx,decMax,raMax,decStep,raStep;
   INT4                                found = 0;
+  INT4                                detId = 0;
   CHAR                                idtag[6][3] = {"G1","H1","H2","L1","T1","V1"};
   INT4                                indexarray[4] = {0,0,0,0};
   CHAR                                caseStr[FILENAME_MAX];
@@ -1316,6 +1314,8 @@ LALCoherentInspiralFilterSegment (
   REAL4                               nHatVect[3] = {0,0,0};
   REAL4                               distance[4] = {0,0,0,0};
   REAL4                               timeDelay[4] = {0,0,0,0};
+  REAL4                               fplus[4];
+  REAL4                               fcross[4];
   REAL4                               chirpTime = 0.0;
   REAL4                               cohSNRThresh = 0.0;
   REAL4                               cohSNRThreshSq = 0.0;
@@ -2586,234 +2586,318 @@ LALCoherentInspiralFilterSegment (
       { /* Network: 3 detectors excluding either H1, H2, or both (H1 && H2)*/
 	/*Now the last 3 cases will involve the looping over the coefficients*/
 	
-	l = 0;
-	k = 0;
-	q = 0;
-	w = 0;
+	LIGOTimeGPS 	triggerGPSEndTime;/* Needed to calculate time-delays */
+	LALMSTUnitsAndAcc pUnitsAndAcc;
+	REAL8           gmstInRadians=0.0;
+	REAL4           psiInRadians = 0.0;
+	
+	/* For now, this is a hard-coded fixed step in degrees: */
+	raStep = 4.0; 
+	decStep = 4.0;
 
-	for (l=0;l < (INT4) numBeamPoints; l++)
-	  {
-	    theta = 0.0;
-	    phi = 0.0;
-	    theta = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[0] * (REAL4) LAL_PI_180;
-            phi   = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[1] * (REAL4) LAL_PI_180;
-	    /* position vector to source relative to first detector */
-	    nHatVect[0] = cos(theta) * sin(phi);
-	    nHatVect[1] = sin(theta) * sin(phi);
-	    nHatVect[2] = cos(phi); 
+	triggerGPSEndTime.gpsSeconds = cData[0]->epoch.gpsSeconds;
+	triggerGPSEndTime.gpsNanoSeconds = cData[0]->epoch.gpsNanoSeconds;
+	/* Convert GPS time of trigger to GMST time in radians 
+	   for computing F+, Fx */
+	pUnitsAndAcc.units = MST_RAD;
+	pUnitsAndAcc.accuracy = LALLEAPSEC_LOOSE;
+	LALGPStoGMST1(status->statusPtr,&gmstInRadians,&triggerGPSEndTime,&pUnitsAndAcc);
+	
+	/* Convert to radians */
+	raMax = floor(360/raStep);
+	decMax = floor(180/decStep);
+	
+	raStep *= LAL_PI_180;
+	decStep *= LAL_PI_180;
+	
+	for (decIdx=1; decIdx<decMax; decIdx++) {
+	  for ( raIdx=0; raIdx<raMax; raIdx++) {
+	    INT4           timePt[4] = {0,0,0,0};
+	    INT4           timePtTemp[4] = {0,0,0,0};
+	    REAL4          AA=0.0;
+	    REAL4          BB=0.0;
+	    REAL4          CC=0.0;
+	    REAL4          discrimSqrt=0.0;
+	    REAL4          VVPlus[4]={0.0,0.0,0.0,0.0};
+	    REAL4          VVMinus[4]={0.0,0.0,0.0,0.0};
+	    REAL4          CRePlus=0.0;
+	    REAL4          CImPlus=0.0;
+	    REAL4          CReMinus=0.0;
+	    REAL4          CImMinus=0.0;
+	    REAL4          AAn[4]={0.0,0.0,0.0,0.0};
+	    REAL4          BBn[4]={0.0,0.0,0.0,0.0};
+	    REAL4          CCn[4]={0.0,0.0,0.0,0.0};
+	    REAL4          discrimSqrtn[4]={0.0,0.0,0.0,0.0};
+	    REAL4          MM1=0.0;
+	    REAL4          MM2=0.0;
+	    REAL4          O11=0.0;
+	    REAL4          O12=0.0;
+	    REAL4          O21=0.0;
+	    REAL4          O22=0.0;
+           
+	    SkyPosition    raDec;
+
+	    raDec.latitude = decIdx * decStep;
+	    raDec.longitude = raIdx * raStep;
 	    
-	    /* Now calculate the distance (in meters) projected along sky-position */
-	    distance[1] = cartesianInnerProduct(s[1],nHatVect);
-	    distance[2] = cartesianInnerProduct(s[2],nHatVect);
-	    timeDelay[1] = distance[1]/LAL_C_SI;
-	    timeDelay[2] = distance[2]/LAL_C_SI;
-	    slidePoints[1] = rint( (fabs(timeDelay[1])/deltaT) + 1.0 );
-	    slidePoints[2] = rint( (fabs(timeDelay[2])/deltaT) + 1.0 );	    
+	    /* Loop over detectors computing their F+, Fx and tc's */
+	    for( j=0; j<LAL_NUM_IFO; j++ ) {
+	      detId = 0;
+	      /* Compute antenna-patterns and time-delays if caseID[j] != 0 */
+	      if ( !(params->detIDVec->data[j] == 0 )) { 
+	      
+		/* Compute antenna-patterns for each participating detector */
+		XLALComputeDetAMResponse(&fplus[detId], &fcross[detId],
+		      params->detectorVec->detector[detId].response,
+		      raDec.longitude,raDec.latitude, psiInRadians, gmstInRadians);
+
+		/*Arrival time delays in detectors relative to the 1st;
+		  esp., dt21 = t2 - t1, dt31 = t3 - t1, etc. are computed */
+		timeDelay[detId] = XLALArrivalTimeDiff(
+			       params->detectorVec->detector[detId].location,
+			       params->detectorVec->detector[0].location,
+			       raDec.longitude,raDec.latitude,&triggerGPSEndTime);
+		/* round off to nearest integer */
+		slidePoints[detId] = rint( (fabs(timeDelay[detId])/deltaT) );
+
+		/* Compute antenna-pattern factors */
+		AAn[detId] = fplus[detId] * fplus[detId];
+		BBn[detId] = fcross[detId] * fcross[detId];
+		CCn[detId] = fplus[detId] * fcross[detId];
+
+		discrimSqrtn[detId] = sqrt(AAn[detId]*AAn[detId] 
+					 + 4*BBn[detId]*BBn[detId]
+					 - 2*AAn[detId]*CCn[detId] 
+					 + CCn[detId]*CCn[detId]);
+
+		O11 = ( AAn[detId] - CCn[detId] - discrimSqrtn[detId])  /
+		  ( 2*BB*sqrt( 1 + ( AAn[detId] - CCn[detId] - discrimSqrtn[detId])*( AAn[detId] - CCn[detId] - discrimSqrtn[detId]) 
+			      / ( 4*BBn[detId]*BBn[detId] ) ) );
+		O12 = 1 / sqrt( 1 + (-AAn[detId]+CCn[detId]+discrimSqrtn[detId])*(-AAn[detId]+CCn[detId]+discrimSqrtn[detId]) 
+				/ ( 4*BBn[detId]*BBn[detId] ) );
+		O21 = ( AAn[detId] - CCn[detId] + discrimSqrtn[detId])  /
+		  ( 2*BB*sqrt( 1 + (-AAn[detId]+CCn[detId]-discrimSqrtn[detId])*(-AAn[detId]+CCn[detId]-discrimSqrtn[detId]) 
+			      / ( 4*BBn[detId]*BBn[detId] ) ) );
+		O22 = 1 / sqrt( 1 + (-AAn[detId]+CCn[detId]-discrimSqrtn[detId])*(-AAn[detId]+CCn[detId]-discrimSqrtn[detId]) 
+				/ ( 4*BBn[detId]*BBn[detId] ) );
+		
+		
+		VVPlus[detId] = O11 * fplus[detId] + O12 * fcross[detId];		
+		VVMinus[detId] = O21 * fplus[detId] + O22 * fcross[detId];		
+		
+		/* CHECK: If sigmasq should be in the denominator!
+		   Compute the elements of the helicity-plane projection matrix */
+		AAn[detId] *= sigmasq[j];
+		BBn[detId] *= sigmasq[j];
+		CCn[detId] *= sigmasq[j];
+		VVPlus[detId] *= sigmasq[j];
+		VVMinus[detId] *= sigmasq[j];
+		
+		detId++;
+	      }
+	    }
+             	    
+	    /* Construct network terms and factors required for
+	       computing the coherent statistics */
+	    for ( detId=0 ; detId<params->numDetectors ; detId++ ) {
+	      AA += AAn[detId];
+	      BB += BBn[detId];
+	      CC += CCn[detId];
+	    }
+	    discrimSqrt = sqrt(AA*AA + 4*BB*BB
+			      - 2*AA*CC + CC*CC);
+	    MM1 = 2 * ( AA*AA*AA 
+			- 2*BB*BB*discrimSqrt
+			- AA*AA*( 2*CC + discrimSqrt )
+			+ AA*( 4*BB*BB 
+			       + CC * (CC + discrimSqrt ) ) );
+	    MM1 = sqrt(MM1);
+	    MM2 = 2 * ( AA*AA*AA 
+			+ 2*BB*BB*discrimSqrt
+			+ AA*AA*(-2*CC + discrimSqrt )
+			+ AA*( 4*BB*BB 
+			       + CC * (CC - discrimSqrt ) ) );
+	    MM2 = sqrt(MM2);
 	    
-	    for(k=0;k<(INT4)numPoints;k++)
+	    /* Regularize */
+	    if ( (MM1==0.0 ) ) 
+	      MM1=0.001;
+	    if ( (MM2==0.0 ) ) 
+	      MM2=0.001;
+
+	    for( timePt[0]=0 ; timePt[0]<(INT4)numPoints ; timePt[0]++)
 	      {
 		REAL4 cohSNR = 0.0;
-		qTemp = 0;
-		wTemp = 0;
-		for (q = k-slidePoints[1]-buffer;q < k+slidePoints[1]+buffer;q++)
-		  {
-		    if(q >= 0 && q < (INT4) numPoints)
-		      {			
-			for (w = q-slidePoints[2]-buffer; w < q+slidePoints[2]+buffer;w++)
-			  {
-			    if (w >= 0 && w < (INT4) numPoints)
-			      {
-			      cohSNRLocal = sqrt( ( 
-                                beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2] *
-                                beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2] +
-                                beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3] *
-                                beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3] )
-                                *( cData[0]->data->data[k].re*cData[0]->data->data[k].re
-                                +cData[0]->data->data[k].im*cData[0]->data->data[k].im )
-                                +(beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2]
-                                *beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2] 
-                                + beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3]
-                                *beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3])
-                                *( cData[1]->data->data[q].re*cData[1]->data->data[q].re
-                                + cData[1]->data->data[q].im*cData[1]->data->data[q].im)
-                                +(beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2]
-                                *beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2] 
-                                + beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3]
-                                *beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3])
-                                *( cData[2]->data->data[w].re*cData[2]->data->data[w].re
-                                + cData[2]->data->data[w].im*cData[2]->data->data[w].im)
-                                +2*(beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2]
-                                *beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2] + 
-                                beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3]
-                                *beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3])
-                                *(cData[0]->data->data[k].re * cData[1]->data->data[q].re + 
-                                cData[0]->data->data[k].im * cData[1]->data->data[q].im) + 
-                                2*(beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2] 
-                                *beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2] + 
-                                beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3]*
-                                beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3])*
-                                (cData[0]->data->data[k].re*cData[2]->data->data[w].re + 
-                                cData[0]->data->data[k].im * cData[2]->data->data[w].im) + 
-                                2*(beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2] *
-                                beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2] + 
-                                beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3] *
-                                beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3]) *
-                                (cData[1]->data->data[q].re * cData[2]->data->data[w].re + 
-                                cData[1]->data->data[q].im *cData[2]->data->data[w].im));
-			     
-								
-
-				if(cohSNRLocal > cohSNR)
-				  {
-				    cohSNR = cohSNRLocal;
-				    quadTemp[0].re=cData[0]->data->data[k].re;
-				    quadTemp[0].im=cData[0]->data->data[k].im;
-				    quadTemp[1].re=cData[1]->data->data[q].re;
-				    quadTemp[1].im=cData[1]->data->data[q].im; 
-				    quadTemp[2].re=cData[2]->data->data[w].re;
-				    quadTemp[2].im=cData[2]->data->data[w].im; 
-				    qTemp = q;
-				    wTemp = w;
-				  }
-			      }
-			    
-			  }
+		timePtTemp[1] = 0;
+		timePtTemp[2] = 0;
+		for (timePt[1] = timePt[0]-slidePoints[1]-buffer;timePt[1] < timePt[0]+slidePoints[1]+buffer;timePt[1]++) {
+		  if( timePt[1] >= 0 && timePt[1] < (INT4) numPoints) {
+		    for (timePt[2] = timePt[1]-slidePoints[2]-buffer; timePt[2] < timePt[1]+slidePoints[2]+buffer; timePt[2]++) {
+		      if (timePt[2] >= 0 && timePt[2] < (INT4) numPoints) {
+			CRePlus = 0.0;
+			CImPlus = 0.0;
+			CReMinus = 0.0;
+			CImMinus = 0.0;
 			
+			for ( detId=0 ; detId<params->numDetectors ; detId++ ) {
+			  CRePlus += VVPlus[detId] * 
+			    cData[detId]->data->data[timePt[detId]].re;
+			  CImPlus += VVPlus[detId] * 
+			    cData[detId]->data->data[timePt[detId]].im;
+			  CReMinus += VVMinus[detId] * 
+			    cData[detId]->data->data[timePt[detId]].re;
+			  CImMinus += VVMinus[detId] *
+			    cData[detId]->data->data[timePt[detId]].im;
+			}
+			
+			/* Compute coherent search statistic */
+			cohSNRLocal = sqrt( ( CRePlus*CRePlus/MM1 + 
+					      CImPlus*CImPlus/MM1 + 
+					      CReMinus*CReMinus/MM2 + 
+					      CImMinus*CImMinus/MM2 ) );
+			
+			if(cohSNRLocal > cohSNR) {
+			  cohSNR = cohSNRLocal;
+			  for ( detId=0 ; detId<params->numDetectors ; detId++ ) {
+			    quadTemp[detId].re=cData[detId]->data->data[timePt[detId]].re;
+			    quadTemp[detId].im=cData[detId]->data->data[timePt[detId]].im;
+			    timePtTemp[detId] = timePt[detId];
+			  }
+			}
+		      }/* closes conditional statement */
+		    }/* closes loop over 3rd detector's time-delays */
+		  }/* closes conditional statement */
+		}/* closes loop over 2nd detector's time-delays */
+		if( cohSNROut ) params->cohSNRVec->data->data[timePt[0]] = cohSNR;
+		if ( cohSNR > cohSNRThresh ) {
+		    if ( !*eventList ) {
+		      /* store the start of the crossing */
+		      eventStartIdx = timePt[0];
+		      
+		      /* if this is the first event, start the list */
+		      thisEvent = *eventList = (MultiInspiralTable *) 
+			LALCalloc( 1, sizeof(MultiInspiralTable) );
+		      
+		      if ( !thisEvent )
+			{
+			  ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
+			}
+		      
+		      /* record the data that we need for the clustering algorithm */          
+		      tempTime = cData[0]->epoch.gpsSeconds + 1.0e-9 * cData[0]->epoch.gpsNanoSeconds + timePt[0] * deltaT;
+		      fracpart = modf( tempTime, &intpart );
+		      thisEvent->end_time.gpsSeconds = (INT4) intpart;
+		      thisEvent->end_time.gpsNanoSeconds = (INT4) ( 1.0e9*fracpart );
+		      
+		      found=0;			
+		      if(caseID[0])
+			{
+			  thisEvent->g1quad.re=quadTemp[found].re;	    
+			  thisEvent->g1quad.im=quadTemp[found].im;
+			  found=found+1;
+			}
+		      else
+			{
+			  thisEvent->g1quad.re=0;	    
+			  thisEvent->g1quad.im=0;
+			}
+		      if(caseID[1])
+			{
+			  thisEvent->h1quad.re=quadTemp[found].re;	    
+			  thisEvent->h1quad.im=quadTemp[found].im;
+			  found=found+1;
+			}
+		      else
+			{
+			  thisEvent->h1quad.re=0;	    
+			  thisEvent->h1quad.im=0;
+			}
+		      if(caseID[2])
+			{
+			  thisEvent->h2quad.re=quadTemp[found].re;	    
+			  thisEvent->h2quad.im=quadTemp[found].im;
+			  found=found+1;
+			}
+		      else
+			{ 
+			  thisEvent->h2quad.re=0;	    
+			  thisEvent->h2quad.im=0;
+			}
+		      if(caseID[3])
+			{
+			  thisEvent->l1quad.re=quadTemp[found].re;	    
+			  thisEvent->l1quad.im=quadTemp[found].im;
+			  found=found+1;		   
+			}
+		      else
+			{
+			  thisEvent->l1quad.re=0;	    
+			  thisEvent->l1quad.im=0;
+			}
+		      if(caseID[4])
+			{
+			  thisEvent->t1quad.re=quadTemp[found].re;	    
+			  thisEvent->t1quad.im=quadTemp[found].im;
+			  found=found+1;
+			}
+		      else
+			{
+			  thisEvent->t1quad.re=0;	    
+			  thisEvent->t1quad.im=0;
+			}
+		      if(caseID[5])
+			{
+			  thisEvent->v1quad.re=quadTemp[found].re;	    
+			  thisEvent->v1quad.im=quadTemp[found].im;
+			  found=found+1;
+			}
+		      else
+			{
+			  thisEvent->v1quad.re=0;	    
+			  thisEvent->v1quad.im=0;
+			}		
+		      
+		      thisEvent->snr = cohSNR;
+		      strcpy(thisEvent->ifos,caseStr);
+		      thisEvent->mass1 = input->tmplt->mass1;
+		      thisEvent->mass2 = input->tmplt->mass2;
+		      thisEvent->mchirp = input->tmplt->totalMass * pow( input->tmplt->eta, 3.0/5.0 );
+		      thisEvent->eta = input->tmplt->eta;
+		      
+		      inclination = 0.0;
+		      polarization = 0.0;
+		      for ( detId=0 ; detId<params->numDetectors ; detId++ ) {
+			cDataTemp[detId].re=cData[detId]->data->data[timePtTemp[detId]].re;
+			cDataTemp[detId].im=cData[detId]->data->data[timePtTemp[detId]].im;
 		      }
-		    if( cohSNROut ) params->cohSNRVec->data->data[k] = cohSNR;
-		    
-		   if ( cohSNR > cohSNRThresh ) {
-		     if ( !*eventList ) {
-		       /* store the start of the crossing */
-		       eventStartIdx = k;
-		
-		       /* if this is the first event, start the list */
-
-		       thisEvent = *eventList = (MultiInspiralTable *) 
-			 LALCalloc( 1, sizeof(MultiInspiralTable) );
-		
-		       if ( !thisEvent )
-			 {
-			   ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
-			 }
-		       
-		       /* record the data that we need for the clustering algorithm */          
-		       tempTime = cData[0]->epoch.gpsSeconds + 1.0e-9 * cData[0]->epoch.gpsNanoSeconds + k * deltaT;
-		       fracpart = modf( tempTime, &intpart );
-		       thisEvent->end_time.gpsSeconds = (INT4) intpart;
-		       thisEvent->end_time.gpsNanoSeconds = (INT4) ( 1.0e9*fracpart );
-		       
-		       found=0;			
-		       if(caseID[0])
-			 {
-			   thisEvent->g1quad.re=quadTemp[found].re;	    
-			   thisEvent->g1quad.im=quadTemp[found].im;
-			   found=found+1;
-			 }
-		       else
-			 {
-			   thisEvent->g1quad.re=0;	    
-			   thisEvent->g1quad.im=0;
-			 }
-		       if(caseID[1])
-			 {
-			   thisEvent->h1quad.re=quadTemp[found].re;	    
-			   thisEvent->h1quad.im=quadTemp[found].im;
-			   found=found+1;
-			 }
-		       else
-			 {
-			   thisEvent->h1quad.re=0;	    
-			   thisEvent->h1quad.im=0;
-			 }
-		       if(caseID[2])
-			 {
-			   thisEvent->h2quad.re=quadTemp[found].re;	    
-			   thisEvent->h2quad.im=quadTemp[found].im;
-			   found=found+1;
-			 }
-		       else
-			 { 
-			   thisEvent->h2quad.re=0;	    
-			   thisEvent->h2quad.im=0;
-			 }
-		       if(caseID[3])
-			 {
-			   thisEvent->l1quad.re=quadTemp[found].re;	    
-			   thisEvent->l1quad.im=quadTemp[found].im;
-			   found=found+1;		   
-			 }
-		       else
-			 {
-			   thisEvent->l1quad.re=0;	    
-			   thisEvent->l1quad.im=0;
-			 }
-		       if(caseID[4])
-			 {
-			   thisEvent->t1quad.re=quadTemp[found].re;	    
-			   thisEvent->t1quad.im=quadTemp[found].im;
-			   found=found+1;
-			 }
-		       else
-			 {
-			   thisEvent->t1quad.re=0;	    
-			   thisEvent->t1quad.im=0;
-			 }
-		       if(caseID[5])
-			 {
-			   thisEvent->v1quad.re=quadTemp[found].re;	    
-			   thisEvent->v1quad.im=quadTemp[found].im;
-			   found=found+1;
-			 }
-		       else
-			 {
-			   thisEvent->v1quad.re=0;	    
-			   thisEvent->v1quad.im=0;
-			 }		
-		       
-		       thisEvent->snr = cohSNR;
-		       strcpy(thisEvent->ifos,caseStr);
-		       thisEvent->mass1 = input->tmplt->mass1;
-		       thisEvent->mass2 = input->tmplt->mass2;
-		       thisEvent->mchirp = input->tmplt->totalMass * pow( input->tmplt->eta, 3.0/5.0 );
-		       thisEvent->eta = input->tmplt->eta;
-
-		       inclination = 0.0;
-		       polarization = 0.0;
-		       cDataTemp[0].re = cData[0]->data->data[k].re;
-		       cDataTemp[0].im = cData[0]->data->data[k].im;
-		       cDataTemp[1].re = cData[1]->data->data[qTemp].re;
-		       cDataTemp[1].im = cData[1]->data->data[qTemp].im;
-		       cDataTemp[2].re = cData[2]->data->data[wTemp].re;
-		       cDataTemp[2].im = cData[2]->data->data[wTemp].im;
-		       LALCoherentInspiralEstimatePsiEpsilonCoaPhase( status->statusPtr, caseID, sigmasq, theta, phi, cDataTemp, &inclination, &polarization, &coaPhase ); 
-		       thisEvent->inclination = inclination;
-		       thisEvent->polarization = polarization;
-		       thisEvent->coa_phase = coaPhase;
-		       /* CHECK: LALCoherentInspiralEstimateDistance( status->statusPtr, sigmasq, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
-			  calculates a valid effective distance for H1-H2. Since not both 
-			  are present here, set the effective distance to zero */
-		       thisEvent->eff_distance = 0.0;
-		       
-		       thisEvent->ligo_axis_ra = phi;
-		       thisEvent->ligo_axis_dec = theta;
-
-		       tempTime = 0.0;
-		       fracpart = 0.0;
-		       intpart = 0.0;
-		       fflush( stdout ); 
-
-		     } /* done creating a new event */
-		     else if (params->maximizeOverChirp && k <= (eventStartIdx + deltaEventIndex) && cohSNR > thisEvent->snr ) {
-		       /* if this is the same event, update the maximum */
-		       
-		       tempTime = cData[0]->epoch.gpsSeconds + 1.0e-9 * cData[0]->epoch.gpsNanoSeconds + k * deltaT;
-		       fracpart = modf( tempTime, &intpart );
-		       thisEvent->end_time.gpsSeconds = (INT4) intpart;
-		       thisEvent->end_time.gpsNanoSeconds = (INT4) ( 1.0e9*fracpart );
-		       
-		       found=0;			
-		       if(caseID[0])
+		      LALCoherentInspiralEstimatePsiEpsilonCoaPhase( status->statusPtr, caseID, sigmasq, theta, phi, cDataTemp, &inclination, &polarization, &coaPhase ); 
+		      thisEvent->inclination = inclination;
+		      thisEvent->polarization = polarization;
+		      thisEvent->coa_phase = coaPhase;
+		      /* CHECK: LALCoherentInspiralEstimateDistance( status->statusPtr, sigmasq, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
+			 calculates a valid effective distance for H1-H2. Since not both 
+			 are present here, set the effective distance to zero */
+		      thisEvent->eff_distance = 0.0;
+		      
+		      thisEvent->ligo_axis_ra = phi;
+		      thisEvent->ligo_axis_dec = theta;
+		      
+		      tempTime = 0.0;
+		      fracpart = 0.0;
+		      intpart = 0.0;
+		      fflush( stdout ); 
+		      
+		    } /* done creating a new event */
+		    else if (params->maximizeOverChirp && timePt[0] <= (eventStartIdx + deltaEventIndex) && cohSNR > thisEvent->snr ) {
+		      /* if this is the same event, update the maximum */
+		      
+		      tempTime = cData[0]->epoch.gpsSeconds + 1.0e-9 * cData[0]->epoch.gpsNanoSeconds + timePt[0] * deltaT;
+		      fracpart = modf( tempTime, &intpart );
+		      thisEvent->end_time.gpsSeconds = (INT4) intpart;
+		      thisEvent->end_time.gpsNanoSeconds = (INT4) ( 1.0e9*fracpart );
+		      
+		      found=0;			
+		      if(caseID[0])
 			 {
 			   thisEvent->g1quad.re=quadTemp[found].re;	    
 			   thisEvent->g1quad.im=quadTemp[found].im;
@@ -2889,12 +2973,10 @@ LALCoherentInspiralFilterSegment (
 
 		       inclination = 0.0;
 		       polarization = 0.0;
-		       cDataTemp[0].re = cData[0]->data->data[k].re;
-		       cDataTemp[0].im = cData[0]->data->data[k].im;
-		       cDataTemp[1].re = cData[1]->data->data[qTemp].re;
-		       cDataTemp[1].im = cData[1]->data->data[qTemp].im;
-		       cDataTemp[2].re = cData[2]->data->data[wTemp].re;
-		       cDataTemp[2].im = cData[2]->data->data[wTemp].im;
+		       for ( detId=0 ; detId<params->numDetectors ; detId++ ) {
+			 cDataTemp[detId].re=cData[detId]->data->data[timePtTemp[detId]].re;
+			 cDataTemp[detId].im=cData[detId]->data->data[timePtTemp[detId]].im;
+		       }
 		       LALCoherentInspiralEstimatePsiEpsilonCoaPhase( status->statusPtr, caseID, sigmasq, theta, phi, cDataTemp, &inclination, &polarization, &coaPhase ); 
 		       thisEvent->inclination = inclination;
 		       thisEvent->polarization = polarization;
@@ -2912,7 +2994,7 @@ LALCoherentInspiralFilterSegment (
 		       fflush( stdout ); 
 		       
 		     }
-		     else if ( k > (eventStartIdx + deltaEventIndex) || !(params->maximizeOverChirp) ) {
+		     else if ( timePt[0] > (eventStartIdx + deltaEventIndex) || !(params->maximizeOverChirp) ) {
 		       /* clean up this event */
 		       MultiInspiralTable      *lastEvent = NULL;
 		
@@ -2928,7 +3010,7 @@ LALCoherentInspiralFilterSegment (
 		
 		       /* stick minimal data into the event */
 
-		       tempTime = cData[0]->epoch.gpsSeconds + 1.0e-9 * cData[0]->epoch.gpsNanoSeconds + k * deltaT;
+		       tempTime = cData[0]->epoch.gpsSeconds + 1.0e-9 * cData[0]->epoch.gpsNanoSeconds + timePt[0] * deltaT;
 		       fracpart = modf( tempTime, &intpart );
 		       thisEvent->end_time.gpsSeconds = (INT4) intpart;
 		       thisEvent->end_time.gpsNanoSeconds = (INT4) ( 1.0e9*fracpart );
@@ -3010,13 +3092,11 @@ LALCoherentInspiralFilterSegment (
 
 		       inclination = 0.0;
 		       polarization = 0.0;
-		       cDataTemp[0].re = cData[0]->data->data[k].re;
-		       cDataTemp[0].im = cData[0]->data->data[k].im;
-		       cDataTemp[1].re = cData[1]->data->data[qTemp].re;
-		       cDataTemp[1].im = cData[1]->data->data[qTemp].im;
-		       cDataTemp[2].re = cData[2]->data->data[wTemp].re;
-		       cDataTemp[2].im = cData[2]->data->data[wTemp].im;
-		       LALCoherentInspiralEstimatePsiEpsilonCoaPhase( status->statusPtr, caseID, sigmasq, theta, phi, cDataTemp, &inclination, &polarization, &coaPhase ); 
+		       for ( detId=0 ; detId<params->numDetectors ; detId++ ) {
+			 cDataTemp[detId].re=cData[detId]->data->data[timePtTemp[detId]].re;
+			 cDataTemp[detId].im=cData[detId]->data->data[timePtTemp[detId]].im;
+		       }
+;		       LALCoherentInspiralEstimatePsiEpsilonCoaPhase( status->statusPtr, caseID, sigmasq, theta, phi, cDataTemp, &inclination, &polarization, &coaPhase ); 
 		       thisEvent->inclination = inclination;
 		       thisEvent->polarization = polarization;
 		       thisEvent->coa_phase = coaPhase;
@@ -3028,642 +3108,218 @@ LALCoherentInspiralFilterSegment (
 		       thisEvent->ligo_axis_dec = theta;
 
 		       /* Need to initialize the event start index to new value */
-		       if( k > (eventStartIdx + deltaEventIndex) )
+		       if( timePt[0] > (eventStartIdx + deltaEventIndex) )
 		         {
-			   eventStartIdx = k;
+			   eventStartIdx = timePt[0];
 		         }
 		       tempTime = 0.0;
             
 		       fracpart= 0.0;
 		       intpart = 0.0;
 		       
-		     }
-		    } /* matches if (cohSNR > cohSNRThresh) */		    
-		  }
-	      }
-	  }/* outer loop end */
-      } /* else statement end */
+		     } /* end of elseif statement */
+		} /* matches if (cohSNR > cohSNRThresh) */		    
+	      }/* ends the "for loop" over the reference detector's timePt[0] */
+	  }/* ends loop over right-ascension index "raIdx" */
+	}/* ends loop over declination index "decIdx" */
+      } /* ends loop over case 3 */
     break;
-  case 4: /* Network: 4 detectors including both H1 and H2 */
-    if(caseID[1] && caseID[2])
-      {
-	/*start search looping */
+  case 4: /* Network: 4 detectors */
+    {
+        LIGOTimeGPS 	triggerGPSEndTime;/* Needed to calculate time-delays */
+	LALMSTUnitsAndAcc pUnitsAndAcc;
+	REAL8           gmstInRadians=0.0;
+	REAL4           psiInRadians = 0.0;
 	
-	for (l=0;l < (INT4) numBeamPoints; l++) 
-	  {
-	    theta = 0.0;
-	    phi = 0.0;
-	    theta = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[0] * (REAL4) LAL_PI_180;
-            phi   = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[1] * (REAL4) LAL_PI_180;
-	    /* position vector to source relative to first detector */
-	    nHatVect[0] = cos(theta) * sin(phi);
-	    nHatVect[1] = sin(theta) * sin(phi);
-	    nHatVect[2] = cos(phi); 
+	/* For now, this is a hard-coded fixed step in degrees: */
+	raStep = 4.0; 
+	decStep = 4.0;
 
-	    /* Now calculate the distance (in meters) projected along sky-position */
-	    distance[1] = cartesianInnerProduct(s[2],nHatVect);
-	    distance[2] = cartesianInnerProduct(s[3],nHatVect);
-	    timeDelay[1] = distance[1]/LAL_C_SI;
-	    timeDelay[2] = distance[2]/LAL_C_SI;
-	    slidePoints[1] = rint( (fabs(timeDelay[1])/deltaT) + 1.0 );
-	    slidePoints[2] = rint( (fabs(timeDelay[2])/deltaT) + 1.0 );
-	    	    
-	    k = 0;
-	    q = 0;
-	    w = 0;
-	    m = 0;
-
-	    for(k=0;k<(INT4)numPoints;k++)
-	      {
-		REAL4 cohSNR = 0.0;
-		mTemp = 0;
-		qTemp = 0;
-		wTemp = 0;
-		for(m=k-buffer;m<k+buffer;m++)
-		  {
-		    if(m >= 0 && m < (INT4) numPoints)
-		      {
-			for (q = m-slidePoints[1]-buffer;q < m+slidePoints[1]+buffer;q++)
-			  {
-			    if(q >= 0 && q < (INT4) numPoints)
-			      {			
-				for (w = q-slidePoints[2]-buffer; w < q+slidePoints[2]+buffer;w++)
-				  {
-				    if (w >= 0 && w < (INT4) numPoints)
-				      {
-				       /*CHECK: Need to update, like previous cases that include both 
-					  H1 and H2, to include correct weighting with sigmasq's */
-				       cohSNRLocal = sqrt( ( 
-					beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2] *
-                                        beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2] + 
-                                        beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3] *
-                                        beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3]) *
-                                        ((cData[0]->data->data[k].re + cData[3]->data->data[m].re)
-                                        *(cData[0]->data->data[k].re + cData[3]->data->data[m].re)
-                                        +(cData[0]->data->data[k].im + cData[3]->data->data[m].im)
-                                        *(cData[0]->data->data[k].im + cData[3]->data->data[m].im)) 
-                                        +(beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2] *
-                                        beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2] + 
-                                        beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3] *
-                                        beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3]) *
-                                        ( cData[1]->data->data[q].re*cData[1]->data->data[q].re + 
-                                        cData[1]->data->data[q].im*cData[1]->data->data[q].im ) + 
-                                        ( beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2] *
-                                        beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2]  + 
-                                        beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3] *
-                                        beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3] ) *
-                                        ( cData[2]->data->data[w].re*cData[2]->data->data[w].re + 
-                                        cData[2]->data->data[w].im*cData[2]->data->data[w].im ) + 
-                                        2*(beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2] *
-                                        beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2] + 
-                                        beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3] *
-                                        beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3]) *
-                                        (cData[0]->data->data[k].re*cData[1]->data->data[q].re + 
-                                        cData[0]->data->data[k].im*cData[1]->data->data[q].im + 
-                                        cData[3]->data->data[m].re*cData[1]->data->data[q].re + 
-                                        cData[3]->data->data[m].im*cData[1]->data->data[q].im) + 
-                                        2*(beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2] *
-                                        beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2] + 
-                                        beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3] *
-                                        beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3]) *
-                                        (cData[0]->data->data[k].re*cData[2]->data->data[w].re + 
-                                        cData[0]->data->data[k].im*cData[2]->data->data[w].im + 
-                                        cData[3]->data->data[m].re*cData[2]->data->data[w].re + 
-                                        cData[3]->data->data[m].im*cData[2]->data->data[w].im) + 
-                                        2*(beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2] *
-                                        beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2] + 
-                                        beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3] *
-                                        beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3]) *
-                                        (cData[1]->data->data[q].re*cData[2]->data->data[w].re + 
-                                        cData[1]->data->data[q].im*cData[2]->data->data[w].im));
-			      
-				
-					if(cohSNRLocal > cohSNR)
-					  {
-					    cohSNR = cohSNRLocal;
-					    quadTemp[0].re=cData[0]->data->data[k].re;
-					    quadTemp[0].im=cData[0]->data->data[k].im;
-					    quadTemp[1].re=cData[1]->data->data[q].re;
-					    quadTemp[1].im=cData[1]->data->data[q].im; 
-					    quadTemp[2].re=cData[2]->data->data[w].re;
-					    quadTemp[2].im=cData[2]->data->data[w].im; 
-					    quadTemp[3].re=cData[3]->data->data[m].re;
-					    quadTemp[3].im=cData[3]->data->data[m].im; 
-
-					    mTemp = m;
-					    qTemp = q;
-					    wTemp = w;
-					  }
-				      }
-			    
-				  }
-			
-			      }
-			  }
-		      }
-		    if( cohSNROut ) params->cohSNRVec->data->data[k] = cohSNR;
-
-		    if ( cohSNR > cohSNRThresh ) {
-		      if ( !*eventList ) {
-			/* store the start of the crossing */
-			eventStartIdx = k;
-		
-		        /* if this is the first event, start the list */
-
-			thisEvent = *eventList = (MultiInspiralTable *) 
-			  LALCalloc( 1, sizeof(MultiInspiralTable) );
-		
-			if ( !thisEvent )
-			  {
-			    ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
-			  }
-		
-			/* record the data that we need for the clustering algorithm */          
-			tempTime = cData[0]->epoch.gpsSeconds + 1.0e-9 * cData[0]->epoch.gpsNanoSeconds + k * deltaT;
-		        fracpart = modf( tempTime, &intpart );
-		        thisEvent->end_time.gpsSeconds = (INT4) intpart;
-		        thisEvent->end_time.gpsNanoSeconds = (INT4) ( 1.0e9*fracpart );
-			
-			found=0;			
-			if(caseID[0])
-			  {
-			    thisEvent->g1quad.re=quadTemp[found].re;	    
-			    thisEvent->g1quad.im=quadTemp[found].im;
-			    found=found+1;
-			  }
-			else
-			  {
-			    thisEvent->g1quad.re=0;	    
-			    thisEvent->g1quad.im=0;
-			  }
-			if(caseID[1])
-			  {
-			    thisEvent->h1quad.re=quadTemp[found].re;	    
-			    thisEvent->h1quad.im=quadTemp[found].im;
-			    found=found+1;
-			  }
-			else
-			  {
-			    thisEvent->h1quad.re=0;	    
-			    thisEvent->h1quad.im=0;
-			  }
-			if(caseID[2])
-			  {
-			    thisEvent->h2quad.re=quadTemp[found].re;	    
-			    thisEvent->h2quad.im=quadTemp[found].im;
-			    found=found+1;
-			  }
-			else
-			  { 
-			    thisEvent->h2quad.re=0;	    
-			    thisEvent->h2quad.im=0;
-			  }
-			if(caseID[3])
-			  {
-			    thisEvent->l1quad.re=quadTemp[found].re;	    
-			    thisEvent->l1quad.im=quadTemp[found].im;
-			    found=found+1;		   
-			  }
-			else
-			  {
-			    thisEvent->l1quad.re=0;	    
-			    thisEvent->l1quad.im=0;
-			  }
-			if(caseID[4])
-			  {
-			    thisEvent->t1quad.re=quadTemp[found].re;	    
-			    thisEvent->t1quad.im=quadTemp[found].im;
-			    found=found+1;
-			  }
-			else
-			  {
-			    thisEvent->t1quad.re=0;	    
-			    thisEvent->t1quad.im=0;
-			  }
-			if(caseID[5])
-			  {
-			    thisEvent->v1quad.re=quadTemp[found].re;	    
-			    thisEvent->v1quad.im=quadTemp[found].im;
-			    found=found+1;
-			  }
-			else
-			  {
-			    thisEvent->v1quad.re=0;	    
-			    thisEvent->v1quad.im=0;
-			  }		
-			
-		        thisEvent->snr = cohSNR;
-		        strcpy(thisEvent->ifos,caseStr);
-		        thisEvent->mass1 = input->tmplt->mass1;
-		        thisEvent->mass2 = input->tmplt->mass2;
-			thisEvent->mchirp = input->tmplt->totalMass * pow( input->tmplt->eta, 3.0/5.0 );
-			thisEvent->eta = input->tmplt->eta;
-
-		        inclination = 0.0;
-		        polarization = 0.0;
-		        cDataTemp[0].re = cData[0]->data->data[k].re;
-		        cDataTemp[0].im = cData[0]->data->data[k].im;
-		        cDataTemp[1].re = cData[1]->data->data[mTemp].re;
-		        cDataTemp[1].im = cData[1]->data->data[mTemp].im;
-		        cDataTemp[2].re = cData[2]->data->data[qTemp].re;
-		        cDataTemp[2].im = cData[2]->data->data[qTemp].im;
-		        cDataTemp[3].re = cData[3]->data->data[wTemp].re;
-		        cDataTemp[3].im = cData[3]->data->data[wTemp].im;
-		        LALCoherentInspiralEstimatePsiEpsilonCoaPhase( status->statusPtr, caseID, sigmasq, theta, phi, cDataTemp, &inclination, &polarization, &coaPhase ); 
-		        thisEvent->inclination = inclination;
-		        thisEvent->polarization = polarization;
-			thisEvent->coa_phase = coaPhase;
-		        LALCoherentInspiralEstimateDistance( status->statusPtr, sigmasq, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
-		        thisEvent->eff_distance = distanceEstimate;
-
-   	                thisEvent->ligo_axis_ra = phi;
-		        thisEvent->ligo_axis_dec = theta;
-
-		        tempTime = 0.0;
-		        fracpart = 0.0;
-		        intpart = 0.0;
-		        fflush( stdout ); 
-
-		      } /* done creating a new event */
-		      else if (params->maximizeOverChirp && k <= (eventStartIdx + deltaEventIndex) && cohSNR > thisEvent->snr ) {
-		        /* if this is the same event, update the maximum */
-
-		        tempTime = cData[0]->epoch.gpsSeconds + 1.0e-9 * cData[0]->epoch.gpsNanoSeconds + k * deltaT;
-		        fracpart = modf( tempTime, &intpart );
-		        thisEvent->end_time.gpsSeconds = (INT4) intpart;
-		        thisEvent->end_time.gpsNanoSeconds = (INT4) ( 1.0e9*fracpart );
-			
-			found=0;			
-			if(caseID[0])
-			  {
-			    thisEvent->g1quad.re=quadTemp[found].re;	    
-			    thisEvent->g1quad.im=quadTemp[found].im;
-			    found=found+1;
-			  }
-			else
-			  {
-			    thisEvent->g1quad.re=0;	    
-			    thisEvent->g1quad.im=0;
-			  }
-			if(caseID[1])
-			  {
-			    thisEvent->h1quad.re=quadTemp[found].re;	    
-			    thisEvent->h1quad.im=quadTemp[found].im;
-			    found=found+1;
-			  }
-			else
-			  {
-			    thisEvent->h1quad.re=0;	    
-			    thisEvent->h1quad.im=0;
-			  }
-			if(caseID[2])
-			  {
-			    thisEvent->h2quad.re=quadTemp[found].re;	    
-			    thisEvent->h2quad.im=quadTemp[found].im;
-			    found=found+1;
-			  }
-			else
-			  { 
-			    thisEvent->h2quad.re=0;	    
-			    thisEvent->h2quad.im=0;
-			  }
-			if(caseID[3])
-			  {
-			    thisEvent->l1quad.re=quadTemp[found].re;	    
-			    thisEvent->l1quad.im=quadTemp[found].im;
-			    found=found+1;		   
-			  }
-			else
-			  {
-			    thisEvent->l1quad.re=0;	    
-			    thisEvent->l1quad.im=0;
-			  }
-			if(caseID[4])
-			  {
-			    thisEvent->t1quad.re=quadTemp[found].re;	    
-			    thisEvent->t1quad.im=quadTemp[found].im;
-			    found=found+1;
-			  }
-			else
-			  {
-			    thisEvent->t1quad.re=0;	    
-			    thisEvent->t1quad.im=0;
-			  }
-			if(caseID[5])
-			  {
-			    thisEvent->v1quad.re=quadTemp[found].re;	    
-			    thisEvent->v1quad.im=quadTemp[found].im;
-			    found=found+1;
-			  }
-			else
-			  {
-			    thisEvent->v1quad.re=0;	    
-			    thisEvent->v1quad.im=0;
-			  }		
-			
-		        thisEvent->snr = cohSNR;
-		        strcpy(thisEvent->ifos, caseStr);
-		        thisEvent->mass1 = input->tmplt->mass1;
-		        thisEvent->mass2 = input->tmplt->mass2;
-			thisEvent->mchirp = input->tmplt->totalMass * pow( input->tmplt->eta, 3.0/5.0 );
-			thisEvent->eta = input->tmplt->eta;
-
-		        inclination = 0.0;
-		        polarization = 0.0;
-		        cDataTemp[0].re = cData[0]->data->data[k].re;
-		        cDataTemp[0].im = cData[0]->data->data[k].im;
-		        cDataTemp[1].re = cData[1]->data->data[mTemp].re;
-		        cDataTemp[1].im = cData[1]->data->data[mTemp].im;
-		        cDataTemp[2].re = cData[2]->data->data[qTemp].re;
-		        cDataTemp[2].im = cData[2]->data->data[qTemp].im;
-		        cDataTemp[3].re = cData[3]->data->data[wTemp].re;
-		        cDataTemp[3].im = cData[3]->data->data[wTemp].im;
-		        LALCoherentInspiralEstimatePsiEpsilonCoaPhase( status->statusPtr, caseID, sigmasq, theta, phi, cDataTemp, &inclination, &polarization, &coaPhase ); 
-		        thisEvent->inclination = inclination;
-		        thisEvent->polarization = polarization;
-			thisEvent->coa_phase = coaPhase;
-		        LALCoherentInspiralEstimateDistance( status->statusPtr, sigmasq, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
-		        thisEvent->eff_distance = distanceEstimate;
-		        thisEvent->ligo_axis_ra = phi;
-		        thisEvent->ligo_axis_dec = theta;
-
-		        tempTime = 0.0;
-		        fracpart = 0.0;
-		        intpart = 0.0;
-		        fflush( stdout ); 
-
-		      }
-		      else if ( k > (eventStartIdx + deltaEventIndex) || !(params->maximizeOverChirp) ) {
-		        /* clean up this event */
-		        MultiInspiralTable      *lastEvent = NULL;
-		
-		        /* allocate memory for the newEvent */
-		        lastEvent = thisEvent;
-		
-		        lastEvent->next = thisEvent = (MultiInspiralTable *) 
-		          LALCalloc( 1, sizeof(MultiInspiralTable) );
-		        if ( !(lastEvent->next) )
-		          {
-			    ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
-		          }
-		
-		        /* stick minimal data into the event */
-
-		        tempTime = cData[0]->epoch.gpsSeconds + 1.0e-9 * cData[0]->epoch.gpsNanoSeconds + k * deltaT;
-		        fracpart = modf( tempTime, &intpart );
-		        thisEvent->end_time.gpsSeconds = (INT4) intpart;
-		        thisEvent->end_time.gpsNanoSeconds = (INT4) ( 1.0e9*fracpart );
-			
-			found=0;			
-			if(caseID[0])
-			  {
-			    thisEvent->g1quad.re=quadTemp[found].re;	    
-			    thisEvent->g1quad.im=quadTemp[found].im;
-			    found=found+1;
-			  }
-			else
-			  {
-			    thisEvent->g1quad.re=0;	    
-			    thisEvent->g1quad.im=0;
-			  }
-			if(caseID[1])
-			  {
-			    thisEvent->h1quad.re=quadTemp[found].re;	    
-			    thisEvent->h1quad.im=quadTemp[found].im;
-			    found=found+1;
-			  }
-			else
-			  {
-			    thisEvent->h1quad.re=0;	    
-			    thisEvent->h1quad.im=0;
-			  }
-			if(caseID[2])
-			  {
-			    thisEvent->h2quad.re=quadTemp[found].re;	    
-			    thisEvent->h2quad.im=quadTemp[found].im;
-			    found=found+1;
-			  }
-			else
-			  { 
-			    thisEvent->h2quad.re=0;	    
-			    thisEvent->h2quad.im=0;
-			  }
-			if(caseID[3])
-			  {
-			    thisEvent->l1quad.re=quadTemp[found].re;	    
-			    thisEvent->l1quad.im=quadTemp[found].im;
-			    found=found+1;		   
-			  }
-			else
-			  {
-			    thisEvent->l1quad.re=0;	    
-			    thisEvent->l1quad.im=0;
-			  }
-			if(caseID[4])
-			  {
-			    thisEvent->t1quad.re=quadTemp[found].re;	    
-			    thisEvent->t1quad.im=quadTemp[found].im;
-			    found=found+1;
-			  }
-			else
-			  {
-			    thisEvent->t1quad.re=0;	    
-			    thisEvent->t1quad.im=0;
-			  }
-			if(caseID[5])
-			  {
-			    thisEvent->v1quad.re=quadTemp[found].re;	    
-			    thisEvent->v1quad.im=quadTemp[found].im;
-			    found=found+1;
-			  }
-			else
-			  {
-			    thisEvent->v1quad.re=0;	    
-			    thisEvent->v1quad.im=0;
-			  }		
-			
-		        thisEvent->snr = cohSNR;
-		        strcpy(thisEvent->ifos,caseStr);
-		        thisEvent->mass1 = input->tmplt->mass1;
-		        thisEvent->mass2 = input->tmplt->mass2;
-			thisEvent->mchirp = input->tmplt->totalMass * pow( input->tmplt->eta, 3.0/5.0 );
-			thisEvent->eta = input->tmplt->eta;
-
-		        inclination = 0.0;
-		        polarization = 0.0;
-		        cDataTemp[0].re = cData[0]->data->data[k].re;
-		        cDataTemp[0].im = cData[0]->data->data[k].im;
-		        cDataTemp[1].re = cData[1]->data->data[mTemp].re;
-		        cDataTemp[1].im = cData[1]->data->data[mTemp].im;
-		        cDataTemp[2].re = cData[2]->data->data[qTemp].re;
-		        cDataTemp[2].im = cData[2]->data->data[qTemp].im;
-		        cDataTemp[3].re = cData[3]->data->data[wTemp].re;
-		        cDataTemp[3].im = cData[3]->data->data[wTemp].im;
-		        LALCoherentInspiralEstimatePsiEpsilonCoaPhase( status->statusPtr, caseID, sigmasq, theta, phi, cDataTemp, &inclination, &polarization, &coaPhase ); 
-		        thisEvent->inclination = inclination;
-		        thisEvent->polarization = polarization;
-			thisEvent->coa_phase = coaPhase;
-		        LALCoherentInspiralEstimateDistance( status->statusPtr, sigmasq, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
-		        thisEvent->eff_distance = distanceEstimate;
-		        thisEvent->ligo_axis_ra = phi;
-		        thisEvent->ligo_axis_dec = theta;
-
-		        /* Need to initialize the event start index to new value */
-		        if( k > (eventStartIdx + deltaEventIndex) )
-		          {
-			    eventStartIdx = k;
-		          }
-		        tempTime = 0.0;
-		        fracpart= 0.0;
-		        intpart = 0.0;
-		   
-		      }
-		    } /* matches if (cohSNR > cohSNRThresh) */		    
-		  }
-	      }
-	  } /* end for statement prior to computing distances*/
-      } /* end outer if statement in case4*/
-    else
-      { /* Network: 4 detectors excluding either H1, H2, or both H1 and H2 */
-	/* there will be one extra loop over the last case since there are 3 nonzero time delays*/
+	triggerGPSEndTime.gpsSeconds = cData[0]->epoch.gpsSeconds;
+	triggerGPSEndTime.gpsNanoSeconds = cData[0]->epoch.gpsNanoSeconds;
+	/* Convert GPS time of trigger to GMST time in radians 
+	   for computing F+, Fx */
+	pUnitsAndAcc.units = MST_RAD;
+	pUnitsAndAcc.accuracy = LALLEAPSEC_LOOSE;
+	LALGPStoGMST1(status->statusPtr,&gmstInRadians,&triggerGPSEndTime,&pUnitsAndAcc);
 	
-	/*start search looping */
+	/* Convert to radians */
+	raMax = floor(360/raStep);
+	decMax = floor(180/decStep);
 	
-	for (l=0;l < (INT4) numBeamPoints; l++)
-	  {
-	    theta = 0.0;
-	    phi = 0.0;
-	    theta = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[0] * (REAL4) LAL_PI_180;
-            phi   = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[1] * (REAL4) LAL_PI_180;
-	    /* position vector to source relative to first detector */
-	    nHatVect[0] = cos(theta) * sin(phi);
-	    nHatVect[1] = sin(theta) * sin(phi);
-	    nHatVect[2] = cos(phi); 
+	raStep *= LAL_PI_180;
+	decStep *= LAL_PI_180;
+	
+	for (decIdx=1; decIdx<decMax; decIdx++) {
+	  for ( raIdx=0; raIdx<raMax; raIdx++) {
+	    INT4           timePt[4] = {0,0,0,0};
+	    INT4           timePtTemp[4] = {0,0,0,0};
+	    REAL4          AA=0.0;
+	    REAL4          BB=0.0;
+	    REAL4          CC=0.0;
+	    REAL4          discrimSqrt=0.0;
+	    REAL4          VVPlus[4]={0.0,0.0,0.0,0.0};
+	    REAL4          VVMinus[4]={0.0,0.0,0.0,0.0};
+	    REAL4          CRePlus=0.0;
+	    REAL4          CImPlus=0.0;
+	    REAL4          CReMinus=0.0;
+	    REAL4          CImMinus=0.0;
+	    REAL4          AAn[4]={0.0,0.0,0.0,0.0};
+	    REAL4          BBn[4]={0.0,0.0,0.0,0.0};
+	    REAL4          CCn[4]={0.0,0.0,0.0,0.0};
+	    REAL4          discrimSqrtn[4]={0.0,0.0,0.0,0.0};
+	    REAL4          MM1=0.0;
+	    REAL4          MM2=0.0;
+	    REAL4          O11=0.0;
+	    REAL4          O12=0.0;
+	    REAL4          O21=0.0;
+	    REAL4          O22=0.0;
 
-	    /* Now calculate the distance (in meters) projected along sky-position */
-	    distance[1] = cartesianInnerProduct(s[1],nHatVect);
-	    distance[2] = cartesianInnerProduct(s[2],nHatVect);
-	    distance[3] = cartesianInnerProduct(s[3],nHatVect);
-	    timeDelay[1] = distance[1]/LAL_C_SI;
-	    timeDelay[2] = distance[2]/LAL_C_SI;
-	    timeDelay[3] = distance[3]/LAL_C_SI;
-	    slidePoints[1] = rint( (fabs(timeDelay[1])/deltaT) + 1.0 );
-	    slidePoints[2] = rint( (fabs(timeDelay[2])/deltaT) + 1.0 );
-	    slidePoints[3] = rint( (fabs(timeDelay[3])/deltaT) + 1.0 );	    
+	    SkyPosition    raDec;
+
+	    raDec.latitude = decIdx * decStep;
+	    raDec.longitude = raIdx * raStep;
 	    
-	    k = 0;
-	    q = 0;
-	    w = 0;
-	    j = 0;
+	    /* Loop over detectors computing their F+, Fx and tc's */
+	    for( j=0; j<LAL_NUM_IFO; j++ ) {
+	      detId = 0;
+	      /* Compute antenna-patterns and time-delays if caseID[j] != 0 */
+	      if ( !(params->detIDVec->data[j] == 0 )) { 
+	      
+		/* Compute antenna-patterns for each participating detector */
+		XLALComputeDetAMResponse(&fplus[detId], &fcross[detId],
+		      params->detectorVec->detector[detId].response,
+		      raDec.longitude,raDec.latitude, psiInRadians, gmstInRadians);
 
-	    for(k=0;k<(INT4)numPoints;k++)
-	      {
-		REAL4 cohSNR = 0.0;
-		qTemp = 0;
-		wTemp = 0;
-		jTemp = 0;
-		for (q = k-slidePoints[1]-buffer;q < k+slidePoints[1]+buffer;q++)
-		  {
-		    if(q >= 0 && q < (INT4) numPoints)
-		      {
-			for (w = q-slidePoints[2]-buffer; w < q+slidePoints[2]+buffer;w++)
-			  {
-			    if (w >= 0 && w < (INT4) numPoints)
-			      {
-				for(j = w-slidePoints[3]-buffer; j < w+slidePoints[3]+buffer; j++)
-				  {
-				    if(j >=0 && j < (INT4) numPoints)
-				      {
-				      cohSNRLocal = sqrt( ( 
-                                        beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2] *
-                                        beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2] + 
-                                        beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3] *
-                                        beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3]) *
-                                        (cData[0]->data->data[k].re*cData[0]->data->data[k].re + 
-                                        cData[0]->data->data[k].im*cData[0]->data->data[k].im ) + 
-                                        (beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2] *
-                                        beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2] + 
-                                        beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3] *
-                                        beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3]) *
-                                        (cData[1]->data->data[q].re*cData[1]->data->data[q].re + 
-                                        cData[1]->data->data[q].im*cData[1]->data->data[q].im ) + 
-                                        (beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2] *
-                                        beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2] + 
-                                        beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3] *
-                                        beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3]) *
-                                        (cData[2]->data->data[w].re*cData[2]->data->data[w].re + 
-                                        cData[2]->data->data[w].im*cData[2]->data->data[w].im ) + 
-                                        (beamVec->detBeamArray[3].thetaPhiVs[l].data->data[2] *
-                                        beamVec->detBeamArray[3].thetaPhiVs[l].data->data[2] + 
-                                        beamVec->detBeamArray[3].thetaPhiVs[l].data->data[3] *
-                                        beamVec->detBeamArray[3].thetaPhiVs[l].data->data[3]) *
-                                        (cData[3]->data->data[j].re*cData[3]->data->data[j].re + 
-                                        cData[3]->data->data[j].im*cData[3]->data->data[j].im ) + 
-                                        2*(beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2] *
-                                        beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2] + 
-                                        beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3] *
-                                        beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3]) *
-                                        (cData[0]->data->data[k].re * cData[1]->data->data[q].re + 
-                                        cData[0]->data->data[k].im * cData[1]->data->data[q].im) + 
-                                        2*(beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2] *
-                                        beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2] + 
-                                        beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3] *
-                                        beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3]) *
-                                        (cData[0]->data->data[k].re*cData[2]->data->data[w].re + 
-                                        cData[0]->data->data[k].im * cData[2]->data->data[w].im) + 
-                                        2*(beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2] *
-                                        beamVec->detBeamArray[3].thetaPhiVs[l].data->data[2] + 
-                                        beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3] *
-                                        beamVec->detBeamArray[3].thetaPhiVs[l].data->data[3]) *
-                                        (cData[0]->data->data[k].re*cData[3]->data->data[j].re + 
-                                        cData[0]->data->data[k].im*cData[3]->data->data[j].im) + 
-                                        2*(beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2] *
-                                        beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2] + 
-                                        beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3] *
-                                        beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3]) *
-                                        (cData[1]->data->data[q].re * cData[2]->data->data[w].re + 
-                                        cData[1]->data->data[q].im*cData[2]->data->data[w].im) + 
-                                        2*(beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2] *
-                                        beamVec->detBeamArray[3].thetaPhiVs[l].data->data[2] + 
-                                        beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3] *
-                                        beamVec->detBeamArray[3].thetaPhiVs[l].data->data[3]) *
-                                        (cData[1]->data->data[q].re*cData[3]->data->data[j].re + 
-                                        cData[1]->data->data[q].im*cData[3]->data->data[j].im) + 
-                                        2*(beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2] *
-                                        beamVec->detBeamArray[3].thetaPhiVs[l].data->data[2] + 
-                                        beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3] *
-                                        beamVec->detBeamArray[3].thetaPhiVs[l].data->data[3]) *
-                                        (cData[2]->data->data[w].re*cData[3]->data->data[j].re + 
-                                        cData[2]->data->data[w].im * cData[3]->data->data[j].im));
-					
-				
-      
-					if(cohSNRLocal > cohSNR)
-					  {
-					    cohSNR = cohSNRLocal;
-					    quadTemp[0].re=cData[0]->data->data[k].re;
-					    quadTemp[0].im=cData[0]->data->data[k].im;
-					    quadTemp[1].re=cData[1]->data->data[q].re;
-					    quadTemp[1].im=cData[1]->data->data[q].im; 
-					    quadTemp[2].re=cData[2]->data->data[w].re;
-					    quadTemp[2].im=cData[2]->data->data[w].im; 
-					    quadTemp[3].re=cData[3]->data->data[j].re;
-					    quadTemp[3].im=cData[3]->data->data[j].im;
-					    qTemp = q;
-					    wTemp = w;
-					    jTemp = j;
-					  }
-				      }
-				  }
-			      }
+		/*Arrival time delays in detectors relative to the 1st;
+		  esp., dt21 = t2 - t1, dt31 = t3 - t1, etc. are computed */
+		timeDelay[detId] = XLALArrivalTimeDiff(
+			       params->detectorVec->detector[detId].location,
+			       params->detectorVec->detector[0].location,
+			       raDec.longitude,raDec.latitude,&triggerGPSEndTime);
+		/* round off to nearest integer */
+		slidePoints[detId] = rint( (fabs(timeDelay[detId])/deltaT) );
+
+		/* Compute antenna-pattern factors */
+		AAn[detId] = fplus[detId] * fplus[detId];
+		BBn[detId] = fcross[detId] * fcross[detId];
+		CCn[detId] = fplus[detId] * fcross[detId];
+
+		discrimSqrtn[detId] = sqrt(AAn[detId]*AAn[detId] 
+					 + 4*BBn[detId]*BBn[detId]
+					 - 2*AAn[detId]*CCn[detId] 
+					 + CCn[detId]*CCn[detId]);
+
+		O11 = ( AAn[detId] - CCn[detId] - discrimSqrtn[detId])  /
+		  ( 2*BB*sqrt( 1 + ( AAn[detId] - CCn[detId] - discrimSqrtn[detId])*( AAn[detId] - CCn[detId] - discrimSqrtn[detId]) 
+			      / ( 4*BBn[detId]*BBn[detId] ) ) );
+		O12 = 1 / sqrt( 1 + (-AAn[detId]+CCn[detId]+discrimSqrtn[detId])*(-AAn[detId]+CCn[detId]+discrimSqrtn[detId]) 
+				/ ( 4*BBn[detId]*BBn[detId] ) );
+		O21 = ( AAn[detId] - CCn[detId] + discrimSqrtn[detId])  /
+		  ( 2*BB*sqrt( 1 + (-AAn[detId]+CCn[detId]-discrimSqrtn[detId])*(-AAn[detId]+CCn[detId]-discrimSqrtn[detId]) 
+			      / ( 4*BBn[detId]*BBn[detId] ) ) );
+		O22 = 1 / sqrt( 1 + (-AAn[detId]+CCn[detId]-discrimSqrtn[detId])*(-AAn[detId]+CCn[detId]-discrimSqrtn[detId]) 
+				/ ( 4*BBn[detId]*BBn[detId] ) );
+		
+		
+		VVPlus[detId] = O11 * fplus[detId] + O12 * fcross[detId];		
+		VVMinus[detId] = O21 * fplus[detId] + O22 * fcross[detId];		
+		
+		/* CHECK: If sigmasq should be in the denominator!
+		   Compute the elements of the helicity-plane projection matrix */
+		AAn[detId] *= sigmasq[j];
+		BBn[detId] *= sigmasq[j];
+		CCn[detId] *= sigmasq[j];
+		VVPlus[detId] *= sigmasq[j];
+		VVMinus[detId] *= sigmasq[j];
+		
+		detId++;
+	      }
+	    }
+	    
+	    /* Construct network terms and factors required for
+	       computing the coherent statistics */
+	    for ( detId=0 ; detId<params->numDetectors ; detId++ ) {
+	      AA += AAn[detId];
+	      BB += BBn[detId];
+	      CC += CCn[detId];
+	    }
+	    discrimSqrt = sqrt(AA*AA + 4*BB*BB
+			      - 2*AA*CC + CC*CC);
+	    MM1 = 2 * ( AA*AA*AA 
+			- 2*BB*BB*discrimSqrt
+			- AA*AA*( 2*CC + discrimSqrt )
+			+ AA*( 4*BB*BB 
+			       + CC * (CC + discrimSqrt ) ) );
+	    MM1 = sqrt(MM1);
+	    MM2 = 2 * ( AA*AA*AA 
+			+ 2*BB*BB*discrimSqrt
+			+ AA*AA*(-2*CC + discrimSqrt )
+			+ AA*( 4*BB*BB 
+			       + CC * (CC - discrimSqrt ) ) );
+	    MM2 = sqrt(MM2);
+	    
+	    /* Regularize */
+	    if ( (MM1==0.0 ) ) 
+	      MM1=0.001;
+	    if ( (MM2==0.0 ) ) 
+	      MM2=0.001;
+
+	    for( timePt[0]=0 ; timePt[0]<(INT4)numPoints ; timePt[0]++) {
+	      REAL4 cohSNR = 0.0;
+	      timePtTemp[1] = 0;
+	      timePtTemp[2] = 0;
+	      timePtTemp[3] = 0;
+	      
+	      for (timePt[1] = timePt[0]-slidePoints[1]-buffer;timePt[1] < timePt[0]+slidePoints[1]+buffer;timePt[1]++) {
+	       if( timePt[1] >= 0 && timePt[1] < (INT4) numPoints) {
+		 for (timePt[2] = timePt[1]-slidePoints[2]-buffer; timePt[2] < timePt[1]+slidePoints[2]+buffer; timePt[2]++) {
+		  if (timePt[2] >= 0 && timePt[2] < (INT4) numPoints) {
+		    for(timePt[3] = timePt[2]-slidePoints[3]-buffer; timePt[3] < timePt[2]+slidePoints[3]+buffer; timePt[3]++) {
+		      if(timePt[3] >=0 && timePt[3] < (INT4) numPoints) {
+			CRePlus = 0.0;
+			CImPlus = 0.0;
+			CReMinus = 0.0;
+			CImMinus = 0.0;
+
+			for ( detId=0 ; detId<params->numDetectors ; detId++ ) {
+			  CRePlus += VVPlus[detId] * 
+			    cData[detId]->data->data[timePt[detId]].re;
+			  CImPlus += VVPlus[detId] * 
+			    cData[detId]->data->data[timePt[detId]].im;
+			  CReMinus += VVMinus[detId] * 
+			    cData[detId]->data->data[timePt[detId]].re;
+			  CImMinus += VVMinus[detId] *
+			    cData[detId]->data->data[timePt[detId]].im;
+			}
+			
+			/* Compute coherent search statistic */
+			cohSNRLocal = sqrt( ( CRePlus*CRePlus/MM1 + 
+					      CImPlus*CImPlus/MM1 + 
+					      CReMinus*CReMinus/MM2 + 
+					      CImMinus*CImMinus/MM2 ) );
+			
+			if(cohSNRLocal > cohSNR) {
+			  cohSNR = cohSNRLocal;
+			  for ( detId=0 ; detId<params->numDetectors ; detId++ ) {
+			    quadTemp[detId].re=cData[detId]->data->data[timePt[detId]].re;
+			    quadTemp[detId].im=cData[detId]->data->data[timePt[detId]].im;
+			    timePtTemp[detId] = timePt[detId];
 			  }
-		      }
-		    if( cohSNROut ) params->cohSNRVec->data->data[k] = cohSNR;
-
-		    if ( cohSNR > cohSNRThresh ) {
+			}
+		      }/* closes conditional statement */
+		    }/* closes loop over 4th detector's time-delays */
+		  }/* closes conditional statement */
+		}/* closes loop over 3rd detector's time-delays */
+	       }/* closes conditional statement */
+	      }/* closes loop over 2nd detector's time-delays */
+	      
+	      if( cohSNROut ) params->cohSNRVec->data->data[k] = cohSNR;
+	      
+	      if ( cohSNR > cohSNRThresh ) {
 		      if ( !*eventList ) {
 			/* store the start of the crossing */
-			eventStartIdx = k;
+			eventStartIdx = timePt[0];
 		
 			/* if this is the first event, start the list */
 
@@ -3676,7 +3332,7 @@ LALCoherentInspiralFilterSegment (
 			  }
 		
 			/* record the data that we need for the clustering algorithm */          
-			tempTime = cData[0]->epoch.gpsSeconds + 1.0e-9 * cData[0]->epoch.gpsNanoSeconds + k * deltaT;
+			tempTime = cData[0]->epoch.gpsSeconds + 1.0e-9 * cData[0]->epoch.gpsNanoSeconds + timePt[0] * deltaT;
 		        fracpart = modf( tempTime, &intpart );
 		        thisEvent->end_time.gpsSeconds = (INT4) intpart;
 		        thisEvent->end_time.gpsNanoSeconds = (INT4) ( 1.0e9*fracpart );
@@ -3758,14 +3414,10 @@ LALCoherentInspiralFilterSegment (
 
 		        inclination = 0.0;
 		        polarization = 0.0;
-		        cDataTemp[0].re = cData[0]->data->data[k].re;
-		        cDataTemp[0].im = cData[0]->data->data[k].im;
-		        cDataTemp[1].re = cData[1]->data->data[qTemp].re;
-		        cDataTemp[1].im = cData[1]->data->data[qTemp].im;
-		        cDataTemp[2].re = cData[2]->data->data[wTemp].re;
-		        cDataTemp[2].im = cData[2]->data->data[wTemp].im;
-		        cDataTemp[3].re = cData[3]->data->data[jTemp].re;
-		        cDataTemp[3].im = cData[3]->data->data[jTemp].im;
+			for ( detId=0 ; detId<params->numDetectors ; detId++ ) {
+			  cDataTemp[detId].re=cData[detId]->data->data[timePtTemp[detId]].re;
+			  cDataTemp[detId].im=cData[detId]->data->data[timePtTemp[detId]].im;
+			}
 		        LALCoherentInspiralEstimatePsiEpsilonCoaPhase( status->statusPtr, caseID, sigmasq, theta, phi, cDataTemp, &inclination, &polarization, &coaPhase ); 
 		        thisEvent->inclination = inclination;
 		        thisEvent->polarization = polarization;
@@ -3784,10 +3436,10 @@ LALCoherentInspiralFilterSegment (
 		        fflush( stdout ); 
 
 		      } /* done creating a new event */
-		      else if (params->maximizeOverChirp && k <= (eventStartIdx + deltaEventIndex) && cohSNR > thisEvent->snr ) {
+		      else if (params->maximizeOverChirp && timePt[0] <= (eventStartIdx + deltaEventIndex) && cohSNR > thisEvent->snr ) {
 		        /* if this is the same event, update the maximum */
 
-		        tempTime = cData[0]->epoch.gpsSeconds + 1.0e-9 * cData[0]->epoch.gpsNanoSeconds + k * deltaT;
+		        tempTime = cData[0]->epoch.gpsSeconds + 1.0e-9 * cData[0]->epoch.gpsNanoSeconds + timePt[0] * deltaT;
 		        fracpart = modf( tempTime, &intpart );
 		        thisEvent->end_time.gpsSeconds = (INT4) intpart;
 		        thisEvent->end_time.gpsNanoSeconds = (INT4) ( 1.0e9*fracpart );
@@ -3869,14 +3521,10 @@ LALCoherentInspiralFilterSegment (
 
 		        inclination = 0.0;
 		        polarization = 0.0;
-		        cDataTemp[0].re = cData[0]->data->data[k].re;
-		        cDataTemp[0].im = cData[0]->data->data[k].im;
-		        cDataTemp[1].re = cData[1]->data->data[qTemp].re;
-		        cDataTemp[1].im = cData[1]->data->data[qTemp].im;
-		        cDataTemp[2].re = cData[2]->data->data[wTemp].re;
-		        cDataTemp[2].im = cData[2]->data->data[wTemp].im;
-		        cDataTemp[3].re = cData[3]->data->data[jTemp].re;
-		        cDataTemp[3].im = cData[3]->data->data[jTemp].im;
+			for ( detId=0 ; detId<params->numDetectors ; detId++ ) {
+			  cDataTemp[detId].re=cData[detId]->data->data[timePtTemp[detId]].re;
+			  cDataTemp[detId].im=cData[detId]->data->data[timePtTemp[detId]].im;
+			}
 		        LALCoherentInspiralEstimatePsiEpsilonCoaPhase( status->statusPtr, caseID, sigmasq, theta, phi, cDataTemp, &inclination, &polarization, &coaPhase ); 
 		        thisEvent->inclination = inclination;
 		        thisEvent->polarization = polarization;
@@ -3894,7 +3542,7 @@ LALCoherentInspiralFilterSegment (
 		        fflush( stdout ); 
 
 		      }
-		      else if ( k > (eventStartIdx + deltaEventIndex) || !(params->maximizeOverChirp) ) {
+		      else if ( timePt[0] > (eventStartIdx + deltaEventIndex) || !(params->maximizeOverChirp) ) {
 		        /* clean up this event */
 		        MultiInspiralTable      *lastEvent = NULL;
 		
@@ -3910,7 +3558,7 @@ LALCoherentInspiralFilterSegment (
 		
 		        /* stick minimal data into the event */
 
-		        tempTime = cData[0]->epoch.gpsSeconds + 1.0e-9 * cData[0]->epoch.gpsNanoSeconds + k * deltaT;
+		        tempTime = cData[0]->epoch.gpsSeconds + 1.0e-9 * cData[0]->epoch.gpsNanoSeconds + timePt[0] * deltaT;
 		        fracpart = modf( tempTime, &intpart );
 		        thisEvent->end_time.gpsSeconds = (INT4) intpart;
 		        thisEvent->end_time.gpsNanoSeconds = (INT4) ( 1.0e9*fracpart );
@@ -3992,14 +3640,10 @@ LALCoherentInspiralFilterSegment (
 
 		        inclination = 0.0;
 		        polarization = 0.0;
-		        cDataTemp[0].re = cData[0]->data->data[k].re;
-		        cDataTemp[0].im = cData[0]->data->data[k].im;
-		        cDataTemp[1].re = cData[1]->data->data[qTemp].re;
-		        cDataTemp[1].im = cData[1]->data->data[qTemp].im;
-		        cDataTemp[2].re = cData[2]->data->data[wTemp].re;
-		        cDataTemp[2].im = cData[2]->data->data[wTemp].im;
-		        cDataTemp[3].re = cData[3]->data->data[jTemp].re;
-		        cDataTemp[3].im = cData[3]->data->data[jTemp].im;
+			for ( detId=0 ; detId<params->numDetectors ; detId++ ) {
+			  cDataTemp[detId].re=cData[detId]->data->data[timePtTemp[detId]].re;
+			  cDataTemp[detId].im=cData[detId]->data->data[timePtTemp[detId]].im;
+			}
 		        LALCoherentInspiralEstimatePsiEpsilonCoaPhase( status->statusPtr, caseID, sigmasq, theta, phi, cDataTemp, &inclination, &polarization, &coaPhase ); 
 		        thisEvent->inclination = inclination;
 		        thisEvent->polarization = polarization;
@@ -4010,27 +3654,26 @@ LALCoherentInspiralFilterSegment (
 		        thisEvent->ligo_axis_dec = theta;
 
 		        /* Need to initialize the event start index to new value */
-		        if( k > (eventStartIdx + deltaEventIndex) )
+		        if( timePt[0] > (eventStartIdx + deltaEventIndex) )
 		          {
-			    eventStartIdx = k;
+			    eventStartIdx = timePt[0];
 		          }
 		        tempTime = 0.0;
 		        fracpart= 0.0;
 		        intpart = 0.0;
 		   
 		      }
-		    } /* matches if (cohSNR > cohSNRThresh) */
-		  }
-	      }
-	  } /*end the outermost for statement prior to computing distances*/
-      } /*end else statement */
-  } /* end case statement */
-
-
+	      } /* matches if (cohSNR > cohSNRThresh) */
+	    } /* end loop over timePts in the reference detector*/
+	  }/* end loop over right-ascension, raIdx */
+	}/* end loop over declination, decIdx */
+    }/* case of 4 detectors */
+  } /* closes  switch(params->numDetectors) */
+  
   /* Compute null-statistic, just for H1-H2 as of now,
      and cohSNRH1H2, if not computed above already */
   if( thisEvent && params->nullStatOut && params->cohH1H2SNROut ) {
-
+    
     /* Prepare norm for null statistic */
     nullNorm = ( 1.0 / sigmasq[1]  + 1.0 /  sigmasq[2] );
 
