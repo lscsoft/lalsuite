@@ -1066,11 +1066,11 @@ int main( int argc, char *argv[] )
       
       /* Write the summary information */
       if ( userTag )	{
-	  LALSnprintf( fileName, FILENAME_MAX, "%s-COHEREMT_INSPIRAL_H1H2_COHSNR_%s-%d-%d-%d", ifoTag, userTag, 
+	  LALSnprintf( fileName, FILENAME_MAX, "%s-COHERENT_INSPIRAL_H1H2_COHSNR_%s-%d-%d-%d", ifoTag, userTag, 
 		       gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds, cohFileID ); 
       }
       else	  {
-	  LALSnprintf( fileName, FILENAME_MAX, "%s-COHEREMT_INSPIRAL_H1H2_COHSNR-%d-%d-%d", ifoTag, 
+	  LALSnprintf( fileName, FILENAME_MAX, "%s-COHERENT_INSPIRAL_H1H2_COHSNR-%d-%d-%d", ifoTag, 
 		       gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds, cohFileID ); 
       }
       
@@ -1094,11 +1094,11 @@ int main( int argc, char *argv[] )
 	}
       
       if ( userTag )	{
-	  LALSnprintf( fileName, FILENAME_MAX, "%s-COHEREMT_INSPIRAL_NULL_STAT_%s-%d-%d-%d", ifoTag, userTag, 
+	  LALSnprintf( fileName, FILENAME_MAX, "%s-COHERENT_INSPIRAL_NULL_STAT_%s-%d-%d-%d", ifoTag, userTag, 
 		       gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds, cohFileID ); 
       }
       else	{
-	  LALSnprintf( fileName, FILENAME_MAX, "%s-COHEREMT_INSPIRAL_NULL_STAT-%d-%d-%d", ifoTag, 
+	  LALSnprintf( fileName, FILENAME_MAX, "%s-COHERENT_INSPIRAL_NULL_STAT-%d-%d-%d", ifoTag, 
 		       gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds, cohFileID ); 
       }
 
