@@ -158,12 +158,11 @@ int main(int argc, char *argv[]){
     fprintf (stderr,"Unable to match any SFTs with pattern '%s'\n", uvar_sftDir );
     exit(1);
   }
-
   thisCatalog.length = 1;
   fprintf(stdout, "%d\n",catalog->length);
 
   /* get a new seed value, and use it to create a new random parameter structure */
-  p=fopen("/dev/urandom", "r");
+  fp=fopen("/dev/urandom", "r");
   if (!fp) 
     { 
       fprintf(stderr,"Error in opening /dev/urandom \n"); 
