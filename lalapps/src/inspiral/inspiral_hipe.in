@@ -1084,8 +1084,8 @@ def coherent_analysis(ifos,single_ifo_segments,cohinsp_job,dag,cohbank_data,
     cohinsp.set_bank(cohbank_done.get_dag_node().get_output())
     cohinsp.set_start(cohbank_done.get_chunk().start())
     cohinsp.set_end(cohbank_done.get_chunk().end())
-    cohinsp.set_ifo_tag(ifos)
-    cohinsp.add_var_opt('ifo-tag',ifotag)
+    cohinsp.set_ifo_tag(ifotag)
+    cohinsp.add_var_opt('ifo-tag',ifos)
     
     # set up trigbank and inspiral
     for ifo in ifo_list:
