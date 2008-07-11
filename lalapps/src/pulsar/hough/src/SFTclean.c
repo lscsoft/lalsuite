@@ -163,28 +163,27 @@ int main(int argc, char *argv[]){
   LAL_CALL ( LALCreateRandomParams (&status, &randPar, seed), &status );
   fprintf(stdout, "%d\n",catalog->length);
 
+  /* generate random number seed */
+  fp=fopen("/dev/urandom", "r");
+  if (!fp) 
+    { 
+      fprintf(stderr,"Error in opening /dev/urandom \n"); 
+      exit(1); 
+    } 
+  ranCount = fread(&seed, sizeof(seed), 1, fp);
+  if (!(ranCount==1)) 
+    { 
+      fprintf(stderr,"Error in reading random seed \n"); 
+      exit(1); 
+    } 
+  
   /* loop over sfts and clean them -- load one sft at a time */
   for (j=0; j<catalog->length; j++) {
 
     thisCatalog.data = catalog->data + j;
   
     /* read the sfts */
-    LAL_CALL( LALLoadMultiSFTs ( &status, &inputSFTs, &thisCatalog, uvar_fMin, uvar_fMax), &status);
-  
-    /* generate random number seed */
-    fp=fopen("/dev/urandom", "r");
-    if (!fp) 
-      { 
-	fprintf(stderr,"Error in opening /dev/urandom \n"); 
-	exit(1); 
-      } 
-    ranCount = fread(&seed, sizeof(seed), 1, fp);
-    if (!(ranCount==1)) 
-      { 
-	fprintf(stderr,"Error in reading random seed \n"); 
-	exit(1); 
-      } 
-    
+    LAL_CALL( LALLoadMultiSFTs ( &status, &inputSFTs, &thisCatalog, uvar_fMin, uvar_fMax), &status);    
     
     /* clean  lines */
     if ( LALUserVarWasSet( &uvar_linefiles ) ) {
