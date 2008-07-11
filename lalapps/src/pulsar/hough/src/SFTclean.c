@@ -160,11 +160,11 @@ int main(int argc, char *argv[]){
   }
 
   thisCatalog.length = 1;
-  LAL_CALL ( LALCreateRandomParams (&status, &randPar, seed), &status );
   fprintf(stdout, "%d\n",catalog->length);
 
-  /* generate random number seed */
-  fp=fopen("/dev/urandom", "r");
+  /* get a new seed value, and use it to create a new random parameter structure */
+  if (!randPar) LAL_CALL ( LALDestroyRandomParams (&status, &randPar), &status );
+  if (!fp) fp=fopen("/dev/urandom", "r");
   if (!fp) 
     { 
       fprintf(stderr,"Error in opening /dev/urandom \n"); 
@@ -176,6 +176,7 @@ int main(int argc, char *argv[]){
       fprintf(stderr,"Error in reading random seed \n"); 
       exit(1); 
     } 
+  LAL_CALL ( LALCreateRandomParams (&status, &randPar, seed), &status );
   
   /* loop over sfts and clean them -- load one sft at a time */
   for (j=0; j<catalog->length; j++) {
