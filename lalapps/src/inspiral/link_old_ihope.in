@@ -1,0 +1,138 @@
+#!/usr/bin/env @PYTHONPROG@
+"""
+
+Try to set up files from an old run within the directory hierarchy of
+a new run
+
+"""
+
+__version__ = "$Revision$"
+__date__ = "$Date$"
+__name__ = "plotinspiral"
+__Id__ = "$Id$"
+__title__ = "Inspiral Plots"
+
+# $Source$
+
+import sys
+import os
+from optparse import *
+import re
+import exceptions
+import glob
+from types import *
+sys.path.append('@PYTHONLIBDIR@')
+
+from pylal import SnglInspiralUtils
+from pylal import SimInspiralUtils
+from pylal import SearchSummaryUtils
+from glue import lal
+from glue import segments
+from glue import segmentsUtils
+from pylal import InspiralUtils
+
+#################################################################
+# help message
+usage = """\
+%prog [options]
+------------------------------------------------------------------------------
+  
+"""
+
+#################################################################
+"""
+Parser function dedicated
+"""
+parser = OptionParser( usage=usage, \
+    version= "%prog CVS\n" +
+    "$Id$\n" +
+    "$Name$\n")
+
+#chisq  related
+parser.add_option("-a","--tmpltbank",action="store_true",default=False,\
+    help="make links for template banks" )
+parser.add_option("-b","--inspiral-first",action="store_true",default=False,\
+    help="make links for first inspiral files)" )
+parser.add_option("-c","--make-links",action="store_true",default=False,\
+    help="make the links instead of just testing the existence" )
+# output related
+parser.add_option("-o","--output-path",action="store",\
+    type="string",default="",  metavar="PATH",\
+    help="path where the figures would be stored")
+#input
+parser.add_option("-w", "--cache-file",
+  help="read trigger filenames from cache file")
+(opts,args) = parser.parse_args()
+
+
+# load cache
+if opts.cache_file is not None:
+  cache = lal.Cache.fromfile(open(opts.cache_file))
+else:
+  print "Must specify a cache file"
+  exit(1)
+
+if opts.tmpltbank:
+  # FULL DATA
+  tmpcache = cache.sieve(description="TMPLTBANK_FULL_DATA", exact_match=True)
+  (tmpfound,tmpmissed) = tmpcache.checkfilesexist()
+  if opts.make_links:
+    for file in tmpfound.pfnlist():
+      os.symlink(file,"full_data/"+os.path.basename(file))
+  # playground
+  tmpcache = cache.sieve(description="TMPLTBANK_PLAYGROUND", exact_match=True)
+  (tmpfound,tmpmissed) = tmpcache.checkfilesexist()
+  if opts.make_links:
+    for file in tmpfound.pfnlist():
+      os.symlink(file,"playground/"+os.path.basename(file))
+  # inj001
+  tmpcache = cache.sieve(description="TMPLTBANK_INJ001", exact_match=True)
+  (tmpfound,tmpmissed) = tmpcache.checkfilesexist()
+  if opts.make_links:
+    for file in tmpfound.pfnlist():
+      os.symlink(file,"inj001/"+os.path.basename(file))
+  # inj002
+  tmpcache = cache.sieve(description="TMPLTBANK_INJ002", exact_match=True)
+  (tmpfound,tmpmissed) = tmpcache.checkfilesexist()
+  if opts.make_links:
+    for file in tmpfound.pfnlist():
+      os.symlink(file,"inj002/"+os.path.basename(file))
+  # inj003
+  tmpcache = cache.sieve(description="TMPLTBANK_INJ003", exact_match=True)
+  (tmpfound,tmpmissed) = tmpcache.checkfilesexist()
+  if opts.make_links:
+    for file in tmpfound.pfnlist():
+      os.symlink(file,"inj003/"+os.path.basename(file))
+
+if opts.inspiral_first:
+  # FULL DATA
+  tmpcache = cache.sieve(description="INSPIRAL_FIRST_FULL_DATA", exact_match=True)
+  (tmpfound,tmpmissed) = tmpcache.checkfilesexist()
+  if opts.make_links:
+    for file in tmpfound.pfnlist():
+      os.symlink(file,"full_data/"+os.path.basename(file))
+  # playground
+  tmpcache = cache.sieve(description="INSPIRAL_FIRST_PLAYGROUND", exact_match=True)
+  (tmpfound,tmpmissed) = tmpcache.checkfilesexist()
+  if opts.make_links:
+    for file in tmpfound.pfnlist():
+      os.symlink(file,"playground/"+os.path.basename(file))
+  # inj001
+  tmpcache = cache.sieve(description="INSPIRAL_FIRST_INJ001", exact_match=True)
+  (tmpfound,tmpmissed) = tmpcache.checkfilesexist()
+  if opts.make_links:
+    for file in tmpfound.pfnlist():
+      os.symlink(file,"inj001/"+os.path.basename(file))
+  # inj002
+  tmpcache = cache.sieve(description="INSPIRAL_FIRST_INJ002", exact_match=True)
+  (tmpfound,tmpmissed) = tmpcache.checkfilesexist()
+  if opts.make_links:
+    for file in tmpfound.pfnlist():
+      os.symlink(file,"inj002/"+os.path.basename(file))
+  # inj003
+  tmpcache = cache.sieve(description="INSPIRAL_FIRST_INJ003", exact_match=True)
+  (tmpfound,tmpmissed) = tmpcache.checkfilesexist()
+  if opts.make_links:
+    for file in tmpfound.pfnlist():
+      os.symlink(file,"inj003/"+os.path.basename(file))
+
