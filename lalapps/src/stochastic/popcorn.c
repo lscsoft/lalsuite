@@ -196,9 +196,7 @@ INT4 main (INT4 argc, CHAR *argv[])
 	
   /* signal-to-noise ratio rho = varmean*sqrt(N)/(sigma1*sigma2)*/
   var=sigma*sigma;
-  varmean=0.; 
-  for(i=1;i<10;i++)
-   varmean=varmean+pmu[i]*var*i;
+  varmean=mu*var;
   snr=varmean*sqrt(Npt);
 
   /* open data files */
@@ -449,13 +447,8 @@ INT4 main (INT4 argc, CHAR *argv[])
  LALDDestroyVector(&lalstatus,&s2);
  LALDDestroyVector(&lalstatus,&e12);
   
- /* poisson coefficient */
- for(i=0;i<10;i++){
-  pmu[i]=gsl_ran_poisson_pdf(i,muest);}
  varest=sigmaest*sigmaest;
- varmeanest=0.; 
- for(i=1;i<10;i++){
-  varmeanest=varmeanest+pmu[i]*varest*i;}
+ varmeanest=muest*varest;
    
  if(verbose_flag){
   fprintf(stdout,"T=%d:",gpsStartTime.gpsSeconds);
@@ -505,7 +498,7 @@ INT4 main (INT4 argc, CHAR *argv[])
   double dsum,psum;
   double pmu,psigma,psigma1,psigma2;
   double pv,pv1,pv2,psig12,pv12,pvv1,pvv2,v1opv1,v2opv2;
-  double pc[10],a[10],b[10];  
+  double pc[100],a[100],b[100];  
 
   pmu=gsl_vector_get(x,0);
   psigma=gsl_vector_get(x,1);
@@ -525,11 +518,11 @@ INT4 main (INT4 argc, CHAR *argv[])
    v2opv2=v2/pv2;
 
    /* poisson coefficient */
-   for(i=0;i<10;i++)
+   for(i=0;i<100;i++)
      pc[i]=gsl_ran_poisson_pdf(i,pmu);
     
    i=1;
-   while(pc[i]>10./(double)Npt){
+   while(pc[i]>20./(double)Npt){
     a[i]=1./sqrt(pv12+i*(pvv1+pvv2))*pc[i];
     b[i]=2.*(1./pv1+1./pv2+1./((double)i*pv));
     i++;
