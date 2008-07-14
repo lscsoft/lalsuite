@@ -40,7 +40,7 @@ to be found at:
 http://www.lsc-group.phys.uwm.edu/cgi-bin/cvs/viewcvs.cgi/einsteinathome/CFS/post_processing/combiner_v4.py?cvsroot=lscsoft
 
 <li> This code outputs one output file whose name is specified by the user, five files with default names, and 
-some information on stderr.
+some information on stdout.
 <ol>
 <li> The one output file contains all the information (f,a,d,f1dot,ncandidate,sig) in all the cells. This can be huge.
 <li> One file outputs time variation of 2F of some significant outliers.
@@ -48,7 +48,7 @@ some information on stderr.
 <li> One file outputs time variation of 2F of some coincident outliers.
 <li> One file outputs cell information of some coincident outliers
 <li> One file outputs the cell info of the maximum coincident event over each Frequency cell but all over the sky and spin-down.
-<li> Outputs summary table on stderr. This table shows how many cells have how many counts. 
+<li> Outputs summary table on stdout. This table shows how many cells have how many counts. 
      (e.g. 2 cells have 10 coincidences.)
 <li> Outputs most coincident cell with its events.
 </ol>
@@ -563,7 +563,7 @@ int main(INT4 argc,CHAR *argv[])
 	    cc4=bb4; /* shift in f1dot */
 	  /*}*/
 	    
-	    fprintf(stderr,"\n%% Selected CellGrid: %d %d %d %d\n", cc1,cc2,cc3,cc4);
+	    fprintf(stdout,"\n%% Selected CellGrid: %d %d %d %d\n", cc1,cc2,cc3,cc4);
 
 	     /* Prepare cells. */
 	    cell = NULL;
@@ -649,7 +649,7 @@ int main(INT4 argc,CHAR *argv[])
 #if 1
 	    /* Holger's sorting function */
 	    sortCandidates2(SortedCListi, 0, CLength-1);
-	    fprintf(stderr,"%% Sorting of candidates finished.\n");
+	    fprintf(stdout,"%% Sorting of candidates finished.\n");
 #endif
 	    /* Initialise the first cell by the first candidate. */
 	    icell = 0;
@@ -1013,25 +1013,25 @@ void PrintResult(LALStatus *lalStatus, const PolkaConfigVars *CLA, CellData *cel
   /* output the summary table including the histogram of coincidences and 
      candidate events of most coincident cell */
   if(lalDebugLevel < 3 ) {
-    fprintf(stderr,"%% Most significant cell : freq [Hz]\tdec [rad]\tra [rad]  \tF1dot \t\t   #[events]\tSig" "\n");
-    fprintf(stderr, "%%\t\t\t     ");
-    TRY( print_info_of_the_cell( lalStatus->statusPtr, stderr, cell, idxmax,idxmax+1,0,0), lalStatus);
-    fprintf(stderr,"%% Most coincident cell  : freq [Hz]\tdec [rad]\tra [rad]  \tF1dot \t\t   #[events]\tSig" "\n");
-    fprintf(stderr, "%%\t\t\t     ");
-    TRY( print_info_of_the_cell( lalStatus->statusPtr, stderr, cell, idxmaxcoin,idxmaxcoin+1,0,0), lalStatus);
+    fprintf(stdout,"%% Most significant cell : freq [Hz]\tdec [rad]\tra [rad]  \tF1dot \t\t   #[events]\tSig" "\n");
+    fprintf(stdout, "%%\t\t\t   ");
+    TRY( print_info_of_the_cell( lalStatus->statusPtr, stdout, cell, idxmax,idxmax+1,0,0), lalStatus);
+    fprintf(stdout,"%% Most coincident cell  : freq [Hz]\tdec [rad]\tra [rad]  \tF1dot \t\t   #[events]\tSig" "\n");
+    fprintf(stdout, "%%\t\t\t   ");
+    TRY( print_info_of_the_cell( lalStatus->statusPtr, stdout, cell, idxmaxcoin,idxmaxcoin+1,0,0), lalStatus);
 
-    fprintf(stderr,"%% # of coincidences: \n");
+    fprintf(stdout,"%% # of coincidences: \n");
     for(nc=0;nc<=nmax;nc++) {
-      fprintf(stderr,"%7d",nc);
+      fprintf(stdout,"%7d",nc);
     }
 
-    fprintf(stderr,"\n");
-    fprintf(stderr,"%% # of cells       : \n");
+    fprintf(stdout,"\n");
+    fprintf(stdout,"%% # of cells       : \n");
     for(nc=0;nc<=nmax;nc++) { 
-      fprintf(stderr, "%7d",count[nc]);
+      fprintf(stdout, "%7d",count[nc]);
     }
     
-    fprintf(stderr,"\n%%\n%% Candidate events of most coincident cell : \n%% data-seg \tfreq [Hz]\tdec [rad]\tra [rad]  \tF1dot[Hz/s]\t\t2F" "\n");
+    fprintf(stdout,"\n%%\n%% Candidate events of most coincident cell : \n%% data-seg \tfreq [Hz]\tdec [rad]\tra [rad]  \tF1dot[Hz/s]\t\t2F" "\n");
     TRY( print_cand_of_most_coin_cell( lalStatus->statusPtr, &cell[idxmaxcoin], CList), lalStatus);
 
   
@@ -1131,7 +1131,7 @@ void PrintResult(LALStatus *lalStatus, const PolkaConfigVars *CLA, CellData *cel
 
   /* faster sorting. */
   sortFreqCells2(CellListi, 0, (*ncell)-1 );
-  fprintf(stderr,"%% Sorting of cells finished.\n");
+  fprintf(stdout,"%% Sorting of cells finished.\n");
   
   {
     INT4 prev_iFreq = -1;
@@ -1466,14 +1466,14 @@ void get_info_of_the_cell( LALStatus *lalStatus, CellData *cd, const CandidateLi
     /* Testing for sky-cells having less than 17 coincidences */
     if( cd->nCand < 17 ) {
       if( CList[idx].Alpha > LAL_TWOPI ) {
-	fprintf(stderr,"skypointx %d %.6f %.6f\n",cd->nCand,CList[idx].Alpha - LAL_TWOPI,CList[idx].Delta);
+	fprintf(stdout,"skypointx %d %.6f %.6f\n",cd->nCand,CList[idx].Alpha - LAL_TWOPI,CList[idx].Delta);
       }
       else {
 	if( CList[idx].Alpha < 0 ) {
-	  fprintf(stderr,"skypointx %d %.6f %.6f\n",cd->nCand,CList[idx].Alpha + LAL_TWOPI,CList[idx].Delta);
+	  fprintf(stdout,"skypointx %d %.6f %.6f\n",cd->nCand,CList[idx].Alpha + LAL_TWOPI,CList[idx].Delta);
 	}
 	else {
-	  fprintf(stderr,"skypointx %d %.6f %.6f\n",cd->nCand,CList[idx].Alpha,CList[idx].Delta);
+	  fprintf(stdout,"skypointx %d %.6f %.6f\n",cd->nCand,CList[idx].Alpha,CList[idx].Delta);
 	}
       }
     }
@@ -1540,7 +1540,7 @@ void print_cand_of_most_coin_cell( LALStatus *lalStatus, CellData *cd, const Can
     if( CList[idx].Alpha < 0 ) {
       AlphaTmp = CList[idx].Alpha + LAL_TWOPI;
     }
-    fprintf(stderr,"  %d\t\t%.6f\t%.6f\t%.6f\t%g\t\t%.6f\n", 
+    fprintf(stdout,"  %d\t\t%.6f\t%.6f\t%.6f\t%g\t\t%.6f\n", 
 	    CList[idx].FileID, CList[idx].f, CList[idx].Delta, AlphaTmp, CList[idx].F1dot, CList[idx].TwoF);
     
     p = p->next;
@@ -1776,7 +1776,7 @@ ReadCandidateFiles(LALStatus *lalStatus,
       for (kc=0;kc<CLA->NFiles;kc++)
 	{
 	  if( lalDebugLevel > 1 ) {
-	    fprintf(stderr,"%s\n",CLA->Filelist[kc]);
+	    fprintf(stdout,"%s\n",CLA->Filelist[kc]);
 	  }
 
 	  if( CLA->UseUnzip ) 
@@ -1819,7 +1819,7 @@ ReadCandidateFiles(LALStatus *lalStatus,
   /* 
      percentage = ( (REAL8) *CLenFthr / *clen ) * 100.0;
 
-     fprintf(stderr,"\n%%Number of the candidate events in this file/directory = %u.\n%% --- Threshold for 2F: %.3f\t Number of candidates kept: %u  or  %.3f%% --- \n",*clen, CLA->TwoFthr, *CLenFthr, percentage);
+     fprintf(stdout,"\n%%Number of the candidate events in this file/directory = %u.\n%% --- Threshold for 2F: %.3f\t Number of candidates kept: %u  or  %.3f%% --- \n",*clen, CLA->TwoFthr, *CLenFthr, percentage);
   */
 
   DETATCHSTATUSPTR (lalStatus);
