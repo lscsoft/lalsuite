@@ -45,6 +45,8 @@
 #include <lal/LIGOMetadataTables.h>
 #include <lal/SkyCoordinates.h>
 #include <lal/Date.h>
+#include <lal/TimeDelay.h>
+#include <lal/DetResponse.h>
 #include <lal/CoherentInspiral.h>
 
 #define rint(x) (floor((x)+0.5))
@@ -1290,32 +1292,27 @@ LALCoherentInspiralFilterSegment (
     CoherentInspiralFilterParams          *params
     )
 {
-  INT4                                caseID[6] = {0,0,0,0,0,0};
-  REAL8                              *sigmasq = NULL;
-  INT4                                i,q,w,m,j,k,l;
-  INT4                                decIdx,raIdx,decMax,raMax,decStep,raStep;
-  INT4                                found = 0;
-  INT4                                detId = 0;
-  CHAR                                idtag[6][3] = {"G1","H1","H2","L1","T1","V1"};
-  INT4                                indexarray[4] = {0,0,0,0};
-  CHAR                                caseStr[FILENAME_MAX];
   UINT4                               numDetectors = 0;
   UINT4                               numSegments = 0;
-  INT4                                numPoints = 0;
   UINT4                               numBeamPoints = 0;
+  UINT4                               cohSNROut = 0;
+  UINT4                               nullStatOut = 0;
+  INT4                                caseID[6] = {0,0,0,0,0,0};
+  INT4                                i,q,w,m,j,k,l;
+  INT4                                found = 0;
+  INT4                                detId = 0;
+  INT4                                indexarray[4] = {0,0,0,0};
+  INT4                                numPoints = 0;
   INT4                                deltaEventIndex = 0;
   INT4                                eventStartIdx = 0;
   INT4                                slidePoints[3] = {0,0,0};
   INT4                                segmentLength = 0;
+  int                                 locIdx,decIdx,raIdx,decMax,raMax;
   REAL4                               buffer = 0.0; /*account for timing errors*/
   REAL4                               timingError = 0.0; /*0.00025;*/  /* allowed timing error of 2 ms */
-  REAL4                               s[4][3];/* up to 4 distances;in 3D space*/
-  REAL8                               deltaT = 0.0;
+  REAL4                               s[3]={0,0,0};/* up to 4 distances;in 3D space*/
   REAL4                               nHatVect[3] = {0,0,0};
   REAL4                               distance[4] = {0,0,0,0};
-  REAL4                               timeDelay[4] = {0,0,0,0};
-  REAL4                               fplus[4];
-  REAL4                               fcross[4];
   REAL4                               chirpTime = 0.0;
   REAL4                               cohSNRThresh = 0.0;
   REAL4                               cohSNRThreshSq = 0.0;
@@ -1325,12 +1322,6 @@ LALCoherentInspiralFilterSegment (
   REAL4                               polarization = 0.0;
   REAL4                               distanceEstimate = 0.0;
   REAL4                               coaPhase = 0.0;
-  REAL8                               tempTime = 0.0;
-  REAL8                               fracpart = 0.0;
-  REAL8                               intpart = 0.0;
-  COMPLEX8                            cDataTemp[4];
-  COMPLEX8                            quadTemp[6];
-  UINT4                               cohSNROut;
   REAL4                               cohSNRLocal = 0.0;
   REAL4                               cohSNRSq = 0.0;
   REAL4                               cohSNRLocalSq = 0.0;
@@ -1338,16 +1329,56 @@ LALCoherentInspiralFilterSegment (
   REAL4                               cohSNRLocalIm = 0.0;
   REAL4                               cohSNRLocalSq1 = 0.0;
   REAL4                               cohSNRLocalSq2 = 0.0;
-  LALDetector                        *detector = NULL;
-  COMPLEX8TimeSeries                 *cData[4] = {NULL,NULL,NULL,NULL};
-  MultiInspiralTable                 *thisEvent = NULL; 
-  CoherentInspiralBeamVector         *beamVec = NULL;
-  UINT4                               nullStatOut;
   REAL4                               nullStatRe    = 0.0 ;
   REAL4                               nullStatIm    = 0.0;
   REAL4                               nullNorm      = 0.0;
   REAL4                               cohSnrRe      = 0.0;
   REAL4                               cohSnrIm      = 0.0;
+  REAL8                              *sigmasq = NULL;
+  REAL8                               deltaT = 0.0;
+  REAL8                               tempTime = 0.0;
+  REAL8                               fracpart = 0.0;
+  REAL8                               intpart = 0.0;
+  double                              decStep = 0.0;
+  double                              raStep = 0.0;
+  double                              timeDelay[4]= {0.0,0.0,0.0,0.0};
+  double                              fplus[4] = {0.0,0.0,0.0,0.0};
+  double                              fcross[4] = {0.0,0.0,0.0,0.0};
+  COMPLEX8                            cDataTemp[4];
+  COMPLEX8                            quadTemp[6];
+  LALDetector                         detectors[4];
+  COMPLEX8TimeSeries                 *cData[4] = {NULL,NULL,NULL,NULL};
+  MultiInspiralTable                 *thisEvent = NULL; 
+  CoherentInspiralBeamVector         *beamVec = NULL;
+  CHAR                                idtag[6][3] = {"G1","H1","H2","L1","T1","V1"};
+  CHAR                                caseStr[FILENAME_MAX];
+
+	    
+  INT4           timePt[4] = {0,0,0,0};
+  INT4           timePtTemp[4] = {0,0,0,0};
+  REAL8          AA=0.0;
+  REAL8          BB=0.0;
+  REAL8          CC=0.0;
+  REAL8          discrimSqrt=0.0;
+  REAL8          VVPlus[4]={0.0,0.0,0.0,0.0};
+  REAL8          VVMinus[4]={0.0,0.0,0.0,0.0};
+  REAL8          CRePlus=0.0;
+  REAL8          CImPlus=0.0;
+  REAL8          CReMinus=0.0;
+  REAL8          CImMinus=0.0;
+  REAL8          AAn[4]={0.0,0.0,0.0,0.0};
+  REAL8          BBn[4]={0.0,0.0,0.0,0.0};
+  REAL8          CCn[4]={0.0,0.0,0.0,0.0};
+  REAL8          discrimSqrtn[4]={0.0,0.0,0.0,0.0};  
+  REAL8          MM1=0.0;
+  REAL8          MM2=0.0;
+  REAL8          MM11=0.0;
+  REAL8          MM22=0.0;
+  REAL8          O11=0.0;
+  REAL8          O12=0.0;
+  REAL8          O21=0.0;
+  REAL8          O22=0.0;
+
 
   INITSTATUS( status, "LALCoherentInspiralFilterSegment", 
 	      COHERENTINSPIRALFILTERC );
@@ -1428,6 +1459,22 @@ LALCoherentInspiralFilterSegment (
 	  i++;
 	}
     }
+
+  /* CHECK: Note that this may be replaced with 
+     ~XLALReadIfo functions in the future. 
+     Also note that the ifo orders in InterferometerNumber and 
+     lalCachedDetectors are different:
+     caseID[0,..,5]=(G1,H1,H2,L1,T1,V1), whereas
+     lalCachedDetectors[0,...]=(T1(0),V1(1),G1(2),H2(3),H1(4),L1(5),...
+     ...,LAL_NUM_DETECTORS=12)*/
+  w=0;
+  if( caseID[0] ) detectors[w++] = lalCachedDetectors[2];
+  if( caseID[1] ) detectors[w++] = lalCachedDetectors[4];
+  if( caseID[2] ) detectors[w++] = lalCachedDetectors[3];
+  if( caseID[3] ) detectors[w++] = lalCachedDetectors[5];
+  if( caseID[4] ) detectors[w++] = lalCachedDetectors[0];
+  if( caseID[5] ) detectors[w++] = lalCachedDetectors[1];
+  
   i = 0;
   j = 0;
   k = 0;
@@ -1456,26 +1503,10 @@ LALCoherentInspiralFilterSegment (
       break;
     }
     
-  /*** get detector beam-pattern information if we have 3 sites ***/
-  
-  if( (params->numDetectors == 3 && !(caseID[1] && caseID[2])) || params->numDetectors == 4 )
-    { 
-      beamVec = input->beamVec;
-    }
-  
   /*** get detector-site locations */
-  detector = params->detectorVec->detector;
   sigmasq = params->sigmasqVec->data;
 
-  
-  /*Now compute the position vector of all detectors relative to first detector*/
-  for ( l=1 ; l < (INT4) params->numDetectors ; l++) {
-    for (i=0;i<3;i++)
-      {
-	s[l][i] = (REAL4) ( detector[l].location[i] - detector[0].location[i]);
-      }
-  }
-  
+  /* read in CData */  
   for ( l=0 ; l < (INT4) params->numDetectors ; l++) {
     cData[l] = input->multiCData->cData[l];
   }
@@ -1810,9 +1841,11 @@ LALCoherentInspiralFilterSegment (
     else 
       { /* Network: 2 detectors excluding either H1, H2, or both H1 and H2 */
 	/*Here, the time delay looping must start */
-	
 	/* Now calculate the distance (in meters) */
-	distance[1] = sqrt( cartesianInnerProduct(s[1],s[1]) ); 
+	for (i=0;i<3;i++) {
+	  s[i] = (REAL4) ( detectors[1].location[i] - detectors[0].location[i]);
+	}
+	distance[1] = sqrt( cartesianInnerProduct(s,s) ); 
 	timeDelay[1] = distance[1]/LAL_C_SI;
 	slidePoints[1] = rint( (fabs(timeDelay[1])/deltaT) + 1.0 );
 	
@@ -2195,7 +2228,10 @@ LALCoherentInspiralFilterSegment (
     if(caseID[1] && caseID[2])
       {    
 	/* Now calculate the distance (in meters) between LHO and 2nd site*/
-	distance[1] = sqrt( cartesianInnerProduct( s[2],s[2]) );
+	for (i=0;i<3;i++) {
+	  s[i] = (REAL4) ( detectors[2].location[i] - detectors[0].location[i]);
+	}
+	distance[1] = sqrt( cartesianInnerProduct( s,s) );
 	timeDelay[1] = distance[1]/LAL_C_SI;
 	slidePoints[1] = rint( (fabs(timeDelay[1])/deltaT) + 1.0 );
 
@@ -2589,11 +2625,14 @@ LALCoherentInspiralFilterSegment (
 	LIGOTimeGPS 	triggerGPSEndTime;/* Needed to calculate time-delays */
 	LALMSTUnitsAndAcc pUnitsAndAcc;
 	REAL8           gmstInRadians=0.0;
-	REAL4           psiInRadians = 0.0;
+	double          psiInRadians = 0.0;
+	double          detRefLocation[3];
+	double          detNextLocation[3];
 	
+
 	/* For now, this is a hard-coded fixed step in degrees: */
-	raStep = 4.0; 
-	decStep = 4.0;
+	raStep = 36.0; 
+	decStep = 18.0;
 
 	triggerGPSEndTime.gpsSeconds = cData[0]->epoch.gpsSeconds;
 	triggerGPSEndTime.gpsNanoSeconds = cData[0]->epoch.gpsNanoSeconds;
@@ -2602,6 +2641,11 @@ LALCoherentInspiralFilterSegment (
 	pUnitsAndAcc.units = MST_RAD;
 	pUnitsAndAcc.accuracy = LALLEAPSEC_LOOSE;
 	LALGPStoGMST1(status->statusPtr,&gmstInRadians,&triggerGPSEndTime,&pUnitsAndAcc);
+	
+	/* Following needed because XLALArrivalTimeDiff() uses doubles */
+	for ( locIdx=0 ; locIdx<3 ; locIdx++ ) {
+	  detRefLocation[locIdx] = (double) detectors[0].location[locIdx];
+	}
 	
 	/* Convert to radians */
 	raMax = floor(360/raStep);
@@ -2612,78 +2656,78 @@ LALCoherentInspiralFilterSegment (
 	
 	for (decIdx=1; decIdx<decMax; decIdx++) {
 	  for ( raIdx=0; raIdx<raMax; raIdx++) {
-	    INT4           timePt[4] = {0,0,0,0};
-	    INT4           timePtTemp[4] = {0,0,0,0};
-	    REAL4          AA=0.0;
-	    REAL4          BB=0.0;
-	    REAL4          CC=0.0;
-	    REAL4          discrimSqrt=0.0;
-	    REAL4          VVPlus[4]={0.0,0.0,0.0,0.0};
-	    REAL4          VVMinus[4]={0.0,0.0,0.0,0.0};
-	    REAL4          CRePlus=0.0;
-	    REAL4          CImPlus=0.0;
-	    REAL4          CReMinus=0.0;
-	    REAL4          CImMinus=0.0;
-	    REAL4          AAn[4]={0.0,0.0,0.0,0.0};
-	    REAL4          BBn[4]={0.0,0.0,0.0,0.0};
-	    REAL4          CCn[4]={0.0,0.0,0.0,0.0};
-	    REAL4          discrimSqrtn[4]={0.0,0.0,0.0,0.0};
-	    REAL4          MM1=0.0;
-	    REAL4          MM2=0.0;
-	    REAL4          O11=0.0;
-	    REAL4          O12=0.0;
-	    REAL4          O21=0.0;
-	    REAL4          O22=0.0;
-           
-	    SkyPosition    raDec;
 
-	    raDec.latitude = decIdx * decStep;
-	    raDec.longitude = raIdx * raStep;
-	    
 	    /* Loop over detectors computing their F+, Fx and tc's */
+	    detId = 0;
 	    for( j=0; j<LAL_NUM_IFO; j++ ) {
-	      detId = 0;
 	      /* Compute antenna-patterns and time-delays if caseID[j] != 0 */
 	      if ( !(params->detIDVec->data[j] == 0 )) { 
-	      
+		
 		/* Compute antenna-patterns for each participating detector */
-		XLALComputeDetAMResponse(&fplus[detId], &fcross[detId],
-		      params->detectorVec->detector[detId].response,
+		/*	XLALComputeDetAMResponse(&fplus[detId], &fcross[detId],
+		      detectors[detId].response,
 		      raDec.longitude,raDec.latitude, psiInRadians, gmstInRadians);
+		*/
 
+		phi = raIdx * raStep;
+		theta = decIdx * decStep;
+
+		XLALComputeDetAMResponse(&fplus[detId], &fcross[detId],
+		      detectors[detId].response,
+		      raIdx * raStep,decIdx * decStep, psiInRadians, (double) gmstInRadians);
+
+
+		for ( locIdx=0 ; locIdx<3 ; locIdx++ ) {
+		  detNextLocation[locIdx] = (double) detectors[detId].location[locIdx];
+		}
+		
 		/*Arrival time delays in detectors relative to the 1st;
 		  esp., dt21 = t2 - t1, dt31 = t3 - t1, etc. are computed */
-		timeDelay[detId] = XLALArrivalTimeDiff(
-			       params->detectorVec->detector[detId].location,
-			       params->detectorVec->detector[0].location,
+		/*	timeDelay[detId] = XLALArrivalTimeDiff(
+			       detectors[detId].location,
+			       detectors[0].location,
 			       raDec.longitude,raDec.latitude,&triggerGPSEndTime);
+		*/
+
+		timeDelay[detId] = XLALArrivalTimeDiff(
+			       detNextLocation,
+			       detRefLocation,
+			       raIdx * raStep,decIdx * decStep,&triggerGPSEndTime);
 		/* round off to nearest integer */
 		slidePoints[detId] = rint( (fabs(timeDelay[detId])/deltaT) );
 
 		/* Compute antenna-pattern factors */
-		AAn[detId] = fplus[detId] * fplus[detId];
-		BBn[detId] = fcross[detId] * fcross[detId];
-		CCn[detId] = fplus[detId] * fcross[detId];
+		AAn[detId] = ( (REAL8) fplus[detId]) * ( (REAL8) fplus[detId]);
+		BBn[detId] = ( (REAL8) fplus[detId]) * ( (REAL8) fcross[detId]);
+		CCn[detId] = ( (REAL8) fcross[detId]) * ( (REAL8) fcross[detId]);
 
 		discrimSqrtn[detId] = sqrt(AAn[detId]*AAn[detId] 
 					 + 4*BBn[detId]*BBn[detId]
 					 - 2*AAn[detId]*CCn[detId] 
 					 + CCn[detId]*CCn[detId]);
 
-		O11 = ( AAn[detId] - CCn[detId] - discrimSqrtn[detId])  /
-		  ( 2*BB*sqrt( 1 + ( AAn[detId] - CCn[detId] - discrimSqrtn[detId])*( AAn[detId] - CCn[detId] - discrimSqrtn[detId]) 
-			      / ( 4*BBn[detId]*BBn[detId] ) ) );
-		O12 = 1 / sqrt( 1 + (-AAn[detId]+CCn[detId]+discrimSqrtn[detId])*(-AAn[detId]+CCn[detId]+discrimSqrtn[detId]) 
+		O11 = ( AAn[detId] - CCn[detId] - discrimSqrtn[detId]);
+		O11 /= (BBn[detId]
+			*sqrt( 4 + ( AAn[detId] - CCn[detId] - discrimSqrtn[detId])
+			       *( AAn[detId] - CCn[detId] - discrimSqrtn[detId])
+			       / ( BBn[detId]*BBn[detId] ) ) );
+		O12 = 1 / sqrt( 1 + (-AAn[detId]+CCn[detId]+discrimSqrtn[detId])
+				*(-AAn[detId]+CCn[detId]+discrimSqrtn[detId]) 
 				/ ( 4*BBn[detId]*BBn[detId] ) );
-		O21 = ( AAn[detId] - CCn[detId] + discrimSqrtn[detId])  /
-		  ( 2*BB*sqrt( 1 + (-AAn[detId]+CCn[detId]-discrimSqrtn[detId])*(-AAn[detId]+CCn[detId]-discrimSqrtn[detId]) 
-			      / ( 4*BBn[detId]*BBn[detId] ) ) );
-		O22 = 1 / sqrt( 1 + (-AAn[detId]+CCn[detId]-discrimSqrtn[detId])*(-AAn[detId]+CCn[detId]-discrimSqrtn[detId]) 
+		O21 = ( AAn[detId] - CCn[detId] + discrimSqrtn[detId]);
+		O21 /= ( BBn[detId]
+			 *sqrt( 4 + (-AAn[detId]+CCn[detId]-discrimSqrtn[detId])
+				*(-AAn[detId]+CCn[detId]-discrimSqrtn[detId]) 
+				/ ( BBn[detId]*BBn[detId] ) ) );
+		O22 = 1 / sqrt( 1 + (-AAn[detId]+CCn[detId]-discrimSqrtn[detId])
+				*(-AAn[detId]+CCn[detId]-discrimSqrtn[detId]) 
 				/ ( 4*BBn[detId]*BBn[detId] ) );
 		
 		
-		VVPlus[detId] = O11 * fplus[detId] + O12 * fcross[detId];		
-		VVMinus[detId] = O21 * fplus[detId] + O22 * fcross[detId];		
+		VVPlus[detId] = O11 * ( (REAL8) fplus[detId]) 
+		  + O12 * ( (REAL8) fcross[detId]);		
+		VVMinus[detId] = O21 * ( (REAL8) fplus[detId]) 
+		  + O22 * ( (REAL8) fcross[detId]);		
 		
 		/* CHECK: If sigmasq should be in the denominator!
 		   Compute the elements of the helicity-plane projection matrix */
@@ -2699,25 +2743,30 @@ LALCoherentInspiralFilterSegment (
              	    
 	    /* Construct network terms and factors required for
 	       computing the coherent statistics */
+	    AA=0.0;
+	    BB=0.0;
+	    CC=0.0;
 	    for ( detId=0 ; detId<params->numDetectors ; detId++ ) {
-	      AA += AAn[detId];
+	      AA += AAn[detId];	 
 	      BB += BBn[detId];
 	      CC += CCn[detId];
 	    }
 	    discrimSqrt = sqrt(AA*AA + 4*BB*BB
 			      - 2*AA*CC + CC*CC);
-	    MM1 = 2 * ( AA*AA*AA 
+	    MM11 = 2 * ( AA*AA*AA 
 			- 2*BB*BB*discrimSqrt
 			- AA*AA*( 2*CC + discrimSqrt )
 			+ AA*( 4*BB*BB 
 			       + CC * (CC + discrimSqrt ) ) );
-	    MM1 = sqrt(MM1);
-	    MM2 = 2 * ( AA*AA*AA 
+	    MM11 /= ( 4*BB*BB + (-AA+CC+discrimSqrt)*(-AA+CC+discrimSqrt) );
+	    MM1 = sqrt(MM11);
+	    MM22 = 2 * ( AA*AA*AA 
 			+ 2*BB*BB*discrimSqrt
 			+ AA*AA*(-2*CC + discrimSqrt )
 			+ AA*( 4*BB*BB 
 			       + CC * (CC - discrimSqrt ) ) );
-	    MM2 = sqrt(MM2);
+	    MM22 /= ( 4*BB*BB + (AA-CC+discrimSqrt)*(AA-CC+discrimSqrt) );
+	    MM2 = sqrt(MM22);
 	    
 	    /* Regularize */
 	    if ( (MM1==0.0 ) ) 
@@ -3126,14 +3175,17 @@ LALCoherentInspiralFilterSegment (
     break;
   case 4: /* Network: 4 detectors */
     {
-        LIGOTimeGPS 	triggerGPSEndTime;/* Needed to calculate time-delays */
+	LIGOTimeGPS 	triggerGPSEndTime;/* Needed to calculate time-delays */
 	LALMSTUnitsAndAcc pUnitsAndAcc;
 	REAL8           gmstInRadians=0.0;
-	REAL4           psiInRadians = 0.0;
+	double          psiInRadians = 0.0;
+	double          detRefLocation[3];
+	double          detNextLocation[3];
 	
+
 	/* For now, this is a hard-coded fixed step in degrees: */
-	raStep = 4.0; 
-	decStep = 4.0;
+	raStep = 36.0; 
+	decStep = 18.0;
 
 	triggerGPSEndTime.gpsSeconds = cData[0]->epoch.gpsSeconds;
 	triggerGPSEndTime.gpsNanoSeconds = cData[0]->epoch.gpsNanoSeconds;
@@ -3142,6 +3194,11 @@ LALCoherentInspiralFilterSegment (
 	pUnitsAndAcc.units = MST_RAD;
 	pUnitsAndAcc.accuracy = LALLEAPSEC_LOOSE;
 	LALGPStoGMST1(status->statusPtr,&gmstInRadians,&triggerGPSEndTime,&pUnitsAndAcc);
+
+	/* Following needed because XLALArrivalTimeDiff() uses doubles */
+	for ( locIdx=0 ; locIdx<3 ; locIdx++ ) {
+	  detRefLocation[locIdx] = (double) detectors[0].location[locIdx];
+	}
 	
 	/* Convert to radians */
 	raMax = floor(360/raStep);
@@ -3152,78 +3209,78 @@ LALCoherentInspiralFilterSegment (
 	
 	for (decIdx=1; decIdx<decMax; decIdx++) {
 	  for ( raIdx=0; raIdx<raMax; raIdx++) {
-	    INT4           timePt[4] = {0,0,0,0};
-	    INT4           timePtTemp[4] = {0,0,0,0};
-	    REAL4          AA=0.0;
-	    REAL4          BB=0.0;
-	    REAL4          CC=0.0;
-	    REAL4          discrimSqrt=0.0;
-	    REAL4          VVPlus[4]={0.0,0.0,0.0,0.0};
-	    REAL4          VVMinus[4]={0.0,0.0,0.0,0.0};
-	    REAL4          CRePlus=0.0;
-	    REAL4          CImPlus=0.0;
-	    REAL4          CReMinus=0.0;
-	    REAL4          CImMinus=0.0;
-	    REAL4          AAn[4]={0.0,0.0,0.0,0.0};
-	    REAL4          BBn[4]={0.0,0.0,0.0,0.0};
-	    REAL4          CCn[4]={0.0,0.0,0.0,0.0};
-	    REAL4          discrimSqrtn[4]={0.0,0.0,0.0,0.0};
-	    REAL4          MM1=0.0;
-	    REAL4          MM2=0.0;
-	    REAL4          O11=0.0;
-	    REAL4          O12=0.0;
-	    REAL4          O21=0.0;
-	    REAL4          O22=0.0;
 
-	    SkyPosition    raDec;
-
-	    raDec.latitude = decIdx * decStep;
-	    raDec.longitude = raIdx * raStep;
-	    
 	    /* Loop over detectors computing their F+, Fx and tc's */
+	    detId = 0;
 	    for( j=0; j<LAL_NUM_IFO; j++ ) {
-	      detId = 0;
 	      /* Compute antenna-patterns and time-delays if caseID[j] != 0 */
 	      if ( !(params->detIDVec->data[j] == 0 )) { 
-	      
+		
 		/* Compute antenna-patterns for each participating detector */
-		XLALComputeDetAMResponse(&fplus[detId], &fcross[detId],
-		      params->detectorVec->detector[detId].response,
+		/*	XLALComputeDetAMResponse(&fplus[detId], &fcross[detId],
+		      detectors[detId].response,
 		      raDec.longitude,raDec.latitude, psiInRadians, gmstInRadians);
+		*/
 
+		phi = raIdx * raStep;
+		theta = decIdx * decStep;
+		
+		XLALComputeDetAMResponse(&fplus[detId], &fcross[detId],
+		      detectors[detId].response,
+		      raIdx * raStep,decIdx * decStep, psiInRadians, (double) gmstInRadians);
+		
+		
+		for ( locIdx=0 ; locIdx<3 ; locIdx++ ) {
+		  detNextLocation[locIdx] = (double) detectors[detId].location[locIdx];
+		}
+		
 		/*Arrival time delays in detectors relative to the 1st;
 		  esp., dt21 = t2 - t1, dt31 = t3 - t1, etc. are computed */
-		timeDelay[detId] = XLALArrivalTimeDiff(
-			       params->detectorVec->detector[detId].location,
-			       params->detectorVec->detector[0].location,
+		/*	timeDelay[detId] = XLALArrivalTimeDiff(
+			       detectors[detId].location,
+			       detectors[0].location,
 			       raDec.longitude,raDec.latitude,&triggerGPSEndTime);
+		*/
+
+		timeDelay[detId] = XLALArrivalTimeDiff(
+			       detNextLocation,
+			       detRefLocation,
+			       raIdx * raStep,decIdx * decStep,&triggerGPSEndTime);
 		/* round off to nearest integer */
 		slidePoints[detId] = rint( (fabs(timeDelay[detId])/deltaT) );
 
 		/* Compute antenna-pattern factors */
-		AAn[detId] = fplus[detId] * fplus[detId];
-		BBn[detId] = fcross[detId] * fcross[detId];
-		CCn[detId] = fplus[detId] * fcross[detId];
+		AAn[detId] = ( (REAL8) fplus[detId]) * ( (REAL8) fplus[detId]);
+		BBn[detId] = ( (REAL8) fplus[detId]) * ( (REAL8) fcross[detId]);
+		CCn[detId] = ( (REAL8) fcross[detId]) * ( (REAL8) fcross[detId]);
 
 		discrimSqrtn[detId] = sqrt(AAn[detId]*AAn[detId] 
 					 + 4*BBn[detId]*BBn[detId]
 					 - 2*AAn[detId]*CCn[detId] 
 					 + CCn[detId]*CCn[detId]);
 
-		O11 = ( AAn[detId] - CCn[detId] - discrimSqrtn[detId])  /
-		  ( 2*BB*sqrt( 1 + ( AAn[detId] - CCn[detId] - discrimSqrtn[detId])*( AAn[detId] - CCn[detId] - discrimSqrtn[detId]) 
-			      / ( 4*BBn[detId]*BBn[detId] ) ) );
-		O12 = 1 / sqrt( 1 + (-AAn[detId]+CCn[detId]+discrimSqrtn[detId])*(-AAn[detId]+CCn[detId]+discrimSqrtn[detId]) 
+		O11 = ( AAn[detId] - CCn[detId] - discrimSqrtn[detId]);
+		O11 /= (BBn[detId]
+			*sqrt( 4 + ( AAn[detId] - CCn[detId] - discrimSqrtn[detId])
+			       *( AAn[detId] - CCn[detId] - discrimSqrtn[detId])
+			       / ( BBn[detId]*BBn[detId] ) ) );
+		O12 = 1 / sqrt( 1 + (-AAn[detId]+CCn[detId]+discrimSqrtn[detId])
+				*(-AAn[detId]+CCn[detId]+discrimSqrtn[detId]) 
 				/ ( 4*BBn[detId]*BBn[detId] ) );
-		O21 = ( AAn[detId] - CCn[detId] + discrimSqrtn[detId])  /
-		  ( 2*BB*sqrt( 1 + (-AAn[detId]+CCn[detId]-discrimSqrtn[detId])*(-AAn[detId]+CCn[detId]-discrimSqrtn[detId]) 
-			      / ( 4*BBn[detId]*BBn[detId] ) ) );
-		O22 = 1 / sqrt( 1 + (-AAn[detId]+CCn[detId]-discrimSqrtn[detId])*(-AAn[detId]+CCn[detId]-discrimSqrtn[detId]) 
+		O21 = ( AAn[detId] - CCn[detId] + discrimSqrtn[detId]);
+		O21 /= ( BBn[detId]
+			 *sqrt( 4 + (-AAn[detId]+CCn[detId]-discrimSqrtn[detId])
+				*(-AAn[detId]+CCn[detId]-discrimSqrtn[detId]) 
+				/ ( BBn[detId]*BBn[detId] ) ) );
+		O22 = 1 / sqrt( 1 + (-AAn[detId]+CCn[detId]-discrimSqrtn[detId])
+				*(-AAn[detId]+CCn[detId]-discrimSqrtn[detId]) 
 				/ ( 4*BBn[detId]*BBn[detId] ) );
 		
 		
-		VVPlus[detId] = O11 * fplus[detId] + O12 * fcross[detId];		
-		VVMinus[detId] = O21 * fplus[detId] + O22 * fcross[detId];		
+		VVPlus[detId] = O11 * ( (REAL8) fplus[detId]) 
+		  + O12 * ( (REAL8) fcross[detId]);		
+		VVMinus[detId] = O21 * ( (REAL8) fplus[detId]) 
+		  + O22 * ( (REAL8) fcross[detId]);		
 		
 		/* CHECK: If sigmasq should be in the denominator!
 		   Compute the elements of the helicity-plane projection matrix */
@@ -3236,28 +3293,33 @@ LALCoherentInspiralFilterSegment (
 		detId++;
 	      }
 	    }
-	    
+             	    
 	    /* Construct network terms and factors required for
 	       computing the coherent statistics */
+	    AA=0.0;
+	    BB=0.0;
+	    CC=0.0;
 	    for ( detId=0 ; detId<params->numDetectors ; detId++ ) {
-	      AA += AAn[detId];
+	      AA += AAn[detId];	 
 	      BB += BBn[detId];
 	      CC += CCn[detId];
 	    }
 	    discrimSqrt = sqrt(AA*AA + 4*BB*BB
 			      - 2*AA*CC + CC*CC);
-	    MM1 = 2 * ( AA*AA*AA 
+	    MM11 = 2 * ( AA*AA*AA 
 			- 2*BB*BB*discrimSqrt
 			- AA*AA*( 2*CC + discrimSqrt )
 			+ AA*( 4*BB*BB 
 			       + CC * (CC + discrimSqrt ) ) );
-	    MM1 = sqrt(MM1);
-	    MM2 = 2 * ( AA*AA*AA 
+	    MM11 /= ( 4*BB*BB + (-AA+CC+discrimSqrt)*(-AA+CC+discrimSqrt) );
+	    MM1 = sqrt(MM11);
+	    MM22 = 2 * ( AA*AA*AA 
 			+ 2*BB*BB*discrimSqrt
 			+ AA*AA*(-2*CC + discrimSqrt )
 			+ AA*( 4*BB*BB 
 			       + CC * (CC - discrimSqrt ) ) );
-	    MM2 = sqrt(MM2);
+	    MM22 /= ( 4*BB*BB + (AA-CC+discrimSqrt)*(AA-CC+discrimSqrt) );
+	    MM2 = sqrt(MM22);
 	    
 	    /* Regularize */
 	    if ( (MM1==0.0 ) ) 

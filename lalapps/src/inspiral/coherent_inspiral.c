@@ -496,7 +496,7 @@ int main( int argc, char *argv[] )
 	    cohInspInitParams->cohH1H2SNROut       = 1;
           }
           else {
-            if ( vrbflg && cohH1H2SNROut ) fprintf( stdout, "Not outputting cohH1H2SNR because either numDetectors > 2 or at least one of H1 and H2 is missing ...\n " );
+            if ( vrbflg && cohH1H2SNROut ) fprintf( stdout, "Not outputting cohH1H2SNR because either numDetectors < 3 or at least one of H1 and H2 is missing ...\n " );
             cohInspInitParams->cohH1H2SNROut       = 0;
           }
           /* Currently, the null-statistic is computed only for a H1H2 network */
@@ -545,7 +545,7 @@ int main( int argc, char *argv[] )
 	  cohInspFilterParams->numTmplts               = 1;
 	  cohInspFilterParams->fLow                    = fLow;
 	  cohInspFilterParams->maximizeOverChirp       = maximizeOverChirp;
-
+	  cohInspFilterParams->numDetectors            = cohInspInitParams->numDetectors;
           /* initParams not needed anymore */
           free( cohInspInitParams );
           cohInspInitParams = NULL;
@@ -557,21 +557,6 @@ int main( int argc, char *argv[] )
 	      cohInspFilterParams->detIDVec->data[j] = caseID[j];
 	      cohInspFilterParams->sigmasqVec->data[j] = 1.0;
 	    }
-	  
-	  /* CHECK: Note that this may be replaced with 
-	     ~XLALReadIfo functions in the future. 
-	     Also note that the ifo orders in InterferometerNumber and 
-	     lalCachedDetectors are different:
-	     caseID[0,..,5]=(G1,H1,H2,L1,T1,V1), whereas
-	     lalCachedDetectors[0,...]=(T1(0),V1(1),G1(2),H2(3),H1(4),L1(5),...
-	     ...,LAL_NUM_DETECTORS=12)*/
-	  w=0;
-	  if( caseID[0] ) cohInspFilterParams->detectorVec->detector[w++] = lalCachedDetectors[2];
-	  if( caseID[1] ) cohInspFilterParams->detectorVec->detector[w++] = lalCachedDetectors[4];
-	  if( caseID[2] ) cohInspFilterParams->detectorVec->detector[w++] = lalCachedDetectors[3];
-	  if( caseID[3] ) cohInspFilterParams->detectorVec->detector[w++] = lalCachedDetectors[5];
-	  if( caseID[4] ) cohInspFilterParams->detectorVec->detector[w++] = lalCachedDetectors[0];
-	  if( caseID[5] ) cohInspFilterParams->detectorVec->detector[w++] = lalCachedDetectors[1];
 	  
 	  /* Read in the snippets associated with thisCoinc trigger */
 	  l = 0; /* A counter to step through the cohInspCVec-tors */
@@ -919,29 +904,13 @@ int main( int argc, char *argv[] )
 	  /* Now that the time series are commensurate, do the filtering... */
 	  LALCoherentInspiralFilterSegment (&status, &thisEvent, cohInspFilterInput, cohInspFilterParams);
 	  
-	  /* Now change from geocentric to equatorial */
+	  /* Save event id in multi_inspiral table */
 	  thisEventTemp =thisEvent;
 	  while( thisEventTemp )
 	    {
 	      thisEventTemp->event_id = (EventIDColumn *) 
 		LALCalloc(1, sizeof(EventIDColumn) );
 	      thisEventTemp->event_id->id=eventID;
-	      if ( (numDetectors == 3 && !( caseID[1] && caseID[2])) || numDetectors == 4 )
-		{
-		  convertParams.system=COORDINATESYSTEM_EQUATORIAL;
-		  convertParams.zenith= NULL;
-		  convertParams.gpsTime=&(thisEventTemp->end_time);
-		  /*The next few lines get the parameters ready for conversion. 
-		    Need to check to make sure that thisEvent->ligo_axis_dec is 
-		    in proper notation, i.e. */
-		  
-		  tempSky.system=COORDINATESYSTEM_GEOGRAPHIC;
-		  tempSky.latitude=thisEventTemp->ligo_axis_dec;
-		  tempSky.longitude=thisEventTemp->ligo_axis_ra;
-		  LALConvertSkyCoordinates(&status,&tempSky, &tempSky,&convertParams);             
-		  thisEventTemp->ligo_axis_dec=LAL_PI*0.5-tempSky.latitude;
-		  thisEventTemp->ligo_axis_ra=tempSky.longitude;
-		}
 	      thisEventTemp = thisEventTemp->next;
 	    }
 	  
