@@ -17,4 +17,5 @@ else
 bin_PROGRAMS = 
 endif
 EXTRA_DIST = stripAdc.c lalDebugLevel.c animate.c calfacs.c computespec.c
-INCLUDES = -I$(top_srcdir)/src
+INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
+LDADD = $(top_builddir)/src/lalapps/liblalapps.la
