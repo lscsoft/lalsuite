@@ -3182,6 +3182,13 @@ void GetSemiCohToplist(LALStatus            *status,
     line.HoughFStat = (in->list[k].significance - meanN)/sigmaN;
 
     line.AlphaBest = in->list[k].alphaBest;
+    if ( line.AlphaBest < 0 ) {
+      line.AlphaBest += LAL_TWOPI;
+    }
+    if ( line.AlphaBest > LAL_TWOPI ) {
+      line.AlphaBest -= LAL_TWOPI;
+    }
+
     line.DeltaBest = in->list[k].deltaBest;
     line.MeanSig = (in->list[k].meanSig - meanN) / sigmaN;
     line.VarianceSig = in->list[k].varianceSig / (sigmaN * sigmaN);
