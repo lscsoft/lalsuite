@@ -2631,8 +2631,8 @@ LALCoherentInspiralFilterSegment (
 	
 
 	/* For now, this is a hard-coded fixed step in degrees: */
-	raStep = 36.0; 
-	decStep = 18.0;
+	raStep = 9.0; 
+	decStep = 9.0;
 
 	triggerGPSEndTime.gpsSeconds = cData[0]->epoch.gpsSeconds;
 	triggerGPSEndTime.gpsNanoSeconds = cData[0]->epoch.gpsNanoSeconds;
@@ -3184,8 +3184,8 @@ LALCoherentInspiralFilterSegment (
 	
 
 	/* For now, this is a hard-coded fixed step in degrees: */
-	raStep = 36.0; 
-	decStep = 18.0;
+	raStep = 9.0; 
+	decStep = 9.0;
 
 	triggerGPSEndTime.gpsSeconds = cData[0]->epoch.gpsSeconds;
 	triggerGPSEndTime.gpsNanoSeconds = cData[0]->epoch.gpsNanoSeconds;
