@@ -34,7 +34,7 @@
 #include <string.h>
 #include "SFTReferenceLibrary.h"
 
-#define RCSID "$Id: splitSFTs.c,v 1.16 2008/07/15 21:55:19 ballen Exp $"
+#define RCSID "$Id: splitSFTs.c,v 1.17 2008/07/15 22:56:00 ballen Exp $"
 
 /* rounding for positive numbers!
    taken from SFTfileIO in LALSupport, should be consistent with that */
@@ -171,6 +171,14 @@ int main(int argc, char**argv) {
 	exit(124);
     }
 
+    /* issue a warning if end - start < width - 1 */
+    if(start + width > end + 1) {
+	fprintf(stderr,
+		"WARNING: start bin + width - 1 (%d) is larger than end bin (%d) requested in command line\n",
+	      start+width-1, end);
+	exit(124);
+    }
+
 
     /* allocate space for new comment */
     TRY((comment = (char*)malloc(hd.comment_length + strlen(cmdline) + 1)) == NULL,
@@ -202,7 +210,13 @@ int main(int argc, char**argv) {
     fclose(fp);
 
     /* loop over start bins for output SFTs */
-    for(bin = start; bin < end - width + 1 ; bin += width) {
+    for(bin = start; bin <= end; bin += width) {
+
+      int last_index = hd.firstfreqindex + hd.nsamples - 1;
+      int last_bin = bin + width - 1;
+      int this_width1 = last_bin <= last_index ? width : width - (last_bin - last_index);
+      int this_width2 = end - bin + 1;
+      int this_width = this_width1 < this_width2 ? this_width1 : this_width2;
 
       /* construct output SFT filename */
       sprintf(outname, "%s%d", prefix, bin);
@@ -213,7 +227,7 @@ int main(int argc, char**argv) {
 
       /* write the data */
       TRYSFT(WriteSFT(fp, hd.gps_sec, hd.gps_nsec, hd.tbase, 
-		      bin, width, detector, comment, data + 2*(bin-hd.firstfreqindex)),
+		      bin, this_width, detector, comment, data + 2*(bin-hd.firstfreqindex)),
 	  "could not write SFT data");
 
       /* cleanup */
