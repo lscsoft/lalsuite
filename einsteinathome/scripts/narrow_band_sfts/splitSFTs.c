@@ -12,7 +12,7 @@
 #include <string.h>
 #include "SFTReferenceLibrary.h"
 
-#define RCSID "$Id: splitSFTs.c,v 1.12 2008/07/15 14:28:55 bema Exp $"
+#define RCSID "$Id: splitSFTs.c,v 1.13 2008/07/15 14:39:13 bema Exp $"
 
 /* rounding for positive numbers!
    taken from SFTfileIO in LALSupport, should be consistent with that */
@@ -92,6 +92,9 @@ int main(int argc, char**argv) {
       prefix = argv[++arg];
     } else if(strcmp(argv[arg], "-i") == 0) {
       break;
+    } else {
+      fprintf(stderr, "unknown option '%s', try '-h' for help\n", argv[arg]);
+      exit (-1);
     }
   }
 
