@@ -12,7 +12,7 @@
 #include <string.h>
 #include "SFTReferenceLibrary.h"
 
-#define RCSID "$Id: splitSFTs.c,v 1.8 2008/07/15 12:47:33 bema Exp $"
+#define RCSID "$Id: splitSFTs.c,v 1.9 2008/07/15 12:57:08 bema Exp $"
 
 /* rounding for positive numbers!
    taken from SFTfileIO in LALSupport, should be consistent with that */
@@ -116,9 +116,18 @@ int main(int argc, char**argv) {
     if(fWidth >= 0.0)
       width = MYROUND(fWidth * hd.tbase);
     
-    /* allocate space for SFT data */
+    /* allocate space for SFT data
+       actually this allocates space for all bins from bin 0 on up to the last bin of the
+       SFT, including bins that might preceede firstfreqindex of the SFT */
     TRY((data = (float*)calloc((hd.nsamples + hd.firstfreqindex), sizeof(float))) == NULL,
 	"out of memory allocating data");
+
+    /* issue a warning if start < hd.firstfreqindex */
+    if(start < hd.firstfreqindex)
+      fprintf(stderr,
+	      "WARNING: start bin (%d) is smaller than first bin in input SFT (%d)\n"
+	      "         This will produce a narrow-band SFT filled up with zeroes\n",
+	      start, hd.firstfreqindex);
 
     /* allocate space for new comment */
     TRY((comment = (char*)malloc(hd.comment_length + strlen(cmdline) + 1)) == NULL,
