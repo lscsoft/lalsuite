@@ -115,6 +115,8 @@ REAL4 meanMass1=-1.0;
 REAL4 meanMass2=-1.0;
 REAL4 massStdev1=-1.0;
 REAL4 massStdev2=-1.0;
+REAL4 minMassRatio=-1.0;
+REAL4 maxMassRatio=-1.0;
 REAL4 inclStd=-1.0;
 REAL4 fixed_inc=0.0;
 int spinInjections=-1;
@@ -256,6 +258,7 @@ static void print_usage(char *program)
       "                           componentMass: uniform in m1 and m2\n"\
       "                           gaussian: gaussian mass distribution\n"\
       "                           log: log distribution in comonent mass\n"\
+      "                           totalMassRatio: uniform distribution in total mass ratio\n"\
       " [--mass-file] mFile       read population mass parameters from mFile\n"\
       " [--nr-file] nrFile        read mass/spin parameters from xml nrFile\n"\
       " [--min-mass1] m1min       set the minimum component mass to m1min\n"\
@@ -268,6 +271,8 @@ static void print_usage(char *program)
       " [--stdev-mass1] m1std     set the standard deviation for mass1\n"\
       " [--mean-mass2] m2mean     set the mean value for mass2\n"\
       " [--stdev-mass2] m2std     set the standard deviation for mass2\n"\
+      " [--min-mratio] minr       set the minimum mass ratio\n"\
+      " [--max-mratio] maxr       set the maximum mass ratio\n"\
       "\n"\
       "Spin distribution information:\n"\
       "  --disable-spin           disables spinning injections\n"\
@@ -663,6 +668,8 @@ int main( int argc, char *argv[] )
     {"mean-mass2",              required_argument, 0,                'N'},
     {"stdev-mass1",             required_argument, 0,                'o'},
     {"stdev-mass2",             required_argument, 0,                'O'},
+    {"min-mratio",              required_argument, 0,                'x'},
+    {"max-mratio",              required_argument, 0,                'y'},
     {"min-distance",            required_argument, 0,                'p'},
     {"max-distance",            required_argument, 0,                'r'},
     {"d-distr",                 required_argument, 0,                'e'},
@@ -951,12 +958,16 @@ int main( int argc, char *argv[] )
         else if (!strcmp(dummy, "log")) 
         {
           mDistr=logComponentMass;
-        } 
+        }
+        else if (!strcmp(dummy, "totalMassRatio"))
+        {
+          mDistr=uniformTotalMassRatio;
+        }
         else
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "unknown mass distribution: %s must be one of\n"
-              "(source, nrwaves, totalMass, componentMass, gaussian, log)\n", 
+              "(source, nrwaves, totalMass, componentMass, gaussian, log, totalMassRatio)\n", 
               long_options[option_index].name, optarg );
           exit( 1 );
         }
@@ -1030,6 +1041,20 @@ int main( int argc, char *argv[] )
         this_proc_param = this_proc_param->next = 
           next_process_param( long_options[option_index].name, 
               "float", "%le", massStdev2 );
+        break;
+
+      case 'x':
+        minMassRatio = atof( optarg );
+        this_proc_param = this_proc_param->next = 
+          next_process_param( long_options[option_index].name, 
+              "float", "%le", minMassRatio );
+        break;
+
+      case 'y':
+        maxMassRatio = atof( optarg );
+        this_proc_param = this_proc_param->next = 
+          next_process_param( long_options[option_index].name, 
+              "float", "%le", minMassRatio );
         break;
 
       case 'p':
@@ -1479,14 +1504,23 @@ int main( int argc, char *argv[] )
     exit( 1 );
   }
 
+  /* check if mass ratios are specified */
+  if ( mDistr==uniformTotalMassRatio && (minMassRatio < 0.0 || maxMassRatio < 0.0) )
+  {
+    fprintf( stderr,
+        "Must specify --min-mass-ratio and --max-mass-ratio if choosing"
+        " --m-distr=totalMassRatio\n");
+    exit( 1 );
+  }
+
   if ( dDistr!=distFromSourceFile && (dmin<0.0 || dmax<0.0) )
   {
     fprintf( stderr, 
         "Must specify --min-distance and --max-distance if "
         "--d-distr is not source.\n" );
     exit( 1 );
+  }
 
-  } 
   /* check if waveform is specified */    
   if ( !*waveform )
   {
@@ -1525,7 +1559,7 @@ int main( int argc, char *argv[] )
         (minabsKappa1 > 0.0 || maxabsKappa1 < 1.0) )
     {
       fprintf( stderr,
-          "Either the options [--min-kappa1,--max-kappa1] or\n"\ 
+          "Either the options [--min-kappa1,--max-kappa1] or\n"\
           "[--min-abskappa1,--max-abskappa1] can be specified\n" );
       exit( 1 );
     }
@@ -1636,7 +1670,13 @@ int main( int argc, char *argv[] )
           meanMass1, massStdev1,
           minMass2, maxMass2, 
           meanMass2, massStdev2);
-    } else {
+    }
+    else if ( mDistr==uniformTotalMassRatio )
+    {
+      simTable=XLALRandomInspiralTotalMassRatio(simTable, randParams, 
+          minMtotal, maxMtotal, minMassRatio, maxMassRatio );
+    }
+    else {
       simTable=XLALRandomInspiralMasses( simTable, randParams, mDistr,
           minMass1, maxMass1,
           minMass2, maxMass2, 
