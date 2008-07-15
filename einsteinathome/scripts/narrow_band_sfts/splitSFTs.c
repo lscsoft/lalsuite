@@ -34,7 +34,7 @@
 #include <string.h>
 #include "SFTReferenceLibrary.h"
 
-#define RCSID "$Id: splitSFTs.c,v 1.15 2008/07/15 20:51:30 ballen Exp $"
+#define RCSID "$Id: splitSFTs.c,v 1.16 2008/07/15 21:55:19 ballen Exp $"
 
 /* rounding for positive numbers!
    taken from SFTfileIO in LALSupport, should be consistent with that */
@@ -152,15 +152,25 @@ int main(int argc, char**argv) {
     /* allocate space for SFT data
        actually this allocates space for all bins from bin 0 on up to the last bin of the
        SFT, including bins that might preceede firstfreqindex of the SFT */
-    TRY((data = (float*)calloc((hd.nsamples + hd.firstfreqindex), 2*sizeof(float))) == NULL,
+    TRY((data = (float*)calloc(hd.nsamples, 2*sizeof(float))) == NULL,
 	"out of memory allocating data");
 
     /* issue a warning if start < hd.firstfreqindex */
-    if(start < hd.firstfreqindex)
-      fprintf(stderr,
-	      "WARNING: start bin (%d) is smaller than first bin in input SFT (%d)\n"
-	      "         This will produce a narrow-band SFT filled up with zeroes\n",
+    if(start < hd.firstfreqindex) {
+	fprintf(stderr,
+		"WARNING: start bin (%d) is smaller than first bin in input SFT (%d)\n",
 	      start, hd.firstfreqindex);
+	exit(123);
+    }
+
+    /* issue a warning if end > hd.firstfreqindex + hd.nsamples - 1 */
+    if(end > hd.firstfreqindex + hd.nsamples -1) {
+	fprintf(stderr,
+		"WARNING: end bin (%d) is larger than last bin in input SFT (%d)\n",
+	      end, hd.firstfreqindex+hd.nsamples - 1);
+	exit(124);
+    }
+
 
     /* allocate space for new comment */
     TRY((comment = (char*)malloc(hd.comment_length + strlen(cmdline) + 1)) == NULL,
@@ -181,11 +191,11 @@ int main(int argc, char**argv) {
     TRY(detector == NULL, "When reading v1 SFTs a detector needs to be specified with -d");
 
     /* read in complete SFT data */
-    TRYSFT(ReadSFTData(fp, data + hd.firstfreqindex, hd.firstfreqindex, hd.nsamples, NULL, NULL),
+    TRYSFT(ReadSFTData(fp, data, hd.firstfreqindex, hd.nsamples, NULL, NULL),
 	"could not read SFT data");
 
     /* apply factor */
-    for(bin = 0; bin < hd.nsamples; bin++)
+    for(bin = 0; bin < 2*hd.nsamples; bin++)
       data[bin] *= factor;
 
     /* cleanup */
@@ -203,7 +213,7 @@ int main(int argc, char**argv) {
 
       /* write the data */
       TRYSFT(WriteSFT(fp, hd.gps_sec, hd.gps_nsec, hd.tbase, 
-		      bin, width, detector, comment, data),
+		      bin, width, detector, comment, data + 2*(bin-hd.firstfreqindex)),
 	  "could not write SFT data");
 
       /* cleanup */
