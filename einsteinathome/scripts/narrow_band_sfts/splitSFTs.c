@@ -6,17 +6,21 @@
   Author: Bernd Machenschalk
 */
 
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "SFTReferenceLibrary.h"
+
+/* rounding for positive numbers! */
+#define MYROUND(x) ( floor( (x) + 0.5 ) )
 
 /* error if value is nonzero */
 #define TRY(v,c) { int r; if((r=(v))) { fprintf(stderr,c " (%d)\n", r); exit(-1); } }
 
 int main(int argc, char**argv) {
   unsigned int arg;
-  unsigned int start, end, width;
+  unsigned int start = 0, end = 0, width = 0;
   unsigned int bin;
   struct headertag2 hd;
   FILE *fp;
@@ -26,37 +30,66 @@ int main(int argc, char**argv) {
   int swap;
   float *data;
   char *outname;
-  char *prefix;
+  char *prefix = "";
   double factor = 1.0;
+  double fMin = -1.0, fMax = -1.0, fWidth = -1.0;
 
-  /* usage error */
-  if(argc < 6) {
-    fprintf(stderr, "%s <startbin> <endbin> <sftbins> <outputprefix> <inputfile> ...\n", argv[0]);
-    exit(-1);
-  } 
+  /* help / usage message */
+  if((argv[1] == NULL) ||
+     (strcmp(argv[1], "-h") == 0) || 
+     (strcmp(argv[1], "--help") == 0)) {
+    fprintf(stderr,
+	    "%s -h\n"
+	    "%s [-s <startbin>] [-e <endbin>] [-b <sftbins>]"
+	    " [-fs <startfrequency>] [-fs <endfrequency>] [-fs <frequencywidth>]"
+	    " [-m <factor>] -o <outputprefix> -i <inputfile> ...\n", argv[0], argv[0]);
+    exit(0);
+  }
 
-  /* get parameters from command line */
-  start  = atoi(argv[1]);
-  end    = atoi(argv[2]);
-  width  = atoi(argv[3]);
-  prefix = argv[4];
+  /* record the commandline for the comment */
+  for(arg = 0; arg < argc; arg++) {
+    if (strcmp(argv[arg], "-m") == 0) {
+      arg++;
+    } else {
+      cmdline = realloc((void*)cmdline, strlen(cmdline) + strlen(argv[arg]) + 2);
+      strcat(cmdline, argv[arg]);
+      if(arg == argc - 1)
+	strcat(cmdline, "\n");
+      else
+	strcat(cmdline, " ");
+    }
+  }
+
+  /* get parameters from command-line */
+  for(arg = 1; arg < argc; arg++) {
+    if(strcmp(argv[arg], "-s") == 0) {
+      start = atoi(argv[++arg]);
+    } else if(strcmp(argv[arg], "-e") == 0) {
+      end = atoi(argv[++arg]);
+    } else if(strcmp(argv[arg], "-b") == 0) {
+      width = atoi(argv[++arg]);
+    } else if(strcmp(argv[arg], "-fs") == 0) {
+      fMin = atof(argv[++arg]);
+    } else if(strcmp(argv[arg], "-fe") == 0) {
+      fMax = atof(argv[++arg]);
+    } else if(strcmp(argv[arg], "-fb") == 0) {
+      fWidth = atof(argv[++arg]);
+    } else if(strcmp(argv[arg], "-m") == 0) {
+      factor = atof(argv[++arg]);
+    } else if(strcmp(argv[arg], "-o") == 0) {
+      prefix = argv[++arg];
+    } else if(strcmp(argv[arg], "-i") == 0) {
+      break;
+    }
+  }
 
   /* allocate space for output filename */
   TRY((outname = (char*)malloc(strlen(prefix) + 20)) == NULL,
       "out of memory allocating outname");
 
-  /* record the commandline for the comment */
-  for(arg = 0; arg < argc; arg++) {
-    cmdline = realloc((void*)cmdline, strlen(cmdline) + strlen(argv[arg]) + 2);
-    strcat(cmdline, argv[arg]);
-    if(arg == argc - 1)
-      strcat(cmdline, "\n");
-    else
-      strcat(cmdline, " ");
-  }
-
-  /* loop over all input files */
-  for(arg = 5; arg < argc; arg++) {    
+  /* loop over all input files
+     first skip the "-i" option */
+  for(arg++; arg < argc; arg++) {    
 
     /* open input SFT */
     TRY((fp = fopen(argv[arg], "r")) == NULL,
@@ -65,6 +98,15 @@ int main(int argc, char**argv) {
     /* read header */
     TRY(ReadSFTHeader(fp, &hd, &oldcomment, &swap, 1),
 	"could not read SFT header");
+
+    /* calculate bins from frequency parameters if they were given */
+    /* deltaF = 1.0 / tbase; bins = freq / deltaF => bins = freq * tbase */
+    if(fMin >= 0.0)
+      start = MYROUND(fMin * hd.tbase);
+    if(fMax >= 0.0)
+      end   = MYROUND(fMax * hd.tbase);
+    if(fWidth >= 0.0)
+      width = MYROUND(fWidth * hd.tbase);
     
     /* allocate space for SFT data */
     TRY((data = (float*)malloc(hd.nsamples * sizeof(float))) == NULL,
