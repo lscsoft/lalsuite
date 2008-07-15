@@ -12,7 +12,8 @@
 #include <string.h>
 #include "SFTReferenceLibrary.h"
 
-/* rounding for positive numbers! */
+/* rounding for positive numbers!
+   taken from SFTfileIO in LALSupport, should be consistent with that */
 #define MYROUND(x) ( floor( (x) + 0.5 ) )
 
 /* error if value is nonzero */
