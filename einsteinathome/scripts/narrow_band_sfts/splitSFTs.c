@@ -135,16 +135,16 @@ int main(int argc, char**argv) {
     fclose(fp);
 
     /* loop over start bins for output SFTs */
-    for(bin = start; bin < end; bin += width) {
+    for(bin = start; bin < end - width + 1 ; bin += width) {
 
       /* construct output SFT filename */
       sprintf(outname, "%s%d", prefix, bin);
 
-      /* open for appending */
+      /* append the SFT to the "merged" SFT with the same name */
       TRY((fp = fopen(outname,"a")) == NULL,
 	  "could not open SFT for writing");
 
-      /* append the SFT to the "merged" SFT */
+      /* write the data */
       TRY(WriteSFT(fp, hd.gps_sec, hd.gps_nsec, hd.tbase, 
 		   bin, width, hd.detector, comment, data),
 	  "could not write SFT data");
