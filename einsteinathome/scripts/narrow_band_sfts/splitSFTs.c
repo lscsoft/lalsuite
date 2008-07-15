@@ -12,7 +12,7 @@
 #include <string.h>
 #include "SFTReferenceLibrary.h"
 
-#define RCSID "$Id: splitSFTs.c,v 1.10 2008/07/15 13:17:06 bema Exp $"
+#define RCSID "$Id: splitSFTs.c,v 1.11 2008/07/15 13:52:26 bema Exp $"
 
 /* rounding for positive numbers!
    taken from SFTfileIO in LALSupport, should be consistent with that */
@@ -35,6 +35,7 @@ int main(int argc, char**argv) {
   float *data;
   char *outname;
   char *prefix = "";
+  char *detector = NULL;
   double factor = 1.0;
   double fMin = -1.0, fMax = -1.0, fWidth = -1.0;
 
@@ -46,7 +47,7 @@ int main(int argc, char**argv) {
 	    "%s -h\n"
 	    "%s [-s <startbin>] [-e <endbin>] [-b <sftbins>]"
 	    " [-fs <startfrequency>] [-fs <endfrequency>] [-fs <frequencywidth>]"
-	    " [-m <factor>] [-o <outputprefix>] -i <inputfile> ...\n", argv[0], argv[0]);
+	    " [-m <factor>] [-d <detector>] [-o <outputprefix>] -i <inputfile> ...\n", argv[0], argv[0]);
     exit(0);
   }
 
@@ -83,6 +84,8 @@ int main(int argc, char**argv) {
       fMax = atof(argv[++arg]);
     } else if(strcmp(argv[arg], "-fb") == 0) {
       fWidth = atof(argv[++arg]);
+    } else if(strcmp(argv[arg], "-d") == 0) {
+      detector = argv[++arg];
     } else if(strcmp(argv[arg], "-m") == 0) {
       factor = atof(argv[++arg]);
     } else if(strcmp(argv[arg], "-o") == 0) {
@@ -91,6 +94,10 @@ int main(int argc, char**argv) {
       break;
     }
   }
+
+  /* check if there was a "-i" at all */
+  TRY(argv[arg] == NULL, "no input files specified");
+  TRY(strcmp(argv[arg], "-i") != 0, "no input files specified");
 
   /* allocate space for output filename */
   TRY((outname = (char*)malloc(strlen(prefix) + 20)) == NULL,
@@ -141,6 +148,13 @@ int main(int argc, char**argv) {
       *comment = '\0';
     strcat(comment,cmdline);
 
+    /* get the detector name from command-line if SFT version doesn't support it */
+    if(hd.version >= 2.0)
+      detector = hd.detector;
+
+    /* if no detector has been specified, issue an error */
+    TRY(detector == NULL, "When reading v1 SFTs a detector needs to be specified with -d");
+
     /* read in complete SFT data */
     TRYSFT(ReadSFTData(fp, data + hd.firstfreqindex, hd.firstfreqindex, hd.nsamples, NULL, NULL),
 	"could not read SFT data");
@@ -164,7 +178,7 @@ int main(int argc, char**argv) {
 
       /* write the data */
       TRYSFT(WriteSFT(fp, hd.gps_sec, hd.gps_nsec, hd.tbase, 
-		   bin, width, hd.detector, comment, data),
+		      bin, width, detector, comment, data),
 	  "could not write SFT data");
 
       /* cleanup */
