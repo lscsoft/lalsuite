@@ -1,7 +1,7 @@
 /*
   - splits a SFTv2 into multiple ones containing narrow frequency bands.
   - uses the SFTReferenceLibrary, compile with
-  gcc -Wall -O2 splitSFTs.c -o splitSFTs libSFTReferenceLibrary.a
+  gcc -Wall -g -O2 splitSFTs.c -o splitSFTs libSFTReferenceLibrary.a
 
   Author: Bernd Machenschalk
 */
@@ -12,13 +12,14 @@
 #include <string.h>
 #include "SFTReferenceLibrary.h"
 
-#define RCSID "$Id: splitSFTs.c,v 1.9 2008/07/15 12:57:08 bema Exp $"
+#define RCSID "$Id: splitSFTs.c,v 1.10 2008/07/15 13:17:06 bema Exp $"
 
 /* rounding for positive numbers!
    taken from SFTfileIO in LALSupport, should be consistent with that */
 #define MYROUND(x) ( floor( (x) + 0.5 ) )
 
 /* error if value is nonzero */
+#define TRYSFT(v,c) { int r; if((r=(v))) { fprintf(stderr,c " (%s)\n", SFTErrorMessage(r)); exit(-1); } }
 #define TRY(v,c) { int r; if((r=(v))) { fprintf(stderr,c " (%d)\n", r); exit(-1); } }
 
 int main(int argc, char**argv) {
@@ -104,7 +105,7 @@ int main(int argc, char**argv) {
 	"could not open SFT file for read");
     
     /* read header */
-    TRY(ReadSFTHeader(fp, &hd, &oldcomment, &swap, 1),
+    TRYSFT(ReadSFTHeader(fp, &hd, &oldcomment, &swap, 1),
 	"could not read SFT header");
 
     /* calculate bins from frequency parameters if they were given */
@@ -134,11 +135,14 @@ int main(int argc, char**argv) {
 	"out of memory allocating comment");
 
     /* append the commandline of this program to the old comment */
-    strcpy(comment,oldcomment);
+    if (oldcomment)
+      strcpy(comment,oldcomment);
+    else
+      *comment = '\0';
     strcat(comment,cmdline);
 
     /* read in complete SFT data */
-    TRY(ReadSFTData(fp, data + hd.firstfreqindex, 0, hd.nsamples, NULL, NULL),
+    TRYSFT(ReadSFTData(fp, data + hd.firstfreqindex, hd.firstfreqindex, hd.nsamples, NULL, NULL),
 	"could not read SFT data");
 
     /* apply factor */
@@ -159,7 +163,7 @@ int main(int argc, char**argv) {
 	  "could not open SFT for writing");
 
       /* write the data */
-      TRY(WriteSFT(fp, hd.gps_sec, hd.gps_nsec, hd.tbase, 
+      TRYSFT(WriteSFT(fp, hd.gps_sec, hd.gps_nsec, hd.tbase, 
 		   bin, width, hd.detector, comment, data),
 	  "could not write SFT data");
 
