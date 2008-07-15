@@ -1657,6 +1657,14 @@ int main( int argc, char *argv[] )
     /* populate distances */
     if ( dDistr == distFromSourceFile )
     {
+      if ( dmax > 0 )
+      {
+        while ( drawnDistance > dmax/1000.0 )
+        {
+          drawFromSource( &drawnRightAscension, &drawnDeclination,
+                          &drawnDistance, drawnSourceName );
+        }
+      }
       simTable->distance = drawnDistance;
     }
     else
