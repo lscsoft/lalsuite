@@ -1203,6 +1203,7 @@ int main( int argc, char *argv[] )
         this_proc_param = this_proc_param->next = 
           next_process_param( long_options[option_index].name, 
               "float", "%e", fixed_inc );
+        break;
 
       case 'P':
         optarg_len = strlen( optarg ) + 1;
