@@ -12,7 +12,7 @@
 #include <string.h>
 #include "SFTReferenceLibrary.h"
 
-#define RCSID "$Id: splitSFTs.c,v 1.11 2008/07/15 13:52:26 bema Exp $"
+#define RCSID "$Id: splitSFTs.c,v 1.12 2008/07/15 14:28:55 bema Exp $"
 
 /* rounding for positive numbers!
    taken from SFTfileIO in LALSupport, should be consistent with that */
@@ -46,7 +46,7 @@ int main(int argc, char**argv) {
     fprintf(stderr,
 	    "%s -h\n"
 	    "%s [-s <startbin>] [-e <endbin>] [-b <sftbins>]"
-	    " [-fs <startfrequency>] [-fs <endfrequency>] [-fs <frequencywidth>]"
+	    " [-fs <startfrequency>] [-fe <endfrequency>] [-fb <frequencywidth>]"
 	    " [-m <factor>] [-d <detector>] [-o <outputprefix>] -i <inputfile> ...\n", argv[0], argv[0]);
     exit(0);
   }
