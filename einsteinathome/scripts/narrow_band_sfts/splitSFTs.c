@@ -12,7 +12,7 @@
 #include <string.h>
 #include "SFTReferenceLibrary.h"
 
-#define RCSID "$Id: splitSFTs.c,v 1.7 2008/07/15 12:40:16 bema Exp $"
+#define RCSID "$Id: splitSFTs.c,v 1.8 2008/07/15 12:47:33 bema Exp $"
 
 /* rounding for positive numbers!
    taken from SFTfileIO in LALSupport, should be consistent with that */
@@ -117,7 +117,7 @@ int main(int argc, char**argv) {
       width = MYROUND(fWidth * hd.tbase);
     
     /* allocate space for SFT data */
-    TRY((data = (float*)malloc(hd.nsamples * sizeof(float))) == NULL,
+    TRY((data = (float*)calloc((hd.nsamples + hd.firstfreqindex), sizeof(float))) == NULL,
 	"out of memory allocating data");
 
     /* allocate space for new comment */
@@ -129,7 +129,7 @@ int main(int argc, char**argv) {
     strcat(comment,cmdline);
 
     /* read in complete SFT data */
-    TRY(ReadSFTData(fp, data, 0, hd.nsamples, NULL, NULL),
+    TRY(ReadSFTData(fp, data + hd.firstfreqindex, 0, hd.nsamples, NULL, NULL),
 	"could not read SFT data");
 
     /* apply factor */
