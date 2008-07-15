@@ -42,13 +42,15 @@ int main(int argc, char**argv) {
 	    "%s -h\n"
 	    "%s [-s <startbin>] [-e <endbin>] [-b <sftbins>]"
 	    " [-fs <startfrequency>] [-fs <endfrequency>] [-fs <frequencywidth>]"
-	    " [-m <factor>] -o <outputprefix> -i <inputfile> ...\n", argv[0], argv[0]);
+	    " [-m <factor>] [-o <outputprefix>] -i <inputfile> ...\n", argv[0], argv[0]);
     exit(0);
   }
 
   /* record the commandline for the comment */
   for(arg = 0; arg < argc; arg++) {
     if (strcmp(argv[arg], "-m") == 0) {
+      cmdline = realloc((void*)cmdline, strlen(cmdline) + 8);
+      strcat(cmdline, "-m xxx ");
       arg++;
     } else {
       cmdline = realloc((void*)cmdline, strlen(cmdline) + strlen(argv[arg]) + 2);
