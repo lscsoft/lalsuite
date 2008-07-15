@@ -236,7 +236,7 @@ static void print_usage(char *program)
       "                           gaussian: gaussian distributed in arccos(i)\n"\
       "                           fixed: no distribution, fixed valued of (i)\n"\
       " [--inclStd]  incStd       std dev for gaussian inclination dist\n"\
-      " [--fixed-inc]  fixed_inc  read inclination dist if fixed value\n"\
+      " [--fixed-inc]  fixed_inc  read inclination dist if fixed value (degrees)\n"\
       " [--source-file] sources   read source parameters from sources\n"\
       "                           requires enable/disable milkyway\n"\
       " [--enable-milkyway] lum   enables MW injections, set MW luminosity\n"\
@@ -1192,14 +1192,7 @@ int main( int argc, char *argv[] )
       
       case 'C':
         /* fixed angle of inclination */
-        fixed_inc = (REAL4) atof( optarg );
-        if ( fixed_inc < 0.0 || fixed_inc > LAL_PI )
-        {
-          fprintf( stderr, "invalid argument to --%s:\n"
-              "inclination fixed must be between 0 and Pi. \n ",
-              long_options[option_index].name );
-          exit( 1 );
-        }
+        fixed_inc = (REAL4) atof( optarg )/180.*LAL_PI;
         this_proc_param = this_proc_param->next = 
           next_process_param( long_options[option_index].name, 
               "float", "%e", fixed_inc );
