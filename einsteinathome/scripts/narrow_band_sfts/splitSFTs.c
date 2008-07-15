@@ -34,7 +34,7 @@
 #include <string.h>
 #include "SFTReferenceLibrary.h"
 
-#define RCSID "$Id: splitSFTs.c,v 1.14 2008/07/15 14:47:40 bema Exp $"
+#define RCSID "$Id: splitSFTs.c,v 1.15 2008/07/15 20:51:30 ballen Exp $"
 
 /* rounding for positive numbers!
    taken from SFTfileIO in LALSupport, should be consistent with that */
@@ -152,7 +152,7 @@ int main(int argc, char**argv) {
     /* allocate space for SFT data
        actually this allocates space for all bins from bin 0 on up to the last bin of the
        SFT, including bins that might preceede firstfreqindex of the SFT */
-    TRY((data = (float*)calloc((hd.nsamples + hd.firstfreqindex), sizeof(float))) == NULL,
+    TRY((data = (float*)calloc((hd.nsamples + hd.firstfreqindex), 2*sizeof(float))) == NULL,
 	"out of memory allocating data");
 
     /* issue a warning if start < hd.firstfreqindex */
