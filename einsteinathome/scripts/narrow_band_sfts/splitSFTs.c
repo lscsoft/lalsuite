@@ -1,9 +1,31 @@
 /*
-  - splits a SFTv2 into multiple ones containing narrow frequency bands.
-  - uses the SFTReferenceLibrary, compile with
+  This program reads in binary SFTs (v1 and v2) and writes out narrow-banded merged SFTs (v2).
+
+  It links to the SFTReferenceLibrary. To compile, use somehting like
   gcc -Wall -g -O2 splitSFTs.c -o splitSFTs libSFTReferenceLibrary.a
 
-  Author: Bernd Machenschalk
+  The frequency bands of the ouput SFTs (start, end, width) can be specified either in bins
+  (-s, -e, -b) or frequencies (-fs, -fe, -fb) (or mixed - if both are given, frequency values
+  take precedence).
+
+  A "mystery factor" can be specified with -m.
+
+  In case of reading v1 SFTs (which don't support detector information in the header) the detector
+  needs to be specified on the command-line using '-d' option.
+
+  The name of the output SFTs is created by appending the start bin of the narrow-band SFT to the
+  "output prefix" that can be given to the program with "-o". If an output file already exists,
+  the program will append the new SFTs to them, making it possible to construct the final
+  narrow-band SFTs by running the program multiple times with different input SFTs.
+
+  The last option on the command-line needs to be "-i", followed by as many input files as you wish
+  (or the OS supports - using xargs should be simple with this command-line syntax).
+
+  The program adds its own RCSID and command-line to the comment of the written SFTs, a mystery
+  factor should show up as "xxx" there.
+
+  Copyright (C) 2008 Bernd Machenschalk
+
 */
 
 #include <math.h>
@@ -12,7 +34,7 @@
 #include <string.h>
 #include "SFTReferenceLibrary.h"
 
-#define RCSID "$Id: splitSFTs.c,v 1.13 2008/07/15 14:39:13 bema Exp $"
+#define RCSID "$Id: splitSFTs.c,v 1.14 2008/07/15 14:47:40 bema Exp $"
 
 /* rounding for positive numbers!
    taken from SFTfileIO in LALSupport, should be consistent with that */
