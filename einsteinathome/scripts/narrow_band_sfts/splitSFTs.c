@@ -12,7 +12,7 @@
 #include <string.h>
 #include "SFTReferenceLibrary.h"
 
-#define RCSID "$Id: splitSFTs.c,v 1.6 2008/07/15 12:36:43 bema Exp $"
+#define RCSID "$Id: splitSFTs.c,v 1.7 2008/07/15 12:40:16 bema Exp $"
 
 /* rounding for positive numbers!
    taken from SFTfileIO in LALSupport, should be consistent with that */
@@ -50,8 +50,9 @@ int main(int argc, char**argv) {
   }
 
   /* record the commandline for the comment */
-  cmdline = malloc(strlen(RCSID)+1);
+  cmdline = malloc(strlen(RCSID)+2);
   strcpy(cmdline,RCSID);
+  strcat(cmdline, "\n");
   for(arg = 0; arg < argc; arg++) {
     if (strcmp(argv[arg], "-m") == 0) {
       cmdline = realloc((void*)cmdline, strlen(cmdline) + 8);
