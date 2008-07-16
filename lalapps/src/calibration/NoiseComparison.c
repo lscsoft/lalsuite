@@ -70,7 +70,8 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <series.h>
 
 
-#define DEBUG 1  /* Uncomment this line to enable debugging fprintfs and mem usage */
+
+/* #define DEBUG 1 */  /* Uncomment this line to enable debugging fprintfs and mem usage */
 
 double hypot(double, double);
 
