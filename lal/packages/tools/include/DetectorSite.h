@@ -32,11 +32,23 @@ backwards compatibility.
 
 ******************************************************* </lalLaTeX> */ 
 
+/**
+ * \author John T. Whelan
+ * \date 2007
+ * \file 
+ * \ingroup tools
+ * \brief Dummy header file which includes LALDetectors.h for backwards compatibility
+ *
+ * $Id$
+ *
+ */
+
 #ifndef _DETECTORSITE_H
 #define _DETECTORSITE_H
 
 #include <lal/LALDetectors.h>
 
+/* C++ protection. */
 #ifdef  __cplusplus
 extern "C" {
 #endif
@@ -44,7 +56,7 @@ extern "C" {
 NRCSID (DETECTORSITEH, "$Id$");
 
 /********************************** <lalVerbatim> */
-/* Legacy code: should now use data in LALDetectors.h */
+/** Legacy code: should now use data in LALDetectors.h */
 enum
 {
   LALDetectorIndexLHODIFF = LAL_LHO_4K_DETECTOR,

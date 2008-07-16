@@ -287,21 +287,25 @@ finds one, it returns a copy of that; if not, it creates one.
 
 The header \texttt{LALDetectors.h} also defines an enumeration of the
 indices of the known detectors:
-\idx[Constant]{LALDetectorIndexLHODIFF}
-\idx[Constant]{LALDetectorIndexLLODIFF}
-\idx[Constant]{LALDetectorIndexVIRGODIFF}
-\idx[Constant]{LALDetectorIndexGEO600DIFF}
-\idx[Constant]{LALDetectorIndexTAMA300DIFF}
-\idx[Constant]{LALDetectorIndexCIT40DIFF}
-\idx[Constant]{LALNumCachedDetectors}
+\idx[Constant]{LAL\_TAMA\_300\_DETECTOR}
+\idx[Constant]{LAL\_VIRGO\_DETECTOR}
+\idx[Constant]{LAL\_GEO\_600\_DETECTOR}
+\idx[Constant]{LAL\_LHO\_2K\_DETECTOR}
+\idx[Constant]{LAL\_LHO\_4K\_DETECTOR}
+\idx[Constant]{LAL\_LLO\_4K\_DETECTOR}
+\idx[Constant]{LAL\_CIT\_40\_DETECTOR}
+\idx[Constant]{LAL\_ALLEGRO\_DETECTOR}
+\idx[Constant]{LAL\_AURIGA\_DETECTOR}
+\idx[Constant]{LAL\_EXPLORER\_DETECTOR}
+\idx[Constant]{LAL\_NIOBE\_DETECTOR}
+\idx[Constant]{LAL\_NAUTILUS\_DETECTOR}
+\idx[Constant]{LAL\_NUM\_DETECTORS}
 ********************************** </lalLaTeX> */
 
-
-
   /********************************* <lalLaTeX> 
-For example, the \texttt{LALDetector} representing LIGO Hanford in
+For example, the \texttt{LALDetector} representing LIGO Hanford 4km (H1) in
 differential mode is
-\texttt{lalCachedDetectors[LALDetectorIndexLHODIFF]}.
+\texttt{lalCachedDetectors[LAL\_LHO\_4K\_DETECTOR]}.
 
 \subsection*{Structures}
 
@@ -317,6 +321,7 @@ in the same format as the \texttt{FrDetector} structure defined in the
 frames spec. \cite{tools:LIGOVIRGO:2000}  The fields are:
 \begin{description}
   \item[\texttt{CHAR name[LALNameLength]}] A unique identifying string.
+  \item[\texttt{CHAR prefix[3]}] Two-letter prefix for detector names.
   \item[\texttt{REAL8 vertexLongitudeRadians}] The geodetic longitude 
 $\lambda$ of the vertex, in radians.
   \item[\texttt{REAL8 vertexLatitudeRadians}] The geodetic latitude
@@ -333,6 +338,8 @@ $\beta$ of the vertex, in radians.
   \item[\texttt{REAL4 yArmAzimuthRadians}] The angle $\zeta_Y$ clockwise
   from North to the projection of the Y arm into the local tangent plane of
   the reference ellipsoid, in radians.
+  \item[\texttt{REAL4 xArmMidpoint}] The distance to the midpoint of the X arm in meters (unused for bars: set it to zero).
+  \item[\texttt{REAL4 yArmMidpoint}] The distance to the midpoint of the Y arm in meters (unused for bars: set it to zero).
 \end{description}
 
 \subsubsection*{Structure \texttt{LALDetector}}

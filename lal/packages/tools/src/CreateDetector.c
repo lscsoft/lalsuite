@@ -31,7 +31,7 @@ structure and the type of detector.
 
 \subsubsection*{Prototypes}
 \input{CreateDetectorCP}
-\idx{LALCreateDetector()}
+\idx{XLALCreateDetector()}
 
 \subsubsection*{Description}
 
@@ -170,7 +170,7 @@ defined in this file and listed in Table~\ref{tools:tab:cached}.
 \input{CreateDetectorCT}
 
 \subsubsection*{Algorithm}
-\texttt{LALCreateDetector()} first checks the
+\texttt{XLALCreateDetector()} first checks the
 \texttt{lalCachedDetectors[]} array to see if the specified type and
 the name in the input \texttt{LALFrDetector} match any of the
 predefined constant detectors.  If so, it returns a copy of the
@@ -201,18 +201,14 @@ to single precision.
 \subsubsection*{Uses}
 
 \begin{verbatim}
-LALCreateDetector()
+XLALCreateDetector()
 \end{verbatim}
 
 \subsubsection*{Notes}
 
 \begin{itemize}
-\item The conventions in the \texttt{LALFrDetector} structure are an
-  extension of those used in version 4 of the frame specification
-  \cite{tools:LIGOVIRGO:2000} and do not agree with the conventions
-  used by LDAS, which are an anticipation of the yet-to-be-released
-  version 5 frame spec.  The \texttt{LALFrDetector} structure will
-  change once a final version 5 frame spec is available.
+\item The conventions in the \texttt{LALFrDetector} structure are based
+  on version 6 of the frame specification \cite{tools:LIGOVIRGO:2000}.
 \item If the location and response tensor information for a
 \texttt{LALDetector} are filled in by hand (e.g., for testing
 purposes), the \texttt{type} field should be set to
@@ -221,8 +217,6 @@ purposes), the \texttt{type} field should be set to
 include the  monopole and five quadrupole modes for a spherical
 resonant detector
 \cite{tools:Maggiore:2000b,tools:Zhou:1995,tools:Bianchi:1998,tools:Maggiore:2000a}.
-\item At the moment, this code still writes some diagnostics to
-standard output.  These are supposed to be removed once it's been tested.
 \end{itemize}
 
 \vfill{\footnotesize\input{CreateDetectorCV}}
@@ -271,8 +265,11 @@ NRCSID( CREATEDETECTORC, "$Id$" );
   \begin{center}
     \begin{tabular}{|c|c|c|}
 \hline
-      index & \texttt{LALDetectorIndexLHODIFF}
-            & \texttt{LALDetectorIndexLLODIFF}
+      index & \texttt{LAL\_LHO\_4K\_DETECTOR}
+            & \texttt{LAL\_LLO\_4K\_DETECTOR}
+\\ \hline
+      prefix & \texttt{H1}
+            & \texttt{L1}
 \\ \hline
       $x^a$
       &
@@ -320,7 +317,7 @@ NRCSID( CREATEDETECTORC, "$Id$" );
 \\ \hline
      type & \texttt{LALDETECTORTYPE\_IFODIFF} & \texttt{LALDETECTORTYPE\_IFODIFF}
 \\ \hline
-     name & LIGO Hanford Observatory & LIGO Livingston Observatory
+     name & LHO\_4k & LLO\_4k
 \\ \hline
      $(\lambda,\beta,h)$
      & $(-(119^\circ24'27''\!\!.5657),46^\circ27'18''\!\!.528,
@@ -336,9 +333,13 @@ NRCSID( CREATEDETECTORC, "$Id$" );
       & $(           1.25\times 10^{-5},      234^\circ\!\!.0006)$
       & $(          -6.107\times 10^{-4},     162^\circ\!\!.2835)$
 \\ \hline
+     $(L_X/2,L_Y/2)$
+     & $(2000\,\textrm{m},2000\,\textrm{m})$ 
+     & $(2000\,\textrm{m},2000\,\textrm{m})$ 
+\\ \hline
 \hline
-      index & \texttt{LALDetectorIndexVIRGODIFF}
-            & \texttt{LALDetectorIndexGEO600DIFF}
+      index & \texttt{LAL\_VIRGO\_DETECTOR}
+            & \texttt{LAL\_GEO\_600\_DETECTOR}
 \\ \hline
       $x^a$
       &
@@ -386,7 +387,7 @@ NRCSID( CREATEDETECTORC, "$Id$" );
 \\ \hline
      type & \texttt{LALDETECTORTYPE\_IFODIFF} & \texttt{LALDETECTORTYPE\_IFODIFF}
 \\ \hline
-     name & VIRGO Interferometer & GEO-600 Interferometer
+     name & VIRGO & GEO\_600
 \\ \hline
      $(\lambda,\beta,h)$
      & $(10^\circ30'16''\!\!.1878,43^\circ37'\!\!53''.0921,
@@ -402,9 +403,13 @@ NRCSID( CREATEDETECTORC, "$Id$" );
       & $( 0,           289^\circ\!\!.4326)$
       & $( 0,           334^\circ\!\!.0569)$
 \\ \hline
+     $(L_X/2,L_Y/2)$
+     & $(1500\,\textrm{m},1500\,\textrm{m})$ 
+     & $(300\,\textrm{m},300\,\textrm{m})$ 
+\\ \hline
 \hline
-      index & \texttt{LALDetectorIndexTAMA300DIFF}
-            & \texttt{LALDetectorIndexCIT40DIFF}
+      index & \texttt{LAL\_TAMA\_300\_DETECTOR}
+            & \texttt{LAL\_CIT\_40\_DETECTOR}
 \\ \hline
       $x^a$
       &
@@ -452,7 +457,7 @@ NRCSID( CREATEDETECTORC, "$Id$" );
 \\ \hline
      type & \texttt{LALDETECTORTYPE\_IFODIFF} & \texttt{LALDETECTORTYPE\_IFODIFF}
 \\ \hline
-     name & TAMA-300 Interferometer & Caltech-40 Interferometer
+     name & TAMA\_300 & CIT\_40
 \\ \hline
      $(\lambda,\beta,h)$
      & $(139^\circ32'9''\!\!.8,35^\circ40'35''\!\!.6,
@@ -468,10 +473,17 @@ NRCSID( CREATEDETECTORC, "$Id$" );
       & $( 0,         180^\circ)$
       & $(0,          90^\circ)$
 \\ \hline
+     $(L_X/2,L_Y/2)$
+     & $(150\,\textrm{m},150\,\textrm{m})$ 
+     & $(20\,\textrm{m},20\,\textrm{m})$ 
+\\ \hline
 
     \end{tabular}
-    \caption{Predefined gravitational wave detectors, contained in
-      the \texttt{lalCachedDetectors[]} array.  The LIGO site data
+    \caption{Selected redefined gravitational wave detectors, contained in
+      the \texttt{lalCachedDetectors[]} array.
+      Not shown in the table are the LHO 2\,km detector (H2) and the bar
+      detectors ALLEGRO, AURIGA, EXPLORER, NIOBE and NAUTILUS.
+      The LIGO site data
       come directly from \cite{tools:Althouse:1999}, including the
       Cartesian position vectors $x^a$ and the response tensor
       $d^{ab}$, which was dermined from the quoted components of the
@@ -693,8 +705,10 @@ void getCartesianComponents( REAL4 u[3],
 }
 
 
+/* <lalVerbatim file="CreateDetectorCP"> */
 LALDetector * XLALCreateDetector( LALDetector *detector, 
     const LALFrDetector *frDetector, LALDetectorType type )
+/* </lalVerbatim> */
 {
   static const char *func = "XLALCreateDetector";
   INT2                i, j;
@@ -873,12 +887,10 @@ LALDetector * XLALCreateDetector( LALDetector *detector,
 }
 
 
-/* <lalVerbatim file="CreateDetectorCP"> */
 void LALCreateDetector( LALStatus             *status,
                         LALDetector           *output,
                         const LALFrDetector   *input,
                         const LALDetectorType  type )
-/* </lalVerbatim> */
 {
   INITSTATUS( status, "LALCreateDetector", CREATEDETECTORC );
 
