@@ -70,7 +70,7 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <series.h>
 
 
-/* #define DEBUG 1 */  /* Uncomment this line to enable debugging fprintfs and mem usage */
+#define DEBUG 1  /* Uncomment this line to enable debugging fprintfs and mem usage */
 
 double hypot(double, double);
 
@@ -326,12 +326,22 @@ int Initialise(struct CommandLineArgsTag CLA)
 
   if (CLA.decimate == 1)
     {
+     #ifdef DEBUG
+      fprintf(stdout,"(UINT4) CLA.t/(derr.deltaT) + 0.5 is %i\n",(UINT4)(CLA.t/(derr.deltaT*DECIMATE) +0.5)); 
+       printmemuse();  
+     #endif
+
     /* Create Window vectors */
     LALCreateVector(&status,&derrwin,(UINT4)(CLA.t/(derr.deltaT*DECIMATE) +0.5));
     TESTSTATUS( &status );
 
     winparams.type=Hann;
    
+     #ifdef DEBUG
+      fprintf(stdout,"(INT4) CLA.t/(derr.deltaT) + 0.5 is %i\n",(INT4)(CLA.t/(derr.deltaT*DECIMATE) +0.5)); 
+       printmemuse();  
+     #endif
+
     /* make window  */
     winparams.length=(INT4)(CLA.t/(derr.deltaT*DECIMATE) +0.5);
     LALWindow(&status,derrwin,&winparams);
@@ -339,16 +349,39 @@ int Initialise(struct CommandLineArgsTag CLA)
     }
   else
     {
+     #ifdef DEBUG
+      fprintf(stdout,"(UINT4) CLA.t/(derr.deltaT) + 0.5 is %i\n",(UINT4)(CLA.t/(derr.deltaT) +0.5)); 
+       printmemuse();  
+     #endif
+
+    
     /* Create Window vectors */
     LALCreateVector(&status,&derrwin,(UINT4)(CLA.t/(derr.deltaT) +0.5));
     TESTSTATUS( &status );
 
+     #ifdef DEBUG
+      fprintf(stdout,"Made it to -1a\n"); 
+       printmemuse();  
+     #endif
+
+
     winparams.type=Hann;
    
     /* make window  */
+    #ifdef DEBUG
+      fprintf(stdout,"(INT4) CLA.t/(derr.deltaT) + 0.5 is %i\n",(INT4)(CLA.t/(derr.deltaT) +0.5)); 
+       printmemuse();  
+     #endif
+
     winparams.length=(INT4)(CLA.t/(derr.deltaT) +0.5);
     LALWindow(&status,derrwin,&winparams);
     TESTSTATUS( &status );
+
+     #ifdef DEBUG
+      fprintf(stdout,"Made it to -1b\n"); 
+       printmemuse();  
+     #endif
+
     }
 
   /* Open output file */
@@ -644,16 +677,19 @@ int ComputeNoise(struct CommandLineArgsTag CLA, int n)
      printmemuse();  
     #endif
 
-  XLALResampleREAL4TimeSeries( &derr, derr.deltaT*4);
-  TESTSTATUS( &status );
+  if (CLA.decimate == 1)
+    {
+      XLALResampleREAL4TimeSeries( &derr, derr.deltaT*DECIMATE);
+      TESTSTATUS( &status );
    
-   #ifdef DEBUG
-     fprintf(stdout,"Made it to: 6\n"); 
-     printmemuse();  
-   #endif
+     #ifdef DEBUG
+       fprintf(stdout,"Made it to: 6\n"); 
+       printmemuse();  
+     #endif
 
-  XLALResampleREAL8TimeSeries( &hoft, hoft.deltaT*4);
-  TESTSTATUS( &status );
+      XLALResampleREAL8TimeSeries( &hoft, hoft.deltaT*DECIMATE);
+      TESTSTATUS( &status );
+    }
 
    #ifdef DEBUG
      fprintf(stdout,"Made it to: 7\n"); 
