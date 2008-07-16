@@ -37,16 +37,16 @@
 #include <string.h>
 #include "SFTReferenceLibrary.h"
 
-#define RCSID "$Id: splitSFTs.c,v 1.18 2008/07/16 09:33:01 bema Exp $"
+#define RCSID "$Id: splitSFTs.c,v 1.19 2008/07/16 09:34:10 bema Exp $"
 
 /* rounding (for positive numbers!)
    taken from SFTfileIO in LALSupport, should be consistent with that */
 #define MYROUND(x) ( floor( (x) + 0.5 ) )
 
 /* error if value is nonzero */
-#define TRY(v,c) { int r; if((r=(v))) { fprintf(stderr,c " (%d)\n", r); exit(-1); } }
+#define TRY(v,c) { int r; if((r=(v))) { fprintf(stderr,c " (%d)\n", r); exit(r); } }
 /* for SFT library calls write out the corresponding SFTErrorMessage, too */
-#define TRYSFT(v,c) { int r; if((r=(v))) { fprintf(stderr,c " (%s)\n", SFTErrorMessage(r)); exit(-1); } }
+#define TRYSFT(v,c) { int r; if((r=(v))) { fprintf(stderr,c " (%s)\n", SFTErrorMessage(r)); exit(r); } }
 
 int main(int argc, char**argv) {
   unsigned int arg;       /* current command-line argument */
