@@ -13,6 +13,7 @@ from pylab import *
 import operator
 from math import *
 import numpy
+import time
 
 class StringError(exceptions.Exception):
   def __init__(self, args=None):
@@ -444,7 +445,9 @@ def plot_systematics(filelist,cp,dir,epoch,dag,opts):
   
   rootN = []
   rootNdeg = []
-  for f in N.values():
+  vals = N.values()
+  vals.sort()
+  for f in vals:
     rootN.append(1/sqrt(f))
     rootNdeg.append(180/sqrt(f)/3.14159)
   
@@ -454,7 +457,9 @@ def plot_systematics(filelist,cp,dir,epoch,dag,opts):
   # Plot the systematic in magnitude
   magfigname = "sys_mag"+epoch[1]+"-"+epoch[2]+".png"
   figure(1)
-  errorbar(mag.keys(),mag.values(),rootN)
+  keys = mag.keys()
+  keys.sort()
+  errorbar(keys,[mag[k] for k in keys],rootN)
   title('h(t) and h(f) magnitude systematics '+epoch[1]+"-"+epoch[2]+'\n')
   xlabel('Freq')
   ylabel('Mag')
@@ -463,12 +468,15 @@ def plot_systematics(filelist,cp,dir,epoch,dag,opts):
   thumb = 'thumb-'+magfigname
   savefig(dir + '/'+ thumb,dpi=20)
   clf()
-  close()
+  #close()
 
  # Plot the systematic in phase
   phasefigname = "sys_phase"+epoch[1]+"-"+epoch[2]+".png"
-  figure(1)
-  errorbar(phase.keys(),phase.values(),rootNdeg)
+  #figure(1)
+  keys = phase.keys()
+  keys.sort()
+  errorbar(keys,[phase[k] for k in keys],rootNdeg)
+  #errorbar(phase.keys(),phase.values(),rootNdeg)
   title('h(t) and h(f) phase systematics '+epoch[1]+"-"+epoch[2]+'\n')
   xlabel('Freq')
   ylabel('Phase (degrees)')
@@ -477,13 +485,18 @@ def plot_systematics(filelist,cp,dir,epoch,dag,opts):
   thumb = 'thumb-'+phasefigname
   savefig(dir + '/'+ thumb,dpi=20)
   clf()
-  close()
+  #close()
 
  # Plot the residual moments
   x1figname = "sys_x1_"+epoch[1]+"-"+epoch[2]+".png"
-  figure(1)
-  plot(xr1.keys(),xr1.values())
-  plot(xi1.keys(),xi1.values(),'r')
+  #figure(1)
+  keys = xr1.keys()
+  keys.sort()
+  plot(keys,[xr1[k] for k in keys])
+  keys = xi1.keys()
+  keys.sort()
+  plot(keys,[xi1[k] for k in keys])
+  #plot(xi1.keys(),xi1.values(),'r')
   legend(['real','imaginary'])
   title('mean '+epoch[1]+"-"+epoch[2]+'\n')
   xlabel('Freq')
@@ -493,13 +506,19 @@ def plot_systematics(filelist,cp,dir,epoch,dag,opts):
   thumb = 'thumb-'+x1figname
   savefig(dir + '/'+ thumb,dpi=20)
   clf()
-  close()
+  #close()
   
  # Plot the residual moments
   x2figname = "sys_x2_"+epoch[1]+"-"+epoch[2]+".png"
-  figure(1)
-  plot(xr2.keys(),xr2.values())
-  plot(xi2.keys(),xi2.values(),'r')
+  #figure(1)
+  keys = xr2.keys()
+  keys.sort()
+  plot(keys,[xr2[k] for k in keys])
+  keys = xi2.keys()
+  keys.sort()
+  plot(keys,[xi2[k] for k in keys])
+#  plot(xr2.keys(),xr2.values())
+#  plot(xi2.keys(),xi2.values(),'r')
   legend(['real','imaginary'])
   title('residual noise sqrt of second moment '+epoch[1]+"-"+epoch[2]+'\n')
   xlabel('Freq')
@@ -509,13 +528,19 @@ def plot_systematics(filelist,cp,dir,epoch,dag,opts):
   thumb = 'thumb-'+x2figname
   savefig(dir + '/'+ thumb,dpi=20)
   clf()
-  close()
+  #close()
 
  # Plot the residual moments
   x3figname = "sys_x3_"+epoch[1]+"-"+epoch[2]+".png"
-  figure(1)
-  plot(xr3.keys(),xr3.values())
-  plot(xi3.keys(),xi3.values(),'r')
+  #figure(1)
+  keys = xr3.keys()
+  keys.sort()
+  plot(keys,[xr3[k] for k in keys])
+  keys = xi3.keys()
+  keys.sort()
+  plot(keys,[xi3[k] for k in keys])
+#  plot(xr3.keys(),xr3.values())
+#  plot(xi3.keys(),xi3.values(),'r')
   legend(['real','imaginary'])
   title('residual noise cube root of third moment '+epoch[1]+"-"+epoch[2]+'\n')
   xlabel('Freq')
@@ -525,13 +550,19 @@ def plot_systematics(filelist,cp,dir,epoch,dag,opts):
   thumb = 'thumb-'+x3figname
   savefig(dir + '/'+ thumb,dpi=20)
   clf()
-  close()
+  #close()
 
  # Plot the residual moments
   x4figname = "sys_x4_"+epoch[1]+"-"+epoch[2]+".png"
-  figure(1)
-  plot(xr4.keys(),xr4.values())
-  plot(xi4.keys(),xi4.values(),'r')
+  #figure(1)
+  keys = xr4.keys()
+  keys.sort()
+  plot(keys,[xr4[k] for k in keys])
+  keys = xi4.keys()
+  keys.sort()
+  plot(keys,[xi4[k] for k in keys])
+ # plot(xr4.keys(),xr4.values())
+ # plot(xi4.keys(),xi4.values(),'r')
   legend(['real','imaginary'])
   title('residual noise fourth root of excess kurtosis '+epoch[1]+"-"+epoch[2]+'\n')
   xlabel('Freq')
@@ -541,7 +572,7 @@ def plot_systematics(filelist,cp,dir,epoch,dag,opts):
   thumb = 'thumb-'+x4figname
   savefig(dir + '/'+ thumb,dpi=20)
   clf()
-  close()
+  #close()
 
   pgname = dir + '/' + "sys_plots"+epoch[1]+"-"+epoch[2]+".html"
   page = open(pgname,'w')
@@ -555,8 +586,10 @@ def plot_systematics(filelist,cp,dir,epoch,dag,opts):
   page.write('<img src='+x4figname+' width=600><br><br>\n')
   page.write('<h3>Raw distribution of residual noise</h3><hr><br>\n')
   for f in freq:
+    #time.sleep(10)
+    print "plotting "+str(f) 
     figname = "n_hist_"+str(f)+'_'+epoch[1]+"-"+epoch[2]+".png"
-    figure(1)
+    #figure(1)
     plot(binVec,realHistVecs[f])
     plot(binVec,imagHistVecs[f],'r')
     legend(['real','imaginary'])
@@ -568,7 +601,7 @@ def plot_systematics(filelist,cp,dir,epoch,dag,opts):
     grid()
     savefig(dir + '/'+ figname)
     clf()
-    close()
+    #close()
     page.write('<a href='+figname+'><img src='+thumb+'></a>\n')
 
   page.close
@@ -729,6 +762,7 @@ def plot_noise_spec(specList,cp,dir,dag,qjob,qfile,tftuple):
   A = array(specList,typecode='f')
   figure(1)
   pcolor(X,Y,A.transpose(),shading='flat',vmin=0.95,vmax=1.05)
+  print "...plotting qscan for " + start
   title('h(t) and h(f) power ratios per freq bin GPS '+start + '\n min = '+str(MIN) + ' max = '+str(MAX) )
   xlabel('Time')
   ylabel('Frequency')
@@ -737,7 +771,7 @@ def plot_noise_spec(specList,cp,dir,dag,qjob,qfile,tftuple):
   thumb = 'thumb-'+figname
   savefig(dir + '/'+ thumb,dpi=20)
   clf()
-  close()
+  #close()
   return figname,qscanTime
   
 def write_qscan_conf(epoch,cp):
