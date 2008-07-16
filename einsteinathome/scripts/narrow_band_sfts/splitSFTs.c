@@ -3,7 +3,7 @@
   This program reads in binary SFTs (v1 and v2) and writes out narrow-banded merged SFTs (v2).
 
   It links to the SFTReferenceLibrary. To compile, use somehting like
-  gcc -Wall -g -O2 splitSFTs.c -o splitSFTs libSFTReferenceLibrary.a
+  gcc -Wall -g -O2 splitSFTs.c -o splitSFTs libSFTReferenceLibrary.a -lm
 
   The frequency bands of the ouput SFTs (first frequency bin of first output SFT,
   last frequency bin of last output SFT, number of bins in each output SFT)
@@ -37,7 +37,7 @@
 #include <string.h>
 #include "SFTReferenceLibrary.h"
 
-#define RCSID "$Id: splitSFTs.c,v 1.19 2008/07/16 09:34:10 bema Exp $"
+#define RCSID "$Id: splitSFTs.c,v 1.20 2008/07/16 09:36:45 bema Exp $"
 
 /* rounding (for positive numbers!)
    taken from SFTfileIO in LALSupport, should be consistent with that */
