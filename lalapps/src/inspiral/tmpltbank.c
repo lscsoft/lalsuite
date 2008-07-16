@@ -89,6 +89,17 @@ enum
   real_8
 } calData = undefined;
 
+/* which type of PSD to use */
+enum
+{
+  specType_mean,
+  specType_median,
+  specType_gaussian,
+  specType_LIGO,
+  specType_AdvLIGO,
+  specType_undefined
+} specType = specType_undefined;
+
 /*
  *
  * variables that control program behaviour
@@ -119,7 +130,6 @@ REAL4  highPassFreq     = 0;            /* high pass frequency          */
 INT4   highPassOrder    = -1;           /* order of the td iir filter   */
 REAL4  highPassAtten    = -1;           /* attenuation of the td filter */
 REAL4  fLow             = -1;           /* low frequency cutoff         */
-INT4   specType         = -1;           /* use median or mean psd       */
 CHAR  *calCacheName     = NULL;         /* location of calibration data */
 INT4   globCalData      = 0;            /* glob for calibration frames  */
 INT4   pointCal         = 0;            /* don't average cal over chunk */
@@ -708,16 +718,16 @@ int main ( int argc, char *argv[] )
         &(avgSpecParams.plan), numPoints, 0 ), &status );
   switch ( specType )
   {
-    case 0:
+    case specType_mean:
       avgSpecParams.method = useMean;
       if ( vrbflg ) fprintf( stdout, "computing mean psd" );
       break;
-    case 1:
+    case specType_median:
       avgSpecParams.method = useMedian;
       if ( vrbflg ) fprintf( stdout, "computing median psd" );
       break;
-    case 3:
-    case 4:
+    case specType_LIGO:
+    case specType_AdvLIGO:
       avgSpecParams.method = useUnity;
       if ( vrbflg ) fprintf( stdout, "computing constant psd with unit value" );
       break;
@@ -736,7 +746,7 @@ int main ( int argc, char *argv[] )
   XLALDestroyREAL4Window( avgSpecParams.window );
   LAL_CALL( LALDestroyRealFFTPlan( &status, &(avgSpecParams.plan) ), &status );
 
-  if ( specType == 3 )
+  if ( specType == specType_LIGO )
   {
     /* replace the spectrum with the Initial LIGO design noise curve */
     for ( k = 0; k < spec.data->length; ++k )
@@ -749,7 +759,7 @@ int main ( int argc, char *argv[] )
                                                                                                                              
     if ( vrbflg ) fprintf( stdout, "set psd to Initial LIGO design\n" );
   }
-  else if ( specType == 4 )
+  else if ( specType == specType_AdvLIGO )
   {
     /* replace the spectrum with the Advanced LIGO design noise curve */
     for ( k = 0; k < spec.data->length; ++k )
@@ -1691,15 +1701,15 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
       case 'j':
         if ( ! strcmp( "mean", optarg ) )
         {
-          specType = 0;
+          specType = specType_mean;
         }
         else if ( ! strcmp( "median", optarg ) )
         {
-          specType = 1;
+          specType = specType_median;
         }
         else if ( ! strcmp( "gaussian", optarg ) )
         {
-          specType = 2;
+          specType = specType_gaussian;
           fprintf( stderr,
               "WARNING: replacing psd with white gaussian spectrum\n"
                "WARNING: option not currently available\n" );
@@ -1707,7 +1717,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         }
         else if ( ! strcmp( "LIGO", optarg ) )
         {
-          specType = 3;
+          specType = specType_LIGO;
           unitResponse = 1;
           fprintf( stderr,
               "WARNING: replacing psd with Initial LIGO design spectrum\n"
@@ -1715,7 +1725,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         }
         else if ( ! strcmp( "AdvLIGO", optarg ) )
         {
-          specType = 4;
+          specType = specType_AdvLIGO;
           unitResponse = 1;
           fprintf( stderr,
               "WARNING: replacing psd with Advanced LIGO design spectrum\n"
@@ -2638,7 +2648,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     fprintf( stderr, "--resample-filter must be specified\n" );
     exit( 1 );
   }
-  if ( specType < 0 )
+  if ( specType == specType_undefined )
   {
     fprintf( stderr, "--spectrum-type must be specified\n" );
     exit( 1 );
