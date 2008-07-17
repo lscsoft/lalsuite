@@ -163,32 +163,13 @@ typedef struct tagHoughParamsTest{
 
 /* local function prototype */
 
-void SplitSFTs(LALStatus         *status, 
-	       REAL8Vector       *weightsV, 
-	       HoughParamsTest   *chi2Params);
+void SplitSFTs(LALStatus *status, REAL8Vector *weightsV, HoughParamsTest *chi2Params);
 
-void ComputeFoft_NM(LALStatus   *status,
-		 REAL8Vector          *foft,
-                 HoughTemplate        *pulsarTemplate,
-		 REAL8Vector          *timeDiffV,
-		 REAL8Cart3CoorVector *velV);
+void ComputeFoft_NM(LALStatus *status, REAL8Vector *foft, HoughTemplate *pulsarTemplate, REAL8Vector *timeDiffV, REAL8Cart3CoorVector *velV);
 
-void ComputeandPrintChi2 ( LALStatus                *status,
-		           toplist_t                *tl,
-		           REAL8Vector              *timeDiffV,
-		           REAL8Cart3CoorVector     *velV,
-			   INT4                     p,
-			   REAL8                    alphaPeak,
-			   MultiDetectorStateSeries *mdetStates,
-			   REAL8Vector		    *weightsNoise,
-			   UCHARPeakGramVector      *upgV /**< Expanded (UCHAR) peakgrams */);
+void ComputeandPrintChi2 ( LALStatus *status, toplist_t *tl, REAL8Vector *timeDiffV, REAL8Cart3CoorVector *velV, INT4 p, REAL8 alphaPeak, MultiDetectorStateSeries *mdetStates, REAL8Vector *weightsNoise, UCHARPeakGramVector *upgV);
 
-void GetPeakGramFromMultSFTVector_NondestroyPg1(LALStatus                   *status,
-						HOUGHPeakGramVector         *out, /**< Output compressed peakgrams */
-						UCHARPeakGramVector         *upgV, /**< Output uncompressed peakgrams */
-						MultiSFTVector              *in,  /**< Input SFTs */
-						REAL8                       thr   /**< Threshold on SFT power */) ; 
-
+void GetPeakGramFromMultSFTVector_NondestroyPg1(LALStatus *status, HOUGHPeakGramVector *out, UCHARPeakGramVector *upgV, MultiSFTVector *in, REAL8 thr) ; 
 
 void PrintLogFile (LALStatus *status, CHAR *dir, CHAR *basename, CHAR *skyfile, LALStringVector *linefiles, CHAR *executable );
 
@@ -374,6 +355,10 @@ int main(int argc, char *argv[]){
   INT4 uvar_numSkyPartitions = 0;
   INT4 uvar_partitionIndex = 0;
 
+  LIGOTimeGPS refTimeGPS; /* reference time */
+  REAL8    uvar_refTime;
+
+  REAL8 uvar_deltaF1dot; 
 
   /* Set up the default parameters */
 
@@ -451,7 +436,8 @@ int main(int argc, char *argv[]){
   LAL_CALL( LALRegisterINTUserVar(    &status, "spindownJump",       0,  UVAR_OPTIONAL, "Jump to the next spin-down being analyzed (to avoid doing them all)",  &uvar_spindownJump), &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "numSkyPartitions",0,UVAR_OPTIONAL, "Number of (equi-)partitions to split skygrid into", &uvar_numSkyPartitions), &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "partitionIndex",0,UVAR_OPTIONAL, "Index [0,numSkyPartitions-1] of sky-partition to generate", &uvar_partitionIndex), &status);
-
+  LAL_CALL( LALRegisterREALUserVar( &status, "refTime",         0,  UVAR_OPTIONAL, "GPS reference time of observation", &uvar_refTime), &status);
+  LAL_CALL( LALRegisterREALUserVar( &status, "deltaF1dot",         0,  UVAR_OPTIONAL, "Stepsize for f1dot [Default: 1/(Tcoh*Tobs)]", &uvar_deltaF1dot), &status);
 
   /* developer input variables */
   LAL_CALL( LALRegisterINTUserVar(    &status, "blocksRngMed",    0, UVAR_DEVELOPER, "Running Median block size", &uvar_blocksRngMed), &status);
@@ -607,7 +593,19 @@ int main(int argc, char *argv[]){
     /* catalog is ordered in time so we can get start, end time and tObs*/
     firstTimeStamp = catalog->data[0].header.epoch;
     lastTimeStamp = catalog->data[catalog->length - 1].header.epoch;
-    tObs = XLALGPSDiff( &lastTimeStamp, &firstTimeStamp ) + timeBase;
+
+    if ( LALUserVarWasSet( &uvar_refTime ) ) 
+    {
+      LAL_CALL ( LALFloatToGPS( &status, &refTimeGPS, &uvar_refTime), &status);
+      
+      tObs = XLALGPSDiff( &lastTimeStamp, &refTimeGPS ) + timeBase;
+    }
+    else
+    {
+      tObs = XLALGPSDiff( &lastTimeStamp, &firstTimeStamp ) + timeBase;  
+    }
+
+   
 
 
     /* clean sfts if required */
@@ -714,8 +712,16 @@ int main(int argc, char *argv[]){
     }
 
     /* compute the time difference relative to startTime for all SFTs */
-    for(j = 0; j < mObsCoh; j++)
+    if ( LALUserVarWasSet( &uvar_refTime ) ) 
+    { 
+      for(j = 0; j < mObsCoh; j++)
+      timeDiffV->data[j] = XLALGPSDiff( timeV->data + j, &refTimeGPS );
+    }
+    else
+    {
+      for(j = 0; j < mObsCoh; j++)
       timeDiffV->data[j] = XLALGPSDiff( timeV->data + j, &firstTimeStamp );
+    }
 
   } /* end block for weights, velocity and time */
   LogPrintfVerbatim (LOG_NORMAL, "done\n");    
@@ -878,7 +884,15 @@ int main(int argc, char *argv[]){
       nSpin1Max = uvar_nfSizeCylinder - 1 ;
       /* nSpin1Max = floor(uvar_nfSizeCylinder/2.0) ;*/
 
-      f1jump = 1./tObs * uvar_spindownJump;
+
+      if ( LALUserVarWasSet( &uvar_deltaF1dot ) ) 
+      {
+	f1jump = uvar_deltaF1dot * uvar_spindownJump;
+      }
+      else
+      {
+	f1jump = 1./tObs * uvar_spindownJump;	
+      }
 
       
       /* start of main loop over search frequency bins */
