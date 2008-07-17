@@ -58,7 +58,7 @@ static struct options parse_command_line(int argc, char *argv[])
 	struct option long_options[] = {
 		{"help", no_argument, NULL, 'h'},
 		{"output", required_argument, NULL, 'o'},
-		{"verbose", no_argument, &options.verbose, 1},
+		{"verbose", no_argument, NULL, 'v'},
 		{NULL, 0, NULL, 0}
 	};
 
@@ -72,6 +72,11 @@ static struct options parse_command_line(int argc, char *argv[])
 	case 'h':
 		print_usage(argv[0]);
 		exit(0);
+
+	/* --verbose */
+	case 'v':
+		options.verbose = 1;
+		break;
 
 	/* option sets a flag */
 	case 0:
