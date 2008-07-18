@@ -144,7 +144,12 @@ int main(int argc, char *argv[]){
  
  
    SkyPosition skypos; 
- 
+
+   /* new SFT I/O data types */
+   SFTCatalog *catalog = NULL;
+   static SFTConstraints constraints;
+
+   MultiSFTVector *multiSFTs = NULL;   
 
    /* LAL error-handler */
    lal_errhandler = LAL_ERR_EXIT;
@@ -246,11 +251,6 @@ int main(int argc, char *argv[]){
 
    /* read sfts */
    
-    /* new SFT I/O data types */
-    SFTCatalog *catalog = NULL;
-    static SFTConstraints constraints;
-
-
     /* set detector constraint */
     constraints.detector = NULL;
     constraints.timestamps = NULL;
@@ -350,9 +350,6 @@ int main(int argc, char *argv[]){
    for (fdotCounter = 0; fdotCounter < nfdotLoops; fdotCounter++) {
 
    fdot_current = uvar_fdot + (delta_fdot*fdotCounter);
-
-   MultiSFTVector *multiSFTs = NULL;
-
 
     /* read the sfts */
     /* first load them into a MultiSFTVector, then concatenate the various vectors into one*/
