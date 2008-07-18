@@ -697,11 +697,12 @@ ezxml_t ezxml_parse_fd(int fd)
 ezxml_t ezxml_parse_file(const char *file)
 {
     int fd = open(file, O_RDONLY, 0);
+    ezxml_t xml;
     if ( fd == -1 ) {
       fprintf (stderr, "\n'open()' failed: errno = %s\n\n", strerror(errno) );
       return NULL;
     }
-    ezxml_t xml = ezxml_parse_fd(fd);
+    xml = ezxml_parse_fd(fd);
     
     if (fd >= 0) close(fd);
     return xml;
