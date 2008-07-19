@@ -404,8 +404,6 @@ RCSID ("$Id$");
 */
 int main(INT4 argc,CHAR *argv[]) 
 {
-  setlocale(LC_ALL, "C");
-  
   PolkaConfigVars PCV; /* Configuration variables */
   REAL8 *LookupDelta1 = NULL;
   REAL8 *LookupDelta2 = NULL;
@@ -427,6 +425,7 @@ int main(INT4 argc,CHAR *argv[])
   INT4  AlphaTwoPiIdx=0, AlphaZeroIdx=0; /* Cell-index of an candidate events located at alpha=2*Pi*/
   
   LALStatus *lalStatus = &global_status;
+  setlocale(LC_ALL, "C");
   lalDebugLevel = 0 ;  
   vrbflg = 1;   /* verbose error-messages */
 
