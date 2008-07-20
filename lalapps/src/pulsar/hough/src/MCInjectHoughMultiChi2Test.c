@@ -198,6 +198,7 @@ int main(int argc, char *argv[]){
 
   /*UINT4 k , j ;*/
   
+  FILE  *fp = NULL;
   FILE  *fpPar = NULL;
   FILE  *fpH0 = NULL;
   FILE  *fpNc = NULL;
@@ -709,7 +710,6 @@ int main(int argc, char *argv[]){
   /* ****************************************************************/
   /*  HERE SHOULD START THE MONTE-CARLO */
   
-      FILE *fp=NULL;
       fp = fopen("./outChi2Test" , "w");
       setvbuf(fp, (char *)NULL, _IOLBF, 0);
 
@@ -827,14 +827,13 @@ int main(int argc, char *argv[]){
     SkyPosition      skypos;
     UINT4            iIFO, iSFT;
     UINT4 	      k, numsft;
+    MultiAMCoeffs   *multiAMcoef = NULL;
     
     weightsAM.length = mObsCoh;
     weightsAM.data = NULL;
     weightsAM.data = (REAL8 *)LALCalloc(mObsCoh, sizeof(REAL8));
     skypos.system = COORDINATESYSTEM_EQUATORIAL;
     
-    MultiAMCoeffs   *multiAMcoef = NULL;
-       
     skypos.longitude = pulsarInject.longitude;
     skypos.latitude  = pulsarInject.latitude;
     LAL_CALL ( LALGetMultiAMCoeffs ( &status, &multiAMcoef, mdetStates, skypos), &status);

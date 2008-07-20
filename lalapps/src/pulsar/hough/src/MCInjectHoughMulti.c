@@ -809,14 +809,13 @@ int main(int argc, char *argv[]){
     SkyPosition      skypos;
     UINT4            iIFO, iSFT;
     UINT4 	      k, numsft;
+    MultiAMCoeffs   *multiAMcoef = NULL;
     
     weightsAM.length = mObsCoh;
     weightsAM.data=NULL;
     weightsAM.data = (REAL8 *)LALCalloc(mObsCoh, sizeof(REAL8));
     skypos.system = COORDINATESYSTEM_EQUATORIAL;
     
-    MultiAMCoeffs   *multiAMcoef = NULL;
-       
     skypos.longitude = pulsarInject.longitude;
     skypos.latitude  = pulsarInject.latitude;
     LAL_CALL ( LALGetMultiAMCoeffs ( &status, &multiAMcoef, mdetStates, skypos), &status);
