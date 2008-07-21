@@ -37,7 +37,7 @@
 #include <string.h>
 #include "SFTReferenceLibrary.h"
 
-#define RCSID "$Id: splitSFTs.c,v 1.23 2008/07/21 12:20:12 bema Exp $"
+#define RCSID "$Id: splitSFTs.c,v 1.24 2008/07/21 12:39:55 bema Exp $"
 
 /* rounding (for positive numbers!)
    taken from SFTfileIO in LALSupport, should be consistent with that */
@@ -79,8 +79,8 @@ int main(int argc, char**argv) {
      (strcmp(argv[1], "--help") == 0)) {
     fprintf(stderr,
 	    "%s -h\n"
-	    "%s [-c 0|1|2] [-s <startbin>] [-e <endbin>] [-b <sftbins>]"
-	    " [-fs <startfrequency>] [-fe <endfrequency>] [-fb <frequencywidth>]"
+	    "%s [-c 0|1|2] [-s <startbin>] [-e <endbin (exclusively)>] [-b <sftbins>]"
+	    " [-fs <startfrequency>] [-fe <endfrequency (exclusively)>] [-fb <frequencywidth>]"
 	    " [-m <factor>] [-d <detector>] [-o <outputprefix>] -i <inputfile> ...\n",
 	    argv[0], argv[0]);
     exit(0);
@@ -227,7 +227,7 @@ int main(int argc, char**argv) {
     fclose(fp);
 
     /* loop over start bins for output SFTs */
-    for(bin = start; bin <= end; bin += width) {
+    for(bin = start; bin < end; bin += width) {
 
       int last_index = hd.firstfreqindex + hd.nsamples - 1;
       int last_bin = bin + width - 1;
