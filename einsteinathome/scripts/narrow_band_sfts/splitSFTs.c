@@ -37,7 +37,7 @@
 #include <string.h>
 #include "SFTReferenceLibrary.h"
 
-#define RCSID "$Id: splitSFTs.c,v 1.22 2008/07/21 12:10:21 bema Exp $"
+#define RCSID "$Id: splitSFTs.c,v 1.23 2008/07/21 12:20:12 bema Exp $"
 
 /* rounding (for positive numbers!)
    taken from SFTfileIO in LALSupport, should be consistent with that */
@@ -45,6 +45,10 @@
 
 #define FALSE 0
 #define TRUE (!FALSE)
+
+#define CMT_NONE 0
+#define CMT_OLD  1
+#define CMT_FULL 2
 
 /* error if value is nonzero */
 #define TRY(v,c,errex) { int r; if((r=(v))) { fprintf(stderr,c " (%d @ %d)\n", r, __LINE__); exit(errex); } }
@@ -65,7 +69,7 @@ int main(int argc, char**argv) {
   char *prefix = "";      /* output filename prefix */
   char *detector = NULL;  /* detector name */
   double factor = 1.0;    /* "mystery" factor */
-  int add_comment = TRUE; /* add RCSID and full command-line to every SFT file */
+  int add_comment = CMT_FULL; /* add RCSID and full command-line to every SFT file */
   unsigned int start = 0, end = 0, width = 0;   /* start, end and width in bins */
   double fMin = -1.0, fMax = -1.0, fWidth = -1.0; /* start, end and width in Hz */
 
@@ -75,38 +79,34 @@ int main(int argc, char**argv) {
      (strcmp(argv[1], "--help") == 0)) {
     fprintf(stderr,
 	    "%s -h\n"
-	    "%s [-c] [-s <startbin>] [-e <endbin>] [-b <sftbins>]"
+	    "%s [-c 0|1|2] [-s <startbin>] [-e <endbin>] [-b <sftbins>]"
 	    " [-fs <startfrequency>] [-fe <endfrequency>] [-fb <frequencywidth>]"
 	    " [-m <factor>] [-d <detector>] [-o <outputprefix>] -i <inputfile> ...\n",
 	    argv[0], argv[0]);
     exit(0);
   }
 
-  if (add_comment) {
-
-    /* record RCSID and command-line for the comment */
-    TRY((cmdline = (char*)malloc(strlen(RCSID)+2)) == NULL,
-	"out of memory allocating cmdline",1);
-    strcpy(cmdline,RCSID);
-    strcat(cmdline, "\n");
-    for(arg = 0; arg < argc; arg++) {
-      /* obscure the mystery factor */
-      if (strcmp(argv[arg], "-m") == 0) {
-	TRY((cmdline = (char*)realloc((void*)cmdline, strlen(cmdline) + 8)) == NULL,
-	    "out of memory allocating cmdline",2);
-	strcat(cmdline, "-m xxx ");
-	arg++;
-      } else {
-	TRY((cmdline = (char*)realloc((void*)cmdline, strlen(cmdline) + strlen(argv[arg]) + 2)) == NULL,
-	    "out of memory allocating cmdline",3);
-	strcat(cmdline, argv[arg]);
-	if(arg == argc - 1)
-	  strcat(cmdline, "\n");
-	else
-	  strcat(cmdline, " ");
-      }
+  /* record RCSID and command-line for the comment */
+  TRY((cmdline = (char*)malloc(strlen(RCSID)+2)) == NULL,
+      "out of memory allocating cmdline",1);
+  strcpy(cmdline,RCSID);
+  strcat(cmdline, "\n");
+  for(arg = 0; arg < argc; arg++) {
+    /* obscure the mystery factor */
+    if (strcmp(argv[arg], "-m") == 0) {
+      TRY((cmdline = (char*)realloc((void*)cmdline, strlen(cmdline) + 8)) == NULL,
+	  "out of memory allocating cmdline",2);
+      strcat(cmdline, "-m xxx ");
+      arg++;
+    } else {
+      TRY((cmdline = (char*)realloc((void*)cmdline, strlen(cmdline) + strlen(argv[arg]) + 2)) == NULL,
+	  "out of memory allocating cmdline",3);
+      strcat(cmdline, argv[arg]);
+      if(arg == argc - 1)
+	strcat(cmdline, "\n");
+      else
+	strcat(cmdline, " ");
     }
-
   }
 
   /* get parameters from command-line */
@@ -116,7 +116,7 @@ int main(int argc, char**argv) {
     } else if(strcmp(argv[arg], "-s") == 0) {
       start = atoi(argv[++arg]);
     } else if(strcmp(argv[arg], "-c") == 0) {
-      add_comment = FALSE;
+      add_comment = atoi(argv[++arg]);
     } else if(strcmp(argv[arg], "-e") == 0) {
       end = atoi(argv[++arg]);
     } else if(strcmp(argv[arg], "-b") == 0) {
@@ -188,7 +188,7 @@ int main(int argc, char**argv) {
       exit(10);
     }
 
-    if (add_comment) {
+    if (add_comment > CMT_OLD) {
 
       /* allocate space for new comment */
       TRY((comment = (char*)malloc(hd.comment_length + strlen(cmdline) + 1)) == NULL,
@@ -201,7 +201,7 @@ int main(int argc, char**argv) {
 	*comment = '\0';
       strcat(comment,cmdline);
 
-    } else {
+    } else if (add_comment == CMT_OLD) {
 
       comment = oldcomment;
 
@@ -254,7 +254,7 @@ int main(int argc, char**argv) {
     } /* loop over output SFTs */
 
     /* cleanup */
-    if (add_comment)
+    if (add_comment > CMT_OLD)
       free(comment);
     free(data);
 
@@ -262,7 +262,7 @@ int main(int argc, char**argv) {
 
   /* cleanup */
   free(outname);
-  if (add_comment)
+    if (add_comment > CMT_OLD)
     free(cmdline);
 
   return(0);
