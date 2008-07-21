@@ -1846,7 +1846,6 @@ paramData );
                              parameters */
 
   /* set initial chain parameters */
-  /*vars.h0 = 10.;*/
   vars.h0 = input.mesh.minVals.h0 + (REAL8)XLALUniformDeviate(randomParams) *
              (input.mesh.maxVals.h0 - input.mesh.minVals.h0);
   if( input.mcmc.nGlitches > 0 )
@@ -1857,9 +1856,6 @@ paramData );
               (input.mesh.maxVals.psi - input.mesh.minVals.psi);
   vars.ci = input.mesh.minVals.ci + (REAL8)XLALUniformDeviate(randomParams) *
             (input.mesh.maxVals.ci - input.mesh.minVals.ci);
-  /*vars.phi0 = 4.0653;
-  vars.psi = 0.0213;
-  vars.ci = 0.557;*/
 
   vars.Xplus = 0.5*(1.+vars.ci*vars.ci);
   vars.Xcross = vars.ci;
@@ -2032,38 +2028,6 @@ paramData );
         pulsarParamsNew.e3 = fabs(pulsarParamsNew.e3);
       else if( pulsarParamsNew.e3 >= 1. )
         pulsarParamsNew.e3 = 1. - fmod(pulsarParamsNew.e3, 1.);
-
-      /* if we're in a binary system once every ten jumps jump to a position
-         that is once wavelength away from the previous one - this is to stop
-         from getting stuck in local maxima */
-      /* if( pulsarParamsNew.model != NULL && fmod(i, 10) == 0 ){ */
-        /* just change x */
-        /* XLALNormalDeviates(randNum, randomParams);
-        if( randNum->data[0] < 0. ){
-          pulsarParamsNew.x += (1./(2.*pulsarParamsFixed.f0)) / (
-            cos(LAL_TWOPI*pulsarParamsFixed.T0) *
-            cos((LAL_TWOPI*-pulsarParamsFixed.T0)/pulsarParamsFixed.Pb +
-            pulsarParamsFixed.w0) + sin(LAL_TWOPI*pulsarParamsFixed.T0) *
-            sin((LAL_TWOPI*-pulsarParamsFixed.T0)/pulsarParamsFixed.Pb +
-            pulsarParamsFixed.w0) );
-        }
-        else{
-          pulsarParamsNew.x -= (1./(2.*pulsarParamsFixed.f0)) / (
-            cos(LAL_TWOPI*pulsarParamsFixed.T0) *
-            cos((LAL_TWOPI*-pulsarParamsFixed.T0)/pulsarParamsFixed.Pb +
-            pulsarParamsFixed.w0) + sin(LAL_TWOPI*pulsarParamsFixed.T0) *
-            sin((LAL_TWOPI*-pulsarParamsFixed.T0)/pulsarParamsFixed.Pb +
-            pulsarParamsFixed.w0) );
-        }
-        if(i==10){
-          fprintf(stderr, "x change = %lf\n",
-  (1./(2.*pulsarParamsFixed.f0)) / (cos(LAL_TWOPI*pulsarParamsFixed.T0)
-  *         cos((LAL_TWOPI*-pulsarParamsFixed.T0)/pulsarParamsFixed.Pb +
-            pulsarParamsFixed.w0) + sin(LAL_TWOPI*pulsarParamsFixed.T0) *
-            sin((LAL_TWOPI*-pulsarParamsFixed.T0)/pulsarParamsFixed.Pb +
-            pulsarParamsFixed.w0) ));
-        }
-      } */
     }
 
     varsNew.phi0 = vars.phi0 + input.mcmc.sigmas.phi0*randNum->data[1];
@@ -2456,7 +2420,7 @@ REAL8Vector *get_phi( DataStructure data, BinaryPulsarParams params,
     }
 
     /* linearly interpolate to get emitdt */
-    emitdt = (data.times->data[i] - (DTplus - interptime)) *
+    emitdt = emit.deltaT + (DT - (DTplus - interptime)) *
       (emit2.deltaT - emit.deltaT)/interptime;
 
     /* check if need to perform binary barycentring */
