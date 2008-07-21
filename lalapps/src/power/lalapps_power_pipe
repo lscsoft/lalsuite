@@ -148,7 +148,7 @@ def remove_too_short_segments(seglistdict, timing_params):
 	Remove segments from seglistdict that are too short to analyze.
 	"""
 	# CAUTION:  this function modifies seglistdict in place.
-	for seglist in seglistdict.itervalues():
+	for seglist in seglistdict.values():
 		for i in xrange(len(seglist) - 1, -1, -1):
 			if not power.segment_ok(timing_params, seglist[i]):
 				del seglist[i]
@@ -174,7 +174,7 @@ def compute_segment_lists(seglistdict, time_slides, minimum_gap, timing_params, 
 
 		# adjust surviving segment lengths up to the next integer
 		# number of PSDs
-		for seglist in new.itervalues():
+		for seglist in new.values():
 			# Try Adjusting Upper Bounds:
 
 			# count the number of PSDs in each segment
@@ -275,6 +275,17 @@ def group_coinc_parents(parents, time_slides, verbose = False):
 
 
 #
+# How to write an output cache
+#
+
+
+def write_output_cache(nodes, filename):
+	f = file(filename, "w")
+	for cache_entry, node in power.collect_output_caches(nodes):
+		print >>f, str(cache_entry)
+
+
+#
 # Command line
 #
 
@@ -363,44 +374,55 @@ datafinds = power.make_datafind_stage(dag, injection_seglistdict | background_se
 #
 
 
-# single-instrument trigger generation
+def make_noninjection_branch(dag, datafinds, seglistdict, time_slides, timing_params, psds_per_power, enable_clustering, tag, verbose = False):
+	# single-instrument trigger generation
 
 
-pwr_nodes = power.make_single_instrument_stage(dag, datafinds, background_seglistdict, options.tag, options.timing_params, options.psds_per_power, verbose = options.verbose)
-if options.enable_clustering:
-	if options.verbose:
-		print >>sys.stderr, "building pre-lladd bucluster jobs ..."
-	pwr_nodes = power.make_bucluster_fragment(dag, pwr_nodes, "PRELLADD_%s" % options.tag, verbose = options.verbose)
+	pwr_nodes = power.make_single_instrument_stage(dag, datafinds, seglistdict, tag, timing_params, psds_per_power, verbose = verbose)
+	if enable_clustering:
+		if verbose:
+			print >>sys.stderr, "building pre-lladd bucluster jobs ..."
+		pwr_nodes = power.make_bucluster_fragment(dag, pwr_nodes, "PRELLADD_%s" % tag, verbose = verbose)
 
 
-# coincidence analysis
+	# coincidence analysis
 
 
-coinc_nodes = set()
-for n, (time_slides_cache_entry, time_slides) in enumerate(background_time_slides.iteritems()):
-	if options.verbose:
-		print >>sys.stderr, "non-injections %d/%d (%s):" % (n + 1, len(background_time_slides), time_slides_cache_entry.path())
-	tisi_cache = set([time_slides_cache_entry])
-	nodes = set()
-	for seg, parents, cache in group_coinc_parents(pwr_nodes, time_slides, verbose = options.verbose):
-		nodes |= power.make_lladd_fragment(dag, parents, "%s_%d" % (options.tag, n), segment = seg, input_cache = cache, extra_input_cache = tisi_cache, preserve_cache = cache | tisi_cache)
-	if options.enable_clustering:
-		if options.verbose:
-			print >>sys.stderr, "building post-lladd bucluster jobs ..."
-		nodes = power.make_bucluster_fragment(dag, nodes, "POSTLLADD_%s_%d" % (options.tag, n), verbose = options.verbose)
-	if options.verbose:
-		print >>sys.stderr, "building burca jobs ..."
-	coinc_nodes |= power.make_burca_fragment(dag, nodes, "%s_%d" % (options.tag, n), verbose = options.verbose)
-	if options.verbose:
-		print >>sys.stderr, "done non-injections %d/%d" % (n + 1, len(background_time_slides))
+	coinc_nodes = set()
+	for n, (time_slides_cache_entry, these_time_slides) in enumerate(time_slides.items()):
+		if verbose:
+			print >>sys.stderr, "%s non-injections %d/%d (%s):" % (tag, n + 1, len(time_slides), time_slides_cache_entry.path())
+		tisi_cache = set([time_slides_cache_entry])
+		nodes = set()
+		for seg, parents, cache in group_coinc_parents(pwr_nodes, these_time_slides, verbose = verbose):
+			nodes |= power.make_lladd_fragment(dag, parents, "%s_%d" % (tag, n), segment = seg, input_cache = cache, extra_input_cache = tisi_cache, preserve_cache = cache | tisi_cache)
+		if enable_clustering:
+			if verbose:
+				print >>sys.stderr, "building post-lladd bucluster jobs ..."
+			nodes = power.make_bucluster_fragment(dag, nodes, "POSTLLADD_%s_%d" % (tag, n), verbose = verbose)
+		if verbose:
+			print >>sys.stderr, "building burca jobs ..."
+		coinc_nodes |= power.make_burca_fragment(dag, nodes, "%s_%d" % (tag, n), verbose = verbose)
+		if verbose:
+			print >>sys.stderr, "done %s non-injections %d/%d" % (tag, n + 1, len(time_slides))
 
 
-# conversion to SQLite database files
+	# conversion to SQLite database files
 
 
-if options.verbose:
-	print >>sys.stderr, "building sqlite jobs ..."
-coinc_nodes = power.make_sqlite_fragment(dag, coinc_nodes, options.tag, verbose = options.verbose)
+	if verbose:
+		print >>sys.stderr, "building sqlite jobs ..."
+	coinc_nodes = power.make_sqlite_fragment(dag, coinc_nodes, tag, verbose = verbose)
+
+
+	# done
+
+
+	write_output_cache(coinc_nodes, os.path.splitext(dag.get_dag_file())[0] + "_output.cache")
+	return coinc_nodes
+
+
+coinc_nodes = make_noninjection_branch(dag, datafinds, background_seglistdict, background_time_slides, options.timing_params, options.psds_per_power, options.enable_clustering, options.tag, verbose = options.verbose)
 
 
 #
@@ -408,79 +430,90 @@ coinc_nodes = power.make_sqlite_fragment(dag, coinc_nodes, options.tag, verbose 
 #
 
 
-# injection list generation
+def make_injection_branch(dag, datafinds, seglistdict, time_slides, timing_params, psds_per_power, enable_clustering, tag, verbose = False):
+	# injection list generation
 
 
-if options.do_injections:
-	if options.verbose:
-		print >>sys.stderr, "Building lalapps_binj jobs ..."
-	binjnodes = power.make_multibinj_fragment(dag, injection_seglistdict.extent_all(), "INJECTIONS_%s" % options.tag)
-	# add binj nodes as parents of the datafinds to force the binj's to
-	# be run first.  this ensures that once a datafind has run the
-	# power jobs that follow it will immediately be able to run, which
-	# helps depth-first dagman do smarter things.
-	for node in datafinds:
-		for binjnode in binjnodes:
-			node.add_parent(binjnode)
-else:
-	binjnodes = set()
+	if options.do_injections:
+		if verbose:
+			print >>sys.stderr, "Building lalapps_binj jobs ..."
+		binjnodes = power.make_multibinj_fragment(dag, seglistdict.extent_all(), "INJECTIONS_%s" % tag)
+		# add binj nodes as parents of the datafinds to force the binj's to
+		# be run first.  this ensures that once a datafind has run the
+		# power jobs that follow it will immediately be able to run, which
+		# helps depth-first dagman do smarter things.
+		for node in datafinds:
+			for binjnode in binjnodes:
+				node.add_parent(binjnode)
+	else:
+		binjnodes = set()
 
 
-# single-instrument trigger generation
+	# single-instrument trigger generation
 
 
-pwr_nodes = power.make_single_instrument_injections_stage(dag, datafinds, binjnodes, injection_seglistdict, "INJECTIONS_%s" % options.tag, options.timing_params, options.psds_per_injection, verbose = options.verbose)
-if options.enable_clustering:
-	if options.verbose:
-		print >>sys.stderr, "building pre-lladd bucluster jobs ..."
-	pwr_nodes = power.make_bucluster_fragment(dag, pwr_nodes, "INJECTIONS_PRELLADD_%s" % options.tag, verbose = options.verbose)
+	pwr_nodes = power.make_single_instrument_injections_stage(dag, datafinds, binjnodes, seglistdict, "INJECTIONS_%s" % tag, timing_params, psds_per_power, verbose = verbose)
+	if enable_clustering:
+		if verbose:
+			print >>sys.stderr, "building pre-lladd bucluster jobs ..."
+		pwr_nodes = power.make_bucluster_fragment(dag, pwr_nodes, "INJECTIONS_PRELLADD_%s" % tag, verbose = verbose)
 
 
-# coincidence analysis.  note that this loop constructs a broken dag if
-# there is more than one time slide file because it doesn't include n in
-# the node tags (so there will be duplicate node names and duplicate output
-# files), and because the lladd nodes' preserve caches don't save the
-# trigger files.  this is ok because the user can only provide one time
-# slide file on the command line.
+	# coincidence analysis.  note that this loop constructs a broken dag if
+	# there is more than one time slide file because it doesn't include n in
+	# the node tags (so there will be duplicate node names and duplicate output
+	# files), and because the lladd nodes' preserve caches don't save the
+	# trigger files.  this is ok because the user can only provide one time
+	# slide file on the command line.
 
 
-inj_coinc_nodes = set()
-binj_cache = set([cache_entry for node in binjnodes for cache_entry in node.get_output_cache()])
-for n, (time_slides_cache_entry, time_slides) in enumerate(injection_time_slides.iteritems()):
-	if options.verbose:
-		print >>sys.stderr, "injections %d/%d (%s):" % (n + 1, len(injection_time_slides), time_slides_cache_entry.path())
-	tisi_cache = set([time_slides_cache_entry])
-	nodes = set()
-	for seg, parents, cache in group_coinc_parents(pwr_nodes, time_slides, verbose = options.verbose):
-		nodes |= power.make_lladd_fragment(dag, parents | binjnodes, "INJECTIONS_%s" % options.tag, segment = seg, input_cache = cache | binj_cache, extra_input_cache = tisi_cache, preserve_cache = binj_cache | tisi_cache)
-	if options.enable_clustering:
-		if options.verbose:
-			print >>sys.stderr, "building post-lladd bucluster jobs ..."
-		nodes = power.make_bucluster_fragment(dag, nodes, "INJECTIONS_POSTLLADD_%s" % options.tag, verbose = options.verbose)
-	if options.verbose:
-		print >>sys.stderr, "building bucut jobs ..."
-	nodes = power.make_bucut_fragment(dag, nodes, "INJECTIONS_%s" % options.tag, verbose = options.verbose)
-	if options.verbose:
-		print >>sys.stderr, "building burca jobs ..."
-	inj_coinc_nodes |= power.make_burca_fragment(dag, nodes, "INJECTIONS_%s" % options.tag, verbose = options.verbose)
-	if options.verbose:
-		print >>sys.stderr, "done injections %d/%d" % (n + 1, len(background_time_slides) + 1)
+	coinc_nodes = set()
+	binj_cache = set([cache_entry for node in binjnodes for cache_entry in node.get_output_cache()])
+	for n, (time_slides_cache_entry, these_time_slides) in enumerate(time_slides.items()):
+		if verbose:
+			print >>sys.stderr, "%s injections %d/%d (%s):" % (tag, n + 1, len(time_slides), time_slides_cache_entry.path())
+		tisi_cache = set([time_slides_cache_entry])
+		nodes = set()
+		for seg, parents, cache in group_coinc_parents(pwr_nodes, these_time_slides, verbose = verbose):
+			nodes |= power.make_lladd_fragment(dag, parents | binjnodes, "INJECTIONS_%s" % tag, segment = seg, input_cache = cache | binj_cache, extra_input_cache = tisi_cache, preserve_cache = binj_cache | tisi_cache)
+		if enable_clustering:
+			if verbose:
+				print >>sys.stderr, "building post-lladd bucluster jobs ..."
+			nodes = power.make_bucluster_fragment(dag, nodes, "INJECTIONS_POSTLLADD_%s" % tag, verbose = verbose)
+		if verbose:
+			print >>sys.stderr, "building bucut jobs ..."
+		nodes = power.make_bucut_fragment(dag, nodes, "INJECTIONS_%s" % tag, verbose = verbose)
+		if verbose:
+			print >>sys.stderr, "building burca jobs ..."
+		coinc_nodes |= power.make_burca_fragment(dag, nodes, "INJECTIONS_%s" % tag, verbose = verbose)
+		if verbose:
+			print >>sys.stderr, "done %s injections %d/%d" % (tag, n + 1, len(time_slides) + 1)
 
 
-# injection identification
+	# injection identification
 
 
-if options.verbose:
-	print >>sys.stderr, "building binjfind jobs ..."
-inj_coinc_nodes = power.make_binjfind_fragment(dag, inj_coinc_nodes, "INJECTIONS_%s" % options.tag, verbose = options.verbose)
+	if verbose:
+		print >>sys.stderr, "building binjfind jobs ..."
+	coinc_nodes = power.make_binjfind_fragment(dag, coinc_nodes, "INJECTIONS_%s" % tag, verbose = verbose)
 
 
-# conversion to SQLite database files
+	# conversion to SQLite database files
 
 
-if options.verbose:
-	print >>sys.stderr, "building sqlite jobs ..."
-inj_coinc_nodes = power.make_sqlite_fragment(dag, inj_coinc_nodes, "INJECTIONS_%s" % options.tag, verbose = options.verbose)
+	if verbose:
+		print >>sys.stderr, "building sqlite jobs ..."
+	coinc_nodes = power.make_sqlite_fragment(dag, coinc_nodes, "INJECTIONS_%s" % tag, verbose = verbose)
+
+
+	# done
+
+
+	write_output_cache(coinc_nodes, os.path.splitext(dag.get_dag_file())[0] + "_output_injections.cache")
+	return coinc_nodes
+
+
+inj_coinc_nodes = make_injection_branch(dag, datafinds, injection_seglistdict, injection_time_slides, options.timing_params, options.psds_per_injection, options.enable_clustering, "RUN_0_%s" % options.tag, verbose = options.verbose)
 
 
 #
@@ -492,9 +525,3 @@ if options.verbose:
 	print >>sys.stderr, "writing dag ..."
 dag.write_sub_files()
 dag.write_dag()
-
-output_cache = [cache_entry for node in coinc_nodes | inj_coinc_nodes for cache_entry in node.get_output_cache()]
-output_cache.sort(lambda a, b: cmp(a.segment, b.segment))
-final_cache = file(os.path.splitext(filenames[0])[0] + "_output.cache", "w")
-for cache_entry in output_cache:
-	print >>final_cache, str(cache_entry)
