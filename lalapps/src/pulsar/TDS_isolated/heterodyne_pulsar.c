@@ -571,7 +571,7 @@ void get_input_args(InputParams *inputParams, int argc, char *argv[]){
     { "ephem-earth-file",         required_argument,  0, 'e' },
     { "ephem-sun-file",           required_argument,  0, 'S' },
     { "seg-file",                 required_argument,  0, 'l' },
-    { "calibrate",                no_argument, &inputParams->calibrate, 1 },
+    { "calibrate",                no_argument,     NULL, 'A' },
     { "response-file",            required_argument,  0, 'R' },
     { "coefficient-file",         required_argument,  0, 'C' },
     { "sensing-function",         required_argument,  0, 'F' },
@@ -580,14 +580,14 @@ void get_input_args(InputParams *inputParams, int argc, char *argv[]){
     { "freq-factor",              required_argument,  0, 'm' },
     { "scale-factor",             required_argument,  0, 'G' },
     { "high-pass-freq",           required_argument,  0, 'H' },
-    { "manual-epoch",           required_argument,  0, 'M' },
-    { "binary-input",             no_argument, &inputParams->binaryinput, 1 },
-    { "binary-output",            no_argument, &inputParams->binaryoutput, 1 },
-    { "verbose",                  no_argument, &inputParams->verbose, 1 },
+    { "manual-epoch",             required_argument,  0, 'M' },
+    { "binary-input",             no_argument,     NULL, 'B' },
+    { "binary-output",            no_argument,     NULL, 'b' },
+    { "verbose",                  no_argument,     NULL, 'v' },
     { 0, 0, 0, 0 }
   };
 
-  char args[] = "hi:p:z:f:g:k:s:r:d:c:o:e:S:l:R:C:F:O:T:m:G:H:M:";
+  char args[] = "hi:p:z:f:g:k:s:r:d:c:o:e:S:l:R:C:F:O:T:m:G:H:M:ABbv";
   char *program = argv[0];
 
   /* set defaults */
@@ -635,6 +635,9 @@ the pulsar parameter file */
       case 'h': /* help message */
         fprintf(stderr, USAGE, program);
         exit(0);
+      case 'v': /* verbose output */
+        inputParams->verbose = 1;
+        break;
       case 'i': /* interferometer */
         sprintf(inputParams->ifo, "%s", optarg);
         break;
@@ -644,6 +647,15 @@ the pulsar parameter file */
         break;
       case 'p': /* pulsar name */
         sprintf(inputParams->pulsar, "%s", optarg);
+        break;
+      case 'A': /* calibration flag */
+        inputParams->calibrate = 1;
+        break;
+      case 'B': /* input file is binary format */
+        inputParams->binaryinput = 1;
+        break;
+      case 'b': /* output file is to be in binary format */
+        inputParams->binaryoutput = 1;
         break;
       case 'f': /* initial heterodyne parameter file */
         sprintf(inputParams->paramfile, "%s", optarg);
