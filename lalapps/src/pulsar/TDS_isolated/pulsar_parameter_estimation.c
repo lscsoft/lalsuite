@@ -413,7 +413,7 @@ void get_input_args(InputParams *inputParams, INT4 argc, CHAR *argv[]){
   struct option long_options[] =
   {
     { "help",         no_argument,       0, 'h' },
-    { "verbose",      no_argument, &inputParams->verbose, 1 },
+    { "verbose",      no_argument,    NULL, 'R' },
     { "detectors",    required_argument, 0, 'D' },
     { "pulsar",       required_argument, 0, 'p' },
     { "par-file",     required_argument, 0, 'P' },
@@ -445,9 +445,9 @@ void get_input_args(InputParams *inputParams, INT4 argc, CHAR *argv[]){
     { "psisig",       required_argument, 0, 'Z' },
     { "cimean",       required_argument, 0, 'e' },
     { "cisig",        required_argument, 0, 'E' },
-    { "output-post",  no_argument, &inputParams->outputPost, 1 },
+    { "output-post",  no_argument,    NULL, 'f' },
     { "dob-ul",       required_argument, 0, 'd' },
-    { "mcmc",         no_argument, &inputParams->mcmc.doMCMC, 1 },
+    { "mcmc",         no_argument,    NULL, 'F' },
     { "iterations",   required_argument, 0, 'I' },
     { "burn-in",      required_argument, 0, 'x' },
     { "temperature",  required_argument, 0, 't' },
@@ -464,13 +464,13 @@ void get_input_args(InputParams *inputParams, INT4 argc, CHAR *argv[]){
     { "earth-ephem",  required_argument, 0, 'J' },
     { "sun-ephem",    required_argument, 0, 'M' },
     { "covariance",   required_argument, 0, 'r' },
-    { "use-priors",   no_argument, &inputParams->usepriors, 1 },
+    { "use-priors",   no_argument,    NULL, '>' },
     { 0, 0, 0, 0 }
   };
 
   CHAR args[] =
 "hD:p:P:i:o:a:A:j:b:B:k:s:S:m:c:C:n:l:L:q:Q:U:u:Y:T:v:V:z:Z:e:E:d:I:x:t:H:w:W:\
-y:g:G:K:N:X:O:J:M:r:" ;
+y:g:G:K:N:X:O:J:M:r:fFR>" ;
   CHAR *program = argv[0];
 
   /* set defaults */
@@ -546,6 +546,15 @@ y:g:G:K:N:X:O:J:M:r:" ;
       case 'h': /* help message */
         fprintf(stderr, USAGE, program);
         exit(0);
+      case 'R': /* verbose */
+        inputParams->verbose = 1;
+        break;
+      case 'f': /* output posterior distribution */
+        inputParams->outputPost = 1;
+        break;
+      case 'F': /* perform MCMC */
+        inputParams->mcmc.doMCMC = 1;
+        break;
       case 'D': /* detectors */
         sprintf(inputParams->detectors, "%s", optarg);
         break;
@@ -689,6 +698,9 @@ y:g:G:K:N:X:O:J:M:r:" ;
         break;
       case 'r':
         inputParams->matrixFile = optarg;
+        break;
+      case '>': /* use priors on parameters */
+        inputParams->usepriors = 1;
         break;
       case '?':
         fprintf(stderr, "Unknown error while parsing options\n");
@@ -1834,6 +1846,7 @@ paramData );
                              parameters */
 
   /* set initial chain parameters */
+  /*vars.h0 = 10.;*/
   vars.h0 = input.mesh.minVals.h0 + (REAL8)XLALUniformDeviate(randomParams) *
              (input.mesh.maxVals.h0 - input.mesh.minVals.h0);
   if( input.mcmc.nGlitches > 0 )
@@ -1844,6 +1857,9 @@ paramData );
               (input.mesh.maxVals.psi - input.mesh.minVals.psi);
   vars.ci = input.mesh.minVals.ci + (REAL8)XLALUniformDeviate(randomParams) *
             (input.mesh.maxVals.ci - input.mesh.minVals.ci);
+  /*vars.phi0 = 4.0653;
+  vars.psi = 0.0213;
+  vars.ci = 0.557;*/
 
   vars.Xplus = 0.5*(1.+vars.ci*vars.ci);
   vars.Xcross = vars.ci;
@@ -1933,7 +1949,10 @@ paramData );
 
     /* get new values of parameters using Gaussian proposal distributions */
     XLALNormalDeviates(randNum, randomParams);
-    varsNew.h0 = vars.h0 + input.mcmc.sigmas.h0*randNum->data[0];
+    /*if( i<input.mcmc.burnIn )
+      varsNew.h0 = vars.h0 + input.mcmc.sigmas.h0*50.0*randNum->data[0];
+    else*/
+      varsNew.h0 = vars.h0 + input.mcmc.sigmas.h0*randNum->data[0];
 
     below0 = 0;
     for( j = 0 ; j < nGlitches ; j++ ){
@@ -2013,6 +2032,38 @@ paramData );
         pulsarParamsNew.e3 = fabs(pulsarParamsNew.e3);
       else if( pulsarParamsNew.e3 >= 1. )
         pulsarParamsNew.e3 = 1. - fmod(pulsarParamsNew.e3, 1.);
+
+      /* if we're in a binary system once every ten jumps jump to a position
+         that is once wavelength away from the previous one - this is to stop
+         from getting stuck in local maxima */
+      /* if( pulsarParamsNew.model != NULL && fmod(i, 10) == 0 ){ */
+        /* just change x */
+        /* XLALNormalDeviates(randNum, randomParams);
+        if( randNum->data[0] < 0. ){
+          pulsarParamsNew.x += (1./(2.*pulsarParamsFixed.f0)) / (
+            cos(LAL_TWOPI*pulsarParamsFixed.T0) *
+            cos((LAL_TWOPI*-pulsarParamsFixed.T0)/pulsarParamsFixed.Pb +
+            pulsarParamsFixed.w0) + sin(LAL_TWOPI*pulsarParamsFixed.T0) *
+            sin((LAL_TWOPI*-pulsarParamsFixed.T0)/pulsarParamsFixed.Pb +
+            pulsarParamsFixed.w0) );
+        }
+        else{
+          pulsarParamsNew.x -= (1./(2.*pulsarParamsFixed.f0)) / (
+            cos(LAL_TWOPI*pulsarParamsFixed.T0) *
+            cos((LAL_TWOPI*-pulsarParamsFixed.T0)/pulsarParamsFixed.Pb +
+            pulsarParamsFixed.w0) + sin(LAL_TWOPI*pulsarParamsFixed.T0) *
+            sin((LAL_TWOPI*-pulsarParamsFixed.T0)/pulsarParamsFixed.Pb +
+            pulsarParamsFixed.w0) );
+        }
+        if(i==10){
+          fprintf(stderr, "x change = %lf\n",
+  (1./(2.*pulsarParamsFixed.f0)) / (cos(LAL_TWOPI*pulsarParamsFixed.T0)
+  *         cos((LAL_TWOPI*-pulsarParamsFixed.T0)/pulsarParamsFixed.Pb +
+            pulsarParamsFixed.w0) + sin(LAL_TWOPI*pulsarParamsFixed.T0) *
+            sin((LAL_TWOPI*-pulsarParamsFixed.T0)/pulsarParamsFixed.Pb +
+            pulsarParamsFixed.w0) ));
+        }
+      } */
     }
 
     varsNew.phi0 = vars.phi0 + input.mcmc.sigmas.phi0*randNum->data[1];
@@ -2238,9 +2289,9 @@ paramData );
 
     /* accept new values if Lnew/Lold >=1 (or log(Lnew/Lold) >= 0) */
     /* include simulated annealing factor */
-    if( i < input.mcmc.burnIn-1 ){
+    if( i < input.mcmc.burnIn - 1){
       ratio = input.mcmc.temperature * exp( log(1./input.mcmc.temperature) *
-              (double)i/(double)input.mcmc.burnIn) * (logL2 - logL1);
+        (double)i/(double)input.mcmc.burnIn ) * (logL2 - logL1);
     }
     else
       ratio = logL2 - logL1;
@@ -2338,7 +2389,7 @@ REAL8Vector *get_phi( DataStructure data, BinaryPulsarParams params,
   INT4 i=0;
 
   REAL8 T0=0., DT=0., DTplus=0., deltat=0., deltat2=0.;
-  REAL8 interptime = 600.; /* calulate every 10 mins (600 secs) */
+  REAL8 interptime = 1800.; /* calulate every 30 mins (1800 secs) */
 
   EarthState earth, earth2;
   EmissionTime emit, emit2;
@@ -2377,7 +2428,7 @@ REAL8Vector *get_phi( DataStructure data, BinaryPulsarParams params,
     else
       (*edat).leap = 14;
 
-    /* only do call the barycentring routines every 10 minutes, otherwise just
+    /* only do call the barycentring routines every 30 minutes, otherwise just
        linearly interpolate between them */
     if( i==0 || DT > DTplus ){
       bary.tgps.gpsSeconds = (UINT8)floor(data.times->data[i]);
@@ -2787,39 +2838,51 @@ REAL8Array *ReadCorrelationMatrix( CHAR *matrixFile,
 
   ParamData paramData[]=
   {
-    { "f0",    params.f0,     params.f0Err,      0 },
-    { "f1",    params.f1,     params.f1Err,      0 },
-    { "f2",    params.f2,     params.f2Err,      0 },
-    { "Dec",   params.dec,    params.decErr,     0 },
-    { "RA",    params.ra,     params.decErr,     0 },
-    { "pmdc",  params.pmdec,  params.pmdecErr,   0 },
-    { "pmra",  params.pmra,   params.pmraErr,    0 },
-    { "x",     params.x,      params.xErr,       0 },
-    { "e",     params.e,      params.eErr,       0 },
-    { "T0",    params.T0,     params.T0Err,      0 },
-    { "Pb",    params.Pb,     params.PbErr,      0 },
-    { "Om",    params.w0,     params.w0Err,      0 },
-    { "Omdt",  params.wdot,   params.wdotErr,    0 },
-    { "gamma", params.gamma,  params.gammaErr,   0 },
-    { "Pbdt",  params.Pbdot,  params.PbdotErr,   0 },
-    { "s",     params.s,      params.sErr,       0 },
-    { "M",     params.M,      params.MErr,       0 },
-    { "m2",    params.m2,     params.m2Err,      0 },
-    { "dth",   params.dth,    params.dthErr,     0 },
-    { "xdot",  params.xdot,   params.xdotErr,    0 },
-    { "edot",  params.edot,   params.edotErr,    0 },
-    { "x2",    params.x2,     params.x2Err,      0 },
-    { "e2",    params.e2,     params.e2Err,      0 },
-    { "T02",   params.T02,    params.T02Err,     0 },
-    { "Pb2",   params.Pb2,    params.Pb2Err,     0 },
-    { "Om2",   params.w02,    params.w02Err,     0 },
-    { "x3",    params.x3,     params.x3Err,      0 },
-    { "e3",    params.e3,     params.e3Err,      0 },
-    { "T03",   params.T03,    params.T03Err,     0 },
-    { "Pb3",   params.Pb3,    params.Pb3Err,     0 },
-    { "Om3",   params.w03,    params.w03Err,     0 },
-    { "Xpbd",  params.xpbdot, params.xpbdotErr,  0 }
+    { "f0",  0., 0., 0 },{ "f1",  0., 0., 0 },{ "f2",  0., 0., 0 },
+    { "Dec", 0., 0., 0 },{ "RA",  0., 0., 0 },{ "pmdc",0., 0., 0 },
+    { "pmra",0., 0., 0 },{ "x",   0., 0., 0 },{ "e",   0., 0., 0 },
+    { "T0",  0., 0., 0 },{ "Pb",  0., 0., 0 },{ "Om",  0., 0., 0 },
+    { "Omdt",0., 0., 0 },{ "gamma",0., 0., 0 },{ "Pbdt",0.,0., 0 },
+    { "s",   0., 0., 0 },{ "M",   0., 0., 0 },{ "m2",  0., 0., 0 },
+    { "dth", 0., 0., 0 },{ "xdot",0., 0., 0 },{ "edot",0., 0., 0 },
+    { "x2",  0., 0., 0 },{ "e2",  0., 0., 0 },{ "T02", 0., 0., 0 },
+    { "Pb2", 0., 0., 0 },{ "Om2", 0., 0., 0 },{ "x3",  0., 0., 0 },
+    { "e3",  0., 0., 0 },{ "T03", 0., 0., 0 },{ "Pb3", 0., 0., 0 },
+    { "Om3", 0., 0., 0 },{ "Xpbd",0., 0., 0 }
   };
+
+  paramData[0].val = params.f0;      paramData[0].sigma = params.f0Err;
+  paramData[1].val = params.f1;      paramData[1].sigma = params.f1Err;
+  paramData[2].val = params.f2;      paramData[2].sigma = params.f2Err;
+  paramData[3].val = params.dec;     paramData[3].sigma = params.decErr;
+  paramData[4].val = params.ra;      paramData[4].sigma = params.raErr;
+  paramData[5].val = params.pmdec;   paramData[5].sigma = params.pmdecErr;
+  paramData[6].val = params.pmra;    paramData[6].sigma = params.pmraErr;
+  paramData[7].val = params.x;       paramData[7].sigma = params.xErr;
+  paramData[8].val = params.e;       paramData[8].sigma = params.eErr;
+  paramData[9].val = params.T0;      paramData[9].sigma = params.T0Err;
+  paramData[10].val = params.Pb;     paramData[10].sigma = params.PbErr;
+  paramData[11].val = params.w0;     paramData[11].sigma = params.w0Err;
+  paramData[12].val = params.wdot;   paramData[12].sigma = params.wdotErr;
+  paramData[13].val = params.gamma;  paramData[13].sigma = params.gammaErr;
+  paramData[14].val = params.Pbdot;  paramData[14].sigma = params.PbdotErr;
+  paramData[15].val = params.s;      paramData[15].sigma = params.sErr;
+  paramData[16].val = params.M;      paramData[16].sigma = params.MErr;
+  paramData[17].val = params.m2;     paramData[17].sigma = params.m2Err;
+  paramData[18].val = params.dth;    paramData[18].sigma = params.dthErr;
+  paramData[19].val = params.xdot;   paramData[19].sigma = params.xdotErr;
+  paramData[20].val = params.edot;   paramData[20].sigma = params.edotErr;
+  paramData[21].val = params.x2;     paramData[21].sigma = params.x2Err;
+  paramData[22].val = params.e2;     paramData[22].sigma = params.e2Err;
+  paramData[23].val = params.T02;    paramData[23].sigma = params.T02Err;
+  paramData[24].val = params.Pb2;    paramData[24].sigma = params.Pb2Err;
+  paramData[25].val = params.w02;    paramData[25].sigma = params.w02Err;
+  paramData[26].val = params.x3;     paramData[26].sigma = params.x3Err;
+  paramData[27].val = params.e3;     paramData[27].sigma = params.e3Err;
+  paramData[28].val = params.T03;    paramData[28].sigma = params.T03Err;
+  paramData[29].val = params.Pb3;    paramData[29].sigma = params.Pb3Err;
+  paramData[30].val = params.w03;    paramData[30].sigma = params.w03Err;
+  paramData[31].val = params.xpbdot; paramData[31].sigma = params.xpbdotErr;
 
   arraySize = MAXPARAMS;
 
