@@ -37,7 +37,7 @@
 #include <string.h>
 #include "SFTReferenceLibrary.h"
 
-#define RCSID "$Id: splitSFTs.c,v 1.24 2008/07/21 12:39:55 bema Exp $"
+#define RCSID "$Id: splitSFTs.c,v 1.25 2008/07/21 13:33:05 bema Exp $"
 
 /* rounding (for positive numbers!)
    taken from SFTfileIO in LALSupport, should be consistent with that */
@@ -70,7 +70,7 @@ int main(int argc, char**argv) {
   char *detector = NULL;  /* detector name */
   double factor = 1.0;    /* "mystery" factor */
   int add_comment = CMT_FULL; /* add RCSID and full command-line to every SFT file */
-  unsigned int start = 0, end = 0, width = 0;   /* start, end and width in bins */
+  unsigned int start = 0, end = 0, width = 0;     /* start, end and width in bins */
   double fMin = -1.0, fMax = -1.0, fWidth = -1.0; /* start, end and width in Hz */
 
   /* help / usage message */
@@ -150,6 +150,8 @@ int main(int argc, char**argv) {
   /* loop over all input files
      first skip the "-i" option */
   for(arg++; arg < argc; arg++) {    
+
+    int first = TRUE;
 
     /* open input SFT */
     TRY((fp = fopen(argv[arg], "r")) == NULL,
@@ -238,15 +240,30 @@ int main(int argc, char**argv) {
       /* construct output SFT filename */
       sprintf(outname, "%s%d", prefix, bin);
 
+      /* find out if the file is aready there */
+      if (first)
+	if ((fp = fopen(outname,"r")) != NULL) {
+	  fclose(fp);
+	  first = FALSE;
+	}
+
       /* append the SFT to the "merged" SFT with the same name */
       TRY((fp = fopen(outname,"a")) == NULL,
 	  "could not open SFT for writing",13);
 
-      /* write the data */
-      TRYSFT(WriteSFT(fp, hd.gps_sec, hd.gps_nsec, hd.tbase, 
-		      bin, this_width, detector, comment,
-		      data + 2 * (bin - hd.firstfreqindex)),
-	  "could not write SFT data");
+      /* write the data
+	 write the comment only to the first SFT in a merged file */
+      if (first) {
+	TRYSFT(WriteSFT(fp, hd.gps_sec, hd.gps_nsec, hd.tbase, 
+			bin, this_width, detector, comment,
+			data + 2 * (bin - hd.firstfreqindex)),
+	       "could not write SFT data");
+      } else {
+	TRYSFT(WriteSFT(fp, hd.gps_sec, hd.gps_nsec, hd.tbase, 
+			bin, this_width, detector, NULL,
+			data + 2 * (bin - hd.firstfreqindex)),
+	       "could not write SFT data");
+      }
 
       /* cleanup */
       fclose(fp);
