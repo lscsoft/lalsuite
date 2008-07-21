@@ -37,16 +37,16 @@
 #include <string.h>
 #include "SFTReferenceLibrary.h"
 
-#define RCSID "$Id: splitSFTs.c,v 1.20 2008/07/16 09:36:45 bema Exp $"
+#define RCSID "$Id: splitSFTs.c,v 1.21 2008/07/21 09:48:53 bema Exp $"
 
 /* rounding (for positive numbers!)
    taken from SFTfileIO in LALSupport, should be consistent with that */
 #define MYROUND(x) ( floor( (x) + 0.5 ) )
 
 /* error if value is nonzero */
-#define TRY(v,c) { int r; if((r=(v))) { fprintf(stderr,c " (%d)\n", r); exit(r); } }
+#define TRY(v,c,errex) { int r; if((r=(v))) { fprintf(stderr,c " (%d @ %d)\n", r, __LINE__); exit(errex); } }
 /* for SFT library calls write out the corresponding SFTErrorMessage, too */
-#define TRYSFT(v,c) { int r; if((r=(v))) { fprintf(stderr,c " (%s)\n", SFTErrorMessage(r)); exit(r); } }
+#define TRYSFT(v,c) { int r; if((r=(v))) { fprintf(stderr,c " (%s @ %d)\n", SFTErrorMessage(r), __LINE__); exit(r); } }
 
 int main(int argc, char**argv) {
   unsigned int arg;       /* current command-line argument */
@@ -80,19 +80,19 @@ int main(int argc, char**argv) {
 
   /* record RCSID and command-line for the comment */
   TRY((cmdline = (char*)malloc(strlen(RCSID)+2)) == NULL,
-      "out of memory allocating cmdline");
+      "out of memory allocating cmdline",1);
   strcpy(cmdline,RCSID);
   strcat(cmdline, "\n");
   for(arg = 0; arg < argc; arg++) {
     /* obscure the mystery factor */
     if (strcmp(argv[arg], "-m") == 0) {
       TRY((cmdline = (char*)realloc((void*)cmdline, strlen(cmdline) + 8)) == NULL,
-	  "out of memory allocating cmdline");
+	  "out of memory allocating cmdline",2);
       strcat(cmdline, "-m xxx ");
       arg++;
     } else {
       TRY((cmdline = (char*)realloc((void*)cmdline, strlen(cmdline) + strlen(argv[arg]) + 2)) == NULL,
-	  "out of memory allocating cmdline");
+	  "out of memory allocating cmdline",3);
       strcat(cmdline, argv[arg]);
       if(arg == argc - 1)
 	strcat(cmdline, "\n");
@@ -130,12 +130,12 @@ int main(int argc, char**argv) {
   }
 
   /* check if there was a "-i" at all */
-  TRY(argv[arg] == NULL, "no input files specified");
-  TRY(strcmp(argv[arg], "-i") != 0, "no input files specified");
+  TRY(argv[arg] == NULL, "no input files specified",4);
+  TRY(strcmp(argv[arg], "-i") != 0, "no input files specified",5);
 
   /* allocate space for output filename */
   TRY((outname = (char*)malloc(strlen(prefix) + 20)) == NULL,
-      "out of memory allocating outname");
+      "out of memory allocating outname",6);
 
   /* loop over all input files
      first skip the "-i" option */
@@ -143,7 +143,7 @@ int main(int argc, char**argv) {
 
     /* open input SFT */
     TRY((fp = fopen(argv[arg], "r")) == NULL,
-	"could not open SFT file for reading");
+	"could not open SFT file for reading",7);
     
     /* read header */
     TRYSFT(ReadSFTHeader(fp, &hd, &oldcomment, &swap, 1),
@@ -160,14 +160,14 @@ int main(int argc, char**argv) {
     
     /* allocate space for SFT data */
     TRY((data = (float*)calloc(hd.nsamples, 2*sizeof(float))) == NULL,
-	"out of memory allocating data");
+	"out of memory allocating data",8);
 
     /* error if start < hd.firstfreqindex */
     if(start < hd.firstfreqindex) {
       fprintf(stderr,
 	      "ERROR: start bin (%d) is smaller than first bin in input SFT (%d)\n",
 	      start, hd.firstfreqindex);
-      exit(123);
+      exit(9);
     }
 
     /* error if end > hd.firstfreqindex + hd.nsamples - 1 */
@@ -175,12 +175,12 @@ int main(int argc, char**argv) {
       fprintf(stderr,
 	      "ERROR: end bin (%d) is larger than last bin in input SFT (%d)\n",
 	      end, hd.firstfreqindex+hd.nsamples - 1);
-      exit(124);
+      exit(10);
     }
 
     /* allocate space for new comment */
     TRY((comment = (char*)malloc(hd.comment_length + strlen(cmdline) + 1)) == NULL,
-	"out of memory allocating comment");
+	"out of memory allocating comment",11);
 
     /* append the commandline of this program to the old comment */
     if (oldcomment)
@@ -195,7 +195,7 @@ int main(int argc, char**argv) {
       detector = hd.detector;
 
     /* if no detector has been specified, issue an error */
-    TRY(detector == NULL, "When reading v1 SFTs a detector needs to be specified with -d");
+    TRY(detector == NULL, "When reading v1 SFTs a detector needs to be specified with -d",12);
 
     /* read in complete SFT data */
     TRYSFT(ReadSFTData(fp, data, hd.firstfreqindex, hd.nsamples, NULL, NULL),
@@ -222,7 +222,7 @@ int main(int argc, char**argv) {
 
       /* append the SFT to the "merged" SFT with the same name */
       TRY((fp = fopen(outname,"a")) == NULL,
-	  "could not open SFT for writing");
+	  "could not open SFT for writing",13);
 
       /* write the data */
       TRYSFT(WriteSFT(fp, hd.gps_sec, hd.gps_nsec, hd.tbase, 
