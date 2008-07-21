@@ -37,7 +37,7 @@
 #include <string.h>
 #include "SFTReferenceLibrary.h"
 
-#define RCSID "$Id: splitSFTs.c,v 1.25 2008/07/21 13:33:05 bema Exp $"
+#define RCSID "$Id: splitSFTs.c,v 1.26 2008/07/21 13:54:57 bema Exp $"
 
 /* rounding (for positive numbers!)
    taken from SFTfileIO in LALSupport, should be consistent with that */
@@ -151,8 +151,6 @@ int main(int argc, char**argv) {
      first skip the "-i" option */
   for(arg++; arg < argc; arg++) {    
 
-    int first = TRUE;
-
     /* open input SFT */
     TRY((fp = fopen(argv[arg], "r")) == NULL,
 	"could not open SFT file for reading",7);
@@ -240,20 +238,13 @@ int main(int argc, char**argv) {
       /* construct output SFT filename */
       sprintf(outname, "%s%d", prefix, bin);
 
-      /* find out if the file is aready there */
-      if (first)
-	if ((fp = fopen(outname,"r")) != NULL) {
-	  fclose(fp);
-	  first = FALSE;
-	}
-
       /* append the SFT to the "merged" SFT with the same name */
       TRY((fp = fopen(outname,"a")) == NULL,
 	  "could not open SFT for writing",13);
 
       /* write the data
-	 write the comment only to the first SFT in a merged file */
-      if (first) {
+	 write the comment only to the first SFT of a "block" */
+      if (bin == start) {
 	TRYSFT(WriteSFT(fp, hd.gps_sec, hd.gps_nsec, hd.tbase, 
 			bin, this_width, detector, comment,
 			data + 2 * (bin - hd.firstfreqindex)),
