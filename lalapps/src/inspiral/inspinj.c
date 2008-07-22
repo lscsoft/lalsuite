@@ -639,7 +639,7 @@ int main( int argc, char *argv[] )
   gpsEndTime.gpsSeconds=-1;
 
   /* getopt arguments */
-  /* available letters: v x y z H Q R S T W X Y  */
+  /* available letters: v z H S T W */
   struct option long_options[] =
   {
     {"help",                          no_argument, 0,                'h'},
