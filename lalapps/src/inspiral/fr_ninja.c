@@ -50,10 +50,6 @@ RCSID("$Id$");
 #define CVS_DATE "$Date$"
 #define PROGRAM_NAME "fr_ninja"
 
-/* true/false */
-#define TRUE {1==1}
-#define FALSE {1==0}
-
 /* defines */
 /* TODO: how long can a FrHistory comment string be? */
 #define HISTORY_COMMENT 512
@@ -91,7 +87,7 @@ INT4 main(INT4 argc, CHAR **argv)
 
   /* metadata parsing variables */
   LALParsedDataFile *meta_file = NULL;
-  BOOLEAN wasRead = FALSE;
+  BOOLEAN wasRead = 0;
   CHAR *simulation_details = NULL;
   CHAR *nr_group = NULL;
   CHAR *email = NULL;
@@ -411,8 +407,6 @@ INT4 main(INT4 argc, CHAR **argv)
     exit(1);
   }
 
-
-
   /*
    * clear memory
    */
@@ -446,7 +440,7 @@ INT4 main(INT4 argc, CHAR **argv)
     for (m = (MAX_L - l); m <= MAX_L + l; m++)
     {
       /* channel names */
-      if (plus_channel[l][m]) 
+      if (plus_channel[l][m])
         LALFree(plus_channel[l][m]);
 
       if (cross_channel[l][m])

@@ -90,9 +90,6 @@ LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 /* function prototypes */
 
 
-#define TRUE (1==1)
-#define FALSE (1==0)
-
 #define NINJA_SEPARATOR ';'
 
 /* verbose flag */
@@ -172,7 +169,7 @@ int main( INT4 argc, CHAR *argv[] )
   UINT4 k;
 
   /* user input variables */
-  BOOLEAN  uvar_help = FALSE;
+  BOOLEAN  uvar_help = 0;
   CHAR *uvar_nrDir=NULL;
   CHAR *uvar_pattern=NULL;
   CHAR *uvar_nrGroup=NULL;
@@ -533,8 +530,8 @@ int metadata_in_range(NinjaMetaData *data, NrParRange *range)
 {
 
   INT4 ret, k;
-  BOOLEAN flag = FALSE;
-  BOOLEAN groupflag = FALSE;
+  BOOLEAN flag = 0;
+  BOOLEAN groupflag = 0;
 
   flag = (data->massRatio >= range->massRatioMin) && (data->massRatio <= range->massRatioMax);
   flag = flag && (data->spin1[0] >= range->sx1Min) && (data->spin1[0] <= range->sx1Max);
@@ -546,13 +543,13 @@ int metadata_in_range(NinjaMetaData *data, NrParRange *range)
 
   for (k = 0; k < range->numGroups; k++) {
     if ( range->grouplist[k] == data->group )
-      groupflag = TRUE;
+      groupflag = 1;
   }
 
   /* if numgroups == 0 then user did not enter any groups and 
      so we must select all groups */
   if ( range->numGroups == 0)
-    groupflag = TRUE;
+    groupflag = 1;
 
   flag = flag && groupflag;
 
