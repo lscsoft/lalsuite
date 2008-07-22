@@ -26,7 +26,7 @@
 #include <lal/LALAtomicDatatypes.h>
 #include <lal/LALDatatypes.h>
 #include <lal/AVFactories.h>
-#include <lal/SkyCoordinates.h> 
+#include <lal/SkyCoordinates.h>
 #include <lal/DetectorSite.h>
 #include <lal/DetResponse.h>
 #include <lal/BinaryPulsarTiming.h>
@@ -177,7 +177,7 @@ typedef struct tagMCMCParams{
   INT4 doMCMC;                     /* flag can be true 1 or false 0 */
   INT4 iterations;                 /* length of MCMC chain */
   INT4 burnIn;                     /* length of burn in period */
-  INT4 temperature;                /* temperature of simulated annealing during
+  REAL8 temperature;               /* temperature of simulated annealing during
                                       burn in */
   IntrinsicPulsarVariables sigmas; /* standard deviations of the proposal
                                       distributions */
