@@ -344,10 +344,10 @@ int main( int argc, char *argv[] )
     
       case 'g':
         fLow = (INT4) atof( optarg );
-        if ( fLow < 40 )
+        if ( fLow > 40 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
-              "f-lower must be > 40Hz (%e specified)\n",
+              "f-lower must be < 40Hz (%e specified)\n",
               long_options[option_index].name, fLow );
           exit( 1 );
         }
