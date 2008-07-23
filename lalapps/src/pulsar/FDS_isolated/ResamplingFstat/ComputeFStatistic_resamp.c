@@ -2275,6 +2275,9 @@ REAL8Sequence* ResampleSeries(REAL8Sequence *X_Real,REAL8Sequence *X_Imag,REAL8S
   
   REAL8Sequence* CorrespondingDetTimes = (REAL8Sequence*)XLALCreateREAL8Sequence(length);
 
+  REAL8 x,y;
+  REAL8 X0 = DetectorTimes->data[0] - TSFT/2.0;
+
   gsl_interp_accel *accl = gsl_interp_accel_alloc();
   gsl_spline *splineinter;
     if (interptype == 3)
@@ -2290,10 +2293,6 @@ REAL8Sequence* ResampleSeries(REAL8Sequence *X_Real,REAL8Sequence *X_Imag,REAL8S
 	gsl_interp_init(lininter,DetectorTimes->data,BaryTimes->data,interp_length);
       }
 
-  REAL8 x,y;
-  REAL8 X0 = DetectorTimes->data[0] - TSFT/2.0;
-  
-  
   for(i=0;i<length;i++)
     {
       x = X0 + i*dt;
