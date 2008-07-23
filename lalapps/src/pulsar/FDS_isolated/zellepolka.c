@@ -2315,7 +2315,7 @@ ReadOneCandidateFileV2( LALStatus *lalStatus,
       ABORT (lalStatus, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
     }
 
-  /* output a record of the running checksun amd byte count */
+  /* output a record of the running checksun and byte count */
   fprintf(stdout, "%% %s: bytecount %" LAL_UINT4_FORMAT " checksum %" LAL_UINT4_FORMAT "\n", fname, bytecount, checksum);
 
   /* check validity of this Fstats-file */
@@ -2590,8 +2590,8 @@ ReadOneCandidateFile( LALStatus *lalStatus,
       ABORT (lalStatus, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
     }
 
-  /* output a record of the running checksun amd byte count */
-  LALPrintError( "%% %s: bytecount %" LAL_UINT4_FORMAT " checksum %" LAL_UINT4_FORMAT "\n", fname, bytecount, checksum);
+  /* output a record of the running checksun and byte count */
+  fprintf(stdout, "%% %s: bytecount %" LAL_UINT4_FORMAT " checksum %" LAL_UINT4_FORMAT "\n", fname, bytecount, checksum);
 
   /* check validity of this Fstats-file */
   if ( strcmp(line1, DONE_MARKER ) ) 
