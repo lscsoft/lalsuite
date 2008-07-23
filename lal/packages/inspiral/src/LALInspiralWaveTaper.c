@@ -73,7 +73,7 @@ void LALInspiralWaveTaper(
                    REAL4Vector *signal,
                    UINT4       bookends)
 { /* </lalVerbatim>  */
-
+ 
   UINT4 i, start, end, mid, n; /* indices */
   UINT4 flag, safe = 1;
   UINT4 length;   
@@ -104,7 +104,6 @@ void LALInspiralWaveTaper(
     }
     i++;
   }  
-  
   flag = 0;
   i = length - 1;
   while(flag == 0)
@@ -116,20 +115,21 @@ void LALInspiralWaveTaper(
     }
     i--;
   }        
+  
+
   /* Check we have more than 2 data points */
-	if((end - start) <= 1)
+  if((end - start) <= 1)
   {
     LALWarning( status, "Data less than 3 points, cannot taper!" );
-	  safe = 0;
-	}
+    safe = 0;
+  }
 
-	if( safe == 1)
-	{
-	  /* Calculate middle point in case of short waveform */    
+  if( safe == 1)
+  {
+    /* Calculate middle point in case of short waveform */    
     mid = (start+end)/2;
 
-  
-	  /* If requested search for second peak from start and taper */
+    /* If requested search for second peak from start and taper */
     if( bookends != 2 )
     {
       flag = 0;
@@ -141,16 +141,21 @@ void LALInspiralWaveTaper(
           {
             if( fabs(signal->data[i]) == fabs(signal->data[i+1]) )
               i++;
-              flag++;
-              n = i - start;
+            flag++;
+            n = i - start;
           }
         i++;
       }
       /* Have we reached the middle? */
       if( flag < 2)
+      {
         n = mid;
+        /* Was it an even length vector? */
+        if( mid*2 < end )
+          mid++;
+      }
 
-		  /* Taper to that point */
+      /* Taper to that point */
       realN = (REAL4)(n);
       signal->data[start] = 0.0;
       for(i=start+1; i < n-1; i++)
@@ -162,8 +167,7 @@ void LALInspiralWaveTaper(
       }
     }     
   
-
-	  /* If requested search for second peak from end */
+    /* If requested search for second peak from end */
     if( bookends > 1 )
     {    
       i = end - 1;
@@ -183,10 +187,10 @@ void LALInspiralWaveTaper(
       /* Have we reached the middle? */
       if( flag < 2)
       {
-		    n = mid;
+        n = mid;
         /* Was it an even length vector? */
-			  if( mid*2 < end )
-		      mid++;
+        if( mid*2 < end )
+          mid++;
       }
 
       /* Taper to that point */
