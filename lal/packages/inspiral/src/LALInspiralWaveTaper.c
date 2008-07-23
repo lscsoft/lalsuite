@@ -148,12 +148,7 @@ void LALInspiralWaveTaper(
       }
       /* Have we reached the middle? */
       if( flag < 2)
-      {
         n = mid;
-        /* Was it an even length vector? */
-        if( mid*2 < end )
-          mid++;
-      }
 
       /* Taper to that point */
       realN = (REAL4)(n);
@@ -187,10 +182,12 @@ void LALInspiralWaveTaper(
       /* Have we reached the middle? */
       if( flag < 2)
       {
-        n = mid;
-        /* Was it an even length vector? */
-        if( mid*2 < end )
+        /* Was it an even length vector? As we find the middle from the
+           begining of the array if it is an even length vector we need
+           to increment one as though we found the middle from the end */
+        if( (2*mid - start) < end )
           mid++;
+        n = mid;
       }
 
       /* Taper to that point */
