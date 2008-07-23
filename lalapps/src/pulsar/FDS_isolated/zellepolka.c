@@ -2316,7 +2316,7 @@ ReadOneCandidateFileV2( LALStatus *lalStatus,
     }
 
   /* output a record of the running checksun amd byte count */
-  LALPrintError( "%% %s: bytecount %" LAL_UINT4_FORMAT " checksum %" LAL_UINT4_FORMAT "\n", fname, bytecount, checksum);
+  fprintf(stdout, "%% %s: bytecount %" LAL_UINT4_FORMAT " checksum %" LAL_UINT4_FORMAT "\n", fname, bytecount, checksum);
 
   /* check validity of this Fstats-file */
   if ( strcmp(line1, DONE_MARKER ) ) 
