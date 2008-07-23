@@ -60,7 +60,7 @@ typedef enum
   unknownInclDist,
   uniformInclDist,
   gaussianInclDist,
-	fixedInclDist
+  fixedInclDist
 } 
 InclDistribution;
 
