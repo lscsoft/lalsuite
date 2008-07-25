@@ -647,7 +647,7 @@ int main( int argc, char *argv[] )
   gpsEndTime.gpsSeconds=-1;
 
   /* getopt arguments */
-  /* available letters: T W H */
+  /* available letters: H */
   struct option long_options[] =
   {
     {"help",                          no_argument, 0,                'h'},
@@ -700,8 +700,8 @@ int main( int argc, char *argv[] )
     {"max-spin2",               required_argument, 0,                'U'},
     {"output",                  required_argument, 0,                'P'},
     {"version",                 no_argument,       0,                'V'},
-    {"enable-spin",             no_argument,       &spinInjections,    1},
-    {"disable-spin",            no_argument,       &spinInjections,    0},
+    {"enable-spin",             no_argument,       0,                'T'},
+    {"disable-spin",            no_argument,       0,                'W'},
     {"write-compress",          no_argument,       &outCompress,       1},
     {0, 0, 0, 0}
   };
@@ -1326,6 +1326,7 @@ int main( int argc, char *argv[] )
           next_process_param( long_options[option_index].name,
               "float", "%le", maxSpin2 );
         break;
+
       case 'V':
         /* print version information and exit */
         fprintf( stdout, "LIGO/LSC inspiral injection engine\n"
@@ -1333,6 +1334,22 @@ int main( int argc, char *argv[] )
             "CVS Version: " CVS_ID_STRING "\n"
             "CVS Tag: " CVS_NAME_STRING "\n" );
         exit( 0 );
+        break;
+
+      case 'T':
+        /* enable spining injections */
+        this_proc_param = this_proc_param->next = 
+          next_process_param( long_options[option_index].name, "string", 
+              "" );
+        spinInjections = 1;
+        break;
+
+      case 'W':
+        /* disable spining injections */
+        this_proc_param = this_proc_param->next = 
+          next_process_param( long_options[option_index].name, "string", 
+              "" );
+        spinInjections = 0;
         break;
 
       case 'h':
