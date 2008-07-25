@@ -119,6 +119,9 @@ REAL4 minMassRatio=-1.0;
 REAL4 maxMassRatio=-1.0;
 REAL4 inclStd=-1.0;
 REAL4 fixed_inc=0.0;
+REAL4 psi=0.0;
+REAL4 longitude=0.0;
+REAL4 latitude=0.0;
 int spinInjections=-1;
 REAL4 minSpin1=-1.0;
 REAL4 maxSpin1=-1.0;
@@ -228,6 +231,9 @@ static void print_usage(char *program)
       "                           source: use locations from source-file\n"\
       "                           exttrig: use external trigger file\n"\
       "                           random: uses random locations\n"\
+      "                           fixed: set fixed location\n"\
+      " [--longitude] longitude   read longitude if fixed value (degrees)\n"
+      " [--latitude] latitude     read latitide if fixed value (degrees)\n"
       "  --d-distr distDist       set the distance distribution of injections\n"\
       "                           source: take distance from galaxy source file\n"\
       "                           uniform: uniform distribution in distance\n"\
@@ -237,6 +243,8 @@ static void print_usage(char *program)
       "                           uniform: distribute uniformly over arccos(i)\n"\
       "                           gaussian: gaussian distributed in arccos(i)\n"\
       "                           fixed: no distribution, fixed valued of (i)\n"\
+      " --polarization psi        set the polarization angle for all \n"
+      "                           injections (degrees)\n"\
       " [--inclStd]  incStd       std dev for gaussian inclination dist\n"\
       " [--fixed-inc]  fixed_inc  read inclination dist if fixed value (degrees)\n"\
       " [--source-file] sources   read source parameters from sources\n"\
@@ -639,7 +647,7 @@ int main( int argc, char *argv[] )
   gpsEndTime.gpsSeconds=-1;
 
   /* getopt arguments */
-  /* available letters: v z H S T W */
+  /* available letters: T W H */
   struct option long_options[] =
   {
     {"help",                          no_argument, 0,                'h'},
@@ -674,9 +682,12 @@ int main( int argc, char *argv[] )
     {"max-distance",            required_argument, 0,                'r'},
     {"d-distr",                 required_argument, 0,                'e'},
     {"l-distr",                 required_argument, 0,                'l'},
+    {"longitude",               required_argument, 0,                'v'},
+    {"latitude",                required_argument, 0,                'z'},
     {"i-distr",                 required_argument, 0,                'I'},
     {"inclStd",                 required_argument, 0,                'B'},
     {"fixed-inc",               required_argument, 0,                'C'},
+    {"polarization",            required_argument, 0,                'S'},
     {"enable-milkyway",         required_argument, 0,                'M'},
     {"disable-milkyway",        no_argument,       0,                'D'},
     {"min-spin1",               required_argument, 0,                'g'},
@@ -1151,6 +1162,10 @@ int main( int argc, char *argv[] )
         else if (!strcmp(dummy, "random")) 
         {
           lDistr=uniformSkyLocation;        
+        }
+        else if(!strcmp(dummy, "fixed"))
+        {
+          lDistr=fixedSkyLocation;    
         } 
         else
         {
@@ -1161,6 +1176,22 @@ int main( int argc, char *argv[] )
           exit( 1 );
         }
 
+        break;
+
+      case 'v':
+        /* fixed location (longitude) */
+        longitude = (REAL4) atof( optarg );
+        this_proc_param = this_proc_param->next = 
+          next_process_param( long_options[option_index].name, 
+              "float", "%e", longitude );
+        break;
+
+      case 'z':
+        /* fixed location (latitude) */
+        latitude = (REAL4) atof( optarg );
+        this_proc_param = this_proc_param->next = 
+          next_process_param( long_options[option_index].name, 
+              "float", "%e", latitude );
         break;
 
       case 'I':
@@ -1223,6 +1254,14 @@ int main( int argc, char *argv[] )
               "float", "%e", fixed_inc );
         break;
 
+      case 'S':
+        /* set the polarization angle */
+        psi = (REAL4) atof( optarg )/180.*LAL_PI;
+        this_proc_param = this_proc_param->next = 
+          next_process_param( long_options[option_index].name, 
+              "float", "%e", psi );
+        break;
+ 
       case 'P':
         optarg_len = strlen( optarg ) + 1;
         outputFileName = calloc( 1, optarg_len * sizeof(char) );
@@ -1718,6 +1757,11 @@ int main( int argc, char *argv[] )
     {
       drawLocationFromExttrig( simTable );
     }
+    else if ( lDistr == fixedSkyLocation)
+    {
+      simTable->longitude = longitude;
+      simTable->latitude = latitude;
+    }
     else
     {
       simTable=XLALRandomInspiralSkyLocation(simTable, randParams); 
@@ -1735,6 +1779,9 @@ int main( int argc, char *argv[] )
     } while ( ! strcmp(waveform, "SpinTaylorthreePointFivePN") &&
         ( simTable->inclination < eps ||
           simTable->inclination > LAL_PI-eps) );
+
+    /* set polarization angle */
+    simTable->polarization = psi;
 
     /* populate spins, if required */
     if (spinInjections)
