@@ -834,6 +834,7 @@ void ComputeFiducialTimeFrequency( LALStatus *lalStatus,
   REAL8 f_fiducial;
   REAL8 deltaT;
   INT4 iindex;
+  INT4 segtmp;
   WU_search_params_t wparams;
 
 
@@ -847,7 +848,88 @@ void ComputeFiducialTimeFrequency( LALStatus *lalStatus,
   iindex=0;
   deltaT=0;
   
+  /* Find data segment from resultname */
+  findSearchParams4Result( CList[0].resultfname, &wparams );
 
+  /* Compute Data-StretchID */
+  segtmp = (INT4)(wparams.endTime / (wparams.endTime - wparams.startTime));
+  
+  switch( segtmp )
+    {
+      /* H1 ----------- */
+
+    case 6537:
+      segtmp=0;
+      break;
+      
+    case 6497:
+      segtmp=1;
+      break;
+      
+    case 5828:
+      segtmp=2;
+      break;
+      
+    case 6120:
+      segtmp=3;
+      break;
+      
+    case 5955:
+      segtmp=4;
+      break;
+      
+    case 5613:
+      segtmp=5;
+      break;
+
+    case 6126:
+      segtmp=6;
+      break;
+      
+    case 5946:
+      segtmp=7;
+      break;
+      
+    case 6130:
+      segtmp=8;
+      break;
+
+    case 5515:
+      segtmp=9;
+      break;
+
+      /* L1 ----------- */
+      
+    case 6341:
+      segtmp=10;
+      break;
+
+    case 6102:
+      segtmp=11;
+      break;
+
+    case 5813:
+      segtmp=12;
+      break;
+
+    case 5783:
+      segtmp=13;
+      break;
+
+    case 5538:
+      segtmp=14;
+      break;
+
+    case 6514:
+      segtmp=15;
+      break;
+
+    case 5653:
+      segtmp=16;
+      break;
+
+    }
+  
   while( iindex < candlen )
     {
       f_CFS = CList[iindex].f;
@@ -857,7 +939,7 @@ void ComputeFiducialTimeFrequency( LALStatus *lalStatus,
       findSearchParams4Result( CList[iindex].resultfname, &wparams );
 
       /* Compute Data-StretchID */
-      CList[iindex].DataStretch = (INT4)(wparams.endTime / (wparams.endTime - wparams.startTime));
+      CList[iindex].DataStretch = segtmp;
       
       /* Fixed fiducial time = e.g. GPS time of first SFT in S4 */
       deltaT = wparams.startTime - FIXED_FIDUCIAL_TIME;  
