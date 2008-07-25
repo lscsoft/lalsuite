@@ -142,6 +142,7 @@ typedef struct FiducialTimeConfigVarsTag
 {
   REAL8 ThrTwoF;
   INT4 InNumLines;
+  INT4 FiducialTime; /*  The fiducial GPS time */
   CHAR *OutputFile;  /*  Name of output file */
   CHAR *InputFile;   /*  Name of input file (combined result file produced by combiner_v2.py */
 } FiducialTimeConfigVars;
@@ -730,7 +731,8 @@ void ReadCommandLineArgs( LALStatus *lalStatus,
   BOOLEAN uvar_help;
   REAL8 uvar_ThrTwoF;
   INT4 uvar_InNumLines;
-  
+  INT4 uvar_FiducialTime;
+
   INITSTATUS( lalStatus, "ReadCommandLineArgs", rcsid );
   ATTATCHSTATUSPTR (lalStatus);
 
@@ -740,10 +742,12 @@ void ReadCommandLineArgs( LALStatus *lalStatus,
   uvar_InputData = NULL;
   uvar_OutputData = NULL;
   uvar_ThrTwoF = -1.0;
-
+  uvar_FiducialTime = FIXED_FIDUCIAL_TIME;
+  
   /* register all our user-variables */
   LALregBOOLUserVar(lalStatus,       help,           'h', UVAR_HELP,     "Print this message"); 
-
+  
+  LALregINTUserVar(lalStatus,        FiducialTime,   'f', UVAR_OPTIONAL, "Fiducial GPS time");
   LALregSTRINGUserVar(lalStatus,     OutputData,     'o', UVAR_OPTIONAL, "Ouput file name");
   LALregSTRINGUserVar(lalStatus,     InputData,      'i', UVAR_OPTIONAL, "Input file name");
   LALregREALUserVar(lalStatus,       ThrTwoF,        't', UVAR_OPTIONAL, "Threshold on values of 2F");
@@ -760,7 +764,7 @@ void ReadCommandLineArgs( LALStatus *lalStatus,
     exit(FIDUCIAL_EXIT_OK);
   }
 
-
+  CLA->FiducialTime = 0;
   CLA->OutputFile = NULL;
   CLA->InputFile = NULL;
   CLA->ThrTwoF = -1.0;
@@ -804,7 +808,15 @@ void ReadCommandLineArgs( LALStatus *lalStatus,
       LALPrintError("Input file '%s' is incorrect. \n\n",uvar_InputData);
       exit(FIDUCIAL_EXIT_ERR);
     }
-  
+
+  if(uvar_FiducialTime > 0){
+    CLA->FiducialTime = uvar_FiducialTime;
+  }
+  else    {
+    TRY( FreeConfigVars( lalStatus->statusPtr, CLA ), lalStatus);
+    LALPrintError("The fiducial GPS time %d is incorrect. \n\n",uvar_FiducialTime);
+    exit(FIDUCIAL_EXIT_ERR);
+  }
   CLA->InNumLines = uvar_InNumLines;
   CLA->ThrTwoF = uvar_ThrTwoF;
 
@@ -840,7 +852,6 @@ void ComputeFiducialTimeFrequency( LALStatus *lalStatus,
 
   INITSTATUS( lalStatus, "ComputeFiducialTimeFrequency", rcsid );
   ATTATCHSTATUSPTR (lalStatus);
-  /* printf("Frequency values are shifted to fixed fiducial GPS time: %f\n", FIXED_FIDUCIAL_TIME); */
 
   f_CFS=0;
   f_fiducial=0;
@@ -942,7 +953,7 @@ void ComputeFiducialTimeFrequency( LALStatus *lalStatus,
       CList[iindex].DataStretch = segtmp;
       
       /* Fixed fiducial time = e.g. GPS time of first SFT in S4 */
-      deltaT = wparams.startTime - FIXED_FIDUCIAL_TIME;  
+      deltaT = wparams.startTime - CLA->FiducialTime;
 
       /* Compute new frequency values at fixed fiducial time */
       f_fiducial = f_CFS - (F1dot_CFS * deltaT);
