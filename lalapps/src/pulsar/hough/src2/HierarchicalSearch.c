@@ -1306,13 +1306,10 @@ void SetUpSFTs( LALStatus *status,
   REAL8 startTime_freqLo, startTime_freqHi;
   REAL8 endTime_freqLo, endTime_freqHi;
   REAL8 freqLo, freqHi;
-  INT4 extraBins, tmpLeap;
+  INT4 extraBins;
   
   INT4 sft_check_result = 0;
 
-  /* leap second for LALBarycenter */
-  LALLeapSecFormatAndAcc lsfas = {LALLEAPSEC_GPSUTC, LALLEAPSEC_STRICT};
-    
   INITSTATUS( status, "SetUpSFTs", rcsid );
   ATTATCHSTATUSPTR (status);
 
@@ -1339,11 +1336,19 @@ void SetUpSFTs( LALStatus *status,
   TRY( LALAddFloatToGPS( status->statusPtr, &tEndGPS, &tEndGPS, timebase ), status);
   TRY ( LALDeltaFloatGPS ( status->statusPtr, &tObs, &tEndGPS, &tStartGPS), status);
   in->tObs = tObs;
-  
-  /* Leap seconds for the first timestamp */   
-  TRY( LALLeapSecs( status->statusPtr, &tmpLeap, &tStartGPS, &lsfas), status);
-  in->edat->leap = (INT2)tmpLeap;
-      
+
+  /* Leap seconds for the first timestamp */
+  /* Repr 26/07/08: deactivated use of old function LALLeapSecs() which has an obsolete leap-second range:
+     TRY( LALLeapSecs( status->statusPtr, &tmpLeap, &tStartGPS, &lsfas), status);
+     Use new XLALLeapSeconds() instead: */
+  in->edat->leap = XLALLeapSeconds( tStartGPS.gpsSeconds );
+  {
+    INT4 err = xlalErrno;
+    if ( err != XLAL_SUCCESS ) {
+      ABORT ( status, err, "XLALLeapSeconds() failed!\n");
+    }
+  }
+
   /* get sft catalogs for each stack */
   TRY( SetUpStacks( status->statusPtr, &catalogSeq, in->tStack, catalog, in->nStacks), status);
 
