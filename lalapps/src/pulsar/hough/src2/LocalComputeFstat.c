@@ -82,7 +82,7 @@ NRCSID( LOCALCOMPUTEFSTATC, "$Id$");
     having a severe impact on runtime of the E@H Linux App.
     So let's allow to give gcc a hint which path has a higher probablility */
 #define __builtin_expect(a,b) a
-#else
+
 /** currently interleaving the kernel loop doesn't work with MSC */
 #undef EAH_HOTLOOP_INTERLEAVED
 #endif
