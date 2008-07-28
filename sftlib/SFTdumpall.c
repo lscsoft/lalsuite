@@ -28,6 +28,7 @@ int main(int argc, char **argv) {
       struct headertag2 info, lastinfo;
       int err=0, swapendian, move;
       char *mycomment;
+      int whence = (int)ftell(fp);
 
       err=ReadSFTHeader(fp, &info, &mycomment, &swapendian, 1);
       
@@ -52,6 +53,7 @@ int main(int argc, char **argv) {
 	printf("First frequency bin:  %d\n", info.firstfreqindex);
 	printf("Number of freq bins:  %d\n", info.nsamples);
 	printf("Endian order:         %s\n", swapendian?"reversed":"native");
+	printf("Start offset (bytes): %d\n", whence);
 	if (1 != info.version) {
 	  printf("Detector prefix:      %c%c\n", info.detector[0], info.detector[1]);
 	  printf("64-bit CRC checksum:  %llu\n", info.crc64);
