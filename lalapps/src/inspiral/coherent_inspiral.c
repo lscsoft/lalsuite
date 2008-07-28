@@ -252,6 +252,8 @@ int main( int argc, char *argv[] )
   REAL8 deltaT= 0.0;
   REAL4 distNorm = 0.0;
   REAL4 templateNorm = 0.0;
+  double raStep = 6.0;
+  double decStep = 6.0;
   REAL8 c0= 0.0;
   REAL8 c2= 0.0;
   REAL4 c3= 0.0;
@@ -546,6 +548,8 @@ int main( int argc, char *argv[] )
 	  cohInspFilterParams->fLow                    = fLow;
 	  cohInspFilterParams->maximizeOverChirp       = maximizeOverChirp;
 	  cohInspFilterParams->numDetectors            = cohInspInitParams->numDetectors;
+	  cohInspFilterParams->raStep                  = raStep;
+	  cohInspFilterParams->decStep                 = decStep;
           /* initParams not needed anymore */
           free( cohInspInitParams );
           cohInspInitParams = NULL;
