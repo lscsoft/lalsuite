@@ -242,6 +242,8 @@ tagCoherentInspiralFilterParams
   REAL4TimeSeries              *cohH1H2SNRVec;
   REAL4TimeSeries              *nullStatVec;
   REAL4                         chirpTime;
+  double                        decStep;
+  double                        raStep;
 }
 CoherentInspiralFilterParams;
 #if 0
