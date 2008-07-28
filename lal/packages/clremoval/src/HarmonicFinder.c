@@ -202,7 +202,12 @@ void LALHarmonicFinder (LALStatus  *status,
   /* -------------------------------------------   */
  
   devF = 0.7;
-  fL = fabs( in2->fLine);
+  /*fL = fabs( in2->fLine);*/
+  if (in2->fLine < 0)
+    fL=-1*in2->fLine;
+  else
+    fL=in2->fLine;
+  
   
   px = in2->data;
   n  = in2->length;
@@ -243,8 +248,23 @@ void LALHarmonicFinder (LALStatus  *status,
   /* the other border */
   for (i=n-nBins; i<n; ++i)
     { pxs->data[i] = pxs->data[i-1];}
+
+  /* Added new hack, doesn't change weighted mean or weighted variances */
+  /* Cristina Torres Thu-Jun-26-2008:200806261728 */
+  norma=pxs->data[0];
+  for (i=1;i<n;i++)
+    if (norma>=pxs->data[i])
+      norma=pxs->data[i];
+  if (norma < 0)
+    {
+      norma=(-1*norma)+1;
+      for (i=0;i<n;i++)
+	pxs->data[i]=pxs->data[i]+norma;
+    }
+  /* End new hack */
+
   /* -------------------------------------------   */
-  
+
   /* the first line */
   
   /* k = fabs(*kv);  */
@@ -254,7 +274,7 @@ void LALHarmonicFinder (LALStatus  *status,
   
   binini = floor( k*( fL - devF)*Tobs );
   binfin = ceil(  k*( fL + devF)*Tobs );
-  
+
   ASSERT ( k != 0, status, CLRH_EFREQ, CLRH_MSGEFREQ); 
   ASSERT ( binfin <  n, status, CLRH_EFREQ, CLRH_MSGEFREQ); 
   ASSERT ( fL > devF, status, CLRH_EFREQ, CLRH_MSGEFREQ); 
@@ -289,6 +309,7 @@ void LALHarmonicFinder (LALStatus  *status,
     if ( k < 0 ) { k = -k; }
     binini = floor( k*(mean1 - std1*cc)*invk );
     binfin = ceil ( k*(mean1 + std1*cc)*invk );
+
     ASSERT ( binfin <  n, status, CLRH_EFREQ, CLRH_MSGEFREQ); 
 
     kf[3*j] = k;
