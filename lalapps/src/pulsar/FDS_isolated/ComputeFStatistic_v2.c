@@ -663,6 +663,10 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
 
   uvar->timerCount = 1e5;	/* output a timer/progress count every N templates */
 
+  uvar->spindownAge = 0.0;
+  uvar->minBraking = 0.0;
+  uvar->maxBraking = 0.0;
+
   /* ---------- register all user-variables ---------- */
   LALregBOOLUserStruct(status, 	help, 		'h', UVAR_HELP,     "Print this message"); 
 
