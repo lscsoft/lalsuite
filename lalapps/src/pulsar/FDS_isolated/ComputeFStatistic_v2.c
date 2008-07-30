@@ -251,11 +251,11 @@ static UserInput_t empty_UserInput;
 /* ---------- local prototypes ---------- */
 int main(int argc,char *argv[]);
 void initUserVars (LALStatus *, UserInput_t *uvar);
-void InitFStat ( LALStatus *, ConfigVariables *cfg, UserInput_t *uvar );
+void InitFStat ( LALStatus *, ConfigVariables *cfg, const UserInput_t *uvar );
 void Freemem(LALStatus *,  ConfigVariables *cfg);
 
 void WriteFStatLog (LALStatus *, CHAR *argv[], const CHAR *log_fname);
-void checkUserInputConsistency (LALStatus *, UserInput_t *uvar);
+void checkUserInputConsistency (LALStatus *, const UserInput_t *uvar);
 int outputBeamTS( const CHAR *fname, const AMCoeffs *amcoe, const DetectorStateSeries *detStates );
 void InitEphemeris (LALStatus *, EphemerisData *edat, const CHAR *ephemDir, const CHAR *ephemYear, LIGOTimeGPS epoch, BOOLEAN isLISA);
 void getUnitWeights ( LALStatus *, MultiNoiseWeights **multiWeights, const MultiSFTVector *multiSFTs );
@@ -384,6 +384,8 @@ int main(int argc,char *argv[])
 
   /* count number of templates */
   numTemplates = XLALNumDopplerTemplates ( GV.scanState );
+  if (uvar.countTemplates)
+    printf("% Number of templates:\n%0.0f", numTemplates);    
 
   /*----------------------------------------------------------------------
    * main loop: demodulate data for each point in the sky-position grid
@@ -832,7 +834,7 @@ InitEphemeris (LALStatus * status,
  * NOTE: the logical *order* of things in here is very important, so be careful
  */
 void
-InitFStat ( LALStatus *status, ConfigVariables *cfg, UserInput_t *uvar )
+InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
 {
   REAL8 fCoverMin, fCoverMax;	/* covering frequency-band to read from SFTs */
   SFTCatalog *catalog = NULL;
@@ -843,6 +845,7 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, UserInput_t *uvar )
 
   UINT4 numSFTs;
   LIGOTimeGPS startTime, endTime;
+  size_t toplist_length = uvar->NumCandidatesToKeep;
 
   INITSTATUS (status, "InitFStat", rcsid);
   ATTATCHSTATUSPTR (status);
@@ -901,17 +904,49 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, UserInput_t *uvar )
     cfg->refTime = startTime;
 
   { /* ----- prepare spin-range at refTime (in *canonical format*, ie all Bands >= 0) ----- */
-    REAL8 fMin = MYMIN ( uvar->Freq, uvar->Freq + uvar->FreqBand );
-    REAL8 fMax = MYMAX ( uvar->Freq, uvar->Freq + uvar->FreqBand );
 
-    REAL8 f1dotMin = MYMIN ( uvar->f1dot, uvar->f1dot + uvar->f1dotBand );
-    REAL8 f1dotMax = MYMAX ( uvar->f1dot, uvar->f1dot + uvar->f1dotBand );
+    REAL8 fMin, fMax, f1dotMin, f1dotMax, f2dotMin, f2dotMax, f3dotMin, f3dotMax;
 
-    REAL8 f2dotMin = MYMIN ( uvar->f2dot, uvar->f2dot + uvar->f2dotBand );
-    REAL8 f2dotMax = MYMAX ( uvar->f2dot, uvar->f2dot + uvar->f2dotBand );
+    fMin = MYMIN ( uvar->Freq, uvar->Freq + uvar->FreqBand );
+    fMax = MYMAX ( uvar->Freq, uvar->Freq + uvar->FreqBand );
 
-    REAL8 f3dotMin = MYMIN ( uvar->f3dot, uvar->f3dot + uvar->f3dotBand );
-    REAL8 f3dotMax = MYMAX ( uvar->f3dot, uvar->f3dot + uvar->f3dotBand );
+    /* Specific to --gridType=GRID_SPINDOWN_AGEBRK parameter space */
+    if (uvar->gridType == GRID_SPINDOWN_AGEBRK) {
+
+      /* Set the first and second spindown ranges to the maximum that will be
+       * encountered by the age-braking index parameter space. These will *ONLY*
+       * be used by older code to, e.g. load the correct band of SFTs, and
+       * will *NOT* be used by the tiling code itself.
+       * The formulas used here are, with age=a, min braking=n, max braking=N:
+       *
+       * -f0/((n-1)*a) <= f1 <= -f0/((N-1)*a)
+       * n*(f1^2)/f0 <= f2 <= N*(f1^2)/f0
+       *
+       * f0/f1 are taken as the maximum/minimum value appropriate for getting the
+       * maximum/minimum values of f1/f2 (note that f1 is strictly negative here).
+       */
+      
+      f1dotMin = -1.0 * fMin / ((uvar->minBraking - 1.0) * uvar->spindownAge);
+      f1dotMax = -1.0 * fMax / ((uvar->maxBraking - 1.0) * uvar->spindownAge);
+
+      f2dotMin = uvar->minBraking * (f1dotMax * f1dotMax) / fMax;
+      f2dotMax = uvar->maxBraking * (f1dotMin * f1dotMin) / fMin;
+      
+    }
+
+    /* Used for all other --gridTypes */
+    else {
+
+      f1dotMin = MYMIN ( uvar->f1dot, uvar->f1dot + uvar->f1dotBand );
+      f1dotMax = MYMAX ( uvar->f1dot, uvar->f1dot + uvar->f1dotBand );
+      
+      f2dotMin = MYMIN ( uvar->f2dot, uvar->f2dot + uvar->f2dotBand );
+      f2dotMax = MYMAX ( uvar->f2dot, uvar->f2dot + uvar->f2dotBand );
+      
+    }
+
+    f3dotMin = MYMIN ( uvar->f3dot, uvar->f3dot + uvar->f3dotBand );
+    f3dotMax = MYMAX ( uvar->f3dot, uvar->f3dot + uvar->f3dotBand );
     
     spinRangeRef.refTime = cfg->refTime;
     spinRangeRef.fkdot[0] = fMin;
@@ -1127,12 +1162,12 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, UserInput_t *uvar )
       LogPrintf(LOG_CRITICAL, "Cannot use FracCandidatesToKeep because number of templates was counted to be zero!\n");
       ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
     }
-    uvar->NumCandidatesToKeep = ceil(XLALNumDopplerTemplates(cfg->scanState) * uvar->FracCandidatesToKeep);
+    toplist_length = ceil(XLALNumDopplerTemplates(cfg->scanState) * uvar->FracCandidatesToKeep);
   }
 
   /* ----- set up toplist if requested ----- */
-  if ( uvar->NumCandidatesToKeep > 0 )
-    if ( create_toplist( &(cfg->FstatToplist), uvar->NumCandidatesToKeep, sizeof(FstatCandidate), compareFstatCandidates) != 0 ) {
+  if ( toplist_length > 0 )
+    if ( create_toplist( &(cfg->FstatToplist), toplist_length, sizeof(FstatCandidate), compareFstatCandidates) != 0 ) {
       ABORT (status, COMPUTEFSTATISTIC_EMEM, COMPUTEFSTATISTIC_MSGEMEM ); 
     }
 
@@ -1316,7 +1351,7 @@ Freemem(LALStatus *status,  ConfigVariables *cfg)
  * Throws an error plus prints error-message if problems are found.
  */
 void
-checkUserInputConsistency (LALStatus *status, UserInput_t *uvar)
+checkUserInputConsistency (LALStatus *status, const UserInput_t *uvar)
 {
 
   INITSTATUS (status, "checkUserInputConsistency", rcsid);  
@@ -1490,6 +1525,10 @@ checkUserInputConsistency (LALStatus *status, UserInput_t *uvar)
         LALPrintError ("\nERROR: minBraking must be strictly positive with gridType=9\n\n");
         ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);      
       }
+      if (uvar->minBraking >= uvar->maxBraking) {
+        LALPrintError ("\nERROR: minBraking must be strictly less than maxBraking with gridType=9\n\n");
+        ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);      
+      }
 
       /* Check that no first and second spindown ranges were given */
       if (uvar->f1dot != 0.0 || uvar->f1dotBand != 0.0) {
@@ -1499,36 +1538,6 @@ checkUserInputConsistency (LALStatus *status, UserInput_t *uvar)
       if (uvar->f2dot != 0.0 || uvar->f2dotBand != 0.0) {
         LALPrintError ("\nERROR: f2dot and f2dotBand cannot be used with gridType=9\n\n");
         ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);      
-      }
-
-      {
-	/* Set the first and second spindown ranges to the maximum that will be
-	 * encountered by the age-braking index parameter space. These will *ONLY*
-	 * be used by older code to, e.g. load the correct band of SFTs, and
-	 * will *NOT* be used by the tiling code itself.
-	 * The formulas used here are, with age=a, min braking=n, max braking=N:
-	 *
-	 * -f0/((n-1)*a) <= f1 <= -f0/((N-1)*a)
-	 * n*(f1^2)/f0 <= f2 <= N*(f1^2)/f0
-	 *
-	 * f0/f1 are taken as the maximum/minimum value appropriate for getting the
-	 * maximum/minimum values of f1/f2 (note that f1 is strictly negative here).
-	 */
-	
-	const REAL8 minf0 = uvar->Freq;
-	const REAL8 maxf0 = uvar->Freq + uvar->FreqBand;
-	const REAL8 minf1 = -1.0 * minf0 / ((uvar->minBraking - 1.0) * uvar->spindownAge);
-	const REAL8 maxf1 = -1.0 * maxf0 / ((uvar->maxBraking - 1.0) * uvar->spindownAge);
-	const REAL8 minf2 = uvar->minBraking * (maxf1 * maxf1) / maxf0;
-	const REAL8 maxf2 = uvar->maxBraking * (minf1 * minf1) / minf0;
-
-	uvar->Freq      = minf0;
-	uvar->FreqBand  = maxf0 - minf0;
-	uvar->f1dot     = minf1;
-	uvar->f1dotBand = maxf1 - minf1;
-	uvar->f2dot     = minf2;
-	uvar->f2dotBand = maxf2 - minf2;
-
       }
 
     }
