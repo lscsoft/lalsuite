@@ -914,7 +914,7 @@ LALMakeTimestamps(LALStatus *status,
        * instead of using iSFT*Tsft, in order to avoid possible ns-rounding problems
        * with REAL8 intervals, which becomes critial from about 100days on...
        */
-      LALAddFloatToGPS( status->statusPtr, &tt, &tt, tStep);	/* can't fail */
+      XLALGPSAdd(&tt, tStep);	/* can't fail */
 
     } /* for i < numSFTs */
 

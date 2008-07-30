@@ -119,7 +119,8 @@ LALGetDetectorStates (LALStatus *status,
       LIGOTimeGPS tgps;
 
       /* shift timestamp by tOffset */
-      TRY ( LALAddFloatToGPS(status->statusPtr, &tgps, &timestamps->data[i], tOffset ), status);
+      tgps = timestamps->data[i];
+      XLALGPSAdd(&tgps, tOffset);
 
       /*----- first get earth-state */
       LALBarycenterEarth (status->statusPtr, earth, &tgps, edat );
