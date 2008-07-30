@@ -1078,12 +1078,6 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, UserInput_t *uvar )
   cfg->stepSizes.fkdot[3] = uvar->df3dot;
   cfg->stepSizes.orbit = NULL;
 
-  /* ----- set up toplist if requested ----- */
-  if ( uvar->NumCandidatesToKeep > 0 )
-    if ( create_toplist( &(cfg->FstatToplist), uvar->NumCandidatesToKeep, sizeof(FstatCandidate), compareFstatCandidates) != 0 ) {
-      ABORT (status, COMPUTEFSTATISTIC_EMEM, COMPUTEFSTATISTIC_MSGEMEM ); 
-    }
-
   /* ----- set up scanline-window if requested for 1D local-maximum clustering on scanline ----- */
   if ( (cfg->scanlineWindow = XLALCreateScanlineWindow ( uvar->clusterOnScanline )) == NULL ) {
     ABORT (status, COMPUTEFSTATISTIC_EMEM, COMPUTEFSTATISTIC_MSGEMEM ); 
