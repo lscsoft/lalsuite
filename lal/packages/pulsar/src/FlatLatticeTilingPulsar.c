@@ -44,8 +44,8 @@
 
 NRCSID(FLATLATTICETILINGPULSARC, "$Id$");
 
-static const BOOLEAN TRUE  = (1==1);
-static const BOOLEAN FALSE = (0==1);
+#define TRUE  (1==1)
+#define FALSE (1==0)
 
 /**
  * Calculate the factorial of an integer
@@ -65,11 +65,13 @@ static INT4 factorial(
 }
 
 /**
- * Setup a flat lattice tiling to use the spindown Fstat metric
+ * Set a flat lattice tiling to the spindown Fstat metric
  * (so no sky position tiling). Components are in the order
- * \f$\w_0,\alpha,\delta,\w_1,\w_2,...\f$
+ * \f$\omega_0,\alpha,\delta,\omega_1,\omega_2,...\f$
  * and will be converted on output to
  * \f$f_0,\alpha,\delta,f_1,f_2,...\f$
+ * using the conversions
+ * \f$f_k = \omega_k {(k+1)! \over {2\pi T^{k+1}}}f$
  */
 int XLALSetFlatLatticeTilingSpindownFstatMetric(
 						FlatLatticeTiling *tiling, /**< Tiling structure */
@@ -91,7 +93,7 @@ int XLALSetFlatLatticeTilingSpindownFstatMetric(
   /* Allocate memory */
   ALLOC_GSL_MATRIX(norm_metric, n, n, XLAL_ERROR);
   ALLOC_GSL_VECTOR(norm_to_real,   n, XLAL_ERROR);
-  gsl_matrix_set_zero(norm_metric);
+  gsl_matrix_set_identity(norm_metric);
   gsl_vector_set_all(norm_to_real, 1.0);
 
   /* Calculate metric and conversion factors */
@@ -100,7 +102,7 @@ int XLALSetFlatLatticeTilingSpindownFstatMetric(
     for (j = 0; j < n - 2; ++j)
       gsl_matrix_set(norm_metric, i + 2, j + 2, (1.0 * (i + 1) * (j + 1)) / ((i + 2) * (j + 2) * (i + j + 3)));
 
-    gsl_vector_set(norm_to_real, i + 2, 1.0 / (LAL_TWOPI * pow(Tspan, i + 1) / factorial(i + 1)));
+    gsl_vector_set(norm_to_real, i + 2, 1.0 * factorial(i + 1) / (LAL_TWOPI * pow(Tspan, i + 1)));
 
   }
 
@@ -119,4 +121,89 @@ int XLALSetFlatLatticeTilingSpindownFstatMetric(
 
   return XLAL_SUCCESS;
 
+}
+
+/**
+ * Set a flat lattice tiling to a parameter space defined by
+ * the age and possible braking index range of an object
+ */
+static BOOLEAN AgeBrakingIndexBound(void *data, INT4 dimension, gsl_vector *point, REAL8 *lower, REAL8 *upper)
+{
+  
+  double x;
+  
+  /* Set constant based on dimension */
+  switch (dimension) {
+  case 0:
+    x = 1.0;
+    break;
+  case 1:
+    x = gsl_vector_get(point, 0);
+    break;
+  case 2:
+    x = gsl_vector_get(point, 1);
+    x *= x;
+    x /= gsl_vector_get(point, 0);
+    break;
+  }
+
+  /* Set lower and upper bound */
+  *lower = x * gsl_matrix_get((gsl_matrix*)data, dimension, 0);
+  *upper = x * gsl_matrix_get((gsl_matrix*)data, dimension, 1);
+  
+  return TRUE;
+  
+}
+static void AgeBrakingIndexFree(void *data)
+{
+
+  /* Cleanup */
+  FREE_GSL_MATRIX((gsl_matrix*)data);
+
+}
+int XLALAddFlatLatticeTilingAgeBrakingIndexBounds(
+						  FlatLatticeTiling *tiling, /**< Tiling structure */
+						  REAL8 freq,                /**< Starting frequency */
+						  REAL8 freq_band,           /**< Frequency band */
+						  REAL8 age,                 /**< Spindown age */
+						  REAL8 min_braking,         /**< Minimum braking index */
+						  REAL8 max_braking,         /**< Maximum braking index */
+						  INT4 offset,               /**< Number of dimensions offset between first dimension and frequency */
+						  INT4 gap                   /**< Number of dimensions gap netween frequency and first spindown */
+						  )
+{
+  
+  gsl_matrix *data = NULL;
+  UINT8 bound;
+
+  /* Check tiling dimension */
+  if (tiling->dimensions < (3 + gap))
+    XLAL_ERROR("'tiling->dimensions' is too small", XLAL_EINVAL);
+  
+  /* Allocate memory */
+  ALLOC_GSL_MATRIX(data, tiling->dimensions, 2, XLAL_ERROR);
+  gsl_matrix_set_zero(data);
+
+  /* Set frequency bounds */
+  gsl_matrix_set(data, 0, 0, freq);
+  gsl_matrix_set(data, 0, 1, freq + freq_band);
+
+  /* Set first spindown bounds */
+  gsl_matrix_set(data, 1, 0, -1.0 / ((min_braking - 1.0) * age));
+  gsl_matrix_set(data, 1, 1, -1.0 / ((max_braking - 1.0) * age));
+
+  /* Set second spindown bounds */
+  gsl_matrix_set(data, 2, 0, min_braking);
+  gsl_matrix_set(data, 2, 1, max_braking);
+
+  /* Set bound dimensions */
+  bound = ((UINT8)1) | (((UINT8)6) << gap) << offset;
+
+  /* Set parameter space */
+  if (XLAL_SUCCESS != XLALAddFlatLatticeTilingBound(tiling, bound, AgeBrakingIndexBound,
+						    (void*)data, AgeBrakingIndexFree))
+    XLAL_ERROR("XLALAddFlatLatticeTilingBound failed", XLAL_EFAILED);
+  
+  return XLAL_SUCCESS;
+  
 }

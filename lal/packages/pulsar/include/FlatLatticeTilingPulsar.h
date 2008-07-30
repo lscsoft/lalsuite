@@ -40,9 +40,10 @@ extern "C" {
   NRCSID(FLATLATTICETILINGPULSARH, "$Id$");
 
   /**
-   * Functions 
+   * Functions
    */
   int XLALSetFlatLatticeTilingSpindownFstatMetric(FlatLatticeTiling*, REAL8, REAL8);
+  int XLALAddFlatLatticeTilingAgeBrakingIndexBounds(FlatLatticeTiling*, REAL8, REAL8, REAL8, REAL8, REAL8, INT4, INT4);
 
 #ifdef __cplusplus
 }
