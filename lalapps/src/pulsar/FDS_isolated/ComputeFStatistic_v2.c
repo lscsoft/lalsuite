@@ -216,6 +216,7 @@ typedef struct {
   BOOLEAN countTemplates;       /**< just count templates (if supported) instead of search */
 
   INT4 NumCandidatesToKeep;	/**< maximal number of toplist candidates to output */
+  REAL8 FracCandidatesToKeep;	/**< fractional number of candidates to output in toplist */
   INT4 clusterOnScanline;	/**< number of points on "scanline" to use for 1-D local maxima finding */
 
   CHAR *gridFile;		/**< read template grid from this file */
@@ -248,7 +249,7 @@ static UserInput_t empty_UserInput;
 /* ---------- local prototypes ---------- */
 int main(int argc,char *argv[]);
 void initUserVars (LALStatus *, UserInput_t *uvar);
-void InitFStat ( LALStatus *, ConfigVariables *cfg, const UserInput_t *uvar );
+void InitFStat ( LALStatus *, ConfigVariables *cfg, UserInput_t *uvar );
 void Freemem(LALStatus *,  ConfigVariables *cfg);
 
 void WriteFStatLog (LALStatus *, CHAR *argv[], const CHAR *log_fname);
@@ -630,6 +631,7 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
 
   uvar->TwoFthreshold = 10.0;
   uvar->NumCandidatesToKeep = 0;
+  uvar->FracCandidatesToKeep = 0.0;
   uvar->clusterOnScanline = 0;
 
   uvar->metricType =  LAL_PMETRIC_NONE;
@@ -722,7 +724,8 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
   LALregSTRINGUserStruct(status,outputFstat,	 0,  UVAR_OPTIONAL, "Output-file for F-statistic field over the parameter-space");
   LALregSTRINGUserStruct(status,outputLoudest,	 0,  UVAR_OPTIONAL, "Loudest F-statistic candidate + estimated MLE amplitudes");
 
-  LALregINTUserStruct(status,   NumCandidatesToKeep,0, UVAR_OPTIONAL, "Number of Fstat 'candidates' to keep. (0 = All)");
+  LALregINTUserStruct(status,  NumCandidatesToKeep,0, UVAR_OPTIONAL, "Number of Fstat 'candidates' to keep. (0 = All)");
+  LALregREALUserStruct(status,FracCandidatesToKeep,0, UVAR_OPTIONAL, "Fraction of Fstat 'candidates' to keep.");
   LALregINTUserStruct(status,   clusterOnScanline, 0, UVAR_OPTIONAL, "Neighbors on each side for finding 1D local maxima on scanline");
 
 
@@ -820,7 +823,7 @@ InitEphemeris (LALStatus * status,
  * NOTE: the logical *order* of things in here is very important, so be careful
  */
 void
-InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
+InitFStat ( LALStatus *status, ConfigVariables *cfg, UserInput_t *uvar )
 {
   REAL8 fCoverMin, fCoverMax;	/* covering frequency-band to read from SFTs */
   SFTCatalog *catalog = NULL;
@@ -1113,6 +1116,21 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
     TRY ( InitDopplerFullScan ( status->statusPtr, &cfg->scanState, &scanInit), status); 
     LogPrintf (LOG_DEBUG, "template grid ready: %.0f templates.\n", XLALNumDopplerTemplates ( cfg->scanState ) );
   }
+
+  /* set number of toplist candidates from fraction if asked to */
+  if (0.0 < uvar->FracCandidatesToKeep && uvar->FracCandidatesToKeep <= 1.0) {
+    if (XLALNumDopplerTemplates(cfg->scanState) <= 0.0) {
+      LogPrintf(LOG_CRITICAL, "Cannot use FracCandidatesToKeep because number of templates was counted to be zero!\n");
+      ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+    }
+    uvar->NumCandidatesToKeep = ceil(XLALNumDopplerTemplates(cfg->scanState) * uvar->FracCandidatesToKeep);
+  }
+
+  /* ----- set up toplist if requested ----- */
+  if ( uvar->NumCandidatesToKeep > 0 )
+    if ( create_toplist( &(cfg->FstatToplist), uvar->NumCandidatesToKeep, sizeof(FstatCandidate), compareFstatCandidates) != 0 ) {
+      ABORT (status, COMPUTEFSTATISTIC_EMEM, COMPUTEFSTATISTIC_MSGEMEM ); 
+    }
 
   /* ----- produce a log-string describing the data-specific setup ----- */
   TRY ( getLogString ( status->statusPtr, &(cfg->logstring), cfg ), status );
@@ -1512,6 +1530,16 @@ checkUserInputConsistency (LALStatus *status, UserInput_t *uvar)
     }
 
   } /* Grid-related checks */
+
+  /* check NumCandidatesToKeep and FracCandidatesToKeep */
+  if (LALUserVarWasSet(&uvar->NumCandidatesToKeep) && LALUserVarWasSet(&uvar->FracCandidatesToKeep)) {
+    LALPrintError ("\nERROR: NumCandidatesToKeep and FracCandidatesToKeep are mutually exclusive\n\n");
+    ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);      
+  }
+  if (LALUserVarWasSet(&uvar->FracCandidatesToKeep) && (uvar->FracCandidatesToKeep <= 0.0 || 1.0 < uvar->FracCandidatesToKeep)) {
+    LALPrintError ("\nERROR: FracCandidatesToKeep must be greater than 0.0 and less than or equal to 1.0\n\n");
+    ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);      
+  }
 
   RETURN (status);
 } /* checkUserInputConsistency() */
