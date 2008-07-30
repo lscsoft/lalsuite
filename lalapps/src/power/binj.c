@@ -693,10 +693,8 @@ static SimBurst *random_directed_btlwnb(double ra, double dec, double minf, doub
 	sim_burst->psi = gsl_ran_flat(rng, 0, LAL_TWOPI);
 
 	/* pick a waveform */
-	/* FIXME:  this should be ULONG_MAX but metaio can't handle
-	 * unsigned ints yet */
 
-	sim_burst->waveform_number = floor(gsl_ran_flat(rng, 0, LONG_MAX));
+	sim_burst->waveform_number = floor(gsl_ran_flat(rng, 0, ULONG_MAX));
 
 	/* centre frequency.  three steps between minf and maxf */
 
