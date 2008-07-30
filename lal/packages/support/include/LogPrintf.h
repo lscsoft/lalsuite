@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2008 Karl Wette
  * Copyright (C) 2005 Reinhard Prix
  * 
  *  [partially based on the MSG_LOG class in BOINC:
@@ -61,6 +62,7 @@ typedef enum
 /*---------- GLOBALs ----------*/
 
 /*---------- PROTOTYPES [API] ----------*/
+void LogSetFile(FILE* file);
 void LogSetLevel(LogLevel_t level);
 
 void LogPrintf (LogLevel_t, const char* format, ...);

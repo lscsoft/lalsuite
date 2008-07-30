@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2008 Karl Wette
  * Copyright (C) 2005 Reinhard Prix
  * 
  *  [partially based on the MSG_LOG class in BOINC:
@@ -54,8 +55,9 @@ static volatile const char __attribute__ ((unused)) *name  = "$Id$";
 #  endif /* !__GNUC__ */
 
 
-/* hardcoded for now, should be made configurable */
-#define LogOutput 	stderr		
+/* output file for log messages, default to standard error */
+#define LogOutputDefault stderr
+static FILE* LogOutput = NULL;
 
 /*---------- internal types ----------*/
 
@@ -78,6 +80,13 @@ static const char *LogFormatLevel( LogLevel_t level );
 
 /*==================== FUNCTION DEFINITIONS ====================*/
 
+/* set the output file for log messages */
+void LogSetFile(FILE *file)
+{
+  LogOutput = file;
+  return;
+}
+
 /* set the log-level to be used in this module.
  * (allow independence of lalDebugLevel!)
  */
@@ -97,6 +106,8 @@ LogPrintfVerbatim (LogLevel_t level, const char* format, ...)
 
     if ( LogLevel < level ) 
       return;
+    if (LogOutput == NULL)
+      LogOutput = LogOutputDefault;
 
     /* simply print this to output  */
     vfprintf (LogOutput, format, va );
@@ -129,6 +140,8 @@ LogPrintf_va (LogLevel_t level, const char* format, va_list va )
 {
   if ( LogLevel < level ) 
     return;
+  if (LogOutput == NULL)
+    LogOutput = LogOutputDefault;
      
   fprintf(LogOutput, "%s [%s]: ", LogGetTimestamp(), LogFormatLevel(level) );
   vfprintf(LogOutput, format, va);
