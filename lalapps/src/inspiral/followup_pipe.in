@@ -118,6 +118,11 @@ parser.add_option("-d", "--data-quality",action="store_true",default=False,\
 parser.add_option("-t", "--trig-bank",action="store_true",default=False,\
     help="generate a pseudo trigbank xml file for single triggers")
 
+parser.add_option("", "--inspiral-datafind",action="store_true",default=False,\
+    help="do datafind jobs to update the old cache files." + \
+         "This option affects the way the inspiral, frame-check, and mcmc jobs" + \
+         "accessing to the data.")
+
 parser.add_option("-i", "--inspiral",action="store_true",default=False,\
     help="do inspirals for single triggers - output SNR/CHISQ/PSD")
 
@@ -170,14 +175,14 @@ if not opts.write_to_iulgroup and not opts.generate_fu_cache and \
   opts.analyse_seis_qscan and not opts.analyse_hoft_qscan and not \
   opts.mcmc and not opts.frame_check and not opts.inspiral_head and not \
   opts.ifo_status_check and not opts.single_qevent and not opts.H1H2_qevent \
-  and not opts.plot_mcmc :
+  and not opts.plot_mcmc and not opts.inspiral_datafind:
   print >> sys.stderr, "No steps of the pipeline specified."
   print >> sys.stderr, "Please specify at least one of"
   print >> sys.stderr, "--generate-fu-cache, --trig-bank, --inspiral, --plots,"
   print >> sys.stderr, "--datafind, --qscan, --hoft-qscan, --seis-qscan,"
   print >> sys.stderr, "--background-qscan, --background-hoft-qscan,"
   print >> sys.stderr, "--background-seis-qscan, --hoft-datafind,"
-  print >> sys.stderr, "--generate-segments, --frame-check,"
+  print >> sys.stderr, "--generate-segments, --frame-check, --inspiral-datafind,"
   print >> sys.stderr, "--analyse-qscan, --analyse-seis-qscan,"
   print >> sys.stderr, "--analyse-hoft-qscan, --mcmc, --plot-mcmc,"
   print >> sys.stderr, "--ifo-status-check, --single-qevent, --H1H2-qevent"
@@ -220,6 +225,7 @@ if not opts.disable_followup:
 ############ SET UP THE REQUESTED JOBS ########################################
 
 if not opts.disable_followup:
+  inspDataJob     = followupDataFindJob(cp,'inspiral')
   inspJob         = followUpInspJob(cp)
   plotJob         = plotSNRCHISQJob(opts,cp)
   qscanFgJob      = qscanJob(opts,cp)
@@ -231,7 +237,7 @@ if not opts.disable_followup:
   headInspJob     = followUpInspJob(cp, 'head')
   h1h2QJob        = h1h2QeventJob(opts,cp)   
 
-dataJob         = qscanDataFindJob(cp,'futrig')
+dataJob         = followupDataFindJob(cp,'futrig')
 qscanBgJob      = qscanLiteJob(opts,cp)
 
 prev_dNode = None
@@ -251,11 +257,11 @@ for ifo in ifos_list:
   times = getQscanBackgroundTimes(cp,opts,ifo, dq_url_pattern,segFile)
   for time in times:
     # SETUP DATAFIND JOBS FOR BACKGROUND QSCANS (REGULAR DATA SET)
-    dNode = qscanDataFindNode(dataJob,'futrig','q-datafind',cp,time,ifo,opts,dag,prev_dNode,'datafind')
+    dNode = followupDataFindNode(dataJob,'futrig','q-datafind',cp,time,ifo,opts,dag,prev_dNode,'datafind')
     if dNode.validNode: prev_dNode = dNode
 
     # SETUP DATAFIND JOBS FOR BACKGROUND QSCANS (HOFT)
-    dHoftNode = qscanDataFindNode(dataJob,'futrig','q-hoft-datafind',cp,time,ifo,opts,dag,prev_dNode,'hoft_datafind')
+    dHoftNode = followupDataFindNode(dataJob,'futrig','q-hoft-datafind',cp,time,ifo,opts,dag,prev_dNode,'hoft_datafind')
     if dHoftNode.validNode: prev_dNode = dHoftNode
     
     # SETUP BACKGROUND QSCAN JOBS
@@ -293,11 +299,11 @@ if not opts.disable_followup:
       dag.appendSubSection(str(ifo)+' @ GPS '+str(trig.gpsTime[ifo]))
 
       # SETUP DATAFIND JOBS FOR HOFT QCANS
-      dHoftNode[ifo] = qscanDataFindNode(dataJob,'futrig','q-hoft-datafind',cp,trig.gpsTime[ifo],ifo,opts,dag,prev_dNode,'hoft_datafind')
+      dHoftNode[ifo] = followupDataFindNode(dataJob,'futrig','q-hoft-datafind',cp,trig.gpsTime[ifo],ifo,opts,dag,prev_dNode,'hoft_datafind')
       if dHoftNode[ifo].validNode: prev_dNode = dHoftNode[ifo]
 
       # SETUP DATAFIND JOBS FOR REGULAR QSCANS
-      dNode = qscanDataFindNode(dataJob,'futrig','q-datafind',cp,trig.gpsTime[ifo],ifo,opts,dag,prev_dNode,'datafind')
+      dNode = followupDataFindNode(dataJob,'futrig','q-datafind',cp,trig.gpsTime[ifo],ifo,opts,dag,prev_dNode,'datafind')
       if dNode.validNode: prev_dNode = dNode
     
       # SETUP FOREGROUND QSCAN JOBS
@@ -305,19 +311,24 @@ if not opts.disable_followup:
       qFgNode = qscanNode(qscanFgJob,trig.gpsTime[ifo],cp,dNode.outputFileName,ifo,'foreground-qscan',opts,dNode,dag,'datafind','qscan')
       qFgNode = qscanNode(qscanFgJob,trig.gpsTime[ifo],cp,dNode.outputFileName,ifo,'foreground-seismic-qscan',opts,dNode,dag,'datafind','seis_qscan')
 
+      # SETUP DATAFIND JOBS FOR INSPIRAL, FRAME CHECKS, AND MCMC JOBS (REQUIRED 
+      # ONLY IF THE INSPIRAL_HIPE CACHE FILES ARE OBSOLETE) 
+      inspiralDataFindNode = followupDataFindNode(inspDataJob,'inspiral','inspiral-datafind',cp,trig.gpsTime[ifo],ifo,opts,dag,prev_dNode,'inspiral_datafind',inspiral_process_params[ifo])
+      if inspiralDataFindNode.validNode: prev_dNode = inspiralDataFindNode
+
       # SETUP INSPIRAL JOBS
-      inspiralNode = followUpInspNode(inspJob,inspiral_process_params[ifo], ifo, trig, cp, opts, dag)
-      headInspiralNode = followUpInspNode(headInspJob,inspiral_process_params[ifo], ifo, trig, cp, opts, dag, 'head', bank)
+      inspiralNode = followUpInspNode(inspJob,inspiral_process_params[ifo], ifo, trig, cp, opts, dag, inspiralDataFindNode.outputFileName,inspiralDataFindNode,'inspiral_datafind')
+      headInspiralNode = followUpInspNode(headInspJob,inspiral_process_params[ifo], ifo, trig, cp, opts, dag, inspiralDataFindNode.outputFileName,inspiralDataFindNode,'inspiral_datafind', 'head', bank)
 
 
       # SETUP PLOT JOBS
       plotNode = plotSNRCHISQNode(plotJob,ifo,inspiralNode.output_file_name,trig,page,dag,inspiralNode,opts)
 
       # SETUP FRAME CHECK JOBS
-      frcheckNode = FrCheckNode(frcheckJob,inspiral_process_params[ifo], ifo, trig, cp, opts, dag)
+      frcheckNode = FrCheckNode(frcheckJob,inspiral_process_params[ifo], ifo, trig, cp, opts, dag, inspiralDataFindNode.outputFileName, inspiralDataFindNode, 'inspiral_datafind')
 
       # MCMC JOBS
-      MCMCNode = mcmcNode(MCMCJob,inspiral_process_params[ifo], ifo, trig, cp, opts, dag)
+      MCMCNode = mcmcNode(MCMCJob,inspiral_process_params[ifo], ifo, trig, cp, opts, dag, inspiralDataFindNode.outputFileName, inspiralDataFindNode, 'inspiral_datafind')
 
       # PLOT MCMC JOBS
       PLOTMCMCNode = plotmcmcNode(PLOTMCMCJob,ifo,trig,cp,opts,dag,MCMCNode)
@@ -345,21 +356,26 @@ if not opts.disable_followup:
         dag.appendSubSection(str(ifo)+" (non coincident ifo)")
 
         # SETUP DATAFIND JOBS FOR HOFT QCANS
-        dHoftNode = qscanDataFindNode(dataJob,'futrig','q-hoft-datafind',cp,trig.gpsTime[trig.ifolist_in_coinc[0]],ifo,opts,dag,prev_dNode,'hoft_datafind')
+        dHoftNode = followupDataFindNode(dataJob,'futrig','q-hoft-datafind',cp,trig.gpsTime[trig.ifolist_in_coinc[0]],ifo,opts,dag,prev_dNode,'hoft_datafind')
         if dHoftNode.validNode: prev_dNode = dHoftNode
 
         # SETUP DATAFIND JOBS FOR REGULAR QCANS
-        dNode = qscanDataFindNode(dataJob,'futrig','q-datafind',cp,trig.gpsTime[trig.ifolist_in_coinc[0]],ifo,opts,dag,prev_dNode,'datafind')
+        dNode = followupDataFindNode(dataJob,'futrig','q-datafind',cp,trig.gpsTime[trig.ifolist_in_coinc[0]],ifo,opts,dag,prev_dNode,'datafind')
         if dNode.validNode: prev_dNode = dNode
 
         # SETUP FOREGROUND QSCAN JOBS
         qFgNode = qscanNode(qscanFgJob,trig.gpsTime[trig.ifolist_in_coinc[0]],cp,dHoftNode.outputFileName,ifo,'foreground-hoft-qscan',opts,dHoftNode,dag,'hoft_datafind','hoft_qscan')
         qFgNode = qscanNode(qscanFgJob,trig.gpsTime[trig.ifolist_in_coinc[0]],cp,dNode.outputFileName,ifo,'foreground-qscan',opts,dNode,dag,'datafind','qscan')
 
+        # SETUP DATAFIND JOBS FOR INSPIRAL JOBS 
+        # (REQUIRED ONLY IF THE INSPIRAL_HIPE CACHE FILES ARE OBSOLETE)
+        inspiralDataFindNode = followupDataFindNode(inspDataJob,'inspiral','inspiral-datafind',cp,trig.gpsTime[trig.ifolist_in_coinc[0]],ifo,opts,dag,prev_dNode,'inspiral_datafind',inspiral_process_params[ifo])
+        if inspiralDataFindNode.validNode: prev_dNode = inspiralDataFindNode
+
         # generate the snr/chisq time series for each triggered template
         for itf in trig.ifolist_in_coinc:
           # SETUP INSPIRAL JOBS
-          inspiralNode = followUpInspNode(inspJob,inspiral_process_params[ifo], itf, trig, cp, opts, dag)
+          inspiralNode = followUpInspNode(inspJob,inspiral_process_params[ifo], itf, trig, cp, opts, dag, inspiralDataFindNode.outputFileName,inspiralDataFindNode,'inspiral_datafind')
           # SETUP PLOT JOBS
           plotNode = plotSNRCHISQNode(plotJob,ifo,inspiralNode.output_file_name,trig,page,dag,inspiralNode,opts,itf)
 
