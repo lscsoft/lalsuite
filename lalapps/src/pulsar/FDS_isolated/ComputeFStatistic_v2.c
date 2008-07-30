@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2008 Karl Wette
  * Copyright (C) 2007 Chris Messenger
  * Copyright (C) 2007 Reinhard Prix
  * Copyright (C) 2005, 2006 Reinhard Prix, Iraj Gholami
@@ -22,7 +23,7 @@
  */
 
 /*********************************************************************************/
-/** \author R. Prix, I. Gholami, Y. Ioth, Papa, X. Siemens, C. Messenger
+/** \author R. Prix, I. Gholami, Y. Ioth, Papa, X. Siemens, C. Messenger, K. Wette
  * \file 
  * \brief
  * Calculate the F-statistic for a given parameter-space of pulsar GW signals.
@@ -191,6 +192,11 @@ typedef struct {
   REAL8 orbitArgp;		/**< angle of periapse */
   REAL8 orbitEcc;		/**< orbital eccentricity */
 
+  /* extra parameters for --gridType=GRID_SPINDOWN_AGEBRK parameter space */
+  REAL8 spindownAge;            /**< spindown age of the object */
+  REAL8 minBraking;             /**< minimum braking index */
+  REAL8 maxBraking;             /**< maximum braking index */
+
   /* --- */
   REAL8 TwoFthreshold;		/**< output threshold on 2F */
   CHAR *ephemDir;		/**< directory to look for ephemeris files */
@@ -246,7 +252,7 @@ void InitFStat ( LALStatus *, ConfigVariables *cfg, const UserInput_t *uvar );
 void Freemem(LALStatus *,  ConfigVariables *cfg);
 
 void WriteFStatLog (LALStatus *, CHAR *argv[], const CHAR *log_fname);
-void checkUserInputConsistency (LALStatus *, const UserInput_t *uvar);
+void checkUserInputConsistency (LALStatus *, UserInput_t *uvar);
 int outputBeamTS( const CHAR *fname, const AMCoeffs *amcoe, const DetectorStateSeries *detStates );
 void InitEphemeris (LALStatus *, EphemerisData *edat, const CHAR *ephemDir, const CHAR *ephemYear, LIGOTimeGPS epoch, BOOLEAN isLISA);
 void getUnitWeights ( LALStatus *, MultiNoiseWeights **multiWeights, const MultiSFTVector *multiSFTs );
@@ -700,7 +706,7 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
   LALregBOOLUserStruct(status, 	UseNoiseWeights,'W', UVAR_OPTIONAL, "Use SFT-specific noise weights");
 
   LALregREALUserStruct(status, 	TwoFthreshold,	'F', UVAR_OPTIONAL, "Set the threshold for selection of 2F");
-  LALregINTUserStruct(status, 	gridType,	 0 , UVAR_OPTIONAL, "Grid: 0=flat, 1=isotropic, 2=metric, 3=skygrid-file, 6=grid-file, 7=An*lattice, 8=spin-lattice");
+  LALregINTUserStruct(status, 	gridType,	 0 , UVAR_OPTIONAL, "Grid: 0=flat, 1=isotropic, 2=metric, 3=skygrid-file, 6=grid-file, 7=An*lattice, 8=spin-square, 9=spin-age-brk");
   LALregINTUserStruct(status, 	metricType,	'M', UVAR_OPTIONAL, "Metric: 0=none,1=Ptole-analytic,2=Ptole-numeric, 3=exact");
   LALregREALUserStruct(status, 	metricMismatch,	'X', UVAR_OPTIONAL, "Maximal allowed mismatch for metric tiling");
   LALregSTRINGUserStruct(status,outputLogfile,	 0,  UVAR_OPTIONAL, "Name of log-file identifying the code + search performed");
@@ -736,6 +742,10 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
   LALregBOOLUserStruct(status, 	projectMetric, 	 0,  UVAR_DEVELOPER, "Use projected metric on Freq=const subspact");
 
   LALregBOOLUserStruct(status, 	countTemplates,  0,  UVAR_DEVELOPER, "Count number of templates (if supported) instead of search"); 
+
+  LALregREALUserStruct(status,  spindownAge,     0,  UVAR_DEVELOPER, "Spindown age for --gridType=9");
+  LALregREALUserStruct(status,  minBraking,      0,  UVAR_DEVELOPER, "Minimum braking index for --gridType=9");
+  LALregREALUserStruct(status,  maxBraking,      0,  UVAR_DEVELOPER, "Maximum braking index for --gridType=9");
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
@@ -1088,6 +1098,13 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
     scanInit.Tspan     = cfg->multiDetStates->Tspan;
     scanInit.Detector  = &(cfg->multiDetStates->data[0]->detector);	/* just use first IFO for metric */
 
+    /* Specific to --gridType=GRID_SPINDOWN_AGEBRK parameter space */
+    if (uvar->gridType == GRID_SPINDOWN_AGEBRK) {
+      scanInit.extraArgs[0] = uvar->spindownAge;
+      scanInit.extraArgs[1] = uvar->minBraking;
+      scanInit.extraArgs[2] = uvar->maxBraking;
+    }
+
     LogPrintf (LOG_DEBUG, "Setting up template grid ... ");
     TRY ( InitDopplerFullScan ( status->statusPtr, &cfg->scanState, &scanInit), status); 
     LogPrintf (LOG_DEBUG, "template grid ready: %.0f templates.\n", XLALNumDopplerTemplates ( cfg->scanState ) );
@@ -1273,7 +1290,7 @@ Freemem(LALStatus *status,  ConfigVariables *cfg)
  * Throws an error plus prints error-message if problems are found.
  */
 void
-checkUserInputConsistency (LALStatus *status, const UserInput_t *uvar)
+checkUserInputConsistency (LALStatus *status, UserInput_t *uvar)
 {
 
   INITSTATUS (status, "checkUserInputConsistency", rcsid);  
@@ -1413,6 +1430,82 @@ checkUserInputConsistency (LALStatus *status, const UserInput_t *uvar)
         LALPrintError ("\nERROR: metric grid-type selected, but no metricType selected\n\n");
         ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);      
       }
+
+    /* Specific checks for --gridType=GRID_SPINDOWN_{SQUARE,AGEBRK} parameter spaces */
+    if (uvar->gridType == GRID_SPINDOWN_SQUARE || uvar->gridType == GRID_SPINDOWN_AGEBRK) {
+
+      /* Check that no third spindown range were given */
+      if (uvar->f3dot != 0.0 || uvar->f3dotBand != 0.0) {
+        LALPrintError ("\nERROR: f3dot and f3dotBand cannot be used with gridType={8,9}\n\n");
+        ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);      
+      }
+
+      /* Check that no grid spacings were given */
+      if (uvar->df1dot != 0.0 || uvar->df2dot != 0.0 || uvar->df3dot != 0.0) {
+        LALPrintError ("\nERROR: df{1,2,3}dot cannot be used with gridType={8,9}\n\n");
+        ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);      
+      }
+
+    }
+
+    /* Specific checks for --gridType=GRID_SPINDOWN_AGEBRK parameter space */
+    if (uvar->gridType == GRID_SPINDOWN_AGEBRK) {
+
+      /* Check age and braking indices */
+      if (uvar->spindownAge <= 0.0) {
+        LALPrintError ("\nERROR: spindownAge must be strictly positive with gridType=9\n\n");
+        ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);      
+      }
+      if (uvar->minBraking <= 0.0) {
+        LALPrintError ("\nERROR: minBraking must be strictly positive with gridType=9\n\n");
+        ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);      
+      }
+      if (uvar->maxBraking <= 0.0) {
+        LALPrintError ("\nERROR: minBraking must be strictly positive with gridType=9\n\n");
+        ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);      
+      }
+
+      /* Check that no first and second spindown ranges were given */
+      if (uvar->f1dot != 0.0 || uvar->f1dotBand != 0.0) {
+        LALPrintError ("\nERROR: f1dot and f1dotBand cannot be used with gridType=9\n\n");
+        ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);      
+      }
+      if (uvar->f2dot != 0.0 || uvar->f2dotBand != 0.0) {
+        LALPrintError ("\nERROR: f2dot and f2dotBand cannot be used with gridType=9\n\n");
+        ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);      
+      }
+
+      {
+	/* Set the first and second spindown ranges to the maximum that will be
+	 * encountered by the age-braking index parameter space. These will *ONLY*
+	 * be used by older code to, e.g. load the correct band of SFTs, and
+	 * will *NOT* be used by the tiling code itself.
+	 * The formulas used here are, with age=a, min braking=n, max braking=N:
+	 *
+	 * -f0/((n-1)*a) <= f1 <= -f0/((N-1)*a)
+	 * n*(f1^2)/f0 <= f2 <= N*(f1^2)/f0
+	 *
+	 * f0/f1 are taken as the maximum/minimum value appropriate for getting the
+	 * maximum/minimum values of f1/f2 (note that f1 is strictly negative here).
+	 */
+	
+	const REAL8 minf0 = uvar->Freq;
+	const REAL8 maxf0 = uvar->Freq + uvar->FreqBand;
+	const REAL8 minf1 = -1.0 * minf0 / ((uvar->minBraking - 1.0) * uvar->spindownAge);
+	const REAL8 maxf1 = -1.0 * maxf0 / ((uvar->maxBraking - 1.0) * uvar->spindownAge);
+	const REAL8 minf2 = uvar->minBraking * (maxf1 * maxf1) / maxf0;
+	const REAL8 maxf2 = uvar->maxBraking * (minf1 * minf1) / minf0;
+
+	uvar->Freq      = minf0;
+	uvar->FreqBand  = maxf0 - minf0;
+	uvar->f1dot     = minf1;
+	uvar->f1dotBand = maxf1 - minf1;
+	uvar->f2dot     = minf2;
+	uvar->f2dotBand = maxf2 - minf2;
+
+      }
+
+    }
 
   } /* Grid-related checks */
 
