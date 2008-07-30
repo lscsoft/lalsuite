@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2008 Karl Wette
  * Copyright (C) 2006 Reinhard Prix
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -18,7 +19,7 @@
  */
 
 /**
- * \author Reinhard Prix
+ * \author Reinhard Prix, Karl Wette
  * \date 2006
  * \file
  * \brief Header file defining the API for DopplerFullScan.
@@ -70,6 +71,7 @@ typedef struct {
   const LALDetector *Detector; 		/**< Current detector */
   const EphemerisData *ephemeris;	/**< ephemeris-data for numerical metrics */
   const CHAR *gridFile;			/**< filename for sky-grid or full-grid if GRID_FILE_SKYGRID or GRID_FILE_FULLGRID */
+  REAL8 extraArgs[3];                   /**< extra grid-specific setup arguments */
 } DopplerFullScanInit;
 
 /** opaque type to reflects the current state of a full multi-dimensional DopplerScan */

@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2007, 2008 Karl Wette
  * Copyright (C) 2004, 2005, 2006 Reinhard Prix
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -18,8 +19,8 @@
  */
 
 /**
- * \author Reinhard Prix
- * \date 2004, 2005, 2006
+ * \author Reinhard Prix, Karl Wette
+ * \date 2004, 2005, 2006, 2007, 2008
  * \file
  * \brief Header file defining the API for DopplerScan.
  *
@@ -101,7 +102,9 @@ typedef enum
   /* ----- full multi-dim grid-types ----- */
   GRID_FILE_FULLGRID	= 6,		/**< load the full D-dim grid from a file */
   GRID_METRIC_LATTICE	= 7,		/**< 'optimal' covering using An*-lattice and flat metric */
-  GRID_SPINDOWN_LATTICE = 8,            /**< spindown lattice tiling for a single sky position */
+  GRID_SPINDOWN_SQUARE  = 8,            /**< spindown tiling for a single sky position and square parameter space */
+  GRID_SPINDOWN_AGEBRK  = 9,            /**< spindown tiling for a single sky position and non-square parameter space
+					   defined by spindown age and braking indices */
   /* ----- end-marker ----- */
   GRID_LAST
 } DopplerGridType;

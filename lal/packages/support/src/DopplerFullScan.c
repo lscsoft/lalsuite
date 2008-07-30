@@ -1,5 +1,6 @@
 /*
- * Copyright (C) 2006, 2007 Reinhard Prix, Karl Wette
+ *  Copyright (C) 2007, 2008 Karl Wette
+ *  Copyright (C) 2006, 2007 Reinhard Prix
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -19,7 +20,7 @@
 
 /**
  * \author Reinhard Prix, Karl Wette
- * \date 2006
+ * \date 2006, 2007, 2008
  * \file
  * \brief Functions for handling "full" multi-dimensional search-grids for CFS.
  *        as opposed to the "factored" grids implemented in DopplerScan.[ch]
@@ -157,75 +158,105 @@ InitDopplerFullScan(LALStatus *status,
 
       break;
 
-    case GRID_SPINDOWN_LATTICE: /* spindown lattice tiling */
+    case GRID_SPINDOWN_SQUARE: /* square parameter space */
+    case GRID_SPINDOWN_AGEBRK: /* age-braking index parameter space */
       {
 
-	int i;
-	gsl_vector *square_bounds = NULL;
+	int i, j;
 	SkyRegion sky = empty_SkyRegion;
 
 	/* Check that the reference time is the same as the start time */
 	if (XLALGPSCmp(&init->searchRegion.refTime, &init->startTime) != 0) {
-	  LALPrintError("\nGRID_SPINDOWN_LATTICE: This option currently restricts "
+	  LALPrintError("\nGRID_SPINDOWN_{SQUARE,AGEBRK}: This option currently restricts "
 			"the reference time to be the same as the start time.\n");
 	  ABORT(status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT);
 	}
-
-	/* Allocate memory */
-	if ((square_bounds = gsl_vector_alloc(2*(2 + PULSAR_MAX_SPINS))) == NULL) {
-	  LALPrintError("\nGRID_SPINDOWN_LATTICE: Failed to allocate a gsl_vector\n");
-	  ABORT(status, DOPPLERSCANH_EMEM, DOPPLERSCANH_MSGEMEM);
-	}
-	gsl_vector_set_zero(square_bounds);
+	
+	/* Set the reference time */
+	thisScan->refTime = init->startTime;	
 
 	/* Create a flat lattice tiling */
-	if (XLAL_SUCCESS != XLALFlatLatticeTilingSquareParamSpace(&thisScan->spindownTiling, square_bounds)) {
-	  LALPrintError("\nGRID_SPINDOWN_LATTICE: XLALFlatLatticeTilingSquareParamSpace failed\n");
+	if (NULL == (thisScan->spindownTiling = XLALCreateFlatLatticeTiling(2 + PULSAR_MAX_SPINS))) {
+	  LALPrintError("\nGRID_SPINDOWN_{SQUARE,AGEBRK}: XLALCreateFlatLatticeTiling failed\n");
 	  ABORT(status, DOPPLERSCANH_EXLAL, DOPPLERSCANH_MSGEXLAL);
+	}
+	
+	/* Parse the sky region string and check that it consists of only one point, and set bounds on it */
+ 	TRY(ParseSkyRegionString(status->statusPtr, &sky, init->searchRegion.skyRegionString), status);
+	if (sky.numVertices != 1) {
+	  LALPrintError("\nGRID_SPINDOWN_{SQUARE,AGEBRK}: This option can only handle a single sky position.\n");
+	  ABORT(status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT);
+	}
+	if (sky.vertices[0].system != COORDINATESYSTEM_EQUATORIAL) {
+ 	  LALPrintError("\nGRID_SPINDOWN_{SQUARE,AGEBRK}: This option only understands COORDINATESYSTEM_EQUATORIAL\n");
+	  ABORT(status, DOPPLERSCANH_ESKYREGION, DOPPLERSCANH_MSGESKYREGION);
+	}
+	if (XLAL_SUCCESS != XLALAddFlatLatticeTilingConstantBound(thisScan->spindownTiling, 1, sky.vertices[0].longitude, sky.vertices[0].longitude)) {
+ 	  LALPrintError("\nGRID_SPINDOWN_{SQUARE,AGEBRK}: XLALAddFlatLatticeTilingConstantBound failed\n");
+	  ABORT(status, DOPPLERSCANH_EXLAL, DOPPLERSCANH_MSGEXLAL);
+	}
+	if (XLAL_SUCCESS != XLALAddFlatLatticeTilingConstantBound(thisScan->spindownTiling, 2, sky.vertices[0].latitude, sky.vertices[0].latitude)) {
+ 	  LALPrintError("\nGRID_SPINDOWN_{SQUARE,AGEBRK}: XLALAddFlatLatticeTilingConstantBound failed\n");
+	  ABORT(status, DOPPLERSCANH_EXLAL, DOPPLERSCANH_MSGEXLAL);
+	}
+	if (sky.vertices)
+	  LALFree (sky.vertices);	
+	
+	/* Setup parameter space */
+	if (thisScan->gridType == GRID_SPINDOWN_SQUARE) { /* square parameter space */
+	  
+	  /* Set square bounds on the frequency and spindowns */
+	  for (i = 0, j = 0; i < PULSAR_MAX_SPINS; ++i, ++j) {
+	    if (i == 1)
+	      j += 2;
+	    if (XLAL_SUCCESS != XLALAddFlatLatticeTilingConstantBound(thisScan->spindownTiling, j, init->searchRegion.fkdot[i], 
+								      init->searchRegion.fkdot[i] + init->searchRegion.fkdotBand[i])) {
+	      LALPrintError("\nGRID_SPINDOWN_SQUARE: XLALAddFlatLatticeTilingConstantBound failed\n");
+	      ABORT(status, DOPPLERSCANH_EXLAL, DOPPLERSCANH_MSGEXLAL);
+	    }
+	  }
+	  
+	}
+	else if (thisScan->gridType == GRID_SPINDOWN_AGEBRK) { /* age-braking index parameter space */
+
+	  /* Get age and braking index from extra arguments */
+	  const REAL8 spindownAge = init->extraArgs[0];
+	  const REAL8 minBraking = init->extraArgs[1];
+	  const REAL8 maxBraking = init->extraArgs[2];
+	  
+	  /* Set age-braking index parameter space */
+	  if (XLAL_SUCCESS != XLALAddFlatLatticeTilingAgeBrakingIndexBounds(thisScan->spindownTiling, 
+									    init->searchRegion.fkdot[0],
+									    init->searchRegion.fkdotBand[0],
+									    spindownAge,
+									    minBraking, maxBraking, 
+									    0, 2)) {
+	    LALPrintError("\nGRID_SPINDOWN_AGEBRK: XLALAddFlatLatticeTilingAgeBrakingIndexBounds failed\n");
+	    ABORT(status, DOPPLERSCANH_EXLAL, DOPPLERSCANH_MSGEXLAL);
+	  }
+	  
+	  /* This current only goes up to second spindown, so bound higher dimensions */
+	  for (i = 3; i < PULSAR_MAX_SPINS; ++i) {
+	    if (XLAL_SUCCESS != XLALAddFlatLatticeTilingConstantBound(thisScan->spindownTiling, 2 + i, init->searchRegion.fkdot[i], 
+								      init->searchRegion.fkdot[i] + init->searchRegion.fkdotBand[i])) {
+	      LALPrintError("\nGRID_SPINDOWN_SQUARE: XLALAddFlatLatticeTilingConstantBound failed\n");
+	      ABORT(status, DOPPLERSCANH_EXLAL, DOPPLERSCANH_MSGEXLAL);
+	    }
+	  }
+
 	}
 	
 	/* Set spindown metric */
 	if (XLAL_SUCCESS != XLALSetFlatLatticeTilingSpindownFstatMetric(thisScan->spindownTiling, init->metricMismatch, init->Tspan)) {
-	  LALPrintError("\nGRID_SPINDOWN_LATTICE: XLALSetFlatLatticeTilingSpindownFstatMetric failed\n");
-	  ABORT(status, DOPPLERSCANH_EXLAL, DOPPLERSCANH_MSGEXLAL);
-	}
-	
-	/* Parse the sky region string, check that it consists of only one point, and set bound on it */
- 	TRY(ParseSkyRegionString(status->statusPtr, &sky, init->searchRegion.skyRegionString), status);
-	if (sky.numVertices != 1) {
-	  LALPrintError("\nGRID_SPINDOWN_LATTICE: This option can only handle a single sky position.\n");
-	  ABORT(status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT);
-	}
-	if (sky.vertices[0].system != COORDINATESYSTEM_EQUATORIAL) {
-	  LALPrintError("\nGRID_SPINDOWN_LATTICE: This option only understands COORDINATESYSTEM_EQUATORIAL\n");
-	  ABORT(status, DOPPLERSCANH_ESKYREGION, DOPPLERSCANH_MSGESKYREGION);
-	}
-	gsl_vector_set(square_bounds, 2, sky.vertices[0].longitude);
-	gsl_vector_set(square_bounds, 4, sky.vertices[0].latitude);
-	LALFree(sky.vertices);
-
-	/* Set bounds on the frequency and spindowns */
-	gsl_vector_set(square_bounds, 0, init->searchRegion.fkdot[0]);
-	gsl_vector_set(square_bounds, 1, init->searchRegion.fkdotBand[0]);
-	for (i = 1; i < PULSAR_MAX_SPINS; ++i) {
-	  gsl_vector_set(square_bounds, 4 + 2*i, init->searchRegion.fkdot[i]);
-	  gsl_vector_set(square_bounds, 5 + 2*i, init->searchRegion.fkdotBand[i]);
-	}
-
-	/* Create the parameter space bounds */
-	if (XLAL_SUCCESS != XLALFlatLatticeTilingSquareParamSpace(&thisScan->spindownTiling, square_bounds)) {
-	  LALPrintError("\nGRID_SPINDOWN_LATTICE: XLALFlatLatticeTilingSquareParamSpace failed\n");
+	  LALPrintError("\nGRID_SPINDOWN_{SQUARE,AGEBRK}: XLALSetFlatLatticeTilingSpindownFstatMetric failed\n");
 	  ABORT(status, DOPPLERSCANH_EXLAL, DOPPLERSCANH_MSGEXLAL);
 	}
 
 	/* Set Anstar lattice */
 	if (XLAL_SUCCESS != XLALSetFlatTilingAnstarLattice(thisScan->spindownTiling)) {
-	  LALPrintError("\nGRID_SPINDOWN_LATTICE: XLALSetFlatTilingAnstarLattice failed\n");
+	  LALPrintError("\nGRID_SPINDOWN_{SQUARE,AGEBRK}: XLALSetFlatTilingAnstarLattice failed\n");
 	  ABORT(status, DOPPLERSCANH_EXLAL, DOPPLERSCANH_MSGEXLAL);
 	}
-	
-	/* Cleanup */
-	gsl_vector_free(square_bounds);
 
       }
 
@@ -349,9 +380,10 @@ XLALNumDopplerTemplates ( DopplerFullScanState *scan)
 	  LogPrintfVerbatim( LOG_DEBUG, " done. (%.0f)\n", scan->numTemplates );
 	  break;
 
-	case GRID_SPINDOWN_LATTICE: /* spindown lattice tiling */
+	case GRID_SPINDOWN_SQUARE: /* square parameter space */
+	case GRID_SPINDOWN_AGEBRK: /* age-braking index parameter space */
 	  LogPrintf(LOG_DEBUG, "Counting spindown lattice templates ... ");
-	  scan->numTemplates = XLALTotalFlatLatticePointCount(scan->spindownTiling);
+	  scan->numTemplates = (REAL8)XLALTotalFlatLatticePointCount(scan->spindownTiling);
 	  LogPrintfVerbatim(LOG_DEBUG, "%0.0f\n", scan->numTemplates);
 	  break;
 
@@ -406,14 +438,14 @@ XLALNextDopplerPos(PulsarDopplerParams *pos, DopplerFullScanState *scan)
       break;
 
     case GRID_FILE_FULLGRID:
-      pos->refTime = scan->refTime;
-      pos->fkdot[0]	= scan->thisGridPoint->entry.data[0];
-      pos->Alpha 	= scan->thisGridPoint->entry.data[1];
-      pos->Delta 	= scan->thisGridPoint->entry.data[2];
-      pos->fkdot[1] 	= scan->thisGridPoint->entry.data[3];
-      pos->fkdot[2] 	= scan->thisGridPoint->entry.data[4];
-      pos->fkdot[3] 	= scan->thisGridPoint->entry.data[5];
-      pos->orbit = NULL;
+      pos->refTime  = scan->refTime;
+      pos->fkdot[0] = scan->thisGridPoint->entry.data[0];
+      pos->Alpha    = scan->thisGridPoint->entry.data[1];
+      pos->Delta    = scan->thisGridPoint->entry.data[2];
+      pos->fkdot[1] = scan->thisGridPoint->entry.data[3];
+      pos->fkdot[2] = scan->thisGridPoint->entry.data[4];
+      pos->fkdot[3] = scan->thisGridPoint->entry.data[5];
+      pos->orbit    = NULL;
       /* advance to next grid point */
       if ( ( scan->thisGridPoint = scan->thisGridPoint->next ) == NULL )
 	scan->state = STATE_FINISHED;
@@ -445,7 +477,8 @@ XLALNextDopplerPos(PulsarDopplerParams *pos, DopplerFullScanState *scan)
 
       break;
 
-    case GRID_SPINDOWN_LATTICE: /* spindown lattice tiling */
+    case GRID_SPINDOWN_SQUARE: /* square parameter space */
+    case GRID_SPINDOWN_AGEBRK: /* age-braking index parameter space */
       {
 
 	int i;
@@ -455,12 +488,13 @@ XLALNextDopplerPos(PulsarDopplerParams *pos, DopplerFullScanState *scan)
 
 	case XLAL_SUCCESS:
 	  /* Found a point */
-	  pos->refTime = scan->refTime;
-	  pos->fkdot[0] = gsl_vector_get(scan->spindownTiling->current, 0);
-	  pos->Alpha = gsl_vector_get(scan->spindownTiling->current, 1);
-	  pos->Delta = gsl_vector_get(scan->spindownTiling->current, 2);
+	  pos->refTime    = scan->refTime;
+	  pos->fkdot[0]   = gsl_vector_get(scan->spindownTiling->current, 0);
+	  pos->Alpha      = gsl_vector_get(scan->spindownTiling->current, 1);
+	  pos->Delta      = gsl_vector_get(scan->spindownTiling->current, 2);
 	  for (i = 1; i < PULSAR_MAX_SPINS; ++i)
 	    pos->fkdot[i] = gsl_vector_get(scan->spindownTiling->current, i + 2);
+
 	  return 0;
 
 	case XLAL_FAILURE:
@@ -469,7 +503,7 @@ XLALNextDopplerPos(PulsarDopplerParams *pos, DopplerFullScanState *scan)
 	  return 1;
 
 	default:
-	  LALPrintError("\nGRID_SPINDOWN_LATTICE: XLALNextFlatLatticeTile failed\n");
+	  LALPrintError("\nGRID_SPINDOWN_{SQUARE,AGEBRK}: XLALNextFlatLatticeTile failed\n");
 	  xlalErrno = XLAL_EFAILED;
 	  return -1;
 
