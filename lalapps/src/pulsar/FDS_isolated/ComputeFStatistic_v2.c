@@ -213,6 +213,8 @@ typedef struct {
   CHAR *outputLogfile;		/**< write a log-file */
   CHAR *outputFstat;		/**< filename to output Fstatistic in */
   CHAR *outputLoudest;		/**< filename for loudest F-candidate plus parameter estimation */
+  CHAR *outputLogPrintf;        /**< send output from LogPrintf statements to this file */
+
   BOOLEAN countTemplates;       /**< just count templates (if supported) instead of search */
 
   INT4 NumCandidatesToKeep;	/**< maximal number of toplist candidates to output */
@@ -299,6 +301,7 @@ int main(int argc,char *argv[])
   PulsarDopplerParams dopplerpos = empty_PulsarDopplerParams;		/* current search-parameters */
   FstatCandidate loudestFCand = empty_FstatCandidate, thisFCand = empty_FstatCandidate;
   BinaryOrbitParams *orbitalParams = NULL;
+  FILE *fpLogPrintf = NULL;
 
   UserInput_t uvar = empty_UserInput;
   ConfigVariables GV = empty_ConfigVariables;		/**< global container for various derived configuration settings */
@@ -319,8 +322,15 @@ int main(int argc,char *argv[])
   if (uvar.help)	/* if help was requested, we're done here */
     exit (0);
 
-  /* set log-level */
+  /* set log-level and open log-file */
   LogSetLevel ( lalDebugLevel );
+  if (LALUserVarWasSet(&uvar.outputLogPrintf)) {
+    if ((fpLogPrintf = fopen(uvar.outputLogPrintf, "wb")) == NULL) {
+      LALPrintError ("\nError opening file '%s' for writing..\n\n", uvar.outputLogPrintf);
+      return (COMPUTEFSTATISTIC_ESYS);
+    }
+    LogSetFile(fpLogPrintf);
+  }
 
   /* keep a log-file recording all relevant parameters of this search-run */
   if ( uvar.outputLogfile ) {
@@ -374,16 +384,6 @@ int main(int argc,char *argv[])
 
   /* count number of templates */
   numTemplates = XLALNumDopplerTemplates ( GV.scanState );
-
-  /* print number of templates if user supplied --countTemplates */
-  if (uvar.countTemplates)
-    {
-      printf("Number of templates: ");
-      if (numTemplates < 0)
-	printf("<not implemented>\n");
-      else
-	printf("%0.0f\n", numTemplates);
-    }
 
   /*----------------------------------------------------------------------
    * main loop: demodulate data for each point in the sky-position grid
@@ -574,6 +574,12 @@ int main(int argc,char *argv[])
   XLALEmptyComputeFBuffer ( &cfBuffer );
 
   LAL_CALL ( Freemem(&status, &GV), &status);
+
+  /* close log-file */
+  if (fpLogPrintf) {
+    fclose(fpLogPrintf);
+    LogSetFile(fpLogPrintf = NULL);
+  }
   
   /* did we forget anything ? */
   LALCheckMemoryLeaks();
@@ -642,8 +648,9 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
 
   uvar->help = FALSE;
   uvar->outputLogfile = NULL;
-
   uvar->outputFstat = NULL;
+  uvar->outputLoudest = NULL;
+  uvar->outputLogPrintf = NULL;
 
   uvar->countTemplates = FALSE;
 
@@ -747,6 +754,8 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
 
   LALregINTUserStruct(status,	upsampleSFTs,	 0,  UVAR_DEVELOPER, "(integer) Factor to up-sample SFTs by");
   LALregBOOLUserStruct(status, 	projectMetric, 	 0,  UVAR_DEVELOPER, "Use projected metric on Freq=const subspact");
+
+  LALregSTRINGUserStruct(status,outputLogPrintf, 0,  UVAR_DEVELOPER, "Send all output from LogPrintf statements to this file");
 
   LALregBOOLUserStruct(status, 	countTemplates,  0,  UVAR_DEVELOPER, "Count number of templates (if supported) instead of search"); 
 
@@ -1108,7 +1117,8 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, UserInput_t *uvar )
 
     LogPrintf (LOG_DEBUG, "Setting up template grid ... ");
     TRY ( InitDopplerFullScan ( status->statusPtr, &cfg->scanState, &scanInit), status); 
-    LogPrintf (LOG_DEBUG, "template grid ready: %.0f templates.\n", XLALNumDopplerTemplates ( cfg->scanState ) );
+    LogPrintfVerbatim (LOG_DEBUG, "template grid ready.\n");
+    XLALNumDopplerTemplates ( cfg->scanState );
   }
 
   /* set number of toplist candidates from fraction if asked to */
