@@ -1267,9 +1267,6 @@ LALCoherentInspiralEstimateDistance (
     REAL4                                 *distance
     )
 {
-  INT4                 i = 0;
-  REAL4                sigmaCoherent = 0.0;
-
   INITSTATUS( status, "LALCoherentInspiralEstimateDistance", 
 	      COHERENTINSPIRALFILTERC );
   ATTATCHSTATUSPTR( status );
@@ -1292,15 +1289,13 @@ LALCoherentInspiralFilterSegment (
     CoherentInspiralFilterParams          *params
     )
 {
-  UINT4                               numDetectors = 0;
-  UINT4                               numSegments = 0;
-  UINT4                               numBeamPoints = 0;
+  UINT4                               detId = 0;
+  UINT4                               detIdSlidTimePt = 0;
   UINT4                               cohSNROut = 0;
   UINT4                               nullStatOut = 0;
   INT4                                caseID[6] = {0,0,0,0,0,0};
   INT4                                i,q,w,m,j,k,l;
   INT4                                found = 0;
-  INT4                                detId = 0;
   INT4                                indexarray[4] = {0,0,0,0};
   INT4                                numPoints = 0;
   INT4                                deltaEventIndex = 0;
@@ -1309,12 +1304,10 @@ LALCoherentInspiralFilterSegment (
   INT4                                segmentLength = 0;
   INT4                                sortedSlidePoints3D[3]= {0,0,0};
   INT4                                sortedSlidePoints4D[4]= {0,0,0,0};
-  INT4                                detIdSlidTimePt = 0;
   int                                 locIdx,decIdx,raIdx,decMax,raMax;
   REAL4                               buffer = 0.0; /*account for timing errors*/
   REAL4                               timingError = 0.0; /*0.00025;*/  /* allowed timing error of 2 ms */
   REAL4                               s[3]={0,0,0};/* up to 4 distances;in 3D space*/
-  REAL4                               nHatVect[3] = {0,0,0};
   REAL4                               distance[4] = {0,0,0,0};
   REAL4                               chirpTime = 0.0;
   REAL4                               cohSNRThresh = 0.0;
@@ -1322,15 +1315,11 @@ LALCoherentInspiralFilterSegment (
   REAL4                               inclination = 0.0;
   REAL4                               polarization = 0.0;
   REAL4                               distanceEstimate = 0.0;
-  REAL4                               coaPhase = 0.0;
-  REAL4                               cohSNRLocal = 0.0; 
+  REAL4                               coaPhase      = 0.0;
   REAL4                               cohSNR        = 0.0;
-  REAL4                               cohSNRSq = 0.0;
-  REAL4                               cohSNRLocalSq = 0.0;
+  REAL4                               cohSNRLocal   = 0.0; 
   REAL4                               cohSNRLocalRe = 0.0;
   REAL4                               cohSNRLocalIm = 0.0;
-  REAL4                               cohSNRLocalSq1 = 0.0;
-  REAL4                               cohSNRLocalSq2 = 0.0;
   REAL4                               nullStatRe    = 0.0 ;
   REAL4                               nullStatIm    = 0.0;
   REAL4                               nullNorm      = 0.0;
@@ -1350,12 +1339,11 @@ LALCoherentInspiralFilterSegment (
   double                              sortedDelays4D[4]= {0.0,0.0,0.0,0.0};
   double                              fplus[4] = {0.0,0.0,0.0,0.0};
   double                              fcross[4] = {0.0,0.0,0.0,0.0};
-  COMPLEX8                            cDataTemp[4];
+  /* CHECK: COMPLEX8                            cDataTemp[4]; */
   COMPLEX8                            quadTemp[6];
   LALDetector                         detectors[4];
   COMPLEX8TimeSeries                 *cData[4] = {NULL,NULL,NULL,NULL};
   MultiInspiralTable                 *thisEvent = NULL; 
-  CoherentInspiralBeamVector         *beamVec = NULL;
   CHAR                                idtag[6][3] = {"G1","H1","H2","L1","T1","V1"};
   CHAR                                caseStr[FILENAME_MAX];
 
@@ -1523,7 +1511,7 @@ LALCoherentInspiralFilterSegment (
     if(caseID[1] && caseID[2]) {
       m = 0;
       for (k=0;k<(INT4)numPoints;k++) {
-	REAL4 cohSNR = 0.0;
+	cohSNR = 0.0;
 
 	for (m=k-buffer; m<k+buffer; m++) {
 	  if(m >=0 && m < (INT4) numPoints) {
@@ -1860,7 +1848,7 @@ LALCoherentInspiralFilterSegment (
 
 	for(k=0;k<(INT4)numPoints;k++)
 	  {
-	    REAL4 cohSNR = 0.0;
+	    cohSNR = 0.0;
 	    
 	    for (q = k-slidePoints[1]-buffer; q < k+slidePoints[1]+buffer; q++)
 	      {
@@ -2247,7 +2235,7 @@ LALCoherentInspiralFilterSegment (
 	
 	for(k=0;k<(INT4)numPoints;k++)
 	  {
-	    REAL4 cohSNR = 0.0;
+	    cohSNR = 0.0;
 	    for(m=k-buffer;m<k+buffer;m++)
 	      {
 		if(m >=0 && m < (INT4) numPoints)
@@ -3855,8 +3843,8 @@ LALCoherentInspiralFilterSegment (
 }
 
 int compare( const void* a, const void* b ) {
-  double* arg1 = (double*) a;
-  double* arg2 = (double*) b;
+  const double* arg1 = (const double*) a;
+  const double* arg2 = (const double*) b;
   if( *arg1 < *arg2 ) return -1;
   else if( *arg1 == *arg2 ) return 0;
   else return 1;
