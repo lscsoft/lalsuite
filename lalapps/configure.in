@@ -235,7 +235,6 @@ AC_OUTPUT( 				\
 	src/inspiral/Makefile		\
 	src/zmsearch/Makefile		\
 	src/detresponse/Makefile	\
-	src/geoinspiralsearch/Makefile  \
 	src/pulsar/hough/src2/Makefile	\
 	src/pulsar/MakeSFTs/Makefile	\
 	src/pulsar/radiometer/Makefile	\
