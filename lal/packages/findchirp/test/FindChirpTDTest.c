@@ -104,6 +104,7 @@ int main( void )
    * do the SP- and TD-filtering... could loop over templates and data here
    * without re-initializing
    */
+  spTmpltParams->order = twoPN;
 
   SPFilter( dataSegVec, mass1, mass2, filterInput, filterParams, fcSegVec,
       spTmpltParams, spDataParams );
