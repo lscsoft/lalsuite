@@ -23,6 +23,7 @@
  * $Date$
  * \brief Module for reading/writing/manipulating SFTs (Short Fourier transforms)
  *
+ *
  <p> <h3> Overview:</h3>
  - SFT-reading: LALSFTdataFind(), LALLoadSFTs(), LALLoadMultiSFTs()
  - SFT-writing: LALWriteSFT2file(), LALWrite_v2SFT_to_v1file()
@@ -151,8 +152,11 @@ i.e. this will only be correct for v1-normalized data (i.e. data = DFT)
  * \date $Date$
  * \brief Header file defining the API for the SFTfileIO modules.
  *
- *
  * Routines for reading and writing SFT binary files.
+ *
+ * This implements the SFTv2 standard defined in LIGO-T040164-01-Z
+ * A previous non-LAL implementation of this standard is found in the "SFT reference library"
+ * gravity.phys.uwm.edu:2402/usr/local/cvs/lscsoft sftlib, Copyright (C) 2004 Bruce Allen
  * 
  */
 
