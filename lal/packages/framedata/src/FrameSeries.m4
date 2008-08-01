@@ -108,6 +108,7 @@ int rename( const char *from, const char *to );
 #include <lal/FrameStream.h>
 #include <lal/TimeSeries.h>
 #include <lal/LALDetectors.h>
+#include <lal/LALDatatypes.h>
 
 NRCSID( FRAMESERIESC, "$Id$" );
 
@@ -385,7 +386,7 @@ static FrVect * FrVectReadInfo( FrFile *iFile, FRULONG *pos )
   return v;
 }
 
-int XLALFrGetTimeSeriesType( const char *channel, FrStream *stream )
+LALTYPECODE XLALFrGetTimeSeriesType( const char *channel, FrStream *stream )
 {
   static const char func[] = "XLALFrGetTimeSeriesType";
   FrChanType chantype;
