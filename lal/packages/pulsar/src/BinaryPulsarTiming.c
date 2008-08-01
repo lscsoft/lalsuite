@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2007 Jolien Creighton, Matt Pitkin, Reinhard Prix
+*  Copyright (C) 2007 Jolien Creighton, Matt Pitkin
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@
 */
 
 /**
- * \author Matt Pitkin, Reinhard Prix
+ * \author Matt Pitkin
  * \date 2006
  * \file
  * \ingroup pulsar

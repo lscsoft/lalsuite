@@ -1,6 +1,8 @@
 /*
  * Copyright (C) 2004, 2005 R. Prix, B. Machenschalk, A.M. Sintes
  *
+ * crc64() taken from SFTReferenceLibrary.c Copyright (C) 2004 Bruce Allen
+ *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2 of the License, or
@@ -12,18 +14,24 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with with program; see the file COPYING. If not, write to the 
- *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, 
+ *  along with with program; see the file COPYING. If not, write to the
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
  */
 
 /** \file
  * \ingroup SFTfileIO
  * \author R. Prix, B. Machenschalk, A.M. Sintes, B. Krishnan
- * 
+ *
  * \brief IO library for reading/writing "Short Fourier transform" (SFT) data files.
  *
- * $Id$ 
+ * This implements the SFTv2 standard defined in LIGO-T040164-01-Z
+ * A previous non-LAL implementation of this standard is found in the "SFT reference library"
+ * gravity.phys.uwm.edu:2402/usr/local/cvs/lscsoft sftlib, Copyright (C) 2004 Bruce Allen
+ *
+ * The function calc_crc64() here is based on crc64() in SFTReferenceLibrary.c.
+ *
+ * $Id$
  *
  */
 

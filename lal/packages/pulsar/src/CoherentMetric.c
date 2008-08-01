@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2007 Jolien Creighton, Reinhard Prix, Teviet Creighton
+*  Copyright (C) 2007 Jolien Creighton, Teviet Creighton
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@
 */
 
 /**
- * \author Creighton, T. D.
+ * \author Creighton, T. D., Jolien Creighton
  * \date 2000 - 2003
  * \file 
  * \ingroup PulsarMetric

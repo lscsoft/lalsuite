@@ -24,6 +24,11 @@
  * \ingroup pulsar
  * \brief Header-file defining the API for the F-statistic functions.
  *
+ * This code is (partly) a descendant of an earlier implementation found in
+ * LALDemod.[ch] by Jolien Creighton, Maria Alessandra Papa, Reinhard Prix, Steve Berukoff, Xavier Siemens, Bruce Allen
+ * ComputSky.[ch] by Jolien Creighton, Reinhard Prix, Steve Berukoff
+ * LALComputeAM.[ch] by Jolien Creighton, Maria Alessandra Papa, Reinhard Prix, Steve Berukoff, Xavier Siemens
+ *
  * $Id$
  *
  */

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007 John T. Whelan
+ * Copyright (C) 2007 John T. Whelan, Reinhard Prix
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,7 +17,7 @@
  *  MA  02111-1307  USA
  */
 
-/** \author J. T. Whelan
+/** \author J. T. Whelan, Reinhard Prix
  * \file
  * \brief
  * Functions related to F-statistic calculation when the AM coefficients are complex.

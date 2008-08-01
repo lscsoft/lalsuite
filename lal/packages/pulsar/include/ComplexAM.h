@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2007 John Whelan
+*  Copyright (C) 2007 John Whelan, Reinhard Prix
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@
 */
 
 /*** <lalVerbatim file="ComplexAMHV">
-Author: Whelan, J.T.
+Author: Whelan, J.T., Reinhard Prix
 $Id$
 *** </lalVerbatim> */
 

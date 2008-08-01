@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2006, 2008 John T. Whelan
  * Copyright (C) 2005, 2006 Reinhard Prix
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -12,13 +13,13 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with with program; see the file COPYING. If not, write to the 
- *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, 
+ *  along with with program; see the file COPYING. If not, write to the
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
  */
 
-/** \author R. Prix
- * \file 
+/** \author R. Prix, John T. Whelan
+ * \file
  * \brief
  * functions to handle DetectorStatesSeries: positions, velocities, detector-tensors
  * of detector as function of time.

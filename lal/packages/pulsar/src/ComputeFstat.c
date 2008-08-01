@@ -25,6 +25,11 @@
  * Functions to calculate the so-called F-statistic for a given point in parameter-space,
  * following the equations in \ref JKS98.
  *
+ * This code is partly a descendant of an earlier implementation found in
+ * LALDemod.[ch] by Jolien Creighton, Maria Alessandra Papa, Reinhard Prix, Steve Berukoff, Xavier Siemens, Bruce Allen
+ * ComputSky.[ch] by Jolien Creighton, Reinhard Prix, Steve Berukoff
+ * LALComputeAM.[ch] by Jolien Creighton, Maria Alessandra Papa, Reinhard Prix, Steve Berukoff, Xavier Siemens
+ *
  */
 
 /*---------- INCLUDES ----------*/
