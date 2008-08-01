@@ -24,7 +24,7 @@ define(`XFSFUNC',`format(`XLALFrWrite%s',FSTYPE)')
 
 int XFUNC ( STYPE *series, int frnum )
 {
-  static const char *func = "XFUNC";
+  static const char func[] = "XFUNC";
   char fname[FILENAME_MAX];
   char tmpfname[FILENAME_MAX];
   char comment[] = "XFUNC $Id$";

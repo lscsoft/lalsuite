@@ -45,7 +45,7 @@ define(`FSFUNC',`format(`LALFrGet%s',FSTYPE)')
 /* <lalVerbatim file="FrameSeriesCP"> */
 int XFSFUNC ( FSTYPE *series, FrStream *stream )
 { /* </lalVerbatim> */
-  static const char *func = "XFSFUNC"; 
+  static const char func[] = "XFSFUNC"; 
   struct FrVect	*vect;
 
   if ( stream->state & LAL_FR_ERR )
@@ -159,7 +159,7 @@ FSFUNC (
 
 int XFUNCM ( STYPE *series, FrStream *stream )
 {
-  static const char *func = "XFUNCM";
+  static const char func[] = "XFUNCM";
   const REAL8    fuzz = 0.1 / 16384.0; /* smallest discernable unit of time */
   struct FrVect	*vect;
   UINT4		 noff;
@@ -211,7 +211,7 @@ int XFUNCM ( STYPE *series, FrStream *stream )
 
 int XFUNC ( STYPE *series, FrStream *stream )
 {
-  static const char *func = "XFUNC";
+  static const char func[] = "XFUNC";
   const REAL8    fuzz = 0.1 / 16384.0; /* smallest discernable unit of time */
   struct FrVect	*vect;
   UINT4		 need;
@@ -636,7 +636,7 @@ STYPE *`XLALFrRead'STYPE (
 	size_t lengthlimit
 )
 {
-	static const char *func = "`XLALFrRead'STYPE";
+	static const char func[] = "`XLALFrRead'STYPE";
 	STYPE *series;
 	size_t length;
 
