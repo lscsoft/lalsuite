@@ -387,7 +387,7 @@ static FrVect * FrVectReadInfo( FrFile *iFile, FRULONG *pos )
 
 int XLALFrGetTimeSeriesType( const char *channel, FrStream *stream )
 {
-  static const char *func = "XLALFrGetTimeSeriesType";
+  static const char func[] = "XLALFrGetTimeSeriesType";
   FrChanType chantype;
   FrTOCts    *ts   = NULL;
   FrProcData *proc = NULL;
@@ -509,7 +509,7 @@ int XLALFrGetTimeSeriesType( const char *channel, FrStream *stream )
 /* little helper function for getting number of points in a channel */
 int XLALFrGetVectorLength ( CHAR *name, FrStream *stream )
 {
-  static const char *func = "XLALFrGetREAL4TimeSeriesLength";
+  static const char func[] = "XLALFrGetVectorLength";
   struct FrVect	*vect;
   int ret = -1;
 
@@ -632,7 +632,7 @@ static int copy_FrVect_to_REAL8( REAL8 *data, struct FrVect *vect, size_t ncpy, 
 
 REAL8TimeSeries * XLALFrInputREAL8TimeSeries( FrStream *stream, const char *channel, const LIGOTimeGPS *start, REAL8 duration, size_t lengthlimit )
 {
-	static const char *func = "XLALFrInputREAL8TimeSeries";
+	static const char func[] = "XLALFrInputREAL8TimeSeries";
 	const REAL8 fuzz = 0.1 / 16384.0; /* smallest discernable unit of time */
 	struct FrVect *vect;
 	REAL8TimeSeries *series;
