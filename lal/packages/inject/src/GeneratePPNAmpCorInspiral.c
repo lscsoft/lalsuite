@@ -41,7 +41,7 @@ with ampltidude corrections.
 
 See GeneratePPNInspiral.c
 
-We store the polarizations h_+ and h_x in waveform.h.
+We store the polarizations $h_+$ and $h_x$ in waveform.h.
 
 Waveform.a is used to store the first three harmonics in alternate values,
 (i.e. a1(0),a2(0),a3(0),a1(1),a2(1),a3(1)...) as this will be used for 
