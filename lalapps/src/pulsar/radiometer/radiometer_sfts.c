@@ -35,8 +35,8 @@ RCSID( "$Id$");
 extern int lalDebugLevel;
 
 
-#define EARTHEPHEMERIS "/Users/artax/work/opt/lscsoft/lal/share/lal/earth05-09.dat"
-#define SUNEPHEMERIS "/Users/artax/work/opt/lscsoft/lal/share/lal/sun05-09.dat"
+#define EARTHEPHEMERIS "/data/gui1/cchung/lscsoft/opt/lscsoft/lal/share/lal/earth05-09.dat"
+#define SUNEPHEMERIS "/data/gui1/cchung/lscsoft/opt/lscsoft/lal/share/lal/sun05-09.dat"
 
 #define F0 100
 #define FBAND 1
@@ -46,7 +46,7 @@ extern int lalDebugLevel;
 #define BLOCKSRNGMED 51
 #define MAXFILENAMELENGTH 512 /* maximum # of characters  of a filename */
 
-#define DIROUT "./out"   /* output directory */
+#define DIROUT "./output/"   /* output directory */
 #define BASENAMEOUT "radio"    /* prefix file output */
 
 #define SKYFILE "./skypatchfile"      
@@ -72,6 +72,7 @@ int main(int argc, char *argv[]){
    COMPLEX16Vector *yalpha = NULL, *ualpha = NULL;
    REAL8Vector *Fplus, *Fcross;
    REAL8 Aplus, Across; 
+   
    /*A's are averaged over cos i... need to change this later!*/ 
 
    SFTPairParams pairParams;
@@ -116,6 +117,7 @@ int main(int argc, char *argv[]){
 
    /* output file */
    FILE *fp = NULL;
+   CHAR filename[MAXFILENAMELENGTH];
 
    /* sft constraint variables */
    LIGOTimeGPS startTimeGPS, endTimeGPS, refTime;
@@ -238,9 +240,10 @@ int main(int argc, char *argv[]){
    }
 
    /* open output file */
-   strcat(uvar_dirnameOut, "Radiometer_out.txt");
+   strcpy (filename, uvar_dirnameOut);
+   strcat(filename, "Radiometer_out.txt");
 
-   if ((fp = fopen(uvar_dirnameOut, "w")) == NULL) {
+   if ((fp = fopen(filename, "w")) == NULL) {
     fprintf(stderr, "error opening output file\n");
     exit(1);
    }
