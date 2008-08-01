@@ -17,18 +17,23 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with with program; see the file COPYING. If not, write to the 
- *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, 
+ *  along with with program; see the file COPYING. If not, write to the
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
  */
 
 /*********************************************************************************/
 /** \author R. Prix, I. Gholami, Y. Ioth, Papa, X. Siemens, C. Messenger, K. Wette
- * \file 
+ * \file
  * \brief
  * Calculate the F-statistic for a given parameter-space of pulsar GW signals.
  * Implements the so-called "F-statistic" as introduced in \ref JKS98.
- *                                                                          
+ *
+ * This code is a descendant of an earlier implementation 'ComputeFStatistic.[ch]'
+ * by Bruce Allen, Bernd Machenschalk, David Hammer, Jolien Creighton, Maria Alessandra Papa,
+ * Reinhard Prix, Xavier Siemens, Scott Koranda, Yousuke Itoh
+ *
+ *
  *********************************************************************************/
 #include "config.h"
 

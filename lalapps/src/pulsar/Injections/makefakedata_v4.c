@@ -1,4 +1,5 @@
 /*
+*  Copyright (C) 2008 Chris Messenger
 *  Copyright (C) 2007 Badri Krishnan, Reinhard Prix
 *
 *  This program is free software; you can redistribute it and/or modify
@@ -23,9 +24,12 @@
  *
  * Authors: R. Prix, M.A. Papa, X. Siemens, B. Allen, C. Messenger
  *
+ * This code is a descendant of an earlier implementation 'makefakedata_v2.[ch]'
+ * by Badri Krishnan, Bruce Allen, Maria Alessandra Papa, Reinhard Prix, Xavier Siemens, Yousuke Itoh
+ *
  * Revision: $Id$
  *
- *           
+ *
  *-----------------------------------------------------------------------
  */
 
