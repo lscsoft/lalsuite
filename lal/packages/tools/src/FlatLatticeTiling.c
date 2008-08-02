@@ -377,7 +377,7 @@ int XLALSetFlatLatticeTilingMetric(
     for (j = 0; j < n; ++j)
       if (gsl_matrix_get(metric, i, j) != gsl_matrix_get(metric, j, i))
 	XLAL_ERROR("'metric' must be symmetric", XLAL_EINVAL);
-  if (max_mismatch < 0.0)
+  if (max_mismatch <= 0.0)
     XLAL_ERROR("'max_mismatch' must be strictly positive", XLAL_EINVAL);
   if (real_scale) {
     if (n != (int)real_scale->size)
