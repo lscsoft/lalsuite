@@ -303,19 +303,24 @@ void InjectNumRelWaveforms (LALStatus           *status,
 			    REAL8               dynRange,      /**< [in] dynamic range factor for scaling time series */ 
 			    REAL8               freqLowCutoff, /**< [in] Lower cutoff frequency */  
 			    REAL8               snrLow,        /**< [in] lower cutoff value of snr */
-			    REAL8               snrHigh)       /**< [in] higher cutoff value of snr */
+			    REAL8               snrHigh,
+			    CHAR                *fname)       /**< [in] higher cutoff value of snr */
 {
 
   REAL4TimeVectorSeries *tempStrain=NULL;
   SimInspiralTable    *thisInj = NULL;
   REAL8 startFreq, startFreqHz, massTotal;
   REAL8 thisSNR;
-  
+  SimInspiralTable *simTableOut=NULL;
+  SimInspiralTable *thisInjOut;
+
   INITSTATUS (status, "InjectNumRelWaveforms", rcsid);
   ATTATCHSTATUSPTR (status); 
   
   ASSERT( chan, status, INSPIRALH_ENULL, INSPIRALH_MSGENULL );
   ASSERT( ifo, status, INSPIRALH_ENULL, INSPIRALH_MSGENULL );
+
+
   
   /* loop over injections */
   for ( thisInj = injections; thisInj; thisInj = thisInj->next )
@@ -339,7 +344,22 @@ void InjectNumRelWaveforms (LALStatus           *status,
 		       "%s:STRAIN", ifo ); 
 
 	  if ((thisSNR < snrHigh) && (thisSNR > snrLow))
-	    {
+	    {	      
+
+	      /* simTableOut will be null only the first time */
+	      if (!simTableOut) {
+		simTableOut = (SimInspiralTable *)LALCalloc( 1, sizeof(SimInspiralTable) );
+		thisInjOut = simTableOut;
+		memcpy(thisInjOut, thisInj, sizeof(*thisInj));
+		thisInjOut->next = NULL;
+	      }
+	      else {
+		thisInjOut->next = (SimInspiralTable *)LALCalloc( 1, sizeof(SimInspiralTable) );
+		thisInjOut = thisInjOut->next;
+		memcpy(thisInjOut, thisInj, sizeof(*thisInj));
+		thisInjOut->next = NULL;
+	      }
+
 	      TRY( LALInjectStrainGW( status->statusPtr, chan, tempStrain, thisInj, 
 				      ifo, dynRange), status);
 	    }
@@ -352,6 +372,31 @@ void InjectNumRelWaveforms (LALStatus           *status,
 
     } /* loop over injectionsj */
 
+
+  /* write and free the output simInspiral table */
+  if ( simTableOut ) {
+
+    LIGOLwXMLStream xmlfp;
+    MetadataTable dummyTable;
+    
+    dummyTable.simInspiralTable = simTableOut;
+
+    /* write the xml table of actual injections */
+    memset( &xmlfp, 0, sizeof(LIGOLwXMLStream) );
+    TRY( LALOpenLIGOLwXMLFile( status->statusPtr, &xmlfp, fname ), status );  
+    
+    TRY( LALBeginLIGOLwXMLTable( status->statusPtr, &xmlfp, sim_inspiral_table ), 
+	      status );
+
+    TRY( LALWriteLIGOLwXMLTable( status->statusPtr, &xmlfp, dummyTable, 
+				      sim_inspiral_table ), status );
+
+    TRY( LALEndLIGOLwXMLTable ( status->statusPtr, &xmlfp ), status );   
+    
+    TRY( LALCloseLIGOLwXMLFile ( status->statusPtr, &xmlfp ), status );    
+    XLALFreeSimInspiral ( &simTableOut );
+  }
+  
   DETATCHSTATUSPTR(status);
   RETURN(status);
 

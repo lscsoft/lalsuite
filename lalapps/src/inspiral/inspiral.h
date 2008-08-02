@@ -93,7 +93,8 @@ void InjectNumRelWaveforms (LALStatus           *status,
 			    REAL8               dynRange,     
 			    REAL8               freqLowCutoff,
 			    REAL8               snrLow,       
-			    REAL8               snrHigh);
+			    REAL8               snrHigh,
+			    CHAR                *fnameOutXML);
 
 REAL8 start_freq_from_frame_url(CHAR  *url);
 

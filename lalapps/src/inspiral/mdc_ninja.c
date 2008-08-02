@@ -134,6 +134,7 @@ INT4 main( INT4 argc, CHAR *argv[] )
   SimInspiralTable *injections = NULL;
   INT4 numInjections           = 0;
   CHAR *injectionType = NULL;
+  CHAR *fnameOutXML = NULL;
 
   /* injection waveforms time series */
   INT4 sampleRate = -1;
@@ -175,6 +176,7 @@ INT4 main( INT4 argc, CHAR *argv[] )
     {"strain-lowpass-freq",     required_argument, 0,                'L'},
     {"snr-low",                 required_argument, 0,                's'},
     {"snr-high",                required_argument, 0,                'S'},
+    {"out-xml-file",            required_argument, 0,                'O'},
     {"help",                    no_argument,       0,                'h'},
     {"version",                 no_argument,       0,                'V'},
     {0, 0, 0, 0}
@@ -194,7 +196,7 @@ INT4 main( INT4 argc, CHAR *argv[] )
     size_t optarg_len;
 
     /* parse command line arguments */
-    c = getopt_long_only( argc, argv, "D:T:a:b:f:r:i:t:n:o:l:L:s:S:hV",
+    c = getopt_long_only( argc, argv, "D:T:a:b:f:r:i:t:n:o:l:L:s:S:O:hV",
         long_options, &option_index );
 
     /* detect the end of the options */
@@ -338,7 +340,7 @@ INT4 main( INT4 argc, CHAR *argv[] )
       case 'o':
         /* create storage for the output mdc log file name */
         optarg_len = strlen(optarg) + 1;
-        mdcFileName = (CHAR *)calloc(optarg_len, sizeof(CHAR));
+        mdcFileName = (CHAR *)calloc(1, optarg_len*sizeof(CHAR));
         memcpy(mdcFileName, optarg, optarg_len);
         break;
 
@@ -378,6 +380,13 @@ INT4 main( INT4 argc, CHAR *argv[] )
       case 'S':
         /* set low-pass cutoff frequency for producing noise */
         snrHigh = atof(optarg);
+        break;
+
+      case 'O':
+	/* set output xml file name */
+	optarg_len = strlen(optarg) + 1;
+        fnameOutXML = (CHAR *)LALCalloc(optarg_len, sizeof(CHAR));
+        memcpy(fnameOutXML, optarg, optarg_len);
         break;
 
       case 'D':
@@ -647,7 +656,8 @@ INT4 main( INT4 argc, CHAR *argv[] )
         strncpy(injData[i]->name, channel, LALNameLength);
 
         LAL_CALL( InjectNumRelWaveforms ( &status, injData[i], injections, ifo, 
-              dynRange, freqLowCutoff, snrLow, snrHigh), &status);
+					  dynRange, freqLowCutoff, snrLow, snrHigh, 
+					  fnameOutXML), &status);
       }
 
       /* set strain as unit */
@@ -692,6 +702,10 @@ INT4 main( INT4 argc, CHAR *argv[] )
     LALFree( thisInj );
   }
 
+  if (fnameOutXML) {
+    LALFree(fnameOutXML);
+  }
+
   LALCheckMemoryLeaks();
 
   exit( 0 );
@@ -726,6 +740,7 @@ static void print_usage( CHAR *program )
       "  --strain-lowpass-freq freq        lowpass frequency when noise is produced\n"\
       "  --snr-low             snr_lo      lower cutoff on snr\n"\
       "  --snr-high            snr_hi      upper cutoff on snr\n"\
+      "  --out-xml-file        output xml  output file with list of injections performed\n"\
       "\n", program );
 }
 
