@@ -717,6 +717,7 @@ int XLALNextFlatLatticePoint(
   ++tiling->count;
   
   /* Convert template to real parameter space coordinates */
+  gsl_vector_memcpy(tiling->current, tiling->curr_point);
   gsl_vector_mul(tiling->current, tiling->real_scale);
   gsl_vector_add(tiling->current, tiling->real_offset);
   
