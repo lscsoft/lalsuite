@@ -191,6 +191,7 @@ int main(int argc, char *argv[]) {
   /* Set the maximum width of a flat parameter space dimension */
   if (max_flat_width > 0.0)
     tiling->max_flat_width = max_flat_width;
+  XLAL_VBXMLO_Tag(&xml, "max_flat_width", "%0.18g", tiling->max_flat_width);
 
   /* Set metric */
   switch (metric_type) {
@@ -265,14 +266,14 @@ int main(int argc, char *argv[]) {
     /* Output template */
     if (!only_count) {
       XLAL_VBXMLO_gsl_vector(&xml, "template", "%0.18g", tiling->current);
-      gsl_vector_memcpy(temp, tiling->curr_lower);
-      gsl_vector_mul(temp, tiling->real_scale);
-      gsl_vector_add(temp, tiling->real_offset);
-      XLAL_VBXMLO_gsl_vector(&xml, "lower", "%0.18g", temp); 
-      gsl_vector_memcpy(temp, tiling->curr_upper);
-      gsl_vector_mul(temp, tiling->real_scale);
-      gsl_vector_add(temp, tiling->real_offset);
-      XLAL_VBXMLO_gsl_vector(&xml, "upper", "%0.18g", temp);
+/*       gsl_vector_memcpy(temp, tiling->curr_lower); */
+/*       gsl_vector_mul(temp, tiling->real_scale); */
+/*       gsl_vector_add(temp, tiling->real_offset); */
+/*       XLAL_VBXMLO_gsl_vector(&xml, "lower", "%0.18g", temp);  */
+/*       gsl_vector_memcpy(temp, tiling->curr_upper); */
+/*       gsl_vector_mul(temp, tiling->real_scale); */
+/*       gsl_vector_add(temp, tiling->real_offset); */
+/*       XLAL_VBXMLO_gsl_vector(&xml, "upper", "%0.18g", temp); */
       fflush(xml.file);
     }
 
