@@ -1294,7 +1294,12 @@ void LALappsGetFrameData(LALStatus*          status,
        * Determine the variable type of data in the frame file.
        */
       dataTypeCode=XLALFrGetTimeSeriesType(channelIn.name, stream);
-
+      if (params->verbosity > quiet)
+	{
+	  fprintf(stdout,"Checking data stream variable type for :%s",channelIn.name);
+	  fflush(stdout);
+	}
+      
       if (dataTypeCode == LAL_S_TYPE_CODE)
 	{
 	  /* Proceed as usual reading in REAL4 data type information */
@@ -1528,7 +1533,7 @@ void LALappsGetFrameData(LALStatus*          status,
       else if  (dataTypeCode == LAL_I2_TYPE_CODE)
 	{
 	  /*Proceed with a INT2 Version of above and copy to REAL4 Struct in the end*/
-	  /* Create temporary space use input REAL4TimeSeries traits!*/
+	  /* Create temporary space use input INT2TimeSeries traits!*/
 	  if (params->verbosity >= verbose)
 	    fprintf(stderr,"Must convert frame INT2 data to REAL4 data for analysis!\n");
 	  tmpINT2Data=XLALCreateINT2TimeSeries(params->channelName,
