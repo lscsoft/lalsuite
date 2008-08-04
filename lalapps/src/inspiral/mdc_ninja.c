@@ -385,7 +385,7 @@ INT4 main( INT4 argc, CHAR *argv[] )
       case 'O':
 	/* set output xml file name */
 	optarg_len = strlen(optarg) + 1;
-        fnameOutXML = (CHAR *)LALCalloc(optarg_len, sizeof(CHAR));
+        fnameOutXML = (CHAR *)calloc(1,optarg_len*sizeof(CHAR));
         memcpy(fnameOutXML, optarg, optarg_len);
         break;
 
@@ -703,7 +703,7 @@ INT4 main( INT4 argc, CHAR *argv[] )
   }
 
   if (fnameOutXML) {
-    LALFree(fnameOutXML);
+    free(fnameOutXML);
   }
 
   LALCheckMemoryLeaks();
