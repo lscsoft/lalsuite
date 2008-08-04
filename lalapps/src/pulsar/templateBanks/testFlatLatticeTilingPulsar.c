@@ -36,6 +36,7 @@
 #include <lal/UserInput.h>
 #include <lal/GSLSupport.h>
 #include <lal/BitField.h>
+#include <lal/DopplerFullScan.h>
 #include <lal/VeryBasicXMLOutput.h>
 #include <lal/FlatLatticeTiling.h>
 #include <lal/FlatLatticeTilingPulsar.h>
@@ -188,15 +189,12 @@ int main(int argc, char *argv[]) {
     LALAPPS_ERROR("Exactly one of --square or --age-braking must be specified\n", 0);
   XLAL_VBXMLO_Tag(&xml, "dimensions", "%i", tiling->dimensions);
 
-  /* Set the maximum width of a flat parameter space dimension */
-  if (max_flat_width > 0.0)
-    tiling->max_flat_width = max_flat_width;
-  XLAL_VBXMLO_Tag(&xml, "max_flat_width", "%0.18g", tiling->max_flat_width);
-
   /* Set metric */
   switch (metric_type) {
   case 0:
-    if (XLAL_SUCCESS != XLALSetFlatLatticeTilingSpindownFstatMetric(tiling, max_mismatch, Tspan))
+    if (!LALUserVarWasSet(&max_flat_width))
+      max_flat_width = GRID_SPINDOWN_MAX_FLAT_WIDTH;
+    if (XLAL_SUCCESS != XLALSetFlatLatticeTilingSpindownFstatMetric(tiling, max_mismatch, Tspan, max_flat_width))
       LALAPPS_ERROR("XLALSetFlatLatticeTilingSpindownFstatMetric failed\n", 0);
     break;
   case 1:
@@ -204,7 +202,7 @@ int main(int argc, char *argv[]) {
       gsl_matrix *identity = NULL;
       ALLOC_GSL_MATRIX(identity, tiling->dimensions, tiling->dimensions, LALAPPS_ERROR);
       gsl_matrix_set_identity(identity);
-      if (XLAL_SUCCESS != XLALSetFlatLatticeTilingMetric(tiling, identity, max_mismatch, NULL))
+      if (XLAL_SUCCESS != XLALSetFlatLatticeTilingMetric(tiling, identity, max_mismatch, NULL, max_flat_width))
 	LALAPPS_ERROR("XLALSetFlatLatticeTilingMetric failed\n", 0);
       gsl_matrix_free(identity);
     }
@@ -216,7 +214,7 @@ int main(int argc, char *argv[]) {
   XLAL_VBXMLO_Tag(&xml, "max_mismatch", "%0.18g", tiling->max_mismatch);
   XLAL_VBXMLO_gsl_vector(&xml, "real_scale", "%0.18g", tiling->real_scale);
   XLAL_VBXMLO_gsl_vector(&xml, "real_offset", "%0.18g", tiling->real_offset);
-  XLAL_VBXMLO_gsl_vector(&xml, "padding", "%e", tiling->padding);
+  XLAL_VBXMLO_Tag(&xml, "max_flat_width", "%0.18g", tiling->max_flat_width);
 
   /* Set lattice */
   switch (lattice_type) {
