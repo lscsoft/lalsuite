@@ -103,7 +103,8 @@ gsl_vector *XLALGSLVectorFromLALStringVector(
 gsl_matrix *XLALResizeGSLMatrix(
 				gsl_matrix *m, /**< Matrix */
 				size_t size1,  /**< New number of rows */
-				size_t size2   /**< New number of columns */
+				size_t size2,  /**< New number of columns */
+				double value   /**< Default value for new elements */
 				)
 {
 
@@ -111,6 +112,7 @@ gsl_matrix *XLALResizeGSLMatrix(
   
   /* Allocate memory */
   ALLOC_GSL_MATRIX(n, size1, size2, XLAL_ERROR_NULL);
+  gsl_matrix_set_all(n, value);
   
   /* Copy contents if any */
   if (m != NULL) {
@@ -129,7 +131,8 @@ gsl_matrix *XLALResizeGSLMatrix(
  */
 gsl_vector *XLALResizeGSLVector(
 				gsl_vector *u, /**< Vector */
-				size_t size    /**< New number of elements */
+				size_t size,   /**< New number of elements */
+				double value   /**< Default value for new elements */
 				)
 {
   
@@ -137,6 +140,7 @@ gsl_vector *XLALResizeGSLVector(
 
   /* Allocate memory */
   ALLOC_GSL_VECTOR(v, size, XLAL_ERROR_NULL);
+  gsl_vector_set_all(v, value);
   
   /* Copy contents if any */
   if (u != NULL) {
@@ -148,4 +152,32 @@ gsl_vector *XLALResizeGSLVector(
   
   return v;
 
+}
+
+/**
+ * Resize a gsl_vector_int and copy over existing contents
+ */
+gsl_vector_int *XLALResizeGSLVectorINT(
+				       gsl_vector_int *u, /**< Vector */
+				       size_t size,       /**< New number of elements */
+				       int value          /**< Default value for new elements */
+				       )
+{
+  
+  gsl_vector_int *v = NULL;
+  
+  /* Allocate memory */
+  ALLOC_GSL_VECTOR_INT(v, size, XLAL_ERROR_NULL);
+  gsl_vector_int_set_all(v, value);
+  
+  /* Copy contents if any */
+  if (u != NULL) {
+    gsl_vector_int_view old = gsl_vector_int_subvector(u, 0, GSL_MIN(u->size, size));
+    gsl_vector_int_view new = gsl_vector_int_subvector(v, 0, GSL_MIN(u->size, size));
+    gsl_vector_int_memcpy(&new.vector, &old.vector);
+    FREE_GSL_VECTOR_INT(u);
+  }
+  
+  return v;
+  
 }
