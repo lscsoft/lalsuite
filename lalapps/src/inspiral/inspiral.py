@@ -1089,14 +1089,13 @@ class SireNode(InspiralAnalysisNode):
     set the output options
     """
     output = self.get_output()
- 
-    self.add_var_opt("output", output)
-    self.add_var_opt("summary", output.replace("xml", "txt"))
-
+    
+    self.add_file_opt("output", output,file_is_output_file=True)
+    self.add_file_opt("summary", output.replace("xml", "txt"),file_is_output_file=True)
+    
     if self.get_inj_file():
-      self.add_var_opt('injection-file', self.get_inj_file())
-      self.add_var_opt('missed-injections', self.get_missed() )
-
+      self.add_file_opt('injection-file', self.get_inj_file())
+      self.add_file_opt('missed-injections', self.get_missed(), file_is_output_file=True)
 
 class CoireNode(InspiralAnalysisNode):
   """
@@ -1253,13 +1252,13 @@ class CoireNode(InspiralAnalysisNode):
     set the output options
     """
     output = self.get_output()
- 
-    self.add_var_opt("output", output)
-    self.add_var_opt("summary", output.replace("xml", "txt"))
+
+    self.add_file_opt("output", output,file_is_output_file=True)
+    self.add_file_opt("summary", output.replace("xml", "txt"),file_is_output_file=True)
 
     if self.get_inj_file():
-      self.add_var_opt('injection-file', self.get_inj_file())
-      self.add_var_opt('missed-injections', self.get_missed() )
+      self.add_file_opt('injection-file', self.get_inj_file())
+      self.add_file_opt('missed-injections', self.get_missed(), file_is_output_file=True)
 
 
 class FrJoinNode(InspiralAnalysisNode):
