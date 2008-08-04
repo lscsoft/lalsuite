@@ -227,6 +227,7 @@ if not opts.disable_followup:
 if not opts.disable_followup:
   inspDataJob     = followupDataFindJob(cp,'inspiral')
   inspJob         = followUpInspJob(cp)
+  inspJobNotrig   = followUpInspJob(cp,'notrig')
   plotJob         = plotSNRCHISQJob(opts,cp)
   qscanFgJob      = qscanJob(opts,cp)
   anaQscanJob     = analyseQscanJob(opts,cp)
@@ -375,7 +376,7 @@ if not opts.disable_followup:
         # generate the snr/chisq time series for each triggered template
         for itf in trig.ifolist_in_coinc:
           # SETUP INSPIRAL JOBS
-          inspiralNode = followUpInspNode(inspJob,inspiral_process_params[ifo], itf, trig, cp, opts, dag, inspiralDataFindNode.outputFileName,inspiralDataFindNode,'inspiral_datafind')
+          inspiralNode = followUpInspNode(inspJobNotrig,inspiral_process_params[ifo], itf, trig, cp, opts, dag, inspiralDataFindNode.outputFileName,inspiralDataFindNode,'inspiral_datafind','notrig',None)
           # SETUP PLOT JOBS
           plotNode = plotSNRCHISQNode(plotJob,ifo,inspiralNode.output_file_name,trig,page,dag,inspiralNode,opts,itf)
 
