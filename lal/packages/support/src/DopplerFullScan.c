@@ -247,7 +247,7 @@ InitDopplerFullScan(LALStatus *status,
 	}
 	
 	/* Set spindown metric */
-	if (XLAL_SUCCESS != XLALSetFlatLatticeTilingSpindownFstatMetric(thisScan->spindownTiling, init->metricMismatch, init->Tspan)) {
+	if (XLAL_SUCCESS != XLALSetFlatLatticeTilingSpindownFstatMetric(thisScan->spindownTiling, init->metricMismatch, init->Tspan, GRID_SPINDOWN_MAX_FLAT_WIDTH)) {
 	  LALPrintError("\nGRID_SPINDOWN_{SQUARE,AGEBRK}: XLALSetFlatLatticeTilingSpindownFstatMetric failed\n");
 	  ABORT(status, DOPPLERSCANH_EXLAL, DOPPLERSCANH_MSGEXLAL);
 	}
