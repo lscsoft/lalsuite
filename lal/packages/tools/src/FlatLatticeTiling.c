@@ -107,6 +107,7 @@ static FlatLatticeTilingSubspace *CreateFlatLatticeTilingSubspace(void)
   /* Initialise structure */
   subspace->is_tiled = 0;
   subspace->dimensions = 0;
+  subspace->padding = NULL;
   subspace->increment = NULL;
 
   return subspace;
@@ -123,6 +124,7 @@ static void FreeFlatLatticeTilingSubspace(
   
   if (subspace) {
     
+    FREE_GSL_VECTOR(subspace->padding);
     FREE_GSL_MATRIX(subspace->increment);
     
     XLALFree(subspace);
@@ -141,6 +143,10 @@ FlatLatticeTiling *XLALCreateFlatLatticeTiling(
   
   FlatLatticeTiling *tiling = NULL;
 
+  /* Check input */
+  if (dimensions <= 0)
+    XLAL_ERROR_NULL("'dimensions' must be strictly positive", XLAL_EINVAL);
+  
   /* Allocate memory */
   if ((tiling = (FlatLatticeTiling*)XLALMalloc(sizeof(FlatLatticeTiling))) == NULL)
     XLAL_ERROR_NULL("Could not allocate 'tiling'", XLAL_ENOMEM);
@@ -152,12 +158,10 @@ FlatLatticeTiling *XLALCreateFlatLatticeTiling(
   tiling->bound_map = NULL;
   tiling->bound_point = NULL;
   tiling->metric = NULL;
-  tiling->orth_directions = NULL;
   tiling->real_scale = NULL;
   tiling->real_offset = NULL;
   tiling->max_mismatch = 0.0;
-  tiling->padding = NULL;
-  tiling->max_flat_width = 0.1;
+  tiling->max_flat_width = NULL;
   tiling->generator = NULL;
   tiling->num_subspaces = 0;
   tiling->subspaces = NULL;
@@ -166,7 +170,6 @@ FlatLatticeTiling *XLALCreateFlatLatticeTiling(
   tiling->curr_point = NULL;
   tiling->curr_lower = NULL;
   tiling->curr_upper = NULL;
-  tiling->curr_inside = 0;
   tiling->current = NULL;
   tiling->count = 0;
   tiling->state = FLT_S_NotInitialised;
@@ -193,10 +196,9 @@ void XLALFreeFlatLatticeTiling(
     FREE_GSL_VECTOR_INT(tiling->bound_map);
     FREE_GSL_VECTOR(tiling->bound_point);
     FREE_GSL_MATRIX(tiling->metric);
-    FREE_GSL_MATRIX(tiling->orth_directions);
     FREE_GSL_VECTOR(tiling->real_scale);
     FREE_GSL_VECTOR(tiling->real_offset);
-    FREE_GSL_VECTOR(tiling->padding);
+    FREE_GSL_VECTOR(tiling->max_flat_width);
     for (k = 0; k < tiling->num_subspaces; ++k)
       FreeFlatLatticeTilingSubspace(tiling->subspaces[k]);
     XLALFree(tiling->subspaces);
@@ -327,11 +329,10 @@ static void GetBounds(
   *lower /= gsl_vector_get(tiling->real_scale, dimension);
   *upper /= gsl_vector_get(tiling->real_scale, dimension);
 
-  /* Update bit field */
-  if (is_tiled) {
-    const REAL8 max_flat_width = tiling->max_flat_width * gsl_vector_get(tiling->padding, dimension);
-    SET_BIT(UINT8, *is_tiled, dimension, (*upper - *lower) > max_flat_width);
-  }
+  /* Update whether dimension is flat */
+  if (is_tiled)
+    SET_BIT(UINT8, *is_tiled, dimension, (*upper - *lower) > 
+	    gsl_vector_get(tiling->max_flat_width, dimension));
 
 }
 
@@ -342,7 +343,8 @@ int XLALSetFlatLatticeTilingMetric(
 				   FlatLatticeTiling *tiling, /**< Tiling structure */
 				   gsl_matrix *metric,        /**< Metric */
 				   REAL8 max_mismatch,        /**< Maximum mismatch */
-				   gsl_vector *real_scale   /**< Multiply to get real metric, may be NULL */
+				   gsl_vector *real_scale,    /**< Multiply to get real metric, may be NULL */
+				   REAL8 max_flat_width       /**< Maximum width of flat dimension */
 				   )
 {
 
@@ -386,10 +388,11 @@ int XLALSetFlatLatticeTilingMetric(
       if (gsl_vector_get(real_scale, i) <= 0.0)
 	XLAL_ERROR("'real_scale' must be strictly positive", XLAL_EINVAL);
   }
+  if (max_flat_width <= 0.0)
+    XLAL_ERROR("'max_flat_width' must be strictly positive", XLAL_EINVAL);
   
   /* Allocate memory */
   ALLOC_GSL_MATRIX(tiling->metric,          n, n, XLAL_ERROR);
-  ALLOC_GSL_MATRIX(tiling->orth_directions, n, n, XLAL_ERROR);  
   ALLOC_GSL_VECTOR(tiling->real_scale,         n, XLAL_ERROR);
   ALLOC_GSL_VECTOR(tiling->real_offset,        n, XLAL_ERROR);
   ALLOC_GSL_VECTOR(tiling->curr_point,         n, XLAL_ERROR);
@@ -413,14 +416,11 @@ int XLALSetFlatLatticeTilingMetric(
     gsl_vector_memcpy(tiling->real_scale, real_scale);
   tiling->max_mismatch = max_mismatch;
 
-  /* Find orthonormal directions of metric */
-  gsl_matrix_set_identity(tiling->orth_directions);
-  if (XLAL_SUCCESS != XLALOrthonormaliseWRTMetric(tiling->orth_directions, tiling->metric))
-    XLAL_ERROR("XLALOrthonormaliseWRTMetric failed", XLAL_EFAILED);
-  
-  /* Use lengths of metric ellipse bounding box as padding along bounds */
-  if (NULL == (tiling->padding = XLALMetricEllipseBoundingBox(tiling->metric, tiling->max_mismatch)))
-    XLAL_ERROR("XLALMetricEllipseBoundingBox failed", XLAL_EFAILED);
+  /* Calculate the maximum width of a flat parameter space 
+     dimension from the extent of the metric along coordinate axes */
+  for (i = 0; i < n; ++i)
+    gsl_vector_set(tiling->max_flat_width, i, max_flat_width * 
+		   sqrt(tiling->max_mismatch / gsl_matrix_get(tiling->metric, i, i)));
   
   return XLAL_SUCCESS;
 
@@ -464,15 +464,12 @@ static int UpdateFlatLatticeTilingSubspace(
 
   int i, j, ii, jj, k;
   gsl_matrix *metric = NULL;
+  gsl_vector *padding = NULL;
   gsl_matrix *orth_directions = NULL;
   gsl_matrix *generator = NULL;
   gsl_matrix *sq_lwtri_generator = NULL;
   gsl_matrix *increment = NULL;
   REAL8 norm_thickness;
-
-  /* Check maximum flat parameter space width */
-  if (tiling->max_flat_width <= 0.0)
-    XLAL_ERROR("'tiling->max_flat_width' must be strictly positive", XLAL_EINVAL);
 
   /* Search for a previously-generated subspace */
   for (k = 0; k < tiling->num_subspaces; ++k) {
@@ -499,10 +496,12 @@ static int UpdateFlatLatticeTilingSubspace(
   if ((r = tiling->curr_subspace->dimensions) > 0) {
 
     /* Allocate memory */
-    ALLOC_GSL_MATRIX(tiling->curr_subspace->increment, n, n, XLAL_ERROR);
     ALLOC_GSL_MATRIX(metric,                           r, r, XLAL_ERROR);
     ALLOC_GSL_MATRIX(orth_directions,                  r, r, XLAL_ERROR);
+    ALLOC_GSL_VECTOR(padding,                             r, XLAL_ERROR);
     ALLOC_GSL_MATRIX(increment,                        r, r, XLAL_ERROR);
+    ALLOC_GSL_VECTOR(tiling->curr_subspace->padding,      n, XLAL_ERROR);
+    ALLOC_GSL_MATRIX(tiling->curr_subspace->increment, n, n, XLAL_ERROR);
     
     /* Copy tiled dimensions of the metric and orthogonal directions */
     for (i = 0, ii = 0; i < n; ++i) {
@@ -510,7 +509,6 @@ static int UpdateFlatLatticeTilingSubspace(
 	for (j = 0, jj = 0; j < n; ++j) {
 	  if (GET_BIT(UINT8, tiling->curr_subspace->is_tiled, j)) {
 	    gsl_matrix_set(metric, ii, jj, gsl_matrix_get(tiling->metric, i, j));
-	    gsl_matrix_set(orth_directions, ii, jj, gsl_matrix_get(tiling->orth_directions, i, j));
 	    ++jj;
 	  }
 	}
@@ -518,7 +516,12 @@ static int UpdateFlatLatticeTilingSubspace(
       }
     }
 
-    /* Re-orthonormalise directions with respect to subspace metric */
+    /* Use lengths of metric ellipse bounding box as padding along bounds */
+    if (NULL == (padding = XLALMetricEllipseBoundingBox(metric, tiling->max_mismatch)))
+      XLAL_ERROR("XLALMetricEllipseBoundingBox failed", XLAL_EFAILED);
+  
+    /* Find orthonormalise directions with respect to subspace metric */
+    gsl_matrix_set_identity(orth_directions);
     if (XLAL_SUCCESS != XLALOrthonormaliseWRTMetric(orth_directions, metric))
       XLAL_ERROR("XLALOrthonormaliseWRTMetric failed", XLAL_EFAILED);
     
@@ -538,9 +541,11 @@ static int UpdateFlatLatticeTilingSubspace(
     gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, orth_directions, sq_lwtri_generator, 0.0, increment);
     
     /* Copy the increment vectors so that non-tiled dimensions are zero */
+    gsl_vector_set_zero(tiling->curr_subspace->padding);
     gsl_matrix_set_zero(tiling->curr_subspace->increment);
     for (i = 0, ii = 0; i < n; ++i) {
       if (GET_BIT(UINT8, tiling->curr_subspace->is_tiled, i)) {
+	gsl_vector_set(tiling->curr_subspace->padding, i, gsl_vector_get(padding, ii));
 	for (j = 0, jj = 0; j < n; ++j) {
 	  if (GET_BIT(UINT8, tiling->curr_subspace->is_tiled, j)) {
 	    gsl_matrix_set(tiling->curr_subspace->increment, i, j, gsl_matrix_get(increment, ii, jj));
@@ -592,8 +597,7 @@ int XLALNextFlatLatticePoint(
     
   case FLT_S_NotStarted:
 
-    /* Initialise current point, bounds, and flags */
-    SET_ALL(UINT8, tiling->curr_inside, n, TRUE);
+    /* Initialise current point and bounds */
     for (i = 0; i < n; ++i) {
 
       /* Get and initialise bounds */
@@ -603,8 +607,6 @@ int XLALNextFlatLatticePoint(
 
       /* Initialise point */
       if (GET_BIT(UINT8, tiling->curr_is_tiled, i)) {
-	lower -= gsl_vector_get(tiling->padding, i);
-	SET_BIT(UINT8, tiling->curr_inside, i, FALSE);
 	gsl_vector_set(tiling->curr_point, i, lower);
       }
       else {
@@ -616,7 +618,10 @@ int XLALNextFlatLatticePoint(
     /* Initialise subspace */
     if (XLAL_SUCCESS != UpdateFlatLatticeTilingSubspace(tiling))
       XLAL_ERROR("UpdateFlatLatticeTilingSubspace failed", XLAL_EFAILED);
-   
+
+    /* Add padding */
+    gsl_vector_sub(tiling->curr_point, tiling->curr_subspace->padding);
+
     /* Initialise count */
     tiling->count = 0;
 
@@ -657,10 +662,7 @@ int XLALNextFlatLatticePoint(
       lower = gsl_vector_get(tiling->curr_lower, i);
       point = gsl_vector_get(tiling->curr_point, i);
       upper = gsl_vector_get(tiling->curr_upper, i);
-      padding = gsl_vector_get(tiling->padding, i);
-      
-      /* Record if point is in bounds */
-      SET_BIT(UINT8, tiling->curr_inside, i, lower <= point && point <= upper);
+      padding = gsl_vector_get(tiling->curr_subspace->padding, i);
       
       /* If point is out of bounds, move to lower dimension */
       if (point > upper + padding)
@@ -690,12 +692,11 @@ int XLALNextFlatLatticePoint(
 	  /* Calculate the distance from current point to
 	     the lower bound, in integer number of increments */
 	  point = gsl_vector_get(tiling->curr_point, j);
-	  padding = gsl_vector_get(tiling->padding, j);
+	  padding = gsl_vector_get(tiling->curr_subspace->padding, j);
 	  dist = floor((lower - padding - point) / gsl_vector_get(&increment.vector, j));
 	  
 	  /* Move point back to lower bound */
 	  gsl_blas_daxpy(dist, &increment.vector, tiling->curr_point);
-	  SET_BIT(UINT8, tiling->curr_inside, j, FALSE);
 	  
 	}
 

@@ -83,6 +83,9 @@ extern "C" {
     /* Dimensions which are tiled (non-flat) */
     UINT8 is_tiled;
 
+    /* Padding of bounds along each dimension */
+    gsl_vector *padding;
+
     /* Increment vectors of the lattice tiling generator */
     gsl_matrix *increment;
 
@@ -120,9 +123,6 @@ extern "C" {
     /* Metric of the parameter space in normalised coordinates */
     gsl_matrix *metric;
 
-    /* Orthogonal directions of the metric */
-    gsl_matrix *orth_directions;
-
     /* Normalised to real parameter coordinates scaling and offset */
     gsl_vector *real_scale;
     gsl_vector *real_offset;
@@ -130,12 +130,8 @@ extern "C" {
     /* Maximum metric mismatch between the templates */
     REAL8 max_mismatch;
 
-    /* Padding of bounds along each dimension */
-    gsl_vector *padding;
-
-    /* Maximum width of a "flat" parameter space 
-       dimension, as a proportion of the padding */
-    REAL8 max_flat_width;
+    /* Maximum width of a flat parameter space dimension */
+    gsl_vector *max_flat_width;
 
     /* Flat tiling lattice generator */
     FlatTilingLatticeGenerator generator;
@@ -157,9 +153,6 @@ extern "C" {
     gsl_vector *curr_lower;
     gsl_vector *curr_upper;
 
-    /* Is current point inside the parameter space */
-    INT8 curr_inside;
-
     /* Current template */
     gsl_vector *current;
 
@@ -177,7 +170,7 @@ extern "C" {
   FlatLatticeTiling* XLALCreateFlatLatticeTiling(INT4);
   void XLALFreeFlatLatticeTiling(FlatLatticeTiling*);
   int XLALAddFlatLatticeTilingBound(FlatLatticeTiling*, UINT8, FlatLatticeTilingBoundFunc, void*, FlatLatticeTilingBoundFree);
-  int XLALSetFlatLatticeTilingMetric(FlatLatticeTiling*, gsl_matrix*, REAL8, gsl_vector*);
+  int XLALSetFlatLatticeTilingMetric(FlatLatticeTiling*, gsl_matrix*, REAL8, gsl_vector*, REAL8);
   int XLALSetFlatTilingLattice(FlatLatticeTiling*, FlatTilingLatticeGenerator);
   int XLALNextFlatLatticePoint(FlatLatticeTiling*);
   UINT4 XLALTotalFlatLatticePointCount(FlatLatticeTiling*);
