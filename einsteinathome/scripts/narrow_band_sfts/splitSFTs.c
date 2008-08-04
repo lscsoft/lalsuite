@@ -37,7 +37,7 @@
 #include <string.h>
 #include "SFTReferenceLibrary.h"
 
-#define RCSID "$Id: splitSFTs.c,v 1.27 2008/07/28 17:10:08 bema Exp $"
+#define RCSID "$Id: splitSFTs.c,v 1.28 2008/08/04 12:04:32 bema Exp $"
 
 /* rounding (for positive numbers!)
    taken from SFTfileIO in LALSupport, should be consistent with that */
@@ -244,19 +244,12 @@ int main(int argc, char**argv) {
 	  "could not open SFT for writing",13);
 
       /* write the data */
-      if (firstfile) {
-	/* write the comment only to the first SFT of a "block" */
-	TRYSFT(WriteSFT(fp, hd.gps_sec, hd.gps_nsec, hd.tbase, 
-			bin, this_width, detector, comment,
-			data + 2 * (bin - hd.firstfreqindex)),
-	       "could not write SFT data");
-      } else {
-	/* not first SFT => NULL comment, everything else identical */
-	TRYSFT(WriteSFT(fp, hd.gps_sec, hd.gps_nsec, hd.tbase, 
-			bin, this_width, detector, NULL,
-			data + 2 * (bin - hd.firstfreqindex)),
-	       "could not write SFT data");
-      }
+      /* write the comment only to the first SFT of a "block" */
+      TRYSFT(WriteSFT(fp, hd.gps_sec, hd.gps_nsec, hd.tbase, 
+		      bin, this_width, detector,
+		      firstfile ? comment : NULL,
+		      data + 2 * (bin - hd.firstfreqindex)),
+	     "could not write SFT data");
 
       /* cleanup */
       fclose(fp);
