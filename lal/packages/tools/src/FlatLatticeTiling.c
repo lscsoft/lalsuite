@@ -395,6 +395,7 @@ int XLALSetFlatLatticeTilingMetric(
   ALLOC_GSL_MATRIX(tiling->metric,          n, n, XLAL_ERROR);
   ALLOC_GSL_VECTOR(tiling->real_scale,         n, XLAL_ERROR);
   ALLOC_GSL_VECTOR(tiling->real_offset,        n, XLAL_ERROR);
+  ALLOC_GSL_VECTOR(tiling->max_flat_width,     n, XLAL_ERROR);
   ALLOC_GSL_VECTOR(tiling->curr_point,         n, XLAL_ERROR);
   ALLOC_GSL_VECTOR(tiling->curr_lower,         n, XLAL_ERROR);
   ALLOC_GSL_VECTOR(tiling->curr_upper,         n, XLAL_ERROR);
@@ -498,7 +499,6 @@ static int UpdateFlatLatticeTilingSubspace(
     /* Allocate memory */
     ALLOC_GSL_MATRIX(metric,                           r, r, XLAL_ERROR);
     ALLOC_GSL_MATRIX(orth_directions,                  r, r, XLAL_ERROR);
-    ALLOC_GSL_VECTOR(padding,                             r, XLAL_ERROR);
     ALLOC_GSL_MATRIX(increment,                        r, r, XLAL_ERROR);
     ALLOC_GSL_VECTOR(tiling->curr_subspace->padding,      n, XLAL_ERROR);
     ALLOC_GSL_MATRIX(tiling->curr_subspace->increment, n, n, XLAL_ERROR);
@@ -558,6 +558,7 @@ static int UpdateFlatLatticeTilingSubspace(
 
     /* Cleanup */
     FREE_GSL_MATRIX(metric);
+    FREE_GSL_VECTOR(padding);
     FREE_GSL_MATRIX(orth_directions);
     FREE_GSL_MATRIX(generator);
     FREE_GSL_MATRIX(sq_lwtri_generator);
