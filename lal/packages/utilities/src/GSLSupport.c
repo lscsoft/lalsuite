@@ -157,7 +157,7 @@ gsl_vector *XLALResizeGSLVector(
 /**
  * Resize a gsl_vector_int and copy over existing contents
  */
-gsl_vector_int *XLALResizeGSLVectorINT(
+gsl_vector_int *XLALResizeGSLVectorInt(
 				       gsl_vector_int *u, /**< Vector */
 				       size_t size,       /**< New number of elements */
 				       int value          /**< Default value for new elements */

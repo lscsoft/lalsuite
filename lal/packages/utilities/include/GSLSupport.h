@@ -45,7 +45,7 @@ extern "C" {
   gsl_vector *XLALGSLVectorFromLALStringVector(LALStringVector*);
   gsl_matrix *XLALResizeGSLMatrix(gsl_matrix*, size_t, size_t, double);
   gsl_vector *XLALResizeGSLVector(gsl_vector*, size_t, double);
-  gsl_vector_int *XLALResizeGSLVectorINT(gsl_vector_int*, size_t, int);
+  gsl_vector_int *XLALResizeGSLVectorInt(gsl_vector_int*, size_t, int);
   
 #ifdef __cplusplus
 }
