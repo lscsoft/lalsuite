@@ -50,6 +50,7 @@ int finite(double);
 
 /* LAL-includes */
 #include <lal/AVFactories.h>
+#include <lal/GSLSupport.h>
 #include <lal/LALInitBarycenter.h>
 #include <lal/UserInput.h>
 #include <lal/SFTfileIO.h>
@@ -220,6 +221,9 @@ typedef struct {
   CHAR *outputLoudest;		/**< filename for loudest F-candidate plus parameter estimation */
   CHAR *outputLogPrintf;        /**< send output from LogPrintf statements to this file */
 
+  CHAR *outputFstatHist;        /**< output discrete histogram of all Fstatistic values */
+  REAL8 FstatHistBin;           /**< width of an Fstatistic histogram bin */
+
   BOOLEAN countTemplates;       /**< just count templates (if supported) instead of search */
 
   INT4 NumCandidatesToKeep;	/**< maximal number of toplist candidates to output */
@@ -307,6 +311,7 @@ int main(int argc,char *argv[])
   FstatCandidate loudestFCand = empty_FstatCandidate, thisFCand = empty_FstatCandidate;
   BinaryOrbitParams *orbitalParams = NULL;
   FILE *fpLogPrintf = NULL;
+  gsl_vector_int *Fstat_histogram = NULL;
 
   UserInput_t uvar = empty_UserInput;
   ConfigVariables GV = empty_ConfigVariables;		/**< global container for various derived configuration settings */
@@ -361,6 +366,15 @@ int main(int argc,char *argv[])
       
       fprintf (fpFstat, "%s", GV.logstring );
     } /* if outputFstat */
+
+  /* start Fstatistic histogram with a single empty bin */
+  if (uvar.outputFstatHist) {
+    if ((Fstat_histogram = gsl_vector_int_alloc(1)) == NULL) {
+      LALPrintError("\nCouldn't allocate 'Fstat_histogram'\n");
+      return COMPUTEFSTATISTIC_EMEM;
+    }
+    gsl_vector_int_set_zero(Fstat_histogram);
+  }
 
   /* setup binary parameters */
   orbitalParams = NULL;
@@ -504,6 +518,25 @@ int main(int argc,char *argv[])
       if ( thisFCand.Fstat.F > loudestFCand.Fstat.F )
 	loudestFCand = thisFCand;
 
+      /* add Fstatistic to histogram if needed */
+      if (uvar.outputFstatHist) {
+
+	/* compute bin */
+	const size_t bin = 2.0 * thisFCand.Fstat.F / uvar.FstatHistBin;
+
+	/* resize histogram vector if needed */
+	if (!Fstat_histogram || bin >= Fstat_histogram->size)
+	  if (NULL == (Fstat_histogram = XLALResizeGSLVectorInt(Fstat_histogram, bin + 1, 0))) {
+	    LALPrintError("\nCouldn't (re)allocate 'Fstat_histogram'\n");
+	    return COMPUTEFSTATISTIC_EMEM;
+	  }
+	
+	/* add to bin */
+	gsl_vector_int_set(Fstat_histogram, bin,
+			   gsl_vector_int_get(Fstat_histogram, bin) + 1);
+	
+      }
+      
     } /* while more Doppler positions to scan */
  
   /* ----- if using toplist: sort and write it out to file now ----- */
@@ -573,6 +606,28 @@ int main(int argc,char *argv[])
   
   LogPrintf (LOG_DEBUG, "Search finished.\n");
   
+  /* write out the Fstatistic histogram */
+  if (uvar.outputFstatHist) {
+
+    size_t i = 0;
+    FILE *fpFstatHist = fopen(uvar.outputFstatHist, "wb");
+   
+    if (fpFstatHist == NULL) {
+      LALPrintError ("\nError opening file '%s' for writing..\n\n", uvar.outputFstat);
+      return (COMPUTEFSTATISTIC_ESYS);
+    }
+    fprintf (fpFstat, "%s", GV.logstring );
+    
+    for (i = 0; i < Fstat_histogram->size; ++i)
+      fprintf(fpFstatHist, "%0.3g %0.3g %i\n",
+	      uvar.FstatHistBin * i,
+	      uvar.FstatHistBin * (i + 1),
+	      gsl_vector_int_get(Fstat_histogram, i));
+    
+    fclose(fpFstatHist);
+    
+  }
+
   /* Free memory */
   LogPrintf (LOG_DEBUG, "Freeing Doppler grid ... ");
   LAL_CALL ( FreeDopplerFullScan(&status, &GV.scanState), &status);
@@ -581,6 +636,9 @@ int main(int argc,char *argv[])
   XLALEmptyComputeFBuffer ( &cfBuffer );
 
   LAL_CALL ( Freemem(&status, &GV), &status);
+
+  if (Fstat_histogram)
+    gsl_vector_int_free(Fstat_histogram);
 
   /* close log-file */
   if (fpLogPrintf) {
@@ -658,6 +716,9 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
   uvar->outputFstat = NULL;
   uvar->outputLoudest = NULL;
   uvar->outputLogPrintf = NULL;
+
+  uvar->outputFstatHist = NULL;
+  uvar->FstatHistBin = 0.1;
 
   uvar->countTemplates = FALSE;
 
@@ -737,6 +798,9 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
 
   LALregSTRINGUserStruct(status,outputFstat,	 0,  UVAR_OPTIONAL, "Output-file for F-statistic field over the parameter-space");
   LALregSTRINGUserStruct(status,outputLoudest,	 0,  UVAR_OPTIONAL, "Loudest F-statistic candidate + estimated MLE amplitudes");
+
+  LALregSTRINGUserStruct(status,outputFstatHist, 0,  UVAR_OPTIONAL, "Output-file for a discrete histogram of all Fstatistic values");
+  LALregREALUserStruct(status,  FstatHistBin,    0,  UVAR_OPTIONAL, "Width of an Fstatistic histogram bin");
 
   LALregINTUserStruct(status,  NumCandidatesToKeep,0, UVAR_OPTIONAL, "Number of Fstat 'candidates' to keep. (0 = All)");
   LALregREALUserStruct(status,FracCandidatesToKeep,0, UVAR_OPTIONAL, "Fraction of Fstat 'candidates' to keep.");
