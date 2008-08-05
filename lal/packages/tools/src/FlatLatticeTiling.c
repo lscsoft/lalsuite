@@ -818,16 +818,19 @@ int XLALRandomPointInFlatLatticeParamSpace(
 
     /* Calculate off-diagonal parts (metric is symmetric) */
     for (i = 0; i < n; ++i)
-      for (j = i + 1; j < n; ++j)
-	*metric_dist += gsl_matrix_get(tiling->metric, i, j) *
-	  gsl_vector_get(diff, i) * gsl_vector_get(diff, j);
+      if (gsl_vector_get(diff, i) != 0.0)
+	for (j = i + 1; j < n; ++j)
+	  if (gsl_vector_get(diff, j) != 0.0)
+	    *metric_dist += gsl_matrix_get(tiling->metric, i, j) *
+	      gsl_vector_get(diff, i) * gsl_vector_get(diff, j);
     *metric_dist *= 2.0;
-
+    
     /* Calculate diagonal components */
     for (i = 0; i < n; ++i)
-      *metric_dist += gsl_matrix_get(tiling->metric, i, i) *
-	gsl_vector_get(diff, i) * gsl_vector_get(diff, i);
-
+      if (gsl_vector_get(diff, i) != 0.0)
+	*metric_dist += gsl_matrix_get(tiling->metric, i, i) *
+	  gsl_vector_get(diff, i) * gsl_vector_get(diff, i);
+    
     /* Cleanup */
     FREE_GSL_VECTOR(diff);
     
