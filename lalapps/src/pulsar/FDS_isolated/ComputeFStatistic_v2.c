@@ -390,7 +390,7 @@ int main(int argc,char *argv[])
   /* count number of templates */
   numTemplates = XLALNumDopplerTemplates ( GV.scanState );
   if (uvar.countTemplates)
-    printf("% Number of templates: %0.0f\n", numTemplates);    
+    printf("%%%% Number of templates: %0.0f\n", numTemplates);    
 
   /*----------------------------------------------------------------------
    * main loop: demodulate data for each point in the sky-position grid
