@@ -79,11 +79,9 @@ int main(int argc, char *argv[]) {
   INT4 inject_seed = 0;
   gsl_vector *inject_point = NULL;
   gsl_vector *inject_min_mismatch = NULL;
-  gsl_vector_int *inject_hit_count = NULL;
   RandomParams *inject_random = NULL;
   REAL8 inject_dist = 0.0;
   gsl_vector_int *inject_min_mismatch_hist = NULL;
-  gsl_vector_int *inject_hit_count_hist = NULL;
   
   /* Initialise LAL error handler, debug level and log level */
   lal_errhandler = LAL_ERR_EXIT;
@@ -114,7 +112,6 @@ int main(int argc, char *argv[]) {
       LALAPPS_ERROR("Could not open output file\n", 0);
   XLAL_VBXMLO_Header(&xml, 1, 0);
   XLAL_VBXMLO_BeginTag(&xml, "testFlatLatticeTilingPulsar");
-  XLAL_VBXMLO_BeginTag(&xml, "param_space");
 
   /* Create square parameter space */
   if (LALUserVarWasSet(&square) && ++spaces == 1) {
@@ -184,7 +181,6 @@ int main(int argc, char *argv[]) {
   }
 
   /* Check only one parameter space was specified */
-  XLAL_VBXMLO_EndTag(&xml, "param_space");
   if (spaces != 1)
     LALAPPS_ERROR("Exactly one of --square or --age-braking must be specified\n", 0);
   XLAL_VBXMLO_Tag(&xml, "dimensions", "%i", tiling->dimensions);
@@ -214,7 +210,7 @@ int main(int argc, char *argv[]) {
   XLAL_VBXMLO_Tag(&xml, "max_mismatch", "%0.18g", tiling->max_mismatch);
   XLAL_VBXMLO_gsl_vector(&xml, "real_scale", "%0.18g", tiling->real_scale);
   XLAL_VBXMLO_gsl_vector(&xml, "real_offset", "%0.18g", tiling->real_offset);
-  XLAL_VBXMLO_Tag(&xml, "max_flat_width", "%0.18g", tiling->max_flat_width);
+  XLAL_VBXMLO_gsl_vector(&xml, "max_flat_width", "%0.18g", tiling->max_flat_width);
 
   /* Set lattice */
   switch (lattice_type) {
@@ -245,11 +241,9 @@ int main(int argc, char *argv[]) {
     /* Allocate memory */
     ALLOC_GSL_VECTOR(inject_point, tiling->dimensions, LALAPPS_ERROR);
     ALLOC_GSL_VECTOR(inject_min_mismatch, inject_count, LALAPPS_ERROR);
-    ALLOC_GSL_VECTOR_INT(inject_hit_count, inject_count, LALAPPS_ERROR);
 
-    /* Initialise injection variables */
+    /* Initialise minimum mismatch */
     gsl_vector_set_all(inject_min_mismatch, GSL_POSINF);
-    gsl_vector_int_set_zero(inject_hit_count);
     
   }
 
@@ -264,14 +258,6 @@ int main(int argc, char *argv[]) {
     /* Output template */
     if (!only_count) {
       XLAL_VBXMLO_gsl_vector(&xml, "template", "%0.18g", tiling->current);
-/*       gsl_vector_memcpy(temp, tiling->curr_lower); */
-/*       gsl_vector_mul(temp, tiling->real_scale); */
-/*       gsl_vector_add(temp, tiling->real_offset); */
-/*       XLAL_VBXMLO_gsl_vector(&xml, "lower", "%0.18g", temp);  */
-/*       gsl_vector_memcpy(temp, tiling->curr_upper); */
-/*       gsl_vector_mul(temp, tiling->real_scale); */
-/*       gsl_vector_add(temp, tiling->real_offset); */
-/*       XLAL_VBXMLO_gsl_vector(&xml, "upper", "%0.18g", temp); */
       fflush(xml.file);
     }
 
@@ -289,11 +275,9 @@ int main(int argc, char *argv[]) {
 	if (!only_count && tiling->count == 1)
 	  XLAL_VBXMLO_gsl_vector(&xml, "injection", "%0.18g", inject_point);	  
 
-	/* Update injection variables */
+	/* Update minimum mismatch */
 	if (gsl_vector_get(inject_min_mismatch, k) > inject_dist)
 	  gsl_vector_set(inject_min_mismatch, k, inject_dist);
-	if (inject_dist <= tiling->max_mismatch)
-	  gsl_vector_int_set(inject_hit_count, k, 1 + gsl_vector_int_get(inject_hit_count, k));
 
       }
       
@@ -351,36 +335,11 @@ int main(int argc, char *argv[]) {
       else
 	++inject_unmatched;
       
-      /* Find the maximum number of template hits */
-      if (inject_hit_count_bins < gsl_vector_int_get(inject_hit_count, k))
-	inject_hit_count_bins = gsl_vector_int_get(inject_hit_count, k);
-      
     }
     XLAL_VBXMLO_Tag(&xml, "injection_count", "%li", inject_count);
     XLAL_VBXMLO_Tag(&xml, "unmatched_injections", "%li", inject_unmatched);
     XLAL_VBXMLO_gsl_vector_int(&xml, "injection_mismatch_histogram", "%i", inject_min_mismatch_hist);
 
-    if (inject_hit_count_bins > 0) {
-      
-      /* Allocate memory */
-      ALLOC_GSL_VECTOR_INT(inject_hit_count_hist, inject_hit_count_bins, LALAPPS_ERROR);
-      
-      /* Loop over injections */
-      gsl_vector_int_set_zero(inject_hit_count_hist);
-      for (k = 0; k < inject_count; ++k) {
-	
-	/* Compute the hit count histogram bin */
-	const int bin = gsl_vector_int_get(inject_hit_count, k) - 1;
-	
-	/* If within range, increase count */
-	if (0 <= bin)
-	  gsl_vector_int_set(inject_hit_count_hist, bin, 1 + gsl_vector_int_get(inject_hit_count_hist, bin));
-	
-      }
-      XLAL_VBXMLO_gsl_vector_int(&xml, "injection_template_hit_histogram", "%i", inject_hit_count_hist);
-
-    }
-    
   }      
   
   /* Close XML output file */
@@ -394,9 +353,7 @@ int main(int argc, char *argv[]) {
   FREE_GSL_VECTOR(temp);
   FREE_GSL_VECTOR(inject_point);
   FREE_GSL_VECTOR(inject_min_mismatch);
-  FREE_GSL_VECTOR_INT(inject_hit_count);
   FREE_GSL_VECTOR_INT(inject_min_mismatch_hist);
-  FREE_GSL_VECTOR_INT(inject_hit_count_hist);
   LALCheckMemoryLeaks();
   
   return EXIT_SUCCESS;
