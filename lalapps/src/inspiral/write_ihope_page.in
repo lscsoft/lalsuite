@@ -1801,9 +1801,8 @@ try:
   opts.ihope_directory 	= configcp.get("main", "ihope-directory")
   opts.title	 	= configcp.get("main", "title")
   opts.url	 	= configcp.get("main", "url")
-  opts.username	 	= configcp.get("main", "username")
   opts.output	 	= configcp.get("main", "output")
-  opts.home_directory 	= configcp.get("main", "home-directory")
+  opts.html_directory 	= configcp.get("main", "html-directory")
 except:
   print >> sys.stderr, "ERROR::The ini file does not have the proper field in the [main] section" 
   print >> sys.stderr, """       Consider adding one of those fields if missing: ihope-ini-file, \
@@ -1814,9 +1813,9 @@ except:
 #sub-products of the ini file parsing
 opts.gpsdir =  '/'+str(opts.gps_start_time)+'-'+str(opts.gps_end_time)+'/'   # note the / at the end
 opts.duration = str(int(opts.gps_end_time) - int(opts.gps_start_time))
-opts.webdir = 'http://' + opts.url + '/~' + opts.username  + opts.gpsdir
+opts.webdir = opts.url + opts.gpsdir
 opts.datadir = opts.ihope_directory + opts.gpsdir 
-opts.physdir = opts.home_directory+'/'+opts.username+'/public_html/'+ opts.gpsdir
+opts.physdir = opts.html_directory + opts.gpsdir
 opts.txt_suffix = '-'+opts.gps_start_time+'-'+opts.duration+'.txt'
 # get the style file, and copy it.  
 opts.style = set_style()
