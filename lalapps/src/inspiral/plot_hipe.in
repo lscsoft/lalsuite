@@ -244,6 +244,12 @@ if tag=="":
 else: 
   input_user_tag = tag + '_'
 
+# Copies the number of slides to the codes that use it
+num_slides = cp.get('pipeline','num-slides')
+if num_slides:
+  for section in ['plotthinca', 'plotethinca', 'ploteffdistcut']:
+    cp.set(section,'num-slides',num_slides)
+
 ###############################
 # Construct list based on ifos supplied at command line
 

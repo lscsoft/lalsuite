@@ -292,6 +292,35 @@ def findSegmentsToAnalyze(config,ifo,generate_segments=True,\
 
 ##############################################################################
 # Function to set up lalapps_inspiral_hipe
+def slide_sanity(config, playOnly = False):
+  """
+  check that the requested number of slides makes sense
+  config    = config file
+  playOnly  = only doing playground
+  """
+  # extract the num-slides
+  try: numSlides = config.get("pipeline","num-slides")
+  except: numSlides = "" 
+
+  maxLength = None
+  if playOnly: maxLength = 600
+  elif config.has_option("input", "max-thinca-segment"):
+    maxLength = config.getint("input", "max-thinca-segment")
+
+  if maxLength and numSlides:
+    ifos = [x[0:2].upper() for x in config.options("ifo-details") \
+        if "data" in x]
+    maxSlide = max([config.getint("thinca-slide", ifo.lower() + "-slide") \
+        for ifo in ifos])
+    if (maxLength/2/maxSlide - 1) < int(numSlides):
+      numSlides = str(maxLength/2/maxSlide - 1)
+      print "Setting number of slides to " + numSlides + \
+          " to avoid double wrapping"
+
+  return numSlides
+
+##############################################################################
+# Function to set up lalapps_inspiral_hipe
 def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dfOnly = False, \
     playOnly = False, vetoCat = None, vetoFiles = None, site = "local", dax=None):
   """
@@ -387,22 +416,8 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dfOnly = False, \
 
   else:
     # add the time slide to the ini file
-    hipecp.set("input","num-slides", config.get("input","num-slides") )
-
-    # sanity check of numSlides
-    maxLength = None
-    if playOnly: maxLength = 600
-    elif hipecp.has_option("input", "max-thinca-segment"):
-      maxLength = hipecp.getint("input", "max-thinca-segment")
-
-    if maxLength:
-      maxSlide = max([config.getint("thinca-slide", ifo.lower() + "-slide") \
-          for ifo in ifos])
-      numSlides = (maxLength/2/maxSlide - 1)
-      if numSlides < hipecp.getint("input", "num-slides"):
-        print "Setting number of slides to " + str(numSlides) + \
-            " to avoid double wrapping"
-        hipecp.set("input","num-slides", str(numSlides))
+    numSlides = slide_sanity(config, playOnly)
+    hipecp.set("input","num-slides",numSlides)
 
   # return to the directory, write ini file and run hipe
   os.chdir(hipeDir)
@@ -564,6 +579,9 @@ def plot_setup(plotDir, config, logPath, stage, injectionSuffix,
   plotcp.set("pipeline","trig-suffix",zerolagSuffix)
   plotcp.set("pipeline","coinc-suffix",zerolagSuffix)
   plotcp.set("pipeline","slide-suffix",slideSuffix)
+  
+  numSlides = slide_sanity(config, ("PLAYGROUND" in slideSuffix )) 
+  plotcp.set("pipeline","num-slides", numSlides)
 
   # Adding followup options to plotinspmissed
   analysisstart = plotcp.get("common","gps-start-time")
@@ -715,7 +733,7 @@ def injZeroSlidePlots(dag, plotDir, config, logPath, injectionSuffix,
   plotDir   = directory in to set up plots
   config    = config file
   logPath   = location where log files will be written
-  injectionSuffix = the strign to restrict to for injections
+  injectionSuffix = the string to restrict to for injections
   zerolagSuffix   = the string to restrict to for zero lag
   slideSuffix     = the string to restrict to for time slides
   cacheFile       = the input cache file for plotting

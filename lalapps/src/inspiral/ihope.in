@@ -577,6 +577,15 @@ if opts.run_followup:
   if opts.run_search:
     followupNode.add_parent(hipeAnalysisNode)
 
+##############################################################################
+# set the number of retries for each of the sub-dags run by ihope
+try:
+  num_retries = int(cp.get('pipeline','retry-subdag'))
+  for node in dag.get_nodes():
+    node.set_retry(num_retries)
+except:
+  # do not retry nodes
+  pass
 
 ##############################################################################
 # Write the dag and sub files
