@@ -2950,8 +2950,8 @@ void ComputeFStat_resamp(LALStatus *status,REAL8FrequencySeries *fstatVector, co
 	  /* Multiply with A and B */
 	  ApplyAandB(CorrDetTimes,BaryTimes,a_at_DetectorTimes,b_at_DetectorTimes,ResampledReal,ResampledImag,FaIn,FbIn);
 
-	  for(p=0;p<FaIn->length;p++)
-	    printf("%d %f %f\n",p,FaIn->data[p][0],FaIn->data[p][1]);
+	  /*for(p=0;p<FaIn->length;p++)
+	    printf("%d %f %f\n",p,FaIn->data[p][0],FaIn->data[p][1]);*/
 	  
 	  /* Calling here for now */
 	  ApplySpinDowns(doppler->fkdot,dt,FaIn,FbIn,CorrDetTimes,StartTime,BaryTimes->data[0] - SFTTimeBaseline/2.0);
