@@ -2851,9 +2851,9 @@ void ComputeFStat_resamp(LALStatus *status,REAL8FrequencySeries *fstatVector, co
       UINT4 q,p1;
       REAL8Sequence* temp;
       
-      fprintf(stderr,"Fmin = %f , Fmax = %f\n",Fmin,Fmax);
+      /*fprintf(stderr,"Fmin = %f , Fmax = %f\n",Fmin,Fmax);
       fprintf(stderr,"length = %d\n",length);
-      fprintf(stderr,"Heterodyne Frequency = %f\n",TSeries->f_het);
+      fprintf(stderr,"Heterodyne Frequency = %f\n",TSeries->f_het);*/
       /*fprintf(stderr,"Internal RefTime = %f , External RefTime = %f , StartTime = %f \n",GPS2REAL8(doppler->refTime),GPS2REAL8(GV->refTime),StartTime);*/
 
       /* Here the reference time in the detector frame is calculated */
