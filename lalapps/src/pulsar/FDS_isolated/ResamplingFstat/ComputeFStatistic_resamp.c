@@ -57,11 +57,7 @@ int finite(double);
 #include <lal/LogPrintf.h>
 #include <lal/DopplerFullScan.h>
 #include <lal/ComplexFFT.h>
-
-/*#include <lal/LALComputeAM.h>*/
-/*#include <lal/DetResponse.h>*/
 #include <lal/LALBarycenter.h>
-
 
 #include <lalapps.h>
 #include <lal/Window.h>
@@ -106,7 +102,7 @@ NRCSID(TEMPORARY,"$Blah$");
 
 /*----- Macros -----*/
 
-/** convert GPS-time to REAL8 */
+/* convert GPS-time to REAL8 */
 #define GPS2REAL8(gps) (1.0 * (gps).gpsSeconds + 1.e-9 * (gps).gpsNanoSeconds )
 #define SQ(x) ( (x) * (x) )
 
@@ -443,6 +439,7 @@ int main(int argc,char *argv[])
   /*Call the CalcTimeSeries Function Here*/
   LogPrintf (LOG_DEBUG, "Calculating Time Series.\n");
   CalcTimeSeries(GV.multiSFTs);
+  fprintf(stderr, "\n WARNING!!! Only the middle half of the band you asked for or is usable. Rest of it is destroyed by Interpolation. Please ask for a larger band. In the future, this will be done automatically. \n"); 
   LogPrintf (LOG_DEBUG, "Done Calculating Time Series.\n");
 
   LogPrintf (LOG_DEBUG, "Starting Main Resampling Loop.\n");
@@ -2024,6 +2021,7 @@ void CalcTimeSeries(MultiSFTVector *multiSFTs)
 	  /*Keep everything except for the Dirichlet Terms */
 	  Fmin = f0+DtermsWings;
 	  Fmax = f0+fullFBand-DtermsWings;
+
 	}
       
       else
@@ -2139,7 +2137,8 @@ void CalcTimeSeries(MultiSFTVector *multiSFTs)
       
       /*fprintf(stderr,"%f %f\n",uvar_Freq+uvar_FreqBand/2.0,Fmax/2.0+Fmin/2.0);*/
       /* Calculate and store the Heterodyne Frequency*/ 
-      TSeries->f_het = (uvar_Freq+uvar_FreqBand/2.0);
+      /*TSeries->f_het = (uvar_Freq+uvar_FreqBand/2.0);*/
+      TSeries->f_het = (Fmin+Fmax)/2.0;
 
       /* Record information for the last block */
       C.Gap[NumofBlocks] = 0;
@@ -2196,7 +2195,7 @@ void CalcTimeSeries(MultiSFTVector *multiSFTs)
 	    }
 	  
 	  /*PrintL(L,Fmin,deltaF/C.NumContinuous[k]);
-	    exit(0);*/
+	  exit(0);*/
 	 	  
 	  plan = fftw_plan_dft_1d(N,L->data,SmallT->data,FFTW_BACKWARD,FFTW_ESTIMATE);
 	  	  
@@ -2229,7 +2228,7 @@ void CalcTimeSeries(MultiSFTVector *multiSFTs)
       XLALFree(C.NumContinuous);
 
     }/*Loop over Multi-IFOs */
-}/*CalctimeSeries()*/
+}/*CalcTimeSeries()*/
 
 
 /****** Returns the sinc function -> sin(pi*x)/x/pi ******/
@@ -2434,15 +2433,15 @@ void ApplySpinDowns(REAL8* SpinDowns, REAL8 dt, FFTWCOMPLEXSeries *FaIn, FFTWCOM
       /* CorrTimes stores the detector times corresponding to a linear sampling in the barycentric frame with the first datum as the detector time corresponding to StartTime + BaryStartTime in the SSB frame */
       /* CorrTimes has StartTime subtracted from it, so add StartTime to get actual time in the detector Frame */
       /* Thus CorrTimes->data[i] + StartTime is the time in the detector frame for the i'th datum. CorrTimes->data[i] + StartTime - DetectorrefTs->data[0] is (td-td0). Here I explicitly put in 0, since I am using only one ifo. But once I get it working, this will be a loop over all detectors and so it will be variable. */
-      /*DT = CorrTimes->data[i] - DetectorrefTs->data[0] + StartTime;*/
+      /* DT = CorrTimes->data[i] - DetectorrefTs->data[0] + StartTime;*/
 
       /* Case 2 to try - (tb-td_reference), in this case, the correction term is 2*pi*fdot*((tb-td0)^2/2 - phi^2/2). */
       /* i*dt + BaryStartTime + StartTime is tb and DetectorrefTs->data[0] = td0 */
-      DT = i*dt + BaryStartTime + StartTime - DetectorrefTs->data[0];
+      /*DT = i*dt + BaryStartTime + StartTime - DetectorrefTs->data[0];*/
 
       /* Case 3 to try - just (tb-tb_reference) */
       /* BaryRefTime is the reference time in the barycentric frame */
-      /* DT = i*dt + BaryStartTime + StartTime - BaryRefTime;*/
+      DT = i*dt + BaryStartTime + StartTime - BaryRefTime;
 
       /* Phi is the sum of all terms */
       Phi = 0;
@@ -2455,9 +2454,9 @@ void ApplySpinDowns(REAL8* SpinDowns, REAL8 dt, FFTWCOMPLEXSeries *FaIn, FFTWCOM
 	  /* Case 1 */
 	  /*Phi += 2.0*LAL_PI*SpinDowns[j]*(DT*DT/2.0-Phi_M*DT);*/
 	  /* Case 2 */
-	  Phi += 2.0*LAL_PI*SpinDowns[j]*(DT*DT/2.0-Phi_M*Phi_M/2.0);
+	  /*Phi += 2.0*LAL_PI*SpinDowns[j]*(DT*DT/2.0-Phi_M*Phi_M/2.0);*/
 	  /* Case 3 */
-	  /*Phi += 2.0*LAL_PI*SpinDowns[j]*(DT*DT/2.0); */
+	  Phi += 2.0*LAL_PI*SpinDowns[j]*(DT*DT/2.0); 
 	}   
 
       /*fprintf(stderr,"Spindown = %g %f\n",SpinDowns[1],Phi);*/
@@ -2472,7 +2471,9 @@ void ApplySpinDowns(REAL8* SpinDowns, REAL8 dt, FFTWCOMPLEXSeries *FaIn, FFTWCOM
       FaIn->data[i][1] = Faimag*cosphi - Fareal*sinphi;
       FbIn->data[i][0] = Fbreal*cosphi + Fbimag*sinphi;
       FbIn->data[i][1] = Fbimag*cosphi - Fbreal*sinphi;
+      /*printf("%d %f %f\n",i,1.0/FaIn->data[i][0]*Fareal,FaIn->data[i][1]/Faimag);*/
     }
+  
 }
 
 
@@ -2849,7 +2850,10 @@ void ComputeFStat_resamp(LALStatus *status,REAL8FrequencySeries *fstatVector, co
       /* Some bookkeeping/convinient variables */
       UINT4 q,p1;
       REAL8Sequence* temp;
-
+      
+      fprintf(stderr,"Fmin = %f , Fmax = %f\n",Fmin,Fmax);
+      fprintf(stderr,"length = %d\n",length);
+      fprintf(stderr,"Heterodyne Frequency = %f\n",TSeries->f_het);
       /*fprintf(stderr,"Internal RefTime = %f , External RefTime = %f , StartTime = %f \n",GPS2REAL8(doppler->refTime),GPS2REAL8(GV->refTime),StartTime);*/
 
       /* Here the reference time in the detector frame is calculated */
@@ -2946,6 +2950,9 @@ void ComputeFStat_resamp(LALStatus *status,REAL8FrequencySeries *fstatVector, co
 	  /* Multiply with A and B */
 	  ApplyAandB(CorrDetTimes,BaryTimes,a_at_DetectorTimes,b_at_DetectorTimes,ResampledReal,ResampledImag,FaIn,FbIn);
 
+	  for(p=0;p<FaIn->length;p++)
+	    printf("%d %f %f\n",p,FaIn->data[p][0],FaIn->data[p][1]);
+	  
 	  /* Calling here for now */
 	  ApplySpinDowns(doppler->fkdot,dt,FaIn,FbIn,CorrDetTimes,StartTime,BaryTimes->data[0] - SFTTimeBaseline/2.0);
 
@@ -2994,7 +3001,7 @@ void ComputeFStat_resamp(LALStatus *status,REAL8FrequencySeries *fstatVector, co
 	}
 
       q = 0;
-      p1 = floor(uvar_FreqBand/2.0/dF+1e-6);
+      p1 = floor((TSeries->f_het - uvar_Freq)/dF+1e-6);
       
       /* If first IFO, make sure they are set to 0 */
       if(i==0)
