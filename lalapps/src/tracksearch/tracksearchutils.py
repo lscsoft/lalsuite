@@ -31,15 +31,33 @@ import copy
 import cPickle
 import gzip
 disableGraphics=False
+#Try importing GTK first if it fails import pylab non-interactive
+#Try getting display env variable upon importing this module.
 import numarray
-try:
-    import pylab
-except Exception, errorInfo: #RuntimeError,ImportError:
-    disableGraphics=True
-    sys.stderr.write("Error trying to import pylab!\n")
-    sys.stderr.write("Exception Instance :%s\n"%(str(type(errorInfo))))
-    sys.stderr.write("Exception Args     :%s\n"%(str(errorInfo.args)))
-    sys.stderr.write("Pylab functionality unavailable!\n")
+
+if os.getenv("DISPLAY") == None:
+    #Non-interactive
+    try:
+        import matplotlib
+        matplotlib.use("Agg")
+        import pylab
+    except Exception, errorInfo: #RuntimeError,ImportError:
+        disableGraphics=True
+        sys.stderr.write("Error trying to import NON-INTERACTIVE pylab!\n")
+        sys.stderr.write("Exception Instance :%s\n"%(str(type(errorInfo))))
+        sys.stderr.write("Exception Args     :%s\n"%(str(errorInfo.args)))
+        sys.stderr.write("Pylab functionality unavailable!\n")
+else:
+    #Interactive
+    try:
+        import pylab
+    except Exception, errorInfo: #RuntimeError,ImportError:
+        disableGraphics=True
+        sys.stderr.write("Error trying to import INTERACTIVE pylab!\n")
+        sys.stderr.write("Exception Instance :%s\n"%(str(type(errorInfo))))
+        sys.stderr.write("Exception Args     :%s\n"%(str(errorInfo.args)))
+        sys.stderr.write("Pylab functionality unavailable!\n")
+
 
 """
 This file provides the class and methods needed to process candidate

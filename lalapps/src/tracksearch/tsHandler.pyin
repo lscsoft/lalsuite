@@ -33,9 +33,6 @@ import copy
 
 sys.path.append('@PYTHONLIBDIR@')
 from tracksearchutils import *
-
-#print sys.argv
-
 disableGraphics=False
 try:
     from pylab import *
@@ -46,9 +43,7 @@ except Exception, errorInfo:
     sys.stderr.write("Exception Args     :%s\n"%(str(errorInfo.args)))
     sys.stderr.write("Pylab functionality unavailable!\n")
     sys.stderr.write("Function calls requiring graphics may FAIL!\n")
-# Need to add import for pylab and if the import fails disable the
-# printing options available from the command line with error messages
-# to the user.
+    
 
 #Begin MAIN part of this python code to actually manipulate the curve
 #lists
@@ -298,6 +293,7 @@ timescale=str(options.timescale).lower()
 topTol=float(options.topPercentile)
 histogramType=str(options.histogramType).lower()
 dqList=int(options.makeDQlist)
+
 
 if verboseSwitch:
     print "Setting verbose mode to candidateHandler call."
