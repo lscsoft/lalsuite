@@ -210,7 +210,10 @@ int main(int argc, char *argv[]) {
   XLAL_VBXMLO_Tag(&xml, "max_mismatch", "%0.18g", tiling->max_mismatch);
   XLAL_VBXMLO_gsl_vector(&xml, "real_scale", "%0.18g", tiling->real_scale);
   XLAL_VBXMLO_gsl_vector(&xml, "real_offset", "%0.18g", tiling->real_offset);
-  XLAL_VBXMLO_gsl_vector(&xml, "max_flat_width", "%0.18g", tiling->max_flat_width);
+  XLAL_VBXMLO_BeginTag(&xml, "max_flat_width");
+  XLAL_VBXMLO_Tag(&xml, "scalar", "%0.18g", max_flat_width);
+  XLAL_VBXMLO_gsl_vector(&xml, "vector", "%0.18g", tiling->max_flat_width);
+  XLAL_VBXMLO_EndTag(&xml, "max_flat_width");
 
   /* Set lattice */
   switch (lattice_type) {
