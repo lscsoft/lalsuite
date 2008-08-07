@@ -126,7 +126,6 @@ RandomParams * XLALCreateRandomParams( INT4 seed )
 {
   static const char *func = "XLALCreateRandomParams";
   RandomParams *params;
-  UINT4 n;
 
   params = XLALMalloc( sizeof( *params) );
   if ( ! params )
@@ -137,6 +136,17 @@ RandomParams * XLALCreateRandomParams( INT4 seed )
 
   if ( seed < 0 )
     seed = -seed;
+
+  XLALResetRandomParams( params, seed );
+
+  return params;
+}
+
+
+void XLALResetRandomParams( RandomParams *params, INT4 seed )
+{
+  static const char *func = "XLALResetRandomParams";
+  UINT4 n;
 
   params->i = seed;
   for ( n = 0; n < 8; ++n ) /* shuffle 8 times */
@@ -149,7 +159,6 @@ RandomParams * XLALCreateRandomParams( INT4 seed )
   /* first random number is the 0th element of v */
   params->y = params->v[0];
 
-  return params;
 }
 
 
