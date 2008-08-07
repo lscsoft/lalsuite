@@ -78,8 +78,8 @@ ADDFUNC ( LALStatus *stat, ATYPE *out, ATYPE *in1, ATYPE *in2 )
 void
 MULFUNC ( LALStatus *stat, ATYPE *out, ATYPE *in1, ATYPE *in2 )
 {
-  UINT4 i, j, k, ni, nj, nk;         /* dimension indecies and ranges */
-  UINT4 ij, ik, kj, in;              /* array indecies */
+  UINT4 i, j, k, ni, nj, nk;         /* dimension indices and ranges */
+  UINT4 ij, ik, kj, in, kn;          /* array indices */
   TYPE *outData, *in1Data, *in2Data; /* data pointers */
 
   INITSTATUS( stat, "MULFUNC", MATRIXOPSC );
@@ -120,14 +120,14 @@ MULFUNC ( LALStatus *stat, ATYPE *out, ATYPE *in1, ATYPE *in2 )
   outData = out->data;
   in1Data = in1->data;
   in2Data = in2->data;
-  for ( i = 0, in = 0; i < ni; i++, in += ni ) {
+  for ( i = 0, in = 0, kn = 0; i < ni; i++, in += nj, kn += nk ) {
     for ( j = 0, ij = in; j < nj; j++, ij++ ) {
 #if COMPLEX
       outData[ij].re = outData[ij].im = 0.0;
 #else
       outData[ij] = 0.0;
 #endif
-      for ( k = 0, ik = in, kj = j; k < nk; k++, ik++, kj += nj ) {
+      for ( k = 0, ik = kn, kj = j; k < nk; k++, ik++, kj += nj ) {
 #if COMPLEX
 	outData[ij].re += in1Data[ik].re*in2Data[kj].re
 	  - in1Data[ik].im*in2Data[kj].im;
@@ -146,8 +146,8 @@ MULFUNC ( LALStatus *stat, ATYPE *out, ATYPE *in1, ATYPE *in2 )
 void
 TRNFUNC ( LALStatus *stat, ATYPE *out, ATYPE *in1 )
 {
-  UINT4 i, j, ni, nj;      /* dimension indecies and ranges */
-  UINT4 ij, ji, in;        /* array indecies */
+  UINT4 i, j, ni, nj;      /* dimension indices and ranges */
+  UINT4 ij, ji, in;        /* array indices */
   TYPE *outData, *in1Data; /* data pointers */
 
   INITSTATUS( stat, "TRNFUNC", MATRIXOPSC );
@@ -177,7 +177,7 @@ TRNFUNC ( LALStatus *stat, ATYPE *out, ATYPE *in1 )
   /* Do transposition. */
   outData = out->data;
   in1Data = in1->data;
-  for ( i = 0, in = 0; i < ni; i++, in += ni ) {
+  for ( i = 0, in = 0; i < ni; i++, in += nj ) {
     for ( j = 0, ij = in, ji = i; j < nj; j++, ij++, ji += ni ) {
 #if COMPLEX
       outData[ij].re = in1Data[ji].re;
