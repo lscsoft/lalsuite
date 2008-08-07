@@ -230,7 +230,7 @@ int main(int argc, char *argv[]) {
   }
 
   /* Setup injections */
-  if (LALUserVarWasSet(&inject_ratio)) {
+  if (inject_ratio > 0.0) {
 
     /* Calculate number of injections */
     if (0 == (inject_count = XLALTotalFlatLatticePointCount(tiling)))
@@ -241,6 +241,10 @@ int main(int argc, char *argv[]) {
     while (inject_seed == 0)
       inject_seed = time(NULL);
 
+    /* Create random number generator */
+    if ((inject_random = XLALCreateRandomParams(inject_seed)) == NULL)
+      LALAPPS_ERROR("XLALCreateRandomParams failed", 0);
+    
     /* Allocate memory */
     ALLOC_GSL_VECTOR(inject_point, tiling->dimensions, LALAPPS_ERROR);
     ALLOC_GSL_VECTOR(inject_min_mismatch, inject_count, LALAPPS_ERROR);
@@ -267,9 +271,8 @@ int main(int argc, char *argv[]) {
     /* Do injections */
     if (inject_count > 0) {
 
-      /* Create random number generator */
-      if ((inject_random = XLALCreateRandomParams(inject_seed)) == NULL)
-	LALAPPS_ERROR("XLALCreateRandomParams failed", 0);
+      /* Reset random number generator */
+      XLALResetRandomParams(inject_random, inject_seed);
 
       /* Generate injections */
       for (k = 0; k < inject_count; ++k) {
@@ -284,9 +287,6 @@ int main(int argc, char *argv[]) {
 
       }
       
-      /* Cleanup */
-      XLALDestroyRandomParams(inject_random);
-
     }
     
   }
@@ -353,6 +353,7 @@ int main(int argc, char *argv[]) {
   /* Cleanup */
   LALDestroyUserVars(&status);
   XLALFreeFlatLatticeTiling(tiling);
+  XLALDestroyRandomParams(inject_random);
   FREE_GSL_VECTOR(temp);
   FREE_GSL_VECTOR(inject_point);
   FREE_GSL_VECTOR(inject_min_mismatch);
