@@ -51,8 +51,9 @@ NRCSID( DOPPLERFULLSCANH, "$Id$" );
 
 /*---------- DEFINES ----------*/
 
-/* maximum width of a "flat" dimension for FlatLatticeTiling */
-#define GRID_SPINDOWN_MAX_FLAT_WIDTH 0.1
+/* Maximum width of a "flat" dimension for FlatLatticeTiling. This choice was verified with MC injections.
+   See 'lscdocs/pulgroup/docs/S5/CasA/flat_lattice_tiling_review/test_max_flat_width/test_max_flat_width.xml' */
+#define GRID_SPINDOWN_MAX_FLAT_WIDTH 0.100
 
 /*---------- external types ----------*/
 
