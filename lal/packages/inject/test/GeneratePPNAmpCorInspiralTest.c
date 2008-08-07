@@ -428,65 +428,65 @@ main(int argc, char **argv)
    ********************************************************************************************************/
 
   /*************************** h(t)*/
-  if( fftout )
-	{
-    LALCreateVector( &stat, &hoft, waveform.h->data->length);
+  LALCreateVector( &stat, &hoft, waveform.h->data->length);
 
-    /* fake detector */
-    /* This one is overhead */
-    detector.location[0] = 0.;
-    detector.location[1] = 0.;
-    detector.location[2] = LAL_AWGS84_SI;
-    detector.response[0][0] = 0.;
-    detector.response[1][1] = 0.5;
-    detector.response[2][2] = -0.5;
-    detector.response[0][1] = detector.response[1][0] = 0.;
-    detector.response[0][2] = detector.response[2][0] = 0.;
-    detector.response[1][2] = detector.response[2][1] = 0.;
-    detector.type = LALDETECTORTYPE_ABSENT;
+  /* fake detector */
+  /* This one is overhead */
+  detector.location[0] = 0.;
+  detector.location[1] = 0.;
+  detector.location[2] = LAL_AWGS84_SI;
+  detector.response[0][0] = 0.;
+  detector.response[1][1] = 0.5;
+  detector.response[2][2] = -0.5;
+  detector.response[0][1] = detector.response[1][0] = 0.;
+  detector.response[0][2] = detector.response[2][0] = 0.;
+  detector.response[1][2] = detector.response[2][1] = 0.;
+  detector.type = LALDETECTORTYPE_ABSENT;
   
-    pulsar.equatorialCoords.longitude = 0.; /* RA */
-    pulsar.equatorialCoords.latitude  = 0.; /* Dec */
-    pulsar.equatorialCoords.system    = COORDINATESYSTEM_EQUATORIAL;
-    pulsar.orientation                = params.psi; /* orientation */
+  pulsar.equatorialCoords.longitude = 0.; /* RA */
+  pulsar.equatorialCoords.latitude  = 0.; /* Dec */
+  pulsar.equatorialCoords.system    = COORDINATESYSTEM_EQUATORIAL;
+  pulsar.orientation                = params.psi; /* orientation */
 
 
-    det_and_pulsar.pDetector = &detector;
-    det_and_pulsar.pSource   = &pulsar;
+  det_and_pulsar.pDetector = &detector;
+  det_and_pulsar.pSource   = &pulsar;
 
-    plus_series.data = NULL;
-    cross_series.data = NULL;
-    scalar_series.data = NULL;
+  plus_series.data = NULL;
+  cross_series.data = NULL;
+  scalar_series.data = NULL;
   
-    am_response_series.pPlus   = &(plus_series);
-    am_response_series.pCross  = &(cross_series);
-    am_response_series.pScalar = &(scalar_series);
+  am_response_series.pPlus   = &(plus_series);
+  am_response_series.pCross  = &(cross_series);
+  am_response_series.pScalar = &(scalar_series);
 
-    LALSCreateVector(&stat, &(am_response_series.pPlus->data), 1);
-    LALSCreateVector(&stat, &(am_response_series.pCross->data), 1);
-    LALSCreateVector(&stat, &(am_response_series.pScalar->data), 1);
+  LALSCreateVector(&stat, &(am_response_series.pPlus->data), 1);
+  LALSCreateVector(&stat, &(am_response_series.pCross->data), 1);
+  LALSCreateVector(&stat, &(am_response_series.pScalar->data), 1);
   
-    time_info.epoch.gpsSeconds     = 61094;
-    time_info.epoch.gpsNanoSeconds = 640000000;
-    time_info.deltaT               = dt;
-    time_info.nSample              = waveform.h->data->length;
-    time_info.accuracy             = LALLEAPSEC_STRICT;
+  time_info.epoch.gpsSeconds     = 61094;
+  time_info.epoch.gpsNanoSeconds = 640000000;
+  time_info.deltaT               = dt;
+  time_info.nSample              = waveform.h->data->length;
+  time_info.accuracy             = LALLEAPSEC_STRICT;
 
-    LALComputeDetAMResponseSeries(&stat,
+  LALComputeDetAMResponseSeries(&stat,
                                 &am_response_series,
                                 &det_and_pulsar,
                                 &time_info);
  
-    for ( i = 0; i < waveform.h->data->length; i++)
-    {
-      hoft->data[i] = waveform.h->data->data[2*i]*am_response_series.pPlus->data->data[i] +
-                        waveform.h->data->data[2*i+1]*am_response_series.pCross->data->data[i];
-    }	
+  for ( i = 0; i < waveform.h->data->length; i++)
+  {
+    hoft->data[i] = waveform.h->data->data[2*i]*am_response_series.pPlus->data->data[i] +
+                   waveform.h->data->data[2*i+1]*am_response_series.pCross->data->data[i];
+  }	
 
-    /* Taper hoft */
-    if( taper > 0 ) 
-      LALInspiralWaveTaper(&stat, hoft, 3);
+  /* Taper hoft */
+  if( taper > 0 ) 
+    LALInspiralWaveTaper(&stat, hoft, 3);
 
+  if( fftout )
+  {
     LALSCreateVector( &stat, &ht.data, waveform.h->data->length );
     LALCCreateVector( &stat, &Hf.data, waveform.h->data->length / 2 + 1 );
     LALCreateForwardRealFFTPlan( &stat, &fwdRealPlan, waveform.h->data->length, 0 );
@@ -508,10 +508,6 @@ main(int argc, char **argv)
 		LALDestroyRealFFTPlan( &stat, &fwdRealPlan );
     LALCDestroyVector( &stat, &Hf.data );
     LALSDestroyVector( &stat, &ht.data );
-    LALDestroyVector( &stat, &hoft );
-    LALSDestroyVector( &stat, &(am_response_series.pPlus->data) );
-    LALSDestroyVector( &stat, &(am_response_series.pCross->data) );
-    LALSDestroyVector( &stat, &(am_response_series.pScalar->data) );
   }
 
   /* Print termination information. */
@@ -578,6 +574,10 @@ main(int argc, char **argv)
   LALFree( waveform.h );
   LALFree( waveform.f );
   LALFree( waveform.phi );
+  LALDestroyVector( &stat, &hoft );
+  LALSDestroyVector( &stat, &(am_response_series.pPlus->data) );
+  LALSDestroyVector( &stat, &(am_response_series.pCross->data) );
+  LALSDestroyVector( &stat, &(am_response_series.pScalar->data) );
 
 
   LALCheckMemoryLeaks();
