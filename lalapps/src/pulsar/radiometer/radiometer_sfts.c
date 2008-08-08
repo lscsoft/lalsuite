@@ -197,7 +197,7 @@ int main(int argc, char *argv[]){
    LAL_CALL( LALRegisterREALUserVar( &status, "f0",               'f', UVAR_OPTIONAL, "Start search frequency", &uvar_f0), &status);
    LAL_CALL( LALRegisterREALUserVar( &status, "fdot",               0, UVAR_OPTIONAL, "Start search frequency derivative", &uvar_fdot), &status);
    LAL_CALL( LALRegisterREALUserVar( &status, "fBand",            'b', UVAR_OPTIONAL, "Search frequency band", &uvar_fBand), &status);
-   LAL_CALL( LALRegisterREALUserVar( &status, "fdotBand",            '0', UVAR_OPTIONAL, "Search frequency derivative band", &uvar_fdotBand), &status);
+   LAL_CALL( LALRegisterREALUserVar( &status, "fdotBand",            0, UVAR_OPTIONAL, "Search frequency derivative band", &uvar_fdotBand), &status);
    LAL_CALL( LALRegisterREALUserVar( &status, "fdotRes",            'r', UVAR_OPTIONAL, "Search frequency derivative resolution", &uvar_fdotResolution), &status);
    LAL_CALL( LALRegisterREALUserVar( &status, "startTime",         0,  UVAR_OPTIONAL, "GPS start time of observation", &uvar_startTime), &status);
    LAL_CALL( LALRegisterREALUserVar(   &status, "endTime",         0,  UVAR_OPTIONAL, "GPS end time of observation", &uvar_endTime), &status);
