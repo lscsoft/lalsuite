@@ -81,7 +81,6 @@ void LALInspiralWaveTaper(
   REAL4 realN, realI;  /* REAL4 values of n & i used for the calculations */
 
   INITSTATUS(status, "LALInspiralWaveTaper",LALINSPIRALWAVETAPERC);
-  ATTATCHSTATUSPTR(status);
 
   ASSERT(signal, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
   ASSERT(signal->data, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL); 
@@ -95,7 +94,7 @@ void LALInspiralWaveTaper(
   /* Search for start and end of signal */
   flag = 0;
   i = 0;
-  while(flag == 0)
+  while(flag == 0 && i < length )
   {
     if( signal->data[i] != 0.)
     {
@@ -104,6 +103,12 @@ void LALInspiralWaveTaper(
     }
     i++;
   }  
+  if ( flag == 0 )
+  {
+    XLALPrintWarning( "No signal found in the vector. Cannot taper." );
+    RETURN( status );
+  }
+    
   flag = 0;
   i = length - 1;
   while(flag == 0)
@@ -148,14 +153,14 @@ void LALInspiralWaveTaper(
       }
       /* Have we reached the middle? */
       if( flag < 2)
-        n = mid;
+        n = mid - start;
 
       /* Taper to that point */
       realN = (REAL4)(n);
       signal->data[start] = 0.0;
-      for(i=start+1; i < n-1; i++)
+      for(i=start+1; i < start + n - 1; i++)
       {
-        realI = (REAL4)(i);
+        realI = (REAL4)(i - start);
         z = (realN - 1.0)/realI + (realN - 1.0)/(realI - (realN - 1.0));
         sigma = 1.0/(exp(z) + 1.0);
         signal->data[i] = signal->data[i]*sigma;
@@ -182,12 +187,7 @@ void LALInspiralWaveTaper(
       /* Have we reached the middle? */
       if( flag < 2)
       {
-        /* Was it an even length vector? As we find the middle from the
-           begining of the array if it is an even length vector we need
-           to increment one as though we found the middle from the end */
-        if( (2*mid - start) < end )
-          mid++;
-        n = mid;
+        n = end - mid;
       }
 
       /* Taper to that point */
@@ -203,8 +203,6 @@ void LALInspiralWaveTaper(
     }
   }
 
-  CHECKSTATUSPTR(status);
-  DETATCHSTATUSPTR(status);
   RETURN (status);
 }
 
