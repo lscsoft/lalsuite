@@ -124,7 +124,7 @@ void CreateSFTPairsIndicesFrom2SFTvectors(LALStatus                *status,
 
   numPairs = 0; /* initialization */
 
-  /* increase length of sftpair vector */
+
 
   thisPair = 0;
 
@@ -232,9 +232,6 @@ void CorrelateSingleSFTPair(LALStatus                *status,
   out->re = (deltaF * deltaF * sqrt(psd1->data->data[bin1] * psd2->data->data[bin2])) * (re1*re2 + im1*im2);
   out->im = (deltaF * deltaF * sqrt(psd1->data->data[bin1] * psd2->data->data[bin2])) * (re1*im2 - re2*im1);
 
-/*  out->re = deltaF * deltaF * (re1*re2 + im2*im2);
-  out->im = deltaF * deltaF * (re1*im2 - re2*im1);
-*/
   DETATCHSTATUSPTR (status);
 	
   /* normal exit */	

@@ -358,9 +358,10 @@ int main(int argc, char *argv[]){
     /* first load them into a MultiSFTVector, then concatenate the various vectors into one*/
     /* read sft files making sure to add extra bins for running median */
     /* add wings for Doppler modulation and running median block size*/
-    doppWings = (uvar_f0 + (freqCounter*deltaF) + uvar_fBand) * VTOT;    
+    /* remove fBand from doppWings because we are going bin-by-bin (?) */
+    doppWings = (uvar_f0 + (freqCounter*deltaF)) * VTOT;    
     fMin = uvar_f0 + (freqCounter*deltaF) - doppWings - uvar_blocksRngMed * deltaF;
-    fMax = uvar_f0 + (freqCounter*deltaF) + uvar_fBand + doppWings + uvar_blocksRngMed * deltaF;
+    fMax = uvar_f0 + (freqCounter*deltaF) + doppWings + uvar_blocksRngMed * deltaF;
  
 
     LAL_CALL( LALLoadMultiSFTs ( &status, &multiSFTs, catalog, fMin, fMax), &status);
@@ -514,11 +515,9 @@ int main(int argc, char *argv[]){
 	psd2 = &(psdVec->data[index2]);
   	
 	LAL_CALL( CorrelateSingleSFTPair( &status, &(yalpha->data[j]), sft1, sft2, psd1, psd2,  &(frequencyShiftList->data[index1]), &(frequencyShiftList->data[index2])), &status);
-/*printf("freqs index%f %i\n", frequencyShiftList->data[index1], index1);*/
-
 
  	LAL_CALL( CalculateSigmaAlphaSq( &status, &sigmasq->data[j], frequencyShiftList->data[index1], frequencyShiftList->data[index2], psd1, psd2), &status);
-/*printf("freqs end %f\n", frequencyShiftList->data[index1]);*/
+
  
 	LAL_CALL( CalculateUalpha (&status, &ualpha->data[j], &Aplus, &Across, &signalPhaseList->data[index1], &signalPhaseList->data[index2], &Fplus->data[index1], &Fplus->data[index2], &Fcross->data[index1], &Fcross->data[index2], &sigmasq->data[j]), &status);
      	ualphacounter = ualphacounter + 1;
