@@ -23,13 +23,7 @@ import glob
 from types import *
 sys.path.append('@PYTHONLIBDIR@')
 
-from pylal import SnglInspiralUtils
-from pylal import SimInspiralUtils
-from pylal import SearchSummaryUtils
 from glue import lal
-from glue import segments
-from glue import segmentsUtils
-from pylal import InspiralUtils
 
 #################################################################
 # help message
@@ -48,91 +42,93 @@ parser = OptionParser( usage=usage, \
     "$Id$\n" +
     "$Name$\n")
 
-#chisq  related
+#action related
 parser.add_option("-a","--tmpltbank",action="store_true",default=False,\
-    help="make links for template banks" )
+    help="look for template bank files that you can make links to" )
 parser.add_option("-b","--inspiral-first",action="store_true",default=False,\
-    help="make links for first inspiral files)" )
+    help="look for first inspiral files that you can make links to)" )
 parser.add_option("-c","--make-links",action="store_true",default=False,\
-    help="make the links instead of just testing the existence" )
-# output related
-parser.add_option("-o","--output-path",action="store",\
-    type="string",default="",  metavar="PATH",\
-    help="path where the figures would be stored")
+    help="make the links" )
 #input
-parser.add_option("-w", "--cache-file",
-  help="read trigger filenames from cache file")
+parser.add_option("-o", "--old-cache-file",action="store",type="string",\
+    default="", metavar="OLD_CACHE_FILE_NAME", help="read filenames from "\
+    "this old cache file. This is the cache file that contains the files "\
+    "you want to link to.")
+parser.add_option("-n", "--append-cache",action="store",type="string",\
+    default="", metavar="NEW_CACHE_FILE_NAME", help="append the newly "\
+    "linked files to this cache file." )
+parser.add_option("-r", "--run-names",action="store",\
+    type="string",default="", metavar="RUN_NAMES",\
+    help="names for the different type of runs. Should "\
+    "be a comma separated list with no spaces. For instance, "\
+    "--run-names playground,full_data,inj001,inj002,inj003")
 (opts,args) = parser.parse_args()
 
-
 # load cache
-if opts.cache_file is not None:
-  cache = lal.Cache.fromfile(open(opts.cache_file))
+if opts.old_cache_file is not None:
+  cache = lal.Cache.fromfile(open(opts.old_cache_file))
 else:
   print "Must specify a cache file"
   exit(1)
 
+if not opts.run_names:
+  print "Must specify the names of the runs. For example, --run-names "\
+    "playground,inj001,inj002"
+  exit(1)
+
+# Make a list of all of the file types that you'd like to link
+# Example: ["TMPLTBANK", "INSPIRAL_FIRST"]
+filetypes = []
 if opts.tmpltbank:
-  # FULL DATA
-  tmpcache = cache.sieve(description="TMPLTBANK_FULL_DATA", exact_match=True)
-  (tmpfound,tmpmissed) = tmpcache.checkfilesexist()
-  if opts.make_links:
-    for file in tmpfound.pfnlist():
-      os.symlink(file,"full_data/"+os.path.basename(file))
-  # playground
-  tmpcache = cache.sieve(description="TMPLTBANK_PLAYGROUND", exact_match=True)
-  (tmpfound,tmpmissed) = tmpcache.checkfilesexist()
-  if opts.make_links:
-    for file in tmpfound.pfnlist():
-      os.symlink(file,"playground/"+os.path.basename(file))
-  # inj001
-  tmpcache = cache.sieve(description="TMPLTBANK_INJ001", exact_match=True)
-  (tmpfound,tmpmissed) = tmpcache.checkfilesexist()
-  if opts.make_links:
-    for file in tmpfound.pfnlist():
-      os.symlink(file,"inj001/"+os.path.basename(file))
-  # inj002
-  tmpcache = cache.sieve(description="TMPLTBANK_INJ002", exact_match=True)
-  (tmpfound,tmpmissed) = tmpcache.checkfilesexist()
-  if opts.make_links:
-    for file in tmpfound.pfnlist():
-      os.symlink(file,"inj002/"+os.path.basename(file))
-  # inj003
-  tmpcache = cache.sieve(description="TMPLTBANK_INJ003", exact_match=True)
-  (tmpfound,tmpmissed) = tmpcache.checkfilesexist()
-  if opts.make_links:
-    for file in tmpfound.pfnlist():
-      os.symlink(file,"inj003/"+os.path.basename(file))
-
+  filetypes.append("TMPLTBANK")
 if opts.inspiral_first:
-  # FULL DATA
-  tmpcache = cache.sieve(description="INSPIRAL_FIRST_FULL_DATA", exact_match=True)
-  (tmpfound,tmpmissed) = tmpcache.checkfilesexist()
-  if opts.make_links:
-    for file in tmpfound.pfnlist():
-      os.symlink(file,"full_data/"+os.path.basename(file))
-  # playground
-  tmpcache = cache.sieve(description="INSPIRAL_FIRST_PLAYGROUND", exact_match=True)
-  (tmpfound,tmpmissed) = tmpcache.checkfilesexist()
-  if opts.make_links:
-    for file in tmpfound.pfnlist():
-      os.symlink(file,"playground/"+os.path.basename(file))
-  # inj001
-  tmpcache = cache.sieve(description="INSPIRAL_FIRST_INJ001", exact_match=True)
-  (tmpfound,tmpmissed) = tmpcache.checkfilesexist()
-  if opts.make_links:
-    for file in tmpfound.pfnlist():
-      os.symlink(file,"inj001/"+os.path.basename(file))
-  # inj002
-  tmpcache = cache.sieve(description="INSPIRAL_FIRST_INJ002", exact_match=True)
-  (tmpfound,tmpmissed) = tmpcache.checkfilesexist()
-  if opts.make_links:
-    for file in tmpfound.pfnlist():
-      os.symlink(file,"inj002/"+os.path.basename(file))
-  # inj003
-  tmpcache = cache.sieve(description="INSPIRAL_FIRST_INJ003", exact_match=True)
-  (tmpfound,tmpmissed) = tmpcache.checkfilesexist()
-  if opts.make_links:
-    for file in tmpfound.pfnlist():
-      os.symlink(file,"inj003/"+os.path.basename(file))
+  filetypes.append("INSPIRAL_FIRST")
 
+# Split the names of the runs into a list. On the command line,
+# the list should be comma-separated. (playground,inj001,etc.)
+runs = opts.run_names.split(",")
+
+# Merge the file types and run names, so that you can do sieves on 
+# the full pattern. Example: TMPLTBANK_INJ001
+filetypelist = []
+
+for typ in filetypes:
+  for run in runs:
+    # Make a tuple of the file type and run name in all upper case
+    # Example: ('TMPLTBANK','INJ001')
+    tup = (typ,run.upper())
+    # Join the file type and run name with an _
+    filetypelist.append("_".join(tup))
+
+# Start a list that will contain the name of every linked file.
+# The files in this list will later be appended to the new cache file.
+filelist = []
+
+# Loop over filetypelist (each item in filetypelist is a sieve pattern).
+# Simultaneously loop over runs, which has the corresponding 
+# directory for each sieve pattern. In order to match up the directory
+# names, the items in "runs" must be repeated (hence the multiplication
+# by len(filetypes)).
+
+for filetype,filedir in zip(filetypelist,runs*len(filetypes)):
+  tmpcache = cache.sieve(description=filetype,exact_match=True)
+  # Check if files from the old cache exist on disk and place 
+  # them in the found and missed lists.
+  (tmpfound,tmpmissed) = tmpcache.checkfilesexist()
+  if len(tmpmissed)>0:
+    print "Warning: These files do not exist on disk, but are listed in the cache."
+    for missingfile in tmpmissed:
+      print "Missing file: " + str(missingfile)
+  if len(tmpfound)==0:
+    print "Nothing matched the sieve pattern: "+filetype
+  # Make the links and append the new file name to filelist
+  if opts.make_links and len(tmpfound)>0:
+    print "Linking the " + filetype + " files..."
+    for file in tmpfound.pfnlist():
+      os.symlink(file,filedir+"/"+os.path.basename(file))
+      filelist.append(filedir+"/"+os.path.basename(file))
+
+# Append the newly linked files to the cache file 
+if opts.append_cache:
+  outcache = cache.from_urls(filelist)
+  outcache.tofile(open(opts.append_cache,"a"))
