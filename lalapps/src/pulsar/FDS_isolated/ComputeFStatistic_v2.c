@@ -616,7 +616,7 @@ int main(int argc,char *argv[])
       LALPrintError ("\nError opening file '%s' for writing..\n\n", uvar.outputFstat);
       return (COMPUTEFSTATISTIC_ESYS);
     }
-    fprintf (fpFstat, "%s", GV.logstring );
+    fprintf(fpFstatHist, "%s", GV.logstring);
     
     for (i = 0; i < Fstat_histogram->size; ++i)
       fprintf(fpFstatHist, "%0.3g %0.3g %i\n",
