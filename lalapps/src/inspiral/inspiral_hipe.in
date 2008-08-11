@@ -1487,7 +1487,8 @@ tmplt_jobs = {}
 
 for ifo in ifo_list:
   if opts.ringdown:
-    tmplt_jobs[ifo] = inspiral.TmpltBankJob(cp,opts.dax,'RINGBANK')
+    tmplt_jobs[ifo] = inspiral.TmpltBankJob(cp,opts.dax)
+    tmplt_jobs[ifo].set_exec_name('ringbank')
   else:
     tmplt_jobs[ifo] = inspiral.TmpltBankJob(cp,opts.dax)
   tmplt_jobs[ifo].set_sub_file( basename + '.tmpltbank_' + ifo + subsuffix )
@@ -1504,7 +1505,8 @@ insp_jobs = {}
 
 for ifo in ifo_list:
   if opts.ringdown:
-    insp_jobs[ifo] = inspiral.InspiralJob(cp,opts.dax,'RING')
+    insp_jobs[ifo] = inspiral.InspiralJob(cp,opts.dax)
+    insp_jobs[ifo].set_exec_name('ring')
   else:
     insp_jobs[ifo] = inspiral.InspiralJob(cp,opts.dax)
   insp_jobs[ifo].set_sub_file( basename + '.inspiral_' + ifo + subsuffix )
@@ -1518,7 +1520,8 @@ thinca_jobs = {}
 
 for ifos in ifo_coincs:
   if opts.ringdown:
-    thinca_jobs[ifos] = inspiral.ThincaJob(cp,opts.dax,'RINCA')
+    thinca_jobs[ifos] = inspiral.ThincaJob(cp,opts.dax)
+    thinca_jobs[ifos].set_exec_name('rinca')
   else:
     thinca_jobs[ifos] = inspiral.ThincaJob(cp)
   thinca_jobs[ifos].set_sub_file(basename + '.thinca_' + ifos + 
@@ -1529,7 +1532,8 @@ thinca_slide_jobs = {}
 
 for ifos in ifo_coincs:
   if opts.ringdown:
-    thinca_slide_jobs[ifos] = inspiral.ThincaJob(cp,opts.dax,'RINCA')
+    thinca_slide_jobs[ifos] = inspiral.ThincaJob(cp,opts.dax)
+    thinca_slide_jobs[ifos].set_exec_name('rinca')
   else:
     thinca_slide_jobs[ifos] = inspiral.ThincaJob(cp)
   thinca_slide_jobs[ifos].set_sub_file(basename + '.thinca_slides_' + 

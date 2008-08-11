@@ -77,6 +77,8 @@ int ring_parse_options( struct ring_params *params, int argc, char **argv )
     { "injection-type",          required_argument, 0, 'J' },
     { "injection-file",          required_argument, 0, 'i' },
     { "inject-mdc-frame",        required_argument, 0, 'I' },
+    { "user-tag",                required_argument, 0, 'k' },
+    { "ifo-tag",                 required_argument, 0, 'K' },
     { "bank-max-mismatch",       required_argument, 0, 'm' },
     { "maximize-duration",       required_argument, 0, 'M' },
     { "only-segment-numbers",    required_argument, 0, 'n' },
@@ -192,6 +194,12 @@ int ring_parse_options( struct ring_params *params, int argc, char **argv )
         break;
       case 'I': /* inject-mdc-frame */
         error( "currently unsupported option: --inject-mdc-frame\n" );
+        break;
+      case 'k': /* user-tag */
+        strncpy( localparams.userTag, optarg, sizeof( localparams.userTag ) - 1 );
+        break;
+      case 'K': /* ifo-tag */
+        strncpy( localparams.ifoTag, optarg, sizeof( localparams.ifoTag ) - 1 );
         break;
       case 'm': /* bank max mismatch */
         localparams.bankParams.maxMismatch = atof( optarg );
@@ -440,9 +448,37 @@ int ring_params_sanity_check( struct ring_params *params )
 
     /* output file name */
     if ( ! strlen( params->outputFile ) )
-      LALSnprintf( params->outputFile, sizeof( params->outputFile ),
-          "%s-RING-%d-%d.xml", params->ifoName, params->startTime.gpsSeconds,
+    {
+      if ( strlen( params->userTag ) && strlen( params->ifoTag ) )
+      {
+        LALSnprintf( params->outputFile, sizeof( params->outputFile ),
+          "%s-RING_%s_%s-%d-%d.xml", params->ifoName, 
+          params->ifoTag, params->userTag, params->startTime.gpsSeconds,
           (int)ceil( params->duration ) );
+      }
+      else if ( strlen( params->userTag ) && !strlen( params->ifoTag ) )
+      {
+        LALSnprintf( params->outputFile, sizeof( params->outputFile ),
+          "%s-RING_%s-%d-%d.xml", params->ifoName, 
+          params->userTag, params->startTime.gpsSeconds,
+          (int)ceil( params->duration ) );
+      }
+      else if ( !strlen( params->userTag ) && strlen( params->ifoTag ) )
+      {
+        LALSnprintf( params->outputFile, sizeof( params->outputFile ),
+          "%s-RING_%s-%d-%d.xml", params->ifoName, 
+          params->ifoTag, params->startTime.gpsSeconds,
+          (int)ceil( params->duration ) );
+      }
+      else 
+      {
+        LALSnprintf( params->outputFile, sizeof( params->outputFile ),
+          "%s-RING-%d-%d.xml", params->ifoName, 
+          params->startTime.gpsSeconds,
+          (int)ceil( params->duration ) );
+      }
+    }
+
   }
 
   /* parameters required to make bank */
@@ -535,6 +571,8 @@ static int ring_usage( const char *program )
   fprintf( stderr, "--output-file=outfile      output triggers to file outfile\n" );
   fprintf( stderr, "--trig-start-time=sec      output only triggers after GPS time sec\n" );
   fprintf( stderr, "--trig-end-time=sec        output only triggers before GPS time sec\n" );
+  fprintf( stderr, "--ifo-tag=string           set ifotag to string for file naming\n" );
+  fprintf( stderr, "--user-tag=string          set the process_params usertag to string\n" );
 
   fprintf( stderr, "\nintermediate data output options:\n" );
   fprintf( stderr, "--write-raw-data           write raw data before injection or conditioning\n" );

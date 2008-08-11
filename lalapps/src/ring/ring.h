@@ -67,6 +67,8 @@ struct ring_params {
   const char  *templatesToDoList;
   UINT4        numEvents;
   char         outputFile[256];
+  char         userTag[256];
+  char         ifoTag[256];
   int          geoData;
   REAL8        geoHighpassFrequency;
   REAL8        geoScale;
