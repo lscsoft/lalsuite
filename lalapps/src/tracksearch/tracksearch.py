@@ -162,6 +162,7 @@ class tracksearchCheckIniFile:
     def __init__(self,cp):
         self.iniOpts=cp
         self.errList=[]
+        self.memoryUseEstimate=int(0)
     #End init
 
     def checkOpts(self):
@@ -272,6 +273,9 @@ class tracksearchCheckIniFile:
         for index in range(0,layerTimesKey.__len__()):
             if float(layerSetSizeKey[index][1]) * float(layerTimesKey[index][1]) > topLayerBlock:
                 self.errList.append('Error inconsistent assigned workload for layerSetSize and layerTimeScale options. Level: '+str(index+1))
+        #Give memory use estimate with warning!
+        floatSize=4
+        self.memoryUseEstimate=(sampleRate*floatSize*LTBS*9)/(1024*1024)
         #Check [pylibraryfiles] section
         condorOptList=self.iniOpts.options('pylibraryfiles')
         for entry in condorOptList:
@@ -285,6 +289,14 @@ class tracksearchCheckIniFile:
                     self.errList.append('Can not find python library file:'+str(entry)+':'+str(optValue))
 
     #end checkOpts def
+
+    def getMemoryUseEstimate(self):
+        """
+        Method to return the variable self.memoryUseEstimate 
+        assuming that checkOpts has been run.
+        """
+        return self.memoryUseEstimate
+    #End self.getMemoryUseEstimate()
 
     def numberErrors(self):
         return self.errList.__len__()

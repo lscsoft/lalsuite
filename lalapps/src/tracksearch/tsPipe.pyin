@@ -139,7 +139,12 @@ testIniFile.checkOpts()
 if testIniFile.numberErrors() > 0 :
     testIniFile.printErrorList()
     os.abort()
-
+#Print memory use estimate!
+memoryEstimate=testIniFile.getMemoryUseEstimate()
+print "***"
+print "For this dag configuration the peak memory use estimate is: "+str(memoryEstimate)+" MBs."
+print "As a rule of thumb this value should be about one third of the systems available memory or less."
+print "***"
 #Check ini file for an injection block heading.
 if (injectFileFlag == True):
     print "Checking injection options."
