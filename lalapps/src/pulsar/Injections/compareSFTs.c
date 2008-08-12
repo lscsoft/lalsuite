@@ -24,7 +24,7 @@
  * Authors: Prix, R.
  *
  * Revision: $Id$
- *           
+ *
  *-----------------------------------------------------------------------
  */
 
@@ -86,10 +86,10 @@ BOOLEAN uvar_verbose;
 BOOLEAN uvar_help;
 
 /*----------------------------------------------------------------------
- * main function 
+ * main function
  *----------------------------------------------------------------------*/
 int
-main(int argc, char *argv[]) 
+main(int argc, char *argv[])
 {
   LALStatus status = empty_status;	/* initialize status */
   SFTConstraints constraints = empty_constraints;
@@ -107,16 +107,16 @@ main(int argc, char *argv[])
 
   /* register all user-variables */
   LAL_CALL (LALGetDebugLevel (&status, argc, argv, 'd'), &status);
-  LAL_CALL (initUserVars (&status), &status);	  
+  LAL_CALL (initUserVars (&status), &status);
 
-  /* read cmdline & cfgfile  */	
-  LAL_CALL (LALUserVarReadAllInput (&status, argc,argv), &status);  
+  /* read cmdline & cfgfile  */
+  LAL_CALL (LALUserVarReadAllInput (&status, argc,argv), &status);
 
   if (uvar_help) 	/* help requested: we're done */
     exit (0);
 
   /* now read in the two complete sft-vectors */
-  constraints.detector = detector;	
+  constraints.detector = detector;
 
   LAL_CALL (LALSFTdataFind (&status, &catalog, uvar_sftBname1, &constraints ), &status );
   LAL_CALL (LALLoadSFTs(&status, &SFTs1, catalog, -1, -1 ), &status );
@@ -145,16 +145,16 @@ main(int argc, char *argv[])
 	  /* exit (1); */  /* can't be too strict here, as we also allow v1-SFTs, which don't have detector-name */
 	}
 
-      if (sft1->data->length != sft2->data->length) 
+      if (sft1->data->length != sft2->data->length)
 	{
 	  LALPrintError ("\nERROR SFT %d: lengths differ! %d != %d\n", i, sft1->data->length, sft2->data->length);
 	  exit(1);
 	}
       LALDeltaFloatGPS (&status, &Tdiff, &(sft1->epoch), &(sft2->epoch));
-      if ( Tdiff != 0.0 ) 
+      if ( Tdiff != 0.0 )
 	LALPrintError ("WARNING SFT %d: epochs differ: (%d s, %d ns)  vs (%d s, %d ns)\n", i,
 		       sft1->epoch.gpsSeconds, sft1->epoch.gpsNanoSeconds, sft2->epoch.gpsSeconds, sft2->epoch.gpsNanoSeconds);
-      
+
       if ( sft1->f0 != sft2->f0)
 	{
 	  LALPrintError ("ERROR SFT %d: fmin differ: %fHz vs %fHz\n", i, sft1->f0, sft2->f0);
@@ -167,7 +167,7 @@ main(int argc, char *argv[])
 	  exit(1);
 	}
     } /* for i < numSFTs */
-  
+
   /*---------- now do some actual comparisons ----------*/
   LAL_CALL (subtractSFTVectors (&status, &diffs, SFTs1, SFTs2), &status);
 
@@ -177,7 +177,7 @@ main(int argc, char *argv[])
 	{
 	  SFTtype *sft1 = &(SFTs1->data[i]);
 	  SFTtype *sft2 = &(SFTs2->data[i]);
-	  
+
 	  REAL4 d1, d2, d3, d4;
 	  REAL4 scalar, norm1, norm2, normdiff;
 	  printf ("i=%02d: ", i);
@@ -186,14 +186,14 @@ main(int argc, char *argv[])
 	  LAL_CALL( scalarProductSFT(&status, &norm2, sft2, sft2 ), &status);
 	  norm2 = sqrt(norm2);
 	  LAL_CALL( scalarProductSFT(&status, &scalar, sft1, sft2 ), &status);
-	  
+
 	  LAL_CALL( scalarProductSFT(&status, &normdiff, &(diffs->data[i]), &(diffs->data[i]) ), &status);
-	  
+
 	  d1 = (norm1 - norm2)/norm1;
 	  d2 = 1.0 - scalar / (norm1*norm2);
 	  d3 = normdiff / (norm1*norm1 + norm2*norm2 );
 	  d4 = getMaxErrSFT (sft1, sft2);
-	  printf ("(|x|-|y|)/|x|=%10.3e, 1-x.y/(|x||y|)=%10.3e, |x-y|^2/(|x|^2+|y|^2))=%10.3e, maxErr=%10.3e\n", 
+	  printf ("(|x|-|y|)/|x|=%10.3e, 1-x.y/(|x||y|)=%10.3e, |x-y|^2/(|x|^2+|y|^2))=%10.3e, maxErr=%10.3e\n",
 		  d1, d2, d3, d4);
 	} /* for i < SFTs->length */
     } /* if verbose */
@@ -223,7 +223,7 @@ main(int argc, char *argv[])
     d4 = getMaxErrSFTVector (SFTs1, SFTs2);
 
     if ( uvar_verbose )
-      printf ("\nTOTAL:(|x|-|y|)/|x|=%10.3e, 1-x.y/(|x||y|)=%10.3e, |x-y|^2/(|x|^2+|y|^2)=%10.3e, maxErr=%10.3e\n", 
+      printf ("\nTOTAL:(|x|-|y|)/|x|=%10.3e, 1-x.y/(|x||y|)=%10.3e, |x-y|^2/(|x|^2+|y|^2)=%10.3e, maxErr=%10.3e\n",
 	      d1, d2, d3, d4);
     else
       printf ("%10.3e  %10.3e", d3, d4);
@@ -237,7 +237,7 @@ main(int argc, char *argv[])
   LAL_CALL (LALDestroyUserVars (&status), &status);
 
 
-  LALCheckMemoryLeaks(); 
+  LALCheckMemoryLeaks();
 
   return 0;
 } /* main */
@@ -268,7 +268,7 @@ initUserVars (LALStatus *stat)
 } /* initUserVars() */
 
 /* for two SFTs: get maximal value of |X_k - Y_k|^2 / max(|X_k|^2,|Y_k|^2) */
-REAL4 
+REAL4
 getMaxErrSFT (const SFTtype *sft1, const SFTtype *sft2)
 {
   UINT4 i;
@@ -322,7 +322,7 @@ getMaxErrSFTVector (const SFTVector *sftvect1, const SFTVector *sftvect2)
 
 
 /*--------------------------------------------------
- * implements a straightforward L2 scalar product of 
+ * implements a straightforward L2 scalar product of
  * two time-series x_i and y_i : x*y = sum_i x_i y_i
  * in Fourier-space, which is 2/N * Re( sum_i X_i Y*_i)
  *--------------------------------------------------*/
@@ -334,7 +334,7 @@ scalarProductSFT (LALStatus *stat, REAL4 *scalar, const SFTtype *sft1, const SFT
 
   INITSTATUS( stat, "scalarProductSFT", rcsid );
   ATTATCHSTATUSPTR (stat);
-  
+
   ASSERT ( scalar, stat, MAKEFAKEDATAC_ENULL, MAKEFAKEDATAC_MSGENULL);
   ASSERT ( sft1, stat, MAKEFAKEDATAC_ENULL, MAKEFAKEDATAC_MSGENULL);
   ASSERT ( sft2, stat, MAKEFAKEDATAC_ENULL, MAKEFAKEDATAC_MSGENULL);
@@ -350,7 +350,7 @@ scalarProductSFT (LALStatus *stat, REAL4 *scalar, const SFTtype *sft1, const SFT
       yre = (REAL8)sft2->data->data[i].re;
       yim = (REAL8)sft2->data->data[i].im;
 
-      prod +=  xre * yre + xim * yim; 
+      prod +=  xre * yre + xim * yim;
 
     } /* for i < SFT-length */
 
@@ -390,7 +390,7 @@ scalarProductSFTVector (LALStatus *stat, REAL4 *scalar, const SFTVector *sftvect
       TRY ( scalarProductSFT (stat->statusPtr, &xy, &(sftvect1->data[i]), &(sftvect2->data[i]) ), stat);
       prod += (REAL8) xy;
     }
-  
+
   (*scalar) = (REAL4) prod;
 
   DETATCHSTATUSPTR (stat);
