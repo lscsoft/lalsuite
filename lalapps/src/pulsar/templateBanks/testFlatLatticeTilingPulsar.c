@@ -135,6 +135,9 @@ int main(int argc, char *argv[]) {
 	LALAPPS_ERROR("XLALAddFlatLatticeTilingConstantBound failed\n", 0);
     }
       
+    /* Output parameter space */
+    XLAL_VBXMLO_gsl_vector(&xml, "square_param_space", "%0.12g", bounds);
+
     /* Cleanup */
     FREE_GSL_VECTOR(bounds);
 
@@ -175,6 +178,9 @@ int main(int argc, char *argv[]) {
     
     }
 
+    /* Output parameter space */
+    XLAL_VBXMLO_gsl_vector(&xml, "age_braking_param_space", "%0.12g", values);
+
     /* Cleanup */
     FREE_GSL_VECTOR(values);
 
@@ -206,13 +212,13 @@ int main(int argc, char *argv[]) {
   default:
     LALAPPS_ERROR("Invalid --metric\n", 0);
   }
-  XLAL_VBXMLO_gsl_matrix(&xml, "metric", "%0.18g", tiling->metric);
-  XLAL_VBXMLO_Tag(&xml, "max_mismatch", "%0.18g", tiling->max_mismatch);
-  XLAL_VBXMLO_gsl_vector(&xml, "real_scale", "%0.18g", tiling->real_scale);
-  XLAL_VBXMLO_gsl_vector(&xml, "real_offset", "%0.18g", tiling->real_offset);
+  XLAL_VBXMLO_gsl_matrix(&xml, "metric", "%0.12g", tiling->metric);
+  XLAL_VBXMLO_Tag(&xml, "max_mismatch", "%0.12g", tiling->max_mismatch);
+  XLAL_VBXMLO_gsl_vector(&xml, "real_scale", "%0.12g", tiling->real_scale);
+  XLAL_VBXMLO_gsl_vector(&xml, "real_offset", "%0.12g", tiling->real_offset);
   XLAL_VBXMLO_BeginTag(&xml, "max_flat_width");
-  XLAL_VBXMLO_Tag(&xml, "scalar", "%0.18g", max_flat_width);
-  XLAL_VBXMLO_gsl_vector(&xml, "vector", "%0.18g", tiling->max_flat_width);
+  XLAL_VBXMLO_Tag(&xml, "scalar", "%0.12g", max_flat_width);
+  XLAL_VBXMLO_gsl_vector(&xml, "vector", "%0.12g", tiling->max_flat_width);
   XLAL_VBXMLO_EndTag(&xml, "max_flat_width");
 
   /* Set lattice */
@@ -264,7 +270,7 @@ int main(int argc, char *argv[]) {
     
     /* Output template */
     if (!only_count) {
-      XLAL_VBXMLO_gsl_vector(&xml, "template", "%0.18g", tiling->current);
+      XLAL_VBXMLO_gsl_vector(&xml, "template", "%0.12g", tiling->current);
       fflush(xml.file);
     }
 
@@ -279,7 +285,7 @@ int main(int argc, char *argv[]) {
 	if (XLAL_SUCCESS != XLALRandomPointInFlatLatticeParamSpace(tiling, inject_random, inject_point, tiling->current, &inject_dist))
 	  LALAPPS_ERROR("XLALRandomPointInFlatLatticeParamSpace failed\n", 0);
 	if (!only_count && tiling->count == 1)
-	  XLAL_VBXMLO_gsl_vector(&xml, "injection", "%0.18g", inject_point);	  
+	  XLAL_VBXMLO_gsl_vector(&xml, "injection", "%0.12g", inject_point);	  
 
 	/* Update minimum mismatch */
 	if (gsl_vector_get(inject_min_mismatch, k) > inject_dist)
@@ -305,7 +311,8 @@ int main(int argc, char *argv[]) {
     }
     XLAL_VBXMLO_Printf(&xml, "\n");
     XLAL_VBXMLO_EndTag(&xml, "is_tiled");
-    XLAL_VBXMLO_gsl_matrix(&xml, "increment", "%0.18g", tiling->subspaces[i]->increment);
+    XLAL_VBXMLO_gsl_vector(&xml, "padding", "%0.12g", tiling->subspaces[i]->padding);
+    XLAL_VBXMLO_gsl_matrix(&xml, "increment", "%0.12g", tiling->subspaces[i]->increment);
     XLAL_VBXMLO_EndTag(&xml, "subspace");
   }
   XLAL_VBXMLO_EndTag(&xml, "subspaces");
