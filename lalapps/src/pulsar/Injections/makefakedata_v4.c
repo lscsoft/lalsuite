@@ -835,12 +835,13 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
 	TRY ( LALDestroySFTCatalog ( status->statusPtr, &catalog ), status );
 	
       } /* if uvar_noiseSFTs */
-    
+
     /* have we got our timestamps yet?: If not, we must get them from (start, duration) user-input */
     if ( ! cfg->timestamps )
       {
 	REAL8 tStep = uvar_Tsft - uvar_SFToverlap;
 	LIGOTimeGPS tStart;
+	REAL8 t0, tLast;
 	if ( !haveStart || !haveDuration )
 	  {
 	    printf ( "\nI need to have either --timestampsFile OR (--startTime,--duration) OR --noiseSFTs\n\n");
@@ -849,23 +850,37 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
 	if ( uvar_SFToverlap > uvar_Tsft )
 	  {
 	    printf ("\nERROR: --SFToverlap cannot be larger than --Tsft!\n\n");
-	    ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);	    
+	    ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
 	  }
 	/* internally always use timestamps, so we generate them  */
 	XLALGPSSetREAL8 ( &tStart, uvar_startTime );
 	TRY( LALMakeTimestamps ( status->statusPtr, &(cfg->timestamps), tStart, uvar_duration, tStep ), status);
+
+
+	/* "prune" last timestamp(s) if the one before-last also covers the end
+	 * (this happens for overlapping SFTs with LALMakeTimestamps() as used above
+	 */
+	t0 = XLALGPSGetREAL8( &(cfg->timestamps->data[0]) );
+	tLast = XLALGPSGetREAL8 ( &(cfg->timestamps->data[cfg->timestamps->length - 1 ]) );
+	while ( tLast - t0  + uvar_Tsft >= uvar_duration )
+	  {
+	    cfg->timestamps->length --;
+	    tLast = XLALGPSGetREAL8 ( &(cfg->timestamps->data[cfg->timestamps->length - 1 ]) );
+	  }
+
       } /* if !cfg->timestamps */
 
     /* ----- figure out start-time and duration ----- */
     {
       LIGOTimeGPS t1, t0;
       REAL8 duration;
-      
+
       t0 = cfg->timestamps->data[0];
       t1 = cfg->timestamps->data[cfg->timestamps->length - 1 ];
+
       TRY (LALDeltaFloatGPS(status->statusPtr, &duration, &t1, &t0), status);
       duration += uvar_Tsft;
-      
+
       cfg->startTimeGPS = cfg->timestamps->data[0];
       cfg->duration = (UINT4)ceil ( duration );	/* round up to seconds */
     }
