@@ -864,7 +864,7 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
 	 */
 	t0 = XLALGPSGetREAL8( &(cfg->timestamps->data[0]) );
 	tLast = XLALGPSGetREAL8 ( &(cfg->timestamps->data[cfg->timestamps->length - 1 ]) );
-	while ( tLast - t0  + uvar_Tsft >= uvar_duration )
+	while ( tLast - t0  + uvar_Tsft > uvar_duration + 1e-6)
 	  {
 	    cfg->timestamps->length --;
 	    tLast = XLALGPSGetREAL8 ( &(cfg->timestamps->data[cfg->timestamps->length - 1 ]) );
