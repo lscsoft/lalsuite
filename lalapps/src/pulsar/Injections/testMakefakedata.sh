@@ -1,17 +1,29 @@
 #!/bin/bash
 
+## allow 'make test' to work from builddir != srcdir
+if [ -n "${srcdir}" ]; then
+    builddir="./";
+else
+    srcdir=.
+fi
+
 testDIR="./mfd_TEST"
 
-oldcode=lalapps_makefakedata_test
-newcodeDEFAULT=lalapps_Makefakedata_v4
-compCode=lalapps_compareSFTs
+oldcode="${builddir}lalapps_makefakedata_test"
+newcodeDEFAULT="${builddir}lalapps_Makefakedata_v4"
+compCode="${builddir}lalapps_compareSFTs"
 
-# test if LAL_PREFIX ... needed to locate ephemeris-files
-if [ -z "$LAL_PREFIX" ]; then
-    echo
-    echo "Need environment-variable LAL_PREFIX to point to your LAL-installation directory!"
-    echo
-    exit 1
+if [ -z "$LAL_DATA_PATH" ]; then
+    if [ -n "$LAL_PREFIX" ]; then
+	export LAL_DATA_PATH=".:${LAL_PREFIX}/share/lal";
+    else
+	echo
+	echo "Need environment-variable LAL_PREFIX, or LAL_DATA_PATH to be set"
+	echo "to your ephemeris-directory (e.g. /usr/local/share/lal)"
+	echo "This might indicate an incomplete LAL installation"
+	echo
+	exit 1
+    fi
 fi
 
 if [ -z "$1" ]; then
@@ -30,13 +42,13 @@ else
     rm -f $testDIR/*SFT* || true
 fi
 
-
+tol="1e-4";	## tolerance on relative difference between SFTs in comparison
 # input parameters
 ## FIXED
 ephemdir=$LAL_PREFIX/share/lal
 Tsft=1800
 nTsft=20
-timestamps=./testT8_1800
+timestamps="$srcdir/testT8_1800"
 refTime=701210229
 ##refTime=714180733
 fmin=300.0
@@ -65,7 +77,7 @@ newCL2="-E $ephemdir --Tsft=$Tsft --fmin=$fmin --Band=$Band --aPlus=$aPlus --aCr
 ## produce In.data file for makefakedata_v2
 echo "$Tsft	%Tsft_in_sec
 $nTsft	%nTsft
-$fmin   %first_SFT_frequency_in_Hz	
+$fmin   %first_SFT_frequency_in_Hz
 $Band	%SFT_freq_band_in_Hz
 0.0	%sigma_(std_of_noise.When=0_only_signal_present)
 $aPlus	%Aplus
@@ -76,8 +88,8 @@ $f0	%f0
 $delta	%latitude_in_radians
 $alpha	%longitude_in_radians
 2	%max_spin-down_param_order
-$f1dot  %value of first spindown 
-$f2dot  %value of second spindown 
+$f1dot  %value of first spindown
+$f2dot  %value of second spindown
 $timestamps 	%name_of_time-stamps_file
 " > In.data-test
 
@@ -86,30 +98,45 @@ echo
 echo "Running 'reference-code':"
 thisCL="$oldCL  -n ${testDIR}/mfdv2_SFTv1"
 echo "$oldcode $thisCL"
-time $oldcode $thisCL
+$oldcode $thisCL
 
 echo
 echo "Running makefakedata_v4, writing v1-SFTs"
 thisCL="$newCL --outSFTv1 --outSFTbname=${testDIR}/mfdv4_SFTv1"
 echo "$newcode $thisCL"
-time $newcode $thisCL
+$newcode $thisCL
 
 echo
 echo "Running makefakedata_v4, writing v2-SFTs"
 thisCL="$newCL2 --outSFTbname=${testDIR}/"
 echo "$newcode $thisCL"
-time $newcode $thisCL
+$newcode $thisCL
 
 
 echo
 echo "comparison of resulting SFTs:"
 
-cmdline="$compCode -v -1 '${testDIR}/mfdv2_SFTv1.*' -2 '${testDIR}/mfdv4_SFTv1.*'"
+cmdline="$compCode -e $tol -1 '${testDIR}/mfdv2_SFTv1.*' -2 '${testDIR}/mfdv4_SFTv1.*'"
 echo ${cmdline}
-eval ${cmdline}
+if ! eval $cmdline; then
+    echo "OUCH... SFTs differ by more than $tol. Something might be wrong..."
+    exit 2
+else
+    echo "OK."
+fi
+
 
 echo
-cmdline="$compCode -v -1 '${testDIR}/mfdv4_SFTv1.*' -2 '${testDIR}/*_L1_*.sft'"
+cmdline="$compCode -e $tol -1 '${testDIR}/mfdv4_SFTv1.*' -2 '${testDIR}/*_L1_*.sft'"
 echo ${cmdline}
-eval ${cmdline}
+if ! eval $cmdline; then
+    echo "OUCH... SFTs differ by more than $tol. Something might be wrong..."
+    exit 2
+else
+    echo "OK."
+fi
+
+
+## clean up files
+rm -rf $testDIR In.data-test
 
