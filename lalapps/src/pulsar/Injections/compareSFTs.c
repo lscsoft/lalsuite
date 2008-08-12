@@ -84,6 +84,7 @@ CHAR *uvar_sftBname2;
 INT4 uvar_debug;
 BOOLEAN uvar_verbose;
 BOOLEAN uvar_help;
+REAL8 uvar_relErrorMax;
 
 /*----------------------------------------------------------------------
  * main function
@@ -98,6 +99,7 @@ main(int argc, char *argv[])
   SFTVector *diffs = NULL;
   SFTCatalog *catalog = NULL;
   UINT4 i;
+  REAL8 maxd = 0;
 
   lalDebugLevel = 0;
   vrbflg = 1;		/* verbose error-messages */
@@ -204,7 +206,6 @@ main(int argc, char *argv[])
     REAL8 norm1, norm2, normdiff, scalar;
     REAL8 d1, d2, d3,d4;
 
-
     LAL_CALL( scalarProductSFTVector (&status, &ret, SFTs1, SFTs1 ), &status);
     norm1 = sqrt( (REAL8)ret );
 
@@ -218,15 +219,19 @@ main(int argc, char *argv[])
     normdiff = (REAL8) ret;
 
     d1 = (norm1 - norm2)/norm1;
+    maxd = mymax ( maxd, d1 );
     d2 = 1.0 - scalar / (norm1*norm2);
+    maxd = mymax ( maxd, d2 );
     d3 = normdiff / ( norm1*norm1 + norm2*norm2);
+    maxd = mymax ( maxd, d3 );
     d4 = getMaxErrSFTVector (SFTs1, SFTs2);
+    maxd = mymax ( maxd, d4 );
 
     if ( uvar_verbose )
       printf ("\nTOTAL:(|x|-|y|)/|x|=%10.3e, 1-x.y/(|x||y|)=%10.3e, |x-y|^2/(|x|^2+|y|^2)=%10.3e, maxErr=%10.3e\n",
 	      d1, d2, d3, d4);
     else
-      printf ("%10.3e  %10.3e", d3, d4);
+      printf ("%10.3e  %10.3e\n", d3, d4);
 
   } /* combined total measures */
 
@@ -239,7 +244,11 @@ main(int argc, char *argv[])
 
   LALCheckMemoryLeaks();
 
-  return 0;
+  if ( maxd < uvar_relErrorMax )
+    return 0;
+  else
+    return 1;
+
 } /* main */
 
 
@@ -254,13 +263,16 @@ initUserVars (LALStatus *stat)
   /* set some defaults */
   uvar_debug = lalDebugLevel;
   uvar_verbose = FALSE;
+  uvar_relErrorMax = 1e-4;
 
   /* now register all our user-variable */
 
+  LALregBOOLUserVar(stat,   help,	'h', UVAR_HELP,     "Print this help/usage message");
   LALregSTRINGUserVar(stat, sftBname1,	'1', UVAR_REQUIRED, "Path and basefilename for SFTs1");
   LALregSTRINGUserVar(stat, sftBname2,	'2', UVAR_REQUIRED, "Path and basefilename for SFTs2");
   LALregBOOLUserVar(stat,   verbose,	'v', UVAR_OPTIONAL, "Verbose output of differences");
-  LALregBOOLUserVar(stat,   help,	'h', UVAR_HELP,     "Print this help/usage message");
+  LALregREALUserVar(stat,   relErrorMax,'e', UVAR_OPTIONAL, "Maximal relative error acceptable to 'pass' comparison");
+
 
   DETATCHSTATUSPTR (stat);
   RETURN (stat);
