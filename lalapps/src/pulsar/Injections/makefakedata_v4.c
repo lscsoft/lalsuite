@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2008 Chris Messenger
+*  Copyright (C) 2008 Chris Messenger, Karl Wette
 *  Copyright (C) 2007 Badri Krishnan, Reinhard Prix
 *
 *  This program is free software; you can redistribute it and/or modify
@@ -546,20 +546,20 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
       printf ( "\nSpecify EITHER {h0,cosi} OR {aPlus, aCross}!\n\n");
       ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
     }
-    if ( (!have_h0 && have_cosi) ) {
+    if ( (have_h0 ^ have_cosi) ) {
       printf ( "\nNeed both --h0 and --cosi!\n\n");
       ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
     }
-    if ( (have_aPlus && !have_aCross) || ( !have_aPlus && have_aCross ) ) {
+    if ( (have_aPlus ^ have_aCross) ) {
       printf ( "\nNeed both --aPlus and --aCross !\n\n");
       ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
     }
-    if ( have_h0 )
+    if ( have_h0 && have_cosi )
       {
 	cfg->pulsar.Amp.h0 = uvar_h0;
 	cfg->pulsar.Amp.cosi = uvar_cosi;
       }
-    else
+    else if ( have_aPlus && have_aCross )
       {  /* translate A_{+,x} into {h_0, cosi} */
 	REAL8 disc;
 	if ( fabs(uvar_aCross) > uvar_aPlus )
@@ -571,6 +571,10 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
 	cfg->pulsar.Amp.h0   = uvar_aPlus + disc; 
 	cfg->pulsar.Amp.cosi = uvar_aCross / cfg->pulsar.Amp.h0;
       }
+    else {
+      cfg->pulsar.Amp.h0 = 0.0;
+      cfg->pulsar.Amp.cosi = 0.0;
+    }
     cfg->pulsar.Amp.phi0 = uvar_phi0;
     cfg->pulsar.Amp.psi  = uvar_psi;
     /* ----- signal Frequency ----- */
@@ -578,14 +582,12 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
       printf ( "\nSpecify signal-frequency using EITHER --Freq [preferred] OR --f0 [deprecated]!\n\n");
       ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
     }
-    if ( !have_f0 && !have_Freq ) {
-      printf ( "\nSpecify signal-frequency using --Freq!\n\n");
-      ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
-    }
     if ( have_Freq )
       cfg->pulsar.Doppler.fkdot[0] = uvar_Freq;
-    else
+    else if ( have_f0 )
       cfg->pulsar.Doppler.fkdot[0] = uvar_f0;
+    else
+      cfg->pulsar.Doppler.fkdot[0] = 0.0;
 
     /* ----- skypos ----- */
     if ( (have_Alpha || have_Delta) && ( have_longitude || have_latitude ) && (have_RA || have_Dec) ) {
