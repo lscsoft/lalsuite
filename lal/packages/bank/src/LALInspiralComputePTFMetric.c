@@ -108,13 +108,14 @@ LALFree
 #include <lal/SeqFactories.h>
 #include <lal/LALInspiralBank.h>
 #include <lal/LALNoiseModels.h>
+#include <lal/MatrixUtils.h>
 
 /* <lalVerbatim file="XLALInspiralComputePTFIntrinsicMetricCP">  */
 INT4 XLALInspiralComputePTFIntrinsicMetric (
     InspiralMetric			   *metric,
-	REAL8Vector				   *fullmetric,
-    REAL8FrequencySeries       *psd,
-    InspiralTemplate           *params
+    REAL8Vector				   *fullmetric,
+    REAL8FrequencySeries                   *psd,
+    InspiralTemplate                       *params
     )
 /* </lalVerbatim> */
 {
@@ -146,8 +147,8 @@ INT4 XLALInspiralComputePTFIntrinsicMetric (
   REAL8				PdTh[5];
   REAL8				PdPh[5];
   REAL8				PdPs[5];
-  REAL8Vector		Q[5];
-  COMPLEX16Vector	Qtilde[5];
+  REAL8Vector		        Q[5];
+  COMPLEX16Vector	        Qtilde[5];
 
   FILE *derivsfile;
   /* should really check that deltaT from the template agrees with N */
@@ -158,40 +159,59 @@ INT4 XLALInspiralComputePTFIntrinsicMetric (
   /* before this function is ever called multiple times inside a loop)       */
   REAL8VectorSequence			*PTFQ;
   COMPLEX16VectorSequence		*PTFQtilde;
-  REAL4Vector					*PTFphi;
-  REAL4Vector					*PTFomega_2_3;
+  REAL4Vector				*PTFphi;
+  REAL4Vector				*PTFomega_2_3;
   REAL4VectorSequence			*PTFe1;
   REAL4VectorSequence			*PTFe2;
-  REAL8FFTPlan					*fwdPlan;
-  REAL8FFTPlan					*revPlan;
+  REAL8FFTPlan				*fwdPlan;
+  REAL8FFTPlan				*revPlan;
   COMPLEX16Vector			*fsig0;
   COMPLEX16Vector			*fsig1;
   COMPLEX16Vector			*fsig;
   COMPLEX16Vector			*intrinsicderiv;
-  COMPLEX16VectorSequence	*derivs;
-  REAL8		initdelta = 0.001;
-  REAL8		tolerance = 0.001;
-  REAL8Vector		*invpsd;
-  REAL8Vector		*tempnorm;
-  COMPLEX16Vector	*tempnormtilde;
-  REAL8 wavenorm;
+  COMPLEX16VectorSequence	        *derivs;
+  REAL8		                         initdelta = 0.001;
+  REAL8		                         tolerance = 0.001;
+  REAL8Vector	                 	*invpsd;
+  REAL8Vector	                	*tempnorm;
+  COMPLEX16Vector               	*tempnormtilde;
+  REAL8                                  wavenorm;
+  REAL8Array                            *IntInt_matrix;
+  REAL8Array                            *ExtExt_matrix;
+  REAL8Array                            *ExtExt_inverse;
+  REAL8Array                            *IntExt_matrix;  
+  REAL8Array                            *IntExt_transp;  
+  REAL8Array                            *matrix_5_x_4;  
+  REAL8Array                            *matrix_4_x_4;  
+  REAL8                                 *det;
+  LALStatus                              status;
+
+  PTFQ           = XLALCreateREAL8VectorSequence( 5, N );
+  PTFQtilde      = XLALCreateCOMPLEX16VectorSequence( 5, N / 2 + 1 );
+  PTFphi         = XLALCreateVector( N );
+  PTFomega_2_3   = XLALCreateVector( N );
+  PTFe1          = XLALCreateVectorSequence( 3, N );
+  PTFe2          = XLALCreateVectorSequence( 3, N );
+  fwdPlan        = XLALCreateForwardREAL8FFTPlan( N, 0 );
+  revPlan        = XLALCreateReverseREAL8FFTPlan( N, 0 );
+  IntInt_matrix  = XLALCreateREAL8ArrayL ( 2, 4, 4 );
+  ExtExt_matrix  = XLALCreateREAL8ArrayL ( 2, 5, 5 );
+  ExtExt_inverse = XLALCreateREAL8ArrayL ( 2, 5, 5 );
+  IntExt_matrix  = XLALCreateREAL8ArrayL ( 2, 4, 5 );
+  IntExt_transp  = XLALCreateREAL8ArrayL ( 2, 5, 4 );
+  matrix_5_x_4   = XLALCreateREAL8ArrayL ( 2, 5, 4 );
+  matrix_4_x_4   = XLALCreateREAL8ArrayL ( 2, 4, 4 );
   
-  PTFQ = XLALCreateREAL8VectorSequence( 5, N );
-  PTFQtilde = XLALCreateCOMPLEX16VectorSequence( 5, N / 2 + 1 );
-  PTFphi = XLALCreateVector( N );
-  PTFomega_2_3 = XLALCreateVector( N );
-  PTFe1 = XLALCreateVectorSequence( 3, N );
-  PTFe2 = XLALCreateVectorSequence( 3, N );
-  fwdPlan = XLALCreateForwardREAL8FFTPlan( N, 0 );
-  revPlan = XLALCreateReverseREAL8FFTPlan( N, 0 );
-  
-  
+  det            = NULL;
+
+  memset( &status, 0, sizeof(LALStatus) );
+
   /* call the PTF waveform code */
   errcode = XLALFindChirpPTFWaveform( PTFphi, PTFomega_2_3, PTFe1, PTFe2,
       params, deltaT);
 
   if ( errcode != XLAL_SUCCESS ) XLAL_ERROR( func, errcode );
-  
+
   /* point the dummy variables Q and Qtilde to the actual output structures */
   for ( i = 0; i < 5; ++i )
   {
@@ -212,7 +232,7 @@ INT4 XLALInspiralComputePTFIntrinsicMetric (
     REAL8 e2x       = PTFe2->data[j];
     REAL8 e2y       = PTFe2->data[N + j];
     REAL8 e2z       = PTFe2->data[2 * N + j];
-    
+
     Q[0].data[j] = omega_2_3 * onebysqrtoftwo * ( cos(2 * phi) * ( e1x * e1x +
           e2y * e2y - e2x * e2x - e1y * e1y ) + 2 * sin(2 * phi) *
         ( e1x * e2x - e1y * e2y ));
@@ -227,51 +247,54 @@ INT4 XLALInspiralComputePTFIntrinsicMetric (
           e2x * e2x - e2y * e2y ) + 2 * sin(2 * phi) * ( e1x * e2x +
             e1y * e2y - 2 * e1z * e2z ));                              
   }
-  
+
   /* Fourier transform the Q's into the Qtilde's */
   for ( i = 0; i < 5; ++i )
   {
     XLALREAL8ForwardFFT( &Qtilde[i], &Q[i], fwdPlan);
   }
-  
+
   /* evaluate the P_I factors from the extrinsic parameters */
   P[0] = -(1 + cos(Theta) * cos(Theta)) * cos(2 * Phi) * cos(Psi) 
-		 + 2 * cos(Theta) * sin(2 * Phi) * sin(Psi);
+    + 2 * cos(Theta) * sin(2 * Phi) * sin(Psi);
   P[1] = - 2 * cos(Theta) * cos(2 * Phi) * sin(Psi) 
-		 -(1 + cos(Theta) * cos(Theta)) * sin(2 * Phi) * cos(Psi);
+    -(1 + cos(Theta) * cos(Theta)) * sin(2 * Phi) * cos(Psi);
   P[2] = 2 * sin(Theta) * (-sin(Phi) * sin(Psi) + cos(Theta) * cos(Phi) * cos(Psi));
   P[3] = 2 * sin(Theta) * ( cos(Phi) * sin(Psi) + cos(Theta) * sin(Phi) * cos(Psi));
   P[4] = 3 * sin(Theta) * sin(Theta) * cos(Psi);
+
   /* P_I derivative over Theta */
   PdTh[0] = -(1 - sin(2 * Theta)) * cos(2 * Phi) * cos(Psi) 
-		 - 2 * sin(Theta) * sin(2 * Phi) * sin(Psi);
+    - 2 * sin(Theta) * sin(2 * Phi) * sin(Psi);
   PdTh[1] =  2 * sin(Theta) * cos(2 * Phi) * sin(Psi) 
-		 -(1 - sin(2 * Theta)) * sin(2 * Phi) * cos(Psi);
+    -(1 - sin(2 * Theta)) * sin(2 * Phi) * cos(Psi);
   PdTh[2] = 2 * cos(Theta) * (-sin(Phi) * sin(Psi) - sin(Theta) * cos(Phi) * cos(Psi));
   PdTh[3] = 2 * cos(Theta) * ( cos(Phi) * sin(Psi) - sin(Theta) * sin(Phi) * cos(Psi));
   PdTh[4] = 3 * sin(2 * Theta) * cos(Psi);
+
   /* P_I derivative over Phi */
   PdPh[0] = - 2 * (1 + cos(Theta) * cos(Theta)) * sin(2 * Phi) * cos(Psi) 
-		 + 4 * cos(Theta) * cos(2 * Phi) * sin(Psi);
+    + 4 * cos(Theta) * cos(2 * Phi) * sin(Psi);
   PdPh[1] =   4 * cos(Theta) * sin(2 * Phi) * sin(Psi) 
-		 - 2 * (1 + cos(Theta) * cos(Theta)) * cos(2 * Phi) * cos(Psi);
+    - 2 * (1 + cos(Theta) * cos(Theta)) * cos(2 * Phi) * cos(Psi);
   PdPh[2] = 2 * sin(Theta) * (-cos(Phi) * sin(Psi) - cos(Theta) * sin(Phi) * cos(Psi));
   PdPh[3] = 2 * sin(Theta) * (-sin(Phi) * sin(Psi) + cos(Theta) * cos(Phi) * cos(Psi));
   PdPh[4] = 0;
+
   /* P_I derivative over Psi */
   PdPs[0] = (1 + cos(Theta) * cos(Theta)) * cos(2 * Phi) * sin(Psi) 
-		 + 2 * cos(Theta) * sin(2 * Phi) * cos(Psi);
+    + 2 * cos(Theta) * sin(2 * Phi) * cos(Psi);
   PdPs[1] = - 2 * cos(Theta) * cos(2 * Phi) * cos(Psi) 
-		 + (1 + cos(Theta) * cos(Theta)) * sin(2 * Phi) * sin(Psi);
+    + (1 + cos(Theta) * cos(Theta)) * sin(2 * Phi) * sin(Psi);
   PdPs[2] = 2 * sin(Theta) * (-sin(Phi) * cos(Psi) - cos(Theta) * cos(Phi) * sin(Psi));
   PdPs[3] = 2 * sin(Theta) * ( cos(Phi) * cos(Psi) - cos(Theta) * sin(Phi) * sin(Psi));
   PdPs[4] = - 3 * sin(Theta) * sin(Theta) * sin(Psi);
-  
+
   /* Prepare frequency domain signals */
   fsig0 = XLALCreateCOMPLEX16Vector(N / 2 + 1);
   fsig1 = XLALCreateCOMPLEX16Vector(N / 2 + 1);
   fsig  = XLALCreateCOMPLEX16Vector(N / 2 + 1);
-  
+
   for (k = 0; k < N / 2 + 1; ++k)
   {
     fsig0->data[k].re = 0.0;
@@ -279,12 +302,12 @@ INT4 XLALInspiralComputePTFIntrinsicMetric (
     fsig1->data[k].re = 0.0;
     fsig1->data[k].im = 0.0;
     for (i = 0; i < 5; ++i)
-	{
-	  fsig0->data[k].re += P[i] * Qtilde[i].data[k].re;
-	  fsig0->data[k].im += P[i] * Qtilde[i].data[k].im;
-	}
-	fsig1->data[k].re =   fsig0->data[k].im;
-	fsig1->data[k].im = - fsig0->data[k].re;
+    {
+      fsig0->data[k].re += P[i] * Qtilde[i].data[k].re;
+      fsig0->data[k].im += P[i] * Qtilde[i].data[k].im;
+    }
+    fsig1->data[k].re =   fsig0->data[k].im;
+    fsig1->data[k].im = - fsig0->data[k].re;
   }
   fsig1->data[0].re		= fsig0->data[0].re;
   fsig1->data[0].im		= fsig0->data[0].im;
@@ -295,150 +318,207 @@ INT4 XLALInspiralComputePTFIntrinsicMetric (
     fsig->data[k].re = cos(phi0) * fsig0->data[k].re + sin(phi0) * fsig1->data[k].re;
     fsig->data[k].im = cos(phi0) * fsig0->data[k].im + sin(phi0) * fsig1->data[k].im;
   }
-  
+
   /* Waveform derivatives */
   intrinsicderiv = XLALCreateCOMPLEX16Vector(N / 2 + 1);
   derivs = XLALCreateCOMPLEX16VectorSequence(9, N / 2 + 1);
-  
-  fprintf(stdout,"%e   %e   %e\n", fsig0->data[0].re, fsig0->data[1].re, fsig0->data[8192].re);
-  fprintf(stdout,"%e   %e   %e\n", fsig0->data[0].im, fsig0->data[1].im, fsig0->data[8192].im);
-  
+
   /* Compute extrinsic derivatives */
   for (k = 0; k < N / 2 + 1; ++k)
   {
     /* t0 */
     derivs->data[k].re = - LAL_TWOPI * deltaF * k * fsig->data[k].im;
-	derivs->data[k].im =   LAL_TWOPI * deltaF * k * fsig->data[k].re;
-	/* phi0 */
+    derivs->data[k].im =   LAL_TWOPI * deltaF * k * fsig->data[k].re;
+    /* phi0 */
     derivs->data[N / 2 + 1 + k].re = - sin(phi0) * fsig0->data[k].re + cos(phi0) * fsig1->data[k].re;
-	derivs->data[N / 2 + 1 + k].im = - sin(phi0) * fsig0->data[k].im + cos(phi0) * fsig1->data[k].im;
-	/* Theta */
-	derivs->data[N + 2 + k].re = 0.0;
-	derivs->data[N + 2 + k].im = 0.0;
-	for (i = 0; i < 5; ++i)
-	{
-	  derivs->data[N + 2 + k].re += PdTh[i] * Qtilde[i].data[k].re;
-	  derivs->data[N + 2 + k].im += PdTh[i] * Qtilde[i].data[k].im;
-	}
-	/* Phi */
-	derivs->data[3 * N / 2 + 3 + k].re = 0.0;
-	derivs->data[3 * N / 2 + 3 + k].im = 0.0;
-	for (i = 0; i < 5; ++i)
-	{
-	  derivs->data[3 * N / 2 + 3 + k].re += PdPh[i] * Qtilde[i].data[k].re;
-	  derivs->data[3 * N / 2 + 3 + k].im += PdPh[i] * Qtilde[i].data[k].im;
-	}
-	/* Psi */
-	derivs->data[2 * N + 4 + k].re = 0.0;
-	derivs->data[2 * N + 4 + k].im = 0.0;
-	for (i = 0; i < 5; ++i)
-	{
-	  derivs->data[2 * N + 4 + k].re += PdPs[i] * Qtilde[i].data[k].re;
-	  derivs->data[2 * N + 4 + k].im += PdPs[i] * Qtilde[i].data[k].im;
-	}
+    derivs->data[N / 2 + 1 + k].im = - sin(phi0) * fsig0->data[k].im + cos(phi0) * fsig1->data[k].im;
+    /* Theta */
+    derivs->data[N + 2 + k].re = 0.0;
+    derivs->data[N + 2 + k].im = 0.0;
+    for (i = 0; i < 5; ++i)
+    {
+      derivs->data[N + 2 + k].re += PdTh[i] * Qtilde[i].data[k].re;
+      derivs->data[N + 2 + k].im += PdTh[i] * Qtilde[i].data[k].im;
+    }
+    /* Phi */
+    derivs->data[3 * N / 2 + 3 + k].re = 0.0;
+    derivs->data[3 * N / 2 + 3 + k].im = 0.0;
+    for (i = 0; i < 5; ++i)
+    {
+      derivs->data[3 * N / 2 + 3 + k].re += PdPh[i] * Qtilde[i].data[k].re;
+      derivs->data[3 * N / 2 + 3 + k].im += PdPh[i] * Qtilde[i].data[k].im;
+    }
+    /* Psi */
+    derivs->data[2 * N + 4 + k].re = 0.0;
+    derivs->data[2 * N + 4 + k].im = 0.0;
+    for (i = 0; i < 5; ++i)
+    {
+      derivs->data[2 * N + 4 + k].re += PdPs[i] * Qtilde[i].data[k].re;
+      derivs->data[2 * N + 4 + k].im += PdPs[i] * Qtilde[i].data[k].im;
+    }
   }
-  
+
   /* Compute intrinsic derivatives */
   for (i = 5; i < 9; ++i)
   {
-	errcode = XLALInspiralComputePTFWDeriv(intrinsicderiv, psd, params, i - 4, initdelta, tolerance);
-	if ( errcode != XLAL_SUCCESS )
+    errcode = XLALInspiralComputePTFWDeriv(intrinsicderiv, psd, params, i - 4, initdelta, tolerance);
+    if ( errcode != XLAL_SUCCESS )
     {
-	  fprintf( stderr, "XLALInspiralComputePTFDeriv failed\n" );
+      fprintf( stderr, "XLALInspiralComputePTFDeriv failed\n" );
       exit( 1 );
     }
-	for (k = 0; k < N / 2 + 1; ++k)
-	{
-	  derivs->data[i * (N / 2 + 1) + k].re = cos(phi0) * intrinsicderiv->data[k].re
-										   + sin(phi0) * intrinsicderiv->data[k].im;
-	  derivs->data[i * (N / 2 + 1) + k].im = cos(phi0) * intrinsicderiv->data[k].im
-										   - sin(phi0) * intrinsicderiv->data[k].re;
-	}
-	derivs->data[i * (N / 2 + 1)].re = (cos(phi0) + sin(phi0)) * intrinsicderiv->data[0].re;
-	derivs->data[i * (N / 2 + 1)].im = (cos(phi0) + sin(phi0)) * intrinsicderiv->data[0].im;
-	derivs->data[i * (N / 2 + 1) + N / 2].re = (cos(phi0) + sin(phi0)) * intrinsicderiv->data[N / 2].re;
-	derivs->data[i * (N / 2 + 1) + N / 2].im = (cos(phi0) + sin(phi0)) * intrinsicderiv->data[N / 2].im;
+    for (k = 0; k < N / 2 + 1; ++k)
+    {
+      derivs->data[i * (N / 2 + 1) + k].re = cos(phi0) * intrinsicderiv->data[k].re
+        + sin(phi0) * intrinsicderiv->data[k].im;
+      derivs->data[i * (N / 2 + 1) + k].im = cos(phi0) * intrinsicderiv->data[k].im
+        - sin(phi0) * intrinsicderiv->data[k].re;
+    }
+    derivs->data[i * (N / 2 + 1)].re = (cos(phi0) + sin(phi0)) * intrinsicderiv->data[0].re;
+    derivs->data[i * (N / 2 + 1)].im = (cos(phi0) + sin(phi0)) * intrinsicderiv->data[0].im;
+    derivs->data[i * (N / 2 + 1) + N / 2].re = (cos(phi0) + sin(phi0)) * intrinsicderiv->data[N / 2].re;
+    derivs->data[i * (N / 2 + 1) + N / 2].im = (cos(phi0) + sin(phi0)) * intrinsicderiv->data[N / 2].im;
   }
-  
- 
+
+
   derivsfile = fopen( "myderivs.dat", "w" );
-  
+
   if( derivsfile != NULL )
   {
-	for (j = 0; j < N / 2 + 1; ++j)
-	{
-	  fprintf( derivsfile, "%f   %f   %f   %f   %f   %f   %f   %f   %f   %f   %f   %f   %f   %f   %f   %f   %f   %f\n", 
-			   derivs->data[j].re, derivs->data[j].im, 
-			   derivs->data[(N / 2 + 1) + j].re, derivs->data[(N / 2 + 1) + j].im, 
-			   derivs->data[2 * (N / 2 + 1) + j].re, derivs->data[2 * (N / 2 + 1) + j].im, 
-			   derivs->data[3 * (N / 2 + 1) + j].re, derivs->data[3 * (N / 2 + 1) + j].im, 
-			   derivs->data[4 * (N / 2 + 1) + j].re, derivs->data[4 * (N / 2 + 1) + j].im, 
-			   derivs->data[5 * (N / 2 + 1) + j].re, derivs->data[5 * (N / 2 + 1) + j].im, 
-			   derivs->data[6 * (N / 2 + 1) + j].re, derivs->data[6 * (N / 2 + 1) + j].im, 
-			   derivs->data[7 * (N / 2 + 1) + j].re, derivs->data[7 * (N / 2 + 1) + j].im, 
-			   derivs->data[8 * (N / 2 + 1) + j].re, derivs->data[8 * (N / 2 + 1) + j].im);
-	}
+    for (j = 0; j < N / 2 + 1; ++j)
+    {
+      fprintf( derivsfile, "%f   %f   %f   %f   %f   %f   %f   %f   %f   %f   %f   %f   %f   %f   %f   %f   %f   %f\n", 
+          derivs->data[j].re, derivs->data[j].im, 
+          derivs->data[(N / 2 + 1) + j].re, derivs->data[(N / 2 + 1) + j].im, 
+          derivs->data[2 * (N / 2 + 1) + j].re, derivs->data[2 * (N / 2 + 1) + j].im, 
+          derivs->data[3 * (N / 2 + 1) + j].re, derivs->data[3 * (N / 2 + 1) + j].im, 
+          derivs->data[4 * (N / 2 + 1) + j].re, derivs->data[4 * (N / 2 + 1) + j].im, 
+          derivs->data[5 * (N / 2 + 1) + j].re, derivs->data[5 * (N / 2 + 1) + j].im, 
+          derivs->data[6 * (N / 2 + 1) + j].re, derivs->data[6 * (N / 2 + 1) + j].im, 
+          derivs->data[7 * (N / 2 + 1) + j].re, derivs->data[7 * (N / 2 + 1) + j].im, 
+          derivs->data[8 * (N / 2 + 1) + j].re, derivs->data[8 * (N / 2 + 1) + j].im);
+    }
   }
   fclose(derivsfile);
-  
+
   /* Compute full metric */
   invpsd		= XLALCreateREAL8Vector(N / 2 + 1);
   tempnorm		= XLALCreateREAL8Vector(N);
   tempnormtilde = XLALCreateCOMPLEX16Vector(N / 2 + 1);
-  
+
   for (k = 0; k < N / 2 + 1; ++k)
   {
     if (psd->data->data[k] == 0.)
-	  invpsd->data[k] = 0.;
-	else
-	  invpsd->data[k] = 1.0 / psd->data->data[k];
+      invpsd->data[k] = 0.;
+    else
+      invpsd->data[k] = 1.0 / psd->data->data[k];
   }
-  
-  fprintf(stdout, "PSD: %e   %e   %e   %e   %e   %e\n", 
-					psd->data->data[0], psd->data->data[1], psd->data->data[2],
-					psd->data->data[1000], psd->data->data[1001], psd->data->data[1002]);
-  
+
   for (i = 0; i < 9; ++i)
   {
-	for (j = 0; j < i + 1; ++j)
-	{ 
-	  for (k = 0; k < N / 2 + 1; ++k)
-	  {
-		tempnormtilde->data[k].re = 
-						( derivs->data[i * (N/2+1) + k].re * derivs->data[j * (N/2+1) + k].re
-						+ derivs->data[i * (N/2+1) + k].im * derivs->data[j * (N/2+1) + k].im) 
-						* invpsd->data[k];
-		tempnormtilde->data[k].im = 
-						( derivs->data[i * (N/2+1) + k].im * derivs->data[j * (N/2+1) + k].re
-						- derivs->data[i * (N/2+1) + k].re * derivs->data[j * (N/2+1) + k].im) 
-						* invpsd->data[k];
-	  }
-	  /* Inverse Fourier of tempnorm */
-	  XLALREAL8ReverseFFT(tempnorm, tempnormtilde, revPlan);
-	  fullmetric->data[i * (i + 1) / 2 + j] = 4.0 * tempnorm->data[0];
-	}
+    for (j = 0; j < i + 1; ++j)
+    { 
+      for (k = 0; k < N / 2 + 1; ++k)
+      {
+        tempnormtilde->data[k].re = 
+          ( derivs->data[i * (N/2+1) + k].re * derivs->data[j * (N/2+1) + k].re
+            + derivs->data[i * (N/2+1) + k].im * derivs->data[j * (N/2+1) + k].im) 
+          * invpsd->data[k];
+        tempnormtilde->data[k].im = 
+          ( derivs->data[i * (N/2+1) + k].im * derivs->data[j * (N/2+1) + k].re
+            - derivs->data[i * (N/2+1) + k].re * derivs->data[j * (N/2+1) + k].im) 
+          * invpsd->data[k];
+      }
+      /* Inverse Fourier of tempnorm */
+      XLALREAL8ReverseFFT(tempnorm, tempnormtilde, revPlan);
+      fullmetric->data[i * (i + 1) / 2 + j] = 4.0 * tempnorm->data[0];
+    }
   }
-  
+
   wavenorm = fullmetric->data[2];
   for (i = 0; i < 45; ++i)
   {
-	fullmetric->data[i] /= wavenorm;
+    fullmetric->data[i] /= wavenorm;
   }
   
-  for (i = 0; i < 9; ++i)
+  /* Calculating the extrinsic-extrinsic block of the metric */
+  for (i = 0; i < 5; ++i)
   {
-	for (j = 0; j < i + 1; ++j)
-	  fprintf(stdout, "%e   ", fullmetric->data[i * (i + 1) / 2 + j]);
-	fprintf(stdout, "\n");
+    for (j = 0; j < i + 1; ++j)
+    {  
+      ExtExt_matrix->data[ 5 * i + j] = ExtExt_matrix->data[ 5 * j + i] = 
+        fullmetric->data[i * (i + 1) / 2 + j];
+    }  
+  } 
+  
+  /* Calculating the inverse of ext-ext */
+  LALDMatrixInverse( &status, det, ExtExt_matrix, ExtExt_inverse );
+  if ( status.statusCode )
+  {
+    REPORTSTATUS( &status );
+    exit( 1 );
   }
   
-  /* now compute the metric... */
-  for ( i = 0; i < 10; ++i )
+  /* Calculating the intrinsic-intrinsic block of the metric */
+  for (i = 5; i < 9; ++i)
   {
-    metric->Gamma[i] = fullmetric->data[i];
-    params->Gamma[i] = metric->Gamma[i];
+    for (j = 5; j < i + 1; ++j)
+    {  
+      IntInt_matrix->data[ 4 * (i-5) + j - 5] = IntInt_matrix->data[ 4 * (j-5) + i - 5]= 
+        fullmetric->data[i * (i + 1) / 2 + j];
+    }  
+  } 
+  
+  /* Calculating the mixed intrinsic-extrinsic block of the metric */
+  for (i = 5; i < 9; ++i)
+  {
+    for (j = 0; j < 5; ++j)
+    {
+      IntExt_matrix->data[ 5 * (i-5) + j] = fullmetric->data[i * (i + 1) / 2 + j];
+    }  
+  } 
+  
+  /* Calculating the transpose of int-ext */
+  LALDMatrixTranspose ( &status, IntExt_transp, IntExt_matrix );
+  if ( status.statusCode )
+  {
+    REPORTSTATUS( &status );
+    exit( 1 );
   }
 
+  for (i = 0; i < 5; ++i)
+  {
+    for (j=0; j < 4; ++j)
+    {
+      IntExt_transp->data[ 4 * i + j] = IntExt_matrix->data[ j * 5 + i];
+    }
+  }
+
+  /* Compute the projected metric from eq.(72) of PBCV*/
+
+  LALDMatrixMultiply ( &status, matrix_5_x_4, ExtExt_inverse, IntExt_transp );
+  if ( status.statusCode )
+  {
+    REPORTSTATUS( &status );
+    exit( 1 );
+  }
+  
+  LALDMatrixMultiply ( &status, matrix_4_x_4, IntExt_matrix, matrix_5_x_4 );
+  if ( status.statusCode )
+  {
+    REPORTSTATUS( &status );
+    exit( 1 );
+  }
+  
+  for ( i = 0; i < 4; ++i )
+  {
+    for ( j = 0; j < i + 1; ++j )
+    {
+      params->Gamma[i * (i + 1) / 2 + j] = metric->Gamma[i * (i + 1) / 2 + j] = 
+        IntInt_matrix->data[i * 4 + j] - matrix_4_x_4->data[i * 4 + j];
+    }
+  }
+  
   /* this memory deallocation code should be moved to a separate function */
   XLALDestroyCOMPLEX16Vector(fsig0);
   XLALDestroyCOMPLEX16Vector(fsig1);
@@ -455,11 +535,17 @@ INT4 XLALInspiralComputePTFIntrinsicMetric (
   XLALDestroyVectorSequence( PTFe2 );
   XLALDestroyREAL8FFTPlan( fwdPlan );
   XLALDestroyREAL8FFTPlan( revPlan );
-
+  XLALDestroyREAL8Array( IntInt_matrix );
+  XLALDestroyREAL8Array( ExtExt_matrix );
+  XLALDestroyREAL8Array( IntExt_matrix );
+  XLALDestroyREAL8Array( IntExt_transp );
+  XLALDestroyREAL8Array( ExtExt_inverse );
+  XLALDestroyREAL8Array( matrix_5_x_4 );
+  XLALDestroyREAL8Array( matrix_4_x_4 );
+  
   /* normal exit */
-  return XLAL_SUCCESS;
+  return errcode;
 }
-
 
 /* <lalVerbatim file="XLALInspiralComputePTFFullMetricCP">  */
 INT4 XLALInspiralComputePTFFullMetric (
