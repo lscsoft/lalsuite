@@ -134,9 +134,10 @@ int main( int argc, char *argv[] )
     exit( 1 );
   }
   
+  fprintf( stderr, "Printing out components of the projected metric in the intrinsic parameter space\n");
   for ( i = 0; i < 10; ++i )
   {
-    fprintf( stdout, "Gamma[%d] = %e\n", i, metric.Gamma[i] );
+    fprintf( stderr, "Gamma[%d] = %e\n", i, metric.Gamma[i] );
   }
   
   /* destory memory for the fullmetric */
