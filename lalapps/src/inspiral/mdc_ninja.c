@@ -357,7 +357,6 @@ INT4 main( INT4 argc, CHAR *argv[] )
         }
         break;
 
-
       case 'L':
         /* set low-pass cutoff frequency for producing noise */
         strainLowPassFreq = atof(optarg);
@@ -371,7 +370,6 @@ INT4 main( INT4 argc, CHAR *argv[] )
         }
         break;
 
-
       case 's':
         /* set low-pass cutoff frequency for producing noise */
         snrLow = atof(optarg);
@@ -383,8 +381,8 @@ INT4 main( INT4 argc, CHAR *argv[] )
         break;
 
       case 'O':
-	/* set output xml file name */
-	optarg_len = strlen(optarg) + 1;
+        /* set output xml file name */
+        optarg_len = strlen(optarg) + 1;
         fnameOutXML = (CHAR *)calloc(1,optarg_len*sizeof(CHAR));
         memcpy(fnameOutXML, optarg, optarg_len);
         break;
@@ -656,8 +654,8 @@ INT4 main( INT4 argc, CHAR *argv[] )
         strncpy(injData[i]->name, channel, LALNameLength);
 
         LAL_CALL( InjectNumRelWaveforms ( &status, injData[i], injections, ifo, 
-					  dynRange, freqLowCutoff, snrLow, snrHigh, 
-					  fnameOutXML), &status);
+              dynRange, freqLowCutoff, snrLow, snrHigh,
+              fnameOutXML), &status);
       }
 
       /* set strain as unit */
