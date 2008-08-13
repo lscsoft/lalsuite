@@ -30,6 +30,7 @@ lalapps_makefakedata_test_SOURCES =  makefakedata_test.c sft_extra.c sft_extra.h
 ## extra-programs
 s3inject_SOURCES = s3inject.c
 
+EXTRA_DIST = testMakefakedata.sh
 TESTS = testMakefakedata.sh
 
 CLEANFILES =
