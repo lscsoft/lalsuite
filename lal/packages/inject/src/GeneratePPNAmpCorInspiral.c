@@ -42,14 +42,18 @@ with ampltidude corrections.
 
 See GeneratePPNInspiral.c
 
-We store the polarizations $h_+$ and $h_x$ in waveform.h.
+Phase computed to 3.5PN.
+Amplitude computed to 2.5PN.
 
-Waveform.a is used to store the first three harmonics in alternate values,
-(i.e. a1(0),a2(0),a3(0),a1(1),a2(1),a3(1)...) as this will be used for 
-filtering. 
+The ampitude corrrected gravitaional wave polarizations $h_+$ and $h_x$ 
+are stored in output.h.
 
-Phase computed to 3.5PN
-Amplitude computed to 2.5PN
+Warning! output.a is used to store the first three harmonics in 
+alternate values, (i.e. [a1(0),a2(0),a3(0),a1(dt),a2(dt),a3(dt)...]) as 
+this will be used for filtering with higher harmonic waveforms. 
+
+Although $h_{+,\times} are computed, $output.phi is also required for filtering.
+
 
 \subsubsection*{Algorithm}
 
@@ -186,6 +190,7 @@ FreqDiff( LALStatus *stat, REAL4 *y, REAL4 x, void *p )
 typedef struct tagPPNInspiralBuffer 
 {
   REAL4 h[2*BUFFSIZE];               /* polarisation data */
+  REAL4 a[3*BUFFSIZE];               /* first three harmonics data */
   REAL8 phi[BUFFSIZE];               /* phase data */
   REAL4 f[BUFFSIZE];                 /* frequency data */
   struct tagPPNInspiralBuffer *next; /* next buffer in list */
@@ -275,8 +280,10 @@ LALGeneratePPNAmpCorInspiral(
   REAL4 a1, a2, a3, a4, a5, a6, a7; /* generated amplitudes of harmonics */
   REAL4 a1mix, a2mix, a3mix, a4mix; /* generated amplitudes of harmonic 
                                        mixed terms */
-  REAL4 *h;                       /* pointer to generated hplus and hcross */
-  REAL8 *phi;                     /* pointer to generated phase data */
+  REAL4 *h;                /* pointer to generated hplus and hcross */
+  REAL4 *a;                /* pointer to generated first three plus harmonics*/
+  REAL8 *phi;              /* pointer to generated phase data */
+
   PPNInspiralBuffer *head, *here; /* pointers to buffered data */
 
   INITSTATUS( stat, "LALGeneratePPNAmpCorInspiral", GENERATEPPNAMPCORINSPIRALC);
@@ -300,6 +307,8 @@ LALGeneratePPNAmpCorInspiral(
 
   /* Make sure output fields don't exist. */
   ASSERT( !( output->h ), stat, GENERATEPPNINSPIRALH_EOUT,
+    GENERATEPPNINSPIRALH_MSGEOUT );
+  ASSERT( !( output->a ), stat, GENERATEPPNINSPIRALH_EOUT,
     GENERATEPPNINSPIRALH_MSGEOUT );
   ASSERT( !( output->f ), stat, GENERATEPPNINSPIRALH_EOUT,
     GENERATEPPNINSPIRALH_MSGEOUT );
@@ -867,6 +876,7 @@ LALGeneratePPNAmpCorInspiral(
   }
   here->next = NULL;
   h = here->h;
+  a = here->a;
   f = here->f;
   
   phi = here->phi;
@@ -999,6 +1009,10 @@ LALGeneratePPNAmpCorInspiral(
      
      a7 = q[5]*a7Pseven*fseven;
      
+     /* Store first three harmonics for filtering */
+     *(a++) = a1Pthree*fthree;
+     *(a++) = a2Ptwo*f2a;
+     *(a++) = a3Pthree*fthree;
 
      *(h++) = preFac*(
                      a1*cos(1.0/2.0*(phiC - phase)) 
@@ -1084,6 +1098,7 @@ LALGeneratePPNAmpCorInspiral(
   
    here->next = NULL;
    h = here->h;
+   a = here->a;
    f = here->f;
    phi = here->phi;
    nNext += BUFFSIZE;
@@ -1118,11 +1133,22 @@ LALGeneratePPNAmpCorInspiral(
   }
   memset( output->h, 0, sizeof(REAL4TimeVectorSeries) );
   
+  if ( ( output->a = (REAL4TimeVectorSeries *)
+       LALMalloc( sizeof(REAL4TimeVectorSeries) ) ) == NULL ) 
+  {
+    FREELIST( head );
+    LALFree( output->h ); output->h = NULL;
+    ABORT( stat, GENERATEPPNINSPIRALH_EMEM,
+     GENERATEPPNINSPIRALH_MSGEMEM );
+  }
+  memset( output->a, 0, sizeof(REAL4TimeVectorSeries) );
+
   if ( ( output->f = (REAL4TimeSeries *)
        LALMalloc( sizeof(REAL4TimeSeries) ) ) == NULL ) 
   {
     FREELIST( head );
     LALFree( output->h ); output->h = NULL;
+    LALFree( output->a ); output->a = NULL;
     ABORT( stat, GENERATEPPNINSPIRALH_EMEM,
      GENERATEPPNINSPIRALH_MSGEMEM );
   } 
@@ -1133,6 +1159,7 @@ LALGeneratePPNAmpCorInspiral(
   {
     FREELIST( head );
     LALFree( output->h ); output->h = NULL;
+    LALFree( output->a ); output->a = NULL;
     LALFree( output->f ); output->f = NULL;
     ABORT( stat, GENERATEPPNINSPIRALH_EMEM,
      GENERATEPPNINSPIRALH_MSGEMEM );
@@ -1149,6 +1176,20 @@ LALGeneratePPNAmpCorInspiral(
     {
       FREELIST( head );
       LALFree( output->h );   output->h = NULL;
+      LALFree( output->a );   output->a = NULL;
+      LALFree( output->f );   output->f = NULL;
+      LALFree( output->phi ); output->phi = NULL;
+    } ENDFAIL( stat );
+    /* Adjust in for waveform.a which stores the first 3 harmonics */
+    in.vectorLength = 3;
+    LALSCreateVectorSequence( stat->statusPtr, &( output->a->data ), &in );
+    BEGINFAIL( stat ) 
+    {
+      FREELIST( head );
+      TRY( LALSDestroyVectorSequence( stat->statusPtr, &( output->h->data ) ),
+           stat );
+      LALFree( output->h );   output->h = NULL;
+      LALFree( output->a );   output->a = NULL;
       LALFree( output->f );   output->f = NULL;
       LALFree( output->phi ); output->phi = NULL;
     } ENDFAIL( stat );
@@ -1156,9 +1197,12 @@ LALGeneratePPNAmpCorInspiral(
     BEGINFAIL( stat ) 
     {
       TRY( LALSDestroyVectorSequence( stat->statusPtr, &( output->h->data ) ),
-     stat );
+           stat );
+      TRY( LALSDestroyVectorSequence( stat->statusPtr, &( output->a->data ) ),
+           stat );
       FREELIST( head );
       LALFree( output->h );   output->h = NULL;
+      LALFree( output->a );   output->a = NULL;
       LALFree( output->f );   output->f = NULL;
       LALFree( output->phi ); output->phi = NULL;
     } ENDFAIL( stat );
@@ -1166,11 +1210,14 @@ LALGeneratePPNAmpCorInspiral(
     BEGINFAIL( stat ) 
     {
       TRY( LALSDestroyVectorSequence( stat->statusPtr, &( output->h->data ) ),
-     stat );
+           stat );
+      TRY( LALSDestroyVectorSequence( stat->statusPtr, &( output->a->data ) ),
+           stat );
       TRY( LALSDestroyVector( stat->statusPtr, &( output->f->data ) ),
-     stat );
+           stat );
       FREELIST( head );
       LALFree( output->h );   output->h = NULL;
+      LALFree( output->a );   output->a = NULL;
       LALFree( output->f );   output->f = NULL;
       LALFree( output->phi ); output->phi = NULL;
     } ENDFAIL( stat );
@@ -1181,18 +1228,22 @@ LALGeneratePPNAmpCorInspiral(
      deallocate the list as we go along. */
   output->position = params->position;
   output->psi = params->psi;
-  output->h->epoch = output->f->epoch = output->phi->epoch
+  output->h->epoch = output->a->epoch = output->f->epoch = output->phi->epoch
     = params->epoch;
-  output->h->deltaT = output->f->deltaT = output->phi->deltaT
-    = params->deltaT;
+  output->h->deltaT = output->a->deltaT = output->f->deltaT 
+    = output->phi->deltaT = params->deltaT;
   output->h->sampleUnits = lalStrainUnit;
+  output->a->sampleUnits = lalStrainUnit;
   output->f->sampleUnits = lalHertzUnit;
   output->phi->sampleUnits = lalDimensionlessUnit;
   LALSnprintf( output->h->name, LALNameLength, 
                "PPN inspiral waveform polarisations" );
+  LALSnprintf( output->a->name, LALNameLength, 
+               "First three harmonics a1_+, a2_+ & a3_+" );
   LALSnprintf( output->f->name, LALNameLength, "PPN inspiral frequency" );
   LALSnprintf( output->phi->name, LALNameLength, "PPN inspiral phase" );
   h = output->h->data->data;
+  a = output->a->data->data;
   f = output->f->data->data;
   phi = output->phi->data->data;
   here = head;
@@ -1203,9 +1254,11 @@ LALGeneratePPNAmpCorInspiral(
     if ( nCopy > n )
       nCopy = n;
     memcpy( h, here->h, 2*nCopy*sizeof(REAL4) );
+    memcpy( a, here->a, 3*nCopy*sizeof(REAL4) );
     memcpy( f, here->f, nCopy*sizeof(REAL4) );
     memcpy( phi, here->phi, nCopy*sizeof(REAL8) );
     h += 2*nCopy;
+    a += 3*nCopy;
     f += nCopy;
     phi += nCopy;
     n -= nCopy;
