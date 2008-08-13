@@ -453,7 +453,7 @@ REAL8 calculate_ligo_snr_from_strain(  REAL4TimeVectorSeries *strain,
   REAL4TimeSeries *chan = NULL;
   REAL4FFTPlan *pfwd;
   COMPLEX8FrequencySeries *fftData;
-  INT4 k;
+  UINT4 k;
   UINT4 length;
 
   /* create the time series */
