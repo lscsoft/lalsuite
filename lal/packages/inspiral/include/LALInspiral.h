@@ -456,7 +456,8 @@ typedef enum {
    AmpCorPPN,
    NumRel,
    Eccentricity,
-   EOBNR
+   EOBNR,
+   NumApproximants
  } Approximant;
 /* </lalVerbatim>  */
 
