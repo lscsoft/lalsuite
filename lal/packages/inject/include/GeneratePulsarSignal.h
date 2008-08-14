@@ -239,6 +239,7 @@ not in the <tt>2*Dterms</tt> band are initialized to zero.
 #include <lal/PulsarDataTypes.h>
 #include <lal/ComputeSky.h>
 #include <lal/ComputeSkyBinary.h>
+#include <lal/Window.h>
 
 /* C++ protection. */
 #ifdef  __cplusplus
@@ -313,6 +314,7 @@ typedef struct {
   LIGOTimeGPSVector *timestamps; /**< timestamps to produce SFTs for (can be NULL) */
   SFTVector *noiseSFTs;		 /**< noise SFTs to be added (can be NULL) */
   INT4 make_v2SFTs;		 /**< UPGRADING switch: should be set to 1 to avoid verbose complaints */
+  REAL4Window *window;		 /**< window function for the time series (can be NULL) */
 } SFTParams;
 
 /** Parameters defining the pulsar signal and SFTs used by LALFastGeneratePulsarSFTs().  Lookup tables (LUTs) are
