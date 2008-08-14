@@ -105,7 +105,8 @@ XLALSumStrainREAL8(
     REAL8TimeVectorSeries *tempstrain,
     REAL8TimeVectorSeries *strain);
 
-REAL4TimeVectorSeries *
+/* REAL4TimeVectorSeries * */
+INT4
 XLALOrientNRWave( 
     REAL4TimeVectorSeries *strain,
     UINT4                  modeL,
@@ -158,9 +159,10 @@ void LALInjectStrainGWREAL8( LALStatus                 *status,
 			     CHAR                      *ifo,
 			     REAL8                     dynRange);
 
+
 INT4
 XLALFindNRCoalescenceTime(REAL8 *tc, 
-			  const REAL4TimeSeries *in   /**< input strain time series */);
+			  const REAL4TimeVectorSeries *in);
 
 /** Spin weighted Spherical Harmonic  */
 INT4 

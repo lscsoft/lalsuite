@@ -98,7 +98,8 @@ XLALSumStrainREAL8(
 
 /** Takes a (sky averaged) numerical relativity waveform and returns the
  * waveform appropriate for given coalescence phase and inclination angles */
-REAL4TimeVectorSeries *
+/* REAL4TimeVectorSeries */
+INT4 
 XLALOrientNRWave( 
     REAL4TimeVectorSeries *strain,         /**< sky average h+, hx data */ 
     UINT4                  modeL,          /**< L                       */
@@ -130,7 +131,9 @@ XLALOrientNRWave(
 	    (tmp2 * MultSphHarm.re) -
 	    (tmp1 * MultSphHarm.im);
     }
-  return( strain );
+
+    return 0;
+/*   return( strain ); */
 }
 
 
@@ -350,20 +353,30 @@ int compare_abs_double(const void *a, const void *b){
 /** Function for calculating the coalescence time (defined to be the peak) of a NR wave */
 INT4
 XLALFindNRCoalescenceTime(REAL8 *tc, 
-			  const REAL4TimeSeries *in   /**< input strain time series */)
+			  const REAL4TimeVectorSeries *in   /**< input strain time series */)
 {
 
   size_t *ind=NULL;
   size_t len;
+  REAL4 *sumSquare=NULL;
+  UINT4 k;
 
-  len = in->data->length;
-  ind = LALCalloc(len, sizeof(*ind));  
+  len = in->data->vectorLength;
+  ind = LALCalloc(1,len*sizeof(*ind));  
 
-  gsl_heapsort_index( ind, in->data->data, len, sizeof(REAL4), compare_abs_float);
+  sumSquare = LALCalloc(1, len*sizeof(*sumSquare)); 
+
+  for (k=0; k < len; k++) {
+    sumSquare[k] = in->data->data[k]*in->data->data[k] + 
+      in->data->data[k + len]*in->data->data[k + len];
+  }    
+
+  gsl_heapsort_index( ind, sumSquare, len, sizeof(REAL4), compare_abs_float);
 
   *tc = ind[len-1] * in->deltaT;
 
   LALFree(ind);
+  LALFree(sumSquare);
 
   return 0;
 }
@@ -767,7 +780,7 @@ void LALInjectStrainGW( LALStatus                 *status,
     htData->data->data[k] *= dynRange;
   }
 
-  XLALFindNRCoalescenceTime( &offset, htData);
+  XLALFindNRCoalescenceTime( &offset, strain);
 
   XLALGPSAdd( &(htData->epoch), -offset);
 
