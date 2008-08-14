@@ -438,7 +438,7 @@ int main(int argc,char *argv[])
   /*Call the CalcTimeSeries Function Here*/
   LogPrintf (LOG_DEBUG, "Calculating Time Series.\n");
   CalcTimeSeries(GV.multiSFTs);
-  fprintf(stderr, "\n WARNING!!! Only the middle half of the band you asked for or is usable. Rest of it is destroyed by Interpolation. Please ask for a larger band. In the future, this will be done automatically. \n"); 
+  /*fprintf(stderr, "\n WARNING!!! Only the middle half of the band you asked for or is usable. Rest of it is destroyed by Interpolation. Please ask for a larger band. In the future, this will be done automatically. \n"); */
   LogPrintf (LOG_DEBUG, "Done Calculating Time Series.\n");
 
   LogPrintf (LOG_DEBUG, "Starting Main Resampling Loop.\n");
@@ -463,7 +463,8 @@ int main(int argc,char *argv[])
 	{
       
 	  REAL8 thisF = fstatVector->data->data[k];
-	  REAL8 thisFreq = fstatVector->f0 + k * fstatVector->deltaF;
+	  /*REAL8 thisFreq = fstatVector->f0 + k * fstatVector->deltaF;*/
+	  REAL8 thisFreq = uvar_Freq + k* fstatVector->deltaF;
 	  /*fprintf(stderr,"f0 = %f , deltaF = %f\n",fstatVector->f0,fstatVector->deltaF);*/
 	  /* sanity check on the result */
 	  if ( !finite ( thisF ) )
@@ -478,7 +479,7 @@ int main(int argc,char *argv[])
 	  /* propagate fkdot from internalRefTime back to refTime for outputting results */
 	  /* FIXE: only do this for candidates we're going to write out */
 	  dopplerpos.fkdot[0] = thisFreq;
-	  LAL_CALL ( LALExtrapolatePulsarSpins ( &status, dopplerpos.fkdot, GV.refTime, dopplerpos.fkdot, GV.searchRegion.refTime ), &status );
+	  /*LAL_CALL ( LALExtrapolatePulsarSpins ( &status, dopplerpos.fkdot, GV.refTime, dopplerpos.fkdot, GV.searchRegion.refTime ), &status );*/
 	  dopplerpos.refTime = GV.refTime;
 
 	  /* correct normalization in --SignalOnly case:
@@ -2892,7 +2893,6 @@ void ComputeFStat_resamp(LALStatus *status,REAL8FrequencySeries *fstatVector, co
       for(p=0;p<length;p++)
 	{
 	  temp->data[p] = 4*dt*dt*(B*magsquare(FaOut->data[p])+A*magsquare(FbOut->data[p])-2*C*(FaOut->data[p][0]*FbOut->data[p][0]+FaOut->data[p][1]*FbOut->data[p][1]))/D/FaOut->length/dt*SFTTimeBaseline/2.0;
-
 	}
 
       q = 0;
@@ -2913,6 +2913,12 @@ void ComputeFStat_resamp(LALStatus *status,REAL8FrequencySeries *fstatVector, co
 	{
 	  fstatVector->data->data[q++] += temp->data[p];
 	}
+
+      /*for(p=0;p<fstatVector->data->length;p++)
+	{
+	  printf("%f %f\n",fstatVector->data->data[p],p*dF+uvar_Freq);
+	}
+      */
 
 
       XLALDestroyREAL8Sequence(temp);
