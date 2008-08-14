@@ -41,6 +41,7 @@
 #include <lal/SeqFactories.h>
 #include <lal/RealFFT.h>
 #include <lal/SFTutils.h>
+#include <lal/Window.h>
 
 #include <lal/GeneratePulsarSignal.h>
 
@@ -250,7 +251,7 @@ LALGeneratePulsarSignal (LALStatus *status,
 
 } /* LALGeneratePulsarSignal() */
 
-
+
 
 /** Turn the given time-series into (v2-)SFTs and add noise if given.
  */
@@ -264,6 +265,7 @@ LALSignalToSFTs (LALStatus *status,
   UINT4 numTimesteps;			/* number of time-samples in an Tsft */
   UINT4 numBins;			/* number of frequency-bins in SFT */
   UINT4 iSFT;
+  UINT4 idatabin;
   REAL8 Band, f0, deltaF, dt;
   LIGOTimeGPSVector *timestamps = NULL;
   REAL4Vector timeStretch = {0,0};
@@ -412,6 +414,14 @@ LALSignalToSFTs (LALStatus *status,
 		}
 	    } /* if nudging */
 	} /* if lalDebugLevel */
+
+      /* Now window the current time series stretch, if necessary */
+      if ( params->window ) {
+	  const float A = 1.0 / sqrt(params->window->sumofsquares / params->window->data->length);
+	  for( idatabin = 0; idatabin < timeStretch.length; idatabin++ ) {
+	      timeStretch.data[idatabin] *= A * params->window->data->data[idatabin];
+	  }
+      }
 
       /* the central step: FFT the ith time-stretch into an SFT-slot */
       LALForwardRealFFT(status->statusPtr, thisSFT->data, &timeStretch, pfwd);
