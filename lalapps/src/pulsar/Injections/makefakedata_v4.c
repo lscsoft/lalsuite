@@ -48,6 +48,7 @@
 #include <lal/GeneratePulsarSignal.h>
 #include <lal/TimeSeries.h>
 #include <lal/BinaryPulsarTiming.h>
+#include <lal/Window.h>
 
 
 RCSID ("$Id$");
@@ -102,6 +103,8 @@ typedef struct
 
   SFTVector *noiseSFTs;		/**< vector of noise-SFTs to be added to signal */
   REAL8 noiseSigma;		/**< sigma for Gaussian noise to be added */
+
+  REAL4Window *window;		/**< window function for the time series */
 
   COMPLEX8FrequencySeries *transfer;  /**< detector's transfer function for use in hardware-injection */
 } ConfigVars_t;
@@ -173,6 +176,9 @@ REAL8 uvar_SFToverlap;		/**< overlap SFTs by this many seconds */
 CHAR *uvar_noiseSFTs;		/**< Glob-like pattern specifying noise-SFTs to be added to signal */
 REAL8 uvar_noiseSigma;		/**< Gaussian noise with standard-deviation sigma */
 REAL8 uvar_noiseSqrtSh;		/**< ALTERNATIVE: single-sided sqrt(Sh) for Gaussian noise */
+
+/* Window function [OPTIONAL] */
+CHAR *uvar_window;		/**< Windowing function for the time series */
 
 /* Detector and ephemeris */
 CHAR *uvar_IFO;			/**< Detector: H1, L1, H2, V1, ... */
@@ -431,6 +437,10 @@ main(int argc, char *argv[])
 	      return MAKEFAKEDATAC_EBAD;
 	      break;
 	    }
+
+	  /* Enter the window function into the SFTparams struct */
+	  sftParams.window = GV.window;
+
 	  /* get SFTs from timeseries */
 	  LAL_CALL ( LALSignalToSFTs(&status, &SFTs, Tseries, &sftParams), &status);
 	  
@@ -926,6 +936,15 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
   if ( uvar_hardwareTDD )
     uvar_generationMode = GENERATE_PER_SFT;
 
+  /*--------------------- Prepare windowing of time series ---------------------*/
+  BOOLEAN have_window = LALUserVarWasSet( &uvar_window );
+  if ( have_window ) {
+	REAL4Window *win = XLALCreateHannREAL4Window( (UINT4)(uvar_Tsft * 2 * uvar_Band) );
+	cfg->window = ( win );
+  } else {
+	cfg->window = NULL;
+  }
+
   /* -------------------- Prepare quantities for barycentering -------------------- */
   {
     UINT4 len;
@@ -1145,6 +1164,8 @@ InitUserVars (LALStatus *status)
   /* per default we generate the whole timeseries first (except for hardware-injections)*/
   uvar_generationMode = GENERATE_ALL_AT_ONCE;
 
+  uvar_window = NULL;	/* By default, use rectangular window */
+
   uvar_refTime = 0.0;
   uvar_refTimeMJD = 0.0;
       
@@ -1192,6 +1213,7 @@ InitUserVars (LALStatus *status)
   /* SFT properties */
   LALregREALUserVar(status,   Tsft, 	 	 0, UVAR_OPTIONAL, "Time baseline of one SFT in seconds");
   LALregREALUserVar(status,   SFToverlap,	 0, UVAR_OPTIONAL, "Overlap between successive SFTs in seconds");
+  LALregSTRINGUserVar(status, window,		 0, UVAR_OPTIONAL, "Window function for the SFT ('Hann')");
 
   /* pulsar params */
   LALregREALUserVar(status,   refTime, 		'S', UVAR_OPTIONAL, "Pulsar reference time in SSB (if 0: use startTime -> SSB)");
@@ -1263,6 +1285,11 @@ void FreeMem (LALStatus* status, ConfigVars_t *cfg)
   /* free timestamps if any */
   if (cfg->timestamps){
     TRY (LALDestroyTimestampVector(status->statusPtr, &(cfg->timestamps)), status);
+  }
+
+  /* free window if any */
+  if (cfg->window){
+    TRY (XLALDestroyREAL4Window(cfg->window), status);
   }
 
   /* free spindown-vector (REAL8) */
