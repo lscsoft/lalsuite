@@ -1,5 +1,6 @@
 /*
 *  Copyright (C) 2007 Reinhard Prix
+*  Copyright (C) 2006 Badri Krishnan, Bruce Allen, Maria Alessandra Papa, Reinhard Prix, Xavier Siemens, Yousuke Itoh
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
