@@ -525,8 +525,8 @@ void LALPrintHPlusCross(
   fprintf (file, "#   t[sec]\t    h_+\t\t   h_x\n"); 
   for (i=0; i < n; i++) 
     {
-      fprintf (file, "%10.8e\t%le\t%le\t%le\n", 
-	       i*dt+off, hp->data->data[i], hc->data->data[i], dt);
+      fprintf (file, "%e\t%e\t%e\n", 
+	       i*dt+off, hp->data->data[i], hc->data->data[i]);
     }
 }
 
