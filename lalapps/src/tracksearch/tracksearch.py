@@ -218,7 +218,7 @@ class tracksearchCheckIniFile:
             sampleRate=float(self.iniOpts.get('tracksearchtime','sample_rate'))
         else:
             self.errList.append('It appears that sample_rate option is missing in ini file!.');
-            sampleRate=0
+            sampleRate=float(0)
         #Check for consistent PSD smoothing bin count!
         if self.iniOpts.has_option('tracksearchtime','whiten_level'):
             if self.iniOpts.get('tracksearchtime','whiten_level') > 0:
@@ -247,7 +247,7 @@ class tracksearchCheckIniFile:
                     sys.stdout.write("Deleting that key from installation.")
                     self.iniOpts.remove_option('multichannel',channel)
         #Check [layerconfig] section
-        LTBS=self.iniOpts.get('layerconfig','layerTopBlockSize')
+        LTBS=int(self.iniOpts.get('layerconfig','layerTopBlockSize'))
         layerOpts=self.iniOpts.options('layerconfig')
         layerOpts.sort()
         layerTimes=[]
@@ -274,7 +274,7 @@ class tracksearchCheckIniFile:
             if float(layerSetSizeKey[index][1]) * float(layerTimesKey[index][1]) > topLayerBlock:
                 self.errList.append('Error inconsistent assigned workload for layerSetSize and layerTimeScale options. Level: '+str(index+1))
         #Give memory use estimate with warning!
-        floatSize=4
+        floatSize=int(4)
         self.memoryUseEstimate=(sampleRate*floatSize*LTBS*9)/(1024*1024)
         #Check [pylibraryfiles] section
         condorOptList=self.iniOpts.options('pylibraryfiles')
