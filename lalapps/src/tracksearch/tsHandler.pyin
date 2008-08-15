@@ -175,7 +175,8 @@ def wrapperShowScatterPlot(candidateObject):
             (colX,colY)=singleTriggerTrait.strip().split(":")
         except:
             sys.stderr.write("Error plotting this scatter plot!\n")
-            sys.stderr.write("Check trigger proptery string.\n")
+            sys.stderr.write("Check trigger property string.\n")
+            sys.stderr.write("%s\n"%(triggerTrait))
             if (triggerTrait=="p"):
                 colX="p"
                 colY="v"
@@ -184,8 +185,8 @@ def wrapperShowScatterPlot(candidateObject):
         myTraitX=str(colX)
         myTraitY=str(colY)
         if verboseSwitch:
-            propertyX=candidateObject.__getCurveField__('',myTraitX)
-            propertyY=candidateObject.__getCurveField__('',myTraitY)
+            propertyX=candidateObject.__getCurveField__('',myTraitX)[1]
+            propertyY=candidateObject.__getCurveField__('',myTraitY)[1]
             sys.stdout.write("Creating scatter plot for %s,%s\n"%
                              (propertyX,propertyY))
         try:

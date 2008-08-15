@@ -2123,6 +2123,8 @@ class candidateList:
         #
         # Set figure title
         #
+        plotLabelX=self.__getTraitField__('',traitX)[1]
+        plotLabelY=self.__getTraitField__('',traitY)[1]
         if ((filename.upper()=='') or (filename.upper()=='AUTO')):
             [name,extension]=os.path.splitext(self.filename[0])
             figtitle=os.path.basename(name)
@@ -2160,6 +2162,16 @@ class candidateList:
             for lineInfo in self.curves:
                 vectorX.append(self.__getCurveField__(triggerSummary,traitX)[0])
                 vectorY.append(self.__getCurveField__(triggerSummary,traitY)[0])
+        #Check for a time field start, stop etc __contains__("gps")
+        minTime=0
+        if labelX.lower().__contains__('gps'):
+            minTime=float(min(vectorX))
+            vectorX=[x-minTime for x in vectorX]
+            pylab.figtext(0.00,0.05,"X0=%s"%(minTime))
+        if labelY.lower().__contains__('gps'):
+            minTime=float(min(vectorY))
+            vectorY=[y-minTime for y in vectorY]
+            pylab.figtext(0.00,0.95,"Y0=%s"%(minTime))
         pylab.scatter(vectorX,vectorY)
         pylab.grid(True)
         pylab.axis('tight')
