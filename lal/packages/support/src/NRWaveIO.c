@@ -332,8 +332,8 @@ LALAddStrainModes(
                 thisInj->mass2, thisMetaData.filename ), status );
 
           /* compute the h+ and hx for given inclination and coalescence phase*/
-          tempStrain = XLALOrientNRWave( tempStrain, thisMetaData.mode[0],
-              thisMetaData.mode[1], thisInj->inclination, thisInj->coa_phase );
+          XLALOrientNRWave( tempStrain, thisMetaData.mode[0],
+			    thisMetaData.mode[1], thisInj->inclination, thisInj->coa_phase );
 
 	  if (sumStrain == NULL) {
 
