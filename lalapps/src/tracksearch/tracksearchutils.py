@@ -688,8 +688,6 @@ class candidateList:
         self.gpsWidth=copy.deepcopy(doner.gpsWidth)
         self.sorted=copy.deepcopy(doner.sorted)
        #End __cloneCandidateList__()
-                    
-        
 
     def __setfilename__(self,newfilename):
         """
@@ -705,7 +703,7 @@ class candidateList:
         it behaves much like its counterpart.  It is required to access
         the trait summary data stored in self.traitSummary.
         """
-        if self.traitSummary.__len__()==0:
+        if ((self.traitSummary.__len__()==0) and (curveSummary=='')):
             ans=self.__getCurveField__(curveSummary,field)
             return ans
         indexToUse=0
@@ -2116,14 +2114,12 @@ class candidateList:
             pylab.savefig(filename)
     #End method graphdata
 
-    def showScatterPlot(self,traitX,traitY,formatString=''):
+    def showScatterPlot(self,traitX,traitY,filename='',formatString=''):
         """
         Allows us to graph the scatter plot.
         """
         pylab.figure()
-        plotLabelX=self.__getCurveField__('',traitX)
-        plotLabelY=self.__getCurveField__('',traitY)
-        self.__triggerScatterPlotPrimative(traitX,traitY,formatString)
+        self.__triggerScatterPlotPrimative__(traitX,traitY,formatString)
         #
         # Set figure title
         #
@@ -2149,8 +2145,8 @@ class candidateList:
         in trait[X,Y] are listed in self.qualities. The argument
         formatString is not yet implemented.
         """
-        labelX=self.__getTraitField__('',traitX)
-        labelY=self.__getTraitField__('',traitY)
+        labelX=self.__getTraitField__('',traitX)[1]
+        labelY=self.__getTraitField__('',traitY)[1]
         pylab.xlabel(str(labelX))
         pylab.ylabel(str(labelY))
         vectorX=list()

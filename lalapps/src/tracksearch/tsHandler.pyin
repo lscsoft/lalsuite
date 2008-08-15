@@ -171,7 +171,16 @@ def wrapperShowScatterPlot(candidateObject):
     global triggerTrait
     global verboseSwitch
     for singleTriggerTrait in triggerTrait:
-        (colX,colY)=singleTriggerTrait.strip().split(":")
+        try:
+            (colX,colY)=singleTriggerTrait.strip().split(":")
+        except:
+            sys.stderr.write("Error plotting this scatter plot!\n")
+            sys.stderr.write("Check trigger proptery string.\n")
+            if (triggerTrait=="p"):
+                colX="p"
+                colY="v"
+            else:
+                return
         myTraitX=str(colX)
         myTraitY=str(colY)
         if verboseSwitch:
@@ -183,6 +192,7 @@ def wrapperShowScatterPlot(candidateObject):
             formatString=''
             candidateObject.showScatterPlot(myTraitX,
                                             myTraitY,
+					    graph2file,
                                             formatString)
         except Exception, errorInfo:
             sys.stderr.write("Problem trying to create scatter plot ::: %s :::\n"%(os.path.basename(graph2file)))
@@ -282,12 +292,12 @@ parser.add_option("-m","--histogram",
                   dest="histogram",
                   action="store_true",
                   help="This option will show a histogram. For the candidate trigger library.")
-parser.add_option("-c","--scatter",
+parser.add_option("-e","--scatter",
                   default=False,
                   dest="scatter",
                   action="store_true",
                   help="This option will show a scatter plot of paired trigger properties. These properties should be specified as the argument to --trigger-property as D:P,A:F. So refer to available property tags in this help menu. The default scatter plot if --trigger-property is not specified will be P:V.  So for the default the X-axis is Integrated Power and the Y-axis is Bright Frequency."
-                  
+                  )
 parser.add_option("-q","--trigger-property",
                   default="p",
                   dest="triggerTrait",
