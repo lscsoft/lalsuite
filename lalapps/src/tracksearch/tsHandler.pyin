@@ -107,6 +107,7 @@ def wrapperGraphTriggers(candidateObject):
         sys.stderr.write("Exception Instance :%s\n"%(str(type(errorInfo))))
         sys.stderr.write("Exception Args     :%s\n"%(str(errorInfo.args)))
         sys.stderr.write("Skipping this plot. Sorry.\n")
+#End wrapperGraphTriggers(candidateObject)
 
 def wrapperShowHistogram(candidateObject):
     """
@@ -160,6 +161,36 @@ def wrapperShowHistogram(candidateObject):
             sys.stderr.write("Exception Instance :%s\n"%(str(type(errorInfo))))
             sys.stderr.write("Exception Args     :%s\n"%(str(errorInfo.args)))
             sys.stderr.write("Skipping this plot. Sorry.\n")
+#End wrapperShowHistogram(candidateObject)
+
+def wrapperShowScatterPlot(candidateObject):
+    """
+    Creates a scatter plot of paired variables and prints
+    them to the screen of a file if requested.
+    """
+    global triggerTrait
+    global verboseSwitch
+    for singleTriggerTrait in triggerTrait:
+        (colX,colY)=singleTriggerTrait.strip().split(":")
+        myTraitX=str(colX)
+        myTraitY=str(colY)
+        if verboseSwitch:
+            propertyX=candidateObject.__getCurveField__('',myTraitX)
+            propertyY=candidateObject.__getCurveField__('',myTraitY)
+            sys.stdout.write("Creating scatter plot for %s,%s\n"%
+                             (propertyX,propertyY))
+        try:
+            formatString=''
+            candidateObject.showScatterPlot(myTraitX,
+                                            myTraitY,
+                                            formatString)
+        except Exception, errorInfo:
+            sys.stderr.write("Problem trying to create scatter plot ::: %s :::\n"%(os.path.basename(graph2file)))
+            sys.stderr.write("Exception Instance :%s\n"%(str(type(errorInfo))))
+            sys.stderr.write("Exception Args     :%s\n"%(str(errorInfo.args)))
+            sys.stderr.write("Skipping this plot. Sorry.\n")
+            
+#End wrapperShowScatterPlot(candidateObject)
 
 ###################End internal methods #################
 usage=''
@@ -251,6 +282,12 @@ parser.add_option("-m","--histogram",
                   dest="histogram",
                   action="store_true",
                   help="This option will show a histogram. For the candidate trigger library.")
+parser.add_option("-c","--scatter",
+                  default=False,
+                  dest="scatter",
+                  action="store_true",
+                  help="This option will show a scatter plot of paired trigger properties. These properties should be specified as the argument to --trigger-property as D:P,A:F. So refer to available property tags in this help menu. The default scatter plot if --trigger-property is not specified will be P:V.  So for the default the X-axis is Integrated Power and the Y-axis is Bright Frequency."
+                  
 parser.add_option("-q","--trigger-property",
                   default="p",
                   dest="triggerTrait",
@@ -278,6 +315,7 @@ expThreshold=str(options.expThreshold)
 graph2file=options.imageFilemask
 linePlot=bool(options.linePlot)
 createHistogram=bool(options.histogram)
+createScatterPlot=bool(options.scatter)
 triggerTrait=str(options.triggerTrait).split(',')
 histogramcolumns=int(options.histCol)
 graph2screen=int(options.imageCount)
@@ -358,7 +396,7 @@ elif (clobberFilename != '') and (canList.__len__() == 1):
     # Add logic branch to do a report graphic...  Try original trigger
     # curve plots, show power histogram, then show a cut trigger plot
     # 
-    #Create a scatterplot on screen of the curves in the candidateList
+    #Create a lineplot on screen of the curves in the candidateList
 elif (linePlot and not createHistogram and (canList.__len__() >=1) and ((graph2screen>0) or (graph2file!=''))):
     if ((graph2screen < canList.__len__()) and (graph2file=='')):
         print "Number of images to create exceeds your request!"
@@ -387,7 +425,20 @@ elif (createHistogram and (canList.__len__() >=1)):
         if linePlot:
             wrapperGraphTriggers(candidateObject)
         del candidateObject
-
+    #SECTION CREATE SCATTER PLOTS
+elif (createScatterPlot and (canList.__len__() >=1)):
+    if ((graph2file != 'AUTO') and (canList.__len__() > 1) and (graph2screen==0)):
+        graph2file='AUTO'
+    for entry in canList:
+        candidateObject=candidateList(verboseSwitch)
+        if muteSpinner:
+            candidateObject.spinnerVerboseMode=False
+        candidateObject.__propertyunpickler__(entry)
+        wrapperShowScatterPlot(candidateObject)
+        if linePlot:
+            wrapperGraphTriggers(candidateObject)
+        del candidateObject
+    
     #SECTION APPLY ABITRARY THRESHOLDS
 elif ((expThreshold != "") and (canList.__len__() >=1)):
     #Carry out thresholding on all entries in canList

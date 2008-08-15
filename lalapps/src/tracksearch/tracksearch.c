@@ -1296,7 +1296,7 @@ void LALappsGetFrameData(LALStatus*          status,
       dataTypeCode=XLALFrGetTimeSeriesType(channelIn.name, stream);
       if (params->verbosity > quiet)
 	{
-	  fprintf(stdout,"Checking data stream variable type for :%s",channelIn.name);
+	  fprintf(stdout,"Checking data stream variable type for :%s \n",channelIn.name);
 	  fflush(stdout);
 	}
       
@@ -3415,24 +3415,26 @@ void LALappsTracksearchRemoveHarmonics( LALStatus             *statusX,
 				        REAL4TimeSeries       *dataSet,
 				        TSSearchParams         params)
 {
-  COMPLEX8Vector          *referenceSignal=NULL;
-  UINT4                    tmpHarmonicCount=0;
-  REAL4                    tmpLineFreq=0.0;
+  COMPLEX8Vector           *referenceSignal=NULL;
+  CHARVector               *dataLabel=NULL;
+  UINT4                     tmpHarmonicCount=0;
+  REAL4                     tmpLineFreq=0.0;
   COMPLEX8FrequencySeries  *signalFFT_harmonic=NULL;
   REAL4FFTPlan             *forwardPlan=NULL;
-  INT4Vector              *harmonicIndex=NULL;
-  INT4Vector              *harmonicIndexCompliment=NULL;
-  REAL4TVectorCLR         *inputTVectorCLR=NULL;
-  REAL4FVectorCLR         *inputFVectorCLR=NULL;
-  REAL4Vector             *inputPSDVector=NULL;
-  REAL4Vector             *cleanData=NULL;
-  UINT4                    i=0;
-  UINT4                    j=0;
-  UINT4                    l=0;
-  const LIGOTimeGPS        gps_zero = LIGOTIMEGPSZERO;
-  UINT4                    planLength=0;
-  int                      code=0;
-  LALStatus                status=blank_status;
+  INT4Vector               *harmonicIndex=NULL;
+  INT4Vector               *harmonicIndexCompliment=NULL;
+  REAL4TVectorCLR          *inputTVectorCLR=NULL;
+  REAL4FVectorCLR          *inputFVectorCLR=NULL;
+  REAL4Vector              *inputPSDVector=NULL;
+  REAL4Vector              *cleanData=NULL;
+  UINT4                     i=0;
+  UINT4                     j=0;
+  UINT4                     l=0;
+  UINT4                     nanCount=0;
+  const LIGOTimeGPS         gps_zero = LIGOTIMEGPSZERO;
+  UINT4                     planLength=0;
+  int                       code=0;
+  LALStatus                 status=blank_status;
 
 
   /*lal_errhandler=LAL_ERR_RTRN;*/
@@ -3489,6 +3491,16 @@ void LALappsTracksearchRemoveHarmonics( LALStatus             *statusX,
 					   dataSet->data,
 					   forwardPlan),
 			&status);
+	      if (params.verbosity >= printFiles)
+		{
+		  dataLabel=XLALCreateCHARVector(maxFilenameLength);
+		  sprintf(dataLabel->data,"LineRemoval_Fdomain_R_%f.diag",tmpLineFreq);
+		  print_complex8fseries(signalFFT_harmonic,dataLabel->data);
+		  sprintf(dataLabel->data,"LineRemoval_Fdomain_R_%f_Units.diag",tmpLineFreq);
+		  print_lalUnit(signalFFT_harmonic->sampleUnits,dataLabel->data);
+		  XLALDestroyCHARVector(dataLabel);
+		}
+
 	      if (code != 0)
 		{
 		  fprintf(stdout,"FAILED!\n");
@@ -3589,9 +3601,30 @@ void LALappsTracksearchRemoveHarmonics( LALStatus             *statusX,
 		  fprintf(stderr,"Error: LALCleanAll\n");
 		  exit(TRACKSEARCHC_EMISC);
 		}
+
 	      /*Copy the clean data back into the variable dataSet */
-	      for (j=0;j<dataSet->data->length;j++)
-		dataSet->data->data[j]=cleanData->data[j];
+	      nanCount=0;
+	      /* Check that the cleaned data has no NaN values.  If it
+	       * does print a warning to the user that this frequency was
+	       * not removed.
+	       */
+	      for (j=0;j<cleanData->length;j++)
+		{
+		  if (cleanData->data[j] != cleanData->data[j])
+		    nanCount=nanCount+1;
+		}
+	      if (nanCount > 0)
+		{
+		  fprintf(stderr,"Error with cleaned data, NaN encountered.\n");
+		  fprintf(stderr,"For cleaning frequency %f, %i elements of %i elements in array contain NaN value!\n",tmpLineFreq,nanCount,cleanData->length);
+		}
+	      else
+		{
+		  for (j=0;j<dataSet->data->length;j++)
+		    {
+		      dataSet->data->data[j]=cleanData->data[j];
+		    }
+		}
 
 	      if (cleanData)
 		XLALDestroyREAL4Vector(cleanData);
@@ -3615,8 +3648,16 @@ void LALappsTracksearchRemoveHarmonics( LALStatus             *statusX,
 		XLALFree(inputFVectorCLR);
 	      if (params.verbosity > quiet)
 		{
-		  fprintf(stdout,"Removed!\n");
-		  fflush(stdout);
+		  if (nanCount == 0)
+		    {
+		      fprintf(stdout,"Removed!\n");
+		      fflush(stdout);
+		    }
+		  else
+		    {
+		      fprintf(stdout,"Warning, Line not found!\n");
+		      fflush(stdout);
+		    }
 		}
 	    }
 	  else
@@ -3806,39 +3847,46 @@ void LALappsTrackSearchWhitenSegments( LALStatus        *status,
       segmentLength=params.SegLengthPoints+(2*params.SegBufferPoints);
       if ((params.NumSeg%2 !=0))
 	{
-	  segCount=params.NumSeg;
 	  /* Add one to odd number segCount to make it even for this method*/
-	  stride=floor((dataSet->data->length - segmentLength)
-		       /((segCount+1)-1));
-	  segCount=segCount+1;
+	  segCount=params.NumSeg+1;
 	}
       else
 	{
 	  segCount=params.NumSeg;
-	  stride=floor((dataSet->data->length - segmentLength)
-		       /((segCount)-1));
 	}
-
-      /*Worakaround "HACK" for proper spanning of data*/
+      stride=floor((dataSet->data->length - segmentLength)
+		   /((segCount)-1));
+      
+      /* 
+       * If stride is LESS THAN segmentLength/2 up the segCount by 2
+       * by adjusting the value of our stride variable
+       */
+      if (stride < segmentLength/2)
+	{
+	  segCount=segCount-2;
+	  stride=floor((dataSet->data->length - segmentLength)
+                       /((segCount)-1));
+	}
+      /* Workaround "HACK" for proper spanning of data */
       /* See AverageSpectrum.c line 845 */
       if ((dataSet->data->length-((segCount-1)*stride+segmentLength))>=1)
 	{
-	  fprintf(stdout,"Notice: We can not estimate the PSD using XLALREAL4AverageSpectrumMedianMean because the segment length, bin buffer, and overlap combing to form a data interval that isn't spanned correctly.  See documentation for the above XLAL function.  We are off by %i points to span the data properly.\n",
+	  fprintf(stdout,"Notice: We can not estimate the PSD using XLALREAL4AverageSpectrumMedianMean because the segment length, bin buffer, and segment overlaps options combine to form a data interval that isn't spanned correctly.  See documentation for the above XLAL function.  We are off by %i points to span the data properly.\n",
 		  (dataSet->data->length-((segCount-1)*stride+segmentLength)));
 	  fflush(stdout);
 	}
 
-      if (
+      if (/*Check and use a tolerance for mismatches to use medianmean estimator*/
 	  (dataSet->data->length-((segCount-1)*stride+segmentLength)
 	   <
-	   floor(segmentLength*0.0001))
+	   floor(segmentLength*0.005))
 	&&
 	  (dataSet->data->length-((segCount-1)*stride+segmentLength)
 	   >
 	   0)
 	  )
 	{
-	  fprintf(stderr,"WARNING!!! To estimate PSD for whitening we are ignoring the last data %i points in the input data used to make the PSD estimate.\n",
+	  fprintf(stderr,"WARNING! To estimate PSD for whitening we are ignoring the last data %i points in the input data used to make the PSD estimate.\n",
 		  (dataSet->data->length-((segCount-1)*stride+segmentLength)));
 	  originalDataLength=dataSet->data->length;	
 	  dataSet->data->length=originalDataLength-(dataSet->data->length-((segCount-1)*stride+segmentLength));
@@ -3863,7 +3911,7 @@ void LALappsTrackSearchWhitenSegments( LALStatus        *status,
       if (errcode !=0)
 	{
 	  fprintf(stderr,"Problem calculating average PSD using mean method.\n");
-	  fprintf(stderr," SegCount Caculated :%i\n Segments :%i\n Dataset :%i\n PSD :%i\n Seglen :%i\n Seglen with buffer bin points :%i\n Stride Caculated:%i\n",
+	  fprintf(stderr,"SegCount Caculated :%i\n Segments :%i\n Dataset :%i\n PSD :%i\n Seglen :%i\n Seglen with buffer bin points :%i\n Stride Caculated:%i\n",
 		  segCount,
 		  params.NumSeg,
 		  dataSet->data->length,

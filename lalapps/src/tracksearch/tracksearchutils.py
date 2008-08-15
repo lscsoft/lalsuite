@@ -705,6 +705,9 @@ class candidateList:
         it behaves much like its counterpart.  It is required to access
         the trait summary data stored in self.traitSummary.
         """
+        if self.traitSummary.__len__()==0:
+            ans=self.__getCurveField__(curveSummary,field)
+            return ans
         indexToUse=0
         traitList=[]
         for element in self.qualities:
@@ -2113,7 +2116,59 @@ class candidateList:
             pylab.savefig(filename)
     #End method graphdata
 
-
+    def showScatterPlot(self,traitX,traitY,formatString=''):
+        """
+        Allows us to graph the scatter plot.
+        """
+        pylab.figure()
+        plotLabelX=self.__getCurveField__('',traitX)
+        plotLabelY=self.__getCurveField__('',traitY)
+        self.__triggerScatterPlotPrimative(traitX,traitY,formatString)
+        #
+        # Set figure title
+        #
+        if ((filename.upper()=='') or (filename.upper()=='AUTO')):
+            [name,extension]=os.path.splitext(self.filename[0])
+            figtitle=os.path.basename(name)
+        else:
+            figtitle=filename
+        pylab.title("%s"%(figtitle))
+        if (filename==''):
+            pylab.show()
+            pylab.close()
+        else:
+            if (filename.upper()=='AUTO'):
+                [fullpath,extension]=os.path.splitext(self.filename[0])
+                filename=os.path.basename(fullpath)+'_scatter_'+plotLabelX.replace(" ","_")+'_'+plotLabelY.replace(" ","_")+'.png'
+            pylab.savefig(filename)
+    #End method graphScatterPlot
+    
+    def __triggerScatterPlotPrimative__(self,traitX,traitY,formatString=''):
+        """
+        Show a scatter plot of traitX versus traitY, where the labels
+        in trait[X,Y] are listed in self.qualities. The argument
+        formatString is not yet implemented.
+        """
+        labelX=self.__getTraitField__('',traitX)
+        labelY=self.__getTraitField__('',traitY)
+        pylab.xlabel(str(labelX))
+        pylab.ylabel(str(labelY))
+        vectorX=list()
+        vectorY=list()
+        #Load properties out of trait summary
+        if self.traitSummary.__len__() > 0:
+            for triggerSummary in self.traitSummary:
+                vectorX.append(self.__getTraitField__(triggerSummary,traitX)[0])
+                vectorY.append(self.__getTraitField__(triggerSummary,traitY)[0])
+        else:
+            for lineInfo in self.curves:
+                vectorX.append(self.__getCurveField__(triggerSummary,traitX)[0])
+                vectorY.append(self.__getCurveField__(triggerSummary,traitY)[0])
+        pylab.scatter(vectorX,vectorY)
+        pylab.grid(True)
+        pylab.axis('tight')
+    #End __triggerScatterPlotPrimative__()
+    
     def showHistogram(self,triggerTrait='p',filename='',colCount=50,topPercentage=float(0.05)):
         """
         Show a histogram of integrated power for each trigger in the

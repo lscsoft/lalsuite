@@ -65,9 +65,9 @@ def buildDir(dirpath):
     
     #Now double check that directory exists else flag error
     if not os.path.isdir(dirpath):
-        os.stderr.write('\n WARNING: Directory still not ready contain(s) '+str(pathArray.__len__())+' branches!\n')
-        os.stderr.write(str(dirpath))
-        os.stderr.write(str(pathArray))
+        sys.stderr.write('\n WARNING: Directory still not ready contain(s) '+str(pathArray.__len__())+' branches!\n')
+        sys.stderr.write(str(dirpath))
+        sys.stderr.write(str(pathArray))
 #End def
 
 def customAnalysisChunkBuilder(scienceSegment,smallestBlockAllowed,largestBlockAllowed):
