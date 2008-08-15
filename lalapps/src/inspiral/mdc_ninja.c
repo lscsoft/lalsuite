@@ -25,6 +25,8 @@
 #include <stdlib.h>
 #include <getopt.h>
 #include <string.h>
+#include <errno.h>
+#include <sys/stat.h>
 
 #include <lalapps.h>
 
@@ -70,9 +72,9 @@ RCSID( "$Id$" );
 /* function prototypes */
 static void print_usage( CHAR *program );
 static void output_frame( CHAR *ifo, INT4 gpsStart, INT4 gpsEnd,
-    REAL4TimeSeries *injData, CHAR *frameType );
+    REAL4TimeSeries *injData, CHAR *frameType, CHAR *outDir );
 static void output_multi_channel_frame( INT4 num_ifos, INT4 gpsStart,
-    INT4 gpsEnd, REAL4TimeSeries *injData[LAL_NUM_IFO], CHAR *frameType );
+    INT4 gpsEnd, REAL4TimeSeries *injData[LAL_NUM_IFO], CHAR *frameType, CHAR *outDir );
 static void write_mdc_log_file( CHAR *filename, SimInspiralTable *injections,
     INT4 gps_start, CHAR *set_name );
 
@@ -106,12 +108,14 @@ INT4 main( INT4 argc, CHAR *argv[] )
   int c;
   INT4 i;
   INT4 num_ifos = 0;
+  int mkdir_result;
 
   /* file/directory/set names */
   CHAR *injectionFile = NULL;
   CHAR *setName       = NULL;
   CHAR *mdcFileName   = NULL;
   CHAR *frameType     = NULL;
+  CHAR *outDir        = NULL;
 
   /* ifo name */
   CHAR *ifo = NULL;
@@ -177,6 +181,7 @@ INT4 main( INT4 argc, CHAR *argv[] )
     {"snr-low",                 required_argument, 0,                's'},
     {"snr-high",                required_argument, 0,                'S'},
     {"out-xml-file",            required_argument, 0,                'O'},
+    {"fr-out-dir",              required_argument, 0,                'd'},
     {"help",                    no_argument,       0,                'h'},
     {"version",                 no_argument,       0,                'V'},
     {0, 0, 0, 0}
@@ -196,7 +201,7 @@ INT4 main( INT4 argc, CHAR *argv[] )
     size_t optarg_len;
 
     /* parse command line arguments */
-    c = getopt_long_only( argc, argv, "D:T:a:b:f:r:i:t:n:o:l:L:s:S:O:hV",
+    c = getopt_long_only( argc, argv, "D:T:a:b:f:r:i:t:n:o:l:L:s:S:O:d:hV",
         long_options, &option_index );
 
     /* detect the end of the options */
@@ -387,6 +392,13 @@ INT4 main( INT4 argc, CHAR *argv[] )
         memcpy(fnameOutXML, optarg, optarg_len);
         break;
 
+      case 'd':
+        /* set frame output directory */
+        optarg_len = strlen(optarg) + 1;
+        outDir = (CHAR *)calloc(1, optarg_len * sizeof(CHAR));
+        memcpy(outDir, optarg, optarg_len);
+        break;
+
       case 'D':
         /* set debug level */
         set_debug_level( optarg );
@@ -419,6 +431,17 @@ INT4 main( INT4 argc, CHAR *argv[] )
    * check validity of arguments
    *
    */
+
+  /* create output directory if needed */
+  errno = 0;
+  mkdir_result = mkdir(outDir, S_IRWXU | S_IRWXG | S_IRWXO);
+
+  if ( (mkdir_result == -1) && (errno != EEXIST) )
+  {
+    fprintf(stderr, "unable to create output directory '%s'\n", outDir);
+    exit( 1 );
+  }
+  
 
   if (( mdcFlag == 0 ) && ( frameFlag == 0 ))
   {
@@ -668,9 +691,9 @@ INT4 main( INT4 argc, CHAR *argv[] )
 
     /* output frame */
     if ( ifosFlag )
-      output_multi_channel_frame( num_ifos, gpsStartSec, gpsEndSec, injData, frameType );
+      output_multi_channel_frame( num_ifos, gpsStartSec, gpsEndSec, injData, frameType, outDir );
     else
-      output_frame( ifo, gpsStartSec, gpsEndSec, injData[0], frameType );
+      output_frame( ifo, gpsStartSec, gpsEndSec, injData[0], frameType, outDir );
   }
 
   /* write mdc log */
@@ -739,6 +762,7 @@ static void print_usage( CHAR *program )
       "  --snr-low             snr_lo      lower cutoff on snr\n"\
       "  --snr-high            snr_hi      upper cutoff on snr\n"\
       "  --out-xml-file        output xml  output file with list of injections performed\n"\
+      "  --fr-out-dir          dir         directory to output frames to\n"\
       "\n", program );
 }
 
@@ -748,7 +772,8 @@ static void output_frame(CHAR *ifo,
     INT4 gpsStart,
     INT4 gpsEnd,
     REAL4TimeSeries *injData,
-    CHAR *frameType)
+    CHAR *frameType,
+    CHAR *outDir)
 {
   CHAR fname[FILENAME_MAX];
   INT4 duration;
@@ -759,8 +784,10 @@ static void output_frame(CHAR *ifo,
 
   /* get frame filename */
   duration = gpsEnd - gpsStart;
-  LALSnprintf( fname, FILENAME_MAX, "%s-%s-%d-%d.gwf", ifo, frameType,
-      gpsStart, duration );
+  if (outDir)
+    LALSnprintf( fname, FILENAME_MAX, "%s/GHLTV-%s-%d-%d.gwf", outDir, frameType, gpsStart, duration );
+  else
+    LALSnprintf( fname, FILENAME_MAX, "GHLTV-%s-%d-%d.gwf", frameType, gpsStart, duration );
 
   /* set detector flags */
   if ( strncmp( ifo, "H2", 2 ) == 0 )
@@ -818,7 +845,8 @@ static void output_multi_channel_frame(INT4 num_ifos,
     INT4 gpsStart,
     INT4 gpsEnd,
     REAL4TimeSeries *injData[LAL_NUM_IFO],
-    CHAR *frameType)
+    CHAR *frameType,
+    CHAR *outDir)
 {
   CHAR fname[FILENAME_MAX];
   INT4 duration;
@@ -829,8 +857,10 @@ static void output_multi_channel_frame(INT4 num_ifos,
 
   /* get frame filename */
   duration = gpsEnd - gpsStart;
-  LALSnprintf( fname, FILENAME_MAX, "GHLTV-%s-%d-%d.gwf", frameType,
-      gpsStart, duration );
+  if (outDir)
+    LALSnprintf( fname, FILENAME_MAX, "%s/GHLTV-%s-%d-%d.gwf", outDir, frameType, gpsStart, duration );
+  else
+    LALSnprintf( fname, FILENAME_MAX, "GHLTV-%s-%d-%d.gwf", frameType, gpsStart, duration );
 
   /* set detector flags */
   detectorFlags = LAL_GEO_600_DETECTOR_BIT | LAL_LHO_4K_DETECTOR_BIT |
