@@ -347,17 +347,15 @@ void InjectNumRelWaveforms (LALStatus           *status,
 	    {	      
 
 	      /* simTableOut will be null only the first time */
-	      if (!simTableOut) {
+	      if ( simTableOut == NULL) {
 		simTableOut = (SimInspiralTable *)LALCalloc( 1, sizeof(SimInspiralTable) );
+		memcpy(simTableOut, thisInj, sizeof(*thisInj));
 		thisInjOut = simTableOut;
-		memcpy(thisInjOut, thisInj, sizeof(*thisInj));
-		thisInjOut->next = NULL;
 	      }
 	      else {
 		thisInjOut->next = (SimInspiralTable *)LALCalloc( 1, sizeof(SimInspiralTable) );
+		memcpy(thisInjOut->next, thisInj, sizeof(*thisInj));
 		thisInjOut = thisInjOut->next;
-		memcpy(thisInjOut, thisInj, sizeof(*thisInj));
-		thisInjOut->next = NULL;
 	      }
 
 	      TRY( LALInjectStrainGW( status->statusPtr, chan, tempStrain, thisInj, 
@@ -394,8 +392,15 @@ void InjectNumRelWaveforms (LALStatus           *status,
     TRY( LALEndLIGOLwXMLTable ( status->statusPtr, &xmlfp ), status );   
     
     TRY( LALCloseLIGOLwXMLFile ( status->statusPtr, &xmlfp ), status );    
-    XLALFreeSimInspiral ( &simTableOut );
+
   }
+
+  while (simTableOut) {
+    thisInjOut = simTableOut;
+    simTableOut = simTableOut->next;
+    LALFree(thisInjOut);
+  }
+
   
   DETATCHSTATUSPTR(status);
   RETURN(status);
