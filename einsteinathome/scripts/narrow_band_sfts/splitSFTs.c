@@ -37,7 +37,7 @@
 #include <string.h>
 #include "SFTReferenceLibrary.h"
 
-#define RCSID "$Id: splitSFTs.c,v 1.28 2008/08/04 12:04:32 bema Exp $"
+#define RCSID "$Id: splitSFTs.c,v 1.29 2008/08/17 15:13:48 bema Exp $"
 
 /* rounding (for positive numbers!)
    taken from SFTfileIO in LALSupport, should be consistent with that */
@@ -56,21 +56,21 @@
 #define TRYSFT(v,c) { int r; if((r=(v))) { fprintf(stderr,c " (%s @ %d)\n", SFTErrorMessage(r), __LINE__); exit(r); } }
 
 int main(int argc, char**argv) {
-  unsigned int arg;       /* current command-line argument */
-  unsigned int bin;       /* current bin */
-  struct headertag2 hd;   /* header of input SFT */
-  FILE *fp;               /* currently open filepointer */
-  char *oldcomment;       /* comment of input SFT */
-  char *cmdline = NULL;   /* records command-line to add it to comment */
-  char *comment = NULL;   /* comment to be written into output SFT file */
-  int swap;               /* do we need to swap bytes? */
-  float *data;            /* SFT data */
-  char *outname;          /* name of output SFT file */
-  char *prefix = "";      /* output filename prefix */
-  char *detector = NULL;  /* detector name */
-  double factor = 1.0;    /* "mystery" factor */
-  int firstfile = TRUE;   /* are we processing the first input SFT file? */
-  int add_comment = CMT_FULL; /* add RCSID and full command-line to every SFT file */
+  unsigned int arg;            /* current command-line argument */
+  unsigned int bin;            /* current bin */
+  struct headertag2 hd;        /* header of input SFT */
+  FILE *fp;                    /* currently open filepointer */
+  char *oldcomment;            /* comment of input SFT */
+  char *cmdline = NULL;        /* records command-line to add it to comment */
+  char *comment = NULL;        /* comment to be written into output SFT file */
+  int swap;                    /* do we need to swap bytes? */
+  float *data;                 /* SFT data */
+  char *outname;               /* name of output SFT file */
+  char *prefix = "";           /* output filename prefix */
+  char *detector = NULL;       /* detector name */
+  double factor = 1.0;         /* "mystery" factor */
+  int firstfile = TRUE;        /* are we processing the first input SFT file? */
+  int add_comment = CMT_FULL;  /* add RCSID and full command-line to every SFT file */
   unsigned int start = 0, end = 0, width = 0;     /* start, end and width in bins */
   double fMin = -1.0, fMax = -1.0, fWidth = -1.0; /* start, end and width in Hz */
 
@@ -189,6 +189,7 @@ int main(int argc, char**argv) {
       exit(10);
     }
 
+    /* build comment for output SFTs */
     if (add_comment > CMT_OLD) {
 
       /* allocate space for new comment */
@@ -204,9 +205,10 @@ int main(int argc, char**argv) {
 
     } else if (add_comment == CMT_OLD) {
 
+      /* copied only, no additional space needed */
       comment = oldcomment;
 
-    }
+    } /* else (add_comment == CMT_NONE) and (comment == NULL) i.e. no comment at all */
 
     /* get the detector name from SFT header if present there (v2 SFTs),
        or else it needs to have been set on the command-line */
@@ -216,11 +218,11 @@ int main(int argc, char**argv) {
     /* if no detector has been specified, issue an error */
     TRY(detector == NULL, "When reading v1 SFTs a detector needs to be specified with -d",12);
 
-    /* read in complete SFT data */
+    /* read in SFT bins */
     TRYSFT(ReadSFTData(fp, data, hd.firstfreqindex, hd.nsamples, NULL, NULL),
 	   "could not read SFT data");
 
-    /* apply factor */
+    /* apply mystery factor */
     for(bin = 0; bin < 2*hd.nsamples; bin++)
       data[bin] *= factor;
 
@@ -243,8 +245,8 @@ int main(int argc, char**argv) {
       TRY((fp = fopen(outname,"a")) == NULL,
 	  "could not open SFT for writing",13);
 
-      /* write the data */
-      /* write the comment only to the first SFT of a "block" */
+      /* write the data
+	 write the comment only to the first SFT of a "block", i.e. of a call of this program */
       TRYSFT(WriteSFT(fp, hd.gps_sec, hd.gps_nsec, hd.tbase, 
 		      bin, this_width, detector,
 		      firstfile ? comment : NULL,
