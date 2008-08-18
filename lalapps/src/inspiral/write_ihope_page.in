@@ -459,7 +459,7 @@ def write_general(page,opts):
 
 
 # ***************************************************************************
-def write_title(page, text, tag):
+def write_title(page, text, tag, checked=False):
   """
   create a title (h2 tag) with a toggle on/off and a link to the TOC.
 
@@ -471,6 +471,8 @@ def write_title(page, text, tag):
   @type text: string
   @param tag: a tag to include within the link/name 
   @type tag: string
+  @param checked: whether the checkbox near the title should be initially checked
+  @type checked: bool
   @return: an update of HTML document
   """
   global h2_num
@@ -478,7 +480,10 @@ def write_title(page, text, tag):
   page.h2()
   page.add("<a name=\""+tag+"\">")
   input = "input_"+tag
-  page.input(id=input, type="checkbox", checked="checked", onclick="toggleVisible('"+tag+"')")
+  if checked:
+    page.input(id=input, type="checkbox", checked=None, onclick="toggleVisible('"+tag+"')")
+  else:
+    page.input(id=input, type="checkbox", onclick="toggleVisible('"+tag+"')")    
 
   h2_num+=1  # we incremnt the section number
   page.add(str(h2_num)+". "+text)
@@ -527,6 +532,12 @@ def write_summary(page,opts):
   ini = opts.config_file
   ifos = get_ifos()
 
+  page.add("<p>This section summarizes the data which was available for analysis.")
+  page.add("All of the segment files are linked in")
+  page = add_href(page, href= webdir + "segments", name="this directory")
+  page.add(".<p>")
+
+  page.add("Segments were generated using the following information:")
   page = add_config_section(page, "segments")
 
   page = heading(page, "Selected segments", "Switch details on/off")  
@@ -579,7 +590,13 @@ def write_summary(page,opts):
 
   for tag in ["SCIENCE_SEGMENTS", "RDS_C03_L2", "MISSED_SEGS"] :
     page = heading(page, tag +" summary ")
-    msg = "The science segments (category 1) according to hipe are "+tag+": "
+    if tag == "SCIENCE_SEGMENTS":
+      msg = "The times requested for analysis are:"
+    elif tag == "RDS_C03_L2":
+      msg = "The times for which " + tag + " data is available are: "
+    elif tag == "MISSED_SEGS":
+      msg = "The times for which data is requested but not available are:" 
+
     page.add(msg +" <br/>")
     try:
       segs = get_segments_tag(tag)
@@ -755,9 +772,9 @@ def write_analysis(page, opts, thisSearch='playground'):
     for key in coincs.keys():        
       page.tr()
       if thisSearch=='playground':
-        file = webdir +thisSearch +'/'+key+"_play_segs_analyzed.txt"
+        file = webdir +thisSearch +'/segments/'+key+"_play_segs_analyzed.txt"
       elif thisSearch=='full_data' or thisSearch=='full_data_slide':
-        file = webdir +'full_data/'+key+"_segs_analyzed.txt"
+        file = webdir +'full_data/segments/'+key+"_segs_analyzed.txt"
       page.td(e.a(key,href=file,rel="external"))
   
       page.td(coincs.get(key))
@@ -800,6 +817,7 @@ def write_analysis(page, opts, thisSearch='playground'):
     logText(logfile, "Error in generating Venn diagram.", "error")
     pass
  
+  
   
   # title will be the name of the section.
   # tags is a tag to search for the relevant cache file (will use the first one found)
@@ -894,73 +912,106 @@ def write_summaryFiles(page, opts):
   """
   webdir = opts.webdir
   ini = opts.config_file
-  ifos = get_ifos()
-  
-  page.add("This section provides a list of COIRE and SIRE summary files.<br/>")
-  page = heading(page, "Final COIRE Summary files ")
-
   
   injections = hipecp.items("injections")
-  directories = ["playground"]
-  for this in injections:     
+  directories = ["playground","full_data"]
+  for this in injections: 
     directories.append(this[0])
-  
+
+  page.add("This section provides a list of COIRE and SIRE summary files.<br/>")
 
   for thisSearch in directories:
     page.add('<h1>' + thisSearch  +' section</h1>')
-    for eachifo in get_ifo_coinc():
-      if len(eachifo)>2:
-        if 'inj' in thisSearch:
-          file = opts.datadir + thisSearch+'/'+eachifo\
-              +'-COIRE_INJECTIONS*SUMMARY_SECOND_'+eachifo\
-              +'_'+thisSearch.upper()+'_CAT_2_VETO' +opts.txt_suffix     
-          flist = glob.glob(file)
-          if flist: file = flist[0]
-        else:
-          file = opts.datadir + thisSearch+'/'+eachifo\
-              +'-COIRE_SUMMARY_SECOND_'+eachifo\
-              +'_'+thisSearch.upper() +'_CAT_2_VETO' +opts.txt_suffix     
-        try:
-          tmp = open(file, "r")
-          this = tmp.read()
-          tmp.close()
-          page.add( "<p>COIRE Summary file "+eachifo+".</p>")
-          page.add("<pre>"+file+"<br/>"+this+"</pre>")
-        except:
-          page.add( "<p>COIRE Summary file "+eachifo+".</p>")
-          page.add('<pre>Could not find '+file+'</pre>')
-        # the SLIDE case
-        if 'inj' not in thisSearch:
-          file = opts.datadir + thisSearch+'/'+eachifo\
-              +'-COIRE_SLIDE_SUMMARY_SECOND_'+eachifo\
-              +'_'+thisSearch.upper()+'_CAT_2_VETO' +opts.txt_suffix      
-          try : 
-            tmp = open(file, "r")
-            this = tmp.read()
-            tmp.close()
-            page.add("<p>COIRE Summary file "+eachifo+" (slide).</p>")
-            page.add("<pre>"+file+"<br/>"+this+"</pre>")
-          except:
-            page.add( "<p>COIRE Summary file "+eachifo+".</p>")
-            page.add('<pre>Could not find '+file+'</pre>')
-   
-     #copy all SUMMARY COIRE file 
+    page.add("Summary files are available in the search directory")
+    page = add_href(page, href= webdir +thisSearch, name="here")
+
+    path = opts.physdir + "/" + thisSearch
+    mkdir(path)
+    # link all the SUMMARY SIRE text files
+    page = heading(page, "Final SIRE Summary files ")
+    prefix = opts.datadir + thisSearch + '/'
+    ifos = get_ifos()
+    for ifo in ifos:
+      if 'inj' in thisSearch:
+        fname = ifo + '-SIRE_INJECTIONS*SUMMARY_FIRST_' + thisSearch.upper() \
+            + opts.txt_suffix     
+      else:
+        fname = ifo + '-SIRE_SUMMARY_FIRST_' + thisSearch.upper() \
+            + opts.txt_suffix     
+      page.add( "<p>SIRE Summary file for "+ifo+".</p>")
+      flist = glob.glob(prefix + fname)
+      if len(flist) == 1: 
+        file = open(flist[0], "r")
+        text = file.read()
+        file.close()
+        page.add("<pre>"+fname+"<br/>"+text+"</pre>")
+      else:
+        page.add('<pre>Could not find '+fname+'</pre>')
+
+    # copy all SUMMARY SIRE file 
     try:
-      mkdir(opts.physdir+"/"+thisSearch)        
-      src = opts.datadir+thisSearch+'/'+"*COIRE*SUMMARY*xml* " 
-      dest = opts.physdir+"/"+thisSearch
+      dest = path + "/sire"
+      mkdir(dest)
+      src = opts.datadir+thisSearch+'/'+"*SIRE*SUMMARY*xml* " 
       if opts.no_copy is False:
         command = 'cp ' +src +' ' + dest
         make_external_call(command, opts.debug, opts.debug, True)   
-      page.add("All COIRE files are available in "+thisSearch + " directory")
-      page = add_href(page, href= webdir +thisSearch, name="here")
+      page.add("All SIRE files are available in sire directory")
+      page = add_href(page, href= webdir +thisSearch+"/sire", name="here")
     except: 
-      page.add("<pre>Problem while copying the cummary files.</pre>")
+      page.add("<pre>Problem while copying the sire summary files.</pre>")
+    page.div.close()
 
-  page.div.close()#rabelais
+    # link all the SUMMARY COIRE text files
+    page = heading(page, "Final COIRE Summary files ")
+    for ifostring in get_ifo_coinc():
+      if len(ifostring)>2:
+        fnames = []
+        if 'inj' in thisSearch:
+          inj_fname = ifostring +'-COIRE_INJECTIONS*SUMMARY_SECOND_' + \
+              ifostring +'_'+thisSearch.upper()+'_CAT_2_VETO' +opts.txt_suffix
+          fnames.append(inj_fname)
+        if thisSearch == "full_data" or thisSearch == "playground":
+          slide_fname = ifostring + '-COIRE_SLIDE_SUMMARY_SECOND_' + ifostring\
+              +'_' + thisSearch.upper() + '_CAT_2_VETO' + opts.txt_suffix    
+          fnames.append(slide_fname)
+        if thisSearch == "playground":
+          fname = ifostring +'-COIRE_SUMMARY_SECOND_' + ifostring \
+              + '_' + thisSearch.upper() + '_CAT_2_VETO' + opts.txt_suffix     
+          fnames.append(fname)
+
+        for fname in fnames: 
+          if "SLIDE" in fname:
+            page.add("<p>COIRE SLIDE Summary file "+ ifostring +".</p>")
+          else: 
+            page.add( "<p>COIRE Summary file "+ ifostring +".</p>")
+
+          flist = glob.glob(prefix + fname)
+          if len(flist) == 1: 
+            file = open(flist[0], "r")
+            text = file.read()
+            file.close()
+            page.add("<pre>" + fname + "<br/>" + text + "</pre>")
+          else: 
+            page.add('<pre>Could not find '+fname+'</pre>')
+
+   
+    #copy all SUMMARY COIRE file 
+    try:
+      dest = path + "/coire"
+      mkdir(dest)
+      src = opts.datadir+thisSearch+'/'+"*COIRE*SUMMARY*xml* " 
+      if opts.no_copy is False:
+        command = 'cp ' +src +' ' + dest
+        make_external_call(command, opts.debug, opts.debug, True)   
+      page.add("All COIRE files are available in coire directory")
+      page = add_href(page, href= webdir +thisSearch+"/coire", name="here")
+    except: 
+      page.add("<pre>Problem while copying the coire summary files.</pre>")
+    page.div.close()
+
   return page
  
-
 
 # ***************************************************************************
 def write_injection(page, opts):
@@ -1547,18 +1598,18 @@ def copy_segments():
             seg = '/'+thisSearch+'/'+this +'_segs_analyzed.txt'
 
           if opts.no_copy is False:
-            command = 'cp '+opts.datadir + seg +\
-                ' '+opts.physdir+thisSearch +'/'
+            dest = opts.physdir + thisSearch + '/segments'
+            mkdir(dest)
+            command = 'cp '+opts.datadir + seg + ' ' + dest
             dummy,status = \
                 make_external_call(command, opts.debug, opts.debug, True)
 
           if status>0:
-            stdout += " WARNING:: could not copy a selected segment ("
-            stdout += "from playground or full_data directory)"
-            break
+            stdout += " WARNING: could not copy a selected segment file "
+            stdout += "from " + thisSearch + " for " + this + "ifo combination"
     except:
-      stdout +=" WARNING:: problem while copying a selected segment"
-      stdout += "(from playground or full_data). passing..."    
+      stdout +=" WARNING: problem while copying a selected segment"
+      stdout += "(from " + thisSearch + "). passing..."    
       logText(logfile,  stdout, "warning")
       pass
     else: 
@@ -1919,7 +1970,7 @@ for each_section in html_order:
         value="expand all figures and sections" )
       page.input(type="button" ,onclick="clearall("+str(maxdiv)+")", \
         value="clear all (come back to the original page)" )
-      page = write_title(page,  html_sections[each_section],id)
+      page = write_title(page,  html_sections[each_section],id,checked=True)
       page.div(id="div_"+id, style='display:block')
     else:
       page = write_title(page,  html_sections[each_section],id)
