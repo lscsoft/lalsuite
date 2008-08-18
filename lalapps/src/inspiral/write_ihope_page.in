@@ -1227,14 +1227,14 @@ def add_figure(page,fnames="test", caption="add a caption", size=None, \
       size="half"
     else : size="third"
 
- 
+# Source is the thumnail, target is the full-resolution image. 
+
   for fnam in fnames:
-    source=dir+"/"+fnam
-    
-    title = " title=\""+alt[this_count].replace("\n","")+"\" "
-    source = source.replace("_thumb","")
-    source = source.replace("\n", "")
-    page.add("\t<a href=\"" + source+"\"" +  title + " rel=\"external\">\n" )
+    source=dir+"/"+fnam.strip()
+    title  = ' title="%s" ' % alt[this_count].strip()
+    title  = title.replace("_thumb","")
+    target = source.replace("_thumb","")
+    page.add("\t<a href=\"" + target+"\"" +  title + " rel=\"external\">\n" )
     try:
       thisalt = alt[this_count]
       thisalt.replace("\n","")
