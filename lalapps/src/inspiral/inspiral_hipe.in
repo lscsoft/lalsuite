@@ -746,6 +746,7 @@ def sire_segments(segments, sire_job, dag, do_sire, do_input, ifo,
   usertag   = the usertag to add to the output file name
   write_input_file = write an input file (default to false: use glob)
   """
+  # only write the input file if we're doing the job
   sire = inspiral.SireNode(sire_job)
   if not opts.disable_dag_categories:
     sire.set_category('sire')
@@ -767,6 +768,8 @@ def sire_segments(segments, sire_job, dag, do_sire, do_input, ifo,
     input_file = sire.get_output().replace(".xml", ".input") 	 
     f = open(input_file, 'w') 	
     sire.add_input_file(input_file) 
+    if do_sire:
+      f = open(input_file, 'w') 	 
 
   if inspinjNode and opts.inspinj: sire.add_parent(inspinjNode)
 
@@ -780,13 +783,13 @@ def sire_segments(segments, sire_job, dag, do_sire, do_input, ifo,
       output = seg.get_dag_node().get_output_a()
 
     if write_input_file:
-      f.write('%s\n' % output)
+      if do_sire: f.write('%s\n' % output)
     else:
       # set up glob
       sire.set_glob(output)
 
   if write_input_file:
-    f.close() 	 
+    if do_sire: f.close() 	 
   	 
     # add the input file name to sire 	 
     sire.set_input(input_file)
@@ -843,7 +846,7 @@ def coire_segments(segments, coire_job, dag, do_coire, do_input, ifos,
   usertag   = the usertag to add to the output file name
   write_input_file = whether to write an input file (default to glob)
   """
-
+  # only write the input file if we're running the coires
   coire = inspiral.CoireNode(coire_job)
   if not opts.disable_dag_categories:
     coire.set_category('coire')
@@ -866,8 +869,8 @@ def coire_segments(segments, coire_job, dag, do_coire, do_input, ifos,
 
   if write_input_file:
     input_file = coire.get_output().replace(".xml", ".input") 	 
-    f = open(input_file, 'w') 	 
     coire.add_input_file(input_file)
+    if do_coire: f = open(input_file, 'w') 	 
 
   for seg in segments:
     # set the glob file for coire 
@@ -879,13 +882,13 @@ def coire_segments(segments, coire_job, dag, do_coire, do_input, ifos,
       output = seg.get_dag_node().get_output_a()
 
     if write_input_file:
-      f.write('%s\n' % output)
+      if do_coire: f.write('%s\n' % output)
     else:
       # set up glob
       coire.set_glob(output)
 
   if write_input_file:
-    f.close() 	 
+    if do_coire: f.close() 	 
   	 
     # add the input file name to coire 	 
     coire.set_input(input_file)
