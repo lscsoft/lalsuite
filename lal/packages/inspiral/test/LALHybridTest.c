@@ -479,7 +479,7 @@ INT4 main ( INT4 argc, CHAR *argv[] ) {
       hP->deltaT *= (1./(totalMass * LAL_MTSUN_SI)); */
 
   /* Set t = 0 at the merger (defined as the max of the NR wave) */
-  XLALFindNRCoalescenceTime( &offset, hP);
+  XLALFindNRCoalescenceTimeFromhoft( &offset, hP);
   XLALGPSAdd( &(hP->epoch), -offset);
   XLALGPSAdd( &(hC->epoch), -offset);
 
