@@ -164,6 +164,11 @@ INT4
 XLALFindNRCoalescenceTime(REAL8 *tc, 
 			  const REAL4TimeVectorSeries *in);
 
+INT4
+XLALFindNRCoalescenceTimeFromhoft(REAL8 *tc, 
+				  const REAL4TimeSeries *in);
+
+
 /** Spin weighted Spherical Harmonic  */
 INT4 
 XLALSphHarm ( COMPLEX16 *out, /**< [out] the value of Y2_lm(theta,phi) */

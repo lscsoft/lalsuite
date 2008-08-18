@@ -382,6 +382,31 @@ XLALFindNRCoalescenceTime(REAL8 *tc,
 }
 
 
+/** Function for calculating the coalescence time (defined to be the
+    peak) of a NR wave 
+    This uses the peak of h(t) 
+*/
+INT4
+XLALFindNRCoalescenceTimeFromhoft(REAL8 *tc, 
+			  const REAL4TimeSeries *in   /**< input strain time series */)
+{
+
+  size_t *ind=NULL;
+  size_t len;
+
+  len = in->data->length;
+  ind = LALCalloc(1,len*sizeof(*ind));  
+
+/*   gsl_heapsort_index( ind, in->data->data, len, sizeof(REAL4), compare_abs_float); */
+
+  *tc = ind[len-1] * in->deltaT;
+
+  LALFree(ind);
+
+  return 0;
+}
+
+
 /** Function for calculating the coalescence time (defined to be the peak) of a NR wave */
 INT4
 XLALFindNRCoalescenceTimeREAL8(REAL8 *tc, 
