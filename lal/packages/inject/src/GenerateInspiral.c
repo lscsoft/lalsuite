@@ -380,11 +380,8 @@ LALGetApproximantFromString(
   {
     *approximant = PadeT1;
   }
-  else if ( strstr(thisEvent, "Amplitude" ) )
-  {/*ideally we should search for "AmplitudeCorrection" BUT there is a bug in strstr 
-  [avr-libc-dev] [bug #19135] strstr(): `needle' is not always founded. WE found that 
-  searching for AmplitudeCorrection raised this bug. That's why we search for "Amplitude" only.
-  */
+  else if ( strstr(thisEvent, "AmpCorPPN" ) )
+  {
     *approximant = AmpCorPPN;
   }
   else if ( strstr(thisEvent, "GeneratePPN" ) )
