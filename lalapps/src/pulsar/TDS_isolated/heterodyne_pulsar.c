@@ -1623,7 +1623,7 @@ data.\n");
 
           /* response function for DARM_ERR is
               R(f) = (1 + \gamma*G)/\gamma*C */
-          if(strstr(channel, "DER_DATA") == NULL){
+          if(strcmp(channel, "DARM_ERR") == 0){
             Resp.re = (cos(Cphase) + gamma[k]*G*cos(Gphase -
               Cphase))/(gamma[k]*C);
             Resp.im = (-sin(Cphase) + gamma[k]*G*sin(Gphase -
@@ -1631,7 +1631,7 @@ data.\n");
           }
           /* response function for AS_Q is
               R(f) = (1 + \gamma*G)/\alpha*C */
-          else if(strstr(channel, "AS_Q") == NULL){
+          else if(strcmp(channel, "AS_Q") == 0){
             Resp.re = (cos(Cphase) + gamma[k]*G*cos(Gphase -
               Cphase))/(alpha[k]*C);
             Resp.im = (-sin(Cphase) + gamma[k]*G*sin(Gphase -
