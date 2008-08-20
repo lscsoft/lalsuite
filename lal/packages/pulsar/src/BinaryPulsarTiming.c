@@ -336,22 +336,22 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
       /*phase = LAL_TWOPI*(orbits);*/
       du = 1.0;
 
-      sin_cos_2PI_LUT(&sp, &cp, phase/LAL_TWOPI);
+      sin_cos_LUT(&sp, &cp, phase);
 
       /* use numerical iteration to solve Kepler's eq for eccentric anomaly u */
       /* u = phase + e*sin(phase)*(1.0 + e*cos(phase)); */
       u = phase + e*sp*(1.0 + e*cp);
-      sin_cos_2PI_LUT(&su, &cu, u/LAL_TWOPI);
+      sin_cos_LUT(&su, &cu, u);
       /* while(fabs(du) > 1.0e-12){ */
       while(fabs(du) > LAL_REAL4_EPS){
         /* du = (phase-(u-e*sin(u)))/(1.0-e*cos(u)); */
         du = (phase-(u-e*su))/(1.0-e*cu);
         u += du;
-        sin_cos_2PI_LUT(&su, &cu, u/LAL_TWOPI);
+        sin_cos_LUT(&su, &cu, u);
       }
 
       /*fprintf(stderr, "Eccentric anomaly = %f, phase = %f.\n", u, phase);*/
-      sin_cos_2PI_LUT(&sw, &cw, w/LAL_TWOPI);      
+      sin_cos_LUT(&sw, &cw, w);      
 
       /* see eq 5 of Taylor and Weisberg (1989) */
       /**********************************************************/
@@ -450,15 +450,15 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
       w_int = atan2(eps1, eps2);
       w_int = w_int + wdot*tt0;
 
-      sin_cos_2PI_LUT(&swint, &cwint, w_int/LAL_TWOPI); 
+      sin_cos_LUT(&swint, &cwint, w_int); 
       /* e1 = ecc*sin(w_int);
       e2 = ecc*cos(w_int); */
       e1 = ecc*swint;
       e2 = ecc*cwint;
     }
 
-    sin_cos_2PI_LUT(&sp, &cp, phase/LAL_TWOPI);
-    sin_cos_2PI_LUT(&s2p, &c2p, 2.*phase/LAL_TWOPI);
+    sin_cos_LUT(&sp, &cp, phase);
+    sin_cos_LUT(&s2p, &c2p, 2.*phase);
 
     /* this timing delay (Roemer + Einstein) should be most important in most cases */ 
     /* DRE = x*(sin(phase)-0.5*(e1*cos(2.0*phase)-e2*sin(2.0*phase)));
@@ -527,17 +527,17 @@ different than DD model - TEMPO bnrymss.f */
 
     phase = LAL_TWOPI*(orbits - (REAL8)norbits);
 
-    sin_cos_2PI_LUT(&sp, &cp, phase/LAL_TWOPI);
+    sin_cos_LUT(&sp, &cp, phase);
     /* use numerical iteration to solve Kepler's eq for eccentric anomaly u */
     /* u = phase + e*sin(phase)*(1.0 + e*cos(phase)); */
     u = phase + e*sp*(1.0 + e*cp);
-    sin_cos_2PI_LUT(&su, &cu, u/LAL_TWOPI);
+    sin_cos_LUT(&su, &cu, u);
     /* while(fabs(du) > 1.0e-12){ */
     while(fabs(du) > LAL_REAL4_EPS){
       /* du = (phase-(u-e*sin(u)))/(1.0-e*cos(u)); */   
       du = (phase-(u-e*su))/(1.0-e*cu);
       u += du;
-      sin_cos_2PI_LUT(&su, &cu, u/LAL_TWOPI);
+      sin_cos_LUT(&su, &cu, u);
     }
 
     /* compute Ae as in TEMPO bnrydd.f */
@@ -567,7 +567,7 @@ this isn't defined for either of the two pulsars currently using this model */
     /* now compute time delays as in DD eqs 46 - 52 */
 
     /* calculate Einstein and Roemer delay */
-    sin_cos_2PI_LUT(&sw, &cw, w/LAL_TWOPI);    
+    sin_cos_LUT(&sw, &cw, w);    
     /* sw = sin(w);
     cw = cos(w); */
     alpha = x*sw;
@@ -586,7 +586,7 @@ this isn't defined for either of the two pulsars currently using this model */
     DS = -2.0*r*dlogbr;
 
     /* this abberation delay is prob fairly small */
-    sin_cos_2PI_LUT(&swAe, &cwAe, (w+Ae)/LAL_TWOPI);    
+    sin_cos_LUT(&swAe, &cwAe, (w+Ae));    
     /* DA = a0*(sin(w+Ae)+e*sw) + b0*(cos(w+Ae)+e*cw); */
     DA = a0*(swAe+e*sw) + b0*(cwAe+e*cw);
 
