@@ -1069,6 +1069,15 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
         output->edotErr = atof(val[i+3]);
         j+=2;
       }
+
+      /* some of the parameter files in the ATNF catalogue have values
+         of EDOT that are stupidly large e.g. O(1e33). These can cause
+         the time delay routines to fail, so if values of EDOT are 
+         greater than 10000 ignore them and set it to zero */
+      if( output->edot > 10000 ){
+        output->edot = 0.;
+        output->edotErr = 0.;
+      }
     }
     else if( !strcmp(val[i], "gamma") || !strcmp(val[i], "GAMMA")){
       output->gamma = atof(val[i+1]);
