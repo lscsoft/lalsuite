@@ -624,6 +624,7 @@ int main(int argc,char *argv[])
 	      uvar.FstatHistBin * (i + 1),
 	      gsl_vector_int_get(Fstat_histogram, i));
     
+    fprintf(fpFstatHist, "%%DONE\n");
     fclose(fpFstatHist);
     
   }
