@@ -108,6 +108,7 @@
 #include <lal/LALConstants.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALString.h>
+#include <lal/ComputeFstat.h>
 
 #define DAYSTOSECS 86400.0 /* number of seconds in a day */
 
@@ -267,6 +268,9 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
     INT4 i=1, j=1;
     REAL8 fac=1.; /* factor in front of fb coefficients */  
 
+    REAL4 sp = 0., cp = 0.;
+    REAL4 su = 0., sw = 0., cu = 0., cw = 0.; /* phases from LUT */
+
     /* work out number of orbits i.e. have we got a BT1P or BT2P model */
     if(strstr(model, "BT1P") != NULL)
       nplanets = 2;
@@ -332,26 +336,40 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
       /*phase = LAL_TWOPI*(orbits);*/
       du = 1.0;
 
+      sin_cos_2PI_LUT(&sp, &cp, phase/LAL_TWOPI);
+
       /* use numerical iteration to solve Kepler's eq for eccentric anomaly u */
-      u = phase + e*sin(phase)*(1.0 + e*cos(phase));
-      while(fabs(du) > 1.0e-12){
-        du = (phase-(u-e*sin(u)))/(1.0-e*cos(u));
+      /* u = phase + e*sin(phase)*(1.0 + e*cos(phase)); */
+      u = phase + e*sp*(1.0 + e*cp);
+      sin_cos_2PI_LUT(&su, &cu, u/LAL_TWOPI);
+      /* while(fabs(du) > 1.0e-12){ */
+      while(fabs(du) > LAL_REAL4_EPS){
+        /* du = (phase-(u-e*sin(u)))/(1.0-e*cos(u)); */
+        du = (phase-(u-e*su))/(1.0-e*cu);
         u += du;
+        sin_cos_2PI_LUT(&su, &cu, u/LAL_TWOPI);
       }
 
       /*fprintf(stderr, "Eccentric anomaly = %f, phase = %f.\n", u, phase);*/
-    
+      sin_cos_2PI_LUT(&sw, &cw, w/LAL_TWOPI);      
+
       /* see eq 5 of Taylor and Weisberg (1989) */
       /**********************************************************/
       if( strstr(model, "BTX") != NULL ){
-        dt += (x*sin(w)*(cos(u)-e) + (x*cos(w)*sqrt(1.0-e*e) +
+        /* dt += (x*sin(w)*(cos(u)-e) + (x*cos(w)*sqrt(1.0-e*e) +
           gamma)*sin(u))*(1.0 - params->fb[0]*(x*cos(w)*sqrt(1.0 -
-          e*e)*cos(u) - x*sin(w)*sin(u))/(1.0 - e*cos(u)));
+          e*e)*cos(u) - x*sin(w)*sin(u))/(1.0 - e*cos(u))); */
+        dt += (x*sw*(cu-e) + (x*cw*sqrt(1.0-e*e) +
+          gamma)*su)*(1.0 - params->fb[0]*(x*cw*sqrt(1.0 -
+          e*e)*u - x*w*su)/(1.0 - e*cu));
       }
       else{
-        dt += (x*sin(w)*(cos(u)-e) + (x*cos(w)*sqrt(1.0-e*e) +
+        /* dt += (x*sin(w)*(cos(u)-e) + (x*cos(w)*sqrt(1.0-e*e) +
           gamma)*sin(u))*(1.0 - (LAL_TWOPI/Pb)*(x*cos(w)*sqrt(1.0 -
-          e*e)*cos(u) - x*sin(w)*sin(u))/(1.0 - e*cos(u)));
+          e*e)*cos(u) - x*sin(w)*sin(u))/(1.0 - e*cos(u))); */
+        dt += (x*sw*(cu-e) + (x*cw*sqrt(1.0-e*e) +
+          gamma)*su)*(1.0 - (LAL_TWOPI/Pb)*(x*cw*sqrt(1.0 -
+          e*e)*cu - x*sw*su)/(1.0 - e*cu));
       }
     /**********************************************************/
     }    
@@ -386,6 +404,8 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
     REAL8 dlogbr;
     REAL8 DS, DA; /* Shapiro delay and Abberation delay terms */
     REAL8 Dbb;
+
+    REAL4 sp = 0., cp = 0., s2p = 0., c2p = 0.;
 
     /* fprintf(stderr, "You are using the ELL1 low eccentricity orbit model.\n");*/
 
@@ -423,23 +443,37 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
       e2 = eps2 + eps2dot*tt0;
     }
     else{
+      REAL4 swint = 0., cwint = 0.;     
+
       ecc = sqrt(eps1*eps1 + eps2*eps2);
       ecc += edot*tt0;
       w_int = atan2(eps1, eps2);
-      w_int = w_int + wdot*tt0; 
-      e1 = ecc*sin(w_int);
-      e2 = ecc*cos(w_int);
+      w_int = w_int + wdot*tt0;
+
+      sin_cos_2PI_LUT(&swint, &cwint, w_int/LAL_TWOPI); 
+      /* e1 = ecc*sin(w_int);
+      e2 = ecc*cos(w_int); */
+      e1 = ecc*swint;
+      e2 = ecc*cwint;
     }
 
+    sin_cos_2PI_LUT(&sp, &cp, phase/LAL_TWOPI);
+    sin_cos_2PI_LUT(&s2p, &c2p, 2.*phase/LAL_TWOPI);
+
     /* this timing delay (Roemer + Einstein) should be most important in most cases */ 
-    DRE = x*(sin(phase)-0.5*(e1*cos(2.0*phase)-e2*sin(2.0*phase)));
+    /* DRE = x*(sin(phase)-0.5*(e1*cos(2.0*phase)-e2*sin(2.0*phase)));
     DREp = x*cos(phase);
-    DREpp = -x*sin(phase);
+    DREpp = -x*sin(phase); */
+    DRE = x*(sp-0.5*(e1*c2p-e2*s2p));
+    DREp = x*cp;
+    DREpp = -x*sp;
 
     /* these params will normally be negligable */
-    dlogbr = log(1.0-s*sin(phase));
+    /* dlogbr = log(1.0-s*sin(phase)); */
+    dlogbr = log(1.0-s*sp);
     DS = -2.0*r*dlogbr;
-    DA = a0*sin(phase) + b0*cos(phase);
+    /* DA = a0*sin(phase) + b0*cos(phase); */
+    DA = a0*sp + b0*cp;
 
     Dbb = DRE*(1.0-nb*DREp+(nb*DREp)*(nb*DREp) + 0.5*nb*nb*DRE*DREpp) + DS + DA;
 
@@ -462,13 +496,16 @@ different than DD model - TEMPO bnrymss.f */
     REAL8 er, eth, an, k;
     REAL8 orbits, phase;
     INT4 norbits;
-    REAL8 su, cu, onemecu, cae, sae;
-    REAL8 sw, cw, alpha, beta, bg;
+    REAL8 onemecu, cae, sae;
+    REAL8 alpha, beta, bg;
     REAL8 anhat, sqr1me2, cume, brace, dlogbr;
     REAL8 Dbb;    /* Delta barbar in DD eq 52 */
 
     REAL8 xi; /* parameter for MSS model - the only other one needed */
     
+    REAL4 sp = 0., cp = 0.;
+    REAL4 su = 0., cu = 0., sw = 0., cw = 0., swAe = 0., cwAe = 0.;
+
     /* fprintf(stderr, "You are using the Damour-Deruelle (DD) binary model.\n");*/
 
     /* part of code adapted from TEMPO bnrydd.f */
@@ -490,16 +527,22 @@ different than DD model - TEMPO bnrymss.f */
 
     phase = LAL_TWOPI*(orbits - (REAL8)norbits);
 
+    sin_cos_2PI_LUT(&sp, &cp, phase/LAL_TWOPI);
     /* use numerical iteration to solve Kepler's eq for eccentric anomaly u */
-    u = phase + e*sin(phase)*(1.0 + e*cos(phase));
-    while(fabs(du) > 1.0e-12){
-      du = (phase-(u-e*sin(u)))/(1.0-e*cos(u));
+    /* u = phase + e*sin(phase)*(1.0 + e*cos(phase)); */
+    u = phase + e*sp*(1.0 + e*cp);
+    sin_cos_2PI_LUT(&su, &cu, u/LAL_TWOPI);
+    /* while(fabs(du) > 1.0e-12){ */
+    while(fabs(du) > LAL_REAL4_EPS){
+      /* du = (phase-(u-e*sin(u)))/(1.0-e*cos(u)); */   
+      du = (phase-(u-e*su))/(1.0-e*cu);
       u += du;
+      sin_cos_2PI_LUT(&su, &cu, u/LAL_TWOPI);
     }
 
     /* compute Ae as in TEMPO bnrydd.f */
-    su = sin(u);
-    cu = cos(u);
+    /* su = sin(u);
+    cu = cos(u); */
     onemecu = 1.0 - e*cu;
     cae = (cu - e)/onemecu;
     sae = sqrt(1.0 - e*e)*su/onemecu;
@@ -524,8 +567,9 @@ this isn't defined for either of the two pulsars currently using this model */
     /* now compute time delays as in DD eqs 46 - 52 */
 
     /* calculate Einstein and Roemer delay */
-    sw = sin(w);
-    cw = cos(w);
+    sin_cos_2PI_LUT(&sw, &cw, w/LAL_TWOPI);    
+    /* sw = sin(w);
+    cw = cos(w); */
     alpha = x*sw;
     beta = x*sqrt(1.0-eth*eth)*cw;
     bg = beta + gamma;
@@ -542,7 +586,9 @@ this isn't defined for either of the two pulsars currently using this model */
     DS = -2.0*r*dlogbr;
 
     /* this abberation delay is prob fairly small */
-    DA = a0*(sin(w+Ae)+e*sw) + b0*(cos(w+Ae)+e*cw);
+    sin_cos_2PI_LUT(&swAe, &cwAe, (w+Ae)/LAL_TWOPI);    
+    /* DA = a0*(sin(w+Ae)+e*sw) + b0*(cos(w+Ae)+e*cw); */
+    DA = a0*(swAe+e*sw) + b0*(cwAe+e*cw);
 
     /* timing difference */
     Dbb = DRE*(1.0 - anhat*DREp+anhat*anhat*DREp*DREp + 0.5*anhat*anhat*DRE*DREpp - 
