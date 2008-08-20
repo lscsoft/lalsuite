@@ -268,8 +268,8 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
     INT4 i=1, j=1;
     REAL8 fac=1.; /* factor in front of fb coefficients */  
 
-    REAL4 sp = 0., cp = 0.;
-    REAL4 su = 0., sw = 0., cu = 0., cw = 0.; /* phases from LUT */
+    REAL8 su = 0., cu = 0.;
+    REAL4 sw = 0., cw = 0.; /* phases from LUT */
 
     /* work out number of orbits i.e. have we got a BT1P or BT2P model */
     if(strstr(model, "BT1P") != NULL)
@@ -336,18 +336,16 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
       /*phase = LAL_TWOPI*(orbits);*/
       du = 1.0;
 
-      sin_cos_LUT(&sp, &cp, phase);
-
       /* use numerical iteration to solve Kepler's eq for eccentric anomaly u */
-      /* u = phase + e*sin(phase)*(1.0 + e*cos(phase)); */
-      u = phase + e*sp*(1.0 + e*cp);
-      sin_cos_LUT(&su, &cu, u);
-      /* while(fabs(du) > 1.0e-12){ */
-      while(fabs(du) > LAL_REAL4_EPS){
+      u = phase + e*sin(phase)*(1.0 + e*cos(phase));
+      su = sin(u);
+      cu = cos(u);
+      while(fabs(du) > 1.0e-12){
         /* du = (phase-(u-e*sin(u)))/(1.0-e*cos(u)); */
         du = (phase-(u-e*su))/(1.0-e*cu);
         u += du;
-        sin_cos_LUT(&su, &cu, u);
+        su = sin(u);
+        cu = cos(u);
       }
 
       /*fprintf(stderr, "Eccentric anomaly = %f, phase = %f.\n", u, phase);*/
@@ -503,8 +501,8 @@ different than DD model - TEMPO bnrymss.f */
 
     REAL8 xi; /* parameter for MSS model - the only other one needed */
     
-    REAL4 sp = 0., cp = 0.;
-    REAL4 su = 0., cu = 0., sw = 0., cw = 0., swAe = 0., cwAe = 0.;
+    REAL8 su = 0., cu = 0.;
+    REAL4 sw = 0., cw = 0., swAe = 0., cwAe = 0.;
 
     /* fprintf(stderr, "You are using the Damour-Deruelle (DD) binary model.\n");*/
 
@@ -527,22 +525,19 @@ different than DD model - TEMPO bnrymss.f */
 
     phase = LAL_TWOPI*(orbits - (REAL8)norbits);
 
-    sin_cos_LUT(&sp, &cp, phase);
     /* use numerical iteration to solve Kepler's eq for eccentric anomaly u */
-    /* u = phase + e*sin(phase)*(1.0 + e*cos(phase)); */
-    u = phase + e*sp*(1.0 + e*cp);
-    sin_cos_LUT(&su, &cu, u);
+    u = phase + e*sin(phase)*(1.0 + e*cos(phase));
+    su = sin(u);
+    cu = cos(u);
     /* while(fabs(du) > 1.0e-12){ */
-    while(fabs(du) > LAL_REAL4_EPS){
-      /* du = (phase-(u-e*sin(u)))/(1.0-e*cos(u)); */   
+    while(fabs(du) > LAL_REAL4_EPS){  
       du = (phase-(u-e*su))/(1.0-e*cu);
       u += du;
-      sin_cos_LUT(&su, &cu, u);
+      su = sin(u);
+      cu = cos(u);
     }
 
     /* compute Ae as in TEMPO bnrydd.f */
-    /* su = sin(u);
-    cu = cos(u); */
     onemecu = 1.0 - e*cu;
     cae = (cu - e)/onemecu;
     sae = sqrt(1.0 - e*e)*su/onemecu;
