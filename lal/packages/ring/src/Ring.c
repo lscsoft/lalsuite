@@ -146,6 +146,23 @@ REAL4 XLALBlackHoleRingMass( REAL4 f, REAL4 Q )
 }
 
 /* <lalVerbatim file="RingCP"> */
+REAL4 XLALBlackHoleRingQuality( REAL4 a )
+/* </lalVerbatim> */
+{
+  return 2.0 * pow( ( 1.0 - a ), -0.45 );
+}
+
+/* <lalVerbatim file="RingCP"> */
+REAL4 XLALBlackHoleRingFrequency( REAL4 M, REAL4 a )
+/* </lalVerbatim> */
+{
+  const REAL4 c = LAL_C_SI;
+  const REAL4 g = ring_spin_factor( a );
+  return (c * c * c * g) / ( LAL_TWOPI * LAL_G_SI * LAL_MSUN_SI * M );
+}
+
+
+/* <lalVerbatim file="RingCP"> */
 REAL4 XLALBlackHoleRingAmplitude( REAL4 f, REAL4 Q, REAL4 r, REAL4 epsilon )
 /* </lalVerbatim> */
 {
