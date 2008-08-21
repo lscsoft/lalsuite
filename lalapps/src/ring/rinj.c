@@ -746,9 +746,8 @@ int main( int argc, char *argv[] )
     this_inj->quality = minQuality + u * (maxQuality - minQuality);
 
     /* calculate M and a from f and Q */
-    this_inj->spin = 1 - pow( (this_inj->quality / 2.0), ( - 20.0 / 9.0 ) );
-    this_inj->mass = pow( LAL_C_SI, 3) / LAL_G_SI / LAL_MSUN_SI / 2.0 / LAL_PI
-                      * ( 1.0 - 0.63 * pow( ( this_inj->quality /2.0 ), (-2.0/3.0))) / this_inj->frequency; 
+    this_inj->spin = XLALBlackHoleRingSpin( this_inj->quality);
+    this_inj->mass = XLALBlackHoleRingMass( this_inj->frequency, this_inj->quality);
 
 #if 0
     /* mass distribution */
@@ -759,9 +758,8 @@ int main( int argc, char *argv[] )
     LAL_CALL( LALUniformDeviate( &status, &u, randParams ), &status );
     this_inj->spin = minSpin + u * deltaA;
     /* calculate central frequency, f0, and quality factor Q */
-    this_inj->frequency = pow( LAL_C_SI, 3) / LAL_G_SI / LAL_MSUN_SI / 2.0 / LAL_PI
-      * ( 1.0 - 0.63 * pow( ( 1.0 - this_inj->spin ), 0.3 ) ) / this_inj->mass;
-    this_inj->quality = 2.0 * pow( ( 1.0 - this_inj->spin ), -0.45 );
+    this_inj->frequency = XLALBlackHoleRingFrequency( this_inj->mass, this_inj->spin );
+    this_inj->quality = XLALBlackHoleRingQuality( this_inj->spin );
 #endif
             
     /* spatial distribution */
