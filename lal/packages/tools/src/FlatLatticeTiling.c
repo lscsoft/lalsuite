@@ -1097,8 +1097,7 @@ int XLALNormaliseLatticeGenerator(
 				  )
 {
   
-  const int m = generator->size1;
-  const int n = generator->size2;
+  const int n = generator->size1;
 
   gsl_matrix *LU_decomp = NULL;
   gsl_permutation *LU_perm = NULL;
@@ -1106,9 +1105,13 @@ int XLALNormaliseLatticeGenerator(
   double generator_determinant = 0.0;
   double generator_covering_radius = 0.0;
 
+  /* Check input */
+  if (n != (int)generator->size1 || n != (int)generator->size2)
+    XLAL_ERROR("'generator' is not square", XLAL_ESIZE);
+
   /* Allocate memory */
-  ALLOC_GSL_MATRIX(LU_decomp, m, n, XLAL_ERROR);
-  ALLOC_GSL_PERMUTATION(LU_perm, m, XLAL_ERROR);
+  ALLOC_GSL_MATRIX(LU_decomp, n, n, XLAL_ERROR);
+  ALLOC_GSL_PERMUTATION(LU_perm, n, XLAL_ERROR);
 
   /* Compute generator LU decomposition */
   gsl_matrix_memcpy(LU_decomp, generator);
