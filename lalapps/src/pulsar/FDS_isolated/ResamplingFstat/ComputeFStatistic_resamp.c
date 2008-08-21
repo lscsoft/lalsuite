@@ -2915,10 +2915,10 @@ void ComputeFStat_resamp(LALStatus *status,REAL8FrequencySeries *fstatVector, co
 	  fstatVector->data->data[q++] += temp->data[p];
 	}
 
-      for(p=0;p<fstatVector->data->length;p++)
+      /*for(p=0;p<fstatVector->data->length;p++)
 	{
 	  printf("%f %f\n",p*dF+uvar_Freq,fstatVector->data->data[p]);
-	}
+	  }*/
       
 
 
