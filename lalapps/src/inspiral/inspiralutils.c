@@ -350,11 +350,13 @@ void InjectNumRelWaveforms (LALStatus           *status,
 	      if ( simTableOut == NULL) {
 		simTableOut = (SimInspiralTable *)LALCalloc( 1, sizeof(SimInspiralTable) );
 		memcpy(simTableOut, thisInj, sizeof(*thisInj));
+		simTableOut->next = NULL;
 		thisInjOut = simTableOut;
 	      }
 	      else {
 		thisInjOut->next = (SimInspiralTable *)LALCalloc( 1, sizeof(SimInspiralTable) );
 		memcpy(thisInjOut->next, thisInj, sizeof(*thisInj));
+		thisInjOut->next = NULL;
 		thisInjOut = thisInjOut->next;
 	      }
 
@@ -381,17 +383,17 @@ void InjectNumRelWaveforms (LALStatus           *status,
 
     /* write the xml table of actual injections */
     memset( &xmlfp, 0, sizeof(LIGOLwXMLStream) );
-    TRY( LALOpenLIGOLwXMLFile( status->statusPtr, &xmlfp, fname ), status );  
+    TRY( LALOpenLIGOLwXMLFile( status->statusPtr, &xmlfp, fname ), status );
     
-    TRY( LALBeginLIGOLwXMLTable( status->statusPtr, &xmlfp, sim_inspiral_table ), 
+    TRY( LALBeginLIGOLwXMLTable( status->statusPtr, &xmlfp, sim_inspiral_table ),
 	      status );
 
-    TRY( LALWriteLIGOLwXMLTable( status->statusPtr, &xmlfp, dummyTable, 
+    TRY( LALWriteLIGOLwXMLTable( status->statusPtr, &xmlfp, dummyTable,
 				      sim_inspiral_table ), status );
 
-    TRY( LALEndLIGOLwXMLTable ( status->statusPtr, &xmlfp ), status );   
+    TRY( LALEndLIGOLwXMLTable ( status->statusPtr, &xmlfp ), status );
     
-    TRY( LALCloseLIGOLwXMLFile ( status->statusPtr, &xmlfp ), status );    
+    TRY( LALCloseLIGOLwXMLFile ( status->statusPtr, &xmlfp ), status );
 
   }
 
