@@ -338,6 +338,7 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
 
       /* use numerical iteration to solve Kepler's eq for eccentric anomaly u */
       u = phase + e*sin(phase)*(1.0 + e*cos(phase));
+
       su = sin(u);
       cu = cos(u);
       while(fabs(du) > 1.0e-12){
@@ -1249,132 +1250,300 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
     /* orbital frequency coefficients for BTX model (up to 6 coefficients), but
        only one orbit at the moment i.e. only a two body system */
     else if( !strcmp(val[i], "fb0") || !strcmp(val[i], "FB0") ){
-      output->fb[0] = atof(val[i+1]);
+      CHAR *loc;
+
+      /* check if exponent contains e/E or d/D or neither */
+      if((loc = strstr(val[i+1], "D"))!=NULL || (loc = strstr(val[i+1], "d"))!=NULL){
+        output->fb[0] = atof(val[i+1])*pow(10, atof(loc+1));
+      }
+      else{
+        output->fb[0] = atof(val[i+1]);
+      }
       j++;
 
       if(atoi(val[i+2])==1 && i+2<k){
-        output->fbErr[0] = atof(val[i+3]);
+        /* check if exponent contains e/E or d/D or neither */
+        if((loc = strstr(val[i+3], "D"))!=NULL || (loc = strstr(val[i+3], "d"))!=NULL){
+          output->fbErr[0] = atof(val[i+3])*pow(10, atof(loc+1));
+        }
+        else{
+          output->fbErr[0] = atof(val[i+3]);
+        }
         j+=2;
       }
 
       output->nfb++; /* add to number of coefficients */
     }
     else if( !strcmp(val[i], "fb1") || !strcmp(val[i], "FB1") ){
-      output->fb[1] = atof(val[i+1]);
+      CHAR *loc;
+
+      /* check if exponent contains e/E or d/D or neither */
+      if((loc = strstr(val[i+1], "D"))!=NULL || (loc = strstr(val[i+1], "d"))!=NULL){
+        output->fb[1] = atof(val[i+1])*pow(10, atof(loc+1));
+      }
+      else{
+        output->fb[1] = atof(val[i+1]);
+      }
       j++;
 
       if(atoi(val[i+2])==1 && i+2<k){
-        output->fbErr[1] = atof(val[i+3]);
+        /* check if exponent contains e/E or d/D or neither */
+        if((loc = strstr(val[i+3], "D"))!=NULL || (loc = strstr(val[i+3], "d"))!=NULL){
+          output->fbErr[1] = atof(val[i+3])*pow(10, atof(loc+1));
+        }
+        else{
+          output->fbErr[1] = atof(val[i+3]);
+        }
         j+=2;
       }
 
       output->nfb++;
     }
     else if( !strcmp(val[i], "fb2") || !strcmp(val[i], "FB2") ){
-      output->fb[2] = atof(val[i+1]);
+      CHAR *loc;
+
+      /* check if exponent contains e/E or d/D or neither */
+      if((loc = strstr(val[i+1], "D"))!=NULL || (loc = strstr(val[i+1], "d"))!=NULL){
+        output->fb[2] = atof(val[i+1])*pow(10, atof(loc+1));
+      }
+      else{
+        output->fb[2] = atof(val[i+1]);
+      }
       j++;
 
       if(atoi(val[i+2])==1 && i+2<k){
-        output->fbErr[2] = atof(val[i+3]);
+        /* check if exponent contains e/E or d/D or neither */
+        if((loc = strstr(val[i+3], "D"))!=NULL || (loc = strstr(val[i+3], "d"))!=NULL){
+          output->fbErr[2] = atof(val[i+3])*pow(10, atof(loc+1));
+        }
+        else{
+          output->fbErr[2] = atof(val[i+3]);
+        }
         j+=2;
       }
     
       output->nfb++;
     }
     else if( !strcmp(val[i], "fb3") || !strcmp(val[i], "FB3") ){
-      output->fb[3] = atof(val[i+1]);
+      CHAR *loc;
+
+      /* check if exponent contains e/E or d/D or neither */
+      if((loc = strstr(val[i+1], "D"))!=NULL || (loc = strstr(val[i+1], "d"))!=NULL){
+        output->fb[3] = atof(val[i+1])*pow(10, atof(loc+1));
+      }
+      else{
+        output->fb[3] = atof(val[i+1]);
+      }
       j++;
 
       if(atoi(val[i+2])==1 && i+2<k){
-        output->fbErr[3] = atof(val[i+3]);
+        /* check if exponent contains e/E or d/D or neither */
+        if((loc = strstr(val[i+3], "D"))!=NULL || (loc = strstr(val[i+3], "d"))!=NULL){
+          output->fbErr[3] = atof(val[i+3])*pow(10, atof(loc+1));
+        }
+        else{
+          output->fbErr[3] = atof(val[i+3]);
+        }
         j+=2;
       }
 
       output->nfb++;
     }
     else if( !strcmp(val[i], "fb4") || !strcmp(val[i], "FB4") ){
-      output->fb[4] = atof(val[i+1]);
+      CHAR *loc;
+
+      /* check if exponent contains e/E or d/D or neither */
+      if((loc = strstr(val[i+1], "D"))!=NULL || (loc = strstr(val[i+1], "d"))!=NULL){
+        output->fb[4] = atof(val[i+1])*pow(10, atof(loc+1));
+      }
+      else{
+        output->fb[4] = atof(val[i+1]);
+      }
       j++;
 
       if(atoi(val[i+2])==1 && i+2<k){
-        output->fbErr[4] = atof(val[i+3]);
+        /* check if exponent contains e/E or d/D or neither */
+        if((loc = strstr(val[i+3], "D"))!=NULL || (loc = strstr(val[i+3], "d"))!=NULL){
+          output->fbErr[4] = atof(val[i+3])*pow(10, atof(loc+1));
+        }
+        else{
+          output->fbErr[4] = atof(val[i+3]);
+        }
         j+=2;
       }
       
       output->nfb++;
     }
     else if( !strcmp(val[i], "fb5") || !strcmp(val[i], "FB5") ){
-      output->fb[5] = atof(val[i+1]);
+      CHAR *loc;
+
+      /* check if exponent contains e/E or d/D or neither */
+      if((loc = strstr(val[i+1], "D"))!=NULL || (loc = strstr(val[i+1], "d"))!=NULL){
+        output->fb[5] = atof(val[i+1])*pow(10, atof(loc+1));
+      }
+      else{
+        output->fb[5] = atof(val[i+1]);
+      }
       j++;
 
       if(atoi(val[i+2])==1 && i+2<k){
-        output->fbErr[5] = atof(val[i+3]);
+        /* check if exponent contains e/E or d/D or neither */
+        if((loc = strstr(val[i+3], "D"))!=NULL || (loc = strstr(val[i+3], "d"))!=NULL){
+          output->fbErr[5] = atof(val[i+3])*pow(10, atof(loc+1));
+        }
+        else{
+          output->fbErr[5] = atof(val[i+3]);
+        }
         j+=2;
       }
 
       output->nfb++;
     }
     else if( !strcmp(val[i], "fb6") || !strcmp(val[i], "FB6") ){
-      output->fb[6] = atof(val[i+1]);
+      CHAR *loc;
+
+      /* check if exponent contains e/E or d/D or neither */
+      if((loc = strstr(val[i+1], "D"))!=NULL || (loc = strstr(val[i+1], "d"))!=NULL){
+        output->fb[6] = atof(val[i+1])*pow(10, atof(loc+1));
+      }
+      else{
+        output->fb[6] = atof(val[i+1]);
+      }
       j++;
 
       if(atoi(val[i+2])==1 && i+2<k){
-        output->fbErr[6] = atof(val[i+3]);
+        /* check if exponent contains e/E or d/D or neither */
+        if((loc = strstr(val[i+3], "D"))!=NULL || (loc = strstr(val[i+3], "d"))!=NULL){
+          output->fbErr[6] = atof(val[i+3])*pow(10, atof(loc+1));
+        }
+        else{
+          output->fbErr[6] = atof(val[i+3]);
+        }
         j+=2;
       }
 
       output->nfb++;
     }
     else if( !strcmp(val[i], "fb7") || !strcmp(val[i], "FB7") ){
-      output->fb[7] = atof(val[i+1]);
+      CHAR *loc;
+
+      /* check if exponent contains e/E or d/D or neither */
+      if((loc = strstr(val[i+1], "D"))!=NULL || (loc = strstr(val[i+1], "d"))!=NULL){
+        output->fb[7] = atof(val[i+1])*pow(10, atof(loc+1));
+      }
+      else{
+        output->fb[7] = atof(val[i+1]);
+      }
       j++;
 
       if(atoi(val[i+2])==1 && i+2<k){
-        output->fbErr[7] = atof(val[i+3]);
+        /* check if exponent contains e/E or d/D or neither */
+        if((loc = strstr(val[i+3], "D"))!=NULL || (loc = strstr(val[i+3], "d"))!=NULL){
+          output->fbErr[7] = atof(val[i+3])*pow(10, atof(loc+1));
+        }
+        else{
+          output->fbErr[7] = atof(val[i+3]);
+        }
         j+=2;
       }
 
       output->nfb++;
     }
     else if( !strcmp(val[i], "fb8") || !strcmp(val[i], "FB8") ){
-      output->fb[8] = atof(val[i+1]);
+      CHAR *loc;
+
+      /* check if exponent contains e/E or d/D or neither */
+      if((loc = strstr(val[i+1], "D"))!=NULL || (loc = strstr(val[i+1], "d"))!=NULL){
+        output->fb[8] = atof(val[i+1])*pow(10, atof(loc+1));
+      }
+      else{
+        output->fb[8] = atof(val[i+1]);
+      }
       j++;
 
       if(atoi(val[i+2])==1 && i+2<k){
-        output->fbErr[8] = atof(val[i+3]);
+        /* check if exponent contains e/E or d/D or neither */
+        if((loc = strstr(val[i+3], "D"))!=NULL || (loc = strstr(val[i+3], "d"))!=NULL){
+          output->fbErr[8] = atof(val[i+3])*pow(10, atof(loc+1));
+        }
+        else{
+          output->fbErr[8] = atof(val[i+3]);
+        }
         j+=2;
       }
 
       output->nfb++;
     }
     else if( !strcmp(val[i], "fb9") || !strcmp(val[i], "FB9") ){
-      output->fb[9] = atof(val[i+1]);
+      CHAR *loc;
+
+      /* check if exponent contains e/E or d/D or neither */
+      if((loc = strstr(val[i+1], "D"))!=NULL || (loc = strstr(val[i+1], "d"))!=NULL){
+        output->fb[9] = atof(val[i+1])*pow(10, atof(loc+1));
+      }
+      else{
+        output->fb[9] = atof(val[i+1]);
+      }
       j++;
 
       if(atoi(val[i+2])==1 && i+2<k){
-        output->fbErr[9] = atof(val[i+3]);
+        /* check if exponent contains e/E or d/D or neither */
+        if((loc = strstr(val[i+3], "D"))!=NULL || (loc = strstr(val[i+3], "d"))!=NULL){
+          output->fbErr[9] = atof(val[i+3])*pow(10, atof(loc+1));
+        }
+        else{
+          output->fbErr[9] = atof(val[i+3]);
+        }
         j+=2;
       }
 
       output->nfb++;
     }
     else if( !strcmp(val[i], "fb10") || !strcmp(val[i], "FB10") ){
-      output->fb[10] = atof(val[i+1]);
+      CHAR *loc;
+
+      /* check if exponent contains e/E or d/D or neither */
+      if((loc = strstr(val[i+1], "D"))!=NULL || (loc = strstr(val[i+1], "d"))!=NULL){
+        output->fb[10] = atof(val[i+1])*pow(10, atof(loc+1));
+      }
+      else{
+        output->fb[10] = atof(val[i+1]);
+      }
       j++;
 
       if(atoi(val[i+2])==1 && i+2<k){
-        output->fbErr[10] = atof(val[i+3]);
+        /* check if exponent contains e/E or d/D or neither */
+        if((loc = strstr(val[i+3], "D"))!=NULL || (loc = strstr(val[i+3], "d"))!=NULL){
+          output->fbErr[10] = atof(val[i+3])*pow(10, atof(loc+1));
+        }
+        else{
+          output->fbErr[10] = atof(val[i+3]);
+        }
         j+=2;
       }
 
       output->nfb++;
     }
     else if( !strcmp(val[i], "fb11") || !strcmp(val[i], "FB11") ){
-      output->fb[11] = atof(val[i+1]);
+      CHAR *loc;
+
+      /* check if exponent contains e/E or d/D or neither */
+      if((loc = strstr(val[i+1], "D"))!=NULL || (loc = strstr(val[i+1], "d"))!=NULL){
+        output->fb[11] = atof(val[i+1])*pow(10, atof(loc+1));
+      }
+      else{
+        output->fb[11] = atof(val[i+1]);
+      }
       j++;
 
       if(atoi(val[i+2])==1 && i+2<k){
-        output->fbErr[11] = atof(val[i+3]);
+        /* check if exponent contains e/E or d/D or neither */
+        if((loc = strstr(val[i+3], "D"))!=NULL || (loc = strstr(val[i+3], "d"))!=NULL){
+          output->fbErr[11] = atof(val[i+3])*pow(10, atof(loc+1));
+        }
+        else{
+          output->fbErr[11] = atof(val[i+3]);
+        }
         j+=2;
       }
 
