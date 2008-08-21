@@ -156,7 +156,7 @@ typedef struct {
 LALUnit empty_Unit;
 
 /*---------- Global variables ----------*/
-extern int vrbflg;		/**< defined in lalapps.c */
+extern UINT4 vrbflg;		/**< defined in lalapps.c */
 
 /* ----- Resampling Variables ----------*/
 REAL8 uvar_F;
@@ -292,10 +292,10 @@ void XLALDestroyMultiCmplxAMCoeffs(MultiCmplxAMCoeffs *X);
 REAL8Sequence* XLALCreateREAL8Sequence(UINT4 length);
 MultiFFTWCOMPLEXSeries *XLALCreateMultiFFTWCOMPLEXSeries(UINT4 length);
 FFTWCOMPLEXSeries *XLALCreateFFTWCOMPLEXSeries(UINT4 length);
-long int factorial(long int x);
+UINT4 factorial(UINT4 x);
 REAL8 magsquare(fftw_complex f);
 UINT4 Round(REAL8 X);
-int CombineSFTs(FFTWCOMPLEXSeries *L,SFTVector *sft_vect,REAL8 FMIN,REAL8 FMAX,int number,int startindex);
+INT4 CombineSFTs(FFTWCOMPLEXSeries *L,SFTVector *sft_vect,REAL8 FMIN,REAL8 FMAX,INT4 number,INT4 startindex);
 void ApplyWindow(REAL8Window *Win, FFTWCOMPLEXSeries *X);
 void Reshuffle(FFTWCOMPLEXSeries *X);
 void PrintL(FFTWCOMPLEXSeries* L,REAL8 min,REAL8 step);
@@ -438,7 +438,7 @@ int main(int argc,char *argv[])
   /*Call the CalcTimeSeries Function Here*/
   LogPrintf (LOG_DEBUG, "Calculating Time Series.\n");
   CalcTimeSeries(GV.multiSFTs);
-  /*fprintf(stderr, "\n WARNING!!! Only the middle half of the band you asked for or is usable. Rest of it is destroyed by Interpolation. Please ask for a larger band. In the future, this will be done automatically. \n"); */
+  fprintf(stderr, "\n WARNING!!! Only the middle half of the band you asked for or is usable. Rest of it is destroyed by Interpolation. Please ask for a larger band. In the future, this will be done automatically. \n"); 
   LogPrintf (LOG_DEBUG, "Done Calculating Time Series.\n");
 
   LogPrintf (LOG_DEBUG, "Starting Main Resampling Loop.\n");
@@ -1668,18 +1668,19 @@ void XLALDestroyMultiCOMPLEX8TimeSeries(MultiCOMPLEX8TimeSeries *T)
 FFTWCOMPLEXSeries *XLALCreateFFTWCOMPLEXSeries(UINT4 length)
 {
   FFTWCOMPLEXSeries *new;
-  fftw_complex *temp;
+  fftw_complex *data;
   new = malloc(sizeof(*new));
   new->length = length;
-  temp = (fftw_complex*)fftw_malloc(sizeof(fftw_complex)*length);
-  new->data = temp;
+  data = malloc(sizeof(fftw_complex)*length);
+  new->data = data;
   return(new);
 }
 
 /* Destroy an FFTWCOMPLEXSeries */
 void XLALDestroyFFTWCOMPLEXSeries(FFTWCOMPLEXSeries *X)
 {
-  fftw_free(X->data);
+  if(X)
+    free(X->data);
   free(X);
 }
 
@@ -1707,9 +1708,9 @@ void XLALDestroyReSampBuffer ( ReSampBuffer *cfb)
 
 
 /* Calculates the factorial of an integer */
-long int factorial(long int x)
+UINT4 factorial(UINT4 x)
 {
-  long int prod = 1,i;
+  UINT4 prod = 1,i;
   if(x==0 || x==1)
     return(1);
   for(i=2;i<=x;i++)
@@ -1747,13 +1748,13 @@ LIGOTimeGPS REAL82GPS(REAL8 Time)
 /* CombineSFTs combines a series of contiguous SFTs into a coherent longer time baseline one SFT */
 /* Written by Xavier, Modified by Pinkesh (Xavier please document further if you think it is necessary) */
 
-int CombineSFTs(FFTWCOMPLEXSeries *L,SFTVector *sft_vect,REAL8 FMIN,REAL8 FMAX,int number,int startindex)
+INT4 CombineSFTs(FFTWCOMPLEXSeries *L,SFTVector *sft_vect,REAL8 FMIN,REAL8 FMAX,INT4 number,INT4 startindex)
 {
   REAL8* sinVal;
   REAL8* cosVal;
   UINT4 index;
-  int k = 0;
-  int res=64;
+  INT4 k = 0;
+  INT4 res=64;
   REAL8 STimeBaseLine = 0;
   REAL8 LTimeBaseLine = 0;
   REAL8 deltaF = 0;
@@ -1796,7 +1797,7 @@ int CombineSFTs(FFTWCOMPLEXSeries *L,SFTVector *sft_vect,REAL8 FMIN,REAL8 FMAX,i
   /*REAL8 ifmax = ceil(Fmax*STimeBaseLine)+uvar_Dterms;*/
 
   /* Loop over frequencies to be demodulated */
-  for(m = -number ; m <= number*(if1-if0) ; m++ )
+  for(m = -number ; m < (number-1)*(if1-if0) ; m++ )
   {
     llSFT.re =0.0;
     llSFT.im =0.0;
@@ -2243,8 +2244,8 @@ double sinc(double t)
 REAL8 strob(REAL8* Xdata, REAL8* Ydata, REAL8 X, UINT4 N1)
 {
   REAL8 fraction;
-  int index;
-  int N = N1;
+  INT4 index;
+  INT4 N = N1;
   REAL8 X0 = Xdata[0];
   REAL8 dX = Xdata[1] - Xdata[0];
   fraction = (X-X0)/dX;
@@ -2763,8 +2764,8 @@ void ComputeFStat_resamp(LALStatus *status,REAL8FrequencySeries *fstatVector, co
       /*fprintf(stderr,"Fmin = %f , Fmax = %f\n",Fmin,Fmax);
       fprintf(stderr,"length = %d\n",length);
       fprintf(stderr,"Heterodyne Frequency = %f\n",TSeries->f_het);
-      fprintf(stderr,"Internal RefTime = %f , External RefTime = %f , StartTime = %f \n",GPS2REAL8(doppler->refTime),GPS2REAL8(GV->refTime),StartTime);*/
-
+      fprintf(stderr,"Internal RefTime = %f , External RefTime = %f , StartTime = %f \n",GPS2REAL8(doppler->refTime),GPS2REAL8(GV->refTime),StartTime);
+      */
 
       /* Store these for readability */
       A = multiAMcoef->data[i]->A;
@@ -2914,11 +2915,11 @@ void ComputeFStat_resamp(LALStatus *status,REAL8FrequencySeries *fstatVector, co
 	  fstatVector->data->data[q++] += temp->data[p];
 	}
 
-      /*for(p=0;p<fstatVector->data->length;p++)
+      for(p=0;p<fstatVector->data->length;p++)
 	{
-	  printf("%f %f\n",fstatVector->data->data[p],p*dF+uvar_Freq);
+	  printf("%f %f\n",p*dF+uvar_Freq,fstatVector->data->data[p]);
 	}
-      */
+      
 
 
       XLALDestroyREAL8Sequence(temp);
