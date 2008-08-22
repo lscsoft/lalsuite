@@ -356,7 +356,7 @@ void InjectNumRelWaveforms (LALStatus           *status,
 	      else {
 		thisInjOut->next = (SimInspiralTable *)LALCalloc( 1, sizeof(SimInspiralTable) );
 		memcpy(thisInjOut->next, thisInj, sizeof(*thisInj));
-		thisInjOut->next = NULL;
+		thisInjOut->next->next = NULL;
 		thisInjOut = thisInjOut->next;
 	      }
 
