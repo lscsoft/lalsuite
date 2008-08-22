@@ -80,6 +80,9 @@ RCSID( "$Id$" );
 "  --time-interval TIME     distribute injections in interval TIME (0)\n"\
 "  --seed SEED              seed random number generator with SEED (1)\n"\
 "  --user-tag STRING        set the usertag to STRING\n"\
+"  --inj-distr INJDISTR     distribute injections uniformly in\n"\
+"                           log_10(frequency) ( INJDISTR = 0), frequency (INJDISTR = 1)\n"\
+"                           or mass (INJDISTR = 2) (default INJDISTR = 0)\n"\
 "  --minimum-mass MIN       set the minimum componenet mass to MIN (13.8)\n"\
 "  --maximum-mass MAX       set the maximum componenet mass to MAX (236.8)\n"\
 "  --minimum-spin AMIN      set the minimum component of the dimensionless spin parameter (0)\n"\
@@ -150,6 +153,7 @@ int main( int argc, char *argv[] )
   REAL4         dmin = 1;
   REAL4         dmax = 200000;
   REAL4         epsilon = 0.010;
+  UINT4         injdistr = 0;
   
   /* program variables */
   RandomParams *randParams = NULL;
@@ -194,6 +198,7 @@ int main( int argc, char *argv[] )
     {"time-step",               required_argument, 0,                't'},
     {"time-interval",           required_argument, 0,                'i'},
     {"seed",                    required_argument, 0,                's'},
+    {"inj-distr",               required_argument, 0,                'G'},
     {"minimum-mass",            required_argument, 0,                'A'},
     {"maximum-mass",            required_argument, 0,                'B'},
     {"minimum-spin",            required_argument, 0,                'P'},
@@ -262,7 +267,7 @@ int main( int argc, char *argv[] )
     size_t optarg_len;
 
     c = getopt_long_only( argc, argv, 
-        "a:A:b:B:C:D:E:F:h:P:Q:r:s:t:V:W:vz:Z:", long_options, &option_index );
+        "a:A:b:B:C:D:E:F:G:h:P:Q:r:s:t:V:W:vz:Z:", long_options, &option_index );
 
     /* detect the end of the options */
     if ( c == - 1 )
@@ -374,6 +379,20 @@ int main( int argc, char *argv[] )
           next_process_param( long_options[option_index].name, 
               "float", "%le", timeInterval );
         break;
+     
+        case 'G':
+        injdistr = (UINT4) atoi( optarg );
+        if ( injdistr != 0 && injdistr != 1 && injdistr != 2 )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "inj-distr must be either 0, 1 or 2\n",
+              long_options[option_index].name);
+          exit(1);
+        }
+          this_proc_param = this_proc_param->next = 
+          next_process_param( long_options[option_index].name, 
+             "int", "%d", injdistr );
+       break;
 
       case 'A':
         minMass = (REAL4) atof( optarg );
@@ -641,9 +660,6 @@ int main( int argc, char *argv[] )
   /* initialize the random number generator */
   LAL_CALL( LALCreateRandomParams( &status, &randParams, randSeed ), &status );
 
-  /* mass range */
-  deltaM = maxMass - minMass;
-
   /* distance range */
    lmin = log10(dmin);
    lmax = log10(dmax);
@@ -732,35 +748,48 @@ int main( int argc, char *argv[] )
     }    
 
  
-    /* set frequency, f0, and quality factor Q */
-    fmin = log10(minFreq);
-    fmax = log10(maxFreq);
-    deltaf = fmax - fmin;
-    LAL_CALL(  LALUniformDeviate(&status,&u,randParams),&status );
-    expt = fmin + deltaf * u;
-    this_inj->frequency = pow(10.0,(REAL4) expt);
+    if ( injdistr == 0 )
+    /* uniform in log frequency */
+    {
+      /* set frequency, f0, and quality factor Q */
+      fmin = log10(minFreq);
+      fmax = log10(maxFreq);
+      deltaf = fmax - fmin;
+      LAL_CALL(  LALUniformDeviate(&status,&u,randParams),&status );
+      expt = fmin + deltaf * u;
+      this_inj->frequency = pow(10.0,(REAL4) expt);
+    }    
+    else if ( injdistr == 1)
+    /* uniform in frequency */
+    {
+      LAL_CALL( LALUniformDeviate( &status, &u, randParams ), &status );
+      this_inj->frequency = minFreq + u * (maxFreq - minFreq);
+    }
 
-/*  LAL_CALL( LALUniformDeviate( &status, &u, randParams ), &status );*/
-/*  this_inj->frequency = minFreq + u * (maxFreq - minFreq);*/
-    LAL_CALL( LALUniformDeviate( &status, &u, randParams ), &status );
-    this_inj->quality = minQuality + u * (maxQuality - minQuality);
+    if ( injdistr == 0 || injdistr == 1 )
+    {
+      LAL_CALL( LALUniformDeviate( &status, &u, randParams ), &status );
+      this_inj->quality = minQuality + u * (maxQuality - minQuality);
+      /* calculate M and a from f and Q */
+      this_inj->spin = XLALBlackHoleRingSpin( this_inj->quality);
+      this_inj->mass = XLALBlackHoleRingMass( this_inj->frequency, this_inj->quality);
+    }
 
-    /* calculate M and a from f and Q */
-    this_inj->spin = XLALBlackHoleRingSpin( this_inj->quality);
-    this_inj->mass = XLALBlackHoleRingMass( this_inj->frequency, this_inj->quality);
+    if ( injdistr == 2 )
+    {
+      /* mass distribution */
+      deltaM = maxMass - minMass;
+      LAL_CALL( LALUniformDeviate( &status, &u, randParams ), &status );
+      this_inj->mass = minMass + u * deltaM;
+      /* generate random spin parameter */  
+      LAL_CALL( LALUniformDeviate( &status, &u, randParams ), &status );
+      this_inj->spin = minSpin + u * deltaA;
+      /* calculate central frequency, f0, and quality factor Q */
+      this_inj->frequency = XLALBlackHoleRingFrequency( this_inj->mass, this_inj->spin );
+      this_inj->quality = XLALBlackHoleRingQuality( this_inj->spin );
+    }
 
-#if 0
-    /* mass distribution */
-    LAL_CALL( LALUniformDeviate( &status, &u, randParams ), &status );
-    this_inj->mass = minMass + u * deltaM;
- 
-    /* generate random spin parameter */  
-    LAL_CALL( LALUniformDeviate( &status, &u, randParams ), &status );
-    this_inj->spin = minSpin + u * deltaA;
-    /* calculate central frequency, f0, and quality factor Q */
-    this_inj->frequency = XLALBlackHoleRingFrequency( this_inj->mass, this_inj->spin );
-    this_inj->quality = XLALBlackHoleRingQuality( this_inj->spin );
-#endif
+
             
     /* spatial distribution */
     /* compute random longitude and latitude */ 
