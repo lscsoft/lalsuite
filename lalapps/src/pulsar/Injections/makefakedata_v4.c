@@ -937,12 +937,14 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
     uvar_generationMode = GENERATE_PER_SFT;
 
   /*--------------------- Prepare windowing of time series ---------------------*/
-  BOOLEAN have_window = LALUserVarWasSet( &uvar_window );
-  if ( have_window ) {
-	REAL4Window *win = XLALCreateHannREAL4Window( (UINT4)(uvar_Tsft * 2 * uvar_Band) );
-	cfg->window = ( win );
-  } else {
-	cfg->window = NULL;
+  {
+    BOOLEAN have_window = LALUserVarWasSet( &uvar_window );
+    if ( have_window ) {
+      REAL4Window *win = XLALCreateHannREAL4Window( (UINT4)(uvar_Tsft * 2 * uvar_Band) );
+      cfg->window = ( win );
+    } else {
+      cfg->window = NULL;
+    }
   }
 
   /* -------------------- Prepare quantities for barycentering -------------------- */
