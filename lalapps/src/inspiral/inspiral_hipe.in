@@ -2388,6 +2388,12 @@ if not opts.disable_dag_categories:
   if opts.sire_inspiral or opts.sire_inspiral_veto:
     dag.add_maxjobs_category('sire',20)
 
+# Add number of retries to jobs as specified by ihope.ini
+if cp.has_option("pipeline", "retry-jobs"):
+  num_retries = cp.getint("pipeline", "retry-jobs")
+  for node in dag.get_nodes():
+    node.set_retry(num_retries)
+
 ##############################################################################
 # Step 14: Write out the DAG, help message and log file
 dag.write_sub_files()
