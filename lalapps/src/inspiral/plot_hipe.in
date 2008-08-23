@@ -820,6 +820,11 @@ if opts.plotinspiralrange:
   #  plotinspiralrange_node=inspiral.PlotInspiralrangeNode(plotinspiralrange_jobs["SECOND"])
   #  dag.add_node(plotinspiralrange_node)
 
+# Add number of retries to plotting jobs as specified by ihope.ini
+if cp.has_option("pipeline", "retry-plot-jobs"):
+  num_retries = cp.getint("pipeline", "retry-plot-jobs")
+  for node in dag.get_nodes():
+    node.set_retry(num_retries)
 
 ##############################################################################
 # Step 10: Write out the DAG, help message and log file
