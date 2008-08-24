@@ -130,7 +130,7 @@ int main(int argc, char **argv)
   int mainArgc = 0; /* 02/02/05 gam; */
   static LALStatus status; /* status structure */
 
-  lalDebugLevel = 3;
+  lalDebugLevel = 0;
 
   /* initialize status */
   status.statusCode = 0;
@@ -191,8 +191,8 @@ void RunGeneratePulsarSignalTest(LALStatus *status)
   LALDetector cachedDetector;  
   CHAR IFO[6] = "LHO";
   EphemerisData *edat = NULL;
-  CHAR sunFile[13] = "sun00-04.dat";     /* 02/02/05 gam */
-  CHAR earthFile[15] = "earth00-04.dat"; /* 02/02/05 gam */
+  CHAR sunFile[] = "sun00-04.dat";     /* 02/02/05 gam */
+  CHAR earthFile[] = "earth00-04.dat"; /* 02/02/05 gam */
   INT4 leap; /* 2nd arg to LALLeapSecFormatAndAcc is INT4 while edat->leap is INT2. */
   
   /* containers for sky position and spindown data */
@@ -330,7 +330,7 @@ void RunGeneratePulsarSignalTest(LALStatus *status)
   }  /* END if (numSpinDown > 0) ELSE ... */
   
   /* Initialize ephemeris data */
-  edat = (EphemerisData *)LALMalloc(sizeof(EphemerisData)); 
+  edat = (EphemerisData *)LALCalloc(1, sizeof(EphemerisData)); 
   /* edat->ephiles.sunEphemeris = "../../pulsar/test/sun00-04.dat";
   edat->ephiles.earthEphemeris = "../../pulsar/test/earth00-04.dat"; */
   /* 07/30/04 gam; added this line to Makefile.am: TESTS_ENVIRONMENT = LAL_DATA_PATH=$(top_srcdir)/packages/pulsar/test */
@@ -380,7 +380,7 @@ void RunGeneratePulsarSignalTest(LALStatus *status)
   GPSin.gpsNanoSeconds = timeStamps->data[0].gpsNanoSeconds;
     
   /* Allocate memory for SFTParams and initialize */
-  pSFTParams = (SFTParams *)LALMalloc(sizeof(SFTParams));
+  pSFTParams = (SFTParams *)LALCalloc(1, sizeof(SFTParams));
   pSFTParams->Tsft = tSFT;
   pSFTParams->timestamps = timeStamps;
   pSFTParams->noiseSFTs = NULL; 
@@ -776,6 +776,10 @@ void RunGeneratePulsarSignalTest(LALStatus *status)
 
   LALFree(timeStamps->data);
   LALFree(timeStamps);
+
+  LALFree ( edat->ephemE );
+  LALFree ( edat->ephemS );
+  LALFree ( edat);
     
   CHECKSTATUSPTR (status);
   DETATCHSTATUSPTR (status);
