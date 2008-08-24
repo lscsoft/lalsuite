@@ -204,6 +204,8 @@ NRCSID (MAKEFAKEDATAC, "$Id$");
 #include <lal/LALVersion.h>
 #include <lal/GenerateSpinOrbitCW.h>
 
+#include "sft_extra.h"
+
 /* Locations of the earth and sun ephemeris data */
 #define EARTHDATA "earth00-04.dat"
 #define SUNDATA "sun00-04.dat"
@@ -368,9 +370,6 @@ int parseR4(FILE *fp, const char* vname, REAL4 *data);
 int parseR8(FILE *fp, const char* vname, REAL8 *data);
 int parseI4(FILE *fp, const char* vname, INT4 *data);
 void usage(FILE *fp);
-
-extern void write_timeSeriesR4 (FILE *fp, const REAL4TimeSeries *series);
-extern void write_timeSeriesR8 (FILE *fp, const REAL8TimeSeries *series);
 
 /* Like perror() but takes variable numbers of arguments and includes
    program name*/
@@ -719,6 +718,10 @@ int freemem(LALStatus* status){
 
   if (fvecn)
     LALCDestroyVector(status, &fvecn);  
+
+  LALFree (earthdata);
+  LALFree (sundata);
+  if ( noisedir ) LALFree(noisedir);
 
   return 0;
 }
@@ -1601,7 +1604,13 @@ int read_commandline_and_file(LALStatus* status, int argc,char *argv[]) {
   
   /* scan through the list of arguments on the command line 
      and get the input data filename*/
-  
+
+  /* set default: */
+  earthdata = LALCalloc(1, strlen(EARTHDATA) + 1);
+  strcpy (earthdata, EARTHDATA);
+  sundata = LALCalloc(1, strlen(SUNDATA)+1);
+  strcpy (sundata, SUNDATA);
+
   opterr=0;
 
   while (!errflg && ((c = getopt(argc, argv,":i:n:t:I:G:S:X:E:D:wbmhd:"))!=-1))
@@ -1684,9 +1693,11 @@ int read_commandline_and_file(LALStatus* status, int argc,char *argv[]) {
       }
       break;
     case 'E':    
+      if ( earthdata ) LALFree(earthdata);
+      if ( sundata ) LALFree(sundata);
       /* path to ephemeris files */
-      if (!(earthdata=(char *)malloc((strlen(optarg)+strlen(EARTHDATA)+2))) ||
-	  !(sundata=  (char *)malloc((strlen(optarg)+strlen(SUNDATA)+2)))) {
+      if (!(earthdata=(CHAR *)LALMalloc((strlen(optarg)+strlen(EARTHDATA)+2))) ||
+	  !(sundata=  (CHAR *)LALMalloc((strlen(optarg)+strlen(SUNDATA)+2)))) {
 	syserror("No memory remaining to store filenames for Ephemeris data\n");
 	exit(1);
       }
@@ -1695,7 +1706,7 @@ int read_commandline_and_file(LALStatus* status, int argc,char *argv[]) {
       sprintf(sundata,  "%s/%s", optarg, SUNDATA);
       break;
     case 'D':
-      if (!(noisedir=(char *)malloc((strlen(optarg)+2)))){
+      if (!(noisedir=(CHAR *)LALMalloc((strlen(optarg)+2)))){
 	syserror("No memory remaining to store input sft dir name\n");
 	exit(1);
       }
