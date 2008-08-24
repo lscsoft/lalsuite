@@ -130,6 +130,8 @@ int main(int argc, char **argv)
   int mainArgc = 0; /* 02/02/05 gam; */
   static LALStatus status; /* status structure */
 
+  lalDebugLevel = 3;
+
   /* initialize status */
   status.statusCode = 0;
   status.statusPtr = NULL;
@@ -191,7 +193,6 @@ void RunGeneratePulsarSignalTest(LALStatus *status)
   EphemerisData *edat = NULL;
   CHAR sunFile[13] = "sun00-04.dat";     /* 02/02/05 gam */
   CHAR earthFile[15] = "earth00-04.dat"; /* 02/02/05 gam */
-  LALLeapSecFormatAndAcc formatAndAcc = {LALLEAPSEC_GPSUTC, LALLEAPSEC_STRICT}; /* Call LALLeapSecs to get edat->leap */
   INT4 leap; /* 2nd arg to LALLeapSecFormatAndAcc is INT4 while edat->leap is INT2. */
   
   /* containers for sky position and spindown data */
@@ -337,8 +338,7 @@ void RunGeneratePulsarSignalTest(LALStatus *status)
   edat->ephiles.earthEphemeris = "earth00-04.dat"; */
   edat->ephiles.sunEphemeris = sunFile;     /* 02/02/05 gam */
   edat->ephiles.earthEphemeris = earthFile; /* 02/02/05 gam */
-  LALLeapSecs(status->statusPtr,&leap,&(timeStamps->data[0]),&formatAndAcc);
-  CHECKSTATUSPTR (status);
+  leap = XLALLeapSeconds ( timeStamps->data[0].gpsSeconds ); /**< [In] Seconds relative to GPS epoch.*/
   edat->leap = (INT2)leap;
   LALInitBarycenter(status->statusPtr, edat);
   CHECKSTATUSPTR (status);
