@@ -263,7 +263,7 @@ do {                                                                 \
 
 /* A global pointer for debugging. */
 #ifndef NDEBUG
-char *lalWatch;
+CHAR *lalWatch;
 #endif
 
 /***************************/
@@ -276,14 +276,14 @@ char *lalWatch;
 #define MAXFILENAMELENGTH 256   
 
 /*Default input data file name*/
-const char *inDataFilename="In.data";
+const CHAR *inDataFilename="In.data";
 char timestampsname[128];
 
 /* non-null values mean to create the files! */
-char *freqbasefilename=NULL;
-char *timebasefilename=NULL;
-char *noisedir;
-char filelist[MAXFILES][MAXFILENAMELENGTH];
+CHAR *freqbasefilename=NULL;
+CHAR *timebasefilename=NULL;
+CHAR *noisedir;
+CHAR filelist[MAXFILES][MAXFILENAMELENGTH];
 REAL8 GPStime=-1.0;
 INT4 pulsar_defined_at_fiducial_SSB=0;
 LIGOTimeGPS SSBpulsarparams;
@@ -292,16 +292,16 @@ INT4 nomagic=0;
 INT4 binaryoutput=0;
 REAL8 xaxis=0.0;
 INT4 doxaxis=0.0;
-char *programname=NULL;
-char *earthdata;
-char *sundata;
+CHAR *programname=NULL;
+CHAR *earthdata;
+CHAR *sundata;
 
 /* timebaseline of SFT in sec, band SFT in Hz */
 REAL8 Tsft,B,sigma;
 /* smallest frequency in the band B */
 REAL8 global_fmin;
 /* How many SFTS we'll produce*/
-INT4 nTsft; 
+UINT4 nTsft;
 
 /* Do you want noise ?*/
 INT2 inoise;
@@ -340,12 +340,12 @@ COMPLEX8Vector *fvecn = NULL;
 /*FFT plan*/
 RealFFTPlan *pfwd = NULL;
 
-INT4 lalDebugLevel = 0;
+INT4 lalDebugLevel = 1;
 
 /* Prototypes for the functions defined in this file */
 int read_commandline_and_file(LALStatus *, int argc, char *argv[]);
 int set_default(void);
-int read_timestamps(REAL8);
+int read_timestamps(REAL8 starttime);
 int write_modulated_amplitudes_file(LALStatus *);
 int prepare_baryinput(LALStatus *);
 int prepare_cwDetector(LALStatus *);
@@ -354,26 +354,26 @@ int compute_SSBtimes(LALStatus *);
 int prepare_fvec(LALStatus *);
 int make_and_add_time_domain_noise(LALStatus *);
 int make_filelist(void);
-int read_and_add_freq_domain_noise(LALStatus *, int iSFT);
+int read_and_add_freq_domain_noise(LALStatus *, UINT4 iSFT);
 int add(LALStatus *);
-int write_SFTS(int iSFT);
-int write_timeseries(int iSFT);
+int write_SFTS(UINT4 iSFT);
+int write_timeseries(UINT4 iSFT);
 int cleanup(LALStatus *);
 int freemem(LALStatus *);
 int window_data(void);
 int correct_phase(LALStatus *);
-void syserror(const char *fmt, ...);
-void error(const char *fmt, ...);
+void syserror(const CHAR *fmt, ...);
+void error(const CHAR *fmt, ...);
 void compute_one_SSB(LALStatus* status, LIGOTimeGPS *ssbout, LIGOTimeGPS *gpsin);
 INT4 myRound (REAL8 x); 
-int parseR4(FILE *fp, const char* vname, REAL4 *data);
-int parseR8(FILE *fp, const char* vname, REAL8 *data);
-int parseI4(FILE *fp, const char* vname, INT4 *data);
+int parseR4(FILE *fp, const CHAR* vname, REAL4 *data);
+int parseR8(FILE *fp, const CHAR* vname, REAL8 *data);
+int parseI4(FILE *fp, const CHAR* vname, INT4 *data);
 void usage(FILE *fp);
 
 /* Like perror() but takes variable numbers of arguments and includes
    program name*/
-void syserror(const char *fmt, ...){
+void syserror(const CHAR *fmt, ...){
   char *thiserror=NULL;
   pid_t pid=getpid();
   va_list ap;
@@ -388,7 +388,7 @@ void syserror(const char *fmt, ...){
   return;
 }
 
-void error(const char *fmt, ...){
+void error(const CHAR *fmt, ...){
   pid_t pid=getpid();
   va_list ap;
   /* initialize variable argument list  */
@@ -417,7 +417,7 @@ void printclock(char *message){
 int main(int argc,char *argv[]) {
   
   static LALStatus status;
-  int iSFT;
+  UINT4 iSFT;
   SpinOrbitCWParamStruc spinorbit;
   REAL4 dfdt;
   
@@ -500,7 +500,7 @@ int main(int argc,char *argv[]) {
   */
   
   memset(&cgwOutput, 0, sizeof(CoherentGW));
-  memset(&spinorbit, '\0', sizeof(spinorbit));
+  memset(&spinorbit, 0, sizeof(spinorbit));
   
   /* The GENERATE routines work entirely in Barycentric Time. This is
      the fiducial time at which pulsar parameters are defined */
@@ -768,9 +768,9 @@ int compute_SSBtimes(LALStatus* status) {
 
 #if 0
 /*applies correct heterodyning from one SFT to the next*/
-int correct_phase(LALStatus* status, int iSFT) {
+int correct_phase(LALStatus* status, UINT4 iSFT) {
 
-  int i;
+  UINT4 i;
   REAL8 cosx,sinx,x;
   COMPLEX8 fvec1;
 
@@ -1122,7 +1122,7 @@ int make_and_add_time_domain_noise(LALStatus* status) {
 int read_timestamps(REAL8 startattime) {
   
   FILE *fp;
-  int i,r;
+  UINT4 i,r;
  
   timestamps=(LIGOTimeGPS *)LALMalloc(nTsft*sizeof(LIGOTimeGPS)); 
 
@@ -1164,7 +1164,7 @@ int write_modulated_amplitudes_file(LALStatus* status){
   LIGOTimeGPS       gps;
   LALGPSandAcc      gpsandacc;
   const char *filename="AmplMod.dat";
-  int i;
+  UINT4 i;
 
   
   if (!(fp=fopen(filename,"w"))) {
@@ -1200,7 +1200,7 @@ int write_modulated_amplitudes_file(LALStatus* status){
 int make_filelist(void) {
 
   UINT4 fileno=0;
-  char command[256];
+  CHAR command[256];
   glob_t globbuf;
 
   strcpy(command,noisedir);
@@ -1231,7 +1231,7 @@ int make_filelist(void) {
 
 
 
-int read_and_add_freq_domain_noise(LALStatus* status, int iSFT) {
+int read_and_add_freq_domain_noise(LALStatus* status, UINT4 iSFT) {
 
   FILE *fp;
   size_t errorcode;
@@ -1246,7 +1246,7 @@ int read_and_add_freq_domain_noise(LALStatus* status, int iSFT) {
     INT4  firstfreqindex;
     INT4  nsamples;
   } header;
-
+  
   /**********************/
 
 
@@ -1356,13 +1356,13 @@ INT4 myRound(REAL8 x)
 
 
 
-int write_SFTS(int iSFT){
+int write_SFTS(UINT4 iSFT){
 
 
   FILE *fp;
   REAL4 rpw,ipw;
   /* REAL8 fr; */
-  char filename[256], filenumber[16];
+  CHAR filename[256], filenumber[16];
   int errorcode;
   UINT4 i;
 
@@ -1423,7 +1423,7 @@ int write_SFTS(int iSFT){
 }
 
 /* This writes out the simulated dat in the time-domain. */
-int write_timeseries(int iSFT){
+int write_timeseries(UINT4 iSFT){
   
   /* write binary form of the output to stdout.  This is useful for
      hardware pulsar injections at the sites */
@@ -1450,8 +1450,8 @@ int write_timeseries(int iSFT){
   if (timebasefilename) {
     FILE *fp;
     REAL4 pw;
-    char filename[256], filenumber[16];
-    int i;
+    CHAR filename[256], filenumber[16];
+    UINT4 i;
     
     struct headertag {
       REAL8 endian;
@@ -1485,13 +1485,13 @@ int write_timeseries(int iSFT){
     
     /* now print data to a file in either one or two column format */
     if (!doxaxis) {
-      for (i=0;i<header.nsamples;i++) {    
+      for (i=0;i<(UINT4)header.nsamples;i++) {
 	pw=timeSeries->data->data[i];
 	fprintf(fp,"%f\n",pw);
       }
     }
     else {
-      for (i=0;i<header.nsamples;i++) {
+      for (i=0;i<(UINT4)header.nsamples;i++) {
 	REAL8 ts=header.gps_sec-xaxis+header.tbase*i/header.nsamples;
 	pw=timeSeries->data->data[i];
 	fprintf(fp,"%f %f\n",ts, pw);
@@ -1504,13 +1504,13 @@ int write_timeseries(int iSFT){
   return 0;  
 }
 
-int parseR4(FILE *fp, const char* vname, REAL4 *data){
-  char junk[1024], junk2[1024];
-  char command[1024];
+int parseR4(FILE *fp, const CHAR* vname, REAL4 *data){
+  CHAR junk[1024], junk2[1024];
+  CHAR command[1024];
   int r;
   
-  memset(junk, '\0', 1024);
-  memset(junk2,'\0', 1024);
+  memset(junk, 0, 1024);
+  memset(junk2,0, 1024);
   
   r=fscanf(fp, "%f%[\t ]%[^\012]", data, junk, junk2);
   if (r!=3)  {
@@ -1523,16 +1523,16 @@ int parseR4(FILE *fp, const char* vname, REAL4 *data){
     system(command);
     return 1;
   }
-      return 0;
+  return 0;
 }
 
-int parseR8(FILE *fp, const char* vname, REAL8 *data){
-  char junk[1024], junk2[1024];
-  char command[1024];
+int parseR8(FILE *fp, const CHAR* vname, REAL8 *data){
+  CHAR junk[1024], junk2[1024];
+  CHAR command[1024];
   int r;
   
-  memset(junk, '\0', 1024);
-  memset(junk2,'\0', 1024);
+  memset(junk, 0, 1024);
+  memset(junk2,0, 1024);
   
   r=fscanf(fp, "%lf%[\t ]%[^\n]", data, junk, junk2);
   if (r!=3)  {
@@ -1547,13 +1547,13 @@ int parseR8(FILE *fp, const char* vname, REAL8 *data){
   }
       return 0;
 }
-int parseI4(FILE *fp, const char* vname, INT4 *data){
-  char junk[1024], junk2[1024];
-  char command[1024];
+int parseI4(FILE *fp, const CHAR* vname, INT4 *data){
+  CHAR junk[1024], junk2[1024];
+  CHAR command[1024];
   int r;
   
-  memset(junk, '\0', 1024);
-  memset(junk2,'\0', 1024);
+  memset(junk, 0, 1024);
+  memset(junk2,0, 1024);
   
   r=fscanf(fp, "%d%[\t ]%[^\n]", data, junk, junk2);
   if (r!=3)  {
@@ -1593,13 +1593,13 @@ void usage(FILE *fp){
 
 int read_commandline_and_file(LALStatus* status, int argc,char *argv[]) {
   
-  char dmp[128];
+  CHAR dmp[128];
   int c, errflg = 0;
-  int r,msp;
+  INT4 r,msp;
   UINT4 imin, nsamples;  
   FILE *fp;
-  char *endptr;
-  int detectorset=0;
+  CHAR *endptr;
+  INT4 detectorset=0;
   REAL8 temptime;
   
   /* scan through the list of arguments on the command line 
@@ -1768,8 +1768,12 @@ int read_commandline_and_file(LALStatus* status, int argc,char *argv[]) {
   if (parseR8(fp, "SFT time baseline Tsft", &Tsft))
     return 1;
 
-  if (parseI4(fp, "# of SFTs nTsft", &nTsft))
-    return 1;
+  {
+    INT4 tmp;
+    if (parseI4(fp, "# of SFTs nTsft", &tmp) || ( tmp < 0 ) )
+      return 1;
+    nTsft = tmp;
+  }
 
   if (parseR8(fp, "minimum frequency fmin", &global_fmin))
     return 1;
@@ -1812,7 +1816,7 @@ int read_commandline_and_file(LALStatus* status, int argc,char *argv[]) {
     genTayParams.f->length=msp;
     for ( k=1; k <= (UINT4)msp; k++)
       {
-	char name[128];
+	CHAR name[128];
 	REAL8 *fk = &(genTayParams.f->data[k-1]);
 	kfact *= 1.0 * k;	/* now k! */
 
