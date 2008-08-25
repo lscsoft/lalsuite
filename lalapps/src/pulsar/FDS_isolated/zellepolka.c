@@ -270,7 +270,7 @@ typedef struct CandidateListTag
   INT4 iDelta;       /*  Declination index. This can be negative. */
   INT4 iAlpha;       /*  Right ascension index */
   INT4 iF1dot;       /*  Spindown index */
-  INT4 iCand;       /*  Candidate id: unique with in this program.  */
+  INT8 iCand;        /*  Candidate id: unique with in this program.  */
 } CandidateList;     /*   Fstat lines */ 
 #pragma pack(0)
 
@@ -278,12 +278,12 @@ typedef struct CandidateListTag
 /*!
 Liked list containing one INT4 data..
 
-@param data INT4
-@param next int4_linked_list*
+@param data INT8
+@param next int8_linked_list*
 */
-struct int4_linked_list {
-  INT4 data;
-  struct int4_linked_list *next;
+struct int8_linked_list {
+  INT8 data;
+  struct int8_linked_list *next;
 }; 
 
 
@@ -300,7 +300,7 @@ Structure containg data in cells
 @param iF1dot        INT4 Spindown index of this candidate event
 @param significance  REAL8 minus log of joint false alarm of the candidates in this cell
 @param nCand;        INT4 number of the events in this cell
-@param CandID        int4_linked_list* linked structure that has candidate id-s of the candidates in this cell
+@param CandID        int8_linked_list* linked structure that has candidate id-s of the candidates in this cell
 */
 
 #pragma pack(1) 
@@ -315,8 +315,8 @@ typedef struct CellDataTag
   INT4 iDelta;         /*  Declination index of this candidate event */
   INT4 iAlpha;         /*  Right ascension index of this candidate event */
   INT4 iF1dot;         /*  Spindown index of this candidate event */
-  INT4 nCand;          /*  number of the events in this cell. */
-  struct int4_linked_list *CandID;  /* linked structure that has candidate id-s of the candidates in this cell. */
+  INT8 nCand;          /*  number of the events in this cell. */
+  struct int8_linked_list *CandID;  /* linked structure that has candidate id-s of the candidates in this cell. */
 } CellData;
 #pragma pack(0)
 
@@ -336,8 +336,8 @@ void ReadCandidateListFromZipFile (LALStatus *, CandidateList **CList, CHAR *fna
 void RePrepareCells( LALStatus *, CellData **cell, const UINT4 CLength , const UINT4 iposition);
 void PrepareCells( LALStatus *, CellData **cell, const UINT4 datalen );
 
-void add_int4_data(LALStatus *, struct int4_linked_list **list_ptr, const INT4 *data);
-void delete_int4_linked_list( LALStatus *, struct int4_linked_list *list_ptr);
+void add_int8_data(LALStatus *, struct int8_linked_list **list_ptr, const INT8 *data);
+void delete_int8_linked_list( LALStatus *, struct int8_linked_list *list_ptr);
 
 void get_info_of_the_cell( LALStatus *, CellData *cd, const CandidateList *CList);
 
@@ -678,7 +678,7 @@ int main(INT4 argc,CHAR *argv[])
 			if( SortedC[SortedCListi[icand]].FileID != lastFileIDinThisCell ) 
 			  { 
 			    /* This candidate has a different file id from the candidates in this cell. */
-			    LAL_CALL( add_int4_data( lalStatus, &(cell[icell].CandID), &(SortedC[SortedCListi[icand]].iCand) ), lalStatus );
+			    LAL_CALL( add_int8_data( lalStatus, &(cell[icell].CandID), &(SortedC[SortedCListi[icand]].iCand) ), lalStatus );
 			    cell[icell].nCand += 1;
 			  }  
 			else  
@@ -788,7 +788,7 @@ void PrepareCells( LALStatus *lalStatus, CellData **cell, const UINT4 CLength )
 
   for(icell=0;icell<CLength;icell++) {
     (*cell)[icell].CandID = NULL;
-    (*cell)[icell].CandID = (struct int4_linked_list *) LALCalloc( 1, sizeof(struct int4_linked_list) );
+    (*cell)[icell].CandID = (struct int8_linked_list *) LALCalloc( 1, sizeof(struct int8_linked_list) );
     if( (*cell)[icell].CandID == NULL ) {
       errflg = 1;
       break;
@@ -861,7 +861,7 @@ void RePrepareCells( LALStatus *lalStatus, CellData **cell, const UINT4 CLength 
 
   for(icell=iposition;icell<CLength;icell++) {
     (*cell)[icell].CandID = NULL;
-    (*cell)[icell].CandID = (struct int4_linked_list *) LALCalloc( 1, sizeof(struct int4_linked_list) );
+    (*cell)[icell].CandID = (struct int8_linked_list *) LALCalloc( 1, sizeof(struct int8_linked_list) );
     if( (*cell)[icell].CandID == NULL ) {
       errflg = 1;
       break;
@@ -1288,7 +1288,7 @@ void FreeMemory( LALStatus *lalStatus,
   /* This is now being done by FreeMemoryCellsOnly ! ############
   if( cell != NULL ) {
     for(icell=0;icell<datalen;icell++) {
-      TRY( delete_int4_linked_list( lalStatus->statusPtr, cell[icell].CandID ), lalStatus );
+      TRY( delete_int8_linked_list( lalStatus->statusPtr, cell[icell].CandID ), lalStatus );
     }
     LALFree(cell);
   }
@@ -1325,7 +1325,7 @@ void FreeMemoryCellsOnly( LALStatus *lalStatus,
      This part takes really long, when lalDebugLevel = 3. I do not know why.*/
   if( cell != NULL ) {
     for(icell=0;icell<datalen;icell++) {
-      TRY( delete_int4_linked_list( lalStatus->statusPtr, cell[icell].CandID ), lalStatus );
+      TRY( delete_int8_linked_list( lalStatus->statusPtr, cell[icell].CandID ), lalStatus );
     }
     LALFree(cell);
   }
@@ -1373,16 +1373,16 @@ void FreeConfigVars(LALStatus *lalStatus, PolkaConfigVars *CLA )
   add data to linked structure 
 
   @param[in,out] lalStatus   LALStatus* 
-  @param[in,out] list_ptr    int4_linked_list**
-  @param[in]     data        INT4*
+  @param[in,out] list_ptr    int8_linked_list**
+  @param[in]     data        INT8*
 */
-void add_int4_data(LALStatus *lalStatus, struct int4_linked_list **list_ptr, const INT4 *data)
+void add_int8_data(LALStatus *lalStatus, struct int8_linked_list **list_ptr, const INT8 *data)
 {
-  struct int4_linked_list *p = NULL;
+  struct int8_linked_list *p = NULL;
 
-  INITSTATUS( lalStatus, "add_int4_data", rcsid );
+  INITSTATUS( lalStatus, "add_int8_data", rcsid );
 
-  p = (struct int4_linked_list *) LALMalloc(sizeof(struct int4_linked_list));
+  p = (struct int8_linked_list *) LALMalloc(sizeof(struct int8_linked_list));
   if( p == NULL ) {
     LALPrintError("Could not allocate Memory! \n");
     ABORT (lalStatus, POLKAC_EMEM, POLKAC_MSGEMEM);
@@ -1392,7 +1392,7 @@ void add_int4_data(LALStatus *lalStatus, struct int4_linked_list **list_ptr, con
   *list_ptr = p;
 
   RETURN (lalStatus);
-} /* void add_int4_data() */
+} /* void add_int8_data() */
 
 
 /* ########################################################################################## */
@@ -1400,14 +1400,14 @@ void add_int4_data(LALStatus *lalStatus, struct int4_linked_list **list_ptr, con
   delete a linked structure 
 
   @param[in,out] lalStatus   LALStatus* 
-  @param[in]     list_ptr    int4_linked_list*
+  @param[in]     list_ptr    int8_linked_list*
 */
-void delete_int4_linked_list( LALStatus *lalStatus, struct int4_linked_list *list_ptr )
+void delete_int8_linked_list( LALStatus *lalStatus, struct int8_linked_list *list_ptr )
 {
-  INT4 ic;
-  struct int4_linked_list *q;
+  INT8 ic;
+  struct int8_linked_list *q;
 
-  INITSTATUS( lalStatus, "delete_int4_linked_list", rcsid );
+  INITSTATUS( lalStatus, "delete_int8_linked_list", rcsid );
 
   ic = 0;
   while( list_ptr !=NULL && ic <= LINKEDSTR_MAX_DEPTH ) {  
@@ -1422,7 +1422,7 @@ void delete_int4_linked_list( LALStatus *lalStatus, struct int4_linked_list *lis
   }
 
   RETURN (lalStatus);
-} /* void delete_int4_linked_list() */
+} /* void delete_int8_linked_list() */
 
 
 /* ########################################################################################## */
@@ -1441,9 +1441,9 @@ void delete_int4_linked_list( LALStatus *lalStatus, struct int4_linked_list *lis
 */
 void get_info_of_the_cell( LALStatus *lalStatus, CellData *cd, const CandidateList *CList )
 {
-  INT4 idx, ic;
+  INT8 idx, ic;
   REAL8 lfa;
-  struct int4_linked_list *p;
+  struct int8_linked_list *p;
 
   INITSTATUS( lalStatus, "get_info_of_the_cell", rcsid );
   ASSERT( cd != NULL, lalStatus, POLKAC_ENULL, POLKAC_MSGENULL);
@@ -1519,9 +1519,9 @@ void get_info_of_the_cell( LALStatus *lalStatus, CellData *cd, const CandidateLi
 
 void print_cand_of_most_coin_cell( LALStatus *lalStatus, CellData *cd, const CandidateList *CList )
 {
-  INT4 idx, ic;
+  INT8 idx, ic;
   REAL8 AlphaTmp=0;
-  struct int4_linked_list *p;
+  struct int8_linked_list *p;
 
   INITSTATUS( lalStatus, "print_cand_of_most_coin_cell", rcsid );
   ASSERT( cd != NULL, lalStatus, POLKAC_ENULL, POLKAC_MSGENULL);
@@ -1587,8 +1587,8 @@ void print_Fstat_of_the_cell( LALStatus *lalStatus,
 			      const REAL8 sig_thr, 
 			      const REAL8 ncand_thr )
 {
-  INT4 idx, ic, icell;
-  struct int4_linked_list *p;
+  INT8 idx, ic, icell;
+  struct int8_linked_list *p;
 
   INITSTATUS( lalStatus, "print_Fstat_of_the_cell", rcsid );
   ASSERT( cd != NULL, lalStatus, POLKAC_ENULL, POLKAC_MSGENULL);
@@ -3224,9 +3224,9 @@ void print_info_of_cell_and_ifo_S4R2a( LALStatus *lalStatus,
                               const REAL8 sig_thr,
                               const REAL8 ncand_thr )
 {
-  INT4 idx, ic, icell;
+  INT8 idx, ic, icell;
   INT4 cH1,cL1;
-  struct int4_linked_list *p;
+  struct int8_linked_list *p;
 
   INITSTATUS( lalStatus, "print_info_of_cell_and_ifo_S4R2a", rcsid );
   ASSERT( cd != NULL, lalStatus, POLKAC_ENULL, POLKAC_MSGENULL);
@@ -3308,9 +3308,9 @@ void print_info_of_cell_and_ifo_S5R1a( LALStatus *lalStatus,
 				       const REAL8 sig_thr,
 				       const REAL8 ncand_thr )
 {
-  INT4 idx, ic, icell;
+  INT8 idx, ic, icell;
   INT4 cH1,cL1;
-  struct int4_linked_list *p;
+  struct int8_linked_list *p;
 
   INITSTATUS( lalStatus, "print_info_of_cell_and_ifo_S5R1a", rcsid );
   ASSERT( cd != NULL, lalStatus, POLKAC_ENULL, POLKAC_MSGENULL);
