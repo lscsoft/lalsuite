@@ -325,16 +325,16 @@ typedef struct CellDataTag
 /* Function declarelations */
 void ReadCommandLineArgs( LALStatus *, INT4 argc, CHAR *argv[], PolkaConfigVars *CLA ); 
 void GetFilesListInThisDir(LALStatus *, const CHAR *directory, const CHAR *basename, CHAR ***filelist, UINT4 *nfiles );
-void ReadCandidateFiles( LALStatus *, CandidateList **Clist, PolkaConfigVars *CLA, INT4 *datalen );
-void ReadOneCandidateFile( LALStatus *, CandidateList **CList, const CHAR *fname, PolkaConfigVars *CLA, INT4 *datalen, const REAL8 myFthr );
-void ReadOneCandidateFileV2( LALStatus *lalStatus, CandidateList **CList, const CHAR *fname, INT4 *candlen );
+void ReadCandidateFiles( LALStatus *, CandidateList **Clist, PolkaConfigVars *CLA, INT8 *datalen );
+void ReadOneCandidateFile( LALStatus *, CandidateList **CList, const CHAR *fname, PolkaConfigVars *CLA, INT8 *datalen, const REAL8 myFthr );
+void ReadOneCandidateFileV2( LALStatus *lalStatus, CandidateList **CList, const CHAR *fname, INT8 *candlen );
 
 #ifdef USE_UNZIP
 void ReadCandidateListFromZipFile (LALStatus *, CandidateList **CList, CHAR *fname, INT4 *candlen, const INT4 *FileID);
 #endif
 
-void RePrepareCells( LALStatus *, CellData **cell, const UINT4 CLength , const UINT4 iposition);
-void PrepareCells( LALStatus *, CellData **cell, const UINT4 datalen );
+void RePrepareCells( LALStatus *, CellData **cell, const UINT8 CLength , const UINT8 iposition);
+void PrepareCells( LALStatus *, CellData **cell, const UINT8 datalen );
 
 void add_int8_data(LALStatus *, struct int8_linked_list **list_ptr, const INT8 *data);
 void delete_int8_linked_list( LALStatus *, struct int8_linked_list *list_ptr);
@@ -345,16 +345,16 @@ int compareREAL8arrays(const REAL8 *ap, const REAL8 *bp, size_t n);
 int compareINT4arrays(const INT4 *ap, const INT4 *bp, size_t n);
 int compareSignificances(const void *a, const void *b);
 
-void PrintResult( LALStatus *, const PolkaConfigVars *CLA, CellData *cell, const INT4 *ncell, CandidateList *CList , const INT4 cellgridnum, INT4 CellListi[]);
+void PrintResult( LALStatus *, const PolkaConfigVars *CLA, CellData *cell, const INT8 *ncell, CandidateList *CList , const INT4 cellgridnum, INT8 CellListi[]);
 
-void print_Fstat_of_the_cell( LALStatus *, FILE *fp, const CellData *cd, const CandidateList *CList, const INT4 icell_start, 
-			      const INT4 icell_end, const REAL8 sig_thr, const REAL8 ncand_thr );
-void print_info_of_the_cell( LALStatus *lalStatus, FILE *fp, const CellData *cd, const INT4 icell_start, 
-			     const INT4 icell_end, const REAL8 sig_thr, const REAL8 ncand_thr);
-void print_info_of_cell_and_ifo_S4R2a( LALStatus *, FILE *fp, const CellData *cd, const CandidateList *CList, const INT4 icell_start,
-				 const INT4 icell_end, const REAL8 sig_thr, const REAL8 ncand_thr );
-void print_info_of_cell_and_ifo_S5R1a( LALStatus *, FILE *fp, const CellData *cd, const CandidateList *CList, const INT4 icell_start,
-				       const INT4 icell_end, const REAL8 sig_thr, const REAL8 ncand_thr );
+void print_Fstat_of_the_cell( LALStatus *, FILE *fp, const CellData *cd, const CandidateList *CList, const INT8 icell_start, 
+			      const INT8 icell_end, const REAL8 sig_thr, const REAL8 ncand_thr );
+void print_info_of_the_cell( LALStatus *lalStatus, FILE *fp, const CellData *cd, const INT8 icell_start, 
+			     const INT8 icell_end, const REAL8 sig_thr, const REAL8 ncand_thr);
+void print_info_of_cell_and_ifo_S4R2a( LALStatus *, FILE *fp, const CellData *cd, const CandidateList *CList, const INT8 icell_start,
+				 const INT8 icell_end, const REAL8 sig_thr, const REAL8 ncand_thr );
+void print_info_of_cell_and_ifo_S5R1a( LALStatus *, FILE *fp, const CellData *cd, const CandidateList *CList, const INT8 icell_start,
+				       const INT8 icell_end, const REAL8 sig_thr, const REAL8 ncand_thr );
 
 void print_cand_of_most_coin_cell( LALStatus *lalStatus, CellData *cd, const CandidateList *CList);
 
@@ -362,9 +362,9 @@ void FreeMemory(LALStatus *, PolkaConfigVars *CLA, CellData *cell, CandidateList
 void FreeMemoryCellsOnly(LALStatus *, PolkaConfigVars *CLA, CellData *cell, const UINT4 datalen);
 void FreeConfigVars(LALStatus *, PolkaConfigVars *CLA );
 
-void sortCandidates(INT4 *data, INT4 N);
-void sortCandidates2(INT4 *data, INT4 left, INT4 right);
-void sortFreqCells2(INT4 *data, INT4 left, INT4 right);
+void sortCandidates(INT8 *data, INT8 N);
+void sortCandidates2(INT8 *data, INT8 left, INT8 right);
+void sortFreqCells2(INT8 *data, INT8 left, INT8 right);
 
 
 /* ----------------------------------------------------------------------------- */
@@ -415,10 +415,10 @@ int main(INT4 argc,CHAR *argv[])
   INT4  iDeltaMax1=0;
   INT4  iDeltaMax2=0;
   INT4  DeltaDeltaStep=0;
-  INT4  CLength=0; /* Length of the candidate-events list */
-  INT4  *SortedCListi = NULL; /* List of candidate-events INT-labels */
-  INT4  *cellListi = NULL;  /* List of cell INT-labels */
-  INT4  icell, icand, ncell;
+  INT8  CLength=0; /* Length of the candidate-events list */
+  INT8  *SortedCListi = NULL; /* List of candidate-events INT-labels */
+  INT8  *cellListi = NULL;  /* List of cell INT-labels */
+  INT8  icell, icand, ncell;
   INT4  cc1,cc2,cc3,cc4,bb1,bb2,bb3,bb4; /* cell-grid shifting variables */
   INT4  selectGrid; /* denotes one of the 16 shifted cell-grid */
   INT4  sizecells; /* Length of the cell list */
@@ -455,7 +455,7 @@ int main(INT4 argc,CHAR *argv[])
   LAL_CALL( ReadCandidateFiles(lalStatus, &SortedC, &PCV, &CLength), lalStatus);
 
   /* More efficent sorting in memory by using an integer list */
-  SortedCListi = (INT4 *) LALCalloc(CLength, sizeof(INT4) );
+  SortedCListi = (INT8 *) LALCalloc(CLength, sizeof(INT8) );
   if( SortedCListi == NULL ) {
     ABORT (lalStatus, POLKAC_EMEM, POLKAC_MSGEMEM);
   }
@@ -718,7 +718,7 @@ int main(INT4 argc,CHAR *argv[])
 	    /* Get the information in each cell. */
 	    ncell=icell+1; /* number of the cells in which more than or at least one candidate exists. */
 	    /* cellList = (ListForSort *) LALCalloc( ncell, sizeof(ListForSort) ); */
-	    cellListi = (INT4 *) LALCalloc(ncell, sizeof(INT4) );
+	    cellListi = (INT8 *) LALCalloc(ncell, sizeof(INT8) );
 
 	    for(icell=0;icell<ncell;icell++) {
 	      LAL_CALL( get_info_of_the_cell( lalStatus, &cell[icell], SortedC), lalStatus);
@@ -769,11 +769,11 @@ int main(INT4 argc,CHAR *argv[])
 
   @param[in,out] lalStatus LALStatus*
   @param[out]    cell      CellData** CellData structure to be initialized
-  @param[in]     CLength   UINT4      Number of the cells
+  @param[in]     CLength   INT8      Number of the cells
 */
-void PrepareCells( LALStatus *lalStatus, CellData **cell, const UINT4 CLength )
+void PrepareCells( LALStatus *lalStatus, CellData **cell, const UINT8 CLength )
 {
-  UINT4 icell, ncell;
+  UINT8 icell, ncell;
   INT4 errflg = 0;
 
   INITSTATUS( lalStatus, "InitCode", rcsid );
@@ -835,9 +835,9 @@ void PrepareCells( LALStatus *lalStatus, CellData **cell, const UINT4 CLength )
   @param[in]     CLength   UINT4      Number of the cells
 */
  
-void RePrepareCells( LALStatus *lalStatus, CellData **cell, const UINT4 CLength , const UINT4 iposition)
+void RePrepareCells( LALStatus *lalStatus, CellData **cell, const UINT8 CLength , const UINT8 iposition)
 {
-  UINT4 icell, ncell;
+  UINT8 icell, ncell;
   INT4 errflg = 0;
   CellData *tmp;
   
@@ -911,7 +911,13 @@ void RePrepareCells( LALStatus *lalStatus, CellData **cell, const UINT4 CLength 
   @param[in]     ncell     UINT4* Number of the cells
   @param[in]     CList     CandidateList
 */
-void PrintResult(LALStatus *lalStatus, const PolkaConfigVars *CLA, CellData *cell, const INT4 *ncell, CandidateList *CList, const INT4 cellgridnum, INT4 CellListi[])
+void PrintResult(LALStatus *lalStatus, 
+		 const PolkaConfigVars *CLA, 
+		 CellData *cell, 
+		 const INT8 *ncell, 
+		 CandidateList *CList, 
+		 const INT4 cellgridnum, 
+		 INT8 CellListi[])
 {
   INT4 icell;
   CHAR fnameSigTime[256]; /* Time variation of 2F of some significant outliers. */
@@ -1173,7 +1179,7 @@ void PrintResult(LALStatus *lalStatus, const PolkaConfigVars *CLA, CellData *cel
 
 	      if( cell[CellListi[icell]].nCand >= CLA->MinCellCoin )
 		{
-		  sprintf(fnameMinCellCoin,"ZP_G%02d_COIN%02d_CID%d_.dat", cellgridnum, cell[CellListi[icell]].nCand, CellListi[icell]);
+		  sprintf(fnameMinCellCoin,"ZP_G%02d_COIN%ld_CID%ld_.dat", cellgridnum, cell[CellListi[icell]].nCand, CellListi[icell]);
 
 		  if( (fpMinCellCoin = fopen(fnameMinCellCoin,"w")) == NULL )
 		    {
@@ -1234,12 +1240,12 @@ void PrintResult(LALStatus *lalStatus, const PolkaConfigVars *CLA, CellData *cel
 void print_info_of_the_cell( LALStatus *lalStatus, 
 			     FILE *fp, 
 			     const CellData *cd, 
-			     const INT4 icell_start, 
-			     const INT4 icell_end, 
+			     const INT8 icell_start, 
+			     const INT8 icell_end, 
 			     const REAL8 sig_thr, 
 			     const REAL8 ncand_thr )
 {
-  INT4 icell;
+  INT8 icell;
 
   INITSTATUS( lalStatus, "print_info_of_the_cell", rcsid );
   ASSERT( cd != NULL, lalStatus, POLKAC_ENULL, POLKAC_MSGENULL);
@@ -1249,7 +1255,7 @@ void print_info_of_the_cell( LALStatus *lalStatus,
 	 cd[icell].significance > sig_thr && 
 	 cd[icell].nCand > ncand_thr ) 
     {
-      fprintf(fp,"%.6f\t%.6f\t%.6f\t%g\t\t%d\t%.6f\n", cd[icell].Freq, cd[icell].Delta, cd[icell].Alpha, cd[icell].F1dot, cd[icell].nCand, cd[icell].significance);
+      fprintf(fp,"%.6f\t%.6f\t%.6f\t%g\t\t%ld\t%.6f\n", cd[icell].Freq, cd[icell].Delta, cd[icell].Alpha, cd[icell].F1dot, cd[icell].nCand, cd[icell].significance);
       icell++;
     }
 
@@ -1582,8 +1588,8 @@ void print_Fstat_of_the_cell( LALStatus *lalStatus,
 			      FILE *fp, 
 			      const CellData *cd, 
 			      const CandidateList *CList, 
-			      const INT4 icell_start, 
-			      const INT4 icell_end, 
+			      const INT8 icell_start, 
+			      const INT8 icell_end, 
 			      const REAL8 sig_thr, 
 			      const REAL8 ncand_thr )
 {
@@ -1606,7 +1612,7 @@ void print_Fstat_of_the_cell( LALStatus *lalStatus,
       while( p !=NULL && ic <= LINKEDSTR_MAX_DEPTH ) { 
 	idx = p->data;
 
-	fprintf(fp,"%d\t%d\t%.6f\t%.6f\t%.6f\t%g\t%.6f\n", 
+	fprintf(fp,"%ld\t%d\t%.6f\t%.6f\t%.6f\t%g\t%.6f\n", 
 		icell, CList[idx].FileID, CList[idx].f, CList[idx].Alpha, CList[idx].Delta, CList[idx].F1dot, CList[idx].TwoF );
 
 	p = p->next;
@@ -1747,9 +1753,9 @@ void
 ReadCandidateFiles(LALStatus *lalStatus, 
 		   CandidateList **CList, 
 		   PolkaConfigVars *CLA, 
-		   INT4 *clen)
+		   INT8 *clen)
 {
-  UINT4 kc;
+  UINT8 kc;
   /* UINT4 *CLenFthr;*/
   /* REAL8 percentage = 0; */
 
@@ -2258,14 +2264,14 @@ void
 ReadOneCandidateFileV2( LALStatus *lalStatus, 
 		      CandidateList **CList, 
 		      const CHAR *fname, 
-		      INT4 *candlen )
+		      INT8 *candlen )
 {
-  UINT4 i;
-  UINT4 numlines;
+  UINT8 i;
+  UINT8 numlines;
   REAL8 epsilon=1e-5;
   CHAR line1[256];
   FILE *fp;
-  INT4 nread;
+  INT8 nread;
   UINT4 checksum=0;
   UINT4 bytecount=0;
 
@@ -2531,15 +2537,15 @@ ReadOneCandidateFile( LALStatus *lalStatus,
 		      CandidateList **CList, 
 		      const CHAR *fname, 
 		      PolkaConfigVars *CLA,
-		      INT4 *candlen, 
+		      INT8 *candlen, 
 		      const REAL8 myFthr )
 {
-  UINT4 i;
-  UINT4 numlines;
+  UINT8 i;
+  UINT8 numlines;
   REAL8 epsilon=1e-5;
   CHAR line1[256];
   FILE *fp;
-  INT4 nread;
+  INT8 nread;
   UINT4 checksum=0;
   UINT4 bytecount=0;
   UINT4 numlinesFthr=0;
@@ -3034,10 +3040,10 @@ ReadCommandLineArgs( LALStatus *lalStatus,
   Bruce's  sorting function to replace qsort. 
 */
 
-void sortCandidates(INT4 *data, INT4 N)
+void sortCandidates(INT8 *data, INT8 N)
 {
-  INT4 i, j, z;
-  INT4 v, t;
+  INT8 i, j, z;
+  INT8 v, t;
   
   if(N<=1) return;
   
@@ -3045,7 +3051,7 @@ void sortCandidates(INT4 *data, INT4 N)
      Partition elements
      BRUCE: first swap data[0] and data[rand(0,N-1)]
   */
-  z=(INT4) ((N-1) * (rand() / (RAND_MAX+1.0)));
+  z=(INT8) ((N-1) * (rand() / (RAND_MAX+1.0)));
   t = data[0]; 
   data[0] = data[z]; 
   data[z] = t;
@@ -3084,14 +3090,14 @@ void sortCandidates(INT4 *data, INT4 N)
   DECREASING ORDER OF a significance.
 */
 
-void sortCandidates2(INT4 *data, INT4 left, INT4 right)
+void sortCandidates2(INT8 *data, INT8 left, INT8 right)
 {
-  INT4 i, last, t, rzahl=0;
+  INT8 i, last, t, rzahl=0;
   
   if (left >= right) 
     return;
 
-  rzahl = (INT4) ( rand() % (right-left) );
+  rzahl = (INT8) ( rand() % (right-left) );
   t =  data[left+rzahl];
   data[left+rzahl] = data[left];
   data[left] = t;
@@ -3163,14 +3169,14 @@ void sortCandidates2(INT4 *data, INT4 left, INT4 right)
   Holger's sorting function to replace qsort. 
 */
 
-void sortFreqCells2(INT4 *data, INT4 left, INT4 right)
+void sortFreqCells2(INT8 *data, INT8 left, INT8 right)
 {
-  INT4 i, last, t, rzahl=0;
+  INT8 i, last, t, rzahl=0;
   
   if (left >= right) 
     return;
 
-  rzahl = (INT4) ( rand() % (right-left) );
+  rzahl = (INT8) ( rand() % (right-left) );
   t =  data[left+rzahl];
   data[left+rzahl] = data[left];
   data[left] = t;
@@ -3219,8 +3225,8 @@ void print_info_of_cell_and_ifo_S4R2a( LALStatus *lalStatus,
                               FILE *fp,
                               const CellData *cd,
                               const CandidateList *CList,
-                              const INT4 icell_start,
-                              const INT4 icell_end,
+                              const INT8 icell_start,
+                              const INT8 icell_end,
                               const REAL8 sig_thr,
                               const REAL8 ncand_thr )
 {
@@ -3288,7 +3294,7 @@ void print_info_of_cell_and_ifo_S4R2a( LALStatus *lalStatus,
       }
 
 
-      fprintf(fp,"%.6f\t%.6f\t%.6f\t%g\t\t%d\t%.6f\t%d\t%d\n",\
+      fprintf(fp,"%.6f\t%.6f\t%.6f\t%g\t\t%ld\t%.6f\t%d\t%d\n",\
 	      cd[icell].Freq, cd[icell].Delta, cd[icell].Alpha, cd[icell].F1dot, cd[icell].nCand, cd[icell].significance,cH1,cL1);
       icell++;
 
@@ -3303,8 +3309,8 @@ void print_info_of_cell_and_ifo_S5R1a( LALStatus *lalStatus,
 				       FILE *fp,
 				       const CellData *cd,
 				       const CandidateList *CList,
-				       const INT4 icell_start,
-				       const INT4 icell_end,
+				       const INT8 icell_start,
+				       const INT8 icell_end,
 				       const REAL8 sig_thr,
 				       const REAL8 ncand_thr )
 {
@@ -3411,7 +3417,7 @@ void print_info_of_cell_and_ifo_S5R1a( LALStatus *lalStatus,
 	exit(POLKA_EXIT_ERR);
 	}
       
-      fprintf(fp,"%.6f\t%.6f\t%.6f\t%g\t\t%d\t%.6f\t%d\t%d\n",\
+      fprintf(fp,"%.6f\t%.6f\t%.6f\t%g\t\t%ld\t%.6f\t%d\t%d\n",\
 	      cd[icell].Freq, cd[icell].Delta, cd[icell].Alpha, cd[icell].F1dot, cd[icell].nCand, cd[icell].significance,cH1,cL1);
       icell++;
       
