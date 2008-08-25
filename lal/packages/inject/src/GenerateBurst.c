@@ -129,7 +129,7 @@ int XLALBurstInjectSignals(
 {
 	static const char func[] = "XLALBurstInjectSignals";
 	/* to be deduced from the time series' channel name */
-	LALDetector detector;
+	const LALDetector *detector;
 	/* + and x time series for injection waveform */
 	REAL8TimeSeries *hplus, *hcross;
 	/* injection time series as added to detector's */
@@ -137,22 +137,14 @@ int XLALBurstInjectSignals(
 	/* skip injections whose geocentre times are more than this many
 	 * seconds outside of the target time series */
 	const double injection_window = 600.0;
-	int i;
 
 	/* turn the first two characters of the channel name into a
 	 * detector */
 
-	for(i = 0; i < LAL_NUM_DETECTORS; i++) {
-		if(!strncmp(series->name, lalCachedDetectors[i].frDetector.prefix, 2)) {
-			detector = lalCachedDetectors[i];
-			break;
-		}
-	}
-	if(i >= LAL_NUM_DETECTORS) {
-		XLALPrintError("%s(): error: can't identify instrument from channel '%s'\n", func, series->name);
-		XLAL_ERROR(func, XLAL_EDATA);
-	}
-	XLALPrintInfo("%s(): channel name is '%s', instrument appears to be '%s'\n", func, series->name, detector.frDetector.prefix);
+	detector = XLALInstrumentNameToLALDetector(series->name);
+	if(!detector)
+		XLAL_ERROR(func, XLAL_EFUNC);
+	XLALPrintInfo("%s(): channel name is '%s', instrument appears to be '%s'\n", func, series->name, detector->frDetector.prefix);
 
 	/* iterate over injections */
 
@@ -181,7 +173,7 @@ int XLALBurstInjectSignals(
 		/* project the wave onto the detector to produce the strain
 		 * in the detector. */
 
-		h = XLALSimDetectorStrainREAL8TimeSeries(hplus, hcross, sim_burst->ra, sim_burst->dec, sim_burst->psi, &detector);
+		h = XLALSimDetectorStrainREAL8TimeSeries(hplus, hcross, sim_burst->ra, sim_burst->dec, sim_burst->psi, detector);
 		XLALDestroyREAL8TimeSeries(hplus);
 		XLALDestroyREAL8TimeSeries(hcross);
 		if(!h)

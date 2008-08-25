@@ -74,6 +74,39 @@ static unsigned long round_up_to_power_of_two(unsigned long x)
 }
 
 
+/**
+ * Turn an instrument name into a LALDetector structure.  The first two
+ * characters of the input string are used as the instrument name, which
+ * allows channel names in the form "H1:LSC-STRAIN" to be used.  The return
+ * value is a pointer into the lalCachedDetectors array, so modifications
+ * to the contents are global.  Make a copy of the structure if you want to
+ * modify it safely.
+ */
+
+
+const LALDetector *XLALInstrumentNameToLALDetector(
+	const char *string
+)
+{
+	static const char func[] = "XLALInstrumentNameToLALDetector";
+	const LALDetector *detector;
+	int i;
+
+	for(i = 0; i < LAL_NUM_DETECTORS; i++) {
+		if(!strncmp(string, lalCachedDetectors[i].frDetector.prefix, 2)) {
+			detector = &lalCachedDetectors[i];
+			break;
+		}
+	}
+	if(i >= LAL_NUM_DETECTORS) {
+		XLALPrintError("%s(): error: can't identify instrument from string \"%s\"\n", func, string);
+		XLAL_ERROR(func, XLAL_EDATA);
+	}
+
+	return detector;
+}
+
+
 /*
  * ============================================================================
  *

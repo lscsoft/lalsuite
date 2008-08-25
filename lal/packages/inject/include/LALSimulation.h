@@ -26,6 +26,11 @@
 NRCSID(LALSIMULATIONH, "$Id:");
 
 
+const LALDetector *XLALInstrumentNameToLALDetector(
+	const char *string
+);
+
+
 REAL8TimeSeries *XLALSimDetectorStrainREAL8TimeSeries(
 	const REAL8TimeSeries *hplus,
 	const REAL8TimeSeries *hcross,
