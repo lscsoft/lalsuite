@@ -130,6 +130,8 @@ int XLALBurstInjectSignals(
 	static const char func[] = "XLALBurstInjectSignals";
 	/* to be deduced from the time series' channel name */
 	const LALDetector *detector;
+	/* FIXME:  fix the const entanglement so as to get rid of this */
+	LALDetector detector_copy;
 	/* + and x time series for injection waveform */
 	REAL8TimeSeries *hplus, *hcross;
 	/* injection time series as added to detector's */
@@ -145,6 +147,7 @@ int XLALBurstInjectSignals(
 	if(!detector)
 		XLAL_ERROR(func, XLAL_EFUNC);
 	XLALPrintInfo("%s(): channel name is '%s', instrument appears to be '%s'\n", func, series->name, detector->frDetector.prefix);
+	detector_copy = *detector;
 
 	/* iterate over injections */
 
@@ -173,7 +176,7 @@ int XLALBurstInjectSignals(
 		/* project the wave onto the detector to produce the strain
 		 * in the detector. */
 
-		h = XLALSimDetectorStrainREAL8TimeSeries(hplus, hcross, sim_burst->ra, sim_burst->dec, sim_burst->psi, detector);
+		h = XLALSimDetectorStrainREAL8TimeSeries(hplus, hcross, sim_burst->ra, sim_burst->dec, sim_burst->psi, &detector_copy);
 		XLALDestroyREAL8TimeSeries(hplus);
 		XLALDestroyREAL8TimeSeries(hcross);
 		if(!h)
