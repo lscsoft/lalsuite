@@ -2596,9 +2596,6 @@ ReadOneCandidateFile( LALStatus *lalStatus,
       ABORT (lalStatus, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
      }
 
-  /* mytest */
-  printf("Opened file to count lines.\n");
-
   while(fgets(line1,sizeof(line1),fp) != NULL) {
     UINT8 k;
     size_t len=strlen(line1);
@@ -2612,10 +2609,6 @@ ReadOneCandidateFile( LALStatus *lalStatus,
       fclose(fp);
       ABORT (lalStatus, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
      }
-
-    /* mytest */
-    if(i%1000000==0)
-      printf("lines read: %ld\n",i);
 
     /* increment line counter */
     i++;
