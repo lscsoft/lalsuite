@@ -270,13 +270,13 @@ typedef struct CandidateListTag
   INT4 iDelta;       /*  Declination index. This can be negative. */
   INT4 iAlpha;       /*  Right ascension index */
   INT4 iF1dot;       /*  Spindown index */
-  INT8 iCand;        /*  Candidate id: unique with in this program.  */
+  INT8 iCand;       /*  Candidate id: unique with in this program.  */
 } CandidateList;     /*   Fstat lines */ 
 #pragma pack(0)
 
 
 /*!
-Liked list containing one INT4 data..
+Liked list containing one INT8 data..
 
 @param data INT8
 @param next int8_linked_list*
@@ -315,7 +315,7 @@ typedef struct CellDataTag
   INT4 iDelta;         /*  Declination index of this candidate event */
   INT4 iAlpha;         /*  Right ascension index of this candidate event */
   INT4 iF1dot;         /*  Spindown index of this candidate event */
-  INT8 nCand;          /*  number of the events in this cell. */
+  INT4 nCand;          /*  number of the events in this cell. */
   struct int8_linked_list *CandID;  /* linked structure that has candidate id-s of the candidates in this cell. */
 } CellData;
 #pragma pack(0)
@@ -330,11 +330,11 @@ void ReadOneCandidateFile( LALStatus *, CandidateList **CList, const CHAR *fname
 void ReadOneCandidateFileV2( LALStatus *lalStatus, CandidateList **CList, const CHAR *fname, INT8 *candlen );
 
 #ifdef USE_UNZIP
-void ReadCandidateListFromZipFile (LALStatus *, CandidateList **CList, CHAR *fname, INT4 *candlen, const INT4 *FileID);
+void ReadCandidateListFromZipFile (LALStatus *, CandidateList **CList, CHAR *fname, INT8 *candlen, const INT4 *FileID);
 #endif
 
-void RePrepareCells( LALStatus *, CellData **cell, const UINT8 CLength , const UINT8 iposition);
-void PrepareCells( LALStatus *, CellData **cell, const UINT8 datalen );
+void RePrepareCells( LALStatus *, CellData **cell, const INT8 CLength , const INT8 iposition);
+void PrepareCells( LALStatus *, CellData **cell, const INT8 datalen );
 
 void add_int8_data(LALStatus *, struct int8_linked_list **list_ptr, const INT8 *data);
 void delete_int8_linked_list( LALStatus *, struct int8_linked_list *list_ptr);
@@ -343,9 +343,11 @@ void get_info_of_the_cell( LALStatus *, CellData *cd, const CandidateList *CList
 
 int compareREAL8arrays(const REAL8 *ap, const REAL8 *bp, size_t n);
 int compareINT4arrays(const INT4 *ap, const INT4 *bp, size_t n);
+int compareINT8arrays(const INT8 *ap, const INT8 *bp, size_t n);
 int compareSignificances(const void *a, const void *b);
 
-void PrintResult( LALStatus *, const PolkaConfigVars *CLA, CellData *cell, const INT8 *ncell, CandidateList *CList , const INT4 cellgridnum, INT8 CellListi[]);
+void PrintResult( LALStatus *, const PolkaConfigVars *CLA, CellData *cell, const INT8 *ncell, 
+		  CandidateList *CList, const INT4 cellgridnum, INT8 CellListi[]);
 
 void print_Fstat_of_the_cell( LALStatus *, FILE *fp, const CellData *cd, const CandidateList *CList, const INT8 icell_start, 
 			      const INT8 icell_end, const REAL8 sig_thr, const REAL8 ncand_thr );
@@ -358,8 +360,8 @@ void print_info_of_cell_and_ifo_S5R1a( LALStatus *, FILE *fp, const CellData *cd
 
 void print_cand_of_most_coin_cell( LALStatus *lalStatus, CellData *cd, const CandidateList *CList);
 
-void FreeMemory(LALStatus *, PolkaConfigVars *CLA, CellData *cell, CandidateList *CList, const UINT4 datalen);
-void FreeMemoryCellsOnly(LALStatus *, PolkaConfigVars *CLA, CellData *cell, const UINT4 datalen);
+void FreeMemory(LALStatus *, PolkaConfigVars *CLA, CellData *cell, CandidateList *CList, const INT8 datalen);
+void FreeMemoryCellsOnly(LALStatus *, PolkaConfigVars *CLA, CellData *cell, const INT8 datalen);
 void FreeConfigVars(LALStatus *, PolkaConfigVars *CLA );
 
 void sortCandidates(INT8 *data, INT8 N);
@@ -421,7 +423,7 @@ int main(INT4 argc,CHAR *argv[])
   INT8  icell, icand, ncell;
   INT4  cc1,cc2,cc3,cc4,bb1,bb2,bb3,bb4; /* cell-grid shifting variables */
   INT4  selectGrid; /* denotes one of the 16 shifted cell-grid */
-  INT4  sizecells; /* Length of the cell list */
+  INT8  sizecells; /* Length of the cell list */
   INT4  AlphaTwoPiIdx=0, AlphaZeroIdx=0; /* Cell-index of an candidate events located at alpha=2*Pi*/
   
   LALStatus *lalStatus = &global_status;
@@ -771,9 +773,9 @@ int main(INT4 argc,CHAR *argv[])
   @param[out]    cell      CellData** CellData structure to be initialized
   @param[in]     CLength   INT8      Number of the cells
 */
-void PrepareCells( LALStatus *lalStatus, CellData **cell, const UINT8 CLength )
+void PrepareCells( LALStatus *lalStatus, CellData **cell, const INT8 CLength )
 {
-  UINT8 icell, ncell;
+  INT8 icell, ncell;
   INT4 errflg = 0;
 
   INITSTATUS( lalStatus, "InitCode", rcsid );
@@ -832,12 +834,12 @@ void PrepareCells( LALStatus *lalStatus, CellData **cell, const UINT8 CLength )
 
   @param[in,out] lalStatus LALStatus*
   @param[out]    cell      CellData** CellData structure to be initialized
-  @param[in]     CLength   UINT4      Number of the cells
+  @param[in]     CLength   INT8       Number of the cells
 */
  
-void RePrepareCells( LALStatus *lalStatus, CellData **cell, const UINT8 CLength , const UINT8 iposition)
+void RePrepareCells( LALStatus *lalStatus, CellData **cell, const INT8 CLength , const INT8 iposition)
 {
-  UINT8 icell, ncell;
+  INT8 icell, ncell;
   INT4 errflg = 0;
   CellData *tmp;
   
@@ -908,7 +910,7 @@ void RePrepareCells( LALStatus *lalStatus, CellData **cell, const UINT8 CLength 
   @param[in,out] lalStatus LALStatus*
   @param[in]     CLA       PolkaConfigVars*
   @param[in]     cell      CellData*
-  @param[in]     ncell     UINT4* Number of the cells
+  @param[in]     ncell     INT8* Number of the cells
   @param[in]     CList     CandidateList
 */
 void PrintResult(LALStatus *lalStatus, 
@@ -919,7 +921,7 @@ void PrintResult(LALStatus *lalStatus,
 		 const INT4 cellgridnum, 
 		 INT8 CellListi[])
 {
-  INT4 icell;
+  INT8 icell;
   CHAR fnameSigTime[256]; /* Time variation of 2F of some significant outliers. */
   CHAR fnameSigCell[256]; /* Cell information of some significant outliers*/
   CHAR fnameCoiTime[256];  /* Time variation of 2F of some coincident outliers. */
@@ -931,9 +933,9 @@ void PrintResult(LALStatus *lalStatus,
   CHAR fnameMinCellCoin[256];
 
   FILE *fp = NULL, *fpSigTime = NULL, *fpSigCell = NULL, *fpCoiTime = NULL, *fpCoiCell = NULL, *fpMinCellCoin = NULL;
-  INT4 *count;
-  INT4 nc, nmax,idxmax = 0;
-  INT4 idxmaxcoin = 0;
+  INT8 *count;
+  INT8 nc, nmax,idxmax = 0;
+  INT8 idxmaxcoin = 0;
   REAL4 Sigmax = 0.0;
   
   INITSTATUS( lalStatus, "PrintResult", rcsid );
@@ -980,7 +982,7 @@ void PrintResult(LALStatus *lalStatus,
 
  
   /* Allocate memory for the histogram of coincidences */
-  if( (count = (INT4 *) LALCalloc( (size_t) (nmax + 1), sizeof(INT4))) == NULL ) {
+  if( (count = (INT8 *) LALCalloc( (size_t) (nmax + 1), sizeof(INT8))) == NULL ) {
     LALPrintError("Could not allocate Memory! \n");
     ABORT (lalStatus, POLKAC_EMEM, POLKAC_MSGEMEM);
   }
@@ -1027,13 +1029,13 @@ void PrintResult(LALStatus *lalStatus,
 
     fprintf(stdout,"%% # of coincidences: \n");
     for(nc=0;nc<=nmax;nc++) {
-      fprintf(stdout,"%7d",nc);
+      fprintf(stdout,"%" LAL_INT8_FORMAT ,nc);
     }
 
     fprintf(stdout,"\n");
     fprintf(stdout,"%% # of cells       : \n");
     for(nc=0;nc<=nmax;nc++) { 
-      fprintf(stdout, "%7d",count[nc]);
+      fprintf(stdout, "%" LAL_INT8_FORMAT,count[nc]);
     }
     
     fprintf(stdout,"\n%%\n%% Candidate events of most coincident cell : \n%% data-seg \tfreq [Hz]\tdec [rad]\tra [rad]  \tF1dot[Hz/s]\t\t2F" "\n");
@@ -1139,7 +1141,7 @@ void PrintResult(LALStatus *lalStatus,
   fprintf(stdout,"%% Sorting of cells finished.\n");
   
   {
-    INT4 prev_iFreq = -1;
+    INT8 prev_iFreq = -1;
 
     if( ( fp = fopen(fnameMaxOverSky,"w") ) == NULL ) {
       { 
@@ -1179,7 +1181,7 @@ void PrintResult(LALStatus *lalStatus,
 
 	      if( cell[CellListi[icell]].nCand >= CLA->MinCellCoin )
 		{
-		  sprintf(fnameMinCellCoin,"ZP_G%02d_COIN%ld_CID%ld_.dat", cellgridnum, cell[CellListi[icell]].nCand, CellListi[icell]);
+		  sprintf(fnameMinCellCoin,"ZP_G%02d_COIN%02d_CID%" LAL_INT8_FORMAT "_.dat", cellgridnum, cell[CellListi[icell]].nCand, CellListi[icell]);
 
 		  if( (fpMinCellCoin = fopen(fnameMinCellCoin,"w")) == NULL )
 		    {
@@ -1232,8 +1234,8 @@ void PrintResult(LALStatus *lalStatus,
   @param[in,out] lalStatus LALStatus*
   @param[in]     fp        FILE*
   @param[in]     cd        CellData*
-  @param[in]     INT4      icell_start
-  @param[in]     INT4      icell_end
+  @param[in]     INT8      icell_start
+  @param[in]     INT8      icell_end
   @param[in]     REAL8     sig_thr
   @param[in]     REAL8     ncand_thr
 */
@@ -1255,7 +1257,8 @@ void print_info_of_the_cell( LALStatus *lalStatus,
 	 cd[icell].significance > sig_thr && 
 	 cd[icell].nCand > ncand_thr ) 
     {
-      fprintf(fp,"%.6f\t%.6f\t%.6f\t%g\t\t%ld\t%.6f\n", cd[icell].Freq, cd[icell].Delta, cd[icell].Alpha, cd[icell].F1dot, cd[icell].nCand, cd[icell].significance);
+      fprintf(fp,"%.6f\t%.6f\t%.6f\t%g\t\t%d\t%.6f\n", 
+	      cd[icell].Freq, cd[icell].Delta, cd[icell].Alpha, cd[icell].F1dot, cd[icell].nCand, cd[icell].significance);
       icell++;
     }
 
@@ -1276,13 +1279,13 @@ void print_info_of_the_cell( LALStatus *lalStatus,
   @param[in]     CLA       PolkaConfigVars* configuration variables structure
   @param[in]     cell      CellData*        CellData structure
   @param[in]     CList     CandidateList*   CandidateList structure
-  @param[in]     CLength   UINT4            Number of the cells
+  @param[in]     CLength   INT8            Number of the cells
 */
 void FreeMemory( LALStatus *lalStatus, 
 	    PolkaConfigVars *CLA, 
 	    CellData *cell, 
 	    CandidateList *CList, 
-	    const UINT4 datalen)
+	    const INT8 datalen)
 {
   INITSTATUS( lalStatus, "FreeMemory", rcsid );
   ATTATCHSTATUSPTR (lalStatus);
@@ -1315,14 +1318,14 @@ void FreeMemory( LALStatus *lalStatus,
   @param[in]     CLA       PolkaConfigVars* configuration variables structure
   @param[in]     cell      CellData*        CellData structure
   @param[in]     CList     CandidateList*   CandidateList structure
-  @param[in]     CLength   UINT4            Number of the cells
+  @param[in]     CLength   INT8            Number of the cells
 */
 void FreeMemoryCellsOnly( LALStatus *lalStatus, 
 			  PolkaConfigVars *CLA, 
 			  CellData *cell, 
-			  const UINT4 datalen)
+			  const INT8 datalen)
 {
-  UINT4 icell;
+  INT8 icell;
 
   INITSTATUS( lalStatus, "FreeMemoryCellsOnly", rcsid );
   ATTATCHSTATUSPTR (lalStatus);
@@ -1577,8 +1580,8 @@ void print_cand_of_most_coin_cell( LALStatus *lalStatus, CellData *cd, const Can
   @param[in]     fp          FILE*
   @param[in]     cd          CellData*
   @param[in]     CList       CandidateList*  
-  @param[in]     icell_start INT4  Starting index of a cell
-  @param[in]     icell_end   INT4  Ending index of a cell
+  @param[in]     icell_start INT8  Starting index of a cell
+  @param[in]     icell_end   INT8  Ending index of a cell
   @param[in]     sig_thr     REAL8 Threshold on significance of the candidate events 
   above which results will be printed out.
   @param[in]     ncand_thr   REAL8 Threshold on number of the candidate events 
@@ -1612,7 +1615,7 @@ void print_Fstat_of_the_cell( LALStatus *lalStatus,
       while( p !=NULL && ic <= LINKEDSTR_MAX_DEPTH ) { 
 	idx = p->data;
 
-	fprintf(fp,"%ld\t%d\t%.6f\t%.6f\t%.6f\t%g\t%.6f\n", 
+	fprintf(fp,"%" LAL_INT8_FORMAT "\t%d\t%.6f\t%.6f\t%.6f\t%g\t%.6f\n", 
 		icell, CList[idx].FileID, CList[idx].f, CList[idx].Alpha, CList[idx].Delta, CList[idx].F1dot, CList[idx].TwoF );
 
 	p = p->next;
@@ -1660,11 +1663,11 @@ int compareSignificances(const void *a, const void *b)
   /* I put F1 and F2 inversely, because I would like to get decreasingly-ordered set. */ 
   res = compareREAL8arrays( &F2,  &F1, 1);
   if( res == 0 ) {
-    INT4 n1, n2;
+    INT8 n1, n2;
     n1=ip->nCand;
     n2=jp->nCand;
     /* I put n1 and n2 inversely, because I would like to get decreasingly-ordered set. */ 
-    res = compareINT4arrays( &n2,  &n1, 1);
+    res = compareINT8arrays( &n2,  &n1, 1);
   } 
 
 
@@ -1707,22 +1710,50 @@ int compareREAL8arrays(const REAL8 *ap, const REAL8 *bp, size_t n)
 
 /*!
   Compare two INT4 arrays of the same size \b n.
+  First compare ap[0] and bp[0]. If ap[0] < bp[0], then
+  return -1. If ap[0] > bp[0], then return 1. If
+  ap[0] == bp[0], then compare ap[1] with bp[1]. Do the
+  same untill we reach the stage where we compare ap[n-1]
+  with bp[n-1]. If ap[n-1]==bp[n-1], then return 0.
+
+  @param[in] ap INT4 array to be compared
+  @param[in] bp INT4 array to be compared
+  @param[in] n  Size of the array
+  @return If ap<bp, return -1, if ap==bp return 0, otherwise return 1.
+*/
+int compareINT4arrays(const INT4 *ap, const INT4 *bp, size_t n)
+{
+  if( (*ap) == (*bp) ) {
+    if ( n > 1 ){
+      return compareINT4arrays( ap+1, bp+1, n-1 );
+    } else {
+      return 0;
+    }
+  }
+  if ( (*ap) < (*bp) )
+    return -1;
+  return 1;
+} /* int compareINT4arrays() */
+
+
+/*!
+  Compare two INT8 arrays of the same size \b n.
   First compare ap[0] and bp[0]. If ap[0] < bp[0], then 
   return -1. If ap[0] > bp[0], then return 1. If 
   ap[0] == bp[0], then compare ap[1] with bp[1]. Do the 
   same untill we reach the stage where we compare ap[n-1] 
   with bp[n-1]. If ap[n-1]==bp[n-1], then return 0.
 
-  @param[in] ap INT4 array to be compared
-  @param[in] bp INT4 array to be compared
+  @param[in] ap INT8 array to be compared
+  @param[in] bp INT8 array to be compared
   @param[in] n  Size of the array
   @return If ap<bp, return -1, if ap==bp return 0, otherwise return 1. 
 */
-int compareINT4arrays(const INT4 *ap, const INT4 *bp, size_t n) 
+int compareINT8arrays(const INT8 *ap, const INT8 *bp, size_t n) 
 {
   if( (*ap) == (*bp) ) { 
     if ( n > 1 ){  
-      return compareINT4arrays( ap+1, bp+1, n-1 );
+      return compareINT8arrays( ap+1, bp+1, n-1 );
     } else {
       return 0;
     }
@@ -1730,7 +1761,7 @@ int compareINT4arrays(const INT4 *ap, const INT4 *bp, size_t n)
   if ( (*ap) < (*bp) ) 
     return -1;    
   return 1;
-} /* int compareINT4arrays() */
+} /* int compareINT8arrays() */
 
 
 /* ########################################################################################## */
@@ -1747,7 +1778,7 @@ int compareINT4arrays(const INT4 *ap, const INT4 *bp, size_t n)
   @param[in,out] lalStatus LALStatus* 
   @param[out]    CList     CandidateList**  Candidate events struecture to be filled
   @param[in,out] CLA       PolkaConfigVars* Configuration variables structure
-  @param[out]    clen      UINT4*           The total number of the candidate events in the files.
+  @param[out]    clen      INT8*           The total number of the candidate events in the files.
 */
 void 
 ReadCandidateFiles(LALStatus *lalStatus, 
@@ -1755,7 +1786,7 @@ ReadCandidateFiles(LALStatus *lalStatus,
 		   PolkaConfigVars *CLA, 
 		   INT8 *clen)
 {
-  UINT8 kc;
+  UINT4 kc;
   /* UINT4 *CLenFthr;*/
   /* REAL8 percentage = 0; */
 
@@ -1948,7 +1979,7 @@ Check if *CList is either NULL or the memory of which is previously allocated by
   @param[in,out] lalStatus LALStatus* 
   @param[in,out] CList     CandidateList**  CandidateList str to be appended
   @param[in]     fname     CHAR* the name of the file to be read
-  @param[in,out] candlen   UINT4* total number of the candidate events so far. 
+  @param[in,out] candlen   INT8* total number of the candidate events so far. 
   This will be updated after reading the file \b fname. 
   @param[in]     FileID    INT4* The \b FileID of the file to be read. Assign a \b FildID 
   to each event and record which file a certain event comes from.
@@ -1957,20 +1988,20 @@ void
 ReadCandidateListFromZipFile( LALStatus *lalStatus, 
 			      CandidateList **CList, 
 			      CHAR *fname, 
-			      INT4 *candlen, 
+			      INT8 *candlen, 
 			      const INT4 *FileID )
 {
   FILE *fp;
-  const UINT4 max_num_candidates = 8000000; /* maximum tractable number of candidate events. */
-  UINT4 numlines;
-  INT4 nread;
+  const INT8 max_num_candidates = 8000000; /* maximum tractable number of candidate events. */
+  INT8 numlines;
+  INT8 nread;
   REAL8 epsilon=1e-5;
-  UINT4 ic;
-  INT4 length; /* length of file */
+  INT8 ic;
+  INT8 length; /* length of file */
   CHAR *line, *endp; /* pointers to start and end of line */
   INT4 section = 0;    /* 0: non-POLKA, 1,2: IFO sections,
 			 3: coincidence, 4: end-of-file */
-  UINT4 nlines[2] = {0,0}; /* number of events for each IFO */
+  INT8 nlines[2] = {0,0}; /* number of events for each IFO */
   const INT4 MAX_SECS = 4;
 
   UzpBuffer uzpbuff;
@@ -2258,7 +2289,7 @@ ReadCandidateListFromZipFile( LALStatus *lalStatus,
   @param[in,out] lalStatus LALStatus* 
   @param[out]    CList     CandidateList** CandidateList str to be filled in this code 
   @param[in]     fname     CHAR* the name of the file to be read
-  @param[in,out]    candlen   UINT4* total number of the candidate events
+  @param[in,out]    candlen   INT8* total number of the candidate events
 */
 void  
 ReadOneCandidateFileV2( LALStatus *lalStatus, 
@@ -2266,14 +2297,14 @@ ReadOneCandidateFileV2( LALStatus *lalStatus,
 		      const CHAR *fname, 
 		      INT8 *candlen )
 {
-  UINT8 i;
-  UINT8 numlines;
+  INT8 i;
+  INT8 numlines;
   REAL8 epsilon=1e-5;
   CHAR line1[256];
   FILE *fp;
   INT8 nread;
-  UINT4 checksum=0;
-  UINT4 bytecount=0;
+  INT8 checksum=0;
+  INT8 bytecount=0;
 
 
   INITSTATUS( lalStatus, "ReadOneCandidateFileV2", rcsid );
@@ -2290,7 +2321,7 @@ ReadOneCandidateFileV2( LALStatus *lalStatus,
       ABORT (lalStatus, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
      }
   while(fgets(line1,sizeof(line1),fp)) {
-    UINT4 k;
+    UINT8 k;
     size_t len=strlen(line1);
 
     /* check that each line ends with a newline char (no overflow of
@@ -2309,7 +2340,7 @@ ReadOneCandidateFileV2( LALStatus *lalStatus,
     /* maintain a running checksum and byte count */
     bytecount+=len;
     for (k=0; k<len; k++)
-      checksum+=(INT4)line1[k];
+      checksum+=(INT8)line1[k];
   }
   numlines=i;
   /* -- close candidate file -- */
@@ -2322,7 +2353,7 @@ ReadOneCandidateFileV2( LALStatus *lalStatus,
     }
 
   /* output a record of the running checksun and byte count */
-  fprintf(stdout, "%% %s: bytecount %" LAL_UINT4_FORMAT " checksum %" LAL_UINT4_FORMAT "\n", fname, bytecount, checksum);
+  fprintf(stdout, "%% %s: bytecount %" LAL_INT8_FORMAT " checksum %" LAL_INT8_FORMAT "\n", fname, bytecount, checksum);
 
   /* check validity of this Fstats-file */
   if ( strcmp(line1, DONE_MARKER ) ) 
@@ -2343,7 +2374,7 @@ ReadOneCandidateFileV2( LALStatus *lalStatus,
     RETURN (lalStatus);
   } 
 
-#if 0 /* Do we need to check this for UINT4? */
+#if 0 /* Do we need to check this for INT8? */
   if ( numlines < 0  )
     {
       LALPrintError("candidate length overflow (or indeed negative) = %ud!\n",numlines);
@@ -2530,7 +2561,7 @@ ReadOneCandidateFileV2( LALStatus *lalStatus,
   @param[in,out] lalStatus LALStatus* 
   @param[out]    CList     CandidateList** CandidateList str to be filled in this code 
   @param[in]     fname     CHAR* the name of the file to be read
-  @param[out]    candlen   UINT4* total number of the candidate events
+  @param[out]    candlen   INT8* total number of the candidate events
 */
 void  
 ReadOneCandidateFile( LALStatus *lalStatus, 
@@ -2540,15 +2571,15 @@ ReadOneCandidateFile( LALStatus *lalStatus,
 		      INT8 *candlen, 
 		      const REAL8 myFthr )
 {
-  UINT8 i;
-  UINT8 numlines;
+  INT8 i;
+  INT8 numlines;
   REAL8 epsilon=1e-5;
   CHAR line1[256];
   FILE *fp;
   INT8 nread;
-  UINT4 checksum=0;
-  UINT4 bytecount=0;
-  UINT4 numlinesFthr=0;
+  INT8 checksum=0;
+  INT8 bytecount=0;
+  INT8 numlinesFthr=0;
 
 
   INITSTATUS( lalStatus, "ReadOneCandidateFile", rcsid );
@@ -2564,8 +2595,12 @@ ReadOneCandidateFile( LALStatus *lalStatus,
       LALPrintError("File %s doesn't exist!\n",fname);
       ABORT (lalStatus, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
      }
-  while(fgets(line1,sizeof(line1),fp)) {
-    UINT4 k;
+
+  /* mytest */
+  printf("Opened file to count lines.\n");
+
+  while(fgets(line1,sizeof(line1),fp) != NULL) {
+    UINT8 k;
     size_t len=strlen(line1);
 
     /* check that each line ends with a newline char (no overflow of
@@ -2578,13 +2613,17 @@ ReadOneCandidateFile( LALStatus *lalStatus,
       ABORT (lalStatus, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
      }
 
+    /* mytest */
+    if(i%1000000==0)
+      printf("lines read: %ld\n",i);
+
     /* increment line counter */
     i++;
     
     /* maintain a running checksum and byte count */
     bytecount+=len;
     for (k=0; k<len; k++)
-      checksum+=(INT4)line1[k];
+      checksum+=(INT8)line1[k];
   }
   numlines=i;
   /* -- close candidate file -- */
@@ -2597,7 +2636,7 @@ ReadOneCandidateFile( LALStatus *lalStatus,
     }
 
   /* output a record of the running checksun and byte count */
-  fprintf(stdout, "%% %s: bytecount %" LAL_UINT4_FORMAT " checksum %" LAL_UINT4_FORMAT "\n", fname, bytecount, checksum);
+  fprintf(stdout, "%% %s: bytecount %" LAL_INT8_FORMAT " checksum %" LAL_INT8_FORMAT "\n", fname, bytecount, checksum);
 
   /* check validity of this Fstats-file */
   if ( strcmp(line1, DONE_MARKER ) ) 
@@ -3294,7 +3333,7 @@ void print_info_of_cell_and_ifo_S4R2a( LALStatus *lalStatus,
       }
 
 
-      fprintf(fp,"%.6f\t%.6f\t%.6f\t%g\t\t%ld\t%.6f\t%d\t%d\n",\
+      fprintf(fp,"%.6f\t%.6f\t%.6f\t%g\t\t%d\t%.6f\t%d\t%d\n",\
 	      cd[icell].Freq, cd[icell].Delta, cd[icell].Alpha, cd[icell].F1dot, cd[icell].nCand, cd[icell].significance,cH1,cL1);
       icell++;
 
@@ -3417,7 +3456,7 @@ void print_info_of_cell_and_ifo_S5R1a( LALStatus *lalStatus,
 	exit(POLKA_EXIT_ERR);
 	}
       
-      fprintf(fp,"%.6f\t%.6f\t%.6f\t%g\t\t%ld\t%.6f\t%d\t%d\n",\
+      fprintf(fp,"%.6f\t%.6f\t%.6f\t%g\t\t%d\t%.6f\t%d\t%d\n",\
 	      cd[icell].Freq, cd[icell].Delta, cd[icell].Alpha, cd[icell].F1dot, cd[icell].nCand, cd[icell].significance,cH1,cL1);
       icell++;
       
