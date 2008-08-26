@@ -89,21 +89,14 @@ const LALDetector *XLALInstrumentNameToLALDetector(
 )
 {
 	static const char func[] = "XLALInstrumentNameToLALDetector";
-	const LALDetector *detector;
 	int i;
 
-	for(i = 0; i < LAL_NUM_DETECTORS; i++) {
-		if(!strncmp(string, lalCachedDetectors[i].frDetector.prefix, 2)) {
-			detector = &lalCachedDetectors[i];
-			break;
-		}
-	}
-	if(i >= LAL_NUM_DETECTORS) {
-		XLALPrintError("%s(): error: can't identify instrument from string \"%s\"\n", func, string);
-		XLAL_ERROR(func, XLAL_EDATA);
-	}
+	for(i = 0; i < LAL_NUM_DETECTORS; i++)
+		if(!strncmp(string, lalCachedDetectors[i].frDetector.prefix, 2))
+			return &lalCachedDetectors[i];
 
-	return detector;
+	XLALPrintError("%s(): error: can't identify instrument from string \"%s\"\n", func, string);
+	XLAL_ERROR_NULL(func, XLAL_EDATA);
 }
 
 
