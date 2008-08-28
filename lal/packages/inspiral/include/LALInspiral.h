@@ -1607,6 +1607,14 @@ int XLALInspiralGetApproximantString( CHAR        *output,
                                       Order       order
                                     );
 
+int XLALBandPassInspiralTemplate(
+        REAL4Sequence  *sequence,
+        REAL4          fLow,
+        REAL4          fHigh,
+        REAL4          fSampling
+        );
+
+
 #ifdef  __cplusplus
 }
 #endif
