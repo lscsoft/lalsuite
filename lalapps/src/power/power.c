@@ -1062,7 +1062,7 @@ static int XLALEPConditionData(
 	static const char func[] = "XLALEPConditionData";
 	const REAL8 epsilon = 1.0e-3;
 
-	XLALPrintInfo("%s(): conditioning %u samples (%.9f s) at GPS time %d%.09u s ...\n", func, series->data->length, series->data->length * series->deltaT, series->epoch.gpsSeconds, series->epoch.gpsNanoSeconds);
+	XLALPrintInfo("%s(): conditioning %u samples (%.9f s) at GPS time %d.%09u s ...\n", func, series->data->length, series->data->length * series->deltaT, series->epoch.gpsSeconds, series->epoch.gpsNanoSeconds);
 
 	/*
 	 * High-pass filter the time series.
