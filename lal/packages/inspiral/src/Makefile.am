@@ -37,7 +37,8 @@ LALRungeKutta4.c\
 LALSTPNWaveform.c\
 LALInspiralAmplitudeCorrectedWave.c\
 LALInspiralWaveTaper.c \
-LALInspiralGetApproximantString.c
+LALInspiralGetApproximantString.c \
+BandPassInspiralTemplate.c
 
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 MOSTLYCLEANFILES = .dvi-dep
