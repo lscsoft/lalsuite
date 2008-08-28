@@ -150,7 +150,6 @@ LALCheckMemoryLeaks()
 ********************************************   </lalLaTeX> */
 
 #include <lal/LALStdlib.h>
-#include <getopt.h>
 
 NRCSID (MAKEFAKEDATAC, "$Id$");
 
@@ -175,8 +174,8 @@ NRCSID (MAKEFAKEDATAC, "$Id$");
 
 /***************************************************/
 
+#include "getopt.h"
 #include <time.h>
-#include <unistd.h>
 #include <sys/types.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -375,25 +374,23 @@ void usage(FILE *fp);
    program name*/
 void syserror(const CHAR *fmt, ...){
   char *thiserror=NULL;
-  pid_t pid=getpid();
   va_list ap;
   /* initialize variable argument list */
   va_start(ap,fmt);
   if (errno && (thiserror=strerror(errno)))
-    fprintf(stderr,"%s [PID=%d]: %s: ", programname, (int)pid, thiserror);
+    fprintf(stderr,"%s: %s: ", programname, thiserror);
   else
-    fprintf(stderr,"%s [PID=%d]: ", programname, (int)pid);
+    fprintf(stderr,"%s ", programname);
   vfprintf(stderr, fmt, ap);
   va_end(ap);
   return;
 }
 
 void error(const CHAR *fmt, ...){
-  pid_t pid=getpid();
   va_list ap;
   /* initialize variable argument list  */
   va_start(ap,fmt);
-  fprintf(stderr,"%s [PID=%d]: ", programname, pid);
+  fprintf(stderr,"%s  ", programname);
   vfprintf(stderr, fmt, ap);
   va_end(ap);
   return;
