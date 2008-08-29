@@ -180,7 +180,7 @@ int XLALFreqSeriesToTFPlane(
 		 * filter by taking their product in the frequency domain
 		 * and then inverse transforming to the time domain to
 		 * obtain an SNR time series.  Note that
-		 * XLALREAL4ReverseFFT() omits the factor of 1 / (N Delta
+		 * XLALREAL8ReverseFFT() omits the factor of 1 / (N Delta
 		 * t) in the inverse transform. */
 		apply_filter(fcorr, fseries, plane->filter[i]);
 		if(XLALREAL8ReverseFFT(plane->channel[i], fcorr, reverseplan)) {
@@ -463,7 +463,7 @@ SnglBurst *XLALExcessPowerProject(
 		 * filter by taking their product in the frequency domain
 		 * and then inverse transforming to the time domain to
 		 * obtain an SNR time series.  Note that
-		 * XLALREAL4ReverseFFT() omits the factor of 1 / (N Delta
+		 * XLALREAL8ReverseFFT() omits the factor of 1 / (N Delta
 		 * t) in the inverse transform. */
 		apply_filter(fcorr, fseries, bank->templates[template].filter);
 		heterodyne_channel(fcorr, bank->templates[template].filter->f0 / bank->templates[template].filter->deltaF, bank->templates[template].filter->data->length);
