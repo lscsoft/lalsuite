@@ -361,10 +361,10 @@ REAL8TimeFrequencyPlane *XLALCreateTFPlane(
 {
 	static const char func[] = "XLALCreateTFPlane";
 	REAL8TimeFrequencyPlane *plane;
-	REAL8Sequence **channel;
+	REAL8 *channel_data;
+	REAL8Sequence *channel_buffer;
 	REAL8Window *tukey;
 	REAL8Sequence *correlation;
-	int i;
 
 	/*
 	 * resolution of FT of input time series
@@ -461,27 +461,17 @@ REAL8TimeFrequencyPlane *XLALCreateTFPlane(
 	 */
 
 	plane = XLALMalloc(sizeof(*plane));
-	channel = XLALMalloc(channels * sizeof(*channel));
+	channel_data = XLALMalloc(channels * tseries_length * sizeof(*channel_data));
+	channel_buffer = XLALCreateREAL8Sequence(tseries_length);
 	tukey = XLALCreateTukeyREAL8Window(tseries_length, (tseries_length - tiling_length) / (double) tseries_length);
 	correlation = tukey ? compute_two_point_spectral_correlation(tukey) : NULL;
-	if(!plane || !channel || !tukey || !correlation) {
+	if(!plane || !channel_data || !channel_buffer || !tukey || !correlation) {
 		XLALFree(plane);
-		XLALFree(channel);
+		XLALFree(channel_data);
+		XLALDestroyREAL8Sequence(channel_buffer);
 		XLALDestroyREAL8Window(tukey);
 		XLALDestroyREAL8Sequence(correlation);
 		XLAL_ERROR_NULL(func, XLAL_EFUNC);
-	}
-	for(i = 0; i < channels; i++) {
-		channel[i] = XLALCreateREAL8Sequence(tseries_length);
-		if(!channel[i]) {
-			while(--i)
-				XLALDestroyREAL8Sequence(channel[i]);
-			XLALFree(plane);
-			XLALFree(channel);
-			XLALDestroyREAL8Window(tukey);
-			XLALDestroyREAL8Sequence(correlation);
-			XLAL_ERROR_NULL(func, XLAL_ENOMEM);
-		}
 	}
 
 	/* 
@@ -493,10 +483,11 @@ REAL8TimeFrequencyPlane *XLALCreateTFPlane(
 	plane->epoch.gpsNanoSeconds = 0;
 	plane->deltaT = tseries_deltaT;
 	plane->fseries_deltaF = fseries_deltaF;
-	plane->channels = channels;
 	plane->deltaF = deltaF;
 	plane->flow = flow;
-	plane->channel = channel;
+	plane->channels = channels;
+	plane->channel_data = channel_data;
+	plane->channel_buffer = channel_buffer;
 	plane->tiles.max_length = max_length;
 	plane->tiles.min_channels = min_channels;
 	plane->tiles.max_channels = max_channels;
@@ -526,11 +517,8 @@ void XLALDestroyTFPlane(
 )
 {
 	if(plane) {
-		unsigned i;
-		for(i = 0; i < plane->channels; i++) {
-			XLALDestroyREAL8Sequence(plane->channel[i]);
-		}
-		XLALFree(plane->channel);
+		XLALFree(plane->channel_data);
+		XLALDestroyREAL8Sequence(plane->channel_buffer);
 		XLALDestroyREAL8Window(plane->window);
 		XLALDestroyREAL8Sequence(plane->two_point_spectral_correlation);
 	}

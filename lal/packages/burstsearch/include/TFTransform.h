@@ -92,21 +92,26 @@ typedef struct tagREAL8TimeFrequencyPlane {
 	REAL8 deltaT;
 	/* input frequency series' resolution */
 	REAL8 fseries_deltaF;
-	/* Number of frequency channels in TF plane */
-	UINT4 channels;
 	/* TF plane's frequency resolution (channel spacing) */
 	REAL8 deltaF;
 	/* low frequency boundary of TF plane */
 	REAL8 flow;
-	/* channel data.  channel[j]->data[i] corresponds to time
+	/* Number of frequency channels in TF plane */
+	UINT4 channels;
+	/* channel data.  channel_data[i * channels + j] corresponds to
+	 * time
 	 *
 	 * epoch + i * deltaT
 	 *
 	 * and the frequency band
 	 *
 	 * [flow + j * deltaF, flow + (j + 1) * deltaF)
+	 *
+	 * channel_buffer->length is the number of samples in each channel.
 	 */
-	REAL8Sequence **channel;
+	REAL8 *channel_data;
+	/* re-usable holding area for the data for a single channel */
+	REAL8Sequence *channel_buffer;
 	/* time-frequency plane's tiling information */
 	struct TFTiling {
 		unsigned max_length;

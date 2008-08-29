@@ -177,6 +177,7 @@ int XLALFreqSeriesToTFPlane(
 
 	/* loop over the time-frequency plane's channels */
 	for(i = 0; i < plane->channels; i++) {
+		unsigned j;
 		/* cross correlate the input data against the channel
 		 * filter by taking their product in the frequency domain
 		 * and then inverse transforming to the time domain to
@@ -184,10 +185,13 @@ int XLALFreqSeriesToTFPlane(
 		 * XLALREAL8ReverseFFT() omits the factor of 1 / (N Delta
 		 * t) in the inverse transform. */
 		apply_filter(fcorr, fseries, filter_bank->filters[i].fseries);
-		if(XLALREAL8ReverseFFT(plane->channel[i], fcorr, reverseplan)) {
+		if(XLALREAL8ReverseFFT(plane->channel_buffer, fcorr, reverseplan)) {
 			XLALDestroyCOMPLEX16Sequence(fcorr);
 			XLAL_ERROR(func, XLAL_EFUNC);
 		}
+		/* interleave the result into the channel_data array */
+		for(j = 0; j < plane->channel_buffer->length; j++)
+			plane->channel_data[j * plane->channels + i] = plane->channel_buffer->data[j];
 	}
 
 	/* clean up */
@@ -342,8 +346,8 @@ SnglBurst *XLALComputeExcessPower(
 			/* compute the whitened and (approximate)
 			 * unwhitened time series samples for this t */
 			for(c = channel; c < channel_end; c++) {
-				sample += plane->channel[c]->data[t];
-				uwsample += plane->channel[c]->data[t] * filter_bank->filters[c].unwhitened_rms * sqrt(plane->fseries_deltaF / plane->deltaF);
+				sample += plane->channel_data[t * plane->channels + c];
+				uwsample += plane->channel_data[t * plane->channels + c] * filter_bank->filters[c].unwhitened_rms * sqrt(plane->fseries_deltaF / plane->deltaF);
 			}
 
 #if 0
