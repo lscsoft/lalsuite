@@ -115,8 +115,8 @@ parser.add_option("-B", "--skip-datafind",action="store_false",\
 parser.add_option("-F", "--skip-full-data",action="store_false",\
     default=True, dest="run_full_data", help="skip the full data + slides")
 
-parser.add_option("-P", "--skip-play-analysis",action="store_false",\
-    default=True, dest="run_play_analysis", help="skip the playground analysis")
+parser.add_option("-P", "--skip-playground",action="store_false",\
+    default=True, dest="run_playground", help="skip the playground analysis")
 
 parser.add_option("-I", "--skip-injections",action="store_false",\
     default=True, dest="run_injections", \
@@ -304,7 +304,7 @@ cachefilename = basename + '.cache'
 
 if opts.run_search:
 
-  if opts.run_play_analysis:
+  if opts.run_playground:
     print "Running inspiral hipe for playground run"
     hipePlayNode = inspiralutils.hipe_setup("playground", cp, ifos, \
          opts.log_path, playOnly = True, dax=opts.dax, \
@@ -391,7 +391,7 @@ if opts.run_data_quality:
     hipeInjVetoNode[category] = {}
     print "Setting up the category " + str(category) + " veto dags"
 
-    if opts.run_play_analysis:
+    if opts.run_playground:
       print "Running inspiral hipe for play with vetoes"
       hipePlayVetoNode[category] = inspiralutils.hipe_setup("playground", cp, \
           ifos, opts.log_path, playOnly = True, vetoCat = category, \
@@ -494,7 +494,7 @@ if opts.reverse_analysis:
 ##############################################################################
 # Set up the directories for plotting and run lalapps_plot
 if opts.run_plots:
-  if opts.run_play_analysis:
+  if opts.run_playground:
 
     # set up parents correctly
     if opts.run_search: 
@@ -511,14 +511,14 @@ if opts.run_plots:
         opts.log_path, "PLAYGROUND", "PLAYGROUND", "../" + cachefilename, \
         opts.do_dag_categories, parentNodes, parentVetoNodes, 2)
 
-  if opts.run_play_analysis and opts.run_full_data:
+  if opts.run_playground and opts.run_full_data:
 
     # set up parents correctly
     if opts.run_search: 
       parentNodes = [hipePlayNode, hipeAnalysisNode]
     else: parentNodes = None
 
-    if opts.run_data_quality and opts.run_play_analysis:
+    if opts.run_data_quality and opts.run_playground:
       parentVetoNodes = [hipePlayVetoNode[2], hipeAnalysisVetoNode[2]]
     else: parentVetoNodes = None
 
@@ -529,7 +529,7 @@ if opts.run_plots:
         opts.do_dag_categories, parentNodes, parentVetoNodes, 2)
 
   # Setting up plots for injection run.
-  if opts.run_injections and opts.run_play_analysis:
+  if opts.run_injections and opts.run_playground:
     print "Making plots depending on the injection runs"
     for (injDir, injSeed) in cp.items("injections"):
   

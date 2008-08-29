@@ -1620,13 +1620,13 @@ def copy_plotinspmissed(dir):
   # save the followup png files within the cachefile. So, we have 
   # to get all the plotinspmissed png files related to the 
   # followup, which can be found in the ./Images directory, and copy them.
-  command = 'find ./' + opts.gpsdir +'/'+ dir + '/Images'  \
+  command = 'find ' + opts.datadir + '/' + dir + '/Images'  \
       + ' -name \"*plotinspmissed*\" -exec cp \"{}\" '\
-      + opts.physdir + '/Images/'+' \;'     
+      + opts.physdir + '/Images/' + ' \;'     
   print >> sys.stdout, ' .../ copying all plotinspmissed files from ' +dir
   make_external_call(command, opts.debug, opts.debug, True)
 
-  command = 'find ./' + opts.gpsdir + '/'+dir   \
+  command = 'find ' + opts.datadir + '/' + dir   \
       + ' -name \"*plotinspmissed*html\" -exec cp \"{}\" '\
       + opts.physdir + ' \;'     
   make_external_call(command, opts.debug, opts.debug, True)

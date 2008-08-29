@@ -899,6 +899,17 @@ int main( int argc, char *argv[] )
           numFileTriggers, ifo );
     }
 
+    
+    /* reconstruct the coincs */
+    numFileCoincs = XLALRecreateCoincFromSngls( &coincFileHead, 
+        &inspiralFileList );
+    if( numFileCoincs < 0 )
+    {
+      fprintf(stderr, 
+          "Unable to reconstruct coincs from single ifo triggers");
+      exit( 1 );
+    }
+   
     /* If there are any remaining triggers ... */
     if ( inspiralFileList )
     {
@@ -915,17 +926,7 @@ int main( int argc, char *argv[] )
           thisInspiralTrigger = thisInspiralTrigger->next);
       numTriggers += numFileTriggers;
     }
-    
-    /* reconstruct the coincs */
-    numFileCoincs = XLALRecreateCoincFromSngls( &coincFileHead, 
-        inspiralFileList );
-    if( numFileCoincs < 0 )
-    {
-      fprintf(stderr, 
-          "Unable to reconstruct coincs from single ifo triggers");
-      exit( 1 );
-    }
-    
+ 
     if ( vrbflg )
     {
       fprintf( stdout,

@@ -353,7 +353,7 @@ int main( int argc, char *argv[] )
       }
     
     /* reconstruct the coincs */
-    numCoincs = XLALRecreateCoincFromSngls( &coincHead, cohbankEventList );
+    numCoincs = XLALRecreateCoincFromSngls( &coincHead, &cohbankEventList );
 
     /* save the number of coincidences in the search summary table */
     searchsumm.searchSummaryTable->nevents = numCoincs;
