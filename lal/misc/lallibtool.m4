@@ -7,9 +7,6 @@
 ## unlimited permission to copy and/or distribute it, with or without
 ## modifications, as long as this notice is preserved.
 
-# serial 48 AC_PROG_LIBTOOL
-
-
 # AC_PROVIDE_IFELSE(MACRO-NAME, IF-PROVIDED, IF-NOT-PROVIDED)
 # -----------------------------------------------------------
 # If this macro is not defined by Autoconf, define it here.
