@@ -914,7 +914,7 @@ XLALSetupCoincSlideTable(
 int
 XLALRecreateCoincFromSngls(
     CoincInspiralTable        **coincPtr,
-    SnglInspiralTable          *snglInspiral
+    SnglInspiralTable         **snglInspiral
     );
 
 void

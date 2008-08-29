@@ -1137,7 +1137,7 @@ XLALSetupCoincSlideTable(
 int 
 XLALRecreateCoincFromSngls(
     CoincInspiralTable        **coincPtr,
-    SnglInspiralTable          *snglInspiral
+    SnglInspiralTable         **snglInspiral
     )
 /* </lalVerbatim> */
 {
@@ -1160,10 +1160,11 @@ XLALRecreateCoincFromSngls(
   }
 
   /* sort single inspiral trigger list according to event_id */
-  snglInspiral=XLALSortSnglInspiral( snglInspiral, LALCompareSnglInspiralByID);
+  *snglInspiral = XLALSortSnglInspiral( *snglInspiral, 
+      LALCompareSnglInspiralByID);
 
   /* loop over the linked list of sngl inspirals */
-  for( thisSngl = snglInspiral; thisSngl; thisSngl = thisSngl->next )
+  for( thisSngl = *snglInspiral; thisSngl; thisSngl = thisSngl->next )
   {
     ifoNumber = XLALIFONumber( thisSngl->ifo );
     if ( thisSngl->event_id->id == eventId )
