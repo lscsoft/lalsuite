@@ -237,9 +237,9 @@ static SnglBurst *XLALTFTileToBurstEvent(
 	strncpy(event->ifo, plane->name, 2);
 	event->ifo[2] = '\0';
 	strncpy(event->search, "excesspower", LIGOMETA_SEARCH_MAX);
-	event->search[LIGOMETA_SEARCH_MAX] = '\0';
+	event->search[LIGOMETA_SEARCH_MAX - 1] = '\0';
 	strncpy(event->channel, plane->name, LIGOMETA_CHANNEL_MAX);
-	event->channel[LIGOMETA_CHANNEL_MAX] = '\0';
+	event->channel[LIGOMETA_CHANNEL_MAX - 1] = '\0';
 	event->start_time = plane->epoch; 
 	XLALGPSAdd(&event->start_time, tile_start * plane->deltaT);
 	event->duration = tile_length * plane->deltaT;
@@ -253,7 +253,7 @@ static SnglBurst *XLALTFTileToBurstEvent(
 	/* -ln P(event | stationary Gaussian white noise) */
 	event->confidence = confidence;
 
-	return(event);
+	return event;
 }
 
 
@@ -416,7 +416,7 @@ static void heterodyne_channel(
 SnglBurst *XLALExcessPowerProject(
 	const COMPLEX16FrequencySeries *fseries,
 	REAL8TimeFrequencyPlane *plane,
-	const struct ExcessPowerTemplateBank *bank,
+	const LALExcessPowerTemplateBank *bank,
 	SnglBurst *head,
 	double confidence_threshold,
 	const REAL8FFTPlan *reverseplan

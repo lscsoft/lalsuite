@@ -793,14 +793,14 @@ INT4 XLALTFPlaneMakeChannelFilters(
  */
 
 
-struct ExcessPowerTemplateBank *XLALCreateExcessPowerTemplateBank(
+LALExcessPowerTemplateBank *XLALCreateExcessPowerTemplateBank(
 	const COMPLEX16FrequencySeries *template,
 	const REAL8TimeFrequencyPlane *plane,
 	const REAL8FrequencySeries *psd
 )
 {
 	static const char func[] = "XLALCreateExcessPowerTemplateBank";
-	struct ExcessPowerTemplateBank *new;
+	LALExcessPowerTemplateBank *new;
 	struct ExcessPowerTemplate *templates;
 	unsigned channels, channel, channel_end;
 	int i;
@@ -843,7 +843,7 @@ struct ExcessPowerTemplateBank *XLALCreateExcessPowerTemplateBank(
 
 
 void XLALDestroyExcessPowerTemplateBank(
-	struct ExcessPowerTemplateBank *bank
+	LALExcessPowerTemplateBank *bank
 )
 {
 	if(bank) {

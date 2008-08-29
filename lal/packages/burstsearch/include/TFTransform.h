@@ -161,7 +161,7 @@ INT4 XLALEPGetTimingParameters(
  */
 
 
-struct ExcessPowerTemplateBank {
+typedef struct tagLALExcessPowerTemplateBank {
 	struct ExcessPowerTemplate {
 		COMPLEX16FrequencySeries *filter;
 		REAL8 f_centre;
@@ -169,10 +169,10 @@ struct ExcessPowerTemplateBank {
 		REAL8 unwhitened_mean_square;
 	} *templates;
 	int n_templates;
-};
+} LALExcessPowerTemplateBank;
 
 
-struct ExcessPowerTemplateBank *XLALCreateExcessPowerTemplateBank(
+LALExcessPowerTemplateBank *XLALCreateExcessPowerTemplateBank(
 	const COMPLEX16FrequencySeries *template,
 	const REAL8TimeFrequencyPlane *plane,
 	const REAL8FrequencySeries *psd
@@ -180,14 +180,14 @@ struct ExcessPowerTemplateBank *XLALCreateExcessPowerTemplateBank(
 
 
 void XLALDestroyExcessPowerTemplateBank(
-	struct ExcessPowerTemplateBank *bank
+	LALExcessPowerTemplateBank *bank
 );
 
 
 SnglBurst *XLALExcessPowerProject(
 	const COMPLEX16FrequencySeries *fseries,
 	REAL8TimeFrequencyPlane *plane,
-	const struct ExcessPowerTemplateBank *bank,
+	const LALExcessPowerTemplateBank *bank,
 	SnglBurst *head,
 	double confidence_threshold,
 	const REAL8FFTPlan *reverseplan

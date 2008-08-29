@@ -68,7 +68,7 @@ SnglBurst *XLALEPSearch(
 	REAL8FrequencySeries *psd;
 	REAL8TimeSeries *cuttseries;
 	REAL8TimeFrequencyPlane *plane;
-	struct ExcessPowerTemplateBank *template_bank = NULL;
+	LALExcessPowerTemplateBank *template_bank = NULL;
 
 	/*
 	 * Construct forward and reverse FFT plans, storage for the PSD,
