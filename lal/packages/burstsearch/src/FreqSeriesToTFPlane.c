@@ -116,6 +116,7 @@ static COMPLEX16Sequence *apply_filter(
 
 int XLALFreqSeriesToTFPlane(
 	REAL8TimeFrequencyPlane *plane,
+	const LALExcessPowerFilterBank *filter_bank,
 	const COMPLEX16FrequencySeries *fseries,
 	const REAL8FFTPlan *reverseplan
 )
@@ -182,7 +183,7 @@ int XLALFreqSeriesToTFPlane(
 		 * obtain an SNR time series.  Note that
 		 * XLALREAL8ReverseFFT() omits the factor of 1 / (N Delta
 		 * t) in the inverse transform. */
-		apply_filter(fcorr, fseries, plane->filter[i]);
+		apply_filter(fcorr, fseries, filter_bank->filters[i].fseries);
 		if(XLALREAL8ReverseFFT(plane->channel[i], fcorr, reverseplan)) {
 			XLALDestroyCOMPLEX16Sequence(fcorr);
 			XLAL_ERROR(func, XLAL_EFUNC);
@@ -266,8 +267,25 @@ static SnglBurst *XLALTFTileToBurstEvent(
  */
 
 
+static double compute_unwhitened_mean_square(
+	const LALExcessPowerFilterBank *filter_bank,
+	unsigned channel,
+	unsigned channels
+)
+{
+	unsigned i;
+	double mean_square = 0;
+
+	for(i = channel; i < channel + channels; i++)
+		mean_square += pow(filter_bank->filters[i].unwhitened_rms, 2);
+
+	return mean_square;
+}
+
+
 SnglBurst *XLALComputeExcessPower(
 	const REAL8TimeFrequencyPlane *plane,
+	const LALExcessPowerFilterBank *filter_bank,
 	SnglBurst *head,
 	double confidence_threshold
 )
@@ -286,7 +304,7 @@ SnglBurst *XLALComputeExcessPower(
 	for(channel_end = (channel = 0) + channels; channel_end <= plane->channels; channel_end = (channel += channels / plane->tiles.inv_fractional_stride) + channels) {
 		/* the mean square of the "virtual channel", \mu^{2} in the
 		 * algorithm description */
-		const double sample_mean_square = channels * plane->deltaF / plane->fseries_deltaF + XLALREAL8SequenceSum(plane->twice_channel_overlap, channel, channels - 1);
+		const double sample_mean_square = channels * plane->deltaF / plane->fseries_deltaF + XLALREAL8SequenceSum(filter_bank->twice_channel_overlap, channel, channels - 1);
 		/* the mean square of the "uwapprox" quantity computed
 		 * below, which is proportional to an approximation of the
 		 * unwhitened time series. */
@@ -295,13 +313,13 @@ SnglBurst *XLALComputeExcessPower(
 		 * of this to uwsample_mean_square is the correction factor to
 		 * be applied to uwapprox^{2} to convert it to an
 		 * approximation of the square of the unwhitened channel */
-		const double strain_mean_square = XLALREAL8SequenceSumSquares(plane->unwhitened_rms, channel, channels) + XLALREAL8SequenceSum(plane->unwhitened_cross, channel, channels - 1);
+		const double strain_mean_square = compute_unwhitened_mean_square(filter_bank, channel, channels) + XLALREAL8SequenceSum(filter_bank->unwhitened_cross, channel, channels - 1);
 		unsigned c;
 
 		/* compute uwsample_mean_square */
-		uwsample_mean_square = XLALREAL8SequenceSumSquares(plane->unwhitened_rms, channel, channels);
+		uwsample_mean_square = compute_unwhitened_mean_square(filter_bank, channel, channels);
 		for(c = channel; c < channel_end - 1; c++)
-			uwsample_mean_square += plane->twice_channel_overlap->data[c] * plane->unwhitened_rms->data[c] * plane->unwhitened_rms->data[c + 1] * plane->fseries_deltaF / plane->deltaF;
+			uwsample_mean_square += filter_bank->twice_channel_overlap->data[c] * filter_bank->filters[c].unwhitened_rms * filter_bank->filters[c + 1].unwhitened_rms * plane->fseries_deltaF / plane->deltaF;
 
 	/* start with at least 2 degrees of freedom */
 	for(length = 2 / (channels * plane->tiles.dof_per_pixel); length <= plane->tiles.max_length; length *= 2) {
@@ -325,7 +343,7 @@ SnglBurst *XLALComputeExcessPower(
 			 * unwhitened time series samples for this t */
 			for(c = channel; c < channel_end; c++) {
 				sample += plane->channel[c]->data[t];
-				uwsample += plane->channel[c]->data[t] * plane->unwhitened_rms->data[c] * sqrt(plane->fseries_deltaF / plane->deltaF);
+				uwsample += plane->channel[c]->data[t] * filter_bank->filters[c].unwhitened_rms * sqrt(plane->fseries_deltaF / plane->deltaF);
 			}
 
 #if 0
@@ -374,162 +392,6 @@ SnglBurst *XLALComputeExcessPower(
 	}
 	}
 	}
-
-	/* success */
-	return(head);
-}
-
-
-/*
- * ============================================================================
- *
- *                              Experimentation
- *
- * ============================================================================
- */
-
-
-static void heterodyne_channel(
-	COMPLEX16Sequence *fdata,
-	unsigned k0,
-	unsigned bandwidth
-)
-{
-	unsigned half_width = (bandwidth + 1) / 2;
-	unsigned k_centre = k0 + half_width - 1;
-	unsigned k;
-
-	for(k = 0; k < half_width; k++) {
-		fdata->data[k_centre + k].re += fdata->data[k_centre - k].re;
-		fdata->data[k_centre + k].im -= fdata->data[k_centre - k].im;
-	}
-
-	memmove(fdata->data, &fdata->data[k_centre], half_width * sizeof(*fdata->data));
-	memset(&fdata->data[half_width], 0, (fdata->length - half_width) * sizeof(*fdata->data));
-	/* floating point rules allow (x-x) to equal -0.0 rather than +0.0,
-	 * but some tests check that the DC component's imaginary part is
-	 * +0.0, and will fail if it is -0.0 */
-	fdata->data[0].im = 0;
-}
-
-
-SnglBurst *XLALExcessPowerProject(
-	const COMPLEX16FrequencySeries *fseries,
-	REAL8TimeFrequencyPlane *plane,
-	const LALExcessPowerTemplateBank *bank,
-	SnglBurst *head,
-	double confidence_threshold,
-	const REAL8FFTPlan *reverseplan
-)
-{
-	static const char func[] = "XLALExcessPowerProject";
-	COMPLEX16Sequence *fcorr;
-	REAL8Sequence *channel;
-	unsigned start;
-	unsigned length;
-	unsigned end;
-	int template;
-	double h_rss;
-	double confidence;
-
-	/* check input parameters */
-	if((fmod(plane->deltaF, fseries->deltaF) != 0.0) ||
-	   (fmod(plane->flow - fseries->f0, fseries->deltaF) != 0.0))
-		XLAL_ERROR_NULL(func, XLAL_EINVAL);
-
-	/* make sure the frequency series spans an appropriate band */
-	if((plane->flow < fseries->f0) ||
-	   (plane->flow + plane->channels * plane->deltaF > fseries->f0 + fseries->data->length * fseries->deltaF))
-		XLAL_ERROR_NULL(func, XLAL_EDATA);
-
-	/* create temporary vectors */
-	fcorr = XLALCreateCOMPLEX16Sequence(fseries->data->length);
-	channel = XLALCreateREAL8Sequence(plane->window->data->length);
-	if(!fcorr || !channel) {
-		XLALDestroyCOMPLEX16Sequence(fcorr);
-		XLALDestroyREAL8Sequence(channel);
-		XLAL_ERROR_NULL(func, XLAL_EFUNC);
-	}
-
-	/* set the name and epoch of the TF plane for tile construction */
-	strncpy(plane->name, fseries->name, LALNameLength);
-	plane->epoch = fseries->epoch;
-
-	/* loop over time-frequency tiles */
-	for(template = 0; template < bank->n_templates; template++) {
-		const double sum_mean_square = bank->templates[template].bandwidth / plane->fseries_deltaF;
-
-		/* cross correlate the input data against the channel
-		 * filter by taking their product in the frequency domain
-		 * and then inverse transforming to the time domain to
-		 * obtain an SNR time series.  Note that
-		 * XLALREAL8ReverseFFT() omits the factor of 1 / (N Delta
-		 * t) in the inverse transform. */
-		apply_filter(fcorr, fseries, bank->templates[template].filter);
-		heterodyne_channel(fcorr, bank->templates[template].filter->f0 / bank->templates[template].filter->deltaF, bank->templates[template].filter->data->length);
-		if(XLALREAL8ReverseFFT(channel, fcorr, reverseplan)) {
-			XLALDestroyCOMPLEX16Sequence(fcorr);
-			XLALDestroyREAL8Sequence(channel);
-			XLAL_ERROR_NULL(func, XLAL_EFUNC);
-		}
-
-	/* 2 * template bandwidth == channel samples (degrees of freedom)
-	 * per second
-	 *
-	 * channel samples per second * (seconds per tseries sample) ==
-	 * degrees of freedom per tseries sample
-	 *
-	 * 2 degrees of freedom / (degrees of freedom per tseries sample)
-	 * == tseries samples for a 2 d-o-f tile
-	 */
-	for(length =  2 / (2 * bank->templates[template].bandwidth * plane->deltaT); length <= plane->tiles.max_length; length *= 2) {
-		const double tile_dof = length * (2 * bank->templates[template].bandwidth * plane->deltaT);
-		/* number of degrees of freedom in tile = number of
-		 * "virtual pixels" in tile.  compute distance between
-		 * tile's "virtual pixels" */
-		const unsigned stride = length / tile_dof;
-
-	for(end = (start = plane->tiles.tiling_start) + length; end <= plane->tiles.tiling_end; end = (start += length / plane->tiles.inv_fractional_stride) + length) {
-		double sumsquares = 0;
-		unsigned t;
-
-		/* compute sum of squares */
-		for(t = start + stride / 2; t < end; t += stride)
-			sumsquares += channel->data[t] * channel->data[t];
-		/* normalization to give each pixel a mean square of 1.0 */
-		sumsquares /= sum_mean_square;
-
-		/* compute statistical confidence, see if it's above
-		 * threshold */
-		confidence = -XLALlnOneMinusChisqCdf(sumsquares, tile_dof);
-		if(XLALIsREAL8FailNaN(confidence)) {
-			XLALDestroyCOMPLEX16Sequence(fcorr);
-			XLALDestroyREAL8Sequence(channel);
-			XLAL_ERROR_NULL(func, XLAL_EFUNC);
-		}
-		if(confidence >= confidence_threshold) {
-			SnglBurst *oldhead;
-
-			/* compute h_rss */
-			h_rss = sqrt((sumsquares - tile_dof) * stride * plane->deltaT) * bank->templates[template].unwhitened_rms;
-
-			/* add new event to head of linked list */
-			oldhead = head;
-			head = XLALTFTileToBurstEvent(plane, start, length, bank->templates[template].f_centre, bank->templates[template].bandwidth, h_rss, sumsquares, tile_dof, confidence);
-			if(!head) {
-				XLALDestroyCOMPLEX16Sequence(fcorr);
-				XLALDestroyREAL8Sequence(channel);
-				XLAL_ERROR_NULL(func, XLAL_EFUNC);
-			}
-			head->next = oldhead;
-		}
-	}
-	}
-	}
-
-	/* clean up */
-	XLALDestroyCOMPLEX16Sequence(fcorr);
-	XLALDestroyREAL8Sequence(channel);
 
 	/* success */
 	return(head);

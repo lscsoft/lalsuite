@@ -361,10 +361,6 @@ REAL8TimeFrequencyPlane *XLALCreateTFPlane(
 {
 	static const char func[] = "XLALCreateTFPlane";
 	REAL8TimeFrequencyPlane *plane;
-	COMPLEX16FrequencySeries **filter;
-	REAL8Sequence *twice_channel_overlap;
-	REAL8Sequence *unwhitened_rms;
-	REAL8Sequence *unwhitened_cross;
 	REAL8Sequence **channel;
 	REAL8Window *tukey;
 	REAL8Sequence *correlation;
@@ -465,35 +461,22 @@ REAL8TimeFrequencyPlane *XLALCreateTFPlane(
 	 */
 
 	plane = XLALMalloc(sizeof(*plane));
-	filter = XLALMalloc(channels * sizeof(*filter));
-	twice_channel_overlap = XLALCreateREAL8Sequence(channels - 1);
-	unwhitened_rms = XLALCreateREAL8Sequence(channels);
-	unwhitened_cross = XLALCreateREAL8Sequence(channels - 1);
 	channel = XLALMalloc(channels * sizeof(*channel));
 	tukey = XLALCreateTukeyREAL8Window(tseries_length, (tseries_length - tiling_length) / (double) tseries_length);
 	correlation = tukey ? compute_two_point_spectral_correlation(tukey) : NULL;
-	if(!plane || !filter || !twice_channel_overlap || !unwhitened_rms || !unwhitened_cross || !channel || !tukey || !correlation) {
+	if(!plane || !channel || !tukey || !correlation) {
 		XLALFree(plane);
-		XLALFree(filter);
-		XLALDestroyREAL8Sequence(twice_channel_overlap);
-		XLALDestroyREAL8Sequence(unwhitened_rms);
-		XLALDestroyREAL8Sequence(unwhitened_cross);
 		XLALFree(channel);
 		XLALDestroyREAL8Window(tukey);
 		XLALDestroyREAL8Sequence(correlation);
 		XLAL_ERROR_NULL(func, XLAL_EFUNC);
 	}
 	for(i = 0; i < channels; i++) {
-		filter[i] = NULL;
 		channel[i] = XLALCreateREAL8Sequence(tseries_length);
 		if(!channel[i]) {
 			while(--i)
 				XLALDestroyREAL8Sequence(channel[i]);
 			XLALFree(plane);
-			XLALFree(filter);
-			XLALDestroyREAL8Sequence(twice_channel_overlap);
-			XLALDestroyREAL8Sequence(unwhitened_rms);
-			XLALDestroyREAL8Sequence(unwhitened_cross);
 			XLALFree(channel);
 			XLALDestroyREAL8Window(tukey);
 			XLALDestroyREAL8Sequence(correlation);
@@ -513,10 +496,6 @@ REAL8TimeFrequencyPlane *XLALCreateTFPlane(
 	plane->channels = channels;
 	plane->deltaF = deltaF;
 	plane->flow = flow;
-	plane->filter = filter;
-	plane->twice_channel_overlap = twice_channel_overlap;
-	plane->unwhitened_rms = unwhitened_rms;
-	plane->unwhitened_cross = unwhitened_cross;
 	plane->channel = channel;
 	plane->tiles.max_length = max_length;
 	plane->tiles.min_channels = min_channels;
@@ -548,14 +527,9 @@ void XLALDestroyTFPlane(
 {
 	if(plane) {
 		unsigned i;
-		XLALDestroyREAL8Sequence(plane->twice_channel_overlap);
-		XLALDestroyREAL8Sequence(plane->unwhitened_rms);
-		XLALDestroyREAL8Sequence(plane->unwhitened_cross);
 		for(i = 0; i < plane->channels; i++) {
-			XLALDestroyCOMPLEX16FrequencySeries(plane->filter[i]);
 			XLALDestroyREAL8Sequence(plane->channel[i]);
 		}
-		XLALFree(plane->filter);
 		XLALFree(plane->channel);
 		XLALDestroyREAL8Window(plane->window);
 		XLALDestroyREAL8Sequence(plane->two_point_spectral_correlation);
@@ -741,116 +715,89 @@ static COMPLEX16FrequencySeries *generate_filter(
 }
 
 
-/*
+/**
  * From the power spectral density function, generate the comb of channel
- * filters for the time-frequency plane.
+ * filters for the time-frequency plane --- an excess power filter bank.
  */
 
 
-INT4 XLALTFPlaneMakeChannelFilters(
-	REAL8TimeFrequencyPlane *plane,
-	const REAL8FrequencySeries *psd
+LALExcessPowerFilterBank *XLALCreateExcessPowerFilterBank(
+	double filter_deltaF,
+	double flow,
+	double channel_bandwidth,
+	int n_channels,
+	const REAL8FrequencySeries *psd,
+	const REAL8Sequence *two_point_spectral_correlation
 )
 {
-	static const char func[] = "XLALTFPlaneMakeChannelFilters";
-	unsigned i;
+	static const char func[] = "XLALCreateExcessPowerFilterBank";
+	LALExcessPowerFilterBank *new;
+	struct ExcessPowerFilter *filters;
+	REAL8Sequence *twice_channel_overlap;
+	REAL8Sequence *unwhitened_cross;
+	int i;
 
-	for(i = 0; i < plane->channels; i++) {
-		if(plane->filter[i])
-			XLALDestroyCOMPLEX16FrequencySeries(plane->filter[i]);
+	new = malloc(sizeof(*new));
+	filters = calloc(n_channels, sizeof(*filters));
+	twice_channel_overlap = XLALCreateREAL8Sequence(n_channels - 1);
+	unwhitened_cross = XLALCreateREAL8Sequence(n_channels - 1);
+	if(!new || !filters || !twice_channel_overlap || !unwhitened_cross) {
+		free(new);
+		free(filters);
+		XLALDestroyREAL8Sequence(twice_channel_overlap);
+		XLALDestroyREAL8Sequence(unwhitened_cross);
+		XLAL_ERROR_NULL(func, XLAL_ENOMEM);
+	}
 
-		plane->filter[i] = generate_filter(plane->flow + i * plane->deltaF, plane->deltaF, psd, plane->two_point_spectral_correlation);
-		if(!plane->filter[i]) {
-			while(i--) {
-				XLALDestroyCOMPLEX16FrequencySeries(plane->filter[i]);
-				plane->filter[i] = NULL;
-			}
-			XLAL_ERROR(func, XLAL_EFUNC);
+	new->n_filters = n_channels;
+	new->filters = filters;
+	new->twice_channel_overlap = twice_channel_overlap;
+	new->unwhitened_cross = unwhitened_cross;
+
+	for(i = 0; i < n_channels; i++) {
+		filters[i].fseries = generate_filter(flow + i * channel_bandwidth, channel_bandwidth, psd, two_point_spectral_correlation);
+		if(!filters[i].fseries) {
+			while(i--)
+				XLALDestroyCOMPLEX16FrequencySeries(filters[i].fseries);
+			free(new);
+			XLALDestroyREAL8Sequence(twice_channel_overlap);
+			XLALDestroyREAL8Sequence(unwhitened_cross);
+			XLAL_ERROR_NULL(func, XLAL_EFUNC);
 		}
 
 		/* compute the unwhitened root mean square for this channel */
-		plane->unwhitened_rms->data[i] = sqrt(psd_weighted_filter_inner_product(plane->filter[i], plane->filter[i], plane->two_point_spectral_correlation, psd) * psd->deltaF / 2);
+		filters[i].unwhitened_rms = sqrt(psd_weighted_filter_inner_product(filters[i].fseries, filters[i].fseries, two_point_spectral_correlation, psd) * filter_deltaF / 2);
 	}
 
 	/* compute the cross terms for the channel normalizations and
 	 * unwhitened mean squares */
-	for(i = 0; i < plane->channels - 1; i++) {
-		plane->twice_channel_overlap->data[i] = 2 * filter_inner_product(plane->filter[i], plane->filter[i + 1], plane->two_point_spectral_correlation);
-		plane->unwhitened_cross->data[i] = psd_weighted_filter_inner_product(plane->filter[i], plane->filter[i + 1], plane->two_point_spectral_correlation, psd) * psd->deltaF;
+	for(i = 0; i < new->n_filters - 1; i++) {
+		twice_channel_overlap->data[i] = 2 * filter_inner_product(filters[i].fseries, filters[i + 1].fseries, two_point_spectral_correlation);
+		unwhitened_cross->data[i] = psd_weighted_filter_inner_product(filters[i].fseries, filters[i + 1].fseries, two_point_spectral_correlation, psd) * psd->deltaF;
 	}
-
-	/* done */
-	return 0;
-}
-
-
-/*
- * ============================================================================
- *
- *                              Experimentation
- *
- * ============================================================================
- */
-
-
-LALExcessPowerTemplateBank *XLALCreateExcessPowerTemplateBank(
-	const COMPLEX16FrequencySeries *template,
-	const REAL8TimeFrequencyPlane *plane,
-	const REAL8FrequencySeries *psd
-)
-{
-	static const char func[] = "XLALCreateExcessPowerTemplateBank";
-	LALExcessPowerTemplateBank *new;
-	struct ExcessPowerTemplate *templates;
-	unsigned channels, channel, channel_end;
-	int i;
-
-	i = 0;
-	for(channels = plane->tiles.min_channels; channels <= plane->tiles.max_channels; channels *= 2)
-		for(channel_end = (channel = 0) + channels; channel_end <= plane->channels; channel_end = (channel += channels / plane->tiles.inv_fractional_stride) + channels)
-			i++;
-
-	new = malloc(sizeof(*new));
-	templates = malloc(i * sizeof(*templates));
-	if(!new || !templates) {
-		free(new);
-		free(templates);
-		XLAL_ERROR_NULL(func, XLAL_ENOMEM);
-	}
-
-	new->templates = templates;
-	new->n_templates = i;
-
-	i = 0;
-	for(channels = plane->tiles.min_channels; channels <= plane->tiles.max_channels; channels *= 2)
-		for(channel_end = (channel = 0) + channels; channel_end <= plane->channels; channel_end = (channel += channels / plane->tiles.inv_fractional_stride) + channels) {
-			templates[i].filter = generate_filter(plane->flow + channel * plane->deltaF, channels * plane->deltaF, psd, plane->two_point_spectral_correlation);
-			if(!templates[i].filter) {
-				while(i--)
-					XLALDestroyCOMPLEX16FrequencySeries(templates[i].filter);
-				free(new);
-				free(templates);
-				XLAL_ERROR_NULL(func, XLAL_EFUNC);
-			}
-			templates[i].unwhitened_rms = sqrt(psd_weighted_filter_inner_product(templates[i].filter, templates[i].filter, plane->two_point_spectral_correlation, psd) * template->deltaF / 2);
-			templates[i].bandwidth = channels * plane->deltaF;
-			templates[i].f_centre = plane->flow + channel * plane->deltaF + templates[i].bandwidth / 2;
-			i++;
-		}
 
 	return new;
 }
 
 
-void XLALDestroyExcessPowerTemplateBank(
-	LALExcessPowerTemplateBank *bank
+/**
+ * Destroy and excess power filter bank.
+ */
+
+
+void XLALDestroyExcessPowerFilterBank(
+	LALExcessPowerFilterBank *bank
 )
 {
 	if(bank) {
-		int i;
-		for(i = 0; i < bank->n_templates; i++)
-			XLALDestroyCOMPLEX16FrequencySeries(bank->templates[i].filter);
-		free(bank->templates);
+		if(bank->filters) {
+			int i;
+			for(i = 0; i < bank->n_filters; i++)
+				XLALDestroyCOMPLEX16FrequencySeries(bank->filters[i].fseries);
+			free(bank->filters);
+		}
+		XLALDestroyREAL8Sequence(bank->twice_channel_overlap);
+		XLALDestroyREAL8Sequence(bank->unwhitened_cross);
 	}
 
 	free(bank);

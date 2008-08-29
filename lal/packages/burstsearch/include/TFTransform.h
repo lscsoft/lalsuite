@@ -36,7 +36,46 @@ extern "C" {
 
 
 #include <lal/LALRCSID.h>
-NRCSID(TFTRANSFORMH, "$Id:");
+NRCSID(TFTRANSFORMH, "$Id$");
+
+
+/*
+ * An excess power filter bank
+ */
+
+
+typedef struct tagLALExcessPowerFilterBank {
+	int n_filters;
+	struct ExcessPowerFilter {
+		COMPLEX16FrequencySeries *fseries;
+		/* root mean square of the unwhitened time series
+		 * corresponding to this filter */
+		REAL8 unwhitened_rms;
+	} *filters;
+	/* twice the inner product of filters for neighbouring channels;
+	 * twice_channel_overlap[0] is twice the inner product of the
+	 * filters for channels 0 and 1, and so on (for n channels, there
+	 * are n - 1 channel_overlaps) */
+	REAL8Sequence *twice_channel_overlap;
+	/* the mean square cross terms for wide channels (indices same as
+	 * for twice_channel_overlap) */
+	REAL8Sequence *unwhitened_cross;
+} LALExcessPowerFilterBank;
+
+
+LALExcessPowerFilterBank *XLALCreateExcessPowerFilterBank(
+	double filter_deltaF,
+	double flow,
+	double channel_bandwidth,
+	int n_channels,
+	const REAL8FrequencySeries *psd,
+	const REAL8Sequence *two_point_spectral_correlation
+);
+
+
+void XLALDestroyExcessPowerFilterBank(
+	LALExcessPowerFilterBank *bank
+);
 
 
 /*
@@ -59,18 +98,6 @@ typedef struct tagREAL8TimeFrequencyPlane {
 	REAL8 deltaF;
 	/* low frequency boundary of TF plane */
 	REAL8 flow;
-	/* channel filters */
-	COMPLEX16FrequencySeries **filter;
-	/* twice the inner product of filters for neighbouring channels;
-	 * twice_channel_overlap[0] is twice the inner product of the
-	 * filters for channels 0 and 1, and so on (for n channels, there
-	 * are n - 1 channel_overlaps) */
-	REAL8Sequence *twice_channel_overlap;
-	/* root mean square for the unwhitened time series corresponding to
-	 * each channel, and the mean square cross terms for wide channels
-	 * (indices same as for twice_channel_overlap) */
-	REAL8Sequence *unwhitened_rms;
-	REAL8Sequence *unwhitened_cross;
 	/* channel data.  channel[j]->data[i] corresponds to time
 	 *
 	 * epoch + i * deltaT
@@ -90,7 +117,8 @@ typedef struct tagREAL8TimeFrequencyPlane {
 		unsigned inv_fractional_stride;
 		double dof_per_pixel;
 	} tiles;
-	/* window applied to input time series for tapering edges to 0 */
+	/* time-domain window applied to input time series for tapering
+	 * edges to 0 */
 	REAL8Window *window;
 	/* by how many samples a window's start should be shifted from the
 	 * start of the window preceding it */
@@ -117,14 +145,9 @@ void XLALDestroyTFPlane(
 );
 
 
-INT4 XLALTFPlaneMakeChannelFilters(
-	REAL8TimeFrequencyPlane *plane,
-	const REAL8FrequencySeries *psd
-);
-
-
 int XLALFreqSeriesToTFPlane(
 	REAL8TimeFrequencyPlane *tfplane,
+	const LALExcessPowerFilterBank *filter_bank,
 	const COMPLEX16FrequencySeries *fseries,
 	const REAL8FFTPlan *reverseplan
 );
@@ -132,6 +155,7 @@ int XLALFreqSeriesToTFPlane(
 
 SnglBurst *XLALComputeExcessPower(
 	const REAL8TimeFrequencyPlane *plane,
+	const LALExcessPowerFilterBank *filter_bank,
 	SnglBurst *head,
 	double confidence_threshold
 );
@@ -153,44 +177,6 @@ INT4 XLALEPGetTimingParameters(
 	INT4 *window_shift,
 	INT4 *window_pad,
 	INT4 *tiling_length
-);
-
-
-/*
- * An excess power "template bank"
- */
-
-
-typedef struct tagLALExcessPowerTemplateBank {
-	struct ExcessPowerTemplate {
-		COMPLEX16FrequencySeries *filter;
-		REAL8 f_centre;
-		REAL8 bandwidth;
-		REAL8 unwhitened_rms;
-	} *templates;
-	int n_templates;
-} LALExcessPowerTemplateBank;
-
-
-LALExcessPowerTemplateBank *XLALCreateExcessPowerTemplateBank(
-	const COMPLEX16FrequencySeries *template,
-	const REAL8TimeFrequencyPlane *plane,
-	const REAL8FrequencySeries *psd
-);
-
-
-void XLALDestroyExcessPowerTemplateBank(
-	LALExcessPowerTemplateBank *bank
-);
-
-
-SnglBurst *XLALExcessPowerProject(
-	const COMPLEX16FrequencySeries *fseries,
-	REAL8TimeFrequencyPlane *plane,
-	const LALExcessPowerTemplateBank *bank,
-	SnglBurst *head,
-	double confidence_threshold,
-	const REAL8FFTPlan *reverseplan
 );
 
 

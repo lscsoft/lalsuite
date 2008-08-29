@@ -67,8 +67,8 @@ SnglBurst *XLALEPSearch(
 	REAL8FFTPlan *rplan;
 	REAL8FrequencySeries *psd;
 	REAL8TimeSeries *cuttseries;
+	LALExcessPowerFilterBank *filter_bank = NULL;
 	REAL8TimeFrequencyPlane *plane;
-	LALExcessPowerTemplateBank *template_bank = NULL;
 
 	/*
 	 * Construct forward and reverse FFT plans, storage for the PSD,
@@ -130,7 +130,8 @@ SnglBurst *XLALEPSearch(
 	 */
 
 	XLALPrintInfo("%s(): constructing channel filters\n", func);
-	if(XLALTFPlaneMakeChannelFilters(plane, psd)) {
+	filter_bank = XLALCreateExcessPowerFilterBank(psd->deltaF, plane->flow, plane->deltaF, plane->channels, psd, plane->two_point_spectral_correlation);
+	if(!filter_bank) {
 		errorcode = XLAL_EFUNC;
 		goto error;
 	}
@@ -189,9 +190,8 @@ SnglBurst *XLALEPSearch(
 		 * series and channel filters.
 		 */
 
-#if 1
 		XLALPrintInfo("%s(): projecting data onto time-frequency plane\n", func);
-		if(XLALFreqSeriesToTFPlane(plane, fseries, rplan)) {
+		if(XLALFreqSeriesToTFPlane(plane, filter_bank, fseries, rplan)) {
 			errorcode = XLAL_EFUNC;
 			goto error;
 		}
@@ -209,44 +209,11 @@ SnglBurst *XLALEPSearch(
 
 		XLALPrintInfo("%s(): computing the excess power for each tile\n", func);
 		XLALClearErrno();
-		head = XLALComputeExcessPower(plane, head, confidence_threshold);
+		head = XLALComputeExcessPower(plane, filter_bank, head, confidence_threshold);
 		if(xlalErrno) {
 			errorcode = XLAL_EFUNC;
 			goto error;
 		}
-#else
-		/* FIXME: decide what to do about this */
-
-		/*
-		 * Construct the template bank
-		 *
-		 * FIXME:  this could be moved out of the loop for a
-		 * performance boost.
-		 */
-
-		XLALPrintInfo("%s(): constructing template bank\n", func);
-		template_bank = XLALCreateExcessPowerTemplateBank(fseries, plane, psd);
-		if(!template_bank) {
-			errorcode = XLAL_EFUNC;
-			goto error;
-		}
-
-		/*
-		 * Project frequency series onto templates
-		 */
-
-		XLALPrintInfo("%s(): projecting frequency series onto template bank\n", func);
-		XLALClearErrno();
-		head = XLALExcessPowerProject(fseries, plane, template_bank, head, confidence_threshold, rplan);
-		if(xlalErrno) {
-			errorcode = XLAL_EFUNC;
-			goto error;
-		}
-		XLALDestroyCOMPLEX16FrequencySeries(fseries);
-		fseries = NULL;
-		XLALDestroyExcessPowerTemplateBank(template_bank);
-		template_bank = NULL;
-#endif
 	}
 
 	/*
@@ -260,7 +227,7 @@ SnglBurst *XLALEPSearch(
 	XLALDestroyREAL8FFTPlan(rplan);
 	XLALDestroyREAL8FrequencySeries(psd);
 	XLALDestroyCOMPLEX16FrequencySeries(fseries);
-	XLALDestroyExcessPowerTemplateBank(template_bank);
+	XLALDestroyExcessPowerFilterBank(filter_bank);
 	XLALDestroyTFPlane(plane);
 	if(errorcode) {
 		XLALDestroySnglBurstTable(head);
