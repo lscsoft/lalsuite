@@ -24,7 +24,7 @@ AH_TOP([/*
 
 #ifndef CONFIG_H
 #define CONFIG_H])
-AH_BOTTOM([#endif /* CONFIG_H */"])
+AH_BOTTOM([#endif /* CONFIG_H */])
 
 LALAPPS_WITH_CC
 LALAPPS_WITH_LAL_PREFIX
