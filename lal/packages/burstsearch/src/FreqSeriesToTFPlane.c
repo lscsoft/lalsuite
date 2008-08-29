@@ -511,7 +511,7 @@ SnglBurst *XLALExcessPowerProject(
 			SnglBurst *oldhead;
 
 			/* compute h_rss */
-			h_rss = sqrt((sumsquares - tile_dof) * bank->templates[template].unwhitened_mean_square * stride * plane->deltaT);
+			h_rss = sqrt((sumsquares - tile_dof) * stride * plane->deltaT) * bank->templates[template].unwhitened_rms;
 
 			/* add new event to head of linked list */
 			oldhead = head;

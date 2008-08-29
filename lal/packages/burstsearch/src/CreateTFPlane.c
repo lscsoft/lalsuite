@@ -832,7 +832,7 @@ LALExcessPowerTemplateBank *XLALCreateExcessPowerTemplateBank(
 				free(templates);
 				XLAL_ERROR_NULL(func, XLAL_EFUNC);
 			}
-			templates[i].unwhitened_mean_square = psd_weighted_filter_inner_product(templates[i].filter, templates[i].filter, plane->two_point_spectral_correlation, psd) * template->deltaF / 2;
+			templates[i].unwhitened_rms = sqrt(psd_weighted_filter_inner_product(templates[i].filter, templates[i].filter, plane->two_point_spectral_correlation, psd) * template->deltaF / 2);
 			templates[i].bandwidth = channels * plane->deltaF;
 			templates[i].f_centre = plane->flow + channel * plane->deltaF + templates[i].bandwidth / 2;
 			i++;

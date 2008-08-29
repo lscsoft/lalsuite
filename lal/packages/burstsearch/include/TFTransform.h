@@ -166,7 +166,7 @@ typedef struct tagLALExcessPowerTemplateBank {
 		COMPLEX16FrequencySeries *filter;
 		REAL8 f_centre;
 		REAL8 bandwidth;
-		REAL8 unwhitened_mean_square;
+		REAL8 unwhitened_rms;
 	} *templates;
 	int n_templates;
 } LALExcessPowerTemplateBank;
