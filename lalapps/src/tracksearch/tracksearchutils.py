@@ -1830,48 +1830,84 @@ class candidateList:
         if self.verboseMode:
             sys.stdout.write("Creating DQ list from %i triggers.\n"%(oldList.__len__()))
 
-        #Take projection of triggers into single time axis... Uniq the list
-        #To DO Mon-Jun-09-2008:200806091545  
-        #We must both 'unique' the trigger list and
-        #remove any overlaps so that the remain list is truly independent
-        #stretches of time information
-        #(1)Unique The List
-        newInputList=[]
-        while oldList.__len__() > 0:
-            repeatCount=oldList.count(oldList[0])
-            newInputList.append(oldList[0])
-            oldList.__delslice__(0,repeatCount)
-        oldList=newInputList
-        #(2)Examine segments to remove overlaps and write this as list of
-        # segments for examination
-        
-        joinList=[]
-        newList=[]
-        padSize=int(padding)
-        for i in range(0,oldList.__len__()-1):
-            if oldList[i][1]+padSize>=oldList[i+1][0]:
-                joinList.append(True)
-            else:
-                joinList.append(False)
-        #Always append False to end the looping chain
-        #Since no other segments to join
-        joinList.append(False)
-        i=0
-        while i < joinList.__len__():
-            myStart=oldList[i][0]
-            while joinList[i]:
+        #CVT Sun-Aug-24-2008:200808241729 
+        # First time order a gpsStart:gpsStop list equivalent
+        # Using the padsize symmetrically expand this list
+        # Do a join to the intervals in the list
+        # If the trigs are f Independant then they list is uniq
+        #(assume for now)
+        #
+        newCode=True
+        if newCode:
+            print "Function still needs debugging!!!"
+            pad_gpsList=list()
+            new_gpsList=list()
+            pad_gpsList=[[A-padding,B+padding] for A,B in oldList]
+            pad_gpsList.sort()
+            #Use index 
+            index=0
+            while index < pad_gpsList.__len__():
+                if index == pad_gpsList.__len__()-1:
+                    endOfList=True
+                else:
+                    endOfList=False
+                joinableSegments=0
+                for scanIndex in range(index,pad_gpsList.__len__()):
+                    if pad_gpsList[index][1] >= pad_gpsList[scanIndex][0]:
+                        # i segment ends inside of scanIndex segment
+                        joinableSegments+=1
+                new_gpsList.append([pad_gpsList[index][0],
+                                    pad_gpsList[index+joinableSegments][1]])
+                index=index+1+joinableSegments
+                print index,joinableSegments,new_gpsList.__len__(),pad_gpsList.__len__()
+            #Strip padding placed before from each interval
+            new_gpsList=[[A+padding,B-padding] for A,B in new_gpsList]
+            deadTime=sum([B-A for A,B in new_gpsList])
+            newList=new_gpsList
+        else:
+            #Take projection of triggers into single time axis... Uniq the list
+            #To DO Mon-Jun-09-2008:200806091545  
+            #We must both 'unique' the trigger list and
+            #remove any overlaps so that the remain list is truly independent
+            #stretches of time information
+            #(1)Unique The List
+            newInputList=[]
+            while oldList.__len__() > 0:
+                repeatCount=oldList.count(oldList[0])
+                newInputList.append(oldList[0])
+                oldList.__delslice__(0,repeatCount)
+            oldList=newInputList
+            #(2)Examine segments to remove overlaps and write this as list of
+            # segments for examination
+            joinList=[]
+            newList=[]
+            padSize=int(padding)
+            for i in range(0,oldList.__len__()-1):
+                if oldList[i][1]+padSize>=oldList[i+1][0]:
+                    joinList.append(True)
+                else:
+                    joinList.append(False)
+            #Always append False to end the looping chain
+            #Since no other segments to join
+            joinList.append(False)
+            i=0
+            while i < joinList.__len__():
+                myStart=oldList[i][0]
+                while joinList[i]:
+                    i=i+1
+                myEnd=oldList[i][1]
+                newList.append([myStart,myEnd])
                 i=i+1
-            myEnd=oldList[i][1]
-            newList.append([myStart,myEnd])
-            i=i+1
-        deadTime=sum([x[1]-x[0] for x in newList])
-        for i in range(0,newList.__len__()-1):
-            if newList[i][1]+padSize>=newList[i+1][0]:
-                sys.stderr.write("FOUND ERROR :%f\n"%(newList[i][1]))
-                sys.stderr.write("DQ List forgotten, output file will be empty.\n")
-                newList=[]
+            deadTime=sum([x[1]-x[0] for x in newList])
+            for i in range(0,newList.__len__()-1):
+                if newList[i][1]+padSize>=newList[i+1][0]:
+                    sys.stderr.write("FOUND ERROR :%f\n"%(newList[i][1]))
+                    sys.stderr.write("DQ List forgotten, output file will be empty.\n")
+                    newList=[]
+        #Finished DQ structure name is newList
         if self.verboseMode:
-            sys.stdout.write("Deadtime of data quality list with pad size %i is %f hours.\n"%(padSize,deadTime/3600))
+            padSize=int(padding)
+            sys.stdout.write("Deadtime of data quality list with %i triggers and pad size %i is segments spanning a total of %f hours.\n"%(newList.__len__(),padSize,deadTime/3600))
         fp=open(outFile,'w')
         outputText=[str(x[0])+' '+str(x[1])+'\n' for x in newList]
         fp.writelines(outputText)

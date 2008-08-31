@@ -4026,7 +4026,7 @@ void LALappsTrackSearchWhitenSegments( LALStatus        *status,
        * Copy newly smoothed PSD to frequency series
        */
       for (i=0;i<averagePSD->data->length;i++)
-	averagePSD->data->data[i]=smoothedAveragePSD->data[i];
+	averagePSD->data->data[i]=smoothedAveragePSD->data[i+(UINT4)floor((params.smoothAvgPSD-1)/2)];
 
       if (smoothedAveragePSD)
 	XLALDestroyREAL4Vector(smoothedAveragePSD);
