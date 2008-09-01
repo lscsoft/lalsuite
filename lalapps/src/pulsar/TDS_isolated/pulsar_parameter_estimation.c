@@ -2016,7 +2016,7 @@ paramData );
        our prior range so the likelihood is always zero and this move always
        rejected */
     if( varsNew.h0 < 0. || below0 == 1 ){
-      if( fmod(count, input.mcmc.outputRate) == 0./*&& i>input.mcmc.burnIn-1*/){
+      if( fmod(count, input.mcmc.outputRate) == 0. i>input.mcmc.burnIn-1 ){
         fprintf(fp, "%le\t%le\t%lf\t%lf\t%lf", logL1, vars.h0, vars.phi0,
           vars.ci, vars.psi);
 
@@ -2314,7 +2314,7 @@ paramData );
     }
 
     /* printf out chains */
-    if( fmod(count, input.mcmc.outputRate) == 0./* && i>input.mcmc.burnIn-1*/){
+    if( fmod(count, input.mcmc.outputRate) == 0. && i>input.mcmc.burnIn-1 ){
       fprintf(fp, "%le\t%le\t%lf\t%lf\t%lf", logL1, vars.h0, vars.phi0, vars.ci,
         vars.psi);
 
