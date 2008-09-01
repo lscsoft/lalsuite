@@ -3732,6 +3732,7 @@ void LALappsTrackSearchWhitenSegments( LALStatus        *status,
   REAL4Vector              *tmpExtendedAveragePSD=NULL;
   REAL4Window              *windowPSD=NULL;
   UINT4                     i=0;
+  UINT4                     halfBlock=0;
   UINT4                     j=0;
   REAL4                     meanValue=0;
   UINT4                     stride=0;
@@ -3982,26 +3983,39 @@ void LALappsTrackSearchWhitenSegments( LALStatus        *status,
       /*
        * Perform running median on the average PSD using
        * blocks of size n
+       * Needs to be extended to account for PSD wrapping...
+       * Add floor(blocksize/2) points then cut them later.
        */
-      smoothedAveragePSD=XLALCreateREAL4Vector(averagePSD->data->length);
-
-      tmpExtendedAveragePSD=XLALCreateREAL4Vector(averagePSD->data->length+params.smoothAvgPSD-1);
-
+      halfBlock=(UINT4) floor(params.smoothAvgPSD/2);
+      smoothedAveragePSD=XLALCreateREAL4Vector(averagePSD->data->length+halfBlock);
+      tmpExtendedAveragePSD=XLALCreateREAL4Vector(smoothedAveragePSD->length+params.smoothAvgPSD-1);
       /*
        * Build a buffered PSD rep so that median estimate
        * returned will have m points equal to the n points of the 
        * original average PSD
        */
+      /* 
+       * Insert time --> The freq shift equals nPoint \def block/2
+       * points WRAP PSD around for this.
+       */
+      /* Need error check for blocksize < averagePSD */
+      for (i=0;i<halfBlock;i++)
+	tmpExtendedAveragePSD->data[i]=averagePSD->data->data[halfBlock-i-1];
       for (i=0;i<averagePSD->data->length;i++)
-	tmpExtendedAveragePSD->data[i]=averagePSD->data->data[i];
-      /*Determine average of last blocksize points in PSD estimate */
-      for (i=averagePSD->data->length-params.smoothAvgPSD;i<averagePSD->data->length;i++)
-	meanValue=meanValue+averagePSD->data->data[i];
-      meanValue=meanValue/params.smoothAvgPSD;
-      for (i=averagePSD->data->length-1;
-	   i<tmpExtendedAveragePSD->length;
-	   i++)
-	tmpExtendedAveragePSD->data[i]=meanValue;
+	tmpExtendedAveragePSD->data[i+halfBlock]=averagePSD->data->data[i];
+      for (i=0;i<params.smoothAvgPSD-1;i++)
+	tmpExtendedAveragePSD->data[i+averagePSD->data->length+halfBlock]=
+	  averagePSD->data->data[averagePSD->data->length-i-1];
+      LALPrintVector(tmpExtendedAveragePSD);
+      LALPrintVector(averagePSD->data);
+/*       /\*Determine average of last blocksize points in PSD estimate *\/ */
+/*       for (i=averagePSD->data->length-params.smoothAvgPSD;i<averagePSD->data->length;i++) */
+/* 	meanValue=meanValue+averagePSD->data->data[i]; */
+/*       meanValue=meanValue/params.smoothAvgPSD; */
+/*       for (i=averagePSD->data->length-1; */
+/* 	   i<tmpExtendedAveragePSD->length; */
+/* 	   i++) */
+/* 	tmpExtendedAveragePSD->data[i]=meanValue; */
 
       /*
        * Setup running median parameters
@@ -4024,10 +4038,16 @@ void LALappsTrackSearchWhitenSegments( LALStatus        *status,
 	  smoothingAveragePSDBias*smoothedAveragePSD->data[i];
       /*
        * Copy newly smoothed PSD to frequency series
+       * We artifically shifted the tmp array to alleviate
+       * a shift due to the blocksize/2 points change in 
+       * freq of the psd.
        */
+/*       for (i=0;i<averagePSD->data->length;i++) */
+/* 	averagePSD->data->data[i]=smoothedAveragePSD->data[i]; */
       for (i=0;i<averagePSD->data->length;i++)
-	averagePSD->data->data[i]=smoothedAveragePSD->data[i+(UINT4)floor((params.smoothAvgPSD-1)/2)];
-
+	averagePSD->data->data[i]=smoothedAveragePSD->data[i+halfBlock];
+      LALPrintVector(smoothedAveragePSD);
+      LALPrintVector(averagePSD->data);
       if (smoothedAveragePSD)
 	XLALDestroyREAL4Vector(smoothedAveragePSD);
 
