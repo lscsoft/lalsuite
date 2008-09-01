@@ -69,6 +69,13 @@ class parameterNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     self.__maxpsi = None
     self.__minpsi = None
     self.__psisteps = None
+    self.__iterations = None
+    self.__burnin = None
+    self.__temperature = None
+    self.__outputrate = None
+    self.__earthephem = None
+    self.__sunephem = None
+    self.__covfile = None
      
   def set_output_dir(self,output_dir):
     # set output directory
@@ -96,13 +103,26 @@ class parameterNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     self.__pulsar = pulsar
     
   def set_ul(self):
-    # set calibration flag
+    # set to output the upper limit
     self.add_var_opt('dob-ul', '') # no variable required
     
+  def set_mcmc(self):
+    # set to perform posterior calculation via an MCMC
+    self.add_var_opt('mcmc', '')
+
+  def set_covfile(self,covfile):
+    # set the covariance matrix file
+    self.add_var_opt('covariance',covfile)
+    self.__covfile = covfile
+
   def set_verbose(self):
     # set verbose flag
     self.add_var_opt('verbose', '') # no variable required
    
+  def set_onlyjoint(self):
+    # only perform the joint posterior calculation for MCMC
+    self.add_var_opt('only-joint', '')
+
   def set_maxh0(self, maxh0):
     # set maximum h0 value in grid
     self.add_var_opt('maxh0',maxh0)
@@ -162,3 +182,33 @@ class parameterNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     # set number of grid points in psi grid
     self.add_var_opt('psisteps', psisteps)
     self.__psisteps = psisteps
+
+  def set_iterations(self, iterations):
+    # set the number of MCMC iterations
+    self.add_var_opt('iterations', iterations)
+    self.__iterations = iterations
+
+  def set_burnin(self, burnin):
+    # set the number of burn in iterations
+    self.add_var_opt('burn-in', burnin)
+    self.__burnin = burnin
+
+  def set_temperature(self, temperature):
+    # set the burn in temperature
+    self.add_var_opt('temperature', temperature)
+    self.__temperature = temperature
+
+  def set_outputrate(self, outputrate):
+    # set the MCMC output rate
+    self.add_var_opt('output-rate', outputrate)
+    self.__outputrate = outputrate
+
+  def set_earth(self, earthephem):
+    # set the earth ephemeris file
+    self.add_var_opt('earth-ephem', earthephem)
+    self.__earthephem = earthephem
+
+  def set_sun(self, sunephem):
+    # set the sun ephemeris file
+    self.add_var_opt('sun-ephem', sunephem)
+    self.__sunephem = sunephem
