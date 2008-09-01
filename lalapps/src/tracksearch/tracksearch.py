@@ -163,6 +163,7 @@ class tracksearchCheckIniFile:
         self.iniOpts=cp
         self.errList=[]
         self.memoryUseEstimate=int(0)
+        self.smoothingWidthEstimate=float(0)
     #End init
 
     def checkOpts(self):
@@ -234,6 +235,12 @@ class tracksearchCheckIniFile:
                     LOSS=float(self.iniOpts.get('layerconfig','layer1SetSize'))
                 else:
                     LOSS=0
+                #Tabulate the width in Hz of the features we will be suppressing...
+                #RunBlockSize > X * (t+(2/fs))
+                if sampleRate > 0:
+                    ##removeWidth=(1+(sampleRate*LoTS)/2)/(LoTS+(2/sampleRate))
+                    removeWidth=((sampleRate/2)*SAP)/(1+(sampleRate*LoTS)/2)
+                    self.smoothingWidthEstimate=removeWidth
                 if (((LOSS*LoTS*sampleRate)/2)<SAP):
                     trySAP=int(((LoTS*sampleRate)/2.0)*0.05)
                     self.errList.append('It appears that smooth_average_spectrum option is inconsistent! Try this value '+str(trySAP)+'. One rule of thumb is: ((fs*dT)/2)*0.05')
@@ -298,6 +305,15 @@ class tracksearchCheckIniFile:
         return self.memoryUseEstimate
     #End self.getMemoryUseEstimate()
 
+    def getBandwithSmoothedEstimate(self):
+        """
+        Returns the approximate bandwidth in the PSD estimate that
+        will be smoothed out during the data whitening procedure if
+        requested.
+        """
+        return self.smoothingWidthEstimate
+    #End()
+    
     def numberErrors(self):
         return self.errList.__len__()
     #end numberErrors def

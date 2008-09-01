@@ -141,10 +141,14 @@ if testIniFile.numberErrors() > 0 :
     os.abort()
 #Print memory use estimate!
 memoryEstimate=testIniFile.getMemoryUseEstimate()
+psdSmoothBandEstimate=testIniFile.getBandwithSmoothedEstimate()
 print "***"
 print "For this dag configuration the peak memory use estimate is: "+str(memoryEstimate)+" MBs."
 print "As a rule of thumb this value should be about one third of the systems available memory or less."
 print "***"
+if verbose:
+	print "For this dag setup if smoothing is used we estimate that a band of "+str(psdSmoothBandEstimate)+" Hz will be smoothed during the whitening process."
+
 #Check ini file for an injection block heading.
 if (injectFileFlag == True):
     print "Checking injection options."

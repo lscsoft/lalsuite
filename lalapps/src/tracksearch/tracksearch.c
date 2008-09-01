@@ -4006,8 +4006,6 @@ void LALappsTrackSearchWhitenSegments( LALStatus        *status,
       for (i=0;i<params.smoothAvgPSD-1;i++)
 	tmpExtendedAveragePSD->data[i+averagePSD->data->length+halfBlock]=
 	  averagePSD->data->data[averagePSD->data->length-i-1];
-      LALPrintVector(tmpExtendedAveragePSD);
-      LALPrintVector(averagePSD->data);
 /*       /\*Determine average of last blocksize points in PSD estimate *\/ */
 /*       for (i=averagePSD->data->length-params.smoothAvgPSD;i<averagePSD->data->length;i++) */
 /* 	meanValue=meanValue+averagePSD->data->data[i]; */
@@ -4046,8 +4044,6 @@ void LALappsTrackSearchWhitenSegments( LALStatus        *status,
 /* 	averagePSD->data->data[i]=smoothedAveragePSD->data[i]; */
       for (i=0;i<averagePSD->data->length;i++)
 	averagePSD->data->data[i]=smoothedAveragePSD->data[i+halfBlock];
-      LALPrintVector(smoothedAveragePSD);
-      LALPrintVector(averagePSD->data);
       if (smoothedAveragePSD)
 	XLALDestroyREAL4Vector(smoothedAveragePSD);
 
