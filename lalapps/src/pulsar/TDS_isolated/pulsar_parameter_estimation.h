@@ -39,6 +39,7 @@
 #include <lal/LALConstants.h>
 #include <lal/XLALError.h>
 #include <lal/LALRCSID.h>
+#include <lal/ComputeFstat.h>
 
 #include <lalapps.h>
 
@@ -125,6 +126,8 @@ extern "C" {
 " --earth-ephem       Earth ephemeris file\n"\
 " --sun-ephem         Sun ephemeris file\n"\
 " --covariance        pulsar parameter covariance matrix file (.mat)\n"\
+" --only-joint        set this to only produce the joint MCMC when given \n\
+                     muliple detectors (MCMC only)\n"\
 "\n"
 
 #define MAXLENGTH 1000000
@@ -132,6 +135,7 @@ extern "C" {
 
 #define SIXTH 0.166666666666666666666666666666666666666667L
 #define TWENTYFOURTH 0.04166666666666666666666666666666666666666667L
+#define LOG_HALF -0.693147180559945
 
 /** define structures */
 
@@ -238,6 +242,8 @@ typedef struct tagInputParams{
 
   CHAR earthfile[256];
   CHAR sunfile[256];
+
+  INT4 onlyjoint;
 
   INT4 verbose;
 }InputParams;
@@ -360,29 +366,29 @@ REAL8Vector *get_phi(DataStructure data, BinaryPulsarParams params,
 /* function to get the lengths of consecutive chunks of data */
 void get_chunk_lengths(DataStructure data);
 
-REAL8Array *CholeskyDecomp( REAL8Array *M, CHAR* uOrl );
+REAL8Array *cholesky_decomp( REAL8Array *M, CHAR* uOrl );
 
-REAL8Array *ReadCorrelationMatrix( CHAR *matrixFile, 
+REAL8Array *read_correlation_matrix( CHAR *matrixFile, 
   BinaryPulsarParams params, ParamData *data );
 
-REAL8Array *CreateCovarianceMatrix( ParamData *data, REAL8Array *corMat );
+REAL8Array *create_covariance_matrix( ParamData *data, REAL8Array *corMat );
 
-REAL8Array *XLALCheckPositiveDefinite( REAL8Array *matrix );
+REAL8Array *check_positive_definite( REAL8Array *matrix );
 
-REAL8Array *XLALConvertToPositiveDefinite( REAL8Array *nonposdef );
+REAL8Array *convert_to_positive_definite( REAL8Array *nonposdef );
 
-ParamData *MultivariateNormalDeviates( REAL8Array *covmat, ParamData *means,
+ParamData *multivariate_normal_deviates( REAL8Array *covmat, ParamData *means,
   RandomParams *randomParams );
 
 /* function to take in a 2D matrix in a REAL8Array and output the value from
    the ith row and jth column (starting from zero in the normal C converntion)*/
-REAL8 XLALGetREAL8MatrixValue( REAL8Array *matrix, INT4 i, INT4 j );
+REAL8 get_REAL8_matrix_value( REAL8Array *matrix, INT4 i, INT4 j );
 
 /* function to take in a 2D matrix in a REAL8Array and set the value of
    the ith row and jth column (starting from zero in the normal C converntion)*/
-void XLALSetREAL8MatrixValue( REAL8Array *matrix, INT4 i, INT4 j, REAL8 val );
+void set_REAL8_matrix_value( REAL8Array *matrix, INT4 i, INT4 j, REAL8 val );
 
-void SetMCMCPulsarParams( BinaryPulsarParams *pulsarParams, ParamData *data,
+void set_mcmc_pulsar_params( BinaryPulsarParams *pulsarParams, ParamData *data,
   INT4Vector *matPos );
 
 #ifdef  __cplusplus

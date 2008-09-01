@@ -222,7 +222,7 @@ INT4 main(INT4 argc, CHAR *argv[]){
     /* only do this once if performing grid search, but do for each seperate
        data set if doing MCMC */
     if( ( inputs.mesh.maxVals.h0 == 0 || inputs.mcmc.sigmas.h0 == 0 ) && (
-          inputs.mcmc.doMCMC != 0 || i == 0 ) ){
+          inputs.mcmc.doMCMC == 1 || i == 0 ) ){
       if( verbose ) fprintf(stderr, "Calculating h0 UL estimate: ");
 
       /* get the power spectral density power/bandwidth (1/60 Hz) */
@@ -239,7 +239,7 @@ INT4 main(INT4 argc, CHAR *argv[]){
       }
 
       /* set the MCMC h0 proposal step size at stdh0/20 */
-      if( inputs.mcmc.doMCMC != 0 )
+      if( inputs.mcmc.doMCMC == 1 )
         inputs.mcmc.sigmas.h0 = stdh0/20.;
 
       if( verbose ) fprintf(stderr, "%le\n", stdh0);
@@ -323,7 +323,7 @@ INT4 main(INT4 argc, CHAR *argv[]){
     /*========================================================================*/
 
     /*================== PERFORM THE MCMC ====================================*/
-    if( inputs.mcmc.doMCMC != 0 )
+    if( inputs.mcmc.doMCMC != 0 && inputs.onlyjoint == 0 )
       perform_mcmc(&data[k], inputs, 1, dets[i], &detPos[i], edat);
 
     /*========================================================================*/
@@ -371,7 +371,7 @@ INT4 main(INT4 argc, CHAR *argv[]){
     /*========================================================================*/
 
     /*======================= PERFORM JOINT MCMC =============================*/
-    if( inputs.mcmc.doMCMC != 0 ){
+    if( inputs.mcmc.doMCMC == 1 ){
       perform_mcmc(data, inputs, numDets, output.det, detPos, edat);
 
       /* destroy data */
@@ -387,25 +387,26 @@ INT4 main(INT4 argc, CHAR *argv[]){
     for( i = 0 ; i < inputs.mesh.phiSteps ; i++ ){
       for( j = 0 ; j < inputs.mesh.ciotaSteps ; j++ ){
         if( numDets > 1 )
-          free(jointLike[i][j]);
+          XLALFree(jointLike[i][j]);
 
-        free(singleLike[i][j]);
+        XLALFree(singleLike[i][j]);
       }
       if( numDets > 1 )
-        free(jointLike[i]);
+        XLALFree(jointLike[i]);
 
-      free(singleLike[i]);
+      XLALFree(singleLike[i]);
     }
 
     if( numDets > 1 )
-      free(jointLike);
+      XLALFree(jointLike);
 
-    free(singleLike);
+    XLALFree(singleLike);
   }
   /*=========================================================================*/ 
 
   return 0;
 }
+
 
 
 /* function to get the input arguments from the command line */
@@ -465,12 +466,13 @@ void get_input_args(InputParams *inputParams, INT4 argc, CHAR *argv[]){
     { "sun-ephem",    required_argument, 0, 'M' },
     { "covariance",   required_argument, 0, 'r' },
     { "use-priors",   no_argument,    NULL, '>' },
+    { "only-joint",   no_argument,    NULL, '<' },
     { 0, 0, 0, 0 }
   };
 
   CHAR args[] =
 "hD:p:P:i:o:a:A:j:b:B:k:s:S:m:c:C:n:l:L:q:Q:U:u:Y:T:v:V:z:Z:e:E:d:I:x:t:H:w:W:\
-y:g:G:K:N:X:O:J:M:r:fFR>" ;
+y:g:G:K:N:X:O:J:M:r:fFR><" ;
   CHAR *program = argv[0];
 
   /* set defaults */
@@ -520,12 +522,14 @@ y:g:G:K:N:X:O:J:M:r:fFR>" ;
   inputParams->mcmc.outputRate = 1;           /* output every sample */
 
   inputParams->mcmc.iterations = 10000;       /* default 10000 points */
-  inputParams->mcmc.temperature = 1;          /* default annealing */
+  inputParams->mcmc.temperature = 1.;         /* default annealing */
   inputParams->mcmc.burnIn = 1000;            /* default burn in time */
 
   inputParams->mcmc.nGlitches = 0;            /* no glitches is default */
 
   inputParams->matrixFile = NULL;             /* no covriance file */
+
+  inputParams->onlyjoint = 0;       /* by default output all posteriors */
 
   /* parse input arguments */
   while( 1 ){
@@ -702,6 +706,9 @@ y:g:G:K:N:X:O:J:M:r:fFR>" ;
       case '>': /* use priors on parameters */
         inputParams->usepriors = 1;
         break;
+      case '<': /* only calculate/output the joint posterior for MCMC */
+        inputParams->onlyjoint = 1;
+        break;
       case '?':
         fprintf(stderr, "Unknown error while parsing options\n");
       default:
@@ -773,6 +780,7 @@ y:g:G:K:N:X:O:J:M:r:fFR>" ;
 }
 
 
+
 /* function to allocate memory for a likelihood array - it will be index as
    logLike[phi][cosiota][psi][h0] */
 REAL8 ****allocate_likelihood_memory(MeshGrid mesh){
@@ -781,22 +789,23 @@ REAL8 ****allocate_likelihood_memory(MeshGrid mesh){
 
   /* allocate the h0 positions using calloc (i.e. array will be initialise to 
      zero */
-  logLike = calloc(mesh.phiSteps, sizeof(REAL8 ***));
+  logLike = XLALCalloc(mesh.phiSteps, sizeof(REAL8 ***));
 
   for( i = 0 ; i < mesh.phiSteps ; i++ ){
-    logLike[i] = calloc(mesh.ciotaSteps, sizeof(REAL8 **));
+    logLike[i] = XLALCalloc(mesh.ciotaSteps, sizeof(REAL8 **));
 
     for( j = 0 ; j < mesh.ciotaSteps ; j++ ){
-      logLike[i][j] = calloc(mesh.psiSteps, sizeof(REAL8 *));
+      logLike[i][j] = XLALCalloc(mesh.psiSteps, sizeof(REAL8 *));
 
       for( k = 0 ; k < mesh.psiSteps ; k++ ){
-        logLike[i][j][k] = calloc(mesh.h0Steps, sizeof(REAL8));
+        logLike[i][j][k] = XLALCalloc(mesh.h0Steps, sizeof(REAL8));
       }
     }
   }
 
   return logLike;
 }
+
 
 
 /* function to create a log likelihood array over the parameter grid */ 
@@ -806,7 +815,7 @@ REAL8 create_likelihood_grid(DataStructure data, REAL8 ****logLike,
 
   INT4 i=0, j=0, k=0;
 
-  REAL8 cosphi=0., sinphi=0.;
+  REAL4 cosphi=0., sinphi=0.;
 
   REAL8 noiseEvidence=0.;
 
@@ -830,8 +839,7 @@ REAL8 create_likelihood_grid(DataStructure data, REAL8 ****logLike,
       fprintf(stderr, "In phi0 loop %d of %d.\n", i+1, mesh.phiSteps);
 
     vars.phi0 = mesh.minVals.phi0 + (REAL8)i*mesh.delta.phi0;
-    cosphi = cos(vars.phi0);
-    sinphi = sin(vars.phi0);
+    sin_cos_LUT( &sinphi, &cosphi, vars.phi0 );
 
     for( j = 0 ; j < mesh.ciotaSteps ; j++ ){
       vars.ci = mesh.minVals.ci + (REAL8)j*mesh.delta.ci;
@@ -858,13 +866,15 @@ REAL8 create_likelihood_grid(DataStructure data, REAL8 ****logLike,
   return noiseEvidence;
 }
 
+
+
 /* a function to sum over the data */
 void sum_data(DataStructure data){
   INT4 chunkLength=0, length=0, i=0, j=0, count=0;
   COMPLEX16 B;
 
-  length = (INT4)data.data->length + 1 -
-           data.chunkLengths->data[(INT4)data.chunkLengths->length-1];
+  length = data.data->length + 1 -
+           data.chunkLengths->data[data.chunkLengths->length-1];
 
   for( i = 0 ; i < length ; i+= chunkLength ){
     chunkLength = data.chunkLengths->data[count];
@@ -875,7 +885,7 @@ void sum_data(DataStructure data){
       B.im = data.data->data[j].im;
 
       /* sum up the data */
-      data.sumData->data[count] += (REAL8)(B.re*B.re + B.im*B.im);
+      data.sumData->data[count] += (B.re*B.re + B.im*B.im);
     }
 
     count++;
@@ -883,9 +893,11 @@ void sum_data(DataStructure data){
 }
 
 
+
+/* function to calculate the log(likelihood) given some data and a set of
+   particular pulsar parameters */
 REAL8 log_likelihood( REAL8 *likeArray, DataStructure data,
-  IntrinsicPulsarVariables vars, MeshGrid mesh,
-  REAL8Vector *dphi ){
+  IntrinsicPulsarVariables vars, MeshGrid mesh, REAL8Vector *dphi ){
   INT4 i=0, j=0, count=0, k=0;
   INT4 length=0;
   REAL8 chunkLength=0.;
@@ -907,13 +919,15 @@ REAL8 log_likelihood( REAL8 *likeArray, DataStructure data,
 
   INT4 first=0, through=0;
 
+  REAL8 psteps = (REAL8)data.lookupTable->psiSteps;
+  REAL8 tsteps = (REAL8)data.lookupTable->timeSteps;
+
   /* to save time get all log factorials up to chunkMax */
   for( i = 0 ; i < data.chunkMax+1 ; i++ )
     exclamation[i] = log_factorial(i);
 
   /* set the psi bin for the lookup table */
-  psibin = (INT4)ROUND( ( vars.psi + LAL_PI/4. )
-           *(REAL8)(data.lookupTable->psiSteps-1.)/LAL_PI_2 );
+  psibin = (INT4)ROUND( ( vars.psi + LAL_PI/4. ) * ( psteps-1. )/LAL_PI_2 );
 
   length = (INT4)data.data->length + 1 -
            data.chunkLengths->data[(INT4)data.chunkLengths->length-1];
@@ -939,8 +953,7 @@ REAL8 log_likelihood( REAL8 *likeArray, DataStructure data,
     for( j = i ; j < i + chunkLength ; j++){
       /* set the time bin for the lookup table */
       T = fmod(data.times->data[j] - tstart, 86400.);
-      timebin = (INT4)fmod(ROUND(T*(REAL8)data.lookupTable->timeSteps/86400.),
-        data.lookupTable->timeSteps);
+      timebin = (INT4)fmod( ROUND(T*tsteps/86400.), tsteps );
 
       plus = data.lookupTable->lookupTable[psibin][timebin].plus;
       cross = data.lookupTable->lookupTable[psibin][timebin].cross;
@@ -951,11 +964,11 @@ REAL8 log_likelihood( REAL8 *likeArray, DataStructure data,
       /*********************************************************/
       /* stuff for phase offset due to parameter uncertainties - MCMC only */
       if( dphi != NULL ){
-        REAL8 cphi=0., sphi=0.;
+        REAL4 cphi=0., sphi=0.;
 
         /* create the signal model */
-        cphi = cos(-dphi->data[j]);
-        sphi = sin(-dphi->data[j]);
+        sin_cos_2PI_LUT( &sphi, &cphi, -dphi->data[j] );
+             
         model.re = (plus*vars.Xpcosphi_2 + cross*vars.Xcsinphi_2)*cphi +
                  (cross*vars.Xccosphi_2 - plus*vars.Xpsinphi_2)*sphi;
         model.im = (plus*vars.Xpsinphi_2 - cross*vars.Xccosphi_2)*cphi +
@@ -985,7 +998,7 @@ REAL8 log_likelihood( REAL8 *likeArray, DataStructure data,
       /* log(likelihood)
          logL = (m-1)log(2) + m! - m*sum((Bk - yk)^2) */
 
-      /* reset array if first time in loop - else joint likelihoods
+      /* reset array if first time in loop - otherwise joint likelihoods
          will be wrong */
       if( first == 0 && through == 1 ) 
         likeArray[k] = (chunkLength - 1.)*log2;
@@ -1010,6 +1023,7 @@ REAL8 log_likelihood( REAL8 *likeArray, DataStructure data,
 }
 
 
+
 /* function to combine log likelihoods to give a joint likelihood 
    log(p(data_joint|a) = log(p(data1|a)) + log(p(data2|a))        */
 void combine_likelihoods(REAL8 ****logLike1, REAL8 ****logLike2, 
@@ -1028,7 +1042,8 @@ void combine_likelihoods(REAL8 ****logLike1, REAL8 ****logLike2,
 }
 
 
-/* calculate the log prior */
+
+/* function to calculate the log prior */
 REAL8 log_prior(PriorVals prior, MeshGrid mesh){
   REAL8 pri=1.;
 
@@ -1041,7 +1056,7 @@ REAL8 log_prior(PriorVals prior, MeshGrid mesh){
   else if(strcmp(prior.h0Prior, "jeffreys") == 0)
     pri *= 1./prior.vars.h0;
   else if(strcmp(prior.h0Prior, "gaussian") == 0){
-    pri *= (1./(prior.stdh0*sqrt(2.*LAL_PI)))*exp(-(prior.vars.h0 -
+    pri *= (1./(prior.stdh0*sqrt(LAL_TWOPI)))*exp(-(prior.vars.h0 -
 prior.meanh0)*(prior.vars.h0 -
     prior.meanh0)/(2.*prior.stdh0*prior.stdh0));
   }
@@ -1056,7 +1071,7 @@ prior.meanh0)*(prior.vars.h0 -
     else if( prior.meanphi + LAL_PI < prior.vars.phi0 )
       prior.vars.phi0 -= LAL_TWOPI;
 
-    pri *= ( 1./ (prior.stdphi*sqrt(2.*LAL_PI) ) )*exp( -( prior.vars.phi0 -
+    pri *= ( 1./ (prior.stdphi*sqrt(LAL_TWOPI) ) )*exp( -( prior.vars.phi0 -
             prior.meanphi ) * ( prior.vars.phi0 - prior.meanphi ) /
            ( 2.*prior.stdphi*prior.stdphi ) );
   }
@@ -1070,7 +1085,7 @@ prior.meanh0)*(prior.vars.h0 -
     else if( prior.meanpsi + LAL_PI/4. < prior.vars.psi )
       prior.vars.psi -= LAL_PI/2.;
 
-    pri *= ( 1./ (prior.stdpsi*sqrt(2.*LAL_PI) ) )*exp( -( prior.vars.psi -
+    pri *= ( 1./ (prior.stdpsi*sqrt(LAL_TWOPI) ) )*exp( -( prior.vars.psi -
             prior.meanpsi ) * ( prior.vars.psi - prior.meanpsi ) / 
            ( 2.*prior.stdpsi*prior.stdpsi ) );
   }
@@ -1084,7 +1099,7 @@ prior.meanh0)*(prior.vars.h0 -
     else if( prior.meanciota + 1. < prior.vars.ci )
       prior.vars.ci -= 2.;
 
-    pri *= ( 1./ (prior.stdciota*sqrt(2.*LAL_PI) ) ) * exp( -( prior.vars.ci -
+    pri *= ( 1./ (prior.stdciota*sqrt(LAL_TWOPI) ) ) * exp( -( prior.vars.ci -
             prior.meanciota ) * ( prior.vars.ci - prior.meanciota ) / 
            ( 2.*prior.stdciota*prior.stdciota ) );
   }
@@ -1093,8 +1108,9 @@ prior.meanh0)*(prior.vars.h0 -
 }
 
 
-/* calculate the unnormalised log posterior and output the max value - print
-out the log posterior if requested */
+
+/* function to calculate the unnormalised log posterior and output the max value 
+   - print out the log posterior if requested */
 REAL8 log_posterior(REAL8 ****logLike, PriorVals prior, MeshGrid mesh,
   OutputParams output){
   REAL8 maxPost=-1.e200, mP=0.;
@@ -1148,8 +1164,8 @@ REAL8 log_posterior(REAL8 ****logLike, PriorVals prior, MeshGrid mesh,
 }
 
 
-/* marginalise posterior over requested parameter and output the log evidence if
-requested */
+/* function to marginalise posterior over requested parameter and output the log 
+   evidence if requested */
 Results marginalise_posterior(REAL8 ****logPost, MeshGrid mesh, 
   OutputParams output){
   REAL8 dval1=0., dval2=0., dval3=0., dval4=0.;
@@ -1221,7 +1237,7 @@ Results marginalise_posterior(REAL8 ****logPost, MeshGrid mesh,
   }
 
   /* allocate memory for integration */
-  evSum1 = calloc(numSteps1, sizeof(REAL8 **));
+  evSum1 = XLALCalloc(numSteps1, sizeof(REAL8 **));
 
   /* perform first integral */
   for( i = 0 ; i < numSteps1 ; i++ ){
@@ -1314,7 +1330,7 @@ Results marginalise_posterior(REAL8 ****logPost, MeshGrid mesh,
   }
 
   /* allocate memory for second integral */
-  evSum2 = calloc(numSteps1, sizeof(REAL8 *));
+  evSum2 = XLALCalloc(numSteps1, sizeof(REAL8 *));
 
   /* perform the second integration */
   for( i = 0 ; i < numSteps1 ; i++ ){
@@ -1339,7 +1355,7 @@ Results marginalise_posterior(REAL8 ****logPost, MeshGrid mesh,
   }
 
   /* allocate memory for third integration */
-  evSum3 = calloc(numSteps1, sizeof(REAL8));
+  evSum3 = XLALCalloc(numSteps1, sizeof(REAL8));
 
   /* perform third integration */
   for( i = 0 ; i < numSteps1 ; i++ ){
@@ -1388,12 +1404,12 @@ Results marginalise_posterior(REAL8 ****logPost, MeshGrid mesh,
   }
 
   /* allocate memory for cumulative sum (needed when we want to produce an UL */
-  cumsum = calloc(numSteps1, sizeof(REAL8));
+  cumsum = XLALCalloc(numSteps1, sizeof(REAL8));
 
   /* normalise the marginalised pdf using the evidence and free memory */
   for( i = 0 ; i < numSteps1 ; i++ ){
     for( j = 0 ; j < numSteps2 ; j++ ){
-      free(evSum1[i][j]);
+      XLALFree(evSum1[i][j]);
     }
 
     /* the parameter value at a given point */
@@ -1414,8 +1430,8 @@ dval1) - evSum4);
     /* print out marginalised posterior */
     fprintf(fp, "%le\t%le\t%le\n", step, exp(evSum3[i] - evSum4), cumsum[i]);
 
-    free(evSum1[i]);
-    free(evSum2[i]);
+    XLALFree(evSum1[i]);
+    XLALFree(evSum2[i]);
   }
 
   results.evidence = evSum4;
@@ -1426,13 +1442,14 @@ dval1) - evSum4);
 
   fclose(fp);
 
-  free(evSum1);
-  free(evSum2);
-  free(evSum3);
-  free(cumsum);
+  XLALFree(evSum1);
+  XLALFree(evSum2);
+  XLALFree(evSum3);
+  XLALFree(cumsum);
 
   return results; /* return the log evidence */
 }
+
 
 
 /* function to do the trapezium rule for integration on logs  */
@@ -1441,10 +1458,11 @@ REAL8 log_trapezium(REAL8 logHeight1, REAL8 logHeight2, REAL8 width){
 
   /* area = 0.5*(height1 + height2)*width
      logarea = log(0.5) + log(width) + log(exp(logHeight1) + exp(logHeight2)) */
-  area = log(0.5) + log(width) + PLUS(logHeight1, logHeight2);
+  area = LOG_HALF + log(width) + PLUS(logHeight1, logHeight2);
 
   return area;
 }
+
 
 
 /* detector response lookup table function  - this function will output a lookup
@@ -1456,16 +1474,18 @@ void response_lookup_table(REAL8 t0, LALDetAndSource detAndSource,
   REAL8 T=0;
 
   REAL8 fplus=0., fcross=0.;
+  REAL8 psteps = (REAL8)lookupTable->psiSteps;
+  REAL8 tsteps = (REAL8)lookupTable->timeSteps;
 
   INT4 i=0, j=0;
 
   for( i = 0 ; i < lookupTable->psiSteps ; i++ ){
     detAndSource.pSource->orientation = -(LAL_PI/4.) +
-        (REAL8)i*(LAL_PI/2.) / ( (REAL8)lookupTable->psiSteps - 1. );
+        (REAL8)i*(LAL_PI/2.) / ( psteps - 1. );
 
     for( j = 0 ; j < lookupTable->timeSteps ; j++ ){
       /* one day is 86400 seconds */
-      T = t0 + (REAL8)j*86400./(REAL8)lookupTable->timeSteps;
+      T = t0 + (REAL8)j*86400. / tsteps;
 
       gps.gpsSeconds = (INT4)floor(T);
       gps.gpsNanoSeconds = (INT4)floor((fmod(T,1.0)*1.e9));
@@ -1484,15 +1504,17 @@ void response_lookup_table(REAL8 t0, LALDetAndSource detAndSource,
 }
 
 
-/* function to return the log factorial of an integer */
+
+/* function to return the (REAL8) log factorial of an integer */
 REAL8 log_factorial(INT4 num){
   INT4 i=0;
-  REAL8 logFac=0.;
+  UINT4 logFac=0;
 
-  for( i=2 ; i <= num ; i++ ) logFac += (REAL8)i;
+  for( i=2 ; i <= num ; i++ ) logFac += i;
 
-  return logFac;
+  return (REAL8)logFac;
 }
+
 
 
 /* function to calculate the upper limit - use quadratic spline interpolation 
@@ -1569,6 +1591,7 @@ REAL8 get_upper_limit(REAL8 *cumsum, REAL8 limit, MeshGrid mesh){
 }
 
 
+
 /* function to perform the MCMC parameter estimation */
 void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets, 
   CHAR *det, LALDetector *detPos, EphemerisData *edat ){
@@ -1597,7 +1620,8 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
   REAL8 like1[1], like2[1];
   REAL8 logL1=0., logL2=0.; /* log likelihoods */
   REAL8 prior=0., priorNew=0., priorTmp=0., priorTmpNew=0.;
-  REAL8 ratio;              /* logL2 - logL1 = log(L2/L1) */
+  REAL8 ratio=0.;           /* logL2 - logL1 = log(L2/L1) */
+  REAL8 log_invtemp=0.;
 
   FILE *fp=NULL;
   CHAR outFile[256];
@@ -1765,18 +1789,18 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
     paramData = XLALMalloc( MAXPARAMS*sizeof(ParamData) );
 
     /* get correlation matrix */
-    cormat = ReadCorrelationMatrix( input.matrixFile, pulsarParamsFixed,
+    cormat = read_correlation_matrix( input.matrixFile, pulsarParamsFixed,
 paramData );
 
     /* set covariance matrix */
-    covmat = CreateCovarianceMatrix( paramData, cormat );
+    covmat = create_covariance_matrix( paramData, cormat );
 
     /* allocate memory for inverse matrix */
     invmat = XLALCreateREAL8Array( covmat->dimLength );
 
     /* check if correlation matrix is positive definite if necessary */
-    if( (posdef = XLALCheckPositiveDefinite( cormat )) == NULL ){
-      chol = CholeskyDecomp(covmat, "lower");
+    if( (posdef = check_positive_definite( cormat )) == NULL ){
+      chol = cholesky_decomp(covmat, "lower");
 
       /* calculate the matrix inverse */
       LAL_CALL( LALDMatrixInverse( &status, &determinant, covmat, invmat ),
@@ -1784,9 +1808,9 @@ paramData );
     }
     else{
       REAL8Array *tempmat=NULL;
-      tempmat = CreateCovarianceMatrix( paramData, posdef );
+      tempmat = create_covariance_matrix( paramData, posdef );
 
-      chol = CholeskyDecomp(tempmat, "lower");
+      chol = cholesky_decomp(tempmat, "lower");
 
       /* calculate the matrix inverse */
       LAL_CALL( LALDMatrixInverse( &status, &determinant, tempmat, invmat ),
@@ -1800,7 +1824,7 @@ paramData );
     XLALDestroyREAL8Array( covmat );
 
     /* generate random parameters */
-    randVals = MultivariateNormalDeviates( chol, paramData, randomParams );
+    randVals = multivariate_normal_deviates( chol, paramData, randomParams );
 
     vals = XLALMalloc( MAXPARAMS*sizeof(ParamData) );
     memcpy( vals, randVals, MAXPARAMS*sizeof(ParamData) );
@@ -1821,7 +1845,7 @@ paramData );
     /* set up initial pulsar parameters */
     memcpy( &pulsarParams, &pulsarParamsFixed, sizeof(pulsarParamsFixed) );
 
-    SetMCMCPulsarParams( &pulsarParams, randVals, matPos );
+    set_mcmc_pulsar_params( &pulsarParams, randVals, matPos );
 
     /* check eccentricities so that 0 <= e < 1 i.e. circular or elliptical
        orbits */
@@ -1930,13 +1954,22 @@ paramData );
     baryinput.site.location[2] /= LAL_C_SI;
 
     /* set phase of initial heterodyne */
-    phi1[0] = get_phi( data[0], pulsarParams, baryinput, edat );
+    if( (phi1[0] = get_phi( data[0], pulsarParams, baryinput, edat )) == NULL ){
+      fprintf(stderr, "Error... Phase generation produces NULL!");
+      exit(0);
+    }
   }
+
+  /* if a annealing temperature is set then set the value of log(1/temp) */
+  if( input.mcmc.temperature > 0. )
+    log_invtemp = log( 1. / input.mcmc.temperature );
 
   fprintf(stderr, "Entering MCMC stage\n");
 
   /*=================== MCMC LOOP =====================*/
   for( i = 0 ; i < input.mcmc.iterations + input.mcmc.burnIn ; i++ ){
+    REAL4 sp=0, cp=0; /* sin and cos values */    
+
     if( verbose ){
       fprintf(stderr, "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
       fprintf(stderr, "%06.2lf%% complete", ((double)(i)+1.)*100. /
@@ -1945,10 +1978,8 @@ paramData );
 
     /* get new values of parameters using Gaussian proposal distributions */
     XLALNormalDeviates(randNum, randomParams);
-    /*if( i<input.mcmc.burnIn )
-      varsNew.h0 = vars.h0 + input.mcmc.sigmas.h0*50.0*randNum->data[0];
-    else*/
-      varsNew.h0 = vars.h0 + input.mcmc.sigmas.h0*randNum->data[0];
+
+    varsNew.h0 = vars.h0 + input.mcmc.sigmas.h0*randNum->data[0];
 
     below0 = 0;
     for( j = 0 ; j < nGlitches ; j++ ){
@@ -1985,7 +2016,7 @@ paramData );
        our prior range so the likelihood is always zero and this move always
        rejected */
     if( varsNew.h0 < 0. || below0 == 1 ){
-      if( fmod(count, input.mcmc.outputRate) == 0. && i>input.mcmc.burnIn-1 ){
+      if( fmod(count, input.mcmc.outputRate) == 0./*&& i>input.mcmc.burnIn-1*/){
         fprintf(fp, "%le\t%le\t%lf\t%lf\t%lf", logL1, vars.h0, vars.phi0,
           vars.ci, vars.psi);
 
@@ -2008,9 +2039,9 @@ paramData );
 
     if( matTrue ){
       /* generate new pulsars parameters from the pulsar parameter covariance */
-      randVals = MultivariateNormalDeviates( chol, vals, randomParams );
+      randVals = multivariate_normal_deviates( chol, vals, randomParams );
       memcpy(&pulsarParamsNew, &pulsarParams, sizeof(BinaryPulsarParams));
-      SetMCMCPulsarParams( &pulsarParamsNew, randVals, matPos );
+      set_mcmc_pulsar_params( &pulsarParamsNew, randVals, matPos );
 
       /* check eccentricities so that 0 <= e < 1 i.e. circular or elliptical
        orbits */
@@ -2065,20 +2096,18 @@ paramData );
     /* set combined parameters */
     varsNew.Xplus = 0.5*(1.+varsNew.ci*varsNew.ci);
     varsNew.Xcross = varsNew.ci;
-    varsNew.Xpsinphi_2 = 0.5*varsNew.Xplus*sin(varsNew.phi0);
-    varsNew.Xcsinphi_2 = 0.5*varsNew.Xcross*sin(varsNew.phi0);
-    varsNew.Xpcosphi_2 = 0.5*varsNew.Xplus*cos(varsNew.phi0);
-    varsNew.Xccosphi_2 = 0.5*varsNew.Xcross*cos(varsNew.phi0);
+    sin_cos_LUT( &sp, &cp, varsNew.phi0 );
+    varsNew.Xpsinphi_2 = 0.5*varsNew.Xplus*sp;
+    varsNew.Xcsinphi_2 = 0.5*varsNew.Xcross*sp;
+    varsNew.Xpcosphi_2 = 0.5*varsNew.Xplus*cp;
+    varsNew.Xccosphi_2 = 0.5*varsNew.Xcross*cp;
 
     for( j = 0 ; j < nGlitches ; j++ ){
-      extraVarsNew[j].Xpsinphi_2 = 0.5*varsNew.Xplus *
-                                   sin(extraVarsNew[j].phi0);
-      extraVarsNew[j].Xcsinphi_2 = 0.5*varsNew.Xcross *
-                                   sin(extraVarsNew[j].phi0);
-      extraVarsNew[j].Xpcosphi_2 = 0.5*varsNew.Xplus *
-                                   cos(extraVarsNew[j].phi0);
-      extraVarsNew[j].Xccosphi_2 = 0.5*varsNew.Xcross *
-                                   cos(extraVarsNew[j].phi0);
+      sin_cos_LUT( &sp, &cp, extraVarsNew[j].phi0 );
+      extraVarsNew[j].Xpsinphi_2 = 0.5*varsNew.Xplus * sp;
+      extraVarsNew[j].Xcsinphi_2 = 0.5*varsNew.Xcross * sp;
+      extraVarsNew[j].Xpcosphi_2 = 0.5*varsNew.Xplus * cp;
+      extraVarsNew[j].Xccosphi_2 = 0.5*varsNew.Xcross * cp;
       extraVarsNew[j].psi = varsNew.psi;
     }
 
@@ -2096,16 +2125,22 @@ paramData );
           baryinput.site.location[1] /= LAL_C_SI;
           baryinput.site.location[2] /= LAL_C_SI;
 
-          phi1[k] = get_phi( data[k], pulsarParamsFixed, baryinput, edat );
+          if( (phi1[k] = get_phi( data[k], pulsarParamsFixed, baryinput, edat )) == NULL ){
+            fprintf(stderr, "Error... Phase generation produces NULL!");
+            exit(0);
+          }
         }
 
         /* get new phase */
-        phi2 = get_phi( data[k], pulsarParams, baryinput, edat );
+        if( (phi2 = get_phi( data[k], pulsarParams, baryinput, edat )) == NULL ){
+          fprintf(stderr, "Error... Phase generation produces NULL!");
+          exit(0);
+        }
 
         /* set up the deltaphi, and put it into the phi2 variable */
         if( matTrue ){
           for( j=0; j<(INT4)data[k].times->length; j++ )
-            phi2->data[j] = phi2->data[j] - phi1[k]->data[j];
+            phi2->data[j] = fmod(phi2->data[j] - phi1[k]->data[j], 1.);
         }
 
         /* first likelihood */
@@ -2145,12 +2180,15 @@ paramData );
       }
 
       /* get new phase */
-      phi2 = get_phi( data[k], pulsarParamsNew, baryinput, edat );
+      if( (phi2 = get_phi( data[k], pulsarParamsNew, baryinput, edat )) == NULL ){
+        fprintf(stderr, "Error... Phase generation produces NULL!");
+        exit(0); 
+      }
 
       /* set up the deltaphi, and put it into the phi2 variable */
       if( matTrue ){
         for( j=0; j<(INT4)data[k].times->length; j++ )
-          phi2->data[j] = phi2->data[j] - phi1[k]->data[j];
+          phi2->data[j] = fmod(phi2->data[j] - phi1[k]->data[j], 1.);
       }
 
       if( nGlitches == 0 ){
@@ -2190,12 +2228,12 @@ paramData );
           if(i==0){
             priorTmp += (vals[matPos->data[k]].val -
               paramData[matPos->data[k]].val) *
-              XLALGetREAL8MatrixValue(invmat, j, k);
+              get_REAL8_matrix_value(invmat, j, k);
           }
 
           priorTmpNew += (randVals[matPos->data[k]].val -
               paramData[matPos->data[k]].val) *
-              XLALGetREAL8MatrixValue(invmat, j, k);
+              get_REAL8_matrix_value(invmat, j, k);
         }
 
         if(i==0){
@@ -2253,14 +2291,14 @@ paramData );
 
     /* accept new values if Lnew/Lold >=1 (or log(Lnew/Lold) >= 0) */
     /* include simulated annealing factor */
-    if( i < input.mcmc.burnIn - 1){
-      ratio = input.mcmc.temperature * exp( log(1./input.mcmc.temperature) *
-        (double)i/(double)input.mcmc.burnIn ) * (logL2 - logL1);
+    ratio = logL2 - logL1;
+    if( i < input.mcmc.burnIn ){
+      ratio *= input.mcmc.temperature * exp( log_invtemp *
+        (double)i/(double)input.mcmc.burnIn );
     }
-    else
-      ratio = logL2 - logL1;
 
-    if( ratio >= 0. ){ /* always accept new value */
+    /* accept new step */
+    if( ratio - log(XLALUniformDeviate(randomParams)) >= 0. ){
       vars = varsNew;
 
       /* update vals structure */
@@ -2274,23 +2312,9 @@ paramData );
 
       logL1 = logL2;
     }
-    /* otherwise accept with a certain probability */
-    else if( log(XLALUniformDeviate(randomParams)) < ratio ){
-      vars = varsNew;
-
-      if( matTrue ){
-        memcpy(vals, randVals, MAXPARAMS*sizeof(ParamData));
-        memcpy(&pulsarParams, &pulsarParamsNew, sizeof(BinaryPulsarParams));
-      }
-
-      for( j = 0 ; j < nGlitches ; j++)
-        extraVars[j] = extraVarsNew[j];
-
-      logL1 = logL2;
-    }
 
     /* printf out chains */
-    if( fmod(count, input.mcmc.outputRate) == 0. && i>input.mcmc.burnIn-1 ){
+    if( fmod(count, input.mcmc.outputRate) == 0./* && i>input.mcmc.burnIn-1*/){
       fprintf(fp, "%le\t%le\t%lf\t%lf\t%lf", logL1, vars.h0, vars.phi0, vars.ci,
         vars.psi);
 
@@ -2344,6 +2368,8 @@ paramData );
 
   fclose(fp);
 }
+
+
 
 /* function to return a vector of the pulsar phase for each data point */
 REAL8Vector *get_phi( DataStructure data, BinaryPulsarParams params,
@@ -2407,7 +2433,7 @@ REAL8Vector *get_phi( DataStructure data, BinaryPulsarParams params,
         &status );
       LAL_CALL( LALBarycenter(&status, &emit, &bary, &earth), &status );
 
-      /* add 10 minutes (600secs) to the time */
+      /* add interptime to the time */
       DTplus = DT + interptime;
       bary.tgps.gpsSeconds = (UINT8)floor(data.times->data[i]+interptime);
       bary.tgps.gpsNanoSeconds =
@@ -2436,13 +2462,14 @@ REAL8Vector *get_phi( DataStructure data, BinaryPulsarParams params,
 
     /* work out phase */
     deltat2 = deltat*deltat;
-    phis->data[i] = 2.*(params.f0*deltat + 0.5*params.f1*deltat2 +
-      SIXTH*params.f2*deltat*deltat2 +
-      TWENTYFOURTH*params.f3*deltat2*deltat2);
+    phis->data[i] = 2.*deltat*(params.f0 + 0.5*params.f1*deltat +
+      SIXTH*params.f2*deltat2 + TWENTYFOURTH*params.f3*deltat*deltat2);
   }
 
   return phis;
 }
+
+
 
 /* function to get the lengths of consecutive chunks of data */
 void get_chunk_lengths(DataStructure data){
@@ -2476,7 +2503,12 @@ void get_chunk_lengths(DataStructure data){
   data.chunkLengths = XLALResizeINT4Vector(data.chunkLengths, j);
 }
 
-void SetMCMCPulsarParams( BinaryPulsarParams *pulsarParams, ParamData *data,
+
+
+/* this functions set the value of a particular parameter from the structure
+   ParamData into a BinaryPulsarParams structure - as this is what is taken
+   in by the get_phi function */
+void set_mcmc_pulsar_params( BinaryPulsarParams *pulsarParams, ParamData *data,
   INT4Vector *matPos ){
   INT4 i=0;
 
@@ -2557,13 +2589,15 @@ void SetMCMCPulsarParams( BinaryPulsarParams *pulsarParams, ParamData *data,
   }
 }
 
-/* this function perform Cholesky decomposition on M and outputs the
+
+
+/* this function performs Cholesky decomposition on M and outputs the
    lower, or upper triagular matrix depending if uOrl is set to "upper" or
    "lower" - if nothing is specified then the default is lower
    This is pretty much copied from the GSL function gsl_linalg_cholesky_decomp
-   although this works with floats rather than doubles
+   although this works with matrices where the values are close to zero
 */
-REAL8Array *CholeskyDecomp(REAL8Array *M, CHAR* uOrl){
+REAL8Array *cholesky_decomp(REAL8Array *M, CHAR* uOrl){
   INT4 i=0, j=0, k=0;
 
   REAL8 A_00=0., L_00=0.;
@@ -2594,19 +2628,19 @@ matrix\n");
   /* initialise L be same as input matrix M */
   for(i=0; i < length; i++)
     for(j=0; j < length; j++)
-      XLALSetREAL8MatrixValue( A, i, j, XLALGetREAL8MatrixValue(M, i, j) );
+      set_REAL8_matrix_value( A, i, j, get_REAL8_matrix_value(M, i, j) );
 
-  A_00 = XLALGetREAL8MatrixValue( A, 0, 0 );
+  A_00 = get_REAL8_matrix_value( A, 0, 0 );
   L_00 = sqrt(A_00);
 
   if( A_00 <= 0 )
     fprintf(stderr, "Error... matrix must be positive definite!\n");
 
-  XLALSetREAL8MatrixValue( A, 0, 0, L_00 );
+  set_REAL8_matrix_value( A, 0, 0, L_00 );
 
   if( length > 1 ){
-    REAL8 A_10 = XLALGetREAL8MatrixValue( A, 1, 0 );
-    REAL8 A_11 = XLALGetREAL8MatrixValue( A, 1, 1 );
+    REAL8 A_10 = get_REAL8_matrix_value( A, 1, 0 );
+    REAL8 A_11 = get_REAL8_matrix_value( A, 1, 1 );
 
     REAL8 L_10 = A_10/L_00;
     REAL8 diag = A_11 - L_10*L_10;
@@ -2617,25 +2651,25 @@ matrix\n");
       exit(0);
     }
 
-    XLALSetREAL8MatrixValue( A, 1, 0, L_10 );
-    XLALSetREAL8MatrixValue( A, 1, 1, L_11 );
+    set_REAL8_matrix_value( A, 1, 0, L_10 );
+    set_REAL8_matrix_value( A, 1, 1, L_11 );
   }
 
   for( k=2; k<length; k++ ){
-    REAL8 A_kk = XLALGetREAL8MatrixValue( A, k, k );
+    REAL8 A_kk = get_REAL8_matrix_value( A, k, k );
 
     for( i=0; i<k; i++ ){
       REAL8 sum = 0.;
 
-      REAL8 A_ki = XLALGetREAL8MatrixValue( A, k, i );
-      REAL8 A_ii = XLALGetREAL8MatrixValue( A, i, i );
+      REAL8 A_ki = get_REAL8_matrix_value( A, k, i );
+      REAL8 A_ii = get_REAL8_matrix_value( A, i, i );
 
       REAL8 ci[length];
       REAL8 ck[length];
 
       for( j=0; j<length; j++ ){
-        ci[j] = XLALGetREAL8MatrixValue( A, i, j );
-        ck[j] = XLALGetREAL8MatrixValue( A, k, j );
+        ci[j] = get_REAL8_matrix_value( A, i, j );
+        ck[j] = get_REAL8_matrix_value( A, k, j );
       }
 
       if( i>0 ){
@@ -2644,7 +2678,7 @@ matrix\n");
       }
 
       A_ki = (A_ki - sum) / A_ii;
-      XLALSetREAL8MatrixValue( A, k, i, A_ki );
+      set_REAL8_matrix_value( A, k, i, A_ki );
     }
 
     {
@@ -2652,8 +2686,8 @@ matrix\n");
       REAL8 diag = 0.;
 
       for( j=0; j<k; j++ ){
-        sum += XLALGetREAL8MatrixValue( A, k, j )*
-          XLALGetREAL8MatrixValue( A, k, j );
+        sum += get_REAL8_matrix_value( A, k, j )*
+          get_REAL8_matrix_value( A, k, j );
       }
 
       diag = A_kk - sum;
@@ -2676,12 +2710,12 @@ matrix\n");
       }
       else if( diag <= 0. && fabs(diag) >= LAL_REAL8_EPS && k == length-1 ){
         /* this is a kludge as a lot of the matricies seem to have entries
-           there m(length, length) diagonal value as small but less than zero,
+           where m(length, length) diagonal value is small but less than zero,
            so I'll just set it to zero manually */
         diag = 0.;
       }
 
-      XLALSetREAL8MatrixValue( A, k, k, sqrt(diag) );
+      set_REAL8_matrix_value( A, k, k, sqrt(diag) );
 
     }
   }
@@ -2689,7 +2723,7 @@ matrix\n");
   /* set upper triangular matrix to zeros - for lower value */
   for(i=0; i<length; i++)
     for(j=i+1; j<length; j++)
-      XLALSetREAL8MatrixValue( A, i, j, 0. );
+      set_REAL8_matrix_value( A, i, j, 0. );
 
   /* check if the upper triangle is wanted - if so perform transpose */
   if(strstr(uOrl, "upper")!=NULL){
@@ -2698,30 +2732,22 @@ matrix\n");
     /* perform transpose */
     for(j=0; j<length-1; j++){
       for(i=j; i<length; i++){
-        tempdata = XLALGetREAL8MatrixValue( A, j, i );
-        XLALSetREAL8MatrixValue( A, j, i, XLALGetREAL8MatrixValue(A, i, j) );
-        XLALSetREAL8MatrixValue( A, i, j, tempdata );
+        tempdata = get_REAL8_matrix_value( A, j, i );
+        set_REAL8_matrix_value( A, j, i, get_REAL8_matrix_value(A, i, j) );
+        set_REAL8_matrix_value( A, i, j, tempdata );
       }
     }
   }
 
-  /* print out matrix */
-  /* if( verbose ){
-    fprintf(stderr, "\nCholesky decomposed matrix:\n");
-    for(i=0; i<length; i++){
-      for(j=0; j<length; j++)
-        fprintf(stderr, "%.2le  ", XLALGetREAL8MatrixValue( A, i, j ));
-      fprintf(stderr, "\n");
-    }
-  } */
-
   return A;
 }
+
+
 
 /* this function will draw a set of random numbers from a multivariate Gaussian
 distribution, with a cholesky decomposed covariance matrix given by cholmat and
 parameter mean values */
-ParamData *MultivariateNormalDeviates( REAL8Array *cholmat, ParamData *data,
+ParamData *multivariate_normal_deviates( REAL8Array *cholmat, ParamData *data,
   RandomParams *randomParams ){
   REAL4Vector *randNum=NULL;
 
@@ -2745,14 +2771,14 @@ ParamData *MultivariateNormalDeviates( REAL8Array *cholmat, ParamData *data,
 
   XLALNormalDeviates( randNum, randomParams );
 
-  /* multiply L by randNum */
+  /* multiply cholsky decomposed matrix by randNum */
   Z = XLALCreateREAL8Vector( dim );
   for(i=0;i<dim;i++)
     Z->data[i] = 0.;
 
   for(i=0;i<dim;i++)
     for(j=0;j<dim;j++)
-      Z->data[i] += XLALGetREAL8MatrixValue(cholmat,i,j)*randNum->data[j];
+      Z->data[i] += get_REAL8_matrix_value(cholmat,i,j)*randNum->data[j];
 
   /* get the output random deviates by doing the mean plus Z */
   j=0;
@@ -2774,13 +2800,14 @@ ParamData *MultivariateNormalDeviates( REAL8Array *cholmat, ParamData *data,
   return deviates;
 }
 
+
+
 /* I need to define a standard set of positions in which various pulsar
    parameters will sit within the internal correlation matrix - this will as
-   far as possible following the standard in the matrix files I have from
-   Michael Kramer
+   far as possible following the standard in the matrix files I have 
 */
-/* read in the correlation matrix */
-REAL8Array *ReadCorrelationMatrix( CHAR *matrixFile, 
+/* function to read in the correlation matrix */
+REAL8Array *read_correlation_matrix( CHAR *matrixFile, 
   BinaryPulsarParams params, ParamData *data ){
   FILE *fp=NULL;
 
@@ -2815,6 +2842,7 @@ REAL8Array *ReadCorrelationMatrix( CHAR *matrixFile,
     { "Om3", 0., 0., 0 },{ "Xpbd",0., 0., 0 }
   };
 
+  /* set the values */
   paramData[0].val = params.f0;      paramData[0].sigma = params.f0Err;
   paramData[1].val = params.f1;      paramData[1].sigma = params.f1Err;
   paramData[2].val = params.f2;      paramData[2].sigma = params.f2Err;
@@ -2919,7 +2947,7 @@ reading any correlation data!");
   corMat = XLALCreateREAL8Array( matdims );
 
   /* find positions of each parameter */
-  /* the strings that represent parameters in a matrix are given in the paraem
+  /* the strings that represent parameters in a matrix are given in the param
      variable in the tempo code mxprt.f */
   /* read in matrix */
   k=0;
@@ -2942,9 +2970,9 @@ reading any correlation data!");
       }
 
       fscanf(fp, "%lf", &corTemp);
-      XLALSetREAL8MatrixValue( corMat, k, n, corTemp );
+      set_REAL8_matrix_value( corMat, k, n, corTemp );
       if(n != k)
-        XLALSetREAL8MatrixValue( corMat, n, k, corTemp );
+        set_REAL8_matrix_value( corMat, n, k, corTemp );
       n++;
     }
 
@@ -2972,22 +3000,15 @@ reading any correlation data!");
   /* pass the parameter data to be output */
   memcpy(data, paramData, sizeof(paramData));
 
-  /* if( verbose ){
-    fprintf(stderr, "\nCorrelation matrix:\n");
-    for(i=0;i<numParams;i++){
-      for(j=0;j<numParams;j++)
-        fprintf(stderr, "%.2lf  ", XLALGetREAL8MatrixValue(corMat,i,j));
-      fprintf(stderr, "\n");
-    }
-  } */
-
   XLALDestroyUINT4Vector( matdims );
 
   return corMat;
 }
 
-/* turn the input correlation matrix into a covariance matrix */
-REAL8Array *CreateCovarianceMatrix( ParamData *data, REAL8Array *corMat ){
+
+
+/* function to turn the input /correlation/ matrix into a covariance matrix */
+REAL8Array *create_covariance_matrix( ParamData *data, REAL8Array *corMat ){
   REAL8Array *covMat=NULL;
   INT4 i=0, j=0;
 
@@ -2998,8 +3019,8 @@ REAL8Array *CreateCovarianceMatrix( ParamData *data, REAL8Array *corMat ){
     if( data[i].matPos != 0 ){
       for(j=0;j<MAXPARAMS;j++){
         if( data[j].matPos != 0 ){
-          XLALSetREAL8MatrixValue( covMat, data[i].matPos-1, data[j].matPos-1,
-          XLALGetREAL8MatrixValue( corMat, data[i].matPos-1, data[j].matPos-1) *
+          set_REAL8_matrix_value( covMat, data[i].matPos-1, data[j].matPos-1,
+          get_REAL8_matrix_value( corMat, data[i].matPos-1, data[j].matPos-1 ) *
             data[i].sigma * data[j].sigma );
         }
       }
@@ -3009,7 +3030,11 @@ REAL8Array *CreateCovarianceMatrix( ParamData *data, REAL8Array *corMat ){
   return covMat;
 }
 
-REAL8Array *XLALCheckPositiveDefinite( REAL8Array *matrix ){
+
+
+/* function to check that a 2D matrix is positive definite - if not 
+   positive definite it will be converted so that it is */
+REAL8Array *check_positive_definite( REAL8Array *matrix ){
   static LALStatus status;
 
   REAL8Vector *eigenval=NULL;
@@ -3024,8 +3049,8 @@ REAL8Array *XLALCheckPositiveDefinite( REAL8Array *matrix ){
 
   for( i=0; i<(INT4)eigenvec->dimLength->data[0]; i++ ){
     for( j=0; j<(INT4)eigenvec->dimLength->data[1]; j++ ){
-      XLALSetREAL8MatrixValue( eigenvec, i, j, 
-        XLALGetREAL8MatrixValue(matrix, i, j) );
+      set_REAL8_matrix_value( eigenvec, i, j, 
+        get_REAL8_matrix_value(matrix, i, j) );
     }
   }
 
@@ -3037,14 +3062,14 @@ REAL8Array *XLALCheckPositiveDefinite( REAL8Array *matrix ){
   for( i=0; i<(INT4)matrix->dimLength->data[0]; i++ ){
     /* first check if any eigen values are zero and if so convert to positive
        definite matrix */
-    if( eigenval->data[i] < 0. && fabs(eigenval->data[i]) > 3.*LAL_REAL8_EPS ){
+    if( eigenval->data[i] < 0. && fabs(eigenval->data[i]) > 10.*LAL_REAL8_EPS ){
       fprintf(stderr, "Eigenvalue is negative. Non-postive definite matrix!\n");
-      posdef = XLALConvertToPositiveDefinite( matrix );
+      posdef = convert_to_positive_definite( matrix );
       break;
     }
   }
 
-  /* if matrix is positive definite return it i.e. posdef hasn't been set */
+  /* if matrix is positive definite return NULL it i.e. posdef hasn't been set */
   if( posdef == NULL ){
     XLALDestroyREAL8Array( eigenvec );
     XLALDestroyREAL8Vector( eigenval );
@@ -3055,8 +3080,8 @@ REAL8Array *XLALCheckPositiveDefinite( REAL8Array *matrix ){
      close to the precision of REAL8 numbers */
   for( i=0; i<(INT4)eigenvec->dimLength->data[0]; i++ ){
     for( j=0; j<(INT4)eigenvec->dimLength->data[1]; j++ ){
-      XLALSetREAL8MatrixValue( eigenvec, i, j, 
-        XLALGetREAL8MatrixValue( posdef, i, j) );
+      set_REAL8_matrix_value( eigenvec, i, j, 
+        get_REAL8_matrix_value( posdef, i, j) );
     }
     eigenval->data[i] = 0.;
   }
@@ -3064,7 +3089,7 @@ REAL8Array *XLALCheckPositiveDefinite( REAL8Array *matrix ){
   LAL_CALL( LALDSymmetricEigenVectors( &status, eigenval, eigenvec ), &status );
 
   for( i=0; i<(INT4)matrix->dimLength->data[0]; i++ ){
-    if( eigenval->data[i] < 0. && fabs(eigenval->data[i]) > 3.*LAL_REAL8_EPS){
+    if( eigenval->data[i] < 0. && fabs(eigenval->data[i]) > 10.*LAL_REAL8_EPS){
       fprintf(stderr, "ABORT! Eigenvalue is negative. Non-postive definite \
 matrix!\n");
       exit(0);
@@ -3077,11 +3102,13 @@ matrix!\n");
   return posdef;
 }
 
+
+
 /* this function takes a matrix that isn't positive definite and converts it
 into a postive definite matrix using the method (number 2) of Rebonato and
 Jackel (see their paper at
-http://www.riccardorebonato.co.uk/papers/ValCorMat.pdf */
-REAL8Array *XLALConvertToPositiveDefinite( REAL8Array *nonposdef ){
+http://www.riccardorebonato.co.uk/papers/ValCorMat.pdf) */
+REAL8Array *convert_to_positive_definite( REAL8Array *nonposdef ){
   static LALStatus status;
 
   REAL8Vector *eigenval=NULL;
@@ -3115,12 +3142,12 @@ REAL8Array *XLALConvertToPositiveDefinite( REAL8Array *nonposdef ){
 
   for( i=0; i<length; i++ ){
     for( j=0; j<length; j++ ){
-      XLALSetREAL8MatrixValue( eigenvec, i, j, 
-        XLALGetREAL8MatrixValue(nonposdef, i, j) );
+      set_REAL8_matrix_value( eigenvec, i, j, 
+        get_REAL8_matrix_value(nonposdef, i, j) );
 
       /* initialise Lprime and T to zeros */
-      XLALSetREAL8MatrixValue( Lprime, i, j, 0. );
-      XLALSetREAL8MatrixValue( T, i, j, 0. );
+      set_REAL8_matrix_value( Lprime, i, j, 0. );
+      set_REAL8_matrix_value( T, i, j, 0. );
     }
   }
 
@@ -3133,28 +3160,28 @@ REAL8Array *XLALConvertToPositiveDefinite( REAL8Array *nonposdef ){
      zero if eigen value is negative */
   for( i=0; i<length; i++ )
     if( eigenval->data[i] > 0. )
-      XLALSetREAL8MatrixValue( Lprime, i, i, eigenval->data[i] );
+      set_REAL8_matrix_value( Lprime, i, i, eigenval->data[i] );
 
   /* compute scaling matrix T */
   for( i=0; i<length; i++ ){
     Tval = 0.;
     for( j=0; j<length; j++ ){
-      Tval += XLALGetREAL8MatrixValue( eigenvec, i, j ) * 
-              XLALGetREAL8MatrixValue( eigenvec, i, j ) *
-              XLALGetREAL8MatrixValue( Lprime, j, j );
+      Tval += get_REAL8_matrix_value( eigenvec, i, j ) * 
+              get_REAL8_matrix_value( eigenvec, i, j ) *
+              get_REAL8_matrix_value( Lprime, j, j );
     }
 
     Tval = 1./Tval;
 
     /* really we just want the sqrt of T */
-    XLALSetREAL8MatrixValue( T, i, i, sqrt(Tval) );
+    set_REAL8_matrix_value( T, i, i, sqrt(Tval) );
   }
 
   /* convert Lprime to sqrt(lambdaprime) */
   for( i=0; i<length; i++ ){
-    REAL8 tempL = XLALGetREAL8MatrixValue(Lprime, i, i);
+    REAL8 tempL = get_REAL8_matrix_value(Lprime, i, i);
 
-    XLALSetREAL8MatrixValue( Lprime, i, i, sqrt(tempL) );
+    set_REAL8_matrix_value( Lprime, i, i, sqrt(tempL) );
   }
 
   /* Bprime = S*sqrt(lambdaprime); */
@@ -3186,10 +3213,10 @@ REAL8Array *XLALConvertToPositiveDefinite( REAL8Array *nonposdef ){
      original value */
   for( i=0; i<length; i++ ){
     for( j=0; j<length; j++ ){
-      if( fabs(XLALGetREAL8MatrixValue( posdef, i, j ) -
-            XLALGetREAL8MatrixValue( nonposdef, i, j )) <= LAL_REAL8_EPS ){
-        XLALSetREAL8MatrixValue( posdef, i, j, 
-          XLALGetREAL8MatrixValue( nonposdef, i, j ) );
+      if( fabs(get_REAL8_matrix_value( posdef, i, j ) -
+            get_REAL8_matrix_value( nonposdef, i, j )) <= LAL_REAL8_EPS ){
+        set_REAL8_matrix_value( posdef, i, j, 
+          get_REAL8_matrix_value( nonposdef, i, j ) );
       }
     }
   }
@@ -3197,7 +3224,10 @@ REAL8Array *XLALConvertToPositiveDefinite( REAL8Array *nonposdef ){
   return posdef;
 }
 
-REAL8 XLALGetREAL8MatrixValue( REAL8Array *matrix, INT4 i, INT4 j ){
+
+
+/* function to get the value of the ith column and jth row from a 2D matrix */
+REAL8 get_REAL8_matrix_value( REAL8Array *matrix, INT4 i, INT4 j ){
   REAL8 val=0.;
 
   /* check that matrix is not NULL */
@@ -3230,7 +3260,10 @@ REAL8 XLALGetREAL8MatrixValue( REAL8Array *matrix, INT4 i, INT4 j ){
   return val;
 }
 
-void XLALSetREAL8MatrixValue( REAL8Array *matrix, INT4 i, INT4 j, REAL8 val ){
+
+
+/* function to set the value of the ith column and jth row of a 2D matrix */
+void set_REAL8_matrix_value( REAL8Array *matrix, INT4 i, INT4 j, REAL8 val ){
   /* check that matrix is not NULL */
   if( matrix == NULL ){
     fprintf(stderr, "Error... matrix is NULL!\n");
@@ -3258,3 +3291,5 @@ void XLALSetREAL8MatrixValue( REAL8Array *matrix, INT4 i, INT4 j, REAL8 val ){
 
   matrix->data[i*matrix->dimLength->data[0] + j] = val;
 }
+
+
