@@ -183,18 +183,18 @@ if do_mcmc:
 
 # find which detectors we have
 if 'H1' in detectors:
-  input_dir = input_dir + '/dataH1'
+  input_dir_det = input_dir + '/dataH1'
 if 'H2' in detectors:
-  input_dir = input_dir + '/dataH2'
+  input_dir_det = input_dir + '/dataH2'
 if 'L1' in detectors:
-  input_dir = input_dir + '/dataL1'
+  input_dir_det = input_dir + '/dataL1'
 if 'G1' in detectors:
-  input_dir = input_dir + '/dataG1'
+  input_dir_det = input_dir + '/dataG1'
 if 'V1' in detectors:
-  input_dir = input_dir + '/dataV1'
+  input_dir_det = input_dir + '/dataV1'
 
 # get the list of fine heterodyned data files
-input_files = os.listdir(input_dir)
+input_files = os.listdir(input_dir_det)
 input_files.sort()
 
 pulsars = [] # create list for parameter estimation nodes
@@ -210,8 +210,8 @@ while i < len(param_files):
     k=0
     while k < len(input_files):
       if pulsar in input_files[k]:
-        data_file = input_dir + '/' + input_files[k]
-        break
+        data_file = 1
+	break
 
       data_file = None
       k = k+1
@@ -261,9 +261,11 @@ while i < len(param_files):
               cov_file = covdir + '/' + cov_files[m]                
               break;
 
+	  m = m + 1
+
         pulsars[j].set_covfile(cov_file)
-        pulsars[j].set_earth(earth_ephem)
-        pulsars[j].set_sun(sun_ephem)
+        pulsars[j].set_earth(earth)
+        pulsars[j].set_sun(sun)
 
         if do_only:
           pulsars[j].set_onlyjoint()
@@ -272,6 +274,8 @@ while i < len(param_files):
     j = j+1
       
   i = i+1 
+
+  print >> sys.stderr, "Set dag job for pulsar %s" % (pulsar)
 
 # write out DAG
 dag.write_sub_files()
