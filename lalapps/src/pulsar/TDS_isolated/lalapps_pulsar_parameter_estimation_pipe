@@ -181,12 +181,37 @@ if do_mcmc:
     cov_files = os.listdir(covdir)
     cov_files.sort()
 
+dets = []
+detNum = 0
+
+# find which detectors we have
+if 'H1' in detectors:
+  dets[detNum] = 'H1'
+  detNum = detNum + 1
+  input_dir = input_dir + '/dataH1'
+if 'H2' in detectors:
+  dets[detNum] = 'H2'
+  detNum = detNum + 1
+  input_dir = input_dir + '/dataH2'
+if 'L1' in detectors:
+  dets[detNum] = 'L1'
+  detNum = detNum + 1
+  input_dir = input_dir + '/dataL1'
+if 'G1' in detectors:
+  dets[detNum] = 'G1'
+  detNum = detNum + 1
+  input_dir = input_dir + '/dataG1'
+if 'V1' in detectors:
+  dets[detNum] = 'V1'
+  detNum = detNum + 1
+  input_dir = input_dir + '/dataV1'
+
 # get the list of fine heterodyned data files
 input_files = os.listdir(input_dir)
 input_files.sort()
 
 pulsars = [] # create list for parameter estimation nodes
-  
+
 i = 0
 j = 0
 while i < len(param_files):
@@ -224,7 +249,7 @@ while i < len(param_files):
       pulsars[j].set_phi0steps(phi0steps)
       pulsars[j].set_cisteps(cisteps)
       pulsars[j].set_psisteps(psisteps)
-     
+       
       if do_ul:
         pulsars[j].set_ul()
        
@@ -237,8 +262,8 @@ while i < len(param_files):
         pulsars[j].set_burnin(burnin)
         pulsars[j].set_temperature(temperature)
         pulsars[j].set_outputrate(outputrate)
-
-        # if there is a covariance matrix set this
+ 
+       # if there is a covariance matrix set this
         m=0        
         if do_cov:
           while m < len(cov_files):
@@ -259,7 +284,7 @@ while i < len(param_files):
       dag.add_node(pulsars[j])
       j = j+1
       
-    i = i+1
+    i = i+1 
 
 # write out DAG
 dag.write_sub_files()
