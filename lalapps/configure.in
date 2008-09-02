@@ -226,40 +226,40 @@ if test "${allstatic}" = "true" ; then
   LDFLAGS="-all-static $LDFLAGS"
 fi
 
-AC_OUTPUT( 				\
-	Makefile 			\
-        lalapps.spec                    \
-	doc/Makefile 			\
-	man/Makefile 			\
-	misc/Makefile 			\
-	src/Makefile			\
-	src/lalapps/Makefile            \
-	src/example/Makefile		\
-	src/calibration/Makefile	\
-        src/frametools/Makefile         \
-	src/findchirp/Makefile		\
-	src/stochastic/Makefile		\
-	src/power/Makefile		\
-	src/ring/Makefile		\
-	src/string/Makefile		\
-	src/pulsar/Makefile		\
-	src/pulsar/FDS_isolated/Makefile \
-	src/pulsar/FDS_isolated/ResamplingFstat/Makefile \
-	src/pulsar/Injections/Makefile	 \
-	src/pulsar/FDS_griphyn/Makefile \
-	src/pulsar/hough/Makefile	\
-	src/pulsar/hough/src/Makefile   \
-	src/pulsar/FDS_binary/Makefile  \
-	src/pulsar/SideBand/Makefile    \
-	src/pulsar/templateBanks/Makefile \
-	src/pulsar/TimingTests/Makefile \
+AC_OUTPUT( \
+  Makefile \
+  lalapps.spec \
+  doc/Makefile \
+  man/Makefile \
+  misc/Makefile \
+  src/Makefile \
+  src/lalapps/Makefile \
+  src/example/Makefile \
+  src/calibration/Makefile \
+  src/frametools/Makefile \
+  src/findchirp/Makefile \
+  src/stochastic/Makefile \
+  src/power/Makefile \
+  src/ring/Makefile \
+  src/string/Makefile \
+  src/pulsar/Makefile \
+  src/pulsar/FDS_isolated/Makefile \
+  src/pulsar/FDS_isolated/ResamplingFstat/Makefile \
+  src/pulsar/Injections/Makefile \
+  src/pulsar/FDS_griphyn/Makefile \
+  src/pulsar/hough/Makefile \
+  src/pulsar/hough/src/Makefile \
+  src/pulsar/FDS_binary/Makefile \
+  src/pulsar/SideBand/Makefile \
+  src/pulsar/templateBanks/Makefile \
+  src/pulsar/TimingTests/Makefile \
   src/pulsar/TDS_isolated/Makefile \
-	src/inspiral/Makefile		\
-	src/zmsearch/Makefile		\
-	src/detresponse/Makefile	\
-	src/pulsar/hough/src2/Makefile	\
-	src/pulsar/MakeSFTs/Makefile	\
-	src/pulsar/radiometer/Makefile	\
+  src/inspiral/Makefile \
+  src/zmsearch/Makefile \
+  src/detresponse/Makefile \
+  src/pulsar/hough/src2/Makefile \
+  src/pulsar/MakeSFTs/Makefile \
+  src/pulsar/radiometer/Makefile \
 )
 
 lalframeenabled="`test x${lalframe} = xtrue && echo "ENABLED" || echo "DISABLED"`"
