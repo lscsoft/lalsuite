@@ -182,7 +182,7 @@ if do_mcmc:
     cov_files.sort()
 
 dets = []
-detNum = 0
+detNum = 1
 
 # find which detectors we have
 if 'H1' in detectors:
