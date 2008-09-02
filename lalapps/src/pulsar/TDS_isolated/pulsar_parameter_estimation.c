@@ -413,66 +413,67 @@ INT4 main(INT4 argc, CHAR *argv[]){
 void get_input_args(InputParams *inputParams, INT4 argc, CHAR *argv[]){
   struct option long_options[] =
   {
-    { "help",         no_argument,       0, 'h' },
-    { "verbose",      no_argument,    NULL, 'R' },
-    { "detectors",    required_argument, 0, 'D' },
-    { "pulsar",       required_argument, 0, 'p' },
-    { "par-file",     required_argument, 0, 'P' },
-    { "input-dir",    required_argument, 0, 'i' },
-    { "output-dir",   required_argument, 0, 'o' },
-    { "minh0",        required_argument, 0, 'a' },
-    { "maxh0",        required_argument, 0, 'A' },
-    { "h0steps",      required_argument, 0, 'j' },
-    { "minphi0",      required_argument, 0, 'b' },
-    { "maxphi0",      required_argument, 0, 'B' },
-    { "phi0steps",    required_argument, 0, 'k' },
-    { "minpsi",       required_argument, 0, 's' },
-    { "maxpsi",       required_argument, 0, 'S' },
-    { "psisteps",     required_argument, 0, 'm' },
-    { "minci",        required_argument, 0, 'c' },
-    { "maxci",        required_argument, 0, 'C' },
-    { "cisteps",      required_argument, 0, 'n' },
-    { "psi-bins",     required_argument, 0, 'l' },
-    { "time-bins",    required_argument, 0, 'L' },
-    { "h0prior",      required_argument, 0, 'q' },
-    { "phi0prior",    required_argument, 0, 'Q' },
-    { "psiprior",     required_argument, 0, 'U' },
-    { "ciprior",      required_argument, 0, 'u' },
-    { "h0mean",       required_argument, 0, 'Y' },
-    { "h0sig",        required_argument, 0, 'T' },
-    { "phi0mean",     required_argument, 0, 'v' },
-    { "phi0sig",      required_argument, 0, 'V' },
-    { "psimean",      required_argument, 0, 'z' },
-    { "psisig",       required_argument, 0, 'Z' },
-    { "cimean",       required_argument, 0, 'e' },
-    { "cisig",        required_argument, 0, 'E' },
-    { "output-post",  no_argument,    NULL, 'f' },
-    { "dob-ul",       required_argument, 0, 'd' },
-    { "mcmc",         no_argument,    NULL, 'F' },
-    { "iterations",   required_argument, 0, 'I' },
-    { "burn-in",      required_argument, 0, 'x' },
-    { "temperature",  required_argument, 0, 't' },
-    { "h0-width",     required_argument, 0, 'H' },
-    { "psi-width",    required_argument, 0, 'w' },
-    { "phi0-width",   required_argument, 0, 'W' },
-    { "ci-width",     required_argument, 0, 'y' },
-    { "glitch-times", required_argument, 0, 'g' },
-    { "glitch-cut",   required_argument, 0, 'G' },
-    { "chunk-min",    required_argument, 0, 'K' },
-    { "chunk-max",    required_argument, 0, 'N' },
-    { "output-rate",  required_argument, 0, 'X' },
-    { "nglitch",      required_argument, 0, 'O' },
-    { "earth-ephem",  required_argument, 0, 'J' },
-    { "sun-ephem",    required_argument, 0, 'M' },
-    { "covariance",   required_argument, 0, 'r' },
-    { "use-priors",   no_argument,    NULL, '>' },
-    { "only-joint",   no_argument,    NULL, '<' },
+    { "help",           no_argument,       0, 'h' },
+    { "verbose",        no_argument,    NULL, 'R' },
+    { "detectors",      required_argument, 0, 'D' },
+    { "pulsar",         required_argument, 0, 'p' },
+    { "par-file",       required_argument, 0, 'P' },
+    { "input-dir",      required_argument, 0, 'i' },
+    { "output-dir",     required_argument, 0, 'o' },
+    { "minh0",          required_argument, 0, 'a' },
+    { "maxh0",          required_argument, 0, 'A' },
+    { "h0steps",        required_argument, 0, 'j' },
+    { "minphi0",        required_argument, 0, 'b' },
+    { "maxphi0",        required_argument, 0, 'B' },
+    { "phi0steps",      required_argument, 0, 'k' },
+    { "minpsi",         required_argument, 0, 's' },
+    { "maxpsi",         required_argument, 0, 'S' },
+    { "psisteps",       required_argument, 0, 'm' },
+    { "minci",          required_argument, 0, 'c' },
+    { "maxci",          required_argument, 0, 'C' },
+    { "cisteps",        required_argument, 0, 'n' },
+    { "psi-bins",       required_argument, 0, 'l' },
+    { "time-bins",      required_argument, 0, 'L' },
+    { "h0prior",        required_argument, 0, 'q' },
+    { "phi0prior",      required_argument, 0, 'Q' },
+    { "psiprior",       required_argument, 0, 'U' },
+    { "ciprior",        required_argument, 0, 'u' },
+    { "h0mean",         required_argument, 0, 'Y' },
+    { "h0sig",          required_argument, 0, 'T' },
+    { "phi0mean",       required_argument, 0, 'v' },
+    { "phi0sig",        required_argument, 0, 'V' },
+    { "psimean",        required_argument, 0, 'z' },
+    { "psisig",         required_argument, 0, 'Z' },
+    { "cimean",         required_argument, 0, 'e' },
+    { "cisig",          required_argument, 0, 'E' },
+    { "output-post",    no_argument,    NULL, 'f' },
+    { "dob-ul",         required_argument, 0, 'd' },
+    { "mcmc",           no_argument,    NULL, 'F' },
+    { "iterations",     required_argument, 0, 'I' },
+    { "burn-in",        required_argument, 0, 'x' },
+    { "temperature",    required_argument, 0, 't' },
+    { "h0-width",       required_argument, 0, 'H' },
+    { "psi-width",      required_argument, 0, 'w' },
+    { "phi0-width",     required_argument, 0, 'W' },
+    { "ci-width",       required_argument, 0, 'y' },
+    { "glitch-times",   required_argument, 0, 'g' },
+    { "glitch-cut",     required_argument, 0, 'G' },
+    { "chunk-min",      required_argument, 0, 'K' },
+    { "chunk-max",      required_argument, 0, 'N' },
+    { "output-rate",    required_argument, 0, 'X' },
+    { "nglitch",        required_argument, 0, 'O' },
+    { "earth-ephem",    required_argument, 0, 'J' },
+    { "sun-ephem",      required_argument, 0, 'M' },
+    { "covariance",     required_argument, 0, 'r' },
+    { "use-priors",     no_argument,    NULL, '>' },
+    { "only-joint",     no_argument,    NULL, '<' },
+    { "output-burn-in", no_argument,    NULL, ')' },
     { 0, 0, 0, 0 }
   };
 
   CHAR args[] =
 "hD:p:P:i:o:a:A:j:b:B:k:s:S:m:c:C:n:l:L:q:Q:U:u:Y:T:v:V:z:Z:e:E:d:I:x:t:H:w:W:\
-y:g:G:K:N:X:O:J:M:r:fFR><" ;
+y:g:G:K:N:X:O:J:M:r:fFR><)" ;
   CHAR *program = argv[0];
 
   /* set defaults */
@@ -524,6 +525,7 @@ y:g:G:K:N:X:O:J:M:r:fFR><" ;
   inputParams->mcmc.iterations = 10000;       /* default 10000 points */
   inputParams->mcmc.temperature = 1.;         /* default annealing */
   inputParams->mcmc.burnIn = 1000;            /* default burn in time */
+  inputParams->mcmc.outputBI = 0;             /* output the burn in chain - default to no */
 
   inputParams->mcmc.nGlitches = 0;            /* no glitches is default */
 
@@ -708,6 +710,9 @@ y:g:G:K:N:X:O:J:M:r:fFR><" ;
         break;
       case '<': /* only calculate/output the joint posterior for MCMC */
         inputParams->onlyjoint = 1;
+        break;
+      case ')': /* output the burn in chain as well as the full chain */
+        inputParams->mcmc.outputBI = 1;
         break;
       case '?':
         fprintf(stderr, "Unknown error while parsing options\n");
@@ -1639,6 +1644,9 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
   BarycenterInput baryinput;
   REAL8Vector *phi1[numDets], *phi2=NULL;
 
+  INT4 iterations = input.mcmc.iterations + input.mcmc.burnIn - 1;  
+  INT4 burnInLength = input.mcmc.burnIn - 1; /* length of burn in */
+
   /* read the TEMPO par file for the pulsar */
   XLALReadTEMPOParFile( &pulsarParamsFixed, input.parFile );
 
@@ -1920,7 +1928,13 @@ paramData );
   }
 
   /* open output file */
-  sprintf(outFile, "%s/MCMCchain_%s_%s", input.outputDir, input.pulsar, det);
+  if( input.mcmc.outputBI == 0 )  
+    sprintf(outFile, "%s/MCMCchain_%s_%s", input.outputDir, input.pulsar, det);
+  else{ /* append number of burn in steps to the file name */
+    sprintf(outFile, "%s/MCMCchain_%s_%s_burn_in_%d", input.outputDir, 
+      input.pulsar, det, input.mcmc.burnIn );
+  }
+
   if( (fp=fopen(outFile, "w")) == NULL ){
     fprintf(stderr, "Error... Can't open MCMC output chain file!\n");
     exit(0);
@@ -1964,16 +1978,20 @@ paramData );
   if( input.mcmc.temperature > 0. )
     log_invtemp = log( 1. / input.mcmc.temperature );
 
+  /* if we also want to output the burn in chain set to -1 */
+  if( input.mcmc.outputBI == 1 )
+    burnInLength = -1;
+
   fprintf(stderr, "Entering MCMC stage\n");
 
   /*=================== MCMC LOOP =====================*/
-  for( i = 0 ; i < input.mcmc.iterations + input.mcmc.burnIn ; i++ ){
+  for( i = 0 ; i < iterations ; i++ ){
     REAL4 sp=0, cp=0; /* sin and cos values */    
 
     if( verbose ){
       fprintf(stderr, "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
-      fprintf(stderr, "%06.2lf%% complete", ((double)(i)+1.)*100. /
-        (double)(input.mcmc.iterations + input.mcmc.burnIn));
+      fprintf(stderr, "%06.2lf%% complete", ((REAL8)(i)+1.)*100. /
+        (REAL8)(input.mcmc.iterations + input.mcmc.burnIn));
     }
 
     /* get new values of parameters using Gaussian proposal distributions */
@@ -2016,7 +2034,7 @@ paramData );
        our prior range so the likelihood is always zero and this move always
        rejected */
     if( varsNew.h0 < 0. || below0 == 1 ){
-      if( fmod(count, input.mcmc.outputRate) == 0. i>input.mcmc.burnIn-1 ){
+      if( fmod(count, input.mcmc.outputRate) == 0. && i > burnInLength ){
         fprintf(fp, "%le\t%le\t%lf\t%lf\t%lf", logL1, vars.h0, vars.phi0,
           vars.ci, vars.psi);
 
@@ -2314,7 +2332,7 @@ paramData );
     }
 
     /* printf out chains */
-    if( fmod(count, input.mcmc.outputRate) == 0. && i>input.mcmc.burnIn-1 ){
+    if( fmod(count, input.mcmc.outputRate) == 0. && i > burnInLength ){
       fprintf(fp, "%le\t%le\t%lf\t%lf\t%lf", logL1, vars.h0, vars.phi0, vars.ci,
         vars.psi);
 

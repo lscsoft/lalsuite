@@ -106,7 +106,7 @@ extern "C" {
 "\n"\
 " MCMC parameters:-\n"\
 " --mcmc              set to also perform an MCMC\n"\
-" --interations       (INT4) the number of iteraction in the MCMC chain\n"\
+" --iterations        (INT4) the number of iteraction in the MCMC chain\n"\
 " --burn-in           (INT4) the number of burn in iterations\n"\
 " --temperature       (REAL8) the temperatue to start of the simulated\n\
                      annealing in the burn in stage\n"\
@@ -128,6 +128,7 @@ extern "C" {
 " --covariance        pulsar parameter covariance matrix file (.mat)\n"\
 " --only-joint        set this to only produce the joint MCMC when given \n\
                      muliple detectors (MCMC only)\n"\
+" --output-burn-in    set this to also output the burn in stage to the chain\n"\
 "\n"
 
 #define MAXLENGTH 1000000
@@ -181,6 +182,7 @@ typedef struct tagMCMCParams{
   INT4 doMCMC;                     /* flag can be true 1 or false 0 */
   INT4 iterations;                 /* length of MCMC chain */
   INT4 burnIn;                     /* length of burn in period */
+  INT4 outputBI;                   /* output the burn in chain */
   REAL8 temperature;               /* temperature of simulated annealing during
                                       burn in */
   IntrinsicPulsarVariables sigmas; /* standard deviations of the proposal
