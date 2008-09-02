@@ -230,12 +230,18 @@ while i < len(param_files):
     pulsars[j].set_pulsar(pulsar)
     pulsars[j].set_input_dir(input_dir)
     pulsars[j].set_output_dir(output_dir)
-    pulsars[j].set_maxh0(maxh0)
-    pulsars[j].set_minh0(minh0)
-    pulsars[j].set_h0steps(h0steps)
-    pulsars[j].set_phi0steps(phi0steps)
-    pulsars[j].set_cisteps(cisteps)
-    pulsars[j].set_psisteps(psisteps)
+    if len(maxh0) > 0: 
+      pulsars[j].set_maxh0(maxh0)
+    if len(minh0) > 0:
+      pulsars[j].set_minh0(minh0)
+    if len(h0steps) > 0:
+      pulsars[j].set_h0steps(h0steps)
+    if len(phi0steps) > 0:
+      pulsars[j].set_phi0steps(phi0steps)
+    if len(cisteps) > 0:
+      pulsars[j].set_cisteps(cisteps)
+    if len(psisteps) > 0:
+      pulsars[j].set_psisteps(psisteps)
        
     if do_ul:
       pulsars[j].set_ul()
@@ -259,13 +265,12 @@ while i < len(param_files):
               
             if pulsar == p:
               cov_file = covdir + '/' + cov_files[m]                
-              break;
+              pulsars[j].set_covfile(cov_file)
+	      pulsars[j].set_earth(earth)
+	      pulsars[j].set_sun(sun)
+	      break;
 
 	  m = m + 1
-
-        pulsars[j].set_covfile(cov_file)
-        pulsars[j].set_earth(earth)
-        pulsars[j].set_sun(sun)
 
         if do_only:
           pulsars[j].set_onlyjoint()
