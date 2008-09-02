@@ -228,12 +228,38 @@ while i < len(param_files):
       print >> sys.stderr, "No file set for PSR %s" % (pulsar)
       i = i+1
       continue 
+    
+    if do_mcmc:
+      # if there is a covariance matrix set this
+      m=0        
+      if do_cov:
+        while m < len(cov_files):
+          if ".mat" in cov_files[m]:
+            p = 'J' + re.sub(r'\.mat',r'',cov_files[m])
+              
+            if pulsar == p:
+              # add parameterNoce for covariance job
+              pulsars.append(pulsar_parameter_estimation.parameterNode(param_job_cov))
+              cov_file = covdir + '/' + cov_files[m]                
+              pulsars[j].set_covfile(cov_file)
+	      
+              pulsars[j].set_earth(earth)
+	            pulsars[j].set_sun(sun)
+	            break;
+
+	        m = m + 1
       
-    # add parameterNode for DAG
-    if do_cov:
-      pulsars.append(pulsar_parameter_estimation.parameterNode(param_job_cov))
-    else:
-      pulsars.append(pulsar_parameter_estimation.parameterNode(parameter_job))
+      else: # add a regular job
+        pulsars.append(pulsar_parameter_estimation.parameterNode(parameter_job))
+
+      if do_only:
+        pulsars[j].set_onlyjoint()
+
+      pulsars[j].set_mcmc()
+      pulsars[j].set_iterations(iterations)
+      pulsars[j].set_burnin(burnin)       
+      pulsars[j].set_temperature(temperature)
+      pulsars[j].set_outputrate(outputrate)
 
     pulsars[j].set_detectors(detectors)
     pulsars[j].set_param_file(param_file)
@@ -258,32 +284,6 @@ while i < len(param_files):
        
     if do_verbose:
       pulsars[j].set_verbose()
-      
-    if do_mcmc:
-      pulsars[j].set_mcmc()
-      pulsars[j].set_iterations(iterations)
-      pulsars[j].set_burnin(burnin)       
-      pulsars[j].set_temperature(temperature)
-      pulsars[j].set_outputrate(outputrate)
- 
-      # if there is a covariance matrix set this
-      m=0        
-      if do_cov:
-        while m < len(cov_files):
-          if ".mat" in cov_files[m]:
-            p = 'J' + re.sub(r'\.mat',r'',cov_files[m])
-              
-            if pulsar == p:
-              cov_file = covdir + '/' + cov_files[m]                
-              pulsars[j].set_covfile(cov_file)
-	      pulsars[j].set_earth(earth)
-	      pulsars[j].set_sun(sun)
-	      break;
-
-	  m = m + 1
-
-        if do_only:
-          pulsars[j].set_onlyjoint()
 
     dag.add_node(pulsars[j])
     j = j+1
