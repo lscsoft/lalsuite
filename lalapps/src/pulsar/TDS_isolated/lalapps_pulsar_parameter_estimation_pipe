@@ -245,7 +245,7 @@ while i < len(param_files):
       
     if do_mcmc:
       pulsars[j].set_mcmc()
-      pulsars[j].set_interations(iterations)
+      pulsars[j].set_iterations(iterations)
       pulsars[j].set_burnin(burnin)       
       pulsars[j].set_temperature(temperature)
       pulsars[j].set_outputrate(outputrate)
