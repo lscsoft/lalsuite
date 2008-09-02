@@ -46,6 +46,8 @@ Usage: lalapps_pulsar_parameter_estimation_pipe [options]
   -u, --ul                 output the upper limit
   -m, --mcmc               perform search as an MCMC
   -c, --covariance         use covariance file if available
+  -o, --only-joint         only output the joint posterior (for MCMC with
+                           multiple detectors 
   """
   print >> sys.stderr, msg
   
@@ -60,6 +62,7 @@ longop = [
   "ul",
   "mcmc",
   "covariance",
+  "only-joint"
   ]
 
 try:
@@ -138,12 +141,8 @@ dag.set_dag_file(basename)
 # create Condor Jobds that will be used in the dag
 parameter_job = pulsar_parameter_estimation.parameterJob(cp)
 
-# set Condor .sub submit file names
-subsuffix = '.sub'
-df_job.set_sub_file(basename + '.datafind' + subsuffix)
-coarse_job.set_sub_file(basename + subsuffix)
-fine_job.set_sub_file(basename +  subsuffix)
-update_job.set_sub_file(basename + subsuffix)
+# set Condor .sub submit file name
+parameter_job.set_sub_file(basename + '.sub')
 
 # set values from config file
 pulsar_param_dir = cp.get('data','pulsar_param_dir')
