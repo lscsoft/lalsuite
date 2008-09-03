@@ -720,33 +720,33 @@ LALExcessPowerFilterBank *XLALCreateExcessPowerFilterBank(
 {
 	static const char func[] = "XLALCreateExcessPowerFilterBank";
 	LALExcessPowerFilterBank *new;
-	struct ExcessPowerFilter *filters;
+	struct ExcessPowerFilter *basis_filters;
 	REAL8Sequence *twice_channel_overlap;
 	REAL8Sequence *unwhitened_cross;
 	int i;
 
 	new = malloc(sizeof(*new));
-	filters = calloc(n_channels, sizeof(*filters));
+	basis_filters = calloc(n_channels, sizeof(*basis_filters));
 	twice_channel_overlap = XLALCreateREAL8Sequence(n_channels - 1);
 	unwhitened_cross = XLALCreateREAL8Sequence(n_channels - 1);
-	if(!new || !filters || !twice_channel_overlap || !unwhitened_cross) {
+	if(!new || !basis_filters || !twice_channel_overlap || !unwhitened_cross) {
 		free(new);
-		free(filters);
+		free(basis_filters);
 		XLALDestroyREAL8Sequence(twice_channel_overlap);
 		XLALDestroyREAL8Sequence(unwhitened_cross);
 		XLAL_ERROR_NULL(func, XLAL_ENOMEM);
 	}
 
 	new->n_filters = n_channels;
-	new->filters = filters;
+	new->basis_filters = basis_filters;
 	new->twice_channel_overlap = twice_channel_overlap;
 	new->unwhitened_cross = unwhitened_cross;
 
 	for(i = 0; i < n_channels; i++) {
-		filters[i].fseries = generate_filter(flow + i * channel_bandwidth, channel_bandwidth, psd, two_point_spectral_correlation);
-		if(!filters[i].fseries) {
+		basis_filters[i].fseries = generate_filter(flow + i * channel_bandwidth, channel_bandwidth, psd, two_point_spectral_correlation);
+		if(!basis_filters[i].fseries) {
 			while(i--)
-				XLALDestroyCOMPLEX16FrequencySeries(filters[i].fseries);
+				XLALDestroyCOMPLEX16FrequencySeries(basis_filters[i].fseries);
 			free(new);
 			XLALDestroyREAL8Sequence(twice_channel_overlap);
 			XLALDestroyREAL8Sequence(unwhitened_cross);
@@ -754,14 +754,14 @@ LALExcessPowerFilterBank *XLALCreateExcessPowerFilterBank(
 		}
 
 		/* compute the unwhitened root mean square for this channel */
-		filters[i].unwhitened_rms = sqrt(psd_weighted_filter_inner_product(filters[i].fseries, filters[i].fseries, two_point_spectral_correlation, psd) * filter_deltaF / 2);
+		basis_filters[i].unwhitened_rms = sqrt(psd_weighted_filter_inner_product(basis_filters[i].fseries, basis_filters[i].fseries, two_point_spectral_correlation, psd) * filter_deltaF / 2);
 	}
 
 	/* compute the cross terms for the channel normalizations and
 	 * unwhitened mean squares */
 	for(i = 0; i < new->n_filters - 1; i++) {
-		twice_channel_overlap->data[i] = 2 * filter_inner_product(filters[i].fseries, filters[i + 1].fseries, two_point_spectral_correlation);
-		unwhitened_cross->data[i] = psd_weighted_filter_inner_product(filters[i].fseries, filters[i + 1].fseries, two_point_spectral_correlation, psd) * psd->deltaF;
+		twice_channel_overlap->data[i] = 2 * filter_inner_product(basis_filters[i].fseries, basis_filters[i + 1].fseries, two_point_spectral_correlation);
+		unwhitened_cross->data[i] = psd_weighted_filter_inner_product(basis_filters[i].fseries, basis_filters[i + 1].fseries, two_point_spectral_correlation, psd) * psd->deltaF;
 	}
 
 	return new;
@@ -778,11 +778,11 @@ void XLALDestroyExcessPowerFilterBank(
 )
 {
 	if(bank) {
-		if(bank->filters) {
+		if(bank->basis_filters) {
 			int i;
 			for(i = 0; i < bank->n_filters; i++)
-				XLALDestroyCOMPLEX16FrequencySeries(bank->filters[i].fseries);
-			free(bank->filters);
+				XLALDestroyCOMPLEX16FrequencySeries(bank->basis_filters[i].fseries);
+			free(bank->basis_filters);
 		}
 		XLALDestroyREAL8Sequence(bank->twice_channel_overlap);
 		XLALDestroyREAL8Sequence(bank->unwhitened_cross);

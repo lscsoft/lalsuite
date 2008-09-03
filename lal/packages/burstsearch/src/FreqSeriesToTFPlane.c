@@ -32,6 +32,7 @@
 
 
 #include <lal/Date.h>
+#include <lal/LALComplex.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataUtils.h>
@@ -98,10 +99,8 @@ static COMPLEX16Sequence *apply_filter(
 	else {
 		/* output = inputseries * conj(filter) */
 		memset(outputseq->data, 0, (output - outputseq->data) * sizeof(*outputseq->data));
-		for(; output < last; output++, input++, filter++) {
-			output->re = input->re * filter->re + input->im * filter->im;
-			output->im = input->im * filter->re - input->re * filter->im;
-		}
+		for(; output < last; output++, input++, filter++)
+			*output = XLALCOMPLEX16Mul(*input, XLALCOMPLEX16Conjugate(*filter));
 		memset(last, 0, (outputseq->length - (last - outputseq->data)) * sizeof(*outputseq->data));
 	}
 
@@ -184,7 +183,7 @@ int XLALFreqSeriesToTFPlane(
 		 * obtain an SNR time series.  Note that
 		 * XLALREAL8ReverseFFT() omits the factor of 1 / (N Delta
 		 * t) in the inverse transform. */
-		apply_filter(fcorr, fseries, filter_bank->filters[i].fseries);
+		apply_filter(fcorr, fseries, filter_bank->basis_filters[i].fseries);
 		if(XLALREAL8ReverseFFT(plane->channel_buffer, fcorr, reverseplan)) {
 			XLALDestroyCOMPLEX16Sequence(fcorr);
 			XLAL_ERROR(func, XLAL_EFUNC);
@@ -281,7 +280,7 @@ static double compute_unwhitened_mean_square(
 	double mean_square = 0;
 
 	for(i = channel; i < channel + channels; i++)
-		mean_square += pow(filter_bank->filters[i].unwhitened_rms, 2);
+		mean_square += pow(filter_bank->basis_filters[i].unwhitened_rms, 2);
 
 	return mean_square;
 }
@@ -323,7 +322,7 @@ SnglBurst *XLALComputeExcessPower(
 		/* compute uwsample_mean_square */
 		uwsample_mean_square = compute_unwhitened_mean_square(filter_bank, channel, channels);
 		for(c = channel; c < channel_end - 1; c++)
-			uwsample_mean_square += filter_bank->twice_channel_overlap->data[c] * filter_bank->filters[c].unwhitened_rms * filter_bank->filters[c + 1].unwhitened_rms * plane->fseries_deltaF / plane->deltaF;
+			uwsample_mean_square += filter_bank->twice_channel_overlap->data[c] * filter_bank->basis_filters[c].unwhitened_rms * filter_bank->basis_filters[c + 1].unwhitened_rms * plane->fseries_deltaF / plane->deltaF;
 
 	/* start with at least 2 degrees of freedom */
 	for(length = 2 / (channels * plane->tiles.dof_per_pixel); length <= plane->tiles.max_length; length *= 2) {
@@ -347,7 +346,7 @@ SnglBurst *XLALComputeExcessPower(
 			 * unwhitened time series samples for this t */
 			for(c = channel; c < channel_end; c++) {
 				sample += plane->channel_data[t * plane->channels + c];
-				uwsample += plane->channel_data[t * plane->channels + c] * filter_bank->filters[c].unwhitened_rms * sqrt(plane->fseries_deltaF / plane->deltaF);
+				uwsample += plane->channel_data[t * plane->channels + c] * filter_bank->basis_filters[c].unwhitened_rms * sqrt(plane->fseries_deltaF / plane->deltaF);
 			}
 
 #if 0

@@ -51,7 +51,7 @@ typedef struct tagLALExcessPowerFilterBank {
 		/* root mean square of the unwhitened time series
 		 * corresponding to this filter */
 		REAL8 unwhitened_rms;
-	} *filters;
+	} *basis_filters;
 	/* twice the inner product of filters for neighbouring channels;
 	 * twice_channel_overlap[0] is twice the inner product of the
 	 * filters for channels 0 and 1, and so on (for n channels, there
