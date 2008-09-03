@@ -39,7 +39,6 @@ cvs-clean: maintainer-clean
 	rm -f include/config.h.in
 	rm -f include/lal/stamp-h*.in
 	rm -f configure
-	rm -f configure.in
 	rm -f aclocal.m4
 	rm -f acinclude.m4
 	rm -f acconfig.h
@@ -48,7 +47,6 @@ cvs-clean: maintainer-clean
 	rm -f config.status
 	rm -f config.log
 	rm -f config.h.in
-	rm -f configure.ac
 
 # make README.install
 README.install:
