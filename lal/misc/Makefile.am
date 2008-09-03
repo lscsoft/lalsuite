@@ -3,7 +3,7 @@ EXTRA_DIST = doc.mk dvi.mk include.mk main.tex.in \
              lal.m4 lallibtool.m4 lalam15patch.m4 pkg.m4 old-pkg.m4 \
              acconfig.h capture-uninstall.sh
 
-CLEANFILES = uninstall-lal.sh lal-user-env.sh lal-user-env.csh
+CLEANFILES = uninstall-lal.sh lal-user-env.sh lal-user-env.csh __lalGitID.h lalGitID.h
 
 sysconf_DATA = lal-user-env.sh lal-user-env.csh
 BUILT_SOURCES = lal-user-env.sh lal-user-env.csh
