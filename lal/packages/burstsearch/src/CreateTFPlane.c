@@ -29,6 +29,11 @@
 
 
 #include <math.h>
+
+
+#include <gsl/gsl_matrix.h>
+
+
 #include <lal/FrequencySeries.h>
 #include <lal/LALAtomicDatatypes.h>
 #include <lal/LALMalloc.h>
@@ -361,7 +366,7 @@ REAL8TimeFrequencyPlane *XLALCreateTFPlane(
 {
 	static const char func[] = "XLALCreateTFPlane";
 	REAL8TimeFrequencyPlane *plane;
-	REAL8 *channel_data;
+	gsl_matrix *channel_data;
 	REAL8Sequence *channel_buffer;
 	REAL8Window *tukey;
 	REAL8Sequence *correlation;
@@ -461,13 +466,14 @@ REAL8TimeFrequencyPlane *XLALCreateTFPlane(
 	 */
 
 	plane = XLALMalloc(sizeof(*plane));
-	channel_data = XLALMalloc(channels * tseries_length * sizeof(*channel_data));
+	channel_data = gsl_matrix_alloc(tseries_length, channels);
 	channel_buffer = XLALCreateREAL8Sequence(tseries_length);
 	tukey = XLALCreateTukeyREAL8Window(tseries_length, (tseries_length - tiling_length) / (double) tseries_length);
 	correlation = tukey ? compute_two_point_spectral_correlation(tukey) : NULL;
 	if(!plane || !channel_data || !channel_buffer || !tukey || !correlation) {
 		XLALFree(plane);
-		XLALFree(channel_data);
+		if(channel_data)
+			gsl_matrix_free(channel_data);
 		XLALDestroyREAL8Sequence(channel_buffer);
 		XLALDestroyREAL8Window(tukey);
 		XLALDestroyREAL8Sequence(correlation);
@@ -517,7 +523,8 @@ void XLALDestroyTFPlane(
 )
 {
 	if(plane) {
-		XLALFree(plane->channel_data);
+		if(plane->channel_data)
+			gsl_matrix_free(plane->channel_data);
 		XLALDestroyREAL8Sequence(plane->channel_buffer);
 		XLALDestroyREAL8Window(plane->window);
 		XLALDestroyREAL8Sequence(plane->two_point_spectral_correlation);

@@ -23,6 +23,9 @@
 #define _TFTRANSFORM_H
 
 
+#include <gsl/gsl_matrix.h>
+
+
 #include <lal/LALDatatypes.h>
 #include <lal/Window.h>
 #include <lal/RealFFT.h>
@@ -109,7 +112,7 @@ typedef struct tagREAL8TimeFrequencyPlane {
 	 *
 	 * channel_buffer->length is the number of samples in each channel.
 	 */
-	REAL8 *channel_data;
+	gsl_matrix *channel_data;
 	/* re-usable holding area for the data for a single channel */
 	REAL8Sequence *channel_buffer;
 	/* time-frequency plane's tiling information */

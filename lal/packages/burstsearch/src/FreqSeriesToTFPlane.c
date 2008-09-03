@@ -190,7 +190,7 @@ int XLALFreqSeriesToTFPlane(
 		}
 		/* interleave the result into the channel_data array */
 		for(j = 0; j < plane->channel_buffer->length; j++)
-			plane->channel_data[j * plane->channels + i] = plane->channel_buffer->data[j];
+			gsl_matrix_set(plane->channel_data, j, i, plane->channel_buffer->data[j]);
 	}
 
 	/* clean up */
@@ -345,8 +345,8 @@ SnglBurst *XLALComputeExcessPower(
 			/* compute the whitened and (approximate)
 			 * unwhitened time series samples for this t */
 			for(c = channel; c < channel_end; c++) {
-				sample += plane->channel_data[t * plane->channels + c];
-				uwsample += plane->channel_data[t * plane->channels + c] * filter_bank->basis_filters[c].unwhitened_rms * sqrt(plane->fseries_deltaF / plane->deltaF);
+				sample += gsl_matrix_get(plane->channel_data, t, c);
+				uwsample += gsl_matrix_get(plane->channel_data, t, c) * filter_bank->basis_filters[c].unwhitened_rms * sqrt(plane->fseries_deltaF / plane->deltaF);
 			}
 
 #if 0
