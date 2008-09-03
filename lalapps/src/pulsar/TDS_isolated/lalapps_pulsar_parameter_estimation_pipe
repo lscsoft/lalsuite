@@ -188,6 +188,9 @@ if do_mcmc:
     cov_files = os.listdir(covdir)
     cov_files.sort()
 
+    if len(cov_files) > 0:
+      pulsarsCov = [] # initialise a list
+
 # find which detectors we have
 if 'H1' in detectors:
   input_dir_det = input_dir + '/dataH1'
@@ -208,6 +211,8 @@ pulsars = [] # create list for parameter estimation nodes
 
 i = 0
 j = 0
+count1 = 0
+count2 = 0
 while i < len(param_files):
   if ".par" in param_files[i]:
     pulsar = 'J' + re.sub(r'\.par',r'',param_files[i]) # set pulsar name from
@@ -239,53 +244,87 @@ while i < len(param_files):
               
             if pulsar == p:
               # add parameterNoce for covariance job
-              pulsars.append(pulsar_parameter_estimation.parameterNode(param_job_cov))
+              pulsarsCov.append(pulsar_parameter_estimation.parameterNode(param_job_cov))
               cov_file = covdir + '/' + cov_files[m]                
-              pulsars[j].set_covfile(cov_file)
+              pulsarsCov[count2].set_covfile(cov_file)
 	      
-              pulsars[j].set_earth(earth)
-	            pulsars[j].set_sun(sun)
-	            break;
+              pulsarsCov[count2].set_earth(earth)
+              pulsarsCov[count2].set_sun(sun)
+	      
+              pulsarsCov[count2].set_mcmc()
+              pulsarsCov[count2].set_iterations(iterations)
+              pulsarsCov[count2].set_burnin(burnin)
+              pulsarsCov[count2].set_temperature(temperature)
+              pulsarsCov[count2].set_outputrate(outputrate)
 
-	        m = m + 1
+              pulsarsCov[count2].set_detectors(detectors)
+              pulsarsCov[count2].set_param_file(param_file)
+              pulsarsCov[count2].set_pulsar(pulsar)
+              pulsarsCov[count2].set_input_dir(input_dir)
+              pulsarsCov[count2].set_output_dir(output_dir)
+
+              if do_only:
+                pulsarsCov[count2].set_onlyjoint()
+              
+              if do_verbose:
+                pulsarsCov[count2].set_verbose()
+
+              dag.add_node(pulsarsCov[count2])
+              count2 = count2 + 1
+              break;
+
+            # if no covariance file has been found do 4 param MCMC
+            if m == len(cov_files) - 1:
+	      pulsars.append(pulsar_parameter_estimation.parameterNode(parameter_job))
+	      
+	      if do_only:
+	        pulsars[count1].set_onlyjoint()
+              
+              pulsars[count1].set_mcmc()
+              pulsars[count1].set_iterations(iterations)
+              pulsars[count1].set_burnin(burnin)
+              pulsars[count1].set_temperature(temperature)
+              pulsars[count1].set_outputrate(outputrate)
+
+              pulsars[count1].set_detectors(detectors)
+              pulsars[count1].set_param_file(param_file)
+              pulsars[count1].set_pulsar(pulsar)
+              pulsars[count1].set_input_dir(input_dir)
+              pulsars[count1].set_output_dir(output_dir)
+
+              dag.add_node(pulsars[count1])
+              count1 = count1 + 1
+              break
+          m = m + 1
       
-      else: # add a regular job
-        pulsars.append(pulsar_parameter_estimation.parameterNode(parameter_job))
-
-      if do_only:
-        pulsars[j].set_onlyjoint()
-
-      pulsars[j].set_mcmc()
-      pulsars[j].set_iterations(iterations)
-      pulsars[j].set_burnin(burnin)       
-      pulsars[j].set_temperature(temperature)
-      pulsars[j].set_outputrate(outputrate)
-
-    pulsars[j].set_detectors(detectors)
-    pulsars[j].set_param_file(param_file)
-    pulsars[j].set_pulsar(pulsar)
-    pulsars[j].set_input_dir(input_dir)
-    pulsars[j].set_output_dir(output_dir)
-    if len(maxh0) > 0: 
-      pulsars[j].set_maxh0(maxh0)
-    if len(minh0) > 0:
-      pulsars[j].set_minh0(minh0)
-    if len(h0steps) > 0:
-      pulsars[j].set_h0steps(h0steps)
-    if len(phi0steps) > 0:
-      pulsars[j].set_phi0steps(phi0steps)
-    if len(cisteps) > 0:
-      pulsars[j].set_cisteps(cisteps)
-    if len(psisteps) > 0:
-      pulsars[j].set_psisteps(psisteps)
+    else: # add a regular job
+      pulsars.append(pulsar_parameter_estimation.parameterNode(parameter_job))
+      
+      pulsars[j].set_detectors(detectors)
+      pulsars[j].set_param_file(param_file)
+      pulsars[j].set_pulsar(pulsar)
+      pulsars[j].set_input_dir(input_dir)
+      pulsars[j].set_output_dir(output_dir)
+      if len(maxh0) > 0: 
+        pulsars[j].set_maxh0(maxh0)
+      if len(minh0) > 0:
+        pulsars[j].set_minh0(minh0)
+      if len(h0steps) > 0:
+        pulsars[j].set_h0steps(h0steps)
+      if len(phi0steps) > 0:
+        pulsars[j].set_phi0steps(phi0steps)
+      if len(cisteps) > 0:
+        pulsars[j].set_cisteps(cisteps)
+      if len(psisteps) > 0:
+        pulsars[j].set_psisteps(psisteps)
        
-    if do_ul:
-      pulsars[j].set_ul()
+      if do_ul:
+        pulsars[j].set_ul()
        
-    if do_verbose:
-      pulsars[j].set_verbose()
+      if do_verbose:
+        pulsars[j].set_verbose()
 
-    dag.add_node(pulsars[j])
+      dag.add_node(pulsars[j])
     j = j+1
       
   i = i+1 
