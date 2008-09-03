@@ -363,7 +363,7 @@ INT4 main(INT4 argc, CHAR *argv[]){
       /* output the evidence */
       fprintf(fp, "%s\t%le\n", output.det, results.evidence - totLogNoiseEv);
       if( output.dob != 0. ){
-        fprintf(fp, "%.1lf%% h0 upper limit = %lf\n", output.dob,
+        fprintf(fp, "%.1lf%% h0 upper limit = %le\n", output.dob,
           results.h0UpperLimit);
       }
       fclose(fp);
@@ -2150,16 +2150,18 @@ paramData );
         }
 
         /* get new phase */
-        if( (phi2 = get_phi( data[k], pulsarParams, baryinput, edat )) == NULL ){
-          fprintf(stderr, "Error... Phase generation produces NULL!");
-          exit(0);
-        }
-
         /* set up the deltaphi, and put it into the phi2 variable */
         if( matTrue ){
+          if( (phi2 = get_phi( data[k], pulsarParams, baryinput, edat )) == NULL ){
+            fprintf(stderr, "Error... Phase generation produces NULL!");
+            exit(0);
+          }
+
           for( j=0; j<(INT4)data[k].times->length; j++ )
             phi2->data[j] = fmod(phi2->data[j] - phi1[k]->data[j], 1.);
         }
+        else
+          phi2 = NULL; /* if there's no cov file log_likelihood requires phi to be NULL */
 
         /* first likelihood */
         if( nGlitches == 0 ){
@@ -2198,16 +2200,18 @@ paramData );
       }
 
       /* get new phase */
-      if( (phi2 = get_phi( data[k], pulsarParamsNew, baryinput, edat )) == NULL ){
-        fprintf(stderr, "Error... Phase generation produces NULL!");
-        exit(0); 
-      }
-
       /* set up the deltaphi, and put it into the phi2 variable */
       if( matTrue ){
+        if( (phi2 = get_phi( data[k], pulsarParamsNew, baryinput, edat )) == NULL ){
+          fprintf(stderr, "Error... Phase generation produces NULL!");
+          exit(0); 
+        }
+
         for( j=0; j<(INT4)data[k].times->length; j++ )
           phi2->data[j] = fmod(phi2->data[j] - phi1[k]->data[j], 1.);
       }
+      else
+        phi2 = NULL;
 
       if( nGlitches == 0 ){
         input.mesh.minVals.h0 = varsNew.h0;
@@ -2409,7 +2413,7 @@ REAL8Vector *get_phi( DataStructure data, BinaryPulsarParams params,
   REAL8Vector *phis=NULL;
 
   /* if edat is NULL then return a NULL poniter */
-  if( edat == NULL)
+  if( edat == NULL )
     return NULL;
 
    /* set the position and frequency epochs if not already set */
