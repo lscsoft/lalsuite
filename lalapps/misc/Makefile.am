@@ -1,7 +1,7 @@
 ## Process this file with automake to produce Makefile.in
 sysconf_DATA = lalapps-user-env.sh lalapps-user-env.csh
 BUILT_SOURCES = lalapps-user-env.sh lalapps-user-env.csh
-CLEANFILES = lalapps-user-env.sh lalapps-user-env.csh
+CLEANFILES = lalapps-user-env.sh lalapps-user-env.csh __lalappsGitID.h lalappsGitID.h
 
 noinst_HEADERS = lalappsGitID.h
 lalappsGitID.h: gitID
