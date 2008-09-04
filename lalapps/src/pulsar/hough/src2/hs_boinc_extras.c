@@ -394,7 +394,7 @@ void show_progress(double rac,  /**< right ascension */
 
 /**
   check if given file is a zip archive by looking for the zip-magic header 'PK\003\044'
-  returns 1 if true, 0 if false, -1 if an error occurred
+  returns 1 if a zip file, 0 if not, -1 if an error occurred
  */
 static int is_zipped ( const char *fname /**< name of the file to check for being zipped */
 		       ) {
@@ -559,11 +559,14 @@ static void worker (void) {
   int output_help = 0;         /**< flag: should we write out an additional help string?
 				    describing additional command-line arguments handled
 			            only by this BOINC-wrapper? */
+  FILE*fp;                     /**< file pointer to check only if a file can be opened */
   int breakpoint = 0;          /**< stop at breakpoint? (for testing the Windows Runtime Debugger) */
   int crash_fpu = 0;
   int test_nan  = 0;
   int test_snan = 0;
   int test_sqrt = 0;
+
+  int resultfile_present = 0;
 
 #ifdef _WIN32
   /* point the Windows Runtime Debugger to the Symbol Store on einstein */
@@ -743,7 +746,7 @@ static void worker (void) {
 	  strncpy(rargv[rarg],argv[arg], (startc - argv[arg]));
 	  strncat(rargv[rarg],resultfile,s);
 	}
-      else
+      else /* option and argument, not joined with "=" */
 	{
 	  if(arg + 1 >= argc) {
 	    LogPrintf(LOG_CRITICAL,"ERROR in command line: no argument following %s option\n",argv[arg]);
@@ -845,10 +848,10 @@ static void worker (void) {
 #ifdef _MSC_VER
   /* break on file present */
 #define DEBUG_BREAKPOINT_FNAME "EAH_MSC_BREAKPOINT"
-  {
-    FILE*fp_debug;
-    if ((fp_debug=fopen("..\\..\\" DEBUG_BREAKPOINT_FNAME, "r")) || (fp_debug=fopen(DEBUG_BREAKPOINT_FNAME, "r")) ) 
-      DebugBreak();
+  if ((fp=fopen("..\\..\\" DEBUG_BREAKPOINT_FNAME, "r")) ||
+      (fp=fopen(DEBUG_BREAKPOINT_FNAME, "r")) ) {
+    fclose(fp);
+    DebugBreak();
   }
 
   /* break on command-line option present */
@@ -874,12 +877,17 @@ static void worker (void) {
 
   if(test_sqrt)
     fprintf(stderr,"NaN:%f\n", sqrt(-1));
-  
+
+  if((fp = boinc_fopen(resultfile,"r"))) {
+    fclose(fp);
+    resultfile_present = 1;
+  }
+
 #ifdef BOINC_APIV6
   if(setup_shmem())
-    LogPrintf (LOG_NORMAL, "WARNING: Couldn't set up communication with graphics process\n",res);
+    LogPrintf (LOG_NORMAL, "WARNING: Couldn't set up communication with graphics process\n");
   else
-    LogPrintf (LOG_DEBUG, "Set up communication with graphics process.\n",res);
+    LogPrintf (LOG_DEBUG, "Set up communication with graphics process.\n");
 #endif
 
 #ifdef EAH_DETECT_CPU_FEATURES
@@ -887,31 +895,33 @@ static void worker (void) {
   LogPrintf (LOG_DEBUG, "CPU type:%d\n",global_cpu_type);
 #endif
 
-  /* CALL WORKER's MAIN()
-   */
-  res = MAIN(rargc,rargv);
-  if (res) {
-    LogPrintf (LOG_CRITICAL, "ERROR: MAIN() returned with error '%d'\n",res);
-  }
+  if (output_help || !resultfile_present) {
+    /* CALL WORKER's MAIN()
+     */
+    res = MAIN(rargc,rargv);
+    if (res) {
+      LogPrintf (LOG_CRITICAL, "ERROR: MAIN() returned with error '%d'\n",res);
+    }
 
 #if defined(__GNUC__) && defined(__i386__)
-  {
-    fpuw_t fpstat = get_fpu_status();
-    fprintf(stderr,"FPU status flags: ");
-    PRINT_FPU_STATUS_FLAGS(fpstat);
-    fprintf(stderr,"\n");
-  }
+    {
+      fpuw_t fpstat = get_fpu_status();
+      fprintf(stderr,"FPU status flags: ");
+      PRINT_FPU_STATUS_FLAGS(fpstat);
+      fprintf(stderr,"\n");
+    }
 #endif
 
-  /* if the program was called for help, we write out usage for command-line options this wrapper adds to it and exit */
-  if(output_help) {
-    printf("Additional options the BOINC version understands:\n");
-    printf("      --WUfpops         REAL     \"flops estimation\", passed to the BOINC client as the number of Flops\n");
-    printf("      --BreakPoint       -       if present fire up the Windows Runtime Debugger at internal breakpoint (WIN32 only)\n");
-    printf("      --CrashFPU         -       if present drain the FPU stack to test FPE\n");
-    printf("      --TestNaN          -       if present raise a NaN to test FPE\n");
-    printf("      --TestSQRT         -       if present try to calculate sqrt(-1) to test FPE\n");
-    boinc_finish(0);
+    /* if the program was called for help, we write out usage for command-line options this wrapper adds to it and exit */
+    if(output_help) {
+      printf("Additional options the BOINC version understands:\n");
+      printf("      --WUfpops         REAL     \"flops estimation\", passed to the BOINC client as the number of Flops\n");
+      printf("      --BreakPoint       -       if present fire up the Windows Runtime Debugger at internal breakpoint (WIN32 only)\n");
+      printf("      --CrashFPU         -       if present drain the FPU stack to test FPE\n");
+      printf("      --TestNaN          -       if present raise a NaN to test FPE\n");
+      printf("      --TestSQRT         -       if present try to calculate sqrt(-1) to test FPE\n");
+      boinc_finish(0);
+    }
   }
 
 
@@ -921,7 +931,8 @@ static void worker (void) {
   /* we'll still try to zip and send back what's left from an output file for diagnostics */
   /* in case of an error before any output was written the result will contain the link file */
 #define OUTPUT_EXT ".zip"
-  {
+  res = is_zipped(resultfile);
+  if(res == 0) {
     int s = strlen(resultfile) + strlen(OUTPUT_EXT) + 1;
     char*zipfile = (char*)calloc(s,sizeof(char));
     strncpy(zipfile,resultfile,s);
@@ -932,6 +943,8 @@ static void worker (void) {
     } else if( boinc_rename(zipfile, resultfile) ) {
       LogPrintf (LOG_NORMAL, "WARNING: Couldn't rename '%s' to '%s'\n", zipfile, resultfile);
     }
+  } else if (res<0) {
+    LogPrintf (LOG_NORMAL, "WARNING: is_zipped() couldn't open output file '%s' (%d)\n", resultfile,res);
   }
 
   /* finally set (fl)ops count if given */
