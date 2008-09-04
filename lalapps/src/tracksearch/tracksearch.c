@@ -4035,15 +4035,14 @@ void LALappsTrackSearchWhitenSegments( LALStatus        *status,
 	smoothedAveragePSD->data[i]=
 	  smoothingAveragePSDBias*smoothedAveragePSD->data[i];
       /*
-       * Copy newly smoothed PSD to frequency series
-       * We artifically shifted the tmp array to alleviate
-       * a shift due to the blocksize/2 points change in 
-       * freq of the psd.
+       * The newly setup smoothed PSD has been shifted to remove the
+       * previous frequency shifts.  In points the shift is halfBlock
+       * which is implicity downshifted into the proper position by 
+       * artifically wrapping the original PSD see above code for
+       * how it is done.
        */
-/*       for (i=0;i<averagePSD->data->length;i++) */
-/* 	averagePSD->data->data[i]=smoothedAveragePSD->data[i]; */
       for (i=0;i<averagePSD->data->length;i++)
-	averagePSD->data->data[i]=smoothedAveragePSD->data[i+halfBlock];
+	averagePSD->data->data[i]=smoothedAveragePSD->data[i];
       if (smoothedAveragePSD)
 	XLALDestroyREAL4Vector(smoothedAveragePSD);
 

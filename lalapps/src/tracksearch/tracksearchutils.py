@@ -2403,7 +2403,12 @@ class candidateList:
         if brightSpotZ.__len__() < 1:
             factor=1;
         else:
-            factor=normalizeZscoreTo/(max(brightSpotZ))
+            try:
+                factor=normalizeZscoreTo/(max(brightSpotZ))
+            except ZeroDivisionError:
+                sys.stderr.write("Problem calculating bright pixel power z score for plotting.\n")
+                sys.stderr.write("Info will not be put into plot, Sorry.\n")
+                factor=0
         del line2plot
         tmpZ=[]
         for entry in brightSpotZ:
