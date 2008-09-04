@@ -42,6 +42,12 @@
  *  This corresponds to bookends = 1, 2 or 3 respectively. If bookends does 
  *  not equal 1, 2 or 3 then option 3 is assumed.
  *
+ *  The function \texttt{XLALInspiralWaveTaper} is the XLAL version of the code
+ *  described above. In this case, instead of passing an integer to give the tapering
+ *  method, we use one of the options in the \texttt{InspiralApplyTaper} enumeration.
+ *  These options are \texttt{INSPIRAL_TAPER_START}, \texttt{INSPIRAL_TAPER_END}
+ *  and \texttt{INSPIRAL_TAPER_BOTH}.
+ *
  *  \subsubsection*{Prototypes}
  *  \vspace{0.1in}
  *  \input{LALInspiralWaveTaperCP}
@@ -67,29 +73,84 @@
 NRCSID(LALINSPIRALWAVETAPERC, 
 		  "$Id$"); 
 
+
 /*  <lalVerbatim file="LALInspiralWaveTaperCP"> */
 void LALInspiralWaveTaper(
                    LALStatus   *status,
                    REAL4Vector *signal,
                    UINT4       bookends)
 { /* </lalVerbatim>  */
+
+  InspiralApplyTaper taperType;
+
+  INITSTATUS(status, "LALInspiralWaveTaper",LALINSPIRALWAVETAPERC);
+
+  XLALPrintDeprecationWarning( "LALInspiralWaveTaper", "XLALInspiralWaveTaper" );
+
+  if ( bookends == 0 )
+  {
+    /* No taper specified */
+    LALWarning( status, "No taper specified; not tapering" );
+    RETURN( status );
+  }
+  else if ( bookends == 1 )
+  {
+    taperType = INSPIRAL_TAPER_START;
+  }
+  else if ( bookends == 2 )
+  {
+    taperType = INSPIRAL_TAPER_END;
+  }
+  else if ( bookends == 3 )
+  {
+    taperType = INSPIRAL_TAPER_BOTH;
+  }
+  else
+  {
+    ABORT( status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE );
+  }
+
+  if ( XLALInspiralWaveTaper( signal, taperType ) == XLAL_FAILURE )
+  {
+    ABORTXLAL( status );
+  }
+
+  RETURN( status );
+}
+
+/*  <lalVerbatim file="LALInspiralWaveTaperCP"> */
+int XLALInspiralWaveTaper(
+                   REAL4Vector         *signal,
+                   InspiralApplyTaper  bookends)
+{ /* </lalVerbatim>  */
  
+  const static char *func = "XLALInspiralWaveTaper";
+
   UINT4 i, start, end, mid, n; /* indices */
   UINT4 flag, safe = 1;
   UINT4 length;   
   REAL4 z, sigma;          
   REAL4 realN, realI;  /* REAL4 values of n & i used for the calculations */
 
-  INITSTATUS(status, "LALInspiralWaveTaper",LALINSPIRALWAVETAPERC);
+#ifndef LAL_NDEBUG
+  if ( !signal )
+    XLAL_ERROR( func, XLAL_EFAULT );
 
-  ASSERT(signal, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-  ASSERT(signal->data, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL); 
+  if ( !signal->data )
+    XLAL_ERROR( func, XLAL_EFAULT );
+#endif
+
+  /* Check we have chosen a valid tapering method */
+  if ( (UINT4) bookends >= (UINT4) INSPIRAL_TAPER_NUM_OPTS )
+    XLAL_ERROR( func, XLAL_EINVAL );
 
   length = signal->length;
 
-  if(bookends < 1 || bookends > 3)
-    bookends = 3;    
-
+  if( bookends == INSPIRAL_TAPER_NONE )    
+  {
+    XLALPrintWarning( "No taper specified; not tapering.\n" );
+    return XLAL_SUCCESS;
+  }
   
   /* Search for start and end of signal */
   flag = 0;
@@ -105,8 +166,8 @@ void LALInspiralWaveTaper(
   }  
   if ( flag == 0 )
   {
-    XLALPrintWarning( "No signal found in the vector. Cannot taper." );
-    RETURN( status );
+    XLALPrintWarning( "No signal found in the vector. Cannot taper.\n" );
+    return XLAL_SUCCESS;
   }
     
   flag = 0;
@@ -125,7 +186,7 @@ void LALInspiralWaveTaper(
   /* Check we have more than 2 data points */
   if((end - start) <= 1)
   {
-    LALWarning( status, "Data less than 3 points, cannot taper!" );
+    XLALPrintWarning( "Data less than 3 points, cannot taper!\n" );
     safe = 0;
   }
 
@@ -135,7 +196,7 @@ void LALInspiralWaveTaper(
     mid = (start+end)/2;
 
     /* If requested search for second peak from start and taper */
-    if( bookends != 2 )
+    if( bookends != INSPIRAL_TAPER_END )
     {
       flag = 0;
       i = start+1;
@@ -168,7 +229,7 @@ void LALInspiralWaveTaper(
     }     
   
     /* If requested search for second peak from end */
-    if( bookends > 1 )
+    if( bookends == INSPIRAL_TAPER_END || bookends == INSPIRAL_TAPER_BOTH )
     {    
       i = end - 1;
       flag = 0;
@@ -203,7 +264,7 @@ void LALInspiralWaveTaper(
     }
   }
 
-  RETURN (status);
+  return XLAL_SUCCESS;
 }
 
 

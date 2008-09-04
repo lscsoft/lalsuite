@@ -899,9 +899,23 @@ tagInspiralInit
 /* </lalVerbatim>  */
 
 /* <lalLaTeX>
-\idx[Type]{PhiofVIntegrandIn}
+\idx[Type]{InspiralInit}
 </lalLaTeX>  */
 
+/* <lalVerbatim file="LALInspiralApplyTaperH">  */
+typedef enum
+{
+  INSPIRAL_TAPER_NONE,
+  INSPIRAL_TAPER_START,
+  INSPIRAL_TAPER_END,
+  INSPIRAL_TAPER_BOTH,
+  INSPIRAL_TAPER_NUM_OPTS
+}  InspiralApplyTaper;
+/* </lalVerbatim>  */
+
+/* <lalLaTeX>
+\idx[Type]{InspiralInit}
+</lalLaTeX>  */ 
 
 
 
@@ -977,8 +991,12 @@ LALInspiralInit(
 void LALInspiralWaveTaper(
      LALStatus    *status,
      REAL4Vector  *signal,
-     UINT4	  bookends
+     UINT4       bookends
      );
+
+int XLALInspiralWaveTaper(
+                   REAL4Vector         *signal,
+                   InspiralApplyTaper  bookends);
 
 /* --- HERE ARE THE WAVEFORMS/MODELS PROTOTYPES --- */
 /*  <lalLaTeX>
