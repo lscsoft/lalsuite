@@ -47,6 +47,8 @@ parser.add_option("-a","--tmpltbank",action="store_true",default=False,\
     help="look for template bank files that you can make links to" )
 parser.add_option("-b","--inspiral-first",action="store_true",default=False,\
     help="look for first inspiral files that you can make links to)" )
+parser.add_option("","--inspiral-second",action="store_true",default=False,\
+    help="look for second stage inspiral files that you can make links to)" )
 parser.add_option("-c","--make-links",action="store_true",default=False,\
     help="make the links" )
 #input
@@ -83,6 +85,8 @@ if opts.tmpltbank:
   filetypes.append("TMPLTBANK")
 if opts.inspiral_first:
   filetypes.append("INSPIRAL_FIRST")
+if opts.inspiral_second:
+  filetypes.append("INSPIRAL_SECOND_*")
 
 # Split the names of the runs into a list. On the command line,
 # the list should be comma-separated. (playground,inj001,etc.)
