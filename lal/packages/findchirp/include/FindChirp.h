@@ -370,6 +370,8 @@ tagFindChirpTmpltParams
   Approximant                   approximant;
   Order                         order;
   INT4                          reverseChirpBank;
+  INT4                          bandPassTmplt;
+  InspiralApplyTaper            taperTmplt;
 }
 FindChirpTmpltParams;
 /* </lalVerbatim> */

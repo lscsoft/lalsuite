@@ -91,6 +91,7 @@ LALFindChirpTDTemplate (
 /* </lalVerbatim> */
 {
   UINT4         j;
+  UINT4         shift;
   UINT4         waveLength;
   UINT4         numPoints;
   REAL4        *xfac;
@@ -101,6 +102,8 @@ LALFindChirpTDTemplate (
   CHAR          infomsg[512];
   PPNParamStruc ppnParams;
   CoherentGW    waveform;
+
+  REAL4Vector  *tmpxfac = NULL; /* Used for band-passing */
 
 
   INITSTATUS( status, "LALFindChirpTDTemplate", FINDCHIRPTDTEMPLATEC );
@@ -179,6 +182,7 @@ LALFindChirpTDTemplate (
   
   /* store deltaT and zero out the time domain waveform vector */
   deltaT = params->deltaT;
+  sampleRate = 1.0 / deltaT;
   xfac = params->xfacVec->data;
   numPoints =  params->xfacVec->length;
   memset( xfac, 0, numPoints * sizeof(REAL4) );
@@ -269,7 +273,6 @@ LALFindChirpTDTemplate (
 
     /* set up additional template parameters */
     deltaF = 1.0 / ((REAL8) numPoints * deltaT);
-    sampleRate = 1.0 / deltaT;
     tmplt->ieta            = 1;
     tmplt->approximant     = params->approximant;
     tmplt->order           = params->order;
@@ -304,14 +307,17 @@ LALFindChirpTDTemplate (
   }
 
 
-  /*
-   *
-   * create the frequency domain findchirp template
-   *
-   */
+  /* Taper the waveform if required */
+  if ( params->taperTmplt != INSPIRAL_TAPER_NONE )
+  {
+    if ( XLALInspiralWaveTaper( params->xfacVec, params->taperTmplt )
+           == XLAL_FAILURE )
+    {
+      ABORTXLAL( status );
+    }
+  }
 
-
-  /* shift chirp to end of vector so it is the correct place for the filter */
+  /* Find the end of the chirp */
   j = numPoints - 1;
   while ( xfac[j] == 0 )
   {
@@ -322,13 +328,84 @@ LALFindChirpTDTemplate (
     }
   }
   ++j;
-  memmove( xfac + numPoints - j, xfac, j * sizeof( *xfac ) );
-  memset( xfac, 0, ( numPoints - j ) * sizeof( *xfac ) );
+
+  /* Band pass the template if required */
+  if ( params->bandPassTmplt )
+  {
+    REAL4Vector bpVector; /*Used to save time */
+
+    /* We want to shift the template to the middle of the vector so */
+    /* that band-passing will work properly */
+    shift = ( numPoints - j ) / 2;
+    memmove( xfac + shift, xfac, j * sizeof( *xfac ) );
+    memset( xfac, 0, shift * sizeof( *xfac ) );
+    memset( xfac + ( numPoints + j ) / 2, 0, 
+         ( numPoints - ( numPoints + j ) / 2 ) * sizeof( *xfac ) );
+
+
+    /* Select an appropriate part of the vector to band pass. */
+    /* band passing the whole thing takes a lot of time */
+    if ( j > 2 * sampleRate && 2 * j <= numPoints )
+    {
+      bpVector.length = 2 * j;
+      bpVector.data   = params->xfacVec->data + numPoints / 2 - j;
+    }
+    else if ( j <= 2 * sampleRate && j + 2 * sampleRate <= numPoints )
+    {
+      bpVector.length = j + 2 * sampleRate;
+      bpVector.data   = params->xfacVec->data 
+                   + ( numPoints - j ) / 2 - (INT4)sampleRate;
+    }
+    else
+    {
+      bpVector.length = params->xfacVec->length;
+      bpVector.data   = params->xfacVec->data;
+    }
+
+    if ( XLALBandPassInspiralTemplate( &bpVector, tmplt->fLower,
+                 tmplt->fFinal, sampleRate ) == XLAL_FAILURE )
+    {
+      ABORTXLAL( status );
+    } 
+
+    /* Now we need to do the shift to the end. */
+    /* Use a temporary vector to avoid mishaps */
+    if ( ( tmpxfac = XLALCreateREAL4Vector( numPoints ) ) == NULL )
+    {
+      ABORTXLAL( status );
+    }
+
+    memcpy( tmpxfac->data, xfac + ( numPoints + j ) / 2, 
+        ( numPoints - ( numPoints + j ) / 2 ) * sizeof( *xfac ) );
+
+    memcpy( tmpxfac->data + numPoints - ( numPoints + j ) / 2, 
+                  xfac, ( numPoints + j ) / 2 * sizeof( *xfac ) );
+
+    memcpy( xfac, tmpxfac->data, numPoints * sizeof( *xfac ) );
+
+    XLALDestroyREAL4Vector( tmpxfac );
+    tmpxfac = NULL;
+  }
+  else
+  {
+    /* No need for so much shifting around if not band passing */
+    /* shift chirp to end of vector so it is the correct place for the filter */
+    memmove( xfac + numPoints - j, xfac, j * sizeof( *xfac ) );
+    memset( xfac, 0, ( numPoints - j ) * sizeof( *xfac ) );
+  }
+
+  /*
+   *
+   * create the frequency domain findchirp template
+   *
+   */
 
   /* fft chirp */
-  LALForwardRealFFT( status->statusPtr, fcTmplt->data, params->xfacVec, 
-      params->fwdPlan );
-  CHECKSTATUSPTR( status );
+  if ( XLALREAL4ForwardFFT( fcTmplt->data, params->xfacVec, 
+      params->fwdPlan ) == XLAL_FAILURE )
+  {
+    ABORTXLAL( status );
+  }
 
   /* copy the template parameters to the findchirp template structure */
   memcpy( &(fcTmplt->tmplt), tmplt, sizeof(InspiralTemplate) );
