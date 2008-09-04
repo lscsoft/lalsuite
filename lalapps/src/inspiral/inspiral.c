@@ -248,6 +248,10 @@ FindChirpBankSimParams bankSimParams = { 0, 0, -1, -1, NULL, -1, NULL, NULL };
 INT4 reverseChirpBank      = 0;         /* enable the reverse chirp     */
                                         /* template bank option         */
 
+/* taper/band pass template options */
+INT4  bandPassTmplt           = 0;
+InspiralApplyTaper taperTmplt = INSPIRAL_TAPER_NONE;
+
 /* template bank veto options */
 UINT4 subBankSize          = 0;         /* num templates in a subbank   */
 UINT4 ccFlag = 0;
@@ -1815,6 +1819,8 @@ int main( int argc, char *argv[] )
   fcTmpltParams->fLow = fLow;
   fcTmpltParams->reverseChirpBank = reverseChirpBank;
   fcTmpltParams->order = order;
+  fcTmpltParams->bandPassTmplt = bandPassTmplt;
+  fcTmpltParams->taperTmplt = taperTmplt;
 
   /* initialize findchirp filter functions */
   LAL_CALL( LALFindChirpFilterInit( &status, &fcFilterParams, fcInitParams ), 
@@ -3303,6 +3309,11 @@ fprintf( a, "  --ts-endtime-interval msec   set end-time interval for TrigScan c
 fprintf( a, "  --ts-metric-scaling fac      scale the metric which defines the ellipsoids for TrigScan\n");\
 fprintf( a, "                               Scaling must be > 0\n");\
 fprintf( a, "\n");\
+fprintf( a, "\n");\
+fprintf( a, "  --band-pass-template         Band-pass filter the time-domain inspiral template\n");\
+fprintf( a, "  --taper-template OPT         Taper the inspiral template using option OPT\n");\
+fprintf( a, "                                 (start|end|both) \n");\
+fprintf( a, "\n");\
 fprintf( a, "  --enable-output              write the results to a LIGO LW XML file\n");\
 fprintf( a, "  --output-mask MASK           write the output sngl_inspiral table\n");\
 fprintf( a, "                                 with optional MASK (bns|bcv) \n");\
@@ -3443,6 +3454,8 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"rsq-veto-coeff",          required_argument, 0,                '['},
     {"rsq-veto-pow",            required_argument, 0,                ']'},
     {"bank-veto-subbank-size",  required_argument, 0,                ','},
+    {"band-pass-template",      no_argument,       0,                '}'},
+    {"taper-template",          required_argument, 0,                '{'},
     /* frame writing options */
     {"write-raw-data",          no_argument,       &writeRawData,     1 },
     {"write-filter-data",       no_argument,       &writeFilterData,  1 },
@@ -4717,6 +4730,35 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
           subBankSize = (UINT4) subBankSizeArg;
         }
         break;
+      case '}':
+        bandPassTmplt = 1;
+        ADD_PROCESS_PARAM( "int", "%s", " " );
+        break;
+
+      case '{':
+        if ( !strcmp( "start", optarg ) )
+        {
+          taperTmplt = INSPIRAL_TAPER_START;
+        }
+        else if ( !strcmp( "end", optarg ) )
+        {
+          taperTmplt = INSPIRAL_TAPER_END;
+        }
+        else if ( !strcmp( "both", optarg ) )
+        {
+          taperTmplt = INSPIRAL_TAPER_BOTH;
+        }
+        else
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "Taper must be set to start, end or both:(%s specified)\n",
+              long_options[option_index].name, optarg );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        break;
+
+
   
       default:
         fprintf( stderr, "unknown error while parsing options (%d)\n", c );
