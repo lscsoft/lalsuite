@@ -20,9 +20,9 @@ tmpfile="misc/__${prefix}GitID.h"
 
 ## ---------- read out git-log of last commit --------------------
 fmt="format:${prefix}CommitID: %H %n${prefix}CommitDate: %aD %n${prefix}CommitAuthor: %ae %n${prefix}CommitTitle: %s";
-logcmd="git-log -1 --pretty='$fmt'";
+logcmd="git log -1 --pretty='$fmt'";
 
-## first check if the git-log works at all: could be a) no git installed or b) no git-repository
+## first check if the git log works at all: could be a) no git installed or b) no git-repository
 if eval "$logcmd > /dev/null 2>&1"; then
     git_log_ok="true";
 else
@@ -36,8 +36,8 @@ else
 fi
 
 ## ---------- check for modified/added git-content [ignores untracked files!] ----------
-statuscmd="git-status";
-## first check if git-status is actually available:
+statuscmd="git status";
+## first check if git status is actually available:
 if test "$git_log_ok" = "true"; then
     if eval `$statuscmd -a 2>&1 1> /dev/null` ; then
 	git_status_ok="true";
