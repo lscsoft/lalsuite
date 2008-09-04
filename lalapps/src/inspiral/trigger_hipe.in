@@ -867,28 +867,29 @@ for grb in ext_trigs:
       
       # ligolw_add FOUND and MISSED files
       injection_cache_filename = injection_analysis.get_cache_name()
-      injection_cache = lal.Cache.fromfile(open(injection_cache_filename))
-      ligolw_added_cache_filename = injection_cache_filename.replace("HIPE",
-        "HIPE_LIGOLW_ADDED")
+      #injection_cache = lal.Cache.fromfile(open(injection_cache_filename))
+      #ligolw_added_cache_filename = injection_cache_filename.replace("HIPE",
+      #  "HIPE_LIGOLW_ADDED")
       
-      found_filename = "%s/%s-COIRE_INJECTION_FOUND_SECOND_%s_%s-%d-%d.xml" %\
-        (hipe_dir, "".join(grb_ifolist), "".join(grb_ifolist), usertag,
-         offSourceSegment[0], abs(offSourceSegment))
-      ligolw_add_1, new_cache = make_ligolw_add(injection_cache,
-                                     "COIRE_*_FOUND", found_filename,
-                                     opts.log_path, cp)
-      ligolw_add_1.add_parent(injection_node)
-      uberdag.add_node(ligolw_add_1)
+      #found_filename = "%s/%s-COIRE_INJECTION_FOUND_SECOND_%s_%s-%d-%d.xml" %\
+      #  (hipe_dir, "".join(grb_ifolist), "".join(grb_ifolist), usertag,
+      #   offSourceSegment[0], abs(offSourceSegment))
+      #ligolw_add_1, new_cache = make_ligolw_add(injection_cache,
+      #                               "COIRE_*_FOUND", found_filename,
+      #                               opts.log_path, cp)
+      #ligolw_add_1.add_parent(injection_node)
+      #uberdag.add_node(ligolw_add_1)
       
-      missed_filename = found_filename.replace("FOUND", "MISSED")
-      ligolw_add_2, new_cache = make_ligolw_add(new_cache,
-                                "COIRE_*_MISSED", missed_filename,
-                                opts.log_path, cp)
-      ligolw_add_2.add_parent(injection_node)
-      new_cache.tofile(open(ligolw_added_cache_filename, "w"))
-      uberdag.add_node(ligolw_add_2)
+      #missed_filename = found_filename.replace("FOUND", "MISSED")
+      #ligolw_add_2, new_cache = make_ligolw_add(new_cache,
+      #                          "COIRE_*_MISSED", missed_filename,
+      #                          opts.log_path, cp)
+      #ligolw_add_2.add_parent(injection_node)
+      #new_cache.tofile(open(ligolw_added_cache_filename, "w"))
+      #uberdag.add_node(ligolw_add_2)
       
-      hipe_caches.append(ligolw_added_cache_filename)
+      #hipe_caches.append(ligolw_added_cache_filename)
+      hipe_caches.append(injection_cache_filename)
   
   grb_cache_name = idirectory + "/" + idirectory + ".cache"
   concatenate_files(hipe_caches, grb_cache_name)
