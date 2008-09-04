@@ -1644,8 +1644,8 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
   BarycenterInput baryinput;
   REAL8Vector *phi1[numDets], *phi2=NULL;
 
-  INT4 iterations = input.mcmc.iterations + input.mcmc.burnIn - 1;  
-  INT4 burnInLength = input.mcmc.burnIn - 1; /* length of burn in */
+  INT4 iterations = input.mcmc.iterations + input.mcmc.burnIn;  
+  INT4 burnInLength = input.mcmc.burnIn; /* length of burn in */
 
   /* read the TEMPO par file for the pulsar */
   XLALReadTEMPOParFile( &pulsarParamsFixed, input.parFile );
@@ -2034,7 +2034,7 @@ paramData );
        our prior range so the likelihood is always zero and this move always
        rejected */
     if( varsNew.h0 < 0. || below0 == 1 ){
-      if( fmod(count, input.mcmc.outputRate) == 0. && i > burnInLength ){
+      if( fmod(count, input.mcmc.outputRate) == 0. && i >= burnInLength ){
         fprintf(fp, "%le\t%le\t%lf\t%lf\t%lf", logL1, vars.h0, vars.phi0,
           vars.ci, vars.psi);
 
@@ -2336,7 +2336,7 @@ paramData );
     }
 
     /* printf out chains */
-    if( fmod(count, input.mcmc.outputRate) == 0. && i > burnInLength ){
+    if( fmod(count, input.mcmc.outputRate) == 0. && i >= burnInLength ){
       fprintf(fp, "%le\t%le\t%lf\t%lf\t%lf", logL1, vars.h0, vars.phi0, vars.ci,
         vars.psi);
 
