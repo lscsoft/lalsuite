@@ -38,7 +38,7 @@
 
 
 #include <lal/LALRCSID.h>
-NRCSID(EPSEARCHC, "$Id:");
+NRCSID(EPSEARCHC, "$Id$");
 
 
 /*

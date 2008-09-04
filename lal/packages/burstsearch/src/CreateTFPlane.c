@@ -47,7 +47,7 @@
 
 
 #include <lal/LALRCSID.h>
-NRCSID(CREATETFPLANEC, "$Id:");
+NRCSID(CREATETFPLANEC, "$Id$");
 
 
 /*
