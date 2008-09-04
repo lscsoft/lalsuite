@@ -130,7 +130,7 @@ SnglBurst *XLALEPSearch(
 	 */
 
 	XLALPrintInfo("%s(): constructing channel filters\n", func);
-	filter_bank = XLALCreateExcessPowerFilterBank(psd->deltaF, plane->flow, plane->deltaF, plane->channels, psd, plane->two_point_spectral_correlation);
+	filter_bank = XLALCreateExcessPowerFilterBank(psd->deltaF, plane->flow, plane->deltaF, plane->channel_data->size2, psd, plane->two_point_spectral_correlation);
 	if(!filter_bank) {
 		errorcode = XLAL_EFUNC;
 		goto error;
@@ -177,7 +177,7 @@ SnglBurst *XLALEPSearch(
 
 #if 1
 		XLALPrintInfo("%s(): normalizing to the average spectrum\n", func);
-		if(!XLALWhitenCOMPLEX16FrequencySeries(fseries, psd, plane->flow, plane->flow + plane->channels * plane->deltaF)) {
+		if(!XLALWhitenCOMPLEX16FrequencySeries(fseries, psd, plane->flow, plane->flow + plane->channel_data->size2 * plane->deltaF)) {
 			errorcode = XLAL_EFUNC;
 			goto error;
 		}

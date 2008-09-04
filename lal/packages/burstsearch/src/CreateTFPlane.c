@@ -368,6 +368,7 @@ REAL8TimeFrequencyPlane *XLALCreateTFPlane(
 	REAL8TimeFrequencyPlane *plane;
 	gsl_matrix *channel_data;
 	REAL8Sequence *channel_buffer;
+	REAL8Sequence *unwhitened_channel_buffer;
 	REAL8Window *tukey;
 	REAL8Sequence *correlation;
 
@@ -468,13 +469,15 @@ REAL8TimeFrequencyPlane *XLALCreateTFPlane(
 	plane = XLALMalloc(sizeof(*plane));
 	channel_data = gsl_matrix_alloc(tseries_length, channels);
 	channel_buffer = XLALCreateREAL8Sequence(tseries_length);
+	unwhitened_channel_buffer = XLALCreateREAL8Sequence(tseries_length);
 	tukey = XLALCreateTukeyREAL8Window(tseries_length, (tseries_length - tiling_length) / (double) tseries_length);
 	correlation = tukey ? compute_two_point_spectral_correlation(tukey) : NULL;
-	if(!plane || !channel_data || !channel_buffer || !tukey || !correlation) {
+	if(!plane || !channel_data || !channel_buffer || !unwhitened_channel_buffer || !tukey || !correlation) {
 		XLALFree(plane);
 		if(channel_data)
 			gsl_matrix_free(channel_data);
 		XLALDestroyREAL8Sequence(channel_buffer);
+		XLALDestroyREAL8Sequence(unwhitened_channel_buffer);
 		XLALDestroyREAL8Window(tukey);
 		XLALDestroyREAL8Sequence(correlation);
 		XLAL_ERROR_NULL(func, XLAL_EFUNC);
@@ -491,9 +494,9 @@ REAL8TimeFrequencyPlane *XLALCreateTFPlane(
 	plane->fseries_deltaF = fseries_deltaF;
 	plane->deltaF = deltaF;
 	plane->flow = flow;
-	plane->channels = channels;
 	plane->channel_data = channel_data;
 	plane->channel_buffer = channel_buffer;
+	plane->unwhitened_channel_buffer = unwhitened_channel_buffer;
 	plane->tiles.max_length = max_length;
 	plane->tiles.min_channels = min_channels;
 	plane->tiles.max_channels = max_channels;
@@ -526,6 +529,7 @@ void XLALDestroyTFPlane(
 		if(plane->channel_data)
 			gsl_matrix_free(plane->channel_data);
 		XLALDestroyREAL8Sequence(plane->channel_buffer);
+		XLALDestroyREAL8Sequence(plane->unwhitened_channel_buffer);
 		XLALDestroyREAL8Window(plane->window);
 		XLALDestroyREAL8Sequence(plane->two_point_spectral_correlation);
 	}

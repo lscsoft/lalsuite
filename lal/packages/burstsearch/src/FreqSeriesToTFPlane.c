@@ -31,6 +31,10 @@
 #include <math.h>
 
 
+#include <gsl/gsl_vector.h>
+#include <gsl/gsl_blas.h>
+
+
 #include <lal/Date.h>
 #include <lal/LALComplex.h>
 #include <lal/LALDatatypes.h>
@@ -131,7 +135,7 @@ int XLALFreqSeriesToTFPlane(
 
 	/* make sure the frequency series spans an appropriate band */
 	if((plane->flow < fseries->f0) ||
-	   (plane->flow + plane->channels * plane->deltaF > fseries->f0 + fseries->data->length * fseries->deltaF))
+	   (plane->flow + plane->channel_data->size2 * plane->deltaF > fseries->f0 + fseries->data->length * fseries->deltaF))
 		XLAL_ERROR(func, XLAL_EDATA);
 
 	/* create temporary vectors */
@@ -144,7 +148,7 @@ int XLALFreqSeriesToTFPlane(
 	{
 	unsigned k;
 	FILE *f = fopen("sk.dat", "a");
-	for(k = plane->flow / fseries->deltaF; k < (plane->flow + plane->channels * plane->deltaF) / fseries->deltaF; k++)
+	for(k = plane->flow / fseries->deltaF; k < (plane->flow + plane->channel_data->size2 * plane->deltaF) / fseries->deltaF; k++)
 		fprintf(f, "%g\n%g\n", fseries->data->data[k].re, fseries->data->data[k].im);
 	fclose(f);
 	}
@@ -158,7 +162,7 @@ int XLALFreqSeriesToTFPlane(
 	for(dk = 0; dk < 100; dk++) {
 		double avg_r = 0;
 		double avg_i = 0;
-	for(k = plane->flow / fseries->deltaF; k + dk < (plane->flow + plane->channels * plane->deltaF) / fseries->deltaF; k++) {
+	for(k = plane->flow / fseries->deltaF; k + dk < (plane->flow + plane->channel_data->size2 * plane->deltaF) / fseries->deltaF; k++) {
 		double dr = fseries->data->data[k].re;
 		double di = fseries->data->data[k].im;
 		double dkr = fseries->data->data[k + dk].re;
@@ -175,7 +179,7 @@ int XLALFreqSeriesToTFPlane(
 #endif
 
 	/* loop over the time-frequency plane's channels */
-	for(i = 0; i < plane->channels; i++) {
+	for(i = 0; i < plane->channel_data->size2; i++) {
 		unsigned j;
 		/* cross correlate the input data against the channel
 		 * filter by taking their product in the frequency domain
@@ -294,6 +298,9 @@ SnglBurst *XLALComputeExcessPower(
 )
 {
 	static const char func[] = "XLALComputeExcessPower";
+	gsl_vector filter_output;
+	gsl_vector channel_buffer;
+	gsl_vector unwhitened_channel_buffer;
 	unsigned start;
 	unsigned length;
 	unsigned end;
@@ -303,67 +310,94 @@ SnglBurst *XLALComputeExcessPower(
 	double h_rss;
 	double confidence;
 
+	/* argh!  C90 ... */
+	filter_output.size = plane->channel_data->size1;
+	filter_output.stride = plane->channel_data->size2;
+	filter_output.data = NULL;
+	filter_output.block = NULL;
+	filter_output.owner = 0;
+	channel_buffer.size = plane->channel_buffer->length;
+	channel_buffer.stride = 1;
+	channel_buffer.data = plane->channel_buffer->data;
+	channel_buffer.block = NULL;
+	channel_buffer.owner = 0;
+	unwhitened_channel_buffer.size = plane->unwhitened_channel_buffer->length;
+	unwhitened_channel_buffer.stride = 1;
+	unwhitened_channel_buffer.data = plane->unwhitened_channel_buffer->data;
+	unwhitened_channel_buffer.block = NULL;
+	unwhitened_channel_buffer.owner = 0;
+
 	for(channels = plane->tiles.min_channels; channels <= plane->tiles.max_channels; channels *= 2) {
-	for(channel_end = (channel = 0) + channels; channel_end <= plane->channels; channel_end = (channel += channels / plane->tiles.inv_fractional_stride) + channels) {
-		/* the mean square of the "virtual channel", \mu^{2} in the
-		 * algorithm description */
-		const double sample_mean_square = channels * plane->deltaF / plane->fseries_deltaF + XLALREAL8SequenceSum(filter_bank->twice_channel_overlap, channel, channels - 1);
-		/* the mean square of the "uwapprox" quantity computed
+	for(channel_end = (channel = 0) + channels; channel_end <= plane->channel_data->size2; channel_end = (channel += channels / plane->tiles.inv_fractional_stride) + channels) {
+		/* the root mean square of the "virtual channel",
+		 * \sqrt{\mu^{2}} in the algorithm description */
+		const double sample_rms = sqrt(channels * plane->deltaF / plane->fseries_deltaF + XLALREAL8SequenceSum(filter_bank->twice_channel_overlap, channel, channels - 1));
+		/* the root mean square of the "uwapprox" quantity computed
 		 * below, which is proportional to an approximation of the
 		 * unwhitened time series. */
-		double uwsample_mean_square;
-		/* true unwhitened mean square for this channel.  the ratio
-		 * of this to uwsample_mean_square is the correction factor to
-		 * be applied to uwapprox^{2} to convert it to an
-		 * approximation of the square of the unwhitened channel */
-		const double strain_mean_square = compute_unwhitened_mean_square(filter_bank, channel, channels) + XLALREAL8SequenceSum(filter_bank->unwhitened_cross, channel, channels - 1);
+		double uwsample_rms;
+		/* true unwhitened root mean square for this channel.  the
+		 * ratio of this squared to uwsample_rms^2 is the
+		 * correction factor to be applied to uwapprox^2 to convert
+		 * it to an approximation of the square of the unwhitened
+		 * channel */
+		const double strain_rms = sqrt(compute_unwhitened_mean_square(filter_bank, channel, channels) + XLALREAL8SequenceSum(filter_bank->unwhitened_cross, channel, channels - 1));
 		unsigned c;
+		unsigned t;
 
-		/* compute uwsample_mean_square */
-		uwsample_mean_square = compute_unwhitened_mean_square(filter_bank, channel, channels);
+		/* compute uwsample_rms */
+		uwsample_rms = compute_unwhitened_mean_square(filter_bank, channel, channels);
 		for(c = channel; c < channel_end - 1; c++)
-			uwsample_mean_square += filter_bank->twice_channel_overlap->data[c] * filter_bank->basis_filters[c].unwhitened_rms * filter_bank->basis_filters[c + 1].unwhitened_rms * plane->fseries_deltaF / plane->deltaF;
+			uwsample_rms += filter_bank->twice_channel_overlap->data[c] * filter_bank->basis_filters[c].unwhitened_rms * filter_bank->basis_filters[c + 1].unwhitened_rms * plane->fseries_deltaF / plane->deltaF;
+		uwsample_rms = sqrt(uwsample_rms);
+
+		/* reconstruct the time series and unwhitened time series
+		 * for this (possibly multi-filter) channel.  both time
+		 * series are normalized so that each sample has a mean
+		 * square of 1 */
+		gsl_vector_set_zero(&channel_buffer);
+		gsl_vector_set_zero(&unwhitened_channel_buffer);
+		for(c = channel; c < channel_end; c++) {
+			filter_output.data = plane->channel_data->data + c;
+			gsl_blas_daxpy(1.0 / sample_rms, &filter_output, &channel_buffer);
+			gsl_blas_daxpy(filter_bank->basis_filters[c].unwhitened_rms * sqrt(plane->fseries_deltaF / plane->deltaF) / uwsample_rms, &filter_output, &unwhitened_channel_buffer);
+		}
+
+#if 0
+		/* diagnostic code to dump data for the s_{j} histogram */
+		{
+		FILE *f = fopen("sj.dat", "a");
+		for(t = 0; t < plane->channel_buffer->length; t++)
+			fprintf(f, "%g\n", plane->unwhitened_channel_buffer->data[t]);
+		fclose(f);
+		}
+#endif
+
+		/* square the samples in the channel time series, because
+		 * from now on that's all we'll need */
+		for(t = 0; t < plane->channel_buffer->length; t++) {
+			plane->channel_buffer->data[t] *= plane->channel_buffer->data[t];
+			plane->unwhitened_channel_buffer->data[t] *= plane->unwhitened_channel_buffer->data[t];
+		}
 
 	/* start with at least 2 degrees of freedom */
 	for(length = 2 / (channels * plane->tiles.dof_per_pixel); length <= plane->tiles.max_length; length *= 2) {
-		const double tile_dof = (length * channels) * plane->tiles.dof_per_pixel;
 		/* number of degrees of freedom in tile = number of
-		 * "virtual pixels" in tile.  compute distance between
-		 * tile's "virtual pixels" */
+		 * "virtual pixels" in tile. */
+		const double tile_dof = (length * channels) * plane->tiles.dof_per_pixel;
+		/* compute distance between tile's "virtual pixels" */
 		const unsigned stride = length / tile_dof;
 
 	for(end = (start = plane->tiles.tiling_start) + length; end <= plane->tiles.tiling_end; end = (start += length / plane->tiles.inv_fractional_stride) + length) {
 		double sumsquares = 0;
 		double uwsumsquares = 0;
-		unsigned t;
 
-		/* compute sum of squares, and unwhitened sum of squares */
+		/* compute sum of squares, and unwhitened sum of squares
+		 * (samples have already been squared) */
 		for(t = start + stride / 2; t < end; t += stride) {
-			double sample = 0;
-			double uwsample = 0;
-
-			/* compute the whitened and (approximate)
-			 * unwhitened time series samples for this t */
-			for(c = channel; c < channel_end; c++) {
-				sample += gsl_matrix_get(plane->channel_data, t, c);
-				uwsample += gsl_matrix_get(plane->channel_data, t, c) * filter_bank->basis_filters[c].unwhitened_rms * sqrt(plane->fseries_deltaF / plane->deltaF);
-			}
-
-#if 0
-			/* diagnostic code to dump data for the s_{j} histogram */
-			{
-			FILE *f = fopen("sj.dat", "a");
-			fprintf(f, "%g\n", uwsample / sqrt(uwsample_mean_square));
-			fclose(f);
-			}
-#endif
-
-			sumsquares += sample * sample;
-			uwsumsquares += uwsample * uwsample;
+			sumsquares += plane->channel_buffer->data[t];
+			uwsumsquares += plane->unwhitened_channel_buffer->data[t];
 		}
-		/* normalization to give each sample a mean square of 1.0 */
-		sumsquares /= sample_mean_square;
-		uwsumsquares /= uwsample_mean_square;
 
 		/* compute statistical confidence */
 		/* FIXME:  the 0.62 is an empirically determined
@@ -383,7 +417,7 @@ SnglBurst *XLALComputeExcessPower(
 			SnglBurst *oldhead = head;
 
 			/* compute h_rss */
-			h_rss = sqrt((uwsumsquares - tile_dof) * strain_mean_square * stride * plane->deltaT);
+			h_rss = sqrt((uwsumsquares - tile_dof) * stride * plane->deltaT) * strain_rms;
 
 			/* add new event to head of linked list */
 			head = XLALTFTileToBurstEvent(plane, start, length, plane->flow + (channel + .5 * channels) * plane->deltaF, channels * plane->deltaF, h_rss, sumsquares, tile_dof, confidence);
