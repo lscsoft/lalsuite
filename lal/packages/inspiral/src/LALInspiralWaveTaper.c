@@ -45,8 +45,8 @@
  *  The function \texttt{XLALInspiralWaveTaper} is the XLAL version of the code
  *  described above. In this case, instead of passing an integer to give the tapering
  *  method, we use one of the options in the \texttt{InspiralApplyTaper} enumeration.
- *  These options are \texttt{INSPIRAL_TAPER_START}, \texttt{INSPIRAL_TAPER_END}
- *  and \texttt{INSPIRAL_TAPER_BOTH}.
+ *  These options are \texttt{INSPIRAL\_TAPER\_START}, \texttt{INSPIRAL\_TAPER\_END}
+ *  and \texttt{INSPIRAL\_TAPER\_BOTH}.
  *
  *  \subsubsection*{Prototypes}
  *  \vspace{0.1in}
