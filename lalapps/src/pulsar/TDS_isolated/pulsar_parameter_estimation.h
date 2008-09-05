@@ -214,7 +214,7 @@ typedef struct tagPriorVals{
 /* a structure to hold the command line input values */
 typedef struct tagInputParams{
   CHAR detectors[40];
-  CHAR pulsar[12];
+  CHAR pulsar[20];
   CHAR parFile[256];   /* pulsar parameter file */
   CHAR *matrixFile;    /* pulsar parameter covariance matrix file */
 
