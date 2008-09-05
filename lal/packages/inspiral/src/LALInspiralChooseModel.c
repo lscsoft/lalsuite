@@ -764,7 +764,7 @@ LALInspiralChooseModel(
          case EOBNR:
             ak->vn = ak->vlso = vlso = ak->vlsoP6;
             f->dEnergy = dEp6;
-            f->flux = Fp8;
+            f->flux = Fp7;
             break;
          case AmpCorPPN:
          case TaylorT1:
