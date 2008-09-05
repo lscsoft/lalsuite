@@ -11,27 +11,7 @@
 package=lal
 version=5.2
 
-## Add a new package here:
-
-# Base (non-conditionally-compiled) packages:
-lal_pkg_list_base="std tools sample hello factories vectorops utilities stats inject date tdfilter window fft clremoval stochastic inspiral noisemodels bank ring findchirp pulsar houghpulsar burstsearch tracksearch tfclusters slopefilters block timefreq"
-
-# Packages compiled only with --enable-mpi
-lal_pkg_list_mpi="comm"
-
-# Packages compiled only with --enable-frame
-lal_pkg_list_frame="framedata"
-
-# Packages compiled only with --enable-mpi and --enable-frame
-lal_pkg_list_frame_mpi=""
-
-# Packages that are omitted
-lal_pkg_list_omit=""
-
 ## <<<< !!!!  Do not edit below here !!!! >>>> ##
-
-# All packages
-lal_pkg_list="$lal_pkg_list_base support $lal_pkg_list_mpi $lal_pkg_list_frame $lal_pkg_list_frame_mpi $lal_pkg_list_omit"
 
 # Help message
 helpmsg="Usage $0 [options]
