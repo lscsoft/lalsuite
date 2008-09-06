@@ -62,8 +62,55 @@ done
 
 test "$verbose" = "true" && set -x
 
-# Unfortunately, GNU-m4 is required... so need to specify this version
+
+
+
+
+
+## Function to report failure
+fail () {
+  echo "00boot: failed $1" >&2
+  echo "00boot: failure: consult the file 'README.install' for help" >&2
+  exit 1
+}
+
+
+echo "00boot: checking versions of aclocal, automake, autoheader and autoconf"
+
+
+ACLOCAL=${ACLOCAL:-"aclocal"}
+AUTOMAKE=${AUTOMAKE:-"automake"}
+AUTOCONF=${AUTOCONF:-"autoconf"}
+AUTOHEADER=${AUTOHEADER:-"autoheader"}
 M4=${M4:-"m4"}
+
+automake_version="`$AUTOMAKE --version 2>/dev/null | sed -n '1s/^.* \([0-9.]*\)/\1/p'`"
+aclocal_version="`$ACLOCAL --version 2>/dev/null | sed -n '1s/^.* \([0-9.]*\)/\1/p'`"
+autoheader_version="`$AUTOHEADER --version 2>/dev/null | sed -n '1s/^.* \([0-9.]*\)/\1/p'`"
+autoconf_version="`$AUTOCONF --version 2>/dev/null | sed -n '1s/^.* \([0-9.]*\)/\1/p'`"
+m4_version="`$M4 --version 2>/dev/null | sed -n '1s/^.* \([0-9.]*\)/\1/p'`"
+if test -z "$aclocal_version"; then
+  fail "finding program aclocal"
+fi
+if test -z "$automake_version"; then
+  fail "finding program automake"
+fi
+if test -z "$autoconf_version"; then
+  fail "finding program autoconf"
+fi
+if test -z "$autoheader_version"; then
+  fail "finding program autoheader"
+fi
+if test -z "$m4_version"; then
+  fail "finding program m4"
+fi
+
+echo "00boot: using:"
+printf "00boot:\t%-16s %s\n" "aclocal-$aclocal_version:" "`which $ACLOCAL`"
+printf "00boot:\t%-16s %s\n" "automake-$automake_version:" "`which $AUTOMAKE`"
+printf "00boot:\t%-16s %s\n" "autoheader-$autoheader_version:" "`which $AUTOHEADER`"
+printf "00boot:\t%-16s %s\n" "autoconf-$autoconf_version:" "`which $AUTOCONF`"
+printf "00boot:\t%-16s %s\n" "m4-$m4_version:" "`which $M4`"
 
 echo "00boot: creating README.install"
 
@@ -82,46 +129,6 @@ chmod +x lal-preinstall.sh
 ${M4} install.m4 > README.install
 cp -f README.install ..
 cd ..
-
-
-## Function to report failure
-fail () {
-  echo "00boot: failed $1" >&2
-  echo "00boot: failure: consult the file 'README.install' for help" >&2
-  exit 1
-}
-
-
-echo "00boot: checking versions of aclocal, automake, autoheader and autoconf"
-
-
-ACLOCAL=${ACLOCAL:-"aclocal"}
-AUTOMAKE=${AUTOMAKE:-"automake"}
-AUTOCONF=${AUTOCONF:-"autoconf"}
-AUTOHEADER=${AUTOHEADER:-"autoheader"}
-
-automake_version="`$AUTOMAKE --version 2>/dev/null | sed -n '1s/^.* \([0-9.]*\)/\1/p'`"
-aclocal_version="`$ACLOCAL --version 2>/dev/null | sed -n '1s/^.* \([0-9.]*\)/\1/p'`"
-autoheader_version="`$AUTOHEADER --version 2>/dev/null | sed -n '1s/^.* \([0-9.]*\)/\1/p'`"
-autoconf_version="`$AUTOCONF --version 2>/dev/null | sed -n '1s/^.* \([0-9.]*\)/\1/p'`"
-if test -z "$aclocal_version"; then
-  fail "finding program aclocal"
-fi
-if test -z "$automake_version"; then
-  fail "finding program automake"
-fi
-if test -z "$autoconf_version"; then
-  fail "finding program autoconf"
-fi
-if test -z "$autoheader_version"; then
-  fail "finding program autoheader"
-fi
-
-echo "00boot: using:"
-printf "00boot:\t%-16s %s\n" "aclocal-$aclocal_version:" "`which $ACLOCAL`"
-printf "00boot:\t%-16s %s\n" "automake-$automake_version:" "`which $AUTOMAKE`"
-printf "00boot:\t%-16s %s\n" "autoheader-$autoheader_version:" "`which $AUTOHEADER`"
-printf "00boot:\t%-16s %s\n" "autoconf-$autoconf_version:" "`which $AUTOCONF`"
 
 
 echo "00boot: creating configuration file"
