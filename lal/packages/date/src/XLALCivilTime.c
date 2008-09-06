@@ -138,6 +138,29 @@ int XLALLeapSeconds( INT4 gpssec /**< [In] Seconds relative to GPS epoch.*/ )
   return leaps[leap-1].taiutc;
 }
 
+
+/** Returns the leap seconds GPS-UTC at a given GPS second. */
+int XLALGPSLeapSeconds( INT4 gpssec /**< [In] Seconds relative to GPS epoch.*/ )
+{
+  static const char func[] = "XLALGPSLeapSeconds";
+  int leapTAI;
+  int leapGPS;
+
+  if ( gpssec < leaps[0].gpssec )
+  {
+    XLALPrintError( "XLAL Error - Don't know leap seconds before GPS time %d\n",
+        leaps[0].gpssec );
+    XLAL_ERROR( func, XLAL_EDOM );
+  }
+
+  leapTAI = XLALLeapSeconds ( gpssec );
+
+  leapGPS = leapTAI - 19;	/* subtract 19 seconds to get leap-seconds wrt to GPS epoch */
+
+  return leapGPS;
+}
+
+
 /** Returns the leap seconds TAI-UTC for a given UTC broken down time. */
 int XLALLeapSecondsUTC( const struct tm *utc /**< [In] UTC as a broken down time.*/ )
 {
