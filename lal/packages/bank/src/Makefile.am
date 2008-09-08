@@ -1,6 +1,7 @@
 ## Process this file with automake to produce Makefile.in
 noinst_LTLIBRARIES = libbank.la
 libbank_la_SOURCES = \
+IMRBank.c\
 InspiralBankGeneration.c\
 InspiralSpinBank.c\
 LALDeterminant3.c\

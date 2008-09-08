@@ -1,5 +1,5 @@
 ## Process this file with automake to produce Makefile.in
-pkginclude_HEADERS = LALInspiralBank.h LALInspiralBCVSpinBank.h LALInspiralRandomBank.h LALSBBH-Metric.h
+pkginclude_HEADERS = IMRBank.h LALInspiralBank.h LALInspiralBCVSpinBank.h LALInspiralRandomBank.h LALSBBH-Metric.h
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex
 all-local: include-link
