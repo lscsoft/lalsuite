@@ -88,7 +88,6 @@ automake_version="`$AUTOMAKE --version 2>/dev/null | sed -n '1s/^.* \([0-9.]*\)/
 aclocal_version="`$ACLOCAL --version 2>/dev/null | sed -n '1s/^.* \([0-9.]*\)/\1/p'`"
 autoheader_version="`$AUTOHEADER --version 2>/dev/null | sed -n '1s/^.* \([0-9.]*\)/\1/p'`"
 autoconf_version="`$AUTOCONF --version 2>/dev/null | sed -n '1s/^.* \([0-9.]*\)/\1/p'`"
-m4_version="`$M4 --version 2>/dev/null | sed -n '1s/^.* \([0-9.]*\)/\1/p'`"
 if test -z "$aclocal_version"; then
   fail "finding program aclocal"
 fi
@@ -101,16 +100,12 @@ fi
 if test -z "$autoheader_version"; then
   fail "finding program autoheader"
 fi
-if test -z "$m4_version"; then
-  fail "finding program m4"
-fi
 
 echo "00boot: using:"
 printf "00boot:\t%-16s %s\n" "aclocal-$aclocal_version:" "`which $ACLOCAL`"
 printf "00boot:\t%-16s %s\n" "automake-$automake_version:" "`which $AUTOMAKE`"
 printf "00boot:\t%-16s %s\n" "autoheader-$autoheader_version:" "`which $AUTOHEADER`"
 printf "00boot:\t%-16s %s\n" "autoconf-$autoconf_version:" "`which $AUTOCONF`"
-printf "00boot:\t%-16s %s\n" "m4-$m4_version:" "`which $M4`"
 
 echo "00boot: creating README.install"
 
