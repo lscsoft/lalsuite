@@ -1360,7 +1360,8 @@ LALEOBWaveformEngine (
                 )
 {
 
-   UINT4                   count, nn=4, length = 0;
+      
+   UINT4                   count, nn=4, scaledLength=0, length = 0;
    REAL4Vector             *sig1, *sig2, *ampl, *freq;
    REAL8Vector             *phse;
 
@@ -1396,7 +1397,12 @@ LALEOBWaveformEngine (
    REAL4      inclination;    /* binary inclination       */
    REAL4      coa_phase;      /* binary coalescence phase */
    REAL8      y1, y2, z1, z2; /* (2,2) and (2,-2) spherical harmonics needed in (h+,hx) */
-  
+
+   /* Used for EOBNR */
+   COMPLEX8Vector *modefreqs;
+   REAL8 internalSampling = 16384.; /* EOBNR needs 16kHz sampling rate */
+   UINT4 resampFac = 1; /* ratio of internal : user sampling rates; initially assume = 1*/
+ 
    CHAR message[256];
 
    /* For checking XLAL return codes */
@@ -1469,6 +1475,38 @@ LALEOBWaveformEngine (
    {
      LALSnprintf( message, 256, "Generating waveform of zero amplitude!!" );
      LALWarning( status, message );
+   }
+
+   /* For EOBNR, Check that the 220 QNM freq. is less than the Nyquist freq. */
+   /* Also set the sampling rate to 16384 Hz for EOBNR */
+   /* We will downsample to the user specified rate at the end */
+   if ( params->approximant == EOBNR )
+   {
+     /* Get QNM frequencies */
+     modefreqs = XLALCreateCOMPLEX8Vector( 3 );
+     xlalStatus = XLALGenerateQNMFreq( modefreqs, params, 2, 2, 3 );
+     if ( xlalStatus != XLAL_SUCCESS )
+     {
+       XLALDestroyCOMPLEX8Vector( modefreqs );
+       ABORTXLAL( status );
+     }
+
+     /* If Nyquist freq. <  220 QNM freq., exit */
+     /* Note that we cancelled a factor of 2 occuring on both sides */
+     if ( params->tSampling < modefreqs->data[0].re / LAL_PI )
+     {
+       XLALDestroyCOMPLEX8Vector( modefreqs );
+       LALSnprintf( message, 256, "Ringdown freq less than Nyquist freq. "
+             "Increase sample rate or consider using EOB approximant.\n", r );
+       LALError(status->statusPtr, message);
+       ABORT( status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
+     }
+     /* Use 16kHz sampling to evolve EOBNR */
+     dt = 1. / internalSampling;
+     resampFac = (int) internalSampling / (int) params->tSampling;
+     /* code already checks tSampling a power of 2 <= 16384 at command line */
+     /* Thus, we shouldn't NEED a check on resampFac here, but can be added */
+     XLALDestroyCOMPLEX8Vector( modefreqs );
    }
 
    /* Find the initial velocity given the lower frequency */
@@ -1632,11 +1670,14 @@ LALEOBWaveformEngine (
    in4.dyt = &dyt;
 
    /* Allocate memory for temporary arrays */
-   sig1 = XLALCreateREAL4Vector ( length );
-   sig2 = XLALCreateREAL4Vector ( length );
-   ampl = XLALCreateREAL4Vector ( 2*length );
-   freq = XLALCreateREAL4Vector ( length );
-   phse = XLALCreateREAL8Vector ( length );
+   /* The length of these internal arrays is a factor resampFac larger than */
+   /* the output arrays, where resampFac = internalSampling / userSampling */
+   scaledLength = resampFac*length;
+   sig1 = XLALCreateREAL4Vector ( scaledLength );
+   sig2 = XLALCreateREAL4Vector ( scaledLength );
+   ampl = XLALCreateREAL4Vector ( scaledLength*2 );
+   freq = XLALCreateREAL4Vector ( scaledLength );
+   phse = XLALCreateREAL8Vector ( scaledLength );
 
    if ( !sig1 || !sig2 || !ampl || !freq || !phse )
    {
@@ -1683,7 +1724,7 @@ LALEOBWaveformEngine (
 
    while (r > rn && r < rOld) 
    {
-      if (count > length)
+      if (count > scaledLength)
       {
         XLALRungeKutta4Free( integrator );
         XLALDestroyREAL4Vector( sig1 );
@@ -1786,7 +1827,10 @@ LALEOBWaveformEngine (
      -------------------------------------------------------------*/
    if (params->approximant == EOBNR)
    {
+     REAL8 tmpSamplingRate = params->tSampling;
+     params->tSampling = internalSampling;
      xlalStatus = XLALInspiralAttachRingdownWave( freq, sig1, sig2, params );
+     params->tSampling = tmpSamplingRate;
      if (xlalStatus != XLAL_SUCCESS )
      {
        XLALDestroyREAL4Vector( sig1 );
@@ -1847,7 +1891,7 @@ LALEOBWaveformEngine (
    LALInfo(status, message);
 
    /* Next, compute h+ and hx from h22, h22*, Y22, Y2-2 */
-   for ( i = 0; i < length; i++)
+   for ( i = 0; i < sig1->length; i++)
    {
      freq->data[i] /= unitHz;
      x1 = sig1->data[i];
@@ -1862,22 +1906,11 @@ LALEOBWaveformEngine (
     * added the phase information is not used in injetions, only hplus and hcross
     * and therefore it shouldn't matter what phasing is as long as it is nonzero.
     */
-       if (i >= count) 
+       if (i >= count*resampFac) 
        {
 	 phse->data[i] = phse->data[i-1]+LAL_PI/20.;
 	 (*countback)++;
        }
-     }
-       
-   /*------------------------------------------------------
-    * If required by the user copy data to hplus and hcross 
-    ------------------------------------------------------*/
-     if (h)
-     {
-       j = 2*i;
-       k = j+1;
-       h->data[j] = sig1->data[i];
-       h->data[k] = sig2->data[i];
      }
    }
 
@@ -1885,11 +1918,52 @@ LALEOBWaveformEngine (
     * If required by the user copy other data sets to the 
     * relevant arrays
     ------------------------------------------------------*/
-   if (signal1) memcpy(signal1->data , sig1->data, length * (sizeof(REAL4)));
-   if (signal2) memcpy(signal2->data , sig2->data, length * (sizeof(REAL4)));
-   if (ff)      memcpy(ff->data      , freq->data, length * (sizeof(REAL4)));
-   if (a)       memcpy(a->data       , ampl->data, 2*length*(sizeof(REAL4)));
-   if (phi)     memcpy(phi->data     , phse->data, length * (sizeof(REAL8)));
+   if ( resampFac > 1 ) 
+   /* If user specified params->tSampling < internalSampling... */
+   {
+     for(i = 0; i < length; i++) 
+     /* ...we resample the output */
+     {
+       int nr = resampFac*i;
+       if (h)
+       {
+         j = 2*i;
+         k = j+1;
+         h->data[j] = sig1->data[nr];
+         h->data[k] = sig2->data[nr];
+       }
+       if (signal1) signal1->data[i] = sig1->data[nr];
+       if (signal2) signal2->data[i] = sig2->data[nr];
+       if (ff) ff->data[i] = freq->data[nr];
+       if (phi) phi->data[i] = phse->data[nr];
+       if (a) 
+       {
+         j = 2*i;
+         k = j+1;
+         a->data[j] = ampl->data[nr];
+         a->data[j+1] = ampl->data[nr + 1];
+       }
+     }
+   }
+   else
+   /*If user tSampling = internalSampling, just copy output data */
+   {
+     if (h)
+     {
+       for(i = 0; i < length; i++) 
+       {
+         j = 2*i;
+         k = j+1;
+         h->data[j] = sig1->data[i];
+         h->data[k] = sig2->data[i];
+       }
+     }
+     if (signal1) memcpy(signal1->data , sig1->data, length * (sizeof(REAL4)));
+     if (signal2) memcpy(signal2->data , sig2->data, length * (sizeof(REAL4)));
+     if (ff)      memcpy(ff->data      , freq->data, length * (sizeof(REAL4)));
+     if (a)       memcpy(a->data       , ampl->data, 2*length*(sizeof(REAL4)));
+     if (phi)     memcpy(phi->data     , phse->data, length * (sizeof(REAL8)));
+   }
 
    /* Clean up */
    XLALDestroyREAL4Vector ( sig1 );
