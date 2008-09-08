@@ -140,11 +140,14 @@ extern "C" {
     INT4 num_subspaces;
     FlatLatticeTilingSubspace **subspaces;
 
+    /* Scaling of the padding of bounds (for testing) */
+    REAL8 scale_padding;
+
     /* Current dimensions which are tiled (non-flat) */
     UINT8 curr_is_tiled;
 
     /* Current tiling subspace */
-    FlatLatticeTilingSubspace *curr_subspace;    
+    FlatLatticeTilingSubspace *curr_subspace;
 
     /* Current lattice point */
     gsl_vector *curr_point;

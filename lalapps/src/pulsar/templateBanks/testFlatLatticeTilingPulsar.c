@@ -68,6 +68,7 @@ int main(int argc, char *argv[]) {
   REAL8 inject_ratio = 0.0;
   INT4 inject_min_mismatch_bins = 100;
   CHAR *output_file = NULL;
+  REAL8 scale_padding = 0;
 
   int i, j;
   UINT4 k;
@@ -100,6 +101,7 @@ int main(int argc, char *argv[]) {
   LAL_CALL(LALRegisterREALUserVar  (&status, "inject-ratio",     'R', UVAR_OPTIONAL, "Inject this ratio of points to templates", &inject_ratio), &status);
   LAL_CALL(LALRegisterINTUserVar   (&status, "inject-bins",      'B', UVAR_OPTIONAL, "Use this number of bins for the mismatch histogram", &inject_min_mismatch_bins), &status);
   LAL_CALL(LALRegisterSTRINGUserVar(&status, "output",           'o', UVAR_OPTIONAL, "Output file", &output_file), &status);
+  LAL_CALL(LALRegisterREALUserVar  (&status, "scale-padding",     0 , UVAR_DEVELOPER, "Scale the padding of the parameter space bounds (for testing)", &scale_padding), &status);
   
   /* Get command line arguments */
   LAL_CALL(LALUserVarReadAllInput(&status, argc, argv), &status);
@@ -190,6 +192,11 @@ int main(int argc, char *argv[]) {
   if (spaces != 1)
     LALAPPS_ERROR("Exactly one of --square or --age-braking must be specified\n", 0);
   XLAL_VBXMLO_Tag(&xml, "dimensions", "%i", tiling->dimensions);
+
+  /* Scale padding (testing only) */
+  if (LALUserVarWasSet(&scale_padding)) {
+    tiling->scale_padding = scale_padding;
+  }
 
   /* Set metric */
   switch (metric_type) {

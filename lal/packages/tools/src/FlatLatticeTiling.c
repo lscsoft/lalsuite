@@ -165,6 +165,7 @@ FlatLatticeTiling *XLALCreateFlatLatticeTiling(
   tiling->generator = NULL;
   tiling->num_subspaces = 0;
   tiling->subspaces = NULL;
+  tiling->scale_padding = 1.0;
   tiling->curr_is_tiled = 0;
   tiling->curr_subspace = NULL;
   tiling->curr_point = NULL;
@@ -519,6 +520,7 @@ static int UpdateFlatLatticeTilingSubspace(
     /* Use lengths of metric ellipse bounding box as padding along bounds */
     if (NULL == (padding = XLALMetricEllipseBoundingBox(metric, tiling->max_mismatch)))
       XLAL_ERROR("XLALMetricEllipseBoundingBox failed", XLAL_EFAILED);
+    gsl_vector_scale(padding, tiling->scale_padding);
   
     /* Find orthonormalise directions with respect to subspace metric */
     gsl_matrix_set_identity(orth_directions);
