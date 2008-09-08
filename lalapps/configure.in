@@ -260,6 +260,7 @@ AC_OUTPUT( \
   src/pulsar/hough/src2/Makefile \
   src/pulsar/MakeSFTs/Makefile \
   src/pulsar/radiometer/Makefile \
+  src/pulsar/fscan/Makefile
 )
 
 lalframeenabled="`test x${lalframe} = xtrue && echo "ENABLED" || echo "DISABLED"`"
