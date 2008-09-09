@@ -510,9 +510,11 @@ extern "C" {
              REAL8     x
             );
 
-    /* <lalLaTeX>
-       \newpage\input{LALLIGOIPsdC}
-       </lalLaTeX>  */
+    REAL8 
+            XLALLIGOIPsd 
+            (
+             REAL8     f
+            );
 
     void 
             LALLIGOIPsd 
