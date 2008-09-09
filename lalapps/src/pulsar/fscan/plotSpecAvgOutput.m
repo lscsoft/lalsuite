@@ -1,6 +1,7 @@
 function plotSpecAvgOutput(filename,outputFileName,chanName,effTBase,deltaFTicks,taveFlag,effTBaseFull,thresholdSNR,coinDF,referenceFile)
 %
 % fileName       -- the name of the file with data to input; this file is the output from spec_avg.
+% outputFileName -- base name of the output spectrogram files; will append .pdf and .png to this name.
 % chanName       -- the name of the channel used to generate the spectrogram data.
 % effTBase       -- the effective time base line: 1/effTBase gives the frequency resolution of the plot.
 %                   so that a effTBase of 10 seconds means deltaF = 0.1 Hz.
