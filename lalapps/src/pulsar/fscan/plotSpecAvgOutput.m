@@ -160,7 +160,8 @@ if (taveFlag > 0)
          jMin = j - coincidenceBins;
          if (jMin < 1); jMin = 1; end;
          jMax = j + coincidenceBins;
-        [SNRoutmax, iMaxout] = max(SNRout(jMin:jMax));
+         if (jMax > lengthSNRout); jMax = lengthSNRout; end;
+         [SNRoutmax, iMaxout] = max(SNRout(jMin:jMax));
          iMaxout = jMin + iMaxout - 1;
          [SNRRefmax, iMaxRef] = max(SNRRef(jMin:jMax));
          iMaxRef = jMin + iMaxRef - 1;
