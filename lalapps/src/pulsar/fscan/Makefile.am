@@ -3,6 +3,6 @@
 AM_CPPFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
-bin_PROGRAMS = lalapps_spec_avg
+EXTRA_PROGRAMS = spec_avg
 
-lalapps_spec_avg_SOURCES = spec_avg.c
+spec_avg_SOURCES = spec_avg.c
