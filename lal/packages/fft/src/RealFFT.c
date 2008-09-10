@@ -281,16 +281,17 @@ REAL4FFTPlan * XLALCreateReverseREAL4FFTPlan( UINT4 size, int measurelvl )
 
 void XLALDestroyREAL4FFTPlan( REAL4FFTPlan *plan )
 {
-  static const char *func = "XLALDestroyREAL4FFTPlan";
-  if ( ! plan )
-    XLAL_ERROR_VOID( func, XLAL_EFAULT );
-  if ( ! plan->plan )
-    XLAL_ERROR_VOID( func, XLAL_EINVAL );
-  LAL_FFTW_PTHREAD_MUTEX_LOCK;
-  fftwf_destroy_plan( plan->plan );
-  LAL_FFTW_PTHREAD_MUTEX_UNLOCK;
-  memset( plan, 0, sizeof( *plan ) );
-  XLALFree( plan );
+  if ( plan )
+  {
+    if ( plan->plan )
+    {
+      LAL_FFTW_PTHREAD_MUTEX_LOCK;
+      fftwf_destroy_plan( plan->plan );
+      LAL_FFTW_PTHREAD_MUTEX_UNLOCK;
+    }
+    memset( plan, 0, sizeof( *plan ) );
+    XLALFree( plan );
+  }
   return;
 }
 
@@ -560,16 +561,17 @@ REAL8FFTPlan * XLALCreateReverseREAL8FFTPlan( UINT4 size, int measurelvl )
 
 void XLALDestroyREAL8FFTPlan( REAL8FFTPlan *plan )
 {
-  static const char *func = "XLALDestroyREAL8FFTPlan";
-  if ( ! plan )
-    XLAL_ERROR_VOID( func, XLAL_EFAULT );
-  if ( ! plan->plan )
-    XLAL_ERROR_VOID( func, XLAL_EINVAL );
-  LAL_FFTW_PTHREAD_MUTEX_LOCK;
-  fftw_destroy_plan( plan->plan );
-  LAL_FFTW_PTHREAD_MUTEX_UNLOCK;
-  memset( plan, 0, sizeof( *plan ) );
-  XLALFree( plan );
+  if ( plan )
+  {
+    if ( plan->plan )
+    {
+      LAL_FFTW_PTHREAD_MUTEX_LOCK;
+      fftw_destroy_plan( plan->plan );
+      LAL_FFTW_PTHREAD_MUTEX_UNLOCK;
+    }
+    memset( plan, 0, sizeof( *plan ) );
+    XLALFree( plan );
+  }
   return;
 }
 
