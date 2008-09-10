@@ -419,7 +419,6 @@ main(int argc, char **argv)
 
   /* Generate waveform. */
   SUB( LALGeneratePPNAmpCorInspiral( &stat, &waveform, &params ), &stat );
-
    /*                                            *
    ********************************************************************************************************
    * This Test file now calculates the polar response functions for the detector and sky position defined *
@@ -569,9 +568,12 @@ main(int argc, char **argv)
   SUB( LALSDestroyVector( &stat, &(params.ppn) ), &stat );
   SUB( LALSDestroyVectorSequence( &stat, &(waveform.h->data) ),
        &stat );
+  SUB( LALSDestroyVectorSequence( &stat, &(waveform.a->data) ),
+       &stat );
   SUB( LALSDestroyVector( &stat, &(waveform.f->data) ), &stat );
   SUB( LALDDestroyVector( &stat, &(waveform.phi->data) ), &stat );
   LALFree( waveform.h );
+  LALFree( waveform.a );
   LALFree( waveform.f );
   LALFree( waveform.phi );
   LALDestroyVector( &stat, &hoft );
