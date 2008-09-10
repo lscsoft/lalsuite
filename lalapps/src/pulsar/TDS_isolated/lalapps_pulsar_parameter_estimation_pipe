@@ -47,12 +47,12 @@ Usage: lalapps_pulsar_parameter_estimation_pipe [options]
   -m, --mcmc               perform search as an MCMC
   -c, --covariance         use covariance file if available
   -o, --only-joint         only output the joint posterior (for MCMC with
-                           multiple detectors 
+                           multiple detectors) 
   """
   print >> sys.stderr, msg
   
 # parse the command line options to figure out what we should do
-shortop = "hvF:l:Vumc"
+shortop = "hvF:l:Vumco"
 longop = [
   "help",
   "version",
