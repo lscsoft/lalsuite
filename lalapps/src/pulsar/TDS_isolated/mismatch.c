@@ -20,14 +20,47 @@
 #include <lal/XLALError.h>
 #include <lal/LALRCSID.h>
 
-#define TIMESPAN 31557600
+#include <getopt.h>
+
 #define SIXTH 0.166666666666666666666666666666666666666667L
 #define TWENTYFOURTH 0.04166666666666666666666666666666666666666667L
-#define EARTH "/Users/matthew/lscsoft/lal/packages/pulsar/test/earth05-09.dat"
-#define SUN "/Users/matthew/lscsoft/lal/packages/pulsar/test/sun05-09.dat"
 #define MAXPARAMS 32
 
+#define USAGE \
+"Usage: %s [options]\n\n"\
+" --help              display this message\n"\
+" --detector          IFOs to use e.g. H1\n"\
+" --pulsar            name of pulsar e.g. J0534+2200\n"\
+" --par-file          pulsar parameter (.par) file (full path)\n"\
+" --covariance        pulsar covariance matrix file\n"\
+" --start             start time GPS\n"\
+" --timespan          time span to calculate over (seconds)\n"\
+" --deltat            length of each step (seconds)\n"\
+" --iterations        number of random points to check\n"\
+" --output-dir        output directory\n"\
+" --earth             Earth ephemeris\n"\
+" --sun               Sun ephemeris\n"\
+"\n"
+
+
 RCSID("$Id$");
+
+typedef struct tagInputParams{
+  CHAR det[10];
+  CHAR pulsar[15];
+  CHAR parfile[256];
+  CHAR covfile[256];
+
+  INT4 start;
+  INT4 timespan;
+  INT4 deltat;
+
+  INT4 iterations;
+  
+  CHAR outputdir[256];
+  CHAR earth[256];
+  CHAR sun[256];  
+}InputParams;
 
 typedef struct tagParamData{
   CHAR *name;  /* parameter name as given by the conventions in the .mat file
@@ -37,6 +70,8 @@ typedef struct tagParamData{
 file */
   INT4 matPos;  /* row position in the covariance matrix */
 }ParamData;
+
+void get_input_args(InputParams *inputParams, INT4 argc, CHAR *argv[]);
 
 REAL8Array *CholeskyDecomp( REAL8Array *M, CHAR* uOrl );
 
@@ -69,20 +104,19 @@ REAL8Vector *get_phi( double start, double deltaT, int npoints,
 int main(int argc, char *argv[]){
   static LALStatus status;
 
+  InputParams inputs;
+
   FILE *fp=NULL;
 
   BinaryPulsarParams params;
 
   BinaryPulsarParams deltaparams;
 
-  char *parfile=NULL, *matfile=NULL;
-
   int doParam[20];
   double errVals[20];
   int i=0, count=0, countBin=0, j=1, k=0, N=0;
 
-  int deltaT=10*60;            /* seconds between points */
-  int npoints=TIMESPAN/deltaT; /* number of 10 minutes stretches */
+  int npoints=0; /* number of 10 minutes stretches */
 
   EphemerisData *edat=NULL;
   LALDetector det;
@@ -102,14 +136,17 @@ int main(int argc, char *argv[]){
   REAL8Array *cormat=NULL, *covmat=NULL, *posdef=NULL;
   REAL8Array *chol=NULL;
 
-  parfile = argv[1];
-  matfile = argv[2];
+  CHAR outputfile[256];
 
-  XLALReadTEMPOParFile( &params, parfile );
-  XLALReadTEMPOParFile( &deltaparams, parfile );
+  get_input_args(&inputs, argc, argv);
+
+  npoints = inputs.timespan/inputs.deltat;
+
+  XLALReadTEMPOParFile( &params, inputs.parfile );
+  XLALReadTEMPOParFile( &deltaparams, inputs.parfile );
 
   /* set up ephemerises */
-  det = *XLALGetSiteInfo( "H1" ); /* just set site as LHO */
+  det = *XLALGetSiteInfo( inputs.det ); /* just set site as LHO */
   baryinput.site = det;
   baryinput.site.location[0] /= LAL_C_SI;
   baryinput.site.location[1] /= LAL_C_SI;
@@ -117,8 +154,8 @@ int main(int argc, char *argv[]){
 
   edat = XLALMalloc(sizeof(*edat));
 
-  (*edat).ephiles.earthEphemeris = EARTH;
-  (*edat).ephiles.sunEphemeris = SUN;
+  (*edat).ephiles.earthEphemeris = inputs.earth;
+  (*edat).ephiles.sunEphemeris = inputs.sun;
   LALInitBarycenter(&status, edat);
 
  /* set the position and frequency epochs if not already set */
@@ -144,8 +181,8 @@ int main(int argc, char *argv[]){
     deltaparams.posepoch = deltaparams.pepoch;
 
   /* calculate the phase every minute for the mean values */
-  phiMean = get_phi( 800000000., (double)deltaT, npoints, params, baryinput,
-edat);
+  phiMean = get_phi( inputs.start, (double)inputs.deltat, npoints, params, baryinput,
+    edat);
 
   /* calculate phase integral over time */
   for( k=0; k<npoints-1; k++ ){
@@ -187,7 +224,7 @@ edat);
   paramData = XLALMalloc( MAXPARAMS*sizeof(ParamData) );
 
   /* get correlation matrix */
-  cormat = ReadCorrelationMatrix( matfile, params, paramData );
+  cormat = ReadCorrelationMatrix( inputs.covfile, params, paramData );
 
   /* set covariance matrix */
   covmat = CreateCovarianceMatrix( paramData, cormat );
@@ -215,7 +252,7 @@ edat);
   }
   matPos = XLALResizeINT4Vector(matPos, j);
 
-  N = 500;
+  N = inputs.iterations;
 
   /* calculate the max mismatch between the mean value and the mean plus the
      standard deviation */
@@ -274,7 +311,7 @@ edat);
     }
 
     /* get new phase */
-    phiOffset = get_phi( 800000000.0, (double)deltaT, npoints, deltaparams,
+    phiOffset = get_phi( inputs.start, (double)inputs.deltat, npoints, deltaparams,
       baryinput, edat );
 
     /* calculate the mismatch 1 - (P(params + delta))/P(params) */
@@ -298,8 +335,13 @@ edat);
     XLALDestroyREAL8Vector( phiOffset );
   }
 
-  fprintf(stderr, "Maximum mismatch for %d templates drawn randomly from the \
-given parameter and covariance file = %lf\n", N, maxmismatch);
+  sprintf(outputfile, "%s/mismatch_%s", inputs.outputdir, inputs.pulsar);
+  fp = fopen(outputfile, "w");
+
+  fprintf(fp, "%% Maximum mismatch for %d templates drawn randomly from the \
+given parameter and pulsar %s\n%lf\n", N, inputs.pulsar, maxmismatch);
+
+  fclose(fp);
 
   XLALFree( paramData );
   XLALFree( randVals );
@@ -311,6 +353,86 @@ given parameter and covariance file = %lf\n", N, maxmismatch);
   XLALDestroyREAL8Vector( phiMean );
 
   return 0;
+}
+
+void get_input_args(InputParams *inputParams, INT4 argc, CHAR *argv[]){
+  struct option long_options[] =
+  {
+    { "help",           no_argument,       0, 'h' },
+    { "detector",      required_argument, 0, 'D' },
+    { "pulsar",         required_argument, 0, 'p' },
+    { "par-file",       required_argument, 0, 'P' },
+    { "covariance",      required_argument, 0, 'c' },
+    { "start",     required_argument, 0, 's' },
+    { "timespan",          required_argument, 0, 't' },
+    { "deltat", required_argument, 0, 'd' },
+    { "iterations", required_argument, 0, 'i' },
+    { "output-dir", required_argument, 0, 'o' },
+    { "earth", required_argument, 0, 'e' },
+    { "sun", required_argument, 0, 'S' },
+    { 0, 0, 0, 0}
+  };
+
+  CHAR args[] = "hd:p:P:c:s:t:d:i:o:e:S:" ;
+  CHAR *program = argv[0];
+
+  while( 1 ){
+    INT4 option_index = 0;
+    INT4 c;
+
+    c = getopt_long_only( argc, argv, args, long_options, &option_index );
+    if( c == -1 ) /* end of options */
+      break;
+
+    switch( c ){
+      case 0:
+        if( long_options[option_index].flag )
+          break;
+        else
+          fprintf(stderr, "Error passing option %s with argument %s\n",
+            long_options[option_index].name, optarg);
+      case 'h': /* help message */
+        fprintf(stderr, USAGE, program);
+        exit(0);
+      case 'D': 
+        sprintf(inputParams->det, "%s", optarg);
+        break;
+      case 'p':
+        sprintf(inputParams->pulsar, "%s", optarg);
+        break;
+      case 'P':
+        sprintf(inputParams->parfile, "%s", optarg);
+        break;
+      case 'c':
+        sprintf(inputParams->covfile, "%s", optarg);
+        break;
+      case 's':
+        inputParams->start = atoi(optarg);
+        break;
+      case 't':
+        inputParams->timespan = atoi(optarg);
+        break;
+      case 'd':
+        inputParams->deltat = atoi(optarg);
+        break;
+      case 'i':
+        inputParams->iterations = atoi(optarg);
+        break;
+      case 'o':
+        sprintf(inputParams->outputdir, "%s", optarg);
+        break;
+      case 'e':
+        sprintf(inputParams->earth, "%s", optarg);
+        break;
+      case 'S':
+        sprintf(inputParams->sun, "%s", optarg);
+        break;
+      case '?':
+        fprintf(stderr, "Unknown error while parsing options\n");
+      default:
+        fprintf(stderr, "Unknown error while parsing options\n");
+    }
+  }
 }
 
 /* function to return a vector of the pulsar phase for each data point */
