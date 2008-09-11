@@ -1341,7 +1341,7 @@ void SetUpSFTs( LALStatus *status,
   /* Repr 26/07/08: deactivated use of old function LALLeapSecs() which has an obsolete leap-second range:
      TRY( LALLeapSecs( status->statusPtr, &tmpLeap, &tStartGPS, &lsfas), status);
      Use new XLALLeapSeconds() instead: */
-  in->edat->leap = XLALLeapSeconds( tStartGPS.gpsSeconds );
+  in->edat->leap = XLALGPSLeapSeconds( tStartGPS.gpsSeconds );
   {
     INT4 err = xlalErrno;
     if ( err != XLAL_SUCCESS ) {
