@@ -1,5 +1,5 @@
 ## Process this file with automake to produce Makefile.in
-pkginclude_HEADERS = LALInspiral.h
+pkginclude_HEADERS = LALInspiral.h BBHPhenomCoeffs.h
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex
 all-local: include-link

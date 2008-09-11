@@ -457,6 +457,7 @@ typedef enum {
    NumRel,
    Eccentricity,
    EOBNR,
+   Phenom,
    NumApproximants
  } Approximant;
 /* </lalVerbatim>  */
@@ -1230,6 +1231,36 @@ void LALSTPNWaveform(
      LALStatus *status,
      REAL4Vector *signalvec,
      InspiralTemplate *params);
+
+
+/* Phenomenological waveform generation functions */
+
+void LALBBHPhenWaveFreqDom ( LALStatus        *status,
+			     REAL4Vector      *signal,
+			     InspiralTemplate *params);
+
+void LALBBHPhenWaveFreqDomTemplates( LALStatus        *status,
+				     REAL4Vector      *signal1,
+				     REAL4Vector      *signal2,
+				     InspiralTemplate *params);
+
+void LALBBHPhenWaveTimeDom ( LALStatus        *status,
+			     REAL4Vector      *signal,
+			     InspiralTemplate *template);
+
+void LALBBHPhenWaveTimeDomTemplates( LALStatus        *status,
+				     REAL4Vector      *signal1,
+				     REAL4Vector      *signal2,
+				     InspiralTemplate *params);
+
+void LALBBHPhenTimeDomEngine( LALStatus        *status,
+			      REAL4Vector      *signal1,
+			      REAL4Vector      *signal2,
+			      REAL4Vector      *h,
+			      REAL4Vector      *a,
+			      REAL4Vector      *f,
+			      REAL8Vector      *phiOut,
+			      InspiralTemplate *params);
 
 
 /* --- OTHER PROTOTYPES --- */
