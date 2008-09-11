@@ -20,8 +20,7 @@
 /**
  * \author Karl Wette
  * \file
- * \brief Computes the weighted amplitude modulation 
-          coefficients A, B, C for a set of SFTs
+ * \brief Computes the weighted AM coefficients for given SFTs
  */
 
 #include "config.h"
@@ -179,10 +178,14 @@ int main(int argc, char *argv[]) {
   }      
 
   /* Print the AM coefficients */
-  printf("#freq band A B C\n");
-  printf("%0.3f %0.3f %0.4e %0.4e %0.4e\n", freq, band,
-	 AM_coeffs->Mmunu.Ad, AM_coeffs->Mmunu.Bd, AM_coeffs->Mmunu.Cd);
-
+  {
+    const REAL8 A = AM_coeffs->Mmunu.Ad * AM_coeffs->Mmunu.Sinv_Tsft;
+    const REAL8 B = AM_coeffs->Mmunu.Bd * AM_coeffs->Mmunu.Sinv_Tsft;
+    const REAL8 C = AM_coeffs->Mmunu.Cd * AM_coeffs->Mmunu.Sinv_Tsft;
+    printf("#freq band A B C\n");
+    printf("%0.3f %0.3f %0.4e %0.4e %0.4e\n", freq, band, A, B, C);
+  }
+  
   /* Cleanup */
   LALDestroyUserVars(&status);
   LAL_CALL(LALDestroySFTCatalog(&status, &catalog), &status);

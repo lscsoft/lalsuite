@@ -14,14 +14,14 @@ FRAMEPROGS =
 endif
 
 bin_PROGRAMS = $(FRAMEPROGS) lalapps_Calibrate60sSFTs lalapps_Calibrate1800SFTs lalapps_FreqAverager lalapps_psd \
-	lalapps_ComputePSD  lalapps_FreqAverager_v2 lalapps_GetSFTVelocities lalapps_create_solar_system_ephemeris
+	lalapps_ComputePSD  lalapps_FreqAverager_v2 lalapps_GetSFTVelocities lalapps_create_solar_system_ephemeris \
+        lalapps_ComputeWeightedMultiAMCoeffs
 
 if FRAME
 lalapps_make_job_input_data_SOURCES = make_job_input_data.c
 lalapps_make_sfts_SOURCES = make_sfts.c
 endif
 
-EXTRA_PROGRAMS = lalapps_ComputeWeightedMultiAMCoeffs
 
 lalapps_Calibrate60sSFTs_SOURCES = Calibrate60sSFTs.c Calibrate60sSFTs.h
 lalapps_Calibrate1800SFTs_SOURCES = Calibrate1800SFTs.c Calibrate1800SFTs.h
