@@ -21,6 +21,8 @@ lalapps_make_job_input_data_SOURCES = make_job_input_data.c
 lalapps_make_sfts_SOURCES = make_sfts.c
 endif
 
+EXTRA_PROGRAMS = lalapps_ComputeWeightedMultiAMCoeffs
+
 lalapps_Calibrate60sSFTs_SOURCES = Calibrate60sSFTs.c Calibrate60sSFTs.h
 lalapps_Calibrate1800SFTs_SOURCES = Calibrate1800SFTs.c Calibrate1800SFTs.h
 lalapps_FreqAverager_SOURCES = FreqAverager.c FreqAverager.h
@@ -29,6 +31,8 @@ lalapps_ComputePSD_SOURCES = ComputePSD.c
 lalapps_FreqAverager_v2_SOURCES =  FreqAverager_v2.c
 lalapps_GetSFTVelocities_SOURCES = GetSFTVelocities.c
 lalapps_create_solar_system_ephemeris_SOURCES = create_solar_system_ephemeris.c
+lalapps_ComputeWeightedMultiAMCoeffs_SOURCES = ComputeWeightedMultiAMCoeffs.c
+
 
 EXTRA_DIST = \
 make_locked_data_list \
