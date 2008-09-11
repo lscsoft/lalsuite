@@ -339,6 +339,10 @@ LALInspiralWaveForInjection(
        LALEOBWaveformForInjection(status->statusPtr, waveform, inspiralParams, ppnParams);
        CHECKSTATUSPTR(status);
 	   break;
+     case Phenom:
+       LALBBHPhenWaveTimeDomForInjection (status->statusPtr, waveform, inspiralParams, ppnParams);
+       CHECKSTATUSPTR(status);
+       break;  
       case BCV:
 	/*       LALBCVWaveformForInjection(status->statusPtr, waveform, inspiralParams, ppnParams);*/
       case BCVSpin:
