@@ -38,7 +38,8 @@ LALSTPNWaveform.c\
 LALInspiralAmplitudeCorrectedWave.c\
 LALInspiralWaveTaper.c \
 LALInspiralGetApproximantString.c \
-BandPassInspiralTemplate.c
+BandPassInspiralTemplate.c \
+LALPhenomWaveform.c
 
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 MOSTLYCLEANFILES = .dvi-dep
