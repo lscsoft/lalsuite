@@ -115,7 +115,6 @@ mismatch_job.set_sub_file(basename + '.sub')
 
 # set values from config file
 pulsar_param_dir = cp.get('input','pulsar_param_dir')
-input_dir = cp.get('input','input_dir')
 
 # actual info on the analysis
 detector = cp.get('input','detector')
@@ -131,13 +130,12 @@ iterations = cp.get('input','iterations') # number of MCMC iterations
 covdir = cp.get('input','cov_dir') # directory containing cov matrices  
 earth = cp.get('input','earth_ephem') # Earth ephemeris
 sun = cp.get('input','sun_ephem') # Sun ephemeris
+starttime = cp.get('input','start')
+deltat = cp.get('input','deltat')
+timespan = cp.get('input','timespan')
 
 cov_files = os.listdir(covdir)
 cov_files.sort()
-
-# get the list of fine heterodyned data files
-input_files = os.listdir(input_dir)
-input_files.sort()
 
 pulsars = [] # create list for parameter estimation nodes
 
@@ -148,22 +146,6 @@ while i < len(param_files):
   if ".par" in param_files[i]:
     pulsar = 'J' + re.sub(r'\.par',r'',param_files[i]) # set pulsar name from
     param_file = pulsar_param_dir + '/' + param_files[i]
-      
-    # find whether an input file exists for that pulsar
-    k=0
-    while k < len(input_files):
-      if pulsar in input_files[k]:
-        data_file = 1
-	      break
-
-      data_file = None
-      k = k+1
-
-    # if no file is set then tell me and move onto next pulsar
-    if data_file == None:
-      print >> sys.stderr, "No file set for PSR %s" % (pulsar)
-      i = i+1
-      continue 
  
     # if there is a covariance matrix set this
     m=0        
@@ -176,21 +158,26 @@ while i < len(param_files):
           pulsars.append(pulsar_parameter_mismatch.mismatchNode(mismatch_job))
           cov_file = covdir + '/' + cov_files[m]                
           pulsars[j].set_covfile(cov_file)
-	      
+	  pulsars[j].set_param_file(param_file)
+
           pulsars[j].set_earth(earth)
           pulsars[j].set_sun(sun)
 
           pulsars[j].set_iterations(iterations)
+          pulsars[j].set_deltat(deltat)
+          pulsars[j].set_start(starttime)
+          pulsars[j].set_timespan(timespan)
 
           pulsars[j].set_detector(detector)
           pulsars[j].set_pulsar(pulsar)
-          pulsars[j].set_input_dir(input_dir)
           pulsars[j].set_output_dir(output_dir)
 
           dag.add_node(pulsars[j])
           j = j + 1
           break;
-      
+       
+      m = m + 1
+
   i = i+1 
 
   print >> sys.stderr, "Set dag job for pulsar %s" % (pulsar)
