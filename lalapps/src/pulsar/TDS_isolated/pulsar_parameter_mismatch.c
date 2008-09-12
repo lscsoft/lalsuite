@@ -1066,7 +1066,7 @@ REAL8Array *XLALCheckPositiveDefinite( REAL8Array *matrix ){
   for( i=0; i<(INT4)matrix->dimLength->data[0]; i++ ){
     /* first check if any eigen values are zero and if so convert to positive
        definite matrix */
-    if( eigenval->data[i] < 0. && fabs(eigenval->data[i]) > 3.*LAL_REAL8_EPS ){
+    if( eigenval->data[i] < 0. && fabs(eigenval->data[i]) > 10.*LAL_REAL8_EPS ){
       fprintf(stderr, "Eigenvalue is negative. Non-postive definite matrix!\n");
       posdef = XLALConvertToPositiveDefinite( matrix );
       break;
@@ -1093,7 +1093,7 @@ REAL8Array *XLALCheckPositiveDefinite( REAL8Array *matrix ){
   LALDSymmetricEigenVectors( &status, eigenval, eigenvec );
 
   for( i=0; i<(INT4)matrix->dimLength->data[0]; i++ ){
-    if( eigenval->data[i] < 0. && fabs(eigenval->data[i]) > 3.*LAL_REAL8_EPS){
+    if( eigenval->data[i] < 0. && fabs(eigenval->data[i]) > 10.*LAL_REAL8_EPS){
       fprintf(stderr, "ABORT! Eigenvalue is negative. Non-postive definite \
 matrix!\n");
       exit(0);
