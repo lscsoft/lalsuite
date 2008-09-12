@@ -97,16 +97,19 @@ CHAR channel2[LALNameLength]= "H2:STRAIN";
 UINT4 sampleRate = 16384;
 UINT4 resampleRate = 1024;
 
+UINT4 stat=0;
 REAL8 mu = 0.2;
 REAL8 sigma = 0.8;
 REAL8 sigma1 = 1.;
 REAL8 sigma2 = 1.;
 REAL8 mu0 = 0.1;
 REAL8 sigma0 = 0.1;
-REAL8 v1, v2;
+REAL8 v1, v2, v12;
 REAL8Vector *h,*s1,*s2,*e12;
 
-double lambda (gsl_vector *x,void *params);
+double lambda0 (gsl_vector *x,void *params);
+double lambda1 (gsl_vector *x,void *params);
+double lambda2 (gsl_vector *x,void *params);
 void parseOptions(INT4 argc, CHAR *argv[]);
 void displayUsage(INT4 exitcode);
 
@@ -127,10 +130,10 @@ INT4 main (INT4 argc, CHAR *argv[])
   int i, j, n;
   /* signal */
   double var, varn, sigman, varmean, snr;
-  double pmu[10];
-  double var1, var2, sigmaref;
-  double muest, sigmaest, varest, varmeanest, sigma1est, sigma2est;
-  double muestMean, sigmaestMean, varmeanestMean, sigma1estMean, sigma2estMean;
+  double pmu[100];
+  double var1, var2, sigmaref, ksi0, ksi;
+  double muest, ksiest, sigmaest, varest, varmeanest, sigma1est, sigma2est;
+  double muestMean, ksiestMean, sigmaestMean, varmeanestMean, sigma1estMean, sigma2estMean;
   double value;
   
   /* time series */
@@ -169,14 +172,12 @@ INT4 main (INT4 argc, CHAR *argv[])
    resampleParams.filterType = defaultButterworth;
   }
   
-   /* set duration and number of jobs */
-   
+   /* set duration and number of jobs */   
    if(condor_flag){
     startTime=startTime+(job-1)*duration;
     if(stopTime>startTime+duration)
      stopTime=startTime+duration;
    }
-
    duration = stopTime-startTime;
    if(resample_flag){
     seglength=(int)Npt/resampleRate;
@@ -191,9 +192,10 @@ INT4 main (INT4 argc, CHAR *argv[])
    fprintf(stdout, "will analyze %d segments of length %d s...\n",nsegment, seglength);}
    
    /* poisson coefficient */
-  for(i=0;i<10;i++)
+  for(i=0;i<50;i++)
    pmu[i]=gsl_ran_poisson_pdf(i,mu);
-	
+  ksi=1.-pmu[0];
+  
   /* signal-to-noise ratio rho = varmean*sqrt(N)/(sigma1*sigma2)*/
   var=sigma*sigma;
   varmean=mu*var;
@@ -232,8 +234,10 @@ INT4 main (INT4 argc, CHAR *argv[])
   /* name output file */
   LALSnprintf(fileName, LALNameLength,"output/stat_%d.dat",job);
   pf3 = fopen(fileName,"w");
+  
+  
   /*** loop over segments ***/
-  muestMean=0.;sigmaestMean=0.;varmeanestMean=0.;
+  muestMean=0.;ksiestMean=0.;sigmaestMean=0.;varmeanestMean=0.;
   sigma1estMean=0.;sigma2estMean=0.;
   for(j=0;j<nsegment;j++){
 
@@ -291,7 +295,6 @@ INT4 main (INT4 argc, CHAR *argv[])
 	}
    }
    else{
-   
     /* read from frames */
 	
     /* read channels */
@@ -375,7 +378,7 @@ INT4 main (INT4 argc, CHAR *argv[])
   v1=0.;v2=0.;	
   for (i = 0; i < Npt; i++) {
    if(montecarlo_flag){
-    n = gsl_ran_poisson (rrgn,mu);           
+    n = gsl_ran_poisson (rrgn,mu);         
     if(n>0){
      varn = var*(double)n;                                          
      sigman = sqrt(varn);        
@@ -386,59 +389,159 @@ INT4 main (INT4 argc, CHAR *argv[])
    s1->data[i] = n1.data->data[i]+h->data[i];                                 
    s2->data[i] = n2.data->data[i]+h->data[i];
    v1=v1+s1->data[i]*s1->data[i];
-   v2=v2+s2->data[i]*s2->data[i];                               
+   v2=v2+s2->data[i]*s2->data[i];
+   v12=v12+s1->data[i]*s2->data[i];                               
   }
-  v1=v1/Npt; v2=v2/Npt;
+  v1=v1/Npt; v2=v2/Npt;v12=v12/Npt;
  
   /** maximize likelihood function for parameter estimation **/ 
   /* Nelder-Mead Simplex algorithm */
   
   if(verbose_flag){
-   fprintf(stdout, "estimate parameters...\n");}
+   fprintf(stdout, "estimate parameters...\n");
+   fprintf(stdout,"T=%d:",gpsStartTime.gpsSeconds);
+   fprintf(stdout,"mu=%e ksi=%e sigma=%e varmean=%e sigma1=%e sigma2=%e\n",mu,ksi,sigma,varmean,sigma1,sigma2);}
+   
+  fprintf(pf3,"%d ",gpsStartTime.gpsSeconds);
+  fprintf(pf3,"%f %f ",sigma1,sigma2); 
   
-  gsl_vector *ss=gsl_vector_alloc (4), *x=gsl_vector_alloc (4);
-  
-  gsl_vector_set_all (ss, 0.1);
-  gsl_vector_set(x,0,mu0);
-  gsl_vector_set(x,1,sigma0);
-  gsl_vector_set(x,2,1.);
-  gsl_vector_set(x,3,1.);
+  if(stat==0){
+   gsl_vector *ss=gsl_vector_alloc (3), *x=gsl_vector_alloc (3);
+   gsl_vector_set_all (ss, 0.1);
+   gsl_vector_set(x,0,sigma0);
+   gsl_vector_set(x,1,1.);
+   gsl_vector_set(x,2,1.);
 
-  minex_func.f = &lambda;
-  minex_func.n = 4;
-  minex_func.params = NULL;
+   minex_func.f = &lambda0;
+   minex_func.n = 3;
+   minex_func.params = NULL;
   
-  s=NULL; 
-  s = gsl_multimin_fminimizer_alloc (T, 4);
-  gsl_multimin_fminimizer_set (s, &minex_func, x, ss);
-  
-  iter=0;
-  do{
-   iter++;
-   status = gsl_multimin_fminimizer_iterate(s);
-   if (status){ 
-	break;}
-   size = gsl_multimin_fminimizer_size (s);
-   status = gsl_multimin_test_size (size, 1.e-4);
-   if(test_flag){
-	if (status == GSL_SUCCESS){
-	 fprintf (stdout,"converged to minimum at\n");}
-	fprintf (stdout,"%5d ", (int)iter);
-	for (k = 0; k < 4; k++){
-	 fprintf (stdout,"%10.3e ", gsl_vector_get (s->x, k));}
-	fprintf (stdout,"f = %e\n", s->fval);
+   s=NULL; 
+   s = gsl_multimin_fminimizer_alloc (T, 3);
+   gsl_multimin_fminimizer_set (s, &minex_func, x, ss);
+
+   iter=0;
+   do{
+    iter++;
+    status = gsl_multimin_fminimizer_iterate(s);
+    if (status){break;}
+    size = gsl_multimin_fminimizer_size (s);
+    status = gsl_multimin_test_size (size, 1.e-4);
+    if(test_flag){
+ 	 if (status == GSL_SUCCESS){
+	  fprintf (stdout,"converged to minimum at\n");}
+	 fprintf (stdout,"%5d ", (int)iter);
+	 for (k = 0; k < 3; k++){
+	  fprintf (stdout,"%10.3e ", gsl_vector_get (s->x, k));}
+	 fprintf (stdout,"f = %e\n", s->fval);
+    }
    }
+  while (status == GSL_CONTINUE && iter < 300);
+  sigmaest=gsl_vector_get (s->x, 0);
+  sigma1est=gsl_vector_get (s->x, 1);
+  sigma2est=gsl_vector_get (s->x, 2);
+  gsl_multimin_fminimizer_free (s);
+  gsl_vector_free(x);
+  gsl_vector_free(ss);
+  varmeanest=sigmaest*sigmaest;
+  if(verbose_flag)
+   fprintf(stdout,"sigmaest=%e varmeanest=%e sigma1est=%e sigma2est=%e\n",sigmaest,varmeanest,sigma1est,sigma2est);
+  fprintf(pf3,"%e %e %e %e\n",sigmaest,varmeanest,sigma1est,sigma2est); 
   }
- while (status == GSL_CONTINUE && iter < 300);
+  
+  else if(stat==1){
+   ksi0=1.-gsl_ran_poisson_pdf(0,mu0);
+   gsl_vector *ss=gsl_vector_alloc (4), *x=gsl_vector_alloc (4);
+   gsl_vector_set_all (ss, 0.1);
+   gsl_vector_set(x,0,ksi0);
+   gsl_vector_set(x,1,sigma0);
+   gsl_vector_set(x,2,1.);
+   gsl_vector_set(x,3,1.);
+   minex_func.f = &lambda1;
+   minex_func.n = 4;
+   minex_func.params = NULL;
+   s=NULL; 
+   s = gsl_multimin_fminimizer_alloc (T, 4);
+   gsl_multimin_fminimizer_set (s, &minex_func, x, ss);
+   iter=0;
+   do{
+    iter++;
+    status = gsl_multimin_fminimizer_iterate(s);
+    if (status){break;}
+    size = gsl_multimin_fminimizer_size (s);
+    status = gsl_multimin_test_size (size, 1.e-4);
+    if(test_flag){
+ 	 if (status == GSL_SUCCESS){
+	  fprintf (stdout,"converged to minimum at\n");}
+	 fprintf (stdout,"%5d ", (int)iter);
+	 for (k = 0; k < 3; k++){
+	  fprintf (stdout,"%10.3e ", gsl_vector_get (s->x, k));}
+	 fprintf (stdout,"f = %e\n", s->fval);
+    }
+   }
+  while (status == GSL_CONTINUE && iter < 300);
+  ksiest=gsl_vector_get (s->x, 0);
+  sigmaest=gsl_vector_get (s->x, 1);
+  sigma1est=gsl_vector_get (s->x, 2);
+  sigma2est=gsl_vector_get (s->x, 3);
+  gsl_multimin_fminimizer_free (s);
+  gsl_vector_free(x);
+  gsl_vector_free(ss);
+  varest=sigmaest*sigmaest;
+  varmeanest=ksiest*varest;
+  ksiestMean=ksiestMean+ksiest;
+  if(verbose_flag)
+   fprintf(stdout,"ksiest=%e sigmaest=%e varmeanest=%e sigma1est=%e sigma2est=%e\n",ksiest,sigmaest,varmeanest,sigma1est,sigma2est);
+  fprintf(pf3,"%e %e %e %e %e\n",ksiest,sigmaest,varmeanest,sigma1est,sigma2est);
+  }
+  
+  else if(stat==2){
+   gsl_vector *ss=gsl_vector_alloc (4), *x=gsl_vector_alloc (4);
+   gsl_vector_set_all (ss, 0.1);
+   gsl_vector_set(x,0,mu0);
+   gsl_vector_set(x,1,sigma0);
+   gsl_vector_set(x,2,1.);
+   gsl_vector_set(x,3,1.);
+   minex_func.f = &lambda2;
+   minex_func.n = 4;
+   minex_func.params = NULL;
+   s=NULL; 
+   s = gsl_multimin_fminimizer_alloc (T, 4);
+   gsl_multimin_fminimizer_set (s, &minex_func, x, ss);
+   iter=0;
+   do{
+    iter++;
+    status = gsl_multimin_fminimizer_iterate(s);
+    if (status){break;}
+    size = gsl_multimin_fminimizer_size (s);
+    status = gsl_multimin_test_size (size, 1.e-4);
+    if(test_flag){
+ 	 if (status == GSL_SUCCESS){
+	  fprintf (stdout,"converged to minimum at\n");}
+	 fprintf (stdout,"%5d ", (int)iter);
+	 for (k = 0; k < 3; k++){
+	  fprintf (stdout,"%10.3e ", gsl_vector_get (s->x, k));}
+	 fprintf (stdout,"f = %e\n", s->fval);
+    }
+   }
+  while (status == GSL_CONTINUE && iter < 300);
+  muest=gsl_vector_get (s->x, 0);
+  sigmaest=gsl_vector_get (s->x, 1);
+  sigma1est=gsl_vector_get (s->x, 2);
+  sigma2est=gsl_vector_get (s->x, 3);
+  gsl_multimin_fminimizer_free (s);
+  gsl_vector_free(x);
+  gsl_vector_free(ss);
+  varest=sigmaest*sigmaest;
+  varmeanest=muest*varest;
+  muestMean=muestMean+muest;
+  if(verbose_flag)
+   fprintf(stdout,"muest=%e sigmaest=%e varmeanest=%e sigma1est=%e sigma2est=%e\n",muest,sigmaest,varmeanest,sigma1est,sigma2est);
+  fprintf(pf3,"%f %f %f %f %f\n",muest,sigmaest,varmeanest,sigma1est,sigma2est);
 
- muest=gsl_vector_get (s->x, 0);
- sigmaest=gsl_vector_get (s->x, 1);
- sigma1est=gsl_vector_get (s->x, 2);
- sigma2est=gsl_vector_get (s->x, 3);
+  }
+  
 
- gsl_multimin_fminimizer_free (s);
- gsl_vector_free(x);
- gsl_vector_free(ss);
  
  LALDDestroyVector(&lalstatus,&h);
  LALDDestroyVector(&lalstatus,&n1.data);
@@ -447,21 +550,7 @@ INT4 main (INT4 argc, CHAR *argv[])
  LALDDestroyVector(&lalstatus,&s2);
  LALDDestroyVector(&lalstatus,&e12);
   
- varest=sigmaest*sigmaest;
- varmeanest=muest*varest;
-   
- if(verbose_flag){
-  fprintf(stdout,"T=%d:",gpsStartTime.gpsSeconds);
-  fprintf(stdout,"mu=%f sigma=%f mean(var)=%f sigma1=%f sigma2=%f\n",mu,sigma,varmean,sigma1,sigma2);
-  fprintf(stdout,"muest=%f sigmaest=%f mean(varmest)=%f sigma1est=%f sigma2est=%f\n",muest,sigmaest,varmeanest,sigma1est,sigma2est);
-  fprintf(stdout,"snr=%f\n",snr);
-  fprintf(stdout,"\n");}
-  
- fprintf(pf3,"%d ",gpsStartTime.gpsSeconds);
- fprintf(pf3,"%f %f ",sigma1,sigma2);
- fprintf(pf3,"%f %f %f %f %f\n",muest,sigmaest,varmeanest,sigma1est,sigma2est);
-
- muestMean=muestMean+muest;
+ 
  sigmaestMean=sigmaestMean+sigmaest;
  varmeanestMean=varmeanestMean+varmeanest;
  sigma1estMean=sigma1estMean+sigma1est;
@@ -469,9 +558,19 @@ INT4 main (INT4 argc, CHAR *argv[])
  }  
  
  /** postprocessing **/
- if(post_flag)
-  fprintf(stdout,"muest=%f sigmaest=%f mean(varest)=%f sigma1est=%f sigma2est=%f\n",muestMean/nsegment,sigmaestMean/nsegment,varmeanestMean/nsegment,sigma1estMean/nsegment,sigma2estMean/nsegment);
- 
+ if(post_flag){
+  if(nsegment>1){
+   if(verbose_flag)
+    fprintf(stdout,"combine the results of the %d segments\n",nsegment);
+   if(stat==0)
+    fprintf(stdout,"sigmaest=%e varmeanest=%e sigma1est=%e sigma2est=%e\n",sigmaestMean/nsegment,varmeanestMean/nsegment,sigma1estMean/nsegment,sigma2estMean/nsegment);
+   else if(stat==1)
+    fprintf(stdout,"ksiest=%e sigmaest=%e varmeanest=%e sigma1est=%e sigma2est=%e\n",ksiestMean/nsegment,sigmaestMean/nsegment,varmeanestMean/nsegment,sigma1estMean/nsegment,sigma2estMean/nsegment);
+   else if(stat==2)
+    fprintf(stdout,"muest=%e sigmaest=%e varmeanest=%e sigma1est=%e sigma2est=%e\n",muestMean/nsegment,sigmaestMean/nsegment,varmeanestMean/nsegment,sigma1estMean/nsegment,sigma2estMean/nsegment);
+  }
+ }
+
  /** cleanup **/
  if(verbose_flag){
   fprintf(stdout,"cleanup and exit\n");}
@@ -488,9 +587,75 @@ INT4 main (INT4 argc, CHAR *argv[])
  
  return 0;
 }
- 
- 
- double lambda (gsl_vector *x,void *params)
+
+double lambda0 (gsl_vector *x,void *params)
+{
+  double y;
+  double psigma,psigma1,psigma2;
+  double pv,pv1,pv2,psig12,pv12,pvv1,pvv2;
+  psigma=gsl_vector_get(x,0);
+  psigma1=gsl_vector_get(x,1);
+  psigma2=gsl_vector_get(x,2);
+
+  if((psigma>0.)&&(psigma1>0.)&&(psigma2>0.)){
+   pv=psigma*psigma;
+   pv1=psigma1*psigma1;
+   pv2=psigma2*psigma2;
+   psig12=psigma1*psigma2;
+   pv12=psig12*psig12;
+   pvv1=pv*pv1;
+   pvv2=pv*pv2;
+
+   y=-(0.5*(log(v1*v2)-log(pv12+pvv1+pvv2))+(v1/(pv1*pv1)+v2/(pv2*pv2)+2.*v12/pv12)/(2.*(1./pv1+1./pv2+1./pv))-v1/(2.*pv1)-v2/(2.*pv2)+1.);
+  }
+  else y=10000.;
+  return y; 
+
+}
+
+double lambda1 (gsl_vector *x,void *params)
+{
+
+  int i;
+  double y;
+  double dsum,psum;
+  double pksi,psigma,psigma1,psigma2;
+  double pv,pv1,pv2,psig12,pv12,pvv1,pvv2,v1opv1,v2opv2;
+  double a,b;  
+
+  pksi=gsl_vector_get(x,0);
+  psigma=gsl_vector_get(x,1);
+  psigma1=gsl_vector_get(x,2);
+  psigma2=gsl_vector_get(x,3);
+
+  if((pksi>0.)&&(pksi<1.)&&(psigma>0.)&&(psigma1>0.)&&(psigma2>0.)){
+   pv=psigma*psigma;
+   pv1=psigma1*psigma1;
+   pv2=psigma2*psigma2;
+   psig12=psigma1*psigma2;
+   pv12=psig12*psig12;
+   pvv1=pv*pv1;
+   pvv2=pv*pv2;
+   v1opv1=v1/pv1;
+   v2opv2=v2/pv2;
+
+   a=1./sqrt(pv12+pvv1+pvv2);
+   b=2.*(1./pv1+1./pv2+1./pv);
+   
+   dsum=0.;
+   for(i=0;i<Npt;i++){
+     e12->data[i]=(s1->data[i]/pv1+s2->data[i]/pv2);
+     e12->data[i]= e12->data[i]*e12->data[i];
+     psum = (1.-pksi)+pksi*psig12*a*exp(e12->data[i]/b);
+     dsum=dsum+log(psum);
+   }
+   y=-(0.5*(log(v1opv1*v2opv2)-(v1opv1+v2opv2))+1.+(1./Npt)*dsum);
+  }
+  else y=10000.;
+  return y; 
+}
+
+double lambda2 (gsl_vector *x,void *params)
 {
 
   int i,j,np;
@@ -499,7 +664,8 @@ INT4 main (INT4 argc, CHAR *argv[])
   double pmu,psigma,psigma1,psigma2;
   double pv,pv1,pv2,psig12,pv12,pvv1,pvv2,v1opv1,v2opv2;
   double pc[100],a[100],b[100];  
-
+  double test;
+  
   pmu=gsl_vector_get(x,0);
   psigma=gsl_vector_get(x,1);
   psigma1=gsl_vector_get(x,2);
@@ -515,17 +681,17 @@ INT4 main (INT4 argc, CHAR *argv[])
    pvv1=pv*pv1;
    pvv2=pv*pv2;
    v1opv1=v1/pv1;
-   v2opv2=v2/pv2;
+   v2opv2=v2/pv2;   
 
-   /* poisson coefficient */
-   for(i=0;i<100;i++)
-     pc[i]=gsl_ran_poisson_pdf(i,pmu);
-    
-   i=1;
-   while(pc[i]>20./(double)Npt){
+   i=0;
+   pc[0]=gsl_ran_poisson_pdf(0,pmu);
+   test=1.-pc[0]; 
+   while(test>1./(double)Npt){
+	i++;
+	pc[i]=gsl_ran_poisson_pdf(i,pmu);
+	test=test-pc[i];
     a[i]=1./sqrt(pv12+i*(pvv1+pvv2))*pc[i];
     b[i]=2.*(1./pv1+1./pv2+1./((double)i*pv));
-    i++;
     }
    np=i;dsum=0.;
    for(i=0;i<Npt;i++){
@@ -544,7 +710,7 @@ INT4 main (INT4 argc, CHAR *argv[])
   return y; 
 
 }
-
+	
 	
  /* parse command line options */
 void parseOptions(INT4 argc, CHAR *argv[])
@@ -574,6 +740,7 @@ void parseOptions(INT4 argc, CHAR *argv[])
       {"number-points", required_argument, 0, 'N'},
 	  {"sampleRate", required_argument, 0, 'r'},
       {"resampleRate", required_argument, 0, 'R'},
+	  {"stat", required_argument, 0, 'a'},
       {"mu", required_argument, 0, 'm'},
 	  {"mu0", required_argument, 0, 'M'},
       {"sigma", required_argument, 0, 's'},
@@ -592,7 +759,7 @@ void parseOptions(INT4 argc, CHAR *argv[])
     int option_index = 0;
 
     c = getopt_long(argc, argv, 
-                  "hn:t:T:l:N:r:R:m:M:s:S:g:G:c:C:d:D:v",
+                  "hn:t:T:l:N:r:R:a:m:M:s:S:g:G:c:C:d:D:v",
  		   long_options, &option_index);
 
     if (c == -1)
@@ -650,6 +817,11 @@ void parseOptions(INT4 argc, CHAR *argv[])
 			   
 	  case 'R':
 			   resampleRate= atof(optarg);
+	           break;
+			   
+	  case 'a':
+			   /* statistic */
+	           stat = atoi(optarg);
 	           break;
 			   
 	  case 'm':
