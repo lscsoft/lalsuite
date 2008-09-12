@@ -1,0 +1,202 @@
+#!/usr/bin/python
+"""
+  mismatch_pipe
+  
+  Matt Pitkin 11/09/08
+  
+  $Id$
+"""
+
+__author__ = 'Matt Pitkin <matthew@astro.gla.ac.uk>'
+__date__ = '$Date$'
+__version__ = '$Revision$'
+
+# import required modules
+import sys
+import os
+import getopt
+import re
+import string
+import tempfile
+import ConfigParser
+import exceptions
+
+# append the lalapps python path
+sys.path.append('/home/matthew/lscsoft/lib/python')
+
+# import the lalapps pipeline modules
+from glue import pipeline
+import pulsar_parameter_mismatch
+
+# program usage
+def usage():
+  msg = """\
+Usage: pulsar_parameter_mismatch_dag_gen [options]
+
+  -h, --help               display this message
+  -v, --version            print version information and exit 
+  -F, --config-file FILE   use configuration file FILE
+  -l, --log-path PATH      directory to write condor log file
+  """
+  print >> sys.stderr, msg
+  
+# parse the command line options to figure out what we should do
+shortop = "hvF:l:"
+longop = [
+  "help",
+  "version",
+  "config-file=",
+  "log-path=",
+  ]
+
+try:
+  opts, args = getopt.getopt(sys.argv[1:], shortop, longop)
+except getopt.GetoptError:
+  usage()
+  sys.exit(1)
+  
+# default options
+config_file = None
+log_path = None
+
+# process options
+for o, a in opts:
+  if o in ("-v", "--version"):
+    print "pulsar_parameter_mismatch_dag_generator version", __version__
+    sys.exit(0)
+  elif o in ("-h", "--help"):
+    usage()
+    sys.exit(0)
+  elif o in ("-F", "--config-file"):
+    config_file = a
+  elif o in ("-l", "--log-path"):
+    log_path = a
+  else:
+    print >> sys.stderr, "Unknown option:", o
+    usage()
+    sys.exit(1)
+
+# test arguments for validity
+if not config_file:
+  print >> sys.stderr, "No configuration file specified."
+  print >> sys.stderr, "Use --config-file FILE to specify location."
+  sys.exit(1)
+
+if not log_path:
+  print >> sys.stderr, "No log file path specified."
+  print >> sys.stderr, "Use --log-path PATH to specify a location."
+  sys.exit(1)
+
+# try and make a directory to store the cache files and job logs
+try: os.mkdir('logs')
+except: pass
+
+# create the config parser object and read in the ini file
+cp = ConfigParser.ConfigParser()
+cp.read(config_file)
+
+# create a log file that the Condor jobs will write to
+basename = re.sub(r'\.ini',r'',config_file) # remove .ini from config_file name
+
+logfile = log_path + '/' + basename + '.dag.log'
+
+fh = open(logfile, "w" ) # creates file
+fh.close()
+
+# create the DAG writing the log to the specified directory
+dag = pipeline.CondorDAG(logfile)
+dag.set_dag_file(basename)
+
+# create Condor Jobs that will be used in the dag
+mismatch_job = pulsar_parameter_mismatch.mismatchJob(cp)
+
+# set Condor .sub submit file name
+mismatch_job.set_sub_file(basename + '.sub')
+
+# set values from config file
+pulsar_param_dir = cp.get('input','pulsar_param_dir')
+input_dir = cp.get('input','input_dir')
+
+# actual info on the analysis
+detector = cp.get('input','detector')
+
+output_dir = cp.get('input','output_path')
+
+# get the list of pulsar parameter files
+param_files = os.listdir(pulsar_param_dir)
+param_files.sort() # sort the files into alphabetical order
+
+iterations = cp.get('input','iterations') # number of MCMC iterations
+
+covdir = cp.get('input','cov_dir') # directory containing cov matrices  
+earth = cp.get('input','earth_ephem') # Earth ephemeris
+sun = cp.get('input','sun_ephem') # Sun ephemeris
+
+cov_files = os.listdir(covdir)
+cov_files.sort()
+
+# get the list of fine heterodyned data files
+input_files = os.listdir(input_dir)
+input_files.sort()
+
+pulsars = [] # create list for parameter estimation nodes
+
+i = 0
+j = 0
+
+while i < len(param_files):
+  if ".par" in param_files[i]:
+    pulsar = 'J' + re.sub(r'\.par',r'',param_files[i]) # set pulsar name from
+    param_file = pulsar_param_dir + '/' + param_files[i]
+      
+    # find whether an input file exists for that pulsar
+    k=0
+    while k < len(input_files):
+      if pulsar in input_files[k]:
+        data_file = 1
+	      break
+
+      data_file = None
+      k = k+1
+
+    # if no file is set then tell me and move onto next pulsar
+    if data_file == None:
+      print >> sys.stderr, "No file set for PSR %s" % (pulsar)
+      i = i+1
+      continue 
+ 
+    # if there is a covariance matrix set this
+    m=0        
+    while m < len(cov_files):
+      if ".mat" in cov_files[m]:
+        p = 'J' + re.sub(r'\.mat',r'',cov_files[m])
+         
+        if pulsar == p:
+          # add parameterNoce for covariance job
+          pulsars.append(pulsar_parameter_mismatch.mismatchNode(mismatch_job))
+          cov_file = covdir + '/' + cov_files[m]                
+          pulsars[j].set_covfile(cov_file)
+	      
+          pulsars[j].set_earth(earth)
+          pulsars[j].set_sun(sun)
+
+          pulsars[j].set_iterations(iterations)
+
+          pulsars[j].set_detector(detector)
+          pulsars[j].set_pulsar(pulsar)
+          pulsars[j].set_input_dir(input_dir)
+          pulsars[j].set_output_dir(output_dir)
+
+          dag.add_node(pulsars[j])
+          j = j + 1
+          break;
+      
+  i = i+1 
+
+  print >> sys.stderr, "Set dag job for pulsar %s" % (pulsar)
+
+# write out DAG
+dag.write_sub_files()
+dag.write_dag()
+
+sys.exit(0)
