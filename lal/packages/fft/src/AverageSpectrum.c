@@ -19,6 +19,7 @@
 
 #include <math.h>
 #include <string.h>
+#include <lal/LALComplex.h>
 #include <lal/FrequencySeries.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
@@ -1211,13 +1212,14 @@ int XLALREAL4SpectrumInvertTruncate(
     /* stick the root-inv-spectrum into the complex frequency-domain vector */
     for ( k = cut; k < vtilde->length - 1; ++k )
     {
-      vtilde->data[k].re = 1.0 / sqrt( spectrum->data->data[k] );
-      vtilde->data[k].im = 0.0; /* purely real */
+      if ( spectrum->data->data[k] )
+        vtilde->data[k] = XLALCOMPLEX8Rect( 1.0 / sqrt( spectrum->data->data[k] ), 0.0 ); /* purely real */
+      else
+        vtilde->data[k] = LAL_COMPLEX8_ZERO;
     }
 
     /* no Nyquist */
-    vtilde->data[vtilde->length - 1].re = 0.0;
-    vtilde->data[vtilde->length - 1].im = 0.0;
+    vtilde->data[vtilde->length - 1] = LAL_COMPLEX8_ZERO;
 
     /* construct time-domain version of root-inv-spectrum */
     XLALREAL4ReverseFFT( vector, vtilde, revplan );
@@ -1252,7 +1254,12 @@ int XLALREAL4SpectrumInvertTruncate(
 
     /* invert the high frequency (non-Nyquist) components */
     for ( k = cut; k < spectrum->data->length - 1; ++k )
-      spectrum->data->data[k] = 1.0 / spectrum->data->data[k];
+    {
+      if ( spectrum->data->data[k] )
+        spectrum->data->data[k] = 1.0 / sqrt( spectrum->data->data[k] );
+      else
+        spectrum->data->data[k] = 0;
+    }
 
     /* zero Nyquist */
     spectrum->data->data[spectrum->data->length - 1] = 0.0;
@@ -1309,13 +1316,14 @@ int XLALREAL8SpectrumInvertTruncate(
     /* stick the root-inv-spectrum into the complex frequency-domain vector */
     for ( k = cut; k < vtilde->length - 1; ++k )
     {
-      vtilde->data[k].re = 1.0 / sqrt( spectrum->data->data[k] );
-      vtilde->data[k].im = 0.0; /* purely real */
+      if ( spectrum->data->data[k] )
+        vtilde->data[k] = XLALCOMPLEX16Rect( 1.0 / sqrt( spectrum->data->data[k] ), 0.0 ); /* purely real */
+      else
+        vtilde->data[k] = LAL_COMPLEX16_ZERO;
     }
 
     /* no Nyquist */
-    vtilde->data[vtilde->length - 1].re = 0.0;
-    vtilde->data[vtilde->length - 1].im = 0.0;
+    vtilde->data[vtilde->length - 1] = LAL_COMPLEX16_ZERO;
 
     /* construct time-domain version of root-inv-spectrum */
     XLALREAL8ReverseFFT( vector, vtilde, revplan );
@@ -1350,7 +1358,12 @@ int XLALREAL8SpectrumInvertTruncate(
 
     /* invert the high frequency (non-Nyquist) components */
     for ( k = cut; k < spectrum->data->length - 1; ++k )
-      spectrum->data->data[k] = 1.0 / spectrum->data->data[k];
+    {
+      if ( spectrum->data->data[k] )
+        spectrum->data->data[k] = 1.0 / spectrum->data->data[k];
+      else
+        spectrum->data->data[k] = 0.0;
+    }
 
     /* zero Nyquist */
     spectrum->data->data[spectrum->data->length - 1] = 0.0;
@@ -1383,7 +1396,7 @@ int XLALREAL8SpectrumInvertTruncate(
  * fmax.  The fmin and fmax parameters set the frequency band ``of
  * interest''.  Divide-by-zero errors within the band of interest are
  * reported, while divide-by-zero errors outside the band of interest are
- * ignored and the output frequency series zeroed in the affected bins.
+ * ignored (the frequency bins are set to NaN).
  *
  * The input PSD is allowed to span a larger frequency band than the input
  * frequency series, but the frequency resolutions of the two must be the
@@ -1392,6 +1405,7 @@ int XLALREAL8SpectrumInvertTruncate(
  * an error occurs, the contents of the input frequency series are
  * undefined.
  */
+
 COMPLEX8FrequencySeries *XLALWhitenCOMPLEX8FrequencySeries(COMPLEX8FrequencySeries *fseries, const REAL4FrequencySeries *psd, REAL8 fmin, REAL8 fmax)
 {
   static const char func[] = "XLALWhitenCOMPLEX8FrequencySeries";
@@ -1423,11 +1437,8 @@ COMPLEX8FrequencySeries *XLALWhitenCOMPLEX8FrequencySeries(COMPLEX8FrequencySeri
         /* f is in band:  error */
         XLAL_ERROR_NULL(func, XLAL_EFPDIV0);
       else
-      {
         /* f is out of band:  ignore, NaN the output */
-        fdata[i].re = XLAL_REAL4_FAIL_NAN;
-        fdata[i].im = XLAL_REAL4_FAIL_NAN;
-      }
+        fdata[i] = XLALCOMPLEX8Rect(XLAL_REAL4_FAIL_NAN, XLAL_REAL4_FAIL_NAN);
     }
     else
     {
@@ -1444,6 +1455,7 @@ COMPLEX8FrequencySeries *XLALWhitenCOMPLEX8FrequencySeries(COMPLEX8FrequencySeri
 /**
  * Double-precision version of XLALWhitenCOMPLEX8FrequencySeries().
  */
+
 COMPLEX16FrequencySeries *XLALWhitenCOMPLEX16FrequencySeries(COMPLEX16FrequencySeries *fseries, const REAL8FrequencySeries *psd, REAL8 fmin, REAL8 fmax)
 {
   static const char func[] = "XLALWhitenCOMPLEX16FrequencySeries";
@@ -1475,11 +1487,8 @@ COMPLEX16FrequencySeries *XLALWhitenCOMPLEX16FrequencySeries(COMPLEX16FrequencyS
         /* f is in band:  error */
         XLAL_ERROR_NULL(func, XLAL_EFPDIV0);
       else
-      {
         /* f is out of band:  ignore, NaN the output */
-        fdata[i].re = XLAL_REAL4_FAIL_NAN;
-        fdata[i].im = XLAL_REAL4_FAIL_NAN;
-      }
+        fdata[i] = XLALCOMPLEX16Rect(XLAL_REAL8_FAIL_NAN, XLAL_REAL8_FAIL_NAN);
     }
     else
     {
