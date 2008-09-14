@@ -41,6 +41,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <time.h>
+#include <strings.h>
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
@@ -249,6 +250,8 @@ typedef struct {
   REAL8 timerCount;		/**< output progress-meter every <timerCount> templates */
 
   INT4 upsampleSFTs;		/**< use SFT-upsampling by this factor */
+
+  BOOLEAN version;		/**< output version information */
 } UserInput_t;
 
 /*---------- Global variables ----------*/
@@ -263,7 +266,6 @@ void initUserVars (LALStatus *, UserInput_t *uvar);
 void InitFStat ( LALStatus *, ConfigVariables *cfg, const UserInput_t *uvar );
 void Freemem(LALStatus *,  ConfigVariables *cfg);
 
-void WriteFStatLog (LALStatus *, CHAR *argv[], const CHAR *log_fname);
 void checkUserInputConsistency (LALStatus *, const UserInput_t *uvar);
 int outputBeamTS( const CHAR *fname, const AMCoeffs *amcoe, const DetectorStateSeries *detStates );
 void InitEphemeris (LALStatus *, EphemerisData *edat, const CHAR *ephemDir, const CHAR *ephemYear, LIGOTimeGPS epoch, BOOLEAN isLISA);
@@ -273,9 +275,14 @@ int write_FstatCandidate_to_fp ( FILE *fp, const FstatCandidate *thisFCand );
 int write_PulsarCandidate_to_fp ( FILE *fp,  const PulsarCandidate *pulsarParams, const FstatCandidate *Fcand );
 
 int compareFstatCandidates ( const void *candA, const void *candB );
+
+void WriteFStatLog ( LALStatus *status, const CHAR *log_fname, const CHAR *logstr );
 void getLogString ( LALStatus *status, CHAR **logstr, const ConfigVariables *cfg );
+void OutputVersion ( void );
 
 const char *va(const char *format, ...);	/* little var-arg string helper function */
+CHAR *append_string ( const CHAR *str1, const CHAR *append );
+CHAR *clear_linebreaks ( const CHAR *string );
 
 /* ---------- scanline window functions ---------- */
 scanlineWindow_t *XLALCreateScanlineWindow ( UINT4 windowWings );
@@ -327,10 +334,16 @@ int main(int argc,char *argv[])
   LAL_CALL (initUserVars(&status, &uvar), &status); 	
 
   /* do ALL cmdline and cfgfile handling */
-  LAL_CALL (LALUserVarReadAllInput(&status, argc,argv), &status);	
+  LAL_CALL (LALUserVarReadAllInput(&status, argc, argv), &status);	
 
   if (uvar.help)	/* if help was requested, we're done here */
     exit (0);
+
+  if ( uvar.version )
+    {
+      OutputVersion();
+      exit (0);
+    }
 
   /* set log-level and open log-file */
   LogSetLevel ( lalDebugLevel );
@@ -342,17 +355,21 @@ int main(int argc,char *argv[])
     LogSetFile(fpLogPrintf);
   }
 
-  /* keep a log-file recording all relevant parameters of this search-run */
-  if ( uvar.outputLogfile ) {
-    LAL_CALL (WriteFStatLog ( &status, argv, uvar.outputLogfile ), &status );
-  }
-
   /* do some sanity checks on the user-input before we proceed */
   LAL_CALL ( checkUserInputConsistency(&status, &uvar), &status);
 
   /* Initialization the common variables of the code, */
   /* like ephemeries data and template grids: */
   LAL_CALL ( InitFStat(&status, &GV, &uvar), &status);
+
+  /* ----- produce a log-string describing the specific run setup ----- */
+  LAL_CALL ( getLogString ( &status, &(GV.logstring), &GV ), &status );
+  LogPrintfVerbatim( LOG_DEBUG, GV.logstring );
+
+  /* keep a log-file recording all relevant parameters of this search-run */
+  if ( uvar.outputLogfile ) {
+    LAL_CALL (WriteFStatLog ( &status, uvar.outputLogfile, GV.logstring ), &status );
+  }
 
   /* if a complete output of the F-statistic file was requested,
    * we open and prepare the output-file here */
@@ -363,7 +380,7 @@ int main(int argc,char *argv[])
 	  LALPrintError ("\nError opening file '%s' for writing..\n\n", uvar.outputFstat);
 	  return (COMPUTEFSTATISTIC_ESYS);
 	}
-      
+
       fprintf (fpFstat, "%s", GV.logstring );
     } /* if outputFstat */
 
@@ -713,6 +730,8 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
   uvar->metricMismatch = 0.02;
 
   uvar->help = FALSE;
+  uvar->version = FALSE;
+
   uvar->outputLogfile = NULL;
   uvar->outputFstat = NULL;
   uvar->outputLoudest = NULL;
@@ -811,9 +830,11 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
   LALregINTUserStruct ( status, minStartTime, 	 0,  UVAR_OPTIONAL, "Earliest SFT-timestamp to include");
   LALregINTUserStruct ( status, maxEndTime, 	 0,  UVAR_OPTIONAL, "Latest SFT-timestamps to include");
 
+  LALregBOOLUserStruct( status, version,	'V', UVAR_SPECIAL,  "Output version information");
+
   /* ----- more experimental/expert options ----- */
   LALregINTUserStruct (status, 	SSBprecision,	 0,  UVAR_DEVELOPER, "Precision to use for time-transformation to SSB: 0=Newtonian 1=relativistic");
-
+  
   LALregBOOLUserStruct(status, 	useRAA, 	 0,  UVAR_DEVELOPER, "Use rigid adiabatic approximation (RAA) for detector response");
   LALregBOOLUserStruct(status, 	bufferedRAA, 	 0,  UVAR_DEVELOPER, "Approximate RAA by using only middle-frequency");
 
@@ -1241,80 +1262,80 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
       ABORT (status, COMPUTEFSTATISTIC_EMEM, COMPUTEFSTATISTIC_MSGEMEM ); 
     }
 
-  /* ----- produce a log-string describing the data-specific setup ----- */
-  TRY ( getLogString ( status->statusPtr, &(cfg->logstring), cfg ), status );
-  LogPrintfVerbatim( LOG_DEBUG, cfg->logstring );
-
-
   DETATCHSTATUSPTR (status);
   RETURN (status);
 
 } /* InitFStat() */
 
-/** Produce a log-string describing the present run-setup 
+/** Produce a log-string describing the present run-setup
  */
 void
 getLogString ( LALStatus *status, CHAR **logstr, const ConfigVariables *cfg )
 {
   struct tm utc;
   time_t tp;
-  CHAR dateStr[512], line[512], summary[4096];
+#define BUFLEN 1024
+  CHAR dateStr[BUFLEN], line[BUFLEN];
   CHAR *cmdline = NULL;
   UINT4 i, numDet, numSpins = PULSAR_MAX_SPINS;
-  const CHAR *codeID = "$Id$";
   CHAR *ret = NULL;
+  CHAR *id1, *id2;
 
   INITSTATUS( status, "getLogString", rcsid );
   ATTATCHSTATUSPTR (status);
 
-  /* first get full commandline describing search*/
+  /* get full commandline describing search*/
   TRY ( LALUserVarGetLog (status->statusPtr, &cmdline,  UVAR_LOGFMT_CMDLINE ), status );
-  sprintf (summary, "%%%% %s\n%%%% %s\n", codeID, cmdline );
+  sprintf (line, "%%%% cmdline: %s\n", cmdline );
   LALFree ( cmdline );
-  
+  ret = append_string ( ret, line );
+
+  /* add code version ID (only useful for git-derived versions) */
+  id1 = clear_linebreaks ( lalGitID );
+  id2 = clear_linebreaks ( lalappsGitID );
+  LALSnprintf (line, BUFLEN, "%%%% %s\n%%%% %s\n", id1, id2 );
+  LALFree ( id1 );
+  LALFree ( id2 );
+  ret = append_string ( ret, line );
+
+
   numDet = cfg->multiSFTs->length;
   tp = time(NULL);
   sprintf (line, "%%%% Started search: %s", asctime( gmtime( &tp ) ) );
-  strcat ( summary, line );
-  strcat (summary, "%% Loaded SFTs: [ " );
-  for ( i=0; i < numDet; i ++ ) 
+  ret = append_string ( ret, line );
+  ret = append_string ( ret, "%% Loaded SFTs: [ " );
+  for ( i=0; i < numDet; i ++ )
     {
       sprintf (line, "%s:%d%s",  cfg->multiSFTs->data[i]->data->name, 
 	       cfg->multiSFTs->data[i]->length,
 	       (i < numDet - 1)?", ":" ]\n");
-      strcat ( summary, line );
+      ret = append_string ( ret, line );
     }
   utc = *XLALGPSToUTC( &utc, (INT4)GPS2REAL8(cfg->multiDetStates->startTime) );
   strcpy ( dateStr, asctime(&utc) );
   dateStr[ strlen(dateStr) - 1 ] = 0;
   sprintf (line, "%%%% Start GPS time tStart = %12.3f    (%s GMT)\n", 
 	   GPS2REAL8(cfg->multiDetStates->startTime), dateStr);
-  strcat ( summary, line );
+  ret = append_string ( ret, line );
   sprintf (line, "%%%% Total time spanned    = %12.3f s  (%.1f hours)\n", 
 	   cfg->multiDetStates->Tspan, cfg->multiDetStates->Tspan/3600 );
-  strcat ( summary, line );
+  ret = append_string ( ret, line );
   sprintf (line, "%%%% Pulsar-params refTime = %12.3f \n", GPS2REAL8(cfg->refTime) );
-  strcat ( summary, line );
+  ret = append_string ( ret, line );
   sprintf (line, "%%%% InternalRefTime       = %12.3f \n", GPS2REAL8(cfg->searchRegion.refTime) );
-  strcat ( summary, line );
+  ret = append_string ( ret, line );
   sprintf (line, "%%%% Spin-range at internalRefTime: " );
-  strcat ( summary, line );
+  ret = append_string ( ret, line );
 
-  strcat (summary, "fkdot = [ " );
+  ret = append_string (ret, "fkdot = [ " );
   for (i=0; i < numSpins; i ++ ) 
     {
       sprintf (line, "%.16g:%.16g%s", 
 	       cfg->searchRegion.fkdot[i], 
 	       cfg->searchRegion.fkdot[i] + cfg->searchRegion.fkdotBand[i], 
 	       (i < numSpins - 1)?", ":" ]\n");
-      strcat ( summary, line );
+      ret = append_string ( ret, line );
     }
-  
-  if ( (ret = LALCalloc(1, strlen(summary) + 1 )) == NULL ) {
-    ABORT (status, COMPUTEFSTATISTIC_EMEM, COMPUTEFSTATISTIC_MSGEMEM);
-  }
-
-  strcpy ( ret, summary );
 
   /* return result */
   (*logstr) = ret;
@@ -1332,17 +1353,16 @@ getLogString ( LALStatus *status, CHAR **logstr, const ConfigVariables *cfg )
  * <em>NOTE:</em> Currently this function only logs the user-input and code-versions.
  */
 void
-WriteFStatLog (LALStatus *status, char *argv[], const CHAR *log_fname )
+WriteFStatLog ( LALStatus *status, const CHAR *log_fname, const CHAR *log_string )
 {
-  CHAR *logstr = NULL;
-  CHAR command[512] = "";
   FILE *fplog;
 
   INITSTATUS (status, "WriteFStatLog", rcsid);
   ATTATCHSTATUSPTR (status);
 
-  if ( !log_fname )	/* no logfile given */
-    return;
+  if ( !log_fname || !log_string ) {	/* no logfile given */
+    ABORT (status, COMPUTEFSTATISTIC_ENULL, COMPUTEFSTATISTIC_MSGENULL);
+  }
 
   /* prepare log-file for writing */
   if ( (fplog = fopen(log_fname, "wb" )) == NULL) {
@@ -1350,20 +1370,8 @@ WriteFStatLog (LALStatus *status, char *argv[], const CHAR *log_fname )
     ABORT (status, COMPUTEFSTATISTIC_ESYS, COMPUTEFSTATISTIC_MSGESYS);
   }
 
-  /* write out a log describing the complete user-input (in cfg-file format) */
-  TRY (LALUserVarGetLog (status->statusPtr, &logstr,  UVAR_LOGFMT_CFGFILE), status);
-
-  fprintf (fplog, "%%%% LOG-FILE of ComputeFStatistic run\n\n");
-  fprintf (fplog, "%% User-input:\n");
-  fprintf (fplog, "%%----------------------------------------------------------------------\n\n");
-
-  fprintf (fplog, logstr);
-  LALFree (logstr);
-
-  /* append an ident-string defining the exact RC-version of the code used */
-  fprintf (fplog, "\n\n%% SC-version of executable:\n");
-  fprintf (fplog, "%% lalCommitID = %s\n", lalGitID );
-  fprintf (fplog, "%% lalappsCommitID = %s\n", lalappsGitID );
+  fprintf (fplog, "%%%% LOG-FILE for ComputeFStatistic run\n\n");
+  fprintf (fplog, log_string);
   fclose (fplog);
 
 
@@ -1871,3 +1879,68 @@ XLALCenterIsLocalMax ( const scanlineWindow_t *scanWindow )
   return TRUE;
     
 } /* XLALCenterIsLocalMax() */
+
+/** Simply output version information to stdout */
+void
+OutputVersion ( void )
+{
+  printf ( "%s\n", lalGitID );
+  printf ( "%s\n", lalappsGitID );
+
+  return;
+
+} /* OutputVersion() */
+
+/** Mini helper-function: append string 'str2' to string 'str1',
+ * returns pointer to new concatenated string
+ */
+CHAR *append_string ( const CHAR *str1, const CHAR *str2 )
+{
+  UINT4 len1 = 0, len2 = 0;
+  CHAR *outstr;
+
+  if ( str1 )
+    len1 = strlen(str1);
+  if ( str2 )
+    len2 = strlen(str2);
+
+  if ( ( outstr = LALCalloc ( 1, len1 + len2 + 1 ) ) == NULL )
+    {
+      XLALPrintError ("Seems like we're out of memory!\n");
+      return NULL;
+    }
+
+  if ( str1 )
+    outstr = strcat ( outstr, str1 );
+  if ( str2 )
+    outstr = strcat ( outstr, str2 );
+
+  return outstr;
+
+} /* append_string() */
+
+/** Returns input string with line-breaks '\n' removed (replaced by space)
+ * The original string is unmodified. The returned string is allocated here.
+ */
+CHAR *
+clear_linebreaks ( const CHAR *string )
+{
+  CHAR *ret, *tmp;
+
+  if ( !string )
+    return NULL;
+
+  if ( (ret = LALMalloc( strlen ( string ) + 1) ) == NULL )
+    return NULL;
+  strcpy ( ret, string );
+
+  tmp = ret;
+  while ( (tmp = index ( tmp, '\n' ) ) )
+    {
+      *tmp = ' ';
+      tmp ++;
+    }
+
+  return ret;
+
+} /* clear_linebreaks() */
