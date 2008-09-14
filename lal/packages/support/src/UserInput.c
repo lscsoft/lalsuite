@@ -770,6 +770,7 @@ LALUserVarReadAllInput (LALStatus *status, int argc, char *argv[])
   CHAR* fname = NULL;
   CHAR *tmp;
   LALUserVariable *ptr;
+  BOOLEAN skipCheckRequired = FALSE;
 
   INITSTATUS( status, "LALUserVarReadAllInput", USERINPUTC);
 
@@ -821,24 +822,30 @@ LALUserVarReadAllInput (LALStatus *status, int argc, char *argv[])
   /* now check if help-string was requested */
   ptr = &UVAR_vars;
   while ( (ptr=ptr->next) != NULL)
-    if ( (ptr->state & UVAR_HELP) && (ptr->state & UVAR_WAS_SET) )
-      {
-	CHAR *helpstring = NULL;
-	TRY (LALUserVarHelpString (status->statusPtr, &helpstring, argv[0]), status);
-	printf ("\n%s\n", helpstring);
-	LALFree (helpstring);
-	helpstring=NULL;
-	DETATCHSTATUSPTR (status);
-	RETURN (status);
-      } /* if help requested */
+    {
+      if ( (ptr->state & UVAR_HELP) && (ptr->state & UVAR_WAS_SET) )
+	{
+	  CHAR *helpstring = NULL;
+	  TRY (LALUserVarHelpString (status->statusPtr, &helpstring, argv[0]), status);
+	  printf ("\n%s\n", helpstring);
+	  LALFree (helpstring);
+	  helpstring=NULL;
+	  DETATCHSTATUSPTR (status);
+	  RETURN (status);
+	} /* if help requested */
 
+      /* check 'special' flag, which suppresses the CheckRequired test */
+      if ( (ptr->state & UVAR_SPECIAL) && (ptr->state & UVAR_WAS_SET) )
+	skipCheckRequired = TRUE;
+    }
   /* check that all required input-variables have been specified */
-  TRY (LALUserVarCheckRequired (status->statusPtr), status);
-
+  if ( !skipCheckRequired ) {
+    TRY (LALUserVarCheckRequired (status->statusPtr), status);
+  }
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
-  
+
 } /* LALReadUserInput() */
 
 

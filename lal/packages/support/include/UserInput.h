@@ -117,6 +117,7 @@ typedef enum {
   UVAR_REQUIRED 	= 1<<0,	/**< we require the user to set this variable */
   UVAR_HELP		= 1<<1,	/**< special variable: trigger output of help-string */
   UVAR_DEVELOPER	= 1<<2,	/**< OPTIONAL and hidden in help-output at lalDebugLevel==0 */
+  UVAR_SPECIAL		= 1<<3,	/**< OPTIONAL and *turns off* checking of required variables (LALUserVarCheckRequired) */
   UVAR_WAS_SET 		= 1<<7	/**< flag that this user-var has been set by user */
 } UserVarState;
 
