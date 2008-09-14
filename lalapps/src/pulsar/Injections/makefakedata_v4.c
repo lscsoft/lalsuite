@@ -50,6 +50,9 @@
 #include <lal/BinaryPulsarTiming.h>
 #include <lal/Window.h>
 
+#include <lal/lalGitID.h>
+#include <lalappsGitID.h>
+
 
 RCSID ("$Id$");
 
@@ -133,6 +136,8 @@ void LALGenerateLineFeature ( LALStatus *status, REAL4TimeSeries **Tseries, cons
 extern void write_timeSeriesR4 (FILE *fp, const REAL4TimeSeries *series);
 extern void write_timeSeriesR8 (FILE *fp, const REAL8TimeSeries *series);
 BOOLEAN is_directory ( const CHAR *fname );
+void OutputVersion ( void );
+
 /*----------------------------------------------------------------------*/
 static const ConfigVars_t empty_GV;
 static const LALUnit empty_LALUnit;
@@ -228,6 +233,9 @@ REAL8 uvar_orbitArgp;	        /**< Argument of periapsis (radians) */
 BOOLEAN uvar_exactSignal;	/**< generate signal timeseries as exactly as possible (slow) */
 BOOLEAN uvar_lineFeature;	/**< generate a monochromatic line instead of a pulsar-signal */
 
+BOOLEAN uvar_version;		/**< output version information */
+
+
 /*----------------------------------------------------------------------*/
 
 extern int vrbflg;
@@ -259,9 +267,6 @@ main(int argc, char *argv[])
   LAL_CALL (LALGetDebugLevel(&status, argc, argv, 'v'), &status);
 
   LAL_CALL (InitMakefakedata(&status, &GV, argc, argv), &status);
-
-  if (uvar_help)	/* help was called, do nothing here.. */
-    return (0);
 
   /*----------------------------------------
    * fill the PulsarSignalParams struct
@@ -531,6 +536,12 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
 
   if (uvar_help) 	/* if help was requested, we're done */
     exit (0);
+
+  if ( uvar_version )
+    {
+      OutputVersion();
+      exit (0);
+    }
 
   /* if requested, log all user-input and code-versions */
   if ( uvar_logfile ) {
@@ -1264,6 +1275,8 @@ InitUserVars (LALStatus *status)
   LALregBOOLUserVar(status,   lineFeature,	 0, UVAR_OPTIONAL, "Generate a line-feature amplitude h0 and frequency 'Freq'}");
 
 
+  LALregBOOLUserVar(status,   version,	         'V', UVAR_OPTIONAL, "Output version information");
+
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
@@ -1482,12 +1495,19 @@ WriteMFDlog (LALStatus *status, char *argv[], const char *logfile)
     /* append an ident-string defining the exact CVS-version of the code used */
     fprintf (fplog, "\n\n# CVS-versions of executable:\n");
     fprintf (fplog, "# ----------------------------------------------------------------------\n");
-    fclose (fplog);
 
+    /* append an ident-string defining the exact RC-version of the code used */
+    fprintf (fplog, "\n\n%% SC-version of executable:\n");
+    fprintf (fplog, "%% CommitID = " );
+    fclose (fplog);
     sprintf (command, "ident %s 2> /dev/null | sort -u >> %s", argv[0], uvar_logfile);
     system (command);   /* we currently don't check this. If it fails, we assume that */
                         /* one of the system-commands was not available, and */
                         /* therefore the CVS-versions will simply not be logged */
+
+
+
+
 
 
     DETATCHSTATUSPTR (status);
@@ -1736,3 +1756,14 @@ LALGenerateLineFeature ( LALStatus *status, REAL4TimeSeries **Tseries, const Pul
   RETURN ( status );
 
 } /* LALGenerateLineFeature() */
+
+/** Simply output version information to stdout */
+void
+OutputVersion ( void )
+{
+  printf ( "%s\n", lalGitID );
+  printf ( "%s\n", lalappsGitID );
+
+  return;
+
+} /* OutputVersion() */
