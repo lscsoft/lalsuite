@@ -65,6 +65,7 @@ typedef struct tagLALUserVariable {
 
 /** The module-local linked list to hold the user-variables */
 static LALUserVariable UVAR_vars;	/**< empty head */
+static const CHAR *program_name;	/**< keep a pointer to the program name */
 
 /* needed for command-line parsing */
 extern char *optarg;
@@ -773,10 +774,11 @@ LALUserVarReadAllInput (LALStatus *status, int argc, char *argv[])
   BOOLEAN skipCheckRequired = FALSE;
 
   INITSTATUS( status, "LALUserVarReadAllInput", USERINPUTC);
+  ATTATCHSTATUSPTR (status);
 
   ASSERT (UVAR_vars.next, status, USERINPUTH_ENOUVARS,  USERINPUTH_MSGENOUVARS);
 
-  ATTATCHSTATUSPTR (status); 
+  program_name = argv[0];	/* keep modul-local pointer to executable name */
 
   /* pre-process command-line: have we got a config-file ? */
   for (i=1; i < argc; i++)
@@ -985,6 +987,16 @@ LALUserVarGetLog (LALStatus *status, CHAR **logstr,  UserVarLogFormat format)
   record[0] = 0;
   len = 0;
 
+  if ( format == UVAR_LOGFMT_CMDLINE )
+    {
+      len += strlen ( program_name );
+      if ( (record = LALRealloc (record, len+1)) == NULL ) {
+	ABORT (status,  USERINPUTH_EMEM,  USERINPUTH_MSGEMEM);
+      }
+      strcat (record, program_name);
+    }
+
+
   ptr = &UVAR_vars;
   while ( (ptr = ptr->next) )   /* we skip the possible lalDebugLevel-entry for now (FIXME?) */
     {
@@ -996,7 +1008,7 @@ LALUserVarGetLog (LALStatus *status, CHAR **logstr,  UserVarLogFormat format)
       TRY ( UvarValue2String (status->statusPtr, &valstr, ptr), status);
       TRY(UvarType2String(status->statusPtr, &typestr, ptr), status);
 
-      appendlen = strlen(ptr->name) + strlen(valstr) + strlen(typestr) + 10; 
+      appendlen = strlen(ptr->name) + strlen(valstr) + strlen(typestr) + 10;
       if ( (append = LALMalloc(appendlen)) == NULL) {
 	ABORT (status,  USERINPUTH_EMEM,  USERINPUTH_MSGEMEM);
       }
@@ -1009,7 +1021,7 @@ LALUserVarGetLog (LALStatus *status, CHAR **logstr,  UserVarLogFormat format)
 	case UVAR_LOGFMT_CMDLINE:
 	  sprintf (append, " --%s=%s", ptr->name, valstr);
 	  break;
-	case UVAR_LOGFMT_PROCPARAMS:  
+	case UVAR_LOGFMT_PROCPARAMS:
 	  sprintf (append, "--%s = %s :%s;", ptr->name, valstr, typestr);
 	  break;
 	default:
@@ -1031,7 +1043,7 @@ LALUserVarGetLog (LALStatus *status, CHAR **logstr,  UserVarLogFormat format)
       LALFree (append);
       append=NULL;
     } /* while ptr->next */
-  
+
   *logstr = record;
 
   DETATCHSTATUSPTR(status);
