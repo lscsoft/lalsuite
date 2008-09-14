@@ -66,7 +66,7 @@ ${prefix}GitStatus: ${git_status}";
 git_log_safe=`echo "$git_log" | sed -e"s/\"/''/g" | sed -e"s/[$]/_/g" `;
 
 ## put proper $ quotations for each line to form proper 'ident' keyword strings:
-git_log_ident=`echo "$git_log_safe" | sed -e"s/\(.*\)/\"$\1 $ \\\\\\n \"/g"`;
+git_log_ident=`echo "$git_log_safe" | sed -e"s/\(.*\)/\"$\1 $ \\\\\\n\"/g"`;
 
 cat > $tmpfile <<EOF
 #ifndef ${prefix}GITID_H
