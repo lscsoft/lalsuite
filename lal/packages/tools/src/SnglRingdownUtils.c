@@ -422,7 +422,7 @@ LALCompareRingdowns (
     Fa = log(fa);
     Xa = Fa + 1.0/16 * pow(Qa,-2) + 1.0/256 * pow(Qa,-4) - 11.0/3072 * pow(Qa,-6) 
            + 49.0/32768 * pow(Qa,-8) - 179.0/327680 * pow(Qa,-10);
-    Ya = 1.0/sqrt(2) * ( pow(Qa,-1) - 1.0/6 * pow(Qa,-3) + 27.0/640 * pow(Qa,-5) 
+    Ya = sqrt(2) / 4 * ( pow(Qa,-1) - 1.0/6 * pow(Qa,-3) + 27.0/640 * pow(Qa,-5) 
            - 43.0/3584 * pow(Qa,-7) + 1067.0/294912 * pow(Qa,-9) );
     Omegaa = pow(Ya,6)/5400 + pow(Ya,4)/756 + pow(Ya,2)/120 + 1.0/24 + 1.0/8 * pow(Ya,-2);
     Ra = sqrt( aAcc.ds_sq / Omegaa);   /* radius of circle */
@@ -430,14 +430,14 @@ LALCompareRingdowns (
     Fb = log(fb);
     Xb = Fb + 1.0/16 * pow(Qb,-2) + 1.0/256 * pow(Qb,-4) - 11.0/3072 * pow(Qb,-6)
             + 49.0/32768 * pow(Qb,-8) - 179.0/327680 * pow(Qb,-10);
-    Yb = 1.0/sqrt(2) * ( pow(Qb,-1) - 1.0/6 * pow(Qb,-3) + 27.0/640 * pow(Qb,-5)
+    Yb = sqrt(2) / 4 * ( pow(Qb,-1) - 1.0/6 * pow(Qb,-3) + 27.0/640 * pow(Qb,-5)
             - 43.0/3584 * pow(Qb,-7) + 1067.0/294912 * pow(Qb,-9) );
     Omegab = pow(Yb,6)/5400 + pow(Yb,4)/756 + pow(Yb,2)/120 + 1.0/24 + 1.0/8 * pow(Yb,-2); 
     Rb = sqrt( bAcc.ds_sq / Omegab); 
 
     D = sqrt( pow((Xa - Xb),2) + pow((Ya - Yb),2) ); /*geometric distance between templates*/
-    ds2 = D * D / pow( ( 1/sqrt(Omegaa) + 1/sqrt(Omegab) ),2);    
-
+    ds2 = D * D / ( 1/Omegaa + 1/Omegab );    
+   
     if ( D < (Ra+Rb) )
     {
       LALInfo( status, "Triggers pass the ds_sq coincidence test" );
@@ -481,7 +481,7 @@ LALCompareRingdowns (
     params->match = 0;
     goto exit;
   }
-  
+
 exit:
   DETATCHSTATUSPTR (status);
   RETURN (status);
