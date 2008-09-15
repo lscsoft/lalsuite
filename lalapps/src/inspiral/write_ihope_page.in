@@ -1868,8 +1868,6 @@ opts.webdir = opts.url + opts.gpsdir
 opts.datadir = opts.ihope_directory + opts.gpsdir 
 opts.physdir = opts.html_directory + opts.gpsdir
 opts.txt_suffix = '-'+opts.gps_start_time+'-'+opts.duration+'.txt'
-# get the style file, and copy it.  
-opts.style = set_style()
 
 
 #----------------------
@@ -1892,8 +1890,12 @@ if not  os.path.isdir(opts.datadir):
 # which physical name is 
 msg = "We will copy all images and HTML documents into this directory " +opts.physdir
 logText(logfile, msg,"done")
-mkdir(opts.physdir)
+# Make the physdir and all necessary directories above it
+os.makedirs(opts.physdir)
 mkdir(opts.physdir+'/Images')
+
+# get the style file and copy it (must happen after the html directories have been created)
+opts.style = set_style()
 
 
 #-----------------------------------------
