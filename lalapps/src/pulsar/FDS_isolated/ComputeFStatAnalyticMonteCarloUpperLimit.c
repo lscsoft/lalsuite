@@ -143,7 +143,7 @@ int main(int argc, char *argv[]) {
   LAL_CALL(LALUserVarGetLog(&status, &cmdline, UVAR_LOGFMT_CMDLINE), &status);
   fprintf(fp, "%%%% %s\n%%%% %s\n", rcsid, cmdline);
   LALFree(cmdline);
-  fprintf(fp, "freq=%0.3f band=%0.3f\n", freq, band);
+  fprintf(fp, "freq=%0.4f band=%0.4f\n", freq, band);
   
   /* Load the SFTs */
   {
@@ -277,7 +277,7 @@ int main(int argc, char *argv[]) {
     /* Target values of integrand */
     const REAL8 J0 = 1 - FDR;
 
-    LogPrintf(LOG_DEBUG, "Beginning h0 loop %i with error=%0.4e\n", h0_iter, H0_ERROR);
+    LogPrintf(LOG_DEBUG, "Beginning h0 loop %i with h0=%0.4e, error=%0.4e, MC_trials=%i\n", h0_iter, h0, H0_ERROR, MC_trials);
 
     fprintf(fp, "MC_trials=%i ", MC_trials);
 
@@ -333,7 +333,7 @@ int main(int argc, char *argv[]) {
     /* Increment the number of MC trials */
     MC_trials *= MC_trial_fac;
 
-    LogPrintf(LOG_DEBUG, "Ending    h0 loop %i with error=%0.4e, J-J0=% 0.4e, dh0=% 0.4e\n", H0_ERROR, h0_iter, J - J0, dh0);
+    LogPrintf(LOG_DEBUG, "Ending    h0 loop %i with h0=%0.4e, error=%0.4e, J-J0=% 0.4e, dh0=% 0.4e\n", H0_ERROR, h0_iter, J - J0, dh0);
 
   }
   
