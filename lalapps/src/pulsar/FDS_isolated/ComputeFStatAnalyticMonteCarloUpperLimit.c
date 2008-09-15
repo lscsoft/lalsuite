@@ -333,7 +333,7 @@ int main(int argc, char *argv[]) {
     /* Increment the number of MC trials */
     MC_trials *= MC_trial_fac;
 
-    LogPrintf(LOG_DEBUG, "Ending    h0 loop %i with h0=%0.4e, error=%0.4e, J-J0=% 0.4e, dh0=% 0.4e\n", H0_ERROR, h0_iter, J - J0, dh0);
+    LogPrintf(LOG_DEBUG, "Ending    h0 loop %i with h0=%0.4e, error=%0.4e, J-J0=% 0.4e, dh0=% 0.4e\n", h0_iter, h0, H0_ERROR, J - J0, dh0);
 
   }
   
