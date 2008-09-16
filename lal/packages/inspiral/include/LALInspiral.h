@@ -101,6 +101,7 @@ NRCSID( LALINSPIRALH, "$Id$" );
 #define LALINSPIRALH_EVECTOR        16
 #define LALINSPIRALH_EFLOWERINJ     17
 #define LALINSPIRALH_EORDERMISSING  18
+#define LALINSPIRALH_EBPERR         19
 
 
 #define LALINSPIRALH_MSGENULL         "Arguments contained an unexpected null pointer"
@@ -121,6 +122,7 @@ NRCSID( LALINSPIRALH, "$Id$" );
 #define LALINSPIRALH_MSGEVECTOR       "Attempting to write beyond the end of vector"
 #define LALINSPIRALH_MSGEFLOWERINJ    "flower for the injection must be greater than zero"
 #define LALINSPIRALH_MSGEORDERMISSING "The PN order requested is not implemented for this approximant"
+#define LALINSPIRALH_MSGEBPERR        "Error in band passing signal"
 
 /** ---------------------------------------------------------------------  </lalErrTable> */
 
