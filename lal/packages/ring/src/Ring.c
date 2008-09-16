@@ -193,6 +193,18 @@ REAL4 XLALBlackHoleRingEpsilon( REAL4 f, REAL4 Q, REAL4 r, REAL4 amplitude )
 }
 
 /* <lalVerbatim file="RingCP"> */
+REAL4 XLAL2DMetricDistance( REAL4 fa, REAL4 fb, REAL4 Qa,REAL4 Qb )
+/* </lalVerbatim> */
+{
+  const Q2 = Qa*Qa;
+  const REAL4 gQQ = ( 3 + 16 * Q2 * Q2) / Q2 / ( 1 + 4 * Q2 ) / ( 1 + 4 * Q2 );
+  const REAL4 gff = ( 3 + 8 * Q2) / fa / fa;
+  const REAL4 gQf = - 2 * ( 3 + 4 * Q2 ) / Qa / ( 1 + 4 * Q2 );
+
+  return ( 1.0/8.0 * ( gQQ * pow(Qb-Qa,2) + gQf * (Qb-Qa) * (fb-fa) + gff * pow(fb-fa,2) ) );
+}
+
+/* <lalVerbatim file="RingCP"> */
 int XLALComputeRingTemplate( REAL4TimeSeries *output, SnglRingdownTable *input )
 /* </lalVerbatim> */
 {

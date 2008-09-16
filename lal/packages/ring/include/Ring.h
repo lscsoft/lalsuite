@@ -189,6 +189,7 @@ REAL4 XLALBlackHoleRingQuality( REAL4 a );
 REAL4 XLALBlackHoleRingFrequency( REAL4 M, REAL4 a );
 REAL4 XLALBlackHoleRingAmplitude( REAL4 f, REAL4 Q, REAL4 r, REAL4 epsilon );
 REAL4 XLALBlackHoleRingEpsilon( REAL4 f, REAL4 Q, REAL4 r, REAL4 amplitude );
+REAL4 XLAL2DMetricDistance( REAL4 fa, REAL4 fb, REAL4 Qa,REAL4 Qb );
   
 int XLALComputeRingTemplate( 
     REAL4TimeSeries *output, SnglRingdownTable *input );
