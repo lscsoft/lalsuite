@@ -281,7 +281,7 @@ void getLogString ( LALStatus *status, CHAR **logstr, const ConfigVariables *cfg
 void OutputVersion ( void );
 
 const char *va(const char *format, ...);	/* little var-arg string helper function */
-CHAR *append_string ( const CHAR *str1, const CHAR *append );
+CHAR *append_string ( CHAR *str1, const CHAR *append );
 CHAR *clear_linebreaks ( const CHAR *string );
 
 /* ---------- scanline window functions ---------- */
@@ -364,8 +364,8 @@ int main(int argc,char *argv[])
 
   /* ----- produce a log-string describing the specific run setup ----- */
   LAL_CALL ( getLogString ( &status, &(GV.logstring), &GV ), &status );
-  LogPrintfVerbatim( LOG_DEBUG, GV.logstring );
-
+  LogPrintfVerbatim( LOG_DEBUG, "%s", GV.logstring );
+  printf ( "TEST: %s", GV.logstring );
   /* keep a log-file recording all relevant parameters of this search-run */
   if ( uvar.outputLogfile ) {
     LAL_CALL (WriteFStatLog ( &status, uvar.outputLogfile, GV.logstring ), &status );
@@ -1894,7 +1894,7 @@ OutputVersion ( void )
 /** Mini helper-function: append string 'str2' to string 'str1',
  * returns pointer to new concatenated string
  */
-CHAR *append_string ( const CHAR *str1, const CHAR *str2 )
+CHAR *append_string ( CHAR *str1, const CHAR *str2 )
 {
   UINT4 len1 = 0, len2 = 0;
   CHAR *outstr;
@@ -1904,14 +1904,15 @@ CHAR *append_string ( const CHAR *str1, const CHAR *str2 )
   if ( str2 )
     len2 = strlen(str2);
 
-  if ( ( outstr = LALCalloc ( 1, len1 + len2 + 1 ) ) == NULL )
+  if ( ( outstr = LALRealloc ( str1, len1 + len2 + 1 ) ) == NULL )
     {
       XLALPrintError ("Seems like we're out of memory!\n");
       return NULL;
     }
 
-  if ( str1 )
-    outstr = strcat ( outstr, str1 );
+  if ( len1 == 0 )
+    outstr[0] = 0;
+
   if ( str2 )
     outstr = strcat ( outstr, str2 );
 
