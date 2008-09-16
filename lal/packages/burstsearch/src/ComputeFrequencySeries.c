@@ -22,9 +22,9 @@
 #include <math.h>
 
 
+#include <lal/TimeSeries.h>
 #include <lal/FrequencySeries.h>
-#include <lal/RealFFT.h>
-#include <lal/Sequence.h>
+#include <lal/TimeFreqFFT.h>
 #include <lal/EPSearch.h>	/* for our own prototypes */
 #include <lal/Units.h>
 #include <lal/Window.h>
@@ -52,7 +52,7 @@ COMPLEX8FrequencySeries *XLALWindowedREAL4ForwardFFT(
 {
 	static const char func[] = "XLALWindowedREAL4ForwardFFT";
 	COMPLEX8FrequencySeries *fseries;
-	REAL4Sequence *tmp;
+	REAL4TimeSeries *tmp;
 	unsigned i;
 
 	/*
@@ -68,21 +68,18 @@ COMPLEX8FrequencySeries *XLALWindowedREAL4ForwardFFT(
 
 	/*
 	 * create the frequency series, and a copy of the time series data
+	 * the Fourier transform routine will set the frequency series
+	 * metadata itself, so we don't have to get it correct but we do
+	 * anyway.
 	 */
 
 	fseries = XLALCreateCOMPLEX8FrequencySeries(tseries->name, &tseries->epoch, tseries->f0, 1.0 / (tseries->data->length * tseries->deltaT), &tseries->sampleUnits, tseries->data->length / 2 + 1);
-	tmp = XLALCutREAL4Sequence(tseries->data, 0, tseries->data->length);
+	tmp = XLALCutREAL4TimeSeries(tseries, 0, tseries->data->length);
 	if(!fseries || !tmp) {
 		XLALDestroyCOMPLEX8FrequencySeries(fseries);
-		XLALDestroyREAL4Sequence(tmp);
+		XLALDestroyREAL4TimeSeries(tmp);
 		XLAL_ERROR_NULL(func, XLAL_EFUNC);
 	}
-
-	/*
-	 * set the frequency series' units
-	 */
-
-	XLALUnitMultiply(&fseries->sampleUnits, &fseries->sampleUnits, &lalSecondUnit);
 
 	/*
 	 * apply normalized window to time series data;  emulate a
@@ -90,22 +87,18 @@ COMPLEX8FrequencySeries *XLALWindowedREAL4ForwardFFT(
 	 */
 
 	if(window) {
-		const float A = tseries->deltaT / sqrt(window->sumofsquares / window->data->length);
-		for(i = 0; i < tmp->length; i++)
-			tmp->data[i] *= A * window->data->data[i];
-	} else {
-		const float A = tseries->deltaT;
-		for(i = 0; i < tmp->length; i++)
-			tmp->data[i] *= A;
+		const float A = sqrt(window->data->length / window->sumofsquares);
+		for(i = 0; i < window->data->length; i++)
+			tmp->data->data[i] *= A * window->data->data[i];
 	}
 
 	/*
 	 * compute the DFT
 	 */
 
-	if(XLALREAL4ForwardFFT(fseries->data, tmp, plan)) {
+	if(XLALREAL4TimeFreqFFT(fseries, tmp, plan)) {
 		XLALDestroyCOMPLEX8FrequencySeries(fseries);
-		XLALDestroyREAL4Sequence(tmp);
+		XLALDestroyREAL4TimeSeries(tmp);
 		XLAL_ERROR_NULL(func, XLAL_EFUNC);
 	}
 
@@ -113,7 +106,7 @@ COMPLEX8FrequencySeries *XLALWindowedREAL4ForwardFFT(
 	 * clean up
 	 */
 
-	XLALDestroyREAL4Sequence(tmp);
+	XLALDestroyREAL4TimeSeries(tmp);
 
 	/*
 	 * done
@@ -140,7 +133,7 @@ COMPLEX16FrequencySeries *XLALWindowedREAL8ForwardFFT(
 {
 	static const char func[] = "XLALWindowedREAL8ForwardFFT";
 	COMPLEX16FrequencySeries *fseries;
-	REAL8Sequence *tmp;
+	REAL8TimeSeries *tmp;
 	unsigned i;
 
 	/*
@@ -156,21 +149,18 @@ COMPLEX16FrequencySeries *XLALWindowedREAL8ForwardFFT(
 
 	/*
 	 * create the frequency series, and a copy of the time series data
+	 * the Fourier transform routine will set the frequency series
+	 * metadata itself, so we don't have to get it correct but we do
+	 * anyway.
 	 */
 
 	fseries = XLALCreateCOMPLEX16FrequencySeries(tseries->name, &tseries->epoch, tseries->f0, 1.0 / (tseries->data->length * tseries->deltaT), &tseries->sampleUnits, tseries->data->length / 2 + 1);
-	tmp = XLALCutREAL8Sequence(tseries->data, 0, tseries->data->length);
+	tmp = XLALCutREAL8TimeSeries(tseries, 0, tseries->data->length);
 	if(!fseries || !tmp) {
 		XLALDestroyCOMPLEX16FrequencySeries(fseries);
-		XLALDestroyREAL8Sequence(tmp);
+		XLALDestroyREAL8TimeSeries(tmp);
 		XLAL_ERROR_NULL(func, XLAL_EFUNC);
 	}
-
-	/*
-	 * set the frequency series' units
-	 */
-
-	XLALUnitMultiply(&fseries->sampleUnits, &fseries->sampleUnits, &lalSecondUnit);
 
 	/*
 	 * apply normalized window to time series data;  emulate a
@@ -178,22 +168,18 @@ COMPLEX16FrequencySeries *XLALWindowedREAL8ForwardFFT(
 	 */
 
 	if(window) {
-		const double A = sqrt(tseries->data->length / window->sumofsquares) * tseries->deltaT;
-		for(i = 0; i < tmp->length; i++)
-			tmp->data[i] *= A * window->data->data[i];
-	} else {
-		const double A = tseries->deltaT;
-		for(i = 0; i < tmp->length; i++)
-			tmp->data[i] *= A;
+		const double A = sqrt(window->data->length / window->sumofsquares);
+		for(i = 0; i < window->data->length; i++)
+			tmp->data->data[i] *= A * window->data->data[i];
 	}
 
 	/*
 	 * compute the DFT
 	 */
 
-	if(XLALREAL8ForwardFFT(fseries->data, tmp, plan)) {
+	if(XLALREAL8TimeFreqFFT(fseries, tmp, plan)) {
 		XLALDestroyCOMPLEX16FrequencySeries(fseries);
-		XLALDestroyREAL8Sequence(tmp);
+		XLALDestroyREAL8TimeSeries(tmp);
 		XLAL_ERROR_NULL(func, XLAL_EFUNC);
 	}
 
@@ -201,7 +187,7 @@ COMPLEX16FrequencySeries *XLALWindowedREAL8ForwardFFT(
 	 * clean up
 	 */
 
-	XLALDestroyREAL8Sequence(tmp);
+	XLALDestroyREAL8TimeSeries(tmp);
 
 	/*
 	 * done
