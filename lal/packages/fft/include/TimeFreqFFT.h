@@ -193,50 +193,50 @@ AverageSpectrumParams;
 
 int XLALREAL4TimeFreqFFT(
     COMPLEX8FrequencySeries *freq, 
-    REAL4TimeSeries         *tser,
-    REAL4FFTPlan            *plan
+    const REAL4TimeSeries   *tser,
+    const REAL4FFTPlan      *plan
     );
 
 int XLALREAL4FreqTimeFFT(
-    REAL4TimeSeries         *tser,
-    COMPLEX8FrequencySeries *freq, 
-    REAL4FFTPlan            *plan
+    REAL4TimeSeries               *tser,
+    const COMPLEX8FrequencySeries *freq, 
+    const REAL4FFTPlan            *plan
     );
 
 int XLALREAL8TimeFreqFFT(
     COMPLEX16FrequencySeries *freq, 
-    REAL8TimeSeries         *tser,
-    REAL8FFTPlan            *plan
+    const REAL8TimeSeries    *tser,
+    const REAL8FFTPlan       *plan
     );
 
 int XLALREAL8FreqTimeFFT(
-    REAL8TimeSeries         *tser,
-    COMPLEX16FrequencySeries *freq, 
-    REAL8FFTPlan            *plan
+    REAL8TimeSeries                *tser,
+    const COMPLEX16FrequencySeries *freq, 
+    const REAL8FFTPlan             *plan
     );
 
 int XLALCOMPLEX8TimeFreqFFT(
-    COMPLEX8FrequencySeries *freq,
-    COMPLEX8TimeSeries      *tser,
-    COMPLEX8FFTPlan         *plan
+    COMPLEX8FrequencySeries  *freq,
+    const COMPLEX8TimeSeries *tser,
+    const COMPLEX8FFTPlan    *plan
     );
 
 int XLALCOMPLEX8FreqTimeFFT(
-    COMPLEX8TimeSeries      *tser,
-    COMPLEX8FrequencySeries *freq,
-    COMPLEX8FFTPlan         *plan
+    COMPLEX8TimeSeries            *tser,
+    const COMPLEX8FrequencySeries *freq,
+    const COMPLEX8FFTPlan         *plan
     );
 
 int XLALCOMPLEX16TimeFreqFFT(
-    COMPLEX16FrequencySeries *freq,
-    COMPLEX16TimeSeries      *tser,
-    COMPLEX16FFTPlan         *plan
+    COMPLEX16FrequencySeries  *freq,
+    const COMPLEX16TimeSeries *tser,
+    const COMPLEX16FFTPlan    *plan
     );
 
 int XLALCOMPLEX16FreqTimeFFT(
-    COMPLEX16TimeSeries      *tser,
-    COMPLEX16FrequencySeries *freq,
-    COMPLEX16FFTPlan         *plan
+    COMPLEX16TimeSeries            *tser,
+    const COMPLEX16FrequencySeries *freq,
+    const COMPLEX16FFTPlan         *plan
     );
 
 int XLALREAL4ModifiedPeriodogram(

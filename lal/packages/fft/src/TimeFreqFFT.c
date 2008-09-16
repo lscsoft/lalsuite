@@ -185,8 +185,8 @@ NRCSID( TIMEFREQFFTC, "$Id$" );
 
 int XLALREAL4TimeFreqFFT(
     COMPLEX8FrequencySeries *freq, 
-    REAL4TimeSeries         *time,
-    REAL4FFTPlan            *plan
+    const REAL4TimeSeries   *time,
+    const REAL4FFTPlan      *plan
     )
 {
   static const char *func = "XLALREAL4TimeFreqFFT";
@@ -224,9 +224,9 @@ int XLALREAL4TimeFreqFFT(
 
 
 int XLALREAL4FreqTimeFFT(
-    REAL4TimeSeries         *time,
-    COMPLEX8FrequencySeries *freq, 
-    REAL4FFTPlan            *plan
+    REAL4TimeSeries               *time,
+    const COMPLEX8FrequencySeries *freq, 
+    const REAL4FFTPlan            *plan
     )
 {
   static const char *func = "XLALREAL4FreqTimeFFT";
@@ -269,8 +269,8 @@ int XLALREAL4FreqTimeFFT(
 
 int XLALREAL8TimeFreqFFT(
     COMPLEX16FrequencySeries *freq, 
-    REAL8TimeSeries         *time,
-    REAL8FFTPlan            *plan
+    const REAL8TimeSeries    *time,
+    const REAL8FFTPlan       *plan
     )
 {
   static const char *func = "XLALREAL8TimeFreqFFT";
@@ -308,9 +308,9 @@ int XLALREAL8TimeFreqFFT(
 
 
 int XLALREAL8FreqTimeFFT(
-    REAL8TimeSeries         *time,
-    COMPLEX16FrequencySeries *freq, 
-    REAL8FFTPlan            *plan
+    REAL8TimeSeries                *time,
+    const COMPLEX16FrequencySeries *freq, 
+    const REAL8FFTPlan             *plan
     )
 {
   static const char *func = "XLALREAL8FreqTimeFFT";
@@ -362,9 +362,9 @@ struct tagCOMPLEX8FFTPlan
 
 
 int XLALCOMPLEX8TimeFreqFFT(
-    COMPLEX8FrequencySeries *freq,
-    COMPLEX8TimeSeries      *time,
-    COMPLEX8FFTPlan         *plan
+    COMPLEX8FrequencySeries  *freq,
+    const COMPLEX8TimeSeries *time,
+    const COMPLEX8FFTPlan    *plan
     )
 {
   static const char *func = "XLALCOMPLEX8TimeFreqFFT";
@@ -426,9 +426,9 @@ int XLALCOMPLEX8TimeFreqFFT(
 
 
 int XLALCOMPLEX8FreqTimeFFT(
-    COMPLEX8TimeSeries      *time,
-    COMPLEX8FrequencySeries *freq,
-    COMPLEX8FFTPlan         *plan
+    COMPLEX8TimeSeries            *time,
+    const COMPLEX8FrequencySeries *freq,
+    const COMPLEX8FFTPlan         *plan
     )
 {
   static const char *func = "XLALCOMPLEX8FreqTimeFFT";
@@ -507,9 +507,9 @@ struct tagCOMPLEX16FFTPlan
 
 
 int XLALCOMPLEX16TimeFreqFFT(
-    COMPLEX16FrequencySeries *freq,
-    COMPLEX16TimeSeries      *time,
-    COMPLEX16FFTPlan         *plan
+    COMPLEX16FrequencySeries  *freq,
+    const COMPLEX16TimeSeries *time,
+    const COMPLEX16FFTPlan    *plan
     )
 {
   static const char *func = "XLALCOMPLEX16TimeFreqFFT";
@@ -571,9 +571,9 @@ int XLALCOMPLEX16TimeFreqFFT(
 
 
 int XLALCOMPLEX16FreqTimeFFT(
-    COMPLEX16TimeSeries      *time,
-    COMPLEX16FrequencySeries *freq,
-    COMPLEX16FFTPlan         *plan
+    COMPLEX16TimeSeries            *time,
+    const COMPLEX16FrequencySeries *freq,
+    const COMPLEX16FFTPlan         *plan
     )
 {
   static const char *func = "XLALCOMPLEX16FreqTimeFFT";
