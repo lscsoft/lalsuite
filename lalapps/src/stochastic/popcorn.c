@@ -104,6 +104,8 @@ REAL8 sigma1 = 1.;
 REAL8 sigma2 = 1.;
 REAL8 mu0 = 0.1;
 REAL8 sigma0 = 0.1;
+
+REAL8 N0 = 0.1;
 REAL8 v1, v2, v12;
 REAL8Vector *h,*s1,*s2,*e12;
 
@@ -130,7 +132,6 @@ INT4 main (INT4 argc, CHAR *argv[])
   int i, j, n;
   /* signal */
   double var, varn, sigman, varmean, snr;
-  double pmu[100];
   double var1, var2, sigmaref, ksi0, ksi;
   double muest, ksiest, sigmaest, varest, varmeanest, sigma1est, sigma2est;
   double muestMean, ksiestMean, sigmaestMean, varmeanestMean, sigma1estMean, sigma2estMean;
@@ -192,9 +193,7 @@ INT4 main (INT4 argc, CHAR *argv[])
    fprintf(stdout, "will analyze %d segments of length %d s...\n",nsegment, seglength);}
    
    /* poisson coefficient */
-  for(i=0;i<50;i++)
-   pmu[i]=gsl_ran_poisson_pdf(i,mu);
-  ksi=1.-pmu[0];
+  ksi=1.-gsl_ran_poisson_pdf(0,mu);
   
   /* signal-to-noise ratio rho = varmean*sqrt(N)/(sigma1*sigma2)*/
   var=sigma*sigma;
@@ -203,8 +202,10 @@ INT4 main (INT4 argc, CHAR *argv[])
 
   /* open data files */
   if(ascii_flag){
-   pf1=fopen("data/n1.dat","r");
-   pf2=fopen("data/n2.dat","r");
+  if(verbose_flag){
+	fprintf(stdout,"Opening ascii files...\n");}
+   pf1=fopen("data/s1.dat","r");
+   pf2=fopen("data/s2.dat","r");
   }
   
   gpsStartTime.gpsSeconds = startTime;
@@ -307,12 +308,7 @@ INT4 main (INT4 argc, CHAR *argv[])
      fprintf(stdout, "Reading in channel \"%s\"...\n", frChanIn2.name);}
     LALFrSeek(&lalstatus, &gpsStartTime, frStream2);
     LALFrGetREAL8TimeSeries(&lalstatus, &n2,&frChanIn2, frStream2);
-	
-	 if(test_flag){
-   for(i=0;i<10;i++){
-    fprintf(stdout,"%e %e\n",n1.data->data[i],n2.data->data[i]);}}
     }
-	
 	if(resample_flag){
 	 
 	 n1Temp.data=NULL; n2Temp.data=NULL;
@@ -360,6 +356,11 @@ INT4 main (INT4 argc, CHAR *argv[])
    sigma1=sqrt(var1/Npt);
    sigma2=sqrt(var2/Npt);
    sigmaref=sqrt(sigma1*sigma2);
+   
+   if(test_flag){
+   /* for comparison test with Matlab*/
+   sigma1=1.;sigma2=1.;sigmaref=1;}
+   
    if(verbose_flag){
     fprintf(stdout, "normalize noise...\n");}	 
     
@@ -371,13 +372,12 @@ INT4 main (INT4 argc, CHAR *argv[])
   }
   	
   /** generate gw signal **/
-
-  if(verbose_flag){
-   fprintf(stdout, "generate gw signal with mu=%f and sigma=%f...\n",mu,sigma);}
-   	
+     	
   v1=0.;v2=0.;	
   for (i = 0; i < Npt; i++) {
    if(montecarlo_flag){
+    if((verbose_flag)&&(i==0)){
+      fprintf(stdout, "generate gw signal with mu=%f and sigma=%f...\n",mu,sigma);}
     n = gsl_ran_poisson (rrgn,mu);         
     if(n>0){
      varn = var*(double)n;                                          
@@ -385,14 +385,22 @@ INT4 main (INT4 argc, CHAR *argv[])
      h->data[i] = gsl_ran_gaussian (rrgn,sigman);
     }
    }
+   else{  
+	h->data[i]=0.;}
    
    s1->data[i] = n1.data->data[i]+h->data[i];                                 
    s2->data[i] = n2.data->data[i]+h->data[i];
+   
+   if(test_flag){
+	for(i=0;i<10;i++){
+      fprintf(stdout,"%e %e\n",n1.data->data[i],n2.data->data[i]);}}
+	  
    v1=v1+s1->data[i]*s1->data[i];
    v2=v2+s2->data[i]*s2->data[i];
    v12=v12+s1->data[i]*s2->data[i];                               
   }
   v1=v1/Npt; v2=v2/Npt;v12=v12/Npt;
+  //fprintf(stdout,"v1=%e v2=%e v12=%e\n",v1,v2,v12);
  
   /** maximize likelihood function for parameter estimation **/ 
   /* Nelder-Mead Simplex algorithm */
@@ -400,6 +408,7 @@ INT4 main (INT4 argc, CHAR *argv[])
   if(verbose_flag){
    fprintf(stdout, "estimate parameters...\n");
    fprintf(stdout,"T=%d:",gpsStartTime.gpsSeconds);
+   fprintf(stdout,"snr=%f\n",snr);
    fprintf(stdout,"mu=%e ksi=%e sigma=%e varmean=%e sigma1=%e sigma2=%e\n",mu,ksi,sigma,varmean,sigma1,sigma2);}
    
   fprintf(pf3,"%d ",gpsStartTime.gpsSeconds);
@@ -426,7 +435,7 @@ INT4 main (INT4 argc, CHAR *argv[])
     status = gsl_multimin_fminimizer_iterate(s);
     if (status){break;}
     size = gsl_multimin_fminimizer_size (s);
-    status = gsl_multimin_test_size (size, 1.e-4);
+    status = gsl_multimin_test_size (size, 1.e-6);
     if(test_flag){
  	 if (status == GSL_SUCCESS){
 	  fprintf (stdout,"converged to minimum at\n");}
@@ -474,7 +483,7 @@ INT4 main (INT4 argc, CHAR *argv[])
  	 if (status == GSL_SUCCESS){
 	  fprintf (stdout,"converged to minimum at\n");}
 	 fprintf (stdout,"%5d ", (int)iter);
-	 for (k = 0; k < 3; k++){
+	 for (k = 0; k < 4; k++){
 	  fprintf (stdout,"%10.3e ", gsl_vector_get (s->x, k));}
 	 fprintf (stdout,"f = %e\n", s->fval);
     }
@@ -514,17 +523,17 @@ INT4 main (INT4 argc, CHAR *argv[])
     status = gsl_multimin_fminimizer_iterate(s);
     if (status){break;}
     size = gsl_multimin_fminimizer_size (s);
-    status = gsl_multimin_test_size (size, 1.e-4);
+    status = gsl_multimin_test_size (size, 1.e-10);
     if(test_flag){
  	 if (status == GSL_SUCCESS){
 	  fprintf (stdout,"converged to minimum at\n");}
 	 fprintf (stdout,"%5d ", (int)iter);
-	 for (k = 0; k < 3; k++){
+	 for (k = 0; k < 4; k++){
 	  fprintf (stdout,"%10.3e ", gsl_vector_get (s->x, k));}
 	 fprintf (stdout,"f = %e\n", s->fval);
     }
    }
-  while (status == GSL_CONTINUE && iter < 300);
+  while (status == GSL_CONTINUE && iter < 1000);
   muest=gsl_vector_get (s->x, 0);
   sigmaest=gsl_vector_get (s->x, 1);
   sigma1est=gsl_vector_get (s->x, 2);
@@ -541,8 +550,6 @@ INT4 main (INT4 argc, CHAR *argv[])
 
   }
   
-
- 
  LALDDestroyVector(&lalstatus,&h);
  LALDDestroyVector(&lalstatus,&n1.data);
  LALDDestroyVector(&lalstatus,&n2.data);
@@ -663,7 +670,7 @@ double lambda2 (gsl_vector *x,void *params)
   double dsum,psum;
   double pmu,psigma,psigma1,psigma2;
   double pv,pv1,pv2,psig12,pv12,pvv1,pvv2,v1opv1,v2opv2;
-  double pc[100],a[100],b[100];  
+  double pc[1000],a[1000],b[1000];  
   double test;
   
   pmu=gsl_vector_get(x,0);
@@ -683,28 +690,28 @@ double lambda2 (gsl_vector *x,void *params)
    v1opv1=v1/pv1;
    v2opv2=v2/pv2;   
 
-   i=0;
+   j=0;
    pc[0]=gsl_ran_poisson_pdf(0,pmu);
    test=1.-pc[0]; 
-   while(test>1./(double)Npt){
-	i++;
-	pc[i]=gsl_ran_poisson_pdf(i,pmu);
-	test=test-pc[i];
-    a[i]=1./sqrt(pv12+i*(pvv1+pvv2))*pc[i];
-    b[i]=2.*(1./pv1+1./pv2+1./((double)i*pv));
+   while(test>N0/(double)Npt){
+	j++;
+	pc[j]=gsl_ran_poisson_pdf(j,pmu);
+	test=test-pc[j];
+    a[j]=1./sqrt(pv12+(double)j*(pvv1+pvv2))*pc[j];
+    b[j]=2.*(1./pv1+1./pv2+1./((double)j*pv));
     }
-   np=i;dsum=0.;
+   np=j;dsum=0.;
    for(i=0;i<Npt;i++){
      e12->data[i]=(s1->data[i]/pv1+s2->data[i]/pv2);
      e12->data[i]= e12->data[i]*e12->data[i];
      psum=0.;   
-     for(j=1;j<np;j++){
+     for(j=1;j<=np;j++){
        psum = psum + a[j]*exp(e12->data[i]/b[j]);
      }
      psum = pc[0]+psig12*psum;
      dsum=dsum+log(psum);
    }
-   y=-(0.5*(log(v1opv1*v2opv2)-(v1opv1+v2opv2))+1.+(1./Npt)*dsum);
+   y=-(0.5*(log(v1opv1*v2opv2)-(v1opv1+v2opv2))+1.+(1./(double)Npt)*dsum);
   }
   else y=10000.;
   return y; 
@@ -747,6 +754,7 @@ void parseOptions(INT4 argc, CHAR *argv[])
 	  {"sigma0", required_argument, 0, 'S'},
 	  {"sigma1", required_argument, 0, 'g'},
 	  {"sigma2", required_argument, 0, 'G'},
+	  {"N0", required_argument, 0, 'p'},
       {"channel1", required_argument, 0, 'c'},
       {"channel2", required_argument, 0, 'C'},
       {"frame-cache1", required_argument, 0, 'd'},
@@ -759,7 +767,7 @@ void parseOptions(INT4 argc, CHAR *argv[])
     int option_index = 0;
 
     c = getopt_long(argc, argv, 
-                  "hn:t:T:l:N:r:R:a:m:M:s:S:g:G:c:C:d:D:v",
+                  "hn:t:T:l:N:r:R:a:m:M:s:S:g:G:p:c:C:d:D:v",
  		   long_options, &option_index);
 
     if (c == -1)
@@ -848,6 +856,10 @@ void parseOptions(INT4 argc, CHAR *argv[])
 	  case 'G':
 	           sigma2 = atof(optarg);
 	           break;
+			   
+	  case 'p':
+	           N0 = atof(optarg);
+	           break;		   
      
       case 'c':
 	           /* ifo for first stream */
@@ -917,6 +929,7 @@ void displayUsage(INT4 exitcode)
   fprintf(stderr, " -S                    initial sigma for parameter estimation\n");
   fprintf(stderr, " -g                    sigma1 of gaussian noise \n");
   fprintf(stderr, " -G                    sigma2 of gaussian noise \n");
+  fprintf(stderr, " -p                    threshold for the poisson probability\n");
   fprintf(stderr, " -c                    channel for first stream\n");
   fprintf(stderr, " -C                    channel for second stream\n");
   fprintf(stderr, " -d                    cache file for first stream\n");
