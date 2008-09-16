@@ -99,6 +99,7 @@ NRCSID( LIGOMETADATATABLESH, "$Id$" );
 #define LIGOMETA_SIMINSTPARAMS_COMM_MAX 65
 #define LIGOMETA_FILTER_NAME_MAX 65
 #define LIGOMETA_STD 100
+#define LIGOMETA_INSPIRALTAPER_MAX 35
 
 #if 0
 <lalLaTeX>
@@ -628,6 +629,8 @@ tagSimInspiralTable
   INT4           numrel_mode_max;
   CHAR           numrel_data[LIGOMETA_STRING_MAX];
   INT4           amp_order;
+  CHAR           taper[LIGOMETA_INSPIRALTAPER_MAX];
+  INT4           bandpass;
 }
 SimInspiralTable;
 /* </lalVerbatim> */
