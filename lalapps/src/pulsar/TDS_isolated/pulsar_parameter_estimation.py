@@ -76,7 +76,8 @@ class parameterNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     self.__earthephem = None
     self.__sunephem = None
     self.__covfile = None
-     
+    self.__ul = None
+
   def set_output_dir(self,output_dir):
     # set output directory
     self.add_var_opt('output-dir',output_dir)
@@ -102,10 +103,11 @@ class parameterNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     self.add_var_opt('pulsar',pulsar)
     self.__pulsar = pulsar
     
-  def set_ul(self):
+  def set_ul(self,ul):
     # set to output the upper limit
-    self.add_var_opt('dob-ul', '') # no variable required
-    
+    self.add_var_opt('dob-ul', ul) # no variable required
+    self.__ul = ul
+
   def set_mcmc(self):
     # set to perform posterior calculation via an MCMC
     self.add_var_opt('mcmc', '')
