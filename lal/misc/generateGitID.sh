@@ -32,7 +32,7 @@ fi
 if test "$git_log_ok" = "true"; then
     git_log=`eval $logcmd`;
 else
-    git_log="%n${prefix}CommitID: unknown.%n";
+    git_log="${prefix}CommitID: unknown.";
 fi
 
 ## ---------- check for modified/added git-content [ignores untracked files!] ----------
