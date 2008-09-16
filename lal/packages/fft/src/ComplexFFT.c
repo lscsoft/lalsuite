@@ -263,7 +263,7 @@ void XLALDestroyCOMPLEX8FFTPlan( COMPLEX8FFTPlan *plan )
 
 
 int XLALCOMPLEX8VectorFFT( COMPLEX8Vector *output, COMPLEX8Vector *input,
-    COMPLEX8FFTPlan *plan )
+    const COMPLEX8FFTPlan *plan )
 {
   static const char *func = "XLALCOMPLEX8VectorFFT";
   if ( ! output || ! input || ! plan )
@@ -400,7 +400,7 @@ void XLALDestroyCOMPLEX16FFTPlan( COMPLEX16FFTPlan *plan )
 
 
 int XLALCOMPLEX16VectorFFT( COMPLEX16Vector *output, COMPLEX16Vector *input,
-    COMPLEX16FFTPlan *plan )
+    const COMPLEX16FFTPlan *plan )
 {
   static const char *func = "XLALCOMPLEX16VectorFFT";
   if ( ! output || ! input || ! plan )

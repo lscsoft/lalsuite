@@ -111,7 +111,7 @@ COMPLEX8FFTPlan * XLALCreateForwardCOMPLEX8FFTPlan( UINT4 size, int measurelvl )
 COMPLEX8FFTPlan * XLALCreateReverseCOMPLEX8FFTPlan( UINT4 size, int measurelvl );
 void XLALDestroyCOMPLEX8FFTPlan( COMPLEX8FFTPlan *plan );
 int XLALCOMPLEX8VectorFFT( COMPLEX8Vector *output, COMPLEX8Vector *input,
-    COMPLEX8FFTPlan *plan );
+    const COMPLEX8FFTPlan *plan );
 
 /*
  *
@@ -124,7 +124,7 @@ COMPLEX16FFTPlan * XLALCreateForwardCOMPLEX16FFTPlan( UINT4 size, int measurelvl
 COMPLEX16FFTPlan * XLALCreateReverseCOMPLEX16FFTPlan( UINT4 size, int measurelvl );
 void XLALDestroyCOMPLEX16FFTPlan( COMPLEX16FFTPlan *plan );
 int XLALCOMPLEX16VectorFFT( COMPLEX16Vector *output, COMPLEX16Vector *input,
-    COMPLEX16FFTPlan *plan );
+    const COMPLEX16FFTPlan *plan );
 
 /*
  *
