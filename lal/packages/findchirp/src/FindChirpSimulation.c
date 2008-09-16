@@ -92,8 +92,16 @@ LALFree()
 #include <lal/NRWaveInject.h>
 #include <lal/GenerateInspRing.h>
 #include <math.h>
+#include <lal/LALInspiral.h>
+#include <lal/LALError.h>
 
 NRCSID( FINDCHIRPSIMULATIONC, "$Id$" );
+
+static int FindTimeSeriesStartAndEnd (
+              REAL4Vector *signal,
+              UINT4 *start,
+              UINT4 *end
+             );
 
 /* <lalVerbatim file="FindChirpSimulationCP"> */
 void
@@ -365,7 +373,65 @@ LALFindChirpInjectSignals (
       LALSimulateCoherentGW( status->statusPtr, 
           &signal, &waveform, &detector );
       CHECKSTATUSPTR( status );
-    
+
+      /* Taper the signal */
+      {
+          
+          if ( ! strcmp( "TAPER_START", thisEvent->taper ) )
+          {
+              XLALInspiralWaveTaper( signal.data, INSPIRAL_TAPER_START ); 
+          }
+          else if (  ! strcmp( "TAPER_END", thisEvent->taper ) )
+          {
+              XLALInspiralWaveTaper( signal.data, INSPIRAL_TAPER_END );
+          }
+          else if (  ! strcmp( "TAPER_BOTH", thisEvent->taper ) )
+          {
+              XLALInspiralWaveTaper( signal.data, INSPIRAL_TAPER_BOTH );
+          }
+      }
+
+      /* Band pass the signal */
+      if ( thisEvent->bandpass )
+      {
+          UINT4 safeToBandPass = 0;
+          UINT4 start, end;
+          REAL4Vector *bandpassVec = NULL;
+          
+          safeToBandPass = FindTimeSeriesStartAndEnd (
+                  signal.data, &start, &end );
+          
+          if ( safeToBandPass )
+          {
+              /* Check if we can grab some padding at the extremeties.
+               * This will make the bandpassing better 
+               */
+              
+              if ((start - (int)(0.25/chan->deltaT)) > 0 ) 
+                    start -= (int)(0.25/chan->deltaT);
+              
+              if ((end + (int)(0.25/chan->deltaT)) < signal.data->length ) 
+                    end += (int)(0.25/chan->deltaT);
+
+              bandpassVec = (REAL4Vector *)
+                      LALCalloc(1, sizeof(REAL4Vector) );
+           
+              bandpassVec->length = (end - start + 1); 
+              bandpassVec->data = signal.data->data + start;
+ 
+              if ( XLALBandPassInspiralTemplate( bandpassVec, 
+                          1.1*thisEvent->f_lower, 
+                          1.05*thisEvent->f_final, 
+                          1./chan->deltaT) != XLAL_SUCCESS ) 
+              { 
+                  LALError( status, "Failed to Bandpass signal" );
+                  ABORT (status, LALINSPIRALH_EBPERR, LALINSPIRALH_MSGEBPERR);
+              }; 
+            
+              LALFree( bandpassVec ); 
+          }
+      }
+
       /* inject the signal into the data channel */
       LALSSInjectTimeSeries( status->statusPtr, chan, &signal );
       CHECKSTATUSPTR( status );
@@ -1381,5 +1447,66 @@ XLALFindChirpBankSimComputeMatch (
   maxMatch->value = tmplt->snr / matchNorm;
 
   return maxMatch;
+
+}
+
+static int FindTimeSeriesStartAndEnd (
+        REAL4Vector *signal,
+        UINT4 *start,
+        UINT4 *end
+        )
+{
+  const static char *func = "FindTimeSeriesStartAndEnd";
+  UINT4 i, mid, n; /* indices */
+  UINT4 flag, safe = 1;
+  UINT4 length;   
+
+#ifndef LAL_NDEBUG
+  if ( !signal )
+    XLAL_ERROR( func, XLAL_EFAULT );
+
+  if ( !signal->data )
+    XLAL_ERROR( func, XLAL_EFAULT );
+#endif
+
+  length = signal->length;
+
+  /* Search for start and end of signal */
+  flag = 0;
+  i = 0;
+  while(flag == 0 && i < length )
+  {
+      if( signal->data[i] != 0.)
+      {
+          *start = i;
+          flag = 1;
+      }
+      i++;
+  }  
+  if ( flag == 0 )
+  {
+      return flag;
+  }
+
+  flag = 0;
+  i = length - 1;
+  while(flag == 0)
+  {
+      if( signal->data[i] != 0.)
+      {
+          *end = i;
+          flag = 1;
+      }
+      i--;
+  }        
+
+  /* Check we have more than 2 data points */
+  if(((*end) - (*start)) <= 1)
+  {
+      XLALPrintWarning( "Data less than 3 points in this signal!\n" );
+      safe = 0;
+  }
+
+  return safe;
 
 }
