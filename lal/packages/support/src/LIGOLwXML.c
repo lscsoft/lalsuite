@@ -729,6 +729,8 @@ LALWriteLIGOLwXMLTable (
 	      tablePtr.simInspiralTable->numrel_mode_max,
 	      tablePtr.simInspiralTable->numrel_data,
 	      tablePtr.simInspiralTable->amp_order,
+	      tablePtr.simInspiralTable->taper,
+	      tablePtr.simInspiralTable->bandpass,
               xml->rowCount
               );
         tablePtr.simInspiralTable = tablePtr.simInspiralTable->next;
