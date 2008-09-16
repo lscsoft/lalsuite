@@ -2246,6 +2246,8 @@ SimInspiralTableFromLIGOLw (
     {"numrel_mode_max",     -1, 51},
     {"numrel_data",         -1, 52},
     {"amp_order",           -1, 53},
+    {"taper",               -1, 54},
+    {"bandpass",            -1, 55},
     {NULL,                   0, 0}
   };
 
@@ -2531,15 +2533,24 @@ SimInspiralTableFromLIGOLw (
           LALSnprintf(thisSim->numrel_data, LIGOMETA_STRING_MAX * sizeof(CHAR),
               "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data);
 	}
-	else if ( tableDir[j].idx == 53 )
-	{
-	  thisSim->amp_order = i4colData;
-	}
+        else if ( tableDir[j].idx == 53 )
+        {
+            thisSim->amp_order = i4colData;
+        }
+        else if ( tableDir[j].idx == 54 )
+        {
+            LALSnprintf(thisSim->taper, LIGOMETA_INSPIRALTAPER_MAX * sizeof(CHAR),
+                    "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data);
+        }
+        else if ( tableDir[j].idx == 55 )
+        {
+            thisSim->bandpass = i4colData;
+        }
         else
         {
-          CLOBBER_SIM;
-          fprintf( stderr, "unknown column while parsing\n" );
-          return -1;
+            CLOBBER_SIM;
+            fprintf( stderr, "unknown column while parsing\n" );
+            return -1;
         }
       }
 
