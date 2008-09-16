@@ -131,6 +131,9 @@ REAL4 minKappa1=-1.0;
 REAL4 maxKappa1=1.0;
 REAL4 minabsKappa1=0.0;
 REAL4 maxabsKappa1=1.0;
+INT4 bandPassInj = 0;
+InspiralApplyTaper taperInj = INSPIRAL_TAPER_NONE;
+
 
 static LALStatus status;
 static RandomParams* randParams=NULL;
@@ -298,6 +301,11 @@ static void print_usage(char *program)
       "  [--max-abskappa1] abskappa1max \n"\
       "                           Set the maximum absolute value of cos(S1.L_N) \n"\
       "                           to abskappa1max (1.0)\n"\
+      "\n"\
+      "Tapering the injection waveform:\n"\
+      "  [--taper-injection] OPT  Taper the inspiral template using option OPT\n"\
+      "                            (start|end|both) \n)"\
+      "  [--band-pass-injection]  sets the tapering method of the injected waveform\n"\
       "\n");
 }
 
@@ -703,6 +711,8 @@ int main( int argc, char *argv[] )
     {"enable-spin",             no_argument,       0,                'T'},
     {"disable-spin",            no_argument,       0,                'W'},
     {"write-compress",          no_argument,       &outCompress,       1},
+    {"taper-injection",         required_argument, 0,                '*'},
+    {"band-pass-injection",     no_argument,       0,                '}'},
     {0, 0, 0, 0}
   };
   int c;
@@ -734,7 +744,7 @@ int main( int argc, char *argv[] )
     size_t optarg_len;
 
     c = getopt_long_only( argc, argv, 
-        "hf:m:a:b:t:s:w:i:M:", long_options, &option_index );
+        "hf:m:a:b:t:s:w:i:M:*", long_options, &option_index );
 
     /* detect the end of the options */
     if ( c == - 1 )
@@ -1352,6 +1362,40 @@ int main( int argc, char *argv[] )
         spinInjections = 0;
         break;
 
+      case '}':
+        /* enable band-passing */
+        this_proc_param = this_proc_param->next = 
+          next_process_param( long_options[option_index].name, "string", 
+              "" );
+        bandPassInj = 1;
+        break;
+
+      case '*':
+        /* Set injection tapering */
+        if ( ! strcmp( "start", optarg ) )
+        {
+            taperInj = INSPIRAL_TAPER_START;
+        }
+        else if ( ! strcmp( "end", optarg ) )
+        {
+            taperInj = INSPIRAL_TAPER_END;
+        }
+        else if ( ! strcmp( "both", optarg ) )
+        {
+            taperInj = INSPIRAL_TAPER_BOTH;
+        }
+        else
+        {
+            fprintf( stderr, "invalid argument to --%s:\n"
+                    "unknown option specified: %s\n"
+                    "(Must be one of start|end|both)\n",
+                    long_options[option_index].name, optarg );
+        }
+        this_proc_param = this_proc_param->next = 
+                next_process_param( long_options[option_index].name, 
+                        "string", optarg );
+        break;
+
       case 'h':
         print_usage(argv[0]);
         exit( 0 );
@@ -1812,6 +1856,36 @@ int main( int argc, char *argv[] )
 
     /* populate the site specific information */
     LALPopulateSimInspiralSiteInfo( &status, simTable );
+
+    /* populate the taper options */
+    {
+        switch (taperInj)
+        {
+            case INSPIRAL_TAPER_NONE:
+                 LALSnprintf( simTable->taper, LIGOMETA_WAVEFORM_MAX, 
+                         "%s", "TAPER_NONE"); 
+                 break;
+            case INSPIRAL_TAPER_START:
+                 LALSnprintf( simTable->taper, LIGOMETA_WAVEFORM_MAX, 
+                         "%s", "TAPER_START"); 
+                 break;
+            case INSPIRAL_TAPER_END:
+                 LALSnprintf( simTable->taper, LIGOMETA_WAVEFORM_MAX, 
+                         "%s", "TAPER_END"); 
+                 break;
+            case INSPIRAL_TAPER_BOTH:
+                 LALSnprintf( simTable->taper, LIGOMETA_WAVEFORM_MAX, 
+                         "%s", "TAPER_BOTH"); 
+                 break;
+            default: /* Never reach here */
+                 fprintf( stderr, "unknown error while populating sim_inspiral taper options\n" );
+                 exit (1);
+        }
+
+    }
+    
+    /* populate the bandpass options */
+    simTable->bandpass = bandPassInj;
 
     /* increment current time, avoiding roundoff error;
        check if end of loop is reached */
