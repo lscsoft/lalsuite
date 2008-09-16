@@ -346,7 +346,7 @@ LALCompareRingdowns (
 {
   INT8    ta,  tb;
   REAL4   df, dQ;
-  REAL4   fa, fb, Qa, Qb, Fa, Fb, Xa, Xb, Ya, Yb, Omegaa, Omegab, Ra, Rb, D, ds2;
+  REAL4   fa, fb, Qa, Qb, ds2ab, ds2ba;
   InterferometerNumber ifoaNum,  ifobNum;
   SnglRingdownAccuracy aAcc, bAcc;
   
@@ -418,47 +418,30 @@ LALCompareRingdowns (
     Qa = aPtr->quality;
     Qb = bPtr->quality;
 
-    /* transforming to a space where the contours of constant ds^2 are circles*/
-    Fa = log(fa);
-    Xa = Fa + 1.0/16 * pow(Qa,-2) + 1.0/256 * pow(Qa,-4) - 11.0/3072 * pow(Qa,-6) 
-           + 49.0/32768 * pow(Qa,-8) - 179.0/327680 * pow(Qa,-10);
-    Ya = sqrt(2) / 4 * ( pow(Qa,-1) - 1.0/6 * pow(Qa,-3) + 27.0/640 * pow(Qa,-5) 
-           - 43.0/3584 * pow(Qa,-7) + 1067.0/294912 * pow(Qa,-9) );
-    Omegaa = pow(Ya,6)/5400 + pow(Ya,4)/756 + pow(Ya,2)/120 + 1.0/24 + 1.0/8 * pow(Ya,-2);
-    Ra = sqrt( aAcc.ds_sq / Omegaa);   /* radius of circle */
+    ds2ab = XLAL2DMetricDistance( fa, fb, Qa, Qb );
+    ds2ba = XLAL2DMetricDistance( fb, fa, Qb, Qa );
 
-    Fb = log(fb);
-    Xb = Fb + 1.0/16 * pow(Qb,-2) + 1.0/256 * pow(Qb,-4) - 11.0/3072 * pow(Qb,-6)
-            + 49.0/32768 * pow(Qb,-8) - 179.0/327680 * pow(Qb,-10);
-    Yb = sqrt(2) / 4 * ( pow(Qb,-1) - 1.0/6 * pow(Qb,-3) + 27.0/640 * pow(Qb,-5)
-            - 43.0/3584 * pow(Qb,-7) + 1067.0/294912 * pow(Qb,-9) );
-    Omegab = pow(Yb,6)/5400 + pow(Yb,4)/756 + pow(Yb,2)/120 + 1.0/24 + 1.0/8 * pow(Yb,-2); 
-    Rb = sqrt( bAcc.ds_sq / Omegab); 
-
-    D = sqrt( pow((Xa - Xb),2) + pow((Ya - Yb),2) ); /*geometric distance between templates*/
-    ds2 = D * D / ( 1/Omegaa + 1/Omegab );    
-   
-    if ( D < (Ra+Rb) )
+    if ( (ds2ab+ds2ba)/2 < (aAcc.ds_sq + bAcc.ds_sq)/2 )
     {
       LALInfo( status, "Triggers pass the ds_sq coincidence test" );
       params->match = 1;
       if ( (strcmp(aPtr->ifo,"H1")==0 && strcmp(bPtr->ifo,"H2")==0)
 		||(strcmp(aPtr->ifo,"H2")==0 && strcmp(bPtr->ifo,"H1")==0) )
       {
-	aPtr->ds2_H1H2=ds2;
-        bPtr->ds2_H1H2=ds2;
+	aPtr->ds2_H1H2=ds2ab;
+        bPtr->ds2_H1H2=ds2ba;
       }
       else if( (strcmp(aPtr->ifo,"H1")==0 && strcmp(bPtr->ifo,"L1")==0) 
  		|| (strcmp(aPtr->ifo,"L1")==0 && strcmp(bPtr->ifo,"H1")==0) )
       {
-        aPtr->ds2_H1L1=ds2;
-        bPtr->ds2_H1L1=ds2;
+        aPtr->ds2_H1L1=ds2ab;
+        bPtr->ds2_H1L1=ds2ba;
       }
       else if( (strcmp(aPtr->ifo,"H2")==0 && strcmp(bPtr->ifo,"L1")==0)
 		|| (strcmp(aPtr->ifo,"L1")==0 && strcmp(bPtr->ifo,"H2")==0) )
       {
-        aPtr->ds2_H2L1=ds2;
-        bPtr->ds2_H2L1=ds2;
+        aPtr->ds2_H2L1=ds2ab;
+        bPtr->ds2_H2L1=ds2ba;
       }
       else
       {
