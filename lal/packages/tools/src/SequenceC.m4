@@ -150,22 +150,19 @@ DATATYPE `XLAL'DATATYPE`Sum' (
 )
 {
 	ifelse(DATATYPE, COMPLEX8,
-	`DATATYPE sum = {0.0, 0.0};'
+	`DATATYPE sum = LAL_COMPLEX8_ZERO;'
 	, DATATYPE, COMPLEX16,
-	`DATATYPE sum = {0.0, 0.0};'
+	`DATATYPE sum = LAL_COMPLEX16_ZERO;'
 	,
 	DATATYPE sum = 0;)
 
-	for(data += first; count-- > 0; data++) {
+	for(data += first; count-- > 0; data++)
 		ifelse(DATATYPE, COMPLEX8,
-		sum.re += (*data).re;
-		sum.im += (*data).im;
+		sum = XLALCOMPLEX8Add(sum, *data);
 		, DATATYPE, COMPLEX16,
-		sum.re += (*data).re;
-		sum.im += (*data).im;
+		sum = XLALCOMPLEX16Add(sum, *data);
 		, 
 		sum += *data;)
-	}
 
 	return sum;
 }
@@ -180,14 +177,13 @@ SQUAREDATATYPE `XLAL'DATATYPE`SumSquares' (
 {
 	SQUAREDATATYPE sum = 0;
 
-	for(data += first; count-- > 0; data++) {
+	for(data += first; count-- > 0; data++)
 		ifelse(DATATYPE, COMPLEX8,
-		sum += (*data).re * (*data).re + (*data).im * (*data).im;
+		sum += XLALCOMPLEX8Abs2(*data);
 		, DATATYPE, COMPLEX16,
-		sum += (*data).re * (*data).re + (*data).im * (*data).im;
+		sum += XLALCOMPLEX16Abs2(*data);
 		, 
 		sum += *data * *data;)
-	}
 
 	return sum;
 }

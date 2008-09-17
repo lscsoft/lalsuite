@@ -266,11 +266,9 @@ SERIESTYPE *`XLALMultiply'SERIESTYPE (
 
 		for(i = 0; i < start && i < arg1->data->length; i++) {
 			ifelse(DATATYPE, COMPLEX8,
-			arg1->data->data[i].re = 0.0;
-			arg1->data->data[i].im = 0.0;
+			arg1->data->data[i] = LAL_COMPLEX8_ZERO;
 			, DATATYPE, COMPLEX16,
-			arg1->data->data[i].re = 0.0;
-			arg1->data->data[i].im = 0.0;
+			arg1->data->data[i] = LAL_COMPLEX16_ZERO;
 			, 
 			arg1->data->data[i] = 0.0;)
 		}
@@ -302,15 +300,12 @@ SERIESTYPE *`XLALMultiply'SERIESTYPE (
 
 	for(; i < arg1->data->length; i++) {
 		ifelse(DATATYPE, COMPLEX8,
-		arg1->data->data[i].re = 0.0;
-		arg1->data->data[i].im = 0.0;
+		arg1->data->data[i] = LAL_COMPLEX8_ZERO;
 		, DATATYPE, COMPLEX16,
-		arg1->data->data[i].re = 0.0;
-		arg1->data->data[i].im = 0.0;
+		arg1->data->data[i] = LAL_COMPLEX16_ZERO;
 		, 
 		arg1->data->data[i] = 0.0;)
 	}
 
 	return arg1;
 }
-
