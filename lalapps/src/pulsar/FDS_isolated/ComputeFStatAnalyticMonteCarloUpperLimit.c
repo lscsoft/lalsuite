@@ -32,7 +32,7 @@
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_randist.h>
-#include <gsl/gsl_sf_hyperg.h>
+#include <gsl/gsl_sf_bessel.h>
 #include <gsl/gsl_sf_gamma.h>
 
 #include <lal/LALRCSID.h>
@@ -49,9 +49,9 @@
 
 RCSID("$Id$");
 
-REAL8 hyperg_0F1_reg(REAL8 c, REAL8 x);
-REAL8 pdf_ncx2_4(REAL8 lambda, REAL8 x);
-REAL8 d_pdf_ncx2_4(REAL8 lambda, REAL8 x);
+REAL8 hyperg_0F1_reg(REAL8, REAL8);
+REAL8 pdf_ncx2_4(REAL8, REAL8);
+REAL8 d_pdf_ncx2_4(REAL8, REAL8);
 
 #define TRUE  (1==1)
 #define FALSE (1==0)
@@ -76,7 +76,7 @@ int main(int argc, char *argv[]) {
   CHAR *ephem_year = NULL;
   INT4 rng_med_win = 50;
   REAL8 max_rel_err = 1.0e-3;
-  REAL8 h0_brake = 0.5;
+  REAL8 h0_brake = 0.75;
   INT4 MC_trials = 10000;
   REAL8 MC_trial_fac = 2.0;
   REAL8 FDR = 0.05;
@@ -232,10 +232,10 @@ int main(int argc, char *argv[]) {
       LALPrintError("XLALWeighMultiAMCoeffs failed\n");
       return EXIT_FAILURE;
     }
-    LogPrintfVerbatim(LOG_DEBUG, "done\n");
     A_coeff = AM_coeffs->Mmunu.Ad * AM_coeffs->Mmunu.Sinv_Tsft;
     B_coeff = AM_coeffs->Mmunu.Bd * AM_coeffs->Mmunu.Sinv_Tsft;
     C_coeff = AM_coeffs->Mmunu.Cd * AM_coeffs->Mmunu.Sinv_Tsft;
+    LogPrintfVerbatim(LOG_DEBUG, "done: A = %0.4e, B = %0.4e, C = %0.4e\n", A_coeff, B_coeff, C_coeff);
   }      
   
   /* Initialise the random number generator */
@@ -277,7 +277,7 @@ int main(int argc, char *argv[]) {
     /* Target values of integrand */
     const REAL8 J0 = 1 - FDR;
 
-    LogPrintf(LOG_DEBUG, "Beginning h0 loop %i with h0=%0.4e, error=%0.4e, MC_trials=%i\n", h0_iter, h0, H0_ERROR, MC_trials);
+    LogPrintf(LOG_DEBUG, "Beginning h0 loop %2i with h0=%0.4e, error=%0.4e, MC_trials=%i\n", h0_iter, h0, H0_ERROR, MC_trials);
 
     fprintf(fp, "MC_trials=%i ", MC_trials);
 
@@ -312,6 +312,15 @@ int main(int argc, char *argv[]) {
       J  += pdf_ncx2_4(rho2, twoF);
       dJ += 2.0 * rho2 / h0 * d_pdf_ncx2_4(rho2, twoF);
 
+      /* If J and dJ failed, reduce h0 and try again */
+      if (gsl_isnan(J) || gsl_isnan(dJ)) {
+	h0 /= 2.0;
+	LogPrintf(LOG_DEBUG, "Reducing h0 to %0.4e and starting again because either J=%0.4e or dJ=%0.4e\n", h0, J, dJ);
+	J = 0;
+	dJ = 0;
+	MC_iter = MC_trials;
+      }	
+
     }
 
     /* Finalise the integrand and derivative: multiply by trial element */
@@ -333,7 +342,7 @@ int main(int argc, char *argv[]) {
     /* Increment the number of MC trials */
     MC_trials *= MC_trial_fac;
 
-    LogPrintf(LOG_DEBUG, "Ending    h0 loop %i with h0=%0.4e, error=%0.4e, J-J0=% 0.4e, dh0=% 0.4e\n", h0_iter, h0, H0_ERROR, J - J0, dh0);
+    LogPrintf(LOG_DEBUG, "Ending    h0 loop %2i with h0=%0.4e, error=%0.4e, J-J0=% 0.4e, dh0=% 0.4e\n", h0_iter, h0, H0_ERROR, J - J0, dh0);
 
   }
   
@@ -361,20 +370,46 @@ int main(int argc, char *argv[]) {
   
 }
 
-/* Regularized hypergeometric function 0F1 */
-REAL8 hyperg_0F1_reg(REAL8 c, REAL8 x) {
-  return gsl_sf_hyperg_0F1(c, x) / gsl_sf_gamma(c);
-}
-
 /* PDF of non-central chi-square with 4 degrees of freedom */
 REAL8 pdf_ncx2_4(REAL8 lambda, REAL8 x) {
-  return 0.25 * exp(-0.5 * (x + lambda)) * x * hyperg_0F1_reg(2, 0.25 * x * lambda);
+
+  const REAL8 z = sqrt(x * lambda);
+
+  gsl_sf_result I1;
+  gsl_error_handler_t *h = NULL;
+
+  /* Compute the Bessel functions */
+  h = gsl_set_error_handler_off();
+  if (gsl_sf_bessel_In_e(1, z, &I1) != GSL_SUCCESS) {
+    gsl_set_error_handler(h);
+    return GSL_NAN;
+  }
+  gsl_set_error_handler(h);
+  
+  /* Compute the PDF */
+  return 0.5 * exp(-0.5 * (x + lambda)) * sqrt(x / lambda) * I1.val;
+
 }
 
 /* Derivative of the PDF of non-central chi-square with 4 degrees of freedom w.r.t. lambda */
 REAL8 d_pdf_ncx2_4(REAL8 lambda, REAL8 x) {
-  return 0.125 * exp(-0.5 * (x + lambda)) * x * (
-						 0.5 * x * hyperg_0F1_reg(3, 0.25 * x * lambda) 
-						 - hyperg_0F1_reg(2, 0.25 * x * lambda)
-						 );
+
+  const REAL8 z = sqrt(x * lambda);
+
+  int i;
+  gsl_sf_result I[2];
+  gsl_error_handler_t *h = NULL;
+
+  /* Compute the Bessel functions */
+  h = gsl_set_error_handler_off();
+  for (i = 0; i <= 2; ++i)
+    if (gsl_sf_bessel_In_e(i, z, &I[i]) != GSL_SUCCESS) {
+      gsl_set_error_handler(h);
+      return GSL_NAN;
+    }
+  gsl_set_error_handler(h);
+  
+  /* Compute the derivative of the PDF */
+  return 0.25 * exp(-0.5 * (x + lambda)) * (0.5 * x / lambda * (I[0].val + I[2].val) - sqrt(x / lambda) * (1 + 1 / lambda) * I[1].val);
+  
 }
