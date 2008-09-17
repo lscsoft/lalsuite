@@ -1256,7 +1256,7 @@ int XLALREAL4SpectrumInvertTruncate(
     for ( k = cut; k < spectrum->data->length - 1; ++k )
     {
       if ( spectrum->data->data[k] )
-        spectrum->data->data[k] = 1.0 / sqrt( spectrum->data->data[k] );
+        spectrum->data->data[k] = 1.0 / spectrum->data->data[k];
       else
         spectrum->data->data[k] = 0;
     }
