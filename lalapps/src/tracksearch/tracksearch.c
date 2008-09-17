@@ -1682,9 +1682,19 @@ void LALappsGetFrameData(LALStatus*          status,
 
       if (params->verbosity >= printFiles)
 	{
-	  print_real4tseries(tmpData,"RawOriginalInputTimeSeries.diag");
-	  print_lalUnit(tmpData->sampleUnits,"RawOriginalInputTimeSeries_Units.diag");
+	  if (tmpData->data->length > 3690480)
+	    {
+	      print_real4tseries(tmpData,"RawOriginalInputTimeSeries.diag");
+	      print_lalUnit(tmpData->sampleUnits,"RawOriginalInputTimeSeries_Units.diag");
+	    }
+	  else
+	    {
+	      fprintf(stderr,"RawOriginalInputTimeSeries.diag Too Large More that 3690480 points.\n");
+	      fprintf(stderr,"File will not be dumped to disk.\n");
+	      fflush(stderr);
+	    }
 	}
+
       /*
        * Prepare for the resample if needed or just copy the data so send
        * back
@@ -1882,8 +1892,15 @@ void LALappsDoTrackSearch(
     {
       /* Do the calculate of Lh given parameters */
       /* Just pending inclussion of gaussian integral */
-      LAL_CALL( LALTracksearchFindLambda(status,*tfmap,&params),
-		status);
+      lal_errhandler = LAL_ERR_RTRN;
+      errCode = LAL_CALL( LALTracksearchFindLambda(status,*tfmap,&params),
+			  status);
+      if ( errCode != 0 )
+	{
+	  fprintf(stderr,"Error calling automagic Lambda selection routine.\n");
+	  fprintf(stderr,"%s\n",status->statusDescription);
+	  fflush(stderr);
+	}
       tsInputs.high=params.StartThresh;
       tsInputs.low=params.LinePThresh;
       /*Reset to show the auto selected values.*/
@@ -1891,12 +1908,7 @@ void LALappsDoTrackSearch(
       outputCurves.linePThreshCut=tsInputs.low;
 
     }
-/*   /\* Allocate structure for analysis *\/ */
-/*   /\* Flag to prepare structure inside LALTrackSearch *\/ */
-
-/*   LAL_CALL( LALSignalTrackSearch(status,&outputCurves,tfmap,&tsInputs), */
-/* 	    status); */
-  
+  /*fprintf(stdout,"Code Marker 03\n");fflush(stdout);*/
   /* Perform the analysis on the data seg given.*/
   tsInputs.allocFlag = 1;
   lal_errhandler = LAL_ERR_RTRN;
@@ -1906,6 +1918,7 @@ void LALappsDoTrackSearch(
     {
       fprintf(stderr,"Error calling LALSignalTrackSearch!\n");
       fprintf(stderr,"%s\n",status->statusDescription);
+      fflush(stderr);
     }
   
   /* 
@@ -1928,20 +1941,39 @@ void LALappsDoTrackSearch(
   /*Height -> time bins */
   /*Width -> freq bins */
   /* Need to configure mapMarkerParams correctly!*/
-  LAL_CALL(  LALTrackSearchInsertMarkers(status,
+  lal_errhandler = LAL_ERR_RTRN;
+  errCode = LAL_CALL(  LALTrackSearchInsertMarkers(status,
 					 &outputCurves,
 					 &tsMarkers),
 	     status);
+  if ( errCode != 0 )
+    {
+      fprintf(stderr,"Error calling insert markers routine.\n");
+      fprintf(stderr,"%s\n",status->statusDescription);
+      fflush(stderr);
+    }
   /* 
    *Call the connect curve routine if argument is specified 
    */
   if (params.joinCurves)
     {
-      LAL_CALL( LALTrackSearchConnectSigma(status,
-					   &outputCurves,
-					   *tfmap,
-					   tsInputs),
-		status);
+      if (params.verbosity > quiet)
+	{
+	  fprintf(stdout,"Connecting found tracks.\n");
+	  fflush(stdout);
+	}
+      lal_errhandler = LAL_ERR_RTRN;
+      errCode=LAL_CALL( LALTrackSearchConnectSigma(status,
+						   &outputCurves,
+						   *tfmap,
+						   tsInputs),
+			status);
+      if (errCode !=0)
+	{
+	  fprintf(stderr,"Call to connect trigger subroutine failed!.\n");
+	  fprintf(stderr,"%s\n",status->statusDescription);
+	  fflush(stderr);
+	}
     };
   /*
    * Write Pre-Threshold Results to Disk
@@ -1958,11 +1990,19 @@ void LALappsDoTrackSearch(
    * Apply the user requested thresholds 
    */
   outputCurvesThreshold.curves = NULL;
-  LAL_CALL( LALTrackSearchApplyThreshold(status,
+  lal_errhandler = LAL_ERR_RTRN;
+  errCode = LAL_CALL( LALTrackSearchApplyThreshold(status,
 					 &outputCurves,
 					 &outputCurvesThreshold,
 					 params),
 	    status);
+  if ( errCode != 0 )
+    {
+      fprintf(stderr,"Error calling trigger threshold selection routine.\n");
+      fprintf(stderr,"%s\n",status->statusDescription);
+      fflush(stderr);
+    }
+
 
   /*
    * Record user request thresholds into output data structure
@@ -2127,11 +2167,13 @@ LALappsDoTSeriesSearch(LALStatus         *status,
 	case Kaiser:
 		tempWindow = XLALCreateKaiserREAL4Window(params.windowsize, 1000);
 		fprintf(stderr,"For Kaiser beta hard wired to 1,000\n");
+		fflush(stderr);
 		break;
 
 	case Creighton:
 		tempWindow = XLALCreateCreightonREAL4Window(params.windowsize, 1000);
 		fprintf(stderr,"For Creighton beta hard wired to 1,000\n");
+		fflush(stderr);
 		break;
 
 	case Tukey:
@@ -2141,6 +2183,7 @@ LALappsDoTSeriesSearch(LALStatus         *status,
 
 	default:
 	  fprintf(stderr,"Window specified not allowed.\n");
+	  fflush(stderr);
 	  exit(TRACKSEARCHC_EVAL);
 	}
 
@@ -2295,7 +2338,11 @@ LALappsDoTSeriesSearch(LALStatus         *status,
   inputs.height=tfmap->tCol;
 
   /* If requested to the auto lambda determination */
-
+  if (params.verbosity > quiet)
+    {
+      fprintf(stdout,"Created TFR. \n");
+      fflush(stdout);
+    }
   /*
    * Call subroutine to run the search
    */
@@ -2304,6 +2351,12 @@ LALappsDoTSeriesSearch(LALStatus         *status,
 		       inputs,
 		       mapMarkerParams,
 		       params);
+
+  if (params.verbosity > quiet)
+    {
+      fprintf(stdout,"Analyzed TFR. \n");
+      fflush(stdout);
+    }
   /*
    * Assemble the TSAmap to write to disk
    */
@@ -2454,12 +2507,13 @@ LALappsDoTimeSeriesAnalysis(LALStatus          *status,
        */
       if (params.verbosity >= verbose)
 	{
-	  printf("Preparing the injection data!\n");
-	  printf("Inject Offset    %f\n",injectParams.startTimeOffset);
-	  printf("Inject Space     %f\n",injectParams.injectSpace);
-	  printf("Inject Count     %i\n",injectParams.numOfInjects);
-	  printf("Inject Scale     %f\n",injectParams.scaleFactor);
-	  printf("Inject Sampling  %f\n",injectParams.sampleRate);
+	  fprintf(stdout,"Preparing the injection data!\n");
+	  fprintf(stdout,"Inject Offset    %f\n",injectParams.startTimeOffset);
+	  fprintf(stdout,"Inject Space     %f\n",injectParams.injectSpace);
+	  fprintf(stdout,"Inject Count     %i\n",injectParams.numOfInjects);
+	  fprintf(stdout,"Inject Scale     %f\n",injectParams.scaleFactor);
+	  fprintf(stdout,"Inject Sampling  %f\n",injectParams.sampleRate);
+	  fflush(stdout);
 	}
 
       LALappsCreateInjectableData(status,
@@ -2488,6 +2542,12 @@ LALappsDoTimeSeriesAnalysis(LALStatus          *status,
   /*
    * Remove the dataset variable to make room in RAM for TFRs
    */
+  if (params.verbosity > quiet)
+    {
+      fprintf(stdout,"Freeing RAM associated with original time series data.\n");
+      fflush(stdout);
+    }
+
   if (dataset)
     {
       XLALDestroyREAL4TimeSeries(dataset);
@@ -2499,11 +2559,18 @@ LALappsDoTimeSeriesAnalysis(LALStatus          *status,
 
   j=0;
   if (params.verbosity >= verbose)
-    printf("Analyzing a total of %i subsegments of data.\n",params.NumSeg);
+    {
+      fprintf(stdout,"Analyzing a total of %i subsegments of data.\n",params.NumSeg);
+      fflush(stdout);
+    }
   for(i = 0;i < params.NumSeg;i++)
     {
       if (params.verbosity >= verbose)
-	printf("Analyzing Segment %i of %i\n",i+1,params.NumSeg);
+	{
+	  fprintf(stdout,"\n");
+	  fprintf(stdout,"Analyzing Segment %i of %i :",i+1,params.NumSeg);
+	  fflush(stdout);
+	}
       /*
        * Call to prepare tSeries search
        * Rewrite functions inside to CROP maps and adjust time marks
@@ -2522,7 +2589,8 @@ LALappsDoTimeSeriesAnalysis(LALStatus          *status,
       LALappsDoTSeriesSearch(status,SegVec->dataSeg[j],params,j);
       j++;
     };
-  printf("\n");
+  fprintf(stdout,"\n");
+  fflush(stdout);
   /* Free some of the memory used to do the analysis */
   if (params.dataSegVec)
     {
@@ -4006,15 +4074,6 @@ void LALappsTrackSearchWhitenSegments( LALStatus        *status,
       for (i=0;i<params.smoothAvgPSD-1;i++)
 	tmpExtendedAveragePSD->data[i+averagePSD->data->length+halfBlock]=
 	  averagePSD->data->data[averagePSD->data->length-i-1];
-/*       /\*Determine average of last blocksize points in PSD estimate *\/ */
-/*       for (i=averagePSD->data->length-params.smoothAvgPSD;i<averagePSD->data->length;i++) */
-/* 	meanValue=meanValue+averagePSD->data->data[i]; */
-/*       meanValue=meanValue/params.smoothAvgPSD; */
-/*       for (i=averagePSD->data->length-1; */
-/* 	   i<tmpExtendedAveragePSD->length; */
-/* 	   i++) */
-/* 	tmpExtendedAveragePSD->data[i]=meanValue; */
-
       /*
        * Setup running median parameters
        */

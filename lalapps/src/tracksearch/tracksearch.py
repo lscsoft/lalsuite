@@ -551,7 +551,8 @@ class tracksearchHousekeeperJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
                 sys.stderr.write("I'll assume you just forgot and we will keep those files.\n")
             self.add_ini_opts(cp,sec)
         workpath=cp.get('filelayout','workpath')
-        self.add_opt('parent-dir',workpath)
+        cleanPath=determineBlockPath(cp,self.block_id)
+        self.add_opt('parent-dir',cleanPath)
         blockPath=determineBlockPath(cp,self.block_id,channel)
         workpath=blockPath
         workpath_logs=workpath+'/logs'
