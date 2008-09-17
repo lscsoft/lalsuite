@@ -126,9 +126,6 @@ static REAL4Window *XLALREAL4Window_from_REAL8Window(REAL8Window *orig)
  * length > 0,
  * 0 <= i < length
  *
- * e.g., if length = 5 (odd), then 0 <= i < 3,
- * if length = 6 (even), then 0 <= i < 3
- *
  * Output:
  * length < 2 --> return 0.0
  * i == 0 --> return -1.0
@@ -137,6 +134,9 @@ static REAL4Window *XLALREAL4Window_from_REAL8Window(REAL8Window *orig)
  *
  * e.g., length = 5 (odd), then i == 2 --> return 0.0
  * if length = 6 (even), then i == 2.5 --> return 0.0
+ *
+ * (in the latter case, obviously i can't be a non-integer, but that's the
+ * value it would have to be for this function to return 0.0)
  */
 
 
