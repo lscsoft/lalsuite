@@ -180,6 +180,16 @@ tagAverageSpectrumParams
 }
 AverageSpectrumParams;
 
+typedef struct
+tagLALPSDRegressor
+{
+  int max_samples;
+  int n_samples;
+  COMPLEX16FrequencySeries *mean;
+  REAL8FrequencySeries *mean_square;
+}
+LALPSDRegressor;
+
 /**** <lalLaTeX>
  * \newpage\input{TimeFreqFFTC}
  * \newpage\input{TimeFreqFFTTestC}
@@ -339,16 +349,12 @@ REAL4TimeSeries *XLALREAL4Convolution(
 
 COMPLEX8FrequencySeries *XLALWhitenCOMPLEX8FrequencySeries(
     COMPLEX8FrequencySeries     *fseries,
-    const REAL4FrequencySeries  *psd,
-    REAL8                        fmin,
-    REAL8                        fmax
+    const REAL4FrequencySeries  *psd
     );
 
 COMPLEX16FrequencySeries *XLALWhitenCOMPLEX16FrequencySeries(
     COMPLEX16FrequencySeries    *fseries,
-    const REAL8FrequencySeries  *psd,
-    REAL8                        fmin,
-    REAL8                        fmax
+    const REAL8FrequencySeries  *psd
 );
 
 void
@@ -397,6 +403,53 @@ LALFreqTimeComplexFFT(
     COMPLEX8FrequencySeries *fser,
     ComplexFFTPlan          *plan
     );
+
+LALPSDRegressor *
+XLALPSDRegressorNew(
+    int max_samples
+);
+
+void
+XLALPSDRegressorFree(
+    LALPSDRegressor *r
+);
+
+void
+XLALPSDRegressorReset(
+    LALPSDRegressor *r
+);
+
+int
+XLALPSDRegressorAdd(
+    LALPSDRegressor *r,
+    const COMPLEX16FrequencySeries *sample
+);
+
+COMPLEX16FrequencySeries *
+XLALPSDRegressorGetMean(
+    const LALPSDRegressor *r,
+    const LIGOTimeGPS *epoch,
+    REAL8 min_sigma_sq
+);
+
+REAL8FrequencySeries *
+XLALPSDRegressorGetPSD(
+    const LALPSDRegressor *r
+);
+
+int
+XLALPSDRegressorSetPSD(
+    LALPSDRegressor *r,
+    const REAL8FrequencySeries *psd,
+    int weight
+);
+
+int
+XLALPSDRegressorRemoveLines(
+    const LALPSDRegressor *r,
+    COMPLEX16FrequencySeries *fseries,
+    REAL8 min_sigma_sq
+);
 
 #ifdef  __cplusplus
 #pragma {
