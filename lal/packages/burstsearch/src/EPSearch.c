@@ -188,7 +188,7 @@ SnglBurst *XLALEPSearch(
 
 #if 1
 		XLALPrintInfo("%s(): normalizing to the average spectrum\n", func);
-		if(!XLALWhitenCOMPLEX16FrequencySeries(fseries, psd, plane->flow, plane->flow + plane->channel_data->size2 * plane->deltaF)) {
+		if(!XLALWhitenCOMPLEX16FrequencySeries(fseries, psd)) {
 			errorcode = XLAL_EFUNC;
 			goto error;
 		}
