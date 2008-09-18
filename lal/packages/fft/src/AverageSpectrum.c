@@ -1392,25 +1392,24 @@ int XLALREAL8SpectrumInvertTruncate(
  * PSDs computed from high- or low-passed data can include 0s at one or the
  * other end of the spectrum, and these would normally result in
  * divide-by-zero errors.  This routine avoids PSD divide-by-zero errors by
- * permitting zeroes in the PSD outside of the band given by fmin <= f <
- * fmax.  The fmin and fmax parameters set the frequency band ``of
- * interest''.  Divide-by-zero errors within the band of interest are
- * reported, while divide-by-zero errors outside the band of interest are
- * ignored (the frequency bins are set to NaN).
+ * ignoring those frequency bins, setting them to zero in the frequency
+ * series.  The justification is that if the PSD is 0 then there must be
+ * nothing in that frequency bin to normalize anyway.
  *
  * The input PSD is allowed to span a larger frequency band than the input
  * frequency series, but the frequency resolutions of the two must be the
  * same.  The frequency series is modified in place.  The return value is
- * the input frequency series pointer on success, or NULL on error.  When
+ * the input frequency series' address on success, or NULL on error.  When
  * an error occurs, the contents of the input frequency series are
  * undefined.
  */
 
-COMPLEX8FrequencySeries *XLALWhitenCOMPLEX8FrequencySeries(COMPLEX8FrequencySeries *fseries, const REAL4FrequencySeries *psd, REAL8 fmin, REAL8 fmax)
+COMPLEX8FrequencySeries *XLALWhitenCOMPLEX8FrequencySeries(COMPLEX8FrequencySeries *fseries, const REAL4FrequencySeries *psd)
 {
   static const char func[] = "XLALWhitenCOMPLEX8FrequencySeries";
   COMPLEX8 *fdata = fseries->data->data;
   REAL4 *pdata = psd->data->data;
+  double norm = 2 * fseries->deltaF;
   unsigned i;	/* fseries index */
   unsigned j;	/* psd index */
 
@@ -1429,23 +1428,11 @@ COMPLEX8FrequencySeries *XLALWhitenCOMPLEX8FrequencySeries(COMPLEX8FrequencySeri
 
   for(i = 0; i < fseries->data->length; i++, j++)
   {
-    if(pdata[j] == 0)
-    {
-      /* PSD has a 0 in it */
-      REAL8 f = fseries->f0 + i * fseries->deltaF;
-      if((fmin <= f) && (f < fmax))
-        /* f is in band:  error */
-        XLAL_ERROR_NULL(func, XLAL_EFPDIV0);
-      else
-        /* f is out of band:  ignore, NaN the output */
-        fdata[i] = XLALCOMPLEX8Rect(XLAL_REAL4_FAIL_NAN, XLAL_REAL4_FAIL_NAN);
-    }
+    if(pdata[j])
+      fdata[i] = XLALCOMPLEX8MulReal(fdata[i], sqrt(norm / pdata[j]));
     else
-    {
-      REAL4 factor = sqrt(2 * fseries->deltaF / pdata[j]);
-      fdata[i].re *= factor;
-      fdata[i].im *= factor;
-    }
+      /* PSD has a 0 in it, treat as a zero in the filter */
+      fdata[i] = LAL_COMPLEX8_ZERO;
   }
 
   return fseries;
@@ -1456,11 +1443,12 @@ COMPLEX8FrequencySeries *XLALWhitenCOMPLEX8FrequencySeries(COMPLEX8FrequencySeri
  * Double-precision version of XLALWhitenCOMPLEX8FrequencySeries().
  */
 
-COMPLEX16FrequencySeries *XLALWhitenCOMPLEX16FrequencySeries(COMPLEX16FrequencySeries *fseries, const REAL8FrequencySeries *psd, REAL8 fmin, REAL8 fmax)
+COMPLEX16FrequencySeries *XLALWhitenCOMPLEX16FrequencySeries(COMPLEX16FrequencySeries *fseries, const REAL8FrequencySeries *psd)
 {
   static const char func[] = "XLALWhitenCOMPLEX16FrequencySeries";
   COMPLEX16 *fdata = fseries->data->data;
   REAL8 *pdata = psd->data->data;
+  double norm = 2 * fseries->deltaF;
   unsigned i;	/* fseries index */
   unsigned j;	/* psd index */
 
@@ -1479,23 +1467,11 @@ COMPLEX16FrequencySeries *XLALWhitenCOMPLEX16FrequencySeries(COMPLEX16FrequencyS
 
   for(i = 0; i < fseries->data->length; i++, j++)
   {
-    if(pdata[j] == 0)
-    {
-      /* PSD has a 0 in it */
-      REAL8 f = fseries->f0 + i * fseries->deltaF;
-      if((fmin <= f) && (f < fmax))
-        /* f is in band:  error */
-        XLAL_ERROR_NULL(func, XLAL_EFPDIV0);
-      else
-        /* f is out of band:  ignore, NaN the output */
-        fdata[i] = XLALCOMPLEX16Rect(XLAL_REAL8_FAIL_NAN, XLAL_REAL8_FAIL_NAN);
-    }
+    if(pdata[j])
+      fdata[i] = XLALCOMPLEX16MulReal(fdata[i], sqrt(norm / pdata[j]));
     else
-    {
-      REAL8 factor = sqrt(2 * fseries->deltaF / pdata[j]);
-      fdata[i].re *= factor;
-      fdata[i].im *= factor;
-    }
+      /* PSD has a 0 in it, treat as a zero in the filter */
+      fdata[i] = LAL_COMPLEX16_ZERO;
   }
 
   return fseries;
