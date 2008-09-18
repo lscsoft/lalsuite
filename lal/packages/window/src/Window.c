@@ -224,6 +224,60 @@ static REAL8 sum_samples(REAL8 *start, int length)
 /*
  * ============================================================================
  *
+ *                              Public Utilities
+ *
+ * ============================================================================
+ */
+
+
+/**
+ * Multiply a REAL8Sequence by a REAL8Window with a normalization that
+ * preserves the RMS of stationary noise.  If the window's length is N and
+ * its sum-of-squares is S, then the input sequence is multiplied by the
+ * window and \sqrt{N / S}.
+ */
+
+
+REAL8Sequence *XLALUnitaryWindowREAL8Sequence(REAL8Sequence *sequence, const REAL8Window *window)
+{
+	static const char func[] = "XLALUnitaryWindowREAL8Sequence";
+	unsigned i;
+	double norm = sqrt(window->data->length / window->sumofsquares);
+
+	if(sequence->length != window->data->length)
+		XLAL_ERROR_NULL(func, XLAL_EDATA);
+
+	for(i = 0; i < window->data->length; i++)
+		sequence->data[i] *= window->data->data[i] * norm;
+
+	return sequence;
+}
+
+
+/**
+ * Single precision version of XLALUnitaryWindowREAL8Sequence().
+ */
+
+
+REAL4Sequence *XLALUnitaryWindowREAL4Sequence(REAL4Sequence *sequence, const REAL4Window *window)
+{
+	static const char func[] = "XLALUnitaryWindowREAL4Sequence";
+	unsigned i;
+	float norm = sqrt(window->data->length / window->sumofsquares);
+
+	if(sequence->length != window->data->length)
+		XLAL_ERROR_NULL(func, XLAL_EDATA);
+
+	for(i = 0; i < window->data->length; i++)
+		sequence->data[i] *= window->data->data[i] * norm;
+
+	return sequence;
+}
+
+
+/*
+ * ============================================================================
+ *
  *                                REAL8Window
  *
  * ============================================================================

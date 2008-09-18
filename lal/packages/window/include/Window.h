@@ -72,6 +72,8 @@ REAL8Window *XLALCreateGaussREAL8Window(UINT4 length, REAL8 beta);
 void XLALDestroyREAL4Window(REAL4Window *window);
 void XLALDestroyREAL8Window(REAL8Window *window);
 
+REAL4Sequence *XLALUnitaryWindowREAL4Sequence(REAL4Sequence *sequence, const REAL4Window *window);
+REAL8Sequence *XLALUnitaryWindowREAL8Sequence(REAL8Sequence *sequence, const REAL8Window *window);
 
 /*
  * LEGACY CODE:  DO NOT USE!!!
