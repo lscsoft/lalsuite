@@ -28,6 +28,7 @@
 #include <lal/TimeFreqFFT.h>
 #include <lal/Units.h>
 #include <lal/Window.h>
+#include <lal/Date.h>
 
 #include <lal/LALRCSID.h>
 NRCSID (AVERAGESPECTRUMC,"$Id$");
@@ -1477,3 +1478,309 @@ COMPLEX16FrequencySeries *XLALWhitenCOMPLEX16FrequencySeries(COMPLEX16FrequencyS
   return fseries;
 }
 
+
+/**
+ * PSD regression functions.
+ */
+
+
+LALPSDRegressor *XLALPSDRegressorNew(int max_samples)
+{
+  static const char func[] = "XLALPSDRegressorNew";
+  LALPSDRegressor *new;
+
+  if(max_samples < 1)
+    XLAL_ERROR_NULL(func, XLAL_EINVAL);
+
+  new = XLALMalloc(sizeof(*new));
+  if(!new)
+    XLAL_ERROR_NULL(func, XLAL_EFUNC);
+
+  new->max_samples = max_samples;
+  new->n_samples = 0;
+  new->mean = NULL;
+  new->mean_square = NULL;
+
+  return new;
+}
+
+
+void XLALPSDRegressorFree(LALPSDRegressor *r)
+{
+  if(r)
+  {
+    XLALDestroyCOMPLEX16FrequencySeries(r->mean);
+    XLALDestroyREAL8FrequencySeries(r->mean_square);
+  }
+  free(r);
+}
+
+
+void XLALPSDRegressorReset(LALPSDRegressor *r)
+{
+  r->n_samples = 0;
+}
+
+
+int XLALPSDRegressorAdd(LALPSDRegressor *r, const COMPLEX16FrequencySeries *sample)
+{
+  static const char func[] = "XLALPSDRegressorAdd";
+  const double max_sigma_sq = 64;
+  double delta_epoch;
+  unsigned i;
+
+  /* create frequency series if required */
+
+  if(!r->mean)
+  {
+    r->mean = XLALCutCOMPLEX16FrequencySeries(sample, 0, sample->data->length);
+    r->mean_square = XLALCreateREAL8FrequencySeries(sample->name, &sample->epoch, sample->f0, sample->deltaF, &sample->sampleUnits, sample->data->length);
+    if(!r->mean || !r->mean_square)
+    {
+      XLALDestroyCOMPLEX16FrequencySeries(r->mean);
+      XLALDestroyREAL8FrequencySeries(r->mean_square);
+      r->mean = NULL;
+      r->mean_square = NULL;
+      XLAL_ERROR(func, XLAL_EFUNC);
+    }
+    XLALUnitSquare(&r->mean_square->sampleUnits, &r->mean_square->sampleUnits);
+    for(i = 0; i < r->mean_square->data->length; i++)
+      r->mean_square->data->data[i] = XLALCOMPLEX16Abs2(sample->data->data[i]);
+    r->n_samples = 1;
+    return 0;
+  }
+  else if((sample->f0 != r->mean->f0) || (sample->deltaF != r->mean->deltaF) || (sample->data->length != r->mean->data->length))
+  {
+    XLALPrintError("%s(): input parameter mismatch", func);
+    XLAL_ERROR(func, XLAL_EDATA);
+  }
+
+  /* compute the change in epoch */
+
+  delta_epoch = XLALGPSDiff(&sample->epoch, &r->mean->epoch);
+
+  /* bump the number of samples that have been recorded */
+
+  if(r->n_samples < r->max_samples)
+    r->n_samples++;
+  else
+    /* just in case */
+    r->n_samples = r->max_samples;
+
+  /* loop over frequency bins */
+
+  for(i = 0; i < sample->data->length; i++)
+  {
+    /* rotate the frequency bin by the phase accrued due to the change in
+     * epoch */
+
+    COMPLEX16 z = XLALCOMPLEX16Mul(sample->data->data[i], XLALCOMPLEX16Polar(1.0, -LAL_TWOPI * (sample->f0 + i * sample->deltaF) * delta_epoch));
+
+#if 0
+    /* clip samples against the boundary defined by the maximum allowed
+     * deviation from the mean */
+
+    if(r->n_samples > 1)
+    {
+      /* sigma_sq = |z - <z>|^2 / (<|z|^2> - |<z>|^2) */
+      double sigma_sq = XLALCOMPLEX16Abs2(XLALCOMPLEX16Sub(z, r->mean->data->data[i])) / (r->mean_square->data->data[i] - XLALCOMPLEX16Abs2(r->mean->data->data[i]));
+      if(sigma_sq > max_sigma_sq)
+        z = XLALCOMPLEX16Add(r->mean->data->data[i], XLALCOMPLEX16MulReal(XLALCOMPLEX16Sub(z, r->mean->data->data[i]), sqrt(max_sigma_sq / sigma_sq)));
+    }
+#endif
+
+    /* update the mean and mean square */
+
+    r->mean_square->data->data[i] = (r->mean_square->data->data[i] * (r->n_samples - 1) + XLALCOMPLEX16Abs2(z)) / r->n_samples;
+    r->mean->data->data[i] = XLALCOMPLEX16DivReal(XLALCOMPLEX16Add(XLALCOMPLEX16MulReal(r->mean->data->data[i], r->n_samples - 1), z), r->n_samples);
+  }
+
+  return 0;
+}
+
+
+/*
+ * returns the square of the number of standard deviations by which the
+ * mean is != 0.  note that
+ *
+ * sigma^2 = |0 - <z>|^2 / variance
+ *
+ * and
+ *
+ * variance=<|z|^2> - |<z>|^2
+ *
+ * therefore
+ *
+ * sigma^2 = 1 / (<|z|^2> / |<z>|^2 - 1)
+ */
+
+
+static double psd_regressor_mean_significance(const LALPSDRegressor *r, unsigned i)
+{
+  return 1.0 / (r->mean_square->data->data[i] / XLALCOMPLEX16Abs2(r->mean->data->data[i]) - 1.0);
+}
+
+
+COMPLEX16FrequencySeries *XLALPSDRegressorGetMean(const LALPSDRegressor *r, const LIGOTimeGPS *epoch, REAL8 min_sigma_sq)
+{
+  static const char func[] = "XLALPSDRegressorGetMean";
+  double delta_epoch = XLALGPSDiff(epoch, &r->mean->epoch);
+  COMPLEX16FrequencySeries *mean;
+  COMPLEX16 *mdata;
+  unsigned i;
+
+  /* initialized yet? */
+
+  if(!r->mean) {
+    XLALPrintError("%s: not initialized", func);
+    XLAL_ERROR_NULL(func, XLAL_EDATA);
+  }
+
+  /* make a copy the mean */
+
+  mean = XLALCutCOMPLEX16FrequencySeries(r->mean, 0, r->mean->data->length);
+  if(!mean)
+    XLAL_ERROR_NULL(func, XLAL_EFUNC);
+  mdata = mean->data->data;
+
+  /* rotate the phase of each bin to the desired epoch, and set bins that
+   * are not sufficiently far from 0 to 0. */
+
+  mean->epoch = *epoch;
+  for(i = 0; i < mean->data->length; i++)
+  {
+    if(psd_regressor_mean_significance(r, i) >= min_sigma_sq)
+      /* FIXME: is the sign of the phase shift right? */
+      mdata[i] = XLALCOMPLEX16Mul(mdata[i], XLALCOMPLEX16Polar(1.0, LAL_TWOPI * (mean->f0 + i * mean->deltaF) * delta_epoch));
+    else
+      mdata[i] = LAL_COMPLEX16_ZERO;
+  }
+
+  /* done */
+
+  return mean;
+}
+
+
+REAL8FrequencySeries *XLALPSDRegressorGetPSD(const LALPSDRegressor *r)
+{
+  static const char func[] = "XLALPSDRegressorGetPSD";
+  COMPLEX16 *mdata = r->mean->data->data;
+  REAL8FrequencySeries *psd;
+  REAL8 *pdata;
+  /* arbitrary constant to make result comply with LAL definition of PSD */
+  double lal_normalization_constant = 2 * r->mean_square->deltaF;
+  unsigned i;
+
+  /* initialized yet? */
+
+  if(!r->mean_square) {
+    XLALPrintError("%s: not initialized", func);
+    XLAL_ERROR_NULL(func, XLAL_EDATA);
+  }
+
+  /* start with a copy of the mean square */
+
+  /* FIXME: adjust the name */
+  psd = XLALCutREAL8FrequencySeries(r->mean_square, 0, r->mean_square->data->length);
+  if(!psd)
+    XLAL_ERROR_NULL(func, XLAL_EFUNC);
+  pdata = psd->data->data;
+
+  /* PSD = variance * (arbitrary normalization), variance = <|z|^2> -
+   * |<z>|^2 */
+
+  for(i = 0; i < psd->data->length; i++)
+    pdata[i] = (pdata[i] - XLALCOMPLEX16Abs2(mdata[i])) * lal_normalization_constant;
+
+  /* normalization constant has units of Hz */
+
+  XLALUnitMultiply(&psd->sampleUnits, &psd->sampleUnits, &lalHertzUnit);
+
+  /* done */
+
+  return psd;
+}
+
+
+int XLALPSDRegressorSetPSD(LALPSDRegressor *r, const REAL8FrequencySeries *psd, int weight)
+{
+  static const char func[] = "XLALPSDRegressorSetPSD";
+  /* arbitrary constant to remove from LAL definition of PSD */
+  double lal_normalization_constant;
+  unsigned i;
+
+  if(!r->mean)
+  {
+    /* create space for the mean */
+    r->mean = XLALCreateCOMPLEX16FrequencySeries(psd->name, &psd->epoch, psd->f0, psd->deltaF, &psd->sampleUnits, psd->data->length);
+    /* initialize the mean square to a copy of the PSD */
+    r->mean_square = XLALCutREAL8FrequencySeries(psd, 0, psd->data->length);
+    /* failure? */
+    if(!r->mean || !r->mean_square)
+    {
+      XLALDestroyCOMPLEX16FrequencySeries(r->mean);
+      XLALDestroyREAL8FrequencySeries(r->mean_square);
+      r->mean = NULL;
+      r->mean_square = NULL;
+      XLAL_ERROR(func, XLAL_EFUNC);
+    }
+    /* normalization constant to be removed has units of Hz */
+    XLALUnitDivide(&r->mean->sampleUnits, &r->mean->sampleUnits, &lalHertzUnit);
+    XLALUnitDivide(&r->mean_square->sampleUnits, &r->mean_square->sampleUnits, &lalHertzUnit);
+    /* fix the exponent of mean's units */
+    XLALUnitSqrt(&r->mean->sampleUnits, &r->mean->sampleUnits);
+    /* set the mean to 0 */
+    memset(r->mean->data->data, 0, r->mean->data->length * sizeof(*r->mean->data->data));
+  }
+  else if((psd->f0 != r->mean->f0) || (psd->deltaF != r->mean->deltaF) || (psd->data->length != r->mean->data->length))
+  {
+    XLALPrintError("%s(): input parameter mismatch", func);
+    XLAL_ERROR(func, XLAL_EDATA);
+  }
+  else
+  {
+    /* copy the PSD data into the mean square data */
+    memcpy(r->mean_square->data->data, psd->data->data, psd->data->length * sizeof(*psd->data->data));
+  }
+
+  /* remove the normalization factor from the input psd, and add the square
+   * of the mean */
+  lal_normalization_constant = 2 * r->mean_square->deltaF;
+  for(i = 0; i < r->mean_square->data->length; i++)
+    r->mean_square->data->data[i] = r->mean_square->data->data[i] / lal_normalization_constant + XLALCOMPLEX16Abs2(r->mean->data->data[i]);
+
+  /* set the n_samples paramter */
+  r->n_samples = weight <= r->max_samples ? weight : r->max_samples;
+
+  return 0;
+}
+
+
+int XLALPSDRegressorRemoveLines(const LALPSDRegressor *r, COMPLEX16FrequencySeries *fseries, REAL8 min_sigma_sq)
+{
+  static const char func[] = "XLALPSDRegressorRemoveLines";
+  COMPLEX16 *mdata = r->mean->data->data;
+  COMPLEX16 *fdata = fseries->data->data;
+  double delta_epoch = XLALGPSDiff(&fseries->epoch, &r->mean->epoch);
+  unsigned i;	/* fseries index */
+  unsigned j;	/* mean index */
+
+  if((r->mean->deltaF != fseries->deltaF) || (fseries->f0 < r->mean->f0))
+    /* resolution mismatch, or mean does not span fseries at low end */
+    XLAL_ERROR(func, XLAL_EINVAL);
+  j = (fseries->f0 - r->mean->f0) / r->mean->deltaF;
+  if(j * r->mean->deltaF + r->mean->f0 != fseries->f0)
+    /* fseries does not start on an integer sample of the mean */
+    XLAL_ERROR(func, XLAL_EINVAL);
+  if(j + fseries->data->length > r->mean->data->length)
+    /* mean does not span fseries at high end */
+    XLAL_ERROR(func, XLAL_EINVAL);
+
+  for(i = 0; i < fseries->data->length; i++, j++)
+    if(psd_regressor_mean_significance(r, j) >= min_sigma_sq)
+      /* FIXME:  is the sign in the phase shift right? */
+      fdata[i] = XLALCOMPLEX16Sub(fdata[i], XLALCOMPLEX16Mul(mdata[j], XLALCOMPLEX16Polar(1.0, LAL_TWOPI * (fseries->f0 + i * fseries->deltaF) * delta_epoch)));
+
+  return 0;
+}
