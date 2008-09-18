@@ -35,6 +35,7 @@
 #include <lal/TimeSeries.h>
 #include <lal/Units.h>
 #include <lal/XLALError.h>
+#include <lal/Window.h>
 
 
 #include <lal/LALRCSID.h>
@@ -62,11 +63,11 @@ SnglBurst *XLALEPSearch(
 	SnglBurst *head = NULL;
 	int errorcode = 0;
 	int start_sample;
-	COMPLEX16FrequencySeries *fseries = NULL;
+	COMPLEX16FrequencySeries *fseries;
 	REAL8FFTPlan *fplan;
 	REAL8FFTPlan *rplan;
 	REAL8FrequencySeries *psd;
-	REAL8TimeSeries *cuttseries;
+	REAL8TimeSeries *cuttseries = NULL;
 	LALExcessPowerFilterBank *filter_bank = NULL;
 	REAL8TimeFrequencyPlane *plane;
 
@@ -75,13 +76,16 @@ SnglBurst *XLALEPSearch(
 	 * the time-frequency plane, and a tiling.  Note that the flat part
 	 * of the Tukey window needs to match the locations of the tiles as
 	 * specified by the tiling_start parameter of XLALCreateTFPlane.
+	 * The metadata for the two frequency series will be filled in
+	 * later, so it doesn't all have to be correct here.
 	 */
 
 	fplan = XLALCreateForwardREAL8FFTPlan(window->data->length, 1);
 	rplan = XLALCreateReverseREAL8FFTPlan(window->data->length, 1);
 	psd = XLALCreateREAL8FrequencySeries("PSD", &tseries->epoch, 0, 0, &lalDimensionlessUnit, window->data->length / 2 + 1);
+	fseries = XLALCreateCOMPLEX16FrequencySeries(tseries->name, &tseries->epoch, 0, 0, &lalDimensionlessUnit, window->data->length / 2 + 1);
 	plane = XLALCreateTFPlane(window->data->length, tseries->deltaT, flow, bandwidth, fractional_stride, maxTileBandwidth, maxTileDuration);
-	if(!fplan || !rplan || !psd || !plane) {
+	if(!fplan || !rplan || !psd || !fseries || !plane) {
 		errorcode = XLAL_EFUNC;
 		goto error;
 	}
@@ -150,8 +154,7 @@ SnglBurst *XLALEPSearch(
 		XLALPrintInfo(" complete\n");
 
 		/*
-		 * Extract a window-length of data from the time series,
-		 * compute its DFT, then free it.
+		 * Extract a window-length of data from the time series.
 		 */
 
 		cuttseries = XLALCutREAL8TimeSeries(tseries, start_sample, plane->window->data->length);
@@ -163,13 +166,21 @@ SnglBurst *XLALEPSearch(
 		if(diagnostics)
 			diagnostics->XLALWriteLIGOLwXMLArrayREAL8TimeSeries(diagnostics->LIGOLwXMLStream, NULL, cuttseries);
 
+		/*
+		 * Window and DFT the time series.
+		 */
+
 		XLALPrintInfo("%s(): computing the Fourier transform\n", func);
-		fseries = XLALWindowedREAL8ForwardFFT(cuttseries, plane->window, fplan);
-		XLALDestroyREAL8TimeSeries(cuttseries);
-		if(!fseries) {
+		if(!XLALUnitaryWindowREAL8Sequence(cuttseries->data, plane->window)) {
 			errorcode = XLAL_EFUNC;
 			goto error;
 		}
+		if(XLALREAL8TimeFreqFFT(fseries, cuttseries, fplan)) {
+			errorcode = XLAL_EFUNC;
+			goto error;
+		}
+		XLALDestroyREAL8TimeSeries(cuttseries);
+		cuttseries = NULL;
 
 		/*
 		 * Normalize the frequency series to the average PSD.
@@ -195,8 +206,6 @@ SnglBurst *XLALEPSearch(
 			errorcode = XLAL_EFUNC;
 			goto error;
 		}
-		XLALDestroyCOMPLEX16FrequencySeries(fseries);
-		fseries = NULL;
 
 		/*
 		 * Compute the excess power for each time-frequency tile
@@ -226,6 +235,7 @@ SnglBurst *XLALEPSearch(
 	XLALDestroyREAL8FFTPlan(fplan);
 	XLALDestroyREAL8FFTPlan(rplan);
 	XLALDestroyREAL8FrequencySeries(psd);
+	XLALDestroyREAL8TimeSeries(cuttseries);
 	XLALDestroyCOMPLEX16FrequencySeries(fseries);
 	XLALDestroyExcessPowerFilterBank(filter_bank);
 	XLALDestroyTFPlane(plane);
