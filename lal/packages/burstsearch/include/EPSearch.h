@@ -72,20 +72,6 @@ SnglBurst *XLALEPSearch(
 );
 
 
-COMPLEX8FrequencySeries *XLALWindowedREAL4ForwardFFT(
-	const REAL4TimeSeries *tseries,
-	const REAL4Window *window,
-	const REAL4FFTPlan *plan
-);
-
-
-COMPLEX16FrequencySeries *XLALWindowedREAL8ForwardFFT(
-	const REAL8TimeSeries *tseries,
-	const REAL8Window *window,
-	const REAL8FFTPlan *plan
-);
-
-
 #ifdef  __cplusplus
 }
 #endif  /* C++ protection. */
