@@ -45,6 +45,9 @@ typedef struct tagREAL8Window {
 } REAL8Window;
 
 
+REAL4Window *XLALCreateREAL4WindowFromSequence(REAL4Sequence *sequence);
+REAL8Window *XLALCreateREAL8WindowFromSequence(REAL8Sequence *sequence);
+
 REAL4Window *XLALCreateRectangularREAL4Window(UINT4 length);
 REAL4Window *XLALCreateHannREAL4Window(UINT4 length);
 REAL4Window *XLALCreateWelchREAL4Window(UINT4 length);

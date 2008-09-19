@@ -51,33 +51,6 @@ NRCSID(WINDOWC, "$Id$");
 
 
 /*
- * Allocates a new REAL8Window.
- */
-
-
-static REAL8Window *REAL8WindowNew(UINT4 length)
-{
-	REAL8Window *window;
-	REAL8Sequence *data;
-
-	window = XLALMalloc(sizeof(*window));
-	data = XLALCreateREAL8Sequence(length);
-	if(!window || !data) {
-		XLALFree(window);
-		XLALDestroyREAL8Sequence(data);
-		return NULL;
-	}
-
-	window->data = data;
-	/* for safety */
-	window->sumofsquares = XLAL_REAL8_FAIL_NAN;
-	window->sum = XLAL_REAL8_FAIL_NAN;
-
-	return window;
-}
-
-
-/*
  * Constructs a REAL4Window from a REAL8Window by quantizing the
  * double-precision data to single-precision.  The REAL8Window is freed
  * unconditionally.  Intended to be used as a wrapper, to convert any
@@ -231,6 +204,72 @@ static REAL8 sum_samples(REAL8 *start, int length)
 
 
 /**
+ * Constructs a new REAL8Window from a REAL8Sequence.  The window "owns"
+ * the sequence, when the window is destroyed the sequence will be
+ * destroyed with it.  If this function fails, the sequence is destroyed.
+ * The return value is the address of the newly allocated REAL8Window or
+ * NULL on failure.
+ */
+
+
+REAL8Window *XLALCreateREAL8WindowFromSequence(REAL8Sequence *sequence)
+{
+	static const char func[] = "XLALCreateREAL8WindowFromSequence";
+	REAL8Window *new;
+
+	new = XLALMalloc(sizeof(*new));
+	if(!new) {
+		XLALDestroyREAL8Sequence(sequence);
+		XLAL_ERROR_NULL(func, XLAL_EFUNC);
+	}
+
+	new->data = sequence;
+	new->sumofsquares = sum_squares(new->data->data, new->data->length);
+	new->sum = sum_samples(new->data->data, new->data->length);
+
+	return new;
+}
+
+
+/**
+ * Single-precision version of XLALCreateREAL8WindowFromSequence().
+ */
+
+
+REAL4Window *XLALCreateREAL4WindowFromSequence(REAL4Sequence *sequence)
+{
+	static const char func[] = "XLALCreateREAL4WindowFromSequence";
+	/* a double-precision copy of the data is used from which to
+	 * compute the window's metadata.  this provides for more accurate
+	 * results, but mostly means I don't have to write single-precision
+	 * versions of the summing loops */
+	REAL8Sequence *workspace;
+	REAL4Window *new;
+	UINT4 i;
+
+	workspace = XLALCreateREAL8Sequence(sequence->length);
+	new = XLALMalloc(sizeof(*new));
+	if(!workspace || !new) {
+		XLALDestroyREAL4Sequence(sequence);
+		XLALDestroyREAL8Sequence(workspace);
+		XLALFree(new);
+		XLAL_ERROR_NULL(func, XLAL_EFUNC);
+	}
+
+	for(i = 0; i < workspace->length; i++)
+		workspace->data[i] = sequence->data[i];
+
+	new->data = sequence;
+	new->sumofsquares = sum_squares(workspace->data, workspace->length);
+	new->sum = sum_samples(workspace->data, workspace->length);
+
+	XLALDestroyREAL8Sequence(workspace);
+
+	return new;
+}
+
+
+/**
  * Multiply a REAL8Sequence by a REAL8Window with a normalization that
  * preserves the RMS of stationary noise.  If the window's length is N and
  * its sum-of-squares is S, then the input sequence is multiplied by the
@@ -289,21 +328,18 @@ REAL8Window *XLALCreateRectangularREAL8Window(UINT4 length)
 /* </lalVerbatim> */
 {
 	static const char func[] = "XLALCreateRectangularREAL8Window";
-	REAL8Window *window;
+	REAL8Sequence *sequence;
 	UINT4 i;
 
-	window = REAL8WindowNew(length);
-	if(!window)
-		XLAL_ERROR_NULL(func, XLAL_ENOMEM);
+	sequence = XLALCreateREAL8Sequence(length);
+	if(!sequence)
+		XLAL_ERROR_NULL(func, XLAL_EFUNC);
 
 	/* flat, box-car, top-hat, rectangle, whatever */
 	for(i = 0; i < length; i++)
-		window->data->data[i] = 1;
+		sequence->data[i] = 1;
 
-	window->sumofsquares = length;
-	window->sum = length;
-
-	return window;
+	return XLALCreateREAL8WindowFromSequence(sequence);
 }
 
 
@@ -312,21 +348,18 @@ REAL8Window *XLALCreateHannREAL8Window(UINT4 length)
 /* </lalVerbatim> */
 {
 	static const char func[] = "XLALCreateHannREAL8Window";
-	REAL8Window *window;
+	REAL8Sequence *sequence;
 	UINT4 i;
 
-	window = REAL8WindowNew(length);
-	if(!window)
-		XLAL_ERROR_NULL(func, XLAL_ENOMEM);
+	sequence = XLALCreateREAL8Sequence(length);
+	if(!sequence)
+		XLAL_ERROR_NULL(func, XLAL_EFUNC);
 
 	/* cos^2, zero at both end points, 1 in the middle */
 	for(i = 0; i < (length + 1) / 2; i++)
-		window->data->data[i] = window->data->data[length - 1 - i] = pow(cos(LAL_PI_2 * Y(length, i)), 2);
+		sequence->data[i] = sequence->data[length - 1 - i] = pow(cos(LAL_PI_2 * Y(length, i)), 2);
 
-	window->sumofsquares = sum_squares(window->data->data, window->data->length);
-	window->sum = sum_samples(window->data->data, window->data->length);
-
-	return window;
+	return XLALCreateREAL8WindowFromSequence(sequence);
 }
 
 
@@ -335,22 +368,19 @@ REAL8Window *XLALCreateWelchREAL8Window(UINT4 length)
 /* </lalVerbatim> */
 {
 	static const char func[] = "XLALCreateWelchREAL8Window";
-	REAL8Window *window;
+	REAL8Sequence *sequence;
 	UINT4 i;
 
-	window = REAL8WindowNew(length);
-	if(!window)
-		XLAL_ERROR_NULL(func, XLAL_ENOMEM);
+	sequence = XLALCreateREAL8Sequence(length);
+	if(!sequence)
+		XLAL_ERROR_NULL(func, XLAL_EFUNC);
 
 	/* downward-opening parabola, zero at both end points, 1 in the
 	 * middle */
 	for(i = 0; i < (length + 1) / 2; i++)
-		window->data->data[i] = window->data->data[length - 1 - i] = 1 - pow(Y(length, i), 2.0);
+		sequence->data[i] = sequence->data[length - 1 - i] = 1 - pow(Y(length, i), 2.0);
 
-	window->sumofsquares = sum_squares(window->data->data, window->data->length);
-	window->sum = sum_samples(window->data->data, window->data->length);
-
-	return window;
+	return XLALCreateREAL8WindowFromSequence(sequence);
 }
 
 
@@ -359,23 +389,20 @@ REAL8Window *XLALCreateBartlettREAL8Window(UINT4 length)
 /* </lalVerbatim> */
 {
 	static const char func[] = "XLALCreateBartlettREAL8Window";
-	REAL8Window *window;
+	REAL8Sequence *sequence;
 	UINT4 i;
 
-	window = REAL8WindowNew(length);
-	if(!window)
-		XLAL_ERROR_NULL(func, XLAL_ENOMEM);
+	sequence = XLALCreateREAL8Sequence(length);
+	if(!sequence)
+		XLAL_ERROR_NULL(func, XLAL_EFUNC);
 
 	/* downward-opening triangle, zero at both end points (non-zero end
 	 * points is a different window called the "triangle" window), 1 in
 	 * the middle */
 	for(i = 0; i < (length + 1) / 2; i++)
-		window->data->data[i] = window->data->data[length - 1 - i] = 1 + Y(length, i);
+		sequence->data[i] = sequence->data[length - 1 - i] = 1 + Y(length, i);
 
-	window->sumofsquares = sum_squares(window->data->data, window->data->length);
-	window->sum = sum_samples(window->data->data, window->data->length);
-
-	return window;
+	return XLALCreateREAL8WindowFromSequence(sequence);
 }
 
 
@@ -384,25 +411,22 @@ REAL8Window *XLALCreateParzenREAL8Window(UINT4 length)
 /* </lalVerbatim> */
 {
 	static const char func[] = "XLALCreateParzenREAL8Window";
-	REAL8Window *window;
+	REAL8Sequence *sequence;
 	UINT4 i;
 
-	window = REAL8WindowNew(length);
-	if(!window)
-		XLAL_ERROR_NULL(func, XLAL_ENOMEM);
+	sequence = XLALCreateREAL8Sequence(length);
+	if(!sequence)
+		XLAL_ERROR_NULL(func, XLAL_EFUNC);
 
 	/* ?? Copied from LAL Software Description */
 	for(i = 0; i < (length + 1) / 4; i++)
-		window->data->data[i] = window->data->data[length - 1 - i] = 2 * pow(1 + Y(length, i), 3);
+		sequence->data[i] = sequence->data[length - 1 - i] = 2 * pow(1 + Y(length, i), 3);
 	for(; i < (length + 1) / 2; i++) {
 		double y = Y(length, i);
-		window->data->data[i] = window->data->data[length - 1 - i] = 1 - 6 * y * y * (1 + y);
+		sequence->data[i] = sequence->data[length - 1 - i] = 1 - 6 * y * y * (1 + y);
 	}
 
-	window->sumofsquares = sum_squares(window->data->data, window->data->length);
-	window->sum = sum_samples(window->data->data, window->data->length);
-
-	return window;
+	return XLALCreateREAL8WindowFromSequence(sequence);
 }
 
 
@@ -411,23 +435,20 @@ REAL8Window *XLALCreatePapoulisREAL8Window(UINT4 length)
 /* </lalVerbatim> */
 {
 	static const char func[] = "XLALCreatePapoulisREAL8Window";
-	REAL8Window *window;
+	REAL8Sequence *sequence;
 	UINT4 i;
 
-	window = REAL8WindowNew(length);
-	if(!window)
-		XLAL_ERROR_NULL(func, XLAL_ENOMEM);
+	sequence = XLALCreateREAL8Sequence(length);
+	if(!sequence)
+		XLAL_ERROR_NULL(func, XLAL_EFUNC);
 
 	/* ?? Copied from LAL Software Description */
 	for(i = 0; i < (length + 1) / 2; i++) {
 		double y = Y(length, i);
-		window->data->data[i] = window->data->data[length - 1 - i] = (1 + y) * cos(LAL_PI * y) - sin(LAL_PI * y) / LAL_PI;
+		sequence->data[i] = sequence->data[length - 1 - i] = (1 + y) * cos(LAL_PI * y) - sin(LAL_PI * y) / LAL_PI;
 	}
 
-	window->sumofsquares = sum_squares(window->data->data, window->data->length);
-	window->sum = sum_samples(window->data->data, window->data->length);
-
-	return window;
+	return XLALCreateREAL8WindowFromSequence(sequence);
 }
 
 
@@ -436,21 +457,18 @@ REAL8Window *XLALCreateHammingREAL8Window(UINT4 length)
 /* </lalVerbatim> */
 {
 	static const char func[] = "XLALCreateHammingREAL8Window";
-	REAL8Window *window;
+	REAL8Sequence *sequence;
 	UINT4 i;
 
-	window = REAL8WindowNew(length);
-	if(!window)
-		XLAL_ERROR_NULL(func, XLAL_ENOMEM);
+	sequence = XLALCreateREAL8Sequence(length);
+	if(!sequence)
+		XLAL_ERROR_NULL(func, XLAL_EFUNC);
 
 	/* cos^2, like Hann window, but with a bias of 0.08 */
 	for(i = 0; i < (length + 1) / 2; i++)
-		window->data->data[i] = window->data->data[length - 1 - i] = 0.08 + 0.92 * pow(cos(LAL_PI_2 * Y(length, i)), 2);
+		sequence->data[i] = sequence->data[length - 1 - i] = 0.08 + 0.92 * pow(cos(LAL_PI_2 * Y(length, i)), 2);
 
-	window->sumofsquares = sum_squares(window->data->data, window->data->length);
-	window->sum = sum_samples(window->data->data, window->data->length);
-
-	return window;
+	return XLALCreateREAL8WindowFromSequence(sequence);
 }
 
 
@@ -459,16 +477,16 @@ REAL8Window *XLALCreateKaiserREAL8Window(UINT4 length, REAL8 beta)
 /* </lalVerbatim> */
 {
 	static const char func[] = "XLALCreateKaiserREAL8Window";
-	REAL8Window *window;
+	REAL8Sequence *sequence;
 	REAL8 I0beta;
 	UINT4 i;
 
 	if(beta < 0)
 		XLAL_ERROR_NULL(func, XLAL_ERANGE);
 
-	window = REAL8WindowNew(length);
-	if(!window)
-		XLAL_ERROR_NULL(func, XLAL_ENOMEM);
+	sequence = XLALCreateREAL8Sequence(length);
+	if(!sequence)
+		XLAL_ERROR_NULL(func, XLAL_EFUNC);
 
 	/* pre-compute I0(beta) */
 	if(beta < 705)
@@ -529,18 +547,15 @@ REAL8Window *XLALCreateKaiserREAL8Window(UINT4 length, REAL8 beta)
 		}
 
 		if(beta < 695)
-			window->data->data[i] = window->data->data[length - 1 - i] = w1;
+			sequence->data[i] = sequence->data[length - 1 - i] = w1;
 		else if(beta < 705) {
 			double r = (beta - 695) / (705 - 695);
-			window->data->data[i] = window->data->data[length - 1 - i] = (1 - r) * w1 + r * w2;
+			sequence->data[i] = sequence->data[length - 1 - i] = (1 - r) * w1 + r * w2;
 		} else
-			window->data->data[i] = window->data->data[length - 1 - i] = w2;
+			sequence->data[i] = sequence->data[length - 1 - i] = w2;
 	}
 
-	window->sumofsquares = sum_squares(window->data->data, window->data->length);
-	window->sum = sum_samples(window->data->data, window->data->length);
-
-	return window;
+	return XLALCreateREAL8WindowFromSequence(sequence);
 }
 
 
@@ -549,15 +564,15 @@ REAL8Window *XLALCreateCreightonREAL8Window(UINT4 length, REAL8 beta)
 /* </lalVerbatim> */
 {
 	static const char func[] = "XLALCreateCreightonREAL8Window";
-	REAL8Window *window;
+	REAL8Sequence *sequence;
 	UINT4 i;
 
 	if(beta < 0)
 		XLAL_ERROR_NULL(func, XLAL_ERANGE);
 
-	window = REAL8WindowNew(length);
-	if(!window)
-		XLAL_ERROR_NULL(func, XLAL_ENOMEM);
+	sequence = XLALCreateREAL8Sequence(length);
+	if(!sequence)
+		XLAL_ERROR_NULL(func, XLAL_EFUNC);
 
 	/* ?? Copied from LAL Software Description */
 	for(i = 0; i < (length + 1) / 2; i++) {
@@ -574,13 +589,10 @@ REAL8Window *XLALCreateCreightonREAL8Window(UINT4 length, REAL8 beta)
 		 * evaluate to +inf instead of 0 at the end points. See
 		 * also the -0 at the end points of the Welch window on
 		 * Macs. */
-		window->data->data[i] = window->data->data[length - 1 - i] = (beta == 0 && y == -1) || y == 0 ? 1 : exp(-beta * y * y / fabs(1 - y * y));
+		sequence->data[i] = sequence->data[length - 1 - i] = (beta == 0 && y == -1) || y == 0 ? 1 : exp(-beta * y * y / fabs(1 - y * y));
 	}
 
-	window->sumofsquares = sum_squares(window->data->data, window->data->length);
-	window->sum = sum_samples(window->data->data, window->data->length);
-
-	return window;
+	return XLALCreateREAL8WindowFromSequence(sequence);
 }
 
 
@@ -589,30 +601,27 @@ REAL8Window *XLALCreateTukeyREAL8Window(UINT4 length, REAL8 beta)
 /* </lalVerbatim> */
 {
 	static const char func[] = "XLALCreateTukeyREAL8Window";
-	REAL8Window *window;
+	REAL8Sequence *sequence;
 	UINT4 transition_length = beta * length + 0.5;
 	UINT4 i;
 
 	if(beta < 0 || beta > 1)
 		XLAL_ERROR_NULL(func, XLAL_ERANGE);
 
-	window = REAL8WindowNew(length);
-	if(!window)
-		XLAL_ERROR_NULL(func, XLAL_ENOMEM);
+	sequence = XLALCreateREAL8Sequence(length);
+	if(!sequence)
+		XLAL_ERROR_NULL(func, XLAL_EFUNC);
 
 	/* 1.0 and flat in the middle, cos^2 transition at each end, zero
 	 * at end points, 0.0 <= beta <= 1.0 sets what fraction of the
 	 * window is transition (0 --> rectangle window, 1 --> Hann window)
 	 * */
 	for(i = 0; i < (transition_length + 1) / 2; i++)
-		window->data->data[i] = window->data->data[length - 1 - i] = pow(cos(LAL_PI_2 * Y(transition_length, i)), 2);
+		sequence->data[i] = sequence->data[length - 1 - i] = pow(cos(LAL_PI_2 * Y(transition_length, i)), 2);
 	for(; i < (length + 1) / 2; i++)
-		window->data->data[i] = window->data->data[length - 1 - i] = 1;
+		sequence->data[i] = sequence->data[length - 1 - i] = 1;
 
-	window->sumofsquares = sum_squares(window->data->data, window->data->length);
-	window->sum = sum_samples(window->data->data, window->data->length);
-
-	return window;
+	return XLALCreateREAL8WindowFromSequence(sequence);
 }
 
 
@@ -621,15 +630,15 @@ REAL8Window *XLALCreateGaussREAL8Window(UINT4 length, REAL8 beta)
 /* </lalVerbatim> */
 {
 	static const char func[] = "XLALCreateGaussREAL8Window";
-	REAL8Window *window;
+	REAL8Sequence *sequence;
 	UINT4 i;
 
 	if(beta < 0)
 		XLAL_ERROR_NULL(func, XLAL_ERANGE);
 
-	window = REAL8WindowNew(length);
-	if(!window)
-		XLAL_ERROR_NULL(func, XLAL_ENOMEM);
+	sequence = XLALCreateREAL8Sequence(length);
+	if(!sequence)
+		XLAL_ERROR_NULL(func, XLAL_EFUNC);
 
 	/* pre-compute -1/2 beta^2 */
 	beta = -0.5 * beta * beta;
@@ -639,13 +648,10 @@ REAL8Window *XLALCreateGaussREAL8Window(UINT4 length, REAL8 beta)
 		double y = Y(length, i);
 		/* Note:  we have to hard-code the 0 * inf when y = 0 and
 		 * beta = inf, which we do by simply checking for y = 0 */
-		window->data->data[i] = window->data->data[length - 1 - i] = y == 0 ? 1 : exp(y * y * beta);
+		sequence->data[i] = sequence->data[length - 1 - i] = y == 0 ? 1 : exp(y * y * beta);
 	}
 
-	window->sumofsquares = sum_squares(window->data->data, window->data->length);
-	window->sum = sum_samples(window->data->data, window->data->length);
-
-	return window;
+	return XLALCreateREAL8WindowFromSequence(sequence);
 }
 
 
