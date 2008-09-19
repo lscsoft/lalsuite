@@ -388,9 +388,7 @@ SnglBurst *XLALComputeExcessPower(
 
 	/* start with at least 2 degrees of freedom */
 	for(tile_dof = 2; tile_dof <= plane->tiles.max_length / stride; tile_dof *= 2) {
-		unsigned length = tile_dof * stride;
-
-	for(end = (start = plane->tiles.tiling_start) + length; end <= plane->tiles.tiling_end; end = (start += length / plane->tiles.inv_fractional_stride) + length) {
+	for(end = (start = plane->tiles.tiling_start) + tile_dof * stride; end <= plane->tiles.tiling_end; end = (start += tile_dof * stride / plane->tiles.inv_fractional_stride) + tile_dof * stride) {
 		double sumsquares = 0;
 		double uwsumsquares = 0;
 
@@ -422,7 +420,7 @@ SnglBurst *XLALComputeExcessPower(
 			h_rss = sqrt((uwsumsquares - tile_dof) * (stride * plane->deltaT)) * strain_rms;
 
 			/* add new event to head of linked list */
-			head = XLALTFTileToBurstEvent(plane, start, length, plane->flow + (channel + .5 * channels) * plane->deltaF, channels * plane->deltaF, h_rss, sumsquares, tile_dof, confidence);
+			head = XLALTFTileToBurstEvent(plane, start, tile_dof * stride, plane->flow + (channel + .5 * channels) * plane->deltaF, channels * plane->deltaF, h_rss, sumsquares, tile_dof, confidence);
 			if(!head)
 				XLAL_ERROR_NULL(func, XLAL_EFUNC);
 			head->next = oldhead;
