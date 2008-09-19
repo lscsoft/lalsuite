@@ -299,8 +299,8 @@ SnglBurst *XLALComputeExcessPower(
 {
 	static const char func[] = "XLALComputeExcessPower";
 	gsl_vector filter_output;
-	gsl_vector channel_buffer;
-	gsl_vector unwhitened_channel_buffer;
+	gsl_vector *channel_buffer;
+	gsl_vector *unwhitened_channel_buffer;
 	unsigned start;
 	unsigned end;
 	unsigned channel;
@@ -313,21 +313,29 @@ SnglBurst *XLALComputeExcessPower(
 	double tile_dof;
 
 	/* argh!  C90 ... */
-	filter_output.size = plane->channel_data->size1;
+	filter_output.size = plane->tiles.tiling_end - plane->tiles.tiling_start;
 	filter_output.stride = plane->channel_data->size2;
 	filter_output.data = NULL;
 	filter_output.block = NULL;
 	filter_output.owner = 0;
-	channel_buffer.size = plane->channel_buffer->length;
-	channel_buffer.stride = 1;
-	channel_buffer.data = plane->channel_buffer->data;
-	channel_buffer.block = NULL;
-	channel_buffer.owner = 0;
-	unwhitened_channel_buffer.size = plane->unwhitened_channel_buffer->length;
-	unwhitened_channel_buffer.stride = 1;
-	unwhitened_channel_buffer.data = plane->unwhitened_channel_buffer->data;
-	unwhitened_channel_buffer.block = NULL;
-	unwhitened_channel_buffer.owner = 0;
+
+	/*
+	 * create work spaces
+	 */
+
+	channel_buffer = gsl_vector_alloc(filter_output.size);
+	unwhitened_channel_buffer = gsl_vector_alloc(filter_output.size);
+	if(!channel_buffer || !unwhitened_channel_buffer) {
+		if(channel_buffer)
+			gsl_vector_free(channel_buffer);
+		if(unwhitened_channel_buffer)
+			gsl_vector_free(unwhitened_channel_buffer);
+		XLAL_ERROR_NULL(func, XLAL_ENOMEM);
+	}
+
+	/*
+	 * enter loops
+	 */
 
 	for(channels = plane->tiles.min_channels; channels <= plane->tiles.max_channels; channels *= 2) {
 		/* compute distance between "virtual pixels" for this
@@ -361,16 +369,17 @@ SnglBurst *XLALComputeExcessPower(
 		 * for this (possibly multi-filter) channel.  both time
 		 * series are normalized so that each sample has a mean
 		 * square of 1 */
-		filter_output.data = plane->channel_data->data + channel;
-		gsl_vector_set_zero(&channel_buffer);
-		gsl_vector_set_zero(&unwhitened_channel_buffer);
+		filter_output.data = plane->channel_data->data + filter_output.stride * plane->tiles.tiling_start + channel;
+		gsl_vector_set_zero(channel_buffer);
+		gsl_vector_set_zero(unwhitened_channel_buffer);
 		for(c = channel; c < channel_end; filter_output.data++, c++) {
-			gsl_blas_daxpy(1.0 / sample_rms, &filter_output, &channel_buffer);
-			gsl_blas_daxpy(filter_bank->basis_filters[c].unwhitened_rms * sqrt(plane->fseries_deltaF / plane->deltaF) / uwsample_rms, &filter_output, &unwhitened_channel_buffer);
+			gsl_blas_daxpy(1.0 / sample_rms, &filter_output, channel_buffer);
+			gsl_blas_daxpy(filter_bank->basis_filters[c].unwhitened_rms * sqrt(plane->fseries_deltaF / plane->deltaF) / uwsample_rms, &filter_output, unwhitened_channel_buffer);
 		}
 
 #if 0
 		/* diagnostic code to dump data for the s_{j} histogram */
+		/* FIXME: use gsl_vector interface */
 		{
 		FILE *f = fopen("sj.dat", "a");
 		for(t = 0; t < plane->channel_buffer->length; t++)
@@ -381,22 +390,22 @@ SnglBurst *XLALComputeExcessPower(
 
 		/* square the samples in the channel time series because
 		 * from now on that's all we'll need */
-		for(t = 0; t < channel_buffer.size; t++) {
-			gsl_vector_set(&channel_buffer, t, pow(gsl_vector_get(&channel_buffer, t), 2));
-			gsl_vector_set(&unwhitened_channel_buffer, t, pow(gsl_vector_get(&unwhitened_channel_buffer, t), 2));
+		for(t = 0; t < channel_buffer->size; t++) {
+			gsl_vector_set(channel_buffer, t, pow(gsl_vector_get(channel_buffer, t), 2));
+			gsl_vector_set(unwhitened_channel_buffer, t, pow(gsl_vector_get(unwhitened_channel_buffer, t), 2));
 		}
 
 	/* start with at least 2 degrees of freedom */
 	for(tile_dof = 2; tile_dof <= plane->tiles.max_length / stride; tile_dof *= 2) {
-	for(end = (start = plane->tiles.tiling_start) + tile_dof * stride; end <= plane->tiles.tiling_end; end = (start += tile_dof * stride / plane->tiles.inv_fractional_stride) + tile_dof * stride) {
+	for(end = (start = 0) + tile_dof * stride; end <= channel_buffer->size; end = (start += tile_dof * stride / plane->tiles.inv_fractional_stride) + tile_dof * stride) {
 		double sumsquares = 0;
 		double uwsumsquares = 0;
 
 		/* compute sum of squares, and unwhitened sum of squares
 		 * (samples have already been squared) */
 		for(t = start + stride / 2; t < end; t += stride) {
-			sumsquares += gsl_vector_get(&channel_buffer, t);
-			uwsumsquares += gsl_vector_get(&unwhitened_channel_buffer, t);
+			sumsquares += gsl_vector_get(channel_buffer, t);
+			uwsumsquares += gsl_vector_get(unwhitened_channel_buffer, t);
 		}
 
 		/* compute statistical confidence */
@@ -408,8 +417,11 @@ SnglBurst *XLALComputeExcessPower(
 		 * non-zero inner product of the time-domain impulse
 		 * response of the channel filter for adjacent pixels */
 		confidence = -XLALlnOneMinusChisqCdf(sumsquares * .62, tile_dof * .62);
-		if(XLALIsREAL8FailNaN(confidence))
+		if(XLALIsREAL8FailNaN(confidence)) {
+			gsl_vector_free(channel_buffer);
+			gsl_vector_free(unwhitened_channel_buffer);
 			XLAL_ERROR_NULL(func, XLAL_EFUNC);
+		}
 
 		/* record tiles whose statistical confidence is above
 		 * threshold and that have real-valued h_rss */
@@ -420,9 +432,12 @@ SnglBurst *XLALComputeExcessPower(
 			h_rss = sqrt((uwsumsquares - tile_dof) * (stride * plane->deltaT)) * strain_rms;
 
 			/* add new event to head of linked list */
-			head = XLALTFTileToBurstEvent(plane, start, tile_dof * stride, plane->flow + (channel + .5 * channels) * plane->deltaF, channels * plane->deltaF, h_rss, sumsquares, tile_dof, confidence);
-			if(!head)
+			head = XLALTFTileToBurstEvent(plane, plane->tiles.tiling_start + start, tile_dof * stride, plane->flow + (channel + .5 * channels) * plane->deltaF, channels * plane->deltaF, h_rss, sumsquares, tile_dof, confidence);
+			if(!head) {
+				gsl_vector_free(channel_buffer);
+				gsl_vector_free(unwhitened_channel_buffer);
 				XLAL_ERROR_NULL(func, XLAL_EFUNC);
+			}
 			head->next = oldhead;
 		}
 	}
@@ -431,5 +446,7 @@ SnglBurst *XLALComputeExcessPower(
 	}
 
 	/* success */
-	return(head);
+	gsl_vector_free(channel_buffer);
+	gsl_vector_free(unwhitened_channel_buffer);
+	return head;
 }
