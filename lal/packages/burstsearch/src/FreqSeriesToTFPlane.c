@@ -252,7 +252,7 @@ static SnglBurst *XLALTFTileToBurstEvent(
 	XLALGPSAdd(&event->start_time, tile_start * plane->deltaT);
 	event->duration = tile_length * plane->deltaT;
 	event->peak_time = event->start_time;
-	XLALGPSAdd(&event->peak_time, 0.5 * event->duration);
+	XLALGPSAdd(&event->peak_time, event->duration / 2);
 	event->bandwidth = bandwidth;
 	event->central_freq = f_centre;
 	/* FIXME: put h_rss into the "hrss" column */
@@ -309,6 +309,9 @@ SnglBurst *XLALComputeExcessPower(
 	unsigned channel_end;
 	double h_rss;
 	double confidence;
+	/* number of degrees of freedom in tile = number of
+	 * "virtual pixels" in tile. */
+	double tile_dof;
 
 	/* argh!  C90 ... */
 	filter_output.size = plane->channel_data->size1;
@@ -328,6 +331,10 @@ SnglBurst *XLALComputeExcessPower(
 	unwhitened_channel_buffer.owner = 0;
 
 	for(channels = plane->tiles.min_channels; channels <= plane->tiles.max_channels; channels *= 2) {
+		/* compute distance between "virtual pixels" for this
+		 * (wide) channel */
+		const unsigned stride = floor(1.0 / (channels * plane->tiles.dof_per_pixel) + 0.5);
+
 	for(channel_end = (channel = 0) + channels; channel_end <= plane->channel_data->size2; channel_end = (channel += channels / plane->tiles.inv_fractional_stride) + channels) {
 		/* the root mean square of the "virtual channel",
 		 * \sqrt{\mu^{2}} in the algorithm description */
@@ -373,20 +380,16 @@ SnglBurst *XLALComputeExcessPower(
 		}
 #endif
 
-		/* square the samples in the channel time series, because
+		/* square the samples in the channel time series because
 		 * from now on that's all we'll need */
 		for(t = 0; t < plane->channel_buffer->length; t++) {
-			plane->channel_buffer->data[t] *= plane->channel_buffer->data[t];
-			plane->unwhitened_channel_buffer->data[t] *= plane->unwhitened_channel_buffer->data[t];
+			gsl_vector_set(&channel_buffer, t, pow(gsl_vector_get(&channel_buffer, t), 2));
+			gsl_vector_set(&unwhitened_channel_buffer, t, pow(gsl_vector_get(&unwhitened_channel_buffer, t), 2));
 		}
 
 	/* start with at least 2 degrees of freedom */
 	for(length = 2 / (channels * plane->tiles.dof_per_pixel); length <= plane->tiles.max_length; length *= 2) {
-		/* number of degrees of freedom in tile = number of
-		 * "virtual pixels" in tile. */
-		const double tile_dof = (length * channels) * plane->tiles.dof_per_pixel;
-		/* compute distance between tile's "virtual pixels" */
-		const unsigned stride = length / tile_dof;
+		tile_dof = (length * channels) * plane->tiles.dof_per_pixel;
 
 	for(end = (start = plane->tiles.tiling_start) + length; end <= plane->tiles.tiling_end; end = (start += length / plane->tiles.inv_fractional_stride) + length) {
 		double sumsquares = 0;
@@ -395,8 +398,8 @@ SnglBurst *XLALComputeExcessPower(
 		/* compute sum of squares, and unwhitened sum of squares
 		 * (samples have already been squared) */
 		for(t = start + stride / 2; t < end; t += stride) {
-			sumsquares += plane->channel_buffer->data[t];
-			uwsumsquares += plane->unwhitened_channel_buffer->data[t];
+			sumsquares += gsl_vector_get(&channel_buffer, t);
+			uwsumsquares += gsl_vector_get(&unwhitened_channel_buffer, t);
 		}
 
 		/* compute statistical confidence */
