@@ -302,7 +302,6 @@ SnglBurst *XLALComputeExcessPower(
 	gsl_vector channel_buffer;
 	gsl_vector unwhitened_channel_buffer;
 	unsigned start;
-	unsigned length;
 	unsigned end;
 	unsigned channel;
 	unsigned channels;
@@ -362,10 +361,10 @@ SnglBurst *XLALComputeExcessPower(
 		 * for this (possibly multi-filter) channel.  both time
 		 * series are normalized so that each sample has a mean
 		 * square of 1 */
+		filter_output.data = plane->channel_data->data + channel;
 		gsl_vector_set_zero(&channel_buffer);
 		gsl_vector_set_zero(&unwhitened_channel_buffer);
-		for(c = channel; c < channel_end; c++) {
-			filter_output.data = plane->channel_data->data + c;
+		for(c = channel; c < channel_end; filter_output.data++, c++) {
 			gsl_blas_daxpy(1.0 / sample_rms, &filter_output, &channel_buffer);
 			gsl_blas_daxpy(filter_bank->basis_filters[c].unwhitened_rms * sqrt(plane->fseries_deltaF / plane->deltaF) / uwsample_rms, &filter_output, &unwhitened_channel_buffer);
 		}
@@ -382,14 +381,14 @@ SnglBurst *XLALComputeExcessPower(
 
 		/* square the samples in the channel time series because
 		 * from now on that's all we'll need */
-		for(t = 0; t < plane->channel_buffer->length; t++) {
+		for(t = 0; t < channel_buffer.size; t++) {
 			gsl_vector_set(&channel_buffer, t, pow(gsl_vector_get(&channel_buffer, t), 2));
 			gsl_vector_set(&unwhitened_channel_buffer, t, pow(gsl_vector_get(&unwhitened_channel_buffer, t), 2));
 		}
 
 	/* start with at least 2 degrees of freedom */
-	for(length = 2 / (channels * plane->tiles.dof_per_pixel); length <= plane->tiles.max_length; length *= 2) {
-		tile_dof = (length * channels) * plane->tiles.dof_per_pixel;
+	for(tile_dof = 2; tile_dof <= plane->tiles.max_length / stride; tile_dof *= 2) {
+		unsigned length = tile_dof * stride;
 
 	for(end = (start = plane->tiles.tiling_start) + length; end <= plane->tiles.tiling_end; end = (start += length / plane->tiles.inv_fractional_stride) + length) {
 		double sumsquares = 0;
@@ -420,7 +419,7 @@ SnglBurst *XLALComputeExcessPower(
 			SnglBurst *oldhead = head;
 
 			/* compute h_rss */
-			h_rss = sqrt((uwsumsquares - tile_dof) * stride * plane->deltaT) * strain_rms;
+			h_rss = sqrt((uwsumsquares - tile_dof) * (stride * plane->deltaT)) * strain_rms;
 
 			/* add new event to head of linked list */
 			head = XLALTFTileToBurstEvent(plane, start, length, plane->flow + (channel + .5 * channels) * plane->deltaF, channels * plane->deltaF, h_rss, sumsquares, tile_dof, confidence);
