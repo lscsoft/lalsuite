@@ -1436,6 +1436,11 @@ COMPLEX8FrequencySeries *XLALWhitenCOMPLEX8FrequencySeries(COMPLEX8FrequencySeri
       fdata[i] = LAL_COMPLEX8_ZERO;
   }
 
+  /* zero the DC and Nyquist components for safety */
+  if(fseries->f0 == 0)
+    fdata[0] = LAL_COMPLEX8_ZERO;
+  fdata[fseries->data->length - 1] = LAL_COMPLEX8_ZERO;
+
   return fseries;
 }
 
@@ -1474,6 +1479,11 @@ COMPLEX16FrequencySeries *XLALWhitenCOMPLEX16FrequencySeries(COMPLEX16FrequencyS
       /* PSD has a 0 in it, treat as a zero in the filter */
       fdata[i] = LAL_COMPLEX16_ZERO;
   }
+
+  /* zero the DC and Nyquist components for safety */
+  if(fseries->f0 == 0)
+    fdata[0] = LAL_COMPLEX16_ZERO;
+  fdata[fseries->data->length - 1] = LAL_COMPLEX16_ZERO;
 
   return fseries;
 }
