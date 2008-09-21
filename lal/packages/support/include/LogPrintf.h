@@ -72,6 +72,8 @@ int XLALfprintfGSLmatrix ( FILE *fp, const char *fmt, const gsl_matrix *gij );
 int XLALfprintfGSLvector ( FILE *fp, const char *fmt, const gsl_vector *vect );
 int XLALfprintfGSLvector_int ( FILE *fp, const char *fmt, const gsl_vector_int *vect );
 
+char * XLALClearLinebreaks ( const char *str );
+
 #ifdef  __cplusplus
 }
 #endif  

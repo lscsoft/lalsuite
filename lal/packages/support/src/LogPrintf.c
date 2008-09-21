@@ -34,6 +34,9 @@
 /*---------- INCLUDES ----------*/
 #include <stdio.h>
 #include <string.h>
+#include <strings.h>
+
+#include <lal/LALMalloc.h>
 
 #ifdef _MSC_VER
 #include <Windows.h>
@@ -353,3 +356,31 @@ XLALfprintfGSLvector_int ( FILE *fp, const char *fmt, const gsl_vector_int *vect
   return 0;
 
 } /* XLALprintGSLvector_int() */
+
+
+/** Returns input string with line-breaks '\n' removed (replaced by space)
+ * The original string is unmodified. The returned string is allocated here.
+ */
+char *
+XLALClearLinebreaks ( const char *str )
+{
+  char *ret, *tmp;
+
+  if ( !str )
+    return NULL;
+
+  if ( (ret = LALMalloc( strlen ( str ) + 1) ) == NULL )
+    return NULL;
+  strcpy ( ret, str );
+
+  tmp = ret;
+  while ( (tmp = index ( tmp, '\n' ) ) )
+    {
+      *tmp = ' ';
+      tmp ++;
+    }
+
+  return ret;
+
+} /* XLALClearLinebreaks() */
+
