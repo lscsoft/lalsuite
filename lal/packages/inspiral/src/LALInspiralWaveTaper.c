@@ -30,12 +30,12 @@
  *
  *  It takes in a Real4Vector and searches for the beginning and end points 
  *  of the signal, in case there are null data points at either end. It then
- *  tapers the wave from the ends to the second maxima in the waveform, 
- *  according to formula 3.35 of gr-qc/0001023.
+ *  tapers the wave from the ends to the second maxima from each end 
+ *  in the waveform, according to formula 3.35 of gr-qc/0001023.
  *
- *  If the waveform does has less than 4 peaks such that it cannot be tapered
- *  from the both ends to the second peak then the central point is tapered to 
- *  insted.
+ *  If the waveform does has less than 4 maxima,  such that it cannot be tapered
+ *  from the each end to the second peak then the waveform is tapered from the 
+ *  ends to the centre of the instead.
  *
  *  The bookends option allows the user to specify whether just the start, 
  *  just the end or both the start and end of the signal are tapered. 
