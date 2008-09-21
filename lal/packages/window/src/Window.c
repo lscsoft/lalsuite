@@ -283,8 +283,10 @@ REAL8Sequence *XLALUnitaryWindowREAL8Sequence(REAL8Sequence *sequence, const REA
 	unsigned i;
 	double norm = sqrt(window->data->length / window->sumofsquares);
 
+	if(window->sumofsquares <= 0)
+		XLAL_ERROR_NULL(func, XLAL_EDOM);
 	if(sequence->length != window->data->length)
-		XLAL_ERROR_NULL(func, XLAL_EDATA);
+		XLAL_ERROR_NULL(func, XLAL_ESIZE);
 
 	for(i = 0; i < window->data->length; i++)
 		sequence->data[i] *= window->data->data[i] * norm;
@@ -304,8 +306,10 @@ REAL4Sequence *XLALUnitaryWindowREAL4Sequence(REAL4Sequence *sequence, const REA
 	unsigned i;
 	float norm = sqrt(window->data->length / window->sumofsquares);
 
+	if(window->sumofsquares <= 0)
+		XLAL_ERROR_NULL(func, XLAL_EDOM);
 	if(sequence->length != window->data->length)
-		XLAL_ERROR_NULL(func, XLAL_EDATA);
+		XLAL_ERROR_NULL(func, XLAL_ESIZE);
 
 	for(i = 0; i < window->data->length; i++)
 		sequence->data[i] *= window->data->data[i] * norm;
