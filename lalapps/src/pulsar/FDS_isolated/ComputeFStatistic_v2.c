@@ -282,7 +282,6 @@ void OutputVersion ( void );
 
 const char *va(const char *format, ...);	/* little var-arg string helper function */
 CHAR *append_string ( CHAR *str1, const CHAR *append );
-CHAR *clear_linebreaks ( const CHAR *string );
 
 /* ---------- scanline window functions ---------- */
 scanlineWindow_t *XLALCreateScanlineWindow ( UINT4 windowWings );
@@ -1291,8 +1290,8 @@ getLogString ( LALStatus *status, CHAR **logstr, const ConfigVariables *cfg )
   ret = append_string ( ret, line );
 
   /* add code version ID (only useful for git-derived versions) */
-  id1 = clear_linebreaks ( lalGitID );
-  id2 = clear_linebreaks ( lalappsGitID );
+  id1 = XLALClearLinebreaks ( lalGitID );
+  id2 = XLALClearLinebreaks ( lalappsGitID );
   LALSnprintf (line, BUFLEN, "%%%% %s\n%%%% %s\n", id1, id2 );
   LALFree ( id1 );
   LALFree ( id2 );
@@ -1920,28 +1919,3 @@ CHAR *append_string ( CHAR *str1, const CHAR *str2 )
 
 } /* append_string() */
 
-/** Returns input string with line-breaks '\n' removed (replaced by space)
- * The original string is unmodified. The returned string is allocated here.
- */
-CHAR *
-clear_linebreaks ( const CHAR *string )
-{
-  CHAR *ret, *tmp;
-
-  if ( !string )
-    return NULL;
-
-  if ( (ret = LALMalloc( strlen ( string ) + 1) ) == NULL )
-    return NULL;
-  strcpy ( ret, string );
-
-  tmp = ret;
-  while ( (tmp = index ( tmp, '\n' ) ) )
-    {
-      *tmp = ' ';
-      tmp ++;
-    }
-
-  return ret;
-
-} /* clear_linebreaks() */
