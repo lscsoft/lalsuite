@@ -122,8 +122,8 @@ typedef struct
   REAL8 Delta;		/**< skyposition Delta: radians, equatorial coords. */
   REAL8 f1dot;		/**< target 1. spindown-value df/dt */
 
-  CHAR *ephemEarth;	/**< filename of Earth ephemeris */
-  CHAR *ephemSun;	/**< filename of Sun ephemeris */
+  CHAR *ephemDir;	/**< directory to look for ephemeris files */
+  CHAR *ephemYear;	/**< date-range string on ephemeris-files to use */
 
   REAL8 startTime;	/**< GPS start time of observation */
   REAL8 duration;	/**< length of observation in seconds */
@@ -142,6 +142,8 @@ typedef struct
   LALStringVector* coords; /**< list of Doppler-coordinates to compute metric in, see --coordsHelp for possible values */
   BOOLEAN coordsHelp;	/**< output help-string explaining all the possible Doppler-coordinate names for --cords */
 
+  BOOLEAN version;	/**< output code versions */
+
 } UserVariables_t;
 
 
@@ -156,7 +158,7 @@ extern int vrbflg;
 void initUserVars (LALStatus *status, UserVariables_t *uvar);
 void InitCode (LALStatus *status, ConfigVariables *cfg, const UserVariables_t *uvar);
 
-EphemerisData* InitEphemeris (const CHAR *ephemEarth, const CHAR *ephemSun );
+EphemerisData *InitEphemeris (const CHAR *ephemDir, const CHAR *ephemYear, const LIGOTimeGPS *epoch );
 
 int project_metric( gsl_matrix *ret_ij, gsl_matrix *g_ij, const UINT4 coordinate );
 int outer_product ( gsl_matrix *ret_ij, const gsl_vector *u_i, const gsl_vector *v_j );
@@ -180,9 +182,6 @@ main(int argc, char *argv[])
   CHAR dummy[512];
   DopplerMetric *metric;
 
-  sprintf (dummy, "%s", lalGitID );
-  sprintf (dummy, "%s", lalappsGitID );
-
   lalDebugLevel = 0;
   vrbflg = 1;	/* verbose error-messages */
 
@@ -202,6 +201,12 @@ main(int argc, char *argv[])
 
   if (uvar.help) 	/* help requested: we're done */
     return 0;
+
+  if ( uvar.version ) {
+    printf ( "%s\n", lalGitID );
+    printf ( "%s\n", lalappsGitID );
+    return 0;
+  }
 
   if ( uvar.coordsHelp )
     {
@@ -264,13 +269,23 @@ main(int argc, char *argv[])
   if ( uvar.outputMetric )
     {
       UINT4 i;
+      CHAR *id1, *id2;
+      CHAR *cmdline = NULL;
       const DopplerMetricParams* meta = &(metric->meta);
 
       if ( (fpMetric = fopen ( uvar.outputMetric, "wb" )) == NULL )
 	return FSTATMETRIC_EFILE;
 
-      fprintf ( fpMetric, "%%%% History: %s\n%%%%%s\n", lalGitID, lalappsGitID );
+      /* get full commandline describing search*/
+      LAL_CALL ( LALUserVarGetLog (&status, &cmdline,  UVAR_LOGFMT_CMDLINE ), &status );
+      fprintf ( fpMetric, "%%%% cmdline: %s\n", cmdline );
+      LALFree ( cmdline );
+
+      id1 = XLALClearLinebreaks ( lalGitID );
+      id2 = XLALClearLinebreaks ( lalappsGitID );
+      fprintf ( fpMetric, "%%%% %s\n%%%%%s\n", id1, id2 );
       fprintf ( fpMetric, "%%%% DopplerCoordinates = [ " );
+      LALFree ( id1 ); LALFree ( id2 );
       for ( i=0; i < meta->coordSys.dim; i ++ )
 	{
 	  if ( i > 0 ) fprintf ( fpMetric, ", " );
@@ -355,12 +370,9 @@ initUserVars (LALStatus *status, UserVariables_t *uvar)
   /* set a few defaults */
   uvar->help = FALSE;
 
-#define EPHEM_EARTH  "earth00-04.dat"
-#define EPHEM_SUN    "sun00-04.dat"
-  uvar->ephemEarth = LALCalloc (1, strlen(EPHEM_EARTH)+1);
-  strcpy (uvar->ephemEarth, EPHEM_EARTH);
-  uvar->ephemSun = LALCalloc (1, strlen(EPHEM_SUN)+1);
-  strcpy (uvar->ephemSun, EPHEM_SUN);
+#define EPHEM_YEAR  "00-04"
+  uvar->ephemYear = LALCalloc (1, strlen(EPHEM_YEAR)+1);
+  strcpy (uvar->ephemYear, EPHEM_YEAR);
 
   uvar->Freq = 100;
   uvar->f1dot = 0.0;
@@ -395,8 +407,8 @@ initUserVars (LALStatus *status, UserVariables_t *uvar)
   LALregREALUserStruct(status,	f1dot, 		's', UVAR_OPTIONAL, 	"first spindown-value df/dt");
   LALregREALUserStruct(status, 	startTime,      't', UVAR_OPTIONAL, 	"GPS start time of observation");
   LALregREALUserStruct(status,  duration,	'T', UVAR_OPTIONAL,	"Alternative: Duration of observation in seconds");
-  LALregSTRINGUserStruct(status, ephemEarth,    'E', UVAR_OPTIONAL, 	"Filename of Earth-ephemeris");
-  LALregSTRINGUserStruct(status, ephemSun,      'S', UVAR_OPTIONAL, 	"Filename of Sun-ephemeris");
+  LALregSTRINGUserStruct(status,ephemDir, 	'E', UVAR_OPTIONAL,     "Directory where Ephemeris files are located");
+  LALregSTRINGUserStruct(status,ephemYear, 	'y', UVAR_OPTIONAL,     "Year (or range of years) of ephemeris files to be used");
   LALregREALUserStruct(status, 	cosi,	 	 0, UVAR_OPTIONAL,	"Pulsar orientation-angle cos(iota) [-1,1]" );
   LALregREALUserStruct(status,	psi,		 0, UVAR_OPTIONAL,	"Wave polarization-angle psi [0, pi]" );
   LALregSTRINGUserStruct(status, outputMetric,	'o', UVAR_OPTIONAL,	"Output the metric components (in octave format) into this file.");
@@ -407,6 +419,8 @@ initUserVars (LALStatus *status, UserVariables_t *uvar)
 
   LALregBOOLUserStruct(status,	fullFmetric,     0,  UVAR_OPTIONAL,     "Compute the 'full' F-metric including antenna-patterns; if FALSE: phaseMetric");
   LALregINTUserStruct(status,  	detMotionType,	 0,  UVAR_DEVELOPER,	"Detector-motion: 0=spin+orbit, 1=orbit, 2=spin, 3=spin+ptoleorbit, 4=ptoleorbit");
+
+  LALregBOOLUserStruct(status,	version,        'V', UVAR_SPECIAL,      "Output code version");
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
@@ -426,7 +440,7 @@ InitCode (LALStatus *status, ConfigVariables *cfg, const UserVariables_t *uvar)
   /* ----- determine start-time from user-input */
   XLALGPSSetREAL8( &(cfg->startTime), uvar->startTime );
 
-  if ( (cfg->edat = InitEphemeris ( uvar->ephemEarth, uvar->ephemSun )) == NULL ) {
+  if ( (cfg->edat = InitEphemeris ( uvar->ephemDir, uvar->ephemYear, &(cfg->startTime) )) == NULL ) {
     LogPrintf (LOG_CRITICAL, "Failed to initialize ephemeris data!\n");
     ABORT ( status, FSTATMETRIC_EINPUT, FSTATMETRIC_MSGEINPUT);
   }
@@ -602,24 +616,36 @@ quad_form ( const gsl_matrix *mat, const gsl_vector *vec )
 
 /** Load Ephemeris from ephemeris data-files  */
 EphemerisData *
-InitEphemeris (const CHAR *ephemEarth,	/**< filename of Earth-ephemeris */
-	       const CHAR *ephemSun	/**< filename of Sun-ephemeris */
+InitEphemeris (const CHAR *ephemDir,	/**< directory containing ephems */
+	       const CHAR *ephemYear,	/**< which years do we need? */
+	       const LIGOTimeGPS *epoch	/**< epoch of observation */
 	       )
 {
 #define FNAME_LENGTH 1024
   const CHAR *fn = "InitEphemeris()";
   LALStatus status = blank_status;
   EphemerisData *edat;
+  CHAR EphemEarth[FNAME_LENGTH];	/* filename of earth-ephemeris data */
+  CHAR EphemSun[FNAME_LENGTH];	/* filename of sun-ephemeris data */
 
-  if ( !ephemEarth || !ephemSun ) {
-    XLALPrintError ("\n%s: NULL pointer passed as ephemeris-filename!\n", fn);
+  if ( !ephemYear ) {
+    XLALPrintError ("\n%s: NULL pointer passed as ephemeris year range!\n", fn);
     return NULL;
   }
 
-  if ( (strlen ( ephemEarth ) > FNAME_LENGTH) || (strlen ( ephemSun ) > FNAME_LENGTH) ) {
-    XLALPrintError ( "\n%s: Ephemeris-filenames must not be longer than %d!\n", fn, FNAME_LENGTH );
-    return NULL;
-  }
+  if ( ephemDir )
+    {
+      LALSnprintf(EphemEarth, FNAME_LENGTH, "%s/earth%s.dat", ephemDir, ephemYear);
+      LALSnprintf(EphemSun, FNAME_LENGTH, "%s/sun%s.dat", ephemDir, ephemYear);
+    }
+  else
+    {
+      LALSnprintf(EphemEarth, FNAME_LENGTH, "earth%s.dat", ephemYear);
+      LALSnprintf(EphemSun, FNAME_LENGTH, "sun%s.dat",  ephemYear);
+    }
+
+  EphemEarth[FNAME_LENGTH-1] = 0;
+  EphemSun[FNAME_LENGTH-1] = 0;
 
   /* allocate memory for ephemeris-data to be returned */
   if ( (edat = LALCalloc ( 1, sizeof(*edat))) == NULL ) {
@@ -628,18 +654,14 @@ InitEphemeris (const CHAR *ephemEarth,	/**< filename of Earth-ephemeris */
   }
 
   /* NOTE: the 'ephiles' are ONLY ever used in LALInitBarycenter, which is
-   * why we don't need to store copies of these filenames
+   * why we can use local variables (EphemEarth, EphemSun) to initialize them.
    */
-  edat->ephiles.earthEphemeris = ephemEarth;
-  edat->ephiles.sunEphemeris   = ephemSun;
+  edat->ephiles.earthEphemeris = EphemEarth;
+  edat->ephiles.sunEphemeris = EphemSun;
 
-  LALInitBarycenter( &status, edat);
-  if ( status.statusCode ) {
-    XLALPrintError("\n%s: call to LALInitBarycenter failed with code %d\n", fn, status.statusCode );
-    return NULL;
-  }
+  edat->leap = XLALGPSLeapSeconds ( epoch->gpsSeconds );
 
-  edat->leap = 0;	/* NOTE! we don't care about leap-seconds for the metric! */
+  LALInitBarycenter(&status, edat);
 
   return edat;
 
