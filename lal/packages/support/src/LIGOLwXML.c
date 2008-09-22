@@ -174,6 +174,53 @@ This requires editing the table specific reading codes in
  */
 #define myfprintf(fp,oldmacro) PRINT_ ## oldmacro(fp)
 
+
+/**
+ * Open an XML file for writing.  The return value is a pointer to a new
+ * LIGOLwXMLStream file handle or NULL on failure.
+ */
+
+LIGOLwXMLStream *
+XLALOpenLIGOLwXMLFile (
+    const char *path
+)
+{
+  static const char func[] = "XLALOpenLIGOLwXMLFile";
+  LIGOLwXMLStream *new;
+
+  /* malloc a new XML file handle */
+
+  new = XLALMalloc( sizeof( *new ) );
+  if ( ! new )
+    XLAL_ERROR_NULL( func, XLAL_EFUNC );
+
+  /* fopen() the underlying C file */
+
+  new->fp = XLALFileOpen( path, "w" );
+  if ( ! new->fp )
+  {
+    XLALFree(new);
+    XLAL_ERROR_NULL( func, XLAL_EFUNC );
+  }
+
+  /* initialize the table flag */
+
+  new->table = no_table;
+
+  /* write the XML header */
+
+  if ( myfprintf( new->fp, LIGOLW_XML_HEADER ) < 0 )
+  {
+    XLALFileClose( new->fp );
+    XLALFree( new );
+    XLAL_ERROR_NULL( func, XLAL_EIO );
+  }
+
+  /* done */
+
+  return new;
+}
+
 /* <lalVerbatim file="LIGOLwXMLCP"> */
 void
 LALOpenLIGOLwXMLFile (
@@ -183,19 +230,55 @@ LALOpenLIGOLwXMLFile (
     )
 /* </lalVerbatim> */
 {
-  /*  open the file and print the xml header */
+  LIGOLwXMLStream *new;
+  XLALPrintDeprecationWarning("LALOpenLIGOLwXMLFile", "XLALOpenLIGOLwXMLFile");
   INITSTATUS( status, "LALOpenLIGOLwXMLFile", LIGOLWXMLC );
   ASSERT( xml, status, LIGOLWXMLH_ENULL, LIGOLWXMLH_MSGENULL );
   ASSERT( ! xml->fp, status, LIGOLWXMLH_ENNUL, LIGOLWXMLH_MSGENNUL );
-  xml->fp = XLALFileOpen( path, "w" );
-  if ( ! xml->fp )
+
+  new = XLALOpenLIGOLwXMLFile( path );
+  if ( ! new )
   {
     ABORT( status, LIGOLWXMLH_EOPEN, LIGOLWXMLH_MSGEOPEN );
   }
-  myfprintf( xml->fp, LIGOLW_XML_HEADER );
-  xml->table = no_table;
+
+  *xml = *new;
+  XLALFree(new);
+
   RETURN( status );
 }
+
+
+/**
+ * Close an XML stream.  On failure the stream is left in an undefined
+ * state, and has not been free()'ed.  Sorry.
+ */
+
+int
+XLALCloseLIGOLwXMLFile (
+  LIGOLwXMLStream *xml
+)
+{
+  static const char func[] = "XLALCloseLIGOLwXMLFile";
+
+  if ( xml )
+  {
+    if ( xml->table != no_table)
+      /* trying to close the file in the middle of a table */
+      XLAL_ERROR(func, XLAL_EFAILED);
+    if ( myfprintf( xml->fp, LIGOLW_XML_FOOTER ) < 0 )
+      /* can't write XML footer */
+      XLAL_ERROR( func, XLAL_EIO );
+    if ( XLALFileClose( xml->fp ) )
+      /* fclose() on the underlying C file failed */
+      XLAL_ERROR( func, XLAL_EFUNC );
+  }
+
+  XLALFree( xml );
+
+  return 0;
+}
+
 
 /* <lalVerbatim file="LIGOLwXMLCP"> */
 void
@@ -205,16 +288,24 @@ LALCloseLIGOLwXMLFile (
     )
 /* </lalVerbatim> */
 {
+  LIGOLwXMLStream *copy;
+  XLALPrintDeprecationWarning("LALCloseLIGOLwXMLFile", "XLALCloseLIGOLwXMLFile");
   /* print the xml footer and close the file handle */
   INITSTATUS( status, "LALCloseLIGOLwXMLFile", LIGOLWXMLC );
   ASSERT( xml, status, LIGOLWXMLH_ENULL, LIGOLWXMLH_MSGENULL );
   ASSERT( xml->fp, status, LIGOLWXMLH_ENULL, LIGOLWXMLH_MSGENULL );
-  if ( xml->table != no_table )
+  /* make an XLALFree()'able copy */
+  copy = XLALMalloc(sizeof(*copy));
+  if ( ! copy )
   {
     ABORT( status, LIGOLWXMLH_ECLOS, LIGOLWXMLH_MSGECLOS );
   }
-  myfprintf( xml->fp, LIGOLW_XML_FOOTER );
-  XLALFileClose( xml->fp );
+  *copy = *xml;
+  if ( XLALCloseLIGOLwXMLFile( copy ) )
+  {
+    XLALFree( copy );
+    ABORT( status, LIGOLWXMLH_ECLOS, LIGOLWXMLH_MSGECLOS );
+  }
   xml->fp = NULL;
   RETURN( status );
 }

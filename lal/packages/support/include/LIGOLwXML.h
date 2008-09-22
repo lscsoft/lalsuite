@@ -127,6 +127,16 @@ directly, but passed to the \verb+LIGOLwXML+ functions for their use.
 </lalLaTeX>
 #endif
 
+LIGOLwXMLStream *
+XLALOpenLIGOLwXMLFile (
+    const char *path
+    );
+
+int
+XLALCloseLIGOLwXMLFile (
+    LIGOLwXMLStream *xml
+    );
+
 void
 LALOpenLIGOLwXMLFile (
     LALStatus           *status,
