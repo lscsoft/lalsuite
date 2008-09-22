@@ -813,44 +813,41 @@ static SimBurst *random_all_sky_sineGaussian(double minf, double maxf, double q,
 
 static void write_xml(const ProcessTable *process_table_head, const ProcessParamsTable *process_params_table_head, const SearchSummaryTable *search_summary_head, const SimBurst *sim_burst, struct options options)
 {
-	LALStatus status = blank_status;
 	char fname[256];
-	LIGOLwXMLStream xmlfp;
-
-	memset(&xmlfp, 0, sizeof(xmlfp));
+	LIGOLwXMLStream *xml;
 
 	if(options.user_tag)
 		snprintf(fname, sizeof(fname), "HL-INJECTIONS_%s-%d-%d.xml", options.user_tag, (int) (options.gps_start_time / LAL_INT8_C(1000000000)), (int) ((options.gps_end_time - options.gps_start_time) / LAL_INT8_C(1000000000)));
 	else
 		snprintf(fname, sizeof(fname), "HL-INJECTIONS-%d-%d.xml", (int) (options.gps_start_time / LAL_INT8_C(1000000000)), (int) ((options.gps_end_time - options.gps_start_time) / LAL_INT8_C(1000000000)));
 
-	LAL_CALL(LALOpenLIGOLwXMLFile(&status, &xmlfp, fname), &status);
+	xml = XLALOpenLIGOLwXMLFile(fname);
 
 	/* process table */
-	if(XLALWriteLIGOLwXMLProcessTable(&xmlfp, process_table_head)) {
+	if(XLALWriteLIGOLwXMLProcessTable(xml, process_table_head)) {
 		/* error occured.  ?? do anything else ?? */
 		exit(1);
 	}
 
 	/* process params table */
-	if(XLALWriteLIGOLwXMLProcessParamsTable(&xmlfp, process_params_table_head)) {
+	if(XLALWriteLIGOLwXMLProcessParamsTable(xml, process_params_table_head)) {
 		/* error occured.  ?? do anything else ?? */
 		exit(1);
 	}
 
 	/* search summary table */
-	if(XLALWriteLIGOLwXMLSearchSummaryTable(&xmlfp, search_summary_head)) {
+	if(XLALWriteLIGOLwXMLSearchSummaryTable(xml, search_summary_head)) {
 		/* error occured.  ?? do anything else ?? */
 		exit(1);
 	}
 
 	/* sim burst table */
-	if(XLALWriteLIGOLwXMLSimBurstTable(&xmlfp, sim_burst)) {
+	if(XLALWriteLIGOLwXMLSimBurstTable(xml, sim_burst)) {
 		/* error occured.  ?? do anything else ?? */
 		exit(1);
 	}
 
-	LAL_CALL(LALCloseLIGOLwXMLFile(&status, &xmlfp), &status);
+	XLALCloseLIGOLwXMLFile(xml);
 }
 
 
