@@ -2377,16 +2377,8 @@ else:
 ##############################################################################
 # Step 13: Setup the Maximum number of jobs for different categories
 if not opts.disable_dag_categories:
-  if opts.datafind:
-    dag.add_maxjobs_category('datafind',10)
-  if opts.coincidence or opts.second_coinc:
-    dag.add_maxjobs_category('thinca',20)
-  if opts.trigbank:
-    dag.add_maxjobs_category('trigbank',20)
-  if opts.coire_coincidence or opts.coire_second_coinc:
-    dag.add_maxjobs_category('coire',20)
-  if opts.sire_inspiral or opts.sire_inspiral_veto:
-    dag.add_maxjobs_category('sire',20)
+  for cp_opt in cp.options('condor-max-jobs'):
+    dag.add_maxjobs_category(cp_opt,cp.getint('condor-max-jobs',cp_opt)
 
 # Add number of retries to jobs as specified by ihope.ini
 if cp.has_option("pipeline", "retry-jobs"):
