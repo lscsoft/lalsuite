@@ -41,6 +41,7 @@ else
 InspiralSpinBankTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 endif
 
+TESTS_ENVIRONMENT = 1>/dev/null 2>/dev/null
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 TESTS = ChirpSpace CoarseTest CoarseTest2 MetricTest MetricTestBCV PNTemplates BCVTemplates BCVTemplatesFlatMesh InspiralSpinBankTest
 EXTRA_DIST = CoarseTest.par demo 
