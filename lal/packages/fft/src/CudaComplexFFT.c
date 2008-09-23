@@ -148,6 +148,7 @@ COMPLEX8FFTPlan * XLALCreateCOMPLEX8FFTPlan( UINT4 size, int fwdflg, int measure
 {
   static const char *func = "XLALCreateCOMPLEX8FFTPlan";
   COMPLEX8FFTPlan *plan;
+  UINT4 createSize;
 
   if ( ! size )
     XLAL_ERROR_NULL( func, XLAL_EBADLEN );
@@ -161,10 +162,14 @@ COMPLEX8FFTPlan * XLALCreateCOMPLEX8FFTPlan( UINT4 size, int fwdflg, int measure
   }
 
   /* create the plan */
-  //LAL_FFTW_PTHREAD_MUTEX_LOCK;
-  cufftPlan1d( &plan->plan, size, CUFFT_C2C, 1 );
-  //LAL_FFTW_PTHREAD_MUTEX_UNLOCK;
-
+  /* LAL_FFTW_PTHREAD_MUTEX_LOCK; */
+  /*
+   * Change the size to avoid CUDA bug with FFT of size 1
+   */
+  if( size == 1 ) createSize = 2;
+  else createSize = size;
+  cufftPlan1d( &plan->plan, createSize, CUFFT_C2C, 1 );
+  /* LAL_FFTW_PTHREAD_MUTEX_UNLOCK; */
   /* check to see success of plan creation */
   if ( ! plan->plan )
   {
@@ -236,7 +241,13 @@ int XLALCOMPLEX8VectorFFT( COMPLEX8Vector *output, COMPLEX8Vector *input,
     XLAL_ERROR( func, XLAL_EBADLEN );
 
   /* do the fft */
-  cudafft_execute_c2c( plan->plan, 
+  if( plan->size == 1 ) 
+  {
+    output->data[0].re = input->data[0].re;
+    output->data[0].im = input->data[0].im;
+  }
+  else
+    cudafft_execute_c2c( plan->plan, 
 	(cufftComplex *)(output->data), (cufftComplex *)(input->data),
 	(cufftComplex *)plan->d_output, (cufftComplex *)plan->d_input, 
 	plan->sign, plan->size );  

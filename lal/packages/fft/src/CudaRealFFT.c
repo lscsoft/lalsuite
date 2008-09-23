@@ -197,6 +197,7 @@ tagREAL8FFTPlan
 
 REAL4FFTPlan * XLALCreateREAL4FFTPlan( UINT4 size, int fwdflg, int measurelvl )
 {
+  UINT4 createSize;
   static const char *func = "XLALCreateREAL4FFTPlan";
   REAL4FFTPlan *plan;
 
@@ -211,23 +212,28 @@ REAL4FFTPlan * XLALCreateREAL4FFTPlan( UINT4 size, int fwdflg, int measurelvl )
     XLAL_ERROR_NULL( func, XLAL_ENOMEM );
   }
 
-  //LAL_FFTW_PTHREAD_MUTEX_LOCK;
+  /* 
+   * Use a different size for plan creation to avoid current CUDA bug
+   * in performing FFT to array with size 1
+   */
+  if( size == 1 ) createSize = 2;
+  else	createSize = size;
+  /* LAL_FFTW_PTHREAD_MUTEX_LOCK; */
   if ( fwdflg ) /* forward */
-    cufftPlan1d( &plan->plan, size, CUFFT_R2C, 1 );
+    cufftPlan1d( &plan->plan, createSize, CUFFT_R2C, 1 );
   else /* reverse */
-    cufftPlan1d( &plan->plan, size, CUFFT_C2R, 1 );
-  //LAL_FFTW_PTHREAD_MUTEX_UNLOCK;
-
+    cufftPlan1d( &plan->plan, createSize, CUFFT_C2R, 1 );
+  /* LAL_FFTW_PTHREAD_MUTEX_UNLOCK; */
   /* check to see success of plan creation */
   if ( ! plan->plan )
-  {
+  {  
     XLALFree( plan );
     XLAL_ERROR_NULL( func, XLAL_EFAILED );
   }
 
   /* Allocate memory in the GPU */
   plan->d_real = XLALCudaMallocReal(size);
-  plan->d_complex = XLALCudaMallocComplex(size/2 + 1);
+  plan->d_complex = XLALCudaMallocComplex(size/2 + 1);  
 
   /* now set remaining plan fields */
   plan->size = size;
@@ -266,14 +272,14 @@ void XLALDestroyREAL4FFTPlan( REAL4FFTPlan *plan )
     XLAL_ERROR_VOID( func, XLAL_EFAULT );
   if ( ! plan->plan )
     XLAL_ERROR_VOID( func, XLAL_EINVAL );
-  //LAL_FFTW_PTHREAD_MUTEX_LOCK;
+  /* LAL_FFTW_PTHREAD_MUTEX_LOCK; */
   /* Free the Cuda specific variables */
   XLALCudaFree( plan->d_real );
   cufftDestroy( plan->plan );
   XLALCudaFree( plan->d_complex );
-  //LAL_FFTW_PTHREAD_MUTEX_UNLOCK;
+  /* LAL_FFTW_PTHREAD_MUTEX_UNLOCK; */
   memset( plan, 0, sizeof( *plan ) );
-  LALFree( plan );
+  XLALFree( plan );
   return;
 }
 
@@ -292,9 +298,24 @@ int XLALREAL4ForwardFFT( COMPLEX8Vector *output, const REAL4Vector *input,
     XLAL_ERROR( func, XLAL_EBADLEN );
 
   /* do the fft */
-  cudafft_execute_r2c( plan->plan, 
+  /* 
+   * Special check for vector with size 1 to avoid CUDA bug
+   */
+  if( plan->size == 1 ) 
+  {
+    output->data[0].re = input->data[0];
+    output->data[0].im = 0.0;
+  }
+  else
+    cudafft_execute_r2c( plan->plan, 
     (cufftComplex *)(output->data), (cufftReal *)(input->data),
     (cufftComplex *)plan->d_complex, (cufftReal *)plan->d_real, plan->size );
+
+  /* Nyquist frequency */
+  if( plan->size%2 == 0 )
+  {
+    output->data[plan->size/2].im = 0.0;
+  }
 
   return 0;
 }
@@ -319,7 +340,15 @@ int XLALREAL4ReverseFFT( REAL4Vector *output, const COMPLEX8Vector *input,
     XLAL_ERROR( func, XLAL_EDOM );  /* imaginary part of Nyquist must be zero */
 
   /* perform the fft */
-  cudafft_execute_c2r( plan->plan, 
+  /* 
+   * Special check to handle array of size 1
+   */
+  if( plan->size == 1 ) 
+  {
+    output->data[0] = input->data[0].re;
+  }
+  else
+    cudafft_execute_c2r( plan->plan, 
     (cufftReal *)(output->data), (cufftComplex *)(input->data),
     (cufftReal *)plan->d_real, (cufftComplex *)plan->d_complex, plan->size );
 
@@ -331,6 +360,9 @@ int XLALREAL4VectorFFT( REAL4Vector *output, const REAL4Vector *input,
     const REAL4FFTPlan *plan )
 {
   static const char *func = "XLALREAL4VectorFFT";
+  COMPLEX8 *tmp;
+  UINT4 k;
+
   if ( ! output || ! input || ! plan )
     XLAL_ERROR( func, XLAL_EFAULT );
   if ( ! plan->plan || ! plan->size )
@@ -340,15 +372,56 @@ int XLALREAL4VectorFFT( REAL4Vector *output, const REAL4Vector *input,
   if ( output->length != plan->size || input->length != plan->size )
     XLAL_ERROR( func, XLAL_EBADLEN );
 
-  /* do the fft */
-  if( plan->sign == -1 )
-    cudafft_execute_r2c( plan->plan, 
-        (cufftComplex *)(output->data), (cufftReal *)(input->data),
-        (cufftComplex *)plan->d_complex, (cufftReal *)plan->d_real, plan->size );
+  if( plan->size == 1 )
+  {
+    output->data[0] = input->data[0];
+  }
   else
-    cudafft_execute_c2r( plan->plan, 
-        (cufftReal *)(output->data), (cufftComplex *)(input->data),
-        (cufftReal *)plan->d_real, (cufftComplex *)plan->d_complex, plan->size );
+  {
+    tmp = XLALMalloc( plan->size * sizeof(*tmp) );
+    /* do the fft */
+    if( plan->sign == -1 )
+    {
+      cudafft_execute_r2c( plan->plan, 
+	  (cufftComplex *)tmp, (cufftReal *)(input->data),
+	  (cufftComplex *)plan->d_complex, (cufftReal *)plan->d_real, plan->size );
+      output->data[0] = tmp[0].re;
+
+      for( k = 1; k < (plan->size + 1)/2; k++ )
+      {
+	output->data[k] = tmp[k].re;
+	output->data[plan->size - k] = tmp[k].im;
+      }
+
+      if( plan->size % 2 == 0 )
+      {
+	output->data[plan->size/2] = tmp[plan->size/2].re;
+      }
+    }
+    else
+    {
+      tmp[0].re = input->data[0];
+      tmp[0].im = 0.0;
+
+      for( k = 1; k < (plan->size + 1)/2; k++ )
+      {
+	tmp[k].re = input->data[k];
+	tmp[k].im = input->data[plan->size - k];
+      }
+
+      if( plan->size%2 == 0 )
+      {
+	tmp[plan->size/2].re = input->data[plan->size/2];
+	tmp[plan->size/2].im = 0.0;
+      }
+
+      cudafft_execute_c2r( plan->plan, 
+	  (cufftReal *)(output->data), (cufftComplex *)tmp,
+	  (cufftReal *)plan->d_real, (cufftComplex *)plan->d_complex, plan->size );
+    }
+    XLALFree(tmp);
+  }
+  
   return 0;
 }
 
@@ -374,8 +447,12 @@ int XLALREAL4PowerSpectrum( REAL4Vector *spec, const REAL4Vector *data,
   if ( ! tmp )
     XLAL_ERROR( func, XLAL_ENOMEM );
 
+  /* Check for size 1 to avoid the CUDA bug */
+  if( plan->size == 1 )
+    tmp[0].re = data->data[0];
   /* transform the data */
-  cudafft_execute_r2c( plan->plan, 
+  else
+    cudafft_execute_r2c( plan->plan, 
     (cufftComplex *)(tmp), (cufftReal *)(data->data),
     (cufftComplex *)plan->d_complex, (cufftReal *)plan->d_real, plan->size );
 
