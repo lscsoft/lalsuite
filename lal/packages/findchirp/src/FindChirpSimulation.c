@@ -439,9 +439,11 @@ LALFindChirpInjectSignals (
     else
     {
       INT4 i, dataLength, wfmLength, sampleRate;
-      /* XXX this code will BREAK if the first element of the frequency series XXX */
-      /* XXX does not contain dynRange. This is the case for calibrated strain XXX */
-      /* XXX data, but will not be the case when filtering uncalibrated data.  XXX */
+      /* XXX This code will BREAK if the first element of the frequency XXX *
+       * XXX series does not contain dynRange. This is the case for     XXX *
+       * XXX calibrated strain data, but will not be the case when      XXX *
+       * XXX filtering uncalibrated data.                               XXX */
+
       REAL8 dynRange;
       float *x1;
       
