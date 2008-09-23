@@ -19,7 +19,7 @@
  */
 
 
-#include <lal/XLALError.h>
+#include <lal/LALAtomicDatatypes.h>
 #include <lal/LALNoiseModels.h>
 
 
@@ -60,6 +60,8 @@ REAL8 XLALLIGOIPsd(REAL8 f)
 
 void LALLIGOIPsd(LALStatus *status, REAL8 *psd, REAL8 f) 
 {
-	XLALPrintDeprecationWarning("LALLIGOIPsd", "XLALLIGOIPsd");
+	/* Deprecation warning temporarily commented out to make life
+	 * easier for the nightly build --- please update calling code */
+	/*XLALPrintDeprecationWarning("LALLIGOIPsd", "XLALLIGOIPsd");*/
 	*psd = XLALLIGOIPsd(f) / 9e-46;
 }
