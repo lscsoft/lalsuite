@@ -342,12 +342,12 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dfOnly = False, \
   hipecp = copy.deepcopy(config)
   if dfOnly:
     hipeSections = ["condor", "pipeline", "input", "datafind","data",\
-        "ligo-data","inspiral","virgo-data"]
+        "ligo-data","inspiral","virgo-data", "condor-max-jobs"]
   elif vetoCat:
     hipeSections = ["condor", "pipeline", "input", "data", "ligo-data", \
         "inspiral", "thinca", "thinca-2", "datafind", "virgo-data", \
         "thinca-slide", "coire", "coire-1", "coire-2","coire-inj", "sire", \
-        "sire-inj"]
+        "sire-inj", "condor-max-jobs"]
   else:
     hipeSections = ["condor", "pipeline", "input", "calibration", "datafind",\
         "ligo-data", "virgo-data", "geo-data", "data", "tmpltbank", \
@@ -357,7 +357,7 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dfOnly = False, \
         "l1-inspiral", "g1-inspiral", "v1-inspiral", "thinca", "thinca-1", \
         "thinca-2", "thinca-slide", "trigbank", "sire",  \
         "sire-inj", "coire", "coire-1", "coire-2", "coire-inj", \
-        "cohbank", "coh-trig", "chia", "coherent-inspiral"]
+        "cohbank", "coh-trig", "chia", "coherent-inspiral", "condor-max-jobs"]
 
   for seg in hipecp.sections():
     if not seg in hipeSections: hipecp.remove_section(seg)
