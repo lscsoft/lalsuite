@@ -102,6 +102,10 @@ int XLALGenerateSimBurst(
 		XLALPrintInfo("%s(): sine-Gaussian: f = %.16g Hz, Q = %.16g, hrss = %.16g\n", func, sim_burst->frequency, sim_burst->q, sim_burst->hrss);
 		if(XLALSimBurstSineGaussian(hplus, hcross, sim_burst->q, sim_burst->frequency, sim_burst->hrss, sim_burst->pol_ellipse_e, sim_burst->pol_ellipse_angle, delta_t))
 			XLAL_ERROR(func, XLAL_EFUNC);
+	} else if(!strcmp(sim_burst->waveform, "Impluse")) {
+		XLALPrintInfo("%s(): impulse: hpeak = %.16g\n", func, sim_burst->amplitude, delta_t);
+		if(XLALGenerateImpulseBurst(hplus, hcross, sim_burst->amplitude, delta_t))
+			XLAL_ERROR(func, XLAL_EFUNC);
 	} else {
 		/* unrecognized waveform */
 		XLALPrintError("%s(): error: unrecognized waveform\n", func);
