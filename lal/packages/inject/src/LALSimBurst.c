@@ -31,6 +31,7 @@
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_randist.h>
 #include <lal/LALSimBurst.h>
+#include <lal/LALComplex.h>
 #include <lal/LALConstants.h>
 #include <lal/FrequencySeries.h>
 #include <lal/Sequence.h>
@@ -184,7 +185,7 @@ REAL8 XLALMeasureIntHDotSquaredDT(const COMPLEX16FrequencySeries *fseries)
 		double tmp = sum;
 		/* what we want to add = f^{2} |\tilde{s}(f)|^{2} + "error
 		 * from last iteration" */
-		double x = (fseries->f0 + i * fseries->deltaF) * (fseries->f0 + i * fseries->deltaF) * (fseries->data->data[i].re * fseries->data->data[i].re + fseries->data->data[i].im * fseries->data->data[i].im) + e;
+		double x = pow(fseries->f0 + i * fseries->deltaF, 2) * XLALCOMPLEX16Abs2(fseries->data->data[i]) + e;
 		/* add */
 		sum += x;
 		/* negative of what was actually added */
@@ -717,15 +718,9 @@ int XLALGenerateStringCusp(
 		tilde_h->data->data[i].re *= cos(-LAL_PI * i * (length - 1) / length);
 	}
 
-	/* set DC to zero */
+	/* set DC and Nyquist to zero */
 
-	tilde_h->data->data[0].re = 0;
-	tilde_h->data->data[0].im = 0;
-
-	/* set Nyquist to zero */
-
-	tilde_h->data->data[tilde_h->data->length - 1].re = 0;
-	tilde_h->data->data[tilde_h->data->length - 1].im = 0;
+	tilde_h->data->data[0] = tilde_h->data->data[tilde_h->data->length - 1] = LAL_COMPLEX16_ZERO;
 
 	/* transform to time domain */
 
