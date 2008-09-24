@@ -264,6 +264,76 @@ REAL8 XLALMeasureEoverRsquared(REAL8TimeSeries *hplus, REAL8TimeSeries *hcross)
 /*
  * ============================================================================
  *
+ *                   Construct a \delta Function Injection
+ *
+ * ============================================================================
+ */
+
+
+/**
+ * Places a single non-zero sample into the middle of the time series.
+ *
+ * Parameters:
+ *
+ * hpeak:  amplitude of the impulse.
+ *
+ * Output:
+ *
+ * The h+ and hx time series both have an odd number of samples all set to
+ * 0 except for a single sample with amplitude hpeak in the middle of the
+ * h+ time series.
+ */
+
+
+int XLALGenerateImpulseBurst(
+	REAL8TimeSeries **hplus,
+	REAL8TimeSeries **hcross,
+	REAL8 hpeak,
+	REAL8 delta_t
+)
+{
+	static const char func[] = "XLALGenerateImpulseBurst";
+	int length;
+	LIGOTimeGPS epoch;
+
+	/* length is 1353 samples, because it's 13:53 right now and it's an
+	 * odd integer */
+
+	length = 1353;
+
+	/* the middle sample is t = 0 */
+
+	XLALGPSSetREAL8(&epoch, -(length - 1) / 2 * delta_t);
+
+	/* allocate the time series */
+
+	*hplus = XLALCreateREAL8TimeSeries("Impulse +", &epoch, 0.0, delta_t, &lalStrainUnit, length);
+	*hcross = XLALCreateREAL8TimeSeries("Impulse x", &epoch, 0.0, delta_t, &lalStrainUnit, length);
+	if(!*hplus || !*hcross) {
+		XLALDestroyREAL8TimeSeries(*hplus);
+		XLALDestroyREAL8TimeSeries(*hcross);
+		*hplus = *hcross = NULL;
+		XLAL_ERROR(func, XLAL_EFUNC);
+	}
+
+	/* set to zero */
+
+	memset((*hplus)->data->data, 0, sizeof(*(*hplus)->data->data));
+	memset((*hcross)->data->data, 0, sizeof(*(*hcross)->data->data));
+
+	/* put impulse into middle sample of h+ */
+
+	(*hplus)->data->data[(length - 1) / 2] = hpeak;
+
+	/* done */
+
+	return 0;
+}
+
+
+/*
+ * ============================================================================
+ *
  *            Construct a Band- and Time-Limited White Noise Burst
  *
  * ============================================================================

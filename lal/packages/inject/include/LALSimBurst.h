@@ -44,6 +44,14 @@ NRCSID(LALSIMBURSTH, "$Id:");
  */
 
 
+int XLALGenerateImpulseBurst(
+	REAL8TimeSeries **hplus,
+	REAL8TimeSeries **hcross,
+	REAL8 hpeak,
+	REAL8 delta_t
+);
+
+
 int XLALGenerateBandAndTimeLimitedWhiteNoiseBurst(
 	REAL8TimeSeries **hplus,
 	REAL8TimeSeries **hcross,
