@@ -37,7 +37,8 @@ SEQUENCETYPE *`XLALCreate'SEQUENCETYPE (
 
 	new = XLALMalloc(sizeof(*new));
 	data = XLALMalloc(length * sizeof(*data));
-	if(!new || !data) {
+	/* data == NULL is OK if length == 0 */
+	if(!new || (length && !data)) {
 		XLALFree(new);
 		XLALFree(data);
 		XLAL_ERROR_NULL(func, XLAL_EFUNC);
