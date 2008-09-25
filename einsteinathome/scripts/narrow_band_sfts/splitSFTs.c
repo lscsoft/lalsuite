@@ -37,7 +37,7 @@
 #include <string.h>
 #include "SFTReferenceLibrary.h"
 
-#define RCSID "$Id: splitSFTs.c,v 1.29 2008/08/17 15:13:48 bema Exp $"
+#define RCSID "$Id: splitSFTs.c,v 1.30 2008/09/25 01:24:35 bema Exp $"
 
 /* rounding (for positive numbers!)
    taken from SFTfileIO in LALSupport, should be consistent with that */
@@ -114,25 +114,35 @@ int main(int argc, char**argv) {
   for(arg = 1; arg < argc; arg++) {
     if(strcmp(argv[arg], "-d") == 0) {
       detector = argv[++arg];
-    } else if(strcmp(argv[arg], "-s") == 0) {
-      start = atoi(argv[++arg]);
-    } else if(strcmp(argv[arg], "-c") == 0) {
+    } else if((strcmp(argv[arg], "-c") == 0) ||
+	      (strcmp(argv[arg], "--add-comment") == 0)){
       add_comment = atoi(argv[++arg]);
-    } else if(strcmp(argv[arg], "-e") == 0) {
+    } else if((strcmp(argv[arg], "-s") == 0) ||
+	      (strcmp(argv[arg], "--start-bin") == 0)){
+      start = atoi(argv[++arg]);
+    } else if((strcmp(argv[arg], "-e") == 0) ||
+	      (strcmp(argv[arg], "--end-bin") == 0)){
       end = atoi(argv[++arg]);
-    } else if(strcmp(argv[arg], "-b") == 0) {
+    } else if((strcmp(argv[arg], "-b") == 0) ||
+	      (strcmp(argv[arg], "--width") == 0)){
       width = atoi(argv[++arg]);
-    } else if(strcmp(argv[arg], "-fs") == 0) {
+    } else if((strcmp(argv[arg], "-fs") == 0) ||
+	      (strcmp(argv[arg], "--start-frequency") == 0)){
       fMin = atof(argv[++arg]);
-    } else if(strcmp(argv[arg], "-fe") == 0) {
+    } else if((strcmp(argv[arg], "-fe") == 0) ||
+	      (strcmp(argv[arg], "--end-frequency") == 0)){
       fMax = atof(argv[++arg]);
-    } else if(strcmp(argv[arg], "-fb") == 0) {
+    } else if((strcmp(argv[arg], "-fb") == 0) ||
+	      (strcmp(argv[arg], "--frequency-bandwidth") == 0)){
       fWidth = atof(argv[++arg]);
-    } else if(strcmp(argv[arg], "-m") == 0) {
+    } else if((strcmp(argv[arg], "-m") == 0) ||
+	      (strcmp(argv[arg], "--mystery-factor") == 0)){
       factor = atof(argv[++arg]);
-    } else if(strcmp(argv[arg], "-o") == 0) {
+    } else if((strcmp(argv[arg], "-o") == 0) ||
+	      (strcmp(argv[arg], "--output-prefix") == 0)){
       prefix = argv[++arg];
-    } else if(strcmp(argv[arg], "-i") == 0) {
+    } else if((strcmp(argv[arg], "-i") == 0) ||
+	      (strcmp(argv[arg], "--input-files") == 0)){
       break;
     } else {
       fprintf(stderr, "unknown option '%s', try '-h' for help\n", argv[arg]);
