@@ -100,7 +100,7 @@ LALINT8toGPS (
 {
   INITSTATUS( status, "LALINT8toGPS", GPSTOINT8C );
 
-  XLALPrintDeprecationWarning("LALINT8toGPS", "XLALINT8toGPS");
+  XLALPrintDeprecationWarning("LALINT8toGPS", "XLALINT8NSToGPS");
 
   XLALINT8toGPS( output, *input );
 
@@ -131,7 +131,7 @@ LALGPStoINT8 (
 {
   INITSTATUS( status, "LALGPStoINT8", GPSTOINT8C );
 
-  XLALPrintDeprecationWarning("LALGPStoINT8", "XLALGPStoINT8");
+  XLALPrintDeprecationWarning("LALGPStoINT8", "XLALGPSToINT8NS");
   
   *output = XLALGPStoINT8( input );
 
