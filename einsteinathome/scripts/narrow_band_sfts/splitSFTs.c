@@ -5,28 +5,6 @@
   It links to the SFTReferenceLibrary. To compile, use somehting like
   gcc -Wall -g -O2 splitSFTs.c -o splitSFTs libSFTReferenceLibrary.a -lm
 
-  The frequency bands of the ouput SFTs (first frequency bin of first output SFT,
-  last frequency bin of last output SFT, number of bins in each output SFT)
-  can be specified either in bins ('-s', '-e', '-b') or Hz ('-fs', '-fe', '-fb')
-  (or mixed - if both are given, frequency values take precedence).
-
-  A "mystery factor" can be specified with '-m' option.
-
-  In case of reading v1 SFTs (which don't support detector information in the header) the detector
-  needs to be specified on the command-line using '-d' option.
-
-  The name of the output SFTs is created by appending the start bin of the narrow-band SFT to the
-  "output prefix" that can be given to the program with '-o'. If an output file already exists,
-  the program will append the new SFTs to them, making it possible to construct the final
-  narrow-band SFTs by running the program multiple times with different input SFTs. The GPS
-  timestamps of the input SFTs need to be in ascending order to get valid merged SFT files.
-
-  The last option on the command-line needs to be '-i', followed by as many input files as you wish
-  (or the OS supports - using xargs should be simple with this command-line syntax).
-
-  The program adds its own RCSID and command-line to the comment of the written SFTs,
-  a mystery factor should show up as "xxx" there.
-
   Copyright (C) 2008 Bernd Machenschalk
 
 */
@@ -37,7 +15,7 @@
 #include <string.h>
 #include "SFTReferenceLibrary.h"
 
-#define RCSID "$Id: splitSFTs.c,v 1.30 2008/09/25 01:24:35 bema Exp $"
+#define RCSID "$Id: splitSFTs.c,v 1.31 2008/09/26 19:28:31 bema Exp $"
 
 /* rounding (for positive numbers!)
    taken from SFTfileIO in LALSupport, should be consistent with that */
@@ -71,8 +49,9 @@ int main(int argc, char**argv) {
   double factor = 1.0;         /* "mystery" factor */
   int firstfile = TRUE;        /* are we processing the first input SFT file? */
   int add_comment = CMT_FULL;  /* add RCSID and full command-line to every SFT file */
-  unsigned int start = 0, end = 0, width = 0;     /* start, end and width in bins */
-  double fMin = -1.0, fMax = -1.0, fWidth = -1.0; /* start, end and width in Hz */
+  unsigned int start = 0, end = 0, width = 0, overlap = 0;     /* start, end, width and overlap in bins */
+  double fMin = -1.0, fMax = -1.0, fWidth = -1.0, fOverlap = -1; /* start, end, width and overlap in Hz */
+
 
   /* help / usage message */
   if((argv[1] == NULL) ||
@@ -80,9 +59,39 @@ int main(int argc, char**argv) {
      (strcmp(argv[1], "--help") == 0)) {
     fprintf(stderr,
 	    "%s -h\n"
-	    "%s [-c 0|1|2] [-s <startbin>] [-e <endbin (exclusively)>] [-b <sftbins>]"
-	    " [-fs <startfrequency>] [-fe <endfrequency (exclusively)>] [-fb <frequencywidth>]"
-	    " [-m <factor>] [-d <detector>] [-o <outputprefix>] -i <inputfile> ...\n",
+	    "\n"
+	    "  Write this help message\n"
+	    "\n"
+	    "%s [-c 0|1|2] [-s <startbin>] [-e <endbin (exclusively)>] [-b <sftbins>]\n"
+	    "  [-fs <startfrequency>] [-fe <endfrequency (exclusively)>] [-fb <frequencywidth>]\n"
+	    "  [-m <factor>] [-d <detector>] [-o <outputprefix>] -i <inputfile> ...\n"
+	    "\n"
+	    "  This program reads in binary SFTs (v1 and v2) and writes out narrow-banded\n"
+	    "  merged SFTs (v2).\n"
+	    "\n"
+	    "  The frequency bands of the ouput SFTs (first frequency bin of first output SFT,\n"
+	    "  last frequency bin of last output SFT, number of bins in each output SFT)\n"
+	    "  can be specified either in bins ('-s', '-e', '-b') or Hz ('-fs', '-fe', '-fb')\n"
+	    "  (or mixed - if both are given, frequency values take precedence).\n"
+	    "\n"
+	    "  A 'mystery factor' can be specified with '-m' option.\n"
+	    "\n"
+	    "  In case of reading v1 SFTs (which don't support detector information in the header)\n"
+	    "  the detector needs to be specified on the command-line using '-d' option.\n"
+	    "\n"
+	    "  The name of the output SFTs is created by appending the start bin of the narrow-band\n"
+	    "  SFT to the 'output prefix' that can be given to the program with '-o'. If an output\n"
+	    "  file already exists, the program will append the new SFTs to them, making it possible\n"
+	    "  to construct the final narrow-band SFTs by running the program multiple times with\n"
+	    "  different input SFTs. The GPS timestamps of the input SFTs need to be in ascending\n"
+	    "  order to get valid merged SFT files.\n"
+	    "\n"
+	    "  The last option on the command-line needs to be '-i', followed by as many input files\n"
+	    "  as you wish (or the OS supports - using xargs should be simple with this command-line\n"
+	    "  syntax).\n"
+	    "\n"
+	    "  The program adds its own RCSID and command-line to the comment of the written SFTs,\n"
+	    "  a mystery factor should show up as 'xxx' there.\n",
 	    argv[0], argv[0]);
     exit(0);
   }
@@ -126,6 +135,8 @@ int main(int argc, char**argv) {
     } else if((strcmp(argv[arg], "-b") == 0) ||
 	      (strcmp(argv[arg], "--width") == 0)){
       width = atoi(argv[++arg]);
+    } else if(strcmp(argv[arg], "-x") == 0) {
+      overlap = atoi(argv[++arg]);
     } else if((strcmp(argv[arg], "-fs") == 0) ||
 	      (strcmp(argv[arg], "--start-frequency") == 0)){
       fMin = atof(argv[++arg]);
@@ -135,6 +146,8 @@ int main(int argc, char**argv) {
     } else if((strcmp(argv[arg], "-fb") == 0) ||
 	      (strcmp(argv[arg], "--frequency-bandwidth") == 0)){
       fWidth = atof(argv[++arg]);
+    } else if(strcmp(argv[arg], "-fx") == 0) {
+      fOverlap = atof(argv[++arg]);
     } else if((strcmp(argv[arg], "-m") == 0) ||
 	      (strcmp(argv[arg], "--mystery-factor") == 0)){
       factor = atof(argv[++arg]);
@@ -178,7 +191,9 @@ int main(int argc, char**argv) {
       end   = MYROUND(fMax * hd.tbase);
     if(fWidth >= 0.0)
       width = MYROUND(fWidth * hd.tbase);
-    
+    if(fOverlap >= 0.0)
+      overlap = MYROUND(fOverlap * hd.tbase);
+ 
     /* allocate space for SFT data */
     TRY((data = (float*)calloc(hd.nsamples, 2*sizeof(float))) == NULL,
 	"out of memory allocating data",8);
@@ -197,6 +212,14 @@ int main(int argc, char**argv) {
 	      "ERROR: end bin (%d) is larger than last bin in input SFT (%d)\n",
 	      end, hd.firstfreqindex+hd.nsamples - 1);
       exit(10);
+    }
+
+    /* error if overlap is larger than the width */
+    if(overlap >= width) {
+      fprintf(stderr,
+              "ERROR: overlap (%d) is not smaller than the width (%d)\n",
+              overlap, width);
+      exit(11);
     }
 
     /* build comment for output SFTs */
@@ -222,7 +245,8 @@ int main(int argc, char**argv) {
 
     /* get the detector name from SFT header if present there (v2 SFTs),
        or else it needs to have been set on the command-line */
-    if(hd.detector)
+
+    if(hd.detector && *hd.detector)
       detector = hd.detector;
 
     /* if no detector has been specified, issue an error */
@@ -240,7 +264,7 @@ int main(int argc, char**argv) {
     fclose(fp);
 
     /* loop over start bins for output SFTs */
-    for(bin = start; bin < end; bin += width) {
+    for(bin = start; bin < end; bin += width-overlap) {
 
       int last_index = hd.firstfreqindex + hd.nsamples - 1;
       int last_bin = bin + width - 1;
