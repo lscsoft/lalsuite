@@ -15,7 +15,7 @@
 #include <string.h>
 #include "SFTReferenceLibrary.h"
 
-#define RCSID "$Id: splitSFTs.c,v 1.31 2008/09/26 19:28:31 bema Exp $"
+#define RCSID "$Id: splitSFTs.c,v 1.32 2008/09/26 20:44:43 bema Exp $"
 
 /* rounding (for positive numbers!)
    taken from SFTfileIO in LALSupport, should be consistent with that */
@@ -85,6 +85,12 @@ int main(int argc, char**argv) {
 	    "  to construct the final narrow-band SFTs by running the program multiple times with\n"
 	    "  different input SFTs. The GPS timestamps of the input SFTs need to be in ascending\n"
 	    "  order to get valid merged SFT files.\n"
+	    "\n"
+	    "  The '-c' options specifies how to deal with comments - 0 means no comment is written\n"
+	    "  at all, 1 means that the comment is taken unmodified from the input SFTs, 2 (default)\n"
+	    "  means that the program appends its RCS id and command-line to the comment. Any comment\n"
+	    "  is writteon only to the first SFT of a merged SFT output 'block' (i.e. call to this\n"
+	    "  program).\n"
 	    "\n"
 	    "  The last option on the command-line needs to be '-i', followed by as many input files\n"
 	    "  as you wish (or the OS supports - using xargs should be simple with this command-line\n"
