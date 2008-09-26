@@ -88,22 +88,22 @@ int XLALGenerateSimBurst(
 			XLAL_ERROR(func, XLAL_ENOMEM);
 		gsl_rng_set(rng, sim_burst->waveform_number);
 
-		XLALPrintInfo("%s(): BTLWNB: f = %.16g Hz, df = %.16g Hz, dt = %.16g s, hdot^2 = %.16g\n", func, sim_burst->frequency, sim_burst->bandwidth, sim_burst->duration, int_hdot_squared_dt);
+		XLALPrintInfo("%s(): BTLWNB @ %9d.%09u: f = %.16g Hz, df = %.16g Hz, dt = %.16g s, hdot^2 = %.16g\n", func, sim_burst->time_geocent_gps.gpsSeconds, sim_burst->time_geocent_gps.gpsNanoSeconds, sim_burst->frequency, sim_burst->bandwidth, sim_burst->duration, int_hdot_squared_dt);
 		if(XLALGenerateBandAndTimeLimitedWhiteNoiseBurst(hplus, hcross, sim_burst->duration, sim_burst->frequency, sim_burst->bandwidth, int_hdot_squared_dt, delta_t, rng)) {
 			gsl_rng_free(rng);
 			XLAL_ERROR(func, XLAL_EFUNC);
 		}
 		gsl_rng_free(rng);
 	} else if(!strcmp(sim_burst->waveform, "StringCusp")) {
-		XLALPrintInfo("%s(): string cusp: A = %.16g, fhigh = %.16g Hz\n", func, sim_burst->amplitude, sim_burst->frequency);
+		XLALPrintInfo("%s(): string cusp @ %9d.%09u: A = %.16g, fhigh = %.16g Hz\n", func, sim_burst->time_geocent_gps.gpsSeconds, sim_burst->time_geocent_gps.gpsNanoSeconds, sim_burst->amplitude, sim_burst->frequency);
 		if(XLALGenerateStringCusp(hplus, hcross, sim_burst->amplitude, sim_burst->frequency, delta_t))
 			XLAL_ERROR(func, XLAL_EFUNC);
 	} else if(!strcmp(sim_burst->waveform, "SineGaussian")) {
-		XLALPrintInfo("%s(): sine-Gaussian: f = %.16g Hz, Q = %.16g, hrss = %.16g\n", func, sim_burst->frequency, sim_burst->q, sim_burst->hrss);
+		XLALPrintInfo("%s(): sine-Gaussian @ %9d.%09u: f = %.16g Hz, Q = %.16g, hrss = %.16g\n", func, sim_burst->time_geocent_gps.gpsSeconds, sim_burst->time_geocent_gps.gpsNanoSeconds, sim_burst->frequency, sim_burst->q, sim_burst->hrss);
 		if(XLALSimBurstSineGaussian(hplus, hcross, sim_burst->q, sim_burst->frequency, sim_burst->hrss, sim_burst->pol_ellipse_e, sim_burst->pol_ellipse_angle, delta_t))
 			XLAL_ERROR(func, XLAL_EFUNC);
 	} else if(!strcmp(sim_burst->waveform, "Impulse")) {
-		XLALPrintInfo("%s(): impulse: hpeak = %.16g\n", func, sim_burst->amplitude, delta_t);
+		XLALPrintInfo("%s(): impulse @ %9d.%09u: hpeak = %.16g\n", func, sim_burst->time_geocent_gps.gpsSeconds, sim_burst->time_geocent_gps.gpsNanoSeconds, sim_burst->amplitude, delta_t);
 		if(XLALGenerateImpulseBurst(hplus, hcross, sim_burst->amplitude, delta_t))
 			XLAL_ERROR(func, XLAL_EFUNC);
 	} else {
@@ -142,7 +142,7 @@ int XLALBurstInjectSignals(
 	REAL8TimeSeries *h;
 	/* skip injections whose geocentre times are more than this many
 	 * seconds outside of the target time series */
-	const double injection_window = 600.0;
+	const double injection_window = 100.0;
 
 	/* turn the first two characters of the channel name into a
 	 * detector */
