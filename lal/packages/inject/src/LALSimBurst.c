@@ -318,8 +318,8 @@ int XLALGenerateImpulseBurst(
 
 	/* set to zero */
 
-	memset((*hplus)->data->data, 0, sizeof(*(*hplus)->data->data));
-	memset((*hcross)->data->data, 0, sizeof(*(*hcross)->data->data));
+	memset((*hplus)->data->data, 0, length * sizeof(*(*hplus)->data->data));
+	memset((*hcross)->data->data, 0, length * sizeof(*(*hcross)->data->data));
 
 	/* put impulse into middle sample of h+ */
 
