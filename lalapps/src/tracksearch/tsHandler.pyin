@@ -479,6 +479,8 @@ elif ((expThreshold != "") and (canList.__len__() >=1)):
                     candidateResults.writeSummary(outfile)
                 if glitchdb:
                     candidateResults.writeGlitchDatabase('',outfile)
+                if (dqList>=0):
+                    candidateObject.writeDQtable(dqList,outfile)
             else:
                 pathName=os.path.dirname(entry)
                 saveFiles=pathName+'/Threshold:'+str(singleThresholdName)+':'+os.path.basename(entry)
@@ -489,6 +491,8 @@ elif ((expThreshold != "") and (canList.__len__() >=1)):
                 	candidateResults.writeSummary(saveFiles)
             	if glitchdb:
                 	candidateResults.writeGlitchDatabase('',saveFiles)
+                if (dqList>=0):
+                    candidateObject.writeDQtable(dqList,outfile)
                 candidateResults.__setfilename__(saveFiles)
                 if createHistogram:
                     wrapperShowHistogram(candidateResults)
@@ -515,6 +519,10 @@ elif ((canList.__len__() >=1) and (dumpSummaryDisk or glitchdb) and (expThreshol
             candidateObject.writeGlitchDatabase('',outfile)
         elif glitchdb:
             candidateObject.writeGlitchDatabase('',entry)
+        if ((outfile != "") and (dqList>=0)):
+            candidateObject.writeDQtable(dqList,outfile)
+        elif (dqList>=0):
+            candidateObject.writeDQtable(dqList,entry)
         del candidateObject
     #SECTION TO DUMP SUMMARY TO SCREEN        
 elif ((canList.__len__() >=1) and dumpSummaryScreen):
