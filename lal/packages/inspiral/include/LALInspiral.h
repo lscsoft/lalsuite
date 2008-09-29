@@ -459,7 +459,7 @@ typedef enum {
    NumRel,
    Eccentricity,
    EOBNR,
-   Phenom,
+   IMRPhenomA,
    NumApproximants
  } Approximant;
 /* </lalVerbatim>  */

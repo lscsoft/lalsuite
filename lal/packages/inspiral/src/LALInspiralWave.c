@@ -339,7 +339,7 @@ LALInspiralWaveForInjection(
        LALEOBWaveformForInjection(status->statusPtr, waveform, inspiralParams, ppnParams);
        CHECKSTATUSPTR(status);
 	   break;
-     case Phenom:
+     case IMRPhenomA:
        LALBBHPhenWaveTimeDomForInjection (status->statusPtr, waveform, inspiralParams, ppnParams);
        CHECKSTATUSPTR(status);
        break;  

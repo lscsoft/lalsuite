@@ -680,7 +680,7 @@ void LALBBHPhenWaveTimeDomForInjection (LALStatus        *status,
   memset(a->data, 0, 2 * paramsInit.nbins * sizeof(REAL4));
   memset(phi->data, 0, paramsInit.nbins * sizeof(REAL8));
 
-  if( params->approximant == Phenom ) {
+  if( params->approximant == IMRPhenomA ) {
       LALSCreateVector(status->statusPtr, &h, 2*paramsInit.nbins);
       CHECKSTATUSPTR(status);
       memset(h->data,  0, 2*paramsInit.nbins * sizeof(REAL4));
@@ -700,7 +700,7 @@ void LALBBHPhenWaveTimeDomForInjection (LALStatus        *status,
       CHECKSTATUSPTR(status);
       LALDDestroyVector(status->statusPtr, &phi);
       CHECKSTATUSPTR(status);
-      if( params->approximant == Phenom ){
+      if( params->approximant == IMRPhenomA ){
           LALSDestroyVector(status->statusPtr, &h);
           CHECKSTATUSPTR(status);
       }
@@ -717,7 +717,7 @@ void LALBBHPhenWaveTimeDomForInjection (LALStatus        *status,
               CHECKSTATUSPTR(status);
               LALDDestroyVector(status->statusPtr, &phi);
               CHECKSTATUSPTR(status);
-          if( params->approximant == Phenom){
+          if( params->approximant == IMRPhenomA){
               LALSDestroyVector(status->statusPtr, &h);
               CHECKSTATUSPTR(status);
           }
@@ -817,7 +817,7 @@ void LALBBHPhenWaveTimeDomForInjection (LALStatus        *status,
       ppnParams->termDescription = GENERATEPPNINSPIRALH_MSGEFSTOP;
       ppnParams->fStart   = ppnParams->fStartIn;
 
-      if( params->approximant == Phenom ){
+      if( params->approximant == IMRPhenomA ){
           if ( ( waveform->h = (REAL4TimeVectorSeries *)
                       LALMalloc( sizeof(REAL4TimeVectorSeries) ) ) == NULL ){
               ABORT( status, LALINSPIRALH_EMEM, LALINSPIRALH_MSGEMEM );

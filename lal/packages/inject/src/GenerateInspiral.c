@@ -392,6 +392,10 @@ LALGetApproximantFromString(
   {
     *approximant = NumRel;
   }
+  else if ( strstr(thisEvent, "IMRPhenomA" ) )
+  {
+    *approximant = IMRPhenomA;
+  }
   else
   {
     LALSnprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
