@@ -2378,7 +2378,7 @@ else:
 # Step 13: Setup the Maximum number of jobs for different categories
 if not opts.disable_dag_categories:
   for cp_opt in cp.options('condor-max-jobs'):
-    dag.add_maxjobs_category(cp_opt,cp.getint('condor-max-jobs',cp_opt)
+    dag.add_maxjobs_category(cp_opt,cp.getint('condor-max-jobs',cp_opt))
 
 # Add number of retries to jobs as specified by ihope.ini
 if cp.has_option("pipeline", "retry-jobs"):
