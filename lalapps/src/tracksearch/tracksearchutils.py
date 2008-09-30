@@ -303,6 +303,116 @@ class kurve:
             return abs(bandWidth)
     #End method getCandidateBandwidth
 
+    def getCandidateCentralFreq(self):
+        """
+        Quickly tabulate the center Freq of the candidate.
+        """
+        [bandWidth,minFreq,maxFreq]=self.getCandidateBandwidth(bool(True))
+        result=minFreq+(maxFreq-minFreq)/2
+        return result
+    #End
+
+    def getCandidateCentralTime(self):
+        """
+        Quickly tabulate the center Freq of the candidate.
+        """
+        duration=self.getCandidateDuration()
+        start=self.startGPS().getAsFloat()
+        stop=self.stopGPS().getAsFloat()
+        result=start+(start-stop)/2
+        return result
+    #End
+
+    def getRelativeBrightTime(self):
+        """
+        Create a measure of relative time for the bright pixel compared to 
+        curve starting time.
+        """
+        startTime=self.getBrightPixelAndStats()[0][3]
+        centralTime=self.getCandidateCentralTime()
+        duration=self.getCandidateDuration()
+        try:
+            relativeTime=(startTime-centralTime)/duration
+        except:
+            relativeTime=0
+        return relativeTime
+    #End getRelativeBrightTime()
+
+    def getRelativeCMTime(self):
+        """
+        Create a measure of relative time for the CM(center of mass) pixel 
+        compared to curve starting time.
+        """
+        startTime=self.getCMPixel()[2]
+        centralTime=self.getCandidateCentralTime()
+        duration=self.getCandidateDuration()
+        try:
+            relativeTime=(startTime-centralTime)/duration
+        except:
+            relativeTime=0
+        return relativeTime
+    #End getRelativeCMTime()
+
+    def getRelativeBrightFreq(self):
+        """
+        Create a measure of relative freq for the bright pixel compared to 
+        curve bandwidth.
+        """
+        brightF=self.getBrightPixelAndStats()[0][3]
+        bandwidth=self.getCandidateBandwidth()
+        centralF=self.getCandidateCentralFreq()
+        try:
+            relativeFreq=(brightF-centralF)/bandwidth
+        except:
+            relativeFreq=0
+        return relativeFreq
+    #End getRelativeBrightFreq()
+
+    def getRelativeCMFreq(self):
+        """
+        Create a measure of relative freq for the bright pixel compared to 
+        curve bandwidth.
+        """
+        brightF=self.getCMPixel()[3]
+        bandwidth=self.getCandidateBandwidth()
+        centralF=self.getCandidateCentralFreq()
+        try:
+            relativeFreq=(brightF-centralF)/bandwidth
+        except:
+            relativeFreq=0
+        return relativeFreq
+    #End getRelativeCMFreq()
+
+    def getBrightZScore(self):
+        """
+        Simple method to calculate the return the curve property Z Score.
+        """
+        brightPower=self.getBrightPixelAndStats()[0][4]
+        meanBright=self.getBrightPixelAndStats()[1]
+        varBright=self.getBrightPixelAndStats()[2]
+        zScore=0
+        try:
+            zScore=(brightPower-meanBright)/math.sqrt(varBright)
+        except:
+            zScore=0
+        return zScore
+    #End getBrightZScore()
+
+    def getCMZScore(self):
+        """
+        Simple method to calculate the return the curve property Z Score.
+        """
+        brightPower=self.getCMPixel()[4]
+        meanBright=self.getBrightPixelAndStats()[1]
+        varBright=self.getBrightPixelAndStats()[2]
+        zScore=0
+        try:
+            zScore=(brightPower-meanBright)/math.sqrt(varBright)
+        except:
+            zScore=0
+        return zScore
+    #End getCMZScore()
+
     def getCandidateDuration(self):
         """
         This method figures out the curves duration in seconds and returns that
@@ -556,6 +666,20 @@ class gpsInt:
         return gpsSecondInput,gpsNanoInput
     #End __splitInt__ method
     
+    def getGPSSeconds(self):
+        """
+        Simple wrapper to grab the GPS Seconds field.
+        """
+        return self.__splitInt__()[0]
+    #End
+
+    def getGPSNanoSeconds(self):
+        """
+        Simple wrapper to grab the GPS NanoSeconds field.
+        """
+        return self.__splitInt__()[1]
+    #End
+
     def __add__(self,inTime):
         """
         Add the argument gpsInt class to the calling gpsInt object ie
@@ -636,22 +760,44 @@ class candidateList:
         #Should be list of objects of class kurve
         self.curves=[]
         self.traitSummary=[]
+        #Variable to be set if candidate file is read in Ok.
+        self.validCurves=bool(False)
+        #Variable to be set if traitSummary is read in Ok.
+        self.validTraitSummary=bool(False)
         self.qualities=[["curveid","Curve ID","getKurveHeader()[0]"],
-                        ["l","Curve Length","getKurveHeader()[1]"],
-                        ["p","Integrated Power","getKurveHeader()[2]"],
-                        ["d","Duration","getCandidateDuration()"],
+                        ["gpsSeconds","Uniq GPS Seconds","startGPS.getGPSSeconds()"],
+                        ["gpsNanoSeconds","Curve GPS NanoSeconds","startGPS.getGPSNanoSeconds()"],
+                        ["a","Orientation Angle","getKurveAngle()"],
                         ["b","Bandwidth","getCandidateBandwidth()"],
-                        ["t","Start GPS","printStartGPS()"],
-                        ["s","Stop GPS","printStopGPS()"],
+                        ["c","Variance Brightness","getBrightPixelAndStats()[2]"],
+                        ["d","Duration","getCandidateDuration()"],
+                        ["e","Relative Freq for Bright Pixel","getRelativeBrightFreq()"],
                         ["f","Start Freq","printStartFreq()"],
                         ["g","Stop Freq","printStopFreq()"],
-                        ["v","Bright Freq","getBrightPixelAndStats()[0][3]"],
                         ["h","Bright GPS","getBrightPixelAndStats()[0][2].getAsFloat()"],
+                        ["i","Center of Mass Pixel Freq","getCMPixel()[3]"],
                         ["j","Bright Energy","getBrightPixelAndStats()[0][4]"],
+                        ["k","Center of Mass Pixel GPS","getCMPixel()[2].getAsFloat()"],
+                        ["l","Curve Length","getKurveHeader()[1]"],
                         ["m","Mean Brightness","getBrightPixelAndStats()[1]"],
-                        ["c","StdDev Brightness","getBrightPixelAndStats()[2]"],
-                        ["a","Orientation Angle","getKurveAngle()"]]
-                        
+                        ["n","Curve lowest F","getCandidateBandwidth(bool(True))[1]"],
+                        ["o","Center of Mass Pixel Power","getCMPixel()[4]"],
+                        ["p","Integrated Power","getKurveHeader()[2]"],
+                        ["q","Curve highest F","getCandidateBandwidth(bool(True))[2]"],
+                        ["r","Z Score for Bright Pixel","getBrightZScore()"],
+                        ["s","Curve Stop GPS","printStopGPS()"],
+                        ["t","Curve Start GPS","printStartGPS()"],
+                        ["u","Curve central GPS time","getCandidateCentralTime()"],
+                        ["v","Bright Freq","getBrightPixelAndStats()[0][3]"],
+                        ["w","Relative Time for Bright Pixel","getRelativeBrightTime()"],
+                        ["x","Mean Power for Pixels in Curve","__getKurveMeanVar__()[0]"],
+                        ["y","Curve central Freq","getCandidateCentralFreq()"],
+                        ["z","Variance of Power for Pixels in Curve","__getKurveMeanVar__()[1]"],
+                        ["ww","Relative Time for CM Pixel","getRelativeCMTime()"],
+                        ["ee","Relative Freq for CM Pixel","getRelativeCMFreq()"],
+                        ["rr","Z Score for CM Pixel","getCMZScore()"]
+                        ]
+
     #End init method
 
     def __getKurveProperty__(self,thisKurveSummary,propertyList=["curveid"]):
@@ -891,9 +1037,21 @@ class candidateList:
                  print "Possible problem, Inconsistent file :",inputFilename
         else:
             print "No candidate entries found in:",inputFilename
+        self.__timeOrderLibrary__()
+        self.validCurves=bool(True)
         self.createTraitSummary()
         self.__propertypickler__()
     #End loadfile method
+
+    def summaryRead(self,inputFilename=''):
+        """
+        Does not read the candidate file.  It first checks for a valid
+        traitSummaryFile, if found it loads that instead.  If not found
+        then we load up the entire candidate file and create a
+        traitSummary file to speed up future dqList, glitchDB and
+        summary dumps of the data.
+        """
+        self.__propertyunpickler__(inputFilename)
 
     def __loadfileQuick__(self,inputFilename):
         """
@@ -971,8 +1129,10 @@ class candidateList:
                 self.gpsWidth=gpsInt(0,0)
                 self.freqWidth=float(0)
         self.__timeOrderLibrary__()
+        self.validCurves=bool(True)
         self.createTraitSummary()
         self.__propertypickler__()
+
     #End __loadfileQuick__ method
 
     def writefile(self,outputFilename):
@@ -1709,6 +1869,7 @@ class candidateList:
                         input_fp.close()
                         self.__loadfileQuick__(filename)
             input_fp.close()
+            self.validTraitSummary=bool(True)
         else:
             if self.verboseMode:
                 sys.stderr.write("Trait summary pickle file older than candidate file or missing.  Rebuilding!\n")
@@ -1719,8 +1880,19 @@ class candidateList:
         """
         Method takes the data in self.curves and uses it to create
         the summary of trigger properties used for creating histograms,
-        summary files and glitchDB files.
+        summary files and glitchDB files. To avoid infinite loops, any 
+        new method for reading in candidate files must set self.validCurves
+        to TRUE before calling self.createTraitSummary
         """
+        if self.verboseMode:
+            print "Creating trait summary structure."
+        if not self.validCurves:
+            print "Valid curve structure not found.  Trying to load file."
+            if ((self.curves.__len__() > 0) and (not self.validCurves)):
+                print "Unexpected behavior aborting!"
+                print "Curve structure listed as invalid but the structure has data in it!"
+                os.abort()
+            self.__loadfileQuick__(self.filename[0])
         for element in self.curves:
             tmpTrait=[]
             for property in self.qualities:
@@ -1728,6 +1900,7 @@ class candidateList:
                 tmpTrait.append(float(tmpData[0]))
             self.traitSummary.append(tmpTrait)
             del tmpTrait
+        self.validTraitSummary=bool(True)
     #end createTraitSummary()
 
     def dumpCandidateKurveSummary(self):
@@ -1751,24 +1924,25 @@ class candidateList:
         10 Integrated Power
         """
         summary=[]
-        if not self.sorted:
-            self.__timeOrderLibrary__()
-        for lineInfo in self.curves:
-            curveid=(self.__getCurveField__(lineInfo,"curveid")[0])
-            l=float(self.__getCurveField__(lineInfo,"l")[0])
-            p=float(self.__getCurveField__(lineInfo,"p")[0])
-            a=float(self.__getCurveField__(lineInfo,"a")[0])
-            d=float(self.__getCurveField__(lineInfo,"d")[0])
-            b=float(self.__getCurveField__(lineInfo,"b")[0])
-            t=float(self.__getCurveField__(lineInfo,"t")[0])
-            s=float(self.__getCurveField__(lineInfo,"s")[0])
-            f=float(self.__getCurveField__(lineInfo,"f")[0])
-            g=float(self.__getCurveField__(lineInfo,"g")[0])
-            v=float(self.__getCurveField__(lineInfo,"v")[0])
-            h=float(self.__getCurveField__(lineInfo,"h")[0])
-            j=float(self.__getCurveField__(lineInfo,"j")[0])
-            m=float(self.__getCurveField__(lineInfo,"m")[0])
-            c=float(self.__getCurveField__(lineInfo,"c")[0])
+        if not self.validTraitSummary:
+            self.createTraitSummary()
+        for traitInfo in self.traitSummary:
+            curveid=(self.__getTraitField__(traitInfo,"curveid")[0])
+            l=float(self.__getTraitField__(traitInfo,"l")[0])
+            p=float(self.__getTraitField__(traitInfo,"p")[0])
+            a=float(self.__getTraitField__(traitInfo,"a")[0])
+            d=float(self.__getTraitField__(traitInfo,"d")[0])
+            b=float(self.__getTraitField__(traitInfo,"b")[0])
+            t=float(self.__getTraitField__(traitInfo,"t")[0])
+            s=float(self.__getTraitField__(traitInfo,"s")[0])
+            f=float(self.__getTraitField__(traitInfo,"f")[0])
+            g=float(self.__getTraitField__(traitInfo,"g")[0])
+            v=float(self.__getTraitField__(traitInfo,"v")[0])
+            h=float(self.__getTraitField__(traitInfo,"h")[0])
+            j=float(self.__getTraitField__(traitInfo,"j")[0])
+            m=float(self.__getTraitField__(traitInfo,"m")[0])
+            c=float(self.__getTraitField__(traitInfo,"c")[0])
+            #
             if d == 0:
                 d=d+self.gpsWidth.getAsFloat()
             if b == 0:
@@ -1823,6 +1997,8 @@ class candidateList:
         outFile=outRoot+'.dqList'
         dqListOrig=[]
         propertyList=["t","d"]
+        if not self.validTraitSummary:
+            self.createTraitSummary()
         for lineSummary in self.traitSummary:
             dqListOrig.append(self.__getKurveProperty__(lineSummary,propertyList))
         oldList=[[x[0],x[0]+x[1]] for x in dqListOrig]
@@ -1896,11 +2072,13 @@ class candidateList:
         """
         Method to write summary with formatting specified in
         createSummaryStructure method to a file.
-        """
+        """            
         if override=='':
             sourceFile=self.filename[0]
         else:
             sourceFile=override
+        if self.verboseMode:
+            print "Writing Summary Information."
         outRoot,outExt=os.path.splitext(sourceFile)
         outFile=outRoot+'.summary'
         fp=open(outFile,'w')
@@ -2498,58 +2676,53 @@ class candidateList:
         graphing the triggers.
         Symmetry weights -- Z scores replace this field!
         """
+        if self.verboseMode:
+            print "Generating glitch DB file."
         weight=1
         glitchDatabase=[]
-        spinner=progressSpinner(verbose,2)
+        spinner=progressSpinner(self.spinnerVerboseMode,2)
         spinner.setTag('GlitchDB ')
-        for trigger in self.curves:
+        if not self.validTraitSummary:
+            self.createTraitSummary()
+        for trait in self.traitSummary:
             spinner.updateSpinner()
-            triggerStartString=trigger.startGPS().__diskPrint__()
-            triggerStartFloat=trigger.startGPS().getAsFloat()
-            triggerStopFloat=trigger.stopGPS().getAsFloat()
-            triggerBandwidth,triggerLowF,triggerHighF=trigger.getCandidateBandwidth(bool(True))
-            triggerID,triggerLength,triggerIntegratedPower=trigger.getKurveHeader()
-            brightPixel=trigger.getBrightPixel()
-            cmPixel=trigger.getCMPixel()
-            meanPixelPower,varPixelPower=trigger.__getKurveMeanVar__()
-            triggerCentralFreq=triggerLowF+(triggerHighF-triggerLowF)/2
-            triggerDuration=triggerStopFloat-triggerStartFloat
-            triggerCentralTime=(triggerStopFloat+triggerStartFloat)/2
+            triggerStartSeconds=self.__getTraitField__(trait,"gpsSeconds")[0]
+            triggerStartNanoSeconds=self.__getTraitField__(trait,"gpsNanoSeconds")[0]
+            triggerAsGPSInt=gpsInt(triggerStartSeconds,triggerStartNanoSeconds)
+            triggerStartString=triggerAsGPSInt.__diskPrint__()
+            triggerStartFloat=float(self.__getTraitField__(trait,"t")[0])
+            triggerStopFloat=float(self.__getTraitField__(trait,"s")[0])
+            triggerBandwidth=self.__getTraitField__(trait,"b")[0]
+            triggerLowF=self.__getTraitField__(trait,"n")[0]
+            triggerHighF=self.__getTraitField__(trait,"q")[0]
+            triggerID=self.__getTraitField__(trait,"curveid")[0]
+            triggerLength=self.__getTraitField__(trait,"l")[0]
+            triggerIntegratedPower=self.__getTraitField__(trait,"p")[0]
+            brightPixelTime=self.__getTraitField__(trait,"h")[0]
+            brightPixelFreq=self.__getTraitField__(trait,"v")[0]
+            brightPixelPower=self.__getTraitField__(trait,"j")[0]
+            brightPixel=[-1,-1,brightPixelTime,brightPixelFreq,brightPixelPower]
+            cmPixelGPS=self.__getTraitField__(trait,"k")[0]
+            cmPixelFreq=self.__getTraitField__(trait,"i")[0]
+            cmPixelPower=self.__getTraitField__(trait,"o")[0]
+            cmPixel=[-1,-1,cmPixelGPS,cmPixelFreq,cmPixelPower]
+            meanPixelPower=self.__getTraitField__(trait,"x")[0]
+            varPixelPower=self.__getTraitField__(trait,"z")[0]
+            triggerDuration=self.__getTraitField__(trait,"d")[0]
+            triggerCentralFreq=self.__getTraitField__(trait,"y")[0]
+            triggerCentralTime=self.__getTraitField__(trait,"u")[0]
+            relativeTimeBP=self.__getTraitField__(trait,"w")[0]
+            relativeFreqBP=self.__getTraitField__(trait,"e")[0]
+            zScoreBP=self.__getTraitField__(trait,"r")[0]
+            relativeTimeCM=self.__getTraitField__(trait,"ww")[0]
+            relativeFreqCM=self.__getTraitField__(trait,"ee")[0]
+            zScoreCM=self.__getTraitField__(trait,"rr")[0]
             #
-            try:
-                relativeTimeBP=(brightPixel[2].getAsFloat()-triggerCentralTime)/triggerDuration
-            except ZeroDivisionError:
-                relativeTimeBP=0
-
-            try:
-                relativeFreqBP=(brightPixel[3]-triggerCentralFreq)/triggerBandwidth
-            except ZeroDivisionError:
-                relativeFreqBP=0
-                
-            ###symmetryBP=trigger.getSymmetryFactor(brightPixel,weight)
-            zScoreBP=(
-                (brightPixel[4]-meanPixelPower)/
-                math.sqrt(varPixelPower)
-                )
-            try:
-                relativeTimeCM=(cmPixel[2].getAsFloat()-triggerCentralTime)/triggerDuration
-            except ZeroDivisionError:
-                relativeTimeCM=0
-
-            try:
-                relativeFreqCM=(cmPixel[3]-triggerCentralFreq)/triggerBandwidth
-            except ZeroDivisionError:
-                relativeFreqCM=0
-                
             ###symmetryCM=trigger.getSymmetryFactor(brightPixel,weight)
-            zScoreCM=(
-                (cmPixel[4]-meanPixelPower)/
-                math.sqrt(varPixelPower)
-                )
             #(+) if T_bp > T_cm
             if (triggerDuration > 0):
                 spanTnorm=(
-                    (brightPixel[2].getAsFloat()-cmPixel[2].getAsFloat())/
+                    (brightPixel[2]-cmPixel[2])/
                     triggerDuration
                 )
             else:
@@ -2610,7 +2783,7 @@ class candidateList:
         format=format.rstrip('\t')+"\n"
         fp=open(outFile,'w')
         counter=0
-        for entry in self.createGlitchDatabase(self.verboseMode):
+        for entry in glitchDatabase:
             counter+=1
             tupleForm=tuple(entry)
             string=format%tupleForm

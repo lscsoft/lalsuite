@@ -503,6 +503,7 @@ elif ((expThreshold != "") and (canList.__len__() >=1)):
     del candidateObject
 
     #SECTION TO DUMP SUMMARY TO DISK WHEN NO THRESHOLDING REQD
+    #Want to rely on traitSummary to speed things up if available.
 elif ((canList.__len__() >=1) and (dumpSummaryDisk or glitchdb) and (expThreshold =="") ):
     for entry in canList:
         candidateObject=candidateList(verboseSwitch)
@@ -510,7 +511,7 @@ elif ((canList.__len__() >=1) and (dumpSummaryDisk or glitchdb) and (expThreshol
             candidateObject.spinnerVerboseMode=False        
         if verboseSwitch:
             print "Processing:",entry
-        candidateObject.__loadfileQuick__(entry)
+        candidateObject.summaryRead(entry)
         if ((outfile != "") and dumpSummaryDisk):
             candidateObject.writeSummary(outfile)
         elif dumpSummaryDisk:
@@ -530,14 +531,14 @@ elif ((canList.__len__() >=1) and dumpSummaryScreen):
         candidateObject=candidateList(verboseSwitch)
         if muteSpinner:
             candidateObject.spinnerVerboseMode=False
-        candidateObject.__loadfileQuick__(entry)
+        candidateObject.summaryRead(entry)
         candidateObject.printSummary()
         del entry
 
 elif ((canList.__len__() >=1) and dqList >= 0):
     for entry in canList:
         candidateObject=candidateList(verboseSwitch)
-        candidateObject.__propertyunpickler__(entry)
+        candidateObject.summaryRead(entry)
         if ((outfile != "") and (canList.__len__() == 1)):
             candidateObject.writeDQtable(dqList,outfile)
         else:
