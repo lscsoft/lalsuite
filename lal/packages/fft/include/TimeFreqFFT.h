@@ -444,13 +444,6 @@ XLALPSDRegressorSetPSD(
     int weight
 );
 
-int
-XLALPSDRegressorRemoveLines(
-    const LALPSDRegressor *r,
-    COMPLEX16FrequencySeries *fseries,
-    REAL8 min_sigma_sq
-);
-
 #ifdef  __cplusplus
 #pragma {
 }

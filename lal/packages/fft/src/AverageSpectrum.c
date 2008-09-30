@@ -1765,32 +1765,3 @@ int XLALPSDRegressorSetPSD(LALPSDRegressor *r, const REAL8FrequencySeries *psd, 
 
   return 0;
 }
-
-
-int XLALPSDRegressorRemoveLines(const LALPSDRegressor *r, COMPLEX16FrequencySeries *fseries, REAL8 min_sigma_sq)
-{
-  static const char func[] = "XLALPSDRegressorRemoveLines";
-  COMPLEX16 *mdata = r->mean->data->data;
-  COMPLEX16 *fdata = fseries->data->data;
-  double delta_epoch = XLALGPSDiff(&fseries->epoch, &r->mean->epoch);
-  unsigned i;	/* fseries index */
-  unsigned j;	/* mean index */
-
-  if((r->mean->deltaF != fseries->deltaF) || (fseries->f0 < r->mean->f0))
-    /* resolution mismatch, or mean does not span fseries at low end */
-    XLAL_ERROR(func, XLAL_EINVAL);
-  j = (fseries->f0 - r->mean->f0) / r->mean->deltaF;
-  if(j * r->mean->deltaF + r->mean->f0 != fseries->f0)
-    /* fseries does not start on an integer sample of the mean */
-    XLAL_ERROR(func, XLAL_EINVAL);
-  if(j + fseries->data->length > r->mean->data->length)
-    /* mean does not span fseries at high end */
-    XLAL_ERROR(func, XLAL_EINVAL);
-
-  for(i = 0; i < fseries->data->length; i++, j++)
-    if(psd_regressor_mean_significance(r, j) >= min_sigma_sq)
-      /* FIXME:  is the sign in the phase shift right? */
-      fdata[i] = XLALCOMPLEX16Sub(fdata[i], XLALCOMPLEX16Mul(mdata[j], XLALCOMPLEX16Polar(1.0, LAL_TWOPI * (fseries->f0 + i * fseries->deltaF) * delta_epoch)));
-
-  return 0;
-}
