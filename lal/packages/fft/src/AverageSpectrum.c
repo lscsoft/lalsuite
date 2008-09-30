@@ -1378,7 +1378,6 @@ int XLALREAL8SpectrumInvertTruncate(
 
 
 /**
- *
  * Normalize a COMPLEX8 frequency series to a REAL4 average PSD.  If the
  * frequency series is the Fourier transform of (coloured) Gaussian random
  * noise, and the PSD is of the same noise, and both have been computed
@@ -1571,6 +1570,7 @@ int XLALPSDRegressorAdd(LALPSDRegressor *r, const COMPLEX16FrequencySeries *samp
     r->n_samples = 1;
     return 0;
   }
+  /* FIXME:  also check units */
   else if((sample->f0 != r->mean->f0) || (sample->deltaF != r->mean->deltaF) || (sample->data->length != r->mean->data->length))
   {
     XLALPrintError("%s(): input parameter mismatch", func);
@@ -1729,7 +1729,7 @@ int XLALPSDRegressorSetPSD(LALPSDRegressor *r, const REAL8FrequencySeries *psd, 
 {
   static const char func[] = "XLALPSDRegressorSetPSD";
   /* arbitrary constant to remove from LAL definition of PSD */
-  double lal_normalization_constant;
+  double lal_normalization_constant = 2 * psd->deltaF;
   unsigned i;
 
   if(!r->mean)
@@ -1755,6 +1755,7 @@ int XLALPSDRegressorSetPSD(LALPSDRegressor *r, const REAL8FrequencySeries *psd, 
     /* set the mean to 0 */
     memset(r->mean->data->data, 0, r->mean->data->length * sizeof(*r->mean->data->data));
   }
+  /* FIXME:  also check units */
   else if((psd->f0 != r->mean->f0) || (psd->deltaF != r->mean->deltaF) || (psd->data->length != r->mean->data->length))
   {
     XLALPrintError("%s(): input parameter mismatch", func);
@@ -1768,7 +1769,6 @@ int XLALPSDRegressorSetPSD(LALPSDRegressor *r, const REAL8FrequencySeries *psd, 
 
   /* remove the normalization factor from the input psd, and add the square
    * of the mean */
-  lal_normalization_constant = 2 * r->mean_square->deltaF;
   for(i = 0; i < r->mean_square->data->length; i++)
     r->mean_square->data->data[i] = r->mean_square->data->data[i] / lal_normalization_constant + XLALCOMPLEX16Abs2(r->mean->data->data[i]);
 
