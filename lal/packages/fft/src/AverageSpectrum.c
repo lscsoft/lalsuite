@@ -1410,7 +1410,8 @@ COMPLEX8FrequencySeries *XLALWhitenCOMPLEX8FrequencySeries(COMPLEX8FrequencySeri
   static const char func[] = "XLALWhitenCOMPLEX8FrequencySeries";
   COMPLEX8 *fdata = fseries->data->data;
   REAL4 *pdata = psd->data->data;
-  double norm = 2 * fseries->deltaF;
+  double norm = 2 * psd->deltaF;
+  LALUnit unit;	/* scratch space */
   unsigned i;	/* fseries index */
   unsigned j;	/* psd index */
 
@@ -1441,6 +1442,11 @@ COMPLEX8FrequencySeries *XLALWhitenCOMPLEX8FrequencySeries(COMPLEX8FrequencySeri
     fdata[0] = LAL_COMPLEX8_ZERO;
   fdata[fseries->data->length - 1] = LAL_COMPLEX8_ZERO;
 
+  /* update the units of fseries.  norm has units of Hz */
+  XLALUnitDivide(&unit, &psd->sampleUnits, &lalHertzUnit);
+  XLALUnitSqrt(&unit, &unit);
+  XLALUnitDivide(&fseries->sampleUnits, &fseries->sampleUnits, &unit);
+
   return fseries;
 }
 
@@ -1454,7 +1460,8 @@ COMPLEX16FrequencySeries *XLALWhitenCOMPLEX16FrequencySeries(COMPLEX16FrequencyS
   static const char func[] = "XLALWhitenCOMPLEX16FrequencySeries";
   COMPLEX16 *fdata = fseries->data->data;
   REAL8 *pdata = psd->data->data;
-  double norm = 2 * fseries->deltaF;
+  double norm = 2 * psd->deltaF;
+  LALUnit unit;	/* scratch space */
   unsigned i;	/* fseries index */
   unsigned j;	/* psd index */
 
@@ -1484,6 +1491,11 @@ COMPLEX16FrequencySeries *XLALWhitenCOMPLEX16FrequencySeries(COMPLEX16FrequencyS
   if(fseries->f0 == 0)
     fdata[0] = LAL_COMPLEX16_ZERO;
   fdata[fseries->data->length - 1] = LAL_COMPLEX16_ZERO;
+
+  /* update the units of fseries.  norm has units of Hz */
+  XLALUnitDivide(&unit, &psd->sampleUnits, &lalHertzUnit);
+  XLALUnitSqrt(&unit, &unit);
+  XLALUnitDivide(&fseries->sampleUnits, &fseries->sampleUnits, &unit);
 
   return fseries;
 }
