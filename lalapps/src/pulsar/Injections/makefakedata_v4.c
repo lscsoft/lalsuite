@@ -110,6 +110,8 @@ typedef struct
   REAL4Window *window;		/**< window function for the time series */
 
   COMPLEX8FrequencySeries *transfer;  /**< detector's transfer function for use in hardware-injection */
+
+  INT4 randSeed;		/**< random-number seed: either taken from user or /dev/urandom */
 } ConfigVars_t;
 
 /** Default year-span of ephemeris-files to be used */
@@ -119,7 +121,7 @@ typedef struct
 void FreeMem (LALStatus *, ConfigVars_t *cfg);
 void InitUserVars (LALStatus *);
 void InitMakefakedata (LALStatus *, ConfigVars_t *cfg, int argc, char *argv[]);
-void AddGaussianNoise (LALStatus *, REAL4TimeSeries *outSeries, REAL4TimeSeries *inSeries, REAL4 sigma);
+void AddGaussianNoise (LALStatus *, REAL4TimeSeries *outSeries, REAL4TimeSeries *inSeries, REAL4 sigma, INT4 seed);
 /* void GetOrbitalParams (LALStatus *, BinaryOrbitParams *orbit); */
 void WriteMFDlog (LALStatus *, char *argv[], const char *logfile);
 
@@ -235,6 +237,7 @@ BOOLEAN uvar_lineFeature;	/**< generate a monochromatic line instead of a pulsar
 
 BOOLEAN uvar_version;		/**< output version information */
 
+INT4 uvar_randSeed;		/**< allow user to specify random-number seed for reproducible noise-realizations */
 
 /*----------------------------------------------------------------------*/
 
@@ -365,7 +368,7 @@ main(int argc, char *argv[])
 
       /* add Gaussian noise if requested */
       if ( GV.noiseSigma > 0) {
-	LAL_CALL ( AddGaussianNoise(&status, Tseries, Tseries, (REAL4)(GV.noiseSigma) ), &status);
+	LAL_CALL ( AddGaussianNoise(&status, Tseries, Tseries, (REAL4)(GV.noiseSigma), GV.randSeed ), &status);
       }
 
       /* output ASCII time-series if requested */
@@ -1079,6 +1082,33 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
     else
       cfg->noiseSigma = 0;
 
+    /* set random-number generator seed: either taken from user or from /dev/urandom */
+    if ( LALUserVarWasSet ( &uvar_randSeed ) )
+      cfg->randSeed = uvar_randSeed;
+    else
+      {
+	FILE *devrandom;
+	/*
+	 * Modified so as to not create random number parameters with seed
+	 * drawn from clock.  Seconds don't change fast enough and sft's
+	 * look alike.  We open /dev/urandom and read a 4 byte integer from
+	 * it and use that as our seed.  Note: /dev/random is slow after the
+	 * first, few accesses.
+	 */
+	if ( (devrandom = fopen("/dev/urandom","r")) == NULL )
+	  {
+	    printf ("\nCould not open '/dev/urandom'\n\n");
+	    ABORT (status, MAKEFAKEDATAC_EFILE, MAKEFAKEDATAC_MSGEFILE);
+	  }
+	if ( fread( (void*)&(cfg->randSeed), sizeof(INT4), 1, devrandom) != 1)
+	  {
+	    printf("\nCould not read from '/dev/urandom'\n\n");
+	    fclose(devrandom);
+	    ABORT (status, MAKEFAKEDATAC_EFILE, MAKEFAKEDATAC_MSGEFILE);
+	  }
+	fclose(devrandom);
+      }
+
   } /* END: Noise params */
 
 
@@ -1189,6 +1219,7 @@ InitUserVars (LALStatus *status)
 
   uvar_outSFTv1 = FALSE;
 
+  uvar_randSeed = 0;
 
   /* ---------- register all our user-variable ---------- */
   LALregBOOLUserVar(status,   help,		'h', UVAR_HELP    , "Print this help/usage message");
@@ -1277,6 +1308,7 @@ InitUserVars (LALStatus *status)
 
   LALregBOOLUserVar(status,   version,	         'V', UVAR_OPTIONAL, "Output version information");
 
+  LALregINTUserVar(status,    randSeed,           0, UVAR_DEVELOPER, "Specify random-number seed for reproducible noise (use /dev/urandom otherwise).");
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
@@ -1343,14 +1375,12 @@ void FreeMem (LALStatus* status, ConfigVars_t *cfg)
  *
  */
 void
-AddGaussianNoise (LALStatus* status, REAL4TimeSeries *outSeries, REAL4TimeSeries *inSeries, REAL4 sigma)
+AddGaussianNoise (LALStatus* status, REAL4TimeSeries *outSeries, REAL4TimeSeries *inSeries, REAL4 sigma, INT4 seed)
 {
 
   REAL4Vector    *v1 = NULL;
   RandomParams   *randpar = NULL;
   UINT4          numPoints, i;
-  INT4 seed;
-  FILE *devrandom;
   REAL4Vector *bak;
 
   INITSTATUS( status, "AddGaussianNoise", rcsid );
@@ -1364,29 +1394,6 @@ AddGaussianNoise (LALStatus* status, REAL4TimeSeries *outSeries, REAL4TimeSeries
   numPoints = inSeries->data->length;
 
   TRY (LALCreateVector(status->statusPtr, &v1, numPoints), status);
-
-  /*
-   * Modified so as to not create random number parameters with seed
-   * drawn from clock.  Seconds don't change fast enough and sft's
-   * look alike.  We open /dev/urandom and read a 4 byte integer from
-   * it and use that as our seed.  Note: /dev/random is slow after the
-   * first, few accesses.
-   */
-
-  if ( (devrandom = fopen("/dev/urandom","r")) == NULL )
-    {
-      printf ("\nCould not open '/dev/urandom'\n\n");
-      ABORT (status, MAKEFAKEDATAC_EFILE, MAKEFAKEDATAC_MSGEFILE);
-    }
-
-  if ( fread( (void*)&seed, sizeof(INT4), 1, devrandom) != 1)
-    {
-      printf("\nCould not read from '/dev/urandom'\n\n");
-      fclose(devrandom);
-      ABORT (status, MAKEFAKEDATAC_EFILE, MAKEFAKEDATAC_MSGEFILE);
-    }
-
-  fclose(devrandom);
 
   TRY (LALCreateRandomParams(status->statusPtr, &randpar, seed), status);
 
