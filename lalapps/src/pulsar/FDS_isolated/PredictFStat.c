@@ -12,18 +12,20 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with with program; see the file COPYING. If not, write to the 
- *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, 
+ *  along with with program; see the file COPYING. If not, write to the
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
  */
 
 /*********************************************************************************/
 /** \author I. Gholami, R. Prix
- * \file 
+ * \file
  * \brief
- * Calculate the F-statistic Semi-Analytically of pulsar GW signals.
- * Implements the so-called "F-statistic" as introduced in \ref JKS98 and Cutler-Schutz 2005.
- *                                                                          
+ * Calculate the *expected* (multi-IFO) F-statistic for pulsar GW signals, without actually
+ * performing a search. The "F-statistic" was introduced in \ref JKS98 and Cutler-Schutz 2005.
+ * Contrary to SemiAnalyticF this code can use (multi-IFO) SFTs to specify the startTime,
+ * duration, detectors and noise-floors to use in the estimation.
+ *
  *********************************************************************************/
 #include "config.h"
 
@@ -135,28 +137,28 @@ void InitEphemeris (LALStatus *, EphemerisData *edat, const CHAR *ephemDir, cons
 /*----------------------------------------------------------------------*/
 /* Main Function starts here */
 /*----------------------------------------------------------------------*/
-/** 
+/**
  * MAIN function of PredictFStat code.
- * Calculates the F-statistic for a given position in the sky and detector 
+ * Calculates the F-statistic for a given position in the sky and detector
  * semi-analytically and outputs the final 2F value.
  */
-int main(int argc,char *argv[]) 
+int main(int argc,char *argv[])
 {
   LALStatus status = blank_status;	/* initialize status */
   REAL8 rho2;	/* SNR^2 */
 
-  lalDebugLevel = 0;  
+  lalDebugLevel = 0;
   vrbflg = 1;	/* verbose error-messages */
-  
+
   /* set LAL error-handler */
   lal_errhandler = LAL_ERR_EXIT;
 
   /* register all user-variable */
   LAL_CALL (LALGetDebugLevel(&status, argc, argv, 'v'), &status);
-  LAL_CALL (initUserVars(&status), &status); 	
+  LAL_CALL (initUserVars(&status), &status);
 
   /* do ALL cmdline and cfgfile handling */
-  LAL_CALL (LALUserVarReadAllInput(&status, argc,argv), &status);	
+  LAL_CALL (LALUserVarReadAllInput(&status, argc,argv), &status);
 
   if (uvar_help)	/* if help was requested, we're done here */
     exit (0);
@@ -174,7 +176,7 @@ int main(int argc,char *argv[])
     al1 = Ap2 * cos2psi2 + Ac2 * sin2psi2;	/* A1^2 + A3^2 */
     al2 = Ap2 * sin2psi2 + Ac2 * cos2psi2;	/* A2^2 + A4^2 */
     al3 = ( Ap2 - Ac2 ) * sin(2.0*uvar_psi) * cos(2.0*uvar_psi);	/* A1 A2 + A3 A4 */
-    
+
     /* SNR^2 */
     rho2 = 0.5 * GV.Mmunu.Sinv_Tsft * (GV.Mmunu.Ad * al1 + GV.Mmunu.Bd * al2 + 2.0 * GV.Mmunu.Cd * al3 );
   }
@@ -186,13 +188,13 @@ int main(int argc,char *argv[])
     {
       FILE *fpFstat = NULL;
       CHAR *logstr = NULL;
-      
+
       if ( (fpFstat = fopen (uvar_outputFstat, "wb")) == NULL)
 	{
 	  LALPrintError ("\nError opening file '%s' for writing..\n\n", uvar_outputFstat);
 	  return (PREDICTFSTAT_ESYS);
 	}
-      
+
       /* log search-footprint at head of output-file */
       LAL_CALL( LALUserVarGetLog (&status, &logstr,  UVAR_LOGFMT_CMDLINE ), &status );
 
@@ -205,20 +207,20 @@ int main(int argc,char *argv[])
       fprintf (fpFstat, "## E[2F]   sigma[2F] \n");
       fprintf (fpFstat, "  %g    %g\n", 4.0 + rho2,  sqrt( 4.0 * ( 2.0 + rho2 )  ) );
       fclose (fpFstat);
-    } /* if outputFstat */   
+    } /* if outputFstat */
 
   /* Free config-Variables and userInput stuff */
   LAL_CALL (LALDestroyUserVars (&status), &status);
   LALFree ( GV.dataSummary );
-  
+
   /* did we forget anything ? */
   LALCheckMemoryLeaks();
-  
+
   return 0;
-  
+
 } /* main() */
 
-/** 
+/**
  * Register all our "user-variables" that can be specified from cmd-line and/or config-file.
  * Here we set defaults for some user-variables and register them with the UserInput module.
  */
@@ -231,23 +233,23 @@ initUserVars (LALStatus *status)
 
   /* set a few defaults */
   uvar_RngMedWindow = 50;	/* for running-median */
-  
+
   uvar_ephemYear = LALCalloc (1, strlen(EPHEM_YEARS)+1);
   strcpy (uvar_ephemYear, EPHEM_YEARS);
-  
+
 #define DEFAULT_EPHEMDIR "env LAL_DATA_PATH"
   uvar_ephemDir = LALCalloc (1, strlen(DEFAULT_EPHEMDIR)+1);
   strcpy (uvar_ephemDir, DEFAULT_EPHEMDIR);
-  
+
   uvar_help = FALSE;
   uvar_outputFstat = NULL;
-  
+
   uvar_minStartTime = 0;
   uvar_maxEndTime = LAL_INT4_MAX;
-  
+
   /* register all our user-variables */
-  LALregBOOLUserVar(status,	help, 		'h', UVAR_HELP,     "Print this message"); 
-  
+  LALregBOOLUserVar(status,	help, 		'h', UVAR_HELP,     "Print this message");
+
   LALregREALUserVar(status,	h0,		's', UVAR_OPTIONAL, "Signal amplitude h_0");
   LALregREALUserVar(status,	cosi,		'i', UVAR_OPTIONAL, "Inclination of rotation-axis Cos(iota)");
   LALregREALUserVar(status,	cosiota,	 0 , UVAR_DEVELOPER,"[DEPRECATED] Use --cosi instead!");
@@ -258,22 +260,22 @@ initUserVars (LALStatus *status)
   LALregREALUserVar(status,	Alpha,		'a', UVAR_REQUIRED, "Sky position alpha (equatorial coordinates) in radians");
   LALregREALUserVar(status,	Delta,		'd', UVAR_REQUIRED, "Sky position delta (equatorial coordinates) in radians");
   LALregREALUserVar(status,	Freq,		'F', UVAR_REQUIRED, "Signal frequency (for noise-estimation)");
-  
-  LALregSTRINGUserVar(status,	DataFiles, 	'D', UVAR_REQUIRED, "File-pattern specifying (multi-IFO) input SFT-files"); 
+
+  LALregSTRINGUserVar(status,	DataFiles, 	'D', UVAR_OPTIONAL, "File-pattern specifying (multi-IFO) input SFT-files");
   LALregSTRINGUserVar(status,	IFO, 		'I', UVAR_OPTIONAL, "Detector-constraint: 'G1', 'L1', 'H1', 'H2' ...(useful for single-IFO v1-SFTs only!)");
   LALregSTRINGUserVar(status,	ephemDir, 	'E', UVAR_OPTIONAL, "Directory where Ephemeris files are located");
   LALregSTRINGUserVar(status,	ephemYear, 	'y', UVAR_OPTIONAL, "Year (or range of years) of ephemeris files to be used");
   LALregSTRINGUserVar(status,	outputFstat,	  0,  UVAR_OPTIONAL, "Output-file for predicted F-stat value" );
-  
+
   LALregINTUserVar ( status,	minStartTime, 	 0,  UVAR_OPTIONAL, "Earliest SFT-timestamp to include");
   LALregINTUserVar ( status,	maxEndTime, 	 0,  UVAR_OPTIONAL, "Latest SFT-timestamps to include");
 
-  LALregBOOLUserVar(status,	SignalOnly,	'S', UVAR_OPTIONAL, "Using noise-free data");  
+  LALregBOOLUserVar(status,	SignalOnly,	'S', UVAR_OPTIONAL, "Assume Sh=1 and don't use SFTs to estimate noise-floor");
 
-  LALregINTUserVar(status,	RngMedWindow,	'k', UVAR_DEVELOPER, "Running-Median window size");  
+  LALregINTUserVar(status,	RngMedWindow,	'k', UVAR_DEVELOPER, "Running-Median window size");
 
 
-  
+
   DETATCHSTATUSPTR (status);
   RETURN (status);
 
@@ -281,7 +283,7 @@ initUserVars (LALStatus *status)
 
 /** Load Ephemeris from ephemeris data-files  */
 void
-InitEphemeris (LALStatus * status,   
+InitEphemeris (LALStatus * status,
 	       EphemerisData *edat,	/**< [out] the ephemeris-data */
 	       const CHAR *ephemDir,	/**< directory containing ephems */
 	       const CHAR *ephemYear,	/**< which years do we need? */
@@ -296,10 +298,10 @@ InitEphemeris (LALStatus * status,
 
   INITSTATUS( status, "InitEphemeris", rcsid );
   ATTATCHSTATUSPTR (status);
-  
+
   ASSERT ( edat, status, PREDICTFSTAT_ENULL, PREDICTFSTAT_MSGENULL );
   ASSERT ( ephemYear, status, PREDICTFSTAT_ENULL, PREDICTFSTAT_MSGENULL );
-  
+
   if ( ephemDir )
     {
       LALSnprintf(EphemEarth, FNAME_LENGTH, "%s/earth%s.dat", ephemDir, ephemYear);
@@ -312,21 +314,21 @@ InitEphemeris (LALStatus * status,
     }
   EphemEarth[FNAME_LENGTH-1]=0;
   EphemSun[FNAME_LENGTH-1]=0;
-  
+
   /* NOTE: the 'ephiles' are ONLY ever used in LALInitBarycenter, which is
    * why we can use local variables (EphemEarth, EphemSun) to initialize them.
    */
   edat->ephiles.earthEphemeris = EphemEarth;
   edat->ephiles.sunEphemeris = EphemSun;
-  
+
   TRY (LALLeapSecs (status->statusPtr, &leap, &epoch, &formatAndAcc), status);
   edat->leap = (INT2) leap;
-  
+
   TRY (LALInitBarycenter(status->statusPtr, edat), status);
-  
+
   DETATCHSTATUSPTR ( status );
   RETURN ( status );
-  
+
 } /* InitEphemeris() */
 
 /** Initialized Fstat-code: handle user-input and set everything up. */
@@ -420,12 +422,12 @@ InitPFS ( LALStatus *status, ConfigVariables *cfg )
 
   /* ----- get full SFT-catalog of all matching (multi-IFO) SFTs */
   LogPrintf (LOG_DEBUG, "Finding all SFTs to load ... ");
-  TRY ( LALSFTdataFind ( status->statusPtr, &catalog, uvar_DataFiles, &constraints ), status);    
+  TRY ( LALSFTdataFind ( status->statusPtr, &catalog, uvar_DataFiles, &constraints ), status);
   LogPrintfVerbatim (LOG_DEBUG, "done. (found %d SFTs)\n", catalog->length);
-  if ( constraints.detector ) 
+  if ( constraints.detector )
     LALFree ( constraints.detector );
 
-  if ( catalog->length == 0 ) 
+  if ( catalog->length == 0 )
     {
       LogPrintf (LOG_CRITICAL, "No matching SFTs for pattern '%s'!\n", uvar_DataFiles );
       ABORT ( status,  PREDICTFSTAT_EINPUT,  PREDICTFSTAT_MSGEINPUT);
@@ -508,13 +510,13 @@ InitPFS ( LALStatus *status, ConfigVariables *cfg )
   /* correctly handle --SignalOnly case:
    * we don't use noise-weights.
    * The SignalOnly case is characterized by
-   * setting Sh->1 (single-sided), so Sinv=2 (double-sided) 
+   * setting Sh->1 (single-sided), so Sinv=2 (double-sided)
    */
   if ( uvar_SignalOnly )
     {
       multiNoiseWeights = NULL;
-      multiAMcoef->Mmunu.Sinv_Tsft = 2.0 * Tsft; 
-    } 
+      multiAMcoef->Mmunu.Sinv_Tsft = 2.0 * Tsft;
+    }
   else
     {
       TRY ( LALNormalizeMultiSFTVect (status->statusPtr, &multiRngmed, multiSFTs, uvar_RngMedWindow ), status);
