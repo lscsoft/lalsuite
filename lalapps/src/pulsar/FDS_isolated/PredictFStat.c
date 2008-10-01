@@ -44,10 +44,12 @@
 #include <lal/NormalizeSFTRngMed.h>
 #include <lal/ComputeFstat.h>
 #include <lal/LALHough.h>
+#include <lal/LogPrintf.h>
+
+#include <lal/lalGitID.h>
+#include <lalappsGitID.h>
 
 #include <lalapps.h>
-
-#include <lal/LogPrintf.h>
 
 /* local includes */
 
@@ -102,34 +104,43 @@ extern int vrbflg;		/**< defined in lalapps.c */
 ConfigVariables GV;		/**< global container for various derived configuration settings */
 
 /* ----- User-variables: can be set from config-file or command-line */
-BOOLEAN uvar_help;
+typedef struct {
+  BOOLEAN help;		/**< trigger output of help string */
 
-INT4 uvar_RngMedWindow;
+  INT4 RngMedWindow;	/**< running-median window to use for noise-floor estimation */
 
-REAL8 uvar_aPlus;
-REAL8 uvar_aCross;
-REAL8 uvar_psi;
-REAL8 uvar_h0;
-REAL8 uvar_cosi;
-REAL8 uvar_cosiota;	/* DEPRECATED in favor of cosi */
-REAL8 uvar_Freq;
-REAL8 uvar_Alpha;
-REAL8 uvar_Delta;
-BOOLEAN uvar_SignalOnly;
+  REAL8 aPlus;		/**< '+' polarization amplitude: aPlus  [alternative to {h0, cosi}:  aPlus = 0.5*h0*(1+cosi^2)] */
+  REAL8 aCross;		/**< 'x' polarization amplitude: aCross [alternative to {h0, cosi}: aCross= h0 * cosi] */
+  REAL8 psi;		/**< polarization angle psi */
+  REAL8 h0;		/**< overall GW amplitude h0 [alternative to {aPlus, aCross}] */
+  REAL8 cosi;		/**< cos(inclination angle)  [alternative to {aPlus, aCross}] */
+  REAL8 Freq;		/**< GW signal frequency */
+  REAL8 Alpha;		/**< sky-position angle 'alpha', which is right ascencion in equatorial coordinates */
+  REAL8 Delta;		/**< sky-position angle 'delta', which is declination in equatorial coordinates */
 
-CHAR *uvar_IFO;
-CHAR *uvar_ephemDir;
-CHAR *uvar_ephemYear;
-CHAR *uvar_DataFiles;
-CHAR *uvar_outputFstat;
-INT4 uvar_minStartTime;
-INT4 uvar_maxEndTime;
+  BOOLEAN SignalOnly;	/**< switch wheter to assume Sh=1 instead of estimating noise-floors from SFTs */
+
+  CHAR *IFO;		/**< GW detector short-name, only useful if not using v2-SFTs as input */
+
+  CHAR *ephemDir;	/**< directory where ephemeris-files are to be found */
+  CHAR *ephemYear;	/**< year-range of ephemeris-files to use */
+
+  CHAR *DataFiles;	/**< SFT input-files to use to determine startTime, duration, IFOs and for noise-floor estimation */
+  CHAR *outputFstat;	/**< output file to write F-stat estimation results into */
+  INT4 minStartTime;	/**< limit start-time of input SFTs to use */
+  INT4 maxEndTime;	/**< limit end-time of input SFTs to use */
+
+  REAL8 cosiota;	/* DEPRECATED in favor of cosi */
+
+} UserInput_t;
+
+static UserInput_t empty_UserInput;
 
 /* ---------- local prototypes ---------- */
 int main(int argc,char *argv[]);
 
-void initUserVars (LALStatus *);
-void InitPFS ( LALStatus *, ConfigVariables *cfg );
+void initUserVars (LALStatus *status, UserInput_t *uvar );
+void InitPFS ( LALStatus *, ConfigVariables *cfg, const UserInput_t *uvar );
 void InitEphemeris (LALStatus *, EphemerisData *edat, const CHAR *ephemDir, const CHAR *ephemYear, LIGOTimeGPS epoch);
 
 /*---------- empty initializers ---------- */
@@ -147,6 +158,8 @@ int main(int argc,char *argv[])
   LALStatus status = blank_status;	/* initialize status */
   REAL8 rho2;	/* SNR^2 */
 
+  UserInput_t uvar = empty_UserInput;
+
   lalDebugLevel = 0;
   vrbflg = 1;	/* verbose error-messages */
 
@@ -155,27 +168,27 @@ int main(int argc,char *argv[])
 
   /* register all user-variable */
   LAL_CALL (LALGetDebugLevel(&status, argc, argv, 'v'), &status);
-  LAL_CALL (initUserVars(&status), &status);
+  LAL_CALL (initUserVars(&status, &uvar), &status);
 
   /* do ALL cmdline and cfgfile handling */
-  LAL_CALL (LALUserVarReadAllInput(&status, argc,argv), &status);
+  LAL_CALL (LALUserVarReadAllInput(&status, argc, argv), &status);
 
-  if (uvar_help)	/* if help was requested, we're done here */
+  if (uvar.help)	/* if help was requested, we're done here */
     exit (0);
 
   /* Initialize code-setup */
-  LAL_CALL ( InitPFS(&status, &GV), &status);
+  LAL_CALL ( InitPFS(&status, &GV, &uvar ), &status);
 
   { /* Calculating the F-Statistic */
     REAL8 al1, al2, al3;
     REAL8 Ap2 = SQ(GV.aPlus);
     REAL8 Ac2 = SQ(GV.aCross);
-    REAL8 cos2psi2 = SQ( cos(2*uvar_psi) );
-    REAL8 sin2psi2 = SQ( sin(2*uvar_psi) );
+    REAL8 cos2psi2 = SQ( cos(2*uvar.psi) );
+    REAL8 sin2psi2 = SQ( sin(2*uvar.psi) );
 
     al1 = Ap2 * cos2psi2 + Ac2 * sin2psi2;	/* A1^2 + A3^2 */
     al2 = Ap2 * sin2psi2 + Ac2 * cos2psi2;	/* A2^2 + A4^2 */
-    al3 = ( Ap2 - Ac2 ) * sin(2.0*uvar_psi) * cos(2.0*uvar_psi);	/* A1 A2 + A3 A4 */
+    al3 = ( Ap2 - Ac2 ) * sin(2.0*uvar.psi) * cos(2.0*uvar.psi);	/* A1 A2 + A3 A4 */
 
     /* SNR^2 */
     rho2 = 0.5 * GV.Mmunu.Sinv_Tsft * (GV.Mmunu.Ad * al1 + GV.Mmunu.Bd * al2 + 2.0 * GV.Mmunu.Cd * al3 );
@@ -184,14 +197,14 @@ int main(int argc,char *argv[])
   fprintf(stdout, "\n%.1f\n", 4.0 + rho2);
 
   /* output predicted Fstat-value into file, if requested */
-  if (uvar_outputFstat)
+  if (uvar.outputFstat)
     {
       FILE *fpFstat = NULL;
       CHAR *logstr = NULL;
 
-      if ( (fpFstat = fopen (uvar_outputFstat, "wb")) == NULL)
+      if ( (fpFstat = fopen (uvar.outputFstat, "wb")) == NULL)
 	{
-	  LALPrintError ("\nError opening file '%s' for writing..\n\n", uvar_outputFstat);
+	  LALPrintError ("\nError opening file '%s' for writing..\n\n", uvar.outputFstat);
 	  return (PREDICTFSTAT_ESYS);
 	}
 
@@ -225,55 +238,54 @@ int main(int argc,char *argv[])
  * Here we set defaults for some user-variables and register them with the UserInput module.
  */
 void
-initUserVars (LALStatus *status)
+initUserVars (LALStatus *status, UserInput_t *uvar )
 {
 
   INITSTATUS( status, "initUserVars", rcsid );
   ATTATCHSTATUSPTR (status);
 
   /* set a few defaults */
-  uvar_RngMedWindow = 50;	/* for running-median */
+  uvar->RngMedWindow = 50;	/* for running-median */
 
-  uvar_ephemYear = LALCalloc (1, strlen(EPHEM_YEARS)+1);
-  strcpy (uvar_ephemYear, EPHEM_YEARS);
+  uvar->ephemYear = LALCalloc (1, strlen(EPHEM_YEARS)+1);
+  strcpy (uvar->ephemYear, EPHEM_YEARS);
 
 #define DEFAULT_EPHEMDIR "env LAL_DATA_PATH"
-  uvar_ephemDir = LALCalloc (1, strlen(DEFAULT_EPHEMDIR)+1);
-  strcpy (uvar_ephemDir, DEFAULT_EPHEMDIR);
+  uvar->ephemDir = LALCalloc (1, strlen(DEFAULT_EPHEMDIR)+1);
+  strcpy (uvar->ephemDir, DEFAULT_EPHEMDIR);
 
-  uvar_help = FALSE;
-  uvar_outputFstat = NULL;
+  uvar->help = FALSE;
+  uvar->outputFstat = NULL;
 
-  uvar_minStartTime = 0;
-  uvar_maxEndTime = LAL_INT4_MAX;
+  uvar->minStartTime = 0;
+  uvar->maxEndTime = LAL_INT4_MAX;
 
   /* register all our user-variables */
-  LALregBOOLUserVar(status,	help, 		'h', UVAR_HELP,     "Print this message");
+  LALregBOOLUserStruct(status,	help, 		'h', UVAR_HELP,     "Print this message");
 
-  LALregREALUserVar(status,	h0,		's', UVAR_OPTIONAL, "Signal amplitude h_0");
-  LALregREALUserVar(status,	cosi,		'i', UVAR_OPTIONAL, "Inclination of rotation-axis Cos(iota)");
-  LALregREALUserVar(status,	cosiota,	 0 , UVAR_DEVELOPER,"[DEPRECATED] Use --cosi instead!");
-  LALregREALUserVar(status, 	aPlus,	 	 0 , UVAR_OPTIONAL, "Alternative to {h0,cosi}: A_+ amplitude");
-  LALregREALUserVar(status,	aCross,  	 0 , UVAR_OPTIONAL, "Alternative to {h0,cosi}: A_x amplitude");
+  LALregREALUserStruct(status,	h0,		's', UVAR_OPTIONAL, "Signal amplitude h_0");
+  LALregREALUserStruct(status,	cosi,		'i', UVAR_OPTIONAL, "Inclination of rotation-axis Cos(iota)");
+  LALregREALUserStruct(status,	cosiota,	 0 , UVAR_DEVELOPER,"[DEPRECATED] Use --cosi instead!");
+  LALregREALUserStruct(status, 	aPlus,	 	 0 , UVAR_OPTIONAL, "Alternative to {h0,cosi}: A_+ amplitude");
+  LALregREALUserStruct(status,	aCross,  	 0 , UVAR_OPTIONAL, "Alternative to {h0,cosi}: A_x amplitude");
 
-  LALregREALUserVar(status,	psi,		'Y', UVAR_REQUIRED, "Polarisation in rad");
-  LALregREALUserVar(status,	Alpha,		'a', UVAR_REQUIRED, "Sky position alpha (equatorial coordinates) in radians");
-  LALregREALUserVar(status,	Delta,		'd', UVAR_REQUIRED, "Sky position delta (equatorial coordinates) in radians");
-  LALregREALUserVar(status,	Freq,		'F', UVAR_REQUIRED, "Signal frequency (for noise-estimation)");
+  LALregREALUserStruct(status,	psi,		'Y', UVAR_REQUIRED, "Polarisation in rad");
+  LALregREALUserStruct(status,	Alpha,		'a', UVAR_REQUIRED, "Sky position alpha (equatorial coordinates) in radians");
+  LALregREALUserStruct(status,	Delta,		'd', UVAR_REQUIRED, "Sky position delta (equatorial coordinates) in radians");
+  LALregREALUserStruct(status,	Freq,		'F', UVAR_REQUIRED, "Signal frequency (for noise-estimation)");
 
-  LALregSTRINGUserVar(status,	DataFiles, 	'D', UVAR_OPTIONAL, "File-pattern specifying (multi-IFO) input SFT-files");
-  LALregSTRINGUserVar(status,	IFO, 		'I', UVAR_OPTIONAL, "Detector-constraint: 'G1', 'L1', 'H1', 'H2' ...(useful for single-IFO v1-SFTs only!)");
-  LALregSTRINGUserVar(status,	ephemDir, 	'E', UVAR_OPTIONAL, "Directory where Ephemeris files are located");
-  LALregSTRINGUserVar(status,	ephemYear, 	'y', UVAR_OPTIONAL, "Year (or range of years) of ephemeris files to be used");
-  LALregSTRINGUserVar(status,	outputFstat,	  0,  UVAR_OPTIONAL, "Output-file for predicted F-stat value" );
+  LALregSTRINGUserStruct(status,DataFiles, 	'D', UVAR_OPTIONAL, "File-pattern specifying (multi-IFO) input SFT-files");
+  LALregSTRINGUserStruct(status,IFO, 		'I', UVAR_OPTIONAL, "Detector-constraint: 'G1', 'L1', 'H1', 'H2' ...(useful for single-IFO v1-SFTs only!)");
+  LALregSTRINGUserStruct(status,ephemDir, 	'E', UVAR_OPTIONAL, "Directory where Ephemeris files are located");
+  LALregSTRINGUserStruct(status,ephemYear, 	'y', UVAR_OPTIONAL, "Year (or range of years) of ephemeris files to be used");
+  LALregSTRINGUserStruct(status,outputFstat,	  0,  UVAR_OPTIONAL, "Output-file for predicted F-stat value" );
 
-  LALregINTUserVar ( status,	minStartTime, 	 0,  UVAR_OPTIONAL, "Earliest SFT-timestamp to include");
-  LALregINTUserVar ( status,	maxEndTime, 	 0,  UVAR_OPTIONAL, "Latest SFT-timestamps to include");
+  LALregINTUserStruct ( status,	minStartTime, 	 0,  UVAR_OPTIONAL, "Earliest SFT-timestamp to include");
+  LALregINTUserStruct ( status,	maxEndTime, 	 0,  UVAR_OPTIONAL, "Latest SFT-timestamps to include");
 
-  LALregBOOLUserVar(status,	SignalOnly,	'S', UVAR_OPTIONAL, "Assume Sh=1 and don't use SFTs to estimate noise-floor");
+  LALregBOOLUserStruct(status,	SignalOnly,	'S', UVAR_OPTIONAL, "Assume Sh=1 and don't use SFTs to estimate noise-floor");
 
-  LALregINTUserVar(status,	RngMedWindow,	'k', UVAR_DEVELOPER, "Running-Median window size");
-
+  LALregINTUserStruct(status,	RngMedWindow,	'k', UVAR_DEVELOPER, "Running-Median window size");
 
 
   DETATCHSTATUSPTR (status);
@@ -333,7 +345,7 @@ InitEphemeris (LALStatus * status,
 
 /** Initialized Fstat-code: handle user-input and set everything up. */
 void
-InitPFS ( LALStatus *status, ConfigVariables *cfg )
+InitPFS ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
 {
   SFTCatalog *catalog = NULL;
   SFTConstraints constraints = empty_SFTConstraints;
@@ -357,11 +369,11 @@ InitPFS ( LALStatus *status, ConfigVariables *cfg )
     BOOLEAN have_h0, have_cosi, have_cosiota, have_Ap, have_Ac;
     REAL8 cosi = 0;
 
-    have_h0 = LALUserVarWasSet ( &uvar_h0 );
-    have_cosi = LALUserVarWasSet ( &uvar_cosi );
-    have_cosiota = LALUserVarWasSet ( &uvar_cosiota );
-    have_Ap = LALUserVarWasSet ( &uvar_aPlus );
-    have_Ac = LALUserVarWasSet ( &uvar_aCross );
+    have_h0 = LALUserVarWasSet ( &uvar->h0 );
+    have_cosi = LALUserVarWasSet ( &uvar->cosi );
+    have_cosiota = LALUserVarWasSet ( &uvar->cosiota );
+    have_Ap = LALUserVarWasSet ( &uvar->aPlus );
+    have_Ac = LALUserVarWasSet ( &uvar->aCross );
 
     /* ----- handle cosi/cosiota ambiguity */
     if ( (have_cosi && have_cosiota)  ) {
@@ -369,11 +381,11 @@ InitPFS ( LALStatus *status, ConfigVariables *cfg )
       ABORT ( status, PREDICTFSTAT_EINPUT, PREDICTFSTAT_MSGEINPUT );
     }
     if ( have_cosiota ) {
-      cosi = uvar_cosiota;
+      cosi = uvar->cosiota;
       have_cosi = TRUE;
     }
     else if ( have_cosi ) {
-      cosi = uvar_cosi;
+      cosi = uvar->cosi;
       have_cosi = TRUE;
     }
 
@@ -396,40 +408,40 @@ InitPFS ( LALStatus *status, ConfigVariables *cfg )
     /* ----- internally we always use Aplus, Across */
     if ( have_h0 )
       {
-	cfg->aPlus = 0.5 * uvar_h0 * ( 1.0 + SQ( cosi) );
-	cfg->aCross = uvar_h0 * uvar_cosi;
+	cfg->aPlus = 0.5 * uvar->h0 * ( 1.0 + SQ( cosi) );
+	cfg->aCross = uvar->h0 * uvar->cosi;
       }
     else
       {
-	cfg->aPlus = uvar_aPlus;
-	cfg->aCross = uvar_aCross;
+	cfg->aPlus = uvar->aPlus;
+	cfg->aCross = uvar->aCross;
       }
   }/* check user-input */
 
 
   /* ----- prepare SFT-reading ----- */
-  if ( LALUserVarWasSet ( &uvar_IFO ) )
-    if ( (constraints.detector = XLALGetChannelPrefix ( uvar_IFO )) == NULL ) {
+  if ( LALUserVarWasSet ( &uvar->IFO ) )
+    if ( (constraints.detector = XLALGetChannelPrefix ( uvar->IFO )) == NULL ) {
       ABORT ( status,  PREDICTFSTAT_EINPUT,  PREDICTFSTAT_MSGEINPUT);
     }
 
-  minStartTimeGPS.gpsSeconds = uvar_minStartTime;
+  minStartTimeGPS.gpsSeconds = uvar->minStartTime;
   minStartTimeGPS.gpsNanoSeconds = 0;
-  maxEndTimeGPS.gpsSeconds = uvar_maxEndTime;
+  maxEndTimeGPS.gpsSeconds = uvar->maxEndTime;
   maxEndTimeGPS.gpsNanoSeconds = 0;
   constraints.startTime = &minStartTimeGPS;
   constraints.endTime = &maxEndTimeGPS;
 
   /* ----- get full SFT-catalog of all matching (multi-IFO) SFTs */
   LogPrintf (LOG_DEBUG, "Finding all SFTs to load ... ");
-  TRY ( LALSFTdataFind ( status->statusPtr, &catalog, uvar_DataFiles, &constraints ), status);
+  TRY ( LALSFTdataFind ( status->statusPtr, &catalog, uvar->DataFiles, &constraints ), status);
   LogPrintfVerbatim (LOG_DEBUG, "done. (found %d SFTs)\n", catalog->length);
   if ( constraints.detector )
     LALFree ( constraints.detector );
 
   if ( catalog->length == 0 )
     {
-      LogPrintf (LOG_CRITICAL, "No matching SFTs for pattern '%s'!\n", uvar_DataFiles );
+      LogPrintf (LOG_CRITICAL, "No matching SFTs for pattern '%s'!\n", uvar->DataFiles );
       ABORT ( status,  PREDICTFSTAT_EINPUT,  PREDICTFSTAT_MSGEINPUT);
     }
 
@@ -444,9 +456,9 @@ InitPFS ( LALStatus *status, ConfigVariables *cfg )
   }
 
   {/* ----- load the multi-IFO SFT-vectors ----- */
-    UINT4 wings = uvar_RngMedWindow/2 + 10;   /* extra frequency-bins needed for rngmed */
-    REAL8 fMax = uvar_Freq + 1.0 * wings / Tsft;
-    REAL8 fMin = uvar_Freq - 1.0 * wings / Tsft;
+    UINT4 wings = uvar->RngMedWindow/2 + 10;   /* extra frequency-bins needed for rngmed */
+    REAL8 fMax = uvar->Freq + 1.0 * wings / Tsft;
+    REAL8 fMin = uvar->Freq - 1.0 * wings / Tsft;
 
     LogPrintf (LOG_DEBUG, "Loading SFTs ... ");
     TRY ( LALLoadMultiSFTs ( status->statusPtr, &multiSFTs, catalog, fMin, fMax ), status );
@@ -489,19 +501,19 @@ InitPFS ( LALStatus *status, ConfigVariables *cfg )
     CHAR *ephemDir;
 
     edat = LALCalloc(1, sizeof(EphemerisData));
-    if ( LALUserVarWasSet ( &uvar_ephemDir ) )
-      ephemDir = uvar_ephemDir;
+    if ( LALUserVarWasSet ( &uvar->ephemDir ) )
+      ephemDir = uvar->ephemDir;
     else
       ephemDir = NULL;
-    TRY( InitEphemeris (status->statusPtr, edat, ephemDir, uvar_ephemYear, startTime ), status);
+    TRY( InitEphemeris (status->statusPtr, edat, ephemDir, uvar->ephemYear, startTime ), status);
   }
 
   /* ----- obtain the (multi-IFO) 'detector-state series' for all SFTs ----- */
   TRY (LALGetMultiDetectorStates( status->statusPtr, &multiDetStates, multiSFTs, edat), status );
 
   /* normalize skyposition: correctly map into [0,2pi]x[-pi/2,pi/2] */
-  skypos.longitude = uvar_Alpha;
-  skypos.latitude = uvar_Delta;
+  skypos.longitude = uvar->Alpha;
+  skypos.latitude = uvar->Delta;
   skypos.system = COORDINATESYSTEM_EQUATORIAL;
   TRY (LALNormalizeSkyPosition ( status->statusPtr, &skypos, &skypos), status);
 
@@ -512,15 +524,15 @@ InitPFS ( LALStatus *status, ConfigVariables *cfg )
    * The SignalOnly case is characterized by
    * setting Sh->1 (single-sided), so Sinv=2 (double-sided)
    */
-  if ( uvar_SignalOnly )
+  if ( uvar->SignalOnly )
     {
       multiNoiseWeights = NULL;
       multiAMcoef->Mmunu.Sinv_Tsft = 2.0 * Tsft;
     }
   else
     {
-      TRY ( LALNormalizeMultiSFTVect (status->statusPtr, &multiRngmed, multiSFTs, uvar_RngMedWindow ), status);
-      TRY ( LALComputeMultiNoiseWeights (status->statusPtr, &multiNoiseWeights, multiRngmed, uvar_RngMedWindow, 0 ), status );
+      TRY ( LALNormalizeMultiSFTVect (status->statusPtr, &multiRngmed, multiSFTs, uvar->RngMedWindow ), status);
+      TRY ( LALComputeMultiNoiseWeights (status->statusPtr, &multiNoiseWeights, multiRngmed, uvar->RngMedWindow, 0 ), status );
     }
 
   /* noise-weighting of Antenna-patterns and compute A,B,C */
