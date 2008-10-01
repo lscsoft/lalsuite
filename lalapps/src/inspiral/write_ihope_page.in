@@ -912,11 +912,15 @@ def write_summaryFiles(page, opts):
   """
   webdir = opts.webdir
   ini = opts.config_file
-  
-  injections = hipecp.items("injections")
-  directories = ["playground","full_data"]
-  for this in injections: 
-    directories.append(this[0])
+  directories = []
+  if opts.playground:
+    directories.append("playground")
+  if opts.full_data or opts.full_data_slide:  
+    directories.append("full_data")
+  if opts.injection:
+    injections = hipecp.items("injections")
+    for this in injections: 
+      directories.append(this[0])
 
   page.add("This section provides a list of COIRE and SIRE summary files.<br/>")
 
@@ -962,53 +966,103 @@ def write_summaryFiles(page, opts):
       page.add("<pre>Problem while copying the sire summary files.</pre>")
     page.div.close()
 
-    # link all the SUMMARY COIRE text files
-    page = heading(page, "Final COIRE Summary files ")
-    for ifostring in get_ifo_coinc():
-      if len(ifostring)>2:
-        fnames = []
-        if 'inj' in thisSearch:
+    # link and copy all the SUMMARY COIRE text files
+    
+    if 'inj' in thisSearch:
+      page = heading(page, "Final COIRE Summary files ")
+      for ifostring in get_ifo_coinc():
+        if len(ifostring)>2:
+          fnames = []
           inj_fname = ifostring +'-COIRE_INJECTIONS*SUMMARY_SECOND_' + \
               ifostring +'_'+thisSearch.upper()+'_CAT_2_VETO' +opts.txt_suffix
           fnames.append(inj_fname)
-        if thisSearch == "full_data" or thisSearch == "playground":
-          slide_fname = ifostring + '-COIRE_SLIDE_SUMMARY_SECOND_' + ifostring\
-              +'_' + thisSearch.upper() + '_CAT_2_VETO' + opts.txt_suffix    
-          fnames.append(slide_fname)
-        if thisSearch == "playground":
-          fname = ifostring +'-COIRE_SUMMARY_SECOND_' + ifostring \
-              + '_' + thisSearch.upper() + '_CAT_2_VETO' + opts.txt_suffix     
-          fnames.append(fname)
-
-        for fname in fnames: 
-          if "SLIDE" in fname:
-            page.add("<p>COIRE SLIDE Summary file "+ ifostring +".</p>")
-          else: 
+          for fname in fnames:
             page.add( "<p>COIRE Summary file "+ ifostring +".</p>")
+            flist = glob.glob(prefix + fname)
+            if len(flist) == 1: 
+              file = open(flist[0], "r")
+              text = file.read()
+              file.close()
+              page.add("<pre>" + fname + "<br/>" + text + "</pre>")
+            else: 
+              page.add('<pre>Could not find '+fname+'</pre>')
+      try:
+        dest = path + "/coire"
+        mkdir(dest)
+        src = opts.datadir+thisSearch+'/'+"*COIRE*SUMMARY*xml* "
+        if opts.no_copy is False:
+          command = 'cp ' +src +' ' + dest
+          make_external_call(command, opts.debug, opts.debug, True)
+        page.add("All COIRE files are available in coire directory")
+        page = add_href(page, href= webdir +thisSearch+"/coire", name="here")
+      except:
+        page.add("<pre>Problem while copying the coire summary files.</pre>")
+      page.div.close()
 
-          flist = glob.glob(prefix + fname)
-          if len(flist) == 1: 
-            file = open(flist[0], "r")
-            text = file.read()
-            file.close()
-            page.add("<pre>" + fname + "<br/>" + text + "</pre>")
-          else: 
-            page.add('<pre>Could not find '+fname+'</pre>')
+    if thisSearch == "full_data" or thisSearch == "playground":
+      if thisSearch == "playground" or opts.full_data:
+        page = heading(page, "Final COIRE zero lag files")
+        for ifostring in get_ifo_coinc():
+          if len(ifostring)>2:
+            fnames = []
+            fname = ifostring +'-COIRE_SUMMARY_SECOND_' + ifostring \
+                + '_' + thisSearch.upper() + '_CAT_2_VETO' + opts.txt_suffix
+            fnames.append(fname)
+            for fname in fnames:
+              page.add( "<p>COIRE Zero Lag Summary file "+ ifostring +".</p>")
+              flist = glob.glob(prefix + fname)
+              if len(flist) == 1:
+                file = open(flist[0], "r")
+                text = file.read()
+                file.close()
+                page.add("<pre>" + fname + "<br/>" + text + "</pre>")
+              else:
+                page.add('<pre>Could not find '+fname+'</pre>')
+        try:
+          dest = path + "/coire_zero_lag"
+          mkdir(dest)
+          src = opts.datadir+thisSearch+'/'+"*COIRE_SUMMARY*xml* "
+          if opts.no_copy is False:
+            command = 'cp ' +src +' ' + dest
+            make_external_call(command, opts.debug, opts.debug, True)
+          page.add("All COIRE zero lag files are available in coire directory")
+          page = add_href(page, href= webdir +thisSearch+"/coire_zero_lag",\
+	         name="here")
+        except:
+          page.add("<pre>Problem while copying the coire summary files.</pre>")
+        page.div.close()
 
-   
-    #copy all SUMMARY COIRE file 
-    try:
-      dest = path + "/coire"
-      mkdir(dest)
-      src = opts.datadir+thisSearch+'/'+"*COIRE*SUMMARY*xml* " 
-      if opts.no_copy is False:
-        command = 'cp ' +src +' ' + dest
-        make_external_call(command, opts.debug, opts.debug, True)   
-      page.add("All COIRE files are available in coire directory")
-      page = add_href(page, href= webdir +thisSearch+"/coire", name="here")
-    except: 
-      page.add("<pre>Problem while copying the coire summary files.</pre>")
-    page.div.close()
+      if thisSearch == "playground" or opts.full_data_slide:
+        page = heading(page, "Final COIRE slide files")
+        for ifostring in get_ifo_coinc():
+          if len(ifostring)>2:
+            fnames = []
+            slidefname = ifostring +'-COIRE_SLIDE_SUMMARY_SECOND_' + ifostring \
+                + '_' + thisSearch.upper() + '_CAT_2_VETO' + opts.txt_suffix
+            fnames.append(slidefname)
+            for fname in fnames:
+              page.add( "<p>COIRE Slide Summary file "+ ifostring +".</p>")
+              flist = glob.glob(prefix + fname)
+              if len(flist) == 1:
+                file = open(flist[0], "r")
+                text = file.read()
+                file.close()
+                page.add("<pre>" + fname + "<br/>" + text + "</pre>")
+              else:
+                page.add('<pre>Could not find '+fname+'</pre>')
+        try:
+          dest = path + "/coire_slide"
+          mkdir(dest)
+          src = opts.datadir+thisSearch+'/'+"*COIRE_SLIDE_SUMMARY*xml* "
+          if opts.no_copy is False:
+            command = 'cp ' +src +' ' + dest
+            make_external_call(command, opts.debug, opts.debug, True)
+          page.add("All COIRE slide files are available in coire directory")
+          page = add_href(page, href= webdir +thisSearch+"/coire_slide",\
+	         name="here")
+        except:
+          page.add("<pre>Problem while copying the coire summary files.</pre>")
+	page.div.close()
 
   return page
  
@@ -1776,8 +1830,8 @@ url             = ldas-jobs.ligo.caltech.edu.......
 username        = cokelaer.........................
 style           = /archive/home/cokelaer/style.css.
 output          = index.shtml""")
-  parser.add_option("-A","--skip-full-data",action="store_false",\
-      default=True,dest="full_data", metavar="DOANALYSIS",\
+  parser.add_option("-A","--open-the-box",action="store_true",\
+      default=False,dest="full_data", metavar="DOANALYSIS",\
       help="" )
   parser.add_option("-T","--skip-tuning",action="store_false",\
       default=True,dest="tuning", metavar="DOTUNING",\
