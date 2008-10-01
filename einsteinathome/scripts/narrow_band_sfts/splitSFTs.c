@@ -15,7 +15,7 @@
 #include <string.h>
 #include "SFTReferenceLibrary.h"
 
-#define RCSID "$Id: splitSFTs.c,v 1.32 2008/09/26 20:44:43 bema Exp $"
+#define RCSID "$Id: splitSFTs.c,v 1.33 2008/10/01 13:37:42 bema Exp $"
 
 /* rounding (for positive numbers!)
    taken from SFTfileIO in LALSupport, should be consistent with that */
@@ -46,11 +46,12 @@ int main(int argc, char**argv) {
   char *outname;               /* name of output SFT file */
   char *prefix = "";           /* output filename prefix */
   char *detector = NULL;       /* detector name */
-  double factor = 1.0;         /* "mystery" factor */
+  double factor = 1.0;         /* factor ("mystery factor" and SFT v1 normalization) */
   int firstfile = TRUE;        /* are we processing the first input SFT file? */
   int add_comment = CMT_FULL;  /* add RCSID and full command-line to every SFT file */
   unsigned int start = 0, end = 0, width = 0, overlap = 0;     /* start, end, width and overlap in bins */
   double fMin = -1.0, fMax = -1.0, fWidth = -1.0, fOverlap = -1; /* start, end, width and overlap in Hz */
+  unsigned int nactivesamples; /* number of bins to read in */
 
 
   /* help / usage message */
@@ -256,21 +257,31 @@ int main(int argc, char**argv) {
       detector = hd.detector;
 
     /* if no detector has been specified, issue an error */
-    TRY(detector == NULL, "When reading v1 SFTs a detector needs to be specified with -d",12);
+    TRY(detector == NULL || !*detector, "When reading v1 SFTs a detector needs to be specified with -d",12);
+
+    /* number of bins to load */
+    for(nactivesamples = 0; nactivesamples < end - start; nactivesamples += width - overlap);
+    nactivesamples += overlap + 1;
+    if(nactivesamples > hd.nsamples + hd.firstfreqindex - start)
+      nactivesamples = hd.nsamples - start;
 
     /* read in SFT bins */
-    TRYSFT(ReadSFTData(fp, data, hd.firstfreqindex, hd.nsamples, NULL, NULL),
+    TRYSFT(ReadSFTData(fp, data, start, nactivesamples, NULL, NULL),
 	   "could not read SFT data");
 
-    /* apply mystery factor */
-    for(bin = 0; bin < 2*hd.nsamples; bin++)
+    /* normalize for v1 SFTs */
+    if(hd.version == 1.0)
+      factor *= 0.5 * hd.tbase / hd.nsamples;
+
+    /* apply factor */
+    for(bin = 0; bin < 2 * nactivesamples; bin++)
       data[bin] *= factor;
 
     /* cleanup */
     fclose(fp);
 
     /* loop over start bins for output SFTs */
-    for(bin = start; bin < end; bin += width-overlap) {
+    for(bin = start; bin < end; bin += width - overlap) {
 
       int last_index = hd.firstfreqindex + hd.nsamples - 1;
       int last_bin = bin + width - 1;
@@ -290,7 +301,7 @@ int main(int argc, char**argv) {
       TRYSFT(WriteSFT(fp, hd.gps_sec, hd.gps_nsec, hd.tbase, 
 		      bin, this_width, detector,
 		      firstfile ? comment : NULL,
-		      data + 2 * (bin - hd.firstfreqindex)),
+		      data + 2 * (bin - start)),
 	     "could not write SFT data");
 
       /* cleanup */
