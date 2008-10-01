@@ -104,8 +104,8 @@ static void print_usage(char *program)
       "                                (mchirp|mtotal|mcomp)\n"\
       " [--mass-range-low]    lowmass  lower bound on mass range\n"\
       " [--mass-range-high]   highmass upper bound on mass range\n"\
-      " [--mass2-range-low]    lowmass  lower bound on mass2 range for mcomp\n"\
-      " [--mass2-range-high]   highmass upper bound on mass2 range for mcomp\n"\
+      " [--mass2-range-low]   lowmass  lower bound on mass2 range for mcomp\n"\
+      " [--mass2-range-high]  highmass upper bound on mass2 range for mcomp\n"\
       "\n"\
       " [--discard-ifo]       ifo      discard all triggers from ifo\n"\
       " [--coinc-cut]         ifos     only keep triggers from IFOS\n"\
@@ -117,6 +117,14 @@ static void print_usage(char *program)
       " [--coinc-stat]        stat     use coinc statistic for cluster/cut\n"\
       "                     [ snrsq | effective_snrsq | s3_snr_chi_stat | bitten_l]\n"\
       " [--stat-threshold]    thresh   discard all triggers with stat less than thresh\n"\
+      " [--rsq-threshold] rsq_thresh   discard all triggers whose rsqveto_duration\n"\
+      "                                exceeds rsq_thresh\n"\
+      " [--rsq-max-snr]   rsq_max_snr  apply rsq on triggers with snr < rsq_max_snr\n"\
+      "                                exceeds rsq_thresh\n"\
+      " [--rsq-coeff]     rsq_coeff    apply rsq on triggers with snr > rsq_max_snr\n"\
+      "                                exceeds rsq_coeff * snr ^ rsq_power\n"\
+      " [--rsq-power]     rsq_power    apply rsq on triggers with snr > rsq_max_snr\n"\
+      "                                exceeds rsq_coeff * snr ^ rsq_power\n"\
       " [--h1-bittenl-a]      bitten   paramater a for clustering\n"\
       " [--h1-bittenl-b]      bitten   paramater b for clustering\n"\
       " [--h2-bittenl-a]      bitten   paramater a for clustering\n"\
@@ -178,6 +186,10 @@ int main( int argc, char *argv[] )
   REAL4 massRangeHigh = -1;
   REAL4 mass2RangeLow = -1;
   REAL4 mass2RangeHigh = -1;
+  REAL4 rsqVetoThresh = -1;
+  REAL4 rsqMaxSnr     = -1;
+  REAL4 rsqAboveSnrCoeff = -1;
+  REAL4 rsqAboveSnrPow     = -1;
 
   UINT8 triggerInputTimeNS = 0;
 
@@ -205,6 +217,7 @@ int main( int argc, char *argv[] )
   int                   numTriggers = 0;
   int                   numCoincs = 0;
   int                   numEventsInIfos = 0;
+  int                   numEventsBelowRsqThresh = 0;
   int                   numEventsPlayTest = 0;
   int                   numEventsInMassRange = 0;
   int                   numEventsAboveThresh = 0;
@@ -282,6 +295,10 @@ int main( int argc, char *argv[] )
       {"num-slides",              required_argument,      0,              'N'},
       {"coinc-stat",              required_argument,      0,              'C'},
       {"stat-threshold",          required_argument,      0,              'E'},
+      {"rsq-threshold",           required_argument,      0,              'x'},
+      {"rsq-max-snr",             required_argument,      0,              'U'},
+      {"rsq-coeff",               required_argument,      0,              'X'},
+      {"rsq-power",               required_argument,      0,              'P'},
       {"cluster-time",            required_argument,      0,              't'},
       {"discard-ifo",             required_argument,      0,              'd'},
       {"coinc-cut",               required_argument,      0,              'D'},
@@ -308,8 +325,9 @@ int main( int argc, char *argv[] )
     int option_index = 0;
     size_t optarg_len;
 
-    c = getopt_long_only ( argc, argv, "a:b:c:d:g:hi:j:k:l:m:n:o:p:t:z:"
-                                       "C:D:E:I:N:S:T:VZ", long_options, 
+    c = getopt_long_only ( argc, argv, "a:b:c:d:g:hi:j:k:l:m:n:o:p:q:r:t:x:z:"
+                                       "C:D:E:I:M:N:P:Q:R:S:T:U:VZ", 
+                                       long_options, 
                                        &option_index );
 
     /* detect the end of the options */
@@ -545,6 +563,59 @@ int main( int argc, char *argv[] )
         ADD_PROCESS_PARAM( "float", "%f", statThreshold );
         break;
         
+      case 'x':
+        rsqVetoThresh = (REAL4) atof( optarg );
+        if ( rsqVetoThresh < 0 )
+        {
+          fprintf( stdout, "invalid argument to --%s:\n"
+              "threshold must be >= 0: "
+              "(%f specified)\n",
+              long_options[option_index].name, rsqVetoThresh );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "float", "%e", rsqVetoThresh );
+        break;
+
+      case 'U':
+        rsqMaxSnr = (REAL4) atof( optarg );
+        if ( rsqMaxSnr < 0 )
+        {
+          fprintf( stdout, "invalid argument to --%s:\n"
+              "threshold must be >= 0: "
+              "(%f specified)\n",
+              long_options[option_index].name, rsqMaxSnr );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "float", "%e", rsqMaxSnr );
+        break;
+
+      case 'X':
+        rsqAboveSnrCoeff = (REAL4) atof( optarg );
+        if ( rsqAboveSnrCoeff < 0 )
+        {
+          fprintf( stdout, "invalid argument to --%s:\n"
+              "coefficient must be >= 0: "
+              "(%f specified)\n",
+              long_options[option_index].name, rsqAboveSnrCoeff );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "float", "%e", rsqAboveSnrCoeff );
+        break;
+
+      case 'P':
+        rsqAboveSnrPow = (REAL4) atof( optarg );
+        if ( rsqAboveSnrPow < 0 )
+        {
+          fprintf( stdout, "invalid argument to --%s:\n"
+              "power must be >= 0: "
+              "(%f specified)\n",
+              long_options[option_index].name, rsqAboveSnrPow );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "float", "%e", rsqAboveSnrPow );
+        break;
+
+
       case 't':
         /* cluster time is specified on command line in ms */
         cluster_dt = (INT8) atoi( optarg );
@@ -704,6 +775,30 @@ int main( int argc, char *argv[] )
   {
     fprintf( stderr, 
         "--coinc-stat must be specified if --cluster-time is given\n" );
+    exit( 1 );
+  }
+
+  /* check that if the rsq veto is being preformed,
+                         we have the required options */
+  if ( ( (rsqVetoThresh > 0) || (rsqMaxSnr > 0) ) && ( (rsqVetoThresh < 0)
+    || (rsqMaxSnr < 0) ) )
+  {
+    fprintf( stderr, "--rsq-threshold and --rsq-max-snr and must be "
+      "specified together" );
+    exit( 1 );
+  }
+  else if ( (rsqAboveSnrCoeff > 0) && ( (rsqMaxSnr < 0) || (rsqVetoThresh < 0)
+    || (rsqAboveSnrPow < 0) ) )
+  {
+    fprintf( stderr, "--rsq-max-snr --rsq-threshold and --rsq-power "
+      "must be specified if --rsq-coeff is given\n" );
+    exit( 1 );
+  }
+  else if ( (rsqAboveSnrPow > 0) && ( (rsqMaxSnr < 0) || (rsqVetoThresh < 0)
+    || (rsqAboveSnrCoeff < 0) ) )
+  {
+    fprintf( stderr, "--rsq-max-snr --rsq-threshold and --rsq-coeff "
+      "must be specified if --rsq-power is given\n" );
     exit( 1 );
   }
 
@@ -899,7 +994,19 @@ int main( int argc, char *argv[] )
           numFileTriggers, ifo );
     }
 
-    
+    /*  Do rsq cut */
+    if ( rsqVetoThresh > 0 )
+    {
+      inspiralFileList = XLALRsqCutSingleInspiral( inspiralFileList, 
+          rsqVetoThresh, rsqMaxSnr, rsqAboveSnrCoeff, rsqAboveSnrPow );
+      /* count the triggers  */
+      numFileTriggers = XLALCountSnglInspiral( inspiralFileList );
+
+      if ( vrbflg ) fprintf( stdout, "Have %d triggers after rsq cut\n",
+          numFileTriggers );
+      numEventsBelowRsqThresh += numFileTriggers;
+    }
+
     /* reconstruct the coincs */
     numFileCoincs = XLALRecreateCoincFromSngls( &coincFileHead, 
         &inspiralFileList );
@@ -1462,6 +1569,24 @@ int main( int argc, char *argv[] )
 
     fprintf( fp, "read triggers from %d files\n", numInFiles );
     fprintf( fp, "number of triggers in input files: %d \n", numTriggers );
+
+    if ( rsqVetoThresh > 0 )
+    {
+      fprintf( fp, "performed R-squared veto on triggers with snr < %f\n",
+          rsqMaxSnr);
+      fprintf( fp, "with rsqveto_duration below %f\n",
+          rsqVetoThresh);
+      if ( (rsqAboveSnrCoeff > 0) && (rsqAboveSnrPow > 0) )
+      {
+        fprintf( fp, "and on triggers with snr > %f\n",
+            rsqMaxSnr);
+        fprintf( fp, "with rsqveto_duration above %f * snr ^ %f\n",
+            rsqAboveSnrCoeff, rsqAboveSnrPow );
+      }
+      fprintf( fp, "the number of triggers below the R-squared veto are: %d \n",
+          numEventsBelowRsqThresh);
+    }
+
     fprintf( fp, "number of reconstructed coincidences: %d \n", numCoincs );
     if ( ifos )
     {

@@ -391,6 +391,12 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dfOnly = False, \
     # set the correct pipeline usertag
     usertag += "_CAT_" + str(vetoCat) + "_VETO"
 
+    for cat in range(2, vetoCat+1):
+      section = "coire-2-cat-" + str(cat)
+      if config.has_section(section):
+        for opt, arg in config.items(section):
+          hipecp.set("coire-2",opt,arg)
+
     # add the veto files in the thinca section
     for ifo in ifos:
       hipecp.set("thinca", ifo.lower() + "-veto-file", vetoFiles[ifo][vetoCat])
@@ -687,6 +693,10 @@ def zeroSlidePlots(dag, plotDir, config, logPath, zerolagSuffix, slideSuffix,
   plotcp.set("plot-arguments","plotinspiral","")
   plotcp.set("plot-arguments","plotthinca","")
   plotcp.set("plot-arguments","write-script","")
+  # Add plotthinca scaling option for zero lag play full data slide plots
+  if zerolagSuffix == "PLAYGROUND" and slideSuffix == "FULL_DATA":
+    plotcp.set("plotthinca","zero-lag-playground","")
+
   plotNode = plot_setup(plotDir, plotcp, logPath, "first", \
       "", zerolagSuffix, slideSuffix, slideSuffix, cacheFile)
   if doDagCategories:
@@ -703,6 +713,8 @@ def zeroSlidePlots(dag, plotDir, config, logPath, zerolagSuffix, slideSuffix,
   plotcp.set("plot-arguments","plotinspiral","")
   plotcp.set("plot-arguments","plotthinca","")
   plotcp.set("plot-arguments","write-script","")
+  if zerolagSuffix == "PLAYGROUND" and slideSuffix == "FULL_DATA":
+    plotcp.set("plotthinca","zero-lag-playground","")
   plotVetoNode = plot_setup(plotDir, plotcp, logPath, "second", \
       "", zerolagSuffix + vetoString, slideSuffix + vetoString, \
       slideSuffix + vetoString, cacheFile, tag=vetoString[1:])
