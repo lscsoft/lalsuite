@@ -168,7 +168,7 @@ def fix_numrel_columns(sims):
        sim.numrel_data="nan"
        sim.numrel_mode_max = 0
        sim.numrel_mode_min = 0
-       sim.amp_order = -1
+       #sim.amp_order = -1
 
 ##############################################################################
 # inspiral_hipe wrapper
@@ -208,7 +208,7 @@ class hipe_run(object):
     for i in range(n):
       self._hipe_args.append("--%s-ifo" % number_words[i+1])
     
-    # set individual ifos to analyze
+	    # set individual ifos to analyze
     for ifo in self._ifos:
       self._cp.set("input", "%s-segments" % ifo.lower(), "../offSourceSeg.txt")
       self._hipe_args.append("--%s-data" % ifo.lower())
@@ -407,27 +407,13 @@ def make_ligolw_add(orig_cache, pattern, outfile, logdir, cp, ligolw_job=None):
   """
   # determine the files to ligolw_add
   sub_cache = orig_cache.sieve(description=pattern)
-  sub_files = sub_cache.pfnlist()
-
-  if len(sub_files) == 0:
+  if len(sub_cache) == 0:
     print >>sys.stderr, "warning: no files on which to run ligolw_add"
     return None
 
   # create the cache-file
   cachefile = os.path.basename( outfile )[:-3]+'cache'
-  output = file(cachefile,'w')
-
-  # loop though all files and bild the cache-file
-  for sub_file in sub_files:
-    path, file1 = os.path.split(sub_file.strip())
-    url = "file://localhost%s" % os.path.abspath(os.path.join(path, file1))
-
-    try:
-      cache_entry = lal.CacheEntry.from_T050017(url)
-    except ValueError, e:
-      continue
-
-    print >>output, str(cache_entry)
+  sub_cache.tofile(open(cachefile,'w'))
 
   if ligolw_job is None:
     ligolw_job = pipeline.LigolwAddJob(logdir, cp)
@@ -437,10 +423,11 @@ def make_ligolw_add(orig_cache, pattern, outfile, logdir, cp, ligolw_job=None):
   node.add_var_opt("input", cachefile)
   node.add_var_opt("output", outfile)
 
-  new_cache = lal.Cache([entry for entry in orig_cache if entry.path() not in sub_files])
+  # return the cache-file without the ones
+  # just extracted above
+  new_cache = lal.Cache([entry for entry in orig_cache if entry not in sub_cache])
   new_cache.extend(lal.Cache.from_urls([outfile]))
   return node, new_cache
-
 
 ##############################################################################
 # define usage and command line options and arguments - parse
@@ -665,6 +652,8 @@ if opts.do_dataquality:
 tag = opts.config_file.rstrip(".ini")
 uberdag = pipeline.CondorDAG("%s/%s_uberdag.log" % (opts.log_path, tag))
 uberdag.set_dag_file("%s_uberdag" % tag)
+ligolwdag = pipeline.CondorDAG("%s/%s_ligolwdag.log" % (opts.log_path, tag))
+ligolwdag.set_dag_file("%s_ligolwdag" % tag)
 
 ##############################################################################
 # loop over the GRBs and construct their required sub-DAGs
@@ -867,29 +856,34 @@ for grb in ext_trigs:
       
       # ligolw_add FOUND and MISSED files
       injection_cache_filename = injection_analysis.get_cache_name()
-      #injection_cache = lal.Cache.fromfile(open(injection_cache_filename))
-      #ligolw_added_cache_filename = injection_cache_filename.replace("HIPE",
-      #  "HIPE_LIGOLW_ADDED")
+      injection_cache = lal.Cache.fromfile(open(injection_cache_filename))
+      ligolw_added_cache_filename = injection_cache_filename.replace("HIPE",
+        "HIPE_LIGOLW_ADDED")
       
-      #found_filename = "%s/%s-COIRE_INJECTION_FOUND_SECOND_%s_%s-%d-%d.xml" %\
-      #  (hipe_dir, "".join(grb_ifolist), "".join(grb_ifolist), usertag,
-      #   offSourceSegment[0], abs(offSourceSegment))
-      #ligolw_add_1, new_cache = make_ligolw_add(injection_cache,
-      #                               "COIRE_*_FOUND", found_filename,
-      #                               opts.log_path, cp)
-      #ligolw_add_1.add_parent(injection_node)
-      #uberdag.add_node(ligolw_add_1)
-      
-      #missed_filename = found_filename.replace("FOUND", "MISSED")
-      #ligolw_add_2, new_cache = make_ligolw_add(new_cache,
-      #                          "COIRE_*_MISSED", missed_filename,
-      #                          opts.log_path, cp)
-      #ligolw_add_2.add_parent(injection_node)
-      #new_cache.tofile(open(ligolw_added_cache_filename, "w"))
-      #uberdag.add_node(ligolw_add_2)
-      
-      #hipe_caches.append(ligolw_added_cache_filename)
-      hipe_caches.append(injection_cache_filename)
+      # add a ligolw_add command to concatenate all the found injections
+      found_filename = "%s/%s-COIRE_INJECTION_FOUND_SECOND_%s_%s-%d-%d.xml" %\
+        (hipe_dir, "".join(grb_ifolist), "".join(grb_ifolist), usertag,
+         offSourceSegment[0], abs(offSourceSegment))
+      ligolw_add_1, new_cache = make_ligolw_add(injection_cache,
+                                     "COIRE_*_FOUND_SECOND", found_filename,
+                                     opts.log_path, cp)
+      ligolw_add_1.add_parent(injection_node)
+      ligolwdag.add_node(ligolw_add_1)
+
+      # add a ligolw_add command to concatenate all the missed injections
+      missed_filename = found_filename.replace("FOUND", "MISSED")
+      ligolw_add_2, new_cache = make_ligolw_add(new_cache,
+                                "COIRE_*_MISSED_SECOND", missed_filename,
+                                opts.log_path, cp)
+      ligolw_add_2.add_parent(injection_node)
+
+      # Create a temporay cache-file containing two files (F/M)
+      # which will be created by the ligolw_add step
+      new_cache.tofile(open(ligolw_added_cache_filename, "w"))
+      ligolwdag.add_node(ligolw_add_2)
+
+      # add these two files to the regular main cache 
+      hipe_caches.append(ligolw_added_cache_filename)
   
   grb_cache_name = idirectory + "/" + idirectory + ".cache"
   concatenate_files(hipe_caches, grb_cache_name)
@@ -898,6 +892,9 @@ for grb in ext_trigs:
 if opts.verbose: print "Writing sub files and uber-DAG..."
 uberdag.write_sub_files()
 uberdag.write_dag()
+ligolwdag.write_sub_files()
+ligolwdag.write_dag()
+ligolwdag.write_script()
 
 concatenate_files(grb_caches, tag + ".cache")
 
