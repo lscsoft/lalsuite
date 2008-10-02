@@ -139,7 +139,7 @@ parser.add_option("-U", "--skip-followup",action="store_false",\
 parser.add_option("-x", "--dax",action="store_true",\
     default=False, help="Make a dax workflow")
 
-parser.add_option("-R","--generate-full-data-results-plots",\
+parser.add_option("-G","--generate-full-data-results-plots",\
     action="store_true",default=False,dest="generate_results_plots",\
     help="""Use this option to generate the zero lag full data results plots
 This is independant of --skip-plots and --skip-full-data. DO NOT run with this
