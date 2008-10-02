@@ -20,7 +20,6 @@
 
 /**
  * \author Alicia Sintes, Badri Krishnan 
- * \defgroup houghPulsar
  * \ingroup pulsarHough
  * \file DriveHough.c 
  * \brief Routines for building and updating the space of partial Hough map
