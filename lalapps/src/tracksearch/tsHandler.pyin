@@ -220,6 +220,11 @@ parser.add_option("-g","--glob",dest="glob",
                   action="store_true",
                   help="This option tells the code to glob all the lists together into one larger curve candidate listing.  The output be a single or sequence of files with GLOB:Start:00000000,0:Stop:00000000,0:TF:000:000:.candidates. This option can not be used with clobber. This is a RAM and CPU intensive task! A quicker option assuming the candidate files are generated with the same paramters is --glue.  To use this then invoke --glob --glue",
                   )
+parser.add_option("-k","--show-legend",dest="legend",
+                  default=False,
+                  action="store_true",
+                  help="This shows the properties that can be accessed from the triggers in the trigger file.  These are typically useful for plotting properties relationships."
+                  )
 parser.add_option("-l","--glue",dest="glue",
                   default=False,
                   action="store_true",
@@ -342,12 +347,12 @@ timescale=str(options.timescale).lower()
 topTol=float(options.topPercentile)
 histogramType=str(options.histogramType).lower()
 dqList=int(options.makeDQlist)
-
+showLegend=bool(options.legend)
 
 if verboseSwitch:
     print "Setting verbose mode to candidateHandler call."
 
-if filename == "":
+if (filename == "" and not showLegend):
     print "Filename argument either not specified or invalid!"
     os.abort()
 
@@ -355,8 +360,13 @@ if filename == "":
 canList=[]
 canList=generateFileList(filename)
 
+if showLegend:
+    x=candidateList()
+    myLegend=x.showQualityLegend()
+    for line in myLegend:
+        sys.stdout.write(line)
 #SECTION TO DO THE GLOBBING OF MANY CANDIDATE FILES
-if (glob and (canList.__len__() >= 1)):
+elif (glob and (canList.__len__() >= 1)):
     if outfile != "":
         outName=outfile
         #If file preexists erase it first!

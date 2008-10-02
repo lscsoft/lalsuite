@@ -800,6 +800,18 @@ class candidateList:
 
     #End init method
 
+    def showQualityLegend(self):
+        """
+        Creates a text structure that contains the legend of available
+        trigger properties that we can use to manipulate the list.
+        """
+        outputTextList=[]
+        outputTextList.append("LABEL\tQUALITY\n")
+        for key,qual,action in self.qualities:
+            outputTextList.append("%s\t%s\n"%(key,qual))
+        return outputTextList
+    #End showQualityLegend
+
     def __getKurveProperty__(self,thisKurveSummary,propertyList=["curveid"]):
         """
         This method returns a list of property values given an input
