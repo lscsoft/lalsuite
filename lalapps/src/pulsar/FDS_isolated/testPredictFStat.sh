@@ -122,7 +122,7 @@ echo
 
 
 ## clean up files
-rm -rf $SFTdir $outfile_pfs
+rm -rf $SFTdir $outfile_pfs $outfile_pfs2
 
 echo
 echo "----------------------------------------"
