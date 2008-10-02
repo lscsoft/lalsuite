@@ -55,7 +55,7 @@ lalapps_PredictFStat_SOURCES = PredictFStat.c
 
 lalapps_ComputeFStatAnalyticMonteCarloUpperLimit_SOURCES = ComputeFStatAnalyticMonteCarloUpperLimit.c
 
-EXTRA_DIST = testFStat.sh testCFSv2.sh testGridv2.sh Fstats.ref1 Fstats.ref2
+EXTRA_DIST = testFStat.sh testCFSv2.sh testGridv2.sh Fstats.ref1 Fstats.ref2 testPredictFStat.sh
 TESTS = testFStat.sh testCFSv2.sh testGridv2.sh testPredictFStat.sh
 
 CLEANFILES =
