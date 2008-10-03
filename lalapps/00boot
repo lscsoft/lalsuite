@@ -80,7 +80,7 @@ printf "00boot:\t%-16s %s\n" "autoconf-$autoconf_version:" "`which $AUTOCONF`"
 ## Generate the Makefile.in's and the configure script
 
 echo "00boot: running aclocal"
-$ACLOCAL || fail "aclocal"
+$ACLOCAL -I misc || fail "aclocal"
 echo "00boot: running autoheader"
 $AUTOHEADER || fail "autoheader"
 echo "00boot: running automake"
