@@ -663,6 +663,11 @@ InitEphemeris (const CHAR *ephemDir,	/**< directory containing ephems */
 
   LALInitBarycenter(&status, edat);
 
+  if ( status.statusCode != 0 ) {
+    LogPrintf ( LOG_CRITICAL, "Call to LALInitBarycenter() failed! code = %d, msg = '%s'", status.statusCode, status.statusDescription );
+    return NULL;
+  }
+
   return edat;
 
 } /* InitEphemeris() */
