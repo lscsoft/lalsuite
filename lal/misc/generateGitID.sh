@@ -19,7 +19,7 @@ outfile="misc/${prefix}GitID.h"
 tmpfile="misc/__${prefix}GitID.h"
 
 ## ---------- read out git-log of last commit --------------------
-fmt="format:${prefix}CommitID: %H %n${prefix}CommitDate: %aD %n${prefix}CommitAuthor: %ae %n${prefix}CommitTitle: %s";
+fmt="format:${prefix}CommitID: %H %n${prefix}CommitDate: %ai %n${prefix}CommitAuthor: %ae %n${prefix}CommitTitle: %s";
 logcmd="git log -1 --pretty='$fmt'";
 
 ## first check if the git log works at all: could be a) no git installed or b) no git-repository
@@ -32,7 +32,10 @@ fi
 if test "$git_log_ok" = "true"; then
     git_log=`eval $logcmd`;
 else
-    git_log="${prefix}CommitID: unknown.";
+    git_log="${prefix}CommitID: unknown.
+${prefix}CommitDate: 1980-01-06 00:00:00 +0000 
+${prefix}CommitAuthor: unknown.
+${prefix}CommitTitle: unknown.";
 fi
 
 ## ---------- check for modified/added git-content [ignores untracked files!] ----------
@@ -67,12 +70,22 @@ git_log_safe=`echo "$git_log" | sed -e"s/\"/''/g" | sed -e"s/[$]/_/g" `;
 
 ## put proper $ quotations for each line to form proper 'ident' keyword strings:
 git_log_ident=`echo "$git_log_safe" | sed -e"s/\(.*\)/\"$\1 $ \\\\\\n\"/g"`;
+git_log_id=`echo $git_log_ident | sed -e"s/^\(.*\)\\\\\\n\(.*\)\\\\\\n\(.*\)\\\\\\n\(.*\)\\\\\\n\(.*\)\\\\\\n/\1/" | sed -e"s/\" \"/\"/"`
+git_log_date=`echo $git_log_ident | sed -e"s/^\(.*\)\\\\\\n\(.*\)\\\\\\n\(.*\)\\\\\\n\(.*\)\\\\\\n\(.*\)\\\\\\n/\2/" | sed -e"s/\" \"/\"/"`
+git_log_author=`echo $git_log_ident | sed -e"s/^\(.*\)\\\\\\n\(.*\)\\\\\\n\(.*\)\\\\\\n\(.*\)\\\\\\n\(.*\)\\\\\\n/\3/" | sed -e"s/\" \"/\"/"`
+git_log_title=`echo $git_log_ident | sed -e"s/^\(.*\)\\\\\\n\(.*\)\\\\\\n\(.*\)\\\\\\n\(.*\)\\\\\\n\(.*\)\\\\\\n/\4/" | sed -e"s/\" \"/\"/"`
+git_log_status=`echo $git_log_ident | sed -e"s/^\(.*\)\\\\\\n\(.*\)\\\\\\n\(.*\)\\\\\\n\(.*\)\\\\\\n\(.*\)\\\\\\n/\5/" | sed -e"s/\" \"/\"/"`
 
 cat > $tmpfile <<EOF
 #ifndef ${prefix}GITID_H
 #define ${prefix}GITID_H
 #include <lal/LALRCSID.h>
 NRCSID (${prefix}GitID, $git_log_ident);
+NRCSID (${prefix}GitCommitID, $git_log_id);
+NRCSID (${prefix}GitCommitDate, $git_log_date);
+NRCSID (${prefix}GitCommitAuthor, $git_log_author);
+NRCSID (${prefix}GitCommitTitle, $git_log_title);
+NRCSID (${prefix}GitGitStatus, $git_log_status);
 #endif
 EOF
 
