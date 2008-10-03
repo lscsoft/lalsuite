@@ -150,6 +150,9 @@ parser.add_option("-z", "--plotinspiralrange" ,action="store_true",default=False
 parser.add_option("", "--ploteffdistcut" ,action="store_true",default=False,\
     help="run ploteffdistcut to plot the effective distance cut.")
 
+parser.add_option("", "--plotgrbtimeslidestats" ,action="store_true",default=False,\
+    help="run pylal_grbtimeslide_stats to plot statistics of the GRB background.")
+
 parser.add_option("-f", "--config-file",action="store",type="string",\
     metavar=" FILE",help="use configuration file FILE")
 
@@ -691,6 +694,17 @@ if opts.plotinspiralrange:
     plotinspiralrange_jobs["FIRST"].add_opt(opt, val)
   all_jobs.extend(plotinspiralrange_jobs.values())
 
+# create the command for pylal_grbtimeslide_stats
+if opts.plotgrbtimeslidestats:
+  this_section = "grbtimeslidestats"
+  cp = set_common_options(cp, this_section)
+  pattern_dict = determine_sieve_patterns(cp, this_section, "", input_user_tag)
+
+  if opts.second_stage:
+    plotgrbtimeslidestats_job = inspiral.PlotGRBtimeslideStatsJob(cp)   
+    for opt, val in pattern_dict.iteritems():
+      plotgrbtimeslidestats_job.  add_opt(opt,val)
+    all_jobs.append(plotgrbtimeslidestats_job)
 
 #############################################################################
 # set the usertag in the jobs
@@ -804,7 +818,6 @@ if opts.plotinspinj:
       plotinspinj_node =inspiral.PlotInspinjNode(plotinspinj_jobs[ifo + "SECOND"])
       dag.add_node(plotinspinj_node)
 
-
 if opts.plotsnrchi:
    for ifo in ifolist:
   # add an plotinspinj job
@@ -819,6 +832,11 @@ if opts.plotinspiralrange:
   #if opts.second_stage:
   #  plotinspiralrange_node=inspiral.PlotInspiralrangeNode(plotinspiralrange_jobs["SECOND"])
   #  dag.add_node(plotinspiralrange_node)
+
+if opts.plotgrbtimeslidestats:
+  # add an pylal_grbtimeslide_stats job
+  plotgrbtimeslides_node=inspiral.PlotGRBtimeslideStatsNode(plotgrbtimeslidestats_job)
+  dag.add_node(plotgrbtimeslides_node)
 
 # Add number of retries to plotting jobs as specified by ihope.ini
 if cp.has_option("pipeline", "retry-plot-jobs"):
