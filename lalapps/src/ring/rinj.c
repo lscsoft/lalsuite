@@ -73,7 +73,6 @@ RCSID( "$Id$" );
 "\nDefaults are shown in brackets\n\n" \
 "  --help                   display this message\n"\
 "  --verbose                turn verbose flag on\n"\
-"  --playground             consider only playground data\n"\
 "  --gps-start-time TIME    start injections at GPS time TIME (793130413)\n"\
 "  --gps-end-time TIME      end injections at GPS time TIME (795679213)\n"\
 "  --time-step STEP         space injections by STEP / pi seconds apart (2630)\n"\
@@ -87,8 +86,8 @@ RCSID( "$Id$" );
 "  --maximum-mass MAX       set the maximum componenet mass to MAX (236.8)\n"\
 "  --minimum-spin AMIN      set the minimum component of the dimensionless spin parameter (0)\n"\
 "  --maximum-spin AMAX      set the maximum component of the dimensionless spin parameter (0.994)\n"\
-"  --minimum-quality MIN    set minimum quality factor to MIN (1000)\n"\
-"  --maximum-quality MAX    set maximum quality factor to MAX (10000)\n"\
+"  --minimum-quality MIN    set minimum quality factor to MIN (2)\n"\
+"  --maximum-quality MAX    set maximum quality factor to MAX (22)\n"\
 "  --minimum-frequency MIN  set minimum frequency to MIN (45)\n"\
 "  --maximum-frequency MAX  set maximum frequency to MAX (2500)\n"\
 "  --minimum-distance DMIN  set the minimum distance to DMIN kpc (1)\n"\
@@ -100,7 +99,6 @@ RCSID( "$Id$" );
 /* all units are in kpc since this is what GalacticInspiralParamStruc expects */
 
 extern int vrbflg;
-int plygnd=0;
 ProcessParamsTable *next_process_param( const char *name, const char *type,
     const char *fmt, ... )
 {
@@ -123,9 +121,6 @@ ProcessParamsTable *next_process_param( const char *name, const char *type,
   va_end( ap );
   return pp;
 }
-
-static int is_outside_playground( LIGOTimeGPS gpsStartTime ); 
-static REAL8 step( LIGOTimeGPS gpsStartTime );
 
 int main( int argc, char *argv[] )
 {
@@ -597,10 +592,6 @@ int main( int argc, char *argv[] )
         vrbflg = 1;
         break;
       
-      case 'x':
-        plygnd = 1;
-        break;
-        
       case 'z':
         set_debug_level( optarg );
         this_proc_param = this_proc_param->next = 
@@ -688,27 +679,6 @@ int main( int argc, char *argv[] )
   /* check that the start time is before the end time */
   LAL_CALL( LALCompareGPS( &status, &compareGPS, &gpsStartTime, &gpsEndTime ),
       &status );
-  
-  /* check if gps_start_time is in playground */
-  /* if it is not then move it to a random place in the next playground
-   * interval */
-  if ( plygnd )
-  {
-    if ( vrbflg )
-             fprintf( stdout, "injecting into playground only\n");
-    if ( is_outside_playground( gpsStartTime ) )
-    {
-      LALStatus status = blank_status;
-      REAL8 randstep;
-      if ( vrbflg )
-        fprintf( stdout, "gps-start-time outside of playground, ... shifting to next playground interval\n");
-      LAL_CALL( LALUniformDeviate( &status, &u, randParams ), &status );
-      randstep = step(gpsStartTime) + u * 600;  /* find a random time within this 600s */
-      LAL_CALL( LALAddFloatToGPS( &status, &gpsStartTime, &gpsStartTime,
-            randstep ), &status );  /* add this to the old gpsStartTime */
-    }
-  }
-
   
   /*
    *
@@ -909,11 +879,6 @@ int main( int argc, char *argv[] )
           /  2.0 / LAL_PI / this_inj->frequency / ( 1.0 + 4.0 * pow ( this_inj->quality, 2 ) ) , 0.5 );
         
     /* increment the injection time */
-    if ( plygnd )
-    {
-      LAL_CALL( LALUniformDeviate( &status, &u, randParams ), &status );
-      meanTimeStep = step(gpsStartTime) + u * 600;
-    }
     LAL_CALL( LALAddFloatToGPS( &status, &gpsStartTime, &gpsStartTime, 
           meanTimeStep ), &status );
     LAL_CALL( LALCompareGPS( &status, &compareGPS, &gpsStartTime, 
@@ -998,29 +963,4 @@ int main( int argc, char *argv[] )
 
 }
 
-
-/* function to check if time outside playground */
-  static int is_outside_playground(  LIGOTimeGPS gpsStartTime )
-{
-  int ans = 0;
-  INT8 startTime = 0;
-  startTime = XLALGPStoINT8 ( &gpsStartTime ) ;
-  if ( ( ( startTime - 729273613LL * 1000000000LL ) % ( 6370 * 1000000000LL ) ) > ( 600 * 1000000000LL ) )
-    ans = 1;
-  return ans;
-}
-
-
-/* function to calculate the time interval to the start of next 600s of playground data */
-static REAL8 step( LIGOTimeGPS gpsStartTime )
-{
-  INT8 istep;
-  REAL8 fstep;
-  INT8 startTime = 0;
-  startTime = XLALGPStoINT8 ( &gpsStartTime ) ;
-  istep = ( 6370 * 1000000000LL ) - ( ( startTime - 729273613LL * 1000000000LL  ) % ( 6370 * 1000000000LL ) );
-  fstep = (REAL8) istep; /*convert integer to float*/
-  fstep = fstep / 1000000000 ; /*convert ns to s */
-  return fstep;
-}
 
