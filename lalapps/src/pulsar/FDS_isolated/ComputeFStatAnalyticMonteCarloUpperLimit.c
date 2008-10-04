@@ -397,7 +397,7 @@ REAL8 d_pdf_ncx2_4(REAL8 lambda, REAL8 x) {
   const REAL8 z = sqrt(x * lambda);
 
   int i;
-  gsl_sf_result I[2];
+  gsl_sf_result I[3];
   gsl_error_handler_t *h = NULL;
 
   /* Compute the Bessel functions */
