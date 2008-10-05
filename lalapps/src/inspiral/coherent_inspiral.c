@@ -176,7 +176,7 @@ LALStatus             status;
 LALLeapSecAccuracy    accuracy = LALLEAPSEC_LOOSE;
 
 CHAR  *userTag          = NULL;         /* string the user can tag with */
-CHAR  *ifoTag           = NULL;         /* string to tag parent IFOs    */
+CHAR  *ifos           = NULL;         /* string to tag parent IFOs    */
 
 /* Params to convert from geocentric to equatorial */
 
@@ -1039,12 +1039,12 @@ int main( int argc, char *argv[] )
       
       /* Write the summary information */
       if ( userTag )	{
-	  LALSnprintf( fileName, FILENAME_MAX, "%s-COHERENT_INSPIRAL_H1H2_COHSNR_%s-%d-%d-%d", ifoTag, userTag, 
-		       gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds, cohFileID ); 
+         LALSnprintf( fileName, FILENAME_MAX, "H1H2-CHIA_COHSNR_%d_%s-%d-%d", cohFileID,
+                      userTag, gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
       }
       else	  {
-	  LALSnprintf( fileName, FILENAME_MAX, "%s-COHERENT_INSPIRAL_H1H2_COHSNR-%d-%d-%d", ifoTag, 
-		       gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds, cohFileID ); 
+         LALSnprintf( fileName, FILENAME_MAX, "H1H2-CHIA_COHSNR_%d-%d-%d",
+                      cohFileID, gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
       }
       
       if( outFrameCohH1H2SNR )
@@ -1067,12 +1067,12 @@ int main( int argc, char *argv[] )
 	}
       
       if ( userTag )	{
-	  LALSnprintf( fileName, FILENAME_MAX, "%s-COHERENT_INSPIRAL_NULL_STAT_%s-%d-%d-%d", ifoTag, userTag, 
-		       gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds, cohFileID ); 
+         LALSnprintf( fileName, FILENAME_MAX, "H1H2-CHIA_NULL_STAT_%d_%s-%d-%d", cohFileID,
+                      userTag, gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
       }
       else	{
-	  LALSnprintf( fileName, FILENAME_MAX, "%s-COHERENT_INSPIRAL_NULL_STAT-%d-%d-%d", ifoTag, 
-		       gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds, cohFileID ); 
+         LALSnprintf( fileName, FILENAME_MAX, "H1H2-CHIA_NULL_STAT_%d-%d-%d",
+                      cohFileID, gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
       }
 
       if( outFrameNullStat )
@@ -1095,12 +1095,12 @@ int main( int argc, char *argv[] )
       }
   
       if ( userTag )	  {
-	  LALSnprintf( fileName, FILENAME_MAX, "%s-COHERENT_INSPIRAL_%s-%d-%d-%d", ifoTag, userTag, 
-		       gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds, cohFileID ); 
+         LALSnprintf( fileName, FILENAME_MAX, "%s-CHIA_%d_%s-%d-%d", ifos, cohFileID,
+                      userTag, gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
       }
       else	{
-	  LALSnprintf( fileName, FILENAME_MAX, "%s-COHERENT_INSPIRAL-%d-%d-%d", ifoTag, 
-		       gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds, cohFileID ); 
+         LALSnprintf( fileName, FILENAME_MAX, "%s-CHIA_%d-%d-%d", ifos,
+                      cohFileID, gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
       }
       
       if( outFrameCoh )
@@ -1482,8 +1482,8 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
          case 'I':
            /* create storage for the ifo-tag */
            optarg_len = strlen( optarg ) + 1;
-           ifoTag = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
-           memcpy( ifoTag, optarg, optarg_len );
+           ifos = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
+           memcpy( ifos, optarg, optarg_len );
            ADD_PROCESS_PARAM( "string", "%s", optarg );
            break;
 
@@ -1788,7 +1788,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
        exit( 1 );
      }
 
-   if( !ifoTag )
+   if( !ifos )
      {
        fprintf(stderr, "--ifo-tag must be specified for file naming\n" );
        exit( 1 );
