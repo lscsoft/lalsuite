@@ -357,7 +357,7 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dfOnly = False, \
         "l1-inspiral", "g1-inspiral", "v1-inspiral", "thinca", "thinca-1", \
         "thinca-2", "thinca-slide", "trigbank", "sire",  \
         "sire-inj", "coire", "coire-1", "coire-2", "coire-inj", \
-        "cohbank", "coh-trig", "chia", "coherent-inspiral", "condor-max-jobs"]
+        "cohbank", "trigbank-coherent", "chia", "inspiral-coherent", "condor-max-jobs"]
 
   for seg in hipecp.sections():
     if not seg in hipeSections: hipecp.remove_section(seg)

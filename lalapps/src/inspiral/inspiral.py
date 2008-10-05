@@ -1405,7 +1405,7 @@ class ChiaNode(InspiralAnalysisNode):
     if not self.get_start() or not self.get_end() or not self.get_ifo_tag():
       raise InspiralError, "Start time, end time or ifos have not been set"
       
-    basename = self.get_ifo_tag() + '-COHERENT'
+    basename = self.get_ifo_tag() + '-CHIA'
 
     if self.get_user_tag():
       basename += '_' + self.get_user_tag()
