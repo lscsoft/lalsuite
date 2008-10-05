@@ -57,13 +57,13 @@ turn.
 \vfill{\footnotesize\input{UnitCompareCV}}
 
 ******************************************************* </lalLaTeX> */ 
-#define TRUE 1
-#define FALSE 0
 
 #include <math.h>
+#include <string.h>
 
 #include <lal/LALStdlib.h>
 #include <lal/Units.h>
+#include <lal/XLALError.h>
 
 NRCSID( UNITCOMPAREC, "$Id$" );
 
@@ -92,10 +92,13 @@ REAL8 XLALUnitPrefactor(const LALUnit *unit)
 }
 
 
-/* Return the ratio unit1 / unit2 */
+/**
+ * Return the ratio unit1 / unit2
+ */
+
 REAL8 XLALUnitRatio(const LALUnit *unit1, const LALUnit *unit2)
 {
-  static const char *func = "XLALUnitRatio";
+  static const char func[] = "XLALUnitRatio";
   LALUnit tmp;
 
   if(!unit1 || !unit2)
@@ -108,13 +111,21 @@ REAL8 XLALUnitRatio(const LALUnit *unit1, const LALUnit *unit2)
 }
 
 
-/* returns 1 if units are the same (after normalization) or 0 if not */
-/* returns -1 if there is an error */
+/**
+ * Returns 0 if units are the same (after normalization), or > 0 if they
+ * are different.  Returns < 0 on error.
+ *
+ * Example:
+ *
+ * if(XLALUnitCompare(&unit1, &unit2)) {
+ * 	units_are_not_equal();
+ * }
+ */
+
 int XLALUnitCompare( const LALUnit *unit1, const LALUnit *unit2 )
 {
-  static const char *func = "XLALUnitCompare";
+  static const char func[] = "XLALUnitCompare";
   LALUnit  unitOne, unitTwo;
-  INT2 i;
 
   if ( ! unit1 || ! unit2 )
     XLAL_ERROR( func, XLAL_EFAULT );
@@ -123,23 +134,23 @@ int XLALUnitCompare( const LALUnit *unit1, const LALUnit *unit2 )
   unitTwo = *unit2;
 
   /* normalize the units */
-  if ( XLALUnitNormalize( &unitOne ) == XLAL_FAILURE )
+  if ( XLALUnitNormalize( &unitOne ) )
     XLAL_ERROR( func, XLAL_EFUNC );
-  if ( XLALUnitNormalize( &unitTwo ) == XLAL_FAILURE )
+  if ( XLALUnitNormalize( &unitTwo ) )
     XLAL_ERROR( func, XLAL_EFUNC );
 
-  if (unitOne.powerOfTen != unitTwo.powerOfTen)
-    return 0; /* false */
+  /* factors of 10 disagree? */
+  if ( unitOne.powerOfTen != unitTwo.powerOfTen )
+    return 1;
 
-  for (i=0; i<LALNumUnits; ++i)
-    if (
-	unitOne.unitNumerator[i] != unitTwo.unitNumerator[i]
-	|| unitOne.unitDenominatorMinusOne[i] 
-	   != unitTwo.unitDenominatorMinusOne[i]
-	)
-      return 0; /* false */
+  /* powers of dimensions disagree? use memcmp() to compare the arrays */
+  if ( memcmp( unitOne.unitNumerator, unitTwo.unitNumerator, LALNumUnits * sizeof( *unitOne.unitNumerator ) ) )
+    return 1;
+  if ( memcmp( unitOne.unitDenominatorMinusOne, unitTwo.unitDenominatorMinusOne, LALNumUnits * sizeof( *unitOne.unitDenominatorMinusOne ) ) )
+    return 1;
 
-  return 1; /* true */
+  /* agree in all possible ways */
+  return 0;
 }
 
 
@@ -147,7 +158,7 @@ int XLALUnitCompare( const LALUnit *unit1, const LALUnit *unit2 )
 void
 LALUnitCompare (LALStatus *status, BOOLEAN *output, const LALUnitPair *input)
 /* </lalVerbatim> */
-     /* Compare two units structures, returning false if they differ */
+     /* Compare two units structures, returning 0 if they differ */
 {
   int code;
 
@@ -156,15 +167,16 @@ LALUnitCompare (LALStatus *status, BOOLEAN *output, const LALUnitPair *input)
   ASSERT( input != NULL, status, UNITSH_ENULLPIN, UNITSH_MSGENULLPIN );
 
   ASSERT( output != NULL, status, UNITSH_ENULLPOUT, UNITSH_MSGENULLPOUT );
+  XLALPrintDeprecationWarning( "LALUnitCompare", "XLALUnitCompare" );
 
   code = XLALUnitCompare( input->unitOne, input->unitTwo );
-  if ( code == XLAL_FAILURE )
+  if ( code < 0 )
   {
     XLALClearErrno();
     ABORTXLAL( status );
   }
 
-  *output = code ? TRUE : FALSE;
+  *output = code ? 0 : 1;
 
   RETURN(status);  
 }
