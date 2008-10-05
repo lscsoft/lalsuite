@@ -531,7 +531,7 @@ def trig_inspiral(ifo_data,ifo_name,coinc_data,coinc_ifos,trig_job,\
               if not opts.disable_dag_priorities: 
                 trigbank.set_priority(4)
               if inj>0: trigbank.set_user_tag(exttrigUserTag)
-              trigbank.set_ifo_tag(coinc_ifos)
+              trigbank.set_ifo_tag("SECOND_" + coinc_ifos)              
               trigbank.set_output_ifo(ifo_name)
               trigbank.set_input_ifo(ifo_name)
               trigbank.set_start(chunk.start())
@@ -929,7 +929,8 @@ def coire_segments_individually(segments, coire_job, dag, do_coire, do_input,
 
 ##############################################################################
 # function to set up the cohbank jobs for a network of ifos
-def coherent_bank(ifos,cb_job,dag,coinc_nodes,coinc_slide_nodes=None):
+def coherent_bank(ifos,cb_job,dag,coinc_nodes,coinc_slide_nodes=None,
+  usertag=None):  
   """
   Create template banks from coincident trigger parameters for 
   coherent analysis.
@@ -954,6 +955,10 @@ def coherent_bank(ifos,cb_job,dag,coinc_nodes,coinc_slide_nodes=None):
       cohbank.set_priority(6)
     cohbank.set_start(coinc_done.get_chunk().start())
     cohbank.set_end(coinc_done.get_chunk().end())
+    if usertag is not None:
+      ifousertag = ifotag + "_" + usertag
+      cohbank.set_user_tag(ifousertag)
+    else: cohbank.set_user_tag(ifotag)
     cohbank.set_ifos(ifos)
     cohbank.add_file_arg(coinc_done.get_dag_node().get_output())
     if opts.second_coinc: cohbank.add_parent(coinc_done.get_dag_node())
@@ -1062,7 +1067,7 @@ def coherent_trig_inspiral(ifo_data,ifo_name,cohbank_data,ifos,trig_coh_jobs,
 ##############################################################################
 # function to set up the cohinspiral jobs for a network of ifos
 def coherent_analysis(ifos,single_ifo_segments,cohinsp_job,dag,cohbank_data,
-  cohtrig_data):
+  cohtrig_data, usertag=None):
   """
   Do a coherent analysis
 
@@ -1087,7 +1092,11 @@ def coherent_analysis(ifos,single_ifo_segments,cohinsp_job,dag,cohbank_data,
     cohinsp.set_bank(cohbank_done.get_dag_node().get_output())
     cohinsp.set_start(cohbank_done.get_chunk().start())
     cohinsp.set_end(cohbank_done.get_chunk().end())
-    cohinsp.set_ifo_tag(ifotag)
+    cohinsp.set_ifo_tag(ifos)
+    if usertag is not None:
+      ifousertag = ifotag + "_" + usertag
+      cohinsp.set_user_tag(ifousertag)
+    else: cohinsp.set_user_tag(ifotag)
     cohinsp.add_var_opt('ifo-tag',ifos)
     
     # set up trigbank and inspiral
@@ -1606,7 +1615,7 @@ frjoin_job.set_sub_file( basename + '.frjoin' + subsuffix )
 cohinsp_jobs = {}
 for ifos in ifo_coincs:
   cohinsp_jobs[ifos] = inspiral.ChiaJob(cp)
-  cohinsp_jobs[ifos].set_sub_file(basename + '.cohinspiral_' + ifos + 
+  cohinsp_jobs[ifos].set_sub_file(basename + '.chia_' + ifos +
       subsuffix )
 
 # sire:
@@ -2271,9 +2280,10 @@ for ifos in ifo_coincs:
 
   if num_slides:
     cohbank_nodes[ifos] = coherent_bank(ifos,cb_job,dag,coinc2_nodes[ifos],
-        coinc2_slide_nodes[ifos])
+        coinc2_slide_nodes[ifos],usertag=usertag)
   else:
-    cohbank_nodes[ifos] = coherent_bank(ifos,cb_job,dag,coinc2_nodes[ifos],0)
+    cohbank_nodes[ifos] = coherent_bank(ifos,cb_job,dag,coinc2_nodes[ifos],
+        0,usertag=usertag)
 
   print "done"
 
@@ -2306,11 +2316,11 @@ for ifos in ifo_coincs:
         channel = cp.get('input','ligo-channel')
 
       # set up the trigbanks
-      if cp.has_section('coh-trig'):
-        trig_coh_jobs[ifo].add_ini_opts(cp,'coh-trig')
+      if cp.has_section('trigbank-coherent'):
+        trig_coh_jobs[ifo].add_ini_opts(cp,'trigbank-coherent')
       # set up inspirals:
-      if cp.has_section('coherent-inspiral'):
-        insp_coh_jobs[ifo].add_ini_opts(cp,'coherent-inspiral')
+      if cp.has_section('inspiral-coherent'):
+        insp_coh_jobs[ifo].add_ini_opts(cp,'inspiral-coherent')
       if cp.has_section(ifo.lower() + '-inspiral'): 
         insp_coh_jobs[ifo].add_ini_opts(cp,ifo.lower() + '-inspiral')
       if cp.has_section(data_opts[ifo]):
@@ -2336,7 +2346,7 @@ for ifos in ifo_coincs:
   sys.stdout.flush()
  
   coherent_analysis(ifos,data,cohinsp_jobs[ifos],dag,cohbank_nodes[ifos],
-      analyzed_trig_coh_data[ifos])
+      analyzed_trig_coh_data[ifos],usertag=usertag)
 
   print "done"
 
