@@ -91,10 +91,8 @@ gcd(INT2 numer, UINT2 denom)
 
 int XLALUnitNormalize( LALUnit *unit )
 {
-  static const char *func = "XLALUnitNormalize";
+  static const char func[] = "XLALUnitNormalize";
   UINT2 commonFactor;
-  INT2  numer;
-  UINT2 denom;
   UINT2 i;
 
   if ( ! unit )
@@ -102,11 +100,9 @@ int XLALUnitNormalize( LALUnit *unit )
 
   for (i=0; i<LALNumUnits; ++i)
   {
-    numer = unit->unitNumerator[i];
-    denom = unit->unitDenominatorMinusOne[i] + 1;
-    commonFactor = gcd (numer, denom);
-    unit->unitNumerator[i] = numer / commonFactor;
-    unit->unitDenominatorMinusOne[i] = denom / commonFactor - 1;
+    commonFactor = gcd ( unit->unitNumerator[i], unit->unitDenominatorMinusOne[i] + 1 );
+    unit->unitNumerator[i] /= commonFactor;
+    unit->unitDenominatorMinusOne[i] = ( unit->unitDenominatorMinusOne[i] + 1 ) / commonFactor - 1;
   } /* for i */
 
   return 0;
