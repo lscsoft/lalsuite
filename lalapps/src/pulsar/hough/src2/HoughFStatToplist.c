@@ -40,8 +40,8 @@ RCSID("$Id$");
 
 
 
-/* MSC specifics */
-#ifdef _MSC_VER
+/* Windows specifics */
+#ifdef _WIN32
 
 /* errno */
 extern int errno;
