@@ -112,7 +112,7 @@ int inject_signal(
         epoch.gpsSeconds, epoch.gpsNanoSeconds );
 
     /* determine if this is strain data */
-    strainData = XLALUnitCompare( &series->sampleUnits, &lalStrainUnit );
+    strainData = !XLALUnitCompare( &series->sampleUnits, &lalStrainUnit );
 
     /* determine sample rate of data (needed for response) */
     sampleRate = 1.0/series->deltaT;
