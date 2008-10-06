@@ -76,7 +76,9 @@ void XLALDestroyREAL4Window(REAL4Window *window);
 void XLALDestroyREAL8Window(REAL8Window *window);
 
 REAL4Sequence *XLALUnitaryWindowREAL4Sequence(REAL4Sequence *sequence, const REAL4Window *window);
+COMPLEX8Sequence *XLALUnitaryWindowCOMPLEX8Sequence(COMPLEX8Sequence *sequence, const REAL4Window *window);
 REAL8Sequence *XLALUnitaryWindowREAL8Sequence(REAL8Sequence *sequence, const REAL8Window *window);
+COMPLEX16Sequence *XLALUnitaryWindowCOMPLEX16Sequence(COMPLEX16Sequence *sequence, const REAL8Window *window);
 
 /*
  * LEGACY CODE:  DO NOT USE!!!
