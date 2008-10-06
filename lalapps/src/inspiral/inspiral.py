@@ -10,7 +10,7 @@ __version__ = '$Revision$'[11:-2]
 
 import string
 import exceptions
-import sys
+import sys,os
 from glue import pipeline
 
 
@@ -20,6 +20,7 @@ class InspiralError(exceptions.Exception):
 
 
 #############################################################################
+
 
 class InspiralAnalysisJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
   """
@@ -40,7 +41,6 @@ class InspiralAnalysisJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     executable = cp.get('condor',exec_name)
     pipeline.CondorDAGJob.__init__(self,universe,executable)
     pipeline.AnalysisJob.__init__(self,cp,dax)
-    self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
 
     for sec in sections:
       if cp.has_section(sec):
@@ -78,6 +78,25 @@ class InspiralAnalysisJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     """
     return self.__extension
 
+
+#############################################################################
+
+class InspiralPlottingJob(InspiralAnalysisJob):
+  """
+  The InspiralPlottingJob class will assign options common to all plotting
+  jobs. Currently this is only MPLCONFIGDIR.
+  """
+  def __init__(self,cp,sections,exec_name,extension='xml',dax=False):
+    """
+    cp = ConfigParser object from which options are read.
+    sections = sections of the ConfigParser that get added to the opts
+    exec_name = exec_name name in ConfigParser
+    """
+    InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
+    self.add_condor_cmd('getenv','True')    
+    if cp.has_option('pipeline','matplotlibdir'):
+      MPLConfigPath = cp.get('pipeline','matplotlibdir')
+      self.add_condor_cmd('environment','MPLCONFIGDIR=' + MPLConfigPath)
 
 #############################################################################
 
@@ -200,6 +219,7 @@ class InspiralJob(InspiralAnalysisJob):
     sections = ['data','inspiral']
     extension = 'xml'
     InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
+    self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
 
 
 class TrigbankJob(InspiralAnalysisJob):
@@ -249,11 +269,38 @@ class ThincaJob(InspiralAnalysisJob):
     cp = ConfigParser object from which options are read.
     """
     exec_name = 'thinca'
-    sections = ['thinca']
+    #sections = ['thinca']
+    sections = []
     extension = 'xml'
     InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
+    if cp.has_section('thinca'):
+      self.add_ini_opts(cp,'thinca')
 
 
+  def add_ini_opts(self, cp, section):
+    """
+    Parse command line options from a given section in an ini file and
+    pass to the executable.
+    @param cp: ConfigParser object pointing to the ini file.
+    @param section: section of the ini file to add to the options.
+    """
+    for opt in cp.options(section):
+      arg = string.strip(cp.get(section,opt))
+      #self.add_opt(opt,arg)
+      if opt[-4:] == "file":
+        fname = os.path.split(arg)[-1]
+        if fname not in os.listdir('.'):
+          try:
+            os.symlink(arg,os.path.split(arg)[-1])
+            self.add_file_opt(opt,fname)
+          except:
+            print >>sys.stderr, "sym link failed for " + arg + " grid workflows might be broken"
+            self.add_file_opt(opt,arg)
+        else:
+          self.add_file_opt(opt,fname)
+      else:
+        self.add_opt(opt,arg)
+  
 class SireJob(InspiralAnalysisJob):
   """
   A lalapps_sire job used by the inspiral pipeline. The stdout and stderr from
@@ -461,6 +508,19 @@ class InspiralAnalysisNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
 
 #############################################################################
 
+class InspiralPlottingNode(InspiralAnalysisNode):
+  """
+  An InspiralPlottingNode runas an instance of the inspiral plotting code in
+  a Condor Dag
+  """
+  def __init__(self,job):
+    """
+    job = A CondorDAGJob that can run an instance of the plotting code
+    """
+    InspiralAnalysisNode.__init__(self,job)
+
+############################################################################# 
+
 class InspInjNode(InspiralAnalysisNode):
   """
   A InspInjNode runs an instance of the inspinj generation job in a
@@ -502,14 +562,18 @@ class InspInjNode(InspiralAnalysisNode):
     Return the manually-set output name if it exists, otherwise, derive the
     name like other InspiralAnalysisNodes.
     """
-    if self.__outputName: return self.__outputName
+    if self.__outputName: 
+      self.add_output_file(self.__outputName)
+      return self.__outputName
     else:
       outputFile = "HL-INJECTIONS_" + str(self.get_seed())
       if self.get_user_tag():
         outputFile += "_" + self.get_user_tag()
       outputFile += "-" + str(self.get_start()) + "-" + str(self.get_end() - \
           self.get_start()) + ".xml"
+      self.add_output_file(outputFile)
       return(outputFile)
+   
 
 class BbhInjNode(InspiralAnalysisNode):
   """
@@ -1058,14 +1122,13 @@ class SireNode(InspiralAnalysisNode):
     set the output options
     """
     output = self.get_output()
- 
-    self.add_var_opt("output", output)
-    self.add_var_opt("summary", output.replace("xml", "txt"))
-
+    
+    self.add_file_opt("output", output,file_is_output_file=True)
+    self.add_file_opt("summary", output.replace("xml", "txt"),file_is_output_file=True)
+    
     if self.get_inj_file():
-      self.add_var_opt('injection-file', self.get_inj_file())
-      self.add_var_opt('missed-injections', self.get_missed() )
-
+      self.add_file_opt('injection-file', self.get_inj_file())
+      self.add_file_opt('missed-injections', self.get_missed(), file_is_output_file=True)
 
 class CoireNode(InspiralAnalysisNode):
   """
@@ -1222,13 +1285,13 @@ class CoireNode(InspiralAnalysisNode):
     set the output options
     """
     output = self.get_output()
- 
-    self.add_var_opt("output", output)
-    self.add_var_opt("summary", output.replace("xml", "txt"))
+
+    self.add_file_opt("output", output,file_is_output_file=True)
+    self.add_file_opt("summary", output.replace("xml", "txt"),file_is_output_file=True)
 
     if self.get_inj_file():
-      self.add_var_opt('injection-file', self.get_inj_file())
-      self.add_var_opt('missed-injections', self.get_missed() )
+      self.add_file_opt('injection-file', self.get_inj_file())
+      self.add_file_opt('missed-injections', self.get_missed(), file_is_output_file=True)
 
 
 class FrJoinNode(InspiralAnalysisNode):
@@ -1342,7 +1405,7 @@ class ChiaNode(InspiralAnalysisNode):
     if not self.get_start() or not self.get_end() or not self.get_ifo_tag():
       raise InspiralError, "Start time, end time or ifos have not been set"
       
-    basename = self.get_ifo_tag() + '-COHERENT'
+    basename = self.get_ifo_tag() + '-CHIA'
 
     if self.get_user_tag():
       basename += '_' + self.get_user_tag()
@@ -1361,7 +1424,7 @@ class ChiaNode(InspiralAnalysisNode):
 ##############################################################################
 #Plotting Jobs and Nodes
 
-class PlotInspiralrangeJob(InspiralAnalysisJob):
+class PlotInspiralrangeJob(InspiralPlottingJob):
   """
   A plotinspiralrange job. The static options are read from the section
   [plotinspiralrange] in the ini file.  The stdout and stderr from the job
@@ -1375,10 +1438,9 @@ class PlotInspiralrangeJob(InspiralAnalysisJob):
     exec_name = 'plotinspiralrange'
     sections = ['plotinspiralrange']
     extension = 'html'
-    InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
-    self.add_condor_cmd('getenv', 'True')
+    InspiralPlottingJob.__init__(self,cp,sections,exec_name,extension,dax)
 
-class PlotInspiralrangeNode(InspiralAnalysisNode):
+class PlotInspiralrangeNode(InspiralPlottingNode):
   """
   A PlotInspiralrangeNode runs an instance of the plotinspiral code in a 
   Condor DAG.
@@ -1387,11 +1449,11 @@ class PlotInspiralrangeNode(InspiralAnalysisNode):
     """
     job = A CondorDAGJob that can run an instance of plotinspiralrange.
     """
-    InspiralAnalysisNode.__init__(self,job)
+    InspiralPlottingNode.__init__(self,job)
 
 #######################################################################################
 
-class PlotInspiralJob(InspiralAnalysisJob):
+class PlotInspiralJob(InspiralPlottingJob):
   """
   A plotinspiral job. The static options are read from the section
   [plotinspiral] in the ini file.  The stdout and stderr from the job
@@ -1405,10 +1467,9 @@ class PlotInspiralJob(InspiralAnalysisJob):
     exec_name = 'plotinspiral'
     sections = ['plotinspiral']
     extension = 'html'
-    InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
-    self.add_condor_cmd('getenv', 'True')
+    InspiralPlottingJob.__init__(self,cp,sections,exec_name,extension,dax)
 
-class PlotInspiralNode(InspiralAnalysisNode):
+class PlotInspiralNode(InspiralPlottingNode):
   """
   A PlotInspiralNode runs an instance of the plotinspiral code in a Condor DAG.
   """
@@ -1416,11 +1477,11 @@ class PlotInspiralNode(InspiralAnalysisNode):
     """
     job = A CondorDAGJob that can run an instance of plotinspiral.
     """
-    InspiralAnalysisNode.__init__(self,job)
+    InspiralPlottingNode.__init__(self,job)
    
 ###########################################################################################
 
-class PlotThincaJob(InspiralAnalysisJob):
+class PlotThincaJob(InspiralPlottingJob):
   """
   A plotthinca job. The static options are read from the section
   [plotthinca] in the ini file.  The stdout and stderr from the job
@@ -1434,10 +1495,9 @@ class PlotThincaJob(InspiralAnalysisJob):
     exec_name = 'plotthinca'
     sections = ['plotthinca']
     extension = 'html'
-    InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
-    self.add_condor_cmd('getenv', 'True')
+    InspiralPlottingJob.__init__(self,cp,sections,exec_name,extension,dax)
   
-class PlotThincaNode(InspiralAnalysisNode):
+class PlotThincaNode(InspiralPlottingNode):
   """
   A PlotThincaNode runs an instance of the plotthinca code in a Condor DAG.
   """
@@ -1445,11 +1505,11 @@ class PlotThincaNode(InspiralAnalysisNode):
     """
     job = A CondorDAGJob that can run an instance of plotthinca.
     """
-    InspiralAnalysisNode.__init__(self,job)
+    InspiralPlottingNode.__init__(self,job)
 
 #######################################################################################
 
-class PlotNumtemplatesJob(InspiralAnalysisJob):
+class PlotNumtemplatesJob(InspiralPlottingJob):
   """
   A plotnumtemplates job. The static options are read from the section
   [plotnumtemplates] in the ini file.  The stdout and stderr from the job
@@ -1463,10 +1523,9 @@ class PlotNumtemplatesJob(InspiralAnalysisJob):
     exec_name = 'plotnumtemplates'
     sections = ['plotnumtemplates']
     extension = 'html'
-    InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
-    self.add_condor_cmd('getenv', 'True')
+    InspiralPlottingJob.__init__(self,cp,sections,exec_name,extension,dax)
 
-class PlotNumtemplatesNode(InspiralAnalysisNode):
+class PlotNumtemplatesNode(InspiralPlottingNode):
   """
   A PlotNumtemplatesNode runs an instance of the plotinspiral code in a Condor DAG.
   """
@@ -1474,11 +1533,11 @@ class PlotNumtemplatesNode(InspiralAnalysisNode):
     """
     job = A CondorDAGJob that can run an instance of plotnumtemplates.
     """
-    InspiralAnalysisNode.__init__(self,job)
+    InspiralPlottingNode.__init__(self,job)
  
 ##############################################################################
 
-class PlotInjnumJob(InspiralAnalysisJob):
+class PlotInjnumJob(InspiralPlottingJob):
   """
   A plotinjnum job. The static options are read from the section
   [plotinjnum] in the ini file.  The stdout and stderr from the job
@@ -1492,10 +1551,9 @@ class PlotInjnumJob(InspiralAnalysisJob):
     exec_name = 'plotinjnum'
     sections = ['plotinjnum']
     extension = 'html'
-    InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
-    self.add_condor_cmd('getenv', 'True')
+    InspiralPlottingJob.__init__(self,cp,sections,exec_name,extension,dax)
 
-class PlotInjnumNode(InspiralAnalysisNode):
+class PlotInjnumNode(InspiralPlottingNode):
   """
   A PlotInjnumNode runs an instance of the plotinspiral code in a Condor DAG.
   """
@@ -1503,11 +1561,11 @@ class PlotInjnumNode(InspiralAnalysisNode):
     """
     job = A CondorDAGJob that can run an instance of plotinjnum.
     """
-    InspiralAnalysisNode.__init__(self,job)
+    InspiralPlottingNode.__init__(self,job)
 
 #############################################################################
 
-class PlotEthincaJob(InspiralAnalysisJob):
+class PlotEthincaJob(InspiralPlottingJob):
   """
   A plotethinca job. The static options are read from the section
   [plotethinca] in the ini file.  The stdout and stderr from the job
@@ -1521,10 +1579,9 @@ class PlotEthincaJob(InspiralAnalysisJob):
     exec_name = 'plotethinca'
     sections = ['plotethinca']
     extension = 'html'
-    InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
-    self.add_condor_cmd('getenv', 'True')
+    InspiralPlottingJob.__init__(self,cp,sections,exec_name,extension,dax)
 
-class PlotEthincaNode(InspiralAnalysisNode):
+class PlotEthincaNode(InspiralPlottingNode):
   """
   A PlotEthincaNode runs an instance of the plotinspiral code in a Condor DAG.
   """
@@ -1532,11 +1589,11 @@ class PlotEthincaNode(InspiralAnalysisNode):
     """
     job = A CondorDAGJob that can run an instance of plotethinca.
     """
-    InspiralAnalysisNode.__init__(self,job)
+    InspiralPlottingNode.__init__(self,job)
 
 #############################################################################
 
-class PlotInspmissedJob(InspiralAnalysisJob):
+class PlotInspmissedJob(InspiralPlottingJob):
   """
   A plotinspmissed job. The static options are read from the section
   [plotinspmissed] in the ini file.  The stdout and stderr from the job
@@ -1550,10 +1607,9 @@ class PlotInspmissedJob(InspiralAnalysisJob):
     exec_name = 'plotinspmissed'
     sections = ['plotinspmissed']
     extension = 'html'
-    InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
-    self.add_condor_cmd('getenv', 'True')
+    InspiralPlottingJob.__init__(self,cp,sections,exec_name,extension,dax)
 
-class PlotInspmissedNode(InspiralAnalysisNode):
+class PlotInspmissedNode(InspiralPlottingNode):
   """
   A PlotInspmissedNode runs an instance of the plotinspiral code in a Condor DAG.
   """
@@ -1561,11 +1617,11 @@ class PlotInspmissedNode(InspiralAnalysisNode):
     """
     job = A CondorDAGJob that can run an instance of plotinspmissed.
     """
-    InspiralAnalysisNode.__init__(self,job)
+    InspiralPlottingNode.__init__(self,job)
 
 #############################################################################
 
-class PlotEffdistcutJob(InspiralAnalysisJob):
+class PlotEffdistcutJob(InspiralPlottingJob):
   """
   A ploteffdistcut job. The static options are read from the section
   [ploteffdistcut] in the ini file.  The stdout and stderr from the job
@@ -1579,10 +1635,9 @@ class PlotEffdistcutJob(InspiralAnalysisJob):
     exec_name = 'ploteffdistcut'
     sections = ['ploteffdistcut']
     extension = 'html'
-    InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
-    self.add_condor_cmd('getenv', 'True')
+    InspiralPlottingJob.__init__(self,cp,sections,exec_name,extension,dax)
 
-class PlotEffdistcutNode(InspiralAnalysisNode):
+class PlotEffdistcutNode(InspiralPlottingNode):
   """
   A PlotEffdistcutNode runs an instance of the 
   ploteffdistcut code in a Condor DAG.
@@ -1591,11 +1646,11 @@ class PlotEffdistcutNode(InspiralAnalysisNode):
     """
     job = A CondorDAGJob that can run an instance of ploteffdistcut.
     """
-    InspiralAnalysisNode.__init__(self,job)
+    InspiralPlottingNode.__init__(self,job)
 
 #############################################################################
 
-class PlotInspinjJob(InspiralAnalysisJob):
+class PlotInspinjJob(InspiralPlottingJob):
   """
   A plotinspinj job. The static options are read from the section
   [plotinspinj] in the ini file.  The stdout and stderr from the job
@@ -1609,10 +1664,9 @@ class PlotInspinjJob(InspiralAnalysisJob):
     exec_name = 'plotinspinj'
     sections = ['plotinspinj']
     extension = 'html'
-    InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
-    self.add_condor_cmd('getenv', 'True')
+    InspiralPlottingJob.__init__(self,cp,sections,exec_name,extension,dax)
 
-class PlotInspinjNode(InspiralAnalysisNode):
+class PlotInspinjNode(InspiralPlottingNode):
   """
   A PlotInspinjNode runs an instance of the plotinspiral code in a Condor DAG.
   """
@@ -1620,11 +1674,11 @@ class PlotInspinjNode(InspiralAnalysisNode):
     """
     job = A CondorDAGJob that can run an instance of plotinspinj.
     """
-    InspiralAnalysisNode.__init__(self,job)
+    InspiralPlottingNode.__init__(self,job)
 
 #############################################################################
 
-class PlotSnrchiJob(InspiralAnalysisJob):
+class PlotSnrchiJob(InspiralPlottingJob):
   """
   A plotsnrchi job. The static options are read from the section
   [plotsnrchi] in the ini file.  The stdout and stderr from the job
@@ -1638,10 +1692,9 @@ class PlotSnrchiJob(InspiralAnalysisJob):
     exec_name = 'plotsnrchi'
     sections = ['plotsnrchi']
     extension = 'html'
-    InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
-    self.add_condor_cmd('getenv', 'True')
+    InspiralPlottingJob.__init__(self,cp,sections,exec_name,extension,dax)
 
-class PlotSnrchiNode(InspiralAnalysisNode):
+class PlotSnrchiNode(InspiralPlottingNode):
   """
   A PlotSnrchiNode runs an instance of the plotinspiral code in a Condor DAG.
   """
@@ -1649,10 +1702,9 @@ class PlotSnrchiNode(InspiralAnalysisNode):
     """
     job = A CondorDAGJob that can run an instance of plotsnrchi.
     """
-    InspiralAnalysisNode.__init__(self,job)
-
+    InspiralPlottingNode.__init__(self,job)
 #############################################################################
-  	 
+
 class PlotGRBtimeslideStatsJob(InspiralAnalysisJob):
   """
   A plotgrbtimeslidestats job. The static options are read from the section
@@ -1669,7 +1721,7 @@ class PlotGRBtimeslideStatsJob(InspiralAnalysisJob):
     extension = 'html'
     InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
     self.add_condor_cmd('getenv', 'True')
- 
+
 class PlotGRBtimeslideStatsNode(InspiralAnalysisNode):
   """
   A PlotGRBtimeslideStatsNode runs an instance of the pylal_grbtimeslide_stats code in a Condor DAG.
@@ -1680,7 +1732,7 @@ class PlotGRBtimeslideStatsNode(InspiralAnalysisNode):
     """
     InspiralAnalysisNode.__init__(self,job)
 
-############################################################################
+##############################################################################
 # some functions to make life easier later
 
 def overlap_test(interval1, interval2, slide_sec=0):
