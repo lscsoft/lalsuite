@@ -49,7 +49,6 @@
 
 RCSID("$Id$");
 
-REAL8 hyperg_0F1_reg(REAL8, REAL8);
 REAL8 pdf_ncx2_4(REAL8, REAL8);
 REAL8 d_pdf_ncx2_4(REAL8, REAL8);
 
@@ -77,8 +76,9 @@ int main(int argc, char *argv[]) {
   INT4 rng_med_win = 50;
   REAL8 max_rel_err = 1.0e-3;
   REAL8 h0_brake = 0.75;
-  INT4 MC_trials = 10000;
-  REAL8 MC_trial_fac = 2.0;
+  INT4 MC_trial_init = 1e5;
+  REAL8 MC_trial_fac = 1.5;
+  INT4 MC_trial_reset = 5e7;
   REAL8 FDR = 0.05;
   CHAR *output_file = NULL;
 
@@ -95,11 +95,11 @@ int main(int argc, char *argv[]) {
   REAL8 B_coeff = 0.0;
   REAL8 C_coeff = 0.0;
   gsl_rng *rng = NULL;
-  REAL8 MC_int_vol = 0.0;
   REAL8 h0 = 0.0;
   REAL8 h0_prev = 0.0;
   REAL8 dh0 = 0.0;
   INT4 h0_iter = 0;
+  INT4 MC_trials = 0;
   INT4 MC_iter = 0;
     
   /* Initialise LAL error handler, debug level and log level */
@@ -108,43 +108,32 @@ int main(int argc, char *argv[]) {
   LogSetLevel(lalDebugLevel);
   
   /* Register command line arguments */
-  LAL_CALL(LALRegisterBOOLUserVar  (&status, "help",        'h', UVAR_HELP,     "Print this help message", &help), &status);
-  LAL_CALL(LALRegisterREALUserVar  (&status, "alpha",       'a', UVAR_REQUIRED, "Right ascension in radians", &alpha), &status);
-  LAL_CALL(LALRegisterREALUserVar  (&status, "delta",       'd', UVAR_REQUIRED, "Declination in radians", &delta), &status);
-  LAL_CALL(LALRegisterREALUserVar  (&status, "freq",        'f', UVAR_REQUIRED, "Starting frequency", &freq), &status);
-  LAL_CALL(LALRegisterREALUserVar  (&status, "band",        'b', UVAR_REQUIRED, "Frequency band", &band), &status);
-  LAL_CALL(LALRegisterREALUserVar  (&status, "loudest-2F",  'F', UVAR_REQUIRED, "Loudest 2F value in this band", &twoFs), &status);
-  LAL_CALL(LALRegisterSTRINGUserVar(&status, "sft-patt",    'D', UVAR_REQUIRED, "File pattern of the input SFTs", &sft_pattern), &status);
-  LAL_CALL(LALRegisterSTRINGUserVar(&status, "ephem-dir",   'E', UVAR_OPTIONAL, "Directory containing ephemeris files", &ephem_dir), &status);
-  LAL_CALL(LALRegisterSTRINGUserVar(&status, "ephem-year",  'y', UVAR_REQUIRED, "Year suffix for ephemeris files", &ephem_year), &status);
-  LAL_CALL(LALRegisterINTUserVar   (&status, "rng-med-win", 'k', UVAR_OPTIONAL, "Size of the running median window", &rng_med_win), &status);
-  LAL_CALL(LALRegisterREALUserVar  (&status, "max-rel-err", 'e', UVAR_OPTIONAL, "Maximum error in h0 relative to previous value", &max_rel_err), &status);
-  LAL_CALL(LALRegisterREALUserVar  (&status, "h0-brake",    'b', UVAR_OPTIONAL, "h0 cannot change by more than this fraction of itself", &h0_brake), &status);
-  LAL_CALL(LALRegisterINTUserVar   (&status, "init-MC-tri", 'I', UVAR_OPTIONAL, "Initial number of MC int. trials", &MC_trials), &status);
-  LAL_CALL(LALRegisterREALUserVar  (&status, "MC-tri-incr", 'i', UVAR_OPTIONAL, "Multiply number of MC int. trials by this after each step", &MC_trial_fac), &status);
-  LAL_CALL(LALRegisterREALUserVar  (&status, "false-dism",  'R', UVAR_OPTIONAL, "Target false dismissal rate", &FDR), &status);
-  LAL_CALL(LALRegisterSTRINGUserVar(&status, "output-file", 'o', UVAR_OPTIONAL, "Output file for the upper limit and other info (defaults to stdout)", &output_file), &status);
+  LAL_CALL(LALRegisterBOOLUserVar  (&status, "help",         'h', UVAR_HELP,     "Print this help message", &help), &status);
+  LAL_CALL(LALRegisterREALUserVar  (&status, "alpha",        'a', UVAR_REQUIRED, "Right ascension in radians", &alpha), &status);
+  LAL_CALL(LALRegisterREALUserVar  (&status, "delta",        'd', UVAR_REQUIRED, "Declination in radians", &delta), &status);
+  LAL_CALL(LALRegisterREALUserVar  (&status, "freq",         'f', UVAR_REQUIRED, "Starting frequency", &freq), &status);
+  LAL_CALL(LALRegisterREALUserVar  (&status, "band",         'b', UVAR_REQUIRED, "Frequency band", &band), &status);
+  LAL_CALL(LALRegisterREALUserVar  (&status, "loudest-2F",   'F', UVAR_REQUIRED, "Loudest 2F value in this band", &twoFs), &status);
+  LAL_CALL(LALRegisterSTRINGUserVar(&status, "sft-patt",     'D', UVAR_REQUIRED, "File pattern of the input SFTs", &sft_pattern), &status);
+  LAL_CALL(LALRegisterSTRINGUserVar(&status, "ephem-dir",    'E', UVAR_OPTIONAL, "Directory containing ephemeris files", &ephem_dir), &status);
+  LAL_CALL(LALRegisterSTRINGUserVar(&status, "ephem-year",   'y', UVAR_REQUIRED, "Year suffix for ephemeris files", &ephem_year), &status);
+  LAL_CALL(LALRegisterINTUserVar   (&status, "rng-med-win",  'k', UVAR_OPTIONAL, "Size of the running median window", &rng_med_win), &status);
+  LAL_CALL(LALRegisterREALUserVar  (&status, "max-rel-err",  'e', UVAR_OPTIONAL, "Maximum error in h0 relative to previous value", &max_rel_err), &status);
+  LAL_CALL(LALRegisterREALUserVar  (&status, "h0-brake",     'b', UVAR_OPTIONAL, "h0 cannot change by more than this fraction of itself", &h0_brake), &status);
+  LAL_CALL(LALRegisterINTUserVar   (&status, "init-MC-tri",  'I', UVAR_OPTIONAL, "Initial number of MC int. trials", &MC_trial_init), &status);
+  LAL_CALL(LALRegisterREALUserVar  (&status, "MC-tri-incr",  'i', UVAR_OPTIONAL, "Multiply number of MC int. trials by this after each step", &MC_trial_fac), &status);
+  LAL_CALL(LALRegisterINTUserVar   (&status, "MC-tri-reset", 'Z', UVAR_OPTIONAL, "Reset if no convergence after this number of MC int. trials", &MC_trial_reset), &status);
+  LAL_CALL(LALRegisterREALUserVar  (&status, "false-dism",   'R', UVAR_OPTIONAL, "Target false dismissal rate", &FDR), &status);
+  LAL_CALL(LALRegisterSTRINGUserVar(&status, "output-file",  'o', UVAR_OPTIONAL, "Output file for the upper limit and other info (defaults to stdout)", &output_file), &status);
 
   /* Get command line arguments */
   LAL_CALL(LALUserVarReadAllInput(&status, argc, argv), &status);
   if (help)
     return EXIT_SUCCESS;
 
-  /* Open the output file */
-  if (LALUserVarWasSet(&output_file)) {
-    if ((fp = fopen(output_file, "wb")) == NULL) {
-      LALPrintError("Couldn't open output file '%s'\n", output_file);
-      return EXIT_FAILURE;
-    }
-  }
-  else {
-    fp = stdout;
-  }
-  LAL_CALL(LALUserVarGetLog(&status, &cmdline, UVAR_LOGFMT_CMDLINE), &status);
-  fprintf(fp, "%%%% %s\n%%%% %s\n", rcsid, cmdline);
-  LALFree(cmdline);
-  fprintf(fp, "freq=%0.4f band=%0.4f\n", freq, band);
-  
+  /* Send log output to stdout */
+  LogSetFile(stdout);
+
   /* Load the SFTs */
   {
     SFTConstraints constraints = empty_SFTConstraints;
@@ -235,6 +224,13 @@ int main(int argc, char *argv[]) {
     A_coeff = AM_coeffs->Mmunu.Ad * AM_coeffs->Mmunu.Sinv_Tsft;
     B_coeff = AM_coeffs->Mmunu.Bd * AM_coeffs->Mmunu.Sinv_Tsft;
     C_coeff = AM_coeffs->Mmunu.Cd * AM_coeffs->Mmunu.Sinv_Tsft;
+
+    /* DEBUG Single-side PSD correction */
+    A_coeff *= 0.5;
+    B_coeff *= 0.5;
+    C_coeff *= 0.5;
+    /* DEBUG Single-side PSD correction */
+    
     LogPrintfVerbatim(LOG_DEBUG, "done: A = %0.4e, B = %0.4e, C = %0.4e\n", A_coeff, B_coeff, C_coeff);
   }      
   
@@ -255,104 +251,125 @@ int main(int argc, char *argv[]) {
     gsl_rng_set(rng, seed);
   }
   
-  /* Compute the volume of the Monte Carlo integration volume:
-     integrate over twoF but average pver cosi,psi (hence not present) */
-  MC_int_vol = (twoFs - 0);
+  /* Begin iterations to find h0 */
+  do {
 
-  /* Compute first guess at h0 */
-  h0 = twoFs * pow(A_coeff * B_coeff - C_coeff * C_coeff, -0.25);
-  h0_prev = GSL_POSINF;
-  dh0 = 0.0;
+    /* Compute the volume of the Monte Carlo integration volume:
+       integrate over twoF but average over cosi,psi (hence not present) */
+    const REAL8 MC_int_vol = (twoFs - 0);
 
-  /* Macro for the relative error in h0 */
+    /* Open the output file */
+    if (LALUserVarWasSet(&output_file)) {
+      if ((fp = fopen(output_file, "wb")) == NULL) {
+	LALPrintError("Couldn't open output file '%s'\n", output_file);
+	return EXIT_FAILURE;
+      }
+    }
+    else {
+      fp = stdout;
+    }
+    LAL_CALL(LALUserVarGetLog(&status, &cmdline, UVAR_LOGFMT_CMDLINE), &status);
+    fprintf(fp, "%%%% %s\n%%%% %s\n", rcsid, cmdline);
+    LALFree(cmdline);
+    fprintf(fp, "freq=%0.4f band=%0.4f\n", freq, band);
+  
+    /* Compute first guess at h0 */
+    h0  = twoFs * pow(A_coeff * B_coeff - C_coeff * C_coeff, -0.25);
+    h0 *= GSL_MAX(0.5, 1.0 + gsl_ran_gaussian(rng, 0.1));
+    h0_prev = GSL_POSINF;
+  
+    /* Begin Newton-Raphson iteration to find h0 */
 #define H0_ERROR fabs((h0 - h0_prev) / h0)
-
-  /* Begin Newton-Raphson iteration to find h0 */
-  for (h0_iter = 0; H0_ERROR > max_rel_err; ++h0_iter) {
-
-    /* Integrand and its derivative w.r.t. h0 */
-    REAL8 J = 0.0;
-    REAL8 dJ = 0.0;
-
-    /* Target values of integrand */
-    const REAL8 J0 = 1 - FDR;
-
-    LogPrintf(LOG_DEBUG, "Beginning h0 loop %2i with h0=%0.4e, error=%0.4e, MC_trials=%i\n", h0_iter, h0, H0_ERROR, MC_trials);
-
-    fprintf(fp, "MC_trials=%i ", MC_trials);
-
-    /* Begin Monte Carlo integration to find J and dJ */
-    MC_iter = MC_trials;
-    while (MC_iter--) {
-
-      /* Generate random cosi, psi, and twoF */
-      const REAL8 cosi = gsl_ran_flat(rng, min_cosi, max_cosi);
-      const REAL8 psi = gsl_ran_flat(rng, min_psi, max_psi);
-      const REAL8 twoF = gsl_ran_flat(rng, 0, twoFs);
-
-      /* Compute the amplitude coefficients vector A */
-      const REAL8 A1 = 0.5 * h0 * (1 + cosi * cosi) * cos(2 * psi);
-      const REAL8 A2 = 0.5 * h0 * (1 + cosi * cosi) * sin(2 * psi);
-      const REAL8 A3 =      -h0 *             cosi  * sin(2 * psi);
-      const REAL8 A4 =       h0 *             cosi  * cos(2 * psi);
-
-      /* Compute the optimal signal to noise ratio rho^2 */
-      const REAL8 rho2 = 0.5 * (
-				A1 * A1 * A_coeff +
-				A2 * A2 * B_coeff +
-				A1 * A2 * C_coeff +
-				A2 * A1 * C_coeff +
-				A3 * A3 * A_coeff +
-				A4 * A4 * B_coeff +
-				A3 * A4 * C_coeff +
-				A4 * A3 * C_coeff
-				);
-
-      /* Add to the integrand and its derivative w.r.t. h0 */
-      J  += pdf_ncx2_4(rho2, twoF);
-      dJ += 2.0 * rho2 / h0 * d_pdf_ncx2_4(rho2, twoF);
-
-      /* If J and dJ failed, reduce h0 and try again */
-      if (gsl_isnan(J) || gsl_isnan(dJ)) {
-	h0 /= 2.0;
-	LogPrintf(LOG_DEBUG, "Reducing h0 to %0.4e and starting again because either J=%0.4e or dJ=%0.4e\n", h0, J, dJ);
-	J = 0;
-	dJ = 0;
-	MC_iter = MC_trials;
-      }	
+    for (h0_iter = 0, MC_trials = MC_trial_init; H0_ERROR > max_rel_err && MC_trials < MC_trial_reset; ++h0_iter, MC_trials *= MC_trial_fac) {
+      
+      /* Integrand and its derivative w.r.t. h0 */
+      REAL8 J = 0.0;
+      REAL8 dJ = 0.0;
+      
+      /* Target values of integrand */
+      const REAL8 J0 = 1 - FDR;
+      
+      LogPrintf(LOG_DEBUG, "Beginning h0 loop %2i with h0=%0.4e, error=%0.4e, MC_trials=%i\n", h0_iter, h0, H0_ERROR, MC_trials);
+      
+      fprintf(fp, "MC_trials=%i ", MC_trials);
+      
+      /* Begin Monte Carlo integration to find J and dJ */
+      MC_iter = MC_trials;
+      while (MC_iter--) {
+	
+	/* Generate random cosi, psi, and twoF */
+	const REAL8 cosi = gsl_ran_flat(rng, min_cosi, max_cosi);
+	const REAL8 psi = gsl_ran_flat(rng, min_psi, max_psi);
+	const REAL8 twoF = gsl_ran_flat(rng, 0, twoFs);
+	
+	/* Compute the amplitude coefficients vector A */
+	const REAL8 A1 = 0.5 * h0 * (1 + cosi * cosi) * cos(2 * psi);
+	const REAL8 A2 = 0.5 * h0 * (1 + cosi * cosi) * sin(2 * psi);
+	const REAL8 A3 =      -h0 *             cosi  * sin(2 * psi);
+	const REAL8 A4 =       h0 *             cosi  * cos(2 * psi);
+	
+	/* Compute the optimal signal to noise ratio rho^2 */
+	const REAL8 rho2 = 0.5 * (
+				  A1 * A1 * A_coeff +
+				  A2 * A2 * B_coeff +
+				  A1 * A2 * C_coeff +
+				  A2 * A1 * C_coeff +
+				  A3 * A3 * A_coeff +
+				  A4 * A4 * B_coeff +
+				  A3 * A4 * C_coeff +
+				  A4 * A3 * C_coeff
+				  );
+	
+	/* Add to the integrand and its derivative w.r.t. h0 */
+	J  += pdf_ncx2_4(rho2, twoF);
+	dJ += 2.0 * rho2 / h0 * d_pdf_ncx2_4(rho2, twoF);
+	
+	/* If J and dJ failed, reduce h0 and try again */
+	if (gsl_isnan(J) || gsl_isnan(dJ)) {
+	  h0 /= 2.0;
+	  LogPrintf(LOG_DEBUG, "Reducing h0 to %0.4e and starting again because either J=%0.4e or dJ=%0.4e\n", h0, J, dJ);
+	  J = 0;
+	  dJ = 0;
+	  MC_iter = MC_trials;
+	}	
+	
+      }
+      
+      /* Finalise the integrand and derivative: multiply by trial element */
+      J  *= MC_int_vol / MC_trials;
+      dJ *= MC_int_vol / MC_trials;
+      
+      /* Compute the increment in h0 from Newton-Raphson */
+      dh0 = (J0 - J) / dJ;
+      
+      /* Limit the increment in h0 to |h0 * h0_brake| */
+      dh0 = GSL_SIGN(dh0) * GSL_MIN(fabs(dh0), fabs(h0 * h0_brake));
+      
+      /* Increment h0 (saving old value) */
+      h0_prev = h0;
+      h0 += dh0;
+      
+      fprintf(fp, "h0=%0.4e\n", h0);
+      fflush(fp);
+      
+      LogPrintf(LOG_DEBUG, "Ending    h0 loop %2i with h0=%0.4e, error=%0.4e, J-J0=% 0.4e, dh0=% 0.4e\n", h0_iter, h0, H0_ERROR, J - J0, dh0);
 
     }
-
-    /* Finalise the integrand and derivative: multiply by trial element */
-    J  *= MC_int_vol / MC_trials;
-    dJ *= MC_int_vol / MC_trials;
-
-    /* Compute the increment in h0 from Newton-Raphson */
-    dh0 = (J0 - J) / dJ;
-
-    /* Limit the increment in h0 to |h0 * h0_brake| */
-    dh0 = GSL_SIGN(dh0) * GSL_MIN(fabs(dh0), fabs(h0 * h0_brake));
-
-    /* Increment h0 (saving old value) */
-    h0_prev = h0;
-    h0 += dh0;
-
-    fprintf(fp, "h0=%0.4e\n", h0);
-
-    /* Increment the number of MC trials */
-    MC_trials *= MC_trial_fac;
-
-    LogPrintf(LOG_DEBUG, "Ending    h0 loop %2i with h0=%0.4e, error=%0.4e, J-J0=% 0.4e, dh0=% 0.4e\n", h0_iter, h0, H0_ERROR, J - J0, dh0);
-
-  }
+#undef H0_ERROR
   
-  /* Close the output file */
-  if (LALUserVarWasSet(&output_file)) {
-    fclose(fp);
-  }
+    /* Close the output file */
+    if (LALUserVarWasSet(&output_file)) {
+      fclose(fp);
+    }
+
+    /* If number of MC trials exceeded reset */
+    if (MC_trials >= MC_trial_reset)
+      LogPrintf(LOG_DEBUG, "Failed to converge after %i iterations (MC_trails=%i): trying again ...\n", h0_iter, MC_trials);
+
+  } while (MC_trials >= MC_trial_reset);
   
   /* Cleanup */
-  LALDestroyUserVars(&status);
+  LAL_CALL(LALDestroyUserVars(&status), &status);
   LAL_CALL(LALDestroySFTCatalog(&status, &catalog), &status);
   LAL_CALL(LALDestroyMultiSFTVector(&status, &sfts), &status);
   XLALFree(ephemeris.ephiles.earthEphemeris);
@@ -402,7 +419,7 @@ REAL8 d_pdf_ncx2_4(REAL8 lambda, REAL8 x) {
 
   /* Compute the Bessel functions */
   h = gsl_set_error_handler_off();
-  for (i = 0; i <= 2; ++i)
+  for (i = 0; i < 3; ++i)
     if (gsl_sf_bessel_In_e(i, z, &I[i]) != GSL_SUCCESS) {
       gsl_set_error_handler(h);
       return GSL_NAN;
