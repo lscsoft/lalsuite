@@ -364,7 +364,7 @@ int main(int argc,char *argv[])
   /* ----- produce a log-string describing the specific run setup ----- */
   LAL_CALL ( getLogString ( &status, &(GV.logstring), &GV ), &status );
   LogPrintfVerbatim( LOG_DEBUG, "%s", GV.logstring );
-  printf ( "TEST: %s", GV.logstring );
+
   /* keep a log-file recording all relevant parameters of this search-run */
   if ( uvar.outputLogfile ) {
     LAL_CALL (WriteFStatLog ( &status, uvar.outputLogfile, GV.logstring ), &status );
