@@ -134,10 +134,10 @@ XLALAverage_am1_am2_Phi_i_Phi_j ( const intparams_t *params )
   gsl_function integrand;
   double epsrel = 2e-3;
   /* NOTE: this level of accuracy has to be compatible with AM-coefficients involved
-   * which are computed in REAL4 precision. We therefor cannot go lower than ~2e-3 it seems,
+   * which are computed in REAL4 precision. We therefor cannot go lower than this it seems,
    * otherwise the gsl-integration fails to converge in some cases.
    */
-  double epsabs = 0;
+  double epsabs = 1e-5;	/* we need an abs-cutoff as well, as epsrel can be too restrictive for small integrals */
   double abserr;
   size_t neval;
   double ret;
