@@ -15,7 +15,7 @@
 #include <string.h>
 #include "SFTReferenceLibrary.h"
 
-#define RCSID "$Id: splitSFTs.c,v 1.33 2008/10/01 13:37:42 bema Exp $"
+#define RCSID "$Id: splitSFTs.c,v 1.34 2008/10/06 09:36:22 bema Exp $"
 
 /* rounding (for positive numbers!)
    taken from SFTfileIO in LALSupport, should be consistent with that */
@@ -46,7 +46,8 @@ int main(int argc, char**argv) {
   char *outname;               /* name of output SFT file */
   char *prefix = "";           /* output filename prefix */
   char *detector = NULL;       /* detector name */
-  double factor = 1.0;         /* factor ("mystery factor" and SFT v1 normalization) */
+  double factor = 1.0;         /* "mystery" factor */
+  double conversion_factor = 1.0; /* extra factor needed when converting from v1 SFTs */
   int firstfile = TRUE;        /* are we processing the first input SFT file? */
   int add_comment = CMT_FULL;  /* add RCSID and full command-line to every SFT file */
   unsigned int start = 0, end = 0, width = 0, overlap = 0;     /* start, end, width and overlap in bins */
@@ -269,13 +270,15 @@ int main(int argc, char**argv) {
     TRYSFT(ReadSFTData(fp, data, start, nactivesamples, NULL, NULL),
 	   "could not read SFT data");
 
-    /* normalize for v1 SFTs */
-    if(hd.version == 1.0)
-      factor *= 0.5 * hd.tbase / hd.nsamples;
+    if(hd.version == 1.0) {
+      conversion_factor = 0.5 * hd.tbase / hd.nsamples;
+    } else {
+      conversion_factor = 1.0;
+    }
 
-    /* apply factor */
+    /* apply mystery factor and conversion factor */
     for(bin = 0; bin < 2 * nactivesamples; bin++)
-      data[bin] *= factor;
+      data[bin] *= factor * conversion_factor;
 
     /* cleanup */
     fclose(fp);
