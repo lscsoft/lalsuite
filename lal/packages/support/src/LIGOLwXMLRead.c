@@ -968,6 +968,15 @@ SimBurst *XLALSimBurstTableFromLIGOLw(
 			/* FIXME:  waveform is an unsigned long, but metaio
 			 * doesn't support int_8u columns */
 			row->waveform_number = env.ligo_lw.table.elt[column_pos.waveform_number].data.int_8s;
+		} else if(!strcmp(row->waveform, "Impulse")) {
+			if(column_pos.amplitude < 0) {
+				XLALDestroySimBurst(row);
+				XLALDestroySimBurstTable(head);
+				MetaioAbort(&env);
+				XLALPrintError("%s(): missing required column in %s table\n", func, table_name);
+				XLAL_ERROR_NULL(func, XLAL_EIO);
+			}
+			row->amplitude = env.ligo_lw.table.elt[column_pos.amplitude].data.real_8;
 		} else {
 			/* unrecognized waveform */
 			XLALDestroySimBurst(row);
