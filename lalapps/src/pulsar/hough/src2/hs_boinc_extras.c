@@ -42,6 +42,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+/* our own exception handler / runtime debugger */
+#ifdef __MINGW32__
+  ExchndlSetup();
+#endif
+
 /* headers of our own code */
 #include "HierarchicalSearch.h"
 #include <lal/LogPrintf.h>
@@ -1105,7 +1110,10 @@ int main(int argc, char**argv) {
      pressing Ctrl-C under boinc should not directly kill the app (which is attached to the
      same terminal), but the app should wait for the client to send <quit/> and cleanly exit. 
    */
-#ifdef _WIN32
+
+#ifdef __MINGW32__
+  ExchndlSetup();
+#elif _WIN32
   signal(SIGTERM, sighandler);
   if ( !skipsighandler ) {
     signal(SIGINT, sighandler);
