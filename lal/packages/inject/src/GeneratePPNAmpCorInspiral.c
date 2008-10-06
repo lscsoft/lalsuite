@@ -1010,9 +1010,9 @@ LALGeneratePPNAmpCorInspiral(
      a7 = q[5]*a7Pseven*fseven;
      
      /* Store first three harmonics for filtering */
-     *(a++) = a1Pthree*fthree;
-     *(a++) = a2Ptwo*f2a;
-     *(a++) = a3Pthree*fthree;
+     *(a++) = preFac*a1Pthree*fthree;
+     *(a++) = preFac*a2Ptwo*f2a;
+     *(a++) = preFac*a3Pthree*fthree;
 
      *(h++) = preFac*(
                      a1*cos(1.0/2.0*(phiC - phase)) 
