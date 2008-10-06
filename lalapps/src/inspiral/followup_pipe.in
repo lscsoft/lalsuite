@@ -144,6 +144,11 @@ parser.add_option("-P", "--plot-mcmc",action="store_true",default=False,\
 parser.add_option("-H", "--inspiral-head",action="store_true",default=False,\
     help="Run a job using inspiral from HEAD (to get bank and cont. chisq) (experimental)")
 
+parser.add_option("", "--disable-ifarsorting",action="store_true",\
+    default=False, help="this option disables the sorting of the candidates \
+    according to their IFAR value. Instead the candidates will be sorted \
+    according to their combined snr, if this option is used.")
+
 parser.add_option("-w", "--write-to-iulgroup",action="store_true", \
     default=False, help="publish the page to the iulgroup")
 
@@ -217,8 +222,10 @@ if not opts.disable_followup:
   missed = None
 
   if opts.trig_bank: trigbank_test = 1
-  else: trigbank_test = 0  
-  followuptrigs = getfollowuptrigs(numtrigs,page,coincs,missed,search,trigbank_test)
+  else: trigbank_test = 0
+  if opts.disable_ifarsorting: ifar = False
+  else: ifar = True
+  followuptrigs = getfollowuptrigs(numtrigs,page,coincs,missed,search,trigbank_test,ifar)
 
   print "\n.......Found " + str(len(followuptrigs)) + " trigs to follow up" 
 
