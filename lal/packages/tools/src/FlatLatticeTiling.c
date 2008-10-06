@@ -161,7 +161,6 @@ FlatLatticeTiling *XLALCreateFlatLatticeTiling(
   tiling->real_scale = NULL;
   tiling->real_offset = NULL;
   tiling->max_mismatch = 0.0;
-  tiling->max_flat_width = NULL;
   tiling->generator = NULL;
   tiling->num_subspaces = 0;
   tiling->subspaces = NULL;
@@ -199,7 +198,6 @@ void XLALFreeFlatLatticeTiling(
     FREE_GSL_MATRIX(tiling->metric);
     FREE_GSL_VECTOR(tiling->real_scale);
     FREE_GSL_VECTOR(tiling->real_offset);
-    FREE_GSL_VECTOR(tiling->max_flat_width);
     for (k = 0; k < tiling->num_subspaces; ++k)
       FreeFlatLatticeTilingSubspace(tiling->subspaces[k]);
     XLALFree(tiling->subspaces);
@@ -332,8 +330,7 @@ static void GetBounds(
 
   /* Update whether dimension is flat */
   if (is_tiled)
-    SET_BIT(UINT8, *is_tiled, dimension, (*upper - *lower) > 
-	    gsl_vector_get(tiling->max_flat_width, dimension));
+    SET_BIT(UINT8, *is_tiled, dimension, (*upper - *lower) > GSL_DBL_EPSILON);
 
 }
 
@@ -344,8 +341,7 @@ int XLALSetFlatLatticeTilingMetric(
 				   FlatLatticeTiling *tiling, /**< Tiling structure */
 				   gsl_matrix *metric,        /**< Metric */
 				   REAL8 max_mismatch,        /**< Maximum mismatch */
-				   gsl_vector *real_scale,    /**< Multiply to get real metric, may be NULL */
-				   REAL8 max_flat_width       /**< Maximum width of flat dimension */
+				   gsl_vector *real_scale     /**< Multiply to get real metric, may be NULL */
 				   )
 {
 
@@ -389,14 +385,11 @@ int XLALSetFlatLatticeTilingMetric(
       if (gsl_vector_get(real_scale, i) <= 0.0)
 	XLAL_ERROR("'real_scale' must be strictly positive", XLAL_EINVAL);
   }
-  if (max_flat_width <= 0.0)
-    XLAL_ERROR("'max_flat_width' must be strictly positive", XLAL_EINVAL);
   
   /* Allocate memory */
   ALLOC_GSL_MATRIX(tiling->metric,          n, n, XLAL_ERROR);
   ALLOC_GSL_VECTOR(tiling->real_scale,         n, XLAL_ERROR);
   ALLOC_GSL_VECTOR(tiling->real_offset,        n, XLAL_ERROR);
-  ALLOC_GSL_VECTOR(tiling->max_flat_width,     n, XLAL_ERROR);
   ALLOC_GSL_VECTOR(tiling->curr_point,         n, XLAL_ERROR);
   ALLOC_GSL_VECTOR(tiling->curr_lower,         n, XLAL_ERROR);
   ALLOC_GSL_VECTOR(tiling->curr_upper,         n, XLAL_ERROR);
@@ -418,12 +411,6 @@ int XLALSetFlatLatticeTilingMetric(
     gsl_vector_memcpy(tiling->real_scale, real_scale);
   tiling->max_mismatch = max_mismatch;
 
-  /* Calculate the maximum width of a flat parameter space 
-     dimension from the extent of the metric along coordinate axes */
-  for (i = 0; i < n; ++i)
-    gsl_vector_set(tiling->max_flat_width, i, max_flat_width * 
-		   sqrt(tiling->max_mismatch / gsl_matrix_get(tiling->metric, i, i)));
-  
   return XLAL_SUCCESS;
 
 }

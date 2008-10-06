@@ -61,7 +61,6 @@ int main(int argc, char *argv[]) {
   LALStringVector *square = NULL;
   LALStringVector *age_brake = NULL;
   REAL8 max_mismatch = 0.0;
-  REAL8 max_flat_width = 0.0;
   INT4 lattice_type = 0;
   INT4 metric_type = 0;
   BOOLEAN only_count = FALSE;
@@ -92,9 +91,9 @@ int main(int argc, char *argv[]) {
   LAL_CALL(LALRegisterBOOLUserVar  (&status, "help",             'h', UVAR_HELP, "Print this help message", &help), &status);
   LAL_CALL(LALRegisterREALUserVar  (&status, "time-span",        'T', UVAR_OPTIONAL, "Time-span of the data set (in seconds)", &Tspan), &status);
   LAL_CALL(LALRegisterLISTUserVar  (&status, "square",            0 , UVAR_OPTIONAL, "Square parameter space: start,width,...", &square), &status);
-  LAL_CALL(LALRegisterLISTUserVar  (&status, "age-braking",       0 , UVAR_OPTIONAL, "Age/braking index parameter space: freq,freqband,alpha,delta,age,minbrake,maxbrake", &age_brake), &status);
+  LAL_CALL(LALRegisterLISTUserVar  (&status, "age-braking",       0 , UVAR_OPTIONAL, "Age/braking index parameter space: "
+				                                                     "freq,freqband,alpha,delta,age,minbrake,maxbrake", &age_brake), &status);
   LAL_CALL(LALRegisterREALUserVar  (&status, "max-mismatch",     'X', UVAR_OPTIONAL, "Maximum allowed mismatch between the templates", &max_mismatch), &status);
-  LAL_CALL(LALRegisterREALUserVar  (&status, "max-flat-width",   'W', UVAR_OPTIONAL, "Maximum width of a flat parameter space dimension", &max_flat_width), &status);
   LAL_CALL(LALRegisterINTUserVar   (&status, "lattice",          'L', UVAR_OPTIONAL, "Lattice: 0=Anstar, 1=cubic", &lattice_type), &status);
   LAL_CALL(LALRegisterINTUserVar   (&status, "metric",           'M', UVAR_OPTIONAL, "Metric: 0=spindown, 1=eye", &metric_type), &status);
   LAL_CALL(LALRegisterBOOLUserVar  (&status, "only-count",       'c', UVAR_OPTIONAL, "Only count number of templates", &only_count), &status);
@@ -201,9 +200,7 @@ int main(int argc, char *argv[]) {
   /* Set metric */
   switch (metric_type) {
   case 0:
-    if (!LALUserVarWasSet(&max_flat_width))
-      max_flat_width = GRID_SPINDOWN_MAX_FLAT_WIDTH;
-    if (XLAL_SUCCESS != XLALSetFlatLatticeTilingSpindownFstatMetric(tiling, max_mismatch, Tspan, max_flat_width))
+    if (XLAL_SUCCESS != XLALSetFlatLatticeTilingSpindownFstatMetric(tiling, max_mismatch, Tspan))
       LALAPPS_ERROR("XLALSetFlatLatticeTilingSpindownFstatMetric failed\n", 0);
     break;
   case 1:
@@ -211,7 +208,7 @@ int main(int argc, char *argv[]) {
       gsl_matrix *identity = NULL;
       ALLOC_GSL_MATRIX(identity, tiling->dimensions, tiling->dimensions, LALAPPS_ERROR);
       gsl_matrix_set_identity(identity);
-      if (XLAL_SUCCESS != XLALSetFlatLatticeTilingMetric(tiling, identity, max_mismatch, NULL, max_flat_width))
+      if (XLAL_SUCCESS != XLALSetFlatLatticeTilingMetric(tiling, identity, max_mismatch, NULL))
 	LALAPPS_ERROR("XLALSetFlatLatticeTilingMetric failed\n", 0);
       gsl_matrix_free(identity);
     }
@@ -223,10 +220,6 @@ int main(int argc, char *argv[]) {
   XLAL_VBXMLO_Tag(&xml, "max_mismatch", "%0.12g", tiling->max_mismatch);
   XLAL_VBXMLO_gsl_vector(&xml, "real_scale", "%0.12g", tiling->real_scale);
   XLAL_VBXMLO_gsl_vector(&xml, "real_offset", "%0.12g", tiling->real_offset);
-  XLAL_VBXMLO_BeginTag(&xml, "max_flat_width");
-  XLAL_VBXMLO_Tag(&xml, "scalar", "%0.12g", max_flat_width);
-  XLAL_VBXMLO_gsl_vector(&xml, "vector", "%0.12g", tiling->max_flat_width);
-  XLAL_VBXMLO_EndTag(&xml, "max_flat_width");
 
   /* Set lattice */
   switch (lattice_type) {

@@ -76,8 +76,7 @@ static INT4 factorial(
 int XLALSetFlatLatticeTilingSpindownFstatMetric(
 						FlatLatticeTiling *tiling, /**< Tiling structure */
 						REAL8 max_mismatch,        /**< Maximum mismatch */
-						REAL8 Tspan,               /**< Time span of the search */
-						REAL8 max_flat_width       /**< Maximum width of flat dimension */
+						REAL8 Tspan                /**< Time span of the search */
 						)
 {
 
@@ -113,7 +112,7 @@ int XLALSetFlatLatticeTilingSpindownFstatMetric(
   gsl_vector_swap_elements(norm_to_real, 0, 2);
 
   /* Set the metric of the flat lattice tiling */
-  if (XLALSetFlatLatticeTilingMetric(tiling, norm_metric, max_mismatch, norm_to_real, max_flat_width) != XLAL_SUCCESS)
+  if (XLALSetFlatLatticeTilingMetric(tiling, norm_metric, max_mismatch, norm_to_real) != XLAL_SUCCESS)
     XLAL_ERROR("XLALSetFlatLatticeTilingMetric failed", XLAL_EFAILED);
 
   /* Cleanup */

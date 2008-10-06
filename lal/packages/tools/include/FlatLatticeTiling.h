@@ -130,9 +130,6 @@ extern "C" {
     /* Maximum metric mismatch between the templates */
     REAL8 max_mismatch;
 
-    /* Maximum width of a flat parameter space dimension */
-    gsl_vector *max_flat_width;
-
     /* Flat tiling lattice generator */
     FlatTilingLatticeGenerator generator;
 
@@ -173,7 +170,7 @@ extern "C" {
   FlatLatticeTiling* XLALCreateFlatLatticeTiling(INT4);
   void XLALFreeFlatLatticeTiling(FlatLatticeTiling*);
   int XLALAddFlatLatticeTilingBound(FlatLatticeTiling*, UINT8, FlatLatticeTilingBoundFunc, void*, FlatLatticeTilingBoundFree);
-  int XLALSetFlatLatticeTilingMetric(FlatLatticeTiling*, gsl_matrix*, REAL8, gsl_vector*, REAL8);
+  int XLALSetFlatLatticeTilingMetric(FlatLatticeTiling*, gsl_matrix*, REAL8, gsl_vector*);
   int XLALSetFlatTilingLattice(FlatLatticeTiling*, FlatTilingLatticeGenerator);
   int XLALNextFlatLatticePoint(FlatLatticeTiling*);
   UINT4 XLALTotalFlatLatticePointCount(FlatLatticeTiling*);
