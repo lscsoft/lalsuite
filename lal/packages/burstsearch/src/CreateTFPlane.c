@@ -299,24 +299,42 @@ INT4 XLALEPGetTimingParameters(
  * The indices of the output sequence are |k - k'|.  The window is, by
  * construction, an even function of the sample index, so the Fourier
  * transform is real-valued (contains only cosine components).
+ *
+ * If x_{j} is a stationary process then the components of its Fourier
+ * transform, X_{k}, are independent random variables, and let their mean
+ * square be <|X_{k}|^{2}> = 1.  If x_{j} is multiplied by the window
+ * function w_{j} then it is no longer stationary and the components of its
+ * Fourier transform are no longer independent.  Their correlations are
+ *
+ *	<X_{k} X*_{k'}>
+ *
+ * and depend only on |k - k'|.
+ *
+ * Given the window function w_{j}, this function computes and returns a
+ * sequence containing <X_{k} X*_{k'}>.  The sequence is a one-dimensional
+ * sequence whose indices are |k - k'|.  A straight-forward normalization
+ * factor can be applied to convert this for use with a sequence x_{j}
+ * whose Fourier transform does not have bins with equal mean square.
+ *
+ * The FFT plan is expected to be a forward plan whose length equals that
+ * of the window.
  */
 
 
-static REAL8Sequence *compute_two_point_spectral_correlation(
-	const REAL8Window *window
+static REAL8Sequence *XLALREAL8TwoPointSpectralCorrelation(
+	const REAL8Window *window,
+	const REAL8FFTPlan *plan
 )
 {
 	REAL8Sequence *w_squared = XLALCopyREAL8Sequence(window->data);
 	COMPLEX16Sequence *tmp = XLALCreateCOMPLEX16Sequence(window->data->length / 2 + 1);
 	REAL8Sequence *correlation = XLALCreateREAL8Sequence(window->data->length / 2 + 1);
-	REAL8FFTPlan *plan = XLALCreateForwardREAL8FFTPlan(window->data->length, 0);
 	unsigned i;
 
-	if(!w_squared || !tmp || !correlation || !plan) {
+	if(!w_squared || !tmp || !correlation) {
 		XLALDestroyREAL8Sequence(w_squared);
 		XLALDestroyCOMPLEX16Sequence(tmp);
 		XLALDestroyREAL8Sequence(correlation);
-		XLALDestroyREAL8FFTPlan(plan);
 		return NULL;
 	}
 
@@ -336,7 +354,6 @@ static REAL8Sequence *compute_two_point_spectral_correlation(
 
 	XLALDestroyREAL8Sequence(w_squared);
 	XLALDestroyCOMPLEX16Sequence(tmp);
-	XLALDestroyREAL8FFTPlan(plan);
 
 	return correlation;
 }
@@ -361,7 +378,9 @@ REAL8TimeFrequencyPlane *XLALCreateTFPlane(
 	/* largest tile's bandwidth */
 	REAL8 max_tile_bandwidth,
 	/* largest tile's duration */
-	REAL8 max_tile_duration
+	REAL8 max_tile_duration,
+	/* forward plan whose length is tseries_length */
+	const REAL8FFTPlan *plan
 )
 {
 	static const char func[] = "XLALCreateTFPlane";
@@ -471,7 +490,7 @@ REAL8TimeFrequencyPlane *XLALCreateTFPlane(
 	channel_buffer = XLALCreateREAL8Sequence(tseries_length);
 	unwhitened_channel_buffer = XLALCreateREAL8Sequence(tseries_length);
 	tukey = XLALCreateTukeyREAL8Window(tseries_length, (tseries_length - tiling_length) / (double) tseries_length);
-	correlation = tukey ? compute_two_point_spectral_correlation(tukey) : NULL;
+	correlation = tukey ? XLALREAL8TwoPointSpectralCorrelation(tukey, plan) : NULL;
 	if(!plane || !channel_data || !channel_buffer || !unwhitened_channel_buffer || !tukey || !correlation) {
 		XLALFree(plane);
 		if(channel_data)

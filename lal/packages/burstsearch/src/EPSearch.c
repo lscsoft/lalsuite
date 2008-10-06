@@ -69,7 +69,7 @@ SnglBurst *XLALEPSearch(
 	REAL8FrequencySeries *psd;
 	REAL8TimeSeries *cuttseries = NULL;
 	LALExcessPowerFilterBank *filter_bank = NULL;
-	REAL8TimeFrequencyPlane *plane;
+	REAL8TimeFrequencyPlane *plane = NULL;
 
 	/*
 	 * Construct forward and reverse FFT plans, storage for the PSD,
@@ -84,7 +84,8 @@ SnglBurst *XLALEPSearch(
 	rplan = XLALCreateReverseREAL8FFTPlan(window->data->length, 1);
 	psd = XLALCreateREAL8FrequencySeries("PSD", &tseries->epoch, 0, 0, &lalDimensionlessUnit, window->data->length / 2 + 1);
 	fseries = XLALCreateCOMPLEX16FrequencySeries(tseries->name, &tseries->epoch, 0, 0, &lalDimensionlessUnit, window->data->length / 2 + 1);
-	plane = XLALCreateTFPlane(window->data->length, tseries->deltaT, flow, bandwidth, fractional_stride, maxTileBandwidth, maxTileDuration);
+	if(fplan)
+		plane = XLALCreateTFPlane(window->data->length, tseries->deltaT, flow, bandwidth, fractional_stride, maxTileBandwidth, maxTileDuration, fplan);
 	if(!fplan || !rplan || !psd || !fseries || !plane) {
 		errorcode = XLAL_EFUNC;
 		goto error;

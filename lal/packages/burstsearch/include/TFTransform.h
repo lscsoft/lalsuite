@@ -141,7 +141,8 @@ REAL8TimeFrequencyPlane *XLALCreateTFPlane(
 	REAL8 bandwidth,
 	REAL8 tiling_fractional_stride,
 	REAL8 tiling_max_bandwidth,
-	REAL8 tiling_max_duration
+	REAL8 tiling_max_duration,
+	const REAL8FFTPlan *plan
 );
 
 
