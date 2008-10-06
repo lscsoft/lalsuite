@@ -293,11 +293,11 @@ INT4 XLALEPGetTimingParameters(
  */
 
 
-/*
+/**
  * Compute the two-point spectral correlation function for the whitened
  * frequency series from the window applied to the original time series.
- * The indices of the output sequence are |k - k'|.  The window is, by
- * construction, an even function of the sample index, so the Fourier
+ * The indices of the output sequence are |k - k'|.  This function assumes
+ * the window is an even function of the sample index, so that its Fourier
  * transform is real-valued (contains only cosine components).
  *
  * If x_{j} is a stationary process then the components of its Fourier
@@ -311,49 +311,84 @@ INT4 XLALEPGetTimingParameters(
  * and depend only on |k - k'|.
  *
  * Given the window function w_{j}, this function computes and returns a
- * sequence containing <X_{k} X*_{k'}>.  The sequence is a one-dimensional
- * sequence whose indices are |k - k'|.  A straight-forward normalization
- * factor can be applied to convert this for use with a sequence x_{j}
- * whose Fourier transform does not have bins with equal mean square.
+ * sequence containing <X_{k} X*_{k'}>.  The sequence's indices are |k -
+ * k'|.  A straight-forward normalization factor can be applied to convert
+ * this for use with a sequence x_{j} whose Fourier transform does not have
+ * bins with equal mean square.
  *
- * The FFT plan is expected to be a forward plan whose length equals that
- * of the window.
+ * The FFT plan argument is must be a forward plan (time to frequency)
+ * whose length equals that of the window.  If the window has length N the
+ * return value is the address of a newly-allocated sequence of length
+ * floor(N/2 + 1), or NULL on error.
  */
 
 
-static REAL8Sequence *XLALREAL8TwoPointSpectralCorrelation(
+static REAL8Sequence *XLALREAL8WindowTwoPointSpectralCorrelation(
 	const REAL8Window *window,
 	const REAL8FFTPlan *plan
 )
 {
-	REAL8Sequence *w_squared = XLALCopyREAL8Sequence(window->data);
-	COMPLEX16Sequence *tmp = XLALCreateCOMPLEX16Sequence(window->data->length / 2 + 1);
-	REAL8Sequence *correlation = XLALCreateREAL8Sequence(window->data->length / 2 + 1);
+	static const char func[] = "XLALREAL8WindowTwoPointSpectralCorrelation";
+	REAL8Sequence *w2;
+	COMPLEX16Sequence *tilde_w2;
+	REAL8Sequence *correlation;
 	unsigned i;
 
-	if(!w_squared || !tmp || !correlation) {
-		XLALDestroyREAL8Sequence(w_squared);
-		XLALDestroyCOMPLEX16Sequence(tmp);
-		XLALDestroyREAL8Sequence(correlation);
-		return NULL;
+	if(window->sumofsquares <= 0)
+		XLAL_ERROR_NULL(func, XLAL_EDOM);
+
+	/*
+	 * Create a sequence to hold the normalized square of the window
+	 * and its Fourier transform.
+	 */
+
+	w2 = XLALCopyREAL8Sequence(window->data);
+	tilde_w2 = XLALCreateCOMPLEX16Sequence(window->data->length / 2 + 1);
+	if(!w2 || !tilde_w2) {
+		XLALDestroyREAL8Sequence(w2);
+		XLALDestroyCOMPLEX16Sequence(tilde_w2);
+		XLAL_ERROR_NULL(func, XLAL_EFUNC);
 	}
 
-	/* square and normalize the window */
-	for(i = 0; i < w_squared->length; i++)
-		w_squared->data[i] *= w_squared->data[i] / window->sumofsquares;
+	/*
+	 * Compute the normalized square of the window.
+	 */
 
-	/* Fourier transform */
-	if(XLALREAL8ForwardFFT(tmp, w_squared, plan)) {
-		XLALDestroyREAL8Sequence(correlation);
-		correlation = NULL;
-	} else {
-		/* extract real components */
-		for(i = 0; i < correlation->length; i++)
-			correlation->data[i] = tmp->data[i].re;
+	for(i = 0; i < w2->length; i++)
+		w2->data[i] *= w2->data[i] / window->sumofsquares;
+
+	/*
+	 * Fourier transform.
+	 */
+
+	if(XLALREAL8ForwardFFT(tilde_w2, w2, plan)) {
+		XLALDestroyREAL8Sequence(w2);
+		XLALDestroyCOMPLEX16Sequence(tilde_w2);
+		XLAL_ERROR_NULL(func, XLAL_EFUNC);
+	}
+	XLALDestroyREAL8Sequence(w2);
+
+	/*
+	 * Create space to hold the two-point correlation function.
+	 */
+
+	correlation = XLALCreateREAL8Sequence(tilde_w2->length);
+	if(!correlation) {
+		XLALDestroyCOMPLEX16Sequence(tilde_w2);
+		XLAL_ERROR_NULL(func, XLAL_EFUNC);
 	}
 
-	XLALDestroyREAL8Sequence(w_squared);
-	XLALDestroyCOMPLEX16Sequence(tmp);
+	/*
+	 * Extract real components from Fourier transform.
+	 */
+
+	for(i = 0; i < correlation->length; i++)
+		correlation->data[i] = tilde_w2->data[i].re;
+	XLALDestroyCOMPLEX16Sequence(tilde_w2);
+
+	/*
+	 * Done.
+	 */
 
 	return correlation;
 }
@@ -490,7 +525,10 @@ REAL8TimeFrequencyPlane *XLALCreateTFPlane(
 	channel_buffer = XLALCreateREAL8Sequence(tseries_length);
 	unwhitened_channel_buffer = XLALCreateREAL8Sequence(tseries_length);
 	tukey = XLALCreateTukeyREAL8Window(tseries_length, (tseries_length - tiling_length) / (double) tseries_length);
-	correlation = tukey ? XLALREAL8TwoPointSpectralCorrelation(tukey, plan) : NULL;
+	if(tukey)
+		correlation = XLALREAL8WindowTwoPointSpectralCorrelation(tukey, plan);
+	else
+		correlation = NULL;
 	if(!plane || !channel_data || !channel_buffer || !unwhitened_channel_buffer || !tukey || !correlation) {
 		XLALFree(plane);
 		if(channel_data)
