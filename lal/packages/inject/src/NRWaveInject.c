@@ -212,6 +212,7 @@ XLALCalculateNRStrain( REAL4TimeVectorSeries *strain, /**< h+, hx time series da
   htData->data = XLALCreateREAL4Vector( vecLength );
   if ( ! htData->data )
   {
+    LALFree( htData );
     XLAL_ERROR_NULL( "XLALCalculateNRStrain", XLAL_ENOMEM );
   }
 
@@ -788,6 +789,7 @@ void LALInjectStrainGW( LALStatus                 *status,
   REAL4TimeSeries *htData = NULL;
   UINT4  k;
   REAL8 offset;
+  InspiralApplyTaper taper = INSPIRAL_TAPER_NONE;
 
   INITSTATUS (status, "LALNRInject",  NRWAVEINJECTC);
   ATTATCHSTATUSPTR (status); 
@@ -798,6 +800,10 @@ void LALInjectStrainGW( LALStatus                 *status,
     
   /*compute strain for given sky location*/
   htData = XLALCalculateNRStrain( strain, thisInj, ifo, sampleRate );
+  if ( !htData )
+  {
+    ABORTXLAL( status );
+  }
 
   /* multiply the input data by dynRange */
   for ( k = 0 ; k < htData->data->length ; ++k )
@@ -809,9 +815,57 @@ void LALInjectStrainGW( LALStatus                 *status,
 
   XLALGPSAdd( &(htData->epoch), -offset);
 
+  
+  /* Taper the signal if required */
+  if ( strcmp( thisInj->taper, "TAPER_NONE" ) )
+  {
+
+    if ( ! strcmp( "TAPER_START", thisInj->taper ) )
+    {
+      taper = INSPIRAL_TAPER_START;
+    }
+    else if (  ! strcmp( "TAPER_END", thisInj->taper ) )
+    {
+      taper = INSPIRAL_TAPER_END;
+    }
+    else if (  ! strcmp( "TAPER_STARTEND", thisInj->taper ) )
+    {
+      taper = INSPIRAL_TAPER_STARTEND;
+    }
+    else
+    {
+      XLALPrintError( "Unsupported tapering type specified: %s\n", thisInj->taper );
+      XLALDestroyREAL4Vector ( htData->data);
+      LALFree(htData);
+      ABORT( status, NRWAVEINJECT_EVAL, NRWAVEINJECT_MSGEVAL );
+    }
+    if ( XLALInspiralWaveTaper( htData->data, taper ) == XLAL_FAILURE )
+    {
+      XLALClearErrno();
+      XLALDestroyREAL4Vector ( htData->data);
+      LALFree(htData);
+      ABORTXLAL( status );
+    }
+  }
+
+  /* Band-passing probably not as important for NR-type waveforms */
+  /* TODO: Implement if required at a later date */
+  if ( thisInj->bandpass )
+  {
+    XLALPrintError( "Band-passing not yet implemented for InjectStrainGW.\n" );
+    XLALDestroyREAL4Vector ( htData->data);
+    LALFree(htData);
+    ABORTXLAL( status );
+  }
+
   /* inject the htData into injection time stream */
-  TRY( LALSSInjectTimeSeries( status->statusPtr, injData, htData ),
-       status );
+  LALSSInjectTimeSeries( status->statusPtr, injData, htData );
+  BEGINFAIL( status )
+  {
+    XLALDestroyREAL4Vector ( htData->data);
+    LALFree( htData );
+  }
+  ENDFAIL( status );
   
   /* set channel name */
   LALSnprintf( injData->name, LIGOMETA_CHANNEL_MAX * sizeof( CHAR ),
@@ -851,6 +905,13 @@ void LALInjectStrainGWREAL8( LALStatus                 *status,
   memset( &det, 0, sizeof(LALDetector) );
   ifoNumber = XLALIFONumber( ifo );
   XLALReturnDetector( &det, ifoNumber );
+
+  /* Band-passing and tapering not yet implemented for REAL8 data */
+  if ( strcmp( thisInj->taper, "TAPER_NONE" ) || thisInj->bandpass )
+  {
+    XLALPrintError( "Tapering/band-passing of REAL8 injection currently unsupported\n" );
+    ABORT( status, NRWAVEINJECT_EVAL, NRWAVEINJECT_MSGEVAL );
+  }
 
   /* sampleRate = 1.0/strain->deltaT;   */
   /* use the sample rate required for the output time series */
