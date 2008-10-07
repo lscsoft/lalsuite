@@ -3312,7 +3312,7 @@ fprintf( a, "\n");\
 fprintf( a, "\n");\
 fprintf( a, "  --band-pass-template         Band-pass filter the time-domain inspiral template\n");\
 fprintf( a, "  --taper-template OPT         Taper the inspiral template using option OPT\n");\
-fprintf( a, "                                 (start|end|both) \n");\
+fprintf( a, "                                 (start|end|startend) \n");\
 fprintf( a, "\n");\
 fprintf( a, "  --enable-output              write the results to a LIGO LW XML file\n");\
 fprintf( a, "  --output-mask MASK           write the output sngl_inspiral table\n");\
@@ -4744,14 +4744,14 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         {
           taperTmplt = INSPIRAL_TAPER_END;
         }
-        else if ( !strcmp( "both", optarg ) )
+        else if ( !strcmp( "startend", optarg ) )
         {
-          taperTmplt = INSPIRAL_TAPER_BOTH;
+          taperTmplt = INSPIRAL_TAPER_STARTEND;
         }
         else
         {
           fprintf( stderr, "invalid argument to --%s:\n"
-              "Taper must be set to start, end or both:(%s specified)\n",
+              "Taper must be set to start, end or startend:(%s specified)\n",
               long_options[option_index].name, optarg );
           exit( 1 );
         }

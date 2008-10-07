@@ -46,7 +46,7 @@
  *  described above. In this case, instead of passing an integer to give the tapering
  *  method, we use one of the options in the \texttt{InspiralApplyTaper} enumeration.
  *  These options are \texttt{INSPIRAL\_TAPER\_START}, \texttt{INSPIRAL\_TAPER\_END}
- *  and \texttt{INSPIRAL\_TAPER\_BOTH}.
+ *  and \texttt{INSPIRAL\_TAPER\_STARTEND}.
  *
  *  \subsubsection*{Prototypes}
  *  \vspace{0.1in}
@@ -103,7 +103,7 @@ void LALInspiralWaveTaper(
   }
   else if ( bookends == 3 )
   {
-    taperType = INSPIRAL_TAPER_BOTH;
+    taperType = INSPIRAL_TAPER_STARTEND;
   }
   else
   {
@@ -229,7 +229,7 @@ int XLALInspiralWaveTaper(
     }     
   
     /* If requested search for second peak from end */
-    if( bookends == INSPIRAL_TAPER_END || bookends == INSPIRAL_TAPER_BOTH )
+    if( bookends == INSPIRAL_TAPER_END || bookends == INSPIRAL_TAPER_STARTEND )
     {    
       i = end - 1;
       flag = 0;

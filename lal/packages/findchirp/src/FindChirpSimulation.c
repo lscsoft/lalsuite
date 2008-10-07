@@ -385,9 +385,9 @@ LALFindChirpInjectSignals (
           {
               XLALInspiralWaveTaper( signal.data, INSPIRAL_TAPER_END );
           }
-          else if (  ! strcmp( "TAPER_BOTH", thisEvent->taper ) )
+          else if (  ! strcmp( "TAPER_STARTEND", thisEvent->taper ) )
           {
-              XLALInspiralWaveTaper( signal.data, INSPIRAL_TAPER_BOTH );
+              XLALInspiralWaveTaper( signal.data, INSPIRAL_TAPER_STARTEND );
           }
       }
 

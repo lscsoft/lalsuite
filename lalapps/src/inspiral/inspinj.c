@@ -304,7 +304,7 @@ static void print_usage(char *program)
       "\n"\
       "Tapering the injection waveform:\n"\
       "  [--taper-injection] OPT  Taper the inspiral template using option OPT\n"\
-      "                            (start|end|both) \n)"\
+      "                            (start|end|startend) \n)"\
       "  [--band-pass-injection]  sets the tapering method of the injected waveform\n"\
       "\n");
 }
@@ -1380,15 +1380,15 @@ int main( int argc, char *argv[] )
         {
             taperInj = INSPIRAL_TAPER_END;
         }
-        else if ( ! strcmp( "both", optarg ) )
+        else if ( ! strcmp( "startend", optarg ) )
         {
-            taperInj = INSPIRAL_TAPER_BOTH;
+            taperInj = INSPIRAL_TAPER_STARTEND;
         }
         else
         {
             fprintf( stderr, "invalid argument to --%s:\n"
                     "unknown option specified: %s\n"
-                    "(Must be one of start|end|both)\n",
+                    "(Must be one of start|end|startend)\n",
                     long_options[option_index].name, optarg );
         }
         this_proc_param = this_proc_param->next = 
@@ -1873,9 +1873,9 @@ int main( int argc, char *argv[] )
                  LALSnprintf( simTable->taper, LIGOMETA_WAVEFORM_MAX, 
                          "%s", "TAPER_END"); 
                  break;
-            case INSPIRAL_TAPER_BOTH:
+            case INSPIRAL_TAPER_STARTEND:
                  LALSnprintf( simTable->taper, LIGOMETA_WAVEFORM_MAX, 
-                         "%s", "TAPER_BOTH"); 
+                         "%s", "TAPER_STARTEND"); 
                  break;
             default: /* Never reach here */
                  fprintf( stderr, "unknown error while populating sim_inspiral taper options\n" );
