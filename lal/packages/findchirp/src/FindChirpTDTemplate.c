@@ -299,6 +299,7 @@ LALFindChirpTDTemplate (
     LALInspiralWave( status->statusPtr, params->xfacVec, tmplt );
     CHECKSTATUSPTR( status );
 
+
     /* template dependent normalization */
     fcTmplt->tmpltNorm  = 2 * tmplt->mu;
     fcTmplt->tmpltNorm *= 2 * LAL_MRSUN_SI / ( cannonDist * 1.0e6 * LAL_PC_SI );
@@ -362,8 +363,8 @@ LALFindChirpTDTemplate (
       bpVector.data   = params->xfacVec->data;
     }
 
-    if ( XLALBandPassInspiralTemplate( &bpVector, tmplt->fLower,
-                 tmplt->fFinal, sampleRate ) == XLAL_FAILURE )
+    if ( XLALBandPassInspiralTemplate( &bpVector, 0.95 * tmplt->fLower,
+                 1.02 * tmplt->fFinal, sampleRate ) == XLAL_FAILURE )
     {
       ABORTXLAL( status );
     } 
@@ -375,14 +376,44 @@ LALFindChirpTDTemplate (
       ABORTXLAL( status );
     }
 
-    memcpy( tmpxfac->data, xfac + ( numPoints + j ) / 2, 
-        ( numPoints - ( numPoints + j ) / 2 ) * sizeof( *xfac ) );
+    if ( params->approximant == EOBNR )
+    {
+      /* We need to do something slightly different for EOBNR */
+      UINT4 endIndx = (UINT4) (tmplt->tC * sampleRate);
 
-    memcpy( tmpxfac->data + numPoints - ( numPoints + j ) / 2, 
-                  xfac, ( numPoints + j ) / 2 * sizeof( *xfac ) );
+      memcpy( tmpxfac->data, xfac + ( numPoints - j ) / 2 + endIndx, 
+          ( numPoints - ( numPoints - j ) / 2 - endIndx ) * sizeof( *xfac ) );
+ 
+      memcpy( tmpxfac->data + numPoints - ( numPoints - j ) / 2 - endIndx, 
+                  xfac, ( ( numPoints - j ) / 2 + endIndx ) * sizeof( *xfac ) );
+    }
+    else 
+    {
+      memcpy( tmpxfac->data, xfac + ( numPoints + j ) / 2, 
+          ( numPoints - ( numPoints + j ) / 2 ) * sizeof( *xfac ) );
+
+      memcpy( tmpxfac->data + numPoints - ( numPoints + j ) / 2, 
+                    xfac, ( numPoints + j ) / 2 * sizeof( *xfac ) );
+    }
 
     memcpy( xfac, tmpxfac->data, numPoints * sizeof( *xfac ) );
 
+    XLALDestroyREAL4Vector( tmpxfac );
+    tmpxfac = NULL;
+  }
+  else if ( params->approximant == EOBNR )
+  {
+    /* For EOBNR we shift so that tC is at the end of the vector */
+    if ( ( tmpxfac = XLALCreateREAL4Vector( numPoints ) ) == NULL )
+    {
+      ABORTXLAL( status );
+    }
+    
+    /* Set the coalescence index depending on tC */
+    j = (UINT4) (tmplt->tC * sampleRate);
+    memcpy( tmpxfac->data + numPoints - j, xfac, j * sizeof( *xfac ) );
+    memcpy( tmpxfac->data, xfac + j, ( numPoints - j ) * sizeof( *xfac ) );
+    memcpy( xfac, tmpxfac->data, numPoints * sizeof( *xfac ) );
     XLALDestroyREAL4Vector( tmpxfac );
     tmpxfac = NULL;
   }
