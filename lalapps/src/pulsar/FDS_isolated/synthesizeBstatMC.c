@@ -42,7 +42,8 @@
 #include <gsl/gsl_blas.h>
 #include <gsl/gsl_permutation.h>
 #include <gsl/gsl_linalg.h>
-
+#include <gsl/gsl_rng.h>
+#include <gsl/gsl_randist.h>
 
 /* LAL-includes */
 #include <lal/AVFactories.h>
@@ -98,8 +99,8 @@
  * These are 'pre-processed' settings, which have been derived from the user-input.
  */
 typedef struct {
-  REAL8 aPlus, aCross;		/**< internally always use Aplus, Across */
   gsl_matrix *M_mu_nu;		/**< antenna-pattern matrix and normalization */
+  gsl_vector  *s_mu, *A_Mu;	/**< signal amplitude vectors */
 } ConfigVariables;
 
 /*---------- Global variables ----------*/
@@ -124,6 +125,8 @@ typedef struct {
   REAL8 Mmunu_A;	/**< componentent of A_mu: A */
   REAL8 Mmunu_B;	/**< componentent of A_mu: B */
   REAL8 Mmunu_C;	/**< componentent of A_mu: C */
+
+  INT4 numDraws;	/**< number of random 'draws' to simulate for F-stat and B-stat */
 
   CHAR *outputStats;	/**< output file to write F-stat estimation results into */
 
@@ -153,11 +156,17 @@ void InitCode ( LALStatus *, ConfigVariables *cfg, const UserInput_t *uvar );
 int main(int argc,char *argv[])
 {
   LALStatus status = blank_status;
-  REAL8 A1, A2, A3, A4;
-  gsl_vector  *x_mu, *A_Mu;
+  UserInput_t uvar = empty_UserInput;
+
+  gsl_matrix *M_chol;
   REAL8 rho2;
 
-  UserInput_t uvar = empty_UserInput;
+  gsl_vector *FStat, *BStat;
+  gsl_matrix *normal, *n_mu_i;
+
+  const gsl_rng_type * T;
+  gsl_rng * r;  /* gsl random-number generator */
+  UINT4 i, row, col;
 
   lalDebugLevel = 0;
   vrbflg = 1;	/* verbose error-messages */
@@ -184,62 +193,84 @@ int main(int argc,char *argv[])
   /* Initialize code-setup */
   LAL_CALL ( InitCode(&status, &GV, &uvar ), &status);
 
-  { /* Calculating the F-Statistic */
-    REAL8 aPlus  = GV.aPlus;
-    REAL8 aCross = GV.aCross;
-    REAL8 cos2psi = cos ( 2.0 * uvar.psi );
-    REAL8 sin2psi = sin ( 2.0 * uvar.psi );
-    REAL8 cosphi0 = cos ( uvar.phi0 );
-    REAL8 sinphi0 = sin ( uvar.phi0 );
-
-    REAL8 Ap2 = SQ(aPlus);
-    REAL8 Ac2 = SQ(aCross);
-    REAL8 cos2psi2 = SQ( cos2psi );
-    REAL8 sin2psi2 = SQ( sin2psi );
-    REAL8 al1, al2, al3;
-
-    if ( (A_Mu = gsl_vector_calloc ( 4 )) == NULL ) {
-      LogPrintf ( LOG_CRITICAL, "Out of memory?\n");
-      return 1;
-    }
-    if ( (x_mu = gsl_vector_calloc ( 4 )) == NULL ) {
-      LogPrintf ( LOG_CRITICAL, "Out of memory?\n");
-      return 1;
-    }
-
-    A1 =  aPlus * cos2psi * cosphi0 - aCross * sin2psi * sinphi0;
-    A2 =  aPlus * sin2psi * cosphi0 + aCross * cos2psi * sinphi0;
-    A3 = -aPlus * cos2psi * sinphi0 - aCross * sin2psi * cosphi0;
-    A4 = -aPlus * sin2psi * sinphi0 + aCross * cos2psi * cosphi0;
-
-    /* ----- fill vector A_Mu ----- */
-    gsl_vector_set (A_Mu, 0,   A1 );
-    gsl_vector_set (A_Mu, 1,   A2 );
-    gsl_vector_set (A_Mu, 2,   A3 );
-    gsl_vector_set (A_Mu, 3,   A4 );
-
-    /* GSL-doc: int gsl_blas_dsymv (CBLAS_UPLO_t Uplo, double alpha, const gsl_matrix * A,
-     *                              const gsl_vector * x, double beta, gsl_vector * y )
-     *
-     * compute the matrix-vector product and sum: y = alpha A x + beta y
-     * for the symmetric matrix A. Since the matrix A is symmetric only its
-     * upper half or lower half need to be stored. When Uplo is CblasUpper
-     * then the upper triangle and diagonal of A are used, and when Uplo
-     * is CblasLower then the lower triangle and diagonal of A are used.
-     */
-    gsl_blas_dsymv (CblasUpper, 1.0, GV.M_mu_nu, A_Mu, 0.0, x_mu);
-
-    al1 = Ap2 * cos2psi2 + Ac2 * sin2psi2;	/* A1^2 + A3^2 */
-    al2 = Ap2 * sin2psi2 + Ac2 * cos2psi2;	/* A2^2 + A4^2 */
-    al3 = ( Ap2 - Ac2 ) * sin(2.0*uvar.psi) * cos(2.0*uvar.psi);	/* A1 A2 + A3 A4 */
-
-    /* SNR^2 */
-    rho2 = uvar.Mmunu_A * al1 + uvar.Mmunu_B * al2 + 2.0 * uvar.Mmunu_C * al3 ;
+  if ( (FStat = gsl_vector_calloc ( uvar.numDraws ) ) == NULL) {
+    LogPrintf ( LOG_CRITICAL, "Out of memory?\n");
+    return 1;
+  }
+  if ( (BStat = gsl_vector_calloc ( uvar.numDraws ) ) == NULL) {
+    LogPrintf ( LOG_CRITICAL, "Out of memory?\n");
+    return 1;
+  }
+  if ( (normal = gsl_vector_calloc ( uvar.numDraws ) ) == NULL) {
+    LogPrintf ( LOG_CRITICAL, "Out of memory?\n");
+    return 1;
+  }
+  if ( ( n_mu_i = gsl_matrix_calloc ( uvar.numDraws, 4 ) ) == NULL ) {
+    LogPrintf ( LOG_CRITICAL, "Out of memory?\n");
+    return 1;
   }
 
-  fprintf(stdout, "\n%.1f\n", 0.5 * ( 4.0 + rho2 ) );
+  /* ----- compute Cholesky decomposition of M_mu_nu */
+  if ( (M_chol = gsl_matrix_calloc ( 4, 4 ) ) == NULL) {
+    LogPrintf ( LOG_CRITICAL, "Out of memory?\n");
+    return 1;
+  }
+  {
+    gsl_matrix *tmp;
+    if ( (tmp = gsl_matrix_calloc ( 4, 4 ) ) == NULL) {
+      LogPrintf ( LOG_CRITICAL, "Out of memory?\n");
+      return 1;
+    }
+    gsl_matrix_memcpy ( tmp, GV.M_mu_nu );
+    /* Cholesky decompose M_mu_nu = L^T * L */
+    gsl_linalg_cholesky_decomp ( tmp );
+    /* copy lower triangular matrix, which is L */
+    for ( row = 0; row < 4; row ++ )
+      for ( col = 0; col <= row; col ++ )
+	gsl_matrix_set ( M_chol, row, col, gsl_matrix_get ( tmp, row, col ) );
+    gsl_matrix_free ( tmp );
+  } /* Cholesky-decompose M_mu_nu */
 
-  /* output statistic-samples into file, if requested */
+
+  /* ----- generate 'numDraws' normal-distributed random numbers ----- */
+  /* initialize gsl random-number generator */
+  gsl_rng_env_setup();
+  T = gsl_rng_default;
+  r = gsl_rng_alloc (T);
+
+  printf ("generator type: %s\n", gsl_rng_name (r));
+  printf ("seed = %lu\n", gsl_rng_default_seed);
+  printf ("first value = %lu\n", gsl_rng_get (r));
+
+  /* generate 'numDraws' random number with normal distribution: mean=0, sigma=1 */
+  for ( i = 0; i < (UINT4)uvar.numDraws; i ++ )
+    {
+      gsl_matrix_set (normal, i, 0,  gsl_ran_gaussian ( r, 1.0 ) );
+      gsl_matrix_set (normal, i, 1,  gsl_ran_gaussian ( r, 1.0 ) );
+      gsl_matrix_set (normal, i, 2,  gsl_ran_gaussian ( r, 1.0 ) );
+      gsl_matrix_set (normal, i, 3,  gsl_ran_gaussian ( r, 1.0 ) );
+    }
+
+
+  /* use normal-variates with Cholesky decomposed matrix to get n_mu with cov(n_mu,n_nu) = M_mu_nu */
+  {
+    for ( i = 0; i < (UINT4)uvar.numDraws; i ++ )
+      {
+	gsl_vector_const_view normi = gsl_matrix_const_row ( normal, i );
+	gsl_vector_view ni = gsl_matrix_row ( n_mu_i, i );
+
+	/* int gsl_blas_dgemv (CBLAS_TRANSPOSE_t TransA, double alpha, const gsl_matrix * A, const gsl_vector * x, double beta, gsl_vector * y)
+	 * compute the matrix-vector product and sum y = \alpha op(A) x + \beta y, where op(A) = A, A^T, A^H
+	 * for TransA = CblasNoTrans, CblasTrans, CblasConjTrans.
+	 */
+	gsl_blas_dgemv (CblasTrans, 1.0, M_chol, &(normi.vector), 0.0, &(ni.vector));
+
+      }
+  }
+
+
+
+  /* output F-statistic and B-statistic samples into file, if requested */
   if (uvar.outputStats)
     {
       FILE *fpStat = NULL;
@@ -269,9 +300,9 @@ int main(int argc,char *argv[])
       fprintf (fpStat, "M_mu_nu = ");
       XLALfprintfGSLmatrix ( fpStat, "%f", GV.M_mu_nu );
       fprintf (fpStat, "x_mu = ");
-      XLALfprintfGSLvector ( fpStat, "%f", x_mu );
+      XLALfprintfGSLvector ( fpStat, "%f", GV.s_mu );
       fprintf (fpStat, "A_Mu = ");
-      XLALfprintfGSLvector ( fpStat, "%f", A_Mu );
+      XLALfprintfGSLvector ( fpStat, "%f", GV.A_Mu );
 
       fclose (fpStat);
     } /* if outputStat */
@@ -280,8 +311,14 @@ int main(int argc,char *argv[])
   LAL_CALL (LALDestroyUserVars (&status), &status);
 
   gsl_matrix_free ( GV.M_mu_nu );
-  gsl_vector_free ( x_mu );
-  gsl_vector_free ( A_Mu );
+  gsl_vector_free ( GV.s_mu );
+  gsl_vector_free ( GV.A_Mu );
+  gsl_vector_free ( FStat );
+  gsl_vector_free ( BStat );
+  gsl_matrix_free ( normal );
+  gsl_matrix_free ( n_mu_i );
+
+  gsl_rng_free (r);
 
   /* did we forget anything ? */
   LALCheckMemoryLeaks();
@@ -308,6 +345,8 @@ initUserVars (LALStatus *status, UserInput_t *uvar )
   uvar->phi0 = 0;
   uvar->psi = 0;
 
+  uvar->numDraws = 1;
+
   /* register all our user-variables */
   LALregBOOLUserStruct(status,	help, 		'h', UVAR_HELP,     "Print this message");
 
@@ -323,6 +362,8 @@ initUserVars (LALStatus *status, UserInput_t *uvar )
   LALregREALUserStruct(status,	Mmunu_B,	  0, UVAR_REQUIRED, "Antenna-pattern matrix M_mu_nu: component A");
   LALregREALUserStruct(status,	Mmunu_C,	  0, UVAR_REQUIRED, "Antenna-pattern matrix M_mu_nu: component A");
 
+  LALregINTUserStruct(status,	numDraws,	'N', UVAR_OPTIONAL, "Number of random 'draws' to simulate for F-stat and B-stat");
+
   LALregBOOLUserStruct(status,	version,        'V', UVAR_SPECIAL,   "Output code version");
 
   DETATCHSTATUSPTR (status);
@@ -335,12 +376,13 @@ initUserVars (LALStatus *status, UserInput_t *uvar )
 void
 InitCode ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
 {
+  REAL8 aPlus, aCross;		/* internally always use Aplus, Across */
+
   INITSTATUS (status, "InitCode", rcsid);
   ATTATCHSTATUSPTR (status);
 
   { /* Check user-input consistency */
     BOOLEAN have_h0, have_cosi, have_Ap, have_Ac;
-    REAL8 cosi = 0;
 
     have_h0 = LALUserVarWasSet ( &uvar->h0 );
     have_cosi = LALUserVarWasSet ( &uvar->cosi );
@@ -366,15 +408,94 @@ InitCode ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
     /* ----- internally we always use Aplus, Across */
     if ( have_h0 )
       {
-	cfg->aPlus = 0.5 * uvar->h0 * ( 1.0 + SQ( cosi) );
-	cfg->aCross = uvar->h0 * uvar->cosi;
+	aPlus = 0.5 * uvar->h0 * ( 1.0 + SQ( uvar->cosi) );
+	aCross = uvar->h0 * uvar->cosi;
       }
     else
       {
-	cfg->aPlus = uvar->aPlus;
-	cfg->aCross = uvar->aCross;
+	aPlus = uvar->aPlus;
+	aCross = uvar->aCross;
       }
   }/* check user-input */
+
+  /* ----- set up M_mu_nu matrix ----- */
+  if ( ( cfg->M_mu_nu = gsl_matrix_calloc ( 4, 4 )) == NULL )
+    {
+      LogPrintf (LOG_CRITICAL, "Seem to be out of memory!\n");
+      ABORT ( status, PREDICTFSTAT_EMEM, PREDICTFSTAT_MSGEMEM );
+    }
+  {
+    REAL8 Ad = uvar->Mmunu_A;
+    REAL8 Bd = uvar->Mmunu_B;
+    REAL8 Cd = uvar->Mmunu_C;
+
+    gsl_matrix_set (cfg->M_mu_nu, 0, 0,   Ad );
+    gsl_matrix_set (cfg->M_mu_nu, 1, 1,   Bd );
+    gsl_matrix_set (cfg->M_mu_nu, 0, 1,   Cd );
+    gsl_matrix_set (cfg->M_mu_nu, 1, 0,   Cd );
+
+    /*
+      gsl_matrix_set (cfg->M_mu_nu, 3, 0,   Ed );
+      gsl_matrix_set (cfg->M_mu_nu, 1, 2,  -Ed );
+    */
+
+    gsl_matrix_set (cfg->M_mu_nu, 2, 2,   Ad );
+    gsl_matrix_set (cfg->M_mu_nu, 3, 3,   Bd );
+    gsl_matrix_set (cfg->M_mu_nu, 2, 3,   Cd );
+    gsl_matrix_set (cfg->M_mu_nu, 3, 2,   Cd );
+
+    /*
+      gsl_matrix_set (cfg->M_mu_nu, 2, 1,  -Ed );
+      gsl_matrix_set (cfg->M_mu_nu, 3, 2,   Ed );
+    */
+  }
+
+
+  /* ----- generate signal amplitude vectors ---------- */
+  if ( (cfg->A_Mu = gsl_vector_calloc ( 4 )) == NULL ) {
+    LogPrintf ( LOG_CRITICAL, "Out of memory?\n");
+    ABORT ( status, PREDICTFSTAT_EMEM, PREDICTFSTAT_MSGEMEM );
+  }
+  if ( (cfg->s_mu = gsl_vector_calloc ( 4 )) == NULL ) {
+    LogPrintf ( LOG_CRITICAL, "Out of memory?\n");
+    ABORT ( status, PREDICTFSTAT_EMEM, PREDICTFSTAT_MSGEMEM );
+  }
+
+  /* get signal A^mu and s_mu */
+  {
+    REAL8 cos2psi = cos ( 2.0 * uvar->psi );
+    REAL8 sin2psi = sin ( 2.0 * uvar->psi );
+    REAL8 cosphi0 = cos ( uvar->phi0 );
+    REAL8 sinphi0 = sin ( uvar->phi0 );
+    REAL8 A1, A2, A3, A4;
+
+    A1 =  aPlus * cos2psi * cosphi0 - aCross * sin2psi * sinphi0;
+    A2 =  aPlus * sin2psi * cosphi0 + aCross * cos2psi * sinphi0;
+    A3 = -aPlus * cos2psi * sinphi0 - aCross * sin2psi * cosphi0;
+    A4 = -aPlus * sin2psi * sinphi0 + aCross * cos2psi * cosphi0;
+
+    /* ----- fill vector A_Mu ----- */
+    gsl_vector_set (cfg->A_Mu, 0,   A1 );
+    gsl_vector_set (cfg->A_Mu, 1,   A2 );
+    gsl_vector_set (cfg->A_Mu, 2,   A3 );
+    gsl_vector_set (cfg->A_Mu, 3,   A4 );
+
+    /* GSL-doc: int gsl_blas_dsymv (CBLAS_UPLO_t Uplo, double alpha, const gsl_matrix * A,
+     *                              const gsl_vector * x, double beta, gsl_vector * y )
+     *
+     * compute the matrix-vector product and sum: y = alpha A x + beta y
+     * for the symmetric matrix A. Since the matrix A is symmetric only its
+     * upper half or lower half need to be stored. When Uplo is CblasUpper
+     * then the upper triangle and diagonal of A are used, and when Uplo
+     * is CblasLower then the lower triangle and diagonal of A are used.
+     */
+    gsl_blas_dsymv (CblasUpper, 1.0, cfg->M_mu_nu, cfg->A_Mu, 0.0, cfg->s_mu);
+  }
+
+
+
+
+
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
