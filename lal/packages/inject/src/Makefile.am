@@ -3,7 +3,6 @@ noinst_LTLIBRARIES = libinject.la
 libinject_la_SOURCES =	\
 	GetInspiralParams.c		GeneratePPNInspiral.c \
 	GeneratePPNAmpCorInspiral.c \
-	GeneratePPNAmpTruncInspiral.c \
 	GenerateSpinOrbitCW.c		GenerateEllipticSpinOrbitCW.c \
 	GenerateParabolicSpinOrbitCW.c	GenerateHyperbolicSpinOrbitCW.c \
 	GenerateTaylorCW.c		SimulateCoherentGW.c \
