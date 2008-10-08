@@ -3437,7 +3437,7 @@ find_files (const CHAR *globdir)
       
       /* First we separate the globdir into directory-path and file-pattern */
 
-#ifndef _MSC_VER
+#ifndef _WIN32
 #define DIR_SEPARATOR '/'
 #else
 #define DIR_SEPARATOR '\\'
