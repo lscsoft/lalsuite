@@ -68,6 +68,21 @@ int TDFini(
     FindChirpDataParams  **tdDataParams
     );
 
+int Init(
+    FindChirpTmpltParams **TmpltParams,
+    FindChirpDataParams  **DataParams,
+    FindChirpInitParams   *initParams,
+    REAL4 srate,
+    REAL4 fmin,
+    REAL4 dynRange,
+    UINT4 trunc
+    );
+
+int Fini(
+    FindChirpTmpltParams **TmpltParams,
+    FindChirpDataParams  **DataParams
+    );
+
 int SPFilter(
     DataSegmentVector *dataSegVec,
     REAL4 mass1,
