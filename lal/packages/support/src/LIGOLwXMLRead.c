@@ -2638,7 +2638,7 @@ SummValueTableFromLIGOLw (
   if ( mioStatus )
   {
     fprintf( stderr, 
-        "warning: unable to opening summ_value table from file %s\n", 
+        "warning: unable to open summ_value table from file %s\n", 
         fileName );
     return -1;
   }
