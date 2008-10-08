@@ -100,6 +100,7 @@
  */
 typedef struct {
   gsl_matrix *M_mu_nu;		/**< antenna-pattern matrix and normalization */
+  gsl_matrix *M_Mu_Nu;		/**< matrix invsers M^{mu,nu} of M_{mu,nu} */
   gsl_vector  *A_Mu;		/**< signal amplitude vector */
 } ConfigVariables;
 
@@ -159,17 +160,21 @@ int main(int argc,char *argv[])
   UserInput_t uvar = empty_UserInput;
 
   gsl_matrix *M_chol;
-  REAL8 rho2;
 
-  gsl_vector *s_mu, *FStat, *BStat;
-  gsl_matrix *normal, *n_mu_i;
+  gsl_vector *s_mu, *FStat, *BStat, *lnL;
+  gsl_matrix *normal, *x_mu_i;
 
   const gsl_rng_type * T;
   gsl_rng * r;  /* gsl random-number generator */
   UINT4 i, row, col;
+  int gslstat;
+  REAL8 rho2;	/* optimal SNR^2 */
 
   lalDebugLevel = 0;
   vrbflg = 1;	/* verbose error-messages */
+
+  /* turn off default GSL error handler */
+  gsl_set_error_handler_off ();
 
   /* set LAL error-handler */
   lal_errhandler = LAL_ERR_EXIT;
@@ -204,9 +209,15 @@ int main(int argc,char *argv[])
       LogPrintf ( LOG_CRITICAL, "Out of memory?\n");
       return 1;
     }
-    gsl_matrix_memcpy ( tmp, GV.M_mu_nu );
+    if ( (gslstat = gsl_matrix_memcpy ( tmp, GV.M_mu_nu )) ) {
+      LogPrintf ( LOG_CRITICAL, "gsl_matrix_memcpy() failed: %s\n", gsl_strerror (gslstat) );
+      return 1;
+    }
     /* Cholesky decompose M_mu_nu = L^T * L */
-    gsl_linalg_cholesky_decomp ( tmp );
+    if ( (gslstat = gsl_linalg_cholesky_decomp ( tmp ) ) ) {
+      LogPrintf ( LOG_CRITICAL, "gsl_linalg_cholesky_decomp(M_mu_nu) failed: %s\n", gsl_strerror (gslstat) );
+      return 1;
+    }
     /* copy lower triangular matrix, which is L */
     for ( row = 0; row < 4; row ++ )
       for ( col = 0; col <= row; col ++ )
@@ -214,6 +225,25 @@ int main(int argc,char *argv[])
     gsl_matrix_free ( tmp );
   } /* Cholesky-decompose M_mu_nu */
 
+
+  /* compute signal components s_mu (simply A^mu with index lowered via M_mu_nu) */
+  if ( (s_mu = gsl_vector_calloc ( 4 )) == NULL ) {
+    LogPrintf ( LOG_CRITICAL, "Out of memory?\n");
+    return 1;
+  }
+  /* GSL-doc: int gsl_blas_dsymv (CBLAS_UPLO_t Uplo, double alpha, const gsl_matrix * A,
+   *                              const gsl_vector * x, double beta, gsl_vector * y )
+   *
+   * compute the matrix-vector product and sum: y = alpha A x + beta y
+   * for the symmetric matrix A. Since the matrix A is symmetric only its
+   * upper half or lower half need to be stored. When Uplo is CblasUpper
+   * then the upper triangle and diagonal of A are used, and when Uplo
+   * is CblasLower then the lower triangle and diagonal of A are used.
+   */
+  if ( (gslstat = gsl_blas_dsymv (CblasUpper, 1.0, GV.M_mu_nu, GV.A_Mu, 0.0, s_mu)) ) {
+    LogPrintf ( LOG_CRITICAL, "gsl_blas_dsymv(M_mu_nu * A^mu failed): %s\n", gsl_strerror (gslstat) );
+    return 1;
+  }
 
   /* ----- generate 'numDraws' normal-distributed random numbers ----- */
   /* initialize gsl random-number generator */
@@ -238,58 +268,101 @@ int main(int argc,char *argv[])
       gsl_matrix_set (normal, i, 3,  gsl_ran_gaussian ( r, 1.0 ) );
     }
 
-
   /* use normal-variates with Cholesky decomposed matrix to get n_mu with cov(n_mu,n_nu) = M_mu_nu */
-  if ( ( n_mu_i = gsl_matrix_calloc ( uvar.numDraws, 4 ) ) == NULL ) {
+  if ( ( x_mu_i = gsl_matrix_calloc ( uvar.numDraws, 4 ) ) == NULL ) {
     LogPrintf ( LOG_CRITICAL, "Out of memory?\n");
     return 1;
   }
-  /* FILE *fpTemp = fopen ( "__tmp.dat", "wb" ); */
+  /*
+  FILE *fpTemp = fopen ( "__tmp.dat", "wb" );
+  */
   for ( i = 0; i < (UINT4)uvar.numDraws; i ++ )
     {
       gsl_vector_const_view normi = gsl_matrix_const_row ( normal, i );
-      gsl_vector_view ni = gsl_matrix_row ( n_mu_i, i );
+      gsl_vector_view xi = gsl_matrix_row ( x_mu_i, i );
+
+      gsl_matrix_set_row (x_mu_i, i, s_mu);	/* initialize x_mu = s_mu */
 
       /* int gsl_blas_dgemv (CBLAS_TRANSPOSE_t TransA, double alpha, const gsl_matrix * A, const gsl_vector * x, double beta, gsl_vector * y)
        * compute the matrix-vector product and sum y = \alpha op(A) x + \beta y, where op(A) = A, A^T, A^H
        * for TransA = CblasNoTrans, CblasTrans, CblasConjTrans.
        */
-      gsl_blas_dgemv (CblasNoTrans, 1.0, M_chol, &(normi.vector), 0.0, &(ni.vector));
+      if ( (gslstat = gsl_blas_dgemv (CblasNoTrans, 1.0, M_chol, &(normi.vector), 1.0, &(xi.vector))) ) {
+	LogPrintf ( LOG_CRITICAL, "gsl_blas_dgemv(M_chol * ni) failed: %s\n", gsl_strerror (gslstat) );
+	return 1;
+      }
       /*
-	fprintf ( fpTemp, "%f  %f  %f  %f\n",
-	gsl_matrix_get ( n_mu_i, i, 0 ),
-	gsl_matrix_get ( n_mu_i, i, 1 ),
-	gsl_matrix_get ( n_mu_i, i, 2 ),
-	gsl_matrix_get ( n_mu_i, i, 3 ) );
+      fprintf ( fpTemp, "%f  %f  %f  %f\n",
+	gsl_matrix_get ( x_mu_i, i, 0 ),
+	gsl_matrix_get ( x_mu_i, i, 1 ),
+	gsl_matrix_get ( x_mu_i, i, 2 ),
+	gsl_matrix_get ( x_mu_i, i, 3 ) );
       */
     }
-  /* fclose ( fpTemp ); */
+  /*
+  fclose ( fpTemp );
+  */
 
-
-  /* compute signal components s_mu (simply A^mu with index lowered via M_mu_nu) */
-  if ( (s_mu = gsl_vector_calloc ( 4 )) == NULL ) {
-    LogPrintf ( LOG_CRITICAL, "Out of memory?\n");
-    return 1;
-  }
-  /* GSL-doc: int gsl_blas_dsymv (CBLAS_UPLO_t Uplo, double alpha, const gsl_matrix * A,
-   *                              const gsl_vector * x, double beta, gsl_vector * y )
-   *
-   * compute the matrix-vector product and sum: y = alpha A x + beta y
-   * for the symmetric matrix A. Since the matrix A is symmetric only its
-   * upper half or lower half need to be stored. When Uplo is CblasUpper
-   * then the upper triangle and diagonal of A are used, and when Uplo
-   * is CblasLower then the lower triangle and diagonal of A are used.
+  /* ---------- compute log likelihood ratio lnL ---------- */
+  /* this assumes *known* A^Mu of course
+   * computes lnL = A^mu x_mu - 1/2 A^mu M_mu_nu A^nu
+   *              = A^mu x_mu - 1/2 A^mu s_mu
    */
-  gsl_blas_dsymv (CblasUpper, 1.0, GV.M_mu_nu, GV.A_Mu, 0.0, s_mu);
+  {
+    if ( (lnL = gsl_vector_calloc ( uvar.numDraws ) ) == NULL) {
+      LogPrintf ( LOG_CRITICAL, "Out of memory?\n");
+      return 1;
+    }
+
+    /* STEP 1: compute A^mu x_mu (--> vector of numDraws scalars)*/
+
+    /* Function: int gsl_blas_dgemv (CBLAS_TRANSPOSE_t TransA, double alpha, const gsl_matrix * A, const gsl_vector * x, double beta, gsl_vector * y)
+     *
+     * These functions compute the matrix-vector product and sum y = \alpha op(A) x + \beta y,
+     * where op(A) = A, A^T, A^H for TransA = CblasNoTrans, CblasTrans, CblasConjTrans.
+     */
+    if ( (gslstat = gsl_blas_dgemv (CblasNoTrans, 1.0, x_mu_i, GV.A_Mu, 0.0, lnL)) ) {
+      LogPrintf ( LOG_CRITICAL, "gsl_blas_dgemv(x_mu_i * A^mu) failed: %s\n", gsl_strerror (gslstat) );
+      return 1;
+    }
+
+    /* STEP 2: compute the single scalar "optimal SNR^2": rho2 = A^mu M_mu_nu A^nu = A^mu s_mu */
+
+    /* Function: int gsl_blas_ddot (const gsl_vector * x, const gsl_vector * y, double * result)
+     *
+     * These functions compute the scalar product x^T y for the vectors x and y, returning the result in result.
+     */
+    if ( (gslstat = gsl_blas_ddot (GV.A_Mu, s_mu, &rho2)) ) {
+      LogPrintf ( LOG_CRITICAL, "rho2 = gsl_blas_ddot(A^mu * s_mu) failed: %s\n", gsl_strerror (gslstat) );
+      return 1;
+    }
+
+    /* STEP 3: combine results for lnL = A^mu x_mu - 1/2 A^mu M_mu_nu A^nu */
+    /* Function: int gsl_vector_add_constant (gsl_vector * a, const double x)
+     *
+     * This function adds the constant value x to the elements of the vector a, a'_i = a_i + x.
+     */
+    if ( ( gslstat = gsl_vector_add_constant (lnL, - 0.5 * rho2)) ) {
+      LogPrintf ( LOG_CRITICAL, "gsl_vector_add_constant(lnL - 1/2 A^mu s_mu) failed: %s\n", gsl_strerror (gslstat) );
+      return 1;
+    }
+
+  } /* compute lnL */
 
 
 
+  /* ---------- compute F-stat values ---------- */
+  {
+    /* int gsl_blas_dtrsv (CBLAS_UPLO_t Uplo, CBLAS_TRANSPOSE_t TransA, CBLAS_DIAG_t Diag, const gsl_matrix * A, gsl_vector * x)
+     *
+     * These functions compute inv(op(A)) x for x, where op(A) = A, A^T, A^H for TransA = CblasNoTrans, CblasTrans, CblasConjTrans.
+     * When Uplo is CblasUpper then the upper triangle of A is used, and when Uplo is CblasLower then the lower triangle of A is used.
+     * If Diag is CblasNonUnit then the diagonal of the matrix is used, but if Diag is CblasUnit then the diagonal elements of the matrix A
+     * are taken as unity and are not referenced.
+     */
 
 
-
-
-
-
+  } /* compute F-stat draws */
 
 
   if ( (FStat = gsl_vector_calloc ( uvar.numDraws ) ) == NULL) {
@@ -326,15 +399,22 @@ int main(int argc,char *argv[])
       LALFree ( id1 ); LALFree ( id2 );
 
       /* append 'dataSummary' */
-      fprintf (fpStat, "%%%% E[2F]   sigma[2F] \n");
-      fprintf (fpStat, "twoF_expected = %g;\n", 4.0 + rho2);
-      fprintf (fpStat, "twoF_sigma    = %g;\n", sqrt( 4.0 * ( 2.0 + rho2 ) ) );
-      fprintf (fpStat, "M_mu_nu = ");
-      XLALfprintfGSLmatrix ( fpStat, "%f", GV.M_mu_nu );
-      fprintf (fpStat, "x_mu = ");
+      fprintf (fpStat, "%%%% rho2 = %f\n", rho2 );
+      fprintf (fpStat, "%%%% s_mu = ");
       XLALfprintfGSLvector ( fpStat, "%f", s_mu );
-      fprintf (fpStat, "A_Mu = ");
+      fprintf (fpStat, "%%%% A_Mu = ");
       XLALfprintfGSLvector ( fpStat, "%f", GV.A_Mu );
+      fprintf (fpStat, "%%%% x_1 x_2 x_3 x_4      lnL    2F      B\n");
+      for ( i=0; i < (UINT4)uvar.numDraws; i ++ )
+	fprintf ( fpStat, "%f %f %f %f     %f     %f     %f\n",
+		  gsl_matrix_get ( x_mu_i, i, 0 ),
+		  gsl_matrix_get ( x_mu_i, i, 1 ),
+		  gsl_matrix_get ( x_mu_i, i, 2 ),
+		  gsl_matrix_get ( x_mu_i, i, 3 ),
+
+		  gsl_vector_get ( lnL, i ),
+		  gsl_vector_get ( FStat, i ),
+		  gsl_vector_get ( BStat, i ) );
 
       fclose (fpStat);
     } /* if outputStat */
@@ -345,10 +425,11 @@ int main(int argc,char *argv[])
   gsl_matrix_free ( GV.M_mu_nu );
   gsl_vector_free ( s_mu );
   gsl_vector_free ( GV.A_Mu );
+  gsl_vector_free ( lnL );
   gsl_vector_free ( FStat );
   gsl_vector_free ( BStat );
   gsl_matrix_free ( normal );
-  gsl_matrix_free ( n_mu_i );
+  gsl_matrix_free ( x_mu_i );
 
   gsl_rng_free (r);
 
@@ -395,6 +476,8 @@ initUserVars (LALStatus *status, UserInput_t *uvar )
   LALregREALUserStruct(status,	Mmunu_C,	  0, UVAR_REQUIRED, "Antenna-pattern matrix M_mu_nu: component A");
 
   LALregINTUserStruct(status,	numDraws,	'N', UVAR_OPTIONAL, "Number of random 'draws' to simulate for F-stat and B-stat");
+
+  LALregSTRINGUserStruct(status, outputStats,	'o', UVAR_OPTIONAL, "Output filename containing random draws of lnL, 2F and B");
 
   LALregBOOLUserStruct(status,	version,        'V', UVAR_SPECIAL,   "Output code version");
 
@@ -451,11 +534,10 @@ InitCode ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
   }/* check user-input */
 
   /* ----- set up M_mu_nu matrix ----- */
-  if ( ( cfg->M_mu_nu = gsl_matrix_calloc ( 4, 4 )) == NULL )
-    {
-      LogPrintf (LOG_CRITICAL, "Seem to be out of memory!\n");
-      ABORT ( status, PREDICTFSTAT_EMEM, PREDICTFSTAT_MSGEMEM );
-    }
+  if ( ( cfg->M_mu_nu = gsl_matrix_calloc ( 4, 4 )) == NULL ) {
+    LogPrintf (LOG_CRITICAL, "Seem to be out of memory!\n");
+    ABORT ( status, PREDICTFSTAT_EMEM, PREDICTFSTAT_MSGEMEM );
+  }
   {
     REAL8 Ad = uvar->Mmunu_A;
     REAL8 Bd = uvar->Mmunu_B;
@@ -481,7 +563,6 @@ InitCode ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
       gsl_matrix_set (cfg->M_mu_nu, 3, 2,   Ed );
     */
   }
-
 
   /* ----- generate signal amplitude vectors ---------- */
   if ( (cfg->A_Mu = gsl_vector_calloc ( 4 )) == NULL ) {
