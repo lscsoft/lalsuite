@@ -21,6 +21,7 @@ Provides the necessary function to test the AmpCorPPN filter.
 #include <lal/LALInspiral.h>
 #include <lal/FindChirp.h>
 #include <lal/FindChirpSP.h>
+#include <lal/FindChirpTD.h>
 #include "FindChirpTDTest.h"
 
 #include <lal/LALRCSID.h>
@@ -59,9 +60,9 @@ int main( void )
   FindChirpSegmentVector *fcSegVec      = NULL;
   DataSegmentVector      *dataSegVec    = NULL;
 
-  /* these are required for SPFilter(); they are created by SPInit() */
-  FindChirpTmpltParams *spTmpltParams = NULL;
-  FindChirpDataParams  *spDataParams  = NULL;
+  /* these are required for filtering; they are created by Init() */
+  FindChirpTmpltParams *tmpltParams = NULL;
+  FindChirpDataParams  *dataParams  = NULL;
 
   
   /* set initialization parameters */
@@ -72,7 +73,7 @@ int main( void )
   initParams.createRhosqVec = 1;
 
 
-  /* create generic objects needed by both SP and TD filters */
+  /* create objects needed by  filters */
   Start( &dataSegVec, &filterInput, &filterParams, &fcSegVec, &initParams );
 
 
@@ -111,23 +112,24 @@ int main( void )
 
 
   /*
-   * initialize the SP-specific parameters
+   * initialize specific parameters
    */
 
   initParams.approximant = AmpCorPPN;
   initParams.numPoints = dataSegVec->data->chan->data->length;
 
-  SPInit( &spTmpltParams, &spDataParams, &initParams, srate, fmin, dynRange,								     invSpecTrunc );
+  Init( &tmpltParams, &dataParams, &initParams, srate, fmin, dynRange,								     invSpecTrunc );
 
 
   for(i = 0; i < dataSegVec->data->chan->data->length; i++)
-    spTmpltParams->PTFQ->data[i] = dataSegVec->data->chan->data->data[i];
+    tmpltParams->PTFQ->data[i] = dataSegVec->data->chan->data->data[i];
 
-  spTmpltParams->taperTmplt = INSPIRAL_TAPER_NONE;
+  tmpltParams->taperTmplt = INSPIRAL_TAPER_NONE;
 
+  fprintf( stderr, "Testing AmpCorTemplate...\n" );
 
   LALFindChirpAmpCorTemplate( &status, filterInput->fcTmplt, &mytmplt, 
-                                                             spTmpltParams  );
+                                                             tmpltParams  );
 
   harm1 = fopen("harm1.dat", "w");
   for(i=0; i < filterInput->fcTmplt->PTFQtilde->vectorLength; i++ )  
@@ -153,19 +155,32 @@ int main( void )
   fclose(harm3);
 
 
+
+  LALFindChirpTDData( &status, fcSegVec, dataSegVec, dataParams );
+
+  filterInput->segment = fcSegVec->data;
+
+  fprintf( stderr, "Testing AmpCorNormalize...\n" );
+  LALFindChirpAmpCorNormalize( &status, filterInput->fcTmplt, 
+                               filterInput->segment, dataParams );
+
   Stop( &dataSegVec, &filterInput, &filterParams, &fcSegVec, numChisqBins );
-  SPFini( &spTmpltParams, &spDataParams );
+  Fini( &tmpltParams, &dataParams );
 
   initParams.approximant = GeneratePPN;
 
+
+
+
+  fprintf( stderr, "Testing TDTemplate with same template...\n" );
   Start( &dataSegVec, &filterInput, &filterParams, &fcSegVec, &initParams );
   MakeData( dataSegVec, mass1, mass2, srate, fmin, fmax );
-  SPInit( &spTmpltParams, &spDataParams, &initParams, srate, fmin, dynRange,								     invSpecTrunc );
+  Init( &tmpltParams, &dataParams, &initParams, srate, fmin, dynRange,								     invSpecTrunc );
   for(i = 0; i < dataSegVec->data->chan->data->length; i++)
-    spTmpltParams->xfacVec->data[i] = dataSegVec->data->chan->data->data[i];
+    tmpltParams->xfacVec->data[i] = dataSegVec->data->chan->data->data[i];
 
   LALFindChirpTDTemplate( &status, filterInput->fcTmplt, &mytmplt,
-                                                               spTmpltParams );
+                                                               tmpltParams );
 
 
   /* clean up memory and exit */
@@ -175,7 +190,7 @@ int main( void )
 
 
 
-  SPFini( &spTmpltParams, &spDataParams );
+  Fini( &tmpltParams, &dataParams );
   LALCheckMemoryLeaks();
   return 0;
 }
@@ -248,16 +263,16 @@ int Stop(
 
 /*
  *
- * SPInit(), SPFini()
+ * Init(), Fini()
  *
- * SPInit() creates and initializes various structures needed for SP filtering.
- * SPFini() destroys the allocated memory.
+ * Init() creates and initializes various structures needed for filtering.
+ * Fini() destroys the allocated memory.
  *
  */
 
-int SPInit(
-    FindChirpTmpltParams **spTmpltParams,
-    FindChirpDataParams  **spDataParams,
+int Init(
+    FindChirpTmpltParams **tmpltParams,
+    FindChirpDataParams  **dataParams,
     FindChirpInitParams     *initParams,
     REAL4 srate,
     REAL4 fmin,
@@ -265,33 +280,33 @@ int SPInit(
     UINT4 trunc
     )
 {
-  LALFindChirpTemplateInit( &status, spTmpltParams, initParams );
+  LALFindChirpTemplateInit( &status, tmpltParams, initParams );
   TEST_STATUS( &status );
 
-  (*spTmpltParams)->deltaT   = 1 / srate;
-  (*spTmpltParams)->fLow     = fmin;
-  (*spTmpltParams)->dynRange = dynRange;
+  (*tmpltParams)->deltaT   = 1 / srate;
+  (*tmpltParams)->fLow     = fmin;
+  (*tmpltParams)->dynRange = dynRange;
 
-  LALFindChirpDataInit( &status, spDataParams, initParams );
+  LALFindChirpDataInit( &status, dataParams, initParams );
   TEST_STATUS( &status );
 
-  (*spDataParams)->fLow         = fmin;
-  (*spDataParams)->dynRange     = dynRange;
-  (*spDataParams)->invSpecTrunc = trunc;
+  (*dataParams)->fLow         = fmin;
+  (*dataParams)->dynRange     = dynRange;
+  (*dataParams)->invSpecTrunc = trunc;
 
 
   return 0;
 }
 
-int SPFini(
-    FindChirpTmpltParams **spTmpltParams,
-    FindChirpDataParams  **spDataParams
+int Fini(
+    FindChirpTmpltParams **tmpltParams,
+    FindChirpDataParams  **dataParams
     )
 {
-  LALFindChirpTemplateFinalize( &status, spTmpltParams );
+  LALFindChirpTemplateFinalize( &status, tmpltParams );
   TEST_STATUS( &status );
 
-  LALFindChirpDataFinalize( &status, spDataParams );
+  LALFindChirpDataFinalize( &status, dataParams );
   TEST_STATUS( &status );
 
   return 0;
