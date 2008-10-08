@@ -349,26 +349,75 @@ int main(int argc,char *argv[])
 
   } /* compute lnL */
 
-
-
   /* ---------- compute F-stat values ---------- */
   {
-    /* int gsl_blas_dtrsv (CBLAS_UPLO_t Uplo, CBLAS_TRANSPOSE_t TransA, CBLAS_DIAG_t Diag, const gsl_matrix * A, gsl_vector * x)
+    int sig;
+    gsl_vector *x_Mu = gsl_vector_alloc ( 4 );
+    gsl_permutation *perm = gsl_permutation_calloc ( 4 );
+    gsl_matrix *Mmunu_LU = gsl_matrix_calloc ( 4, 4 );
+    gsl_matrix_memcpy (Mmunu_LU, GV.M_mu_nu);
+
+    if ( (FStat = gsl_vector_calloc ( uvar.numDraws ) ) == NULL) {
+      LogPrintf ( LOG_CRITICAL, "Out of memory?\n");
+      return 1;
+    }
+
+    /* Function: int gsl_linalg_LU_decomp (gsl_matrix * A, gsl_permutation * p, int * signum)
      *
-     * These functions compute inv(op(A)) x for x, where op(A) = A, A^T, A^H for TransA = CblasNoTrans, CblasTrans, CblasConjTrans.
-     * When Uplo is CblasUpper then the upper triangle of A is used, and when Uplo is CblasLower then the lower triangle of A is used.
-     * If Diag is CblasNonUnit then the diagonal of the matrix is used, but if Diag is CblasUnit then the diagonal elements of the matrix A
-     * are taken as unity and are not referenced.
+     * These functions factorize the square matrix A into the LU decomposition PA = LU.
+     * On output the diagonal and upper triangular part of the input matrix A contain the matrix U. The lower
+     * triangular part of the input matrix (excluding the diagonal) contains L. The diagonal elements of L are
+     * unity, and are not stored. The permutation matrix P is encoded in the permutation p. The j-th column of
+     * the matrix P is given by the k-th column of the identity matrix, where k = p_j the j-th element of the
+     * permutation vector. The sign of the permutation is given by signum. It has the value (-1)^n, where n is
+     * the number of interchanges in the permutation.
+     * The algorithm used in the decomposition is Gaussian Elimination with partial pivoting
+     * (Golub & Van Loan, Matrix Computations, Algorithm 3.4.1).
      */
+    if( (gslstat = gsl_linalg_LU_decomp (Mmunu_LU, perm, &sig)) ) {
+      LogPrintf ( LOG_CRITICAL, "gsl_linalg_LU_decomp (Mmunu) failed: %s\n", gsl_strerror (gslstat) );
+      return 1;
+    }
 
+    for ( i=0; i < (UINT4)uvar.numDraws; i ++ )
+      {
+	gsl_vector_const_view xi = gsl_matrix_const_row ( x_mu_i, i );
+	double x2;
 
+	/* STEP 1: compute x^mu = M^{mu,nu} x_nu */
+
+	/* Function: int gsl_linalg_LU_solve (const gsl_matrix * LU, const gsl_permutation * p, const gsl_vector * b, gsl_vector * x)
+	 *
+	 * These functions solve the square system A x = b using the LU decomposition of A into (LU, p) given by
+	 * gsl_linalg_LU_decomp or gsl_linalg_complex_LU_decomp.
+	 */
+	if ( (gslstat = gsl_linalg_LU_solve (Mmunu_LU, perm, &(xi.vector), x_Mu)) ) {
+	  LogPrintf ( LOG_CRITICAL, "gsl_linalg_LU_solve (x^Mu = M^{mu,nu} x_nu) failed: %s\n", gsl_strerror (gslstat) );
+	  return 1;
+	}
+
+	/* STEP 2: compute scalar product x_mu x^mu */
+
+	/* Function: int gsl_blas_ddot (const gsl_vector * x, const gsl_vector * y, double * result)
+	 *
+	 * These functions compute the scalar product x^T y for the vectors x and y, returning the result in result.
+	 */
+	if ( (gslstat = gsl_blas_ddot (&(xi.vector), x_Mu, &x2)) ) {
+	  LogPrintf ( LOG_CRITICAL, "i = %d: int gsl_blas_ddot (x_mu x^mu) failed: %s\n", i, gsl_strerror (gslstat) );
+	  return 1;
+	}
+
+	/* write result into FStat (=2F) vector */
+	gsl_vector_set ( FStat, i, x2 );
+
+      } /* for i < numDraws */
+
+    gsl_permutation_free ( perm );
+    gsl_matrix_free ( Mmunu_LU );
+    gsl_vector_free ( x_Mu );
   } /* compute F-stat draws */
 
 
-  if ( (FStat = gsl_vector_calloc ( uvar.numDraws ) ) == NULL) {
-    LogPrintf ( LOG_CRITICAL, "Out of memory?\n");
-    return 1;
-  }
   if ( (BStat = gsl_vector_calloc ( uvar.numDraws ) ) == NULL) {
     LogPrintf ( LOG_CRITICAL, "Out of memory?\n");
     return 1;
