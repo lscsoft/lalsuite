@@ -201,6 +201,7 @@ int main (int argc , char **argv) {
   case TaylorT2:
   case TaylorT3:
   case EOB:
+  case EOBNR:
   case PadeT1:
   case SpinTaylor:
   case Eccentricity:
