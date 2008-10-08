@@ -45,6 +45,12 @@
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_randist.h>
 
+#include <gsl/gsl_monte.h>
+#include <gsl/gsl_monte_plain.h>
+#include <gsl/gsl_monte_miser.h>
+#include <gsl/gsl_monte_vegas.h>
+
+
 /* LAL-includes */
 #include <lal/AVFactories.h>
 #include <lal/LALInitBarycenter.h>
@@ -113,10 +119,8 @@ ConfigVariables GV;		/**< global container for various derived configuration set
 typedef struct {
   BOOLEAN help;		/**< trigger output of help string */
 
-  REAL8 aPlus;		/**< '+' polarization amplitude: aPlus  [alternative to {h0, cosi}: aPlus = 0.5*h0*(1+cosi^2)] */
-  REAL8 aCross;		/**< 'x' polarization amplitude: aCross [alternative to {h0, cosi}: aCross= h0 * cosi] */
-  REAL8 h0;		/**< overall GW amplitude h0 [alternative to {aPlus, aCross}] */
-  REAL8 cosi;		/**< cos(inclination angle)  [alternative to {aPlus, aCross}] */
+  REAL8 h0;		/**< overall GW amplitude h0 */
+  REAL8 cosi;		/**< cos(inclination angle) */
   REAL8 psi;		/**< polarization angle psi */
   REAL8 phi0;		/**< initial GW phase phi_0 in radians */
   REAL8 Freq;		/**< GW signal frequency */
@@ -136,6 +140,15 @@ typedef struct {
 
 static UserInput_t empty_UserInput;
 
+
+typedef struct {
+  double A;
+  double B;
+  double C;
+  const gsl_vector *x_mu;
+} MCparams;
+
+
 RCSID( "$Id$");
 
 /* ---------- local prototypes ---------- */
@@ -143,6 +156,8 @@ int main(int argc,char *argv[]);
 
 void initUserVars (LALStatus *status, UserInput_t *uvar );
 void InitCode ( LALStatus *, ConfigVariables *cfg, const UserInput_t *uvar );
+double computeLikelihoodRatio ( double A[], size_t dim, void *p );
+int XLALAmplitudeParams2Vect ( REAL8 Amu[], REAL8 h0, REAL8 cosi, REAL8 psi, REAL8 phi0 );
 
 /*---------- empty initializers ---------- */
 
@@ -165,7 +180,7 @@ int main(int argc,char *argv[])
   gsl_matrix *normal, *x_mu_i;
 
   const gsl_rng_type * T;
-  gsl_rng * r;  /* gsl random-number generator */
+  gsl_rng * rng;  /* gsl random-number generator */
   UINT4 i, row, col;
   int gslstat;
   REAL8 rho2;	/* optimal SNR^2 */
@@ -249,11 +264,11 @@ int main(int argc,char *argv[])
   /* initialize gsl random-number generator */
   gsl_rng_env_setup();
   T = gsl_rng_default;
-  r = gsl_rng_alloc (T);
+  rng = gsl_rng_alloc (T);
 
-  printf ("generator type: %s\n", gsl_rng_name (r));
+  printf ("generator type: %s\n", gsl_rng_name (rng));
   printf ("seed = %lu\n", gsl_rng_default_seed);
-  printf ("first value = %lu\n", gsl_rng_get (r));
+  printf ("first value = %lu\n", gsl_rng_get (rng));
 
   /* generate 'numDraws' random number with normal distribution: mean=0, sigma=1 */
   if ( (normal = gsl_matrix_calloc ( uvar.numDraws, 4 ) ) == NULL) {
@@ -262,10 +277,10 @@ int main(int argc,char *argv[])
   }
   for ( i = 0; i < (UINT4)uvar.numDraws; i ++ )
     {
-      gsl_matrix_set (normal, i, 0,  gsl_ran_gaussian ( r, 1.0 ) );
-      gsl_matrix_set (normal, i, 1,  gsl_ran_gaussian ( r, 1.0 ) );
-      gsl_matrix_set (normal, i, 2,  gsl_ran_gaussian ( r, 1.0 ) );
-      gsl_matrix_set (normal, i, 3,  gsl_ran_gaussian ( r, 1.0 ) );
+      gsl_matrix_set (normal, i, 0,  gsl_ran_gaussian ( rng, 1.0 ) );
+      gsl_matrix_set (normal, i, 1,  gsl_ran_gaussian ( rng, 1.0 ) );
+      gsl_matrix_set (normal, i, 2,  gsl_ran_gaussian ( rng, 1.0 ) );
+      gsl_matrix_set (normal, i, 3,  gsl_ran_gaussian ( rng, 1.0 ) );
     }
 
   /* use normal-variates with Cholesky decomposed matrix to get n_mu with cov(n_mu,n_nu) = M_mu_nu */
@@ -417,14 +432,91 @@ int main(int argc,char *argv[])
     gsl_vector_free ( x_Mu );
   } /* compute F-stat draws */
 
-
+  /* ---------- compute B-stat values ---------- */
   if ( (BStat = gsl_vector_calloc ( uvar.numDraws ) ) == NULL) {
     LogPrintf ( LOG_CRITICAL, "Out of memory?\n");
     return 1;
   }
 
+  {
+    gsl_monte_vegas_state * MCS_vegas = gsl_monte_vegas_alloc ( 4 );
+    gsl_monte_function F;
+    MCparams pars;
 
-  /* output F-statistic and B-statistic samples into file, if requested */
+    size_t numMCpoints = 1e4;
+
+    pars.A = uvar.Mmunu_A;
+    pars.B = uvar.Mmunu_B;
+    pars.C = uvar.Mmunu_C;
+
+    F.f = &computeLikelihoodRatio;
+    F.dim = 4;
+    F.params = &pars;
+
+    for ( i=0; i < (UINT4)uvar.numDraws; i ++ )
+      {
+	gsl_vector_const_view xi = gsl_matrix_const_row ( x_mu_i, i );
+	double Bb;
+	double Amp[4] = {0,0,0,0};
+	double x1, x2, x3, x4;
+	double xlower[4], xupper[4];
+	double abserr;
+	double h0A, D;
+	pars.x_mu = &(xi.vector);
+
+	Amp[0] = uvar.h0;
+	Amp[1] = uvar.cosi;
+	Amp[2] = uvar.psi;
+	Amp[3] = uvar.phi0;
+
+	gsl_monte_vegas_init ( MCS_vegas );
+
+	/* estimate order of magnitude h0A of A^mu near maximum of lnL */
+	x1 = gsl_vector_get ( &(xi.vector), 0 );
+	x2 = gsl_vector_get ( &(xi.vector), 1 );
+	x3 = gsl_vector_get ( &(xi.vector), 2 );
+	x4 = gsl_vector_get ( &(xi.vector), 3 );
+
+	D = pars.A * pars.B - SQ(pars.C);
+	h0A = (1.0/D) * sqrt ( SQ(pars.B) * ( SQ(x1) + SQ(x3) ) + SQ(pars.A) * ( SQ(x2) + SQ(x4) ) );
+
+	/* Integration boundaries */
+	xlower[0] = 0;		/* h0 */
+	xlower[1] = -1;		/* cosi */
+	xlower[2] = 0;		/* psi */
+	xlower[3] = 0;		/* phi0 */
+
+	xupper[0] = 3 * h0A;	/* h0 */
+	xupper[1] = 1;		/* cosi */
+	xupper[2] = LAL_PI;	/* psi */
+	xupper[3] = LAL_TWOPI;	/* phi0 */
+
+	/* Function: int gsl_monte_vegas_integrate (gsl_monte_function * f, double * xl, double * xu, size_t dim, size_t calls,
+	 *                                          gsl_rng * r, gsl_monte_vegas_state * s, double * result, double * abserr)
+	 *
+	 * This routines uses the vegas Monte Carlo algorithm to integrate the function f over the dim-dimensional hypercubic
+	 * region defined by the lower and upper limits in the arrays xl and xu, each of size dim. The integration uses a
+	 * fixed number of function calls calls, and obtains random sampling points using the random number generator r.
+	 * A previously allocated workspace s must be supplied. The result of the integration is returned in result, with
+	 * an estimated absolute error abserr. The result and its error estimate are based on a weighted average of independent
+	 * samples. The chi-squared per degree of freedom for the weighted average is returned via the state struct component,
+	 * s->chisq, and must be consistent with 1 for the weighted average to be reliable.
+	 */
+	if ( (gslstat = gsl_monte_vegas_integrate ( &F, xlower, xupper, 4, numMCpoints, rng, MCS_vegas, &Bb, &abserr)) ) {
+	  LogPrintf ( LOG_CRITICAL, "i = %d: gsl_monte_vegas_integrate() failed: %s\n", i, gsl_strerror (gslstat) );
+	  return 1;
+	}
+	gsl_vector_set ( BStat, i, Bb );
+	/*
+	  printf ( "Vegas Monte-Carlo integration: Bb = %f, abserr = %f ==> relerr = %f\n", Bb, abserr, abserr / Bb );
+	*/
+
+      } /* i < numDraws */
+
+    gsl_monte_vegas_free ( MCS_vegas );
+  } /* compute B-stat */
+
+  /* ---------- output F-statistic and B-statistic samples into file, if requested */
   if (uvar.outputStats)
     {
       FILE *fpStat = NULL;
@@ -453,9 +545,9 @@ int main(int argc,char *argv[])
       XLALfprintfGSLvector ( fpStat, "%f", s_mu );
       fprintf (fpStat, "%%%% A_Mu = ");
       XLALfprintfGSLvector ( fpStat, "%f", GV.A_Mu );
-      fprintf (fpStat, "%%%% x_1 x_2 x_3 x_4      lnL    2F      B\n");
+      fprintf (fpStat, "%%%% x_1       x_2        x_3        x_4              lnL              2F             B_vegas\n");
       for ( i=0; i < (UINT4)uvar.numDraws; i ++ )
-	fprintf ( fpStat, "%f %f %f %f     %f     %f     %f\n",
+	fprintf ( fpStat, "%10f %10f %10f %10f     %12f     %12f     %12f\n",
 		  gsl_matrix_get ( x_mu_i, i, 0 ),
 		  gsl_matrix_get ( x_mu_i, i, 1 ),
 		  gsl_matrix_get ( x_mu_i, i, 2 ),
@@ -463,7 +555,8 @@ int main(int argc,char *argv[])
 
 		  gsl_vector_get ( lnL, i ),
 		  gsl_vector_get ( FStat, i ),
-		  gsl_vector_get ( BStat, i ) );
+		  gsl_vector_get ( BStat, i )
+		  );
 
       fclose (fpStat);
     } /* if outputStat */
@@ -476,11 +569,11 @@ int main(int argc,char *argv[])
   gsl_vector_free ( GV.A_Mu );
   gsl_vector_free ( lnL );
   gsl_vector_free ( FStat );
-  gsl_vector_free ( BStat );
   gsl_matrix_free ( normal );
   gsl_matrix_free ( x_mu_i );
+  gsl_vector_free ( BStat );
 
-  gsl_rng_free (r);
+  gsl_rng_free (rng);
 
   /* did we forget anything ? */
   LALCheckMemoryLeaks();
@@ -512,10 +605,8 @@ initUserVars (LALStatus *status, UserInput_t *uvar )
   /* register all our user-variables */
   LALregBOOLUserStruct(status,	help, 		'h', UVAR_HELP,     "Print this message");
 
-  LALregREALUserStruct(status, 	aPlus,	 	 0 , UVAR_OPTIONAL, "'Plus' polarization amplitude: aPlus  [alternative to {h0, cosi}");
-  LALregREALUserStruct(status,	aCross,  	 0 , UVAR_OPTIONAL, "'Cross' polarization amplitude: aCross [alternative to {h0, cosi}");
-  LALregREALUserStruct(status,	h0,		's', UVAR_OPTIONAL, "Overall GW amplitude h0 [alternative to {aPlus, aCross}]");
-  LALregREALUserStruct(status,	cosi,		'i', UVAR_OPTIONAL, "Inclination angle of rotation axis cos(iota) [alternative to {aPlus, aCross}]");
+  LALregREALUserStruct(status,	h0,		's', UVAR_OPTIONAL, "Overall GW amplitude h0]");
+  LALregREALUserStruct(status,	cosi,		'i', UVAR_OPTIONAL, "Inclination angle of rotation axis cos(iota)");
 
   LALregREALUserStruct(status,	psi,		'Y', UVAR_OPTIONAL, "Polarisation angle in radians");
   LALregREALUserStruct(status,	phi0,		'Y', UVAR_OPTIONAL, "Initial GW phase phi0 in radians");
@@ -540,47 +631,8 @@ initUserVars (LALStatus *status, UserInput_t *uvar )
 void
 InitCode ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
 {
-  REAL8 aPlus, aCross;		/* internally always use Aplus, Across */
-
   INITSTATUS (status, "InitCode", rcsid);
   ATTATCHSTATUSPTR (status);
-
-  { /* Check user-input consistency */
-    BOOLEAN have_h0, have_cosi, have_Ap, have_Ac;
-
-    have_h0 = LALUserVarWasSet ( &uvar->h0 );
-    have_cosi = LALUserVarWasSet ( &uvar->cosi );
-    have_Ap = LALUserVarWasSet ( &uvar->aPlus );
-    have_Ac = LALUserVarWasSet ( &uvar->aCross );
-
-    /* ----- handle {h0,cosi} || {aPlus,aCross} freedom ----- */
-    if ( ( have_h0 && !have_cosi ) || ( !have_h0 && have_cosi ) )
-      {
-	LogPrintf (LOG_CRITICAL, "Need both (h0, cosi) to specify signal!\n");
-	ABORT ( status, PREDICTFSTAT_EINPUT, PREDICTFSTAT_MSGEINPUT );
-      }
-    if ( ( have_Ap && !have_Ac) || ( !have_Ap && have_Ac ) )
-      {
-	LogPrintf (LOG_CRITICAL, "Need both (aPlus, aCross) to specify signal!\n");
-	ABORT ( status, PREDICTFSTAT_EINPUT, PREDICTFSTAT_MSGEINPUT );
-      }
-    if ( have_h0 && have_Ap )
-      {
-	LogPrintf (LOG_CRITICAL, "Overdetermined: specify EITHER (h0,cosi) OR (aPlus,aCross)!\n");
-	ABORT ( status, PREDICTFSTAT_EINPUT, PREDICTFSTAT_MSGEINPUT );
-      }
-    /* ----- internally we always use Aplus, Across */
-    if ( have_h0 )
-      {
-	aPlus = 0.5 * uvar->h0 * ( 1.0 + SQ( uvar->cosi) );
-	aCross = uvar->h0 * uvar->cosi;
-      }
-    else
-      {
-	aPlus = uvar->aPlus;
-	aCross = uvar->aCross;
-      }
-  }/* check user-input */
 
   /* ----- set up M_mu_nu matrix ----- */
   if ( ( cfg->M_mu_nu = gsl_matrix_calloc ( 4, 4 )) == NULL ) {
@@ -619,27 +671,87 @@ InitCode ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
     ABORT ( status, PREDICTFSTAT_EMEM, PREDICTFSTAT_MSGEMEM );
   }
 
-  /* get signal A^mu */
   {
-    REAL8 cos2psi = cos ( 2.0 * uvar->psi );
-    REAL8 sin2psi = sin ( 2.0 * uvar->psi );
-    REAL8 cosphi0 = cos ( uvar->phi0 );
-    REAL8 sinphi0 = sin ( uvar->phi0 );
-    REAL8 A1, A2, A3, A4;
+    double Amu[4];
 
-    A1 =  aPlus * cos2psi * cosphi0 - aCross * sin2psi * sinphi0;
-    A2 =  aPlus * sin2psi * cosphi0 + aCross * cos2psi * sinphi0;
-    A3 = -aPlus * cos2psi * sinphi0 - aCross * sin2psi * cosphi0;
-    A4 = -aPlus * sin2psi * sinphi0 + aCross * cos2psi * cosphi0;
-
-    /* ----- fill vector A_Mu ----- */
-    gsl_vector_set (cfg->A_Mu, 0,   A1 );
-    gsl_vector_set (cfg->A_Mu, 1,   A2 );
-    gsl_vector_set (cfg->A_Mu, 2,   A3 );
-    gsl_vector_set (cfg->A_Mu, 3,   A4 );
+    XLALAmplitudeParams2Vect ( Amu, uvar->h0, uvar->cosi, uvar->psi, uvar->phi0 );
+    gsl_vector_set ( cfg->A_Mu, 0, Amu[0] );
+    gsl_vector_set ( cfg->A_Mu, 1, Amu[1] );
+    gsl_vector_set ( cfg->A_Mu, 2, Amu[2] );
+    gsl_vector_set ( cfg->A_Mu, 3, Amu[3] );
   }
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
 
 } /* InitPFS() */
+
+
+/** compute log likelihood ratio lnL for given Amp = {h0, cosi, psi, phi0} and M_{mu,nu}.
+ * computes lnL = A^mu x_mu - 1/2 A^mu M_mu_nu A^nu.
+ *
+ * This function is of type gsl_monte_function for gsl Monte-Carlo integration.
+ * The parameter-struct is simply gsl_matrix *M_mu_nu.
+ *
+ */
+double
+computeLikelihoodRatio ( double Amp[], size_t dim, void *p )
+{
+  MCparams *par = (MCparams *) p;
+  double Ax, rho2;
+  double x0, x1, x2, x3;
+  double Amu[4];
+  double lnL;
+
+  if ( dim != 4 ) {
+    LogPrintf (LOG_CRITICAL, "Error: computeLikelihoodRatio() was called with illegal dim = %d != 4\n", dim );
+    abort ();
+  }
+
+  /* introduce a few handy shortcuts */
+  x0 = gsl_vector_get ( par->x_mu, 0 );
+  x1 = gsl_vector_get ( par->x_mu, 1 );
+  x2 = gsl_vector_get ( par->x_mu, 2 );
+  x3 = gsl_vector_get ( par->x_mu, 3 );
+
+  XLALAmplitudeParams2Vect ( Amu, Amp[0] /* h0 */, Amp[1] /* cosi */, Amp[2] /* psi */, Amp[3] /* phi0 */ );
+
+  /* STEP 1: compute A^mu x_mu */
+  Ax = Amu[0] * x0 + Amu[1] * x1 + Amu[2] * x2 + Amu[3] * x3;
+
+  /* STEP 2: compute the "optimal SNR^2": rho2 = A^mu M_mu_nu A^nu = A^mu s_mu */
+  rho2 = par->A * ( SQ(Amu[0]) + SQ(Amu[2]) ) + par->B * ( SQ(Amu[1]) + SQ(Amu[3]) ) + 2.0 * par->C * ( Amu[0] * Amu[1] + Amu[2] * Amu[3] );
+
+  /* STEP 3: combine results for lnL = A^mu x_mu - 1/2 A^mu M_mu_nu A^nu */
+  lnL = Ax - 0.5 * rho2;
+
+  return exp(lnL);
+
+} /* computeLikelihoodRatio() */
+
+
+/** Convert amplitude params {h0, cosi, psi, phi0} into amplitude vector A^mu.
+ *
+ * NOTE: We rely on Amu[] being allocated 4-dim vector!
+ */
+int
+XLALAmplitudeParams2Vect ( REAL8 Amu[], REAL8 h0, REAL8 cosi, REAL8 psi, REAL8 phi0 )
+{
+  REAL8 aPlus = 0.5 * h0 * ( 1.0 + SQ(cosi) );
+  REAL8 aCross = h0 * cosi;
+  REAL8 cos2psi = cos ( 2.0 * psi );
+  REAL8 sin2psi = sin ( 2.0 * psi );
+  REAL8 cosphi0 = cos ( phi0 );
+  REAL8 sinphi0 = sin ( phi0 );
+
+  if ( !Amu )
+    return -1;
+
+  Amu[0] =  aPlus * cos2psi * cosphi0 - aCross * sin2psi * sinphi0;
+  Amu[1] =  aPlus * sin2psi * cosphi0 + aCross * cos2psi * sinphi0;
+  Amu[2] = -aPlus * cos2psi * sinphi0 - aCross * sin2psi * cosphi0;
+  Amu[3] = -aPlus * sin2psi * sinphi0 + aCross * cos2psi * cosphi0;
+
+  return 0;
+
+} /* XLALAmplitudeParams2Vect() */
