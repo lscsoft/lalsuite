@@ -201,7 +201,7 @@ int main(int argc,char *argv[])
     LogPrintf ( LOG_CRITICAL, "Out of memory?\n");
     return 1;
   }
-  if ( (normal = gsl_vector_calloc ( uvar.numDraws ) ) == NULL) {
+  if ( (normal = gsl_matrix_calloc ( uvar.numDraws, 4 ) ) == NULL) {
     LogPrintf ( LOG_CRITICAL, "Out of memory?\n");
     return 1;
   }
@@ -254,6 +254,7 @@ int main(int argc,char *argv[])
 
   /* use normal-variates with Cholesky decomposed matrix to get n_mu with cov(n_mu,n_nu) = M_mu_nu */
   {
+    FILE *fpTemp = fopen ( "__tmp.dat", "wb" );
     for ( i = 0; i < (UINT4)uvar.numDraws; i ++ )
       {
 	gsl_vector_const_view normi = gsl_matrix_const_row ( normal, i );
@@ -263,11 +264,16 @@ int main(int argc,char *argv[])
 	 * compute the matrix-vector product and sum y = \alpha op(A) x + \beta y, where op(A) = A, A^T, A^H
 	 * for TransA = CblasNoTrans, CblasTrans, CblasConjTrans.
 	 */
-	gsl_blas_dgemv (CblasTrans, 1.0, M_chol, &(normi.vector), 0.0, &(ni.vector));
+	gsl_blas_dgemv (CblasNoTrans, 1.0, M_chol, &(normi.vector), 0.0, &(ni.vector));
 
+	fprintf ( fpTemp, "%f  %f  %f  %f\n",
+		  gsl_matrix_get ( n_mu_i, i, 0 ),
+		  gsl_matrix_get ( n_mu_i, i, 1 ),
+		  gsl_matrix_get ( n_mu_i, i, 2 ),
+		  gsl_matrix_get ( n_mu_i, i, 3 ) );
       }
+    fclose ( fpTemp );
   }
-
 
 
   /* output F-statistic and B-statistic samples into file, if requested */
