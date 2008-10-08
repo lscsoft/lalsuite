@@ -120,8 +120,9 @@ REAL4 maxMassRatio=-1.0;
 REAL4 inclStd=-1.0;
 REAL4 fixed_inc=0.0;
 REAL4 psi=0.0;
-REAL4 longitude=0.0;
-REAL4 latitude=0.0;
+REAL4 longitude=181.0;
+REAL4 latitude=91.0;
+REAL4 epsAngle=1e-7;
 int spinInjections=-1;
 REAL4 minSpin1=-1.0;
 REAL4 maxSpin1=-1.0;
@@ -1190,18 +1191,40 @@ int main( int argc, char *argv[] )
 
       case 'v':
         /* fixed location (longitude) */
-        longitude = (REAL4) atof( optarg );
-        this_proc_param = this_proc_param->next = 
-          next_process_param( long_options[option_index].name, 
-              "float", "%e", longitude );
+        longitude =  atof( optarg )*LAL_PI_180 ;
+        if (longitude <= (  LAL_PI + epsAngle ) && \
+            longitude >= ( -LAL_PI - epsAngle ))
+        { 
+          this_proc_param = this_proc_param->next = 
+            next_process_param( long_options[option_index].name, 
+                "float", "%e", longitude );
+        }
+        else
+        {
+          fprintf(stderr,"invalid argument to --%s:\n"
+                  "%s must be between -180. and 180. degrees\n",
+                  long_options[option_index].name, optarg );
+          exit( 1 );
+        }
         break;
 
       case 'z':
         /* fixed location (latitude) */
-        latitude = (REAL4) atof( optarg );
-        this_proc_param = this_proc_param->next = 
-          next_process_param( long_options[option_index].name, 
-              "float", "%e", latitude );
+        latitude = (REAL4) atof( optarg )*LAL_PI_180;
+        if (latitude <= (  LAL_PI/2. + epsAngle ) && \
+            latitude >= ( -LAL_PI/2. - epsAngle ))
+        { 
+	  this_proc_param = this_proc_param->next = 
+            next_process_param( long_options[option_index].name, 
+                "float", "%e", latitude );
+        }
+        else
+        {
+          fprintf(stderr,"invalid argument to --%s:\n"
+                  "%s must be between -90. and 90. degrees\n",
+                  long_options[option_index].name, optarg );
+          exit( 1 );
+        } 
         break;
 
       case 'I':
@@ -1433,25 +1456,41 @@ int main( int argc, char *argv[] )
 
   if ( dDistr == unknownDistanceDist )
   {
-    printf("Must specify a distance distribution (--d-distr).\n");
+    fprintf(stderr,"Must specify a distance distribution (--d-distr).\n");
     exit( 1 );
   }
 
   if ( lDistr == unknownLocationDist )
   {
-    printf("Must specify a location distribution (--l-distr).\n");
+    fprintf(stderr,"Must specify a location distribution (--l-distr).\n");
+    exit( 1 );
+  }
+
+  if ( lDistr == fixedSkyLocation && longitude == 181. )
+  {
+    fprintf(stderr,
+        "Must specify both --longitude and --latitude when using \n"\
+        "--l-distr=fixed\n");
+    exit( 1 );
+  }
+
+  if ( lDistr == fixedSkyLocation && latitude == 91. )
+  {
+    fprintf(stderr,
+        "Must specify both --longitude and --latitude when using \n"\
+        "--l-distr=fixed\n");
     exit( 1 );
   }
 
   if ( mDistr == unknownMassDist )
   {
-    printf("Must specify a mass distribution (--m-distr).\n");
+    fprintf(stderr,"Must specify a mass distribution (--m-distr).\n");
     exit( 1 );
   }
 
   if ( iDistr == unknownInclDist )
   {
-    printf("Must specify an inclination distribution (--i-distr).\n");
+    fprintf(stderr,"Must specify an inclination distribution (--i-distr).\n");
     exit( 1 );
   }
 
@@ -1530,17 +1569,22 @@ int main( int argc, char *argv[] )
   {
     numExtTriggers=LALExtTriggerTableFromLIGOLw( &exttrigHead, exttrigFileName,
         0, 1);
-    printf("Number of triggers read from the external trigger file: %d\n",
-        numExtTriggers);
+    fprintf(stderr,
+              "Number of triggers read from the external trigger file: %d\n",
+               numExtTriggers);
 
     if (numExtTriggers>1)
     {
-      printf("WARNING: Only 1 external trigger expected in the file '%s'",
-          exttrigFileName );
+      fprintf(stderr,
+                "WARNING: Only 1 external trigger expected in the file '%s'",
+                 exttrigFileName );
     }
     if (numExtTriggers==0)
     {
-      printf("ERROR: No external trigger found in file '%s'",exttrigFileName );
+      fprintf(stderr,
+                "ERROR: No external trigger found in file '%s'",
+                 exttrigFileName );
+
       exit(1);
     }
   }
