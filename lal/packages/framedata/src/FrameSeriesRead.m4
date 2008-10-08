@@ -363,14 +363,19 @@ int XFUNC ( STYPE *series, FrStream *stream )
   tend += (INT8)floor( 1e9 * stream->file->toc->dt[stream->pos] );
   if ( tend <= EPOCH_TO_I8TIME( stream->epoch ) )
   {
+    int keepmode = stream->mode;
     LIGOTimeGPS keep;
     keep = stream->epoch;
     /* advance a frame */
     /* failure is benign, so we return results */
-    if ( XLALFrNext( stream ) < 0 )
+    stream->mode |= LAL_FR_IGNOREGAP_MODE;
+    if ( XLALFrNext( stream ) < 0 ) {
+      stream->mode = keepmode;
       XLAL_ERROR( func, XLAL_EFUNC );
+    }
     if ( ! stream->state & LAL_FR_GAP )
       stream->epoch = keep;
+    stream->mode = keepmode;
   }
 
   if ( gap ) /* there was a gap in the data */
@@ -561,15 +566,18 @@ FUNC (
   tend += (INT8)floor( 1e9 * stream->file->toc->dt[stream->pos] );
   if ( tend <= EPOCH_TO_I8TIME( stream->epoch ) )
   {
+    int keepmode = stream->mode;
     LIGOTimeGPS keep;
     keep = stream->epoch;
     /* advance a frame */
     /* failure is benign, so we return results */
+    stream->mode |= LAL_FR_IGNOREGAP_MODE;
     TRY( LALFrNext( status->statusPtr, stream ), status );
     if ( ! stream->state & LAL_FR_GAP )
     {
       stream->epoch = keep;
     }
+    stream->mode = keepmode;
   }
 
   if ( gap ) /* there was a gap in the data */

@@ -761,12 +761,15 @@ REAL8TimeSeries * XLALFrInputREAL8TimeSeries( FrStream *stream, const char *chan
 	tend  = SECNAN_TO_I8TIME( stream->file->toc->GTimeS[stream->pos], stream->file->toc->GTimeN[stream->pos] );
 	tend += (INT8)floor( 1e9 * stream->file->toc->dt[stream->pos] );
 	if ( tend <= EPOCH_TO_I8TIME( stream->epoch ) ) {
+		int keepmode = stream->mode;
 		LIGOTimeGPS keep;
 		keep = stream->epoch;
 		/* advance a frame -- failure is benign */
+		stream->mode |= LAL_FR_IGNOREGAP_MODE;
 		XLALFrNext( stream );
 		if ( ! stream->state & LAL_FR_GAP )
 			stream->epoch = keep;
+		stream->mode = keepmode;
 	}
 
 	if ( stream->state & LAL_FR_ERR ) {
