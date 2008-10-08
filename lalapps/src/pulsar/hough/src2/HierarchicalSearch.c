@@ -1341,7 +1341,11 @@ void SetUpSFTs( LALStatus *status,
   /* Repr 26/07/08: deactivated use of old function LALLeapSecs() which has an obsolete leap-second range:
      TRY( LALLeapSecs( status->statusPtr, &tmpLeap, &tStartGPS, &lsfas), status);
      Use new XLALLeapSeconds() instead: */
+#ifdef WRONGLY_USE_XLALLEAPSECONDS_FOR_EINSTEINATHOME_S5R4_COMPATIBILITY
+  in->edat->leap = XLALLeapSeconds( tStartGPS.gpsSeconds );
+#else
   in->edat->leap = XLALGPSLeapSeconds( tStartGPS.gpsSeconds );
+#endif
   {
     INT4 err = xlalErrno;
     if ( err != XLAL_SUCCESS ) {
