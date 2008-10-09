@@ -84,8 +84,10 @@ int XLALGenerateSimBurst(
 		 * Mersenne twister random number generator */
 		gsl_rng *rng = gsl_rng_alloc(gsl_rng_mt19937);
 
-		if(!rng)
+		if(!rng) {
+			XLALPrintError("%s(): failure creating random number generator\n", func);
 			XLAL_ERROR(func, XLAL_ENOMEM);
+		}
 		gsl_rng_set(rng, sim_burst->waveform_number);
 
 		XLALPrintInfo("%s(): BTLWNB @ %9d.%09u: f = %.16g Hz, df = %.16g Hz, dt = %.16g s, hdot^2 = %.16g\n", func, sim_burst->time_geocent_gps.gpsSeconds, sim_burst->time_geocent_gps.gpsNanoSeconds, sim_burst->frequency, sim_burst->bandwidth, sim_burst->duration, int_hdot_squared_dt);
