@@ -133,6 +133,8 @@ typedef struct {
 
   INT4 numDraws;	/**< number of random 'draws' to simulate for F-stat and B-stat */
 
+  REAL8 numMCpoints;	/**< number of points to use for Monte-Carlo integration */
+
   CHAR *outputStats;	/**< output file to write F-stat estimation results into */
 
   BOOLEAN version;	/**< output version-info */
@@ -176,7 +178,7 @@ int main(int argc,char *argv[])
 
   gsl_matrix *M_chol;
 
-  gsl_vector *s_mu, *FStat, *BStat, *lnL;
+  gsl_vector *s_mu, *FStat, *BStat, *dBStat, *lnL;
   gsl_matrix *normal, *x_mu_i;
 
   const gsl_rng_type * T;
@@ -268,7 +270,7 @@ int main(int argc,char *argv[])
 
   printf ("generator type: %s\n", gsl_rng_name (rng));
   printf ("seed = %lu\n", gsl_rng_default_seed);
-  printf ("first value = %lu\n", gsl_rng_get (rng));
+  /* printf ("first value = %lu\n", gsl_rng_get (rng)); */
 
   /* generate 'numDraws' random number with normal distribution: mean=0, sigma=1 */
   if ( (normal = gsl_matrix_calloc ( uvar.numDraws, 4 ) ) == NULL) {
@@ -437,13 +439,15 @@ int main(int argc,char *argv[])
     LogPrintf ( LOG_CRITICAL, "Out of memory?\n");
     return 1;
   }
+  if ( (dBStat = gsl_vector_calloc ( uvar.numDraws ) ) == NULL) {
+    LogPrintf ( LOG_CRITICAL, "Out of memory?\n");
+    return 1;
+  }
 
   {
     gsl_monte_vegas_state * MCS_vegas = gsl_monte_vegas_alloc ( 4 );
     gsl_monte_function F;
     MCparams pars;
-
-    size_t numMCpoints = 1e4;
 
     pars.A = uvar.Mmunu_A;
     pars.B = uvar.Mmunu_B;
@@ -502,11 +506,12 @@ int main(int argc,char *argv[])
 	 * samples. The chi-squared per degree of freedom for the weighted average is returned via the state struct component,
 	 * s->chisq, and must be consistent with 1 for the weighted average to be reliable.
 	 */
-	if ( (gslstat = gsl_monte_vegas_integrate ( &F, xlower, xupper, 4, numMCpoints, rng, MCS_vegas, &Bb, &abserr)) ) {
+	if ( (gslstat = gsl_monte_vegas_integrate ( &F, xlower, xupper, 4, (size_t)uvar.numMCpoints, rng, MCS_vegas, &Bb, &abserr)) ) {
 	  LogPrintf ( LOG_CRITICAL, "i = %d: gsl_monte_vegas_integrate() failed: %s\n", i, gsl_strerror (gslstat) );
 	  return 1;
 	}
 	gsl_vector_set ( BStat, i, Bb );
+	gsl_vector_set ( dBStat, i, abserr );
 	/*
 	  printf ( "Vegas Monte-Carlo integration: Bb = %f, abserr = %f ==> relerr = %f\n", Bb, abserr, abserr / Bb );
 	*/
@@ -545,9 +550,9 @@ int main(int argc,char *argv[])
       XLALfprintfGSLvector ( fpStat, "%f", s_mu );
       fprintf (fpStat, "%%%% A_Mu = ");
       XLALfprintfGSLvector ( fpStat, "%f", GV.A_Mu );
-      fprintf (fpStat, "%%%% x_1       x_2        x_3        x_4              lnL              2F             B_vegas\n");
+      fprintf (fpStat, "%%%% x_1       x_2        x_3        x_4              lnL              2F             B_vegas         dB\n");
       for ( i=0; i < (UINT4)uvar.numDraws; i ++ )
-	fprintf ( fpStat, "%10f %10f %10f %10f     %12f     %12f     %12f\n",
+	fprintf ( fpStat, "%10f %10f %10f %10f     %12f     %12f     %12f  %12f\n",
 		  gsl_matrix_get ( x_mu_i, i, 0 ),
 		  gsl_matrix_get ( x_mu_i, i, 1 ),
 		  gsl_matrix_get ( x_mu_i, i, 2 ),
@@ -555,7 +560,8 @@ int main(int argc,char *argv[])
 
 		  gsl_vector_get ( lnL, i ),
 		  gsl_vector_get ( FStat, i ),
-		  gsl_vector_get ( BStat, i )
+		  gsl_vector_get ( BStat, i ),
+		  gsl_vector_get ( dBStat, i )
 		  );
 
       fclose (fpStat);
@@ -572,6 +578,7 @@ int main(int argc,char *argv[])
   gsl_matrix_free ( normal );
   gsl_matrix_free ( x_mu_i );
   gsl_vector_free ( BStat );
+  gsl_vector_free ( dBStat );
 
   gsl_rng_free (rng);
 
@@ -601,6 +608,7 @@ initUserVars (LALStatus *status, UserInput_t *uvar )
   uvar->psi = 0;
 
   uvar->numDraws = 1;
+  uvar->numMCpoints = 1e4;
 
   /* register all our user-variables */
   LALregBOOLUserStruct(status,	help, 		'h', UVAR_HELP,     "Print this message");
@@ -616,6 +624,7 @@ initUserVars (LALStatus *status, UserInput_t *uvar )
   LALregREALUserStruct(status,	Mmunu_C,	  0, UVAR_REQUIRED, "Antenna-pattern matrix M_mu_nu: component A");
 
   LALregINTUserStruct(status,	numDraws,	'N', UVAR_OPTIONAL, "Number of random 'draws' to simulate for F-stat and B-stat");
+  LALregREALUserStruct(status,	numMCpoints,	'M', UVAR_OPTIONAL, "Number of points to use in Monte-Carlo integration");
 
   LALregSTRINGUserStruct(status, outputStats,	'o', UVAR_OPTIONAL, "Output filename containing random draws of lnL, 2F and B");
 
