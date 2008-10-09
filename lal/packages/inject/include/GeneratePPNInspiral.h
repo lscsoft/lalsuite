@@ -395,13 +395,6 @@ LALGeneratePPNAmpCorInspiral( LALStatus     *,
 			CoherentGW    *output,
 			PPNParamStruc *params );
 			
-/* <lalLaTeX>
-\newpage\input{GeneratePPNAmpTruncInspiralC}
-</lalLaTeX> */
-void
-LALGeneratePPNAmpTruncInspiral( LALStatus     *,
-			CoherentGW    *output,
-			PPNParamStruc *params );
 			
 
 /* <lalLaTeX>
