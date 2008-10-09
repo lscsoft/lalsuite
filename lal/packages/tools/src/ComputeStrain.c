@@ -750,6 +750,14 @@ void LALFFTFIRFilter(LALStatus *status, REAL8TimeSeries *tseries, REAL8IIRFilter
 
   INITSTATUS( status, "LALFIRFilter", COMPUTESTRAINC );
   ATTATCHSTATUSPTR( status );
+
+  /* check that the time series is larger than the length of the filter */
+  if ( tseries->data->length < FIR->directCoef->length )
+    {
+      fprintf(stderr,"ERROR. tseries length (=%d) < filter length (=%d)",
+	      tseries->data->length, FIR->directCoef->length);
+      ABORT(status,118,"Time series is smaller than filter length.");
+    }
   
   /* create time series that will hold FIR filter (with room for zero padding) */
   LALCreateREAL8TimeSeries(status->statusPtr, &tseriesFIR, tseries->name, 
