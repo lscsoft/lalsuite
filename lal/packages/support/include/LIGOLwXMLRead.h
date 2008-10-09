@@ -205,7 +205,7 @@ LALSnglInspiralTableFromLIGOLw (
 int
 InspiralTmpltBankFromLIGOLw (
     InspiralTemplate   **bankHead,
-    CHAR                *fileName,
+    const CHAR         *fileName,
     INT4                startTmplt,
     INT4                stopTmplt
     );
