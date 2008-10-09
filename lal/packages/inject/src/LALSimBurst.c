@@ -85,8 +85,10 @@ REAL8 XLALMeasureHPeak(const REAL8TimeSeries *series)
 	double hpeak;
 	unsigned i;
 
-	if(!series->data->length)
+	if(!series->data->length) {
+		XLALPrintError("%s(): length must be > 0\n", func);
 		XLAL_ERROR_REAL8(func, XLAL_EBADLEN);
+	}
 
 	hpeak = series->data->data[0];
 	for(i = 1; i < series->data->length; i++)
@@ -405,6 +407,7 @@ int XLALGenerateBandAndTimeLimitedWhiteNoiseBurst(
 	 * checking if duration * bandwidth < LAL_2_PI */
 
 	if(duration < 0 || bandwidth < 0 || sigma_t_squared < 0 || int_hdot_squared < 0 || delta_t <= 0) {
+		XLALPrintError("%s(): invalid input parameters\n", func);
 		*hplus = *hcross = NULL;
 		XLAL_ERROR(func, XLAL_EINVAL);
 	}
@@ -735,6 +738,7 @@ int XLALGenerateStringCusp(
 	/* check input */
 
 	if(amplitude < 0 || f_high < f_low || delta_t <= 0) {
+		XLALPrintError("%s(): invalid input parameters\n", func);
 		*hplus = *hcross = NULL;
 		XLAL_ERROR(func, XLAL_EINVAL);
 	}
