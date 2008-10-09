@@ -183,14 +183,13 @@ LALFindChirpStoreEvent (
   }
   thisEvent->sigmasq = norm * input->segment->segNorm->data[kmax] * 
     input->segment->segNorm->data[kmax] * input->fcTmplt->tmpltNorm;
-  thisEvent->eff_distance = 4.0 * (deltaT / (REAL4)numPoints) / norm *
-    4.0 * (deltaT / (REAL4)numPoints) / norm * input->fcTmplt->tmpltNorm /
-    thisEvent->snr;
-    /*(input->fcTmplt->tmpltNorm * input->segment->segNorm->data[kmax] * 
-     input->segment->segNorm->data[kmax]) / thisEvent->snr;*/
-  thisEvent->eff_distance = sqrt( thisEvent->eff_distance );
+
   thisEvent->snr *= norm;
   thisEvent->snr = sqrt( thisEvent->snr );
+
+  /* Effective distance is: D_eff = sigma / rho  */
+  
+  thisEvent->eff_distance = sqrt( thisEvent->sigmasq ) / thisEvent->snr;
 
   /* compute the time since the snr crossing */
   thisEvent->event_duration = (REAL8) timeIndex - (REAL8) eventStartIdx;
