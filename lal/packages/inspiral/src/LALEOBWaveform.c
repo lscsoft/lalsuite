@@ -126,6 +126,12 @@ typedef struct tagPr3In {
 } pr3In;
 
 static void 
+omegaofr2PN (
+             REAL8 *x, 
+             REAL8 r, 
+             REAL8 eta) ; 
+
+static void 
 omegaofr3PN (
 	     REAL8 *x,
 	     REAL8 r, 
@@ -277,6 +283,25 @@ LALpphiInit(
    r2 = r*r;
    r3 = r2*r;
    *phase = pow(r2 * (r2 - 3.*eta) / (r3 - 3.* r2 + 5.*eta), 0.5);
+}
+
+/*--------------------------------------------------------------------*/
+static void 
+omegaofr2PN (
+   REAL8 *x, 
+   REAL8 r, 
+   REAL8 eta
+   ) 
+{ 
+
+   REAL8 r2, r3, A, z;
+
+   r2 = r*r;
+   r3 = r2*r;
+
+   A = 1. - 2./r + 2.*eta/r3;
+   z = r3 * A * A/(r3 - 3.*r2 + 5.*eta);
+   *x = sqrt((1.-3*eta/r2)/(r3 * (1. + 2*eta*(sqrt(z)-1.))));
 }
 
 /*--------------------------------------------------------------------*/
@@ -1375,7 +1400,7 @@ LALEOBWaveformEngine (
    InspiralDerivativesIn   in3;
    rk4In                   in4;
    rk4GSLIntegrator        *integrator = NULL;
-   pr3In pr3in; 
+   pr3In                   pr3in; 
    expnCoeffs              ak;
    expnFunc                func;
    rOfOmegaIn              rofomegain;
@@ -1387,8 +1412,7 @@ LALEOBWaveformEngine (
    BOOLEAN                 writeToWaveform = 0;     /* Set to true when the current frequency 
 						     * crosses fLower */
    REAL8                   sInit, s0 = 0.0;  /* Initial phase, and phase to subtract */
-   REAL8                   rmin = 10;               /* Smallest value of r at which to generate
-						       the waveform */
+   REAL8                   rmin = 20;        /* Smallest value of r at which to generate the waveform */
    COMPLEX16  MultSphHarmP;    /* Spin-weighted spherical harmonics */
    COMPLEX16  MultSphHarmM;    /* Spin-weighted spherical harmonics */
    REAL4      x1, x2;
@@ -1423,10 +1447,16 @@ LALEOBWaveformEngine (
    ASSERT(ak.totalmass/LAL_MTSUN_SI > 0.4, status, 
    	LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
 
-   /* Check order is consistent if using EOBNR */
+   /* Check order is consistent if using EOBNR and EOB */
    if ( params->approximant == EOBNR && params->order != pseudoFourPN )
    {
      LALSnprintf( message, 256, "Order must be pseudoFourPN for approximant EOBNR." ); 
+     LALError( status, message );
+     ABORT( status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE );
+   }
+   else if ( params->approximant == EOB && params->order < twoPN )
+   {
+     LALSnprintf( message, 256, "Order must be twoPN or greater for approximant EOB." ); 
      LALError( status, message );
      ABORT( status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE );
    }
@@ -1454,6 +1484,8 @@ LALEOBWaveformEngine (
    dym.data = &dummy.data[4*nn];
    dyt.data = &dummy.data[5*nn];
 
+   /* Set dt to sampling interval specified by user */
+   /* But this is changed to 1/16 kHz if the approximant is EOBNR */
    dt = 1./params->tSampling;
    eta = ak.eta;
    m = ak.totalmass;
@@ -1555,6 +1587,11 @@ LALEOBWaveformEngine (
    pr3in.eta = eta;
    pr3in.omegaS = params->OmegaS;
    pr3in.zeta2 = params->Zeta2;
+
+   /* We will be changing the starting r if it is less than rmin */
+   /* Therefore, we should reset pr3in.omega later if necessary. */
+   /* For now we need it so that we can see what the initial r is. */
+   
    pr3in.omega = omega;
    in3.totalmass = ak.totalmass;
    in3.dEnergy = func.dEnergy;
@@ -1565,7 +1602,7 @@ LALEOBWaveformEngine (
    funcParams1 = (void *) &rofomegain;
 
    switch (params->order)
-     {
+   {
      case twoPN:
      case twoPointFivePN:
        rootIn1.function = LALlightRingRadius;
@@ -1584,18 +1621,18 @@ LALEOBWaveformEngine (
        funcParams2 = (void *) &pr3in;
        break;
      default:
-       LALSnprintf(message, 256, 
-               "There are no EOB waveforms implemented at order %d\n", params->order);
+       LALSnprintf(message, 256, "There are no EOB/EOBNR waveforms implemented at order %d\n", params->order);
        LALError( status, message );
        LALFree(dummy.data);
        ABORT( status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE); 
-     }
+   }
    LALDBisectionFindRoot(status->statusPtr, &rn, &rootIn1, funcParams1);
    CHECKSTATUSPTR(status);
    LALDBisectionFindRoot(status->statusPtr, &r, &rootIn2, funcParams2);
    CHECKSTATUSPTR(status);
     
-   if (a && r < 6)
+   /* Is the initial condition sensible? */
+   if (r < 6)
    {
      LALSnprintf( message, 256, "EOB:initialCondition:Initial r found = %f "
            "too small (below 6 no waveform is generated)\n", r );
@@ -1603,10 +1640,9 @@ LALEOBWaveformEngine (
      RETURN( status );
    }
 
-   /* We want the waveform to generate from a point which won't cause
-    * problems with the initial conditions. Therefore we force the code
-    * to start at least at r = rmin (in units of M).
-    */
+   /* We want the waveform to generate from a point which won't cause */
+   /* problems with the initial conditions. Therefore we force the code */
+   /* to start at least at r = rmin (in units of M). */
     
    r = (r<rmin) ? rmin : r;
 
@@ -1615,16 +1651,23 @@ LALEOBWaveformEngine (
    pr3in.in3copy = in3; 
    pr3in.r = r;
 
+   /* Now that r is changed recompute omega corresponding */
+   /* to that r and only then compute initial pr and pphi */
+
    switch (params->order)
    {
      case twoPN:
      case twoPointFivePN:
+       omegaofr2PN (&omega, r, eta);
+       pr3in.omega = omega;
        LALpphiInit(&q, r, eta);
        LALprInit(&p, r, &in3);
        in4.function = LALHCapDerivatives;
        break;
      case threePN:
      case threePointFivePN:
+       omegaofr3PN (&omega, r, &pr3in);
+       pr3in.omega = omega;
        LALpphiInit3PN(&q, r, eta, params->OmegaS);
        rootIn3.function = LALprInit3PN;
        /* first we compute vr (we need coeef->Fp6) */
@@ -1637,6 +1680,8 @@ LALEOBWaveformEngine (
        in4.function = LALHCapDerivatives3PN;
        break;
      case pseudoFourPN:
+       omegaofrP4PN (&omega, r, &pr3in);
+       pr3in.omega = omega;
        LALpphiInitP4PN(&q, r, eta, params->OmegaS);
        rootIn3.function = LALprInitP4PN;
        /* first we compute vr (we need coeef->Fp6) */
@@ -1649,10 +1694,10 @@ LALEOBWaveformEngine (
        in4.function = LALHCapDerivativesP4PN;
        break;
      default:
-       LALSnprintf( message, 256, "There are no EOB waveforms at order %d\n", params->order);
+       LALSnprintf(message, 256, "There are no EOB/EOBNR waveforms implemented at order %d\n", params->order);
        LALError( status, message );
        LALFree(dummy.data);
-       ABORT(status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
+       ABORT( status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE); 
    }
 
    values.data[0] = r;
@@ -1807,7 +1852,15 @@ LALEOBWaveformEngine (
    -----------------------------------------------------------------*/
    params->vFinal = v;
    if (signal1 && !signal2) params->tC = t;
-   params->fFinal = pow(v,3.)/(LAL_PI*m);
+   if (params->approximant == EOB)
+   {
+     params->fFinal = pow(v,3.)/(LAL_PI*m);
+   }
+   else
+   {
+     params->fFinal = params->tSampling/2.;
+   }
+     
    /* ------------------------------------------------------------------
     * This is the count for the inspiral part only. It is changed below 
     * when the merger part is added; the phase is changed artificially 
@@ -1815,8 +1868,6 @@ LALEOBWaveformEngine (
     * it is not the total accumuated phase.
     --------------------------------------------------------------------*/
    *countback = count;
-   sprintf(message, "fFinal=%10.5e count=%d\n", params->fFinal, count);
-   LALInfo(status, message);
   
    XLALRungeKutta4Free( integrator );
    LALFree(dummy.data);
@@ -1919,8 +1970,13 @@ LALEOBWaveformEngine (
     * relevant arrays
     ------------------------------------------------------*/
    if ( resampFac > 1 ) 
-   /* If user specified params->tSampling < internalSampling... */
+   /* If user specified params->tSampling < internalSampling...  */
+   /* Note that in this case we have to recompute "countback" as */
+   /* we need the number of non-zero elements in the resampled */
+   /* output while countback computed earlier is the over-sampled */
+   /* output. */
    {
+     *countback = 0;
      for(i = 0; i < length; i++) 
      /* ...we resample the output */
      {
@@ -1943,6 +1999,7 @@ LALEOBWaveformEngine (
          a->data[j] = ampl->data[nr];
          a->data[j+1] = ampl->data[nr + 1];
        }
+       if (sig1->data[nr]) (*countback)++;
      }
    }
    else
@@ -1964,6 +2021,9 @@ LALEOBWaveformEngine (
      if (a)       memcpy(a->data       , ampl->data, 2*length*(sizeof(REAL4)));
      if (phi)     memcpy(phi->data     , phse->data, length * (sizeof(REAL8)));
    }
+     
+   sprintf(message, "fFinal=%10.5e count=%d\n", params->fFinal, *countback);
+   LALInfo(status, message);
 
    /* Clean up */
    XLALDestroyREAL4Vector ( sig1 );
