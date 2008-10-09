@@ -518,6 +518,7 @@ LALInspiralChooseModel(
          case PadeF1:
          case EOB:
          case EOBNR:
+         case IMRPhenomA:
             ABORT(status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
             break;
          default:
@@ -554,6 +555,7 @@ LALInspiralChooseModel(
          case PadeF1:
          case EOB:
          case EOBNR:
+         case IMRPhenomA:
             ABORT(status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
             break;
          default:
@@ -590,6 +592,7 @@ LALInspiralChooseModel(
          case PadeF1:
          case EOB:
          case EOBNR:
+         case IMRPhenomA:
             ABORT(status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
             break;
          default:
@@ -625,6 +628,7 @@ LALInspiralChooseModel(
          case PadeT1:
          case EOB:
          case EOBNR:
+         case IMRPhenomA:
             ak->vn = ak->vlso = vlso = ak->vlsoP4;
             f->dEnergy = dEp4;
             f->flux = Fp4;
@@ -665,6 +669,7 @@ LALInspiralChooseModel(
          case PadeT1:
          case EOB:
          case EOBNR:
+         case IMRPhenomA:
             ak->vn = ak->vlso = vlso = ak->vlsoP4;
             f->dEnergy = dEp4;
             f->flux = Fp5;
@@ -706,6 +711,7 @@ LALInspiralChooseModel(
          case PadeT1:
          case EOB:
          case EOBNR:
+         case IMRPhenomA:
             ak->vn = ak->vlso = vlso = ak->vlsoP6;
             f->dEnergy = dEp6;
             f->flux = Fp6;
@@ -743,6 +749,7 @@ LALInspiralChooseModel(
          case PadeT1:
          case EOB:
          case EOBNR:
+         case IMRPhenomA:
             ak->vn = ak->vlso = vlso = ak->vlsoP6;
             f->dEnergy = dEp6;
             f->flux = Fp7;
@@ -762,6 +769,7 @@ LALInspiralChooseModel(
             break;
          case EOB:
          case EOBNR:
+         case IMRPhenomA:
             ak->vn = ak->vlso = vlso = ak->vlsoP6;
             f->dEnergy = dEp6;
             f->flux = Fp7;
@@ -794,6 +802,7 @@ LALInspiralChooseModel(
    case TaylorF1:
    case EOB:
    case EOBNR:
+   case IMRPhenomA:
    case PadeT1:
    case PadeF1:
    case TaylorF2:
