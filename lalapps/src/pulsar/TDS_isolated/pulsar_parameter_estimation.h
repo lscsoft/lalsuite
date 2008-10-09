@@ -112,6 +112,7 @@ extern "C" {
                      annealing in the burn in stage\n"\
 " --h0-width          (REAL8) width of the h0 proposal distribution (if set\n\
                      to 0 this will be worked out in the code)\n"\
+" --h0-scale          (REAL8) scale factor for h0 proposal width\n"\
 " --psi-width         (REAL8) width of the psi proposal distribution\n"\
 " --phi0-width        (REAL8) width of the phi proposal distribution\n"\
 " --ci-width          (REAL8) width of the cos(iota) proposal distribution\n"\
@@ -187,6 +188,7 @@ typedef struct tagMCMCParams{
                                       burn in */
   IntrinsicPulsarVariables sigmas; /* standard deviations of the proposal
                                       distributions */
+  REAL8 h0scale;                   /* scale factor to multiply h0 sigma by */
 
   INT4 outputRate;                 /* rate at which to output chain e.g. 10
                                       means output every tenth sample */

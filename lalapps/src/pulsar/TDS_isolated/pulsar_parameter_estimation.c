@@ -221,8 +221,8 @@ INT4 main(INT4 argc, CHAR *argv[]){
     /* if there is no input range for h0 then estimate it from the data */
     /* only do this once if performing grid search, but do for each seperate
        data set if doing MCMC */
-    if( ( inputs.mesh.maxVals.h0 == 0 || inputs.mcmc.sigmas.h0 == 0 ) && (
-          inputs.mcmc.doMCMC == 1 || i == 0 ) ){
+    if( ( inputs.mesh.maxVals.h0 == 0 || inputs.mcmc.sigmas.h0 == 0 ) && 
+        ( inputs.mcmc.doMCMC == 1 || i == 0 ) ){
       if( verbose ) fprintf(stderr, "Calculating h0 UL estimate: ");
 
       /* get the power spectral density power/bandwidth (1/60 Hz) */
@@ -238,9 +238,9 @@ INT4 main(INT4 argc, CHAR *argv[]){
           inputs.mesh.minVals.h0)/(REAL8)(inputs.mesh.h0Steps - 1.);
       }
 
-      /* set the MCMC h0 proposal step size at stdh0/20 */
+      /* set the MCMC h0 proposal step size at stdh0*scalefac */
       if( inputs.mcmc.doMCMC == 1 )
-        inputs.mcmc.sigmas.h0 = stdh0/20.;
+        inputs.mcmc.sigmas.h0 = stdh0*inputs.mcmc.h0scale;
 
       if( verbose ) fprintf(stderr, "%le\n", stdh0);
     }
@@ -468,12 +468,13 @@ void get_input_args(InputParams *inputParams, INT4 argc, CHAR *argv[]){
     { "use-priors",     no_argument,    NULL, '>' },
     { "only-joint",     no_argument,    NULL, '<' },
     { "output-burn-in", no_argument,    NULL, ')' },
+    { "h0-scale",       required_argument, 0, '[' },
     { 0, 0, 0, 0 }
   };
 
   CHAR args[] =
 "hD:p:P:i:o:a:A:j:b:B:k:s:S:m:c:C:n:l:L:q:Q:U:u:Y:T:v:V:z:Z:e:E:d:I:x:t:H:w:W:\
-y:g:G:K:N:X:O:J:M:r:fFR><)" ;
+y:g:G:K:N:X:O:J:M:r:fFR><)[:" ;
   CHAR *program = argv[0];
 
   /* set defaults */
@@ -520,6 +521,9 @@ y:g:G:K:N:X:O:J:M:r:fFR><)" ;
   inputParams->mcmc.sigmas.phi0 = LAL_PI/10.; /* 20th of phi range */
   inputParams->mcmc.sigmas.psi = LAL_PI/40.;  /* 20th of psi range */
   inputParams->mcmc.sigmas.ci = 0.1;          /* 20th of cosi range */
+  
+  inputParams->mcmc.h0scale = 1./20.;         /* 20th of default value */
+
   inputParams->mcmc.outputRate = 1;           /* output every sample */
 
   inputParams->mcmc.iterations = 10000;       /* default 10000 points */
@@ -713,6 +717,9 @@ y:g:G:K:N:X:O:J:M:r:fFR><)" ;
         break;
       case ')': /* output the burn in chain as well as the full chain */
         inputParams->mcmc.outputBI = 1;
+        break;
+      case '[': /* scale factor for stdev of h0 proposal distribution */
+        inputParams->mcmc.h0scale = atof(optarg);
         break;
       case '?':
         fprintf(stderr, "Unknown error while parsing options\n");
