@@ -690,43 +690,40 @@ void LALBBHPhenWaveTimeDomForInjection (LALStatus        *status,
   params->startPhase = ppnParams->phi;
   LALBBHPhenTimeDomEngine(status->statusPtr, hp, hc, h, a, ff, phi, params);
   
-  LALSDestroyVector(status->statusPtr, &hc);
-  CHECKSTATUSPTR(status);
-
   BEGINFAIL(status) {
+    LALSDestroyVector(status->statusPtr, &ff);
+    CHECKSTATUSPTR(status);
+    LALSDestroyVector(status->statusPtr, &a);
+    CHECKSTATUSPTR(status);
+    LALDDestroyVector(status->statusPtr, &phi);
+    CHECKSTATUSPTR(status);
+    if( params->approximant == IMRPhenomA ){
+      LALSDestroyVector(status->statusPtr, &h);
+      CHECKSTATUSPTR(status);
+    }
+  }
+  ENDFAIL(status);
+
+  /* Check an empty waveform hasn't been returned */
+  for (i = 0; i < phi->length; i++) {
+    if (phi->data[i] != 0.0) break;
+    if (i == phi->length - 1){
       LALSDestroyVector(status->statusPtr, &ff);
       CHECKSTATUSPTR(status);
       LALSDestroyVector(status->statusPtr, &a);
       CHECKSTATUSPTR(status);
       LALDDestroyVector(status->statusPtr, &phi);
       CHECKSTATUSPTR(status);
-      if( params->approximant == IMRPhenomA ){
-          LALSDestroyVector(status->statusPtr, &h);
-          CHECKSTATUSPTR(status);
+      if( params->approximant == IMRPhenomA){
+	LALSDestroyVector(status->statusPtr, &h);
+	CHECKSTATUSPTR(status);
       }
+      
+      DETATCHSTATUSPTR( status );
+      RETURN( status );
+    }
   }
-  ENDFAIL(status);
-
-  /* Check an empty waveform hasn't been returned */
-  for (i = 0; i < phi->length; i++) {
-      if (phi->data[i] != 0.0) break;
-      if (i == phi->length - 1){
-              LALSDestroyVector(status->statusPtr, &ff);
-              CHECKSTATUSPTR(status);
-              LALSDestroyVector(status->statusPtr, &a);
-              CHECKSTATUSPTR(status);
-              LALDDestroyVector(status->statusPtr, &phi);
-              CHECKSTATUSPTR(status);
-          if( params->approximant == IMRPhenomA){
-              LALSDestroyVector(status->statusPtr, &h);
-              CHECKSTATUSPTR(status);
-          }
-          
-          DETATCHSTATUSPTR( status );
-          RETURN( status );
-      }
-  }
-
+  
   /* print some messages */
   sprintf(message, "fFinal = %f", params->fFinal);
   LALInfo(status, message);
@@ -818,23 +815,23 @@ void LALBBHPhenWaveTimeDomForInjection (LALStatus        *status,
       ppnParams->fStart   = ppnParams->fStartIn;
 
       if( params->approximant == IMRPhenomA ){
-          if ( ( waveform->h = (REAL4TimeVectorSeries *)
-                      LALMalloc( sizeof(REAL4TimeVectorSeries) ) ) == NULL ){
-              ABORT( status, LALINSPIRALH_EMEM, LALINSPIRALH_MSGEMEM );
-          }
-          memset( waveform->h, 0, sizeof(REAL4TimeVectorSeries) );
-          LALSCreateVectorSequence( status->statusPtr,&( waveform->h->data ), &in );
-          CHECKSTATUSPTR(status);      
-          memcpy(waveform->h->data->data , h->data, 2*count*(sizeof(REAL4)));
-          waveform->h->deltaT = 1./params->tSampling;
-          waveform->h->sampleUnits = lalStrainUnit;
-          LALSnprintf( waveform->h->name, 
-                  LALNameLength, "Phenom inspiral polarizations");
-          LALSDestroyVector(status->statusPtr, &h);
-          CHECKSTATUSPTR(status);
+	if ( ( waveform->h = (REAL4TimeVectorSeries *)
+	       LALMalloc( sizeof(REAL4TimeVectorSeries) ) ) == NULL ){
+	  ABORT( status, LALINSPIRALH_EMEM, LALINSPIRALH_MSGEMEM );
+	}
+	memset( waveform->h, 0, sizeof(REAL4TimeVectorSeries) );
+	LALSCreateVectorSequence( status->statusPtr,&( waveform->h->data ), &in );
+	CHECKSTATUSPTR(status);      
+	memcpy(waveform->h->data->data , h->data, 2*count*(sizeof(REAL4)));
+	waveform->h->deltaT = 1./params->tSampling;
+	waveform->h->sampleUnits = lalStrainUnit;
+	LALSnprintf( waveform->h->name, 
+		     LALNameLength, "Phenom inspiral polarizations");
+	LALSDestroyVector(status->statusPtr, &h);
+	CHECKSTATUSPTR(status);
       }
   } /* end phase condition*/
-
+  
   /* free memory */
   LALSDestroyVector(status->statusPtr, &ff);
   CHECKSTATUSPTR(status);
@@ -842,6 +839,15 @@ void LALBBHPhenWaveTimeDomForInjection (LALStatus        *status,
   CHECKSTATUSPTR(status);
   LALDDestroyVector(status->statusPtr, &phi);
   CHECKSTATUSPTR(status);
+
+  LALSDestroyVector(status->statusPtr, &hc);
+  CHECKSTATUSPTR(status);
+
+  LALSDestroyVector(status->statusPtr, &hp);
+  CHECKSTATUSPTR(status);
+
+/*   LALSDestroyVector(status->statusPtr, &h); */
+/*   CHECKSTATUSPTR(status); */
 
   DETATCHSTATUSPTR(status);
   RETURN(status);
