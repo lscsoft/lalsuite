@@ -159,10 +159,10 @@ if the routine was unable to allocate memory for the output or
 if the input pointer is \verb+NULL+, in which case \verb+xlalErrno+
 is set to \verb+XLAL_EFAULT+
 
-\verb+XLALUnitCompare+ returns 1 if the the normal form of the two unit
-structures are the same or 0 if they are different.  It returns
-\verb+XLAL_FAILURE+ and \verb+xlalErrno+ is set to \verb+XLAL_EFAULT+
-if one of the input pointers is \verb+NULL+.
+\verb+XLALUnitCompare+ returns 0 if the the normal form of the two unit
+structures are the same or > 0 if they are different.  It returns
+\verb+XLAL_FAILURE+ and \verb+xlalErrno+ is set to \verb+XLAL_EFAULT+ if
+one of the input pointers is \verb+NULL+.
 
 \verb+XLALUnitMultiply+
 \verb+XLALUnitRaiseRAT4+
