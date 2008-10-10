@@ -23,11 +23,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <lal/LALConstants.h>
 #include <lal/LALMalloc.h>
 #include <lal/XLALError.h>
+#include <lal/DetResponse.h>
+#include <lal/LIGOMetadataUtils.h>
 #include <lal/Skymap.h>
 
-#define pi 3.1415926535897932385
+#define pi LAL_PI
 
 /* functions to handle vectors and matrices with dimensions that are
    (a) small and
@@ -116,16 +119,6 @@ static void cross(double a[3], double b[3], double c[3])
     a[2] = b[0] * c[1] - b[1] * c[0];
 }
 
-static void set33(double a[3][3], 
-           double v00, double v01, double v02, 
-           double v10, double v11, double v12, 
-           double v20, double v21, double v22)
-{
-    set3(a[0], v00, v01, v02);
-    set3(a[1], v10, v11, v12);
-    set3(a[2], v20, v21, v22);
-}
-
 static void set32(double a[3][2], 
            double v00, double v01, 
            double v10, double v11, 
@@ -136,32 +129,10 @@ static void set32(double a[3][2],
     set2(a[2], v20, v21);
 }
 
-static void add33(double a[3][3], double b[3][3], double c[3][3])
-{
-    add3(a[0], b[0], c[0]);
-    add3(a[1], b[1], c[1]);
-    add3(a[2], b[2], c[2]);
-}
-
-static void sub33(double a[3][3], double b[3][3], double c[3][3])
-{
-    sub3(a[0], b[0], c[0]);
-    sub3(a[1], b[1], c[1]);
-    sub3(a[2], b[2], c[2]);
-}
-
 static void div22(double a[2][2], double b[2][2], double c)
 {
     div2(a[0], b[0], c);
     div2(a[1], b[1], c);
-}
-
-
-static void out33(double a[3][3], double b[3], double c[3])
-{
-    mul3(a[0], c, b[0]);
-    mul3(a[1], c, b[1]);
-    mul3(a[2], c, b[2]);
 }
 
 static void transpose32(double a[2][3], double b[3][2])
@@ -248,83 +219,23 @@ static void spherical_from_cartesian(double a[2], double b[3])
 
 /* geometrical properties of an interferometer site */
 
-static double site_time(XLALSkymapSiteType* site, double direction[3])
+static double site_time(LALDetector* site, double direction[3])
 {
-    return -dot3(site->location, direction);
+    return -dot3(site->location, direction) / LAL_C_SI;
 }
 
-static void site_response(double f[2], XLALSkymapSiteType* site, double direction[3])
+static void site_response(double f[2], LALDetector* site, double direction[3])
 {
-    double e[2][3][3];
-    {
-        double m[3], n[3];
-        /* compute polarization basis vectors ... */
-        {
-            double z[3] = { 0, 0, 1 };        
-            cross(m, direction, z);
-            normalize3(m);       
-            cross(n, m, direction);
-            normalize3(n);
-        }       
-        /* ... and their outer products */
-        {
-            double mm[3][3], nn[3][3];
-            out33(mm, m, m);
-            out33(nn, n, n);
-            sub33(e[0], mm, nn);
-        }
-        {
-            double mn[3][3], nm[3][3];
-            out33(mn, m, n);
-            out33(nm, n, m);
-            add33(e[1], mn, nm);
-        }
-    }
-    {
-        /* accumulate the elementwise product of the matrices */
-        int i, j;
-        for (i = 0; i != 2; ++i)
-        {
-            f[i] = 0;
-            for (j = 0; j != 3; ++j)
-                f[i] += dot3(site->response[j], e[i][j]);
-        }
-
-    }
+    double thetaphi[2];
+    spherical_from_cartesian(thetaphi, direction);
+    XLALComputeDetAMResponse(&f[0], &f[1], site->response, thetaphi[1], LAL_PI_2 - thetaphi[0], 0, 0);
 }
 
-static void construct_hanford(XLALSkymapSiteType* site)
+static void construct_hlv(LALDetector site[3])
 {
-    set3 (site->location, -0.007209704, -0.012791166, +0.015345117 );
-    set33(site->response,  
-        -0.392614702, -0.077612253, -0.247388405, 
-        -0.077612253, +0.319524089, +0.227998294,
-        -0.247388405, +0.227998294, +0.073090613);
-}
-
-static void construct_livingston(XLALSkymapSiteType* site)
-{
-    set3 (site->location, -0.000247758, -0.018333629, +0.010754964);
-    set33(site->response, 
-        +0.411281744, +0.140209630, +0.247293475,
-        +0.140209630, -0.109005943, -0.181616031,
-        +0.247293475, -0.181616031, -0.302275801);
-}
-
-static void construct_virgo(XLALSkymapSiteType* site)
-{
-    set3 (site->location, +0.015165071, +0.002811912, +0.014605361);
-    set33(site->response, 
-        +0.243874678, -0.099086615, -0.232575796,
-        -0.099086615, -0.447827872, +0.187828535,
-        -0.232575796, +0.187828535, +0.203953193);
-}
-
-static void construct_hlv(XLALSkymapSiteType site[3])
-{
-    construct_hanford   (&site[0]);
-    construct_livingston(&site[1]);
-    construct_virgo     (&site[2]);
+    site[0] = lalCachedDetectors[LAL_LHO_4K_DETECTOR];
+    site[1] = lalCachedDetectors[LAL_LLO_4K_DETECTOR];
+    site[2] = lalCachedDetectors[LAL_VIRGO_DETECTOR];
 }
 
 /* properties of each pixel in the tiling */
@@ -398,6 +309,8 @@ XLALSkymapPlanType* XLALSkymapConstructPlan(int sampleFrequency)
         double v_hl[3], v_hv[3];
         sub3(v_hl, plan->site[1].location, plan->site[0].location);
         sub3(v_hv, plan->site[2].location, plan->site[0].location);
+        div3(v_hl, v_hl, LAL_C_SI);
+        div3(v_hv, v_hv, LAL_C_SI);
         cross(plan->siteNormal, v_hl, v_hv);
         /* compute the maximum delay rounded to nearest sample */ 
         plan->hl = (int) floor(nrm3(v_hl) * plan->sampleFrequency + 0.5);
@@ -460,11 +373,10 @@ XLALSkymapPlanType* XLALSkymapConstructPlan(int sampleFrequency)
                 normalize3(plan->pixel[i].direction);
                 /* normalize the area */
                 plan->pixel[i].area /= area;
-                /* compute the antenna pattern for the average direction */
                 for (j = 0; j != 3; ++j)
                 {   
                     site_response(plan->pixel[i].f[j], &plan->site[j], plan->pixel[i].direction);
-                }                
+                } 
             }
             else
             {

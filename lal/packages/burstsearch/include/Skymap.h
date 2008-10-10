@@ -25,17 +25,9 @@
 extern "C" {
 #endif
 
+#include <lal/LALDetectors.h>
 #include <lal/LALRCSID.h>
 NRCSID(EPSEARCHH, "$Id$");
-
-/*
- * Stores the location and response matrix of an observatory
- */
-typedef struct tagXLALSkymapSiteType
-{
-    double location[3];
-    double response[3][3];
-} XLALSkymapSiteType;
 
 /* 
  * Stores pre-computed properties of each sky direction
@@ -53,7 +45,7 @@ typedef struct tagLALSkymapPixelType
 typedef struct tagXLALSkymapPlanType
 {
     int sampleFrequency;
-    XLALSkymapSiteType site[3];
+    LALDetector site[3];
     double siteNormal[3];
 
     /*  physical delays between the detectors,
