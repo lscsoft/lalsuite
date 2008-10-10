@@ -318,7 +318,7 @@ LALGeneratePPNAmpCorInspiral(
     GENERATEPPNINSPIRALH_MSGEOUT );
 
   /* Get PN parameters, if they are specified; otherwise use
-     3.5 post-Newtonian. */
+     2PN */
   if ( params->ppn ) {
     ASSERT( params->ppn->data, stat, GENERATEPPNINSPIRALH_ENUL, 
         GENERATEPPNINSPIRALH_MSGENUL );
@@ -336,9 +336,8 @@ LALGeneratePPNAmpCorInspiral(
     p[2] = 1.0;
     p[3] = 1.0;
     p[4] = 1.0;
-    p[5] = 1.0;
-    for ( i = 6; i < MAXORDER; i++ )
-      p[i] = 1.0;
+    for ( i = 5; i < MAXORDER; i++ )
+      p[i] = 0.0;
   }
 
 
