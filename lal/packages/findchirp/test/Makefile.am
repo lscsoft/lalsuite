@@ -2,7 +2,7 @@
 #
 # $Id$
 #
-check_PROGRAMS  = FindChirpBCVSpinTest FindChirpTDTest FindChirpAmpCorTest
+check_PROGRAMS  = FindChirpBCVSpinTest FindChirpTDTest 
 #CoherentInspiralInputTest
 TESTS           = NoTest.sh
 
