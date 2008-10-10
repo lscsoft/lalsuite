@@ -832,6 +832,8 @@ ConnectLinePoints(LALStatus *status,
       contour[direction].n=curveLength;
     }
     /* check if the length of the curve is greater than the threshhold*/
+    /* Also check if the power is enough to record this curve.*/
+    /* Need to build a generalized function to threshold the contour halves*/
     if(contour[0].n+contour[1].n-1 >= LENGTH_THRESHOLD){
       /* record the curve found in the output structure by joining the left and right Contours*/
       out->curves = (Curve*)LALRealloc(out->curves,sizeof(Curve)*(out->numberOfCurves+1));

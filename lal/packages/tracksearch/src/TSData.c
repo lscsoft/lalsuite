@@ -176,7 +176,7 @@ LALTracksearchFindLambda(
   if (searchParams->verbosity >= verbose)
     {
       fprintf(stdout,"Auto lambda invoked\n");
-      fprintf(stdout,"Lh %e \t Ll %e \n 2nd D Gauss %f \t  Mean h  %e \t Std h %f \n",searchParams->StartThresh,searchParams->LinePThresh,myGaussian,meanH,stdH);
+      fprintf(stdout,"Lh %e \t Ll %e \n 2nd D Gauss %f \n Mean h:  %10.20e \n Std  h: %10.20e \n",searchParams->StartThresh,searchParams->LinePThresh,myGaussian,meanH,stdH);
     }
   /* Need to throw an error if we get a value Lh <= 0 */
   DETATCHSTATUSPTR(status);
