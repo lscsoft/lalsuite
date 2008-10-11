@@ -63,29 +63,21 @@ int XLALREAL4ModifiedPeriodogram(
       XLAL_ERROR( func, XLAL_EINVAL );
   if ( periodogram->data->length != tseries->data->length/2 + 1 )
       XLAL_ERROR( func, XLAL_EBADLEN );
-  if ( window )
-  {
-    if ( ! window->data )
-      XLAL_ERROR( func, XLAL_EINVAL );
-    if ( window->sumofsquares <= 0.0 )
-      XLAL_ERROR( func, XLAL_EINVAL );
-    if ( window->data->length != tseries->data->length )
-      XLAL_ERROR( func, XLAL_EBADLEN );
-  }
 
   /* if the window has been specified, apply it to data */
   if ( window )
   {
-    UINT4 j;
-
     /* make a working copy */
     work = XLALCutREAL4Sequence( tseries->data, 0, tseries->data->length );
     if ( ! work )
       XLAL_ERROR( func, XLAL_EFUNC );
 
     /* apply windowing to data */
-    for ( j = 0; j < tseries->data->length; ++j )
-      work->data[j] *= window->data->data[j];
+    if ( ! XLALUnitaryWindowREAL4Sequence( work, window ) )
+    {
+      XLALDestroyREAL4Sequence( work );
+      XLAL_ERROR( func, XLAL_EFUNC );
+    }
   }
   else
     /* point to original data */
@@ -103,10 +95,7 @@ int XLALREAL4ModifiedPeriodogram(
 
   /* normalize power spectrum to give correct units */
   /* CHECKME: is this the right factor? */
-  if ( window )
-    normfac = tseries->deltaT / window->sumofsquares;
-  else
-    normfac = tseries->deltaT / tseries->data->length;
+  normfac = tseries->deltaT / tseries->data->length;
   for ( k = 0; k < periodogram->data->length; ++k )
     periodogram->data->data[k] *= normfac;
 
@@ -152,29 +141,21 @@ int XLALREAL8ModifiedPeriodogram(
       XLAL_ERROR( func, XLAL_EINVAL );
   if ( periodogram->data->length != tseries->data->length/2 + 1 )
       XLAL_ERROR( func, XLAL_EBADLEN );
-  if ( window )
-  {
-    if ( ! window->data )
-      XLAL_ERROR( func, XLAL_EINVAL );
-    if ( window->sumofsquares <= 0.0 )
-      XLAL_ERROR( func, XLAL_EINVAL );
-    if ( window->data->length != tseries->data->length )
-      XLAL_ERROR( func, XLAL_EBADLEN );
-  }
 
   /* if the window has been specified, apply it to data */
   if ( window )
   {
-    UINT4 j;
-
     /* make a working copy */
     work = XLALCutREAL8Sequence( tseries->data, 0, tseries->data->length );
     if ( ! work )
       XLAL_ERROR( func, XLAL_EFUNC );
 
     /* apply windowing to data */
-    for ( j = 0; j < tseries->data->length; ++j )
-      work->data[j] *= window->data->data[j];
+    if ( ! XLALUnitaryWindowREAL8Sequence( work, window ) )
+    {
+      XLALDestroyREAL8Sequence( work );
+      XLAL_ERROR( func, XLAL_EFUNC );
+    }
   }
   else
     /* point to original data */
@@ -192,10 +173,7 @@ int XLALREAL8ModifiedPeriodogram(
 
   /* normalize power spectrum to give correct units */
   /* CHECKME: is this the right factor? */
-  if ( window )
-    normfac = tseries->deltaT / window->sumofsquares;
-  else
-    normfac = tseries->deltaT / tseries->data->length;
+  normfac = tseries->deltaT / tseries->data->length;
   for ( k = 0; k < periodogram->data->length; ++k )
     periodogram->data->data[k] *= normfac;
 
@@ -263,17 +241,6 @@ int XLALREAL4AverageSpectrumWelch(
     XLAL_ERROR( func, XLAL_EBADLEN );
   if ( spectrum->data->length != seglen/2 + 1 )
     XLAL_ERROR( func, XLAL_EBADLEN );
-
-  /* make sure window, if present, is appropriate */
-  if ( window )
-  {
-    if ( ! window->data )
-      XLAL_ERROR( func, XLAL_EINVAL );
-    if ( window->sumofsquares <= 0.0 )
-      XLAL_ERROR( func, XLAL_EINVAL );
-    if ( window->data->length != seglen )
-      XLAL_ERROR( func, XLAL_EBADLEN );
-  }
 
   /* clear spectrum data */
   memset( spectrum->data->data, 0,
@@ -362,17 +329,6 @@ int XLALREAL8AverageSpectrumWelch(
     XLAL_ERROR( func, XLAL_EBADLEN );
   if ( spectrum->data->length != seglen/2 + 1 )
     XLAL_ERROR( func, XLAL_EBADLEN );
-
-  /* make sure window, if present, is appropriate */
-  if ( window )
-  {
-    if ( ! window->data )
-      XLAL_ERROR( func, XLAL_EINVAL );
-    if ( window->sumofsquares <= 0.0 )
-      XLAL_ERROR( func, XLAL_EINVAL );
-    if ( window->data->length != seglen )
-      XLAL_ERROR( func, XLAL_EBADLEN );
-  }
 
   /* clear spectrum data */
   memset( spectrum->data->data, 0,
@@ -524,17 +480,6 @@ int XLALREAL4AverageSpectrumMedian(
   if ( spectrum->data->length != seglen/2 + 1 )
     XLAL_ERROR( func, XLAL_EBADLEN );
 
-  /* make sure window, if present, is appropriate */
-  if ( window )
-  {
-    if ( ! window->data )
-      XLAL_ERROR( func, XLAL_EINVAL );
-    if ( window->sumofsquares <= 0.0 )
-      XLAL_ERROR( func, XLAL_EINVAL );
-    if ( window->data->length != seglen )
-      XLAL_ERROR( func, XLAL_EBADLEN );
-  }
-
   /* create frequency series data workspaces */
   work = XLALCalloc( numseg, sizeof( *work ) );
   if ( ! work )
@@ -664,17 +609,6 @@ int XLALREAL8AverageSpectrumMedian(
     XLAL_ERROR( func, XLAL_EBADLEN );
   if ( spectrum->data->length != seglen/2 + 1 )
     XLAL_ERROR( func, XLAL_EBADLEN );
-
-  /* make sure window, if present, is appropriate */
-  if ( window )
-  {
-    if ( ! window->data )
-      XLAL_ERROR( func, XLAL_EINVAL );
-    if ( window->sumofsquares <= 0.0 )
-      XLAL_ERROR( func, XLAL_EINVAL );
-    if ( window->data->length != seglen )
-      XLAL_ERROR( func, XLAL_EBADLEN );
-  }
 
   /* create frequency series data workspaces */
   work = XLALCalloc( numseg, sizeof( *work ) );
@@ -855,17 +789,6 @@ int XLALREAL4AverageSpectrumMedianMean(
   if ( numseg%2 || stride < seglen/2 )
     XLAL_ERROR( func, XLAL_EBADLEN );
 
-  /* make sure window, if present, is appropriate */
-  if ( window )
-  {
-    if ( ! window->data )
-      XLAL_ERROR( func, XLAL_EINVAL );
-    if ( window->sumofsquares <= 0.0 )
-      XLAL_ERROR( func, XLAL_EINVAL );
-    if ( window->data->length != seglen )
-      XLAL_ERROR( func, XLAL_EBADLEN );
-  }
-
   /* create frequency series data workspaces */
   even = XLALCalloc( halfnumseg, sizeof( *even ) );
   if ( ! even )
@@ -1036,17 +959,6 @@ int XLALREAL8AverageSpectrumMedianMean(
   halfnumseg = numseg/2;
   if ( numseg%2 || stride < seglen/2 )
     XLAL_ERROR( func, XLAL_EBADLEN );
-
-  /* make sure window, if present, is appropriate */
-  if ( window )
-  {
-    if ( ! window->data )
-      XLAL_ERROR( func, XLAL_EINVAL );
-    if ( window->sumofsquares <= 0.0 )
-      XLAL_ERROR( func, XLAL_EINVAL );
-    if ( window->data->length != seglen )
-      XLAL_ERROR( func, XLAL_EBADLEN );
-  }
 
   /* create frequency series data workspaces */
   even = XLALCalloc( halfnumseg, sizeof( *even ) );
