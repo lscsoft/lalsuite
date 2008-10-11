@@ -614,7 +614,11 @@ void LALappsTrackSearchInitialize(
 	  {
 	    /* Allow intepreting float values */
 	    REAL8 startTime = atof(optarg);
-	    XLALFloatToGPS(&tempGPS,startTime);
+	    /*XLALFloatToGPS(&tempGPS,startTime);*/
+	    LAL_CALL(LALFloatToGPS(status,
+				   &tempGPS,
+				   &startTime),
+		     status);
 	    params->GPSstart.gpsSeconds = tempGPS.gpsSeconds;
 	    params->GPSstart.gpsNanoSeconds = tempGPS.gpsNanoSeconds;
 	  }
@@ -1277,7 +1281,10 @@ void LALappsGetFrameData(LALStatus*          status,
        * Seek to end of requested data makes sure that all stream is complete!
        */
       bufferedDataStop=bufferedDataStart+(DataIn->data->length * DataIn->deltaT);
-      XLALFloatToGPS(&bufferedDataStopGPS,bufferedDataStop);
+      LAL_CALL(LALFloatToGPS(status,
+			     &bufferedDataStopGPS,
+			     &bufferedDataStop),
+	       status);
       bufferedDataTimeInterval=bufferedDataStop-bufferedDataStart;
       if (params->verbosity >= verbose)
 	{
@@ -2019,9 +2026,13 @@ void LALappsDoTrackSearch(
 			   tsMarkers,
 			   &outputCandidateFilename,
 			   ".candidates");
+/*   LALappsWriteSearchResults(status, */
+/* 			    outputCandidateFilename->data, */
+/* 			    outputCurvesThreshold); */
+
   LALappsWriteSearchResults(status,
 			    outputCandidateFilename->data,
-			    outputCurvesThreshold);
+			    outputCurves);
 
   if (params.verbosity >= printFiles)
     LALappsWriteCurveList(status,
@@ -2453,8 +2464,10 @@ LALappsDoTimeSeriesAnalysis(LALStatus          *status,
 			   &(params.GPSstart)),
 	     status);
     newFloatTime=originalFloatTime-(params.SegBufferPoints/params.SamplingRate);
-    XLALFloatToGPS(&edgeOffsetGPS,
-		   newFloatTime);
+    LAL_CALL(LALFloatToGPS(status,
+			   &edgeOffsetGPS,
+			   &newFloatTime),
+	     status);
     
     dataset=XLALCreateREAL4TimeSeries(params.channelName,
 				      &edgeOffsetGPS,

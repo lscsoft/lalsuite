@@ -78,7 +78,11 @@ LALappsTSACropMap(
 
   startTime=startTime+(tmpMarkingParams.deltaT*binsToCrop);
 
-  XLALFloatToGPS(&tmpMarkingParams.mapStartGPS,startTime);
+  LAL_CALL(
+	   LALFloatToGPS(status,
+			 &tmpMarkingParams.mapStartGPS,
+			 &startTime),
+	   status);
 
   LAL_CALL(
 	   LALGPStoFloat(status,
@@ -88,7 +92,11 @@ LALappsTSACropMap(
 
   stopTime=stopTime-(tmpMarkingParams.deltaT*binsToCrop);
 
-  XLALFloatToGPS(&tmpMarkingParams.mapStopGPS,stopTime);
+  LAL_CALL(
+	   LALFloatToGPS(status,
+			 &tmpMarkingParams.mapStopGPS,
+			 &stopTime),
+	   status);
 
   LALappsTSACreateMap(status,
 		      &tmpMap,
