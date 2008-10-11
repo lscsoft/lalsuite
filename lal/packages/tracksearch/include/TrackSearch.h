@@ -90,7 +90,7 @@ NRCSID (TRACKSEARCHH, "$Id$");
 #define TS_OCTANT 10
 #define TS_MASKSIZE 11
 #define TS_SIGMASIZE 12
-
+#define TS_ALLOC_ERROR 13
 
 #define TS_MSGNON_NULL_POINTER  "Allocation of memory to Non null pointer" 
 #define TS_MSG_NULL_POINTER     "Null pointer passed when non NUll pointer expected" 
@@ -104,6 +104,7 @@ NRCSID (TRACKSEARCHH, "$Id$");
 #define MSG_TS_OCTANT "octant cannot be greater than 4 "
 #define MSG_TS_MASKSIZE "maskSize too small"
 #define MSG_TS_SIGMASIZE "sigma value to small to be useful"
+#define MSG_TS_ALLOC_ERROR "error trying to allocate or deallocate memory"
 /* structures */
 
 typedef struct tagCurve
@@ -135,19 +136,27 @@ typedef struct tagTrackSearchStore  /* Structure for storage space for the algor
   INT4  numLPoints;      /* A variable which contains the number of possible line points */
 } TrackSearchStore;
 
-
+/*
+ * Enum type for the possible operations for curve cutting
+ */
+typedef enum tagTrackSearchCut
+  {
+    none, PandL, nPandnL, PandnL, nPandL
+  }TrackSearchCut;
+ 
 /*
  * Output structure for the tracksearch algorithm
  */
 typedef struct tagTrackSearchOut
 {
-  INT4 numberOfCurves;    /* the number of curves found*/
-  Curve *curves;          /* a pointer to a array of numberOfCurves curves */
-  TrackSearchStore store; /* a pointer to the temporary storage space */
-  REAL4 minPowerCut;       /* copy of applied threshold value */
-  REAL4 minLengthCut;      /* copy of applied threshold value */
-  REAL4 startThreshCut;    /* copy of applied Lh threshold */
-  REAL4 linePThreshCut;    /* copy of applied Ll threshold */
+  INT4 numberOfCurves;          /* the number of curves found*/
+  Curve *curves;                /* a pointer to a array of numberOfCurves curves */
+  TrackSearchStore store;       /* a pointer to the temporary storage space */
+  REAL4 minPowerCut;            /* copy of applied threshold value */
+  REAL4 minLengthCut;           /* copy of applied threshold value */
+  REAL4 startThreshCut;         /* copy of applied Lh threshold */
+  REAL4 linePThreshCut;         /* copy of applied Ll threshold */
+  TrackSearchCut thresholdLogic;/* Logic operation to apply with mPC and mLC*/
 } TrackSearchOut;
 
 /*

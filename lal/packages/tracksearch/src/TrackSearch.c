@@ -99,6 +99,8 @@ static void DestroyStorage(LALStatus *, TrackSearchStore *);
 static void ComputeConvolutions(LALStatus *,  TrackSearchStore *, const TimeFreqRep *, TrackSearchParams *);
 static void ComputeLinePoints(LALStatus *, TrackSearchStore * , TrackSearchParams *);
 static void ConnectLinePoints(LALStatus *, TrackSearchOut *, TrackSearchParams *, const TimeFreqRep *);
+static INT4 TestPotentialLine(TrackSearchOut, INT4, REAL4);
+
 static REAL4 GetAngle(REAL4 , REAL4 );
 static REAL4 Gauss0(INT4,REAL4);
 static REAL4 Gauss1(INT4,REAL4);
@@ -240,31 +242,62 @@ InitializeStorage( LALStatus * status,
   store->width=params->width;
   
   /* allocate space for isLine, a char Map to flag possible line points*/
+  store->isLine = NULL;
   store->isLine = (CHAR **)LALMalloc(store->height*sizeof(CHAR *));
+  if (store->isLine == NULL)
+    ABORT(status,TS_ALLOC_ERROR,MSG_TS_ALLOC_ERROR);
   for(i=0;i<store->height;i++) 
-    *(store->isLine + i ) = (CHAR *) LALMalloc(store->width*sizeof(CHAR));
-  
+    {
+      *(store->isLine + i ) = NULL;
+      *(store->isLine + i ) = (CHAR *) LALMalloc(store->width*sizeof(CHAR));
+      if (*(store->isLine + i) == NULL)
+	ABORT(status,TS_ALLOC_ERROR,MSG_TS_ALLOC_ERROR);
+    }
   /* Arrays to store convolved images.. 5 in number for the 2 first derivatives
      and 3 second derivatives */
   for(i=0;i<5;i++){
+    store->k[i]=NULL;
     store->k[i] = (REAL4 **)LALMalloc(store->height*sizeof(REAL4 *));
+    if (store->k[i] == NULL)
+      ABORT(status,TS_ALLOC_ERROR,MSG_TS_ALLOC_ERROR);
     for(j=0;j<store->height;j++) 
-      *(store->k[i]+j) = (REAL4 *)  LALMalloc(store->width*sizeof(REAL4));    
+      {
+	*(store->k[i]+j)=NULL;
+	*(store->k[i]+j) = (REAL4 *)  LALMalloc(store->width*sizeof(REAL4));
+	if (*(store->k[i]+j) == NULL)
+	  ABORT(status,TS_ALLOC_ERROR,MSG_TS_ALLOC_ERROR);
+      }
   }
   /* Array to store the Eigen vectors and line positions */
+  store->eigenVec=NULL;
   store->eigenVec = LALMalloc(store->height * store->width * 4 * sizeof(REAL4));
-  
+  if (store->eigenVec == NULL)
+    ABORT(status,TS_ALLOC_ERROR,MSG_TS_ALLOC_ERROR);
   /* Array to store temporary images */
+  store->imageTemp=NULL;
   store->imageTemp = (REAL4 **)LALMalloc(store->height*sizeof(REAL4 *));
+  if (store->imageTemp == NULL)
+    ABORT(status,TS_ALLOC_ERROR,MSG_TS_ALLOC_ERROR);
   for(i=0;i<store->height;i++) 
-    *(store->imageTemp + i ) = (REAL4 *) LALMalloc(store->width*sizeof(REAL4));
-   
+    {
+      *(store->imageTemp + i ) = NULL;
+      *(store->imageTemp + i ) = (REAL4 *) LALMalloc(store->width*sizeof(REAL4));
+      if (*(store->imageTemp + i) == NULL)
+	ABORT(status,TS_ALLOC_ERROR,MSG_TS_ALLOC_ERROR);
+    }
   /* Allocate memory for the Gaussian masks and compute the size of the arrays */
   maskSize = ceil(params->sigma * MASK_SIZE);
   ASSERT(maskSize>2,status,TS_MASKSIZE,MSG_TS_MASKSIZE);
   /* 3 arrays; gaussian function, its first and second derivative */
   for(i=0;i<3;i++)
-    store->gaussMask[i] = LALMalloc(sizeof(REAL8)*(2*maskSize+1));
+    {
+      store->gaussMask[i] = NULL;
+      store->gaussMask[i] = LALMalloc(sizeof(REAL8)*(2*maskSize+1));
+      if (store->gaussMask[i] == NULL)
+	{
+	  ABORT(status,TS_ALLOC_ERROR,MSG_TS_ALLOC_ERROR);
+	}
+    }
   for(i=-maskSize;i<=maskSize;i++){
     j = i + maskSize;
     /* Averaged Gaussian function */
@@ -586,7 +619,8 @@ ConnectLinePoints(LALStatus *status,
   INT4 processed; /*the number of line Points processed so far */
   INT4 octant,lastOctant; /* to use in identifying which neighbouring pixels to search for line points */
   INT4 currentRow,currentCol,nextRow,nextCol; /* variables pointing to the current and next location*/
-  INT4 curveLength;    /* the length of the current curve segment */
+  INT4  curveLength=0; /* the length of the current curve segment */
+  REAL4 curvePower=0; /* the total energy of the current curve segment */
   INT4 maxCurveLen=MAX_CURVE_LENGTH;/* the maximum curve lenght allowed */
   INT4 direction; /* the 2 opposite directions to traverse to obtain the complete line */
   INT4 reject[2],check[3],which;/* the list of surrounding points to reject and select */
@@ -831,10 +865,21 @@ ConnectLinePoints(LALStatus *status,
       /* end of the Contour reached */
       contour[direction].n=curveLength;
     }
+    /* *** */
+    curveLength=0;
+    curveLength=contour[0].n+contour[1].n-1;
+    curvePower=0;
+    /* Following loops may have a single TFR point in common? */
+    for(i=0;i<contour[0].n;i++)
+	curvePower = curvePower +
+	  TimeFreqMap->map[contour[0].row[contour[0].n - 1 - i]][contour[0].col[contour[0].n - 1 - i]];
+    for(i=0;i<contour[1].n;i++)
+      curvePower=curvePower +
+	TimeFreqMap->map[contour[1].row[i]][contour[1].col[i]];
+    /* *** */
     /* check if the length of the curve is greater than the threshhold*/
-    /* Also check if the power is enough to record this curve.*/
-    /* Need to build a generalized function to threshold the contour halves*/
-    if(contour[0].n+contour[1].n-1 >= LENGTH_THRESHOLD){
+    if((contour[0].n+contour[1].n-1 >= LENGTH_THRESHOLD) 
+       && TestPotentialLine(*out,curveLength,curvePower)){
       /* record the curve found in the output structure by joining the left and right Contours*/
       out->curves = (Curve*)LALRealloc(out->curves,sizeof(Curve)*(out->numberOfCurves+1));
       /* Check why contour[1].n-1 has the -1*/
@@ -872,7 +917,8 @@ ConnectLinePoints(LALStatus *status,
       out->curves[out->numberOfCurves].totalPower = powerHalfContourA + powerHalfContourB;
       out->curves[out->numberOfCurves].totalPower=0;
             for(i=0;i<out->curves[out->numberOfCurves].n;i++)
-	      out->curves[out->numberOfCurves].totalPower=out->curves[out->numberOfCurves].totalPower+
+	      out->curves[out->numberOfCurves].totalPower=
+		out->curves[out->numberOfCurves].totalPower+
 		out->curves[out->numberOfCurves].depth[i];
       if(contour[0].junction+contour[1].junction)
 	out->curves[out->numberOfCurves].junction=1;
@@ -1010,6 +1056,26 @@ GetAngle(
     angle=LAL_PI-epsilon;
   if(angle<epsilon) angle=epsilon;
   return angle;
+}
+/* routinte that applies the requested threshold logic returning
+ *   True/False 1 or 0
+ */
+INT4
+TestPotentialLine(
+		  TrackSearchOut TSO,
+		  INT4 CL,
+		  REAL4 IP)
+{
+  INT4 result=0;
+  
+  /* Future plan case statement if conditionals based on
+   * TSO.thresholdLogic field
+   */
+  if ((CL >= TSO.minLengthCut) && (IP >= TSO.minPowerCut))
+    result=1;
+  else
+    result=0;
+  return result;
 }
 
 /* routine called by qsort  
