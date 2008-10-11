@@ -92,3 +92,4 @@ int XLALSkymapRenderMollweide(int m, int n, double* q, XLALSkymapPlanType* plan,
 #endif
 
 #endif /* SKYMAP_H */
+

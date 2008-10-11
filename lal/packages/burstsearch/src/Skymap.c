@@ -18,7 +18,6 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <assert.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -112,8 +111,6 @@ static void normalize3(double a[3])
 
 static void cross(double a[3], double b[3], double c[3])
 {
-    /* check for aliasing */
-    assert((a != b) && (a != c));
     a[0] = b[1] * c[2] - b[2] * c[1];
     a[1] = b[2] * c[0] - b[0] * c[2];
     a[2] = b[0] * c[1] - b[1] * c[0];
@@ -155,7 +152,6 @@ static void set22(double a[2][2], double a00, double a01, double a10, double a11
 
 static void inv22(double a[2][2], double b[2][2])
 {
-    assert(a != b);
     a[0][0] = b[1][1];
     a[0][1] = -b[1][0];
     a[1][0] = -b[0][1];
@@ -166,7 +162,6 @@ static void inv22(double a[2][2], double b[2][2])
 static void mul322(double a[3][2], double b[3][2], double c[2][2])
 {
     int i, j, k;
-    assert(a != b);
     for (i = 0; i != 3; ++i)
         for (k = 0; k != 2; ++k)
         {
@@ -636,3 +631,4 @@ int XLALSkymapRenderMollweide(int m, int n, double* q, XLALSkymapPlanType* plan,
 
     return 0;
 }
+
