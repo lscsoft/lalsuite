@@ -34,10 +34,12 @@
 #include <gsl/gsl_randist.h>
 #include <gsl/gsl_sf_bessel.h>
 #include <gsl/gsl_sf_gamma.h>
+#include <gsl/gsl_vector_int.h>
 
 #include <lal/LALRCSID.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALError.h>
+#include <lal/GSLSupport.h>
 #include <lal/LogPrintf.h>
 #include <lal/UserInput.h>
 #include <lal/SFTfileIO.h>
@@ -51,6 +53,7 @@ RCSID("$Id$");
 
 REAL8 pdf_ncx2_4(REAL8, REAL8);
 REAL8 d_pdf_ncx2_4(REAL8, REAL8);
+REAL8 ran_ncx2_4(const gsl_rng*, REAL8);
 
 #define TRUE  (1==1)
 #define FALSE (1==0)
@@ -76,11 +79,13 @@ int main(int argc, char *argv[]) {
   INT4 rng_med_win = 50;
   REAL8 max_rel_err = 1.0e-3;
   REAL8 h0_brake = 0.75;
-  INT4 MC_trial_init = 1e5;
+  INT4 MC_trial_init = 2e5;
   REAL8 MC_trial_fac = 1.5;
   INT4 MC_trial_reset = 5e7;
   REAL8 FDR = 0.05;
   CHAR *output_file = NULL;
+  REAL8 twoF_pdf_hist_binw = 1.0;
+  CHAR *twoF_pdf_hist_file = NULL;
 
   FILE *fp = NULL;
   CHAR *cmdline = NULL;
@@ -101,6 +106,8 @@ int main(int argc, char *argv[]) {
   INT4 h0_iter = 0;
   INT4 MC_trials = 0;
   INT4 MC_iter = 0;
+  INT4 twoF_pdf_FD = 0;
+  gsl_vector_int *twoF_pdf_hist = NULL;
     
   /* Initialise LAL error handler, debug level and log level */
   lal_errhandler = LAL_ERR_EXIT;
@@ -108,23 +115,25 @@ int main(int argc, char *argv[]) {
   LogSetLevel(lalDebugLevel);
   
   /* Register command line arguments */
-  LAL_CALL(LALRegisterBOOLUserVar  (&status, "help",         'h', UVAR_HELP,     "Print this help message", &help), &status);
-  LAL_CALL(LALRegisterREALUserVar  (&status, "alpha",        'a', UVAR_REQUIRED, "Right ascension in radians", &alpha), &status);
-  LAL_CALL(LALRegisterREALUserVar  (&status, "delta",        'd', UVAR_REQUIRED, "Declination in radians", &delta), &status);
-  LAL_CALL(LALRegisterREALUserVar  (&status, "freq",         'f', UVAR_REQUIRED, "Starting frequency", &freq), &status);
-  LAL_CALL(LALRegisterREALUserVar  (&status, "band",         'b', UVAR_REQUIRED, "Frequency band", &band), &status);
-  LAL_CALL(LALRegisterREALUserVar  (&status, "loudest-2F",   'F', UVAR_REQUIRED, "Loudest 2F value in this band", &twoFs), &status);
-  LAL_CALL(LALRegisterSTRINGUserVar(&status, "sft-patt",     'D', UVAR_REQUIRED, "File pattern of the input SFTs", &sft_pattern), &status);
-  LAL_CALL(LALRegisterSTRINGUserVar(&status, "ephem-dir",    'E', UVAR_OPTIONAL, "Directory containing ephemeris files", &ephem_dir), &status);
-  LAL_CALL(LALRegisterSTRINGUserVar(&status, "ephem-year",   'y', UVAR_REQUIRED, "Year suffix for ephemeris files", &ephem_year), &status);
-  LAL_CALL(LALRegisterINTUserVar   (&status, "rng-med-win",  'k', UVAR_OPTIONAL, "Size of the running median window", &rng_med_win), &status);
-  LAL_CALL(LALRegisterREALUserVar  (&status, "max-rel-err",  'e', UVAR_OPTIONAL, "Maximum error in h0 relative to previous value", &max_rel_err), &status);
-  LAL_CALL(LALRegisterREALUserVar  (&status, "h0-brake",     'b', UVAR_OPTIONAL, "h0 cannot change by more than this fraction of itself", &h0_brake), &status);
-  LAL_CALL(LALRegisterINTUserVar   (&status, "init-MC-tri",  'I', UVAR_OPTIONAL, "Initial number of MC int. trials", &MC_trial_init), &status);
-  LAL_CALL(LALRegisterREALUserVar  (&status, "MC-tri-incr",  'i', UVAR_OPTIONAL, "Multiply number of MC int. trials by this after each step", &MC_trial_fac), &status);
-  LAL_CALL(LALRegisterINTUserVar   (&status, "MC-tri-reset", 'Z', UVAR_OPTIONAL, "Reset if no convergence after this number of MC int. trials", &MC_trial_reset), &status);
-  LAL_CALL(LALRegisterREALUserVar  (&status, "false-dism",   'R', UVAR_OPTIONAL, "Target false dismissal rate", &FDR), &status);
-  LAL_CALL(LALRegisterSTRINGUserVar(&status, "output-file",  'o', UVAR_OPTIONAL, "Output file for the upper limit and other info (defaults to stdout)", &output_file), &status);
+  LAL_CALL(LALRegisterBOOLUserVar  (&status, "help",             'h', UVAR_HELP,     "Print this help message", &help), &status);
+  LAL_CALL(LALRegisterREALUserVar  (&status, "alpha",            'a', UVAR_REQUIRED, "Right ascension in radians", &alpha), &status);
+  LAL_CALL(LALRegisterREALUserVar  (&status, "delta",            'd', UVAR_REQUIRED, "Declination in radians", &delta), &status);
+  LAL_CALL(LALRegisterREALUserVar  (&status, "freq",             'f', UVAR_REQUIRED, "Starting frequency", &freq), &status);
+  LAL_CALL(LALRegisterREALUserVar  (&status, "band",             'b', UVAR_REQUIRED, "Frequency band", &band), &status);
+  LAL_CALL(LALRegisterREALUserVar  (&status, "loudest-2F",       'F', UVAR_REQUIRED, "Loudest 2F value in this band", &twoFs), &status);
+  LAL_CALL(LALRegisterSTRINGUserVar(&status, "sft-patt",         'D', UVAR_REQUIRED, "File pattern of the input SFTs", &sft_pattern), &status);
+  LAL_CALL(LALRegisterSTRINGUserVar(&status, "ephem-dir",        'E', UVAR_OPTIONAL, "Directory containing ephemeris files", &ephem_dir), &status);
+  LAL_CALL(LALRegisterSTRINGUserVar(&status, "ephem-year",       'y', UVAR_REQUIRED, "Year suffix for ephemeris files", &ephem_year), &status);
+  LAL_CALL(LALRegisterINTUserVar   (&status, "rng-med-win",      'k', UVAR_OPTIONAL, "Size of the running median window", &rng_med_win), &status);
+  LAL_CALL(LALRegisterREALUserVar  (&status, "max-rel-err",      'e', UVAR_OPTIONAL, "Maximum error in h0 relative to previous value", &max_rel_err), &status);
+  LAL_CALL(LALRegisterREALUserVar  (&status, "h0-brake",         'b', UVAR_OPTIONAL, "h0 cannot change by more than this fraction of itself", &h0_brake), &status);
+  LAL_CALL(LALRegisterINTUserVar   (&status, "init-MC-tri",      'I', UVAR_OPTIONAL, "Initial number of MC int. trials", &MC_trial_init), &status);
+  LAL_CALL(LALRegisterREALUserVar  (&status, "MC-tri-incr",      'i', UVAR_OPTIONAL, "Multiply number of MC int. trials by this after each step", &MC_trial_fac), &status);
+  LAL_CALL(LALRegisterINTUserVar   (&status, "MC-tri-reset",     'Z', UVAR_OPTIONAL, "Reset if no convergence after this number of MC int. trials", &MC_trial_reset), &status);
+  LAL_CALL(LALRegisterREALUserVar  (&status, "false-dism",       'R', UVAR_OPTIONAL, "Target false dismissal rate", &FDR), &status);
+  LAL_CALL(LALRegisterSTRINGUserVar(&status, "output-file",      'o', UVAR_OPTIONAL, "Output file for the upper limit and other info (defaults to stdout)", &output_file), &status);
+  LAL_CALL(LALRegisterREALUserVar  (&status, "2F-pdf-hist-binw", 'B', UVAR_OPTIONAL, "Bin width of the histogram of the non-central 2F distribution", &twoF_pdf_hist_binw), &status);
+  LAL_CALL(LALRegisterSTRINGUserVar(&status, "2F-pdf-hist-file", 'H', UVAR_OPTIONAL, "Output file for the histogram of the non-central 2F distribution", &twoF_pdf_hist_file), &status);
 
   /* Get command line arguments */
   LAL_CALL(LALUserVarReadAllInput(&status, argc, argv), &status);
@@ -280,21 +289,30 @@ int main(int argc, char *argv[]) {
   
     /* Begin Newton-Raphson iteration to find h0 */
 #define H0_ERROR fabs((h0 - h0_prev) / h0)
-    for (h0_iter = 0, MC_trials = MC_trial_init; H0_ERROR > max_rel_err && MC_trials < MC_trial_reset; ++h0_iter, MC_trials *= MC_trial_fac) {
+    h0_iter = 0;
+    MC_trials = MC_trial_init;
+    while (H0_ERROR > max_rel_err && MC_trials < MC_trial_reset) {
       
       /* Integrand and its derivative w.r.t. h0 */
       REAL8 J = 0.0;
       REAL8 dJ = 0.0;
-      
-      /* Target values of integrand */
-      const REAL8 J0 = 1 - FDR;
+
+      /* False dismissal rate from 2F distribution */
+      REAL8 twoF_pdf_FDR = 0.0;
       
       LogPrintf(LOG_DEBUG, "Beginning h0 loop %2i with h0=%0.4e, error=%0.4e, MC_trials=%i\n", h0_iter, h0, H0_ERROR, MC_trials);
       
       fprintf(fp, "MC_trials=%i ", MC_trials);
-      
+
+      /* Destroy any previous histogram */
+      if (twoF_pdf_hist) {
+	gsl_vector_int_free(twoF_pdf_hist);
+	twoF_pdf_hist = NULL;
+      }
+
       /* Begin Monte Carlo integration to find J and dJ */
       MC_iter = MC_trials;
+      twoF_pdf_FD = 0;
       while (MC_iter--) {
 	
 	/* Generate random cosi, psi, and twoF */
@@ -303,10 +321,10 @@ int main(int argc, char *argv[]) {
 	const REAL8 twoF = gsl_ran_flat(rng, 0, twoFs);
 	
 	/* Compute the amplitude coefficients vector A */
-	const REAL8 A1 = 0.5 * h0 * (1 + cosi * cosi) * cos(2 * psi);
-	const REAL8 A2 = 0.5 * h0 * (1 + cosi * cosi) * sin(2 * psi);
-	const REAL8 A3 =      -h0 *             cosi  * sin(2 * psi);
-	const REAL8 A4 =       h0 *             cosi  * cos(2 * psi);
+	const REAL8 A1 =  0.5 * h0 * (1 + cosi * cosi) * cos(2 * psi);
+	const REAL8 A2 =  0.5 * h0 * (1 + cosi * cosi) * sin(2 * psi);
+	const REAL8 A3 = -1.0 * h0 *             cosi  * sin(2 * psi);
+	const REAL8 A4 =  1.0 * h0 *             cosi  * cos(2 * psi);
 	
 	/* Compute the optimal signal to noise ratio rho^2 */
 	const REAL8 rho2 = 0.5 * (
@@ -324,23 +342,56 @@ int main(int argc, char *argv[]) {
 	J  += pdf_ncx2_4(rho2, twoF);
 	dJ += 2.0 * rho2 / h0 * d_pdf_ncx2_4(rho2, twoF);
 	
-	/* If J and dJ failed, reduce h0 and try again */
-	if (gsl_isnan(J) || gsl_isnan(dJ)) {
-	  h0 /= 2.0;
-	  LogPrintf(LOG_DEBUG, "Reducing h0 to %0.4e and starting again because either J=%0.4e or dJ=%0.4e\n", h0, J, dJ);
-	  J = 0;
-	  dJ = 0;
-	  MC_iter = MC_trials;
-	}	
-	
+	/* Break if J and dJ failed */
+	if (gsl_isnan(J) || gsl_isnan(dJ))
+	  break;
+
+	/* Draw a 2F value from the non-central chi-square with parameter rho^2 */
+	const REAL8 twoF_from_pdf = ran_ncx2_4(rng, rho2);
+
+	/* Count 2F value if it is below threshold */
+	if (twoF_from_pdf < twoFs)
+	  ++twoF_pdf_FD;
+
+	/* Add 2F to histogram if needed */
+	if (LALUserVarWasSet(&twoF_pdf_hist_file)) {
+	  
+	  /* Compute bin */
+	  const size_t bin = twoF_from_pdf / twoF_pdf_hist_binw;
+	  
+	  /* Resize histogram vector if needed */
+	  if (!twoF_pdf_hist || bin >= twoF_pdf_hist->size)
+	    if (NULL == (twoF_pdf_hist = XLALResizeGSLVectorInt(twoF_pdf_hist, bin + 1, 0))) {
+	      LALPrintError("\nCouldn't (re)allocate 'twoF_pdf_hist'\n");
+	      return EXIT_FAILURE;
+	    }
+	  
+	  /* Add to bin */
+	  gsl_vector_int_set(twoF_pdf_hist, bin,
+			     gsl_vector_int_get(twoF_pdf_hist, bin) + 1);
+	  
+	}
+
+      }
+      
+      /* If J and dJ failed, reduce h0 and try again */
+      if (gsl_isnan(J) || gsl_isnan(dJ)) {
+	h0 /= 2.0;
+	LogPrintf(LOG_DEBUG, "Reducing h0 to %0.4e and starting again because either J=%0.4e or dJ=%0.4e\n", h0, J, dJ);
+	h0_iter = 0;
+	MC_trials = MC_trial_init;
+	continue;
       }
       
       /* Finalise the integrand and derivative: multiply by trial element */
       J  *= MC_int_vol / MC_trials;
       dJ *= MC_int_vol / MC_trials;
-      
+
+      /* Compute the false dismissal rate from 2F distribution */
+      twoF_pdf_FDR = (1.0 * twoF_pdf_FD) / MC_trials;
+
       /* Compute the increment in h0 from Newton-Raphson */
-      dh0 = (J0 - J) / dJ;
+      dh0 = (FDR - J) / dJ;
       
       /* Limit the increment in h0 to |h0 * h0_brake| */
       dh0 = GSL_SIGN(dh0) * GSL_MIN(fabs(dh0), fabs(h0 * h0_brake));
@@ -349,16 +400,21 @@ int main(int argc, char *argv[]) {
       h0_prev = h0;
       h0 += dh0;
       
-      fprintf(fp, "h0=%0.4e\n", h0);
+      fprintf(fp, "h0=%0.4e FDR=%0.4f\n", h0, twoF_pdf_FDR);
       fflush(fp);
       
-      LogPrintf(LOG_DEBUG, "Ending    h0 loop %2i with h0=%0.4e, error=%0.4e, J-J0=% 0.4e, dh0=% 0.4e\n", h0_iter, h0, H0_ERROR, J - J0, dh0);
+      LogPrintf(LOG_DEBUG, "Ending    h0 loop %2i with h0=%0.4e, error=%0.4e, J-FDR=% 0.4e, dh0=% 0.4e\n", h0_iter, h0, H0_ERROR, J - FDR, dh0);
+
+      /* Increase iteration count and number of MC trials */
+      ++h0_iter;
+      MC_trials *= MC_trial_fac;
 
     }
 #undef H0_ERROR
   
     /* Close the output file */
     if (LALUserVarWasSet(&output_file)) {
+      fprintf(fp, "%%DONE\n");
       fclose(fp);
     }
 
@@ -368,6 +424,32 @@ int main(int argc, char *argv[]) {
 
   } while (MC_trials >= MC_trial_reset);
   
+  /* Write 2F histogram if needed */
+  if (LALUserVarWasSet(&twoF_pdf_hist_file)) {
+
+    size_t i;
+    FILE *fpH;
+
+    if ((fpH = fopen(twoF_pdf_hist_file, "wb")) == NULL) {
+      LALPrintError("Couldn't open histogram file '%s'\n", twoF_pdf_hist_file);
+      return EXIT_FAILURE;
+    }
+    LAL_CALL(LALUserVarGetLog(&status, &cmdline, UVAR_LOGFMT_CMDLINE), &status);
+    fprintf(fpH, "%%%% %s\n%%%% %s\n", rcsid, cmdline);
+    LALFree(cmdline);
+    
+    for (i = 0; i < twoF_pdf_hist->size; ++i)
+      fprintf(fpH, "%0.3g %0.3g %i\n",
+	      twoF_pdf_hist_binw * i,
+	      twoF_pdf_hist_binw * (i + 1),
+	      gsl_vector_int_get(twoF_pdf_hist, i));
+    
+    fprintf(fpH, "%%DONE\n");
+    fclose(fpH);
+    
+  }
+
+
   /* Cleanup */
   LAL_CALL(LALDestroyUserVars(&status), &status);
   LAL_CALL(LALDestroySFTCatalog(&status, &catalog), &status);
@@ -387,7 +469,8 @@ int main(int argc, char *argv[]) {
   
 }
 
-/* PDF of non-central chi-square with 4 degrees of freedom */
+/* PDF of non-central chi-square with 4 degrees 
+   of freedom and non-centrality parameter lambda */
 REAL8 pdf_ncx2_4(REAL8 lambda, REAL8 x) {
 
   const REAL8 z = sqrt(x * lambda);
@@ -408,7 +491,8 @@ REAL8 pdf_ncx2_4(REAL8 lambda, REAL8 x) {
 
 }
 
-/* Derivative of the PDF of non-central chi-square with 4 degrees of freedom w.r.t. lambda */
+/* Derivative of the PDF of non-central chi-square with 4 degrees 
+   of freedom and non-centrality parameter lambda w.r.t. lambda */
 REAL8 d_pdf_ncx2_4(REAL8 lambda, REAL8 x) {
 
   const REAL8 z = sqrt(x * lambda);
@@ -429,4 +513,20 @@ REAL8 d_pdf_ncx2_4(REAL8 lambda, REAL8 x) {
   /* Compute the derivative of the PDF */
   return 0.25 * exp(-0.5 * (x + lambda)) * (0.5 * x / lambda * (I[0].val + I[2].val) - sqrt(x / lambda) * (1 + 1 / lambda) * I[1].val);
   
+}
+
+/* Random number drawn from a non-central chi-square with 4 degrees 
+   of freedom and non-centrality parameter lambda */
+REAL8 ran_ncx2_4(const gsl_rng *rng, REAL8 lambda) {
+
+  const REAL8 a = sqrt(lambda / 4);
+
+  int i;
+  REAL8 x = 0.0;
+
+  for (i = 0; i < 4; ++i)
+    x += pow(gsl_ran_gaussian(rng, 1.0) + a, 2.0);
+  
+  return x;
+
 }
