@@ -233,7 +233,7 @@ LALGeneratePPNAmpCorInspiral(
   REAL4 q[AMPMAXORDER];                   /* PN parameter values in amplitude */ 
   REAL4 p6;                        /* synonym for p[6] */
   UINT4 ampOrder;                  /* Amplitude Order */
-  INT4 Harmonics;                  /* Number of harmonics */
+  INT4 harmonics;                  /* Number of harmonics */
   REAL4 mTot, mu;                  /* total mass and reduced mass */
   REAL4 eta, etaInv;               /* mass ratio and its inverse */
   REAL4 phiC;                      /* phase at coalescence */
@@ -359,7 +359,7 @@ LALGeneratePPNAmpCorInspiral(
   
   /* Set number of harmonics in accordance with params->ampOrder*/
   /* Dominant harmonic is the 2nd */
-  Harmonics = ampOrder + 2;
+  harmonics = ampOrder + 2;
 
 
   /*******************************************************************
@@ -744,7 +744,7 @@ LALGeneratePPNAmpCorInspiral(
   /* First, find the normalized start frequency, and the best guess as
      to the start times from each term.  We require the
      frequency to be increasing. */
-  yStart =  2.0/(REAL4)(Harmonics)*params->fStartIn / fFac;
+  yStart =  2.0/(REAL4)(harmonics)*params->fStartIn / fFac;
   
   if ( params->fStopIn == 0.0 )
     yMax = 1.0/(LAL_PI*pow(6.0, 1.5)*mTot*LAL_MTSUN_SI) / fFac;
