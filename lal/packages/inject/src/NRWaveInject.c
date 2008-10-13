@@ -194,13 +194,23 @@ XLALCalculateNRStrain( REAL4TimeVectorSeries *strain, /**< h+, hx time series da
   ifoNumber = XLALIFONumber( ifo );
   XLALReturnDetector( &det, ifoNumber );
 
-  /* compute detector response */
-  XLALComputeDetAMResponse(&fplus, &fcross, det.response, inj->longitude, 
-      inj->latitude, inj->polarization, inj->end_time_gmst);
+  if( ifoNumber == LAL_UNKNOWN_IFO )
+  {
+    XLALPrintWarning( "Unknown ifo! Injecting signal overhead!\n" );
+    fplus  = 1.0;
+    fcross = 0.0;
+    tDelay = 0.0;
+  }
+  else
+  {
+    /* compute detector response */
+    XLALComputeDetAMResponse(&fplus, &fcross, det.response, inj->longitude, 
+          inj->latitude, inj->polarization, inj->end_time_gmst);
 
-  /* calculate the time delay */
-  tDelay = XLALTimeDelayFromEarthCenter( det.location, inj->longitude,
-      inj->latitude, &(inj->geocent_end_time) );
+    /* calculate the time delay */
+    tDelay = XLALTimeDelayFromEarthCenter( det.location, inj->longitude,
+        inj->latitude, &(inj->geocent_end_time) );
+  }
 
   /* create htData */
   htData = LALCalloc(1, sizeof(*htData));
