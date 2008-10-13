@@ -342,7 +342,8 @@ if not opts.disable_followup:
       PLOTMCMCNode = plotmcmcNode(PLOTMCMCJob,ifo,trig,cp,opts,dag,MCMCNode)
 
       # SETUP STATUS SUMMARY PLOT JOBS
-      statusNode = IFOstatus_checkNode(statusJob, ifo, trig, cp, opts, dag)
+      if not ifo=='V1':
+        statusNode = IFOstatus_checkNode(statusJob, ifo, trig, cp, opts, dag)
 
 
     # SETUP H1H2 SPECIFIC JOBS
