@@ -46,6 +46,7 @@
 #include <gsl/gsl_linalg.h>
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_randist.h>
+#include <gsl/gsl_sf_bessel.h>
 
 #include <gsl/gsl_monte.h>
 #include <gsl/gsl_monte_plain.h>
@@ -160,7 +161,7 @@ int main(int argc,char *argv[]);
 
 void initUserVars (LALStatus *status, UserInput_t *uvar );
 void InitCode ( LALStatus *, ConfigVariables *cfg, const UserInput_t *uvar );
-double computeLikelihoodRatio ( double A[], size_t dim, void *p );
+double BstatIntegrand ( double A[], size_t dim, void *p );
 int XLALAmplitudeParams2Vect ( REAL8 Amu[], REAL8 h0, REAL8 cosi, REAL8 psi, REAL8 phi0 );
 
 /*---------- empty initializers ---------- */
@@ -447,55 +448,39 @@ int main(int argc,char *argv[])
   }
 
   {
-    gsl_monte_vegas_state * MCS_vegas = gsl_monte_vegas_alloc ( 4 );
+    gsl_monte_vegas_state * MCS_vegas = gsl_monte_vegas_alloc ( 2 );
     gsl_monte_function F;
     MCparams pars;
+    double prefact = 7.87480497286121;	/* sqrt(2) * pi^(3/2) */
 
     pars.M11 = uvar.M11;
     pars.M22 = uvar.M22;
     pars.M12 = uvar.M12;
 
-    F.f = &computeLikelihoodRatio;
-    F.dim = 4;
+    F.f = &BstatIntegrand;
+    F.dim = 2;
     F.params = &pars;
 
     for ( i=0; i < (UINT4)uvar.numDraws; i ++ )
       {
 	gsl_vector_const_view xi = gsl_matrix_const_row ( x_mu_i, i );
 	double Bb;
-	double Amp[4] = {0,0,0,0};
-	double x1, x2, x3, x4;
-	double xlower[4], xupper[4];
+	double Amp[2] = {0,0};
+	double xlower[2], xupper[2];
 	double abserr;
-	double h0A, D;
 	pars.x_mu = &(xi.vector);
 
-	Amp[0] = uvar.h0;
-	Amp[1] = uvar.cosi;
-	Amp[2] = uvar.psi;
-	Amp[3] = uvar.phi0;
+	Amp[0] = uvar.cosi;
+	Amp[1] = uvar.psi;
 
 	gsl_monte_vegas_init ( MCS_vegas );
 
-	/* estimate order of magnitude h0A of A^mu near maximum of lnL */
-	x1 = gsl_vector_get ( &(xi.vector), 0 );
-	x2 = gsl_vector_get ( &(xi.vector), 1 );
-	x3 = gsl_vector_get ( &(xi.vector), 2 );
-	x4 = gsl_vector_get ( &(xi.vector), 3 );
-
-	D = pars.M11 * pars.M22 - SQ(pars.M12);
-	h0A = (1.0/D) * sqrt ( SQ(pars.M22) * ( SQ(x1) + SQ(x3) ) + SQ(pars.M11) * ( SQ(x2) + SQ(x4) ) );
-
 	/* Integration boundaries */
-	xlower[0] = 0;		/* h0 */
-	xlower[1] = -1;		/* cosi */
-	xlower[2] = 0;		/* psi */
-	xlower[3] = 0;		/* phi0 */
+	xlower[0] = -1;		/* cosi */
+	xlower[1] = 0;		/* psi */
 
-	xupper[0] = 3 * h0A;	/* h0 */
-	xupper[1] = 1;		/* cosi */
-	xupper[2] = LAL_PI;	/* psi */
-	xupper[3] = LAL_TWOPI;	/* phi0 */
+	xupper[0] = 1;		/* cosi */
+	xupper[1] = LAL_PI;	/* psi */
 
 	/* Function: int gsl_monte_vegas_integrate (gsl_monte_function * f, double * xl, double * xu, size_t dim, size_t calls,
 	 *                                          gsl_rng * r, gsl_monte_vegas_state * s, double * result, double * abserr)
@@ -508,11 +493,11 @@ int main(int argc,char *argv[])
 	 * samples. The chi-squared per degree of freedom for the weighted average is returned via the state struct component,
 	 * s->chisq, and must be consistent with 1 for the weighted average to be reliable.
 	 */
-	if ( (gslstat = gsl_monte_vegas_integrate ( &F, xlower, xupper, 4, (size_t)uvar.numMCpoints, rng, MCS_vegas, &Bb, &abserr)) ) {
+	if ( (gslstat = gsl_monte_vegas_integrate ( &F, xlower, xupper, 2, (size_t)uvar.numMCpoints, rng, MCS_vegas, &Bb, &abserr)) ) {
 	  LogPrintf ( LOG_CRITICAL, "i = %d: gsl_monte_vegas_integrate() failed: %s\n", i, gsl_strerror (gslstat) );
 	  return 1;
 	}
-	gsl_vector_set ( BStat, i, Bb );
+	gsl_vector_set ( BStat, i, prefact * Bb );
 	gsl_vector_set ( dBStat, i, abserr );
 	/*
 	  printf ( "Vegas Monte-Carlo integration: Bb = %f, abserr = %f ==> relerr = %f\n", Bb, abserr, abserr / Bb );
@@ -702,39 +687,57 @@ InitCode ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
  *
  */
 double
-computeLikelihoodRatio ( double Amp[], size_t dim, void *p )
+BstatIntegrand ( double Amp[], size_t dim, void *p )
 {
   MCparams *par = (MCparams *) p;
-  double Ax, rho2;
-  double x0, x1, x2, x3;
-  double Amu[4];
-  double lnL;
+  double x1, x2, x3, x4;
+  double al1, al2, al3, al4;
+  double eta, etaSQ, etaSQp1SQ;
+  double psi, sin2psi, cos2psi, sin2psiSQ, cos2psiSQ;
+  double AMA, qSQ, arg0;
+  double integrand;
 
-  if ( dim != 4 ) {
-    LogPrintf (LOG_CRITICAL, "Error: computeLikelihoodRatio() was called with illegal dim = %d != 4\n", dim );
+  if ( dim != 2 ) {
+    LogPrintf (LOG_CRITICAL, "Error: BstatIntegrand() was called with illegal dim = %d != 2\n", dim );
     abort ();
   }
 
   /* introduce a few handy shortcuts */
-  x0 = gsl_vector_get ( par->x_mu, 0 );
-  x1 = gsl_vector_get ( par->x_mu, 1 );
-  x2 = gsl_vector_get ( par->x_mu, 2 );
-  x3 = gsl_vector_get ( par->x_mu, 3 );
+  x1 = gsl_vector_get ( par->x_mu, 0 );
+  x2 = gsl_vector_get ( par->x_mu, 1 );
+  x3 = gsl_vector_get ( par->x_mu, 2 );
+  x4 = gsl_vector_get ( par->x_mu, 3 );
 
-  XLALAmplitudeParams2Vect ( Amu, Amp[0] /* h0 */, Amp[1] /* cosi */, Amp[2] /* psi */, Amp[3] /* phi0 */ );
+  eta = Amp[0];
+  etaSQ = SQ(eta);			/* eta^2 */
+  etaSQp1SQ = SQ ( (1.0 + etaSQ) );	/* (1+eta^2)^2 */
 
-  /* STEP 1: compute A^mu x_mu */
-  Ax = Amu[0] * x0 + Amu[1] * x1 + Amu[2] * x2 + Amu[3] * x3;
+  psi = Amp[1];
+  sin2psi = sin ( 2.0 * psi );
+  cos2psi = cos ( 2.0 * psi );
+  sin2psiSQ = SQ(sin2psi);
+  cos2psiSQ = SQ(cos2psi);
 
-  /* STEP 2: compute the "optimal SNR^2": rho2 = A^mu M_mu_nu A^nu = A^mu s_mu */
-  rho2 = par->M11 * ( SQ(Amu[0]) + SQ(Amu[2]) ) + par->M22 * ( SQ(Amu[1]) + SQ(Amu[3]) ) + 2.0 * par->M12 * ( Amu[0] * Amu[1] + Amu[2] * Amu[3] );
+  /* compute amplitude-params alpha1, alpha2, alpha3 and alpha4 */
+  al1 = 0.25 * etaSQp1SQ * cos2psiSQ + etaSQ * sin2psiSQ;
+  al2 = 0.25 * etaSQp1SQ * sin2psiSQ + etaSQ * cos2psiSQ;
+  al3 = 0.25 * SQ( (1.0 - etaSQ) ) * sin2psi * cos2psi;
+  al4 = eta * ( 1.0 + etaSQ );
 
-  /* STEP 3: combine results for lnL = A^mu x_mu - 1/2 A^mu M_mu_nu A^nu */
-  lnL = Ax - 0.5 * rho2;
+  /* STEP 1: compute AMA = A^mu M_mu_nu A^nu / h0^2 */
+  AMA = al1 * par->M11 + al2 * par->M22 + 2.0 * al3 * par->M12;
 
-  return exp(lnL);
+  /* STEP2: compute q^2 */
+  qSQ = al1 * ( SQ(x1) + SQ(x3) ) + al2 * ( SQ(x2) + SQ(x4) ) + 2.0 * al3 * ( x1 * x2 + x3 * x4 ) + al4 * ( x1 * x4 - x2 * x3 );
 
-} /* computeLikelihoodRatio() */
+  /* STEP3 : put all the pieces together */
+  arg0 = 0.25 * qSQ  / AMA;
+
+  integrand = pow(AMA, -0.5) * exp(arg0) * gsl_sf_bessel_I0(arg0);
+
+  return integrand;
+
+} /* BstatIntegrand() */
 
 
 /** Convert amplitude params {h0, cosi, psi, phi0} into amplitude vector A^mu.
