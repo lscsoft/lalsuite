@@ -35,6 +35,8 @@
 #include <unistd.h>
 #endif
 
+#define GSL_RANGE_CHECK_OFF
+
 /* GSL includes */
 #include <lal/LALGSL.h>
 #include <gsl/gsl_vector.h>
@@ -127,9 +129,9 @@ typedef struct {
   REAL8 Alpha;		/**< sky-position angle 'alpha', which is right ascencion in equatorial coordinates */
   REAL8 Delta;		/**< sky-position angle 'delta', which is declination in equatorial coordinates */
 
-  REAL8 Mmunu_A;	/**< componentent of A_mu: A */
-  REAL8 Mmunu_B;	/**< componentent of A_mu: B */
-  REAL8 Mmunu_C;	/**< componentent of A_mu: C */
+  REAL8 M11;		/**< componentent {1,1} of M_{mu,nu}: T Sinv A */
+  REAL8 M22;		/**< componentent {2,2} of M_{mu,nu}: T Sinv B */
+  REAL8 M12;		/**< componentent {1,2} of M_{mu,nu}: T Sinv C */
 
   INT4 numDraws;	/**< number of random 'draws' to simulate for F-stat and B-stat */
 
@@ -144,9 +146,9 @@ static UserInput_t empty_UserInput;
 
 
 typedef struct {
-  double A;
-  double B;
-  double C;
+  double M11;
+  double M22;
+  double M12;
   const gsl_vector *x_mu;
 } MCparams;
 
@@ -449,9 +451,9 @@ int main(int argc,char *argv[])
     gsl_monte_function F;
     MCparams pars;
 
-    pars.A = uvar.Mmunu_A;
-    pars.B = uvar.Mmunu_B;
-    pars.C = uvar.Mmunu_C;
+    pars.M11 = uvar.M11;
+    pars.M22 = uvar.M22;
+    pars.M12 = uvar.M12;
 
     F.f = &computeLikelihoodRatio;
     F.dim = 4;
@@ -481,8 +483,8 @@ int main(int argc,char *argv[])
 	x3 = gsl_vector_get ( &(xi.vector), 2 );
 	x4 = gsl_vector_get ( &(xi.vector), 3 );
 
-	D = pars.A * pars.B - SQ(pars.C);
-	h0A = (1.0/D) * sqrt ( SQ(pars.B) * ( SQ(x1) + SQ(x3) ) + SQ(pars.A) * ( SQ(x2) + SQ(x4) ) );
+	D = pars.M11 * pars.M22 - SQ(pars.M12);
+	h0A = (1.0/D) * sqrt ( SQ(pars.M22) * ( SQ(x1) + SQ(x3) ) + SQ(pars.M11) * ( SQ(x2) + SQ(x4) ) );
 
 	/* Integration boundaries */
 	xlower[0] = 0;		/* h0 */
@@ -619,9 +621,9 @@ initUserVars (LALStatus *status, UserInput_t *uvar )
   LALregREALUserStruct(status,	psi,		'Y', UVAR_OPTIONAL, "Polarisation angle in radians");
   LALregREALUserStruct(status,	phi0,		'Y', UVAR_OPTIONAL, "Initial GW phase phi0 in radians");
 
-  LALregREALUserStruct(status,	Mmunu_A,	  0, UVAR_REQUIRED, "Antenna-pattern matrix M_mu_nu: component A");
-  LALregREALUserStruct(status,	Mmunu_B,	  0, UVAR_REQUIRED, "Antenna-pattern matrix M_mu_nu: component A");
-  LALregREALUserStruct(status,	Mmunu_C,	  0, UVAR_REQUIRED, "Antenna-pattern matrix M_mu_nu: component A");
+  LALregREALUserStruct(status,	M11,	  	 0,  UVAR_REQUIRED, "Antenna-pattern matrix M_mu_nu: component {1,1} = T Sinv A");
+  LALregREALUserStruct(status,	M22,	  	 0,  UVAR_REQUIRED, "Antenna-pattern matrix M_mu_nu: component {2,2} = T Sinv B");
+  LALregREALUserStruct(status,	M12,	  	 0,  UVAR_REQUIRED, "Antenna-pattern matrix M_mu_nu: component {1,2} = T Sinv C");
 
   LALregINTUserStruct(status,	numDraws,	'N', UVAR_OPTIONAL, "Number of random 'draws' to simulate for F-stat and B-stat");
   LALregREALUserStruct(status,	numMCpoints,	'M', UVAR_OPTIONAL, "Number of points to use in Monte-Carlo integration");
@@ -649,24 +651,20 @@ InitCode ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
     ABORT ( status, PREDICTFSTAT_EMEM, PREDICTFSTAT_MSGEMEM );
   }
   {
-    REAL8 Ad = uvar->Mmunu_A;
-    REAL8 Bd = uvar->Mmunu_B;
-    REAL8 Cd = uvar->Mmunu_C;
-
-    gsl_matrix_set (cfg->M_mu_nu, 0, 0,   Ad );
-    gsl_matrix_set (cfg->M_mu_nu, 1, 1,   Bd );
-    gsl_matrix_set (cfg->M_mu_nu, 0, 1,   Cd );
-    gsl_matrix_set (cfg->M_mu_nu, 1, 0,   Cd );
+    gsl_matrix_set (cfg->M_mu_nu, 0, 0,   uvar->M11 );
+    gsl_matrix_set (cfg->M_mu_nu, 1, 1,   uvar->M22 );
+    gsl_matrix_set (cfg->M_mu_nu, 0, 1,   uvar->M12 );
+    gsl_matrix_set (cfg->M_mu_nu, 1, 0,   uvar->M12 );
 
     /*
       gsl_matrix_set (cfg->M_mu_nu, 3, 0,   Ed );
       gsl_matrix_set (cfg->M_mu_nu, 1, 2,  -Ed );
     */
 
-    gsl_matrix_set (cfg->M_mu_nu, 2, 2,   Ad );
-    gsl_matrix_set (cfg->M_mu_nu, 3, 3,   Bd );
-    gsl_matrix_set (cfg->M_mu_nu, 2, 3,   Cd );
-    gsl_matrix_set (cfg->M_mu_nu, 3, 2,   Cd );
+    gsl_matrix_set (cfg->M_mu_nu, 2, 2,   uvar->M11 );
+    gsl_matrix_set (cfg->M_mu_nu, 3, 3,   uvar->M22 );
+    gsl_matrix_set (cfg->M_mu_nu, 2, 3,   uvar->M12 );
+    gsl_matrix_set (cfg->M_mu_nu, 3, 2,   uvar->M12 );
 
     /*
       gsl_matrix_set (cfg->M_mu_nu, 2, 1,  -Ed );
@@ -729,7 +727,7 @@ computeLikelihoodRatio ( double Amp[], size_t dim, void *p )
   Ax = Amu[0] * x0 + Amu[1] * x1 + Amu[2] * x2 + Amu[3] * x3;
 
   /* STEP 2: compute the "optimal SNR^2": rho2 = A^mu M_mu_nu A^nu = A^mu s_mu */
-  rho2 = par->A * ( SQ(Amu[0]) + SQ(Amu[2]) ) + par->B * ( SQ(Amu[1]) + SQ(Amu[3]) ) + 2.0 * par->C * ( Amu[0] * Amu[1] + Amu[2] * Amu[3] );
+  rho2 = par->M11 * ( SQ(Amu[0]) + SQ(Amu[2]) ) + par->M22 * ( SQ(Amu[1]) + SQ(Amu[3]) ) + 2.0 * par->M12 * ( Amu[0] * Amu[1] + Amu[2] * Amu[3] );
 
   /* STEP 3: combine results for lnL = A^mu x_mu - 1/2 A^mu M_mu_nu A^nu */
   lnL = Ax - 0.5 * rho2;
