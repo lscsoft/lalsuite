@@ -167,6 +167,9 @@ class tracksearchCheckIniFile:
     #End init
 
     def checkOpts(self):
+        #Need to add simple check compare datafind:observatory
+        #to multichannel:channel or tracksearchtime:channel
+        #if [H,L] then channel has [H,L][0,1,2]:XXX_XXXX respectively
         #Check for existance of [condor] section files
         condorOptList=self.iniOpts.options('condor')
         fileNotFound=False
@@ -214,6 +217,8 @@ class tracksearchCheckIniFile:
             self.errList.append('It appears that in section tracksearchtime option number_of_freq_bins is missing!')
         if WS > NOFB:
             self.errList.append('Error window length inconsistent!')
+        if (math.fmod(WS,2) == 0.0):
+            self.errList.append('Error window length must be an odd length!')
         #Read expected job sampling rate
         if self.iniOpts.has_option('tracksearchtime','sample_rate'):
             sampleRate=float(self.iniOpts.get('tracksearchtime','sample_rate'))
@@ -551,7 +556,7 @@ class tracksearchHousekeeperJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
                 sys.stderr.write("I'll assume you just forgot and we will keep those files.\n")
             self.add_ini_opts(cp,sec)
         workpath=cp.get('filelayout','workpath')
-        cleanPath=determineBlockPath(cp,self.block_id)
+        cleanPath=determineBlockPath(cp,self.block_id,channel)
         self.add_opt('parent-dir',cleanPath)
         blockPath=determineBlockPath(cp,self.block_id,channel)
         workpath=blockPath

@@ -319,7 +319,7 @@ class kurve:
         duration=self.getCandidateDuration()
         start=self.startGPS().getAsFloat()
         stop=self.stopGPS().getAsFloat()
-        result=start+(start-stop)/2
+        result=start+(stop-start)/2
         return result
     #End
 
@@ -328,11 +328,11 @@ class kurve:
         Create a measure of relative time for the bright pixel compared to 
         curve starting time.
         """
-        startTime=self.getBrightPixelAndStats()[0][3]
+        startTime=self.getBrightPixelAndStats()[0][2].getAsFloat()
         centralTime=self.getCandidateCentralTime()
         duration=self.getCandidateDuration()
         try:
-            relativeTime=(startTime-centralTime)/duration
+            relativeTime=(centralTime-startTime)/duration
         except:
             relativeTime=0
         return relativeTime
@@ -343,11 +343,11 @@ class kurve:
         Create a measure of relative time for the CM(center of mass) pixel 
         compared to curve starting time.
         """
-        startTime=self.getCMPixel()[2]
+        startTime=self.getCMPixel()[2].getAsFloat()
         centralTime=self.getCandidateCentralTime()
         duration=self.getCandidateDuration()
         try:
-            relativeTime=(startTime-centralTime)/duration
+            relativeTime=(centralTime-startTime)/duration
         except:
             relativeTime=0
         return relativeTime
@@ -1171,7 +1171,8 @@ class candidateList:
                       ';'+str(elements[2].__diskPrint__())+','\
                       +str(elements[3])+','+str(elements[4]))
             output_fp.write(str(':').join(data)+'\n')
-        self.createTraitSummary()
+        if not self.validTraitSummary:
+            self.createTraitSummary()
         self.__propertypickler__(outputFilename)
         spinner.closeSpinner()
     #End writefile method
@@ -1903,7 +1904,7 @@ class candidateList:
             if ((self.curves.__len__() > 0) and (not self.validCurves)):
                 print "Unexpected behavior aborting!"
                 print "Curve structure listed as invalid but the structure has data in it!"
-                os.abort()
+                print "Resulting candidates file may be corrupted!"
             self.__loadfileQuick__(self.filename[0])
         for element in self.curves:
             tmpTrait=[]
@@ -2064,7 +2065,8 @@ class candidateList:
                     pad_gpsList.append(segB)
             #print "Adding to list:  ",segA
             new_gpsList.append(segA)
-        new_gpsList.pop()
+        if new_gpsList.__len__() > 0:
+            new_gpsList.pop()
         new_gpsList.sort()
         #Strip padding placed before from each interval
         new_gpsList=[[A+padding,B-padding] for A,B in new_gpsList]
@@ -2189,15 +2191,21 @@ class candidateList:
                 resultsList.append(lineInfo)
         #Return the a modified structure with self.curves
         #made only of passing candidates
+        spinner.closeSpinner()
         if self.verboseMode:
-            sys.stdout.write("There are %i candidates passing the %s threshold requested\n"%(int(resultsList.__len__()),str(testExp)))
+            rCount=int(resultsList.__len__())
+            sCount=int(self.curves.__len__())
+            percentile=100*(rCount/float(sCount))
+            sys.stdout.write("There are %i candidates (%f %s) passing the %s threshold requested\n"%
+                             (rCount,percentile,"%",testExp))
 #         outputObject=copy.deepcopy(self)
         outputObject=candidateList()
         outputObject.__cloneCandidateList__(self)
         outputObject.curves=copy.deepcopy(resultsList)
         outputObject.totalCount=resultsList.__len__()
+        #Set the curve structure as valid here!
+        outputObject.validCurves=bool(True)
         outputObject.createTraitSummary()
-        spinner.closeSpinner()
         return outputObject
     #end applyAbitraryThresholds method
     

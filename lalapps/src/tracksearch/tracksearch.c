@@ -1924,7 +1924,14 @@ void LALappsDoTrackSearch(
   if ( errCode != 0 )
     {
       fprintf(stderr,"Error calling LALSignalTrackSearch!\n");
-      fprintf(stderr,"%s\n",status->statusDescription);
+      fprintf(stderr,"Error Code: %s\n",status->statusDescription);
+      fprintf(stderr,"Function  : %s\n",status->function);
+      fprintf(stderr,"File      : %s\n",status->file);
+      fprintf(stderr,"Line      : %i\n",status->line);
+      fprintf(stderr,"Aux information.\n");
+      fprintf(stderr,"Start  point count: %i\n",outputCurves.store.numLStartPoints);
+      fprintf(stderr,"Member point count: %i\n",outputCurves.store.numLPoints);
+      fprintf(stderr,"Curves returned   : %i\n",outputCurves.numberOfCurves);
       fflush(stderr);
     }
   
@@ -2026,13 +2033,13 @@ void LALappsDoTrackSearch(
 			   tsMarkers,
 			   &outputCandidateFilename,
 			   ".candidates");
-/*   LALappsWriteSearchResults(status, */
-/* 			    outputCandidateFilename->data, */
-/* 			    outputCurvesThreshold); */
-
   LALappsWriteSearchResults(status,
 			    outputCandidateFilename->data,
-			    outputCurves);
+			    outputCurvesThreshold);
+
+/*   LALAPPSWRITESEARCHRESULTS(status, */
+/* 			    outputCandidateFilename->data, */
+/* 			    outputCurves); */
 
   if (params.verbosity >= printFiles)
     LALappsWriteCurveList(status,
@@ -2084,6 +2091,7 @@ LALappsDoTSeriesSearch(LALStatus         *status,
   REAL8                 cropDeltaT=0;
   INT4                  tmpSegDataPoints=0;
   INT4                  tmpMapTimeBins=0;
+  INT4                  errCode=0;
   /*
    * Error checking section
    */
@@ -2201,6 +2209,12 @@ LALappsDoTSeriesSearch(LALStatus         *status,
       /* 
        * Case statment that look to do the various TF Reps 
        */
+      if (params.verbosity > quiet)
+	{
+	  fprintf(stdout,"Creating TFR: ");
+	  fflush(stdout);
+	}
+
       switch ( tfInputs.type )
 	{
 	case Undefined:
@@ -2211,13 +2225,25 @@ LALappsDoTSeriesSearch(LALStatus         *status,
 	  break;
 	case Spectrogram:
 	  {
+	    if (params.verbosity > quiet)
+	      {
+		fprintf(stdout,"Spectrogram\n");
+		fflush(stdout);
+	      }
 	    /* Required from deprication of LALWindow function */
 	    memcpy(autoparams->windowT->data,
 		   tempWindow->data->data,
 		   (windowParams.length * sizeof(REAL4)));
-	    lal_errhandler = LAL_ERR_EXIT;
-	    LAL_CALL( LALTfrSp(status,signalSeries->data,tfmap,autoparams),
-		      status);
+	    errCode=LAL_CALL( LALTfrSp(status,signalSeries->data,tfmap,autoparams),
+			      status);
+	    if ( errCode != 0 )
+	      {
+		fprintf(stderr,"Error calling LALTfrSp!\n");
+		fprintf(stderr,"Error Code: %s\n",status->statusDescription);
+		fprintf(stderr,"Function  : %s\n",status->function);
+		fprintf(stderr,"File      : %s\n",status->file);
+		fprintf(stderr,"Line      : %i\n",status->line);
+	      }
 	  }
 	  break;
 	case WignerVille:
@@ -2325,6 +2351,11 @@ LALappsDoTSeriesSearch(LALStatus         *status,
 /*    *\/ */
 /*   if (params.verbosity >= verbose) */
 /*     LALappsTSAWritePGM(status,tmpTSA,NULL);  */
+  if ((params.verbosity > quiet) && (params.colsToClip > 0))
+    {
+      fprintf(stdout,"Cropping TFR ");
+      fflush(stdout);
+    }
   LALappsTSACropMap(status,&tmpTSA,params.colsToClip);
     
   /* 
