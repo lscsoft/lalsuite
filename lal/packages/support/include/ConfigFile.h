@@ -124,6 +124,9 @@ typedef struct {
 void LALParseDataFile (LALStatus *, LALParsedDataFile **cfgdata, const CHAR *fname);
 void LALDestroyParsedDataFile (LALStatus *, LALParsedDataFile **cfgdata);
 
+int XLALParseDataFile (LALParsedDataFile **cfgdata, const CHAR *fname);
+int XLALDestroyParsedDataFile (LALParsedDataFile **cfgdata);
+
 void 
 LALReadConfigBOOLVariable (LALStatus *, 
 			  BOOLEAN *varp, 

@@ -264,7 +264,7 @@ static int TOLOWER(int c);
 static const char upper_chars[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 static const char lower_chars[] = "abcdefghijklmnopqrstuvwxyz";
 
-
+
 
 /** Parse an ASCII data-file into a pre-cleaned array of lines.
  *
@@ -351,6 +351,103 @@ LALParseDataFile (LALStatus *status,
 
 } /* LALLoadConfigFile() */
 
+
+
+/** Parse an ASCII data-file into a pre-cleaned array of lines.
+ *
+ * The cleaning gets rid of comments ('#', ';'), empty lines,
+ * and performs line-continuation if '\' is found at EOL
+ */
+int
+XLALParseDataFile (LALParsedDataFile **cfgdata, /**< [out] pre-parsed data-file lines */
+		   const CHAR *fname)		/**< [in] name of config-file to be read */
+{
+
+  CHARSequence *rawdata = NULL;
+  FILE *fp;
+  int err = 0;  /* error code */
+#if HAVE_STAT
+  struct stat stat_out;
+#endif
+
+  if (*cfgdata != NULL) {
+      fprintf(stderr, CONFIGFILEH_MSGENONULL);
+      return CONFIGFILEH_ENONULL;
+  }
+  if (fname == NULL) {
+      fprintf(stderr, CONFIGFILEH_MSGENULL);
+      return CONFIGFILEH_ENULL;
+  }
+
+#if HAVE_STAT
+  if (  stat ( fname, &stat_out ) )
+    {
+      LogPrintf ( LOG_CRITICAL, "Could not stat data-file: `%s` : \n\n", fname, strerror(errno) );
+      fprintf(stderr, CONFIGFILEH_MSGEFILE);
+      return CONFIGFILEH_EFILE;
+    }
+
+  if ( ! S_ISREG(stat_out.st_mode)  )
+    {
+      LogPrintf ( LOG_CRITICAL, "'%s' does not seem to be a regular file!\n");
+      fprintf(stderr, CONFIGFILEH_MSGEFILE);
+      return CONFIGFILEH_EFILE;
+    }
+#endif
+
+  if ( (fp = LALOpenDataFile (fname)) == NULL) {
+    LogPrintf ( LOG_CRITICAL, "Could not open data-file: `%s`\n\n", fname);
+    fprintf(stderr, CONFIGFILEH_MSGEFILE);
+    return CONFIGFILEH_EFILE;
+  }
+
+  err = XLALCHARReadSequence (&rawdata, fp);
+  fclose (fp);
+  if (err)
+      return err;
+
+  if (rawdata == NULL) {
+    fprintf(stderr, CONFIGFILEH_MSGEFILE);
+    return CONFIGFILEH_EFILE;
+  }
+
+  /* get rid of comments and do line-continuation */
+  cleanConfig (rawdata);
+
+  if ( (*cfgdata = LALCalloc (1, sizeof(LALParsedDataFile))) == NULL) {
+    fprintf(stderr, CONFIGFILEH_MSGEMEM);
+    return CONFIGFILEH_EMEM;
+  }
+
+  /* parse this into individual lines */
+  err = XLALCreateTokenList (&((*cfgdata)->lines), rawdata->data, "\n");
+  LALFree (rawdata->data);
+  LALFree (rawdata);
+
+  if (err) {
+    LALFree (*cfgdata);
+    return err;
+  }
+
+  /* initialize the 'wasRead' flags for the lines */
+  if ( (*cfgdata)->lines->nTokens )
+    {
+      if ( ((*cfgdata)->wasRead =
+	    LALCalloc(1,(*cfgdata)->lines->nTokens * sizeof( (*cfgdata)->wasRead[0]))) == NULL)
+	{
+	  LALFree ((*cfgdata)->lines);
+	  fprintf(stderr, CONFIGFILEH_MSGEMEM);
+	  return CONFIGFILEH_EMEM;
+	}
+    }
+  else
+    (*cfgdata)->wasRead = NULL;
+
+  return 0;
+}
+
+
+
 /** Free memory associated with a LALParsedDataFile structure.
  */
 void
@@ -377,7 +474,38 @@ LALDestroyParsedDataFile (LALStatus *status,
   RETURN (status);
 } /* LALDestroyConfigData() */
 
-
+
+
+
+/** Free memory associated with a LALParsedDataFile structure.
+ */
+int
+XLALDestroyParsedDataFile (LALParsedDataFile **cfgdata)	/**< [in/out] config-file data */
+{
+  int err = 0;  /* error code */
+
+  if ( ! cfgdata || ! *cfgdata || ! (*cfgdata)->lines ) {
+    fprintf(stderr, CONFIGFILEH_MSGENULL);
+    return CONFIGFILEH_ENULL;
+  }
+
+  err = XLALDestroyTokenList ( &((*cfgdata)->lines) );
+  if (err) {
+    fprintf(stderr, "Error destroying token list.\n");
+    return err;
+  }
+  
+  if ( (*cfgdata)->wasRead )
+    LALFree ( (*cfgdata)->wasRead );
+
+  LALFree ( *cfgdata );
+
+  *cfgdata = NULL;
+
+  return 0;
+}
+
+
 
 /** Parser for config-file: can read config-variables of the form
  *	VARIABLE [=:] VALUE.

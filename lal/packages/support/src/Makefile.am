@@ -29,7 +29,7 @@ liblalsupport_la_SOURCES = FileIO.c PrintVector.c PrintFrequencySeries.c \
   LALMath3DPlot.c LALMathNDPlot.c SegmentsIO.c \
   Audio.c NRWaveIO.c	\
   DopplerScan.c DopplerFullScan.c DopplerLatticeCovering.c \
-  VeryBasicXMLOutput.c
+  VeryBasicXMLOutput.c ReadFiltersFile.c
 
 liblalsupport_la_LIBADD = @LALSUPPORT_LIBADD@
 

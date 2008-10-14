@@ -204,6 +204,80 @@ LALCHARReadSequence( LALStatus *stat, CHARSequence **sequence, FILE *stream )
   RETURN( stat );
 }
 
+
+/* <lalVerbatim file="StreamSequenceInputCP"> */
+int
+XLALCHARReadSequence( CHARSequence **sequence, FILE *stream )
+{ /* </lalVerbatim> */
+  BufferList head;  /* head of linked list of buffers */
+  BufferList *here; /* pointer to current position in list */
+  CHAR *data;       /* pointer to vector data */
+  size_t nTot = 0;  /* total number of characters read */
+
+  /* Check for valid input arguments. */
+  if ( !stream || !sequence ) {
+    fprintf(stderr, STREAMINPUTH_MSGENUL );
+    return STREAMINPUTH_ENUL;
+  }
+  if ( *sequence != NULL ) {
+    fprintf(stderr, STREAMINPUTH_MSGEOUT );
+    return STREAMINPUTH_EOUT;
+  }
+
+  /* Read file into linked list of buffers. */
+  here = &head;
+  here->next = NULL;
+  while ( !feof( stream ) ) {
+    size_t n = BUFFSIZE;
+    data = here->buf.CH;
+    while ( !feof( stream ) && n )
+	{
+	   *(data++) = (CHAR)getc( stream );
+	    n--;
+	}
+    /* The very last value returned by getc() is EOF, which is not a
+       character and should not be stored. */
+    if ( feof( stream ) ) {
+      data--;
+      n++;
+    }
+    here->size = BUFFSIZE - n;
+    nTot += here->size;
+    if ( !feof( stream ) ) {
+      here->next = (BufferList *)LALMalloc( sizeof(BufferList) );
+      if ( !(here->next) ) {
+	FREEBUFFERLIST( head.next );
+	fprintf(stderr, STREAMINPUTH_MSGEMEM );
+	return STREAMINPUTH_EMEM;
+      }
+      here = here->next;
+      here->next = NULL;
+    }
+  }
+
+  /* Allocate **sequence, include space for a terminating '\0'. */
+  *sequence = XLALCreateCHARVector( nTot+1 );
+  if ( ! *sequence ) {
+    FREEBUFFERLIST( head.next );
+  }
+
+  /* Copy buffer list into (*sequence)->data, adding final '\0'. */
+  here = &head;
+  data = (*sequence)->data;
+  while ( here ) {
+    memcpy( data, here->buf.CH, here->size );
+    data += here->size;
+    here = here->next;
+  }
+  (*sequence)->data[nTot] = '\0';
+
+  /* Free buffer list and exit. */
+  FREEBUFFERLIST( head.next );
+  
+  return 0;
+}
+
+
 /* tell the GNU compiler to ignore issues with the `ll' length modifier */
 #ifdef __GNUC__
 #define fscanf __extension__ fscanf

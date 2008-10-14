@@ -197,6 +197,16 @@ void
 LALDestroyTokenList( LALStatus *status,
 		     TokenList **list );
 
+
+int
+XLALCreateTokenList( TokenList  **list,
+		     const CHAR *string,
+		     const CHAR *delimiters );
+
+int
+XLALDestroyTokenList( TokenList **list );
+
+
 /* <lalLaTeX>
 \newpage\input{StringConvertC}
 </lalLaTeX> */

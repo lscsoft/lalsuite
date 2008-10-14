@@ -7,7 +7,7 @@ pkginclude_HEADERS = FileIO.h PrintVector.h PrintFTSeries.h ReadFTSeries.h \
 		     SFTfileIO.h LogPrintf.h UserInput.h ConfigFile.h \
 		     LALMathematica.h SegmentsIO.h Audio.h NRWaveIO.h	\
                      DopplerScan.h DopplerFullScan.h DopplerLatticeCovering.h \
-                     VeryBasicXMLOutput.h
+                     VeryBasicXMLOutput.h ReadFiltersFile.h
 
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex

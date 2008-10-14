@@ -184,6 +184,99 @@ LALCreateTokenList( LALStatus  *stat,
 }
 
 
+
+/* <lalVerbatim file="StringTokenCP"> */
+int
+XLALCreateTokenList(TokenList  **list,
+		    const CHAR *string,
+		    const CHAR *delimiters )
+{ /* </lalVerbatim> */
+  BOOLEAN delimiter = 1; /* whether current character is a delimiter */
+  UINT4 i = 0, j = 0;    /* indecies */
+  UINT4 nTokens = 0;     /* number of tokens */
+  UINT4 sLength;         /* length of string */
+  UINT4 tLength = 0;     /* length of token list */
+  CHAR *copy;            /* working copy of token list */
+
+  /* Check for valid input arguments. */
+  if (!list || !string || !delimiters || *list != NULL) {
+      fprintf(stderr, STRINGINPUTH_MSGENUL);
+      return STRINGINPUTH_ENUL;
+  }
+
+  /* Create working copy of token list. */
+  sLength = strlen( string ) + 1;
+  if ( !( copy = (CHAR *)LALMalloc( sLength*sizeof(CHAR) ) ) ) {
+      fprintf(stderr, STRINGINPUTH_MSGENUL);
+      return STRINGINPUTH_ENUL;
+  }
+  for ( i = 0; i < sLength; i++ ) {
+    CHAR c = string[i];
+    if ( strchr( delimiters, c ) ) {
+      copy[i] = '\0';
+      delimiter = 1;
+    } else {
+      copy[i] = c;
+      tLength++;
+      if ( delimiter ) {
+	delimiter = 0;
+	nTokens++;
+      }
+    }
+  }
+
+  /* Create the token list. */
+  if ( !( *list = (TokenList *)LALMalloc( sizeof(TokenList) ) ) ) {
+    LALFree( copy );
+    fprintf(stderr, STRINGINPUTH_MSGENUL);
+    return STRINGINPUTH_ENUL;
+  }
+  if ( !( (*list)->tokens =
+	  (CHAR **)LALMalloc( ( nTokens + 1 )*sizeof(CHAR *) ) ) ) {
+    LALFree( *list );
+    *list = NULL;
+    LALFree( copy );
+    fprintf(stderr, STRINGINPUTH_MSGENUL);
+    return STRINGINPUTH_ENUL;
+  }
+  (*list)->nTokens = nTokens;
+  (*list)->list = NULL;
+
+
+  /* If tokens were found, copy them over and set up pointers. */
+  if ( nTokens ) {
+    CHAR *listData; /* pointer to token list data */
+    (*list)->list = XLALCreateCHARVector(nTokens + tLength);
+
+    if ( ! (*list)->list ) {
+      LALFree( (*list)->tokens );
+      LALFree( *list );
+      *list = NULL;
+      LALFree( copy );
+    }
+    listData = (*list)->list->data;
+    i = 0;
+    while ( i < sLength ) {
+      if ( copy[i] ) {
+	tLength = strlen( copy + i ) + 1;
+	memcpy( listData, copy + i, tLength*sizeof(CHAR) );
+	(*list)->tokens[j++] = listData;
+	i += tLength;
+	listData += tLength;
+      } else
+	i++;
+    }
+  }
+  (*list)->tokens[j] = NULL;
+
+  /* Clean up and exit. */
+  LALFree( copy );
+
+  return 0;
+}
+
+
+
 /* <lalVerbatim file="StringTokenCP"> */
 void
 LALDestroyTokenList( LALStatus *stat,
@@ -206,4 +299,25 @@ LALDestroyTokenList( LALStatus *stat,
   *list = NULL;
   DETATCHSTATUSPTR( stat );
   RETURN( stat );
+}
+
+
+/* <lalVerbatim file="StringTokenCP"> */
+int
+XLALDestroyTokenList( TokenList **list )
+{ /* </lalVerbatim> */
+  /* Check for valid input arguments. */
+  if ( !list || !*list ) {
+    fprintf(stderr, STRINGINPUTH_MSGENUL);
+    return STRINGINPUTH_ENUL;
+  }
+  /* Free everything and exit. */
+  if ( (*list)->list )
+    XLALDestroyCHARVector( (*list)->list );
+
+  LALFree( (*list)->tokens );
+  LALFree( *list );
+  *list = NULL;
+
+  return 0;
 }
