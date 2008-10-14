@@ -222,12 +222,12 @@ int XLALDestroyFiltersFile(StrainIn* InputData)
 {
     int i;
 
-    REAL8IIRFilter *filters[] = {
-	InputData->Cinv,
-	InputData->A,
-	InputData->AW,
-	InputData->D
-    };
+    REAL8IIRFilter *filters[4];
+
+    filters[0] = InputData->Cinv;
+    filters[1] = InputData->A;
+    filters[2] = InputData->AW;
+    filters[3] = InputData->D;
 
     for (i = 0; i < 4; i++) {
 	XLALDestroyREAL8Vector(filters[i]->directCoef);
