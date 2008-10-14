@@ -233,13 +233,11 @@ int main(int argc, char *argv[]) {
     A_coeff = AM_coeffs->Mmunu.Ad * AM_coeffs->Mmunu.Sinv_Tsft;
     B_coeff = AM_coeffs->Mmunu.Bd * AM_coeffs->Mmunu.Sinv_Tsft;
     C_coeff = AM_coeffs->Mmunu.Cd * AM_coeffs->Mmunu.Sinv_Tsft;
-
     /* DEBUG Single-side PSD correction */
     A_coeff *= 0.5;
     B_coeff *= 0.5;
     C_coeff *= 0.5;
     /* DEBUG Single-side PSD correction */
-    
     LogPrintfVerbatim(LOG_DEBUG, "done: A = %0.4e, B = %0.4e, C = %0.4e\n", A_coeff, B_coeff, C_coeff);
   }      
   
@@ -327,16 +325,16 @@ int main(int argc, char *argv[]) {
 	const REAL8 A4 =  1.0 * h0 *             cosi  * cos(2 * psi);
 	
 	/* Compute the optimal signal to noise ratio rho^2 */
-	const REAL8 rho2 = 0.5 * (
-				  A1 * A1 * A_coeff +
-				  A2 * A2 * B_coeff +
-				  A1 * A2 * C_coeff +
-				  A2 * A1 * C_coeff +
-				  A3 * A3 * A_coeff +
-				  A4 * A4 * B_coeff +
-				  A3 * A4 * C_coeff +
-				  A4 * A3 * C_coeff
-				  );
+	const REAL8 rho2 = (
+			    A1 * A1 * A_coeff +
+			    A2 * A2 * B_coeff +
+			    A1 * A2 * C_coeff +
+			    A2 * A1 * C_coeff +
+			    A3 * A3 * A_coeff +
+			    A4 * A4 * B_coeff +
+			    A3 * A4 * C_coeff +
+			    A4 * A3 * C_coeff
+			    );
 	
 	/* Add to the integrand and its derivative w.r.t. h0 */
 	J  += pdf_ncx2_4(rho2, twoF);
