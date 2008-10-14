@@ -10,12 +10,14 @@
 */
 
 #include <math.h>
+#include <time.h>
+#include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "SFTReferenceLibrary.h"
 
-#define RCSID "$Id: splitSFTs.c,v 1.34 2008/10/06 09:36:22 bema Exp $"
+#define RCSID "$Id: splitSFTs.c,v 1.35 2008/10/14 15:59:15 bema Exp $"
 
 /* rounding (for positive numbers!)
    taken from SFTfileIO in LALSupport, should be consistent with that */
@@ -32,6 +34,36 @@
 #define TRY(v,c,errex) { int r; if((r=(v))) { fprintf(stderr,c " (%d @ %d)\n", r, __LINE__); exit(errex); } }
 /* for SFT library calls write out the corresponding SFTErrorMessage, too */
 #define TRYSFT(v,c) { int r; if((r=(v))) { fprintf(stderr,c " (%s @ %d)\n", SFTErrorMessage(r), __LINE__); exit(r); } }
+
+typedef struct {
+	int resource_units; /* number of resource units available for consumption */
+	int resource_rate; /* this many resource units become available in one second */
+	time_t last_checked; /* time we last checked */
+	} UNIT_SOURCE;
+
+void request_resource(UNIT_SOURCE *us, int units)
+{
+time_t now;
+int seconds;
+
+if(us->resource_rate<=0)return; /* negative rate indicates no throttling */
+
+us->resource_units-=units;
+while(us->resource_units<=0) {
+	time(&now);
+	seconds=now-us->last_checked;
+	if(seconds<0)seconds=0;
+	if(seconds>10)seconds=10; /* guard against overflow and condor checkpointing */
+	if(seconds==0) sleep(1);
+	us->resource_units+=seconds*us->resource_rate;
+	us->last_checked=now;
+	}
+}
+
+UNIT_SOURCE read_bandwidth={0, 0, 0};
+UNIT_SOURCE read_open_rate={0, 0, 0};
+UNIT_SOURCE write_bandwidth={0, 0, 0};
+UNIT_SOURCE write_open_rate={0, 0, 0};
 
 int main(int argc, char**argv) {
   unsigned int arg;            /* current command-line argument */
@@ -54,6 +86,10 @@ int main(int argc, char**argv) {
   double fMin = -1.0, fMax = -1.0, fWidth = -1.0, fOverlap = -1; /* start, end, width and overlap in Hz */
   unsigned int nactivesamples; /* number of bins to read in */
 
+  time(&read_bandwidth.last_checked);
+  time(&read_open_rate.last_checked);
+  time(&write_bandwidth.last_checked);
+  time(&write_open_rate.last_checked);
 
   /* help / usage message */
   if((argv[1] == NULL) ||
@@ -165,6 +201,18 @@ int main(int argc, char**argv) {
     } else if((strcmp(argv[arg], "-i") == 0) ||
 	      (strcmp(argv[arg], "--input-files") == 0)){
       break;
+    } else if((strcmp(argv[arg], "-rb") == 0) ||
+	      (strcmp(argv[arg], "--read-bandwidth") == 0)){
+      read_bandwidth.resource_rate=atoi(argv[++arg]);
+    } else if((strcmp(argv[arg], "-ror") == 0) ||
+	      (strcmp(argv[arg], "--read-open-rate") == 0)){
+      read_open_rate.resource_rate=atoi(argv[++arg]);
+    } else if((strcmp(argv[arg], "-wb") == 0) ||
+	      (strcmp(argv[arg], "--write-bandwidth") == 0)){
+      write_bandwidth.resource_rate=atoi(argv[++arg]);
+    } else if((strcmp(argv[arg], "-wor") == 0) ||
+	      (strcmp(argv[arg], "--write-open-rate") == 0)){
+      write_open_rate.resource_rate=atoi(argv[++arg]);
     } else {
       fprintf(stderr, "unknown option '%s', try '-h' for help\n", argv[arg]);
       exit (-1);
@@ -184,10 +232,12 @@ int main(int argc, char**argv) {
   for(arg++; arg < argc; arg++) {    
 
     /* open input SFT */
+    request_resource(&read_open_rate, 1);
     TRY((fp = fopen(argv[arg], "r")) == NULL,
 	"could not open SFT file for reading",7);
     
     /* read header */
+    request_resource(&read_bandwidth, 40);
     TRYSFT(ReadSFTHeader(fp, &hd, &oldcomment, &swap, 1),
 	   "could not read SFT header");
 
@@ -267,6 +317,7 @@ int main(int argc, char**argv) {
       nactivesamples = hd.nsamples - start;
 
     /* read in SFT bins */
+    request_resource(&read_bandwidth, nactivesamples*8);
     TRYSFT(ReadSFTData(fp, data, start, nactivesamples, NULL, NULL),
 	   "could not read SFT data");
 
@@ -296,11 +347,13 @@ int main(int argc, char**argv) {
       sprintf(outname, "%s%d", prefix, bin);
 
       /* append the SFT to the "merged" SFT with the same name */
+      request_resource(&write_open_rate, 1);
       TRY((fp = fopen(outname,"a")) == NULL,
 	  "could not open SFT for writing",13);
 
       /* write the data
 	 write the comment only to the first SFT of a "block", i.e. of a call of this program */
+      request_resource(&write_bandwidth, 40+this_width*8);
       TRYSFT(WriteSFT(fp, hd.gps_sec, hd.gps_nsec, hd.tbase, 
 		      bin, this_width, detector,
 		      firstfile ? comment : NULL,
