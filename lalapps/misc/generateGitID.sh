@@ -84,11 +84,11 @@ cat > $tmpfile <<EOF
 #ifndef ${prefix}GITID_H
 #define ${prefix}GITID_H
 #include <lal/LALRCSID.h>
-NRCSID (${prefix}GitID, "\$${prefix}CommitID: $git_id  \$ \n"
-"\$${prefix}CommitDate: $git_date_utc  \$ \n"
-"\$${prefix}CommitAuthor: $git_author  \$ \n"
+NRCSID (${prefix}GitID, "\$${prefix}CommitID: $git_id \$ \n"
+"\$${prefix}CommitDate: $git_date_utc \$ \n"
+"\$${prefix}CommitAuthor: $git_author \$ \n"
 "\$${prefix}CommitTitle: $git_title_safe \$ \n"
-"\$${prefix}GitStatus: $git_status \$ ");
+"\$${prefix}GitStatus: $git_status \$ \n");
 NRCSID (${prefix}GitCommitID, "\$${prefix}CommitID: $git_id \$ ");
 NRCSID (${prefix}GitCommitDate, "\$${prefix}CommitDate: $git_date_utc \$ ");
 NRCSID (${prefix}GitCommitAuthor, "\$${prefix}CommitAuthor: $git_author \$ ");
