@@ -66,6 +66,7 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <lal/LALConstants.h>
 #include <lal/AVFactories.h>
 #include <lal/ConfigFile.h>
+#include <lal/ReadFiltersFile.h>
 #include <lal/TimeSeries.h>
 #include <lal/LALVersion.h>
 #include <lal/LALFrameIO.h>
@@ -158,9 +159,6 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA);
 /* Reads T seconds of AS_Q, EXC, and DARM_CTRL data */
 int ReadData(struct CommandLineArgsTag CLA);
 
-/* Reads the filters file */
-int ReadFiltersFile(struct CommandLineArgsTag CLA);
-
 /* Writes frame file */
 int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA);
 
@@ -202,8 +200,8 @@ int main(int argc,char *argv[])
 
   if (ReadData(CommandLineArgs)) return 2;
 
-  if (ReadFiltersFile(CommandLineArgs)) return 3;
-  
+  if (XLALReadFiltersFile(CommandLineArgs.filterfile, &InputData)) return 3;
+
   LALComputeStrain(&status, &OutputData, &InputData);
   TESTSTATUS( &status );
 
@@ -664,262 +662,6 @@ static FrChanIn chanin_exc;
 }
 
 
-
-/*******************************************************************************/
-
-int ReadFiltersFile(struct CommandLineArgsTag CLA)
-{
-  LALParsedDataFile *Filters =NULL;	/* pre-parsed contents of Filters-file */
-  int numlines,i,n;
-  CHAR *thisline;
-  char sensingstr[7],usfstr[17], delaystr[5];
-  char aastr[9], servostr[5], awstr[13];
-  int NCinv, NA, ND, NAW, l;
- 
-  LALParseDataFile (&status, &Filters, CLA.filterfile);
-  TESTSTATUS( &status );
-
-  numlines = Filters->lines->nTokens; /* how many lines of data */
-
-  /* check that file is not empty */
-  if (numlines == 0)
-    {
-      fprintf(stderr,"File %s has no contents!\n",CLA.filterfile);
-      LALDestroyParsedDataFile ( &status, &Filters ); TESTSTATUS( &status );
-      return 1;
-    }
-  
-  /**-----------------------------------------------------------------------**/
-  /* read CVS info */
-  i=0; /*start with first line */
-  thisline = Filters->lines->tokens[i];	/* get line i */
-  strncpy(filtercvsinfo, thisline, sizeof(filtercvsinfo) );
-  i++; /*advance one line */
-
-  /**-----------------------------------------------------------------------**/
-  /* read sensing function info */
-
-  thisline = Filters->lines->tokens[i];	/* get line i */
-  sscanf (thisline,"%s", sensingstr);
-  if ( strcmp(sensingstr, "SENSING" ) ) 
-    {
-      fprintf(stderr,"ERROR: Line (%s) of file %s is not properly terminated by '%s' marker!\n\n", 
-	      thisline, CLA.filterfile, "SENSING");
-      LALDestroyParsedDataFile ( &status, &Filters ); TESTSTATUS( &status );
-      return 1;
-    }
-
-  i++; /*advance one line */
-  thisline = Filters->lines->tokens[i];	/* get line i */
-  sscanf (thisline,"%" LAL_INT4_FORMAT " %s", &InputData.CinvUSF, usfstr);
-  if ( strcmp(usfstr, "UPSAMPLING_FACTOR" ) ) 
-    {
-      fprintf(stderr,"ERROR: Line (%s) of file %s is not properly terminated by '%s' marker!\n\n", 
-	      thisline, CLA.filterfile, "UPSAMPLING_FACTOR");
-      LALDestroyParsedDataFile ( &status, &Filters ); TESTSTATUS( &status );
-      return 1;
-    }
-  /* FIXME: Check upsamplig factor USF, positive, and mod 2=0 */
-
-  /* Read Delay */
-  i++; /*advance one line */
-  thisline = Filters->lines->tokens[i];	/* get line i */
-  sscanf (thisline,"%" LAL_INT4_FORMAT " %s", &InputData.CinvDelay, delaystr);
-  if ( strcmp(delaystr, "DELAY" ) ) 
-    {
-      fprintf(stderr,"ERROR: Line (%s) of file %s is not properly terminated by '%s' marker!\n\n", 
-	      thisline, CLA.filterfile, "DELAY");
-      LALDestroyParsedDataFile ( &status, &Filters ); TESTSTATUS( &status );
-      return 1;
-    }
-
-  /* Read number of sensing filters and their orders */
-  i++;/*advance one line */
-  thisline = Filters->lines->tokens[i];	/* get line i */
-  NCinv=strtol(thisline, &thisline,10);
-  if ( strcmp(thisline, " FILTER_ORDER" ) ) 
-    {
-      fprintf(stderr,"ERROR: Line (%s) of file %s is not properly terminated by '%s' marker!\n\n", 
-	      thisline, CLA.filterfile, "FILTERS_ORDERS");
-      LALDestroyParsedDataFile ( &status, &Filters ); TESTSTATUS( &status );
-      return 1;      
-    }
-   
-  /* Allocate inverse sensing funtion filters */
-  InputData.Cinv=(REAL8IIRFilter *)LALMalloc(sizeof(REAL8IIRFilter)); 
-
-  /* Allocate inverse sensing function filter */
-  InputData.Cinv->directCoef=NULL;
-  InputData.Cinv->recursCoef=NULL;
-  InputData.Cinv->history=NULL;
-
-  LALDCreateVector(&status,&(InputData.Cinv->directCoef),NCinv);
-  LALDCreateVector(&status,&(InputData.Cinv->recursCoef),NCinv);
-  LALDCreateVector(&status,&(InputData.Cinv->history),NCinv-1);
-
-  for(l=0;l<NCinv;l++) InputData.Cinv->directCoef->data[l]=0.0;
-  for(l=0;l<NCinv;l++) InputData.Cinv->recursCoef->data[l]=0.0;
-  for(l=0;l<NCinv-1;l++) InputData.Cinv->history->data[l]=0.0;
-  
-  for(n = 0; n < NCinv; n++)
-    {
-      /* read direct coeffs */
-      i++;/*advance one line */
-      thisline = Filters->lines->tokens[i];	/* get line i */
-      InputData.Cinv->directCoef->data[n]=strtod(thisline, &thisline);  
-    }
-
-  /**-----------------------------------------------------------------------**/
-  /* Read in servo */
-  i++; /*advance one line */
-  thisline = Filters->lines->tokens[i];	/* get line i */
-  sscanf (thisline,"%s", servostr);
-  if ( strcmp(servostr, "SERVO" ) ) 
-    {
-      fprintf(stderr,"ERROR: Line (%s) of file %s is not properly terminated by '%s' marker!\n\n", 
-	      thisline, CLA.filterfile, "SERVO");
-      LALDestroyParsedDataFile ( &status, &Filters ); TESTSTATUS( &status );
-      return 1;
-    }
-  /* Read number of sensing filters and their orders */
-  i++;/*advance one line */
-  thisline = Filters->lines->tokens[i];	/* get line i */
-  ND=strtol(thisline, &thisline,10);
-  if ( strcmp(thisline, " FILTER_ORDER" ) ) 
-    {
-      fprintf(stderr,"ERROR: Line (%s) of file %s is not properly terminated by '%s' marker!\n\n", 
-	      thisline, CLA.filterfile, "FILTER_ORDER");
-      LALDestroyParsedDataFile ( &status, &Filters ); TESTSTATUS( &status );
-      return 1;      
-    }
-   
-  /* Allocate inverse sensing funtion filters */
-  InputData.D=(REAL8IIRFilter *)LALMalloc(sizeof(REAL8IIRFilter)); 
-
-  /* Allocate inverse sensing function filter */
-  InputData.D->directCoef=NULL;
-  InputData.D->recursCoef=NULL;
-  InputData.D->history=NULL;
-
-  LALDCreateVector(&status,&(InputData.D->directCoef),ND);
-  LALDCreateVector(&status,&(InputData.D->recursCoef),ND);
-  LALDCreateVector(&status,&(InputData.D->history),ND-1);
-
-  for(l=0;l<ND;l++) InputData.D->directCoef->data[l]=0.0;
-  for(l=0;l<ND;l++) InputData.D->recursCoef->data[l]=0.0;
-  for(l=0;l<ND-1;l++) InputData.D->history->data[l]=0.0;
-  
-  for(n = 0; n < ND; n++)
-    {
-      /* read direct coeffs */
-      i++;/*advance one line */
-      thisline = Filters->lines->tokens[i];	/* get line i */
-      InputData.D->directCoef->data[n]=strtod(thisline, &thisline);
-    }
-
-  /**-----------------------------------------------------------------------**/
-  /* Read in actuation */
-  i++; /*advance one line */
-  thisline = Filters->lines->tokens[i];	/* get line i */
-  sscanf (thisline,"%s", aastr);
-  if ( strcmp(aastr, "ACTUATION" ) ) 
-    {
-      fprintf(stderr,"ERROR: Line (%s) of file %s is not properly terminated by '%s' marker!\n\n", 
-	      thisline, CLA.filterfile, "ACTUATION");
-      LALDestroyParsedDataFile ( &status, &Filters ); TESTSTATUS( &status );
-      return 1;
-    }
-  /* Read number of sensing filters and their orders */
-  i++;/*advance one line */
-  thisline = Filters->lines->tokens[i];	/* get line i */
-  NA=strtol(thisline, &thisline,10);
-  if ( strcmp(thisline, " FILTER_ORDER" ) ) 
-    {
-      fprintf(stderr,"ERROR: Line (%s) of file %s is not properly terminated by '%s' marker!\n\n", 
-	      thisline, CLA.filterfile, "FILTER_ORDER");
-      LALDestroyParsedDataFile ( &status, &Filters ); TESTSTATUS( &status );
-      return 1;      
-    }
-   
-  /* Allocate inverse sensing funtion filters */
-  InputData.A=(REAL8IIRFilter *)LALMalloc(sizeof(REAL8IIRFilter)); 
-
-  /* Allocate inverse sensing function filter */
-  InputData.A->directCoef=NULL;
-  InputData.A->recursCoef=NULL;
-  InputData.A->history=NULL;
-
-  LALDCreateVector(&status,&(InputData.A->directCoef),NA);
-  LALDCreateVector(&status,&(InputData.A->recursCoef),NA);
-  LALDCreateVector(&status,&(InputData.A->history),NA-1);
-
-  for(l=0;l<NA;l++) InputData.A->directCoef->data[l]=0.0;
-  for(l=0;l<NA;l++) InputData.A->recursCoef->data[l]=0.0;
-  for(l=0;l<NA-1;l++) InputData.A->history->data[l]=0.0;
-  
-  for(n = 0; n < NA; n++)
-    {
-      /* read direct coeffs */
-      i++;/*advance one line */
-      thisline = Filters->lines->tokens[i];	/* get line i */
-      InputData.A->directCoef->data[n]=strtod(thisline, &thisline);
-    }
-
-  /**-----------------------------------------------------------------------**/
-  /* Read in antiwhitening filter */
-  i++; /*advance one line */
-  thisline = Filters->lines->tokens[i];	/* get line i */
-  sscanf (thisline,"%s", awstr);
-  if ( strcmp(awstr, "ANTIWHITENING" ) ) 
-    {
-      fprintf(stderr,"ERROR: Line (%s) of file %s is not properly terminated by '%s' marker!\n\n", 
-	      thisline, CLA.filterfile, "ANTIWHITENING");
-      LALDestroyParsedDataFile ( &status, &Filters ); TESTSTATUS( &status );
-      return 1;
-    }
-  /* Read number of sensing filters and their orders */
-  i++;/*advance one line */
-  thisline = Filters->lines->tokens[i];	/* get line i */
-  NAW=strtol(thisline, &thisline,10);
-  if ( strcmp(thisline, " FILTER_ORDER" ) ) 
-    {
-      fprintf(stderr,"ERROR: Line (%s) of file %s is not properly terminated by '%s' marker!\n\n", 
-	      thisline, CLA.filterfile, "FILTER_ORDER");
-      LALDestroyParsedDataFile ( &status, &Filters ); TESTSTATUS( &status );
-      return 1;      
-    }
-   
-  /* Allocate inverse sensing funtion filters */
-  InputData.AW=(REAL8IIRFilter *)LALMalloc(sizeof(REAL8IIRFilter)); 
-
-  /* Allocate inverse sensing function filter */
-  InputData.AW->directCoef=NULL;
-  InputData.AW->recursCoef=NULL;
-  InputData.AW->history=NULL;
-
-  LALDCreateVector(&status,&(InputData.AW->directCoef),NAW);
-  LALDCreateVector(&status,&(InputData.AW->recursCoef),NAW);
-  LALDCreateVector(&status,&(InputData.AW->history),NAW-1);
-
-  for(l=0;l<NAW;l++) InputData.AW->directCoef->data[l]=0.0;
-  for(l=0;l<NAW;l++) InputData.AW->recursCoef->data[l]=0.0;
-  for(l=0;l<NAW-1;l++) InputData.AW->history->data[l]=0.0;
-  
-  for(n = 0; n < NAW; n++)
-    {
-      /* read direct coeffs */
-      i++;/*advance one line */
-      thisline = Filters->lines->tokens[i];	/* get line i */
-      InputData.AW->directCoef->data[n]=strtod(thisline, &thisline);
-    }
-
-  /**-----------------------------------------------------------------------**/
-
-  LALDestroyParsedDataFile ( &status, &Filters );
-  TESTSTATUS( &status );
-
-  return 0;
-}
 
 /*******************************************************************************/
 
