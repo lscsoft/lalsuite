@@ -263,17 +263,20 @@ LALCreateTwoIFOCoincList(
     /* calculate the time of the trigger */
     LALGPStoINT8( status->statusPtr, &currentTriggerNS[0], 
         &(currentTrigger[0]->end_time) );
+    CHECKSTATUSPTR( status );
 
     /* set next trigger for comparison */
     currentTrigger[1] = currentTrigger[0]->next;
     LALGPStoINT8( status->statusPtr, &currentTriggerNS[1], 
           &(currentTrigger[1]->end_time) );
+    CHECKSTATUSPTR( status );
 
     while ( (currentTriggerNS[1] - currentTriggerNS[0]) < maxTimeDiff )
     {
       /* check that triggers pass coincidence test */
       LALCompareInspirals( status->statusPtr, currentTrigger[0], 
           currentTrigger[1], accuracyParams );
+      CHECKSTATUSPTR( status );
 
       /* test whether we have coincidence */
       if ( accuracyParams->match )
@@ -294,8 +297,14 @@ LALCreateTwoIFOCoincList(
         /* Add the two triggers to the coinc */
         LALAddSnglInspiralToCoinc( status->statusPtr, &thisCoinc,
             currentTrigger[0] );
+	BEGINFAIL (status) { 
+	  XLALFreeCoincInspiral( &coincHead );
+	} ENDFAIL (status);
         LALAddSnglInspiralToCoinc( status->statusPtr, &thisCoinc,
             currentTrigger[1] );
+	BEGINFAIL (status) { 
+	  XLALFreeCoincInspiral( &coincHead );
+	} ENDFAIL (status);
 
         ++numEvents;
 
@@ -307,6 +316,9 @@ LALCreateTwoIFOCoincList(
       {
         LALGPStoINT8( status->statusPtr, &currentTriggerNS[1], 
             &(currentTrigger[1]->end_time) );
+	BEGINFAIL (status) { 
+	  XLALFreeCoincInspiral( &coincHead );
+	} ENDFAIL (status);
       }
       else
       {
@@ -424,6 +436,9 @@ LALCreateNIFOCoincList(
               /* add the single to the new N coinc */
               LALAddSnglInspiralToCoinc( status->statusPtr, &thisNIfoCoinc,
                   otherCoinc->snglInspiral[ifoNumber] );
+	      BEGINFAIL (status) { 
+		XLALFreeCoincInspiral( &nIfoCoincHead );
+	      } ENDFAIL (status);
 
               /* add the triggers from the (N-1) coinc to the new N coinc */
               for( ifoNum = 0; ifoNum < LAL_NUM_IFO; ifoNum++ )
@@ -432,6 +447,9 @@ LALCreateNIFOCoincList(
                 {
                   LALAddSnglInspiralToCoinc( status->statusPtr, &thisNIfoCoinc,
                       thisCoinc->snglInspiral[ifoNum] );
+		  BEGINFAIL (status) { 
+		    XLALFreeCoincInspiral( &nIfoCoincHead );
+		  } ENDFAIL (status);
                 }
               }
             } /* closes: if ( accuracyParams->match ) */
@@ -532,12 +550,18 @@ LALRemoveRepeatedCoincs(
       {
         *coincHead = thisCoinc->next;
         LALFreeCoincInspiral( status->statusPtr, &thisCoinc );
+	BEGINFAIL (status) { 
+	  XLALFreeCoincInspiral( coincHead );
+	} ENDFAIL (status);
         thisCoinc = *coincHead;
       }
       else 
       {
         prevCoinc->next = thisCoinc->next;
         LALFreeCoincInspiral( status->statusPtr, &thisCoinc );
+	BEGINFAIL (status) { 
+	  XLALFreeCoincInspiral( coincHead );
+	} ENDFAIL (status);
         thisCoinc = prevCoinc->next;
       }
     }
@@ -1599,9 +1623,11 @@ LALInspiralDistanceCutCleaning(
       dH2 = 0;
       LALDistanceScanSummValueTable(status->statusPtr, summValueList,
 				    tmpCoinc->snglInspiral[LAL_IFO_H1]->end_time, "H1",  &dH1);
+      CHECKSTATUSPTR( status );
       
       LALDistanceScanSummValueTable(status->statusPtr, summValueList,
 				    tmpCoinc->snglInspiral[LAL_IFO_H1]->end_time, "H2",  &dH2);
+      CHECKSTATUSPTR( status );
       
       /* iota =1 */
       if (dH2/dH1*snrH1 > snrThreshold * iotaCut)
@@ -1628,8 +1654,10 @@ LALInspiralDistanceCutCleaning(
         dH2 = 0;
 	LALDistanceScanSummValueTable(status->statusPtr, summValueList,
 				      tmpCoinc->snglInspiral[LAL_IFO_H2]->end_time, "H1",  &dH1);
+	CHECKSTATUSPTR( status );
 	LALDistanceScanSummValueTable(status->statusPtr, summValueList, 
 				      tmpCoinc->snglInspiral[LAL_IFO_H2]->end_time, "H2",  &dH2);
+	CHECKSTATUSPTR( status );
 	/* iota = 1 */
 	if (dH1/dH2*snrH2 > snrThreshold *iotaCut)
 	  {
@@ -1918,6 +1946,7 @@ LALCoincCutSnglInspiral(
     {
       /* discard this trigger since it's not in a coinc */
       LALFreeSnglInspiral ( status->statusPtr, &tmpEvent );
+      CHECKSTATUSPTR( status );
     }
   }
 
