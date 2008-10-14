@@ -19,23 +19,34 @@ outfile="misc/${prefix}GitID.h"
 tmpfile="misc/__${prefix}GitID.h"
 
 ## ---------- read out git-log of last commit --------------------
-fmt="format:${prefix}CommitID: %H %n${prefix}CommitDate: %ai %n${prefix}CommitAuthor: %ae %n${prefix}CommitTitle: %s";
-logcmd="git log -1 --pretty='$fmt'";
+fmt_id="format:%H";
+logcmd_id="git log -1 --pretty='$fmt_id'";
+fmt_date="format:%ai";
+logcmd_date="git log -1 --pretty='$fmt_date'";
+fmt_author="format:%ae";
+logcmd_author="git log -1 --pretty='$fmt_author'";
+fmt_title="format:%s";
+logcmd_title="git log -1 --pretty='$fmt_title'";
 
 ## first check if the git log works at all: could be a) no git installed or b) no git-repository
-if eval "$logcmd > /dev/null 2>&1"; then
+if eval "$logcmd_id > /dev/null 2>&1"; then
     git_log_ok="true";
 else
     git_log_ok="false";
 fi
 
 if test "$git_log_ok" = "true"; then
-    git_log=`eval $logcmd`;
+    git_id=`eval $logcmd_id`;
+    git_date=`eval $logcmd_date`;
+    git_author=`eval $logcmd_author`;
+    git_title=`eval $logcmd_title`;
+    git_date_utc=`date -ud "$git_date" +"%Y-%m-%d %H:%M:%S %z"`
 else
-    git_log="${prefix}CommitID: unknown.
-${prefix}CommitDate: 1980-01-06 00:00:00 +0000 
-${prefix}CommitAuthor: unknown.
-${prefix}CommitTitle: unknown.";
+    git_id="unknown.";
+    git_date="1980-01-06 00:00:00 +0000";
+    git_author="unknown.";
+    git_title="unknown.";
+    git_date_utc=$git_date;
 fi
 
 ## ---------- check for modified/added git-content [ignores untracked files!] ----------
@@ -64,28 +75,25 @@ ${prefix}GitStatus: ${git_status}";
 
 ## ---------- parse output and generate ${prefix}GitID.h header file --------------------
 
-## make sure the 'git_log' string doesn't contain any double-quotes or $-signs, from commit-messages,
+## make sure the 'git_title' string doesn't contain any double-quotes or $-signs, from commit-messages,
 ## to avoid messing up the C-string and ident-keywords
-git_log_safe=`echo "$git_log" | sed -e"s/\"/''/g" | sed -e"s/[$]/_/g" `;
+git_title_safe=`echo "$git_title" | sed -e"s/\"/''/g" | sed -e"s/[$]/_/g" `;
 
 ## put proper $ quotations for each line to form proper 'ident' keyword strings:
-git_log_ident=`echo "$git_log_safe" | sed -e"s/\(.*\)/\"$\1 $ \\\\\\n\"/g"`;
-git_log_id=`echo $git_log_ident | sed -e"s/^\(.*\)\\\\\\n\(.*\)\\\\\\n\(.*\)\\\\\\n\(.*\)\\\\\\n\(.*\)\\\\\\n/\1/" | sed -e"s/\" \"/\"/"`
-git_log_date=`echo $git_log_ident | sed -e"s/^\(.*\)\\\\\\n\(.*\)\\\\\\n\(.*\)\\\\\\n\(.*\)\\\\\\n\(.*\)\\\\\\n/\2/" | sed -e"s/\" \"/\"/"`
-git_log_author=`echo $git_log_ident | sed -e"s/^\(.*\)\\\\\\n\(.*\)\\\\\\n\(.*\)\\\\\\n\(.*\)\\\\\\n\(.*\)\\\\\\n/\3/" | sed -e"s/\" \"/\"/"`
-git_log_title=`echo $git_log_ident | sed -e"s/^\(.*\)\\\\\\n\(.*\)\\\\\\n\(.*\)\\\\\\n\(.*\)\\\\\\n\(.*\)\\\\\\n/\4/" | sed -e"s/\" \"/\"/"`
-git_log_status=`echo $git_log_ident | sed -e"s/^\(.*\)\\\\\\n\(.*\)\\\\\\n\(.*\)\\\\\\n\(.*\)\\\\\\n\(.*\)\\\\\\n/\5/" | sed -e"s/\" \"/\"/"`
-
 cat > $tmpfile <<EOF
 #ifndef ${prefix}GITID_H
 #define ${prefix}GITID_H
 #include <lal/LALRCSID.h>
-NRCSID (${prefix}GitID, $git_log_ident);
-NRCSID (${prefix}GitCommitID, $git_log_id);
-NRCSID (${prefix}GitCommitDate, $git_log_date);
-NRCSID (${prefix}GitCommitAuthor, $git_log_author);
-NRCSID (${prefix}GitCommitTitle, $git_log_title);
-NRCSID (${prefix}GitGitStatus, $git_log_status);
+NRCSID (${prefix}GitID, "\$${prefix}CommitID: $git_id  \$ \n"
+"\$${prefix}CommitDate: $git_date_utc  \$ \n"
+"\$${prefix}CommitAuthor: $git_author  \$ \n"
+"\$${prefix}CommitTitle: $git_title_safe \$ \n"
+"\$${prefix}GitStatus: $git_status \$ ");
+NRCSID (${prefix}GitCommitID, "\$${prefix}CommitID: $git_id \$ ");
+NRCSID (${prefix}GitCommitDate, "\$${prefix}CommitDate: $git_date_utc \$ ");
+NRCSID (${prefix}GitCommitAuthor, "\$${prefix}CommitAuthor: $git_author \$ ");
+NRCSID (${prefix}GitCommitTitle, "\$${prefix}CommitTitle: $git_title_safe \$ ");
+NRCSID (${prefix}GitGitStatus, "\$${prefix}GitStatus: $git_status \$ ");
 #endif
 EOF
 
