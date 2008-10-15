@@ -48,6 +48,7 @@ $Id$
 #include <lal/LIGOMetadataUtils.h>
 #include <lal/LIGOLwXMLRead.h>
 #include <lal/Date.h>
+#include <gsl/gsl_rng.h>
 
 NRCSID( LIGOLWXMLREADC, "$Id$" );
 
@@ -570,11 +571,14 @@ SearchSummaryTable *XLALSearchSummaryTableFromLIGOLw(
 	/* open the file and find table */
 
 	if(MetaioOpenFile(&env, filename)) {
+                MetaioAbort(&env);
+                MetaioClose(&env);
 		XLALPrintError("%s(): error opening \"%s\": %s\n", func, filename, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
 		XLAL_ERROR_NULL(func, XLAL_EIO);
 	}
 	if(MetaioOpenTableOnly(&env, table_name)) {
 		MetaioAbort(&env);
+                MetaioClose(&env);
 		XLALPrintError("%s(): cannot find %s table: %s\n", func, table_name, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
 		XLAL_ERROR_NULL(func, XLAL_EIO);
 	}
@@ -603,6 +607,7 @@ SearchSummaryTable *XLALSearchSummaryTableFromLIGOLw(
 
 	if(XLALGetBaseErrno()) {
 		MetaioAbort(&env);
+                MetaioClose(&env);
 		XLALPrintError("%s(): failure reading %s table\n", func, table_name);
 		XLAL_ERROR_NULL(func, XLAL_EFUNC);
 	}
@@ -617,6 +622,7 @@ SearchSummaryTable *XLALSearchSummaryTableFromLIGOLw(
 		if(!row) {
 			XLALDestroySearchSummaryTable(head);
 			MetaioAbort(&env);
+                        MetaioClose(&env);
 			XLAL_ERROR_NULL(func, XLAL_EFUNC);
 		}
 
@@ -630,6 +636,7 @@ SearchSummaryTable *XLALSearchSummaryTableFromLIGOLw(
 		if((row->process_id = XLALLIGOLwParseIlwdChar(&env, column_pos.process_id, "process", "process_id")) < 0) {
 			XLALDestroySearchSummaryTable(head);
 			MetaioAbort(&env);
+                        MetaioClose(&env);
 			XLAL_ERROR_NULL(func, XLAL_EFUNC);
 		}
 		/* FIXME:  structure definition does not include elements
@@ -649,6 +656,7 @@ SearchSummaryTable *XLALSearchSummaryTableFromLIGOLw(
 	if(miostatus < 0) {
 		XLALDestroySearchSummaryTable(head);
 		MetaioAbort(&env);
+                MetaioClose(&env);
 		XLALPrintError("%s(): I/O error parsing %s table: %s\n", func, table_name, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
 		XLAL_ERROR_NULL(func, XLAL_EIO);
 	}
@@ -656,6 +664,8 @@ SearchSummaryTable *XLALSearchSummaryTableFromLIGOLw(
 	/* close file */
 
 	if(MetaioClose(&env)) {
+                MetaioAbort(&env);
+                MetaioClose(&env);
 		XLALDestroySearchSummaryTable(head);
 		XLALPrintError("%s(): error parsing document after %s table: %s\n", func, table_name, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
 		XLAL_ERROR_NULL(func, XLAL_EIO);
@@ -1080,6 +1090,7 @@ MultiInspiralTable    * XLALMultiInspiralTableFromLIGOLw (
       MetaioClose( env );
       XLAL_ERROR_NULL( func, XLAL_ENOMEM );
     }
+      
 
     /* parse the contents of the row into the InspiralTemplate structure */
     for ( j = 0; tableDir[j].name; ++j )
@@ -1454,6 +1465,8 @@ LALSnglInspiralTableFromLIGOLw (
   mioStatus = MetaioOpenFile( env, fileName );
   if ( mioStatus )
   {
+    MetaioAbort(env);
+    MetaioClose(env);
     fprintf( stderr, "unable to open file %s\n", fileName );
     return -1;
   }
@@ -1462,6 +1475,8 @@ LALSnglInspiralTableFromLIGOLw (
   mioStatus = MetaioOpenTableOnly( env, "sngl_inspiral" );
   if ( mioStatus )
   {
+    MetaioAbort(env);
+    MetaioClose(env);
     fprintf( stdout, "no sngl_inspiral table in file %s\n", fileName );
     return 0;
   }
@@ -1839,6 +1854,7 @@ InspiralTmpltBankFromLIGOLw (
   const  MetaioParseEnv                 env = &parseEnv;
   int   pParParam;
   int   pParValue;
+  gsl_rng * r = gsl_rng_alloc (gsl_rng_taus);
   REAL4 minMatch = 0;
   MetaTableDirectory tableDir[] =
   {
@@ -1991,6 +2007,11 @@ InspiralTmpltBankFromLIGOLw (
         MetaioClose( env );
         return -1;
       }
+
+ /* assign the unused minMatch parameter to a random number for the bank */
+    /* veto sorting algorithm */
+
+    thisTmplt->OmegaS = (REAL8) gsl_rng_uniform_pos(r);
 
       /* parse the contents of the row into the InspiralTemplate structure */
       for ( j = 0; tableDir[j].name; ++j )
@@ -2171,6 +2192,7 @@ InspiralTmpltBankFromLIGOLw (
   }
 
   /* we have sucesfully parsed temples */
+  gsl_rng_free(r);
   MetaioClose( env );
   return nrows;  
 }
@@ -2637,6 +2659,8 @@ SummValueTableFromLIGOLw (
   mioStatus = MetaioOpenTable( env, fileName, "summ_value" );
   if ( mioStatus )
   {
+    MetaioAbort(env);
+    MetaioClose(env);
     fprintf( stderr, 
         "warning: unable to open summ_value table from file %s\n", 
         fileName );
