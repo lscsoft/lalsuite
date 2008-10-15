@@ -66,6 +66,11 @@ static void XLALComputeInstantFreq( REAL4Vector *Freq,
 			     REAL4Vector *hc,
 			     REAL8 dt);
 
+static REAL4Vector *XLALCutAtFreq( REAL4Vector     *h, 
+				       REAL4Vector     *freq, 
+				       REAL8           cutFreq, 
+				       REAL8           deltaT);
+
 NRCSID (LALPHENOMWAVEFORMC, "$Id$");
 
 
@@ -557,6 +562,10 @@ void LALBBHPhenTimeDomEngine( LALStatus        *status,
     /* compute the instantaneous frequency */
     if (f) XLALComputeInstantFreq(f, signal1, signal2, dt); 
 
+    /* cut the waveform at the low freq given by */
+    /*    signal1 = XLALCutAtFreq( signal1, f, params->fLower, dt);
+	  signal2 = XLALCutAtFreq( signal2, f, params->fLower, dt);*/
+
     /* allocate memory for the temporary phase vector */
     n = signal1->length;
     if (phiOut) phi = XLALCreateREAL8Vector(n);
@@ -894,5 +903,66 @@ static void XLALComputeInstantFreq( REAL4Vector *Freq,
     XLALDestroyREAL4Vector(hcDot);
 
     return;
+
+}
+
+static REAL4Vector *XLALCutAtFreq( REAL4Vector     *h, 
+				   REAL4Vector     *freq, 
+				   REAL8           cutFreq, 
+				   REAL8           deltaT)
+{
+  REAL8 dt;
+  UINT4 k, k0, kMid, len;
+  REAL4 currentFreq;
+  UINT4 newLen;
+
+  REAL4Vector *newH = NULL;
+
+  LIGOTimeGPS epoch;
+
+  len = freq->length;
+  dt = deltaT;
+
+  /* Since the boundaries of this freq vector are likely to have   */
+  /* FFT crap, let's scan the freq values starting from the middle */
+  kMid = len/2;
+  currentFreq = freq->data[kMid];
+  k = kMid;
+  
+  /* freq is an increasing function of time */
+  /* If we are above the cutFreq we move to the left; else to the right */
+  if (currentFreq > cutFreq && k > 0)
+    {
+      while(currentFreq > cutFreq)
+	{
+	  currentFreq = freq->data[k];
+	  k--;
+	}
+      k0 = k;
+    }
+  else 
+    {
+      while(currentFreq < cutFreq && k < len)
+	{
+	  currentFreq = freq->data[k];
+	  k++;
+	}
+      k0 = k;
+    }
+    
+  newLen = len - k0;
+
+  /* Allocate memory for the frequency series */
+  epoch.gpsSeconds = 0;
+  epoch.gpsNanoSeconds = 0;
+  newH = 
+    XLALCreateREAL4Vector(newLen);
+
+  for(k = 0; k < newLen; k++)
+    {
+      newH->data[k] = h->data[k0 + k]; 
+    }
+
+  return newH;
 
 }
