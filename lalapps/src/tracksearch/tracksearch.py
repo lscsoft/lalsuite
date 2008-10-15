@@ -184,6 +184,13 @@ class tracksearchCheckIniFile:
                 if not os.path.exists(str(optValue)):
                     self.errList.append('Can not find :'+str(entry)+':'+str(optValue))
                     fileNotFound=True
+        #Check the opts compared to condor-max-jobs
+        if self.iniOpts.has_section('condor-max-jobs'):
+            condorMaxJobOpts=self.iniOpts.options('condor-max-jobs')
+            if not set(condorMaxJobOpts).issubset(set(optValue)):
+                self.errList.append("It appears that there is an option in [condor-max-jobs] that refers to a job type not in [condor]")
+        else:
+            self.errList.append("Missing section in the ini file [condor-max-jobs] section");
         if fileNotFound:
             LALpath=os.getenv('PATH')
             pathsToSearch=[]
@@ -931,6 +938,7 @@ class tracksearchHousekeeperNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
         #Expects to run CondorDAGJob object for tracksearch
         pipeline.CondorDAGNode.__init__(self,job)
         pipeline.AnalysisNode.__init__(self)
+        pipeline.CondorDAGNode.set_category('housekeeper')
     #End init
 #End Class
                                    
@@ -943,6 +951,7 @@ class tracksearchTimeNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
         pipeline.CondorDAGNode.__init__(self,job)
         pipeline.AnalysisNode.__init__(self)
         pipeline.CondorDAGNode.set_retry(self,1)
+        pipeline.CondorDAGNode.set_category('tracksearch')
     #End init
 #End Class
 
@@ -955,6 +964,7 @@ class tracksearchMapNode(pipeline.CondorDAGNode,
         #Expects to run CondorDAGJob object for tracksearch
         pipeline.CondorDAGNode.__init__(self,job)
         pipeline.AnalysisNode.__init__(self)
+        pipeline.CondorDAGNode.set_category('tracksearch')
     #End init
 #End Class
 
@@ -968,6 +978,7 @@ class tracksearchAveragerNode(pipeline.CondorDAGNode,
         #Expects to run CondorDAGJob object for tracksearch
         pipeline.CondorDAGNode.__init__(self,job)
         pipeline.AnalysisNode.__init__(self)
+        pipeline.CondorDAGNode.set_category('averager')
     #End init
 #End Class      
 
@@ -981,6 +992,7 @@ class tracksearchMapCacheBuildNode(pipeline.CondorDAGNode,
         #Expects to run CondorDAGJob object for tracksearch
         pipeline.CondorDAGNode.__init__(self,job)
         pipeline.AnalysisNode.__init__(self)
+        pipeline.CondorDAGNode.set_category('cachebuilder')
     #End init
 #End Class
 
@@ -998,6 +1010,7 @@ class tracksearchClusterNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
         pipeline.AnalysisNode.__init__(self)
         #pipeline.CondorDAGNode.set_post_script(self,'/bin/true')
         pipeline.CondorDAGNode.set_retry(self,1)
+        pipeline.CondorDAGNode.set_category('clustertool')
     #End init
 #End Class
 
@@ -1060,6 +1073,11 @@ class tracksearch:
         self.injectFlag=False
         self.injectFlag=injectFlag
         self.jobType=""
+        #Setup the types for condor-max-jobs
+        cjtOptions='condor-max-jobs'
+        for condorJobType in self.iniOpts.options(cjtOptions)
+            maxJobValue=self.iniOpts.get(cjtOptions,condorJobType)
+            self.dag.add_max_jobs_category(condorJobType,int(maxJobValue))
         #Injection relevant config
         if self.injectFlag == True:
             self.jobType='injection'
