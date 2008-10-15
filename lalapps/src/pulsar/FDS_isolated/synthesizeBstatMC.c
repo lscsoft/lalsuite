@@ -271,8 +271,10 @@ int main(int argc,char *argv[])
   T = gsl_rng_default;
   rng = gsl_rng_alloc (T);
 
-  printf ("generator type: %s\n", gsl_rng_name (rng));
-  printf ("seed = %lu\n", gsl_rng_default_seed);
+  /*
+     printf ("generator type: %s\n", gsl_rng_name (rng));
+     printf ("seed = %lu\n", gsl_rng_default_seed);
+  */
   /* printf ("first value = %lu\n", gsl_rng_get (rng)); */
 
   /* generate 'numDraws' random number with normal distribution: mean=0, sigma=1 */
@@ -451,7 +453,7 @@ int main(int argc,char *argv[])
     gsl_monte_vegas_state * MCS_vegas = gsl_monte_vegas_alloc ( 2 );
     gsl_monte_function F;
     MCparams pars;
-    double prefact = 7.87480497286121;	/* sqrt(2) * pi^(3/2) */
+    double prefact = 2.0 * 7.87480497286121;	/* 2 * sqrt(2) * pi^(3/2) */
 
     pars.M11 = uvar.M11;
     pars.M22 = uvar.M22;
@@ -477,10 +479,10 @@ int main(int argc,char *argv[])
 
 	/* Integration boundaries */
 	xlower[0] = -1;		/* cosi */
-	xlower[1] = 0;		/* psi */
+	xlower[1] = -LAL_PI_4;	/* psi */
 
 	xupper[0] = 1;		/* cosi */
-	xupper[1] = LAL_PI;	/* psi */
+	xupper[1] = LAL_PI_4;	/* psi */
 
 	/* Function: int gsl_monte_vegas_integrate (gsl_monte_function * f, double * xl, double * xu, size_t dim, size_t calls,
 	 *                                          gsl_rng * r, gsl_monte_vegas_state * s, double * result, double * abserr)
@@ -734,6 +736,8 @@ BstatIntegrand ( double Amp[], size_t dim, void *p )
   arg0 = 0.25 * qSQ  / AMA;
 
   integrand = pow(AMA, -0.5) * exp(arg0) * gsl_sf_bessel_I0(arg0);
+
+  printf ("%f   %f    %f\n", eta, psi, integrand );
 
   return integrand;
 
