@@ -21,8 +21,8 @@ tmpfile="misc/__${prefix}GitID.h"
 ## ---------- read out git-log of last commit --------------------
 fmt_id="format:%H";
 logcmd_id="git log -1 --pretty='$fmt_id'";
-fmt_date="format:%ai";
-logcmd_date="git log -1 --pretty='$fmt_date'";
+fmt_udate="format:%at";
+logcmd_udate="git log -1 --pretty='$fmt_udate'";
 fmt_author="format:%ae";
 logcmd_author="git log -1 --pretty='$fmt_author'";
 fmt_title="format:%s";
@@ -37,16 +37,16 @@ fi
 
 if test "$git_log_ok" = "true"; then
     git_id=`eval $logcmd_id`;
-    git_date=`eval $logcmd_date`;
+    git_udate=`eval $logcmd_udate`;
     git_author=`eval $logcmd_author`;
     git_title=`eval $logcmd_title`;
-    git_date_utc=`date -ud "$git_date" +"%Y-%m-%d %H:%M:%S %z"`
+    logcmd_date_utc="perl -e '@t=gmtime($git_udate); printf(\"%04d-%02d-%02d %02d:%02d:%02d +0000\",1900+\$t[5],1+\$t[4],\$t[3],\$t[2],\$t[1],\$t[0]);'"
+    git_date_utc=`eval $logcmd_date_utc`;
 else
     git_id="unknown.";
-    git_date="1980-01-06 00:00:00 +0000";
     git_author="unknown.";
     git_title="unknown.";
-    git_date_utc=$git_date;
+    git_date_utc="1980-01-06 00:00:00 +0000";
 fi
 
 ## ---------- check for modified/added git-content [ignores untracked files!] ----------
