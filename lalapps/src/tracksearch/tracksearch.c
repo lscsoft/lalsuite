@@ -2016,8 +2016,6 @@ void LALappsDoTrackSearch(
       fprintf(stderr,"%s\n",status->statusDescription);
       fflush(stderr);
     }
-
-
   /*
    * Record user request thresholds into output data structure
    * as a simple reference
