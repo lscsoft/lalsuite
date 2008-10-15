@@ -35,6 +35,7 @@
 #include <gsl/gsl_sf_bessel.h>
 #include <gsl/gsl_sf_gamma.h>
 #include <gsl/gsl_vector_int.h>
+#include <gsl/gsl_matrix.h>
 
 #include <lal/LALRCSID.h>
 #include <lal/LALStdlib.h>
@@ -47,6 +48,7 @@
 #include <lal/DetectorStates.h>
 #include <lal/NormalizeSFTRngMed.h>
 #include <lal/ComputeFstat.h>
+#include <lal/ConfigFile.h>
 #include <lalapps.h>
 
 RCSID("$Id$");
@@ -73,13 +75,15 @@ int main(int argc, char *argv[]) {
   REAL8 freq = 0.0;
   REAL8 band = 0.0;
   REAL8 twoFs = 0.0;
+  CHAR *mism_hist_file = NULL;
+  REAL8 max_mismatch = 0.0;
   CHAR *sft_pattern = NULL;
   CHAR *ephem_dir = NULL;
   CHAR *ephem_year = NULL;
   INT4 rng_med_win = 50;
   REAL8 max_rel_err = 1.0e-3;
   REAL8 h0_brake = 0.75;
-  INT4 MC_trial_init = 2e5;
+  INT4 MC_trial_init = 5e5;
   REAL8 MC_trial_fac = 1.5;
   INT4 MC_trial_reset = 5e7;
   REAL8 FDR = 0.05;
@@ -89,6 +93,7 @@ int main(int argc, char *argv[]) {
 
   FILE *fp = NULL;
   CHAR *cmdline = NULL;
+  gsl_matrix *mism_hist = NULL;
   SFTCatalog *catalog = NULL;
   MultiSFTVector *sfts = NULL;
   EphemerisData ephemeris = empty_EphemerisData;
@@ -121,6 +126,8 @@ int main(int argc, char *argv[]) {
   LAL_CALL(LALRegisterREALUserVar  (&status, "freq",             'f', UVAR_REQUIRED, "Starting frequency", &freq), &status);
   LAL_CALL(LALRegisterREALUserVar  (&status, "band",             'b', UVAR_REQUIRED, "Frequency band", &band), &status);
   LAL_CALL(LALRegisterREALUserVar  (&status, "loudest-2F",       'F', UVAR_REQUIRED, "Loudest 2F value in this band", &twoFs), &status);
+  LAL_CALL(LALRegisterSTRINGUserVar(&status, "mism-hist-file",   'M', UVAR_OPTIONAL, "File containing the mismatch PDF histogram", &mism_hist_file), &status);
+  LAL_CALL(LALRegisterREALUserVar  (&status, "max-mismatch",     'm', UVAR_OPTIONAL, "Maximum mismatch to scale histogram to", &max_mismatch), &status);
   LAL_CALL(LALRegisterSTRINGUserVar(&status, "sft-patt",         'D', UVAR_REQUIRED, "File pattern of the input SFTs", &sft_pattern), &status);
   LAL_CALL(LALRegisterSTRINGUserVar(&status, "ephem-dir",        'E', UVAR_OPTIONAL, "Directory containing ephemeris files", &ephem_dir), &status);
   LAL_CALL(LALRegisterSTRINGUserVar(&status, "ephem-year",       'y', UVAR_REQUIRED, "Year suffix for ephemeris files", &ephem_year), &status);
@@ -142,6 +149,60 @@ int main(int argc, char *argv[]) {
 
   /* Send log output to stdout */
   LogSetFile(stdout);
+
+  /* Load the mismatch PDF histogram */
+  if (LALUserVarWasSet(&mism_hist_file)) {
+
+    size_t i;
+    LALParsedDataFile *file = NULL;
+    double total_count = 0;
+    double max_bin = 0;
+
+    /* Check the mismatch */
+    if (max_mismatch <= 0.0) {
+      LALPrintError("Maximum mismatch must be strictly positive\n");
+      return EXIT_FAILURE;
+    }
+    
+    /* Load the file */
+    LAL_CALL(LALParseDataFile(&status, &file, mism_hist_file), &status);
+
+    /* Allocate memory */
+    if ((mism_hist = gsl_matrix_alloc(file->lines->nTokens, 3)) == NULL) {
+      LALPrintError("Couldn't allocate a gsl_matrix\n");
+      return EXIT_FAILURE;
+    }
+
+    /* Read in histogram */
+    for (i = 0; i < mism_hist->size1; ++i) {
+      double left_bin, right_bin, count;
+      if (sscanf(file->lines->tokens[i], "%lf %lf %lf", &left_bin, &right_bin, &count) != 3) {
+	LALPrintError("Couldn't parse line %i of '%s'\n", i, mism_hist_file);
+	return EXIT_FAILURE;
+      }
+      if (left_bin >= right_bin || count < 0.0) {
+	LALPrintError("Invalid syntax: line %i of '%s'\n", i, mism_hist_file);
+	return EXIT_FAILURE;
+      }
+      gsl_matrix_set(mism_hist, i, 0, left_bin);
+      gsl_matrix_set(mism_hist, i, 1, right_bin);
+      gsl_matrix_set(mism_hist, i, 2, count);
+      if (max_bin < right_bin)
+	max_bin = right_bin;
+      total_count += count;
+    }
+
+    /* Normalise histogram to unit maximum mismatch and unit area */
+    for (i = 0; i < mism_hist->size1; ++i) {
+      gsl_matrix_set(mism_hist, i, 0, gsl_matrix_get(mism_hist, i, 0) / max_bin);
+      gsl_matrix_set(mism_hist, i, 1, gsl_matrix_get(mism_hist, i, 1) / max_bin);
+      gsl_matrix_set(mism_hist, i, 2, gsl_matrix_get(mism_hist, i, 2) / total_count);
+    }
+
+    /* Cleanup */
+    LAL_CALL(LALDestroyParsedDataFile(&status, &file), &status);
+
+  }
 
   /* Load the SFTs */
   {
@@ -278,24 +339,26 @@ int main(int argc, char *argv[]) {
     LAL_CALL(LALUserVarGetLog(&status, &cmdline, UVAR_LOGFMT_CMDLINE), &status);
     fprintf(fp, "%%%% %s\n%%%% %s\n", rcsid, cmdline);
     LALFree(cmdline);
+    cmdline = NULL;
     fprintf(fp, "freq=%0.4f band=%0.4f\n", freq, band);
   
     /* Compute first guess at h0 */
     h0  = twoFs * pow(A_coeff * B_coeff - C_coeff * C_coeff, -0.25);
     h0 *= GSL_MAX(0.5, 1.0 + gsl_ran_gaussian(rng, 0.1));
-    h0_prev = GSL_POSINF;
   
     /* Begin Newton-Raphson iteration to find h0 */
-#define H0_ERROR fabs((h0 - h0_prev) / h0)
+    h0_prev = GSL_POSINF;
+#define H0_ERROR fabs(1.0 - (h0 / h0_prev))
     h0_iter = 0;
     MC_trials = MC_trial_init;
     while (H0_ERROR > max_rel_err && MC_trials < MC_trial_reset) {
       
-      /* Integrand and its derivative w.r.t. h0 */
+      /* Integrand and its derivative w.r.t. h0, and total mismatch probability */
       REAL8 J = 0.0;
       REAL8 dJ = 0.0;
+      REAL8 total_prob_mism = 0.0;
 
-      /* False dismissal rate from 2F distribution */
+      /* False dismissal rate from 2F distribution */    
       REAL8 twoF_pdf_FDR = 0.0;
       
       LogPrintf(LOG_DEBUG, "Beginning h0 loop %2i with h0=%0.4e, error=%0.4e, MC_trials=%i\n", h0_iter, h0, H0_ERROR, MC_trials);
@@ -312,45 +375,91 @@ int main(int argc, char *argv[]) {
       MC_iter = MC_trials;
       twoF_pdf_FD = 0;
       while (MC_iter--) {
-	
+
+	REAL8 twoF_mism_factor = 1.0;
+	REAL8 prob_mism = 1.0;
+
+	REAL8 cosi = 0.0;
+	REAL8 psi = 0.0;
+	REAL8 twoF = 0.0;
+	REAL8 A1 = 0.0;
+	REAL8 A2 = 0.0;
+	REAL8 A3 = 0.0;
+	REAL8 A4 = 0.0;
+	REAL8 rho2 = 0.0;
+
+	REAL8 twoF_from_pdf = 0.0;
+
+	/* Generate random mismatch factor */
+	if (LALUserVarWasSet(&mism_hist_file)) {
+
+	  size_t i;
+	  REAL8 norm_mism;
+
+	  /* Generate random normalised mismatch */
+	  norm_mism = gsl_ran_flat(rng, 0.0, 1.0);
+
+	  /* Find bin in histogram */
+	  for (i = 0; i < mism_hist->size1; ++i) {
+	    const double left_bin  = gsl_matrix_get(mism_hist, i, 0);
+	    const double right_bin = gsl_matrix_get(mism_hist, i, 1);
+	    const double prob_bin  = gsl_matrix_get(mism_hist, i, 2);
+	    if (left_bin <= norm_mism && norm_mism < right_bin) {
+
+	      /* Create mismatch from centre of bin */
+	      const double mismatch = 0.5 * (left_bin + right_bin) * max_mismatch;
+
+	      /* 2F is increase by this factor */
+	      twoF_mism_factor = 1.0 / (1.0 - mismatch);
+
+	      /* This factor has this probability */
+ 	      prob_mism = prob_bin;
+
+	      break;
+	    }
+	  }
+
+	}	
+
 	/* Generate random cosi, psi, and twoF */
-	const REAL8 cosi = gsl_ran_flat(rng, min_cosi, max_cosi);
-	const REAL8 psi = gsl_ran_flat(rng, min_psi, max_psi);
-	const REAL8 twoF = gsl_ran_flat(rng, 0, twoFs);
+	cosi = gsl_ran_flat(rng, min_cosi, max_cosi);
+	psi = gsl_ran_flat(rng, min_psi, max_psi);
+	twoF = gsl_ran_flat(rng, 0, twoF_mism_factor * twoFs);
 	
 	/* Compute the amplitude coefficients vector A */
-	const REAL8 A1 =  0.5 * h0 * (1 + cosi * cosi) * cos(2 * psi);
-	const REAL8 A2 =  0.5 * h0 * (1 + cosi * cosi) * sin(2 * psi);
-	const REAL8 A3 = -1.0 * h0 *             cosi  * sin(2 * psi);
-	const REAL8 A4 =  1.0 * h0 *             cosi  * cos(2 * psi);
+	A1 =  0.5 * h0 * (1 + cosi * cosi) * cos(2 * psi);
+	A2 =  0.5 * h0 * (1 + cosi * cosi) * sin(2 * psi);
+	A3 = -1.0 * h0 *             cosi  * sin(2 * psi);
+	A4 =  1.0 * h0 *             cosi  * cos(2 * psi);
 	
 	/* Compute the optimal signal to noise ratio rho^2 */
-	const REAL8 rho2 = (
-			    A1 * A1 * A_coeff +
-			    A2 * A2 * B_coeff +
-			    A1 * A2 * C_coeff +
-			    A2 * A1 * C_coeff +
-			    A3 * A3 * A_coeff +
-			    A4 * A4 * B_coeff +
-			    A3 * A4 * C_coeff +
-			    A4 * A3 * C_coeff
-			    );
+	rho2 = (
+		A1 * A1 * A_coeff +
+		A2 * A2 * B_coeff +
+		A1 * A2 * C_coeff +
+		A2 * A1 * C_coeff +
+		A3 * A3 * A_coeff +
+		A4 * A4 * B_coeff +
+		A3 * A4 * C_coeff +
+		A4 * A3 * C_coeff
+		);
 	
-	/* Add to the integrand and its derivative w.r.t. h0 */
-	J  += pdf_ncx2_4(rho2, twoF);
-	dJ += 2.0 * rho2 / h0 * d_pdf_ncx2_4(rho2, twoF);
+	/* Add to the integrand and its derivative w.r.t. h0, and to total mismatch probability */
+	J  += pdf_ncx2_4(rho2, twoF) * prob_mism;
+	dJ += 2.0 * rho2 / h0 * d_pdf_ncx2_4(rho2, twoF) * prob_mism;
+	total_prob_mism += prob_mism;
 	
 	/* Break if J and dJ failed */
 	if (gsl_isnan(J) || gsl_isnan(dJ))
 	  break;
-
-	/* Draw a 2F value from the non-central chi-square with parameter rho^2 */
-	const REAL8 twoF_from_pdf = ran_ncx2_4(rng, rho2);
-
+	
 	/* Count 2F value if it is below threshold */
 	if (twoF_from_pdf < twoFs)
 	  ++twoF_pdf_FD;
-
+	
+	/* Draw a 2F value from the non-central chi-square with parameter rho^2 */
+	twoF_from_pdf = twoF_mism_factor * ran_ncx2_4(rng, rho2);
+	
 	/* Add 2F to histogram if needed */
 	if (LALUserVarWasSet(&twoF_pdf_hist_file)) {
 	  
@@ -380,11 +489,11 @@ int main(int argc, char *argv[]) {
 	MC_trials = MC_trial_init;
 	continue;
       }
-      
-      /* Finalise the integrand and derivative: multiply by trial element */
-      J  *= MC_int_vol / MC_trials;
-      dJ *= MC_int_vol / MC_trials;
 
+      /* Finalise the integrand and derivative */
+      J  *= MC_int_vol / total_prob_mism;
+      dJ *= MC_int_vol / total_prob_mism;
+      
       /* Compute the false dismissal rate from 2F distribution */
       twoF_pdf_FDR = (1.0 * twoF_pdf_FD) / MC_trials;
 
@@ -435,6 +544,7 @@ int main(int argc, char *argv[]) {
     LAL_CALL(LALUserVarGetLog(&status, &cmdline, UVAR_LOGFMT_CMDLINE), &status);
     fprintf(fpH, "%%%% %s\n%%%% %s\n", rcsid, cmdline);
     LALFree(cmdline);
+    cmdline = NULL;
     
     for (i = 0; i < twoF_pdf_hist->size; ++i)
       fprintf(fpH, "%0.3g %0.3g %i\n",
@@ -447,9 +557,10 @@ int main(int argc, char *argv[]) {
     
   }
 
-
   /* Cleanup */
   LAL_CALL(LALDestroyUserVars(&status), &status);
+  if (mism_hist)
+    gsl_matrix_free(mism_hist);
   LAL_CALL(LALDestroySFTCatalog(&status, &catalog), &status);
   LAL_CALL(LALDestroyMultiSFTVector(&status, &sfts), &status);
   XLALFree(ephemeris.ephiles.earthEphemeris);
@@ -461,6 +572,8 @@ int main(int argc, char *argv[]) {
   LAL_CALL(LALDestroyMultiNoiseWeights(&status, &noise_weights), &status);
   XLALDestroyMultiAMCoeffs(AM_coeffs);
   gsl_rng_free(rng);
+  if (twoF_pdf_hist)
+    gsl_vector_int_free(twoF_pdf_hist);
   LALCheckMemoryLeaks();
   
   return EXIT_SUCCESS;
