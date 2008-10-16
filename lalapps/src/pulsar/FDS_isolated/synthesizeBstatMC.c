@@ -117,8 +117,6 @@ typedef struct {
 /*---------- Global variables ----------*/
 extern int vrbflg;		/**< defined in lalapps.c */
 
-ConfigVariables GV;		/**< global container for various derived configuration settings */
-
 /* ----- User-variables: can be set from config-file or command-line */
 typedef struct {
   BOOLEAN help;		/**< trigger output of help string */
@@ -167,8 +165,8 @@ int InitCode ( ConfigVariables *cfg, const UserInput_t *uvar );
 double BstatIntegrand ( double A[], size_t dim, void *p );
 int XLALAmplitudeParams2Vect ( REAL8 Amu[], REAL8 h0, REAL8 cosi, REAL8 psi, REAL8 phi0 );
 int XLALsynthesizeData ( gsl_matrix *x_mu_i, const gsl_matrix *M_mu_nu, const gsl_vector *s_mu, gsl_rng * rng );
-int XLALcomputeLogLikelihood ( gsl_vector *lnL, REAL8 *rho2, const gsl_vector *A_Mu, const gsl_matrix *x_mu_i);
-
+int XLALcomputeLogLikelihood ( gsl_vector *lnL, REAL8 *rho2, const gsl_vector *A_Mu, const gsl_vector *s_mu, const gsl_matrix *x_mu_i);
+int XLALcomputeFstatistic ( gsl_vector *Fstat, const gsl_matrix *M_mu_nu, const gsl_matrix *x_mu_i );
 
 /*---------- empty initializers ---------- */
 
@@ -185,7 +183,9 @@ int main(int argc,char *argv[])
   LALStatus status = blank_status;
   UserInput_t uvar = empty_UserInput;
 
-  gsl_vector *FStat, *BStat, *dBStat, *lnL;
+  ConfigVariables GV;		/**< various derived configuration settings */
+
+  gsl_vector *Fstat, *Bstat, *dBstat, *lnL;
   gsl_matrix *x_mu_i;
 
   UINT4 i;
@@ -238,16 +238,16 @@ int main(int argc,char *argv[])
     return 1;
   }
   /* ----- F-statistic */
-  if ( (FStat = gsl_vector_calloc ( (UINT4)uvar.numDraws ) ) == NULL) {
+  if ( (Fstat = gsl_vector_calloc ( (UINT4)uvar.numDraws ) ) == NULL) {
     LogPrintf ( LOG_CRITICAL, "Out of memory?\n");
     return 1;
   }
   /* ----- B-statistic */
-  if ( (BStat = gsl_vector_calloc ( (UINT4)uvar.numDraws ) ) == NULL) {
+  if ( (Bstat = gsl_vector_calloc ( (UINT4)uvar.numDraws ) ) == NULL) {
     LogPrintf ( LOG_CRITICAL, "Out of memory?\n");
     return 1;
   }
-  if ( (dBStat = gsl_vector_calloc ( (UINT4)uvar.numDraws ) ) == NULL) {
+  if ( (dBstat = gsl_vector_calloc ( (UINT4)uvar.numDraws ) ) == NULL) {
     LogPrintf ( LOG_CRITICAL, "Out of memory?\n");
     return 1;
   }
@@ -259,73 +259,16 @@ int main(int argc,char *argv[])
   }
 
   /* ---------- compute log likelihood ratio lnL ---------- */
-  if ( XLALcomputeLogLikelihood ( lnL, &rho2, GV.A_Mu, x_mu_i) ) {
+  if ( XLALcomputeLogLikelihood ( lnL, &rho2, GV.A_Mu, GV.s_mu, x_mu_i) ) {
     LogPrintf (LOG_CRITICAL, "XLALcomputeLogLikelihood() failed with error = %d\n", xlalErrno );
     return 1;
   }
 
-  /* ---------- compute F-stat values ---------- */
-  {
-    int sig;
-    gsl_vector *x_Mu = gsl_vector_alloc ( 4 );
-    gsl_permutation *perm = gsl_permutation_calloc ( 4 );
-    gsl_matrix *Mmunu_LU = gsl_matrix_calloc ( 4, 4 );
-    gsl_matrix_memcpy (Mmunu_LU, GV.M_mu_nu);
-
-    /* Function: int gsl_linalg_LU_decomp (gsl_matrix * A, gsl_permutation * p, int * signum)
-     *
-     * These functions factorize the square matrix A into the LU decomposition PA = LU.
-     * On output the diagonal and upper triangular part of the input matrix A contain the matrix U. The lower
-     * triangular part of the input matrix (excluding the diagonal) contains L. The diagonal elements of L are
-     * unity, and are not stored. The permutation matrix P is encoded in the permutation p. The j-th column of
-     * the matrix P is given by the k-th column of the identity matrix, where k = p_j the j-th element of the
-     * permutation vector. The sign of the permutation is given by signum. It has the value (-1)^n, where n is
-     * the number of interchanges in the permutation.
-     * The algorithm used in the decomposition is Gaussian Elimination with partial pivoting
-     * (Golub & Van Loan, Matrix Computations, Algorithm 3.4.1).
-     */
-    if( (gslstat = gsl_linalg_LU_decomp (Mmunu_LU, perm, &sig)) ) {
-      LogPrintf ( LOG_CRITICAL, "gsl_linalg_LU_decomp (Mmunu) failed: %s\n", gsl_strerror (gslstat) );
-      return 1;
-    }
-
-    for ( i=0; i < (UINT4)uvar.numDraws; i ++ )
-      {
-	gsl_vector_const_view xi = gsl_matrix_const_row ( x_mu_i, i );
-	double x2;
-
-	/* STEP 1: compute x^mu = M^{mu,nu} x_nu */
-
-	/* Function: int gsl_linalg_LU_solve (const gsl_matrix * LU, const gsl_permutation * p, const gsl_vector * b, gsl_vector * x)
-	 *
-	 * These functions solve the square system A x = b using the LU decomposition of A into (LU, p) given by
-	 * gsl_linalg_LU_decomp or gsl_linalg_complex_LU_decomp.
-	 */
-	if ( (gslstat = gsl_linalg_LU_solve (Mmunu_LU, perm, &(xi.vector), x_Mu)) ) {
-	  LogPrintf ( LOG_CRITICAL, "gsl_linalg_LU_solve (x^Mu = M^{mu,nu} x_nu) failed: %s\n", gsl_strerror (gslstat) );
-	  return 1;
-	}
-
-	/* STEP 2: compute scalar product x_mu x^mu */
-
-	/* Function: int gsl_blas_ddot (const gsl_vector * x, const gsl_vector * y, double * result)
-	 *
-	 * These functions compute the scalar product x^T y for the vectors x and y, returning the result in result.
-	 */
-	if ( (gslstat = gsl_blas_ddot (&(xi.vector), x_Mu, &x2)) ) {
-	  LogPrintf ( LOG_CRITICAL, "i = %d: int gsl_blas_ddot (x_mu x^mu) failed: %s\n", i, gsl_strerror (gslstat) );
-	  return 1;
-	}
-
-	/* write result into FStat (=2F) vector */
-	gsl_vector_set ( FStat, i, x2 );
-
-      } /* for i < numDraws */
-
-    gsl_permutation_free ( perm );
-    gsl_matrix_free ( Mmunu_LU );
-    gsl_vector_free ( x_Mu );
-  } /* compute F-stat draws */
+  /* ---------- compute F-statistic ---------- */
+  if ( XLALcomputeFstatistic ( Fstat, GV.M_mu_nu, x_mu_i ) ) {
+    LogPrintf (LOG_CRITICAL, "XLALcomputeFstatistic() failed with error = %d\n", xlalErrno );
+    return 1;
+  }
 
   /* ---------- compute B-stat values ---------- */
   {
@@ -378,8 +321,8 @@ int main(int argc,char *argv[])
 	  LogPrintf ( LOG_CRITICAL, "i = %d: gsl_monte_vegas_integrate() failed: %s\n", i, gsl_strerror (gslstat) );
 	  return 1;
 	}
-	gsl_vector_set ( BStat, i, prefact * Bb );
-	gsl_vector_set ( dBStat, i, abserr );
+	gsl_vector_set ( Bstat, i, prefact * Bb );
+	gsl_vector_set ( dBstat, i, abserr );
 	/*
 	  printf ( "Vegas Monte-Carlo integration: Bb = %f, abserr = %f ==> relerr = %f\n", Bb, abserr, abserr / Bb );
 	*/
@@ -427,9 +370,9 @@ int main(int argc,char *argv[])
 		  gsl_matrix_get ( x_mu_i, i, 3 ),
 
 		  gsl_vector_get ( lnL, i ),
-		  gsl_vector_get ( FStat, i ),
-		  gsl_vector_get ( BStat, i ),
-		  gsl_vector_get ( dBStat, i )
+		  gsl_vector_get ( Fstat, i ),
+		  gsl_vector_get ( Bstat, i ),
+		  gsl_vector_get ( dBstat, i )
 		  );
 
       fclose (fpStat);
@@ -442,10 +385,10 @@ int main(int argc,char *argv[])
   gsl_vector_free ( GV.s_mu );
   gsl_vector_free ( GV.A_Mu );
   gsl_vector_free ( lnL );
-  gsl_vector_free ( FStat );
+  gsl_vector_free ( Fstat );
   gsl_matrix_free ( x_mu_i );
-  gsl_vector_free ( BStat );
-  gsl_vector_free ( dBStat );
+  gsl_vector_free ( Bstat );
+  gsl_vector_free ( dBstat );
 
   gsl_rng_free (GV.rng);
 
@@ -773,11 +716,13 @@ XLALsynthesizeData ( gsl_matrix *x_mu_i,		/**< [OUT] list of numDraws 4D line-ve
 } /* XLALsynthesizeData() */
 
 
-
+/** Compute log-likelihood function for given input data
+ */
 int
 XLALcomputeLogLikelihood ( gsl_vector *lnL,		/**< [OUT] log-likelihood vector */
 			   REAL8 *rho2,			/**< [OUT] optimal SNR^2 rho2 = (s|s) = A^mu s_mu (FIXME)*/
 			   const gsl_vector *A_Mu,	/**< 4D amplitude-vector (FIXME: numDraws) */
+			   const gsl_vector *s_mu,	/**< 4D signal-component vector s_mu = (s|h_mu) [FIXME] */
 			   const gsl_matrix *x_mu_i	/**< numDraws x 4D data-vectors x_mu */
 			   )
 {
@@ -805,7 +750,7 @@ XLALcomputeLogLikelihood ( gsl_vector *lnL,		/**< [OUT] log-likelihood vector */
   /* Function: int gsl_blas_ddot (const gsl_vector * x, const gsl_vector * y, double * result)
    * These functions compute the scalar product x^T y for the vectors x and y, returning the result in result.
    */
-  if ( (gslstat = gsl_blas_ddot (GV.A_Mu, GV.s_mu, rho2)) ) {
+  if ( (gslstat = gsl_blas_ddot (A_Mu, s_mu, rho2)) ) {
     LogPrintf ( LOG_CRITICAL, "%s: rho2 = gsl_blas_ddot(A^mu * s_mu) failed: %s\n", fn, gsl_strerror (gslstat) );
     return 1;
   }
@@ -836,3 +781,96 @@ XLALcomputeLogLikelihood ( gsl_vector *lnL,		/**< [OUT] log-likelihood vector */
   return 0;
 
 } /* XLALcomputeLogLikelihood() */
+
+
+/** Compute F-statistic for given input data
+ */
+int
+XLALcomputeFstatistic ( gsl_vector *Fstat,		/**< [OUT] F-statistic vector */
+			const gsl_matrix *M_mu_nu,	/**< antenna-pattern matrix M_mu_nu */
+			const gsl_matrix *x_mu_i	/**< data-vectors x_mu: numDraws x 4 */
+			)
+{
+  const char *fn = "XLALcomputeFstatistic()";
+
+  int sig;
+  gsl_vector *x_Mu = gsl_vector_alloc ( 4 );
+  gsl_permutation *perm = gsl_permutation_calloc ( 4 );
+  gsl_matrix *Mmunu_LU = gsl_matrix_calloc ( 4, 4 );
+  int gslstat;
+  UINT4 row, numDraws;
+
+  /* ----- check input arguments ----- */
+  if ( !Fstat || !M_mu_nu || !x_mu_i ) {
+    LogPrintf ( LOG_CRITICAL, "%s: illegal NULL input vector passed.\n", fn);
+    return XLAL_EINVAL;
+  }
+  numDraws = Fstat->size;
+  if ( (M_mu_nu->size1 != 4) || (M_mu_nu->size2 != 4) ) {
+    LogPrintf ( LOG_CRITICAL, "%s: antenna-pattern matrix M_mu_nu must be 4x4.\n", fn);
+    return XLAL_EINVAL;
+  }
+  if ( (x_mu_i->size1 != numDraws) || (x_mu_i->size2 != 4) ) {
+    LogPrintf ( LOG_CRITICAL, "%s: input vector-list x_mu_i must be numDraws x 4.\n", fn);
+    return XLAL_EINVAL;
+  }
+
+  gsl_matrix_memcpy (Mmunu_LU, M_mu_nu);
+
+  /* Function: int gsl_linalg_LU_decomp (gsl_matrix * A, gsl_permutation * p, int * signum)
+   *
+   * These functions factorize the square matrix A into the LU decomposition PA = LU.
+   * On output the diagonal and upper triangular part of the input matrix A contain the matrix U. The lower
+   * triangular part of the input matrix (excluding the diagonal) contains L. The diagonal elements of L are
+   * unity, and are not stored. The permutation matrix P is encoded in the permutation p. The j-th column of
+   * the matrix P is given by the k-th column of the identity matrix, where k = p_j the j-th element of the
+   * permutation vector. The sign of the permutation is given by signum. It has the value (-1)^n, where n is
+   * the number of interchanges in the permutation.
+   * The algorithm used in the decomposition is Gaussian Elimination with partial pivoting
+   * (Golub & Van Loan, Matrix Computations, Algorithm 3.4.1).
+   */
+  if( (gslstat = gsl_linalg_LU_decomp (Mmunu_LU, perm, &sig)) ) {
+    LogPrintf ( LOG_CRITICAL, "%s: gsl_linalg_LU_decomp (Mmunu) failed: %s\n", fn, gsl_strerror (gslstat) );
+    return 1;
+  }
+
+  for ( row=0; row < numDraws; row ++ )
+    {
+      gsl_vector_const_view xi = gsl_matrix_const_row ( x_mu_i, row );
+      double x2;
+
+      /* STEP 1: compute x^mu = M^{mu,nu} x_nu */
+
+      /* Function: int gsl_linalg_LU_solve (const gsl_matrix * LU, const gsl_permutation * p, const gsl_vector * b, gsl_vector * x)
+       *
+       * These functions solve the square system A x = b using the LU decomposition of A into (LU, p) given by
+       * gsl_linalg_LU_decomp or gsl_linalg_complex_LU_decomp.
+       */
+      if ( (gslstat = gsl_linalg_LU_solve (Mmunu_LU, perm, &(xi.vector), x_Mu)) ) {
+	LogPrintf ( LOG_CRITICAL, "%s: gsl_linalg_LU_solve (x^Mu = M^{mu,nu} x_nu) failed: %s\n", fn, gsl_strerror (gslstat) );
+	return 1;
+      }
+
+      /* STEP 2: compute scalar product x_mu x^mu */
+
+      /* Function: int gsl_blas_ddot (const gsl_vector * x, const gsl_vector * y, double * result)
+       *
+       * These functions compute the scalar product x^T y for the vectors x and y, returning the result in result.
+       */
+      if ( (gslstat = gsl_blas_ddot (&(xi.vector), x_Mu, &x2)) ) {
+	LogPrintf ( LOG_CRITICAL, "%s: row = %d: int gsl_blas_ddot (x_mu x^mu) failed: %s\n", fn, row, gsl_strerror (gslstat) );
+	return 1;
+      }
+
+      /* write result into Fstat (=2F) vector */
+      gsl_vector_set ( Fstat, row, x2 );
+
+    } /* for row < numDraws */
+
+  gsl_permutation_free ( perm );
+  gsl_matrix_free ( Mmunu_LU );
+  gsl_vector_free ( x_Mu );
+
+  return 0;
+
+} /* XLALcomputeFstatistic () */
