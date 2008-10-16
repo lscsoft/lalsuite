@@ -432,17 +432,25 @@ INT4 main( INT4 argc, CHAR *argv[] )
    *
    */
 
-  /* create output directory if needed */
-  errno = 0;
-  mkdir_result = mkdir(outDir, S_IRWXU | S_IRWXG | S_IRWXO);
-
-  if ( (mkdir_result == -1) && (errno != EEXIST) )
+  if (outDir != NULL)
   {
-    fprintf(stderr, "unable to create output directory '%s'\n", outDir);
-    exit( 1 );
+    /* create output directory if needed */
+    errno = 0;
+    mkdir_result = mkdir(outDir, S_IRWXU | S_IRWXG | S_IRWXO);
+
+    if ( (mkdir_result == -1) && (errno != EEXIST) )
+    {
+      fprintf(stderr, "unable to create output directory '%s'\n", outDir);
+      exit( 1 );
+    }
+  }
+  else
+  {
+    /* use current directory for output */
+    outDir = (CHAR *)calloc(1, 2 * sizeof(CHAR));
+    memcpy(outDir, ".", 2);
   }
   
-
   if (( mdcFlag == 0 ) && ( frameFlag == 0 ))
   {
     fprintf( stderr, "Nothing to do, exiting...\n" );
