@@ -166,8 +166,8 @@ int XLALsynthesizeData ( gsl_matrix *x_mu_i, const gsl_matrix *M_mu_nu, const gs
 int XLALcomputeLogLikelihood ( gsl_vector *lnL, REAL8 *rho2, const gsl_vector *A_Mu, const gsl_vector *s_mu, const gsl_matrix *x_mu_i);
 int XLALcomputeFstatistic ( gsl_vector *Fstat, const gsl_matrix *M_mu_nu, const gsl_matrix *x_mu_i );
 
-int XLALcomputeBstatisticMC ( gsl_vector *Bstat, gsl_vector *dBstat, const gsl_matrix *M_mu_nu, const gsl_matrix *x_mu_i, gsl_rng * rng, UINT4 numMCpoints );
-int XLALcomputeBstatisticGauss ( gsl_vector *Bstat, gsl_vector *dBstat,	const gsl_matrix *M_mu_nu, const gsl_matrix *x_mu_i );
+int XLALcomputeBstatisticMC ( gsl_vector *Bstat, gsl_vector *dBstatRel, const gsl_matrix *M_mu_nu, const gsl_matrix *x_mu_i, gsl_rng * rng, UINT4 numMCpoints );
+int XLALcomputeBstatisticGauss ( gsl_vector *Bstat, gsl_vector *dBstatRel, const gsl_matrix *M_mu_nu, const gsl_matrix *x_mu_i );
 
 double BstatIntegrandOuter ( double cosi, void *p );
 double BstatIntegrandInner ( double psi, void *p );
@@ -190,7 +190,7 @@ int main(int argc,char *argv[])
 
   ConfigVariables GV;		/**< various derived configuration settings */
 
-  gsl_vector *Fstat, *Bstat, *dBstat, *lnL;
+  gsl_vector *Fstat, *Bstat, *dBstatRel, *lnL;
   gsl_matrix *x_mu_i;
 
   UINT4 i;
@@ -242,16 +242,16 @@ int main(int argc,char *argv[])
     return 1;
   }
   /* ----- F-statistic */
-  if ( (Fstat = gsl_vector_calloc ( (UINT4)uvar.numDraws ) ) == NULL) {
+  if ( (Fstat = gsl_vector_calloc ( numDraws ) ) == NULL) {
     LogPrintf ( LOG_CRITICAL, "Out of memory?\n");
     return 1;
   }
   /* ----- B-statistic */
-  if ( (Bstat = gsl_vector_calloc ( (UINT4)uvar.numDraws ) ) == NULL) {
+  if ( (Bstat = gsl_vector_calloc ( numDraws ) ) == NULL) {
     LogPrintf ( LOG_CRITICAL, "Out of memory?\n");
     return 1;
   }
-  if ( (dBstat = gsl_vector_calloc ( (UINT4)uvar.numDraws ) ) == NULL) {
+  if ( (dBstatRel = gsl_vector_calloc ( numDraws ) ) == NULL) {
     LogPrintf ( LOG_CRITICAL, "Out of memory?\n");
     return 1;
   }
@@ -278,14 +278,14 @@ int main(int argc,char *argv[])
   switch ( uvar.integrationMethod )
     {
     case 0:
-      if ( XLALcomputeBstatisticGauss ( Bstat, dBstat, GV.M_mu_nu, x_mu_i ) ) {
+      if ( XLALcomputeBstatisticGauss ( Bstat, dBstatRel, GV.M_mu_nu, x_mu_i ) ) {
 	LogPrintf (LOG_CRITICAL, "XLALcomputeBstatisticGauss() failed with error = %d\n", xlalErrno );
 	return 1;
       }
       break;
 
     case 1:
-      if ( XLALcomputeBstatisticMC ( Bstat, dBstat, GV.M_mu_nu, x_mu_i, GV.rng, (UINT4)uvar.numMCpoints ) ) {
+      if ( XLALcomputeBstatisticMC ( Bstat, dBstatRel, GV.M_mu_nu, x_mu_i, GV.rng, (UINT4)uvar.numMCpoints ) ) {
 	LogPrintf (LOG_CRITICAL, "XLALcomputeBstatisticMC() failed with error = %d\n", xlalErrno );
 	return 1;
       }
@@ -327,7 +327,7 @@ int main(int argc,char *argv[])
       XLALfprintfGSLvector ( fpStat, "%f", GV.s_mu );
       fprintf (fpStat, "%%%% A_Mu = ");
       XLALfprintfGSLvector ( fpStat, "%f", GV.A_Mu );
-      fprintf (fpStat, "%%%% x_1       x_2        x_3        x_4              lnL              2F             B-stat         dB\n");
+      fprintf (fpStat, "%%%% x_1       x_2        x_3        x_4              lnL              2F             Bstat         dB/Bstat\n");
       for ( i=0; i < (UINT4)uvar.numDraws; i ++ )
 	fprintf ( fpStat, "%10f %10f %10f %10f     %12f     %12f     %12f  %12f\n",
 		  gsl_matrix_get ( x_mu_i, i, 0 ),
@@ -338,7 +338,7 @@ int main(int argc,char *argv[])
 		  gsl_vector_get ( lnL, i ),
 		  gsl_vector_get ( Fstat, i ),
 		  gsl_vector_get ( Bstat, i ),
-		  gsl_vector_get ( dBstat, i )
+		  gsl_vector_get ( dBstatRel, i )
 		  );
 
       fclose (fpStat);
@@ -354,7 +354,7 @@ int main(int argc,char *argv[])
   gsl_vector_free ( Fstat );
   gsl_matrix_free ( x_mu_i );
   gsl_vector_free ( Bstat );
-  gsl_vector_free ( dBstat );
+  gsl_vector_free ( dBstatRel );
 
   gsl_rng_free (GV.rng);
 
@@ -555,6 +555,7 @@ XLALsynthesizeData ( gsl_matrix *x_mu_i,		/**< [OUT] list of numDraws 4D line-ve
     LogPrintf ( LOG_CRITICAL, "Out of memory?\n");
     return XLAL_ENOMEM;
   }
+
   for ( row = 0; row < numDraws; row ++ )
     {
       gsl_matrix_set (normal, row, 0,  gsl_ran_gaussian ( rng, 1.0 ) );
@@ -759,7 +760,7 @@ XLALcomputeFstatistic ( gsl_vector *Fstat,		/**< [OUT] F-statistic vector */
  */
 int
 XLALcomputeBstatisticMC ( gsl_vector *Bstat,		/**< [OUT] vector of numDraws B-statistic values */
-			  gsl_vector *dBstat,		/**< [OUT] corresponding absolute-error estimates on B-stat */
+			  gsl_vector *dBstatRel,	/**< [OUT] corresponding relative-error estimates on B-stat */
 			  const gsl_matrix *M_mu_nu,	/**< antenna-pattern matrix M_mu_nu */
 			  const gsl_matrix *x_mu_i,	/**< data-vectors x_mu: numDraws x 4 */
 			  gsl_rng * rng,		/**< gsl random-number generator */
@@ -776,7 +777,7 @@ XLALcomputeBstatisticMC ( gsl_vector *Bstat,		/**< [OUT] vector of numDraws B-st
   int gslstat;
 
   /* ----- check input arguments ----- */
-  if ( !Bstat || !dBstat || !M_mu_nu || !x_mu_i || !rng) {
+  if ( !Bstat || !dBstatRel || !M_mu_nu || !x_mu_i || !rng) {
     LogPrintf ( LOG_CRITICAL, "%s: illegal NULL input vector passed.\n", fn);
     return XLAL_EINVAL;
   }
@@ -832,7 +833,7 @@ XLALcomputeBstatisticMC ( gsl_vector *Bstat,		/**< [OUT] vector of numDraws B-st
 	return 1;
       }
       gsl_vector_set ( Bstat, row, prefact * Bb );
-      gsl_vector_set ( dBstat, row, abserr );
+      gsl_vector_set ( dBstatRel, row, abserr/Bb );
 
     } /* row < numDraws */
 
@@ -849,7 +850,7 @@ XLALcomputeBstatisticMC ( gsl_vector *Bstat,		/**< [OUT] vector of numDraws B-st
  */
 int
 XLALcomputeBstatisticGauss ( gsl_vector *Bstat,		/**< [OUT] vector of numDraws B-statistic values */
-			     gsl_vector *dBstat,	/**< [OUT] corresponding absolute-error estimates on B-stat */
+			     gsl_vector *dBstatRel,	/**< [OUT] corresponding relative-error estimates on B-stat */
 			     const gsl_matrix *M_mu_nu,	/**< antenna-pattern matrix M_mu_nu */
 			     const gsl_matrix *x_mu_i	/**< data-vectors x_mu: numDraws x 4 */
 			     )
@@ -859,15 +860,17 @@ XLALcomputeBstatisticGauss ( gsl_vector *Bstat,		/**< [OUT] vector of numDraws B
   double prefact = 2.0 * 7.87480497286121;	/* 2 * sqrt(2) * pi^(3/2) */
   UINT4 row, numDraws;
   int gslstat;
-  double epsabs = 0;
-  double epsrel = 1e-4;
+  double epsabs = 1;
+  double epsrel = 1e-2;
   double abserr;
   size_t neval;
   gsl_function F;
   integrationParams_t pars;
 
+  gsl_integration_workspace * w = gsl_integration_workspace_alloc (1000);
+
   /* ----- check input arguments ----- */
-  if ( !Bstat || !dBstat || !M_mu_nu || !x_mu_i ) {
+  if ( !Bstat || !dBstatRel || !M_mu_nu || !x_mu_i ) {
     LogPrintf ( LOG_CRITICAL, "%s: illegal NULL input vector passed.\n", fn);
     return XLAL_EINVAL;
   }
@@ -909,16 +912,35 @@ XLALcomputeBstatisticGauss ( gsl_vector *Bstat,		/**< [OUT] vector of numDraws B
        * and the number of function evaluations used, neval. The Gauss-Kronrod rules are designed in such a way that each rule
        * uses all the results of its predecessors, in order to minimize the total number of function evaluations.
        */
+      /*
       if ( (gslstat = gsl_integration_qng ( &F, CosiLower, CosiUpper, epsabs, epsrel, &Bb, &abserr, &neval)) ) {
-	LogPrintf ( LOG_CRITICAL, "%s: row = %d: gsl_integration_qng() failed: abserr=%f, neval=%d, %s\n",
-		    fn, row, abserr, neval, gsl_strerror (gslstat) );
+	LogPrintf ( LOG_CRITICAL, "%s: row = %d: gsl_integration_qng() failed: res=%f, abserr=%f, neval=%d, %s\n",
+		    fn, row, Bb, abserr, neval, gsl_strerror (gslstat) );
+	return 1;
+      }
+      */
+      /* Function: int gsl_integration_qags (const gsl_function * f, double a, double b, double epsabs, double epsrel,
+       *                                     size_t limit, gsl_integration_workspace * workspace, double * result, double * abserr)
+       *
+       * This function applies the Gauss-Kronrod 21-point integration rule adaptively until an estimate of the integral
+       * of f over (a,b) is achieved within the desired absolute and relative error limits, epsabs and epsrel. The results
+       * are extrapolated using the epsilon-algorithm, which accelerates the convergence of the integral in the presence of
+       * discontinuities and integrable singularities. The function returns the final approximation from the extrapolation,
+       * result, and an estimate of the absolute error, abserr. The subintervals and their results are stored in the memory
+       * provided by workspace. The maximum number of subintervals is given by limit, which may not exceed the allocated size of the workspace.
+       */
+      if ( (gslstat = gsl_integration_qags ( &F, CosiLower, CosiUpper, epsabs, epsrel, 1000, w, &Bb, &abserr)) ) {
+	LogPrintf ( LOG_CRITICAL, "%s: row = %d: gsl_integration_qag() failed: res=%f, abserr=%f, intervals=%d, %s\n",
+		    fn, row, Bb, abserr, w->size, gsl_strerror (gslstat) );
 	return 1;
       }
 
       gsl_vector_set ( Bstat, row, prefact * Bb );
-      gsl_vector_set ( dBstat, row, abserr );
+      gsl_vector_set ( dBstatRel, row, abserr/Bb );
 
     } /* row < numDraws */
+
+  gsl_integration_workspace_free (w);
 
   return 0;
 
@@ -938,12 +960,16 @@ BstatIntegrandOuter ( double cosi, void *p )
   integrationParams_t *par = (integrationParams_t *) p;
   gsl_function F;
   double epsabs = 0;
-  double epsrel = 1e-4;
+  double epsrel = 1e-3;
   double abserr;
   size_t neval;
   double ret;
   double PsiLower, PsiUpper;
   int gslstat;
+  static gsl_integration_workspace * w = NULL;
+
+  if ( !w )
+    w = gsl_integration_workspace_alloc (1000);
 
   par->cosi = cosi;
   F.function = &BstatIntegrandInner;
@@ -961,10 +987,28 @@ BstatIntegrandOuter ( double cosi, void *p )
    * and the number of function evaluations used, neval. The Gauss-Kronrod rules are designed in such a way that each rule
    * uses all the results of its predecessors, in order to minimize the total number of function evaluations.
    */
+  /*
   if ( (gslstat = gsl_integration_qng ( &F, PsiLower, PsiUpper, epsabs, epsrel, &ret, &abserr, &neval)) ) {
-    LogPrintf ( LOG_CRITICAL, "%s: gsl_integration_qng() failed: abserr=%f, neval=%d, %s\n",
-		fn, abserr, neval, gsl_strerror (gslstat) );
+    LogPrintf ( LOG_CRITICAL, "%s: gsl_integration_qng() failed: ret=%f, abserr=%f, neval=%d, %s\n",
+		fn, ret, abserr, neval, gsl_strerror (gslstat) );
     abort();
+  }
+  */
+
+  /* Function: int gsl_integration_qags (const gsl_function * f, double a, double b, double epsabs, double epsrel,
+   *                                     size_t limit, gsl_integration_workspace * workspace, double * result, double * abserr)
+   *
+   * This function applies the Gauss-Kronrod 21-point integration rule adaptively until an estimate of the integral
+   * of f over (a,b) is achieved within the desired absolute and relative error limits, epsabs and epsrel. The results
+   * are extrapolated using the epsilon-algorithm, which accelerates the convergence of the integral in the presence of
+   * discontinuities and integrable singularities. The function returns the final approximation from the extrapolation,
+   * result, and an estimate of the absolute error, abserr. The subintervals and their results are stored in the memory
+   * provided by workspace. The maximum number of subintervals is given by limit, which may not exceed the allocated size of the workspace.
+   */
+  if ( (gslstat = gsl_integration_qags ( &F, PsiLower, PsiUpper, epsabs, epsrel, 1000, w, &ret, &abserr)) ) {
+    LogPrintf ( LOG_CRITICAL, "%s: gsl_integration_qag() failed: res=%f, abserr=%f, intervals=%d, %s\n",
+		fn, ret, abserr, w->size, gsl_strerror (gslstat) );
+    return 1;
   }
 
   return ret;
@@ -1052,7 +1096,7 @@ BstatIntegrand ( double Amp[], size_t dim, void *p )
   integrand = pow(AMA, -0.5) * exp(arg0) * gsl_sf_bessel_I0(arg0);
 
   if ( lalDebugLevel >= 2 )
-    printf ("%f   %f    %f\n", eta, psi, integrand );
+    printf ("%f   %f    %f   %f %f\n", eta, psi, integrand, AMA, arg0 );
 
   return integrand;
 
