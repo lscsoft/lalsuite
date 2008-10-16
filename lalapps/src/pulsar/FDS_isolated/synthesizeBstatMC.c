@@ -35,8 +35,6 @@
 #include <unistd.h>
 #endif
 
-#define GSL_RANGE_CHECK_OFF
-
 /* GSL includes */
 #include <lal/LALGSL.h>
 #include <gsl/gsl_vector.h>
@@ -167,6 +165,8 @@ int XLALAmplitudeParams2Vect ( REAL8 Amu[], REAL8 h0, REAL8 cosi, REAL8 psi, REA
 int XLALsynthesizeData ( gsl_matrix *x_mu_i, const gsl_matrix *M_mu_nu, const gsl_vector *s_mu, gsl_rng * rng );
 int XLALcomputeLogLikelihood ( gsl_vector *lnL, REAL8 *rho2, const gsl_vector *A_Mu, const gsl_vector *s_mu, const gsl_matrix *x_mu_i);
 int XLALcomputeFstatistic ( gsl_vector *Fstat, const gsl_matrix *M_mu_nu, const gsl_matrix *x_mu_i );
+int XLALcomputeBstatisticMC ( gsl_vector *Bstat, gsl_vector *dBstat, const gsl_matrix *M_mu_nu, const gsl_matrix *x_mu_i, gsl_rng * rng, UINT4 numMCpoints );
+
 
 /*---------- empty initializers ---------- */
 
@@ -189,7 +189,6 @@ int main(int argc,char *argv[])
   gsl_matrix *x_mu_i;
 
   UINT4 i;
-  int gslstat;
   REAL8 rho2;	/* optimal SNR^2 */
   UINT4 numDraws;
 
@@ -270,67 +269,12 @@ int main(int argc,char *argv[])
     return 1;
   }
 
-  /* ---------- compute B-stat values ---------- */
-  {
-    gsl_monte_vegas_state * MCS_vegas = gsl_monte_vegas_alloc ( 2 );
-    gsl_monte_function F;
-    MCparams pars;
-    double prefact = 2.0 * 7.87480497286121;	/* 2 * sqrt(2) * pi^(3/2) */
+  /* ---------- compute B-statistic ---------- */
+  if ( XLALcomputeBstatisticMC ( Bstat, dBstat, GV.M_mu_nu, x_mu_i, GV.rng, (UINT4)uvar.numMCpoints ) ) {
+    LogPrintf (LOG_CRITICAL, "XLALcomputeBstatistic() failed with error = %d\n", xlalErrno );
+    return 1;
+  }
 
-    pars.M11 = uvar.M11;
-    pars.M22 = uvar.M22;
-    pars.M12 = uvar.M12;
-
-    F.f = &BstatIntegrand;
-    F.dim = 2;
-    F.params = &pars;
-
-    for ( i=0; i < (UINT4)uvar.numDraws; i ++ )
-      {
-	gsl_vector_const_view xi = gsl_matrix_const_row ( x_mu_i, i );
-	double Bb;
-	double Amp[2] = {0,0};
-	double xlower[2], xupper[2];
-	double abserr;
-	pars.x_mu = &(xi.vector);
-
-	Amp[0] = uvar.cosi;
-	Amp[1] = uvar.psi;
-
-	gsl_monte_vegas_init ( MCS_vegas );
-
-	/* Integration boundaries */
-	xlower[0] = -1;		/* cosi */
-	xlower[1] = -LAL_PI_4;	/* psi */
-
-	xupper[0] = 1;		/* cosi */
-	xupper[1] = LAL_PI_4;	/* psi */
-
-	/* Function: int gsl_monte_vegas_integrate (gsl_monte_function * f, double * xl, double * xu, size_t dim, size_t calls,
-	 *                                          gsl_rng * r, gsl_monte_vegas_state * s, double * result, double * abserr)
-	 *
-	 * This routines uses the vegas Monte Carlo algorithm to integrate the function f over the dim-dimensional hypercubic
-	 * region defined by the lower and upper limits in the arrays xl and xu, each of size dim. The integration uses a
-	 * fixed number of function calls calls, and obtains random sampling points using the random number generator r.
-	 * A previously allocated workspace s must be supplied. The result of the integration is returned in result, with
-	 * an estimated absolute error abserr. The result and its error estimate are based on a weighted average of independent
-	 * samples. The chi-squared per degree of freedom for the weighted average is returned via the state struct component,
-	 * s->chisq, and must be consistent with 1 for the weighted average to be reliable.
-	 */
-	if ( (gslstat = gsl_monte_vegas_integrate ( &F, xlower, xupper, 2, (size_t)uvar.numMCpoints, GV.rng, MCS_vegas, &Bb, &abserr)) ) {
-	  LogPrintf ( LOG_CRITICAL, "i = %d: gsl_monte_vegas_integrate() failed: %s\n", i, gsl_strerror (gslstat) );
-	  return 1;
-	}
-	gsl_vector_set ( Bstat, i, prefact * Bb );
-	gsl_vector_set ( dBstat, i, abserr );
-	/*
-	  printf ( "Vegas Monte-Carlo integration: Bb = %f, abserr = %f ==> relerr = %f\n", Bb, abserr, abserr / Bb );
-	*/
-
-      } /* i < numDraws */
-
-    gsl_monte_vegas_free ( MCS_vegas );
-  } /* compute B-stat */
 
   /* ---------- output F-statistic and B-statistic samples into file, if requested */
   if (uvar.outputStats)
@@ -874,3 +818,94 @@ XLALcomputeFstatistic ( gsl_vector *Fstat,		/**< [OUT] F-statistic vector */
   return 0;
 
 } /* XLALcomputeFstatistic () */
+
+
+/** Compute the B-statistic for given input data, using Monte-Carlo integration for
+ * the marginalization over {cosi, psi}, while {h0, phi0} have been marginalized analytically.
+ *
+ * Currently uses the Vegas Monte-Carlo integrator, which samples more densely where the integrand is larger.
+ */
+int
+XLALcomputeBstatisticMC ( gsl_vector *Bstat,		/**< [OUT] vector of numDraws B-statistic values */
+			  gsl_vector *dBstat,		/**< [OUT] corresponding absolute-error estimates on B-stat */
+			  const gsl_matrix *M_mu_nu,	/**< antenna-pattern matrix M_mu_nu */
+			  const gsl_matrix *x_mu_i,	/**< data-vectors x_mu: numDraws x 4 */
+			  gsl_rng * rng,		/**< gsl random-number generator */
+			  UINT4 numMCpoints		/**< number of points to use in Monte-Carlo integration */
+			  )
+{
+  const char *fn = "XLALcomputeBstatisticMC()";
+
+  gsl_monte_vegas_state * MCS_vegas = gsl_monte_vegas_alloc ( 2 );
+  gsl_monte_function F;
+  MCparams pars;
+  double prefact = 2.0 * 7.87480497286121;	/* 2 * sqrt(2) * pi^(3/2) */
+  UINT4 row, numDraws;
+  int gslstat;
+
+  /* ----- check input arguments ----- */
+  if ( !Bstat || !dBstat || !M_mu_nu || !x_mu_i || !rng) {
+    LogPrintf ( LOG_CRITICAL, "%s: illegal NULL input vector passed.\n", fn);
+    return XLAL_EINVAL;
+  }
+  numDraws = Bstat->size;
+  if ( (M_mu_nu->size1 != 4) || (M_mu_nu->size2 != 4) ) {
+    LogPrintf ( LOG_CRITICAL, "%s: antenna-pattern matrix M_mu_nu must be 4x4.\n", fn);
+    return XLAL_EINVAL;
+  }
+  if ( (x_mu_i->size1 != numDraws) || (x_mu_i->size2 != 4) ) {
+    LogPrintf ( LOG_CRITICAL, "%s: input vector-list x_mu_i must be numDraws x 4.\n", fn);
+    return XLAL_EINVAL;
+  }
+
+  /* ----- prepare Monte-Carlo integrator ----- */
+  pars.M11 = gsl_matrix_get ( M_mu_nu, 0, 0 );
+  pars.M22 = gsl_matrix_get ( M_mu_nu, 1, 1 );
+  pars.M12 = gsl_matrix_get ( M_mu_nu, 0, 1 );
+
+  F.f = &BstatIntegrand;
+  F.dim = 2;
+  F.params = &pars;
+
+  for ( row=0; row < numDraws; row ++ )
+    {
+      gsl_vector_const_view xi = gsl_matrix_const_row ( x_mu_i, row );
+      double Bb;
+      double AmpLower[2], AmpUpper[2];
+      double abserr;
+      pars.x_mu = &(xi.vector);
+
+      gsl_monte_vegas_init ( MCS_vegas );
+
+      /* Integration boundaries */
+      AmpLower[0] = -1;		/* cosi */
+      AmpLower[1] = -LAL_PI_4;	/* psi */
+
+      AmpUpper[0] = 1;		/* cosi */
+      AmpUpper[1] = LAL_PI_4;	/* psi */
+
+      /* Function: int gsl_monte_vegas_integrate (gsl_monte_function * f, double * xl, double * xu, size_t dim, size_t calls,
+       *                                          gsl_rng * r, gsl_monte_vegas_state * s, double * result, double * abserr)
+       *
+       * This routines uses the vegas Monte Carlo algorithm to integrate the function f over the dim-dimensional hypercubic
+       * region defined by the lower and upper limits in the arrays xl and xu, each of size dim. The integration uses a
+       * fixed number of function calls calls, and obtains random sampling points using the random number generator r.
+       * A previously allocated workspace s must be supplied. The result of the integration is returned in result, with
+       * an estimated absolute error abserr. The result and its error estimate are based on a weighted average of independent
+       * samples. The chi-squared per degree of freedom for the weighted average is returned via the state struct component,
+       * s->chisq, and must be consistent with 1 for the weighted average to be reliable.
+       */
+      if ( (gslstat = gsl_monte_vegas_integrate ( &F, AmpLower, AmpUpper, 2, numMCpoints, rng, MCS_vegas, &Bb, &abserr)) ) {
+	LogPrintf ( LOG_CRITICAL, "%s: row = %d: gsl_monte_vegas_integrate() failed: %s\n", fn, row, gsl_strerror (gslstat) );
+	return 1;
+      }
+      gsl_vector_set ( Bstat, row, prefact * Bb );
+      gsl_vector_set ( dBstat, row, abserr );
+
+    } /* row < numDraws */
+
+  gsl_monte_vegas_free ( MCS_vegas );
+
+  return 0;
+
+} /* XLALcomputeBstatisticMC() */
