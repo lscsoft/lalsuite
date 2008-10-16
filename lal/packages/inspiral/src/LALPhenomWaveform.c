@@ -28,6 +28,7 @@
 #include <lal/SeqFactories.h>
 #include <lal/VectorOps.h>
 #include <lal/BBHPhenomCoeffs.h> 
+#include <lal/AVFactories.h> 
 
 #include <math.h>
 
@@ -382,7 +383,7 @@ void LALBBHPhenWaveTimeDom ( LALStatus        *status,
   
   /* this is the frequency at which the softening fn has value 0.5 */
   tau0 = 32.;
-  /*  fLower = pow((tau0*256.*eta*pow(totalMass*LAL_MTSUN_SI,5./3.)/5.),-3./8.)/LAL_PI; */
+/*   fLower = pow((tau0*256.*eta*pow(totalMass*LAL_MTSUN_SI,5./3.)/5.),-3./8.)/LAL_PI;  */
   /* Better ansatz (Lucia Oct 08) */
   fLower = 2.E-3/(totalMass*LAL_MTSUN_SI);
   fCut = (1.025)*phenParams.fCut;            
@@ -392,11 +393,11 @@ void LALBBHPhenWaveTimeDom ( LALStatus        *status,
   if (fCut > template->tSampling/2.-100.) fCut = template->tSampling/2.-100.;
   
   /* generate waveforms over this frequency range */
-  template->fLower = fLower/4.;
+/*   template->fLower = fLower/4.; */
   phenParams.fCut = template->tSampling/2.;
   
   /* make sure that fLower is not too low */
-  if (template->fLower < 0.5) template->fLower = 0.5;
+  /*  if (template->fLower < 0.5) template->fLower = 0.5; */
   
   /* generate the phenomenological waveform in frequency domain */
   n = signal->length;
@@ -416,7 +417,7 @@ void LALBBHPhenWaveTimeDom ( LALStatus        *status,
   
   /* We will apply a window function to soften the boundaries. The function has 
      value 1e-15 at fLow-df and fCut+df*/
-  sharpNessLow = (-1./(fLower/2.)) * atanh(1e-15 - 1);
+  sharpNessLow = (-1./(fLower/4.)) * atanh(1e-15 - 1);
   sharpNessUpp = (-1./fCut) * atanh(1e-15 - 1);
   
   softWin = (1+tanh(sharpNessLow*(0.0-fLower)))*(1-tanh(sharpNessUpp*(0.0-fCut)))/4.;
@@ -563,8 +564,8 @@ void LALBBHPhenTimeDomEngine( LALStatus        *status,
     if (f) XLALComputeInstantFreq(f, signal1, signal2, dt); 
 
     /* cut the waveform at the low freq given by */
-    /*    signal1 = XLALCutAtFreq( signal1, f, params->fLower, dt);
-	  signal2 = XLALCutAtFreq( signal2, f, params->fLower, dt);*/
+    signal1 = XLALCutAtFreq( signal1, f, params->fLower, dt);
+    signal2 = XLALCutAtFreq( signal2, f, params->fLower, dt);
 
     /* allocate memory for the temporary phase vector */
     n = signal1->length;
@@ -893,7 +894,7 @@ static void XLALComputeInstantFreq( REAL4Vector *Freq,
     /* Compute frequency using the fact that  */
     /*h(t) = A(t) e^(i Phi) = Re(h) + i Im(h) */
     for( k = 0; k < len; k++) {
-        Freq->data[k] = hcDot->data[k] * hp->data[k] -hpDot->data[k] * hc->data[k];
+        Freq->data[k] = -hcDot->data[k] * hp->data[k] +hpDot->data[k] * hc->data[k];
         Freq->data[k] /= LAL_TWOPI;
         Freq->data[k] /= (pow(hp->data[k],2.) + pow(hc->data[k], 2.));
     }
@@ -914,11 +915,6 @@ static REAL4Vector *XLALCutAtFreq( REAL4Vector     *h,
   REAL8 dt;
   UINT4 k, k0, kMid, len;
   REAL4 currentFreq;
-  UINT4 newLen;
-
-  REAL4Vector *newH = NULL;
-
-  LIGOTimeGPS epoch;
 
   len = freq->length;
   dt = deltaT;
@@ -949,20 +945,14 @@ static REAL4Vector *XLALCutAtFreq( REAL4Vector     *h,
 	}
       k0 = k;
     }
-    
-  newLen = len - k0;
 
   /* Allocate memory for the frequency series */
-  epoch.gpsSeconds = 0;
-  epoch.gpsNanoSeconds = 0;
-  newH = 
-    XLALCreateREAL4Vector(newLen);
 
-  for(k = 0; k < newLen; k++)
+  for(k = 0; k < k0; k++)
     {
-      newH->data[k] = h->data[k0 + k]; 
+      h->data[k] = 0.0; 
     }
 
-  return newH;
+  return h;
 
 }
