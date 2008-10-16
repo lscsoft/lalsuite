@@ -150,7 +150,8 @@ typedef struct {
   double M22;
   double M12;
   const gsl_vector *x_mu;
-} MCparams;
+  double cosi;		/**< only used for non-Monte-Carlo gsl-integration: value of cosi at which to integrate over psi */
+} integrationParams_t;
 
 
 RCSID( "$Id$");
@@ -160,13 +161,17 @@ int main(int argc,char *argv[]);
 
 void initUserVars (LALStatus *status, UserInput_t *uvar );
 int InitCode ( ConfigVariables *cfg, const UserInput_t *uvar );
-double BstatIntegrand ( double A[], size_t dim, void *p );
 int XLALAmplitudeParams2Vect ( REAL8 Amu[], REAL8 h0, REAL8 cosi, REAL8 psi, REAL8 phi0 );
 int XLALsynthesizeData ( gsl_matrix *x_mu_i, const gsl_matrix *M_mu_nu, const gsl_vector *s_mu, gsl_rng * rng );
 int XLALcomputeLogLikelihood ( gsl_vector *lnL, REAL8 *rho2, const gsl_vector *A_Mu, const gsl_vector *s_mu, const gsl_matrix *x_mu_i);
 int XLALcomputeFstatistic ( gsl_vector *Fstat, const gsl_matrix *M_mu_nu, const gsl_matrix *x_mu_i );
-int XLALcomputeBstatisticMC ( gsl_vector *Bstat, gsl_vector *dBstat, const gsl_matrix *M_mu_nu, const gsl_matrix *x_mu_i, gsl_rng * rng, UINT4 numMCpoints );
 
+int XLALcomputeBstatisticMC ( gsl_vector *Bstat, gsl_vector *dBstat, const gsl_matrix *M_mu_nu, const gsl_matrix *x_mu_i, gsl_rng * rng, UINT4 numMCpoints );
+int XLALcomputeBstatisticGauss ( gsl_vector *Bstat, gsl_vector *dBstat,	const gsl_matrix *M_mu_nu, const gsl_matrix *x_mu_i );
+
+double BstatIntegrandOuter ( double cosi, void *p );
+double BstatIntegrandInner ( double psi, void *p );
+double BstatIntegrand ( double A[], size_t dim, void *p );
 
 /*---------- empty initializers ---------- */
 
@@ -270,10 +275,27 @@ int main(int argc,char *argv[])
   }
 
   /* ---------- compute B-statistic ---------- */
-  if ( XLALcomputeBstatisticMC ( Bstat, dBstat, GV.M_mu_nu, x_mu_i, GV.rng, (UINT4)uvar.numMCpoints ) ) {
-    LogPrintf (LOG_CRITICAL, "XLALcomputeBstatistic() failed with error = %d\n", xlalErrno );
-    return 1;
-  }
+  switch ( uvar.integrationMethod )
+    {
+    case 0:
+      if ( XLALcomputeBstatisticGauss ( Bstat, dBstat, GV.M_mu_nu, x_mu_i ) ) {
+	LogPrintf (LOG_CRITICAL, "XLALcomputeBstatisticGauss() failed with error = %d\n", xlalErrno );
+	return 1;
+      }
+      break;
+
+    case 1:
+      if ( XLALcomputeBstatisticMC ( Bstat, dBstat, GV.M_mu_nu, x_mu_i, GV.rng, (UINT4)uvar.numMCpoints ) ) {
+	LogPrintf (LOG_CRITICAL, "XLALcomputeBstatisticMC() failed with error = %d\n", xlalErrno );
+	return 1;
+      }
+      break;
+
+    default:
+      LogPrintf (LOG_CRITICAL, "Sorry, --integrationMethod = %d not implemented!\n", uvar.integrationMethod );
+      return 1;
+      break;
+    } /* switch integrationMethod */
 
 
   /* ---------- output F-statistic and B-statistic samples into file, if requested */
@@ -305,7 +327,7 @@ int main(int argc,char *argv[])
       XLALfprintfGSLvector ( fpStat, "%f", GV.s_mu );
       fprintf (fpStat, "%%%% A_Mu = ");
       XLALfprintfGSLvector ( fpStat, "%f", GV.A_Mu );
-      fprintf (fpStat, "%%%% x_1       x_2        x_3        x_4              lnL              2F             B_vegas         dB\n");
+      fprintf (fpStat, "%%%% x_1       x_2        x_3        x_4              lnL              2F             B-stat         dB\n");
       for ( i=0; i < (UINT4)uvar.numDraws; i ++ )
 	fprintf ( fpStat, "%10f %10f %10f %10f     %12f     %12f     %12f  %12f\n",
 		  gsl_matrix_get ( x_mu_i, i, 0 ),
@@ -384,7 +406,7 @@ initUserVars (LALStatus *status, UserInput_t *uvar )
 
   LALregSTRINGUserStruct(status, outputStats,	'o', UVAR_OPTIONAL, "Output filename containing random draws of lnL, 2F and B");
 
-  LALregINTUserStruct(status, integrationMethod,'m', UVAR_OPTIONAL, "Integration-method: '0': 2D Gauss-Kronod, '1': 2D Vegas Monte-Carlo");
+  LALregINTUserStruct(status, integrationMethod,'m', UVAR_OPTIONAL, "2D Integration-method: 0=Gauss-Kronod, 1=Monte-Carlo(Vegas)");
 
   LALregBOOLUserStruct(status,	version,        'V', UVAR_SPECIAL,   "Output code version");
 
@@ -474,97 +496,6 @@ InitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
   return 0;
 
 } /* InitCode() */
-
-
-/** compute log likelihood ratio lnL for given Amp = {h0, cosi, psi, phi0} and M_{mu,nu}.
- * computes lnL = A^mu x_mu - 1/2 A^mu M_mu_nu A^nu.
- *
- * This function is of type gsl_monte_function for gsl Monte-Carlo integration.
- * The parameter-struct is simply gsl_matrix *M_mu_nu.
- *
- */
-double
-BstatIntegrand ( double Amp[], size_t dim, void *p )
-{
-  MCparams *par = (MCparams *) p;
-  double x1, x2, x3, x4;
-  double al1, al2, al3, al4;
-  double eta, etaSQ, etaSQp1SQ;
-  double psi, sin2psi, cos2psi, sin2psiSQ, cos2psiSQ;
-  double AMA, qSQ, arg0;
-  double integrand;
-
-  if ( dim != 2 ) {
-    LogPrintf (LOG_CRITICAL, "Error: BstatIntegrand() was called with illegal dim = %d != 2\n", dim );
-    abort ();
-  }
-
-  /* introduce a few handy shortcuts */
-  x1 = gsl_vector_get ( par->x_mu, 0 );
-  x2 = gsl_vector_get ( par->x_mu, 1 );
-  x3 = gsl_vector_get ( par->x_mu, 2 );
-  x4 = gsl_vector_get ( par->x_mu, 3 );
-
-  eta = Amp[0];
-  etaSQ = SQ(eta);			/* eta^2 */
-  etaSQp1SQ = SQ ( (1.0 + etaSQ) );	/* (1+eta^2)^2 */
-
-  psi = Amp[1];
-  sin2psi = sin ( 2.0 * psi );
-  cos2psi = cos ( 2.0 * psi );
-  sin2psiSQ = SQ(sin2psi);
-  cos2psiSQ = SQ(cos2psi);
-
-  /* compute amplitude-params alpha1, alpha2, alpha3 and alpha4 */
-  al1 = 0.25 * etaSQp1SQ * cos2psiSQ + etaSQ * sin2psiSQ;
-  al2 = 0.25 * etaSQp1SQ * sin2psiSQ + etaSQ * cos2psiSQ;
-  al3 = 0.25 * SQ( (1.0 - etaSQ) ) * sin2psi * cos2psi;
-  al4 = eta * ( 1.0 + etaSQ );
-
-  /* STEP 1: compute AMA = A^mu M_mu_nu A^nu / h0^2 */
-  AMA = al1 * par->M11 + al2 * par->M22 + 2.0 * al3 * par->M12;
-
-  /* STEP2: compute q^2 */
-  qSQ = al1 * ( SQ(x1) + SQ(x3) ) + al2 * ( SQ(x2) + SQ(x4) ) + 2.0 * al3 * ( x1 * x2 + x3 * x4 ) + al4 * ( x1 * x4 - x2 * x3 );
-
-  /* STEP3 : put all the pieces together */
-  arg0 = 0.25 * qSQ  / AMA;
-
-  integrand = pow(AMA, -0.5) * exp(arg0) * gsl_sf_bessel_I0(arg0);
-
-  if ( lalDebugLevel >= 2 )
-    printf ("%f   %f    %f\n", eta, psi, integrand );
-
-  return integrand;
-
-} /* BstatIntegrand() */
-
-
-/** Convert amplitude params {h0, cosi, psi, phi0} into amplitude vector A^mu.
- *
- * NOTE: We rely on Amu[] being allocated 4-dim vector!
- */
-int
-XLALAmplitudeParams2Vect ( REAL8 Amu[], REAL8 h0, REAL8 cosi, REAL8 psi, REAL8 phi0 )
-{
-  REAL8 aPlus = 0.5 * h0 * ( 1.0 + SQ(cosi) );
-  REAL8 aCross = h0 * cosi;
-  REAL8 cos2psi = cos ( 2.0 * psi );
-  REAL8 sin2psi = sin ( 2.0 * psi );
-  REAL8 cosphi0 = cos ( phi0 );
-  REAL8 sinphi0 = sin ( phi0 );
-
-  if ( !Amu )
-    return -1;
-
-  Amu[0] =  aPlus * cos2psi * cosphi0 - aCross * sin2psi * sinphi0;
-  Amu[1] =  aPlus * sin2psi * cosphi0 + aCross * cos2psi * sinphi0;
-  Amu[2] = -aPlus * cos2psi * sinphi0 - aCross * sin2psi * cosphi0;
-  Amu[3] = -aPlus * sin2psi * sinphi0 + aCross * cos2psi * cosphi0;
-
-  return 0;
-
-} /* XLALAmplitudeParams2Vect() */
 
 
 /** Generate random-noise draws and combine with (FIXME: single!) signal.
@@ -658,6 +589,7 @@ XLALsynthesizeData ( gsl_matrix *x_mu_i,		/**< [OUT] list of numDraws 4D line-ve
   return XLAL_SUCCESS;
 
 } /* XLALsynthesizeData() */
+
 
 
 /** Compute log-likelihood function for given input data
@@ -838,7 +770,7 @@ XLALcomputeBstatisticMC ( gsl_vector *Bstat,		/**< [OUT] vector of numDraws B-st
 
   gsl_monte_vegas_state * MCS_vegas = gsl_monte_vegas_alloc ( 2 );
   gsl_monte_function F;
-  MCparams pars;
+  integrationParams_t pars;
   double prefact = 2.0 * 7.87480497286121;	/* 2 * sqrt(2) * pi^(3/2) */
   UINT4 row, numDraws;
   int gslstat;
@@ -879,10 +811,10 @@ XLALcomputeBstatisticMC ( gsl_vector *Bstat,		/**< [OUT] vector of numDraws B-st
 
       /* Integration boundaries */
       AmpLower[0] = -1;		/* cosi */
-      AmpLower[1] = -LAL_PI_4;	/* psi */
+      AmpUpper[0] =  1;		/* cosi */
 
-      AmpUpper[0] = 1;		/* cosi */
-      AmpUpper[1] = LAL_PI_4;	/* psi */
+      AmpLower[1] = -LAL_PI_4;	/* psi */
+      AmpUpper[1] =  LAL_PI_4;	/* psi */
 
       /* Function: int gsl_monte_vegas_integrate (gsl_monte_function * f, double * xl, double * xu, size_t dim, size_t calls,
        *                                          gsl_rng * r, gsl_monte_vegas_state * s, double * result, double * abserr)
@@ -909,3 +841,247 @@ XLALcomputeBstatisticMC ( gsl_vector *Bstat,		/**< [OUT] vector of numDraws B-st
   return 0;
 
 } /* XLALcomputeBstatisticMC() */
+
+
+/** Compute the B-statistic for given input data, using standard Gauss-Kronod integration (gsl_integration_qng)
+ * for the marginalization over {cosi, psi}, while {h0, phi0} have been marginalized analytically.
+ *
+ */
+int
+XLALcomputeBstatisticGauss ( gsl_vector *Bstat,		/**< [OUT] vector of numDraws B-statistic values */
+			     gsl_vector *dBstat,	/**< [OUT] corresponding absolute-error estimates on B-stat */
+			     const gsl_matrix *M_mu_nu,	/**< antenna-pattern matrix M_mu_nu */
+			     const gsl_matrix *x_mu_i	/**< data-vectors x_mu: numDraws x 4 */
+			     )
+{
+  const char *fn = "XLALcomputeBstatisticGauss()";
+
+  double prefact = 2.0 * 7.87480497286121;	/* 2 * sqrt(2) * pi^(3/2) */
+  UINT4 row, numDraws;
+  int gslstat;
+  double epsabs = 0;
+  double epsrel = 1e-4;
+  double abserr;
+  size_t neval;
+  gsl_function F;
+  integrationParams_t pars;
+
+  /* ----- check input arguments ----- */
+  if ( !Bstat || !dBstat || !M_mu_nu || !x_mu_i ) {
+    LogPrintf ( LOG_CRITICAL, "%s: illegal NULL input vector passed.\n", fn);
+    return XLAL_EINVAL;
+  }
+  numDraws = Bstat->size;
+  if ( (M_mu_nu->size1 != 4) || (M_mu_nu->size2 != 4) ) {
+    LogPrintf ( LOG_CRITICAL, "%s: antenna-pattern matrix M_mu_nu must be 4x4.\n", fn);
+    return XLAL_EINVAL;
+  }
+  if ( (x_mu_i->size1 != numDraws) || (x_mu_i->size2 != 4) ) {
+    LogPrintf ( LOG_CRITICAL, "%s: input vector-list x_mu_i must be numDraws x 4.\n", fn);
+    return XLAL_EINVAL;
+  }
+
+  /* ----- prepare Gauss-Kronod integrator ----- */
+  pars.M11 = gsl_matrix_get ( M_mu_nu, 0, 0 );
+  pars.M22 = gsl_matrix_get ( M_mu_nu, 1, 1 );
+  pars.M12 = gsl_matrix_get ( M_mu_nu, 0, 1 );
+
+  F.function = &BstatIntegrandOuter;
+  F.params = &pars;
+
+  for ( row=0; row < numDraws; row ++ )
+    {
+      gsl_vector_const_view xi = gsl_matrix_const_row ( x_mu_i, row );
+      double Bb;
+      double CosiLower, CosiUpper;
+
+      pars.x_mu = &(xi.vector);
+
+      /* Integration boundaries */
+      CosiLower = -1;
+      CosiUpper =  1;
+
+      /* Function: int gsl_integration_qng (const gsl_function * f, double a, double b, double epsabs, double epsrel,
+       *                                    double * result, double * abserr, size_t * neval)
+       * This function applies the Gauss-Kronrod 10-point, 21-point, 43-point and 87-point integration rules in succession
+       * until an estimate of the integral of f over (a,b) is achieved within the desired absolute and relative error limits,
+       * epsabs and epsrel. The function returns the final approximation, result, an estimate of the absolute error, abserr
+       * and the number of function evaluations used, neval. The Gauss-Kronrod rules are designed in such a way that each rule
+       * uses all the results of its predecessors, in order to minimize the total number of function evaluations.
+       */
+      if ( (gslstat = gsl_integration_qng ( &F, CosiLower, CosiUpper, epsabs, epsrel, &Bb, &abserr, &neval)) ) {
+	LogPrintf ( LOG_CRITICAL, "%s: row = %d: gsl_integration_qng() failed: abserr=%f, neval=%d, %s\n",
+		    fn, row, abserr, neval, gsl_strerror (gslstat) );
+	return 1;
+      }
+
+      gsl_vector_set ( Bstat, row, prefact * Bb );
+      gsl_vector_set ( dBstat, row, abserr );
+
+    } /* row < numDraws */
+
+  return 0;
+
+} /* XLALcomputeBstatisticGauss() */
+
+
+/** log likelihood ratio lnL marginalized over {h0, phi0} (analytical) and integrated over psi in [-pi/4,pi/4], for
+ * given cosi: BstatIntegrandOuter(cosi) = int lnL dh0 dphi0 dpsi
+ *
+ * This function is of type gsl_function for gsl-integration over cosi
+ *
+ */
+double
+BstatIntegrandOuter ( double cosi, void *p )
+{
+  const char *fn = "BstatIntegrandOuter()";
+  integrationParams_t *par = (integrationParams_t *) p;
+  gsl_function F;
+  double epsabs = 0;
+  double epsrel = 1e-4;
+  double abserr;
+  size_t neval;
+  double ret;
+  double PsiLower, PsiUpper;
+  int gslstat;
+
+  par->cosi = cosi;
+  F.function = &BstatIntegrandInner;
+  F.params = p;
+
+  /* Integration boundaries */
+  PsiLower = -LAL_PI_4;
+  PsiUpper =  LAL_PI_4;
+
+  /* Function: int gsl_integration_qng (const gsl_function * f, double a, double b, double epsabs, double epsrel,
+   *                                    double * result, double * abserr, size_t * neval)
+   * This function applies the Gauss-Kronrod 10-point, 21-point, 43-point and 87-point integration rules in succession
+   * until an estimate of the integral of f over (a,b) is achieved within the desired absolute and relative error limits,
+   * epsabs and epsrel. The function returns the final approximation, result, an estimate of the absolute error, abserr
+   * and the number of function evaluations used, neval. The Gauss-Kronrod rules are designed in such a way that each rule
+   * uses all the results of its predecessors, in order to minimize the total number of function evaluations.
+   */
+  if ( (gslstat = gsl_integration_qng ( &F, PsiLower, PsiUpper, epsabs, epsrel, &ret, &abserr, &neval)) ) {
+    LogPrintf ( LOG_CRITICAL, "%s: gsl_integration_qng() failed: abserr=%f, neval=%d, %s\n",
+		fn, abserr, neval, gsl_strerror (gslstat) );
+    abort();
+  }
+
+  return ret;
+
+} /* BstatIntegrandOuter() */
+
+
+/** log likelihood ratio lnL marginalized over {h0, phi0} (analytical) for given psi and pars->cosi
+ * BstatIntegrandInner(cosi,psi) = int lnL dh0 dphi0
+ *
+ * This function is of type gsl_function for gsl-integration over psi at fixed cosi,
+ * and represents a simple wrapper around BstatIntegrand() for gsl-integration.
+ *
+ */
+double
+BstatIntegrandInner ( double psi, void *p )
+{
+  const char *fn = "BstatIntegrandInner()";
+  integrationParams_t *par = (integrationParams_t *) p;
+  double Amp[2], ret;
+
+  Amp[0] = par->cosi;
+  Amp[1] = psi;
+
+  ret = BstatIntegrand ( Amp, 2, p );
+
+  return ret;
+
+} /* BstatIntegrandInner() */
+
+
+/** compute log likelihood ratio lnL for given Amp = {h0, cosi, psi, phi0} and M_{mu,nu}.
+ * computes lnL = A^mu x_mu - 1/2 A^mu M_mu_nu A^nu.
+ *
+ * This function is of type gsl_monte_function for gsl Monte-Carlo integration.
+ *
+ */
+double
+BstatIntegrand ( double Amp[], size_t dim, void *p )
+{
+  integrationParams_t *par = (integrationParams_t *) p;
+  double x1, x2, x3, x4;
+  double al1, al2, al3, al4;
+  double eta, etaSQ, etaSQp1SQ;
+  double psi, sin2psi, cos2psi, sin2psiSQ, cos2psiSQ;
+  double AMA, qSQ, arg0;
+  double integrand;
+
+  if ( dim != 2 ) {
+    LogPrintf (LOG_CRITICAL, "Error: BstatIntegrand() was called with illegal dim = %d != 2\n", dim );
+    abort ();
+  }
+
+  /* introduce a few handy shortcuts */
+  x1 = gsl_vector_get ( par->x_mu, 0 );
+  x2 = gsl_vector_get ( par->x_mu, 1 );
+  x3 = gsl_vector_get ( par->x_mu, 2 );
+  x4 = gsl_vector_get ( par->x_mu, 3 );
+
+  eta = Amp[0];
+  etaSQ = SQ(eta);			/* eta^2 */
+  etaSQp1SQ = SQ ( (1.0 + etaSQ) );	/* (1+eta^2)^2 */
+
+  psi = Amp[1];
+  sin2psi = sin ( 2.0 * psi );
+  cos2psi = cos ( 2.0 * psi );
+  sin2psiSQ = SQ(sin2psi);
+  cos2psiSQ = SQ(cos2psi);
+
+  /* compute amplitude-params alpha1, alpha2, alpha3 and alpha4 */
+  al1 = 0.25 * etaSQp1SQ * cos2psiSQ + etaSQ * sin2psiSQ;
+  al2 = 0.25 * etaSQp1SQ * sin2psiSQ + etaSQ * cos2psiSQ;
+  al3 = 0.25 * SQ( (1.0 - etaSQ) ) * sin2psi * cos2psi;
+  al4 = eta * ( 1.0 + etaSQ );
+
+  /* STEP 1: compute AMA = A^mu M_mu_nu A^nu / h0^2 */
+  AMA = al1 * par->M11 + al2 * par->M22 + 2.0 * al3 * par->M12;
+
+  /* STEP2: compute q^2 */
+  qSQ = al1 * ( SQ(x1) + SQ(x3) ) + al2 * ( SQ(x2) + SQ(x4) ) + 2.0 * al3 * ( x1 * x2 + x3 * x4 ) + al4 * ( x1 * x4 - x2 * x3 );
+
+  /* STEP3 : put all the pieces together */
+  arg0 = 0.25 * qSQ  / AMA;
+
+  integrand = pow(AMA, -0.5) * exp(arg0) * gsl_sf_bessel_I0(arg0);
+
+  if ( lalDebugLevel >= 2 )
+    printf ("%f   %f    %f\n", eta, psi, integrand );
+
+  return integrand;
+
+} /* BstatIntegrand() */
+
+
+/** Convert amplitude params {h0, cosi, psi, phi0} into amplitude vector A^mu.
+ *
+ * NOTE: We rely on Amu[] being allocated 4-dim vector!
+ */
+int
+XLALAmplitudeParams2Vect ( REAL8 Amu[], REAL8 h0, REAL8 cosi, REAL8 psi, REAL8 phi0 )
+{
+  REAL8 aPlus = 0.5 * h0 * ( 1.0 + SQ(cosi) );
+  REAL8 aCross = h0 * cosi;
+  REAL8 cos2psi = cos ( 2.0 * psi );
+  REAL8 sin2psi = sin ( 2.0 * psi );
+  REAL8 cosphi0 = cos ( phi0 );
+  REAL8 sinphi0 = sin ( phi0 );
+
+  if ( !Amu )
+    return -1;
+
+  Amu[0] =  aPlus * cos2psi * cosphi0 - aCross * sin2psi * sinphi0;
+  Amu[1] =  aPlus * sin2psi * cosphi0 + aCross * cos2psi * sinphi0;
+  Amu[2] = -aPlus * cos2psi * sinphi0 - aCross * sin2psi * cosphi0;
+  Amu[3] = -aPlus * sin2psi * sinphi0 + aCross * cos2psi * cosphi0;
+
+  return 0;
+
+} /* XLALAmplitudeParams2Vect() */
+
