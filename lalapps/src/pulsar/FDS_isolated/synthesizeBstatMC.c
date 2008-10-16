@@ -166,7 +166,9 @@ void initUserVars (LALStatus *status, UserInput_t *uvar );
 int InitCode ( ConfigVariables *cfg, const UserInput_t *uvar );
 double BstatIntegrand ( double A[], size_t dim, void *p );
 int XLALAmplitudeParams2Vect ( REAL8 Amu[], REAL8 h0, REAL8 cosi, REAL8 psi, REAL8 phi0 );
-int XLALsynthesizeData ( gsl_matrix **x_mu_i, UINT4 numDraws, const gsl_matrix *M_mu_nu, const gsl_vector *s_mu, gsl_rng * rng );
+int XLALsynthesizeData ( gsl_matrix *x_mu_i, const gsl_matrix *M_mu_nu, const gsl_vector *s_mu, gsl_rng * rng );
+int XLALcomputeLogLikelihood ( gsl_vector *lnL, REAL8 *rho2, const gsl_vector *A_Mu, const gsl_matrix *x_mu_i);
+
 
 /*---------- empty initializers ---------- */
 
@@ -189,6 +191,7 @@ int main(int argc,char *argv[])
   UINT4 i;
   int gslstat;
   REAL8 rho2;	/* optimal SNR^2 */
+  UINT4 numDraws;
 
   lalDebugLevel = 0;
   vrbflg = 1;	/* verbose error-messages */
@@ -216,62 +219,50 @@ int main(int argc,char *argv[])
     return 0;
   }
 
-  /* Initialize code-setup */
+  /* ---------- Initialize code-setup ---------- */
   if ( InitCode( &GV, &uvar ) ) {
     LogPrintf (LOG_CRITICAL, "InitCode() failed with error = %d\n", xlalErrno );
     return 1;
   }
+  numDraws = (UINT4)uvar.numDraws;
 
-  if ( XLALsynthesizeData( &x_mu_i, (UINT4)uvar.numDraws, GV.M_mu_nu, GV.s_mu, GV.rng ) ) {
+  /* ---------- prepare data-vectors of numDraws entries ---------- */
+  /* ----- data-components x_mu */
+  if ( ( x_mu_i = gsl_matrix_calloc ( numDraws, 4 ) ) == NULL ) {
+    LogPrintf ( LOG_CRITICAL, "Out of memory.\n");
+    return XLAL_ENOMEM;
+  }
+  /* ----- log-likelihood */
+  if ( (lnL = gsl_vector_calloc ( numDraws ) ) == NULL) {
+    LogPrintf ( LOG_CRITICAL, "Out of memory?\n");
+    return 1;
+  }
+  /* ----- F-statistic */
+  if ( (FStat = gsl_vector_calloc ( (UINT4)uvar.numDraws ) ) == NULL) {
+    LogPrintf ( LOG_CRITICAL, "Out of memory?\n");
+    return 1;
+  }
+  /* ----- B-statistic */
+  if ( (BStat = gsl_vector_calloc ( (UINT4)uvar.numDraws ) ) == NULL) {
+    LogPrintf ( LOG_CRITICAL, "Out of memory?\n");
+    return 1;
+  }
+  if ( (dBStat = gsl_vector_calloc ( (UINT4)uvar.numDraws ) ) == NULL) {
+    LogPrintf ( LOG_CRITICAL, "Out of memory?\n");
+    return 1;
+  }
+
+  /* ---------- generate numDraws random draws of signal + noise ==> x_mu_i */
+  if ( XLALsynthesizeData( x_mu_i, GV.M_mu_nu, GV.s_mu, GV.rng ) ) {
     LogPrintf (LOG_CRITICAL, "XLALsynthesizeData() failed with error = %d\n", xlalErrno );
     return 1;
   }
 
   /* ---------- compute log likelihood ratio lnL ---------- */
-  /* this assumes *known* A^Mu of course
-   * computes lnL = A^mu x_mu - 1/2 A^mu M_mu_nu A^nu
-   *              = A^mu x_mu - 1/2 A^mu s_mu
-   */
-  {
-    if ( (lnL = gsl_vector_calloc ( (UINT4)uvar.numDraws ) ) == NULL) {
-      LogPrintf ( LOG_CRITICAL, "Out of memory?\n");
-      return 1;
-    }
-
-    /* STEP 1: compute A^mu x_mu (--> vector of numDraws scalars)*/
-
-    /* Function: int gsl_blas_dgemv (CBLAS_TRANSPOSE_t TransA, double alpha, const gsl_matrix * A, const gsl_vector * x, double beta, gsl_vector * y)
-     *
-     * These functions compute the matrix-vector product and sum y = \alpha op(A) x + \beta y,
-     * where op(A) = A, A^T, A^H for TransA = CblasNoTrans, CblasTrans, CblasConjTrans.
-     */
-    if ( (gslstat = gsl_blas_dgemv (CblasNoTrans, 1.0, x_mu_i, GV.A_Mu, 0.0, lnL)) ) {
-      LogPrintf ( LOG_CRITICAL, "gsl_blas_dgemv(x_mu_i * A^mu) failed: %s\n", gsl_strerror (gslstat) );
-      return 1;
-    }
-
-    /* STEP 2: compute the single scalar "optimal SNR^2": rho2 = A^mu M_mu_nu A^nu = A^mu s_mu */
-
-    /* Function: int gsl_blas_ddot (const gsl_vector * x, const gsl_vector * y, double * result)
-     *
-     * These functions compute the scalar product x^T y for the vectors x and y, returning the result in result.
-     */
-    if ( (gslstat = gsl_blas_ddot (GV.A_Mu, GV.s_mu, &rho2)) ) {
-      LogPrintf ( LOG_CRITICAL, "rho2 = gsl_blas_ddot(A^mu * s_mu) failed: %s\n", gsl_strerror (gslstat) );
-      return 1;
-    }
-
-    /* STEP 3: combine results for lnL = A^mu x_mu - 1/2 A^mu M_mu_nu A^nu */
-    /* Function: int gsl_vector_add_constant (gsl_vector * a, const double x)
-     *
-     * This function adds the constant value x to the elements of the vector a, a'_i = a_i + x.
-     */
-    if ( ( gslstat = gsl_vector_add_constant (lnL, - 0.5 * rho2)) ) {
-      LogPrintf ( LOG_CRITICAL, "gsl_vector_add_constant(lnL - 1/2 A^mu s_mu) failed: %s\n", gsl_strerror (gslstat) );
-      return 1;
-    }
-
-  } /* compute lnL */
+  if ( XLALcomputeLogLikelihood ( lnL, &rho2, GV.A_Mu, x_mu_i) ) {
+    LogPrintf (LOG_CRITICAL, "XLALcomputeLogLikelihood() failed with error = %d\n", xlalErrno );
+    return 1;
+  }
 
   /* ---------- compute F-stat values ---------- */
   {
@@ -280,11 +271,6 @@ int main(int argc,char *argv[])
     gsl_permutation *perm = gsl_permutation_calloc ( 4 );
     gsl_matrix *Mmunu_LU = gsl_matrix_calloc ( 4, 4 );
     gsl_matrix_memcpy (Mmunu_LU, GV.M_mu_nu);
-
-    if ( (FStat = gsl_vector_calloc ( (UINT4)uvar.numDraws ) ) == NULL) {
-      LogPrintf ( LOG_CRITICAL, "Out of memory?\n");
-      return 1;
-    }
 
     /* Function: int gsl_linalg_LU_decomp (gsl_matrix * A, gsl_permutation * p, int * signum)
      *
@@ -342,15 +328,6 @@ int main(int argc,char *argv[])
   } /* compute F-stat draws */
 
   /* ---------- compute B-stat values ---------- */
-  if ( (BStat = gsl_vector_calloc ( (UINT4)uvar.numDraws ) ) == NULL) {
-    LogPrintf ( LOG_CRITICAL, "Out of memory?\n");
-    return 1;
-  }
-  if ( (dBStat = gsl_vector_calloc ( (UINT4)uvar.numDraws ) ) == NULL) {
-    LogPrintf ( LOG_CRITICAL, "Out of memory?\n");
-    return 1;
-  }
-
   {
     gsl_monte_vegas_state * MCS_vegas = gsl_monte_vegas_alloc ( 2 );
     gsl_monte_function F;
@@ -600,9 +577,8 @@ InitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
   }
 
   /* ----- initialize random-number generator ----- */
-  /*
-    cfg->rng = gsl_rng_alloc (gsl_rng_taus);
-  */
+  /* read out environment variables GSL_RNG_xxx */
+  gsl_rng_env_setup ();
   cfg->rng = gsl_rng_alloc (gsl_rng_default);
 
   LogPrintf ( LOG_DEBUG, "random-number generator type: %s\n", gsl_rng_name (cfg->rng));
@@ -669,7 +645,8 @@ BstatIntegrand ( double Amp[], size_t dim, void *p )
 
   integrand = pow(AMA, -0.5) * exp(arg0) * gsl_sf_bessel_I0(arg0);
 
-  printf ("%f   %f    %f\n", eta, psi, integrand );
+  if ( lalDebugLevel >= 2 )
+    printf ("%f   %f    %f\n", eta, psi, integrand );
 
   return integrand;
 
@@ -702,12 +679,12 @@ XLALAmplitudeParams2Vect ( REAL8 Amu[], REAL8 h0, REAL8 cosi, REAL8 psi, REAL8 p
 
 } /* XLALAmplitudeParams2Vect() */
 
+
 /** Generate random-noise draws and combine with (FIXME: single!) signal.
  *  Returns a list of numDraws vectors {x_mu}
  */
 int
-XLALsynthesizeData ( gsl_matrix **x_mu_i,		/**< [OUT] list of numDraws 4D line-vectors {x_mu = n_mu + s_mu} */
-		     UINT4 numDraws,			/**< number of random-draws to generate data for */
+XLALsynthesizeData ( gsl_matrix *x_mu_i,		/**< [OUT] list of numDraws 4D line-vectors {x_mu = n_mu + s_mu} */
 		     const gsl_matrix *M_mu_nu,		/**< 4x4 antenna-pattern matrix */
 		     const gsl_vector *s_mu,		/**< 4D vector of 'signal components' s_mu = (s|h_mu) FIXME: relax to random-signals*/
 		     gsl_rng * rng			/**< gsl random-number generator */
@@ -716,14 +693,22 @@ XLALsynthesizeData ( gsl_matrix **x_mu_i,		/**< [OUT] list of numDraws 4D line-v
   const CHAR *fn = "XLALsynthesizeData()";
   gsl_matrix *tmp, *M_chol;
   UINT4 row, col;
-  gsl_matrix *normal, *x_mu_list;
+  gsl_matrix *normal;
   int gslstat;
+  UINT4 numDraws;
 
   /* ----- check input arguments ----- */
   if ( !x_mu_i || !M_mu_nu || M_mu_nu->size1 != M_mu_nu->size2 || M_mu_nu->size1 != 4 ) {
     LogPrintf ( LOG_CRITICAL, "%s: Invalid input, M_mu_nu must be a 4x4 matrix.", fn );
     return XLAL_EINVAL;
   }
+
+  if ( x_mu_i->size2 != 4 ) {
+    LogPrintf ( LOG_CRITICAL, "%s: Invalid input, x_mu_i must be a numDrawsx4 matrix.", fn );
+    return XLAL_EINVAL;
+  }
+
+  numDraws = x_mu_i->size1;
 
   /* ----- Cholesky decompose M_mu_nu = L^T * L ----- */
   if ( (M_chol = gsl_matrix_calloc ( 4, 4 ) ) == NULL) {
@@ -761,17 +746,12 @@ XLALsynthesizeData ( gsl_matrix **x_mu_i,		/**< [OUT] list of numDraws 4D line-v
     } /* for row < numDraws */
 
   /* use normal-variates with Cholesky decomposed matrix to get n_mu with cov(n_mu,n_nu) = M_mu_nu */
-  if ( ( x_mu_list = gsl_matrix_calloc ( numDraws, 4 ) ) == NULL ) {
-    LogPrintf ( LOG_CRITICAL, "Out of memory?\n");
-    return XLAL_ENOMEM;
-  }
-
   for ( row = 0; row < numDraws; row ++ )
     {
       gsl_vector_const_view normi = gsl_matrix_const_row ( normal, row );
-      gsl_vector_view xi = gsl_matrix_row ( x_mu_list, row );
+      gsl_vector_view xi = gsl_matrix_row ( x_mu_i, row );
 
-      gsl_matrix_set_row ( x_mu_list, row, s_mu);	/* initialize x_mu = s_mu */
+      gsl_matrix_set_row ( x_mu_i, row, s_mu);	/* initialize x_mu = s_mu */
 
       /* int gsl_blas_dgemv (CBLAS_TRANSPOSE_t TransA, double alpha, const gsl_matrix * A, const gsl_vector * x, double beta, gsl_vector * y)
        * compute the matrix-vector product and sum y = \alpha op(A) x + \beta y, where op(A) = A, A^T, A^H
@@ -788,8 +768,71 @@ XLALsynthesizeData ( gsl_matrix **x_mu_i,		/**< [OUT] list of numDraws 4D line-v
   gsl_matrix_free ( M_chol );
   gsl_matrix_free ( normal );
 
-  (*x_mu_i) = x_mu_list;
-
   return XLAL_SUCCESS;
 
 } /* XLALsynthesizeData() */
+
+
+
+int
+XLALcomputeLogLikelihood ( gsl_vector *lnL,		/**< [OUT] log-likelihood vector */
+			   REAL8 *rho2,			/**< [OUT] optimal SNR^2 rho2 = (s|s) = A^mu s_mu (FIXME)*/
+			   const gsl_vector *A_Mu,	/**< 4D amplitude-vector (FIXME: numDraws) */
+			   const gsl_matrix *x_mu_i	/**< numDraws x 4D data-vectors x_mu */
+			   )
+{
+  const char *fn = "XLALcomputeLogLikelihood()";
+  int gslstat;
+  UINT4 numDraws;
+
+  /* ----- check input arguments ----- */
+  if ( !lnL || !A_Mu || !x_mu_i ) {
+    LogPrintf ( LOG_CRITICAL, "%s: illegal NULL input vector passed.\n", fn);
+    return XLAL_EINVAL;
+  }
+  numDraws = lnL->size;
+  if ( A_Mu->size != 4 ) {
+    LogPrintf ( LOG_CRITICAL, "%s: input Amplitude-vector A^mu must be 4D.\n", fn);
+    return XLAL_EINVAL;
+  }
+  if ( (x_mu_i->size1 != numDraws) || (x_mu_i->size2 != 4) ) {
+    LogPrintf ( LOG_CRITICAL, "%s: input vector-list x_mu_i must be numDraws x 4.\n", fn);
+    return XLAL_EINVAL;
+  }
+
+  /* STEP1: compute the single scalar "optimal SNR^2": rho2 = A^mu M_mu_nu A^nu = A^mu s_mu for the signal(s) [FIXME]*/
+
+  /* Function: int gsl_blas_ddot (const gsl_vector * x, const gsl_vector * y, double * result)
+   * These functions compute the scalar product x^T y for the vectors x and y, returning the result in result.
+   */
+  if ( (gslstat = gsl_blas_ddot (GV.A_Mu, GV.s_mu, rho2)) ) {
+    LogPrintf ( LOG_CRITICAL, "%s: rho2 = gsl_blas_ddot(A^mu * s_mu) failed: %s\n", fn, gsl_strerror (gslstat) );
+    return 1;
+  }
+
+  /* STEP 2: compute A^mu x_mu (--> vector of numDraws scalars)*/
+
+  /* Function: int gsl_blas_dgemv (CBLAS_TRANSPOSE_t TransA, double alpha, const gsl_matrix * A, const gsl_vector * x, double beta, gsl_vector * y)
+   *
+   * These functions compute the matrix-vector product and sum y = \alpha op(A) x + \beta y,
+   * where op(A) = A, A^T, A^H for TransA = CblasNoTrans, CblasTrans, CblasConjTrans.
+   */
+  if ( (gslstat = gsl_blas_dgemv (CblasNoTrans, 1.0, x_mu_i, A_Mu, 0.0, lnL)) ) {
+    LogPrintf ( LOG_CRITICAL, "%s: gsl_blas_dgemv(x_mu_i * A^mu) failed: %s\n", fn, gsl_strerror (gslstat) );
+    return 1;
+  }
+
+
+  /* STEP 3: combine results for lnL = A^mu x_mu - 1/2 A^mu M_mu_nu A^nu */
+  /* Function: int gsl_vector_add_constant (gsl_vector * a, const double x)
+   *
+   * This function adds the constant value x to the elements of the vector a, a'_i = a_i + x.
+   */
+  if ( ( gslstat = gsl_vector_add_constant (lnL, - 0.5 * (*rho2) )) ) {
+    LogPrintf ( LOG_CRITICAL, "%s: gsl_vector_add_constant(lnL - 1/2 A^mu s_mu) failed: %s\n", fn, gsl_strerror (gslstat) );
+    return 1;
+  }
+
+  return 0;
+
+} /* XLALcomputeLogLikelihood() */
