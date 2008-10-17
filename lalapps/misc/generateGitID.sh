@@ -40,13 +40,14 @@ if test "$git_log_ok" = "true"; then
     git_udate=`eval $logcmd_udate`;
     git_author=`eval $logcmd_author`;
     git_title=`eval $logcmd_title`;
-    logcmd_date_utc="perl -e '@t=gmtime($git_udate); printf(\"%04d-%02d-%02d %02d:%02d:%02d +0000\",1900+\$t[5],1+\$t[4],\$t[3],\$t[2],\$t[1],\$t[0]);'"
+    logcmd_date_utc="perl -e '@t=gmtime($git_udate); printf(\"%04d-%02d-%02d %02d:%02d:%02d UTC\",1900+\$t[5],1+\$t[4],\$t[3],\$t[2],\$t[1],\$t[0]);'"
     git_date_utc=`eval $logcmd_date_utc`;
 else
     git_id="unknown.";
     git_author="unknown.";
     git_title="unknown.";
-    git_date_utc="1980-01-06 00:00:00 +0000";
+## If date unknown, use GPS 0 so it can still be parsed
+    git_date_utc="1980-01-06 00:00:00 UTC";
 fi
 
 ## ---------- check for modified/added git-content [ignores untracked files!] ----------
