@@ -409,8 +409,8 @@ int main(int argc, char *argv[]) {
 	      /* Create mismatch from centre of bin */
 	      const double mismatch = 0.5 * (left_bin + right_bin) * max_mismatch;
 
-	      /* 2F is increase by this factor */
-	      twoF_mism_factor = 1.0 / (1.0 - mismatch);
+	      /* 2F is multiplied by this factor */
+	      twoF_mism_factor = 1.0 - mismatch;
 
 	      /* This factor has this probability */
  	      prob_mism = prob_bin;
