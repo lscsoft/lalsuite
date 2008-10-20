@@ -78,19 +78,19 @@
 #define FALSE (1==0)
 
 /*----- Error-codes -----*/
-#define PREDICTFSTAT_ENULL 	1
-#define PREDICTFSTAT_ESYS     	2
-#define PREDICTFSTAT_EINPUT   	3
-#define PREDICTFSTAT_EMEM   	4
-#define PREDICTFSTAT_ENONULL 	5
-#define PREDICTFSTAT_EXLAL	6
+#define SYNTHBSTAT_ENULL 	1
+#define SYNTHBSTAT_ESYS     	2
+#define SYNTHBSTAT_EINPUT   	3
+#define SYNTHBSTAT_EMEM   	4
+#define SYNTHBSTAT_ENONULL 	5
+#define SYNTHBSTAT_EXLAL	6
 
-#define PREDICTFSTAT_MSGENULL 	"Arguments contained an unexpected null pointer"
-#define PREDICTFSTAT_MSGESYS	"System call failed (probably file IO)"
-#define PREDICTFSTAT_MSGEINPUT  "Invalid input"
-#define PREDICTFSTAT_MSGEMEM   	"Out of memory. Bad."
-#define PREDICTFSTAT_MSGENONULL "Output pointer is non-NULL"
-#define PREDICTFSTAT_MSGEXLAL	"XLALFunction-call failed"
+#define SYNTHBSTAT_MSGENULL 	"Arguments contained an unexpected null pointer"
+#define SYNTHBSTAT_MSGESYS	"System call failed (probably file IO)"
+#define SYNTHBSTAT_MSGEINPUT  "Invalid input"
+#define SYNTHBSTAT_MSGEMEM   	"Out of memory. Bad."
+#define SYNTHBSTAT_MSGENONULL "Output pointer is non-NULL"
+#define SYNTHBSTAT_MSGEXLAL	"XLALFunction-call failed"
 
 /** convert GPS-time to REAL8 */
 #define GPS2REAL8(gps) (1.0 * (gps).gpsSeconds + 1.e-9 * (gps).gpsNanoSeconds )
@@ -304,7 +304,7 @@ int main(int argc,char *argv[])
       if ( (fpStat = fopen (uvar.outputStats, "wb")) == NULL)
 	{
 	  LALPrintError ("\nError opening file '%s' for writing..\n\n", uvar.outputStats);
-	  return (PREDICTFSTAT_ESYS);
+	  return (SYNTHBSTAT_ESYS);
 	}
 
       /* log search-footprint at head of output-file */
@@ -486,7 +486,7 @@ InitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
   /* ----- set up M_mu_nu matrix ----- */
   if ( ( cfg->M_mu_nu = gsl_matrix_calloc ( 4, 4 )) == NULL ) {
     LogPrintf (LOG_CRITICAL, "%s: Seem to be out of memory!\n", fn);
-    return PREDICTFSTAT_EMEM;
+    return SYNTHBSTAT_EMEM;
   }
   {
     gsl_matrix_set (cfg->M_mu_nu, 0, 0,   uvar->M11 );
