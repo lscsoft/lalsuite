@@ -2794,7 +2794,7 @@ class candidateList:
             fp.close()
             return
         format="%s\t"
-        entryFormat="%10.5f\t"
+        entryFormat="%15.15e\t"
         if (glitchDatabase.__len__() == 0):
             if self.verboseMode:
                 sys.stdout.write("Empty candidate object; no glitchDB info.\n")
@@ -2919,7 +2919,7 @@ def generateFileList(inputTXT):
             #Could possibly be just the name of single candidate file!
             objList=[]
             fp=open(dirnameFilename,'r')
-            objList=fp.readlines()
+            objList=[x.strip('\n')for x in fp.readlines()]
             fp.close()
             if str(objList[0]).__contains__('#'):
                 #This is a single candidate file specified
