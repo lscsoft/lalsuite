@@ -453,12 +453,12 @@ int main(int argc, char *argv[]) {
 	if (gsl_isnan(J) || gsl_isnan(dJ))
 	  break;
 	
+	/* Draw a 2F value from the non-central chi-square with parameter rho^2 */
+	twoF_from_pdf = twoF_mism_factor * ran_ncx2_4(rng, rho2);
+	
 	/* Count 2F value if it is below threshold */
 	if (twoF_from_pdf < twoFs)
 	  ++twoF_pdf_FD;
-	
-	/* Draw a 2F value from the non-central chi-square with parameter rho^2 */
-	twoF_from_pdf = twoF_mism_factor * ran_ncx2_4(rng, rho2);
 	
 	/* Add 2F to histogram if needed */
 	if (LALUserVarWasSet(&twoF_pdf_hist_file)) {
