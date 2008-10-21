@@ -16,14 +16,12 @@ else
 frameprogs =
 endif
 
-bin_PROGRAMS = $(frameprogs) lalapps_ConvertToSFTv2 lalapps_ConvertChunkToSFTv2 lalapps_LISAmakeSFTs
+bin_PROGRAMS = $(frameprogs) lalapps_ConvertToSFTv2 lalapps_LISAmakeSFTs
 
 if FRAME
 lalapps_MakeSFTs_SOURCES = MakeSFTs.c
 endif
 
 lalapps_ConvertToSFTv2_SOURCES = ConvertToSFTv2.c
-
-lalapps_ConvertChunkToSFTv2_SOURCES = ConvertChunkToSFTv2.c
 
 lalapps_LISAmakeSFTs_SOURCES = LISAmakeSFTs.c readxml.c readxml.h ezxml.c ezxml.h
