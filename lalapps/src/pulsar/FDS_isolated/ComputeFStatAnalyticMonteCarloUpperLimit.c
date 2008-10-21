@@ -111,7 +111,6 @@ int main(int argc, char *argv[]) {
   INT4 h0_iter = 0;
   INT4 MC_trials = 0;
   INT4 MC_iter = 0;
-  INT4 twoF_pdf_FD = 0;
   gsl_vector_int *twoF_pdf_hist = NULL;
     
   /* Initialise LAL error handler, debug level and log level */
@@ -358,8 +357,8 @@ int main(int argc, char *argv[]) {
       REAL8 dJ = 0.0;
       REAL8 total_prob_mism = 0.0;
 
-      /* False dismissal rate from 2F distribution */    
       REAL8 twoF_pdf_FDR = 0.0;
+      REAL8 twoF_pdf_FDR_num = 0.0;
       
       LogPrintf(LOG_DEBUG, "Beginning h0 loop %2i with h0=%0.4e, error=%0.4e, MC_trials=%i\n", h0_iter, h0, H0_ERROR, MC_trials);
       
@@ -373,7 +372,6 @@ int main(int argc, char *argv[]) {
 
       /* Begin Monte Carlo integration to find J and dJ */
       MC_iter = MC_trials;
-      twoF_pdf_FD = 0;
       while (MC_iter--) {
 
 	REAL8 twoF_mism_factor = 1.0;
@@ -456,9 +454,9 @@ int main(int argc, char *argv[]) {
 	/* Draw a 2F value from the non-central chi-square with parameter rho^2 */
 	twoF_from_pdf = twoF_mism_factor * ran_ncx2_4(rng, rho2);
 	
-	/* Count 2F value if it is below threshold */
+	/* Count 2F value (weighted by mismatch probability) if it is below threshold */
 	if (twoF_from_pdf < twoFs)
-	  ++twoF_pdf_FD;
+	  twoF_pdf_FDR_num += prob_mism;
 	
 	/* Add 2F to histogram if needed */
 	if (LALUserVarWasSet(&twoF_pdf_hist_file)) {
@@ -495,7 +493,7 @@ int main(int argc, char *argv[]) {
       dJ *= MC_int_vol / total_prob_mism;
       
       /* Compute the false dismissal rate from 2F distribution */
-      twoF_pdf_FDR = (1.0 * twoF_pdf_FD) / MC_trials;
+      twoF_pdf_FDR = twoF_pdf_FDR_num / total_prob_mism;
 
       /* Compute the increment in h0 from Newton-Raphson */
       dh0 = (FDR - J) / dJ;
