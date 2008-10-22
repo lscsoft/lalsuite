@@ -349,14 +349,14 @@ static void sighandler(int sig)
   show_progress() just sets some variables,
   so should be pretty fast and can be called several times a second
  */
-void show_progress(double rac,  /**< right ascension */
-		   double dec,  /**< declination */
-		   UINT4 count, /**< current skypoint counter */
-		   UINT4 total, /**< total number of skypoints */
+void show_progress(REAL8 rac,   /**< right ascension */
+		   REAL8 dec,   /**< declination */
+		   REAL8 count, /**< current skypoint counter */
+		   REAL8 total, /**< total number of skypoints */
 		   REAL8 freq,  /**< base frequency */
 		   REAL8 fband  /**< frequency bandwidth */
-		   ){
-  double fraction = (double)count / (double)total;
+		   ) {
+  double fraction = count / total;
 
   /* set globals to be written into next checkpoint */
   last_count = count;

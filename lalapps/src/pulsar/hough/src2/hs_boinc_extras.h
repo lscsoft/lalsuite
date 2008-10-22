@@ -101,9 +101,9 @@ extern LALStatus *global_status;
 
 /** show progress of the App.
     NOTE: This also sets the count & total (skypos) for checkpointing */
-extern void show_progress(double rac, double dec,
-			  UINT4 count, UINT4 total,
-			  REAL8 freq, REAL8 fband);
+extern void show_progress(REAL8 rac,   REAL8 dec,
+			  REAL8 count, REAL8 total,
+			  REAL8 freq,  REAL8 fband);
 
 /** inits checkpointing for the toplist and reads the last checkpoint if present
     This expects all passed variables (toplist, total, count) to be already
