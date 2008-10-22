@@ -2163,13 +2163,14 @@ void CalcTimeSeries(MultiSFTVector *multiSFTs)
       dt = 1.0/(Fmax-Fmin);
 
       /* For purposes of readability, I will use two REAL8sequence pointers called Real and Imag for now and then assign them to the TSeries as and when required */
-      Real = (REAL8Sequence*)XLALCreateREAL8Sequence(PointsinTimeSeries);
-      Imag = (REAL8Sequence*)XLALCreateREAL8Sequence(PointsinTimeSeries);
+      TSeries->Real[i]  = (REAL8Sequence*)XLALCreateREAL8Sequence(PointsinTimeSeries);
+      TSeries->Imag[i]  = (REAL8Sequence*)XLALCreateREAL8Sequence(PointsinTimeSeries);
       TSeries->Times[i] = (REAL8Sequence*)XLALCreateREAL8Sequence(PointsinTimeSeries);
+      Times = TSeries->Times[i];
 
       /*Assign memory for each TSeries Real and Imag parts */
-      TSeries->Real[i] = Real;
-      TSeries->Imag[i] = Imag;
+      /*TSeries->Real[i] = Real;
+	TSeries->Imag[i] = Imag;*/
 
       /* Store the Starting time */
       TSeries->epoch = REAL82GPS(StartTime);
@@ -2183,10 +2184,10 @@ void CalcTimeSeries(MultiSFTVector *multiSFTs)
       k = 0;
       
       /* Set the TSeries to Zeros to deal with gaps. */
-      for(p=0;p<Real->length;p++)
+      for(p=0;p<TSeries->Real[i]->length;p++)
 	{
-	  Real->data[p] = 0;
-	  Imag->data[p] = 0;
+	  TSeries->Real[i]->data[p] = 0;
+	  TSeries->Imag[i]->data[p] = 0;
 	}
       
       Block = 0;
@@ -2202,7 +2203,7 @@ void CalcTimeSeries(MultiSFTVector *multiSFTs)
 	      }
 	  TSeries->Times[i]->data[p] = TimesNow + k*dt;
 	  k++;
-	}
+	  }
       
       /* Calculate and store the Heterodyne Frequency*/ 
       /*TSeries->f_het = (uvar_Freq+uvar_FreqBand/2.0);*/
@@ -2296,7 +2297,7 @@ void CalcTimeSeries(MultiSFTVector *multiSFTs)
       XLALFree(C.StartTime);
       for(p=0;p<TSeries->Real[0]->length;p++)
 	{
-	  printf("%d %f %f %f %f %f\n",p,StartTime + p*dt,TSeries->Times[i]->data[p],StartTime+p*dt-TSeries->Times[i]->data[p],TSeries->Real[i]->data[p],TSeries->Imag[i]->data[p]);
+	  /*printf("%d %f %f %f %f %f\n",p,StartTime + p*dt,TSeries->Times[i]->data[p],StartTime+p*dt-TSeries->Times[i]->data[p],TSeries->Real[i]->data[p],TSeries->Imag[i]->data[p]);*/
 	  TSeries->Times[i]->data[p] = StartTime + p*dt;
 	}
 
