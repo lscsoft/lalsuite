@@ -522,11 +522,11 @@ y:g:G:K:N:X:O:J:M:r:fFR><)[:" ;
 
   /* default MCMC parameters */
   inputParams->mcmc.sigmas.h0 = 0.;           /* estimate from data */
-  inputParams->mcmc.sigmas.phi0 = LAL_PI/10.; /* 20th of phi range */
-  inputParams->mcmc.sigmas.psi = LAL_PI/40.;  /* 20th of psi range */
-  inputParams->mcmc.sigmas.ci = 0.1;          /* 20th of cosi range */
+  inputParams->mcmc.sigmas.phi0 = LAL_PI;     /* half of phi range */
+  inputParams->mcmc.sigmas.psi = LAL_PI/4.;   /* half of psi range */
+  inputParams->mcmc.sigmas.ci = 1.;           /* half of cosi range */
   
-  inputParams->mcmc.h0scale = 1./20.;         /* 20th of default value */
+  inputParams->mcmc.h0scale = 0.5;            /* half of default value */
 
   inputParams->mcmc.outputRate = 1;           /* output every sample */
 
