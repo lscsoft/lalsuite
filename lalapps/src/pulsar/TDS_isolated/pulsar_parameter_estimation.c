@@ -3177,13 +3177,13 @@ REAL8Array *check_positive_definite( REAL8Array *matrix ){
 
   LAL_CALL( LALDSymmetricEigenVectors( &status, eigenval, eigenvec ), &status );
 
-  for( i=0; i<(INT4)matrix->dimLength->data[0]; i++ ){
+  /* for( i=0; i<(INT4)matrix->dimLength->data[0]; i++ ){
     if( eigenval->data[i] < 0. && fabs(eigenval->data[i]) > 10.*LAL_REAL8_EPS){
       fprintf(stderr, "ABORT! Eigenvalue is negative. Non-postive definite \
 matrix!\n");
       exit(0);
     }
-  }
+  } */
 
   XLALDestroyREAL8Array( eigenvec );
   XLALDestroyREAL8Vector( eigenval );
