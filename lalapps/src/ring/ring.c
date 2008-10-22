@@ -248,6 +248,7 @@ static REAL4TimeSeries *ring_get_data( struct ring_params *params )
 {
   int stripPad = 0;
   REAL4TimeSeries *channel = NULL;
+  UINT4 j;
 
   /* compute the start and duration needed to pad data */
   params->frameDataStartTime = params->startTime;
@@ -287,7 +288,12 @@ static REAL4TimeSeries *ring_get_data( struct ring_params *params )
           params->calibCache, 1.0, params->channel ); 
     if ( params->writeRawData )
        write_REAL4TimeSeries( channel );  
-        
+    if( params->geoData ){
+      for (j=0; j<channel->data->length; j++){
+        channel->data->data[j] *= params->geoScale;
+      }
+    }
+    
     /* condition the data: resample and highpass */
     resample_REAL4TimeSeries( channel, params->sampleRate );
     if ( params->writeProcessedData ) /* write processed data */
