@@ -2753,23 +2753,28 @@ class candidateList:
             else:
                 spanFnorm=0
             #Create glitch database entry
-            glitchDatabaseEntry=[triggerStartString,
-                                 triggerStartFloat,
-                                 triggerLowF,
-                                 triggerDuration,
-                                 triggerBandwidth,
-                                 int(triggerLength),
-                                 triggerIntegratedPower,
-                                 meanPixelPower,
-                                 varPixelPower,
-                                 relativeTimeBP,
-                                 relativeFreqBP,
-                                 zScoreBP,
-                                 relativeTimeCM,
-                                 relativeFreqCM,
-                                 zScoreCM,
-                                 spanTnorm,
-                                 spanFnorm]
+            #Change so that there are NO negative entries 
+            #now (-1,1) becomes (0,2)
+            #for zScore we have (-inf,inf) to (-inf+10,inf+10)
+            unitTraitOffset=1
+            zScoreTraitOffset=10
+            glitchDatabaseEntry=[triggerStartString,            #0,1
+                                 triggerStartFloat,             #2
+                                 triggerLowF,                   #3
+                                 triggerDuration,               #4
+                                 triggerBandwidth,              #5
+                                 int(triggerLength),            #6
+                                 triggerIntegratedPower,        #7
+                                 meanPixelPower,                #8
+                                 varPixelPower,                 #9
+                                 relativeTimeBP+unitTraitOffset,#10
+                                 relativeFreqBP+unitTraitOffset,#11
+                                 zScoreBP+zScoreTraitOffset,    #12
+                                 relativeTimeCM+unitTraitOffset,#13
+                                 relativeFreqCM+unitTraitOffset,#13
+                                 zScoreCM+zScoreTraitOffset,    #14
+                                 spanTnorm+unitTraitOffset,     #15
+                                 spanFnorm+unitTraitOffset]     #16
             glitchDatabase.append(glitchDatabaseEntry)
         spinner.closeSpinner()
         return glitchDatabase
