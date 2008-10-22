@@ -231,16 +231,20 @@ INT4 main(INT4 argc, CHAR *argv[]){
       /* upper limit estimate comes from ~ h0 = 10.8*sqrt(Sn/T) */
       stdh0 = 10.8*sqrt(stdh0/((REAL8)j*60.));
 
+      /* set the MCMC h0 proposal step size at stdh0*scalefac */
+      if( inputs.mcmc.doMCMC == 1 ){
+        inputs.mcmc.sigmas.h0 = stdh0*inputs.mcmc.h0scale;
+        
+        if( inputs.mesh.maxVals.h0 == 0 )
+          inputs.mesh.maxVals.h0 = stdh0;
+      }
+
       /* set h0 max value for the grid at 5 times the expected ul */
       if( inputs.mesh.maxVals.h0 == 0 ){
         inputs.mesh.maxVals.h0 = 5.*stdh0;
         inputs.mesh.delta.h0 = (inputs.mesh.maxVals.h0 -
           inputs.mesh.minVals.h0)/(REAL8)(inputs.mesh.h0Steps - 1.);
       }
-
-      /* set the MCMC h0 proposal step size at stdh0*scalefac */
-      if( inputs.mcmc.doMCMC == 1 )
-        inputs.mcmc.sigmas.h0 = stdh0*inputs.mcmc.h0scale;
 
       if( verbose ) fprintf(stderr, "%le\n", stdh0);
     }
@@ -1176,6 +1180,7 @@ REAL8 log_posterior(REAL8 ****logLike, PriorVals prior, MeshGrid mesh,
 }
 
 
+
 /* function to marginalise posterior over requested parameter and output the log 
    evidence if requested */
 Results marginalise_posterior(REAL8 ****logPost, MeshGrid mesh, 
@@ -1654,6 +1659,8 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
   INT4 iterations = input.mcmc.iterations + input.mcmc.burnIn;  
   INT4 burnInLength = input.mcmc.burnIn; /* length of burn in */
 
+  INT4 acc=0, rej=0; /* count acceptance and rejection of new point */
+
   /* read the TEMPO par file for the pulsar */
   XLALReadTEMPOParFile( &pulsarParamsFixed, input.parFile );
 
@@ -1799,7 +1806,7 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
     matTrue = 1;
 
   if( matTrue ){
-    REAL8Array *cormat=NULL, *covmat=NULL, *posdef=NULL;
+    REAL8Array *cormat=NULL, *covmat=NULL, *posdef=NULL, *tempinvmat=NULL;
 
     paramData = XLALMalloc( MAXPARAMS*sizeof(ParamData) );
 
@@ -1807,34 +1814,42 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
     cormat = read_correlation_matrix( input.matrixFile, pulsarParamsFixed,
 paramData );
 
-    /* set covariance matrix */
-    covmat = create_covariance_matrix( paramData, cormat );
-
     /* allocate memory for inverse matrix */
-    invmat = XLALCreateREAL8Array( covmat->dimLength );
+    tempinvmat = XLALCreateREAL8Array( cormat->dimLength );
 
     /* check if correlation matrix is positive definite if necessary */
     if( (posdef = check_positive_definite( cormat )) == NULL ){
+      /* set covariance matrix */
+      covmat = create_covariance_matrix( paramData, cormat, 0 );
+
+      /* cholesky decompose matrix */
       chol = cholesky_decomp(covmat, "lower");
 
-      /* calculate the matrix inverse */
-      LAL_CALL( LALDMatrixInverse( &status, &determinant, covmat, invmat ),
-        &status );
+      /* create inverse of correlation matrix */
+      LAL_CALL( LALDMatrixInverse( &status, &determinant, cormat, 
+        tempinvmat), &status );
+
+      /* set inverse of covariance matrix */
+      invmat = create_covariance_matrix( paramData, tempinvmat, 1 );
     }
     else{
-      REAL8Array *tempmat=NULL;
-      tempmat = create_covariance_matrix( paramData, posdef );
+      /* set covariance matrix */
+      covmat = create_covariance_matrix( paramData, posdef, 0 );
 
-      chol = cholesky_decomp(tempmat, "lower");
+      /* cholesky decompose covariance matrix */
+      chol = cholesky_decomp(covmat, "lower");
 
-      /* calculate the matrix inverse */
-      LAL_CALL( LALDMatrixInverse( &status, &determinant, tempmat, invmat ),
+      /* create matrix inverse of correlation matrix */
+      LAL_CALL( LALDMatrixInverse( &status, &determinant, posdef, tempinvmat ),
         &status );
 
-      XLALDestroyREAL8Array( tempmat );
+      /* set inverse of covariance matrix */
+      invmat = create_covariance_matrix( paramData, tempinvmat, 1 );
+
       XLALDestroyREAL8Array( posdef );
     }
 
+    XLALDestroyREAL8Array( tempinvmat );
     XLALDestroyREAL8Array( cormat );
     XLALDestroyREAL8Array( covmat );
 
@@ -1881,8 +1896,8 @@ paramData );
   }
   else
     edat = NULL; /* make sure edat is NULL as this is how later functions
-                             decide whether or not to perform MCMC over all
-                             parameters */
+                    decide whether or not to perform MCMC over all
+                    parameters */
 
   /* set initial chain parameters */
   vars.h0 = input.mesh.minVals.h0 + (REAL8)XLALUniformDeviate(randomParams) *
@@ -2057,6 +2072,9 @@ paramData );
         }
         fprintf(fp, "\n");
       }
+
+      if( i > input.mcmc.burnIn - 1 )
+        rej++; /* count rejected steps */
 
       count++;
       continue;
@@ -2280,10 +2298,11 @@ paramData );
       }
 
       priorNew *= -0.5;
+
       logL2 += priorNew;
     }
 
-    /* set and apply priors on h0, psi, cos(iota) and phi is requested */
+    /* set and apply priors on h0, psi, cos(iota) and phi if requested */
     if( input.usepriors ){
       if(i==0){
         input.priors.vars.h0 = vars.h0;
@@ -2340,6 +2359,13 @@ paramData );
         extraVars[j] = extraVarsNew[j];
 
       logL1 = logL2;
+
+      if( i > input.mcmc.burnIn - 1 )
+        acc++; /* count acceptance number */
+    }
+    else{
+      if( i > input.mcmc.burnIn - 1 )
+        rej++; /* count rejection number */
     }
 
     /* printf out chains */
@@ -2368,6 +2394,14 @@ paramData );
   /*===============================================*/
 
   if( verbose ) fprintf(stderr, "\n");
+
+  /* print out acceptance ratio */
+  if( verbose ){
+    if( rej > 0 )
+      fprintf(stderr, "Acceptance ratio %.2lf\n", (double)acc/(double)rej);
+    else
+      fprintf(stderr, "No step rejected!!\n");
+  }
 
   /* destroy vectors */
   XLALDestroyREAL4Vector(randNum);
@@ -2768,6 +2802,15 @@ matrix\n");
     }
   }
 
+  /* if( verbose ){   
+    fprintf(stderr, "\nCholesky decomposed matrix:\n");   
+    for(i=0; i<length; i++){    
+       for(j=0; j<length; j++)   
+         fprintf(stderr, "%.2e  ", get_REAL8_matrix_value( A, i, j ));   
+       fprintf(stderr, "\n");    
+    }
+  } */
+
   return A;
 }
 
@@ -2999,9 +3042,17 @@ reading any correlation data!");
       }
 
       fscanf(fp, "%lf", &corTemp);
+
+      /* if covariance equals 1 set as 0.9999999, because values of 1
+           can cause problems of giving singular matrices */
+      if( (n != k) && (corTemp == 1.) )
+        corTemp = 0.9999999;
+
       set_REAL8_matrix_value( corMat, k, n, corTemp );
+
       if(n != k)
         set_REAL8_matrix_value( corMat, n, k, corTemp );
+
       n++;
     }
 
@@ -3037,7 +3088,8 @@ reading any correlation data!");
 
 
 /* function to turn the input /correlation/ matrix into a covariance matrix */
-REAL8Array *create_covariance_matrix( ParamData *data, REAL8Array *corMat ){
+REAL8Array *create_covariance_matrix( ParamData *data, REAL8Array *corMat, 
+  INT4 isinv ){
   REAL8Array *covMat=NULL;
   INT4 i=0, j=0;
 
@@ -3048,9 +3100,22 @@ REAL8Array *create_covariance_matrix( ParamData *data, REAL8Array *corMat ){
     if( data[i].matPos != 0 ){
       for(j=0;j<MAXPARAMS;j++){
         if( data[j].matPos != 0 ){
-          set_REAL8_matrix_value( covMat, data[i].matPos-1, data[j].matPos-1,
-          get_REAL8_matrix_value( corMat, data[i].matPos-1, data[j].matPos-1 ) *
-            data[i].sigma * data[j].sigma );
+          /* if covariance matrix then isinv = 0 */
+          if( isinv == 0 ){
+            set_REAL8_matrix_value( covMat, data[i].matPos-1, data[j].matPos-1,
+              get_REAL8_matrix_value( corMat, data[i].matPos-1, 
+              data[j].matPos-1 ) * data[i].sigma * data[j].sigma );
+          }
+          else if( isinv == 1 ){ /* doing matrix inverse */
+            set_REAL8_matrix_value( covMat, data[i].matPos-1, data[j].matPos-1,
+              get_REAL8_matrix_value( corMat, data[i].matPos-1, 
+              data[j].matPos-1 ) / ( data[i].sigma * data[j].sigma ) );
+          }
+          else{
+            fprintf(stderr, "Error... in setting covariance matrix isinv must \
+be 0 or 1\n");
+            exit(0);
+          } 
         }
       }
     }

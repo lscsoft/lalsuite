@@ -105,7 +105,7 @@ extern "C" {
 " --cisig             (REAL8) std. dev. of a gaussian prior on cos(iota)\n"\
 "\n"\
 " MCMC parameters:-\n"\
-" --mcmc              set to also perform an MCMC\n"\
+" --mcmc              set to perform an MCMC\n"\
 " --iterations        (INT4) the number of iteraction in the MCMC chain\n"\
 " --burn-in           (INT4) the number of burn in iterations\n"\
 " --temperature       (REAL8) the temperatue to start of the simulated\n\
@@ -375,7 +375,8 @@ REAL8Array *cholesky_decomp( REAL8Array *M, CHAR* uOrl );
 REAL8Array *read_correlation_matrix( CHAR *matrixFile, 
   BinaryPulsarParams params, ParamData *data );
 
-REAL8Array *create_covariance_matrix( ParamData *data, REAL8Array *corMat );
+REAL8Array *create_covariance_matrix( ParamData *data, REAL8Array *corMat, 
+  INT4 isinv );
 
 REAL8Array *check_positive_definite( REAL8Array *matrix );
 
