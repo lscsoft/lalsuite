@@ -1,5 +1,6 @@
 /*
- *  Copyright (C) 2007 Badri Krishnan  
+ *  Copyright (C) 2007 Badri Krishnan
+ *  Copyright (C) 2008 Christine Chung, Badri Krishnan and John Whelan
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,22 +18,29 @@
  *  MA  02111-1307  USA
  */
 
+/**
+ * \author Christine Chung, Badri Krishnan, John Whelan
+ * \date 2008
+ * \file 
+ * \ingroup pulsar
+ * \brief LAL routines for CW cross-correlation searches
+ *
+ * $Id$
+ *
+ */
 
-
-#include "./radiometer.h"
-/* lalapps includes */
-#include <lalapps.h>
 #include <lal/DopplerScan.h>
+#include <lal/PulsarCrossCorr.h>
 #include <gsl/gsl_permutation.h>
 
 
 
 RCSID( "$Id$");
 
-void CombineAllSFTs ( LALStatus *status,
-	      SFTVector **outsfts,	   
-	      MultiSFTVector *multiSFTs,  
-	      REAL8 length)
+void LALCombineAllSFTs ( LALStatus *status,
+			 SFTVector **outsfts,	   
+			 MultiSFTVector *multiSFTs,  
+			 REAL8 length)
 {
   SFTVector *ret;
   SFTtype *tmpsft = NULL;
@@ -95,11 +103,11 @@ void CombineAllSFTs ( LALStatus *status,
 
 }
 
-void CreateSFTPairsIndicesFrom2SFTvectors(LALStatus                *status,
-					 INT4VectorSequence        **out,
-					 SFTVector           *in,
-					 SFTPairParams             *par,
-					 INT4 			   detChoice)
+void LALCreateSFTPairsIndicesFrom2SFTvectors(LALStatus          *status,
+					     INT4VectorSequence **out,
+					     SFTVector          *in,
+					     SFTPairParams      *par,
+					     INT4 		detChoice)
 {
   
   UINT4 i, j, numsft, numPairs;
@@ -113,8 +121,8 @@ void CreateSFTPairsIndicesFrom2SFTvectors(LALStatus                *status,
   INITSTATUS (status, "CreateSFTPairsIndicesFrom2SFTvectors", rcsid);
   ATTATCHSTATUSPTR (status);
 
-  ASSERT (in, status, RADIOMETER_ENULL, RADIOMETER_MSGENULL);
-  ASSERT (par, status, RADIOMETER_ENULL, RADIOMETER_MSGENULL);
+  ASSERT (in, status, PULSARCROSSCORR_ENULL, PULSARCROSSCORR_MSGENULL);
+  ASSERT (par, status, PULSARCROSSCORR_ENULL, PULSARCROSSCORR_MSGENULL);
 
   /* number of SFTs */
   numsft = in->length;
@@ -198,14 +206,14 @@ void CreateSFTPairsIndicesFrom2SFTvectors(LALStatus                *status,
 
 
 /** Correlate a single pair of SFT at a parameter space point*/
-void CorrelateSingleSFTPair(LALStatus                *status,
-			    COMPLEX16                *out,
-			    COMPLEX8FrequencySeries  *sft1,
-			    COMPLEX8FrequencySeries  *sft2,
-	  	            REAL8FrequencySeries *psd1,
-		            REAL8FrequencySeries *psd2,
-			    REAL8                    *freq1,
-			    REAL8                    *freq2)
+void LALCorrelateSingleSFTPair(LALStatus                *status,
+			       COMPLEX16                *out,
+			       COMPLEX8FrequencySeries  *sft1,
+			       COMPLEX8FrequencySeries  *sft2,
+			       REAL8FrequencySeries     *psd1,
+			       REAL8FrequencySeries     *psd2,
+			       REAL8                    *freq1,
+			       REAL8                    *freq2)
 {  
   INT4 bin1, bin2;
   REAL8 deltaF;
@@ -213,10 +221,10 @@ void CorrelateSingleSFTPair(LALStatus                *status,
 
   INITSTATUS (status, "CorrelateSingleSFTPair", rcsid);
   ATTATCHSTATUSPTR (status);
-  ASSERT (sft1, status, RADIOMETER_ENULL, RADIOMETER_MSGENULL);
-  ASSERT (sft2, status, RADIOMETER_ENULL, RADIOMETER_MSGENULL);
-  ASSERT (psd1, status, RADIOMETER_ENULL, RADIOMETER_MSGENULL);
-  ASSERT (psd2, status, RADIOMETER_ENULL, RADIOMETER_MSGENULL);
+  ASSERT (sft1, status, PULSARCROSSCORR_ENULL, PULSARCROSSCORR_MSGENULL);
+  ASSERT (sft2, status, PULSARCROSSCORR_ENULL, PULSARCROSSCORR_MSGENULL);
+  ASSERT (psd1, status, PULSARCROSSCORR_ENULL, PULSARCROSSCORR_MSGENULL);
+  ASSERT (psd2, status, PULSARCROSSCORR_ENULL, PULSARCROSSCORR_MSGENULL);
 
 
   /* assume both sfts have the same freq. resolution */
@@ -243,12 +251,12 @@ void CorrelateSingleSFTPair(LALStatus                *status,
 
 
 /** Correlate a single pair of SFT at a parameter space point*/
-void GetSignalFrequencyInSFT(LALStatus                *status,
-			     REAL8                    *out,
-			     COMPLEX8FrequencySeries  *sft1,
-			     PulsarDopplerParams      *dopp,
-			     REAL8Vector              *vel,
-			     LIGOTimeGPS	      *firstTimeStamp)
+void LALGetSignalFrequencyInSFT(LALStatus                *status,
+				REAL8                    *out,
+				COMPLEX8FrequencySeries  *sft1,
+				PulsarDopplerParams      *dopp,
+				REAL8Vector              *vel,
+				LIGOTimeGPS	         *firstTimeStamp)
 {  
   UINT4 k;
   REAL8 alpha, delta;
@@ -290,11 +298,11 @@ void GetSignalFrequencyInSFT(LALStatus                *status,
 
 
 /** Get signal phase at a given epoch */
-void GetSignalPhaseInSFT(LALStatus               *status,
-			 REAL8                   *out,
-			 COMPLEX8FrequencySeries *sft1,
-			 PulsarDopplerParams     *dopp,
-			 REAL8Vector             *pos)
+void LALGetSignalPhaseInSFT(LALStatus               *status,
+			    REAL8                   *out,
+			    COMPLEX8FrequencySeries *sft1,
+			    PulsarDopplerParams     *dopp,
+			    REAL8Vector             *pos)
 {  
   UINT4 k;
   REAL8 alpha, delta;
@@ -348,12 +356,12 @@ void GetSignalPhaseInSFT(LALStatus               *status,
   RETURN (status);
 }
 
-void CalculateSigmaAlphaSq(LALStatus *status,
-			   REAL8	*out,
-			   REAL8 	freq1,
-	  	           REAL8	freq2,
-		           REAL8FrequencySeries *psd1,
-		           REAL8FrequencySeries *psd2)
+void LALCalculateSigmaAlphaSq(LALStatus            *status,
+			      REAL8                *out,
+			      REAL8                freq1,
+			      REAL8                freq2,
+			      REAL8FrequencySeries *psd1,
+			      REAL8FrequencySeries *psd2)
 {			   
   INT8 bin1, bin2;
   REAL8 deltaF;
@@ -373,17 +381,17 @@ void CalculateSigmaAlphaSq(LALStatus *status,
 }
 
 /** Calculate pair weights (U_alpha) **/
-void CalculateUalpha(LALStatus *status,
-		      COMPLEX16	*out,
-		      REAL8	*Aplus,
-		      REAL8	*Across,
-		      REAL8	*phiI,
-		      REAL8	*phiJ,
-		      REAL8	*FplusI,
-		      REAL8	*FplusJ,
-		      REAL8	*FcrossI,
-		      REAL8	*FcrossJ,
-		      REAL8 	*sigmasq)
+void LALCalculateUalpha(LALStatus *status,
+			COMPLEX16 *out,
+			REAL8     *Aplus,
+			REAL8     *Across,
+			REAL8     *phiI,
+			REAL8     *phiJ,
+			REAL8     *FplusI,
+			REAL8     *FplusJ,
+			REAL8     *FcrossI,
+			REAL8     *FcrossJ,
+			REAL8     *sigmasq)
 {
   REAL8 deltaPhi;
   REAL8 re, im;
@@ -412,19 +420,19 @@ void CalculateUalpha(LALStatus *status,
 
 
 
-void CalculateCrossCorrPower(LALStatus       *status,
-		      REAL8		     *out,
-		      COMPLEX16Vector *yalpha,
-		      COMPLEX16Vector *ualpha)
+void LALCalculateCrossCorrPower(LALStatus       *status,
+				REAL8	        *out,
+				COMPLEX16Vector *yalpha,
+				COMPLEX16Vector *ualpha)
 {
   INT4 i;
 
   INITSTATUS (status, "CalculateCrossCorrPower", rcsid);
   ATTATCHSTATUSPTR (status);
 
-  ASSERT (out, status, RADIOMETER_ENULL, RADIOMETER_MSGENULL);
-  ASSERT (yalpha, status, RADIOMETER_ENULL, RADIOMETER_MSGENULL);
-  ASSERT (ualpha, status, RADIOMETER_ENULL, RADIOMETER_MSGENULL);
+  ASSERT (out, status, PULSARCROSSCORR_ENULL, PULSARCROSSCORR_MSGENULL);
+  ASSERT (yalpha, status, PULSARCROSSCORR_ENULL, PULSARCROSSCORR_MSGENULL);
+  ASSERT (ualpha, status, PULSARCROSSCORR_ENULL, PULSARCROSSCORR_MSGENULL);
 
   *out = 0;
   
@@ -442,10 +450,10 @@ void CalculateCrossCorrPower(LALStatus       *status,
 
 }
 
-void NormaliseCrossCorrPower(LALStatus 		  *status,
-			     REAL8		  *out,
-			     COMPLEX16Vector 	  *ualpha,
-		    	     REAL8Vector	  *sigmaAlphasq)
+void LALNormaliseCrossCorrPower(LALStatus        *status,
+				REAL8		 *out,
+				COMPLEX16Vector  *ualpha,
+				REAL8Vector      *sigmaAlphasq)
 {
   INT4 i;
   REAL8 variance = 0;
@@ -453,8 +461,8 @@ void NormaliseCrossCorrPower(LALStatus 		  *status,
   INITSTATUS (status, "NormaliseCrossCorrPower", rcsid);
   ATTATCHSTATUSPTR (status);
 
-  ASSERT (ualpha, status, RADIOMETER_ENULL, RADIOMETER_MSGENULL);
-  ASSERT (sigmaAlphasq, status, RADIOMETER_ENULL, RADIOMETER_MSGENULL);
+  ASSERT (ualpha, status, PULSARCROSSCORR_ENULL, PULSARCROSSCORR_MSGENULL);
+  ASSERT (sigmaAlphasq, status, PULSARCROSSCORR_ENULL, PULSARCROSSCORR_MSGENULL);
 
 
   for (i=0; i < (INT4)ualpha->length; i++) {
