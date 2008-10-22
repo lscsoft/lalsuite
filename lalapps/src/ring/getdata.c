@@ -212,7 +212,7 @@ REAL4TimeSeries * get_frame_data_dbl_convert(
   /* scale and copy data */
   series->data = XLALCreateREAL4Vector( dblser->data->length );
   for ( j = 0; j < series->data->length; ++j )
-    series->data->data[j] = (REAL4)( dblScale * dblser->data->data[j] );
+    series->data->data[j] = (REAL4)( 1.0 * dblser->data->data[j] );
 
   /* if this is strain data, correct the units */
   if ( strainData )
