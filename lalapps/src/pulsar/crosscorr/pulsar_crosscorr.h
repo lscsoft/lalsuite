@@ -17,14 +17,23 @@
  *  MA  02111-1307  USA
  */
 
+/**
+ * \author Christine Chung, Badri Krishnan, John Whelan
+ * \date 2008
+ * \file
+ * \brief Header for CW cross-correlation search
+ *
+ * $Id$
+ *
+ */
  
 /*
  *   Protection against double inclusion (include-loop protection)
  *     Note the naming convention!
  */
 
-#ifndef _RADIOMETER_H
-#define _RADIOMETER_H
+#ifndef _PULSAR_CROSSCORR_H
+#define _PULSAR_CROSSCORR_H
 
 #include <unistd.h>
 #include <sys/types.h>
@@ -57,6 +66,7 @@
 #include <gsl/gsl_cdf.h>
 #include <lal/FrequencySeries.h>
 #include <lal/Sequence.h>
+#include <lal/PulsarCrossCorr.h>
 
 
 /******************************************************
@@ -72,33 +82,33 @@ extern "C" {
  *  Assignment of Id string using NRCSID()
  */
 
-NRCSID (RADIOMETERH, "$Id$");
+NRCSID (PULSAR_CROSSCORRH, "$Id$");
 
 /******************************************************
  *  Error codes and messages.
  */
  
-#define RADIOMETER_ENORM 0
-#define RADIOMETER_ESUB  1
-#define RADIOMETER_EARG  2
-#define RADIOMETER_EBAD  3
-#define RADIOMETER_EFILE 4
-#define RADIOMETER_EDIR 4
-#define RADIOMETER_ENULL 5
-#define RADIOMETER_ENONULL 6
-#define RADIOMETER_EVAL 5
-#define RADIOMETER_EMEM 14
+#define PULSAR_CROSSCORR_ENORM 0
+#define PULSAR_CROSSCORR_ESUB  1
+#define PULSAR_CROSSCORR_EARG  2
+#define PULSAR_CROSSCORR_EBAD  3
+#define PULSAR_CROSSCORR_EFILE 4
+#define PULSAR_CROSSCORR_EDIR 4
+#define PULSAR_CROSSCORR_ENULL 5
+#define PULSAR_CROSSCORR_ENONULL 6
+#define PULSAR_CROSSCORR_EVAL 5
+#define PULSAR_CROSSCORR_EMEM 14
 
-#define RADIOMETER_MSGENORM "Normal exit"
-#define RADIOMETER_MSGESUB  "Subroutine failed"
-#define RADIOMETER_MSGEARG  "Error parsing arguments"
-#define RADIOMETER_MSGEBAD  "Bad argument values"
-#define RADIOMETER_MSGEFILE "Could not create output file"
-#define RADIOMETER_MSGEDIR  "Could not create directory"
-#define RADIOMETER_MSGENULL "Null pointer"
-#define RADIOMETER_MSGENONULL "Non-null pointer"
-#define RADIOMETER_MSGEVAL "Invalid value"
-#define RADIOMETER_MSGEMEM "Out of memory"
+#define PULSAR_CROSSCORR_MSGENORM "Normal exit"
+#define PULSAR_CROSSCORR_MSGESUB  "Subroutine failed"
+#define PULSAR_CROSSCORR_MSGEARG  "Error parsing arguments"
+#define PULSAR_CROSSCORR_MSGEBAD  "Bad argument values"
+#define PULSAR_CROSSCORR_MSGEFILE "Could not create output file"
+#define PULSAR_CROSSCORR_MSGEDIR  "Could not create directory"
+#define PULSAR_CROSSCORR_MSGENULL "Null pointer"
+#define PULSAR_CROSSCORR_MSGENONULL "Non-null pointer"
+#define PULSAR_CROSSCORR_MSGEVAL "Invalid value"
+#define PULSAR_CROSSCORR_MSGEMEM "Out of memory"
 
 #define PIXELFACTOR  2 
 
@@ -107,128 +117,16 @@ NRCSID (RADIOMETERH, "$Id$");
  *  Structure, enum, union, etc., typdefs.
  */
 
-  /** struct holding info about skypoints */
-  typedef struct tagSkyPatchesInfo{
-    UINT4 numSkyPatches;
-    REAL8 *alpha;
-    REAL8 *delta;
-    REAL8 *alphaSize;
-    REAL8 *deltaSize;
-  } SkyPatchesInfo;
-
-  /** A pair of SFTs which will be correlated 
-      -- this struct contains all information needed 
-      to calculate the cross correlation for some given 
-      parameter space point   */
-  typedef struct tagSingleSFTpair{
-    COMPLEX8FrequencySeries  *sft1; 
-    COMPLEX8FrequencySeries  *sft2; 
-    REAL8FrequencySeries     *psd1;
-    REAL8FrequencySeries     *psd2;
-    REAL8 vel1[3];
-    REAL8 vel2[3];
-    REAL8 pos1[3];
-    REAL8 pos2[3];
-  } SingleSFTpair;
-
-  /** vector of SFT pairs */
-  typedef struct tagSFTPairVec{
-    UINT4 length;
-    SingleSFTpair *data;
-  } SFTPairVec;  
-
-  typedef struct tagSFTPairparams{
-    REAL8 lag;
-  } SFTPairParams;
-
-  typedef struct tagSFTDetectorInfo{
-    COMPLEX8FrequencySeries *sft;
-    REAL8 vDetector[3];
-    REAL8 rDetector[3];
-    REAL8 a;
-    REAL8 b;
-  } SFTDetectorInfo;
-
 /*
  *  Functions Declarations (i.e., prototypes).
  */
 
-void CombineAllSFTs ( LALStatus *status,
-	      SFTVector **outsfts,	   
-	      MultiSFTVector *multiSFTs,  
-	      REAL8 length);		   
-
-
-
-
-void SetUpRadiometerSkyPatches(LALStatus *status, 
-			       SkyPatchesInfo *out,  
-			       CHAR *skyFileName, 
-			       CHAR *skyRegion, 
-			       REAL8 dAlpha, 
+void SetUpRadiometerSkyPatches(LALStatus *status,
+			       SkyPatchesInfo *out,
+			       CHAR *skyFileName,
+			       CHAR *skyRegion,
+			       REAL8 dAlpha,
 			       REAL8 dDelta);
-
-void CreateSFTPairsIndicesFrom2SFTvectors(LALStatus                *status,
-					 INT4VectorSequence        **out,
-					 SFTVector                  *in1,
-					 SFTPairParams             *par,
-					 INT4			    detChoice);
-
-
-void CorrelateSingleSFTPair(LALStatus                *status,
-			    COMPLEX16                *out,
-			    COMPLEX8FrequencySeries  *sft1,
-			    COMPLEX8FrequencySeries  *sft2,
-			    REAL8FrequencySeries     *psd1,
-			    REAL8FrequencySeries     *psd2,
-			    REAL8                    *freq1,
-			    REAL8                    *freq2);
-
-
-void GetSignalFrequencyInSFT(LALStatus                *status,
-			     REAL8                    *out,
-			     COMPLEX8FrequencySeries  *sft1,
-			     PulsarDopplerParams      *dopp,
-			     REAL8Vector              *vel,
-			     LIGOTimeGPS	      *firstTimeStamp);
-
-void GetSignalPhaseInSFT(LALStatus               *status,
-			 REAL8                   *out,
-			 COMPLEX8FrequencySeries *sft1,
-			 PulsarDopplerParams     *dopp,
-			 REAL8Vector             *pos);
-
-void CalculateSigmaAlphaSq(LALStatus *status,
-			   REAL8	*out,
-			   REAL8 	freq1,
-	  	           REAL8	freq2,
-		           REAL8FrequencySeries *psd1,
-		           REAL8FrequencySeries *psd2);
-
-
-void CalculateUalpha(LALStatus *status,
-		     COMPLEX16	*out,
-		     REAL8	*Aplus,
-		     REAL8	*Across,
-		     REAL8	*phiI,
-		     REAL8	*phiJ,
-		     REAL8	*FplusI,
-		     REAL8	*FplusJ,
-		     REAL8	*FcrossI,
-		     REAL8	*FcrossJ,
-	 	     REAL8	*sigmasq);
-
-void CalculateCrossCorrPower(LALStatus       *status,
-		      REAL8     *out,
-		      COMPLEX16Vector *yalpha,
-		      COMPLEX16Vector *ualpha);
-
-void NormaliseCrossCorrPower(LALStatus 		  *status,
-			     REAL8 	  *out,
-			     COMPLEX16Vector 	  *ualpha,
-		    	     REAL8Vector	  *sigmasq);
-
-
 
 /* ****************************************************** */
 
@@ -237,4 +135,4 @@ void NormaliseCrossCorrPower(LALStatus 		  *status,
 #endif
 
 
-#endif     /* Close double-include protection _RADIOMETER_H */
+#endif     /* Close double-include protection _PULSAR_CROSSCORR_H */

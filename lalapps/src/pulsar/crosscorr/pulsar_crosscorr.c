@@ -1,5 +1,6 @@
 /*
  *  Copyright (C) 2007 Badri Krishnan  
+ *  Copyright (C) 2008 Christine Chung, Badri Krishnan and John Whelan
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,11 +18,20 @@
  *  MA  02111-1307  USA
  */
 
+/**
+ * \author Christine Chung, Badri Krishnan, John Whelan
+ * \date 2008
+ * \file
+ * \brief Perform CW cross-correlation search
+ *
+ * $Id$
+ *
+ */
 
-
-#include "./radiometer.h"
 /* lalapps includes */
 #include <lalapps.h>
+#include <pulsar_crosscorr.h>
+#include <lal/PulsarCrossCorr.h>
 #include <lal/DopplerScan.h>
 #include <gsl/gsl_permutation.h>
 
@@ -365,7 +375,7 @@ int main(int argc, char *argv[]){
  
 
     LAL_CALL( LALLoadMultiSFTs ( &status, &multiSFTs, catalog, fMin, fMax), &status);
-    LAL_CALL (CombineAllSFTs (&status, &inputSFTs, multiSFTs, catalog->length), &status);
+    LAL_CALL( LALCombineAllSFTs (&status, &inputSFTs, multiSFTs, catalog->length), &status);
 
 
     /* find number of sfts */
@@ -400,7 +410,7 @@ int main(int argc, char *argv[]){
     pairParams.lag = uvar_maxlag;  
 
     /* create sft pair indices */
-    LAL_CALL ( CreateSFTPairsIndicesFrom2SFTvectors( &status, &sftPairIndexList, inputSFTs, &pairParams, uvar_detChoice), &status);
+    LAL_CALL ( LALCreateSFTPairsIndicesFrom2SFTvectors( &status, &sftPairIndexList, inputSFTs, &pairParams, uvar_detChoice), &status);
 
     /* initialise F_+, F_x vectors */
 
@@ -479,8 +489,8 @@ int main(int argc, char *argv[]){
 	sft = &(inputSFTs->data[j]);
 
 
-        LAL_CALL( GetSignalFrequencyInSFT( &status, freq1, sft, &thisPoint, &thisVel, &firstTimeStamp), &status);
-        LAL_CALL( GetSignalPhaseInSFT( &status, phase1, sft, &thisPoint, &thisPos), &status);
+        LAL_CALL( LALGetSignalFrequencyInSFT( &status, freq1, sft, &thisPoint, &thisVel, &firstTimeStamp), &status);
+        LAL_CALL( LALGetSignalPhaseInSFT( &status, phase1, sft, &thisPoint, &thisPos), &status);
 
 	frequencyShiftList->data[j] = *freq1; 
 	signalPhaseList->data[j] = *phase1;
@@ -514,22 +524,22 @@ int main(int argc, char *argv[]){
 	psd1 = &(psdVec->data[index1]);
 	psd2 = &(psdVec->data[index2]);
   	
-	LAL_CALL( CorrelateSingleSFTPair( &status, &(yalpha->data[j]), sft1, sft2, psd1, psd2,  &(frequencyShiftList->data[index1]), &(frequencyShiftList->data[index2])), &status);
+	LAL_CALL( LALCorrelateSingleSFTPair( &status, &(yalpha->data[j]), sft1, sft2, psd1, psd2,  &(frequencyShiftList->data[index1]), &(frequencyShiftList->data[index2])), &status);
 
- 	LAL_CALL( CalculateSigmaAlphaSq( &status, &sigmasq->data[j], frequencyShiftList->data[index1], frequencyShiftList->data[index2], psd1, psd2), &status);
+ 	LAL_CALL( LALCalculateSigmaAlphaSq( &status, &sigmasq->data[j], frequencyShiftList->data[index1], frequencyShiftList->data[index2], psd1, psd2), &status);
 
  
-	LAL_CALL( CalculateUalpha (&status, &ualpha->data[j], &Aplus, &Across, &signalPhaseList->data[index1], &signalPhaseList->data[index2], &Fplus->data[index1], &Fplus->data[index2], &Fcross->data[index1], &Fcross->data[index2], &sigmasq->data[j]), &status);
+	LAL_CALL( LALCalculateUalpha (&status, &ualpha->data[j], &Aplus, &Across, &signalPhaseList->data[index1], &signalPhaseList->data[index2], &Fplus->data[index1], &Fplus->data[index2], &Fcross->data[index1], &Fcross->data[index2], &sigmasq->data[j]), &status);
      	ualphacounter = ualphacounter + 1;
 
     }
 
 
     /* calculate rho (weights) from Yalpha and Ualpha */
-    LAL_CALL( CalculateCrossCorrPower( &status, &(weights->data[counter]), yalpha, ualpha), &status);
+    LAL_CALL( LALCalculateCrossCorrPower( &status, &(weights->data[counter]), yalpha, ualpha), &status);
 
     /* calculate standard deviation of rho (Eq 4.6) */
-    LAL_CALL( NormaliseCrossCorrPower( &status, stddev, ualpha, sigmasq), &status); 
+    LAL_CALL( LALNormaliseCrossCorrPower( &status, stddev, ualpha, sigmasq), &status); 
 
     /* select candidates  */
     /* print all interesting variables to file */
@@ -603,10 +613,6 @@ printf("Frequency %f\n", uvar_f0 + (freqCounter*deltaF));
 } /* main */
 
 
-
-
-
-
 /** Set up location of skypatch centers and sizes 
     If user specified skyRegion then use DopplerScan function
     to construct an isotropic grid. Otherwise use skypatch file. */
@@ -627,9 +633,9 @@ void SetUpRadiometerSkyPatches(LALStatus           *status,
   INITSTATUS (status, "SetUpRadiometerSkyPatches", rcsid);
   ATTATCHSTATUSPTR (status);
 
-  ASSERT (out, status, RADIOMETER_ENULL, RADIOMETER_MSGENULL);
-  ASSERT (dAlpha > 0, status, RADIOMETER_EBAD, RADIOMETER_MSGEBAD);
-  ASSERT (dDelta > 0, status, RADIOMETER_EBAD, RADIOMETER_MSGEBAD);
+  ASSERT (out, status, PULSAR_CROSSCORR_ENULL, PULSAR_CROSSCORR_MSGENULL);
+  ASSERT (dAlpha > 0, status, PULSAR_CROSSCORR_EBAD, PULSAR_CROSSCORR_MSGEBAD);
+  ASSERT (dDelta > 0, status, PULSAR_CROSSCORR_EBAD, PULSAR_CROSSCORR_MSGEBAD);
 
   if (skyRegion ) {
     
@@ -687,11 +693,11 @@ void SetUpRadiometerSkyPatches(LALStatus           *status,
       INT4   r;
       REAL8  temp1, temp2, temp3, temp4;
 
-      ASSERT (skyFileName, status, RADIOMETER_ENULL, RADIOMETER_MSGENULL);
+      ASSERT (skyFileName, status, PULSAR_CROSSCORR_ENULL, PULSAR_CROSSCORR_MSGENULL);
       
       if ( (fpsky = fopen(skyFileName, "r")) == NULL)
 	{
-	  ABORT ( status, RADIOMETER_EFILE, RADIOMETER_MSGEFILE );
+	  ABORT ( status, PULSAR_CROSSCORR_EFILE, PULSAR_CROSSCORR_MSGEFILE );
 	}
       
       nSkyPatches = 0;
