@@ -1824,13 +1824,6 @@ paramData );
 
       /* cholesky decompose matrix */
       chol = cholesky_decomp(covmat, "lower");
-
-      /* create inverse of correlation matrix */
-      LAL_CALL( LALDMatrixInverse( &status, &determinant, cormat, 
-        tempinvmat), &status );
-
-      /* set inverse of covariance matrix */
-      invmat = create_covariance_matrix( paramData, tempinvmat, 1 );
     }
     else{
       /* set covariance matrix */
@@ -1839,15 +1832,15 @@ paramData );
       /* cholesky decompose covariance matrix */
       chol = cholesky_decomp(covmat, "lower");
 
-      /* create matrix inverse of correlation matrix */
-      LAL_CALL( LALDMatrixInverse( &status, &determinant, posdef, tempinvmat ),
-        &status );
-
-      /* set inverse of covariance matrix */
-      invmat = create_covariance_matrix( paramData, tempinvmat, 1 );
-
       XLALDestroyREAL8Array( posdef );
     }
+
+    /* create inverse of correlation matrix */
+    LAL_CALL( LALDMatrixInverse( &status, &determinant, cormat, tempinvmat),
+      &status );
+
+    /* set inverse of covariance matrix */
+    invmat = create_covariance_matrix( paramData, tempinvmat, 1 );
 
     XLALDestroyREAL8Array( tempinvmat );
     XLALDestroyREAL8Array( cormat );
@@ -2802,14 +2795,14 @@ matrix\n");
     }
   }
 
-  /* if( verbose ){   
+  if( verbose ){   
     fprintf(stderr, "\nCholesky decomposed matrix:\n");   
     for(i=0; i<length; i++){    
        for(j=0; j<length; j++)   
          fprintf(stderr, "%.2e  ", get_REAL8_matrix_value( A, i, j ));   
        fprintf(stderr, "\n");    
     }
-  } */
+  }
 
   return A;
 }
@@ -3047,6 +3040,8 @@ reading any correlation data!");
            can cause problems of giving singular matrices */
       if( (n != k) && (corTemp == 1.) )
         corTemp = 0.9999999;
+      else if( (n != k) && (corTemp == -1.) )
+        corTemp = -0.9999999;
 
       set_REAL8_matrix_value( corMat, k, n, corTemp );
 
