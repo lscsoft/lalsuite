@@ -154,8 +154,6 @@ int main(int argc, char *argv[]) {
 
     size_t i;
     LALParsedDataFile *file = NULL;
-    double total_count = 0;
-    double max_bin = 0;
 
     /* Check the mismatch */
     if (max_mismatch <= 0.0) {
@@ -174,32 +172,50 @@ int main(int argc, char *argv[]) {
 
     /* Read in histogram */
     for (i = 0; i < mism_hist->size1; ++i) {
-      double left_bin, right_bin, count;
-      if (sscanf(file->lines->tokens[i], "%lf %lf %lf", &left_bin, &right_bin, &count) != 3) {
+      double left_bin, right_bin, prob_dbin;
+      if (sscanf(file->lines->tokens[i], "%lf %lf %lf", &left_bin, &right_bin, &prob_dbin) != 3) {
 	LALPrintError("Couldn't parse line %i of '%s'\n", i, mism_hist_file);
 	return EXIT_FAILURE;
       }
-      if (left_bin >= right_bin || count < 0.0) {
+      if (left_bin >= right_bin || prob_dbin < 0.0) {
 	LALPrintError("Invalid syntax: line %i of '%s'\n", i, mism_hist_file);
 	return EXIT_FAILURE;
       }
       gsl_matrix_set(mism_hist, i, 0, left_bin);
       gsl_matrix_set(mism_hist, i, 1, right_bin);
-      gsl_matrix_set(mism_hist, i, 2, count);
-      if (max_bin < right_bin)
-	max_bin = right_bin;
-      total_count += count;
-    }
-
-    /* Normalise histogram to unit maximum mismatch and unit area */
-    for (i = 0; i < mism_hist->size1; ++i) {
-      gsl_matrix_set(mism_hist, i, 0, gsl_matrix_get(mism_hist, i, 0) / max_bin);
-      gsl_matrix_set(mism_hist, i, 1, gsl_matrix_get(mism_hist, i, 1) / max_bin);
-      gsl_matrix_set(mism_hist, i, 2, gsl_matrix_get(mism_hist, i, 2) / total_count);
+      gsl_matrix_set(mism_hist, i, 2, prob_dbin);
     }
 
     /* Cleanup */
     LAL_CALL(LALDestroyParsedDataFile(&status, &file), &status);
+
+    /* Rescale histogram to maximum mismatch */
+    {
+      double max_bin = 0.0;
+      for (i = 0; i < mism_hist->size1; ++i) {
+	const double right_bin = gsl_matrix_get(mism_hist, i, 1);
+	if (max_bin < right_bin)
+	  max_bin = right_bin;
+      }
+      for (i = 0; i < mism_hist->size1; ++i) {
+	gsl_matrix_set(mism_hist, i, 0, gsl_matrix_get(mism_hist, i, 0) / max_bin * max_mismatch);
+	gsl_matrix_set(mism_hist, i, 1, gsl_matrix_get(mism_hist, i, 1) / max_bin * max_mismatch);
+      }
+    }
+
+    /* Normalise histogram to unit area */
+    {
+      double total_area = 0.0;
+      for (i = 0; i < mism_hist->size1; ++i) {
+	const double left_bin  = gsl_matrix_get(mism_hist, i, 0);
+	const double right_bin = gsl_matrix_get(mism_hist, i, 1);
+	const double prob_dbin  = gsl_matrix_get(mism_hist, i, 2);
+	total_area += prob_dbin * (right_bin - left_bin);
+      }
+      for (i = 0; i < mism_hist->size1; ++i) {
+	gsl_matrix_set(mism_hist, i, 2, gsl_matrix_get(mism_hist, i, 2) / total_area);
+      }
+    }
 
   }
 
@@ -321,9 +337,9 @@ int main(int argc, char *argv[]) {
   /* Begin iterations to find h0 */
   do {
 
-    /* Compute the volume of the Monte Carlo integration volume:
-       integrate over twoF but average over cosi,psi (hence not present) */
-    const REAL8 MC_int_vol = (twoFs - 0);
+    /* Monte Carlo integration volume:
+       integrate 2F but average cosi,psi */
+    REAL8 MC_int_vol = (twoFs - 0.0);
 
     /* Open the output file */
     if (LALUserVarWasSet(&output_file)) {
@@ -352,10 +368,9 @@ int main(int argc, char *argv[]) {
     MC_trials = MC_trial_init;
     while (H0_ERROR > max_rel_err && MC_trials < MC_trial_reset) {
       
-      /* Integrand and its derivative w.r.t. h0, and total mismatch probability */
+      /* Integrand and its derivative w.r.t. h0 */
       REAL8 J = 0.0;
       REAL8 dJ = 0.0;
-      REAL8 total_prob_mism = 0.0;
 
       INT4 twoF_pdf_FD = 0;
       REAL8 twoF_pdf_FDR = 0.0;
@@ -375,7 +390,7 @@ int main(int argc, char *argv[]) {
       while (MC_iter--) {
 
 	REAL8 twoF_mism_factor = 1.0;
-	REAL8 prob_mism = 1.0;
+	REAL8 prob_mism_dmism = 1.0;
 
 	REAL8 cosi = 0.0;
 	REAL8 psi = 0.0;
@@ -392,37 +407,35 @@ int main(int argc, char *argv[]) {
 	if (LALUserVarWasSet(&mism_hist_file)) {
 
 	  size_t i;
-	  REAL8 norm_mism;
 
-	  /* Generate random normalised mismatch */
-	  norm_mism = gsl_ran_flat(rng, 0.0, 1.0);
+	  /* Generate random mismatch */
+	  REAL8 mismatch = gsl_ran_flat(rng, 0.0, max_mismatch);
 
-	  /* Find bin in histogram */
+	  /* 2F is multiplied by this factor */
+	  twoF_mism_factor = 1.0 - mismatch;
+
+	  /* Find prob(mismatch) d(mismatch) from histogram */
+	  prob_mism_dmism = 0.0;
 	  for (i = 0; i < mism_hist->size1; ++i) {
 	    const double left_bin  = gsl_matrix_get(mism_hist, i, 0);
 	    const double right_bin = gsl_matrix_get(mism_hist, i, 1);
-	    const double prob_bin  = gsl_matrix_get(mism_hist, i, 2);
-	    if (left_bin <= norm_mism && norm_mism < right_bin) {
-
-	      /* Create mismatch from centre of bin */
-	      const double mismatch = 0.5 * (left_bin + right_bin) * max_mismatch;
-
-	      /* 2F is multiplied by this factor */
-	      twoF_mism_factor = 1.0 - mismatch;
-
-	      /* This factor has this probability */
- 	      prob_mism = prob_bin;
-
+	    const double prob_dbin  = gsl_matrix_get(mism_hist, i, 2);
+	    if (left_bin <= mismatch && mismatch < right_bin) {
+ 	      prob_mism_dmism = prob_dbin;
 	      break;
 	    }
 	  }
+	  if (prob_mism_dmism <= 0.0) {
+	    LALPrintError("\nCouldn't find prob(mismatch) d(mismatch) from histogram\n");
+	    return EXIT_FAILURE;
+	  }
 
-	}	
-
+	}
+	
 	/* Generate random cosi, psi, and twoF */
 	cosi = gsl_ran_flat(rng, min_cosi, max_cosi);
 	psi = gsl_ran_flat(rng, min_psi, max_psi);
-	twoF = gsl_ran_flat(rng, 0, twoF_mism_factor * twoFs);
+	twoF = twoF_mism_factor * gsl_ran_flat(rng, 0, twoFs);
 	
 	/* Compute the amplitude coefficients vector A */
 	A1 =  0.5 * h0 * (1 + cosi * cosi) * cos(2 * psi);
@@ -441,11 +454,10 @@ int main(int argc, char *argv[]) {
 		A3 * A4 * C_coeff +
 		A4 * A3 * C_coeff
 		);
-	
-	/* Add to the integrand and its derivative w.r.t. h0, and to total mismatch probability */
-	J  += pdf_ncx2_4(rho2, twoF) * prob_mism;
-	dJ += 2.0 * rho2 / h0 * d_pdf_ncx2_4(rho2, twoF) * prob_mism;
-	total_prob_mism += prob_mism;
+
+	/* Add to the integrand and its derivative w.r.t. h0 */
+	J  += pdf_ncx2_4(rho2, twoF) * prob_mism_dmism;
+	dJ += 2.0 * rho2 / h0 * d_pdf_ncx2_4(rho2, twoF) * prob_mism_dmism;
 	
 	/* Break if J and dJ failed */
 	if (gsl_isnan(J) || gsl_isnan(dJ))
@@ -475,7 +487,7 @@ int main(int argc, char *argv[]) {
 	  gsl_vector_int_set(twoF_pdf_hist, bin,
 			     gsl_vector_int_get(twoF_pdf_hist, bin) + 1);
 	  
-	}
+     	}
 
       }
       
@@ -489,8 +501,8 @@ int main(int argc, char *argv[]) {
       }
 
       /* Finalise the integrand and derivative */
-      J  *= MC_int_vol / total_prob_mism;
-      dJ *= MC_int_vol / total_prob_mism;
+      J  *= MC_int_vol / MC_trials;
+      dJ *= MC_int_vol / MC_trials;
       
       /* Compute the false dismissal rate from 2F distribution */
       twoF_pdf_FDR = (1.0 * twoF_pdf_FD) / MC_trials;
