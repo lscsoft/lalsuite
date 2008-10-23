@@ -2391,10 +2391,16 @@ paramData );
   /* print out acceptance ratio */
   if( verbose ){
     if( rej > 0 )
-      fprintf(stderr, "Acceptance ratio %.2lf\n", (double)acc/(double)rej);
+      fprintf(stderr, "Acceptance ratio %.3lf\n", (double)acc/(double)rej);
     else
       fprintf(stderr, "No step rejected!!\n");
   }
+
+  /* output acceptance ratio to end of the chain */
+  if( rej > 0 )
+    fprintf(fp, "%% Acceptance ratio = %.5lf\n", (double)acc/(double)rej);
+  else
+    fprintf(fp, "%% Acceptance ratio - no step rejected!\n");
 
   /* destroy vectors */
   XLALDestroyREAL4Vector(randNum);
@@ -2795,14 +2801,14 @@ matrix\n");
     }
   }
 
-  if( verbose ){   
+  /* if( verbose ){
     fprintf(stderr, "\nCholesky decomposed matrix:\n");   
     for(i=0; i<length; i++){    
        for(j=0; j<length; j++)   
          fprintf(stderr, "%.2e  ", get_REAL8_matrix_value( A, i, j ));   
        fprintf(stderr, "\n");    
     }
-  }
+  } */
 
   return A;
 }
@@ -3177,13 +3183,13 @@ REAL8Array *check_positive_definite( REAL8Array *matrix ){
 
   LAL_CALL( LALDSymmetricEigenVectors( &status, eigenval, eigenvec ), &status );
 
-  /* for( i=0; i<(INT4)matrix->dimLength->data[0]; i++ ){
+  for( i=0; i<(INT4)matrix->dimLength->data[0]; i++ ){
     if( eigenval->data[i] < 0. && fabs(eigenval->data[i]) > 10.*LAL_REAL8_EPS){
       fprintf(stderr, "ABORT! Eigenvalue is negative. Non-postive definite \
 matrix!\n");
       exit(0);
     }
-  } */
+  }
 
   XLALDestroyREAL8Array( eigenvec );
   XLALDestroyREAL8Vector( eigenval );
