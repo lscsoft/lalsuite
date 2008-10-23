@@ -2549,7 +2549,7 @@ int main( int argc, char *argv[] )
                 /* ( When doing the chisq test and the bank veto for          */
                 /* time domain searches that don't use the                    */
                 /* the template power vec that goes as f^-(7/3) )             */
-                if (numChisqBins > 0 && subBankCurrent->subBankSize > 1)
+                if (subBankCurrent->subBankSize > 1)
                 {
                 LAL_CALL( LALFindChirpTDNormalize( &status,
                       fcFilterInput->fcTmplt, fcFilterInput->segment,
