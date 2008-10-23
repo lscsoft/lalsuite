@@ -261,6 +261,7 @@ AC_OUTPUT( \
   src/pulsar/hough/src2/Makefile \
   src/pulsar/MakeSFTs/Makefile \
   src/pulsar/radiometer/Makefile \
+  src/pulsar/crosscorr/Makefile \
   src/pulsar/fscan/Makefile \
 )
 
