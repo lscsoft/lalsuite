@@ -71,9 +71,11 @@ int main(int argc, char *argv[]) {
   BOOLEAN help = FALSE;
 
   REAL8 alpha = 0.0;
+  REAL8 alpha_band = 0.0;
   REAL8 delta = 0.0;
+  REAL8 delta_band = 0.0;
   REAL8 freq = 0.0;
-  REAL8 band = 0.0;
+  REAL8 freq_band = 0.0;
   REAL8 twoFs = 0.0;
   CHAR *mism_hist_file = NULL;
   REAL8 max_mismatch = 0.0;
@@ -101,7 +103,7 @@ int main(int argc, char *argv[]) {
   MultiDetectorStateSeries *detector_states = NULL;
   MultiPSDVector *rng_med = NULL;
   MultiNoiseWeights *noise_weights = NULL;
-  MultiAMCoeffs *AM_coeffs = NULL;
+  BOOLEAN calc_ABC_coeffs = TRUE;
   REAL8 A_coeff = 0.0;
   REAL8 B_coeff = 0.0;
   REAL8 C_coeff = 0.0;
@@ -123,9 +125,11 @@ int main(int argc, char *argv[]) {
   /* Register command line arguments */
   LAL_CALL(LALRegisterBOOLUserVar  (&status, "help",             'h', UVAR_HELP,     "Print this help message", &help), &status);
   LAL_CALL(LALRegisterREALUserVar  (&status, "alpha",            'a', UVAR_REQUIRED, "Right ascension in radians", &alpha), &status);
+  LAL_CALL(LALRegisterREALUserVar  (&status, "alpha-band",       'z', UVAR_REQUIRED, "Right ascension band", &alpha), &status);
   LAL_CALL(LALRegisterREALUserVar  (&status, "delta",            'd', UVAR_REQUIRED, "Declination in radians", &delta), &status);
+  LAL_CALL(LALRegisterREALUserVar  (&status, "delta-band",       'c', UVAR_REQUIRED, "Declination band", &delta), &status);
   LAL_CALL(LALRegisterREALUserVar  (&status, "freq",             'f', UVAR_REQUIRED, "Starting frequency", &freq), &status);
-  LAL_CALL(LALRegisterREALUserVar  (&status, "band",             'b', UVAR_REQUIRED, "Frequency band", &band), &status);
+  LAL_CALL(LALRegisterREALUserVar  (&status, "freq-band",        'b', UVAR_REQUIRED, "Frequency band", &freq_band), &status);
   LAL_CALL(LALRegisterREALUserVar  (&status, "loudest-2F",       'F', UVAR_REQUIRED, "Loudest 2F value in this band", &twoFs), &status);
   LAL_CALL(LALRegisterSTRINGUserVar(&status, "mism-hist-file",   'M', UVAR_OPTIONAL, "File containing the mismatch PDF histogram", &mism_hist_file), &status);
   LAL_CALL(LALRegisterREALUserVar  (&status, "max-mismatch",     'm', UVAR_OPTIONAL, "Maximum mismatch to scale histogram to", &max_mismatch), &status);
@@ -242,7 +246,7 @@ int main(int argc, char *argv[]) {
     /* Determine the frequency range */
     extra = catalog->data[0].header.deltaF * (rng_med_win/2 + 1);
     fmin = freq - extra;
-    fmax = freq + extra + band;
+    fmax = freq + extra + freq_band;
     
     /* Load the SFTs */
     LogPrintf(LOG_DEBUG, "Loading SFTs (%f to %f) ... ", fmin, fmax);
@@ -252,13 +256,13 @@ int main(int argc, char *argv[]) {
   
   /* Load the ephemeris data */
   {
-    size_t buf = strlen(ephem_year) + 20;
+    size_t buf = strlen(ephem_year) + 32;
     if (ephem_dir)
       buf += strlen(ephem_dir);
     
     /* Allocate memory */
     if ((ephemeris.ephiles.earthEphemeris = (CHAR*)XLALCalloc(buf, sizeof(CHAR))) == NULL ||
-	(ephemeris.ephiles.sunEphemeris = (CHAR*)XLALCalloc(buf, sizeof(CHAR))) == NULL) {
+	(ephemeris.ephiles.sunEphemeris   = (CHAR*)XLALCalloc(buf, sizeof(CHAR))) == NULL) {
       LALPrintError("Couldn't allocate memory\n");
       return EXIT_FAILURE;
     }
@@ -292,36 +296,20 @@ int main(int argc, char *argv[]) {
   LogPrintfVerbatim(LOG_DEBUG, "done\n");
   
   /* Normalise SFTs and compute noise weights */
-  {
-    LogPrintf(LOG_DEBUG, "Normalising SFTs and computing noise weights ... ");
-    LAL_CALL(LALNormalizeMultiSFTVect(&status, &rng_med, sfts, rng_med_win), &status);
-    LAL_CALL(LALComputeMultiNoiseWeights(&status, &noise_weights, rng_med, rng_med_win, 0), &status);
-    LogPrintfVerbatim(LOG_DEBUG, "done\n");
-  }
-  
-  /* Compute the AM coefficients */
-  {
-    SkyPosition sky;
-    sky.system = COORDINATESYSTEM_EQUATORIAL;
-    sky.longitude = alpha;
-    sky.latitude = delta;
-    LogPrintf(LOG_DEBUG, "Calculating AM coefficients ... ");
-    LAL_CALL(LALGetMultiAMCoeffs(&status, &AM_coeffs, detector_states, sky), &status);
-    if (XLALWeighMultiAMCoeffs(AM_coeffs, noise_weights) != XLAL_SUCCESS) {
-      LALPrintError("XLALWeighMultiAMCoeffs failed\n");
-      return EXIT_FAILURE;
-    }
-    A_coeff = AM_coeffs->Mmunu.Ad * AM_coeffs->Mmunu.Sinv_Tsft;
-    B_coeff = AM_coeffs->Mmunu.Bd * AM_coeffs->Mmunu.Sinv_Tsft;
-    C_coeff = AM_coeffs->Mmunu.Cd * AM_coeffs->Mmunu.Sinv_Tsft;
-    /* DEBUG Single-side PSD correction */
-    A_coeff *= 0.5;
-    B_coeff *= 0.5;
-    C_coeff *= 0.5;
-    /* DEBUG Single-side PSD correction */
-    LogPrintfVerbatim(LOG_DEBUG, "done: A = %0.4e, B = %0.4e, C = %0.4e\n", A_coeff, B_coeff, C_coeff);
-  }      
-  
+  LogPrintf(LOG_DEBUG, "Normalising SFTs and computing noise weights ... ");
+  LAL_CALL(LALNormalizeMultiSFTVect(&status, &rng_med, sfts, rng_med_win), &status);
+  LAL_CALL(LALComputeMultiNoiseWeights(&status, &noise_weights, rng_med, rng_med_win, 0), &status);
+  LogPrintfVerbatim(LOG_DEBUG, "done\n");
+
+  /* Cleanup */
+  LAL_CALL(LALDestroySFTCatalog(&status, &catalog), &status);
+  LAL_CALL(LALDestroyMultiSFTVector(&status, &sfts), &status);
+  XLALFree(ephemeris.ephiles.earthEphemeris);
+  XLALFree(ephemeris.ephiles.sunEphemeris);
+  LALFree(ephemeris.ephemE);
+  LALFree(ephemeris.ephemS);
+  LAL_CALL(LALDestroyMultiPSDVector(&status, &rng_med), &status);
+    
   /* Initialise the random number generator */
   {
     unsigned long seed;
@@ -357,7 +345,9 @@ int main(int argc, char *argv[]) {
     fprintf(fp, "%%%% %s\n%%%% %s\n", rcsid, cmdline);
     LALFree(cmdline);
     cmdline = NULL;
-    fprintf(fp, "freq=%0.4f band=%0.4f\n", freq, band);
+    fprintf(fp, "alpha=%0.4f alpha_band=%0.4f\n", alpha, alpha_band);
+    fprintf(fp, "delta=%0.4f delta_band=%0.4f\n", delta, delta_band);
+    fprintf(fp, "freq=%0.4f freq_band=%0.4f\n", freq, freq_band);
 
     /* Use initial h0 guess if given (first time only) */
     if (initial_h0 > 0.0) {
@@ -429,17 +419,44 @@ int main(int argc, char *argv[]) {
 	A3 = -1.0 * h0 *             cosi  * sin(2 * psi);
 	A4 =  1.0 * h0 *             cosi  * cos(2 * psi);
 	
+	/* Compute the AM coefficients */
+	if (calc_ABC_coeffs) {
+	  
+	  MultiAMCoeffs *AM_coeffs = NULL;
+	  SkyPosition sky = empty_SkyPosition;
+	  
+	  /* Generate a random sky position */
+	  sky.system = COORDINATESYSTEM_EQUATORIAL;
+	  sky.longitude = gsl_ran_flat(alpha, alpha + alpha_band);
+	  sky.latitude  = gsl_ran_flat(delta, delta + delta_band);
+
+	  /* Calculate and noise-weigh the AM coefficients */
+	  LAL_CALL(LALGetMultiAMCoeffs(&status, &AM_coeffs, detector_states, sky), &status);
+	  if (XLALWeighMultiAMCoeffs(AM_coeffs, noise_weights) != XLAL_SUCCESS) {
+	    LALPrintError("XLALWeighMultiAMCoeffs failed\n");
+	    return EXIT_FAILURE;
+	  }
+	  A_coeff = AM_coeffs->Mmunu.Ad * AM_coeffs->Mmunu.Sinv_Tsft;
+	  B_coeff = AM_coeffs->Mmunu.Bd * AM_coeffs->Mmunu.Sinv_Tsft;
+	  C_coeff = AM_coeffs->Mmunu.Cd * AM_coeffs->Mmunu.Sinv_Tsft;
+
+	  /* Correct for use of DOUBLE-SIDED PSD by AM coefficient functions */
+	  A_coeff *= 0.5; B_coeff *= 0.5; C_coeff *= 0.5;
+
+	  /* If fixed sky position, do not do this again */
+	  if (alpha_band == 0.0 && delta_band == 0.0)
+	    calc_ABC_coeffs = FALSE;
+
+	  /* Cleanup */
+	  XLALDestroyMultiAMCoeffs(AM_coeffs);
+
+	}
+	
 	/* Compute the optimal signal to noise ratio rho^2 */
-	rho2 = (
-		A1 * A1 * A_coeff +
-		A2 * A2 * B_coeff +
-		A1 * A2 * C_coeff +
-		A2 * A1 * C_coeff +
-		A3 * A3 * A_coeff +
-		A4 * A4 * B_coeff +
-		A3 * A4 * C_coeff +
-		A4 * A3 * C_coeff
-		);
+	rho2 = (A1 * A1 * A_coeff + A2 * A2 * B_coeff +
+		A1 * A2 * C_coeff + A2 * A1 * C_coeff +
+		A3 * A3 * A_coeff + A4 * A4 * B_coeff +
+		A3 * A4 * C_coeff + A4 * A3 * C_coeff);
 
 	/* Generate random mismatch */
 	if (LALUserVarWasSet(&mism_hist_file)) {
@@ -613,16 +630,8 @@ int main(int argc, char *argv[]) {
   LAL_CALL(LALDestroyUserVars(&status), &status);
   if (mism_hist)
     gsl_matrix_free(mism_hist);
-  LAL_CALL(LALDestroySFTCatalog(&status, &catalog), &status);
-  LAL_CALL(LALDestroyMultiSFTVector(&status, &sfts), &status);
-  XLALFree(ephemeris.ephiles.earthEphemeris);
-  XLALFree(ephemeris.ephiles.sunEphemeris);
-  LALFree(ephemeris.ephemE);
-  LALFree(ephemeris.ephemS);
   XLALDestroyMultiDetectorStateSeries(detector_states);
-  LAL_CALL(LALDestroyMultiPSDVector(&status, &rng_med), &status);
   LAL_CALL(LALDestroyMultiNoiseWeights(&status, &noise_weights), &status);
-  XLALDestroyMultiAMCoeffs(AM_coeffs);
   gsl_rng_free(rng);
   if (twoF_pdf_hist)
     gsl_vector_int_free(twoF_pdf_hist);
