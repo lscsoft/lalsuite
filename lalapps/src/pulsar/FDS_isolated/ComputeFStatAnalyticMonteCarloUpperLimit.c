@@ -53,6 +53,7 @@
 
 RCSID("$Id$");
 
+BOOLEAN calc_AM_coeffs(LALStatus*, gsl_rng*, REAL8, REAL8, REAL8, REAL8, MultiDetectorStateSeries*, MultiNoiseWeights*, REAL8*, REAL8*, REAL8*);
 REAL8 pdf_ncx2_4(REAL8, REAL8);
 REAL8 d_pdf_ncx2_4(REAL8, REAL8);
 REAL8 ran_ncx2_4(const gsl_rng*, REAL8);
@@ -125,9 +126,9 @@ int main(int argc, char *argv[]) {
   /* Register command line arguments */
   LAL_CALL(LALRegisterBOOLUserVar  (&status, "help",             'h', UVAR_HELP,     "Print this help message", &help), &status);
   LAL_CALL(LALRegisterREALUserVar  (&status, "alpha",            'a', UVAR_REQUIRED, "Right ascension in radians", &alpha), &status);
-  LAL_CALL(LALRegisterREALUserVar  (&status, "alpha-band",       'z', UVAR_REQUIRED, "Right ascension band", &alpha), &status);
+  LAL_CALL(LALRegisterREALUserVar  (&status, "alpha-band",       'z', UVAR_OPTIONAL, "Right ascension band", &alpha), &status);
   LAL_CALL(LALRegisterREALUserVar  (&status, "delta",            'd', UVAR_REQUIRED, "Declination in radians", &delta), &status);
-  LAL_CALL(LALRegisterREALUserVar  (&status, "delta-band",       'c', UVAR_REQUIRED, "Declination band", &delta), &status);
+  LAL_CALL(LALRegisterREALUserVar  (&status, "delta-band",       'c', UVAR_OPTIONAL, "Declination band", &delta), &status);
   LAL_CALL(LALRegisterREALUserVar  (&status, "freq",             'f', UVAR_REQUIRED, "Starting frequency", &freq), &status);
   LAL_CALL(LALRegisterREALUserVar  (&status, "freq-band",        'b', UVAR_REQUIRED, "Frequency band", &freq_band), &status);
   LAL_CALL(LALRegisterREALUserVar  (&status, "loudest-2F",       'F', UVAR_REQUIRED, "Loudest 2F value in this band", &twoFs), &status);
@@ -327,10 +328,17 @@ int main(int argc, char *argv[]) {
     gsl_rng_set(rng, seed);
   }
   
+  /* Calculate the AM coefficients at least once */
+  calc_ABC_coeffs = calc_AM_coeffs(&status, rng,
+				   alpha, alpha_band,
+				   delta, delta_band,
+				   detector_states, noise_weights,
+				   &A_coeff, &B_coeff, &C_coeff);
+  
   /* Begin iterations to find h0 */
   MC_trials_reset = ((INT8)MC_trials_reset_fac * ((INT8)MC_trials_init));
   do {
-
+    
     /* Open the output file */
     if (LALUserVarWasSet(&output_file)) {
       if ((fp = fopen(output_file, "wb")) == NULL) {
@@ -359,7 +367,7 @@ int main(int argc, char *argv[]) {
       h0  = twoFs * pow(A_coeff * B_coeff - C_coeff * C_coeff, -0.25);
       h0 *= GSL_MAX(0.5, 1.0 + gsl_ran_gaussian(rng, 0.1));
     }
-  
+
     /* Begin Newton-Raphson iteration to find h0 */
     h0_prev = GSL_POSINF;
 #define H0_ERROR fabs(1.0 - (h0 / h0_prev))
@@ -412,45 +420,20 @@ int main(int argc, char *argv[]) {
 	cosi = gsl_ran_flat(rng, min_cosi, max_cosi);
 	psi = gsl_ran_flat(rng, min_psi, max_psi);
 	twoF = gsl_ran_flat(rng, 0, twoFs);
+
+	/* Calculate the AM coefficients if needed */
+	if (calc_ABC_coeffs)
+	  calc_ABC_coeffs = calc_AM_coeffs(&status, rng,
+					   alpha, alpha_band,
+					   delta, delta_band,
+					   detector_states, noise_weights,
+					   &A_coeff, &B_coeff, &C_coeff);
 	
 	/* Compute the amplitude coefficients vector A */
 	A1 =  0.5 * h0 * (1 + cosi * cosi) * cos(2 * psi);
 	A2 =  0.5 * h0 * (1 + cosi * cosi) * sin(2 * psi);
 	A3 = -1.0 * h0 *             cosi  * sin(2 * psi);
 	A4 =  1.0 * h0 *             cosi  * cos(2 * psi);
-	
-	/* Compute the AM coefficients */
-	if (calc_ABC_coeffs) {
-	  
-	  MultiAMCoeffs *AM_coeffs = NULL;
-	  SkyPosition sky = empty_SkyPosition;
-	  
-	  /* Generate a random sky position */
-	  sky.system = COORDINATESYSTEM_EQUATORIAL;
-	  sky.longitude = gsl_ran_flat(alpha, alpha + alpha_band);
-	  sky.latitude  = gsl_ran_flat(delta, delta + delta_band);
-
-	  /* Calculate and noise-weigh the AM coefficients */
-	  LAL_CALL(LALGetMultiAMCoeffs(&status, &AM_coeffs, detector_states, sky), &status);
-	  if (XLALWeighMultiAMCoeffs(AM_coeffs, noise_weights) != XLAL_SUCCESS) {
-	    LALPrintError("XLALWeighMultiAMCoeffs failed\n");
-	    return EXIT_FAILURE;
-	  }
-	  A_coeff = AM_coeffs->Mmunu.Ad * AM_coeffs->Mmunu.Sinv_Tsft;
-	  B_coeff = AM_coeffs->Mmunu.Bd * AM_coeffs->Mmunu.Sinv_Tsft;
-	  C_coeff = AM_coeffs->Mmunu.Cd * AM_coeffs->Mmunu.Sinv_Tsft;
-
-	  /* Correct for use of DOUBLE-SIDED PSD by AM coefficient functions */
-	  A_coeff *= 0.5; B_coeff *= 0.5; C_coeff *= 0.5;
-
-	  /* If fixed sky position, do not do this again */
-	  if (alpha_band == 0.0 && delta_band == 0.0)
-	    calc_ABC_coeffs = FALSE;
-
-	  /* Cleanup */
-	  XLALDestroyMultiAMCoeffs(AM_coeffs);
-
-	}
 	
 	/* Compute the optimal signal to noise ratio rho^2 */
 	rho2 = (A1 * A1 * A_coeff + A2 * A2 * B_coeff +
@@ -638,6 +621,50 @@ int main(int argc, char *argv[]) {
   LALCheckMemoryLeaks();
   
   return EXIT_SUCCESS;
+  
+}
+
+/* Compute the AM coefficients */
+BOOLEAN calc_AM_coeffs(
+		       LALStatus *status,
+		       gsl_rng *rng,
+		       REAL8 alpha,
+		       REAL8 alpha_band,
+		       REAL8 delta,
+		       REAL8 delta_band,
+		       MultiDetectorStateSeries *detector_states,
+		       MultiNoiseWeights *noise_weights,
+		       REAL8 *A_coeff,
+		       REAL8 *B_coeff,
+		       REAL8 *C_coeff)
+{
+  
+  MultiAMCoeffs *AM_coeffs = NULL;
+  SkyPosition sky = empty_SkyPosition;
+  
+  /* Generate a random sky position */
+  sky.system = COORDINATESYSTEM_EQUATORIAL;
+  sky.longitude = gsl_ran_flat(rng, alpha, alpha + alpha_band);
+  sky.latitude  = gsl_ran_flat(rng, delta, delta + delta_band);
+  
+  /* Calculate and noise-weigh the AM coefficients */
+  LAL_CALL(LALGetMultiAMCoeffs(status, &AM_coeffs, detector_states, sky), status);
+  if (XLALWeighMultiAMCoeffs(AM_coeffs, noise_weights) != XLAL_SUCCESS) {
+    LALPrintError("XLALWeighMultiAMCoeffs failed\n");
+    return EXIT_FAILURE;
+  }
+  *A_coeff = AM_coeffs->Mmunu.Ad * AM_coeffs->Mmunu.Sinv_Tsft;
+  *B_coeff = AM_coeffs->Mmunu.Bd * AM_coeffs->Mmunu.Sinv_Tsft;
+  *C_coeff = AM_coeffs->Mmunu.Cd * AM_coeffs->Mmunu.Sinv_Tsft;
+  
+  /* Correct for use of DOUBLE-SIDED PSD by AM coefficient functions */
+  *A_coeff *= 0.5; *B_coeff *= 0.5; *C_coeff *= 0.5;
+  
+  /* Cleanup */
+  XLALDestroyMultiAMCoeffs(AM_coeffs);
+
+  /* Return if AM coefficients need to be calculated again */
+  return (alpha_band != 0.0 || delta_band != 0.0);
   
 }
 
