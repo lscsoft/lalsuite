@@ -347,6 +347,7 @@ void LALBBHPhenWaveTimeDom ( LALStatus        *status,
   REAL8 sharpNessLow, sharpNessUpp, fLower;
   REAL8 fCut, fRes, f, totalMass, softWin;
   REAL8 fLowerOrig, eta, tau0;
+  REAL8 winFLo, winFHi, sigLo, sigHi;
   REAL4 windowLength;
   INT4 i, k, n;
   /* INT4 kMin, kMax; */
@@ -374,7 +375,7 @@ void LALBBHPhenWaveTimeDom ( LALStatus        *status,
 
   totalMass = template->mass1 + template->mass2;
   eta = template->mass1*template->mass2/pow(totalMass,2.);
-  
+
   /* we will generate the waveform from a frequency which is lower than the
    * fLower chosen. Also the cutoff frequency is higher than the fCut. We 
    * will later apply a window function, and truncate the time-domain waveform 
@@ -385,19 +386,20 @@ void LALBBHPhenWaveTimeDom ( LALStatus        *status,
   tau0 = 32.;
 /*   fLower = pow((tau0*256.*eta*pow(totalMass*LAL_MTSUN_SI,5./3.)/5.),-3./8.)/LAL_PI;  */
   /* Better ansatz (Lucia Oct 08) */
-  fLower = 2.E-3/(totalMass*LAL_MTSUN_SI);
-  fCut = (1.025)*phenParams.fCut;            
+/*   fLower = 2.E-3/(totalMass*LAL_MTSUN_SI); */
+  fLower = 18. - 3.*totalMass/25.;
+  fCut = (1.025)*phenParams.fCut;
   
   /* make sure that these frequencies are not too out of range */
   if (fLower > fLowerOrig) fLower = fLowerOrig;
   if (fCut > template->tSampling/2.-100.) fCut = template->tSampling/2.-100.;
   
   /* generate waveforms over this frequency range */
-/*   template->fLower = fLower/4.; */
-  phenParams.fCut = template->tSampling/2.;
+  template->fLower = fLower;
+  phenParams.fCut = template->tSampling/2.; 
   
   /* make sure that fLower is not too low */
-  /*  if (template->fLower < 0.5) template->fLower = 0.5; */
+   if (template->fLower < 0.5) template->fLower = 0.5;
   
   /* generate the phenomenological waveform in frequency domain */
   n = signal->length;
@@ -417,17 +419,31 @@ void LALBBHPhenWaveTimeDom ( LALStatus        *status,
   
   /* We will apply a window function to soften the boundaries. The function has 
      value 1e-15 at fLow-df and fCut+df*/
-  sharpNessLow = (-1./(fLower/4.)) * atanh(1e-15 - 1);
-  sharpNessUpp = (-1./fCut) * atanh(1e-15 - 1);
+/*   sharpNessLow = (-1./(fLower/4.)) * atanh(1e-15 - 1); */
+/*   sharpNessUpp = (-1./fCut) * atanh(1e-15 - 1); */
   
-  softWin = (1+tanh(sharpNessLow*(0.0-fLower)))*(1-tanh(sharpNessUpp*(0.0-fCut)))/4.;
-  signalFD1->data[0] *= softWin;
+/*   softWin = (1+tanh(sharpNessLow*(0.0-fLower)))*(1-tanh(sharpNessUpp*(0.0-fCut)))/4.; */
+/*   signalFD1->data[0] *= softWin; */
+/*   for (k = 1; k <= n/2; k++) { */
+/*     f = k*fRes; */
+/*     softWin = (1+tanh(4.*sharpNessLow*(f-fLower)))*(1-tanh(4.*sharpNessUpp*(f-fCut)))/4.; */
+/*     signalFD1->data[k] *= softWin; */
+/*     signalFD1->data[n-k] *= softWin; */
+/*     } */
+
+  winFLo = (fLowerOrig + fLower)/2.;
+  winFHi = (fCut + phenParams.fCut)/2.;
+  sigLo = 4.;
+  sigHi = 4.;
+  
+  signalFD1->data[0] *= 0.;
   for (k = 1; k <= n/2; k++) {
     f = k*fRes;
-    softWin = (1+tanh(sharpNessLow*(f-fLower)))*(1-tanh(sharpNessUpp*(f-fCut)))/4.;
+    softWin = (1+tanh((4.*(f-winFLo)/sigLo)))*(1-tanh(4.*(f-fCut)/sigHi))/4.;
     signalFD1->data[k] *= softWin;
     signalFD1->data[n-k] *= softWin;
     }
+
   
   /********************************* DEBUG ********************************/
   /*       filePtr = fopen("FreqDomPhenWave_Wind.txt","a");
@@ -459,17 +475,16 @@ void LALBBHPhenWaveTimeDom ( LALStatus        *status,
     fclose(filePtr);*/
   /************************************************************************/
   
-  
-  /* apply a liearly increasing/decresing window at the beginning and at the end 
+  /* apply a linearly increasing/decresing window at the beginning and at the end 
    * of the waveform in order to avoid edge effects. This could be made fancier */
-  windowLength = 10.*totalMass * LAL_MTSUN_SI*template->tSampling;
-  for (i=0; i< windowLength; i++){
-        signal->data[n-i-1] *= i/windowLength;
-  }
-  windowLength = 1000.*totalMass * LAL_MTSUN_SI*template->tSampling;
-  for (i=0; i< windowLength; i++){
-    signal->data[i] *= i/windowLength;
-  }
+/*   windowLength = 10.*totalMass * LAL_MTSUN_SI*template->tSampling; */
+/*   for (i=0; i< windowLength; i++){ */
+/*         signal->data[n-i-1] *= i/windowLength; */
+/*   } */
+/*   windowLength = 1000.*totalMass * LAL_MTSUN_SI*template->tSampling; */
+/*   for (i=0; i< windowLength; i++){ */
+/*     signal->data[i] *= i/windowLength; */
+/*   } */
   
   /********************************* DEBUG ********************************/
   /* CHAR fileName[1000];
