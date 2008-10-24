@@ -60,10 +60,10 @@ REAL8 ran_ncx2_4(const gsl_rng*, REAL8);
 #define TRUE  (1==1)
 #define FALSE (1==0)
 
-const REAL8 min_cosi = 0;
-const REAL8 max_cosi = 1;
-const REAL8 min_psi = -LAL_PI_4;
-const REAL8 max_psi =  LAL_PI_4;
+const REAL8 min_cosi = -1;
+const REAL8 max_cosi =  1;
+const REAL8 min_psi  = -LAL_PI_4;
+const REAL8 max_psi  =  LAL_PI_4;
 
 int main(int argc, char *argv[]) {
 
@@ -83,13 +83,14 @@ int main(int argc, char *argv[]) {
   INT4 rng_med_win = 50;
   REAL8 max_rel_err = 1.0e-3;
   REAL8 h0_brake = 0.75;
-  INT4 MC_trial_init = 1e5;
-  REAL8 MC_trial_fac = 1.5;
-  INT4 MC_trial_reset_fac = 5e2;
+  INT4 MC_trials_init = 1e6;
+  REAL8 MC_trials_incr = 1.5;
+  INT4 MC_trials_reset_fac = 5e2;
   REAL8 FDR = 0.05;
   CHAR *output_file = NULL;
   REAL8 twoF_pdf_hist_binw = 1.0;
   CHAR *twoF_pdf_hist_file = NULL;
+  REAL8 initial_h0 = 0.0;
 
   FILE *fp = NULL;
   CHAR *cmdline = NULL;
@@ -109,8 +110,9 @@ int main(int argc, char *argv[]) {
   REAL8 h0_prev = 0.0;
   REAL8 dh0 = 0.0;
   INT4 h0_iter = 0;
-  INT4 MC_trials = 0;
-  INT4 MC_iter = 0;
+  INT8 MC_trials = 0;
+  INT8 MC_iter = 0;
+  INT8 MC_trials_reset;
   gsl_vector_int *twoF_pdf_hist = NULL;
     
   /* Initialise LAL error handler, debug level and log level */
@@ -133,15 +135,16 @@ int main(int argc, char *argv[]) {
   LAL_CALL(LALRegisterINTUserVar   (&status, "rng-med-win",      'k', UVAR_OPTIONAL, "Size of the running median window", &rng_med_win), &status);
   LAL_CALL(LALRegisterREALUserVar  (&status, "max-rel-err",      'e', UVAR_OPTIONAL, "Maximum error in h0 relative to previous value", &max_rel_err), &status);
   LAL_CALL(LALRegisterREALUserVar  (&status, "h0-brake",         'b', UVAR_OPTIONAL, "h0 cannot change by more than this fraction of itself", &h0_brake), &status);
-  LAL_CALL(LALRegisterINTUserVar   (&status, "init-MC-tri",      'I', UVAR_OPTIONAL, "Initial number of MC int. trials", &MC_trial_init), &status);
-  LAL_CALL(LALRegisterREALUserVar  (&status, "MC-tri-incr",      'i', UVAR_OPTIONAL, "Multiply number of MC int. trials by this after each step", &MC_trial_fac), &status);
+  LAL_CALL(LALRegisterINTUserVar   (&status, "init-MC-tri",      'I', UVAR_OPTIONAL, "Initial number of MC int. trials", &MC_trials_init), &status);
+  LAL_CALL(LALRegisterREALUserVar  (&status, "MC-tri-incr",      'i', UVAR_OPTIONAL, "Multiply number of MC int. trials by this after each step", &MC_trials_incr), &status);
   LAL_CALL(LALRegisterINTUserVar   (&status, "MC-tri-reset",     'Z', UVAR_OPTIONAL, "Reset if no convergence after this "
-				                                                     "ratio of initial MC int. trials", &MC_trial_reset_fac), &status);
+				                                                     "ratio of initial MC int. trials", &MC_trials_reset_fac), &status);
   LAL_CALL(LALRegisterREALUserVar  (&status, "false-dism",       'R', UVAR_OPTIONAL, "Target false dismissal rate", &FDR), &status);
   LAL_CALL(LALRegisterSTRINGUserVar(&status, "output-file",      'o', UVAR_OPTIONAL, "Output file for the upper limit and other info (defaults to stdout)", &output_file), &status);
   LAL_CALL(LALRegisterREALUserVar  (&status, "2F-pdf-hist-binw", 'B', UVAR_OPTIONAL, "Bin width of the histogram of the non-central 2F distribution", &twoF_pdf_hist_binw), &status);
   LAL_CALL(LALRegisterSTRINGUserVar(&status, "2F-pdf-hist-file", 'H', UVAR_OPTIONAL, "Output file for the histogram of the "
 				                                                     "non-central 2F distribution", &twoF_pdf_hist_file), &status);
+  LAL_CALL(LALRegisterREALUserVar  (&status, "initial-h0",        0 , UVAR_DEVELOPER,"Initial guess of h0 (default: automatic)", &initial_h0), &status);
 
   /* Get command line arguments */
   LAL_CALL(LALUserVarReadAllInput(&status, argc, argv), &status);
@@ -174,18 +177,18 @@ int main(int argc, char *argv[]) {
 
     /* Read in histogram */
     for (i = 0; i < mism_hist->size1; ++i) {
-      double left_bin, right_bin, prob_dbin;
-      if (sscanf(file->lines->tokens[i], "%lf %lf %lf", &left_bin, &right_bin, &prob_dbin) != 3) {
+      double left_bin, right_bin, prob_bin;
+      if (sscanf(file->lines->tokens[i], "%lf %lf %lf", &left_bin, &right_bin, &prob_bin) != 3) {
 	LALPrintError("Couldn't parse line %i of '%s'\n", i, mism_hist_file);
 	return EXIT_FAILURE;
       }
-      if (left_bin >= right_bin || prob_dbin < 0.0) {
+      if (left_bin >= right_bin || prob_bin < 0.0) {
 	LALPrintError("Invalid syntax: line %i of '%s'\n", i, mism_hist_file);
 	return EXIT_FAILURE;
       }
       gsl_matrix_set(mism_hist, i, 0, left_bin);
       gsl_matrix_set(mism_hist, i, 1, right_bin);
-      gsl_matrix_set(mism_hist, i, 2, prob_dbin);
+      gsl_matrix_set(mism_hist, i, 2, prob_bin);
     }
 
     /* Cleanup */
@@ -211,8 +214,8 @@ int main(int argc, char *argv[]) {
       for (i = 0; i < mism_hist->size1; ++i) {
 	const double left_bin  = gsl_matrix_get(mism_hist, i, 0);
 	const double right_bin = gsl_matrix_get(mism_hist, i, 1);
-	const double prob_dbin  = gsl_matrix_get(mism_hist, i, 2);
-	total_area += prob_dbin * (right_bin - left_bin);
+	const double prob_bin  = gsl_matrix_get(mism_hist, i, 2);
+	total_area += prob_bin * (right_bin - left_bin);
       }
       for (i = 0; i < mism_hist->size1; ++i) {
 	gsl_matrix_set(mism_hist, i, 2, gsl_matrix_get(mism_hist, i, 2) / total_area);
@@ -220,24 +223,6 @@ int main(int argc, char *argv[]) {
     }
 
   }
-  /* Otherwise create a fake no-mismatch histogram */
-  else {
-
-    /* Allocate memory */
-    if ((mism_hist = gsl_matrix_alloc(1, 3)) == NULL) {
-      LALPrintError("Couldn't allocate a gsl_matrix\n");
-      return EXIT_FAILURE;
-    }
-
-    /* Set single bin to zero mismatch with perfect probability */
-    gsl_matrix_set(mism_hist, 0, 0, 0.0);
-    gsl_matrix_set(mism_hist, 0, 1, 0.0);
-    gsl_matrix_set(mism_hist, 0, 2, 1.0);
-
-  }
-
-  /* Reduce the number of MC trials to speed things up */
-  MC_trial_init /= sqrt(mism_hist->size1);
 
   /* Load the SFTs */
   {
@@ -355,6 +340,7 @@ int main(int argc, char *argv[]) {
   }
   
   /* Begin iterations to find h0 */
+  MC_trials_reset = ((INT8)MC_trials_reset_fac * ((INT8)MC_trials_init));
   do {
 
     /* Open the output file */
@@ -372,17 +358,24 @@ int main(int argc, char *argv[]) {
     LALFree(cmdline);
     cmdline = NULL;
     fprintf(fp, "freq=%0.4f band=%0.4f\n", freq, band);
-  
-    /* Compute first guess at h0 */
-    h0  = twoFs * pow(A_coeff * B_coeff - C_coeff * C_coeff, -0.25);
-    h0 *= GSL_MAX(0.5, 1.0 + gsl_ran_gaussian(rng, 0.1));
+
+    /* Use initial h0 guess if given (first time only) */
+    if (initial_h0 > 0.0) {
+      h0 = initial_h0;
+      initial_h0 = 0.0;
+    }
+    /* Otherwise compute first guess at h0 */
+    else {
+      h0  = twoFs * pow(A_coeff * B_coeff - C_coeff * C_coeff, -0.25);
+      h0 *= GSL_MAX(0.5, 1.0 + gsl_ran_gaussian(rng, 0.1));
+    }
   
     /* Begin Newton-Raphson iteration to find h0 */
     h0_prev = GSL_POSINF;
 #define H0_ERROR fabs(1.0 - (h0 / h0_prev))
     h0_iter = 0;
-    MC_trials = MC_trial_init;
-    while (H0_ERROR > max_rel_err && MC_trials < (MC_trial_reset_fac * MC_trial_init)) {
+    MC_trials = MC_trials_init;
+    while (TRUE) {
       
       /* Integrand and its derivative w.r.t. h0 */
       REAL8 J = 0.0;
@@ -390,10 +383,10 @@ int main(int argc, char *argv[]) {
 
       INT4 twoF_pdf_FD = 0;
       REAL8 twoF_pdf_FDR = 0.0;
-      
-      LogPrintf(LOG_DEBUG, "Beginning h0 loop %2i with h0=%0.4e, error=%0.4e, MC_trials=%i\n", h0_iter, h0, H0_ERROR, MC_trials);
-      
-      fprintf(fp, "MC_trials=%i ", MC_trials);
+
+      /* Output at beginning of loop */
+      LogPrintf(LOG_DEBUG, "Beginning h0 loop %2i with h0=%0.5e, dh0=% 0.5e, MC_trials=%i\n", h0_iter, h0, dh0, MC_trials);
+      fprintf(fp, "MC_trials=%li ", MC_trials);
 
       /* Destroy any previous histogram */
       if (twoF_pdf_hist) {
@@ -410,12 +403,19 @@ int main(int argc, char *argv[]) {
 	REAL8 cosi = 0.0;
 	REAL8 psi = 0.0;
 	REAL8 twoF = 0.0;
+
 	REAL8 A1 = 0.0;
 	REAL8 A2 = 0.0;
 	REAL8 A3 = 0.0;
 	REAL8 A4 = 0.0;
-	REAL8 rho2 = 0.0;
 
+	REAL8 rho2 = 0.0;
+	REAL8 mism_rho2 = 0.0;
+
+	REAL8 mismatch = 0.0;
+	REAL8 prob_mismatch = 1.0;
+
+	REAL8 mismatch_from_pdf = 0.0;
 	REAL8 twoF_from_pdf = 0.0;
 
 	/* Generate random cosi, psi, and twoF */
@@ -441,54 +441,63 @@ int main(int argc, char *argv[]) {
 		A4 * A3 * C_coeff
 		);
 
-	/* Integrate over mismatch and add to the integrand and its derivative w.r.t. h0 */
-	for (i = 0; i < mism_hist->size1; ++i) {
-	  const double left_bin  = gsl_matrix_get(mism_hist, i, 0);
-	  const double right_bin = gsl_matrix_get(mism_hist, i, 1);
-	  const double prob_dbin = gsl_matrix_get(mism_hist, i, 2);
-	  
-	  const double mismatch = 0.5 * (right_bin - left_bin);
-	  const double twoFp = twoF * (1.0 - mismatch);
+	/* Generate random mismatch */
+	if (LALUserVarWasSet(&mism_hist_file)) {
 
-	  J  += pdf_ncx2_4(rho2, twoFp) * prob_dbin;
-	  dJ += 2.0 * rho2 / h0 * d_pdf_ncx2_4(rho2, twoFp) * prob_dbin;
+	  mismatch = gsl_ran_flat(rng, 0.0, max_mismatch);
+
+	  prob_mismatch = 0.0;
+	  for (i = 0; i < mism_hist->size1; ++i) {
+	    const double left_bin  = gsl_matrix_get(mism_hist, i, 0);
+	    const double right_bin = gsl_matrix_get(mism_hist, i, 1);
+	    const double prob_bin = gsl_matrix_get(mism_hist, i, 2);
+	    if (left_bin <= mismatch && mismatch < right_bin) {
+	      prob_mismatch = prob_bin;
+	      break;
+	    }
+	  }
+	  if (prob_mismatch == 0.0) {
+	    LALPrintError("\nCouldn't find the probability of a random mismatch from the mismatch PDF\n");
+	    return EXIT_FAILURE;
+	  }
 
 	}
+	mism_rho2 = (1.0 - mismatch) * rho2;
+
+	/* Add to the integrand and its derivative w.r.t. h0 */
+	J  +=                          pdf_ncx2_4(mism_rho2, twoF) * prob_mismatch;
+	dJ += 2.0 * mism_rho2 / h0 * d_pdf_ncx2_4(mism_rho2, twoF) * prob_mismatch;
 	
 	/* Break if J and dJ failed */
 	if (gsl_isnan(J) || gsl_isnan(dJ))
 	  break;
 	
-	/* Draw a 2F value from the non-central chi-square with parameter rho^2 */
-	twoF_from_pdf = ran_ncx2_4(rng, rho2);
-
-	/* Multiply 2F with a random mismatch from the mismatch histogram */
+	/* Draw a random mismatch from the mismatch histogram */
 	if (LALUserVarWasSet(&mism_hist_file)) {
 
-	  REAL8 mismatch_from_mism_pdf = 0.0;
-	  REAL8 mism_pdf_cumul_prob_dbin = gsl_ran_flat(rng, 0.0, 1.0);
+	  REAL8 mism_pdf_cumul_prob_bin = gsl_ran_flat(rng, 0.0, 1.0);
 
 	  for (i = 0; i < mism_hist->size1; ++i) {
 	    const double left_bin  = gsl_matrix_get(mism_hist, i, 0);
 	    const double right_bin = gsl_matrix_get(mism_hist, i, 1);
-	    const double prob_dbin = gsl_matrix_get(mism_hist, i, 2);
-
-	    mism_pdf_cumul_prob_dbin -= prob_dbin;
-	    if (mism_pdf_cumul_prob_dbin < (right_bin - left_bin)) {
-	      mismatch_from_mism_pdf = left_bin + mism_pdf_cumul_prob_dbin / prob_dbin * (right_bin - left_bin);
+	    const double prob_bin = gsl_matrix_get(mism_hist, i, 2);
+	    if (mism_pdf_cumul_prob_bin < (right_bin - left_bin)) {
+	      mismatch_from_pdf = left_bin + mism_pdf_cumul_prob_bin / prob_bin;
 	      break;
 	    }
-
+	    mism_pdf_cumul_prob_bin -= prob_bin * (right_bin - left_bin);
 	  }
-	  if (mismatch_from_mism_pdf == 0.0) {
+	  if (mismatch_from_pdf == 0.0) {
 	    LALPrintError("\nCouldn't generate a random mismatch from the mismatch PDF\n");
 	    return EXIT_FAILURE;
 	  }
 
-	  twoF_from_pdf *= (1.0 - mismatch_from_mism_pdf);
-
 	}	
+	mism_rho2 = (1.0 - mismatch_from_pdf) * rho2;
 	
+	/* Draw a 2F value from the non-central chi-square with parameter rho^2 */
+	twoF_from_pdf = ran_ncx2_4(rng, mism_rho2);
+
 	/* Count 2F value if it is below threshold */
 	if (twoF_from_pdf < twoFs)
 	  ++twoF_pdf_FD;
@@ -517,15 +526,18 @@ int main(int argc, char *argv[]) {
       /* If J and dJ failed, reduce h0 and try again */
       if (gsl_isnan(J) || gsl_isnan(dJ)) {
 	h0 /= 2.0;
-	LogPrintf(LOG_DEBUG, "Reducing h0 to %0.4e and starting again because either J=%0.4e or dJ=%0.4e\n", h0, J, dJ);
+	LogPrintf(LOG_DEBUG, "Reducing h0 to %0.4e and starting again because J=%0.4e, dJ=%0.4e\n", h0, J, dJ);
 	h0_iter = 0;
-	MC_trials = MC_trial_init;
+	MC_trials = MC_trials_init;
 	continue;
       }
 
-      /* Monte Carlo normalisation: integrate 2F but average cosi,psi; divide by number of trials */
+      /* Monte Carlo normalisation: integrate over 2F,mismatch but average cosi,psi; divide by number of trials */
       {
-	const REAL8 MC_norm = (twoFs - 0.0) / (MC_trials * mism_hist->size1);
+	REAL8 MC_norm = twoFs / MC_trials;
+	if (LALUserVarWasSet(&mism_hist_file))
+	  MC_norm *= max_mismatch;
+
 	J  *= MC_norm;
 	dJ *= MC_norm;
       }
@@ -538,19 +550,23 @@ int main(int argc, char *argv[]) {
       
       /* Limit the increment in h0 to |h0 * h0_brake| */
       dh0 = GSL_SIGN(dh0) * GSL_MIN(fabs(dh0), fabs(h0 * h0_brake));
-      
-      /* Increment h0 (saving old value) */
+
+      /* Output at end of loop */
+      fprintf(fp, "h0=%0.5e FDR_MC_int=%0.4f, FDR_2F_dist=%0.4f\n", h0, J, twoF_pdf_FDR);
+      fflush(fp);      
+      LogPrintf(LOG_DEBUG, "Ending    h0 loop %2i with error=%0.4e, FDR(MC int.)=%0.4f, FDR(2F dist.)=%0.4f\n", h0_iter, H0_ERROR, J, twoF_pdf_FDR);
+
+      /* Done if error condition or maximum number of trials */
+      if (H0_ERROR <= max_rel_err || MC_trials >= MC_trials_reset)
+	break;
+
+      /* Increment h0 */
       h0_prev = h0;
       h0 += dh0;
-      
-      fprintf(fp, "h0=%0.4e FDR=%0.4f\n", h0, twoF_pdf_FDR);
-      fflush(fp);
-      
-      LogPrintf(LOG_DEBUG, "Ending    h0 loop %2i with h0=%0.4e, error=%0.4e, J-FDR=% 0.4e, dh0=% 0.4e\n", h0_iter, h0, H0_ERROR, J - FDR, dh0);
 
       /* Increase iteration count and number of MC trials */
       ++h0_iter;
-      MC_trials *= MC_trial_fac;
+      MC_trials = (INT8)ceil(MC_trials * MC_trials_incr);
 
     }
 #undef H0_ERROR
@@ -562,10 +578,10 @@ int main(int argc, char *argv[]) {
     }
 
     /* If number of MC trials exceeded reset */
-    if (MC_trials >= (MC_trial_reset_fac * MC_trial_init))
+    if (MC_trials >= MC_trials_reset)
       LogPrintf(LOG_DEBUG, "Failed to converge after %i iterations (MC_trails=%i): trying again ...\n", h0_iter, MC_trials);
 
-  } while (MC_trials >= (MC_trial_reset_fac * MC_trial_init));
+  } while (MC_trials >= MC_trials_reset);
   
   /* Write 2F histogram if needed */
   if (LALUserVarWasSet(&twoF_pdf_hist_file)) {
