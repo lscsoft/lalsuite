@@ -326,6 +326,12 @@ def plot_systematics(filelist,cp,dir,epoch,dag,opts):
       htifi[freq[freqcnt]] += float(tmp[1])*float(tmp[3])#/ampf
       htrfi[freq[freqcnt]] += float(tmp[0])*float(tmp[3])#/ampf
       htifr[freq[freqcnt]] += float(tmp[1])*float(tmp[2])#/ampf
+#      htrfr[freq[freqcnt]] += float(tmp[0])*float(tmp[2])/ampf
+#      htifi[freq[freqcnt]] += float(tmp[1])*float(tmp[3])/ampf
+#      htrfi[freq[freqcnt]] += float(tmp[0])*float(tmp[3])/ampf
+#      htifr[freq[freqcnt]] += float(tmp[1])*float(tmp[2])/ampf
+
+
 
       freqcnt += 1
       if freqcnt >= len(freq): freqcnt = 0 
@@ -658,8 +664,10 @@ def plot_noise_jobs(filelist,cp,dir,epoch,dag,qjob,opts):
         timeFreqTuple = []
       specCol = []
       for ix in range(0,len(freq)):        
-        timeFreqTuple.append((float(tmp[0]),float(freq[ix]),float(tmp[1+12*ix])/float(tmp[2+12*ix]) ))
-        specCol.append(float(tmp[1+12*ix])/float(tmp[2+12*ix]))
+        #PREVIOUS VERSION HAD 12 COLUMNS!
+        #timeFreqTuple.append((float(tmp[0]),float(freq[ix]),float(tmp[1+2*ix])/float(tmp[2+2*ix]) ))
+        timeFreqTuple.append((float(tmp[0]),float(freq[ix]),float(tmp[1+2*ix])/float(tmp[2+2*ix]) ))
+        specCol.append(float(tmp[1+2*ix])/float(tmp[2+2*ix]))
       specList.append(specCol)
     input.close() 
   fignames.sort(reverse=True)
@@ -895,4 +903,36 @@ class qscanNode(pipeline.CondorDAGNode):
       self.add_file_arg(qfile+'FULL')
     self.add_var_arg('@default')
     self.add_var_arg(dir)
-    
+
+class MkdirJob(CondorDAGJob):
+  """
+  Runs an instance of mkdir in a DAG/DAX. Useful for grid submission.
+  """
+  def __init__(self,log_dir, cp, dax=False):
+    self.__executable = cp.get('condor','mkdir')
+    self.__universe = 'local'
+    CondorDAGJob.__init__(self,self.__universe,self.__executable)
+#    AnalysisJob.__init__(self,cp,dax)
+    self.add_condor_cmd('getenv','True')
+    self.set_stdout_file(os.path.join( log_dir, 'mkdir-$(cluster)-$(process).out') )
+    self.set_stderr_file(os.path.join( log_dir, 'mkdir-$(cluster)-$(process).err') )
+    self.set_sub_file('mkdir.sub')
+
+class MkdirNode(CondorDAGNode):
+  """
+  Runs an instance of mkdir in a DAG/DAX. Useful for grid submission.
+  """
+  def __init__(self,job,dir):
+    """
+    @param job: A CondorDAGJob that can run an instance of ligolw_add
+    """
+    CondorDAGNode.__init__(self,job)
+    self.set_name('mkdir_'+dir.replace(' ',''))
+    self.add_var_arg(dir)
+
+    for file in dir.split():
+      self.add_output_file(file+'/'+'.log')
+      try: os.mkdir(file)
+      except: pass
+
+ 
