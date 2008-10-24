@@ -113,8 +113,8 @@ dag.set_dag_file(opts.basename)
 subsuffix = '.sub'
 
 # create the Condor jobs that will be used in the DAG
-mkdir_job = pipeline.MkdirJob('logs',cp)
-mkdir_node = pipeline.MkdirNode(mkdir_job,'cache')
+mkdir_job = strain.MkdirJob('logs',cp)
+mkdir_node = strain.MkdirNode(mkdir_job,'cache')
 if opts.write_dax: dag.add_node(mkdir_node)
 
 # try and make a directory to store the cache files and job logs
@@ -153,7 +153,7 @@ for epoch in epochs.epoch_segs():
   print "setting up jobs for calibration epoch " + str(epoch[1])+" - "+str(epoch[2]) + "..."
   #output the epochs in their own directories
   epoch_dir = 'EPOCH'+'-'+str(epoch[1])+'-'+str(epoch[2])
-  mkdir_node2 = pipeline.MkdirNode(mkdir_job,epoch_dir)
+  mkdir_node2 = strain.MkdirNode(mkdir_job,epoch_dir)
   if opts.write_dax: dag.add_node(mkdir_node2)
   if opts.cat_noise_jobs: catfile = strain.open_noise_cat_file(epoch_dir)
   # Make a ScienceData class for the calibration epochs
