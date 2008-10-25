@@ -456,10 +456,6 @@ int main(int argc, char *argv[]) {
 	      break;
 	    }
 	  }
-	  if (prob_mismatch == 0.0) {
-	    LALPrintError("\nCouldn't find the probability of a random mismatch from the mismatch PDF\n");
-	    return EXIT_FAILURE;
-	  }
 
 	}
 	mism_rho2 = (1.0 - mismatch) * rho2;
@@ -477,6 +473,7 @@ int main(int argc, char *argv[]) {
 
 	  REAL8 mism_pdf_cumul_prob_bin = gsl_ran_flat(rng, 0.0, 1.0);
 
+	  mismatch_from_pdf = max_mismatch;
 	  for (i = 0; i < mism_hist->size1; ++i) {
 	    const double left_bin  = gsl_matrix_get(mism_hist, i, 0);
 	    const double right_bin = gsl_matrix_get(mism_hist, i, 1);
@@ -486,10 +483,6 @@ int main(int argc, char *argv[]) {
 	      break;
 	    }
 	    mism_pdf_cumul_prob_bin -= prob_bin * (right_bin - left_bin);
-	  }
-	  if (mismatch_from_pdf == 0.0) {
-	    LALPrintError("\nCouldn't generate a random mismatch from the mismatch PDF\n");
-	    return EXIT_FAILURE;
 	  }
 
 	}	
