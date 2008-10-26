@@ -722,6 +722,7 @@ tagFindChirpBankSimParams
   INT4                  maxMatch;
   CHAR                 *frameName;
   CHAR                 *frameChan;
+  REAL4			f_lower;
 }
 FindChirpBankSimParams;
 /* </lalVerbatim> */
@@ -1109,9 +1110,12 @@ XLALComputeFullChisq(
     REAL4                       norm
 );
 
-InspiralTemplate * 
-XLALFindChirpSortTemplates( InspiralTemplate *bankHead, UINT4 num );
-
+InspiralTemplate *
+XLALFindChirpSortTemplates( 
+  InspiralTemplate *bankHead, 
+  UINT4 num, 
+  UINT4 subbanksize
+);
 
 #ifdef  __cplusplus
 #pragma {
