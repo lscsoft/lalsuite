@@ -545,7 +545,7 @@ int main(int argc, char *argv[]) {
       dh0 = GSL_SIGN(dh0) * GSL_MIN(fabs(dh0), fabs(h0 * h0_brake));
 
       /* Output at end of loop */
-      fprintf(fp, "h0=%0.5e FDR_MC_int=%0.4f, FDR_2F_dist=%0.4f\n", h0, J, twoF_pdf_FDR);
+      fprintf(fp, "h0=%0.5e FDR_MC_int=%0.4f FDR_2F_dist=%0.4f\n", h0, J, twoF_pdf_FDR);
       fflush(fp);      
       LogPrintf(LOG_DEBUG, "Ending    h0 loop %2i with error=%0.4e, FDR(MC int.)=%0.4f, FDR(2F dist.)=%0.4f\n", h0_iter, H0_ERROR, J, twoF_pdf_FDR);
 
