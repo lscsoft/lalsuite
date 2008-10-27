@@ -203,7 +203,7 @@ REAL4 XLAL2DMetricDistance( REAL4 fa, REAL4 fb, REAL4 Qa, REAL4 Qb )
 
   gQQ = ( 3 + 16 * Q2 * Q2) / Q2 / ( 1 + 4 * Q2 ) / ( 1 + 4 * Q2 ); 
   gff = ( 3 + 8 * Q2) / fa / fa; 
-  gQf = - 2 * ( 3 + 4 * Q2 ) / Qa / ( 1 + 4 * Q2 ); 
+  gQf = - 2 * ( 3 + 4 * Q2 ) / Qa / fa / ( 1 + 4 * Q2 ); 
 
   return ( 1.0/8.0 * ( gQQ * pow(Qb-Qa,2) + gQf * (Qb-Qa) * (fb-fa) + gff * pow(fb-fa,2) ) ); 
 }
