@@ -7,7 +7,7 @@ $Id$
 This program creates cache files for the output of inspiral hipe
 """
 
-__author__ = 'Chad Hanna <channa@phys.lsu.edu>'
+__author__ = 'Chad Hanna <channa@ligo.caltech.edu>'
 __date__ = '$Date$'
 __version__ = '$Revision$'[11:-2]
 
@@ -153,6 +153,17 @@ parser.add_option("", "--disable-ifarsorting",action="store_true",\
 parser.add_option("-w", "--write-to-iulgroup",action="store_true", \
     default=False, help="publish the page to the iulgroup")
 
+parser.add_option("", "--sky-map",action="store_true",default=False,\
+    help="generate sky map data for an event")
+
+parser.add_option("", "--sky-map-plot",action="store_true",default=False,\
+    help="plot sky map data for an event")
+
+parser.add_option("", "--coh-inspiral",action="store_true",default=False,\
+    help="run a lalapps_inspiral job much the same way as the coherent code")
+
+
+
 command_line = sys.argv[1:]
 (opts,args) = parser.parse_args()
 
@@ -220,7 +231,9 @@ if not opts.disable_followup:
 
 ##############################################################################
 # create the DAG writing the log to the specified directory
-page = string.strip(cp.get('output','page'))
+#page = string.strip(cp.get('output','page'))
+page = string.strip(cp.get('output','url'))
+publish_path = string.strip(cp.get('output','page'))
 dag = followUpDAG(opts.config_file, opts.log_path)
 dag.setupDAGWeb('followup web page','index.html',page)
 
@@ -252,7 +265,11 @@ if not opts.disable_followup:
   MCMCJob 	  = mcmcJob(opts,cp)
   PLOTMCMCJob     = plotmcmcJob(opts,cp)
   headInspJob     = followUpInspJob(cp, 'head')
+  cohInspJob     = followUpInspJob(cp, 'coh')
   h1h2QJob        = h1h2QeventJob(opts,cp)   
+  skyMapJob       = lalapps_skyMapJob(opts,cp)
+  skyPlotJob      = pylal_skyPlotJob(opts,cp)
+
 
 dataJob         = followupDataFindJob(cp,'futrig')
 qscanBgJob      = qscanLiteJob(opts,cp)
@@ -364,10 +381,14 @@ if not opts.disable_followup:
  
     # Initialization of local variables
     dHoftNode = {}
-
+    
+    # We need a source localization node at the coincident trigger level
+    # it takes many ifos as input. 
+    skyNode = lalapps_skyMapNode(skyMapJob,trig)
+ 
     #Lets make a new section for this event
     dag.appendSection('Trigger ID = '+str(trig.eventID)+ ' Stat = '+str(trig.statValue))  
-
+    
     # TRY GETTING INSPIRAL PROCESS PARAMS... 
     # currently done even when inspiral jobs are not requested... fix?
     inspiral_process_params = cache.processFollowupCache(cp, opts, trig)
@@ -406,6 +427,9 @@ if not opts.disable_followup:
 
       # SETUP INSPIRAL JOBS
       inspiralNode = followUpInspNode(inspJob,inspiral_process_params[ifo], ifo, trig, cp, opts, dag, inspiralDataFindNode.outputFileName,inspiralDataFindNode,'inspiral_datafind')
+      cohInspNode = followUpInspNode(cohInspJob,inspiral_process_params[ifo], ifo, trig, cp, opts, dag, inspiralDataFindNode.outputFileName,inspiralDataFindNode,'inspiral_datafind',type='coh')
+      skyNode.append_insp_node(inspiralNode,ifo)
+      #skyNode.append_insp_node(cohInspNode,ifo)      
       headInspiralNode = followUpInspNode(headInspJob,inspiral_process_params[ifo], ifo, trig, cp, opts, dag, inspiralDataFindNode.outputFileName,inspiralDataFindNode,'inspiral_datafind', 'head', bank)
 
 
@@ -422,8 +446,7 @@ if not opts.disable_followup:
       PLOTMCMCNode = plotmcmcNode(PLOTMCMCJob,ifo,trig,cp,opts,dag,MCMCNode)
 
       # SETUP STATUS SUMMARY PLOT JOBS
-      if not ifo=='V1':
-        statusNode = IFOstatus_checkNode(statusJob, ifo, trig, cp, opts, dag)
+      statusNode = IFOstatus_checkNode(statusJob, ifo, trig, cp, opts, dag)
 
 
     # SETUP H1H2 SPECIFIC JOBS
@@ -465,8 +488,25 @@ if not opts.disable_followup:
         for itf in trig.ifolist_in_coinc:
           # SETUP INSPIRAL JOBS
           inspiralNode = followUpInspNode(inspJobNotrig,inspiral_process_params[ifo], itf, trig, cp, opts, dag, inspiralDataFindNode.outputFileName,inspiralDataFindNode,'inspiral_datafind','notrig',None)
+          # Setup sky map node, this will cause a warning because it will try
+          # to add multiple ifos at once.  What we really want is the same 
+          # template filtered through all ifos.  This needs to be fixed.  For
+          # now the skymap is wedged in to test the plumbing.
+          #skyMapNode.append(inspiralNode,ifo)
           # SETUP PLOT JOBS
           plotNode = plotSNRCHISQNode(plotJob,ifo,inspiralNode.output_file_name,trig,page,dag,inspiralNode,opts,itf)
+
+    # SOURCE LOCALIZATION.  This requires the complex frame data from the above
+    # inspiral jobs for all ifos that are on.  This should be replaced with the
+    # output of the coherent inspiral stages which use the same template
+    # Set up a sky map node.  These take inputs from all the triggers and
+    # must appear outside the loop over ifos.  But we need the output file 
+    # names from several inspiral jobs since they are only run over one ifo
+    # we could walk the graph and find this (maybe) but instead I'll just track
+    # the names we need. 
+    skyNode.add_node_to_dag(dag,opts,trig)
+    skyPlotNode = pylal_skyPlotNode(skyPlotJob,trig,skyNode,dag,page,opts)
+  
 
 
   # Prepare for moving the deported qscan directory (tar-gzip)
@@ -475,16 +515,12 @@ if not opts.disable_followup:
   
   # Loop for analyseQscan jobs (which must be children of all qscan jobs)
   for trig in followuptrigs:
-
-    for ifo in trig.ifolist_in_coinc:
-
-      anaQscanNode = analyseQscanNode(anaQscanJob,trig.gpsTime[ifo],ifo,'foreground-qscan','QSCAN/QSCAN.cache','QSCANLITE/QSCANLITE.cache',cp,opts,dag,'analyse_qscan')
       anaQscanNode = analyseQscanNode(anaQscanJob,trig.gpsTime[ifo],ifo,'foreground-seismic-qscan','QSCAN/QSCAN.cache','QSCANLITE/QSCANLITE.cache',cp,opts,dag,'analyse_seis_qscan')
       anaQscanNode = analyseQscanNode(anaQscanJob,trig.gpsTime[ifo],ifo,'foreground-hoft-qscan','QSCAN/QSCAN.cache','QSCANLITE/QSCANLITE.cache',cp,opts,dag,'analyse_hoft_qscan')
     
 ##########################################################################
 dag.writeAll()
 if opts.write_to_iulgroup:
-  dag.publishToHydra()
+  dag.publishToHydra(publish_path)
 
 sys.exit(0)
