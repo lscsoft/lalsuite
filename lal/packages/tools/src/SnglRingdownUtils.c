@@ -48,6 +48,7 @@ $Id$
 #include <lal/DetectorSite.h>
 #include <lal/DetResponse.h>
 #include <lal/TimeDelay.h>
+#include <lal/Ring.h>
 
 NRCSID( SNGLRINGDOWNUTILSC, "$Id$" );
 
@@ -417,7 +418,7 @@ LALCompareRingdowns (
     fb = bPtr->frequency;
     Qa = aPtr->quality;
     Qb = bPtr->quality;
-
+    
     ds2ab = XLAL2DMetricDistance( fa, fb, Qa, Qb );
     ds2ba = XLAL2DMetricDistance( fb, fa, Qb, Qa );
 
