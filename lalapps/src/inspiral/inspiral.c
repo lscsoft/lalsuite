@@ -187,7 +187,18 @@ INT4   highPassOrder    = -1;           /* order of the td iir filter   */
 REAL4  highPassAtten    = -1;           /* attenuation of the td filter */
 
 REAL4  fLow             = -1;           /* low frequency cutoff         */
-INT4   specType         = -1;           /* use median or mean psd       */
+
+/* which type of PSD to use */
+enum
+{
+  specType_mean,
+  specType_median,
+  specType_gaussian,
+  specType_LIGO,
+  specType_AdvLIGO,
+  specType_undefined
+} specType = specType_undefined;
+
 INT4   badMeanPsd       = 0;            /* use a mean with no overlap   */
 INT4   invSpecTrunc     = -1;           /* length of inverse spec (s)   */
 REAL4  dynRangeExponent = -1;           /* exponent of dynamic range    */
@@ -1137,7 +1148,7 @@ int main( int argc, char *argv[] )
     if ( writeResponse ) outFrame = fr_add_proc_COMPLEX8FrequencySeries( 
         outFrame, &resp, "strain/ct", "RESPONSE_UNITY" );
   }
-  if ( ( specType == 3 ) || ( specType == 4 ) )
+  if ( ( specType == specType_LIGO ) || ( specType == specType_AdvLIGO ) )
   {
     /* replace the response function with 1/dynRange if we are using the */
     /* design LIGO or AdvLIGO psd                                        */
@@ -1616,17 +1627,17 @@ int main( int argc, char *argv[] )
   avgSpecParams.window = NULL;
   switch ( specType )
   {
-    case 0:
+    case specType_mean:
       avgSpecParams.method = useMean;
       if ( vrbflg ) fprintf( stdout, "computing mean psd" );
       break;
-    case 1:
+    case specType_median:
       avgSpecParams.method = useMedian;
       if ( vrbflg ) fprintf( stdout, "computing median psd" );
       break;
-    case 2:
-    case 3:
-    case 4:
+    case specType_gaussian:
+    case specType_LIGO:
+    case specType_AdvLIGO:
       avgSpecParams.method = useUnity;
       if ( vrbflg ) fprintf( stdout, "computing constant psd with unit value" );
       break;
@@ -1659,7 +1670,7 @@ int main( int argc, char *argv[] )
   XLALDestroyREAL4Window( avgSpecParams.window );
   strcpy( spec.name, chan.name );
   
-  if ( specType == 2 )
+  if ( specType == specType_gaussian )
   {
     /* multiply the unit power spectrum by the variance to get the white psd */
     REAL4 gaussVarSq = gaussVar * gaussVar;
@@ -1670,7 +1681,7 @@ int main( int argc, char *argv[] )
     if ( vrbflg ) 
       fprintf( stdout, "set psd to constant value = %e\n", spec.data->data[0] );
   }
-  else if ( specType == 3 )
+  else if ( specType == specType_LIGO )
   {
     /* replace the spectrum with the Initial LIGO design noise curve */
     INT4  k_min          = strainHighPassFreq / spec.deltaF > 1 ? 
@@ -1692,7 +1703,7 @@ int main( int argc, char *argv[] )
     }
     if ( vrbflg ) fprintf( stdout, "set psd to Initial LIGO design\n" );
   }
-  else if ( specType == 4 )
+  else if ( specType == specType_AdvLIGO )
   {
     /* replace the spectrum with the Advanced LIGO design noise curve */
     INT4  k_min          = strainHighPassFreq / spec.deltaF > 1 ? 
@@ -3838,33 +3849,33 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
       case 'j':
         if ( ! strcmp( "mean", optarg ) )
         {
-          specType = 0;
+          specType = specType_mean;
         }
         else if ( ! strcmp( "median", optarg ) )
         {
-          specType = 1;
+          specType = specType_median;
         }
         else if ( ! strcmp( "bad-mean", optarg ) )
         {
-          specType = 0;
+          specType = specType_mean;
           badMeanPsd = 1;
         }
         else if ( (! strcmp( "gaussian", optarg )) || (! strcmp( "white", optarg )) )
         {
-          specType = 2;
+          specType = specType_gaussian;
           fprintf( stderr,
               "WARNING: replacing psd with white Gaussian spectrum\n" );
         }
         else if ( ! strcmp( "LIGO", optarg ) )
         {
-          specType = 3;
+          specType = specType_LIGO;
           fprintf( stderr,
               "WARNING: replacing psd with Initial LIGO design spectrum\n"
               "WARNING: replacing response function with a constant\n" );
         }
         else if ( ! strcmp( "AdvLIGO", optarg ) )
         {
-          specType = 4;
+          specType = specType_AdvLIGO;
           fprintf( stderr,
               "WARNING: replacing psd with Advanced LIGO design spectrum\n"
               "WARNING: replacing response function with a constant\n" );
@@ -5011,7 +5022,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     fprintf( stderr, "--resample-filter must be specified\n" );
     exit( 1 );
   }
-  if ( specType < 0 )
+  if ( specType == specType_undefined )
   {
     fprintf( stderr, "--spectrum-type must be specified\n" );
     exit( 1 );
@@ -5233,20 +5244,20 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
  
     /* check that specType is either LIGO or advLIGO for colored Gaussian noise
      */
-    if (specType == 2)
+    if (specType == specType_gaussian)
     {
       fprintf( stderr, "--spectrum-type cannot be white for " 
                         "colored Gaussian noise: specify either LIGO, "
                         "AdvLIGO, mean or median\n");
       exit( 1 );
     }
-    if (specType == 3 && colorSpec == 4) 
+    if (specType == specType_LIGO && colorSpec == 4) 
     {
       fprintf(stderr,"Error: if "
         "--colored-gaussian is AdvLIGO --spectrum-type cannot be LIGO\n");
       exit( 1 );
     }
-    if (specType == 4 && colorSpec == 3) 
+    if (specType == specType_AdvLIGO && colorSpec == 3) 
     {
       fprintf(stderr,"Error: if "
         "--colored-gaussian is LIGO --spectrum-type cannot be AdvLIGO\n");
