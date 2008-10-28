@@ -407,11 +407,15 @@ LALFindChirpInjectSignals (
                * This will make the bandpassing better 
                */
               
-              if ((start - (int)(0.25/chan->deltaT)) > 0 ) 
+              if (((INT4)start - (int)(0.25/chan->deltaT)) > 0 ) 
                     start -= (int)(0.25/chan->deltaT);
-              
+              else
+                    start = 0;              
+
               if ((end + (int)(0.25/chan->deltaT)) < signal.data->length ) 
                     end += (int)(0.25/chan->deltaT);
+              else
+                    end = signal.data->length - 1;
 
               bandpassVec = (REAL4Vector *)
                       LALCalloc(1, sizeof(REAL4Vector) );
