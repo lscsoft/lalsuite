@@ -19,7 +19,7 @@
 #include <string.h>
 #include "SFTReferenceLibrary.h"
 
-#define RCSID "$Id: splitSFTs.c,v 1.38 2008/10/29 16:07:32 bema Exp $"
+#define RCSID "$Id: splitSFTs.c,v 1.39 2008/10/29 16:32:54 bema Exp $"
 
 /** rounding (for positive numbers!)
     taken from SFTfileIO in LALSupport, should be consistent with that */
@@ -319,7 +319,7 @@ int main(int argc, char**argv) {
     } /* else (add_comment == CMT_NONE) and (comment == NULL) i.e. no comment at all */
 
     /* get the detector name from SFT header if present there (in v2 SFTs),
-	or else it needs to have been set on the command-line */
+       or else it needs to have been set on the command-line */
     if(hd.detector && *hd.detector)
       detector = hd.detector;
 
@@ -337,7 +337,7 @@ int main(int argc, char**argv) {
     TRYSFT(ReadSFTData(fp, data, start, nactivesamples, NULL, NULL),
 	   "could not read SFT data");
 
-    /* if reading v1 SFTs include the normalization in the applied factor */
+    /* if reading v1 SFTs include the normalization in the factor to be applied */
     if(hd.version == 1.0) {
       conversion_factor = 0.5 * hd.tbase / hd.nsamples;
     } else {
