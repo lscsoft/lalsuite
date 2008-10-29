@@ -396,7 +396,6 @@ if not opts.disable_followup:
 
     # loop over ifos found in coincidence
     for ifo in trig.ifolist_in_coinc:
-    
       try: trig.gpsTime[ifo]
       except: continue
     
@@ -428,8 +427,8 @@ if not opts.disable_followup:
       # SETUP INSPIRAL JOBS
       inspiralNode = followUpInspNode(inspJob,inspiral_process_params[ifo], ifo, trig, cp, opts, dag, inspiralDataFindNode.outputFileName,inspiralDataFindNode,'inspiral_datafind')
       cohInspNode = followUpInspNode(cohInspJob,inspiral_process_params[ifo], ifo, trig, cp, opts, dag, inspiralDataFindNode.outputFileName,inspiralDataFindNode,'inspiral_datafind',type='coh')
-      skyNode.append_insp_node(inspiralNode,ifo)
-      #skyNode.append_insp_node(cohInspNode,ifo)      
+      #skyNode.append_insp_node(inspiralNode,ifo)
+      skyNode.append_insp_node(cohInspNode,ifo)      
       headInspiralNode = followUpInspNode(headInspJob,inspiral_process_params[ifo], ifo, trig, cp, opts, dag, inspiralDataFindNode.outputFileName,inspiralDataFindNode,'inspiral_datafind', 'head', bank)
 
 
