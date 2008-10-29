@@ -1,13 +1,15 @@
 /*
-
   This program reads in binary SFTs (v1 and v2) and writes out narrow-banded merged SFTs (v2).
 
-  It links to the SFTReferenceLibrary. To compile, use somehting like
+  This code links to the SFTReferenceLibrary. To compile, use somehting like
   gcc -Wall -g -O2 splitSFTs.c -o splitSFTs libSFTReferenceLibrary.a -lm
-
-  Copyright (C) 2008 Bernd Machenschalk
-
 */
+ 
+/** \author Bernd Machenschalk
+ * \file
+ * \brief
+ * This program reads in binary SFTs (v1 and v2) and writes out narrow-banded merged SFTs (v2).
+ */
 
 #include <math.h>
 #include <time.h>
@@ -17,7 +19,7 @@
 #include <string.h>
 #include "SFTReferenceLibrary.h"
 
-#define RCSID "$Id: splitSFTs.c,v 1.36 2008/10/23 19:12:10 bema Exp $"
+#define RCSID "$Id: splitSFTs.c,v 1.37 2008/10/29 15:44:02 bema Exp $"
 
 /** rounding (for positive numbers!)
     taken from SFTfileIO in LALSupport, should be consistent with that */
@@ -30,7 +32,7 @@
 #define CMT_OLD  1
 #define CMT_FULL 2
 
-/** macros for error handling */
+/* macros for error handling */
 /** error if value is nonzero */
 #define TRY(v,c,errex) { int r; if((r=(v))) { fprintf(stderr,c " (%d @ %d)\n", r, __LINE__); exit(errex); } }
 /** for SFT library calls write out the corresponding SFTErrorMessage, too */
@@ -75,35 +77,35 @@ UNIT_SOURCE write_open_rate={0, 0, 0};
 
 /** main program */
 int main(int argc, char**argv) {
-  unsigned int arg;               /**< current command-line argument */
-  unsigned int bin;               /**< current bin */
-  struct headertag2 hd;           /**< header of input SFT */
-  FILE *fp;                       /**< currently open filepointer */
-  char *oldcomment;               /**< comment of input SFT */
-  char *cmdline = NULL;           /**< records command-line to add it to comment */
-  char *comment = NULL;           /**< comment to be written into output SFT file */
-  int swap;                       /**< do we need to swap bytes? */
-  float *data;                    /**< SFT data */
-  char *outname;                  /**< name of output SFT file */
-  char *prefix = "";              /**< output filename prefix */
-  char *detector = NULL;          /**< detector name */
-  double factor = 1.0;            /**< "mystery" factor */
-  double conversion_factor = 1.0; /**< extra factor needed when converting from v1 SFTs */
-  int firstfile = TRUE;           /**< are we processing the first input SFT file? */
-  int add_comment = CMT_FULL;     /**< add RCSID and full command-line to every SFT file */
-  unsigned int start = 0, end = 0;     /**< start and end in bins */
-  unsigned int width = 0, overlap = 0; /**< width and overlap in bins */
-  double fMin = -1.0, fMax = -1.0;     /**< start and end in Hz */
-  double fWidth = -1.0, fOverlap = -1; /**< width and overlap in Hz */
-  unsigned int nactivesamples;         /**< number of bins to actually read in */
+  unsigned int arg;               /* current command-line argument */
+  unsigned int bin;               /* current bin */
+  struct headertag2 hd;           /* header of input SFT */
+  FILE *fp;                       /* currently open filepointer */
+  char *oldcomment;               /* comment of input SFT */
+  char *cmdline = NULL;           /* records command-line to add it to comment */
+  char *comment = NULL;           /* comment to be written into output SFT file */
+  int swap;                       /* do we need to swap bytes? */
+  float *data;                    /* SFT data */
+  char *outname;                  /* name of output SFT file */
+  char *prefix = "";              /* output filename prefix */
+  char *detector = NULL;          /* detector name */
+  double factor = 1.0;            /* "mystery" factor */
+  double conversion_factor = 1.0; /* extra factor needed when converting from v1 SFTs */
+  int firstfile = TRUE;           /* are we processing the first input SFT file? */
+  int add_comment = CMT_FULL;     /* add RCSID and full command-line to every SFT file */
+  unsigned int start = 0, end = 0;     /* start and end in bins */
+  unsigned int width = 0, overlap = 0; /* width and overlap in bins */
+  double fMin = -1.0, fMax = -1.0;     /* start and end in Hz */
+  double fWidth = -1.0, fOverlap = -1; /* width and overlap in Hz */
+  unsigned int nactivesamples;         /* number of bins to actually read in */
 
-  /** initialize throtteling */
+  /* initialize throtteling */
   time(&read_bandwidth.last_checked);
   time(&read_open_rate.last_checked);
   time(&write_bandwidth.last_checked);
   time(&write_open_rate.last_checked);
 
-  /** help / usage message */
+  /* help / usage message */
   if((argv[1] == NULL) ||
      (strcmp(argv[1], "-h") == 0) || 
      (strcmp(argv[1], "--help") == 0)) {
@@ -152,14 +154,14 @@ int main(int argc, char**argv) {
     exit(0);
   }
 
-  /** record RCSID and command-line for the comment */
+  /* record RCSID and command-line for the comment */
   TRY((cmdline = (char*)malloc(strlen(RCSID)+2)) == NULL,
       "out of memory allocating cmdline",1);
   strcpy(cmdline,RCSID);
   strcat(cmdline, "\n");
   for(arg = 0; arg < argc; arg++) {
     if (strcmp(argv[arg], "-m") == 0) {
-      /** obscure the mystery factor */
+      /* obscure the mystery factor */
       TRY((cmdline = (char*)realloc((void*)cmdline, strlen(cmdline) + 8)) == NULL,
 	  "out of memory allocating cmdline",2);
       strcat(cmdline, "-m xxx ");
@@ -232,30 +234,32 @@ int main(int argc, char**argv) {
     }
   }
 
-  /** check if there was an input-file option given at all */
+  /* check if there was an input-file option given at all */
   TRY(argv[arg] == NULL, "no input files specified",4);
-  TRY(strcmp(argv[arg], "-i") != 0, "no input files specified",5);
+  TRY(((strcmp(argv[arg], "-i") != 0) &&
+       (strcmp(argv[arg], "--input-files" != 0))),
+      "no input files specified",5);
 
-  /** allocate space for output filename */
+  /* allocate space for output filename */
   TRY((outname = (char*)malloc(strlen(prefix) + 20)) == NULL,
       "out of memory allocating outname",6);
 
-  /** loop over all input files */
-  /** first skip the "-i" option */
+  /* loop over all input SFT files */
+  /* first skip the "-i" option */
   for(arg++; arg < argc; arg++) {
 
-    /** open input SFT */
+    /* open input SFT */
     request_resource(&read_open_rate, 1);
     TRY((fp = fopen(argv[arg], "r")) == NULL,
 	"could not open SFT file for reading",7);
     
-    /** read header */
+    /* read header */
     request_resource(&read_bandwidth, 40);
     TRYSFT(ReadSFTHeader(fp, &hd, &oldcomment, &swap, 1),
 	   "could not read SFT header");
 
-    /** calculate bins from frequency parameters if they were given */
-    /** deltaF = 1.0 / tbase; bins = freq / deltaF => bins = freq * tbase */
+    /* calculate bins from frequency parameters if they were given */
+    /* deltaF = 1.0 / tbase; bins = freq / deltaF => bins = freq * tbase */
     if(fMin >= 0.0)
       start = MYROUND(fMin * hd.tbase);
     if(fMax >= 0.0)
@@ -265,11 +269,11 @@ int main(int argc, char**argv) {
     if(fOverlap >= 0.0)
       overlap = MYROUND(fOverlap * hd.tbase);
  
-    /** allocate space for SFT data */
+    /* allocate space for SFT data */
     TRY((data = (float*)calloc(hd.nsamples, 2*sizeof(float))) == NULL,
 	"out of memory allocating data",8);
 
-    /** error if desired start bin < hd.firstfreqindex */
+    /* error if desired start bin < hd.firstfreqindex */
     if(start < hd.firstfreqindex) {
       fprintf(stderr,
 	      "ERROR: start bin (%d) is smaller than first bin in input SFT (%d)\n",
@@ -277,7 +281,7 @@ int main(int argc, char**argv) {
       exit(9);
     }
 
-    /** error if desired end bin > hd.firstfreqindex + hd.nsamples - 1 */
+    /* error if desired end bin > hd.firstfreqindex + hd.nsamples - 1 */
     if(start + width > end + 1) {
       fprintf(stderr,
 	      "ERROR: end bin (%d) is larger than last bin in input SFT (%d)\n",
@@ -285,7 +289,7 @@ int main(int argc, char**argv) {
       exit(10);
     }
 
-    /** error if overlap is larger than the width */
+    /* error if overlap is larger than the width */
     if(overlap >= width) {
       fprintf(stderr,
               "ERROR: overlap (%d) is not smaller than the width (%d)\n",
@@ -293,14 +297,14 @@ int main(int argc, char**argv) {
       exit(11);
     }
 
-    /** build comment for output SFTs */
+    /* construct comment for output SFTs */
     if (add_comment > CMT_OLD) {
 
-      /** allocate space for new comment */
+      /* allocate space for new comment */
       TRY((comment = (char*)malloc(hd.comment_length + strlen(cmdline) + 1)) == NULL,
 	  "out of memory allocating comment",11);
       
-      /** append the commandline of this program to the old comment */
+      /* append the commandline of this program to the old comment */
       if (oldcomment)
 	strcpy(comment,oldcomment);
       else
@@ -309,63 +313,63 @@ int main(int argc, char**argv) {
 
     } else if (add_comment == CMT_OLD) {
 
-      /** only copied existing comment, no additional space needed */
+      /* only copied existing comment, no additional space needed */
       comment = oldcomment;
 
-    } /** else (add_comment == CMT_NONE) and (comment == NULL) i.e. no comment at all */
+    } /* else (add_comment == CMT_NONE) and (comment == NULL) i.e. no comment at all */
 
-    /** get the detector name from SFT header if present there (in v2 SFTs),
+    /* get the detector name from SFT header if present there (in v2 SFTs),
 	or else it needs to have been set on the command-line */
     if(hd.detector && *hd.detector)
       detector = hd.detector;
 
-    /** if no detector has been specified, issue an error */
-    TRY(detector == NULL || !*detector, "When reading v1 SFTs a detector needs to be specified with -d",12);
+    /* if no detector has been specified, issue an error */
+    TRY(!detector || !*detector, "When reading v1 SFTs a detector needs to be specified with -d",12);
 
-    /** calculate number of bins to actually read (width + overlap) */
+    /* calculate number of bins to actually read (width + overlap) */
     for(nactivesamples = 0; nactivesamples < end - start; nactivesamples += width - overlap);
     nactivesamples += overlap + 1;
     if(nactivesamples > hd.nsamples + hd.firstfreqindex - start)
       nactivesamples = hd.nsamples - start;
 
-    /** read in SFT bins */
+    /* read in SFT bins */
     request_resource(&read_bandwidth, nactivesamples*8);
     TRYSFT(ReadSFTData(fp, data, start, nactivesamples, NULL, NULL),
 	   "could not read SFT data");
 
-    /** if reading v1 SFTs include the normalization in the applied factor */
+    /* if reading v1 SFTs include the normalization in the applied factor */
     if(hd.version == 1.0) {
       conversion_factor = 0.5 * hd.tbase / hd.nsamples;
     } else {
       conversion_factor = 1.0;
     }
 
-    /** apply mystery factor and possibly normalization factor */
+    /* apply mystery factor and possibly normalization factor */
     for(bin = 0; bin < 2 * nactivesamples; bin++)
       data[bin] *= factor * conversion_factor;
 
-    /** close the input sfts */
+    /* close the input sfts */
     fclose(fp);
 
-    /** loop over start bins for output SFTs */
+    /* loop over start bins for output SFTs */
     for(bin = start; bin < end; bin += width - overlap) {
 
-      int last_index = hd.firstfreqindex + hd.nsamples - 1;
-      int last_bin = bin + width - 1;
+      int last_index  = hd.firstfreqindex + hd.nsamples - 1;
+      int last_bin    = bin + width - 1;
       int this_width1 = last_bin <= last_index ? width : width - (last_bin - last_index);
       int this_width2 = end - bin + 1;
-      int this_width = this_width1 < this_width2 ? this_width1 : this_width2;
+      int this_width  = this_width1 < this_width2 ? this_width1 : this_width2;
 
-      /** construct filename for this output SFT */
+      /* construct filename for this output SFT */
       sprintf(outname, "%s%d", prefix, bin);
 
-      /** append this SFT to a possible "merged" SFT with the same name */
+      /* append this SFT to a possible "merged" SFT with the same name */
       request_resource(&write_open_rate, 1);
       TRY((fp = fopen(outname,"a")) == NULL,
 	  "could not open SFT for writing",13);
 
-      /** write the data */
-      /** write the comment only to the first SFT of a "block", i.e. of a call of this program */
+      /* write the data */
+      /* write the comment only to the first SFT of a "block", i.e. of a call of this program */
       request_resource(&write_bandwidth, 40+this_width*8);
       TRYSFT(WriteSFT(fp, hd.gps_sec, hd.gps_nsec, hd.tbase, 
 		      bin, this_width, detector,
@@ -373,22 +377,22 @@ int main(int argc, char**argv) {
 		      data + 2 * (bin - start)),
 	     "could not write SFT data");
 
-      /** close output SFT file */
+      /* close output SFT file */
       fclose(fp);
 
-    } /**< loop over output SFTs */
+    } /* loop over output SFTs */
 
-    /** cleanup */
+    /* cleanup */
     if (add_comment > CMT_OLD)
       free(comment);
     free(data);
 
-    /** next file is not the first file anymore */
+    /* next file is not the first file anymore */
     firstfile = FALSE;
 
-  } /**< loop over input SFTs */
+  } /* loop over input SFTs */
 
-  /** cleanup */
+  /* cleanup */
   free(outname);
   if (add_comment > CMT_OLD)
     free(cmdline);
