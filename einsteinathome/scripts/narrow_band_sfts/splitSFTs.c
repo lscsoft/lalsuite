@@ -19,7 +19,7 @@
 #include <string.h>
 #include "SFTReferenceLibrary.h"
 
-#define RCSID "$Id: splitSFTs.c,v 1.37 2008/10/29 15:44:02 bema Exp $"
+#define RCSID "$Id: splitSFTs.c,v 1.38 2008/10/29 16:07:32 bema Exp $"
 
 /** rounding (for positive numbers!)
     taken from SFTfileIO in LALSupport, should be consistent with that */
@@ -353,12 +353,15 @@ int main(int argc, char**argv) {
 
     /* loop over start bins for output SFTs */
     for(bin = start; bin < end; bin += width - overlap) {
-
-      int last_index  = hd.firstfreqindex + hd.nsamples - 1;
-      int last_bin    = bin + width - 1;
-      int this_width1 = last_bin <= last_index ? width : width - (last_bin - last_index);
-      int this_width2 = end - bin + 1;
-      int this_width  = this_width1 < this_width2 ? this_width1 : this_width2;
+      /* determine the number of bins actually to write from the desired 'width',
+	 given that the remaining number of bin may be odd (especially from overlapping)
+	 and the bins to write need to be present in the input sft
+       */
+      int last_input_bin   = hd.firstfreqindex + hd.nsamples - 1;
+      int last_output_bin  = bin + width - 1;
+      int max_input_width  = last_output_bin <= last_input_bin ? width : width - (last_output_bin - last_input_bin);
+      int max_output_width = end - bin + 1;
+      int this_width       = max_input_width < max_output_width ? max_input_width : max_output_width;
 
       /* construct filename for this output SFT */
       sprintf(outname, "%s%d", prefix, bin);
@@ -370,7 +373,7 @@ int main(int argc, char**argv) {
 
       /* write the data */
       /* write the comment only to the first SFT of a "block", i.e. of a call of this program */
-      request_resource(&write_bandwidth, 40+this_width*8);
+      request_resource(&write_bandwidth, 40 + this_width * 8);
       TRYSFT(WriteSFT(fp, hd.gps_sec, hd.gps_nsec, hd.tbase, 
 		      bin, this_width, detector,
 		      firstfile ? comment : NULL,
