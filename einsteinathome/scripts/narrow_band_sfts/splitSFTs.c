@@ -19,7 +19,7 @@
 #include <string.h>
 #include "SFTReferenceLibrary.h"
 
-#define RCSID "$Id: splitSFTs.c,v 1.40 2008/10/29 16:46:05 bema Exp $"
+#define RCSID "$Id: splitSFTs.c,v 1.41 2008/10/29 16:54:13 bema Exp $"
 
 /** rounding (for positive numbers!)
     taken from SFTfileIO in LALSupport, should be consistent with that */
@@ -326,9 +326,12 @@ int main(int argc, char**argv) {
     /* if no detector has been specified, issue an error */
     TRY(!detector || !*detector, "When reading v1 SFTs a detector needs to be specified with -d",12);
 
-    /* calculate number of bins to actually read (width + overlap) */
+    /* calculate number of bins to actually read (from width + overlap) */
+    /* add width-overlap samples as lon as they are < the total number og bins to write */
     for(nactivesamples = 0; nactivesamples < end - start; nactivesamples += width - overlap);
+    /* add the last overlap */
     nactivesamples += overlap + 1;
+    /* if this number is larger than the bins in the input sft, just use the latter */
     if(nactivesamples > hd.nsamples + hd.firstfreqindex - start)
       nactivesamples = hd.nsamples - start;
 
