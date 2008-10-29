@@ -77,7 +77,7 @@ def customAnalysisChunkBuilder(scienceSegment,smallestBlockAllowed,largestBlockA
     """
     time_left=scienceSegment.dur()
     chunk_start=scienceSegment.start()
-    while time_left > smallestBlockAllowed:
+    while time_left >= smallestBlockAllowed:
         if time_left-largestBlockAllowed >=0:
             chunk_end=chunk_start+largestBlockAllowed
             scienceSegment.add_chunk(chunk_start,chunk_end)
