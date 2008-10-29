@@ -19,7 +19,7 @@
 #include <string.h>
 #include "SFTReferenceLibrary.h"
 
-#define RCSID "$Id: splitSFTs.c,v 1.39 2008/10/29 16:32:54 bema Exp $"
+#define RCSID "$Id: splitSFTs.c,v 1.40 2008/10/29 16:46:05 bema Exp $"
 
 /** rounding (for positive numbers!)
     taken from SFTfileIO in LALSupport, should be consistent with that */
@@ -236,8 +236,8 @@ int main(int argc, char**argv) {
 
   /* check if there was an input-file option given at all */
   TRY(argv[arg] == NULL, "no input files specified",4);
-  TRY(((strcmp(argv[arg], "-i") != 0) &&
-       (strcmp(argv[arg], "--input-files" != 0))),
+  TRY((strcmp(argv[arg], "-i") != 0) &&
+      (strcmp(argv[arg], "--input-files") != 0),
       "no input files specified",5);
 
   /* allocate space for output filename */
@@ -337,7 +337,7 @@ int main(int argc, char**argv) {
     TRYSFT(ReadSFTData(fp, data, start, nactivesamples, NULL, NULL),
 	   "could not read SFT data");
 
-    /* if reading v1 SFTs include the normalization in the factor to be applied */
+    /* if reading v1 SFTs set up a factor to be applied for normalization conversion */
     if(hd.version == 1.0) {
       conversion_factor = 0.5 * hd.tbase / hd.nsamples;
     } else {
