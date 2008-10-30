@@ -171,9 +171,9 @@ double load_time(char* file, int detector)
     {
         SnglInspiralTable* a = 0;
         LALSnglInspiralTableFromLIGOLw(&a, file, 0, 1);
-        /*w[detector] = sqrt(a->sigmasq);*/
+        w[detector] = sqrt(a->sigmasq);
         /*[detector] = a->snr;*/
-        w[detector] = 1;
+        /*w[detector] = 1;*/
         fprintf(stderr, "w[%d] = %f\n", detector, w[detector]);
         greenwich = XLALGreenwichMeanSiderealTime(&(a->end_time));
         fprintf(stderr, "%d:greenwich hour %f\n", detector, fmod(greenwich, LAL_TWOPI));
@@ -182,6 +182,7 @@ double load_time(char* file, int detector)
     else
     {
         fprintf(stderr, "warning: using unit template normalization");
+        w[detector] = w[0]*0.1;
         return 0;
     }
 }
@@ -225,7 +226,7 @@ void load_data(int detector, char* file, char* initial)
         FrStream *stream = NULL;
         COMPLEX8TimeSeries H1series;
         int i;
-
+        int inject_at;
 	int start_index;
 	double relative_time;
 
@@ -252,11 +253,11 @@ void load_data(int detector, char* file, char* initial)
 	fprintf(stderr, "%s:epoch: %f\n", initial, XLALGPSGetREAL8(&(H1series.epoch)));
         fprintf(stderr, "%s:mean_time: %f\n", initial, mean_time);
         /*relative_time = mean_time - trig_time[detector] + 0.5;*/ 
-        relative_time = trig_time[0] - trig_time[detector] + 0.5;/*- XLALGPSGetREAL8(&(H1series.epoch));*/
+        relative_time = -trig_time[0] + trig_time[detector] + 0.5;/*- XLALGPSGetREAL8(&(H1series.epoch));*/
         /* FIXME CHAD DID THIS */
-        /*relative_time = 0.5;*/
+        relative_time = 0.5;
 	fprintf(stderr,"relative time is %f\n",relative_time);
-	start_index = relative_time * frequency - samples/2;
+	start_index = (relative_time * frequency) - (samples / 2);
 
 	/*
 	 *  Allocate memory to repack the data in
@@ -266,18 +267,14 @@ void load_data(int detector, char* file, char* initial)
 	x[detector] = (double*) malloc(samples * sizeof(double));
 	/* complex, or waveform two */
 	x[detector + 3] = (double*) malloc(samples * sizeof(double));
+        inject_at = samples/2 + ((int) ((trig_time[detector]-trig_time[0])*frequency));
 
 	for (i = 0; i != samples; ++i)
 	{
-	    x[detector    ][i] = 0 * H1series.data->data[start_index + i].re;
-	    x[detector + 3][i] = 0 * H1series.data->data[start_index + i].im;
-	    fprintf(FP, "%d %f %f\n", i, x[detector][i], x[detector + 3][i]);
-	}
-        {
-          int inject_at = samples/2 + ((int) ((trig_time[detector]-trig_time[0])*frequency));
-          x[detector][inject_at] = 10;
-          fprintf(stderr,"%s: inject at %d\n",initial,inject_at);
-         }
+	    x[detector    ][i] = H1series.data->data[start_index + i].re;
+	    x[detector + 3][i] = H1series.data->data[start_index + i].im;
+	    fprintf(FP, "%d %f %f %d\n", i, x[detector][i], x[detector + 3][i], i == inject_at);
+        }
         fclose(FP);
     }
     else
@@ -306,19 +303,56 @@ void load_data(int detector, char* file, char* initial)
     }
 }
 
+#define max(A,B) (((A) > (B)) ? (A) : (B))
+
+double logsumexp(double a, double b)
+{
+   double c;
+   if (a > b)
+   {
+      c = log(1 + exp(b - a)) + a;
+   }
+   else
+   {
+      if (a < b)
+      {
+          c = log(exp(a - b) + 1) + b;
+      }
+      else
+      {
+          c = log(exp(a) + exp(b));
+      }
+   }
+   /*if (c == (log(0) - log(0)))*/
+   {
+      fprintf(stderr, "warning: logsumexp(%f, %f) = %f\n", a, b, c);
+   }
+   return c;
+}
+
 void analyze()
 {
     XLALSkymapPlanType* plan;
-    double s;    
-    
+    double s[8];
+    int i, j;
     double* raw;
-    
+    double* accumulator;
+    double psigma;
 
     /* 
      *  The characteristic size of the signal 
      */
     /*s = 1e-20;*/
-    s = 1;
+    /*s = 5 / w[0];*/
+
+    s[0] =   1 / w[0];
+    s[1] =   2 / w[0];
+    s[2] =   4 / w[0];
+    s[3] =   8 / w[0];
+    s[4] =  16 / w[0];
+    s[5] =  32 / w[0];
+    s[6] =  64 / w[0];
+    s[7] = 128 / w[0];
         
     /* 
      *  The inner product of the template with the noise in each detector 
@@ -333,6 +367,17 @@ void analyze()
      *  x[4] = imag(z_L)
      *  x[5] = imag(z_V)
      */
+
+     {
+        int i, j;
+        for (i = 0; i != 6; ++i)
+        {
+           for (j = 0; j != samples; ++j)
+           {
+               fprintf(stderr, "x[%d][%d] = %f\n", i, j, x[i][j]);
+           }
+        }
+     }
     
    
     /*
@@ -346,11 +391,32 @@ void analyze()
      *  timing format
      */
     raw = (double*) malloc(plan->pixelCount * sizeof(double));
-
+    accumulator = (double*) malloc(plan->pixelCount * sizeof(double));
     /*
      *  Generate the skymap
      */
-    XLALSkymapAnalyzeElliptical(raw, plan, s, w, samples, x);
+    XLALSkymapAnalyzeElliptical(accumulator, plan, s[0], w, samples, x);
+
+    for (i = 1; i != 8; ++i)
+    {
+        XLALSkymapAnalyzeElliptical(raw, plan, s[i], w, samples, x);
+
+        psigma = log(0);
+        for (j = 0; j != plan->pixelCount; ++j)
+        {
+            if (plan->pixel[j].area != 0)
+            {   
+                fprintf(stderr, "sigma[%d] raw[%d] = %f\n", i, j, raw[j]);
+                accumulator[j] = logsumexp(accumulator[j], raw[j]);
+                psigma = logsumexp(psigma, raw[j]);
+            }
+        }
+        fprintf(stderr, "sigma[%d] = %f with ln p(sigma) = %f\n", i, s[i], psigma);
+        
+    }
+
+    free(raw);
+    raw = accumulator;
 
     #if 0
     {   /*  
@@ -368,9 +434,26 @@ void analyze()
         double* render;
         int m = dec_res;
         int n = ra_res;
+        double maximum;
         render = (double*) malloc(m * n * sizeof(double));
-        XLALSkymapRenderEqualArea(m, n, render, plan, raw);
-	/*XLALSkymapRenderMollweide(m, n, render, plan, raw);*/
+        XLALSkymapRenderEquirectangular(m, n, render, plan, raw);
+        /*XLALSkymapRenderMollweide(m, n, render, plan, raw);*/
+
+        maximum = render[0];
+        for (j = 1; j != m * n; ++j)
+        {
+            if (render[j] > maximum)
+            {
+                maximum = render[j];
+            }
+        }
+        for (j = 0; j != m * n; ++j)
+        {
+            render[j] -= maximum;
+        }
+
+
+
 #ifdef SKYMAP_PNG
         {
             FILE* fp;
@@ -445,12 +528,17 @@ void analyze()
             {
                 double phi, ra;
                 phi = (LAL_TWOPI * (j + 0.5)) / n;
-                ra = fmod(phi + greenwich, LAL_TWOPI);
+                /*ra = fmod(phi + greenwich, LAL_TWOPI);*/
+                ra = fmod(phi+greenwich, LAL_TWOPI);
+                while (ra < 0)
+                    ra += LAL_TWOPI;
+                while (ra >= LAL_TWOPI)
+                    ra -= LAL_TWOPI;
                 for (i = 0; i != m; ++i)
                 {                    
                     double dec;
                     dec = LAL_PI_2 - (LAL_PI * (i + 0.5)) / m;
-                    fprintf(h, "%.10e %.10e %.10e\n", phi, dec, render[i + m * j]);
+                    fprintf(h, "%.10e %.10e %.10e\n", ra, dec, (render[i + m * j]));
                 }
             }
             fclose(h);
