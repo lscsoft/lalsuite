@@ -487,7 +487,8 @@ int XLALSkymapAnalyzeElliptical(double* p, XLALSkymapPlanType* plan, double sigm
                             buffer_max = (tau == start) ? buffer[tau] : max(buffer[tau], buffer_max);
                         }
                         /* guarding against overflows, compute the sum */
-                        for (tau = start; tau < stop; ++tau)
+                        p[index] = 0;
+			for (tau = start; tau < stop; ++tau)
                         {
                             p[index] += exp(buffer[tau] - buffer_max);
                         }
