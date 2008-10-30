@@ -50,13 +50,15 @@ $Id$
 NRCSID (FINDCHIRPBANKVETOC, "$Id$");
 
 /* Some static function prototypes */
-static int compareTemplateByOmegaS (const void * a, const void * b);
+
+static int compareTemplateByLevel (const void * a, const void * b);
 static int compareTemplateByChirpMass (const void * a, const void * b);
 static int  breakUpRegions(InspiralTemplate *bankHead, UINT4 num, UINT4 subbanksize );
 static InspiralTemplate *
 XLALFindChirpSortTemplatesByChirpMass( InspiralTemplate *bankHead, UINT4 num );
 static InspiralTemplate *
-XLALFindChirpSortTemplatesByOmegaS( InspiralTemplate *bankHead, UINT4 num);
+XLALFindChirpSortTemplatesByLevel( InspiralTemplate *bankHead, UINT4 num);
+
 
 
 /* <lalVerbatim file="FindChirpBankVetoCP"> */
@@ -69,7 +71,6 @@ XLALFindChirpCreateSubBanks(
     )
 /* </lalVerbatim> */
 {
-  static const char *func = "XLALFindChirpCreateSubBanks";
   UINT4                 i;
   UINT4                 numSubBanks = 0;
   UINT4                 subBankRemainder = 0;
@@ -350,38 +351,9 @@ XLALFindChirpSortTemplates( InspiralTemplate *bankHead, UINT4 num, UINT4 subbank
   {
   bankHead = XLALFindChirpSortTemplatesByChirpMass(bankHead,num);
   breakUpRegions(bankHead, num, subbanksize );
-  return XLALFindChirpSortTemplatesByOmegaS(bankHead,num);
+  return XLALFindChirpSortTemplatesByLevel(bankHead,num);
   }
 
-#if 0
-InspiralTemplate * 
-XLALFindChirpSortTemplates( InspiralTemplate *bankHead, UINT4 num ){
-
-  InspiralTemplate **bankArray = NULL;
-  InspiralTemplate *bankFirst = NULL;
-  UINT4 i = 0;
-  bankFirst = bankHead;
-  bankArray = (InspiralTemplate **) LALCalloc(num, sizeof(InspiralTemplate *));
-
-
-  for (i = 0; (i < num); bankHead = bankHead->next, i++)
-  {
-    bankArray[i] = bankHead; /* populate pointer array */
-  }
-
-  qsort(bankArray, num, sizeof(InspiralTemplate *), compareTemplate);
-
-  bankFirst = bankHead = bankArray[0];
-  /* repopulate linked list */
-  for (i=1; i < num; i++)
-  {
-    bankHead = bankHead->next = bankArray[i];
-  }
-  bankHead->next = NULL;
-  LALFree(bankArray);
-  return bankFirst;
-}
-#endif
 
 static InspiralTemplate *
 XLALFindChirpSortTemplatesByChirpMass( InspiralTemplate *bankHead, UINT4 num )
@@ -418,14 +390,14 @@ static int  breakUpRegions(InspiralTemplate *bankHead, UINT4 num, UINT4 subbanks
   UINT4 subbanknum = (UINT4) floor(num / (subbanksize+1) );
   for (i = 0; i < num; bankHead = bankHead->next, i++)
     {
-    bankHead->OmegaS = i % subbanknum;
+    bankHead->level = (UINT4) (i % subbanknum);
     }
-  return 1;
+  return 0;
   }
-      
+
 
 static InspiralTemplate *
-XLALFindChirpSortTemplatesByOmegaS( InspiralTemplate *bankHead, UINT4 num)
+XLALFindChirpSortTemplatesByLevel( InspiralTemplate *bankHead, UINT4 num)
   {
   InspiralTemplate **bankArray = NULL;
   InspiralTemplate *bankFirst = NULL;
@@ -433,13 +405,17 @@ XLALFindChirpSortTemplatesByOmegaS( InspiralTemplate *bankHead, UINT4 num)
   bankFirst = bankHead;
   bankArray = (InspiralTemplate **) LALCalloc(num, sizeof(InspiralTemplate *));
 
-  
-  for (i = 0; (i < num); bankHead = bankHead->next, i++)
+  i = 0;
+/*  for (i = 0; (i < num); bankHead = bankHead->next, i++)*/
+  while(bankHead)
   {
     bankArray[i] = bankHead; /* populate pointer array */
+    fprintf(stderr,"Level Sort() %d chirpmass %f\n",i,bankHead->chirpMass);
+    bankHead=bankHead->next;
+    i++;
   }
 
-  qsort(bankArray, num, sizeof(InspiralTemplate *), compareTemplateByOmegaS);
+  qsort(bankArray, num, sizeof(InspiralTemplate *), compareTemplateByLevel);
 
   bankFirst = bankHead = bankArray[0];
   /* repopulate linked list */
@@ -453,28 +429,20 @@ XLALFindChirpSortTemplatesByOmegaS( InspiralTemplate *bankHead, UINT4 num)
 }
 
 
-
-
-
-static int compareTemplateByOmegaS (const void * a, const void * b)
+static int compareTemplateByLevel (const void * a, const void * b)
 {
-  /* Sorts the bank randomly because OmegaS is a random number */
-  /* See function InspiralTmpltBankFromLIGOLw() in LIGOLwXMLRead.c */
-  /* in the support package */
-  REAL4 mVal1 = (*((const InspiralTemplate**)a))->OmegaS;
-  REAL4 mVal2 =   (*((const InspiralTemplate**)b))->OmegaS;
-  
+  REAL4 mVal1 = (*((const InspiralTemplate**)a))->level;
+  REAL4 mVal2 =   (*((const InspiralTemplate**)b))->level;
+
   if ( mVal1 > mVal2 ) return 1;
   if ( mVal1 == mVal2 ) return 0;
   if ( mVal1 < mVal2 ) return -1;
   return 0;
 }
 
+
 static int compareTemplateByChirpMass (const void * a, const void * b)
 {
-  /* Sorts the bank randomly because OmegaS is a random number */
-  /* See function InspiralTmpltBankFromLIGOLw() in LIGOLwXMLRead.c */
-  /* in the support package */
   REAL4 mVal1 = (*((const InspiralTemplate**)a))->chirpMass;
   REAL4 mVal2 =   (*((const InspiralTemplate**)b))->chirpMass;
 
