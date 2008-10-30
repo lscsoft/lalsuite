@@ -569,7 +569,6 @@ tagInspiralTemplate
  
 /* Note that tc and fFinal are computed during waveform generation!!! */
  
-/*  useless parameters */
   REAL4 minMatch;
   REAL8 mu; 
   INT4  level;
