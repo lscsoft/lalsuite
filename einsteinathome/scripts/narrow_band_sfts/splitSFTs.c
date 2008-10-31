@@ -3,6 +3,21 @@
 
   This code links to the SFTReferenceLibrary. To compile, use somehting like
   gcc -Wall -g -O2 splitSFTs.c -o splitSFTs libSFTReferenceLibrary.a -lm
+
+  Writen by Bernd Machenschalk for Einstein@home 2008
+
+  * Revision splitSFTs.c,v 1.41 2008/10/29 16:54:13 was
+    reviewed by the LSC CW Review Committee Thur Oct 30, 2008
+
+    Suggested improvements:
+    * issue warning at ambiguous frequency values that are so close to the boundary of a bin
+      that rounding might end up giving an unintended bin
+    * check for consistency of input SFTs (same timebase, ascending timestamps etc., see spec)
+      and merged SFTs (check last header of a file we are appending to)
+
+  * Other possible improvements not suggested by the committee
+    * keep output files open (if there aren't too many)
+    * obscure a mystery factor in command-line record even if given with long option --factor
 */
  
 /** \author Bernd Machenschalk
@@ -19,7 +34,7 @@
 #include <string.h>
 #include "SFTReferenceLibrary.h"
 
-#define RCSID "$Id: splitSFTs.c,v 1.41 2008/10/29 16:54:13 bema Exp $"
+#define RCSID "$Id: splitSFTs.c,v 1.42 2008/10/31 10:38:12 bema Exp $"
 
 /** rounding (for positive numbers!)
     taken from SFTfileIO in LALSupport, should be consistent with that */
