@@ -150,6 +150,14 @@ parser.add_option("", "--disable-ifarsorting",action="store_true",\
     according to their IFAR value. Instead the candidates will be sorted \
     according to their combined snr, if this option is used.")
 
+parser.add_option("", "--convert-eventid",action="store_true",\
+    default=False, help="For the analysis of the second year branch triggers \
+    the event_id was defined as an \"int_8s\" instead of an \"ilwd:char\" \
+    Therefore when analysing S5 second year data, one must activate this \
+    option. The followup code will make a copy of the original xml files in \
+    the local directory and use the \"ligolw_conv_inspid\" to convert the \
+    event_id into the correct type.")
+
 parser.add_option("-w", "--write-to-iulgroup",action="store_true", \
     default=False, help="publish the page to the iulgroup")
 
@@ -161,8 +169,6 @@ parser.add_option("", "--sky-map-plot",action="store_true",default=False,\
 
 parser.add_option("", "--coh-inspiral",action="store_true",default=False,\
     help="run a lalapps_inspiral job much the same way as the coherent code")
-
-
 
 command_line = sys.argv[1:]
 (opts,args) = parser.parse_args()
@@ -240,7 +246,15 @@ dag.setupDAGWeb('followup web page','index.html',page)
 ############# READ IN THE COIRE FILES #########################################
 
 if not opts.disable_followup:
-  numtrigs, found, coincs, search = cache.readTriggerFiles(cp)
+
+  # if the option convert-eventid is called, we need to prepare the directory 
+  # where the .xml files will be copied
+  if opts.convert_eventid:
+    if not os.access('LOCAL_XML_COPY',os.F_OK):
+      os.mkdir('LOCAL_XML_COPY')
+    else: pass
+
+  numtrigs, found, coincs, search = cache.readTriggerFiles(cp,opts)
   missed = None
 
   if opts.trig_bank: trigbank_test = 1
