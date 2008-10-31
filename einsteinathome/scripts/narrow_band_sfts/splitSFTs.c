@@ -19,7 +19,7 @@
     * keep output files open (if there aren't too many)
     * obscure a mystery factor in command-line record even if given with long option --factor
 */
- 
+
 /** \author Bernd Machenschalk
  * \file
  * \brief
@@ -34,7 +34,7 @@
 #include <string.h>
 #include "SFTReferenceLibrary.h"
 
-#define RCSID "$Id: splitSFTs.c,v 1.42 2008/10/31 10:38:12 bema Exp $"
+#define RCSID "$Id: splitSFTs.c,v 1.43 2008/10/31 10:39:13 bema Exp $"
 
 /** rounding (for positive numbers!)
     taken from SFTfileIO in LALSupport, should be consistent with that */
@@ -208,7 +208,8 @@ int main(int argc, char**argv) {
     } else if((strcmp(argv[arg], "-b") == 0) ||
 	      (strcmp(argv[arg], "--width") == 0)) {
       width = atoi(argv[++arg]);
-    } else if(strcmp(argv[arg], "-x") == 0) {
+    } else if((strcmp(argv[arg], "-x") == 0) ||
+	      (strcmp(argv[arg], "--overlap") == 0)) {
       overlap = atoi(argv[++arg]);
     } else if((strcmp(argv[arg], "-fs") == 0) ||
 	      (strcmp(argv[arg], "--start-frequency") == 0)) {
@@ -223,7 +224,7 @@ int main(int argc, char**argv) {
 	      (strcmp(argv[arg], "--output-prefix") == 0)) {
       fOverlap = atof(argv[++arg]);
     } else if((strcmp(argv[arg], "-m") == 0) ||
-	      (strcmp(argv[arg], "--overlap") == 0)) {
+	      (strcmp(argv[arg], "--factor") == 0)) {
       factor = atof(argv[++arg]);
     } else if((strcmp(argv[arg], "-o") == 0) ||
 	      (strcmp(argv[arg], "--output-prefix") == 0)) {
