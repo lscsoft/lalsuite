@@ -364,7 +364,6 @@ XLALFindChirpSortTemplatesByChirpMass( InspiralTemplate *bankHead, UINT4 num )
   bankFirst = bankHead;
   bankArray = (InspiralTemplate **) LALCalloc(num, sizeof(InspiralTemplate *));
 
-
   for (i = 0; (i < num); bankHead = bankHead->next, i++)
   {
     bankArray[i] = bankHead; /* populate pointer array */
@@ -388,6 +387,8 @@ static int  breakUpRegions(InspiralTemplate *bankHead, UINT4 num, UINT4 subbanks
   {
   UINT4 i = 0;
   UINT4 subbanknum = (UINT4) floor(num / (subbanksize+1) );
+  if (subbanknum == 0) subbanknum = 1;
+
   for (i = 0; i < num; bankHead = bankHead->next, i++)
     {
     bankHead->level = (UINT4) (i % subbanknum);
