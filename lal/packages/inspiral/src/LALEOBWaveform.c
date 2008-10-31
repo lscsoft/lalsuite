@@ -1476,7 +1476,6 @@ LALEOBWaveformEngine (
       ABORT(status, LALINSPIRALH_EMEM, LALINSPIRALH_MSGEMEM);
    }
 
-
    values.data = &dummy.data[0];
    dvalues.data = &dummy.data[nn];
    newvalues.data = &dummy.data[2*nn];
@@ -1500,7 +1499,7 @@ LALEOBWaveformEngine (
    if ( params->distance > 0.0 )
      ampl0  = -sqrt(64.0*LAL_PI/5.) * eta * params->totalMass * LAL_MRSUN_SI/params->distance;
    else
-     ampl0  = params->signalAmplitude;
+     ampl0  = 2.0 * sqrt( LAL_PI / 5.0) * params->signalAmplitude;
 
    /* Check we get a sensible answer */
    if ( ampl0 == 0.0 )
@@ -1632,12 +1631,13 @@ LALEOBWaveformEngine (
    CHECKSTATUSPTR(status);
     
    /* Is the initial condition sensible? */
-   if (r < 6)
+   /* For EOB this check should be done to prevent templates/injections being too short. */
+   /* No need to do this for EOBNR, as this gets a ringdown attached. */
+   if ( params->approximant == EOB && r < 6 )
    {
-     LALSnprintf( message, 256, "EOB:initialCondition:Initial r found = %f "
+     XLALPrintError( "EOB:initialCondition:Initial r found = %f "
            "too small (below 6 no waveform is generated)\n", r );
-     LALWarning(status->statusPtr, message);
-     RETURN( status );
+     ABORT( status, LALINSPIRALH_ENOWAVEFORM, LALINSPIRALH_MSGENOWAVEFORM );
    }
 
    /* We want the waveform to generate from a point which won't cause */
@@ -1704,9 +1704,11 @@ LALEOBWaveformEngine (
    values.data[1] = s;
    values.data[2] = p;
    values.data[3] = q;
+#if 0
    sprintf(message, "In EOB Initial values of r=%10.5e p=%10.5e q=%10.5e\n", r, p, q);
    LALInfo(status, message);
-   
+#endif   
+
    in4.y = &values;
    in4.h = dt/m;
    in4.n = nn;
@@ -1860,7 +1862,7 @@ LALEOBWaveformEngine (
    {
      params->fFinal = params->tSampling/2.;
    }
-     
+
    /* ------------------------------------------------------------------
     * This is the count for the inspiral part only. It is changed below 
     * when the merger part is added; the phase is changed artificially 
@@ -1936,10 +1938,12 @@ LALEOBWaveformEngine (
    z1 = - MultSphHarmM.im - MultSphHarmP.im;
    z2 =   MultSphHarmM.re - MultSphHarmP.re;
 
+#if 0
    sprintf(message, "MultSphHarm2,+2 re=%10.5e im=%10.5e\n", MultSphHarmP.re, MultSphHarmP.im);
    LALInfo(status, message);
    sprintf(message, "MultSphHarm2,-2 re=%10.5e im=%10.5e\n", MultSphHarmP.re, MultSphHarmM.im);
    LALInfo(status, message);
+#endif
 
    /* Next, compute h+ and hx from h22, h22*, Y22, Y2-2 */
    for ( i = 0; i < sig1->length; i++)
@@ -1957,7 +1961,7 @@ LALEOBWaveformEngine (
     * added the phase information is not used in injetions, only hplus and hcross
     * and therefore it shouldn't matter what phasing is as long as it is nonzero.
     */
-       if (i >= count*resampFac) 
+       if ( i >= count ) 
        {
 	 phse->data[i] = phse->data[i-1]+LAL_PI/20.;
 	 (*countback)++;
@@ -2021,9 +2025,11 @@ LALEOBWaveformEngine (
      if (a)       memcpy(a->data       , ampl->data, 2*length*(sizeof(REAL4)));
      if (phi)     memcpy(phi->data     , phse->data, length * (sizeof(REAL8)));
    }
-     
+
+#if 0     
    sprintf(message, "fFinal=%10.5e count=%d\n", params->fFinal, *countback);
    LALInfo(status, message);
+#endif
 
    /* Clean up */
    XLALDestroyREAL4Vector ( sig1 );
