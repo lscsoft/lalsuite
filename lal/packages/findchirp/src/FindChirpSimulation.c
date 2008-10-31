@@ -124,6 +124,7 @@ LALFindChirpInjectSignals (
   COMPLEX8Vector       *unity = NULL;
   CHAR                  warnMsg[512];
   CHAR                  ifo[LIGOMETA_IFO_MAX];
+  REAL8                 timeDelay;
   
   INITSTATUS( status, "LALFindChirpInjectSignals", FINDCHIRPSIMULATIONC );
   ATTATCHSTATUSPTR( status );
@@ -347,8 +348,22 @@ LALFindChirpInjectSignals (
       /* clear the signal structure */
       memset( &signal, 0, sizeof(REAL4TimeSeries) );
       
-      /* set the start time of the signal vector to the start time of the chan */
-      signal.epoch = chan->epoch;
+      /* set the start time of the signal vector to the appropriate start time of the injection */
+      if ( detector.site )
+      {
+        timeDelay = XLALTimeDelayFromEarthCenter( detector.site->location, thisEvent->longitude,
+          thisEvent->latitude, &(thisEvent->geocent_end_time) );
+        if ( XLAL_IS_REAL8_FAIL_NAN( timeDelay ) )
+        {
+          ABORTXLAL( status );
+        }
+      }
+      else
+      {
+        timeDelay = 0.0;
+      }
+      /* Give a little more breathing space to aid band-passing */
+      XLALGPSSetREAL8( &(signal.epoch), (waveformStartTime * 1.0e-9) - 0.25 + timeDelay );
       
       /* set the parameters for the signal time series */
       signal.deltaT = chan->deltaT;
