@@ -726,20 +726,28 @@ LALDistanceScanSummValueTable (
   for( thisSummValue = summValueList; thisSummValue; 
       thisSummValue = thisSummValue->next )
   {
-    /* if this is the requested ifo */
-    if ( !strcmp(thisSummValue->ifo, ifo) ) 
-    {
-      /* IFOs match so now let us check if this entry coincides 
-	with the requested GPS time */
 
-      LALGPStoINT8( status->statusPtr, &tb, &(thisSummValue->start_time) );
-      LALGPStoINT8( status->statusPtr, &tc, &(thisSummValue->end_time) );
-      if ( ta >= tb && ta<=tc )
+    /* if this summvar is actually the distance */
+    if ( ! strncmp( thisSummValue->name, "inspiral_effective_distance",
+		    LIGOMETA_SUMMVALUE_NAME_MAX ) )
       {
-        *distance = thisSummValue->value; 
-        break;
-      } 
-    }
+	/* if this is the requested ifo */
+	if ( !strcmp(thisSummValue->ifo, ifo) ) 
+	  {
+	    /* IFOs match so now let us check if this entry coincides 
+	       with the requested GPS time */
+	    
+	    LALGPStoINT8( status->statusPtr, &tb,
+			  &(thisSummValue->start_time) );
+	    LALGPStoINT8( status->statusPtr, &tc,
+			  &(thisSummValue->end_time) );
+	    if ( ta >= tb && ta<=tc )
+	      {
+		*distance = thisSummValue->value; 
+		break;
+	      }
+	  }
+      }
   }
 
   if ( *distance == 0 )
