@@ -1,24 +1,31 @@
 ## Process this file with automake to produce Makefile.in
 # $Id$
 if FRAME
-FRAMEPROGRAMS = lalapps_mkcalfac lalapps_mkcalref lalapps_makecalframe lalapps_readcalframe lalapps_dumpcalframe lalapps_getresp
-else
-FRAMEPROGRAMS = 
-endif
-bin_PROGRAMS = $(FRAMEPROGRAMS) lalapps_NoiseComparison lalapps_ComputeStrain lalapps_ComputeFactors lalapps_ComputeStrainDriver lalapps_ComputeStrainDriverDMT
-if FRAME
-lalapps_makecalframe_SOURCES = makecalframe.c LALASCIIFileRead.c LALASCIIFileRead.h
-lalapps_readcalframe_SOURCES = readcalframe.c
-lalapps_dumpcalframe_SOURCES = dumpcalframe.c
-lalapps_getresp_SOURCES = getresp.c
+FRAMEPROGRAMS = lalapps_mkcalfac lalapps_mkcalref lalapps_dumpcalframe
 lalapps_mkcalfac_SOURCES = mkcalfac.c
 lalapps_mkcalref_SOURCES = mkcalref.c
+lalapps_dumpcalframe_SOURCES = dumpcalframe.c
+if LALFRAME
+LALFRAMEPROGRAMS = lalapps_makecalframe
+lalapps_makecalframe_SOURCES = makecalframe.c LALASCIIFileRead.c LALASCIIFileRead.h
+else
+LALFRAMEPROGRAMS =
+endif
+else
+LALFRAMEPROGRAMS =
+FRAMEPROGRAMS =
+endif
+if LALFRAME
+LALFRAMEPROGRAMS += lalapps_readcalframe lalapps_getresp
+lalapps_readcalframe_SOURCES = readcalframe.c
+lalapps_getresp_SOURCES = getresp.c
 endif
 lalapps_ComputeStrain_SOURCES = ComputeStrain.c
 lalapps_ComputeStrainDriver_SOURCES = ComputeStrainDriver.c LALASCIIFileRead.c LALASCIIFileRead.h
 lalapps_ComputeStrainDriverDMT_SOURCES = ComputeStrainDriverDMT.c
 lalapps_ComputeFactors_SOURCES = ComputeFactors.c
 lalapps_NoiseComparison_SOURCES = NoiseComparison.c
+bin_PROGRAMS = $(FRAMEPROGRAMS) $(LALFRAMEPROGRAMS) lalapps_NoiseComparison lalapps_ComputeStrain lalapps_ComputeFactors lalapps_ComputeStrainDriver lalapps_ComputeStrainDriverDMT
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
