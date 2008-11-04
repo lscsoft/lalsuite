@@ -16,16 +16,18 @@ LALFRAMEPROGRAMS =
 FRAMEPROGRAMS =
 endif
 if LALFRAME
-LALFRAMEPROGRAMS += lalapps_readcalframe lalapps_getresp
+LALFRAMEONLYPROGRAMS = lalapps_readcalframe lalapps_getresp
 lalapps_readcalframe_SOURCES = readcalframe.c
 lalapps_getresp_SOURCES = getresp.c
+else
+LALFRAMEONLYPROGRAMS =
 endif
 lalapps_ComputeStrain_SOURCES = ComputeStrain.c
 lalapps_ComputeStrainDriver_SOURCES = ComputeStrainDriver.c LALASCIIFileRead.c LALASCIIFileRead.h
 lalapps_ComputeStrainDriverDMT_SOURCES = ComputeStrainDriverDMT.c
 lalapps_ComputeFactors_SOURCES = ComputeFactors.c
 lalapps_NoiseComparison_SOURCES = NoiseComparison.c
-bin_PROGRAMS = $(FRAMEPROGRAMS) $(LALFRAMEPROGRAMS) lalapps_NoiseComparison lalapps_ComputeStrain lalapps_ComputeFactors lalapps_ComputeStrainDriver lalapps_ComputeStrainDriverDMT
+bin_PROGRAMS = $(FRAMEPROGRAMS) $(LALFRAMEPROGRAMS) $(LALFRAMEONLYPROGRAMS) lalapps_NoiseComparison lalapps_ComputeStrain lalapps_ComputeFactors lalapps_ComputeStrainDriver lalapps_ComputeStrainDriverDMT
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
