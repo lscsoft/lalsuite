@@ -72,6 +72,12 @@ void XLALSkymapDestroyPlan(XLALSkymapPlanType* plan);
  */
 int XLALSkymapAnalyzeElliptical(double* p, XLALSkymapPlanType* plan, double sigma, double w[3], int n, double** x);
 
+/*
+ * Add skymaps together, taking account of their log representation and valid
+ * pixels
+ */
+void XLALSkymapSum(XLALSkymapPlanType* plan, double* a, const double* b, const double* c);
+
 /* 
  * Find the most plausible direction (the mode of the distribution) and return
  * its theta and phi coordinates 

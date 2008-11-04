@@ -200,6 +200,19 @@ static double det22(double a[2][2])
     return a[0][0] * a[1][1] - a[0][1] * a[1][0];
 }
 
+/* log functions */
+
+/* FIXME : declare the C99 function log1p to suppress warning */
+double log1p(double x);
+
+static double logsumexp(double a, double b)
+{
+    return
+        (a < b) ? (b + log1p(exp(a - b))) : (
+	    (b < a) ? (a + log1p(exp(b - a))) : (a + log(2))
+	    );
+}
+
 /* coordinate transformations */
 
 static void cartesian_from_spherical(double a[3], double theta, double phi)
@@ -507,6 +520,18 @@ int XLALSkymapAnalyzeElliptical(double* p, XLALSkymapPlanType* plan, double sigm
     XLALFree(buffer);
     
     return 0;
+}
+
+void XLALSkymapSum(XLALSkymapPlanType* plan, double* a, const double* b, const double* c)
+{
+    int i;
+    for (i = 0; i != plan->pixelCount; ++i)
+    {   /* check to see if the pixel is valid */
+        if (plan->pixel[i].area > 0)
+	{   /* sum the log-represented values */
+	    a[i] = logsumexp(b[i], c[i]);
+	}
+    }
 }
 
 void XLALSkymapModeThetaPhi(XLALSkymapPlanType* plan, double* p, double thetaphi[2])
