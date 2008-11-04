@@ -1052,8 +1052,12 @@ int MAIN( int argc, char *argv[]) {
       for ( ifdot = 0; ifdot < nf1dot; ifdot++)
 	{
 	  
-	  LogPrintf(LOG_DETAIL, "Analyzing %d/%d Coarse sky grid points and %d/%d spindown values\n", 
-		    skyGridCounter, thisScan.numSkyGridPoints, ifdot+1, nf1dot);    
+	  LogPrintf(LOG_DETAIL, "Analyzing %d/%d Coarse sky grid points and %d/%d spindown values\n",
+		    skyGridCounter, thisScan.numSkyGridPoints, ifdot+1, nf1dot);                    
+
+	  SHOW_PROGRESS(dopplerpos.Alpha,dopplerpos.Delta, skyGridCounter + (REAL4)ifdot / (REAL4)nf1dot, 
+			thisScan.numSkyGridPoints, uvar_Freq, uvar_FreqBand);
+
 	  
 	  /* calculate the Fstatistic for each stack*/
 	  LogPrintf(LOG_DETAIL, "Starting Fstat calculation for each stack...");
