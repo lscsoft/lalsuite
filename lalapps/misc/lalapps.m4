@@ -117,6 +117,19 @@ AC_DEFUN([LALAPPS_ENABLE_METAIO],
   ], [ metaio=true ] )
 ])
 
+AC_DEFUN([LALAPPS_ENABLE_CFITSIO],
+[AC_ARG_ENABLE(
+  [cfitsio],
+  [  --enable-cfitsio        compile code that requires cfitsio library 
+[default=yes] ],
+  [ case "${enableval}" in
+      yes) cfitsio=true;;
+      no) cfitsio=false;;
+      *) AC_MSG_ERROR(bad value ${enableval} for --enable-cfitsio) ;;
+    esac
+  ], [ cfitsio=true ] )
+])
+
 AC_DEFUN([LALAPPS_DISABLE_FRAME],
 [echo "**************************************************************"
  echo "*                                                            *"

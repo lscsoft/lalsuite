@@ -37,6 +37,7 @@ LALAPPS_WITH_GCC_FLAGS
 LALAPPS_ENABLE_CONDOR
 LALAPPS_ENABLE_FRAME
 LALAPPS_ENABLE_METAIO
+LALAPPS_ENABLE_CFITSIO
 LALAPPS_ENABLE_NIGHTLY
 
 AC_PREFIX_DEFAULT([/opt/lscsoft/lalapps])
@@ -127,6 +128,11 @@ else
   dnl do actual checks for libraries after checking for gsl and FrameL
 fi
 
+dnl cfitsio
+PKG_CHECK_MODULES(CFITSIO, cfitsio, [ true ], [ false ])
+CPPFLAGS="$CPPFLAGS $CFITSIO_CFLAGS"
+LIBS="$LIBS $CFITSIO_LIBS"
+
 dnl GSL
 PKG_CHECK_MODULES(GSL, gsl, [ true ], [ false ])
 CPPFLAGS="$CPPFLAGS $GSL_CFLAGS"
@@ -154,6 +160,11 @@ if test "${metaio}" = "true"; then
                  [AC_MSG_WARN(disabling metaio support)]
                  [metaio="false"]
                  [LIBS="$lal_pre_metaio_LIBS"])
+fi
+
+dnl Check for libcfitsio
+if test "${cfitsio}" = "true"; then
+  AC_CHECK_LIB(cfitsio, ffopen, , cfitsio="false")
 fi
 
 dnl Now check for LALFrame and LALMetaIo
@@ -196,6 +207,14 @@ if test "${metaio}" = "true"; then
                    [CPPFLAGS="$lal_pre_metaio_CPPFLAGS"])
 fi
 
+if test "${cfitsio}" = "true"; then
+  lal_pre_cfitsio_CPPFLAGS="$CPPFLAGS"
+  CPPFLAGS="$CPPFLAGS $CFITSIO_CFLAGS"
+  AC_CHECK_HEADER(fitsio.h, ,
+                  [cfitsio="false"]
+                  [CPPFLAGS="$lal_pre_cfitsio_CPPFLAGS"])
+fi
+
 LALAPPS_CHECK_QTHREAD
 
 AC_MSG_CHECKING(for gethostname prototype in unistd.h)
@@ -207,12 +226,14 @@ AC_MSG_RESULT(no))
 AC_CHECK_FUNCS(setenv)
 
 if test "$LAL_BUILD" = "true"; then
-  LIBS="$LALFRAME_LIBS $LALMETAIO_LIBS $LALSUPPORT_LIBS $LAL_LIBS $LIBS"
-  CPPFLAGS="$CPPFLAGS $LAL_CFLAGS $LALSUPPORT_CFLAGS $LALFRAME_CFLAGS $LALMETAIO_CFLAGS"
+  LIBS="$LIBS $LAL_LIBS $LALSUPPORT_LIBS $LALFRAME_LIBS $LALMETAIO_LIBS $CFITSIO_LIBS"
+  CPPFLAGS="$CPPFLAGS $LAL_CFLAGS $LALSUPPORT_CFLAGS $LALFRAME_CFLAGS $LALMETAIO_CFLAGS $CFITSIO_CFLAGS"
   lalframe="false"
   lalmetaio="false"
+  cfitsio="false"
   test -z "$LALFRAME_LIBS" && test -z "$LALFRAME_CFLAGS" && lalframe="true"
   test -z "$LALMETAIO_LIBS" && test -z "$LALMETAIO_CFLAGS" && lalmetaio="true"
+  test -z "$CFITSIO_LIBS" && test -z "$CFITSIO_CFLAGS" && cfitsio="true"
 fi
 AC_ARG_VAR(LAL_BUILD,[set to "true" if lalapps is built as part of a lal build])
 
@@ -220,6 +241,7 @@ AM_CONDITIONAL(FRAME, test x$frame = xtrue)
 AM_CONDITIONAL(LALFRAME, test x$lalframe = xtrue)
 AM_CONDITIONAL(LALMETAIO, test x$lalmetaio = xtrue)
 AM_CONDITIONAL(DATAFLOW, test x$metaio = xtrue)
+AM_CONDITIONAL(CFITSIO, test x$cfitsio = xtrue)
 AC_DEFINE_UNQUOTED(PREFIX, "$prefix", [Install prefix])
 
 dnl restore all static to ldflags
@@ -266,6 +288,7 @@ AC_OUTPUT( \
 
 lalframeenabled="`test x${lalframe} = xtrue && echo "ENABLED" || echo "DISABLED"`"
 lalmetaioenabled="`test x${lalmetaio} = xtrue && echo "ENABLED" || echo "DISABLED"`"
+cfitsioenabled="`test x${cfitsio} = xtrue && echo "ENABLED" || echo "DISABLED"`"
 echo "
 ================================================================
 
@@ -273,6 +296,7 @@ echo "
 
                 LAL Frame library support is $lalframeenabled
                 LAL MetaIo library support is $lalmetaioenabled
+                FITS library support is $cfitsioenabled
 
         Now run 'make' to build LALApps
         and run 'make install' to install LALApps
