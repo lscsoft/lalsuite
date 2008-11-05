@@ -207,6 +207,12 @@ INT4 main(INT4 argc, CHAR *argv[]){
         stdh0 += dataVals.re*dataVals.re + dataVals.im*dataVals.im;
 
         j++;
+
+        /* check that size of data file is not to large */
+        if( j > MAXLENGTH ){
+          fprintf(stderr, "Error... size of MAXLENGTH not large enough.\n");
+          exit(0);
+        }
       }
     }
 
@@ -968,8 +974,9 @@ REAL8 log_likelihood( REAL8 *likeArray, DataStructure data,
 
     for( j = i ; j < i + chunkLength ; j++){
       /* set the time bin for the lookup table */
-      T = fmod(data.times->data[j] - tstart, 86400.);
-      timebin = (INT4)fmod( ROUND(T*tsteps/86400.), tsteps );
+      /* sidereal day in secs*/
+      T = fmod(data.times->data[j] - tstart, LAL_DAYSID_SI);
+      timebin = (INT4)fmod( ROUND(T*tsteps/LAL_DAYSID_SI), tsteps );
 
       plus = data.lookupTable->lookupTable[psibin][timebin].plus;
       cross = data.lookupTable->lookupTable[psibin][timebin].cross;
@@ -984,7 +991,7 @@ REAL8 log_likelihood( REAL8 *likeArray, DataStructure data,
 
         /* create the signal model */
         sin_cos_2PI_LUT( &sphi, &cphi, -dphi->data[j] );
-             
+
         model.re = (plus*vars.Xpcosphi_2 + cross*vars.Xcsinphi_2)*cphi +
                  (cross*vars.Xccosphi_2 - plus*vars.Xpsinphi_2)*sphi;
         model.im = (plus*vars.Xpsinphi_2 - cross*vars.Xccosphi_2)*cphi +
@@ -1012,24 +1019,22 @@ REAL8 log_likelihood( REAL8 *likeArray, DataStructure data,
       chiSquare += vars.h0*vars.h0*sumModel;
 
       /* log(likelihood)
-         logL = (m-1)log(2) + m! - m*sum((Bk - yk)^2) */
+         logL = (m-1)log(2) + log(m!) - m*log(sum((Bk - yk)^2)) */
 
       /* reset array if first time in loop - otherwise joint likelihoods
          will be wrong */
-      if( first == 0 && through == 1 ) 
+      if( first == 0 )
         likeArray[k] = (chunkLength - 1.)*log2;
       else likeArray[k] += (chunkLength - 1.)*log2;
 
       likeArray[k] += exclamation[(INT4)chunkLength];
       likeArray[k] -= chunkLength*log(chiSquare);
-
-      /* get the log evidence for the data not containing a signal */
-      if( k == 0 ){
-        noiseEvidence += (chunkLength - 1.)*log2;
-        noiseEvidence += exclamation[(INT4)chunkLength];
-        noiseEvidence -= chunkLength*log(data.sumData->data[count]);
-      }
     }
+
+    /* get the log evidence for the data not containing a signal */
+    noiseEvidence += (chunkLength - 1.)*log2;
+    noiseEvidence += exclamation[(INT4)chunkLength];
+    noiseEvidence -= chunkLength*log(data.sumData->data[count]);
 
     first++;
     count++;
@@ -1483,8 +1488,8 @@ REAL8 log_trapezium(REAL8 logHeight1, REAL8 logHeight2, REAL8 width){
 
 
 /* detector response lookup table function  - this function will output a lookup
-table of points in time and psi, covering a day from the start time (t0) and
-from -pi/4 to pi/4 in psi */
+table of points in time and psi, covering a sidereal day from the start time
+(t0) and from -pi/4 to pi/4 in psi */
 void response_lookup_table(REAL8 t0, LALDetAndSource detAndSource,
   DetRespLookupTable *lookupTable){ 
   LIGOTimeGPS gps;
@@ -1501,8 +1506,7 @@ void response_lookup_table(REAL8 t0, LALDetAndSource detAndSource,
         (REAL8)i*(LAL_PI/2.) / ( psteps - 1. );
 
     for( j = 0 ; j < lookupTable->timeSteps ; j++ ){
-      /* one day is 86400 seconds */
-      T = t0 + (REAL8)j*86400. / tsteps;
+      T = t0 + (REAL8)j*LAL_DAYSID_SI / tsteps;
 
       gps.gpsSeconds = (INT4)floor(T);
       gps.gpsNanoSeconds = (INT4)floor((fmod(T,1.0)*1.e9));
@@ -1525,11 +1529,11 @@ void response_lookup_table(REAL8 t0, LALDetAndSource detAndSource,
 /* function to return the (REAL8) log factorial of an integer */
 REAL8 log_factorial(INT4 num){
   INT4 i=0;
-  UINT4 logFac=0;
+  REAL8 logFac=0.;
 
-  for( i=2 ; i <= num ; i++ ) logFac += i;
+  for( i=2 ; i <= num ; i++ ) logFac += log((REAL8)i);
 
-  return (REAL8)logFac;
+  return logFac;
 }
 
 
@@ -1632,7 +1636,7 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
   RandomParams *randomParams=NULL;
 
   CHAR *pos1=NULL, *pos2=NULL;
-  INT4 i=0, j=0, k=0, n=0, count=0;
+  INT4 i=0, j=0, k=0, n=0;
 
   REAL8 like1[1], like2[1];
   REAL8 logL1=0., logL2=0.; /* log likelihoods */
@@ -1660,6 +1664,8 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
   INT4 burnInLength = input.mcmc.burnIn; /* length of burn in */
 
   INT4 acc=0, rej=0; /* count acceptance and rejection of new point */
+
+  INT4 onlyonce=0; /* use this variable only once */
 
   /* read the TEMPO par file for the pulsar */
   XLALReadTEMPOParFile( &pulsarParamsFixed, input.parFile );
@@ -1842,6 +1848,15 @@ paramData );
     /* set inverse of covariance matrix */
     invmat = create_covariance_matrix( paramData, tempinvmat, 1 );
 
+    /* if( verbose ){
+      fprintf(stderr, "\nInverse matrix:\n");   
+      for(i=0; i<invmat->dimLength->data[0]; i++){    
+        for(j=0; j<invmat->dimLength->data[1]; j++)   
+          fprintf(stderr, "%.2e  ", get_REAL8_matrix_value( invmat, i, j ));   
+        fprintf(stderr, "\n");    
+      }
+    } */
+
     XLALDestroyREAL8Array( tempinvmat );
     XLALDestroyREAL8Array( cormat );
     XLALDestroyREAL8Array( covmat );
@@ -1973,8 +1988,6 @@ paramData );
   /* create vector for random Gaussian numbers */
   randNum = XLALCreateREAL4Vector(4+2*nGlitches);
 
-  count = 0;
-
   if( matTrue && numDets == 1 ){
     /* set up detector location - if not doing joint analysis */
     baryinput.site = *detPos;
@@ -2001,7 +2014,7 @@ paramData );
 
   /*=================== MCMC LOOP =====================*/
   for( i = 0 ; i < iterations ; i++ ){
-    REAL4 sp=0, cp=0; /* sin and cos values */    
+    REAL4 sp=0, cp=0; /* sin and cos values */
 
     if( verbose ){
       fprintf(stderr, "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
@@ -2047,9 +2060,10 @@ paramData );
 
     /* if h0 jumps negative then this is equivalent to having jumped outside
        our prior range so the likelihood is always zero and this move always
-       rejected */
-    if( varsNew.h0 < 0. || below0 == 1 ){
-      if( fmod(count, input.mcmc.outputRate) == 0. && i >= burnInLength ){
+       rejected - therefore it's quickest just to output the only step now 
+       and move on to the next step */
+    if( ( varsNew.h0 < 0. || below0 == 1 ) && i > 0 ){
+      if( fmod(i, input.mcmc.outputRate) == 0. && i >= burnInLength ){
         fprintf(fp, "%le\t%le\t%lf\t%lf\t%lf", logL1, vars.h0, vars.phi0,
           vars.ci, vars.psi);
 
@@ -2069,8 +2083,17 @@ paramData );
       if( i > input.mcmc.burnIn - 1 )
         rej++; /* count rejected steps */
 
-      count++;
       continue;
+    }
+    else if( ( varsNew.h0 < 0. || below0 == 1 ) && i == 0 ){
+      onlyonce = 1; /* if h0 goes below zero on the first step then we still 
+                       have to calculate logL1, so continue but make sure 
+                       logL2 gets set to -Inf (or close to!) later on */
+      /* set values of h0 so that they aren't negative, as this could screw
+         up other functions */
+      varsNew.h0 = 1e-30;
+
+      for( j = 0 ; j < nGlitches ; j++ ) extraVarsNew[j].h0 = 1e-30;
     }
 
     if( matTrue ){
@@ -2146,9 +2169,6 @@ paramData );
       extraVarsNew[j].Xccosphi_2 = 0.5*varsNew.Xcross * cp;
       extraVarsNew[j].psi = varsNew.psi;
     }
-
-    /* set single h0 value for log_likelihood function */
-    input.mesh.h0Steps = 1;
 
     /* calculate log likelihoods */
     /* only calculate the likelhood twice in the first loop */
@@ -2330,6 +2350,13 @@ paramData );
       }
     }
 
+    /* if this is the first time in the chain an h0 was negative then set
+       the value of logL2 to something close to -Inf */
+    if( onlyonce == 1 ){
+      logL2 = -1e200;
+      onlyonce = 0; /* reset value */
+    }
+
     /* accept new values if Lnew/Lold >=1 (or log(Lnew/Lold) >= 0) */
     /* include simulated annealing factor */
     ratio = logL2 - logL1;
@@ -2362,7 +2389,7 @@ paramData );
     }
 
     /* printf out chains */
-    if( fmod(count, input.mcmc.outputRate) == 0. && i >= burnInLength ){
+    if( fmod(i, input.mcmc.outputRate) == 0. && i >= burnInLength ){
       fprintf(fp, "%le\t%le\t%lf\t%lf\t%lf", logL1, vars.h0, vars.phi0, vars.ci,
         vars.psi);
 
@@ -2381,7 +2408,6 @@ paramData );
       fprintf(fp, "\n");
     }
 
-    count++;
     logL2 = 0.;
   }
   /*===============================================*/
@@ -2768,7 +2794,9 @@ matrix\n");
         exit(0);
       }
       else if( diag <= 0. && fabs(diag) <= LAL_REAL8_EPS ){
-        diag = LAL_REAL8_EPS;
+        /* diag = LAL_REAL8_EPS; */
+        diag = 0.; /* set to zero as setting it to LAL_REAL8_EPS sometimes
+                      gives a value that's far larger than it should be */
       }
       else if( diag <= 0. && fabs(diag) >= LAL_REAL8_EPS && k == length-1 ){
         /* this is a kludge as a lot of the matricies seem to have entries
@@ -3386,5 +3414,3 @@ void set_REAL8_matrix_value( REAL8Array *matrix, INT4 i, INT4 j, REAL8 val ){
 
   matrix->data[i*matrix->dimLength->data[0] + j] = val;
 }
-
-
