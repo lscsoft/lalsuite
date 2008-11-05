@@ -73,7 +73,7 @@ NRCSID (TRACKSEARCHH, "$Id$");
 				   for a continuation of the line */
 #define LENGTH_THRESHOLD 3  /* A LOWER threshold on the length of the curves in pixels to process*/
 #define MAX_CURVE_LENGTH 16384 /* the maximum length allowed */
-#define MAX_NUMBER_OF_CURVES 32768 /* the maximum number of curves allowed */
+#define MAX_NUMBER_OF_CURVES 65536 /* the maximum number of curves allowed */
 
 
 /* Error codes and strings */

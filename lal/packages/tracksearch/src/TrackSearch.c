@@ -99,8 +99,10 @@ static void DestroyStorage(LALStatus *, TrackSearchStore *);
 static void ComputeConvolutions(LALStatus *,  TrackSearchStore *, const TimeFreqRep *, TrackSearchParams *);
 static void ComputeLinePoints(LALStatus *, TrackSearchStore * , TrackSearchParams *);
 static void ConnectLinePoints(LALStatus *, TrackSearchOut *, TrackSearchParams *, const TimeFreqRep *);
-static INT4 TestPotentialLine(TrackSearchOut, INT4, REAL4);
+static void estimateProfile(REAL4*, TimeFreqRep);
 
+static REAL4 estimateSNR(Curve, Curve, REAL4*, TimeFreqRep);
+static INT4 TestPotentialLine(TrackSearchOut, INT4, REAL4);
 static REAL4 GetAngle(REAL4 , REAL4 );
 static REAL4 Gauss0(INT4,REAL4);
 static REAL4 Gauss1(INT4,REAL4);
@@ -621,6 +623,7 @@ ConnectLinePoints(LALStatus *status,
   INT4 currentRow,currentCol,nextRow,nextCol; /* variables pointing to the current and next location*/
   INT4  curveLength=0; /* the length of the current curve segment */
   REAL4 curvePower=0; /* the total energy of the current curve segment */
+  REAL4 *curveDepth=NULL; /*tmp pointer for array of depth values to sum */
   INT4 maxCurveLen=MAX_CURVE_LENGTH;/* the maximum curve lenght allowed */
   INT4 direction; /* the 2 opposite directions to traverse to obtain the complete line */
   INT4 reject[2],check[3],which;/* the list of surrounding points to reject and select */
@@ -630,14 +633,17 @@ ConnectLinePoints(LALStatus *status,
   REAL4 differ; /* the difference between 2 angles */
   REAL4 powerHalfContourA; /* The resulting power of half the contour from tfMap*/
   REAL4 powerHalfContourB; /* The resulting power of half the contour from tfMap*/
-  
-  
+  REAL4 *meanProfile=NULL; /* Pointer to array of REAL4s */
+
   /* Initialize status structure   */ 
   INITSTATUS(status,"ConnectLinePoints",TRACKSEARCHC);  
   /* check if the caller has passed a non NULL pointer for Curves */
   ASSERT(out->curves==NULL,status,TS_NON_NULL_POINTER,TS_MSGNON_NULL_POINTER); 
   /* a pointer to the storage structure */
   store = &(out->store);
+  /* Estimate the noise profile from the TFR */
+  /* meanProfile= LALMalloc(sizeof(REAL4)*(TimeFreqMap->fRow));*/
+  /* estimateProfile(meanProfile,TimeFreqMap);*/
   /* Allocate arrays */
   linePoints = LALMalloc(sizeof(LinePoints)*(store->numLPoints));
   label= LALMalloc(sizeof(INT4 *) * params->height);
@@ -869,13 +875,19 @@ ConnectLinePoints(LALStatus *status,
     curveLength=0;
     curveLength=contour[0].n+contour[1].n-1;
     curvePower=0;
+    curveDepth=(REAL4*)LALMalloc(sizeof(REAL4)*(contour[0].n+contour[1].n-1));
     /* Following loops may have a single TFR point in common? */
     for(i=0;i<contour[0].n;i++)
-	curvePower = curvePower +
+	curveDepth[i] = 
 	  TimeFreqMap->map[contour[0].row[contour[0].n - 1 - i]][contour[0].col[contour[0].n - 1 - i]];
     for(i=0;i<contour[1].n;i++)
-      curvePower=curvePower +
-	TimeFreqMap->map[contour[1].row[i]][contour[1].col[i]];
+	curveDepth[i+contour[0].n-1] = 
+	  TimeFreqMap->map[contour[1].row[i]][contour[1].col[i]];
+    for(i=0;i<(contour[0].n+contour[1].n-1);i++)
+      curvePower=curvePower+curveDepth[i];
+    LALFree(curveDepth);
+    /* ESTIMATE THE SNR */
+    /* mySNR=estimateSNR(contourA,contourB,meanProfile,TimeFreqMap); */
     /* *** */
     /* check if the length of the curve is greater than the threshhold*/
     if((contour[0].n+contour[1].n-1 >= LENGTH_THRESHOLD) 
@@ -933,6 +945,7 @@ ConnectLinePoints(LALStatus *status,
   LALFree(contour[0].col);
   LALFree(contour[1].row);
   LALFree(contour[1].col);
+  /*LALFree(meanProfile);*/
   for(i=0;i<params->height;i++)
     LALFree(label[i]);
   LALFree(label);
@@ -941,6 +954,29 @@ ConnectLinePoints(LALStatus *status,
   LALFree(mapContour);  
   /* Return to Calling program */
   RETURN(status);  
+}
+
+
+/*
+ * Estimates from the TFR the internal mean Frequency profile
+ * This allows us to estimate an SNR to individual curves
+ */
+static void estimateProfile(REAL4 *myProfile,
+			    TimeFreqRep Map)
+{
+  INT4 i=0; /*Freq index*/
+  INT4 j=0; /*Time index*/
+  INT4 k=0; /*myProfile index*/
+  INT4 n=0; /*Number of values counted*/
+  REAL4 currentSum=0; /* Current value */
+  /*Map layout map[freq][time]*/
+  for (k=0;k<Map.fRow;k++)
+    {
+      currentSum=0;
+      for (j=0;j<Map.tCol;j++)
+	currentSum=currentSum+Map.map[k][j];
+      myProfile[k]=currentSum/Map.tCol;
+    }
 }
 
 
@@ -1077,6 +1113,36 @@ TestPotentialLine(
     result=0;
   return result;
 }
+
+/* static REAL4 */
+/* estimateSNR(Curve contourA, */
+/* 	    Curve contourB, */
+/* 	    REAL4* tfrProfile, */
+/* 	    TimeFreqRep tfr) */
+/* { */
+/*   INT4 i=0; /\*F index*\/ */
+/*   INT4 j=0; /\*T index*\/ */
+/*   INT4 k=0; /\*profile F index*\/ */
+/*   INT4 n=0; /\*curve element number*\/ */
+/*   REAL4 *curveProfile=NULL; /\*profile of curve*\/ */
+/*   REAL4 result=0;/\*Variable holding the value of the SNR */
+/*   REAL4 tmp=0;/\*tmp variable for caculating snr */
+/* Create the real4* vector to hold the curves pseudo PSD */
+/* tfrProfile=LALMalloc(sizeof(REAL4)*(tfr->fRow)); */
+/* /\*Initialize the elements to zero*\/ */
+/* for (n=0;n<tfr->fRow;n++) */
+/*   tfrProfile[n]=0; */
+/* /\*Cycle across each contour*\/ */
+/* for (n=0;n<contourA.n;n++) */
+/*   tfrProfile[contourA.row[n]]=tfrProfile[contourA.row[n]]+tfr[contourA.row[n]][contourA.col[n]]; */
+/* for (n=0;n<contourB.n;n++) */
+/*   tfrProfile[contourB.row[n]]=tfrProfile[contourB.row[n]]+tfr[contourB.row[n]][contourB.col[n]]; */
+/* /\*Compute the SNR (check the normalization) use GRASP definition*\/ */
+/* LALFree(tfrProfile); */
+/*   return result; */
+/* } */
+	    
+/*End static function estimateSNR*/
 
 /* routine called by qsort  
    Compare the elements of the LinePoint array. 
