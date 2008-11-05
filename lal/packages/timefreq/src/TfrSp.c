@@ -162,9 +162,9 @@ void LALTfrSp (LALStatus *stat, REAL4Vector* sig, TimeFreqRep *tfr, TimeFreqPara
   for (row = 0; row < tfr->fRow/2+1; row++)
     tfr->freqBin[row] = (REAL4) row / tfr->fRow;
   
+  TRY(LALDestroyRealFFTPlan(stat->statusPtr, &plan), stat);
   TRY(LALSDestroyVector(stat->statusPtr, &ptmp), stat);
   TRY(LALSDestroyVector(stat->statusPtr, &windSig), stat);
-  TRY(LALDestroyRealFFTPlan(stat->statusPtr, &plan), stat);
 
   DETATCHSTATUSPTR (stat);
 
