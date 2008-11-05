@@ -228,6 +228,7 @@ struct StrainOutTag {
   COMPLEX16TimeSeries alpha; /* alpha time series */
   COMPLEX16TimeSeries beta;  /* beta time series */
   COMPLEX16TimeSeries alphabeta; /* alpha time series */
+  INT2TimeSeries science_mode;   /* flag = 1 for science mode, 0 otherwise */
 } StrainOut;
                                                                                                                                
 typedef
