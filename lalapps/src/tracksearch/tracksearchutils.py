@@ -2162,23 +2162,37 @@ class candidateList:
         #print "String to threshold with :",testExp
         for lineInfo in self.curves:
             spinner.updateSpinner()
-            curveid=(self.__getCurveField__(lineInfo,"curveid")[0])
-            l=float(self.__getCurveField__(lineInfo,"l")[0])
-            p=float(self.__getCurveField__(lineInfo,"p")[0])
             a=float(self.__getCurveField__(lineInfo,"a")[0])
-            d=float(self.__getCurveField__(lineInfo,"d")[0])
             b=float(self.__getCurveField__(lineInfo,"b")[0])
-            t=float(self.__getCurveField__(lineInfo,"t")[0])
-            s=float(self.__getCurveField__(lineInfo,"s")[0])
+            c=float(self.__getCurveField__(lineInfo,"c")[0])
+            curveid=(self.__getCurveField__(lineInfo,"curveid")[0])
+            d=float(self.__getCurveField__(lineInfo,"d")[0])
+            e=float(self.__getCurveField__(lineInfo,"e")[0])
             f=float(self.__getCurveField__(lineInfo,"f")[0])
             g=float(self.__getCurveField__(lineInfo,"g")[0])
-            v=float(self.__getCurveField__(lineInfo,"v")[0])
             h=float(self.__getCurveField__(lineInfo,"h")[0])
+            i=float(self.__getCurveField__(lineInfo,"i")[0])
             j=float(self.__getCurveField__(lineInfo,"j")[0])
+            k=float(self.__getCurveField__(lineInfo,"k")[0])
+            l=float(self.__getCurveField__(lineInfo,"l")[0])
             m=float(self.__getCurveField__(lineInfo,"m")[0])
-            c=float(self.__getCurveField__(lineInfo,"c")[0])
+            p=float(self.__getCurveField__(lineInfo,"p")[0])
+            q=float(self.__getCurveField__(lineInfo,"q")[0])
+            r=float(self.__getCurveField__(lineInfo,"r")[0])
+            s=float(self.__getCurveField__(lineInfo,"s")[0])
+            t=float(self.__getCurveField__(lineInfo,"t")[0])
+            u=float(self.__getCurveField__(lineInfo,"u")[0])
+            v=float(self.__getCurveField__(lineInfo,"v")[0])
+            w=float(self.__getCurveField__(lineInfo,"w")[0])
+            x=float(self.__getCurveField__(lineInfo,"x")[0])
+            y=float(self.__getCurveField__(lineInfo,"y")[0])
+            z=float(self.__getCurveField__(lineInfo,"z")[0])
+            ww=float(self.__getCurveField__(lineInfo,"ww")[0])
+            ee=float(self.__getCurveField__(lineInfo,"ee")[0])
+            rr=float(self.__getCurveField__(lineInfo,"rr")[0])
             evalResult=False
             try:
+                print "HI THERE ",u
                 evalResult=eval(testExp)
             except ZeroDivisionError:
                 if self.verboseMode:
@@ -2771,10 +2785,10 @@ class candidateList:
                                  relativeFreqBP+unitTraitOffset,#11
                                  zScoreBP+zScoreTraitOffset,    #12
                                  relativeTimeCM+unitTraitOffset,#13
-                                 relativeFreqCM+unitTraitOffset,#13
-                                 zScoreCM+zScoreTraitOffset,    #14
-                                 spanTnorm+unitTraitOffset,     #15
-                                 spanFnorm+unitTraitOffset]     #16
+                                 relativeFreqCM+unitTraitOffset,#14
+                                 zScoreCM+zScoreTraitOffset,    #15
+                                 spanTnorm+unitTraitOffset,     #16
+                                 spanFnorm+unitTraitOffset]     #17
             glitchDatabase.append(glitchDatabaseEntry)
         spinner.closeSpinner()
         return glitchDatabase
@@ -2926,7 +2940,7 @@ def generateFileList(inputTXT):
             fp=open(dirnameFilename,'r')
             objList=[x.strip('\n')for x in fp.readlines()]
             fp.close()
-            if str(objList[0]).__contains__('#'):
+            if (str(objList[0]).__contains__('#') or str(objList[0]).lower().__contains__('curve')):
                 #This is a single candidate file specified
                 objList=[dirnameFilename]
     else:
