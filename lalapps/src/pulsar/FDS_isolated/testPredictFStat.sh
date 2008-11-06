@@ -109,7 +109,7 @@ if ! tmp=`eval $cmdline`; then
     echo "Error.. something failed when running '$pfs_code' ..."
     exit 1
 fi
-resPFS=`echo $tmp | awk '{printf "%g", $1}'`
+resPFS2=`echo $tmp | awk '{printf "%g", $1}'`
 
 echo
 echo "----------------------------------------------------------------------"
@@ -126,7 +126,7 @@ if ! tmp=`eval $cmdline`; then
     echo "Error.. something failed when running '$pfs_code' ..."
     exit 1
 fi
-resPFS2=`echo $tmp | awk '{printf "%g", $1}'`
+resPFS1=`echo $tmp | awk '{printf "%g", $1}'`
 
 
 
@@ -140,22 +140,33 @@ echo "----------------------------------------"
 echo " STEP 4: Comparing results: "
 echo "----------------------------------------"
 echo
-echo "SemiAnalyticF:        2F = $resSAF"
-echo "PredictFStat [SFTs]:  2F = $resPFS"
+echo "SemiAnalyticF:        2F_SA  = $resSAF"
+echo "PredictFStat [Sh=1]:  2F_PF1 = $resPFS1"
+echo "PredictFStat [SFTs]:  2F_PF2 = $resPFS2"
 echo
 
-eps=$(echo $resSAF $resPFS | awk '{printf "%d", int ( 1000 * sqrt( ($1 - $2)*($1 - $2) ) / $1 )}');
+eps1=$(echo $resSAF $resPFS1 | awk '{printf "%d", int ( 1000 * sqrt( ($1 - $2)*($1 - $2) ) / $1 )}');
 eps2=$(echo $resSAF $resPFS2 | awk '{printf "%d", int ( 1000 * sqrt( ($1 - $2)*($1 - $2) ) / $1 )}');
 
-if test $eps2 -gt 10; then
-    echo "==> relative deviation F_PF wrt F_SA: $eps2/1000 larger than 15% ... FAILED."
+res=0;
+if test $eps1 -gt 10; then
+    echo "==> relative deviation F_PF1 wrt F_SA: $eps1/1000 larger than 1% ... FAILED."
     echo
-    exit 1;
+    res=1;
 else
-    echo "==> relative deviation F_PF wrt F_SA: $eps2/1000 smaller than 1% ... PASSED."
-    echo
-    exit 0;
+    echo "==> relative deviation F_PF1 wrt F_SA: $eps1/1000 smaller than 1% ... PASSED."
 fi
+
+if test $eps2 -gt 150; then
+    echo "==> relative deviation F_PF2 wrt F_SA: $eps2/1000 larger than 15% ... FAILED."
+    echo
+    res=1;
+else
+    echo "==> relative deviation F_PF2 wrt F_SA: $eps2/1000 smaller than 15% ... PASSED."
+    echo
+fi
+
+exit $res;
 
 
 
