@@ -85,7 +85,6 @@ if ! eval $cmdline; then
 fi
 
 echo
-echo -n "Running '$saf_code' ... "
 cmdline="$saf_code $saf_CL  --sqrtSh=$noiseSqrtSh"
 echo $cmdline
 if ! tmp=`eval $cmdline 2> /dev/null`; then
@@ -105,7 +104,6 @@ outfile_pfs="__tmp_PFS.dat";
 ## common cmdline-options for v1 and v2
 pfs_CL=" --Alpha=$Alpha --Delta=$Delta --IFO=$IFO --h0=$h0 --cosi=$cosi --psi=$psi --Freq=$Freq --DataFiles='$SFTdir/*' --outputFstat=$outfile_pfs"
 cmdline="$pfs_code $pfs_CL"
-echo -n "Running '$pfs_code' ... "
 echo $cmdline
 if ! tmp=`eval $cmdline`; then
     echo "Error.. something failed when running '$pfs_code' ..."
@@ -115,9 +113,20 @@ resPFS=`echo $tmp | awk '{printf "%g", $1}'`
 
 echo
 echo "----------------------------------------------------------------------"
-echo " STEP 3: run PFS without using noise-SFT data-files"
+echo " STEP 3: run PFS without using noise-floor estimation (assume Sh=1)"
 echo "----------------------------------------------------------------------"
 echo
+outfile_pfs2="__tmp_PFS2.dat";
+
+## common cmdline-options for v1 and v2
+pfs_CL=" --Alpha=$Alpha --Delta=$Delta --IFO=$IFO --h0=$h0 --cosi=$cosi --psi=$psi --Freq=$Freq --DataFiles='$SFTdir/*' --outputFstat=$outfile_pfs2 --SignalOnly"
+cmdline="$pfs_code $pfs_CL"
+echo $cmdline
+if ! tmp=`eval $cmdline`; then
+    echo "Error.. something failed when running '$pfs_code' ..."
+    exit 1
+fi
+resPFS2=`echo $tmp | awk '{printf "%g", $1}'`
 
 
 
@@ -134,15 +143,17 @@ echo "PredictFStat [SFTs]:  2F = $resPFS"
 echo
 
 eps=$(echo $resSAF $resPFS | awk '{printf "%d", int ( 1000 * sqrt( ($1 - $2)*($1 - $2) ) / $1 )}');
+eps2=$(echo $resSAF $resPFS2 | awk '{printf "%d", int ( 1000 * sqrt( ($1 - $2)*($1 - $2) ) / $1 )}');
 
-if test $eps -gt 150; then
-    echo "==> relative deviation $eps/1000 larger than 15% ... FAILED."
+if test $eps2 -gt 10; then
+    echo "==> relative deviation F_PF wrt F_SA: $eps2/1000 larger than 15% ... FAILED."
     echo
     exit 1;
 else
-    echo "==> relative deviation $eps/1000 smaller than 15% ... PASSED."
+    echo "==> relative deviation F_PF wrt F_SA: $eps2/1000 smaller than 1% ... PASSED."
     echo
     exit 0;
 fi
+
 
 
