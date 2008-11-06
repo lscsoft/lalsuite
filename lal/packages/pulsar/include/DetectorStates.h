@@ -19,6 +19,7 @@
 
 /**
  * \author Reinhard Prix
+ * \ingroup pulsarCommon
  * \date 2005
  * \file
  * \ingroup pulsar

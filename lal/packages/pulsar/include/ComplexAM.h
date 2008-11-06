@@ -17,25 +17,17 @@
 *  MA  02111-1307  USA
 */
 
-/*** <lalVerbatim file="ComplexAMHV">
-Author: Whelan, J.T., Reinhard Prix
-$Id$
-*** </lalVerbatim> */
-
-/* <lalLaTeX>
-\section{Header \texttt{ComplexAM.h}}
-\label{s:ComplexAM.h}
-Computes filter components for amplitude demodulation.
-
-\subsection*{Synposis}
-\begin{verbatim}
-#include <lal/ComplexAM.h>
-\end{verbatim}
-
-\noindent  structures and prototypes associated with complex AM coefficients
-
-</lalLaTeX> */
-
+/**
+ * \author Whelan, J.T., Reinhard Prix
+ * \date 2007
+ * \ingroup pulsar
+ * \file
+ * \ingroup pulsarCoherent
+ * \brief structures and prototypes associated with complex AM coefficients
+ *
+ * $Id$
+ *
+ */
 
 #ifndef _COMPLEXAM_H
 #define _COMPLEXAM_H
@@ -70,11 +62,6 @@ NRCSID (COMPLEXAMH, "$Id: ComplexAM.h");
 #define COMPLEXAMC_MSGEIEEE	"Floating point failure"
 #define COMPLEXAMC_MSGERAALISA	"RAA response only available for LISA"
 
-  /* <lalLaTeX>
-\subsection*{Structures}
-
-</lalLaTeX> */
-
 /** The 'detector tensor' for a GW-detector: symmetric 3x3 matrix, storing only the upper triangle.
  * The coordinate-system is SSB-fixed Cartesian coordinates, in particular EQUATORIAL coords for
  * Earth-based detectors and ECLIPTIC coords for LISA.
@@ -94,11 +81,6 @@ typedef struct
   SymmTensor3 ePlus;	/**< ePlus polarization tensor (skypos-dependent) */
   SymmTensor3 eCross;	/**< eCross polarization tensor (skypos-dependent) */
 } FreqSkypos_t;
-
-  /* <lalLaTeX>
-\newpage\input{ComplexAMHV}
-% \newpage\input{ComplexAMC}
-</lalLaTeX> */
 
 /*---------- exported prototypes [API] ----------*/
 
