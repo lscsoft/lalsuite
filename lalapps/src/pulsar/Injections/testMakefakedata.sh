@@ -137,6 +137,9 @@ else
 fi
 
 
-## clean up files
-rm -rf $testDIR In.data-test
+## clean up files [allow turning off via 'NOCLEANUP' environment variable
+if [ -z "$NOCLEANUP" ]; then
+    rm -rf $testDIR In.data-test
+fi
+
 
