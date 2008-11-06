@@ -20,8 +20,8 @@
 /**
  * \author Reinhard Prix
  * \date 2005
+ * \ingroup pulsarCoherent
  * \file
- * \ingroup pulsar
  * \brief Header-file defining the API for the F-statistic functions.
  *
  * This code is (partly) a descendant of an earlier implementation found in
@@ -127,10 +127,10 @@ typedef struct {
  * \f}
  * where (here) \f$\mathcal{S} \equiv \frac{1}{N_\mathrm{SFT}}\sum_{X,\alpha} S_{X\alpha}\f$ characterizes the multi-detector noise-floor, and
  * \f{equation}
- * A_d \equiv \sum_{X,\alpha} \mathrm{Re} \widehat{a}^X_\alpha{}^* \widehat{a}^X_\alpha\,,\quad
- * B_d \equiv \sum_{X,\alpha} \mathrm{Re} \widehat{b}^X_\alpha{}^* \widehat{b}^X_\alpha \,,\quad
- * C_d \equiv \sum_{X,\alpha} \mathrm{Re} \widehat{a}^X_\alpha{}^* \widehat{b}^X_\alpha \,,
- * E_d \equiv \sum_{X,\alpha} \mathrm{Im} \widehat{a}^X_\alpha{}^* \widehat{b}^X_\alpha \,,
+ * A_d \equiv \mathrm{Re} \sum_{X,\alpha} \widehat{a}^X_\alpha{}^* \widehat{a}^X_\alpha\,,\quad
+ * B_d \equiv \mathrm{Re} \sum_{X,\alpha} \widehat{b}^X_\alpha{}^* \widehat{b}^X_\alpha \,,\quad
+ * C_d \equiv \mathrm{Re} \sum_{X,\alpha} \widehat{a}^X_\alpha{}^* \widehat{b}^X_\alpha \,,
+ * E_d \equiv \mathrm{Im} \sum_{X,\alpha} \widehat{a}^X_\alpha{}^* \widehat{b}^X_\alpha \,,
  * \f}
  * and the noise-weighted atenna-functions \f$\widehat{a}^X_\alpha = \sqrt{w^X_\alpha}\,a^X_\alpha\f$,
  * \f$\widehat{b}^X_\alpha = \sqrt{w^X_\alpha}\,b^X_\alpha\f$, and noise-weights

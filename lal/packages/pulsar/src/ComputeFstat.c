@@ -20,6 +20,7 @@
  */
 
 /** \author R. Prix, J. T. Whelan
+ * \ingroup pulsarCoherent
  * \file
  * \brief
  * Functions to calculate the so-called F-statistic for a given point in parameter-space,
@@ -117,12 +118,12 @@ int finite(double x);
     they must be correctly set outside this function.
 */
 void ComputeFStatFreqBand ( LALStatus *status,
-			    REAL8FrequencySeries *fstatVector, /**< [out] Vector of Fstat values */
-			    const PulsarDopplerParams *doppler,/**< parameter-space point to compute F for */
-			    const MultiSFTVector *multiSFTs, /**< normalized (by DOUBLE-sided Sn!) data-SFTs of all IFOs */
+			    REAL8FrequencySeries *fstatVector, 		/**< [out] Vector of Fstat values */
+			    const PulsarDopplerParams *doppler,		/**< parameter-space point to compute F for */
+			    const MultiSFTVector *multiSFTs, 		/**< normalized (by DOUBLE-sided Sn!) data-SFTs of all IFOs */
 			    const MultiNoiseWeights *multiWeights,	/**< noise-weights of all SFTs */
 			    const MultiDetectorStateSeries *multiDetStates,/**< 'trajectories' of the different IFOs */
-			    const ComputeFParams *params	/**< addition computational params */
+			    const ComputeFParams *params		/**< addition computational params */
 			    )
 {
 
@@ -193,13 +194,13 @@ void ComputeFStatFreqBand ( LALStatus *status,
  */
 void
 ComputeFStat ( LALStatus *status,
-	       Fcomponents *Fstat,                 /**< [out] Fstatistic + Fa, Fb */
-	       const PulsarDopplerParams *doppler, /**< parameter-space point to compute F for */
-	       const MultiSFTVector *multiSFTs,    /**< normalized (by DOUBLE-sided Sn!) data-SFTs of all IFOs */
-	       const MultiNoiseWeights *multiWeights,/**< noise-weights of all SFTs */
-	       const MultiDetectorStateSeries *multiDetStates,/**< 'trajectories' of the different IFOs */
-	       const ComputeFParams *params,       /**< addition computational params */
-	       ComputeFBuffer *cfBuffer            /**< CF-internal buffering structure */
+	       Fcomponents *Fstat,                 		/**< [out] Fstatistic + Fa, Fb */
+	       const PulsarDopplerParams *doppler, 		/**< parameter-space point to compute F for */
+	       const MultiSFTVector *multiSFTs,    		/**< normalized (by DOUBLE-sided Sn!) data-SFTs of all IFOs */
+	       const MultiNoiseWeights *multiWeights,		/**< noise-weights of all SFTs */
+	       const MultiDetectorStateSeries *multiDetStates,	/**< 'trajectories' of the different IFOs */
+	       const ComputeFParams *params,       		/**< addition computational params */
+	       ComputeFBuffer *cfBuffer            		/**< CF-internal buffering structure */
 	       )
 {
   Fcomponents retF = empty_Fcomponents;
@@ -1155,9 +1156,9 @@ XLALComputeFaFbXavie ( Fcomponents *FaFb,
  */
 void
 LALGetAMCoeffs(LALStatus *status,
-	       AMCoeffs *coeffs,			/**< [out] amplitude-coeffs {a(t_i), b(t_i)} */
+	       AMCoeffs *coeffs,				/**< [out] amplitude-coeffs {a(t_i), b(t_i)} */
 	       const DetectorStateSeries *DetectorStates,	/**< timeseries of detector states */
-	       SkyPosition skypos			/**< {alpha,delta} of the source */
+	       SkyPosition skypos				/**< {alpha,delta} of the source */
 	       )
 {
   REAL4 ah1, ah2, ah3, ah4, ah5;
@@ -2248,15 +2249,13 @@ sin_cos_2PI_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x)
 
 /** Parameter-estimation: based on large parts on Yousuke's notes and implemention (in CFSv1),
  * extended for error-estimation.
- * This implementation follows closely the derivations found in
- * http://www.lsc-group.phys.uwm.edu/cgi-bin/enote.pl?nb=puls5knownpulsardemod&action=view&page=12
  */
 void
 LALEstimatePulsarAmplitudeParams (LALStatus * status,
 				  PulsarCandidate *pulsarParams,  	/**< [out] estimated params {h0,cosi,phi0,psi} plus error-estimates */
 				  const Fcomponents *Fstat,	 	/**<  Fstat-components Fa, Fb */
 				  const LIGOTimeGPS *FstatRefTime,	/**<  reference-time for the phase of Fa, Fb */
-				  const CmplxAntennaPatternMatrix *Mmunu 	/**<  antenna-pattern A,B,C and normalization S_inv*Tsft */
+				  const CmplxAntennaPatternMatrix *Mmunu/**<  antenna-pattern A,B,C and normalization S_inv*Tsft */
 				  )
 {
   REAL8 A1h, A2h, A3h, A4h;
