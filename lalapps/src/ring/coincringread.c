@@ -105,6 +105,7 @@ static void print_usage(char *program)
       " [--num-slides]        slides   number of time slides performed \n"\
       "                                (used in clustering)\n"\
       " [--sort-triggers]              time sort the coincident triggers\n"\
+      " [--cluster-time]      time     cluster triggers with time ms window\n"\
       " [--coinc-stat]        stat     use coinc statistic for cluster/cut\n"\
       " [--injection-file]    inj_file read injection parameters from inj_file\n"\
       " [--injection-window]  inj_win  trigger and injection coincidence window (ms)\n"\
