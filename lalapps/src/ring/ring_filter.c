@@ -238,10 +238,10 @@ static SnglRingdownTable * find_events(
   UINT4 jmin;
   UINT4 jmax;
   UINT4 j;
-  INT8  t0;
-  INT8  tpeak;
+  INT8  t0 = 0;
+  INT8  tpeak = 0;
   INT8  tmp;
- /* LALMSTUnitsAndAcc     gmstUnits = { MST_HRS, LALLEAPSEC_STRICT };*/
+  /* LALMSTUnitsAndAcc     gmstUnits = { MST_HRS, LALLEAPSEC_STRICT };*/
 
   /* compute filter duration: sum of rindown duration and spec trunc duration */
   filterDuration  = efolds * tmpltQuality / (LAL_PI * tmpltFrequency);
