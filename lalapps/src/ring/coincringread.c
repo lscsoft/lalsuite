@@ -158,7 +158,6 @@ int main( int argc, char *argv[] )
   int numInFiles = 0;
   char **inFileNameList;
   char line[MAX_PATH];
-  REAL4 kappa = 0;
   UINT8 triggerInputTimeNS = 0;
 
   MetadataTable         proctable;
@@ -519,7 +518,7 @@ int main( int argc, char *argv[] )
         {
           fprintf( stdout, "invalid argument to --%s:\n"
               "cluster window must be > 0: "
-              "(%lld specified)\n",
+              "(%ld specified)\n",
               long_options[option_index].name, cluster_dt );
           exit( 1 );
         }
@@ -559,7 +558,7 @@ int main( int argc, char *argv[] )
         {
           fprintf( stdout, "invalid argument to --%s:\n"
               "injection coincidence window must be >= 0: "
-              "(%lld specified)\n",
+              "(%ld specified)\n",
               long_options[option_index].name, injectWindowNS );
           exit( 1 );
         }
