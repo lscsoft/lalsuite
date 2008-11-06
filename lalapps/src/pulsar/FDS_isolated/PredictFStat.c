@@ -132,6 +132,7 @@ typedef struct {
 
   REAL8 cosiota;	/* DEPRECATED in favor of cosi */
 
+  BOOLEAN version;	/**< output version-info */
 } UserInput_t;
 
 static UserInput_t empty_UserInput;
@@ -176,6 +177,12 @@ int main(int argc,char *argv[])
   if (uvar.help)	/* if help was requested, we're done here */
     exit (0);
 
+  if ( uvar.version ) {
+    printf ( "%s\n", lalGitID );
+    printf ( "%s\n", lalappsGitID );
+    return 0;
+  }
+
   /* Initialize code-setup */
   LAL_CALL ( InitPFS(&status, &GV, &uvar ), &status);
 
@@ -201,6 +208,7 @@ int main(int argc,char *argv[])
     {
       FILE *fpFstat = NULL;
       CHAR *logstr = NULL;
+      CHAR *id1, *id2;
 
       if ( (fpFstat = fopen (uvar.outputFstat, "wb")) == NULL)
 	{
@@ -211,13 +219,16 @@ int main(int argc,char *argv[])
       /* log search-footprint at head of output-file */
       LAL_CALL( LALUserVarGetLog (&status, &logstr,  UVAR_LOGFMT_CMDLINE ), &status );
 
-      fprintf(fpFstat, "## %s\n## %s\n",
-	      "$Id$",
-	      logstr );
+      fprintf(fpFstat, "%%%% cmdline: %s\n", logstr );
       LALFree ( logstr );
+      id1 = XLALClearLinebreaks ( lalGitID );
+      id2 = XLALClearLinebreaks ( lalappsGitID );
+      fprintf ( fpFstat, "%%%% %s\n%%%%%s\n", id1, id2 );
+      LALFree ( id1 ); LALFree ( id2 );
+
       /* append 'dataSummary' */
       fprintf (fpFstat, "%s", GV.dataSummary );
-      fprintf (fpFstat, "## E[2F]   sigma[2F] \n");
+      fprintf (fpFstat, "%%%% E[2F]   sigma[2F] \n");
       fprintf (fpFstat, "  %g    %g\n", 4.0 + rho2,  sqrt( 4.0 * ( 2.0 + rho2 )  ) );
       fclose (fpFstat);
     } /* if outputFstat */
@@ -287,6 +298,7 @@ initUserVars (LALStatus *status, UserInput_t *uvar )
 
   LALregINTUserStruct(status,	RngMedWindow,	'k', UVAR_DEVELOPER, "Running-Median window size");
 
+  LALregBOOLUserStruct(status,	version,        'V', UVAR_SPECIAL,   "Output code version");
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
@@ -474,8 +486,8 @@ InitPFS ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
     UINT4 i, numDet;
     numDet = multiSFTs->length;
     tp = time(NULL);
-    sprintf (summary, "## Date: %s", asctime( gmtime( &tp ) ) );
-    strcat (summary, "## Loaded SFTs: [ " );
+    sprintf (summary, "%%%% Date: %s", asctime( gmtime( &tp ) ) );
+    strcat (summary, "%% Loaded SFTs: [ " );
     for ( i=0; i < numDet; i ++ ) {
       sprintf (line, "%s:%d%s",  multiSFTs->data[i]->data->name, multiSFTs->data[i]->length,
 	       (i < numDet - 1)?", ":" ]\n");
@@ -484,9 +496,9 @@ InitPFS ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
     utc = *XLALGPSToUTC( &utc, (INT4)GPS2REAL8(startTime) );
     strcpy ( dateStr, asctime(&utc) );
     dateStr[ strlen(dateStr) - 1 ] = 0;
-    sprintf (line, "## Start GPS time tStart = %12.3f    (%s GMT)\n", GPS2REAL8(startTime), dateStr);
+    sprintf (line, "%%%% Start GPS time tStart = %12.3f    (%s GMT)\n", GPS2REAL8(startTime), dateStr);
     strcat ( summary, line );
-    sprintf (line, "## Total time spanned    = %12.3f s  (%.1f hours)\n", duration, duration/3600 );
+    sprintf (line, "%%%% Total time spanned    = %12.3f s  (%.1f hours)\n", duration, duration/3600 );
     strcat ( summary, line );
 
     if ( (cfg->dataSummary = LALCalloc(1, strlen(summary) + 1 )) == NULL ) {
