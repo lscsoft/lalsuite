@@ -131,7 +131,9 @@ resPFS2=`echo $tmp | awk '{printf "%g", $1}'`
 
 
 ## clean up files
-rm -rf $SFTdir $outfile_pfs $outfile_pfs2
+if [ -z "$NOCLEANUP" ]; then
+    rm -rf $SFTdir $outfile_pfs $outfile_pfs2;
+fi
 
 echo
 echo "----------------------------------------"
