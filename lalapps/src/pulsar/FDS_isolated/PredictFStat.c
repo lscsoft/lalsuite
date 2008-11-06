@@ -109,11 +109,12 @@ typedef struct {
 
   INT4 RngMedWindow;	/**< running-median window to use for noise-floor estimation */
 
-  REAL8 aPlus;		/**< '+' polarization amplitude: aPlus  [alternative to {h0, cosi}:  aPlus = 0.5*h0*(1+cosi^2)] */
+  REAL8 aPlus;		/**< '+' polarization amplitude: aPlus  [alternative to {h0, cosi}: aPlus = 0.5*h0*(1+cosi^2)] */
   REAL8 aCross;		/**< 'x' polarization amplitude: aCross [alternative to {h0, cosi}: aCross= h0 * cosi] */
-  REAL8 psi;		/**< polarization angle psi */
   REAL8 h0;		/**< overall GW amplitude h0 [alternative to {aPlus, aCross}] */
   REAL8 cosi;		/**< cos(inclination angle)  [alternative to {aPlus, aCross}] */
+  REAL8 psi;		/**< polarization angle psi */
+  REAL8 phi0;		/**< initial GW phase phi_0 in radians */
   REAL8 Freq;		/**< GW signal frequency */
   REAL8 Alpha;		/**< sky-position angle 'alpha', which is right ascencion in equatorial coordinates */
   REAL8 Delta;		/**< sky-position angle 'delta', which is declination in equatorial coordinates */
@@ -271,34 +272,38 @@ initUserVars (LALStatus *status, UserInput_t *uvar )
   uvar->minStartTime = 0;
   uvar->maxEndTime = LAL_INT4_MAX;
 
+  uvar->phi0 = 0;
+
   /* register all our user-variables */
   LALregBOOLUserStruct(status,	help, 		'h', UVAR_HELP,     "Print this message");
 
-  LALregREALUserStruct(status,	h0,		's', UVAR_OPTIONAL, "Signal amplitude h_0");
-  LALregREALUserStruct(status,	cosi,		'i', UVAR_OPTIONAL, "Inclination of rotation-axis Cos(iota)");
-  LALregREALUserStruct(status,	cosiota,	 0 , UVAR_DEVELOPER,"[DEPRECATED] Use --cosi instead!");
-  LALregREALUserStruct(status, 	aPlus,	 	 0 , UVAR_OPTIONAL, "Alternative to {h0,cosi}: A_+ amplitude");
-  LALregREALUserStruct(status,	aCross,  	 0 , UVAR_OPTIONAL, "Alternative to {h0,cosi}: A_x amplitude");
+  LALregREALUserStruct(status, 	aPlus,	 	 0 , UVAR_OPTIONAL, "'Plus' polarization amplitude: aPlus  [alternative to {h0, cosi}");
+  LALregREALUserStruct(status,	aCross,  	 0 , UVAR_OPTIONAL, "'Cross' polarization amplitude: aCross [alternative to {h0, cosi}");
+  LALregREALUserStruct(status,	h0,		's', UVAR_OPTIONAL, "Overall GW amplitude h0 [alternative to {aPlus, aCross}]");
+  LALregREALUserStruct(status,	cosi,		'i', UVAR_OPTIONAL, "Inclination angle of rotation axis cos(iota) [alternative to {aPlus, aCross}]");
 
-  LALregREALUserStruct(status,	psi,		'Y', UVAR_REQUIRED, "Polarisation in rad");
+  LALregREALUserStruct(status,	psi,		'Y', UVAR_REQUIRED, "Polarisation angle in radians");
+  LALregREALUserStruct(status,	phi0,		'Y', UVAR_OPTIONAL, "Initial GW phase phi0 in radians");
+
   LALregREALUserStruct(status,	Alpha,		'a', UVAR_REQUIRED, "Sky position alpha (equatorial coordinates) in radians");
   LALregREALUserStruct(status,	Delta,		'd', UVAR_REQUIRED, "Sky position delta (equatorial coordinates) in radians");
-  LALregREALUserStruct(status,	Freq,		'F', UVAR_REQUIRED, "Signal frequency (for noise-estimation)");
+  LALregREALUserStruct(status,	Freq,		'F', UVAR_REQUIRED, "GW signal frequency (only used for noise-estimation in SFTs)");
 
   LALregSTRINGUserStruct(status,DataFiles, 	'D', UVAR_OPTIONAL, "File-pattern specifying (multi-IFO) input SFT-files");
   LALregSTRINGUserStruct(status,IFO, 		'I', UVAR_OPTIONAL, "Detector-constraint: 'G1', 'L1', 'H1', 'H2' ...(useful for single-IFO v1-SFTs only!)");
   LALregSTRINGUserStruct(status,ephemDir, 	'E', UVAR_OPTIONAL, "Directory where Ephemeris files are located");
   LALregSTRINGUserStruct(status,ephemYear, 	'y', UVAR_OPTIONAL, "Year (or range of years) of ephemeris files to be used");
-  LALregSTRINGUserStruct(status,outputFstat,	  0,  UVAR_OPTIONAL, "Output-file for predicted F-stat value" );
+  LALregSTRINGUserStruct(status,outputFstat,     0,  UVAR_OPTIONAL, "Output-file for predicted F-stat value" );
 
   LALregINTUserStruct ( status,	minStartTime, 	 0,  UVAR_OPTIONAL, "Earliest SFT-timestamp to include");
   LALregINTUserStruct ( status,	maxEndTime, 	 0,  UVAR_OPTIONAL, "Latest SFT-timestamps to include");
 
-  LALregBOOLUserStruct(status,	SignalOnly,	'S', UVAR_OPTIONAL, "Assume Sh=1 and don't use SFTs to estimate noise-floor");
-
-  LALregINTUserStruct(status,	RngMedWindow,	'k', UVAR_DEVELOPER, "Running-Median window size");
+  LALregBOOLUserStruct(status,	SignalOnly,	'S', UVAR_OPTIONAL, "Assume Sh=1 instead of estimating noise-floor from SFTs");
 
   LALregBOOLUserStruct(status,	version,        'V', UVAR_SPECIAL,   "Output code version");
+
+  LALregINTUserStruct(status,	RngMedWindow,	'k', UVAR_DEVELOPER, "Running-Median window size");
+  LALregREALUserStruct(status,	cosiota,	 0 , UVAR_DEVELOPER,"[DEPRECATED] Use --cosi instead!");
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
@@ -317,8 +322,6 @@ InitEphemeris (LALStatus * status,
 #define FNAME_LENGTH 1024
   CHAR EphemEarth[FNAME_LENGTH];	/* filename of earth-ephemeris data */
   CHAR EphemSun[FNAME_LENGTH];	/* filename of sun-ephemeris data */
-  LALLeapSecFormatAndAcc formatAndAcc = {LALLEAPSEC_GPSUTC, LALLEAPSEC_STRICT};
-  INT4 leap;
 
   INITSTATUS( status, "InitEphemeris", rcsid );
   ATTATCHSTATUSPTR (status);
