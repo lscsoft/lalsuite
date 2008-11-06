@@ -2,6 +2,20 @@
 
 export LC_ALL=C
 
+# test if LAL_DATA_PATH has been set ... needed to locate ephemeris-files
+if [ -z "$LAL_DATA_PATH" ]; then
+    if [ -n "$LAL_PREFIX" ]; then
+	export LAL_DATA_PATH=".:${LAL_PREFIX}/share/lal";
+    else
+	echo
+	echo "Need environment-variable LAL_PREFIX, or LAL_DATA_PATH to be set"
+	echo "to your ephemeris-directory (e.g. /usr/local/share/lal)"
+	echo "This might indicate an incomplete LAL installation"
+	echo
+	exit 1
+    fi
+fi
+
 #------------------------------
 #Some Constants
 pi=3.14159265358979
@@ -105,7 +119,7 @@ echo "Iter = $iteration"
 
 ## generate deterministic random-seed:
     randseed=$(( 1000 * $iteration + $iteration ))
-    randvals=`./$randCode -s $randseed -n 9`
+    randvals=`$randCode -s $randseed -n 9`
 
     #---------- delta
     randval=$(echo $randvals | awk '{print $1}');
@@ -200,7 +214,7 @@ fi
 #echo "----------------------------------------------------------------------"
 # this part of the command-line is compatible with PredictFStat:
 FreqBand=$(echo $mfd_FreqBand | awk '{printf "%g", ($1-0.05*$1) / 2.0}');
-pfs_CL="--aPlus=$aPlus --aCross=$aCross --psi=$psi --phi=$phi0 --Freq=$f0 --FreqBand=$FreqBand --Delta=$Delta --Alpha=$Alpha"
+pfs_CL="--aPlus=$aPlus --aCross=$aCross --psi=$psi --Freq=$f0 --Delta=$Delta --Alpha=$Alpha"
 
 ############################################################
 # Calculating the Semi-Analytic FStat for detector H1
@@ -266,7 +280,7 @@ res2PFSH1H2=`echo $resPFSH1H2 | awk '{printf "%.1f", $1}'`
 ############################################################
 # Calculating the Semi-Analytic FStat for detector H1+H2+G1
 cmdline="$pfs_code $pfs_CL --DataFiles='./testSFTs/'H-1_H*  G-1_G*''"
-echo $cmdline
+#echo $cmdline
 
 if ! resPFSH1H2G1=`eval $cmdline 2> /dev/null`; then
     echo "Error ... something failed running '$pfs_code' ..."
@@ -274,7 +288,7 @@ if ! resPFSH1H2G1=`eval $cmdline 2> /dev/null`; then
 fi
 
 res2PFSH1H2G1=`echo $resPFSH1H2G1 | awk '{printf "%.1f", $1}'`
-echo "res2PFSH1H2G1=$res2PFSH1H2G1"
+##echo "res2PFSH1H2G1=$res2PFSH1H2G1"
 
 ############################################################
 # Calculating the Semi-Analytic FStat for detector H1+H2+L1+G1
@@ -308,7 +322,7 @@ if ! resCFSH1=`eval $cmdline 2> /dev/null`; then
 fi
 
 res2CFSH1=`echo $resCFSH1 | awk '{printf "%.1f", $1}'`
-#echo "$res2CFSH1"
+echo "$res2CFSH1"
 
 ############################################################
 cmdline="$cfsv2_code $cfs_CL --DataFiles='$SFTdir/H-1_H2*'";
