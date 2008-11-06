@@ -229,8 +229,9 @@ int main(int argc,char *argv[])
 
       /* append 'dataSummary' */
       fprintf (fpFstat, "%s", GV.dataSummary );
-      fprintf (fpFstat, "%%%% E[2F]   sigma[2F] \n");
-      fprintf (fpFstat, "  %g    %g\n", 4.0 + rho2,  sqrt( 4.0 * ( 2.0 + rho2 )  ) );
+      fprintf (fpFstat, "twoF_expected = %g;\n", 4.0 + rho2);
+      fprintf (fpFstat, "twoF_sigma    = %g;\n", sqrt( 4.0 * ( 2.0 + rho2 ) ) );
+
       fclose (fpFstat);
     } /* if outputFstat */
 
