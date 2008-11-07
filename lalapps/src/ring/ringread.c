@@ -75,12 +75,8 @@ RCSID("$Id$");
 "  --output FILE                write output data to FILE\n"\
 "  --tama-output FILE           write out text triggers for tama\n"\
 "  --summary-file FILE          write trigger analysis summary to FILE\n"\
-"\n"\
-"Playground data:\n"\
-"  --playground-only            write triggers that are in playground\n"\
-"  --exclude-playground         write triggers that are NOT in playground\n"\
-"  --all-data                   write triggers for all times read in\n"\
-"\n"\
+"  --data-type                   specify the data type, must be one of\n"\
+"                               (playground_only|exclude_play|all_data)\n"\ 
 "Clustering and Sorting:\n"\
 "  --sort-triggers              time sort the ringdown triggers\n"\
 "  --snr-threshold RHO          discard all triggers with snr less than RHO\n"\
@@ -233,9 +229,6 @@ int main( int argc, char *argv[] )
     {
       {"verbose",             no_argument,           &vrbflg,              1 },
       {"sort-triggers",       no_argument,     &sortTriggers,              1 },
-      {"playground-only",     no_argument, (int *) &dataType, playground_only},
-      {"exclude-playground",  no_argument, (int *) &dataType,    exclude_play},
-      {"all-data",            no_argument, (int *) &dataType,        all_data},
       {"help",                    no_argument,            0,              'h'},
       {"debug-level",             required_argument,      0,              'z'},
       {"user-tag",                required_argument,      0,              'Z'},
@@ -245,6 +238,7 @@ int main( int argc, char *argv[] )
       {"glob",                    required_argument,      0,              'g'},
       {"input",                   required_argument,      0,              'i'},
       {"output",                  required_argument,      0,              'o'},
+      {"data-type",               required_argument,      0,              'k'},
       {"tama-output",             required_argument,      0,              'j'},
       {"summary-file",            required_argument,      0,              'S'},
       {"snr-threshold",           required_argument,      0,              's'},
@@ -387,6 +381,31 @@ int main( int argc, char *argv[] )
         ADD_PROCESS_PARAM( "float", "%e", snrStar );
         break;
 
+      case 'k':
+        /* type of data to analyze */
+        if ( ! strcmp( "playground_only", optarg ) )
+        {
+          dataType = playground_only;
+        }
+        else if ( ! strcmp( "exclude_play", optarg ) )
+        {
+          dataType = exclude_play;
+        }
+        else if ( ! strcmp( "all_data", optarg ) )
+        {
+          dataType = all_data;
+        }
+        else
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "unknown data type, %s, specified: "
+              "(must be playground_only, exclude_play or all_data)\n",
+              long_options[option_index].name, optarg );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        break;
+
       case 'C':
         /* choose the clustering algorithm */
         {        
@@ -422,13 +441,13 @@ int main( int argc, char *argv[] )
         {
           fprintf( stdout, "invalid argument to --%s:\n"
               "custer window must be > 0: "
-              "(%lld specified)\n",
+              "(%" LAL_INT8_FORMAT " specified)\n",
               long_options[option_index].name, cluster_dt );
           exit( 1 );
         }
-        ADD_PROCESS_PARAM( "int", "%lld", cluster_dt );
+        ADD_PROCESS_PARAM( "int", "%" LAL_INT8_FORMAT "", cluster_dt );
         /* convert cluster time from ms to ns */
-        cluster_dt *= 1000000LL;
+        cluster_dt *= LAL_INT8_C(1000000);
         break;
 
       case 'I':
@@ -453,13 +472,13 @@ int main( int argc, char *argv[] )
         {
           fprintf( stdout, "invalid argument to --%s:\n"
               "injection coincidence window must be >= 0: "
-              "(%lld specified)\n",
+              "(%" LAL_INT8_FORMAT " specified)\n",
               long_options[option_index].name, inject_dt );
           exit( 1 );
         }
-        ADD_PROCESS_PARAM( "int", "%lld", inject_dt );
+        ADD_PROCESS_PARAM( "int", "%" LAL_INT8_FORMAT " ", inject_dt );
         /* convert inject time from ms to ns */
-        inject_dt *= 1000000LL;
+        inject_dt *= LAL_INT8_C(1000000);
         break;
 
       case 'm':
@@ -480,7 +499,7 @@ int main( int argc, char *argv[] )
               long_options[option_index].name, hardware );
           exit( 1 );
         }
-        ADD_PROCESS_PARAM( "int", "%ld", hardware );
+        ADD_PROCESS_PARAM( "int", "%" LAL_INT8_FORMAT " ", hardware );
         break;
 
       case 'D':
@@ -540,6 +559,13 @@ int main( int argc, char *argv[] )
   {
     fprintf( stderr, "--output must be specified\n" );
     exit( 1 );
+  }
+
+  /* check that Data Type has been specified */
+  if ( dataType == unspecified_data_type )
+  {
+    fprintf( stderr, "Error: --data-type must be specified\n");
+    exit(1);
   }
 
   /* check that if clustering is being done that we have all the options */
@@ -1515,8 +1541,8 @@ int main( int argc, char *argv[] )
       fprintf( fp, "number of injections found in input data: %d\n", 
           numSimFound );
       fprintf( fp, 
-          "number of triggers found within %lld msec of injection: %d\n",
-          (inject_dt / 1000000LL), numEventsCoinc );
+          "number of triggers found within %" LAL_INT8_FORMAT "msec of injection: %d\n",
+          (inject_dt / LAL_INT8_C(1000000) ), numEventsCoinc );
 
       fprintf( fp, "efficiency: %f \n", 
           (REAL4) numSimFound / (REAL4) numSimInData );
@@ -1524,8 +1550,8 @@ int main( int argc, char *argv[] )
 
     if ( clusterchoice )
     {
-      fprintf( fp, "number of event clusters with %lld msec window: %d\n",
-          cluster_dt/ 1000000LL, numClusteredEvents ); 
+      fprintf( fp, "number of event clusters with %" LAL_INT8_FORMAT " msec window: %d\n",
+          cluster_dt/ LAL_INT8_C(1000000), numClusteredEvents ); 
     }
 
     fclose( fp ); 

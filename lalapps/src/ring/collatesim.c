@@ -100,9 +100,7 @@ int main( int argc, char *argv[] )
 
   /*  program option variables */
   extern int vrbflg;
-  CHAR *userTag = NULL;
   CHAR comment[LIGOMETA_COMMENT_MAX];
-  char *ifoName = NULL;
   char *inputGlob = NULL;
   char *inputFileName = NULL;
   char *outputFileName = NULL;
@@ -114,7 +112,6 @@ int main( int argc, char *argv[] )
   static const char *func = "XLALSimRingdownTableFromLIGOLw";
   int j;
   int  errnum;
-  UINT8 triggerInputTimeNS = 0;
 
   MetadataTable         proctable;
   MetadataTable         procparams;
@@ -123,7 +120,6 @@ int main( int argc, char *argv[] )
   SimRingdownTable   **eventHandle = NULL;
   SimRingdownTable    *eventHead = NULL;
   SimRingdownTable    *thisEvent = NULL;
-  SimRingdownTable    *tmpEvent = NULL;
   SimRingdownTable    *prevEvent = NULL;
 
   LIGOLwXMLStream       xmlStream;

@@ -27,6 +27,7 @@
 #include <lal/LIGOLwXML.h>
 #include <lal/LIGOMetadataUtils.h>
 #include <lal/Units.h>
+#include <lal/FindChirp.h>
 
 #include "lalapps.h"
 #include "injsgnl.h"
@@ -57,7 +58,7 @@ int inject_signal(
   SimRingdownTable        *ringList = NULL;
   char                     injFile[FILENAME_LENGTH + 1];
   LIGOTimeGPS              epoch;
-  UINT4                    numInject;
+  UINT4                    numInject = 0;
   INT4                     startSec;
   INT4                     stopSec;
   int                      strainData;
@@ -93,7 +94,7 @@ int inject_signal(
       for ( thisInject = ringList; thisInject; thisInject = thisInject->next )
             ++numInject;
     break;
-    case imr_inject: case imr_ring_inject:
+    case imr_inject: case imr_ring_inject: case EOBNR_inject:
       numInject = 
         SimInspiralTableFromLIGOLw( &injectList, injFile, startSec, stopSec );
       break;
@@ -139,6 +140,9 @@ int inject_signal(
         LAL_CALL( LALFindChirpInjectIMR( &status, series, injectList, ringList, 
               response, injectSignalType ), &status );
         break;        
+      case EOBNR_inject:
+        LAL_CALL( LALFindChirpInjectSignals( &status, series, injectList, response ), &status );
+        break;
       default:
         error( "unrecognized injection signal type\n" );
     }

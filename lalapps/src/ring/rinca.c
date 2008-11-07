@@ -42,6 +42,7 @@
 #include <lal/LIGOMetadataUtils.h>
 #include <lalapps.h>
 #include <processtable.h>
+#include <lal/SegmentsIO.h>
 
 RCSID("$Id$");
 
@@ -183,7 +184,7 @@ int main( int argc, char *argv[] )
 
   LALSegList vetoSegs[LAL_NUM_IFO];
 
-  INT4   numIFO = 0;
+  UINT4   numIFO = 0;
   UINT4  numTrigIFO = 0;
   UINT4  numTriggers = 0;
   UINT4  numCoinc = 0;
@@ -961,7 +962,7 @@ if ( vrbflg)
       {
         if (vrbflg)
         {
-          fprintf( stdout, "Clustering triggers for over %lld ms window\n",
+          fprintf( stdout, "Clustering triggers for over %ld ms window\n",
               maximizationInterval);
         }
         XLALMaxSnglRingdownOverIntervals( &ringdownFileList,
@@ -1044,7 +1045,7 @@ if ( vrbflg)
   {
     if ( vrbflg ) fprintf( stdout, 
         "Checking that we have data for all times from all IFOs\n");
-    for ( ifoNumber = 0; ifoNumber < numIFO; ++ifoNumber )
+    for ( ifoNumber = 0; ifoNumber < (int)numIFO; ++ifoNumber )
     {
       LAL_CALL( LALCheckOutTimeFromSearchSummary ( &status, searchSummList, 
             ifoName[ifoNumber], &startCoinc, &endCoinc ), &status);
