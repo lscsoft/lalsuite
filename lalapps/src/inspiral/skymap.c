@@ -38,6 +38,7 @@ char* event_id = 0;
  */
 double trig_time[3] = {0, 0, 0};
 double w[3] = { 1, 1, 1 };
+/*double cp[3] = {0, 0, 0};*/
 /*
  *  Resolution of output sky map
  */
@@ -52,7 +53,7 @@ int frequency = 4096;
 /*
  *  Number of samples to analyze
  */
-int samples = 512;
+int samples = 2048;
 
 /*
  *  Array of pointers to the matched-filtered data z[t]
@@ -77,8 +78,6 @@ void load_data(int detector, char* file, char* initial);
 
 int main(int argc, char** argv)
 {
-
-    
     int c;
     while (1)
     {
@@ -154,11 +153,8 @@ int main(int argc, char** argv)
     trig_time[2] = load_time(xml_file[2],2); 
 
     load_data(0, h1_frame_file, "H");
-    fprintf(stderr, "H1 trigger:%f\n", trig_time[0]); 
     load_data(1, l1_frame_file, "L");
     load_data(2, v1_frame_file, "V");
-    fprintf(stderr, "L1 trigger:%f\n", trig_time[1]);
-    fprintf(stderr, "V1 trigger:%f\n", trig_time[2]);
 
     analyze(ra_res, dec_res, output_file);
  
@@ -172,17 +168,13 @@ double load_time(char* file, int detector)
         SnglInspiralTable* a = 0;
         LALSnglInspiralTableFromLIGOLw(&a, file, 0, 1);
         w[detector] = sqrt(a->sigmasq);
-        /*[detector] = a->snr;*/
-        /*w[detector] = 1;*/
-        fprintf(stderr, "w[%d] = %f\n", detector, w[detector]);
         greenwich = XLALGreenwichMeanSiderealTime(&(a->end_time));
-        fprintf(stderr, "%d:greenwich hour %f\n", detector, fmod(greenwich, LAL_TWOPI));
         return XLALGPSGetREAL8(&(a->end_time));
     }
     else
     {
-        fprintf(stderr, "warning: using unit template normalization");
-        w[detector] = w[0]*0.1;
+        fprintf(stderr, "warning: using heuristic w[%d]\n", detector);
+        w[detector] = w[0] * 0.1;
         return 0;
     }
 }
@@ -190,28 +182,6 @@ double load_time(char* file, int detector)
 void load_data(int detector, char* file, char* initial)
 {
     char buffer[256];
-    double mean_time = 0;
-    {
-       int i, j;
-       j = 0;
-       for (i = 0; i != 3; ++i)
-       {
-          if (trig_time[i] > 0)
-          {
-             mean_time += trig_time[i];
-             ++j;
-          }
-       }
-       if (j > 0)
-       {
-           mean_time /= j;
-       }
-       else
-       {
-           fprintf(stderr, "error: data from at least one interferometer must be supplied");
-           exit(1);
-       }
-    }
 
     if (strcmp(file, "none"))
     {
@@ -219,45 +189,21 @@ void load_data(int detector, char* file, char* initial)
          *  Read the frame file here
          */
 
-	/*
-	 *  This is prototype code that needs to be made robust
-	 */
-  
         FrStream *stream = NULL;
         COMPLEX8TimeSeries H1series;
         int i;
-        int inject_at;
 	int start_index;
-	double relative_time;
-
-	FILE *FP = NULL;
-	sprintf(buffer, "%s:%s.txt", initial, event_id);
-	FP = fopen(buffer,"w");
+        FILE* h;
 
         sprintf(H1series.name,"%s1:CBC-CData_%s", initial, event_id);
-	fprintf(stderr, "series name: %s\n", H1series.name);
         stream = XLALFrOpen("./", file);
         H1series.data = XLALCreateCOMPLEX8Vector(4096);
         XLALFrGetCOMPLEX8TimeSeries(&H1series,stream);
-        fprintf(stderr,"length %d\n",H1series.data->length);
-        for (i = 0; i < H1series.data->length; i++)
-        {
-         /*   fprintf(FP,"%i %f %f\n",i, H1series.data->data[i].re, H1series.data->data[i].im);*/
-        }
         XLALFrClose(stream);
-        /*fclose(FP);*/
-        /*
-         *  Identify the index corresponding to the trigger
-	 */
-        
-	fprintf(stderr, "%s:epoch: %f\n", initial, XLALGPSGetREAL8(&(H1series.epoch)));
-        fprintf(stderr, "%s:mean_time: %f\n", initial, mean_time);
-        /*relative_time = mean_time - trig_time[detector] + 0.5;*/ 
-        relative_time = -trig_time[0] + trig_time[detector] + 0.5;/*- XLALGPSGetREAL8(&(H1series.epoch));*/
-        /* FIXME CHAD DID THIS */
-        relative_time = 0.5;
-	fprintf(stderr,"relative time is %f\n",relative_time);
-	start_index = (relative_time * frequency) - (samples / 2);
+
+        start_index = 2048 - samples/2;
+
+        fprintf(stderr, "start index = %d\n", start_index);
 
 	/*
 	 *  Allocate memory to repack the data in
@@ -266,16 +212,14 @@ void load_data(int detector, char* file, char* initial)
         /* real, or waveform one */
 	x[detector] = (double*) malloc(samples * sizeof(double));
 	/* complex, or waveform two */
-	x[detector + 3] = (double*) malloc(samples * sizeof(double));
-        inject_at = samples/2 + ((int) ((trig_time[detector]-trig_time[0])*frequency));
+	x[detector + 3] = (double*) malloc(samples * sizeof(double));     
 
 	for (i = 0; i != samples; ++i)
 	{
 	    x[detector    ][i] = H1series.data->data[start_index + i].re;
 	    x[detector + 3][i] = H1series.data->data[start_index + i].im;
-	    fprintf(FP, "%d %f %f %d\n", i, x[detector][i], x[detector + 3][i], i == inject_at);
+            fprintf(h, "%d %f %f\n", start_index + i, x[detector][i], x[detector+3][i]);
         }
-        fclose(FP);
     }
     else
     {
@@ -325,63 +269,37 @@ double logsumexp(double a, double b)
    }
    /*if (c == (log(0) - log(0)))*/
    {
-      fprintf(stderr, "warning: logsumexp(%f, %f) = %f\n", a, b, c);
+      /*fprintf(stderr, "warning: logsumexp(%f, %f) = %f\n", a, b, c);*/
    }
    return c;
 }
 
 void analyze()
 {
+#define NSIGMA 11
     XLALSkymapPlanType* plan;
-    double s[8];
+    double s[NSIGMA];
     int i, j;
     double* raw;
     double* accumulator;
-    double psigma;
 
     /* 
      *  The characteristic size of the signal 
      */
-    /*s = 1e-20;*/
-    /*s = 5 / w[0];*/
 
-    s[0] =   1 / w[0];
-    s[1] =   2 / w[0];
-    s[2] =   4 / w[0];
-    s[3] =   8 / w[0];
-    s[4] =  16 / w[0];
-    s[5] =  32 / w[0];
-    s[6] =  64 / w[0];
-    s[7] = 128 / w[0];
-        
-    /* 
-     *  The inner product of the template with the noise in each detector 
-     */
-
-    /* 
-     *  The filtered data z[t]:
-     *  x[0] = real(z_H)
-     *  x[1] = real(z_L)
-     *  x[2] = real(z_V)
-     *  x[3] = imag(z_H)
-     *  x[4] = imag(z_L)
-     *  x[5] = imag(z_V)
-     */
-
-     {
-        int i, j;
-        for (i = 0; i != 6; ++i)
-        {
-           for (j = 0; j != samples; ++j)
-           {
-               fprintf(stderr, "x[%d][%d] = %f\n", i, j, x[i][j]);
-           }
-        }
-     }
-    
-   
-    /*
-     *  Construct an analysis plan (precomputes the area and direction of 
+    s[0]  =   1 / w[0];
+    s[1]  =   2 / w[0];
+    s[2]  =   4 / w[0];
+    s[3]  =   8 / w[0];
+    s[4]  =  16 / w[0];
+    s[5]  =  32 / w[0];
+    s[6]  =  64 / w[0];
+    s[7]  = 128 / w[0];
+    s[8]  = 256 / w[0];
+    s[9]  = 512 / w[0];
+    s[10] = 1024 / w[0];
+     
+    /*   
      *  the sky tiles implied by the frequency) 
      */
     plan = XLALSkymapConstructPlan(frequency);  
@@ -397,22 +315,10 @@ void analyze()
      */
     XLALSkymapAnalyzeElliptical(accumulator, plan, s[0], w, samples, x);
 
-    for (i = 1; i != 8; ++i)
+    for (i = 1; i != NSIGMA; ++i)
     {
         XLALSkymapAnalyzeElliptical(raw, plan, s[i], w, samples, x);
-
-        psigma = log(0);
-        for (j = 0; j != plan->pixelCount; ++j)
-        {
-            if (plan->pixel[j].area != 0)
-            {   
-                fprintf(stderr, "sigma[%d] raw[%d] = %f\n", i, j, raw[j]);
-                accumulator[j] = logsumexp(accumulator[j], raw[j]);
-                psigma = logsumexp(psigma, raw[j]);
-            }
-        }
-        fprintf(stderr, "sigma[%d] = %f with ln p(sigma) = %f\n", i, s[i], psigma);
-        
+        XLALSkymapSum(plan, accumulator, accumulator, raw);
     }
 
     free(raw);
@@ -423,7 +329,7 @@ void analyze()
          *  Get the mode 
          */ 
         double thetaphi[2];
-        XLALSkymapModeThetaPhi(plan, raw,thetaphi);
+        XLALSkymapModeThetaPhi(plan, raw, thetaphi);
     }
     #endif
     
@@ -520,15 +426,13 @@ void analyze()
             /*
              *  Write an ascii file describing the sky map
              */
-            int i;
-            int j;
             FILE* h;
             h = fopen(output_file, "wt");
             for (j = 0; j != n; ++j)
             {
                 double phi, ra;
                 phi = (LAL_TWOPI * (j + 0.5)) / n;
-                /*ra = fmod(phi + greenwich, LAL_TWOPI);*/
+                /*ra = fmod(phi - greenwich, LAL_TWOPI);*/
                 ra = fmod(phi+greenwich, LAL_TWOPI);
                 while (ra < 0)
                     ra += LAL_TWOPI;
