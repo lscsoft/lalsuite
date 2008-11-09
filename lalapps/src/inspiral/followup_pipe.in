@@ -158,6 +158,17 @@ parser.add_option("", "--convert-eventid",action="store_true",\
     the local directory and use the \"ligolw_conv_inspid\" to convert the \
     event_id into the correct type.")
 
+parser.add_option("", "--add-trig-columns",action="store_true",\
+    default=False, help="For the analysis of teh second year branch, \
+    we want to be able to use the followup code of the TRUNK. This requires to \
+    handle the discrepancies between the column definitions in the \
+    sngl_inspiral table. This option can be called when the \"--trig-bank\" \
+    argument is also specified. When the option \"--add-trig-columns\" is \
+    specified the code check for the existence of extra columns in the \
+    sngl_inspiral table definition of the installed version of glue. If extra \
+    columns are detected, they are added to the followup template bank xml \
+    files.")
+
 parser.add_option("-w", "--write-to-iulgroup",action="store_true", \
     default=False, help="publish the page to the iulgroup")
 
@@ -261,7 +272,7 @@ if not opts.disable_followup:
   else: trigbank_test = 0
   if opts.disable_ifarsorting: ifar = False
   else: ifar = True
-  followuptrigs = getfollowuptrigs(numtrigs,page,coincs,missed,search,trigbank_test,ifar)
+  followuptrigs = getfollowuptrigs(numtrigs,page,coincs,missed,search,trigbank_test,ifar,opts.add_trig_columns)
 
   print "\n.......Found " + str(len(followuptrigs)) + " trigs to follow up" 
 
@@ -528,6 +539,8 @@ if not opts.disable_followup:
   
   # Loop for analyseQscan jobs (which must be children of all qscan jobs)
   for trig in followuptrigs:
+    for ifo in trig.ifolist_in_coinc:
+      anaQscanNode = analyseQscanNode(anaQscanJob,trig.gpsTime[ifo],ifo,'foreground-qscan','QSCAN/QSCAN.cache','QSCANLITE/QSCANLITE.cache',cp,opts,dag,'analyse_qscan')
       anaQscanNode = analyseQscanNode(anaQscanJob,trig.gpsTime[ifo],ifo,'foreground-seismic-qscan','QSCAN/QSCAN.cache','QSCANLITE/QSCANLITE.cache',cp,opts,dag,'analyse_seis_qscan')
       anaQscanNode = analyseQscanNode(anaQscanJob,trig.gpsTime[ifo],ifo,'foreground-hoft-qscan','QSCAN/QSCAN.cache','QSCANLITE/QSCANLITE.cache',cp,opts,dag,'analyse_hoft_qscan')
     
