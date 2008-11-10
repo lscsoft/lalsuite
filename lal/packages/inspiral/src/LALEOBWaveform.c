@@ -1386,12 +1386,16 @@ LALEOBWaveformEngine (
 {
 
       
-   UINT4                   count, nn=4, scaledLength=0, length = 0;
+   UINT4                   count, nn=4, length = 0, hiSRndx=0, ndx=0, higherSR=0;
    REAL4Vector             *sig1, *sig2, *ampl, *freq;
    REAL8Vector             *phse;
 
 
    REAL8                   v2, eta, m, rn, r, rOld, s, p, q, dt, t, v, omega, f, ampl0;
+   REAL8                   omegamatch;
+   /* Track change to help step back two points in integraion */
+   REAL8                   rpr1, rpr2, spr1, spr2, ppr1, ppr2, qpr1, qpr2;
+
    void                    *funcParams1, *funcParams2, *funcParams3;
 
    REAL8Vector             dummy, values, dvalues, newvalues, yt, dym, dyt;
@@ -1424,8 +1428,7 @@ LALEOBWaveformEngine (
 
    /* Used for EOBNR */
    COMPLEX8Vector *modefreqs;
-   REAL8 internalSampling = 16384.; /* EOBNR needs 16kHz sampling rate */
-   UINT4 resampFac = 1; /* ratio of internal : user sampling rates; initially assume = 1*/
+   UINT4 resampFac = 8; 
  
    CHAR message[256];
 
@@ -1509,8 +1512,6 @@ LALEOBWaveformEngine (
    }
 
    /* For EOBNR, Check that the 220 QNM freq. is less than the Nyquist freq. */
-   /* Also set the sampling rate to 16384 Hz for EOBNR */
-   /* We will downsample to the user specified rate at the end */
    if ( params->approximant == EOBNR )
    {
      /* Get QNM frequencies */
@@ -1532,11 +1533,6 @@ LALEOBWaveformEngine (
        LALError(status->statusPtr, message);
        ABORT( status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
      }
-     /* Use 16kHz sampling to evolve EOBNR */
-     dt = 1. / internalSampling;
-     resampFac = (int) internalSampling / (int) params->tSampling;
-     /* code already checks tSampling a power of 2 <= 16384 at command line */
-     /* Thus, we shouldn't NEED a check on resampFac here, but can be added */
      XLALDestroyCOMPLEX8Vector( modefreqs );
    }
 
@@ -1717,14 +1713,11 @@ LALEOBWaveformEngine (
    in4.dyt = &dyt;
 
    /* Allocate memory for temporary arrays */
-   /* The length of these internal arrays is a factor resampFac larger than */
-   /* the output arrays, where resampFac = internalSampling / userSampling */
-   scaledLength = resampFac*length;
-   sig1 = XLALCreateREAL4Vector ( scaledLength );
-   sig2 = XLALCreateREAL4Vector ( scaledLength );
-   ampl = XLALCreateREAL4Vector ( scaledLength*2 );
-   freq = XLALCreateREAL4Vector ( scaledLength );
-   phse = XLALCreateREAL8Vector ( scaledLength );
+   sig1 = XLALCreateREAL4Vector ( length );
+   sig2 = XLALCreateREAL4Vector ( length );
+   ampl = XLALCreateREAL4Vector ( length*2 );
+   freq = XLALCreateREAL4Vector ( length );
+   phse = XLALCreateREAL8Vector ( length );
 
    if ( !sig1 || !sig2 || !ampl || !freq || !phse )
    {
@@ -1768,10 +1761,12 @@ LALEOBWaveformEngine (
    /* Begin integration loop here */
    t = 0.0;
    rOld = r+0.1;
+      
+   omegamatch = -0.01 + 0.133 + 0.183 * params->eta + 0.161 * params->eta * params->eta;
 
    while (r > rn && r < rOld) 
    {
-      if (count > scaledLength)
+      if (count > length)
       {
         XLALRungeKutta4Free( integrator );
         XLALDestroyREAL4Vector( sig1 );
@@ -1819,10 +1814,8 @@ LALEOBWaveformEngine (
         ampl->data[k] =  (REAL4)( acFac * v2 );
         phse->data[i] =  (REAL8)( st );
       }
-      
-      in4.function(&values, &dvalues, funcParams3);
 
-      omega = dvalues.data[1];
+      /* Integrate one step forward */
       in4.dydx = &dvalues;
       in4.x = t/m;
       LALRungeKutta4(status->statusPtr, &newvalues, integrator, funcParams3);
@@ -1838,20 +1831,89 @@ LALEOBWaveformEngine (
       }
       ENDFAIL( status );
 
+      /* We need to track the dynamical variables prior to the current step */
+      if(ndx>1) 
+      {
+        rpr2 = rpr1; 
+	spr2=spr1; 
+	ppr2=ppr1; 
+	qpr2=qpr1;
+      }
+
+      /* These are the current values of the dynamical variables */
+      rpr1=r; 
+      spr1=s; 
+      ppr1=p; 
+      qpr1=q;
+     
+      /* Update the values of the dynamical variables */
       r = values.data[0] = newvalues.data[0];
       s = values.data[1] = newvalues.data[1];
       p = values.data[2] = newvalues.data[2];
       q = values.data[3] = newvalues.data[3];
 
+      /* Compute the derivaties at the new location */
+      in4.function(&values, &dvalues, funcParams3);
+      omega = dvalues.data[1];
+
+      /*----------------------------------------------------------------------*/
+      /* We are going to terminate waveform generation if omega is greater    */
+      /* than omegamatch - the frequency at which the ringdown is matched to  */
+      /* merger waveform                                                      */
+      /*----------------------------------------------------------------------*/
+      if (omega > omegamatch && params->approximant == EOBNR && !higherSR) 
+      {
+	/* We are now going to work with a higher sampling rate */
+	/* Sometime in the future we might change code so that  */
+	/* a higher sampling rate is used only if required */
+	higherSR = 1;
+        /*-------------------------------------------------------------*/
+	/* We are going to decrease the number of points by 2          */
+	/* In reality, note that we are really using the previous      */
+	/* point from the current step; 2 is needed below instead of 1 */
+	/* only because count is incremented before returning to the   */
+	/* continuing the integration; the same is true with dt        */
+        /*-------------------------------------------------------------*/
+        count -= 2;
+	hiSRndx = count+1;
+        t -= dt;
+        dt /= (double) resampFac;
+        t -= dt;
+        in4.h = dt/m;
+   
+        r = values.data[0] = rpr2;
+        s = values.data[1] = spr2;
+        p = values.data[2] = ppr2;
+        q = values.data[3] = qpr2;
+
+        /*----------------------------------------------------------------------*/
+	/* Integration will stop if rOld is not reset to a value greater than r */
+        /*----------------------------------------------------------------------*/
+
+        rOld = r+0.1;
+
+        in4.function(&values, &dvalues, funcParams3);
+        omega = dvalues.data[1];
+        fCurrent = omega/(LAL_PI*m);
+      }
+
       if (writeToWaveform)
       {
-        t = (++count-params->nStartPad) * dt;
-      }
-   }  
+	if (!higherSR)
+          t = (++count-params->nStartPad) * dt;
+	else
+	{
+	  t += dt;
+	  count++;
+	}
 
-   /*----------------------------------------------------------------- 
-   Record the final cutoff frequency of BD Waveforms for record keeping 
-   -----------------------------------------------------------------*/
+      }
+      ndx++;
+   }  
+      
+   /*----------------------------------------------------------------------*/
+   /* Record the final cutoff frequency of BD Waveforms for record keeping */
+   /* ---------------------------------------------------------------------*/
    params->vFinal = v;
    if (signal1 && !signal2) params->tC = t;
    if (params->approximant == EOB)
@@ -1863,12 +1925,12 @@ LALEOBWaveformEngine (
      params->fFinal = params->tSampling/2.;
    }
 
-   /* ------------------------------------------------------------------
-    * This is the count for the inspiral part only. It is changed below 
-    * when the merger part is added; the phase is changed artificially 
-    * by a small increment for each data point added but be warned that 
-    * it is not the total accumuated phase.
-    --------------------------------------------------------------------*/
+   /* ------------------------------------------------------------------*/
+   /* This is the count for the inspiral part only. It is changed below */
+   /* when the merger part is added; the phase is changed artificially  */
+   /* by a small increment for each data point added but be warned that */
+   /* it is not the total accumuated phase.                             */
+   /*-------------------------------------------------------------------*/
    *countback = count;
   
    XLALRungeKutta4Free( integrator );
@@ -1881,9 +1943,8 @@ LALEOBWaveformEngine (
    if (params->approximant == EOBNR)
    {
      REAL8 tmpSamplingRate = params->tSampling;
-     params->tSampling = internalSampling;
+     params->tSampling *= resampFac;
      xlalStatus = XLALInspiralAttachRingdownWave( freq, sig1, sig2, params );
-     params->tSampling = tmpSamplingRate;
      if (xlalStatus != XLAL_SUCCESS )
      {
        XLALDestroyREAL4Vector( sig1 );
@@ -1893,7 +1954,28 @@ LALEOBWaveformEngine (
        XLALDestroyREAL8Vector( phse );
        ABORTXLAL( status );
      }
+     params->tSampling = tmpSamplingRate;
+     count = hiSRndx;
+     for(j=hiSRndx; j<length; j+=resampFac)
+     {
+       sig1->data[count] = sig1->data[j];
+       sig2->data[count] = sig2->data[j];
+       freq->data[count] = freq->data[j];
+       if (sig1->data[count] == 0) 
+       {
+	 k = count;
+	 while (++k<length)
+	 {
+	   sig1->data[k] = 0.;
+	   sig2->data[k] = 0.;
+	   freq->data[k] = 0.;
+	 }
+         break;
+       }
+       count++;
+     }
    }
+   *countback = count;
 
    /*-------------------------------------------------------------------
     * Compute the spherical harmonics required for constructing (h+,hx).
@@ -1964,7 +2046,6 @@ LALEOBWaveformEngine (
        if ( i >= count ) 
        {
 	 phse->data[i] = phse->data[i-1]+LAL_PI/20.;
-	 (*countback)++;
        }
      }
    }
@@ -1973,58 +2054,21 @@ LALEOBWaveformEngine (
     * If required by the user copy other data sets to the 
     * relevant arrays
     ------------------------------------------------------*/
-   if ( resampFac > 1 ) 
-   /* If user specified params->tSampling < internalSampling...  */
-   /* Note that in this case we have to recompute "countback" as */
-   /* we need the number of non-zero elements in the resampled */
-   /* output while countback computed earlier is the over-sampled */
-   /* output. */
+   if (h)
    {
-     *countback = 0;
      for(i = 0; i < length; i++) 
-     /* ...we resample the output */
      {
-       int nr = resampFac*i;
-       if (h)
-       {
-         j = 2*i;
-         k = j+1;
-         h->data[j] = sig1->data[nr];
-         h->data[k] = sig2->data[nr];
-       }
-       if (signal1) signal1->data[i] = sig1->data[nr];
-       if (signal2) signal2->data[i] = sig2->data[nr];
-       if (ff) ff->data[i] = freq->data[nr];
-       if (phi) phi->data[i] = phse->data[nr];
-       if (a) 
-       {
-         j = 2*i;
-         k = j+1;
-         a->data[j] = ampl->data[nr];
-         a->data[j+1] = ampl->data[nr + 1];
-       }
-       if (sig1->data[nr]) (*countback)++;
+       j = 2*i;
+       k = j+1;
+       h->data[j] = sig1->data[i];
+       h->data[k] = sig2->data[i];
      }
    }
-   else
-   /*If user tSampling = internalSampling, just copy output data */
-   {
-     if (h)
-     {
-       for(i = 0; i < length; i++) 
-       {
-         j = 2*i;
-         k = j+1;
-         h->data[j] = sig1->data[i];
-         h->data[k] = sig2->data[i];
-       }
-     }
-     if (signal1) memcpy(signal1->data , sig1->data, length * (sizeof(REAL4)));
-     if (signal2) memcpy(signal2->data , sig2->data, length * (sizeof(REAL4)));
-     if (ff)      memcpy(ff->data      , freq->data, length * (sizeof(REAL4)));
-     if (a)       memcpy(a->data       , ampl->data, 2*length*(sizeof(REAL4)));
-     if (phi)     memcpy(phi->data     , phse->data, length * (sizeof(REAL8)));
-   }
+   if (signal1) memcpy(signal1->data , sig1->data, length * (sizeof(REAL4)));
+   if (signal2) memcpy(signal2->data , sig2->data, length * (sizeof(REAL4)));
+   if (ff)      memcpy(ff->data      , freq->data, length * (sizeof(REAL4)));
+   if (a)       memcpy(a->data       , ampl->data, 2*length*(sizeof(REAL4)));
+   if (phi)     memcpy(phi->data     , phse->data, length * (sizeof(REAL8)));
 
 #if 0     
    sprintf(message, "fFinal=%10.5e count=%d\n", params->fFinal, *countback);
