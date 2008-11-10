@@ -1,3 +1,33 @@
+lal (5.2-7lscsoft2) unstable; urgency=low
+
+  * prefix=/opt/lscsoft/lal, some more fixes
+
+ -- Steffen Grunewald <steffen.grunewald@aei.mpg.de>  Wed, 05 Nov 2008 11:00:00 +0100
+
+lal (5.2-7lscsoft1) unstable; urgency=low
+
+  * prefix=/opt/lscsoft/lal
+
+ -- Steffen Grunewald <steffen.grunewald@aei.mpg.de>  Tue, 04 Nov 2008 12:00:00 +0100
+
+lal (5.2-6) unstable; urgency=low
+
+  * /etc/lal just in case
+
+ -- Steffen Grunewald <steffen.grunewald@aei.mpg.de>  Fri, 29 Feb 2008 10:00:00 +0100
+
+lal (5.2-5) unstable; urgency=low
+
+  * reorder package contents, move etc/ to etc/lscsoft/
+
+ -- Steffen Grunewald <steffen.grunewald@aei.mpg.de>  Thu, 28 Feb 2008 14:45:00 +0100
+
+lal (5.2-4) unstable; urgency=low
+
+  * fixed build dependencies
+
+ -- Steffen Grunewald <steffen.grunewald@aei.mpg.de>  Thu, 21 Feb 2008 13:55:00 +0100
+
 lal (5.2-3) unstable; urgency=low
 
   * rebuilt with --enable-frame --enable-metaio

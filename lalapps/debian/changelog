@@ -1,3 +1,33 @@
+lalapps (5.2-7lscsoft2) unstable; urgency=low
+
+  * prefix=/opt/lscsoft/lalapps, some fixes
+
+ -- Steffen Grunewald <steffen.grunewald@aei.mpg.de>  Wed, 05 Nov 2008 11:30:00 +0100
+
+lalapps (5.2-7lscsoft1) unstable; urgency=low
+
+  * prefix=/opt/lscsoft/lalapps
+
+ -- Steffen Grunewald <steffen.grunewald@aei.mpg.de>  Tue, 04 Nov 2008 12:00:00 +0100
+
+lalapps (5.2-6) unstable; urgency=low
+
+  * /etc/lalapps just in case
+
+ -- Steffen Grunewald <steffen.grunewald@aei.mpg.de>  Fri, 29 Feb 2008 10:00:00 +0100
+
+lalapps (5.2-5) unstable; urgency=low
+
+  * moved etc/ to etc/lscsoft/
+
+ -- Steffen Grunewald <steffen.grunewald@aei.mpg.de>  Thu, 28 Feb 2008 14:45:00 +0100
+
+lalapps (5.2-4) unstable; urgency=low
+
+  * fixed zlib1g build dependency
+
+ -- Steffen Grunewald <steffen.grunewald@aei.mpg.de>  Thu, 21 Feb 2008 14:20:00 +0100
+
 lalapps (5.2-3) unstable; urgency=low
 
   * Use --enable-frame --enable-metaio

@@ -1,2 +1,4 @@
-usr/include
-usr/lib
+opt/lscsoft/lal/bin
+opt/lscsoft/lal/include
+opt/lscsoft/lal/lib
+opt/lscsoft/lal/share

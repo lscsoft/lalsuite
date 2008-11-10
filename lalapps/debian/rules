@@ -15,8 +15,8 @@
 DEB_HOST_GNU_TYPE   ?= $(shell dpkg-architecture -qDEB_HOST_GNU_TYPE)
 DEB_BUILD_GNU_TYPE  ?= $(shell dpkg-architecture -qDEB_BUILD_GNU_TYPE)
 
-PREFIX = /usr
-SYSCONF = /etc/lalapps
+PREFIX = /opt/lscsoft/lalapps
+LALPREFIX = /opt/lscsoft/lal
 
 CFLAGS = -Wall -g
 
@@ -31,15 +31,15 @@ configure:
 
 config.status: configure
 	dh_testdir
-	# Add here commands to configure the package.
-#LDFLAGS="-Wl,-z,defs"
+
+#	LDFLAGS="-Wl,-z,defs"
 	CFLAGS="$(CFLAGS)" \
 	./configure --host=$(DEB_HOST_GNU_TYPE) --build=$(DEB_BUILD_GNU_TYPE) \
 	    --prefix=$(PREFIX) \
-	    --sysconfdir=$(SYSCONF) \
 	    --mandir=\$${prefix}/share/man --infodir=\$${prefix}/share/info \
 	    --enable-nightly=no \
 	    --enable-frame --enable-metaio \
+	    --with-lal-prefix=$(LALPREFIX) \
 	    --disable-debug
 
 build: build-stamp
@@ -47,7 +47,6 @@ build: build-stamp
 build-stamp:  config.status
 	dh_testdir
 
-	# Add here commands to compile the package.
 	$(MAKE)
 
 	touch $@
@@ -76,9 +75,6 @@ install: build
 
 	# Add here commands to install the package into debian/lalapps.
 	$(MAKE) DESTDIR=$(CURDIR)/debian/lalapps install
-
-# remove unneeded /etc/lalapps
-#	-rm -rf $(CURDIR)/debian/lalapps/etc
 
 # Build architecture-independent files here.
 binary-indep: build install
