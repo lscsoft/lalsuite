@@ -213,6 +213,20 @@ static double logsumexp(double a, double b)
 	    );
 }
 
+static double logtotalexp(double* begin, double* end)
+{
+    double m, t;
+    double* p;
+    m = *begin;
+    for (p = begin + 1; p != end; ++p)
+	if (m < *p) 
+	    m = *p;
+    t = 0;
+    for (p = begin; p != end; ++p)
+	t += exp(*p - m);
+    return m + log(t);
+}
+
 /* coordinate transformations */
 
 static void cartesian_from_spherical(double a[3], double theta, double phi)
@@ -256,8 +270,18 @@ static void construct_pixel(XLALSkymapPixelType* pixel)
 
 /* properties of a network and a sample rate */
 
-static int index_from_times(XLALSkymapPlanType* plan, int times[3], int h)
+static int index_from_delays(XLALSkymapPlanType* plan, int hl, int hv, int hemisphere)
 {
+    return
+	(hl + plan->hl) +
+	(hv + plan->hv) * (plan->hl * 2 + 1) +
+	(hemisphere   ) * (plan->hl * 2 + 1) * (plan->hv * 2 + 1);
+}
+
+static int index_from_times(XLALSkymapPlanType* plan, int times[3], int hemisphere)
+{
+    return index_from_delays(plan, times[1] - times[0], times[2] - times[0], hemisphere);
+    /*
     int i[3];
     i[0] = times[1] - times[0];
     i[1] = times[2] - times[0];
@@ -266,6 +290,7 @@ static int index_from_times(XLALSkymapPlanType* plan, int times[3], int h)
         (i[0] + plan->hl) + 
         (i[1] + plan->hv) * (plan->hl * 2 + 1) +
         (i[2]           ) * (plan->hl * 2 + 1) * (plan->hv * 2 + 1);
+    */
 }
 
 static int index_from_direction(XLALSkymapPlanType* plan, double direction[3])
@@ -440,6 +465,102 @@ static void compute_kernel(XLALSkymapPlanType* plan, int index, double sigma, do
     wfsfwiwfsfwa[0][0] -= 1;
     wfsfwiwfsfwa[1][1] -= 1;
     *log_normalization = log(0.5 * det22(wfsfwiwfsfwa));
+}
+
+int XLALSkymapEllipticalHypothesis(XLALSkymapPlanType* plan, double* p, double sigma, double w[3], int begin[3], int end[3], double** x)
+{
+    static const char func[] = "XLALSymapEllipticalHypothesis";
+ 
+    double* buffer;
+    int hl;
+
+    buffer = (double*) XLALMalloc(sizeof(double) * (end[0] - begin[0]));
+
+    /* loop over hanford-livingston delay */
+    for (hl = -plan->hl; hl <= plan->hl; ++hl)
+    {
+        /* loop over hanford-virgo delay */
+	int hv;
+	for (hv = -plan->hv; hv <= plan->hv; ++hv)
+	{
+	    /* loop over hemisphere */
+	    int hemisphere;
+	    for (hemisphere = 0; hemisphere != 2; ++hemisphere)
+	    {
+		/* compute the index into the buffers from delays */
+	        int index = index_from_delays(plan, hl, hv, hemisphere);
+		/* log zero the output buffer */
+		p[index] = log(0);
+    		/* test if the delays are physical */
+		if (plan->pixel[index].area > 0)
+		{
+		    /* compute the begin and end times */
+		    int b;
+		    int e;
+		    /* use the hanford begin and end times */
+		    b = begin[0];
+		    e = end[0];
+		    if (b + hl < begin[1])
+		    {   /* livingston constrains the begin time */
+	        	b = begin[1] - hl;		
+		    }
+		    if (e + hl > end[1])
+		    {   /* livingston constrains the end time */
+			e = end[1] - hl;
+		    }
+		    if (b + hv < begin[2])
+		    {   /* virgo constrains the begin time */ 
+			b = begin[2] - hv;
+		    }
+		    if (e + hv > end[2])
+		    {   /* virgo constrains the end time */
+			e = end[2] - hv;
+		    }
+		    /* test if there is enough data to analyze */
+		    if (b < e)
+		    {
+			double kernel[3][3];
+			double log_normalization;
+			double *hr, *lr, *vr, *hi, *li, *vi;
+			double* stop;
+			double* q;
+			/* compute the kernel */
+			compute_kernel(plan, index, sigma, w, kernel, &log_normalization);
+			/* create offset pointers to simplify inner loop */
+			hr = x[0] + b      - begin[0]; /* hanford real */
+			lr = x[1] + b + hl - begin[1]; /* livingston real */
+			vr = x[2] + b + hv - begin[2]; /* virgo real */
+		      	hi = x[3] + b      - begin[0]; /* hanford imag */
+			li = x[4] + b + hl - begin[1]; /* livingston imag */
+			vi = x[5] + b + hv - begin[2]; /* virgo imag */
+
+			stop = x[0] - begin[0] + e; /* hanford real stop */
+
+			q = buffer;
+			
+			/* loop over arrival times */
+			for (; hr != stop; ++hr, ++lr, ++vr, ++hi, ++li, ++vi, ++q)
+			{
+			    *q = 0.5 * (
+				kernel[0][0] * (sq(*hr) + sq(*hi)) + 
+				kernel[0][1] * (*hr * *lr + *hi * *li) * 2 +
+				kernel[0][2] * (*hr * *vr + *hi * *vi) * 2 +
+				kernel[1][1] * (sq(*lr) + sq(*li)) +
+				kernel[1][2] * (*lr * *vr + *li * *vi) * 2 +
+				kernel[2][2] * (sq(*vr) + sq(*vi))
+				);
+			} /* loop over arrival time */
+			p[index] = 
+			    logtotalexp(buffer, buffer + e - b) + 
+			    log_normalization * 2 + 
+			    log(plan->pixel[index].area);
+		    } /* test if there is enough data to analyze */
+		} /* test if the delays are physical */
+	    } /* loop over hemisphere */
+	} /* loop over hanford-virgo delay */
+    } /* loop over hanford-livingston delay */
+    XLALFree(buffer);
+    return 0;
 }
 
 int XLALSkymapAnalyzeElliptical(double* p, XLALSkymapPlanType* plan, double sigma, double w[3], int n, double** x)
