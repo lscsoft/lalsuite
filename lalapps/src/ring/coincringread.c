@@ -522,9 +522,9 @@ int main( int argc, char *argv[] )
               long_options[option_index].name, cluster_dt );
           exit( 1 );
         }
-        ADD_PROCESS_PARAM( "int", "%lld", cluster_dt );
+        ADD_PROCESS_PARAM( "int", "%" LAL_INT8_FORMAT "", cluster_dt );
         /* convert cluster time from ms to ns */
-        cluster_dt *= 1000000LL;
+        cluster_dt *= LAL_INT8_C(1000000);
         break;
 
       case 'I':
@@ -1346,8 +1346,8 @@ why??????????????
       fprintf( fp, "number of injections found in input data: %d\n", 
           numCoincFound );
       fprintf( fp, 
-          "number of triggers found within %lld msec of injection: %d\n",
-          (injectWindowNS / 1000000LL), numEventsCoinc );
+          "number of triggers found within %" LAL_INT8_FORMAT " msec of injection: %d\n",
+          (injectWindowNS / LAL_INT8_C(1000000)), numEventsCoinc );
 
       fprintf( fp, "efficiency: %f \n", 
           (REAL4) numCoincFound / (REAL4) numSimInData );
@@ -1365,8 +1365,8 @@ why??????????????
         fprintf( fp, "clustering triggers from %d slides separately\n",
             numSlides );
       }
-      fprintf( fp, "number of event clusters with %lld msec window: %d\n",
-          cluster_dt/ 1000000LL, numClusteredEvents ); 
+      fprintf( fp, "number of event clusters with %" LAL_INT8_FORMAT " msec window: %d\n",
+          cluster_dt/ LAL_INT8_C(1000000), numClusteredEvents ); 
     }
 
     fclose( fp ); 

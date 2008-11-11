@@ -382,19 +382,19 @@ int main( int argc, char *argv[] )
             
       case 'B':
         /* time accuracy H1, argument is in milliseconds */
-        accuracyParams.ifoAccuracy[LAL_IFO_H1].dt = atof(optarg) * 1000000LL;
+        accuracyParams.ifoAccuracy[LAL_IFO_H1].dt = atof(optarg) * LAL_INT8_C(1000000);
         ADD_PROCESS_PARAM( "float", "%s", optarg );
         break;
         
       case 'C':
         /* time accuracy H2, argument is in milliseconds */
-        accuracyParams.ifoAccuracy[LAL_IFO_H2].dt = atof(optarg) * 1000000LL;
+        accuracyParams.ifoAccuracy[LAL_IFO_H2].dt = atof(optarg) * LAL_INT8_C(1000000);
         ADD_PROCESS_PARAM( "float", "%s", optarg );
         break;
         
       case 'D':
         /* time accuracy L1, argument is in milliseconds */
-        accuracyParams.ifoAccuracy[LAL_IFO_L1].dt = atof(optarg) * 1000000LL;
+        accuracyParams.ifoAccuracy[LAL_IFO_L1].dt = atof(optarg) * LAL_INT8_C(1000000);
         ADD_PROCESS_PARAM( "float", "%s", optarg );
         break;
 
