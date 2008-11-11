@@ -56,10 +56,10 @@ typedef struct tagInputParams{
   INT4 deltat;
 
   INT4 iterations;
-  
+
   CHAR outputdir[256];
   CHAR earth[256];
-  CHAR sun[256];  
+  CHAR sun[256];
 }InputParams;
 
 typedef struct tagParamData{
@@ -87,14 +87,6 @@ REAL8Array *XLALConvertToPositiveDefinite( REAL8Array *nonposdef );
 ParamData *MultivariateNormalDeviates( REAL8Array *covmat, ParamData *means,
   RandomParams *randomParams );
 
-/* function to take in a 2D matrix in a REAL8Array and output the value from
-   the ith row and jth column (starting from zero in the normal C converntion)*/
-REAL8 XLALGetREAL8MatrixValue( REAL8Array *matrix, INT4 i, INT4 j );
-
-/* function to take in a 2D matrix in a REAL8Array and set the value of
-   the ith row and jth column (starting from zero in the normal C converntion)*/
-void XLALSetREAL8MatrixValue( REAL8Array *matrix, INT4 i, INT4 j, REAL8 val );
-
 void SetMCMCPulsarParams( BinaryPulsarParams *pulsarParams, ParamData *data,
   INT4Vector *matPos );
 
@@ -112,8 +104,6 @@ int main(int argc, char *argv[]){
 
   BinaryPulsarParams deltaparams;
 
-  int doParam[20];
-  double errVals[20];
   int i=0, count=0, countBin=0, j=1, k=0, N=0;
 
   int npoints=0; /* number of 10 minutes stretches */
@@ -124,7 +114,6 @@ int main(int argc, char *argv[]){
 
   REAL8Vector *phiMean=NULL;
   REAL8 intre=0., intim=0., integral1=0.;
-  REAL8 phaseSum1 = 0., phaseSum2 = 0.;
 
   REAL8 maxmismatch = 1e-100;
 
@@ -226,17 +215,18 @@ int main(int argc, char *argv[]){
   /* get correlation matrix */
   cormat = ReadCorrelationMatrix( inputs.covfile, params, paramData );
 
-  /* set covariance matrix */
-  covmat = CreateCovarianceMatrix( paramData, cormat );
+  if( (posdef = XLALCheckPositiveDefinite( cormat )) == NULL ){
+    /* set covariance matrix */
+    covmat = CreateCovarianceMatrix( paramData, cormat );
 
-  if( (posdef = XLALCheckPositiveDefinite( cormat )) == NULL )
     chol = CholeskyDecomp(covmat, "lower");
+  }
   else{
-    REAL8Array *tempmat=NULL;
-    tempmat = CreateCovarianceMatrix( paramData, posdef );
+    covmat = CreateCovarianceMatrix( paramData, posdef );
 
-    chol = CholeskyDecomp(tempmat, "lower");
-    XLALDestroyREAL8Array( tempmat );
+    chol = CholeskyDecomp(covmat, "lower");
+
+    XLALDestroyREAL8Array(posdef);
   }
 
   /* get the posistions of the parameters within paramData */
@@ -338,6 +328,9 @@ int main(int argc, char *argv[]){
   sprintf(outputfile, "%s/mismatch_%s", inputs.outputdir, inputs.pulsar);
   fp = fopen(outputfile, "w");
 
+  fprintf(stderr, "Maximum mismatch for %d templates drawn randomly from the\
+ given parameter and pulsar %s\n%le\n", N, inputs.pulsar, maxmismatch);
+
   fprintf(fp, "%% Maximum mismatch for %d templates drawn randomly from the \
 given parameter and pulsar %s\n%lf\n", N, inputs.pulsar, maxmismatch);
 
@@ -346,7 +339,6 @@ given parameter and pulsar %s\n%lf\n", N, inputs.pulsar, maxmismatch);
   XLALFree( paramData );
   XLALFree( randVals );
   XLALDestroyREAL8Array( chol );
-  XLALDestroyREAL8Array( posdef );
 
   XLALDestroyINT4Vector( matPos );
 
@@ -454,8 +446,6 @@ REAL8Vector *get_phi( double start, double deltaT, int npoints,
   BinaryPulsarOutput boutput;
 
   REAL8Vector *phis=NULL;
-
-  FILE *fp=NULL;
 
   /* if edat is NULL then return a NULL poniter */
   if( edat == NULL)
@@ -640,19 +630,19 @@ REAL8Array *CholeskyDecomp(REAL8Array *M, CHAR* uOrl){
   /* initialise L be same as input matrix M */
   for(i=0; i < length; i++)
     for(j=0; j < length; j++)
-      XLALSetREAL8MatrixValue( A, i, j, XLALGetREAL8MatrixValue(M, i, j) );
+      A->data[i*length + j] = M->data[i*length + j];
 
-  A_00 = XLALGetREAL8MatrixValue( A, 0, 0 );
+  A_00 = A->data[0];
   L_00 = sqrt(A_00);
 
   if( A_00 <= 0 )
     fprintf(stderr, "Error... matrix must be positive definite!\n");
 
-  XLALSetREAL8MatrixValue( A, 0, 0, L_00 );
+  A->data[0] = L_00;
 
   if( length > 1 ){
-    REAL8 A_10 = XLALGetREAL8MatrixValue( A, 1, 0 );
-    REAL8 A_11 = XLALGetREAL8MatrixValue( A, 1, 1 );
+    REAL8 A_10 = A->data[1*length + 0];
+    REAL8 A_11 = A->data[1*length + 1];
 
     REAL8 L_10 = A_10/L_00;
     REAL8 diag = A_11 - L_10*L_10;
@@ -663,25 +653,25 @@ REAL8Array *CholeskyDecomp(REAL8Array *M, CHAR* uOrl){
       exit(0);
     }
 
-    XLALSetREAL8MatrixValue( A, 1, 0, L_10 );
-    XLALSetREAL8MatrixValue( A, 1, 1, L_11 );
+    A->data[1*length + 0] = L_10;
+    A->data[1*length + 1] = L_11;
   }
 
   for( k=2; k<length; k++ ){
-    REAL8 A_kk = XLALGetREAL8MatrixValue( A, k, k );
+    REAL8 A_kk = A->data[k*length + k];
 
     for( i=0; i<k; i++ ){
       REAL8 sum = 0.;
 
-      REAL8 A_ki = XLALGetREAL8MatrixValue( A, k, i );
-      REAL8 A_ii = XLALGetREAL8MatrixValue( A, i, i );
+      REAL8 A_ki = A->data[k*length + i];
+      REAL8 A_ii = A->data[i*length + i];
 
       REAL8 ci[length];
       REAL8 ck[length];
 
       for( j=0; j<length; j++ ){
-        ci[j] = XLALGetREAL8MatrixValue( A, i, j );
-        ck[j] = XLALGetREAL8MatrixValue( A, k, j );
+        ci[j] = A->data[i*length + j];
+        ck[j] = A->data[k*length + j];
       }
 
       if( i>0 ){
@@ -690,7 +680,7 @@ REAL8Array *CholeskyDecomp(REAL8Array *M, CHAR* uOrl){
       }
 
       A_ki = (A_ki - sum) / A_ii;
-      XLALSetREAL8MatrixValue( A, k, i, A_ki );
+      A->data[k*length + i] = A_ki;
     }
 
     {
@@ -698,8 +688,7 @@ REAL8Array *CholeskyDecomp(REAL8Array *M, CHAR* uOrl){
       REAL8 diag = 0.;
 
       for( j=0; j<k; j++ ){
-        sum += XLALGetREAL8MatrixValue( A, k, j )*
-          XLALGetREAL8MatrixValue( A, k, j );
+        sum += A->data[k*length + j] * A->data[k*length + j];
       }
 
       diag = A_kk - sum;
@@ -718,7 +707,9 @@ REAL8Array *CholeskyDecomp(REAL8Array *M, CHAR* uOrl){
         exit(0);
       }
       else if( diag <= 0. && fabs(diag) <= LAL_REAL8_EPS ){
-        diag = LAL_REAL8_EPS;
+        diag = fabs(diag);
+        /* diag = LAL_REAL8_EPS; */
+        /* diag = 0.; */
       }
       else if( diag <= 0. && fabs(diag) >= LAL_REAL8_EPS && k == length-1 ){
         /* this is a kludge as a lot of the matricies seem to have entries
@@ -727,7 +718,7 @@ REAL8Array *CholeskyDecomp(REAL8Array *M, CHAR* uOrl){
         diag = 0.;
       }
 
-      XLALSetREAL8MatrixValue( A, k, k, sqrt(diag) );
+      A->data[k*length + k] = sqrt(diag);
 
     }
   }
@@ -735,7 +726,7 @@ REAL8Array *CholeskyDecomp(REAL8Array *M, CHAR* uOrl){
   /* set upper triangular matrix to zeros - for lower value */
   for(i=0; i<length; i++)
     for(j=i+1; j<length; j++)
-      XLALSetREAL8MatrixValue( A, i, j, 0. );
+      A->data[i*length + j] = 0.;
 
   /* check if the upper triangle is wanted - if so perform transpose */
   if(strstr(uOrl, "upper")!=NULL){
@@ -744,11 +735,18 @@ REAL8Array *CholeskyDecomp(REAL8Array *M, CHAR* uOrl){
     /* perform transpose */
     for(j=0; j<length-1; j++){
       for(i=j; i<length; i++){
-        tempdata = XLALGetREAL8MatrixValue( A, j, i );
-        XLALSetREAL8MatrixValue( A, j, i, XLALGetREAL8MatrixValue(A, i, j) );
-        XLALSetREAL8MatrixValue( A, i, j, tempdata );
+        tempdata = A->data[j*length + i];
+        A->data[j*length + i] = A->data[i*length + j];
+        A->data[i*length + j] = tempdata;
       }
     }
+  }
+
+  fprintf(stderr, "\nCholesky decomposed matrix:\n");
+  for(i=0; i<length; i++){
+     for(j=0; j<length; j++)
+       fprintf(stderr, "%.2e  ", A->data[i*length + j]);
+     fprintf(stderr, "\n");
   }
 
   return A;
@@ -788,7 +786,7 @@ ParamData *MultivariateNormalDeviates( REAL8Array *cholmat, ParamData *data,
 
   for(i=0;i<dim;i++)
     for(j=0;j<dim;j++)
-      Z->data[i] += XLALGetREAL8MatrixValue(cholmat,i,j)*randNum->data[j];
+      Z->data[i] += cholmat->data[i*dim +j]*randNum->data[j];
 
   /* get the output random deviates by doing the mean plus Z */
   j=0;
@@ -980,9 +978,9 @@ reading any correlation data!");
       }
 
       fscanf(fp, "%lf", &corTemp);
-      XLALSetREAL8MatrixValue( corMat, k, n, corTemp );
+      corMat->data[k*corMat->dimLength->data[0] + n] = corTemp;
       if(n != k)
-        XLALSetREAL8MatrixValue( corMat, n, k, corTemp );
+        corMat->data[n*corMat->dimLength->data[0] + k] = corTemp;
       n++;
     }
 
@@ -1027,9 +1025,10 @@ REAL8Array *CreateCovarianceMatrix( ParamData *data, REAL8Array *corMat ){
     if( data[i].matPos != 0 ){
       for(j=0;j<MAXPARAMS;j++){
         if( data[j].matPos != 0 ){
-          XLALSetREAL8MatrixValue( covMat, data[i].matPos-1, data[j].matPos-1,
-          XLALGetREAL8MatrixValue( corMat, data[i].matPos-1, data[j].matPos-1) *
-            data[i].sigma * data[j].sigma );
+          covMat->data[(data[i].matPos-1)*covMat->dimLength->data[0] +
+            data[j].matPos-1] =
+          corMat->data[(data[i].matPos-1)*corMat->dimLength->data[0] +
+             data[j].matPos-1] * data[i].sigma * data[j].sigma;
         }
       }
     }
@@ -1053,8 +1052,8 @@ REAL8Array *XLALCheckPositiveDefinite( REAL8Array *matrix ){
 
   for( i=0; i<(INT4)eigenvec->dimLength->data[0]; i++ ){
     for( j=0; j<(INT4)eigenvec->dimLength->data[1]; j++ ){
-      XLALSetREAL8MatrixValue( eigenvec, i, j, 
-        XLALGetREAL8MatrixValue(matrix, i, j) );
+      eigenvec->data[i*eigenvec->dimLength->data[0] + j] =
+        matrix->data[i*matrix->dimLength->data[0] + j];
     }
   }
 
@@ -1084,8 +1083,8 @@ REAL8Array *XLALCheckPositiveDefinite( REAL8Array *matrix ){
      close to the precision of REAL8 numbers */
   for( i=0; i<(INT4)eigenvec->dimLength->data[0]; i++ ){
     for( j=0; j<(INT4)eigenvec->dimLength->data[1]; j++ ){
-      XLALSetREAL8MatrixValue( eigenvec, i, j, 
-        XLALGetREAL8MatrixValue( posdef, i, j) );
+      eigenvec->data[i*eigenvec->dimLength->data[0] + j] =
+        posdef->data[i*posdef->dimLength->data[0] + j];
     }
     eigenval->data[i] = 0.;
   }
@@ -1144,12 +1143,11 @@ REAL8Array *XLALConvertToPositiveDefinite( REAL8Array *nonposdef ){
 
   for( i=0; i<length; i++ ){
     for( j=0; j<length; j++ ){
-      XLALSetREAL8MatrixValue( eigenvec, i, j, 
-        XLALGetREAL8MatrixValue(nonposdef, i, j) );
+      eigenvec->data[i*length + j] = nonposdef->data[i*length + j];
 
       /* initialise Lprime and T to zeros */
-      XLALSetREAL8MatrixValue( Lprime, i, j, 0. );
-      XLALSetREAL8MatrixValue( T, i, j, 0. );
+      Lprime->data[i*length + j] = 0.;
+      T->data[i*length + j] = 0.;
     }
   }
 
@@ -1162,28 +1160,27 @@ REAL8Array *XLALConvertToPositiveDefinite( REAL8Array *nonposdef ){
      zero if eigen value is negative */
   for( i=0; i<length; i++ )
     if( eigenval->data[i] > 0. )
-      XLALSetREAL8MatrixValue( Lprime, i, i, eigenval->data[i] );
+      Lprime->data[i*length + i] = eigenval->data[i];
 
   /* compute scaling matrix T */
   for( i=0; i<length; i++ ){
     Tval = 0.;
     for( j=0; j<length; j++ ){
-      Tval += XLALGetREAL8MatrixValue( eigenvec, i, j ) * 
-              XLALGetREAL8MatrixValue( eigenvec, i, j ) *
-              XLALGetREAL8MatrixValue( Lprime, j, j );
+      Tval += eigenvec->data[i*length + j] * eigenvec->data[i*length + j] *
+        Lprime->data[j*length + j];
     }
 
     Tval = 1./Tval;
 
     /* really we just want the sqrt of T */
-    XLALSetREAL8MatrixValue( T, i, i, sqrt(Tval) );
+    T->data[i*length + i] = sqrt(Tval);
   }
 
   /* convert Lprime to sqrt(lambdaprime) */
   for( i=0; i<length; i++ ){
-    REAL8 tempL = XLALGetREAL8MatrixValue(Lprime, i, i);
+    REAL8 tempL = Lprime->data[i*length + i];
 
-    XLALSetREAL8MatrixValue( Lprime, i, i, sqrt(tempL) );
+    Lprime->data[i*length + i] = sqrt(tempL);
   }
 
   /* Bprime = S*sqrt(lambdaprime); */
@@ -1215,76 +1212,12 @@ REAL8Array *XLALConvertToPositiveDefinite( REAL8Array *nonposdef ){
      original value */
   for( i=0; i<length; i++ ){
     for( j=0; j<length; j++ ){
-      if( fabs(XLALGetREAL8MatrixValue( posdef, i, j ) -
-            XLALGetREAL8MatrixValue( nonposdef, i, j )) <= LAL_REAL8_EPS ){
-        XLALSetREAL8MatrixValue( posdef, i, j, 
-          XLALGetREAL8MatrixValue( nonposdef, i, j ) );
+      if( fabs(posdef->data[i*length + j] -
+            nonposdef->data[i*length + j]) <= LAL_REAL8_EPS ){
+        posdef->data[i*length + j] = nonposdef->data[i*length + j];
       }
     }
   }
 
   return posdef;
 }
-
-REAL8 XLALGetREAL8MatrixValue( REAL8Array *matrix, INT4 i, INT4 j ){
-  REAL8 val=0.;
-
-  /* check that matrix is not NULL */
-  if( matrix == NULL ){
-    fprintf(stderr, "Error... matrix is NULL!\n");
-    exit(0);
-  }
-
-  /* check that matrix dimemsions are not NULL */
-  if( matrix->dimLength == NULL ){
-    fprintf(stderr, "Error... matrix dimensions not defined!\n");
-    exit(0);
-  }
-
-  /* check that matrix is two dimensional */
-  if( matrix->dimLength->length != 2 ){
-    fprintf(stderr, "Error... matrix is not 2D!\n");
-    exit(0);
-  }
-
-  /* check that i and j are in the range */
-  if( (i >= (INT4)matrix->dimLength->data[0] || 
-       j >= (INT4)matrix->dimLength->data[1]) && (i < 0 || j < 0) ){
-    fprintf(stderr, "Error... i or j not in matrix range!\n");
-    exit(0);
-  }
-
-  val = matrix->data[i*matrix->dimLength->data[0] + j];
-
-  return val;
-}
-
-void XLALSetREAL8MatrixValue( REAL8Array *matrix, INT4 i, INT4 j, REAL8 val ){
-  /* check that matrix is not NULL */
-  if( matrix == NULL ){
-    fprintf(stderr, "Error... matrix is NULL!\n");
-    exit(0);
-  }
-
-  /* check that matrix dimemsions are not NULL */
-  if( matrix->dimLength == NULL ){
-    fprintf(stderr, "Error... matrix dimensions not defined!\n");
-    exit(0);
-  }
-
-  /* check that matrix is two dimensional */
-  if( matrix->dimLength->length != 2 ){
-    fprintf(stderr, "Error... matrix is not 2D!\n");
-    exit(0);
-  }
-
-  /* check that i and j are in the range */
-  if( (i >= (INT4)matrix->dimLength->data[0] || 
-       j >= (INT4)matrix->dimLength->data[1]) && (i < 0 || j < 0) ){
-    fprintf(stderr, "Error... i or j not in matrix range!\n");
-    exit(0);
-  }
-
-  matrix->data[i*matrix->dimLength->data[0] + j] = val;
-}
-
