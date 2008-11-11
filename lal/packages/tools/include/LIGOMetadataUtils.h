@@ -321,7 +321,8 @@ typedef enum
 {
   unknown_test,
   f_and_Q,
-  ds_sq
+  ds_sq,
+  ds_sq_fQt
 }
 SnglRingdownParameterTest;
 
@@ -329,7 +330,7 @@ typedef enum
 { 
   ring_inject, 
   imr_inject, 
-  imr_ring_inject 
+  imr_ring_inject
 } 
 inject_type;
 
@@ -1408,6 +1409,14 @@ int
 LALCompareSnglRingdownByTime (
     const void *a,
     const void *b
+    );
+
+void
+LALCompareRingdowns (
+    LALStatus                *status,
+    SnglRingdownTable        *aPtr,
+    SnglRingdownTable        *bPtr,
+    RingdownAccuracyList     *params
     );
 
 void
