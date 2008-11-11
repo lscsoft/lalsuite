@@ -76,7 +76,8 @@ RCSID("$Id$");
 "  --tama-output FILE           write out text triggers for tama\n"\
 "  --summary-file FILE          write trigger analysis summary to FILE\n"\
 "  --data-type                   specify the data type, must be one of\n"\
-"                               (playground_only|exclude_play|all_data)\n"\ 
+"                               (playground_only|exclude_play|all_data)\n"\
+"\n"\
 "Clustering and Sorting:\n"\
 "  --sort-triggers              time sort the ringdown triggers\n"\
 "  --snr-threshold RHO          discard all triggers with snr less than RHO\n"\
