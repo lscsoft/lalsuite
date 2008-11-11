@@ -347,7 +347,9 @@ LALCompareRingdowns (
 {
   INT8    ta,  tb;
   REAL4   df, dQ;
-  REAL4   fa, fb, Qa, Qb, ds2ab, ds2ba;
+  REAL4   fa, fb, Qa, Qb;
+  REAL4   dsab = 0;
+  REAL4   dsba = 0;
   InterferometerNumber ifoaNum,  ifobNum;
   SnglRingdownAccuracy aAcc, bAcc;
   
@@ -412,37 +414,45 @@ LALCompareRingdowns (
       goto exit;
     }
   }
-  if ( params->test == ds_sq )
+  if ( params->test == ds_sq || params->test == ds_sq_fQt )
   {
     fa = aPtr->frequency;
     fb = bPtr->frequency;
     Qa = aPtr->quality;
     Qb = bPtr->quality;
-    
-    ds2ab = XLAL2DMetricDistance( fa, fb, Qa, Qb );
-    ds2ba = XLAL2DMetricDistance( fb, fa, Qb, Qa );
+     
+    if ( params->test == ds_sq )
+    {
+      dsab = XLAL2DRingMetricDistance( fa, fb, Qa, Qb );
+      dsba = XLAL2DRingMetricDistance( fb, fa, Qb, Qa );
+    }
+    else if ( params->test == ds_sq_fQt )
+    {
+      dsab = XLAL3DRingMetricDistance( fa, fb, Qa, Qb, ta, tb );
+      dsba = XLAL3DRingMetricDistance( fb, fa, Qb, Qa, ta, tb );
+    }
 
-    if ( (ds2ab+ds2ba)/2 < (aAcc.ds_sq + bAcc.ds_sq)/2 )
+    if ( (dsab+dsba)/2 < (aAcc.ds_sq + bAcc.ds_sq)/2 )
     {
       LALInfo( status, "Triggers pass the ds_sq coincidence test" );
       params->match = 1;
       if ( (strcmp(aPtr->ifo,"H1")==0 && strcmp(bPtr->ifo,"H2")==0)
 		||(strcmp(aPtr->ifo,"H2")==0 && strcmp(bPtr->ifo,"H1")==0) )
       {
-	aPtr->ds2_H1H2=ds2ab;
-        bPtr->ds2_H1H2=ds2ba;
+	aPtr->ds2_H1H2=dsab;
+        bPtr->ds2_H1H2=dsba;
       }
       else if( (strcmp(aPtr->ifo,"H1")==0 && strcmp(bPtr->ifo,"L1")==0) 
  		|| (strcmp(aPtr->ifo,"L1")==0 && strcmp(bPtr->ifo,"H1")==0) )
       {
-        aPtr->ds2_H1L1=ds2ab;
-        bPtr->ds2_H1L1=ds2ba;
+        aPtr->ds2_H1L1=dsab;
+        bPtr->ds2_H1L1=dsba;
       }
       else if( (strcmp(aPtr->ifo,"H2")==0 && strcmp(bPtr->ifo,"L1")==0)
 		|| (strcmp(aPtr->ifo,"L1")==0 && strcmp(bPtr->ifo,"H2")==0) )
       {
-        aPtr->ds2_H2L1=ds2ab;
-        bPtr->ds2_H2L1=ds2ba;
+        aPtr->ds2_H2L1=dsab;
+        bPtr->ds2_H2L1=dsba;
       }
       else
       {
