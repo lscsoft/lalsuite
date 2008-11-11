@@ -184,11 +184,15 @@ int ring_parse_options( struct ring_params *params, int argc, char **argv )
         {
           localparams.injectType = 2;
         }
+        else if( ! strcmp( "EOBNR", optarg ) )
+        {
+          localparams.injectType = 3;
+        }
         else
         {
           localparams.injectType = -1;
           fprintf( stderr, "invalid --injection_type:\n"
-              "(must be ringdown, imr or imr_ringdown\n" );
+              "(must be ringdown, imr, imr_ringdown or EOBNR\n" );
           exit( 1 );
         }
         break;
@@ -247,10 +251,10 @@ int ring_parse_options( struct ring_params *params, int argc, char **argv )
         localparams.invSpecLen = atof( optarg );
         break;
       case 'u': /* trig-start-time */
-        localparams.trigStartTimeNS = (INT8) atol( optarg ) * 1000000000LL;
+        localparams.trigStartTimeNS = (INT8) atol( optarg ) * LAL_INT8_C(1000000000);
         break;
       case 'U': /* trig-end-time */
-        localparams.trigEndTimeNS = (INT8) atol( optarg ) * 1000000000LL;
+        localparams.trigEndTimeNS = (INT8) atol( optarg ) * LAL_INT8_C(1000000000);
         break;
       case 'w': /* block-duration */
         localparams.duration = atof( optarg );
@@ -532,7 +536,7 @@ static int ring_usage( const char *program )
   fprintf( stderr, "--sample-rate=srate        decimate data to be at sample rate srate (Hz)\n" );
 
   fprintf( stderr, "\nsimulated injection options:\n" );
-  fprintf( stderr, "--injection-type       type of injection, must be one of \n \t \t [ringdown, imr, imr_ringdown] \n \t and must be accompanied by the appropriate injection file\n" );
+  fprintf( stderr, "--injection-type       type of injection, must be one of \n \t \t [ringdown, imr, imr_ringdown, EOBNR] \n \t and must be accompanied by the appropriate injection file\n" );
   fprintf( stderr, "--injection-file=injfile      XML file with injection parameters\n \t \t should a sim_ringdown table for 'ringdown' injections \n \t \t and a sim_inspiral table for the other types\n" );
   fprintf( stderr, "--inject-mdc-frame=mdcframe  frame file with MDC-frame injections\n" );
 
