@@ -193,7 +193,7 @@ REAL4 XLALBlackHoleRingEpsilon( REAL4 f, REAL4 Q, REAL4 r, REAL4 amplitude )
 }
 
 /* <lalVerbatim file="RingCP"> */
-REAL4 XLAL2DMetricDistance( REAL4 fa, REAL4 fb, REAL4 Qa, REAL4 Qb )
+REAL4 XLAL2DRingMetricDistance( REAL4 fa, REAL4 fb, REAL4 Qa, REAL4 Qb )
 /* </lalVerbatim> */
 {
   REAL4 Q2 = Qa*Qa; 
@@ -207,6 +207,27 @@ REAL4 XLAL2DMetricDistance( REAL4 fa, REAL4 fb, REAL4 Qa, REAL4 Qb )
 
   return ( 1.0/8.0 * ( gQQ * pow(Qb-Qa,2) + gQf * (Qb-Qa) * (fb-fa) + gff * pow(fb-fa,2) ) ); 
 }
+
+/* <lalVerbatim file="RingCP"> */
+REAL4 XLAL3DRingMetricDistance( REAL4 fa, REAL4 fb, REAL4 Qa, REAL4 Qb, INT8 ta, INT8 tb )
+/* </lalVerbatim> */
+{  
+  REAL4 Q2 = Qa*Qa;
+  REAL4 gQQ;
+  REAL4 gff;
+  REAL4 gQf;
+  REAL4 gtt;
+
+/* The metric components need to be updated for the new metric. */
+/* Here I just copied the 2D coefficients and made gtt up (to aviod warnings). */  
+  gQQ = ( 3.0 + 16.0 * Q2 * Q2) / ( Q2 * ( 1.0 + 4.0 * Q2 ) * ( 1.0 + 4.0 * Q2 ) );
+  gff = ( 3.0 + 8.0 * Q2) / ( fa * fa);
+  gQf = - 2.0 * ( 3.0 + 4.0 * Q2 ) / ( Qa * fa * ( 1.0 + 4.0 * Q2 ));
+  gtt = 4.0 * fa * fa / (Qa *Qa);
+  
+  return ( ( gQQ * pow(Qb-Qa,2) + gQf * (Qb-Qa) * (fb-fa) + gff * pow(fb-fa,2)+ gtt * pow(tb-ta,2) ) );
+}
+
 
 /* <lalVerbatim file="RingCP"> */
 int XLALComputeRingTemplate( REAL4TimeSeries *output, SnglRingdownTable *input )
