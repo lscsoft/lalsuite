@@ -670,7 +670,7 @@ def plot_setup(plotDir, config, logPath, stage, injectionSuffix,
 # Function to set up zero/slide plots:
 def zeroSlidePlots(dag, plotDir, config, logPath, zerolagSuffix, slideSuffix, 
     cacheFile, doDagCategories, parentDags = None, vetoParentDags = None, 
-    vetoCat = 2):
+    vetoCat = 3):
   """
   set up plots for zero lag and time slides
   dag       = the dag
@@ -706,7 +706,7 @@ def zeroSlidePlots(dag, plotDir, config, logPath, zerolagSuffix, slideSuffix,
     for thisDag in parentDags: 
       plotNode.add_parent(thisDag)
 
-  # second stage (require DQ)
+  # second stage (require DQ) 
   vetoString = "_CAT_" + str(vetoCat) + "_VETO"
   plotcp = copy.deepcopy(config)
   plotcp.add_section("plot-arguments")
@@ -736,7 +736,7 @@ def zeroSlidePlots(dag, plotDir, config, logPath, zerolagSuffix, slideSuffix,
 # Function to set up inj/zero/slide plots:
 def injZeroSlidePlots(dag, plotDir, config, logPath, injectionSuffix,
     zerolagSuffix, slideSuffix, cacheFile, doDagCategories, parentDags = None, 
-    vetoParentDags = None, vetoCat = 2):
+    vetoParentDags = None, vetoCat = 3):
   """
   set up plots for injections, zero lag and time slides
   dag       = the dag

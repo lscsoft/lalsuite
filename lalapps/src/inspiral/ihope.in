@@ -508,14 +508,14 @@ if opts.run_plots:
     else: parentNodes = None
 
     if opts.run_data_quality:
-      parentVetoNodes = [hipePlayVetoNode[2]]
+      parentVetoNodes = [hipePlayVetoNode[3]]
     else: parentVetoNodes = None
     
     # make the playground slide/zerolag plots
     print "Making plots depending only on the playground"
     dag = inspiralutils.zeroSlidePlots(dag, "playground_summary_plots", cp, \
         opts.log_path, "PLAYGROUND", "PLAYGROUND", "../" + cachefilename, \
-        opts.do_dag_categories, parentNodes, parentVetoNodes, 2)
+        opts.do_dag_categories, parentNodes, parentVetoNodes, 3)
 
   if opts.run_playground and opts.run_full_data:
 
@@ -525,18 +525,28 @@ if opts.run_plots:
     else: parentNodes = None
 
     if opts.run_data_quality and opts.run_playground:
-      parentVetoNodes = [hipePlayVetoNode[2], hipeAnalysisVetoNode[2]]
+      parentVetoNodes = [hipePlayVetoNode[3], hipeAnalysisVetoNode[3]]
     else: parentVetoNodes = None
 
     # make the playground slide/zerolag plots
     print "Making plots with full data slides, playground zero lag"
     dag = inspiralutils.zeroSlidePlots(dag, "full_data_slide_summary_plots", \
         cp, opts.log_path, "PLAYGROUND", "FULL_DATA", "../" + cachefilename, \
-        opts.do_dag_categories, parentNodes, parentVetoNodes, 2)
+        opts.do_dag_categories, parentNodes, parentVetoNodes, 3)
 
   # Setting up plots for injection run.
-  if opts.run_injections and opts.run_playground:
+  if opts.run_injections:
     print "Making plots depending on the injection runs"
+    if opts.run_full_data:
+      slideSuffix = "FULL_DATA"
+    elif opts.run_playground:
+      slideSuffix = "PLAYGROUND"
+    else:
+      slideSuffix = "NONE_AVAILABLE"
+    if opts.run_playground:
+      zeroLagSuffix = "PLAYGROUND"
+    else:
+      zeroLagSuffix = "NONE_AVAILABLE"
     for (injDir, injSeed) in cp.items("injections"):
   
       # set up parents correctly
@@ -545,13 +555,13 @@ if opts.run_plots:
       else: parentNodes = None
 
       if opts.run_data_quality:
-        parentVetoNodes = [hipePlayVetoNode[2], hipeInjVetoNode[2][injDir]]
+        parentVetoNodes = [hipePlayVetoNode[3], hipeInjVetoNode[3][injDir]]
       else: parentVetoNodes = None
 
       dag = inspiralutils.injZeroSlidePlots(dag, injDir + "_summary_plots", \
-          cp, opts.log_path, injDir.upper(), "PLAYGROUND", "PLAYGROUND", \
+          cp, opts.log_path, injDir.upper(), zeroLagSuffix, slideSuffix, \
           "../" + cachefilename, opts.do_dag_categories, parentNodes, 
-          parentVetoNodes, 2)
+          parentVetoNodes, 3)
 
     print "Making plots of all injection runs together"
 
@@ -562,14 +572,14 @@ if opts.run_plots:
     else: parentNodes = None
 
     if opts.run_data_quality:
-        parentVetoNodes = hipeInjVetoNode[2].values()
-        parentVetoNodes.append(hipePlayVetoNode[2])
+        parentVetoNodes = hipeInjVetoNode[3].values()
+        parentVetoNodes.append(hipePlayVetoNode[3])
     else: parentVetoNodes = None
 
     dag = inspiralutils.injZeroSlidePlots(dag, "allinj_summary_plots", cp, \
-        opts.log_path, "*INJ", "PLAYGROUND", "PLAYGROUND", \
+        opts.log_path, "*INJ", zeroLagSuffix, slideSuffix, \
         "../" + cachefilename, opts.do_dag_categories, parentNodes, 
-        parentVetoNodes, 2)
+        parentVetoNodes, 3)
 
   if opts.do_dag_categories:
     dag.add_maxjobs_category('plotting',2)
@@ -582,14 +592,14 @@ if opts.generate_results_plots:
     else: parentNodes = None
 
     if opts.run_data_quality:
-      parentVetoNodes = [hipeAnalysisVetoNode[2]]
+      parentVetoNodes = [hipeAnalysisVetoNode[3]]
     else: parentVetoNodes = None
 
   # make the full data slide/zerolag plots
   print "Making full data zero lag plots."
   dag = inspiralutils.zeroSlidePlots(dag, "full_data_summary_plots", cp, \
         opts.log_path, "FULL_DATA", "FULL_DATA", "../" + cachefilename, \
-        opts.do_dag_categories, parentNodes, parentVetoNodes, 2)
+        opts.do_dag_categories, parentNodes, parentVetoNodes, 3)
                              
 ##############################################################################
 # Set up the directories for followup and run lalapps_followup_pipe
