@@ -227,6 +227,8 @@ Name & Value & Expression \\
 \idx[Constant]{LAL\_MU0\_SI}
 \idx[Constant]{LAL\_GEARTH\_SI}
 \idx[Constant]{LAL\_PATM\_SI}
+\idx[Constant]{LAL\_YRJUL\_SI}
+\idx[Constant]{LAL\_LYR\_SI}
 \idx[Constant]{LAL\_G\_SI}
 \idx[Constant]{LAL\_H\_SI}
 \idx[Constant]{LAL\_HBAR\_SI}
@@ -252,8 +254,9 @@ Name & Value & Expression \\
 The following physical constants are defined to have exact values.
 The values of $c$ and $g$ are taken from~\cite{Barnet:1996},
 $p_\mathrm{atm}$ is from~\cite{Lang:1992}, while $\epsilon_0$ and
-$\mu_0$ are computed from $c$ using exact formulae.  They are given in
-the SI units shown.
+$\mu_0$ are computed from $c$ using exact formulae.  The use of a
+Julian year (365.25 days) as standard is specified by the IAU.
+They are given in the SI units shown.
 
 \begin{center}
 \begin{tabular}{|lll|}
@@ -274,6 +277,10 @@ Name & Value & Description \\
 	Standard gravity $g$ \\
 \tt LAL\_PATM\_SI     & $101\,325\,\mathrm{Pa}$ &
 	Standard atmospheric pressure $p_\mathrm{atm}$ \\
+\tt LAL\_YRJUL\_SI    & $31\,557\,600\,\mathrm{s}$ &
+	(Julian) year \\
+\tt LAL\_LYR\_SI    & $9.4607304725808\times10^{15}\,\mathrm{m}$ &
+	$c\times$(Julian) year\\
 \hline
 \end{tabular}
 \end{center}
@@ -284,14 +291,17 @@ Name & Value & Description \\
  * The following physical constants are defined to have exact values.
  * The values of \f$c\f$ and \f$g\f$ are taken from Barnet (1996),
  * \f$p_\mathrm{atm}\f$ is from Lang (1992), while \f$\epsilon_0\f$ and
- * \f$\mu_0\f$ are computed from \f$c\f$ using exact formulae.  They are given in
- * the SI units shown. */
+ * \f$\mu_0\f$ are computed from \f$c\f$ using exact formulae.  The use
+ * of a Julian year (365.25 days) as standard is specified by the IAU.
+ * They are given in the SI units shown. */
 /*@{*/
 #define LAL_C_SI      299792458 /**< Speed of light in vacuo, m s^-1 */
 #define LAL_EPSILON0_SI  8.8541878176203898505365630317107503e-12 /**< Permittivity of free space, C^2 N^-1 m^-2 */
 #define LAL_MU0_SI    1.2566370614359172953850573533118012e-6 /**< Permeability of free space, N A^-2 */
 #define LAL_GEARTH_SI 9.80665 /**< Standard gravity, m s^-2 */
 #define LAL_PATM_SI 101325 /**< Standard atmosphere, Pa */
+#define LAL_YRJUL_SI 31557600 /**< Julian year, s */
+#define LAL_LYR_SI 9.4607304725808e15 /**< (Julian) Lightyear, m */
 /*@}*/
 
 /* <lalLaTeX>
@@ -390,7 +400,6 @@ Name & Value & Description \\
 \idx[Constant]{LAL\_YRTROP\_SI}
 \idx[Constant]{LAL\_YRSID\_SI}
 \idx[Constant]{LAL\_DAYSID\_SI}
-\idx[Constant]{LAL\_LYR\_SI}
 \idx[Constant]{LAL\_H0\_SI}
 \idx[Constant]{LAL\_H0FAC\_SI}
 \idx[Constant]{LAL\_RHOC\_SI}
@@ -405,7 +414,8 @@ The following parameters are derived from measured properties of the
 Earth and Sun.  The values are taken from~\cite{Barnet:1996}, except
 for the obliquity of the ecliptic plane and the eccentricity of
 Earth's orbit, which are taken from~\cite{Lang:1992}.  All values are
-given in the SI units shown.
+given in the SI units shown.  Note that the ``year'' and ``light-year''
+have exactly defined values, and appear under ``Exact physical constants''.
 
 \begin{center}
 \begin{tabular}{|lll|}
@@ -435,8 +445,6 @@ Name & Value & Description \\
 \tt LAL\_YRTROP\_SI & $31\,556\,925.2\,\mathrm{s}$ & Tropical year (1994) \\
 \tt LAL\_YRSID\_SI  & $31\,558\,149.8\,\mathrm{s}$ & Sidereal year (1994) \\
 \tt LAL\_DAYSID\_SI & $86\,164.09053\,\mathrm{s}$ & Mean sidereal day \\
-\tt LAL\_LYR\_SI    & $9.46052817\times10^{15}\,\mathrm{m}$ &
-	$c\times$tropical year (1994) \\
 \hline
 \end{tabular}
 \end{center}
@@ -448,7 +456,10 @@ Name & Value & Description \\
  * Earth and Sun.  The values are taken from Barnet (1996), except
  * for the obliquity of the ecliptic plane and the eccentricity of
  * Earth's orbit, which are taken from Lang (1992).  All values are
- * given in the SI units shown. */
+ * given in the SI units shown.  Note that the ``year'' and
+ * ``light-year'' have exactly defined values, and appear under
+ * ``Exact physical constants''.
+ */
 /*@{*/
 #define LAL_REARTH_SI 6.378140e6      /**< Earth equatorial radius, m */
 #define LAL_AWGS84_SI 6.378137e6      /**< Semimajor axis of WGS-84 Reference Ellipsoid, m */
@@ -466,7 +477,6 @@ Name & Value & Description \\
 #define LAL_YRTROP_SI 31556925.2      /**< Tropical year (1994), s */
 #define LAL_YRSID_SI  31558149.8      /**< Sidereal year (1994), s */
 #define LAL_DAYSID_SI 86164.09053     /**< Mean sidereal day, s */
-#define LAL_LYR_SI    9.46052817e15   /**< ``Tropical'' lightyear (1994), m */
 /*@}*/
 
 /* <lalLaTeX>
