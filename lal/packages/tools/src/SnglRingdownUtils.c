@@ -414,7 +414,7 @@ LALCompareRingdowns (
       goto exit;
     }
   }
-  if ( params->test == ds_sq || params->test == ds_sq_fQt )
+  else if ( params->test == ds_sq || params->test == ds_sq_fQt )
   {
     fa = aPtr->frequency;
     fb = bPtr->frequency;
@@ -428,31 +428,41 @@ LALCompareRingdowns (
     }
     else if ( params->test == ds_sq_fQt )
     {
-      dsab = XLAL3DRingMetricDistance( fa, fb, Qa, Qb, ta, tb );
-      dsba = XLAL3DRingMetricDistance( fb, fa, Qb, Qa, ta, tb );
+      REAL8 dt = 1.e-9 * (tb - ta);
+      REAL8 dt_min = dt - fabs(params->lightTravelTime[ifoaNum][ifobNum]);
+      REAL8 dt_max = dt + fabs(params->lightTravelTime[ifoaNum][ifobNum]);
+      REAL4 ds2_min = XLAL3DRingMetricDistance( fa, fb, Qa, Qb, dt );
+      
+      for ( dt = dt_min ; dt < dt_max ; dt += 0.00012207) // estimate true time delay
+      {
+        REAL4 ds2 = XLAL3DRingMetricDistance( fa, fb, Qa, Qb, dt );
+        if (ds2 < ds2_min) ds2_min = ds2;
+      }
+      
+      dsab = ds2_min;
+      dsba = ds2_min;
     }
-
-    if ( (dsab+dsba)/2 < (aAcc.ds_sq + bAcc.ds_sq)/2 )
+    if ( (dsab + dsba)/2. < (aAcc.ds_sq + bAcc.ds_sq)/2. )
     {
       LALInfo( status, "Triggers pass the ds_sq coincidence test" );
       params->match = 1;
       if ( (strcmp(aPtr->ifo,"H1")==0 && strcmp(bPtr->ifo,"H2")==0)
 		||(strcmp(aPtr->ifo,"H2")==0 && strcmp(bPtr->ifo,"H1")==0) )
       {
-	aPtr->ds2_H1H2=dsab;
+        aPtr->ds2_H1H2=dsab;
         bPtr->ds2_H1H2=dsba;
       }
       else if( (strcmp(aPtr->ifo,"H1")==0 && strcmp(bPtr->ifo,"L1")==0) 
  		|| (strcmp(aPtr->ifo,"L1")==0 && strcmp(bPtr->ifo,"H1")==0) )
       {
-        aPtr->ds2_H1L1=dsab;
-        bPtr->ds2_H1L1=dsba;
+        aPtr->ds2_H1H2=dsab;
+        bPtr->ds2_H1H2=dsba;
       }
       else if( (strcmp(aPtr->ifo,"H2")==0 && strcmp(bPtr->ifo,"L1")==0)
 		|| (strcmp(aPtr->ifo,"L1")==0 && strcmp(bPtr->ifo,"H2")==0) )
       {
-        aPtr->ds2_H2L1=dsab;
-        bPtr->ds2_H2L1=dsba;
+        aPtr->ds2_H1H2=dsab;
+        bPtr->ds2_H1H2=dsba;
       }
       else
       {
@@ -468,7 +478,6 @@ LALCompareRingdowns (
       goto exit;
     }
   }
-
   else
   {
     LALInfo( status, "error: unknown test\n" );
