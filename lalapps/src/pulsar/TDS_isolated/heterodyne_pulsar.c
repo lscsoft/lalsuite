@@ -849,6 +849,8 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
   REAL8 filtphase=0.;
   UINT4 position=0, middle=0;
 
+  REAL8 lyr_pc = LAL_PC_SI/LAL_LYR_SI; /* light years per parsec */
+
   /* set the position and frequency epochs if not already set */
   if(hetParams.het.pepoch == 0. && hetParams.het.posepoch != 0.)
     hetParams.het.pepoch = hetParams.het.posepoch;
@@ -879,6 +881,29 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
     baryinput.site.location[0] = hetParams.detector.location[0]/LAL_C_SI;
     baryinput.site.location[1] = hetParams.detector.location[1]/LAL_C_SI;
     baryinput.site.location[2] = hetParams.detector.location[2]/LAL_C_SI;
+
+    /* set 1/distance using parallax or distance value is given (try parallax 
+       first) - in 1/secs */
+    if( hetParams.heterodyneflag != 2 ){ /* not using updated params */
+      if( hetParams.het.px != 0. ){
+        baryinput.dInv = hetParams.het.px*1e-3/(LAL_C_SI*lyr_pc);
+      }
+      else if( hetParams.het.dist != 0. ){
+        baryinput.dInv = 1./(hetParams.het.dist*1e3*LAL_C_SI*lyr_pc);
+      }
+      else
+        baryInput.dInv = 0.; /* no parallax */
+    }
+    else{                                /* using updated params */
+      if( hetParams.hetUpdate.px != 0. ){
+        baryinput.dInv = hetParams.hetUpdate.px*1e-3/(LAL_C_SI*lyr_pc);
+      }
+      else if( hetParams.hetUpdate.dist != 0. ){
+        baryinput.dInv = 1./(hetParams.hetUpdate.dist*1e3*LAL_C_SI*lyr_pc);
+      }
+      else
+        baryInput.dInv = 0.; /* no parallax */
+    }
   }
 
   for(i=0;i<hetParams.length;i++){
@@ -901,7 +926,6 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
       baryinput.delta = hetParams.het.dec + dtpos*hetParams.het.pmdec;
       baryinput.alpha = hetParams.het.ra +
         dtpos*hetParams.het.pmra/cos(baryinput.delta);
-      baryinput.dInv = 0.0;  /* no parallax */
 
       t = hetParams.timestamp + (REAL8)i/hetParams.samplerate; /*get data time*/
 
@@ -955,7 +979,6 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
         dtpos*hetParams.hetUpdate.pmdec;
       baryinput.alpha = hetParams.hetUpdate.ra +
         dtpos*hetParams.hetUpdate.pmra/cos(baryinput.delta);
-      baryinput.dInv = 0.0;  /* no parallax */
 
       t = times->data[i]; /* get data time */
 
