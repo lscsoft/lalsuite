@@ -115,7 +115,7 @@ static void print_usage(char *program)
       "  [--l1-triggers]               input triggers from L1\n"\
       "\n"\
       "   --parameter-test     test    set parameters with which to test coincidence:\n"\
-      "                                (f_and_Q)\n"\
+      "                                (f_and_Q, ds_sq, ds_sq_fQt)\n"\
       "  [--h1-time-accuracy]  h1_dt   specify the timing accuracy of H1 in ms\n"\
       "  [--h2-time-accuracy]  h2_dt   specify the timing accuracy of H2 in ms\n"\
       "  [--l1-time-accuracy]  l1_dt   specify the timing accuracy of L1 in ms\n"\
@@ -369,11 +369,15 @@ int main( int argc, char *argv[] )
         {
           accuracyParams.test = ds_sq;
         }
+        else if ( ! strcmp( "ds_sq_fQt", optarg ) )
+        {
+          accuracyParams.test = ds_sq_fQt;
+        }
         else
           {
             fprintf( stderr, "invalid argument to --%s:\n"
                 "unknown test specified: "
-                "%s (must be f_and_Q or ds_sq)\n",
+                "%s (must be f_and_Q, ds_sq, or ds_sq_fQt)\n",
                 long_options[option_index].name, optarg );
             exit( 1 );
             }
