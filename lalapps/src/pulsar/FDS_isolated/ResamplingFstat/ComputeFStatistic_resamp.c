@@ -238,6 +238,8 @@ typedef struct
 /* The Downsampled Time Series*/
 MultiCOMPLEX8TimeSeries* TSeries;
 REAL8Sequence* TotalAnalysisTime;
+REAL8Sequence* NoiseAverage;
+UINT4 l,m;
 REAL8 Fmin,Fmax;
 REAL8 Shift;
 
@@ -445,6 +447,23 @@ int main(int argc,char *argv[])
   LogPrintf (LOG_DEBUG, "Done Calculating Time Series.\n");
 
   LogPrintf (LOG_DEBUG, "Starting Main Resampling Loop.\n");
+  NoiseAverage = XLALCreateREAL8Sequence(GV.multiNoiseWeights->length);
+  for(m=0;m<GV.multiNoiseWeights->length;m++)
+    {
+      NoiseAverage->data[m] = 0;
+      for(l=0;l<GV.multiNoiseWeights->data[m]->length;l++)
+	{
+	  NoiseAverage->data[m] += GV.multiNoiseWeights->data[m]->data[l]/GV.multiNoiseWeights->data[m]->length;
+	}
+    }
+  for(m=0;m<GV.multiNoiseWeights->length;m++)
+    {
+      for(l=0;l<GV.multiNoiseWeights->data[m]->length;l++)
+	{
+	  GV.multiNoiseWeights->data[m]->data[l] = GV.multiNoiseWeights->data[m]->data[l]/NoiseAverage->data[m]; 
+	  /*printf("%d %f %f\n",l,GV.multiNoiseWeights->data[m]->data[l],GV.multiNoiseWeights->Sinv_Tsft);*/
+	}
+    }
   while ( XLALNextDopplerPos( &dopplerpos, GV.scanState ) == 0 )
     {
       /* main function call: compute F-statistic over frequency-band  */ 
@@ -611,6 +630,7 @@ int main(int argc,char *argv[])
 
   XLALDestroyREAL8FrequencySeries ( fstatVector );
   XLALDestroyREAL8Sequence(TotalAnalysisTime);
+  XLALDestroyREAL8Sequence(NoiseAverage);
 
   XLALDestroyReSampBuffer ( &Buffer );
 
@@ -2882,6 +2902,7 @@ void ComputeFStat_resamp(LALStatus *status,REAL8FrequencySeries *fstatVector, co
 	    {
 	      a_at_DetectorTimes->data[p] = (REAL8)multiAMcoef->data[i]->a->data[p];
 	      b_at_DetectorTimes->data[p] = (REAL8)multiAMcoef->data[i]->b->data[p];
+	      /*printf("%d %f %f \n",p,a_at_DetectorTimes->data[p],b_at_DetectorTimes->data[p]);*/
 	    }
 
 	  /* Allocate and Store DetectorTimes */
@@ -3006,8 +3027,8 @@ void ComputeFStat_resamp(LALStatus *status,REAL8FrequencySeries *fstatVector, co
 	  printf("%f %f\n",p*dF+uvar_Freq,fstatVector->data->data[p]);
 	  }*/
       
-      for(p=0;p<fstatVector->data->length;p++)
-	printf("%f %f\n",uvar_Freq+p*dF,fstatVector->data->data[p]);
+      /*for(p=0;p<fstatVector->data->length;p++)
+	printf("%f %f\n",uvar_Freq+p*dF,fstatVector->data->data[p]);*/
       
       XLALDestroyREAL8Sequence(temp);
       XLALDestroyFFTWCOMPLEXSeries(FaOut);
