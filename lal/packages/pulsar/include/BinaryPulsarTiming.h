@@ -216,7 +216,13 @@ tagBinaryPulsarParams
   /* orbital frequency coefficients for BTX model (only for one orbit at the
      moment i.e. a two body system) */
   REAL8 fb[12]; /**> orbital frequency coefficients for BTX model */
-  INT4 nfb; /**> the number of fb coefficients */
+  INT4 nfb;     /**> the number of fb coefficients */
+
+  REAL8 px;     /**> pulsar parallax (in milliarcsecs) */
+  REAL8 dist;   /**> pulsar distance (in kiloparsecs) */
+
+  REAL8 DM;     /**> dispersion measure */
+  REAL8 DM1;    /**> first derivative of dispersion measure */
 
   /******** errors read in from a .par file **********/
   REAL8 f0Err;
@@ -264,6 +270,11 @@ tagBinaryPulsarParams
 
   REAL8 fbErr[12];
 
+  REAL8 pxErr;
+  REAL8 distErr;
+
+  REAL8 DMErr;
+  REAL8 DM1Err;
 }BinaryPulsarParams;
 
 /** structure containing the input parameters for the binary delay function */ 
