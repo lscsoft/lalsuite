@@ -637,7 +637,7 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
   }
 
   output->model = NULL; /* set binary model to null - incase not a binary */
-  
+
   /* set all output params to zero*/
   output->e=0.0;      /* orbital eccentricity */
   output->Pb=0.0;     /* orbital period (days) */
@@ -699,6 +699,13 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
   output->pmra=0.0;
   output->pmdec=0.0;
 
+  output->px=0.;    /* parallax (mas) */
+  output->dist=0.;  /* distance (kpc) */
+
+  output->DM=0.;    /* dispersion measure */
+  output->DM1=0.;   /* first derivative of dispersion measure */
+
+  /* set all errors on params to zero */
   output->raErr=0.0;
   output->decErr=0.0;
   output->pmraErr=0.0;
@@ -706,13 +713,12 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
 
   output->posepoch=0.0;
   output->pepoch=0.0;
-  
+
   output->posepochErr=0.0;
   output->pepochErr=0.0;
-  
-  /* set all errors on params to zero */
+
   output->xpbdotErr=0.0;  /* (10^-12) */
-  
+
   output->eps1Err=0.0;        /* e*sin(w) */
   output->eps2Err=0.0;        /* e*cos(w) */
   output->eps1dotErr=0.0;
@@ -724,18 +730,18 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
   output->PbdotErr=0.0;  /* rate of change of Pb (dimensionless 10^-12) */
   output->xdotErr=0.0;   /* rate of change of x(=asini/c) - optional (10^-12)*/
   output->edotErr=0.0;   /* rate of change of e (10^-12)*/
-  
+
   output->sErr=0.0;     /* Shapiro 'shape' parameter sin i */
-  
+
   /*output->rErr=0.0;  Shapiro 'range' parameter */
   output->drErr=0.0;
   output->dthErr=0.0;   /* (10^-6) */
   output->a0Err=0.0;
   output->b0Err=0.0;    /* abberation delay parameters */
-  
+
   output->MErr=0.0;     /* M = m1 + m2 (m1 = pulsar mass, m2 = companion mass) */
   output->m2Err=0.0;    /* companion mass */
-  
+
   output->f0Err=0.0;
   output->f1Err=0.0;
   output->f2Err=0.0;
@@ -746,18 +752,24 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
   output->PbErr=0.0;
   output->xErr=0.0;
   output->T0Err=0.0;
-  
+
   output->e2Err =0.0;
   output->w02Err=0.0;
   output->Pb2Err=0.0;
   output->x2Err=0.0;
   output->T02Err=0.0;
-  
+
   output->e3Err =0.0;
   output->w03Err=0.0;
   output->Pb3Err=0.0;
   output->x3Err=0.0;
   output->T03Err=0.0;
+
+  output->pxErr=0.;
+  output->distErr=0.;
+
+  output->DMErr=0.;
+  output->DM1Err=0.;
 
   if((fp = fopen(pulsarAndPath, "r")) == NULL){
     XLAL_ERROR_VOID( fn, XLAL_EIO );
@@ -812,20 +824,20 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
     }
     else if(!strcmp(val[i],"pmra") || !strcmp(val[i],"PMRA")) {
       /* convert pmra from mas/year to rads/sec */
-      output->pmra = LAL_PI_180*atof(val[i+1])/(60.0*60.0*1000.*LAL_YRSID_SI);
+      output->pmra = LAL_PI_180*atof(val[i+1])/(60.0*60.0*1000.*365.25);
       j++;
       if(atoi(val[i+2])==1 && i+2<k){
-        output->pmraErr = LAL_PI_180*atof(val[i+3])/(60.0*60.0*1000.*LAL_YRSID_SI);
+        output->pmraErr = LAL_PI_180*atof(val[i+3])/(60.0*60.0*1000.*365.25);
         j+=2;
       }
     }
     else if(!strcmp(val[i],"pmdec") || !strcmp(val[i],"PMDEC")) {
       /* convert pmdec from mas/year to rads/sec */
-      output->pmdec = LAL_PI_180*atof(val[j+1])/(60.0*60.0*1000.*LAL_YRSID_SI);
+      output->pmdec = LAL_PI_180*atof(val[j+1])/(60.0*60.0*1000.*365.25);
       j++;
 
       if(atoi(val[i+2])==1 && i+2<k){
-        output->pmdecErr = LAL_PI_180*atof(val[i+3])/(60.0*60.0*1000.*LAL_YRSID_SI);
+        output->pmdecErr = LAL_PI_180*atof(val[i+3])/(60.0*60.0*1000.*365.25);
         j+=2;
       }
     }
@@ -1153,6 +1165,46 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
       }
     }
 
+    /* parameters for distance */
+    else if( !strcmp(val[i],"px") || !strcmp(val[i],"PX") ) { /* parallax */
+      output->px = atof(val[i+1]); /* in milliarcsecs */
+      j++;
+
+      if(atoi(val[i+2])==1 && i+2<k){
+        output->pxErr = atof(val[i+3]);
+        j+=2;
+      }
+    }
+    else if( !strcmp(val[i],"dist") || !strcmp(val[i],"DIST") ) { /* distance */
+      output->dist = atof(val[i+1]); /* in kpc */
+      j++;
+
+      if(atoi(val[i+2])==1 && i+2<k){
+        output->distErr = atof(val[i+3]);
+        j+=2;
+      }
+    }
+
+    /* dispersion measure parameters */
+    else if( !strcmp(val[i],"dm") || !strcmp(val[i],"DM") ) {
+      output->DM = atof(val[i+1]);
+      j++;
+
+      if(atoi(val[i+2])==1 && i+2<k){
+        output->DMErr = atof(val[i+3]);
+        j+=2;
+      }
+    }
+    else if( !strcmp(val[i],"dm1") || !strcmp(val[i],"DM1") ) {
+      output->DM1 = atof(val[i+1]);
+      j++;
+
+      if(atoi(val[i+2])==1 && i+2<k){
+        output->DM1Err = atof(val[i+3]);
+        j+=2;
+      }
+    }
+
     /* add parameters extra orbital parameters for the BT1P and BT2P models */
     else if( !strcmp(val[i],"a1_2") || !strcmp(val[i],"A1_2")) {
       output->x2 = atof(val[i+1]);
@@ -1247,7 +1299,7 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
       }
     }
 
-    /* orbital frequency coefficients for BTX model (up to 6 coefficients), but
+    /* orbital frequency coefficients for BTX model (up to 12 coefficients), but
        only one orbit at the moment i.e. only a two body system */
     else if( !strcmp(val[i], "fb0") || !strcmp(val[i], "FB0") ){
       CHAR *loc;
