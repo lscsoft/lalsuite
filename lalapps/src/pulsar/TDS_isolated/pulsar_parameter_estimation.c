@@ -196,6 +196,12 @@ INT4 main(INT4 argc, CHAR *argv[]){
     stdh0 = 0.;
     /* read in data */
     while(fscanf(fp, "%lf%lf%lf", &times, &dataVals.re, &dataVals.im) != EOF){
+      /* check that size of data file is not to large */
+      if( j == MAXLENGTH ){
+        fprintf(stderr, "Error... size of MAXLENGTH not large enough.\n");
+        exit(0);
+      }
+
       /* exclude values smaller than 1e-28 as most are spurious points caused
          during a the heterodyne stage (e.g. when frame files were missing in
          the original S5 analysis) */
@@ -207,12 +213,6 @@ INT4 main(INT4 argc, CHAR *argv[]){
         stdh0 += dataVals.re*dataVals.re + dataVals.im*dataVals.im;
 
         j++;
-
-        /* check that size of data file is not to large */
-        if( j > MAXLENGTH ){
-          fprintf(stderr, "Error... size of MAXLENGTH not large enough.\n");
-          exit(0);
-        }
       }
     }
 
@@ -447,15 +447,15 @@ void get_input_args(InputParams *inputParams, INT4 argc, CHAR *argv[]){
     { "h0prior",        required_argument, 0, 'q' },
     { "phi0prior",      required_argument, 0, 'Q' },
     { "psiprior",       required_argument, 0, 'U' },
-    { "ciprior",        required_argument, 0, 'u' },
+    { "iotaprior",      required_argument, 0, 'u' },
     { "h0mean",         required_argument, 0, 'Y' },
     { "h0sig",          required_argument, 0, 'T' },
     { "phi0mean",       required_argument, 0, 'v' },
     { "phi0sig",        required_argument, 0, 'V' },
     { "psimean",        required_argument, 0, 'z' },
     { "psisig",         required_argument, 0, 'Z' },
-    { "cimean",         required_argument, 0, 'e' },
-    { "cisig",          required_argument, 0, 'E' },
+    { "iotamean",       required_argument, 0, 'e' },
+    { "iotasig",        required_argument, 0, 'E' },
     { "output-post",    no_argument,    NULL, 'f' },
     { "dob-ul",         required_argument, 0, 'd' },
     { "mcmc",           no_argument,    NULL, 'F' },
@@ -524,7 +524,7 @@ y:g:G:K:N:X:O:J:M:r:fFR><)[:" ;
   inputParams->priors.h0Prior = "uniform";
   inputParams->priors.phiPrior = "uniform";
   inputParams->priors.psiPrior = "uniform";
-  inputParams->priors.ciotaPrior = "uniform";
+  inputParams->priors.iotaPrior = "uniform";
 
   /* default MCMC parameters */
   inputParams->mcmc.sigmas.h0 = 0.;           /* estimate from data */
@@ -641,8 +641,8 @@ y:g:G:K:N:X:O:J:M:r:fFR><)[:" ;
       case 'U': /* prior on psi */
         inputParams->priors.psiPrior = optarg;
         break;
-      case 'u': /* prior on cos(iota) */
-        inputParams->priors.ciotaPrior = optarg;
+      case 'u': /* prior on iota */
+        inputParams->priors.iotaPrior = optarg;
         break;
       case 'Y': /* mean of h0 Gaussian prior */
         inputParams->priors.meanh0 = atof(optarg);
@@ -662,11 +662,11 @@ y:g:G:K:N:X:O:J:M:r:fFR><)[:" ;
       case 'Z': /* standard deviation of Gaussian psi prior */
         inputParams->priors.stdpsi = atof(optarg);
         break;
-      case 'e': /* mean of cos(iota) Gaussian prior */
-        inputParams->priors.meanciota = atof(optarg);
+      case 'e': /* mean of iota Gaussian prior */
+        inputParams->priors.meaniota = atof(optarg);
         break;
-      case 'E': /* standard deviation of Gaussian cos(iota) prior */
-        inputParams->priors.stdciota = atof(optarg);
+      case 'E': /* standard deviation of Gaussian iota prior */
+        inputParams->priors.stdiota = atof(optarg);
         break;
       case 'd': /* percentage degree-of-belief at which to get UL */
         inputParams->dob = atof(optarg);
@@ -1101,28 +1101,30 @@ prior.meanh0)*(prior.vars.h0 -
     pri *= 1./(mesh.maxVals.psi - mesh.minVals.psi);
   }
   else if(strcmp(prior.psiPrior, "gaussian") == 0){
-    if( prior.vars.psi < prior.meanpsi - LAL_PI/4. )
-      prior.vars.psi += LAL_PI/2.;
-    else if( prior.meanpsi + LAL_PI/4. < prior.vars.psi )
-      prior.vars.psi -= LAL_PI/2.;
+    if( prior.vars.psi < prior.meanpsi - LAL_PI_4 )
+      prior.vars.psi += LAL_PI_2;
+    else if( prior.meanpsi + LAL_PI_4 < prior.vars.psi )
+      prior.vars.psi -= LAL_PI_2;
 
     pri *= ( 1./ (prior.stdpsi*sqrt(LAL_TWOPI) ) )*exp( -( prior.vars.psi -
             prior.meanpsi ) * ( prior.vars.psi - prior.meanpsi ) / 
            ( 2.*prior.stdpsi*prior.stdpsi ) );
   }
 
-  if(strcmp(prior.ciotaPrior, "uniform") == 0){
-    pri *= 1./(mesh.maxVals.ci - mesh.minVals.ci);
+  if(strcmp(prior.iotaPrior, "uniform") == 0){
+    pri *= 1./fabs(acos(mesh.maxVals.ci) - acos(mesh.minVals.ci));
   }
-  else if(strcmp(prior.ciotaPrior, "gaussian") == 0){
-    if( prior.vars.ci < prior.meanciota - 1. )
-      prior.vars.ci += 2.;
-    else if( prior.meanciota + 1. < prior.vars.ci )
-      prior.vars.ci -= 2.;
+  /* wrap around at zero and pi */
+  else if(strcmp(prior.iotaPrior, "gaussian") == 0){
+    REAL8 iota = acos(prior.vars.ci);
+    if( iota < prior.meaniota - LAL_PI_2 )
+      iota += LAL_PI;
+    else if( prior.meaniota + LAL_PI_2 < iota )
+      prior.vars.ci -= LAL_PI;
 
-    pri *= ( 1./ (prior.stdciota*sqrt(LAL_TWOPI) ) ) * exp( -( prior.vars.ci -
-            prior.meanciota ) * ( prior.vars.ci - prior.meanciota ) / 
-           ( 2.*prior.stdciota*prior.stdciota ) );
+    pri *= ( 1./ (prior.stdiota*sqrt(LAL_TWOPI) ) ) * exp( -( iota -
+            prior.meaniota ) * ( iota - prior.meaniota ) / 
+           ( 2.*prior.stdiota*prior.stdiota ) );
   }
 
   return log(pri);
@@ -1263,9 +1265,9 @@ Results marginalise_posterior(REAL8 ****logPost, MeshGrid mesh,
 
   /* perform first integral */
   for( i = 0 ; i < numSteps1 ; i++ ){
-    evSum1[i] = calloc(numSteps2, sizeof(REAL8 *));
+    evSum1[i] = XLALCalloc(numSteps2, sizeof(REAL8 *));
     for( j = 0 ; j < numSteps2 ; j++ ){
-      evSum1[i][j] = calloc(numSteps3, sizeof(REAL8));
+      evSum1[i][j] = XLALCalloc(numSteps3, sizeof(REAL8));
       for( k = 0 ; k < numSteps3 ; k++ ){
         evSum1[i][j][k] = -1.e200; /* initialise */
 
@@ -1288,7 +1290,7 @@ Results marginalise_posterior(REAL8 ****logPost, MeshGrid mesh,
 
               /* use trapezium rule for intergration */
               evVal = evSum1[i][j][k];
-              sumVal = log_trapezium(post1, post2, dval4);
+              sumVal = LOG_TRAPEZIUM(post1, post2, dval4);
               evSum1[i][j][k] = PLUS(sumVal, evVal);
             }
             else if( strcmp( output.margParam, "phi" ) == 0 ){
@@ -1296,7 +1298,7 @@ Results marginalise_posterior(REAL8 ****logPost, MeshGrid mesh,
               post2 = logPost[i][j][k][n+1];
 
               evVal = evSum1[i][j][k];
-              sumVal = log_trapezium(post1, post2, dval4);
+              sumVal = LOG_TRAPEZIUM(post1, post2, dval4);
               evSum1[i][j][k] = PLUS(sumVal, evVal);
             }
             else if( strcmp( output.margParam, "psi" ) == 0 ){
@@ -1304,7 +1306,7 @@ Results marginalise_posterior(REAL8 ****logPost, MeshGrid mesh,
               post2 = logPost[j][k][i][n+1];
 
               evVal = evSum1[i][j][k];
-              sumVal = log_trapezium(post1, post2, dval4);
+              sumVal = LOG_TRAPEZIUM(post1, post2, dval4);
               evSum1[i][j][k] = PLUS(sumVal, evVal);
             }
             else if( strcmp( output.margParam, "ciota" ) == 0 ){
@@ -1312,7 +1314,7 @@ Results marginalise_posterior(REAL8 ****logPost, MeshGrid mesh,
               post2 = logPost[j][i][k][n+1];
 
               evVal = evSum1[i][j][k];
-              sumVal = log_trapezium(post1, post2, dval4);
+              sumVal = LOG_TRAPEZIUM(post1, post2, dval4);
               evSum1[i][j][k] = PLUS(sumVal, evVal);
             }
           }
@@ -1356,7 +1358,7 @@ Results marginalise_posterior(REAL8 ****logPost, MeshGrid mesh,
 
   /* perform the second integration */
   for( i = 0 ; i < numSteps1 ; i++ ){
-    evSum2[i] = calloc(numSteps2, sizeof(REAL8));
+    evSum2[i] = XLALCalloc(numSteps2, sizeof(REAL8));
     for( j = 0 ; j < numSteps2 ; j++ ){
       evSum2[i][j] = -1.e200;
 
@@ -1364,7 +1366,7 @@ Results marginalise_posterior(REAL8 ****logPost, MeshGrid mesh,
       else{  
         for( k = 0 ; k <numSteps3 - 1 ; k++ ){
           evVal = evSum2[i][j];
-          sumVal = log_trapezium(evSum1[i][j][k], evSum1[i][j][k+1], dval3);
+          sumVal = LOG_TRAPEZIUM(evSum1[i][j][k], evSum1[i][j][k+1], dval3);
           evSum2[i][j] = PLUS(sumVal, evVal);
         }
 /*        for( k = 0 ; k < numSteps3 - 1 ; k++ ){
@@ -1387,7 +1389,7 @@ Results marginalise_posterior(REAL8 ****logPost, MeshGrid mesh,
     else{
       for( j = 0 ; j < numSteps2 - 1 ; j++ ){
         evVal = evSum3[i];
-        sumVal = log_trapezium(evSum2[i][j], evSum2[i][j+1], dval2);
+        sumVal = LOG_TRAPEZIUM(evSum2[i][j], evSum2[i][j+1], dval2);
         evSum3[i] = PLUS(sumVal, evVal);
       }
 /*       for( j = 0 ; j < numSteps2 - 1 ; j++ ){
@@ -1406,7 +1408,7 @@ Results marginalise_posterior(REAL8 ****logPost, MeshGrid mesh,
     /* perform final integration to get the log evidence */
     for( i = 0 ; i < numSteps1 - 1 ; i++ ){
       evVal = evSum4;
-      sumVal = log_trapezium(evSum3[i], evSum3[i+1], dval1);
+      sumVal = LOG_TRAPEZIUM(evSum3[i], evSum3[i+1], dval1);
       evSum4 = PLUS(sumVal, evVal);
     }
 /*     for( i = 0 ; i < numSteps1 - 1 ; i++ ){
@@ -1444,7 +1446,7 @@ Results marginalise_posterior(REAL8 ****logPost, MeshGrid mesh,
         cumsum[i] = 0.;
       }
       else{
-        cumsum[i] = cumsum[i-1] + exp(log_trapezium(evSum3[i-1], evSum3[i],
+        cumsum[i] = cumsum[i-1] + exp(LOG_TRAPEZIUM(evSum3[i-1], evSum3[i],
 dval1) - evSum4);
 /*         cumsum[i] = cumsum[i-1] + exp(evSum3[i-1] - evSum4) * dval1; */
       }
@@ -1470,19 +1472,6 @@ dval1) - evSum4);
   XLALFree(cumsum);
 
   return results; /* return the log evidence */
-}
-
-
-
-/* function to do the trapezium rule for integration on logs  */
-REAL8 log_trapezium(REAL8 logHeight1, REAL8 logHeight2, REAL8 width){
-  REAL8 area=0.;
-
-  /* area = 0.5*(height1 + height2)*width
-     logarea = log(0.5) + log(width) + log(exp(logHeight1) + exp(logHeight2)) */
-  area = LOG_HALF + log(width) + PLUS(logHeight1, logHeight2);
-
-  return area;
 }
 
 
@@ -1566,7 +1555,7 @@ REAL8 get_upper_limit(REAL8 *cumsum, REAL8 limit, MeshGrid mesh){
   }
 
   /* couldn't calculate an upper limit! */
-  if( point2 == 0. ){
+  if( point2 == 0 || point1 < 1 || point2 > (mesh.h0Steps - 2) ){
     fprintf(stderr, "Couldn't calculate a %.1lf%% upper limit!\n", limit);
   }
 
@@ -1604,11 +1593,17 @@ REAL8 get_upper_limit(REAL8 *cumsum, REAL8 limit, MeshGrid mesh){
   ul1 = (-c[1] + sqrt(c[1]*c[1] - 4.*c[0]*c[2]))/(2.*c[0]);
   ul2 = (-c[1] - sqrt(c[1]*c[1] - 4.*c[0]*c[2]))/(2.*c[0]);
 
-  /* return smaller value as cumulative prob gradient will always be positive */
-  if( ul1 < ul2 )
-    return ul1;
-  else
-    return ul2;
+  /* work out derivative of the gradient to see which solution to use */
+  if( (y[2]-y[1]) < (y[1]-y[0]) ){ /* quadratic is negative /^\*/
+    /* return the smaller of the two solutions */
+    if( ul1 < ul2 ) return ul1;
+    else return ul2;
+  }
+  else{ /* quadratic is positive  \_/ */
+    /* return the larger of the two solutions */
+    if( ul1 > ul2 ) return ul1;
+    else return ul2;
+  }
 }
 
 
@@ -1680,9 +1675,9 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
 
   /* work out how many glitches have been input */
   if( input.mcmc.nGlitches > 0 ){
-    extraVars = calloc(nGlitches, sizeof(IntrinsicPulsarVariables));
-    extraVarsNew = calloc(nGlitches, sizeof(IntrinsicPulsarVariables));
-    glitchTimes = calloc(nGlitches, sizeof(REAL8));
+    extraVars = XLALCalloc(nGlitches, sizeof(IntrinsicPulsarVariables));
+    extraVarsNew = XLALCalloc(nGlitches, sizeof(IntrinsicPulsarVariables));
+    glitchTimes = XLALCalloc(nGlitches, sizeof(REAL8));
 
     /* start and end point of the data before each glitch */
     g1 = XLALCalloc(numDets, sizeof(INT4 *));
@@ -1852,8 +1847,8 @@ paramData );
       fprintf(stderr, "\nInverse matrix:\n");   
       for(i=0; i<invmat->dimLength->data[0]; i++){    
         for(j=0; j<invmat->dimLength->data[1]; j++)   
-          fprintf(stderr, "%.2e  ", get_REAL8_matrix_value( invmat, i, j ));   
-        fprintf(stderr, "\n");    
+          fprintf(stderr, "%.2e  ", invmat[i*invmat->dimLength->data[0] + j]);
+        fprintf(stderr, "\n");
       }
     } */
 
@@ -2288,12 +2283,12 @@ paramData );
           if(i==0){
             priorTmp += (vals[matPos->data[k]].val -
               paramData[matPos->data[k]].val) *
-              get_REAL8_matrix_value(invmat, j, k);
+              invmat->data[j*(INT4)invmat->dimLength->data[0] + k];
           }
 
           priorTmpNew += (randVals[matPos->data[k]].val -
               paramData[matPos->data[k]].val) *
-              get_REAL8_matrix_value(invmat, j, k);
+              invmat->data[j*(INT4)invmat->dimLength->data[0] + k];
         }
 
         if(i==0){
@@ -2495,6 +2490,14 @@ REAL8Vector *get_phi( DataStructure data, BinaryPulsarParams params,
 
   /* allocate memory for phases */
   phis = XLALCreateREAL8Vector( data.times->length );
+
+  /* set 1/distance if parallax or distance value is given (1/sec) */
+  if( params.px != 0. )
+    bary.dInv = params.px*1e-3*LAL_LYR_SI/(LAL_PC_SI*LAL_C_SI);
+  else if( params.dist != 0. )
+    bary.dInv = LAL_LYR_SI/(params.dist*1e3*LAL_PC_SI*LAL_C_SI);
+  else
+    bary.dInv = 0.;
 
   for( i=0; i<(INT4)data.times->length; i++){
     T0 = params.pepoch;
@@ -2716,19 +2719,19 @@ matrix\n");
   /* initialise L be same as input matrix M */
   for(i=0; i < length; i++)
     for(j=0; j < length; j++)
-      set_REAL8_matrix_value( A, i, j, get_REAL8_matrix_value(M, i, j) );
+      A->data[i*length + j] = M->data[i*length + j];
 
-  A_00 = get_REAL8_matrix_value( A, 0, 0 );
+  A_00 = A->data[0];
   L_00 = sqrt(A_00);
 
   if( A_00 <= 0 )
     fprintf(stderr, "Error... matrix must be positive definite!\n");
 
-  set_REAL8_matrix_value( A, 0, 0, L_00 );
+  A->data[0] = L_00;
 
   if( length > 1 ){
-    REAL8 A_10 = get_REAL8_matrix_value( A, 1, 0 );
-    REAL8 A_11 = get_REAL8_matrix_value( A, 1, 1 );
+    REAL8 A_10 = A->data[1*length + 0];
+    REAL8 A_11 = A->data[1*length + 1];
 
     REAL8 L_10 = A_10/L_00;
     REAL8 diag = A_11 - L_10*L_10;
@@ -2739,25 +2742,25 @@ matrix\n");
       exit(0);
     }
 
-    set_REAL8_matrix_value( A, 1, 0, L_10 );
-    set_REAL8_matrix_value( A, 1, 1, L_11 );
+    A->data[1*length + 0] = L_10;
+    A->data[1*length + 1] = L_11;
   }
 
   for( k=2; k<length; k++ ){
-    REAL8 A_kk = get_REAL8_matrix_value( A, k, k );
+    REAL8 A_kk = A->data[k*length + k];
 
     for( i=0; i<k; i++ ){
       REAL8 sum = 0.;
 
-      REAL8 A_ki = get_REAL8_matrix_value( A, k, i );
-      REAL8 A_ii = get_REAL8_matrix_value( A, i, i );
+      REAL8 A_ki = A->data[k*length + i];
+      REAL8 A_ii = A->data[i*length + i];
 
       REAL8 ci[length];
       REAL8 ck[length];
 
       for( j=0; j<length; j++ ){
-        ci[j] = get_REAL8_matrix_value( A, i, j );
-        ck[j] = get_REAL8_matrix_value( A, k, j );
+        ci[j] = A->data[i*length + j];
+        ck[j] = A->data[k*length + j];
       }
 
       if( i>0 ){
@@ -2766,17 +2769,15 @@ matrix\n");
       }
 
       A_ki = (A_ki - sum) / A_ii;
-      set_REAL8_matrix_value( A, k, i, A_ki );
+      A->data[k*length + i] = A_ki;
     }
 
     {
       REAL8 sum = 0.;
       REAL8 diag = 0.;
 
-      for( j=0; j<k; j++ ){
-        sum += get_REAL8_matrix_value( A, k, j )*
-          get_REAL8_matrix_value( A, k, j );
-      }
+      for( j = 0 ; j < k ; j++ )
+        sum += A->data[k*length + j]*A->data[k*length + j];
 
       diag = A_kk - sum;
 
@@ -2805,7 +2806,7 @@ matrix\n");
         diag = 0.;
       }
 
-      set_REAL8_matrix_value( A, k, k, sqrt(diag) );
+      A->data[k*length + k] = sqrt(diag);
 
     }
   }
@@ -2813,7 +2814,7 @@ matrix\n");
   /* set upper triangular matrix to zeros - for lower value */
   for(i=0; i<length; i++)
     for(j=i+1; j<length; j++)
-      set_REAL8_matrix_value( A, i, j, 0. );
+      A->data[i*length + j] = 0.;
 
   /* check if the upper triangle is wanted - if so perform transpose */
   if(strstr(uOrl, "upper")!=NULL){
@@ -2822,19 +2823,19 @@ matrix\n");
     /* perform transpose */
     for(j=0; j<length-1; j++){
       for(i=j; i<length; i++){
-        tempdata = get_REAL8_matrix_value( A, j, i );
-        set_REAL8_matrix_value( A, j, i, get_REAL8_matrix_value(A, i, j) );
-        set_REAL8_matrix_value( A, i, j, tempdata );
+        tempdata = A->data[j*length + i];
+        A->data[j*length + i] = A->data[i*length + j];
+        A->data[i*length + j] = tempdata;
       }
     }
   }
 
   /* if( verbose ){
-    fprintf(stderr, "\nCholesky decomposed matrix:\n");   
-    for(i=0; i<length; i++){    
-       for(j=0; j<length; j++)   
-         fprintf(stderr, "%.2e  ", get_REAL8_matrix_value( A, i, j ));   
-       fprintf(stderr, "\n");    
+    fprintf(stderr, "\nCholesky decomposed matrix:\n");
+    for(i=0; i<length; i++){
+       for(j=0; j<length; j++)
+         fprintf(stderr, "%.2e  ", A->data[i*length + j]);
+       fprintf(stderr, "\n");
     }
   } */
 
@@ -2877,7 +2878,7 @@ ParamData *multivariate_normal_deviates( REAL8Array *cholmat, ParamData *data,
 
   for(i=0;i<dim;i++)
     for(j=0;j<dim;j++)
-      Z->data[i] += get_REAL8_matrix_value(cholmat,i,j)*randNum->data[j];
+      Z->data[i] += cholmat->data[i*dim + j]*randNum->data[j];
 
   /* get the output random deviates by doing the mean plus Z */
   j=0;
@@ -3077,10 +3078,10 @@ reading any correlation data!");
       else if( (n != k) && (corTemp == -1.) )
         corTemp = -0.9999999;
 
-      set_REAL8_matrix_value( corMat, k, n, corTemp );
+      corMat->data[k*corMat->dimLength->data[0] + n] = corTemp;
 
       if(n != k)
-        set_REAL8_matrix_value( corMat, n, k, corTemp );
+        corMat->data[n*corMat->dimLength->data[0] + k] = corTemp;
 
       n++;
     }
@@ -3131,14 +3132,16 @@ REAL8Array *create_covariance_matrix( ParamData *data, REAL8Array *corMat,
         if( data[j].matPos != 0 ){
           /* if covariance matrix then isinv = 0 */
           if( isinv == 0 ){
-            set_REAL8_matrix_value( covMat, data[i].matPos-1, data[j].matPos-1,
-              get_REAL8_matrix_value( corMat, data[i].matPos-1, 
-              data[j].matPos-1 ) * data[i].sigma * data[j].sigma );
+            covMat->data[(data[i].matPos-1)*covMat->dimLength->data[0] +
+              data[j].matPos-1] =
+              corMat->data[(data[i].matPos-1)*corMat->dimLength->data[0] +
+              data[j].matPos-1] * data[i].sigma * data[j].sigma;
           }
           else if( isinv == 1 ){ /* doing matrix inverse */
-            set_REAL8_matrix_value( covMat, data[i].matPos-1, data[j].matPos-1,
-              get_REAL8_matrix_value( corMat, data[i].matPos-1, 
-              data[j].matPos-1 ) / ( data[i].sigma * data[j].sigma ) );
+            covMat->data[(data[i].matPos-1)*covMat->dimLength->data[0] +
+              data[j].matPos-1] =
+              corMat->data[(data[i].matPos-1)*corMat->dimLength->data[0] + 
+              data[j].matPos-1] / ( data[i].sigma * data[j].sigma );
           }
           else{
             fprintf(stderr, "Error... in setting covariance matrix isinv must \
@@ -3172,8 +3175,8 @@ REAL8Array *check_positive_definite( REAL8Array *matrix ){
 
   for( i=0; i<(INT4)eigenvec->dimLength->data[0]; i++ ){
     for( j=0; j<(INT4)eigenvec->dimLength->data[1]; j++ ){
-      set_REAL8_matrix_value( eigenvec, i, j, 
-        get_REAL8_matrix_value(matrix, i, j) );
+      eigenvec->data[i*eigenvec->dimLength->data[0] + j] =
+        matrix->data[i*matrix->dimLength->data[0] + j];
     }
   }
 
@@ -3203,8 +3206,8 @@ REAL8Array *check_positive_definite( REAL8Array *matrix ){
      close to the precision of REAL8 numbers */
   for( i=0; i<(INT4)eigenvec->dimLength->data[0]; i++ ){
     for( j=0; j<(INT4)eigenvec->dimLength->data[1]; j++ ){
-      set_REAL8_matrix_value( eigenvec, i, j, 
-        get_REAL8_matrix_value( posdef, i, j) );
+      eigenvec->data[i*eigenvec->dimLength->data[0] + j] =
+        posdef->data[i*posdef->dimLength->data[0] + j];
     }
     eigenval->data[i] = 0.;
   }
@@ -3265,12 +3268,11 @@ REAL8Array *convert_to_positive_definite( REAL8Array *nonposdef ){
 
   for( i=0; i<length; i++ ){
     for( j=0; j<length; j++ ){
-      set_REAL8_matrix_value( eigenvec, i, j, 
-        get_REAL8_matrix_value(nonposdef, i, j) );
+      eigenvec->data[i*length + j] = nonposdef->data[i*length + j];
 
       /* initialise Lprime and T to zeros */
-      set_REAL8_matrix_value( Lprime, i, j, 0. );
-      set_REAL8_matrix_value( T, i, j, 0. );
+      Lprime->data[i*length + j] = 0.;
+      T->data[i*length + j] =  0.;
     }
   }
 
@@ -3283,28 +3285,27 @@ REAL8Array *convert_to_positive_definite( REAL8Array *nonposdef ){
      zero if eigen value is negative */
   for( i=0; i<length; i++ )
     if( eigenval->data[i] > 0. )
-      set_REAL8_matrix_value( Lprime, i, i, eigenval->data[i] );
+      Lprime->data[i*length + i] = eigenval->data[i];
 
   /* compute scaling matrix T */
   for( i=0; i<length; i++ ){
     Tval = 0.;
     for( j=0; j<length; j++ ){
-      Tval += get_REAL8_matrix_value( eigenvec, i, j ) * 
-              get_REAL8_matrix_value( eigenvec, i, j ) *
-              get_REAL8_matrix_value( Lprime, j, j );
+      Tval += eigenvec->data[i*length + j] * eigenvec->data[i*length + j] *
+         Lprime->data[j*length + j];
     }
 
     Tval = 1./Tval;
 
     /* really we just want the sqrt of T */
-    set_REAL8_matrix_value( T, i, i, sqrt(Tval) );
+    T->data[i*length + i] = sqrt(Tval);
   }
 
   /* convert Lprime to sqrt(lambdaprime) */
   for( i=0; i<length; i++ ){
-    REAL8 tempL = get_REAL8_matrix_value(Lprime, i, i);
+    REAL8 tempL = Lprime->data[i*length + i];
 
-    set_REAL8_matrix_value( Lprime, i, i, sqrt(tempL) );
+    Lprime->data[i*length + i] = sqrt(tempL);
   }
 
   /* Bprime = S*sqrt(lambdaprime); */
@@ -3336,81 +3337,11 @@ REAL8Array *convert_to_positive_definite( REAL8Array *nonposdef ){
      original value */
   for( i=0; i<length; i++ ){
     for( j=0; j<length; j++ ){
-      if( fabs(get_REAL8_matrix_value( posdef, i, j ) -
-            get_REAL8_matrix_value( nonposdef, i, j )) <= LAL_REAL8_EPS ){
-        set_REAL8_matrix_value( posdef, i, j, 
-          get_REAL8_matrix_value( nonposdef, i, j ) );
-      }
+      if( fabs(posdef->data[i*length + j]-nonposdef->data[i*length + j]) <=
+        LAL_REAL8_EPS)
+        posdef->data[i*length + j] = nonposdef->data[i*length + j];
     }
   }
 
   return posdef;
-}
-
-
-
-/* function to get the value of the ith column and jth row from a 2D matrix */
-REAL8 get_REAL8_matrix_value( REAL8Array *matrix, INT4 i, INT4 j ){
-  REAL8 val=0.;
-
-  /* check that matrix is not NULL */
-  if( matrix == NULL ){
-    fprintf(stderr, "Error... matrix is NULL!\n");
-    exit(0);
-  }
-
-  /* check that matrix dimemsions are not NULL */
-  if( matrix->dimLength == NULL ){
-    fprintf(stderr, "Error... matrix dimensions not defined!\n");
-    exit(0);
-  }
-
-  /* check that matrix is two dimensional */
-  if( matrix->dimLength->length != 2 ){
-    fprintf(stderr, "Error... matrix is not 2D!\n");
-    exit(0);
-  }
-
-  /* check that i and j are in the range */
-  if( (i >= (INT4)matrix->dimLength->data[0] || 
-       j >= (INT4)matrix->dimLength->data[1]) && (i < 0 || j < 0) ){
-    fprintf(stderr, "Error... i or j not in matrix range!\n");
-    exit(0);
-  }
-
-  val = matrix->data[i*matrix->dimLength->data[0] + j];
-
-  return val;
-}
-
-
-
-/* function to set the value of the ith column and jth row of a 2D matrix */
-void set_REAL8_matrix_value( REAL8Array *matrix, INT4 i, INT4 j, REAL8 val ){
-  /* check that matrix is not NULL */
-  if( matrix == NULL ){
-    fprintf(stderr, "Error... matrix is NULL!\n");
-    exit(0);
-  }
-
-  /* check that matrix dimemsions are not NULL */
-  if( matrix->dimLength == NULL ){
-    fprintf(stderr, "Error... matrix dimensions not defined!\n");
-    exit(0);
-  }
-
-  /* check that matrix is two dimensional */
-  if( matrix->dimLength->length != 2 ){
-    fprintf(stderr, "Error... matrix is not 2D!\n");
-    exit(0);
-  }
-
-  /* check that i and j are in the range */
-  if( (i >= (INT4)matrix->dimLength->data[0] || 
-       j >= (INT4)matrix->dimLength->data[1]) && (i < 0 || j < 0) ){
-    fprintf(stderr, "Error... i or j not in matrix range!\n");
-    exit(0);
-  }
-
-  matrix->data[i*matrix->dimLength->data[0] + j] = val;
 }
