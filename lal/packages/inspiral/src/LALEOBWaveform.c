@@ -2043,7 +2043,7 @@ LALEOBWaveformEngine (
     * added the phase information is not used in injetions, only hplus and hcross
     * and therefore it shouldn't matter what phasing is as long as it is nonzero.
     */
-       if ( i >= count ) 
+       if ( params->approximant == EOBNR && i >= hiSRndx ) 
        {
 	 phse->data[i] = phse->data[i-1]+LAL_PI/20.;
        }
