@@ -209,23 +209,29 @@ REAL4 XLAL2DRingMetricDistance( REAL4 fa, REAL4 fb, REAL4 Qa, REAL4 Qb )
 }
 
 /* <lalVerbatim file="RingCP"> */
-REAL4 XLAL3DRingMetricDistance( REAL4 fa, REAL4 fb, REAL4 Qa, REAL4 Qb, INT8 ta, INT8 tb )
+REAL4 XLAL3DRingMetricDistance( REAL4 fa, REAL4 fb, REAL4 Qa, REAL4 Qb, REAL8 dt )
 /* </lalVerbatim> */
 {  
-  REAL4 Q2 = Qa*Qa;
-  REAL4 gQQ;
-  REAL4 gff;
-  REAL4 gQf;
-  REAL4 gtt;
+  REAL4 gQQ, gff, gtt;
+  REAL4 gQf, gtf, gtQ;
+  REAL4 df, dQ, ds2;
+  REAL4 f = (fa+fb)/2.;
+  REAL4 Q = (Qa+Qb)/2.;
+  REAL4 Q2 = Q*Q;
 
-/* The metric components need to be updated for the new metric. */
-/* Here I just copied the 2D coefficients and made gtt up (to aviod warnings). */  
-  gQQ = ( 3.0 + 16.0 * Q2 * Q2) / ( Q2 * ( 1.0 + 4.0 * Q2 ) * ( 1.0 + 4.0 * Q2 ) );
-  gff = ( 3.0 + 8.0 * Q2) / ( fa * fa);
-  gQf = - 2.0 * ( 3.0 + 4.0 * Q2 ) / ( Qa * fa * ( 1.0 + 4.0 * Q2 ));
-  gtt = 4.0 * fa * fa / (Qa *Qa);
+  gQQ = ( 1. + 28.*Q2*Q2 + 128.*Q2*Q2*Q2 + 64.*Q2*Q2*Q2*Q2) / ( 4. * Q2 * ( 1. + 6.*Q2 + 8.*Q2*Q2 )*( 1. + 6.*Q2 + 8.*Q2*Q2 ) );
+  gff = ( 1. + 6.*Q2 + 16.*Q2*Q2) / ( 4. * f*f * ( 1. + 2.*Q2 ) );
+  gtt = ( LAL_PI*LAL_PI * f*f ) * ( 1. + 4.*Q2 ) / ( Q2 );
+  gQf = - ( 1. + 2.*Q2 + 8.*Q2*Q2 ) / ( 4.*Q*f * ( 1. + 6.*Q2 + 8.*Q2*Q2 ) );
+  gtf = - ( LAL_PI * Q ) * ( 1. + 4.*Q2) / ( 1. + 2.*Q2 );
+  gtQ = ( LAL_PI * f ) * ( 1. - 2.*Q2 ) / ( ( 1. + 2.*Q2 )*( 1. + 2.*Q2 ) );
   
-  return ( ( gQQ * pow(Qb-Qa,2) + gQf * (Qb-Qa) * (fb-fa) + gff * pow(fb-fa,2)+ gtt * pow(tb-ta,2) ) );
+  df = fb - fa;
+  dQ = Qb - Qa;
+  
+  ds2 = ( gQQ * dQ*dQ + gff * df*df + gtt * dt*dt + gQf * 2.*dQ*df + gtf * 2.*dt*df + gtQ * 2.*dt*dQ );
+
+  return ( ds2 );
 }
 
 
