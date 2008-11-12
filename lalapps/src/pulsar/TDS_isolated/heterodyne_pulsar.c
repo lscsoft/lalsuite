@@ -892,7 +892,7 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
         baryinput.dInv = 1./(hetParams.het.dist*1e3*LAL_C_SI*lyr_pc);
       }
       else
-        baryInput.dInv = 0.; /* no parallax */
+        baryinput.dInv = 0.; /* no parallax */
     }
     else{                                /* using updated params */
       if( hetParams.hetUpdate.px != 0. ){
@@ -902,7 +902,7 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
         baryinput.dInv = 1./(hetParams.hetUpdate.dist*1e3*LAL_C_SI*lyr_pc);
       }
       else
-        baryInput.dInv = 0.; /* no parallax */
+        baryinput.dInv = 0.; /* no parallax */
     }
   }
 
