@@ -824,20 +824,22 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
     }
     else if(!strcmp(val[i],"pmra") || !strcmp(val[i],"PMRA")) {
       /* convert pmra from mas/year to rads/sec */
-      output->pmra = LAL_PI_180*atof(val[i+1])/(60.0*60.0*1000.*365.25);
+      output->pmra = LAL_PI_180*atof(val[i+1])/(60.0*60.0*1000.*365.25*86400.);
       j++;
       if(atoi(val[i+2])==1 && i+2<k){
-        output->pmraErr = LAL_PI_180*atof(val[i+3])/(60.0*60.0*1000.*365.25);
+        output->pmraErr =
+          LAL_PI_180*atof(val[i+3])/(60.0*60.0*1000.*365.25*86400.);
         j+=2;
       }
     }
     else if(!strcmp(val[i],"pmdec") || !strcmp(val[i],"PMDEC")) {
       /* convert pmdec from mas/year to rads/sec */
-      output->pmdec = LAL_PI_180*atof(val[j+1])/(60.0*60.0*1000.*365.25);
+      output->pmdec = LAL_PI_180*atof(val[j+1])/(60.0*60.0*1000.*365.25*86400.);
       j++;
 
       if(atoi(val[i+2])==1 && i+2<k){
-        output->pmdecErr = LAL_PI_180*atof(val[i+3])/(60.0*60.0*1000.*365.25);
+        output->pmdecErr =
+          LAL_PI_180*atof(val[i+3])/(60.0*60.0*1000.*365.25*86400.);
         j+=2;
       }
     }
