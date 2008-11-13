@@ -306,6 +306,8 @@ def analyze_ifo(ifo_name,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
                 insp.set_bank(GeoBank)
              else:
                 insp.set_bank(bank.get_output())
+             # XXX: ensure output is added to list of output files
+             output = insp.get_output()
              if opts.datafind: insp.add_parent(df)
              if inspinjNode and opts.inspinj: insp.add_parent(inspinjNode) 
              if (opts.template_bank and not GeoBank): insp.add_parent(bank)
@@ -559,6 +561,8 @@ def trig_inspiral(ifo_data,ifo_name,coinc_data,coinc_ifos,trig_job,\
               else: insp.set_cache(cp.get('datafind',ifo_name+'-cache')) 
               if not calibrated: insp.calibration()
               insp.set_bank(trigbank.get_output())
+              # XXX: ensure output is added to list of output files
+              output = insp.get_output()
               if opts.datafind: insp.add_parent(seg.get_df_node())
               if opts.trigbank: insp.add_parent(trigbank)
               if inspinjNode and opts.inspinj: insp.add_parent(inspinjNode)
@@ -694,6 +698,8 @@ def follow_up(ifo_data,ifo_name,coinc_data,coinc_ifos,tmplt_follow_job,\
             if not calibrated: insp.calibration()
             insp.set_bank(bank.get_output())
             if approximant: insp.add_var_opt('approximant', approximant)
+            # XXX: ensure output is added to list of output files
+            output = insp.get_output()
             if opts.datafind: insp.add_parent(seg.get_df_node())
             if opts.td_follow_bank: insp.add_parent(bank)
             if opts.td_follow_inspiral: dag.add_node(insp)
@@ -1050,7 +1056,8 @@ def coherent_trig_inspiral(ifo_data,ifo_name,cohbank_data,ifos,trig_coh_jobs,
             else: insp.set_cache(cp.get('datafind',ifo_name+'-cache')) 
             if not calibrated: insp.calibration()
             insp.set_bank(trigbank.get_output())
-
+            # XXX: ensure output is added to list of output files
+            output = insp.get_output()
             if opts.coherent_bank: insp.add_parent(trigbank)
             if opts.coherent_bank: dag.add_node(insp)
 
