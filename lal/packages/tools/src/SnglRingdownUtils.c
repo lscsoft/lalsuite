@@ -432,13 +432,14 @@ LALCompareRingdowns (
       REAL8 dt_min = dt - fabs(params->lightTravelTime[ifoaNum][ifobNum]);
       REAL8 dt_max = dt + fabs(params->lightTravelTime[ifoaNum][ifobNum]);
       REAL4 ds2_min = XLAL3DRingMetricDistance( fa, fb, Qa, Qb, dt );
-      
-      for ( dt = dt_min ; dt < dt_max ; dt += 0.00012207) // estimate true time delay
+
+      /* estimate true time delay */
+      for ( dt = dt_min ; dt < dt_max ; dt += 0.00012207)
       {
         REAL4 ds2 = XLAL3DRingMetricDistance( fa, fb, Qa, Qb, dt );
         if (ds2 < ds2_min) ds2_min = ds2;
       }
-      
+
       dsab = ds2_min;
       dsba = ds2_min;
     }
