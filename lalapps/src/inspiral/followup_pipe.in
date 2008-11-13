@@ -287,7 +287,7 @@ if not opts.disable_followup:
   anaQscanJob     = analyseQscanJob(opts,cp)
   frcheckJob      = FrCheckJob(opts,cp)
   statusJob       = IFOstatus_checkJob(opts,cp)
-  MCMCJob 	  = mcmcJob(opts,cp)
+  MCMCJob 	  = followupmcmcJob(opts,cp)
   PLOTMCMCJob     = plotmcmcJob(opts,cp)
   headInspJob     = followUpInspJob(cp, 'head')
   cohInspJob     = followUpInspJob(cp, 'coh')
@@ -464,10 +464,16 @@ if not opts.disable_followup:
       frcheckNode = FrCheckNode(frcheckJob,inspiral_process_params[ifo], ifo, trig, cp, opts, dag, inspiralDataFindNode.outputFileName, inspiralDataFindNode, 'inspiral_datafind')
 
       # MCMC JOBS
-      MCMCNode = mcmcNode(MCMCJob,inspiral_process_params[ifo], ifo, trig, cp, opts, dag, inspiralDataFindNode.outputFileName, inspiralDataFindNode, 'inspiral_datafind')
+      # run multiple MCMC chains for each trigger (1 chain = 1 node)
+      chainNumber = string.strip(cp.get('mcmc','chain_nb'))
+      mcmcIdList = []
+      for k in range(int(chainNumber)):
+        randomseed = [str(trig.gpsTime[ifo] + k).split('.')[0][5:9],str(trig.gpsTime[ifo]).split('.')[1]]
+        MCMCNode = followupmcmcNode(MCMCJob,inspiral_process_params[ifo], ifo, trig, randomseed, cp, opts, dag)
+        mcmcIdList.append(MCMCNode.id)
 
       # PLOT MCMC JOBS
-      PLOTMCMCNode = plotmcmcNode(PLOTMCMCJob,ifo,trig,cp,opts,dag,MCMCNode)
+      PLOTMCMCNode = plotmcmcNode(PLOTMCMCJob,ifo,trig,mcmcIdList,cp,opts,dag)
 
       # SETUP STATUS SUMMARY PLOT JOBS
       statusNode = IFOstatus_checkNode(statusJob, ifo, trig, cp, opts, dag)
