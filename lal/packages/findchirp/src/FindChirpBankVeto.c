@@ -411,7 +411,6 @@ XLALFindChirpSortTemplatesByLevel( InspiralTemplate *bankHead, UINT4 num)
   while(bankHead)
   {
     bankArray[i] = bankHead; /* populate pointer array */
-    fprintf(stderr,"Level Sort() %d chirpmass %f\n",i,bankHead->chirpMass);
     bankHead=bankHead->next;
     i++;
   }
