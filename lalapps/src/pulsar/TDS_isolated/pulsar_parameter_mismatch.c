@@ -539,6 +539,8 @@ void SetMCMCPulsarParams( BinaryPulsarParams *pulsarParams, ParamData *data,
       pulsarParams->e = data[matPos->data[i]].val;
     else if( !strcmp(data[matPos->data[i]].name, "T0") )
       pulsarParams->T0 = data[matPos->data[i]].val;
+    else if( !strcmp(data[matPos->data[i]].name, "Tasc") )
+      pulsarParams->Tasc = data[matPos->data[i]].val;
     else if( !strcmp(data[matPos->data[i]].name, "Pb") )
       pulsarParams->Pb = data[matPos->data[i]].val;
     else if( !strcmp(data[matPos->data[i]].name, "Om") )
@@ -895,8 +897,9 @@ files */
     paramData[11].val = params.eps2;
     paramData[11].sigma = params.eps2Err;
 
-    paramData[10].val = params.Tasc;
-    paramData[10].sigma = params.TascErr;
+    paramData[9].name = "Tasc";
+    paramData[9].val = params.Tasc;
+    paramData[9].sigma = params.TascErr;
 
     paramData[12].name = "e1dt";
     paramData[12].val = params.eps1dot;

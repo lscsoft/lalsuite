@@ -2625,6 +2625,8 @@ void set_mcmc_pulsar_params( BinaryPulsarParams *pulsarParams, ParamData *data,
       pulsarParams->e = data[matPos->data[i]].val;
     else if( !strcmp(data[matPos->data[i]].name, "T0") )
       pulsarParams->T0 = data[matPos->data[i]].val;
+    else if( !strcmp(data[matPos->data[i]].name, "Tasc") )
+      pulsarParams->Tasc = data[matPos->data[i]].val;
     else if( !strcmp(data[matPos->data[i]].name, "Pb") )
       pulsarParams->Pb = data[matPos->data[i]].val;
     else if( !strcmp(data[matPos->data[i]].name, "Om") )
@@ -2796,8 +2798,9 @@ matrix\n");
       }
       else if( diag <= 0. && fabs(diag) <= LAL_REAL8_EPS ){
         /* diag = LAL_REAL8_EPS; */
-        diag = 0.; /* set to zero as setting it to LAL_REAL8_EPS sometimes
-                      gives a value that's far larger than it should be */
+        /* diag = 0.; */ /* set to zero as setting it to LAL_REAL8_EPS sometimes
+                      is a value that's far larger than it should be */
+        diag = fabs(diag);
       }
       else if( diag <= 0. && fabs(diag) >= LAL_REAL8_EPS && k == length-1 ){
         /* this is a kludge as a lot of the matricies seem to have entries
@@ -2987,8 +2990,9 @@ REAL8Array *read_correlation_matrix( CHAR *matrixFile,
     paramData[11].val = params.eps2;
     paramData[11].sigma = params.eps2Err;
 
-    paramData[10].val = params.Tasc;
-    paramData[10].sigma = params.TascErr;
+    paramData[9].name = "Tasc";
+    paramData[9].val = params.Tasc;
+    paramData[9].sigma = params.TascErr;
 
     paramData[12].name = "e1dt";
     paramData[12].val = params.eps1dot;
