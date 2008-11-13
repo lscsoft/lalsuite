@@ -243,6 +243,7 @@ static void XLALBBHPhenWaveFD ( BBHPhenomParams  *params,
     amp0 = pow(LAL_MTSUN_SI*totalMass, 5./6.)*pow(fMerg,-7./6.)/pow(LAL_PI,2./3.);
     amp0 *= pow(5.*eta/24., 1./2.)/(template->distance/LAL_C_SI);  
     amp0 *= 4.*sqrt(5./(64.*LAL_PI));
+    amp0 *= 4.*sqrt(5./(64.*LAL_PI));
 
     /* fill the zero and Nyquist frequency with zeros */
     *(signal->data+0) = 0.;
