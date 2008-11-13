@@ -138,6 +138,9 @@ parser.add_option("-e", "--plotethinca" ,action="store_true",default=False,\
 parser.add_option("-M", "--plotinspmissed" ,action="store_true",default=False,\
     help="run plotinspmissed to plot missed triggers")
 
+parser.add_option("-F", "--plotinspfound" ,action="store_true",default=False,\
+    help="run plotinpfound to check found triggers")
+
 parser.add_option("-j", "--plotinspinj" ,action="store_true",default=False,\
     help="run plotinspinj to plot inspiral injections.")
 
@@ -572,6 +575,32 @@ if opts.plotinspmissed:
 
   all_jobs.extend(plotinspmissed_jobs.values())
 
+#plotinspfound
+if opts.plotinspfound:
+
+  plotinspfound_jobs = {}
+  this_section = "plotinspfound"
+  cp = set_common_options(cp, this_section)
+
+  if opts.first_stage:
+    print >>sys.stderr, "warning: plotinspfound runs with second stage inputs.  Skipping..."
+  if opts.second_stage:
+    if cp.get("pipeline","inj-suffix") == '*INJ':
+      print >>sys.stderr, "warning: plotinspfound does not work with '*INJ'. Skipping..."
+    else:
+      plotinspfound_jobs['plotinspfound'] = inspiral.PlotInspfoundJob(cp)
+
+      plotinspfound_jobs['plotinspfound'].add_opt( "inj-suffixes",
+                                             cp.get("pipeline","inj-suffix") )
+      for ifo in ifolist:
+        plotinspfound_jobs['plotinspfound'].add_opt(
+                                             "%s-triggers" % ifo.lower(), "" )
+      plotinspfound_jobs['plotinspfound'].set_sub_file( basename
+                                               + '.plotinspfound' + subsuffix )
+
+  all_jobs.extend(plotinspfound_jobs.values())
+
+
 #ploteffdistcut
 if opts.ploteffdistcut:
 
@@ -793,6 +822,13 @@ if opts.plotinspmissed:
       combostring = combo2str(ifos)
       plotinspmissed_node =inspiral.PlotInspmissedNode(plotinspmissed_jobs[combostring + "SECOND"])
       dag.add_node(plotinspmissed_node)
+
+if opts.plotinspfound:
+  if len( plotinspfound_jobs ) != 0:
+    # add an plotinspfound job
+    plotinspfound_node =inspiral.PlotInspfoundNode(plotinspfound_jobs['plotinspfound'])
+    dag.add_node(plotinspfound_node)
+
 
 if opts.ploteffdistcut:
   if opts.first_stage:
