@@ -1,13 +1,13 @@
 /*******************************************************************************
   Matt Pitkin - 08/08/07
-  
+
   pulsar_parameter_estimation.h
-  
+
   Header file for pulsar_parameter_estimation.c
-  
+
 *******************************************************************************/
 
-/* 
+/*
   Author:
   $Id$
 */
@@ -43,7 +43,7 @@
 
 #include <lalapps.h>
 
-#ifdef  __cplusplus
+#ifdef __cplusplus
 extern "C" {
 #endif
 
@@ -52,6 +52,10 @@ extern "C" {
 
 /* macro to perform logarithmic addition log(exp(x) + exp(y)) */
 #define PLUS(x,y) ( x>y ? x+log(1.+exp(y-x)) : y+log(1.+exp(x-y)) )
+
+/* macro to calculate the area of a trapezium for on logs */
+/* logarea = log(0.5) + log(width) + log(exp(logHeight1) + exp(logHeight2)) */
+#define LOG_TRAPEZIUM(h1, h2, w) ( -0.693147180559945 + log(w) + PLUS(h1, h2) )
 
 /* Usage format string */
 #define USAGE \
@@ -100,9 +104,9 @@ extern "C" {
 " --psiprior          type of prior on psi - uniform or gaussian\n"\
 " --psimean           (REAL8) mean of a gaussian prior on psi\n"\
 " --psisig            (REAL8) std. dev. of a gaussian prior on psi\n"\
-" --ciprior           type of prior on cos(iota) - uniform or gaussian\n"\
-" --cimean            (REAL8) mean of a gaussian prior on cos(iota)\n"\
-" --cisig             (REAL8) std. dev. of a gaussian prior on cos(iota)\n"\
+" --iotaprior         type of prior on iota - uniform or gaussian\n"\
+" --iotamean          (REAL8) mean of a gaussian prior on iota\n"\
+" --iotasig           (REAL8) std. dev. of a gaussian prior on iota\n"\
 "\n"\
 " MCMC parameters:-\n"\
 " --mcmc              set to perform an MCMC\n"\
@@ -137,7 +141,6 @@ extern "C" {
 
 #define SIXTH 0.166666666666666666666666666666666666666667L
 #define TWENTYFOURTH 0.04166666666666666666666666666666666666666667L
-#define LOG_HALF -0.693147180559945
 
 /** define structures */
 
@@ -201,7 +204,7 @@ typedef struct tagMCMCParams{
 }MCMCParams;
 
 typedef struct tagPriorVals{
-  CHAR *h0Prior, *phiPrior, *psiPrior, *ciotaPrior; /* prior type e.g.
+  CHAR *h0Prior, *phiPrior, *psiPrior, *iotaPrior; /* prior type e.g.
 "uniform", "jeffreys" or "gaussian" */
 
   IntrinsicPulsarVariables vars;
@@ -210,7 +213,7 @@ typedef struct tagPriorVals{
   REAL8 meanh0, stdh0;
   REAL8 meanphi, stdphi;
   REAL8 meanpsi, stdpsi;
-  REAL8 meanciota, stdciota;
+  REAL8 meaniota, stdiota;
 }PriorVals;
 
 /* a structure to hold the command line input values */
@@ -345,9 +348,6 @@ from -pi/4 to pi/4 in psi */
 void response_lookup_table(REAL8 t0, LALDetAndSource detAndSource,
   DetRespLookupTable *lookupTable);
 
-/* function to do the trapezium rule for integration on logs  */
-REAL8 log_trapezium(REAL8 logHeight1, REAL8 logHeight2, REAL8 width);
-
 /* factorial function */
 REAL8 log_factorial(INT4 num);
 
@@ -385,18 +385,10 @@ REAL8Array *convert_to_positive_definite( REAL8Array *nonposdef );
 ParamData *multivariate_normal_deviates( REAL8Array *covmat, ParamData *means,
   RandomParams *randomParams );
 
-/* function to take in a 2D matrix in a REAL8Array and output the value from
-   the ith row and jth column (starting from zero in the normal C converntion)*/
-REAL8 get_REAL8_matrix_value( REAL8Array *matrix, INT4 i, INT4 j );
-
-/* function to take in a 2D matrix in a REAL8Array and set the value of
-   the ith row and jth column (starting from zero in the normal C converntion)*/
-void set_REAL8_matrix_value( REAL8Array *matrix, INT4 i, INT4 j, REAL8 val );
-
 void set_mcmc_pulsar_params( BinaryPulsarParams *pulsarParams, ParamData *data,
   INT4Vector *matPos );
 
-#ifdef  __cplusplus
+#ifdef __cplusplus
 }
 #endif
 
