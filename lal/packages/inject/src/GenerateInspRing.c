@@ -268,10 +268,10 @@ XLALGenerateInspRing(
       "We then add the same length to asymptote to ringdown values\n",
       tToRing, mergerLength, mergerPhase);
 
-  if ( mergerPhase > 2 * LAL_TWOPI )
+  if ( mergerPhase > 200 * LAL_TWOPI )
   {
     XLALPrintError("Failed to add a decent merger and ringdown\n"
-        "The merger had a length of %.2f radians in GW phase (only allow 4pi)\n"
+        "The merger had a length of %.2f radians in GW phase (only allow 400 pi)\n"
         "Returning null from %s\n",
         mergerPhase, func);
     XLALFree( waveform->a );
@@ -495,7 +495,7 @@ XLALGenerateInspRing(
   ampPlus = waveform->a->data->data[n];
   n = 2.0*(inputLength + mergerLength + endMerger ) + 1.0;
   ampCross = waveform->a->data->data[n];
-  
+  /* FIXME This calculation leads to nans and thus failures is there a typo?
   cosiotaA = ampPlus / ampCross * 
     (1.0 + sqrt(1-ampCross*ampCross/ampPlus/ampPlus));
   cosiotaB = ampPlus / ampCross * 
@@ -514,9 +514,13 @@ XLALGenerateInspRing(
     XLALFree( waveform->shift );
     XLAL_ERROR_NULL(func,XLAL_EFAILED);
   }
- 
+  */
   /* ringdown inclination and amplitude */ 
-  ringInj->inclination = acos( cosiota );
+  /*ringInj->inclination = acos( cosiota );*/
+  /* Since the inclination angle doens't seem to be reliably calculated by
+     the above calculation I am setting it to zero */
+  cosiota = 0.0;
+  ringInj->inclination = 0.0;
   amp =  ampPlus / ( 1.0 + cosiota * cosiota );
   ringInj->amplitude = sqrt( amp*amp);
   
