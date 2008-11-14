@@ -252,6 +252,8 @@ typedef struct {
   BOOLEAN GPUready;		/**< use special single-precision  'GPU-ready' version */
 
   BOOLEAN version;		/**< output version information */
+
+  CHAR *outputFstatAtoms;	/**< output per-SFT, per-IFO 'atoms', ie quantities required to compute F-stat */
 } UserInput_t;
 
 /*---------- Global variables ----------*/
@@ -280,6 +282,7 @@ void WriteFStatLog ( LALStatus *status, const CHAR *log_fname, const CHAR *logst
 void getLogString ( LALStatus *status, CHAR **logstr, const ConfigVariables *cfg );
 
 CHAR *append_string ( CHAR *str1, const CHAR *append );
+int XLALoutputMultiFstatAtoms ( FILE *fp, MultiFstatAtoms *multiAtoms );
 
 /* ---------- scanline window functions ---------- */
 scanlineWindow_t *XLALCreateScanlineWindow ( UINT4 windowWings );
@@ -307,6 +310,7 @@ int main(int argc,char *argv[])
   LALStatus status = blank_status;	/* initialize status */
 
   FILE *fpFstat = NULL;
+  FILE *fpFstatAtoms = NULL;
   ComputeFBuffer cfBuffer = empty_ComputeFBuffer;
   ComputeFBufferREAL4 cfBuffer4 = empty_ComputeFBufferREAL4;
   REAL8 numTemplates, templateCounter;
@@ -387,6 +391,19 @@ int main(int argc,char *argv[])
 
       fprintf (fpFstat, "%s", GV.logstring );
     } /* if outputFstat */
+
+  /* if output of the F-stat 'atoms' (per-SFT components {a,b,Fa,Fb}_alpha) was requested, open output-file */
+  if (uvar.outputFstatAtoms)
+    {
+      if ( (fpFstatAtoms = fopen (uvar.outputFstatAtoms, "wb")) == NULL)
+	{
+	  LALPrintError ("\nError opening file '%s' for writing..\n\n", uvar.outputFstatAtoms);
+	  return (COMPUTEFSTATISTIC_ESYS);
+	}
+
+      fprintf (fpFstatAtoms, "%s", GV.logstring );
+    } /* if outputFstat */
+
 
   /* start Fstatistic histogram with a single empty bin */
   if (uvar.outputFstatHist) {
@@ -586,6 +603,13 @@ int main(int argc,char *argv[])
 
       }
 
+      if ( fpFstatAtoms )
+	{
+	  XLALoutputMultiFstatAtoms ( fpFstatAtoms, Fstat.multiFstatAtoms );
+	  XLALDestroyMultiFstatAtoms ( Fstat.multiFstatAtoms );
+	  Fstat.multiFstatAtoms = NULL;
+	}
+
     } /* while more Doppler positions to scan */
 
   /* ----- if using toplist: sort and write it out to file now ----- */
@@ -620,6 +644,9 @@ int main(int argc,char *argv[])
       fclose (fpFstat);
       fpFstat = NULL;
     }
+
+  if ( fpFstatAtoms )
+    fclose (fpFstatAtoms);
 
   /* ----- estimate amplitude-parameters for the loudest canidate and output into separate file ----- */
   if ( uvar.outputLoudest )
@@ -864,6 +891,8 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
 
   LALregINTUserStruct ( status, minStartTime, 	 0,  UVAR_OPTIONAL, "Earliest SFT-timestamp to include");
   LALregINTUserStruct ( status, maxEndTime, 	 0,  UVAR_OPTIONAL, "Latest SFT-timestamps to include");
+
+  LALregSTRINGUserStruct(status,outputFstatAtoms,0,  UVAR_OPTIONAL, "Output file for per-SFT F-statistic 'atoms' {a,b,Fa,Fb}_alpha");
 
   LALregBOOLUserStruct( status, version,	'V', UVAR_SPECIAL,  "Output version information");
 
@@ -1233,7 +1262,8 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
   cfg->CFparams.SSBprec = uvar->SSBprecision;
   cfg->CFparams.useRAA = uvar->useRAA;
   cfg->CFparams.bufferedRAA = uvar->bufferedRAA;
-  cfg->CFparams.upsampling = 1.0 * uvar->upsampleSFTs;
+  cfg->CFparams.upsampling = 1.0 * uvar->upsampleSFTs; 
+  cfg->CFparams.returnAtoms = ( uvar->outputFstatAtoms != NULL );
 
   /* ----- set fixed grid step-sizes from user-input for GRID_FLAT ----- */
   cfg->stepSizes.Alpha = uvar->dAlpha;
@@ -1917,3 +1947,33 @@ CHAR *append_string ( CHAR *str1, const CHAR *str2 )
   return outstr;
 
 } /* append_string() */
+
+
+int
+XLALoutputMultiFstatAtoms ( FILE *fp, MultiFstatAtoms *multiAtoms )
+{
+  const char *fn = "XLALoutputMultiFstatAtoms()";
+  UINT4 X, alpha;
+
+  if ( !fp || !multiAtoms )
+    XLAL_ERROR (fn, XLAL_EINVAL );
+
+  fprintf ( fp, "%% GPS                a(t_i)     b(t_i)            Fa(t_i)                 Fb(t_i)\n");
+
+  for ( X=0; X < multiAtoms->length; X++ )
+    {
+      FstatAtoms *thisAtom = multiAtoms->data[X];
+      for ( alpha=0; alpha < multiAtoms->data[X]->length; alpha ++ )
+	{
+	  fprintf ( fp, "%f   % f  % f     % f  % f     % f  % f \n",
+		    GPS2REAL8(thisAtom->timestamps[alpha]),
+		    thisAtom->a_alpha[alpha],
+		    thisAtom->b_alpha[alpha],
+		    thisAtom->Fa_alpha[alpha].re, thisAtom->Fa_alpha[alpha].im,
+		    thisAtom->Fb_alpha[alpha].re, thisAtom->Fb_alpha[alpha].im
+		    );
+	} /* for alpha < numSFTs */
+    } /* for X < numDet */
+
+  return XLAL_SUCCESS;
+} /* XLALoutputMultiFstatAtoms() */
