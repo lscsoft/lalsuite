@@ -205,6 +205,7 @@ int main(int argc, char *argv[]){
     if( params.PbdotErr != 0. ) countBin++;
     if( params.xdotErr != 0. ) countBin++;
     if( params.edotErr != 0. ) countBin++;
+    if( params.sErr != 0. ) countBin++;
   }
 
   /* set up random parameters */
@@ -298,6 +299,8 @@ int main(int argc, char *argv[]){
         if( i==0 ) fprintf(stderr, "Search over xdot\n");
       if( params.edotErr != 0. )
         if( i==0 ) fprintf(stderr, "Search over edot\n");
+      if( params.sErr != 0. )
+        if( i==0 ) fprintf(stderr, "Search over sini\n");
     }
 
     /* get new phase */
@@ -453,6 +456,8 @@ REAL8Vector *get_phi( double start, double deltaT, int npoints,
 
   /* allocate memory for phases */
   phis = XLALCreateREAL8Vector( npoints );
+
+  bary.dInv = 0.;
 
   for( i=0; i<npoints; i++){
     T0 = params.pepoch;
