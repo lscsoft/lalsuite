@@ -107,6 +107,7 @@ typedef struct
   REAL8 fBand;
   REAL8 startTime; 
   REAL8 endTime;
+  CHAR *IFO;
   CHAR  *timeStampsFile;
   LALStringVector *linefiles;
   INT4 blocksRngMed;
@@ -183,7 +184,10 @@ main(int argc, char *argv[]){
     exit(0); 
 
   /* set detector constraint */
-  constraints.detector = NULL;
+  if (LALUserVarWasSet(&uvar.IFO))
+    constraints.detector = uvar.IFO;
+  else
+    constraints.detector = NULL;
   
   if ( LALUserVarWasSet( &uvar.startTime ) ) {
     LAL_CALL ( LALFloatToGPS( &status, &startTimeGPS, &uvar.startTime), &status);
@@ -524,6 +528,8 @@ initUserVars (LALStatus *status, int argc, char *argv[], UserVariables_t *uvar)
 
   uvar->inputData = NULL;
 
+  uvar->IFO = NULL;
+
   /* default: read all SFT bins */
   uvar->fStart = -1;
   uvar->fBand = 0;
@@ -549,6 +555,7 @@ initUserVars (LALStatus *status, int argc, char *argv[], UserVariables_t *uvar)
   LALregREALUserStruct ( status, 	startTime, 	's', UVAR_OPTIONAL, 	"GPS start time");
   LALregREALUserStruct ( status, 	endTime,  	'e', UVAR_OPTIONAL, 	"GPS end time");
   LALregSTRINGUserStruct ( status, 	timeStampsFile, 't', UVAR_OPTIONAL, 	"Time-stamps file");
+  LALregSTRINGUserStruct ( status,      IFO,             0 , UVAR_OPTIONAL,     "Detector filter");
 
   LALregINTUserStruct ( status, 	blocksRngMed,  	'w', UVAR_OPTIONAL, 	"Running Median window size");
   LALregINTUserStruct ( status,         mthopOverSFTs,  'S', UVAR_OPTIONAL,     "Type of math. operation over SFTs:  0=arith-sum, 1=arith-mean, 2=arith-median, 3=harm-sum, 4=harm-mean, 5=power-2-sum, 6=power-2-mean, 7=min, 8=max");
