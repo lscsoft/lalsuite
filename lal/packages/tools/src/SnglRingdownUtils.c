@@ -458,14 +458,14 @@ LALCompareRingdowns (
       else if( (strcmp(aPtr->ifo,"H1")==0 && strcmp(bPtr->ifo,"L1")==0) 
  		|| (strcmp(aPtr->ifo,"L1")==0 && strcmp(bPtr->ifo,"H1")==0) )
       {
-        aPtr->ds2_H1H2=dsab;
-        bPtr->ds2_H1H2=dsba;
+        aPtr->ds2_H1L1=dsab;
+        bPtr->ds2_H1L1=dsba;
       }
       else if( (strcmp(aPtr->ifo,"H2")==0 && strcmp(bPtr->ifo,"L1")==0)
 		|| (strcmp(aPtr->ifo,"L1")==0 && strcmp(bPtr->ifo,"H2")==0) )
       {
-        aPtr->ds2_H1H2=dsab;
-        bPtr->ds2_H1H2=dsba;
+        aPtr->ds2_H2L1=dsab;
+        bPtr->ds2_H2L1=dsba;
       }
       else
       {
