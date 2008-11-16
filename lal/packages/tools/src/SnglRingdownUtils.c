@@ -350,6 +350,7 @@ LALCompareRingdowns (
   REAL4   fa, fb, Qa, Qb;
   REAL4   dsab = 0;
   REAL4   dsba = 0;
+  REAL8   step = 1./params->minimizerStep;
   InterferometerNumber ifoaNum,  ifobNum;
   SnglRingdownAccuracy aAcc, bAcc;
   
@@ -428,13 +429,14 @@ LALCompareRingdowns (
     }
     else if ( params->test == ds_sq_fQt )
     {
-      REAL8 dt = 1.e-9 * (tb - ta);
-      REAL8 dt_min = dt - fabs(params->lightTravelTime[ifoaNum][ifobNum]);
-      REAL8 dt_max = dt + fabs(params->lightTravelTime[ifoaNum][ifobNum]);
-      REAL4 ds2_min = XLAL3DRingMetricDistance( fa, fb, Qa, Qb, dt );
+      REAL8 dtab = 1.e-9 * (tb - ta);
+      REAL8 dt_min = dtab - fabs(params->lightTravelTime[ifoaNum][ifobNum]);
+      REAL8 dt_max = dtab + fabs(params->lightTravelTime[ifoaNum][ifobNum]);
+      REAL4 ds2_min = XLAL3DRingMetricDistance( fa, fb, Qa, Qb, dtab );
+      REAL8 dt;
 
       /* estimate true time delay */
-      for ( dt = dt_min ; dt < dt_max ; dt += 0.00012207)
+      for ( dt = dt_min ; dt < dt_max ; dt += step )
       {
         REAL4 ds2 = XLAL3DRingMetricDistance( fa, fb, Qa, Qb, dt );
         if (ds2 < ds2_min) ds2_min = ds2;
