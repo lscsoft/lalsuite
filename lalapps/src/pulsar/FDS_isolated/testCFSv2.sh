@@ -187,5 +187,6 @@ else
 fi
 
 ## clean up files
-rm -rf $SFTdir $outfile_v1 $outfile_v2NWon $outfile_v2NWoff Fstats Fstats.log
-
+if [ -z "$NOCLEANUP" ]; then
+    rm -rf $SFTdir $outfile_v1 $outfile_v2NWon $outfile_v2NWoff Fstats Fstats.log
+fi

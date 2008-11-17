@@ -114,5 +114,6 @@ else
 fi
 
 ## clean up files
-rm -f $outfile1 $outfile2 test1.dat test2.dat Fstats Fstats.log
-
+if [ -z "$NOCLEANUP" ]; then
+    rm -f $outfile1 $outfile2 test1.dat test2.dat Fstats Fstats.log
+fi

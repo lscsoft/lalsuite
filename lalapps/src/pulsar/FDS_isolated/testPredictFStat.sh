@@ -128,13 +128,6 @@ if ! tmp=`eval $cmdline`; then
 fi
 resPFS1=`echo $tmp | awk '{printf "%g", $1}'`
 
-
-
-## clean up files
-if [ -z "$NOCLEANUP" ]; then
-    rm -rf $SFTdir $outfile_pfs $outfile_pfs2;
-fi
-
 echo
 echo "----------------------------------------"
 echo " STEP 4: Comparing results: "
@@ -168,5 +161,7 @@ fi
 
 exit $res;
 
-
-
+## clean up files
+if [ -z "$NOCLEANUP" ]; then
+    rm -rf $SFTdir $outfile_pfs $outfile_pfs2;
+fi
