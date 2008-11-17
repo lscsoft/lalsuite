@@ -13,6 +13,7 @@ import ConfigParser
 import optparse
 import tempfile
 import urllib
+import subprocess
 
 ##############################################################################
 # import the modules we need to build the pipeline
@@ -501,8 +502,12 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dfOnly = False, \
      ldg_submit_dax_command += hipeDax +' '+ site
 
      print ldg_submit_dax_command
+     popen = subprocess.call(ldg_submit_dax_command.split())
+     #popen = subprocess.Popen(ldg_submit_dax_command.split())
+     #popen.communicate()
+     #status = popen.returncode
 
-     make_external_call(ldg_submit_dax_command)
+     #make_external_call(ldg_submit_dax_command,show_stdout=True, show_command=True)
  
   #print os.getcwd()
   #print ldg_submit_dax_command
@@ -560,8 +565,7 @@ def plot_setup(plotDir, config, logPath, stage, injectionSuffix,
       "plotinspinj", "plotinspinj-meta", \
       "plotsnrchi", "plotsnrchi-meta", \
       "plotinspiralrange", "plotinspiralrange-meta", \
-      "ploteffdistcut", "ploteffdistcut-meta", \
-			"plotinspfound"]
+      "ploteffdistcut", "ploteffdistcut-meta"]
 
   for seg in plotcp.sections():
     if not seg in plotSections: plotcp.remove_section(seg)
@@ -759,7 +763,6 @@ def injZeroSlidePlots(dag, plotDir, config, logPath, injectionSuffix,
   plotcp.set("plot-arguments","plotinspinj","")
   plotcp.set("plot-arguments","plotinjnum","")
   plotcp.set("plot-arguments","plotinspmissed","")
-  plotcp.set("plot-arguments","plotinspfound","")
   plotcp.set("plot-arguments","ploteffdistcut","")
   plotcp.set("plot-arguments","write-script","")
   injPlotNode = plot_setup( plotDir, \
