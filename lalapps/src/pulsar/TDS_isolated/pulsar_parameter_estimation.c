@@ -1688,6 +1688,22 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
         g2[j] = XLALCalloc(nGlitches + 1, sizeof(INT4));
     }
 
+    /* check that the number of glitch times entered as the same as the number
+       of glitches specified (count commas in the glitch time string */
+    pos1 = input.mcmc.glitchTimes;
+    j=0;
+    while( (pos2 = strchr(pos1, ',')) != NULL ){
+      pos1 = pos2 + 1;
+      j++;
+    }
+    if( j != input.mcmc.nGlitches-1 ){
+      fprintf(stderr, "Error... number of glitches specified is not the same as\
+ the number of glitch times given!\n");
+      exit(0);
+    }
+    pos1 = NULL;
+    pos2 = NULL;
+
     /* glitch times are seperated by commas so count them up */
     for( i = 0 ; i < nGlitches ; i++ ){
       if( nGlitches == 1 )
@@ -1699,7 +1715,7 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
           pos1 = pos2+1; /* first position equals the previous value */
 
         gtimestr = NULL;
-        gtimestr = malloc(256*sizeof(CHAR));
+        gtimestr = XLALMalloc(256*sizeof(CHAR));
 
         /* values are delimited by commas , */
         if( i < nGlitches - 1 ){
@@ -1708,6 +1724,12 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
         }
         else
           gtimestr = XLALStringDuplicate(pos1);
+
+        /* crude check that the time is valid */
+        if( atof(gtimestr) == 0. ){
+          fprintf(stderr, "Error... Glitch time is not valid!\n");
+          exit(0);
+        }
 
         glitchTimes[i] = LALTDBMJDtoGPS(atof(gtimestr)); /* convert to GPS */
 
@@ -1736,11 +1758,11 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
         for( k = 0 ; k < (INT4)data[j].times->length ; k++ ){
           /* first point after the last glitch */
           if( i > 0 && data[j].times->data[k] < glitchTimes[i-1] +
-              input.mcmc.glitchCut/2.){
-              g1[j][i] = k;
+              input.mcmc.glitchCut/2. ){
+              g1[j][i] = k+2;
            }
 
-          /* first point before current glitch */
+          /* end point of segment before current glitch */
           if( data[j].times->data[k] > glitchTimes[i] -
             input.mcmc.glitchCut/2. ){
             g2[j][i] = k;
@@ -1752,8 +1774,8 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
           /* point from final glitch to end of data */
           if( data[j].times->data[k] > glitchTimes[i] +
              input.mcmc.glitchCut/2. && i == nGlitches - 1 ){
-            g1[j][i+1] = k;
-            g2[j][i+1] = data[j].times->length;
+            g1[j][i+1] = k+1;
+            g2[j][i+1] = data[j].times->length-1;
 
             break;
           }
@@ -1781,7 +1803,15 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
         glitchData[i][j].chunkMax = data[i].chunkMax;
 
         n=0;
-        for( k = g1[i][j] ; k < g2[i][j] ; k++ ){
+        for( k = g1[i][j] ; k <= g2[i][j] ; k++ ){
+          if( k == g1[i][j] ){
+            fprintf(stderr, "pos = %d, time = %lf\n", g1[i][j],
+data[i].times->data[k] );
+          }
+          if(k == g2[i][j]){
+            fprintf(stderr, "pos = %d, time = %lf\n", g2[i][j],
+data[i].times->data[k] );
+          }
           glitchData[i][j].data->data[n] = data[i].data->data[k];
           glitchData[i][j].times->data[n] = data[i].times->data[k];
           n++;
