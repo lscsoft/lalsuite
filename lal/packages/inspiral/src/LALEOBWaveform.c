@@ -1861,7 +1861,7 @@ LALEOBWaveformEngine (
       /* than omegamatch - the frequency at which the ringdown is matched to  */
       /* merger waveform                                                      */
       /*----------------------------------------------------------------------*/
-      if (omega > omegamatch && params->approximant == EOBNR && !higherSR) 
+      if ( (omega > omegamatch && params->approximant == EOBNR && !higherSR) || (r < rn && !higherSR) )
       {
 	/* We are now going to work with a higher sampling rate */
 	/* Sometime in the future we might change code so that  */
