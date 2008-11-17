@@ -1804,14 +1804,6 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
 
         n=0;
         for( k = g1[i][j] ; k <= g2[i][j] ; k++ ){
-          if( k == g1[i][j] ){
-            fprintf(stderr, "pos = %d, time = %lf\n", g1[i][j],
-data[i].times->data[k] );
-          }
-          if(k == g2[i][j]){
-            fprintf(stderr, "pos = %d, time = %lf\n", g2[i][j],
-data[i].times->data[k] );
-          }
           glitchData[i][j].data->data[n] = data[i].data->data[k];
           glitchData[i][j].times->data[n] = data[i].times->data[k];
           n++;
