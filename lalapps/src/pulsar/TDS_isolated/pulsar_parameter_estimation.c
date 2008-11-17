@@ -1765,7 +1765,8 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
           /* end point of segment before current glitch */
           if( data[j].times->data[k] > glitchTimes[i] -
             input.mcmc.glitchCut/2. ){
-            g2[j][i] = k;
+            if( g2[j][i] == 0. ) /* check if it's been set already */
+              g2[j][i] = k;
 
             if(i != nGlitches - 1)
               break;
