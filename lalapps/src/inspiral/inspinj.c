@@ -1878,12 +1878,14 @@ int main( int argc, char *argv[] )
       simTable->inclination = fixed_inc;
     }
     else
-    {                               
-      simTable=XLALRandomInspiralOrientation(simTable, randParams,
-          iDistr, inclStd);
-    } while ( ! strcmp(waveform, "SpinTaylorthreePointFivePN") &&
-        ( simTable->inclination < eps ||
-          simTable->inclination > LAL_PI-eps) );
+    {                           
+      do {
+	simTable=XLALRandomInspiralOrientation(simTable, randParams,
+					       iDistr, inclStd);
+      } while ( ! strcmp(waveform, "SpinTaylorthreePointFivePN") &&
+		( simTable->inclination < eps ||
+		  simTable->inclination > LAL_PI-eps) );
+    }
 
     /* set polarization angle */
     simTable->polarization = psi;
