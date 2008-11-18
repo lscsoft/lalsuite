@@ -327,30 +327,25 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
         orbits = tt0/Pb;
       }
 
-      norbits = (INT4)floor(orbits);
+      norbits = (INT4)orbits;
 
-      if(orbits < 0)
-        norbits = norbits - 1;
+      if(orbits < 0.) norbits--;
 
       phase = LAL_TWOPI*(orbits - (REAL8)norbits); /* called phase in TEMPO */
-      /*phase = LAL_TWOPI*(orbits);*/
       du = 1.0;
 
       /* use numerical iteration to solve Kepler's eq for eccentric anomaly u */
       u = phase + e*sin(phase)*(1.0 + e*cos(phase));
 
+      while(fabs(du) > 1.0e-12){
+        du = (phase-(u-e*sin(u)))/(1.0-e*cos(u));
+        u += du;
+      }
       su = sin(u);
       cu = cos(u);
-      while(fabs(du) > 1.0e-12){
-        /* du = (phase-(u-e*sin(u)))/(1.0-e*cos(u)); */
-        du = (phase-(u-e*su))/(1.0-e*cu);
-        u += du;
-        su = sin(u);
-        cu = cos(u);
-      }
 
       /*fprintf(stderr, "Eccentric anomaly = %f, phase = %f.\n", u, phase);*/
-      sin_cos_LUT(&sw, &cw, w);      
+      sin_cos_LUT(&sw, &cw, w);
 
       /* see eq 5 of Taylor and Weisberg (1989) */
       /**********************************************************/
@@ -371,7 +366,7 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
           e*e)*cu - x*sw*su)/(1.0 - e*cu));
       }
     /**********************************************************/
-    }    
+    }
 
     /* use method from Taylor etal 1976 ApJ Lett and used in bnrybt.f */
     /**********************************************************/
@@ -427,12 +422,10 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
 
     tt0 = tb - Tasc;
     orbits = tt0/Pb - 0.5*(pbdot+xpbdot)*(tt0/Pb)*(tt0/Pb);
-    norbits = (INT4)floor(orbits);
-    if(orbits < 0.0)
-      norbits = norbits - 1.0;
+    norbits = (INT4)orbits;
+    if(orbits < 0.0) norbits--;
 
     phase=LAL_TWOPI*(orbits - (REAL8)norbits);
-    /*phase=LAL_TWOPI*(orbits);*/
 
     x = x + xdot*tt0;
 
@@ -519,24 +512,21 @@ different than DD model - TEMPO bnrymss.f */
     eth = e*(1.0+dth);
 
     orbits = (tt0/Pb) - 0.5*(pbdot+xpbdot)*(tt0/Pb)*(tt0/Pb);
-    norbits = (INT4)floor(orbits);
+    norbits = (INT4)orbits;
 
-    if(orbits < 0.0)
-      norbits = norbits - 1;
+    if(orbits < 0.0) norbits--;
 
     phase = LAL_TWOPI*(orbits - (REAL8)norbits);
 
     /* use numerical iteration to solve Kepler's eq for eccentric anomaly u */
     u = phase + e*sin(phase)*(1.0 + e*cos(phase));
+
+    while(fabs(du) > 1.0e-12){
+      du = (phase-(u-e*sin(u)))/(1.0-e*cos(u));
+      u += du;
+    }
     su = sin(u);
     cu = cos(u);
-    /* while(fabs(du) > 1.0e-12){ */
-    while(fabs(du) > LAL_REAL4_EPS){  
-      du = (phase-(u-e*su))/(1.0-e*cu);
-      u += du;
-      su = sin(u);
-      cu = cos(u);
-    }
 
     /* compute Ae as in TEMPO bnrydd.f */
     onemecu = 1.0 - e*cu;
