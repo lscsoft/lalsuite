@@ -17,10 +17,12 @@
 *  MA  02111-1307  USA
 */
 
+#include <lalapps.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
 #include <lal/AVFactories.h>
+#include <lal/UserInput.h>
 #include <lal/SFTfileIO.h>
 #include <lal/NormalizeSFTRngMed.h>
 #include <stdio.h>
@@ -30,48 +32,60 @@
 #include <time.h>
 #include <unistd.h>
 
-/*---------- empty initializers ---------- */
-LALStatus empty_status;
-SFTConstraints empty_constraints;
-/*---------- Global variables ----------*/
-
-INT4 lalDebugLevel = 1;
+RCSID("$Id");
 
 int main(int argc, char **argv)
 {
   FILE *fp  = NULL;
   FILE *fp2 = NULL;
   FILE *fp3 = NULL;
-  LALStatus status = empty_status;
+  LALStatus status = blank_status;
 
   SFTCatalog *catalog = NULL;
   SFTVector *sft_vect = NULL;
   INT4 i,j,k;
   UINT4 numBins, nSFT;
-  double f_min,f_max; 
-  SFTConstraints constraints=empty_constraints;
+  SFTConstraints constraints=empty_SFTConstraints;
   LIGOTimeGPS startTime, endTime; 
   double avg;
   REAL4 *timeavg;
   REAL8 f;
   char outfile[128],outfile2[128],outfile3[128];
-  if (argc!=7)
-  {
-   fprintf(stderr, "startGPS endGPS Detector f_min f_max where?\n"); 
-   return(0);
-  }  
-  
-  startTime.gpsSeconds = atoi(argv[1]);
+
+  BOOLEAN help = 0;
+  CHAR *SFTpatt = NULL;
+  CHAR *IFO = NULL;
+  INT4 startGPS = 0;
+  INT4 endGPS = 0;
+  REAL8 f_min = 0.0;
+  REAL8 f_max = 0.0;
+  INT4 blocksRngMed = 101;
+
+  lalDebugLevel = 0;
+  LAL_CALL (LALGetDebugLevel(&status, argc, argv, 'v'), &status);
+
+  LAL_CALL(LALRegisterBOOLUserVar  (&status, "help",         'h', UVAR_HELP,     "Print this help message",     &help        ), &status);
+  LAL_CALL(LALRegisterSTRINGUserVar(&status, "SFTs",         'I', UVAR_REQUIRED, "SFT location/pattern",        &SFTpatt     ), &status);
+  LAL_CALL(LALRegisterSTRINGUserVar(&status, "IFO",          'I', UVAR_REQUIRED, "Detector",                    &IFO         ), &status);
+  LAL_CALL(LALRegisterINTUserVar   (&status, "startGPS",     's', UVAR_REQUIRED, "Starting GPS time",           &startGPS    ), &status);
+  LAL_CALL(LALRegisterINTUserVar   (&status, "endGPS",       'e', UVAR_REQUIRED, "Ending GPS time",             &endGPS      ), &status);
+  LAL_CALL(LALRegisterREALUserVar  (&status, "fMin",         'f', UVAR_REQUIRED, "Minimum frequency",           &f_min       ), &status);
+  LAL_CALL(LALRegisterREALUserVar  (&status, "fMax",         'F', UVAR_REQUIRED, "Maximum frequency",           &f_max       ), &status);
+  LAL_CALL(LALRegisterINTUserVar   (&status, "blocksRngMed", 'w', UVAR_OPTIONAL,  "Running Median window size", &blocksRngMed), &status);
+
+  LAL_CALL(LALUserVarReadAllInput(&status, argc, argv), &status);
+  if (help)
+    return(0);
+
+  startTime.gpsSeconds = startGPS;
   startTime.gpsNanoSeconds = 0;
   constraints.startTime = &startTime; 
   
-  endTime.gpsSeconds = atoi(argv[2]);
+  endTime.gpsSeconds = endGPS;
   endTime.gpsNanoSeconds = 0;
   constraints.endTime = &endTime;
-  constraints.detector = argv[3];
-  f_min = atof(argv[4]);
-  f_max = atof(argv[5]);
-  LALSFTdataFind ( &status, &catalog,argv[6], &constraints );
+  constraints.detector = IFO;
+  LALSFTdataFind ( &status, &catalog,SFTpatt, &constraints );
   LALLoadSFTs ( &status, &sft_vect, catalog, f_min,f_max);
   LALDestroySFTCatalog( &status, &catalog);
 
@@ -105,7 +119,7 @@ int main(int argc, char **argv)
   }
  
  /* Find time average of normalized SFTs */
- LALNormalizeSFTVect(&status, sft_vect, 101);   
+ LALNormalizeSFTVect(&status, sft_vect, blocksRngMed);   
  timeavg = (REAL4 *)LALMalloc(numBins*sizeof(REAL4));
  for (j=0;j<nSFT;j++)
  { 
@@ -134,7 +148,9 @@ int main(int argc, char **argv)
  fclose(fp2);
  fclose(fp3);
 
-return(0);
+ LAL_CALL(LALDestroyUserVars(&status), &status);
+
+ return(0);
 
 }
 /* END main */

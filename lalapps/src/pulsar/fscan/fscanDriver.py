@@ -503,11 +503,11 @@ if (createSFTs):
   tagStringOut = '%s_%i' % (tagString, sftNodeCount)
   dagFID.write('VARS %s argList="%s" tagstring="%s"\n'%(sftDAGSUBJobName,argList,tagStringOut))
 
-# CREATE A CONDOR .sub FILE TO RUN spec_avg
+# CREATE A CONDOR .sub FILE TO RUN lalapps_spec_avg
 spectrumAverageFID = file('spectrumAverage.sub','w')
 spectrumAverageLogFile = subLogPath + '/' + 'spectrumAverage_' + dagFileName + '.log'
 spectrumAverageFID.write('universe = vanilla\n')
-spectrumAverageFID.write('executable = $ENV(SPECAVG_PATH)/spec_avg\n')
+spectrumAverageFID.write('executable = $ENV(SPECAVG_PATH)/lalapps_spec_avg\n')
 spectrumAverageFID.write('arguments = $(argList)\n')
 spectrumAverageFID.write('log = %s\n' % spectrumAverageLogFile)
 spectrumAverageFID.write('error = %s/spectrumAverage_$(tagstring).err\n' % logPath)
@@ -571,13 +571,13 @@ if (htmlFilename != None):
   htmlFID.write('<table style="width: 100%; text-align: left;" border="1" cellpadding="2" cellspacing="2">\n')
   htmlFID.write('<tbody>\n')
 
-# Write spec_avg jobs to SUPER DAG:
+# Write lalapps_spec_avg jobs to SUPER DAG:
 endFreq = startFreq + freqBand
 thisStartFreq = startFreq
 thisEndFreq = thisStartFreq + freqSubBand
 nodeCount = 0L
 while (thisEndFreq < endFreq):
-  # Because SFTs are in the band [startFreq,endFreq) but spec_avg works on [startFreq,endFreq]
+  # Because SFTs are in the band [startFreq,endFreq) but lalapps_spec_avg works on [startFreq,endFreq]
   # we need to avoid the last subBand requested. The user thus should request 1 Hz more than
   # wanted and the last one Hz band will not be used.
   #if (thisEndFreq >= endFreq):
@@ -587,9 +587,9 @@ while (thisEndFreq < endFreq):
   dagFID.write('JOB %s spectrumAverage.sub\n' % specAvgJobName)
   dagFID.write('RETRY %s 10\n' % specAvgJobName)
   if (sftVersion == 2):
-     argList = '%d %d %s %d %d %s/*.sft' % (analysisStartTime,analysisEndTime,ifo,thisStartFreq,thisEndFreq,pathToSFTs)
+     argList = '--startGPS %d --endGPS %d --IFO %s --fMin %d --fMax %d --SFTs %s/*.sft' % (analysisStartTime,analysisEndTime,ifo,thisStartFreq,thisEndFreq,pathToSFTs)
   else:
-     argList = '%d %d %s %d %d %s/SFT*' % (analysisStartTime,analysisEndTime,ifo,thisStartFreq,thisEndFreq,pathToSFTs)
+     argList = '--startGPS %d --endGPS %d --IFO %s --fMin %d --fMax %d --SFTs %s/SFT*' % (analysisStartTime,analysisEndTime,ifo,thisStartFreq,thisEndFreq,pathToSFTs)
   tagStringOut = '%s_%i' % (tagString, nodeCount)  
   dagFID.write('VARS %s argList="%s" tagstring="%s"\n'%(specAvgJobName,argList,tagStringOut))
   if (createSFTs):  
