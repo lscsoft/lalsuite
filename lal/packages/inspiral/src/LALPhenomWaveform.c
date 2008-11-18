@@ -383,14 +383,20 @@ void LALBBHPhenWaveTimeDom ( LALStatus        *status,
    * below an instantaneous frequency  fLower */
   fLowerOrig = template->fLower;    /* this is the low-freq set by the user */
   
-  /* this is the frequency at which the softening fn has value 0.5 */
-  tau0 = 32.;
-/*   fLower = pow((tau0*256.*eta*pow(totalMass*LAL_MTSUN_SI,5./3.)/5.),-3./8.)/LAL_PI;  */
+    /* Find an optimum value for fLower (using the definition of Newtonian chirp time) 
+     * such that the waveform has a minimum length of tau0. This is necessary to avoid
+     * FFT artifacts */
+    tau0 = 32.;
+    fLower = pow((tau0*256.*eta*pow(totalMass*LAL_MTSUN_SI,5./3.)/5.),-3./8.)/LAL_PI; /* Actually, this seems to be a better ansatz
+                                                                                        as this makes use of the definition of Newtonian 
+                                                                                        chirp time in order to find an fLower that gives
+                                                                                        a minimum length of tau0 (which can be fixed) for
+                                                                                        the waveform - Ajith, 18 Nov 08 */
   /* Better ansatz (Lucia Oct 08) */
-/*   fLower = 2.E-3/(totalMass*LAL_MTSUN_SI); */
-  fLower = 18. - 3.*totalMass/25.;
+    /*   fLower = 2.E-3/(totalMass*LAL_MTSUN_SI); */
+    /* fLower = 18. - 3.*totalMass/25.; */
   fCut = (1.025)*phenParams.fCut;
-  
+
   /* make sure that these frequencies are not too out of range */
   if (fLower > fLowerOrig) fLower = fLowerOrig;
   if (fCut > template->tSampling/2.-100.) fCut = template->tSampling/2.-100.;
@@ -478,14 +484,14 @@ void LALBBHPhenWaveTimeDom ( LALStatus        *status,
   
   /* apply a linearly increasing/decresing window at the beginning and at the end 
    * of the waveform in order to avoid edge effects. This could be made fancier */
-/*   windowLength = 10.*totalMass * LAL_MTSUN_SI*template->tSampling; */
-/*   for (i=0; i< windowLength; i++){ */
-/*         signal->data[n-i-1] *= i/windowLength; */
-/*   } */
-/*   windowLength = 1000.*totalMass * LAL_MTSUN_SI*template->tSampling; */
-/*   for (i=0; i< windowLength; i++){ */
-/*     signal->data[i] *= i/windowLength; */
-/*   } */
+   windowLength = 10.*totalMass * LAL_MTSUN_SI*template->tSampling; 
+   for (i=0; i< windowLength; i++){ 
+         signal->data[n-i-1] *= i/windowLength; 
+   } 
+   windowLength = 1000.*totalMass * LAL_MTSUN_SI*template->tSampling; 
+   for (i=0; i< windowLength; i++){ 
+        signal->data[i] *= i/windowLength; 
+   } 
   
   /********************************* DEBUG ********************************/
   /* CHAR fileName[1000];
