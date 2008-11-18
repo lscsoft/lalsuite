@@ -119,6 +119,7 @@ typedef struct tagCurve
   REAL4 *depth; /* the "height" of the pixel in the TF map corresponding 
 		  to (col[i],row[i]) */
   REAL4 totalPower; /* resulting numerical intergration along ridge */
+  REAL4 snrEstimate; /*estimate of trigger SNR */
 } Curve;
 
 typedef struct tagTrackSearchStore  /* Structure for storage space for the algorithm */

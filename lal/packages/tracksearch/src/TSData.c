@@ -368,6 +368,7 @@ LALTrackSearchApplyThreshold(
 	      dataProduct->curves[UsefulCurves].gpsStamp=(LIGOTimeGPS*)LALMalloc(sizeof(LIGOTimeGPS) * cicn);
 	      dataProduct->curves[UsefulCurves].n = cicn;
 	      dataProduct->curves[UsefulCurves].totalPower = curveinfo->curves[i].totalPower;
+	      dataProduct->curves[UsefulCurves].snrEstimate = curveinfo->curves[i].snrEstimate;
 	      /* Copy the data over */
 	      for(j=0;j<dataProduct->curves[UsefulCurves].n;j++)
 		{

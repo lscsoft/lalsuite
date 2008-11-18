@@ -101,7 +101,7 @@ static void ComputeLinePoints(LALStatus *, TrackSearchStore * , TrackSearchParam
 static void ConnectLinePoints(LALStatus *, TrackSearchOut *, TrackSearchParams *, const TimeFreqRep *);
 static void estimateProfile(REAL4*, TimeFreqRep);
 
-static REAL4 estimateSNR(Curve, Curve, REAL4*, TimeFreqRep);
+static REAL4 estimateSNR(Curve, Curve, REAL4*, const TimeFreqRep*);
 static INT4 TestPotentialLine(TrackSearchOut, INT4, REAL4);
 static REAL4 GetAngle(REAL4 , REAL4 );
 static REAL4 Gauss0(INT4,REAL4);
@@ -634,6 +634,7 @@ ConnectLinePoints(LALStatus *status,
   REAL4 powerHalfContourA; /* The resulting power of half the contour from tfMap*/
   REAL4 powerHalfContourB; /* The resulting power of half the contour from tfMap*/
   REAL4 *meanProfile=NULL; /* Pointer to array of REAL4s */
+  REAL4 mySNR=0; /*current estimate of SNR for particular curve*/
 
   /* Initialize status structure   */ 
   INITSTATUS(status,"ConnectLinePoints",TRACKSEARCHC);  
@@ -642,8 +643,9 @@ ConnectLinePoints(LALStatus *status,
   /* a pointer to the storage structure */
   store = &(out->store);
   /* Estimate the noise profile from the TFR */
-  /* meanProfile= LALMalloc(sizeof(REAL4)*(TimeFreqMap->fRow));*/
-  /* estimateProfile(meanProfile,TimeFreqMap);*/
+  /* tCol ->F fRow ->T */
+  meanProfile= LALMalloc(sizeof(REAL4)*(TimeFreqMap->fRow/2+1));
+  estimateProfile(meanProfile,*TimeFreqMap);
   /* Allocate arrays */
   linePoints = LALMalloc(sizeof(LinePoints)*(store->numLPoints));
   label= LALMalloc(sizeof(INT4 *) * params->height);
@@ -887,7 +889,7 @@ ConnectLinePoints(LALStatus *status,
       curvePower=curvePower+curveDepth[i];
     LALFree(curveDepth);
     /* ESTIMATE THE SNR */
-    /* mySNR=estimateSNR(contourA,contourB,meanProfile,TimeFreqMap); */
+    mySNR=estimateSNR(contour[0],contour[1],meanProfile,TimeFreqMap);
     /* *** */
     /* check if the length of the curve is greater than the threshhold*/
     if((contour[0].n+contour[1].n-1 >= LENGTH_THRESHOLD) 
@@ -903,7 +905,8 @@ ConnectLinePoints(LALStatus *status,
       /* Allocate fbin and gpsbin labels */
       out->curves[out->numberOfCurves].fBinHz=(REAL4*)LALMalloc(sizeof(REAL4)*out->curves[out->numberOfCurves].n);
       out->curves[out->numberOfCurves].gpsStamp=(LIGOTimeGPS*)LALMalloc(sizeof(LIGOTimeGPS)*out->curves[out->numberOfCurves].n);
-
+      /*Save SNR estimate to curve structure*/
+      out->curves[out->numberOfCurves].snrEstimate=mySNR;
       powerHalfContourA = 0;
       for(i=0;i<contour[0].n;i++){
 	out->curves[out->numberOfCurves].row[i] = contour[0].row[contour[0].n - 1 - i];
@@ -945,7 +948,7 @@ ConnectLinePoints(LALStatus *status,
   LALFree(contour[0].col);
   LALFree(contour[1].row);
   LALFree(contour[1].col);
-  /*LALFree(meanProfile);*/
+  LALFree(meanProfile);
   for(i=0;i<params->height;i++)
     LALFree(label[i]);
   LALFree(label);
@@ -964,18 +967,32 @@ ConnectLinePoints(LALStatus *status,
 static void estimateProfile(REAL4 *myProfile,
 			    TimeFreqRep Map)
 {
-  INT4 i=0; /*Freq index*/
-  INT4 j=0; /*Time index*/
-  INT4 k=0; /*myProfile index*/
-  INT4 n=0; /*Number of values counted*/
+  INT4 j=0; 
+  INT4 k=0; 
   REAL4 currentSum=0; /* Current value */
-  /*Map layout map[freq][time]*/
-  for (k=0;k<Map.fRow;k++)
+  /*TFR[time][freq] or TFR[tCol][fRow/2+1]*/
+  for (k=0;k<Map.fRow/2+1;k++)
     {
       currentSum=0;
       for (j=0;j<Map.tCol;j++)
-	currentSum=currentSum+Map.map[k][j];
+	{
+/* 	  fprintf(stdout,"k:%i/%i j:%i/%i \t Map:%f \t CS %f \n", */
+/* 		  k, */
+/* 		  Map.fRow, */
+/* 		  j, */
+/* 		  Map.tCol, */
+/* 		  Map.map[j][k], */
+/* 		  currentSum, */
+/* 	  fflush(stdout); */
+	  currentSum=currentSum+Map.map[j][k];
+	}
       myProfile[k]=currentSum/Map.tCol;
+/*       fprintf(stdout,"Computing myProfile value.\t"); */
+/*       fprintf(stdout," : %i/%i Value: %f\n",  */
+/* 	      k, */
+/* 	      Map.fRow/2+1, */
+/* 	      myProfile[k]); */
+/*       fflush(stdout); */
     }
 }
 
@@ -1114,34 +1131,92 @@ TestPotentialLine(
   return result;
 }
 
-/* static REAL4 */
-/* estimateSNR(Curve contourA, */
-/* 	    Curve contourB, */
-/* 	    REAL4* tfrProfile, */
-/* 	    TimeFreqRep tfr) */
-/* { */
-/*   INT4 i=0; /\*F index*\/ */
-/*   INT4 j=0; /\*T index*\/ */
-/*   INT4 k=0; /\*profile F index*\/ */
-/*   INT4 n=0; /\*curve element number*\/ */
-/*   REAL4 *curveProfile=NULL; /\*profile of curve*\/ */
-/*   REAL4 result=0;/\*Variable holding the value of the SNR */
-/*   REAL4 tmp=0;/\*tmp variable for caculating snr */
-/* Create the real4* vector to hold the curves pseudo PSD */
-/* tfrProfile=LALMalloc(sizeof(REAL4)*(tfr->fRow)); */
-/* /\*Initialize the elements to zero*\/ */
-/* for (n=0;n<tfr->fRow;n++) */
-/*   tfrProfile[n]=0; */
-/* /\*Cycle across each contour*\/ */
-/* for (n=0;n<contourA.n;n++) */
-/*   tfrProfile[contourA.row[n]]=tfrProfile[contourA.row[n]]+tfr[contourA.row[n]][contourA.col[n]]; */
-/* for (n=0;n<contourB.n;n++) */
-/*   tfrProfile[contourB.row[n]]=tfrProfile[contourB.row[n]]+tfr[contourB.row[n]][contourB.col[n]]; */
-/* /\*Compute the SNR (check the normalization) use GRASP definition*\/ */
-/* LALFree(tfrProfile); */
-/*   return result; */
-/* } */
-	    
+static REAL4
+estimateSNR(Curve contourA,
+	    Curve contourB,
+	    REAL4* tfrProfile,
+	    const TimeFreqRep* tfr)
+{
+  INT4 n=0; /*curve element number*/
+  REAL4 *curveProfile=NULL; /*profile of curve*/
+  REAL4 result=0;/*Variable holding the value of the SNR*/
+  REAL4 tmp=0;/*tmp variable for caculating snr
+		Create the real4* vector to hold the curves pseudo PSD
+		tfrProfile=LALMalloc(sizeof(REAL4)*(tfr->fRow/2+1));*/
+		/*Initialize the elements to zero*/
+  curveProfile=LALMalloc(sizeof(REAL4)*(tfr->fRow/2+1));
+  for (n=0;n<tfr->fRow/2+1;n++)
+    curveProfile[n]=0;
+  /*Cycle across each contour*/
+  /*
+   * The contours share a pixel in common that MUST NOT BE counted
+   * twice.  contourA[0] == contourB[0] so do not count it from both
+   * contours just one of them!
+   */
+  for (n=0;n<contourA.n;n++)
+    {
+      if (contourA.col[n] > tfr->fRow/2+1-1)
+	{
+	  fprintf(stderr,"Oops. ContourA specified Row %i which is beyond %i\n",
+		  contourA.col[n],
+		  tfr->fRow/2+1);
+	  fflush(stderr);
+	}
+      curveProfile[contourA.col[n]]=curveProfile[contourA.col[n]]+tfr->map[contourA.row[n]][contourA.col[n]];
+/*       fprintf(stdout,"A -- Row(T) :%i\tCol(F) :%i\tTFR :%20.20f\t CP :%20.20f\n", */
+/* 	      contourA.row[n], */
+/* 	      contourA.col[n], */
+/* 	      tfr->map[contourA.row[n]][contourA.col[n]], */
+/* 	      curveProfile[contourA.row[n]]); */
+/*       fflush(stdout); */
+    }
+  for (n=1;n<contourB.n;n++)
+    {
+      if (contourB.col[n] > tfr->fRow/2+1-1)
+	{
+	  fprintf(stderr,"Oops. ContourA specified Row %i which is beyond %i\n",
+		  contourB.col[n],
+		  tfr->fRow/2+1);
+	  fflush(stderr);
+	}
+    curveProfile[contourB.col[n]]=curveProfile[contourB.col[n]]+tfr->map[contourB.row[n]][contourB.col[n]];
+/*     fprintf(stdout,"B -- Row(T) :%i\tCol(F) :%i\tTFR :%20.20f\t CP :%20.20f\n", */
+/* 	    contourB.row[n], */
+/* 	    contourB.col[n], */
+/* 	    tfr->map[contourB.row[n]][contourB.col[n]], */
+/* 	    curveProfile[contourB.row[n]]); */
+/*     fflush(stdout); */
+    }
+/*   fprintf(stdout,"\n\n"); */
+/*   fflush(stdout); */
+  /*Compute the SNR (check the normalization) can we GRASP definition P156-160*/
+  /*
+   * We invoke for our estimate the idea of a SNR measure the ratio of in the 
+   * frequency domain of our average assumned noise amplitude to that constructed from
+   * position information of the curve in the TFR.
+   */
+  for (n=0;n<tfr->fRow/2+1;n++)
+    {
+      /*Use of variance SNR measure std(cp)/std(tp) assume E(x)==0*/
+      /*Assumption of RMS is Std with zero mean is WRONG */
+      /*Define my snr estimate as std(energyInCurve)/std(energyInNoise)*/
+      tmp=tmp+((curveProfile[n]*curveProfile[n])/
+	(tfrProfile[n]*tfrProfile[n]));
+/*       fprintf(stdout,"Index : %i\tTMP :%10.10f\t CP :%10.10f\t TFR :%10.10f\n", */
+/* 	      n, */
+/* 	      tmp, */
+/* 	      curveProfile[n], */
+/* 	      tfrProfile[n]); */
+/*       fflush(stdout); */
+    }
+  result=sqrt(tmp);
+/*   fprintf(stdout,"SNR Estimate :%f\n",result); */
+/*   fflush(stdout); */
+  LALFree(curveProfile);
+  return result;
+}
+
+
 /*End static function estimateSNR*/
 
 /* routine called by qsort  
