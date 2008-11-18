@@ -159,9 +159,10 @@ else
     echo
 fi
 
-exit $res;
-
 ## clean up files
 if [ -z "$NOCLEANUP" ]; then
     rm -rf $SFTdir $outfile_pfs $outfile_pfs2;
 fi
+
+exit $res;
+
