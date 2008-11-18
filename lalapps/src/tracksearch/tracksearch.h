@@ -45,7 +45,6 @@
 #include <lal/Random.h>
 #include <lal/ResampleTimeSeries.h>
 #include <lal/SeqFactories.h>
-#include <lal/StdBurstSearch.h>
 #include <lal/TSData.h>
 #include <lal/TSSearch.h>
 #include <lal/TimeFreq.h>

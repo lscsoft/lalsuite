@@ -73,10 +73,11 @@ class kurve:
     This is a class that will hold the data in primitives of python and
     provide higher level methods to questioning the curve object.
     """
-    def __init__(self,curveId,length,power):
+    def __init__(self,curveId,length,power,snr=0):
         self.curveId=int(curveId)
         self.length=int(length)
         self.power=float(power)
+        self.snr=float(snr)
         self.element=list()
         self.sortedByTime=False
         self.sortedByFreq=False
@@ -456,7 +457,15 @@ class kurve:
         routine: curveId,length,power
         """
         return self.curveId,self.length,self.power
-        #End method getKurveHeader
+    #End method getKurveHeader
+
+    def getKurveSNR(self):
+        """
+        This method returns the SNR value stored when curve was
+        initialized.
+        """
+        return self.snr
+    #End method getKurveSNR
 
     def getKurveDataBlock(self):
         """
@@ -670,14 +679,14 @@ class gpsInt:
         """
         Simple wrapper to grab the GPS Seconds field.
         """
-        return self.__splitInt__()[0]
+        return int(self.gpsSeconds)
     #End
 
     def getGPSNanoSeconds(self):
         """
         Simple wrapper to grab the GPS NanoSeconds field.
         """
-        return self.__splitInt__()[1]
+        return int(self.gpsNanoSeconds)
     #End
 
     def __add__(self,inTime):
@@ -765,8 +774,8 @@ class candidateList:
         #Variable to be set if traitSummary is read in Ok.
         self.validTraitSummary=bool(False)
         self.qualities=[["curveid","Curve ID","getKurveHeader()[0]"],
-                        ["gpsSeconds","Uniq GPS Seconds","startGPS.getGPSSeconds()"],
-                        ["gpsNanoSeconds","Curve GPS NanoSeconds","startGPS.getGPSNanoSeconds()"],
+                        ["gpsseconds","Uniq GPS Seconds","startGPS().getGPSSeconds()"],
+                        ["gpsnanoseconds","Curve GPS NanoSeconds","startGPS().getGPSNanoSeconds()"],
                         ["a","Orientation Angle","getKurveAngle()"],
                         ["b","Bandwidth","getCandidateBandwidth()"],
                         ["c","Variance Brightness","getBrightPixelAndStats()[2]"],
@@ -795,7 +804,8 @@ class candidateList:
                         ["z","Variance of Power for Pixels in Curve","__getKurveMeanVar__()[1]"],
                         ["ww","Relative Time for CM Pixel","getRelativeCMTime()"],
                         ["ee","Relative Freq for CM Pixel","getRelativeCMFreq()"],
-                        ["rr","Z Score for CM Pixel","getCMZScore()"]
+                        ["rr","Z Score for CM Pixel","getCMZScore()"],
+                        ["pp","Estimated SNR for Curve","getKurveSNR()"],
                         ]
 
     #End init method
@@ -871,6 +881,7 @@ class candidateList:
         try:
             indexToUse=traitList.index(field.lower())
         except ValueError:
+            print "HELP %s :%s\n"%(field.lower())
             return [0,"NULL"]
         if curveSummary == '':
             output = 0
@@ -1090,8 +1101,12 @@ class candidateList:
                 line=input_fp.readline()
                 if not (line.startswith('#') or line.startswith('\n')):
                     if line.startswith('Curve'):
-                        [A,B,C]=str(str(line).split(':')[1]).split(',')
-                        self.curves.append(kurve(A,B,C))
+                        try:
+                            [A,B,C]=str(str(line).split(':')[1]).split(',')
+                            self.curves.append(kurve(A,B,C))
+                        except ValueError:
+                            [A,B,C,D]=str(str(line).split(':')[1]).split(',')
+                            self.curves.append(kurve(A,B,C,D))
                         #Advance to next data line expected!
                         line=input_fp.readline()
                         if not line.__contains__(';'):
@@ -2192,7 +2207,6 @@ class candidateList:
             rr=float(self.__getCurveField__(lineInfo,"rr")[0])
             evalResult=False
             try:
-                print "HI THERE ",u
                 evalResult=eval(testExp)
             except ZeroDivisionError:
                 if self.verboseMode:
@@ -2736,10 +2750,10 @@ class candidateList:
             brightPixelFreq=self.__getTraitField__(trait,"v")[0]
             brightPixelPower=self.__getTraitField__(trait,"j")[0]
             brightPixel=[-1,-1,brightPixelTime,brightPixelFreq,brightPixelPower]
-            cmPixelGPS=self.__getTraitField__(trait,"k")[0]
+            cmPixelTime=self.__getTraitField__(trait,"k")[0]
             cmPixelFreq=self.__getTraitField__(trait,"i")[0]
             cmPixelPower=self.__getTraitField__(trait,"o")[0]
-            cmPixel=[-1,-1,cmPixelGPS,cmPixelFreq,cmPixelPower]
+            cmPixel=[-1,-1,cmPixelTime,cmPixelFreq,cmPixelPower]
             meanPixelPower=self.__getTraitField__(trait,"x")[0]
             varPixelPower=self.__getTraitField__(trait,"z")[0]
             triggerDuration=self.__getTraitField__(trait,"d")[0]
@@ -2755,22 +2769,19 @@ class candidateList:
             ###symmetryCM=trigger.getSymmetryFactor(brightPixel,weight)
             #(+) if T_bp > T_cm
             if (triggerDuration > 0):
-                spanTnorm=(
-                    (brightPixel[2]-cmPixel[2])/
-                    triggerDuration
-                )
+                spanTnorm=brightPixelTime-cmPixelTime)/triggerDuration
             else:
                 spanTnorm=0
             #(+) if F_bp>F_cm
             if (triggerBandwidth > 0):
-                spanFnorm=(brightPixel[3]-cmPixel[3])/triggerBandwidth
+                spanFnorm=(brightPixelFreq-cmPixelFreq)/triggerBandwidth
             else:
                 spanFnorm=0
             #Create glitch database entry
             #Change so that there are NO negative entries 
-            #now (-1,1) becomes (0,2)
+            #now (-1,1) becomes (1,3)
             #for zScore we have (-inf,inf) to (-inf+10,inf+10)
-            unitTraitOffset=1
+            unitTraitOffset=2
             zScoreTraitOffset=10
             glitchDatabaseEntry=[triggerStartString,            #0,1
                                  triggerStartFloat,             #2
