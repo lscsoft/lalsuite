@@ -255,57 +255,38 @@ int main(int argc, char *argv[]){
     randVals = MultivariateNormalDeviates( chol, paramData, randomParams );
     SetMCMCPulsarParams( &deltaparams, randVals, matPos );
 
-    if(count > 0){
-      if( params.f0Err != 0. )
-        if( i==0 ) fprintf(stderr, "Search over f0\n");
-      if( params.f1Err != 0. )
-        if( i==0 ) fprintf(stderr, "Search over f1\n");
-      if( params.f2Err != 0. )
-        if( i==0 ) fprintf(stderr, "Search over f2\n");
-      if( params.raErr != 0. )
-        if ( i==0 )fprintf(stderr, "Search over ra\n");
-      if( params.decErr != 0. )
-        if( i==0 ) fprintf(stderr, "Search over dec\n");
-      if( params.pmraErr != 0. )
-        if( i==0 ) fprintf(stderr, "Search over pmra\n");
-      if( params.pmdecErr != 0. )
-        if( i==0 ) fprintf(stderr, "Search over pmdec\n");
-    }
+    if( i==0 ){
+      if(count > 0){
+        if( params.f0Err != 0. ) fprintf(stderr, "Search over f0\n");
+        if( params.f1Err != 0. ) fprintf(stderr, "Search over f1\n");
+        if( params.f2Err != 0. ) fprintf(stderr, "Search over f2\n");
+        if( params.raErr != 0. )fprintf(stderr, "Search over ra\n");
+        if( params.decErr != 0. ) fprintf(stderr, "Search over dec\n");
+        if( params.pmraErr != 0. ) fprintf(stderr, "Search over pmra\n");
+        if( params.pmdecErr != 0. ) fprintf(stderr, "Search over pmdec\n");
+      }
 
-    if( countBin > 0 ){
-      if( params.xErr != 0. )
-        if( i==0 ) fprintf(stderr, "Search over x\n");
-      if( params.w0Err != 0. )
-        if( i==0 ) fprintf(stderr, "Search over w0\n");
-      if( params.eErr != 0. )
-        if( i==0 ) fprintf(stderr, "Search over e\n");
-      if( params.PbErr != 0. )
-        if( i==0 ) fprintf(stderr, "Search over Pb\n");
-      if( params.T0 != 0. )
-        if( i==0 ) fprintf(stderr, "Search over T0\n");
-      if( params.Tasc != 0. )
-        if( i==0 ) fprintf(stderr, "Search over Tasc\n");
-      if( params.eps1Err != 0. )
-        if( i==0 ) fprintf(stderr, "Search over eps1\n");
-      if( params.eps2Err != 0. )
-        if( i==0 ) fprintf(stderr, "Search over eps2\n");
-      if( params.gammaErr != 0. )
-        if( i==0 ) fprintf(stderr, "Search over gamma\n");
-      if( params.wdotErr != 0. )
-        if( i==0 ) fprintf(stderr, "Search over wdot\n");
-      if( params.PbdotErr != 0. )
-        if( i==0 ) fprintf(stderr, "Search over Pbdot\n");
-      if( params.xdotErr != 0. )
-        if( i==0 ) fprintf(stderr, "Search over xdot\n");
-      if( params.edotErr != 0. )
-        if( i==0 ) fprintf(stderr, "Search over edot\n");
-      if( params.sErr != 0. )
-        if( i==0 ) fprintf(stderr, "Search over sini\n");
+      if( countBin > 0 ){
+        if( params.xErr != 0. ) fprintf(stderr, "Search over x\n");
+        if( params.w0Err != 0. ) fprintf(stderr, "Search over w0\n");
+        if( params.eErr != 0. ) fprintf(stderr, "Search over e\n");
+        if( params.PbErr != 0. ) fprintf(stderr, "Search over Pb\n");
+        if( params.T0Err != 0. ) fprintf(stderr, "Search over T0\n");
+        if( params.TascErr != 0. ) fprintf(stderr, "Search over Tasc\n");
+        if( params.eps1Err != 0. ) fprintf(stderr, "Search over eps1\n");
+        if( params.eps2Err != 0. ) fprintf(stderr, "Search over eps2\n");
+        if( params.gammaErr != 0. ) fprintf(stderr, "Search over gamma\n");
+        if( params.wdotErr != 0. ) fprintf(stderr, "Search over wdot\n");
+        if( params.PbdotErr != 0. ) fprintf(stderr, "Search over Pbdot\n");
+        if( params.xdotErr != 0. ) fprintf(stderr, "Search over xdot\n");
+        if( params.edotErr != 0. ) fprintf(stderr, "Search over edot\n");
+        if( params.sErr != 0. ) fprintf(stderr, "Search over sini\n");
+      }
     }
 
     /* get new phase */
-    phiOffset = get_phi( inputs.start, (double)inputs.deltat, npoints, deltaparams,
-      baryinput, edat );
+    phiOffset = get_phi( inputs.start, (double)inputs.deltat, npoints,
+deltaparams, baryinput, edat );
 
     /* calculate the mismatch 1 - (P(params + delta))/P(params) */
     intre = 0.;
@@ -801,10 +782,8 @@ ParamData *MultivariateNormalDeviates( REAL8Array *cholmat, ParamData *data,
     deviates[i].name = data[i].name;
     deviates[i].sigma = data[i].sigma;
     deviates[i].matPos = data[i].matPos;
-    if( data[i].matPos != 0 ){
-      deviates[i].val = data[i].val + Z->data[j];
-      j++;
-    }
+    if( data[i].matPos != 0 )
+      deviates[i].val = data[i].val + Z->data[data[i].matPos-1];
     else
       deviates[i].val = data[i].val;
   }
@@ -1008,6 +987,7 @@ reading any correlation data!");
     for(j=0;j<arraySize;j++){
       if(!strcmp(matrixParams[i-1], paramData[j].name)){
         paramData[j].matPos = i;
+
         break;
       }
     }
