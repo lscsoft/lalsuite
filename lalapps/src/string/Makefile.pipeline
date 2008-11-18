@@ -46,7 +46,7 @@ ligolw_sqlite :
 
 final :
 	lalapps_stringfinal --verbose --cal-uncertainty 0.08 noninjections/triggers/cafe*.sqlite >lalapps_stringfinal.log
-	lalapps_stringfinal --verbose --injections --injections-bin-size 16 --loudest-survivor H1=3.4744909e-20 --cal-uncertainty 0.08 injections/triggers/cafe*.sqlite >lalapps_stringfinal_injections.log
+	lalapps_stringfinal --verbose --injections --injections-bin-size 16 --loudest-survivor H1=3.3683419e-20 --cal-uncertainty 0.08 injections/triggers/cafe*.sqlite >lalapps_stringfinal_injections.log
 
 
 realclean :
