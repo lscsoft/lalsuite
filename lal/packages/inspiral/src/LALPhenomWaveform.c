@@ -242,8 +242,6 @@ static void XLALBBHPhenWaveFD ( BBHPhenomParams  *params,
      * employed in the injection codes */ 
     amp0 = pow(LAL_MTSUN_SI*totalMass, 5./6.)*pow(fMerg,-7./6.)/pow(LAL_PI,2./3.);
     amp0 *= pow(5.*eta/24., 1./2.)/(template->distance/LAL_C_SI);  
-    amp0 *= 4.*sqrt(5./(64.*LAL_PI));
-    amp0 *= 4.*sqrt(5./(64.*LAL_PI));
 
     /* fill the zero and Nyquist frequency with zeros */
     *(signal->data+0) = 0.;
@@ -559,6 +557,7 @@ void LALBBHPhenTimeDomEngine( LALStatus        *status,
 
     INT4 i, j, k, n, peakAmpIdx;
     REAL8 dt, peakAmp;
+    REAL8 cosI;
     REAL8Vector *phi=NULL;
     
     INITSTATUS(status, "LALBBHPhenTimeDomEngine", LALPHENOMWAVEFORMC);
@@ -577,6 +576,8 @@ void LALBBHPhenTimeDomEngine( LALStatus        *status,
     ASSERT(signal2->data, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
 
     dt = 1./params->tSampling;
+
+    cosI = cos( params->inclination );  
 
     /* generate two orthogonal waveforms */
     LALBBHPhenWaveTimeDomTemplates(status->statusPtr, signal1, signal2, params);
@@ -618,8 +619,11 @@ void LALBBHPhenTimeDomEngine( LALStatus        *status,
 
         /* fill in the h vector, if required */
         if (h) {
-            h->data[j] = signal1->data[i];
-            h->data[k] = signal2->data[i];
+            REAL8 z1 = 0.25 * (( 1. + cosI ) * ( 1. + cosI ) + ( 1. - cosI ) * ( 1. - cosI ));
+            REAL8 z2 = 0.25 * (( 1. - cosI ) * ( 1. - cosI ) - ( 1. + cosI ) * ( 1. + cosI ));
+
+            h->data[j] = z1 * signal1->data[i];
+            h->data[k] = z2 * signal2->data[i];
         }
      }
 
