@@ -37,6 +37,8 @@ include
 #include <lal/LIGOLwXML.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/Date.h>
+#include <lal/lalGitID.h>
+#include <lalappsGitID.h>
 
 #define CVS_ID_STRING "$Id$"
 #define CVS_NAME_STRING "$Name$"
@@ -1716,6 +1718,7 @@ int arg_parse_check( int argc, char *argv[])
 	       "Alexander Dietz\n"
 	       "CVS Version: " CVS_ID_STRING "\n"
 	       "CVS Tag: " CVS_NAME_STRING "\n" );
+      fprintf( stdout, lalappsGitID );
       exit( 0 );
       break;
     }

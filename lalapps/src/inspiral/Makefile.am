@@ -28,6 +28,13 @@ MDCNINJASRC	= mdc_ninja.c inspiralutils.c inspiral.h
 CALCEXPSNRSRC	= calcexpsnr.c
 SNEDSRC		= sned.c
 CORSESRC	= corse.c
+
+## make sure LALAPPSgitID.h is re-generated at every 'make'
+.PHONY: gitID
+gitID:
+	cd $(top_builddir)/misc && $(MAKE) gitID
+BUILT_SOURCES = gitID
+
 if LALFRAME
 if LALMETAIO
 bin_PROGRAMS = lalapps_inspiral lalapps_tmpltbank \
@@ -150,7 +157,7 @@ EXTRA_DIST = $(INSPIRALSRC) $(TMPLTBANKSRC) \
 	     compare_ini.in link_old_ihope.in\
              $(DATA)
 
-INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
+INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(top_srcdir)/misc
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
 CLEANFILES = $(bin_SCRIPTS) python_config.sed

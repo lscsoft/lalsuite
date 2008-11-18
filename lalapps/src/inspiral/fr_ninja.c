@@ -36,6 +36,8 @@
 #include <lal/NRWaveInject.h>
 #include <lal/TimeSeries.h>
 #include <lal/Units.h>
+#include <lal/lalGitID.h>
+#include <lalappsGitID.h>
 
 #include <FrameL.h>
 
@@ -189,6 +191,7 @@ INT4 main(INT4 argc, CHAR **argv)
         fprintf(stdout, "Numerical Relativity Frame Generation\n"
             "CVS Version: " CVS_ID_STRING "\n"
             "CVS Tag: " CVS_NAME_STRING "\n");
+	fprintf( stdout, lalappsGitID );
         exit(0);
         break;
 

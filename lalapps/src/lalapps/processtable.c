@@ -71,9 +71,22 @@ static char *cvs_get_keyword_value(const char *cvs_string)
 	 * keyword ends at ':'
 	 */
 
-	value_start = strchr(value_start, ':');
-	if(!value_start)
-		return NULL;
+	value_end = strchr(value_start, ':');
+	if(!value_end)
+	  {
+	    /*
+	     * allow for unset keyword
+	     */
+	    value_start = strchr(value_start, '$');
+	    if(!value_start)
+	      return NULL;
+	    else
+	      --value_start;
+	  }
+	else
+	  {
+	    value_start = value_end;
+	  }
 
 	/*
 	 * skip leading white space
@@ -243,11 +256,15 @@ int XLALPopulateProcessTable(
 		XLALPrintError("%s(): cannot parse \"%s\"\n", func, cvs_date);
 		XLAL_ERROR(func, XLAL_EINVAL);
 	}
-	if(!strptime(cvs_keyword_value, "%Y/%m/%d %T", &utc)) {
+	if(!strptime(cvs_keyword_value, "%Y/%m/%d %T", &utc))
+	  {
+	    if(!strptime(cvs_keyword_value, "%F %T %z", &utc))
+	      {
 		XLALPrintError("%s(): cannot parse \"%s\"\n", func, cvs_keyword_value);
 		free(cvs_keyword_value);
 		XLAL_ERROR(func, XLAL_EINVAL);
-	}
+	      }
+	  }
 	free(cvs_keyword_value);
 	XLALClearErrno();
 	XLALGPSSet(&ptable->cvs_entry_time, XLALUTCToGPS(&utc), 0);

@@ -51,6 +51,8 @@
 #include <lal/DetectorSite.h>
 #include <lal/DetResponse.h>
 #include <lal/TimeDelay.h>
+#include <lal/lalGitID.h>
+#include <lalappsGitID.h>
 
 
 NRCSID( SPININJC, "$Id$");
@@ -680,8 +682,19 @@ void LALParserInspiralInjection(LALStatus *status,
     calloc( 1, sizeof(ProcessTable) );
   
   LAL_CALL(  LALGPSTimeNow ( status, &(proctable.processTable->start_time), &accuracy ), status);
-  LAL_CALL(  populate_process_table( status, proctable.processTable, 
-				     PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE ), status);
+  if (strcmp(CVS_REVISION,"$Revi" "sion$"))
+    {
+      LAL_CALL( populate_process_table( &status, proctable.processTable, 
+					PROGRAM_NAME, CVS_REVISION,
+					CVS_SOURCE, CVS_DATE ), &status );
+    }
+  else
+    {
+      LAL_CALL( populate_process_table( &status, proctable.processTable, 
+					PROGRAM_NAME, lalappsGitCommitID,
+					lalappsGitGitStatus,
+					lalappsGitCommitDate ), &status );
+    }
   LALSnprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX, " " );
   this_proc_param = procparams.processParamsTable = (ProcessParamsTable *) 
     calloc( 1, sizeof(ProcessParamsTable) );

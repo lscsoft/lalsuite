@@ -80,6 +80,8 @@
 #include <lal/LALTrigScanCluster.h>
 #include <lal/NRWaveIO.h>
 #include <lal/NRWaveInject.h>
+#include <lal/lalGitID.h>
+#include <lalappsGitID.h>
 
 #include "inspiral.h"
 
@@ -460,8 +462,19 @@ int main( int argc, char *argv[] )
   proctable.processTable = (ProcessTable *) calloc( 1, sizeof(ProcessTable) );
   LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->start_time),
         &accuracy ), &status );
-  LAL_CALL( populate_process_table( &status, proctable.processTable, 
-        PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE ), &status );
+  if (strcmp(CVS_REVISION,"$Revi" "sion$"))
+    {
+      LAL_CALL( populate_process_table( &status, proctable.processTable, 
+					PROGRAM_NAME, CVS_REVISION,
+					CVS_SOURCE, CVS_DATE ), &status );
+    }
+  else
+    {
+      LAL_CALL( populate_process_table( &status, proctable.processTable, 
+					PROGRAM_NAME, lalappsGitCommitID,
+					lalappsGitGitStatus,
+					lalappsGitCommitDate ), &status );
+    }
   this_proc_param = procparams.processParamsTable = (ProcessParamsTable *) 
     calloc( 1, sizeof(ProcessParamsTable) );
   memset( comment, 0, LIGOMETA_COMMENT_MAX * sizeof(CHAR) );
@@ -4433,6 +4446,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
             "Duncan Brown <duncan@gravity.phys.uwm.edu>\n"
             "CVS Version: " CVS_ID_STRING "\n"
             "CVS Tag: " CVS_NAME_STRING "\n" );
+	fprintf( stdout, lalappsGitID );
         exit( 0 );
         break;
 
