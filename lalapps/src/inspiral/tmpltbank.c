@@ -739,11 +739,15 @@ int main ( int argc, char *argv[] )
       avgSpecParams.method = useMedian;
       if ( vrbflg ) fprintf( stdout, "computing median psd" );
       break;
+    case specType_gaussian:
     case specType_LIGO:
     case specType_AdvLIGO:
       avgSpecParams.method = useUnity;
       if ( vrbflg ) fprintf( stdout, "computing constant psd with unit value" );
       break;
+    default:
+      fprintf( stderr, "unknown spectrum type %d\n", specType );
+      exit( 1 );
   }
 
   wpars.type = Hann;
