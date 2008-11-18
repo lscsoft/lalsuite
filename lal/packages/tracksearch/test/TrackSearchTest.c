@@ -70,6 +70,14 @@ int main( void )
       *(in.map[i] + j) = maxVal - dummy;
     }
   }
+  /* 
+   * Use information about image to setup TF Rep tCol and fRow
+   * values which must be 
+   * fRow/2+1 == width
+   * tCol == height
+   */
+  in.fRow=(params.width-1)*2;
+  in.tCol=params.height;
   /* Added static function to write out in.map structure */
   /* in is of type timefreqrep */
   printf("MaxVal = %d \n",maxVal);
@@ -100,7 +108,7 @@ int main( void )
   for(i=0;i<out.numberOfCurves;i++){
     LALFree(out.curves[i].row);
     LALFree(out.curves[i].col);
-    LALFree(out.curves[i].depth); /* added cwt */
+    LALFree(out.curves[i].depth); /*added*/
   }
   if(out.curves!=NULL)
     LALFree(out.curves);
