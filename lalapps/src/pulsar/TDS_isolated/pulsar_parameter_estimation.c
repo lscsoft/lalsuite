@@ -2907,15 +2907,12 @@ ParamData *multivariate_normal_deviates( REAL8Array *cholmat, ParamData *data,
       Z->data[i] += cholmat->data[i*dim + j]*randNum->data[j];
 
   /* get the output random deviates by doing the mean plus Z */
-  j=0;
   for(i=0;i<MAXPARAMS;i++){
     deviates[i].name = data[i].name;
     deviates[i].sigma = data[i].sigma;
     deviates[i].matPos = data[i].matPos;
-    if( data[i].matPos != 0 ){
-      deviates[i].val = data[i].val + Z->data[j];
-      j++;
-    }
+    if( data[i].matPos != 0 )
+      deviates[i].val = data[i].val + Z->data[data[i].matPos-1];
     else
       deviates[i].val = data[i].val;
   }
