@@ -802,7 +802,6 @@ LALInspiralChooseModel(
    case TaylorF1:
    case EOB:
    case EOBNR:
-   case IMRPhenomA:
    case PadeT1:
    case PadeF1:
    case TaylorF2:
@@ -844,6 +843,7 @@ LALInspiralChooseModel(
      break;
  case BCV:
  case BCVSpin:
+ case IMRPhenomA:
    ak->tn = 100.;
    break;
  case Eccentricity:
