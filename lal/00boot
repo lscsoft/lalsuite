@@ -7,10 +7,6 @@
 ##
 ## $Id$
 
-## LAL version:
-package=lal
-version=5.2
-
 ## <<<< !!!!  Do not edit below here !!!! >>>> ##
 
 # Help message
