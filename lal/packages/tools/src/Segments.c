@@ -178,10 +178,9 @@ specified time, and returns that promptly if so.
 
 \subsubsection*{Error codes and return values}
 
-Each XLAL function listed above, if it succeeds, sets \texttt{xlalErrno} to 0
-before returning.  If it fails, it invokes the current XLAL error handler,
-sets \texttt{xlalErrno} to the appropriate XLAL error code, and returns
-a particular value as noted below:
+Each XLAL function listed above, if it fails invokes the current XLAL error
+handler, sets \texttt{xlalErrno} to the appropriate XLAL error code, and
+returns a particular value as noted below:
 
 \begin{itemize}
 
@@ -195,27 +194,21 @@ or \texttt{XLAL\_FAILURE} if an error occurs.
 \item
 \texttt{XLALGPSInSeg} and \texttt{XLALSegCmp} normally return a
 comparison value (negative, $0$, or positive).
-If a NULL pointer is passed to either function, it sets \texttt{xlalErrno}
-to a nonzero value and returns \texttt{XLAL\_FAILURE}.
-\texttt{XLAL\_FAILURE} happens to be equal to $-1$, so this looks like a
-valid comparison value if one neglects to check \texttt{xlalErrno}.
 
 \item
 \texttt{XLALSegCreate} normally returns a pointer to the created
 segment.  If an error occurs, it returns NULL.
 
 \item
-\texttt{XLALSegListSearch} returns a pointer to a segment in the
-list which contains the time being searched for, or NULL if there is no
-such segment.  If more than one segment
-in the list contains the time, then this function returns a pointer to
-\emph{one} of the segments which contains it, not necessarily the first
-such segment in the list.  (This is not an issue if the list is ``disjoint'',
-which guarantees that it has no overlapping segments.)  If no segment in
-the list contains the time, then this function returns NULL; however, this is
-not really an error, so \texttt{xlalErrno} will be equal to zero in this case.
-If a real error occurs---{\it e.g.}, the function arguments are invalid---then
-this function returns NULL and sets \texttt{xlalErrno} to a nonzero value.
+\texttt{XLALSegListSearch} returns a pointer to a segment in the list which
+contains the time being searched for, or NULL if there is no such segment.
+If more than one segment in the list contains the time, then this function
+returns a pointer to \emph{one} of the segments which contains it, not
+necessarily the first such segment in the list.  (This is not an issue if
+the list is ``disjoint'', which guarantees that it has no overlapping
+segments.)  If no segment in the list contains the time, then this function
+returns NULL; however, this is not really an error, use \texttt{xlalErrno}
+to differentiate between failure and non-failure.
 
 \end{itemize}
 
@@ -232,7 +225,7 @@ XLALSegSet( LALSeg *seg, const LIGOTimeGPS *start, const LIGOTimeGPS *end,
 	    const INT4 id )
 /* </lalVerbatim> */
 {
-  static const char *func = "XLALSegSet";
+  static const char func[] = "XLALSegSet";
 
   /* Make sure a non-null pointer was passed for the segment to be set */
   if ( ! seg ) {
@@ -259,7 +252,6 @@ XLALSegSet( LALSeg *seg, const LIGOTimeGPS *start, const LIGOTimeGPS *end,
   seg->end = *end;
   seg->id = id;
 
-  XLALSetErrno( 0 );
   /* Return with success status code */
   return XLAL_SUCCESS;
 }
@@ -272,7 +264,7 @@ XLALSegCreate( const LIGOTimeGPS *start, const LIGOTimeGPS *end,
 	       const INT4 id )
 /* </lalVerbatim> */
 {
-  static const char *func = "XLALSegCreate";
+  static const char func[] = "XLALSegCreate";
   LALSeg *segptr;
 
   /* Make sure non-null pointers were passed for the GPS times */
@@ -302,7 +294,6 @@ XLALSegCreate( const LIGOTimeGPS *start, const LIGOTimeGPS *end,
   segptr->end = *end;
   segptr->id = id;
 
-  XLALSetErrno( 0 );
   /* Return a pointer to the newly-created segment */
   return segptr;
 }
@@ -314,52 +305,14 @@ int
 XLALGPSInSeg( const void *pgps, const void *pseg )
 /* </lalVerbatim> */
 {
-  static const char *func = "XLALGPSInSeg";
-  const LIGOTimeGPS *gps = pgps;
-  const LALSeg *seg = pseg;
-
-  INT8 gpsns, startns, endns;
-
-  /* Make sure a non-null pointer was passed for the GPS time */
-  if ( ! gps ) {
-    XLALPrintError( "NULL LIGOTimeGPS pointer passed to %s\n", func );
-    XLAL_ERROR( func, XLAL_EFAULT );
-  }
-
-  /* Make sure a non-null pointer was passed for the segment */
-  if ( ! seg ) {
-    XLALPrintError( "NULL LALSeg pointer passed to %s\n", func );
-    XLAL_ERROR( func, XLAL_EFAULT );
-  }
-
-  XLALSetErrno( 0 );
-
-  /* Convert the GPS time and the segment start time to INT8 nanoseconds */
-  gpsns = LAL_INT8_C( 1000000000 ) * (INT8) gps->gpsSeconds
-          + (INT8) gps->gpsNanoSeconds;
-  startns = LAL_INT8_C( 1000000000 ) * (INT8) seg->start.gpsSeconds
-          + (INT8) seg->start.gpsNanoSeconds;
-
-  /* If GPS time is earlier than the start time of the segment, then it is
-     earlier than the segment.  If GPS time is equal to the start time
-     of the segment, then it is "equal" to the segment, regardless of the
-     end time of the segment. */
-  if ( gpsns < startns ) {
+  /* if time is < start of segment, return -1 */
+  if ( XLALGPSCmp( (const LIGOTimeGPS *) pgps, &((const LALSeg *) pseg)->start ) < 0 )
     return -1;
-  } else if ( gpsns == startns ) {
+  /* else if time is < end of segment, return 0 */
+  if ( XLALGPSCmp( (const LIGOTimeGPS *) pgps, &((const LALSeg *) pseg)->end ) < 0 )
     return 0;
-  }
-
-  /* If we get here, then the GPS time is later than the beginning of
-     the segment.  Return 0 if it is before the end time of the segment,
-     +1 otherwise */
-  endns = LAL_INT8_C( 1000000000 ) * (INT8) seg->end.gpsSeconds
-          + (INT8) seg->end.gpsNanoSeconds;
-  if ( gpsns < endns ) {
-    return 0;
-  } else {
-    return 1;
-  }
+  /* time is >= end of segment, return +1 */
+  return +1;
 }
 
 
@@ -369,30 +322,19 @@ int
 XLALSegCmp( const void *pseg0, const void *pseg1 )
 /* </lalVerbatim> */
 {
-  static const char *func = "XLALSegCmp";
   const LALSeg *seg0 = pseg0;
   const LALSeg *seg1 = pseg1;
-  int cmpstart, cmpend;
-
-  /* Make sure non-null pointers were passed for the segments */
-  if ( ! seg0 || ! seg1 ) {
-    XLALPrintError( "NULL LALSeg pointer passed to %s\n", func );
-    XLAL_ERROR( func, XLAL_EFAULT );
-  }
-
-  XLALSetErrno( 0 );
+  int result;
 
   /* If segment start times are different, comparison is based on that */
-  cmpstart = XLALGPSCmp( &(seg0->start), &(seg1->start) );
-  if ( cmpstart ) {
-    return cmpstart;
+  result = XLALGPSCmp( &seg0->start, &seg1->start );
+  if ( !result ) {
+    /* If we get here, then the segments have the same start time,
+       so use the end times to do the comparison */
+    result = XLALGPSCmp( &seg0->end, &seg1->end );
   }
 
-  /* If we get here, then the segments have the same start time,
-     so use the end times to do the comparison */
-  cmpend = XLALGPSCmp( &(seg0->end), &(seg1->end) );
-
-  return cmpend;
+  return result;
 }
 
 
@@ -402,7 +344,7 @@ INT4
 XLALSegListInit( LALSegList *seglist )
 /* </lalVerbatim> */
 {
-  static const char *func = "XLALSegListInit";
+  static const char func[] = "XLALSegListInit";
 
   /* Make sure a non-null pointer was passed for the segment list */
   if ( ! seglist ) {
@@ -429,7 +371,6 @@ XLALSegListInit( LALSegList *seglist )
      was performed */
   seglist->initMagic = SEGMENTSH_INITMAGICVAL;
 
-  XLALSetErrno( 0 );
   /* Return with success status code */
   return XLAL_SUCCESS;
 }
@@ -441,7 +382,7 @@ INT4
 XLALSegListClear( LALSegList *seglist )
 /* </lalVerbatim> */
 {
-  static const char *func = "XLALSegListClear";
+  static const char func[] = "XLALSegListClear";
 
   /* Make sure a non-null pointer was passed for the segment list */
   if ( ! seglist ) {
@@ -475,7 +416,6 @@ XLALSegListClear( LALSegList *seglist )
   /* No search has been performed yet */
   seglist->lastFound = NULL;
 
-  XLALSetErrno( 0 );
   /* Return with success status code */
   return XLAL_SUCCESS;
 }
@@ -487,7 +427,7 @@ INT4
 XLALSegListAppend( LALSegList *seglist, const LALSeg *seg )
 /* </lalVerbatim> */
 {
-  static const char *func = "XLALSegListAppend";
+  static const char func[] = "XLALSegListAppend";
   LALSeg *segptr;
   LALSeg *prev;
   size_t newSize;
@@ -589,7 +529,6 @@ XLALSegListAppend( LALSegList *seglist, const LALSeg *seg )
 
   }
 
-  XLALSetErrno( 0 );
   /* Return with success status code */
   return XLAL_SUCCESS;
 }
@@ -601,7 +540,7 @@ INT4
 XLALSegListSort( LALSegList *seglist )
 /* </lalVerbatim> */
 {
-  static const char *func = "XLALSegListSort";
+  static const char func[] = "XLALSegListSort";
 
   /* Make sure a non-null pointer was passed for the segment list */
   if ( ! seglist ) {
@@ -617,7 +556,6 @@ XLALSegListSort( LALSegList *seglist )
 
   /* If segment list is known to be sorted already, just return */
   if ( seglist->sorted ) {
-    XLALSetErrno( 0 );
     return XLAL_SUCCESS;
   }
 
@@ -633,7 +571,6 @@ XLALSegListSort( LALSegList *seglist )
   /* Reset the 'lastFound' value, since the array has changed */
   seglist->lastFound = NULL;
 
-  XLALSetErrno( 0 );
   /* Return with success status code */
   return XLAL_SUCCESS;
 }
@@ -645,7 +582,7 @@ INT4
 XLALSegListCoalesce( LALSegList *seglist )
 /* </lalVerbatim> */
 {
-  static const char *func = "XLALSegListCoalesce";
+  static const char func[] = "XLALSegListCoalesce";
   LALSeg *rp, *wp;   /* Read and write pointers for stepping through array */
   size_t newLength;
   LALSeg *segptr;
@@ -664,7 +601,6 @@ XLALSegListCoalesce( LALSegList *seglist )
 
   /* If segment list is empty or has only one segment, just return */
   if ( seglist->length <= 1 ) {
-    XLALSetErrno( 0 );
     return XLAL_SUCCESS;
   }
 
@@ -713,7 +649,6 @@ XLALSegListCoalesce( LALSegList *seglist )
   /* Reset the 'lastFound' value, since the array has changed */
   seglist->lastFound = NULL;
 
-  XLALSetErrno( 0 );
   /* Return with success status code */
   return XLAL_SUCCESS;
 }
@@ -725,7 +660,7 @@ LALSeg *
 XLALSegListSearch( LALSegList *seglist, const LIGOTimeGPS *gps )
 /* </lalVerbatim> */
 {
-  static const char *func = "XLALSegListSearch";
+  static const char func[] = "XLALSegListSearch";
   int cmp;
   LALSeg *bstart = NULL;
   size_t bcount = 0;
@@ -749,8 +684,6 @@ XLALSegListSearch( LALSegList *seglist, const LIGOTimeGPS *gps )
     XLALPrintError( "Passed unintialized LALSegList structure to %s\n", func );
     XLAL_ERROR_NULL( func, XLAL_EINVAL );
   }
-
-  XLALSetErrno( 0 );
 
   /* If the segment list is empty, simply return */
   if ( seglist->length == 0 ) {
@@ -950,14 +883,11 @@ XLALSegListSearch( LALSegList *seglist, const LIGOTimeGPS *gps )
 /*---------------------------------------------------------------------------*/
 /* <lalVerbatim file="SegmentsCP"> */
 INT4
-XLALSegListShift(  LALSegList *seglist, const LIGOTimeGPS *gps )
+XLALSegListShift(  LALSegList *seglist, const LIGOTimeGPS *shift )
 /* </lalVerbatim> */
 {
-  static const char *func = "XLALSegListShift";
-  static LALStatus status;
-  int i;
-  REAL8 shift;
-  LALSeg tmpSeg;
+  static const char func[] = "XLALSegListShift";
+  unsigned i;
 
   /* Make sure a non-null pointer was passed for the segment list */
   if ( ! seglist ) {
@@ -966,7 +896,7 @@ XLALSegListShift(  LALSegList *seglist, const LIGOTimeGPS *gps )
   }
 
   /* Make sure a non-null pointer was passed for the GPS time */
-  if ( ! gps ) {
+  if ( ! shift ) {
     XLALPrintError( "NULL LIGOTimeGPS pointer passed to %s\n", func );
     XLAL_ERROR( func, XLAL_EFAULT );
   }
@@ -977,28 +907,14 @@ XLALSegListShift(  LALSegList *seglist, const LIGOTimeGPS *gps )
     XLAL_ERROR( func, XLAL_EINVAL );
   }
 
-  XLALSetErrno( 0 );
-
-  /* If the segment list is empty, simply return */
-  if ( seglist->length == 0 ) {
-    return XLAL_SUCCESS;
-  }
-
-  /* convert the time-shift to a float */
-  LALGPStoFloat( &status, &shift, gps);
-
-  /* loop over all segments in this list */
+  /* time shift each segment in this list */
   for (i=0; i<seglist->length; i++) {
-    tmpSeg=seglist->segs[i];
-
-    /* create time-shifted segments */
-    LALAddFloatToGPS( &status, &tmpSeg.start, &tmpSeg.start, shift);
-    LALAddFloatToGPS( &status, &tmpSeg.end, &tmpSeg.end, shift);    
-    seglist->segs[i]=tmpSeg;
+    XLALGPSAddGPS( &seglist->segs[i].start, shift);
+    XLALGPSAddGPS( &seglist->segs[i].end, shift);    
   }
 
-  return 1;
-
+  /* done */
+  return 0;
 }
 
 
@@ -1007,83 +923,73 @@ INT4
 XLALSegListKeep(  LALSegList *seglist, const LIGOTimeGPS *start, const LIGOTimeGPS *end )
 /* </lalVerbatim> */
 {
- static const char *func = "XLALSegListKeep";
- static LALStatus status;
- LALSegList  newlist;
- int i;
- INT8 startNS, endNS;
- INT8 segStart, segEnd;
- LALSeg tmpSeg, newSeg;
+  static const char func[] = "XLALSegListKeep";
+  LALSegList workspace;
+  unsigned i;
+  INT8 startNS, endNS;
 
- /* Make sure a non-null pointer was passed for the segment list */
- if ( ! seglist ) {
-   XLALPrintError( "NULL LALSegList pointer passed to %s\n", func );
-   XLAL_ERROR( func, XLAL_EFAULT );
- }
+  /* Make sure a non-null pointer was passed for the segment list */
+  if ( ! seglist ) {
+    XLALPrintError( "%s(): NULL LALSegList\n", func );
+    XLAL_ERROR( func, XLAL_EFAULT );
+  }
 
- /* Make sure a non-null pointer was passed for the GPS time */
- if ( !start || !end ) {
-   XLALPrintError( "NULL LIGOTimeGPS pointers passed to %s\n", func );
-   XLAL_ERROR( func, XLAL_EFAULT );
- }
+  /* Make sure a non-null pointer was passed for the GPS time */
+  if ( !start || !end ) {
+    XLALPrintError( "%s(): NULL boundaries\n", func );
+    XLAL_ERROR( func, XLAL_EFAULT );
+  }
 
- /* Make sure the segment list has been properly initialized */
- if ( seglist->initMagic != SEGMENTSH_INITMAGICVAL ) {
-   XLALPrintError( "Passed unintialized LALSegList structure to %s\n", func );
-   XLAL_ERROR( func, XLAL_EINVAL );
- }
+  /* Make sure the segment list has been properly initialized */
+  if ( seglist->initMagic != SEGMENTSH_INITMAGICVAL ) {
+    XLALPrintError( "%s(): unintialized LALSegList\n", func );
+    XLAL_ERROR( func, XLAL_EINVAL );
+  }
 
- XLALSetErrno( 0 );
+  /* init the temporary list */
+  XLALSegListInit( &workspace );
 
- /* If the segment list is empty, simply return */
- if ( seglist->length == 0 ) {
-   return XLAL_SUCCESS;
- }
+  /* convert the start and stop times to nanoseconds */
+  startNS = XLALGPSToINT8NS( start );
+  endNS = XLALGPSToINT8NS( end );
+  if ( startNS >= endNS ) {
+    XLALPrintError( "%s(): zero-length or improper interval\n", func );
+    XLAL_ERROR( func, XLAL_EINVAL );
+  }
 
-/* init the temporary list */
- XLALSegListInit( &newlist );
+  /* loop over all segments in this list */
+  for (i=0; i<seglist->length; i++) {
+    LALSeg newSeg;
+    INT8 segStart = XLALGPSToINT8NS( &seglist->segs[i].start );
+    INT8 segEnd = XLALGPSToINT8NS( &seglist->segs[i].end );
 
- /* convert the time-shift to a float */
- LALGPStoINT8( &status, &startNS, start);
- LALGPStoINT8( &status, &endNS, end);
+    /* if segment lies entirely outside interval, discard */
+    if ( segEnd <= startNS || segStart >= endNS )
+      continue;
 
- /* loop over all segments in this list */
- for (i=0; i<seglist->length; i++) {
-   tmpSeg=seglist->segs[i];
+    /* intersect */
+    if ( segStart < startNS )
+      segStart = startNS;
+    if ( segEnd > endNS )
+      segEnd = endNS;
 
-   LALGPStoINT8( &status, &segStart, &(tmpSeg.start));
-   LALGPStoINT8( &status, &segEnd,   &(tmpSeg.end));
+    /* store in new list */
+    XLALINT8NSToGPS( &newSeg.start, segStart );
+    XLALINT8NSToGPS( &newSeg.end, segEnd );
+    newSeg.id = seglist->segs[i].id;
+    XLALSegListAppend( &workspace, &newSeg );
+  }
 
-/* check the times */
-   if ( segEnd<startNS || segStart>endNS) {
-     segStart=0;
-     segEnd=0;
-   }
-   if ( segStart<startNS && segEnd>startNS ) {
-     segStart=startNS;
-     segEnd=segEnd;
-   }
-   if ( segStart<endNS && segEnd>endNS ) {
-     segStart=segStart;
-     segEnd=endNS;
-   }
-     if ( segStart ) {
-/* store time to temporary list */
-     LALINT8toGPS( &status, &(newSeg.start), &segStart );
-     LALINT8toGPS( &status, &(newSeg.end),   &segEnd );
-     XLALSegListAppend( &newlist, &newSeg );
-   }
-   }
+  /* clear the old list */
+  XLALSegListClear( seglist );
 
-   /* clear the old list */
- XLALSegListClear( seglist ); /* SEGFAULT */
+  /* put the new segments into the old lsit */
+  for ( i = 0; i < workspace.length; i++ )
+    XLALSegListAppend( seglist, &workspace.segs[i] );
 
- /* loop over all segments in this list */
- for (i=0; i<newlist.length; i++) {
-   XLALSegListAppend( seglist, &(newlist.segs[i]));
- }
+  /* clear the work space */
+  XLALSegListClear( &workspace );
 
- XLALSegListClear( &newlist );
-
- return 1;
+  /* done */
+  return 0;
 }
