@@ -37,6 +37,7 @@ LALAPPS_WITH_GCC_FLAGS
 LALAPPS_ENABLE_CONDOR
 LALAPPS_ENABLE_FRAME
 LALAPPS_ENABLE_METAIO
+LALAPPS_ENABLE_XML
 LALAPPS_ENABLE_CFITSIO
 LALAPPS_ENABLE_NIGHTLY
 
@@ -118,13 +119,15 @@ else
   LIBS="$LALSUPPORT_LIBS $LAL_LIBS $LIBS"
   AC_CHECK_LIB(lal, LALVersion, , AC_MSG_ERROR(could not find the LAL library))
   AC_CHECK_LIB(lalsupport, LALOpenDataFile, , AC_MSG_ERROR(could not find the LAL support library))
-  dnl LALFrame and LALMetaIo (optional).
+  dnl LALFrame, LALMetaIo, and LALXML (optional).
   lalframe="true"
   lalmetaio="true"
+  lalxml="true"
   PKG_CHECK_MODULES(LALFRAME, lalframe, [ true ], [ false ])
   PKG_CHECK_MODULES(LALMETAIO, lalmetaio, [ true ], [ false ])
-  CPPFLAGS="$CPPFLAGS $LALFRAME_CFLAGS $LALMETAIO_CFLAGS"
-  LIBS="$LIBS $LALFRAME_LIBS $LALMETAIO_LIBS"
+  PKG_CHECK_MODULES(LALXML, lalxml, [ true ], [ false ])
+  CPPFLAGS="$CPPFLAGS $LALFRAME_CFLAGS $LALMETAIO_CFLAGS $LALXML_CFLAGS"
+  LIBS="$LIBS $LALFRAME_LIBS $LALMETAIO_LIBS $LALXML_LIBS"
   dnl do actual checks for libraries after checking for gsl and FrameL
 fi
 
@@ -162,6 +165,17 @@ if test "${metaio}" = "true"; then
                  [LIBS="$lal_pre_metaio_LIBS"])
 fi
 
+dnl XML2 (libxml2)
+if test "${xml}" = "true"; then
+  PKG_CHECK_MODULES(LIBXML2, libxml-2.0, [ true ], [ false ])
+  lal_pre_xml2_LIBS="$LIBS"
+  LIBS="$LIBS $LIBXML2_LIBS"
+  AC_SEARCH_LIBS(xmlInitParser, xml2, ,
+                 [AC_MSG_WARN(disabling xml support)]
+                 [xml="false"]
+                 [LIBS="$lal_pre_xml2_LIBS"])
+fi
+
 dnl Check for libcfitsio
 if test "${cfitsio}" = "true"; then
   AC_CHECK_LIB(cfitsio, ffopen, , cfitsio="false")
@@ -171,6 +185,7 @@ dnl Now check for LALFrame and LALMetaIo
 if test "$LAL_BUILD" != "true" ; then
   AC_CHECK_LIB(lalframe, LALFrOpen, , lalframe="false")
   AC_CHECK_LIB(lalmetaio, LALSnglInspiralTableFromLIGOLw, , lalmetaio="false")
+  AC_CHECK_LIB(lalxml, XLALXMLFilePrintElements, , lalxml="false")
 fi
 
 AC_CHECK_LIB(mysqlclient, mysql_init)
@@ -207,6 +222,15 @@ if test "${metaio}" = "true"; then
                    [CPPFLAGS="$lal_pre_metaio_CPPFLAGS"])
 fi
 
+if test "${xml}" = "true"; then
+  lal_pre_xml2_CPPFLAGS="$CPPFLAGS"
+  CPPFLAGS="$CPPFLAGS $LIBXML2_CFLAGS"
+  AC_CHECK_HEADERS(libxml/xmlversion.h, ,
+                   [AC_MSG_WARN(disabling xml support)]
+                   [xml="false"]
+                   [CPPFLAGS="$lal_pre_xml2_CPPFLAGS"])
+fi
+
 if test "${cfitsio}" = "true"; then
   lal_pre_cfitsio_CPPFLAGS="$CPPFLAGS"
   CPPFLAGS="$CPPFLAGS $CFITSIO_CFLAGS"
@@ -226,13 +250,15 @@ AC_MSG_RESULT(no))
 AC_CHECK_FUNCS(setenv)
 
 if test "$LAL_BUILD" = "true"; then
-  LIBS="$LIBS $LAL_LIBS $LALSUPPORT_LIBS $LALFRAME_LIBS $LALMETAIO_LIBS $CFITSIO_LIBS"
-  CPPFLAGS="$CPPFLAGS $LAL_CFLAGS $LALSUPPORT_CFLAGS $LALFRAME_CFLAGS $LALMETAIO_CFLAGS $CFITSIO_CFLAGS"
+  LIBS="$LALXML_LIBS $LALFRAME_LIBS $LALMETAIO_LIBS $LALSUPPORT_LIBS $LAL_LIBS $CFITSIO_LIBS $LIBS"
+  CPPFLAGS="$CPPFLAGS $CFITSIO_CFLAGS $LAL_CFLAGS $LALSUPPORT_CFLAGS $LALFRAME_CFLAGS $LALMETAIO_CFLAGS $LALXML_LIBS"
   lalframe="false"
   lalmetaio="false"
+  lalxml="false"
   cfitsio="false"
   test -z "$LALFRAME_LIBS" && test -z "$LALFRAME_CFLAGS" && lalframe="true"
   test -z "$LALMETAIO_LIBS" && test -z "$LALMETAIO_CFLAGS" && lalmetaio="true"
+  test -z "$LALXML_LIBS" && test -z "$LALXML_CFLAGS" && lalxml="true"
   test -z "$CFITSIO_LIBS" && test -z "$CFITSIO_CFLAGS" && cfitsio="true"
 fi
 AC_ARG_VAR(LAL_BUILD,[set to "true" if lalapps is built as part of a lal build])
@@ -240,6 +266,7 @@ AC_ARG_VAR(LAL_BUILD,[set to "true" if lalapps is built as part of a lal build])
 AM_CONDITIONAL(FRAME, test x$frame = xtrue)
 AM_CONDITIONAL(LALFRAME, test x$lalframe = xtrue)
 AM_CONDITIONAL(LALMETAIO, test x$lalmetaio = xtrue)
+AM_CONDITIONAL(LALXML, test x$lalxml = xtrue)
 AM_CONDITIONAL(DATAFLOW, test x$metaio = xtrue)
 AM_CONDITIONAL(CFITSIO, test x$cfitsio = xtrue)
 AC_DEFINE_UNQUOTED(PREFIX, "$prefix", [Install prefix])
@@ -288,6 +315,7 @@ AC_OUTPUT( \
 
 lalframeenabled="`test x${lalframe} = xtrue && echo "ENABLED" || echo "DISABLED"`"
 lalmetaioenabled="`test x${lalmetaio} = xtrue && echo "ENABLED" || echo "DISABLED"`"
+lalxmlenabled="`test x${lalxml} = xtrue && echo "ENABLED" || echo "DISABLED"`"
 cfitsioenabled="`test x${cfitsio} = xtrue && echo "ENABLED" || echo "DISABLED"`"
 echo "
 ================================================================
@@ -296,6 +324,7 @@ echo "
 
                 LAL Frame library support is $lalframeenabled
                 LAL MetaIo library support is $lalmetaioenabled
+                LAL XML library support is $lalxmlenabled
                 FITS library support is $cfitsioenabled
 
         Now run 'make' to build LALApps

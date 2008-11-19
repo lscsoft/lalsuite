@@ -117,6 +117,18 @@ AC_DEFUN([LALAPPS_ENABLE_METAIO],
   ], [ metaio=true ] )
 ])
 
+AC_DEFUN([LALAPPS_ENABLE_XML],
+[AC_ARG_ENABLE(
+  [xml],
+  [  --enable-xml         compile code for XML I/O [default=yes] ],
+  [ case "${enableval}" in
+      yes) xml=true;;
+      no)  xml=false ;;
+      *) AC_MSG_ERROR(bad value ${enableval} for --enable-xml) ;;
+    esac
+  ], [ xml=true ] )
+])
+
 AC_DEFUN([LALAPPS_ENABLE_CFITSIO],
 [AC_ARG_ENABLE(
   [cfitsio],
