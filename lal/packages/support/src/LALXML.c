@@ -20,6 +20,7 @@
 #include <stdio.h>
 #include <libxml/parser.h>
 #include <libxml/tree.h>
+#include <lal/LALXML.h>
 #include <lal/XLALError.h>
 
 static void print_element_names(xmlNode *node)
@@ -43,7 +44,7 @@ int XLALXMLFilePrintElements(const char *fname)
 	LIBXML_TEST_VERSION
 
 	if (!(doc = xmlReadFile(fname, NULL, 0)))
-		XLAL_ERROR(XLAL_EIO, file);
+		XLAL_ERROR(file, XLAL_EIO);
 	print_element_names(xmlDocGetRootElement(doc));
 	xmlFreeDoc(doc);
 	xmlCleanupParser(); /* free global variables in parser */
