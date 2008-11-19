@@ -31,6 +31,7 @@ LAL_WITH_GCC_FLAGS
 LAL_ENABLE_INTELFFT
 LAL_ENABLE_FRAME
 LAL_ENABLE_METAIO
+LAL_ENABLE_XML
 LAL_ENABLE_MPI
 
 LAL_ENABLE_DEBUG
@@ -155,7 +156,7 @@ else
   AC_CHECK_HEADERS(mkl_fft.h, , [AC_MSG_ERROR(could not find Intel FFT header)])
 fi
 
-dnl Checks for optional FrameL and metaio libraries.
+dnl Checks for optional FrameL, metaio, and xml2 libraries.
 if test "${metaio}" = "true"; then
   PKG_CHECK_MODULES(METAIO, libmetaio, [ true ], [ false ])
   lal_pre_metaio_LIBS="$LIBS"
@@ -173,6 +174,15 @@ if test "${frame}" = "true"; then
                  [AC_MSG_WARN(disabling frame library)]
                  [frame="false"]
                  [LIBS="$lal_pre_frame_LIBS"])
+fi
+if test "${xml}" = "true"; then
+  PKG_CHECK_MODULES(LIBXML2, libxml-2.0, [ true ], [ false ])
+  lal_pre_xml2_LIBS="$LIBS"
+  LIBS="$LIBS $LIBXML2_LIBS"
+  AC_SEARCH_LIBS(xmlInitParser, xml2, ,
+                 [AC_MSG_WARN(disabling xml support)]
+                 [xml="false"]
+                 [LIBS="$lal_pre_xml2_LIBS"])
 fi
 
 
@@ -206,6 +216,14 @@ if test "${frame}" = "true"; then
                    [AC_MSG_WARN(disabling frame library support)]
                    [frame="false"]
                    [CPPFLAGS="$lal_pre_frame_CPPFLAGS"])
+fi
+if test "${xml}" = "true"; then
+  lal_pre_xml2_CPPFLAGS="$CPPFLAGS"
+  CPPFLAGS="$CPPFLAGS $LIBXML2_CFLAGS"
+  AC_CHECK_HEADERS(libxml/xmlversion.h, ,
+                   [AC_MSG_WARN(disabling xml support)]
+                   [xml="false"]
+                   [CPPFLAGS="$lal_pre_xml2_CPPFLAGS"])
 fi
 if test "${lal_pthread_lock}" = "true"; then
   AC_CHECK_HEADERS(pthread.h, break)
@@ -243,6 +261,9 @@ if test "${metaio}" = "true"; then
 fi
 if test "${frame}" = "true"; then
   AC_DEFINE(LAL_FRAME_ENABLED, 1, [Define if using frame library])
+fi
+if test "${xml}" = "true"; then
+  AC_DEFINE(LAL_XML_ENABLED, 1, [Define if using xml2 library])
 fi
 if test "${mpi}" = "true"; then
   AC_DEFINE(LAL_MPI_ENABLED, 1, [Define if using MPI])
@@ -291,6 +312,7 @@ AM_CONDITIONAL(FRAME, test x$frame = xtrue)
 AM_CONDITIONAL(MPI, test x$mpi = xtrue)
 AM_CONDITIONAL(FRAMEANDMPI, test x$frame = xtrue -a x$mpi = xtrue)
 AM_CONDITIONAL(METAIO, test x$metaio = xtrue)
+AM_CONDITIONAL(XML, test x$xml = xtrue)
 AM_CONDITIONAL(INTELFFT, test x$intelfft = xtrue)
 AM_CONDITIONAL(QTHREAD, test x$qthread = xtrue)
 
@@ -317,7 +339,14 @@ if test -d $srcdir/lalapps ; then
     LALMETAIO_LIBS=""
     LALMETAIO_CFLAGS=""
   fi
-  export LAL_BUILD LAL_LIBS LAL_CFLAGS LALSUPPORT_LIBS LALSUPPORT_CFLAGS LALFRAME_LIBS LALFRAME_CFLAGS LALMETAIO_LIBS LALMETAIO_CFLAGS
+  if test x$xml = xtrue ; then
+    LALXML_LIBS=$lal_build_dir/packages/support/src/liblalxml.la
+    LALXML_CFLAGS=-I$lal_build_dir/include
+  else
+    LALXML_LIBS=""
+    LALXML_CFLAGS=""
+  fi
+  export LAL_BUILD LAL_LIBS LAL_CFLAGS LALSUPPORT_LIBS LALSUPPORT_CFLAGS LALFRAME_LIBS LALFRAME_CFLAGS LALMETAIO_LIBS LALMETAIO_CFLAGS LALXML_LIBS LALXML_CFLAGS
   AC_CONFIG_SUBDIRS(lalapps)
 fi
 
@@ -355,6 +384,7 @@ AC_CONFIG_FILES([lal.spec])
 AC_CONFIG_FILES([lal.pc])
 AC_CONFIG_FILES([lalframe.pc])
 AC_CONFIG_FILES([lalmetaio.pc])
+AC_CONFIG_FILES([lalxml.pc])
 AC_CONFIG_FILES([lalmpi.pc])
 AC_CONFIG_FILES([lalsupport.pc])
 AC_CONFIG_FILES([lal-config])
@@ -525,6 +555,7 @@ AC_CONFIG_FILES([packages/framedata/test/Makefile])
 AC_OUTPUT
 frameenabled="`test x${frame} = xtrue && echo "ENABLED" || echo "DISABLED"`"
 metaioenabled="`test x${metaio} = xtrue && echo "ENABLED" || echo "DISABLED"`"
+xmlenabled="`test x${xml} = xtrue && echo "ENABLED" || echo "DISABLED"`"
 mpienabled="`test x${mpi} = xtrue && echo "ENABLED" || echo "DISABLED"`"
 echo "
 ================================================================
@@ -533,6 +564,7 @@ echo "
 
                 LAL Frame library support is $frameenabled
                 LAL MetaIo library support is $metaioenabled
+                LAL XML library support is $xmlenabled
                 LAL MPI support is $mpienabled
 
         Now run 'make' to build LAL

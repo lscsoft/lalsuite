@@ -11,7 +11,7 @@ Source: %{name}-%{version}.tar.gz
 URL: http://www.lsc-group.phys.uwm.edu/lal
 Packager: Jolien Creighton <jolien@uwm.edu>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
-Requires: gsl fftw libframe libmetaio
+Requires: gsl fftw libframe libmetaio libxml2
 Prefix: %{_prefix}
 
 %description
@@ -23,7 +23,7 @@ that use the LAL library.
 Summary: Files and documentation needed for compiling programs that use LAL
 Group: LAL
 Requires: %{name} = %{version}
-Requires: gsl-devel libframe-devel libmetaio-devel
+Requires: gsl-devel libframe-devel libmetaio-devel libxml2-devel
 %description devel
 The LSC Algorithm Library for gravitational wave data analysis.
 This package contains files needed build applications that use the LAL library

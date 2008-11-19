@@ -1,0 +1,11 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: LALXML
+Description: LAL XML Library Support
+Version: @VERSION@
+Requires: lal libxml-2.0
+Libs: -L${libdir} -llalxml
+Cflags: -I${includedir}

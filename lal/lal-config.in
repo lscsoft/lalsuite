@@ -9,6 +9,7 @@ my_lal_cflags="-I@includedir@ @GSL_CFLAGS@ @FFTW3_CFLAGS@"
 test "@MPI_TRUE@" = "#" && lal_mpi_enabled="no" || lal_mpi_enabled="yes"
 test "@FRAME_TRUE@" = "#" && lal_frame_enabled="no" || lal_frame_enabled="yes"
 test "@METAIO_TRUE@" = "#" && lal_metaio_enabled="no" || lal_metaio_enabled="yes"
+test "@XML_TRUE@" = "#" && lal_xml_enabled="no" || lal_xml_enabled="yes"
 usage()
 {
     cat <<EOF
@@ -26,6 +27,7 @@ Libraries:
         lalsupport
         lalframe
         lalmetaio
+	lalxml
 EOF
     exit $1
 }
@@ -76,6 +78,9 @@ while test $# -gt 0; do
     --metaio-enabled)
         echo $lal_metaio_enabled
         ;;
+    --xml-enabled)
+        echo $lal_xml_enabled
+        ;;
     lal)
         lib_lal=yes
         ;;
@@ -95,6 +100,14 @@ while test $# -gt 0; do
           lib_lalmetaio=yes
         else
           echo "LAL was not compiled with metaio support!" 1>&2
+          exit 1
+        fi
+        ;;
+    lalxml)
+        if test "$lal_xml_enabled" = "yes" ; then
+          lib_lalxml=yes
+        else
+          echo "LAL was not compiled with xml support!" 1>&2
           exit 1
         fi
         ;;
@@ -131,6 +144,11 @@ fi
 if test "$lib_lalmetaio" = "yes"; then
   my_lal_libs="-L@libdir@ -llalmetaio @METAIO_LIBS@ $my_lal_libs"
   my_lal_cflags="@METAIO_CFLAGS@ $my_lal_cflags"
+fi
+
+if test "$lib_lalxml" = "yes"; then
+  my_lal_libs="-L@libdir@ -llalxml @XML_LIBS@ $my_lal_libs"
+  my_lal_cflags="@XML_CFLAGS@ $my_lal_cflags"
 fi
 
 if test "$echo_libs" = "yes"; then

@@ -1,6 +1,7 @@
 ## Process this file with automake to produce Makefile.in
 ## $Id$
 LALMETAIOSOURCES = CreateMetaTableDir.c LIGOLwXMLRead.c LIGOLwXMLRingdownRead.c
+LALXMLSOURCES = LALXML.c
 
 if METAIO
 LALMETAIOLIBRARIES = liblalmetaio.la
@@ -8,12 +9,22 @@ else
 LALMETAIOLIBRARIES = 
 endif
 
-lib_LTLIBRARIES = $(LALMETAIOLIBRARIES) liblalsupport.la
+if XML
+LALXMLLIBRARIES = liblalxml.la
+else
+LALXMLLIBRARIES = 
+endif
+
+lib_LTLIBRARIES = $(LALMETAIOLIBRARIES) $(LALXMLLIBRARIES) liblalsupport.la
 
 if METAIO
 liblalmetaio_la_SOURCES = $(LALMETAIOSOURCES)
 else
 EXTRA_TEXSOURCES = $(LALMETAIOSOURCES)
+endif
+
+if XML
+liblalxml_la_SOURCES = $(LALXMLSOURCES)
 endif
 
 liblalsupport_la_SOURCES = FileIO.c PrintVector.c PrintFrequencySeries.c \
@@ -40,7 +51,7 @@ MAINTAINERCLEANFILES = PrintVector.c PrintFrequencySeries.c PrintTimeSeries.c \
   StreamSeriesInput.c StreamSeriesOutput.c \
   StreamGridInput.c StreamGridOutput.c
 
-EXTRA_DIST = $(LALMETAIOSOURCES) \
+EXTRA_DIST = $(LALMETAIOSOURCES) $(LALXMLSOURCES)\
              PrintVector.m4 LALPrintVector.m4 \
              PrintTimeSeries.m4 LALPrintTimeSeries.m4 \
 	     PrintFrequencySeries.m4 LALPrintFrequencySeries.m4\
