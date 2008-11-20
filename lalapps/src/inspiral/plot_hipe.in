@@ -585,8 +585,8 @@ if opts.plotinspfound:
   if opts.first_stage:
     print >>sys.stderr, "warning: plotinspfound runs with second stage inputs.  Skipping..."
   if opts.second_stage:
-    if cp.get("pipeline","inj-suffix") == '*INJ':
-      print >>sys.stderr, "warning: plotinspfound does not work with '*INJ'. Skipping..."
+    if cp.get("pipeline","inj-suffix") == '*INJ_CAT_3_VETO':
+      print >>sys.stderr, "warning: plotinspfound does not work with '*INJ_CAT_£_VETO'. Skipping..."
     else:
       plotinspfound_jobs['plotinspfound'] = inspiral.PlotInspfoundJob(cp)
 
