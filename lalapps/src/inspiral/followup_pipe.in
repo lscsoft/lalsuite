@@ -104,6 +104,16 @@ parser.add_option("-s", "--seis-qscan",action="store_true",\
 parser.add_option("-S", "--background-seis-qscan",action="store_true",\
     default=False, help="do seismic qscans over a list of times")
 
+parser.add_option("", "--distrib-remote-q", action="store_true",\
+    default=False, help="this argument needs to be called when you want to \
+    analyse the V1 qscans and seismic qscans that have been run remotely at  \
+    CC-Lyon. After the V1 qscans have been done, you have received a \
+    \"V1_qscans_results.tar.gz\" file that contains all the qscan results. \
+    Before launching the \"analyseQscan\" jobs, you first need to copy these \
+    results at their expected location, ie the \"xxouput\" fields defined in \
+    the qscan sections of your \"followup_pipe.ini\" file. This is taken care \
+    of by the argument \"--distrib-remote-q\"")
+
 parser.add_option("-a", "--analyse-qscan",action="store_true",\
     default=False, help="run the analyseQscan script to interprete the qscan")
 
@@ -284,6 +294,7 @@ if not opts.disable_followup:
   inspJobNotrig   = followUpInspJob(cp,'notrig')
   plotJob         = plotSNRCHISQJob(opts,cp)
   qscanFgJob      = qscanJob(opts,cp)
+  distribQJob     = distributeQscanJob(cp)
   anaQscanJob     = analyseQscanJob(opts,cp)
   frcheckJob      = FrCheckJob(opts,cp)
   statusJob       = IFOstatus_checkJob(opts,cp)
@@ -390,8 +401,9 @@ for ifo in ifos_list:
     qBgNode = qscanNode(qscanBgJob,time,cp,dNode.outputFileName,ifo,'background-seismic-qscan',opts, dNode, dag,'datafind','background_seis_qscan')
   
   # WRITE TIMES FOR REMOTE (DEPORTED) CALCULATIONS
-  if ifo == depIfo and len(times)!=0:
-     os.system('cp '+timeListFile+' '+depIfoDir+'/TIMES/background_qscan_times.txt')
+  if not opts.disable_followup:
+    if ifo == depIfo and len(times)!=0:
+      os.system('cp '+timeListFile+' '+depIfoDir+'/TIMES/background_qscan_times.txt')
 
 ################# LOOP OVER FOLLOWUP TRIGGERS #################################
 ###############################################################################
@@ -483,7 +495,6 @@ if not opts.disable_followup:
     # first make sure that the coincident trigger is found in at least one Hanford ifo and that both Hanford ifos are in the analysed times
     lho_flag = trig.ifolist_in_coinc.count('H1') + trig.ifolist_in_coinc.count('H2')
     if lho_flag == 2:
-      #times = {"H1":trig.gpsTime["H1"],"H2":trig.gpsTime["H2"]} # equivalent to trig.gpsTime ?
       #Lets append a new subsection to the last section
       dag.appendSubSection('H1H2 followup' +' @ GPS '+str(trig.gpsTime['H1']))
       h1h2Qevent = h1h2QeventNode(h1h2QJob,dHoftNode,trig.gpsTime,['H1','H2'],'qevent',cp,opts,dag,'H1H2_qevent')
@@ -542,6 +553,9 @@ if not opts.disable_followup:
   # Prepare for moving the deported qscan directory (tar-gzip)
   depQscanTFile.close()
   os.system('tar zcvf '+depIfoDir+'.tar.gz '+depIfoDir)
+
+  # Distribute the results of the deported qscans to the expected output directories
+  distribQNode = distributeQscanNode(distribQJob,'QSCAN/QSCAN.cache','QSCANLITE/QSCANLITE.cache',depIfo,depIfo+"_qscans_results.tar.gz",opts,dag)
   
   # Loop for analyseQscan jobs (which must be children of all qscan jobs)
   for trig in followuptrigs:
