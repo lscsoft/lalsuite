@@ -74,6 +74,8 @@ char* HSBOINCEXTRASCRCSID = "$Id$";
 #define MIN(a,b) ((a)<(b)?(a):(b))
 #endif
 
+#define DEBUG_COMMAND_LINE_MANGLING 1
+
 /** compare strings s1 and s2 up to the length of s1 (w/o the '\0'!!)
     and set l to the length */
 #define MATCH_START(s1,s2,l) (0 == strncmp(s1,s2,(l=strlen(s1))-1))
