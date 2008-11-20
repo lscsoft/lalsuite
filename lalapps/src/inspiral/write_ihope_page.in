@@ -1099,13 +1099,15 @@ def write_injection(page, opts):
   	"Efficiencies (Second stage)",\
   	"Accuracies (First stage)",\
   	"Accuracies (Second stage)"\
+  	"Found injections with SNR loss through pipeline"\
 	]
   tags = [\
   	'*plotinspmissed_FIRST*',\
   	'*plotinspmissed_SECOND*',\
   	'*plotinspmissed_SECOND*',\
   	'*plotinspinj_FIRST*',\
-  	'*plotinspinj_SECOND*'\
+  	'*plotinspinj_SECOND*',\
+  	'*plotinspfound*',\
 	]
 	#['map-8'],\  # this is not robust but works for GPS <900,000,000
   imagetags=[\
@@ -1113,14 +1115,16 @@ def write_injection(page, opts):
 	['map-8'],\
         ['efficiency-eff_dist'],\
         ['mchirp_vs_snr_accuracy_scatter_mtotal'],\
-        ['mchirp_vs_snr_accuracy_scatter_mtotal']\
+        ['mchirp_vs_snr_accuracy_scatter_mtotal'],\
+        ['no image']\
 	]
   captions = [\
         "Found and Missed injections links (first stage)",\
 	'Found and Missed injections. Effective distance versus total mass',\
 	'Efficiencies (Second stage)',\
         'Accuracy plots (first stage)',\
-        'Accuracy plots (second stage)'\
+        'Accuracy plots (second stage)',\
+        'Found injections with SNR loss through pipeline'\
 	]
 
   comments = [\
@@ -1130,7 +1134,10 @@ def write_injection(page, opts):
         None, \
         None, \
         None, \
-        None, \
+        "<span style=\"color:red\">plotinspfound does not produce \
+         plots!</span>. \
+         To see the followup of found injections, clik on the link in the \
+         caption below"\
         ]
 
   configs = [\
@@ -1139,7 +1146,7 @@ def write_injection(page, opts):
 	'plotinspmissed',\
 	'plotinspinj',\
 	'plotinspinj',\
-	'plotinspinj'\
+	'plotinspfound'\
 	]
 
   injections = hipecp.items("injections")
@@ -1152,6 +1159,7 @@ def write_injection(page, opts):
   try:
     for dir in images_dirs:
       copy_plotinspmissed(dir)
+      copy_plotinspfound(dir)
   except:
     logText(logfile, "Problem while copying files", "error")
     pass
@@ -1682,6 +1690,19 @@ def copy_plotinspmissed(dir):
 
   command = 'find ' + opts.datadir + '/' + dir   \
       + ' -name \"*plotinspmissed*html\" -exec cp \"{}\" '\
+      + opts.physdir + ' \;'     
+  make_external_call(command, opts.debug, opts.debug, True)
+
+def copy_plotinspfound(dir):
+  # see copy_plotinspmissed.
+  command = 'find ' + opts.datadir + '/' + dir + '/Images'  \
+      + ' -name \"*plotinspfound*\" -exec cp \"{}\" '\
+      + opts.physdir + '/Images/' + ' \;'     
+  print >> sys.stdout, ' .../ copying all plotinspfound files from ' +dir
+  make_external_call(command, opts.debug, opts.debug, True)
+
+  command = 'find ' + opts.datadir + '/' + dir   \
+      + ' -name \"*plotinspfound*html\" -exec cp \"{}\" '\
       + opts.physdir + ' \;'     
   make_external_call(command, opts.debug, opts.debug, True)
 
