@@ -176,7 +176,7 @@ if test "${frame}" = "true"; then
                  [LIBS="$lal_pre_frame_LIBS"])
 fi
 if test "${xml}" = "true"; then
-  PKG_CHECK_MODULES(LIBXML2, libxml-2.0, [ true ], [ false ])
+  PKG_CHECK_MODULES(LIBXML2, libxml-2.0 >= 2.6, [ true ], [ false ])
   lal_pre_xml2_LIBS="$LIBS"
   LIBS="$LIBS $LIBXML2_LIBS"
   AC_SEARCH_LIBS(xmlInitParser, xml2, ,
