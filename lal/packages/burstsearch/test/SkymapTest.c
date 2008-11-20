@@ -33,8 +33,8 @@ int main(int argc, char** argv)
     FILE* h;
     int i;
     double* rbw;
-    int begin[3] = { 200, 200, 200 };
-    int end[3] = { 300, 300, 210 };
+    int begin[3] = { 0, 0, 0 };
+    int end[3] = { 512, 512, 512 };
     double* image;
     
     make_data(z, samples);
@@ -46,12 +46,14 @@ int main(int argc, char** argv)
     x[4] = z[4] + begin[1];
     x[5] = z[5] + begin[2];
     
-    plan = XLALSkymapConstructPlan(2048);
-    raw = (double*) malloc(plan->pixelCount * sizeof(double));
-    XLALSkymapAnalyzeElliptical(raw, plan, sigma, w, samples, z);
+    printf("constructing plan...\n");
+    plan = XLALSkymapConstructPlan(2048*4);
+    /*raw = (double*) malloc(plan->pixelCount * sizeof(double));*/
+    /*XLALSkymapAnalyzeElliptical(raw, plan, sigma, w, samples, z);*/
+    printf("computing skymap...\n");
     rbw = (double*) malloc(plan->pixelCount * sizeof(double));
     XLALSkymapEllipticalHypothesis(plan, rbw, sigma, w, begin, end, x); 
-    
+    printf("writing directions...\n");
     h = fopen("out.txt", "wt");
     for (i = 0; i != plan->pixelCount; ++i)
     {
@@ -63,6 +65,7 @@ int main(int argc, char** argv)
     }
     fclose(h);
 
+    /*
     h = fopen("difference.txt", "wt");
     for (i = 0; i != plan->pixelCount; ++i)
     {
@@ -72,16 +75,19 @@ int main(int argc, char** argv)
 	}
     }
     fclose(h);
-
+    */
+    
+    printf("rendering image...\n");
     image = (double*) malloc(sizeof(double) * 512 * 1024);
     XLALSkymapRenderEqualArea(512, 1024, image, plan, rbw);
+    printf("writing image...\n");
     h = fopen("raw.dat", "wb");
     fwrite(image, sizeof(double), 512*1024, h);
     fclose(h);
-
     
+    printf("cleanup...\n");
     free(rbw);
-    free(raw);
+    /*free(raw);*/
     XLALSkymapDestroyPlan(plan);
     
     return 0;

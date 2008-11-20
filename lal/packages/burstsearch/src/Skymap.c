@@ -213,18 +213,30 @@ static double logsumexp(double a, double b)
 	    );
 }
 
-static double logtotalexp(double* begin, double* end)
+static double* findmax(double* begin, double* end)
 {
-    double m, t;
     double* p;
-    m = *begin;
-    for (p = begin + 1; p != end; ++p)
-	if (m < *p) 
-	    m = *p;
+    double* m;
+    m = begin;
+    for (p = begin; p != end; ++p)
+	if (*m < *p) 
+	    m = p;
+    return m;
+}
+
+static double logtotalexpwithmax(double* begin, double* end, double m)
+{
+    double t;
+    double* p;
     t = 0;
     for (p = begin; p != end; ++p)
 	t += exp(*p - m);
     return m + log(t);
+}
+
+static double logtotalexp(double* begin, double* end)
+{
+    return logtotalexpwithmax(begin, end, *findmax(begin, end));
 }
 
 /* coordinate transformations */
@@ -281,16 +293,6 @@ static int index_from_delays(XLALSkymapPlanType* plan, int hl, int hv, int hemis
 static int index_from_times(XLALSkymapPlanType* plan, int times[3], int hemisphere)
 {
     return index_from_delays(plan, times[1] - times[0], times[2] - times[0], hemisphere);
-    /*
-    int i[3];
-    i[0] = times[1] - times[0];
-    i[1] = times[2] - times[0];
-    i[2] = h;
-    return 
-        (i[0] + plan->hl) + 
-        (i[1] + plan->hv) * (plan->hl * 2 + 1) +
-        (i[2]           ) * (plan->hl * 2 + 1) * (plan->hv * 2 + 1);
-    */
 }
 
 static int index_from_direction(XLALSkymapPlanType* plan, double direction[3])
@@ -306,10 +308,7 @@ static int index_from_direction(XLALSkymapPlanType* plan, double direction[3])
         site_time(&plan->site[0], direction)) * 
         plan->sampleFrequency + 0.5);
     i[2] = dot3(plan->siteNormal, direction) < 0 ? 0 : 1;
-    return 
-        (i[0] + plan->hl) + 
-        (i[1] + plan->hv) * (plan->hl * 2 + 1) +
-        (i[2]               ) * (plan->hl * 2 + 1) * (plan->hv * 2 + 1);
+    return index_from_delays(plan, i[0], i[1], i[2]); 
 }
 
 XLALSkymapPlanType* XLALSkymapConstructPlan(int sampleFrequency)
@@ -402,7 +401,6 @@ XLALSkymapPlanType* XLALSkymapConstructPlan(int sampleFrequency)
         {   /* is the direction physical? */
             if (plan->pixel[i].area > 0)
             {   /* compute the average direction */
-                div3(plan->pixel[i].direction, plan->pixel[i].direction, plan->pixel[i].area);
                 normalize3(plan->pixel[i].direction);
                 /* normalize the area */
                 plan->pixel[i].area /= area;
@@ -474,6 +472,9 @@ int XLALSkymapEllipticalHypothesis(XLALSkymapPlanType* plan, double* p, double s
     double* buffer;
     int hl;
 
+    int best_time[3], best_hemisphere;
+    double best_plausibility = log(0);
+
     buffer = (double*) XLALMalloc(sizeof(double) * (end[0] - begin[0]));
 
     /* loop over hanford-livingston delay */
@@ -524,6 +525,7 @@ int XLALSkymapEllipticalHypothesis(XLALSkymapPlanType* plan, double* p, double s
 			double *hr, *lr, *vr, *hi, *li, *vi;
 			double* stop;
 			double* q;
+			double* m;
 			/* compute the kernel */
 			compute_kernel(plan, index, sigma, w, kernel, &log_normalization);
 			/* create offset pointers to simplify inner loop */
@@ -549,16 +551,34 @@ int XLALSkymapEllipticalHypothesis(XLALSkymapPlanType* plan, double* p, double s
 				kernel[1][2] * (*lr * *vr + *li * *vi) * 2 +
 				kernel[2][2] * (sq(*vr) + sq(*vi))
 				);
-			} /* loop over arrival time */
+			} /* end loop over arrival times */
+			
+			/* compute the plausibility for the direction */
+			m = findmax(buffer, buffer + e - b);
 			p[index] = 
-			    logtotalexp(buffer, buffer + e - b) + 
+			    logtotalexpwithmax(buffer, buffer + e - b, *m) + 
 			    log_normalization * 2 + 
 			    log(plan->pixel[index].area);
-		    } /* test if there is enough data to analyze */
-		} /* test if the delays are physical */
-	    } /* loop over hemisphere */
-	} /* loop over hanford-virgo delay */
-    } /* loop over hanford-livingston delay */
+			
+			{ /* extract the quantities for X followup */
+			    double maximum = *m + log_normalization * 2 + log(plan->pixel[index].area);
+			    if (maximum > best_plausibility)
+			    {
+				best_plausibility = maximum;
+				best_time[0] = (m - buffer) + b;
+				best_time[1] = best_time[0] + hl;
+				best_time[2] = best_time[0] + hv;
+				best_hemisphere = hemisphere;
+			    }
+			} /* end extract the quantities for X followup */
+			
+		    } /* end test if there is enough data to analyze */
+		} /* end test if the delays are physical */
+	    } /* end loop over hemisphere */
+	} /* end loop over hanford-virgo delay */
+    } /* end loop over hanford-livingston delay */
+    
+    /* release working memory */
     XLALFree(buffer);
     return 0;
 }
