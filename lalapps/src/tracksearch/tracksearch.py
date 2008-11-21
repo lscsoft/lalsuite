@@ -1024,6 +1024,7 @@ class tracksearchThresholdNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
         #Expects to run CondorDAGJob object for tracksearch
         pipeline.CondorDAGNode.__init__(self,job)
         pipeline.AnalysisNode.__init__(self)
+        pipeline.CondorDAGNode.set_category(self,'clustertool')
     #End init
 #End Class
         

@@ -1180,7 +1180,14 @@ class candidateList:
         Write the current candidate list structure to disk using given
         filename
         """
-        output_fp=open(outputFilename,'w')
+        try:
+            output_fp=open(outputFilename,'w')
+        except IOError:
+            sys.stderr.write("Problem creating output file: %s \n"%(outputFilename))
+            sys.stderr.write("Writing instead to directory the module is called from.\n");
+            oldName=outputFilename
+            outputFilename=os.path.basename(oldName)
+            output_fp=open(outputFilename,'w')
         textLine="#Total Curves:"+str(self.totalCount)+"\n"
         output_fp.write(textLine)
         output_fp.write('# Legend: Col,Row;gpsSec,gpsNanoSec,Freq,depth\n')
@@ -1857,7 +1864,14 @@ class candidateList:
             else:
                 self.filename[0]=filename
         pickleFile=self.filename[0]+self.pickleExtension
-        output_fp=gzip.open(pickleFile,'wb')
+        try:
+            output_fp=gzip.open(pickleFile,'wb')
+        except IOError:
+            sys.stderr.write("Problem creating output file: %s \n"%(pickleFile))
+            sys.stderr.write("Writing instead to directory the module is called from.\n");
+            oldName=pickleFile
+            pickleFile=os.path.basename(oldName)
+            output_fp=gzip.open(pickleFile,'wb')
         for line in self.traitSummary:
             output_fp.write(str(line).strip("[").strip("]").replace(",",'').replace("'",'')+"\n")
         output_fp.close()
@@ -2000,10 +2014,11 @@ class candidateList:
         """
         if override=='':
             sourceFile=self.filename[0]
+            outRoot,outExt=os.path.splitext(sourceFile)
+            outFile=outRoot+'.dqList'
         else:
             sourceFile=override
-        outRoot,outExt=os.path.splitext(sourceFile)
-        outFile=outRoot+'.dqList'
+            outFile=sourceFile
         dqListOrig=[]
         propertyList=["t","d"]
         if not self.validTraitSummary:
@@ -2072,7 +2087,14 @@ class candidateList:
         if self.verboseMode:
             padSize=int(padding)
             sys.stdout.write("Deadtime of data quality list with %i triggers and pad size of %i seconds yields %i segments spanning a total of %2.3f hours.\n"%(oldList.__len__(),padSize,newList.__len__(),deadTime/3600))
-        fp=open(outFile,'w')
+        try:
+            fp=open(outFile,'w')
+        except IOError:
+            sys.stderr.write("Problem creating output file: %s \n"%(outFile))
+            sys.stderr.write("Writing instead to directory the module is called from.\n");
+            oldName=outFile
+            outFile=os.path.basename(oldName)
+            output_fp=open(outFile,'w')
         outputText=["%f\t%f\t%f\n"%(x[0],x[1],x[1]-x[0]) for x in newList]
         fp.writelines(outputText)
         fp.close()
@@ -2114,7 +2136,14 @@ class candidateList:
             print "Writing Summary Information."
         outRoot,outExt=os.path.splitext(sourceFile)
         outFile=outRoot+'.summary'
-        fp=open(outFile,'w')
+        try:
+            fp=open(outFile,'w')
+        except IOError:
+            sys.stderr.write("Problem creating output file: %s \n"%(outFile))
+            sys.stderr.write("Writing instead to directory the module is called from.\n");
+            oldName=outFile
+            outFile=os.path.basename(oldName)
+            output_fp=open(outFile,'w')
         key=self.__summaryHeader__()
         fp.write(key)
         for entry in self.createSummaryStructure():
@@ -2283,7 +2312,14 @@ class candidateList:
         if type(style) != type(str('test')):
             print "Error on type of pixel list file!"
             os.abort
-        output_fp=open(filename,'w')
+        try:
+            output_fp=open(filename,'w')
+        except IOError:
+            sys.stderr.write("Problem creating output file: %s \n"%(filename))
+            sys.stderr.write("Writing instead to directory the module is called from.\n");
+            oldName=filename
+            filename=os.path.basename(oldName)
+            output_fp=open(filename,'w')
         format3C="%10.5s %10.5s %10.5s\n"
         format2C="%10.5s %10.5s\n"
         pixelList=self.getPixelList()
@@ -2826,7 +2862,14 @@ class candidateList:
         if (glitchDatabase.__len__() == 0):
             if self.verboseMode:
                 sys.stdout.write("Empty candidate object; no summary.\n")
-            fp=open(outFile,'w')
+            try:
+                fp=open(outFile,'w')
+            except IOError:
+                sys.stderr.write("Problem creating output file: %s \n"%(outFile))
+                sys.stderr.write("Writing instead to directory the module is called from.\n");
+                oldName=outFile
+                outFile=os.path.basename(oldName)
+                output_fp=open(outFile,'w')
             fp.close()
             return
         format="%s\t"
@@ -2837,7 +2880,14 @@ class candidateList:
         for index in range(1,glitchDatabase[0].__len__(),1):
             format=format+entryFormat
         format=format.rstrip('\t')+"\n"
-        fp=open(outFile,'w')
+        try:
+            fp=open(outFile,'w')
+        except IOError:
+            sys.stderr.write("Problem creating output file: %s \n"%(outFile))
+            sys.stderr.write("Writing instead to directory the module is called from.\n");
+            oldName=outFile
+            outFile=os.path.basename(oldName)
+            output_fp=open(outFile,'w')
         counter=0
         for entry in glitchDatabase:
             counter+=1
@@ -3029,7 +3079,14 @@ def autoCreateSegmentList(cp,iniFile,specificGPS):
     out_filename=os.path.normpath(
         os.path.dirname(os.path.abspath(iniFile))
         +'/tracksearch_'+str(specificGPS)+'.segment')
-    output_fp=open(out_filename,'w')
+    try:
+        output_fp=open(out_filename,'w')
+    except IOError:
+        sys.stderr.write("Problem creating output file: %s \n"%(out_filename))
+        sys.stderr.write("Writing instead to directory the module is called from.\n");
+        oldName=out_filename
+        out_filename=os.path.basename(oldName)
+        output_fp=open(out_filename,'w')
     for line in filecontents:
         output_fp.write(line+"\n")
     output_fp.close()
