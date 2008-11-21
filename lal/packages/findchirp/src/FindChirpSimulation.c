@@ -1272,7 +1272,7 @@ XLALFindChirpBankSimInjectSignal (
     else
     {
       /* use simParams so generate our own injection parameters */
-      
+      bankInjection->f_lower = simParams->f_lower; 
       /* set up the injection masses */
       if ( simParams->maxMass == simParams->minMass )
       {
