@@ -1,3 +1,9 @@
+lalapps (5.3-1lscsoft1) unstable; urgency=low
+
+  * 5.3 release for Metaio 8.2
+
+ -- Steffen Grunewald <steffen.grunewald@aei.mpg.de>  Fri, 21 Nov 2008 12:10:00 +0100
+
 lalapps (5.2-7lscsoft2) unstable; urgency=low
 
   * prefix=/opt/lscsoft/lalapps, some fixes

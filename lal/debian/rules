@@ -13,6 +13,8 @@ DEB_HOST_GNU_TYPE   ?= $(shell dpkg-architecture -qDEB_HOST_GNU_TYPE)
 DEB_BUILD_GNU_TYPE  ?= $(shell dpkg-architecture -qDEB_BUILD_GNU_TYPE)
 
 PREFIX = /opt/lscsoft/lal
+FRAMEPREFIX = /opt/lscsoft/libframe
+METAIOPREFIX = /opt/lscsoft/libmetaio
 
 CFLAGS = -Wall -g
 
@@ -33,6 +35,7 @@ configure:
 config.status : configure
 	dh_testdir
 #	LDFLAGS="-Wl,-z,defs"
+	PKG_CONFIG_PATH=$(FRAMEPREFIX)/lib/pkgconfig:$(METAIOPREFIX)/lib/pkgconfig \
 	CFLAGS="$(CFLAGS)" \
 	./configure --host=$(DEB_HOST_GNU_TYPE) --build=$(DEB_BUILD_GNU_TYPE) \
 		--prefix=$(PREFIX) \
@@ -47,7 +50,6 @@ build : build-stamp
 build-stamp :  config.status
 	dh_testdir
 
-	# Add here commands to compile the package.
 	$(MAKE)
 	-yes "" | $(MAKE) dvi
 	-yes "" | $(MAKE) check
@@ -63,12 +65,7 @@ clean:
 
 	# Add here commands to clean up after the build process.
 	-$(MAKE) cvs-clean
-#ifneq "$(wildcard /usr/share/misc/config.sub)" ""
-#	cp -f /usr/share/misc/config.sub config.sub
-#endif
-#ifneq "$(wildcard /usr/share/misc/config.guess)" ""
-#	cp -f /usr/share/misc/config.guess config.guess
-#endif
+	-$(MAKE) distclean
 	dh_clean 
 
 
@@ -78,11 +75,10 @@ install : build
 	dh_clean -k
 	dh_installdirs
 
-	# Add here commands to install the package into debian/lal.
 	$(MAKE) DESTDIR=$(CURDIR)/debian/lal install
 
 	# split off -dev
-	mkdir -p $(CURDIR)/debian/lal-dev/$(PREFIX)/bin $(CURDIR)/debian/lal-dev/$(PREFIX)/lib $(CURDIR)/debian/lal-dev/$(PREFIX)/include
+#	mkdir -p $(CURDIR)/debian/lal-dev/$(PREFIX)/bin $(CURDIR)/debian/lal-dev/$(PREFIX)/lib $(CURDIR)/debian/lal-dev/$(PREFIX)/include
 	mv $(CURDIR)/debian/lal/$(PREFIX)/bin/lal-config $(CURDIR)/debian/lal-dev/$(PREFIX)/bin/
 	mv $(CURDIR)/debian/lal/$(PREFIX)/lib/*a $(CURDIR)/debian/lal-dev/$(PREFIX)/lib/
 	mv $(CURDIR)/debian/lal/$(PREFIX)/lib/pkgconfig $(CURDIR)/debian/lal-dev/$(PREFIX)/lib/
@@ -93,8 +89,6 @@ install : build
 	dh_install -s
 
 
-# Must not depend on anything. This is to be called by
-# binary in another 'make' thread.
 binary-common :
 	dh_testdir
 	dh_testroot
@@ -120,12 +114,11 @@ binary-common :
 #	dh_perl
 	dh_makeshlibs
 	dh_installdeb
-	dh_shlibdeps
+	LD_LIBRARY_PATH=$(PREFIX)/lib dh_shlibdeps
 	dh_gencontrol
 	dh_md5sums
 	dh_builddeb
 
-# Build architecture dependant packages using the common target.
 binary :  install
 	$(MAKE) -f debian/rules DH_OPTIONS=-a binary-common
 

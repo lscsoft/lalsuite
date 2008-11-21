@@ -16,6 +16,8 @@ DEB_HOST_GNU_TYPE   ?= $(shell dpkg-architecture -qDEB_HOST_GNU_TYPE)
 DEB_BUILD_GNU_TYPE  ?= $(shell dpkg-architecture -qDEB_BUILD_GNU_TYPE)
 
 PREFIX = /opt/lscsoft/lalapps
+FRAMEPREFIX = /opt/lscsoft/libframe
+METAIOPREFIX = /opt/lscsoft/libmetaio
 LALPREFIX = /opt/lscsoft/lal
 
 CFLAGS = -Wall -g
@@ -32,22 +34,24 @@ configure:
 config.status: configure
 	dh_testdir
 
-#	LDFLAGS="-Wl,-z,defs"
-	CFLAGS="$(CFLAGS)" \
-	./configure --host=$(DEB_HOST_GNU_TYPE) --build=$(DEB_BUILD_GNU_TYPE) \
-	    --prefix=$(PREFIX) \
-	    --mandir=\$${prefix}/share/man --infodir=\$${prefix}/share/info \
-	    --enable-nightly=no \
-	    --enable-frame --enable-metaio \
-	    --with-lal-prefix=$(LALPREFIX) \
-	    --disable-debug
+#	LDFLAGS="-Wl,-z,defs" \
+# moved to install
+#	CFLAGS="$(CFLAGS)" \
+#	PKG_CONFIG_PATH=$(FRAMEPREFIX)/lib/pkgconfig:$(METAIOPREFIX)/lib/pkgconfig:$(LALPREFIX)/lib/pkgconfig \
+#	./configure --host=$(DEB_HOST_GNU_TYPE) --build=$(DEB_BUILD_GNU_TYPE) \
+#	    --prefix=$(PREFIX) \
+#	    --mandir=\$${prefix}/share/man --infodir=\$${prefix}/share/info \
+#	    --enable-nightly=no \
+#	    --enable-frame --enable-metaio \
+#	    --disable-debug
 
 build: build-stamp
 
 build-stamp:  config.status
 	dh_testdir
 
-	$(MAKE)
+# moved to install
+#	$(MAKE)
 
 	touch $@
 
@@ -56,15 +60,8 @@ clean:
 	dh_testroot
 	rm -f build-stamp 
 
-	# Add here commands to clean up after the build process.
 	-$(MAKE) cvs-clean
 	-$(MAKE) distclean
-#ifneq "$(wildcard /usr/share/misc/config.sub)" ""
-#	cp -f /usr/share/misc/config.sub config.sub
-#endif
-#ifneq "$(wildcard /usr/share/misc/config.guess)" ""
-#	cp -f /usr/share/misc/config.guess config.guess
-#endif
 	dh_clean 
 
 install: build
@@ -73,15 +70,45 @@ install: build
 	dh_clean -k 
 	dh_installdirs
 
-	# Add here commands to install the package into debian/lalapps.
-	$(MAKE) DESTDIR=$(CURDIR)/debian/lalapps install
+	set -e; \
+	for v in 2.5 2.4; do                                                         \
+	PYTHON="python$$v"                                                    \
+	CFLAGS="$(CFLAGS)"                                                    \
+	PKG_CONFIG_PATH=$(FRAMEPREFIX)/lib/pkgconfig:$(METAIOPREFIX)/lib/pkgconfig:$(LALPREFIX)/lib/pkgconfig \
+	./configure --host=$(DEB_HOST_GNU_TYPE) --build=$(DEB_BUILD_GNU_TYPE) \
+	    --prefix=$(PREFIX)                                                \
+	    --mandir=\$${prefix}/share/man --infodir=\$${prefix}/share/info   \
+	    --enable-nightly=no                                               \
+	    --enable-frame --enable-metaio                                    \
+	    --disable-debug ;                                                        \
+	PYTHON="python$$v"                                                    \
+	$(MAKE) ;                                                                    \
+	echo "tree after build:" ;                                                   \
+	ls -lR $(CURDIR)/debian ;                                                    \
+	PYTHON="python$$v"                                                    \
+	$(MAKE) DESTDIR=$(CURDIR)/debian/lalapps install ;                           \
+	echo "tree after install:" ;                                                 \
+	ls -lR $(CURDIR)/debian ;                                                    \
+	$(MAKE) clean ;                                                              \
+	echo "tree after clean:" ;                                                   \
+	ls -lR $(CURDIR)/debian ;                                                    \
+	done
+	set -e; \
+	for i in `find debian -mindepth 2 -type f ! -perm 755`; do       \
+		if head -n1 $$i | grep -q '^#!' ; then                   \
+		        chmod +x $$i;                                    \
+		fi ;                                                     \
+	done
+	set -e; \
+	for i in `find debian/$(PACKAGE)/$(PREFIX)/bin -type f`; do      \
+	        echo $$i;                                                \
+	        if head -n1 $$i | grep -q '^#!.*python$$' ; then         \
+	                sed -i '1s/python$$/python2.4/' $$i;             \
+	        fi ;                                                     \
+	done
 
-# Build architecture-independent files here.
-binary-indep: build install
-# We have nothing to do by default.
 
-# Build architecture-dependent files here.
-binary-arch: build install
+binary-common: build install
 	dh_testdir
 	dh_testroot
 	dh_installchangelogs ChangeLog
@@ -106,10 +133,10 @@ binary-arch: build install
 #	dh_perl
 	dh_makeshlibs
 	dh_installdeb
-	dh_shlibdeps
+	LD_LIBRARY_PATH=$(PREFIX)/lib dh_shlibdeps
 	dh_gencontrol
 	dh_md5sums
 	dh_builddeb
 
-binary: binary-indep binary-arch
-.PHONY: build clean binary-indep binary-arch binary install 
+binary: binary-common
+.PHONY: build clean binary-common binary install 
