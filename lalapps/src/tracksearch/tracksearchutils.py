@@ -296,7 +296,9 @@ class kurve:
             listFreq.sort()
             minFreq=min(listFreq)
             maxFreq=max(listFreq)
-        bandWidth=maxFreq-minFreq
+        #The minimum allowed bandwidth must be added (ie 1 bin width)
+        #Fix this later 2008Nov19
+        bandWidth=(maxFreq-minFreq)
         #Remember bandwidth above is middle bin to middle bin must and .5 and .5 bin edges!
         if getBounds:
             return [abs(bandWidth),minFreq,maxFreq]
@@ -771,6 +773,8 @@ class candidateList:
         self.traitSummary=[]
         #Variable to be set if candidate file is read in Ok.
         self.validCurves=bool(False)
+        #Variable to signal the candidate loaded also have SNR measure
+        self.kurvesHaveSNR=bool(False)
         #Variable to be set if traitSummary is read in Ok.
         self.validTraitSummary=bool(False)
         self.qualities=[["curveid","Curve ID","getKurveHeader()[0]"],
@@ -869,8 +873,10 @@ class candidateList:
         """
         This method is the traitSummary analog of __getCurveField__()
         it behaves much like its counterpart.  It is required to access
-        the trait summary data stored in self.traitSummary.
+        the trait summary data stored in self.traitSummary. The return value is
+        a list [a,b] where a = numeric value and b = label for that value
         """
+        nullResult=[0,"NULL"]
         if ((self.traitSummary.__len__()==0) and (curveSummary=='')):
             ans=self.__getCurveField__(curveSummary,field)
             return ans
@@ -881,12 +887,17 @@ class candidateList:
         try:
             indexToUse=traitList.index(field.lower())
         except ValueError:
-            print "HELP %s :%s\n"%(field.lower())
-            return [0,"NULL"]
+            sys.stderr.write("HELP %s :%s\n"%(field.lower()))
+            return nullResult
         if curveSummary == '':
             output = 0
         else:
-            output = curveSummary[indexToUse]
+            try:
+                output = curveSummary[indexToUse]
+            except IndexError:
+                output=0
+                if self.verboseMode and self.kurvesHaveSNR:
+                    sys.stderr.write("Problem accessing property %s\n"%(self.qualities[indexToUse][1]))
         return [output,self.qualities[indexToUse][1]]
     #End __getTraitField__()
 
@@ -1104,9 +1115,11 @@ class candidateList:
                         try:
                             [A,B,C]=str(str(line).split(':')[1]).split(',')
                             self.curves.append(kurve(A,B,C))
+                            self.kurvesHaveSNR=bool(False)
                         except ValueError:
                             [A,B,C,D]=str(str(line).split(':')[1]).split(',')
                             self.curves.append(kurve(A,B,C,D))
+                            self.kurvesHaveSNR=bool(True)
                         #Advance to next data line expected!
                         line=input_fp.readline()
                         if not line.__contains__(';'):
@@ -1933,82 +1946,50 @@ class candidateList:
 
     def dumpCandidateKurveSummary(self):
         """
-        This method creates a variable object that contains the
-        summary associated with all the elements in the input
-        structure self.curves.  This output can be used to write the
-        summary information to a .summary text file.  This method is
-        closely related to createSummaryStructure method.  We have as
-        output of this method.  This is a list of lists with fields
-        0 GPS Start
-        1 Duration
-        2 Start F
-        3 Bandwidth
-        4 GPS Bright
-        5 Freq Bright
-        6 Pow Bright
-        7 Mean Pow
-        8 Std Pow
-        9 Length
-        10 Integrated Power
+        This method wraps up the values saved in the candidateList as
+        self.traitSummary which is an array that gives the generic
+        properties of all triggers in this candidate file.  This method
+        saves them as rows (trigs) in the order given my the 
+        candidateList.qualities array structure.
         """
-        summary=[]
+        KurveSummary=[]
         if not self.validTraitSummary:
             self.createTraitSummary()
-        for traitInfo in self.traitSummary:
-            curveid=(self.__getTraitField__(traitInfo,"curveid")[0])
-            l=float(self.__getTraitField__(traitInfo,"l")[0])
-            p=float(self.__getTraitField__(traitInfo,"p")[0])
-            a=float(self.__getTraitField__(traitInfo,"a")[0])
-            d=float(self.__getTraitField__(traitInfo,"d")[0])
-            b=float(self.__getTraitField__(traitInfo,"b")[0])
-            t=float(self.__getTraitField__(traitInfo,"t")[0])
-            s=float(self.__getTraitField__(traitInfo,"s")[0])
-            f=float(self.__getTraitField__(traitInfo,"f")[0])
-            g=float(self.__getTraitField__(traitInfo,"g")[0])
-            v=float(self.__getTraitField__(traitInfo,"v")[0])
-            h=float(self.__getTraitField__(traitInfo,"h")[0])
-            j=float(self.__getTraitField__(traitInfo,"j")[0])
-            m=float(self.__getTraitField__(traitInfo,"m")[0])
-            c=float(self.__getTraitField__(traitInfo,"c")[0])
-            #
-            if d == 0:
-                d=d+self.gpsWidth.getAsFloat()
-            if b == 0:
-                b=b+self.freqWidth
-            summary.append([t,d,f,g,b,h,v,j,m,s,l,p])
-        return summary
+        #Cycle through all the triggers in traitSummary
+        for trig in self.traitSummary:
+            KurveSummaryLine=[]
+            for [sTrait,lTrait,mTrait] in self.qualities:
+                KurveSummaryLine.append(self.__getTraitField__(trig,sTrait)[0])
+            KurveSummary.append(KurveSummaryLine)
+        return KurveSummary
     #End dumpCandidateKurveSummary()
 
     def createSummaryStructure(self):
         """
-        Method to build a summary structure for saving to file or
-        printing to screen.
-        The summary should contain the following fields
-        GPS start, Delta T, F start, F stop,F Band, T bright,F bright, Avg
-        brightness,Std dev brightness, Curve Length, Integrate Power
+        This method creates a tab delimited text structure for display
+        to screen or writing to the disk.  This structure is populated
+        by values specified in the candidateList variable
+        candidateList.traitSummary array.
         """
-        # Set the output formatting string here for all summary
-        # display calls
         summaryData=self.dumpCandidateKurveSummary()
-        output=[]
-        entryFormatFloat="%10.6f\t"
-        entryFormatDouble="%10.6e\t"
-        format=""
+        outputTextArray=[]
+        genericFormat="X10.6%s\t"
         if (summaryData.__len__() == 0):
+            errString="Empty candidate object, no objects to summarize.\n"
+            outputTextArray.append("#%s"%(errString))
             if self.verboseMode:
-                sys.stdout.write("Empty candidate object; no summary.\n")
-            return output
-        for index in range(0,summaryData[0].__len__()):
-            if str(summaryData[0][index]).__contains__('e'):
-                format=format+entryFormatDouble
-            else:
-                format=format+entryFormatFloat
-        format=format.rstrip('\t')+"\n"
-        for entry in summaryData:
-            tupleForm=tuple(entry)
-            outString=format%tupleForm
-            output.append(outString)
-        return output
+                sys.stdout.write(errString)
+            return outputTextArray
+        for trig in summaryData:
+            thisLine=""
+            for elem in trig:
+                if str(elem).lower().__contains__('e'):
+                    thisLine=thisLine+str(genericFormat%("e")).replace("X","%")%(elem)
+                else:
+                    thisLine=thisLine+str(genericFormat%("f")).replace("X","%")%(elem)
+            thisLine="%s\n"%(thisLine)
+            outputTextArray.append(thisLine)
+        return outputTextArray
     #End createSummaryStructure method
     
     def writeDQtable(self,padding=0,override=''):
@@ -2097,6 +2078,29 @@ class candidateList:
         fp.close()
     #End write DQlist file
 
+    def __summaryHeader__(self):
+        """
+        Returns the two first text string giving the user a key for
+        the summary file of what is what.
+        """
+        outputKey=""
+        outputKeyLine1="#"
+        outputKeyLine2="#"
+        #Cycle across the available properties
+        counter=0
+        for [shortKey,longName,method] in self.qualities:
+            outputKeyLine1="%s [%i:%s:%s] "%(outputKeyLine1,
+                                             counter,
+                                             shortKey,
+                                             longName)
+            outputKeyLine2="%s%s\t"%(outputKeyLine2,shortKey)
+            counter+=1
+        outputKeyLine1="%s\n"%(outputKeyLine1)
+        outputKeyLine2="%s\n"%(outputKeyLine2)
+        outputKey="%s%s"%(outputKeyLine1,outputKeyLine2)
+        return outputKey
+    #End __summaryHeadker__()
+
     def writeSummary(self,override=''):
         """
         Method to write summary with formatting specified in
@@ -2111,7 +2115,7 @@ class candidateList:
         outRoot,outExt=os.path.splitext(sourceFile)
         outFile=outRoot+'.summary'
         fp=open(outFile,'w')
-        key="# GPSstart\t Duration\t StartF\t StopF\t Bandwidth\t GPSBright\t FBright\t PBright\t MeanP\t StdP\t CL\t IP\n"
+        key=self.__summaryHeader__()
         fp.write(key)
         for entry in self.createSummaryStructure():
             fp.write(entry)
@@ -2127,7 +2131,8 @@ class candidateList:
         print "#"
         print "#"+sourceFile
         print "#The fields are:"
-        print "#GPS\t    dT\t    Fstart\t    Fstop\t    Fband\t   Tbright\t    Fbright\t    Pbright\t   AvgBright\t    STDBright\t    CL\t    IP\t"
+        key=self.__summaryHeader__()
+        print key
         for entry in self.createSummaryStructure():
             print entry,
     # End printSummary method
@@ -2156,6 +2161,7 @@ class candidateList:
         M     mean Bright
         C     std Bright
         A     angle measure of trigger atan(Fband/Tband)
+        PP    estimate SNR if it is available
         Example:
         P>10 and L < 5
         D >=2 or P>12
@@ -2769,7 +2775,7 @@ class candidateList:
             ###symmetryCM=trigger.getSymmetryFactor(brightPixel,weight)
             #(+) if T_bp > T_cm
             if (triggerDuration > 0):
-                spanTnorm=brightPixelTime-cmPixelTime)/triggerDuration
+                spanTnorm=(brightPixelTime-cmPixelTime)/triggerDuration
             else:
                 spanTnorm=0
             #(+) if F_bp>F_cm
