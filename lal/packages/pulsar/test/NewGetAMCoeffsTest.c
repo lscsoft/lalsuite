@@ -39,6 +39,7 @@
 #include <lal/LALBarycenter.h>
 #include <lal/LALInitBarycenter.h>
 #include <lal/AVFactories.h>
+extern char *optarg;
 
 NRCSID (NEWGETAMCOEFFSTEST, "$Id$");
 
@@ -100,6 +101,7 @@ extern int lalDebugLevel;
 int main(int argc, char *argv[])
 {
   LALStatus status = empty_status;
+  int              opt;             /* Command-line option. */
 
   LIGOTimeGPS startTime = {714180733, 0};
   REAL8 duration = 180000;	/* 50 hours */
@@ -122,6 +124,8 @@ int main(int argc, char *argv[])
   const CHAR *sites[]   = {"H1", "L1", "V2", "G1", "T1" };
   REAL8 sinzeta;	/* zeta = IFO opening angle */
   UINT4 pickedSite;
+  BOOLEAN ignoreErrors = 0; /* Don't fail if tolerance exceeded */
+  UINT4 numChecks = 1; /* Number of times to check */
   char earthEphem[] = "earth00-04.dat";
   char sunEphem[] = "sun00-04.dat";
 
@@ -131,9 +135,20 @@ int main(int argc, char *argv[])
   Tsft = 2154.1; */
 
   lalDebugLevel = 0;
-  if ( argc == 2 && !strcmp(argv[1], "-v1") )
-    lalDebugLevel = 1;
 
+  while ((opt = getopt( argc, argv, "n:qv:" )) != -1) {
+    switch (opt) {
+    case 'v': /* set lalDebugLevel */
+      lalDebugLevel = atoi( optarg );
+      break;
+    case 'q': /* don't fail if tolerance exceeded */
+      ignoreErrors = 1;
+      break;
+    case 'n': /* number of times to check */
+      numChecks = atoi( optarg );
+      break;
+    }
+  }
 
   /* init random-generator */
   srand ( times(&buf) );
@@ -154,6 +169,9 @@ int main(int argc, char *argv[])
   AMnew1.b = XLALCreateREAL4Vector ( timestamps->length );
   AMnew2.a = XLALCreateREAL4Vector ( timestamps->length );
   AMnew2.b = XLALCreateREAL4Vector ( timestamps->length );
+
+  while ( numChecks-- )
+{
 
   /* ----- pick detector-site at random ----- */
   pickedSite = floor( 5 * (1.0 * rand() / (RAND_MAX + 1.0) ) );  /* int in [0,5) */
@@ -276,8 +294,21 @@ int main(int argc, char *argv[])
        || (maxerr01 > tolerance) ||(maxerr02 > tolerance) || (maxerr12 > tolerance) )
     {
       LALPrintError ("Maximal error-tolerance of %g %% was exceeded!\n", 100.0 * tolerance );
-      return 1;
+      if (!ignoreErrors)
+	return 1;
     }
+
+  if ( lalDebugLevel ) 
+    printf("%d checks left\n", numChecks);
+
+  /* ---- Clean up things that were created in this loop ---- */
+  XLALDestroyDetectorStateSeries ( detStates );
+  detStates = NULL;
+  LALFree ( det );
+  LALFree ( amParams.das->pSource );
+  LALFree ( amParams.das );
+
+}
 
   /* ----- free memory ----- */
   XLALDestroyTimestampVector ( timestamps );
@@ -287,10 +318,6 @@ int main(int argc, char *argv[])
   XLALDestroyREAL4Vector ( AMnew1.b );
   XLALDestroyREAL4Vector ( AMnew2.a );
   XLALDestroyREAL4Vector ( AMnew2.b );
-  LALFree ( det );
-  XLALDestroyDetectorStateSeries ( detStates );
-  LALFree ( amParams.das->pSource );
-  LALFree ( amParams.das );
   
   LALFree(edat.ephemE);
   LALFree(edat.ephemS);
