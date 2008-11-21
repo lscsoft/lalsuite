@@ -644,6 +644,9 @@ ConnectLinePoints(LALStatus *status,
   store = &(out->store);
   /* Estimate the noise profile from the TFR */
   /* tCol ->F fRow ->T */
+  /* Interchangeable variables */
+  /* TFR->fRow/2+1 == input.width */
+  /* TFR->tCol == input.height */
   meanProfile= LALMalloc(sizeof(REAL4)*(TimeFreqMap->fRow/2+1));
   estimateProfile(meanProfile,*TimeFreqMap);
   /* Allocate arrays */
