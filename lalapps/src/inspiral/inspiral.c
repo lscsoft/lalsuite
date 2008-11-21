@@ -254,7 +254,7 @@ INT4  coloredGaussian   = 0;            /* generate colored Gaussian    */
 /* template bank simulation params */
 INT4  bankSim           = 0;            /* number of template bank sims */
 CHAR *bankSimFileName   = NULL;         /* file contining sim_inspiral  */
-FindChirpBankSimParams bankSimParams = { 0, 0, -1, -1, NULL, -1, NULL, NULL };
+FindChirpBankSimParams bankSimParams = { 0, 0, -1, -1, NULL, -1, NULL, NULL, -1 };
                                         /* template bank sim params     */
 
 /* reverse chirp bank option */
@@ -3365,6 +3365,7 @@ fprintf( a, "  --sim-frame-file F           read the bank sim waveform from fram
 fprintf( a, "  --sim-frame-channel C        read the bank sim waveform from frame channel C\n");\
 fprintf( a, "  --sim-minimum-mass M         set minimum mass of bank injected signal to M\n");\
 fprintf( a, "  --sim-maximum-mass M         set maximum mass of bank injected signal to M\n");\
+fprintf( a, "  --bank-sim-flower F          set low frequency of signal to F\n");\
 fprintf( a, "\n");\
 fprintf( a, "  --data-checkpoint            checkpoint and exit after data is read in\n");\
 fprintf( a, "  --checkpoint-path PATH       write checkpoint file under PATH\n");\
@@ -3448,6 +3449,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"random-seed",             required_argument, 0,                'J'},
     {"sim-minimum-mass",        required_argument, 0,                'U'},
     {"sim-maximum-mass",        required_argument, 0,                'W'},
+    {"bank-sim-flower",         required_argument, 0,                '?'},
     {"white-gaussian",          required_argument, 0,                'G'},
     {"gaussian-noise",          required_argument, 0,                'G'},
     {"colored-gaussian",        required_argument, 0,                '.'},
@@ -3514,7 +3516,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     size_t optarg_len;
 
     c = getopt_long_only( argc, argv, 
-        "-A:B:C:D:E:F:G:H:I:J:K:L:M:N:O:P:Q:R:S:T:U:VW:X:Y:Z:"
+        "-A:B:C:D:E:F:G:H:I:J:K:L:M:N:O:P:Q:R:S:T:U:VW:?:X:Y:Z:"
         "a:b:c:d:e:f:g:hi:j:k:l:m:n:o:p:q:r:s:t:u:v:w:x:y:z:"
         "0:1::2:3:4:567:8:9:*:>:<:(:):[:],:{:}:+:=:^:.:",
         long_options, &option_index );
@@ -4683,7 +4685,16 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         break; 
 
       case '?':
-        exit( 1 );
+ 	bankSimParams.f_lower = (REAL4) atof( optarg );
+ 	if (bankSimParams.f_lower <= 0 )
+ 	{
+ 		fprintf( stderr, "invalid argument to --%s:\n"
+ 				"bank-sim-flower must be > 0.0 : "
+ 				"(%f specified)\n",
+ 				long_options[option_index].name, bankSimParams.f_lower );
+ 		exit( 1 );
+ 	}
+ 	ADD_PROCESS_PARAM( "float", "%e", bankSimParams.f_lower );
         break;
 
       case '(':
@@ -5020,6 +5031,12 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     }
   }
 
+  if ( fLow < bankSimParams.f_lower )
+  {
+	  fprintf( stderr, "--low-frequency-cutoff must be greater than bank sim injection starting frequency\n" );
+	  exit( 1 );
+  }
+
   /* check filter parameters have been specified */
   if ( numChisqBins < 0 )
   {
@@ -5349,6 +5366,12 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
               "--bank-simulation is given and approx is not FrameFile\n" );
           exit( 1 );
         }
+        if ( bankSimParams.f_lower < 0 )
+        {
+          fprintf( stderr, "--bank-sim-flower must be specified if\n"
+              "--bank-simulation is given and approx is not FrameFile\n" );
+          exit( 1 );
+        }  
       }
     }
   }
