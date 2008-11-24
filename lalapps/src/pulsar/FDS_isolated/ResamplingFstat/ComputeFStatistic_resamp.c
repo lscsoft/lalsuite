@@ -2643,8 +2643,8 @@ void ComputeFStat_resamp(LALStatus *status,REAL8FrequencySeries *fstatVector, co
   MultiFFTWCOMPLEXSeries *Saved_b;
   BOOLEAN SAMESKYPOSITION = FALSE;
 
-  for ( i = 0; i < multiWeights->data[0]->length; i++ )
-    printf("%d, %f \n",i,multiWeights->data[0]->data[i]);
+  /*for ( i = 0; i < multiWeights->data[0]->length; i++ )
+    printf("%d, %f \n",i,multiWeights->data[0]->data[i]);*/
 
   /* Check if it the previous SkyPosition */
   if ( Buffer
