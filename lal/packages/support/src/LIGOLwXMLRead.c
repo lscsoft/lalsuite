@@ -268,7 +268,7 @@ static long long XLALLIGOLwParseIlwdChar(
 {
 	static const char func[] = "XLALLIGOLwParseIlwdChar";
 	char *fmt;
-	const char *ilwd_char = (char *) env->ligo_lw.table.elt[column_number].data.ilwd_char.data;
+	const char *ilwd_char = env->ligo_lw.table.elt[column_number].data.lstring.data;
 	long long id;
 
 	/*
@@ -886,8 +886,7 @@ SimBurst *XLALSimBurstTableFromLIGOLw(
 	column_pos.amplitude = XLALLIGOLwFindColumn(&env, "amplitude", METAIO_TYPE_REAL_8, 0);
 	column_pos.hrss = XLALLIGOLwFindColumn(&env, "hrss", METAIO_TYPE_REAL_8, 0);
 	column_pos.egw_over_rsquared = XLALLIGOLwFindColumn(&env, "egw_over_rsquared", METAIO_TYPE_REAL_8, 0);
-	/* FIXME:  type should be METAIO_TYPE_INT_8U */
-	column_pos.waveform_number = XLALLIGOLwFindColumn(&env, "waveform_number", METAIO_TYPE_INT_8S, 0);
+	column_pos.waveform_number = XLALLIGOLwFindColumn(&env, "waveform_number", METAIO_TYPE_INT_8U, 0);
 	column_pos.simulation_id = XLALLIGOLwFindColumn(&env, "simulation_id", METAIO_TYPE_ILWD_CHAR, 1);
 
 	/* check for failure (== a required column is missing) */
@@ -974,9 +973,7 @@ SimBurst *XLALSimBurstTableFromLIGOLw(
 			row->frequency = env.ligo_lw.table.elt[column_pos.frequency].data.real_8;
 			row->bandwidth = env.ligo_lw.table.elt[column_pos.bandwidth].data.real_8;
 			row->egw_over_rsquared = env.ligo_lw.table.elt[column_pos.egw_over_rsquared].data.real_8;
-			/* FIXME:  waveform is an unsigned long, but metaio
-			 * doesn't support int_8u columns */
-			row->waveform_number = env.ligo_lw.table.elt[column_pos.waveform_number].data.int_8s;
+			row->waveform_number = env.ligo_lw.table.elt[column_pos.waveform_number].data.int_8u;
 		} else if(!strcmp(row->waveform, "Impulse")) {
 			if(column_pos.amplitude < 0) {
 				XLALDestroySimBurst(row);

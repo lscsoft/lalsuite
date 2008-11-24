@@ -132,72 +132,6 @@ static char *cvs_get_keyword_value(const char *cvs_string)
 
 
 /**
- * Precede special characters with a '\'.  The string is modified in place
- * and resized with realloc().  The return value is the new string or NULL
- * on failure.  The pointer passed as input is invalid unconditionally
- * after this function (either it has been realloc()'ed or free()'ed on
- * failure).
- */
-
-
-static char *escape_specials(char *s, char special)
-{
-	char *pos = s;
-
-	/*
-	 * check for input
-	 */
-
-	if(!s)
-		return NULL;
-
-	/*
-	 * while a special can be found in the remainder of the string
-	 */
-
-	while((pos = strchr(pos, special))) {
-		/*
-		 * allocate new string.  +1 for the '\0', and +1 for the
-		 * "\" to be added
-		 */
-
-		char *new = malloc((strlen(s) + 2) * sizeof(*new));
-		if(!new) {
-			free(s);
-			return NULL;
-		}
-
-		/*
-		 * null-terminate the string preceding the special
-		 */
-
-		*(pos++) = '\0';
-
-		/*
-		 * {text preceding special} + "\special" + {text following
-		 * special}
-		 */
-
-		sprintf(new, "%s\\%c%s", s, special, pos);
-
-		/*
-		 * point pointers at new string and free old one
-		 */
-
-		pos = new + (pos - s) + 1;
-		free(s);
-		s = new;
-	}
-
-	/*
-	 * done
-	 */
-
-	return s;
-}
-
-
-/**
  * Populate a pre-allocated ProcessTable structure.
  */
 
@@ -239,7 +173,7 @@ int XLALPopulateProcessTable(
 	 * cvs repository
 	 */
 
-	cvs_keyword_value = escape_specials(cvs_get_keyword_value(cvs_source), ',');
+	cvs_keyword_value = cvs_get_keyword_value(cvs_source);
 	if(!cvs_keyword_value) {
 		XLALPrintError("%s(): cannot parse \"%s\"\n", func, cvs_source);
 		XLAL_ERROR(func, XLAL_EINVAL);
