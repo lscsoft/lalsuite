@@ -447,23 +447,6 @@ int main(int argc,char *argv[])
   LogPrintf (LOG_DEBUG, "Done Calculating Time Series.\n");
 
   LogPrintf (LOG_DEBUG, "Starting Main Resampling Loop.\n");
-  NoiseAverage = XLALCreateREAL8Sequence(GV.multiNoiseWeights->length);
-  for(m=0;m<GV.multiNoiseWeights->length;m++)
-    {
-      NoiseAverage->data[m] = 0;
-      for(l=0;l<GV.multiNoiseWeights->data[m]->length;l++)
-	{
-	  NoiseAverage->data[m] += GV.multiNoiseWeights->data[m]->data[l]/GV.multiNoiseWeights->data[m]->length;
-	}
-    }
-  for(m=0;m<GV.multiNoiseWeights->length;m++)
-    {
-      for(l=0;l<GV.multiNoiseWeights->data[m]->length;l++)
-	{
-	  GV.multiNoiseWeights->data[m]->data[l] = GV.multiNoiseWeights->data[m]->data[l]/NoiseAverage->data[m]; 
-	  /*printf("%d %f %f\n",l,GV.multiNoiseWeights->data[m]->data[l],GV.multiNoiseWeights->Sinv_Tsft);*/
-	}
-    }
   while ( XLALNextDopplerPos( &dopplerpos, GV.scanState ) == 0 )
     {
       /* main function call: compute F-statistic over frequency-band  */ 
@@ -1033,6 +1016,26 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
       cfg->multiNoiseWeights = NULL;
       TRY ( LALNormalizeMultiSFTVect (status->statusPtr, &rngmed, cfg->multiSFTs, uvar_RngMedWindow ), status );
       TRY ( LALComputeMultiNoiseWeights  (status->statusPtr, &(cfg->multiNoiseWeights), rngmed, uvar_RngMedWindow, 0 ), status );
+
+      /* Average the Weights, so that their average is 1.0 */
+      NoiseAverage = XLALCreateREAL8Sequence(cfg->multiNoiseWeights->length);
+      for(X=0;X<cfg->multiNoiseWeights->length;X++)
+	{
+	  NoiseAverage->data[X] = 0;
+	  for(alpha=0;alpha<cfg->multiNoiseWeights->data[X]->length;alpha++)
+	    {
+	      NoiseAverage->data[X] += cfg->multiNoiseWeights->data[X]->data[alpha]/cfg->multiNoiseWeights->data[X]->length;
+	    }
+	}
+
+      for(X=0;X<cfg->multiNoiseWeights->length;X++)
+	{
+	  for(alpha=0;alpha<cfg->multiNoiseWeights->data[X]->length;alpha++)
+	    {
+	      cfg->multiNoiseWeights->data[X]->data[alpha] = cfg->multiNoiseWeights->data[X]->data[alpha]/NoiseAverage->data[X]; 
+	    }
+	}
+
       TRY ( LALDestroyMultiPSDVector (status->statusPtr, &rngmed ), status );
       if ( !uvar_UseNoiseWeights )	/* in that case simply set weights to 1.0 */
 	for ( X = 0; X < cfg->multiNoiseWeights->length; X ++ )
@@ -2583,14 +2586,17 @@ void ApplyAandB(REAL8Sequence *CorrTimes,REAL8Sequence *DetTimes,REAL8Sequence *
   UINT4 i;
   REAL8 x;
   REAL8 y;
+  REAL8 dt;
   gsl_interp_accel *accl = gsl_interp_accel_alloc();
   gsl_interp *lininter = gsl_interp_alloc(gsl_interp_linear,DetTimes->length);
   gsl_interp_init(lininter,DetTimes->data,a->data,DetTimes->length);
+  dt = CorrTimes->data[CorrTimes->length-1]/DetTimes->length;
 
   for(i=0;i<CorrTimes->length;i++)
     {
       x = CorrTimes->data[i];
-      y = gsl_interp_eval(lininter,DetTimes->data,a->data,x,accl);
+      /*y = gsl_interp_eval(lininter,DetTimes->data,a->data,x,accl);*/
+      y = a->data[(UINT4)((CorrTimes->data[i]-DetTimes->data[0])/dt)];
       FaIn->data[i][0] = Real->data[i] * y;
       FaIn->data[i][1] = Imag->data[i] * y;
     }
@@ -2606,7 +2612,8 @@ void ApplyAandB(REAL8Sequence *CorrTimes,REAL8Sequence *DetTimes,REAL8Sequence *
   for(i=0;i<CorrTimes->length;i++)
     {
       x = CorrTimes->data[i];
-      y = gsl_interp_eval(lininter,DetTimes->data,b->data,x,accl);
+      /*y = gsl_interp_eval(lininter,DetTimes->data,b->data,x,accl);*/
+      y = b->data[(UINT4)((CorrTimes->data[i]-DetTimes->data[0])/dt)];
       FbIn->data[i][0] = Real->data[i] * y;
       FbIn->data[i][1] = Imag->data[i] * y;
     }
@@ -2619,8 +2626,7 @@ void ApplyAandB(REAL8Sequence *CorrTimes,REAL8Sequence *DetTimes,REAL8Sequence *
 
 void ComputeFStat_resamp(LALStatus *status,REAL8FrequencySeries *fstatVector, const PulsarDopplerParams *doppler, const MultiSFTVector *multiSFTs, const MultiNoiseWeights *multiWeights, const MultiDetectorStateSeries *multiDetStates,const ComputeFParams *params,ReSampBuffer *Buffer,ConfigVariables* GV)
 {
-  /* Sorry have to declare all my variables here, due to compiling reasons*/
-  /* Please read on and I will try to explain as these variables turn up */
+
   UINT4 numDetectors, numBins;
   REAL8 deltaF,SFTTimeBaseline = 0;
   PulsarDopplerParams thisPoint;
@@ -2636,6 +2642,9 @@ void ComputeFStat_resamp(LALStatus *status,REAL8FrequencySeries *fstatVector, co
   MultiFFTWCOMPLEXSeries *Saved_a;
   MultiFFTWCOMPLEXSeries *Saved_b;
   BOOLEAN SAMESKYPOSITION = FALSE;
+
+  for ( i = 0; i < multiWeights->data[0]->length; i++ )
+    printf("%d, %f \n",i,multiWeights->data[0]->data[i]);
 
   /* Check if it the previous SkyPosition */
   if ( Buffer
