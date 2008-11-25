@@ -598,15 +598,17 @@ def plot_setup(plotDir, config, logPath, stage, injectionSuffix,
   analysisend = plotcp.get("common","gps-end-time")
   analysisduration = int(analysisend) - int(analysisstart)
   plotcp.set("plotinspmissed","followup-vetofile-h1",
-        "../segments/H1-CATEGORY_2_VETO_SEGS-" + analysisstart 
+        "../segments/H1-COMBINED_CAT_3_VETO_SEGS-" + analysisstart 
         + "-" + str(analysisduration) + ".txt")
   plotcp.set("plotinspmissed","followup-vetofile-h2",
-        "../segments/H2-CATEGORY_2_VETO_SEGS-" + analysisstart 
+        "../segments/H2-COMBINED_CAT_3_VETO_SEGS-" + analysisstart 
         + "-" + str(analysisduration) + ".txt")
   plotcp.set("plotinspmissed","followup-vetofile-l1",
-        "../segments/L1-CATEGORY_2_VETO_SEGS-" + analysisstart 
+        "../segments/L1-COMBINED_CAT_3_VETO_SEGS-" + analysisstart 
         + "-" + str(analysisduration) + ".txt")
-
+  plotcp.set("plotinspmissed","followup-vetofile-v1",
+        "../segments/V1-COMBINED_CAT_3_VETO_SEGS-" + analysisstart
+        + "-" + str(analysisduration) + ".txt")
 
   # set the user-tag
   if plotcp.get("pipeline","user-tag"):
