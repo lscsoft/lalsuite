@@ -1249,10 +1249,12 @@ int MAIN( int argc, char *argv[]) {
   XLALDestroyTimestampVector(startTstack);
 
   /* free Fstat vectors  */
-  for(k = 0; k < nStacks; k++) {
-    LALFree(fstatVector.data[k].data->data);
-    LALFree(fstatVector.data[k].data);
-  }
+  for(k = 0; k < nStacks; k++)
+    if (fstatVector.data[k].data) {
+      if (fstatVector.data[k].data->data)
+	LALFree(fstatVector.data[k].data->data);
+      LALFree(fstatVector.data[k].data);
+    }
   LALFree(fstatVector.data);
   
 
