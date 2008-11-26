@@ -1,16 +1,26 @@
-#!/bin/bash 
+#!/bin/bash
 
 ################################################################################
-# edit these appropriately
+# get needed options from ini file
 
-cat='cat3_combined'
-coire_path='/home/cdcapano/local/s5_2yr_lowcbc_20080829/bin/lalapps_coire'
-log_path='/usr1/cdcapano/log'
-condor_priority='20'
-month_gps_time='847555570'
-month_duration='2419200'
+month_gps_time=`cat write_ifar_scripts.ini | grep 'month_gps_time' | awk '{print $3}'`
+month_duration=`cat write_ifar_scripts.ini | grep 'month_duration' | awk '{print $3}'`
+cat=`cat write_ifar_scripts.ini | grep 'cat' | awk '{print $3}'`
 
-# don't touch anything below here
+coire_path=`cat write_ifar_scripts.ini | grep 'coire_path' | awk '{print $3}'`
+
+log_path=`cat write_ifar_scripts.ini | grep 'log_path' | awk '{print $3}'`
+condor_priority=`cat write_ifar_scripts.ini | grep 'condor_priority' | awk '{print $3}'`
+
+#Print options out to screen for verification
+echo "Options used are:"
+echo "  month_gps_time = ${month_gps_time}"
+echo "  month_duration = ${month_duration}"
+echo "  cat = ${cat}"
+echo "  coire_path = ${coire_path}"
+echo "  log_path = ${log_path}"
+echo "  condor_priority = ${condor_priority}"
+echo
 ################################################################################
 
 
@@ -18,7 +28,7 @@ month_duration='2419200'
 /bin/echo -n "Generating first_coire file list..."
 pushd first_coire_files/ > /dev/null
 for combo in H1H2L1 H1H2 H1L1 H2L1; do
-  for file in ${combo}-COIRE_H*xml.gz; do
+  for file in ${combo}-COIRE_${cat}_H*xml.gz; do
     echo "first_coire_files/${file}"
   done > ${combo}_first_coire_${cat}.cache
 done
@@ -31,10 +41,11 @@ if [ 1 ]; then
   #write coire jobs for double-in_double files
   for combo in H1H2 H1L1 H2L1; do
     infile="${combo}_first_coire_${cat}.cache"
-    parent_file="${combo}-SECOND_COIRE_${combo}-${month_gps_time}-${month_duration}.xml.gz"
+    parent_file="${combo}-SECOND_COIRE_${cat}_${combo}-${month_gps_time}-${month_duration}.xml.gz"
+    summary_file="summ_files_all_data/${combo}-SECOND_COIRE_${cat}_${combo}-${month_gps_time}-${month_duration}.txt"
     echo "JOB $parent_file second_coire.coire.sub"
     echo "RETRY $parent_file 1"
-    echo "VARS $parent_file macroinfile=\"$infile\" macrooutfile=\"$parent_file\" macrocombo=\"$combo\""
+    echo "VARS $parent_file macroinfile=\"$infile\" macrooutfile=\"$parent_file\" macrocombo=\"$combo\" macrosummaryfile=\"$summary_file\""
     echo "CATEGORY $parent_file coire"
     echo "## JOB $parent_file requires input file $infile"
     #write mass coire child jobs
@@ -61,10 +72,11 @@ if [ 1 ]; then
   #write coire jobs for double-in_triple and triple-in_triple files
   for combo in H1H2L1 H1H2 H1L1 H2L1; do
     infile="H1H2L1_first_coire_${cat}.cache"
-    parent_file="${combo}-SECOND_COIRE_H1H2L1-${month_gps_time}-${month_duration}.xml.gz"
+    parent_file="${combo}-SECOND_COIRE_${cat}_H1H2L1-${month_gps_time}-${month_duration}.xml.gz"
+    summary_file="summ_files_all_data/${combo}-SECOND_COIRE_${cat}_H1H2L1-${month_gps_time}-${month_duration}.txt"
     echo "JOB $parent_file second_coire.coire.sub"
     echo "RETRY $parent_file 1"
-    echo "VARS $parent_file macroinfile=\"$infile\" macrooutfile=\"$parent_file\" macrocombo=\"$combo\""
+    echo "VARS $parent_file macroinfile=\"$infile\" macrooutfile=\"$parent_file\" macrocombo=\"$combo\" macrosummaryfile=\"$summary_file\""
     echo "CATEGORY $parent_file coire"
     echo "## JOB $parent_file requires input file $infile"
     #write mass coire child jobs
@@ -94,7 +106,7 @@ fi > second_coire.dag
 if [ 1 ]; then
   echo "universe = standard"
   echo "executable = ${coire_path}"
-  echo "arguments = --input first_coire_files/\$(macroinfile) --output second_coire_files/\$(macrooutfile) --data-type all_data --coinc-stat effective_snrsq --coinc-cut \$(macrocombo) --cluster-time 10000"
+  echo "arguments = --input first_coire_files/\$(macroinfile) --output second_coire_files/\$(macrooutfile) --data-type all_data --coinc-stat effective_snrsq --coinc-cut \$(macrocombo) --cluster-time 10000 --summary-file second_coire_files/\$(macrosummaryfile)"
   echo "log = " `mktemp -p ${log_path}`
   echo "error = logs/coire-\$(cluster)-\$(process).err"
   echo "output = logs/coire-\$(cluster)-\$(process).out"
@@ -121,7 +133,7 @@ echo " done."
 /bin/echo -n "Generating first_coire_slide file list..."
 pushd first_coire_files/ > /dev/null
 for combo in H1H2L1 H1H2 H1L1 H2L1; do
-  for file in ${combo}-COIRE_SLIDE_H*xml.gz; do
+  for file in ${combo}-COIRE_SLIDE_${cat}_H*xml.gz; do
     echo "first_coire_files/${file}"
   done > ${combo}_first_coire_slide_${cat}.cache
 done
@@ -134,7 +146,7 @@ if [ 1 ]; then
   #write coire_slide jobs for double-in_double files
   for combo in H1H2 H1L1 H2L1; do
     infile="${combo}_first_coire_slide_${cat}.cache"
-    parent_file="${combo}-SECOND_COIRE_SLIDE_${combo}-${month_gps_time}-${month_duration}.xml.gz"
+    parent_file="${combo}-SECOND_COIRE_SLIDE_${cat}_${combo}-${month_gps_time}-${month_duration}.xml.gz"
     echo "JOB $parent_file second_coire_slide.coire.sub"
     echo "RETRY $parent_file 1"
     echo "VARS $parent_file macroinfile=\"$infile\" macrooutfile=\"$parent_file\" macrocombo=\"$combo\""
@@ -164,7 +176,7 @@ if [ 1 ]; then
   #write coire_slide jobs for double-in_triple and triple-in_triple files
   for combo in H1H2L1 H1H2 H1L1 H2L1; do
     infile="H1H2L1_first_coire_slide_${cat}.cache"
-    parent_file="${combo}-SECOND_COIRE_SLIDE_H1H2L1-${month_gps_time}-${month_duration}.xml.gz"
+    parent_file="${combo}-SECOND_COIRE_SLIDE_${cat}_H1H2L1-${month_gps_time}-${month_duration}.xml.gz"
     echo "JOB $parent_file second_coire_slide.coire.sub"
     echo "RETRY $parent_file 1"
     echo "VARS $parent_file macroinfile=\"$infile\" macrooutfile=\"$parent_file\" macrocombo=\"$combo\""
@@ -224,6 +236,9 @@ echo " done."
 /bin/echo -n "Creating second_coire_files directory structure..."
 if [ ! -d second_coire_files ] ; then
   mkdir second_coire_files
+fi
+if [ ! -d second_coire_files/summ_files_all_data ] ; then
+  mkdir second_coire_files/summ_files_all_data
 fi
 for mass in mchirp_2_8 mchirp_8_17 mchirp_17_35; do
   if [ ! -d second_coire_files/${mass} ] ; then
