@@ -49,6 +49,36 @@ parser.add_option("-b","--inspiral-first",action="store_true",default=False,\
     help="look for first inspiral files that you can make links to)" )
 parser.add_option("","--inspiral-second",action="store_true",default=False,\
     help="look for second stage inspiral files that you can make links to)" )
+parser.add_option("","--thinca-first",action="store_true",default=False,\
+    help="look for first thinca files that you can make links to)" )
+parser.add_option("","--thinca-second",action="store_true",default=False,\
+    help="look for second stage thinca files (CAT_1 vetoes) that you " +
+     "can make links to)" )
+parser.add_option("","--thinca-second-veto",action="store_true",default=False,\
+    help="look for second stage thinca files (CAT_2/3/4 vetoes) that you " +
+    "can make links to)" )
+parser.add_option("","--inspinj",action="store_true",default=False,\
+    help="look for inspinj files that you can make links to)" )
+parser.add_option("","--inca",action="store_true",default=False,\
+    help="look for inca files that you can make links to)" )
+parser.add_option("","--sire-first",action="store_true",default=False,\
+    help="look for first sire files that you can make links to)" )
+parser.add_option("","--sire-second",action="store_true",default=False,\
+    help="look for second stage sire files (CAT_1 vetoes) that you " +
+    "can make links to)" )
+parser.add_option("","--sire-second-veto",action="store_true",default=False,\
+    help="look for second stage sire files (CAT_2/3/4 vetoes) that you " +
+    "can make links to)" )
+parser.add_option("","--coire-first",action="store_true",default=False,\
+    help="look for first coire files that you can make links to)" )
+parser.add_option("","--coire-second",action="store_true",default=False,\
+    help="look for second stage coire files (CAT_1 vetoes) that you " +
+    "can make links to)" )
+parser.add_option("","--coire-second-veto",action="store_true",default=False,\
+    help="look for second stage coire files (CAT_2/3/4 vetoes) that you " +
+    "can make links to)" )
+parser.add_option("","--trigbank",action="store_true",default=False,\
+    help="look for trigbank files that you can make links to)" )
 parser.add_option("-c","--make-links",action="store_true",default=False,\
     help="make the links" )
 #input
@@ -78,31 +108,46 @@ if not opts.run_names:
     "playground,inj001,inj002"
   exit(1)
 
-# Make a list of all of the file types that you'd like to link
-# Example: ["TMPLTBANK", "INSPIRAL_FIRST"]
-filetypes = []
-if opts.tmpltbank:
-  filetypes.append("TMPLTBANK")
-if opts.inspiral_first:
-  filetypes.append("INSPIRAL_FIRST")
-if opts.inspiral_second:
-  filetypes.append("INSPIRAL_SECOND_*")
-
 # Split the names of the runs into a list. On the command line,
 # the list should be comma-separated. (playground,inj001,etc.)
 runs = opts.run_names.split(",")
 
-# Merge the file types and run names, so that you can do sieves on 
-# the full pattern. Example: TMPLTBANK_INJ001
-filetypelist = []
+# Make a list of all of the file types that you'd like to link
+# Example: ["TMPLTBANK_PLAYGROUND", "INSPIRAL_FIRST_FULL_DATA"]
+filetypes = []
 
-for typ in filetypes:
-  for run in runs:
-    # Make a tuple of the file type and run name in all upper case
-    # Example: ('TMPLTBANK','INJ001')
-    tup = (typ,run.upper())
-    # Join the file type and run name with an _
-    filetypelist.append("_".join(tup))
+for run in runs:
+  runCaps = run.upper()
+  if opts.tmpltbank:
+    filetypes.append("TMPLTBANK_" + runCaps)
+  if opts.inspiral_first:
+    filetypes.append("INSPIRAL_FIRST_" + runCaps)
+  if opts.inspiral_second:
+    filetypes.append("INSPIRAL_SECOND_*" + runCaps)
+  if opts.thinca_first:
+    filetypes.append("THINCA*FIRST_" + runCaps)
+  if opts.thinca_second:
+    filetypes.append("THINCA*SECOND_*" + runCaps)
+  if opts.thinca_second_veto:
+    filetypes.append("THINCA*SECOND_*" + runCaps + "*CAT*VETO")
+  if opts.thinca_first:
+    filetypes.append("SIRE*FIRST_" + runCaps)
+  if opts.thinca_second:
+    filetypes.append("SIRE*SECOND_*" + runCaps)
+  if opts.thinca_second_veto:
+    filetypes.append("SIRE*SECOND_*" + runCaps + "*CAT*VETO")
+  if opts.thinca_first:
+    filetypes.append("COIRE*FIRST_" + runCaps) 
+  if opts.thinca_second:
+    filetypes.append("COIRE*SECOND_*" + runCaps)
+  if opts.thinca_second_veto:
+    filetypes.append("COIRE*SECOND_*" + runCaps + "*CAT*VETO")
+  if opts.trigbank:
+    filetypes.append("TRIGBANK*" + runCaps)
+  if opts.inspinj:
+    filetypes.append("INJECTIONS*" + runCaps)
+  if opts.inca:
+    filetypes.append("INCA_" + runCaps)
 
 # Start a list that will contain the name of every linked file.
 # The files in this list will later be appended to the new cache file.
@@ -114,7 +159,12 @@ filelist = []
 # names, the items in "runs" must be repeated (hence the multiplication
 # by len(filetypes)).
 
-for filetype,filedir in zip(filetypelist,runs*len(filetypes)):
+directoryList = []
+for run in runs:
+  for i in range(0,len(filetypes)//len(runs)):
+    directoryList.append(run)
+
+for filetype,filedir in zip(filetypes,directoryList):
   tmpcache = cache.sieve(description=filetype,exact_match=True)
   # Check if files from the old cache exist on disk and place 
   # them in the found and missed lists.
