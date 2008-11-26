@@ -305,7 +305,7 @@ void ApplyWindow(REAL8Window *Win, COMPLEX16Vector *X);
 void Reshuffle(COMPLEX16Vector *X);
 void PrintL(FFTWCOMPLEXSeries* L,REAL8 min,REAL8 step);
 void ApplyHetCorrection(REAL8Sequence *BaryTimes, REAL8Sequence *DetectorTimes, REAL8 dt, REAL8Sequence *Real, REAL8Sequence *Imag, REAL8 TSFT);
-void ApplySpinDowns(REAL8 *SpinDowns, REAL8 dt, FFTWCOMPLEXSeries *FaIn, FFTWCOMPLEXSeries *FbIn,REAL8 StartTime, REAL8 BaryStartTime);
+void ApplySpinDowns(REAL8 *SpinDowns, REAL8 dt, FFTWCOMPLEXSeries *FaIn, FFTWCOMPLEXSeries *FbIn,REAL8 StartTime, REAL8 BaryStartTime,REAL8Sequence *CorrTimes);
 void ApplyAandB(REAL8Sequence *FineBaryTimes,REAL8Sequence *BaryTimes,REAL8Sequence *a,REAL8Sequence *b,REAL8Sequence *Real,REAL8Sequence *Imag,FFTWCOMPLEXSeries *FaIn, FFTWCOMPLEXSeries *FbIn);
 double sinc(double t);
 void retband(REAL8 t0, REAL8 dt, REAL8* t,REAL8* x, REAL8* y,UINT4 n,UINT4 size, UINT4 terms);
@@ -2511,7 +2511,7 @@ REAL8Sequence* ResampleSeries(REAL8Sequence *X_Real,REAL8Sequence *X_Imag,REAL8S
 
 }
 
-void ApplySpinDowns(REAL8* SpinDowns, REAL8 dt, FFTWCOMPLEXSeries *FaIn, FFTWCOMPLEXSeries *FbIn,REAL8 StartTime, REAL8 BaryStartTime)
+void ApplySpinDowns(REAL8* SpinDowns, REAL8 dt, FFTWCOMPLEXSeries *FaIn, FFTWCOMPLEXSeries *FbIn,REAL8 StartTime, REAL8 BaryStartTime,REAL8Sequence *CorrTimes)
 {
   UINT4 i;
   UINT4 j;
@@ -2524,14 +2524,16 @@ void ApplySpinDowns(REAL8* SpinDowns, REAL8 dt, FFTWCOMPLEXSeries *FaIn, FFTWCOM
   for(i=0;i<FaIn->length;i++)
     {
       /* BaryRefTime is the reference time in the barycentric frame */
-      DT = i*dt + BaryStartTime*0 + StartTime*0 - BaryRefTime*0;
+      DT = CorrTimes->data[i];
+      Phi_M = i*dt + BaryStartTime - CorrTimes->data[i];
 
       /* Phi is the sum of all terms */
       Phi = 0;
 
       for(j=1;j<3;j++)
 	{
-	  Phi += 2.0*LAL_PI*SpinDowns[j]*(pow(DT,j+1)/factorial(j+1)); 
+	  /*Phi += 2.0*LAL_PI*SpinDowns[j]*(pow(DT,j+1)/factorial(j+1));*/
+	  Phi += 2.0*LAL_PI*SpinDowns[j]*pow(DT,j+1)/factorial(j+1) + 2.0*LAL_PI*Phi_M*SpinDowns[j]*pow(DT,j)/factorial(j);
 	}   
 
       sinphi = sin(Phi);
@@ -2957,7 +2959,9 @@ void ComputeFStat_resamp(LALStatus *status,REAL8FrequencySeries *fstatVector, co
 	  ApplyAandB(CorrDetTimes,BaryTimes,a_at_DetectorTimes,b_at_DetectorTimes,ResampledReal,ResampledImag,FaIn,FbIn);
 	  
 	  BaryStartTime = BaryTimes->data[0] - SFTTimeBaseline/2.0;
-
+	  
+	  ApplySpinDowns(doppler->fkdot,dt,FaIn,FbIn,StartTime,BaryStartTime,CorrDetTimes);
+	  
 	  XLALDestroyREAL8Sequence(ResampledReal);
 	  XLALDestroyREAL8Sequence(ResampledImag);
 	  XLALDestroyREAL8Vector(BaryTimes);
@@ -2975,7 +2979,7 @@ void ComputeFStat_resamp(LALStatus *status,REAL8FrequencySeries *fstatVector, co
 	  FbIn = Saved_b->data[i];
 	}
          
-      ApplySpinDowns(doppler->fkdot,dt,FaIn,FbIn,StartTime,BaryStartTime);
+      /*ApplySpinDowns(doppler->fkdot,dt,FaIn,FbIn,StartTime,BaryStartTime);*/
 
       /* Allocate Memory for FaOut and FbOut*/
       FaOut = XLALCreateFFTWCOMPLEXSeries(length);
