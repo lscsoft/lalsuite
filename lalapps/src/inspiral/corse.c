@@ -73,6 +73,7 @@ static void print_usage(char *program)
       " [--debug-level]       level    set the LAL debug level to LEVEL\n"\
       " [--user-tag]          usertag  set the process_params usertag\n"\
       " [--comment]           string   set the process table comment\n"\
+      " [--mass-tag]          string   specify what mass bin in summfile\n"\
       "\n"\
       " [--glob-zero]         glob     use pattern glob to determine the input files\n"\
       " [--input-zero]        input    read list of input XML files from input\n"\
@@ -142,6 +143,7 @@ int main( int argc, char *argv[] )
   /*  program option variables */
   CHAR *userTag = NULL;
   CHAR comment[LIGOMETA_COMMENT_MAX];
+  CHAR *massTag = NULL;
   char *ifos = NULL;
   char *inputGlobZero = NULL;
   char *inputFileNameZero = NULL;
@@ -161,6 +163,8 @@ int main( int argc, char *argv[] )
   REAL4 loudestRate = 0;
   REAL4 timeAnalyzed = 1;
   REAL4 timeModifier = 1;
+  REAL4 bkgtimeAnalyzed = 0;
+  char *coincifos = NULL;
   char *injectFileName = NULL;
   INT8 injectWindowNS = -1;
   char *missedFileName = NULL;
@@ -190,7 +194,6 @@ int main( int argc, char *argv[] )
   SearchSummaryTable   *searchSummSlideList = NULL;
   SearchSummaryTable   *thisSearchSumm = NULL;
   SummValueTable       *summValueList = NULL;
-
   SimInspiralTable     *simEventHead = NULL;
   SimInspiralTable     *thisSimEvent = NULL;
   SimInspiralTable     *missedSimHead = NULL;
@@ -280,6 +283,7 @@ int main( int argc, char *argv[] )
       {"user-tag",                required_argument,      0,              'Z'},
       {"userTag",                 required_argument,      0,              'Z'},
       {"comment",                 required_argument,      0,              'c'},
+      {"mass-tag",                required_argument,      0,              'M'},
       {"version",                 no_argument,            0,              'V'},
       {"data-type",               required_argument,      0,              'k'},
       {"glob-zero",               required_argument,      0,              'g'},
@@ -407,6 +411,13 @@ int main( int argc, char *argv[] )
         {
           LALSnprintf( comment, LIGOMETA_COMMENT_MAX, "%s", optarg);
         }
+        break;
+
+      case 'M':
+        /* create storage for and save massTag string; this is not written to
+         * the process params table; just used for summfile */
+        massTag = (CHAR *) calloc( strlen(optarg), sizeof(CHAR) );
+        memcpy( massTag, optarg, strlen(optarg) );
         break;
 
       case 'V':
@@ -1139,6 +1150,32 @@ int main( int argc, char *argv[] )
           "Error in calculating the FAR");
       exit( 1 );
     }
+    /* for summary file, get calculate background time analyzed and get the
+     * type of ifo coincidence (this is retrieved from the background in case
+     * there are no foreground triggers */
+    if ( summFileName )
+    {
+      thisSlideHead = slideHeads;
+      while ( thisSlideHead )
+      {
+        bkgtimeAnalyzed = bkgtimeAnalyzed + thisSlideHead->slideTimeAnalyzed;
+        /* get coinc ifo; this is probably an arcane way to do it */
+        if ( !coincifos && thisSlideHead->coincInspiral )
+        {
+        /* allocate memory for coincifos string; needed size deteremined using
+         * the numIfos element in the coincInspiral table */
+          coincifos = (CHAR *) calloc(thisSlideHead->coincInspiral->numIfos * 2 + 1, sizeof(CHAR));
+          for( j = 0; j < 6; ++j )
+          {
+            if ( thisSlideHead->coincInspiral->snglInspiral[j] )
+            {
+              strcat(coincifos, thisSlideHead->coincInspiral->snglInspiral[j]->ifo);
+            }
+          }
+         }
+         thisSlideHead = thisSlideHead->next;
+       }
+      }
 
     numEventsAboveThresh = XLALCountCoincInspiral( coincZeroHead );
     if ( vrbflg ) fprintf( stdout,
@@ -1549,6 +1586,12 @@ int main( int argc, char *argv[] )
         exit( 1 );
     }
 
+    if ( !coincifos )
+    {
+      coincifos = (CHAR *) calloc(14, sizeof(CHAR));
+      strcpy(coincifos, "no_background");
+    }
+    fprintf( fp, "coincident ifos: %s\n", coincifos );
     fprintf( fp, "read zero-lag triggers from %d files\n", numInZeroFiles );
     fprintf( fp, "number of zero-lag triggers in input files: %d \n",
         numZeroTriggers );
@@ -1582,6 +1625,14 @@ int main( int argc, char *argv[] )
     XLALINT8toGPS( &triggerTime, triggerInputTimeNS );
     fprintf( fp, "amount of time analysed for triggers %d sec %d ns\n", 
         triggerTime.gpsSeconds, triggerTime.gpsNanoSeconds );
+
+    fprintf( fp, "amount of background time analyzed %f sec\n", bkgtimeAnalyzed );
+
+
+    if ( massTag )
+    {
+      fprintf( fp, "mass-bin: %s\n", massTag );
+    }
 
     if ( injectFileName )
     {
