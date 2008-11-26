@@ -148,31 +148,12 @@ LALFindChirpTDTemplate (
   switch ( params->approximant )
   {
     case TaylorT1:
-      LALInfo( status, "Generating template using TaylorT1" );
-      break;
-      
     case TaylorT2:
-      LALInfo( status, "Generating template using TaylorT2" );
-      break;
-      
     case TaylorT3:
-      LALInfo( status, "Generating template using TaylorT3" );
-      break;
-      
     case GeneratePPN:
-      LALInfo( status, "Generating template using GeneratePPN" );
-      break;
-
     case PadeT1:
-      LALInfo( status, "Generating template using PadeT1" );
-      break;
-
     case EOB:
-      LALInfo( status, "Generating template using EOB" );
-      break;
-
     case EOBNR:
-      LALInfo( status, "Generating template using EOBNR" );
       break;
 
     default:
@@ -440,15 +421,6 @@ LALFindChirpTDTemplate (
 
   /* copy the template parameters to the findchirp template structure */
   memcpy( &(fcTmplt->tmplt), tmplt, sizeof(InspiralTemplate) );
-
-  /* print the template normalization constant */
-  if ( lalDebugLevel & LALINFO )
-  {
-    LALSnprintf( infomsg, sizeof(infomsg) / sizeof(*infomsg), 
-        "tmpltNorm = %e\n", fcTmplt->tmpltNorm );
-    LALInfo( status, infomsg );
-  }
-
 
   /* normal exit */
   DETATCHSTATUSPTR( status );
