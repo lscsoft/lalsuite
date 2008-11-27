@@ -965,6 +965,14 @@ reading any correlation data!");
       }
 
       fscanf(fp, "%lf", &corTemp);
+      
+      /* if covariance equals 1 set as 0.9999999, because values of 1
+         can cause problems of giving singular matrices */
+      if( (n != k) && (corTemp == 1.) )
+        corTemp = 0.9999999;
+      else if( (n != k) && (corTemp == -1.) )
+        corTemp = -0.9999999;
+
       corMat->data[k*corMat->dimLength->data[0] + n] = corTemp;
       if(n != k)
         corMat->data[n*corMat->dimLength->data[0] + k] = corTemp;
