@@ -81,12 +81,9 @@ char *asctime_r(const struct tm *t, char *s) {
   return(s);
 }
 
-#ifdef EAH_RENAME // probably need some tries to get the includes right
-
 /*
   more atomic replacement for the non-atomic boinc_rename()
-  #define MOVEFILE_REPLACE_EXISTING 1
- */
+*/
 
 static int eah_rename_aux(const char* old, const char* newf) {
   if (MoveFileEx(old, newf, MOVEFILE_REPLACE_EXISTING))
@@ -108,5 +105,3 @@ int eah_rename(const char* oldf, const char* newf) {
   }
   return retval;
 }
-
-#endif // EAH_RENAME
