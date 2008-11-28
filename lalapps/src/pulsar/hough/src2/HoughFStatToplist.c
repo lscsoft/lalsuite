@@ -34,9 +34,7 @@
 /* actually boinc_rename() is not as atomic as rename()
    on Windows. For the MinGW cross-build we therefore use
    the rename() provided by MinGW() */
-#ifndef EINSTEINATHOME_CROSS_BUILD
 #define rename boinc_rename
-#endif
 #endif
 
 #include <lal/LogPrintf.h>
