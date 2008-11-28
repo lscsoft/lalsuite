@@ -94,7 +94,7 @@ int inject_signal(
       for ( thisInject = ringList; thisInject; thisInject = thisInject->next )
             ++numInject;
     break;
-    case imr_inject: case imr_ring_inject:
+    case imr_inject: case imr_ring_inject: case EOBNR_inject:
       numInject = 
         SimInspiralTableFromLIGOLw( &injectList, injFile, startSec, stopSec );
       break;
@@ -140,6 +140,9 @@ int inject_signal(
         LAL_CALL( LALFindChirpInjectIMR( &status, series, injectList, ringList, 
               response, injectSignalType ), &status );
         break;        
+      case EOBNR_inject:
+        LAL_CALL( LALFindChirpInjectSignals( &status, series, injectList, response ), &status );
+        break;
       default:
         error( "unrecognized injection signal type\n" );
     }
