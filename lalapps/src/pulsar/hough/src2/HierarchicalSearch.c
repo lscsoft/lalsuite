@@ -1195,6 +1195,7 @@ int MAIN( int argc, char *argv[]) {
 
   LogPrintf(LOG_DETAIL, "Finished analysis and now printing results and cleaning up...");
   
+  LogPrintfVerbatim ( LOG_DEBUG, "Writing output ...\n");
 
 #if (!HS_CHECKPOINTING)
   /* print 1st stage candidates */  
@@ -1218,6 +1219,7 @@ int MAIN( int argc, char *argv[]) {
   write_and_close_checkpointed_file();
 #endif
 
+  LogPrintfVerbatim ( LOG_DEBUG, " done.\n");
 
   /*------------ free all remaining memory -----------*/
   
