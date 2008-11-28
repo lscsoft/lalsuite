@@ -308,7 +308,7 @@ if not opts.disable_followup:
 
 
 dataJob         = followupDataFindJob(cp,'futrig')
-qscanBgJob      = qscanLiteJob(opts,cp)
+qscanBgJob      = qscanJob(opts,cp,'QSCANLITE')
 
 prev_dNode = None
 
