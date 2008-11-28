@@ -26,6 +26,7 @@ static volatile const char *rcsid_win_lib_cpp = "$Id$";
 #include "win_lib.h"
 #ifdef _MSC_VER
 #include <atlbase.h>
+#include <WinBase.h>
 #else
 #include <math.h>
 #include <stdlib.h>
@@ -70,3 +71,33 @@ char *asctime_r(const struct tm *t, char *s) {
   strcpy(s,asctime(t));
   return(s);
 }
+
+#ifdef EAH_RENAME // probably need some tries to get the includes right
+
+/*
+  more atomic replacement for the non-atomic boinc_rename()
+  #define MOVEFILE_REPLACE_EXISTING 1
+ */
+
+static int eah_rename_aux(const char* old, const char* newf) {
+  if (MoveFileEx(old, newf, MOVEFILE_REPLACE_EXISTING))
+    return 0;
+  return GetLastError();
+}
+
+int eah_rename(const char* oldf, const char* newf) {
+  int retval=0;
+  
+  retval = eah_rename_aux(oldf, newf);
+  if (retval) {
+    double start = dtime();
+    do {
+      boinc_sleep(drand()*2); // avoid lockstep
+      retval = eah_rename_aux(oldf, newf);
+      if (!retval) break;
+    } while (dtime() < start + FILE_RETRY_INTERVAL);
+  }
+  return retval;
+}
+
+#endif // EAH_RENAME

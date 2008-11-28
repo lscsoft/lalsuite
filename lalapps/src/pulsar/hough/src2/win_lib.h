@@ -45,8 +45,11 @@ extern "C" {
   /* replacements for the asctime_r and gmtime_r functions */
   extern struct tm *gmtime_r(const time_t *t, struct tm *s);
   extern char *asctime_r(const struct tm *t, char *s);
+
+  /* a different implementation of boinc_rename() */
+  extern int eah_rename(const char* oldf, const char* newf);
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* _MSC_VER */
+#endif /* _WIN32 */
