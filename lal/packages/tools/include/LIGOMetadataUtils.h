@@ -330,7 +330,8 @@ typedef enum
 { 
   ring_inject, 
   imr_inject, 
-  imr_ring_inject
+  imr_ring_inject,
+  EOBNR_inject
 } 
 inject_type;
 
