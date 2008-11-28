@@ -31,16 +31,11 @@
 #if defined(USE_BOINC) || defined(EAH_BOINC)
 #include "filesys.h"
 #define fopen boinc_fopen
-/* actually boinc_rename() is not as atomic as rename()
-   on Windows. For the MinGW cross-build we therefore use
-   the rename() provided by MinGW() */
-#define rename boinc_rename
 #endif
 
 #include <lal/LogPrintf.h>
 
 RCSID("$Id$");
-
 
 
 /* Windows specifics */
@@ -61,7 +56,12 @@ extern int _doserrno;
 #include <float.h>
 #define finite _finite
 
-#else /* MSC */
+/* actually boinc_rename() is not as atomic as rename()
+   on Windows. We therefore use our own implementation
+   eah_rename (in win_lib.h) */
+#define rename eah_rename
+
+#else /* WIN32 */
 
 /* errno */
 #include <errno.h>
@@ -70,7 +70,9 @@ extern int _doserrno;
    protect this with a HAVE_FINITE */
 int finite(double);
 
-#endif  /* MSC */
+#define rename boinc_rename
+
+#endif /* WIN32 */
 
 
 
