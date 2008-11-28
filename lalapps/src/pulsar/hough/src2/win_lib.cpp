@@ -26,7 +26,6 @@ static volatile const char *rcsid_win_lib_cpp = "$Id$";
 #include "win_lib.h"
 #ifdef _MSC_VER
 #include <atlbase.h>
-#include <WinBase.h>
 #else
 #include <math.h>
 #include <stdlib.h>
@@ -34,8 +33,18 @@ static volatile const char *rcsid_win_lib_cpp = "$Id$";
 #include <float.h>
 #include <limits>
 #include <string.h>
+#include <windows.h>
 
 using namespace std;
+
+/* from BOINC's util.h etc. */
+#define FILE_RETRY_INTERVAL 5
+extern double dtime();
+extern void boinc_sleep(double);
+
+static inline double drand() {
+    return (double)rand()/(double)RAND_MAX;
+}
 
 void sleep(unsigned int s) {
 #ifdef _MSC_VER
