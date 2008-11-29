@@ -33,19 +33,21 @@ static volatile const char *rcsid_win_lib_cpp = "$Id$";
 #include <float.h>
 #include <limits>
 #include <string.h>
-#include <windows.h>
+#include <windows.h> // don't move this earlier
 
 using namespace std;
 
-/* from BOINC's util.h etc. */
+/* from BOINC */
 #define FILE_RETRY_INTERVAL 5
+/* links to BOINC's util.o */
 extern double dtime();
 extern void boinc_sleep(double);
-
+/* from BOINC's util.h */
 static inline double drand() {
     return (double)rand()/(double)RAND_MAX;
 }
 
+/* weird re-implementation of sleep based on Win32 APIs */
 void sleep(unsigned int s) {
 #ifdef _MSC_VER
   Sleep(s*1000L);
@@ -54,10 +56,15 @@ void sleep(unsigned int s) {
 #endif
 }
 
+/*
+  provided finite() as a function so that linking LAL
+  with win_lib.o works
+*/ 
 int finite(double x) {
   return(_finite(x));
 }
 
+/* for testing FPE */
 float get_float_snan(void) {
   char*idummy;
   return (numeric_limits<float>::signaling_NaN());
@@ -83,6 +90,11 @@ char *asctime_r(const struct tm *t, char *s) {
 
 /*
   more atomic replacement for the non-atomic boinc_rename()
+  eah_rename() is just a copy of boinc_rename() in boinc/lib/filesys.cpp
+  with the only difference that it calls eah_rename_aux() instead of
+  boinc_rename_aux(). eah_rename_aux() uses MoveFileEx() where
+  boinc_rename_aux() uses the boinc_delete(newf); MoveFile(old,newf)
+  sequence (not even checking the return code of boinc_delete()).
 */
 
 static int eah_rename_aux(const char* old, const char* newf) {
