@@ -262,7 +262,7 @@ if not opts.disable_followup:
 page = string.strip(cp.get('output','url'))
 publish_path = string.strip(cp.get('output','page'))
 dag = followUpDAG(opts.config_file, opts.log_path)
-dag.setupDAGWeb('followup web page','index.html',page)
+dag.setupDAGWeb('followup web page','index.html',page,publish_path)
 
 ############# READ IN THE COIRE FILES #########################################
 
@@ -301,7 +301,7 @@ if not opts.disable_followup:
   MCMCJob 	  = followupmcmcJob(opts,cp)
   PLOTMCMCJob     = plotmcmcJob(opts,cp)
   headInspJob     = followUpInspJob(cp, 'head')
-  cohInspJob     = followUpInspJob(cp, 'coh')
+  cohInspJob      = followUpInspJob(cp, 'coh')
   h1h2QJob        = h1h2QeventJob(opts,cp)   
   skyMapJob       = lalapps_skyMapJob(opts,cp)
   skyPlotJob      = pylal_skyPlotJob(opts,cp)
