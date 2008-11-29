@@ -31,7 +31,15 @@
 #if defined(USE_BOINC) || defined(EAH_BOINC)
 #include "filesys.h"
 #define fopen boinc_fopen
-#endif
+#ifdef _WIN32
+/* actually boinc_rename() is not as atomic as rename()
+   on Windows. We therefore use our own implementation
+   eah_rename (in win_lib.h) */
+#define rename eah_rename
+#else  // _WIN32
+#define rename boinc_rename
+#endif // _WIN32
+#endif // _BOINC
 
 #include <lal/LogPrintf.h>
 
@@ -56,11 +64,6 @@ extern int _doserrno;
 #include <float.h>
 #define finite _finite
 
-/* actually boinc_rename() is not as atomic as rename()
-   on Windows. We therefore use our own implementation
-   eah_rename (in win_lib.h) */
-#define rename eah_rename
-
 #else /* WIN32 */
 
 /* errno */
@@ -69,8 +72,6 @@ extern int _doserrno;
 /* this is defined in C99 and *should* be in math.h. Long term
    protect this with a HAVE_FINITE */
 int finite(double);
-
-#define rename boinc_rename
 
 #endif /* WIN32 */
 
