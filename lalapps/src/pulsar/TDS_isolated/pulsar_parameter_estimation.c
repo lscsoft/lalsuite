@@ -765,6 +765,18 @@ y:g:G:K:N:X:O:J:M:r:fFR><)[:" ;
     exit(0);
   }
 
+  if( inputParams->dob != 0. && inputParams->mcmc.doMCMC == 1 ){
+    fprintf(stderr, "Error... can't output an upper limit in MCMC mode!\n");
+    fprintf(stderr, "\tNon-fatal error so continue anyway...\n");
+    inputParams->dob = 0.;
+  }
+
+  if( inputParams->outputPost == 1 && inputParams->mcmc.doMCMC == 1 ){
+    fprintf(stderr, "Error... can't output full posterior in MCMC mode!\n");
+    fprintf(stderr, "\tNon-fatal error so continue anyway...\n");
+    inputParams->outputPost = 0;
+  }
+
   /* set mesh step sizes */
   if( inputParams->mesh.h0Steps > 1 ){
     inputParams->mesh.delta.h0 = (inputParams->mesh.maxVals.h0 -
@@ -1624,7 +1636,7 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
   INT4 **g1=NULL, **g2=NULL; /* start - end positions of each glitch segment */
   DataStructure **glitchData=NULL;
 
-  INT4 below0=0;
+  /* INT4 below0=0; */
 
   REAL4Vector *randNum=NULL; /* LAL random variable params */
   UINT4 seed=0;              /* set to get seed from clock time */
@@ -1662,6 +1674,8 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
 
   INT4 onlyonce=0; /* use this variable only once */
 
+  /* REAL8 Ap=0., Ac=0., Apnew=0., Acnew=0.; */
+
   /* read the TEMPO par file for the pulsar */
   XLALReadTEMPOParFile( &pulsarParamsFixed, input.parFile );
 
@@ -1684,8 +1698,8 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
     g2 = XLALCalloc(numDets, sizeof(INT4 *));
 
     for( j = 0 ; j < numDets ; j++ ){
-        g1[j] = XLALCalloc(nGlitches + 1, sizeof(INT4));
-        g2[j] = XLALCalloc(nGlitches + 1, sizeof(INT4));
+      g1[j] = XLALCalloc(nGlitches + 1, sizeof(INT4));
+      g2[j] = XLALCalloc(nGlitches + 1, sizeof(INT4));
     }
 
     /* check that the number of glitch times entered as the same as the number
@@ -1738,15 +1752,15 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
 
       /* set initial values for extra params (all start at same point) */
       if( i==0 ){
-        extraVars[i].h0 = input.mesh.minVals.h0 +
+        /* extraVars[i].h0 = input.mesh.minVals.h0 +
           (REAL8)XLALUniformDeviate(randomParams) *
-          (input.mesh.maxVals.h0 - input.mesh.minVals.h0);
+          (input.mesh.maxVals.h0 - input.mesh.minVals.h0); */
         extraVars[i].phi0 = input.mesh.minVals.phi0 +
           (REAL8)XLALUniformDeviate(randomParams) *
           (input.mesh.maxVals.phi0 - input.mesh.minVals.phi0);
       }
       else{
-        extraVars[i].h0 = extraVars[i-1].h0;
+        /* extraVars[i].h0 = extraVars[i-1].h0; */
         extraVars[i].phi0 = extraVars[i-1].phi0;
       }
 
@@ -1866,15 +1880,6 @@ paramData );
     /* set inverse of covariance matrix */
     invmat = create_covariance_matrix( paramData, tempinvmat, 1 );
 
-    /* if( verbose ){
-      fprintf(stderr, "\nInverse matrix:\n");   
-      for(i=0; i<invmat->dimLength->data[0]; i++){    
-        for(j=0; j<invmat->dimLength->data[1]; j++)   
-          fprintf(stderr, "%.2e  ", invmat[i*invmat->dimLength->data[0] + j]);
-        fprintf(stderr, "\n");
-      }
-    } */
-
     XLALDestroyREAL8Array( tempinvmat );
     XLALDestroyREAL8Array( cormat );
     XLALDestroyREAL8Array( covmat );
@@ -1928,8 +1933,10 @@ paramData );
   /* set initial chain parameters */
   vars.h0 = input.mesh.minVals.h0 + (REAL8)XLALUniformDeviate(randomParams) *
              (input.mesh.maxVals.h0 - input.mesh.minVals.h0);
-  if( input.mcmc.nGlitches > 0 )
-    vars.h0 = extraVars[0].h0;
+
+  /* if( input.mcmc.nGlitches > 0 )
+    vars.h0 = extraVars[0].h0; */
+
   vars.phi0 = input.mesh.minVals.phi0 + (REAL8)XLALUniformDeviate(randomParams)
              * (input.mesh.maxVals.phi0 - input.mesh.minVals.phi0);
   vars.psi = input.mesh.minVals.psi + (REAL8)XLALUniformDeviate(randomParams) *
@@ -1944,7 +1951,11 @@ paramData );
   vars.Xpcosphi_2 = 0.5*vars.Xplus*cos(vars.phi0);
   vars.Xccosphi_2 = 0.5*vars.Xcross*cos(vars.phi0);
 
+  /* Ap = vars.h0*vars.Xplus;
+  Ac = vars.h0*vars.Xcross; */
+
   for( i = 0 ; i < nGlitches ; i++ ){
+    extraVars[i].h0 = vars.h0;
     extraVars[i].Xpsinphi_2 = 0.5*vars.Xplus * sin(extraVars[i].phi0);
     extraVars[i].Xcsinphi_2 = 0.5*vars.Xcross * sin(extraVars[i].phi0);
     extraVars[i].Xpcosphi_2 = 0.5*vars.Xplus * cos(extraVars[i].phi0);
@@ -1994,7 +2005,8 @@ paramData );
   fprintf(fp, "%% log(L)    \th0          \tphi0 (rads) \tcos(iota)\tpsi \
 (rads)");
   for( j = 0 ; j < nGlitches ; j++ )
-    fprintf(fp, "\th0(%d)       \tphi0(%d) ", j+2, j+2);
+    fprintf(fp, "\tphi0(%d) ", j+2);
+    /* fprintf(fp, "\th0(%d)       \tphi0(%d) ", j+2, j+2); */
   if( matTrue ){
     for( j = 0 ; j < MAXPARAMS ; j++ ){
       if( paramData[j].matPos != 0 )
@@ -2004,7 +2016,8 @@ paramData );
   fprintf(fp, "\n");
 
   /* create vector for random Gaussian numbers */
-  randNum = XLALCreateREAL4Vector(4+2*nGlitches);
+  /* randNum = XLALCreateREAL4Vector(4+2*nGlitches); */
+  randNum = XLALCreateREAL4Vector(4+nGlitches);
 
   if( matTrue && numDets == 1 ){
     /* set up detector location - if not doing joint analysis */
@@ -2032,7 +2045,8 @@ paramData );
 
   /*=================== MCMC LOOP =====================*/
   for( i = 0 ; i < iterations ; i++ ){
-    REAL4 sp=0, cp=0; /* sin and cos values */
+    REAL4 sp=0., cp=0.; /* sin and cos values */
+    INT4 nege=0;        /* eccentricity check */
 
     if( verbose ){
       fprintf(stderr, "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
@@ -2043,14 +2057,20 @@ paramData );
     /* get new values of parameters using Gaussian proposal distributions */
     XLALNormalDeviates(randNum, randomParams);
 
+    /* jump in Aplus and Across */
+    /* Apnew = Ap + input.mcmc.sigmas.h0*randNum->data[0];
+    Acnew = Ac + input.mcmc.sigmas.h0*randNum->data[3]; */
+
     varsNew.h0 = vars.h0 + input.mcmc.sigmas.h0*randNum->data[0];
 
-    below0 = 0;
+    /* below0 = 0; */
     for( j = 0 ; j < nGlitches ; j++ ){
-      extraVarsNew[j].h0 = extraVars[j].h0 +
+      /* extraVarsNew[j].h0 = extraVars[j].h0 +
         input.mcmc.sigmas.h0*randNum->data[4+2*j];
       extraVarsNew[j].phi0 = extraVars[j].phi0 +
-        input.mcmc.sigmas.phi0*randNum->data[4+2*j+1];
+        input.mcmc.sigmas.phi0*randNum->data[4+2*j+1]; */
+      extraVarsNew[j].phi0 = extraVars[j].phi0 +
+        input.mcmc.sigmas.phi0*randNum->data[4+j];
 
       if( extraVarsNew[j].phi0 < 0. ){
         extraVarsNew[j].phi0 = fmod(extraVarsNew[j].phi0, LAL_TWOPI);
@@ -2060,27 +2080,42 @@ paramData );
         extraVarsNew[j].phi0 = fmod(extraVarsNew[j].phi0, LAL_TWOPI);
 
       /* if any of the h0 jump below zero then write out data below */
-      if( extraVarsNew[j].h0 < 0. )
-        below0 = 1;
+      /* if( extraVarsNew[j].h0 < 0. )
+        below0 = 1; */
 
       /* make it so that values of h0 after a glitch must be smaller than
          before the glitch i.e. the pulsar always relaxes to a lower energy
          state - if this happens set below0 = 1 to output the current state */
-      if( j==0 ){
+      /* if( j==0 ){
         if( extraVarsNew[j].h0 > varsNew.h0 )
           below0 = 1;
       }
       else{
         if( extraVarsNew[j].h0 > extraVarsNew[j-1].h0 )
           below0 = 1;
-      }
+      } */
     }
 
-    /* if h0 jumps negative then this is equivalent to having jumped outside
-       our prior range so the likelihood is always zero and this move always
-       rejected - therefore it's quickest just to output the only step now 
-       and move on to the next step */
-    if( ( varsNew.h0 < 0. || below0 == 1 ) && i > 0 ){
+    if( matTrue ){
+      /* generate new pulsars parameters from the pulsar parameter covariance */
+      randVals = multivariate_normal_deviates( chol, vals, randomParams );
+      memcpy(&pulsarParamsNew, &pulsarParams, sizeof(BinaryPulsarParams));
+      set_mcmc_pulsar_params( &pulsarParamsNew, randVals, matPos );
+
+      if( pulsarParamsNew.e < 0. || pulsarParamsNew.e >= 1. ||
+          pulsarParamsNew.e2 < 0. || pulsarParamsNew.e2 >= 1. ||
+          pulsarParamsNew.e3 < 0. || pulsarParamsNew.e3 >= 1. )
+        nege = 1;
+    }
+
+    /* if h0 jumps negative, or eccentricity is negative or greater than 1 then
+       this is equivalent to having jumped outside our prior range so the
+       likelihood is always zero and this move always rejected - therefore it's
+       quickest just to output the only step now and move on to the next step */
+    /* if( ( varsNew.h0 < 0. || below0 == 1 || nege == 1 ) && i > 0 ){ */
+    if( ( varsNew.h0 < 0. || nege == 1 ) && i > 0 ){
+    /* if( ( Apnew < 0. || ( Apnew*Apnew < 2.*Acnew*Acnew ) || nege == 1 ) && i
+> 0 ){ */
       if( fmod(i, input.mcmc.outputRate) == 0. && i >= burnInLength ){
         fprintf(fp, "%le\t%le\t%lf\t%lf\t%lf", logL1, vars.h0, vars.phi0,
           vars.ci, vars.psi);
@@ -2103,44 +2138,29 @@ paramData );
 
       continue;
     }
-    else if( ( varsNew.h0 < 0. || below0 == 1 ) && i == 0 ){
+    /* else if( ( varsNew.h0 < 0. || below0 == 1 || nege == 1 ) && i == 0 ){ */
+    else if( ( varsNew.h0 < 0. || nege == 1 ) && i == 0 ){
+    /* else if( ( Apnew < 0. || ( Apnew*Apnew < 2.*Acnew*Acnew ) || nege == 1 )
+&& i == 0 ){ */
       onlyonce = 1; /* if h0 goes below zero on the first step then we still 
                        have to calculate logL1, so continue but make sure 
                        logL2 gets set to -Inf (or close to!) later on */
       /* set values of h0 so that they aren't negative, as this could screw
          up other functions */
       varsNew.h0 = 1e-30;
+      pulsarParamsNew.e = 0.;
+      pulsarParamsNew.e2 = 0.;
+      pulsarParamsNew.e3 = 0.;
 
       for( j = 0 ; j < nGlitches ; j++ ) extraVarsNew[j].h0 = 1e-30;
     }
 
-    if( matTrue ){
-      /* generate new pulsars parameters from the pulsar parameter covariance */
-      randVals = multivariate_normal_deviates( chol, vals, randomParams );
-      memcpy(&pulsarParamsNew, &pulsarParams, sizeof(BinaryPulsarParams));
-      set_mcmc_pulsar_params( &pulsarParamsNew, randVals, matPos );
-
-      /* check eccentricities so that 0 <= e < 1 i.e. circular or elliptical
-       orbits */
-      if( pulsarParamsNew.e < 0. )
-        pulsarParamsNew.e = fabs(pulsarParamsNew.e);
-      else if( pulsarParamsNew.e >= 1. )
-        pulsarParamsNew.e = 1. - fmod(pulsarParamsNew.e, 1.);
-
-      if( pulsarParamsNew.e2 < 0. )
-        pulsarParamsNew.e2 = fabs(pulsarParamsNew.e2);
-      else if( pulsarParamsNew.e2 >= 1. )
-        pulsarParamsNew.e2 = 1. - fmod(pulsarParamsNew.e2, 1.);
-
-      if( pulsarParamsNew.e3 < 0. )
-        pulsarParamsNew.e3 = fabs(pulsarParamsNew.e3);
-      else if( pulsarParamsNew.e3 >= 1. )
-        pulsarParamsNew.e3 = 1. - fmod(pulsarParamsNew.e3, 1.);
-    }
+    /* varsNew.h0 = Apnew - sqrt(Apnew*Apnew - 2.*Acnew*Acnew); */
 
     varsNew.phi0 = vars.phi0 + input.mcmc.sigmas.phi0*randNum->data[1];
     varsNew.psi = vars.psi + input.mcmc.sigmas.psi*randNum->data[2];
     varsNew.ci = vars.ci + input.mcmc.sigmas.ci*randNum->data[3];
+    /* varsNew.ci = Acnew/varsNew.h0; */
 
     /* wrap parameters around or bounce */
     if( varsNew.ci > 1.0 )
@@ -2181,6 +2201,7 @@ paramData );
 
     for( j = 0 ; j < nGlitches ; j++ ){
       sin_cos_LUT( &sp, &cp, extraVarsNew[j].phi0 );
+      extraVarsNew[j].h0 = varsNew.h0;
       extraVarsNew[j].Xpsinphi_2 = 0.5*varsNew.Xplus * sp;
       extraVarsNew[j].Xcsinphi_2 = 0.5*varsNew.Xcross * sp;
       extraVarsNew[j].Xpcosphi_2 = 0.5*varsNew.Xplus * cp;
@@ -2233,7 +2254,7 @@ paramData );
               log_likelihood(like1, glitchData[k][j], vars, input.mesh, phi2);
             }
             else{
-              input.mesh.minVals.h0 = extraVars[j-1].h0;
+              /* input.mesh.minVals.h0 = extraVars[j-1].h0; */
               log_likelihood(like1, glitchData[k][j], extraVars[j-1],
                 input.mesh, phi2);
             }
@@ -2281,7 +2302,7 @@ paramData );
             log_likelihood(like2, glitchData[k][j], varsNew, input.mesh, phi2);
           }
           else{
-            input.mesh.minVals.h0 = extraVarsNew[j-1].h0;
+            /* input.mesh.minVals.h0 = extraVarsNew[j-1].h0; */
             log_likelihood(like2, glitchData[k][j], extraVarsNew[j-1],
               input.mesh, phi2);
           }
@@ -2345,7 +2366,8 @@ paramData );
 
         if( nGlitches > 0 ){
           for( j = 0 ; j < nGlitches ; j++ ){
-            input.priors.vars.h0 = extraVars[j].h0;
+            /* input.priors.vars.h0 = extraVars[j].h0; */
+            input.priors.vars.phi0 = extraVars[j].phi0;
 
             logL1 += log_prior(input.priors, input.mesh);
           }
@@ -2361,7 +2383,8 @@ paramData );
 
       if( nGlitches > 0 ){
         for( j = 0 ; j < nGlitches ; j++ ){
-          input.priors.vars.h0 = extraVarsNew[j].h0;
+          /* input.priors.vars.h0 = extraVarsNew[j].h0; */
+          input.priors.vars.phi0 = extraVarsNew[j].phi0;
 
           logL2 += log_prior(input.priors, input.mesh);
         }
@@ -2386,6 +2409,9 @@ paramData );
     /* accept new step */
     if( ratio - log(XLALUniformDeviate(randomParams)) >= 0. ){
       vars = varsNew;
+
+      /* Ap = Apnew;
+      Ac = Acnew; */
 
       /* update vals structure */
       if( matTrue ){
@@ -2412,7 +2438,8 @@ paramData );
         vars.psi);
 
       for( j = 0 ; j < nGlitches ; j++ )
-        fprintf(fp, "\t%le\t%lf", extraVars[j].h0, extraVars[j].phi0);
+        fprintf(fp, "\t%lf", extraVars[j].phi0);
+        /* fprintf(fp, "\t%le\t%lf", extraVars[j].h0, extraVars[j].phi0); */
 
       if( matTrue ){
         /* print out pulsar parameters */
