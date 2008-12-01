@@ -953,6 +953,9 @@ static void worker (void) {
       }
     } else if (zipped < 0) {
       LogPrintf (LOG_NORMAL, "WARNING: is_zipped() couldn't open output file '%s' (%d)\n", resultfile,res);
+      /* if there wasn't an error before, a problem opening the output file is serious, so signal it */
+      if(res == 0)
+	res = zipped;
     }
   }
 
