@@ -32,6 +32,7 @@
 " --detector          IFOs to use e.g. H1\n"\
 " --pulsar            name of pulsar e.g. J0534+2200\n"\
 " --par-file          pulsar parameter (.par) file (full path)\n"\
+" --par-file2         pulsar parameter file to compare\n"\
 " --covariance        pulsar covariance matrix file\n"\
 " --start             start time GPS\n"\
 " --timespan          time span to calculate over (seconds)\n"\
@@ -49,6 +50,7 @@ typedef struct tagInputParams{
   CHAR det[10];
   CHAR pulsar[15];
   CHAR parfile[256];
+  CHAR parfile2[256];
   CHAR covfile[256];
 
   INT4 start;
@@ -100,7 +102,7 @@ int main(int argc, char *argv[]){
 
   FILE *fp=NULL;
 
-  BinaryPulsarParams params;
+  BinaryPulsarParams params, params2;
 
   BinaryPulsarParams deltaparams;
 
@@ -134,6 +136,9 @@ int main(int argc, char *argv[]){
   XLALReadTEMPOParFile( &params, inputs.parfile );
   XLALReadTEMPOParFile( &deltaparams, inputs.parfile );
 
+  if( strstr(inputs.parfile2, ".par") != NULL )
+    XLALReadTEMPOParFile( &params2, inputs.parfile2 );
+
   /* set up ephemerises */
   det = *XLALGetSiteInfo( inputs.det ); /* just set site as LHO */
   baryinput.site = det;
@@ -147,23 +152,20 @@ int main(int argc, char *argv[]){
   (*edat).ephiles.sunEphemeris = inputs.sun;
   LALInitBarycenter(&status, edat);
 
- /* set the position and frequency epochs if not already set */
+  /* set the position and frequency epochs if not already set */
   if(params.pepoch == 0. && params.posepoch != 0.)
     params.pepoch = params.posepoch;
   else if(params.posepoch == 0. && params.pepoch != 0.)
     params.posepoch = params.pepoch;
 
-  if(params.pepoch == 0. && params.posepoch != 0.)
-    params.pepoch = params.posepoch;
-  else if(params.posepoch == 0. && params.pepoch != 0.)
-    params.posepoch = params.pepoch;
+  if( strstr(inputs.parfile2, ".par") != NULL ){
+    if(params2.pepoch == 0. && params2.posepoch != 0.)
+    params2.pepoch = params2.posepoch;
+  else if(params2.posepoch == 0. && params2.pepoch != 0.)
+    params2.posepoch = params2.pepoch;
+  }
 
   /* set the position and frequency epochs if not already set */
-  if(deltaparams.pepoch == 0. && deltaparams.posepoch != 0.)
-    deltaparams.pepoch = deltaparams.posepoch;
-  else if(deltaparams.posepoch == 0. && deltaparams.pepoch != 0.)
-    deltaparams.posepoch = deltaparams.pepoch;
-
   if(deltaparams.pepoch == 0. && deltaparams.posepoch != 0.)
     deltaparams.pepoch = deltaparams.posepoch;
   else if(deltaparams.posepoch == 0. && deltaparams.pepoch != 0.)
@@ -208,42 +210,48 @@ int main(int argc, char *argv[]){
     if( params.sErr != 0. ) countBin++;
   }
 
+  fprintf(stderr, "%s\n", inputs.parfile2);
+
   /* set up random parameters */
-  randomParams = XLALCreateRandomParams( seed );
+  if ( strstr(inputs.parfile2, ".par") == NULL ){
+    randomParams = XLALCreateRandomParams( seed );
 
-  paramData = XLALMalloc( MAXPARAMS*sizeof(ParamData) );
+    paramData = XLALMalloc( MAXPARAMS*sizeof(ParamData) );
 
-  /* get correlation matrix */
-  cormat = ReadCorrelationMatrix( inputs.covfile, params, paramData );
+    /* get correlation matrix */
+    cormat = ReadCorrelationMatrix( inputs.covfile, params, paramData );
 
-  if( (posdef = XLALCheckPositiveDefinite( cormat )) == NULL ){
-    /* set covariance matrix */
-    covmat = CreateCovarianceMatrix( paramData, cormat );
+    if( (posdef = XLALCheckPositiveDefinite( cormat )) == NULL ){
+      /* set covariance matrix */
+      covmat = CreateCovarianceMatrix( paramData, cormat );
 
-    chol = CholeskyDecomp(covmat, "lower");
-  }
-  else{
-    covmat = CreateCovarianceMatrix( paramData, posdef );
-
-    chol = CholeskyDecomp(covmat, "lower");
-
-    XLALDestroyREAL8Array(posdef);
-  }
-
-  /* get the posistions of the parameters within paramData */
-  i=0;
-  j=0;
-  matPos = XLALCreateINT4Vector( MAXPARAMS );
-  while(i < MAXPARAMS){
-    if( paramData[i].matPos != 0 ){
-      matPos->data[j] = i;
-      j++;
+      chol = CholeskyDecomp(covmat, "lower");
     }
-    i++;
+    else{
+      covmat = CreateCovarianceMatrix( paramData, posdef );
+
+      chol = CholeskyDecomp(covmat, "lower");
+
+      XLALDestroyREAL8Array(posdef);
+    }
+
+    /* get the posistions of the parameters within paramData */
+    i=0;
+    j=0;
+    matPos = XLALCreateINT4Vector( MAXPARAMS );
+    while(i < MAXPARAMS){
+      if( paramData[i].matPos != 0 ){
+        matPos->data[j] = i;
+        j++;
+      }
+      i++;
+    }
+    matPos = XLALResizeINT4Vector(matPos, j);
   }
-  matPos = XLALResizeINT4Vector(matPos, j);
 
   N = inputs.iterations;
+
+  if( inputs.parfile2 != NULL ) N = 1;
 
   /* calculate the max mismatch between the mean value and the mean plus the
      standard deviation */
@@ -252,8 +260,10 @@ int main(int argc, char *argv[]){
     REAL8 integral2=0.;
 
     /* generate new pulsars parameters from the pulsar parameter covariance */
-    randVals = MultivariateNormalDeviates( chol, paramData, randomParams );
-    SetMCMCPulsarParams( &deltaparams, randVals, matPos );
+    if( strstr(inputs.parfile2, ".par") == NULL ){
+      randVals = MultivariateNormalDeviates( chol, paramData, randomParams );
+      SetMCMCPulsarParams( &deltaparams, randVals, matPos );
+    }
 
     if( i==0 ){
       if(count > 0){
@@ -285,8 +295,14 @@ int main(int argc, char *argv[]){
     }
 
     /* get new phase */
-    phiOffset = get_phi( inputs.start, (double)inputs.deltat, npoints,
-deltaparams, baryinput, edat );
+    if( strstr(inputs.parfile2, ".par") == NULL ){
+      phiOffset = get_phi( inputs.start, (double)inputs.deltat, npoints,
+        deltaparams, baryinput, edat );
+    }
+    else{
+      phiOffset = get_phi( inputs.start, (double)inputs.deltat, npoints,
+        params2, baryinput, edat );
+    }
 
     /* calculate the mismatch 1 - (P(params + delta))/P(params) */
     intre = 0.;
@@ -309,16 +325,22 @@ deltaparams, baryinput, edat );
     XLALDestroyREAL8Vector( phiOffset );
   }
 
-  sprintf(outputfile, "%s/mismatch_%s", inputs.outputdir, inputs.pulsar);
-  fp = fopen(outputfile, "w");
+  if( strstr(inputs.parfile2, ".par") == NULL ){
+    sprintf(outputfile, "%s/mismatch_%s", inputs.outputdir, inputs.pulsar);
+    fp = fopen(outputfile, "w");
 
-  fprintf(stderr, "Maximum mismatch for %d templates drawn randomly from the\
+    fprintf(stderr, "Maximum mismatch for %d templates drawn randomly from the\
  given parameter and pulsar %s\n%le\n", N, inputs.pulsar, maxmismatch);
 
-  fprintf(fp, "%% Maximum mismatch for %d templates drawn randomly from the \
+    fprintf(fp, "%% Maximum mismatch for %d templates drawn randomly from the \
 given parameter and pulsar %s\n%lf\n", N, inputs.pulsar, maxmismatch);
 
-  fclose(fp);
+    fclose(fp);
+  }
+  else{
+    fprintf(stderr, "The mismatch between the two par file for pulsar %s is %le\n", 
+      inputs.pulsar, maxmismatch);
+  }
 
   XLALFree( paramData );
   XLALFree( randVals );
@@ -338,6 +360,7 @@ void get_input_args(InputParams *inputParams, INT4 argc, CHAR *argv[]){
     { "detector",      required_argument, 0, 'D' },
     { "pulsar",         required_argument, 0, 'p' },
     { "par-file",       required_argument, 0, 'P' },
+    { "par-file2",      required_argument, 0, 'b' },
     { "covariance",      required_argument, 0, 'c' },
     { "start",     required_argument, 0, 's' },
     { "timespan",          required_argument, 0, 't' },
@@ -349,7 +372,7 @@ void get_input_args(InputParams *inputParams, INT4 argc, CHAR *argv[]){
     { 0, 0, 0, 0}
   };
 
-  CHAR args[] = "hd:p:P:c:s:t:d:i:o:e:S:" ;
+  CHAR args[] = "hd:p:P:b:c:s:t:d:i:o:e:S:" ;
   CHAR *program = argv[0];
 
   while( 1 ){
@@ -378,6 +401,9 @@ void get_input_args(InputParams *inputParams, INT4 argc, CHAR *argv[]){
         break;
       case 'P':
         sprintf(inputParams->parfile, "%s", optarg);
+        break;
+      case 'b':
+        sprintf(inputParams->parfile2, "%s", optarg);
         break;
       case 'c':
         sprintf(inputParams->covfile, "%s", optarg);
