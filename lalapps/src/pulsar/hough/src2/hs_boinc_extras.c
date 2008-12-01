@@ -937,21 +937,23 @@ static void worker (void) {
 
   /* we'll still try to zip and send back what's left from an output file for diagnostics */
   /* in case of an error before any output was written the result will contain the link file */
+  {
 #define OUTPUT_EXT ".zip"
-  res = is_zipped(resultfile);
-  if(res == 0) {
-    int s = strlen(resultfile) + strlen(OUTPUT_EXT) + 1;
-    char*zipfile = (char*)calloc(s,sizeof(char));
-    strncpy(zipfile,resultfile,s);
-    strncat(zipfile,OUTPUT_EXT,s);
-
-    if ( boinc_zip(ZIP_IT, zipfile, resultfile) ) {
-      LogPrintf (LOG_NORMAL, "WARNING: Can't zip output file '%s'\n", resultfile);
-    } else if( boinc_rename(zipfile, resultfile) ) {
-      LogPrintf (LOG_NORMAL, "WARNING: Couldn't rename '%s' to '%s'\n", zipfile, resultfile);
+    int zipped = is_zipped(resultfile);
+    if(zipped == 0) {
+      int s = strlen(resultfile) + strlen(OUTPUT_EXT) + 1;
+      char*zipfile = (char*)calloc(s,sizeof(char));
+      strncpy(zipfile,resultfile,s);
+      strncat(zipfile,OUTPUT_EXT,s);
+      
+      if ( boinc_zip(ZIP_IT, zipfile, resultfile) ) {
+	LogPrintf (LOG_NORMAL, "WARNING: Can't zip output file '%s'\n", resultfile);
+      } else if( boinc_rename(zipfile, resultfile) ) {
+	LogPrintf (LOG_NORMAL, "WARNING: Couldn't rename '%s' to '%s'\n", zipfile, resultfile);
+      }
+    } else if (zipped < 0) {
+      LogPrintf (LOG_NORMAL, "WARNING: is_zipped() couldn't open output file '%s' (%d)\n", resultfile,res);
     }
-  } else if (res<0) {
-    LogPrintf (LOG_NORMAL, "WARNING: is_zipped() couldn't open output file '%s' (%d)\n", resultfile,res);
   }
 
   /* finally set (fl)ops count if given */
