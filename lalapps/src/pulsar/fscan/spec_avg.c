@@ -50,7 +50,7 @@ int main(int argc, char **argv)
   double avg;
   REAL4 *timeavg;
   REAL8 f;
-  char outfile[128],outfile2[128],outfile3[128];
+  CHAR outbase[128],outfile[128],outfile2[128],outfile3[128];
 
   BOOLEAN help = 0;
   CHAR *SFTpatt = NULL;
@@ -60,6 +60,7 @@ int main(int argc, char **argv)
   REAL8 f_min = 0.0;
   REAL8 f_max = 0.0;
   INT4 blocksRngMed = 101;
+  CHAR *outputBname = NULL;
 
   lalDebugLevel = 0;
   LAL_CALL (LALGetDebugLevel(&status, argc, argv, 'v'), &status);
@@ -71,7 +72,8 @@ int main(int argc, char **argv)
   LAL_CALL(LALRegisterINTUserVar   (&status, "endGPS",       'e', UVAR_REQUIRED, "Ending GPS time",             &endGPS      ), &status);
   LAL_CALL(LALRegisterREALUserVar  (&status, "fMin",         'f', UVAR_REQUIRED, "Minimum frequency",           &f_min       ), &status);
   LAL_CALL(LALRegisterREALUserVar  (&status, "fMax",         'F', UVAR_REQUIRED, "Maximum frequency",           &f_max       ), &status);
-  LAL_CALL(LALRegisterINTUserVar   (&status, "blocksRngMed", 'w', UVAR_OPTIONAL,  "Running Median window size", &blocksRngMed), &status);
+  LAL_CALL(LALRegisterINTUserVar   (&status, "blocksRngMed", 'w', UVAR_OPTIONAL, "Running Median window size",  &blocksRngMed), &status);
+  LAL_CALL(LALRegisterSTRINGUserVar(&status, "outputBname",  'o', UVAR_OPTIONAL, "Base name of output files",   &outputBname ), &status);
 
   LAL_CALL(LALUserVarReadAllInput(&status, argc, argv), &status);
   if (help)
@@ -93,9 +95,13 @@ int main(int argc, char **argv)
   nSFT = sft_vect->length;
 
   fprintf(stderr, "nSFT = %d\tnumBins = %d\tf0 = %f\n", nSFT, numBins,sft_vect->data->f0);
-  sprintf(outfile, "spec_%.2f_%.2f_%s_%d_%d", f_min,f_max,constraints.detector,startTime.gpsSeconds,endTime.gpsSeconds);
-  sprintf(outfile2, "spec_%.2f_%.2f_%s_%d_%d_timestamps", f_min,f_max,constraints.detector,startTime.gpsSeconds, endTime.gpsSeconds);
-  sprintf(outfile3, "spec_%.2f_%.2f_%s_%d_%d_timeaverage", f_min,f_max,constraints.detector,startTime.gpsSeconds, endTime.gpsSeconds);
+  if (LALUserVarWasSet(&outputBname))
+    strcpy(outbase, outputBname);
+  else
+    sprintf(outbase, "spec_%.2f_%.2f_%s_%d_%d", f_min,f_max,constraints.detector,startTime.gpsSeconds,endTime.gpsSeconds);
+  sprintf(outfile,  "%s", outbase);
+  sprintf(outfile2, "%s_timestamps", outbase);
+  sprintf(outfile3, "%s_timeaverage", outbase);
  
   fp = fopen(outfile, "w");
   fp2 = fopen(outfile2, "w");
