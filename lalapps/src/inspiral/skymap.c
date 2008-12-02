@@ -23,20 +23,19 @@
 /*
  *  File names for input and output
  */
-char* h1_frame_file = "none";
-char* l1_frame_file = "none";
-char* v1_frame_file = "none";
+const char* h1_frame_file = "none";
+const char* l1_frame_file = "none";
+const char* v1_frame_file = "none";
 
-char* xml_file[3] = { "none", "none", "none"};
+const char* xml_file[3] = { "none", "none", "none"};
 
-char* output_file = "skymap.txt";
+const char* output_file = "skymap.txt";
 
 char* event_id = 0;
 
 /*
  *  Time of the trigger to be analyzed
  */
-double trig_time[3] = {0, 0, 0};
 double w[3] = { 1, 1, 1 };
 /*double cp[3] = {0, 0, 0};*/
 /*
@@ -53,7 +52,7 @@ int frequency = 4096;
 /*
  *  Number of samples to analyze
  */
-int samples = 2048;
+int samples = 4096;
 
 /*
  *  Array of pointers to the matched-filtered data z[t]
@@ -68,13 +67,50 @@ int samples = 2048;
 
 double* x[6] = { 0, 0, 0, 0, 0, 0 };
 
-double greenwich;
+double greenwich = 0;
 
-void analyze();
+void analyze(void);
 
-double load_time(char* file, int detector);
+void load_metadata(const char* file, int detector);
 
-void load_data(int detector, char* file, char* initial);
+void load_data(int detector, const char* file, const char* initial);
+
+void load_test_data(const char* file);
+
+void load_test_data(const char* file)
+{
+    FILE* h;
+    int i;
+
+    fprintf(stderr, "warning: overwriting with test data\n");
+
+    for (i = 0; i != 6; ++i)
+    {
+	if(!(x[i] = (double*) malloc(samples * sizeof(double))))
+        {
+            fprintf(stderr, "malloc test data failed\n");
+        }
+    }
+
+    if(!(h = fopen(file, "rt")))
+    {
+        fprintf(stderr, "open test file failed\n");
+    }
+    
+    for (i = 0; i != samples; ++i)
+    {
+        int j;
+    	fscanf(h, "%le %le %le %le %le %le\n", x[0] + i, x[3] + i, x[1] + i, x[4] + i, x[2] + i, x[5] + i);
+        for(j=0; j!= 6;++j)
+        {
+           /*fprintf(stderr, "%e ", x[j][i]);*/
+        }
+        /*fprintf(stderr,"\n");*/
+    }
+    fclose(h);
+
+    /*fprintf(stderr, "warning: overwrote with test data\n");*/
+}
 
 int main(int argc, char** argv)
 {
@@ -148,41 +184,44 @@ int main(int argc, char** argv)
         exit(1);
     }
     
-    trig_time[0] = load_time(xml_file[0],0);    
-    trig_time[1] = load_time(xml_file[1],1);
-    trig_time[2] = load_time(xml_file[2],2); 
+    load_metadata(xml_file[0], 0);    
+    load_metadata(xml_file[1], 1);
+    load_metadata(xml_file[2], 2); 
 
     load_data(0, h1_frame_file, "H");
     load_data(1, l1_frame_file, "L");
     load_data(2, v1_frame_file, "V");
 
-    analyze(ra_res, dec_res, output_file);
+    /*load_test_data("/home/channa/TestInjection.txt");*/
+
+    analyze();
  
     return 0;       
 }
 
-double load_time(char* file, int detector)
+void load_metadata(const char* file, int detector)
 {
     if (strcmp(file, "none"))
     {
         SnglInspiralTable* a = 0;
         LALSnglInspiralTableFromLIGOLw(&a, file, 0, 1);
+        if (!a)
+        {
+            fprintf(stderr, "error: failed to read single inspiral table from file %s\n", file);
+            exit(1);
+        }
         w[detector] = sqrt(a->sigmasq);
         greenwich = XLALGreenwichMeanSiderealTime(&(a->end_time));
-        return XLALGPSGetREAL8(&(a->end_time));
     }
     else
     {
         fprintf(stderr, "warning: using heuristic w[%d]\n", detector);
-        w[detector] = w[0] * 0.1;
-        return 0;
+        w[detector] = 1.0;
     }
 }
 
-void load_data(int detector, char* file, char* initial)
+void load_data(int detector, const char* file, const char* initial)
 {
-    char buffer[256];
-
     if (strcmp(file, "none"))
     {
         /* 
@@ -192,18 +231,23 @@ void load_data(int detector, char* file, char* initial)
         FrStream *stream = NULL;
         COMPLEX8TimeSeries H1series;
         int i;
-	int start_index;
-        FILE* h;
 
         sprintf(H1series.name,"%s1:CBC-CData_%s", initial, event_id);
         stream = XLALFrOpen("./", file);
-        H1series.data = XLALCreateCOMPLEX8Vector(4096);
+        if (!stream)
+        {
+            fprintf(stderr, "error: failed to open FrStream from file %s\n", H1series.name);
+            exit(1);
+        }
+        
+        H1series.data = XLALCreateCOMPLEX8Vector(samples);
+        if (!H1series.data)
+        {
+            fprintf(stderr, "error: failed to create COMPLEX8 vector\n");
+            exit(1);
+        }
         XLALFrGetCOMPLEX8TimeSeries(&H1series,stream);
         XLALFrClose(stream);
-
-        start_index = 2048 - samples/2;
-
-        fprintf(stderr, "start index = %d\n", start_index);
 
 	/*
 	 *  Allocate memory to repack the data in
@@ -216,9 +260,8 @@ void load_data(int detector, char* file, char* initial)
 
 	for (i = 0; i != samples; ++i)
 	{
-	    x[detector    ][i] = H1series.data->data[start_index + i].re;
-	    x[detector + 3][i] = H1series.data->data[start_index + i].im;
-            fprintf(h, "%d %f %f\n", start_index + i, x[detector][i], x[detector+3][i]);
+	    x[detector    ][i] = H1series.data->data[i].re;
+	    x[detector + 3][i] = H1series.data->data[i].im;
         }
     }
     else
@@ -227,11 +270,12 @@ void load_data(int detector, char* file, char* initial)
          *  No frame given, generate white noise data
          */
         int i;
+
         fprintf(stdout, "Warning: generating white noise for detector %d\n", detector);
         for (i = detector; i < 6; i += 3)
         {
-            x[i] = (double*) malloc(samples * sizeof(double));
             int j;
+            x[i] = (double*) malloc(samples * sizeof(double));
             for (j = 0; j != samples; ++j)
             {
                 int k;
@@ -249,32 +293,7 @@ void load_data(int detector, char* file, char* initial)
 
 #define max(A,B) (((A) > (B)) ? (A) : (B))
 
-double logsumexp(double a, double b)
-{
-   double c;
-   if (a > b)
-   {
-      c = log(1 + exp(b - a)) + a;
-   }
-   else
-   {
-      if (a < b)
-      {
-          c = log(exp(a - b) + 1) + b;
-      }
-      else
-      {
-          c = log(exp(a) + exp(b));
-      }
-   }
-   /*if (c == (log(0) - log(0)))*/
-   {
-      /*fprintf(stderr, "warning: logsumexp(%f, %f) = %f\n", a, b, c);*/
-   }
-   return c;
-}
-
-void analyze()
+void analyze(void)
 {
 #define NSIGMA 11
     XLALSkymapPlanType* plan;
@@ -282,21 +301,32 @@ void analyze()
     int i, j;
     double* raw;
     double* accumulator;
+    int begin[3], end[3];
+
+    begin[0] = samples/2 - 256;
+    begin[1] = begin[0];
+    begin[2] = begin[0];
+
+    end[0] = samples/2 + 256;
+    end[1] = end[0];
+    end[2] = end[0];
 
     /* 
      *  The characteristic size of the signal 
      */
 
-    s[0]  =   1 / w[0];
-    s[1]  =   2 / w[0];
-    s[2]  =   4 / w[0];
-    s[3]  =   8 / w[0];
-    s[4]  =  16 / w[0];
-    s[5]  =  32 / w[0];
-    s[6]  =  64 / w[0];
-    s[7]  = 128 / w[0];
-    s[8]  = 256 / w[0];
-    s[9]  = 512 / w[0];
+    /*fprintf(stderr, "w: %e %e %e\n", w[0], w[1], w[2]);*/
+
+    s[0]  =    1 / w[0];
+    s[1]  =    2 / w[0];
+    s[2]  =    4 / w[0];
+    s[3]  =    8 / w[0];
+    s[4]  =   16 / w[0];
+    s[5]  =   32 / w[0];
+    s[6]  =   64 / w[0];
+    s[7]  =  128 / w[0];
+    s[8]  =  256 / w[0];
+    s[9]  =  512 / w[0];
     s[10] = 1024 / w[0];
      
     /*   
@@ -308,30 +338,36 @@ void analyze()
      *  Allocate a chunk of memory tto hold the sky map in the internal 
      *  timing format
      */
-    raw = (double*) malloc(plan->pixelCount * sizeof(double));
-    accumulator = (double*) malloc(plan->pixelCount * sizeof(double));
+    raw = (double*) calloc(plan->pixelCount, sizeof(double));
+    accumulator = (double*) calloc(plan->pixelCount, sizeof(double));
     /*
      *  Generate the skymap
      */
+    /*
     XLALSkymapAnalyzeElliptical(accumulator, plan, s[0], w, samples, x);
-
+    */
+    XLALSkymapEllipticalHypothesis(plan, accumulator, s[0], w, begin, end, x);
     for (i = 1; i != NSIGMA; ++i)
     {
+        /*
         XLALSkymapAnalyzeElliptical(raw, plan, s[i], w, samples, x);
+        */
+        XLALSkymapEllipticalHypothesis(plan, accumulator, s[i], w, begin, end, x);
         XLALSkymapSum(plan, accumulator, accumulator, raw);
     }
 
     free(raw);
     raw = accumulator;
 
-    #if 0
     {   /*  
          *  Get the mode 
          */ 
         double thetaphi[2];
         XLALSkymapModeThetaPhi(plan, raw, thetaphi);
+        while (thetaphi[1] < 0)
+            thetaphi[1] += LAL_TWOPI;
+        printf("%e %e\n", thetaphi[0], thetaphi[1]);
     }
-    #endif
     
     {   /*  
          *  Render the timing-format sky map to a more friendly coordinate 
@@ -357,7 +393,6 @@ void analyze()
         {
             render[j] -= maximum;
         }
-
 
 
 #ifdef SKYMAP_PNG
@@ -434,6 +469,7 @@ void analyze()
                 phi = (LAL_TWOPI * (j + 0.5)) / n;
                 /*ra = fmod(phi - greenwich, LAL_TWOPI);*/
                 ra = fmod(phi+greenwich, LAL_TWOPI);
+                ra = phi;
                 while (ra < 0)
                     ra += LAL_TWOPI;
                 while (ra >= LAL_TWOPI)
@@ -442,7 +478,7 @@ void analyze()
                 {                    
                     double dec;
                     dec = LAL_PI_2 - (LAL_PI * (i + 0.5)) / m;
-                    fprintf(h, "%.10e %.10e %.10e\n", ra, dec, (render[i + m * j]));
+                    fprintf(h, "%.10e %.10e %.10e\n", ra, dec, exp(render[i + m * j]));
                 }
             }
             fclose(h);
@@ -463,7 +499,6 @@ void analyze()
      *  Free the data
      */
     {
-        int i;
         for (i = 0; i != 6; ++i)
         {
             free(x[i]);
