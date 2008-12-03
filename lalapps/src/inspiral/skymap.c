@@ -37,6 +37,7 @@ char* event_id = 0;
  *  Time of the trigger to be analyzed
  */
 double w[3] = { 1, 1, 1 };
+double wgood = 1;
 /*double cp[3] = {0, 0, 0};*/
 /*
  *  Resolution of output sky map
@@ -186,7 +187,10 @@ int main(int argc, char** argv)
     
     load_metadata(xml_file[0], 0);    
     load_metadata(xml_file[1], 1);
-    load_metadata(xml_file[2], 2); 
+    load_metadata(xml_file[2], 2);
+    load_metadata(xml_file[0], 0);
+    load_metadata(xml_file[1], 1);
+    load_metadata(xml_file[2], 2);
 
     load_data(0, h1_frame_file, "H");
     load_data(1, l1_frame_file, "L");
@@ -211,12 +215,13 @@ void load_metadata(const char* file, int detector)
             exit(1);
         }
         w[detector] = sqrt(a->sigmasq);
+	wgood = sqrt(a->sigmasq);
         greenwich = XLALGreenwichMeanSiderealTime(&(a->end_time));
     }
     else
     {
         fprintf(stderr, "warning: using heuristic w[%d]\n", detector);
-        w[detector] = 1.0;
+        w[detector] = wgood * wgood;
     }
 }
 
