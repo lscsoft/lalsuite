@@ -1130,6 +1130,8 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
       GPSfloat = LALTDBMJDtoGPS(uvar_refTimeMJD);
       XLALGPSSetREAL8(&(cfg->pulsar.Doppler.refTime),GPSfloat);
     }
+  else
+    cfg->pulsar.Doppler.refTime = cfg->timestamps->data[0];	/* internal startTime always found in here*/
 
 
   /* ---------- has the user specified an actuation-function file ? ---------- */
