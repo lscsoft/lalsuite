@@ -137,13 +137,13 @@ AC_DEFUN([LAL_ENABLE_METAIO],
 AC_DEFUN([LAL_ENABLE_XML],
 [AC_ARG_ENABLE(
   [xml],
-  [  --enable-xml         compile code for XML I/O [default=yes] ],
+  [  --enable-xml         compile code for XML I/O [default=no] ],
   [ case "${enableval}" in
       yes) xml=true;;
       no)  xml=false ;;
       *) AC_MSG_ERROR(bad value ${enableval} for --enable-xml) ;;
     esac
-  ], [ xml=true ] )
+  ], [ xml=false ] )
 ])
 
 AC_DEFUN([LAL_ENABLE_INTELFFT],
