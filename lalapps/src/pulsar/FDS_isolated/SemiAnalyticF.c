@@ -17,6 +17,18 @@
 *  MA  02111-1307  USA
 */
 
+/************************************************************************
+ ** WARNING: THIS CODE OUTPUTS 'F' INSTEAD OF '2F' WHICH WOULD BE OUR USUAL
+ **          CONVENTION FOR THE "F-STATISTIC"
+ ************************************************************************
+ **
+ ** An attempt to change this to 2F to make it consistent with the other
+ ** pulgroup codes was rejected by pulgroup. This warning has been put in place
+ ** instead: http://blip.phys.uwm.edu/twiki/bin/save/CW/ProposedCodePatches
+ **
+ ************************************************************************/
+
+
 /*********************************************************************************/
 /*                 Semi-Analytic calculation of the F-statistic                  */
 /*                                                                               */
