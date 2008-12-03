@@ -564,6 +564,7 @@ def plot_setup(plotDir, config, logPath, stage, injectionSuffix,
       "plotinspmissed", "plotinspmissed-meta", \
       "plotinspinj", "plotinspinj-meta", \
       "plotsnrchi", "plotsnrchi-meta", \
+      "plotinspfound", \
       "plotinspiralrange", "plotinspiralrange-meta", \
       "ploteffdistcut", "ploteffdistcut-meta"]
 
@@ -787,6 +788,7 @@ def injZeroSlidePlots(dag, plotDir, config, logPath, injectionSuffix,
   plotcp.set("plot-arguments","plotethinca","")
   plotcp.set("plot-arguments","plotinjnum","")
   plotcp.set("plot-arguments","plotinspmissed","")
+  plotcp.set("plot-arguments","plotinspfound","")
   plotcp.set("plot-arguments","ploteffdistcut","")
   plotcp.set("plot-arguments","write-script","")
   injPlotVetoNode = plot_setup( plotDir, \
