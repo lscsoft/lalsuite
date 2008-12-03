@@ -1262,8 +1262,8 @@ InitUserVars (LALStatus *status)
   LALregSTRINGUserVar(status, window,		 0, UVAR_OPTIONAL, "Window function for the SFT ('Hann')");
 
   /* pulsar params */
-  LALregREALUserVar(status,   refTime, 		'S', UVAR_OPTIONAL, "Pulsar reference time in SSB (if 0: use startTime -> SSB)");
-  LALregREALUserVar(status,   refTimeMJD, 	 0 , UVAR_OPTIONAL, "Pulsar reference time in SSB in MJD (if 0: use startTime -> SSB)");
+  LALregREALUserVar(status,   refTime, 		'S', UVAR_OPTIONAL, "Pulsar reference time in SSB (if 0: use startTime)");
+  LALregREALUserVar(status,   refTimeMJD, 	 0 , UVAR_OPTIONAL, "Pulsar reference time in SSB in MJD (if 0: use startTime)");
 
   LALregREALUserVar(status,   Alpha,	 	 0, UVAR_OPTIONAL, "Right ascension/longitude [radians] of pulsar");
   LALregREALUserVar(status,   Delta, 	 	 0, UVAR_OPTIONAL, "Declination/latitude [radians] of pulsar");
