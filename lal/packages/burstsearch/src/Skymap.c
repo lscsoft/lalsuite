@@ -465,7 +465,7 @@ static void compute_kernel(XLALSkymapPlanType* plan, int index, double sigma, do
     *log_normalization = log(0.5 * det22(wfsfwiwfsfwa));
 }
 
-int XLALSkymapEllipticalHypothesis(XLALSkymapPlanType* plan, double* p, double sigma, double w[3], int begin[3], int end[3], double** x)
+int XLALSkymapEllipticalHypothesis(XLALSkymapPlanType* plan, double* p, double sigma, double w[3], int begin[3], int end[3], double** x, int* bests)
 {
     static const char func[] = "XLALSymapEllipticalHypothesis";
  
@@ -577,6 +577,14 @@ int XLALSkymapEllipticalHypothesis(XLALSkymapPlanType* plan, double* p, double s
 	    } /* end loop over hemisphere */
 	} /* end loop over hanford-virgo delay */
     } /* end loop over hanford-livingston delay */
+    
+    if (bests)
+    {
+        bests[0] = best_time[0];
+	bests[1] = best_time[1];
+	bests[2] = best_time[2];
+	bests[3] = best_hemisphere;
+    }
     
     /* release working memory */
     XLALFree(buffer);
