@@ -1674,8 +1674,6 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
 
   INT4 onlyonce=0; /* use this variable only once */
 
-  /* REAL8 Ap=0., Ac=0., Apnew=0., Acnew=0.; */
-
   /* read the TEMPO par file for the pulsar */
   XLALReadTEMPOParFile( &pulsarParamsFixed, input.parFile );
 
@@ -1951,9 +1949,6 @@ paramData );
   vars.Xpcosphi_2 = 0.5*vars.Xplus*cos(vars.phi0);
   vars.Xccosphi_2 = 0.5*vars.Xcross*cos(vars.phi0);
 
-  /* Ap = vars.h0*vars.Xplus;
-  Ac = vars.h0*vars.Xcross; */
-
   for( i = 0 ; i < nGlitches ; i++ ){
     extraVars[i].h0 = vars.h0;
     extraVars[i].Xpsinphi_2 = 0.5*vars.Xplus * sin(extraVars[i].phi0);
@@ -2027,7 +2022,8 @@ paramData );
     baryinput.site.location[2] /= LAL_C_SI;
 
     /* set phase of initial heterodyne */
-    if( (phi1[0] = get_phi( data[0], pulsarParams, baryinput, edat )) == NULL ){
+    if( (phi1[0] = get_phi( data[0], pulsarParamsFixed, baryinput, edat )) ==
+      NULL ){
       fprintf(stderr, "Error... Phase generation produces NULL!");
       exit(0);
     }
@@ -2056,10 +2052,6 @@ paramData );
 
     /* get new values of parameters using Gaussian proposal distributions */
     XLALNormalDeviates(randNum, randomParams);
-
-    /* jump in Aplus and Across */
-    /* Apnew = Ap + input.mcmc.sigmas.h0*randNum->data[0];
-    Acnew = Ac + input.mcmc.sigmas.h0*randNum->data[3]; */
 
     varsNew.h0 = vars.h0 + input.mcmc.sigmas.h0*randNum->data[0];
 
@@ -2114,8 +2106,6 @@ paramData );
        quickest just to output the only step now and move on to the next step */
     /* if( ( varsNew.h0 < 0. || below0 == 1 || nege == 1 ) && i > 0 ){ */
     if( ( varsNew.h0 < 0. || nege == 1 ) && i > 0 ){
-    /* if( ( Apnew < 0. || ( Apnew*Apnew < 2.*Acnew*Acnew ) || nege == 1 ) && i
-> 0 ){ */
       if( fmod(i, input.mcmc.outputRate) == 0. && i >= burnInLength ){
         fprintf(fp, "%le\t%le\t%lf\t%lf\t%lf", logL1, vars.h0, vars.phi0,
           vars.ci, vars.psi);
@@ -2140,8 +2130,6 @@ paramData );
     }
     /* else if( ( varsNew.h0 < 0. || below0 == 1 || nege == 1 ) && i == 0 ){ */
     else if( ( varsNew.h0 < 0. || nege == 1 ) && i == 0 ){
-    /* else if( ( Apnew < 0. || ( Apnew*Apnew < 2.*Acnew*Acnew ) || nege == 1 )
-&& i == 0 ){ */
       onlyonce = 1; /* if h0 goes below zero on the first step then we still 
                        have to calculate logL1, so continue but make sure 
                        logL2 gets set to -Inf (or close to!) later on */
@@ -2155,12 +2143,9 @@ paramData );
       for( j = 0 ; j < nGlitches ; j++ ) extraVarsNew[j].h0 = 1e-30;
     }
 
-    /* varsNew.h0 = Apnew - sqrt(Apnew*Apnew - 2.*Acnew*Acnew); */
-
     varsNew.phi0 = vars.phi0 + input.mcmc.sigmas.phi0*randNum->data[1];
     varsNew.psi = vars.psi + input.mcmc.sigmas.psi*randNum->data[2];
     varsNew.ci = vars.ci + input.mcmc.sigmas.ci*randNum->data[3];
-    /* varsNew.ci = Acnew/varsNew.h0; */
 
     /* wrap parameters around or bounce */
     if( varsNew.ci > 1.0 )
@@ -2406,12 +2391,10 @@ paramData );
         (double)i/(double)input.mcmc.burnIn );
     }
 
-    /* accept new step */
+    /* accept new step (Metropolis-Hastings algorithm) if Lnew/Lold > 1)
+       or with a probability Lnew/Lold if < 1 */
     if( ratio - log(XLALUniformDeviate(randomParams)) >= 0. ){
       vars = varsNew;
-
-      /* Ap = Apnew;
-      Ac = Acnew; */
 
       /* update vals structure */
       if( matTrue ){
