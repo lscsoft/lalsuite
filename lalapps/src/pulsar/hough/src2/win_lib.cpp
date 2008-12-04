@@ -105,15 +105,20 @@ static int eah_rename_aux(const char* old, const char* newf) {
 
 int eah_rename(const char* oldf, const char* newf) {
   int retval=0;
-  
-  retval = eah_rename_aux(oldf, newf);
-  if (retval) {
-    double start = dtime();
-    do {
-      boinc_sleep(drand()*2); // avoid lockstep
-      retval = eah_rename_aux(oldf, newf);
-      if (!retval) break;
-    } while (dtime() < start + FILE_RETRY_INTERVAL);
+
+  if (IsOS(OS_WIN2000ORGREATER)) {  
+    retval = eah_rename_aux(oldf, newf);
+    if (retval) {
+      double start = dtime();
+      do {
+	boinc_sleep(drand()*2); // avoid lockstep
+	retval = eah_rename_aux(oldf, newf);
+	if (!retval) break;
+      } while (dtime() < start + FILE_RETRY_INTERVAL);
+    }
+  } else {
+    retval = boinc_rename(oldf,newf);
   }
+
   return retval;
 }
