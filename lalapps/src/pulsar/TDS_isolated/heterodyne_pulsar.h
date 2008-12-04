@@ -81,7 +81,7 @@ extern "C" {
 " --ifo               name of ifo e.g. L1, H1, H2, G1\n"\
 " --pulsar            name of pulsar e.g. J0534+2200\n"\
 " --heterodyne-flag   (int) coarse heterodyne 0, fine heterodyne 1,\n\
-                     parameter update 2\n"\
+                     parameter update 2, full heterodyne in one go 3\n"\
 " --param-file        name of file containing initial pulsar parameters\n\
                      (.par file)\n"\
 " --param-file-update name of file containing updated pulsar parameters\n"\
@@ -249,7 +249,7 @@ frequency);
 of outliers removed */
 INT4 remove_outliers(COMPLEX16TimeSeries *data, REAL8Vector *times, REAL8 stddevthresh);
 
-void create_filter_response( FilterResponse *filtresp, REAL8 filterKnee );
+FilterResponse *create_filter_response( REAL8 filterKnee );
 
 #ifdef  __cplusplus
 }

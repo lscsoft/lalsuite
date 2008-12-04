@@ -59,7 +59,7 @@ int main(int argc, char *argv[]){
   INT4Vector *starts=NULL, *stops=NULL; /* science segment start and stop times */
   INT4 numSegs=0;
 
-  FilterResponse filtresp; /* variable to hold the filter response function */
+  FilterResponse *filtresp=NULL; /* variable for the filter response function */
 
   CHAR *pos=NULL;
 
@@ -170,15 +170,15 @@ number of frame files to read in.\n");
   
   if(inputParams.heterodyneflag == 1 || inputParams.heterodyneflag == 2){
     if(inputParams.filterknee == 0.){
-      fprintf(stderr, "Error... need to know the filter knee frequency used in \
-the coarse heterodyne stage.\n");
-      return 1;
+      fprintf(stderr, "REMINDER: You aren't giving a filter knee frequency from\
+ the coarse heterodyne stage! You could be reheterodyning data that has\
+ already had the filter response removed, but are you sure this is what you're\
+ doing?\n");
     }
     
     /* calculate the frequency and phase response of the filter used in the
-       coarse heterodyne */ 
-    if(inputParams.filterknee > 0.0)
-      create_filter_response(&filtresp, inputParams.filterknee);
+       coarse heterodyne */
+    filtresp = create_filter_response( inputParams.filterknee );
     
     /* reset the filter knee to zero so the filtering is not performed on the
        fine heterodyned data*/
@@ -412,7 +412,7 @@ allowed file size %d!\n", MAXLENGTH);
       floor(hetParams.timestamp)));
     
     /* heterodyne data */
-    heterodyne_data(data, times, hetParams, inputParams.freqfactor, &filtresp);
+    heterodyne_data(data, times, hetParams, inputParams.freqfactor, filtresp);
     if( verbose ){ fprintf(stderr, "I've heterodyned the data.\n"); }
  
     /* filter data */
@@ -431,7 +431,7 @@ data at %.2lf Hz\n", inputParams.filterknee);  }
       inputParams.samplerate, inputParams.resamplerate,
       inputParams.heterodyneflag);
     if( verbose ){  fprintf(stderr, "I've resampled the data from \
-%.1lf to %.4lf Hz\n", inputParams.samplerate, inputParams.resamplerate);  }
+%.2lf to %.4lf Hz\n", inputParams.samplerate, inputParams.resamplerate);  }
 
     XLALDestroyCOMPLEX16TimeSeries( data );
 
@@ -895,7 +895,7 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
         baryinput.dInv = 0.; /* no parallax */
     }
     else{                                /* using updated params */
-      if( hetParams.hetUpdate.px != 0. ){
+      if( hetParams.hetUpdate.px == 2 ){
         baryinput.dInv = hetParams.hetUpdate.px*1e-3/(LAL_C_SI*lyr_pc);
       }
       else if( hetParams.hetUpdate.dist != 0. ){
@@ -1027,16 +1027,19 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
           binOutput2.deltaT = 0.;
       }
       
-      /** calculate df  = f*(dt(t2) - dt(t))/(t2 - t) here (t2 - t) is 1 sec */
-      df = fcoarse*(emit2.deltaT - emit.deltaT + binOutput2.deltaT -
-        binOutput.deltaT);
-      
-      srate = (REAL8)filtresp->freqResp->length*filtresp->deltaf;/*sample rate*/
-      middle = (UINT4)srate*FILTERFFTTIME/2;
-      
-      /* find filter frequency response closest to df */
-      position = middle + (INT4)floor(df/filtresp->deltaf);
-      
+      if( filtresp != NULL ){
+        /* calculate df  = f*(dt(t2) - dt(t))/(t2 - t) here (t2 - t) is 1 sec */
+        df = fcoarse*(emit2.deltaT - emit.deltaT + binOutput2.deltaT -
+          binOutput.deltaT);
+
+        /*sample rate*/
+        srate = (REAL8)filtresp->freqResp->length*filtresp->deltaf;
+        middle = (UINT4)srate*FILTERFFTTIME/2;
+
+        /* find filter frequency response closest to df */
+        position = middle + (INT4)floor(df/filtresp->deltaf);
+      }
+
       /* multiply by freqfactor to get gw phase */
       phaseUpdate = freqfactor*(hetParams.hetUpdate.f0*tdt +
         0.5*hetParams.hetUpdate.f1*tdt*tdt +
@@ -1058,24 +1061,26 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
       /* mutliply the data by the filters complex response function to remove
          its effect */
       /* do a linear interpolation between filter response function points */
-      filtphase = filtresp->phaseResp->data[position] +
-        ((filtresp->phaseResp->data[position+1] -
-        filtresp->phaseResp->data[position]) / (filtresp->deltaf)) *
-        ((REAL8)srate/2. + df - (REAL8)position*filtresp->deltaf);
-      filtphase = fmod(filtphase - filtresp->phaseResp->data[middle],
-        2.*LAL_PI);
+      if( filtresp != NULL ){
+        filtphase = filtresp->phaseResp->data[position] +
+          ((filtresp->phaseResp->data[position+1] -
+          filtresp->phaseResp->data[position]) / (filtresp->deltaf)) *
+          ((REAL8)srate/2. + df - (REAL8)position*filtresp->deltaf);
+        filtphase = fmod(filtphase - filtresp->phaseResp->data[middle],
+          2.*LAL_PI);
       
-      resp = filtresp->freqResp->data[position] + 
-        ((filtresp->freqResp->data[position+1] -
-        filtresp->freqResp->data[position]) / (filtresp->deltaf)) *
-        ((REAL8)srate/2. + df - (REAL8)position*filtresp->deltaf); 
+        resp = filtresp->freqResp->data[position] + 
+          ((filtresp->freqResp->data[position+1] -
+          filtresp->freqResp->data[position]) / (filtresp->deltaf)) *
+          ((REAL8)srate/2. + df - (REAL8)position*filtresp->deltaf); 
       
-      dataTemp2 = dataTemp;
+        dataTemp2 = dataTemp;
              
-      dataTemp.re = (1./resp)*(dataTemp2.re*cos(filtphase) -
-        dataTemp2.im*sin(filtphase));
-      dataTemp.im = (1./resp)*(dataTemp2.re*sin(filtphase) +
-        dataTemp2.im*cos(filtphase));
+        dataTemp.re = (1./resp)*(dataTemp2.re*cos(filtphase) -
+          dataTemp2.im*sin(filtphase));
+        dataTemp.im = (1./resp)*(dataTemp2.re*sin(filtphase) +
+          dataTemp2.im*cos(filtphase));
+      }
     }
     
     data->data->data[i].re = dataTemp.re*cos(-deltaphase) -
@@ -1311,10 +1316,15 @@ COMPLEX16TimeSeries *resample_data(COMPLEX16TimeSeries *data,
       /* take the middle point - if just resampling rather than averaging */
       /*series->data->data[count].re = data->data->data[i + size/2].re;
       series->data->data[count].im = data->data->data[i + size/2].im;*/
-
-      times->data[count] = (REAL8)data->epoch.gpsSeconds +
-        (REAL8)data->epoch.gpsNanoSeconds/1.e9 + (1./resampleRate)/2. +
-        ((REAL8)count/resampleRate);
+      if( sampleRate != resampleRate ){
+        times->data[count] = (REAL8)data->epoch.gpsSeconds +
+          (REAL8)data->epoch.gpsNanoSeconds/1.e9 + (1./resampleRate)/2. +
+          ((REAL8)count/resampleRate);
+      }
+      else{
+        times->data[count] = (REAL8)data->epoch.gpsSeconds +
+          (REAL8)data->epoch.gpsNanoSeconds/1.e9 + ((REAL8)count/resampleRate);
+      }
 
       count++;
     }
@@ -1325,6 +1335,7 @@ COMPLEX16TimeSeries *resample_data(COMPLEX16TimeSeries *data,
     INT4 duration=0;  /* duration of a science segment */
     INT4 remainder=0; /* number of data points lost */
     INT4 prevdur=0;   /* duration of previous segment */
+    INT4 frombeg=0, fromend=0;
 
     count=0;
     j=0;
@@ -1358,7 +1369,7 @@ COMPLEX16TimeSeries *resample_data(COMPLEX16TimeSeries *data,
         j++;
         
       starts->data[i] = times->data[j] - ((1./sampleRate)/2.);
-      
+
       duration = stops->data[i] - starts->data[i];
       
       /* check duration is not negative */
@@ -1370,11 +1381,11 @@ COMPLEX16TimeSeries *resample_data(COMPLEX16TimeSeries *data,
         /* check for break in the data */
         if( (times->data[j+k+1] - times->data[j+k]) > 1./sampleRate ){
           /* get duration of segment up until time of split */
-          duration = times->data[j+k] - starts->data[i] - ((1./sampleRate)/2.);
-             
+          duration = times->data[j+k] - starts->data[i] + ((1./sampleRate)/2.);
+
           /* restart from this point as if it's a new segment */
           starts->data[i] = times->data[j+k+1] - ((1./sampleRate)/2.);
-          
+
           /* check that the new point is still in the same segment or not - if
              we are then redo new segment, if not then move on to next segment*/
           if( starts->data[i] < stops->data[i] && duration > 0 )
@@ -1391,11 +1402,19 @@ COMPLEX16TimeSeries *resample_data(COMPLEX16TimeSeries *data,
       }
 
       remainder = (INT4)(duration*sampleRate)%size;
+      if( sampleRate != resampleRate ){
+        frombeg = floor(remainder/2);
+        fromend = ceil(remainder/2);
+      }
+      else{
+        frombeg = 0;
+        fromend = -2;
+      }
 
       prevdur = j;
 
-      for( j=prevdur+floor(remainder/2);j<prevdur + (INT4)(duration*sampleRate)
-          -ceil(remainder/2)-1 ; j+=size ){
+      for( j=prevdur+frombeg;j<prevdur + (INT4)(duration*sampleRate)
+          -fromend-1 ; j+=size ){
         tempData.re = 0.;
         tempData.im = 0.;
 
@@ -1407,7 +1426,11 @@ COMPLEX16TimeSeries *resample_data(COMPLEX16TimeSeries *data,
         series->data->data[count].re = tempData.re/(REAL8)size;
         series->data->data[count].im = tempData.im/(REAL8)size;
 
-        times->data[count] = times->data[j+size/2] - (1./sampleRate)/2.;
+        if( sampleRate != resampleRate )
+          times->data[count] = times->data[j+size/2] - (1./sampleRate)/2.;
+        else
+          times->data[count] = times->data[j];
+
         count++;
       }
     }
@@ -1785,10 +1808,11 @@ INT4 remove_outliers(COMPLEX16TimeSeries *data, REAL8Vector *times,
   return data->data->length - j;
 }
 
-void create_filter_response( FilterResponse *filtresp, REAL8 filterKnee ){
+FilterResponse *create_filter_response( REAL8 filterKnee ){
   int i = 0;
   int srate, time;
  
+  FilterResponse *filtresp=NULL;
   Filters testFilters;
 
   COMPLEX16Vector *data=NULL;
@@ -1799,12 +1823,19 @@ void create_filter_response( FilterResponse *filtresp, REAL8 filterKnee ){
   REAL8 phase=0., tempphase=0.;
   INT4 count=0;
   
+  /* check filter knee is > 0 otherwise return NULL */
+  if( filterKnee <= 0. )
+    return NULL;
+
   srate = 16384; /* sample at 16384 Hz */
   time = FILTERFFTTIME; /* have 200 second long data stretch - might need longer to increase
                            resolution */
 
   /**** CREATE SET OF IIR FILTERS ****/
   set_filters(&testFilters, filterKnee, srate);
+
+  /* allocate memory for filtresp */
+  filtresp = XLALMalloc(sizeof(FilterResponse));
 
   /* create some data */
   data = XLALCreateCOMPLEX16Vector(time*srate);
@@ -1880,4 +1911,6 @@ void create_filter_response( FilterResponse *filtresp, REAL8 filterKnee ){
   XLALDestroyCOMPLEX16Vector(data);
   XLALDestroyCOMPLEX16Vector(fftdata);
   XLALDestroyCOMPLEX16FFTPlan(fftplan);
+
+  return filtresp;
 }
