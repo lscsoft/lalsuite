@@ -34,6 +34,7 @@ static volatile const char *rcsid_win_lib_cpp = "$Id$";
 #include <limits>
 #include <string.h>
 #include <windows.h> // don't move this earlier
+#include <shlwapi.h>
 
 using namespace std;
 
