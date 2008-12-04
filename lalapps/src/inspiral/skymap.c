@@ -42,8 +42,8 @@ double wgood = 1;
 /*
  *  Resolution of output sky map
  */
-int ra_res = 1024;
-int dec_res = 512;
+int ra_res = 512;
+int dec_res = 256;
 
 /*
  *  Sampling frequency of analysis, which determines sky tiling
@@ -221,7 +221,7 @@ void load_metadata(const char* file, int detector)
     else
     {
         fprintf(stderr, "warning: using heuristic w[%d]\n", detector);
-        w[detector] = wgood * wgood;
+        w[detector] = wgood * 0.1;
     }
 }
 
@@ -357,7 +357,7 @@ void analyze(void)
         /*
         XLALSkymapAnalyzeElliptical(raw, plan, s[i], w, samples, x);
         */
-        XLALSkymapEllipticalHypothesis(plan, accumulator, s[i], w, begin, end, x);
+        XLALSkymapEllipticalHypothesis(plan, raw, s[i], w, begin, end, x);
         XLALSkymapSum(plan, accumulator, accumulator, raw);
     }
 
