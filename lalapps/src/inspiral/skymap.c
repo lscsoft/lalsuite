@@ -351,13 +351,13 @@ void analyze(void)
     /*
     XLALSkymapAnalyzeElliptical(accumulator, plan, s[0], w, samples, x);
     */
-    XLALSkymapEllipticalHypothesis(plan, accumulator, s[0], w, begin, end, x);
+    XLALSkymapEllipticalHypothesis(plan, accumulator, s[0], w, begin, end, x, 0);
     for (i = 1; i != NSIGMA; ++i)
     {
         /*
         XLALSkymapAnalyzeElliptical(raw, plan, s[i], w, samples, x);
         */
-        XLALSkymapEllipticalHypothesis(plan, raw, s[i], w, begin, end, x);
+        XLALSkymapEllipticalHypothesis(plan, raw, s[i], w, begin, end, x, 0);
         XLALSkymapSum(plan, accumulator, accumulator, raw);
     }
 
