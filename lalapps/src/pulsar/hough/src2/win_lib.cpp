@@ -33,8 +33,8 @@ static volatile const char *rcsid_win_lib_cpp = "$Id$";
 #include <float.h>
 #include <limits>
 #include <string.h>
+#include <stdio.h>
 #include <windows.h> // don't move this earlier
-#include <shlwapi.h>
 
 using namespace std;
 
@@ -90,7 +90,7 @@ char *asctime_r(const struct tm *t, char *s) {
 }
 
 /*
-  more atomic replacement for the non-atomic boinc_rename()
+  more atomic replacement functions for the non-atomic boinc_rename()
   eah_rename() is just a copy of boinc_rename() in boinc/lib/filesys.cpp
   with the only difference that it calls eah_rename_aux() instead of
   boinc_rename_aux(). eah_rename_aux() uses MoveFileEx() where
@@ -99,27 +99,53 @@ char *asctime_r(const struct tm *t, char *s) {
 */
 
 static int eah_rename_aux(const char* old, const char* newf) {
-  if (MoveFileEx(old, newf, MOVEFILE_REPLACE_EXISTING))
-    return 0;
-  return GetLastError();
-}
+  int err = 0;
+  static OSVERSIONINFO osv = {0};
 
-int eah_rename(const char* oldf, const char* newf) {
-  int retval=0;
-
-  if (IsOS(OS_WIN2000ORGREATER)) {  
-    retval = eah_rename_aux(oldf, newf);
-    if (retval) {
-      double start = dtime();
-      do {
-	boinc_sleep(drand()*2); // avoid lockstep
-	retval = eah_rename_aux(oldf, newf);
-	if (!retval) break;
-      } while (dtime() < start + FILE_RETRY_INTERVAL);
+  /* don't know how expensive GetVersionEx() is, better call it only once */
+  if (osv.dwOSVersionInfoSize == 0) {
+    osv.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
+    if(GetVersionEx(&osv) == 0) {
+      /* this should never happen. If it does, at least reset the tested MajorVersion */
+      fprintf(stderr,"Warning: GetVersionEx() failed (%d)\n",GetLastError());
+      osv.dwMajorVersion = 0;
     }
-  } else {
-    retval = boinc_rename(oldf,newf);
   }
 
+  if(osv.dwMajorVersion >= 5) {
+
+    /* Windows >= Win2k supports MoveFileEx(), which is really atomic */
+    if (MoveFileEx(old, newf, MOVEFILE_REPLACE_EXISTING))
+      return(0);
+    err = GetLastError();
+
+  } else {
+
+    /* copy the new file and then delete the old one should be better than what
+       boinc_rename() does, however only for small files like our checkpoint file */
+    CopyFile(old,newf,false);
+    err = GetLastError();
+    if(!err) {
+      DeleteFile(old);
+      err = GetLastError();
+    }
+  }
+
+  return(err);
+}
+
+/* this is just a copy of boinc_rename() which calls
+   eah_rename_aux() instead of boinc_rename_aux() */
+int eah_rename(const char* oldf, const char* newf) {
+  int retval=0;
+  retval = eah_rename_aux(oldf, newf);
+  if (retval) {
+    double start = dtime();
+    do {
+      boinc_sleep(drand()*2); // avoid lockstep
+      retval = eah_rename_aux(oldf, newf);
+      if (!retval) break;
+    } while (dtime() < start + FILE_RETRY_INTERVAL);
+  }
   return retval;
 }
