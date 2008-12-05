@@ -282,6 +282,9 @@ def write_results(page, opts, section):
     page = write_tuning(page, opts)
   elif section=='injection':
     page = write_injection(page, opts)
+  elif section=='hardware_injections':
+    page = write_injection(page, opts,hardwareInj=True)
+    page = write_tuning(page, opts,hardwareInj=True)
   elif section=='full_data':
     page=write_analysis(page,opts,thisSearch='full_data')
   elif section=='upperlimit': 	
@@ -634,7 +637,7 @@ def write_upperlimit(page, opts):
 
 
 # ***************************************************************************
-def write_tuning(page,opts):
+def write_tuning(page,opts,hardwareInj=False):
   """
   Creates the tuning section.
 
@@ -691,11 +694,14 @@ def write_tuning(page,opts):
 	'ploteffdistcut'\
 	]
 
-  injections = hipecp.items("injections")
   images_dirs = []
-  for this in injections:     
-    images_dirs.append(this[0]+"_summary_plots")
-  images_dirs.append("allinj_summary_plots")
+  if hardwareInj:
+    images_dirs.append('hardware_injections_summary_plots')
+  else:
+    injections = hipecp.items("injections")
+    for this in injections:     
+      images_dirs.append(this[0]+"_summary_plots")
+    images_dirs.append("allinj_summary_plots")
 
 
   for images_dir in images_dirs:
@@ -1068,7 +1074,7 @@ def write_summaryFiles(page, opts):
  
 
 # ***************************************************************************
-def write_injection(page, opts):
+def write_injection(page, opts,hardwareInj=False):
   """
   Creates the injection section
 
@@ -1149,11 +1155,14 @@ def write_injection(page, opts):
 	'plotinspfound'\
 	]
 
-  injections = hipecp.items("injections")
   images_dirs = []
-  for this in injections:     
-    images_dirs.append(this[0]+"_summary_plots")
-  images_dirs.append("allinj_summary_plots")
+  if hardwareInj:
+    images_dirs.append('hardware_injections_summary_plots')
+  else:
+    injections = hipecp.items("injections")
+    for this in injections:     
+      images_dirs.append(this[0]+"_summary_plots")
+    images_dirs.append("allinj_summary_plots")
 
   #if opts.no_copy is False:
   try:
@@ -1863,6 +1872,9 @@ output          = index.shtml""")
   parser.add_option("-I","--skip-injection",action="store_false",\
       default=True,dest="injection", metavar="DOUPPERLIMIT",\
       help="" )
+  parser.add_option("-H","--skip-hardware-injection",action="store_false",\
+      default=True,dest="hardware_injection", metavar="SKIPHWINJ",\
+      help="" )
   parser.add_option("-P","--skip-playground",action="store_false",\
       default=True,dest="playground", metavar="DOPLAYGROUND",\
       help="" )
@@ -1992,7 +2004,8 @@ copy_segments()
 html_sections={}
 
 # the string "full_data" is hardcoded somewhere else, so it must remain as it is
-html_order = ['toc', 'general', 'summary', 'playground', 'full_data_slide', 'injection', \
+html_order = ['toc', 'general', 'summary', 'playground', 'full_data', \
+    'full_data_slide', 'injection', 'hardware_injections', \
     'tuning', 'full_data', 'upperlimit', 'summary files', 'logfile', \
     'about']
 
@@ -2000,8 +2013,11 @@ html_sections['toc'] = "Table of Contents"
 html_sections['general'] = "General Information"
 html_sections['summary'] = "Data Information"
 if opts.playground is True: html_sections['playground']	= "Playground"
-if opts.full_data_slide is True: html_sections['full_data_slide']	= "Full Data Slide And Playground Zero lag"
+if opts.full_data_slide is True: 
+  html_sections['full_data_slide'] = "Full Data Slide And Playground Zero lag"
 if opts.injection is True: html_sections['injection'] = "Injection"
+if opts.hardware_injection is True: 
+  html_sections['hardware_injections'] = "Hardware Injection"
 if opts.tuning is True: html_sections['tuning']	= "Tuning"
 if opts.full_data is True: html_sections['full_data'] = "Full Data"
 if opts.upperlimit is True: html_sections['upperlimit']	= "Upper Limit"

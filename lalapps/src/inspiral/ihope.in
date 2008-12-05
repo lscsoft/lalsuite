@@ -120,7 +120,11 @@ parser.add_option("-P", "--skip-playground",action="store_false",\
 
 parser.add_option("-I", "--skip-injections",action="store_false",\
     default=True, dest="run_injections", \
-    help="skip the inspiral analysis with injections")
+    help="skip the inspiral analysis with software injections")
+
+parser.add_option("-H", "--run-hardware-injections",action="store_true",\
+    default=False, dest="run_hardware_injections", \
+        help="skip the inspiral analysis with hardware injections")
 
 parser.add_option("-A", "--skip-search",action="store_false",\
     default=True, dest="run_search",
@@ -259,36 +263,67 @@ sys.stdout.flush()
 
 # first, copy the segment files and make sure that the ini file reflects the
 # new path, relative to the DAG directories.
+
+if opts.run_hardware_injections:
+  hwcp = copy.deepcopy(cp)
+  inspiralutils.mkdir("hardware_inj_segments")
+  
 inspiralutils.mkdir("segments")
 os.chdir("..")
 for vetoes, infile in cp.items("segments"):
-  outfile = analysisDirectory + "/segments/" + os.path.basename(infile)
-  rel_outfile = "../segments/" + os.path.basename(infile)
-  if "veto-file" in vetoes:
-    if infile == "":
-      print >>sys.stderr, "warning: " + vetoes + " left blank; proceeding "\
-        "without DQ vetoes"
-      outfile += vetoes + "_BLANK.txt"
-      rel_outfile += vetoes + "_BLANK.txt"
-      open(outfile, "w").write("")  # touch
-    else:
-      shutil.copy(infile, outfile)
-    cp.set("segments", vetoes, rel_outfile)
+  inspiralutils.copyCategoryFiles(cp,vetoes,"segments",infile,\
+                analysisDirectory)
+
+if opts.run_hardware_injections:
+  for vetoes, infile in hwcp.items("segments"):
+    inspiralutils.copyCategoryFiles(hwcp,vetoes,"hardware_inj_segments",infile,\
+                  analysisDirectory,hardwareInj=True)
+
 os.chdir(analysisDirectory)
 os.chdir("segments")
+
+# Download the dqSegFiles
+
+dqSegFile = {}
+for ifo in ifos:
+  dqSegFile[ifo] = inspiralutils.downloadDqSegFiles(cp,\
+                   ifo,opts.generate_segments)
+  if opts.run_hardware_injections:
+    shutil.copy(dqSegFile[ifo], '../hardware_inj_segments/')
 
 segFile = {}
 dqVetoes = {}
 
 for ifo in ifos:
-  segFile[ifo], dqVetoes[ifo] = inspiralutils.findSegmentsToAnalyze(cp, ifo, \
-      opts.generate_segments, opts.use_available_data, \
+  segFile[ifo], dqVetoes[ifo] = inspiralutils.findSegmentsToAnalyze(cp, ifo, 
+      dqSegFile[ifo],opts.generate_segments, opts.use_available_data, \
       opts.generate_veto_segments)
   # set correct name as we're in the segments directory:
   segFile[ifo] = "../segments/" + segFile[ifo]
   cp.set("input", ifo.lower() + "-segments", segFile[ifo])
   for key in dqVetoes[ifo].keys():
     dqVetoes[ifo][key] = "../segments/" + dqVetoes[ifo][key]
+
+if opts.run_hardware_injections:
+  os.chdir("..")
+  os.chdir("hardware_inj_segments")
+  hwInjHtmlLoc = hwcp.get('hardware-inj','hw-inj-file-html-path')
+  hwFileTempName = 'HARDWARE_INJECTIONS.xml'
+  hwFileTempName,hwInfo = urllib.urlretrieve(hwInjHtmlLoc,hwFileTempName)
+  hwcp.set('input','hardware-inj-file',\
+           '../hardware_inj_segments/' + hwFileTempName)
+
+  HWsegFile = {}
+  HWdqVetoes = {}
+
+  for ifo in ifos:
+    HWsegFile[ifo],HWdqVetoes[ifo]=inspiralutils.findSegmentsToAnalyze(hwcp,\
+        ifo,dqSegFile[ifo],opts.generate_segments, opts.use_available_data, \
+        opts.generate_veto_segments)
+    HWsegFile[ifo] = "../hardware_inj_segments/" + HWsegFile[ifo]
+    hwcp.set("input", ifo.lower() + "-segments", HWsegFile[ifo])
+    for key in HWdqVetoes[ifo].keys():
+      HWdqVetoes[ifo][key] = "../hardware_inj_segments/" + HWdqVetoes[ifo][key]
 
 
 os.chdir("..")
@@ -300,7 +335,6 @@ if opts.run_datafind:
   hipeDfNode = inspiralutils.hipe_setup("datafind", cp, ifos, \
       opts.log_path, dfOnly = True)
   dag.add_node(hipeDfNode)
-
 
 ##############################################################################
 # Set up the directories for each run and run lalapps_inspiral_hipe
@@ -330,6 +364,15 @@ if opts.run_search:
     dag.add_node(hipeAnalysisNode)
     if opts.run_datafind:
       hipeAnalysisNode.add_parent(hipeDfNode)
+
+  if opts.run_hardware_injections:
+    hipeHWinjNode = inspiralutils.hipe_setup("hardware_injections", hwcp, ifos,\
+        opts.log_path, hardwareInj = True)
+    for cacheFile in hipeHWinjNode.get_output_files():
+      cachelist.append("hardware_injections/" + cacheFile)
+    dag.add_node(hipeHWinjNode)
+    if opts.run_datafind:
+      hipeHWinjNode.add_parent(hipeDfNode)
 
   if opts.run_injections:
     hipeInjNode = {} 
@@ -392,6 +435,7 @@ if opts.run_data_quality:
   hipePlayVetoNode = {}
   hipeAnalysisVetoNode = {}
   hipeInjVetoNode = {}
+  hipeHWinjVetoNode = {}
 
   for category in [2,3,4]:
     hipeInjVetoNode[category] = {}
@@ -425,6 +469,21 @@ if opts.run_data_quality:
         hipeAnalysisVetoNode[category].add_parent( \
             hipeAnalysisVetoNode[category-1])
 
+    if opts.run_hardware_injections:
+      print "Running inspiral hipe for hardware injections with vetoes"
+      hipeHWinjVetoNode[category] = inspiralutils.hipe_setup( \
+          "hardware_injections",hwcp, ifos, opts.log_path, \
+          vetoCat = category, vetoFiles = HWdqVetoes,hardwareInj=True)
+      for cacheFile in hipeHWinjVetoNode[category].get_output_files():
+        cachelist.append("hardware_injections" + "/" + cacheFile)
+      dag.add_node(hipeHWinjVetoNode[category])
+      if category==2 and opts.run_search:
+        hipeHWinjVetoNode[category].add_parent(hipeHWinjNode)
+      elif category>2:
+        hipeHWinjVetoNode[category].add_parent( \
+            hipeHWinjVetoNode[category-1])
+
+			      
     if opts.run_injections:
       print "Running inspiral hipe for injections with vetoes"
       for (injDir, injSeed) in cp.items("injections"):
@@ -534,7 +593,45 @@ if opts.run_plots:
         cp, opts.log_path, "PLAYGROUND", "FULL_DATA", "../" + cachefilename, \
         opts.do_dag_categories, parentNodes, parentVetoNodes, 3)
 
-  # Setting up plots for injection run.
+  # Setting up plots for hardware injection run.
+  
+  if opts.run_hardware_injections:
+    print "Making plots depending on the hardware injection"
+    if opts.run_full_data:
+      slideSuffix = "FULL_DATA"
+    elif opts.run_playground:
+      slideSuffix = "PLAYGROUND"
+    else:
+      slideSuffix = "NONE_AVAILABLE"
+    if opts.run_playground:
+      zeroLagSuffix = "PLAYGROUND"
+    else:
+      zeroLagSuffix = "NONE_AVAILABLE"
+    # Set up parent Nodes
+    if opts.run_search:
+      parentNodes=[hipeHWinjNode]
+      if opts.run_full_data:
+        parentNodes.append(hipeAnalysisNode)
+      if opts.run_playground:
+        parentNodes.append(hipePlayNode)
+    else: parentNodes = None
+
+    if opts.run_data_quality:
+      parentVetoNodes = [hipeHWinjVetoNode[4]]
+      if opts.run_full_data:
+        parentVetoNodes.append(hipeAnalysisVetoNode[3])
+      if opts.run_playground:
+        parentVetoNodes.append(hipePlayVetoNode[3])
+    else: parentVetoNodes = None
+    dag = inspiralutils.injZeroSlidePlots(dag,\
+          "hardware_injections" + "_summary_plots", hwcp, opts.log_path,\
+          "HARDWARE_INJECTIONS", zeroLagSuffix, slideSuffix, \
+          "../" + cachefilename, opts.do_dag_categories, parentNodes,
+          parentVetoNodes, 3)
+    print "Making plots of hardware injection runs"
+
+
+  # Setting up plots for software injection run.
   if opts.run_injections:
     print "Making plots depending on the injection runs"
     if opts.run_full_data:
@@ -551,11 +648,19 @@ if opts.run_plots:
   
       # set up parents correctly
       if opts.run_search: 
-        parentNodes = [hipePlayNode, hipeInjNode[injDir]]
+        parentNodes=[hipeInjNode[injDir]]
+        if opts.run_full_data:
+          parentNodes.append(hipeAnalysisNode)
+        if opts.run_playground:
+          parentNodes.append(hipePlayNode)
       else: parentNodes = None
 
       if opts.run_data_quality:
-        parentVetoNodes = [hipePlayVetoNode[3], hipeInjVetoNode[3][injDir]]
+        parentVetoNodes = [hipeInjVetoNode[4][injDir]]
+        if opts.run_full_data:
+          parentVetoNodes.append(hipeAnalysisVetoNode[3])
+        if opts.run_playground:
+          parentVetoNodes.append(hipePlayVetoNode[3])
       else: parentVetoNodes = None
 
       dag = inspiralutils.injZeroSlidePlots(dag, injDir + "_summary_plots", \
@@ -568,12 +673,18 @@ if opts.run_plots:
     # set up parents correctly
     if opts.run_search: 
       parentNodes = hipeInjNode.values()
-      parentNodes.append(hipePlayNode)
+      if opts.run_full_data:
+        parentNodes.append(hipeAnalysisNode)
+      if opts.run_playground:
+        parentNodes.append(hipePlayNode)
     else: parentNodes = None
 
     if opts.run_data_quality:
-        parentVetoNodes = hipeInjVetoNode[3].values()
+      parentVetoNodes = hipeInjVetoNode[4].values()
+      if opts.run_playground:
         parentVetoNodes.append(hipePlayVetoNode[3])
+      if opts.run_full_data:
+        parentVetoNodes.append(hipeAnalysisVetoNode[3])
     else: parentVetoNodes = None
 
     dag = inspiralutils.injZeroSlidePlots(dag, "allinj_summary_plots", cp, \

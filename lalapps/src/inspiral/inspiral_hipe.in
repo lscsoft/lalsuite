@@ -17,7 +17,7 @@ __version__ = '$Revision$'[11:-2]
 
 ##############################################################################
 # import standard modules and append the lalapps prefix to the python path
-import sys, os, copy, math
+import sys, os, copy, math, shutil
 import socket, time
 import re, string
 from optparse import *
@@ -1956,7 +1956,18 @@ for ifo in ifo_list:
 # if doing injections then set up the injection analysis
 try: seed = cp.get("input","injection-seed")
 except: seed = None
-if seed:
+
+if cp.has_option("input","hardware-injection"):
+  inj_file_loc = cp.get("input","hardware-inj-file")
+  inspinj = inspiral.InspInjNode(inspinj_job)
+  inspinj.set_start(gps_start_time)
+  inspinj.set_end(gps_end_time)
+  inspinj.set_seed(0)
+  inj_file = inspinj.get_output()
+  print inj_file
+  shutil.copy( inj_file_loc, inj_file)
+  inspinj = None
+elif seed:
   inspinj = inspiral.InspInjNode(inspinj_job)
   inspinj.set_start(gps_start_time)
   inspinj.set_end(gps_end_time)
@@ -1966,6 +1977,7 @@ if seed:
 else: 
   inj_file = None
   inspinj = None
+
 
 # add the injection details to inspiral/sire/coire jobs  
 if inj_file:
