@@ -107,6 +107,7 @@ static void print_usage(char *program)
       "                       (snrsq|effective_snrsq|s3_snr_chi_stat|bitten_l)\n"\
       " [--stat-threshold]    thresh   discard all triggers with stat less than thresh\n"\
       " [--rate-threshold]    rate     discard all triggers with rate greater than thresh\n"\
+      " [--eff-snr-denom-fac] number   parameter for clustering effective snr denominator (traditionally 250) \n"\
       " [--h1-bittenl-a]      bitten   paramater a for clustering\n"\
       " [--h1-bittenl-b]      bitten   paramater b for clustering\n"\
       " [--h2-bittenl-a]      bitten   paramater a for clustering\n"\
@@ -223,7 +224,7 @@ int main( int argc, char *argv[] )
   CoincInspiralTable   *thisCoinc = NULL;
   CoincInspiralTable   *missedCoincHead = NULL;
 
-  CoincInspiralBittenLParams bittenLParams;
+  CoincInspiralStatParams    bittenLParams;
 
   LIGOLwXMLStream       xmlStream;
   MetadataTable         outputTable;
@@ -261,8 +262,9 @@ int main( int argc, char *argv[] )
     calloc( 1, sizeof(ProcessParamsTable) );
   memset( comment, 0, LIGOMETA_COMMENT_MAX * sizeof(CHAR) );
 
-  memset( &bittenLParams, 0, sizeof(CoincInspiralBittenLParams) );
-  
+  memset( &bittenLParams, 0, sizeof(CoincInspiralStatParams   ) );
+  /* Assign a default effective snr denominator factor */
+  bittenLParams.eff_snr_denom_fac = 250.0;
 
   /*
    *
@@ -303,6 +305,7 @@ int main( int argc, char *argv[] )
       {"coinc-cut",               required_argument,      0,              'D'},
       {"injection-file",          required_argument,      0,              'f'},
       {"injection-window",        required_argument,      0,              'T'},
+      {"eff-snr-denom-fac",    required_argument,      0,              'a'},
       {"h1-bittenl-a",            required_argument,      0,              'q'},
       {"h1-bittenl-b",            required_argument,      0,              'r'},
       {"h2-bittenl-a",            required_argument,      0,              'j'},
@@ -342,7 +345,12 @@ int main( int argc, char *argv[] )
           exit( 1 );
         }
         break;
-      
+
+     case 'a':
+        bittenLParams.eff_snr_denom_fac = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg);
+        break;
+ 
       case 'q':
         bittenLParams.param_a[LAL_IFO_H1] = atof(optarg);
       ADD_PROCESS_PARAM( "float", "%s", optarg);

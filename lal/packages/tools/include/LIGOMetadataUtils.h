@@ -231,16 +231,17 @@ criteria are satisfied and 0 otherwise.  Finally, the
 
 /* <lalVerbatim> */
 typedef struct
-tagCoincInspiralBittenLParams
+tagCoincInspiralStatParams
 {
   REAL4    param_a[LAL_NUM_IFO];
   REAL4    param_b[LAL_NUM_IFO];
+  REAL4    eff_snr_denom_fac;
 }
-CoincInspiralBittenLParams;
+CoincInspiralStatParams;
 /*</lalVerbatim> */
 #if 0
 <lalLaTeX>
-The \texttt{CoincInspiralBittenLParams} structure contains the bitten L parameter for
+The \texttt{CoincInspiralStatParams} structure contains the bitten L parameter for
 each of the six global interferometers.  These are stored in the
 \texttt{param\_a} and \texttt{param\_b} structure. 
 </lalLaTeX>
@@ -942,7 +943,7 @@ REAL4
 XLALCoincInspiralStat(
     const CoincInspiralTable   *coincInspiral,
     CoincInspiralStatistic      coincStat,
-    CoincInspiralBittenLParams *bittenLParams
+    CoincInspiralStatParams    *bittenLParams
     );
 
 int 
@@ -950,7 +951,7 @@ XLALClusterCoincInspiralTable (
     CoincInspiralTable        **coincList,
     INT8                        dtimeNS,
     CoincInspiralStatistic      coincStat,
-    CoincInspiralBittenLParams *bittenLParams
+    CoincInspiralStatParams *bittenLParams
     );
 
 int
@@ -1004,7 +1005,7 @@ CoincInspiralTable *
 XLALStatCutCoincInspiral (
     CoincInspiralTable         *eventHead,
     CoincInspiralStatistic      coincStat,
-    CoincInspiralBittenLParams *bittenLParams,
+    CoincInspiralStatParams    *bittenLParams,
     REAL4                       statCut
     );
 
@@ -1013,7 +1014,7 @@ XLALCalcExpFitNLoudestBackground (
     CoincInspiralTable         *coincSlideHead,
     int                         fitNum,
     CoincInspiralStatistic      coincStat,
-    CoincInspiralBittenLParams *bittenLParams,
+    CoincInspiralStatParams    *bittenLParams,
     REAL4                      *fitStat,
     REAL4                      *fitA,
     REAL4                      *fitB
@@ -1024,7 +1025,7 @@ XLALRateCalcCoincInspiral (
     CoincInspiralTable         *eventZeroHead,
     CoincInspiralTable         *eventSlideHead,
     CoincInspiralStatistic      coincStat,
-    CoincInspiralBittenLParams *bittenLParams,
+    CoincInspiralStatParams    *bittenLParams,
     REAL4                       timeAnalyzed,
     REAL4                       fitStat,
     REAL4                       fitA,
@@ -1036,7 +1037,7 @@ XLALRateErrorCalcCoincInspiral (
     CoincInspiralTable         *eventZeroHead,
     CoincInspiralSlideTable    *eventSlideHead,
     CoincInspiralStatistic      coincStat,
-    CoincInspiralBittenLParams *bittenLParams,
+    CoincInspiralStatParams    *bittenLParams,
     int                         numSlides,
     REAL4                       timeAnalyzed,
     REAL4                       fitStat,
@@ -1048,7 +1049,7 @@ CoincInspiralTable *
 XLALRateStatCutCoincInspiral (
     CoincInspiralTable         *eventZeroHead,
     CoincInspiralStatistic      coincStat,
-    CoincInspiralBittenLParams *bittenLParams,
+    CoincInspiralStatParams    *bittenLParams,
     REAL4                       statCut,
     REAL4                       rateCut
     );
@@ -1657,7 +1658,7 @@ REAL4
 XLALCoincRingdownStat(
     CoincRingdownTable         *coincRingdown,
     CoincInspiralStatistic      coincStat,
-    CoincInspiralBittenLParams *bittenLParams
+    CoincInspiralStatParams    *bittenLParams
     );
 
 int 
@@ -1665,7 +1666,7 @@ XLALClusterCoincRingdownTable (
     CoincRingdownTable        **coincList,
     INT8                        dtimeNS,
     CoincInspiralStatistic      coincStat,
-    CoincInspiralBittenLParams *bittenLParams
+    CoincInspiralStatParams   *bittenLParams
     );
 
 int
@@ -1707,7 +1708,7 @@ CoincRingdownTable *
 XLALStatCutCoincRingdown (
     CoincRingdownTable         *eventHead,
     CoincInspiralStatistic      coincStat,
-    CoincInspiralBittenLParams *bittenLParams,
+    CoincInspiralStatParams    *bittenLParams,
     REAL4                       statCut
     );
 

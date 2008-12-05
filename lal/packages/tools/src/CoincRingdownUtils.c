@@ -1055,7 +1055,7 @@ CoincRingdownTable *
 XLALStatCutCoincRingdown (  
     CoincRingdownTable         *eventHead,
     CoincInspiralStatistic      coincStat,
-    CoincInspiralBittenLParams *bittenLParams,
+    CoincInspiralStatParams    *bittenLParams,
     REAL4                       statCut
     )
 /* </lalVerbatim> */
@@ -1644,7 +1644,7 @@ REAL4
 XLALCoincRingdownStat(
     CoincRingdownTable         *coincRingdown,
     CoincInspiralStatistic      coincStat,
-    CoincInspiralBittenLParams *bittenLParams
+    CoincInspiralStatParams    *bittenLParams
     )
 {
   InterferometerNumber  ifoNumber;
@@ -1721,7 +1721,7 @@ XLALClusterCoincRingdownTable (
     CoincRingdownTable        **coincList,
     INT8                        dtimeNS,
     CoincInspiralStatistic      coincStat,
-    CoincInspiralBittenLParams *bittenLParams
+    CoincInspiralStatParams    *bittenLParams
     )
 /* </lalVerbatim> */
 {

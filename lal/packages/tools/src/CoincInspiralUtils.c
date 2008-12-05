@@ -1982,7 +1982,7 @@ REAL4
 XLALCoincInspiralStat(
     const CoincInspiralTable   *coincInspiral,
     CoincInspiralStatistic      coincStat,
-    CoincInspiralBittenLParams *bittenLParams
+    CoincInspiralStatParams    *bittenLParams
     )
 {
   InterferometerNumber  ifoNumber;
@@ -1991,7 +1991,9 @@ XLALCoincInspiralStat(
   REAL4 statValue = 0;
   INT4  i;
   INT4  ifoCounter = 0;
-  
+  /* This replaces the 250 in the effective snr formula. */
+  REAL4 eff_snr_denom_fac = bittenLParams->eff_snr_denom_fac;
+
   if( coincStat == no_stat )
   {
     return(0);
@@ -2026,7 +2028,7 @@ XLALCoincInspiralStat(
         REAL4 tmp_bins = snglInspiral->chisq_dof;
         
         statValue += tmp_snr * tmp_snr / 
-          sqrt ( tmp_chisq/(2*tmp_bins-2) * (1+tmp_snr*tmp_snr/250) ) ;
+          sqrt ( tmp_chisq/(2*tmp_bins-2) * (1+tmp_snr*tmp_snr/eff_snr_denom_fac) ) ;
       }
       else if ( coincStat == bitten_l || coincStat == bitten_lsq)
       {
@@ -2081,7 +2083,7 @@ XLALClusterCoincInspiralTable (
     CoincInspiralTable        **coincList,
     INT8                        dtimeNS,
     CoincInspiralStatistic      coincStat,
-    CoincInspiralBittenLParams *bittenLParams
+    CoincInspiralStatParams    *bittenLParams
     )
 /* </lalVerbatim> */
 {
@@ -2205,8 +2207,8 @@ XLALCompareCoincInspiralByEffectiveSnr (
   REAL4 ta, tb;
 
   CoincInspiralStatistic coincStat = effective_snrsq;
-  CoincInspiralBittenLParams bittenLParams;
-  memset( &bittenLParams, 0, sizeof(CoincInspiralBittenLParams) );
+  CoincInspiralStatParams    bittenLParams;
+  memset( &bittenLParams, 0, sizeof(CoincInspiralStatParams   ) );
 
   ta = XLALCoincInspiralStat(aPtr,coincStat,&bittenLParams);
   tb = XLALCoincInspiralStat(bPtr,coincStat,&bittenLParams);
@@ -2577,7 +2579,7 @@ CoincInspiralTable *
 XLALStatCutCoincInspiral (
     CoincInspiralTable         *eventHead,
     CoincInspiralStatistic      coincStat,
-    CoincInspiralBittenLParams *bittenLParams,
+    CoincInspiralStatParams    *bittenLParams,
     REAL4                       statCut
     )
 /* </lalVerbatim> */
@@ -2623,7 +2625,7 @@ XLALCalcExpFitNLoudestBackground (
     CoincInspiralTable         *coincSlideHead,
     int                         fitNum,
     CoincInspiralStatistic      coincStat,
-    CoincInspiralBittenLParams *bittenLParams,
+    CoincInspiralStatParams    *bittenLParams,
     REAL4                      *fitStat,
     REAL4                      *fitA,
     REAL4                      *fitB
@@ -2682,7 +2684,7 @@ XLALRateCalcCoincInspiral (
     CoincInspiralTable         *coincZeroHead,
     CoincInspiralTable         *coincSlideHead,
     CoincInspiralStatistic      coincStat,
-    CoincInspiralBittenLParams *bittenLParams,
+    CoincInspiralStatParams    *bittenLParams,
     REAL4                       timeAnalyzed,
     REAL4                       fitStat,
     REAL4                       fitA,
@@ -2764,7 +2766,7 @@ XLALRateErrorCalcCoincInspiral (
     CoincInspiralTable         *coincZeroHead,
     CoincInspiralSlideTable    *slideHeads,
     CoincInspiralStatistic      coincStat,
-    CoincInspiralBittenLParams *bittenLParams,
+    CoincInspiralStatParams    *bittenLParams,
     int                         numSlides,
     REAL4                       timeAnalyzed,
     REAL4                       fitStat,
@@ -2923,7 +2925,7 @@ CoincInspiralTable *
 XLALRateStatCutCoincInspiral (
     CoincInspiralTable         *eventZeroHead,
     CoincInspiralStatistic      coincStat,
-    CoincInspiralBittenLParams *bittenLParams,
+    CoincInspiralStatParams    *bittenLParams,
     REAL4                       statCut,
     REAL4                       rateCut
     )

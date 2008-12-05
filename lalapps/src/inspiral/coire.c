@@ -127,6 +127,7 @@ static void print_usage(char *program)
       "                                exceeds rsq_coeff * snr ^ rsq_power\n"\
       " [--rsq-power]     rsq_power    apply rsq on triggers with snr > rsq_max_snr\n"\
       "                                exceeds rsq_coeff * snr ^ rsq_power\n"\
+      " [--eff-snr-denom-fac] number   parameter for clustering effective snr denominator (traditionally 250) \n"\
       " [--h1-bittenl-a]      bitten   paramater a for clustering\n"\
       " [--h1-bittenl-b]      bitten   paramater b for clustering\n"\
       " [--h2-bittenl-a]      bitten   paramater a for clustering\n"\
@@ -238,7 +239,7 @@ int main( int argc, char *argv[] )
   CoincInspiralTable   *thisCoinc = NULL;
   CoincInspiralTable   *missedCoincHead = NULL;
 
-  CoincInspiralBittenLParams bittenLParams;
+  CoincInspiralStatParams    bittenLParams;
 
   LIGOLwXMLStream       xmlStream;
   MetadataTable         outputTable;
@@ -276,8 +277,9 @@ int main( int argc, char *argv[] )
     calloc( 1, sizeof(ProcessParamsTable) );
   memset( comment, 0, LIGOMETA_COMMENT_MAX * sizeof(CHAR) );
 
-  memset( &bittenLParams, 0, sizeof(CoincInspiralBittenLParams) );
-  
+  memset( &bittenLParams, 0, sizeof(CoincInspiralStatParams   ) );
+  /* default value from traditional effective snr formula */
+  bittenLParams.eff_snr_denom_fac = 250.0; 
 
   /*
    *
@@ -317,6 +319,7 @@ int main( int argc, char *argv[] )
       {"coinc-cut",               required_argument,      0,              'D'},
       {"injection-file",          required_argument,      0,              'I'},
       {"injection-window",        required_argument,      0,              'T'},
+      {"eff-snr-denom-fac",    required_argument,      0,              'A'},
       {"h1-bittenl-a",            required_argument,      0,              'a'},
       {"h1-bittenl-b",            required_argument,      0,              'b'},
       {"h2-bittenl-a",            required_argument,      0,              'j'},
@@ -338,7 +341,7 @@ int main( int argc, char *argv[] )
     int option_index = 0;
     size_t optarg_len;
 
-    c = getopt_long_only ( argc, argv, "a:b:c:d:g:hi:j:k:l:m:n:o:p:q:r:t:x:z:"
+    c = getopt_long_only ( argc, argv, "A:a:b:c:d:g:hi:j:k:l:m:n:o:p:q:r:t:x:z:"
                                        "C:D:E:I:M:N:P:Q:R:S:T:U:VZ", 
                                        long_options, 
                                        &option_index );
@@ -362,7 +365,12 @@ int main( int argc, char *argv[] )
           exit( 1 );
         }
         break;
-      
+
+      case 'A':
+        bittenLParams.eff_snr_denom_fac = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg);
+        break;
+
       case 'a':
         bittenLParams.param_a[LAL_IFO_H1] = atof(optarg);
       ADD_PROCESS_PARAM( "float", "%s", optarg);

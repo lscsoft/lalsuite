@@ -200,7 +200,7 @@ int main( int argc, char *argv[] )
   CoincRingdownTable   *thisCoinc = NULL;
   CoincRingdownTable   *missedCoincHead = NULL;
   
-  CoincInspiralBittenLParams bittenLParams;
+  CoincInspiralStatParams    bittenLParams;
 
   RingdownAccuracyList  accuracyParams;
   
@@ -229,7 +229,7 @@ int main( int argc, char *argv[] )
     calloc( 1, sizeof(ProcessParamsTable) );
   memset( comment, 0, LIGOMETA_COMMENT_MAX * sizeof(CHAR) );
 
-  memset( &bittenLParams, 0, sizeof(CoincInspiralBittenLParams) );
+  memset( &bittenLParams, 0, sizeof(CoincInspiralStatParams   ) );
 
   /*
    *
