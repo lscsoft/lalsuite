@@ -1078,24 +1078,23 @@ void combine_likelihoods(REAL8 ****logLike1, REAL8 ****logLike2,
 
 /* function to calculate the log prior */
 REAL8 log_prior(PriorVals prior, MeshGrid mesh){
-  REAL8 pri=1.;
+  REAL8 pri=0.;
 
   /* FIXME: Add ability to read in a old pdf file to use as a prior */
 
   if(strcmp(prior.h0Prior, "uniform") == 0){
-    pri *= 1.; /* set h0 prior to be one for all values if uniform */
+    pri = 0.; /* set h0 prior to be one for all values if uniform */
     /* pri *= 1./(mesh.maxVals.h0 - mesh.minVals.h0); */
   }
   else if(strcmp(prior.h0Prior, "jeffreys") == 0)
-    pri *= 1./prior.vars.h0;
+    pri += -log(prior.vars.h0);
   else if(strcmp(prior.h0Prior, "gaussian") == 0){
-    pri *= (1./(prior.stdh0*sqrt(LAL_TWOPI)))*exp(-(prior.vars.h0 -
-prior.meanh0)*(prior.vars.h0 -
-    prior.meanh0)/(2.*prior.stdh0*prior.stdh0));
+    pri += -log(prior.stdh0*sqrt(LAL_TWOPI)) + (-(prior.vars.h0 -
+prior.meanh0)*(prior.vars.h0 - prior.meanh0)/(2.*prior.stdh0*prior.stdh0));
   }
 
   if(strcmp(prior.phiPrior, "uniform") == 0){
-    pri *= 1./(mesh.maxVals.phi0 - mesh.minVals.phi0);
+    pri += -log(mesh.maxVals.phi0 - mesh.minVals.phi0);
   }
   /* wrap around Gaussian priors so that the mean is always at the centre */
   else if(strcmp(prior.phiPrior, "gaussian") == 0){
@@ -1104,13 +1103,13 @@ prior.meanh0)*(prior.vars.h0 -
     else if( prior.meanphi + LAL_PI < prior.vars.phi0 )
       prior.vars.phi0 -= LAL_TWOPI;
 
-    pri *= ( 1./ (prior.stdphi*sqrt(LAL_TWOPI) ) )*exp( -( prior.vars.phi0 -
+    pri += -log(prior.stdphi*sqrt(LAL_TWOPI) ) + ( -( prior.vars.phi0 -
             prior.meanphi ) * ( prior.vars.phi0 - prior.meanphi ) /
            ( 2.*prior.stdphi*prior.stdphi ) );
   }
 
   if(strcmp(prior.psiPrior, "uniform") == 0){
-    pri *= 1./(mesh.maxVals.psi - mesh.minVals.psi);
+    pri += -log(mesh.maxVals.psi - mesh.minVals.psi);
   }
   else if(strcmp(prior.psiPrior, "gaussian") == 0){
     if( prior.vars.psi < prior.meanpsi - LAL_PI_4 )
@@ -1118,13 +1117,13 @@ prior.meanh0)*(prior.vars.h0 -
     else if( prior.meanpsi + LAL_PI_4 < prior.vars.psi )
       prior.vars.psi -= LAL_PI_2;
 
-    pri *= ( 1./ (prior.stdpsi*sqrt(LAL_TWOPI) ) )*exp( -( prior.vars.psi -
+    pri += -log(prior.stdpsi*sqrt(LAL_TWOPI) ) + ( -( prior.vars.psi -
             prior.meanpsi ) * ( prior.vars.psi - prior.meanpsi ) / 
            ( 2.*prior.stdpsi*prior.stdpsi ) );
   }
 
   if(strcmp(prior.iotaPrior, "uniform") == 0){
-    pri *= 1./fabs(acos(mesh.maxVals.ci) - acos(mesh.minVals.ci));
+    pri += -log(fabs(acos(mesh.maxVals.ci) - acos(mesh.minVals.ci)));
   }
   /* wrap around at zero and pi */
   else if(strcmp(prior.iotaPrior, "gaussian") == 0){
@@ -1134,12 +1133,12 @@ prior.meanh0)*(prior.vars.h0 -
     else if( prior.meaniota + LAL_PI_2 < iota )
       prior.vars.ci -= LAL_PI;
 
-    pri *= ( 1./ (prior.stdiota*sqrt(LAL_TWOPI) ) ) * exp( -( iota -
+    pri += -log(prior.stdiota*sqrt(LAL_TWOPI) ) + ( -( iota -
             prior.meaniota ) * ( iota - prior.meaniota ) / 
            ( 2.*prior.stdiota*prior.stdiota ) );
   }
 
-  return log(pri);
+  return pri;
 }
 
 
@@ -2111,7 +2110,8 @@ paramData );
           vars.ci, vars.psi);
 
         for( j = 0 ; j < nGlitches ; j++ )
-          fprintf(fp, "\t%le\t%lf", extraVars[j].h0, extraVars[j].phi0);
+          fprintf(fp, "\t%lf", extraVars[j].phi0);
+          /* fprintf(fp, "\t%le\t%lf", extraVars[j].h0, extraVars[j].phi0); */
 
         if( matTrue ){
           /* print out pulsar parameters */
