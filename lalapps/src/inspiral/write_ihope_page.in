@@ -830,7 +830,7 @@ def write_analysis(page, opts, thisSearch='playground'):
   	"First inspiral stage (using SIRE_FIRST*_ files)",\
   	"First coincidence stage (using COIRE_FIRST*_ and COIRE_SLIDE_FIRST*_ files)",\
 	'Second inspiral stage (using SIRE_SECOND files)',\
-	'Second thinca step (all ifo combination and category 2 COIRE_SECOND*_ files)'\
+	'Second thinca step (all ifo combination and category 3 COIRE_SECOND*_ files)'\
 	]
 
   tags = [\
@@ -870,7 +870,7 @@ def write_analysis(page, opts, thisSearch='playground'):
   "<span style=\"color:red\">This section has no images (on purpose)</span>. \
    To obtain the first thinca stage images, clik on the links in the caption here below",\
   None,\
-  "This section shows the plotthinca results for the category 2 only.  "\
+  "This section shows the plotthinca results for the category 3 only.  "\
   ]
 
   configs = [	\
@@ -1095,7 +1095,7 @@ def write_injection(page, opts):
   # configs : is not none, the part of the ini file corresponding to this config name will be written in the web page
   titles = [\
   	"Efficiency, Found and Missed plots (first stage)",\
-  	"Closeby missed injections (Second coincidence stage and CAT2)",\
+  	"Closeby missed injections (Second coincidence stage and CAT3)",\
   	"Efficiencies (Second stage)",\
   	"Accuracies (First stage)",\
   	"Accuracies (Second stage)"\
