@@ -212,6 +212,7 @@ CHAR **tdFollowUpFiles  = NULL;         /* name of file containing td f */
 INT4   numTDFiles       = 0;            /* Number of files to follow up */
 int    injectOverhead   = 0;            /* inject h+ into detector      */
 REAL4  mmFast           = -1.0;         /* match for the --fast option  */
+INT4   hardwareInjection= 0;            /* hardware injection flag      */
 Approximant injApproximant;             /* injected waveform approximant*/
 
 /* matched filter parameters */
@@ -1249,7 +1250,7 @@ int main( int argc, char *argv[] )
       fprintf( stderr, "error: cannot read injection file" );
       exit( 1 );
     }
-    else if ( numInjections )
+    else if ( numInjections && !hardwareInjection )
     {
       /* see if we need a higher resolution response to do the injections */
       if ( resampleChan )
@@ -1433,7 +1434,8 @@ int main( int argc, char *argv[] )
     }
     else
     {
-      if ( vrbflg ) fprintf( stdout, "no injections in this chunk\n" );
+      if ( vrbflg && !hardwareInjection ) fprintf( stdout, 
+              "no injections in this chunk\n" );
     }
   }
 
@@ -3269,6 +3271,7 @@ fprintf( a, "  --fast F                     analyse injections templates within 
 fprintf( a, "  --inject-overhead            inject signals from overhead detector\n");\
 fprintf( a, "  --enable-filter-inj-only     filter only segments with injections\n");\
 fprintf( a, "  --disable-filter-inj-only    filter all segments when doing injections\n");\
+fprintf( a, "  --hardware-injection         Injections are in the frame files don't make them again!\n");\
 fprintf( a, "                               All segments are filtered.\n");\
 fprintf( a, "\n");\
 fprintf( a, "  --td-follow-up FILE          Follow up coincident BCV events in FILE\n");\
@@ -3400,6 +3403,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"disable-rsq-veto",        no_argument,       &enableRsqVeto,    0 },
     {"enable-filter-inj-only",  no_argument,       &flagFilterInjOnly,1 },
     {"disable-filter-inj-only", no_argument,       &flagFilterInjOnly,0 },
+    {"hardware-injection",      no_argument,       &hardwareInjection,1 },
     {"reverse-chirp-bank",      no_argument,       &reverseChirpBank, 1 },
     {"do-rsq-veto",             no_argument,       &doRsqVeto,        1 },
     /* these options don't set a flag */
