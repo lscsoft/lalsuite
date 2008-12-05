@@ -107,9 +107,10 @@ static int eah_rename_aux(const char* old, const char* newf) {
     osv.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
     if(GetVersionEx(&osv) == 0) {
       /* this should never happen. If it does, at least reset the tested MajorVersion */
-      fprintf(stderr,"Warning: GetVersionEx() failed (%d)\n",GetLastError());
+      fprintf(stderr,"WARNING: GetVersionEx() failed (%d)\n",GetLastError());
       osv.dwMajorVersion = 0;
     }
+    fprintf(stderr,"INFO: Major Windows version: %d\n", osv.dwMajorVersion);
   }
 
   if(osv.dwMajorVersion >= 5) {
@@ -126,8 +127,11 @@ static int eah_rename_aux(const char* old, const char* newf) {
     CopyFile(old,newf,false);
     err = GetLastError();
     if(!err) {
+      int err2;
       DeleteFile(old);
-      err = GetLastError();
+      err2 = GetLastError();
+      if(err2)
+	fprintf(stderr,"ERROR: Error deleting file '%s': %d\n", old, err2);
     }
   }
 
