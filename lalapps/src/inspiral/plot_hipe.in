@@ -569,8 +569,6 @@ if opts.plotinspmissed:
       for opt, val in pattern_dict.iteritems():
         plotinspmissed_jobs[combostring + "SECOND"].add_opt(opt, val)
       plotinspmissed_jobs[combostring +"SECOND"].add_opt("ifo-tag", "SECOND_" + combostring)
-      plotinspmissed_jobs[combostring + "SECOND"].add_opt("followup-tag" ,
-                cp.get("pipeline","inj-suffix").split("_")[0])
       plotinspmissed_jobs[combostring +"SECOND"].set_sub_file( basename + '.plotinspmissed_SECOND_' + combostring + subsuffix )
 
   all_jobs.extend(plotinspmissed_jobs.values())
