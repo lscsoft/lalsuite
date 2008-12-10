@@ -34,12 +34,16 @@ static volatile const char *rcsid_win_lib_cpp = "$Id$";
 #include <limits>
 #include <string.h>
 #include <stdio.h>
-#include <windows.h> // don't move this earlier
+#include <windows.h> // don't move this further up
 
 using namespace std;
 
-/* from BOINC */
+/*
+  from BOINC
+*/
+/* from BOINC's filesys.h */
 #define FILE_RETRY_INTERVAL 5
+extern "C" int boinc_delete_file(const char*);
 /* links to BOINC's util.o */
 extern double dtime();
 extern void boinc_sleep(double);
@@ -48,30 +52,34 @@ static inline double drand() {
     return (double)rand()/(double)RAND_MAX;
 }
 
-/* weird re-implementation of sleep based on Win32 APIs */
-void sleep(unsigned int s) {
-#ifdef _MSC_VER
-  Sleep(s*1000L);
-#else
-  _sleep(s);
-#endif
-}
+
 
 /*
-  provided finite() as a function so that linking LAL
-  with win_lib.o works
+  sleep() based on Win32 APIs
+*/
+void sleep(unsigned int s) {
+  Sleep(s*1000L);
+}
+
+
+/*
+  provides finite() as a function for linking LAL with win_lib.o
 */ 
 int finite(double x) {
   return(_finite(x));
 }
 
-/* for testing FPE */
+
+/*
+  for testing FPE
+*/
 float get_float_snan(void) {
   char*idummy;
   return (numeric_limits<float>::signaling_NaN());
   idummy = (char*)rcsid_win_lib_cpp;
   idummy = (char*)rcsid_win_lib_h;
 }
+
 
 /*
   replacement for the asctime_r and gmtime_r functions
@@ -89,67 +97,61 @@ char *asctime_r(const struct tm *t, char *s) {
   return(s);
 }
 
+
+
 /*
-  more atomic replacement functions for the non-atomic boinc_rename()
-  eah_rename() is just a copy of boinc_rename() in boinc/lib/filesys.cpp
-  with the only difference that it calls eah_rename_aux() instead of
-  boinc_rename_aux(). eah_rename_aux() uses MoveFileEx() where
-  boinc_rename_aux() uses the boinc_delete(newf); MoveFile(old,newf)
-  sequence (not even checking the return code of boinc_delete()).
+  atomic replacement functions for the (currently) non-atomic boinc_rename()
 */
 
-static int eah_rename_aux(const char* old, const char* newf) {
-  int err = 0;
+static int eah_rename_aux(const char* old, const char* newf, const bool w2k) {
+  if(w2k) {
+    MoveFileEx(old, newf, MOVEFILE_REPLACE_EXISTING);
+  } else {
+    CopyFile(old,newf,false);
+  }
+  return(GetLastError());
+}
+
+
+int eah_rename(const char* old, const char* newf) {
   static OSVERSIONINFO osv = {0};
+  static bool w2k = false;
+  int retval = 0;
 
   /* don't know how expensive GetVersionEx() is, better call it only once */
   if (osv.dwOSVersionInfoSize == 0) {
     osv.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
     if(GetVersionEx(&osv) == 0) {
-      /* this should never happen. If it does, at least reset the tested MajorVersion */
-      fprintf(stderr,"WARNING: GetVersionEx() failed (%d)\n",GetLastError());
-      osv.dwMajorVersion = 0;
-    }
-    fprintf(stderr,"INFO: Major Windows version: %d\n", osv.dwMajorVersion);
-  }
-
-  if(osv.dwMajorVersion >= 5) {
-
-    /* Windows >= Win2k supports MoveFileEx(), which is really atomic */
-    if (MoveFileEx(old, newf, MOVEFILE_REPLACE_EXISTING))
-      return(0);
-    err = GetLastError();
-
-  } else {
-
-    /* copy the new file and then delete the old one should be better than what
-       boinc_rename() does, however only for small files like our checkpoint file */
-    CopyFile(old,newf,false);
-    err = GetLastError();
-    if(!err) {
-      int err2;
-      DeleteFile(old);
-      err2 = GetLastError();
-      if(err2)
-	fprintf(stderr,"ERROR: Error deleting file '%s': %d\n", old, err2);
+      /* this should never happen */
+      fprintf(stderr,"WARNING: GetVersionEx() failed (%d)\n", GetLastError());
+    } else {
+      fprintf(stderr,"INFO: Major Windows version: %d\n", osv.dwMajorVersion);
+      w2k = (osv.dwMajorVersion >= 5);
     }
   }
 
-  return(err);
-}
-
-/* this is just a copy of boinc_rename() which calls
-   eah_rename_aux() instead of boinc_rename_aux() */
-int eah_rename(const char* oldf, const char* newf) {
-  int retval=0;
-  retval = eah_rename_aux(oldf, newf);
+  /* copied from the original boinc_rename() */
+  retval = eah_rename_aux(old,newf,w2k);
   if (retval) {
     double start = dtime();
     do {
       boinc_sleep(drand()*2); // avoid lockstep
-      retval = eah_rename_aux(oldf, newf);
+      retval = eah_rename_aux(old,newf,w2k);
       if (!retval) break;
     } while (dtime() < start + FILE_RETRY_INTERVAL);
   }
-  return retval;
+
+  /* return if there was an error, keeping the old file */
+  if(retval)
+    return(retval);
+
+  /* if we used CopyFile() we still have to delete the old file */
+  if(!w2k) {
+    retval = boinc_delete_file(old);
+    if(retval)
+      fprintf(stderr,"WARNING: boinc_delete(%s) failed (%d)\n", old, delret);
+  }
+
+  /* an error while deleting is not fatal */
+  return(0);
 }
