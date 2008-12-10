@@ -68,6 +68,13 @@ parser.add_option("-f", "--config-file",action="store",type="string",\
 parser.add_option("-g", "--generate-fu-cache",action="store_true",\
     default=False, help="create hipe caches")
 
+parser.add_option("", "--read-times", action="store_true",\
+    default=False, help="If this option is activated, the pipeline \
+    will determine the list of triggers to be analysed from text files \
+    containing the list of GPS times per interferometers.\ The paths to these \
+    text files are expected to be provided within the fields \"XXtimes\" \
+    (where XX is an ifo name) in the section [triggers] of the .ini file.")
+
 parser.add_option("-D", "--disable-followup",action="store_true",\
     default=False, help="disable candidate followup (for running qscans only)")
 
@@ -242,7 +249,10 @@ if not opts.write_to_iulgroup and not opts.generate_fu_cache and \
   sys.exit(1)
 
 if opts.disable_followup:
-  print >> sys.stderr, "Warning: this option disables any followup jobs, only qscan datafind and background qscan jobs will be run..."
+  print >> sys.stderr, "Warning: the option disable-followup disables any followup jobs, only qscan datafind and background qscan jobs will be run..."
+
+if opts.read_times:
+  print >> sys.stderr, "Warning: the option read-times disables the standard behaviour of the pipeline. The \"hipe-output-cache\" or \"xml-glob\" files will be ignored. Instead the times to be analysed will be read within the text files specified by the fields \"XXtimes\" of the section [triggers] of the .ini file"
 
 #################### READ IN THE CONFIG (.ini) FILE ########################
 cp = ConfigParser.ConfigParser()
@@ -261,7 +271,7 @@ currentPath = os.path.abspath('.')
 
 ############# TURN THE HIPE OUTPUT INTO LAL CACHE FILES #######################
 
-if not opts.disable_followup:
+if not opts.disable_followup and not opts.read_times:
   cache = getCache(opts,cp,currentPath)
 
 ##############################################################################
@@ -271,7 +281,7 @@ dag.setupDAGWeb('followup web page','index.html',cp,opts)
 
 ############# READ IN THE COIRE FILES #########################################
 
-if not opts.disable_followup:
+if not opts.disable_followup and not opts.read_times:
 
   # if the option convert-eventid is called, we need to prepare the directory 
   # where the .xml files will be copied
@@ -294,26 +304,26 @@ if not opts.disable_followup:
 ############ SET UP THE REQUESTED JOBS ########################################
 
 if not opts.disable_followup:
-  inspDataJob     = followupDataFindJob(cp,'inspiral')
-  inspJob         = followUpInspJob(cp)
-  inspJobNotrig   = followUpInspJob(cp,'notrig')
-  plotJob         = plotSNRCHISQJob(opts,cp)
   qscanFgJob      = qscanJob(opts,cp)
-  distribQJob     = distributeQscanJob(cp)
   anaQscanJob     = analyseQscanJob(opts,cp)
-  frcheckJob      = FrCheckJob(opts,cp)
-  statusJob       = IFOstatus_checkJob(opts,cp)
-  MCMCJob 	  = followupmcmcJob(opts,cp)
-  PLOTMCMCJob     = plotmcmcJob(opts,cp)
-  headInspJob     = followUpInspJob(cp, 'head')
-  cohInspJob      = followUpInspJob(cp, 'coh')
-  h1h2QJob        = h1h2QeventJob(opts,cp)   
-  skyMapJob       = lalapps_skyMapJob(opts,cp)
-  skyPlotJob      = pylal_skyPlotJob(opts,cp)
-
+  if not opts.read_times:
+    inspDataJob     = followupDataFindJob(cp,'inspiral')
+    inspJob         = followUpInspJob(cp)
+    inspJobNotrig   = followUpInspJob(cp,'notrig')
+    plotJob         = plotSNRCHISQJob(opts,cp)
+    frcheckJob      = FrCheckJob(opts,cp)
+    statusJob       = IFOstatus_checkJob(opts,cp)
+    MCMCJob 	    = followupmcmcJob(opts,cp)
+    PLOTMCMCJob     = plotmcmcJob(opts,cp)
+    headInspJob     = followUpInspJob(cp, 'head')
+    cohInspJob      = followUpInspJob(cp, 'coh')
+    h1h2QJob        = h1h2QeventJob(opts,cp)   
+    skyMapJob       = lalapps_skyMapJob(opts,cp)
+    skyPlotJob      = pylal_skyPlotJob(opts,cp)
 
 dataJob         = followupDataFindJob(cp,'futrig')
 qscanBgJob      = qscanJob(opts,cp,'QSCANLITE')
+distribQJob     = distributeQscanJob(cp)
 
 print "\n.......Setting up pipeline jobs"
 
@@ -325,64 +335,62 @@ ifos_list = ['H1','H2','L1','G1','V1','T1']
 ############ PREPARE FILES FOR REMOTE (DEPORTED) VIRGO QSCANS #################
 ###############################################################################
 
-if not opts.disable_followup:
+depIfoIniConfig = depIfo+'config-file'
+depIfoIniWeb = depIfo+'web'
+depIfoDir = depIfo+'_qscans_config'
+depQscanList = ['foreground-qscan', 'background-qscan', 'foreground-seismic-qscan', 'background-seismic-qscan']
   
-  depIfoIniConfig = depIfo+'config-file'
-  depIfoIniWeb = depIfo+'web'
-  depIfoDir = depIfo+'_qscans_config'
-  depQscanList = ['foreground-qscan', 'background-qscan', 'foreground-seismic-qscan', 'background-seismic-qscan']
-  
-  # Build directories
-  os.system('mkdir -p '+depIfoDir)
-  os.system('mkdir -p '+depIfoDir+'/CONFIG')
-  os.system('mkdir -p '+depIfoDir+'/RESULTS')
-  for depQscan in depQscanList:
-     os.system('mkdir -p '+depIfoDir+'/RESULTS/results_'+depQscan)
-  os.system('mkdir -p '+depIfoDir+'/SCRIPTS')
-  os.system('mkdir -p '+depIfoDir+'/TIMES')
+# Build directories
+os.system('mkdir -p '+depIfoDir)
+os.system('mkdir -p '+depIfoDir+'/CONFIG')
+os.system('mkdir -p '+depIfoDir+'/RESULTS')
+for depQscan in depQscanList:
+  os.system('mkdir -p '+depIfoDir+'/RESULTS/results_'+depQscan)
+os.system('mkdir -p '+depIfoDir+'/SCRIPTS')
+os.system('mkdir -p '+depIfoDir+'/TIMES')
 
-  # Copy the qscan configuration files
-  for depQscan in depQscanList:
-    if cp.has_option(depQscan, depIfoIniConfig):
-      qscanConfig = string.strip(cp.get(depQscan, depIfoIniConfig))
-      if qscanConfig!='':
-        print 'copy '+qscanConfig+' -----> '+depIfoDir+'/CONFIG/'+depQscan+'_config.txt'
-        os.system('cp '+qscanConfig+' '+depIfoDir+'/CONFIG/'+depQscan+'_config.txt')
+# Copy the qscan configuration files
+for depQscan in depQscanList:
+  if cp.has_option(depQscan, depIfoIniConfig):
+    qscanConfig = string.strip(cp.get(depQscan, depIfoIniConfig))
+    if qscanConfig!='':
+      print 'copy '+qscanConfig+' -----> '+depIfoDir+'/CONFIG/'+depQscan+'_config.txt'
+      os.system('cp '+qscanConfig+' '+depIfoDir+'/CONFIG/'+depQscan+'_config.txt')
   
-  # Copy the scripts used in the remote computing center
-  #   first, get the path to the scripts
-  scriptPath = Popen(["which", "analyseQscan.py"], stdout=PIPE).communicate()[0]
+# Copy the scripts used in the remote computing center
+#   first, get the path to the scripts
+scriptPath = Popen(["which", "analyseQscan.py"], stdout=PIPE).communicate()[0]
 
-  scriptPath = scriptPath.strip('\n')
-  scriptPath = scriptPath.replace('analyseQscan.py','followup_virgo_scripts')
-  os.system('cp '+scriptPath+'/qsub_wscan.sh '+depIfoDir+'/SCRIPTS/')
-  os.system('cp '+scriptPath+'/qsub_wscanlite.sh '+depIfoDir+'/SCRIPTS/')
-  os.system('cp '+scriptPath+'/wscan_in2p3.sh '+depIfoDir+'/SCRIPTS/')
-  os.system('cp '+scriptPath+'/wscanlite_in2p3.sh '+depIfoDir+'/SCRIPTS/')
-  os.system('cp '+scriptPath+'/prepare_sendback.py '+depIfoDir)
-  os.system('cp '+scriptPath+'/virgo_qscan_in2p3.py '+depIfoDir)
-  depIfoWebForeground = string.strip(cp.get('foreground-qscan', depIfoIniWeb))
-  if not depIfoWebForeground.startswith('http://virgo.in2p3.fr/followups/'):
-    print('\nWARNING for foreground qscans:')
-    print('   wrong web address : '+depIfoWebForeground)
-    print('   The web address for Virgo qscans should start with \"http://virgo.in2p3.fr/followups/\"')
-    print('   followed by the name of the submitter of the jobs')
-  else:
-    depIfoWebForeground = depIfoWebForeground.replace('http://virgo.in2p3.fr/followups/','')
-    os.system('sed -e \'s|@foreground@|'+depIfoWebForeground+'|\' '+depIfoDir+'/virgo_qscan_in2p3.py > '+depIfoDir+'/virgo_qscan_in2p3.py.tmp')
-    os.system('mv -f '+depIfoDir+'/virgo_qscan_in2p3.py.tmp '+depIfoDir+'/virgo_qscan_in2p3.py')
-    os.system('chmod +x '+depIfoDir+'/virgo_qscan_in2p3.py')
-  depIfoWebForegroundSeismic = string.strip(cp.get('foreground-seismic-qscan', depIfoIniWeb))
-  if not depIfoWebForegroundSeismic.startswith('http://virgo.in2p3.fr/followups/'):
-    print('\nWARNING for foreground-seismic qscans:')
-    print('   wrong web address : '+depIfoWebForegroundSeismic)
-    print('   The web address for Virgo qscans should start with \"http://virgo.in2p3.fr/followups/\"')
-    print('   followed by the name of the submitter of the jobs')
-  else:
-    depIfoWebForegroundSeismic = depIfoWebForegroundSeismic.replace('http://virgo.in2p3.fr/followups/','')
-    os.system('sed -e \'s|@foreground-seismic@|'+depIfoWebForegroundSeismic+'|\' '+depIfoDir+'/virgo_qscan_in2p3.py > '+depIfoDir+'/virgo_qscan_in2p3.py.tmp')
-    os.system('mv -f '+depIfoDir+'/virgo_qscan_in2p3.py.tmp '+depIfoDir+'/virgo_qscan_in2p3.py')
-    os.system('chmod +x '+depIfoDir+'/virgo_qscan_in2p3.py')
+scriptPath = scriptPath.strip('\n')
+scriptPath = scriptPath.replace('analyseQscan.py','followup_virgo_scripts')
+os.system('cp '+scriptPath+'/qsub_wscan.sh '+depIfoDir+'/SCRIPTS/')
+os.system('cp '+scriptPath+'/qsub_wscanlite.sh '+depIfoDir+'/SCRIPTS/')
+os.system('cp '+scriptPath+'/wscan_in2p3.sh '+depIfoDir+'/SCRIPTS/')
+os.system('cp '+scriptPath+'/wscanlite_in2p3.sh '+depIfoDir+'/SCRIPTS/')
+os.system('cp '+scriptPath+'/prepare_sendback.py '+depIfoDir)
+os.system('cp '+scriptPath+'/virgo_qscan_in2p3.py '+depIfoDir)
+depIfoWebForeground = string.strip(cp.get('foreground-qscan', depIfoIniWeb))
+if not depIfoWebForeground.startswith('http://virgo.in2p3.fr/followups/'):
+  print('\nWARNING for foreground qscans:')
+  print('   wrong web address : '+depIfoWebForeground)
+  print('   The web address for Virgo qscans should start with \"http://virgo.in2p3.fr/followups/\"')
+  print('   followed by the name of the submitter of the jobs')
+else:
+  depIfoWebForeground = depIfoWebForeground.replace('http://virgo.in2p3.fr/followups/','')
+  os.system('sed -e \'s|@foreground@|'+depIfoWebForeground+'|\' '+depIfoDir+'/virgo_qscan_in2p3.py > '+depIfoDir+'/virgo_qscan_in2p3.py.tmp')
+  os.system('mv -f '+depIfoDir+'/virgo_qscan_in2p3.py.tmp '+depIfoDir+'/virgo_qscan_in2p3.py')
+  os.system('chmod +x '+depIfoDir+'/virgo_qscan_in2p3.py')
+depIfoWebForegroundSeismic = string.strip(cp.get('foreground-seismic-qscan', depIfoIniWeb))
+if not depIfoWebForegroundSeismic.startswith('http://virgo.in2p3.fr/followups/'):
+  print('\nWARNING for foreground-seismic qscans:')
+  print('   wrong web address : '+depIfoWebForegroundSeismic)
+  print('   The web address for Virgo qscans should start with \"http://virgo.in2p3.fr/followups/\"')
+  print('   followed by the name of the submitter of the jobs')
+else:
+  depIfoWebForegroundSeismic = depIfoWebForegroundSeismic.replace('http://virgo.in2p3.fr/followups/','')
+  os.system('sed -e \'s|@foreground-seismic@|'+depIfoWebForegroundSeismic+'|\' '+depIfoDir+'/virgo_qscan_in2p3.py > '+depIfoDir+'/virgo_qscan_in2p3.py.tmp')
+  os.system('mv -f '+depIfoDir+'/virgo_qscan_in2p3.py.tmp '+depIfoDir+'/virgo_qscan_in2p3.py')
+  os.system('chmod +x '+depIfoDir+'/virgo_qscan_in2p3.py')
 
 ############# LOOP OVER RANDOM BACKGROUND TIMES ###############################
 ###############################################################################
@@ -402,17 +410,57 @@ for ifo in ifos_list:
     qBgNode = qscanNode(qscanBgJob,time,cp,dNode.outputFileName,ifo,'background-seismic-qscan',opts, dNode, dag,'datafind','background_seis_qscan')
   
   # WRITE TIMES FOR REMOTE (DEPORTED) CALCULATIONS
-  if not opts.disable_followup:
-    if ifo == depIfo and len(times)!=0:
-      os.system('cp '+timeListFile+' '+depIfoDir+'/TIMES/background_qscan_times.txt')
+  if ifo == depIfo and len(times)!=0:
+    os.system('cp '+timeListFile+' '+depIfoDir+'/TIMES/background_qscan_times.txt')
+
+############# Preparing deported qscans and distribution node #################
+###############################################################################
+
+# Initialize qscan times text file for deported qscans
+depQscanTFile = open(depIfoDir+'/TIMES/qscan_times.txt','w')
+
+# Distribute the results of the deported qscans to the expected output directories
+distribQNode = distributeQscanNode(distribQJob,'QSCAN/QSCAN.cache','QSCANLITE/QSCANLITE.cache',depIfo,depIfo+"_qscans_results.tar.gz",opts,dag)
+
+########## LOOP OVER FOLLOWUP TIMES (if read-times is activated) ##############
+###############################################################################
+
+if opts.read_times:
+  for ifo in ifos_list:
+    dag.appendSection("Triggers in " + ifo)
+    times,timeListFile = getForegroundTimes(cp,opts,ifo)
+    for time in times:
+
+      #Lets make a new section for this event
+      event_title = ifo + ' @ GPS ' + repr(time)
+      dag.appendSubSection(event_title)
+
+      # Write time in file for deported qscans
+      if ifo==depIfo:
+         depQscanTFile.write(repr(time)+'\n')
+
+      # SETUP DATAFIND JOBS FOR HOFT QCANS
+      dHoftNode = followupDataFindNode(dataJob,'futrig','q-hoft-datafind',cp,time,ifo,opts,dag,'hoft_datafind')
+
+      # SETUP DATAFIND JOBS FOR REGULAR QSCANS
+      dNode = followupDataFindNode(dataJob,'futrig','q-datafind',cp,time,ifo,opts,dag,'datafind')
+
+      # SETUP FOREGROUND QSCAN JOBS
+      qFgNode = qscanNode(qscanFgJob,time,cp,dHoftNode.outputFileName,ifo,'foreground-hoft-qscan',opts,dHoftNode,dag,'hoft_datafind','hoft_qscan')
+      qFgNode = qscanNode(qscanFgJob,time,cp,dNode.outputFileName,ifo,'foreground-qscan',opts,dNode,dag,'datafind','qscan')
+      qFgNode = qscanNode(qscanFgJob,time,cp,dNode.outputFileName,ifo,'foreground-seismic-qscan',opts,dNode,dag,'datafind','seis_qscan')
+
+    # Loop for analyseQscan jobs (which must be children of all qscan jobs)
+    for time in times:
+
+      anaQscanNode = analyseQscanNode(anaQscanJob,time,ifo,'foreground-qscan','QSCAN/QSCAN.cache','QSCANLITE/QSCANLITE.cache',cp,opts,dag,'analyse_qscan')
+      anaQscanNode = analyseQscanNode(anaQscanJob,time,ifo,'foreground-seismic-qscan','QSCAN/QSCAN.cache','QSCANLITE/QSCANLITE.cache',cp,opts,dag,'analyse_seis_qscan')
+      anaQscanNode = analyseQscanNode(anaQscanJob,time,ifo,'foreground-hoft-qscan','QSCAN/QSCAN.cache','QSCANLITE/QSCANLITE.cache',cp,opts,dag,'analyse_hoft_qscan')
 
 ################# LOOP OVER FOLLOWUP TRIGGERS #################################
 ###############################################################################
 
-if not opts.disable_followup:
-    
-  # Initialize qscan times text file for deported qscans
-  depQscanTFile = open(depIfoDir+'/TIMES/qscan_times.txt','w')
+if not opts.disable_followup and not opts.read_times:
   
   # LOOP ON TRIGGERS (=CANDIDATES)
   for trig in followuptrigs:
@@ -546,14 +594,6 @@ if not opts.disable_followup:
     skyNode.add_node_to_dag(dag,opts,trig)
     skyPlotNode = pylal_skyPlotNode(skyPlotJob,trig,skyNode,dag,dag.page,opts)
   
-
-
-  # Prepare for moving the deported qscan directory (tar-gzip)
-  depQscanTFile.close()
-  os.system('tar zcvf '+depIfoDir+'.tar.gz '+depIfoDir)
-
-  # Distribute the results of the deported qscans to the expected output directories
-  distribQNode = distributeQscanNode(distribQJob,'QSCAN/QSCAN.cache','QSCANLITE/QSCANLITE.cache',depIfo,depIfo+"_qscans_results.tar.gz",opts,dag)
   
   # Loop for analyseQscan jobs (which must be children of all qscan jobs)
   for trig in followuptrigs:
@@ -561,6 +601,11 @@ if not opts.disable_followup:
       anaQscanNode = analyseQscanNode(anaQscanJob,trig.gpsTime[ifo],ifo,'foreground-qscan','QSCAN/QSCAN.cache','QSCANLITE/QSCANLITE.cache',cp,opts,dag,'analyse_qscan')
       anaQscanNode = analyseQscanNode(anaQscanJob,trig.gpsTime[ifo],ifo,'foreground-seismic-qscan','QSCAN/QSCAN.cache','QSCANLITE/QSCANLITE.cache',cp,opts,dag,'analyse_seis_qscan')
       anaQscanNode = analyseQscanNode(anaQscanJob,trig.gpsTime[ifo],ifo,'foreground-hoft-qscan','QSCAN/QSCAN.cache','QSCANLITE/QSCANLITE.cache',cp,opts,dag,'analyse_hoft_qscan')
+
+
+# Prepare for moving the deported qscan directory (tar-gzip)
+depQscanTFile.close()
+os.system('tar zcvf '+depIfoDir+'.tar.gz '+depIfoDir)
     
 ##########################################################################
 dag.writeAll()
