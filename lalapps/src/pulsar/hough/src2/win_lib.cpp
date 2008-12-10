@@ -149,7 +149,7 @@ int eah_rename(const char* old, const char* newf) {
   if(!w2k) {
     retval = boinc_delete_file(old);
     if(retval)
-      fprintf(stderr,"WARNING: boinc_delete(%s) failed (%d)\n", old, delret);
+      fprintf(stderr,"WARNING: boinc_delete(%s) failed (%d)\n", old, retval);
   }
 
   /* an error while deleting is not fatal */
