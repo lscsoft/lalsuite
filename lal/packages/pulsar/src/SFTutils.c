@@ -1322,7 +1322,7 @@ void LALComputeMultiNoiseWeights  (LALStatus             *status,
       weights->data[X]->data[alpha] *= Tsft_calS;
   }
 
-  weights->Sinv_Tsft = Tsft*Tsft / Tsft_calS;		/* 'Sinv * Tsft' normalization factor */
+  weights->Sinv_Tsft = 0.5 * Tsft*Tsft / Tsft_calS;		/* 'Sinv * Tsft' normalization factor uses single-sided PSD!! */
 
   *out = weights;
 

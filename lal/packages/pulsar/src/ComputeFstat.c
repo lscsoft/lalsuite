@@ -2296,7 +2296,7 @@ LALEstimatePulsarAmplitudeParams (LALStatus * status,
   Ed = Mmunu->Ed;
   Dd = Ad * Bd - Cd * Cd - Ed * Ed;
 
-  normAmu = 2.0 / sqrt(Mmunu->Sinv_Tsft);	/* generally *very* small!! */
+  normAmu = 2.0 / sqrt(2.0 * Mmunu->Sinv_Tsft);	/* generally *very* small!! */
 
   /* ----- GSL memory allocation ----- */
   if ( ( x_mu = gsl_vector_calloc (4) ) == NULL ) {
