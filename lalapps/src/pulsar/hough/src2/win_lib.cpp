@@ -104,19 +104,25 @@ char *asctime_r(const struct tm *t, char *s) {
 */
 
 static int eah_rename_aux(const char* old, const char* newf, const bool w2k) {
+#ifdef _WIN32
   if(w2k) {
     MoveFileEx(old, newf, MOVEFILE_REPLACE_EXISTING);
   } else {
-    CopyFile(old,newf,false);
+    CopyFile(old, newf, false);
   }
   return(GetLastError());
+#else
+  return(rename(old, newf));
+#endif
 }
 
 
 int eah_rename(const char* old, const char* newf) {
-  static OSVERSIONINFO osv = {0};
-  static bool w2k = false;
   int retval = 0;
+  static bool w2k = false;
+
+#ifdef _WIN32
+  static OSVERSIONINFO osv = {0};
 
   /* don't know how expensive GetVersionEx() is, better call it only once */
   if (osv.dwOSVersionInfoSize == 0) {
@@ -129,6 +135,7 @@ int eah_rename(const char* old, const char* newf) {
       w2k = (osv.dwMajorVersion >= 5);
     }
   }
+#endif
 
   /* copied from the original boinc_rename() */
   retval = eah_rename_aux(old,newf,w2k);
@@ -145,12 +152,14 @@ int eah_rename(const char* old, const char* newf) {
   if(retval)
     return(retval);
 
+#ifdef _WIN32
   /* if we used CopyFile() we still have to delete the old file */
   if(!w2k) {
     retval = boinc_delete_file(old);
     if(retval)
       fprintf(stderr,"WARNING: boinc_delete(%s) failed (%d)\n", old, retval);
   }
+#endif
 
   /* an error while deleting is not fatal */
   return(0);
