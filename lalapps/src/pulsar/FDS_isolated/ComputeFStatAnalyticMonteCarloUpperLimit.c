@@ -649,10 +649,12 @@ BOOLEAN calc_AM_coeffs(
   *A_coeff = AM_coeffs->Mmunu.Ad * AM_coeffs->Mmunu.Sinv_Tsft;
   *B_coeff = AM_coeffs->Mmunu.Bd * AM_coeffs->Mmunu.Sinv_Tsft;
   *C_coeff = AM_coeffs->Mmunu.Cd * AM_coeffs->Mmunu.Sinv_Tsft;
-  
+
   /* Correct for use of DOUBLE-SIDED PSD by AM coefficient functions */
-  *A_coeff *= 0.5; *B_coeff *= 0.5; *C_coeff *= 0.5;
-  
+  /* *A_coeff *= 0.5; *B_coeff *= 0.5; *C_coeff *= 0.5; 
+     RP: commented-out as the field Sinv_Tsft has now refers to the single-sided PSD!
+   */
+
   /* Cleanup */
   XLALDestroyMultiAMCoeffs(AM_coeffs);
 

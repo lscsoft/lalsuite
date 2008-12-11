@@ -206,7 +206,7 @@ int main(int argc, char *argv[]) {
       LogPrintfVerbatim(LOG_DEBUG, "done\n");
     }      
     
-    /* Print the AM coefficients */
+    /* Print the AM coefficients (single-sided PSD in Sinv_Tsft !) */
     {
       const REAL8 A = AM_coeffs->Mmunu.Ad * AM_coeffs->Mmunu.Sinv_Tsft;
       const REAL8 B = AM_coeffs->Mmunu.Bd * AM_coeffs->Mmunu.Sinv_Tsft;

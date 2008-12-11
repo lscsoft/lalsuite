@@ -199,7 +199,7 @@ int main(int argc,char *argv[])
     al3 = ( Ap2 - Ac2 ) * sin(2.0*uvar.psi) * cos(2.0*uvar.psi);	/* A1 A2 + A3 A4 */
 
     /* SNR^2 */
-    rho2 = 0.5 * GV.Mmunu.Sinv_Tsft * (GV.Mmunu.Ad * al1 + GV.Mmunu.Bd * al2 + 2.0 * GV.Mmunu.Cd * al3 );
+    rho2 = GV.Mmunu.Sinv_Tsft * (GV.Mmunu.Ad * al1 + GV.Mmunu.Bd * al2 + 2.0 * GV.Mmunu.Cd * al3 );
   }
 
   fprintf(stdout, "\n%.1f\n", 4.0 + rho2);
@@ -537,12 +537,12 @@ InitPFS ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
   /* correctly handle --SignalOnly case:
    * we don't use noise-weights.
    * The SignalOnly case is characterized by
-   * setting Sh->1 (single-sided), so Sinv=2 (double-sided)
+   * setting Sh->1 (single-sided)
    */
   if ( uvar->SignalOnly )
     {
       multiNoiseWeights = NULL;
-      multiAMcoef->Mmunu.Sinv_Tsft = 2.0 * Tsft;
+      multiAMcoef->Mmunu.Sinv_Tsft = Tsft;
     }
   else
     {

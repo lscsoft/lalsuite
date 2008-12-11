@@ -121,7 +121,7 @@ RCSID( "$Id$");
 typedef struct {
   PulsarDopplerParams doppler;		/**< Doppler params of this 'candidate' */
   Fcomponents  Fstat;			/**< the Fstat-value (plus Fa,Fb) for this candidate */
-  CmplxAntennaPatternMatrix Mmunu;		/**< antenna-pattern matrix Mmunu = 0.5* Sinv*Tsft * [ Ad, Cd; Cd; Bd ] */
+  CmplxAntennaPatternMatrix Mmunu;		/**< antenna-pattern matrix Mmunu = Sinv*Tsft * [ Ad, Cd; Cd; Bd ] */
 } FstatCandidate;
 
 
@@ -498,7 +498,7 @@ int main(int argc,char *argv[])
 	  Fstat.Fb.re *= norm;  Fstat.Fb.im *= norm;
 	  Fstat.F *= norm * norm;
 	  Fstat.F += 2;		/* compute E[2F]:= 4 + SNR^2 */
-	  thisFCand.Mmunu.Sinv_Tsft = 2.0 * GV.Tsft; 
+	  thisFCand.Mmunu.Sinv_Tsft = GV.Tsft; 
 	} 
       thisFCand.Fstat   = Fstat;
 
