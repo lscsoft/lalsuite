@@ -598,9 +598,15 @@ int read_hfs_checkpoint(const char*filename, toplist_t*tl, UINT4*counter) {
   /* try to open file */
   fp = fopen(filename, "rb");
   if(!fp) {
-    LogPrintf(LOG_NORMAL,"INFO: Couldn't open checkpoint %s\n", filename);
-    clear_toplist(tl);
-    return(1);
+    if(errno == ENOENT) {
+      LogPrintf(LOG_NORMAL,"INFO: No checkpoint %s found - starting from scratch\n", filename);
+      clear_toplist(tl);
+      return(1);
+    } else {
+      LogPrintf(LOG_NORMAL,"ERROR: checkpoint %s found but couldn't open (%d)\n", filename, errno);
+      clear_toplist(tl);
+      return(-1);
+    }
   }
 
   /* read number of elements */
