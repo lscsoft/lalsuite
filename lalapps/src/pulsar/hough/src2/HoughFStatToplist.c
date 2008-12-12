@@ -481,7 +481,7 @@ int final_write_houghFStat_toplist_to_file(toplist_t *l, char *filename, UINT4*c
 #endif
 #endif
 
-#ifdef _MSC_VER
+#ifdef _WIN32
 #define LOGIOERROR(mess,filename) \
     LogPrintf(LOG_CRITICAL, "ERROR: %s %s: %s (%s:%d): doserr:%d, ferr:%d, errno:%d: %s\n",\
 	      mess,filename,__func__,__FILE__,__LINE__,_doserrno,((fp)?(ferror(fp)):0),errno,strerror(errno))
