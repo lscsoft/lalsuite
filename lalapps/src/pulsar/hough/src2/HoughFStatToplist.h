@@ -96,20 +96,6 @@ extern int final_write_houghFStat_toplist_to_file(toplist_t*list, char*filename,
 
 
 
-
-/** a toplist as a checkpointed file */
-
-typedef struct {
-  CHAR* filename;    /**< name of the toplist file */
-  CHAR* buffer;      /**< write buffer if needed */
-  UINT4 bufsize;     /**< buffer size if needed */
-  UINT4 bytes;       /**< counts the bytes in the file */
-  UINT4 maxsize;     /**< the file must not grow larger than that */
-  UINT4 checksum;    /**< keeps the checksum */
-  FILE* fp;          /**< FILE* currently associated */
-  toplist_t*list;    /**< toplist this file reflects */
-} HoughFStatCheckpointFile;
-
 /** new, simpler checkpointing for HierarchicalSearch */
 
 /** writes a checkpoint:
