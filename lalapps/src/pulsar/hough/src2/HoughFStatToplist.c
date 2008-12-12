@@ -473,14 +473,22 @@ int final_write_houghFStat_toplist_to_file(toplist_t *l, char *filename, UINT4*c
 */
 
 /** log an I/O error, i.e. source code line no., ferror, errno and strerror, and doserrno on Windows, too */
+#ifndef __func__
+#ifdef __FUNCTION__
+#define __func__  __FUNCTION__
+#else
+#define __func__  ""
+#endif
+#endif
+
 #ifdef _MSC_VER
 #define LOGIOERROR(mess,filename) \
-    LogPrintf(LOG_CRITICAL, "ERROR: %s %s: line:%d, doserr:%d, ferr:%d, errno:%d: %s\n",\
-	      mess,filename,__LINE__,_doserrno,((fp)?(ferror(fp)):0),errno,strerror(errno))
+    LogPrintf(LOG_CRITICAL, "ERROR: %s %s: %s (%s:%d): doserr:%d, ferr:%d, errno:%d: %s\n",\
+	      mess,filename,__func__,__FILE__,__LINE__,_doserrno,((fp)?(ferror(fp)):0),errno,strerror(errno))
 #else
 #define LOGIOERROR(mess,filename) \
-    LogPrintf(LOG_CRITICAL, "ERROR: %s %s: line:%d, ferr:%d, errno:%d: %s\n",\
-	      mess,filename,__LINE__,((fp)?(ferror(fp)):0),errno,strerror(errno))
+    LogPrintf(LOG_CRITICAL, "ERROR: %s %s: %s (%s:%d): ferr:%d, errno:%d: %s\n",\
+	      mess,filename,__func__,__FILE__,__LINE__,((fp)?(ferror(fp)):0),errno,strerror(errno))
 #endif
 
 /* dumps toplist to a temporary file, then renames the file to filename */
@@ -603,7 +611,7 @@ int read_hfs_checkpoint(const char*filename, toplist_t*tl, UINT4*counter) {
       clear_toplist(tl);
       return(1);
     } else {
-      LogPrintf(LOG_NORMAL,"ERROR: checkpoint %s found but couldn't open (%d)\n", filename, errno);
+      LOGIOERROR("Checkpoint found but couldn't open", filename);
       clear_toplist(tl);
       return(-1);
     }
