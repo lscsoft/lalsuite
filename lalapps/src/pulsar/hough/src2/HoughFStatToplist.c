@@ -32,8 +32,8 @@
 #include "filesys.h"
 #define fopen boinc_fopen
 #ifdef _WIN32
-/* actually boinc_rename() is not as atomic as rename()
-   on Windows. We therefore use our own implementation
+/* On MS Windows boinc_rename() is not as atomic as rename()
+   on POSIX systems. We therefore use our own implementation
    eah_rename (in win_lib.h) */
 #define rename eah_rename
 #else  // _WIN32
