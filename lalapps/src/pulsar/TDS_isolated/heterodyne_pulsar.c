@@ -109,8 +109,8 @@ pulsars spin frequency.\n", inputParams.freqfactor);
   if(verbose){  fprintf(stderr, "I've set the detector location for\
  %s.\n", inputParams.ifo); }
 
-  if(inputParams.heterodyneflag == 2){ /* if updating parameters read in updated
-                                          par file */
+  if(inputParams.heterodyneflag == 2 || inputParams.heterodyneflag == 4){ /* if
+    updating parameters read in updated par file */
     XLALReadTEMPOParFile( &hetParams.hetUpdate, inputParams.paramfileupdate );
 
     /* if there is an epoch given manually (i.e. not from the pulsar parameter
@@ -168,7 +168,8 @@ number of frame files to read in.\n");
     if(verbose){  fprintf(stderr, "I've read in the frame list.\n");  }
   }
   
-  if(inputParams.heterodyneflag == 1 || inputParams.heterodyneflag == 2){
+  if(inputParams.heterodyneflag == 1 || inputParams.heterodyneflag == 2 ||
+    inputParams.heterodyneflag == 4 ){
     if(inputParams.filterknee == 0.){
       fprintf(stderr, "REMINDER: You aren't giving a filter knee frequency from\
  the coarse heterodyne stage! You could be reheterodyning data that has\
@@ -319,7 +320,7 @@ heterodyne.\n");  }
       count++;
     }
     else if( inputParams.heterodyneflag == 1 || 
-      inputParams.heterodyneflag == 2 ){
+      inputParams.heterodyneflag == 2 ||inputParams.heterodyneflag == 4 ){
       /* i.e. reading from a heterodyned file */
       REAL8 temptime=0.; /* temporary time storage variable */
       LIGOTimeGPS epochdummy;
@@ -402,8 +403,8 @@ allowed file size %d!\n", MAXLENGTH);
       if( verbose ) fprintf(stderr, "I've read in the fine heterodyne data.\n");
     }
     else{
-      fprintf(stderr, "Error... Heterodyne flag = %d, should be 0, 1, 2 or \
-3.\n", inputParams.heterodyneflag);
+      fprintf(stderr, "Error... Heterodyne flag = %d, should be 0, 1, 2, 3 or \
+4.\n", inputParams.heterodyneflag);
       return 0;
     }
 
@@ -857,7 +858,8 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
   else if(hetParams.het.posepoch == 0. && hetParams.het.pepoch != 0.)
     hetParams.het.posepoch = hetParams.het.pepoch;
 
-  if(hetParams.heterodyneflag == 1 || hetParams.heterodyneflag == 2){
+  if(hetParams.heterodyneflag == 1 || hetParams.heterodyneflag == 2 ||
+    hetParams.heterodyneflag == 4 ){
     if(hetParams.hetUpdate.pepoch == 0. && hetParams.hetUpdate.posepoch != 0.)
       hetParams.hetUpdate.pepoch = hetParams.hetUpdate.posepoch;
     else if(hetParams.hetUpdate.posepoch == 0. && 
@@ -884,7 +886,8 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
 
     /* set 1/distance using parallax or distance value is given (try parallax 
        first) - in 1/secs */
-    if( hetParams.heterodyneflag != 2 ){ /* not using updated params */
+    if( hetParams.heterodyneflag != 2 && hetParams.heterodyneflag != 4 ){ /* not
+      using updated params */
       if( hetParams.het.px != 0. ){
         baryinput.dInv = hetParams.het.px*1e-3/(LAL_C_SI*lyr_pc);
       }
@@ -918,7 +921,7 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
       tdt = times->data[i] - T0; 
     /* if doing one single heterodyne i.e. het flag = 3 then just calc
        phaseCoarse at all times */
-    else if(hetParams.heterodyneflag == 3){
+    else if(hetParams.heterodyneflag == 3 || hetParams.heterodyneflag == 4 ){
       /* set up LALBarycenter */
       dtpos = hetParams.timestamp - hetParams.het.posepoch;
 
@@ -927,7 +930,10 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
       baryinput.alpha = hetParams.het.ra +
         dtpos*hetParams.het.pmra/cos(baryinput.delta);
 
-      t = hetParams.timestamp + (REAL8)i/hetParams.samplerate; /*get data time*/
+      if( hetParams.heterodyneflag == 3 ) /*get data time */
+        t = hetParams.timestamp + (REAL8)i/hetParams.samplerate;
+      else
+        t = times->data[i];
 
       /* set leap seconds noting that for all runs prior to S5 that the number
          of leap seconds was 13 and that 1 more leap seconds was added on 31st
@@ -970,7 +976,8 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
 
 /******************************************************************************/
     /* produce second phase for fine heterodyne */
-    if(hetParams.heterodyneflag == 1 || hetParams.heterodyneflag == 2){
+    if( hetParams.heterodyneflag == 1 || hetParams.heterodyneflag == 2 ||
+      hetParams.heterodyneflag == 4 ){
       /* set up LALBarycenter */
       dtpos = hetParams.timestamp - hetParams.hetUpdate.posepoch;
 
@@ -1055,7 +1062,8 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
       deltaphase = 2.*LAL_PI*fmod(phaseCoarse, 1.);
       dataTemp.im = 0.; /* make sure imaginary part is zero */
     }
-    if(hetParams.heterodyneflag == 1 || hetParams.heterodyneflag == 2){
+    if(hetParams.heterodyneflag == 1 || hetParams.heterodyneflag == 2 ||
+      hetParams.heterodyneflag == 4){
       deltaphase = 2.*LAL_PI*fmod(phaseUpdate - phaseCoarse, 1.);
       
       /* mutliply the data by the filters complex response function to remove
@@ -1329,9 +1337,9 @@ COMPLEX16TimeSeries *resample_data(COMPLEX16TimeSeries *data,
       count++;
     }
   }
-  else if( hetflag == 1 || hetflag == 2 ){ /* need to calculate how many chunks
-    of data at the new sample rate will fit into each science segment (starts
-    and stops) */
+  else if( hetflag == 1 || hetflag == 2 || hetflag == 4 ){ /* need to calculate
+    how many chunks of data at the new sample rate will fit into each science
+    segment (starts and stops) */
     INT4 duration=0;  /* duration of a science segment */
     INT4 remainder=0; /* number of data points lost */
     INT4 prevdur=0;   /* duration of previous segment */
