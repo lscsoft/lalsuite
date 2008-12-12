@@ -195,6 +195,13 @@ REAL8IIRFilter ALPHASLPFIR;
  /* copy factors into time series */
  for (p=0; p<(int)ALPHAS.data->length; p++) 
    {
+      /* check alphabeta: If values are outside bounds we replace factors with 1 */
+      if( (output->alphabeta.data->data[p].re < 0.8) ||  ( output->alphabeta.data->data[p].re > 1.2) 
+	  || (isnan(output->alphabeta.data->data[p].re)) || isinf(output->alphabeta.data->data[p].re)) 
+	{
+	  ALPHAS.data->data[p]=1.0;
+	  if ( p > 0 )  ALPHAS.data->data[p]= ALPHAS.data->data[p-1];
+	}  
      ALPHAS.data->data[p]=output->alphabeta.data->data[p].re;
    }
  
@@ -646,29 +653,6 @@ INT4 localtime = input->AS_Q.epoch.gpsSeconds;
       if (input->gamma_fudgefactor != 0)
 	{
 	  factors.alphabeta.re /= input->gamma_fudgefactor;
-	}
-
-      /* check alphabeta */
-      if( (factors.alphabeta.re < 0.8) ||  (factors.alphabeta.re > 1.2) 
-	  || (isnan(factors.alphabeta.re)) || isinf(factors.alphabeta.re)) 
-	{
-	 factors.alphabeta.re = 1.0;
-	 if (m>0) factors.alphabeta.re=output->alphabeta.data->data[m-1].re;
-	 facterrflag=1;
-	}
-      
-      localtime=localtime+(int)To;
-
-      if (facterrflag == 1)
-	{
-	  fprintf(stderr,"BADFACTORS: %d %e %e %e %e %e %e %e %e %e %e %e %e\n",localtime, 
-		  factors.alphabeta.re,factors.alphabeta.im,
-		  factors.beta.re,factors.beta.im,
-		  factors.alpha.re,factors.alpha.im,
-		  factors.asq.re*2/To,factors.asq.im*2/To,
-		  factors.darm.re*2/To,factors.darm.im*2/To,
-		  factors.exc.re*2/To,factors.exc.im*2/To);
-	  facterrflag=0;
 	}
 
       output->alpha.data->data[m]= factors.alpha;
