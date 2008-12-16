@@ -652,6 +652,7 @@ tagCoincInspiralTable
   INT4                numIfos;
   SnglInspiralTable  *snglInspiral[LAL_NUM_IFO];
   SimInspiralTable   *simInspiral;
+  REAL4              stat;
 }
 CoincInspiralTable;/* </lalVerbatim> */
 #if 0

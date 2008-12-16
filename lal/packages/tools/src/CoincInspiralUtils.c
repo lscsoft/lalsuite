@@ -2194,12 +2194,11 @@ XLALCompareCoincInspiralByTime (
   }
 }
 
-/* <lalVerbatim file="CoincInspiralUtilsCP"> */
-int   
+int
 XLALCompareCoincInspiralByEffectiveSnr (
     const void *a,
     const void *b
-    ) 
+    )
 /* </lalVerbatim> */
 {
   const CoincInspiralTable *aPtr = *((const CoincInspiralTable * const *)a);
@@ -2209,10 +2208,11 @@ XLALCompareCoincInspiralByEffectiveSnr (
   CoincInspiralStatistic coincStat = effective_snrsq;
   CoincInspiralStatParams    bittenLParams;
   memset( &bittenLParams, 0, sizeof(CoincInspiralStatParams   ) );
-
+  /* Default value of denom fac is 250 to preserve old functionality */
+  bittenLParams.eff_snr_denom_fac = 250.0;
   ta = XLALCoincInspiralStat(aPtr,coincStat,&bittenLParams);
   tb = XLALCoincInspiralStat(bPtr,coincStat,&bittenLParams);
- 
+
   if ( ta > tb )
   {
     return -1;
@@ -2222,9 +2222,102 @@ XLALCompareCoincInspiralByEffectiveSnr (
     return 1;
   }
   else
-  { 
+  {
     return 0;
-  } 
+  }
+}
+
+int  XLALComputeAndStoreEffectiveSNR( CoincInspiralTable *head, CoincInspiralStatistic *stat, CoincInspiralStatParams *par)
+  {
+  while (head)
+    {
+    head->stat = XLALCoincInspiralStat(head, *stat, par);
+    head = head->next;
+    }
+  return 0;
+  }
+
+int
+XLALCompareCoincInspiralByStat (
+    const void *a,
+    const void *b
+    )
+/* </lalVerbatim> */
+{
+  const CoincInspiralTable *aPtr = *((const CoincInspiralTable * const *)a);
+  const CoincInspiralTable *bPtr = *((const CoincInspiralTable * const *)b);
+  REAL4 ta, tb;
+  ta = aPtr->stat;
+  tb = bPtr->stat;
+
+  if ( ta > tb )
+  {
+    return -1;
+  }
+  else if ( ta < tb )
+  {
+    return 1;
+  }
+  else
+  {
+    return 0;
+  }
+}
+
+/* <lalVerbatim file="CoincInspiralUtilsCP"> */
+CoincInspiralTable *
+XLALSortCoincInspiralByStat (
+    CoincInspiralTable  *eventHead,
+    int(*comparfunc)    (const void *, const void *),
+    CoincInspiralStatParams *statParams,
+    CoincInspiralStatistic *stat
+    )
+{
+/* </lalVerbatim> */
+  INT4                   i;
+  INT4                   numEvents = 0;
+  CoincInspiralTable    *thisEvent = NULL;
+  CoincInspiralTable   **eventHandle = NULL;
+
+  /* count the number of events in the linked list */
+  for ( thisEvent = eventHead; thisEvent; thisEvent = thisEvent->next )
+  {
+    ++numEvents;
+  }
+
+  if ( ! numEvents )
+  {
+     XLALPrintInfo(
+      "XLALSortCoincInspiral: Empty coincInspiral passed as input" );
+    return( eventHead );
+  }
+
+  set_eff_snr( eventHead, stat, statParams);
+
+  /* allocate memory for an array of pts to sort and populate array */
+  eventHandle = (CoincInspiralTable **)
+    LALCalloc( numEvents, sizeof(CoincInspiralTable *) );
+  for ( i = 0, thisEvent = eventHead; i < numEvents;
+      ++i, thisEvent = thisEvent->next )
+  {
+    eventHandle[i] = thisEvent;
+  }
+
+  /* qsort the array using the specified function */
+  qsort( eventHandle, numEvents, sizeof(eventHandle[0]), comparfunc );
+
+  /* re-link the linked list in the right order */
+  thisEvent = eventHead = eventHandle[0];
+  for ( i = 1; i < numEvents; ++i )
+  {
+    thisEvent = thisEvent->next = eventHandle[i];
+  }
+  thisEvent->next = NULL;
+
+  /* free the internal memory */
+  LALFree( eventHandle );
+
+  return( eventHead );
 }
 
 

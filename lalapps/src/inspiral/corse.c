@@ -1102,14 +1102,14 @@ int main( int argc, char *argv[] )
   {
     if ( vrbflg ) fprintf( stdout,
         "sorting zero-lag coinc inspiral trigger list by effective snr..." );
-    coincZeroHead = XLALSortCoincInspiral( coincZeroHead,
-        *XLALCompareCoincInspiralByEffectiveSnr );
+    coincZeroHead = XLALSortCoincInspiralByStat( coincZeroHead,
+        *XLALCompareCoincInspiralByStat, &bittenLParams, &coincstat );
     if ( vrbflg ) fprintf( stdout, "done\n" );
 
     if ( vrbflg ) fprintf( stdout,
         "sorting slide coinc inspiral trigger list by effective snr..." );
-    coincSlideHead = XLALSortCoincInspiral( coincSlideHead,
-        *XLALCompareCoincInspiralByEffectiveSnr );
+    coincSlideHead = XLALSortCoincInspiralByStat( coincSlideHead,
+        *XLALCompareCoincInspiralByStat, &bittenLParams, &coincstat );
     if ( vrbflg ) fprintf( stdout, "done\n" );
   }
   else

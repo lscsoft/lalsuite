@@ -444,6 +444,12 @@ LALCompareSearchSummaryByInTime (
     );
 
 int
+XLALCompareCoincInspiralByStat (
+    const void *a,
+    const void *b
+    );
+
+int
 LALCompareSearchSummaryByOutTime (
     const void *a,
     const void *b
@@ -946,6 +952,11 @@ XLALCoincInspiralStat(
     CoincInspiralStatParams    *bittenLParams
     );
 
+int XLALComputeAndStoreEffectiveSNR(   	CoincInspiralTable *head, 
+					CoincInspiralStatistic *stat, 
+					CoincInspiralStatParams *par
+    );
+
 int 
 XLALClusterCoincInspiralTable (
     CoincInspiralTable        **coincList,
@@ -971,6 +982,15 @@ XLALSortCoincInspiral (
     CoincInspiralTable  *eventHead,
     int(*comparfunc)    (const void *, const void *)
     );
+
+CoincInspiralTable *
+XLALSortCoincInspiralByStat (
+    CoincInspiralTable  *eventHead,
+    int(*comparfunc)    (const void *, const void *),
+    CoincInspiralStatParams *statParams,
+    CoincInspiralStatistic *stat
+    );
+
 
 int
 XLALCoincInspiralIfos (
