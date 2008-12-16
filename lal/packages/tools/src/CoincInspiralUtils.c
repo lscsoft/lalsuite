@@ -2292,7 +2292,7 @@ XLALSortCoincInspiralByStat (
     return( eventHead );
   }
 
-  set_eff_snr( eventHead, stat, statParams);
+  XLALComputeAndStoreEffectiveSNR( eventHead, stat, statParams);
 
   /* allocate memory for an array of pts to sort and populate array */
   eventHandle = (CoincInspiralTable **)
