@@ -260,11 +260,11 @@ cp.read(opts.config_file)
 
 ## set the option to make remote calculations for some Virgo qscans
 depIfo = 'V1'
-cp.set('q-datafind','remote-ifo',depIfo)
-cp.set('foreground-qscan','remote-ifo',depIfo)
-cp.set('background-qscan','remote-ifo',depIfo)
-cp.set('foreground-seismic-qscan','remote-ifo',depIfo)
-cp.set('background-seismic-qscan','remote-ifo',depIfo)
+cp.set('followup-q-datafind','remote-ifo',depIfo)
+cp.set('followup-foreground-qscan','remote-ifo',depIfo)
+cp.set('followup-background-qscan','remote-ifo',depIfo)
+cp.set('followup-foreground-seismic-qscan','remote-ifo',depIfo)
+cp.set('followup-background-seismic-qscan','remote-ifo',depIfo)
 
 ## get the directory where the code is run
 currentPath = os.path.abspath('.')
@@ -351,8 +351,8 @@ os.system('mkdir -p '+depIfoDir+'/TIMES')
 
 # Copy the qscan configuration files
 for depQscan in depQscanList:
-  if cp.has_option(depQscan, depIfoIniConfig):
-    qscanConfig = string.strip(cp.get(depQscan, depIfoIniConfig))
+  if cp.has_option("followup-"+depQscan, depIfoIniConfig):
+    qscanConfig = string.strip(cp.get("followup-"+depQscan, depIfoIniConfig))
     if qscanConfig!='':
       print 'copy '+qscanConfig+' -----> '+depIfoDir+'/CONFIG/'+depQscan+'_config.txt'
       os.system('cp '+qscanConfig+' '+depIfoDir+'/CONFIG/'+depQscan+'_config.txt')
@@ -369,7 +369,7 @@ os.system('cp '+scriptPath+'/wscan_in2p3.sh '+depIfoDir+'/SCRIPTS/')
 os.system('cp '+scriptPath+'/wscanlite_in2p3.sh '+depIfoDir+'/SCRIPTS/')
 os.system('cp '+scriptPath+'/prepare_sendback.py '+depIfoDir)
 os.system('cp '+scriptPath+'/virgo_qscan_in2p3.py '+depIfoDir)
-depIfoWebForeground = string.strip(cp.get('foreground-qscan', depIfoIniWeb))
+depIfoWebForeground = string.strip(cp.get('followup-foreground-qscan', depIfoIniWeb))
 if not depIfoWebForeground.startswith('http://virgo.in2p3.fr/followups/'):
   print('\nWARNING for foreground qscans:')
   print('   wrong web address : '+depIfoWebForeground)
@@ -380,7 +380,7 @@ else:
   os.system('sed -e \'s|@foreground@|'+depIfoWebForeground+'|\' '+depIfoDir+'/virgo_qscan_in2p3.py > '+depIfoDir+'/virgo_qscan_in2p3.py.tmp')
   os.system('mv -f '+depIfoDir+'/virgo_qscan_in2p3.py.tmp '+depIfoDir+'/virgo_qscan_in2p3.py')
   os.system('chmod +x '+depIfoDir+'/virgo_qscan_in2p3.py')
-depIfoWebForegroundSeismic = string.strip(cp.get('foreground-seismic-qscan', depIfoIniWeb))
+depIfoWebForegroundSeismic = string.strip(cp.get('followup-foreground-seismic-qscan', depIfoIniWeb))
 if not depIfoWebForegroundSeismic.startswith('http://virgo.in2p3.fr/followups/'):
   print('\nWARNING for foreground-seismic qscans:')
   print('   wrong web address : '+depIfoWebForegroundSeismic)
@@ -526,7 +526,7 @@ if not opts.disable_followup and not opts.read_times:
 
       # MCMC JOBS
       # run multiple MCMC chains for each trigger (1 chain = 1 node)
-      chainNumber = string.strip(cp.get('mcmc','chain_nb'))
+      chainNumber = string.strip(cp.get('followup-mcmc','chain_nb'))
       mcmcIdList = []
       for k in range(int(chainNumber)):
         randomseed = [str(trig.gpsTime[ifo] + k).split('.')[0][5:9],str(trig.gpsTime[ifo]).split('.')[1]]
