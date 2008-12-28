@@ -144,6 +144,8 @@ typedef struct {
 
   INT4 integrationMethod; /**< 0 = 2D Gauss-Kronod, 1 = 2D Vegas Monte-Carlo,  */
 
+  BOOLEAN SignalOnly;	/**< don't generate noise-draws: will result in non-random 'signal only' values of F and B */
+
   BOOLEAN version;	/**< output version-info */
 } UserInput_t;
 
@@ -223,9 +225,6 @@ int main(int argc,char *argv[])
   /* turn off default GSL error handler */
   gsl_set_error_handler_off ();
 
-  /* set LAL error-handler */
-  lal_errhandler = LAL_ERR_EXIT;
-
   /* register all user-variable */
   LAL_CALL (LALGetDebugLevel(&status, argc, argv, 'v'), &status);
   LogSetLevel(lalDebugLevel);
@@ -255,22 +254,32 @@ int main(int argc,char *argv[])
     return 1;
   }
 
-  /* ---------- generate numDraws random draws of signal + noise ==> x_mu_i */
-  if ( XLALsynthesizeNoise( &n_mu_i, GV.M_mu_nu, GV.rng, uvar.numDraws ) ) {
-    LogPrintf (LOG_CRITICAL, "XLALsynthesizeNoise() failed with error = %d\n", xlalErrno );
-    return 1;
-  }
-
   /* ----- data = noise + signal: x_mu = n_mu + s_mu  ----- */
   if ( ( x_mu_i = gsl_matrix_calloc ( uvar.numDraws, 4 ) ) == NULL ) {
     LogPrintf ( LOG_CRITICAL, "%s: gsl_matrix_calloc(%d,4) failed.\n", fn, uvar.numDraws);
     return XLAL_ENOMEM;
   }
 
+  if ( ! uvar.SignalOnly )
+    {
+      if ( XLALsynthesizeNoise( &n_mu_i, GV.M_mu_nu, GV.rng, uvar.numDraws ) ) {
+	LogPrintf (LOG_CRITICAL, "XLALsynthesizeNoise() failed with error = %d\n", xlalErrno );
+	return 1;
+      }
+    }
+  else
+    {
+      if ( ( n_mu_i = gsl_matrix_calloc ( uvar.numDraws, 4 ) ) == NULL ) {
+	LogPrintf ( LOG_CRITICAL, "%s: gsl_matrix_calloc(%d,4) failed.\n", fn, uvar.numDraws);
+	return XLAL_ENOMEM;
+      }
+    } /* if SignalOnly */
+
   if ( (gslstat = gsl_matrix_memcpy (x_mu_i, n_mu_i))  ) {
     LogPrintf ( LOG_CRITICAL, "%s: gsl_matrix_memcpy() failed): %s\n", fn, gsl_strerror (gslstat) );
     return XLAL_EDOM;
   }
+
   if ( (gslstat = gsl_matrix_add (x_mu_i, s_mu_i)) ) {
     LogPrintf ( LOG_CRITICAL, "%s: gsl_matrix_add() failed): %s\n", fn, gsl_strerror (gslstat) );
     return XLAL_EDOM;
@@ -368,6 +377,7 @@ int main(int argc,char *argv[])
   gsl_vector_free ( lnL );
   gsl_vector_free ( Fstat );
   gsl_matrix_free ( x_mu_i );
+  gsl_matrix_free ( n_mu_i );
   gsl_vector_free ( Bstat );
 
   gsl_rng_free (GV.rng);
@@ -425,6 +435,8 @@ initUserVars (LALStatus *status, UserInput_t *uvar )
 
   LALregINTUserStruct(status, integrationMethod,'m', UVAR_OPTIONAL, "2D Integration-method: 0=Gauss-Kronod, 1=Monte-Carlo(Vegas)");
   LALregREALUserStruct(status,	numMCpoints,	'M', UVAR_OPTIONAL, "Number of points to use in Monte-Carlo integration");
+
+  LALregBOOLUserStruct(status,	SignalOnly,     'S', UVAR_SPECIAL,  "No noise-draws: will result in non-random 'signal only' values for F and B");
 
   LALregBOOLUserStruct(status,	version,        'V', UVAR_SPECIAL,   "Output code version");
 
@@ -947,7 +959,6 @@ XLALcomputeBstatisticMC ( gsl_vector **Bstat,		/**< [OUT] vector of numDraws B-s
   gsl_monte_vegas_state * MCS_vegas = gsl_monte_vegas_alloc ( 2 );
   gsl_monte_function F;
   integrationParams_t pars;
-  double prefact = 2.0 * 7.87480497286121;	/* 2 * sqrt(2) * pi^(3/2) */
   UINT4 row, numDraws;
   int gslstat;
 
@@ -1025,7 +1036,7 @@ XLALcomputeBstatisticMC ( gsl_vector **Bstat,		/**< [OUT] vector of numDraws B-s
 	LogPrintf ( LOG_CRITICAL, "%s: row = %d: gsl_monte_vegas_integrate() failed: %s\n", fn, row, gsl_strerror (gslstat) );
 	return 1;
       }
-      gsl_vector_set ( *Bstat, row, prefact * Bb );
+      gsl_vector_set ( *Bstat, row, 2.0 * log(Bb) );
 
     } /* row < numDraws */
 
@@ -1048,7 +1059,6 @@ XLALcomputeBstatisticGauss ( gsl_vector **Bstat,	/**< [OUT] vector of numDraws B
 {
   const char *fn = "XLALcomputeBstatisticGauss()";
 
-  double prefact = 2.0 * 7.87480497286121;	/* 2 * sqrt(2) * pi^(3/2) */
   UINT4 row, numDraws;
   int gslstat;
   double epsabs = 0;
@@ -1128,7 +1138,7 @@ XLALcomputeBstatisticGauss ( gsl_vector **Bstat,	/**< [OUT] vector of numDraws B
 	return 1;
       }
 
-      gsl_vector_set ( *Bstat, row, prefact * Bb );
+      gsl_vector_set ( *Bstat, row, 2.0 * log(Bb) );
 
     } /* row < numDraws */
 
