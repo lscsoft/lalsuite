@@ -100,18 +100,22 @@
  */
 typedef struct {
   REAL8 h0;
+  REAL8 h0Band;
+  REAL8 SNR;		/**< if > 0: alternative to [h0,h0+h0Band]: fix signal SNR */
   REAL8 cosi;
+  REAL8 cosiBand;
   REAL8 psi;
+  REAL8 psiBand;
   REAL8 phi0;
-} AmpParams_t;
+  REAL8 phi0Band;
+} AmpParamsRange_t;
 
 /** Configuration settings required for and defining a coherent pulsar search.
  * These are 'pre-processed' settings, which have been derived from the user-input.
  */
 typedef struct {
   gsl_matrix *M_mu_nu;		/**< antenna-pattern matrix and normalization */
-  AmpParams_t AmpMin;		/**< signal amplitude-parameters: lower bound on value-ranges */
-  AmpParams_t AmpBand;		/**< signal ampltiude-parameters: band-widths on value-ranges */
+  AmpParamsRange_t AmpRange;	/**< signal amplitude-parameter ranges: lower bounds + bands */
   gsl_rng * rng;		/**< gsl random-number generator */
 
 } ConfigVariables;
@@ -126,6 +130,7 @@ typedef struct {
   /* amplitude parameters + ranges */
   REAL8 h0;		/**< overall GW amplitude h0 */
   REAL8 h0Band;		/**< randomize signal within [h0, h0+Band] with uniform prior */
+  REAL8 SNR;		/**< specify fixed SNR: adjust h0 to obtain signal of this SNR */
   REAL8 cosi;		/**< cos(inclination angle). If not set: randomize within [-1,1] */
   REAL8 psi;		/**< polarization angle psi. If not set: randomize within [-pi/4,pi/4] */
   REAL8 phi0;		/**< initial GW phase phi_0. If not set: randomize within [0, 2pi] */
@@ -168,11 +173,12 @@ int main(int argc,char *argv[]);
 void initUserVars (LALStatus *status, UserInput_t *uvar );
 int InitCode ( ConfigVariables *cfg, const UserInput_t *uvar );
 
-int XLALsynthesizeSignals ( gsl_matrix **A_Mu_i, gsl_matrix **s_mu_i, gsl_matrix **Amp_i, const gsl_matrix *M_mu_nu, AmpParams_t AmpMin, AmpParams_t AmpBand,
+int XLALsynthesizeSignals ( gsl_matrix **A_Mu_i, gsl_matrix **s_mu_i, gsl_matrix **Amp_i, gsl_vector **rho2,
+			    const gsl_matrix *M_mu_nu, AmpParamsRange_t AmpRange,
 			    gsl_rng * rnd, UINT4 numDraws);
 int XLALsynthesizeNoise ( gsl_matrix **n_mu_i, const gsl_matrix *M_mu_nu, gsl_rng * rng, UINT4 numDraws );
 
-int XLALcomputeLogLikelihood ( gsl_vector **lnL, gsl_vector **rho2, const gsl_matrix *A_Mu_i, const gsl_matrix *s_mu_i, const gsl_matrix *x_mu_i);
+int XLALcomputeLogLikelihood ( gsl_vector **lnL, const gsl_matrix *A_Mu_i, const gsl_matrix *s_mu_i, const gsl_matrix *x_mu_i);
 int XLALcomputeFstatistic ( gsl_vector **Fstat, const gsl_matrix *M_mu_nu, const gsl_matrix *x_mu_i );
 
 int XLALcomputeBstatisticMC ( gsl_vector **Bstat, const gsl_matrix *M_mu_nu, const gsl_matrix *x_mu_i, gsl_rng * rng, UINT4 numMCpoints );
@@ -249,7 +255,7 @@ int main(int argc,char *argv[])
   }
 
   /* ---------- generate numDraws random draws of signals (A^mu, s_mu) */
-  if ( XLALsynthesizeSignals( &A_Mu_i, &s_mu_i, &Amp_i, GV.M_mu_nu, GV.AmpMin, GV.AmpBand, GV.rng, uvar.numDraws ) ) {
+  if ( XLALsynthesizeSignals( &A_Mu_i, &s_mu_i, &Amp_i, &rho2, GV.M_mu_nu, GV.AmpRange, GV.rng, uvar.numDraws ) ) {
     LogPrintf (LOG_CRITICAL, "XLALsynthesizeSignal() failed with error = %d\n", xlalErrno );
     return 1;
   }
@@ -286,7 +292,7 @@ int main(int argc,char *argv[])
   }
 
   /* ---------- compute log likelihood ratio lnL ---------- */
-  if ( XLALcomputeLogLikelihood ( &lnL, &rho2, A_Mu_i, s_mu_i, x_mu_i) ) {
+  if ( XLALcomputeLogLikelihood ( &lnL, A_Mu_i, s_mu_i, x_mu_i) ) {
     LogPrintf (LOG_CRITICAL, "XLALcomputeLogLikelihood() failed with error = %d\n", xlalErrno );
     return 1;
   }
@@ -419,6 +425,7 @@ initUserVars (LALStatus *status, UserInput_t *uvar )
 
   LALregREALUserStruct(status,	h0,		's', UVAR_OPTIONAL, "Overall GW amplitude h0");
   LALregREALUserStruct(status,	h0Band,		 0,  UVAR_OPTIONAL, "Randomize amplitude within [h0, h0+h0Band] with uniform prior");
+  LALregREALUserStruct(status,	SNR,		 0,  UVAR_OPTIONAL, "Alternative: adjust h0 to obtain signal of exactly this SNR");
 
   LALregREALUserStruct(status,	cosi,		'i', UVAR_OPTIONAL, "cos(inclination angle). If not set: randomize within [-1,1].");
   LALregREALUserStruct(status,	psi,		'Y', UVAR_OPTIONAL, "polarization angle psi. If not set: randomize within [-pi/4,pi/4].");
@@ -453,67 +460,76 @@ InitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
   const char *fn = "InitCode()";
 
   /* ----- parse user-input on signal amplitude-paramters + ranges ----- */
-  /* explicit range on h0 */
-  cfg->AmpMin.h0 = uvar->h0;
-  cfg->AmpBand.h0 = uvar->h0Band;
+
+  if ( LALUserVarWasSet ( &uvar->SNR ) && ( LALUserVarWasSet ( &uvar->h0 ) || LALUserVarWasSet (&uvar->h0Band) ) )
+    {
+      LogPrintf (LOG_CRITICAL, "Don't specify either of {--h0,--h0Band} and --SNR\n");
+      XLAL_ERROR( fn, SYNTHBSTAT_EINPUT );
+    }
+
+  cfg->AmpRange.h0 = uvar->h0;
+  cfg->AmpRange.h0Band = uvar->h0Band;
+  cfg->AmpRange.SNR = uvar->SNR;
+
   /* implict ranges on cosi, psi and phi0 if not specified by user */
   if ( LALUserVarWasSet ( &uvar->cosi ) )
     {
-      cfg->AmpMin.cosi = uvar->cosi;
-      cfg->AmpBand.cosi = 0;
+      cfg->AmpRange.cosi = uvar->cosi;
+      cfg->AmpRange.cosiBand = 0;
     }
   else
     {
-      cfg->AmpMin.cosi = -1;
-      cfg->AmpBand.cosi = 2;
+      cfg->AmpRange.cosi = -1;
+      cfg->AmpRange.cosiBand = 2;
     }
   if ( LALUserVarWasSet ( &uvar->psi ) )
     {
-      cfg->AmpMin.psi = uvar->psi;
-      cfg->AmpBand.psi = 0;
+      cfg->AmpRange.psi = uvar->psi;
+      cfg->AmpRange.psiBand = 0;
     }
   else
     {
-      cfg->AmpMin.psi = - LAL_PI_4;
-      cfg->AmpBand.psi = LAL_PI_2;
+      cfg->AmpRange.psi = - LAL_PI_4;
+      cfg->AmpRange.psiBand = LAL_PI_2;
     }
   if ( LALUserVarWasSet ( &uvar->phi0 ) )
     {
-      cfg->AmpMin.phi0 = uvar->phi0;
-      cfg->AmpBand.phi0 = 0;
+      cfg->AmpRange.phi0 = uvar->phi0;
+      cfg->AmpRange.phi0Band = 0;
     }
   else
     {
-      cfg->AmpMin.phi0 = 0;
-      cfg->AmpBand.phi0 = LAL_TWOPI;
+      cfg->AmpRange.phi0 = 0;
+      cfg->AmpRange.phi0Band = LAL_TWOPI;
     }
 
   /* ----- set up M_mu_nu matrix ----- */
   if ( ( cfg->M_mu_nu = gsl_matrix_calloc ( 4, 4 )) == NULL ) {
     LogPrintf (LOG_CRITICAL, "%s: gsl_matrix_calloc(4,4) failed.\n", fn);
-    return SYNTHBSTAT_EMEM;
+    XLAL_ERROR( fn, SYNTHBSTAT_EMEM );
   }
-  {
-    gsl_matrix_set (cfg->M_mu_nu, 0, 0,   uvar->M11 );
-    gsl_matrix_set (cfg->M_mu_nu, 1, 1,   uvar->M22 );
-    gsl_matrix_set (cfg->M_mu_nu, 0, 1,   uvar->M12 );
-    gsl_matrix_set (cfg->M_mu_nu, 1, 0,   uvar->M12 );
 
-    gsl_matrix_set (cfg->M_mu_nu, 2, 2,   uvar->M11 );
-    gsl_matrix_set (cfg->M_mu_nu, 3, 3,   uvar->M22 );
-    gsl_matrix_set (cfg->M_mu_nu, 2, 3,   uvar->M12 );
-    gsl_matrix_set (cfg->M_mu_nu, 3, 2,   uvar->M12 );
+  gsl_matrix_set (cfg->M_mu_nu, 0, 0,   uvar->M11 );
+  gsl_matrix_set (cfg->M_mu_nu, 1, 1,   uvar->M22 );
+  gsl_matrix_set (cfg->M_mu_nu, 0, 1,   uvar->M12 );
+  gsl_matrix_set (cfg->M_mu_nu, 1, 0,   uvar->M12 );
 
-    /* RAA components, only non-zero if NOT using the LWL approximation */
-    gsl_matrix_set (cfg->M_mu_nu, 0, 3,   uvar->M14 );
-    gsl_matrix_set (cfg->M_mu_nu, 1, 2,   -uvar->M14 );
-    gsl_matrix_set (cfg->M_mu_nu, 3, 0,   uvar->M14 );
-    gsl_matrix_set (cfg->M_mu_nu, 2, 1,   -uvar->M14 );
+  gsl_matrix_set (cfg->M_mu_nu, 2, 2,   uvar->M11 );
+  gsl_matrix_set (cfg->M_mu_nu, 3, 3,   uvar->M22 );
+  gsl_matrix_set (cfg->M_mu_nu, 2, 3,   uvar->M12 );
+  gsl_matrix_set (cfg->M_mu_nu, 3, 2,   uvar->M12 );
 
-  }
+  /* RAA components, only non-zero if NOT using the LWL approximation */
+  gsl_matrix_set (cfg->M_mu_nu, 0, 3,   uvar->M14 );
+  gsl_matrix_set (cfg->M_mu_nu, 1, 2,   -uvar->M14 );
+  gsl_matrix_set (cfg->M_mu_nu, 3, 0,   uvar->M14 );
+  gsl_matrix_set (cfg->M_mu_nu, 2, 1,   -uvar->M14 );
 
   /* ----- initialize random-number generator ----- */
-  /* read out environment variables GSL_RNG_xxx */
+  /* read out environment variables GSL_RNG_xxx
+   * GSL_RNG_SEED: use to set random seed: defult = 0
+   * GSL_RNG_TYPE: type of random-number generator to use: default = 'mt19937'
+   */
   gsl_rng_env_setup ();
   cfg->rng = gsl_rng_alloc (gsl_rng_default);
 
@@ -532,9 +548,9 @@ int
 XLALsynthesizeSignals ( gsl_matrix **A_Mu_i,		/**< [OUT] list of numDraws 4D line-vectors {A^nu} */
 			gsl_matrix **s_mu_i,		/**< [OUT] list of numDraws 4D line-vectors {s_mu = M_mu_nu A^nu} */
 			gsl_matrix **Amp_i,		/**< [OUT] list of numDraws 4D amplitude-parameters {h0, cosi, psi, phi} */
+			gsl_vector **rho2,		/**< [OUT] optimal SNR^2 */
 			const gsl_matrix *M_mu_nu,	/**< antenna-pattern matrix M_mu_nu */
-			AmpParams_t AmpMin,		/**< signal amplitude-parameters: lower bound on value-ranges */
-			AmpParams_t AmpBand,		/**< signal ampltiude-parameters: band-widths on value-ranges */
+			AmpParamsRange_t AmpRange,	/**< signal amplitude-parameters ranges: lower bound + bands */
 			gsl_rng * rng,			/**< gsl random-number generator */
 			UINT4 numDraws			/**< number of random draws to synthesize */
 			)
@@ -542,16 +558,17 @@ XLALsynthesizeSignals ( gsl_matrix **A_Mu_i,		/**< [OUT] list of numDraws 4D lin
   const char *fn = "XLALsynthesizeSignals()";
   UINT4 row;
 
-  REAL8 h0Min   = AmpMin.h0;
-  REAL8 h0Max   = h0Min + AmpBand.h0;
-  REAL8 cosiMin = AmpMin.cosi;
-  REAL8 cosiMax = cosiMin + AmpBand.cosi;
-  REAL8 psiMin  = AmpMin.psi;
-  REAL8 psiMax  = psiMin + AmpBand.psi;
-  REAL8 phi0Min = AmpMin.phi0;
-  REAL8 phi0Max = phi0Min + AmpBand.phi0;
-  REAL8 h0, cosi, psi, phi0;
+  REAL8 h0Min, h0Max;
+  REAL8 cosiMin = AmpRange.cosi;
+  REAL8 cosiMax = cosiMin + AmpRange.cosiBand;
+  REAL8 psiMin  = AmpRange.psi;
+  REAL8 psiMax  = psiMin + AmpRange.psiBand;
+  REAL8 phi0Min = AmpRange.phi0;
+  REAL8 phi0Max = phi0Min + AmpRange.phi0Band;
+  REAL8 SNR = AmpRange.SNR;
   gsl_vector *A_Mu, *s_mu;
+  REAL8 res_rho2;
+
   int gslstat;
 
   /* ----- check input arguments ----- */
@@ -582,6 +599,11 @@ XLALsynthesizeSignals ( gsl_matrix **A_Mu_i,		/**< [OUT] list of numDraws 4D lin
     return XLAL_ENOMEM;
   }
 
+  if ( ( (*rho2) = gsl_vector_calloc ( numDraws )) == NULL ) {
+    LogPrintf ( LOG_CRITICAL, "%s: gsl_vector_calloc (%d) failed.\n", fn, numDraws);
+    return XLAL_ENOMEM;
+  }
+
   /* ----- allocate temporary interal storage vectors */
   if ( (A_Mu = gsl_vector_alloc ( 4 )) == NULL ) {
     LogPrintf ( LOG_CRITICAL, "%s: gsl_vector_alloc (4) failed.\n", fn);
@@ -593,8 +615,21 @@ XLALsynthesizeSignals ( gsl_matrix **A_Mu_i,		/**< [OUT] list of numDraws 4D lin
     return XLAL_ENOMEM;
   }
 
+  if ( SNR > 0 )
+    {
+      h0Min = 1;
+      h0Max = 1;
+    }
+  else
+    {
+      h0Min = AmpRange.h0;
+      h0Max = h0Min + AmpRange.h0Band;
+    }
+
   for ( row = 0; row < numDraws; row ++ )
     {
+      REAL8 h0, cosi, psi, phi0;
+
       h0   = gsl_ran_flat ( rng, h0Min, h0Max );
       cosi = gsl_ran_flat ( rng, cosiMin, cosiMax );
       psi  = gsl_ran_flat ( rng, psiMin, psiMax );
@@ -615,6 +650,23 @@ XLALsynthesizeSignals ( gsl_matrix **A_Mu_i,		/**< [OUT] list of numDraws 4D lin
 	LogPrintf ( LOG_CRITICAL, "%s: gsl_blas_dsymv(M_mu_nu * A^mu failed): %s\n", fn, gsl_strerror (gslstat) );
 	return XLAL_EDOM;
       }
+
+      /* compute optimal SNR for this signal: rho2 = A^mu M_{mu,nu} A^nu = A^mu s_mu */
+      if ( (gslstat = gsl_blas_ddot (A_Mu, s_mu, &res_rho2)) ) {
+	LogPrintf ( LOG_CRITICAL, "%s: lnL = gsl_blas_ddot(A^mu * s_mu) failed: %s\n", fn, gsl_strerror (gslstat) );
+	return XLAL_EDOM;
+      }
+
+      /* if specified SNR: rescale signal to this SNR */
+      if ( SNR > 0 ) {
+	REAL8 rescale_h0 = SNR / sqrt ( res_rho2 );
+	h0 *= rescale_h0;
+	res_rho2 = SQ(SNR);
+	gsl_vector_scale ( A_Mu, rescale_h0);
+	gsl_vector_scale ( s_mu, rescale_h0);
+      }
+
+      gsl_vector_set ( *rho2, row, res_rho2 );
 
       gsl_matrix_set ( *Amp_i,  row, 0, h0   );
       gsl_matrix_set ( *Amp_i,  row, 1, cosi );
@@ -737,7 +789,6 @@ XLALsynthesizeNoise ( gsl_matrix **n_mu_i,		/**< [OUT] list of numDraws 4D line-
  */
 int
 XLALcomputeLogLikelihood ( gsl_vector **lnL,		/**< [OUT] log-likelihood vector */
-			   gsl_vector **rho2,		/**< [OUT] optimal SNR^2 */
 			   const gsl_matrix *A_Mu_i,	/**< 4D amplitude-vector (FIXME: numDraws) */
 			   const gsl_matrix *s_mu_i,	/**< 4D signal-component vector s_mu = (s|h_mu) [FIXME] */
 			   const gsl_matrix *x_mu_i	/**< numDraws x 4D data-vectors x_mu */
@@ -747,11 +798,11 @@ XLALcomputeLogLikelihood ( gsl_vector **lnL,		/**< [OUT] log-likelihood vector *
   int gslstat;
   UINT4 row, numDraws;
   gsl_matrix *tmp;
-  REAL8 res_lnL, res_rho2;
+  REAL8 res_lnL;
 
   /* ----- check input arguments ----- */
-  if ( ((*lnL) != NULL) || ((*rho2) != NULL) ) {
-    LogPrintf ( LOG_CRITICAL, "%s: output vectors lnL, rho2 must be set to NULL.\n", fn);
+  if ( (*lnL) != NULL )  {
+    LogPrintf ( LOG_CRITICAL, "%s: output vector lnL must be set to NULL.\n", fn);
     return XLAL_EINVAL;
   }
   if ( !A_Mu_i || !s_mu_i || !x_mu_i ) {
@@ -783,10 +834,6 @@ XLALcomputeLogLikelihood ( gsl_vector **lnL,		/**< [OUT] log-likelihood vector *
     LogPrintf ( LOG_CRITICAL, "%s: gsl_vector_calloc (%d) failed.\n", fn, numDraws);
     return XLAL_ENOMEM;
   }
-  if ( ( (*rho2) = gsl_vector_calloc ( numDraws )) == NULL ) {
-    LogPrintf ( LOG_CRITICAL, "%s: gsl_vector_calloc (%d) failed.\n", fn, numDraws);
-    return XLAL_ENOMEM;
-  }
 
   /* ----- allocate temporary internal storage ---------- */
   if ( (tmp = gsl_matrix_alloc ( numDraws, 4 ) ) == NULL ) {
@@ -804,7 +851,6 @@ XLALcomputeLogLikelihood ( gsl_vector **lnL,		/**< [OUT] log-likelihood vector *
   for ( row=0; row < numDraws; row ++ )
     {
       gsl_vector_const_view A_Mu = gsl_matrix_const_row (A_Mu_i, row);
-      gsl_vector_const_view s_mu = gsl_matrix_const_row (s_mu_i, row);
       gsl_vector_const_view d_mu = gsl_matrix_const_row (tmp, row);
 
       /* Function: int gsl_blas_ddot (const gsl_vector * x, const gsl_vector * y, double * result)
@@ -815,13 +861,8 @@ XLALcomputeLogLikelihood ( gsl_vector **lnL,		/**< [OUT] log-likelihood vector *
 	return 1;
       }
 
-      if ( (gslstat = gsl_blas_ddot (&A_Mu.vector, &s_mu.vector, &res_rho2)) ) {
-	LogPrintf ( LOG_CRITICAL, "%s: lnL = gsl_blas_ddot(A^mu * s_mu) failed: %s\n", fn, gsl_strerror (gslstat) );
-	return 1;
-      }
-
       gsl_vector_set ( *lnL, row, res_lnL );
-      gsl_vector_set ( *rho2, row, res_rho2 );
+
 
     } /* for row < numDraws */
 
