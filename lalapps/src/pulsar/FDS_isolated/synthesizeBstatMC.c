@@ -722,7 +722,7 @@ XLALsynthesizeNoise ( gsl_matrix **n_mu_i,		/**< [OUT] list of numDraws 4D line-
     return XLAL_ENOMEM;
   }
 
-  /* ----- Cholesky decompose M_mu_nu = L^T * L ----- */
+  /* ----- Cholesky decompose M_mu_nu = L . L^T ----- */
   if ( (M_chol = gsl_matrix_calloc ( 4, 4 ) ) == NULL) {
     LogPrintf ( LOG_CRITICAL, "%s: gsl_matrix_calloc(4,4) failed\n", fn);
     return XLAL_ENOMEM;
@@ -758,7 +758,9 @@ XLALsynthesizeNoise ( gsl_matrix **n_mu_i,		/**< [OUT] list of numDraws 4D line-
       gsl_matrix_set (normal, row, 3,  gsl_ran_gaussian ( rng, 1.0 ) );
     } /* for row < numDraws */
 
-  /* use normal-variates with Cholesky decomposed matrix to get n_mu with cov(n_mu,n_nu) = M_mu_nu */
+  /* use four normal-variates {norm_nu} with Cholesky decomposed matrix L to get: n_mu = L_{mu nu} norm_nu
+   * which gives {n_\mu} satisfying cov(n_mu,n_nu) = M_mu_nu
+   */
   for ( row = 0; row < numDraws; row ++ )
     {
       gsl_vector_const_view normi = gsl_matrix_const_row ( normal, row );
@@ -768,7 +770,7 @@ XLALsynthesizeNoise ( gsl_matrix **n_mu_i,		/**< [OUT] list of numDraws 4D line-
        * compute the matrix-vector product and sum y = \alpha op(A) x + \beta y, where op(A) = A, A^T, A^H
        * for TransA = CblasNoTrans, CblasTrans, CblasConjTrans.
        */
-      if ( (gslstat = gsl_blas_dgemv (CblasNoTrans, 1.0, M_chol, &(normi.vector), 1.0, &(ni.vector))) ) {
+      if ( (gslstat = gsl_blas_dgemv (CblasNoTrans, 1.0, M_chol, &(normi.vector), 0.0, &(ni.vector))) ) {
 	LogPrintf ( LOG_CRITICAL, "%s: gsl_blas_dgemv(M_chol * ni) failed: %s\n", fn, gsl_strerror (gslstat) );
 	return 1;
       }
