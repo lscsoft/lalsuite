@@ -99,9 +99,9 @@
 /** Signal (amplitude) parameter ranges
  */
 typedef struct {
-  REAL8 h0;
-  REAL8 h0Band;
-  REAL8 SNR;		/**< if > 0: alternative to [h0,h0+h0Band]: fix signal SNR */
+  REAL8 h0Nat;		/**< h0 in *natural units* ie h0Nat = h0 * sqrt(T/Sn) */
+  REAL8 h0NatBand;	/**< draw h0Nat from Band [h0Nat, h0Nat + Band ] */
+  REAL8 SNR;		/**< if > 0: alternative to h0Nat/h0NatBand: fix optimal signal SNR */
   REAL8 cosi;
   REAL8 cosiBand;
   REAL8 psi;
@@ -128,18 +128,18 @@ typedef struct {
   BOOLEAN help;		/**< trigger output of help string */
 
   /* amplitude parameters + ranges */
-  REAL8 h0;		/**< overall GW amplitude h0 */
-  REAL8 h0Band;		/**< randomize signal within [h0, h0+Band] with uniform prior */
-  REAL8 SNR;		/**< specify fixed SNR: adjust h0 to obtain signal of this SNR */
+  REAL8 h0Nat;		/**< overall GW amplitude h0 in *natural units*: h0Nat = h0 * sqrt(T/Sn) */
+  REAL8 h0NatBand;	/**< randomize signal within [h0, h0+Band] with uniform prior */
+  REAL8 SNR;		/**< specify fixed SNR: adjust h0 to obtain signal of this optimal SNR */
   REAL8 cosi;		/**< cos(inclination angle). If not set: randomize within [-1,1] */
   REAL8 psi;		/**< polarization angle psi. If not set: randomize within [-pi/4,pi/4] */
   REAL8 phi0;		/**< initial GW phase phi_0. If not set: randomize within [0, 2pi] */
 
   /* Doppler parameters are not needed, only the input of the antenna-pattern matrix M_{mu nu} */
-  REAL8 M11;		/**< componentent {1,1} of M_{mu,nu}: T Sinv A */
-  REAL8 M22;		/**< componentent {2,2} of M_{mu,nu}: T Sinv B */
-  REAL8 M12;		/**< componentent {1,2} of M_{mu,nu}: T Sinv C */
-  REAL8 M14;            /**< componentent {1,4} of M_{mu,nu}: T Sinv E. Zero if using LWL. */
+  REAL8 A;		/**< componentent {1,1} of MNat_{mu,nu}: A = <|a|^2> */
+  REAL8 B;		/**< componentent {2,2} of MNat_{mu,nu}: B = <|b|^2> */
+  REAL8 C;		/**< componentent {1,2} of MNat_{mu,nu}: C = <Re(b a*)> */
+  REAL8 E;              /**< componentent {1,4} of MNat_{mu,nu}: E = <Im(b a*)> */
 
   REAL8 numDraws;	/**< number of random 'draws' to simulate for F-stat and B-stat */
 
@@ -156,10 +156,10 @@ typedef struct {
 
 
 typedef struct {
-  double M11;
-  double M22;
-  double M12;
-  double M14;
+  double A;
+  double B;
+  double C;
+  double E;
   const gsl_vector *x_mu;
   double cosi;		/**< only used for *inner* 2D Gauss-Kronod gsl-integration: value of cosi at which to integrate over psi */
 } integrationParams_t;
@@ -211,7 +211,7 @@ int main(int argc,char *argv[])
   UINT4 i;
 
   /* signal + data vectors */
-  gsl_matrix *Amp_i = NULL;		/**< numDraws signal amplitude-params {h0, cosi, psi, phi0} */
+  gsl_matrix *Amp_i = NULL;		/**< numDraws signal amplitude-params {h0Nat, cosi, psi, phi0} */
   gsl_matrix *A_Mu_i = NULL;		/**< list of 'numDraws' signal amplitude vectors {A^mu} */
   gsl_matrix *s_mu_i = NULL;		/**< list of 'numDraws' (covariant) signal amplitude vectors {s_mu = (s|h_mu) = M_mu_nu A^nu} */
   gsl_matrix *n_mu_i = NULL;		/**< list of 'numDraws' (covariant) noise vectors {n_mu = (n|h_mu)} */
@@ -350,7 +350,7 @@ int main(int argc,char *argv[])
       LALFree ( id1 ); LALFree ( id2 );
 
       /* append 'dataSummary' */
-      fprintf (fpStat, "%%%% h0        cosi       psi        phi0          n1         n2         n3         n4              rho2            lnL            2F           Bstat\n");
+      fprintf (fpStat, "%%%% h0Nat        cosi       psi        phi0          n1         n2         n3         n4              rho2            lnL            2F           Bstat\n");
       for ( i=0; i < Bstat->size; i ++ )
 	fprintf ( fpStat, "%10f %10f %10f %10f    %10f %10f %10f %10f    %12f    %12f   %12f   %12f\n",
 		  gsl_matrix_get ( Amp_i, i, 0 ),
@@ -418,23 +418,23 @@ initUserVars (LALStatus *status, UserInput_t *uvar )
 
   uvar->integrationMethod = 0;	/* Gauss-Kronod integration */
 
-  uvar->M14 = 0;	/* RAA approximation antenna-pattern matrix component M_{14}. Zero if using LWL */
+  uvar->E = 0;	/* RAA approximation antenna-pattern matrix component M_{14}. Zero if using LWL */
 
   /* register all our user-variables */
   LALregBOOLUserStruct(status,	help, 		'h', UVAR_HELP,     "Print this message");
 
-  LALregREALUserStruct(status,	h0,		's', UVAR_OPTIONAL, "Overall GW amplitude h0");
-  LALregREALUserStruct(status,	h0Band,		 0,  UVAR_OPTIONAL, "Randomize amplitude within [h0, h0+h0Band] with uniform prior");
-  LALregREALUserStruct(status,	SNR,		 0,  UVAR_OPTIONAL, "Alternative: adjust h0 to obtain signal of exactly this SNR");
+  LALregREALUserStruct(status,	h0Nat,		's', UVAR_OPTIONAL, "Overall GW amplitude h0 in *natural units*: h0Nat = h0 sqrt(T/Sn) ");
+  LALregREALUserStruct(status,	h0NatBand,	 0,  UVAR_OPTIONAL, "Randomize amplitude within [h0, h0+h0Band] with uniform prior");
+  LALregREALUserStruct(status,	SNR,		 0,  UVAR_OPTIONAL, "Alternative: adjust h0 to obtain signal of exactly this optimal SNR");
 
   LALregREALUserStruct(status,	cosi,		'i', UVAR_OPTIONAL, "cos(inclination angle). If not set: randomize within [-1,1].");
   LALregREALUserStruct(status,	psi,		'Y', UVAR_OPTIONAL, "polarization angle psi. If not set: randomize within [-pi/4,pi/4].");
   LALregREALUserStruct(status,	phi0,		'Y', UVAR_OPTIONAL, "initial GW phase phi_0. If not set: randomize within [0, 2pi]");
 
-  LALregREALUserStruct(status,	M11,	  	 0,  UVAR_REQUIRED, "Antenna-pattern matrix M_mu_nu: component {1,1} = T Sinv A");
-  LALregREALUserStruct(status,	M22,	  	 0,  UVAR_REQUIRED, "Antenna-pattern matrix M_mu_nu: component {2,2} = T Sinv B");
-  LALregREALUserStruct(status,	M12,	  	 0,  UVAR_REQUIRED, "Antenna-pattern matrix M_mu_nu: component {1,2} = T Sinv C");
-  LALregREALUserStruct(status,	M14,	  	 0,  UVAR_OPTIONAL, "Antenna-pattern matrix M_mu_nu: component {1,4} = T Sinv E");
+  LALregREALUserStruct(status,	A,	  	 0,  UVAR_REQUIRED, "Antenna-pattern matrix MNat_mu_nu: component {1,1} = A = <|a|^2>");
+  LALregREALUserStruct(status,	B,	  	 0,  UVAR_REQUIRED, "Antenna-pattern matrix MNat_mu_nu: component {2,2} = B = <|b|^2>");
+  LALregREALUserStruct(status,	C,	  	 0,  UVAR_REQUIRED, "Antenna-pattern matrix MNat_mu_nu: component {1,2} = C = <Re(b a*)>");
+  LALregREALUserStruct(status,	E,	  	 0,  UVAR_OPTIONAL, "Antenna-pattern matrix MNat_mu_nu: component {1,4} = E = <Im(b a*)>");
 
   LALregREALUserStruct(status,	numDraws,	'N', UVAR_OPTIONAL, "Number of random 'draws' to simulate for F-stat and B-stat");
 
@@ -461,14 +461,14 @@ InitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
 
   /* ----- parse user-input on signal amplitude-paramters + ranges ----- */
 
-  if ( LALUserVarWasSet ( &uvar->SNR ) && ( LALUserVarWasSet ( &uvar->h0 ) || LALUserVarWasSet (&uvar->h0Band) ) )
+  if ( LALUserVarWasSet ( &uvar->SNR ) && ( LALUserVarWasSet ( &uvar->h0Nat ) || LALUserVarWasSet (&uvar->h0NatBand) ) )
     {
       LogPrintf (LOG_CRITICAL, "Don't specify either of {--h0,--h0Band} and --SNR\n");
       XLAL_ERROR( fn, SYNTHBSTAT_EINPUT );
     }
 
-  cfg->AmpRange.h0 = uvar->h0;
-  cfg->AmpRange.h0Band = uvar->h0Band;
+  cfg->AmpRange.h0Nat = uvar->h0Nat;
+  cfg->AmpRange.h0NatBand = uvar->h0NatBand;
   cfg->AmpRange.SNR = uvar->SNR;
 
   /* implict ranges on cosi, psi and phi0 if not specified by user */
@@ -509,21 +509,21 @@ InitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
     XLAL_ERROR( fn, SYNTHBSTAT_EMEM );
   }
 
-  gsl_matrix_set (cfg->M_mu_nu, 0, 0,   uvar->M11 );
-  gsl_matrix_set (cfg->M_mu_nu, 1, 1,   uvar->M22 );
-  gsl_matrix_set (cfg->M_mu_nu, 0, 1,   uvar->M12 );
-  gsl_matrix_set (cfg->M_mu_nu, 1, 0,   uvar->M12 );
+  gsl_matrix_set (cfg->M_mu_nu, 0, 0,   uvar->A );
+  gsl_matrix_set (cfg->M_mu_nu, 1, 1,   uvar->B );
+  gsl_matrix_set (cfg->M_mu_nu, 0, 1,   uvar->C );
+  gsl_matrix_set (cfg->M_mu_nu, 1, 0,   uvar->C );
 
-  gsl_matrix_set (cfg->M_mu_nu, 2, 2,   uvar->M11 );
-  gsl_matrix_set (cfg->M_mu_nu, 3, 3,   uvar->M22 );
-  gsl_matrix_set (cfg->M_mu_nu, 2, 3,   uvar->M12 );
-  gsl_matrix_set (cfg->M_mu_nu, 3, 2,   uvar->M12 );
+  gsl_matrix_set (cfg->M_mu_nu, 2, 2,   uvar->A );
+  gsl_matrix_set (cfg->M_mu_nu, 3, 3,   uvar->B );
+  gsl_matrix_set (cfg->M_mu_nu, 2, 3,   uvar->C );
+  gsl_matrix_set (cfg->M_mu_nu, 3, 2,   uvar->C );
 
   /* RAA components, only non-zero if NOT using the LWL approximation */
-  gsl_matrix_set (cfg->M_mu_nu, 0, 3,   uvar->M14 );
-  gsl_matrix_set (cfg->M_mu_nu, 1, 2,   -uvar->M14 );
-  gsl_matrix_set (cfg->M_mu_nu, 3, 0,   uvar->M14 );
-  gsl_matrix_set (cfg->M_mu_nu, 2, 1,   -uvar->M14 );
+  gsl_matrix_set (cfg->M_mu_nu, 0, 3,   uvar->E );
+  gsl_matrix_set (cfg->M_mu_nu, 1, 2,   -uvar->E );
+  gsl_matrix_set (cfg->M_mu_nu, 3, 0,   uvar->E );
+  gsl_matrix_set (cfg->M_mu_nu, 2, 1,   -uvar->E );
 
   /* ----- initialize random-number generator ----- */
   /* read out environment variables GSL_RNG_xxx
@@ -558,7 +558,7 @@ XLALsynthesizeSignals ( gsl_matrix **A_Mu_i,		/**< [OUT] list of numDraws 4D lin
   const char *fn = "XLALsynthesizeSignals()";
   UINT4 row;
 
-  REAL8 h0Min, h0Max;
+  REAL8 h0NatMin, h0NatMax;
   REAL8 cosiMin = AmpRange.cosi;
   REAL8 cosiMax = cosiMin + AmpRange.cosiBand;
   REAL8 psiMin  = AmpRange.psi;
@@ -617,25 +617,25 @@ XLALsynthesizeSignals ( gsl_matrix **A_Mu_i,		/**< [OUT] list of numDraws 4D lin
 
   if ( SNR > 0 )
     {
-      h0Min = 1;
-      h0Max = 1;
+      h0NatMin = 1;
+      h0NatMax = 1;
     }
   else
     {
-      h0Min = AmpRange.h0;
-      h0Max = h0Min + AmpRange.h0Band;
+      h0NatMin = AmpRange.h0Nat;
+      h0NatMax = h0NatMin + AmpRange.h0NatBand;
     }
 
   for ( row = 0; row < numDraws; row ++ )
     {
-      REAL8 h0, cosi, psi, phi0;
+      REAL8 h0Nat, cosi, psi, phi0;
 
-      h0   = gsl_ran_flat ( rng, h0Min, h0Max );
+      h0Nat = gsl_ran_flat( rng, h0NatMin, h0NatMax );
       cosi = gsl_ran_flat ( rng, cosiMin, cosiMax );
       psi  = gsl_ran_flat ( rng, psiMin, psiMax );
       phi0 = gsl_ran_flat ( rng, phi0Min, phi0Max );
 
-      XLALAmplitudeParams2Vect ( A_Mu, h0, cosi, psi, phi0 );
+      XLALAmplitudeParams2Vect ( A_Mu, h0Nat, cosi, psi, phi0 );
 
       /* GSL-doc: int gsl_blas_dsymv (CBLAS_UPLO_t Uplo, double alpha, const gsl_matrix * A,
        *                              const gsl_vector * x, double beta, gsl_vector * y )
@@ -660,7 +660,7 @@ XLALsynthesizeSignals ( gsl_matrix **A_Mu_i,		/**< [OUT] list of numDraws 4D lin
       /* if specified SNR: rescale signal to this SNR */
       if ( SNR > 0 ) {
 	REAL8 rescale_h0 = SNR / sqrt ( res_rho2 );
-	h0 *= rescale_h0;
+	h0Nat *= rescale_h0;
 	res_rho2 = SQ(SNR);
 	gsl_vector_scale ( A_Mu, rescale_h0);
 	gsl_vector_scale ( s_mu, rescale_h0);
@@ -668,7 +668,7 @@ XLALsynthesizeSignals ( gsl_matrix **A_Mu_i,		/**< [OUT] list of numDraws 4D lin
 
       gsl_vector_set ( *rho2, row, res_rho2 );
 
-      gsl_matrix_set ( *Amp_i,  row, 0, h0   );
+      gsl_matrix_set ( *Amp_i,  row, 0, h0Nat   );
       gsl_matrix_set ( *Amp_i,  row, 1, cosi );
       gsl_matrix_set ( *Amp_i,  row, 2, psi  );
       gsl_matrix_set ( *Amp_i,  row, 3, phi0 );
@@ -1038,10 +1038,10 @@ XLALcomputeBstatisticMC ( gsl_vector **Bstat,		/**< [OUT] vector of numDraws B-s
 
 
   /* ----- prepare Monte-Carlo integrator ----- */
-  pars.M11 = gsl_matrix_get ( M_mu_nu, 0, 0 );
-  pars.M22 = gsl_matrix_get ( M_mu_nu, 1, 1 );
-  pars.M12 = gsl_matrix_get ( M_mu_nu, 0, 1 );
-  pars.M14 = gsl_matrix_get ( M_mu_nu, 0, 3 );
+  pars.A = gsl_matrix_get ( M_mu_nu, 0, 0 );
+  pars.B = gsl_matrix_get ( M_mu_nu, 1, 1 );
+  pars.C = gsl_matrix_get ( M_mu_nu, 0, 1 );
+  pars.E = gsl_matrix_get ( M_mu_nu, 0, 3 );
 
   F.f = &BstatIntegrand;
   F.dim = 2;
@@ -1145,10 +1145,10 @@ XLALcomputeBstatisticGauss ( gsl_vector **Bstat,	/**< [OUT] vector of numDraws B
   }
 
   /* ----- prepare Gauss-Kronod integrator ----- */
-  pars.M11 = gsl_matrix_get ( M_mu_nu, 0, 0 );
-  pars.M22 = gsl_matrix_get ( M_mu_nu, 1, 1 );
-  pars.M12 = gsl_matrix_get ( M_mu_nu, 0, 1 );
-  pars.M14 = gsl_matrix_get ( M_mu_nu, 0, 3 );
+  pars.A = gsl_matrix_get ( M_mu_nu, 0, 0 );
+  pars.B = gsl_matrix_get ( M_mu_nu, 1, 1 );
+  pars.C = gsl_matrix_get ( M_mu_nu, 0, 1 );
+  pars.E = gsl_matrix_get ( M_mu_nu, 0, 3 );
 
   F.function = &BstatIntegrandOuter;
   F.params = &pars;
@@ -1282,7 +1282,7 @@ BstatIntegrand ( double Amp[], size_t dim, void *p )
   double al1, al2, al3, al4;
   double eta, etaSQ, etaSQp1SQ;
   double psi, sin2psi, cos2psi, sin2psiSQ, cos2psiSQ;
-  double AMA, qSQ, arg0;
+  double gammaSQ, qSQ, Xi;
   double integrand;
 
   if ( dim != 2 ) {
@@ -1312,19 +1312,19 @@ BstatIntegrand ( double Amp[], size_t dim, void *p )
   al3 = 0.25 * SQ( (1.0 - etaSQ) ) * sin2psi * cos2psi;
   al4 = 0.5 * eta * ( 1.0 + etaSQ );
 
-  /* STEP 1: compute AMA = A^mu M_mu_nu A^nu / h0^2 */
-  AMA = al1 * par->M11 + al2 * par->M22 + 2.0 * al3 * par->M12 + 2.0 * al4 * par->M14;
+  /* STEP 1: compute gamma^2 = At^mu Mt_{mu,nu} At^nu */
+  gammaSQ = al1 * par->A + al2 * par->B + 2.0 * al3 * par->C + 2.0 * al4 * par->E;
 
   /* STEP2: compute q^2 */
   qSQ = al1 * ( SQ(x1) + SQ(x3) ) + al2 * ( SQ(x2) + SQ(x4) ) + 2.0 * al3 * ( x1 * x2 + x3 * x4 ) + 2.0 * al4 * ( x1 * x4 - x2 * x3 );
 
   /* STEP3 : put all the pieces together */
-  arg0 = 0.25 * qSQ  / AMA;
+  Xi = 0.25 * qSQ  / gammaSQ;
 
-  integrand = pow(AMA, -0.5) * exp(arg0) * gsl_sf_bessel_I0(arg0);
+  integrand = pow(gammaSQ, -0.5) * exp(Xi) * gsl_sf_bessel_I0(Xi);
 
   if ( lalDebugLevel >= 2 )
-    printf ("%f   %f    %f   %f %f\n", eta, psi, integrand, AMA, arg0 );
+    printf ("%f   %f    %f   %f %f\n", eta, psi, integrand, gammaSQ, Xi );
 
   return integrand;
 
