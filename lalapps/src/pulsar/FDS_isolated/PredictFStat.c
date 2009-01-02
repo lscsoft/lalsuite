@@ -96,6 +96,7 @@ typedef struct {
   CHAR *dataSummary;            /**< descriptive string describing the data */
   REAL8 aPlus, aCross;		/**< internally always use Aplus, Across */
   AntennaPatternMatrix Mmunu;	/**< antenna-pattern matrix and normalization */
+  UINT4 numSFTs;		/**< number of SFTs = Tobs/Tsft */
 } ConfigVariables;
 
 /*---------- Global variables ----------*/
@@ -229,9 +230,22 @@ int main(int argc,char *argv[])
 
       /* append 'dataSummary' */
       fprintf (fpFstat, "%s", GV.dataSummary );
+      /* output E[2F] and std[2F] */
       fprintf (fpFstat, "twoF_expected = %g;\n", 4.0 + rho2);
       fprintf (fpFstat, "twoF_sigma    = %g;\n", sqrt( 4.0 * ( 2.0 + rho2 ) ) );
 
+      /* output antenna-pattern matrix MNat_mu_nu = matrix(A, B, C) */
+      {
+	/* compute A = <a^2>, B=<b^2>, C=<ab> from the 'discretized versions Ad, Bc, Cd */
+	REAL8 A = GV.Mmunu.Ad / GV.numSFTs;
+	REAL8 B = GV.Mmunu.Bd / GV.numSFTs;
+	REAL8 C = GV.Mmunu.Cd / GV.numSFTs;
+	REAL8 D = A * B - C * C;
+	fprintf (fpFstat, "A = %f;\n", A );
+	fprintf (fpFstat, "B = %f;\n", B );
+	fprintf (fpFstat, "C = %f;\n", C );
+	fprintf (fpFstat, "D = %f;\n", D );
+      }
       fclose (fpFstat);
     } /* if outputFstat */
 
@@ -462,10 +476,10 @@ InitPFS ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
 
   /* ----- deduce start- and end-time of the observation spanned by the data */
   {
-    UINT4 numSFTs = catalog->length;
+    GV.numSFTs = catalog->length;	/* total number of SFTs */
     Tsft = 1.0 / catalog->data[0].header.deltaF;
     startTime = catalog->data[0].header.epoch;
-    endTime   = catalog->data[numSFTs-1].header.epoch;
+    endTime   = catalog->data[GV.numSFTs-1].header.epoch;
     LALAddFloatToGPS(status->statusPtr, &endTime, &endTime, Tsft );	/* can't fail */
     duration = GPS2REAL8(endTime) - GPS2REAL8 (startTime);
   }
