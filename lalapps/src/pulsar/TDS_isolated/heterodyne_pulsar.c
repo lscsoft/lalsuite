@@ -936,12 +936,15 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
         t = times->data[i];
 
       /* set leap seconds noting that for all runs prior to S5 that the number
-         of leap seconds was 13 and that 1 more leap seconds was added on 31st
-         Dec 2005 24:00:00 i.e. GPS 820108813 */
+         of leap seconds was 13, 1 leap seconds was added on 31st
+         Dec 2005 24:00:00 i.e. GPS 820108813, and another was added on 31st
+         Dec 2008 24:00:00 i.e. GPS 91480321 */
       if(t <= 820108813)
         (*edat).leap = 13;
-      else
+      else if(t <= 914803214)
         (*edat).leap = 14;
+      else
+        (*edat).leap = 15;
 
       baryinput.tgps.gpsSeconds = (UINT8)floor(t);
       baryinput.tgps.gpsNanoSeconds = (UINT8)floor((fmod(t,1.0)*1.e9));	
@@ -991,13 +994,13 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
 
       t2 = times->data[i] + 1.; /* just add a second to get the gradient */
 
-      /* set leap seconds noting that for all runs prior to S5 that the number
-         of leap seconds was 13 and that 1 more leap seconds was added on 31st
-         Dec 2005 24:00:00 i.e. GPS 820108813 */
+      /* set leap seconds  */
       if(t <= 820108813)
         (*edat).leap = 13;
-      else
+      else if(t <= 914803214)
         (*edat).leap = 14;
+      else
+        (*edat).leap = 15;
 
       baryinput2 = baryinput;
         

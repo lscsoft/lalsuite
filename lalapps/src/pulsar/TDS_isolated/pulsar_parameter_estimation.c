@@ -1941,6 +1941,18 @@ paramData );
   vars.ci = input.mesh.minVals.ci + (REAL8)XLALUniformDeviate(randomParams) *
             (input.mesh.maxVals.ci - input.mesh.minVals.ci);
 
+  /* fprintf(stderr, "Give me a start h0 value for the chain:\n");
+  fscanf(stdin, "%lf", &vars.h0);
+
+  fprintf(stderr, "Give me a start phi0 value for the chain:\n");
+  fscanf(stdin, "%lf", &vars.phi0);
+
+  fprintf(stderr, "Give me a start psi value for the chain:\n");
+  fscanf(stdin, "%lf", &vars.psi);
+
+  fprintf(stderr, "Give me a start cos(iota) value for the chain:\n");
+  fscanf(stdin, "%lf", &vars.ci); */
+
   vars.Xplus = 0.5*(1.+vars.ci*vars.ci);
   vars.Xcross = vars.ci;
   vars.Xpsinphi_2 = 0.5*vars.Xplus*sin(vars.phi0);
@@ -2516,19 +2528,14 @@ REAL8Vector *get_phi( DataStructure data, BinaryPulsarParams params,
   else if(params.posepoch == 0. && params.pepoch != 0.)
     params.posepoch = params.pepoch;
 
-  if(params.pepoch == 0. && params.posepoch != 0.)
-    params.pepoch = params.posepoch;
-  else if(params.posepoch == 0. && params.pepoch != 0.)
-    params.posepoch = params.pepoch;
-
   /* allocate memory for phases */
   phis = XLALCreateREAL8Vector( data.times->length );
 
   /* set 1/distance if parallax or distance value is given (1/sec) */
   if( params.px != 0. )
-    bary.dInv = params.px*1e-3*LAL_LYR_SI/(LAL_PC_SI*LAL_C_SI);
+    bary.dInv = params.px*1e-3*LAL_C_SI/LAL_PC_SI;
   else if( params.dist != 0. )
-    bary.dInv = LAL_LYR_SI/(params.dist*1e3*LAL_PC_SI*LAL_C_SI);
+    bary.dInv = LAL_C_SI/(params.dist*1e3*LAL_PC_SI);
   else
     bary.dInv = 0.;
 
@@ -2539,8 +2546,10 @@ REAL8Vector *get_phi( DataStructure data, BinaryPulsarParams params,
 
     if(data.times->data[i] <= 820108813)
       (*edat).leap = 13;
-    else
+    else if(data.times->data[i] <= 914803214)
       (*edat).leap = 14;
+    else
+      (*edat).leap = 15;
 
     /* only do call the barycentring routines every 30 minutes, otherwise just
        linearly interpolate between them */
@@ -2549,8 +2558,10 @@ REAL8Vector *get_phi( DataStructure data, BinaryPulsarParams params,
       bary.tgps.gpsNanoSeconds =
 (UINT8)floor((fmod(data.times->data[i],1.)*1e9));
 
-      bary.delta = params.dec + DT*params.pmdec;
-      bary.alpha = params.ra + DT*params.pmra/cos(bary.delta);
+      bary.delta = params.dec +
+        (data.times->data[i]-params.posepoch) * params.pmdec;
+      bary.alpha = params.ra + (data.times->data[i]-params.posepoch) *
+         params.pmra/cos(bary.delta);
 
       /* call barycentring routines */
       LAL_CALL( LALBarycenterEarth(&status, &earth, &bary.tgps, edat),
@@ -2829,7 +2840,7 @@ matrix\n");
         fprintf(stderr, "Error... input matrix is not pos def!\n");
         exit(0);
       }
-      else if( diag <= 0. && fabs(diag) <= LAL_REAL8_EPS ){
+      else if( diag < 0. && fabs(diag) <= LAL_REAL8_EPS ){
         /* diag = LAL_REAL8_EPS; */
         /* diag = 0.; */ /* set to zero as setting it to LAL_REAL8_EPS sometimes
                       is a value that's far larger than it should be */

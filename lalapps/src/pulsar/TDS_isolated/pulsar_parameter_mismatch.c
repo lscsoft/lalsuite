@@ -474,8 +474,10 @@ REAL8Vector *get_phi( double start, double deltaT, int npoints,
 
     if(time <= 820108813)
       (*edat).leap = 13;
-    else
+    else if(time <= 914803214)
       (*edat).leap = 14;
+    else
+      (*edat).leap = 15;
 
     /* only call the barycentring routines every 30 minutes, otherwise just
        linearly interpolate between them */
@@ -863,61 +865,61 @@ REAL8Array *ReadCorrelationMatrix( CHAR *matrixFile,
 
   /* set the values - put the parameter errors at twice those given in the .par
 files */
-  paramData[0].val = params.f0;      paramData[0].sigma = 10.*params.f0Err;
-  paramData[1].val = params.f1;      paramData[1].sigma = 10.*params.f1Err;
-  paramData[2].val = params.f2;      paramData[2].sigma = 10.*params.f2Err;
-  paramData[3].val = params.dec;     paramData[3].sigma = 10.*params.decErr;
-  paramData[4].val = params.ra;      paramData[4].sigma = 10.*params.raErr;
-  paramData[5].val = params.pmdec;   paramData[5].sigma = 10.*params.pmdecErr;
-  paramData[6].val = params.pmra;    paramData[6].sigma = 10.*params.pmraErr;
-  paramData[7].val = params.x;       paramData[7].sigma = 2.*params.xErr;
-  paramData[8].val = params.e;       paramData[8].sigma = 2.*params.eErr;
-  paramData[9].val = params.T0;      paramData[9].sigma = 2.*params.T0Err;
-  paramData[10].val = params.Pb;     paramData[10].sigma = 2.*params.PbErr;
-  paramData[11].val = params.w0;     paramData[11].sigma = 2.*params.w0Err;
-  paramData[12].val = params.wdot;   paramData[12].sigma = 2.*params.wdotErr;
-  paramData[13].val = params.gamma;  paramData[13].sigma = 2.*params.gammaErr;
-  paramData[14].val = params.Pbdot;  paramData[14].sigma = 2.*params.PbdotErr;
-  paramData[15].val = params.s;      paramData[15].sigma = 2.*params.sErr;
-  paramData[16].val = params.M;      paramData[16].sigma = 2.*params.MErr;
-  paramData[17].val = params.m2;     paramData[17].sigma = 2.*params.m2Err;
-  paramData[18].val = params.dth;    paramData[18].sigma = 2.*params.dthErr;
-  paramData[19].val = params.xdot;   paramData[19].sigma = 2.*params.xdotErr;
-  paramData[20].val = params.edot;   paramData[20].sigma = 2.*params.edotErr;
-  paramData[21].val = params.x2;     paramData[21].sigma = 2.*params.x2Err;
-  paramData[22].val = params.e2;     paramData[22].sigma = 2.*params.e2Err;
-  paramData[23].val = params.T02;    paramData[23].sigma = 2.*params.T02Err;
-  paramData[24].val = params.Pb2;    paramData[24].sigma = 2.*params.Pb2Err;
-  paramData[25].val = params.w02;    paramData[25].sigma = 2.*params.w02Err;
-  paramData[26].val = params.x3;     paramData[26].sigma = 2.*params.x3Err;
-  paramData[27].val = params.e3;     paramData[27].sigma = 2.*params.e3Err;
-  paramData[28].val = params.T03;    paramData[28].sigma = 2.*params.T03Err;
-  paramData[29].val = params.Pb3;    paramData[29].sigma = 2.*params.Pb3Err;
-  paramData[30].val = params.w03;    paramData[30].sigma = 2.*params.w03Err;
-  paramData[31].val = params.xpbdot; paramData[31].sigma = 2.*params.xpbdotErr;
+  paramData[0].val = params.f0;      paramData[0].sigma = params.f0Err;
+  paramData[1].val = params.f1;      paramData[1].sigma = params.f1Err;
+  paramData[2].val = params.f2;      paramData[2].sigma = params.f2Err;
+  paramData[3].val = params.dec;     paramData[3].sigma = params.decErr;
+  paramData[4].val = params.ra;      paramData[4].sigma = params.raErr;
+  paramData[5].val = params.pmdec;   paramData[5].sigma = params.pmdecErr;
+  paramData[6].val = params.pmra;    paramData[6].sigma = params.pmraErr;
+  paramData[7].val = params.x;       paramData[7].sigma = params.xErr;
+  paramData[8].val = params.e;       paramData[8].sigma = params.eErr;
+  paramData[9].val = params.T0;      paramData[9].sigma = params.T0Err;
+  paramData[10].val = params.Pb;     paramData[10].sigma = params.PbErr;
+  paramData[11].val = params.w0;     paramData[11].sigma = params.w0Err;
+  paramData[12].val = params.wdot;   paramData[12].sigma = params.wdotErr;
+  paramData[13].val = params.gamma;  paramData[13].sigma = params.gammaErr;
+  paramData[14].val = params.Pbdot;  paramData[14].sigma = params.PbdotErr;
+  paramData[15].val = params.s;      paramData[15].sigma = params.sErr;
+  paramData[16].val = params.M;      paramData[16].sigma = params.MErr;
+  paramData[17].val = params.m2;     paramData[17].sigma = params.m2Err;
+  paramData[18].val = params.dth;    paramData[18].sigma = params.dthErr;
+  paramData[19].val = params.xdot;   paramData[19].sigma = params.xdotErr;
+  paramData[20].val = params.edot;   paramData[20].sigma = params.edotErr;
+  paramData[21].val = params.x2;     paramData[21].sigma = params.x2Err;
+  paramData[22].val = params.e2;     paramData[22].sigma = params.e2Err;
+  paramData[23].val = params.T02;    paramData[23].sigma = params.T02Err;
+  paramData[24].val = params.Pb2;    paramData[24].sigma = params.Pb2Err;
+  paramData[25].val = params.w02;    paramData[25].sigma = params.w02Err;
+  paramData[26].val = params.x3;     paramData[26].sigma = params.x3Err;
+  paramData[27].val = params.e3;     paramData[27].sigma = params.e3Err;
+  paramData[28].val = params.T03;    paramData[28].sigma = params.T03Err;
+  paramData[29].val = params.Pb3;    paramData[29].sigma = params.Pb3Err;
+  paramData[30].val = params.w03;    paramData[30].sigma = params.w03Err;
+  paramData[31].val = params.xpbdot; paramData[31].sigma = params.xpbdotErr;
 
   arraySize = MAXPARAMS;
 
   if( params.model != NULL && !strcmp(params.model, "ELL1") ){
     paramData[8].name = "eps1";
     paramData[8].val = params.eps1;
-    paramData[8].sigma = 2.*params.eps1Err;
+    paramData[8].sigma = params.eps1Err;
 
     paramData[11].name = "eps2";
     paramData[11].val = params.eps2;
-    paramData[11].sigma = 2.*params.eps2Err;
+    paramData[11].sigma = params.eps2Err;
 
     paramData[9].name = "Tasc";
     paramData[9].val = params.Tasc;
-    paramData[9].sigma = 2.*params.TascErr;
+    paramData[9].sigma = params.TascErr;
 
     paramData[12].name = "e1dt";
     paramData[12].val = params.eps1dot;
-    paramData[12].sigma = 2.*params.eps1dotErr;
+    paramData[12].sigma = params.eps1dotErr;
 
     paramData[20].name = "e2dt";
     paramData[20].val = params.eps2dot;
-    paramData[20].sigma = 2.*params.eps2dotErr;
+    paramData[20].sigma = params.eps2dotErr;
   }
 
   /* read in data from correlation matrix file */
