@@ -198,8 +198,12 @@ parser.add_option("", "--sky-map-plot",action="store_true",default=False,\
 parser.add_option("", "--coh-inspiral",action="store_true",default=False,\
     help="run a lalapps_inspiral job much the same way as the coherent code")
 
+parser.add_option("-O","--odds",action="store_true",default=False,\
+                   help="Run coherent model selection on followup trigs (experimental)")
+
 parser.add_option("", "--disable-dag-categories",action="store_true",\
     default=False,help="disable the internal dag category maxjobs")
+
 
 command_line = sys.argv[1:]
 (opts,args) = parser.parse_args()
@@ -232,7 +236,8 @@ if not opts.write_to_iulgroup and not opts.generate_fu_cache and \
   and not opts.plot_mcmc and not opts.inspiral_datafind and not \
   opts.analyse_hoft_qscan and not opts.distrib_remote_q and not \
   opts.coh_inspiral and not opts.sky_map and not opts.sky_map_plot and not \
-  opts.convert_eventid:
+  opts.convert_eventid and not opts.odds:
+
   print >> sys.stderr, "No steps of the pipeline specified."
   print >> sys.stderr, "Please specify at least one of"
   print >> sys.stderr, "--generate-fu-cache, --trig-bank, --inspiral, --plots,"
@@ -306,6 +311,7 @@ if not opts.disable_followup and not opts.read_times:
 if not opts.disable_followup:
   qscanFgJob      = qscanJob(opts,cp)
   anaQscanJob     = analyseQscanJob(opts,cp)
+
   if not opts.read_times:
     inspDataJob     = followupDataFindJob(cp,'inspiral')
     inspJob         = followUpInspJob(cp)
@@ -320,6 +326,8 @@ if not opts.disable_followup:
     h1h2QJob        = h1h2QeventJob(opts,cp)   
     skyMapJob       = lalapps_skyMapJob(opts,cp)
     skyPlotJob      = pylal_skyPlotJob(opts,cp)
+    oddsJob         = followupoddsJob(opts,cp)
+
 
 dataJob         = followupDataFindJob(cp,'futrig')
 qscanBgJob      = qscanJob(opts,cp,'QSCANLITE')
@@ -593,8 +601,8 @@ if not opts.disable_followup and not opts.read_times:
     # the names we need. 
     skyNode.add_node_to_dag(dag,opts,trig)
     skyPlotNode = pylal_skyPlotNode(skyPlotJob,trig,skyNode,dag,dag.page,opts)
-  
-  
+    oddsNode = followupoddsNode(oddsJob,inspiral_process_params, trig, randomseed, cp, opts, dag)
+
   # Loop for analyseQscan jobs (which must be children of all qscan jobs)
   for trig in followuptrigs:
     for ifo in trig.ifolist_in_coinc:
