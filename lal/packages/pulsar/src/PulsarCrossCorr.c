@@ -383,29 +383,49 @@ void LALCalculateSigmaAlphaSq(LALStatus            *status,
 /** Calculate pair weights (U_alpha) **/
 void LALCalculateUalpha(LALStatus *status,
 			COMPLEX16 *out,
-			REAL8     *Aplus,
-			REAL8     *Across,
+			REAL8     *Aplussq,
+			REAL8     *Acrosssq,
+			REAL8 	  *AplusAcross,
 			REAL8     *phiI,
 			REAL8     *phiJ,
-			REAL8     *FplusI,
-			REAL8     *FplusJ,
-			REAL8     *FcrossI,
-			REAL8     *FcrossJ,
+			INT4      *avePsi,
+			REAL8     *Fplus_or_aI,
+			REAL8     *Fplus_or_aJ,
+			REAL8     *Fcross_or_bI,
+			REAL8     *Fcross_or_bJ,
 			REAL8     *sigmasq)
 {
   REAL8 deltaPhi;
   REAL8 re, im;
-    
+  REAL8 Fplus_or_aIFplus_or_aJ, Fcross_or_bIFcross_or_bJ, Fplus_or_aIFcross_or_bJ, Fcross_or_bIFplus_or_aJ;
+	    
   INITSTATUS (status, "CalculateUalpha", rcsid);
   ATTATCHSTATUSPTR (status);
 
   deltaPhi = *phiI - *phiJ;
 
-  re = 0.25 * cos(deltaPhi) * ((*FplusI * (*FplusJ) * (*Aplus) * (*Aplus)) 
-			    + (*FcrossI * (*FcrossJ) * (*Across) * (*Across)) );
-  im = 0.25 * sin(-deltaPhi) * (-(*FplusI * (*FcrossJ) - (*FcrossI) * (*FplusJ)) 
-				 * (*Aplus) * (*Across) );
-/*printf("fplusi, fplusj, fcrossi, fcrossj %f %f %f %f\n",*FplusI, *FplusJ, *FcrossI, *FcrossJ);*/
+  /*need to calculate the products of F first in case we have an average
+    over psi */
+
+  if (*avePsi == 1) {
+	Fplus_or_aIFplus_or_aJ = 0.5*(*Fplus_or_aI * (*Fplus_or_aJ) + *Fcross_or_bI * (*Fcross_or_bJ));
+	Fcross_or_bIFcross_or_bJ = 0.5*(*Fplus_or_aI * (*Fplus_or_aJ) + *Fcross_or_bI * (*Fcross_or_bJ));
+	Fplus_or_aIFcross_or_bJ = 0.5*(*Fplus_or_aI * (*Fcross_or_bJ) - *Fcross_or_bI * (*Fplus_or_aJ));
+	Fcross_or_bIFplus_or_aJ = 0.5*(*Fplus_or_aJ * (*Fcross_or_bI) - *Fplus_or_aI * (*Fcross_or_bJ));
+  }
+  else {
+	Fplus_or_aIFplus_or_aJ = *Fplus_or_aI * (*Fplus_or_aJ);
+	Fcross_or_bIFcross_or_bJ = *Fcross_or_bI * (*Fcross_or_bJ);
+	Fplus_or_aIFcross_or_bJ = *Fplus_or_aI * (*Fcross_or_bJ);	
+	Fcross_or_bIFplus_or_aJ = *Fcross_or_bI * (*Fplus_or_aJ);
+  }
+
+
+  re = 0.25 * cos(deltaPhi) * ((Fplus_or_aIFplus_or_aJ * (*Aplussq)) 
+			    + (Fcross_or_bIFcross_or_bJ * (*Acrosssq)) );
+  im = 0.25 * sin(-deltaPhi) * (-(Fplus_or_aIFcross_or_bJ - Fcross_or_bIFplus_or_aJ) 
+				 * (*AplusAcross) );
+/*printf("fplusi, fplusj, fcrossi, fcrossj %f %f %f %f\n",*Fplus_or_aI, *Fplus_or_aJ, *Fcross_or_bI, *Fcross_or_bJ);*/
 
   out->re = re/(*sigmasq);
   out->im = -im/(*sigmasq);
