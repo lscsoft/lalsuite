@@ -81,7 +81,8 @@ extern "C" {
 " --ifo               name of ifo e.g. L1, H1, H2, G1\n"\
 " --pulsar            name of pulsar e.g. J0534+2200\n"\
 " --heterodyne-flag   (int) coarse heterodyne 0, fine heterodyne 1,\n\
-                     parameter update 2, full heterodyne in one go 3\n"\
+                     parameter update 2, full heterodyne in one go 3,\n\
+                     re-heterodyne an already fine heterodyned file 4\n"\
 " --param-file        name of file containing initial pulsar parameters\n\
                      (.par file)\n"\
 " --param-file-update name of file containing updated pulsar parameters\n"\
@@ -229,7 +230,7 @@ void get_frame_times(CHAR *framefile, REAL8 *gpstime, INT4 *duration);
 
 /* reads in a time series from frames */
 REAL8TimeSeries *get_frame_data(CHAR *framefile, CHAR *channel, REAL8 time, REAL8 length, INT4
-duration, REAL8 scalefac, REAL8 highpass);
+duration, REAL8 samplerate, REAL8 scalefac, REAL8 highpass);
 
 /* read in science segment list file - returns the number of segments */
 INT4 get_segment_list(INT4Vector *starts, INT4Vector *stops, CHAR *seglistfile, INT4 heterodyneflag);
