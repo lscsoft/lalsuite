@@ -1663,7 +1663,7 @@ int main(int argc, char *argv[])
 						exit(1);
 					}
 					seed = 1000 * (t.tv_sec + t.tv_usec * 1e-6);
-					XLALPrintInfo("%s: using random number seed %lu\n", seed);
+					XLALPrintInfo("%s: using random number seed %lu\n", argv[0], seed);
 					gsl_rng_set(rng, seed);
 				}
 			}
