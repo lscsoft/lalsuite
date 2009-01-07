@@ -802,7 +802,7 @@ extern const int lalNoDebug;
 #ifndef NOLALMACROS
 
 #define INITSTATUS( statusptr, funcname, id )                                 \
-  if ( (statusptr) )                                                          \
+  do { if ( (statusptr) )                                                     \
   {                                                                           \
     INT4 level_ = (statusptr)->level ;                                        \
     INT4 statp_ = (statusptr)->statusPtr ? 1 : 0 ;                            \
@@ -812,112 +812,107 @@ extern const int lalNoDebug;
     (statusptr)->function = (funcname);                                       \
     SETSTATUSFILELINE( statusptr );                                           \
     (void) LALTrace( statusptr, 0 );                                          \
-    if ( statp_ )                                                              \
-    {                                                                         \
+    if ( statp_ )                                                             \
       ABORT( statusptr, -2, "INITSTATUS: non-null status pointer" );          \
-    }                                                                         \
     else if ( xlalErrno )                                                     \
-    {                                                                         \
       ABORT( statusptr, -16, "INITSTATUS: non-zero xlalErrno" );              \
-    }                                                                         \
   }                                                                           \
   else                                                                        \
     lalAbortHook( "Abort: function %s, file %s, line %d, %s\n"                \
                   "       Null status pointer passed to function\n",          \
-                  (funcname), __FILE__, __LINE__, (id) )
+                  (funcname), __FILE__, __LINE__, (id) );                     \
+  } while ( 0 )
 
 #define RETURN( statusptr )                                                   \
-  if ( 1 )                                                                    \
+  do { if ( 1 )                                                               \
   {                                                                           \
     SETSTATUSFILELINE( statusptr );                                           \
     if ( (statusptr)->statusCode )                                            \
       (void) LALError( statusptr, "RETURN:" );                                \
     (void) LALTrace( statusptr, 1 );                                          \
     if ( xlalErrno )                                                          \
-    {                                                                         \
       ABORT( statusptr, -32, "RETURN: untrapped XLAL error" );                \
-    }                                                                         \
     return;                                                                   \
   }                                                                           \
-  else (void)(0)
+  } while ( 0 )
 
 #define ATTATCHSTATUSPTR(statusptr)                                           \
-  if ( !(statusptr)->statusPtr )                                              \
+  do { if ( !(statusptr)->statusPtr )                                         \
   {                                                                           \
     (statusptr)->statusPtr = (LALStatus *)LALCalloc( 1, sizeof( LALStatus ) );\
     if ( !(statusptr)->statusPtr )                                            \
-    {                                                                         \
       ABORT( statusptr, -4, "ATTATCHSTATUSPTR: memory allocation error" );    \
-    }                                                                         \
     (statusptr)->statusPtr->level = (statusptr)->level + 1;                   \
   }                                                                           \
   else                                                                        \
-    ABORT( statusptr, -2, "ATTATCHSTATUSPTR: non-null status pointer" )
+    ABORT( statusptr, -2, "ATTATCHSTATUSPTR: non-null status pointer" );      \
+  } while ( 0 )
 
 #define DETATCHSTATUSPTR( statusptr )                                         \
-  if ( (statusptr)->statusPtr )                                               \
+  do { if ( (statusptr)->statusPtr )                                          \
   {                                                                           \
     FREESTATUSPTR( statusptr );                                               \
     (statusptr)->statusCode = 0;                                              \
     (statusptr)->statusDescription = NULL;                                    \
   }                                                                           \
   else                                                                        \
-    ABORT( statusptr, -8, "DETATCHSTATUSPTR: null status pointer" )
+    ABORT( statusptr, -8, "DETATCHSTATUSPTR: null status pointer" );          \
+  } while ( 0 )
 
 #define ABORT( statusptr, code, mesg )                                        \
-  if ( 1 )                                                                    \
+  do { if ( 1 )                                                               \
   {                                                                           \
-    if ( statusptr->statusPtr ) FREESTATUSPTR( statusptr );                   \
+    if ( (statusptr)->statusPtr ) FREESTATUSPTR( statusptr );                   \
     SETSTATUS( statusptr, code, mesg );                                       \
     if ( code )                                                               \
       (void) LALError( statusptr, "ABORT:" );                                 \
     (void) LALTrace( statusptr, 1 );                                          \
     return;                                                                   \
   }                                                                           \
-  else (void)(0)
+  } while ( 0 )
 
 #ifdef LAL_NDEBUG
 #define ASSERT( assertion, statusptr, code, mesg )
 #else
 #define ASSERT( assertion, statusptr, code, mesg )                            \
-  if ( !(assertion) )                                                         \
+  do { if ( !(assertion) )                                                    \
   {                                                                           \
-    if ( statusptr->statusPtr )                                               \
+    if ( (statusptr)->statusPtr )                                               \
       FREESTATUSPTR( statusptr );                                             \
     SETSTATUS( statusptr, code, mesg );                                       \
     (void) LALError( statusptr, "Assertion \"" #assertion "\" failed:" );     \
     (void) LALTrace( statusptr, 1 );                                          \
     return;                                                                   \
   }                                                                           \
-  else (void)(0)
+  } while ( 0 )
 #endif
 
 #define TRY( func, statusptr )                                                \
-  if ( (func), (statusptr)->statusPtr->statusCode )                           \
+  do { if ( (func), (statusptr)->statusPtr->statusCode )                      \
   {                                                                           \
     SETSTATUS( statusptr, -1, "Recursive error" );                            \
     (void) LALError( statusptr, "Function call \"" #func "\" failed:" );      \
     (void) LALTrace( statusptr, 1 );                                          \
     return;                                                                   \
   }                                                                           \
-  else (void)(0)
+  } while ( 0 )
 
 #define CHECKSTATUSPTR( statusptr )                                           \
-  if ( (statusptr)->statusPtr->statusCode )                                   \
+  do { if ( (statusptr)->statusPtr->statusCode )                              \
   {                                                                           \
     SETSTATUS( statusptr, -1, "Recursive error" );                            \
     (void) LALError( statusptr, "CHECKSTATUSPTR:" );                          \
     (void) LALTrace( statusptr, 1 );                                          \
     return;                                                                   \
   }                                                                           \
-  else (void)(0)
+  } while ( 0 )
 
 #define FREESTATUSPTR( statusptr )                                            \
   do                                                                          \
   {                                                                           \
-    LALStatus *next_ = (statusptr)->statusPtr->statusPtr;                      \
+    LALStatus *next_ = (statusptr)->statusPtr->statusPtr;                     \
     LALFree( (statusptr)->statusPtr );                                        \
-    (statusptr)->statusPtr = next_;                                            \
+    (statusptr)->statusPtr = next_;                                           \
   }                                                                           \
   while ( (statusptr)->statusPtr )
 
@@ -929,14 +924,10 @@ extern const int lalNoDebug;
     {                                                                         \
       LALPrintError( "\nLevel %i: %s\n", ptr_->level, ptr_->Id );             \
       if ( ptr_->statusCode )                                                 \
-      {                                                                       \
         LALPrintError( "\tStatus code %i: %s\n", ptr_->statusCode,            \
                        ptr_->statusDescription );                             \
-      }                                                                       \
       else                                                                    \
-      {                                                                       \
         LALPrintError( "\tStatus code 0: Nominal\n" );                        \
-      }                                                                       \
       LALPrintError( "\tfunction %s, file %s, line %i\n",                     \
                      ptr_->function, ptr_->file, ptr_->line );                \
     }                                                                         \
@@ -945,32 +936,32 @@ extern const int lalNoDebug;
 #else /* NOLALMACROS */
 
 #define INITSTATUS( statusptr, funcname, id ) \
-  if ( LALInitStatus( statusptr, funcname, id, __FILE__, __LINE__ ) ) return
+  do { if ( LALInitStatus( statusptr, funcname, id, __FILE__, __LINE__ ) ) return; } while ( 0 )
 
 #define RETURN( statusptr ) \
-  if ( LALPrepareReturn( statusptr, __FILE__, __LINE__ ), 1 ) return
+  do { if ( LALPrepareReturn( statusptr, __FILE__, __LINE__ ), 1 ) return; } while ( 0 )
 
 #define ATTATCHSTATUSPTR( statusptr ) \
-  if ( LALAttatchStatusPtr( statusptr, __FILE__, __LINE__ ) ) return
+  do { if ( LALAttatchStatusPtr( statusptr, __FILE__, __LINE__ ) ) return; } while ( 0 )
 
 #define DETATCHSTATUSPTR( statusptr ) \
-  if ( LALDetatchStatusPtr( statusptr, __FILE__, __LINE__ ) ) return
+  do { if ( LALDetatchStatusPtr( statusptr, __FILE__, __LINE__ ) ) return; } while ( 0 )
 
 #define ABORT( statusptr, code, mesg ) \
-  if ( LALPrepareAbort( statusptr, code, mesg, __FILE__, __LINE__ ), 1 ) return
+  do { if ( LALPrepareAbort( statusptr, code, mesg, __FILE__, __LINE__ ), 1 ) return; } while ( 0 )
 
 #ifdef LAL_NDEBUG
 #define ASSERT( assertion, statusptr, code, mesg )
 #else
 #define ASSERT( assertion, statusptr, code, mesg )                            \
-  if ( !(assertion) )                                                         \
+  do { if ( !(assertion) )                                                    \
   {                                                                           \
     LALPrepareAssertFail( statusptr, code, mesg,                              \
                           "Assertion \"" #assertion "\" failed:",             \
                           __FILE__, __LINE__ );                               \
     return;                                                                   \
   }                                                                           \
-  else (void)(0)
+  } while ( 0 )
 #endif
 
 #define TRY( func, statusptr )                                                \
@@ -984,8 +975,7 @@ extern const int lalNoDebug;
   while ( 0 )
 
 #define CHECKSTATUSPTR( statusptr )                                           \
-  if ( LALCheckStatusPtr( statusptr, "CHECKSTATUSPTR:", __FILE__, __LINE__ ) )\
-    return
+  do { if ( LALCheckStatusPtr( statusptr, "CHECKSTATUSPTR:", __FILE__, __LINE__ ) ) return; } while ( 0 )
   
 #endif /* NOLALMACROS */
 
@@ -993,12 +983,10 @@ extern const int lalNoDebug;
 
 #define BEGINFAIL( statusptr )                                                \
 do {                                                                          \
-  if ( !(statusptr) ) {                                                       \
+  if ( !(statusptr) )                                                         \
     ABORT( statusptr, -8, "BEGINFAIL: null status pointer" );                 \
-  }                                                                           \
-  if ( !( (statusptr)->statusPtr ) ) {                                        \
+  if ( !( (statusptr)->statusPtr ) )                                          \
     ABORT( statusptr, -8, "BEGINFAIL: null status pointer pointer" );         \
-  }                                                                           \
   if ( (statusptr)->statusPtr->statusCode ) {                                 \
     LALStatus *statusPtrSave_ = (statusptr)->statusPtr;                       \
     (statusptr)->statusPtr = NULL;                                            \
