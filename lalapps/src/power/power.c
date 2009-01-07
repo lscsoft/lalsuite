@@ -1299,22 +1299,9 @@ static struct injection_document *load_injection_document(const char *filename, 
  */
 
 
-static int add_xml_injections(REAL8TimeSeries *h, const char *filename, COMPLEX8FrequencySeries *response)
+static int add_xml_injections(REAL8TimeSeries *h, const struct injection_document *injection_document, COMPLEX8FrequencySeries *response)
 {
 	static const char func[] = "add_xml_injections";
-	struct injection_document *injection_document;
-	LIGOTimeGPS start;
-	LIGOTimeGPS end;
-
-	/*
-	 * load document
-	 */
-
-	start = end = h->epoch;
-	XLALGPSAdd(&end, h->data->length * h->deltaT);
-	injection_document = load_injection_document(filename, start, end);
-	if(!injection_document)
-		XLAL_ERROR(func, XLAL_EFUNC);
 
 	/*
 	 * sim_burst
@@ -1322,10 +1309,8 @@ static int add_xml_injections(REAL8TimeSeries *h, const char *filename, COMPLEX8
 
 	if(injection_document->sim_burst_table_head) {
 		XLALPrintInfo("%s(): computing sim_burst injections ...\n", func);
-		if(XLALBurstInjectSignals(h, injection_document->sim_burst_table_head, NULL)) {
-			destroy_injection_document(injection_document);
+		if(XLALBurstInjectSignals(h, injection_document->sim_burst_table_head, NULL))
 			XLAL_ERROR(func, XLAL_EFUNC);
-		}
 		XLALPrintInfo("%s(): done\n", func);
 	}
 
@@ -1339,10 +1324,8 @@ static int add_xml_injections(REAL8TimeSeries *h, const char *filename, COMPLEX8
 		unsigned i;
 
 		mdc = XLALCreateREAL4TimeSeries(h->name, &h->epoch, h->f0, h->deltaT, &h->sampleUnits, h->data->length);
-		if(!mdc) {
-			destroy_injection_document(injection_document);
+		if(!mdc)
 			XLAL_ERROR(func, XLAL_EFUNC);
-		}
 		memset(mdc->data->data, 0, mdc->data->length * sizeof(*mdc->data->data));
 		memset(&stat, 0, sizeof(stat));
 
@@ -1358,8 +1341,6 @@ static int add_xml_injections(REAL8TimeSeries *h, const char *filename, COMPLEX8
 	/*
 	 * done
 	 */
-
-	destroy_injection_document(injection_document);
 
 	return 0;
 }
@@ -1539,6 +1520,7 @@ int main(int argc, char *argv[])
 	LIGOTimeGPS boundepoch;
 	int overlap;
 	REAL8TimeSeries *series = NULL;
+	struct injection_document *injection_document = NULL;
 	SnglBurst *_sngl_burst_table = NULL;
 	SnglBurst **EventAddPoint = &_sngl_burst_table;
 	/* the ugly underscores are because some badger put global symbols
@@ -1604,6 +1586,17 @@ int main(int argc, char *argv[])
 	XLALGPSAdd(&boundepoch, -(2 * options->filter_corruption + (int) overlap) / (double) options->resample_rate);
 	XLALPrintInfo("%s: time series epochs must be less than %u.%09u s\n", argv[0], boundepoch.gpsSeconds, boundepoch.gpsNanoSeconds);
 
+	/*
+	 * load injections if requested
+	 */
+
+	if(options->injection_filename) {
+		injection_document = load_injection_document(options->injection_filename, options->gps_start, options->gps_end);
+		if(!injection_document) {
+			XLALPrintError("%s: error: failure reading injections file \"%s\"\n", argv[0], options->injection_filename);
+			exit(1);
+		}
+	}
 
 	/*
 	 * ====================================================================
@@ -1685,7 +1678,7 @@ int main(int argc, char *argv[])
 		 * Add XML injections into the time series if requested.
 		 */
 
-		if(options->injection_filename) {
+		if(injection_document) {
 			COMPLEX8FrequencySeries *response;
 
 			/* Create the response function (generates unity
@@ -1695,7 +1688,7 @@ int main(int argc, char *argv[])
 				exit(1);
 
 			/* perform XML injections */
-			if(add_xml_injections(series, options->injection_filename, response))
+			if(add_xml_injections(series, injection_document, response))
 				exit(1);
 
 			/* clean up */
@@ -1787,6 +1780,7 @@ int main(int argc, char *argv[])
 	XLALDestroyProcessParamsTable(_process_params_table);
 	XLALDestroySearchSummaryTable(_search_summary_table);
 	XLALDestroySnglBurstTable(_sngl_burst_table);
+	destroy_injection_document(injection_document);
 
 	if(options->diagnostics)
 		XLALCloseLIGOLwXMLFile(options->diagnostics->LIGOLwXMLStream);
