@@ -722,12 +722,7 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 
 	case 'X':
 		options->diagnostics = malloc(sizeof(*options->diagnostics));
-		{
-		LALStatus stat;
-		memset(&stat, 0, sizeof(stat));
-		options->diagnostics->LIGOLwXMLStream = calloc(1, sizeof(*options->diagnostics));
-		LALOpenLIGOLwXMLFile(&stat, options->diagnostics->LIGOLwXMLStream, optarg);
-		}
+		options->diagnostics->LIGOLwXMLStream = XLALOpenLIGOLwXMLFile(optarg);
 		options->diagnostics->XLALWriteLIGOLwXMLArrayREAL8FrequencySeries = XLALWriteLIGOLwXMLArrayREAL8FrequencySeries;
 		options->diagnostics->XLALWriteLIGOLwXMLArrayREAL8TimeSeries = XLALWriteLIGOLwXMLArrayREAL8TimeSeries;
 		options->diagnostics->XLALWriteLIGOLwXMLArrayCOMPLEX16FrequencySeries = XLALWriteLIGOLwXMLArrayCOMPLEX16FrequencySeries;
@@ -1473,18 +1468,17 @@ static SnglBurst **analyze_series(SnglBurst **addpoint, REAL8TimeSeries *series,
  */
 
 
-static void output_results(LALStatus *stat, char *file, const ProcessTable *_process_table, const ProcessParamsTable *_process_params_table, const SearchSummaryTable *_search_summary_table, const SnglBurst *_sngl_burst_table)
+static void output_results(char *file, const ProcessTable *_process_table, const ProcessParamsTable *_process_params_table, const SearchSummaryTable *_search_summary_table, const SnglBurst *_sngl_burst_table)
 {
-	LIGOLwXMLStream xml;
+	LIGOLwXMLStream *xml;
 
-	memset(&xml, 0, sizeof(xml));
-	LAL_CALL(LALOpenLIGOLwXMLFile(stat, &xml, file), stat);
+	xml = XLALOpenLIGOLwXMLFile(file);
 
 	/*
 	 * process table
 	 */
 
-	if(XLALWriteLIGOLwXMLProcessTable(&xml, _process_table)) {
+	if(XLALWriteLIGOLwXMLProcessTable(xml, _process_table)) {
 		/* FIXME:  error occured. do something smarter */
 		exit(1);
 	}
@@ -1493,7 +1487,7 @@ static void output_results(LALStatus *stat, char *file, const ProcessTable *_pro
 	 * process params table
 	 */
 
-	if(XLALWriteLIGOLwXMLProcessParamsTable(&xml, _process_params_table)) {
+	if(XLALWriteLIGOLwXMLProcessParamsTable(xml, _process_params_table)) {
 		/* FIXME:  error occured. do something smarter */
 		exit(1);
 	}
@@ -1502,7 +1496,7 @@ static void output_results(LALStatus *stat, char *file, const ProcessTable *_pro
 	 * search summary table
 	 */
 
-	if(XLALWriteLIGOLwXMLSearchSummaryTable(&xml, _search_summary_table)) {
+	if(XLALWriteLIGOLwXMLSearchSummaryTable(xml, _search_summary_table)) {
 		/* FIXME:  error occured. do something smarter */
 		exit(1);
 	}
@@ -1511,7 +1505,7 @@ static void output_results(LALStatus *stat, char *file, const ProcessTable *_pro
 	 * burst table
 	 */
 
-	if(XLALWriteLIGOLwXMLSnglBurstTable(&xml, _sngl_burst_table)) {
+	if(XLALWriteLIGOLwXMLSnglBurstTable(xml, _sngl_burst_table)) {
 		/* FIXME:  error occured. do something smarter */
 		exit(1);
 	}
@@ -1520,7 +1514,7 @@ static void output_results(LALStatus *stat, char *file, const ProcessTable *_pro
 	 * done
 	 */
 
-	LAL_CALL(LALCloseLIGOLwXMLFile(stat, &xml), stat);
+	XLALCloseLIGOLwXMLFile(xml);
 }
 
 
@@ -1535,7 +1529,6 @@ static void output_results(LALStatus *stat, char *file, const ProcessTable *_pro
 
 int main(int argc, char *argv[])
 {
-	LALStatus stat;
 	struct options *options;
 	LIGOTimeGPS epoch;
 	LIGOTimeGPS boundepoch;
@@ -1555,7 +1548,6 @@ int main(int argc, char *argv[])
 	 * Command line
 	 */
 
-	memset(&stat, 0, sizeof(stat));
 	lal_errhandler = LAL_ERR_EXIT;
 	if(parse_command_line_debug(argc, argv) < 0)
 		exit(1);
@@ -1658,7 +1650,7 @@ int main(int argc, char *argv[])
 				exit(1);
 			}
 			if(!rng) {
-				rng = gsl_rng_alloc(gsl_rng_ranlxd1);
+				rng = gsl_rng_alloc(gsl_rng_mt19937);
 				if(options->seed)
 					gsl_rng_set(rng, options->seed);
 				else {
@@ -1777,7 +1769,7 @@ int main(int argc, char *argv[])
 	 */
 
 	XLALGPSTimeNow(&_process_table->end_time);
-	output_results(&stat, options->output_filename, _process_table, _process_params_table, _search_summary_table, _sngl_burst_table);
+	output_results(options->output_filename, _process_table, _process_params_table, _search_summary_table, _sngl_burst_table);
 
 	/*
 	 * Final cleanup.
@@ -1792,7 +1784,7 @@ int main(int argc, char *argv[])
 	XLALDestroySnglBurstTable(_sngl_burst_table);
 
 	if(options->diagnostics)
-		LAL_CALL(LALCloseLIGOLwXMLFile(&stat, options->diagnostics->LIGOLwXMLStream), &stat);
+		XLALCloseLIGOLwXMLFile(options->diagnostics->LIGOLwXMLStream);
 	options_free(options);
 
 	LALCheckMemoryLeaks();
