@@ -288,8 +288,8 @@ heterodyne.\n");  }
 
       /* read in frame data */
       if( (datareal = get_frame_data(smalllist, channel, gpstime,
-        inputParams.samplerate * duration, duration, inputParams.scaleFac, 
-        inputParams.highPass)) == NULL ){
+        inputParams.samplerate * duration, duration, inputParams.samplerate,
+        inputParams.scaleFac, inputParams.highPass)) == NULL ){
         fprintf(stderr, "Error... could not open frame files between %d and \
 %d.\n", (INT4)gpstime, (INT4)gpstime + duration);
 
@@ -1138,7 +1138,8 @@ void get_frame_times(CHAR *framefile, REAL8 *gpstime, INT4 *duration){
 
 /* function to read in frame data given a framefile and data channel */
 REAL8TimeSeries *get_frame_data(CHAR *framefile, CHAR *channel, REAL8 time,
-  REAL8 length, INT4 duration, REAL8 scalefac, REAL8 highpass){
+  REAL8 length, INT4 duration, REAL8 samplerate, REAL8 scalefac, 
+  REAL8 highpass){
   REAL8TimeSeries *dblseries=NULL;
 
   FrFile *frfile=NULL;
@@ -1150,41 +1151,45 @@ REAL8TimeSeries *get_frame_data(CHAR *framefile, CHAR *channel, REAL8 time,
   /* open frame file for reading */
   if((frfile = FrFileINew(framefile)) == NULL)
     return NULL; /* couldn't open frame file */
-  
+
   epoch.gpsSeconds = (UINT4)floor(time);
   epoch.gpsNanoSeconds = (UINT4)(1.e9*(time-floor(time)));
-  
+
   /* create data memory */
-  dblseries = XLALCreateREAL8TimeSeries( channel, &epoch, 0., 1./16384.,
+  dblseries = XLALCreateREAL8TimeSeries( channel, &epoch, 0., 1./samplerate,
     &lalSecondUnit, (INT4)length );
 
   /* get data */
   /* read in frame data */
-  if((frvect = FrFileIGetV(frfile, dblseries->name, time, (REAL8)duration)) ==
-    NULL){
+  if((frvect = FrFileIGetV(frfile, channel, time, (REAL8)duration)) == NULL){
     FrFileIEnd(frfile);
     XLALDestroyREAL8Vector(dblseries->data);
     XLALFree(dblseries);
     return NULL; /* couldn't read frame data */
   }
-  
+
   /* check if there was missing data within the frame(s) */
-  if(frvect->next){
+  if(frvect->next && strstr(channel, "h_16384Hz") == NULL){
+    /* the inclusion of strstr(channel, "h_16384Hz") == NULL is a hack due to
+    all the Virgo data files I've checked having gaps in them, so I can't read
+    in anything if I don't include it */
     FrFileIEnd(frfile);
     XLALDestroyREAL8Vector(dblseries->data);
     XLALFree(dblseries);
     return NULL; /* couldn't read frame data */
   }
-    
+
   FrFileIEnd(frfile);
 
   /* fill into REAL8 vector */
-  if((strstr(channel, "STRAIN") == NULL && strstr(channel, "DER_DATA") == NULL)
-    && strstr(channel, ":LSC") != NULL){ /* data is uncalibrated single
-    precision - not neccesarily from DARM_ERR or AS_Q though - might be
-    analysing an enviromental channel */
+  if(((strstr(channel, "STRAIN") == NULL && strstr(channel, "DER_DATA") == NULL)
+    && strstr(channel, ":LSC") != NULL) || strstr(channel, "h_16384Hz")!=NULL){ 
+    /* data is uncalibrated single precision - not neccesarily from DARM_ERR
+      or AS_Q though - might be analysing an enviromental channel, or is
+      calibrated Virgo data which has the channel h_16384Hz and is single
+      precision */
     for(i=0;i<(INT4)length;i++){
-      dblseries->data->data[i] = (REAL8)frvect->dataF[i];
+      dblseries->data->data[i] = scalefac*(REAL8)frvect->dataF[i];
     }
   }
   else if(strstr(channel, "STRAIN") != NULL || strstr(channel, "DER_DATA") !=
@@ -1192,18 +1197,18 @@ REAL8TimeSeries *get_frame_data(CHAR *framefile, CHAR *channel, REAL8 time,
    for(i=0;i<(INT4)length;i++){
       dblseries->data->data[i] = scalefac*frvect->dataD[i];
     }
-    
+
     /* if a high-pass filter is specified (>0) then filter data */
     if(highpass > 0.){
       PassBandParamStruc highpasspar;
-      
-      /* uses 8th order Butterworth, with 10% attenuation */     
+
+      /* uses 8th order Butterworth, with 10% attenuation */
       highpasspar.nMax = 8;
       highpasspar.f1   = -1;
       highpasspar.a1   = -1;
       highpasspar.f2   = highpass;
       highpasspar.a2   = 0.9; /* this means 10% attenuation at f2 */
-     
+
       XLALButterworthREAL8TimeSeries( dblseries, &highpasspar );
     }
   }
