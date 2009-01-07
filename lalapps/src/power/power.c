@@ -1425,6 +1425,7 @@ static SnglBurst **analyze_series(SnglBurst **addpoint, REAL8TimeSeries *series,
 	}
 
 	for(i = 0; i + psd_length < series->data->length + psd_shift; i += psd_shift) {
+		int errnum;
 		int start = min(i, series->data->length - psd_length);
 		REAL8TimeSeries *interval = XLALCutREAL8TimeSeries(series, start, psd_length);
 
@@ -1436,7 +1437,7 @@ static SnglBurst **analyze_series(SnglBurst **addpoint, REAL8TimeSeries *series,
 		XLALPrintInfo(" complete\n");
 		XLALPrintInfo("%s(): analyzing samples %zu -- %zu (%.9lf s -- %.9lf s)\n", func, start, start + interval->data->length, start * interval->deltaT, (start + interval->data->length) * interval->deltaT);
 
-		*addpoint = XLALEPSearch(
+		XLAL_TRY(*addpoint = XLALEPSearch(
 			options->diagnostics,
 			interval,
 			options->window,
@@ -1446,14 +1447,16 @@ static SnglBurst **analyze_series(SnglBurst **addpoint, REAL8TimeSeries *series,
 			options->fractional_stride,
 			options->maxTileBandwidth,
 			options->maxTileDuration
-		);
+		), errnum);
 		while(*addpoint)
 			addpoint = &(*addpoint)->next;
 
 		XLALDestroyREAL8TimeSeries(interval);
 
-		if(xlalErrno)
+		if(errnum) {
+			XLALSetErrno(errnum);
 			XLAL_ERROR_NULL(func, XLAL_EFUNC);
+		}
 
 	}
 
