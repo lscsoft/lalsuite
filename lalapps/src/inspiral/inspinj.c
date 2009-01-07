@@ -1,4 +1,4 @@
-/*
+ /*
  *  Copyright (C) 2007 Chad Hanna, Alexander Dietz, Duncan Brown, Gareth Jones, Jolien Creighton, Nickolas Fotopoulos, Patrick Brady, Stephen Fairhurst
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -42,8 +42,6 @@
 #include <lal/AVFactories.h>
 #include <lal/InspiralInjectionParams.h>
 #include <processtable.h>
-#include <lal/lalGitID.h>
-#include <lalappsGitID.h>
 
 RCSID( "$Id$" );
 
@@ -75,6 +73,7 @@ ProcessParamsTable *next_process_param( const char *name, const char *type,
 void read_mass_data( char *filename );
 void read_nr_data( char* filename );
 void read_source_data( char* filename );
+void sourceComplete(void);
 void drawFromSource( REAL8 *rightAscension,
     REAL8 *declination,
     REAL8 *distance,
@@ -82,7 +81,6 @@ void drawFromSource( REAL8 *rightAscension,
 void drawLocationFromExttrig( SimInspiralTable* table );
 void drawMassFromSource( SimInspiralTable* table );
 void drawMassSpinFromNR( SimInspiralTable* table );
-
 /* 
  *  *************************************
  *  Defining of the used global variables
@@ -122,9 +120,8 @@ REAL4 maxMassRatio=-1.0;
 REAL4 inclStd=-1.0;
 REAL4 fixed_inc=0.0;
 REAL4 psi=0.0;
-REAL4 longitude=181.0;
-REAL4 latitude=91.0;
-REAL4 epsAngle=1e-7;
+REAL4 longitude=0.0;
+REAL4 latitude=0.0;
 int spinInjections=-1;
 REAL4 minSpin1=-1.0;
 REAL4 maxSpin1=-1.0;
@@ -134,9 +131,6 @@ REAL4 minKappa1=-1.0;
 REAL4 maxKappa1=1.0;
 REAL4 minabsKappa1=0.0;
 REAL4 maxabsKappa1=1.0;
-INT4 bandPassInj = 0;
-InspiralApplyTaper taperInj = INSPIRAL_TAPER_NONE;
-
 
 static LALStatus status;
 static RandomParams* randParams=NULL;
@@ -144,6 +138,7 @@ INT4 numExtTriggers = 0;
 ExtTriggerTable   *exttrigHead = NULL;
 
 int num_source;
+int galaxynum;
 struct {
   char   name[LIGOMETA_SOURCE_MAX];
   REAL8 ra;
@@ -151,7 +146,7 @@ struct {
   REAL8 dist;
   REAL8 lum;
   REAL8 fudge;
-} *source_data;
+} *source_data,*old_source_data,*temparray;
 
 char MW_name[LIGOMETA_SOURCE_MAX] = "MW";
 REAL8* fracVec  =NULL;
@@ -163,7 +158,17 @@ struct {
   REAL8 mass1;
   REAL8 mass2;
 } *mass_data;
-
+struct FakeGalaxy{
+char name[LIGOMETA_SOURCE_MAX];
+REAL8 ra;
+REAL8 dec;
+REAL8 lum;
+REAL8 dist;
+REAL8 fudge;
+struct FakeGalaxy *next; };
+int srcComplete = 0;
+int makeCatalog = 0;
+REAL8 srcCompleteDist;
 int num_nr = 0;
 int i = 0;
 SimInspiralTable **nrSimArray = NULL;
@@ -255,6 +260,9 @@ static void print_usage(char *program)
       " [--fixed-inc]  fixed_inc  read inclination dist if fixed value (degrees)\n"\
       " [--source-file] sources   read source parameters from sources\n"\
       "                           requires enable/disable milkyway\n"\
+      " [--sourcecomplete] distance \n"
+      "                           complete galaxy catalog out to distance (kPc)\n"\
+      " [--make-catalog]          create a text file of the completed galaxy catalog\n"\  
       " [--enable-milkyway] lum   enables MW injections, set MW luminosity\n"\
       " [--disable-milkyway]      disables Milky Way injections\n"\
       " [--exttrig-file] exttrig  XML file containing external trigger\n"\
@@ -304,11 +312,6 @@ static void print_usage(char *program)
       "  [--max-abskappa1] abskappa1max \n"\
       "                           Set the maximum absolute value of cos(S1.L_N) \n"\
       "                           to abskappa1max (1.0)\n"\
-      "\n"\
-      "Tapering the injection waveform:\n"\
-      "  [--taper-injection] OPT  Taper the inspiral template using option OPT\n"\
-      "                            (start|end|startend) \n)"\
-      "  [--band-pass-injection]  sets the tapering method of the injected waveform\n"\
       "\n");
 }
 
@@ -501,6 +504,237 @@ read_source_data( char* filename )
     fracVec[i] = fracVec[i-1] + ratioVec[i] / norm;
 }
 
+/*
+*
+*
+* Function to complete galaxy catalog
+*
+*/
+void sourceComplete() {
+
+/*  Catalog Completion Constants */
+REAL8 Mbstar = -20.45;
+/* Mbstar = magnitude at which the number of galaxies begins to fall off exponentially, corrected for reddening (to agree with the
+lum density of 0.0198) */
+REAL8 phistar = 0.0081/0.92; /* normalization constant */
+REAL8 alpha = -0.9; /* determines slope at faint end of luminosity function */
+REAL8 initDistance = 0.0; /*minimum Distance for galaxy catalog*/
+REAL8 DeltaD = 100.0; /* Distance step for stepping through galaxy catalog (kpc) */
+REAL8 maxDistance = srcCompleteDist; /*Distance to which you want to correct the catalog (kPc)*/
+REAL8 M_min = -12.0; /* minimum blue light magnitude */
+REAL8 M_max = -25; /* maximum blue light magnitude */
+REAL8 edgestep = 0.1; /* magnitude bin size */
+
+/*  Vectors  */
+REAL8Vector *phibins = NULL; /* Magnitude bins for calculating Schechter function */
+REAL8Vector *Distance = NULL; /* Distances from initDistance to maxDistance in steps of DeltaD */
+REAL8Vector *phi = NULL; /* Schecter magnitude function */
+REAL8Vector *phiN = NULL; /* Number of expected galaxies in each magnitude bin */
+REAL8Vector *N = NULL; /* Actual number of galaxies in each magnitude bin */
+REAL8Vector *pN = NULL; /* Running tally of the fake galaxies added to the catalog */
+REAL8Vector *Corrections = NULL; /* Number of galaxies to be added in each magnitude bin */
+
+/* Other Variables */
+int edgenum = (int) ceil((M_min-M_max)/edgestep); /* Number of magnitude bins */
+char galaxyname[LIGOMETA_SOURCE_MAX] = "Fake"; /* Beginning of name for all added (non-real) galaxies */
+int distnum = (maxDistance-initDistance)/DeltaD; /* Number of elements in Distance vector */
+int k_at_25Mpc = floor((25000-initDistance)/DeltaD); /*Initial index for Distance vector - no galaxies added before 25Mpc */
+int j,k,q; /* Indices for loops */
+REAL8 mag; /* Converted blue light luminosity of each galaxy */
+int mag_index; /* Index of each galaxy when binning by magnitude */
+FILE *fp; /* File for output of corrected galaxy catalog */
+REAL8 pow1 = 0.0; /* Used to calculate Schechter function */
+REAL8 pow2 = 0.0; /* Used to calculate Schechter function */
+
+REAL8 shellLum = 0.0;
+REAL8 density = 0;
+
+/* Parameters for generating random sky positions */
+SimInspiralTable *randPositionTable;
+static RandomParams* randPositions=NULL;
+int rand_skylocation_seed = 3456;
+
+/* Set up linked list for added galaxies*/
+struct FakeGalaxy *myFakeGalaxy;
+struct FakeGalaxy *head; /*=myFakeGalaxy;*/
+struct FakeGalaxy *saved_next;
+
+/* Create the Vectors */
+phibins = XLALCreateREAL8Vector(edgenum);
+Distance = XLALCreateREAL8Vector(distnum+1);
+phi = XLALCreateREAL8Vector(edgenum);
+phiN = XLALCreateREAL8Vector(edgenum);
+N = XLALCreateREAL8Vector(edgenum);
+pN = XLALCreateREAL8Vector(edgenum);
+Corrections = XLALCreateREAL8Vector(edgenum);
+
+/* Initialize sky location parameters and FakeGalaxy linked list */
+randPositionTable = calloc(1, sizeof(SimInspiralTable));
+LALCreateRandomParams( &status, &randPositions, rand_skylocation_seed);
+galaxynum = 0;
+myFakeGalaxy = (struct FakeGalaxy*) calloc(1, sizeof(struct FakeGalaxy));
+head = myFakeGalaxy;
+
+/* Initialize the vectors */
+for (j=0; j<edgenum; j++) 
+  {
+  phibins->data[j] = M_max+j*edgestep;
+  phiN->data[j] = 0;
+  N->data[j] = 0;
+  pN->data[j] = 0;
+  Corrections->data[j] = 0;
+
+  /* Calculate the theoretical blue light magnitude in each magnitude bin */
+  pow1 = -1*pow(10, (-0.4*(phibins->data[j]-Mbstar)));
+  pow2 = pow(10, (-0.4*(phibins->data[j]-Mbstar)));
+  phi->data[j] = 0.92*phistar*exp(pow1)*pow(pow2, alpha+1);
+  }
+
+/* Initialize the Distance array */
+for (j=0; j<=distnum; j++) 
+  {
+  Distance->data[j] = initDistance+j*DeltaD;
+  }
+  
+
+/* Iterate through Distance vector and bin galaxies according to magnitude at each distance */
+for (k = k_at_25Mpc; k<distnum; k++) 
+  {
+
+  /* Reset N to zero before you count the galaxies with distances less than the current Distance */
+  for (q = 0; q<edgenum;q++) 
+    {
+    N->data[q]=0;
+    }
+
+  /* Count the number of galaxies in the spherical volume with radius Distance->data[k+1] and bin them in magnitude */
+  for( q = 0; q<num_source; q++) 
+    {
+    if ( (source_data[q].dist<=Distance->data[k+1]) ) 
+      {
+      /* Convert galaxy luminosity to blue light magnitude */
+      mag = -2.5*(log10(source_data[q].lum)+7.808); 
+      /* Calculate which magnitude bin it falls in */
+      mag_index = (int) floor((mag-M_max)/edgestep); 
+      /* Create a histogram array of the number of galaxies in each magnitude bin */
+      if (mag_index >= 0 && mag_index<edgenum) 
+        {
+	N->data[mag_index] += 1.0;
+	}
+      else printf("WARNING GALAXY DOESNT FIT IN BIN\n");
+      }
+    }
+
+  /* Add galaxies to the catalog based on the difference between the expected number of galaxies and the number of galaxies in the catalog */
+  for (j = 0; j<edgenum; j++) 
+    {
+    /* Number of galaxies expected in the spherical volume with radius Distance->data[k+1] */
+    phiN->data[j] =edgestep*phi->data[j]*(4.0/3.0)*LAL_PI*(pow(Distance->data[k+1]/1000.0,3));
+    /*Difference between the counted number of galaxies and the expected number of galaxies */
+    Corrections->data[j] = phiN->data[j] - N->data[j] - pN->data[j]; 
+    /* If there are galaxies missing, add them */
+    if (Corrections->data[j]>0.0) 
+      {
+      for (q=0;q<floor(Corrections->data[j]);q++) 
+        {
+	randPositionTable = XLALRandomInspiralSkyLocation( randPositionTable, randPositions);
+	myFakeGalaxy->dist = Distance->data[k+1];
+	myFakeGalaxy->ra = randPositionTable->longitude;
+	myFakeGalaxy->dec = randPositionTable->latitude;
+	myFakeGalaxy->fudge = 1;
+	sprintf(myFakeGalaxy->name, "%s%d", galaxyname, galaxynum);
+	myFakeGalaxy->lum = pow(10.0, (phibins->data[j]/(-2.5)-7.808));
+	myFakeGalaxy->next = (struct FakeGalaxy*) calloc(1,sizeof(struct FakeGalaxy));
+	myFakeGalaxy = myFakeGalaxy->next;
+	galaxynum++;	
+        pN->data[j] += 1.0;
+	}
+      }
+    }
+  }
+
+/*Combine source_data (original catalog) and FakeGalaxies into one array */
+temparray = calloc((num_source+galaxynum), sizeof(*source_data));
+  if ( !temparray )
+  {
+    fprintf( stderr, "Allocation error for temparray\n" );
+    exit( 1 );
+  }
+
+for (j=0;j<num_source;j++) {
+	temparray[j].dist = source_data[j].dist;
+	temparray[j].lum = source_data[j].lum;
+	sprintf(temparray[j].name, "%s", source_data[j].name);
+	temparray[j].ra = source_data[j].ra;
+	temparray[j].dec = source_data[j].dec;
+	temparray[j].fudge = source_data[j].fudge;
+}
+myFakeGalaxy = head;
+for (j=num_source;j<(num_source+galaxynum);j++) {
+	temparray[j].dist = myFakeGalaxy->dist;
+	temparray[j].lum = myFakeGalaxy->lum;
+	sprintf(temparray[j].name, "%s", myFakeGalaxy->name);
+	temparray[j].ra = myFakeGalaxy->ra;
+	temparray[j].dec = myFakeGalaxy->dec;
+	temparray[j].fudge = myFakeGalaxy->fudge;
+	myFakeGalaxy = myFakeGalaxy->next;
+} 
+myFakeGalaxy->next = NULL;
+
+/*Point old_source_data at source_data */
+old_source_data = source_data;
+
+/*Point source_data at the new array*/
+source_data = temparray;
+shellLum = 0;
+
+if (makeCatalog == 1) {
+/* Write the corrected catalog to a file */
+fp = fopen("correctedcatalog.txt", "w+");
+for (j=0; j<(num_source+galaxynum);j++) {
+fprintf(fp, "%s %g %g %g %g %g \n", source_data[j].name, source_data[j].ra, source_data[j].dec, source_data[j].dist, source_data[j].lum, source_data[j].fudge ); 
+}
+fclose(fp);
+}
+/* Recalculate some variables from read_source_data that will have changed due to the addition of fake galaxies */
+ ratioVec = (REAL8*) calloc( (num_source+galaxynum), sizeof( REAL8 ) );
+ fracVec  = (REAL8*) calloc( (num_source+galaxynum), sizeof( REAL8  ) );
+  if ( !ratioVec || !fracVec )
+  {
+    fprintf( stderr, "Allocation error for ratioVec/fracVec\n" );
+    exit( 1 );
+  }
+
+  /* MW luminosity might be zero */
+  norm = mwLuminosity;
+
+  /* calculate the fractions of the different sources */
+  for ( i = 0; i <(num_source+galaxynum); ++i )
+    norm += ratioVec[i] = source_data[i].lum * source_data[i].fudge;
+  fracVec[0] = ratioVec[0] / norm;
+  for ( i = 1; i <(num_source+galaxynum); ++i )
+    fracVec[i] = fracVec[i-1] + ratioVec[i] / norm;
+
+/* Free some stuff */
+myFakeGalaxy = head;
+for (j=0; j<galaxynum; j++) {
+	saved_next = myFakeGalaxy->next;
+	free(myFakeGalaxy);
+	myFakeGalaxy = saved_next;	
+}
+LALFree(old_source_data);
+LALDestroyRandomParams( &status, &randPositions);
+
+XLALDestroyREAL8Vector(phibins);
+XLALDestroyREAL8Vector(Corrections);
+XLALDestroyREAL8Vector(Distance);
+XLALDestroyREAL8Vector(phi);
+XLALDestroyREAL8Vector(phiN);
+XLALDestroyREAL8Vector(N);
+XLALDestroyREAL8Vector(pN);
+}
+
+
 
 /*
  *
@@ -578,6 +812,7 @@ void drawFromSource( REAL8 *rightAscension,
       randParams );
   memcpy( name, MW_name, sizeof(CHAR) * 30 );
 
+/* LALFree( source_data );*/
 }
 
 /*
@@ -656,7 +891,7 @@ int main( int argc, char *argv[] )
   status=blank_status;
   gpsStartTime.gpsSeconds=-1;
   gpsEndTime.gpsSeconds=-1;
-
+   
   /* getopt arguments */
   /* available letters: H */
   struct option long_options[] =
@@ -699,6 +934,8 @@ int main( int argc, char *argv[] )
     {"inclStd",                 required_argument, 0,                'B'},
     {"fixed-inc",               required_argument, 0,                'C'},
     {"polarization",            required_argument, 0,                'S'},
+    {"sourcecomplete",          required_argument, 0,                'H'},
+    {"make-catalog",            no_argument,       0,                '.'}, 
     {"enable-milkyway",         required_argument, 0,                'M'},
     {"disable-milkyway",        no_argument,       0,                'D'},
     {"min-spin1",               required_argument, 0,                'g'},
@@ -714,8 +951,6 @@ int main( int argc, char *argv[] )
     {"enable-spin",             no_argument,       0,                'T'},
     {"disable-spin",            no_argument,       0,                'W'},
     {"write-compress",          no_argument,       &outCompress,       1},
-    {"taper-injection",         required_argument, 0,                '*'},
-    {"band-pass-injection",     no_argument,       0,                '}'},
     {0, 0, 0, 0}
   };
   int c;
@@ -729,19 +964,8 @@ int main( int argc, char *argv[] )
     calloc( 1, sizeof(ProcessTable) );
   LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->start_time),
         &accuracy ), &status );
-  if (strcmp(CVS_REVISION,"$Revi" "sion$"))
-    {
-      LAL_CALL( populate_process_table( &status, proctable.processTable, 
-					PROGRAM_NAME, CVS_REVISION,
-					CVS_SOURCE, CVS_DATE ), &status );
-    }
-  else
-    {
-      LAL_CALL( populate_process_table( &status, proctable.processTable, 
-					PROGRAM_NAME, lalappsGitCommitID,
-					lalappsGitGitStatus,
-					lalappsGitCommitDate ), &status );
-    }
+  LAL_CALL( populate_process_table( &status, proctable.processTable, 
+        PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE ), &status );
   LALSnprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX, " " );
   this_proc_param = procparams.processParamsTable = (ProcessParamsTable *) 
     calloc( 1, sizeof(ProcessParamsTable) );
@@ -758,7 +982,7 @@ int main( int argc, char *argv[] )
     size_t optarg_len;
 
     c = getopt_long_only( argc, argv, 
-        "hf:m:a:b:t:s:w:i:M:*", long_options, &option_index );
+        "hf:m:a:b:t:s:w:i:M:", long_options, &option_index );
 
     /* detect the end of the options */
     if ( c == - 1 )
@@ -1202,42 +1426,31 @@ int main( int argc, char *argv[] )
 
         break;
 
+      case 'H':
+        /* Turn on galaxy catalog completion function */
+	srcComplete = 1;
+        srcCompleteDist = (REAL8) atof( optarg );
+	break;
+
+      case '.':
+	/* Create a text file of completed catalog */
+	makeCatalog = 1;
+	break;
+
       case 'v':
         /* fixed location (longitude) */
-        longitude =  atof( optarg )*LAL_PI_180 ;
-        if (longitude <= (  LAL_PI + epsAngle ) && \
-            longitude >= ( -LAL_PI - epsAngle ))
-        { 
-          this_proc_param = this_proc_param->next = 
-            next_process_param( long_options[option_index].name, 
-                "float", "%e", longitude );
-        }
-        else
-        {
-          fprintf(stderr,"invalid argument to --%s:\n"
-                  "%s must be between -180. and 180. degrees\n",
-                  long_options[option_index].name, optarg );
-          exit( 1 );
-        }
+        longitude = (REAL4) atof( optarg );
+        this_proc_param = this_proc_param->next = 
+          next_process_param( long_options[option_index].name, 
+              "float", "%e", longitude );
         break;
 
       case 'z':
         /* fixed location (latitude) */
-        latitude = (REAL4) atof( optarg )*LAL_PI_180;
-        if (latitude <= (  LAL_PI/2. + epsAngle ) && \
-            latitude >= ( -LAL_PI/2. - epsAngle ))
-        { 
-	  this_proc_param = this_proc_param->next = 
-            next_process_param( long_options[option_index].name, 
-                "float", "%e", latitude );
-        }
-        else
-        {
-          fprintf(stderr,"invalid argument to --%s:\n"
-                  "%s must be between -90. and 90. degrees\n",
-                  long_options[option_index].name, optarg );
-          exit( 1 );
-        } 
+        latitude = (REAL4) atof( optarg );
+        this_proc_param = this_proc_param->next = 
+          next_process_param( long_options[option_index].name, 
+              "float", "%e", latitude );
         break;
 
       case 'I':
@@ -1379,7 +1592,6 @@ int main( int argc, char *argv[] )
             "The CBC group \n"
             "CVS Version: " CVS_ID_STRING "\n"
             "CVS Tag: " CVS_NAME_STRING "\n" );
-	fprintf( stdout, lalappsGitID );
         exit( 0 );
         break;
 
@@ -1399,40 +1611,6 @@ int main( int argc, char *argv[] )
         spinInjections = 0;
         break;
 
-      case '}':
-        /* enable band-passing */
-        this_proc_param = this_proc_param->next = 
-          next_process_param( long_options[option_index].name, "string", 
-              "" );
-        bandPassInj = 1;
-        break;
-
-      case '*':
-        /* Set injection tapering */
-        if ( ! strcmp( "start", optarg ) )
-        {
-            taperInj = INSPIRAL_TAPER_START;
-        }
-        else if ( ! strcmp( "end", optarg ) )
-        {
-            taperInj = INSPIRAL_TAPER_END;
-        }
-        else if ( ! strcmp( "startend", optarg ) )
-        {
-            taperInj = INSPIRAL_TAPER_STARTEND;
-        }
-        else
-        {
-            fprintf( stderr, "invalid argument to --%s:\n"
-                    "unknown option specified: %s\n"
-                    "(Must be one of start|end|startend)\n",
-                    long_options[option_index].name, optarg );
-        }
-        this_proc_param = this_proc_param->next = 
-                next_process_param( long_options[option_index].name, 
-                        "string", optarg );
-        break;
-
       case 'h':
         print_usage(argv[0]);
         exit( 0 );
@@ -1449,7 +1627,6 @@ int main( int argc, char *argv[] )
         exit( 1 );
     }
   }
-
   /* must set MW flag */
   if ( mwLuminosity < 0  && dDistr == distFromSourceFile ) 
   {
@@ -1470,41 +1647,25 @@ int main( int argc, char *argv[] )
 
   if ( dDistr == unknownDistanceDist )
   {
-    fprintf(stderr,"Must specify a distance distribution (--d-distr).\n");
+    printf("Must specify a distance distribution (--d-distr).\n");
     exit( 1 );
   }
 
   if ( lDistr == unknownLocationDist )
   {
-    fprintf(stderr,"Must specify a location distribution (--l-distr).\n");
-    exit( 1 );
-  }
-
-  if ( lDistr == fixedSkyLocation && longitude == 181. )
-  {
-    fprintf(stderr,
-        "Must specify both --longitude and --latitude when using \n"\
-        "--l-distr=fixed\n");
-    exit( 1 );
-  }
-
-  if ( lDistr == fixedSkyLocation && latitude == 91. )
-  {
-    fprintf(stderr,
-        "Must specify both --longitude and --latitude when using \n"\
-        "--l-distr=fixed\n");
+    printf("Must specify a location distribution (--l-distr).\n");
     exit( 1 );
   }
 
   if ( mDistr == unknownMassDist )
   {
-    fprintf(stderr,"Must specify a mass distribution (--m-distr).\n");
+    printf("Must specify a mass distribution (--m-distr).\n");
     exit( 1 );
   }
 
   if ( iDistr == unknownInclDist )
   {
-    fprintf(stderr,"Must specify an inclination distribution (--i-distr).\n");
+    printf("Must specify an inclination distribution (--i-distr).\n");
     exit( 1 );
   }
 
@@ -1520,8 +1681,13 @@ int main( int argc, char *argv[] )
 
     /* read the source distribution here */
     read_source_data( sourceFileName );
-  }
-
+  
+   /* complete the galaxy catalog */
+   if (srcComplete == 1) 
+    {
+    sourceComplete();	
+    }
+}
   /* check if the source file is specified for distance but NOT for 
      location */
   if ( dDistr==distFromSourceFile && lDistr!=locationFromSourceFile )
@@ -1583,22 +1749,17 @@ int main( int argc, char *argv[] )
   {
     numExtTriggers=LALExtTriggerTableFromLIGOLw( &exttrigHead, exttrigFileName,
         0, 1);
-    fprintf(stderr,
-              "Number of triggers read from the external trigger file: %d\n",
-               numExtTriggers);
+    printf("Number of triggers read from the external trigger file: %d\n",
+        numExtTriggers);
 
     if (numExtTriggers>1)
     {
-      fprintf(stderr,
-                "WARNING: Only 1 external trigger expected in the file '%s'",
-                 exttrigFileName );
+      printf("WARNING: Only 1 external trigger expected in the file '%s'",
+          exttrigFileName );
     }
     if (numExtTriggers==0)
     {
-      fprintf(stderr,
-                "ERROR: No external trigger found in file '%s'",
-                 exttrigFileName );
-
+      printf("ERROR: No external trigger found in file '%s'",exttrigFileName );
       exit(1);
     }
   }
@@ -1840,9 +2001,8 @@ int main( int argc, char *argv[] )
           minMass2, maxMass2, 
           minMtotal, maxMtotal);
     }
-
     /* draw location and distances */
-    drawFromSource( &drawnRightAscension, &drawnDeclination, &drawnDistance,
+      drawFromSource( &drawnRightAscension, &drawnDeclination, &drawnDistance,
         drawnSourceName );
 
     /* populate distances */
@@ -1892,14 +2052,12 @@ int main( int argc, char *argv[] )
       simTable->inclination = fixed_inc;
     }
     else
-    {                           
-      do {
-	simTable=XLALRandomInspiralOrientation(simTable, randParams,
-					       iDistr, inclStd);
-      } while ( ! strcmp(waveform, "SpinTaylorthreePointFivePN") &&
-		( simTable->inclination < eps ||
-		  simTable->inclination > LAL_PI-eps) );
-    }
+    {                               
+      simTable=XLALRandomInspiralOrientation(simTable, randParams,
+          iDistr, inclStd);
+    } while ( ! strcmp(waveform, "SpinTaylorthreePointFivePN") &&
+        ( simTable->inclination < eps ||
+          simTable->inclination > LAL_PI-eps) );
 
     /* set polarization angle */
     simTable->polarization = psi;
@@ -1916,36 +2074,6 @@ int main( int argc, char *argv[] )
 
     /* populate the site specific information */
     LALPopulateSimInspiralSiteInfo( &status, simTable );
-
-    /* populate the taper options */
-    {
-        switch (taperInj)
-        {
-            case INSPIRAL_TAPER_NONE:
-                 LALSnprintf( simTable->taper, LIGOMETA_WAVEFORM_MAX, 
-                         "%s", "TAPER_NONE"); 
-                 break;
-            case INSPIRAL_TAPER_START:
-                 LALSnprintf( simTable->taper, LIGOMETA_WAVEFORM_MAX, 
-                         "%s", "TAPER_START"); 
-                 break;
-            case INSPIRAL_TAPER_END:
-                 LALSnprintf( simTable->taper, LIGOMETA_WAVEFORM_MAX, 
-                         "%s", "TAPER_END"); 
-                 break;
-            case INSPIRAL_TAPER_STARTEND:
-                 LALSnprintf( simTable->taper, LIGOMETA_WAVEFORM_MAX, 
-                         "%s", "TAPER_STARTEND"); 
-                 break;
-            default: /* Never reach here */
-                 fprintf( stderr, "unknown error while populating sim_inspiral taper options\n" );
-                 exit (1);
-        }
-
-    }
-    
-    /* populate the bandpass options */
-    simTable->bandpass = bandPassInj;
 
     /* increment current time, avoiding roundoff error;
        check if end of loop is reached */
@@ -2010,7 +2138,7 @@ int main( int argc, char *argv[] )
   }
 
   LAL_CALL( LALCloseLIGOLwXMLFile ( &status, &xmlfp ), &status );
-
   LALCheckMemoryLeaks();
+
   return 0;
 }
