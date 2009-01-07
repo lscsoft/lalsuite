@@ -1159,9 +1159,8 @@ REAL8TimeSeries *get_frame_data(CHAR *framefile, CHAR *channel, REAL8 time,
   dblseries = XLALCreateREAL8TimeSeries( channel, &epoch, 0., 1./samplerate,
     &lalSecondUnit, (INT4)length );
 
-  /* get data */
   /* read in frame data */
-  if((frvect = FrFileIGetV(frfile, channel, time, (REAL8)duration)) == NULL){
+  if((frvect = FrFileIGetV(frfile, channel, time, (REAL8)duration))==NULL){
     FrFileIEnd(frfile);
     XLALDestroyREAL8Vector(dblseries->data);
     XLALFree(dblseries);
@@ -1169,10 +1168,7 @@ REAL8TimeSeries *get_frame_data(CHAR *framefile, CHAR *channel, REAL8 time,
   }
 
   /* check if there was missing data within the frame(s) */
-  if(frvect->next && strstr(channel, "h_16384Hz") == NULL){
-    /* the inclusion of strstr(channel, "h_16384Hz") == NULL is a hack due to
-    all the Virgo data files I've checked having gaps in them, so I can't read
-    in anything if I don't include it */
+  if(frvect->next){
     FrFileIEnd(frfile);
     XLALDestroyREAL8Vector(dblseries->data);
     XLALFree(dblseries);
@@ -1182,20 +1178,46 @@ REAL8TimeSeries *get_frame_data(CHAR *framefile, CHAR *channel, REAL8 time,
   FrFileIEnd(frfile);
 
   /* fill into REAL8 vector */
-  if(((strstr(channel, "STRAIN") == NULL && strstr(channel, "DER_DATA") == NULL)
-    && strstr(channel, ":LSC") != NULL) || strstr(channel, "h_16384Hz")!=NULL){ 
+  if((strstr(channel, "STRAIN") == NULL && strstr(channel, "DER_DATA") == NULL)
+    && strstr(channel, ":LSC") != NULL){ 
+
+    /* check that data doesn't contain NaNs */
+    if(isnan(frvect->dataF[0]) != 0){
+      XLALDestroyREAL8Vector(dblseries->data);
+      XLALFree(dblseries);
+      return NULL; /* couldn't read frame data */
+    } 
+
     /* data is uncalibrated single precision - not neccesarily from DARM_ERR
-      or AS_Q though - might be analysing an enviromental channel, or is
-      calibrated Virgo data which has the channel h_16384Hz and is single
-      precision */
-    for(i=0;i<(INT4)length;i++){
+      or AS_Q though - might be analysing an enviromental channel */
+    for(i=0;i<(INT4)length;i++)
       dblseries->data->data[i] = scalefac*(REAL8)frvect->dataF[i];
-    }
   }
   else if(strstr(channel, "STRAIN") != NULL || strstr(channel, "DER_DATA") !=
-    NULL){ /* data is calibrated h(t) */
-   for(i=0;i<(INT4)length;i++){
-      dblseries->data->data[i] = scalefac*frvect->dataD[i];
+    NULL || strstr(channel, "h_16384Hz") != NULL){ /* data is calibrated h(t) */
+    /* calibrated Virgo data has the channel h_16384Hz and is single
+       precision */
+    if( strstr(channel, "h_16384Hz") == NULL ){
+      /* check that data doesn't contain NaNs */
+      if(isnan(frvect->dataD[0]) != 0){
+        XLALDestroyREAL8Vector(dblseries->data);
+        XLALFree(dblseries);
+        return NULL; /* couldn't read frame data */
+      }
+
+      for(i=0;i<(INT4)length;i++)
+        dblseries->data->data[i] = scalefac*frvect->dataD[i];
+    }
+    else{ /* Virgo data */
+      /* check that data doesn't contain NaNs */
+      if(isnan(frvect->dataF[0]) != 0){
+        XLALDestroyREAL8Vector(dblseries->data);
+        XLALFree(dblseries);
+        return NULL; /* couldn't read frame data */
+      }
+
+      for(i=0;i<(INT4)length;i++)
+        dblseries->data->data[i] = scalefac*(REAL8)frvect->dataF[i];
     }
 
     /* if a high-pass filter is specified (>0) then filter data */
