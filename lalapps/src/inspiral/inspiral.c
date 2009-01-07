@@ -223,7 +223,7 @@ INT4  numChisqBins      = -1;           /* number of chisq bins         */
 REAL4 chisqDelta        = -1;           /* set chisq delta param        */
 REAL4 snrThresh         = -1;           /* signal to noise thresholds   */
 REAL4 chisqThresh       = -1;           /* chisq veto thresholds        */
-Clustering clusterMethod;               /* chosen clustering algorithm  */  
+FindChirpClustering clusterMethod;      /* chosen clustering algorithm  */  
 REAL4 clusterWindow     = -1;           /* cluster over time window     */  
 Approximant approximant;                /* waveform approximant         */
 CHAR *approximantName   = NULL;         /* waveform approximant name    */
@@ -4492,19 +4492,19 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
       case '0':
         if ( ! strcmp( "none", optarg ) )
         {
-          clusterMethod = noClustering;
+          clusterMethod = FindChirpClustering_none;
         }
         else if ( ! strcmp( "template", optarg ) )
         {
-          clusterMethod = tmplt;
+          clusterMethod = FindChirpClustering_tmplt;
         } 
         else if ( ! strcmp( "window", optarg ) )
         {
-          clusterMethod = window;
+          clusterMethod = FindChirpClustering_window;
         }
         else if ( ! strcmp( "tmpltwindow", optarg ) )
         {
-          clusterMethod = tmpltwindow; 
+          clusterMethod = FindChirpClustering_tmpltwindow; 
         }
         else
         {
@@ -5073,13 +5073,13 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     fprintf( stderr, "--cluster-method must be specified\n" );
     exit( 1 );
   }
-  if ( ( clusterMethod == window || clusterMethod == tmpltwindow ) && clusterWindow == -1 )
+  if ( ( clusterMethod == FindChirpClustering_window || clusterMethod == FindChirpClustering_tmpltwindow ) && clusterWindow == -1 )
   {
     fprintf( stderr, "--cluster-window must be specified "
         "if --clustering method 'window' chosen\n" );
     exit( 1 );
   }
-  if ( clusterMethod != window && clusterMethod != tmpltwindow && clusterWindow != -1 )
+  if ( clusterMethod != FindChirpClustering_window && clusterMethod != FindChirpClustering_tmpltwindow && clusterWindow != -1 )
   {
     fprintf( stderr, "--cluster-window specified "
         "but --clustering method 'window' or 'tmpltwindow' not chosen\n" );

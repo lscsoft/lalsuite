@@ -176,17 +176,17 @@ LALFindChirpClusterEvents (
 
 
    /* set deltaEventIndex depending on clustering method used */
-   if ( params->clusterMethod == tmplt )
+   if ( params->clusterMethod == FindChirpClustering_tmplt )
    {
      deltaEventIndex = 
        (UINT4) rint( (input->fcTmplt->tmplt.tC / deltaT) + 1.0 );
    }
-   else if ( params->clusterMethod == window )
+   else if ( params->clusterMethod == FindChirpClustering_window )
    {
      deltaEventIndex = 
        (UINT4) rint( (params->clusterWindow / deltaT) + 1.0 );
    }
-   else if ( params->clusterMethod == tmpltwindow )
+   else if ( params->clusterMethod == FindChirpClustering_tmpltwindow )
    {
      if ( input->fcTmplt->tmplt.tC > params->clusterWindow )
      {
@@ -276,7 +276,7 @@ LALFindChirpClusterEvents (
             thisEvent->end_time.gpsSeconds = j;
             thisEvent->snr = modqsq;
           }
-          else if (  ! params->clusterMethod == noClustering  &&
+          else if (  ! params->clusterMethod == FindChirpClustering_none  &&
               j <= thisEvent->end_time.gpsSeconds + deltaEventIndex &&
              modqsq > thisEvent->snr )
           {
@@ -285,7 +285,7 @@ LALFindChirpClusterEvents (
             thisEvent->snr = modqsq;
           }
           else if ( j > thisEvent->end_time.gpsSeconds + deltaEventIndex ||
-                params->clusterMethod == noClustering  )
+                params->clusterMethod == FindChirpClustering_none  )
           {
             /* clean up this event */
             SnglInspiralTable *lastEvent;

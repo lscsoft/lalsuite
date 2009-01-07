@@ -491,11 +491,11 @@ LALFindChirpBCVSpinFilterSegment (
 
   /* Calculate deltaEventIndex : the only acceptable clustering */
   /* is "window" method, for BCV                                */
-  if ( params->clusterMethod == window )
+  if ( params->clusterMethod == FindChirpClustering_window )
   {
 	 deltaEventIndex=(UINT4) rint((params->clusterWindow/params->deltaT)+1.0);
   }
-  else if ( params->clusterMethod == tmplt )
+  else if ( params->clusterMethod == FindChirpClustering_tmplt )
   {
         ABORT( status, FINDCHIRPBCVSPINH_ECLUW, FINDCHIRPBCVSPINH_MSGECLUW );
   }
@@ -615,7 +615,7 @@ LALFindChirpBCVSpinFilterSegment (
 		within interval defined by
                 deltaEventIndex */
 		
-		else if ( ! params->clusterMethod == noClustering &&
+		else if ( ! params->clusterMethod == FindChirpClustering_none &&
 	        j <= thisEvent->end_time.gpsSeconds + deltaEventIndex &&
 		rho > thisEvent->snr )
         	{
@@ -645,7 +645,7 @@ LALFindChirpBCVSpinFilterSegment (
                 }
 
                 else if (j > thisEvent->end_time.gpsSeconds + deltaEventIndex ||
-		         params->clusterMethod == noClustering )
+		         params->clusterMethod == FindChirpClustering_none )
         	{
           		/* clean up this event */
           		SnglInspiralTable *lastEvent;

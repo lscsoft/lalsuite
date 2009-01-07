@@ -418,8 +418,8 @@ numerical relativity waveforms.
 to be a reverse chirp template bank if true.
 \end{description}
 
-\subsubsection*{Structure \texttt{Clustering}}
-\idx[Type]{Clustering}
+\subsubsection*{Structure \texttt{FindChirpClustering}}
+\idx[Type]{FindChirpClustering}
 
 \noindent This structure contains the possible methods by which
 to maximize over a chirp in a data segment.
@@ -428,24 +428,27 @@ to maximize over a chirp in a data segment.
 
 /* <lalVerbatim> */
 typedef enum {
-   noClustering,
-   tmplt,
-   window,
-   tmpltwindow
- } 
-Clustering;
+   FindChirpClustering_none,
+   FindChirpClustering_tmplt,
+   FindChirpClustering_window,
+   FindChirpClustering_tmpltwindow
+}
+FindChirpClustering;
 /* </lalVerbatim> */
 
 #if 0
 <lalLaTeX>
 
 \begin{description}
-\item[\texttt{noClustering}] The decision to do no clustering
+\item[\texttt{FindChirpClustering\_none}]
+The decision to do no clustering
 of events.
 
-\item[\texttt{tmplt}] Cluster over the length of the data segment.
+\item[\texttt{FindChirpClustering\_tmplt}]
+Cluster over the length of the data segment.
 
-\item[\texttt{window}] Cluster over a given number of seconds
+\item[\texttt{FindChirpClustering\_window}]
+Cluster over a given number of seconds
 given by the argument to the flag \texttt{--cluster-window}
 (required to be less than the length of the data segment).
 
@@ -501,7 +504,7 @@ tagFindChirpFilterParams
   REAL4                         chisqDelta;
   UINT4                         maximiseOverChirp;
   UINT4                         ignoreIndex;
-  Clustering                    clusterMethod;          
+  FindChirpClustering           clusterMethod;          
   Approximant                   approximant;
   Order                         order;
   COMPLEX8Vector               *qVec;
