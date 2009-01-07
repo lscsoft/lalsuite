@@ -269,34 +269,32 @@ static struct options *options_new(void)
 	if(!options)
 		return NULL;
 
-	*options = (struct options) {
-		.cal_cache_filename = NULL,	/* default == disable */
-		.channel_name = NULL,	/* impossible */
-		.comment = default_comment,	/* default = "" */
-		.filter_corruption = -1,	/* impossible */
-		.mdc_cache_filename = NULL,	/* default == disable */
-		.mdc_channel_name = NULL,	/* impossible */
-		.noise_rms = -1.0,	/* default == disable */
-		.diagnostics = NULL,	/* default == disable */
-		.psd_length = 0,	/* impossible */
-		.psd_shift = 0,	/* impossible */
-		.resample_rate = 0,	/* impossible */
-		.seed = 0,	/* default == use system clock */
-		.max_series_length = 0,	/* default == disable */
-		.calibrated = 0,	/* default */
-		.high_pass = -1.0,	/* impossible */
-		.max_event_rate = 0,	/* default == disable */
-		.output_filename = NULL,	/* impossible */
-		.injection_filename = NULL,	/* default == disable */
-		.cache_filename = NULL,	/* default == disable */
-		.confidence_threshold = XLAL_REAL8_FAIL_NAN,	/* impossible */
-		.bandwidth = 0,	/* impossible */
-		.flow = -1,	/* impossible */
-		.maxTileBandwidth = 0,	/* impossible */
-		.maxTileDuration = 0,	/* impossible */
-		.fractional_stride = 0,	/* impossible */
-		.window = NULL,	/* impossible */
-	};
+	options->cal_cache_filename = NULL;	/* default == disable */
+	options->channel_name = NULL;	/* impossible */
+	options->comment = default_comment;	/* default = "" */
+	options->filter_corruption = -1;	/* impossible */
+	options->mdc_cache_filename = NULL;	/* default == disable */
+	options->mdc_channel_name = NULL;	/* impossible */
+	options->noise_rms = -1;	/* default == disable */
+	options->diagnostics = NULL;	/* default == disable */
+	options->psd_length = 0;	/* impossible */
+	options->psd_shift = 0;	/* impossible */
+	options->resample_rate = 0;	/* impossible */
+	options->seed = 0;	/* default == use system clock */
+	options->max_series_length = 0;	/* default == disable */
+	options->calibrated = 0;	/* default */
+	options->high_pass = -1;	/* impossible */
+	options->max_event_rate = 0;	/* default == disable */
+	options->output_filename = NULL;	/* impossible */
+	options->injection_filename = NULL;	/* default == disable */
+	options->cache_filename = NULL;	/* default == disable */
+	options->confidence_threshold = XLAL_REAL8_FAIL_NAN;	/* impossible */
+	options->bandwidth = 0;	/* impossible */
+	options->flow = -1;	/* impossible */
+	options->maxTileBandwidth = 0;	/* impossible */
+	options->maxTileDuration = 0;	/* impossible */
+	options->fractional_stride = 0;	/* impossible */
+	options->window = NULL;	/* impossible */
 
 	memset(options->ifo, 0, sizeof(options->ifo));	/* default = "" */
 	XLALINT8NSToGPS(&options->gps_start, 0);	/* impossible */
