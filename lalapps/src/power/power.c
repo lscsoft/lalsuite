@@ -58,6 +58,7 @@
 #include <lal/GenerateBurst.h>
 #include <lal/Inject.h>
 #include <lal/IIRFilter.h>
+#include <lal/LALComplex.h>
 #include <lal/LALConstants.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LALError.h>
@@ -1149,9 +1150,10 @@ static COMPLEX8FrequencySeries *generate_response(const char *cachefile, const c
 		/* generate fake unity response if working with calibrated
 		 * data or if there is no calibration information available
 		 * */
-		const LALUnit strainPerCount = {0, {0, 0, 0, 0, 0, 1, -1}, {0, 0, 0, 0, 0, 0, 0}};
-		const COMPLEX8 one = {1.0, 0.0};
-		size_t i;
+		LALUnit strainPerCount;
+		unsigned i;
+
+		XLALUnitDivide(&strainPerCount, &lalStrainUnit, &lalADCCountUnit);
 
 		response = XLALCreateCOMPLEX8FrequencySeries(channel_name, &epoch, 0.0, deltaf, &strainPerCount, n);
 		if(!response)
@@ -1160,7 +1162,7 @@ static COMPLEX8FrequencySeries *generate_response(const char *cachefile, const c
 		XLALPrintInfo("generate_response(): generating unit response function\n");
 
 		for(i = 0; i < response->data->length; i++)
-			response->data->data[i] = one;
+			response->data->data[i] = LAL_COMPLEX8_ONE;
 
 		return response;
 	} else {
