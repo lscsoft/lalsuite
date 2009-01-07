@@ -916,18 +916,20 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 	 */
 
 	if(!options->output_filename) {
-		int length = 1000;
-		options->output_filename = calloc(length, sizeof(*options->output_filename));
-		if(!options->output_filename) {
-			XLALPrintError("memory error");
-			exit(1);
+		int size = 1024, required_size;
+		while(1) {
+			options->output_filename = calloc(size, sizeof(*options->output_filename));
+			if(!options->output_filename) {
+				XLALPrintError("memory error");
+				exit(1);
+			}
+			required_size = snprintf(options->output_filename, size, "%s-POWER_%s-%d-%d.xml", options->ifo, options->comment, options->gps_start.gpsSeconds, options->gps_end.gpsSeconds - options->gps_start.gpsSeconds);
+			if(required_size < size)
+				break;
+			free(options->output_filename);
+			size = required_size;
 		}
-		length = snprintf(options->output_filename, length, "%s-POWER_%s-%d-%d.xml", options->ifo, options->comment, options->gps_start.gpsSeconds, options->gps_end.gpsSeconds - options->gps_start.gpsSeconds);
-		if(length > 999) {
-			XLALPrintError("output filename too long (999 characters max)");
-			exit(1);
-		}
-		options->output_filename = realloc(options->output_filename, (length + 1) * sizeof(*options->output_filename));
+		options->output_filename = realloc(options->output_filename, (required_size + 1) * sizeof(*options->output_filename));
 		if(!options->output_filename) {
 			XLALPrintError("memory error");
 			exit(1);
