@@ -117,7 +117,6 @@ real or simulated gravitational wave detector data.
 \item[Synopsis]
 \prog{lalapps\_power} \newline \hspace*{0.5in}
 \option{--bandwidth}~\parm{Hz} \newline \hspace*{0.5in}
-[\option{--calibrated-data}] \newline \hspace*{0.5in}
 [\option{--calibration-cache}~\parm{cache file}] \newline \hspace*{0.5in}
 \option{--channel-name}~\parm{string} \newline \hspace*{0.5in}
 \option{--confidence-threshold}~\parm{threshold} \newline \hspace*{0.5in}
@@ -162,6 +161,9 @@ frame files.  This program analyzes data from only a single detector at a
 time, but it can analyze data that spans multiple frame files.  Usually a
 collection of frame files is specified by providing as input to this
 program a LAL cache file, as might be obtained from \prog{LSCdataFind}.
+Internally, all processing is performed using double-precision IEEE
+floating point arithmetic.  The type of data in the input channel is
+auto-detected and the data is cast to double precision if needed.
 
 If software injections are desired, then a LIGO\_LW XML file containing a
 sim\_burst table describing the software injections must also be provided
@@ -202,21 +204,16 @@ Set the bandwidth in which the search is to be performed.  This must be an
 integer power of 2.  This and the \option{--low-freq-cutoff} option
 together set the frequency band to be searched.
 
-\item[\option{--calibrated-data}]
-When the \option{--calibrated-data} option is supplied, input time series
-data is read as IEEE double-precision samples.  Calibrated data, for
-example from the GEO detector, or from LIGO's \(h(t)\) frames, is stored in
-double-precision rather than single-precision format.  The default is to
-read the data as IEEE single-precision samples, although internally the
-code uses double precision throughout (single-precision input data is
-re-quantized to double precision prior to processing).
-
 \item[\option{--calibration-cache} \parm{cache file}]
 Specify the location of calibration information.  \parm{cache file} gives
 the path to a LAL-format frame cache file describing locations of
 \texttt{.gwf} frame files that provide the calibration data ($\alpha$ and
 $\beta$ coefficients) for the analysis.  Frame cache files are explained in
-the ``framedata'' package in LAL.
+the ``framedata'' package in LAL.  This option also controls the units
+assumed for the data (frame files don't provide that information).  When
+this command line option is present the input time series data is assumed
+to have units of ``ADC counts'', otherwise it is assumed to have units of
+strain.
 
 \item[\option{--channel-name} \parm{string}]
 Set the name of the data channel to analyze to \parm{string}.  This must
@@ -390,7 +387,6 @@ To run the program, type:
 \begin{verbatim}
 lalapps_power \
 --bandwidth 2048 \
---calibrated-data \
 --channel-name "H1:LSC-STRAIN" \
 --debug-level info \
 --filter-corruption 4096 \
