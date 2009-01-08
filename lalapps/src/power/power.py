@@ -389,22 +389,12 @@ class PowerNode(pipeline.AnalysisNode):
 		self.add_var_opt("mdc-cache", file)
 		self.add_input_file(file)
 
-	def set_inspinj(self, file):
+	def set_injection_file(self, file):
 		"""
-		Set the LAL frame cache to to use. The frame cache is
-		passed to the job with the --frame-cache argument.  @param
-		file: calibration file to use.
+		Set the name of the XML file from which to read a list of
+		software injections.
 		"""
-		self.add_var_opt("inspiralinjection-file", file)
-		self.add_input_file(file)
-
-	def set_siminj(self, file):
-		"""
-		Set the LAL frame cache to to use. The frame cache is
-		passed to the job with the --frame-cache argument.  @param
-		file: calibration file to use.
-		"""
-		self.add_var_opt("siminjection-file", file)
+		self.add_var_opt("injection-file", file)
 		self.add_input_file(file)
 
 
