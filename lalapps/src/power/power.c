@@ -201,13 +201,6 @@ struct options {
 	int max_series_length;
 
 	/*
-	 * h(t) support
-	 */
-
-	/* flag indicating that input is double-precision h(t) */
-	int calibrated;
-
-	/*
 	 * data conditioning
 	 */
 
@@ -283,7 +276,6 @@ static struct options *options_new(void)
 	options->resample_rate = 0;	/* impossible */
 	options->seed = 0;	/* default == use system clock */
 	options->max_series_length = 0;	/* default == disable */
-	options->calibrated = 0;	/* default */
 	options->high_pass = -1;	/* impossible */
 	options->max_event_rate = 0;	/* default == disable */
 	options->output_filename = NULL;	/* impossible */
@@ -326,7 +318,6 @@ static void print_usage(const char *program)
 "The following options are recognized.  Options not surrounded in [] are\n" \
 "required.\n" \
 "	 --bandwidth <Hz>\n" \
-"	[--calibrated-data]\n" \
 "	[--calibration-cache <cache file name>]\n" \
 "	 --channel-name <name>\n" \
 "	 --confidence-threshold <confidence>\n" \
@@ -550,7 +541,6 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 	struct option long_options[] = {
 		{"bandwidth", required_argument, NULL, 'A'},
 		{"injection-file", required_argument, NULL, 'P'},
-		{"calibrated-data", no_argument, NULL, 'J'},
 		{"calibration-cache", required_argument, NULL, 'B'},
 		{"channel-name", required_argument, NULL, 'C'},
 		{"confidence-threshold", required_argument, NULL, 'g'},
@@ -633,11 +623,6 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 
 	case 'G':
 		options->cache_filename = optarg;
-		ADD_PROCESS_PARAM(process, "string");
-		break;
-
-	case 'J':
-		options->calibrated = 1;
 		ADD_PROCESS_PARAM(process, "string");
 		break;
 
@@ -874,12 +859,8 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 	 * will be used for injections and h_rss.
 	 */
 
-	if(!options->cal_cache_filename) {
+	if(options->cal_cache_filename)
 		XLALPrintWarning("warning: no calibration cache is provided:  software injections and hrss will be computed with unit response\n");
-	} else if(options->calibrated) {
-		XLALPrintError("error: calibration cache provided for use with calibrated data!\n");
-		args_are_bad = 1;
-	}
 
 	/*
 	 * Exit if anything was wrong with the command line.
@@ -958,12 +939,13 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
  */
 
 
-static REAL8TimeSeries *get_time_series(const char *cachefilename, const char *chname, LIGOTimeGPS start, LIGOTimeGPS end, size_t lengthlimit, int getcaltimeseries)
+static REAL8TimeSeries *get_time_series(const char *cachefilename, const char *chname, LIGOTimeGPS start, LIGOTimeGPS end, size_t lengthlimit)
 {
 	static const char func[] = "get_time_series";
 	double duration = XLALGPSDiff(&end, &start);
 	FrCache *cache;
 	FrStream *stream;
+	LALTYPECODE series_type;
 	REAL8TimeSeries *series;
 
 	if(duration < 0)
@@ -985,36 +967,54 @@ static REAL8TimeSeries *get_time_series(const char *cachefilename, const char *c
 	 * Turn on checking for missing data.
 	 */
 
-	stream->mode = LAL_FR_VERBOSE_MODE;
+	XLALFrSetMode(stream, LAL_FR_VERBOSE_MODE);
 
 	/*
 	 * Get the data.
 	 */
 
-	if(getcaltimeseries) {
-		series = XLALFrReadREAL8TimeSeries(stream, chname, &start, duration, lengthlimit);
-		if(!series)
-			XLAL_ERROR_NULL(func, XLAL_EFUNC);
-		/* FIXME:  ARGH!!!  frame files cannot be trusted to
-		 * provide units for their contents!  */
-		series->sampleUnits = lalStrainUnit;
-	} else {
-		/* read data as single-precision, and convert to double */
+	series_type = XLALFrGetTimeSeriesType(chname, stream);
+	if((int) series_type < 0) {
+		XLALFrClose(stream);
+		XLAL_ERROR_NULL(func, XLAL_EFUNC);
+	}
+
+	switch(series_type) {
+	case LAL_S_TYPE_CODE: {
+		/*
+		 * Read data as single-precision and convert to double.
+		 */
+
 		REAL4TimeSeries *tmp = XLALFrReadREAL4TimeSeries(stream, chname, &start, duration, lengthlimit);
 		unsigned i;
-		if(!tmp)
+		if(!tmp) {
+			XLALFrClose(stream);
 			XLAL_ERROR_NULL(func, XLAL_EFUNC);
+		}
 		series = XLALCreateREAL8TimeSeries(tmp->name, &tmp->epoch, tmp->f0, tmp->deltaT, &tmp->sampleUnits, tmp->data->length);
 		if(!series) {
 			XLALDestroyREAL4TimeSeries(tmp);
+			XLALFrClose(stream);
 			XLAL_ERROR_NULL(func, XLAL_EFUNC);
 		}
 		for(i = 0; i < tmp->data->length; i++)
 			series->data->data[i] = tmp->data->data[i];
 		XLALDestroyREAL4TimeSeries(tmp);
-		/* FIXME:  ARGH!!!  frame files cannot be trusted to
-		 * provide units for their contents!  */
-		series->sampleUnits = lalADCCountUnit;
+		break;
+	}
+
+	case LAL_D_TYPE_CODE:
+		series = XLALFrReadREAL8TimeSeries(stream, chname, &start, duration, lengthlimit);
+		if(!series) {
+			XLALFrClose(stream);
+			XLAL_ERROR_NULL(func, XLAL_EFUNC);
+		}
+		break;
+
+	default:
+		XLALPrintError("get_time_series(): error: invalid channel data type %d\n", series_type);
+		XLALFrClose(stream);
+		XLAL_ERROR_NULL(func, XLAL_EINVAL);
 	}
 
 	/*
@@ -1367,9 +1367,12 @@ static REAL8TimeSeries *add_mdc_injections(const char *mdccachefile, const char 
 	stop = series->epoch;
 	XLALGPSAdd(&stop, series->data->length * series->deltaT);
 
-	mdc = get_time_series(mdccachefile, channel_name, series->epoch, stop, 0, 1);
+	mdc = get_time_series(mdccachefile, channel_name, series->epoch, stop, 0);
 	if(!mdc)
 		XLAL_ERROR_NULL(func, XLAL_EFUNC);
+	/* FIXME:  ARGH!!!  frame files cannot be trusted to provide units
+	 * for their contents!  */
+	series->sampleUnits = lalStrainUnit;
 
 	for(i = 0; i < series->data->length; i++)
 		series->data->data[i] += mdc->data->data[i];
@@ -1629,11 +1632,16 @@ int main(int argc, char *argv[])
 			 * Read from frame files
 			 */
 
-			series = get_time_series(options->cache_filename, options->channel_name, epoch, options->gps_end, options->max_series_length, options->calibrated);
+			series = get_time_series(options->cache_filename, options->channel_name, epoch, options->gps_end, options->max_series_length);
 			if(!series) {
 				XLALPrintError("%s: error: failure reading input data\n", argv[0]);
 				exit(1);
 			}
+			/* FIXME:  ARGH!!!  frame files cannot be trusted
+			 * to provide units for their contents!  assume ADC
+			 * counts if a calibration cache has been provided,
+			 * otherwise assume strain. */
+			series->sampleUnits = options->cal_cache_filename ? lalADCCountUnit : lalStrainUnit;
 		} else if(options->noise_rms > 0.0) {
 			/*
 			 * Synthesize Gaussian white noise.
@@ -1642,7 +1650,10 @@ int main(int argc, char *argv[])
 			unsigned length = XLALGPSDiff(&options->gps_end, &epoch) * options->resample_rate;
 			if(options->max_series_length)
 				length = min(options->max_series_length, length);
-			series = XLALCreateREAL8TimeSeries(options->channel_name, &epoch, 0.0, (REAL8) 1.0 / options->resample_rate, &lalADCCountUnit, length);
+			/* for units, assume ADC counts if a calibration
+			 * cache has been provided, otherwise assume
+			 * strain. */
+			series = XLALCreateREAL8TimeSeries(options->channel_name, &epoch, 0.0, (REAL8) 1.0 / options->resample_rate, options->cal_cache_filename ? &lalADCCountUnit : &lalStrainUnit, length);
 			if(!series) {
 				XLALPrintError("%s: error: failure allocating data for Gaussian noise\n", argv[0]);
 				exit(1);
