@@ -47,7 +47,7 @@ LALInspiralBankGeneration(
   INT4  kappacnt  = 0;
   INT4  numTmplts = 0;
   INT4  i;
-  REAL4 chi[3], kappa[4];
+  REAL8 chi[input->nPointsChi], kappa[input->nPointsKappa], dChi, dKappa;
   
   INITSTATUS(status, "LALInspiralBankGeneration", INSPIRALBANKGENERATIONC);
   ATTATCHSTATUSPTR(status);
@@ -302,11 +302,18 @@ LALInspiralBankGeneration(
   
   case FindChirpPTF:
     
-    for (i=0; i<5; i++)
-    {
-      if ( i < 3 ) chi[i]     = 0.1 + i * 0.4 ;
-      if ( i < 2 ) kappa[i]   = -0.9 + i * 0.4 ;
-      if ( i > 2 ) kappa[i-1] = 0.5 + (i-3) * 0.4;
+    dChi = ( input->chiMax - input->chiMin) / (REAL8) input->nPointsChi;
+    dKappa = ( input->kappaMax - input->kappaMin ) / (REAL8) input->nPointsKappa;
+    
+    for (i=0; i < input->nPointsChi; i++)
+    {  
+      if (!i) chi[i] = input->chiMin + dChi / 2.0;
+      else chi[i] = chi[0] + i * dChi ;
+    }
+    for (i=0; i < input->nPointsKappa; i++)
+    {  
+      if (!i) kappa[i] = input->kappaMin + dKappa / 2.0;
+      else kappa[i] = kappa[0] + i * dKappa ;
     }
     
     /* Use LALInspiralCreateCoarseBank(). */
@@ -320,9 +327,9 @@ LALInspiralBankGeneration(
     }
     *first = bank;
 
-    for ( chicnt = 0; chicnt < 3; chicnt++ )
+    for ( chicnt = 0; chicnt < input->nPointsChi; chicnt++ )
     {
-      for( kappacnt = 0; kappacnt < 4; kappacnt++ )
+      for( kappacnt = 0; kappacnt < input->nPointsKappa; kappacnt++ )
       {
         for( cnt = 0; cnt < *ntiles; cnt++ )
         {
@@ -341,8 +348,8 @@ LALInspiralBankGeneration(
           bank->mchirp  = coarseList[cnt].params.chirpMass;
           bank->mtotal  = coarseList[cnt].params.totalMass;
           bank->eta     = coarseList[cnt].params.eta;
-          bank->kappa   = kappa[kappacnt];
-          bank->chi     = chi[chicnt];
+          bank->kappa   = (REAL4) kappa[kappacnt];
+          bank->chi     = (REAL4) chi[chicnt];
           bank->tau0    = coarseList[cnt].params.t0;
           bank->tau2    = coarseList[cnt].params.t2;
           bank->tau3    = coarseList[cnt].params.t3;
