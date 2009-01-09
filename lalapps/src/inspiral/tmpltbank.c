@@ -156,10 +156,12 @@ REAL4	betaMax		= 0;		/* maximum BCV spin parameter	*/
 INT4    maxFcutTmplts   = -1;           /* num tmplts in fcut direction */
 REAL4   minMatch        = -1;           /* minimum requested match      */
 REAL4   fUpper          = -1;           /* upper frequency cutoff       */
-REAL4   chiMin          = -1;           /* minimum value of chi for PTF */
-REAL4   chiMax          = -1;           /* maximum value of chi for PTF */
-REAL4   kappaMin        = -2;           /* minimum value of kappa for PTF */
-REAL4   kappaMax        = -2;           /* maximum value of kappa for PTF */
+REAL4   chiMin          = 0.0;          /* minimum value of chi for PTF */
+REAL4   chiMax          = 1.0;          /* maximum value of chi for PTF */
+REAL4   kappaMin        = -1.0;         /* minimum value of kappa for PTF */
+REAL4   kappaMax        = 1.0;          /* maximum value of kappa for PTF */
+INT4    nPointsChi      = 3;            /* PTF template bank density */
+INT4    nPointsKappa    = 5;            /* PTF templated bank density */
 Order   order;                          /* post-Newtonian order         */
 Approximant approximant;                /* approximation method         */
 CoordinateSpace space;                  /* coordinate space used        */
@@ -1028,6 +1030,8 @@ int main ( int argc, char *argv[] )
   bankIn.chiMax           = (REAL8) chiMax;
   bankIn.kappaMin         = (REAL8) kappaMin;
   bankIn.kappaMax         = (REAL8) kappaMax;
+  bankIn.nPointsChi       = nPointsChi;
+  bankIn.nPointsKappa     = nPointsKappa;
   bankIn.mmCoarse         = (REAL8) minMatch;
   bankIn.mmFine           = 0.99; /* doesn't matter since no fine bank yet */
   bankIn.fLower           = (REAL8) fLow;
@@ -1358,6 +1362,13 @@ fprintf(a, "  --alpha ALPHA                set alpha for the BCV bank generation
 fprintf(a, "  --minimum-beta BETA		set minimum BCV spin parameter beta to BETA\n");\
 fprintf(a, "  --maximum-beta BETA		set maximum BCV spin parameter beta to BETA\n");\
 fprintf(a, "\n");\
+fprintf(a, "  --minimum-spin1 SPIN1_MIN    set minimum value of chi for PTF to SPIN1_MIN (0.0)\n");\
+fprintf(a, "  --maximum-spin1 SPIN1_MAX    set maximum value of chi for PTF to SPIN1_MAX (1.0)\n");\
+fprintf(a, "  --minimum-kappa1 KAPPA1_MIN  set minimum value of kappa for PTF to KAPPA1_MIN (-1.0)\n");\
+fprintf(a, "  --maximum-kappa1 KAPPA1_MAX  set maximum value of kappa for PTF to KAPPA1_MAX (1.0)\n");\
+fprintf(a, "  --npoints-chi N-CHI          set number of points in the Chi direction for PTF template bank to N-CHI (3)\n");\
+fprintf(a, "  --npoints-kappa N-KAPPA      set number of points in the Kappa direction for PTF template bank to N-KAPPA (5)\n");\
+fprintf(a, "\n");\
 fprintf(a, "  --minimal-match M            generate bank with minimal match M\n");\
 fprintf(a, "\n");\
 fprintf(a, "  --order ORDER                set post-Newtonian order of the waveform to ORDER\n");\
@@ -1434,6 +1445,12 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"minimum-beta",		required_argument, 0,                'o'},
     {"maximum-beta",		required_argument, 0,                'O'},
     {"alpha",                   required_argument, 0,                'T'},
+    {"minimum-spin1",           required_argument, 0,                '4'},
+    {"maximum-spin1",           required_argument, 0,                '5'},
+    {"minimum-kappa1",          required_argument, 0,                '6'},
+    {"maximum-kappa1",          required_argument, 0,                '7'},
+    {"npoints-chi",             required_argument, 0,                '8'},
+    {"npoints-kappa",           required_argument, 0,                '9'},
     {"minimal-match",           required_argument, 0,                'C'},
     {"high-frequency-cutoff",   required_argument, 0,                'D'},
     {"order",                   required_argument, 0,                'E'},
@@ -1490,7 +1507,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 
     c = getopt_long_only( argc, argv, 
         "a:b:c:d:e:f:g:hi:j:k:l:m:n:o:p:r:s:t:u:v:x:yz:"
-        "A:B:C:D:E:F:G:H:I:J:K:L:M:O:P:Q:R:S:T:U:VZ:1:2:3:",
+        "A:B:C:D:E:F:G:H:I:J:K:L:M:O:P:Q:R:S:T:U:VZ:1:2:3:4:5:6:7:8:9:",
         long_options, &option_index );
 
     /* detect the end of the options */
@@ -1899,7 +1916,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         if ( minMass <= 0 )
         {
           fprintf( stdout, "invalid argument to --%s:\n"
-              "miniumum component mass must be > 0: "
+              "minimum component mass must be > 0: "
               "(%f solar masses specified)\n",
               long_options[option_index].name, minMass );
           exit( 1 );
@@ -1912,7 +1929,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         if ( maxMass <= 0 )
         {
           fprintf( stdout, "invalid argument to --%s:\n"
-              "maxiumum component mass must be > 0: "
+              "maximum component mass must be > 0: "
               "(%f solar masses specified)\n",
               long_options[option_index].name, maxMass );
           exit( 1 );
@@ -1925,7 +1942,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         if ( psi0Min <= 0 )
         {
           fprintf( stdout, "invalid argument to --%s:\n"
-              "miniumum value of psi0 must be > 0: "
+              "minimum value of psi0 must be > 0: "
               "(%f specified)\n",
               long_options[option_index].name, psi0Min );
           exit( 1 );
@@ -2136,8 +2153,8 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
           fprintf( stderr, "invalid argument to --%s:\n"
               "unknown order specified: "
               "%s (must be one of: TaylorT1, TaylorT2, TaylorT3, TaylorF1,\n"
-              "TaylorF2, PadeT1, PadeF1, EOB, EOBNR, BCV, SpinTaylorT3, or BCVSpin)\n", 
-              long_options[option_index].name, optarg );
+              "TaylorF2, PadeT1, PadeF1, EOB, EOBNR, BCV, SpinTaylorT3, BCVSpin)\n"
+              "or FindChirpPTF)\n", long_options[option_index].name, optarg );
           exit( 1 );
         }
         haveApprox = 1;
@@ -2402,6 +2419,84 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         haveMinFcut = 1;
         break;
 
+      case '4':
+        chiMin = atof( optarg );
+        if ( chiMin < 0. )
+        {
+          fprintf( stdout, "invalid argument to --%s:\n"
+              "Spin magnitude can only take values between 0 and 1. : "
+              "(%f specified)\n",
+              long_options[option_index].name, chiMin );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "float", "%e", chiMin );
+        break;
+      
+      case '5':
+        chiMax = atof( optarg );
+        if ( chiMax > 1. )
+        {
+          fprintf( stdout, "invalid argument to --%s:\n"
+              "Spin magnitude can only take values between 0 and 1. : "
+              "(%f specified)\n",
+              long_options[option_index].name, chiMax );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "float", "%e", chiMax );
+        break;
+      
+      case '6':
+        kappaMin = atof( optarg );
+        if ( kappaMin < -1. )
+        {
+          fprintf( stdout, "invalid argument to --%s:\n"
+              "Kappa can only take values between -1. and 1. : "
+              "(%f specified)\n",
+              long_options[option_index].name, kappaMin );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "float", "%e", kappaMin );
+        break;
+        
+      case '7':
+        kappaMax = atof( optarg );
+        if ( kappaMax > 1. )
+        {
+          fprintf( stdout, "invalid argument to --%s:\n"
+              "Kappa can only take values between -1. and 1. : "
+              "(%f specified)\n",
+              long_options[option_index].name, kappaMax );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "float", "%e", kappaMax );
+        break;
+      
+      case '8':
+        nPointsChi = atof( optarg );
+        if ( nPointsChi < 1 )
+        {
+          fprintf( stdout, "invalid argument to --%s:\n"
+              "Number of points in the Chi direction must be greater than 0 : "
+              "(%d specified)\n",
+              long_options[option_index].name, nPointsChi );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "int", "%d", nPointsChi );
+        break;
+      
+      case '9':
+        nPointsKappa = atof( optarg );
+        if ( nPointsKappa < 1 )
+        {
+          fprintf( stdout, "invalid argument to --%s:\n"
+              "Number of points in the Kappa direction must be greater than 0 : "
+              "(%d specified)\n",
+              long_options[option_index].name, nPointsKappa );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "int", "%d", nPointsKappa );
+        break;
+        
       default:
         fprintf( stderr, "unknown error while parsing options\n" );
         USAGE( stderr );
@@ -2919,6 +3014,25 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     if( maxFreqCut < minFreqCut || maxFreqCut > minFreqCut )
     {
       fprintf(stderr, "--max-high-freq-cutoff must equal --min-high-freq-cutoff when --num-freq-cutoffs = 1\n" );
+      exit( 1 );
+    }
+  }
+
+  if ( approximant==FindChirpPTF )
+  {
+    /* check max and mins are the correct way around */
+    if (chiMin > chiMax )
+    {
+      fprintf( stderr,
+          "Error: argument to --minimum-spin1 must be less than --maximum-spin1 .\n" );
+      exit( 1 );
+    }
+
+    /* check that kappa min-max are set correctly */
+    if (kappaMin > kappaMax)
+    {
+      fprintf( stderr,
+          "Error: argument to --minimum-kappa1 must be less than --maximum-kappa1 .\n" );
       exit( 1 );
     }
   }
