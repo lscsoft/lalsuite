@@ -47,7 +47,7 @@ LALInspiralBankGeneration(
   INT4  kappacnt  = 0;
   INT4  numTmplts = 0;
   INT4  i;
-  REAL8 chi[input->nPointsChi], kappa[input->nPointsKappa], dChi, dKappa;
+  REAL8 *chi, *kappa, dChi, dKappa;
   
   INITSTATUS(status, "LALInspiralBankGeneration", INSPIRALBANKGENERATIONC);
   ATTATCHSTATUSPTR(status);
@@ -59,8 +59,6 @@ LALInspiralBankGeneration(
   ASSERT( input->numFreqCut >= 1, status, LALINSPIRALBANKH_ENUMFCUT,
           LALINSPIRALBANKH_MSGENUMFCUT );
 
-  
-  
   /* For nonspinning approximants, call LALInspiralCreateCoarseBank(). */
   switch( input->approximant )
   {
@@ -301,7 +299,9 @@ LALInspiralBankGeneration(
     break;
   
   case FindChirpPTF:
-    
+   
+    chi = malloc (input->nPointsChi * sizeof(REAL8));
+    kappa = malloc (input->nPointsKappa * sizeof(REAL8));
     dChi = ( input->chiMax - input->chiMin) / (REAL8) input->nPointsChi;
     dKappa = ( input->kappaMax - input->kappaMin ) / (REAL8) input->nPointsKappa;
     
@@ -369,7 +369,9 @@ LALInspiralBankGeneration(
         }
       }
     }
-
+    
+    free(chi);
+    free(kappa);
     /* Free first template, which is blank. */
     bank = (*first)->next;
     LALFree( *first );
