@@ -141,6 +141,9 @@ parser.add_option("-M", "--plotinspmissed" ,action="store_true",default=False,\
 parser.add_option("-F", "--plotinspfound" ,action="store_true",default=False,\
     help="run plotinpfound to check found triggers")
 
+parser.add_option("-C", "--plotcoincmissed" ,action="store_true",default=False,\
+    help="run plotcoincmissed to check coincident but later missed triggers")
+
 parser.add_option("-j", "--plotinspinj" ,action="store_true",default=False,\
     help="run plotinspinj to plot inspiral injections.")
 
@@ -599,6 +602,36 @@ if opts.plotinspfound:
   all_jobs.extend(plotinspfound_jobs.values())
 
 
+#plotcoincmissed
+if opts.plotcoincmissed:
+
+  plotcoincmissed_jobs = {}
+  this_section = "plotcoincmissed"
+  cp = set_common_options(cp, this_section)
+
+  if opts.first_stage:
+    print >>sys.stderr, "warning: plotcoincmissed runs with second stage inputs.  Skipping..."
+  if opts.second_stage:
+    if cp.get("pipeline","inj-suffix") == '*INJ_CAT_3_VETO':
+      print >>sys.stderr, "warning: plotcoincmissed does not work with '*INJ_CAT_3_VETO'. Skipping..."
+    else:
+      plotcoincmissed_jobs['plotcoincmissed'] = inspiral.PlotCoincmissedJob(cp)
+
+      this_suffix = cp.get( "pipeline", "inj-suffix" )
+      short_suffix = this_suffix.rstrip( "_CAT_3_VETO" )
+
+      plotcoincmissed_jobs['plotcoincmissed']. add_opt( "found-pattern",
+                    "SIRE_INJECTIONS_*_" + short_suffix + \
+                    "_FOUND_SUMMARY_FIRST_" + short_suffix )
+      plotcoincmissed_jobs['plotcoincmissed']. add_opt( "missed-pattern",
+                     short_suffix + "_MISSED_SUMMARY_SECOND_*_" + this_suffix )
+
+      plotcoincmissed_jobs['plotcoincmissed'].set_sub_file( basename 
+                                             + '.plotcoincmissed' + subsuffix )
+
+  all_jobs.extend(plotcoincmissed_jobs.values())
+
+
 #ploteffdistcut
 if opts.ploteffdistcut:
 
@@ -823,10 +856,16 @@ if opts.plotinspmissed:
 
 if opts.plotinspfound:
   if len( plotinspfound_jobs ) != 0:
-    # add an plotinspfound job
+    # add a plotinspfound job
     plotinspfound_node =inspiral.PlotInspfoundNode(plotinspfound_jobs['plotinspfound'])
     dag.add_node(plotinspfound_node)
 
+
+if opts.plotcoincmissed:
+  if len( plotcoincmissed_jobs ) != 0:
+    # add a plotcoincmissed job
+    plotcoincmissed_node =inspiral.PlotCoincmissedNode(plotcoincmissed_jobs['plotcoincmissed'])
+    dag.add_node(plotcoincmissed_node)
 
 if opts.ploteffdistcut:
   if opts.first_stage:

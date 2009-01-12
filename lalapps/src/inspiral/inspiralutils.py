@@ -699,7 +699,8 @@ def plot_setup(plotDir, config, logPath, stage, injectionSuffix,
       "plotsnrchi", "plotsnrchi-meta", \
       "plotinspfound", \
       "plotinspiralrange", "plotinspiralrange-meta", \
-      "ploteffdistcut", "ploteffdistcut-meta"]
+      "ploteffdistcut", "ploteffdistcut-meta", \
+      "plotinspfound", "plotcoincmissed"]
 
   for seg in plotcp.sections():
     if not seg in plotSections: plotcp.remove_section(seg)
@@ -942,6 +943,7 @@ def injZeroSlidePlots(dag, plotDir, config, logPath, injectionSuffix,
   plotcp.set("plot-arguments","plotinjnum","")
   plotcp.set("plot-arguments","plotinspmissed","")
   plotcp.set("plot-arguments","plotinspfound","")
+  plotcp.set("plot-arguments","plotcoincmissed","")
   plotcp.set("plot-arguments","ploteffdistcut","")
   plotcp.set("plot-arguments","write-script","")
   injPlotVetoNode = plot_setup( plotDir, \
