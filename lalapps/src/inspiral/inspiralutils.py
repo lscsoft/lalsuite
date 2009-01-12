@@ -291,6 +291,43 @@ def downloadDqSegFiles(config,ifo,generate_segments):
   return dqSegFile
 
 ##############################################################################
+# Function to download hwInj not made lists and append to dq seg lists
+def downloadDqHWSegFiles(config,ifo,generate_segments,dqSegFile):
+  """
+  Download the dqSegFiles from a html location
+  @param config      : the configParser object with analysis details
+  @param ifo         : name of the ifo
+  @param generate_segments : If False do not download, just return filename  
+  @param dqSegFile   : The dqSegFiles locations (to be appended to the Hw files
+  """
+  start = config.getint("input","gps-start-time")
+  end = config.getint("input","gps-end-time")
+  dqHWSegFile = ifo + "-DQ_HW_SEGMENTS-" + str(start) + "-" + \
+      str(end - start) + ".txt"
+  if generate_segments:
+    dq_url = config.get("segments","dq-server-url")
+    dq_hw_segdb_file = config.get("segments", ifo.lower() + '-hw-dq-file')
+    if dq_hw_segdb_file == "":
+      print >>sys.stderr, "warning: no file provided to %s-hw-dq-file; " \
+          "assuming there are no HW_INJ_NOT_MADE times" % ifo.lower()
+      openHWDQFile = open(dqHWSegFile,'w')
+    else:
+      print "Downloading HW_INJ_NOT_MADE list" + dq_hw_segdb_file
+      sys.stdout.flush()
+      dqHWSegFile, info = urllib.urlretrieve(dq_url + '/' + dq_hw_segdb_file,
+            dqHWSegFile)
+      print "Done,appending this to dqSegFile for hardware-inj"
+      openHWDQFile = open(dqHWSegFile,'a')
+    openDQFile=open(dqSegFile, 'r')
+    dqFileConts = openDQFile.read()
+    openDQFile.close()
+    openHWDQFile.write(dqFileConts)
+    openHWDQFile.close()
+    print "done"
+  return dqHWSegFile
+
+
+##############################################################################
 # Function to determine the segments to analyze 
 #(science segments, data quality, missing segments)
 def findSegmentsToAnalyze(config,ifo,dqSegFile,generate_segments=True,\
@@ -612,6 +649,17 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dfOnly = False, \
   return hipeNode
 
 ##############################################################################
+# Function to remove meta option from lalapps_plot_hipe ini file
+def remove_plot_meta_option(plotcp,patternType,plottingCode):
+  programTag = patternType + '-program-tag'
+  plotMeta = plottingCode + '-meta'
+  plotcp.remove_option(plotMeta,programTag)
+  patterns = (plotcp.get(plotMeta,'cache-patterns')).split(',')
+  patterns.remove(patternType)
+  newpatterns=','.join(patterns)
+  plotcp.set(plotMeta,'cache-patterns',newpatterns)
+
+##############################################################################
 # Function to set up lalapps_plot_hipe
 def plot_setup(plotDir, config, logPath, stage, injectionSuffix,
     zerolagSuffix, slideSuffix, bankSuffix, cacheFile, injdirType, tag = None):
@@ -683,21 +731,37 @@ def plot_setup(plotDir, config, logPath, stage, injectionSuffix,
   analysisstart = plotcp.get("common","gps-start-time")
   analysisend = plotcp.get("common","gps-end-time")
   analysisduration = int(analysisend) - int(analysisstart)
+  if "HARDWARE_INJECTION" in injectionSuffix:
+    inspmissedVetoDir = "../hardware_inj_segments"
+  else:
+    inspmissedVetoDir = "../segments"
   plotcp.set("plotinspmissed","followup-vetofile-h1",
-        "../segments/H1-COMBINED_CAT_3_VETO_SEGS-" + analysisstart 
+        inspmissedVetoDir + "/H1-COMBINED_CAT_3_VETO_SEGS-" + analysisstart 
         + "-" + str(analysisduration) + ".txt")
   plotcp.set("plotinspmissed","followup-vetofile-h2",
-        "../segments/H2-COMBINED_CAT_3_VETO_SEGS-" + analysisstart 
+        inspmissedVetoDir + "/H2-COMBINED_CAT_3_VETO_SEGS-" + analysisstart 
         + "-" + str(analysisduration) + ".txt")
   plotcp.set("plotinspmissed","followup-vetofile-l1",
-        "../segments/L1-COMBINED_CAT_3_VETO_SEGS-" + analysisstart 
+        inspmissedVetoDir + "/L1-COMBINED_CAT_3_VETO_SEGS-" + analysisstart 
         + "-" + str(analysisduration) + ".txt")
   plotcp.set("plotinspmissed","followup-vetofile-v1",
-        "../segments/V1-COMBINED_CAT_3_VETO_SEGS-" + analysisstart
+        inspmissedVetoDir + "/V1-COMBINED_CAT_3_VETO_SEGS-" + analysisstart
         + "-" + str(analysisduration) + ".txt")
 
   # Adding followup option to plotinspfound
   plotcp.set("plotinspfound","followup-tag",injdirType)
+
+  # Remove options if no slide or zero lag files are available.
+  if "NONE_AVAILABLE" in slideSuffix:
+    if plotcp.has_option('plotsnrchi-meta','slide-program-tag'):
+      remove_plot_meta_option(plotcp,'slide','plotsnrchi')
+    if plotcp.has_option('ploteffdistcut-meta','slide-program-tag'):
+      remove_plot_meta_option(plotcp,'slide','ploteffdistcut')
+    if plotcp.has_option('plotethinca-meta','slide-program-tag'):
+      remove_plot_meta_option(plotcp,'slide','plotethinca')
+  if "NONE_AVAILABLE" in zerolagSuffix:
+    if plotcp.has_option('plotsnrchi-meta','trig-program-tag'):
+      remove_plot_meta_option(plotcp,'trig','plotsnrchi')
 
   # set the user-tag
   if plotcp.get("pipeline","user-tag"):
