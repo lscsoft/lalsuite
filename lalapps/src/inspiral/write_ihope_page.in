@@ -1183,60 +1183,70 @@ def write_injection(page, opts,hardwareInj=False):
   # captions is the text to be written in the caption
   # configs : is not none, the part of the ini file corresponding to this config name will be written in the web page
   titles = [\
-  	"Efficiency, Found and Missed plots (first stage)",\
-  	"Closeby missed injections (Second coincidence stage and CAT3)",\
-  	"Efficiencies (Second stage)",\
-  	"Accuracies (First stage)",\
-  	"Accuracies (Second stage)"\
-  	"Found injections with SNR loss through pipeline"\
-	]
+    "Efficiency, Found and Missed plots (first stage)",\
+    "Closeby missed injections (Second coincidence stage and CAT2)",\
+    "Efficiencies (Second stage)",\
+    "Accuracies (First stage)",\
+    "Accuracies (Second stage)",\
+    "Found injections with SNR loss through pipeline.", \
+    "Coincident found injections at SIRE but missed by COIRE"\
+  ]
   tags = [\
-  	'*plotinspmissed_FIRST*',\
-  	'*plotinspmissed_SECOND*',\
-  	'*plotinspmissed_SECOND*',\
-  	'*plotinspinj_FIRST*',\
-  	'*plotinspinj_SECOND*',\
-  	'*plotinspfound*',\
-	]
-	#['map-8'],\  # this is not robust but works for GPS <900,000,000
+    '*plotinspmissed_FIRST*',\
+    '*plotinspmissed_SECOND*',\
+    '*plotinspmissed_SECOND*',\
+    '*plotinspinj_FIRST*',\
+    '*plotinspinj_SECOND*',\
+    '*plotinspfound*',\
+    '*plotcoincmissed*'\
+  ]
+  #['map-8'],\  # this is not robust but works for GPS <900,000,000
   imagetags=[\
         ['dummy_on_purpose_so_that_no_images_is_passed_to_the_web_page'],\
-	['map-8'],\
+        ['map-8'],\
         ['efficiency-eff_dist'],\
         ['mchirp_vs_snr_accuracy_scatter_mtotal'],\
         ['mchirp_vs_snr_accuracy_scatter_mtotal'],\
+        ['no image'],\
         ['no image']\
-	]
+  ]
   captions = [\
         "Found and Missed injections links (first stage)",\
-	'Found and Missed injections. Effective distance versus total mass',\
-	'Efficiencies (Second stage)',\
+        'Found and Missed injections. Effective distance versus total mass',\
+        'Efficiencies (Second stage)',\
         'Accuracy plots (first stage)',\
         'Accuracy plots (second stage)',\
-        'Found injections with SNR loss through pipeline'\
-	]
+        'Found injections with SNR loss through pipeline',\
+        'Coincident found injections at SIRE but missed by COIRE'\
+  ]
 
   comments = [\
-        "<span style=\"color:red\">This section has no images (on purpose)</span>. \
-        To obtain the efficiency and found/missed plots at the first stage, clik on the links in the caption here below",\
+       "<span style=\"color:red\">This section has no images \
+        (on purpose)</span>. To obtain the efficiency and found/missed plots \
+        at the first stage, click on the links in the caption here below",\
         None, \
         None, \
         None, \
         None, \
         "<span style=\"color:red\">plotinspfound does not produce \
          plots!</span>. \
-         To see the followup of found injections, clik on the link in the \
-         caption below"\
+         To see the followup of found injections, click on the link in the \
+         caption below",\
+        "<span style=\"color:red\">plotcoincmissed does not produce \
+         plots!</span>. \
+         To see the followup of injections found in more than one ifo at SIRE \
+         but missed by COIRE, click on the link in the caption below"\
         ]
 
   configs = [\
         'plotinspmissed',\
         'plotinspmissed',\
-	'plotinspmissed',\
-	'plotinspinj',\
-	'plotinspinj',\
-	'plotinspfound'\
-	]
+        'plotinspmissed',\
+        'plotinspinj',\
+        'plotinspinj',\
+        'plotinspfound',\
+        'plotcoincmissed'\
+  ]
 
   images_dirs = []
   if hardwareInj:
@@ -1250,8 +1260,9 @@ def write_injection(page, opts,hardwareInj=False):
   #if opts.no_copy is False:
   try:
     for dir in images_dirs:
-      copy_plotinspmissed(dir)
-      copy_plotinspfound(dir)
+      copy_plotdirectory(dir, "plotinspmissed")
+      copy_plotdirectory(dir, "plotinspfound")
+      copy_plotdirectory(dir, "plotcoincmissed")
   except:
     logText(logfile, "Problem while copying files", "error")
     pass
@@ -1267,7 +1278,7 @@ def write_injection(page, opts,hardwareInj=False):
             page.p(comment)
           page = add_config_section(page, config)
           page = fom(page, opts, cachefile_tag=tag, caption=caption,\
-	 	image_tag=image_tag, directory=images_dir)
+     image_tag=image_tag, directory=images_dir)
           page.div.close() # for each heading 
         except: 
           page.div.close() # for each heading 
@@ -1769,34 +1780,22 @@ def copy_segments():
     else: 
       logText(logfile,  stdout)
 
-def copy_plotinspmissed(dir):
-  # currently, there is a bug in plotinspmissed : it does not 
+def copy_plotdirectory(dir, plotcode):
+  # currently, there is a bug in plotinspmissed/inspfound etc : They do not 
   # save the followup png files within the cachefile. So, we have 
-  # to get all the plotinspmissed png files related to the 
+  # to get all the  png files related to the 
   # followup, which can be found in the ./Images directory, and copy them.
   command = 'find ' + opts.datadir + '/' + dir + '/Images'  \
-      + ' -name \"*plotinspmissed*\" -exec cp \"{}\" '\
+      + ' -name \"*' + plotcode + '*\" -exec cp \"{}\" '\
       + opts.physdir + '/Images/' + ' \;'     
-  print >> sys.stdout, ' .../ copying all plotinspmissed files from ' +dir
+  print >> sys.stdout, ' .../ copying all ' + plotcode + ' files from ' +dir
   make_external_call(command, opts.debug, opts.debug, True)
 
   command = 'find ' + opts.datadir + '/' + dir   \
-      + ' -name \"*plotinspmissed*html\" -exec cp \"{}\" '\
+      + ' -name \"*' + plotcode + '*html\" -exec cp \"{}\" '\
       + opts.physdir + ' \;'     
   make_external_call(command, opts.debug, opts.debug, True)
 
-def copy_plotinspfound(dir):
-  # see copy_plotinspmissed.
-  command = 'find ' + opts.datadir + '/' + dir + '/Images'  \
-      + ' -name \"*plotinspfound*\" -exec cp \"{}\" '\
-      + opts.physdir + '/Images/' + ' \;'     
-  print >> sys.stdout, ' .../ copying all plotinspfound files from ' +dir
-  make_external_call(command, opts.debug, opts.debug, True)
-
-  command = 'find ' + opts.datadir + '/' + dir   \
-      + ' -name \"*plotinspfound*html\" -exec cp \"{}\" '\
-      + opts.physdir + ' \;'     
-  make_external_call(command, opts.debug, opts.debug, True)
 
 # ***************************************************************************
 def fom(page, opts, cachefile_tag=None, caption="fix me",\
