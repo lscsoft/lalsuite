@@ -38,6 +38,21 @@ RCSID("$Id$");
 /* define a macro to round a number without having to use the C round function */
 #define ROUND(a) (floor(a+0.5))
 
+/* track memory usage under linux */
+#define TRACKMEMUSE 0
+
+/* routine to track memory usage in different categories */
+#if TRACKMEMUSE
+void printmemuse() {
+   pid_t mypid=getpid();
+   char commandline[256];
+   fflush(NULL);
+   sprintf(commandline,"cat /proc/%d/status | /bin/grep Vm | /usr/bin/fmt -140 -u", (int)mypid);
+   system(commandline);
+   fflush(NULL);
+ }
+#endif
+
 /* verbose global variable */
 INT4 verbose=0;
 
@@ -62,6 +77,10 @@ int main(int argc, char *argv[]){
   FilterResponse *filtresp=NULL; /* variable for the filter response function */
 
   CHAR *pos=NULL;
+
+  #if TRACKMEMUSE
+    fprintf(stderr, "Memory use at start of the code:\n"); printmemuse();
+  #endif
 
   /* get input options */
   get_input_args(&inputParams, argc, argv);
@@ -218,6 +237,10 @@ heterodyne.\n");  }
 
   remove(outputfile); /* if output file already exists remove it */
   sprintf(channel, "%s:%s", inputParams.ifo, inputParams.channel);
+
+  #if TRACKMEMUSE
+    fprintf(stderr, "Memory use before entering main loop:\n"); printmemuse();
+  #endif
 
   /* loop through file and read in data */
   /* if the file is a list of frame files read science segment at a time and
@@ -523,7 +546,7 @@ file!\n");
             resampData->data->data[i].re, resampData->data->data[i].im);
         }
       }
-      
+
     }
     if( verbose ){ fprintf(stderr, "I've output the data.\n"); }
 
@@ -534,22 +557,30 @@ file!\n");
   }while( count < numSegs && (inputParams.heterodyneflag==0 ||
     inputParams.heterodyneflag==3) );
 
+  #if TRACKMEMUSE
+    fprintf(stderr, "Memory usage after completion of main loop:\n"); printmemuse();
+  #endif
+
   fprintf(stderr, "Heterodyning complete.\n");
 
   XLALDestroyINT4Vector( stops );
   XLALDestroyINT4Vector( starts );
- 
+
   if( inputParams.filterknee > 0. ){
     LALDestroyREAL8IIRFilter( &status, &iirFilters.filter1Re );
-    LALDestroyREAL8IIRFilter( &status, &iirFilters.filter1Im ); 
+    LALDestroyREAL8IIRFilter( &status, &iirFilters.filter1Im );
     LALDestroyREAL8IIRFilter( &status, &iirFilters.filter2Re );
-    LALDestroyREAL8IIRFilter( &status, &iirFilters.filter2Im );   
+    LALDestroyREAL8IIRFilter( &status, &iirFilters.filter2Im );
     LALDestroyREAL8IIRFilter( &status, &iirFilters.filter3Re );
     LALDestroyREAL8IIRFilter( &status, &iirFilters.filter3Im );
-  
+
     if( verbose ){ fprintf(stderr, "I've destroyed all filters.\n"); }
   }
-  
+
+  #if TRACKMEMUSE
+    fprintf(stderr, "Memory use at the end of the code:\n"); printmemuse();
+  #endif
+
   return 0;
 }
 
@@ -1172,6 +1203,7 @@ REAL8TimeSeries *get_frame_data(CHAR *framefile, CHAR *channel, REAL8 time,
     FrFileIEnd(frfile);
     XLALDestroyREAL8Vector(dblseries->data);
     XLALFree(dblseries);
+    FrVectFree(frvect);
     return NULL; /* couldn't read frame data */
   }
 
@@ -1185,8 +1217,9 @@ REAL8TimeSeries *get_frame_data(CHAR *framefile, CHAR *channel, REAL8 time,
     if(isnan(frvect->dataF[0]) != 0){
       XLALDestroyREAL8Vector(dblseries->data);
       XLALFree(dblseries);
+      FrVectFree(frvect);
       return NULL; /* couldn't read frame data */
-    } 
+    }
 
     /* data is uncalibrated single precision - not neccesarily from DARM_ERR
       or AS_Q though - might be analysing an enviromental channel */
@@ -1202,6 +1235,7 @@ REAL8TimeSeries *get_frame_data(CHAR *framefile, CHAR *channel, REAL8 time,
       if(isnan(frvect->dataD[0]) != 0){
         XLALDestroyREAL8Vector(dblseries->data);
         XLALFree(dblseries);
+        FrVectFree(frvect);
         return NULL; /* couldn't read frame data */
       }
 
@@ -1213,6 +1247,7 @@ REAL8TimeSeries *get_frame_data(CHAR *framefile, CHAR *channel, REAL8 time,
       if(isnan(frvect->dataF[0]) != 0){
         XLALDestroyREAL8Vector(dblseries->data);
         XLALFree(dblseries);
+        FrVectFree(frvect);
         return NULL; /* couldn't read frame data */
       }
 

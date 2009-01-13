@@ -34,6 +34,8 @@
 #include <math.h>
 #include <string.h>
 #include <getopt.h>
+#include <unistd.h>
+#include <sys/types.h>
 
 #include <lal/BinaryPulsarTiming.h>
 
