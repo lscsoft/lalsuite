@@ -403,32 +403,35 @@ else:
 ############# LOOP OVER RANDOM BACKGROUND TIMES ###############################
 ###############################################################################
 # Prepare the qscan background
-for ifo in ifos_list:
-  times, timeListFile = getQscanBackgroundTimes(cp,opts,ifo, dq_url_pattern,segFile)
-  for time in times:
-    # SETUP DATAFIND JOBS FOR BACKGROUND QSCANS (REGULAR DATA SET)
-    dNode = followupDataFindNode(dataJob,'futrig','q-datafind',cp,time,ifo,opts,dag,'datafind')
+if opts.background_qscan or opts.background_hoft_qscan:
+  for ifo in ifos_list:
+    times, timeListFile = getQscanBackgroundTimes(cp,opts,ifo, dq_url_pattern,segFile)
+    for time in times:
+      # SETUP DATAFIND JOBS FOR BACKGROUND QSCANS (REGULAR DATA SET)
+      dNode = followupDataFindNode(dataJob,'futrig','q-datafind',cp,time,ifo,opts,dag,'datafind')
 
-    # SETUP DATAFIND JOBS FOR BACKGROUND QSCANS (HOFT)
-    dHoftNode = followupDataFindNode(dataJob,'futrig','q-hoft-datafind',cp,time,ifo,opts,dag,'hoft_datafind')
+      # SETUP DATAFIND JOBS FOR BACKGROUND QSCANS (HOFT)
+      dHoftNode = followupDataFindNode(dataJob,'futrig','q-hoft-datafind',cp,time,ifo,opts,dag,'hoft_datafind')
     
-    # SETUP BACKGROUND QSCAN JOBS
-    qBgNode = qscanNode(qscanBgJob,time,cp,dHoftNode.outputFileName,ifo,'background-hoft-qscan',opts,dHoftNode,dag,'hoft_datafind','background_hoft_qscan')
-    qBgNode = qscanNode(qscanBgJob,time,cp,dNode.outputFileName,ifo,'background-qscan',opts, dNode, dag,'datafind','background_qscan')
-    qBgNode = qscanNode(qscanBgJob,time,cp,dNode.outputFileName,ifo,'background-seismic-qscan',opts, dNode, dag,'datafind','background_seis_qscan')
+      # SETUP BACKGROUND QSCAN JOBS
+      qBgNode = qscanNode(qscanBgJob,time,cp,dHoftNode.outputFileName,ifo,'background-hoft-qscan',opts,dHoftNode,dag,'hoft_datafind','background_hoft_qscan')
+      qBgNode = qscanNode(qscanBgJob,time,cp,dNode.outputFileName,ifo,'background-qscan',opts, dNode, dag,'datafind','background_qscan')
+      qBgNode = qscanNode(qscanBgJob,time,cp,dNode.outputFileName,ifo,'background-seismic-qscan',opts, dNode, dag,'datafind','background_seis_qscan')
   
-  # WRITE TIMES FOR REMOTE (DEPORTED) CALCULATIONS
-  if ifo == depIfo and len(times)!=0:
-    os.system('cp '+timeListFile+' '+depIfoDir+'/TIMES/background_qscan_times.txt')
+    # WRITE TIMES FOR REMOTE (DEPORTED) CALCULATIONS
+    if ifo == depIfo and len(times)!=0:
+      os.system('cp '+timeListFile+' '+depIfoDir+'/TIMES/background_qscan_times.txt')
 
 ############# Preparing deported qscans and distribution node #################
 ###############################################################################
 
 # Initialize qscan times text file for deported qscans
-depQscanTFile = open(depIfoDir+'/TIMES/qscan_times.txt','w')
+if opts.background_qscan or opts.background_hoft_qscan:
+  depQscanTFile = open(depIfoDir+'/TIMES/qscan_times.txt','w')
 
 # Distribute the results of the deported qscans to the expected output directories
-distribQNode = distributeQscanNode(distribQJob,'QSCAN/QSCAN.cache','QSCANLITE/QSCANLITE.cache',depIfo,depIfo+"_qscans_results.tar.gz",opts,dag)
+if opts.background_qscan or opts.background_hoft_qscan:
+  distribQNode = distributeQscanNode(distribQJob,'QSCAN/QSCAN.cache','QSCANLITE/QSCANLITE.cache',depIfo,depIfo+"_qscans_results.tar.gz",opts,dag)
 
 ########## LOOP OVER FOLLOWUP TIMES (if read-times is activated) ##############
 ###############################################################################
