@@ -610,7 +610,8 @@ INT4 main( INT4 argc, CHAR *argv[] )
 
   /* create random parameters to be used later for adding
      simulated noise if required */
-  LAL_CALL( LALCreateRandomParams( &status, &randParams, randomSeed ), &status );
+  if ( addNoise )
+    LAL_CALL( LALCreateRandomParams( &status, &randParams, randomSeed ), &status );
 
   if ( frameFlag )
   {
@@ -680,6 +681,8 @@ INT4 main( INT4 argc, CHAR *argv[] )
         /* reset the channel name to IFO:STRAIN as LALFindChirpInjectSignals()
          * messes with it */
         strncpy(injData[i]->name, channel, LALNameLength);
+
+        printf("injData[%d] length = %d\n", i, injData[i]->data->length); 
       }
       else
       {
@@ -711,11 +714,12 @@ INT4 main( INT4 argc, CHAR *argv[] )
   if ( mdcFlag )
     write_mdc_log_file(mdcFileName, injections, gpsStartSec, setName);
 
-  /* free memeory */
+  /* free memory */
   if ( injectionFile )
     free( injectionFile );
 
-  LAL_CALL( LALDestroyRandomParams( &status, &randParams ), &status );
+  if ( randParams )
+    LAL_CALL( LALDestroyRandomParams( &status, &randParams ), &status );
 
   if ( ifo )
     free( ifo );
@@ -888,7 +892,10 @@ static void output_multi_channel_frame(INT4 num_ifos,
 
   /* add channels to frame */
   for( i = 0; i < num_ifos; i++ )
+  {
+    printf("adding channel %d to frame\n", i);
     XLALFrameAddREAL4TimeSeriesSimData( frame, injData[i] );
+  }
 
   if (vrbflg)
     fprintf( stdout, "Writing injections to frame: '%s'\n", fname );
