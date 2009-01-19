@@ -113,6 +113,15 @@ void load_test_data(const char* file)
     /*fprintf(stderr, "warning: overwrote with test data\n");*/
 }
 
+void dump_data_to_file(FILE* h)
+{
+    int i;
+    for (i = 0; i != samples; ++i)
+    {
+        fprintf(h, "%le %le %le %le %le %le %le\n", ((double) i)/frequency, x[0][i], x[3][i], x[1][i], x[4][i], x[2][i], x[5][i]);
+    }
+}
+
 int main(int argc, char** argv)
 {
     int c;
@@ -196,6 +205,15 @@ int main(int argc, char** argv)
     load_data(1, l1_frame_file, "L");
     load_data(2, v1_frame_file, "V");
 
+    {
+        FILE* h;
+	char buffer[256];
+	sprintf(buffer, "%s-raw", output_file);
+	h = fopen(buffer, "w");
+        dump_data_to_file(h);
+        fclose(h);
+    }
+
     /*load_test_data("/home/channa/TestInjection.txt");*/
 
     analyze();
@@ -216,7 +234,9 @@ void load_metadata(const char* file, int detector)
         }
         w[detector] = sqrt(a->sigmasq);
 	wgood = sqrt(a->sigmasq);
-        greenwich = XLALGreenwichMeanSiderealTime(&(a->end_time));
+        greenwich = fmod(XLALGreenwichMeanSiderealTime(&(a->end_time)), LAL_TWOPI);
+        fprintf(stderr, "GPS %d -> GMS %e -> RAD %e \n", a->end_time.gpsSeconds, XLALGreenwichMeanSiderealTime(&(a->end_time)), greenwich);
+
     }
     else
     {
@@ -308,11 +328,11 @@ void analyze(void)
     double* accumulator;
     int begin[3], end[3];
 
-    begin[0] = samples/2 - 256;
+    begin[0] = 0;
     begin[1] = begin[0];
     begin[2] = begin[0];
 
-    end[0] = samples/2 + 256;
+    end[0] = samples;
     end[1] = end[0];
     end[2] = end[0];
 
@@ -321,18 +341,23 @@ void analyze(void)
      */
 
     /*fprintf(stderr, "w: %e %e %e\n", w[0], w[1], w[2]);*/
-
-    s[0]  =    1 / w[0];
-    s[1]  =    2 / w[0];
-    s[2]  =    4 / w[0];
-    s[3]  =    8 / w[0];
-    s[4]  =   16 / w[0];
-    s[5]  =   32 / w[0];
-    s[6]  =   64 / w[0];
-    s[7]  =  128 / w[0];
-    s[8]  =  256 / w[0];
-    s[9]  =  512 / w[0];
-    s[10] = 1024 / w[0];
+    /*wgood = max(w[0],max(w[1],w[2]));*/
+ 
+    /*w[0] *= 100.0; /* or maybe the reciprocal of this? */
+    /*w[1] *= 100.0;  /* or maybe the reciprocal of this? */
+    /*w[2] *= 100.0; /* or maybe the reciprocal of this? */
+    /*fprintf(stderr, "w: %e %e %e %e\n", w[0], w[1], w[2], wgood);  */
+    s[0]  =    1;
+    s[1]  =    4;
+    s[2]  =    16;
+    s[3]  =    64;
+    s[4]  =   256;
+    s[5]  =   1024;
+    s[6]  =   1./4;
+    s[7]  =  1./16;
+    s[8]  =  1./64;
+    s[9]  =  1./256;
+    s[10] = 1./1024;
      
     /*   
      *  the sky tiles implied by the frequency) 
@@ -472,9 +497,10 @@ void analyze(void)
             {
                 double phi, ra;
                 phi = (LAL_TWOPI * (j + 0.5)) / n;
+		ra = fmod(phi + greenwich, LAL_TWOPI);
                 /*ra = fmod(phi - greenwich, LAL_TWOPI);*/
-                ra = fmod(phi+greenwich, LAL_TWOPI);
-                ra = phi;
+                /*ra = fmod(phi + greenwich, LAL_TWOPI);*/
+                /*ra = phi;*/
                 while (ra < 0)
                     ra += LAL_TWOPI;
                 while (ra >= LAL_TWOPI)
