@@ -1,12 +1,10 @@
 ## Process this file with automake to produce Makefile.in
-SUBDIRS = include packages doc lib misc @subdirs@
+SUBDIRS = include packages doc lib misc debian @subdirs@
 MAINTAINERCLEANFILES = README.install lal.spec
 EXTRA_DIST = README.bugs README.contrib README.install \
   lal.pc.in lalsupport.pc.in lalframe.pc.in lalmetaio.pc.in lalxml.pc.in lalmpi.pc.in \
   lal-config.in acinclude.m4 aclocal.m4 \
-  lal.spec.in lal.spec \
-  debian/changelog debian/compat debian/control debian/copyright \
-  debian/dirs debian/docs debian/lal-dev.dirs debian/rules
+  lal.spec.in lal.spec
 BUILT_SOURCES = README.install
 bin_SCRIPTS = lal-config
 
