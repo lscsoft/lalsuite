@@ -1,4 +1,5 @@
 ## Process this file with automake to produce Makefile.in
+EXTRA_DIST = lalapps.m4 lalappslibtool.m4 pkg.m4
 sysconf_DATA = lalapps-user-env.sh lalapps-user-env.csh
 BUILT_SOURCES = lalapps-user-env.sh lalapps-user-env.csh
 CLEANFILES = lalapps-user-env.sh lalapps-user-env.csh

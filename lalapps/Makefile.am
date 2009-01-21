@@ -1,8 +1,6 @@
 ## Process this file with automake to produce Makefile.in
-SUBDIRS = src doc man misc
-EXTRA_DIST = lalapps.spec.in lalapps.spec \
-  debian/changelog debian/compat debian/control debian/copyright \
-  debian/dirs debian/docs debian/rules
+SUBDIRS = src doc man misc debian
+EXTRA_DIST = lalapps.spec.in lalapps.spec
 
 # cvs-clean: more than maintainer-clean, this cleans
 # everything not in the cvs archive.
