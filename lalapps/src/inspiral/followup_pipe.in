@@ -403,7 +403,7 @@ else:
 ############# LOOP OVER RANDOM BACKGROUND TIMES ###############################
 ###############################################################################
 # Prepare the qscan background
-if opts.background_qscan or opts.background_hoft_qscan:
+if opts.background_qscan or opts.background_hoft_qscan or opts.background_seis_qscan:
   for ifo in ifos_list:
     times, timeListFile = getQscanBackgroundTimes(cp,opts,ifo, dq_url_pattern,segFile)
     for time in times:
@@ -426,12 +426,11 @@ if opts.background_qscan or opts.background_hoft_qscan:
 ###############################################################################
 
 # Initialize qscan times text file for deported qscans
-if opts.background_qscan or opts.background_hoft_qscan:
+if opts.qscan or opts.seis_qscan:
   depQscanTFile = open(depIfoDir+'/TIMES/qscan_times.txt','w')
 
 # Distribute the results of the deported qscans to the expected output directories
-if opts.background_qscan or opts.background_hoft_qscan:
-  distribQNode = distributeQscanNode(distribQJob,'QSCAN/QSCAN.cache','QSCANLITE/QSCANLITE.cache',depIfo,depIfo+"_qscans_results.tar.gz",opts,dag)
+distribQNode = distributeQscanNode(distribQJob,'QSCAN/QSCAN.cache','QSCANLITE/QSCANLITE.cache',depIfo,depIfo+"_qscans_results.tar.gz",opts,dag)
 
 ########## LOOP OVER FOLLOWUP TIMES (if read-times is activated) ##############
 ###############################################################################
@@ -448,7 +447,8 @@ if opts.read_times:
 
       # Write time in file for deported qscans
       if ifo==depIfo:
-         depQscanTFile.write(repr(time)+'\n')
+         if opts.qscan or opts.seis_qscan:
+           depQscanTFile.write(repr(time)+'\n')
 
       # SETUP DATAFIND JOBS FOR HOFT QCANS
       dHoftNode = followupDataFindNode(dataJob,'futrig','q-hoft-datafind',cp,time,ifo,opts,dag,'hoft_datafind')
@@ -501,7 +501,8 @@ if not opts.disable_followup and not opts.read_times:
     
       # Write time in file for deported qscans
       if ifo==depIfo:
-         depQscanTFile.write(repr(trig.gpsTime[ifo])+'\n')
+         if opts.qscan or opts.seis_qscan:
+           depQscanTFile.write(repr(trig.gpsTime[ifo])+'\n')
 	 
       #Lets append a new subsection to the last section
       dag.appendSubSection(str(ifo)+' @ GPS '+str(trig.gpsTime[ifo]))
@@ -615,7 +616,8 @@ if not opts.disable_followup and not opts.read_times:
 
 
 # Prepare for moving the deported qscan directory (tar-gzip)
-depQscanTFile.close()
+if opts.qscan or opts.seis_qscan:
+  depQscanTFile.close()
 os.system('tar zcvf '+depIfoDir+'.tar.gz '+depIfoDir)
     
 ##########################################################################
