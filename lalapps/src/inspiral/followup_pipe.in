@@ -294,15 +294,16 @@ if not opts.disable_followup and not opts.read_times:
     if not os.access('LOCAL_XML_COPY',os.F_OK):
       os.mkdir('LOCAL_XML_COPY')
     else: pass
-
+  print "Reading files from cache..."
   numtrigs, found, coincs, search = cache.readTriggerFiles(cp,opts)
   missed = None
-
+  print "found " + str(len(coincs)) + " triggers..."
   if opts.trig_bank: trigbank_test = 1
   else: trigbank_test = 0
   if opts.disable_ifarsorting: ifar = False
   else: ifar = True
-  followuptrigs = getfollowuptrigs(numtrigs,dag.page,coincs,missed,search,trigbank_test,ifar,opts.add_trig_columns)
+  trigtype = cp.get("followup-triggers", "trigger-type").strip()
+  followuptrigs = getfollowuptrigs(numtrigs,trigtype,dag.page,coincs,missed,search,trigbank_test,ifar,opts.add_trig_columns)
 
   print "\n.......Found " + str(len(followuptrigs)) + " trigs to follow up" 
 
