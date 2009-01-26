@@ -75,6 +75,7 @@ ProcessParamsTable *next_process_param( const char *name, const char *type,
 void read_mass_data( char *filename );
 void read_nr_data( char* filename );
 void read_source_data( char* filename );
+void sourceComplete(void);
 void drawFromSource( REAL8 *rightAscension,
     REAL8 *declination,
     REAL8 *distance,
@@ -144,6 +145,7 @@ INT4 numExtTriggers = 0;
 ExtTriggerTable   *exttrigHead = NULL;
 
 int num_source;
+int galaxynum;
 struct {
   char   name[LIGOMETA_SOURCE_MAX];
   REAL8 ra;
@@ -151,7 +153,7 @@ struct {
   REAL8 dist;
   REAL8 lum;
   REAL8 fudge;
-} *source_data;
+} *source_data, *old_source_data,*temparray;
 
 char MW_name[LIGOMETA_SOURCE_MAX] = "MW";
 REAL8* fracVec  =NULL;
@@ -163,6 +165,18 @@ struct {
   REAL8 mass1;
   REAL8 mass2;
 } *mass_data;
+
+struct FakeGalaxy{
+char name[LIGOMETA_SOURCE_MAX];
+REAL8 ra;
+REAL8 dec;
+REAL8 lum;
+REAL8 dist;
+REAL8 fudge;
+struct FakeGalaxy *next; };
+int srcComplete = 0;
+int makeCatalog = 0;
+REAL8 srcCompleteDist;
 
 int num_nr = 0;
 int i = 0;
@@ -255,6 +269,9 @@ static void print_usage(char *program)
       " [--fixed-inc]  fixed_inc  read inclination dist if fixed value (degrees)\n"\
       " [--source-file] sources   read source parameters from sources\n"\
       "                           requires enable/disable milkyway\n"\
+      " [--sourcecomplete] distance \n"
+      "                           complete galaxy catalog out to distance (kPc)\n"\
+      " [--make-catalog]          create a text file of the completed galaxy catalog\n"\
       " [--enable-milkyway] lum   enables MW injections, set MW luminosity\n"\
       " [--disable-milkyway]      disables Milky Way injections\n"\
       " [--exttrig-file] exttrig  XML file containing external trigger\n"\
@@ -501,6 +518,234 @@ read_source_data( char* filename )
     fracVec[i] = fracVec[i-1] + ratioVec[i] / norm;
 }
 
+/*
+*
+*
+* Function to complete galaxy catalog
+*
+*/
+void sourceComplete() {
+
+/*  Catalog Completion Constants */
+REAL8 Mbstar = -20.45;
+/* Mbstar = magnitude at which the number of galaxies begins to fall off exponentially, corrected for reddening (to agree with the
+lum density of 0.0198) */
+REAL8 phistar = 0.0081/0.92; /* normalization constant */
+REAL8 alpha = -0.9; /* determines slope at faint end of luminosity function */
+REAL8 initDistance = 0.0; /*minimum Distance for galaxy catalog*/
+REAL8 DeltaD = 100.0; /* Distance step for stepping through galaxy catalog (kpc) */
+REAL8 maxDistance = srcCompleteDist; /*Distance to which you want to correct the catalog (kPc)*/
+REAL8 M_min = -12.0; /* minimum blue light magnitude */
+REAL8 M_max = -25; /* maximum blue light magnitude */
+REAL8 edgestep = 0.1; /* magnitude bin size */
+
+/*  Vectors  */
+REAL8Vector *phibins = NULL; /* Magnitude bins for calculating Schechter function */
+REAL8Vector *Distance = NULL; /* Distances from initDistance to maxDistance in steps of DeltaD */
+REAL8Vector *phi = NULL; /* Schecter magnitude function */
+REAL8Vector *phiN = NULL; /* Number of expected galaxies in each magnitude bin */
+REAL8Vector *N = NULL; /* Actual number of galaxies in each magnitude bin */
+REAL8Vector *pN = NULL; /* Running tally of the fake galaxies added to the catalog */
+REAL8Vector *Corrections = NULL; /* Number of galaxies to be added in each magnitude bin */
+
+/* Other Variables */
+int edgenum = (int) ceil((M_min-M_max)/edgestep); /* Number of magnitude bins */
+char galaxyname[LIGOMETA_SOURCE_MAX] = "Fake"; /* Beginning of name for all added (non-real) galaxies */
+int distnum = (maxDistance-initDistance)/DeltaD; /* Number of elements in Distance vector */
+int k_at_25Mpc = floor((25000-initDistance)/DeltaD); /*Initial index for Distance vector - no galaxies added before 25Mpc */
+int j,k,q; /* Indices for loops */
+REAL8 mag; /* Converted blue light luminosity of each galaxy */
+int mag_index; /* Index of each galaxy when binning by magnitude */
+FILE *fp; /* File for output of corrected galaxy catalog */
+REAL8 pow1 = 0.0; /* Used to calculate Schechter function */
+REAL8 pow2 = 0.0; /* Used to calculate Schechter function */
+
+REAL8 shellLum = 0.0;
+
+/* Parameters for generating random sky positions */
+SimInspiralTable *randPositionTable;
+static RandomParams* randPositions=NULL;
+int rand_skylocation_seed = 3456;
+
+/* Set up linked list for added galaxies*/
+struct FakeGalaxy *myFakeGalaxy;
+struct FakeGalaxy *head; /*=myFakeGalaxy;*/
+struct FakeGalaxy *saved_next;
+
+/* Create the Vectors */
+phibins = XLALCreateREAL8Vector(edgenum);
+Distance = XLALCreateREAL8Vector(distnum+1);
+phi = XLALCreateREAL8Vector(edgenum);
+phiN = XLALCreateREAL8Vector(edgenum); N = XLALCreateREAL8Vector(edgenum);
+pN = XLALCreateREAL8Vector(edgenum);
+Corrections = XLALCreateREAL8Vector(edgenum);
+
+/* Initialize sky location parameters and FakeGalaxy linked list */
+randPositionTable = calloc(1, sizeof(SimInspiralTable));
+LALCreateRandomParams( &status, &randPositions, rand_skylocation_seed);
+galaxynum = 0;
+myFakeGalaxy = (struct FakeGalaxy*) calloc(1, sizeof(struct FakeGalaxy));
+head = myFakeGalaxy;
+
+/* Initialize the vectors */
+for (j=0; j<edgenum; j++)
+  {
+  phibins->data[j] = M_max+j*edgestep;
+  phiN->data[j] = 0;
+  N->data[j] = 0;
+  pN->data[j] = 0;
+  Corrections->data[j] = 0;
+
+  /* Calculate the theoretical blue light magnitude in each magnitude bin */
+  pow1 = -1*pow(10, (-0.4*(phibins->data[j]-Mbstar)));
+  pow2 = pow(10, (-0.4*(phibins->data[j]-Mbstar)));
+  phi->data[j] = 0.92*phistar*exp(pow1)*pow(pow2, alpha+1);
+  }
+
+/* Initialize the Distance array */
+for (j=0; j<=distnum; j++)
+  {
+  Distance->data[j] = initDistance+j*DeltaD;
+  }
+
+
+/* Iterate through Distance vector and bin galaxies according to magnitude at each distance */
+for (k = k_at_25Mpc; k<distnum; k++)
+  {
+
+  /* Reset N to zero before you count the galaxies with distances less than the current Distance */
+  for (q = 0; q<edgenum;q++)
+    {
+    N->data[q]=0;
+    }
+
+  /* Count the number of galaxies in the spherical volume with radius Distance->data[k+1] and bin them in magnitude */
+  for( q = 0; q<num_source; q++)
+    {
+    if ( (source_data[q].dist<=Distance->data[k+1]) )
+      {
+      /* Convert galaxy luminosity to blue light magnitude */
+      mag = -2.5*(log10(source_data[q].lum)+7.808);
+      /* Calculate which magnitude bin it falls in */
+      mag_index = (int) floor((mag-M_max)/edgestep);
+      /* Create a histogram array of the number of galaxies in each magnitude bin */
+      if (mag_index >= 0 && mag_index<edgenum)
+        {
+        N->data[mag_index] += 1.0;
+        }
+      else printf("WARNING GALAXY DOESNT FIT IN BIN\n");
+      }
+    }
+
+  /* Add galaxies to the catalog based on the difference between the expected number of galaxies and the number of galaxies in the catalog */
+  for (j = 0; j<edgenum; j++)
+    {
+    /* Number of galaxies expected in the spherical volume with radius Distance->data[k+1] */
+    phiN->data[j] =edgestep*phi->data[j]*(4.0/3.0)*LAL_PI*(pow(Distance->data[k+1]/1000.0,3));
+    /*Difference between the counted number of galaxies and the expected number of galaxies */
+    Corrections->data[j] = phiN->data[j] - N->data[j] - pN->data[j];
+    /* If there are galaxies missing, add them */
+    if (Corrections->data[j]>0.0)
+      {
+      for (q=0;q<floor(Corrections->data[j]);q++)
+        {
+        randPositionTable = XLALRandomInspiralSkyLocation( randPositionTable, randPositions);
+        myFakeGalaxy->dist = Distance->data[k+1];
+        myFakeGalaxy->ra = randPositionTable->longitude;
+        myFakeGalaxy->dec = randPositionTable->latitude;
+        myFakeGalaxy->fudge = 1;
+        sprintf(myFakeGalaxy->name, "%s%d", galaxyname, galaxynum);
+        myFakeGalaxy->lum = pow(10.0, (phibins->data[j]/(-2.5)-7.808));
+        myFakeGalaxy->next = (struct FakeGalaxy*) calloc(1,sizeof(struct FakeGalaxy));
+        myFakeGalaxy = myFakeGalaxy->next;
+        galaxynum++;
+        pN->data[j] += 1.0;
+        }
+      }
+    }
+  }
+
+/*Combine source_data (original catalog) and FakeGalaxies into one array */
+temparray = calloc((num_source+galaxynum), sizeof(*source_data));
+  if ( !temparray )
+  {     fprintf( stderr, "Allocation error for temparray\n" );
+    exit( 1 );
+  }
+
+for (j=0;j<num_source;j++) {
+        temparray[j].dist = source_data[j].dist;
+        temparray[j].lum = source_data[j].lum;
+        sprintf(temparray[j].name, "%s", source_data[j].name);
+        temparray[j].ra = source_data[j].ra;
+        temparray[j].dec = source_data[j].dec;
+        temparray[j].fudge = source_data[j].fudge;
+}
+myFakeGalaxy = head;
+for (j=num_source;j<(num_source+galaxynum);j++) {
+        temparray[j].dist = myFakeGalaxy->dist;
+        temparray[j].lum = myFakeGalaxy->lum;
+        sprintf(temparray[j].name, "%s", myFakeGalaxy->name);
+        temparray[j].ra = myFakeGalaxy->ra;
+        temparray[j].dec = myFakeGalaxy->dec;
+        temparray[j].fudge = myFakeGalaxy->fudge;
+        myFakeGalaxy = myFakeGalaxy->next;
+}
+myFakeGalaxy->next = NULL;
+
+/*Point old_source_data at source_data */
+old_source_data = source_data;
+
+/*Point source_data at the new array*/
+source_data = temparray;
+shellLum = 0;
+
+if (makeCatalog == 1) {
+/* Write the corrected catalog to a file */
+fp = fopen("correctedcatalog.txt", "w+");
+for (j=0; j<(num_source+galaxynum);j++) { 
+fprintf(fp, "%s %g %g %g %g %g \n", source_data[j].name, source_data[j].ra, source_data[j].dec, source_data[j].dist, source_data[j].lum, source_data[j].fudge );
+}
+fclose(fp);
+}
+/* Recalculate some variables from read_source_data that will have changed due to the addition of fake galaxies */
+ ratioVec = (REAL8*) calloc( (num_source+galaxynum), sizeof( REAL8 ) );
+ fracVec  = (REAL8*) calloc( (num_source+galaxynum), sizeof( REAL8  ) );
+  if ( !ratioVec || !fracVec )
+  {
+    fprintf( stderr, "Allocation error for ratioVec/fracVec\n" );
+    exit( 1 );
+  }
+
+  /* MW luminosity might be zero */
+  norm = mwLuminosity;
+
+  /* calculate the fractions of the different sources */
+  for ( i = 0; i <(num_source+galaxynum); ++i )
+    norm += ratioVec[i] = source_data[i].lum * source_data[i].fudge;
+  fracVec[0] = ratioVec[0] / norm;
+  for ( i = 1; i <(num_source+galaxynum); ++i )
+    fracVec[i] = fracVec[i-1] + ratioVec[i] / norm;
+
+/* Free some stuff */
+myFakeGalaxy = head;
+for (j=0; j<galaxynum; j++) {
+        saved_next = myFakeGalaxy->next;
+        free(myFakeGalaxy);
+        myFakeGalaxy = saved_next;
+}
+LALFree(old_source_data);
+LALDestroyRandomParams( &status, &randPositions);
+
+XLALDestroyREAL8Vector(phibins);
+XLALDestroyREAL8Vector(Corrections);
+XLALDestroyREAL8Vector(Distance);
+XLALDestroyREAL8Vector(phi);
+XLALDestroyREAL8Vector(phiN);
+XLALDestroyREAL8Vector(N);
+XLALDestroyREAL8Vector(pN);
+}
+
+
 
 /*
  *
@@ -697,8 +942,10 @@ int main( int argc, char *argv[] )
     {"latitude",                required_argument, 0,                'z'},
     {"i-distr",                 required_argument, 0,                'I'},
     {"inclStd",                 required_argument, 0,                'B'},
-    {"fixed-inc",               required_argument, 0,                'C'},
+    {"fixed-inc",               required_argument, 0,                'C'},   
     {"polarization",            required_argument, 0,                'S'},
+    {"sourcecomplete",          required_argument, 0,                'H'},
+    {"make-catalog",            no_argument,       0,                '.'},
     {"enable-milkyway",         required_argument, 0,                'M'},
     {"disable-milkyway",        no_argument,       0,                'D'},
     {"min-spin1",               required_argument, 0,                'g'},
@@ -1202,6 +1449,17 @@ int main( int argc, char *argv[] )
 
         break;
 
+      case 'H':
+        /* Turn on galaxy catalog completion function */
+        srcComplete = 1;
+        srcCompleteDist = (REAL8) atof( optarg );
+        break;
+
+      case '.':
+        /* Create a text file of completed catalog */
+        makeCatalog = 1;
+        break;
+
       case 'v':
         /* fixed location (longitude) */
         longitude =  atof( optarg )*LAL_PI_180 ;
@@ -1520,6 +1778,12 @@ int main( int argc, char *argv[] )
 
     /* read the source distribution here */
     read_source_data( sourceFileName );
+
+   /* complete the galaxy catalog */
+   if (srcComplete == 1)
+    {
+    sourceComplete();
+    }
   }
 
   /* check if the source file is specified for distance but NOT for 
