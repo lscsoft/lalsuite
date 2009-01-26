@@ -2091,7 +2091,7 @@ html_sections={}
 # the string "full_data" is hardcoded somewhere else, so it must remain as it is
 html_order = ['toc', 'general', 'summary', 'playground', 'full_data', \
     'full_data_slide', 'injection', 'hardware_injections', \
-    'tuning', 'full_data', 'followup', 'upperlimit', \ 
+    'tuning', 'full_data', 'followup', 'upperlimit', \
     'summary files', 'logfile', 'about']
 
 html_sections['toc'] = "Table of Contents"
