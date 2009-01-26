@@ -2275,6 +2275,10 @@ int main( int argc, char *argv[] )
 
   LAL_CALL( LALCloseLIGOLwXMLFile ( &status, &xmlfp ), &status );
 
+  if (source_data)
+    free(source_data);
+
+
   LALCheckMemoryLeaks();
   return 0;
 }
