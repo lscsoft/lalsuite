@@ -80,6 +80,11 @@ int XLALSkymapAnalyzeElliptical(double* p, XLALSkymapPlanType* plan, double sigm
 int XLALSkymapGlitchHypothesis(XLALSkymapPlanType* plan, double* p, double sigma, double w[3], int begin[3], int end[3], double** x);
 
 /*
+ * Add log-represented values together, preventing overflow
+ */
+double XLALSkymapLogSumExp(double a, double b);
+
+/*
  * Add skymaps together, taking account of their log representation and valid
  * pixels
  */
