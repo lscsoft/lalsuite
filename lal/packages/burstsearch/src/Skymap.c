@@ -465,6 +465,40 @@ static void compute_kernel(XLALSkymapPlanType* plan, int index, double sigma, do
     *log_normalization = log(0.5 * det22(wfsfwiwfsfwa));
 }
 
+int XLALSkymapGlitchHypothesis(XLALSkymapPlanType* plan, double *p, double sigma, double w[3], int begin[3], int end[3], double** x)
+{
+    static const char func[] = "XLALSkymapGlitchHypothesis";
+    double* buffer;
+    int i;
+    
+    /* allocate working memory */
+    buffer = (double*) XLALMalloc(sizeof(double)* max(max(end[0], end[1]), end[2]));
+        
+    /* analyze each detector individually */
+    for (i = 0; i != 3; ++i)
+    {
+        int t;
+        double d;
+        double k;
+        double *m;
+        /* compute the kernel */
+        k = 0.5 / (sq(w[i]) + 1.0 / sq(sigma));
+        /* loop over all times */
+        for (t = begin[i]; t != end[i]; ++t)
+        {
+            buffer[t] = k * (sq(x[i][t]) + sq(x[i + 3][t]));
+        }
+        /* find the maximum to prevent over or underflow when accumulating exponentials */
+        m = findmax(buffer + begin[i], buffer + end[i]);
+        /* marginalize over time */
+        p[i] = logtotalexpwithmax(buffer + begin[i], buffer + end[i], *m);
+        /* apply normalization */
+        p[i] += log(sq(sigma) * sq(w[i]) + 1.0);
+    }    
+    XLALFree(buffer);    
+    return;
+}
+
 int XLALSkymapEllipticalHypothesis(XLALSkymapPlanType* plan, double* p, double sigma, double w[3], int begin[3], int end[3], double** x, int* bests)
 {
     static const char func[] = "XLALSymapEllipticalHypothesis";
@@ -581,9 +615,9 @@ int XLALSkymapEllipticalHypothesis(XLALSkymapPlanType* plan, double* p, double s
     if (bests)
     {
         bests[0] = best_time[0];
-	bests[1] = best_time[1];
-	bests[2] = best_time[2];
-	bests[3] = best_hemisphere;
+        bests[1] = best_time[1];
+        bests[2] = best_time[2];
+        bests[3] = best_hemisphere;
     }
     
     /* release working memory */
@@ -591,6 +625,7 @@ int XLALSkymapEllipticalHypothesis(XLALSkymapPlanType* plan, double* p, double s
     return 0;
 }
 
+#if 0
 int XLALSkymapAnalyzeElliptical(double* p, XLALSkymapPlanType* plan, double sigma, double w[3], int n, double** x)
 {
     static const char func[] = "XLALSkymapAnalyzeElliptical";
@@ -670,6 +705,7 @@ int XLALSkymapAnalyzeElliptical(double* p, XLALSkymapPlanType* plan, double sigm
     
     return 0;
 }
+#endif
 
 void XLALSkymapSum(XLALSkymapPlanType* plan, double* a, const double* b, const double* c)
 {

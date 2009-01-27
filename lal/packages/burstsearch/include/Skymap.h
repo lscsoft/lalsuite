@@ -74,6 +74,12 @@ int XLALSkymapEllipticalHypothesis(XLALSkymapPlanType* plan, double* p, double s
 int XLALSkymapAnalyzeElliptical(double* p, XLALSkymapPlanType* plan, double sigma, double w[3], int n, double** x);
 
 /*
+ * Investigate the glitch hypothesis for model selection
+ */
+
+int XLALSkymapGlitchHypothesis(XLALSkymapPlanType* plan, double* p, double sigma, double w[3], int begin[3], int end[3], double** x);
+
+/*
  * Add skymaps together, taking account of their log representation and valid
  * pixels
  */
