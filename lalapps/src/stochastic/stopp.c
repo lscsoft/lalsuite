@@ -32,8 +32,10 @@
 #include <lal/LIGOLwXML.h>
 #include <lal/LIGOLwXMLRead.h>
 #include <lal/LIGOMetadataTables.h>
+#include <lal/lalGitId.h>
 
 #include <lalapps.h>
+#include <lalappsGitId.h>
 
 /* verbose flag */
 extern int vrbflg;

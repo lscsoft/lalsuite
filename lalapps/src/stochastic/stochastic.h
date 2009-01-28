@@ -24,6 +24,9 @@
 #ifndef STOCHASTIC_H
 #define STOCHASTIC_H
 
+#include <lal/lalGitId.h>
+#include <lalappsGitId.h>
+
 /* xml process param table helper */
 #define ADD_PROCESS_PARAM(pptype, format, ppvalue) \
 	  this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
