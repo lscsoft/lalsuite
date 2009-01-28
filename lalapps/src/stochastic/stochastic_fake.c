@@ -4,12 +4,12 @@
  *
  * Copyright (C) 2002-2006,2009 Adam Mercer
  * Copyright (C) 2003-2004 Tania Regimbau
- * 
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or (at
  * your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
@@ -127,7 +127,7 @@ static void display_usage()
   fprintf(stdout, " --verbose                verbose mode\n");
   fprintf(stdout, " --debug                  debug mode\n");
   fprintf(stdout, " --debug-level N          set lalDebugLevel\n");
-  fprintf(stdout, " --user-tag STRING        set the user tag\n"); 
+  fprintf(stdout, " --user-tag STRING        set the user tag\n");
   fprintf(stdout, " --comment STRING         set the comment\n");
   fprintf(stdout, " --output-dir DIR         directory for output files\n");
   fprintf(stdout, " --output-file FILE       file for output\n");
@@ -528,7 +528,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
     fprintf(stderr, "--duration must be specified\n");
     exit(1);
   }
-  
+
   /* interval duration */
   if (intervalDuration == -1)
   {
@@ -669,7 +669,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 {
   /* lal initialisation variables */
   LALStatus status = blank_status;
-  
+
   /* xml */
   CHAR baseName[FILENAME_MAX];
   StochasticTable *stochHead = NULL;
@@ -722,7 +722,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   {
     XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME, \
         lalappsGitCommitID, lalappsGitGitStatus, lalappsGitCommitDate, 0);
-        
   }
   this_proc_param = procparams.processParamsTable = (ProcessParamsTable *) \
                     calloc(1, sizeof(ProcessParamsTable));
@@ -769,7 +768,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* get number of segments */
   numSegments = totalDuration / segmentDuration;
   segsInInt = intervalDuration / segmentDuration;
-  
+
   /* add a resample buffer, if required */
   if ((resampleRate) || (high_pass_flag))
     padData = 1;
