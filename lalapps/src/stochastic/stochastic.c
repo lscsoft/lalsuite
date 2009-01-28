@@ -1,7 +1,7 @@
 /*
  * stochastic.c - SGWB Standalone Analysis Pipeline
  *
- * Copyright (C) 2002-2006 Adam Mercer
+ * Copyright (C) 2002-2006,2009 Adam Mercer
  * Copyright (C) 2003-2004 Tania Regimbau
  * 
  * This program is free software; you can redistribute it and/or modify
