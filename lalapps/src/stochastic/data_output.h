@@ -55,7 +55,6 @@ void write_ccspectra_frame(COMPLEX8FrequencySeries *series,
 
 /* save out xml tables */
 void save_xml_file(LALStatus *status,
-    LALLeapSecAccuracy accuracy,
     CHAR *program_name,
     CHAR *output_path,
     CHAR *base_name,

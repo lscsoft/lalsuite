@@ -668,7 +668,6 @@ INT4 main(INT4 argc, CHAR *argv[])
 {
   /* lal initialisation variables */
   LALStatus status = blank_status;
-  LALLeapSecAccuracy accuracy = LALLEAPSEC_LOOSE;
   
   /* xml */
   CHAR baseName[FILENAME_MAX];
@@ -885,7 +884,7 @@ INT4 main(INT4 argc, CHAR *argv[])
       fMin, fMax, fRef);
 
   /* save out xml table */
-  save_xml_file(&status, accuracy, PROGRAM_NAME, outputPath, baseName, \
+  save_xml_file(&status, PROGRAM_NAME, outputPath, baseName, \
       stochHead, proctable, procparams, this_proc_param, comment);
 
   /* cleanup */
