@@ -476,6 +476,9 @@ if not opts.disable_followup and not opts.read_times:
   
   # LOOP ON TRIGGERS (=CANDIDATES)
   for trig in followuptrigs:
+
+    #Write table of trigger parameters
+    writeParamTable(trig,opts)
  
     # Initialization of local variables
     dHoftNode = {}
