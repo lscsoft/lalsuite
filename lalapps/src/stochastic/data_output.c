@@ -249,8 +249,7 @@ void save_xml_file(LALStatus *status,
   LAL_CALL(LALOpenLIGOLwXMLFile(status, &xml_stream, xml_file_name), status);
 
   /* write out process and process params tables */
-  LAL_CALL(LALGPSTimeNow(status, &(proc_table.processTable->end_time), \
-        &accuracy), status);
+  XLALGPSTimeNow(&proc_table.processTable->end_time);
   LAL_CALL(LALBeginLIGOLwXMLTable(status, &xml_stream, process_table), \
       status);
   LAL_CALL(LALWriteLIGOLwXMLTable(status, &xml_stream, proc_table, \
