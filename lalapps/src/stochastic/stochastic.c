@@ -1031,8 +1031,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* create the process and process params tables */
   proctable.processTable = (ProcessTable *) calloc(1, sizeof(ProcessTable));
   XLALGPSTimeNow(&proctable.processTable->start_time);
-  LAL_CALL(populate_process_table(&status, proctable.processTable, \
-        PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE), &status);
+  XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME, \
+      CVS_REVISION, CVS_SOURCE, CVS_DATE, 0);
   this_proc_param = procparams.processParamsTable = (ProcessParamsTable *) \
                     calloc(1, sizeof(ProcessParamsTable));
   memset(comment, 0, LIGOMETA_COMMENT_MAX * sizeof(CHAR));
