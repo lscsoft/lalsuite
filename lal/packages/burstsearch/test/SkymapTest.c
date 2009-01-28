@@ -2,8 +2,11 @@
 #include <stdio.h>
 #include <math.h>
 
+#include <lal/LALConstants.h>
 #include <lal/Skymap.h>
 #include <lal/Random.h>
+
+#define max(A,B) (((A) > (B)) ? (A) : (B))
 
 static void make_data(double** z, int samples) 
 {
@@ -44,7 +47,13 @@ void make_injection(XLALSkymapPlanType* plan, double** z, int samples, double si
     int i, j;
     RandomParams* params;
     double h[4];
+    double theta, phi;
     params = XLALCreateRandomParams(0);
+    
+    theta = acos(XLALUniformDeviate(params) * 2 - 1);
+    phi = LAL_TWOPI * XLALUniformDeviate(params);
+    
+    /* for now, just inject perpendicular to network */
     
     i = index_from_delays(plan, 0, 0, 0);
     j = samples / 2;
@@ -67,21 +76,29 @@ void make_injection(XLALSkymapPlanType* plan, double** z, int samples, double si
 
 void make_glitch(XLALSkymapPlanType* plan, double** z, int samples, double sigma)
 {
-    int i, j;
+    int i, t[3];
     RandomParams* params;
     params = XLALCreateRandomParams(0);
     
     i = index_from_delays(plan, 0, 0, 0);
-    j = samples / 2;
     
-    z[0][j] += sigma * XLALNormalDeviate(params);
-    z[1][j] += sigma * XLALNormalDeviate(params);
-    z[2][j] += sigma * XLALNormalDeviate(params);
-    z[3][j] += sigma * XLALNormalDeviate(params);
-    z[4][j] += sigma * XLALNormalDeviate(params);
-    z[5][j] += sigma * XLALNormalDeviate(params);
+    t[0] = rand() % samples;
+    t[1] = rand() % samples;
+    t[2] = rand() % samples;
+    
+    z[0][t[0]] += sigma * XLALNormalDeviate(params);
+    z[1][t[1]] += sigma * XLALNormalDeviate(params);
+    z[2][t[2]] += sigma * XLALNormalDeviate(params);
+    z[3][t[0]] += sigma * XLALNormalDeviate(params);
+    z[4][t[1]] += sigma * XLALNormalDeviate(params);
+    z[5][t[2]] += sigma * XLALNormalDeviate(params);
     
     XLALDestroyRandomParams(params);
+}
+
+double logdifferenceexp(double a, double b)
+{
+    return a + log(1. - exp(b - a));
 }
 
 int main(int argc, char** argv)
@@ -90,7 +107,7 @@ int main(int argc, char** argv)
     double* raw;
     double* z[6];
     double w[3] = { 1, 1, 1};
-    double sigma = 10.;
+    double sigma = 7.;
     int samples = 512;
     FILE* h;
     int i;
@@ -105,8 +122,11 @@ int main(int argc, char** argv)
     int trial, trials;
     trials = 20;
      
-    printf("constructing plan...\n");
+    printf("constructing plan...\n");    
     plan = XLALSkymapConstructPlan(f);
+    
+    printf("Sigma = %f\n", sigma);
+    printf("Injctn  p(Noise)+p(Gltch)+p(Signl)=1.00 log(p(Gltch),p(Signl))/p(Noise)\n");
    
     for (trial = 0; trial < trials; ++trial)
     {
@@ -161,33 +181,55 @@ int main(int argc, char** argv)
                 XLALSkymapLogSumExp(0, g[2] - log(samples)) -
                 log(8);
         /* remove the signal hypothesis */
-        marginalizedGlitch = log(exp(marginalizedGlitch) - 0.125) + log(8) - log(7);
+        /* marginalizedGlitch = log(exp(marginalizedGlitch) - 0.125) + log(8) - log(7); */
+        marginalizedGlitch = logdifferenceexp(marginalizedGlitch, log(0.125)) + log(8) - log(7);
 
         /* printf("Signal %f - Glitch %f\n", marginalizedSkymap, marginalizedGlitch); */
-        printf("%e %s %e", marginalizedSkymap, (marginalizedSkymap > marginalizedGlitch) ? ">" : "<", marginalizedGlitch);
-
-        if (marginalizedSkymap > marginalizedGlitch)
+        /* printf("%e %s %e", marginalizedSkymap, (marginalizedSkymap > marginalizedGlitch) ? ">" : "<", marginalizedGlitch); */
+        
         {
-            if (marginalizedSkymap > 0)
+            double p[3];
+            p[0] = 1 / (1 + exp(marginalizedSkymap) + exp(marginalizedGlitch));
+            p[1] = 1 / (exp(-marginalizedGlitch) + 1 + exp(marginalizedSkymap - marginalizedGlitch));
+            p[2] = 1 / (exp(-marginalizedSkymap) + exp(marginalizedGlitch - marginalizedSkymap) + 1);
+            printf("%f %f %f", p[0], p[1], p[2]);
+            
+            if (p[0] > max(p[1], p[2]))
             {
-                printf(injection_type == 2 ? " \tPASS\n" : " \tFAIL\n");
+                if (p[0] > 0.95)
+                {
+                    printf(injection_type == 0 ? " PASS" : " FAIL");
+                }
+                else
+                {
+                    printf(" WEAK");
+                }
             }
-            else
+            if (p[1] > max(p[0], p[2]))
             {
-                printf(injection_type == 0 ? " \tPASS\n" : " \tFAIL\n");
+                if (p[1] > 0.95)
+                {
+                    printf(injection_type == 1 ? " PASS" : " FAIL");
+                }
+                else
+                {
+                    printf(" WEAK");
+                }
+            }
+            if (p[2] > max(p[1], p[0]))
+            {
+                if (p[2] > 0.95)
+                {
+                    printf(injection_type == 2 ? " PASS" : " FAIL");
+                }
+                else
+                {
+                    printf(" WEAK");
+                }
             }
         }
-        else
-        {
-            if (marginalizedGlitch > 0)
-            {
-                printf(injection_type == 1 ? " \tPASS\n" : " \tFAIL\n");
-            }
-            else
-            {
-                printf(injection_type == 0 ? " \tPASS\n" : " \tFAIL\n");
-            }
-        }
+        
+        printf(" (%f, %f)\n", marginalizedGlitch, marginalizedSkymap);
                         
         /*
         printf("writing directions...\n");
