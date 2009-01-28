@@ -22,6 +22,15 @@ static void make_data(double** z, int samples)
     XLALDestroyRandomParams(params);
 }
 
+static void free_data(double** z)
+{
+    int i;
+    for (i = 0; i != 6; ++i)
+    {
+        free(z[i]);
+    }
+}
+
 static int index_from_delays(XLALSkymapPlanType* plan, int hl, int hv, int hemisphere)
 {
     return
@@ -91,74 +100,126 @@ int main(int argc, char** argv)
     int f = 8192; /* Hz */
     int bests[5];
     double g[3];
-    double marginalizedSkymap = log(0);
+    double marginalizedSkymap;
     double marginalizedGlitch;
-    
-    make_data(z, samples);    
-    
+    int trial, trials;
+    trials = 20;
+     
     printf("constructing plan...\n");
     plan = XLALSkymapConstructPlan(f);
-    
-    printf("injecting signal or glitch...\n");
-    make_injection(plan, z, samples, sigma);
-    
-    printf("computing skymap...\n");
-    raw = (double*) malloc(plan->pixelCount * sizeof(double));
-    XLALSkymapEllipticalHypothesis(plan, raw, sigma, w, begin, end, z, bests); 
-    
-    printf("marginalizing over skymap...\n");
-    for (i = 0; i != plan->pixelCount; ++i)
+   
+    for (trial = 0; trial < trials; ++trial)
     {
-        marginalizedSkymap = XLALSkymapLogSumExp(marginalizedSkymap, raw[i]);
-    }
-    printf("Marginalized skymap = %f\n", marginalizedSkymap);
-    /* normalize by the hypothesis count */
-    /*printf("Hypothesis count normalization %f - %f\n", marginalizedSkymap, log(bests[4]));
-    marginalizedSkymap -= log(bests[4]);*/
-    
-    printf("computing glitch posterior...\n");
-    XLALSkymapGlitchHypothesis(plan, g, sigma, w, begin, end, z);
-    
-    printf("Glitch %f %f %f %f\n", g[0], g[1], g[2], log(samples));
-    
-    marginalizedGlitch = 
-            XLALSkymapLogSumExp(0, g[0] - log(samples)) + 
-            XLALSkymapLogSumExp(0, g[1] - log(samples)) + 
-            XLALSkymapLogSumExp(0, g[2] - log(samples)) -
-            log(8);
-    /* remove the signal hypothesis */
-    marginalizedGlitch = log(exp(marginalizedGlitch) - 0.125) + log(8) - log(7);
-    
-    printf("Signal %f - Glitch %f\n", marginalizedSkymap, marginalizedGlitch);
-            
-    
-    /*
-    printf("writing directions...\n");
-    h = fopen("out.txt", "wt");
-    for (i = 0; i != plan->pixelCount; ++i) 
-    {
-        if (plan->pixel[i].area > 0) 
+        int injection_type;
+        
+        srand(time(0));
+        
+        make_data(z, samples);    
+        
+        /* printf("injecting signal or glitch...\n"); */
+ 
+        injection_type = rand() % 3;
+        
+        switch (injection_type)
         {
-            fprintf(h, "%f %f %f\n", plan->pixel[i].direction[0], plan->pixel[i].direction[1], plan->pixel[i].direction[2]);
+            case 0:
+                printf("None  : ");
+                break;
+            case 1:
+                printf("Glitch: ");
+                make_glitch(plan, z, samples, sigma);
+                break;
+            case 2:
+                printf("Signal: ");
+                make_injection(plan, z, samples, sigma);
+                break;
         }
-    }
-    fclose(h);
-    */
-    
-    printf("rendering image...\n");
-    image = (double*) malloc(sizeof(double) * 512 * 1024);
-    XLALSkymapRenderEqualArea(512, 1024, image, plan, raw);
-    
-    printf("writing image...\n");
-    h = fopen("raw.dat", "wb");
-    fwrite(image, sizeof(double), 512*1024, h);
-    fclose(h);
-    
-    printf("cleanup...\n");
-    free(raw);
-    XLALSkymapDestroyPlan(plan);
+        
+        /* printf("computing skymap...\n"); */
+        raw = (double*) malloc(plan->pixelCount * sizeof(double));
+        XLALSkymapEllipticalHypothesis(plan, raw, sigma, w, begin, end, z, bests); 
 
-    /* z leaks */
+        /* printf("marginalizing over skymap...\n"); */
+        marginalizedSkymap = log(0);
+        for (i = 0; i != plan->pixelCount; ++i)
+        {
+            marginalizedSkymap = XLALSkymapLogSumExp(marginalizedSkymap, raw[i]);
+        }
+        /* printf("Marginalized skymap = %f\n", marginalizedSkymap); */
+        /* normalize by the hypothesis count */
+        /*printf("Hypothesis count normalization %f - %f\n", marginalizedSkymap, log(bests[4]));
+        marginalizedSkymap -= log(bests[4]);*/
+
+        /* printf("computing glitch posterior...\n"); */
+        XLALSkymapGlitchHypothesis(plan, g, sigma, w, begin, end, z);
+
+        /* printf("Glitch %f %f %f %f\n", g[0], g[1], g[2], log(samples)); */
+
+        marginalizedGlitch = 
+                XLALSkymapLogSumExp(0, g[0] - log(samples)) + 
+                XLALSkymapLogSumExp(0, g[1] - log(samples)) + 
+                XLALSkymapLogSumExp(0, g[2] - log(samples)) -
+                log(8);
+        /* remove the signal hypothesis */
+        marginalizedGlitch = log(exp(marginalizedGlitch) - 0.125) + log(8) - log(7);
+
+        /* printf("Signal %f - Glitch %f\n", marginalizedSkymap, marginalizedGlitch); */
+        printf("%e %s %e", marginalizedSkymap, (marginalizedSkymap > marginalizedGlitch) ? ">" : "<", marginalizedGlitch);
+
+        if (marginalizedSkymap > marginalizedGlitch)
+        {
+            if (marginalizedSkymap > 0)
+            {
+                printf(injection_type == 2 ? " \tPASS\n" : " \tFAIL\n");
+            }
+            else
+            {
+                printf(injection_type == 0 ? " \tPASS\n" : " \tFAIL\n");
+            }
+        }
+        else
+        {
+            if (marginalizedGlitch > 0)
+            {
+                printf(injection_type == 1 ? " \tPASS\n" : " \tFAIL\n");
+            }
+            else
+            {
+                printf(injection_type == 0 ? " \tPASS\n" : " \tFAIL\n");
+            }
+        }
+                        
+        /*
+        printf("writing directions...\n");
+        h = fopen("out.txt", "wt");
+        for (i = 0; i != plan->pixelCount; ++i) 
+        {
+            if (plan->pixel[i].area > 0) 
+            {
+                fprintf(h, "%f %f %f\n", plan->pixel[i].direction[0], plan->pixel[i].direction[1], plan->pixel[i].direction[2]);
+            }
+        }
+        fclose(h);
+        */
+
+        /*
+        printf("rendering image...\n");
+        image = (double*) malloc(sizeof(double) * 512 * 1024);
+        XLALSkymapRenderEqualArea(512, 1024, image, plan, raw);
+
+        printf("writing image...\n");
+        h = fopen("raw.dat", "wb");
+        fwrite(image, sizeof(double), 512*1024, h);
+        fclose(h);
+        */
+    
+        /* printf("cleanup...\n"); */
+        free(raw);       
+        free_data(z);
+        
+    }
+    
+    XLALSkymapDestroyPlan(plan);
     
     return 0;
 }
