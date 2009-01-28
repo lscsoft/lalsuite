@@ -146,6 +146,7 @@ INT4 main(INT4 argc, CHAR *argv[])
       case 'v':
         /* display version info and exit */
         fprintf(stdout, "Stochastic Post Processing\n" CVS_ID "\n");
+        fprintf(stdout, lalappsGitID);
         exit(0);
         break;
 

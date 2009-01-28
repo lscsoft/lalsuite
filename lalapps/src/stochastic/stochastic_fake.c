@@ -237,6 +237,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
       case 'b':
         /* display version info and exit */
         fprintf(stdout, "Standalone SGWB Search Engine\n" CVS_ID "\n");
+        fprintf(stdout, lalappsGitID);
         exit(0);
         break;
 
@@ -712,8 +713,17 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* create the process and process params tables */
   proctable.processTable = (ProcessTable *) calloc(1, sizeof(ProcessTable));
   XLALGPSTimeNow(&proctable.processTable->start_time);
-  XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME, \
-      CVS_REVISION, CVS_SOURCE, CVS_DATE, 0);
+  if (strcmp(CVS_REVISION, "$Revi" "sion$"))
+  {
+    XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME, \
+        CVS_REVISION, CVS_SOURCE, CVS_DATE, 0);
+  }
+  else
+  {
+    XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME, \
+        lalappsGitCommitID, lalappsGitGitStatus, lalappsGitCommitDate, 0);
+        
+  }
   this_proc_param = procparams.processParamsTable = (ProcessParamsTable *) \
                     calloc(1, sizeof(ProcessParamsTable));
   memset(comment, 0, LIGOMETA_COMMENT_MAX * sizeof(CHAR));
