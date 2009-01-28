@@ -2,7 +2,7 @@
  * stopp_bayes.c - SGWB Standalone Analysis Pipeline
  *               - Bayesian Post Processing
  *
- * Copyright (C) 2004-2006 Adam Mercer
+ * Copyright (C) 2004-2006,2009 Adam Mercer
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
