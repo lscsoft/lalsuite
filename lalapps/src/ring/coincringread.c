@@ -45,8 +45,10 @@
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataUtils.h>
 #include <lal/LIGOLwXMLRead.h>
+#include <lal/lalGitID.h>
 #include <lalapps.h>
 #include <processtable.h>
+#include <lalappsGitID.h>
 
 RCSID("$Id$");
 
@@ -223,8 +225,16 @@ int main( int argc, char *argv[] )
     calloc( 1, sizeof(ProcessTable) );
   LAL_CALL(LALGPSTimeNow(&status, &(proctable.processTable->start_time), 
         &accuracy), &status);
-  LAL_CALL( populate_process_table( &status, proctable.processTable, 
-        PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE ), &status );
+  if (strcmp(CVS_REVISION, "$Revi" "sion$"))
+  {
+    XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME,
+        CVS_REVISION, CVS_SOURCE, CVS_DATE, 0);
+  }
+  else
+  {
+    XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME,
+        lalappsGitCommitID, lalappsGitGitStatus, lalappsGitCommitDate, 0);
+  }
   this_proc_param = procparams.processParamsTable = (ProcessParamsTable *) 
     calloc( 1, sizeof(ProcessParamsTable) );
   memset( comment, 0, LIGOMETA_COMMENT_MAX * sizeof(CHAR) );
@@ -382,6 +392,7 @@ int main( int argc, char *argv[] )
         fprintf( stdout, "Coincident Ringdown Reader and Injection Analysis\n"
             "Steve Fairhurst\n"
             "CVS Version: " CVS_ID_STRING "\n" );
+        fprintf(stdout, lalappsGitID);
         exit( 0 );
         break;
 
