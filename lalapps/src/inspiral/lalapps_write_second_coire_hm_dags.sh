@@ -106,7 +106,7 @@ fi > second_coire.dag
 if [ 1 ]; then
   echo "universe = standard"
   echo "executable = ${coire_path}"
-  echo "arguments = --input first_coire_files/\$(macroinfile) --output second_coire_files/\$(macrooutfile) --data-type all_data --coinc-stat effective_snrsq --coinc-cut \$(macrocombo) --cluster-time 10000 --summary-file second_coire_files/\$(macrosummaryfile)"
+  echo "arguments = --input first_coire_files/\$(macroinfile) --output second_coire_files/\$(macrooutfile) --data-type all_data --coinc-stat effective_snrsq --coinc-cut \$(macrocombo) --cluster-time 10000 --summary-file second_coire_files/\$(macrosummaryfile) --eff-snr-denom-fac 50"
   echo "log = " `mktemp -p ${log_path}`
   echo "error = logs/coire-\$(cluster)-\$(process).err"
   echo "output = logs/coire-\$(cluster)-\$(process).out"
@@ -118,7 +118,7 @@ fi > second_coire.coire.sub
 if [ 1 ]; then
   echo "universe = standard"
   echo "executable = ${coire_path}"
-  echo "arguments = --glob second_coire_files/\$(macroinfile) --output second_coire_files/\$(macrooutfile) --data-type all_data --coinc-stat effective_snrsq --cluster-time 10000 --mass-cut mtotal --mass-range-low \$(macrolowmass) --mass-range-high \$(macrohighmass)"
+  echo "arguments = --glob second_coire_files/\$(macroinfile) --output second_coire_files/\$(macrooutfile) --data-type all_data --coinc-stat effective_snrsq --cluster-time 10000 --mass-cut mtotal --mass-range-low \$(macrolowmass) --mass-range-high \$(macrohighmass) --eff-snr-denom-fac 50"
   echo "log = " `mktemp -p ${log_path}`
   echo "error = logs/coire-\$(cluster)-\$(process).err"
   echo "output = logs/coire-\$(cluster)-\$(process).out"
@@ -209,7 +209,7 @@ fi > second_coire_slide.dag
 if [ 1 ]; then
   echo "universe = standard"
   echo "executable = ${coire_path}"
-  echo "arguments = --input first_coire_files/\$(macroinfile) --output second_coire_files/\$(macrooutfile) --data-type all_data --coinc-stat effective_snrsq --cluster-time 10000 --coinc-cut \$(macrocombo) --num-slides 50"
+  echo "arguments = --input first_coire_files/\$(macroinfile) --output second_coire_files/\$(macrooutfile) --data-type all_data --coinc-stat effective_snrsq --cluster-time 10000 --coinc-cut \$(macrocombo) --num-slides 50 --eff-snr-denom-fac 50"
   echo "log = " `mktemp -p ${log_path}`
   echo "error = logs/coire_slide-\$(cluster)-\$(process).err"
   echo "output = logs/coire_slide-\$(cluster)-\$(process).out"
@@ -221,7 +221,7 @@ fi > second_coire_slide.coire.sub
 if [ 1 ]; then
   echo "universe = standard"
   echo "executable = ${coire_path}"
-  echo "arguments = --glob second_coire_files/\$(macroinfile) --output second_coire_files/\$(macrooutfile) --data-type all_data --coinc-stat effective_snrsq --cluster-time 10000 --num-slides 50 --mass-cut mtotal --mass-range-low \$(macrolowmass) --mass-range-high \$(macrohighmass)"
+  echo "arguments = --glob second_coire_files/\$(macroinfile) --output second_coire_files/\$(macrooutfile) --data-type all_data --coinc-stat effective_snrsq --cluster-time 10000 --num-slides 50 --mass-cut mtotal --mass-range-low \$(macrolowmass) --mass-range-high \$(macrohighmass) --eff-snr-denom-fac 50"
   echo "log = " `mktemp -p ${log_path}`
   echo "error = logs/coire_slide-\$(cluster)-\$(process).err"
   echo "output = logs/coire_slide-\$(cluster)-\$(process).out"

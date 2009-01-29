@@ -50,7 +50,7 @@ fi > first_coire.dag
 if [ 1 ]; then
   echo "universe = standard"
   echo "executable = ${coire_path}"
-  echo "arguments = --glob septime_files/${cat}/\$(macroinfile) --output first_coire_files/\$(macrooutfile) --data-type all_data --coinc-stat effective_snrsq --cluster-time 10000"
+  echo "arguments = --glob septime_files/${cat}/\$(macroinfile) --output first_coire_files/\$(macrooutfile) --data-type all_data --coinc-stat effective_snrsq --cluster-time 10000 --eff-snr-denom-fac 50"
   echo "log = " `mktemp -p ${log_path}`
   echo "error = logs/coire-\$(cluster)-\$(process).err"
   echo "output = logs/coire-\$(cluster)-\$(process).out"
@@ -91,7 +91,7 @@ fi > first_coire_slide.dag
 if [ 1 ]; then
   echo "universe = vanilla"
   echo "executable = ${coire_path}"
-  echo "arguments = --glob septime_files/${cat}/\$(macroinfile) --output first_coire_files/\$(macrooutfile) --data-type all_data --coinc-stat effective_snrsq --cluster-time 10000 --num-slides 50"
+  echo "arguments = --glob septime_files/${cat}/\$(macroinfile) --output first_coire_files/\$(macrooutfile) --data-type all_data --coinc-stat effective_snrsq --cluster-time 10000 --num-slides 50 --eff-snr-denom-fac 50"
   echo "log = " `mktemp -p ${log_path}`
   echo "error = logs/coire_slide-\$(cluster)-\$(process).err"
   echo "output = logs/coire_slide-\$(cluster)-\$(process).out"

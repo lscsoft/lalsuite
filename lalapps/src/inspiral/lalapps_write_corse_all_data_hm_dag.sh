@@ -67,7 +67,7 @@ if [ 1 ]; then
         echo
       done
     #write corse jobs for double-in_triple and triple-in_triple files
-      for combo in H1L1 H2L1 H1H2L1; do
+      for combo in H1L1 H1H2L1; do
         zerofile="second_coire_files/${mass}/${combo}-SECOND_COIRE_${cat}_H1H2L1-${month_gps_time}-${month_duration}.xml.gz"
         slidefile="second_coire_files/${mass}/${combo}-SECOND_COIRE_SLIDE_${cat}_H1H2L1-${month_gps_time}-${month_duration}.xml.gz"
         outfile="corse_all_data_files/${data}/H1H2L1_${combo}-CORSE_`echo ${data} | tr '[a-z]' '[A-Z]'`_${mass}_${cat}-${month_gps_time}-${month_duration}.xml.gz"
@@ -105,7 +105,7 @@ fi > corse_all_data.add_septime.sub
 if [ 1 ] ; then
   echo "universe = standard"
   echo "executable = ${corse_path}"
-  echo "arguments = --glob-zero \$(macrozerofile) --glob-slide \$(macroslidefile) --output \$(macrooutfile) --data-type \$(macrodatatype) --coinc-stat effective_snrsq --num-slides 50 --time-analyzed-file  \$(macrotimeanalyzedfile) --summary-file \$(macrosummaryfile) --mass-tag \$(macromasstag)"
+  echo "arguments = --glob-zero \$(macrozerofile) --glob-slide \$(macroslidefile) --output \$(macrooutfile) --data-type \$(macrodatatype) --coinc-stat effective_snrsq --num-slides 50 --time-analyzed-file  \$(macrotimeanalyzedfile) --summary-file \$(macrosummaryfile) --mass-tag \$(macromasstag) --eff-snr-denom-fac 50"
   echo "log = " `mktemp -p ${log_path}`
   echo "error = logs/corse-\$(cluster)-\$(process).err"
   echo "output = logs/corse-\$(cluster)-\$(process).out"
