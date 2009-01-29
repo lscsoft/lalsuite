@@ -32,12 +32,12 @@
 #include <lal/LIGOLwXML.h>
 #include <lal/LIGOLwXMLRead.h>
 #include <lal/LIGOMetadataTables.h>
-#include <lal/lalGitId.h>
+#include <lal/lalGitID.h>
 
 #include <gsl/gsl_sf_erf.h>
 
 #include <lalapps.h>
-#include <lalappsGitId.h>
+#include <lalappsGitID.h>
 
 /* verbose flag */
 extern int vrbflg;
