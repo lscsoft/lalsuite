@@ -53,6 +53,11 @@
 #include "hs_boinc_extras.h"
 #include "hs_boinc_options.h"
 
+/* for Linux extended backtrace */
+#if defined(__GLIBC__) && defined(__i386__)
+#include "erp_execinfo_plus.h"
+#endif
+
 /* FIXME: we should probably eliminate the references to this */
 #include "ComputeFStatistic.h"
 
@@ -323,8 +328,10 @@ static void sighandler(int sig)
   /* overwrite sigaction with caller's address */
 #ifdef __i386__
   stackframes[1] = (void *) uc->uc_mcontext.gregs[REG_EIP];
-#endif /* __i386__ */
+  backtrace_symbols_fd_plus(stackframes, nostackframes, fileno(stderr));
+#else /* __i386__ */
   backtrace_symbols_fd(stackframes, nostackframes, fileno(stderr));
+#endif /* __i386__ */
 #endif /* __GLIBC__ */
 
   if (global_status)
