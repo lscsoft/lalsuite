@@ -549,7 +549,24 @@ int main(int argc,char *argv[])
 	  Fstat.F *= norm * norm;
 	  Fstat.F += 2;		/* compute E[2F]:= 4 + SNR^2 */
 	  thisFCand.Mmunu.Sinv_Tsft = GV.Tsft;
-	}
+
+	  /* if outputting FstatAtoms, we need to renormalize them too ! */
+	  if ( Fstat.multiFstatAtoms )
+	    {
+	      UINT4 X, alpha;
+	      for ( X=0; X < Fstat.multiFstatAtoms->length; X++ )
+		{
+		  FstatAtoms *thisAtomList = Fstat.multiFstatAtoms->data[X];
+		  for ( alpha=0; alpha < thisAtomList->length; alpha ++ )
+		    {
+		      thisAtomList->Fa_alpha[alpha].re *= norm;
+		      thisAtomList->Fa_alpha[alpha].im *= norm;
+		      thisAtomList->Fb_alpha[alpha].re *= norm;
+		      thisAtomList->Fb_alpha[alpha].im *= norm;
+		    } /* for alpha < numSFTs */
+		} /* for X < numDet */
+	    } /* if outputFstatAtoms */
+	} /* if SignalOnly */
       thisFCand.Fstat   = Fstat;
 
       /* push new value onto scan-line buffer */
