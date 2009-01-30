@@ -21,6 +21,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <limits.h>
 
 #include <lal/LALConstants.h>
 #include <lal/LALMalloc.h>
@@ -188,6 +189,30 @@ static void mul222(double a[2][2], double b[2][2], double c[2][2])
     int i, j, k;
     for (i = 0; i != 2; ++i)
         for (k = 0; k != 2; ++k)
+        {
+            a[i][k] = 0;
+            for (j = 0; j != 2; ++j)
+                a[i][k] += b[i][j] * c[j][k];
+        }
+}
+
+static void mul122(double a[1][2], double b[1][2], double c[2][2])
+{
+    int i, j, k;
+    for (i = 0; i != 1; ++i)
+        for (k = 0; k != 2; ++k)
+        {
+            a[i][k] = 0;
+            for (j = 0; j != 2; ++j)
+                a[i][k] += b[i][j] * c[j][k];
+        }
+}
+
+static void mul121(double a[1][1], double b[1][2], double c[2][1])
+{
+    int i, j, k;
+    for (i = 0; i != 1; ++i)
+        for (k = 0; k != 1; ++k)
         {
             a[i][k] = 0;
             for (j = 0; j != 2; ++j)
@@ -440,9 +465,9 @@ static void compute_kernel(XLALSkymapPlanType* plan, int index, double sigma, do
     transpose32(f, plan->pixel[index].f);
     for (i = 0; i != 3; ++i)
     {
-        wfsfw[0][0] += sq(plan->pixel[index].f[i][0] * w[i]);
-        wfsfw[0][1] += plan->pixel[index].f[i][0] * plan->pixel[index].f[i][1] * sq(w[i]);
-        wfsfw[1][1] += sq(plan->pixel[index].f[i][1] * w[i]);
+        wfsfw[0][0] += sq(f[0][i] * w[i]);
+        wfsfw[0][1] += f[0][i] * f[1][i] * sq(w[i]);
+        wfsfw[1][1] += sq(f[1][i] * w[i]);
     }
     wfsfw[1][0] = wfsfw[0][1];
     
@@ -465,6 +490,126 @@ static void compute_kernel(XLALSkymapPlanType* plan, int index, double sigma, do
     *log_normalization = log(det22(wfsfwiwfsfwa)) * 0.5;
 }
 
+static void compute_kernel2(XLALSkymapPlanType* plan, int index, double sigma, double w[3], double kernel[2][2], double* log_normalization, double** x)
+{
+    double f[2][2];
+    double wfsfw[2][2] = {{0, 0}, {0, 0}};
+    double wfsfwa[2][2];
+    double iwfsfwa[2][2];
+    double fiwfsfwa[2][2];
+    double wfsfwiwfsfwa[2][2];
+    int i, j;
+    double w2[2];
+    
+    /* transpose32(f, plan->pixel[index].f); */
+    if (x[0])
+    {
+        /* we have hanford data */
+        f[0][0] = plan->pixel[index].f[0][0];
+        f[1][0] = plan->pixel[index].f[0][1];
+        w2[0] = w[0];
+        if (x[1])
+        {
+            /* we have livingston data */
+            f[0][1] = plan->pixel[index].f[1][0];
+            f[1][1] = plan->pixel[index].f[1][1];
+            w2[1] = w[1];
+        }
+        else
+        {
+            /* we must have virgo data */
+            f[0][1] = plan->pixel[index].f[2][0];
+            f[1][1] = plan->pixel[index].f[2][1];            
+            w2[1] = w[2];
+        }
+    }
+    else
+    {
+        /* we must have livingston and virgo data */
+        f[0][0] = plan->pixel[index].f[1][0];
+        f[1][0] = plan->pixel[index].f[1][1];
+        w2[0] = w[1];
+        f[0][1] = plan->pixel[index].f[2][0];
+        f[1][1] = plan->pixel[index].f[2][1];
+        w2[1] = w[2];
+    }
+    
+    for (i = 0; i != 2; ++i)
+    {
+        wfsfw[0][0] += sq(f[0][i] * w2[i]);
+        wfsfw[0][1] += f[0][i] * f[1][i] * sq(w2[i]);
+        wfsfw[1][1] += sq(f[1][i] * w2[i]);
+    }
+    wfsfw[1][0] = wfsfw[0][1];
+    
+    set22(wfsfwa, wfsfw[0][0] + 1/sq(sigma), wfsfw[0][1]    ,
+    wfsfw[1][0]    , wfsfw[1][1] + 1/sq(sigma));
+    inv22(iwfsfwa, wfsfwa);
+    mul222(fiwfsfwa, plan->pixel[index].f, iwfsfwa);
+    mul222(kernel, fiwfsfwa, f);
+    for (i = 0; i != 2; ++i)
+    {
+        for (j = 0; j != 2; ++j)
+        {
+            kernel[i][j] *= w2[i] * w2[j];
+        }
+    }
+    
+    mul222(wfsfwiwfsfwa, wfsfw, iwfsfwa);
+    wfsfwiwfsfwa[0][0] -= 1;
+    wfsfwiwfsfwa[1][1] -= 1;
+    *log_normalization = log(det22(wfsfwiwfsfwa)) * 0.5;
+}
+
+static void compute_kernel1(XLALSkymapPlanType* plan, int index, double sigma, double w[3], double kernel[1][1], double* log_normalization, double** x)
+{
+    double f[2][1];
+    double wfsfw[2][2] = {{0, 0}, {0, 0}};
+    double wfsfwa[2][2];
+    double iwfsfwa[2][2];
+    double fiwfsfwa[1][2];
+    double wfsfwiwfsfwa[2][2];
+    int i;
+    
+    if (x[0])
+    {
+        i = 0;
+    }
+    else
+    {
+        if (x[1])
+        {
+            i = 1;
+        }
+        else
+        {
+            i = 2;
+        }
+    }
+    
+    /* transpose32(f, plan->pixel[index].f); */
+    f[0][0] = plan->pixel[index].f[i][0];
+    f[1][0] = plan->pixel[index].f[i][1];
+    
+    wfsfw[0][0] += sq(f[0][0] * w[i]);
+    wfsfw[0][1] += f[0][0] * f[1][0] * sq(w[i]);
+    wfsfw[1][1] += sq(f[1][0] * w[i]);
+
+    wfsfw[1][0] = wfsfw[0][1];
+    
+    set22(wfsfwa, wfsfw[0][0] + 1/sq(sigma), wfsfw[0][1]    ,
+    wfsfw[1][0]    , wfsfw[1][1] + 1/sq(sigma));
+    inv22(iwfsfwa, wfsfwa);
+    mul122(fiwfsfwa, plan->pixel[index].f, iwfsfwa);
+    mul121(kernel, fiwfsfwa, f);
+    kernel[0][0] *= w[i] * w[i];
+    
+    mul222(wfsfwiwfsfwa, wfsfw, iwfsfwa);
+    wfsfwiwfsfwa[0][0] -= 1;
+    wfsfwiwfsfwa[1][1] -= 1;
+    *log_normalization = log(det22(wfsfwiwfsfwa)) * 0.5;
+}
+
 int XLALSkymapGlitchHypothesis(XLALSkymapPlanType* plan, double *p, double sigma, double w[3], int begin[3], int end[3], double** x)
 {
     static const char func[] = "XLALSkymapGlitchHypothesis";
@@ -477,28 +622,38 @@ int XLALSkymapGlitchHypothesis(XLALSkymapPlanType* plan, double *p, double sigma
     /* analyze each detector individually */
     for (i = 0; i != 3; ++i)
     {
-        int t;
-        double d;
-        double k;
-        double *m;
-        /* compute the kernel */
-        k = 0.5 / (sq(w[i]) + 1.0 / sq(sigma));
-        /* loop over all times */
-        for (t = begin[i]; t != end[i]; ++t)
+        /* was data supplied for this detector? */
+        if (x[i])
         {
-            buffer[t] = k * (sq(x[i][t]) + sq(x[i + 3][t]));
+            int t;
+            double d;
+            double k;
+            double *m;
+            /* compute the kernel */
+            k = 0.5 / (sq(w[i]) + 1.0 / sq(sigma));
+            /* loop over all times */
+            for (t = begin[i]; t != end[i]; ++t)
+            {
+                buffer[t] = k * (sq(x[i][t]) + sq(x[i + 3][t]));
+            }
+            /* find the maximum to prevent over or underflow when accumulating exponentials */
+            m = findmax(buffer + begin[i], buffer + end[i]);
+            /* marginalize over time */
+            p[i] = logtotalexpwithmax(buffer + begin[i], buffer + end[i], *m);
+            /* apply normalization */
+            p[i] -= log(sq(sigma) * sq(w[i]) + 1.0);
         }
-        /* find the maximum to prevent over or underflow when accumulating exponentials */
-        m = findmax(buffer + begin[i], buffer + end[i]);
-        /* marginalize over time */
-        p[i] = logtotalexpwithmax(buffer + begin[i], buffer + end[i], *m);
-        /* apply normalization */
-        p[i] -= log(sq(sigma) * sq(w[i]) + 1.0);
+        else
+        {
+            /* if there is no data we draw no conclusion */
+            p[i] = 0.0;
+        }
     }    
     XLALFree(buffer);    
     return;
 }
 
+#if 0
 int XLALSkymapEllipticalHypothesis(XLALSkymapPlanType* plan, double* p, double sigma, double w[3], int begin[3], int end[3], double** x, int* bests) 
 {
     static const char func[] = "XLALSkymapEllipticalHypothesis";
@@ -563,8 +718,7 @@ int XLALSkymapEllipticalHypothesis(XLALSkymapPlanType* plan, double* p, double s
                         double* stop;
                         double* q;
                         double* m;
-                        /* compute the kernel */
-                        compute_kernel(plan, index, sigma, w, kernel, &log_normalization);
+
                         /* create offset pointers to simplify inner loop */
                         hr = x[0] + b      - begin[0]; /* hanford real */
                         lr = x[1] + b + hl - begin[1]; /* livingston real */
@@ -577,19 +731,21 @@ int XLALSkymapEllipticalHypothesis(XLALSkymapPlanType* plan, double* p, double s
                         
                         q = buffer;
                         
+                        /* compute the kernel */
+                        compute_kernel(plan, index, sigma, w, kernel, &log_normalization);   
                         /* loop over arrival times */
                         for (; hr != stop; ++hr, ++lr, ++vr, ++hi, ++li, ++vi, ++q) 
                         {
                             *q = 0.5 * (
-                                    kernel[0][0] * (sq(*hr) + sq(*hi)) +
-                                    kernel[0][1] * (*hr * *lr + *hi * *li) * 2 +
-                                    kernel[0][2] * (*hr * *vr + *hi * *vi) * 2 +
-                                    kernel[1][1] * (sq(*lr) + sq(*li)) +
-                                    kernel[1][2] * (*lr * *vr + *li * *vi) * 2 +
-                                    kernel[2][2] * (sq(*vr) + sq(*vi))
-                                    );
-                        } /* end loop over arrival times */
-                        
+                                 kernel[0][0] * (sq(*hr) + sq(*hi)) +
+                                 kernel[0][1] * (*hr * *lr + *hi * *li) * 2 +
+                                 kernel[0][2] * (*hr * *vr + *hi * *vi) * 2 +
+                                 kernel[1][1] * (sq(*lr) + sq(*li)) +
+                                 kernel[1][2] * (*lr * *vr + *li * *vi) * 2 +
+                                 kernel[2][2] * (sq(*vr) + sq(*vi))
+                                 );
+                         } /* end loop over arrival times */
+                                                
                         /* compute the plausibility for the direction */
                         m = findmax(buffer, buffer + e - b);
                         p[index] =
@@ -639,6 +795,333 @@ int XLALSkymapEllipticalHypothesis(XLALSkymapPlanType* plan, double* p, double s
     XLALFree(buffer);
     return 0;
 }
+#endif
+
+int XLALSkymapEllipticalHypothesis(XLALSkymapPlanType* plan, double* p, double sigma, double w[3], int begin[3], int end[3], double** x, int* bests) 
+{
+    /* indicate that a detector has no data by x[i] == 0 */
+    
+    static const char func[] = "XLALSkymapEllipticalHypothesis";
+    
+    double* buffer;
+    int hl;
+    double total_normalization;
+    
+    int best_time[3], best_hemisphere;
+    double best_plausibility = log(0);
+    
+    total_normalization = 0;
+    
+    buffer = 0;
+    if (x[0])
+    {
+        buffer = (double*) XLALMalloc(sizeof(double) * (end[0] - begin[0]));
+    }
+    else
+    {
+        if (x[1]) 
+        {
+            buffer = (double*) XLALMalloc(sizeof(double) * (end[1] - begin[1]));
+        }
+        else
+        {
+            if (x[2])
+            {
+                buffer = (double*) XLALMalloc(sizeof(double) * (end[2] - begin[2]));
+            }
+            else
+            {
+                return 1;
+            }
+        }
+    }    
+    
+    /* loop over hanford-livingston delay */
+    for (hl = -plan->hl; hl <= plan->hl; ++hl) 
+    {
+        /* loop over hanford-virgo delay */
+        int hv;
+        for (hv = -plan->hv; hv <= plan->hv; ++hv) 
+        {
+            /* loop over hemisphere */
+            int hemisphere;
+            for (hemisphere = 0; hemisphere != 2; ++hemisphere) 
+            {
+                /* compute the index into the buffers from delays */
+                int index = index_from_delays(plan, hl, hv, hemisphere);
+                /* log zero the output buffer */
+                p[index] = log(0);
+                /* test if the delays are physical */
+                if (plan->pixel[index].area > 0) 
+                { 
+                    /* compute the begin and end times */
+                    int b;
+                    int e;
+                    
+                    if (x[0])
+                    { /* if we have hanford data */
+                        b = begin[0];
+                        e = end[0];
+                        if (x[1])
+                        { /* if we have livingston data */
+                            if (b + hl < begin[1]) 
+                            {   /* livingston constrains the begin time */
+                                b = begin[1] - hl;
+                            }
+                            if (e + hl > end[1]) 
+                            {   /* livingston constrains the end time */
+                                e = end[1] - hl;
+                            }
+                        } 
+                        if (x[2])
+                        { /* if we have virgo data */
+                            if (b + hv < begin[2]) 
+                            {   /* virgo constrains the begin time */
+                                b = begin[2] - hv;
+                            }
+                            if (e + hv > end[2]) 
+                            {   /* virgo constrains the end time */
+                                e = end[2] - hv;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        if (x[1])
+                        { /* if we have livingston data */
+                            b = begin[1] - hl;
+                            e = end[1] -hl;
+                            if (x[2])
+                            { /* if we have virgo data */
+                                if (b + hv < begin[2]) 
+                                {   /* virgo constrains the begin time */
+                                    b = begin[2] - hv;
+                                }
+                                if (e + hv > end[2]) 
+                                {   /* virgo constrains the end time */
+                                    e = end[2] - hv;
+                                }
+                            }
+                        }
+                        else
+                        { /* if we have virgo data */
+                            if (x[2])
+                            {
+                                b = begin[2] - hv;
+                                e = end[2] - hv;
+                            }
+                            else
+                            { /* we have no data */
+                                b = 0;
+                                e = 0;
+                            }
+                        }
+                    }
+                    
+                    /* test if there is enough data to analyze */
+                    if (b < e) 
+                    {
+                        double log_normalization;
+                        double *hr, *lr, *vr, *hi, *li, *vi;
+                        double* stop;
+                        double* q;
+                        double* m;
+
+                        /* create offset pointers to simplify inner loop */                        
+                        hr = x[0] + b      - begin[0]; /* hanford real */
+                        lr = x[1] + b + hl - begin[1]; /* livingston real */
+                        vr = x[2] + b + hv - begin[2]; /* virgo real */
+                        hi = x[3] + b      - begin[0]; /* hanford imag */
+                        li = x[4] + b + hl - begin[1]; /* livingston imag */
+                        vi = x[5] + b + hv - begin[2]; /* virgo imag */
+
+                        stop = x[0] - begin[0] + e; /* hanford real stop */
+                        
+                        q = buffer;
+                        
+                        if (x[0])
+                        {
+                            if (x[1])
+                            {
+                                if (x[2])
+                                {
+                                    /* hanford-livingston-virgo analysis */
+                                    double kernel[3][3];
+                                    /* compute the kernel */
+                                    compute_kernel(plan, index, sigma, w, kernel, &log_normalization);   
+                                    /* loop over arrival times */
+                                    for (; hr != stop; ++hr, ++lr, ++vr, ++hi, ++li, ++vi, ++q) 
+                                    {
+                                        *q = 0.5 * (
+                                                kernel[0][0] * (sq(*hr) + sq(*hi)) +
+                                                kernel[0][1] * (*hr * *lr + *hi * *li) * 2 +
+                                                kernel[0][2] * (*hr * *vr + *hi * *vi) * 2 +
+                                                kernel[1][1] * (sq(*lr) + sq(*li)) +
+                                                kernel[1][2] * (*lr * *vr + *li * *vi) * 2 +
+                                                kernel[2][2] * (sq(*vr) + sq(*vi))
+                                                );
+                                    } /* end loop over arrival times */
+                                }
+                                else
+                                {
+                                    /* hanford-livingston analysis */
+                                    double kernel[2][2];
+                                    /* compute the kernel */
+                                    compute_kernel2(plan, index, sigma, w, kernel, &log_normalization, x);   
+                                    /* loop over arrival times */
+                                    for (; hr != stop; ++hr, ++lr, ++vr, ++hi, ++li, ++vi, ++q) 
+                                    {
+                                        *q = 0.5 * (
+                                                kernel[0][0] * (sq(*hr) + sq(*hi)) +
+                                                kernel[0][1] * (*hr * *lr + *hi * *li) * 2 +
+                                                kernel[1][1] * (sq(*lr) + sq(*li))
+                                                );
+                                    } /* end loop over arrival times */                                   
+                                }
+                            }
+                            else
+                            {
+                                if (x[2])
+                                {
+                                    /* hanford-virgo analysis */
+                                    double kernel[2][2];
+                                    /* compute the kernel */
+                                    compute_kernel2(plan, index, sigma, w, kernel, &log_normalization, x);   
+                                    /* loop over arrival times */
+                                    for (; hr != stop; ++hr, ++lr, ++vr, ++hi, ++li, ++vi, ++q) 
+                                    {
+                                        *q = 0.5 * (
+                                                kernel[0][0] * (sq(*hr) + sq(*hi)) +
+                                                kernel[0][1] * (*hr * *vr + *hi * *vi) * 2 +
+                                                kernel[1][1] * (sq(*vr) + sq(*vi))
+                                                );
+                                    } /* end loop over arrival times */
+                                }
+                                else
+                                {
+                                    /* hanford analysis */
+                                    double kernel[1][1];
+                                    /* compute the kernel */
+                                    compute_kernel1(plan, index, sigma, w, kernel, &log_normalization, x);   
+                                    /* loop over arrival times */
+                                    for (; hr != stop; ++hr, ++lr, ++vr, ++hi, ++li, ++vi, ++q) 
+                                    {
+                                        *q = 0.5 * (
+                                                kernel[0][0] * (sq(*hr) + sq(*hi))
+                                                );
+                                    } /* end loop over arrival times */                                   
+                                }
+                            }
+                        }
+                        else
+                        {
+                            if (x[1])
+                            {
+                                if (x[2])
+                                {
+                                    /* livingston-virgo analysis */
+                                    double kernel[2][2];
+                                    /* compute the kernel */
+                                    compute_kernel2(plan, index, sigma, w, kernel, &log_normalization, x);   
+                                    /* loop over arrival times */
+                                    for (; hr != stop; ++hr, ++lr, ++vr, ++hi, ++li, ++vi, ++q) 
+                                    {
+                                        *q = 0.5 * (
+                                                kernel[0][0] * (sq(*lr) + sq(*li)) +
+                                                kernel[0][1] * (*lr * *vr + *li * *vi) * 2 +
+                                                kernel[1][1] * (sq(*vr) + sq(*vi))
+                                                );
+                                    } /* end loop over arrival times */
+                                }
+                                else
+                                {
+                                    /* livingston analysis */
+                                    double kernel[1][1];
+                                    /* compute the kernel */
+                                    compute_kernel1(plan, index, sigma, w, kernel, &log_normalization, x);   
+                                    /* loop over arrival times */
+                                    for (; hr != stop; ++hr, ++lr, ++vr, ++hi, ++li, ++vi, ++q) 
+                                    {
+                                        *q = 0.5 * (
+                                                kernel[0][0] * (sq(*lr) + sq(*li))
+                                                );
+                                    } /* end loop over arrival times */
+                                }
+                            }
+                            else
+                            {
+                                if (x[2])
+                                {
+                                    /* virgo analysis */
+                                    double kernel[1][1];
+                                    /* compute the kernel */
+                                    compute_kernel1(plan, index, sigma, w, kernel, &log_normalization, x);   
+                                    /* loop over arrival times */
+                                    for (; hr != stop; ++hr, ++lr, ++vr, ++hi, ++li, ++vi, ++q) 
+                                    {
+                                        *q = 0.5 * (
+                                                kernel[2][2] * (sq(*vr) + sq(*vi))
+                                                );
+                                    } /* end loop over arrival times */
+                                }
+                                else
+                                {
+                                    /* no data at all */
+                                    return 1;
+                                }
+                            }
+                        }
+                        
+                        /* compute the plausibility for the direction */
+                        m = findmax(buffer, buffer + e - b);
+                        p[index] =
+                                logtotalexpwithmax(buffer, buffer + e - b, *m) +
+                                log_normalization * 2 +
+                                log(plan->pixel[index].area);
+                                                
+                        { /* extract the quantities for X followup */
+                            double maximum = *m + log_normalization * 2 + log(plan->pixel[index].area);
+                            if (maximum > best_plausibility) 
+                            {
+                                best_plausibility = maximum;
+                                best_time[0] = (m - buffer) + b;
+                                best_time[1] = best_time[0] + hl;
+                                best_time[2] = best_time[0] + hv;
+                                best_hemisphere = hemisphere;
+                            }
+                        } /* end extract the quantities for X followup */
+                                
+                        /* track the total normalization */
+                        total_normalization += plan->pixel[index].area * (e - b);
+                                
+                    } /* end test if there is enough data to analyze */
+                } /* end test if the delays are physical */
+            } /* end loop over hemisphere */
+        } /* end loop over hanford-virgo delay */
+    } /* end loop over hanford-livingston delay */
+    
+    if (bests) 
+    {
+        bests[0] = best_time[0];
+        bests[1] = best_time[1];
+        bests[2] = best_time[2];
+        bests[3] = best_hemisphere;
+    }
+    
+    /* loop through applying normalization */
+    {
+        int i;
+        for (i = 0; i != plan->pixelCount; ++i)
+        {
+            p[i] -= log(total_normalization);
+        }
+    }
+
+    /* release working memory */
+    XLALFree(buffer);
+    return 0;
+}
+
 
 void XLALSkymapSum(XLALSkymapPlanType* plan, double* a, const double* b, const double* c) 
 {

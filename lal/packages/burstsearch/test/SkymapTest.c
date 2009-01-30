@@ -79,19 +79,28 @@ void make_glitch(XLALSkymapPlanType* plan, double** z, int samples, double sigma
     int i, t[3];
     RandomParams* params;
     params = XLALCreateRandomParams(0);
-    
-    i = index_from_delays(plan, 0, 0, 0);
+        
+    i = (rand() % 7) + 1;
     
     t[0] = rand() % samples;
     t[1] = rand() % samples;
     t[2] = rand() % samples;
     
-    z[0][t[0]] += sigma * XLALNormalDeviate(params);
-    z[1][t[1]] += sigma * XLALNormalDeviate(params);
-    z[2][t[2]] += sigma * XLALNormalDeviate(params);
-    z[3][t[0]] += sigma * XLALNormalDeviate(params);
-    z[4][t[1]] += sigma * XLALNormalDeviate(params);
-    z[5][t[2]] += sigma * XLALNormalDeviate(params);
+    if (i & 1)
+    {
+        z[0][t[0]] += sigma * XLALNormalDeviate(params);
+        z[3][t[0]] += sigma * XLALNormalDeviate(params);
+    }
+    if (i & 2)
+    {
+        z[1][t[1]] += sigma * XLALNormalDeviate(params);
+        z[4][t[1]] += sigma * XLALNormalDeviate(params);
+    }
+    if (i & 4)
+    {
+        z[2][t[2]] += sigma * XLALNormalDeviate(params);
+        z[5][t[2]] += sigma * XLALNormalDeviate(params);
+    }
     
     XLALDestroyRandomParams(params);
 }
@@ -101,13 +110,35 @@ double logdifferenceexp(double a, double b)
     return a + log(1. - exp(b - a));
 }
 
+int lose_data(double **z)
+{
+    int i;
+    i = rand() & 7;
+    if (i & 1)
+    {
+        free(z[0]); free(z[3]);
+        z[0] = 0; z[3] = 0;
+    }
+    if (i & 2)
+    {
+        free(z[1]); free(z[4]);
+        z[1] = 0; z[4] = 0;        
+    }
+    if (i & 4)
+    {
+        free(z[2]); free(z[5]);
+        z[2] = 0; z[5] = 0;
+    }
+    return i;
+}
+
 int main(int argc, char** argv)
 {
     XLALSkymapPlanType* plan;
     double* raw;
     double* z[6];
     double w[3] = { 1, 1, 1};
-    double sigma = 7.;
+    double sigma = 10.;
     int samples = 512;
     FILE* h;
     int i;
@@ -120,7 +151,7 @@ int main(int argc, char** argv)
     double marginalizedSkymap;
     double marginalizedGlitch;
     int trial, trials;
-    trials = 20;
+    trials = 100;
      
     printf("constructing plan...\n");    
     plan = XLALSkymapConstructPlan(f);
@@ -143,22 +174,29 @@ int main(int argc, char** argv)
         switch (injection_type)
         {
             case 0:
-                printf("None  : ");
+                printf("None  ");
                 break;
             case 1:
-                printf("Glitch: ");
+                printf("Glitch");
                 make_glitch(plan, z, samples, sigma);
                 break;
             case 2:
-                printf("Signal: ");
+                printf("Signal");
                 make_injection(plan, z, samples, sigma);
                 break;
         }
         
+        /* drop virgo */
+        /* z[2] = 0; z[5] = 0; */
+        /* drop livingston */
+        /* z[1] = 0; z[4] = 0; */
+        /* printf("%d:", lose_data(z)); */
+        printf(": ");
+                        
         /* printf("computing skymap...\n"); */
         raw = (double*) malloc(plan->pixelCount * sizeof(double));
-        XLALSkymapEllipticalHypothesis(plan, raw, sigma, w, begin, end, z, bests); 
-
+        XLALSkymapEllipticalHypothesis(plan, raw, sigma, w, begin, end, z, bests);         
+        
         /* printf("marginalizing over skymap...\n"); */
         marginalizedSkymap = log(0);
         for (i = 0; i != plan->pixelCount; ++i)
@@ -244,20 +282,25 @@ int main(int argc, char** argv)
         fclose(h);
         */
 
-        /*
-        printf("rendering image...\n");
-        image = (double*) malloc(sizeof(double) * 512 * 1024);
-        XLALSkymapRenderEqualArea(512, 1024, image, plan, raw);
+        
+        if (injection_type == 2)
+        {
+            printf("rendering image...\n");
+            image = (double*) malloc(sizeof(double) * 1024 * 2048);
+            XLALSkymapRenderEqualArea(1024, 2048, image, plan, raw);
 
-        printf("writing image...\n");
-        h = fopen("raw.dat", "wb");
-        fwrite(image, sizeof(double), 512*1024, h);
-        fclose(h);
-        */
+            printf("writing image...\n");
+            h = fopen("raw.dat", "wb");
+            fwrite(image, sizeof(double), 1024*2048, h);
+            fclose(h);
+            free(image);
+            printf("    ...write complete\n");
+        }
     
         /* printf("cleanup...\n"); */
         free(raw);       
-        free_data(z);
+        /* leak the data ? */
+        /* free_data(z); */
         
     }
     
