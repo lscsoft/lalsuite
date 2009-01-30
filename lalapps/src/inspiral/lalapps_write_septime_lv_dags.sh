@@ -27,10 +27,10 @@ echo
 
 # These shouldn't need changing
 
-h1_veto_file='../segments/H1-COMBINED_'${cat}'_VETO_SEGS-'${month_gps_time}'-'${month_duration}'.txt'
-h2_veto_file='../segments/H2-COMBINED_'${cat}'_VETO_SEGS-'${month_gps_time}'-'${month_duration}'.txt'
-l1_veto_file='../segments/L1-COMBINED_'${cat}'_VETO_SEGS-'${month_gps_time}'-'${month_duration}'.txt'
-v1_veto_file='../segments/V1-COMBINED_'${cat}'_VETO_SEGS-'${month_gps_time}'-'${month_duration}'.txt'
+h1_veto_file='/scratch2/jclayton/runlvtag5/thirdstage/866088014-868721414/segments/H1-COMBINED_'${cat}'_VETO_SEGS-'${month_gps_time}'-'${month_duration}'.txt'
+h2_veto_file='/scratch2/jclayton/runlvtag5/thirdstage/866088014-868721414/segments/H2-COMBINED_'${cat}'_VETO_SEGS-'${month_gps_time}'-'${month_duration}'.txt'
+l1_veto_file='/scratch2/jclayton/runlvtag5/thirdstage/866088014-868721414/segments/L1-COMBINED_'${cat}'_VETO_SEGS-'${month_gps_time}'-'${month_duration}'.txt'
+v1_veto_file='/scratch2/jclayton/runlvtag5/thirdstage/866088014-868721414/segments/V1-COMBINED_'${cat}'_VETO_SEGS-'${month_gps_time}'-'${month_duration}'.txt'
 # don't touch anything below here
 ################################################################################
 
@@ -107,14 +107,80 @@ if [ 1 ]; then
 fi > septime_zero_lag.septime.sub
 echo -e "\n...done."
 
+#generate injection dag
+echo "Generating septime_injection.dag and .sub files... "
+num_thincas=`grep THINCA_SECOND.*INJ_${cat} ${hipe_cache} | awk '{print $5}' | sed s+file://localhost++g | wc -l`
+thinca_idx=1
+
+if [ 1 ]; then
+  for injstring in BNS001INJ NSBH001INJ SPIN001INJ BBH001INJ FULLRANGE001INJ; do
+    for file in `grep THINCA_SECOND.*${injstring}_${cat} ${hipe_cache} | awk '{print $5}' | sed s+file://localhost++g`; do
+      echo -ne "processing ${thinca_idx} / ${num_thincas}\r" >&2
+      thinca_idx=$(( ${thinca_idx} + 1 ))
+      infile=`basename $file`
+      job_name=`echo $infile | awk 'gsub("THINCA","SEPTIME")'`
+      starttime=`echo $infile | awk 'gsub("-"," ") {print $3}'`
+      duration=`echo $infile | sed 's/\./ /g' | awk 'gsub("-"," ") {print $4}'`
+      endtime=$(($starttime + $duration))
+      combo=`echo $infile | awk 'gsub("-"," ") {print $1}'`
+      if [ $combo == H1H2L1V1 ] ; then
+        triggers="--h1-triggers --h2-triggers --l1-triggers --v1-triggers"
+      elif [ $combo == H1H2L1 ] ; then
+        triggers="--h1-triggers --h2-triggers --l1-triggers"
+      elif [ $combo == H1H2V1 ] ; then
+        triggers="--h1-triggers --h2-triggers --v1-triggers"
+      elif [ $combo == H1L1V1 ] ; then
+        triggers="--h1-triggers --l1-triggers --v1-triggers"
+      elif [ $combo == H2L1V1 ] ; then
+        triggers="--h2-triggers --l1-triggers --v1-triggers"
+      elif [ $combo == H1H2 ] ; then
+        triggers="--h1-triggers --h2-triggers"
+      elif [ $combo == H1L1 ] ; then
+        triggers="--h1-triggers --l1-triggers"
+      elif [ $combo == H2L1 ] ; then
+        triggers="--h2-triggers --l1-triggers"
+      elif [ $combo == H1V1 ] ; then
+        triggers="--h1-triggers --v1-triggers"
+      elif [ $combo == H2V1 ] ; then
+        triggers="--h2-triggers --v1-triggers"
+      elif [ $combo == L1V1 ] ; then
+        triggers="--l1-triggers --v1-triggers"
+      fi
+
+      echo "JOB $job_name septime_${injstring}.septime.sub"
+      echo "RETRY $job_name 3"
+      echo "VARS $job_name macroinfile=\"$file\" macrotriggers=\"$triggers\" macrogpsstarttime=\"$starttime\" macrogpsendtime=\"$endtime\""
+      echo "CATEGORY $job_name septime"
+      echo "## JOB $job_name requires input file $infile"
+    done
+  done
+  echo "MAXJOBS septime 20"
+fi > septime_injection.dag
+
+for injstring in BNS001INJ NSBH001INJ SPIN001INJ BBH001INJ FULLRANGE001INJ; do 
+  if [ 1 ]; then
+    echo "universe = vanilla"
+    echo "executable = ${septime_path}"
+    echo "arguments = --thinca \$(macroinfile) \$(macrotriggers) --veto-file vetoes_${cat}.xml.gz --output-dir septime_files/${injstring}_${cat} --gps-start-time \$(macrogpsstarttime) --gps-end-time \$(macrogpsendtime)"
+    echo "getenv = True"
+    echo "log = " `mktemp -p ${log_path}`
+    echo "error = logs/septime-\$(cluster)-\$(process).err"
+    echo "output = logs/septime-\$(cluster)-\$(process).out"
+    echo "notification = never"
+    echo "priority=${condor_priority}"
+    echo "queue 1"
+  fi > septime_${injstring}.septime.sub
+done
+echo -e "\n...done."
+
 #generate time-slide dag
-echo "Genearting septime_slide.dag and .sub files..."
-num_thincas=`grep THINCA_SLIDE_SECOND.*FULL_DATA_CAT_2 ${hipe_cache} | awk '{print $5}' | sed s+file://localhost++g | wc -l` 
+echo "Generating septime_slide.dag and .sub files..."
+num_thincas=`grep THINCA_SLIDE_SECOND.*FULL_DATA_CAT_3 ${hipe_cache} | awk '{print $5}' | sed s+file://localhost++g | wc -l` 
 thinca_idx=1
 
 
 if [ 1 ]; then
-  for file in `grep THINCA_SLIDE_SECOND.*FULL_DATA_CAT_2 ${hipe_cache} | awk '{print $5}' | sed s+file://localhost++g`; do
+  for file in `grep THINCA_SLIDE_SECOND.*FULL_DATA_CAT_3 ${hipe_cache} | awk '{print $5}' | sed s+file://localhost++g`; do
     echo -ne "processing ${thinca_idx} / ${num_thincas}\r" >&2
     thinca_idx=$(( ${thinca_idx} + 1 ))
     infile=`basename $file`
@@ -164,7 +230,7 @@ fi> septime_slide.dag
 if [ 1 ]; then
   echo "universe = vanilla"
   echo "executable = ${septime_path}"
-  echo "arguments = --thinca \$(macroinfile) \$(macrotriggers) --veto-file vetoes_${cat}.xml.gz --output-dir septime_files/${cat} --gps-start-time \$(macrogpsstarttime) --gps-end-time \$(macrogpsendtime) --h1-slide 0 --h2-slide 0 --l1-slide 10 --v1-slide 15 --num-slides 50 --write-antime-file"
+  echo "arguments = --thinca \$(macroinfile) \$(macrotriggers) --veto-file vetoes_${cat}.xml.gz --output-dir septime_files/${cat} --gps-start-time \$(macrogpsstarttime) --gps-end-time \$(macrogpsendtime) --h1-slide 0 --h2-slide 0 --l1-slide 5 --v1-slide 15 --num-slides 50 --write-antime-file"
   echo "getenv = True"
   echo "log = " `mktemp -p ${log_path}`
   echo "error = logs/septime_slide-\$(cluster)-\$(process).err"
@@ -173,7 +239,7 @@ if [ 1 ]; then
   echo "priority=${condor_priority}"
   echo "queue 1"
 fi > septime_slide.septime.sub
-echo -e "\n...done."
+echo -e "\n...done."i
 
 #setup directory structure
 if [ ! -d septime_files ] ; then
@@ -182,6 +248,11 @@ fi
 if [ ! -d septime_files/${cat} ] ; then
   mkdir septime_files/${cat}
 fi
+for string in BNS001INJ NSBH001INJ BBH001INJ SPIN001INJ FULLRANGE001INJ; do
+  if [ ! -d septime_files/${string}_${cat} ] ; then
+    mkdir septime_files/${string}_${cat}
+  fi
+done
 if [ ! -d logs ] ; then
   mkdir logs
 fi
@@ -189,6 +260,7 @@ fi
 echo "******************************************************"
 echo "  Now run: condor_submit_dag septime_zero_lag.dag"
 echo "      and: condor_submit_dag septime_slide.dag"
+echo "      and: condor_submit_dag septime_injection.dag"
 echo "  These dags can be run simutaneously."
 echo "******************************************************"
 

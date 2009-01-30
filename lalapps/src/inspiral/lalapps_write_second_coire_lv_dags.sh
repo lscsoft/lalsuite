@@ -26,11 +26,12 @@ echo
 
 #get first_coire zero-lag files
 /bin/echo -n "Generating first_coire file list..."
-pushd first_coire_files/ > /dev/null
+pushd first_coire_files/${cat}/ > /dev/null
 for combo in H1H2L1V1 H1H2L1 H1H2V1 H1L1V1 H2L1V1 H1H2 H1L1 H2L1 H1V1 H2V1 L1V1; do
-  for file in ${combo}-COIRE_${cat}_H*xml.gz; do
-    echo "first_coire_files/${file}"
+  for file in ${combo}-COIRE_${cat}_*xml.gz; do
+    echo "first_coire_files/${cat}/${file}"
   done > ${combo}_first_coire_${cat}.cache
+
 done
 popd > /dev/null
 echo " done."
@@ -69,7 +70,7 @@ if [ 1 ]; then
       echo "## JOB $child_file requires input file $parent_file"
     done
   done
-  #write coire jobs for double-in_triple and triple-in_triple files
+  #write coire jobs for double-in_triple and triple-in_triple times
   for combo in H1H2L1 H1H2 H1L1 H2L1; do
     infile="H1H2L1_first_coire_${cat}.cache"
     parent_file="${combo}-SECOND_COIRE_${cat}_H1H2L1-${month_gps_time}-${month_duration}.xml.gz"
@@ -78,7 +79,7 @@ if [ 1 ]; then
     echo "RETRY $parent_file 1"
     echo "VARS $parent_file macroinfile=\"$infile\" macrooutfile=\"$parent_file\" macrocombo=\"$combo\" macrosummaryfile=\"$summary_file\""
     echo "CATEGORY $parent_file coire"
-    echo "## JOB $parent_file requires input file $infile"
+    echo "## JOB $parent_file requires input file $infile"i
     #write mass coire child jobs
     for mass in mchirp_2_8 mchirp_8_17 mchirp_17_35; do
       if [[ "$mass" == "mchirp_2_8" ]]; then
@@ -227,7 +228,7 @@ fi > second_coire.dag
 if [ 1 ]; then
   echo "universe = standard"
   echo "executable = ${coire_path}"
-  echo "arguments = --input first_coire_files/\$(macroinfile) --output second_coire_files/\$(macrooutfile) --data-type all_data --coinc-stat effective_snrsq --coinc-cut \$(macrocombo) --cluster-time 10000 --summary-file second_coire_files/\$(macrosummaryfile)"
+  echo "arguments = --input first_coire_files/${cat}/\$(macroinfile) --output second_coire_files/${cat}/\$(macrooutfile) --data-type all_data --coinc-stat effective_snrsq --coinc-cut \$(macrocombo) --cluster-time 4000 --summary-file second_coire_files/\$(macrosummaryfile)"
   echo "log = " `mktemp -p ${log_path}`
   echo "error = logs/coire-\$(cluster)-\$(process).err"
   echo "output = logs/coire-\$(cluster)-\$(process).out"
@@ -239,7 +240,7 @@ fi > second_coire.coire.sub
 if [ 1 ]; then
   echo "universe = standard"
   echo "executable = ${coire_path}"
-  echo "arguments = --glob second_coire_files/\$(macroinfile) --output second_coire_files/\$(macrooutfile) --data-type all_data --coinc-stat effective_snrsq --cluster-time 10000 --mass-cut mchirp --mass-range-low \$(macrolowmass) --mass-range-high \$(macrohighmass)"
+  echo "arguments = --glob second_coire_files/\$(macroinfile) --output second_coire_files/${cat}/${mass}/\$(macrooutfile) --data-type all_data --coinc-stat effective_snrsq --cluster-time 4000 --mass-cut mchirp --mass-range-low \$(macrolowmass) --mass-range-high \$(macrohighmass)"
   echo "log = " `mktemp -p ${log_path}`
   echo "error = logs/coire-\$(cluster)-\$(process).err"
   echo "output = logs/coire-\$(cluster)-\$(process).out"
@@ -250,12 +251,264 @@ fi > second_coire_mass.coire.sub
 
 echo " done."
 
+#####################
+
+#get first_coire injection files
+/bin/echo -n "Generating first_coire injection file list..."
+for injstring in BNS001INJ NSBH001INJ BBH001INJ SPIN001INJ FULLRANGE001INJ; do
+  pushd first_coire_files/${injstring}/ > /dev/null
+  for combo in H1H2L1V1 H1H2L1 H1H2V1 H1L1V1 H2L1V1 H1H2 H1L1 H2L1 H1V1 H2V1 L1V1; do
+    for file in ${combo}-COIRE_${injstring}_${cat}_H*xml.gz; do
+      echo "first_coire_files/${injstring}/${file}"
+    done > ${combo}_first_coire_${injstring}_${cat}.cache
+    for file in ${combo}-COIRE_${injstring}_${cat}_L*xml.gz; do
+      echo "first_coire_files/${injstring}/${file}"
+    done > ${combo}_first_coire_${injstring}_${cat}.cache
+  done
+  popd > /dev/null
+  echo " done."
+done
+
+/bin/echo -n "Generating injection second_coire.dag and .sub files..."
+if [ 1 ]; then
+  for injstring in BNS001INJ NSBH001INJ BBH001INJ SPIN001INJ FULLRANGE001INJ; do
+    #get HL-INJ file
+    for file in `ls ../*inj/HL*${injstring}*`; do
+      hlinjfile=$file
+    done
+    #write coire jobs for double-in_double files
+    for combo in H1H2 H1L1 H2L1 H1V1 H2V1 L1V1; do
+      infile="${combo}_first_coire_${injstring}_${cat}.cache"
+      parent_file="${combo}-SECOND_COIRE_${injstring}_${cat}_${combo}-${month_gps_time}-${month_duration}.xml.gz"
+      summary_file="summ_files_${injstring}/${combo}-SECOND_COIRE_${injstring}_${cat}_${combo}-${month_gps_time}-${month_duration}.txt"
+      echo "JOB $parent_file second_coire_${injstring}.coire.sub"
+      echo "RETRY $parent_file 1"
+      echo "VARS $parent_file macroinfile=\"$infile\" macrooutfile=\"$parent_file\" macrocombo=\"$combo\" macrosummaryfile=\"$summary_file\" macroinjectionfile=\"$hlinjfile\""
+      echo "CATEGORY $parent_file coire"
+      echo "## JOB $parent_file requires input file $infile"
+      #write mass coire child jobs
+      for mass in mchirp_2_8 mchirp_8_17 mchirp_17_35; do
+        if [[ "$mass" == "mchirp_2_8" ]]; then
+          low_mass='0.87'
+          high_mass='3.48'
+        elif [[ "$mass" == "mchirp_8_17" ]]; then
+          low_mass='3.48'
+          high_mass='7.40'
+        else
+          low_mass='7.40'
+          high_mass='15.24'
+        fi
+        child_file="$mass/$parent_file"
+        echo "JOB $child_file second_coire_mass_${injstring}.coire.sub"
+        echo "RETRY $child_file 1"
+        echo "VARS $child_file macroinfile=\"$parent_file\" macrooutfile=\"$child_file\" macrolowmass=\"$low_mass\" macrohighmass=\"$high_mass\" macroinjectionfile=\"$hlinjfile\""
+        echo "CATEGORY $child_file coire"
+        echo "PARENT $parent_file CHILD $child_file"
+        echo "## JOB $child_file requires input file $parent_file"
+      done
+    done
+
+    #write coire jobs for double-in_triple and triple-in_triple files
+    for combo in H1H2L1 H1H2 H1L1 H2L1; do
+      infile="H1H2L1_first_coire_${injstring}_${cat}.cache"
+      parent_file="${combo}-SECOND_COIRE_${injstring}_${cat}_H1H2L1-${month_gps_time}-${month_duration}.xml.gz"
+      summary_file="summ_files_${injstring}/${combo}-SECOND_COIRE_${injstring}_${cat}_H1H2L1-${month_gps_time}-${month_duration}.txt"
+      echo "JOB $parent_file second_coire_${injstring}.coire.sub"
+      echo "RETRY $parent_file 1"
+      echo "VARS $parent_file macroinfile=\"$infile\" macrooutfile=\"$parent_file\" macrocombo=\"$combo\" macrosummaryfile=\"$summary_file\" macroinjectionfile=\"$hlinjfile\""
+      echo "CATEGORY $parent_file coire"
+      echo "## JOB $parent_file requires input file $infile"
+      #write mass coire child jobs
+      for mass in mchirp_2_8 mchirp_8_17 mchirp_17_35; do
+        if [[ "$mass" == "mchirp_2_8" ]]; then
+          low_mass='0.87'
+          high_mass='3.48'
+        elif [[ "$mass" == "mchirp_8_17" ]]; then
+          low_mass='3.48'
+          high_mass='7.40'
+        else
+          low_mass='7.40'
+          high_mass='15.24'
+        fi
+        child_file="$mass/$parent_file"
+        echo "JOB $child_file second_coire_mass_${injstring}.coire.sub"
+        echo "RETRY $child_file 1"
+        echo "VARS $child_file macroinfile=\"$parent_file\" macrooutfile=\"$child_file\" macrolowmass=\"$low_mass\" macrohighmass=\"$high_mass\" macroinjectionfile=\"$hlinjfile\""
+        echo "CATEGORY $child_file coire"
+        echo "PARENT $parent_file CHILD $child_file${injstring}"
+        echo "## JOB $child_file requires input file $parent_file"
+      done
+    done
+
+    for combo in H1L1V1 H1L1 H1V1 L1V1; do
+      infile="H1L1V1_first_coire_${injstring}_${cat}.cache"
+      parent_file="${combo}-SECOND_COIRE_${injstring}_${cat}_H1L1V1-${month_gps_time}-${month_duration}.xml.gz"
+      summary_file="summ_files_${injstring}/${combo}-SECOND_COIRE_${injstring}_${cat}_H1L1V1-${month_gps_time}-${month_duration}.txt"
+      echo "JOB $parent_file second_coire_${injstring}.coire.sub"
+      echo "RETRY $parent_file 1"
+      echo "VARS $parent_file macroinfile=\"$infile\" macrooutfile=\"$parent_file\" macrocombo=\"$combo\" macrosummaryfile=\"$summary_file\" macroinjectionfile=\"$hlinjfile\""
+      echo "CATEGORY $parent_file coire"
+      echo "## JOB $parent_file requires input file $infile"
+      #write mass coire child jobs
+      for mass in mchirp_2_8 mchirp_8_17 mchirp_17_35; do
+        if [[ "$mass" == "mchirp_2_8" ]]; then
+          low_mass='0.87'
+          high_mass='3.48'
+        elif [[ "$mass" == "mchirp_8_17" ]]; then
+          low_mass='3.48'
+          high_mass='7.40'
+        else
+          low_mass='7.40'
+          high_mass='15.24'
+        fi
+        child_file="$mass/$parent_file"
+        echo "JOB $child_file second_coire_mass_${injstring}.coire.sub"
+        echo "RETRY $child_file 1"
+        echo "VARS $child_file macroinfile=\"$parent_file\" macrooutfile=\"$child_file\" macrolowmass=\"$low_mass\" macrohighmass=\"$high_mass\" macroinjectionfile=\"$hlinjfile\""
+        echo "CATEGORY $child_file coire"
+        echo "PARENT $parent_file CHILD $child_file${injstring}"
+        echo "## JOB $child_file requires input file $parent_file"
+      done
+    done
+
+    for combo in H2L1V1 H2L1 H2V1 L1V1; do
+      infile="H2L1V1_first_coire_${injstring}_${cat}.cache"
+      parent_file="${combo}-SECOND_COIRE_${injstring}_${cat}_H2L1V1-${month_gps_time}-${month_duration}.xml.gz"
+      summary_file="summ_files_${injstring}/${combo}-SECOND_COIRE_${injstring}_${cat}_H2L1V1-${month_gps_time}-${month_duration}.txt"
+      echo "JOB $parent_file second_coire_${injstring}.coire.sub"
+      echo "RETRY $parent_file 1"
+      echo "VARS $parent_file macroinfile=\"$infile\" macrooutfile=\"$parent_file\" macrocombo=\"$combo\" macrosummaryfile=\"$summary_file\" macroinjectionfile=\"$hlinjfile\""
+      echo "CATEGORY $parent_file coire"
+      echo "## JOB $parent_file requires input file $infile"
+      #write mass coire child jobs
+      for mass in mchirp_2_8 mchirp_8_17 mchirp_17_35; do
+        if [[ "$mass" == "mchirp_2_8" ]]; then
+          low_mass='0.87'
+          high_mass='3.48'
+        elif [[ "$mass" == "mchirp_8_17" ]]; then
+          low_mass='3.48'
+          high_mass='7.40'
+        else
+          low_mass='7.40'
+          high_mass='15.24'
+        fi
+        child_file="$mass/$parent_file"
+        echo "JOB $child_file second_coire_mass_${injstring}.coire.sub"
+        echo "RETRY $child_file 1"
+        echo "VARS $child_file macroinfile=\"$parent_file\" macrooutfile=\"$child_file\" macrolowmass=\"$low_mass\" macrohighmass=\"$high_mass\" macroinjectionfile=\"$hlinjfile\""
+        echo "CATEGORY $child_file coire"
+        echo "PARENT $parent_file CHILD $child_file${injstring}"
+        echo "## JOB $child_file requires input file $parent_file"
+      done
+    done
+
+    for combo in H1H2V1 H1H2 H1V1 H2V1; do
+      infile="H1H2V1_first_coire_${injstring}_${cat}.cache"
+      parent_file="${combo}-SECOND_COIRE_${injstring}_${cat}_H1H2V1-${month_gps_time}-${month_duration}.xml.gz"
+      summary_file="summ_files_${injstring}/${combo}-SECOND_COIRE_${injstring}_${cat}_H1H2V1-${month_gps_time}-${month_duration}.txt"
+      echo "JOB $parent_file second_coire_${injstring}.coire.sub"
+      echo "RETRY $parent_file 1"
+      echo "VARS $parent_file macroinfile=\"$infile\" macrooutfile=\"$parent_file\" macrocombo=\"$combo\" macrosummaryfile=\"$summary_file\" macroinjectionfile=\"$hlinjfile\""
+      echo "CATEGORY $parent_file coire"
+      echo "## JOB $parent_file requires input file $infile"
+      #write mass coire child jobs
+      for mass in mchirp_2_8 mchirp_8_17 mchirp_17_35; do
+        if [[ "$mass" == "mchirp_2_8" ]]; then
+          low_mass='0.87'
+          high_mass='3.48'
+        elif [[ "$mass" == "mchirp_8_17" ]]; then
+          low_mass='3.48'
+          high_mass='7.40'
+        else
+          low_mass='7.40'
+          high_mass='15.24'
+        fi
+        child_file="$mass/$parent_file"
+        echo "JOB $child_file second_coire_mass_${injstring}.coire.sub"
+        echo "RETRY $child_file 1"
+        echo "VARS $child_file macroinfile=\"$parent_file\" macrooutfile=\"$child_file\" macrolowmass=\"$low_mass\" macrohighmass=\"$high_mass\" macroinjectionfile=\"$hlinjfile\""
+        echo "CATEGORY $child_file coire"
+        echo "PARENT $parent_file CHILD $child_file${injstring}"
+        echo "## JOB $child_file requires input file $parent_file"
+      done
+    done
+
+    #write coire jobs for double-in_quadruple, triple-in_quadruple and quadruple-in_quadruple files
+    for combo in H1H2L1V1 H1H2L1 H1L1V1 H2L1V1 H1H2V1 H1H2 H1L1 H2L1 H1V1 H2V1 L1V1; do
+      infile="H1H2L1V1_first_coire_${injstring}_${cat}.cache"
+      parent_file="${combo}-SECOND_COIRE_${injstring}_${cat}_H1H2L1V1-${month_gps_time}-${month_duration}.xml.gz"
+      summary_file="summ_files_${injstring}/${combo}-SECOND_COIRE_${injstring}_${cat}_H1H2L1V1-${month_gps_time}-${month_duration}.txt"
+      echo "JOB $parent_file second_coire_${injstring}.coire.sub"
+      echo "RETRY $parent_file 1"
+      echo "VARS $parent_file macroinfile=\"$infile\" macrooutfile=\"$parent_file\" macrocombo=\"$combo\" macrosummaryfile=\"$summary_file\" macroinjectionfile=\"$hlinjfile\" "
+      echo "CATEGORY $parent_file coire"
+      echo "## JOB $parent_file requires input file $infile"
+      #write mass coire child jobs
+      for mass in mchirp_2_8 mchirp_8_17 mchirp_17_35; do
+        if [[ "$mass" == "mchirp_2_8" ]]; then
+          low_mass='0.87'
+          high_mass='3.48'
+        elif [[ "$mass" == "mchirp_8_17" ]]; then
+          low_mass='3.48'
+          high_mass='7.40'
+        else
+          low_mass='7.40'
+          high_mass='15.24'
+        fi
+        child_file="$mass/$parent_file"
+        echo "JOB $child_file second_coire_mass_${injstring}.coire.sub"
+        echo "RETRY $child_file 1"
+        echo "VARS $child_file macroinfile=\"$parent_file\" macrooutfile=\"$child_file\" macrolowmass=\"$low_mass\" macrohighmass=\"$high_mass\" macroinjectionfile=\"$hlinjfile\" "
+        echo "CATEGORY $child_file coire"
+        echo "PARENT $parent_file CHILD $child_file${injstring}"
+        echo "## JOB $child_file requires input file $parent_file"
+      done
+    done
+
+  done
+  echo "MAXJOBS coire 20"
+fi > second_coire_injection.dag
+
+for injstring in BNS001INJ NSBH001INJ BBH001INJ SPIN001INJ FULLRANGE001INJ; do
+  if [ 1 ]; then
+    echo "universe = standard"
+    echo "executable = ${coire_path}"
+    ### DO WE NEED --missed-injections ?
+    echo "arguments = --input first_coire_files/${injstring}/\$(macroinfile) --output second_coire_files/${injstring}/\$(macrooutfile) --data-type all_data --coinc-stat effective_snrsq --coinc-cut \$(macrocombo) --cluster-time 4000 --summary-file second_coire_files/\$(macrosummaryfile) --injection-file \$(macroinjectionfile) --injection-window 100"
+    echo "log = " `mktemp -p ${log_path}`
+    echo "error = logs/coire-\$(cluster)-\$(process).err"
+    echo "output = logs/coire-\$(cluster)-\$(process).out"
+    echo "notification = never"
+    echo "priority = ${condor_priority}"
+    echo "queue 1"
+  fi > second_coire_${injstring}.coire.sub
+done
+
+for injstring in BNS001INJ NSBH001INJ BBH001INJ SPIN001INJ FULLRANGE001INJ; do
+  if [ 1 ]; then
+    echo "universe = standard"
+    echo "executable = ${coire_path}"
+    echo "arguments = --glob second_coire_files/${injstring}/\$(macroinfile) --output second_coire_files/${injstring}/\$(macrooutfile) --data-type all_data --coinc-stat effective_snrsq --cluster-time 4000 --mass-cut mchirp --mass-range-low \$(macrolowmass) --mass-range-high \$(macrohighmass) --injection-file \$(macroinjectionfile) --injection-window 100"
+    echo "log = " `mktemp -p ${log_path}`
+    echo "error = logs/coire-\$(cluster)-\$(process).err"
+    echo "output = logs/coire-\$(cluster)-\$(process).out"
+    echo "notification = never"
+    echo "priority = ${condor_priority}"
+    echo "queue 1"
+  fi > second_coire_mass_${injstring}.coire.sub
+done
+
+echo " done."
+
+
+#####################
+
 #get first_coire time-slide files
 /bin/echo -n "Generating first_coire_slide file list..."
-pushd first_coire_files/ > /dev/null
+pushd first_coire_files/${cat}/ > /dev/null
 for combo in H1H2L1V1 H1H2L1 H1H2V1 H1L1V1 H2L1V1 H1H2 H1L1 H2L1 H1V1 H2V1 L1V1; do
-  for file in ${combo}-COIRE_SLIDE_${cat}_H*xml.gz; do
-    echo "first_coire_files/${file}"
+  for file in ${combo}-COIRE_SLIDE_${cat}_*xml.gz; do
+    echo "first_coire_files/${cat}/${file}"
   done > ${combo}_first_coire_slide_${cat}.cache
 done
 popd > /dev/null
@@ -450,7 +703,7 @@ fi > second_coire_slide.dag
 if [ 1 ]; then
   echo "universe = standard"
   echo "executable = ${coire_path}"
-  echo "arguments = --input first_coire_files/\$(macroinfile) --output second_coire_files/\$(macrooutfile) --data-type all_data --coinc-stat effective_snrsq --cluster-time 10000 --coinc-cut \$(macrocombo) --num-slides 50"
+  echo "arguments = --input first_coire_files/${cat}/\$(macroinfile) --output second_coire_files/${cat}/\$(macrooutfile) --data-type all_data --coinc-stat effective_snrsq --cluster-time 4000 --coinc-cut \$(macrocombo) --num-slides 50"
   echo "log = " `mktemp -p ${log_path}`
   echo "error = logs/coire_slide-\$(cluster)-\$(process).err"
   echo "output = logs/coire_slide-\$(cluster)-\$(process).out"
@@ -462,7 +715,7 @@ fi > second_coire_slide.coire.sub
 if [ 1 ]; then
   echo "universe = standard"
   echo "executable = ${coire_path}"
-  echo "arguments = --glob second_coire_files/\$(macroinfile) --output second_coire_files/\$(macrooutfile) --data-type all_data --coinc-stat effective_snrsq --cluster-time 10000 --num-slides 50 --mass-cut mchirp --mass-range-low \$(macrolowmass) --mass-range-high \$(macrohighmass)"
+  echo "arguments = --glob second_coire_files/\$(macroinfile) --output second_coire_files/${cat}/${mass}/\$(macrooutfile) --data-type all_data --coinc-stat effective_snrsq --cluster-time 4000 --num-slides 50 --mass-cut mchirp --mass-range-low \$(macrolowmass) --mass-range-high \$(macrohighmass)"
   echo "log = " `mktemp -p ${log_path}`
   echo "error = logs/coire_slide-\$(cluster)-\$(process).err"
   echo "output = logs/coire_slide-\$(cluster)-\$(process).out"
@@ -481,9 +734,25 @@ fi
 if [ ! -d second_coire_files/summ_files_all_data ] ; then
   mkdir second_coire_files/summ_files_all_data
 fi
+if [ ! -d second_coire_files/${cat} ] ; then
+  mkdir second_coire_files/${cat}
+fi
 for mass in mchirp_2_8 mchirp_8_17 mchirp_17_35; do
-  if [ ! -d second_coire_files/${mass} ] ; then
-    mkdir second_coire_files/${mass}
+  if [ ! -d second_coire_files/${cat}/${mass} ] ; then
+    mkdir second_coire_files/${cat}/${mass}
+  fi
+done
+for injstring in BNS001INJ NSBH001INJ BBH001INJ SPIN001INJ FULLRANGE001INJ; do
+  if [ ! -d second_coire_files/${injstring} ] ; then
+    mkdir second_coire_files/${injstring}
+  fi
+  for mass in mchirp_2_8 mchirp_8_17 mchirp_17_35; do
+    if [ ! -d second_coire_files/${injstring}/${mass} ] ; then
+      mkdir second_coire_files/${injstring}/${mass}
+    fi
+  done
+  if [ ! -d second_coire_files/summ_files_${injstring} ] ; then
+    mkdir second_coire_files/summ_files_${injstring}
   fi
 done
 echo " done."

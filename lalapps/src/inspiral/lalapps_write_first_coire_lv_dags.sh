@@ -27,8 +27,18 @@ for file in *SEPTIME_H*xml.gz; do
   echo ${file}
   num_septimes=$(( ${num_septimes} + 1 ))
 done > ../septime_${cat}.cache
+#popd > /dev/null
+#echo "done"
+
+
+
+for file in *SEPTIME_L*xml.gz; do
+  echo ${file}
+  num_septimes=$(( ${num_septimes} + 1 ))
+done >> ../septime_${cat}.cache
 popd > /dev/null
 echo " done."
+
 
 #generate zero-lag coire dag
 echo "Generating zero-lag first_coire.dag and .sub files..."
@@ -50,7 +60,7 @@ fi > first_coire.dag
 if [ 1 ]; then
   echo "universe = standard"
   echo "executable = ${coire_path}"
-  echo "arguments = --glob septime_files/${cat}/\$(macroinfile) --output first_coire_files/\$(macrooutfile) --data-type all_data --coinc-stat effective_snrsq --cluster-time 10000"
+  echo "arguments = --glob septime_files/${cat}/\$(macroinfile) --output first_coire_files/${cat}/\$(macrooutfile) --data-type all_data --coinc-stat effective_snrsq --cluster-time 4000"
   echo "log = " `mktemp -p ${log_path}`
   echo "error = logs/coire-\$(cluster)-\$(process).err"
   echo "output = logs/coire-\$(cluster)-\$(process).out"
@@ -58,6 +68,63 @@ if [ 1 ]; then
   echo "priority = ${condor_priority}"
   echo "queue 1"
 fi > first_coire.coire.sub
+echo -e "\n...done."
+
+#get septime injection files
+/bin/echo -n "Generating septime file list..."
+num_septimes=0
+for injstring in BBH001INJ BNS001INJ NSBH001INJ SPIN001INJ FULLRANGE001INJ; do
+  pushd septime_files/${injstring}_${cat} > /dev/null
+  for file in *SEPTIME_H*xml.gz; do
+    echo ${file}
+    num_septimes=$(( ${num_septimes} + 1 ))
+  done > ../septime_${injstring}_${cat}.cache
+
+  for file in *SEPTIME_L*xml.gz; do
+    echo ${file}
+    num_septimes=$(( ${num_septimes} + 1 ))
+  done >> ../septime_${injstring}_${cat}.cache
+
+  popd > /dev/null
+done
+echo " done."
+
+#generate injection coire dag
+echo "Generating injection first_coire.dag and .sub files..."
+septime_idx=1
+for injstring in BBH001INJ BNS001INJ NSBH001INJ SPIN001INJ FULLRANGE001INJ; do
+  #get HL-INJ file
+  for file in `ls ../*inj/HL*${injstring}*`; do
+    hlinjfile=$file
+  done
+  if [ 1 ]; then
+    for infile in `cat septime_files/septime_${injstring}_${cat}.cache`; do
+      echo -ne "processing ${septime_idx} / ${num_septimes}\r" >&2
+      septime_idx=$(( ${septime_idx} + 1))
+      outfile=`echo $infile | sed s/SEPTIME/COIRE_${injstring}_${cat}/g`
+      echo "JOB $outfile first_coire_${injstring}.coire.sub"
+      echo "RETRY $outfile 1"
+      echo "VARS $outfile macroinfile=\"$infile\" macrooutfile=\"$outfile\" macroinjectionfile=\"$hlinjfile\" "
+      echo "CATEGORY $outfile coire"
+      echo "## JOB $outfile requires input file $infile"
+    done
+  fi
+  echo "MAXJOBS coire 200"
+done > first_coire_injection.dag
+
+for injstring in BBH001INJ BNS001INJ NSBH001INJ SPIN001INJ FULLRANGE001INJ; do
+  if [ 1 ]; then
+    echo "universe = standard"
+    echo "executable = ${coire_path}"
+    echo "arguments = --glob septime_files/${injstring}_${cat}/\$(macroinfile) --output first_coire_files/${injstring}/\$(macrooutfile) --data-type all_data --coinc-stat effective_snrsq --cluster-time 4000 --injection-file \$(macroinjectionfile) --injection-window 100"
+    echo "log = " `mktemp -p ${log_path}`
+    echo "error = logs/coire-\$(cluster)-\$(process).err"
+    echo "output = logs/coire-\$(cluster)-\$(process).out"
+    echo "notification = never"
+    echo "priority = ${condor_priority}"
+    echo "queue 1"
+  fi > first_coire_${injstring}.coire.sub
+done
 echo -e "\n...done."
 
 #get septime_slide files
@@ -68,6 +135,11 @@ for file in *SEPTIME_SLIDE_H*xml.gz; do
   echo ${file}
   num_septimes=$(( ${num_septimes} + 1 ))
 done > ../septime_slide_${cat}.cache
+
+for file in *SEPTIME_SLIDE_L*xml.gz; do
+  echo ${file}
+  num_septimes=$(( ${num_septimes} + 1 ))
+done >> ../septime_slide_${cat}.cache
 popd > /dev/null
 echo " done."
 
@@ -91,7 +163,7 @@ fi > first_coire_slide.dag
 if [ 1 ]; then
   echo "universe = vanilla"
   echo "executable = ${coire_path}"
-  echo "arguments = --glob septime_files/${cat}/\$(macroinfile) --output first_coire_files/\$(macrooutfile) --data-type all_data --coinc-stat effective_snrsq --cluster-time 10000 --num-slides 50"
+  echo "arguments = --glob septime_files/${cat}/\$(macroinfile) --output first_coire_files/${cat}/\$(macrooutfile) --data-type all_data --coinc-stat effective_snrsq --cluster-time 4000 --num-slides 50"
   echo "log = " `mktemp -p ${log_path}`
   echo "error = logs/coire_slide-\$(cluster)-\$(process).err"
   echo "output = logs/coire_slide-\$(cluster)-\$(process).out"
@@ -106,9 +178,16 @@ if [ ! -d first_coire_files ]; then
   mkdir first_coire_files
 fi
 
+for string in ${cat} BNS001INJ NSBH001INJ BBH001INJ SPIN001INJ FULLRANGE001INJ; do
+  if [ ! -d first_coire_files/${string} ]; then
+    mkdir first_coire_files/${string}
+  fi
+done
+
 echo "******************************************************"
 echo "  Now run: condor_submit_dag first_coire.dag"
 echo "      and: condor_submit_dag first_coire_slide.dag"
+echo "      and: condor_submit_dag first_coire_injection.dag"
 echo "  These dags can be run simutaneously."
 echo "******************************************************"
 
