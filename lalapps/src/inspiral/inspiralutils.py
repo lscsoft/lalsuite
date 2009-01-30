@@ -749,8 +749,9 @@ def plot_setup(plotDir, config, logPath, stage, injectionSuffix,
         inspmissedVetoDir + "/V1-COMBINED_CAT_3_VETO_SEGS-" + analysisstart
         + "-" + str(analysisduration) + ".txt")
 
-  # Adding followup option to plotinspfound
+  # Adding followup option to plotinspfound and plotinspmissed
   plotcp.set("plotinspfound","followup-tag",injdirType)
+  plotcp.set("plotinspmissed","followup-tag",injdirType)
 
   # Remove options if no slide or zero lag files are available.
   if "NONE_AVAILABLE" in slideSuffix:
