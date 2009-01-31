@@ -207,6 +207,9 @@ parser.add_option("-c", "--plot-chia",action="store_true",default=False,\
 parser.add_option("", "--disable-dag-categories",action="store_true",\
     default=False,help="disable the internal dag category maxjobs")
 
+parser.add_option("","--do-remote-ifo",action="store",\
+    type="string",default=False,metavar=" IFO",\
+    help="specify ifo for which calculations should be done remotely")
 
 command_line = sys.argv[1:]
 (opts,args) = parser.parse_args()
@@ -267,12 +270,13 @@ cp = ConfigParser.ConfigParser()
 cp.read(opts.config_file)
 
 ## set the option to make remote calculations for some Virgo qscans
-depIfo = 'V1'
-cp.set('followup-q-datafind','remote-ifo',depIfo)
-cp.set('followup-foreground-qscan','remote-ifo',depIfo)
-cp.set('followup-background-qscan','remote-ifo',depIfo)
-cp.set('followup-foreground-seismic-qscan','remote-ifo',depIfo)
-cp.set('followup-background-seismic-qscan','remote-ifo',depIfo)
+if opts.do_remote_ifo:
+  depIfo = opts.do_remote_ifo
+  cp.set('followup-q-datafind','remote-ifo',depIfo)
+  cp.set('followup-foreground-qscan','remote-ifo',depIfo)
+  cp.set('followup-background-qscan','remote-ifo',depIfo)
+  cp.set('followup-foreground-seismic-qscan','remote-ifo',depIfo)
+  cp.set('followup-background-seismic-qscan','remote-ifo',depIfo)
 
 ## get the directory where the code is run
 currentPath = os.path.abspath('.')
@@ -349,62 +353,64 @@ ifos_list = ['H1','H2','L1','G1','V1','T1']
 ############ PREPARE FILES FOR REMOTE (DEPORTED) VIRGO QSCANS #################
 ###############################################################################
 
-depIfoIniConfig = depIfo+'config-file'
-depIfoIniWeb = depIfo+'web'
-depIfoDir = depIfo+'_qscans_config'
-depQscanList = ['foreground-qscan', 'background-qscan', 'foreground-seismic-qscan', 'background-seismic-qscan']
-  
-# Build directories
-os.system('mkdir -p '+depIfoDir)
-os.system('mkdir -p '+depIfoDir+'/CONFIG')
-os.system('mkdir -p '+depIfoDir+'/RESULTS')
-for depQscan in depQscanList:
-  os.system('mkdir -p '+depIfoDir+'/RESULTS/results_'+depQscan)
-os.system('mkdir -p '+depIfoDir+'/SCRIPTS')
-os.system('mkdir -p '+depIfoDir+'/TIMES')
+if opts.do_remote_ifo:
 
-# Copy the qscan configuration files
-for depQscan in depQscanList:
-  if cp.has_option("followup-"+depQscan, depIfoIniConfig):
-    qscanConfig = string.strip(cp.get("followup-"+depQscan, depIfoIniConfig))
-    if qscanConfig!='':
-      print 'copy '+qscanConfig+' -----> '+depIfoDir+'/CONFIG/'+depQscan+'_config.txt'
-      os.system('cp '+qscanConfig+' '+depIfoDir+'/CONFIG/'+depQscan+'_config.txt')
+  depIfoIniConfig = depIfo+'config-file'
+  depIfoIniWeb = depIfo+'web'
+  depIfoDir = depIfo+'_qscans_config'
+  depQscanList = ['foreground-qscan', 'background-qscan', 'foreground-seismic-qscan', 'background-seismic-qscan']
   
-# Copy the scripts used in the remote computing center
-#   first, get the path to the scripts
-scriptPath = Popen(["which", "analyseQscan.py"], stdout=PIPE).communicate()[0]
+  # Build directories
+  os.system('mkdir -p '+depIfoDir)
+  os.system('mkdir -p '+depIfoDir+'/CONFIG')
+  os.system('mkdir -p '+depIfoDir+'/RESULTS')
+  for depQscan in depQscanList:
+    os.system('mkdir -p '+depIfoDir+'/RESULTS/results_'+depQscan)
+  os.system('mkdir -p '+depIfoDir+'/SCRIPTS')
+  os.system('mkdir -p '+depIfoDir+'/TIMES')
 
-scriptPath = scriptPath.strip('\n')
-scriptPath = scriptPath.replace('analyseQscan.py','followup_virgo_scripts')
-os.system('cp '+scriptPath+'/qsub_wscan.sh '+depIfoDir+'/SCRIPTS/')
-os.system('cp '+scriptPath+'/qsub_wscanlite.sh '+depIfoDir+'/SCRIPTS/')
-os.system('cp '+scriptPath+'/wscan_in2p3.sh '+depIfoDir+'/SCRIPTS/')
-os.system('cp '+scriptPath+'/wscanlite_in2p3.sh '+depIfoDir+'/SCRIPTS/')
-os.system('cp '+scriptPath+'/prepare_sendback.py '+depIfoDir)
-os.system('cp '+scriptPath+'/virgo_qscan_in2p3.py '+depIfoDir)
-depIfoWebForeground = string.strip(cp.get('followup-foreground-qscan', depIfoIniWeb))
-if not depIfoWebForeground.startswith('http://virgo.in2p3.fr/followups/'):
-  print('\nWARNING for foreground qscans:')
-  print('   wrong web address : '+depIfoWebForeground)
-  print('   The web address for Virgo qscans should start with \"http://virgo.in2p3.fr/followups/\"')
-  print('   followed by the name of the submitter of the jobs')
-else:
-  depIfoWebForeground = depIfoWebForeground.replace('http://virgo.in2p3.fr/followups/','')
-  os.system('sed -e \'s|@foreground@|'+depIfoWebForeground+'|\' '+depIfoDir+'/virgo_qscan_in2p3.py > '+depIfoDir+'/virgo_qscan_in2p3.py.tmp')
-  os.system('mv -f '+depIfoDir+'/virgo_qscan_in2p3.py.tmp '+depIfoDir+'/virgo_qscan_in2p3.py')
-  os.system('chmod +x '+depIfoDir+'/virgo_qscan_in2p3.py')
-depIfoWebForegroundSeismic = string.strip(cp.get('followup-foreground-seismic-qscan', depIfoIniWeb))
-if not depIfoWebForegroundSeismic.startswith('http://virgo.in2p3.fr/followups/'):
-  print('\nWARNING for foreground-seismic qscans:')
-  print('   wrong web address : '+depIfoWebForegroundSeismic)
-  print('   The web address for Virgo qscans should start with \"http://virgo.in2p3.fr/followups/\"')
-  print('   followed by the name of the submitter of the jobs')
-else:
-  depIfoWebForegroundSeismic = depIfoWebForegroundSeismic.replace('http://virgo.in2p3.fr/followups/','')
-  os.system('sed -e \'s|@foreground-seismic@|'+depIfoWebForegroundSeismic+'|\' '+depIfoDir+'/virgo_qscan_in2p3.py > '+depIfoDir+'/virgo_qscan_in2p3.py.tmp')
-  os.system('mv -f '+depIfoDir+'/virgo_qscan_in2p3.py.tmp '+depIfoDir+'/virgo_qscan_in2p3.py')
-  os.system('chmod +x '+depIfoDir+'/virgo_qscan_in2p3.py')
+  # Copy the qscan configuration files
+  for depQscan in depQscanList:
+    if cp.has_option("followup-"+depQscan, depIfoIniConfig):
+      qscanConfig = string.strip(cp.get("followup-"+depQscan, depIfoIniConfig))
+      if qscanConfig!='':
+        print 'copy '+qscanConfig+' -----> '+depIfoDir+'/CONFIG/'+depQscan+'_config.txt'
+        os.system('cp '+qscanConfig+' '+depIfoDir+'/CONFIG/'+depQscan+'_config.txt')
+  
+  # Copy the scripts used in the remote computing center
+  #   first, get the path to the scripts
+  scriptPath = Popen(["which", "analyseQscan.py"], stdout=PIPE).communicate()[0]
+
+  scriptPath = scriptPath.strip('\n')
+  scriptPath = scriptPath.replace('analyseQscan.py','followup_virgo_scripts')
+  os.system('cp '+scriptPath+'/qsub_wscan.sh '+depIfoDir+'/SCRIPTS/')
+  os.system('cp '+scriptPath+'/qsub_wscanlite.sh '+depIfoDir+'/SCRIPTS/')
+  os.system('cp '+scriptPath+'/wscan_in2p3.sh '+depIfoDir+'/SCRIPTS/')
+  os.system('cp '+scriptPath+'/wscanlite_in2p3.sh '+depIfoDir+'/SCRIPTS/')
+  os.system('cp '+scriptPath+'/prepare_sendback.py '+depIfoDir)
+  os.system('cp '+scriptPath+'/virgo_qscan_in2p3.py '+depIfoDir)
+  depIfoWebForeground = string.strip(cp.get('followup-foreground-qscan', depIfoIniWeb))
+  if not depIfoWebForeground.startswith('http://virgo.in2p3.fr/followups/'):
+    print('\nWARNING for foreground qscans:')
+    print('   wrong web address : '+depIfoWebForeground)
+    print('   The web address for Virgo qscans should start with \"http://virgo.in2p3.fr/followups/\"')
+    print('   followed by the name of the submitter of the jobs')
+  else:
+    depIfoWebForeground = depIfoWebForeground.replace('http://virgo.in2p3.fr/followups/','')
+    os.system('sed -e \'s|@foreground@|'+depIfoWebForeground+'|\' '+depIfoDir+'/virgo_qscan_in2p3.py > '+depIfoDir+'/virgo_qscan_in2p3.py.tmp')
+    os.system('mv -f '+depIfoDir+'/virgo_qscan_in2p3.py.tmp '+depIfoDir+'/virgo_qscan_in2p3.py')
+    os.system('chmod +x '+depIfoDir+'/virgo_qscan_in2p3.py')
+  depIfoWebForegroundSeismic = string.strip(cp.get('followup-foreground-seismic-qscan', depIfoIniWeb))
+  if not depIfoWebForegroundSeismic.startswith('http://virgo.in2p3.fr/followups/'):
+    print('\nWARNING for foreground-seismic qscans:')
+    print('   wrong web address : '+depIfoWebForegroundSeismic)
+    print('   The web address for Virgo qscans should start with \"http://virgo.in2p3.fr/followups/\"')
+    print('   followed by the name of the submitter of the jobs')
+  else:
+    depIfoWebForegroundSeismic = depIfoWebForegroundSeismic.replace('http://virgo.in2p3.fr/followups/','')
+    os.system('sed -e \'s|@foreground-seismic@|'+depIfoWebForegroundSeismic+'|\' '+depIfoDir+'/virgo_qscan_in2p3.py > '+depIfoDir+'/virgo_qscan_in2p3.py.tmp')
+    os.system('mv -f '+depIfoDir+'/virgo_qscan_in2p3.py.tmp '+depIfoDir+'/virgo_qscan_in2p3.py')
+    os.system('chmod +x '+depIfoDir+'/virgo_qscan_in2p3.py')
 
 ############# LOOP OVER RANDOM BACKGROUND TIMES ###############################
 ###############################################################################
@@ -425,18 +431,20 @@ if opts.background_qscan or opts.background_hoft_qscan or opts.background_seis_q
       qBgNode = qscanNode(qscanBgJob,time,cp,dNode.outputFileName,ifo,'background-seismic-qscan',opts, dNode, dag,'datafind','background_seis_qscan')
   
     # WRITE TIMES FOR REMOTE (DEPORTED) CALCULATIONS
-    if ifo == depIfo and len(times)!=0:
-      os.system('cp '+timeListFile+' '+depIfoDir+'/TIMES/background_qscan_times.txt')
+    if opts.do_remote_ifo:
+      if ifo == depIfo and len(times)!=0:
+        os.system('cp '+timeListFile+' '+depIfoDir+'/TIMES/background_qscan_times.txt')
 
 ############# Preparing deported qscans and distribution node #################
 ###############################################################################
 
-# Initialize qscan times text file for deported qscans
-if opts.qscan or opts.seis_qscan:
-  depQscanTFile = open(depIfoDir+'/TIMES/qscan_times.txt','w')
+if opts.do_remote_ifo:
+  # Initialize qscan times text file for deported qscans
+  if opts.qscan or opts.seis_qscan:
+    depQscanTFile = open(depIfoDir+'/TIMES/qscan_times.txt','w')
 
-# Distribute the results of the deported qscans to the expected output directories
-distribQNode = distributeQscanNode(distribQJob,'QSCAN/QSCAN.cache','QSCANLITE/QSCANLITE.cache',depIfo,depIfo+"_qscans_results.tar.gz",opts,dag)
+  # Distribute the results of the deported qscans to the expected output directories
+  distribQNode = distributeQscanNode(distribQJob,'QSCAN/QSCAN.cache','QSCANLITE/QSCANLITE.cache',depIfo,depIfo+"_qscans_results.tar.gz",opts,dag)
 
 ########## LOOP OVER FOLLOWUP TIMES (if read-times is activated) ##############
 ###############################################################################
@@ -452,7 +460,7 @@ if opts.read_times:
       dag.appendSubSection(event_title)
 
       # Write time in file for deported qscans
-      if ifo==depIfo:
+      if opts.do_remote_ifo and ifo==depIfo:
          if opts.qscan or opts.seis_qscan:
            depQscanTFile.write(repr(time)+'\n')
 
@@ -510,10 +518,10 @@ if not opts.disable_followup and not opts.read_times:
       except: continue
     
       # Write time in file for deported qscans
-      if ifo==depIfo:
+      if opts.do_remote_ifo and ifo==depIfo:
          if opts.qscan or opts.seis_qscan:
            depQscanTFile.write(repr(trig.gpsTime[ifo])+'\n')
-	 
+ 
       #Lets append a new subsection to the last section
       dag.appendSubSection(str(ifo)+' @ GPS '+str(trig.gpsTime[ifo]))
 
@@ -596,16 +604,12 @@ if not opts.disable_followup and not opts.read_times:
 
         cohInspNodeNotrig = followUpInspNode(cohInspJob,inspiral_process_params[ifo], trig.ifolist_in_coinc[0], trig, cp, opts, dag, inspiralDataFindNode.outputFileName,inspiralDataFindNode,'inspiral_datafind',type='coh')
         chiaNode.append_insp_node(cohInspNodeNotrig,ifo)
+        skyNode.append_insp_node(cohInspNodeNotrig,ifo)
 
         # generate the snr/chisq time series for each triggered template
         for itf in trig.ifolist_in_coinc:
           # SETUP INSPIRAL JOBS
           inspiralNode = followUpInspNode(inspJobNotrig,inspiral_process_params[ifo], itf, trig, cp, opts, dag, inspiralDataFindNode.outputFileName,inspiralDataFindNode,'inspiral_datafind','notrig',None)
-          # Setup sky map node, this will cause a warning because it will try
-          # to add multiple ifos at once.  What we really want is the same 
-          # template filtered through all ifos.  This needs to be fixed.  For
-          # now the skymap is wedged in to test the plumbing.
-          #skyMapNode.append(inspiralNode,ifo)
           # SETUP PLOT JOBS
           plotNode = plotSNRCHISQNode(plotJob,ifo,inspiralNode.output_file_name,trig,dag.page,dag,inspiralNode,opts,itf)
 
@@ -638,9 +642,10 @@ if not opts.disable_followup and not opts.read_times:
 
 
 # Prepare for moving the deported qscan directory (tar-gzip)
-if opts.qscan or opts.seis_qscan:
-  depQscanTFile.close()
-os.system('tar zcvf '+depIfoDir+'.tar.gz '+depIfoDir)
+if opts.do_remote_ifo:
+  if opts.qscan or opts.seis_qscan:
+    depQscanTFile.close()
+  os.system('tar zcvf '+depIfoDir+'.tar.gz '+depIfoDir)
     
 ##########################################################################
 dag.writeAll()
