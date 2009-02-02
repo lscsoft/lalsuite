@@ -40,6 +40,7 @@
 #include <sys/time.h>
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_randist.h>
+#include <lalappsGitID.h>
 
 
 #include <lal/AVFactories.h>
@@ -80,6 +81,7 @@
 #include <lal/Units.h>
 #include <lal/VectorOps.h>
 #include <lal/Window.h>
+#include <lal/lalGitID.h>
 
 
 /* ARGH!  allow the code to be C99!  Obsession with C89 will cause bugs */
@@ -1553,8 +1555,16 @@ int main(int argc, char *argv[])
 	 */
 
 	_process_table = XLALCreateProcessTableRow();
-	if(XLALPopulateProcessTable(_process_table, PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE, 9))
-		exit(1);
+	if (strcmp(CVS_REVISION, "$Revi" "sion$"))
+	{
+		if(XLALPopulateProcessTable(_process_table, PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE, 9))
+			exit(1);
+	}
+	else
+	{
+		if(XLALPopulateProcessTable(_process_table, PROGRAM_NAME, lalappsGitCommitID, lalappsGitGitStatus, lalappsGitCommitDate, 9))
+			exit(1);
+	}
 	XLALGPSTimeNow(&_process_table->start_time);
 
 	/*
