@@ -229,7 +229,7 @@ if ((do_coarse) and (do_datafind == None)):
     print >> sys.stderr, """The specified data file %s does not exist!""" % data_cache
     sys.exit(1)
 
-if (channel.find('STRAIN') > -1) | (channel.find('DER_DATA_H') > -1) | (channel.find('h_') > -1)
+if (channel.find('STRAIN') > -1) | (channel.find('DER_DATA_H') > -1) | (channel.find('h_') > -1):
   print >> sys.stderr, """You are looking at calibrated strain data, so read in high-pass frequency and scale factors"""
   high_pass = cp.get('input', 'high_pass')
   scale_fac = cp.get('input', 'scale_fac')
