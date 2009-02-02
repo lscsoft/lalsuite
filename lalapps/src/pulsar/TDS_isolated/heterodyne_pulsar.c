@@ -1227,10 +1227,12 @@ REAL8TimeSeries *get_frame_data(CHAR *framefile, CHAR *channel, REAL8 time,
       dblseries->data->data[i] = scalefac*(REAL8)frvect->dataF[i];
   }
   else if(strstr(channel, "STRAIN") != NULL || strstr(channel, "DER_DATA") !=
-    NULL || strstr(channel, "h_16384Hz") != NULL){ /* data is calibrated h(t) */
-    /* calibrated Virgo data has the channel h_16384Hz and is single
+    NULL || strstr(channel, "h_16384Hz") != NULL || strstr(channel, 
+    "h_20000Hz") != NULL){ /* data is calibrated h(t) */
+    /* calibrated Virgo data has the channel h_16384/20000Hz and is single
        precision */
-    if( strstr(channel, "h_16384Hz") == NULL ){
+    if( strstr(channel, "h_16384Hz") == NULL && strstr(channel, "h_20000Hz")
+      == NULL){
       /* check that data doesn't contain NaNs */
       if(isnan(frvect->dataD[0]) != 0){
         XLALDestroyREAL8Vector(dblseries->data);
