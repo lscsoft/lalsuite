@@ -5,7 +5,8 @@ pkginclude_HEADERS = Units.h LALDetectors.h DetectorSite.h DetResponse.h \
 		     LIGOMetadataUtils.h TemplateBankGeneration.h \
 		     Sequence.h TimeSeries.h FrequencySeries.h \
 		     Segments.h LALTrigScanCluster.h EllipsoidOverlapTools.h \
-		     CoincInspiralEllipsoid.h FlatLatticeTiling.h
+		     CoincInspiralEllipsoid.h FlatLatticeTiling.h \
+		     ComputeDataQualityVector.h
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex
 MAINTAINERCLEANFILES = FrequencySeries.h Sequence.h TimeSeries.h

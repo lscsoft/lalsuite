@@ -12,7 +12,7 @@ libtools_la_SOURCES = \
   Segments.c LALTrigScanCluster.c LALTrigScanClusterDriver.c \
   EllipsoidOverlapTools.c GetErrorMatrixFromSnglInspiral.c \
   CoincInspiralEllipsoid.c SimRingdownUtils.c \
-  FlatLatticeTiling.c
+  FlatLatticeTiling.c ComputeDataQualityVector.c
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 MAINTAINERCLEANFILES = FrequencySeries.c Sequence.c TimeSeries.c
 EXTRA_DIST = \

@@ -1,0 +1,127 @@
+/*
+ *  Copyright (C) 2008, 2009 Jordi Burguet-Castell, Xavier Siemens
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with with program; see the file COPYING. If not, write to the
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ *  MA  02111-1307  USA
+ */
+
+#include <lal/ComputeDataQualityVector.h>
+
+/* #include <math.h>  to use isnan() and isinf(), but not in C89! */
+
+NRCSID( COMPUTEDATAQUALITYVECTORC, "$Id$" );
+RCSID("$Id$");
+
+/*
+ * Compute the Data Quality Vector as defined in
+ * https://www.lsc-group.phys.uwm.edu/daswg/wiki/S6OnlineGroup/CalibratedData
+ *
+ * Copied for reference:
+ *
+ * State vector channel: IFO:DMT-STATE_VECTOR
+ *
+ * Bits 0-4 define the states. bits 5-15 are always set to 1, such
+ * that the word 0xffff means science mode:
+ *
+ * bit0=SCI (operator set to go to science mode)
+ * bit1=CON conlog unsets this bit is non-harmless epics changes
+ * bit2=UP (set by locking scripts)
+ * bit3=!INJ Injections unset this bit
+ * bit4=EXC Unauthorized excitations cause this bit to be unset 
+ *
+ * Channel Name: IFO:DMT-DATA_QUALITY_VECTOR where IFO is one of (H1, H2, L1)
+ * Sample Rate: 1 Hz, for any state to be true, it must be true every
+ * sample of h(t) within the second
+ * Type: INT4
+ *
+ * The quality channel will use the following bitmask definition
+ *
+ * SCIENCE       1  // SV_SCIENCE & LIGHT
+ * INJECTION     2  // Injection: same as statevector 
+ * UP            4  // SV_UP & LIGHT
+ * CALIBRATED    8  // SV_UP & LIGHT & (not TRANSIENT)
+ * BADGAMMA     16  // Calibration is bad (outside 0.8 < gamma < 1.2)
+ * LIGHT        32  // Light in the arms ok
+ * MISSING     128  // Indication that data was dropped in DMT
+ *
+ * All the arrays must have been previously allocated.
+ * n_x is the number of x_value(s) that are in a single DQ sample (=
+ * x.length/n_dq).
+ */
+int XLALComputeDQ(int* sv_data, int n_sv,
+                  float* lax_data, float* lay_data, int n_light,
+                  COMPLEX16* gamma_data, int n_gamma,
+                  int transient, int missing,
+                  int* dq_data, int n_dq)  /* output */
+{
+    int i, j;                    /* counters */
+    float sum_x, sum_y;
+    int light;                   /* is there light in the arms? */
+    int science, injection, up;  /* state vector info */
+    int calibrated;
+    int badgamma;
+    int dq_value;
+    
+    /* Fill one by one the contents of the DQ vector */
+    for (i = 0; i < n_dq; i++) {
+        /* light */
+        sum_x = 0;
+        sum_y = 0;
+        for (j = 0; j < n_light; j++) {
+            sum_x += lax_data[i*n_light + j]; 
+            sum_y += lay_data[i*n_light + j];
+        }
+        
+        light = (sum_x/n_light > 100 && sum_y/n_light > 100);
+        
+        /* science, injection, up (stuff coming from the state vector) */
+        science = 1;    /* in science mode */
+        injection = 0;  /* with no injection going on */
+        up = 1;         /* and IFO is up */
+        for (j = 0; j < n_sv; j++) {
+            if ((sv_data[i*n_sv + j] & (1 << 0)) != 1)  science = 0;
+            if ((sv_data[i*n_sv + j] & (1 << 3)) != 1)  injection = 1;
+            if ((sv_data[i*n_sv + j] & (1 << 2)) != 1)  up = 0;
+        }
+        
+        up = up && light;  /* this is the "up" definition of the DQ vector */
+        
+        /* calibrated */
+        calibrated = up && (! transient);
+        
+        /* badgamma */
+        badgamma = 0;
+
+        for (j = 0; j < n_gamma; j++) {
+            REAL8 re = gamma_data[j].re;
+            if (re < 0.8 || re > 1.2)  /* || isnan(re) || isinf(re)  not C89 */
+                badgamma = 1;
+        }
+        
+        /* data quality */
+        dq_value = 0;
+        if (science)    dq_value += (1 << 0);
+        if (injection)  dq_value += (1 << 1);
+        if (up)         dq_value += (1 << 2);
+        if (calibrated) dq_value += (1 << 3);
+        if (badgamma)   dq_value += (1 << 4);
+        if (light)      dq_value += (1 << 5);
+        if (missing)    dq_value += (1 << 6);  /* directly from the argument */
+        
+        dq_data[i] = dq_value;
+    }
+    
+    return 0;
+}
