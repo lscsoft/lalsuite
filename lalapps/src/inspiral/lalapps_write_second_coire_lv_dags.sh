@@ -1,4 +1,5 @@
 #!/bin/bash
+mb
 
 ################################################################################
 # get needed options from ini file
@@ -228,7 +229,7 @@ fi > second_coire.dag
 if [ 1 ]; then
   echo "universe = standard"
   echo "executable = ${coire_path}"
-  echo "arguments = --input first_coire_files/${cat}/\$(macroinfile) --output second_coire_files/${cat}/\$(macrooutfile) --data-type all_data --coinc-stat effective_snrsq --coinc-cut \$(macrocombo) --cluster-time 4000 --summary-file second_coire_files/\$(macrosummaryfile)"
+  echo "arguments = --input first_coire_files/${cat}/\$(macroinfile) --output second_coire_files/${cat}/\$(macrooutfile) --data-type all_data --coinc-stat effective_snrsq --coinc-cut \$(macrocombo) --cluster-time 10000 --summary-file second_coire_files/\$(macrosummaryfile)"
   echo "log = " `mktemp -p ${log_path}`
   echo "error = logs/coire-\$(cluster)-\$(process).err"
   echo "output = logs/coire-\$(cluster)-\$(process).out"
@@ -240,7 +241,7 @@ fi > second_coire.coire.sub
 if [ 1 ]; then
   echo "universe = standard"
   echo "executable = ${coire_path}"
-  echo "arguments = --glob second_coire_files/\$(macroinfile) --output second_coire_files/${cat}/${mass}/\$(macrooutfile) --data-type all_data --coinc-stat effective_snrsq --cluster-time 4000 --mass-cut mchirp --mass-range-low \$(macrolowmass) --mass-range-high \$(macrohighmass)"
+  echo "arguments = --glob second_coire_files/${cat}/\$(macroinfile) --output second_coire_files/${cat}/\$(macrooutfile) --data-type all_data --coinc-stat effective_snrsq --cluster-time 10000 --mass-cut mchirp --mass-range-low \$(macrolowmass) --mass-range-high \$(macrohighmass)"
   echo "log = " `mktemp -p ${log_path}`
   echo "error = logs/coire-\$(cluster)-\$(process).err"
   echo "output = logs/coire-\$(cluster)-\$(process).out"
@@ -258,10 +259,7 @@ echo " done."
 for injstring in BNS001INJ NSBH001INJ BBH001INJ SPIN001INJ FULLRANGE001INJ; do
   pushd first_coire_files/${injstring}/ > /dev/null
   for combo in H1H2L1V1 H1H2L1 H1H2V1 H1L1V1 H2L1V1 H1H2 H1L1 H2L1 H1V1 H2V1 L1V1; do
-    for file in ${combo}-COIRE_${injstring}_${cat}_H*xml.gz; do
-      echo "first_coire_files/${injstring}/${file}"
-    done > ${combo}_first_coire_${injstring}_${cat}.cache
-    for file in ${combo}-COIRE_${injstring}_${cat}_L*xml.gz; do
+    for file in ${combo}-COIRE_${injstring}_${cat}*xml.gz; do
       echo "first_coire_files/${injstring}/${file}"
     done > ${combo}_first_coire_${injstring}_${cat}.cache
   done
@@ -335,7 +333,7 @@ if [ 1 ]; then
         echo "RETRY $child_file 1"
         echo "VARS $child_file macroinfile=\"$parent_file\" macrooutfile=\"$child_file\" macrolowmass=\"$low_mass\" macrohighmass=\"$high_mass\" macroinjectionfile=\"$hlinjfile\""
         echo "CATEGORY $child_file coire"
-        echo "PARENT $parent_file CHILD $child_file${injstring}"
+        echo "PARENT $parent_file CHILD $child_file"
         echo "## JOB $child_file requires input file $parent_file"
       done
     done
@@ -366,7 +364,7 @@ if [ 1 ]; then
         echo "RETRY $child_file 1"
         echo "VARS $child_file macroinfile=\"$parent_file\" macrooutfile=\"$child_file\" macrolowmass=\"$low_mass\" macrohighmass=\"$high_mass\" macroinjectionfile=\"$hlinjfile\""
         echo "CATEGORY $child_file coire"
-        echo "PARENT $parent_file CHILD $child_file${injstring}"
+        echo "PARENT $parent_file CHILD $child_file"
         echo "## JOB $child_file requires input file $parent_file"
       done
     done
@@ -397,7 +395,7 @@ if [ 1 ]; then
         echo "RETRY $child_file 1"
         echo "VARS $child_file macroinfile=\"$parent_file\" macrooutfile=\"$child_file\" macrolowmass=\"$low_mass\" macrohighmass=\"$high_mass\" macroinjectionfile=\"$hlinjfile\""
         echo "CATEGORY $child_file coire"
-        echo "PARENT $parent_file CHILD $child_file${injstring}"
+        echo "PARENT $parent_file CHILD $child_file"
         echo "## JOB $child_file requires input file $parent_file"
       done
     done
@@ -428,7 +426,7 @@ if [ 1 ]; then
         echo "RETRY $child_file 1"
         echo "VARS $child_file macroinfile=\"$parent_file\" macrooutfile=\"$child_file\" macrolowmass=\"$low_mass\" macrohighmass=\"$high_mass\" macroinjectionfile=\"$hlinjfile\""
         echo "CATEGORY $child_file coire"
-        echo "PARENT $parent_file CHILD $child_file${injstring}"
+        echo "PARENT $parent_file CHILD $child_file"
         echo "## JOB $child_file requires input file $parent_file"
       done
     done
@@ -460,7 +458,7 @@ if [ 1 ]; then
         echo "RETRY $child_file 1"
         echo "VARS $child_file macroinfile=\"$parent_file\" macrooutfile=\"$child_file\" macrolowmass=\"$low_mass\" macrohighmass=\"$high_mass\" macroinjectionfile=\"$hlinjfile\" "
         echo "CATEGORY $child_file coire"
-        echo "PARENT $parent_file CHILD $child_file${injstring}"
+        echo "PARENT $parent_file CHILD $child_file"
         echo "## JOB $child_file requires input file $parent_file"
       done
     done
@@ -474,7 +472,7 @@ for injstring in BNS001INJ NSBH001INJ BBH001INJ SPIN001INJ FULLRANGE001INJ; do
     echo "universe = standard"
     echo "executable = ${coire_path}"
     ### DO WE NEED --missed-injections ?
-    echo "arguments = --input first_coire_files/${injstring}/\$(macroinfile) --output second_coire_files/${injstring}/\$(macrooutfile) --data-type all_data --coinc-stat effective_snrsq --coinc-cut \$(macrocombo) --cluster-time 4000 --summary-file second_coire_files/\$(macrosummaryfile) --injection-file \$(macroinjectionfile) --injection-window 100"
+    echo "arguments = --input first_coire_files/${injstring}/\$(macroinfile) --output second_coire_files/${injstring}/\$(macrooutfile) --data-type all_data --coinc-stat effective_snrsq --coinc-cut \$(macrocombo) --cluster-time 10000 --summary-file second_coire_files/\$(macrosummaryfile) --injection-file \$(macroinjectionfile) --injection-window 100"
     echo "log = " `mktemp -p ${log_path}`
     echo "error = logs/coire-\$(cluster)-\$(process).err"
     echo "output = logs/coire-\$(cluster)-\$(process).out"
@@ -488,7 +486,7 @@ for injstring in BNS001INJ NSBH001INJ BBH001INJ SPIN001INJ FULLRANGE001INJ; do
   if [ 1 ]; then
     echo "universe = standard"
     echo "executable = ${coire_path}"
-    echo "arguments = --glob second_coire_files/${injstring}/\$(macroinfile) --output second_coire_files/${injstring}/\$(macrooutfile) --data-type all_data --coinc-stat effective_snrsq --cluster-time 4000 --mass-cut mchirp --mass-range-low \$(macrolowmass) --mass-range-high \$(macrohighmass) --injection-file \$(macroinjectionfile) --injection-window 100"
+    echo "arguments = --glob second_coire_files/${injstring}/\$(macroinfile) --output second_coire_files/${injstring}/\$(macrooutfile) --data-type all_data --coinc-stat effective_snrsq --cluster-time 10000 --mass-cut mchirp --mass-range-low \$(macrolowmass) --mass-range-high \$(macrohighmass) --injection-file \$(macroinjectionfile) --injection-window 100"
     echo "log = " `mktemp -p ${log_path}`
     echo "error = logs/coire-\$(cluster)-\$(process).err"
     echo "output = logs/coire-\$(cluster)-\$(process).out"
@@ -703,7 +701,7 @@ fi > second_coire_slide.dag
 if [ 1 ]; then
   echo "universe = standard"
   echo "executable = ${coire_path}"
-  echo "arguments = --input first_coire_files/${cat}/\$(macroinfile) --output second_coire_files/${cat}/\$(macrooutfile) --data-type all_data --coinc-stat effective_snrsq --cluster-time 4000 --coinc-cut \$(macrocombo) --num-slides 50"
+  echo "arguments = --input first_coire_files/${cat}/\$(macroinfile) --output second_coire_files/${cat}/\$(macrooutfile) --data-type all_data --coinc-stat effective_snrsq --cluster-time 10000 --coinc-cut \$(macrocombo) --num-slides 50"
   echo "log = " `mktemp -p ${log_path}`
   echo "error = logs/coire_slide-\$(cluster)-\$(process).err"
   echo "output = logs/coire_slide-\$(cluster)-\$(process).out"
@@ -715,7 +713,7 @@ fi > second_coire_slide.coire.sub
 if [ 1 ]; then
   echo "universe = standard"
   echo "executable = ${coire_path}"
-  echo "arguments = --glob second_coire_files/\$(macroinfile) --output second_coire_files/${cat}/${mass}/\$(macrooutfile) --data-type all_data --coinc-stat effective_snrsq --cluster-time 4000 --num-slides 50 --mass-cut mchirp --mass-range-low \$(macrolowmass) --mass-range-high \$(macrohighmass)"
+  echo "arguments = --glob second_coire_files/${cat}/\$(macroinfile) --output second_coire_files/${cat}/\$(macrooutfile) --data-type all_data --coinc-stat effective_snrsq --cluster-time 10000 --num-slides 50 --mass-cut mchirp --mass-range-low \$(macrolowmass) --mass-range-high \$(macrohighmass)"
   echo "log = " `mktemp -p ${log_path}`
   echo "error = logs/coire_slide-\$(cluster)-\$(process).err"
   echo "output = logs/coire_slide-\$(cluster)-\$(process).out"
