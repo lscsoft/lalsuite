@@ -64,6 +64,7 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <lal/Random.h>
 #include <lal/Date.h>
 #include <lal/Units.h>
+#include <lal/lalGitID.h>
 
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataUtils.h>
@@ -78,6 +79,7 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 
 #include <lalapps.h>
 #include <processtable.h>
+#include <lalappsGitID.h>
 
 extern char *optarg;
 extern int optind, opterr, optopt;
@@ -1054,8 +1056,16 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   /* create the process and process params tables */
   procTable.processTable = XLALCreateProcessTableRow();
   LALGPSTimeNow(&status, &(procTable.processTable->start_time), &accuracy);
-  if(XLALPopulateProcessTable(procTable.processTable, PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE, 0))
-    exit(1);
+	if (strcmp(CVS_REVISION, "$Revi" "sion$"))
+	{
+		if(XLALPopulateProcessTable(procTable.processTable, PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE, 0))
+			exit(1);
+	}
+	else
+	{
+		if(XLALPopulateProcessTable(procTable.processTable, PROGRAM_NAME, lalappsGitCommitID, lalappsGitGitStatus, lalappsGitCommitDate, 0))
+			exit(1);
+	}
   procparams.processParamsTable = NULL;
   /* create the search summary table */
   searchsumm.searchSummaryTable = XLALCreateSearchSummaryTableRow(procTable.processTable);
