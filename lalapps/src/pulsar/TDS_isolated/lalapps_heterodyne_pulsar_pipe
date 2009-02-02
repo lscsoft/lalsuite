@@ -229,7 +229,7 @@ if ((do_coarse) and (do_datafind == None)):
     print >> sys.stderr, """The specified data file %s does not exist!""" % data_cache
     sys.exit(1)
 
-if (channel.find('STRAIN') > -1) | (channel.find('DER_DATA_H') > -1):
+if (channel.find('STRAIN') > -1) | (channel.find('DER_DATA_H') > -1) | (channel.find('h_') > -1)
   print >> sys.stderr, """You are looking at calibrated strain data, so read in high-pass frequency and scale factors"""
   high_pass = cp.get('input', 'high_pass')
   scale_fac = cp.get('input', 'scale_fac')
@@ -260,9 +260,11 @@ if do_datafind:
     obs = 'L'
   elif (detector.find('G1') > -1) | (detector.find('GEO') > -1):
     obs = 'G'
+  elif (detector.find('V1') > -1) | (detector.find('Virgo') > -1):
+    obs = 'V'
   else:
     print >> sys.stderr, """Detector not set in .ini file or not recognised, should be either H1,
-H2, L1, G1 or GEO."""
+H2, L1, V1, G1 or GEO."""
     sys.exit(1)
     
   df.set_observatory(obs)
@@ -413,7 +415,7 @@ if do_coarse:
       coarse[j].set_channel(channel)
       
       # if using calibrated data set high-pass freq and scale factor
-      if (channel.find('STRAIN') > -1 ) | (channel.find('DER_DATA_H') > -1):
+      if (channel.find('STRAIN') > -1 ) | (channel.find('DER_DATA_H') > -1) | (channel.find('h_') > -1):
         coarse[j].set_scale_fac(scale_fac)
         coarse[j].set_high_pass(high_pass)
       
