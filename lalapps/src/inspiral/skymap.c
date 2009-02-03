@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <getopt.h>
 #include <math.h>
+#include <zlib.h>
 
 #ifdef SKYMAP_PNG
 #include <png.h>
@@ -48,12 +49,12 @@ int dec_res = 256;
 /*
  *  Sampling frequency of analysis, which determines sky tiling
  */
-int frequency = 4096;
+int frequency = 0;
 
 /*
  *  Number of samples to analyze
  */
-int samples = 4096;
+int samples = 512;
 
 /*
  *  Array of pointers to the matched-filtered data z[t]
@@ -125,6 +126,7 @@ void dump_data_to_file(FILE* h)
 int main(int argc, char** argv)
 {
     int c;
+    /*printf("hello!\n");*/
     while (1)
     {
         static struct option long_options[] =
@@ -139,10 +141,11 @@ int main(int argc, char** argv)
 	    {"l1-xml-file", required_argument, 0, 's'},
 	    {"v1-xml-file", required_argument, 0, 'r'},
             {"event-id", required_argument, 0, 'e'},
+	    {"sample-rate", required_argument, 0, 'f'},
             {0, 0, 0, 0}
         };
         int option_index = 0;
-        c = getopt_long_only(argc, argv, "h:l:v:o:a:d:t:s:r:e:", long_options, &option_index);
+        c = getopt_long_only(argc, argv, "h:l:v:o:a:d:t:s:r:e:f:", long_options, &option_index);
         if (c == -1)
             break;
         
@@ -178,6 +181,9 @@ int main(int argc, char** argv)
             case 'e':
                 event_id = optarg;
                 break;
+	    case 'f':
+	        frequency = atoi(optarg);
+		break;
             default:
                 fprintf(stderr, "unknown error while parsing options\n");
                 exit(1);
@@ -194,6 +200,12 @@ int main(int argc, char** argv)
         exit(1);
     }
     
+    /* when we can reliably pull out a subset of the data 
+     * around the injection we should do so */
+    samples = frequency;
+
+    /*printf("frequency %d\n", frequency);*/
+
     load_metadata(xml_file[0], 0);    
     load_metadata(xml_file[1], 1);
     load_metadata(xml_file[2], 2);
@@ -343,9 +355,9 @@ void analyze(void)
     /*fprintf(stderr, "w: %e %e %e\n", w[0], w[1], w[2]);*/
     /*wgood = max(w[0],max(w[1],w[2]));*/
  
-    /*w[0] *= 100.0; /* or maybe the reciprocal of this? */
-    /*w[1] *= 100.0;  /* or maybe the reciprocal of this? */
-    /*w[2] *= 100.0; /* or maybe the reciprocal of this? */
+    /*w[0] *= 100.0; *//* or maybe the reciprocal of this? */
+    /*w[1] *= 100.0;  *//* or maybe the reciprocal of this? */
+    /*w[2] *= 100.0; *//* or maybe the reciprocal of this? */
     /*fprintf(stderr, "w: %e %e %e %e\n", w[0], w[1], w[2], wgood);  */
     s[0]  =    1;
     s[1]  =    4;
@@ -489,10 +501,14 @@ void analyze(void)
 #else        
         {
             /*
-             *  Write an ascii file describing the sky map
+             *  Write a gzipped ascii file describing the sky map
              */
-            FILE* h;
-            h = fopen(output_file, "wt");
+            gzFile* h = NULL;
+            h = gzopen(output_file, "wb");
+	    if (h == NULL) {
+	      fprintf(stderr,"cannot gzopen() %s\n",output_file);
+	      exit(1);
+	    }
             for (j = 0; j != n; ++j)
             {
                 double phi, ra;
@@ -509,10 +525,10 @@ void analyze(void)
                 {                    
                     double dec;
                     dec = LAL_PI_2 - (LAL_PI * (i + 0.5)) / m;
-                    fprintf(h, "%.10e %.10e %.10e\n", ra, dec, exp(render[i + m * j]));
+                    gzprintf(h, "%.10e %.10e %.10e\n", ra, dec, exp(render[i + m * j]));
                 }
             }
-            fclose(h);
+            gzclose(h);
         }
 #endif    
         free(render);
