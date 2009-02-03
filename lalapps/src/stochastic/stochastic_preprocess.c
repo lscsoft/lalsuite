@@ -94,26 +94,26 @@ static int test_flag = 0;
 
 
 /* parameters for the stochastic search */
-UINT8 startTime = 782758900;
-UINT8 stopTime =  782759100;
+UINT8 startTime = 700000100;
+UINT8 stopTime =  700000300;
 
-CHAR frameCache1 [200]= "cache/LIGOP1a.cache";
-CHAR frameCache2[200] = "cache/VirgoP1a.cache";
+CHAR frameCache1 [200]= "H1.cache";
+CHAR frameCache2[200] = "H2.cache";
 
 CHAR channel1[LALNameLength]= "H1:STRAIN";
-CHAR channel2[LALNameLength]= "V2:noise";
+CHAR channel2[LALNameLength]= "H2/STRAIN";
 CHAR ifo1[LALNameLength] = "H1";
-CHAR ifo2[LALNameLength] = "V2";
-INT4 site1 = 4;
+CHAR ifo2[LALNameLength] = "H2";
+INT4 site1 = 1;
 INT4 site2 = 1;
 
 /* data */
 INT4 segmentDuration = 60;
 INT4 numSegments = 3;
 INT4 sampleRate1 = 16384.;
-INT4 sampleRate2 = 20000.;
-INT4 resampleRate1 = 2048.;
-INT4 resampleRate2 = 2500.;
+INT4 sampleRate2 = 16384.;
+INT4 resampleRate1 = 1024.;
+INT4 resampleRate2 = 1024.;
 INT4 padData=1;
 REAL4 calibFactor=1.e18;
 

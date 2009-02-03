@@ -112,12 +112,15 @@ CHAR channel2[LALNameLength]= "L1:LSC-STRAIN";
 UINT4 sampleRate = 16384;
 UINT4 resampleRate = 1024;
 
-UINT4 stat=0;
+UINT4 stat=2;
+UINT4 mcstat=2;
 REAL8 mu = 0.5;
+REAL8 ksi = 0.1;
 REAL8 sigma = 0.5;
 REAL8 sigma1 = 1.;
 REAL8 sigma2 = 1.;
 REAL8 mu0 = 0.1;
+REAL8 ksi0=-1.;
 REAL8 sigma0 = 0.1;
 
 REAL8 N0 = 0.1;
@@ -147,7 +150,7 @@ INT4 main (INT4 argc, CHAR *argv[])
   int i, j, n;
   /* signal */
   double var, varn, sigman, varmean, snr;
-  double var1, var2, sigmaref, ksi0, ksi;
+  double var1, var2, sigmaref;
   double muest, ksiest, sigmaest, varest, varmeanest, sigma1est, sigma2est;
   double muestMean, ksiestMean, sigmaestMean, varmeanestMean, sigma1estMean, sigma2estMean;
   double value;
@@ -208,13 +211,21 @@ INT4 main (INT4 argc, CHAR *argv[])
   if(verbose_flag){
    fprintf(stdout, "will analyze %d segments of length %d s...\n",nsegment, seglength);}
    
-   /* probability of non null signal */
-  ksi=1.-gsl_ran_poisson_pdf(0,mu);
+  /* probability of non null signal */
+  if (mcstat==0)
+   ksi=1; 
+  else if (mcstat==2) 
+   ksi=1.-gsl_ran_poisson_pdf(0,mu);
   
   /* signal-to-noise ratio rho = varmean*sqrt(N)/(sigma1*sigma2)*/
   var=sigma*sigma;
-  varmean=mu*var;
-  snr=varmean*sqrt(Npt);
+  snr=var*sqrt(Npt)/(sigma1*sigma2);
+  if (mcstat==1){
+   snr=ksi*snr;
+   varmean=ksi*var;}
+  else if (mcstat==2){
+   snr=mu*snr;
+   varmean=ksi*var;}
 
   /* open data files */
   if(ascii_flag){
@@ -392,9 +403,14 @@ INT4 main (INT4 argc, CHAR *argv[])
   }//end else read from files
   
   if(verbose_flag){
-   if(montecarlo_flag)
-    fprintf(stdout, "generate gw signal with mu=%f and sigma=%f and calculate variances v1 and v2...\n",mu,sigma);
-   else	
+   if(montecarlo_flag){
+    if(mcstat==1)
+	 fprintf(stdout, "generate gw signal with ksi=%f and sigma=%f and calculate variances v1 and v2...\n",ksi,sigma);
+	else if(mcstat==2)
+     fprintf(stdout, "generate gw signal with mu=%f and sigma=%f and calculate variances v1 and v2...\n",mu,sigma);
+    else
+	 fprintf(stdout, "generate gw signal with sigma=%f and calculate variances v1 and v2...\n",sigma);}
+	 	
 	fprintf(stdout, "calculate variances v1 and v2...\n");}
 	
   v1=0.;v2=0.;v12=0.;
@@ -402,7 +418,12 @@ INT4 main (INT4 argc, CHAR *argv[])
   for (i = 0; i < Npt; i++) {
    if(montecarlo_flag){
    /* generate gw signal */
-    n = gsl_ran_poisson (rrgn,mu);           
+    n=1;
+    if(mcstat==1){
+	 if(gsl_ran_flat (rrgn,0.,1.)>ksi)
+	  n=0;}
+    else if(mcstat==2)
+     n = gsl_ran_poisson (rrgn,mu);           
     if(n>0){
      varn = var*(double)n;                                          
      sigman = sqrt(varn);        
@@ -428,10 +449,16 @@ INT4 main (INT4 argc, CHAR *argv[])
    fprintf(stdout, "estimate parameters...\n");
    fprintf(stdout,"T=%d:",gpsStartTime.gpsSeconds);
    fprintf(stdout,"snr=%f\n",snr);
-   fprintf(stdout,"mu=%e ksi=%e sigma=%e varmean=%e sigma1=%e sigma2=%e\n",mu,ksi,sigma,varmean,sigma1,sigma2);}
-   
+   if(mcstat==1)
+    fprintf(stdout,"ksi=%e sigma=%e varmean=%e sigma1=%e sigma2=%e\n",ksi,sigma,varmean,sigma1,sigma2);
+   else if(mcstat==2)
+    fprintf(stdout,"mu=%e ksi=%e sigma=%e varmean=%e sigma1=%e sigma2=%e\n",mu,ksi,sigma,varmean,sigma1,sigma2);
+    else 
+    fprintf(stdout,"sigma=%e varmean=%e sigma1=%e sigma2=%e\n",sigma,varmean,sigma1,sigma2);}	
+	
   fprintf(pf3,"%d ",gpsStartTime.gpsSeconds);
   fprintf(pf3,"%f %f ",sigma1,sigma2); 
+  
   if(stat==2){
    gsl_vector *ss=gsl_vector_alloc (4), *x=gsl_vector_alloc (4);
    gsl_vector_set_all (ss, 0.1);
@@ -461,23 +488,26 @@ INT4 main (INT4 argc, CHAR *argv[])
 	 fprintf (stdout,"f = %e\n", s->fval);
     }
    }
-  while (status == GSL_CONTINUE && iter < 300);
-  muest=gsl_vector_get (s->x, 0);
-  sigmaest=gsl_vector_get (s->x, 1);
-  sigma1est=gsl_vector_get (s->x, 2);
-  sigma2est=gsl_vector_get (s->x, 3);
-  gsl_multimin_fminimizer_free (s);
-  gsl_vector_free(x);
-  gsl_vector_free(ss);
-  varest=sigmaest*sigmaest;
-  varmeanest=muest*varest;
-  muestMean=muestMean+muest;
-  if(verbose_flag)
-   fprintf(stdout,"muest=%e sigmaest=%e varmeanest=%e sigma1est=%e sigma2est=%e\n",muest,sigmaest,varmeanest,sigma1est,sigma2est);
-  fprintf(pf3,"%f %f %f %f %f\n",muest,sigmaest,varmeanest,sigma1est,sigma2est);
-  }
+   while (status == GSL_CONTINUE && iter < 300);
+   muest=gsl_vector_get (s->x, 0);
+   ksiest=1.-gsl_ran_poisson_pdf(0,muest);
+   sigmaest=gsl_vector_get (s->x, 1);
+   sigma1est=gsl_vector_get (s->x, 2);
+   sigma2est=gsl_vector_get (s->x, 3);
+   gsl_multimin_fminimizer_free (s);
+   gsl_vector_free(x);
+   gsl_vector_free(ss);
+   varest=sigmaest*sigmaest;
+   varmeanest=muest*varest;
+   muestMean=muestMean+muest;
+   ksiestMean=ksiestMean+ksiest;
+   if(verbose_flag)
+    fprintf(stdout,"muest=%e ksiest=%e sigmaest=%e varmeanest=%e sigma1est=%e sigma2est=%e\n",muest,ksiest,sigmaest,varmeanest,sigma1est,sigma2est);
+   fprintf(pf3,"%f %f %f %f %f %f\n",muest,ksiest,sigmaest,varmeanest,sigma1est,sigma2est);
+   }
   else if(stat==1){
-   ksi0=1.-gsl_ran_poisson_pdf(0,mu0);
+   if(ksi0<0)
+    ksi0=1.-gsl_ran_poisson_pdf(0,mu0);
    gsl_vector *ss=gsl_vector_alloc (4), *x=gsl_vector_alloc (4);
    gsl_vector_set_all (ss, 0.1);
    gsl_vector_set(x,0,ksi0);
@@ -506,20 +536,20 @@ INT4 main (INT4 argc, CHAR *argv[])
 	 fprintf (stdout,"f = %e\n", s->fval);
     }
    }
-  while (status == GSL_CONTINUE && iter < 300);
-  ksiest=gsl_vector_get (s->x, 0);
-  sigmaest=gsl_vector_get (s->x, 1);
-  sigma1est=gsl_vector_get (s->x, 2);
-  sigma2est=gsl_vector_get (s->x, 3);
-  gsl_multimin_fminimizer_free (s);
-  gsl_vector_free(x);
-  gsl_vector_free(ss);
-  varest=sigmaest*sigmaest;
-  varmeanest=ksiest*varest;
-  ksiestMean=ksiestMean+ksiest;
-  if(verbose_flag)
-   fprintf(stdout,"ksiest=%e sigmaest=%e varmeanest=%e sigma1est=%e sigma2est=%e\n",ksiest,sigmaest,varmeanest,sigma1est,sigma2est);
-  fprintf(pf3,"%e %e %e %e %e\n",ksiest,sigmaest,varmeanest,sigma1est,sigma2est);
+   while (status == GSL_CONTINUE && iter < 300);
+   ksiest=gsl_vector_get (s->x, 0);
+   sigmaest=gsl_vector_get (s->x, 1);
+   sigma1est=gsl_vector_get (s->x, 2);
+   sigma2est=gsl_vector_get (s->x, 3);
+   gsl_multimin_fminimizer_free (s);
+   gsl_vector_free(x);
+   gsl_vector_free(ss);
+   varest=sigmaest*sigmaest;
+   varmeanest=ksiest*varest;
+   ksiestMean=ksiestMean+ksiest;
+   if(verbose_flag)
+    fprintf(stdout,"ksiest=%e sigmaest=%e varmeanest=%e sigma1est=%e sigma2est=%e\n",ksiest,sigmaest,varmeanest,sigma1est,sigma2est);
+   fprintf(pf3,"%e %e %e %e %e\n",ksiest,sigmaest,varmeanest,sigma1est,sigma2est);
   }
   
   else if(stat==0){
@@ -553,17 +583,17 @@ INT4 main (INT4 argc, CHAR *argv[])
 	 fprintf (stdout,"f = %e\n", s->fval);
     }
    }
-  while (status == GSL_CONTINUE && iter < 300);
-  sigmaest=gsl_vector_get (s->x, 0);
-  sigma1est=gsl_vector_get (s->x, 1);
-  sigma2est=gsl_vector_get (s->x, 2);
-  gsl_multimin_fminimizer_free (s);
-  gsl_vector_free(x);
-  gsl_vector_free(ss);
-  varmeanest=sigmaest*sigmaest;
-  if(verbose_flag)
-   fprintf(stdout,"sigmaest=%e varmeanest=%e sigma1est=%e sigma2est=%e\n",sigmaest,varmeanest,sigma1est,sigma2est);
-  fprintf(pf3,"%e %e %e %e\n",sigmaest,varmeanest,sigma1est,sigma2est); 
+   while (status == GSL_CONTINUE && iter < 300);
+   sigmaest=gsl_vector_get (s->x, 0);
+   sigma1est=gsl_vector_get (s->x, 1);
+   sigma2est=gsl_vector_get (s->x, 2);
+   gsl_multimin_fminimizer_free (s);
+   gsl_vector_free(x);
+   gsl_vector_free(ss);
+   varmeanest=sigmaest*sigmaest;
+   if(verbose_flag)
+    fprintf(stdout,"sigmaest=%e varmeanest=%e sigma1est=%e sigma2est=%e\n",sigmaest,varmeanest,sigma1est,sigma2est);
+   fprintf(pf3,"%e %e %e %e\n",sigmaest,varmeanest,sigma1est,sigma2est); 
   }
  
   
@@ -586,12 +616,13 @@ INT4 main (INT4 argc, CHAR *argv[])
   if(nsegment>1){
    if(verbose_flag)
     fprintf(stdout,"combine the results of the %d segments\n",nsegment);
-   if(stat==0)
-    fprintf(stdout,"sigmaest=%e varmeanest=%e sigma1est=%e sigma2est=%e\n",sigmaestMean/nsegment,varmeanestMean/nsegment,sigma1estMean/nsegment,sigma2estMean/nsegment);
-   else if(stat==1)
+  if(stat==1)
     fprintf(stdout,"ksiest=%e sigmaest=%e varmeanest=%e sigma1est=%e sigma2est=%e\n",ksiestMean/nsegment,sigmaestMean/nsegment,varmeanestMean/nsegment,sigma1estMean/nsegment,sigma2estMean/nsegment);
    else if(stat==2)
     fprintf(stdout,"muest=%e sigmaest=%e varmeanest=%e sigma1est=%e sigma2est=%e\n",muestMean/nsegment,sigmaestMean/nsegment,varmeanestMean/nsegment,sigma1estMean/nsegment,sigma2estMean/nsegment);
+   else
+    fprintf(stdout,"sigmaest=%e varmeanest=%e sigma1est=%e sigma2est=%e\n",sigmaestMean/nsegment,varmeanestMean/nsegment,sigma1estMean/nsegment,sigma2estMean/nsegment);
+	
   }
  }
 
@@ -639,7 +670,6 @@ double lambda0 (gsl_vector *x,void *params)
 
 double lambda1 (gsl_vector *x,void *params)
 {
-
   int i;
   double y;
   double dsum,psum;
@@ -766,6 +796,9 @@ void parseOptions(INT4 argc, CHAR *argv[])
 	  {"sampleRate", required_argument, 0, 'r'},
       {"resampleRate", required_argument, 0, 'R'},
 	  {"stat", required_argument, 0, 'a'},
+	  {"mcstat", required_argument, 0, 'A'},
+	  {"ksi", required_argument, 0, 'k'},
+	  {"ksi0", required_argument, 0, 'K'},
       {"mu", required_argument, 0, 'm'},
 	  {"mu0", required_argument, 0, 'M'},
       {"sigma", required_argument, 0, 's'},
@@ -785,7 +818,7 @@ void parseOptions(INT4 argc, CHAR *argv[])
     int option_index = 0;
 
     c = getopt_long(argc, argv, 
-                  "hn:t:T:l:N:r:R:a:m:M:s:S:g:G:p:c:C:d:D:v",
+                  "hn:t:T:l:N:r:R:a:A:k:K:m:M:s:S:g:G:p:c:C:d:D:v",
  		   long_options, &option_index);
 
     if (c == -1)
@@ -846,8 +879,21 @@ void parseOptions(INT4 argc, CHAR *argv[])
 	           break;
 			   
 	  case 'a':
-			   /* statistic */
+			   /* statistic for analysis */
 	           stat = atoi(optarg);
+	           break;
+			   
+	  case 'A':
+			   /* statistic for MC */
+	           mcstat = atoi(optarg);
+	           break;
+			   
+	  case 'k':
+	           ksi = atof(optarg);
+	           break;
+			   
+	  case 'K':
+	           ksi0 = atof(optarg);
 	           break;
 			   
 	  case 'm':
@@ -931,7 +977,7 @@ void displayUsage(INT4 exitcode)
   fprintf(stderr, " --ascii               read data from ascii files\n");
   fprintf(stderr, " --gaussian            simulate gaussian noise\n");
   fprintf(stderr, " --resample            resample data\n");
-  fprintf(stderr, " --normalize           normalize noise data\n");
+  fprintf(stderr, " --normalize           normalize noise data (not needed for gaussian noise)\n");
   fprintf(stderr, " --montecarlo          inject gw signal\n");
   fprintf(stderr, " --condor              run on cluster\n");
   fprintf(stderr, " --post                crude post processing\n");
@@ -942,14 +988,17 @@ void displayUsage(INT4 exitcode)
   fprintf(stderr, " -N                    number of points per data segment\n");
   fprintf(stderr, " -r                    sampleRate\n");
   fprintf(stderr, " -R                    resampleRate\n");
-  fprintf(stderr, " -m                    mu of injected gw signal\n");
-  fprintf(stderr, " -M                    initial mu for parameter estimation\n");
+  fprintf(stderr, " -k                    ksi of injected gw signal if option -a 1 -A 1\n");
+  fprintf(stderr, " -K                    initial ksi for parameter estimation if -a 1 -A 1\n");
+  fprintf(stderr, " -m                    mu of injected gw signal if -A 2\n");
+  fprintf(stderr, " -M                    initial mu for parameter estimation if -a 2 -A 2\n");
   fprintf(stderr, " -s                    sigma of injected gw signal\n");
   fprintf(stderr, " -S                    initial sigma for parameter estimation\n");
   fprintf(stderr, " -g                    sigma1 of gaussian noise \n");
   fprintf(stderr, " -G                    sigma2 of gaussian noise \n");
-  fprintf(stderr, " -a                    statistic 0 for CC, 1 for ML (no overlap), 2 for ML (overlap)\n");
-  fprintf(stderr, " -p                    threshold for the poisson probability\n");
+  fprintf(stderr, " -a                    statistic for analysis: 0 for CC, 1 for ML (no overlap), 2 for ML (overlap)\n");
+  fprintf(stderr, " -A                    statistic for MC simulations: 2 by default, 1 to test Drasco statistic, 0 to test CC analysis\n");
+  fprintf(stderr, " -p                    threshold of the number of events left out (N*(1-pc[0]-pc[1]...-pc[nmax]): \n");
   fprintf(stderr, " -c                    channel for first stream\n");
   fprintf(stderr, " -C                    channel for second stream\n");
   fprintf(stderr, " -d                    cache file for first stream\n");
