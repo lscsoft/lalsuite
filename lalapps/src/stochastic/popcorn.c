@@ -695,7 +695,7 @@ double lambda2 (gsl_vector *x,void *params)
   psigma1=gsl_vector_get(x,2);
   psigma2=gsl_vector_get(x,3);
 
-  if((pmu>0.)&&(pmu<=1.)&&(psigma>0.)&&(psigma1>0.)&&(psigma2>0.)){
+  if((pmu>0.)&&(psigma>0.)&&(psigma1>0.)&&(psigma2>0.)){
 
    pv=psigma*psigma;
    pv1=psigma1*psigma1;
