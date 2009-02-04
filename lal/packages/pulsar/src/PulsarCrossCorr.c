@@ -383,16 +383,12 @@ void LALCalculateSigmaAlphaSq(LALStatus            *status,
 /** Calculate pair weights (U_alpha) **/
 void LALCalculateUalpha(LALStatus *status,
 			COMPLEX16 *out,
-			REAL8     *Aplussq,
-			REAL8     *Acrosssq,
-			REAL8 	  *AplusAcross,
+			CrossCorrAmps amplitudes,
 			REAL8     *phiI,
 			REAL8     *phiJ,
-			INT4      *avePsi,
-			REAL8     *Fplus_or_aI,
-			REAL8     *Fplus_or_aJ,
-			REAL8     *Fcross_or_bI,
-			REAL8     *Fcross_or_bJ,
+			BOOLEAN      avePsi,
+			CrossCorrBeamFn beamfnsI,
+			CrossCorrBeamFn beamfnsJ,
 			REAL8     *sigmasq)
 {
   REAL8 deltaPhi;
@@ -407,26 +403,26 @@ void LALCalculateUalpha(LALStatus *status,
   /*need to calculate the products of F first in case we have an average
     over psi */
 
-  if (*avePsi == 1) {
-	Fplus_or_aIFplus_or_aJ = 0.5*(*Fplus_or_aI * (*Fplus_or_aJ) + *Fcross_or_bI * (*Fcross_or_bJ));
-	Fcross_or_bIFcross_or_bJ = 0.5*(*Fplus_or_aI * (*Fplus_or_aJ) + *Fcross_or_bI * (*Fcross_or_bJ));
-	Fplus_or_aIFcross_or_bJ = 0.5*(*Fplus_or_aI * (*Fcross_or_bJ) - *Fcross_or_bI * (*Fplus_or_aJ));
-	Fcross_or_bIFplus_or_aJ = 0.5*(*Fplus_or_aJ * (*Fcross_or_bI) - *Fplus_or_aI * (*Fcross_or_bJ));
+  if (avePsi) {
+	Fplus_or_aIFplus_or_aJ = 0.5*(beamfnsI.Fplus_or_a * (beamfnsJ.Fplus_or_a) + beamfnsI.Fcross_or_b * (beamfnsJ.Fcross_or_b));
+	Fcross_or_bIFcross_or_bJ = 0.5*(beamfnsI.Fplus_or_a * (beamfnsJ.Fplus_or_a) + beamfnsI.Fcross_or_b * (beamfnsJ.Fcross_or_b));
+	Fplus_or_aIFcross_or_bJ = 0.5*(beamfnsI.Fplus_or_a * (beamfnsJ.Fcross_or_b) - beamfnsI.Fcross_or_b * (beamfnsJ.Fplus_or_a));
+	Fcross_or_bIFplus_or_aJ = 0.5*(beamfnsJ.Fplus_or_a * (beamfnsI.Fcross_or_b) - beamfnsI.Fplus_or_a * (beamfnsJ.Fcross_or_b));
   }
   else {
-	Fplus_or_aIFplus_or_aJ = *Fplus_or_aI * (*Fplus_or_aJ);
-	Fcross_or_bIFcross_or_bJ = *Fcross_or_bI * (*Fcross_or_bJ);
-	Fplus_or_aIFcross_or_bJ = *Fplus_or_aI * (*Fcross_or_bJ);	
-	Fcross_or_bIFplus_or_aJ = *Fcross_or_bI * (*Fplus_or_aJ);
+	Fplus_or_aIFplus_or_aJ = beamfnsI.Fplus_or_a * (beamfnsJ.Fplus_or_a);
+	Fcross_or_bIFcross_or_bJ = beamfnsI.Fcross_or_b * (beamfnsJ.Fcross_or_b);
+	Fplus_or_aIFcross_or_bJ = beamfnsI.Fplus_or_a * (beamfnsJ.Fcross_or_b);	
+	Fcross_or_bIFplus_or_aJ = beamfnsI.Fcross_or_b * (beamfnsJ.Fplus_or_a);
   }
 
 
-  re = 0.25 * cos(deltaPhi) * ((Fplus_or_aIFplus_or_aJ * (*Aplussq)) 
-			    + (Fcross_or_bIFcross_or_bJ * (*Acrosssq)) );
+  re = 0.25 * cos(deltaPhi) * ((Fplus_or_aIFplus_or_aJ * (amplitudes.Aplussq)) 
+			    + (Fcross_or_bIFcross_or_bJ * (amplitudes.Acrosssq)) );
   im = 0.25 * sin(-deltaPhi) * (-(Fplus_or_aIFcross_or_bJ - Fcross_or_bIFplus_or_aJ) 
-				 * (*AplusAcross) );
-/*printf("fplusi, fplusj, fcrossi, fcrossj %f %f %f %f\n",*Fplus_or_aI, *Fplus_or_aJ, *Fcross_or_bI, *Fcross_or_bJ);*/
-
+				 * (amplitudes.AplusAcross) );
+/*printf("fplusi, fplusj, fcrossi, fcrossj %f %f %f %f\n",beamfnsI.Fplus_or_a, beamfnsI.Fplus_or_a, beamfnsI.Fcross_or_b, beamfnsI.Fcross_or_b);
+*/
   out->re = re/(*sigmasq);
   out->im = -im/(*sigmasq);
 

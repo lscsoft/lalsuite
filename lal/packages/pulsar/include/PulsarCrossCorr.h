@@ -140,6 +140,20 @@ NRCSID (PULSARCROSSCORRH, "$Id$");
     REAL8 b;
   } SFTDetectorInfo;
 
+  /* define structs to hold combinations of F's and A's */
+  typedef struct tagCrossCorrAmps {
+	REAL8 Aplussq;
+	REAL8 Acrosssq;
+	REAL8 AplusAcross;
+	} CrossCorrAmps;
+
+  typedef struct tagCrossCorrBeamFn{
+	REAL8 Fplus_or_a;
+	REAL8 Fcross_or_b;
+	} CrossCorrBeamFn;
+
+
+
 /*
  *  Functions Declarations (i.e., prototypes).
  */
@@ -186,16 +200,12 @@ void LALCalculateSigmaAlphaSq(LALStatus            *status,
 
 void LALCalculateUalpha(LALStatus *status,
 			COMPLEX16 *out,
-			REAL8     *Aplussq,
-			REAL8     *Acrosssq,
-			REAL8 	  *AplusAcross,
+			CrossCorrAmps amplitudes,
 			REAL8     *phiI,
 			REAL8     *phiJ,
-			INT4      *avePsi,
-			REAL8     *Fplus_or_aI,
-			REAL8     *Fplus_or_aJ,
-			REAL8     *Fcross_or_bI,
-			REAL8     *Fcross_or_bJ,
+			BOOLEAN   averagePsi,
+			CrossCorrBeamFn beamfnsI,
+			CrossCorrBeamFn beamfnsJ,
 			REAL8     *sigmasq);
 
 void LALCalculateCrossCorrPower(LALStatus       *status,
