@@ -367,9 +367,9 @@ int main(int argc, char **argv)
                     z_t[d    ][i] = dft_out[i][0];
                     z_t[d + 3][i] = dft_out[i][1];
                     power += pow(dft_out[i][0], 2) + pow(dft_out[i][1], 2);
-                    fwrite(z_t[d], sizeof(double), samples, g);
-                    fwrite(z_t[d + 3], sizeof(double), samples, g);
                 }
+                fwrite(z_t[d], sizeof(double), samples, g);
+                fwrite(z_t[d + 3], sizeof(double), samples, g);
                 power /= samples;
                 /* printf("mean(power) = %f =?= 2\n", power); */
             }
