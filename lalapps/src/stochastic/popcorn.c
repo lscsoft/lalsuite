@@ -43,6 +43,7 @@
 #include <gsl/gsl_vector.h>
 #include <gsl/gsl_randist.h>
 #include <gsl/gsl_multimin.h>
+#include <gsl/gsl_statistics.h>
 #include <FrameL.h>
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
@@ -87,6 +88,7 @@ static int test_flag = 0;
 static int montecarlo_flag = 0;
 static int condor_flag = 0;
 static int post_flag = 0;
+static int stat_flag = 0;
 static int contour_flag = 0;
 
 UINT4 job=1;
@@ -148,9 +150,10 @@ INT4 main (INT4 argc, CHAR *argv[])
   double size;
   size_t iter, k;
   
-  int i,j,n,l,m,compt;
+  int i,j,n,l,m,Ne;
   /* signal */
-  double var,varn,sigman,varmean,snr,vargw;
+  double var,varn,sigman,varmean,snr;
+  double meangw,vargw,skewgw,kurtgw;
   double var1,var2,sigmaref;
   double ksi_ml,sigma_ml,CP[100][100],cp0;
   double muest, ksiest, sigmaest, varest, varmeanest, sigma1est, sigma2est;
@@ -415,7 +418,7 @@ INT4 main (INT4 argc, CHAR *argv[])
 	 	
 	fprintf(stdout, "calculate variances v1 and v2...\n");}
 	
-  v1=0.;v2=0.;v12=0.;compt=0;vargw=0;
+  v1=0.;v2=0.;v12=0.;Ne=0;
   /* calculate variance */		
   for (i = 0; i < Npt; i++) {
    if(montecarlo_flag){
@@ -427,16 +430,12 @@ INT4 main (INT4 argc, CHAR *argv[])
     else if(mcstat==2)
      n = gsl_ran_poisson (rrgn,mu);           
     if(n>0){
-	 compt++;
+	 Ne++;
      varn = var*(double)n;                                          
      sigman = sqrt(varn);        
      h->data[i] = gsl_ran_gaussian_ziggurat (rrgn,sigman);
-	 if(verbose_flag){
-	  vargw=vargw+h->data[i]*h->data[i];
-	 //printf("%e\n",h->data[i]);
-	 }
     }
-   }					    
+   }
    s1->data[i] = n1.data->data[i]+h->data[i];                                 
    s2->data[i] = n2.data->data[i]+h->data[i];
    v1=v1+s1->data[i]*s1->data[i];
@@ -445,11 +444,24 @@ INT4 main (INT4 argc, CHAR *argv[])
   }
   
   /*statistics of the GW signal*/
-   if(verbose_flag){
+   if(stat_flag){
     fprintf(stdout,"statistics of the GW signal\n");
-    fprintf(stdout,"number of data points containing a GW signal: %d or a ratio of %e\n",compt, (double)compt/(double)Npt);
-	fprintf(stdout,"variance of the distribution of the amplitude: %e\n",vargw/(double)compt);
-	} 
+    fprintf(stdout,"number of data points containing a GW signal: %d or a ratio of %e\n",Ne, (double)Ne/(double)Npt);
+	fprintf(stdout,"calculate moments of the distribution of the amplitude...\n");
+	double hgw[Ne];
+	l=0;
+	for(i=0;i<Npt;i++) {
+	  if(fabs(h->data[i])>0.){
+	   hgw[l]=h->data[i];
+	   l++;
+	 }}
+	
+	meangw= gsl_stats_mean(hgw, 1, Ne);
+    vargw = gsl_stats_variance(hgw, 1, Ne);
+	skewgw= gsl_stats_skew(hgw, 1, Ne);
+    kurtgw = gsl_stats_kurtosis(hgw, 1, Ne);
+	fprintf(stdout,"mean=%e variance=%e skewness=%e kurtosis=%e\n",meangw,vargw,skewgw,kurtgw);
+	}
 	
   v1=v1/Npt;v2=v2/Npt;v12=v12/Npt;
   
@@ -890,6 +902,7 @@ void parseOptions(INT4 argc, CHAR *argv[])
 	  {"montecarlo", no_argument, &montecarlo_flag, 1},
 	  {"condor", no_argument, &condor_flag, 1},
 	  {"post", no_argument, &post_flag, 1},
+	  {"stat", no_argument, &stat_flag, 1},
 	  {"contour", no_argument, &contour_flag, 1},
       /* options that don't set a flag */
       {"help", no_argument, 0, 'h'},
@@ -1087,6 +1100,7 @@ void displayUsage(INT4 exitcode)
   fprintf(stderr, " --condor              run on cluster\n");
   fprintf(stderr, " --post                crude post processing\n");
   fprintf(stderr, " --contour             generate matrix for contour plot (when -a 1)\n");
+  fprintf(stderr, " --stat                display mean and variance of the amplitude distribution of the GW signal\n");
   fprintf(stderr, " -n                    job number\n");
   fprintf(stderr, " -t                    GPS start time\n");
   fprintf(stderr, " -T                    GPS stop time\n");
