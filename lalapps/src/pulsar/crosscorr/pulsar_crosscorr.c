@@ -76,13 +76,11 @@ int main(int argc, char *argv[]){
    INT4 index1, index2;
    REAL8FrequencySeries *psd1, *psd2;
    COMPLEX16Vector *yalpha = NULL, *ualpha = NULL;
-   REAL8Vector *Fplus_or_a, *Fcross_or_b;
-   REAL8 Aplussq, Acrosssq, AplusAcross; 
-   INT4 avePsi;
-   
 
+   CrossCorrAmps amplitudes;
+   CrossCorrBeamFn *beamfns;
    SFTPairParams pairParams;
-   
+
    /* information about all the ifos */
    PSDVector *psdVec = NULL;  
    LALDetector *det;
@@ -328,13 +326,13 @@ int main(int argc, char *argv[]){
    /*because we have the option of either averaging over i or not, we need to calculate
      A_{+,x}^2 and A_xA_+ rather than the individual values because <A_x> = 0*/
    if (uvar_averageIota) {
-	Aplussq = 7.0/15.0;
-	Acrosssq = 1.0/3.0;
-	AplusAcross = 0;
+	amplitudes.Aplussq = 7.0/15.0;
+	amplitudes.Acrosssq = 1.0/3.0;
+	amplitudes.AplusAcross = 0;
    } else {
-  	Aplussq = pow(((1.0 + uvar_cosi*uvar_cosi)/2.0),2);
-	Acrosssq = pow(uvar_cosi,2);
-	AplusAcross = (uvar_cosi/2) + (pow(uvar_cosi,3)/2);
+  	amplitudes.Aplussq = pow(((1.0 + uvar_cosi*uvar_cosi)/2.0),2);
+	amplitudes.Acrosssq = pow(uvar_cosi,2);
+	amplitudes.AplusAcross = (uvar_cosi/2) + (pow(uvar_cosi,3)/2);
    }
 
 
@@ -413,10 +411,9 @@ int main(int argc, char *argv[]){
       /* create sft pair indices */
       LAL_CALL ( LALCreateSFTPairsIndicesFrom2SFTvectors( &status, &sftPairIndexList, inputSFTs, &pairParams, uvar_detChoice), &status);
 
-      /* initialise F_+, F_x vectors */
+    /* initialise F_+, F_x vectors */
 
-    Fplus_or_a = XLALCreateREAL8Vector(numsft);
-    Fcross_or_b = XLALCreateREAL8Vector(numsft);
+    beamfns = (CrossCorrBeamFn *) LALCalloc(numsft, sizeof(CrossCorrBeamFn));
     frequencyShiftList = XLALCreateREAL8Vector(numsft);
     signalPhaseList = XLALCreateREAL8Vector(numsft);
 
@@ -503,16 +500,14 @@ int main(int argc, char *argv[]){
 	   If uvar_averagePsi = false, then there is no problem and we calculate Fplus_or_a and Fcross_or_b here */
 
 	if(uvar_averagePsi) {
-		avePsi = 1;
-		Fplus_or_a->data[j] = (AMcoef->a->data[0]);
-		Fcross_or_b->data[j] = (AMcoef->b->data[0]);
+		beamfns[j].Fplus_or_a = (AMcoef->a->data[0]);
+		beamfns[j].Fcross_or_b = (AMcoef->b->data[0]);
 	}
 	else {
-		avePsi = 0;
-		Fplus_or_a->data[j] = (AMcoef->a->data[0] * cos(2.0*psi))
+		beamfns[j].Fplus_or_a = (AMcoef->a->data[0] * cos(2.0*psi))
 		 	     + (AMcoef->b->data[0] * sin(2.0*psi));
 
-		Fcross_or_b->data[j] = (AMcoef->b->data[0] * cos(2.0*psi))
+		beamfns[j].Fcross_or_b = (AMcoef->b->data[0] * cos(2.0*psi))
 			     - (AMcoef->a->data[0] * sin(2.0*psi));
 	}
 
@@ -538,8 +533,8 @@ int main(int argc, char *argv[]){
 
  	LAL_CALL( LALCalculateSigmaAlphaSq( &status, &sigmasq->data[j], frequencyShiftList->data[index1], frequencyShiftList->data[index2], psd1, psd2), &status);
 
- 
-	LAL_CALL( LALCalculateUalpha (&status, &ualpha->data[j], &Aplussq, &Acrosssq, &AplusAcross, &signalPhaseList->data[index1], &signalPhaseList->data[index2], &avePsi, &Fplus_or_a->data[index1], &Fplus_or_a->data[index2], &Fcross_or_b->data[index1], &Fcross_or_b->data[index2], &sigmasq->data[j]), &status);
+	LAL_CALL( LALCalculateUalpha (&status, &ualpha->data[j], amplitudes, &signalPhaseList->data[index1], &signalPhaseList->data[index2], uvar_averagePsi, beamfns[index1], beamfns[index2], &sigmasq->data[j]), &status);
+
      	ualphacounter = ualphacounter + 1;
 
     } /*finish loop over sft pairs*/
@@ -576,8 +571,6 @@ printf("Frequency %f\n", uvar_f0 + (freqCounter*deltaF));
    XLALDestroyCOMPLEX16Vector(ualpha);
    XLALDestroyREAL8Vector(frequencyShiftList);
    XLALDestroyREAL8Vector(signalPhaseList);
-   XLALDestroyREAL8Vector(Fcross_or_b);
-   XLALDestroyREAL8Vector(Fplus_or_a);
    LAL_CALL ( LALDestroyPSDVector  ( &status, &psdVec), &status);
    LAL_CALL (LALDestroySFTVector(&status, &inputSFTs), &status );
    LALFree(sftPairIndexList->data);
