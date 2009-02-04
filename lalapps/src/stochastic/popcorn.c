@@ -87,6 +87,7 @@ static int test_flag = 0;
 static int montecarlo_flag = 0;
 static int condor_flag = 0;
 static int post_flag = 0;
+static int contour_flag = 0;
 
 UINT4 job=1;
 UINT4 Npt =1000000;
@@ -141,16 +142,17 @@ INT4 main (INT4 argc, CHAR *argv[])
   gsl_rng * rrgn;
 
   /* minization */
-  const gsl_multimin_fminimizer_type *T = gsl_multimin_fminimizer_nmsimplex;
+  const gsl_multimin_fminimizer_type *T = gsl_multimin_fminimizer_nmsimplex2;
   gsl_multimin_fminimizer *s;
   gsl_multimin_function minex_func;
   double size;
   size_t iter, k;
   
-  int i, j, n;
+  int i,j,n,l,m;
   /* signal */
   double var, varn, sigman, varmean, snr;
   double var1, var2, sigmaref;
+  double ksi_ml,sigma_ml,CP[100][100],cp0;
   double muest, ksiest, sigmaest, varest, varmeanest, sigma1est, sigma2est;
   double muestMean, ksiestMean, sigmaestMean, varmeanestMean, sigma1estMean, sigma2estMean;
   double value;
@@ -168,7 +170,7 @@ INT4 main (INT4 argc, CHAR *argv[])
   LIGOTimeGPS gpsStartTime;
   ResampleTSParams resampleParams;
   
-  FILE *pf1,*pf2,*pf3;
+  FILE *pf1,*pf2,*pf3,*pf4;
   /* output file name */
   CHAR fileName[LALNameLength];
 
@@ -437,11 +439,11 @@ INT4 main (INT4 argc, CHAR *argv[])
    if(stat==0){v12=v12+s1->data[i]*s2->data[i];}                            
   }
   v1=v1/Npt;v2=v2/Npt;v12=v12/Npt;
-       
+  /*     
   if(test_flag){
    for(i=0;i<Npt;i++){
 	fprintf(stdout,"%e %e\n",n1.data->data[i],n2.data->data[i]);}}
- 
+  */
   /** maximize likelihood function for parameter estimation **/ 
   /* Nelder-Mead Simplex algorithm */
   
@@ -494,9 +496,6 @@ INT4 main (INT4 argc, CHAR *argv[])
    sigmaest=gsl_vector_get (s->x, 1);
    sigma1est=gsl_vector_get (s->x, 2);
    sigma2est=gsl_vector_get (s->x, 3);
-   gsl_multimin_fminimizer_free (s);
-   gsl_vector_free(x);
-   gsl_vector_free(ss);
    varest=sigmaest*sigmaest;
    varmeanest=muest*varest;
    muestMean=muestMean+muest;
@@ -504,10 +503,50 @@ INT4 main (INT4 argc, CHAR *argv[])
    if(verbose_flag)
     fprintf(stdout,"muest=%e ksiest=%e sigmaest=%e varmeanest=%e sigma1est=%e sigma2est=%e\n",muest,ksiest,sigmaest,varmeanest,sigma1est,sigma2est);
    fprintf(pf3,"%f %f %f %f %f %f\n",muest,ksiest,sigmaest,varmeanest,sigma1est,sigma2est);
+   
+   if(test_flag){   
+	gsl_vector_set(x,0,muest);
+	gsl_vector_set(x,1,sigmaest);
+	gsl_vector_set(x,2,sigma1est);
+	gsl_vector_set(x,3,sigma2est);
+	cp0=lambda1(x,NULL);	
+	printf("likelihood function at estimated parameters: %e\n",-(double)Npt*cp0);
+    gsl_vector_set(x,0,mu);
+	gsl_vector_set(x,1,sigma);
+	gsl_vector_set(x,2,sigma1);
+	gsl_vector_set(x,3,sigma2);
+	cp0=lambda1(x,NULL);
+	printf("likelihood function at injected parameters: %e\n",-(double)Npt*cp0);
    }
+   
+   //test for comparison with fig 11 of Drasc's paper
+   if(contour_flag){
+    pf4=fopen("contour.dat","w");
+    for(m=1;m<10;m++){
+	 for(l=1;l<10;l++){
+	  ksi_ml=(double)m*0.1;
+	  sigma_ml=sqrt((double)l*0.1);
+	  gsl_vector_set(x,0,ksi_ml);
+      gsl_vector_set(x,1,sigma_ml);
+      gsl_vector_set(x,2,1.);
+      gsl_vector_set(x,3,1.);
+	  CP[m][l]=lambda1(x,NULL);
+	  }}
+	for(m=1;m<10;m++){
+	 for(l=1;l<10;l++){ 
+	  fprintf(pf4,"%e\t",CP[m][l]);}
+	  fprintf(pf4,"\n");}
+    fclose(pf4);
+   }
+   gsl_multimin_fminimizer_free (s);
+   gsl_vector_free(x); 
+   gsl_vector_free(ss); 
+  }
   else if(stat==1){
+  
    if(ksi0<0)
     ksi0=1.-gsl_ran_poisson_pdf(0,mu0);
+	
    gsl_vector *ss=gsl_vector_alloc (4), *x=gsl_vector_alloc (4);
    gsl_vector_set_all (ss, 0.1);
    gsl_vector_set(x,0,ksi0);
@@ -526,7 +565,7 @@ INT4 main (INT4 argc, CHAR *argv[])
     status = gsl_multimin_fminimizer_iterate(s);
     if (status){break;}
     size = gsl_multimin_fminimizer_size (s);
-    status = gsl_multimin_test_size (size, 1.e-4);
+    status = gsl_multimin_test_size (size, 1.e-6);
     if(test_flag){
  	 if (status == GSL_SUCCESS){
 	  fprintf (stdout,"converged to minimum at\n");}
@@ -536,20 +575,55 @@ INT4 main (INT4 argc, CHAR *argv[])
 	 fprintf (stdout,"f = %e\n", s->fval);
     }
    }
-   while (status == GSL_CONTINUE && iter < 300);
+   while (status == GSL_CONTINUE && iter < 1000);
    ksiest=gsl_vector_get (s->x, 0);
    sigmaest=gsl_vector_get (s->x, 1);
    sigma1est=gsl_vector_get (s->x, 2);
    sigma2est=gsl_vector_get (s->x, 3);
-   gsl_multimin_fminimizer_free (s);
-   gsl_vector_free(x);
-   gsl_vector_free(ss);
    varest=sigmaest*sigmaest;
    varmeanest=ksiest*varest;
    ksiestMean=ksiestMean+ksiest;
    if(verbose_flag)
     fprintf(stdout,"ksiest=%e sigmaest=%e varmeanest=%e sigma1est=%e sigma2est=%e\n",ksiest,sigmaest,varmeanest,sigma1est,sigma2est);
    fprintf(pf3,"%e %e %e %e %e\n",ksiest,sigmaest,varmeanest,sigma1est,sigma2est);
+   
+   if(test_flag){ 
+    gsl_vector_set(x,0,ksiest);
+	gsl_vector_set(x,1,sigmaest);
+	gsl_vector_set(x,2,sigma1est);
+	gsl_vector_set(x,3,sigma2est);
+	cp0=lambda1(x,NULL);
+    fprintf(stdout,"likelihood function at estimated parameters: %e\n",-(double)Npt*cp0);
+    gsl_vector_set(x,0,ksi);
+	gsl_vector_set(x,1,sigma);
+	gsl_vector_set(x,2,sigma1);
+	gsl_vector_set(x,3,sigma2);
+	cp0=lambda1(x,NULL);
+	printf("likelihood function at injected parameters: %e\n",-(double)Npt*cp0);
+   }
+   
+   //test for comparison with fig 11 of Drasc's paper
+   if(contour_flag){
+    pf4=fopen("contour.dat","w");
+    for(m=1;m<10;m++){
+	 for(l=1;l<10;l++){
+	  ksi_ml=(double)m*0.1;
+	  sigma_ml=sqrt((double)l*0.1);
+	  gsl_vector_set(x,0,ksi_ml);
+      gsl_vector_set(x,1,sigma_ml);
+      gsl_vector_set(x,2,1.);
+      gsl_vector_set(x,3,1.);
+	  CP[m][l]=lambda1(x,NULL);
+	  }}
+	for(m=1;m<10;m++){
+	 for(l=1;l<10;l++){ 
+	  fprintf(pf4,"%e\t",CP[m][l]);}
+	  fprintf(pf4,"\n");}
+    fclose(pf4);
+   }
+  gsl_multimin_fminimizer_free (s);
+  gsl_vector_free(x); 
+  gsl_vector_free(ss); 	
   }
   
   else if(stat==0){
@@ -583,17 +657,31 @@ INT4 main (INT4 argc, CHAR *argv[])
 	 fprintf (stdout,"f = %e\n", s->fval);
     }
    }
-   while (status == GSL_CONTINUE && iter < 300);
+   while (status == GSL_CONTINUE && iter < 500);
    sigmaest=gsl_vector_get (s->x, 0);
    sigma1est=gsl_vector_get (s->x, 1);
    sigma2est=gsl_vector_get (s->x, 2);
-   gsl_multimin_fminimizer_free (s);
-   gsl_vector_free(x);
-   gsl_vector_free(ss);
    varmeanest=sigmaest*sigmaest;
    if(verbose_flag)
     fprintf(stdout,"sigmaest=%e varmeanest=%e sigma1est=%e sigma2est=%e\n",sigmaest,varmeanest,sigma1est,sigma2est);
    fprintf(pf3,"%e %e %e %e\n",sigmaest,varmeanest,sigma1est,sigma2est); 
+   
+   if(test_flag){
+	gsl_vector_set(x,0,sigmaest);
+	gsl_vector_set(x,1,sigma1est);
+	gsl_vector_set(x,2,sigma2est);
+	cp0=lambda1(x,NULL);
+	printf("likelihood function at estimated parameters: %e\n",-(double)Npt*cp0);
+	gsl_vector_set(x,0,sigma);
+	gsl_vector_set(x,1,sigma1);
+	gsl_vector_set(x,2,sigma2);
+	cp0=lambda1(x,NULL);
+	printf("likelihood function at injected parameters: %e\n",-(double)Npt*cp0);
+   }
+  gsl_multimin_fminimizer_free (s);
+  gsl_vector_free(x); 
+  gsl_vector_free(ss); 	
+ 
   }
  
   
@@ -613,18 +701,19 @@ INT4 main (INT4 argc, CHAR *argv[])
  
  /** postprocessing **/
  if(post_flag){
-  if(nsegment>1){
-   if(verbose_flag)
-    fprintf(stdout,"combine the results of the %d segments\n",nsegment);
-  if(stat==1)
+ 
+  if(verbose_flag){
+   fprintf(stdout,"combine the results of the %d segments\n",nsegment);
+
+   if(stat==1)
     fprintf(stdout,"ksiest=%e sigmaest=%e varmeanest=%e sigma1est=%e sigma2est=%e\n",ksiestMean/nsegment,sigmaestMean/nsegment,varmeanestMean/nsegment,sigma1estMean/nsegment,sigma2estMean/nsegment);
    else if(stat==2)
     fprintf(stdout,"muest=%e sigmaest=%e varmeanest=%e sigma1est=%e sigma2est=%e\n",muestMean/nsegment,sigmaestMean/nsegment,varmeanestMean/nsegment,sigma1estMean/nsegment,sigma2estMean/nsegment);
-   else
-    fprintf(stdout,"sigmaest=%e varmeanest=%e sigma1est=%e sigma2est=%e\n",sigmaestMean/nsegment,varmeanestMean/nsegment,sigma1estMean/nsegment,sigma2estMean/nsegment);
-	
+   else	
+	fprintf(stdout,"sigmaest=%e varmeanest=%e sigma1est=%e sigma2est=%e\n",sigmaestMean/nsegment,varmeanestMean/nsegment,sigma1estMean/nsegment,sigma2estMean/nsegment);
+	}
   }
- }
+  
 
  /** cleanup **/
  if(verbose_flag){
@@ -786,6 +875,7 @@ void parseOptions(INT4 argc, CHAR *argv[])
 	  {"montecarlo", no_argument, &montecarlo_flag, 1},
 	  {"condor", no_argument, &condor_flag, 1},
 	  {"post", no_argument, &post_flag, 1},
+	  {"contour", no_argument, &contour_flag, 1},
       /* options that don't set a flag */
       {"help", no_argument, 0, 'h'},
 	  {"job-number", required_argument, 0, 'n'},
@@ -981,6 +1071,7 @@ void displayUsage(INT4 exitcode)
   fprintf(stderr, " --montecarlo          inject gw signal\n");
   fprintf(stderr, " --condor              run on cluster\n");
   fprintf(stderr, " --post                crude post processing\n");
+  fprintf(stderr, " --contour             generate matrix for contour plot (when -a 1)\n");
   fprintf(stderr, " -n                    job number\n");
   fprintf(stderr, " -t                    GPS start time\n");
   fprintf(stderr, " -T                    GPS stop time\n");
