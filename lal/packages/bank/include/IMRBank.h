@@ -9,14 +9,15 @@
 #include <gsl/gsl_rng.h>
 
 /* New structure to hold moments full arrays!! */
-typedef struct tagLALIMRBankCumulativeNoiseMoments
+
+typedef struct
   {
-  REAL8Vector * minus3[15];
-  REAL8Vector * plus3[15];
-  REAL8Vector * logplus3[15];
-  REAL8Vector * logminus3[15];
-  REAL8Vector * logsqplus3[15];
-  REAL8Vector * logsqminus3[15];
+  REAL8Vector * minus3[25];
+  REAL8Vector * plus3[25];
+  REAL8Vector * logplus3[25];
+  REAL8Vector * logminus3[25];
+  REAL8Vector * logsqplus3[25];
+  REAL8Vector * logsqminus3[25];
   REAL8FrequencySeries *psd;
   UINT4 length;
   REAL8 deltaF;
@@ -24,36 +25,26 @@ typedef struct tagLALIMRBankCumulativeNoiseMoments
   LIGOTimeGPS epoch;
   REAL8 f0;
   LALUnit sampleUnits;
-  } LALIMRBankCumulativeNoiseMoments;
+  } IMRBankCumulativeNoiseMoments;
 
-typedef struct tagLALIMRBankMetric
+/* A more convenient metric type */
+typedef struct
   {
-  REAL8 data[2][2];
-  } LALIMRBankMetric;
+  REAL8 data[3][3];
+  REAL8 m1;
+  REAL8 m2;
+  REAL8 M;
+  REAL8 eta;
+  REAL8 tau0;
+  REAL8 tau3;
+  } IMRBankMetric;
 
-typedef struct tagLALIMRBankMassRegion
+/* This holds a box in m1,m2 */
+typedef struct tagIMRBankMassRegion
   {
   REAL8 mbox[3];
-  struct tagLALIMRBankMassRegion *next;
-  } LALIMRBankMassRegion;
+  struct tagIMRBankMassRegion *next;
+  } IMRBankMassRegion;
 
-int XLALCreateLALIMRBankCumulativeNoiseMoments(LALIMRBankCumulativeNoiseMoments *moments, REAL8FrequencySeries *psd, REAL8 flow);
+INT4 TileIMRBankMassRegion(InspiralCoarseBankIn *in, SnglInspiralTable **first);
 
-
-int XLALComputeIMRBankCumulativeNoiseMoment(LALIMRBankCumulativeNoiseMoments *moments, INT4 power, UINT4 logFlag);
-
-
-int XLALDestroyLALIMRBankCumulativeNoiseMoments(LALIMRBankCumulativeNoiseMoments *moments);
-
-REAL8 XLALComputeLALIMRBankMetricMassMass(REAL8 mass1, REAL8 mass2,
-         REAL8 fl, REAL8 fh, INT4 xpow, LALIMRBankCumulativeNoiseMoments *I);
-
-REAL8 XLALComputeLALIMRBankMetricEtaEta(REAL8 mass1, REAL8 mass2,
-         REAL8 fl, REAL8 fh, INT4 xpow, LALIMRBankCumulativeNoiseMoments *I);
-
-REAL8 XLALComputeLALIMRBankMetricMassEta(REAL8 mass1, REAL8 mass2,
-         REAL8 fl, REAL8 fh, INT4 xpow, LALIMRBankCumulativeNoiseMoments *I);
-
-int XLALComputeLALIMRBankMetric(REAL8 mass1, REAL8 mass2, LALIMRBankCumulativeNoiseMoments *moments, LALIMRBankMetric *metric);
-
-INT4 XLALTileLALIMRBankMassRegion(InspiralCoarseBankIn *in, SnglInspiralTable **first);
