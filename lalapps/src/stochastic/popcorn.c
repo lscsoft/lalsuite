@@ -381,8 +381,11 @@ INT4 main (INT4 argc, CHAR *argv[])
 	}//end if(resample_flag)
 	 
 	 
-   /* normalize so that maximal sigma1*sigma2 = 1 **/ 
-   if(normalize_flag){
+   }//end else read from files
+  
+  
+  /* normalize so that maximal sigma1*sigma2 = 1 **/ 
+   if((stat_flag)||(normalize_flag)){
     if(verbose_flag){
      fprintf(stdout, "calculate noise variances...\n");}
     var1=0.;var2=0.;	   
@@ -393,28 +396,28 @@ INT4 main (INT4 argc, CHAR *argv[])
     sigma1=sqrt(var1/Npt);
     sigma2=sqrt(var2/Npt);
     sigmaref=sqrt(sigma1*sigma2);
-	
-   if(verbose_flag){
-    fprintf(stdout, "sigma1=%e sigma2=%e sigmaref=%e\n",sigma1,sigma2,sigmaref);}
-   if(verbose_flag){
-    fprintf(stdout, "normalize noise...\n");}	 
-    
-    sigma1=sigma1/sigmaref; sigma2=sigma2/sigmaref;	
-    for (i = 0; i < Npt; i++) {
-     n1.data->data[i] = n1.data->data[i]/sigmaref;
-     n2.data->data[i] = n2.data->data[i]/sigmaref;
+    if(verbose_flag){
+     fprintf(stdout, "sigma1=%e sigma2=%e sigmaref=%e\n",sigma1,sigma2,sigmaref);}
+    	
+    if(normalize_flag){
+     if(verbose_flag)
+      fprintf(stdout, "normalize noise...\n");	 
+     sigma1=sigma1/sigmaref; sigma2=sigma2/sigmaref;	
+     for (i = 0; i < Npt; i++) {
+      n1.data->data[i] = n1.data->data[i]/sigmaref;
+      n2.data->data[i] = n2.data->data[i]/sigmaref;
+     }
     }
    }
-  }//end else read from files
   
   if(verbose_flag){
    if(montecarlo_flag){
     if(mcstat==1)
-	 fprintf(stdout, "generate gw signal with ksi=%f and sigma=%f and calculate variances v1 and v2...\n",ksi,sigma);
+	 fprintf(stdout, "generate gw signal with ksi=%f and sigma=%f\n",ksi,sigma);
 	else if(mcstat==2)
-     fprintf(stdout, "generate gw signal with mu=%f and sigma=%f and calculate variances v1 and v2...\n",mu,sigma);
+     fprintf(stdout, "generate gw signal with mu=%f and sigma=%f\n",mu,sigma);
     else
-	 fprintf(stdout, "generate gw signal with sigma=%f and calculate variances v1 and v2...\n",sigma);}
+	 fprintf(stdout, "generate gw signal with sigma=%f\n",sigma);}
 	 	
 	fprintf(stdout, "calculate variances v1 and v2...\n");}
 	
@@ -550,18 +553,18 @@ INT4 main (INT4 argc, CHAR *argv[])
    //test for comparison with fig 11 of Drasc's paper
    if(contour_flag){
     pf4=fopen("contour.dat","w");
-    for(m=1;m<10;m++){
-	 for(l=1;l<10;l++){
-	  ksi_ml=(double)m*0.1;
-	  sigma_ml=sqrt((double)l*0.1);
+    for(m=1;m<100;m++){
+	 for(l=1;l<100;l++){
+	  ksi_ml=(double)m*0.01;
+	  sigma_ml=sqrt((double)l*0.01);
 	  gsl_vector_set(x,0,ksi_ml);
       gsl_vector_set(x,1,sigma_ml);
       gsl_vector_set(x,2,1.);
       gsl_vector_set(x,3,1.);
-	  CP[m][l]=lambda1(x,NULL);
+	  CP[m][l]=-(double)Npt*lambda1(x,NULL);
 	  }}
-	for(m=1;m<10;m++){
-	 for(l=1;l<10;l++){ 
+	for(m=1;m<100;m++){
+	 for(l=1;l<100;l++){ 
 	  fprintf(pf4,"%e\t",CP[m][l]);}
 	  fprintf(pf4,"\n");}
     fclose(pf4);
@@ -641,7 +644,7 @@ INT4 main (INT4 argc, CHAR *argv[])
       gsl_vector_set(x,1,sigma_ml);
       gsl_vector_set(x,2,1.);
       gsl_vector_set(x,3,1.);
-	  CP[m][l]=lambda1(x,NULL);
+	  CP[m][l]=-(double)Npt*lambda1(x,NULL);
 	  }}
 	for(m=1;m<10;m++){
 	 for(l=1;l<10;l++){ 
