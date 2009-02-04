@@ -148,10 +148,10 @@ INT4 main (INT4 argc, CHAR *argv[])
   double size;
   size_t iter, k;
   
-  int i,j,n,l,m;
+  int i,j,n,l,m,compt;
   /* signal */
-  double var, varn, sigman, varmean, snr;
-  double var1, var2, sigmaref;
+  double var,varn,sigman,varmean,snr,vargw;
+  double var1,var2,sigmaref;
   double ksi_ml,sigma_ml,CP[100][100],cp0;
   double muest, ksiest, sigmaest, varest, varmeanest, sigma1est, sigma2est;
   double muestMean, ksiestMean, sigmaestMean, varmeanestMean, sigma1estMean, sigma2estMean;
@@ -415,7 +415,7 @@ INT4 main (INT4 argc, CHAR *argv[])
 	 	
 	fprintf(stdout, "calculate variances v1 and v2...\n");}
 	
-  v1=0.;v2=0.;v12=0.;
+  v1=0.;v2=0.;v12=0.;compt=0;vargw=0;
   /* calculate variance */		
   for (i = 0; i < Npt; i++) {
    if(montecarlo_flag){
@@ -427,23 +427,38 @@ INT4 main (INT4 argc, CHAR *argv[])
     else if(mcstat==2)
      n = gsl_ran_poisson (rrgn,mu);           
     if(n>0){
+	 compt++;
      varn = var*(double)n;                                          
      sigman = sqrt(varn);        
-     h->data[i] = gsl_ran_gaussian (rrgn,sigman);
+     h->data[i] = gsl_ran_gaussian_ziggurat (rrgn,sigman);
+	 if(verbose_flag){
+	  vargw=vargw+h->data[i]*h->data[i];
+	 //printf("%e\n",h->data[i]);
+	 }
     }
-   }   
+   }					    
    s1->data[i] = n1.data->data[i]+h->data[i];                                 
    s2->data[i] = n2.data->data[i]+h->data[i];
    v1=v1+s1->data[i]*s1->data[i];
    v2=v2+s2->data[i]*s2->data[i];   
    if(stat==0){v12=v12+s1->data[i]*s2->data[i];}                            
   }
+  
+  /*statistics of the GW signal*/
+   if(verbose_flag){
+    fprintf(stdout,"statistics of the GW signal\n");
+    fprintf(stdout,"number of data points containing a GW signal: %d or a ratio of %e\n",compt, (double)compt/(double)Npt);
+	fprintf(stdout,"variance of the distribution of the amplitude: %e\n",vargw/(double)compt);
+	} 
+	
   v1=v1/Npt;v2=v2/Npt;v12=v12/Npt;
+  
   /*     
   if(test_flag){
    for(i=0;i<Npt;i++){
 	fprintf(stdout,"%e %e\n",n1.data->data[i],n2.data->data[i]);}}
   */
+  
   /** maximize likelihood function for parameter estimation **/ 
   /* Nelder-Mead Simplex algorithm */
   
@@ -481,6 +496,7 @@ INT4 main (INT4 argc, CHAR *argv[])
     if (status){break;}
     size = gsl_multimin_fminimizer_size (s);
     status = gsl_multimin_test_size (size, 1.e-4);
+	
     if(test_flag){
  	 if (status == GSL_SUCCESS){
 	  fprintf (stdout,"converged to minimum at\n");}
@@ -701,7 +717,6 @@ INT4 main (INT4 argc, CHAR *argv[])
  
  /** postprocessing **/
  if(post_flag){
- 
   if(verbose_flag){
    fprintf(stdout,"combine the results of the %d segments\n",nsegment);
 
