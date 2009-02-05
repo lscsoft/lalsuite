@@ -1,8 +1,8 @@
 ## Process this file with automake to produce Makefile.in
 # $Id$
 if LALMETAIO
-LALMETAIOPROGRAMS = lalapps_exc_resp lalapps_ivana lalapps_inspmultiawg \
-                    lalapps_chirplen
+LALMETAIOPROGRAMS = lalapps_exc_resp lalapps_ivana lalapps_chirplen
+# lalapps_inspmultiawg
 else
 LALMETAIOPROGRAMS = 
 endif
@@ -21,7 +21,7 @@ lalapps_InspiralOverlap_SOURCES 	= InspiralOverlap.c
 if LALMETAIO
 lalapps_exc_resp_SOURCES 		= exc_resp.c
 lalapps_ivana_SOURCES 			= ivana.c
-lalapps_inspmultiawg_SOURCES 		= inspmultiawg.c 
+#lalapps_inspmultiawg_SOURCES 		= inspmultiawg.c 
 lalapps_chirplen_SOURCES 		= chirplen.c
 endif
 
