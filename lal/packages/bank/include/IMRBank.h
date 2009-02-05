@@ -1,12 +1,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <lal/LALStdlib.h>
 #include <lal/LALDatatypes.h>
 #include <lal/AVFactories.h>
 #include <lal/LALConstants.h>
 #include <lal/LALInspiralBank.h>
 #include <lal/LIGOMetadataTables.h>
 #include <gsl/gsl_rng.h>
+
 
 /* New structure to hold moments full arrays!! */
 
@@ -46,5 +48,5 @@ typedef struct tagIMRBankMassRegion
   struct tagIMRBankMassRegion *next;
   } IMRBankMassRegion;
 
-INT4 TileIMRBankMassRegion(InspiralCoarseBankIn *in, SnglInspiralTable **first);
+int XLALTileIMRBankMassRegion(InspiralCoarseBankIn *in, SnglInspiralTable **first);
 

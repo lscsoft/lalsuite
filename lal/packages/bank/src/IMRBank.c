@@ -6,46 +6,7 @@
 #include <lal/LALConstants.h>
 #include <lal/LALInspiralBank.h>
 #include <lal/LIGOMetadataTables.h>
-#include <gsl/gsl_rng.h>
-
-/* A new structure to hold cumulative noise moments so that they don't have
- * to be recomputed at every step */
-
-typedef struct 
-  {
-  REAL8Vector * minus3[25];
-  REAL8Vector * plus3[25];
-  REAL8Vector * logplus3[25];
-  REAL8Vector * logminus3[25];
-  REAL8Vector * logsqplus3[25];
-  REAL8Vector * logsqminus3[25];
-  REAL8FrequencySeries *psd;
-  UINT4 length;
-  REAL8 deltaF;
-  REAL8 flow;
-  LIGOTimeGPS epoch;
-  REAL8 f0;
-  LALUnit sampleUnits;
-  } IMRBankCumulativeNoiseMoments;
-
-/* A more convenient metric type */
-typedef struct 
-  {
-  REAL8 data[3][3];
-  REAL8 m1;
-  REAL8 m2;
-  REAL8 M;
-  REAL8 eta;
-  REAL8 tau0;
-  REAL8 tau3;
-  } IMRBankMetric;
-
-/* This holds a box in m1,m2 */
-typedef struct tagIMRBankMassRegion
-  {
-  REAL8 mbox[3];
-  struct tagIMRBankMassRegion *next;
-  } IMRBankMassRegion;
+#include <lal/IMRBank.h>
 
 /* This function sets the pointers of the cumulative noise moment arrays to 
  * zero */
@@ -1147,16 +1108,17 @@ static REAL8 XLALComputeIMRBankMetricMassEta(REAL8 mass1, REAL8 mass2,
     * JPsiEta(mass1, mass2, fl, fh, xpow, I))/2.0;
   }
 
-
-static printmetric(IMRBankMetric *metric,FILE *FP)
+#if 0
+static int printmetric(IMRBankMetric *metric,FILE *FP)
   {
   REAL8 MM = metric->data[1][1]-metric->data[0][1]*metric->data[0][1]/metric->data[0][0];
   REAL8 MN = metric->data[1][2]-metric->data[0][1]*metric->data[0][2]/metric->data[0][0];
   REAL8 NN = metric->data[2][2]-metric->data[0][2]*metric->data[0][2]/metric->data[0][0];
   REAL8 vol = sqrt(fabs( (MM*NN-MN*MN) ));
   fprintf(FP,"%e %e %e %e %e %e %e %e %e\n",metric->m1, metric->m2,metric->data[0][0],metric->data[0][1],metric->data[0][2],metric->data[1][1],metric->data[1][2],metric->data[2][2],vol);
+  return 0;
   }
-
+#endif
 
 
 static double tau0fromm1m2(REAL8 mass1, REAL8 mass2, REAL8 flow)
@@ -1178,7 +1140,6 @@ static double tau3fromm1m2(REAL8 mass1, REAL8 mass2, REAL8 flow)
 
 static int IMRBankMetricToTau0Tau3(IMRBankMetric *metric,IMRBankCumulativeNoiseMoments *moments)
   {
-  REAL8 flow = moments->flow;
   REAL8 dtdt, dtdt0, dtdt3, dmdt, dmdt0, dmdt3, dndt, dndt0, dndt3;
   REAL8 h00,h01,h02,h10,h20,h11,h12,h21,h22;
   /* fix this */
@@ -1227,7 +1188,7 @@ static int IMRBankMetricToTau0Tau3(IMRBankMetric *metric,IMRBankCumulativeNoiseM
   metric->data[2][2] =  h02*dtdt3 + h12*dmdt3 + h22*dndt3;
 
   /*printf("%e %e %e\n %e %e %e\n %e %e %e\n\n",metric->data[0][0],metric->data[0][1],metric->data[0][2],metric->data[1][0],metric->data[1][1],metric->data[1][2],metric->data[2][0],metric->data[2][1],metric->data[2][2]);*/
-
+  return 0;
   }
 
 static int XLALComputeIMRBankMetric(REAL8 mass1, REAL8 mass2, IMRBankCumulativeNoiseMoments *moments, IMRBankMetric *metric)
@@ -1317,6 +1278,7 @@ static REAL8 mDensity(REAL8 m1, REAL8 m2, IMRBankCumulativeNoiseMoments *I)
   return sqrt(fabs( (MM*NN-MN*MN) ));
   }
 
+#if 0
 static REAL8 Mfromtau0tau3(REAL8 t0, REAL8 t3, REAL8 flow)
   {
   REAL8 c0 = 5. / 256. / pow(LAL_PI*flow,8./3.);
@@ -1340,8 +1302,9 @@ static REAL8 m2fromMassEta(REAL8 M, REAL8 n)
   {
   return (M - sqrt(M*M-4.0*n*M*M))/2.0;
   }
+#endif
 
-
+#if 0
 static REAL8 m1fromtau0tau3(REAL8 t0, REAL8 t3, REAL8 flow)
   {
   REAL8 M = Mfromtau0tau3(t0,t3,flow);
@@ -1359,8 +1322,9 @@ static REAL8 m2fromtau0tau3(REAL8 t0, REAL8 t3, REAL8 flow)
   if (n > 0.25) return 0.0;
   return m2fromMassEta(M,n);
   }
+#endif
 
-
+#if 0
 static REAL8 tDensity(REAL8 t0, REAL8 t3, IMRBankCumulativeNoiseMoments *I)
   {
   IMRBankMetric metric;
@@ -1376,13 +1340,12 @@ static REAL8 tDensity(REAL8 t0, REAL8 t3, IMRBankCumulativeNoiseMoments *I)
   NN = metric.data[2][2]-metric.data[0][2]*metric.data[0][2]/metric.data[0][0];
   return sqrt(fabs( (MM*NN-MN*MN) ));
   }
-
+#endif
 
 static REAL8 integrateMassVolume(REAL8 mbox[3], 
                        IMRBankCumulativeNoiseMoments *I)
 
   {
-  REAL8 flow = I->flow;
   REAL8 m1 = mbox[0];
   REAL8 m2 = mbox[1];
   REAL8 size = mbox[2];
@@ -1442,8 +1405,7 @@ static int appendtotailMass(IMRBankMassRegion *elem, IMRBankMassRegion **tail)
   }
 
 static int divideAndConquerMass(IMRBankMassRegion *list, 
-                            IMRBankMassRegion **tail, REAL8 mm,
-                            IMRBankCumulativeNoiseMoments *I)
+                            IMRBankMassRegion **tail)
 
   {
   REAL8 m1 = list->mbox[0];
@@ -1459,18 +1421,16 @@ static int divideAndConquerMass(IMRBankMassRegion *list,
   }
 
 
-static int addtemplatesMass(REAL8 mbox[3], REAL8 numTmps, 
+static int addtemplatesMass(REAL8 mbox[3], 
                         InspiralCoarseBankIn *in, SnglInspiralTable **head,
-			gsl_rng *r, IMRBankCumulativeNoiseMoments *I
+			IMRBankCumulativeNoiseMoments *I
 			)
   {
   /*Now this function always assumes one template to be added */
-  UINT4 num = (UINT4) ceil(numTmps);
   REAL8 m1 = 0;
   REAL8 m2 = 0;
   REAL8 mtot = mbox[0]+mbox[1];
   REAL8 size = mbox[2];
-  UINT4 i = 0;
   IMRBankMetric metric;
   REAL8 MM,MN,NN;
   /* check to see if it is the bottom half of the mass/mass plane */
@@ -1517,16 +1477,16 @@ static int checkNumberOfTemplatesMass(IMRBankMassRegion *list,
                                   IMRBankMassRegion **tail, 
 				  InspiralCoarseBankIn *in, 
 				  IMRBankCumulativeNoiseMoments *I, 
-				  SnglInspiralTable **head,
-				  gsl_rng *r
+				  SnglInspiralTable **head
 				  )
   {
   REAL8 mm = 1.0-in->mmCoarse;
   REAL8 numTmps = XLALComputeNumberOfIMRTemplatesInSquareIMRBankMassRegion(
                   list->mbox, mm, I);
   
-  if (numTmps >= 1.0)  divideAndConquerMass(list,tail,mm,I);
-  else addtemplatesMass(list->mbox,numTmps,in,head,r,I);
+  if (numTmps >= 1.0)  divideAndConquerMass(list,tail);
+  else addtemplatesMass(list->mbox,in,head,I);
+  return 0;
   }
 
 
@@ -1540,18 +1500,18 @@ static int destroyregionlistMass(IMRBankMassRegion *head)
     head = head->next;
     free(tmp);
     }
+  return 0;
   }
 
 
 /* This is the main function that actually is called by the bank code */
-INT4 TileIMRBankMassRegion(InspiralCoarseBankIn *in, SnglInspiralTable **first)
+int XLALTileIMRBankMassRegion(InspiralCoarseBankIn *in, SnglInspiralTable **first)
   {
   /* Convert all masses to geometrized units */
   REAL8 mass1 = LAL_MTSUN_SI*(0.9*in->mMin);
   REAL8 mass2 = LAL_MTSUN_SI*(0.9*in->mMin);
   REAL8 size = LAL_MTSUN_SI*(1.1*in->mMax - 0.9*in->mMin);
 
-  REAL8 mm = 1.0 - in->mmCoarse;
   REAL8 flow = in->fLower;
   SnglInspiralTable *tab = NULL;
   SnglInspiralTable *tmp = NULL;
@@ -1559,7 +1519,6 @@ INT4 TileIMRBankMassRegion(InspiralCoarseBankIn *in, SnglInspiralTable **first)
   IMRBankMassRegion *head = createIMRBankMassRegion(mass1,mass2,size);
   IMRBankMassRegion *list = head;
   IMRBankMassRegion *tail = head;
-  gsl_rng * r = gsl_rng_alloc (gsl_rng_taus);
   *first = (SnglInspiralTable *) LALCalloc(1,sizeof(SnglInspiralTable));
   tab = *first;
   /*srand(814);*/
@@ -1568,13 +1527,12 @@ INT4 TileIMRBankMassRegion(InspiralCoarseBankIn *in, SnglInspiralTable **first)
   /*printf("generating templates\n");*/
   while(list)
     {
-    checkNumberOfTemplatesMass(list,&tail,in,&moments,first,r);
+    checkNumberOfTemplatesMass(list,&tail,in,&moments,first);
     list = list->next;
     }
   /*addEqualMassTemplates(in,&moments,*first,FP);*/
   XLALDestroyIMRBankCumulativeNoiseMoments(&moments);
   destroyregionlistMass(head);
-  gsl_rng_free(r);
   /* send back the beginning of the list */
   *first = tab;
   while (tab)
