@@ -41,8 +41,8 @@ RCSID( "$Id$");
 
 extern int lalDebugLevel;
 
-#define EARTHEPHEMERIS "/data/gui1/cchung/lscsoft/opt/lscsoft/lal/share/lal/earth05-09.dat"
-#define SUNEPHEMERIS "/data/gui1/cchung/lscsoft/opt/lscsoft/lal/share/lal/sun05-09.dat"
+#define DEFAULT_EPHEMDIR "env LAL_DATA_PATH"
+#define EPHEM_YEARS "00-04"
 
 #define F0 100
 #define FBAND 1
@@ -93,6 +93,8 @@ int main(int argc, char *argv[]){
    EphemerisData    *edat=NULL;
    INT4 tmpLeap;
    LALLeapSecFormatAndAcc  lsfas = {LALLEAPSEC_GPSUTC, LALLEAPSEC_LOOSE};
+   CHAR EphemEarth[MAXFILENAMELENGTH];
+   CHAR EphemSun[MAXFILENAMELENGTH];
 
    /* skypatch info */
    REAL8  *skyAlpha=NULL, *skyDelta=NULL, *skySizeAlpha=NULL, *skySizeDelta=NULL; 
@@ -141,8 +143,8 @@ int main(int argc, char *argv[]){
    REAL8    uvar_psi;
    REAL8    uvar_refTime;
    REAL8    uvar_cosi;
-   CHAR     *uvar_earthEphemeris=NULL;
-   CHAR     *uvar_sunEphemeris=NULL;
+   CHAR     *uvar_ephemDir=NULL;
+   CHAR     *uvar_ephemYear=NULL;
    CHAR     *uvar_sftDir=NULL;
    CHAR     *uvar_dirnameOut=NULL;
    CHAR     *uvar_fbasenameOut=NULL;
@@ -185,11 +187,11 @@ int main(int argc, char *argv[]){
    uvar_refTime = 0.0;
    uvar_cosi = 0.0;
  
-   uvar_earthEphemeris = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
-   strcpy(uvar_earthEphemeris,EARTHEPHEMERIS);
+   uvar_ephemDir = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
+   strcpy(uvar_ephemDir,DEFAULT_EPHEMDIR);
  
-   uvar_sunEphemeris = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
-   strcpy(uvar_sunEphemeris,SUNEPHEMERIS);
+   uvar_ephemYear = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
+   strcpy(uvar_ephemYear,EPHEM_YEARS);
  
    uvar_dirnameOut = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
    strcpy(uvar_dirnameOut,DIROUT);
@@ -216,8 +218,8 @@ int main(int argc, char *argv[]){
    LAL_CALL( LALRegisterREALUserVar(   &status, "dDelta",          0,  UVAR_OPTIONAL, "Sky resolution (flat/isotropic) (rad)", &uvar_dDelta), &status);
    LAL_CALL( LALRegisterREALUserVar(   &status, "psi",             0,  UVAR_OPTIONAL, "Polarisation angle (rad)", &uvar_psi), &status);
    LAL_CALL( LALRegisterSTRINGUserVar( &status, "skyfile",         0,  UVAR_OPTIONAL, "Alternative: input skypatch file", &uvar_skyfile),     &status);
-   LAL_CALL( LALRegisterSTRINGUserVar( &status, "earthEphemeris", 'E', UVAR_OPTIONAL, "Earth Ephemeris file",  &uvar_earthEphemeris),  &status);
-   LAL_CALL( LALRegisterSTRINGUserVar( &status, "sunEphemeris",   'S', UVAR_OPTIONAL, "Sun Ephemeris file", &uvar_sunEphemeris), &status);
+   LAL_CALL( LALRegisterSTRINGUserVar( &status, "ephemDir", 'E', UVAR_OPTIONAL, "Directory where ephemeris files are located",  &uvar_ephemDir),  &status);
+   LAL_CALL( LALRegisterSTRINGUserVar( &status, "ephemYear",   'y', UVAR_OPTIONAL, "Year (or range of years) of ephemeris files to be used", &uvar_ephemYear), &status);
    LAL_CALL( LALRegisterSTRINGUserVar( &status, "sftDir",         'D', UVAR_REQUIRED, "SFT filename pattern", &uvar_sftDir), &status);
    LAL_CALL( LALRegisterREALUserVar(   &status, "maxlag",          0,  UVAR_OPTIONAL, "Maximum time lag for correlating sfts", &uvar_maxlag), &status);
    LAL_CALL( LALRegisterSTRINGUserVar( &status, "dirnameOut",     'o', UVAR_OPTIONAL, "Output directory", &uvar_dirnameOut), &status);
@@ -312,9 +314,21 @@ int main(int argc, char *argv[]){
    psi = uvar_psi;
 
   /*  set up ephemeris  */
+  if(uvar_ephemDir) {
+    LALSnprintf(EphemEarth, MAXFILENAMELENGTH, "%s/earth%s.dat", uvar_ephemDir, uvar_ephemYear);
+    LALSnprintf(EphemSun, MAXFILENAMELENGTH, "%s/sun%s.dat", uvar_ephemDir, uvar_ephemYear);
+  }
+  else {
+    LALSnprintf(EphemEarth, MAXFILENAMELENGTH, "earth%s.dat", uvar_ephemYear);
+    LALSnprintf(EphemSun, MAXFILENAMELENGTH, "sun%s.dat", uvar_ephemYear);
+  }
+
+  EphemEarth[MAXFILENAMELENGTH-1] = 0;
+  EphemSun[MAXFILENAMELENGTH-1] = 0;
+
   edat = (EphemerisData *)LALCalloc(1, sizeof(EphemerisData));
-  (*edat).ephiles.earthEphemeris = uvar_earthEphemeris;
-  (*edat).ephiles.sunEphemeris = uvar_sunEphemeris;
+  (*edat).ephiles.earthEphemeris = EphemEarth;
+  (*edat).ephiles.sunEphemeris = EphemSun;
 
   LAL_CALL( LALLeapSecs(&status, &tmpLeap, &firstTimeStamp, &lsfas), &status);
   (*edat).leap = (INT2)tmpLeap;
