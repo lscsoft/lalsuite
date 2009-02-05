@@ -9,6 +9,9 @@
 #include <lal/LIGOMetadataTables.h>
 #include <gsl/gsl_rng.h>
 
+#ifndef _IMRBANK_H
+#define _IMRBANK_H
+
 
 /* New structure to hold moments full arrays!! */
 
@@ -50,3 +53,4 @@ typedef struct tagIMRBankMassRegion
 
 int XLALTileIMRBankMassRegion(InspiralCoarseBankIn *in, SnglInspiralTable **first);
 
+#endif
