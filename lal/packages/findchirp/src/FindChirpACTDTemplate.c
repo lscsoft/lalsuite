@@ -153,8 +153,8 @@ LALFindChirpACTDTemplate (
   ppnParams.mTot = tmplt->mass1 + tmplt->mass2;
   ppnParams.eta = tmplt->mass1 * tmplt->mass2 /
     ( ppnParams.mTot * ppnParams.mTot );
-	/* Set distance at 20Mpc for testing, will be normalised anyway */
-  ppnParams.d = 20. * 1000. * 1000. * LAL_PC_SI;
+  /* Set distance at 20Mpc for testing, will be normalised anyway */
+  ppnParams.d = 1.0 * 1000. * 1000. * LAL_PC_SI;
   ppnParams.fStartIn = params->fLow;
   ppnParams.fStopIn = - 1.0 /
                     (6.0 * sqrt(6.0) * LAL_PI * ppnParams.mTot * LAL_MTSUN_SI);
@@ -172,7 +172,7 @@ LALFindChirpACTDTemplate (
   LALInfo( status, ppnParams.termDescription );
   if ( ppnParams.dfdt > 2.0 )
   {
-   /* ABORT( status, FINDCHIRPTDH_ESMPL, FINDCHIRPTDH_MSGESMPL ); */
+  /* ABORT( status, FINDCHIRPTDH_ESMPL, FINDCHIRPTDH_MSGESMPL ); */
   }
   if ( waveform.a->data->length > numPoints )
   {
@@ -192,6 +192,7 @@ LALFindChirpACTDTemplate (
   }
 
   /* compute h(t) */
+  /* legacy - length is the lentgh of the vectors */
   for ( i = 0; i < waveform.a->data->length; ++i )
   {
     for ( j = 0; j < NACTDVECS; ++j )
@@ -516,7 +517,7 @@ LALFindChirpACTDNormalize(
                                       wtilde, tmpltParams->fLow, deltaF );
 
   fprintf( stderr, "\n\n  H1H1 = %.4f  H2H2 = %.4f  H3H3 = %.4f\n", 
-									                                          H1H1, H2H2, H3H3 );
+                                          H1H1, H2H2, H3H3 );
   
   h1H2 = XLALFindChirpACTDInnerProduct( &ACTDtilde[1], &ACTDtilde[0],
                                       wtilde, tmpltParams->fLow, deltaF );
@@ -526,7 +527,7 @@ LALFindChirpACTDNormalize(
                                       wtilde, tmpltParams->fLow, deltaF );
 
   fprintf( stderr, "  h1H2 = %.4f  h3H1 = %.4f  h3H2 = %.4f\n", 
-									                                          h1H2, h3H1, h3H2 );
+                                          h1H2, h3H1, h3H2 );
   fprintf( stderr, "                                        " );
   /* XXX UNCOMMENT ABOVE TO TEST ORTHONORMALIZATION XXX */
 
@@ -548,18 +549,18 @@ REAL4  XLALFindChirpACTDInnerProduct(
   REAL8 sum = 0.0;
   flower = 0.0;
 
-	for( k = 0; k < a->length; ++k )
+  for( k = 0; k < a->length; ++k )
   {
     if(  k * deltaF  >= flower )
     {
-			REAL4 power;
+      REAL4 power;
       power = a->data[k].re * b->data[k].re;
       power += a->data[k].im * b->data[k].im;
       sum += power * wtilde[k].re;
     }
   }
 
-	innerProduct = 4.0 * (REAL4)(sum) * deltaF;
+  innerProduct = 4.0 * (REAL4)(sum) * deltaF;
 
   return innerProduct;
 
