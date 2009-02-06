@@ -38,6 +38,7 @@ FrHistory * XLALFrHistoryAdd( FrameH *frame, const char *name, const char *comme
 FrDetector * XLALFrDetectorNew( int detector );
 FrameH * XLALFrameNew( LIGOTimeGPS *epoch, double duration, 
     const char *project, int run, int frnum, int detectorFlags );
+FrVect * XLALFrVectINT4TimeSeries( INT4TimeSeries *series );
 FrVect * XLALFrVectREAL4TimeSeries( REAL4TimeSeries *series );
 FrVect * XLALFrVectREAL8TimeSeries( REAL8TimeSeries *series );
 FrVect * XLALFrVectCOMPLEX8TimeSeries( COMPLEX8TimeSeries *series );
@@ -50,6 +51,7 @@ FrVect * XLALFrVectCOMPLEX16FrequencySeries( COMPLEX16FrequencySeries *series );
 int XLALFrameAddCalRef( FrameH *frame, COMPLEX8FrequencySeries *series, int version, double duration );
 int XLALFrameAddREAL8TimeSeriesProcData( FrameH *frame, REAL8TimeSeries *series );
 int XLALFrameAddREAL4TimeSeriesProcData( FrameH *frame, REAL4TimeSeries *series );
+int XLALFrameAddINT4TimeSeriesProcData( FrameH *frame, INT4TimeSeries *series );
 int XLALFrameAddREAL4TimeSeriesSimData( FrameH *frame, REAL4TimeSeries *series );
 int XLALFrameAddREAL4TimeSeriesAdcData( FrameH *frame, REAL4TimeSeries *series );
 

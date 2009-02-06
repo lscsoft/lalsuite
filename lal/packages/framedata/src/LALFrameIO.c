@@ -251,6 +251,30 @@ FrameH * XLALFrameNew( LIGOTimeGPS *epoch, double duration,
 }
 
 
+FrVect * XLALFrVectINT4TimeSeries( INT4TimeSeries *series )
+{
+  static const char *func = "XLALFrVectINT4TimeSeries";
+  char seconds[LALUnitTextSize] = "s";
+  char units[LALUnitTextSize];
+  FrVect *vect;
+
+  if ( NULL == XLALUnitAsString( units, sizeof( units ), &series->sampleUnits ) )
+    XLAL_ERROR_NULL( func, XLAL_EFUNC );
+
+  vect = FrVectNew1D( series->name, FR_VECT_4S, series->data->length, series->deltaT, seconds, units );
+  if ( ! vect )
+    XLAL_ERROR_NULL( func, XLAL_EERR ); /* "internal" error */
+  vect->startX[0] = 0.0;
+
+  memcpy( vect->data, series->data->data, series->data->length * sizeof( *series->data->data ) );
+
+  FrVectCompress (vect, 8, 0);
+  if (vect->compress == 0) FrVectCompress (vect, 6, 1);
+
+  return vect;
+}
+
+
 FrVect * XLALFrVectREAL4TimeSeries( REAL4TimeSeries *series )
 {
   static const char *func = "XLALFrVectREAL4TimeSeries";
@@ -662,6 +686,48 @@ int XLALFrameAddREAL4TimeSeriesProcData( FrameH *frame, REAL4TimeSeries *series 
 	duration = series->deltaT * series->data->length;
 
 	vect = XLALFrVectREAL4TimeSeries( series );
+	if ( ! vect )
+		XLAL_ERROR( func, XLAL_EFUNC );
+
+	proc = FrProcDataNewV( frame, vect );
+	if ( ! proc ) {
+		FrVectFree( vect );
+		XLAL_ERROR( func, XLAL_EERR );
+	}
+
+	/* comment is rcs info of this routine */
+/* 	FrStrCpy( &proc->comment, rcsinfo ); */
+
+	/* time offset: compute this from frame time */
+	frameEpoch.gpsSeconds     = frame->GTimeS;
+	frameEpoch.gpsNanoSeconds = frame->GTimeN;
+	proc->timeOffset = XLALGPSDiff( &series->epoch, &frameEpoch );
+
+	/* remaining metadata */
+	proc->type    = 1;
+	proc->subType = 0;
+	proc->tRange  = duration;
+	proc->fShift  = 0.0;
+	proc->phase   = 0.0;
+	proc->BW      = 0.0;
+
+	return 0;
+}
+
+
+
+int XLALFrameAddINT4TimeSeriesProcData( FrameH *frame, INT4TimeSeries *series )
+{
+	static const char * func = "XLALFrameAddINT4TimeSeriesProcData";
+	char rcsinfo[]  = "$Id$" "$Name$";
+	LIGOTimeGPS frameEpoch;
+	FrProcData *proc;
+	FrVect *vect;
+	REAL8 duration;
+
+	duration = series->deltaT * series->data->length;
+
+	vect = XLALFrVectINT4TimeSeries( series );
 	if ( ! vect )
 		XLAL_ERROR( func, XLAL_EFUNC );
 
