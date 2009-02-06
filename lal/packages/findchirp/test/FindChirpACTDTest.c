@@ -64,7 +64,24 @@ NRCSID (FINDCHIRPAMPCORTESTC,"$Id$");
 #define ORDER    (2)
 #define AMP      (1)
 
-
+#define USAGE "\nUsage: \n\
+ --help                     : Print this message! \n\
+ --overlap                  : Normalises input data \n\
+ --dynrange DYNRANGE        : set the dynamic range \n\
+ --flatpsd                  : Use flat psd \n\
+ --dominant                 : Inject only the domintnat harmonic \n\
+ --h-plus                   : inject only h+\n\
+ --enable-output            : Print output files \n\
+ --tmplt-masses MASS1 MASS2 : Specify template masses \n\
+ --sgnl-masses MASS1 MASS2  : Specify signal masses \n\
+ --iota IOTA                : Specify Inclination \n\
+ --phiC PHIC                : Specify coalescence phase \n\
+ --phi PHI                  : Specify sky angle phi \n\
+ --theta THETA              : Specify sky angle theta \n\
+ --psi PSI                  : Specify polarisation psi \n\
+ --dist DIST                : Specify signal distance \n\
+ --amp-order AMP            : Specify signal amplitude order \n\
+ --phase-order ORDER        : Specify signal phase order \n\n\n"                       
 
 LALStatus status;
 int lalDebugLevel = 1;
@@ -154,6 +171,11 @@ int main( int argc, char **argv )
       arg++;
       overlap = 1;
     }
+    else if ( !strcmp( argv[arg], "--help") )
+		{
+      fprintf(stderr, "%s", USAGE );
+      return;
+		}
     /* Set dynRange */
     else if ( !strcmp( argv[arg], "--dynrange" ) )
     {
@@ -161,7 +183,12 @@ int main( int argc, char **argv )
       {
         arg++;
         dynRange = atof( argv[arg++] );
-      }      
+      }
+			else
+	    {
+        fprintf(stderr, "%s", USAGE );
+        return;
+      }
     }
     /* Use flat psd */
     else if ( !strcmp( argv[arg], "--flatpsd" ) )
@@ -199,7 +226,8 @@ int main( int argc, char **argv )
       else
       {
         arg++;
-        fprintf( stderr, "Wrong Arguments for masses, ignoring!\n" );
+        fprintf(stderr, "%s", USAGE );
+        return;
       }
     }
     /* Set signal mass */
@@ -214,7 +242,8 @@ int main( int argc, char **argv )
       else
       {
         arg++;
-        fprintf( stderr, "Wrong Arguments for masses, ignoring!\n" );
+        fprintf(stderr, "%s", USAGE );
+        return;
       }
     }
     /* Replace data with injected signal */
@@ -234,7 +263,8 @@ int main( int argc, char **argv )
       else
       {
         arg++;
-        fprintf( stderr, "Wrong argument for iota, ignoring!\n" );
+        fprintf(stderr, "%s", USAGE );
+        return;
       }
     }
     /* parse phiC option */
@@ -248,7 +278,8 @@ int main( int argc, char **argv )
       else
       {
         arg++;
-        fprintf( stderr, "Wrong argument for phiC, ignoring!\n" );
+        fprintf(stderr, "%s", USAGE );
+        return;
       }
     }
     /* parse phi option */
@@ -262,7 +293,8 @@ int main( int argc, char **argv )
       else
       {
         arg++;
-        fprintf( stderr, "Wrong argument for phi, ignoring!\n" );
+        fprintf(stderr, "%s", USAGE );
+        return;
       }
     }
     /* parse theta option */
@@ -276,7 +308,8 @@ int main( int argc, char **argv )
       else
       {
         arg++;
-        fprintf( stderr, "Wrong argument for theta, ignoring!\n" );
+        fprintf(stderr, "%s", USAGE );
+        return;
       }
     }
     /* parse psi option */
@@ -290,7 +323,8 @@ int main( int argc, char **argv )
       else
       {
         arg++;
-        fprintf( stderr, "Wrong argument for psi, ignoring!\n" );
+        fprintf(stderr, "%s", USAGE );
+        return;
       }
     }
     /* parse distance option */
@@ -304,7 +338,8 @@ int main( int argc, char **argv )
       else
       {
         arg++;
-        fprintf( stderr, "Wrong argument for dist, ignoring!\n" );
+        fprintf(stderr, "%s", USAGE );
+        return;
       }
     }
     /* parse amp order option */
@@ -318,7 +353,8 @@ int main( int argc, char **argv )
       else
       {
         arg++;
-        fprintf( stderr, "Wrong argument for amp order, ignoring!\n" );
+        fprintf(stderr, "%s", USAGE );
+        return;
       }
     }
     /* parse phase order option */
@@ -332,12 +368,13 @@ int main( int argc, char **argv )
       else
       {
         arg++;
-        fprintf( stderr, "Wrong argument for phase order, ignoring!\n" );
+        fprintf(stderr, "%s", USAGE );
+        return;
       }
     }
     else
     {
-      fprintf( stderr, "!ERROR! Check Arguments\n" );
+      fprintf(stderr, "%s", USAGE );
       return;
     }
   }
@@ -359,14 +396,18 @@ int main( int argc, char **argv )
   /* create some fake data */
   fprintf( stderr, "Making data segment...                  " );
   MakeData( dataSegVec, mass1, mass2, srate, fmin, fmax );
-  fprintf( stderr, "      Done!\n" );  
+	fprintf( stderr, "      Done!\n" );  
 
-  if( flatpsd == 1 )
+  for ( j = 0; j < dataSegVec->data->spec->data->length; ++j )
   {
-    for ( j = 0; j < dataSegVec->data->spec->data->length; ++j )
+    if( flatpsd == 1 )
     {
       dataSegVec->data->spec->data->data[j] = 1.0/dynRange;
     }
+		else
+    {
+     dataSegVec->data->spec->data->data[j] *= 1.0/dynRange;
+	  }		
   }
 
   /* Replace Data with Signal */
@@ -561,8 +602,9 @@ int main( int argc, char **argv )
 
 /*
   tmpltParams->taperTmplt = INSPIRAL_TAPER_STARTEND;
-  tmpltParams->bandPassTmplt = 1;
 */
+  tmpltParams->bandPassTmplt = 0;
+
   fprintf( stderr, "Testing ACTDTemplate...                 " );
 
   LALFindChirpACTDTemplate( &status, filterInput->fcTmplt, &mytmplt, 
@@ -635,6 +677,11 @@ int main( int argc, char **argv )
   if ( overlap == 1 )
   {
     REAL4 invRootData;
+    REAL4 normTest;
+		COMPLEX8Vector normTestVector;
+    
+    normTestVector.length = fcSegVec->data->data->data->length;
+    normTestVector.data = fcSegVec->data->data->data->data;
 
     memset( fcSegVec->data->segNorm->data, 0,
       fcSegVec->data->segNorm->length * sizeof(REAL4) );
@@ -666,15 +713,30 @@ int main( int argc, char **argv )
     fprintf( stderr, "  segNormSum = %1.3e\n", segNormSum );
     segNormSum *= 4.0 / ( numPoints ) * dt;
     fprintf( stderr, "  segNormSum = %1.3e\n", segNormSum );
-    fprintf( stderr, "                                              Done!\n" );  
 
-    invRootData = pow( segNormSum, -0.5 );
+    normTest = XLALFindChirpACTDInnerProduct( &normTestVector, 
+		                                          &normTestVector,
+		                                          dataParams->wtildeVec->data, 
+																							40.,
+																							fcSegVec->data->data->deltaF );
+
+    invRootData = pow( normTest, -0.5 );
 
     for ( j = 0;  j < fcSegVec->data->data->data->length; ++j )
     {
       fcSegVec->data->data->data->data[j].re *= invRootData;
-      fcSegVec->data->data->data->data[j].im *= invRootData;
+			fcSegVec->data->data->data->data[j].im *= invRootData;
     }
+
+
+		normTest = XLALFindChirpACTDInnerProduct( &normTestVector, 
+		                                          &normTestVector,
+		                                          dataParams->wtildeVec->data, 
+																							40.,
+																							fcSegVec->data->data->deltaF );
+
+    fprintf( stderr, "   < data, data > = %1.3e\n", normTest );
+    fprintf( stderr, "                                              Done!\n" );  
   }
 
   if( output == 1 )
@@ -929,11 +991,14 @@ int MakeData(
     {
       LALLIGOIPsd(&status, &psd, f);
       dataSegVec->data->spec->data->data[k] = psd;
+      fprintf(stdout, "%e\n",psd);
     }
     else
     {
       dataSegVec->data->spec->data->data[k] = psdfs;
+      fprintf(stdout, "%e\n",psdfs);
     }
+  
 
     dataSegVec->data->resp->data->data[k].re = 1;
     dataSegVec->data->resp->data->data[k].im = 0;
