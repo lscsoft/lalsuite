@@ -257,6 +257,7 @@ FrCache *XLALAggregationFrameCache(CHAR *ifo, LIGOTimeGPS *start, INT4 length)
   if (type == NULL)
   {
     /* failed to determine type */
+    XLALFrDestroyCache(cache);
     XLAL_ERROR_NULL(func, XLAL_EINVAL);
   }
 
@@ -278,6 +279,7 @@ FrCache *XLALAggregationFrameCache(CHAR *ifo, LIGOTimeGPS *start, INT4 length)
     if (url == NULL)
     {
       /* failed to determine url */
+      XLALFrDestroyCache(cache);
       XLAL_ERROR_NULL(func, XLAL_EINVAL);
     }
 
