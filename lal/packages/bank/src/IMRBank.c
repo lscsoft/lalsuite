@@ -1458,13 +1458,13 @@ static int addtemplatesMass(REAL8 mbox[3],
   NN = metric.data[2][2]-metric.data[0][2]*metric.data[0][2]/metric.data[0][0];
   IMRcnt++;
   fprintf(stderr, "added template %d\n",IMRcnt);
-  (*head)->mass1 = m1;
-  (*head)->mass2 = m2;
+  (*head)->mass1 = m1 / LAL_MTSUN_SI;
+  (*head)->mass2 = m2 / LAL_MTSUN_SI;
   (*head)->tau0 = metric.tau0;
   (*head)->tau3 = metric.tau3;
   /*printmetric(&metric,FP);*/
   (*head)->eta = eta(m1,m2);
-  (*head)->mchirp = pow(m1*m2,0.6)/pow(m1+m2,0.2);
+  (*head)->mchirp = pow(m1*m2,0.6)/pow(m1+m2,0.2) / LAL_MTSUN_SI;
   (*head)->Gamma[0] = metric.data[0][0];
   (*head)->Gamma[1] = metric.data[0][1];
   (*head)->Gamma[2] = metric.data[0][2];
@@ -1520,7 +1520,6 @@ static int normalize_psd(InspiralCoarseBankIn *in)
   for (i=0; i<vec->length; i++)
     {
     f = i*in->shf.deltaF;
-    fprintf(FPa,"%e %e\n", f, vec->data[i]);
     vec->data[i] *= 10e48;
     }
   return 0;
