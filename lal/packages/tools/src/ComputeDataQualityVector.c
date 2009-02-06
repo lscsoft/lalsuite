@@ -32,8 +32,9 @@ RCSID("$Id$");
  *
  * State vector channel: IFO:DMT-STATE_VECTOR
  *
- * Bits 0-4 define the states. bits 5-15 are always set to 1, such
- * that the word 0xffff means science mode:
+ * The data type is float(!) so they have to be first converted to int.
+ * Then, bits 0-4 define the states. Bits 5-15 are always set to 1,
+ * such that the word 0xffff means science mode:
  *
  * bit0=SCI (operator set to go to science mode)
  * bit1=CON conlog unsets this bit is non-harmless epics changes
@@ -54,14 +55,14 @@ RCSID("$Id$");
  * CALIBRATED    8  // SV_UP & LIGHT & (not TRANSIENT)
  * BADGAMMA     16  // Calibration is bad (outside 0.8 < gamma < 1.2)
  * LIGHT        32  // Light in the arms ok
- * MISSING     128  // Indication that data was dropped in DMT
+ * MISSING      64  // Indication that data was dropped in DMT
  *
  * All the arrays must have been previously allocated.
  * n_x is the number of x_value(s) that are in a single DQ sample (=
  * x.length/n_dq).
  */
-int XLALComputeDQ(int* sv_data, int n_sv,
-                  float* lax_data, float* lay_data, int n_light,
+int XLALComputeDQ(REAL4* sv_data, int n_sv,
+                  REAL4* lax_data, REAL4* lay_data, int n_light,
                   COMPLEX16* gamma_data, int n_gamma,
                   int transient, int missing,
                   int* dq_data, int n_dq)  /* output */
@@ -73,7 +74,7 @@ int XLALComputeDQ(int* sv_data, int n_sv,
     int calibrated;
     int badgamma;
     int dq_value;
-    
+
     /* Fill one by one the contents of the DQ vector */
     for (i = 0; i < n_dq; i++) {
         /* light */
@@ -91,9 +92,10 @@ int XLALComputeDQ(int* sv_data, int n_sv,
         injection = 0;  /* with no injection going on */
         up = 1;         /* and IFO is up */
         for (j = 0; j < n_sv; j++) {
-            if ((sv_data[i*n_sv + j] & (1 << 0)) != 1)  science = 0;
-            if ((sv_data[i*n_sv + j] & (1 << 3)) != 1)  injection = 1;
-            if ((sv_data[i*n_sv + j] & (1 << 2)) != 1)  up = 0;
+            int s = (int) sv_data[i*n_sv + j];  /* convert from float to int */
+            if ((s & (1 << 0)) != 1)  science = 0;
+            if ((s & (1 << 3)) != 1)  injection = 1;
+            if ((s & (1 << 2)) != 1)  up = 0;
         }
         
         up = up && light;  /* this is the "up" definition of the DQ vector */

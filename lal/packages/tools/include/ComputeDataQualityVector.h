@@ -30,8 +30,8 @@ extern "C" {
 #pragma } /** to match the previous brace **/
 #endif
 
-int XLALComputeDQ(int* sv_data, int n_sv,
-                  float* lax_data, float* lay_data, int n_light,
+int XLALComputeDQ(REAL4* sv_data, int n_sv,
+                  REAL4* lax_data, REAL4* lay_data, int n_light,
                   COMPLEX16* gamma_data, int n_gamma,
                   int transient, int missing,
                   int* dq_data, int n_dq);
