@@ -494,6 +494,7 @@ void LALappsTrackSearchInitialize(
       {"zlength",             required_argument,  0,    'R'},
       {"remove_line",         required_argument,  0,    'S'},
       {"max_harmonics",       required_argument,  0,    'T'},
+      {"snr",                 required_argument,  0,    'U'},
       {0,                     0,                  0,      0}
     };
   
@@ -527,6 +528,7 @@ void LALappsTrackSearchInitialize(
   params->LinePThresh =-1; /* We choose invalid values to check incoming args*/
   params->MinPower = 0;
   params->MinLength = 0;
+  params->MinSNR = 0;
   params->GPSstart.gpsSeconds = 0;
   params->GPSstart.gpsNanoSeconds = 0;
   /* 
@@ -1051,6 +1053,12 @@ void LALappsTrackSearchInitialize(
 	case 'T':
 	  {
 	    params->maxHarmonics=atoi(optarg);
+	  }
+	  break;
+
+	case 'U':
+	  {
+	    params->MinSNR=atof(optarg);
 	  }
 	  break;
 
@@ -1878,6 +1886,7 @@ void LALappsDoTrackSearch(
   outputCurves.numberOfCurves=0;
   outputCurves.minPowerCut=params.MinPower;
   outputCurves.minLengthCut=params.MinLength;
+  outputCurves.minSNRCut=params.MinSNR;
   outputCurves.startThreshCut=tsInputs.high;
   outputCurves.linePThreshCut=tsInputs.low;
 
@@ -1898,10 +1907,12 @@ void LALappsDoTrackSearch(
   if (params.autoLambda)
     {
       /* Do the calculate of Lh given parameters */
-      /* Just pending inclussion of gaussian integral */
       lal_errhandler = LAL_ERR_RTRN;
-      errCode = LAL_CALL( LALTracksearchFindLambda(status,*tfmap,&params),
+      /*      errCode = LAL_CALL( LALTracksearchFindLambdaMean(status,*tfmap,&params),
+	      status);*/
+      errCode = LAL_CALL( LALTracksearchFindLambdaMedian(status,*tfmap,&params),
 			  status);
+
       if ( errCode != 0 )
 	{
 	  fprintf(stderr,"Error calling automagic Lambda selection routine.\n");
@@ -2022,6 +2033,7 @@ void LALappsDoTrackSearch(
    */
   outputCurvesThreshold.minPowerCut=params.MinPower;
   outputCurvesThreshold.minLengthCut=params.MinLength;
+  outputCurvesThreshold.minSNRCut=params.MinSNR;
   outputCurvesThreshold.startThreshCut=tsInputs.high;
   outputCurvesThreshold.linePThreshCut=tsInputs.low;
   /* 
