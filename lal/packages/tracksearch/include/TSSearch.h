@@ -166,6 +166,7 @@ extern "C" {
     BOOLEAN           autoLambda;/*Bool flag to track auto Lh state */
     INT4              MinLength;/*Minimum length of a curve*/
     REAL4             MinPower;/*Minimum Power in a curve*/
+    REAL4             MinSNR;/*minimum estimate SNR to accept*/
     UINT4             overlapFlag;/*
 				   * Number of points to overlap the
 				   * individual data segments by. This

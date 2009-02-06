@@ -152,12 +152,17 @@ tagTSWhitenParams
  * Routine to determine the best Lh and set Ll given Lrelative.  
  */
 void
-LALTracksearchFindLambda(
-			 LALStatus                *status,
-			 TimeFreqRep               map,
-			 TSSearchParams           *searchParams
-			 );
-
+LALTracksearchFindLambdaMean(
+			     LALStatus                *status,
+			     TimeFreqRep               map,
+			     TSSearchParams           *searchParams
+			     );
+void
+LALTracksearchFindLambdaMedian(
+			       LALStatus                *status,
+			       TimeFreqRep               map,
+			       TSSearchParams           *searchParams
+			       );
 /*
  * Routine to break up time series input and make a collection of 
  * segments which overlap by the overlap(points) parameter
