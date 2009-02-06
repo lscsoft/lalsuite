@@ -265,9 +265,6 @@ FrCache *XLALAggregationFrameCache(CHAR *ifo, LIGOTimeGPS *start, INT4 length)
   gps.gpsSeconds = start->gpsSeconds;
   gps.gpsNanoSeconds = start->gpsNanoSeconds;
 
-  /* initialise counter */
-  i = 0;
-
   /* determine list of frames */
   do
   {
