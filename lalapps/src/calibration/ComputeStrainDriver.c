@@ -20,7 +20,7 @@
 /*********************************************************************************/
 /*                         Driver for calibration function                       */
 /*                                                                               */
-/*                                  X. Siemens                                   */
+/*         X. Siemens ideas & implementation, J. Burguet-Castell bugs            */
 /*                                                                               */
 /*                               UWM - August 2004                               */
 /*********************************************************************************/
@@ -60,6 +60,7 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <lal/FrameStream.h>
 #include <lal/Window.h>
 #include <lal/Calibration.h>
+#include <lal/ComputeDataQualityVector.h>
 #include <lal/LALConstants.h>
 #include <lal/BandPassTimeSeries.h>
 #include <lal/LALStdlib.h>
@@ -120,6 +121,9 @@ struct CommandLineArgsTag {
   char *darm_chan;         /* darm channel name */ 
   char *darmerr_chan;      /* darm_err  channel name */ 
   char *asq_chan;          /* asq channel name */
+  char *sv_chan;           /* state vector channel name */
+  char *lax_chan;          /* light in x-arm channel name */
+  char *lay_chan;          /* light in y-arm channel name */
   char *filterfile;        /* file with filter coefficients */
   char *frametype;
   char *strainchannel;
@@ -138,6 +142,12 @@ StrainIn InputData;
 StrainOut OutputData;
 INT4 duration;
 LIGOTimeGPS gpsStartepoch;
+
+REAL4TimeSeries StateVector;
+REAL4TimeSeries LAX;
+REAL4TimeSeries LAY;
+
+INT4TimeSeries OutputDQ;  /* data quality */
 
 static LALStatus status;
 INT4 lalDebugLevel=0;
@@ -202,8 +212,22 @@ int main(int argc,char *argv[])
 
   if (XLALReadFiltersFile(CommandLineArgs.filterfile, &InputData)) return 3;
 
+  /*********************/
+  /* **** a function must be added here *********** */
+          /* **** check the times when we are not in science mode
+                  (on+light) and mark as transient any data calibrated
+                  using non-science mode time ***********/
+  /*********************/
+
+
   LALComputeStrain(&status, &OutputData, &InputData);
   TESTSTATUS( &status );
+
+  XLALComputeDQ(StateVector.data->data, StateVector.data->length,
+                LAX.data->data, LAY.data->data, LAX.data->length,
+                OutputData.alphabeta.data->data, OutputData.alphabeta.data->length,
+                0, 0,
+                OutputDQ.data->data, OutputDQ.data->length);
 
   if (WriteFrame(argc,argv,CommandLineArgs)) return 4;
        
@@ -248,6 +272,7 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
   char gammaName[] = "Xn:CAL-OLOOP_FAC";
   char alphaimName[] = "Xn:CAL-CAV_FAC_Im";
   char gammaimName[] = "Xn:CAL-OLOOP_FAC_Im";
+  char dqName[] = "Xn:DMT-DATA_QUALITY_VECTOR";
 
   /*re-size h(t) and data time series*/
   LALResizeREAL8TimeSeries(&status, &(OutputData.h), (int)(InputData.wings/OutputData.h.deltaT),
@@ -263,6 +288,16 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
 			   OutputData.alphabeta.data->length-2*(UINT4)(InputData.wings/OutputData.alphabeta.deltaT));
   TESTSTATUS( &status );
 
+  /* Resize State Vector and Data Quality time series */
+  LALResizeREAL4TimeSeries(&status, &(StateVector), (int)(InputData.wings/StateVector.deltaT),
+               StateVector.data->length-2*(UINT4)(InputData.wings/StateVector.deltaT));  /* safe for the *input* state vector?? */
+  TESTSTATUS( &status );
+  LALResizeINT4TimeSeries(&status, &(OutputDQ), (int)(InputData.wings/OutputDQ.deltaT),
+			   OutputDQ.data->length-2*(UINT4)(InputData.wings/OutputDQ.deltaT));
+  TESTSTATUS( &status );
+  strncpy(OutputDQ.name,
+          memcpy(dqName, OutputData.h.name, 2), sizeof( OutputDQ.name  ) );
+
   /* Resize DARM_CTRL, DARM_ERR, EXC and AS_Q*/
   LALResizeREAL4TimeSeries(&status, &(InputData.DARM), (int)(InputData.wings/InputData.DARM.deltaT),
 			   InputData.DARM.data->length-2*(UINT4)(InputData.wings/InputData.DARM.deltaT));
@@ -276,7 +311,7 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
   LALResizeREAL4TimeSeries(&status, &(InputData.AS_Q), (int)(InputData.wings/InputData.AS_Q.deltaT),
 			   InputData.AS_Q.data->length-2*(UINT4)(InputData.wings/InputData.AS_Q.deltaT));
   TESTSTATUS( &status );
-  
+
   /* Names for factors time series */
   memcpy( alphaName, OutputData.h.name, 2 );
   memcpy( gammaName, OutputData.h.name, 2 );
@@ -349,6 +384,12 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
 
   /* Add in the h(t) data */
   XLALFrameAddREAL8TimeSeriesProcData( frame, &OutputData.h);
+
+  /* Add in the state vector data */
+  XLALFrameAddREAL4TimeSeriesProcData( frame, &StateVector);
+
+  /* Add in the data quality data */
+  XLALFrameAddINT4TimeSeriesProcData( frame, &OutputDQ);
 
   /* write level 2 frame */
   {
@@ -536,16 +577,25 @@ static FrChanIn chanin_darm;
 static FrChanIn chanin_darmerr;
 static FrChanIn chanin_asq;
 static FrChanIn chanin_exc;
+static FrChanIn chanin_sv;   /* state vector */
+static FrChanIn chanin_lax;  /* light in x-arm */
+static FrChanIn chanin_lay;  /* light in y-arm */
 
   chanin_asq.type  = ADCDataChannel;
   chanin_darm.type = ADCDataChannel;
   chanin_darmerr.type = ADCDataChannel;
   chanin_exc.type  = ADCDataChannel;
+  chanin_sv.type  = ADCDataChannel;
+  chanin_lax.type  = ADCDataChannel;
+  chanin_lay.type  = ADCDataChannel;
 
   chanin_asq.name  = CLA.asq_chan;
   chanin_darm.name = CLA.darm_chan;
   chanin_darmerr.name = CLA.darmerr_chan;
   chanin_exc.name  = CLA.exc_chan; 
+  chanin_sv.name  = CLA.sv_chan;
+  chanin_lax.name  = CLA.lax_chan;
+  chanin_lay.name  = CLA.lay_chan;
 
   /* create Frame cache, open frame stream and delete frame cache */
   LALFrCacheImport(&status,&framecache,CommandLineArgs.FrCacheFile);
@@ -574,6 +624,12 @@ static FrChanIn chanin_exc;
   TESTSTATUS( &status );
   LALFrGetREAL4TimeSeries(&status,&InputData.DARM_ERR,&chanin_darmerr,framestream);
   TESTSTATUS( &status );
+  LALFrGetREAL4TimeSeries(&status,&StateVector,&chanin_sv,framestream);
+  TESTSTATUS( &status );
+  LALFrGetREAL4TimeSeries(&status,&LAX,&chanin_lax,framestream);
+  TESTSTATUS( &status );
+  LALFrGetREAL4TimeSeries(&status,&LAY,&chanin_lay,framestream);
+  TESTSTATUS( &status );
 
   /* Allocate space for data vectors */
   LALSCreateVector(&status,&InputData.AS_Q.data,(UINT4)(duration/InputData.AS_Q.deltaT +0.5));
@@ -583,6 +639,12 @@ static FrChanIn chanin_exc;
   LALSCreateVector(&status,&InputData.DARM_ERR.data,(UINT4)(duration/InputData.DARM_ERR.deltaT +0.5));
   TESTSTATUS( &status );
   LALSCreateVector(&status,&InputData.EXC.data,(UINT4)(duration/InputData.EXC.deltaT +0.5));
+  TESTSTATUS( &status );
+  LALSCreateVector(&status,&StateVector.data,(UINT4)(duration/StateVector.deltaT +0.5));
+  TESTSTATUS( &status );
+  LALSCreateVector(&status,&LAX.data,(UINT4)(duration/LAX.deltaT +0.5));
+  TESTSTATUS( &status );
+  LALSCreateVector(&status,&LAY.data,(UINT4)(duration/LAX.deltaT +0.5));
   TESTSTATUS( &status );
 
   /* Read in the data */
@@ -604,6 +666,21 @@ static FrChanIn chanin_exc;
   LALFrSetPos(&status,&pos1,framestream);
   TESTSTATUS( &status );
   LALFrGetREAL4TimeSeries(&status,&InputData.EXC,&chanin_exc,framestream);
+  TESTSTATUS( &status );
+
+  LALFrSetPos(&status,&pos1,framestream);
+  TESTSTATUS( &status );
+  LALFrGetREAL4TimeSeries(&status,&StateVector,&chanin_sv,framestream);
+  TESTSTATUS( &status );
+
+  LALFrSetPos(&status,&pos1,framestream);
+  TESTSTATUS( &status );
+  LALFrGetREAL4TimeSeries(&status,&LAX,&chanin_lax,framestream);
+  TESTSTATUS( &status );
+
+  LALFrSetPos(&status,&pos1,framestream);
+  TESTSTATUS( &status );
+  LALFrGetREAL4TimeSeries(&status,&LAY,&chanin_lay,framestream);
   TESTSTATUS( &status );
 
   LALFrClose(&status,&framestream);
@@ -658,6 +735,11 @@ static FrChanIn chanin_exc;
   LALZCreateVector(&status,&OutputData.beta.data,(UINT4)(duration/OutputData.beta.deltaT +0.5));
   TESTSTATUS( &status );
 
+  OutputDQ.epoch=StateVector.epoch;
+  OutputDQ.deltaT=1;  /* Data Quality channel written at 1 Hz */
+  LALI4CreateVector(&status,&OutputDQ.data,(UINT4)(duration/OutputDQ.deltaT +0.5));
+  TESTSTATUS( &status );
+
   return 0;
 }
 
@@ -677,6 +759,9 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     {"asq-channel",         required_argument, NULL,           'A'},
     {"darm-channel",        required_argument, NULL,           'D'},
     {"darmerr-channel",     required_argument, NULL,           'R'},
+    {"sv-channel",          required_argument, NULL,           'V'},
+    {"lax-channel",         required_argument, NULL,           'L'},
+    {"lay-channel",         required_argument, NULL,           'Y'},
     {"gps-start-time",      required_argument, NULL,           's'},
     {"gps-end-time",        required_argument, NULL,           'e'},
     {"olg-re",              required_argument, NULL,           'i'},
@@ -715,6 +800,9 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   CLA->darm_chan=NULL;
   CLA->darmerr_chan=NULL;
   CLA->asq_chan=NULL;
+  CLA->sv_chan=NULL;
+  CLA->lax_chan=NULL;
+  CLA->lay_chan=NULL;
   CLA->GPSStart=0;
   CLA->GPSEnd=0;
   CLA->G0Re=0.0;
@@ -784,6 +872,18 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     case 'R':
       /* name of darm err channel */
       CLA->darmerr_chan=optarg;
+      break;    
+    case 'V':
+      /* name of state vector channel */
+      CLA->sv_chan=optarg;
+      break;    
+    case 'L':
+      /* name of light in x-arm channel */
+      CLA->lax_chan=optarg;
+      break;   
+    case 'Y':
+      /* name of light in y-arm channel */
+      CLA->lay_chan=optarg;
       break;    
     case 's':
       /* GPS start */
@@ -888,6 +988,9 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stdout,"\texc-channel (-E)\tSTRING\t Excitation channel name (eg, L1:LSC-ETMX_EXC_DAQ).\n");
       fprintf(stdout,"\tdarm-channel (-D)\tSTRING\t Darm channel name (eg, L1:LSC-DARM_CTRL).\n");
       fprintf(stdout,"\tdarmerr-channel (-R)\tSTRING\t Darm ERR channel name (eg, L1:LSC-DARM_ERR).\n");
+      fprintf(stdout,"\tsv-channel (-V)\tSTRING\t State Vector channel name (eg, L1:IFO-SV_STATE_VECTOR).\n");
+      fprintf(stdout,"\tlax-channel (-L)\tSTRING\t Light in X-arm channel name (eg, L1:LSC-LA_PTRX_NORM).\n");
+      fprintf(stdout,"\tlay-channel (-Y)\tSTRING\t Light in Y-arm channel name (eg, L1:LSC-LA_PTRY_NORM).\n");
       fprintf(stdout,"\twings (-o)\tINTEGER\t Size of wings in seconds.\n");
       fprintf(stdout,"\ttest-sensing (-r)\tFLAG\t Output residual strain only.\n");
       fprintf(stdout,"\ttest-actuation (-c)\tFLAG\t Output control strain only.\n");
@@ -987,6 +1090,24 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stderr,"Try ./ComputeStrainDriver -h \n");
       return 1;
     }      
+   if(CLA->sv_chan == NULL)
+    {
+      fprintf(stderr,"No state vector channel specified.\n");
+      fprintf(stderr,"Try ./ComputeStrainDriver -h \n");
+      return 1;
+    }      
+   if(CLA->lax_chan == NULL)
+    {
+      fprintf(stderr,"No light in x-arm channel specified.\n");
+      fprintf(stderr,"Try ./ComputeStrainDriver -h \n");
+      return 1;
+    }      
+   if(CLA->lay_chan == NULL)
+    {
+      fprintf(stderr,"No light in y-arm  channel specified.\n");
+      fprintf(stderr,"Try ./ComputeStrainDriver -h \n");
+      return 1;
+    }      
    if(CLA->darmerr_chan == NULL)
     {
       fprintf(stderr,"No darm err channel specified.\n");
@@ -1064,6 +1185,12 @@ int FreeMem(void)
   TESTSTATUS( &status );
   LALSDestroyVector(&status,&InputData.EXC.data);
   TESTSTATUS( &status );
+  LALSDestroyVector(&status,&StateVector.data);
+  TESTSTATUS( &status );
+  LALSDestroyVector(&status,&LAX.data);
+  TESTSTATUS( &status );
+  LALSDestroyVector(&status,&LAY.data);
+  TESTSTATUS( &status );
 
   /* Free filters */
   LALDDestroyVector(&status,&InputData.Cinv->directCoef);
@@ -1110,6 +1237,8 @@ int FreeMem(void)
   LALZDestroyVector(&status,&OutputData.beta.data);
   TESTSTATUS( &status );
   LALZDestroyVector(&status,&OutputData.alphabeta.data);
+  TESTSTATUS( &status );
+  LALI4DestroyVector(&status,&OutputDQ.data);
   TESTSTATUS( &status );
 
   LALCheckMemoryLeaks();
