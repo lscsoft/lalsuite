@@ -586,10 +586,6 @@ void LALBBHPhenTimeDomEngine( LALStatus        *status,
     /* compute the instantaneous frequency */
     if (f) XLALComputeInstantFreq(f, signal1, signal2, dt); 
 
-    /* cut the waveform at the low freq given by */
-    signal1 = XLALCutAtFreq( signal1, f, params->fLower, dt);
-    signal2 = XLALCutAtFreq( signal2, f, params->fLower, dt);
-
     /* allocate memory for the temporary phase vector */
     n = signal1->length;
     if (phiOut) phi = XLALCreateREAL8Vector(n);
@@ -626,6 +622,20 @@ void LALBBHPhenTimeDomEngine( LALStatus        *status,
             h->data[k] = z2 * signal2->data[i];
         }
      }
+
+    /* if the instantaneous amplitude is less than 1/1000 of the peak amplitude, set the 
+     * instantaneous freq to be zero. This frequency estimation can very well be corrput due
+     * to the very low amplitude of the signal, and is dominated by noise arising from the 
+     * edge effects */
+    for (i=0; i< f->length; i++) {
+        if (a->data[i] < 1.0e-3*peakAmp) {
+            f->data[i] = 0.0;
+        }
+    }
+
+    /* cut the waveform at the low freq given by */
+    signal1 = XLALCutAtFreq( signal1, f, params->fLower, dt);
+    signal2 = XLALCutAtFreq( signal2, f, params->fLower, dt);
 
     /* unwrap the phase */
     if (phiOut) {
