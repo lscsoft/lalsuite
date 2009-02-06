@@ -236,7 +236,7 @@ FrCache *XLALAggregationFrameCache(CHAR *ifo, LIGOTimeGPS *start, INT4 length)
 
   /* determine number of frames */
   gps.gpsSeconds = start->gpsSeconds + length;
-  gps.gpsNanoSeconds = 0;
+  gps.gpsNanoSeconds = start->gpsNanoSeconds;
   frame_start = return_frame_start(start);
   last_frame_start = return_frame_start(&gps);
   frame_duration = (last_frame_start + ONLINE_FRAME_DURATION) - frame_start;
