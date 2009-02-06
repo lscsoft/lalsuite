@@ -7,6 +7,7 @@ pkginclude_HEADERS = FindChirpDatatypes.h \
                      FindChirpChisq.h \
                      FindChirpSP.h \
                      FindChirpTD.h \
+                     FindChirpACTD.h \
                      FindChirpBCV.h \
                      FindChirpPTF.h \
                      FindChirpBCVSpin.h \

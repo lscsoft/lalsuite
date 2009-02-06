@@ -361,6 +361,7 @@ tagFindChirpTmpltParams
   REAL4                         fLow;
   REAL4                         dynRange;
   REAL4Vector                  *xfacVec;
+  REAL4VectorSequence          *ACTDVecs;
   REAL4VectorSequence          *PTFQ;
   REAL4Vector                  *PTFphi;
   REAL4Vector                  *PTFomega_2_3;
@@ -515,6 +516,8 @@ tagFindChirpFilterParams
   COMPLEX8Vector               *qtildeVecBCV;
   COMPLEX8Vector               *qtildeVecBCVSpin1;
   COMPLEX8Vector               *qtildeVecBCVSpin2;
+  COMPLEX8Vector              **qVecACTD;
+  COMPLEX8Vector              **qtildeVecACTD;
   COMPLEX8VectorSequence       *PTFqVec;
   COMPLEX8Vector               *PTFsnrVec;
   REAL4Array                   *PTFA;

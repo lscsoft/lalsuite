@@ -138,6 +138,7 @@ LALFindChirpChisqVetoInit (
     case EOBNR:
     case BCV:
     case BCVSpin:
+    case AmpCorPPN:
       break;
     default:
       ABORT( status, FINDCHIRPCHISQH_EUAPX, FINDCHIRPCHISQH_MSGEUAPX );
@@ -326,6 +327,7 @@ LALFindChirpChisqVetoFinalize (
     case EOBNR:
     case BCV:
     case BCVSpin:
+    case AmpCorPPN:
       break;
     default:
       ABORT( status, FINDCHIRPCHISQH_EUAPX, FINDCHIRPCHISQH_MSGEUAPX );

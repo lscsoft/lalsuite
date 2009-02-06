@@ -519,6 +519,7 @@ LALCreateFindChirpSegmentVector (
     case FindChirpPTF:
     case BCV:
     case BCVSpin:
+    case AmpCorPPN:
       break;
     default:
       ABORT( status, FINDCHIRPH_EUAPX, FINDCHIRPH_MSGEUAPX );

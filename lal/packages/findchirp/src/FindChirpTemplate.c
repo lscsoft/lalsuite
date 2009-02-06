@@ -79,6 +79,7 @@ LALDestroyVector()
 #include <lal/DataBuffer.h>
 #include <lal/LALInspiral.h>
 #include <lal/FindChirp.h>
+#include <lal/FindChirpACTD.h>
 
 
 NRCSID (FINDCHIRPTEMPLATEC, "$Id$");
@@ -234,6 +235,26 @@ LALFindChirpTemplateInit (
 
       break;
 
+    case AmpCorPPN:
+      /* create workspace memory for the time-domain Q vectors */
+      outputPtr->ACTDVecs = 
+                      XLALCreateVectorSequence( NACTDVECS, params->numPoints );
+      if ( ! outputPtr->ACTDVecs )
+      {
+        ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
+      }
+
+      /* create a forward FFT plan */
+      outputPtr->fwdPlan = 
+        XLALCreateForwardREAL4FFTPlan( params->numPoints, 0 );
+      if ( ! outputPtr->fwdPlan )
+      {
+        ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
+      }
+
+      break;
+      
+
     default:
       /* unknown approximant type */
       LALFree( outputPtr );
@@ -320,6 +341,12 @@ LALFindChirpTemplateFinalize (
   if ( outputPtr->PTFe2 )
   {
     XLALDestroyVectorSequence( outputPtr->PTFe2 );
+  }
+ 
+  /* destroy ACTD vectors if they exist */
+  if ( outputPtr->ACTDVecs )
+  {
+    XLALDestroyVectorSequence( outputPtr->ACTDVecs );
   }
  
   

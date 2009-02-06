@@ -108,6 +108,7 @@ LALFindChirpDataInit (
     case FindChirpPTF:
     case BCV:
     case BCVSpin:
+    case AmpCorPPN:
       break;
     default:
       ABORT( status, FINDCHIRPH_EUAPX, FINDCHIRPH_MSGEUAPX );
@@ -513,7 +514,6 @@ LALFindChirpDataFinalize (
 
   LALCDestroyVector (status->statusPtr, &dataParamPtr->wtildeVec);
   CHECKSTATUSPTR (status);
-
   LALDestroyVector (status->statusPtr, &dataParamPtr->tmpltPowerVec);
   CHECKSTATUSPTR (status);
 
