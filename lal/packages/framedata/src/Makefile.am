@@ -1,7 +1,7 @@
 ## Process this file with automake to produce Makefile.in
 OLDFRAMEDATASOURCES = FrameData.c SpecBuffer.c DataBuffer.c
 FRAMEDATASOURCES = LALFrameIO.c FrameStream.c FrameCache.c FrameStreamDef.h \
-                   FrameCalibration.c
+                   FrameCalibration.c Aggregation.c
 
 if FRAME
 lib_LTLIBRARIES = liblalframe.la
