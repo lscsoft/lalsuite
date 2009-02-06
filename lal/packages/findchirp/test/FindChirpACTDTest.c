@@ -685,34 +685,18 @@ int main( int argc, char **argv )
 
     memset( fcSegVec->data->segNorm->data, 0,
       fcSegVec->data->segNorm->length * sizeof(REAL4) );
-    segNormSum = 0.0;
 
-    for ( j = 1; j < fcSegVec->data->data->data->length; ++j )
+    if ( dominant == 1 )
     {
-  	  REAL4 re;
-  	  REAL4 im;
-  		REAL4 power;
-
-      if ( dominant == 1 )
-  	  {
-        re = fcSegVec->data->data->data->data[j].re = 
+		  for ( j = 1; j < fcSegVec->data->data->data->length; ++j )
+      {
+        fcSegVec->data->data->data->data[j].re = 
                filterInput->fcTmplt->ACTDtilde->data[j + 0*(numPoints/2+1) ].re;
-        im = fcSegVec->data->data->data->data[j].im = 
+        fcSegVec->data->data->data->data[j].im = 
                filterInput->fcTmplt->ACTDtilde->data[j + 0*(numPoints/2+1) ].im;
       }
-  		else
-  		{
-        re = fcSegVec->data->data->data->data[j].re;
-        im = fcSegVec->data->data->data->data[j].im;
-  		}
-
-  		power = re * re + im * im;
-      segNormSum += power * dataParams->wtildeVec->data[j].re;
     }
     fprintf( stderr, "Normalising input data for overlap...\n" );
-    fprintf( stderr, "  segNormSum = %1.3e\n", segNormSum );
-    segNormSum *= 4.0 / ( numPoints ) * dt;
-    fprintf( stderr, "  segNormSum = %1.3e\n", segNormSum );
 
     normTest = XLALFindChirpACTDInnerProduct( &normTestVector, 
 		                                          &normTestVector,
