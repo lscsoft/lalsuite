@@ -8,7 +8,6 @@
 #include <lal/LIGOMetadataTables.h>
 #include <lal/IMRBank.h>
 
-int IMRcnt = 0;
 /* This function sets the pointers of the cumulative noise moment arrays to 
  * zero */
 static REAL8 eta(REAL8 m1, REAL8 m2)
@@ -45,7 +44,6 @@ static int XLALCreateIMRBankCumulativeNoiseMoments(IMRBankCumulativeNoiseMoments
 /* This function computes the negative noise moment integrals */
 static int computeMinusMoment(IMRBankCumulativeNoiseMoments *moments, INT4 power, UINT4 logFlag)
   {
-  char outfile[25]; 
   REAL8FrequencySeries *psd = moments->psd;
   UINT4 length = psd->data->length;
   REAL8 deltaF = psd->deltaF;
@@ -68,7 +66,6 @@ static int computeMinusMoment(IMRBankCumulativeNoiseMoments *moments, INT4 power
       moments->minus3[-power]->data[j]=moments->minus3[-power]->data[j-1];
       }
     }
-  fprintf(stderr, "minus moment %d %e\n", power, moments->minus3[-power]->data[length-1]);
   return 0;
   }
 
@@ -100,7 +97,6 @@ static int computePlusMoment(IMRBankCumulativeNoiseMoments *moments, INT4 power,
       moments->plus3[power]->data[j]=moments->plus3[power]->data[j-1];
       }
     }
-  fprintf(stderr, "plus moment %d %e\n", power,moments->plus3[power]->data[length-1]);
   return 0;
   }
 
@@ -135,7 +131,6 @@ static int computePlusLogMoment(IMRBankCumulativeNoiseMoments *moments, INT4 pow
       moments->logplus3[power]->data[j]=moments->logplus3[power]->data[j-1];
       }
     }
-  fprintf(stderr, "logplus moment %d %e\n", power, moments->logplus3[power]->data[length-1]);
   return 0;
   }
 
@@ -170,7 +165,6 @@ static int computeMinusLogMoment(IMRBankCumulativeNoiseMoments *moments, INT4 po
       moments->logminus3[-power]->data[j]=moments->logminus3[-power]->data[j-1];
       }
     }
-  fprintf(stderr, "log minus moment %d %e\n", power, moments->logminus3[-power]->data[length-1]);
   return 0;
   }
 
@@ -206,7 +200,6 @@ static int computeMinusLogsqMoment(IMRBankCumulativeNoiseMoments *moments, INT4 
       moments->logsqminus3[-power]->data[j]=moments->logsqminus3[-power]->data[j-1];
       }
     }
-  fprintf(stderr, "log sq minus moment %d %e\n", power, moments->logsqminus3[-power]->data[length-1]);
   return 0;
   }
 
@@ -242,7 +235,6 @@ static int computePlusLogsqMoment(IMRBankCumulativeNoiseMoments *moments, INT4 p
       moments->logsqplus3[power]->data[j]=moments->logsqplus3[power]->data[j-1];
       }
     }  
-  fprintf(stderr, "log sq plus moment %d %e\n", power, moments->logsqplus3[power]->data[length-1]);
   return 0;
   }
 
@@ -1456,8 +1448,6 @@ static int addtemplatesMass(REAL8 mbox[3],
   MM = metric.data[1][1]-metric.data[0][1]*metric.data[0][1]/metric.data[0][0];
   MN = metric.data[1][2]-metric.data[0][1]*metric.data[0][2]/metric.data[0][0];
   NN = metric.data[2][2]-metric.data[0][2]*metric.data[0][2]/metric.data[0][0];
-  IMRcnt++;
-  fprintf(stderr, "added template %d\n",IMRcnt);
   (*head)->mass1 = m1 / LAL_MTSUN_SI;
   (*head)->mass2 = m2 / LAL_MTSUN_SI;
   (*head)->tau0 = metric.tau0;
