@@ -8,6 +8,7 @@
 #include <lal/LIGOMetadataTables.h>
 #include <lal/IMRBank.h>
 
+int IMRcnt = 0;
 /* This function sets the pointers of the cumulative noise moment arrays to 
  * zero */
 static REAL8 eta(REAL8 m1, REAL8 m2)
@@ -44,12 +45,12 @@ static int XLALCreateIMRBankCumulativeNoiseMoments(IMRBankCumulativeNoiseMoments
 /* This function computes the negative noise moment integrals */
 static int computeMinusMoment(IMRBankCumulativeNoiseMoments *moments, INT4 power, UINT4 logFlag)
   {
-   
+  char outfile[25]; 
   REAL8FrequencySeries *psd = moments->psd;
   UINT4 length = psd->data->length;
   REAL8 deltaF = psd->deltaF;
   UINT4 j = 0;
-  REAL8 flow = 5;/*moments->flow;*/
+  REAL8 flow = moments->flow;
   if (logFlag != 0 || power >= 0) return 1;
   if (moments->minus3[-power]) return 0;
   if ( !(moments->minus3[-power] = XLALCreateREAL8Vector(length)) ) return 1;
@@ -67,6 +68,7 @@ static int computeMinusMoment(IMRBankCumulativeNoiseMoments *moments, INT4 power
       moments->minus3[-power]->data[j]=moments->minus3[-power]->data[j-1];
       }
     }
+  fprintf(stderr, "minus moment %d %e\n", power, moments->minus3[-power]->data[length-1]);
   return 0;
   }
 
@@ -79,7 +81,7 @@ static int computePlusMoment(IMRBankCumulativeNoiseMoments *moments, INT4 power,
    UINT4 length = psd->data->length;
    REAL8 deltaF = psd->deltaF;
    UINT4 j = 0;
-   REAL8 flow = 5;/*moments->flow;*/
+   REAL8 flow = moments->flow;
    if (logFlag != 0 || power < 0) return 1;
    if (moments->plus3[power]) return 0;
    if ( !(moments->plus3[power] = XLALCreateREAL8Vector(length)) ) return 1;
@@ -98,6 +100,7 @@ static int computePlusMoment(IMRBankCumulativeNoiseMoments *moments, INT4 power,
       moments->plus3[power]->data[j]=moments->plus3[power]->data[j-1];
       }
     }
+  fprintf(stderr, "plus moment %d %e\n", power,moments->plus3[power]->data[length-1]);
   return 0;
   }
 
@@ -110,7 +113,7 @@ static int computePlusLogMoment(IMRBankCumulativeNoiseMoments *moments, INT4 pow
    UINT4 length = psd->data->length;
    REAL8 deltaF = psd->deltaF;
    UINT4 j = 0; 
-   REAL8 flow = 5;/*moments->flow;*/
+   REAL8 flow = moments->flow;
 
    if (logFlag != 1 || power < 0) return 1;
    if (moments->logplus3[power]) return 0;
@@ -132,6 +135,7 @@ static int computePlusLogMoment(IMRBankCumulativeNoiseMoments *moments, INT4 pow
       moments->logplus3[power]->data[j]=moments->logplus3[power]->data[j-1];
       }
     }
+  fprintf(stderr, "logplus moment %d %e\n", power, moments->logplus3[power]->data[length-1]);
   return 0;
   }
 
@@ -144,7 +148,7 @@ static int computeMinusLogMoment(IMRBankCumulativeNoiseMoments *moments, INT4 po
    UINT4 length = psd->data->length;
    REAL8 deltaF = psd->deltaF;
    UINT4 j = 0;
-   REAL8 flow = 5;/*moments->flow;*/
+   REAL8 flow = moments->flow;
 
    if (logFlag != 1 || power >= 0) return 1;
    if (moments->logminus3[-power]) return 0;
@@ -166,6 +170,7 @@ static int computeMinusLogMoment(IMRBankCumulativeNoiseMoments *moments, INT4 po
       moments->logminus3[-power]->data[j]=moments->logminus3[-power]->data[j-1];
       }
     }
+  fprintf(stderr, "log minus moment %d %e\n", power, moments->logminus3[-power]->data[length-1]);
   return 0;
   }
 
@@ -178,7 +183,7 @@ static int computeMinusLogsqMoment(IMRBankCumulativeNoiseMoments *moments, INT4 
    UINT4 length = psd->data->length;
    REAL8 deltaF = psd->deltaF;
    UINT4 j = 0;
-   REAL8 flow = 5;/*moments->flow;*/
+   REAL8 flow = moments->flow;
 
    if (logFlag != 2 || power >= 0) return 1;
    if (moments->logsqminus3[-power]) return 0;
@@ -201,6 +206,7 @@ static int computeMinusLogsqMoment(IMRBankCumulativeNoiseMoments *moments, INT4 
       moments->logsqminus3[-power]->data[j]=moments->logsqminus3[-power]->data[j-1];
       }
     }
+  fprintf(stderr, "log sq minus moment %d %e\n", power, moments->logsqminus3[-power]->data[length-1]);
   return 0;
   }
 
@@ -213,7 +219,7 @@ static int computePlusLogsqMoment(IMRBankCumulativeNoiseMoments *moments, INT4 p
    UINT4 length = psd->data->length;
    REAL8 deltaF = psd->deltaF;
    UINT4 j = 0;
-   REAL8 flow = 5;/*moments->flow;*/
+   REAL8 flow = moments->flow;
 
    if (logFlag != 2 || power < 0) return 1;
    if (moments->logsqplus3[power]) return 0;
@@ -235,7 +241,8 @@ static int computePlusLogsqMoment(IMRBankCumulativeNoiseMoments *moments, INT4 p
       {
       moments->logsqplus3[power]->data[j]=moments->logsqplus3[power]->data[j-1];
       }
-    }
+    }  
+  fprintf(stderr, "log sq plus moment %d %e\n", power, moments->logsqplus3[power]->data[length-1]);
   return 0;
   }
 
@@ -1371,10 +1378,7 @@ static REAL8 integrateMassVolume(REAL8 mbox[3],
   if (g3 > maxg) maxg = g3;
   if (g4 > maxg) maxg = g4;
   /*factor of two because we only record half of the mass mass plane */  
-  volume = 2.0 * maxg * size/sf/sf * size/sf/sf * maxj ;
-               
-      
-  /*printf("volume = %e\n",volume);*/
+  volume = 2.0 * maxg * size/sf/sf * size/sf/sf * maxj ;             
   return volume;
   }
 
@@ -1452,7 +1456,8 @@ static int addtemplatesMass(REAL8 mbox[3],
   MM = metric.data[1][1]-metric.data[0][1]*metric.data[0][1]/metric.data[0][0];
   MN = metric.data[1][2]-metric.data[0][1]*metric.data[0][2]/metric.data[0][0];
   NN = metric.data[2][2]-metric.data[0][2]*metric.data[0][2]/metric.data[0][0];
-
+  IMRcnt++;
+  fprintf(stderr, "added template %d\n",IMRcnt);
   (*head)->mass1 = m1;
   (*head)->mass2 = m2;
   (*head)->tau0 = metric.tau0;
@@ -1504,6 +1509,24 @@ static int destroyregionlistMass(IMRBankMassRegion *head)
   }
 
 
+static int normalize_psd(InspiralCoarseBankIn *in)
+  {
+  UINT4 i;
+  double f = 0;
+  UINT4 startIX;
+  REAL8Vector *vec = in->shf.data;
+  startIX = floor(in->fLower / in->shf.deltaF);
+  vec->data[0] = vec->data[1];
+  for (i=0; i<vec->length; i++)
+    {
+    f = i*in->shf.deltaF;
+    fprintf(FPa,"%e %e\n", f, vec->data[i]);
+    vec->data[i] *= 10e48;
+    }
+  return 0;
+  }
+
+
 /* This is the main function that actually is called by the bank code */
 int XLALTileIMRBankMassRegion(InspiralCoarseBankIn *in, SnglInspiralTable **first)
   {
@@ -1519,22 +1542,24 @@ int XLALTileIMRBankMassRegion(InspiralCoarseBankIn *in, SnglInspiralTable **firs
   IMRBankMassRegion *head = createIMRBankMassRegion(mass1,mass2,size);
   IMRBankMassRegion *list = head;
   IMRBankMassRegion *tail = head;
+  int cnt;
+
   *first = (SnglInspiralTable *) LALCalloc(1,sizeof(SnglInspiralTable));
   tab = *first;
-  /*srand(814);*/
-  /*printf("set up noise moments\n");*/
+
+  normalize_psd(in);
+
   XLALCreateIMRBankCumulativeNoiseMoments(&moments,&(in->shf),flow);
-  /*printf("generating templates\n");*/
   while(list)
     {
     checkNumberOfTemplatesMass(list,&tail,in,&moments,first);
     list = list->next;
     }
-  /*addEqualMassTemplates(in,&moments,*first,FP);*/
   XLALDestroyIMRBankCumulativeNoiseMoments(&moments);
   destroyregionlistMass(head);
   /* send back the beginning of the list */
   *first = tab;
+  cnt = 0;
   while (tab)
     {
     if ( (tab->next) && !(tab->next->next)) 
@@ -1544,7 +1569,8 @@ int XLALTileIMRBankMassRegion(InspiralCoarseBankIn *in, SnglInspiralTable **firs
       free(tmp);
       break;
       }
+    cnt++;
     tab = tab->next;
     }
-  return 0;
-  }
+  return cnt;
+}
