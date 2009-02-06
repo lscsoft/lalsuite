@@ -126,11 +126,11 @@ static void print_real4tseries(const REAL4TimeSeries *fseries, const char *file)
  */
 
 void
-LALTracksearchFindLambda(
-			 LALStatus                *status,
-			 TimeFreqRep               map,
-			 TSSearchParams           *searchParams
-			 )
+LALTracksearchFindLambdaMean(
+			     LALStatus                *status,
+			     TimeFreqRep               map,
+			     TSSearchParams           *searchParams
+			     )
 {
   INT4            i=0;/* Counter in F axis */
   INT4            j=0;/* Counter in T axis */
@@ -144,7 +144,7 @@ LALTracksearchFindLambda(
   REAL8 lowerThresh=0;/* Value set from upperThresh */
   REAL8 myGaussian=0;
   REAL8 myFloor=10e20;/*Lowest value in TFR */
-  INITSTATUS(status,"LALTracksearchFindLambda", TSDATAC);
+  INITSTATUS(status,"LALTracksearchFindLambdaMean", TSDATAC);
   ATTATCHSTATUSPTR (status);
   
   ASSERT(searchParams,status, TSDATA_ENNUL, TSDATA_MSGENNUL);
@@ -177,6 +177,82 @@ LALTracksearchFindLambda(
     {
       fprintf(stdout,"Auto lambda invoked\n");
       fprintf(stdout,"Lh %e \t Ll %e \n 2nd D Gauss %f \n Mean h:  %10.20e \n Std  h: %10.20e \n",searchParams->StartThresh,searchParams->LinePThresh,myGaussian,meanH,stdH);
+    }
+  /* Need to throw an error if we get a value Lh <= 0 */
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
+}/*
+  * End LALTracksearchFindLambda
+  */
+
+static int lambdaSortOpt(const void *a,const void *b)
+{
+  const REAL8 *A = ((const REAL8 *) a);
+  const REAL8 *B = ((const REAL8 *) b);
+
+  if (*A<*B)
+    return -1;
+  else if (*A==*B)
+    return 0;
+  else
+    return 1;
+}
+
+void
+LALTracksearchFindLambdaMedian(
+			       LALStatus                *status,
+			       TimeFreqRep               map,
+			       TSSearchParams           *searchParams
+			       )
+{
+  REAL8       medianH=0;/*Median value calculated*/
+  REAL8      *vector=NULL;/*Pointer to array of REAL8s for sorting*/
+  REAL8       upperThresh=0;
+  REAL8       lowerThresh=0;
+  REAL8       myGaussian=0;
+  INT4        count=0;/*Count the number of elements inserted into
+			vector*/
+  INT4        i=0;/*Index*/
+  INT4        j=0;/*Index*/
+  INT4        k=0;/*Index*/
+
+  INITSTATUS(status,"LALTracksearchFindLambdaMedian", TSDATAC);
+  ATTATCHSTATUSPTR (status);
+  /*Read out pixel h from map into vector for sorting*/
+  count=((map.tCol)*(map.fRow/2+1));
+  vector=(REAL8*)LALMalloc(count*sizeof(REAL8));
+  for (i = 0;i < map.tCol;i++)
+    { 
+      for (j = 0;j <(map.fRow/2+1);j++)
+	{
+	  /*fprintf(stdout,"%i %i %i %i %f\n",i,j,k,count,map.map[i][j]);*/
+	  vector[k]=map.map[i][j];
+	  k=k+1;
+	}
+    }
+  qsort(vector,count,sizeof(REAL8),lambdaSortOpt);
+  if (k%2 == 0)
+    medianH=(vector[k/2]+vector[(k/2)+1])/2;
+  else
+    medianH=(vector[(k+1)/2]);
+  LALFree(vector);
+  /* Given desired contrast Z score */
+  /*Valid interval of autoThresh(x) are {x|-1<x<=\inf} */
+  if (searchParams->autoThresh <= -1)
+    searchParams->autoThresh = -0.99999999;
+  myGaussian=localGauss2(searchParams->LineWidth);
+  upperThresh=myGaussian*medianH*(1+searchParams->autoThresh);
+  lowerThresh=upperThresh*searchParams->relaThresh;
+  searchParams->StartThresh=fabs(upperThresh);
+  searchParams->LinePThresh=fabs(lowerThresh);
+  if (searchParams->verbosity >= verbose)
+    {
+      fprintf(stdout,"Auto lambda invoked\n");
+      fprintf(stdout,"Lh %e \t Ll %e \n 2nd D Gauss %f \n Median h: %10.20e \n Pixel Count: %i \n",searchParams->StartThresh,
+	      searchParams->LinePThresh,
+	      myGaussian,
+	      medianH,
+	      k);
     }
   /* Need to throw an error if we get a value Lh <= 0 */
   DETATCHSTATUSPTR(status);
@@ -352,7 +428,8 @@ LALTrackSearchApplyThreshold(
       for(i=0;i<curveinfo->numberOfCurves;i++)
 	{
 	  if ((curveinfo->curves[i].n >= params.MinLength) && 
-	      (curveinfo->curves[i].totalPower >= params.MinPower))
+	      (curveinfo->curves[i].totalPower >= params.MinPower) &&
+	      (curveinfo->curves[i].snrEstimate >= params.MinSNR))
 	    {
 	      /*UsefulCurve Var is not count but curve index so add 1*/
 	      /* Expand the structure to take in another curve */

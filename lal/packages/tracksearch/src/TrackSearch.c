@@ -102,7 +102,7 @@ static void ConnectLinePoints(LALStatus *, TrackSearchOut *, TrackSearchParams *
 static void estimateProfile(REAL4*, TimeFreqRep);
 
 static REAL4 estimateSNR(Curve, Curve, REAL4*, const TimeFreqRep*);
-static INT4 TestPotentialLine(TrackSearchOut, INT4, REAL4);
+static INT4 TestPotentialLine(TrackSearchOut, INT4, REAL4, REAL4);
 static REAL4 GetAngle(REAL4 , REAL4 );
 static REAL4 Gauss0(INT4,REAL4);
 static REAL4 Gauss1(INT4,REAL4);
@@ -896,7 +896,7 @@ ConnectLinePoints(LALStatus *status,
     /* *** */
     /* check if the length of the curve is greater than the threshhold*/
     if((contour[0].n+contour[1].n-1 >= LENGTH_THRESHOLD) 
-       && TestPotentialLine(*out,curveLength,curvePower)){
+       && TestPotentialLine(*out,curveLength,curvePower,mySNR)){
       /* record the curve found in the output structure by joining the left and right Contours*/
       out->curves = (Curve*)LALRealloc(out->curves,sizeof(Curve)*(out->numberOfCurves+1));
       /* Check why contour[1].n-1 has the -1*/
@@ -1120,14 +1120,15 @@ INT4
 TestPotentialLine(
 		  TrackSearchOut TSO,
 		  INT4 CL,
-		  REAL4 IP)
+		  REAL4 IP,
+		  REAL4 SNR)
 {
   INT4 result=0;
   
   /* Future plan case statement if conditionals based on
    * TSO.thresholdLogic field
    */
-  if ((CL >= TSO.minLengthCut) && (IP >= TSO.minPowerCut))
+  if ((CL >= TSO.minLengthCut) && (IP >= TSO.minPowerCut) && (SNR >= TSO.minSNRCut))
     result=1;
   else
     result=0;
