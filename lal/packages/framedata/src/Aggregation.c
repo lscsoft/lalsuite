@@ -309,8 +309,6 @@ FrCache *XLALAggregationFrameCache(CHAR *ifo, LIGOTimeGPS *start, INT4 length)
     }
     strcpy(file->url, url);
 
-    fprintf(stdout, "%s\n", url);
-
     /* increment gps */
     gps.gpsSeconds += ONLINE_FRAME_DURATION;
 
