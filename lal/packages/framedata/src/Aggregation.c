@@ -284,29 +284,31 @@ FrCache *XLALAggregationFrameCache(CHAR *ifo, LIGOTimeGPS *start, INT4 length)
     /* determine frame start */
     frame_start = return_frame_start(&gps);
 
-    /* add to cache */
+    /* allocate memory for cache entry */
     file->source = LALMalloc(strlen(ifo) + 1);
     if (!file->source)
     {
       XLALFrDestroyCache(cache);
       XLAL_ERROR_NULL(func, XLAL_ENOMEM);
     }
-    strcpy(file->source, ifo);
     file->description = LALMalloc(strlen(type) + 1);
     if (!file->description)
     {
       XLALFrDestroyCache(cache);
       XLAL_ERROR_NULL(func, XLAL_ENOMEM);
     }
-    strcpy(file->description, type);
-    file->startTime = frame_start;
-    file->duration = ONLINE_FRAME_DURATION;
     file->url = LALMalloc(strlen(url) + 1);
     if (!file->url)
     {
       XLALFrDestroyCache(cache);
       XLAL_ERROR_NULL(func, XLAL_ENOMEM);
     }
+
+    /* add frame to cache */
+    strcpy(file->source, ifo);
+    strcpy(file->description, type);
+    file->startTime = frame_start;
+    file->duration = ONLINE_FRAME_DURATION;
     strcpy(file->url, url);
 
     /* increment gps */
