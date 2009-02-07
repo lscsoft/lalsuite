@@ -290,10 +290,14 @@ FrCache *XLALAggregationFrameCache(CHAR *ifo, LIGOTimeGPS *start, INT4 length)
   gps.gpsNanoSeconds = start->gpsNanoSeconds;
 
   /* determine list of frames */
-  do
+  for (i = 0; i < num_frames; i++)
   {
     /* declare variables */
     FrStat *file = cache->frameFiles + i;
+
+    /* increment gps */
+    gps.gpsSeconds = start->gpsSeconds + (i * ONLINE_FRAME_DURATION);
+    gps.gpsNanoSeconds = start->gpsNanoSeconds;
 
     /* determine url */
     url = XLALAggregationFrameURL(ifo, &gps);
@@ -333,13 +337,7 @@ FrCache *XLALAggregationFrameCache(CHAR *ifo, LIGOTimeGPS *start, INT4 length)
     file->startTime = frame_start;
     file->duration = ONLINE_FRAME_DURATION;
     strcpy(file->url, url);
-
-    /* increment gps */
-    gps.gpsSeconds += ONLINE_FRAME_DURATION;
-
-    /* increment counter */
-    i++;
-  } while ((gps.gpsSeconds - start->gpsSeconds) < length);
+  }
 
   return cache;
 }
@@ -375,6 +373,9 @@ FrStream *XLALAggregationFrameStream(CHAR *ifo, LIGOTimeGPS *start, INT4 length)
     /* failed to open stream */
     XLAL_ERROR_NULL(func, XLAL_EINVAL);
   }
+
+  /* destroy cache */
+  XLALFrDestroyCache(cache);
 
   return stream;
 }
