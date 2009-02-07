@@ -25,7 +25,7 @@
 #include <math.h>
 
 #include <lal/LALStdio.h>
-#include <lal/LALDataTypes.h>
+#include <lal/LALDatatypes.h>
 #include <lal/LALMalloc.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/Aggregation.h>
