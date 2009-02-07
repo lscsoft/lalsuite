@@ -31,6 +31,10 @@ extern "C" {
 #endif
 
 #define ONLINE_FRAME_DURATION 16
+#define ONLINE_STRAIN_CHANNEL "DMT-STRAIN"
+#define ONLINE_STATE_VECTOR "DMT-STATE_VECTOR"
+#define ONLINE_DQ_VECTOR "DMT-DATA_QUALITY_VECTOR"
+
 
 /* function prototypes */
 static INT4 return_frame_start(LIGOTimeGPS *gps);
