@@ -22,7 +22,9 @@
 #ifndef _AGGREGATION_H
 #define _AGGREGATION_H
 
+#include <lal/LALDatatypes.h>
 #include <lal/FrameCache.h>
+#include <lal/FrameStream.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -32,12 +34,14 @@ extern "C" {
 
 /* function prototypes */
 static INT4 return_frame_start(LIGOTimeGPS *gps);
+LIGOTimeGPS *XLALAggregationFrameStart(LIGOTimeGPS *gps);
 CHAR *XLALAggregationDirectoryPath(CHAR *ifo, LIGOTimeGPS *gps);
 CHAR *XLALAggregationFrameType(CHAR *ifo);
 CHAR *XLALAggregationFrameFilename(CHAR *ifo, LIGOTimeGPS *gps);
 CHAR *XLALAggregationFramePathFilename(CHAR *ifo, LIGOTimeGPS *gps);
 CHAR *XLALAggregationFrameURL(CHAR *ifo, LIGOTimeGPS *gps);
 FrCache *XLALAggregationFrameCache(CHAR *ifo, LIGOTimeGPS *start, INT4 length);
+FrStream *XLALAggregationFrameStream(CHAR *ifo, LIGOTimeGPS *start, INT4 length);
 
 #ifdef __cplusplus
 }

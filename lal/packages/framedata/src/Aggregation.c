@@ -31,7 +31,7 @@
 #include <lal/Aggregation.h>
 #include <lal/XLALError.h>
 #include <lal/FrameCache.h>
-
+#include <lal/FrameStream.h>
 
 /* return frame start for given gps time */
 static INT4 return_frame_start(LIGOTimeGPS *gps)
@@ -342,4 +342,39 @@ FrCache *XLALAggregationFrameCache(CHAR *ifo, LIGOTimeGPS *start, INT4 length)
   } while ((gps.gpsSeconds - start->gpsSeconds) < length);
 
   return cache;
+}
+
+
+/* return required frame stream */
+FrStream *XLALAggregationFrameStream(CHAR *ifo, LIGOTimeGPS *start, INT4 length)
+{
+  static const char *func = "XLALAggregationFrameStream";
+
+  /* declare variables */
+  FrCache *cache;
+  FrStream *stream;
+  
+  /* check arguments */
+  if (!ifo)
+    XLAL_ERROR_NULL(func, XLAL_EFAULT);
+  if (!start)
+    XLAL_ERROR_NULL(func, XLAL_EFAULT);
+
+  /* get frame cache */
+  cache = XLALAggregationFrameCache(ifo, start, length);
+  if (cache == NULL)
+  {
+    /* failed to get cache */
+    XLAL_ERROR_NULL(func, XLAL_EINVAL);
+  }
+
+  /* open cache as stream */
+  stream = XLALFrCacheOpen(cache);
+  if (stream == NULL)
+  {
+    /* failed to open stream */
+    XLAL_ERROR_NULL(func, XLAL_EINVAL);
+  }
+
+  return stream;
 }
