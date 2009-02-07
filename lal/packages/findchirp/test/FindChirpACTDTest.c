@@ -691,9 +691,9 @@ int main( int argc, char **argv )
 		  for ( j = 1; j < fcSegVec->data->data->data->length; ++j )
       {
         fcSegVec->data->data->data->data[j].re = 
-               filterInput->fcTmplt->ACTDtilde->data[j + 0*(numPoints/2+1) ].re;
+               filterInput->fcTmplt->ACTDtilde->data[j + (numPoints/2+1) ].re;
         fcSegVec->data->data->data->data[j].im = 
-               filterInput->fcTmplt->ACTDtilde->data[j + 0*(numPoints/2+1) ].im;
+               filterInput->fcTmplt->ACTDtilde->data[j + (numPoints/2+1) ].im;
       }
     }
     fprintf( stderr, "Normalising input data for overlap...\n" );
@@ -975,12 +975,10 @@ int MakeData(
     {
       LALLIGOIPsd(&status, &psd, f);
       dataSegVec->data->spec->data->data[k] = psd;
-      fprintf(stdout, "%e\n",psd);
     }
     else
     {
       dataSegVec->data->spec->data->data[k] = psdfs;
-      fprintf(stdout, "%e\n",psdfs);
     }
   
 
