@@ -142,6 +142,12 @@ CHAR *XLALAggregationFrameFilename(CHAR *ifo, LIGOTimeGPS *gps)
   INT4 frame_start;
   static CHAR filename[FILENAME_MAX];
 
+  /* check arguments */
+  if (!ifo)
+    XLAL_ERROR_NULL(func, XLAL_EFAULT);
+  if (!gps)
+    XLAL_ERROR_NULL(func, XLAL_EFAULT);
+
   /* determine type */
   type = XLALAggregationFrameType(ifo);
   if (type == NULL)
@@ -170,6 +176,12 @@ CHAR *XLALAggregationFramePathFilename(CHAR *ifo, LIGOTimeGPS *gps)
   CHAR *directory;
   CHAR *filename;
   static CHAR path[FILENAME_MAX];
+
+  /* check arguments */
+  if (!ifo)
+    XLAL_ERROR_NULL(func, XLAL_EFAULT);
+  if (!gps)
+    XLAL_ERROR_NULL(func, XLAL_EFAULT);
 
   /* determine directory */
   directory = XLALAggregationDirectoryPath(ifo, gps);
@@ -203,6 +215,12 @@ CHAR *XLALAggregationFrameURL(CHAR *ifo, LIGOTimeGPS *gps)
   CHAR *path;
   static CHAR url[FILENAME_MAX];
 
+  /* check arguments */
+  if (!ifo)
+    XLAL_ERROR_NULL(func, XLAL_EFAULT);
+  if (!gps)
+    XLAL_ERROR_NULL(func, XLAL_EFAULT);
+
   /* determine path */
   path = XLALAggregationFramePathFilename(ifo, gps);
   if (path == NULL)
@@ -233,6 +251,12 @@ FrCache *XLALAggregationFrameCache(CHAR *ifo, LIGOTimeGPS *start, INT4 length)
   INT4 last_frame_start;
   INT4 frame_duration;
   INT4 num_frames;
+
+  /* check arguments */
+  if (!ifo)
+    XLAL_ERROR_NULL(func, XLAL_EFAULT);
+  if (!start)
+    XLAL_ERROR_NULL(func, XLAL_EFAULT);
 
   /* determine number of frames */
   gps.gpsSeconds = start->gpsSeconds + length;
