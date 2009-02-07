@@ -379,3 +379,47 @@ FrStream *XLALAggregationFrameStream(CHAR *ifo, LIGOTimeGPS *start, INT4 length)
 
   return stream;
 }
+
+
+/* return strain data time series for given ifo, start time, and duration */
+REAL8TimeSeries *XLALAggregationStrainData(CHAR *ifo, LIGOTimeGPS *start, INT4 length)
+{
+  static const char *func = "XLALAggregationStrainData";
+
+  /* declare variables */
+  FrStream *stream;
+  REAL8TimeSeries *series;
+  size_t num_points;
+  CHAR channel[LIGOMETA_CHANNEL_MAX];
+
+  /* check arguments */
+  if (!ifo)
+    XLAL_ERROR_NULL(func, XLAL_EFAULT);
+  if (!start)
+    XLAL_ERROR_NULL(func, XLAL_EFAULT);
+
+  /* determine number of data points */
+  num_points = length * ONLINE_SAMPLE_RATE;
+
+  /* open frame stream */
+  stream = XLALAggregationFrameStream(ifo, start, length);
+  if (stream == NULL)
+  {
+    /* failed to open stream */
+    XLAL_ERROR_NULL(func, XLAL_EINVAL);
+  }
+
+  /* get strain data time series */
+  LALSnprintf(channel, LIGOMETA_CHANNEL_MAX, "%s:%s", ifo, ONLINE_STRAIN_CHANNEL);
+  series = XLALFrReadREAL8TimeSeries(stream, channel, start, (REAL8)length, num_points);
+  if (series == NULL)
+  {
+    /* failed to read data */
+    XLAL_ERROR_NULL(func, XLAL_EINVAL);
+  }
+
+  /* close stream */
+  XLALFrClose(stream);
+
+  return series;
+}
