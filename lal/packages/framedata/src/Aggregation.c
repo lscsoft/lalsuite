@@ -511,7 +511,7 @@ INT4TimeSeries *XLALAggregationStateVector(CHAR *ifo, LIGOTimeGPS *start, INT4 l
   }
 
   /* initialise series */
-  series = XLALCreateINT4TimeSeries(state->name, &state->epoch, state->deltaT, state->f0, &state->sampleUnits, state->data->length);
+  series = XLALCreateINT4TimeSeries(state->name, &state->epoch, state->f0, state->deltaT, &state->sampleUnits, state->data->length);
 
   /* cast state vector to INT4 */
   for (i = 0; i < state->data->length; i++)
