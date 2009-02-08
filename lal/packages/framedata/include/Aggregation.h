@@ -53,6 +53,7 @@ REAL8TimeSeries *XLALAggregationStrainData(CHAR *ifo, LIGOTimeGPS *start, INT4 l
 INT4TimeSeries *XLALAggregationDQVector(CHAR *ifo, LIGOTimeGPS *start, INT4 length);
 INT4TimeSeries *XLALAggregationStateVector(CHAR *ifo, LIGOTimeGPS *start, INT4 length);
 REAL8TimeSeries *XLALAggregationDQStrainData(CHAR *ifo, LIGOTimeGPS *start, INT4 length, INT4 dq_bitmask);
+REAL8TimeSeries *XLALAggregationStateStrainData(CHAR *ifo, LIGOTimeGPS *start, INT4 length, INT4 state_bitmask);
 
 #ifdef __cplusplus
 }
