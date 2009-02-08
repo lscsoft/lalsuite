@@ -453,7 +453,7 @@ INT4TimeSeries *XLALAggregationDQVector(CHAR *ifo, LIGOTimeGPS *start, INT4 leng
     XLAL_ERROR_NULL(func, XLAL_EINVAL);
   }
 
-  /* get strain data time series */
+  /* get dq vector time series */
   LALSnprintf(channel, LIGOMETA_CHANNEL_MAX, "%s:%s", ifo, ONLINE_DQ_VECTOR);
   series = XLALFrReadINT4TimeSeries(stream, channel, start, (REAL8)length, num_points);
   if (series == NULL)
