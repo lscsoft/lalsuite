@@ -525,3 +525,53 @@ INT4TimeSeries *XLALAggregationStateVector(CHAR *ifo, LIGOTimeGPS *start, INT4 l
 
   return series;
 }
+
+
+/* return strain data time series for given ifo, start time, duration, and bitmask */
+REAL8TimeSeries *XLALAggregationDQStrainData(CHAR *ifo, LIGOTimeGPS *start, INT4 length, INT4 dq_bitmask)
+{
+  static const char *func = "XLALAggregationDQStrainData";
+
+  /* declare variables */
+  INT4TimeSeries *dq_vector;
+  REAL8TimeSeries *series;
+  UINT4 i;
+
+  /* checkout arguments */
+  if (!ifo)
+    XLAL_ERROR_NULL(func, XLAL_EFAULT);
+  if (!start)
+    XLAL_ERROR_NULL(func, XLAL_EFAULT);
+
+  /* get data quality vector */
+  dq_vector = XLALAggregationDQVector(ifo, start, length);
+  if (dq_vector == NULL)
+  {
+    /* failed to get data quality vector */
+    XLAL_ERROR_NULL(func, XLAL_EINVAL);
+  }
+
+  /* check for required bitmask */
+  for (i = 0; i < dq_vector->data->length; i++)
+  {
+    if (dq_vector->data->data[i] != dq_bitmask)
+    {
+      /* invalid bitmask */
+      XLALDestroyINT4TimeSeries(dq_vector);
+      XLAL_ERROR_NULL(func, XLAL_EINVAL);
+    }
+  }
+
+  /* destroy data quality vector */
+  XLALDestroyINT4TimeSeries(dq_vector);
+
+  /* get strain data time series */
+  series = XLALAggregationStrainData(ifo, start, length);
+  if (series == NULL)
+  {
+    /* failed to get strain data time series */
+    XLAL_ERROR_NULL(func, XLAL_EINVAL);
+  }
+
+  return series;
+}

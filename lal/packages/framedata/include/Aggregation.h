@@ -30,10 +30,13 @@
 extern "C" {
 #endif
 
-#define ONLINE_FRAME_DURATION 16
+/* frame channels */
 #define ONLINE_STRAIN_CHANNEL "DMT-STRAIN"
 #define ONLINE_STATE_VECTOR "DMT-STATE_VECTOR"
 #define ONLINE_DQ_VECTOR "DMT-DATA_QUALITY_VECTOR"
+
+/* frame metadata */
+#define ONLINE_FRAME_DURATION 16
 #define ONLINE_SAMPLE_RATE 16384
 
 
@@ -49,6 +52,7 @@ FrStream *XLALAggregationFrameStream(CHAR *ifo, LIGOTimeGPS *start, INT4 length)
 REAL8TimeSeries *XLALAggregationStrainData(CHAR *ifo, LIGOTimeGPS *start, INT4 length);
 INT4TimeSeries *XLALAggregationDQVector(CHAR *ifo, LIGOTimeGPS *start, INT4 length);
 INT4TimeSeries *XLALAggregationStateVector(CHAR *ifo, LIGOTimeGPS *start, INT4 length);
+REAL8TimeSeries *XLALAggregationDQStrainData(CHAR *ifo, LIGOTimeGPS *start, INT4 length, INT4 dq_bitmask);
 
 #ifdef __cplusplus
 }
