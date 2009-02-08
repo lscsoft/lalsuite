@@ -39,6 +39,15 @@ extern "C" {
 #define ONLINE_FRAME_DURATION 16
 #define ONLINE_SAMPLE_RATE 16384
 
+/* data quality */
+#define DQ_SCIENCE     (1 << 0)  /* SV_SCIENCE & LIGHT */
+#define DQ_INJECTION   (1 << 1)  /* Injection: same as statevector */
+#define DQ_UP          (1 << 2)  /* SV_UP & LIGHT */
+#define DQ_CALIBRATED  (1 << 3)  /* SV_UP & LIGHT & (not TRANSIENT) */
+#define DQ_BADGAMMA    (1 << 4)  /* Calibration is bad (outside 0.8 < gamma < 1.2) */
+#define DQ_LIGHT       (1 << 5)  /* Light in the arms ok */
+#define DQ_MISSING     (1 << 6)  /* Indication that data was dropped in DMT */
+
 
 /* function prototypes */
 LIGOTimeGPS *XLALAggregationFrameStart(LIGOTimeGPS *gps);
