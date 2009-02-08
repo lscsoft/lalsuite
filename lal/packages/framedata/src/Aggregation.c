@@ -625,3 +625,77 @@ REAL8TimeSeries *XLALAggregationStateStrainData(CHAR *ifo, LIGOTimeGPS *start, I
 
   return series;
 }
+
+
+/* return strain data time series for given ifo, start time, duration, data quality bitmask and state bitmask */
+REAL8TimeSeries *XLALAggregationDQStateStrainData(CHAR *ifo, LIGOTimeGPS *start, INT4 length, INT4 dq_bitmask, INT4 state_bitmask)
+{
+  static const char *func = "XLALAggregationDQStateStrainData";
+
+  /* declare variables */
+  INT4TimeSeries *dq_vector;
+  INT4TimeSeries *state_vector;
+  REAL8TimeSeries *series;
+  UINT4 i;
+
+  /* checkout arguments */
+  if (!ifo)
+    XLAL_ERROR_NULL(func, XLAL_EFAULT);
+  if (!start)
+    XLAL_ERROR_NULL(func, XLAL_EFAULT);
+
+  /* get data quality vector */
+  dq_vector = XLALAggregationDQVector(ifo, start, length);
+  if (dq_vector == NULL)
+  {
+    /* failed to get data quality vector */
+    XLAL_ERROR_NULL(func, XLAL_EINVAL);
+  }
+
+  /* check for required data quality bitmask */
+  for (i = 0; i < dq_vector->data->length; i++)
+  {
+    if (dq_vector->data->data[i] != dq_bitmask)
+    {
+      /* invalid bitmask */
+      XLALDestroyINT4TimeSeries(dq_vector);
+      XLAL_ERROR_NULL(func, XLAL_EINVAL);
+    }
+  }
+
+  /* destroy data quality vector */
+  XLALDestroyINT4TimeSeries(dq_vector);
+
+  /* get state vector */
+  state_vector = XLALAggregationStateVector(ifo, start, length);
+  if (state_vector == NULL)
+  {
+    /* failed to get state vector */
+    XLAL_ERROR_NULL(func, XLAL_EINVAL);
+  }
+
+  /* check for required state bitmask */
+  for (i = 0; i < state_vector->data->length; i++)
+  {
+    if (state_vector->data->data[i] != state_bitmask)
+    {
+      /* invalid bitmask */
+      XLALDestroyINT4TimeSeries(state_vector);
+      XLAL_ERROR_NULL(func, XLAL_EINVAL);
+    }
+  }
+
+  /* destroy state vector */
+  XLALDestroyINT4TimeSeries(state_vector);
+
+  /* get strain data time series */
+  series = XLALAggregationStrainData(ifo, start, length);
+  if (series == NULL)
+  {
+    /* failed to get strain data time series */
+    XLAL_ERROR_NULL(func, XLAL_EINVAL);
+  }
+
+  return series;
+}
+
