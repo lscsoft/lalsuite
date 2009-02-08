@@ -38,7 +38,6 @@ extern "C" {
 
 
 /* function prototypes */
-static INT4 return_frame_start(LIGOTimeGPS *gps);
 LIGOTimeGPS *XLALAggregationFrameStart(LIGOTimeGPS *gps);
 CHAR *XLALAggregationDirectoryPath(CHAR *ifo, LIGOTimeGPS *gps);
 CHAR *XLALAggregationFrameType(CHAR *ifo);
