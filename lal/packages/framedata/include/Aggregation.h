@@ -48,6 +48,7 @@ CHAR *XLALAggregationFrameURL(CHAR *ifo, LIGOTimeGPS *gps);
 FrCache *XLALAggregationFrameCache(CHAR *ifo, LIGOTimeGPS *start, INT4 length);
 FrStream *XLALAggregationFrameStream(CHAR *ifo, LIGOTimeGPS *start, INT4 length);
 REAL8TimeSeries *XLALAggregationStrainData(CHAR *ifo, LIGOTimeGPS *start, INT4 length);
+INT4TimeSeries *XLALAggregationDQVector(CHAR *ifo, LIGOTimeGPS *start, INT4 length);
 
 #ifdef __cplusplus
 }
