@@ -469,3 +469,59 @@ INT4TimeSeries *XLALAggregationDQVector(CHAR *ifo, LIGOTimeGPS *start, INT4 leng
 
   return series;
 }
+
+
+/* return state vector time series for given ifo, start time, and duration */
+INT4TimeSeries *XLALAggregationStateVector(CHAR *ifo, LIGOTimeGPS *start, INT4 length)
+{
+  static const char *func = "XLALAggregationStateVector";
+
+  /* declare variables */
+  FrStream *stream;
+  REAL4TimeSeries *state;
+  INT4TimeSeries *series;
+  size_t num_points;
+  CHAR channel[LIGOMETA_CHANNEL_MAX];
+  UINT4 i;
+
+  /* check arguments */
+  if (!ifo)
+    XLAL_ERROR_NULL(func, XLAL_EFAULT);
+  if (!start)
+    XLAL_ERROR_NULL(func, XLAL_EFAULT);
+
+  /* determine number of data points */
+  num_points = length * ONLINE_SAMPLE_RATE;
+
+  /* open frame stream */
+  stream = XLALAggregationFrameStream(ifo, start, length);
+  if (stream == NULL)
+  {
+    /* failed to open stream */
+    XLAL_ERROR_NULL(func, XLAL_EINVAL);
+  }
+
+  /* get state vector time series */
+  LALSnprintf(channel, LIGOMETA_CHANNEL_MAX, "%s:%s", ifo, ONLINE_STATE_VECTOR);
+  state = XLALFrReadREAL4TimeSeries(stream, channel, start, (REAL8)length, num_points);
+  if (state == NULL)
+  {
+    /* failed to read data */
+    XLAL_ERROR_NULL(func, XLAL_EINVAL);
+  }
+
+  /* initialise series */
+  series = XLALCreateINT4TimeSeries(state->name, &state->epoch, state->deltaT, state->f0, &state->sampleUnits, state->data->length);
+
+  /* cast state vector to INT4 */
+  for (i = 0; i < state->data->length; i++)
+    series->data->data[i] = (INT4)state->data->data[i];
+
+  /* destroy state vector */
+  XLALDestroyREAL4TimeSeries(state);
+
+  /* close stream */
+  XLALFrClose(stream);
+
+  return series;
+}
