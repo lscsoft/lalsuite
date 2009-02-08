@@ -527,7 +527,7 @@ INT4TimeSeries *XLALAggregationStateVector(CHAR *ifo, LIGOTimeGPS *start, INT4 l
 }
 
 
-/* return strain data time series for given ifo, start time, duration, and bitmask */
+/* return strain data time series for given ifo, start time, duration, and data quality bitmask */
 REAL8TimeSeries *XLALAggregationDQStrainData(CHAR *ifo, LIGOTimeGPS *start, INT4 length, INT4 dq_bitmask)
 {
   static const char *func = "XLALAggregationDQStrainData";
