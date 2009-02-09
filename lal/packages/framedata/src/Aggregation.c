@@ -622,7 +622,7 @@ REAL8TimeSeries *XLALAggregationDQStrainData(CHAR *ifo,
   /* check for required bitmask */
   for (i = 0; i < dq_vector->data->length; i++)
   {
-    if (dq_vector->data->data[i] != dq_bitmask)
+    if ((dq_vector->data->data[i] & dq_bitmask) == dq_bitmask)
     {
       /* invalid bitmask */
       XLALDestroyINT4TimeSeries(dq_vector);
@@ -676,7 +676,7 @@ REAL8TimeSeries *XLALAggregationStateStrainData(CHAR *ifo,
   /* check for required state bitmask */
   for (i = 0; i < state_vector->data->length; i++)
   {
-    if (state_vector->data->data[i] != state_bitmask)
+    if ((state_vector->data->data[i] & state_bitmask) == state_bitmask)
     {
       /* invalid bitmask */
       XLALDestroyINT4TimeSeries(state_vector);
@@ -731,7 +731,7 @@ REAL8TimeSeries *XLALAggregationDQStateStrainData(CHAR *ifo,
   /* check for required data quality bitmask */
   for (i = 0; i < dq_vector->data->length; i++)
   {
-    if (dq_vector->data->data[i] != dq_bitmask)
+    if ((dq_vector->data->data[i] & dq_bitmask) == dq_bitmask)
     {
       /* invalid bitmask */
       XLALDestroyINT4TimeSeries(dq_vector);
@@ -753,7 +753,7 @@ REAL8TimeSeries *XLALAggregationDQStateStrainData(CHAR *ifo,
   /* check for required state bitmask */
   for (i = 0; i < state_vector->data->length; i++)
   {
-    if (state_vector->data->data[i] != state_bitmask)
+    if ((state_vector->data->data[i] & state_bitmask) == state_bitmask)
     {
       /* invalid bitmask */
       XLALDestroyINT4TimeSeries(state_vector);
