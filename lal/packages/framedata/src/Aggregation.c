@@ -122,7 +122,8 @@ CHAR *XLALAggregationDirectoryPath(CHAR *ifo,
   /* declare variables */
   CHAR *base_dir;
   CHAR *type;
-  INT4 gps_dir, frame_start;
+  LIGOTimeGPS *frame_start;
+  INT4 gps_dir;
   static CHAR directory[FILENAME_MAX];
 
   /* check arguments */
@@ -149,12 +150,15 @@ CHAR *XLALAggregationDirectoryPath(CHAR *ifo,
 
   /* determine gps directory name, frame start must be multiple of
    * ONLINE_FRAME_DURATION */
-  frame_start = return_frame_start(gps);
-  gps_dir = (INT4)floor(frame_start / 100000);
+  frame_start = XLALAggregationFrameStart(gps);
+  gps_dir = (INT4)floor(frame_start->gpsSeconds / 100000);
 
   /* construct directory */
   LALSnprintf(directory, FILENAME_MAX, "%s/%c-%s-%d", base_dir, ifo[0], \
       type, gps_dir);
+
+  /* free memory */
+  LALFree(frame_start);
 
   return directory;
 }
@@ -168,7 +172,7 @@ CHAR *XLALAggregationFrameFilename(CHAR *ifo,
 
   /* declare variables */
   CHAR *type;
-  INT4 frame_start;
+  LIGOTimeGPS *frame_start;
   static CHAR filename[FILENAME_MAX];
 
   /* check arguments */
@@ -186,11 +190,14 @@ CHAR *XLALAggregationFrameFilename(CHAR *ifo,
   }
 
   /* determine gps start time for frame */
-  frame_start = return_frame_start(gps);
+  frame_start = XLALAggregationFrameStart(gps);
 
   /* construct frame filename */
   LALSnprintf(filename, FILENAME_MAX, "%c-%s-%d-%d.gwf", ifo[0], type, \
-      frame_start, ONLINE_FRAME_DURATION);
+      frame_start->gpsSeconds, ONLINE_FRAME_DURATION);
+
+  /* free memory */
+  LALFree(frame_start);
 
   return filename;
 }
@@ -276,12 +283,12 @@ FrCache *XLALAggregationFrameCache(CHAR *ifo,
 
   /* declare variables */
   LIGOTimeGPS gps;
+  LIGOTimeGPS *frame_start;
+  LIGOTimeGPS *last_frame_start;
   CHAR *type;
   CHAR *url;
   FrCache *cache;
   int i = 0;
-  INT4 frame_start;
-  INT4 last_frame_start;
   INT4 frame_duration;
   INT4 num_frames;
 
@@ -294,11 +301,15 @@ FrCache *XLALAggregationFrameCache(CHAR *ifo,
   /* determine number of frames */
   gps.gpsSeconds = start->gpsSeconds + length;
   gps.gpsNanoSeconds = start->gpsNanoSeconds;
-  frame_start = return_frame_start(start);
-  last_frame_start = return_frame_start(&gps);
-  frame_duration = (last_frame_start + ONLINE_FRAME_DURATION) - \
-                   frame_start;
+  frame_start = XLALAggregationFrameStart(start);
+  last_frame_start = XLALAggregationFrameStart(&gps);
+  frame_duration = (last_frame_start->gpsSeconds + ONLINE_FRAME_DURATION) - \
+                   frame_start->gpsSeconds;
   num_frames = frame_duration / ONLINE_FRAME_DURATION;
+
+  /* free memory */
+  LALFree(frame_start);
+  LALFree(last_frame_start);
 
   /* initilise cache */
   cache = LALCalloc(1, sizeof(*cache));
@@ -343,7 +354,7 @@ FrCache *XLALAggregationFrameCache(CHAR *ifo,
     }
 
     /* determine frame start */
-    frame_start = return_frame_start(&gps);
+    frame_start = XLALAggregationFrameStart(&gps);
 
     /* allocate memory for cache entry */
     file->source = LALMalloc(strlen(ifo) + 1);
@@ -368,9 +379,12 @@ FrCache *XLALAggregationFrameCache(CHAR *ifo,
     /* add frame to cache */
     strcpy(file->source, ifo);
     strcpy(file->description, type);
-    file->startTime = frame_start;
+    file->startTime = frame_start->gpsSeconds;
     file->duration = ONLINE_FRAME_DURATION;
     strcpy(file->url, url);
+
+    /* free memory */
+    LALFree(frame_start);
   }
 
   return cache;
