@@ -279,6 +279,7 @@ static REAL8 x(IMRBankCumulativeNoiseMoments *moments,
   UINT4 fl = floor(flow / moments->deltaF);
   UINT4 fh = floor(fhigh / moments->deltaF);
   REAL8 output = 0;
+  if (fl >= fh) fh = fl+1;
   if (fl > psd->data->length) fl = psd->data->length -2;
   if (fh > psd->data->length) fh = psd->data->length -1;
   XLALComputeIMRBankCumulativeNoiseMoment(moments, power,0);
@@ -298,8 +299,9 @@ static REAL8 x(IMRBankCumulativeNoiseMoments *moments,
   if (mpower > 0) output *= pow(m,mpower/3.);
   /*printf("output of x function for m=%f fl=%f fh=%f pow=%d/3 is %e\n",
          m,flow,fhigh,power,output);*/
-
-  return output;
+  /* FIXME: UH OH! Recursion! if the output is zero then bump up the frequency until it isn't */
+  if (output <= 0) return x(moments, m, flow, fhigh+1.0, power, mpower);
+  else return output;
   }
 
 static REAL8 lx(IMRBankCumulativeNoiseMoments *moments,
@@ -309,6 +311,7 @@ static REAL8 lx(IMRBankCumulativeNoiseMoments *moments,
   REAL8 output = 0;
   UINT4 fl = floor(flow / moments->deltaF);
   UINT4 fh = floor(fhigh / moments->deltaF);
+  if (fl >= fh) fh = fl+1;
   if (fl > psd->data->length) fl = psd->data->length -2;
   if (fh > psd->data->length) fh = psd->data->length -1;
   XLALComputeIMRBankCumulativeNoiseMoment(moments,power,1);
@@ -325,7 +328,9 @@ static REAL8 lx(IMRBankCumulativeNoiseMoments *moments,
     }
   if (mpower < 0) output /= pow(m,-mpower/3.);
   if (mpower > 0) output *= pow(m,mpower/3.);
-  return output;
+  /* FIXME: UH OH! Recursion! if the output is zero then bump up the frequency until it isn't */
+  if (output <= 0) return lx(moments, m, flow, fhigh+1.0, power, mpower);
+  else return output;
   }
 
 static REAL8 lsqx(IMRBankCumulativeNoiseMoments *moments,
@@ -335,6 +340,7 @@ static REAL8 lsqx(IMRBankCumulativeNoiseMoments *moments,
   REAL8 output = 0;
   UINT4 fl = floor(flow / moments->deltaF);
   UINT4 fh = floor(fhigh / moments->deltaF);
+  if (fl >= fh) fh = fl+1;
   if (fl > psd->data->length) fl = psd->data->length -2;
   if (fh > psd->data->length) fh = psd->data->length -1;
   XLALComputeIMRBankCumulativeNoiseMoment(moments,power,2);
@@ -350,7 +356,9 @@ static REAL8 lsqx(IMRBankCumulativeNoiseMoments *moments,
     }
   if (mpower < 0) output /= pow(m,-mpower/3.);
   if (mpower > 0) output *= pow(m,mpower/3.);
-  return output;
+  /* FIXME: UH OH! Recursion! if the output is zero then bump up the frequency until it isn't */
+  if (output <= 0) return lsqx(moments, m, flow, fhigh+1.0, power, mpower);
+  else return output;
   }
 
 static REAL8 JPsiEta(REAL8 mass1, REAL8 mass2,
@@ -1148,7 +1156,6 @@ static int IMRBankMetricToTau0Tau3(IMRBankMetric *metric,IMRBankCumulativeNoiseM
   REAL8 g11 = metric->data[1][1];/* /2./LAL_PI/flow/2./LAL_PI/flow;*/
   REAL8 g12 = metric->data[1][2];/* /2./LAL_PI/flow/2./LAL_PI/flow;*/
   REAL8 g22 = metric->data[2][2];/* /2./LAL_PI/flow/2./LAL_PI/flow;*/
-  /*printf("g00 %e g01 %e g02 %e g11 %e g12 %e g22 %e\n",g00,g01,g02,g11,g12,g22);*/
 
   metric->tau0 = tau0fromm1m2(metric->m1,metric->m2,moments->flow);
   metric->tau3 = tau3fromm1m2(metric->m1,metric->m2,moments->flow);
@@ -1162,7 +1169,6 @@ static int IMRBankMetricToTau0Tau3(IMRBankMetric *metric,IMRBankCumulativeNoiseM
   dndt = 0;
   dndt0 = (2./3.*metric->eta / metric->tau0);
   dndt3 = (0.0-5./3.*metric->eta / metric->tau3);
-  /*printf("dmdt0 %e dmdt3 %e dndt0 %e dndt3 %e\n",dmdt0,dmdt3,dndt0,dndt3);*/
 
 
   h00 = dtdt*g00 + dmdt*g01 + dndt*g02;
@@ -1443,8 +1449,9 @@ static int addtemplatesMass(REAL8 mbox[3],
 	|| (m1 > in->mMax*LAL_MTSUN_SI)    
 	|| (m2 > in->mMax*LAL_MTSUN_SI)      )  return 0;
 
-  XLALComputeIMRBankMetric(m1,m2,I,&metric);
+  XLALComputeIMRBankMetric(m1-size/2.,m2-size/2.,I,&metric);
   IMRBankMetricToTau0Tau3(&metric,I);
+  /* project out the time dimension */
   MM = metric.data[1][1]-metric.data[0][1]*metric.data[0][1]/metric.data[0][0];
   MN = metric.data[1][2]-metric.data[0][1]*metric.data[0][2]/metric.data[0][0];
   NN = metric.data[2][2]-metric.data[0][2]*metric.data[0][2]/metric.data[0][0];
