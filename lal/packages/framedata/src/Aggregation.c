@@ -48,7 +48,7 @@ LIGOTimeGPS *XLALAggregationFrameStart(LIGOTimeGPS *gps)
     XLAL_ERROR_NULL(func, XLAL_EFAULT);
 
   /* allocate memory */
-  start = LALCalloc(1, sizeof(*start));
+  start = XLALCalloc(1, sizeof(*start));
 
   /* determine frame start time, multiple of ONLINE_FRAME_DURATION */
   start->gpsSeconds = (INT4)floor(gps->gpsSeconds / ONLINE_FRAME_DURATION) * \
@@ -144,7 +144,7 @@ CHAR *XLALAggregationDirectoryPath(CHAR *ifo,
       type, gps_dir);
 
   /* free memory */
-  LALFree(frame_start);
+  XLALFree(frame_start);
 
   return directory;
 }
@@ -183,7 +183,7 @@ CHAR *XLALAggregationFrameFilename(CHAR *ifo,
       frame_start->gpsSeconds, ONLINE_FRAME_DURATION);
 
   /* free memory */
-  LALFree(frame_start);
+  XLALFree(frame_start);
 
   return filename;
 }
@@ -294,16 +294,16 @@ FrCache *XLALAggregationFrameCache(CHAR *ifo,
   num_frames = frame_duration / ONLINE_FRAME_DURATION;
 
   /* free memory */
-  LALFree(frame_start);
-  LALFree(last_frame_start);
+  XLALFree(frame_start);
+  XLALFree(last_frame_start);
 
   /* initilise cache */
-  cache = LALCalloc(1, sizeof(*cache));
+  cache = XLALCalloc(1, sizeof(*cache));
   cache->numFrameFiles = num_frames;
-  cache->frameFiles = LALCalloc(num_frames, sizeof(*cache->frameFiles));
+  cache->frameFiles = XLALCalloc(num_frames, sizeof(*cache->frameFiles));
   if (!cache->frameFiles)
   {
-    LALFree(cache);
+    XLALFree(cache);
     XLAL_ERROR_NULL(func, XLAL_ENOMEM);
   }
 
@@ -370,7 +370,7 @@ FrCache *XLALAggregationFrameCache(CHAR *ifo,
     strcpy(file->url, url);
 
     /* free memory */
-    LALFree(frame_start);
+    XLALFree(frame_start);
   }
 
   return cache;
