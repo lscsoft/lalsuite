@@ -7,9 +7,9 @@
 #include <lal/LALInspiralBank.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/IMRBank.h>
-
 /* This function sets the pointers of the cumulative noise moment arrays to 
  * zero */
+int tmpltcnt = 0;
 static REAL8 eta(REAL8 m1, REAL8 m2)
   {
   return m1*m2/(m1+m2)/(m1+m2);
@@ -278,10 +278,20 @@ static REAL8 x(IMRBankCumulativeNoiseMoments *moments,
   REAL8FrequencySeries *psd = moments->psd;
   UINT4 fl = floor(flow / moments->deltaF);
   UINT4 fh = floor(fhigh / moments->deltaF);
+  REAL8 newflow = flow;
   REAL8 output = 0;
-  if (fl >= fh) fh = fl+1;
-  if (fl > psd->data->length) fl = psd->data->length -2;
-  if (fh > psd->data->length) fh = psd->data->length -1;
+
+  if (fh > psd->data->length) 
+    {
+    fh = psd->data->length -1;
+    fhigh = fh * moments->deltaF;
+    }
+  if (fl >= fh)
+    {
+    newflow = fhigh - 1.0;
+    fl = floor(newflow / moments->deltaF);
+    }
+
   XLALComputeIMRBankCumulativeNoiseMoment(moments, power,0);
 
   if (power < 0) 
@@ -300,7 +310,7 @@ static REAL8 x(IMRBankCumulativeNoiseMoments *moments,
   /*printf("output of x function for m=%f fl=%f fh=%f pow=%d/3 is %e\n",
          m,flow,fhigh,power,output);*/
   /* FIXME: UH OH! Recursion! if the output is zero then bump up the frequency until it isn't */
-  if (output <= 0) return x(moments, m, flow, fhigh+1.0, power, mpower);
+  if (output <= 0) return 0.0; /*x(moments, m, (newflow-0.5), (fhigh+0.5), power, mpower);*/
   else return output;
   }
 
@@ -311,9 +321,19 @@ static REAL8 lx(IMRBankCumulativeNoiseMoments *moments,
   REAL8 output = 0;
   UINT4 fl = floor(flow / moments->deltaF);
   UINT4 fh = floor(fhigh / moments->deltaF);
-  if (fl >= fh) fh = fl+1;
-  if (fl > psd->data->length) fl = psd->data->length -2;
-  if (fh > psd->data->length) fh = psd->data->length -1;
+  REAL8 newflow = flow;
+
+  if (fh > psd->data->length) 
+    {
+    fh = psd->data->length -1;
+    fhigh = fh * moments->deltaF;
+    }
+  if (fl >= fh) 
+    {
+    newflow = fhigh - 1.0;
+    fl = floor(newflow / moments->deltaF);
+    }
+
   XLALComputeIMRBankCumulativeNoiseMoment(moments,power,1);
 
   if (power < 0)
@@ -329,7 +349,7 @@ static REAL8 lx(IMRBankCumulativeNoiseMoments *moments,
   if (mpower < 0) output /= pow(m,-mpower/3.);
   if (mpower > 0) output *= pow(m,mpower/3.);
   /* FIXME: UH OH! Recursion! if the output is zero then bump up the frequency until it isn't */
-  if (output <= 0) return lx(moments, m, flow, fhigh+1.0, power, mpower);
+  if (output <= 0) return 0.0;/* lx(moments, m, (newflow-0.5), (fhigh+0.5), power, mpower);*/
   else return output;
   }
 
@@ -340,9 +360,19 @@ static REAL8 lsqx(IMRBankCumulativeNoiseMoments *moments,
   REAL8 output = 0;
   UINT4 fl = floor(flow / moments->deltaF);
   UINT4 fh = floor(fhigh / moments->deltaF);
-  if (fl >= fh) fh = fl+1;
-  if (fl > psd->data->length) fl = psd->data->length -2;
-  if (fh > psd->data->length) fh = psd->data->length -1;
+  REAL8 newflow = flow;
+
+  if (fh > psd->data->length) 
+    {
+    fh = psd->data->length -1;
+    fhigh = fh * moments->deltaF;
+    }
+  if (fl >= fh)
+    {
+    newflow = fhigh - 1.0;
+    fl = floor(newflow / moments->deltaF);
+    }
+
   XLALComputeIMRBankCumulativeNoiseMoment(moments,power,2);
   if (power < 0)
     {
@@ -357,7 +387,7 @@ static REAL8 lsqx(IMRBankCumulativeNoiseMoments *moments,
   if (mpower < 0) output /= pow(m,-mpower/3.);
   if (mpower > 0) output *= pow(m,mpower/3.);
   /* FIXME: UH OH! Recursion! if the output is zero then bump up the frequency until it isn't */
-  if (output <= 0) return lsqx(moments, m, flow, fhigh+1.0, power, mpower);
+  if (output <= 0) return 0.0; /*lsqx(moments, m, (newflow-0.5), (fhigh+0.5), power, mpower);*/
   else return output;
   }
 
@@ -1221,45 +1251,39 @@ static int XLALComputeIMRBankMetric(REAL8 mass1, REAL8 mass2, IMRBankCumulativeN
    
   /*printf("starting metric 00\n");*/
   metric->data[0][0] = 
-    XLALComputeIMRBankMetricTimeTime(mass1,mass2,fl,fm,-7,moments) / 
-      x(moments,1,fl,fm,-7,0)
-    + XLALComputeIMRBankMetricTimeTime(mass1,mass2,fm,fr,-4,moments) /
-      x(moments,1,fl,fm,-4,0);
-
+    ( XLALComputeIMRBankMetricTimeTime(mass1,mass2,fl,fm,-7,moments) + 
+    XLALComputeIMRBankMetricTimeTime(mass1,mass2,fm,fr,-4,moments) ) /
+    ( x(moments,1,fl,fm,-7,0) + x(moments,1,fm,fr,-4,0) );
   /*printf("starting metric 01\n");*/
-  metric->data[0][1] = metric->data[1][0] = 
-    XLALComputeIMRBankMetricTimeMass(mass1,mass2,fl,fm,-7,moments) / 
-      x(moments,1,fl,fm,-7,0)
-    + XLALComputeIMRBankMetricTimeMass(mass1,mass2,fm,fr,-4,moments) /
-      x(moments,1,fm,fr,-4,0);
 
-/*printf("starting metric 02\n");*/
+  metric->data[0][1] = metric->data[1][0] = 
+    ( XLALComputeIMRBankMetricTimeMass(mass1,mass2,fl,fm,-7,moments) +
+    XLALComputeIMRBankMetricTimeMass(mass1,mass2,fm,fr,-4,moments) ) /
+    ( x(moments,1,fl,fm,-7,0) + x(moments,1,fm,fr,-4,0) );
+
+  /*printf("starting metric 02\n");*/
   metric->data[0][2] = metric->data[2][0] = 
-    XLALComputeIMRBankMetricTimeEta(mass1,mass2,fl,fm,-7,moments) /
-      x(moments,1,fl,fm,-7,0)
-    + XLALComputeIMRBankMetricTimeEta(mass1,mass2,fm,fr,-4,moments) /
-      x(moments,1,fm,fr,-4,0);
+    ( XLALComputeIMRBankMetricTimeEta(mass1,mass2,fl,fm,-7,moments) +
+    XLALComputeIMRBankMetricTimeEta(mass1,mass2,fm,fr,-4,moments) ) /
+    ( x(moments,1,fl,fm,-7,0) + x(moments,1,fm,fr,-4,0) );
 
   /*printf("starting metric 11\n");*/
   metric->data[1][1] = 
-    XLALComputeIMRBankMetricMassMass(mass1,mass2,fl,fm,-7,moments) /
-      x(moments,1,fl,fm,-7,0)
-    + XLALComputeIMRBankMetricMassMass(mass1,mass2,fm,fr,-4,moments) /
-      x(moments,1,fm,fr,-4,0);
-      
+    ( XLALComputeIMRBankMetricMassMass(mass1,mass2,fl,fm,-7,moments) +
+    XLALComputeIMRBankMetricMassMass(mass1,mass2,fm,fr,-4,moments) ) /
+    ( x(moments,1,fl,fm,-7,0) + x(moments,1,fm,fr,-4,0) );
+
   /*printf("starting metric 22\n");*/
   metric->data[2][2] =
-     XLALComputeIMRBankMetricEtaEta(mass1,mass2,fl,fm,-7,moments) /
-       x(moments,1,fl,fm,-7,0)
-     + XLALComputeIMRBankMetricEtaEta(mass1,mass2,fm,fr,-4,moments) /
-       x(moments,1,fm,fr,-4,0);
+    ( XLALComputeIMRBankMetricEtaEta(mass1,mass2,fl,fm,-7,moments) +
+    XLALComputeIMRBankMetricEtaEta(mass1,mass2,fm,fr,-4,moments) ) /
+    ( x(moments,1,fl,fm,-7,0) + x(moments,1,fm,fr,-4,0) );
 
   /*printf("starting metric 12\n");*/
   metric->data[1][2] = metric->data[2][1] =
-     XLALComputeIMRBankMetricMassEta(mass1,mass2,fl,fm,-7,moments) /
-       x(moments,1,fl,fm,-7,0)     
-     + XLALComputeIMRBankMetricMassEta(mass1,mass2,fm,fr,-4,moments) / 
-       x(moments,1,fm,fr,-4,0);
+    ( XLALComputeIMRBankMetricMassEta(mass1,mass2,fl,fm,-7,moments) +
+    XLALComputeIMRBankMetricMassEta(mass1,mass2,fm,fr,-4,moments) ) /
+    ( x(moments,1,fl,fm,-7,0) + x(moments,1,fm,fr,-4,0) );
   /*printMetric(metric);*/
   return 0;
 
@@ -1355,7 +1379,7 @@ static REAL8 integrateMassVolume(REAL8 mbox[3],
   REAL8 m2 = mbox[1];
   REAL8 size = mbox[2];
   REAL8 volume = 0;
-  REAL8 sf = 0.8409;/*gives volume that is 2x overlapping*/
+  REAL8 sf = 0.8409; /* gives volume that is 2x overlapping */
   REAL8 g1 = mDensity(sf*m1,m2*sf,I);
   REAL8 g2 = mDensity(sf*m1+size/sf/sf,m2*sf,I);
   REAL8 g3 = mDensity(m1*sf,m2*sf+size/sf/sf,I);
@@ -1375,8 +1399,7 @@ static REAL8 integrateMassVolume(REAL8 mbox[3],
   if (g2 > maxg) maxg = g2;
   if (g3 > maxg) maxg = g3;
   if (g4 > maxg) maxg = g4;
-  /*factor of two because we only record half of the mass mass plane */  
-  volume = 2.0 * maxg * size/sf/sf * size/sf/sf * maxj ;             
+  volume = maxg * size/sf/sf * size/sf/sf * maxj ;             
   return volume;
   }
 
@@ -1385,7 +1408,11 @@ static REAL8 XLALComputeNumberOfIMRTemplatesInSquareIMRBankMassRegion(
                       REAL8 mbox[3], 
                       REAL8 mm, IMRBankCumulativeNoiseMoments *I)
   {
-  return integrateMassVolume(mbox,I) / mm / 2.0;
+  REAL8 out;
+  REAL8 vol;
+  vol = integrateMassVolume(mbox,I);
+  out = vol / mm / sqrt(2.0);
+  return out;
   }
 
 
@@ -1449,6 +1476,7 @@ static int addtemplatesMass(REAL8 mbox[3],
 	|| (m1 > in->mMax*LAL_MTSUN_SI)    
 	|| (m2 > in->mMax*LAL_MTSUN_SI)      )  return 0;
 
+  fprintf(stderr, "template %d\n",tmpltcnt++);
   XLALComputeIMRBankMetric(m1-size/2.,m2-size/2.,I,&metric);
   IMRBankMetricToTau0Tau3(&metric,I);
   /* project out the time dimension */
@@ -1510,15 +1538,15 @@ static int normalize_psd(InspiralCoarseBankIn *in)
   {
   UINT4 i;
   double f = 0;
+  double min = 1.0;
   UINT4 startIX;
   REAL8Vector *vec = in->shf.data;
   startIX = floor(in->fLower / in->shf.deltaF);
   vec->data[0] = vec->data[1];
+  for (i=0; i < vec->length; i++)
+    if (vec->data[i] < min && vec->data[i] != 0) min = vec->data[i];
   for (i=0; i<vec->length; i++)
-    {
-    f = i*in->shf.deltaF;
-    vec->data[i] *= 10e48;
-    }
+    vec->data[i] = 2.0 / min; /*10e50;*/
   return 0;
   }
 
@@ -1527,9 +1555,9 @@ static int normalize_psd(InspiralCoarseBankIn *in)
 int XLALTileIMRBankMassRegion(InspiralCoarseBankIn *in, SnglInspiralTable **first)
   {
   /* Convert all masses to geometrized units */
-  REAL8 mass1 = LAL_MTSUN_SI*(0.9*in->mMin);
-  REAL8 mass2 = LAL_MTSUN_SI*(0.9*in->mMin);
-  REAL8 size = LAL_MTSUN_SI*(1.1*in->mMax - 0.9*in->mMin);
+  REAL8 mass1 = LAL_MTSUN_SI*(0.85*in->mMin);
+  REAL8 mass2 = LAL_MTSUN_SI*(0.85*in->mMin);
+  REAL8 size = LAL_MTSUN_SI*(1.2*in->mMax - 0.85*in->mMin);
 
   REAL8 flow = in->fLower;
   SnglInspiralTable *tab = NULL;
