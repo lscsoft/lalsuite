@@ -568,6 +568,7 @@ INT4TimeSeries *XLALAggregationStateVector(CHAR *ifo,
   if (state == NULL)
   {
     /* failed to read data */
+    XLALFrClose(stream);
     XLAL_ERROR_NULL(func, XLAL_EINVAL);
   }
 
