@@ -467,6 +467,7 @@ REAL8TimeSeries *XLALAggregationStrainData(CHAR *ifo,
   if (series == NULL)
   {
     /* failed to read data */
+    XLALFrClose(stream);
     XLAL_ERROR_NULL(func, XLAL_EINVAL);
   }
 
