@@ -307,7 +307,7 @@ FrCache *XLALAggregationFrameCache(CHAR *ifo,
   if (cache == NULL)
   {
     /* failed to allocate memory for cache */
-    XLAL_ERROR_NULL(func, XLAL_ENONMEM);
+    XLAL_ERROR_NULL(func, XLAL_ENOMEM);
   }
   cache->numFrameFiles = num_frames;
   cache->frameFiles = XLALCalloc(num_frames, sizeof(*cache->frameFiles));
