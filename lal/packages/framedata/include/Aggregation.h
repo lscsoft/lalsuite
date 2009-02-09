@@ -49,7 +49,7 @@ extern "C" {
 #define DQ_MISSING    (1 << 6) /* Indication that data was dropped in DMT */
 
 
-/* function prototypes */
+/* return frame gps start time for given gps time */
 LIGOTimeGPS *XLALAggregationFrameStart(LIGOTimeGPS *gps);
 
 /* return frame type for given ifo */
@@ -71,37 +71,48 @@ CHAR *XLALAggregationFramePathFilename(CHAR *ifo,
 CHAR *XLALAggregationFrameURL(CHAR *ifo,
     LIGOTimeGPS *gps);
 
-/* return frame cache given ifo, gps time and length */
+/* return frame cache given ifo, gps time, and length */
 FrCache *XLALAggregationFrameCache(CHAR *ifo,
     LIGOTimeGPS *start,
     INT4 length);
 
+/* return frame stream for given ifo, gps time, and length */
 FrStream *XLALAggregationFrameStream(CHAR *ifo,
     LIGOTimeGPS *start,
     INT4 length);
 
+/* return strain data time series for given ifo, gps time, and length */
 REAL8TimeSeries *XLALAggregationStrainData(CHAR *ifo,
     LIGOTimeGPS *start,
     INT4 length);
 
+/* return data quality vector time series for given ifo, gps time and
+ * length */
 INT4TimeSeries *XLALAggregationDQVector(CHAR *ifo,
     LIGOTimeGPS *start,
     INT4 length);
 
+/* return state vector time series for given ifo, gps time, and length */
 INT4TimeSeries *XLALAggregationStateVector(CHAR *ifo,
     LIGOTimeGPS *start,
     INT4 length);
 
+/* return strain data time series for given ifo, gps time, length, and
+ * data quality vector bitmask */
 REAL8TimeSeries *XLALAggregationDQStrainData(CHAR *ifo,
     LIGOTimeGPS *start,
     INT4 length,
     INT4 dq_bitmask);
 
+/* return strain data time series for given ifo, gps time, length, and
+ * state vector bitmask */
 REAL8TimeSeries *XLALAggregationStateStrainData(CHAR *ifo,
     LIGOTimeGPS *start,
     INT4 length,
     INT4 state_bitmask);
 
+/* return strain data time series for givem ifo, gps time, length, data
+ * quality vector bitmask, and state vector bitmask */
 REAL8TimeSeries *XLALAggregationDQStateStrainData(CHAR *ifo,
     LIGOTimeGPS *start,
     INT4 length,

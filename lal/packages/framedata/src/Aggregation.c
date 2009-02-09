@@ -49,6 +49,30 @@ static INT4 return_frame_start(LIGOTimeGPS *gps)
 }
 
 
+/* return frame gps start time for given gps time */
+LIGOTimeGPS *XLALAggregationFrameStart(LIGOTimeGPS *gps)
+{
+  static const char *func = "XLALAggregationFrameStart";
+
+  /* declare variables */
+  LIGOTimeGPS *start;
+
+  /* check arguments */
+  if (!gps)
+    XLAL_ERROR_NULL(func, XLAL_EFAULT);
+
+  /* allocate memory */
+  start = LALCalloc(1, sizeof(*start));
+
+  /* determine frame start time, multiple of ONLINE_FRAME_DURATION */
+  start->gpsSeconds = (INT4)floor(gps->gpsSeconds / ONLINE_FRAME_DURATION) * \
+                     ONLINE_FRAME_DURATION;
+  start->gpsNanoSeconds = 0;
+
+  return start;
+}
+
+
 /* return frame type for given ifo */
 CHAR *XLALAggregationFrameType(CHAR *ifo)
 {
