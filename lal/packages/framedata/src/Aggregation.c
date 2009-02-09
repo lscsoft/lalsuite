@@ -123,7 +123,8 @@ CHAR *XLALAggregationDirectoryPath(CHAR *ifo,
     XLAL_ERROR_NULL(func, XLAL_EINVAL);
   }
 
-  /* determine gps directory name, frame start must be multiple of 16 */
+  /* determine gps directory name, frame start must be multiple of
+   * ONLINE_FRAME_DURATION */
   frame_start = return_frame_start(gps);
   gps_dir = (INT4)floor(frame_start / 100000);
 
