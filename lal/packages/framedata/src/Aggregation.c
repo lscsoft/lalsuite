@@ -354,19 +354,19 @@ FrCache *XLALAggregationFrameCache(CHAR *ifo,
     frame_start = XLALAggregationFrameStart(&gps);
 
     /* allocate memory for cache entry */
-    file->source = LALMalloc(strlen(ifo) + 1);
+    file->source = XLALMalloc(strlen(ifo) + 1);
     if (!file->source)
     {
       XLALFrDestroyCache(cache);
       XLAL_ERROR_NULL(func, XLAL_ENOMEM);
     }
-    file->description = LALMalloc(strlen(type) + 1);
+    file->description = XLALMalloc(strlen(type) + 1);
     if (!file->description)
     {
       XLALFrDestroyCache(cache);
       XLAL_ERROR_NULL(func, XLAL_ENOMEM);
     }
-    file->url = LALMalloc(strlen(url) + 1);
+    file->url = XLALMalloc(strlen(url) + 1);
     if (!file->url)
     {
       XLALFrDestroyCache(cache);
@@ -418,6 +418,7 @@ FrStream *XLALAggregationFrameStream(CHAR *ifo,
   if (stream == NULL)
   {
     /* failed to open stream */
+    XLALFrDestroyCache(cache);
     XLAL_ERROR_NULL(func, XLAL_EINVAL);
   }
 
