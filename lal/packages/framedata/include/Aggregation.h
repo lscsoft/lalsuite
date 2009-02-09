@@ -40,30 +40,67 @@ extern "C" {
 #define ONLINE_SAMPLE_RATE 16384
 
 /* data quality */
-#define DQ_SCIENCE     (1 << 0)  /* SV_SCIENCE & LIGHT */
-#define DQ_INJECTION   (1 << 1)  /* Injection: same as statevector */
-#define DQ_UP          (1 << 2)  /* SV_UP & LIGHT */
-#define DQ_CALIBRATED  (1 << 3)  /* SV_UP & LIGHT & (not TRANSIENT) */
-#define DQ_BADGAMMA    (1 << 4)  /* Calibration is bad (outside 0.8 < gamma < 1.2) */
-#define DQ_LIGHT       (1 << 5)  /* Light in the arms ok */
-#define DQ_MISSING     (1 << 6)  /* Indication that data was dropped in DMT */
+#define DQ_SCIENCE    (1 << 0) /* SV_SCIENCE & LIGHT */
+#define DQ_INJECTION  (1 << 1) /* Injection: same as statevector */
+#define DQ_UP         (1 << 2) /* SV_UP & LIGHT */
+#define DQ_CALIBRATED (1 << 3) /* SV_UP & LIGHT & (not TRANSIENT) */
+#define DQ_BADGAMMA   (1 << 4) /* Bad calibration (outside 0.8 < gamma < 1.2) */
+#define DQ_LIGHT      (1 << 5) /* Light in the arms ok */
+#define DQ_MISSING    (1 << 6) /* Indication that data was dropped in DMT */
 
 
 /* function prototypes */
 LIGOTimeGPS *XLALAggregationFrameStart(LIGOTimeGPS *gps);
-CHAR *XLALAggregationDirectoryPath(CHAR *ifo, LIGOTimeGPS *gps);
+
+CHAR *XLALAggregationDirectoryPath(CHAR *ifo,
+    LIGOTimeGPS *gps);
+
 CHAR *XLALAggregationFrameType(CHAR *ifo);
-CHAR *XLALAggregationFrameFilename(CHAR *ifo, LIGOTimeGPS *gps);
-CHAR *XLALAggregationFramePathFilename(CHAR *ifo, LIGOTimeGPS *gps);
-CHAR *XLALAggregationFrameURL(CHAR *ifo, LIGOTimeGPS *gps);
-FrCache *XLALAggregationFrameCache(CHAR *ifo, LIGOTimeGPS *start, INT4 length);
-FrStream *XLALAggregationFrameStream(CHAR *ifo, LIGOTimeGPS *start, INT4 length);
-REAL8TimeSeries *XLALAggregationStrainData(CHAR *ifo, LIGOTimeGPS *start, INT4 length);
-INT4TimeSeries *XLALAggregationDQVector(CHAR *ifo, LIGOTimeGPS *start, INT4 length);
-INT4TimeSeries *XLALAggregationStateVector(CHAR *ifo, LIGOTimeGPS *start, INT4 length);
-REAL8TimeSeries *XLALAggregationDQStrainData(CHAR *ifo, LIGOTimeGPS *start, INT4 length, INT4 dq_bitmask);
-REAL8TimeSeries *XLALAggregationStateStrainData(CHAR *ifo, LIGOTimeGPS *start, INT4 length, INT4 state_bitmask);
-REAL8TimeSeries *XLALAggregationDQStateStrainData(CHAR *ifo, LIGOTimeGPS *start, INT4 length, INT4 dq_bitmask, INT4 state_bitmask);
+
+CHAR *XLALAggregationFrameFilename(CHAR *ifo,
+    LIGOTimeGPS *gps);
+
+CHAR *XLALAggregationFramePathFilename(CHAR *ifo,
+    LIGOTimeGPS *gps);
+
+CHAR *XLALAggregationFrameURL(CHAR *ifo,
+    LIGOTimeGPS *gps);
+
+FrCache *XLALAggregationFrameCache(CHAR *ifo,
+    LIGOTimeGPS *start,
+    INT4 length);
+
+FrStream *XLALAggregationFrameStream(CHAR *ifo,
+    LIGOTimeGPS *start,
+    INT4 length);
+
+REAL8TimeSeries *XLALAggregationStrainData(CHAR *ifo,
+    LIGOTimeGPS *start,
+    INT4 length);
+
+INT4TimeSeries *XLALAggregationDQVector(CHAR *ifo,
+    LIGOTimeGPS *start,
+    INT4 length);
+
+INT4TimeSeries *XLALAggregationStateVector(CHAR *ifo,
+    LIGOTimeGPS *start,
+    INT4 length);
+
+REAL8TimeSeries *XLALAggregationDQStrainData(CHAR *ifo,
+    LIGOTimeGPS *start,
+    INT4 length,
+    INT4 dq_bitmask);
+
+REAL8TimeSeries *XLALAggregationStateStrainData(CHAR *ifo,
+    LIGOTimeGPS *start,
+    INT4 length,
+    INT4 state_bitmask);
+
+REAL8TimeSeries *XLALAggregationDQStateStrainData(CHAR *ifo,
+    LIGOTimeGPS *start,
+    INT4 length,
+    INT4 dq_bitmask,
+    INT4 state_bitmask);
 
 #ifdef __cplusplus
 }
