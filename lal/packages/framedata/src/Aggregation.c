@@ -35,20 +35,6 @@
 #include <lal/TimeSeries.h>
 
 
-/* return frame start time for given gps time */
-static INT4 return_frame_start(LIGOTimeGPS *gps)
-{
-  /* declare variables */
-  static INT4 frame_start;
-
-  /* frame start must be a multiple of ONLINE_FRAME_DURATION */
-  frame_start = (INT4)floor(gps->gpsSeconds / ONLINE_FRAME_DURATION) * \
-                ONLINE_FRAME_DURATION;
-
-  return frame_start;
-}
-
-
 /* return frame gps start time for given gps time */
 LIGOTimeGPS *XLALAggregationFrameStart(LIGOTimeGPS *gps)
 {
