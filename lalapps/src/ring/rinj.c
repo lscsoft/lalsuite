@@ -78,7 +78,7 @@ RCSID( "$Id$" );
 "  --gps-start-time TIME    start injections at GPS time TIME (793130413)\n"\
 "  --gps-end-time TIME      end injections at GPS time TIME (795679213)\n"\
 "  --time-step STEP         space injections by STEP / pi seconds apart (2630)\n"\
-"  --time-interval TIME     distribute injections in interval TIME (0)\n"\
+"  --time-interval TIME     distribute injections in interval TIME (250)\n"\
 "  --seed SEED              seed random number generator with SEED (1)\n"\
 "  --user-tag STRING        set the usertag to STRING\n"\
 "  --inj-distr INJDISTR     distribute injections uniformly in\n"\
@@ -89,9 +89,9 @@ RCSID( "$Id$" );
 "  --minimum-spin AMIN      set the minimum component of the dimensionless spin parameter (0)\n"\
 "  --maximum-spin AMAX      set the maximum component of the dimensionless spin parameter (0.994)\n"\
 "  --minimum-quality MIN    set minimum quality factor to MIN (2)\n"\
-"  --maximum-quality MAX    set maximum quality factor to MAX (22)\n"\
-"  --minimum-frequency MIN  set minimum frequency to MIN (45)\n"\
-"  --maximum-frequency MAX  set maximum frequency to MAX (2500)\n"\
+"  --maximum-quality MAX    set maximum quality factor to MAX (20)\n"\
+"  --minimum-frequency MIN  set minimum frequency to MIN (50)\n"\
+"  --maximum-frequency MAX  set maximum frequency to MAX (2000)\n"\
 "  --minimum-distance DMIN  set the minimum distance to DMIN kpc (1)\n"\
 "  --maximum-distance DMAX      set the maximum distance to DMAX kpc (200000)\n"\
 "  --epsilon EPS            amount of energy radiated as gravitational waves (0.01)\n"\
@@ -136,17 +136,17 @@ int main( int argc, char *argv[] )
   LIGOTimeGPS   gpsEndTime;
   REAL8         meanTimeStep = 7000 / LAL_PI;
   REAL8         timeInterval = 250;
-  REAL8         tstep = 0;
+  REAL8         tstep = 2630;
   UINT4         randSeed = 1;
   CHAR         *userTag = NULL;
   REAL4         minMass = 13.8;
   REAL4         maxMass = 236.8;
   REAL4         minSpin = 0;
   REAL4         maxSpin = 0.994;
-  REAL4         minFreq = 45.0;
-  REAL4         maxFreq = 2500.0;
+  REAL4         minFreq = 50.0;
+  REAL4         maxFreq = 2000.0;
   REAL4         minQuality = 2;
-  REAL4         maxQuality = 22.0;
+  REAL4         maxQuality = 20.0;
   REAL4         dmin = 1;
   REAL4         dmax = 200000;
   REAL4         epsilon = 0.010;
