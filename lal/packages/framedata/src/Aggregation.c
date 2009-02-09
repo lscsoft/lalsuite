@@ -49,6 +49,11 @@ LIGOTimeGPS *XLALAggregationFrameStart(LIGOTimeGPS *gps)
 
   /* allocate memory */
   start = XLALCalloc(1, sizeof(*start));
+  if (start == NULL)
+  {
+    /* failed to allocate memory for start */
+    XLAL_ERROR_NULL(func, XLAL_ENOMEM);
+  }
 
   /* determine frame start time, multiple of ONLINE_FRAME_DURATION */
   start->gpsSeconds = (INT4)floor(gps->gpsSeconds / ONLINE_FRAME_DURATION) * \
@@ -299,10 +304,16 @@ FrCache *XLALAggregationFrameCache(CHAR *ifo,
 
   /* initilise cache */
   cache = XLALCalloc(1, sizeof(*cache));
+  if (cache == NULL)
+  {
+    /* failed to allocate memory for cache */
+    XLAL_ERROR_NULL(func, XLAL_ENONMEM);
+  }
   cache->numFrameFiles = num_frames;
   cache->frameFiles = XLALCalloc(num_frames, sizeof(*cache->frameFiles));
-  if (!cache->frameFiles)
+  if (cache->frameFiles == NULL)
   {
+    /* failed to allocate memory for cache->frameFiles */
     XLALFree(cache);
     XLAL_ERROR_NULL(func, XLAL_ENOMEM);
   }
