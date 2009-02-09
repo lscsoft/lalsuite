@@ -35,7 +35,7 @@
 #include <lal/TimeSeries.h>
 
 
-/* return frame start for given gps time */
+/* return frame start time for given gps time */
 static INT4 return_frame_start(LIGOTimeGPS *gps)
 {
   /* declare variables */
@@ -89,7 +89,7 @@ CHAR *XLALAggregationFrameType(CHAR *ifo)
 }
 
 
-/* return path for given GPS time */
+/* return path for given ifo and gps time */
 CHAR *XLALAggregationDirectoryPath(CHAR *ifo,
     LIGOTimeGPS *gps)
 {
@@ -136,7 +136,7 @@ CHAR *XLALAggregationDirectoryPath(CHAR *ifo,
 }
 
 
-/* return frame filename for given gps time and ifo */
+/* return frame filename for given ifo and gps time */
 CHAR *XLALAggregationFrameFilename(CHAR *ifo,
     LIGOTimeGPS *gps)
 {
@@ -172,7 +172,7 @@ CHAR *XLALAggregationFrameFilename(CHAR *ifo,
 }
 
 
-/* return full path to frame for a given gps time and ifo */
+/* return full path to frame for given ifo and gps time */
 CHAR *XLALAggregationFramePathFilename(CHAR *ifo,
     LIGOTimeGPS *gps)
 {
@@ -212,7 +212,7 @@ CHAR *XLALAggregationFramePathFilename(CHAR *ifo,
 }
 
 
-/* return url to frame for a given gps time and ifo */
+/* return url to frame for a given ifo and gps time */
 CHAR *XLALAggregationFrameURL(CHAR *ifo,
     LIGOTimeGPS *gps)
 {
@@ -243,7 +243,7 @@ CHAR *XLALAggregationFrameURL(CHAR *ifo,
 }
 
 
-/* return frame cache of required frames */
+/* return frame cache given ifo, gps time, and length */
 FrCache *XLALAggregationFrameCache(CHAR *ifo,
     LIGOTimeGPS *start,
     INT4 length)
@@ -353,7 +353,7 @@ FrCache *XLALAggregationFrameCache(CHAR *ifo,
 }
 
 
-/* return required frame stream */
+/* return frame stream for given ifo, gps time, and length */
 FrStream *XLALAggregationFrameStream(CHAR *ifo,
     LIGOTimeGPS *start,
     INT4 length)
@@ -393,8 +393,7 @@ FrStream *XLALAggregationFrameStream(CHAR *ifo,
 }
 
 
-/* return strain data time series for given ifo, start time, and
- * duration */
+/* return strain data time series for given ifo, gps time, and length */
 REAL8TimeSeries *XLALAggregationStrainData(CHAR *ifo,
     LIGOTimeGPS *start,
     INT4 length)
@@ -442,8 +441,8 @@ REAL8TimeSeries *XLALAggregationStrainData(CHAR *ifo,
 }
 
 
-/* return data quality vector time series for given ifo, start time,
- * and duration */
+/* return data quality vector time series for given ifo, gps time and
+ * length */
 INT4TimeSeries *XLALAggregationDQVector(CHAR *ifo,
     LIGOTimeGPS *start,
     INT4 length)
@@ -491,8 +490,7 @@ INT4TimeSeries *XLALAggregationDQVector(CHAR *ifo,
 }
 
 
-/* return state vector time series for given ifo, start time, and
- * duration */
+/* return state vector time series for given ifo, gps time, and length */
 INT4TimeSeries *XLALAggregationStateVector(CHAR *ifo,
     LIGOTimeGPS *start,
     INT4 length)
@@ -554,8 +552,8 @@ INT4TimeSeries *XLALAggregationStateVector(CHAR *ifo,
 }
 
 
-/* return strain data time series for given ifo, start time, duration,
- * and data quality bitmask */
+/* return strain data time series for given ifo, gps time, length, and
+ * data quality vector bitmask */
 REAL8TimeSeries *XLALAggregationDQStrainData(CHAR *ifo,
     LIGOTimeGPS *start,
     INT4 length,
@@ -608,8 +606,8 @@ REAL8TimeSeries *XLALAggregationDQStrainData(CHAR *ifo,
 }
 
 
-/* return strain data time series for given ifo, start time, duration,
- * and state bitmask */
+/* return strain data time series for given ifo, gps time, length, and
+ * state vector bitmask */
 REAL8TimeSeries *XLALAggregationStateStrainData(CHAR *ifo,
     LIGOTimeGPS *start,
     INT4 length,
@@ -661,9 +659,8 @@ REAL8TimeSeries *XLALAggregationStateStrainData(CHAR *ifo,
   return series;
 }
 
-
-/* return strain data time series for given ifo, start time, duration,
- * data quality bitmask and state bitmask */
+/* return strain data time series for givem ifo, gps time, length, data
+ * quality vector bitmask, and state vector bitmask */
 REAL8TimeSeries *XLALAggregationDQStateStrainData(CHAR *ifo,
     LIGOTimeGPS *start,
     INT4 length,

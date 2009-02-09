@@ -52,20 +52,26 @@ extern "C" {
 /* function prototypes */
 LIGOTimeGPS *XLALAggregationFrameStart(LIGOTimeGPS *gps);
 
+/* return frame type for given ifo */
+CHAR *XLALAggregationFrameType(CHAR *ifo);
+
+/* return path for given ifo and gps time */
 CHAR *XLALAggregationDirectoryPath(CHAR *ifo,
     LIGOTimeGPS *gps);
 
-CHAR *XLALAggregationFrameType(CHAR *ifo);
-
+/* return frame filename for given ifo and gps time */
 CHAR *XLALAggregationFrameFilename(CHAR *ifo,
     LIGOTimeGPS *gps);
 
+/* return full path to frame for given ifo and gps time*/
 CHAR *XLALAggregationFramePathFilename(CHAR *ifo,
     LIGOTimeGPS *gps);
 
+/* return url to frame for a given gps time and ifo */
 CHAR *XLALAggregationFrameURL(CHAR *ifo,
     LIGOTimeGPS *gps);
 
+/* return frame cache given ifo, gps time and length */
 FrCache *XLALAggregationFrameCache(CHAR *ifo,
     LIGOTimeGPS *start,
     INT4 length);
