@@ -104,21 +104,6 @@ REAL8TimeSeries *XLALAggregationDQStrainData(CHAR *ifo,
     INT4 length,
     INT4 dq_bitmask);
 
-/* return strain data time series for given ifo, gps time, length, and
- * state vector bitmask */
-REAL8TimeSeries *XLALAggregationStateStrainData(CHAR *ifo,
-    LIGOTimeGPS *start,
-    INT4 length,
-    INT4 state_bitmask);
-
-/* return strain data time series for givem ifo, gps time, length, data
- * quality vector bitmask, and state vector bitmask */
-REAL8TimeSeries *XLALAggregationDQStateStrainData(CHAR *ifo,
-    LIGOTimeGPS *start,
-    INT4 length,
-    INT4 dq_bitmask,
-    INT4 state_bitmask);
-
 #ifdef __cplusplus
 }
 #endif
