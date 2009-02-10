@@ -154,7 +154,7 @@ LALFindChirpACTDTemplate (
   ppnParams.eta = tmplt->mass1 * tmplt->mass2 /
     ( ppnParams.mTot * ppnParams.mTot );
   /* Set distance at 20Mpc for testing, will be normalised anyway */
-  ppnParams.d = 1.0 * 1000. * 1000. * LAL_PC_SI;
+  ppnParams.d = 1.0;
   ppnParams.fStartIn = params->fLow;
   ppnParams.fStopIn = - 1.0 /
                     (6.0 * sqrt(6.0) * LAL_PI * ppnParams.mTot * LAL_MTSUN_SI);
@@ -244,7 +244,7 @@ LALFindChirpACTDTemplate (
   for( i = 0; i < NACTDVECS; i++ )
   {
     memcpy( tmpACTDVec->data, ACTDVecs[i].data,  
-               numPoints * sizeof( ACTDVecs[i].data ) );
+               numPoints * sizeof( *( ACTDVecs[i].data ) ) );
 
     /* Taper the waveform if required */
     if ( params->taperTmplt != INSPIRAL_TAPER_NONE )
@@ -279,11 +279,11 @@ LALFindChirpACTDTemplate (
       /* that band-passing will work properly */
       shift = ( numPoints - j ) / 2;
       memmove( tmpACTDVec->data + shift, tmpACTDVec->data, 
-                                       j * sizeof( tmpACTDVec->data ) );
+                                       j * sizeof( *( tmpACTDVec->data ) ) );
 
-      memset( tmpACTDVec->data, 0, shift * sizeof( tmpACTDVec->data ) );
+      memset( tmpACTDVec->data, 0, shift * sizeof( *( tmpACTDVec->data ) ) );
       memset( tmpACTDVec->data + ( numPoints + j ) / 2, 0,
-         ( numPoints - ( numPoints + j ) / 2 ) * sizeof( tmpACTDVec->data ) );
+		( numPoints - ( numPoints + j ) / 2 ) * sizeof( *( tmpACTDVec->data ) ) );
 
       /* Select an appropriate part of the vector to band pass. */
       /* band passing the whole thing takes a lot of time */
@@ -324,9 +324,11 @@ LALFindChirpACTDTemplate (
 
       /* Now we need to do the shift to the end. */
       memcpy( tmpACTDVec->data, tmpACTDVec->data + ( numPoints + j ) / 2,
-         ( numPoints - ( numPoints + j ) / 2 )  * sizeof( tmpACTDVec->data ) );
+         ( numPoints - ( numPoints + j ) / 2 )  
+				       * sizeof( *(tmpACTDVec->data) ) );
       memcpy( tmpACTDVec->data + numPoints - ( numPoints + j ) / 2,
-         tmpACTDVec->data, ( numPoints + j ) /2 * sizeof( tmpACTDVec->data ) );
+         tmpACTDVec->data, ( numPoints + j ) /2 
+				       * sizeof( *( tmpACTDVec->data ) ) );
 
     }
     else
@@ -334,13 +336,13 @@ LALFindChirpACTDTemplate (
       /* No need for so much shifting around if not band passing */
       /* shift chirp to end of vector so it is the correct place for filter */
         memmove( tmpACTDVec->data + numPoints - j, tmpACTDVec->data, 
-                                             j * sizeof( tmpACTDVec->data ) );
+                                        j * sizeof( *( tmpACTDVec->data ) ) );
         memset( tmpACTDVec->data, 0, 
-                             ( numPoints - j ) * sizeof( tmpACTDVec->data ) );
+                        ( numPoints - j ) * sizeof( *( tmpACTDVec->data ) ) );
     }
 
     memcpy( ACTDVecs[i].data, tmpACTDVec->data, 
-                            numPoints * sizeof( tmpACTDVec->data ) );
+                           numPoints * sizeof( *( tmpACTDVec->data ) ) );
 
   }
 
@@ -546,7 +548,7 @@ REAL4  XLALFindChirpACTDInnerProduct(
 {
   INT4  k;
   REAL4 innerProduct;
-  REAL8 sum = 0.0;
+  REAL4 sum = 0.0;
   flower = 0.0;
 
   for( k = 0; k < a->length; ++k )
@@ -560,7 +562,7 @@ REAL4  XLALFindChirpACTDInnerProduct(
     }
   }
 
-  innerProduct = 4.0 * (REAL4)(sum) * deltaF;
+  innerProduct = 4.0 * sum * deltaF;
 
   return innerProduct;
 

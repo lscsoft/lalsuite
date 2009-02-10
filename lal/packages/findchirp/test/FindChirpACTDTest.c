@@ -715,8 +715,8 @@ int main( int argc, char **argv )
       }
     }
 
-		normTest = 4.0 * norm ; /*fcSegVec->data->data->deltaF;
-*/
+		normTest = 4.0 * norm * fcSegVec->data->data->deltaF;
+
     /*
     normTest = XLALFindChirpACTDInnerProduct( &normTestVector, 
 		                                          &normTestVector,
