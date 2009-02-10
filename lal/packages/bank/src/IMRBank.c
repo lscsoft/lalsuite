@@ -1429,7 +1429,7 @@ static REAL8 XLALComputeNumberOfIMRTemplatesInSquareIMRBankMassRegion(
   REAL8 vol;
 
   vol = integrateMassVolume(mbox,I);
-  out = vol / mm / (2.0);
+  out = vol / mm ;
   return out;
   }
 
