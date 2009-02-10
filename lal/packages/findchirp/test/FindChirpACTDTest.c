@@ -443,7 +443,7 @@ int main( int argc, char **argv )
     params.inc = inc;
     params.phi = phi;
     params.psi = psi;
-    params.d = dist * 1000 * LAL_PC_SI;
+    params.d = 1.0;
     params.fStartIn = fmin;
     params.fStopIn = - 1.0 / 
                      ( 6.0 * sqrt(6.0) * LAL_PI * params.mTot * LAL_MTSUN_SI );
@@ -645,6 +645,7 @@ int main( int argc, char **argv )
 
 
 
+
   LALFindChirpTDData( &status, fcSegVec, dataSegVec, dataParams );
 
 
@@ -672,16 +673,19 @@ int main( int argc, char **argv )
   fprintf( stderr, "      Done!\n" );  
 
 
-
   /* Normalise data to compute overlap */
   if ( overlap == 1 )
   {
     REAL4 invRootData;
-    REAL4 normTest;
+    REAL4 norm = 0.0, normTest;
 		COMPLEX8Vector normTestVector;
+		COMPLEX8Vector normTestVector2;
     
     normTestVector.length = fcSegVec->data->data->data->length;
     normTestVector.data = fcSegVec->data->data->data->data;
+    normTestVector2.length = fcSegVec->data->data->data->length;
+    normTestVector2.data = filterInput->fcTmplt->ACTDtilde->data +
+                              (numPoints/2+1);
 
     memset( fcSegVec->data->segNorm->data, 0,
       fcSegVec->data->segNorm->length * sizeof(REAL4) );
@@ -698,12 +702,28 @@ int main( int argc, char **argv )
     }
     fprintf( stderr, "Normalising input data for overlap...\n" );
 
+    for( j = 0; j < fcSegVec->data->data->data->length - 1; ++j )
+    {
+      if( j * fcSegVec->data->data->deltaF >= 40. )
+      {
+        REAL4 power;
+        power = fcSegVec->data->data->data->data[j].re * 
+			          fcSegVec->data->data->data->data[j].re;
+        power += fcSegVec->data->data->data->data[j].im * 
+			          fcSegVec->data->data->data->data[j].im;
+			  norm += power / dataParams->wtildeVec->data[j].re;
+      }
+    }
+
+		normTest = 4.0 * norm ; /*fcSegVec->data->data->deltaF;
+*/
+    /*
     normTest = XLALFindChirpACTDInnerProduct( &normTestVector, 
 		                                          &normTestVector,
 		                                          dataParams->wtildeVec->data, 
 																							40.,
 																							fcSegVec->data->data->deltaF );
-
+    */
     invRootData = pow( normTest, -0.5 );
 
     for ( j = 0;  j < fcSegVec->data->data->data->length; ++j )
@@ -713,15 +733,25 @@ int main( int argc, char **argv )
     }
 
 
+    fprintf( stderr, "   normTest  = %1.3e\n", normTest );
 		normTest = XLALFindChirpACTDInnerProduct( &normTestVector, 
 		                                          &normTestVector,
 		                                          dataParams->wtildeVec->data, 
 																							40.,
 																							fcSegVec->data->data->deltaF );
 
-    fprintf( stderr, "   < data, data > = %1.3e\n", normTest );
+    fprintf( stderr, "   < data, data>  = %1.3e\n", normTest );
+    normTest = XLALFindChirpACTDInnerProduct( &normTestVector,
+                                              &normTestVector2,
+                                              dataParams->wtildeVec->data,
+                                              40.,
+                                              fcSegVec->data->data->deltaF );
+
+    fprintf( stderr, "   < H2, data >   = %1.3e\n", normTest );
+
     fprintf( stderr, "                                              Done!\n" );  
   }
+
 
   if( output == 1 )
   {
