@@ -370,6 +370,8 @@ int main(int argc, char *argv[]){
 
   stddev = LALCalloc(1, sizeof(REAL8));
 
+
+
   /* start frequency loop */
 
   for (freqCounter = 0; freqCounter < nfreqLoops; freqCounter++) {
@@ -409,6 +411,7 @@ int main(int argc, char *argv[]){
 
       ts = XLALCreateTimestampVector (1);
       tOffs = 0.5/deltaF;
+
       /*loop over all sfts and get the PSDs and detector states */
       for (j=0; j < (INT4)numsft; j++) {
   	psdVec->data[j].data = NULL;
@@ -425,9 +428,9 @@ int main(int argc, char *argv[]){
       /* create sft pair indices */
       LAL_CALL ( LALCreateSFTPairsIndicesFrom2SFTvectors( &status, &sftPairIndexList, inputSFTs, &pairParams, uvar_detChoice), &status);
 
-    /* initialise F_+, F_x vectors */
 
     beamfns = (CrossCorrBeamFn *) LALCalloc(numsft, sizeof(CrossCorrBeamFn));
+
     frequencyShiftList = XLALCreateREAL8Vector(numsft);
     signalPhaseList = XLALCreateREAL8Vector(numsft);
 
@@ -443,11 +446,6 @@ int main(int argc, char *argv[]){
 
       sigmasq = XLALCreateREAL8Vector(sftPairIndexList->vectorLength);
 
-
-  /*  AMcoef = (AMCoeffs *)LALCalloc(1, sizeof(AMCoeffs));
-    AMcoef->a = XLALCreateREAL4Vector(numsft);
-    AMcoef->b = XLALCreateREAL4Vector(numsft);
-*/
 /*printf("starting loops over sky patches\n");*/
 
     /* loop over sky patches -- main calculations  */
@@ -526,6 +524,12 @@ int main(int argc, char *argv[]){
 	}
 
 	sft = NULL;
+	
+	/* clean up AMcoefs */
+	XLALDestroyAMCoeffs(AMcoef);
+	XLALDestroyDetectorStateSeries(detState);
+	XLALFree(det);
+
      } /*finish loop over individual sfts */
 
      /* loop over SFT pairs */
@@ -550,7 +554,6 @@ int main(int argc, char *argv[]){
 	LAL_CALL( LALCalculateUalpha (&status, &ualpha->data[j], amplitudes, &signalPhaseList->data[index1], &signalPhaseList->data[index2], uvar_averagePsi, beamfns[index1], beamfns[index2], &sigmasq->data[j]), &status);
 
      	ualphacounter = ualphacounter + 1;
-
     } /*finish loop over sft pairs*/
 
 
@@ -565,9 +568,6 @@ int main(int argc, char *argv[]){
 
 fprintf(fp, "%1.5f\t %1.5f\t %1.5f\t%e\t%1.10f\n", thisPoint.Alpha, thisPoint.Delta, uvar_f0 + (freqCounter*deltaF), fdot_current, weights->data[counter]/(*stddev));
 
-/*    fprintf(fp, "%1.5f\t %1.5f\t %1.5f\t%1.10f\t%1.10f\t%1.10f\n", thisPoint.Alpha, thisPoint.Delta, uvar_f0 + (freqCounter*deltaF), weights->data[counter], *stddev, weights->data[counter]/(*stddev));*/
-
-/*printf("%1.5f\t%1.10f\t%1.10f\t%1.10f\n", uvar_f0 + (counter*deltaF), weights->data[counter], *stddev, weights->data[counter]/(*stddev));*/
 
     weights->data[counter] = weights->data[counter++]/(*stddev);
 
@@ -587,9 +587,11 @@ printf("Frequency %f\n", uvar_f0 + (freqCounter*deltaF));
    XLALDestroyREAL8Vector(signalPhaseList);
    LAL_CALL ( LALDestroyPSDVector  ( &status, &psdVec), &status);
    LAL_CALL (LALDestroySFTVector(&status, &inputSFTs), &status );
-   LALFree(sftPairIndexList->data);
-   LALFree(sftPairIndexList);
+   XLALFree(sftPairIndexList->data);
+   XLALFree(sftPairIndexList);
    XLALDestroyREAL8Vector(sigmasq);
+   XLALFree(beamfns); 
+
  /*  XLALDestroyDetectorStateSeries ( detStates );*/
 
    } /*finish loop over frequency derivatives*/
@@ -603,7 +605,6 @@ printf("Frequency %f\n", uvar_f0 + (freqCounter*deltaF));
   LALFree(edat->ephemE);
   LALFree(edat->ephemS);
   LALFree(edat);
-
   LALFree(skyAlpha);
   LALFree(skyDelta);
   LALFree(skySizeAlpha);
