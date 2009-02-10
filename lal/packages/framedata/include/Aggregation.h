@@ -74,34 +74,34 @@ CHAR *XLALAggregationFrameURL(CHAR *ifo,
 /* return frame cache given ifo, gps time, and duration */
 FrCache *XLALAggregationFrameCache(CHAR *ifo,
     LIGOTimeGPS *start,
-    INT4 duration);
+    REAL8 duration);
 
-/* return frame stream for given ifo, gps time, and length */
+/* return frame stream for given ifo, gps time, and duration */
 FrStream *XLALAggregationFrameStream(CHAR *ifo,
     LIGOTimeGPS *start,
-    INT4 length);
+    REAL8 duration);
 
-/* return strain data time series for given ifo, gps time, and length */
+/* return strain data time series for given ifo, gps time, and duration */
 REAL8TimeSeries *XLALAggregationStrainData(CHAR *ifo,
     LIGOTimeGPS *start,
-    INT4 length);
+    REAL8 duration);
 
 /* return data quality vector time series for given ifo, gps time and
- * length */
+ * duration */
 INT4TimeSeries *XLALAggregationDQVector(CHAR *ifo,
     LIGOTimeGPS *start,
-    INT4 length);
+    REAL8 duration);
 
-/* return state vector time series for given ifo, gps time, and length */
+/* return state vector time series for given ifo, gps time, and duration */
 INT4TimeSeries *XLALAggregationStateVector(CHAR *ifo,
     LIGOTimeGPS *start,
-    INT4 length);
+    REAL8 duration);
 
-/* return strain data time series for given ifo, gps time, length, and
+/* return strain data time series for given ifo, gps time, duration, and
  * data quality vector bitmask */
 REAL8TimeSeries *XLALAggregationDQStrainData(CHAR *ifo,
     LIGOTimeGPS *start,
-    INT4 length,
+    REAL8 duration,
     INT4 dq_bitmask);
 
 #ifdef __cplusplus

@@ -265,10 +265,10 @@ CHAR *XLALAggregationFrameURL(CHAR *ifo,
 }
 
 
-/* return frame cache given ifo, gps time, and length */
+/* return frame cache given ifo, gps time, and duration */
 FrCache *XLALAggregationFrameCache(CHAR *ifo,
     LIGOTimeGPS *start,
-    INT4 length)
+    REAL8 duration)
 {
   static const char *func = "XLALAggregationFrameCache";
 
@@ -290,8 +290,9 @@ FrCache *XLALAggregationFrameCache(CHAR *ifo,
     XLAL_ERROR_NULL(func, XLAL_EFAULT);
 
   /* determine number of frames */
-  gps.gpsSeconds = start->gpsSeconds + length;
-  gps.gpsNanoSeconds = start->gpsNanoSeconds;
+  gps.gpsSeconds = start->gpsSeconds + (INT4)floor(duration);
+  gps.gpsNanoSeconds = start->gpsNanoSeconds + \
+                       (INT4)((duration - floor(duration)) * pow(10, 9));
   frame_start = XLALAggregationFrameStart(start);
   last_frame_start = XLALAggregationFrameStart(&gps);
   frame_duration = (last_frame_start->gpsSeconds + ONLINE_FRAME_DURATION) - \
@@ -388,10 +389,10 @@ FrCache *XLALAggregationFrameCache(CHAR *ifo,
 }
 
 
-/* return frame stream for given ifo, gps time, and length */
+/* return frame stream for given ifo, gps time, and duration */
 FrStream *XLALAggregationFrameStream(CHAR *ifo,
     LIGOTimeGPS *start,
-    INT4 length)
+    REAL8 duration)
 {
   static const char *func = "XLALAggregationFrameStream";
 
@@ -406,7 +407,7 @@ FrStream *XLALAggregationFrameStream(CHAR *ifo,
     XLAL_ERROR_NULL(func, XLAL_EFAULT);
 
   /* get frame cache */
-  cache = XLALAggregationFrameCache(ifo, start, length);
+  cache = XLALAggregationFrameCache(ifo, start, duration);
   if (cache == NULL)
   {
     /* failed to get cache */
@@ -429,10 +430,10 @@ FrStream *XLALAggregationFrameStream(CHAR *ifo,
 }
 
 
-/* return strain data time series for given ifo, gps time, and length */
+/* return strain data time series for given ifo, gps time, and duration */
 REAL8TimeSeries *XLALAggregationStrainData(CHAR *ifo,
     LIGOTimeGPS *start,
-    INT4 length)
+    REAL8 duration)
 {
   static const char *func = "XLALAggregationStrainData";
 
@@ -449,10 +450,10 @@ REAL8TimeSeries *XLALAggregationStrainData(CHAR *ifo,
     XLAL_ERROR_NULL(func, XLAL_EFAULT);
 
   /* determine number of data points */
-  num_points = length * ONLINE_SAMPLE_RATE;
+  num_points = duration * ONLINE_SAMPLE_RATE;
 
   /* open frame stream */
-  stream = XLALAggregationFrameStream(ifo, start, length);
+  stream = XLALAggregationFrameStream(ifo, start, duration);
   if (stream == NULL)
   {
     /* failed to open stream */
@@ -462,8 +463,8 @@ REAL8TimeSeries *XLALAggregationStrainData(CHAR *ifo,
   /* get strain data time series */
   LALSnprintf(channel, LIGOMETA_CHANNEL_MAX, "%s:%s", ifo, \
       ONLINE_STRAIN_CHANNEL);
-  series = XLALFrReadREAL8TimeSeries(stream, channel, start, \
-      (REAL8)length, num_points);
+  series = XLALFrReadREAL8TimeSeries(stream, channel, start, duration, \
+      num_points);
   if (series == NULL)
   {
     /* failed to read data */
@@ -479,10 +480,10 @@ REAL8TimeSeries *XLALAggregationStrainData(CHAR *ifo,
 
 
 /* return data quality vector time series for given ifo, gps time and
- * length */
+ * duration */
 INT4TimeSeries *XLALAggregationDQVector(CHAR *ifo,
     LIGOTimeGPS *start,
-    INT4 length)
+    REAL8 duration)
 {
   static const char *func = "XLALAggregationDQVector";
 
@@ -499,10 +500,10 @@ INT4TimeSeries *XLALAggregationDQVector(CHAR *ifo,
     XLAL_ERROR_NULL(func, XLAL_EFAULT);
 
   /* determine number of data points */
-  num_points = length * ONLINE_SAMPLE_RATE;
+  num_points = duration * ONLINE_SAMPLE_RATE;
 
   /* open frame stream */
-  stream = XLALAggregationFrameStream(ifo, start, length);
+  stream = XLALAggregationFrameStream(ifo, start, duration);
   if (stream == NULL)
   {
     /* failed to open stream */
@@ -513,7 +514,7 @@ INT4TimeSeries *XLALAggregationDQVector(CHAR *ifo,
   LALSnprintf(channel, LIGOMETA_CHANNEL_MAX, "%s:%s", ifo, \
       ONLINE_DQ_VECTOR);
   series = XLALFrReadINT4TimeSeries(stream, channel, start, \
-      (REAL8)length, num_points);
+      (REAL8)duration, num_points);
   if (series == NULL)
   {
     /* failed to read data */
@@ -528,10 +529,10 @@ INT4TimeSeries *XLALAggregationDQVector(CHAR *ifo,
 }
 
 
-/* return state vector time series for given ifo, gps time, and length */
+/* return state vector time series for given ifo, gps time, and duration */
 INT4TimeSeries *XLALAggregationStateVector(CHAR *ifo,
     LIGOTimeGPS *start,
-    INT4 length)
+    REAL8 duration)
 {
   static const char *func = "XLALAggregationStateVector";
 
@@ -550,10 +551,10 @@ INT4TimeSeries *XLALAggregationStateVector(CHAR *ifo,
     XLAL_ERROR_NULL(func, XLAL_EFAULT);
 
   /* determine number of data points */
-  num_points = length * ONLINE_SAMPLE_RATE;
+  num_points = duration * ONLINE_SAMPLE_RATE;
 
   /* open frame stream */
-  stream = XLALAggregationFrameStream(ifo, start, length);
+  stream = XLALAggregationFrameStream(ifo, start, duration);
   if (stream == NULL)
   {
     /* failed to open stream */
@@ -564,7 +565,7 @@ INT4TimeSeries *XLALAggregationStateVector(CHAR *ifo,
   LALSnprintf(channel, LIGOMETA_CHANNEL_MAX, "%s:%s", ifo, \
       ONLINE_STATE_VECTOR);
   state = XLALFrReadREAL4TimeSeries(stream, channel, start, \
-      (REAL8)length, num_points);
+      (REAL8)duration, num_points);
   if (state == NULL)
   {
     /* failed to read data */
@@ -591,11 +592,11 @@ INT4TimeSeries *XLALAggregationStateVector(CHAR *ifo,
 }
 
 
-/* return strain data time series for given ifo, gps time, length, and
+/* return strain data time series for given ifo, gps time, duration, and
  * data quality vector bitmask */
 REAL8TimeSeries *XLALAggregationDQStrainData(CHAR *ifo,
     LIGOTimeGPS *start,
-    INT4 length,
+    REAL8 duration,
     INT4 dq_bitmask)
 {
   static const char *func = "XLALAggregationDQStrainData";
@@ -612,7 +613,7 @@ REAL8TimeSeries *XLALAggregationDQStrainData(CHAR *ifo,
     XLAL_ERROR_NULL(func, XLAL_EFAULT);
 
   /* get data quality vector */
-  dq_vector = XLALAggregationDQVector(ifo, start, length);
+  dq_vector = XLALAggregationDQVector(ifo, start, duration);
   if (dq_vector == NULL)
   {
     /* failed to get data quality vector */
@@ -634,7 +635,7 @@ REAL8TimeSeries *XLALAggregationDQStrainData(CHAR *ifo,
   XLALDestroyINT4TimeSeries(dq_vector);
 
   /* get strain data time series */
-  series = XLALAggregationStrainData(ifo, start, length);
+  series = XLALAggregationStrainData(ifo, start, duration);
   if (series == NULL)
   {
     /* failed to get strain data time series */
