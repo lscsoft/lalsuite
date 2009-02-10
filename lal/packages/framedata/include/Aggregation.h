@@ -71,10 +71,10 @@ CHAR *XLALAggregationFramePathFilename(CHAR *ifo,
 CHAR *XLALAggregationFrameURL(CHAR *ifo,
     LIGOTimeGPS *gps);
 
-/* return frame cache given ifo, gps time, and length */
+/* return frame cache given ifo, gps time, and duration */
 FrCache *XLALAggregationFrameCache(CHAR *ifo,
     LIGOTimeGPS *start,
-    INT4 length);
+    INT4 duration);
 
 /* return frame stream for given ifo, gps time, and length */
 FrStream *XLALAggregationFrameStream(CHAR *ifo,
