@@ -435,7 +435,7 @@ static REAL8 JPsiEta(REAL8 mass1, REAL8 mass2,
     - 11.1937/3.0 * log(1./m/LAL_PI) * x(I,m,fl,fh,1+xpow,1)
     + 11.1937/3.0 * lx(I,m,fl,fh,1+xpow,1)
     );
-  return output/2.0/LAL_PI; /*/I->flow/2./LAL_PI;*/
+  return output/2.0/LAL_PI/I->flow; /*/I->flow/2./LAL_PI;*/
   /*return output /2./LAL_PI/I->flow; */
   }
 
@@ -586,7 +586,7 @@ static REAL8 JPsiEtaPsiEta(REAL8 mass1, REAL8 mass2,
     + 125.298/9.0 * lsqx(I,m,fl,fh,2+xpow,2)
    
     );
-  return output/4.0/LAL_PI/LAL_PI; /*/I->flow/I->flow/2./LAL_PI/2./LAL_PI;*/
+  return output/4.0/LAL_PI/LAL_PI/I->flow/I->flow; /*/I->flow/I->flow/2./LAL_PI/2./LAL_PI;*/
   /*return output /2./LAL_PI/2./LAL_PI/I->flow/I->flow; */
   }
 
@@ -1004,7 +1004,7 @@ static REAL8 JPsiMPsiEta(REAL8 mass1, REAL8 mass2,
     + 1077.78/9. /n/n/n * lsqx(I,m,fl,fh,4+xpow,4) 
 
     );
-  return output/I->flow/2./LAL_PI/2./LAL_PI;
+  return output/I->flow/2./LAL_PI/2./LAL_PI/I->flow;
   /*return output /2./LAL_PI/2./LAL_PI/I->flow/I->flow; */
   }
 
@@ -1101,7 +1101,7 @@ static REAL8 JPsiTimePsiEta(REAL8 mass1, REAL8 mass2,
     - 70.3319/3. * lx(I,m,fl,fh,4+xpow,4)
 
   );
-  return output/2./LAL_PI/2./LAL_PI;
+  return output/2./LAL_PI/2./LAL_PI/I->flow;
   /*return output /LAL_PI/2./LAL_PI/I->flow;*/
   }
 
@@ -1429,7 +1429,7 @@ static REAL8 XLALComputeNumberOfIMRTemplatesInSquareIMRBankMassRegion(
   REAL8 vol;
 
   vol = integrateMassVolume(mbox,I);
-  out = vol / mm / sqrt(2.0);
+  out = vol / mm / (2.0);
   return out;
   }
 
