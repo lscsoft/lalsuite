@@ -441,7 +441,7 @@ static REAL8 JPsiEta(REAL8 mass1, REAL8 mass2,
     - 11.1937/3.0 * log(1./m/LAL_PI) * x(I,m,fl,fh,1+xpow,1)
     + 11.1937/3.0 * lx(I,m,fl,fh,1+xpow,1)
     );
-  return output/I->flow; /*/I->flow/2./LAL_PI;*/
+  return output; /*/I->flow/2./LAL_PI;*/
   /*return output /2./LAL_PI/I->flow; */
   }
 
@@ -592,7 +592,7 @@ static REAL8 JPsiEtaPsiEta(REAL8 mass1, REAL8 mass2,
     + 125.298/9.0 * lsqx(I,m,fl,fh,2+xpow,2)
    
     );
-  return output/I->flow/I->flow; /*/I->flow/I->flow/2./LAL_PI/2./LAL_PI;*/
+  return output; /*/I->flow/I->flow/2./LAL_PI/2./LAL_PI;*/
   /*return output /2./LAL_PI/2./LAL_PI/I->flow/I->flow; */
   }
 
@@ -633,7 +633,7 @@ static REAL8 JPsiM(REAL8 mass1, REAL8 mass2,
   );
 
   /* Lets use solar masses here and stick with it */
-  return output/I->flow;
+  return output;
   /*return output  /2./LAL_PI/I->flow; */
   }
 
@@ -787,7 +787,7 @@ static REAL8 JPsiMPsiM(REAL8 mass1, REAL8 mass2,
     - 2155.56/9.0 * lsqx(I,m,fl,fh,4+xpow,4)
 
   );
-  return output/I->flow/I->flow;
+  return output;
   /*return output / 2./LAL_PI/2./LAL_PI/I->flow/I->flow; */
 
   }
@@ -1010,7 +1010,7 @@ static REAL8 JPsiMPsiEta(REAL8 mass1, REAL8 mass2,
     + 1077.78/9. /n/n/n * lsqx(I,m,fl,fh,4+xpow,4) 
 
     );
-  return output/I->flow/I->flow;
+  return output;
   /*return output /2./LAL_PI/2./LAL_PI/I->flow/I->flow; */
   }
 
@@ -1073,7 +1073,7 @@ static REAL8 JPsiTimePsiM(REAL8 mass1, REAL8 mass2,
     + 23.444/3. * lx(I,m,fl,fh,4+xpow,4)
 
   );
-  return output/I->flow;
+  return output;
   /*return output /LAL_PI/2./LAL_PI/I->flow;*/
   }
 
@@ -1107,7 +1107,7 @@ static REAL8 JPsiTimePsiEta(REAL8 mass1, REAL8 mass2,
     - 70.3319/3. * lx(I,m,fl,fh,4+xpow,4)
 
   );
-  return output/I->flow;
+  return output;
   /*return output /LAL_PI/2./LAL_PI/I->flow;*/
   }
 
@@ -1203,6 +1203,11 @@ static int IMRBankMetricToTau0Tau3(IMRBankMetric *metric,IMRBankCumulativeNoiseM
   REAL8 dtdt, dtdt0, dtdt3, dmdt, dmdt0, dmdt3, dndt, dndt0, dndt3;
   REAL8 h00,h01,h02,h10,h20,h11,h12,h21,h22;
   /* fix this */
+
+  REAL8 c8_3 = 2. * LAL_PI / pow(moments->flow,8./3.);
+  REAL8 c5_3 = 2. * LAL_PI / pow(moments->flow,5./3.);
+  REAL8 p2 = 2. * LAL_PI;
+
   REAL8 g00 = metric->data[0][0];/* /2./LAL_PI/flow/2./LAL_PI/flow;*/
   REAL8 g01 = metric->data[0][1];/* /2./LAL_PI/flow/2./LAL_PI/flow;*/
   REAL8 g02 = metric->data[0][2];/* /2./LAL_PI/flow/2./LAL_PI/flow;*/
@@ -1234,15 +1239,15 @@ static int IMRBankMetricToTau0Tau3(IMRBankMetric *metric,IMRBankCumulativeNoiseM
   h21 = dtdt0*g02 + dmdt0*g12 + dndt0*g22;
   h22 = dtdt3*g02 + dmdt3*g12 + dndt3*g22;
   /* fix here down*/
-  metric->data[0][0] = h00*dtdt + h10*dmdt + h20*dndt;
-  metric->data[0][1] =  h01*dtdt + h11*dmdt + h21*dndt;
-  metric->data[0][2] =  h02*dtdt + h12*dmdt + h22*dndt;
-  metric->data[1][0] =  h00*dtdt0 + h10*dmdt0 + h20*dndt0;
-  metric->data[1][1] =  h01*dtdt0 + h11*dmdt0 + h21*dndt0;
-  metric->data[1][2] =  h02*dtdt0 + h12*dmdt0 + h22*dndt0;
-  metric->data[2][0] =  h00*dtdt3 + h10*dmdt3 + h20*dndt3;
-  metric->data[2][1] =  h01*dtdt3 + h11*dmdt3 + h21*dndt3;
-  metric->data[2][2] =  h02*dtdt3 + h12*dmdt3 + h22*dndt3;
+  metric->data[0][0] = p2 * p2 * (h00*dtdt + h10*dmdt + h20*dndt);
+  metric->data[0][1] = p2 * c8_3 * (h01*dtdt + h11*dmdt + h21*dndt);
+  metric->data[0][2] =  p2 * c5_3 * (h02*dtdt + h12*dmdt + h22*dndt);
+  metric->data[1][0] =  p2 * c5_3 * (h00*dtdt0 + h10*dmdt0 + h20*dndt0);
+  metric->data[1][1] =  c8_3 * c8_3 * (h01*dtdt0 + h11*dmdt0 + h21*dndt0);
+  metric->data[1][2] =  c5_3 * c8_3 * (h02*dtdt0 + h12*dmdt0 + h22*dndt0);
+  metric->data[2][0] =  p2 * c5_3 * (h00*dtdt3 + h10*dmdt3 + h20*dndt3);
+  metric->data[2][1] =  c8_3 * c5_3 * (h01*dtdt3 + h11*dmdt3 + h21*dndt3);
+  metric->data[2][2] =  c5_3 * c5_3 * (h02*dtdt3 + h12*dmdt3 + h22*dndt3);
 
   /*printf("%e %e %e\n %e %e %e\n %e %e %e\n\n",metric->data[0][0],metric->data[0][1],metric->data[0][2],metric->data[1][0],metric->data[1][1],metric->data[1][2],metric->data[2][0],metric->data[2][1],metric->data[2][2]);*/
   return 0;
@@ -1460,7 +1465,6 @@ static REAL8 integrateMassVolume(REAL8 mbox[3],
   if (g3 > maxg) maxg = g3;
   if (g4 > maxg) maxg = g4;
   volume = maxg * maxj * size * size * LAL_MTSUN_SI;             
-  /*fprintf(stderr,"volume %e\n",volume);*/
   return volume;
   }
 
@@ -1473,7 +1477,7 @@ static REAL8 XLALComputeNumberOfIMRTemplatesInSquareIMRBankMassRegion(
   REAL8 vol;
 
   vol = integrateMassVolume(mbox,I);
-  out = vol / mm / 2.0;
+  out = vol / mm / 2.0 / I->flow / I->flow;
   return out;
   }
 
