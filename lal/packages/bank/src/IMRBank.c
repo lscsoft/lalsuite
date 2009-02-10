@@ -10,9 +10,15 @@
 /* This function sets the pointers of the cumulative noise moment arrays to 
  * zero */
 int tmpltcnt = 0;
+
 static REAL8 eta(REAL8 m1, REAL8 m2)
   {
   return m1*m2/(m1+m2)/(m1+m2);
+  }
+
+static REAL8 chirpmass(REAL8 m1, REAL8 m2)
+  {
+  return pow(m1*m2,0.6)/pow(m1+m2,0.2) / LAL_MTSUN_SI;
   }
 
 static int XLALCreateIMRBankCumulativeNoiseMoments(IMRBankCumulativeNoiseMoments *moments, REAL8FrequencySeries *psd, REAL8 flow)
@@ -46,9 +52,9 @@ static int computeMinusMoment(IMRBankCumulativeNoiseMoments *moments, INT4 power
   {
   REAL8FrequencySeries *psd = moments->psd;
   UINT4 length = psd->data->length;
-  REAL8 deltaF = psd->deltaF;
-  UINT4 j = 0;
   REAL8 flow = moments->flow;
+  REAL8 deltaF = psd->deltaF / flow;
+  UINT4 j = 0;
   REAL8 f;
   if (logFlag != 0 || power >= 0) return 1;
   if (moments->minus3[-power]) return 0;
@@ -59,7 +65,7 @@ static int computeMinusMoment(IMRBankCumulativeNoiseMoments *moments, INT4 power
     if (psd->data->data[j] != 0)
       {
       f = deltaF*j;
-      if (deltaF*j < flow)  moments->minus3[-power]->data[j] = 0;
+      if (deltaF*j < 1)  moments->minus3[-power]->data[j] = 0;
       else moments->minus3[-power]->data[j] = moments->minus3[-power]->data[j-1]
         + 1./pow(f,-power / 3.0) / (psd->data->data[j]) * deltaF;
         /* pow(flow,-power/3.0);*/
@@ -79,9 +85,9 @@ static int computePlusMoment(IMRBankCumulativeNoiseMoments *moments, INT4 power,
 
    REAL8FrequencySeries *psd = moments->psd;
    UINT4 length = psd->data->length;
-   REAL8 deltaF = psd->deltaF;
-   UINT4 j = 0;
    REAL8 flow = moments->flow;
+   REAL8 deltaF = psd->deltaF / flow;
+   UINT4 j = 0;
    REAL8 f;
    if (logFlag != 0 || power < 0) return 1;
    if (moments->plus3[power]) return 0;
@@ -93,7 +99,7 @@ static int computePlusMoment(IMRBankCumulativeNoiseMoments *moments, INT4 power,
     if (psd->data->data[j] != 0)
       {
       f = deltaF*j;
-      if (deltaF*j < flow)  moments->plus3[power]->data[j] = 0;
+      if (deltaF*j < 1)  moments->plus3[power]->data[j] = 0;
       else moments->plus3[power]->data[j] = moments->plus3[power]->data[j-1]
         + pow(f,power / 3.0) / (psd->data->data[j]) * deltaF;
         /* pow(flow,power/3.0);*/
@@ -113,9 +119,9 @@ static int computePlusLogMoment(IMRBankCumulativeNoiseMoments *moments, INT4 pow
 
    REAL8FrequencySeries *psd = moments->psd;
    UINT4 length = psd->data->length;
-   REAL8 deltaF = psd->deltaF;
-   UINT4 j = 0; 
    REAL8 flow = moments->flow;
+   REAL8 deltaF = psd->deltaF/flow;
+   UINT4 j = 0; 
    REAL8 f;
    if (logFlag != 1 || power < 0) return 1;
    if (moments->logplus3[power]) return 0;
@@ -127,7 +133,7 @@ static int computePlusLogMoment(IMRBankCumulativeNoiseMoments *moments, INT4 pow
     if (psd->data->data[j] != 0)
       {
       f = deltaF*j;
-      if (deltaF*j < flow)  moments->logplus3[power]->data[j] = 0;
+      if (deltaF*j < 1)  moments->logplus3[power]->data[j] = 0;
       else moments->logplus3[power]->data[j] = 
            moments->logplus3[power]->data[j-1] 
 	   + pow(f,power / 3.0)  * log(f)
@@ -149,9 +155,9 @@ static int computeMinusLogMoment(IMRBankCumulativeNoiseMoments *moments, INT4 po
 
    REAL8FrequencySeries *psd = moments->psd;
    UINT4 length = psd->data->length;
-   REAL8 deltaF = psd->deltaF;
-   UINT4 j = 0;
    REAL8 flow = moments->flow;
+   REAL8 deltaF = psd->deltaF/flow;
+   UINT4 j = 0;
    REAL8 f;
    if (logFlag != 1 || power >= 0) return 1;
    if (moments->logminus3[-power]) return 0;
@@ -163,7 +169,7 @@ static int computeMinusLogMoment(IMRBankCumulativeNoiseMoments *moments, INT4 po
     if (psd->data->data[j] != 0)
       {
       f = deltaF*j;
-      if (deltaF*j < flow)  moments->logminus3[-power]->data[j] = 0;
+      if (deltaF*j < 1)  moments->logminus3[-power]->data[j] = 0;
       else moments->logminus3[-power]->data[j] =
             moments->logminus3[-power]->data[j-1]
             + 1./pow(f,-power / 3.0)  * log(f) 
@@ -185,9 +191,9 @@ static int computeMinusLogsqMoment(IMRBankCumulativeNoiseMoments *moments, INT4 
 
    REAL8FrequencySeries *psd = moments->psd;
    UINT4 length = psd->data->length;
-   REAL8 deltaF = psd->deltaF;
-   UINT4 j = 0;
    REAL8 flow = moments->flow;
+   REAL8 deltaF = psd->deltaF/flow;
+   UINT4 j = 0;
    REAL8 f;
    if (logFlag != 2 || power >= 0) return 1;
    if (moments->logsqminus3[-power]) return 0;
@@ -199,7 +205,7 @@ static int computeMinusLogsqMoment(IMRBankCumulativeNoiseMoments *moments, INT4 
     if (psd->data->data[j] != 0)
       {
       f = deltaF*j;
-      if (deltaF*j < flow)  moments->logsqminus3[-power]->data[j] = 0;
+      if (deltaF*j < 1)  moments->logsqminus3[-power]->data[j] = 0;
       else
       moments->logsqminus3[-power]->data[j] 
         = moments->logsqminus3[-power]->data[j-1]
@@ -222,9 +228,9 @@ static int computePlusLogsqMoment(IMRBankCumulativeNoiseMoments *moments, INT4 p
 
    REAL8FrequencySeries *psd = moments->psd;
    UINT4 length = psd->data->length;
-   REAL8 deltaF = psd->deltaF;
-   UINT4 j = 0;
    REAL8 flow = moments->flow;
+   REAL8 deltaF = psd->deltaF/flow;
+   UINT4 j = 0;
    REAL8 f;
    if (logFlag != 2 || power < 0) return 1;
    if (moments->logsqplus3[power]) return 0;
@@ -236,7 +242,7 @@ static int computePlusLogsqMoment(IMRBankCumulativeNoiseMoments *moments, INT4 p
     if (psd->data->data[j] != 0)
       {
       f = deltaF*j;
-      if (deltaF*j < flow)  moments->logsqplus3[power]->data[j] = 0;
+      if (deltaF*j < 1)  moments->logsqplus3[power]->data[j] = 0;
       else
       moments->logsqplus3[power]->data[j] 
         = moments->logsqplus3[power]->data[j-1]
@@ -435,7 +441,7 @@ static REAL8 JPsiEta(REAL8 mass1, REAL8 mass2,
     - 11.1937/3.0 * log(1./m/LAL_PI) * x(I,m,fl,fh,1+xpow,1)
     + 11.1937/3.0 * lx(I,m,fl,fh,1+xpow,1)
     );
-  return output/2.0/LAL_PI/I->flow; /*/I->flow/2./LAL_PI;*/
+  return output/I->flow; /*/I->flow/2./LAL_PI;*/
   /*return output /2./LAL_PI/I->flow; */
   }
 
@@ -586,7 +592,7 @@ static REAL8 JPsiEtaPsiEta(REAL8 mass1, REAL8 mass2,
     + 125.298/9.0 * lsqx(I,m,fl,fh,2+xpow,2)
    
     );
-  return output/4.0/LAL_PI/LAL_PI/I->flow/I->flow; /*/I->flow/I->flow/2./LAL_PI/2./LAL_PI;*/
+  return output/I->flow/I->flow; /*/I->flow/I->flow/2./LAL_PI/2./LAL_PI;*/
   /*return output /2./LAL_PI/2./LAL_PI/I->flow/I->flow; */
   }
 
@@ -627,7 +633,7 @@ static REAL8 JPsiM(REAL8 mass1, REAL8 mass2,
   );
 
   /* Lets use solar masses here and stick with it */
-  return output/I->flow/2./LAL_PI;
+  return output/I->flow;
   /*return output  /2./LAL_PI/I->flow; */
   }
 
@@ -781,7 +787,7 @@ static REAL8 JPsiMPsiM(REAL8 mass1, REAL8 mass2,
     - 2155.56/9.0 * lsqx(I,m,fl,fh,4+xpow,4)
 
   );
-  return output/I->flow/I->flow/2./LAL_PI/2./LAL_PI;
+  return output/I->flow/I->flow;
   /*return output / 2./LAL_PI/2./LAL_PI/I->flow/I->flow; */
 
   }
@@ -1004,7 +1010,7 @@ static REAL8 JPsiMPsiEta(REAL8 mass1, REAL8 mass2,
     + 1077.78/9. /n/n/n * lsqx(I,m,fl,fh,4+xpow,4) 
 
     );
-  return output/I->flow/2./LAL_PI/2./LAL_PI/I->flow;
+  return output/I->flow/I->flow;
   /*return output /2./LAL_PI/2./LAL_PI/I->flow/I->flow; */
   }
 
@@ -1016,7 +1022,7 @@ static REAL8 JPsiTime(REAL8 mass1, REAL8 mass2,
   REAL8 m = (mass1+mass2);
   /* FINISH THIS!!! */
   output = -2.0 * LAL_PI * x(I,m,fl,fh,3+xpow,0);
-  return output/2./LAL_PI;/*/I->flow/2./LAL_PI;*/
+  return output;/*2./LAL_PI;*//*/I->flow/2./LAL_PI;*/
   /*return output /LAL_PI; */
   }
 
@@ -1030,7 +1036,7 @@ static REAL8 JPsiTimePsiTime(REAL8 mass1, REAL8 mass2,
   /* FINISH THIS!!! */
   /*printf("setting output for %f %f %f %d\n",m,fl,fh,xpow);*/
   output = 4.0 * LAL_PI * LAL_PI * x(I,m,fl,fh,6+xpow,0);
-  return output/4./LAL_PI/LAL_PI;/*/I->flow/I->flow/2./LAL_PI/2./LAL_PI;*/
+  return output;/*4./LAL_PI/LAL_PI;*//*/I->flow/I->flow/2./LAL_PI/2./LAL_PI;*/
   /*return output /LAL_PI/LAL_PI;*/
   }
 
@@ -1067,7 +1073,7 @@ static REAL8 JPsiTimePsiM(REAL8 mass1, REAL8 mass2,
     + 23.444/3. * lx(I,m,fl,fh,4+xpow,4)
 
   );
-  return output/I->flow/2./LAL_PI/2./LAL_PI;
+  return output/I->flow;
   /*return output /LAL_PI/2./LAL_PI/I->flow;*/
   }
 
@@ -1101,7 +1107,7 @@ static REAL8 JPsiTimePsiEta(REAL8 mass1, REAL8 mass2,
     - 70.3319/3. * lx(I,m,fl,fh,4+xpow,4)
 
   );
-  return output/2./LAL_PI/2./LAL_PI/I->flow;
+  return output/I->flow;
   /*return output /LAL_PI/2./LAL_PI/I->flow;*/
   }
 
@@ -1227,7 +1233,6 @@ static int IMRBankMetricToTau0Tau3(IMRBankMetric *metric,IMRBankCumulativeNoiseM
   h20 = dtdt*g02 + dmdt*g12 + dndt*g22;
   h21 = dtdt0*g02 + dmdt0*g12 + dndt0*g22;
   h22 = dtdt3*g02 + dmdt3*g12 + dndt3*g22;
-
   /* fix here down*/
   metric->data[0][0] = h00*dtdt + h10*dmdt + h20*dndt;
   metric->data[0][1] =  h01*dtdt + h11*dmdt + h21*dndt;
@@ -1388,6 +1393,44 @@ static REAL8 tDensity(REAL8 t0, REAL8 t3, IMRBankCumulativeNoiseMoments *I)
   }
 #endif
 
+static REAL8 eta_chirpmass_volume(REAL8 mbox[3])
+  {
+  REAL8 m1 = mbox[0];
+  REAL8 m2 = mbox[1];
+  REAL8 size = mbox[2];
+  REAL8 e1 = eta(m1,m2);
+  REAL8 e2 = eta(m1+size,m2);
+  REAL8 e3 = eta(m1,m2+size);
+  REAL8 e4 = eta(m1+size,m2+size);
+  REAL8 c1 = chirpmass(m1,m2);
+  REAL8 c2 = chirpmass(m1+size,m2);
+  REAL8 c3 = chirpmass(m1,m2+size);
+  REAL8 c4 = chirpmass(m1+size,m2+size);
+  REAL8 maxe = e1;
+  REAL8 maxc = c1;
+  REAL8 mine = e1;
+  REAL8 minc = c1;
+
+  if (e2 > maxe) maxe = e2;
+  if (e3 > maxe) maxe = e3;
+  if (e4 > maxe) maxe = e4;
+
+  if (c2 > maxc) maxc = c2;
+  if (c3 > maxc) maxc = c3;
+  if (c4 > maxc) maxc = c4;
+
+  if (e2 < maxe) mine = e2;
+  if (e3 < maxe) mine = e3;
+  if (e4 < maxe) mine = e4;
+
+  if (c2 < minc) minc = c2;
+  if (c3 < minc) minc = c3;
+  if (c4 < minc) minc = c4;
+
+  return (maxe-mine) * (maxc-minc);
+  
+  }
+
 static REAL8 integrateMassVolume(REAL8 mbox[3], 
                        IMRBankCumulativeNoiseMoments *I)
 
@@ -1416,7 +1459,8 @@ static REAL8 integrateMassVolume(REAL8 mbox[3],
   if (g2 > maxg) maxg = g2;
   if (g3 > maxg) maxg = g3;
   if (g4 > maxg) maxg = g4;
-  volume = maxg * size/sf/sf * size/sf/sf * maxj ;             
+  volume = maxg * maxj * size * size * LAL_MTSUN_SI;             
+  /*fprintf(stderr,"volume %e\n",volume);*/
   return volume;
   }
 
@@ -1429,7 +1473,7 @@ static REAL8 XLALComputeNumberOfIMRTemplatesInSquareIMRBankMassRegion(
   REAL8 vol;
 
   vol = integrateMassVolume(mbox,I);
-  out = vol / mm ;
+  out = vol / mm / 2.0;
   return out;
   }
 
