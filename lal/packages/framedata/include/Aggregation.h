@@ -40,13 +40,13 @@ extern "C" {
 #define ONLINE_SAMPLE_RATE 16384
 
 /* data quality */
-#define DQ_SCIENCE    (1 << 0) /* SV_SCIENCE & LIGHT */
-#define DQ_INJECTION  (1 << 1) /* Injection: same as statevector */
-#define DQ_UP         (1 << 2) /* SV_UP & LIGHT */
-#define DQ_CALIBRATED (1 << 3) /* SV_UP & LIGHT & (not TRANSIENT) */
-#define DQ_BADGAMMA   (1 << 4) /* Bad calibration (outside 0.8 < gamma < 1.2) */
-#define DQ_LIGHT      (1 << 5) /* Light in the arms ok */
-#define DQ_MISSING    (1 << 6) /* Indication that data was dropped in DMT */
+#define LAL_DQ_SCIENCE    (1 << 0) /* SV_SCIENCE & LIGHT */
+#define LAL_DQ_INJECTION  (1 << 1) /* Injection: same as statevector */
+#define LAL_DQ_UP         (1 << 2) /* SV_UP & LIGHT */
+#define LAL_DQ_CALIBRATED (1 << 3) /* SV_UP & LIGHT & (not TRANSIENT) */
+#define LAL_DQ_BADGAMMA   (1 << 4) /* Bad calibration */
+#define LAL_DQ_LIGHT      (1 << 5) /* Light in the arms ok */
+#define LAL_DQ_MISSING    (1 << 6) /* Data was dropped in DMT */
 
 
 /* return frame gps start time for given gps time */
