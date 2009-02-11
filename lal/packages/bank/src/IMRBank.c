@@ -1536,13 +1536,13 @@ static int addtemplatesMass(REAL8 mbox[3],
   m1 = mbox[0]+size/2.;/* * gsl_rng_uniform_pos(r); */
   m2 = mbox[1]+size/2.; /* * gsl_rng_uniform_pos(r);*/
   /* Don't forget the input masses are in Kg */
-  if ( (mtot <= in->MMin*LAL_MTSUN_SI) 
-        || (mtot >= in->MMax*LAL_MTSUN_SI) 
+  if ( (mtot <= 0.99 * in->MMin*LAL_MTSUN_SI) 
+        || (mtot >= 1.01 * in->MMax*LAL_MTSUN_SI) 
         || (m2>m1) 
-	|| (m1 < in->mMin*LAL_MTSUN_SI)    
-	|| (m2 < in->mMin*LAL_MTSUN_SI)    
-	|| (m1 > in->mMax*LAL_MTSUN_SI)    
-	|| (m2 > in->mMax*LAL_MTSUN_SI)      )  return 0;
+	|| (m1 < 0.99 * in->mMin*LAL_MTSUN_SI)    
+	|| (m2 < 0.99 * in->mMin*LAL_MTSUN_SI)    
+	|| (m1 > 1.01 * in->mMax*LAL_MTSUN_SI)    
+	|| (m2 > 1.01 * in->mMax*LAL_MTSUN_SI)      )  return 0;
 
   fprintf(stderr, "template %d\n",tmpltcnt++);
   XLALComputeIMRBankMetric(m1-size/2.,m2-size/2.,I,&metric);
