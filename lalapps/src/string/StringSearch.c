@@ -790,7 +790,7 @@ int CreateTemplateBank(struct CommandLineArgsTag CLA)
   t2t2=t1t1;
   k=1;
 
-  fprintf(stdout,"%% Templ.    frequency      sigma\n");  
+  fprintf(stdout,"%% Templ.    frequency      sigma        mismatch\n");  
   fprintf(stdout,"%% %d       %e        %e\n",k-1,strtemplate[0].f,strtemplate[0].norm);
 
   f_low_index = CLA.fbankhighfcutofflow / GV.Spec.deltaF;
