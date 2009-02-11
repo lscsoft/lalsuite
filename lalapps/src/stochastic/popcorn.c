@@ -510,13 +510,15 @@ INT4 main (INT4 argc, CHAR *argv[])
   fprintf(pf3,"%f %f ",sigma1,sigma2); 
   
   if(stat==2){
+   if(mcstat==2) 
+    {ksi0=1.-gsl_ran_poisson_pdf(0,mu0);}
    pmax=1.;
-   for(i=0;i<=nmax;i++){
-	pmax=pmax-gsl_ran_poisson_pdf(i,mu);}
+   for(i=0;i<=nmax;i++)
+    {pmax=pmax-gsl_ran_poisson_pdf(i,mu);}
    fprintf(stdout,"nmax=%d (%e percent left out)\n",nmax,pmax*100.);
    gsl_vector *ss=gsl_vector_alloc (4), *x=gsl_vector_alloc (4);
    gsl_vector_set_all (ss, 0.1);
-   gsl_vector_set(x,0,mu0);
+   gsl_vector_set(x,0,ksi0);
    gsl_vector_set(x,1,sigma0);
    gsl_vector_set(x,2,1.);
    gsl_vector_set(x,3,1.);
@@ -532,7 +534,7 @@ INT4 main (INT4 argc, CHAR *argv[])
     status = gsl_multimin_fminimizer_iterate(s);
     if (status){break;}
     size = gsl_multimin_fminimizer_size (s);
-    status = gsl_multimin_test_size (size, 1.e-4);
+    status = gsl_multimin_test_size (size, 1.e-6);
 	
     if(test_flag){
  	 if (status == GSL_SUCCESS){
@@ -543,9 +545,9 @@ INT4 main (INT4 argc, CHAR *argv[])
 	 fprintf (stdout,"f = %e\n", s->fval);
     }
    }
-   while (status == GSL_CONTINUE && iter < 300);
-   muest=gsl_vector_get (s->x, 0);
-   ksiest=1.-gsl_ran_poisson_pdf(0,muest);
+   while (status == GSL_CONTINUE && iter < 1000);
+   ksiest=gsl_vector_get (s->x, 0);
+   muest=-log(1.-ksiest);
    sigmaest=gsl_vector_get (s->x, 1);
    sigma1est=gsl_vector_get (s->x, 2);
    sigma2est=gsl_vector_get (s->x, 3);
@@ -559,17 +561,17 @@ INT4 main (INT4 argc, CHAR *argv[])
    fprintf(pf3,"%f %f %f %f %f %f\n",muest,ksiest,sigmaest,varmeanest,sigma1est,sigma2est);
    
    if(stat_flag){   
-	gsl_vector_set(x,0,muest);
+	gsl_vector_set(x,0,ksiest);
 	gsl_vector_set(x,1,sigmaest);
 	gsl_vector_set(x,2,sigma1est);
 	gsl_vector_set(x,3,sigma2est);
-	cp0=lambda1(x,NULL);	
+	cp0=lambda2(x,NULL);	
 	printf("likelihood function at estimated parameters: %e\n",-(double)Npt*cp0);
-    gsl_vector_set(x,0,mu);
+    gsl_vector_set(x,0,ksi);
 	gsl_vector_set(x,1,sigma);
 	gsl_vector_set(x,2,sigma1);
 	gsl_vector_set(x,3,sigma2);
-	cp0=lambda1(x,NULL);
+	cp0=lambda2(x,NULL);
 	printf("likelihood function at injected parameters: %e\n",-(double)Npt*cp0);
    }
    
@@ -584,7 +586,7 @@ INT4 main (INT4 argc, CHAR *argv[])
       gsl_vector_set(x,1,sigma_ml);
       gsl_vector_set(x,2,1.);
       gsl_vector_set(x,3,1.);
-	  CP[m][l]=-(double)Npt*lambda1(x,NULL);
+	  CP[m][l]=-(double)Npt*lambda2(x,NULL);
 	  }}
 	for(m=1;m<100;m++){
 	 for(l=1;l<100;l++){ 
@@ -856,19 +858,20 @@ double lambda1 (gsl_vector *x,void *params)
 double lambda2 (gsl_vector *x,void *params)
 {
 
-  int i,j;
+  int i,j,np;
   double y;
-  double dsum,psum;
-  double pmu,psigma,psigma1,psigma2;
+  double dsum,psum,pcleft,pcsum;
+  double pksi,pmu,psigma,psigma1,psigma2;
   double pv,pv1,pv2,psig12,pv12,pvv1,pvv2,v1opv1,v2opv2;
-  double pc[10],a[10],b[10];  
+  double pc[10],a[10],b[10]; 
   
-  pmu=gsl_vector_get(x,0);
+  pksi=gsl_vector_get(x,0);
   psigma=gsl_vector_get(x,1);
   psigma1=gsl_vector_get(x,2);
   psigma2=gsl_vector_get(x,3);
+ 
 
-  if((pmu>0.)&&(psigma>0.)&&(psigma1>0.)&&(psigma2>0.)){
+  if((pksi>0.)&&(pksi<1.)&&(psigma>0.)&&(psigma1>0.)&&(psigma2>0.)){
 
    pv=psigma*psigma;
    pv1=psigma1*psigma1;
@@ -879,26 +882,48 @@ double lambda2 (gsl_vector *x,void *params)
    pvv2=pv*pv2;
    v1opv1=v1/pv1;
    v2opv2=v2/pv2;   
-
-   pc[0]=gsl_ran_poisson_pdf(0,pmu);
    
-   for(j=1;j<=nmax;j++){
+   pmu=-log(1.-pksi);
+   pc[0]=gsl_ran_poisson_pdf(0,pmu);
+   psum=0.;
+   pcsum=0.;
+   for(j=1;j<nmax;j++){
 	pc[j]=gsl_ran_poisson_pdf(j,pmu);
-    a[j]=1./sqrt(pv12+(double)j*(pvv1+pvv2))*pc[j];
-    b[j]=2.*(1./pv1+1./pv2+1./((double)j*pv));
-    }
+	pcsum=pcsum+pc[j];	
+	a[j]=1./sqrt(pv12+j*(pvv1+pvv2))*pc[j];
+	b[j]=2.*(1./pv1+1./pv2+1./(j*pv));
+   }
+   
+   pcleft=pksi-pcsum;
+   a[nmax]=1./sqrt(pv12+nmax*(pvv1+pvv2))*pcleft;
+   b[nmax]=2.*(1./pv1+1./pv2+1./(nmax*pv));
+   
    dsum=0.;
    for(i=0;i<Npt;i++){
      e12->data[i]=(s1->data[i]/pv1+s2->data[i]/pv2);
      e12->data[i]= e12->data[i]*e12->data[i];
-     psum=0.;   
-     for(j=1;j<=nmax;j++){
-       psum = psum + a[j]*exp(e12->data[i]/b[j]);
-     }
-     psum = pc[0]+psig12*psum;
+	 psum=0.;
+	 for(j=1;j<=nmax;j++){
+      psum=psum+a[j]*exp(e12->data[i]/b[j]);}
+	 psum=(1.-pksi)+psig12*psum; 
      dsum=dsum+log(psum);
+   /*
+   for(j=1;j<=nmax;j++){
+    pc[j]=gsl_ran_poisson_pdf(j,pmu);
+    a[j]=1./sqrt(pv12+j*(pvv1+pvv2))*pc[j];
+	b[j]=2.*(1./pv1+1./pv2+1./(j*pv));
    }
-   y=-(0.5*(log(v1opv1*v2opv2)-(v1opv1+v2opv2))+1.+(1./(double)Npt)*dsum);
+   dsum=0.;
+   for(i=0;i<Npt;i++){
+     e12->data[i]=(s1->data[i]/pv1+s2->data[i]/pv2);
+     e12->data[i]= e12->data[i]*e12->data[i];
+	 psum=0.;
+	 for(j=1;j<=nmax;j++){
+      psum = psum + a[j]*exp(e12->data[i]/b[j]);}
+	 psum=(1.-pksi)+psig12*psum; 
+     dsum=dsum+log(psum);*/
+   }
+   y=-(0.5*(log(v1opv1*v2opv2)-(v1opv1+v2opv2))+1.+(1./Npt)*dsum);
   }
   else y=10000.;
   return y; 
