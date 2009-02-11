@@ -440,7 +440,6 @@ REAL8TimeSeries *XLALAggregationStrainData(CHAR *ifo,
   /* declare variables */
   FrStream *stream;
   REAL8TimeSeries *series;
-  size_t num_points;
   CHAR channel[LIGOMETA_CHANNEL_MAX];
 
   /* check arguments */
@@ -448,9 +447,6 @@ REAL8TimeSeries *XLALAggregationStrainData(CHAR *ifo,
     XLAL_ERROR_NULL(func, XLAL_EFAULT);
   if (!start)
     XLAL_ERROR_NULL(func, XLAL_EFAULT);
-
-  /* determine number of data points */
-  num_points = duration * ONLINE_SAMPLE_RATE;
 
   /* open frame stream */
   stream = XLALAggregationFrameStream(ifo, start, duration);
@@ -463,8 +459,7 @@ REAL8TimeSeries *XLALAggregationStrainData(CHAR *ifo,
   /* get strain data time series */
   LALSnprintf(channel, LIGOMETA_CHANNEL_MAX, "%s:%s", ifo, \
       ONLINE_STRAIN_CHANNEL);
-  series = XLALFrReadREAL8TimeSeries(stream, channel, start, duration, \
-      num_points);
+  series = XLALFrReadREAL8TimeSeries(stream, channel, start, duration, 0);
   if (series == NULL)
   {
     /* failed to read data */
@@ -490,7 +485,6 @@ INT4TimeSeries *XLALAggregationDQVector(CHAR *ifo,
   /* declare variables */
   FrStream *stream;
   INT4TimeSeries *series;
-  size_t num_points;
   CHAR channel[LIGOMETA_CHANNEL_MAX];
 
   /* check arguments */
@@ -498,9 +492,6 @@ INT4TimeSeries *XLALAggregationDQVector(CHAR *ifo,
     XLAL_ERROR_NULL(func, XLAL_EFAULT);
   if (!start)
     XLAL_ERROR_NULL(func, XLAL_EFAULT);
-
-  /* determine number of data points */
-  num_points = duration * ONLINE_SAMPLE_RATE;
 
   /* open frame stream */
   stream = XLALAggregationFrameStream(ifo, start, duration);
@@ -514,7 +505,7 @@ INT4TimeSeries *XLALAggregationDQVector(CHAR *ifo,
   LALSnprintf(channel, LIGOMETA_CHANNEL_MAX, "%s:%s", ifo, \
       ONLINE_DQ_VECTOR);
   series = XLALFrReadINT4TimeSeries(stream, channel, start, \
-      (REAL8)duration, num_points);
+      (REAL8)duration, 0);
   if (series == NULL)
   {
     /* failed to read data */
@@ -540,7 +531,6 @@ INT4TimeSeries *XLALAggregationStateVector(CHAR *ifo,
   FrStream *stream;
   REAL4TimeSeries *state;
   INT4TimeSeries *series;
-  size_t num_points;
   CHAR channel[LIGOMETA_CHANNEL_MAX];
   UINT4 i;
 
@@ -549,9 +539,6 @@ INT4TimeSeries *XLALAggregationStateVector(CHAR *ifo,
     XLAL_ERROR_NULL(func, XLAL_EFAULT);
   if (!start)
     XLAL_ERROR_NULL(func, XLAL_EFAULT);
-
-  /* determine number of data points */
-  num_points = duration * ONLINE_SAMPLE_RATE;
 
   /* open frame stream */
   stream = XLALAggregationFrameStream(ifo, start, duration);
@@ -565,7 +552,7 @@ INT4TimeSeries *XLALAggregationStateVector(CHAR *ifo,
   LALSnprintf(channel, LIGOMETA_CHANNEL_MAX, "%s:%s", ifo, \
       ONLINE_STATE_VECTOR);
   state = XLALFrReadREAL4TimeSeries(stream, channel, start, \
-      (REAL8)duration, num_points);
+      (REAL8)duration, 0);
   if (state == NULL)
   {
     /* failed to read data */
