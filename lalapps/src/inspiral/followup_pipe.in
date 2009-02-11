@@ -310,7 +310,7 @@ if not opts.disable_followup and not opts.read_times:
   if opts.disable_ifarsorting: ifar = False
   else: ifar = True
   trigtype = cp.get("followup-triggers", "trigger-type").strip()
-  followuptrigs = getfollowuptrigs(numtrigs,trigtype,dag.page,coincs,missed,search,trigbank_test,ifar,opts.add_trig_columns)
+  followuptrigs = getfollowuptrigs(cp,numtrigs,trigtype,dag.page,coincs,missed,search,trigbank_test,ifar,opts.add_trig_columns)
 
   print "\n.......Found " + str(len(followuptrigs)) + " trigs to follow up" 
 
