@@ -1444,7 +1444,7 @@ static REAL8 integrateMassVolume(REAL8 mbox[3],
   REAL8 m2 = mbox[1];
   REAL8 size = mbox[2];
   REAL8 volume = 0;
-  REAL8 sf = 1.0; /*0.8409;*/ /* gives volume that is 2x overlapping */
+  REAL8 sf = 0.8409; /* gives volume that is 2x overlapping */
   REAL8 g1 = mDensity(sf*m1,m2*sf,I);
   REAL8 g2 = mDensity(sf*m1+size/sf/sf,m2*sf,I);
   REAL8 g3 = mDensity(m1*sf,m2*sf+size/sf/sf,I);
@@ -1464,7 +1464,8 @@ static REAL8 integrateMassVolume(REAL8 mbox[3],
   if (g2 > maxg) maxg = g2;
   if (g3 > maxg) maxg = g3;
   if (g4 > maxg) maxg = g4;
-  volume = maxg * maxj * size * size * LAL_MTSUN_SI;             
+  volume = maxg * maxj * size * size;             
+  /*fprintf(stderr,"volume %e\n",volume);*/
   return volume;
   }
 
@@ -1477,7 +1478,8 @@ static REAL8 XLALComputeNumberOfIMRTemplatesInSquareIMRBankMassRegion(
   REAL8 vol;
 
   vol = integrateMassVolume(mbox,I);
-  out = vol / mm / 2.0 / I->flow / I->flow;
+  out = vol / mm / (4.0 * LAL_PI * LAL_PI * I->flow * I->flow) 
+      / (4.0 * LAL_PI * LAL_PI * I->flow * I->flow);
   return out;
   }
 
