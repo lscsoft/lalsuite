@@ -1464,7 +1464,7 @@ static REAL8 integrateMassVolume(REAL8 mbox[3],
   if (g2 > maxg) maxg = g2;
   if (g3 > maxg) maxg = g3;
   if (g4 > maxg) maxg = g4;
-  volume = maxg * maxj * size * size;             
+  volume = maxg * maxj * size/sf * size/sf;             
   /*fprintf(stderr,"volume %e\n",volume);*/
   return volume;
   }
