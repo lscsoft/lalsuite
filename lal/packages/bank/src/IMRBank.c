@@ -1444,7 +1444,7 @@ static REAL8 integrateMassVolume(REAL8 mbox[3],
   REAL8 m2 = mbox[1];
   REAL8 size = mbox[2];
   REAL8 volume = 0;
-  REAL8 sf = 0.841; /* gives volume that is 2x overlapping */
+  REAL8 sf = 0.80; /* gives volume that is 2x overlapping */
   REAL8 g1 = mDensity(sf*m1,m2*sf,I);
   REAL8 g2 = mDensity(sf*m1+size/sf/sf,m2*sf,I);
   REAL8 g3 = mDensity(m1*sf,m2*sf+size/sf/sf,I);
