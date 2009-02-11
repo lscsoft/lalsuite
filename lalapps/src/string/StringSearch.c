@@ -810,7 +810,7 @@ int CreateTemplateBank(struct CommandLineArgsTag CLA)
 	  strtemplate[k].norm=sqrt(t1t1);
 	  strtemplate[k].mismatch=epsilon;
 	  k++;
-	  fprintf(stdout,"%% %d       %e        %e\n",k-1,strtemplate[k-1].f,strtemplate[k-1].norm);
+	  fprintf(stdout,"%% %d       %e        %e        %e\n",k-1,strtemplate[k-1].f,strtemplate[k-1].norm, strtemplate[k-1].mismatch);
 	}
       if(k == MAXTEMPLATES)
 	{
