@@ -791,7 +791,7 @@ int CreateTemplateBank(struct CommandLineArgsTag CLA)
   k=1;
 
   fprintf(stdout,"%% Templ.    frequency      sigma        mismatch\n");  
-  fprintf(stdout,"%% %d       %e        %e\n",k-1,strtemplate[0].f,strtemplate[0].norm);
+  fprintf(stdout,"%% %d       %e        %e        %e\n",k-1,strtemplate[0].f,strtemplate[0].norm, strtemplate[0].norm);
 
   f_low_index = CLA.fbankhighfcutofflow / GV.Spec.deltaF;
   /* now we loop through and take away from the integral one point at a time */
