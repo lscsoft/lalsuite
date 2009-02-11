@@ -504,8 +504,7 @@ INT4TimeSeries *XLALAggregationDQVector(CHAR *ifo,
   /* get data quality vector time series */
   LALSnprintf(channel, LIGOMETA_CHANNEL_MAX, "%s:%s", ifo, \
       ONLINE_DQ_VECTOR);
-  series = XLALFrReadINT4TimeSeries(stream, channel, start, \
-      (REAL8)duration, 0);
+  series = XLALFrReadINT4TimeSeries(stream, channel, start, duration, 0);
   if (series == NULL)
   {
     /* failed to read data */
@@ -551,8 +550,7 @@ INT4TimeSeries *XLALAggregationStateVector(CHAR *ifo,
   /* get state vector time series */
   LALSnprintf(channel, LIGOMETA_CHANNEL_MAX, "%s:%s", ifo, \
       ONLINE_STATE_VECTOR);
-  state = XLALFrReadREAL4TimeSeries(stream, channel, start, \
-      (REAL8)duration, 0);
+  state = XLALFrReadREAL4TimeSeries(stream, channel, start, duration, 0);
   if (state == NULL)
   {
     /* failed to read data */
