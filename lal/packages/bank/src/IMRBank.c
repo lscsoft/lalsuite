@@ -1623,9 +1623,9 @@ static int normalize_psd(InspiralCoarseBankIn *in)
 int XLALTileIMRBankMassRegion(InspiralCoarseBankIn *in, SnglInspiralTable **first)
   {
   /* Convert all masses to geometrized units */
-  REAL8 mass1 = LAL_MTSUN_SI*(0.85*in->mMin);
-  REAL8 mass2 = LAL_MTSUN_SI*(0.85*in->mMin);
-  REAL8 size = LAL_MTSUN_SI*(1.2*in->mMax - 0.85*in->mMin);
+  REAL8 mass1 = LAL_MTSUN_SI*(0.80*in->mMin);
+  REAL8 mass2 = LAL_MTSUN_SI*(0.80*in->mMin);
+  REAL8 size = LAL_MTSUN_SI*(1.25*in->mMax - 0.80*in->mMin);
 
   REAL8 flow = in->fLower;
   SnglInspiralTable *tab = NULL;
