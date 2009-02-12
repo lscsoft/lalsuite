@@ -33,7 +33,8 @@ extern "C" {
 int XLALComputeDQ(REAL4* sv_data, int n_sv,
                   REAL4* lax_data, REAL4* lay_data, int n_light,
                   COMPLEX16* gamma_data, int n_gamma,
-                  int transient, int missing,
+                  int t_bad_left, int t_bad_right, int wings,
+                  int missing,
                   int* dq_data, int n_dq);
 
 

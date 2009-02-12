@@ -60,11 +60,20 @@ RCSID("$Id$");
  * All the arrays must have been previously allocated.
  * n_x is the number of x_value(s) that are in a single DQ sample (=
  * x.length/n_dq).
+ *
+ * Other special meanings:
+ *  t_bad_left:  time (in s) of the last NOT-UP event in the Data Quality
+ *  t_bad_right: time (in s) of the next NOT-UP event in the Data Quality
+ *  wings:       duration (in s) of the wings used for calibration
+ * 
+ * If t_bad_left < wings then it doesn't matter how much less it
+ * is. Same thing for t_bad_right > wings.
  */
 int XLALComputeDQ(REAL4* sv_data, int n_sv,
                   REAL4* lax_data, REAL4* lay_data, int n_light,
                   COMPLEX16* gamma_data, int n_gamma,
-                  int transient, int missing,
+                  int t_bad_left, int t_bad_right, int wings,
+                  int missing,
                   int* dq_data, int n_dq)  /* output */
 {
     int i, j;                    /* counters */
@@ -101,7 +110,13 @@ int XLALComputeDQ(REAL4* sv_data, int n_sv,
         up = up && light;  /* this is the "up" definition of the DQ vector */
         
         /* calibrated */
-        calibrated = up && (! transient);
+        /* Because we will have to compute UP for the Data Quality
+         * everywhere before anything, to know if something funny
+         * happens within a "wings" distance from this data, we will
+         * leave the computation of the calibrated flag for next
+         * loop.
+         */
+    /*  calibrated = up && (! transient);  */
         
         /* badgamma */
         badgamma = 0;
@@ -117,7 +132,7 @@ int XLALComputeDQ(REAL4* sv_data, int n_sv,
         if (science)    dq_value += (1 << 0);
         if (injection)  dq_value += (1 << 1);
         if (up)         dq_value += (1 << 2);
-        if (calibrated) dq_value += (1 << 3);
+   /*   if (calibrated) dq_value += (1 << 3);  */  /* we'll do that later */
         if (badgamma)   dq_value += (1 << 4);
         if (light)      dq_value += (1 << 5);
         if (missing)    dq_value += (1 << 6);  /* directly from the argument */
@@ -125,5 +140,28 @@ int XLALComputeDQ(REAL4* sv_data, int n_sv,
         dq_data[i] = dq_value;
     }
     
+    /* Now look for the transients and fill the "calibrated" bit. */
+    for (i = 0; i < n_dq; i++) {
+        calibrated = 1;
+
+        if (i - wings < t_bad_left || i + wings > n_dq + t_bad_right)
+            calibrated = 0;
+        
+        for (j = 0; j < wings; j++) {
+            int pos = i - j;
+            if (pos > 0) {
+                if ((dq_data[pos] & (1 << 2)) != 1)
+                    calibrated = 0;
+            }
+            pos = i + j;  /* note that this includes dq_data[i] having UP=1 */
+            if (pos < n_dq) {
+                if ((dq_data[pos] & (1 << 2)) != 1)
+                    calibrated = 0;
+            }
+        }
+        
+        if (calibrated) dq_data[i] += (1 << 3);
+    }
+
     return 0;
 }
