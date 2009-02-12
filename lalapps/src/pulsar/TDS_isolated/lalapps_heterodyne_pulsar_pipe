@@ -531,6 +531,7 @@ os.path.isfile(sensing_function)):
           fine[j].set_coefficient_file(coefficient_file)
           fine[j].set_open_loop_gain(open_loop_gain)
           fine[j].set_sensing_function(sensing_function)
+          fine[j].set_channel(channel)
         else:
           print >> sys.stderr, "Could not find any calibration files! Check .ini file."
           sys.exit(1)
@@ -545,7 +546,7 @@ os.path.isfile(sensing_function)):
         fine[j].set_binoutput()
         
       # if a value of the standard deviation threshold is set add the arg
-      if stddev_thresh != '':        
+      if stddev_thresh != '':
         fine[j].set_stddev_thresh(stddev_thresh)
       
       fine[j].set_output_dir(output_dir)
