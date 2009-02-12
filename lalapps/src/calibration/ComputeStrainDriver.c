@@ -226,7 +226,8 @@ int main(int argc,char *argv[])
   XLALComputeDQ(StateVector.data->data, StateVector.data->length,
                 LAX.data->data, LAY.data->data, LAX.data->length,
                 OutputData.alphabeta.data->data, OutputData.alphabeta.data->length,
-                0, 0,
+                0, 0, InputData.wings,
+                0,   /* how can I actually know if it is missing in the DMT or not?? */
                 OutputDQ.data->data, OutputDQ.data->length);
 
   if (WriteFrame(argc,argv,CommandLineArgs)) return 4;
