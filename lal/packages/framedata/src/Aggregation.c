@@ -145,8 +145,8 @@ CHAR *XLALAggregationDirectoryPath(CHAR *ifo,
   gps_dir = (INT4)floor(frame_start->gpsSeconds / 100000);
 
   /* construct directory */
-  LALSnprintf(directory, FILENAME_MAX, "%s/%c-%s-%d", base_dir, ifo[0], \
-      type, gps_dir);
+  LALSnprintf(directory, FILENAME_MAX, "%s/%s/%c-%s-%d", base_dir, ifo, \
+      ifo[0], type, gps_dir);
 
   /* free memory */
   XLALFree(frame_start);
