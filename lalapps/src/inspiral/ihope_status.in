@@ -21,7 +21,53 @@ import os
 import optparse
 from optparse import OptionParser
 import time
-  
+
+
+##############################################################################
+usage = """\
+%prog [options]
+----------------
+ brief status of the dag
+   
+ Purpose - parse one or several dagman.out file(s) to obtain a brief  summary 
+ of the dag status and their rescue files if they exist.
+ 
+ Example - You can parse a dag that contains several dag such as ihope.dag 
+
+         >>> python %prog --dag-file ihope.dag
+         
+         - Or a simple dag:
+        
+         >>> python %prog --dag-file hipe.dag')
+
+"""
+
+#
+# =============================================================================
+#
+#                     Parse Command Line
+#
+# =============================================================================
+#
+
+def parse_command_line():
+  """
+  Parser function dedicated
+  """
+  parser = OptionParser( usage=usage )
+  parser.add_option( "--dag-file", default='ihope.dag', metavar='DAGFILE', \
+                   help="The dag file to parse")
+  comand_line = sys.argv[1:]
+  (options,args) = parser.parse_args()
+
+  return options, sys.argv[1:]
+
+# ============================================================================
+# -- get command line arguments
+options, args = parse_command_line()
+
+
+##############################################################################
 def get_status(filename, depth, totals, debug=False):
   """
   parse a dag filem search for failed/done jobs
@@ -92,38 +138,15 @@ def get_status(filename, depth, totals, debug=False):
 
   return output, error, number_of_failed_jobs
 
-usage = """\
-%prog [options]
-----------------
- brief status of the dag
-   
- Purpose - parse one or several dagman.out file(s) to obtain a brief  summary 
- of the dag status and their rescue files if they exist.
+
+#
+# =============================================================================
+#
+#                    Main
+#
+# =============================================================================
+#
  
- Example - You can parse a dag that contains several dag such as ihope.dag 
-
-         >>> python %prog --dag-file ihope.dag
-         
-         - Or a simple dag:
-        
-         >>> python %prog --dag-file hipe.dag')
-
-"""
- 
-# let us parse the command line
-
-parser = OptionParser(usage=usage, \
-   version="%prog CVS\n" + 
-   "$Id$\n" +
-   "$Name$\n")
-   
-
-parser.add_option( "--dag-file", \
-  dest='scandag', default='ihope.dag', metavar='DAGFILE', \
-  help="The dag file to parse")
-
-(options, args) = parser.parse_args()
-
 
 """ There are 2 possibilities. 
     First, the file provided is a dag file that ends in '.dag' that
@@ -132,10 +155,16 @@ parser.add_option( "--dag-file", \
     by itself, and in such case we search for the .dagman.out file.
 """
 
-print 'Parsing ' +options.scandag + '...'
+print 'Parsing ' +options.dag_file + '...'
 time.sleep(1)
 
-dagFile = open(options.scandag, 'r')
+# Need path path for dub dags
+if '/' in options.dag_file:
+  path = options.dag_file[:( options.dag_file.rindex( '/' ) + 1 )]
+else:
+  path = ''
+
+dagFile = open(options.dag_file, 'r')
 filenames = []
 lines = dagFile.readlines()
 for line in lines:
@@ -153,9 +182,9 @@ for line in lines:
 dagFile.close()
 
 if len(filenames)==0:
-  print 'No dag files found in ' + options.scandag
-  print 'Assuming that ' + options.scandag + ' is the dag file you want to parse'
-  filenames.append(options.scandag)
+  print 'No dag files found in ' + options.dag_file
+  print 'Assuming that ' + options.dag_file + ' is the dag file you want to parse'
+  filenames.append(options.dag_file)
   
 print 'Parsing the dag files for status...\n'
 ### we found some dag files hopefully
@@ -167,6 +196,10 @@ totals = [0,0,0,0,0,0,0]
 for i in xrange(0,len(filenames), 1):
   tag = filenames[i] 
   filename = tag +'.dagman.out'
+  
+  # if sub dags add path
+  if path != '' and path not in filename:
+    filename = path + filename
   
 
   undone_jobs = 111 #dummy value
