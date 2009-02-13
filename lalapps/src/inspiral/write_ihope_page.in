@@ -718,7 +718,7 @@ def write_tuning(page,opts,hardwareInj=False):
         except:
           page.div.close() # for each heading
 
-return page
+  return page
 
 # ***************************************************************************
 def write_analysis(page, opts, thisSearch='playground'):
