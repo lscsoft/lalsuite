@@ -235,7 +235,7 @@ int main( int argc, char *argv[] )
   UINT8  slideSign        = 0;
 
   /* counters and other variables */
-  INT4   j,k,l,w, cohtrigs, cohtriglimit;
+  INT4   j,k,l, cohtrigs, cohtriglimit;
   INT4   kmax = 0;
   UINT4  numDetectors     = 0;
   REAL8  tempTime[6]      = {0.0,0.0,0.0,0.0,0.0,0.0};
@@ -902,8 +902,20 @@ int main( int argc, char *argv[] )
 	  
 	  /* If cohSNR is being output, then copy epoch */
 	  if( cohInspFilterParams->cohSNROut ) {
-	    cohInspFilterParams->cohSNRVec->epoch = cohInspCVec->cData[0]->epoch; 
+	    cohInspFilterParams->cohSNRVec->epoch = cohInspCVec->cData[0]->epoch;
+            cohInspFilterParams->cohSNRVec->deltaT = cohInspCVec->cData[0]->deltaT;
 	  }
+
+          if( cohInspFilterParams->cohH1H2SNROut ) {
+            cohInspFilterParams->cohH1H2SNRVec->epoch = cohInspCVec->cData[0]->epoch;
+            cohInspFilterParams->cohH1H2SNRVec->deltaT = cohInspCVec->cData[0]->deltaT;
+          }
+
+          if( cohInspFilterParams->nullStatOut ) {
+            cohInspFilterParams->nullStatVec->epoch = cohInspCVec->cData[0]->epoch;
+            cohInspFilterParams->nullStatVec->deltaT = cohInspCVec->cData[0]->deltaT;
+          }
+
 	  
 	  /* Now that the time series are commensurate, do the filtering... */
 	  LALCoherentInspiralFilterSegment (&status, &thisEvent, cohInspFilterInput, cohInspFilterParams);
