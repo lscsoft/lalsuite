@@ -1836,7 +1836,7 @@ INT4 remove_outliers(COMPLEX16TimeSeries *data, REAL8Vector *times,
   REAL8 stddevthresh){
   COMPLEX16 mean;
   COMPLEX16 stddev;
-  INT4 i=0, j=0;
+  INT4 i=0, j=0, startlen=(INT4)data->data->length;
 
   /* calculate mean - could in reality just assume to be zero */
   mean.re = 0.;
@@ -1880,7 +1880,7 @@ INT4 remove_outliers(COMPLEX16TimeSeries *data, REAL8Vector *times,
   data = XLALResizeCOMPLEX16TimeSeries(data, 0, j);
   times = XLALResizeREAL8Vector(times, j);
   
-  return data->data->length - j;
+  return startlen - j;
 }
 
 FilterResponse *create_filter_response( REAL8 filterKnee ){
