@@ -37,7 +37,6 @@ extern "C" {
 
 /* frame metadata */
 #define ONLINE_FRAME_DURATION 16
-#define ONLINE_SAMPLE_RATE 16384
 
 /* data quality */
 #define LAL_DQ_SCIENCE    (1 << 0) /* SV_SCIENCE & LIGHT */
