@@ -70,7 +70,10 @@ void XLALSkymapDestroyPlan(XLALSkymapPlanType* plan);
 /* 
  * Produce a skymap according to a plan
  */
+int XLALSkymapSignalHypothesis(XLALSkymapPlanType* plan, double* p, double sigma, double w[3], int begin[3], int end[3], double** x, int *counts, int *modes);
+/* deprecated legacy interface */
 int XLALSkymapEllipticalHypothesis(XLALSkymapPlanType* plan, double* p, double sigma, double w[3], int begin[3], int end[3], double** x, int* bests);
+/* deprecated legacy interface*/
 int XLALSkymapAnalyzeElliptical(double* p, XLALSkymapPlanType* plan, double sigma, double w[3], int n, double** x);
 
 /*

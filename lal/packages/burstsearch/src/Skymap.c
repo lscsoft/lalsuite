@@ -315,6 +315,14 @@ static int index_from_delays(XLALSkymapPlanType* plan, int hl, int hv, int hemis
 	(hemisphere   ) * (plan->hl * 2 + 1) * (plan->hv * 2 + 1);
 }
 
+static delays_from_index(XLALSkymapPlanType *plan, int index, int delays[3])
+{
+    delays[2] = index / ((plan->hl * 2 + 1) * (plan->hv * 2 + 1));
+    index %= ((plan->hl * 2 + 1) * (plan->hv * 2 + 1));
+    delays[1] = (index / (plan->hl * 2 + 1)) - plan->hv;
+    delays[0] = (index % (plan->hl * 2 + 1)) - plan->hl;
+}
+
 static int index_from_times(XLALSkymapPlanType* plan, int times[3], int hemisphere)
 {
     return index_from_delays(plan, times[1] - times[0], times[2] - times[0], hemisphere);
@@ -335,6 +343,8 @@ static int index_from_direction(XLALSkymapPlanType* plan, double direction[3])
     i[2] = dot3(plan->siteNormal, direction) < 0 ? 0 : 1;
     return index_from_delays(plan, i[0], i[1], i[2]); 
 }
+
+
 
 XLALSkymapPlanType* XLALSkymapConstructPlan(int sampleFrequency)
 {
@@ -653,11 +663,13 @@ int XLALSkymapGlitchHypothesis(XLALSkymapPlanType* plan, double *p, double sigma
     return;
 }
 
-int XLALSkymapEllipticalHypothesis(XLALSkymapPlanType* plan, double* p, double sigma, double w[3], int begin[3], int end[3], double** x, int* bests) 
+/* a new interface is required that instead produces a per-tile product */
+
+/* return not a skymap but a grid of odds ratios for each direction individually */
+/* to make a skymap requires correcting for unequal areas and unequal time ranges */
+int XLALSkymapSignalHypothesis(XLALSkymapPlanType* plan, double* p, double sigma, double w[3], int begin[3], int end[3], double** x, int *counts, int *modes)
 {
-    /* indicate that a detector has no data by x[i] == 0 */
-    
-    static const char func[] = "XLALSkymapEllipticalHypothesis";
+    static const char func[] = "XLALSkymapSignalHypothesis";
     
     double* buffer;
     int hl;
@@ -705,8 +717,10 @@ int XLALSkymapEllipticalHypothesis(XLALSkymapPlanType* plan, double* p, double s
             {
                 /* compute the index into the buffers from delays */
                 int index = index_from_delays(plan, hl, hv, hemisphere);
-                /* log zero the output buffer */
+                /* (log) zero the output buffers */
                 p[index] = log(0);
+                counts[index] = 0;
+                modes[index] = 0;
                 /* test if the delays are physical */
                 if (plan->pixel[index].area > 0) 
                 { 
@@ -932,49 +946,80 @@ int XLALSkymapEllipticalHypothesis(XLALSkymapPlanType* plan, double* p, double s
                         m = findmax(buffer, buffer + e - b);
                         p[index] =
                                 logtotalexpwithmax(buffer, buffer + e - b, *m) +
-                                log_normalization * 2 +
-                                log(plan->pixel[index].area);
-                                                
-                        { /* extract the quantities for X followup */
-                            double maximum = *m + log_normalization * 2 + log(plan->pixel[index].area);
-                            if (maximum > best_plausibility) 
-                            {
-                                best_plausibility = maximum;
-                                best_time[0] = (m - buffer) + b;
-                                best_time[1] = best_time[0] + hl;
-                                best_time[2] = best_time[0] + hv;
-                                best_hemisphere = hemisphere;
-                            }
-                        } /* end extract the quantities for X followup */
-                                
-                        /* track the total normalization */
-                        total_normalization += plan->pixel[index].area * (e - b);
+                                log_normalization * 2 - log(e - b);
+                        counts[index] = e - b;
+                        modes[index] = b + (m - buffer);
                                 
                     } /* end test if there is enough data to analyze */
                 } /* end test if the delays are physical */
             } /* end loop over hemisphere */
         } /* end loop over hanford-virgo delay */
     } /* end loop over hanford-livingston delay */
-    
-    if (bests) 
-    {
-        bests[0] = best_time[0];
-        bests[1] = best_time[1];
-        bests[2] = best_time[2];
-        bests[3] = best_hemisphere;
-    }
-    
-    /* loop through applying normalization */
-    {
-        int i;
-        for (i = 0; i != plan->pixelCount; ++i)
-        {
-            p[i] -= log(total_normalization);
-        }
-    }
-
+        
     /* release working memory */
     XLALFree(buffer);
+    return 0;
+}
+
+int XLALSkymapEllipticalHypothesis(XLALSkymapPlanType* plan, double* p, double sigma, double w[3], int begin[3], int end[3], double** x, int* bests) 
+{
+    /* indicate that a detector has no data by x[i] == 0 */
+    
+    static const char func[] = "XLALSkymapEllipticalHypothesis";
+    
+    int *counts;
+    int *modes;
+    double c;
+    int i;
+    
+    counts = (int *) XLALMalloc(sizeof(int) * plan->pixelCount);
+    modes = (int *) XLALMalloc(sizeof(int) * plan->pixelCount);
+    
+    XLALSkymapSignalHypothesis(plan, p, sigma, w, begin, end, x, counts, modes);
+    
+    /* the prior of each pixel is the product of its area and the length
+     * arrival times it represents */
+    
+    /* compute the normalization factor for the prior */
+    c = 0;
+    for (i = 0; i != plan->pixelCount; ++i)
+    {
+        if (plan->pixel[i].area > 0)
+        {
+            c += plan->pixel[i].area * counts[i];
+        }
+    }
+    /* apply the prior */
+    for (i = 0; i != plan->pixelCount; ++i)
+    {
+        if (plan->pixel[i].area > 0)
+        {
+            p[i] += log(plan->pixel[i].area * counts[i] / c);
+        }
+    }
+    /* now the sum over the skymap is the posterior odds of a signal from
+     * any direction */ 
+    
+    if (bests) {
+        /* find the most likely arrival times */
+        double *a;
+        int i;
+        int delays[3];
+        a = findmax(p, p + plan->pixelCount);
+        i = a - p;
+        printf("i = %d\n", i);
+        delays_from_index(plan, i, delays);
+        printf("delays[] = { %d, %d, %d}\n", delays[0], delays[1], delays[2]);
+        printf("index_from_delays(delays) = %d\n", index_from_delays(plan, delays[0], delays[1], delays[2])); 
+        bests[0] = modes[i];
+        bests[1] = bests[0] + delays[0];
+        bests[2] = bests[0] + delays[1];
+        bests[3] = delays[2];        
+    }
+    
+    XLALFree(modes);
+    XLALFree(counts);
+        
     return 0;
 }
 

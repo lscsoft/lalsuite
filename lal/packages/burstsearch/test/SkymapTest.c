@@ -30,6 +30,42 @@ int *widths;
 
 XLALSkymapPlanType* plan;
 
+static double sq(double a)
+{
+    return a * a;
+}
+
+static double* findmax(double* begin, double* end)
+{
+    double* p;
+    double* m;
+    m = begin;
+    for (p = begin; p != end; ++p)
+	if (*m < *p) 
+	    m = p;
+    return m;
+}
+
+static double logtotalexpwithmax(double* begin, double* end, double m)
+{
+    double t;
+    double* p;
+    t = 0;
+    for (p = begin; p != end; ++p)
+	t += exp(*p - m);
+    return m + log(t);
+}
+
+static double logtotalexp(double* begin, double* end)
+{
+    return logtotalexpwithmax(begin, end, *findmax(begin, end));
+}
+
+double logdifferenceexp(double a, double b)
+{
+    return a + log(1. - exp(b - a));
+}
+
 void make_h_t()
 {
     int i, j;
@@ -60,29 +96,96 @@ int index_from_delays(XLALSkymapPlanType* plan, int hl, int hv, int hemisphere)
 	(hemisphere   ) * (plan->hl * 2 + 1) * (plan->hv * 2 + 1);
 }
 
+static void set2(double a[2], double v0, double v1)
+{
+    a[0] = v0;
+    a[1] = v1;
+}
+
+static void set3(double a[3], double v0, double v1, double v2)
+{
+    a[0] = v0;
+    a[1] = v1;
+    a[2] = v2;
+}
+
+static void cartesian_from_spherical(double a[3], double theta, double phi)
+{
+    set3(a, sin(theta) * cos(phi), sin(theta) * sin(phi), cos(theta));
+}
+
+static void spherical_from_cartesian(double a[2], double b[3])
+{
+    set2(a, acos(b[2]), atan2(b[1], b[0]));
+}
+
+static double dot3(double a[3], double b[3])
+{
+    return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+}
+
+static double site_time(LALDetector* site, double direction[3])
+{
+    return -dot3(site->location, direction) / LAL_C_SI;
+}
+
+static void delays_from_direction(XLALSkymapPlanType* plan, int delays[3], double direction[3])
+{
+    /* compute the delays rounded to the nearest sample */
+    delays[0] = (int) floor((
+        site_time(&plan->site[1], direction) - 
+        site_time(&plan->site[0], direction)) * 
+        plan->sampleFrequency + 0.5);
+    delays[1] = (int) floor((
+        site_time(&plan->site[2], direction) - 
+        site_time(&plan->site[0], direction)) * 
+        plan->sampleFrequency + 0.5);
+    delays[2] = dot3(plan->siteNormal, direction) < 0 ? 0 : 1;
+}
+
+static int index_from_direction(XLALSkymapPlanType* plan, double direction[3])
+{
+    int i[3];
+    delays_from_direction(plan, i, direction);
+    return index_from_delays(plan, i[0], i[1], i[2]); 
+}
+
+double thetaphi[2];
+
 void add_injection(XLALSkymapPlanType* plan, double sigma)
 {
     int i, j;
     double h[4];
-    
-    i = index_from_delays(plan, 0, 0, 0);
+    double direction[3];
+    int delays[3];
 
-    for (j = samples / 2 - rate / 64; j < samples /2 + rate / 64; ++j)
+    thetaphi[0] = acos(XLALUniformDeviate(rng_parameters) * 2 - 1); 
+    thetaphi[1] = XLALUniformDeviate(rng_parameters) * LAL_TWOPI;
+    cartesian_from_spherical(direction, thetaphi[0], thetaphi[1]);
+    
+    delays_from_direction(plan, delays, direction);
+    i = index_from_direction(plan, direction);
+   
+    for (j = samples / 2 - rate / 256; j < samples /2 + rate / 256; ++j)
     {
         h[0] = sigma * XLALNormalDeviate(rng_parameters);
         h[1] = sigma * XLALNormalDeviate(rng_parameters);
 
-        h_t[0][j] += plan->pixel[i].f[0][0] * h[0] + plan->pixel[i].f[0][1] * h[1];
-        h_t[1][j] += plan->pixel[i].f[1][0] * h[0] + plan->pixel[i].f[1][1] * h[1];
-        h_t[2][j] += plan->pixel[i].f[2][0] * h[0] + plan->pixel[i].f[2][1] * h[1];
+        h_t[0][j            ] += plan->pixel[i].f[0][0] * h[0] + plan->pixel[i].f[0][1] * h[1];
+        h_t[1][j + delays[0]] += plan->pixel[i].f[1][0] * h[0] + plan->pixel[i].f[1][1] * h[1];
+        h_t[2][j + delays[1]] += plan->pixel[i].f[2][0] * h[0] + plan->pixel[i].f[2][1] * h[1];
     }
 }
 
 void add_glitch(double sigma)
 {
     int j;
+    int k[3];
+    k[0] = (rand() % (samples/2)) - samples / 4;
+    k[1] = (rand() % (samples/2)) - samples / 4;
+    k[2] = (rand() % (samples/2)) - samples / 4;
 
-    for (j = samples / 2 - rate / 64; j < samples /2 + rate / 64; ++j)
+    for (j = samples / 2 - rate / 256; j < samples /2 + rate / 256; ++j)
     {
         h_t[0][j] += sigma * XLALNormalDeviate(rng_parameters);
         h_t[1][j] += sigma * XLALNormalDeviate(rng_parameters);
@@ -159,7 +262,7 @@ int main(int argc, char **argv)
     FILE *h, *g;
     int width;
     
-    double *powers;
+    double *probabilities, *scores;
     int *widths, *frequencies, *times, *used;
     int n_bands;
     int i_band;
@@ -167,11 +270,14 @@ int main(int argc, char **argv)
     
     double* accumulated_skymap;
     double accumulated_glitch, accumulated_signal;
+    double w[3];
     
-    rng_parameters = XLALCreateRandomParams(100);
+    w[0] = 1.0; w[1] = w[0]; w[2] = w[0];
+    
+    rng_parameters = XLALCreateRandomParams(0);
         
     duration = 1;
-    rate = 4096;
+    rate = 8192;
     
     samples = duration * rate;
     
@@ -186,8 +292,8 @@ int main(int argc, char **argv)
     make_h_t();
     printf("    ...done\n");
     
-    add_injection(plan, 5);
-    /* add_glitch(3); */
+    add_injection(plan, 10);
+    /* add_glitch(10); */
     
     printf("transforming data...\n");
     make_h_f();
@@ -198,7 +304,8 @@ int main(int argc, char **argv)
     
     n_bands = (1024 / 16) * 4 * 2;
     i_band = 0;
-    powers = (double*) malloc(sizeof(double) * n_bands);
+    probabilities = (double*) malloc(sizeof(double) * n_bands);
+    scores = (double*) malloc(sizeof(double) * n_bands);
     widths = (int*) malloc(sizeof(int) * n_bands);
     frequencies = (int *) malloc(sizeof(int) * n_bands);
     times = (int*) malloc(sizeof(int) * n_bands);
@@ -212,11 +319,17 @@ int main(int argc, char **argv)
         fftw_complex *dft_in;
         fftw_complex *dft_out;
         fftw_plan dft_backward;
+        double *buffer;
+        int n_sigmas = 3;
+        double sigmas[] = { sqrt(10), 10, sqrt(1000) };
+        /* sigmas[0] = 0.01; sigmas[1] = sigmas[0]; sigmas[2] = sigmas[0]; */
             
         n = width * duration * 4;
           
         dft_in  = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * n);
         dft_out = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * n);
+        
+        buffer = (double*) malloc(sizeof(double) * n);
             
         dft_backward = fftw_plan_dft_1d(n, dft_in, dft_out, FFTW_BACKWARD, FFTW_ESTIMATE);
                     
@@ -226,20 +339,20 @@ int main(int argc, char **argv)
             dft_in[i][1] = 0.0;
         }
         /* loop through bands */
-        for (f = 0; f != 1024; f += (width / 4))
+        for (f = 0; f + width <= 1024; f += (width / 4))
         {
             /* loop through detectors */
             int d;
-            double best_power;
-            int best_time;
+            double p_detectors;
             
             printf("    [%d, %d) Hz", f, f + width);
-            
-            best_power = 0;
-            
+            p_detectors = 0.0;
             for (d = 0; d != 3; ++d)
             {
-                double s;
+                double s;   
+                int j;
+                double p_sigmas = log(0);
+                
                 s = 1.0 / sqrt(width * duration);
                 for (i = 0; i != width * duration; ++i)
                 {
@@ -248,51 +361,62 @@ int main(int argc, char **argv)
                 }
                 fftw_execute(dft_backward);
                 fwrite(dft_out, sizeof(fftw_complex), n, g);
-                for (i = 0; i != n; ++i)
+
+                for (j = 0; j != n_sigmas; ++j)
                 {
-                    double power;
-                    power = pow(dft_out[i][0], 2) + pow(dft_out[i][1], 2);
-                    if (power > best_power)
+                    double kernel;
+                    double p_sigma;
+                    
+                    kernel = 0.5 / (sq(w[d]) + 1.0 / sq(sigmas[j]));
+                    
+                    for (i = 0; i != n; ++i)
                     {
-                        best_power = power;
-                        best_time = i;
+                        buffer[i] = kernel * (sq(dft_out[i][0]) + sq(dft_out[i][1]));
                     }
+                    p_sigma = logtotalexp(buffer, buffer + n) - log(sq(sigmas[j]) * sq(w[d]) + 1.0) - log(n);
+                    p_sigmas = XLALSkymapLogSumExp(p_sigmas, p_sigma);
                 }
+                /* the log odds that a waveform was added to a detector */
+                p_sigmas -= log(n_sigmas);
+                /* compute the log odds that a waveform was added to all detectors */
+                p_detectors += XLALSkymapLogSumExp(p_sigmas, 0);
             }
-            printf(" %f\n", best_power);
             
-            powers[i_band] = best_power;
+            p_detectors = logdifferenceexp(p_detectors, 0);
+            p_detectors -= log(7);
+            
+            printf(" %f\n", p_detectors);
+            
+            probabilities[i_band] = p_detectors;
             widths[i_band] = width;
             frequencies[i_band] = f;
-            times[i_band] = best_time * (samples / n);
             used[i_band] = 0;
+            scores[i_band] = p_detectors / width;
+            times[i_band] = samples/2;
             
             ++i_band;
         }
         
         fftw_destroy_plan(dft_backward);
+        free(buffer);
         fftw_free(dft_out);
         fftw_free(dft_in);
                         
     }
     
     fclose(g);
+    
+    printf("\n    --------    \n\n");    
+    
+    n_bands = i_band;
+    
     g = fopen("used.dat", "wb");
-    n_bands = i_band;    
         
-    /* now sort the basis waveforms by peak power */
+    /* sort the basis waveforms by peak power */
     index = (INT4*) malloc(sizeof(INT4) * n_bands);
-    XLALHeapIndex(index, powers, n_bands, sizeof(double), 0, less_double);
-    
-    --i_band;
-    
-    printf("power %f width %d frequency %d time %d\n", 
-        powers[index[i_band]], 
-        widths[index[i_band]],
-        frequencies[index[i_band]],
-        times[index[i_band]]);
-    
-    /* now we can work backwards from most powerful tile */
+    XLALHeapIndex(index, scores, n_bands, sizeof(double), 0, less_double);
+
+    /* work backwards from most powerful tile */
     accumulated_skymap = (double*) malloc(plan->pixelCount * sizeof(double));
     {
         int i;
@@ -303,7 +427,8 @@ int main(int argc, char **argv)
     }
     accumulated_glitch = 0;
     h = fopen("raw.dat", "wb");
-    for (; i_band >= 0; --i_band)
+    fwrite(thetaphi, sizeof(double), 2, h);
+    for (i_band = n_bands - 1; i_band >= 0; --i_band)
     {        
         double *z_t[6];
         int f, i, d, time;
@@ -318,7 +443,7 @@ int main(int argc, char **argv)
         
         /* printf("with %d frequency %d time %d\n", width, f, time); */
         
-        if (powers[index[i_band]] > 10)
+        if (probabilities[index[i_band]] > log(1))
         {
             used[i_band] = 1;
             for (i = i_band + 1; i < n_bands; ++i)
@@ -336,7 +461,8 @@ int main(int argc, char **argv)
         if (used[i_band])
         {
            
-            printf("width %d frequency %d time %d power %f\n", width, f, time, powers[index[i_band]]);
+            printf("[%d, %d) Hz time %d probability %f\n", f, f+width, time, probabilities[index[i_band]]);
+            
             dft_in  = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * samples);
             dft_out = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * samples);
 
@@ -377,18 +503,24 @@ int main(int argc, char **argv)
             /* we now have band-limited time series */
 
             {
-                double w[3];
+                
                 int begin[3];
                 int end[3];
                 double* skymap[3];
                 int n_sigmas = 3;
                 double sigmas[] = { sqrt(10), 10, sqrt(1000) };
-                double g[3];
+                double g[3][3];
                 double psignal;
                 double pglitch;
                 int k;
+                int *modes;
+                int *counts;
+                double c;
+                
+                modes = (int *) malloc(sizeof(int) * plan->pixelCount);
+                counts = (int *) malloc(sizeof(int) * plan->pixelCount); 
 
-                w[0] = 1.0; w[1] = w[0]; w[2] = w[0];
+                
                 begin[0] = max(time - (rate / 32), 0);
                 begin[1] = begin[0]; begin[2] = begin[0];
                 end[0] = min(time + (rate / 32), samples); end[1] = end[0]; end[2] = end[0];
@@ -396,56 +528,86 @@ int main(int argc, char **argv)
                 for (k = 0; k != n_sigmas; ++k)
                 {
                     skymap[k] = (double*) malloc(plan->pixelCount * sizeof(double));
-                    XLALSkymapEllipticalHypothesis(plan, skymap[k], sigmas[k], w, begin, end, z_t, 0); 
+                    XLALSkymapSignalHypothesis(plan, skymap[k], sigmas[k], w, begin, end, z_t, counts, modes); 
                 }
                 for (k = 1; k != n_sigmas; ++k)
                 {
                     XLALSkymapSum(plan, skymap[0], skymap[0], skymap[k]);
                 }
+                for (i = 0; i != plan->pixelCount; ++i)
+                {
+                    skymap[0][i] -= log(n_sigmas);
+                }
                 
                 {
                     double* image;
-                    printf("rendering image...\n");
+                    /* printf("rendering image...\n"); */
                     image = (double*) malloc(sizeof(double) * 1024 * 2048);
                     XLALSkymapRenderEqualArea(1024, 2048, image, plan, skymap[0]);
                     
-                    printf("writing image...\n");
+                    /* printf("writing image...\n"); */
                     fwrite(image, sizeof(double), 1024*2048, h);
                     free(image);
-                    printf("    ...write complete\n");
+                    /* printf("    ...write complete\n"); */
                 }
                 
                 for (i = 0; i != plan->pixelCount; ++i)
                 {
-                    accumulated_skymap[i] += skymap[0][i] - log(n_sigmas);
+                    accumulated_skymap[i] += skymap[0][i];
+                }
+                
+                c = 0;
+                for (i = 0; i != plan->pixelCount; ++i)
+                {
+                    if (plan->pixel[i].area > 0)
+                    {
+                        c += plan->pixel[i].area * counts[i];
+                    }
                 }
                 
                 accumulated_signal = log(0);
                 for (i = 0; i != plan->pixelCount; ++i)
                 {
-                    accumulated_signal = XLALSkymapLogSumExp(accumulated_signal, accumulated_skymap[i]);
+                    if (plan->pixel[i].area > 0)
+                    {
+                        accumulated_signal = XLALSkymapLogSumExp(accumulated_signal, 
+                            accumulated_skymap[i] + log(plan->pixel[i].area * counts[i] / c));
+                    }
                 }
 
                 psignal = log(0);
                 for (i = 0; i != plan->pixelCount; ++i)
                 {
-                    psignal = XLALSkymapLogSumExp(psignal, skymap[0][i] - log(3));
+                    if (plan->pixel[i].area > 0)
+                    {
+                        psignal = XLALSkymapLogSumExp(psignal, 
+                            skymap[0][i] + log(plan->pixel[i].area * counts[i] / c));
+                    }
                 }            
 
                 
                 /* marginalize over glitch size too */
-                XLALSkymapGlitchHypothesis(plan, g, sigmas[1], w, begin, end, z_t);
+                for (k = 0; k != n_sigmas; ++k)
+                {
+                    XLALSkymapGlitchHypothesis(plan, g[k], sigmas[k], w, begin, end, z_t);
+                }
+                for (k = 0; k != 3; ++k)
+                {
+                    /* for each detector, marginalize over sigma */
+                    g[0][k] = XLALSkymapLogSumExp(g[0][k], XLALSkymapLogSumExp(g[1][k], g[2][k]));
+                }
 
                 pglitch = 
-                    XLALSkymapLogSumExp(0, g[0] - log(end[0] - begin[0])) +
-                    XLALSkymapLogSumExp(0, g[1] - log(end[1] - begin[1])) +
-                    XLALSkymapLogSumExp(0, g[2] - log(end[2] - begin[2])) -
-                    3.0 * log(2.0);
+                    logdifferenceexp(XLALSkymapLogSumExp(0, g[0][0] - log(end[0] - begin[0])) +
+                    XLALSkymapLogSumExp(0, g[0][1] - log(end[1] - begin[1])) +
+                    XLALSkymapLogSumExp(0, g[0][2] - log(end[2] - begin[2])), 0) - log(7.0);
                 accumulated_glitch += pglitch;
 
-                printf("%f %f        %f %f\n", psignal, pglitch, accumulated_signal, accumulated_glitch);
+                printf("    %f / %f        %f / %f\n", psignal, pglitch, accumulated_signal, accumulated_glitch);
 
                 free(skymap[0]);free(skymap[1]);free(skymap[2]);
+                free(modes);
+                free(counts);
             }
 
             /* free data */
@@ -464,6 +626,7 @@ int main(int argc, char **argv)
     free_h_t();
     
     return 0;
+
 }
 
 #if 0
