@@ -336,9 +336,9 @@ if not opts.disable_followup:
     skyMapJob       = lalapps_skyMapJob(opts,cp)
     skyPlotJob      = pylal_skyPlotJob(opts,cp)
     oddsJob         = followupoddsJob(opts,cp)
-    chiaCDataInspJob = followUpInspJob(cp, 'chia')
+    chiaCDataInspJob= followUpInspJob(cp, 'chia')
     chiaJob         = followUpChiaJob(opts,cp)
-    #CHECK: chiaPlotJob         = followUpChiaPlotJob(opts,cp)
+    chiaPlotJob     = plotChiaJob(opts,cp)
 
 dataJob         = followupDataFindJob(cp,'futrig')
 qscanBgJob      = qscanJob(opts,cp,'QSCANLITE')
@@ -630,7 +630,7 @@ if not opts.disable_followup and not opts.read_times:
 
     #SETUP CHIA JOBS
     #CHECK: chiaNode.add_node_to_dag(dag,opts,trig)
-
+    chiaPlotNode = plotChiaNode(chiaPlotJob,chiaJob.outputPath,trig,chiaNode,dag,dag.page,opts)
     #CHECK: chiaPlotNode = followUpChiaPlotNode(chiaPlotJob,trig,chiaNode,dag,page,opts)
     #Need to create this from scratch: chia_process_params
     #CHECK:chiaNode = followUpChiaNode(chiaJob,inspiral_process_params[maxIFO],trig, cp, opts, dag , skyNode , skyNodeNotrig )
