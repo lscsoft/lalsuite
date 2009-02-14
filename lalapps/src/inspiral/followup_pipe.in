@@ -204,6 +204,9 @@ parser.add_option("-O","--odds",action="store_true",default=False,\
 parser.add_option("-c", "--plot-chia",action="store_true",default=False,\
     help="Plot Coherent Inspiral results (experimental)")
 
+parser.add_option("", "--make-checklist",action="store_true",default=False,\
+    help="Make checklist html files")
+
 parser.add_option("", "--disable-dag-categories",action="store_true",\
     default=False,help="disable the internal dag category maxjobs")
 
@@ -242,7 +245,8 @@ if not opts.write_to_iulgroup and not opts.generate_fu_cache and \
   and not opts.plot_mcmc and not opts.inspiral_datafind and not \
   opts.analyse_hoft_qscan and not opts.distrib_remote_q and not \
   opts.coh_inspiral and not opts.sky_map and not opts.sky_map_plot and not \
-  opts.convert_eventid and not opts.odds and not opts.plot_chia:
+  opts.convert_eventid and not opts.odds and not opts.plot_chia \
+  and not opts.make_checklist:
 
   print >> sys.stderr, "No steps of the pipeline specified."
   print >> sys.stderr, "Please specify at least one of"
@@ -256,7 +260,7 @@ if not opts.write_to_iulgroup and not opts.generate_fu_cache and \
   print >> sys.stderr, "--mcmc, --plot-mcmc, --coh-inspiral, --plot-chia,"
   print >> sys.stderr, "--sky-map, --sky-map-plot, --convert-eventid,"
   print >> sys.stderr, "--ifo-status-check, --single-qevent, --H1H2-qevent"
-  print >> sys.stderr, "or --write-to-iulgroup" 
+  print >> sys.stderr, "--make-checklist or --write-to-iulgroup" 
   sys.exit(1)
 
 if opts.disable_followup:
@@ -339,6 +343,7 @@ if not opts.disable_followup:
     chiaCDataInspJob= followUpInspJob(cp, 'chia')
     chiaJob         = followUpChiaJob(opts,cp)
     chiaPlotJob     = plotChiaJob(opts,cp)
+    checkListJob    = makeCheckListJob(opts,cp)
 
 dataJob         = followupDataFindJob(cp,'futrig')
 qscanBgJob      = qscanJob(opts,cp,'QSCANLITE')
@@ -643,6 +648,10 @@ if not opts.disable_followup and not opts.read_times:
       anaQscanNode = analyseQscanNode(anaQscanJob,trig.gpsTime[ifo],ifo,'foreground-seismic-qscan','QSCAN/QSCAN.cache','QSCANLITE/QSCANLITE.cache',cp,opts,dag,'analyse_seis_qscan')
       anaQscanNode = analyseQscanNode(anaQscanJob,trig.gpsTime[ifo],ifo,'foreground-hoft-qscan','QSCAN/QSCAN.cache','QSCANLITE/QSCANLITE.cache',cp,opts,dag,'analyse_hoft_qscan')
 
+
+  # Prepare the makeCheckList jobs (must be children of all jobs)
+  for trig in followuptrigs:
+    checkListNode = makeCheckListNode(checkListJob,trig,cp,opts,dag) 
 
 # Prepare for moving the deported qscan directory (tar-gzip)
 if opts.do_remote_ifo:
