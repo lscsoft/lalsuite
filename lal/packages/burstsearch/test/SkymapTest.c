@@ -35,37 +35,6 @@ static double sq(double a)
     return a * a;
 }
 
-static double* findmax(double* begin, double* end)
-{
-    double* p;
-    double* m;
-    m = begin;
-    for (p = begin; p != end; ++p)
-	if (*m < *p) 
-	    m = p;
-    return m;
-}
-
-static double logtotalexpwithmax(double* begin, double* end, double m)
-{
-    double t;
-    double* p;
-    t = 0;
-    for (p = begin; p != end; ++p)
-	t += exp(*p - m);
-    return m + log(t);
-}
-
-static double logtotalexp(double* begin, double* end)
-{
-    return logtotalexpwithmax(begin, end, *findmax(begin, end));
-}
-
-double logdifferenceexp(double a, double b)
-{
-    return a + log(1. - exp(b - a));
-}
-
 void make_h_t()
 {
     int i, j;
@@ -88,68 +57,6 @@ void free_h_t()
     }
 }
 
-int index_from_delays(XLALSkymapPlanType* plan, int hl, int hv, int hemisphere)
-{
-    return
-	(hl + plan->hl) +
-	(hv + plan->hv) * (plan->hl * 2 + 1) +
-	(hemisphere   ) * (plan->hl * 2 + 1) * (plan->hv * 2 + 1);
-}
-
-static void set2(double a[2], double v0, double v1)
-{
-    a[0] = v0;
-    a[1] = v1;
-}
-
-static void set3(double a[3], double v0, double v1, double v2)
-{
-    a[0] = v0;
-    a[1] = v1;
-    a[2] = v2;
-}
-
-static void cartesian_from_spherical(double a[3], double theta, double phi)
-{
-    set3(a, sin(theta) * cos(phi), sin(theta) * sin(phi), cos(theta));
-}
-
-static void spherical_from_cartesian(double a[2], double b[3])
-{
-    set2(a, acos(b[2]), atan2(b[1], b[0]));
-}
-
-static double dot3(double a[3], double b[3])
-{
-    return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
-}
-
-static double site_time(LALDetector* site, double direction[3])
-{
-    return -dot3(site->location, direction) / LAL_C_SI;
-}
-
-static void delays_from_direction(XLALSkymapPlanType* plan, int delays[3], double direction[3])
-{
-    /* compute the delays rounded to the nearest sample */
-    delays[0] = (int) floor((
-        site_time(&plan->site[1], direction) - 
-        site_time(&plan->site[0], direction)) * 
-        plan->sampleFrequency + 0.5);
-    delays[1] = (int) floor((
-        site_time(&plan->site[2], direction) - 
-        site_time(&plan->site[0], direction)) * 
-        plan->sampleFrequency + 0.5);
-    delays[2] = dot3(plan->siteNormal, direction) < 0 ? 0 : 1;
-}
-
-static int index_from_direction(XLALSkymapPlanType* plan, double direction[3])
-{
-    int i[3];
-    delays_from_direction(plan, i, direction);
-    return index_from_delays(plan, i[0], i[1], i[2]); 
-}
-
 double thetaphi[2];
 
 void add_injection(XLALSkymapPlanType* plan, double sigma)
@@ -161,12 +68,12 @@ void add_injection(XLALSkymapPlanType* plan, double sigma)
 
     thetaphi[0] = acos(XLALUniformDeviate(rng_parameters) * 2 - 1); 
     thetaphi[1] = XLALUniformDeviate(rng_parameters) * LAL_TWOPI;
-    cartesian_from_spherical(direction, thetaphi[0], thetaphi[1]);
+    XLALSkymapCartesianFromSpherical(direction, thetaphi[0], thetaphi[1]);
     
-    delays_from_direction(plan, delays, direction);
-    i = index_from_direction(plan, direction);
+    XLALSkymapDelaysFromDirection(plan, delays, direction);
+    i = XLALSkymapIndexFromDirection(plan, direction);
    
-    for (j = samples / 2 - rate / 256; j < samples /2 + rate / 256; ++j)
+    for (j = samples / 2 - rate / 128; j < samples /2 + rate / 128; ++j)
     {
         h[0] = sigma * XLALNormalDeviate(rng_parameters);
         h[1] = sigma * XLALNormalDeviate(rng_parameters);
@@ -373,7 +280,7 @@ int main(int argc, char **argv)
                     {
                         buffer[i] = kernel * (sq(dft_out[i][0]) + sq(dft_out[i][1]));
                     }
-                    p_sigma = logtotalexp(buffer, buffer + n) - log(sq(sigmas[j]) * sq(w[d]) + 1.0) - log(n);
+                    p_sigma = XLALSkymapLogTotalExp(buffer, buffer + n) - log(sq(sigmas[j]) * sq(w[d]) + 1.0) - log(n);
                     p_sigmas = XLALSkymapLogSumExp(p_sigmas, p_sigma);
                 }
                 /* the log odds that a waveform was added to a detector */
@@ -382,7 +289,7 @@ int main(int argc, char **argv)
                 p_detectors += XLALSkymapLogSumExp(p_sigmas, 0);
             }
             
-            p_detectors = logdifferenceexp(p_detectors, 0);
+            p_detectors = XLALSkymapLogDifferenceExp(p_detectors, 0);
             p_detectors -= log(7);
             
             printf(" %f\n", p_detectors);
@@ -598,12 +505,12 @@ int main(int argc, char **argv)
                 }
 
                 pglitch = 
-                    logdifferenceexp(XLALSkymapLogSumExp(0, g[0][0] - log(end[0] - begin[0])) +
+                    XLALSkymapLogDifferenceExp(XLALSkymapLogSumExp(0, g[0][0] - log(end[0] - begin[0])) +
                     XLALSkymapLogSumExp(0, g[0][1] - log(end[1] - begin[1])) +
                     XLALSkymapLogSumExp(0, g[0][2] - log(end[2] - begin[2])), 0) - log(7.0);
                 accumulated_glitch += pglitch;
 
-                printf("    %f / %f        %f / %f\n", psignal, pglitch, accumulated_signal, accumulated_glitch);
+                printf("    exp(%f)        exp(%f)\n", (psignal - pglitch), (accumulated_signal - accumulated_glitch));
 
                 free(skymap[0]);free(skymap[1]);free(skymap[2]);
                 free(modes);
@@ -1002,11 +909,6 @@ void make_glitch(XLALSkymapPlanType* plan, double** z, int samples, double sigma
     XLALDestroyRandomParams(params);
 }
 
-double logdifferenceexp(double a, double b)
-{
-    return a + log(1. - exp(b - a));
-}
-
 int lose_data(double **z)
 {
     int i;
@@ -1292,8 +1194,8 @@ int main(int argc, char** argv)
         }
         /* remove the signal hypothesis */
         /* marginalizedGlitch = log(exp(marginalizedGlitch) - 0.125) + log(8) - log(7); */
-        /* marginalizedGlitch = logdifferenceexp(marginalizedGlitch, log(0.125)) + log(8) - log(7); */
-        marginalizedGlitch = logdifferenceexp(marginalizedGlitch, -log(pow(2,activeDetectors))) + log(pow(2,activeDetectors)) - log(pow(2,activeDetectors) - 1);
+        /* marginalizedGlitch = XLALSkymapLogDifferenceExp(marginalizedGlitch, log(0.125)) + log(8) - log(7); */
+        marginalizedGlitch = XLALSkymapLogDifferenceExp(marginalizedGlitch, -log(pow(2,activeDetectors))) + log(pow(2,activeDetectors)) - log(pow(2,activeDetectors) - 1);
 
         /* printf("Signal %f - Glitch %f\n", marginalizedSkymap, marginalizedGlitch); */
         /* printf("%e %s %e", marginalizedSkymap, (marginalizedSkymap > marginalizedGlitch) ? ">" : "<", marginalizedGlitch); */

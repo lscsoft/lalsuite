@@ -238,7 +238,12 @@ double XLALSkymapLogSumExp(double a, double b)
 	    );
 }
 
-static double* findmax(double* begin, double* end)
+double XLALSkymapLogDifferenceExp(double a, double b)
+{
+    return a + log(1.0 - exp(b - a));
+}
+
+double* findmax(double* begin, double* end)
 {
     double* p;
     double* m;
@@ -259,14 +264,14 @@ static double logtotalexpwithmax(double* begin, double* end, double m)
     return m + log(t);
 }
 
-static double logtotalexp(double* begin, double* end)
+double XLALSkymapLogTotalExp(double* begin, double* end)
 {
     return logtotalexpwithmax(begin, end, *findmax(begin, end));
 }
 
 /* coordinate transformations */
 
-static void cartesian_from_spherical(double a[3], double theta, double phi)
+void XLALSkymapCartesianFromSpherical(double a[3], double theta, double phi)
 {
     set3(a, sin(theta) * cos(phi), sin(theta) * sin(phi), cos(theta));
 }
@@ -328,23 +333,26 @@ static int index_from_times(XLALSkymapPlanType* plan, int times[3], int hemisphe
     return index_from_delays(plan, times[1] - times[0], times[2] - times[0], hemisphere);
 }
 
-static int index_from_direction(XLALSkymapPlanType* plan, double direction[3])
+void XLALSkymapDelaysFromDirection(XLALSkymapPlanType* plan, int delays[3], double direction[3])
 {
-    int i[3];
     /* compute the delays rounded to the nearest sample */
-    i[0] = (int) floor((
+    delays[0] = (int) floor((
         site_time(&plan->site[1], direction) - 
         site_time(&plan->site[0], direction)) * 
         plan->sampleFrequency + 0.5);
-    i[1] = (int) floor((
+    delays[1] = (int) floor((
         site_time(&plan->site[2], direction) - 
         site_time(&plan->site[0], direction)) * 
         plan->sampleFrequency + 0.5);
-    i[2] = dot3(plan->siteNormal, direction) < 0 ? 0 : 1;
-    return index_from_delays(plan, i[0], i[1], i[2]); 
+    delays[2] = dot3(plan->siteNormal, direction) < 0 ? 0 : 1;
 }
 
-
+int XLALSkymapIndexFromDirection(XLALSkymapPlanType* plan, double direction[3])
+{
+    int i[3];
+    XLALSkymapDelaysFromDirection(plan, i, direction);
+    return index_from_delays(plan, i[0], i[1], i[2]); 
+}
 
 XLALSkymapPlanType* XLALSkymapConstructPlan(int sampleFrequency)
 {
@@ -418,9 +426,9 @@ XLALSkymapPlanType* XLALSkymapConstructPlan(int sampleFrequency)
                 double theta = (i + 0.5) * (pi / m);
                 double phi   = (j + 0.5) * (2 * pi / n);
                 /* compute direction */
-                cartesian_from_spherical(direction, theta, phi);
+                XLALSkymapCartesianFromSpherical(direction, theta, phi);
                 /* determine the corresponding pixel */
-                k = index_from_direction(plan, direction);
+                k = XLALSkymapIndexFromDirection(plan, direction);
                 /* increase the total area */
                 area += sin(theta);
                 /* increase the pixel area */
@@ -1075,9 +1083,9 @@ int XLALSkymapRenderEquirectangular(int m, int n, double* q, XLALSkymapPlanType*
             double theta = (i + 0.5) * (pi / m);
             double phi   = (j + 0.5) * (2 * pi / n);
             /* compute direction */
-            cartesian_from_spherical(direction, theta, phi);
+            XLALSkymapCartesianFromSpherical(direction, theta, phi);
             /* determine the corresponding pixel */
-            k = index_from_direction(plan, direction);
+            k = XLALSkymapIndexFromDirection(plan, direction);
 
             q[i + j * m] = p[k];
             /* apply area corrections */
@@ -1107,9 +1115,9 @@ int XLALSkymapRenderEqualArea(int m, int n, double* q, XLALSkymapPlanType* plan,
             double theta = acos(1. - (i + 0.5) * (2. / m));
             double phi   = (j + 0.5) * (2. * pi / n);
             /* compute direction */
-            cartesian_from_spherical(direction, theta, phi);
+            XLALSkymapCartesianFromSpherical(direction, theta, phi);
             /* determine the corresponding pixel */
-            k = index_from_direction(plan, direction);
+            k = XLALSkymapIndexFromDirection(plan, direction);
 
             if (plan->pixel[k].area > 0)
             {
@@ -1148,11 +1156,11 @@ int XLALSkymapRenderMollweide(int m, int n, double* q, XLALSkymapPlanType* plan,
                 double phi = asin(((2*theta)+sin(2*theta))/pi);
                 double direction[3];
                 /* compute direction */
-                cartesian_from_spherical(direction, pi/2 - phi, lambda);
+                XLALSkymapCartesianFromSpherical(direction, pi/2 - phi, lambda);
                 /* determine the corresponding pixel */
-                q[i + j * m] = p[index_from_direction(plan, direction)];
+                q[i + j * m] = p[XLALSkymapIndexFromDirection(plan, direction)];
                 /* undo area prior since this is an equiarea projection */
-                q[i + j * m] -= log(plan->pixel[index_from_direction(plan, direction)].area);
+                q[i + j * m] -= log(plan->pixel[XLALSkymapIndexFromDirection(plan, direction)].area);
             }
         }
     }

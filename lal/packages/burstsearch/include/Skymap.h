@@ -83,15 +83,24 @@ int XLALSkymapAnalyzeElliptical(double* p, XLALSkymapPlanType* plan, double sigm
 int XLALSkymapGlitchHypothesis(XLALSkymapPlanType* plan, double* p, double sigma, double w[3], int begin[3], int end[3], double** x);
 
 /*
- * Add log-represented values together, preventing overflow
+ * Manipulate log-represented values together, preventing overflow
  */
 double XLALSkymapLogSumExp(double a, double b);
+double XLALSkymapLogDifferenceExp(double a, double b);
+double XLALSkymapLogTotalExp(double* begin, double* end);
 
 /*
  * Add skymaps together, taking account of their log representation and valid
  * pixels
  */
 void XLALSkymapSum(XLALSkymapPlanType* plan, double* a, const double* b, const double* c);
+
+/*
+ * Lightweight coordinate transformations
+ */ 
+void XLALSkymapCartesianFromSpherical(double a[3], double theta, double phi);
+void XLALSkymapDelaysFromDirection(XLALSkymapPlanType* plan, int delays[3], double direction[3]);
+int XLALSkymapIndexFromDirection(XLALSkymapPlanType* plan, double direction[3]);
 
 /* 
  * Find the most plausible direction (the mode of the distribution) and return
