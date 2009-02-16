@@ -480,6 +480,29 @@ int main(int argc, char *argv[]){
 
   stddev = LALCalloc(1, sizeof(REAL8));
 
+      /* read the sfts */
+      /* first load them into a MultiSFTVector, then concatenate the
+	 various vectors into one */
+      /* read sft files making sure to add extra bins for running median */
+      /* add wings for Doppler modulation and running median block size */
+      /* remove fBand from doppWings because we are going bin-by-bin (?) */
+      doppWings = (uvar_f0 + (freqCounter*deltaF)) * VTOT;
+      fMin = uvar_f0 - doppWings - uvar_blocksRngMed * deltaF;
+      fMax = uvar_f0 + uvar_fBand + doppWings + uvar_blocksRngMed * deltaF;
+
+/*      fMin = uvar_f0 + (freqCounter*deltaF) - doppWings - uvar_blocksRngMed * deltaF;
+      fMax = uvar_f0 + (freqCounter*deltaF) + doppWings + uvar_blocksRngMed * deltaF;
+
+*/
+      LAL_CALL( LALLoadMultiSFTs ( &status, &multiSFTs, catalog, fMin, fMax), &status);
+      LAL_CALL( LALCombineAllSFTs (&status, &inputSFTs, multiSFTs, catalog->length), &status);
+
+
+      /* find number of sfts */
+      /* loop over ifos and calculate number of sfts */
+      /* note that we can't use the catalog to determine the number of SFTs
+	 because SFTs might be segmented in frequency */
+      numsft = inputSFTs->length;
 
 
   /* start frequency loop */
@@ -491,30 +514,6 @@ int main(int argc, char *argv[]){
 
       fdot_current = uvar_fdot + (delta_fdot*fdotCounter);
 
-      /* read the sfts */
-      /* first load them into a MultiSFTVector, then concatenate the
-	 various vectors into one */
-      /* read sft files making sure to add extra bins for running median */
-      /* add wings for Doppler modulation and running median block size */
-      /* remove fBand from doppWings because we are going bin-by-bin (?) */
-      doppWings = (uvar_f0 + (freqCounter*deltaF)) * VTOT;
-      fMin = uvar_f0 + (freqCounter*deltaF)
-	- doppWings - uvar_blocksRngMed * deltaF;
-      fMax = uvar_f0 + (freqCounter*deltaF)
-	+ doppWings + uvar_blocksRngMed * deltaF;
-
-
-      LAL_CALL( LALLoadMultiSFTs ( &status, &multiSFTs, catalog, fMin, fMax),
-		&status);
-      LAL_CALL( LALCombineAllSFTs ( &status, &inputSFTs, multiSFTs,
-				    catalog->length),
-		&status);
-
-      /* find number of sfts */
-      /* loop over ifos and calculate number of sfts */
-      /* note that we can't use the catalog to determine the number of SFTs
-	 because SFTs might be segmented in frequency */
-      numsft = inputSFTs->length;
 
       /* normalize sfts */
       /* get information about all detectors including velocity and
@@ -564,13 +563,16 @@ int main(int argc, char *argv[]){
 
       /* initialise frequency and phase vectors *
        * initialise Y, u, weight vectors */
-      yalpha = (COMPLEX16Vector *) LALCalloc(1, sizeof(COMPLEX16));
+     yalpha = XLALCreateCOMPLEX16Vector(sftPairIndexList->vectorLength);
+     ualpha = XLALCreateCOMPLEX16Vector(sftPairIndexList->vectorLength);
+
+/*      yalpha = (COMPLEX16Vector *) LALCalloc(1, sizeof(COMPLEX16));
       yalpha->length = sftPairIndexList->vectorLength;
       yalpha->data = LALCalloc(yalpha->length, sizeof(COMPLEX16));
       ualpha = (COMPLEX16Vector *) LALCalloc(1, sizeof(COMPLEX16));
       ualpha->length = sftPairIndexList->vectorLength;
       ualpha->data = LALCalloc(ualpha->length, sizeof(COMPLEX16));
-
+*/
       sigmasq = XLALCreateREAL8Vector(sftPairIndexList->vectorLength);
 
       /*printf("starting loops over sky patches\n");*/
@@ -739,16 +741,15 @@ int main(int argc, char *argv[]){
 
       XLALDestroyTimestampVector(ts);
 
-      XLALDestroyCOMPLEX16Vector(yalpha);
-      XLALDestroyCOMPLEX16Vector(ualpha);
-      XLALDestroyREAL8Vector(frequencyShiftList);
-      XLALDestroyREAL8Vector(signalPhaseList);
-      LAL_CALL ( LALDestroyPSDVector  ( &status, &psdVec), &status);
-      LAL_CALL (LALDestroySFTVector(&status, &inputSFTs), &status );
-      XLALFree(sftPairIndexList->data);
-      XLALFree(sftPairIndexList);
-      XLALDestroyREAL8Vector(sigmasq);
-      XLALFree(beamfns); 
+   XLALDestroyCOMPLEX16Vector(yalpha);
+   XLALDestroyCOMPLEX16Vector(ualpha);
+   XLALDestroyREAL8Vector(frequencyShiftList);
+   XLALDestroyREAL8Vector(signalPhaseList);
+   LAL_CALL ( LALDestroyPSDVector  ( &status, &psdVec), &status);
+   XLALFree(sftPairIndexList->data);
+   XLALFree(sftPairIndexList);
+   XLALDestroyREAL8Vector(sigmasq);
+   XLALFree(beamfns); 
 
       /*  XLALDestroyDetectorStateSeries ( detStates );*/
 
@@ -759,6 +760,7 @@ int main(int argc, char *argv[]){
   fclose (fp);
 
   LAL_CALL( LALDestroySFTCatalog( &status, &catalog ), &status);
+  LAL_CALL (LALDestroySFTVector(&status, &inputSFTs), &status );
 
   LALFree(edat->ephemE);
   LALFree(edat->ephemS);
