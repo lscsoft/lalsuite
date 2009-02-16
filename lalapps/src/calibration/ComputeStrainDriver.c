@@ -212,20 +212,12 @@ int main(int argc,char *argv[])
 
   if (XLALReadFiltersFile(CommandLineArgs.filterfile, &InputData)) return 3;
 
-  /*********************/
-  /* **** a function must be added here *********** */
-          /* **** check the times when we are not in science mode
-                  (on+light) and mark as transient any data calibrated
-                  using non-science mode time ***********/
-  /*********************/
-
-
   LALComputeStrain(&status, &OutputData, &InputData);
   TESTSTATUS( &status );
 
-  XLALComputeDQ(StateVector.data->data, StateVector.data->length,
-                LAX.data->data, LAY.data->data, LAX.data->length,
-                OutputData.alphabeta.data->data, OutputData.alphabeta.data->length,
+  XLALComputeDQ(StateVector.data->data, StateVector.data->length/OutputDQ.data->length,
+                LAX.data->data, LAY.data->data, LAX.data->length/OutputDQ.data->length,
+                OutputData.alphabeta.data->data, OutputData.alphabeta.data->length/OutputDQ.data->length,
                 0, 0, InputData.wings,
                 0,   /* how can I actually know if it is missing in the DMT or not?? */
                 OutputDQ.data->data, OutputDQ.data->length);
@@ -273,7 +265,7 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
   char gammaName[] = "Xn:CAL-OLOOP_FAC";
   char alphaimName[] = "Xn:CAL-CAV_FAC_Im";
   char gammaimName[] = "Xn:CAL-OLOOP_FAC_Im";
-  char dqName[] = "Xn:DMT-DATA_QUALITY_VECTOR";
+  char dqName[] = "Xn:LSC-DATA_QUALITY_VECTOR";
 
   /*re-size h(t) and data time series*/
   LALResizeREAL8TimeSeries(&status, &(OutputData.h), (int)(InputData.wings/OutputData.h.deltaT),
