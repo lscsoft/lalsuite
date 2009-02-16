@@ -5,7 +5,7 @@ L-CAL_FAC_V03-729273600-5094000.gwf L-CAL_REF_V03-731488397-64.gwf
 
 if FRAME
 #check_PROGRAMS   = FrameStreamTest Read40mData ReadGEOData ReadLHOData MakeFrames FrameCacheTest FrameCalibrationTest
-check_PROGRAMS   = FrameStreamTest Read40mData ReadGEOData ReadLHOData MakeFrames FrameCacheTest
+check_PROGRAMS   = FrameStreamTest Read40mData ReadGEOData ReadLHOData MakeFrames FrameCacheTest AggregationTest
 #TESTS            = FrameCacheTest.sh FrameStreamTest FrameCalibrationTest
 TESTS            = FrameCacheTest.sh FrameStreamTest
 else
