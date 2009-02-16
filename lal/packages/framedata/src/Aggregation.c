@@ -642,8 +642,8 @@ UINT4 XLALAggregationDQGap(INT4TimeSeries *series,
   UINT4 gap = 0;
 
   /* check arguments */
-  if (series == NULL)
-    XLAL_ERROR_NULL(func, XLAL_EFAULT);
+  if (!series)
+    XLAL_ERROR(func, XLAL_EFAULT);
 
   /* check for required bitmask */
   for (i = 0; i < series->data->length; i++)
