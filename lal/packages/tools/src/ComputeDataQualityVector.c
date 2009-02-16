@@ -58,8 +58,8 @@ RCSID("$Id$");
  * MISSING      64  // Indication that data was dropped in DMT
  *
  * All the arrays must have been previously allocated.
- * n_x is the number of x_value(s) that are in a single DQ sample (=
- * x.length/n_dq).
+ * r_x is the number of x_value(s) that are in a single DQ sample (=
+ * x.length/n_dq). So it is the "rate" of x with respect to DQ samples.
  *
  * Other special meanings:
  *  t_bad_left:  time (in s) of the last NOT-UP event in the Data Quality
@@ -69,9 +69,9 @@ RCSID("$Id$");
  * If t_bad_left < wings then it doesn't matter how much less it
  * is. Same thing for t_bad_right > wings.
  */
-int XLALComputeDQ(REAL4* sv_data, int n_sv,
-                  REAL4* lax_data, REAL4* lay_data, int n_light,
-                  COMPLEX16* gamma_data, int n_gamma,
+int XLALComputeDQ(REAL4* sv_data, int r_sv,
+                  REAL4* lax_data, REAL4* lay_data, int r_light,
+                  COMPLEX16* gamma_data, int r_gamma,
                   int t_bad_left, int t_bad_right, int wings,
                   int missing,
                   int* dq_data, int n_dq)  /* output */
@@ -89,22 +89,22 @@ int XLALComputeDQ(REAL4* sv_data, int n_sv,
         /* light */
         sum_x = 0;
         sum_y = 0;
-        for (j = 0; j < n_light; j++) {
-            sum_x += lax_data[i*n_light + j]; 
-            sum_y += lay_data[i*n_light + j];
+        for (j = 0; j < r_light; j++) {
+            sum_x += lax_data[i*r_light + j]; 
+            sum_y += lay_data[i*r_light + j];
         }
         
-        light = (sum_x/n_light > 100 && sum_y/n_light > 100);
+        light = (sum_x/r_light > 100 && sum_y/r_light > 100);
         
         /* science, injection, up (stuff coming from the state vector) */
         science = 1;    /* in science mode */
         injection = 0;  /* with no injection going on */
         up = 1;         /* and IFO is up */
-        for (j = 0; j < n_sv; j++) {
-            int s = (int) sv_data[i*n_sv + j];  /* convert from float to int */
-            if ((s & (1 << 0)) != 1)  science = 0;
-            if ((s & (1 << 3)) != 1)  injection = 1;
-            if ((s & (1 << 2)) != 1)  up = 0;
+        for (j = 0; j < r_sv; j++) {
+            int s = (int) sv_data[i*r_sv + j];  /* convert from float to int */
+            if ((s & (1 << 0)) == 0)  science = 0;
+            if ((s & (1 << 3)) == 0)  injection = 1;
+            if ((s & (1 << 2)) == 0)  up = 0;
         }
         
         up = up && light;  /* this is the "up" definition of the DQ vector */
@@ -121,7 +121,7 @@ int XLALComputeDQ(REAL4* sv_data, int n_sv,
         /* badgamma */
         badgamma = 0;
 
-        for (j = 0; j < n_gamma; j++) {
+        for (j = 0; j < r_gamma; j++) {
             REAL8 re = gamma_data[j].re;
             if (re < 0.8 || re > 1.2)  /* || isnan(re) || isinf(re)  not C89 */
                 badgamma = 1;
@@ -150,12 +150,12 @@ int XLALComputeDQ(REAL4* sv_data, int n_sv,
         for (j = 0; j < wings; j++) {
             int pos = i - j;
             if (pos > 0) {
-                if ((dq_data[pos] & (1 << 2)) != 1)
+                if ((dq_data[pos] & (1 << 2)) == 0)
                     calibrated = 0;
             }
             pos = i + j;  /* note that this includes dq_data[i] having UP=1 */
             if (pos < n_dq) {
-                if ((dq_data[pos] & (1 << 2)) != 1)
+                if ((dq_data[pos] & (1 << 2)) == 0)
                     calibrated = 0;
             }
         }
