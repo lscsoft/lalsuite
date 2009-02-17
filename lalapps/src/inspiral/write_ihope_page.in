@@ -21,7 +21,6 @@ from glue.markup import oneliner as e
 import ConfigParser
 sys.path.append('@PYTHONLIBDIR@')
 
-
 # ***************************************************************************
 def functionId(nFramesUp):
   """ 
@@ -61,7 +60,7 @@ def logText(logfile, text, tag="done"):
       print >>sys.stdout,text
   elif tag=="error":
     msg = "<"+tag+">"+text
-    logfile.write(text)
+    logfile.write(msg)
     i =1 
     while len(msg)>0:
       msg = functionId(i)
@@ -72,7 +71,6 @@ def logText(logfile, text, tag="done"):
         msg=[]
       i=i+1
     print >>sys.stderr, msg
-    exit(1)
   else :
     msg = "<"+tag+">"+text+"</"+tag+">\n"
     logfile.write( msg )
@@ -607,8 +605,8 @@ def write_summary(page,opts):
       page = write_table(page, segs,keys)
       page.div.close() 
     except:
-      msg = "Problems parsing category veto segment list "+tag, "warning"
-      logText(logfile, msg)
+      msg = "Problems parsing category veto segment list "+tag
+      logText(logfile, msg,"warning")
       page.div.close() 
   
   return page
