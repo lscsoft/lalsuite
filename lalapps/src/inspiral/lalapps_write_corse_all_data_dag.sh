@@ -25,11 +25,11 @@ echo
 
 #get septime txt files organized by combo and run add_septime to add up times
 echo "Getting SEPTIME_SLIDE*.txt file names and writing to cache files..."
-pushd septime_files/${cat}/ > /dev/null
+pushd septime_files/full_data_slide_${cat}/ > /dev/null
 for combo in H1H2L1 H1H2 H1L1 H2L1; do
   echo -n "  Getting ${cat}/${combo}-SEPTIME_SLIDE*.txt files..."
   for file in ${combo}-SEPTIME_SLIDE_H*.txt; do
-    echo "septime_files/${cat}/${file}"
+    echo "septime_files/full_data_slide_${cat}/${file}"
   done > ../septime_${cat}_${combo}_times.cache
   echo " done."
 done
@@ -53,8 +53,8 @@ if [ 1 ]; then
     for mass in mchirp_2_8 mchirp_8_17 mchirp_17_35; do
     #write corse jobs for double-in_double files
       for combo in H1L1 H2L1; do
-        zerofile="second_coire_files/${mass}/${combo}-SECOND_COIRE_${cat}_${combo}-${month_gps_time}-${month_duration}.xml.gz"
-        slidefile="second_coire_files/${mass}/${combo}-SECOND_COIRE_SLIDE_${cat}_${combo}-${month_gps_time}-${month_duration}.xml.gz"
+        zerofile="second_coire_files/full_data/${mass}/${combo}-SECOND_COIRE_${cat}_${combo}-${month_gps_time}-${month_duration}.xml.gz"
+        slidefile="second_coire_files/full_data_slide/${mass}/${combo}-SECOND_COIRE_SLIDE_${cat}_${combo}-${month_gps_time}-${month_duration}.xml.gz"
         outfile="corse_all_data_files/${data}/${combo}_${combo}-CORSE_`echo ${data} | tr '[a-z]' '[A-Z]'`_${mass}_${cat}-${month_gps_time}-${month_duration}.xml.gz"
         summfile=`echo ${outfile} | sed s/.xml.gz/.txt/g`
         timeanalyzedfile="septime_files/${combo}_V3_${cat}.txt"
@@ -67,15 +67,84 @@ if [ 1 ]; then
         echo
       done
     #write corse jobs for double-in_triple and triple-in_triple files
-      for combo in H1L1 H2L1 H1H2L1; do
-        zerofile="second_coire_files/${mass}/${combo}-SECOND_COIRE_${cat}_H1H2L1-${month_gps_time}-${month_duration}.xml.gz"
-        slidefile="second_coire_files/${mass}/${combo}-SECOND_COIRE_SLIDE_${cat}_H1H2L1-${month_gps_time}-${month_duration}.xml.gz"
+      for combo in H1L1 H1H2L1; do
+        zerofile="second_coire_files/full_data/${mass}/${combo}-SECOND_COIRE_${cat}_H1H2L1-${month_gps_time}-${month_duration}.xml.gz"
+        slidefile="second_coire_files/full_data_slide/${mass}/${combo}-SECOND_COIRE_SLIDE_${cat}_H1H2L1-${month_gps_time}-${month_duration}.xml.gz"
         outfile="corse_all_data_files/${data}/H1H2L1_${combo}-CORSE_`echo ${data} | tr '[a-z]' '[A-Z]'`_${mass}_${cat}-${month_gps_time}-${month_duration}.xml.gz"
         summfile=`echo ${outfile} | sed s/.xml.gz/.txt/g`
         timeanalyzedfile="septime_files/H1H2L1_V3_${cat}.txt"
         echo "JOB $outfile corse_all_data.corse.sub"
         echo "RETRY $outfile 1"
         echo "VARS $outfile macrozerofile=\"$zerofile\" macroslidefile=\"$slidefile\" macrooutfile=\"$outfile\" macrotimeanalyzedfile=\"$timeanalyzedfile\" macrodatatype=\"$data\" macrosummaryfile=\"$summfile\" macromasstag=\"$mass\""
+        echo "CATEGORY $outfile corse"
+        parent_file="H1H2L1_V3_${cat}.txt"
+        echo "PARENT $parent_file CHILD $outfile"
+        echo
+      done
+    done
+  done
+  #write CORSE_SLIDE jobs
+  for data in all_data playground_only exclude_play; do
+    for mass in mchirp_2_8 mchirp_8_17 mchirp_17_35; do
+    #write corse jobs for double-in_double files
+      for combo in H1L1 H2L1; do
+        zerofile="second_coire_files/full_data_slide/${mass}/${combo}-SECOND_COIRE_SLIDE_${cat}_${combo}-${month_gps_time}-${month_duration}.xml.gz"
+        slidefile="second_coire_files/full_data_slide/${mass}/${combo}-SECOND_COIRE_SLIDE_${cat}_${combo}-${month_gps_time}-${month_duration}.xml.gz"
+        outfile="corse_all_data_files/${data}_slide/${combo}_${combo}-CORSE_SLIDE_`echo ${data} | tr '[a-z]' '[A-Z]'`_${mass}_${cat}-${month_gps_time}-${month_duration}.xml.gz"
+        summfile=`echo ${outfile} | sed s/.xml.gz/.txt/g`
+        timeanalyzedfile="septime_files/${combo}_V3_${cat}.txt"
+        echo "JOB $outfile corse_all_data.corse.sub"
+        echo "RETRY $outfile 1"
+        echo "VARS $outfile macrozerofile=\"$zerofile\" macroslidefile=\"$slidefile\" macrooutfile=\"$outfile\" macrotimeanalyzedfile=\"$timeanalyzedfile\" macrodatatype=\"$data\" macrosummaryfile=\"$summfile\" macromasstag=\"$mass\""
+        echo "CATEGORY $outfile corse"
+        parent_file="${combo}_V3_${cat}.txt"
+        echo "PARENT $parent_file CHILD $outfile"
+        echo
+      done
+    #write corse jobs for double-in_triple and triple-in_triple files
+      for combo in H1L1 H1H2L1; do
+        zerofile="second_coire_files/full_data_slide/${mass}/${combo}-SECOND_COIRE_SLIDE_${cat}_H1H2L1-${month_gps_time}-${month_duration}.xml.gz"
+        slidefile="second_coire_files/full_data_slide/${mass}/${combo}-SECOND_COIRE_SLIDE_${cat}_H1H2L1-${month_gps_time}-${month_duration}.xml.gz"
+        outfile="corse_all_data_files/${data}_slide/H1H2L1_${combo}-CORSE_SLIDE_`echo ${data} | tr '[a-z]' '[A-Z]'`_${mass}_${cat}-${month_gps_time}-${month_duration}.xml.gz"
+        summfile=`echo ${outfile} | sed s/.xml.gz/.txt/g`
+        timeanalyzedfile="septime_files/H1H2L1_V3_${cat}.txt"
+        echo "JOB $outfile corse_all_data.corse.sub"
+        echo "RETRY $outfile 1"
+        echo "VARS $outfile macrozerofile=\"$zerofile\" macroslidefile=\"$slidefile\" macrooutfile=\"$outfile\" macrotimeanalyzedfile=\"$timeanalyzedfile\" macrodatatype=\"$data\" macrosummaryfile=\"$summfile\" macromasstag=\"$mass\""
+        echo "CATEGORY $outfile corse"
+        parent_file="H1H2L1_V3_${cat}.txt"
+        echo "PARENT $parent_file CHILD $outfile"
+        echo
+      done
+    done
+  done
+  for injstring in BNSLININJ BNSLOGINJ BNSSPINLININJ BNSSPINLOGINJ NSBHLININJ NSBHLOGINJ NSBHSPINLININJ NSBHSPINLOGINJ BBHLININJ BBHLOGINJ BBHSPINLININJ BBHSPINLOGINJ; do
+    for mass in mchirp_2_8 mchirp_8_17 mchirp_17_35; do
+    #write corse jobs for double-in_double files
+      for combo in H1L1 H2L1; do
+        zerofile="second_coire_files/${injstring}/${mass}/${combo}-SECOND_COIRE_${cat}_${combo}-${month_gps_time}-${month_duration}.xml.gz"
+        slidefile="second_coire_files/full_data_slide/${mass}/${combo}-SECOND_COIRE_SLIDE_${cat}_${combo}-${month_gps_time}-${month_duration}.xml.gz"
+        outfile="corse_all_data_files/${injstring}/${combo}_${combo}-CORSE_${injstring}_${mass}_${cat}-${month_gps_time}-${month_duration}.xml.gz"
+        summfile=`echo ${outfile} | sed s/.xml.gz/.txt/g`
+        timeanalyzedfile="septime_files/${combo}_V3_${cat}.txt"
+        echo "JOB $outfile corse_all_data.corse.sub"
+        echo "RETRY $outfile 1"
+        echo "VARS $outfile macrozerofile=\"$zerofile\" macroslidefile=\"$slidefile\" macrooutfile=\"$outfile\" macrotimeanalyzedfile=\"$timeanalyzedfile\" macrodatatype=\"all_data\" macrosummaryfile=\"$summfile\" macromasstag=\"$mass\""
+        echo "CATEGORY $outfile corse"
+        parent_file="${combo}_V3_${cat}.txt"
+        echo "PARENT $parent_file CHILD $outfile"
+        echo
+      done
+    #write corse jobs for double-in_triple and triple-in_triple files
+      for combo in H1L1 H1H2L1; do
+        zerofile="second_coire_files/${injstring}/${mass}/${combo}-SECOND_COIRE_${cat}_H1H2L1-${month_gps_time}-${month_duration}.xml.gz"
+        slidefile="second_coire_files/full_data_slide/${mass}/${combo}-SECOND_COIRE_SLIDE_${cat}_H1H2L1-${month_gps_time}-${month_duration}.xml.gz"
+        outfile="corse_all_data_files/${injstring}/H1H2L1_${combo}-CORSE_${injstring}_${mass}_${cat}-${month_gps_time}-${month_duration}.xml.gz"
+        summfile=`echo ${outfile} | sed s/.xml.gz/.txt/g`
+        timeanalyzedfile="septime_files/H1H2L1_V3_${cat}.txt"
+        echo "JOB $outfile corse_all_data.corse.sub"
+        echo "RETRY $outfile 1"
+        echo "VARS $outfile macrozerofile=\"$zerofile\" macroslidefile=\"$slidefile\" macrooutfile=\"$outfile\" macrotimeanalyzedfile=\"$timeanalyzedfile\" macrodatatype=\"all_data\" macrosummaryfile=\"$summfile\" macromasstag=\"$mass\""
         echo "CATEGORY $outfile corse"
         parent_file="H1H2L1_V3_${cat}.txt"
         echo "PARENT $parent_file CHILD $outfile"
@@ -120,7 +189,7 @@ echo " done."
 if [ ! -d corse_all_data_files ] ; then
   mkdir corse_all_data_files
 fi
-for data in all_data playground_only exclude_play; do
+for data in all_data playground_only exclude_play BNSLININJ BNSLOGINJ BNSSPINLININJ BNSSPINLOGINJ NSBHLININJ NSBHLOGINJ NSBHSPINLININJ NSBHSPINLOGINJ BBHLININJ BBHLOGINJ BBHSPINLININJ BBHSPINLOGINJ all_data_slide playground_only_slide exclude_play_slide; do
   if [ ! -d corse_all_data_files/${data} ] ; then
     mkdir corse_all_data_files/${data}
   fi
