@@ -427,6 +427,8 @@ LALCoherentInspiralEstimateDistance (
     REAL4                                 *distance
     );
 
+double XLALCoherentCBCParamEstim( double *psi_est, double *iota_est, double *coa_phase_est, double a1, double a2, double a3, double a4, double *eff_distance0,double *eff_distance1,double *eff_distance2,double *eff_distanceH1H2,double amplitudeConst, double chirpTime, double C_Real0, double C_Real1, double C_Real2,double C_Im0, double C_Im1, double C_Im2, REAL8 *sigmasq);
+
 void
 LALCoherentInspiralFilterSegment (
     LALStatus                             *status,
