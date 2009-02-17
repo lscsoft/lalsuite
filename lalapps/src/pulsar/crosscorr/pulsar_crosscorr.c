@@ -521,34 +521,61 @@ int main(int argc, char *argv[]){
 
   stddev = LALCalloc(1, sizeof(REAL8));
 
-      /* read the sfts */
-      /* first load them into a MultiSFTVector, then concatenate the
-	 various vectors into one */
-      /* read sft files making sure to add extra bins for running median */
-      /* add wings for Doppler modulation and running median block size */
-      /* remove fBand from doppWings because we are going bin-by-bin (?) */
-      doppWings = (uvar_f0 + (freqCounter*deltaF)) * VTOT;
-      fMin = uvar_f0 - doppWings - uvar_blocksRngMed * deltaF;
-      fMax = uvar_f0 + uvar_fBand + doppWings + uvar_blocksRngMed * deltaF;
+  /* set the max. allowable time lag between 2 sfts */
+  pairParams.lag = uvar_maxlag;
 
-/*      fMin = uvar_f0 + (freqCounter*deltaF) - doppWings - uvar_blocksRngMed * deltaF;
-      fMax = uvar_f0 + (freqCounter*deltaF) + doppWings + uvar_blocksRngMed * deltaF;
+  /* read the sfts */
+  /* first load them into a MultiSFTVector, then concatenate the
+     various vectors into one */
+  /* read sft files making sure to add extra bins for running median */
+  /* add wings for Doppler modulation and running median block size */
+  /* remove fBand from doppWings because we are going bin-by-bin (?) */
+  doppWings = (uvar_f0 + (freqCounter*deltaF)) * VTOT;
+  fMin = uvar_f0 - doppWings - uvar_blocksRngMed * deltaF;
+  fMax = uvar_f0 + uvar_fBand + doppWings + uvar_blocksRngMed * deltaF;
 
-*/
-      LAL_CALL( LALLoadMultiSFTs ( &status, &multiSFTs, catalog, fMin, fMax), &status);
-      LAL_CALL( LALCombineAllSFTs (&status, &inputSFTs, multiSFTs, catalog->length), &status);
+  /* combine all sfts into a single sftvector */
+  LAL_CALL( LALLoadMultiSFTs ( &status, &multiSFTs, catalog, fMin, fMax), &status);
+  LAL_CALL( LALCombineAllSFTs (&status, &inputSFTs, multiSFTs, catalog->length), &status);
  
-      LAL_CALL(LALDestroyMultiSFTVector(&status, &multiSFTs), &status);
+  /* clean up sft catalog and multisftvector */
+  LAL_CALL(LALDestroyMultiSFTVector(&status, &multiSFTs), &status);
+  LAL_CALL( LALDestroySFTCatalog( &status, &catalog ), &status);
 
-      LAL_CALL( LALDestroySFTCatalog( &status, &catalog ), &status);
+  /* find number of sfts */
+  numsft = inputSFTs->length;
+
+  /* initialise PSD vector */
+  psdVec = (PSDVector *) LALCalloc(1, sizeof(PSDVector));
+  psdVec->length = numsft;
+
+  psdVec->data = (REAL8FrequencySeries *)
+  		  LALCalloc (psdVec->length, sizeof(REAL8FrequencySeries));
+
+  /*loop over all sfts, get their PSDs and normalise them with LALNormalizeSFT*/
+  for (j=0; j < (INT4)numsft; j++) {
+
+    psdVec->data[j].data = NULL;
+    psdVec->data[j].data = (REAL8Sequence *)
+    			    LALCalloc (1,sizeof(REAL8Sequence));
+    psdVec->data[j].data->length = inputSFTs->data[j].data->length;
+    psdVec->data[j].data->data = (REAL8 *)
+    				LALCalloc (inputSFTs->data[j].data->length, sizeof(REAL8));
+	
+    LAL_CALL( LALNormalizeSFT (&status, psdVec->data + j,
+     			       inputSFTs->data + j, uvar_blocksRngMed),
+	 	&status);
+	
+  }
 
 
-      /* find number of sfts */
-      /* loop over ifos and calculate number of sfts */
-      /* note that we can't use the catalog to determine the number of SFTs
-	 because SFTs might be segmented in frequency */
-      numsft = inputSFTs->length;
-
+  /* create sft pair indices */
+  LAL_CALL ( LALCreateSFTPairsIndicesFrom2SFTvectors( &status,
+ 						      &sftPairIndexList,
+						      inputSFTs,
+						      &pairParams,
+						      uvar_detChoice),
+	     &status);
 
   /* start frequency loop */
 
@@ -564,48 +591,9 @@ int main(int argc, char *argv[]){
       for (fddotCounter = 0; fddotCounter < nfddotLoops; fddotCounter++) {
 
 	fddot_current = uvar_fddot + (delta_fddot*fddotCounter++);
-
-
-        /* normalize sfts */
-        /* get information about all detectors including velocity and
-  	   timestamps */
-        /* note that this function returns the velocity at the
-  	   mid-time of the SFTs -- should not make any difference */
-        psdVec = (PSDVector *) LALCalloc(1, sizeof(PSDVector));
-        psdVec->length = numsft;
-
-        psdVec->data = (REAL8FrequencySeries *)
- 	LALCalloc (psdVec->length, sizeof(REAL8FrequencySeries));
-
+ 
         ts = XLALCreateTimestampVector (1);
         tOffs = 0.5/deltaF;
-
-        /*loop over all sfts and get the PSDs and detector states */
-        for (j=0; j < (INT4)numsft; j++) {
-
-    	  psdVec->data[j].data = NULL;
-	  psdVec->data[j].data = (REAL8Sequence *)
-	  LALCalloc (1,sizeof(REAL8Sequence));
-	  psdVec->data[j].data->length = inputSFTs->data[j].data->length;
-	  psdVec->data[j].data->data = (REAL8 *)
-	  LALCalloc (inputSFTs->data[j].data->length, sizeof(REAL8));
-	
-	  LAL_CALL( LALNormalizeSFT (&status, psdVec->data + j,
-				   inputSFTs->data + j, uvar_blocksRngMed),
-	  	    &status);
-	
-        }
-
-        pairParams.lag = uvar_maxlag;
-
-        /* create sft pair indices */
-        LAL_CALL ( LALCreateSFTPairsIndicesFrom2SFTvectors( &status,
-							  &sftPairIndexList,
-							  inputSFTs,
-							  &pairParams,
-							  uvar_detChoice),
-		   &status);
-
 
         beamfns = (CrossCorrBeamFn *) LALCalloc(numsft, sizeof(CrossCorrBeamFn));
 
@@ -615,119 +603,115 @@ int main(int argc, char *argv[]){
 
         /* initialise frequency and phase vectors *
          * initialise Y, u, weight vectors */
-       yalpha = XLALCreateCOMPLEX16Vector(sftPairIndexList->vectorLength);
-       ualpha = XLALCreateCOMPLEX16Vector(sftPairIndexList->vectorLength);
+        yalpha = XLALCreateCOMPLEX16Vector(sftPairIndexList->vectorLength);
+        ualpha = XLALCreateCOMPLEX16Vector(sftPairIndexList->vectorLength);
 
-/*      yalpha = (COMPLEX16Vector *) LALCalloc(1, sizeof(COMPLEX16));
-      yalpha->length = sftPairIndexList->vectorLength;
-      yalpha->data = LALCalloc(yalpha->length, sizeof(COMPLEX16));
-      ualpha = (COMPLEX16Vector *) LALCalloc(1, sizeof(COMPLEX16));
-      ualpha->length = sftPairIndexList->vectorLength;
-      ualpha->data = LALCalloc(ualpha->length, sizeof(COMPLEX16));
-*/
         sigmasq = XLALCreateREAL8Vector(sftPairIndexList->vectorLength);
 
         /*printf("starting loops over sky patches\n");*/
 
         /* loop over sky patches -- main calculations  */
         for (skyCounter = 0; skyCounter < nSkyPatches; skyCounter++) { 
-   	/* initialize Doppler parameters of the potential source */
-	thisPoint.Alpha = skyAlpha[skyCounter]; 
-	thisPoint.Delta = skyDelta[skyCounter]; 
-	thisPoint.fkdot[0] = f_current;
-	thisPoint.fkdot[1] = fdot_current; 
-	thisPoint.fkdot[2] = fddot_current;
- 	thisPoint.fkdot[3] = 0.0;
-	thisPoint.refTime = refTime;
+   	  /* initialize Doppler parameters of the potential source */
+	  thisPoint.Alpha = skyAlpha[skyCounter]; 
+	  thisPoint.Delta = skyDelta[skyCounter]; 
+	  thisPoint.fkdot[0] = f_current;
+	  thisPoint.fkdot[1] = fdot_current; 
+	  thisPoint.fkdot[2] = fddot_current;
+ 	  thisPoint.fkdot[3] = 0.0;
+	  thisPoint.refTime = refTime;
  
-	thisVel.length = 3;
-	thisPos.length = 3;
+	  thisVel.length = 3;
+	  thisPos.length = 3;
   
-    	/* set sky positions and skypatch sizes  */
-	patchSizeX = skySizeDelta[skyCounter]; 
-	patchSizeY = skySizeAlpha[skyCounter]; 
+    	  /* set sky positions and skypatch sizes  */
+	  patchSizeX = skySizeDelta[skyCounter]; 
+	  patchSizeY = skySizeAlpha[skyCounter]; 
   
   
-    	/* get the amplitude modulation coefficients */
-	skypos.longitude = thisPoint.Alpha; 
-	skypos.latitude = thisPoint.Delta; 
-	skypos.system = COORDINATESYSTEM_EQUATORIAL; 
+    	  /* get the amplitude modulation coefficients */
+	  skypos.longitude = thisPoint.Alpha; 
+	  skypos.latitude = thisPoint.Delta; 
+	  skypos.system = COORDINATESYSTEM_EQUATORIAL; 
 
-	/* loop over each SFT to get frequency, then store in
-	   frequencyShiftList */
-	for (j=0; j < (INT4)numsft; j++) {
+	  /* loop over each SFT to get frequency, then store in
+	     frequencyShiftList */
+	  for (j=0; j < (INT4)numsft; j++) {
+     
+            /* get information about all detectors including velocity and
+             timestamps */
+	    /*only have 1 element in detectorStateSeries and AMCoeffs because
+	      the detector has to be updated for every SFT */
+	    DetectorStateSeries *detState = NULL;
+	    AMcoef = (AMCoeffs *)LALCalloc(1, sizeof(AMCoeffs));
+	    AMcoef->a = XLALCreateREAL4Vector(1);
+	    AMcoef->b = XLALCreateREAL4Vector(1);
 
-	  /*only have 1 element in detectorStateSeries and AMCoeffs because
-	    the detector has to be updated for every SFT */
-	  DetectorStateSeries *detState = NULL;
-	  AMcoef = (AMCoeffs *)LALCalloc(1, sizeof(AMCoeffs));
-	  AMcoef->a = XLALCreateREAL4Vector(1);
-	  AMcoef->b = XLALCreateREAL4Vector(1);
+	    det = XLALGetSiteInfo (inputSFTs->data[j].name); 
+	    ts->data[0] = inputSFTs->data[j].epoch;
 
+            /* note that this function returns the velocity at the
+               mid-time of the SFTs -- should not make any difference */
 
-
-	  det = XLALGetSiteInfo (inputSFTs->data[j].name); 
-	  ts->data[0] = inputSFTs->data[j].epoch;
-
-	  LAL_CALL ( LALGetDetectorStates ( &status, &detState, ts, det,
+	    LAL_CALL ( LALGetDetectorStates ( &status, &detState, ts, det,
 					    edat, tOffs),
 		     &status);
 
-	  detState->detector = *det;
+	    detState->detector = *det;
 
-	  LAL_CALL ( LALGetAMCoeffs ( &status, AMcoef, detState, skypos),
+	    LAL_CALL ( LALGetAMCoeffs ( &status, AMcoef, detState, skypos),
 		     &status); 
 
-	  thisVel.data = detState->data[0].vDetector;
-	  thisPos.data = detState->data[0].rDetector;
-	  sft = &(inputSFTs->data[j]);
+  	    thisVel.data = detState->data[0].vDetector;
+	    thisPos.data = detState->data[0].rDetector;
+	    sft = &(inputSFTs->data[j]);
 
 
-	  LAL_CALL( LALGetSignalFrequencyInSFT( &status, freq1, sft, &thisPoint,
+	    LAL_CALL( LALGetSignalFrequencyInSFT( &status, freq1, sft, &thisPoint,
 						&thisVel, &firstTimeStamp),
 		    &status);
-	  LAL_CALL( LALGetSignalPhaseInSFT( &status, phase1, sft, &thisPoint,
-					    &thisPos),
-		    &status);
+	    LAL_CALL( LALGetSignalPhaseInSFT( &status, phase1, sft, &thisPoint,
+	 				    &thisPos),
+	  	    &status);
 
-	  frequencyShiftList->data[j] = *freq1; 
-	  signalPhaseList->data[j] = *phase1;
+	    frequencyShiftList->data[j] = *freq1; 
+	    signalPhaseList->data[j] = *phase1;
 
-	  /* There is some ambiguity here. If uvar_averagePsi = true,
-	     then we can't directly calculate the <F F> products
-	     (because <F_+> = <F_x> = 0) so we store a and b in the
-	     variables.
+	    /* There is some ambiguity here. If uvar_averagePsi = true,
+	       then we can't directly calculate the <F F> products
+	       (because <F_+> = <F_x> = 0) so we store a and b in the
+	       variables.
 
-	     The <F F> products will be calculated later in the
-	     calculateUalpha function.
+	       The <F F> products will be calculated later in the
+	       calculateUalpha function.
 
-	     If uvar_averagePsi = false, then there is no problem and
-	     we calculate Fplus_or_a and Fcross_or_b here */
+	       If uvar_averagePsi = false, then there is no problem and
+	       we calculate Fplus_or_a and Fcross_or_b here */
 
-	  if(uvar_averagePsi) {
-	    beamfns[j].Fplus_or_a = (AMcoef->a->data[0]);
-	    beamfns[j].Fcross_or_b = (AMcoef->b->data[0]);
-	  } else {
-	    beamfns[j].Fplus_or_a = (AMcoef->a->data[0] * cos(2.0*psi))
+	    if(uvar_averagePsi) {
+	      beamfns[j].Fplus_or_a = (AMcoef->a->data[0]);
+	      beamfns[j].Fcross_or_b = (AMcoef->b->data[0]);
+	    } else {
+	      beamfns[j].Fplus_or_a = (AMcoef->a->data[0] * cos(2.0*psi))
 	      + (AMcoef->b->data[0] * sin(2.0*psi));
 
-	    beamfns[j].Fcross_or_b = (AMcoef->b->data[0] * cos(2.0*psi))
+	      beamfns[j].Fcross_or_b = (AMcoef->b->data[0] * cos(2.0*psi))
 	      - (AMcoef->a->data[0] * sin(2.0*psi));
-	  }
+	    }
 
-	  sft = NULL;
+	    sft = NULL;
 	
-	  /* clean up AMcoefs */
-	  XLALDestroyAMCoeffs(AMcoef);
-	  XLALDestroyDetectorStateSeries(detState);
-	  XLALFree(det);
+	    /* clean up AMcoefs */
+	    XLALDestroyAMCoeffs(AMcoef);
+	    XLALDestroyDetectorStateSeries(detState);
+	    XLALFree(det);
 
-	} /*finish loop over individual sfts */
+	  } /*finish loop over individual sfts */
 
-	/* loop over SFT pairs */
+	  /* loop over SFT pairs */
 
-	ualphacounter = 0.0;
-	for (j=0; j < (INT4)sftPairIndexList->vectorLength; j++) {
+	  ualphacounter = 0.0;
+	  for (j=0; j < (INT4)sftPairIndexList->vectorLength; j++) {
   
 	  /*  correlate sft pairs  */
 	  index1 = sftPairIndexList->data[j];
@@ -759,32 +743,32 @@ int main(int argc, char *argv[]){
 		    &status);
 
 	  ualphacounter = ualphacounter + 1;
-	} /*finish loop over sft pairs*/
+  	  } /*finish loop over sft pairs*/
 
 
-	/* calculate rho (weights) from Yalpha and Ualpha */
-	LAL_CALL( LALCalculateCrossCorrPower( &status,
+	  /* calculate rho (weights) from Yalpha and Ualpha */
+	  LAL_CALL( LALCalculateCrossCorrPower( &status,
 					      &(weights->data[counter]),
 					      yalpha, ualpha),
 		  &status);
 
-	/* calculate standard deviation of rho (Eq 4.6) */
-	LAL_CALL( LALNormaliseCrossCorrPower( &status, stddev, ualpha, sigmasq),
+	  /* calculate standard deviation of rho (Eq 4.6) */
+	  LAL_CALL( LALNormaliseCrossCorrPower( &status, stddev, ualpha, sigmasq),
 		  &status); 
 
 
-	weights->data[counter] = weights->data[counter]/(*stddev);
+	  weights->data[counter] = weights->data[counter]/(*stddev);
 
-	/* select candidates  */
-	/* print all variables to file */
+	  /* select candidates  */
+	  /* print all variables to file */
 
-	fprintf(fp, "%1.5f\t %1.5f\t %1.5f\t %e\t %e\t %1.10f\n", thisPoint.Alpha,
-		thisPoint.Delta, f_current,
+	  fprintf(fp, "%1.5f\t %1.5f\t %1.5f\t %e\t %e\t %1.10f\n", thisPoint.Alpha,
+	  	thisPoint.Delta, f_current,
 		fdot_current, fddot_current, weights->data[counter]);
 
- 	counter++;
+ 	  counter++;
 
-      } /* finish loop over skypatches */ 
+        } /* finish loop over skypatches */ 
       printf("Frequency %f\n", f_current);
 
       /* free memory */
@@ -796,9 +780,7 @@ int main(int argc, char *argv[]){
       XLALDestroyCOMPLEX16Vector(ualpha);
       XLALDestroyREAL8Vector(frequencyShiftList);
       XLALDestroyREAL8Vector(signalPhaseList);
-      LAL_CALL ( LALDestroyPSDVector  ( &status, &psdVec), &status);
-      XLALFree(sftPairIndexList->data);
-      XLALFree(sftPairIndexList);
+
       XLALDestroyREAL8Vector(sigmasq);
       XLALFree(beamfns); 
 
@@ -813,6 +795,9 @@ int main(int argc, char *argv[]){
   fclose (fp);
 
   LAL_CALL (LALDestroySFTVector(&status, &inputSFTs), &status );
+  LAL_CALL ( LALDestroyPSDVector  ( &status, &psdVec), &status);
+  XLALFree(sftPairIndexList->data);
+  XLALFree(sftPairIndexList);
 
   LALFree(edat->ephemE);
   LALFree(edat->ephemS);
