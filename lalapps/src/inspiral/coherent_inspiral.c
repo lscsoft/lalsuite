@@ -495,20 +495,25 @@ int main( int argc, char *argv[] )
              in a 2D network this will make one of cohSNR and cohH1H2SNR
              redundant, do not output the latter for < 3D networks */
           if( cohH1H2SNROut && caseID[1] && caseID[2] && (numDetectors > 2) ) {
-	    cohInspInitParams->cohH1H2SNROut       = 1;
+            cohInspInitParams->cohH1H2SNROut       = 1;
+          }
+          else if( cohSNROut && caseID[1] && caseID[2] && (numDetectors == 2)){
+            cohInspInitParams->cohH1H2SNROut       = 1;
           }
           else {
             if ( vrbflg && cohH1H2SNROut ) fprintf( stdout, "Not outputting cohH1H2SNR because either numDetectors < 3 or at least one of H1 and H2 is missing ...\n " );
             cohInspInitParams->cohH1H2SNROut       = 0;
           }
+
           /* Currently, the null-statistic is computed only for a H1H2 network */
-          if( nullStatOut && caseID[1] && caseID[2] ) {
-	    cohInspInitParams->nullStatOut         = 1;
-	  }
+          if( (nullStatOut && ( (caseID[1] && caseID[2])
+                                || (numDetectors > 2) ) ) ) {
+            cohInspInitParams->nullStatOut         = 1;
+          }
           else {
             if ( vrbflg && nullStatOut ) fprintf( stdout, "Not outputting nullStatOut because at least one of H1 and H2 is missing ...\n " );
-            cohInspInitParams->nullStatOut         = 0; 
-	  }
+            cohInspInitParams->nullStatOut         = 0;
+          }
 
 	  /* create the data structures needed for coherentInspiral */
 	  
