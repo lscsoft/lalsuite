@@ -106,11 +106,14 @@ int main(int argc, char *argv[]){
   /* frequency loop info */
   INT4 nfreqLoops, freqCounter = 0;
   INT4 nParams = 0;
+  REAL8 f_current = 0.0;
   REAL8 *stddev, ualphacounter=0.0;
 
-  /* frequency derivative loop info */
+  /* frequency derivative loop info. we can go up to f_doubledot */
   INT4 nfdotLoops = 1, fdotCounter = 0;
-  REAL8 fdot_current = 0.0, delta_fdot = 0.0; 
+  INT4 nfddotLoops = 0, fddotCounter = 0;
+  REAL8 fdot_current = 0.0, delta_fdot = 0.0;
+  REAL8 fddot_current = 0.0, delta_fddot = 0.0; 
 
   static INT4VectorSequence  *sftPairIndexList;
   REAL8Vector *frequencyShiftList, *signalPhaseList, *sigmasq;
@@ -134,11 +137,13 @@ int main(int argc, char *argv[]){
   BOOLEAN  uvar_help;
   BOOLEAN  uvar_averagePsi;
   BOOLEAN  uvar_averageIota;
+  BOOLEAN  uvar_searchfddot;
   INT4     uvar_blocksRngMed; 
   INT4     uvar_detChoice;
   REAL8    uvar_startTime, uvar_endTime;
   REAL8    uvar_f0, uvar_fdot, uvar_fBand, uvar_fdotBand;
-  REAL8    uvar_fdotResolution;
+  REAL8    uvar_fddot, uvar_fddotBand;
+  REAL8    uvar_fdotResolution, uvar_fddotResolution;
   REAL8    uvar_dAlpha, uvar_dDelta; /* resolution for isotropic sky-grid */
   REAL8    uvar_maxlag;
   REAL8    uvar_psi;
@@ -171,9 +176,10 @@ int main(int argc, char *argv[]){
   uvar_maxlag = 0;
  
   uvar_help = FALSE;
-  uvar_averagePsi = FALSE;
-  uvar_averageIota = FALSE;
+  uvar_averagePsi = TRUE;
+  uvar_averageIota = TRUE;
   uvar_blocksRngMed = BLOCKSRNGMED;
+  uvar_searchfddot = FALSE;
   uvar_detChoice = 2;
   uvar_f0 = F0;
   uvar_startTime = 0.0;
@@ -181,6 +187,9 @@ int main(int argc, char *argv[]){
   uvar_fdot = 0.0;
   uvar_fdotBand = 0.0;
   uvar_fdotResolution = 0.0;
+  uvar_fddot = 0.0;
+  uvar_fddotBand = 0.0;
+  uvar_fddotResolution = 0.0;
   uvar_fBand = FBAND;
   uvar_dAlpha = 0.2;
   uvar_dDelta = 0.2;
@@ -243,6 +252,26 @@ int main(int argc, char *argv[]){
 				    'r', UVAR_OPTIONAL,
 				    "Search frequency derivative resolution",
 				    &uvar_fdotResolution),
+	    &status);
+  LAL_CALL( LALRegisterBOOLUserVar( &status, "searchfddot",
+				    0, UVAR_OPTIONAL,
+				    "Search a range of frequency double derivative",
+				    &uvar_searchfddot),
+	    &status);
+  LAL_CALL( LALRegisterREALUserVar( &status, "fddot",
+				    0, UVAR_OPTIONAL,
+				    "Start frequency double derivative",
+				    &uvar_fddot),
+	    &status);
+  LAL_CALL( LALRegisterREALUserVar( &status, "fddotBand",
+				    0, UVAR_OPTIONAL,
+				    "Search frequency double derivative band",
+				    &uvar_fddotBand),
+	    &status);
+  LAL_CALL( LALRegisterREALUserVar( &status, "fddotRes",
+				    0, UVAR_OPTIONAL,
+				    "Search frequency double derivative resolution",
+				    &uvar_fddotResolution),
 	    &status);
   LAL_CALL( LALRegisterREALUserVar( &status, "startTime",
 				    0, UVAR_OPTIONAL,
@@ -352,6 +381,12 @@ int main(int argc, char *argv[]){
     exit(1);
   }
 
+  if (uvar_fddotResolution < 0) {
+    fprintf(stderr, "frequency double derivative resolution must be positive\n");
+    exit(1);
+  }
+
+
   /* open output file */
   strcpy (filename, uvar_dirnameOut);
   strcat(filename, "Radiometer_out.txt");
@@ -361,9 +396,7 @@ int main(int argc, char *argv[]){
     exit(1);
   }
 
-  /*   fprintf(fp, "##Alpha\tDelta\tFrequency\t\tRaw Power \t\t Sigma \t\t Normalised Power\n");*/
-
-  fprintf(fp, "##Alpha\tDelta\tFrequency\t Fdot \t Normalised Power\n");
+  fprintf(fp, "##Alpha\tDelta\tFrequency\t Fdot \t Fddot \t Normalised Power\n");
 
   /* read sfts */
 
@@ -413,6 +446,15 @@ int main(int argc, char *argv[]){
 
     delta_fdot = (uvar_fdotBand > 0)
       ? uvar_fdotResolution : -(uvar_fdotResolution);
+  }
+
+  /* only loop through more than 1 fddot value if fddotBand and fddotRes
+     are non-zero, and if we want to */
+  if (uvar_searchfddot && uvar_fddotBand != 0 && uvar_fddotResolution > 0) {
+    nfddotLoops = 1 + abs(ceil(uvar_fddotBand/uvar_fddotResolution));
+
+    delta_fddot = (uvar_fddotBand > 0)
+      ? uvar_fddotResolution : -(uvar_fddotResolution);
   }
 
   /* polarisation angle */
@@ -474,7 +516,6 @@ int main(int argc, char *argv[]){
 
   /* initialise output arrays */
   nParams = nSkyPatches * nfreqLoops *nfdotLoops;
-  fdot_current = uvar_fdot;
 
   weights = XLALCreateREAL8Vector(nParams);
 
@@ -496,6 +537,10 @@ int main(int argc, char *argv[]){
 */
       LAL_CALL( LALLoadMultiSFTs ( &status, &multiSFTs, catalog, fMin, fMax), &status);
       LAL_CALL( LALCombineAllSFTs (&status, &inputSFTs, multiSFTs, catalog->length), &status);
+ 
+      LAL_CALL(LALDestroyMultiSFTVector(&status, &multiSFTs), &status);
+
+      LAL_CALL( LALDestroySFTCatalog( &status, &catalog ), &status);
 
 
       /* find number of sfts */
@@ -508,63 +553,70 @@ int main(int argc, char *argv[]){
   /* start frequency loop */
 
   for (freqCounter = 0; freqCounter < nfreqLoops; freqCounter++) {
+    
+    f_current = uvar_f0 + (deltaF*freqCounter);
 
     /* frequency derivative loop */
     for (fdotCounter = 0; fdotCounter < nfdotLoops; fdotCounter++) {
 
       fdot_current = uvar_fdot + (delta_fdot*fdotCounter);
 
+      /* frequency double derivative loop */
+      for (fddotCounter = 0; fddotCounter < nfddotLoops; fddotCounter++) {
 
-      /* normalize sfts */
-      /* get information about all detectors including velocity and
-	 timestamps */
-      /* note that this function returns the velocity at the
-	 mid-time of the SFTs -- should not make any difference */
-      psdVec = (PSDVector *) LALCalloc(1, sizeof(PSDVector));
-      psdVec->length = numsft;
+	fddot_current = uvar_fddot + (delta_fddot*fddotCounter++);
 
-      psdVec->data = (REAL8FrequencySeries *)
-	LALCalloc (psdVec->length, sizeof(REAL8FrequencySeries));
 
-      ts = XLALCreateTimestampVector (1);
-      tOffs = 0.5/deltaF;
+        /* normalize sfts */
+        /* get information about all detectors including velocity and
+  	   timestamps */
+        /* note that this function returns the velocity at the
+  	   mid-time of the SFTs -- should not make any difference */
+        psdVec = (PSDVector *) LALCalloc(1, sizeof(PSDVector));
+        psdVec->length = numsft;
 
-      /*loop over all sfts and get the PSDs and detector states */
-      for (j=0; j < (INT4)numsft; j++) {
-  	psdVec->data[j].data = NULL;
-	psdVec->data[j].data = (REAL8Sequence *)
+        psdVec->data = (REAL8FrequencySeries *)
+ 	LALCalloc (psdVec->length, sizeof(REAL8FrequencySeries));
+
+        ts = XLALCreateTimestampVector (1);
+        tOffs = 0.5/deltaF;
+
+        /*loop over all sfts and get the PSDs and detector states */
+        for (j=0; j < (INT4)numsft; j++) {
+    	  psdVec->data[j].data = NULL;
+	  psdVec->data[j].data = (REAL8Sequence *)
 	  LALCalloc (1,sizeof(REAL8Sequence));
-	psdVec->data[j].data->length = inputSFTs->data[j].data->length;
-	psdVec->data[j].data->data = (REAL8 *)
+	  psdVec->data[j].data->length = inputSFTs->data[j].data->length;
+	  psdVec->data[j].data->data = (REAL8 *)
 	  LALCalloc (inputSFTs->data[j].data->length, sizeof(REAL8));
 	
-	LAL_CALL( LALNormalizeSFT (&status, psdVec->data + j,
+	  LAL_CALL( LALNormalizeSFT (&status, psdVec->data + j,
 				   inputSFTs->data + j, uvar_blocksRngMed),
-		  &status);
+	  	    &status);
 	
-      }
+        }
 
-      pairParams.lag = uvar_maxlag;
+        pairParams.lag = uvar_maxlag;
 
-      /* create sft pair indices */
-      LAL_CALL ( LALCreateSFTPairsIndicesFrom2SFTvectors( &status,
+        /* create sft pair indices */
+        LAL_CALL ( LALCreateSFTPairsIndicesFrom2SFTvectors( &status,
 							  &sftPairIndexList,
 							  inputSFTs,
 							  &pairParams,
 							  uvar_detChoice),
-		 &status);
+		   &status);
 
 
-      beamfns = (CrossCorrBeamFn *) LALCalloc(numsft, sizeof(CrossCorrBeamFn));
+        beamfns = (CrossCorrBeamFn *) LALCalloc(numsft, sizeof(CrossCorrBeamFn));
 
-      frequencyShiftList = XLALCreateREAL8Vector(numsft);
-      signalPhaseList = XLALCreateREAL8Vector(numsft);
+        frequencyShiftList = XLALCreateREAL8Vector(numsft);
+        signalPhaseList = XLALCreateREAL8Vector(numsft);
 
 
-      /* initialise frequency and phase vectors *
-       * initialise Y, u, weight vectors */
-     yalpha = XLALCreateCOMPLEX16Vector(sftPairIndexList->vectorLength);
-     ualpha = XLALCreateCOMPLEX16Vector(sftPairIndexList->vectorLength);
+        /* initialise frequency and phase vectors *
+         * initialise Y, u, weight vectors */
+       yalpha = XLALCreateCOMPLEX16Vector(sftPairIndexList->vectorLength);
+       ualpha = XLALCreateCOMPLEX16Vector(sftPairIndexList->vectorLength);
 
 /*      yalpha = (COMPLEX16Vector *) LALCalloc(1, sizeof(COMPLEX16));
       yalpha->length = sftPairIndexList->vectorLength;
@@ -573,19 +625,19 @@ int main(int argc, char *argv[]){
       ualpha->length = sftPairIndexList->vectorLength;
       ualpha->data = LALCalloc(ualpha->length, sizeof(COMPLEX16));
 */
-      sigmasq = XLALCreateREAL8Vector(sftPairIndexList->vectorLength);
+        sigmasq = XLALCreateREAL8Vector(sftPairIndexList->vectorLength);
 
-      /*printf("starting loops over sky patches\n");*/
+        /*printf("starting loops over sky patches\n");*/
 
-      /* loop over sky patches -- main calculations  */
-      for (skyCounter = 0; skyCounter < nSkyPatches; skyCounter++) { 
+        /* loop over sky patches -- main calculations  */
+        for (skyCounter = 0; skyCounter < nSkyPatches; skyCounter++) { 
 
    	/* initialize Doppler parameters of the potential source */
 	thisPoint.Alpha = skyAlpha[skyCounter]; 
 	thisPoint.Delta = skyDelta[skyCounter]; 
-	thisPoint.fkdot[0] = uvar_f0 + (freqCounter*deltaF);
+	thisPoint.fkdot[0] = f_current;
 	thisPoint.fkdot[1] = fdot_current; 
-	thisPoint.fkdot[2] = 0.0;
+	thisPoint.fkdot[2] = fddot_current;
  	thisPoint.fkdot[3] = 0.0;
 	thisPoint.refTime = refTime;
  
@@ -721,37 +773,39 @@ int main(int argc, char *argv[]){
 	LAL_CALL( LALNormaliseCrossCorrPower( &status, stddev, ualpha, sigmasq),
 		  &status); 
 
+
+	weights->data[counter] = weights->data[counter]/(*stddev);
+
 	/* select candidates  */
-	/* print all interesting variables to file */
+	/* print all variables to file */
 
-	fprintf(fp, "%1.5f\t %1.5f\t %1.5f\t%e\t%1.10f\n", thisPoint.Alpha,
-		thisPoint.Delta, uvar_f0 + (freqCounter*deltaF),
-		fdot_current, weights->data[counter]/(*stddev));
+	fprintf(fp, "%1.5f\t %1.5f\t %1.5f\t %e\t %e\t %1.10f\n", thisPoint.Alpha,
+		thisPoint.Delta, f_current,
+		fdot_current, fddot_current, weights->data[counter]);
 
-
-	weights->data[counter] = weights->data[counter++]/(*stddev);
-
+ 	counter++;
 
       } /* finish loop over skypatches */ 
-      printf("Frequency %f\n", uvar_f0 + (freqCounter*deltaF));
+      printf("Frequency %f\n", f_current);
 
       /* free memory */
 
-      LAL_CALL(LALDestroyMultiSFTVector(&status, &multiSFTs), &status);
 
       XLALDestroyTimestampVector(ts);
 
-   XLALDestroyCOMPLEX16Vector(yalpha);
-   XLALDestroyCOMPLEX16Vector(ualpha);
-   XLALDestroyREAL8Vector(frequencyShiftList);
-   XLALDestroyREAL8Vector(signalPhaseList);
-   LAL_CALL ( LALDestroyPSDVector  ( &status, &psdVec), &status);
-   XLALFree(sftPairIndexList->data);
-   XLALFree(sftPairIndexList);
-   XLALDestroyREAL8Vector(sigmasq);
-   XLALFree(beamfns); 
+      XLALDestroyCOMPLEX16Vector(yalpha);
+      XLALDestroyCOMPLEX16Vector(ualpha);
+      XLALDestroyREAL8Vector(frequencyShiftList);
+      XLALDestroyREAL8Vector(signalPhaseList);
+      LAL_CALL ( LALDestroyPSDVector  ( &status, &psdVec), &status);
+      XLALFree(sftPairIndexList->data);
+      XLALFree(sftPairIndexList);
+      XLALDestroyREAL8Vector(sigmasq);
+      XLALFree(beamfns); 
 
       /*  XLALDestroyDetectorStateSeries ( detStates );*/
+
+      } /*finish loop over frequency double derivatives*/
 
     } /*finish loop over frequency derivatives*/
 
@@ -759,7 +813,6 @@ int main(int argc, char *argv[]){
 
   fclose (fp);
 
-  LAL_CALL( LALDestroySFTCatalog( &status, &catalog ), &status);
   LAL_CALL (LALDestroySFTVector(&status, &inputSFTs), &status );
 
   LALFree(edat->ephemE);
