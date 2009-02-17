@@ -29,7 +29,7 @@
 #include <lal/LIGOMetadataTables.h>
 #include <lal/FrameCache.h>
 #include <lal/FrameStream.h>
-#include <lal/PrintFtSeries.h>
+#include <lal/PrintFTSeries.h>
 #include <lal/TimeSeries.h>
 #include <lal/XLALError.h>
 
