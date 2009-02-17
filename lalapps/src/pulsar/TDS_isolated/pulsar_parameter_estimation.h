@@ -385,8 +385,7 @@ REAL8Array *convert_to_positive_definite( REAL8Array *nonposdef );
 ParamData *multivariate_normal_deviates( REAL8Array *covmat, ParamData *means,
   RandomParams *randomParams );
 
-void set_mcmc_pulsar_params( BinaryPulsarParams *pulsarParams, ParamData *data,
-  INT4Vector *matPos );
+void set_mcmc_pulsar_params( BinaryPulsarParams *pulsarParams, ParamData *data);
 
 #ifdef __cplusplus
 }

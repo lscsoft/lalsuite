@@ -1893,7 +1893,7 @@ paramData );
     matPos = XLALCreateINT4Vector( MAXPARAMS );
     while(i < MAXPARAMS){
       if( paramData[i].matPos != 0 ){
-        matPos->data[j] = i;
+        matPos->data[paramData[i].matPos-1] = i;
         j++;
       }
       i++;
@@ -1903,7 +1903,7 @@ paramData );
     /* set up initial pulsar parameters */
     memcpy( &pulsarParams, &pulsarParamsFixed, sizeof(pulsarParamsFixed) );
 
-    set_mcmc_pulsar_params( &pulsarParams, randVals, matPos );
+    set_mcmc_pulsar_params( &pulsarParams, randVals );
 
     /* check eccentricities so that 0 <= e < 1 i.e. circular or elliptical
        orbits */
@@ -2014,10 +2014,8 @@ paramData );
     fprintf(fp, "\tphi0(%d) ", j+2);
     /* fprintf(fp, "\th0(%d)       \tphi0(%d) ", j+2, j+2); */
   if( matTrue ){
-    for( j = 0 ; j < MAXPARAMS ; j++ ){
-      if( paramData[j].matPos != 0 )
-        fprintf(fp, "\t%s", paramData[j].name);
-    }
+    for( j = 0 ; j < (INT4)matPos->length ; j++ )
+        fprintf(fp, "\t%s", paramData[matPos->data[j]].name);
   }
   fprintf(fp, "\n");
 
@@ -2103,7 +2101,7 @@ paramData );
       /* generate new pulsars parameters from the pulsar parameter covariance */
       randVals = multivariate_normal_deviates( chol, vals, randomParams );
       memcpy(&pulsarParamsNew, &pulsarParams, sizeof(BinaryPulsarParams));
-      set_mcmc_pulsar_params( &pulsarParamsNew, randVals, matPos );
+      set_mcmc_pulsar_params( &pulsarParamsNew, randVals );
 
       if( pulsarParamsNew.e < 0. || pulsarParamsNew.e >= 1. ||
           pulsarParamsNew.e2 < 0. || pulsarParamsNew.e2 >= 1. ||
@@ -2324,12 +2322,12 @@ paramData );
           if(i==0){
             priorTmp += (vals[matPos->data[k]].val -
               paramData[matPos->data[k]].val) *
-              invmat->data[j*(INT4)invmat->dimLength->data[0] + k];
+              invmat->data[j * (INT4)invmat->dimLength->data[0]+ k];
           }
 
           priorTmpNew += (randVals[matPos->data[k]].val -
               paramData[matPos->data[k]].val) *
-              invmat->data[j*(INT4)invmat->dimLength->data[0] + k];
+              invmat->data[j * (INT4)invmat->dimLength->data[0] + k];
         }
 
         if(i==0){
@@ -2643,86 +2641,47 @@ void get_chunk_lengths(DataStructure data){
 /* this functions set the value of a particular parameter from the structure
    ParamData into a BinaryPulsarParams structure - as this is what is taken
    in by the get_phi function */
-void set_mcmc_pulsar_params( BinaryPulsarParams *pulsarParams, ParamData *data,
-  INT4Vector *matPos ){
-  INT4 i=0;
-
+void set_mcmc_pulsar_params( BinaryPulsarParams *pulsarParams, ParamData *data){
   /* go through params and set the next step in the MCMC */
-  for( i=0 ; i<(INT4)matPos->length; i++ ){
-    if( !strcmp(data[matPos->data[i]].name, "f0") )
-      pulsarParams->f0 = data[matPos->data[i]].val;
-    else if( !strcmp(data[matPos->data[i]].name, "f1") )
-      pulsarParams->f1 = data[matPos->data[i]].val;
-    else if( !strcmp(data[matPos->data[i]].name, "f2") )
-      pulsarParams->f2 = data[matPos->data[i]].val;
-    else if( !strcmp(data[matPos->data[i]].name, "Dec") )
-      pulsarParams->dec = data[matPos->data[i]].val;
-    else if( !strcmp(data[matPos->data[i]].name, "RA") )
-      pulsarParams->ra = data[matPos->data[i]].val;
-    else if( !strcmp(data[matPos->data[i]].name, "pmdc") )
-      pulsarParams->pmdec = data[matPos->data[i]].val;
-    else if( !strcmp(data[matPos->data[i]].name, "pmra") )
-      pulsarParams->pmra = data[matPos->data[i]].val;
-    else if( !strcmp(data[matPos->data[i]].name, "x") )
-      pulsarParams->x = data[matPos->data[i]].val;
-    else if( !strcmp(data[matPos->data[i]].name, "e") )
-      pulsarParams->e = data[matPos->data[i]].val;
-    else if( !strcmp(data[matPos->data[i]].name, "T0") )
-      pulsarParams->T0 = data[matPos->data[i]].val;
-    else if( !strcmp(data[matPos->data[i]].name, "Tasc") )
-      pulsarParams->Tasc = data[matPos->data[i]].val;
-    else if( !strcmp(data[matPos->data[i]].name, "Pb") )
-      pulsarParams->Pb = data[matPos->data[i]].val;
-    else if( !strcmp(data[matPos->data[i]].name, "Om") )
-      pulsarParams->w0 = data[matPos->data[i]].val;
-    else if( !strcmp(data[matPos->data[i]].name, "Omdt") )
-      pulsarParams->wdot = data[matPos->data[i]].val;
-    else if( !strcmp(data[matPos->data[i]].name, "gamma") )
-      pulsarParams->gamma = data[matPos->data[i]].val;
-    else if( !strcmp(data[matPos->data[i]].name, "Pbdt") )
-      pulsarParams->Pbdot = data[matPos->data[i]].val;
-    else if( !strcmp(data[matPos->data[i]].name, "s") )
-      pulsarParams->s = data[matPos->data[i]].val;
-    else if( !strcmp(data[matPos->data[i]].name, "M") )
-      pulsarParams->M = data[matPos->data[i]].val;
-    else if( !strcmp(data[matPos->data[i]].name, "m2") )
-      pulsarParams->m2 = data[matPos->data[i]].val;
-    else if( !strcmp(data[matPos->data[i]].name, "dth") )
-      pulsarParams->dth = data[matPos->data[i]].val;
-    else if( !strcmp(data[matPos->data[i]].name, "xdot") )
-      pulsarParams->xdot = data[matPos->data[i]].val;
-    else if( !strcmp(data[matPos->data[i]].name, "edot") )
-      pulsarParams->edot = data[matPos->data[i]].val;
-    else if( !strcmp(data[matPos->data[i]].name, "x2") )
-      pulsarParams->x2 = data[matPos->data[i]].val;
-    else if( !strcmp(data[matPos->data[i]].name, "e2") )
-      pulsarParams->e2 = data[matPos->data[i]].val;
-    else if( !strcmp(data[matPos->data[i]].name, "T02") )
-      pulsarParams->T02 = data[matPos->data[i]].val;
-    else if( !strcmp(data[matPos->data[i]].name, "Pb2") )
-      pulsarParams->Pb2 = data[matPos->data[i]].val;
-    else if( !strcmp(data[matPos->data[i]].name, "Om2") )
-      pulsarParams->w02 = data[matPos->data[i]].val;
-    else if( !strcmp(data[matPos->data[i]].name, "x3") )
-      pulsarParams->x3 = data[matPos->data[i]].val;
-    else if( !strcmp(data[matPos->data[i]].name, "e3") )
-      pulsarParams->e3 = data[matPos->data[i]].val;
-    else if( !strcmp(data[matPos->data[i]].name, "T03") )
-      pulsarParams->T03 = data[matPos->data[i]].val;
-    else if( !strcmp(data[matPos->data[i]].name, "Pb3") )
-      pulsarParams->Pb3 = data[matPos->data[i]].val;
-    else if( !strcmp(data[matPos->data[i]].name, "Om3") )
-      pulsarParams->w03 = data[matPos->data[i]].val;
-    else if( !strcmp(data[matPos->data[i]].name, "Xpbd") )
-      pulsarParams->xpbdot = data[matPos->data[i]].val;
-    else if( !strcmp(data[matPos->data[i]].name, "eps1") )
-      pulsarParams->eps1 = data[matPos->data[i]].val;
-    else if( !strcmp(data[matPos->data[i]].name, "eps2") )
-      pulsarParams->eps2 = data[matPos->data[i]].val;
-    else if( !strcmp(data[matPos->data[i]].name, "e1dt") )
-      pulsarParams->eps1dot = data[matPos->data[i]].val;
-    else if( !strcmp(data[matPos->data[i]].name, "e2dt") )
-      pulsarParams->eps2dot = data[matPos->data[i]].val;
+  pulsarParams->f0 = data[0].val;
+  pulsarParams->f1 = data[1].val;
+  pulsarParams->f2 = data[2].val;
+  pulsarParams->dec = data[3].val;
+  pulsarParams->ra = data[4].val;
+  pulsarParams->pmdec = data[5].val;
+  pulsarParams->pmra = data[6].val;
+  pulsarParams->x = data[7].val;
+  pulsarParams->e = data[8].val;
+  pulsarParams->T0 = data[9].val;
+  pulsarParams->Pb = data[10].val;
+  pulsarParams->w0 = data[11].val;
+  pulsarParams->wdot = data[12].val;
+  pulsarParams->gamma = data[13].val;
+  pulsarParams->Pbdot = data[14].val;
+  pulsarParams->s = data[15].val;
+  pulsarParams->M = data[16].val;
+  pulsarParams->m2 = data[17].val;
+  pulsarParams->dth = data[18].val;
+  pulsarParams->xdot = data[19].val;
+  pulsarParams->edot = data[20].val;
+  pulsarParams->x2 = data[21].val;
+  pulsarParams->e2 = data[22].val;
+  pulsarParams->T02 = data[23].val;
+  pulsarParams->Pb2 = data[24].val;
+  pulsarParams->w02 = data[25].val;
+  pulsarParams->x3 = data[26].val;
+  pulsarParams->e3 = data[27].val;
+  pulsarParams->T03 = data[28].val;
+  pulsarParams->Pb3 = data[29].val;
+  pulsarParams->w03 = data[30].val;
+  pulsarParams->xpbdot = data[31].val;
+
+  if( pulsarParams->model != NULL && !strcmp(pulsarParams->model, "ELL1") ){
+    pulsarParams->eps1 = data[8].val;
+    pulsarParams->eps2 = data[11].val;
+    pulsarParams->Tasc = data[9].val;
+    pulsarParams->eps1dot = data[12].val;
+    pulsarParams->eps2dot = data[20].val;
   }
 }
 
