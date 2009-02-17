@@ -111,7 +111,7 @@ int main(int argc, char *argv[]){
 
   /* frequency derivative loop info. we can go up to f_doubledot */
   INT4 nfdotLoops = 1, fdotCounter = 0;
-  INT4 nfddotLoops = 0, fddotCounter = 0;
+  INT4 nfddotLoops = 1, fddotCounter = 0;
   REAL8 fdot_current = 0.0, delta_fdot = 0.0;
   REAL8 fddot_current = 0.0, delta_fddot = 0.0; 
 
@@ -553,7 +553,6 @@ int main(int argc, char *argv[]){
   /* start frequency loop */
 
   for (freqCounter = 0; freqCounter < nfreqLoops; freqCounter++) {
-    
     f_current = uvar_f0 + (deltaF*freqCounter);
 
     /* frequency derivative loop */
@@ -583,6 +582,7 @@ int main(int argc, char *argv[]){
 
         /*loop over all sfts and get the PSDs and detector states */
         for (j=0; j < (INT4)numsft; j++) {
+
     	  psdVec->data[j].data = NULL;
 	  psdVec->data[j].data = (REAL8Sequence *)
 	  LALCalloc (1,sizeof(REAL8Sequence));
@@ -631,7 +631,6 @@ int main(int argc, char *argv[]){
 
         /* loop over sky patches -- main calculations  */
         for (skyCounter = 0; skyCounter < nSkyPatches; skyCounter++) { 
-
    	/* initialize Doppler parameters of the potential source */
 	thisPoint.Alpha = skyAlpha[skyCounter]; 
 	thisPoint.Delta = skyDelta[skyCounter]; 
