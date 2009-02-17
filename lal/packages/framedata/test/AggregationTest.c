@@ -143,7 +143,10 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* determine frame start time */
   start = XLALAggregationFrameStart(&gps);
   if (start == NULL)
-    exit(xlalErrno);
+  {
+    static const char *func = "XLALAggregationFrameStart";
+    XLAL_ERROR(func, XLAL_EINVAL);
+  }
   /* check for correct value */
   if (start->gpsSeconds != 918073008)
   {
