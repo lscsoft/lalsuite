@@ -1,0 +1,159 @@
+#!/usr/bin/env /usr/bin/python
+
+import shutil
+import os
+import sys
+import glob
+import ConfigParser
+
+
+# USEFUL FUNCTION DEFINITIONS
+
+def getIni():
+  cp = ConfigParser.ConfigParser()
+  path = glob.glob('*followup_pipe.ini')
+  if path[0]: cp.read(path[0])
+  else:
+    print "Could not find a match to *followup_pipe.ini"
+    sys.exit(1)
+  dest = cp.get('followup-output','page')
+  server = cp.get('followup-output','url')
+  return dest,server,cp
+
+def ifos_from_str(ifostr):
+  out = []
+  for i in range(len(ifostr)/2):
+    out.append(ifostr[(2*i):(2*i+2)])
+  out.sort()
+  return out
+
+def imageLink(path):
+  return '[[ImageLink('+path+','+path.replace('_thumbnail','').replace('_thumb','')+',width=400][,alt=none])]]'
+
+def link_path(wiki, server, pathstr):
+  path = glob.glob(pathstr)
+  if path: wiki.write('||'+imageLink(server+'/'+path[0]))
+   
+def param_from_str(trig, param):
+  for c in trig:
+    if c.split(':')[0] == param: return c.split(':')[1]
+
+
+def dict_from_str(trig):   
+  ifos = ifos_from_str(param_from_str(trig,'Type'))
+  ifodict = {}
+  # ifo dependent things
+  for ifo in ifos:
+    paramdict = {'time':None, 'mchirp':None, 'eta':None, 'mass1':None, 'mass2':None}
+    for param in ["time","mchirp","eta","mass1","mass2"]:      
+      tstr = ifo+param
+      for c in trig:
+        if c.split(':')[0] == tstr: paramdict[param] = c.split(':')[1]
+    ifodict[ifo] = paramdict
+
+  # things true for all ifos
+  paramdict = {}
+  for param in ['Rank', 'ID', 'Stat', 'FAR', 'Type']:
+    paramdict[param] = param_from_str(trig, param)
+  ifodict['All'] = paramdict
+  return ifodict
+
+  
+def plotsnr(pdict, wiki, plot, server):
+  ifos = ifos_from_str(pdict['All']['Type'])
+  id = pdict['All']['ID']
+  for ifo in ifos:
+    link_path(wiki,server, 'plotSNRCHISQJob/Images/*'+ifo+'*_'+id+'_'+plot+'-*_thumb.png')
+  wiki.write('||\n')
+
+def qscan(pdict, wiki, plot, server):
+  ifos = ifos_from_str(pdict['All']['Type'])
+  for ifo in ifos:
+    link_path(wiki,server, "QSCAN/foreground-hoft-qscan/"+ifo+"/"+pdict[ifo]['time']+"/"+pdict[ifo]['time']+"*1.00_"+plot+"_thumbnail.png")
+  wiki.write('||\n')
+
+def param_table(pdict, wiki, server):
+  
+  # Sorry this isn't very elegant
+  id = pdict['All']['ID']
+  ifos = ifos_from_str(pdict['All']['Type'])
+  nrows = 6+len(ifos)
+  colordict = {'H1':'red', 'H2':'blue', 'L1':'green', 'V1':'purple'}
+  skypath = glob.glob('pylal_skyPlotJob/Images/*plot_inspiral_skymap_*' + id + '*_skylocation-unspecified-gpstime_thumb.png')
+  wiki.write('||<|'+str(nrows)+'>'+imageLink(server+'/'+skypath[0]))
+  wiki.write('|| ||<style="font-weight: bold; background-color: rgb(225,225,225);">RANK||<style="font-weight: bold;background-color: rgb(225,225,225);">COINC TYPE||<style="font-weight: bold;background-color: rgb(225,225,225);">EVENT ID||<style="font-weight: bold;background-color: rgb(225,225,225);">STAT||<style="font-weight: bold;background-color: rgb(225,225,225);">FAR||\n')
+  wiki.write('|| ||' + pdict['All']['Rank']+ '||'+pdict['All']['Type']+'||'+pdict['All']['ID']+'||'+pdict['All']['Stat']+'||'+pdict['All']['FAR']+'||\n')
+  wiki.write('||<-6> ||\n')
+  wiki.write('||<-6> ||\n')
+  wiki.write('||<-6> ||\n')
+  wiki.write('|| ||<style="font-weight: bold;background-color: rgb(225,225,225);">TIME||<style="font-weight: bold;background-color: rgb(225,225,225);">MCHIRP||<style="font-weight: bold;background-color: rgb(225,225,225);">ETA||<style="font-weight: bold;background-color: rgb(225,225,225);">MASS 1||<style="font-weight: bold;background-color: rgb(225,225,225);">MASS 2||\n')
+  for ifo in ifos:
+    wiki.write('||<style="background-color: '+ colordict[ifo] +';">'+ifo +'||<style="background-color: '+ colordict[ifo] +';">'+pdict[ifo]['time']+ '||<style="background-color: '+ colordict[ifo] +';">'+pdict[ifo]['mchirp']+'||<style="background-color: '+ colordict[ifo] +';">'+pdict[ifo]['eta']+'||<style="background-color: '+ colordict[ifo] +';">'+pdict[ifo]['mass1']+'||<style="background-color: '+ colordict[ifo] +';">'+pdict[ifo]['mass2']+'||\n')
+
+
+def setup(dest, server):
+  sections = ['FrCheckJob','IFOstatus_checkJob', 'QSCAN', 'analyseQscanJob', 'h1h2QeventJob', 'plotSNRCHISQJob', 'pylal_skyPlotJob']
+
+  # Make a destination directory if it doesn't exist
+  if not os.path.isdir(dest):
+    print "destination:" + dest + " does not exist, I'll make it for you..."
+    os.mkdir(dest)
+
+  # copy the data to the webspace - sort of painful probably could omit some
+  for sec in sections:
+    print "...copying " + sec + " to " + dest
+    try: shutil.copytree(sec, os.path.join(dest,sec))
+    except: print "could not copy, destination probably exists"
+
+def write_header(wiki):
+  wiki.write('\n[[TableOfContents]]\n\n')
+
+def how_to(log, wiki):
+  fulog = open('followup_pipe.log').readlines()
+  wiki.write('\n\n== How to make this page ==\n\n')
+  wiki.write('The followup pipeline was run with:')
+  wiki.write('{{{\n')
+  for l in fulog:
+    wiki.write(l)
+  wiki.write('}}}\n')
+  wiki.write('The followup page was made by doing:')
+  wiki.write('{{{\nlalapps_followup_page\n}}}\n')
+
+
+###############################################################################
+# MAIN "PROGRAM"
+###############################################################################
+
+#dest = '/archive/home/channa/public_html/highmass23_24equinox/' 
+#server = 'https://ldas-jobs.ligo.caltech.edu/~channa/highmass23_24equinox/'
+
+dest, server, cp = getIni()
+setup(dest, server)
+triginfo = open('trigger_info.txt','r').readlines()
+wiki = open('wiki.txt','w')
+
+write_header(wiki)
+
+for line in triginfo:
+  trig = line.split(',')
+  paramdict = dict_from_str(trig)
+  wiki.write("\n\n== Rank: " + paramdict['All']['Rank']+" - Follow up of event " + paramdict['All']['ID']+" ==\n\n")
+  #Skymap
+  wiki.write("\n\n=== Parameters for " + paramdict['All']['ID']+" ===\n\n")
+  param_table(paramdict, wiki, server)
+  
+  #Qscans and snr and ...
+  wiki.write("\n\n=== h(t), snr, chisq, etc " + paramdict['All']['ID']+" ===\n\n")
+  qscan(paramdict, wiki, 'timeseries_whitened',server)
+  qscan(paramdict, wiki, 'spectrogram_whitened',server)     
+  plotsnr(paramdict, wiki, 'snr',server)
+  plotsnr(paramdict, wiki, 'rsq',server)
+  plotsnr(paramdict, wiki, 'chisq',server)
+  plotsnr(paramdict, wiki, 'template',server)
+  plotsnr(paramdict, wiki, 'white_template',server)
+  plotsnr(paramdict, wiki, 'fft_of_template_and_asd',server)
+
+how_to('followup_pipe.log', wiki)
+
+# we're done
+wiki.close()
