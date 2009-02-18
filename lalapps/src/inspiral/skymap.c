@@ -24,11 +24,11 @@
 /*
  *  File names for input and output
  */
-const char* h1_frame_file = "none";
-const char* l1_frame_file = "none";
-const char* v1_frame_file = "none";
+const char* h1_frame_file = 0;
+const char* l1_frame_file = 0;
+const char* v1_frame_file = 0;
 
-const char* xml_file[3] = { "none", "none", "none"};
+const char* xml_file[3] = { 0, 0, 0};
 
 const char* output_file = "skymap.txt";
 
@@ -209,9 +209,10 @@ int main(int argc, char** argv)
     load_metadata(xml_file[0], 0);    
     load_metadata(xml_file[1], 1);
     load_metadata(xml_file[2], 2);
+    /*
     load_metadata(xml_file[0], 0);
     load_metadata(xml_file[1], 1);
-    load_metadata(xml_file[2], 2);
+    load_metadata(xml_file[2], 2);*/
 
     load_data(0, h1_frame_file, "H");
     load_data(1, l1_frame_file, "L");
@@ -235,7 +236,7 @@ int main(int argc, char** argv)
 
 void load_metadata(const char* file, int detector)
 {
-    if (strcmp(file, "none"))
+    if (file)
     {
         SnglInspiralTable* a = 0;
         LALSnglInspiralTableFromLIGOLw(&a, file, 0, 1);
@@ -245,21 +246,23 @@ void load_metadata(const char* file, int detector)
             exit(1);
         }
         w[detector] = sqrt(a->sigmasq);
-	wgood = sqrt(a->sigmasq);
+	    wgood = sqrt(a->sigmasq);
         greenwich = fmod(XLALGreenwichMeanSiderealTime(&(a->end_time)), LAL_TWOPI);
         fprintf(stderr, "GPS %d -> GMS %e -> RAD %e \n", a->end_time.gpsSeconds, XLALGreenwichMeanSiderealTime(&(a->end_time)), greenwich);
 
     }
+    /*
     else
     {
         fprintf(stderr, "warning: using heuristic w[%d]\n", detector);
         w[detector] = wgood * 0.1;
     }
+    */
 }
 
 void load_data(int detector, const char* file, const char* initial)
 {
-    if (strcmp(file, "none"))
+    if (file)
     {
         /* 
          *  Read the frame file here
@@ -286,26 +289,27 @@ void load_data(int detector, const char* file, const char* initial)
         XLALFrGetCOMPLEX8TimeSeries(&H1series,stream);
         XLALFrClose(stream);
 
-	/*
-	 *  Allocate memory to repack the data in
-	 */
+        /*
+         *  Allocate memory to repack the data in
+         */
 
         /* real, or waveform one */
-	x[detector] = (double*) malloc(samples * sizeof(double));
-	/* complex, or waveform two */
-	x[detector + 3] = (double*) malloc(samples * sizeof(double));     
+        x[detector] = (double*) malloc(samples * sizeof(double));
+        /* complex, or waveform two */
+        x[detector + 3] = (double*) malloc(samples * sizeof(double));     
 
-	for (i = 0; i != samples; ++i)
-	{
-	    x[detector    ][i] = H1series.data->data[i].re;
-	    x[detector + 3][i] = H1series.data->data[i].im;
+        for (i = 0; i != samples; ++i)
+        {
+            x[detector    ][i] = H1series.data->data[i].re;
+            x[detector + 3][i] = H1series.data->data[i].im;
         }
     }
+    /*
     else
     {
-        /*
-         *  No frame given, generate white noise data
-         */
+        *
+        *  No frame given, generate white noise data
+        *
         int i;
 
         fprintf(stdout, "Warning: generating white noise for detector %d\n", detector);
@@ -326,6 +330,7 @@ void load_data(int detector, const char* file, const char* initial)
             }
         }       
     }
+    */
 }
 
 #define max(A,B) (((A) > (B)) ? (A) : (B))
