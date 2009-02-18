@@ -21,6 +21,8 @@
 #include <lal/LIGOLwXMLRead.h>
 #include <lal/LIGOMetadataTables.h>
 
+#define max(A,B) (((A) > (B)) ? (A) : (B))
+
 /*
  *  File names for input and output
  */
@@ -33,13 +35,10 @@ char* xml_file[3] = { 0, 0, 0};
 const char* output_file = "skymap.txt";
 
 char* event_id = 0;
-
 /*
  *  Time of the trigger to be analyzed
  */
 double w[3] = { 1, 1, 1 };
-double wgood = 1;
-/*double cp[3] = {0, 0, 0};*/
 /*
  *  Resolution of output sky map
  */
@@ -66,88 +65,40 @@ int samples = 512;
  *  x[4] = imag(z_L)
  *  x[5] = imag(z_V)
  */
-
 double* x[6] = { 0, 0, 0, 0, 0, 0 };
-
-double greenwich = 0;
-
-void analyze(void);
-
-void load_metadata(char* file, int detector);
-
-void load_data(int detector, const char* file, const char* initial);
-
-void load_test_data(const char* file);
-
 /*
-void load_test_data(const char* file)
-{
-    FILE* h;
-    int i;
-
-    fprintf(stderr, "warning: overwriting with test data\n");
-
-    for (i = 0; i != 6; ++i)
-    {
-	if(!(x[i] = (double*) malloc(samples * sizeof(double))))
-        {
-            fprintf(stderr, "malloc test data failed\n");
-        }
-    }
-
-    if(!(h = fopen(file, "rt")))
-    {
-        fprintf(stderr, "open test file failed\n");
-    }
-    
-    for (i = 0; i != samples; ++i)
-    {
-        int j;
-    	fscanf(h, "%le %le %le %le %le %le\n", x[0] + i, x[3] + i, x[1] + i, x[4] + i, x[2] + i, x[5] + i);
-        for(j=0; j!= 6;++j)
-        {
-           *fprintf(stderr, "%e ", x[j][i]);
-        }
-        *fprintf(stderr,"\n");
-    }
-    fclose(h);
-
-    *fprintf(stderr, "warning: overwrote with test data\n");
-}
-*/
-
+ * Orientation of the earth at the event time
+ */
+double greenwich = 0;
+/*
+ * Functions
+ */
+void load_metadata(char* file, int detector);
+void load_data(int detector, const char* file, const char* initial);
 void dump_data_to_file(FILE*);
-
-void dump_data_to_file(FILE* h)
-{
-    int i;
-    for (i = 0; i != samples; ++i)
-    {
-        fprintf(h, "%e %e %e %e %e %e %e\n", ((double) i)/frequency, x[0][i], x[3][i], x[1][i], x[4][i], x[2][i], x[5][i]);
-    }
-}
+void analyze(void);
 
 int main(int argc, char** argv)
 {
     int c;
-    /*printf("hello!\n");*/
+    
     while (1)
     {
         static struct option long_options[] =
-        {
-            {"h1-frame-file", required_argument, 0, 'h'},
-            {"l1-frame-file", required_argument, 0, 'l'},
-            {"v1-frame-file", required_argument, 0, 'v'},
-            {"output-file", required_argument, 0, 'o'},
-            {"ra-res", required_argument, 0, 'a'},
-            {"dec-res", required_argument, 0, 'd'},
-            {"h1-xml-file", required_argument, 0, 't'},
-	    {"l1-xml-file", required_argument, 0, 's'},
-	    {"v1-xml-file", required_argument, 0, 'r'},
-            {"event-id", required_argument, 0, 'e'},
-	    {"sample-rate", required_argument, 0, 'f'},
-            {0, 0, 0, 0}
-        };
+            {
+                {"h1-frame-file", required_argument, 0, 'h'},
+                {"l1-frame-file", required_argument, 0, 'l'},
+                {"v1-frame-file", required_argument, 0, 'v'},
+                {"output-file", required_argument, 0, 'o'},
+                {"ra-res", required_argument, 0, 'a'},
+                {"dec-res", required_argument, 0, 'd'},
+                {"h1-xml-file", required_argument, 0, 't'},
+                {"l1-xml-file", required_argument, 0, 's'},
+                {"v1-xml-file", required_argument, 0, 'r'},
+                {"event-id", required_argument, 0, 'e'},
+                {"sample-rate", required_argument, 0, 'f'},
+                {0, 0, 0, 0}
+            };
         int option_index = 0;
         c = getopt_long_only(argc, argv, "h:l:v:o:a:d:t:s:r:e:f:", long_options, &option_index);
         if (c == -1)
@@ -176,66 +127,108 @@ int main(int argc, char** argv)
             case 't':
                 xml_file[0] = (optarg);
                 break;
-	    case 's':
-	        xml_file[1] = (optarg);
-		break;
+            case 's':
+                xml_file[1] = (optarg);
+                break;
             case 'r':
-	        xml_file[2] = (optarg);
-		break;
+                xml_file[2] = (optarg);
+                break;
             case 'e':
                 event_id = optarg;
                 break;
-	    case 'f':
-	        frequency = atoi(optarg);
-		break;
+            case 'f':
+                frequency = atoi(optarg);
+                break;
             default:
                 fprintf(stderr, "unknown error while parsing options\n");
-                exit(1);
-        }            
+                    exit(1);
+        }
     }
     
     if (optind < argc)
     {
-        fprintf(stderr, "extraneous command line arguments:\n");
+        fprintf(stderr, "error: extraneous command line argument ");
         while (optind < argc)
         {
-            fprintf(stderr, "\t%s\n", argv[optind++]);
+            fprintf(stderr, "%s\n", argv[optind++]);
         }
         exit(1);
     }
     
-    /* when we can reliably pull out a subset of the data 
-     * around the injection we should do so */
+    /* check sanity */
+    if (!(h1_frame_file || l1_frame_file || v1_frame_file))
+    {
+        fprintf(stderr, "error: Supply at least one of --h1-frame-file, --l1-frame-file or --v1-frame-file\n");
+        exit(1);
+    }
+    if (h1_frame_file && !xml_file[0])
+    {
+        fprintf(stderr, "error: Supply --h1-xml-file to match --h1-frame-file\n");
+        exit(1);
+    }
+    if (l1_frame_file && !xml_file[1])
+    {
+        fprintf(stderr, "error: Supply --l1-xml-file to match --l1-frame-file\n");
+        exit(1);
+    }
+    if (v1_frame_file && !xml_file[2])
+    {
+        fprintf(stderr, "error: Supply --v1-xml-file to match --v1-frame-file\n");
+        exit(1);
+    }
+    if (!h1_frame_file && xml_file[0])
+    {
+        fprintf(stderr, "error: Supply --h1-frame-file to match --h1-xml-file\n");
+        exit(1);
+    }
+    if (!l1_frame_file && xml_file[1])
+    {
+        fprintf(stderr, "error: Supply --l1-frame-file to match --l1-xml-file\n");
+        exit(1);
+    }
+    if (!v1_frame_file && xml_file[2])
+    {
+        fprintf(stderr, "error: Supply --v1-frame-file to match --v1-xml-file\n");
+        exit(1);
+    }
+    
+    if (frequency <= 0)
+    {
+        fprintf(stderr, "error: Supply positive integer Hertz --sample-rate\n");
+        exit(1);
+    }
+
+    /* examine one second of data around the injection */
     samples = frequency;
-
-    /*printf("frequency %d\n", frequency);*/
-
-    load_metadata(xml_file[0], 0);    
+    /*
+     * Load metadata from XML files
+     */
+    load_metadata(xml_file[0], 0);
     load_metadata(xml_file[1], 1);
     load_metadata(xml_file[2], 2);
     /*
-    load_metadata(xml_file[0], 0);
-    load_metadata(xml_file[1], 1);
-    load_metadata(xml_file[2], 2);*/
-
+     * Load z[t] data from frame files
+     */
     load_data(0, h1_frame_file, "H");
     load_data(1, l1_frame_file, "L");
     load_data(2, v1_frame_file, "V");
-
+    
     {
+        /* dump the z[t] data for debugging purposes */
         FILE* h;
-	char buffer[256];
-	sprintf(buffer, "%s-raw", output_file);
-	h = fopen(buffer, "w");
+        char buffer[256];
+        sprintf(buffer, "%s-raw", output_file);
+        h = fopen(buffer, "w");
         dump_data_to_file(h);
         fclose(h);
     }
-
-    /*load_test_data("/home/channa/TestInjection.txt");*/
-
+        
+    /*
+     * Analyze the data and save the skymap
+     */
     analyze();
- 
-    return 0;       
+    
+    return 0;
 }
 
 void load_metadata(char* file, int detector)
@@ -250,18 +243,9 @@ void load_metadata(char* file, int detector)
             exit(1);
         }
         w[detector] = sqrt(a->sigmasq);
-	    wgood = sqrt(a->sigmasq);
         greenwich = fmod(XLALGreenwichMeanSiderealTime(&(a->end_time)), LAL_TWOPI);
         fprintf(stderr, "GPS %d -> GMS %e -> RAD %e \n", a->end_time.gpsSeconds, XLALGreenwichMeanSiderealTime(&(a->end_time)), greenwich);
-
     }
-    /*
-    else
-    {
-        fprintf(stderr, "warning: using heuristic w[%d]\n", detector);
-        w[detector] = wgood * 0.1;
-    }
-    */
 }
 
 void load_data(int detector, const char* file, const char* initial)
@@ -308,40 +292,21 @@ void load_data(int detector, const char* file, const char* initial)
             x[detector + 3][i] = H1series.data->data[i].im;
         }
     }
-    /*
-    else
-    {
-        *
-        *  No frame given, generate white noise data
-        *
-        int i;
-
-        fprintf(stdout, "Warning: generating white noise for detector %d\n", detector);
-        for (i = detector; i < 6; i += 3)
-        {
-            int j;
-            x[i] = (double*) malloc(samples * sizeof(double));
-            for (j = 0; j != samples; ++j)
-            {
-                int k;
-                x[i][j] = 0.;
-                for (k = 0; k != 12; ++k)
-                {
-                    x[i][j] += rand();
-                }
-                x[i][j] /= RAND_MAX;
-                x[i][j] -= 6;
-            }
-        }       
-    }
-    */
 }
 
-#define max(A,B) (((A) > (B)) ? (A) : (B))
+void dump_data_to_file(FILE* h)
+{
+    int i;
+    for (i = 0; i != samples; ++i)
+    {
+        fprintf(h, "%e %e %e %e %e %e %e\n", ((double) i)/frequency, x[0][i], x[3][i], x[1][i], x[4][i], x[2][i], x[5][i]);
+    }
+}
+#define NSIGMA 11
 
 void analyze(void)
 {
-#define NSIGMA 11
+
     XLALSkymapPlanType* plan;
     double s[NSIGMA];
     int i, j;
@@ -362,12 +327,7 @@ void analyze(void)
      */
 
     /*fprintf(stderr, "w: %e %e %e\n", w[0], w[1], w[2]);*/
-    /*wgood = max(w[0],max(w[1],w[2]));*/
- 
-    /*w[0] *= 100.0; *//* or maybe the reciprocal of this? */
-    /*w[1] *= 100.0;  *//* or maybe the reciprocal of this? */
-    /*w[2] *= 100.0; *//* or maybe the reciprocal of this? */
-    /*fprintf(stderr, "w: %e %e %e %e\n", w[0], w[1], w[2], wgood);  */
+
     s[0]  =    1;
     s[1]  =    4;
     s[2]  =    16;
@@ -384,7 +344,6 @@ void analyze(void)
      *  the sky tiles implied by the frequency) 
      */
     plan = XLALSkymapConstructPlan(frequency);  
-
     /*
      *  Allocate a chunk of memory tto hold the sky map in the internal 
      *  timing format
@@ -394,15 +353,10 @@ void analyze(void)
     /*
      *  Generate the skymap
      */
-    /*
-    XLALSkymapAnalyzeElliptical(accumulator, plan, s[0], w, samples, x);
-    */
     XLALSkymapEllipticalHypothesis(plan, accumulator, s[0], w, begin, end, x, 0);
     for (i = 1; i != NSIGMA; ++i)
     {
-        /*
-        XLALSkymapAnalyzeElliptical(raw, plan, s[i], w, samples, x);
-        */
+
         XLALSkymapEllipticalHypothesis(plan, raw, s[i], w, begin, end, x, 0);
         XLALSkymapSum(plan, accumulator, accumulator, raw);
     }
@@ -445,6 +399,60 @@ void analyze(void)
             render[j] -= maximum;
         }
 
+
+
+        {
+            /*
+             *  Write a gzipped ascii file describing the sky map
+             */
+            gzFile* h = NULL;
+            h = gzopen(output_file, "wb");
+            if (h == NULL) 
+            {
+                fprintf(stderr,"cannot gzopen() %s\n",output_file);
+                exit(1);
+            }
+            for (j = 0; j != n; ++j)
+            {
+                double phi, ra;
+                phi = (LAL_TWOPI * (j + 0.5)) / n;
+                ra = fmod(phi + greenwich, LAL_TWOPI);
+                while (ra < 0)
+                    ra += LAL_TWOPI;
+                while (ra >= LAL_TWOPI)
+                    ra -= LAL_TWOPI;
+                for (i = 0; i != m; ++i)
+                {
+                    double dec;
+                    dec = LAL_PI_2 - (LAL_PI * (i + 0.5)) / m;
+                    gzprintf(h, "%.10e %.10e %.10e\n", ra, dec, exp(render[i + m * j]));
+                }
+            }
+            gzclose(h);
+        }
+        
+        free(render);
+        
+    }
+        
+    free(raw);
+        
+    /*
+     *  The plan has allocated memory, so we have to destroy it
+     */
+    XLALSkymapDestroyPlan(plan);
+    
+    /*
+     *  Free the data
+     */
+    {
+        for (i = 0; i != 6; ++i)
+        {
+            free(x[i]);
+        }
+    }
+
+}
 
 #ifdef SKYMAP_PNG
         {
@@ -506,62 +514,46 @@ void analyze(void)
             png_destroy_write_struct(&png_ptr, &info_ptr);
             
             fclose(fp);
-        }
-#else        
-        {
-            /*
-             *  Write a gzipped ascii file describing the sky map
-             */
-            gzFile* h = NULL;
-            h = gzopen(output_file, "wb");
-	    if (h == NULL) {
-	      fprintf(stderr,"cannot gzopen() %s\n",output_file);
-	      exit(1);
-	    }
-            for (j = 0; j != n; ++j)
-            {
-                double phi, ra;
-                phi = (LAL_TWOPI * (j + 0.5)) / n;
-		ra = fmod(phi + greenwich, LAL_TWOPI);
-                /*ra = fmod(phi - greenwich, LAL_TWOPI);*/
-                /*ra = fmod(phi + greenwich, LAL_TWOPI);*/
-                /*ra = phi;*/
-                while (ra < 0)
-                    ra += LAL_TWOPI;
-                while (ra >= LAL_TWOPI)
-                    ra -= LAL_TWOPI;
-                for (i = 0; i != m; ++i)
-                {                    
-                    double dec;
-                    dec = LAL_PI_2 - (LAL_PI * (i + 0.5)) / m;
-                    gzprintf(h, "%.10e %.10e %.10e\n", ra, dec, exp(render[i + m * j]));
-                }
-            }
-            gzclose(h);
-        }
-#endif    
-        free(render);
-        
-    }
-        
-    free(raw);
-        
-    /*
-     *  The plan has allocated memory, so we have to destroy it
-     */
-    XLALSkymapDestroyPlan(plan);
-    
-    /*
-     *  Free the data
-     */
+        }       
+#endif   
+
+#if 0
+
+void load_test_data(const char* file);
+
+void load_test_data(const char* file)
+{
+    FILE* h;
+    int i;
+
+    fprintf(stderr, "warning: overwriting with test data\n");
+
+    for (i = 0; i != 6; ++i)
     {
-        for (i = 0; i != 6; ++i)
+	if(!(x[i] = (double*) malloc(samples * sizeof(double))))
         {
-            free(x[i]);
+            fprintf(stderr, "malloc test data failed\n");
         }
     }
 
+    if(!(h = fopen(file, "rt")))
+    {
+        fprintf(stderr, "open test file failed\n");
+    }
+    
+    for (i = 0; i != samples; ++i)
+    {
+        int j;
+    	fscanf(h, "%le %le %le %le %le %le\n", x[0] + i, x[3] + i, x[1] + i, x[4] + i, x[2] + i, x[5] + i);
+        for(j=0; j!= 6;++j)
+        {
+           /*fprintf(stderr, "%e ", x[j][i]);*/
+        }
+        /*fprintf(stderr,"\n");*/
+    }
+    fclose(h);
+
+    /*fprintf(stderr, "warning: overwrote with test data\n");*/
 }
-
-
+#endif
 
