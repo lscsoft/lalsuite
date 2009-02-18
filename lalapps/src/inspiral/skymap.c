@@ -28,7 +28,7 @@ const char* h1_frame_file = 0;
 const char* l1_frame_file = 0;
 const char* v1_frame_file = 0;
 
-const char* xml_file[3] = { 0, 0, 0};
+char* xml_file[3] = { 0, 0, 0};
 
 const char* output_file = "skymap.txt";
 
@@ -73,12 +73,13 @@ double greenwich = 0;
 
 void analyze(void);
 
-void load_metadata(const char* file, int detector);
+void load_metadata(char* file, int detector);
 
 void load_data(int detector, const char* file, const char* initial);
 
 void load_test_data(const char* file);
 
+/*
 void load_test_data(const char* file)
 {
     FILE* h;
@@ -105,21 +106,24 @@ void load_test_data(const char* file)
     	fscanf(h, "%le %le %le %le %le %le\n", x[0] + i, x[3] + i, x[1] + i, x[4] + i, x[2] + i, x[5] + i);
         for(j=0; j!= 6;++j)
         {
-           /*fprintf(stderr, "%e ", x[j][i]);*/
+           *fprintf(stderr, "%e ", x[j][i]);
         }
-        /*fprintf(stderr,"\n");*/
+        *fprintf(stderr,"\n");
     }
     fclose(h);
 
-    /*fprintf(stderr, "warning: overwrote with test data\n");*/
+    *fprintf(stderr, "warning: overwrote with test data\n");
 }
+*/
+
+void dump_data_to_file(FILE*);
 
 void dump_data_to_file(FILE* h)
 {
     int i;
     for (i = 0; i != samples; ++i)
     {
-        fprintf(h, "%le %le %le %le %le %le %le\n", ((double) i)/frequency, x[0][i], x[3][i], x[1][i], x[4][i], x[2][i], x[5][i]);
+        fprintf(h, "%e %e %e %e %e %e %e\n", ((double) i)/frequency, x[0][i], x[3][i], x[1][i], x[4][i], x[2][i], x[5][i]);
     }
 }
 
@@ -234,7 +238,7 @@ int main(int argc, char** argv)
     return 0;       
 }
 
-void load_metadata(const char* file, int detector)
+void load_metadata(char* file, int detector)
 {
     if (file)
     {
