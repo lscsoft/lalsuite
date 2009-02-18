@@ -430,8 +430,8 @@ LALCompareRingdowns (
     else if ( params->test == ds_sq_fQt )
     {
       REAL8 dtab = 1.e-9 * (tb - ta);
-      REAL8 dt_min = dtab - fabs(params->lightTravelTime[ifoaNum][ifobNum]);
-      REAL8 dt_max = dtab + fabs(params->lightTravelTime[ifoaNum][ifobNum]);
+      REAL8 dt_min = dtab - 1.e-9 * fabs(params->lightTravelTime[ifoaNum][ifobNum]);
+      REAL8 dt_max = dtab + 1.e-9 * fabs(params->lightTravelTime[ifoaNum][ifobNum]);
       REAL4 ds2_min = XLAL3DRingMetricDistance( fa, fb, Qa, Qb, dtab );
       REAL8 dt;
 
