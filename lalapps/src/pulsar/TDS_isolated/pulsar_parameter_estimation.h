@@ -20,6 +20,7 @@
 #include <math.h>
 #include <string.h>
 #include <getopt.h>
+#include <unistd.h>
 
 /* LAL headers */
 #include <lal/LALStdlib.h>

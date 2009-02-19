@@ -155,6 +155,15 @@ INT4 main(INT4 argc, CHAR *argv[]){
 
       (*edat).ephiles.earthEphemeris = inputs.earthfile;
       (*edat).ephiles.sunEphemeris = inputs.sunfile;
+
+      /* check files exist and if not output an error message */
+      if( access(inputs.earthfile, F_OK) != 0 || 
+          access(inputs.earthfile, F_OK) != 0 ){
+        fprintf(stderr, "Error... ephemeris files not, or incorrectly, \
+defined!\n");
+        return 0;
+      }
+
       LAL_CALL( LALInitBarycenter(&status, edat), &status );
     }
     else
@@ -1846,8 +1855,11 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
     paramData = XLALMalloc( MAXPARAMS*sizeof(ParamData) );
 
     /* get correlation matrix */
-    cormat = read_correlation_matrix( input.matrixFile, pulsarParamsFixed,
-paramData );
+    if( ( cormat = read_correlation_matrix( input.matrixFile, pulsarParamsFixed,
+paramData ) ) == NULL ){
+      fprintf(stderr, "Error... couldn't read in correlation matrix file!\n");
+      exit(0);
+    }
 
     /* allocate memory for inverse matrix */
     tempinvmat = XLALCreateREAL8Array( cormat->dimLength );
@@ -2103,10 +2115,13 @@ paramData );
       memcpy(&pulsarParamsNew, &pulsarParams, sizeof(BinaryPulsarParams));
       set_mcmc_pulsar_params( &pulsarParamsNew, randVals );
 
-      if( pulsarParamsNew.e < 0. || pulsarParamsNew.e >= 1. ||
-          pulsarParamsNew.e2 < 0. || pulsarParamsNew.e2 >= 1. ||
-          pulsarParamsNew.e3 < 0. || pulsarParamsNew.e3 >= 1. )
-        nege = 1;
+      /* I've discovered that TEMPO can produce negative eccentricites (when
+         they're close to zero), so will allow this to happen here, but still
+         won't allow it to go over 1 */
+      if( /* pulsarParamsNew.e < 0.  || */ pulsarParamsNew.e >= 1. ||
+          /* pulsarParamsNew.e2 < 0. || */ pulsarParamsNew.e2 >= 1. ||
+          /* pulsarParamsNew.e3 < 0. || */ pulsarParamsNew.e3 >= 1. )
+        nege = 1; 
     }
 
     /* if h0 jumps negative, or eccentricity is negative or greater than 1 then
@@ -2679,6 +2694,7 @@ void set_mcmc_pulsar_params( BinaryPulsarParams *pulsarParams, ParamData *data){
   if( pulsarParams->model != NULL && !strcmp(pulsarParams->model, "ELL1") ){
     pulsarParams->eps1 = data[8].val;
     pulsarParams->eps2 = data[11].val;
+    pulsarParams->e = 0.;
     pulsarParams->Tasc = data[9].val;
     pulsarParams->eps1dot = data[12].val;
     pulsarParams->eps2dot = data[20].val;
@@ -3005,7 +3021,7 @@ REAL8Array *read_correlation_matrix( CHAR *matrixFile,
 
   /* read in data from correlation matrix file */
   if((fp = fopen(matrixFile, "r")) == NULL){
-    fprintf(stderr, "No correlation matrix file" );
+    fprintf(stderr, "Error...No correlation matrix file!\n" );
     return NULL;
   }
 
