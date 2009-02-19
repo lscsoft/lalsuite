@@ -57,7 +57,7 @@ LIGOTimeGPS *XLALAggregationFrameStart(LIGOTimeGPS *gps)
 
   /* determine frame start time, multiple of ONLINE_FRAME_DURATION */
   start->gpsSeconds = (INT4)floor(gps->gpsSeconds / ONLINE_FRAME_DURATION) * \
-                     ONLINE_FRAME_DURATION;
+                      ONLINE_FRAME_DURATION;
   start->gpsNanoSeconds = 0;
 
   return start;
