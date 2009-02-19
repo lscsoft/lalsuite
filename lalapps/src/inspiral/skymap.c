@@ -107,13 +107,13 @@ int main(int argc, char** argv)
         switch (c)
         {
             case 'h':
-                h1_frame_file = optarg;
+		if (strcmp(optarg,"none")) h1_frame_file = optarg;
                 break;
             case 'l':
-                l1_frame_file = optarg;
+		if (strcmp(optarg,"none")) l1_frame_file = optarg;
                 break;
             case 'v':
-                v1_frame_file = optarg;
+                if (strcmp(optarg,"none")) v1_frame_file = optarg;
                 break;
             case 'o':
                 output_file = optarg;
@@ -125,13 +125,13 @@ int main(int argc, char** argv)
                 dec_res = atoi(optarg);
                 break;
             case 't':
-                xml_file[0] = (optarg);
+                if (strcmp(optarg,"none")) xml_file[0] = (optarg);
                 break;
-            case 's':
-                xml_file[1] = (optarg);
-                break;
+	    case 's':
+	        if (strcmp(optarg,"none")) xml_file[1] = (optarg);
+		break;
             case 'r':
-                xml_file[2] = (optarg);
+	        if (strcmp(optarg,"none")) xml_file[2] = (optarg);
                 break;
             case 'e':
                 event_id = optarg;
@@ -212,20 +212,7 @@ int main(int argc, char** argv)
     load_data(0, h1_frame_file, "H");
     load_data(1, l1_frame_file, "L");
     load_data(2, v1_frame_file, "V");
-    
-    {
-        /* dump the z[t] data for debugging purposes */
-        FILE* h;
-        char buffer[256];
-        sprintf(buffer, "%s-raw", output_file);
-        h = fopen(buffer, "w");
-        dump_data_to_file(h);
-        fclose(h);
-    }
-        
-    /*
-     * Analyze the data and save the skymap
-     */
+
     analyze();
     
     return 0;
