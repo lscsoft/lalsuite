@@ -198,12 +198,19 @@ void LALCalculateSigmaAlphaSq(LALStatus            *status,
 			      REAL8FrequencySeries *psd1,
 			      REAL8FrequencySeries *psd2);
 
+void LALCalculateAveUalpha(LALStatus *status,
+			COMPLEX16 *out,
+			REAL8     *phiI,
+			REAL8     *phiJ,
+			CrossCorrBeamFn beamfnsI,
+			CrossCorrBeamFn beamfnsJ,
+			REAL8     *sigmasq);
+
 void LALCalculateUalpha(LALStatus *status,
 			COMPLEX16 *out,
 			CrossCorrAmps amplitudes,
 			REAL8     *phiI,
 			REAL8     *phiJ,
-			BOOLEAN   averagePsi,
 			CrossCorrBeamFn beamfnsI,
 			CrossCorrBeamFn beamfnsJ,
 			REAL8     *sigmasq);
