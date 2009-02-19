@@ -1933,6 +1933,12 @@ paramData ) ) == NULL ){
       pulsarParams.e3 = fabs(pulsarParams.e3);
     else if( pulsarParams.e3 >= 1. )
       pulsarParams.e3 = 1. - fmod(pulsarParams.e3, 1.);
+
+    /* check sini parameter and make sure it's between -1 and 1 */
+    if( pulsarParams.s > 1. )
+      pulsarParams.s = 1. - fmod(pulsarParams.s, 1.);
+    else if( pulsarParams.s < -1. )
+      pulsarParams.s = -1. - fmod(pulsarParams.s, 1.);
   }
   else
     edat = NULL; /* make sure edat is NULL as this is how later functions
@@ -2120,7 +2126,8 @@ paramData ) ) == NULL ){
          won't allow it to go over 1 */
       if( /* pulsarParamsNew.e < 0.  || */ pulsarParamsNew.e >= 1. ||
           /* pulsarParamsNew.e2 < 0. || */ pulsarParamsNew.e2 >= 1. ||
-          /* pulsarParamsNew.e3 < 0. || */ pulsarParamsNew.e3 >= 1. )
+          /* pulsarParamsNew.e3 < 0. || */ pulsarParamsNew.e3 >= 1. ||
+          pulsarParamsNew.s > 1. || pulsarParamsNew.s < -1. )
         nege = 1; 
     }
 
