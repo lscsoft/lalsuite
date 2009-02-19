@@ -735,12 +735,24 @@ int main(int argc, char *argv[]){
 					      psd1, psd2),
 		    &status);
 
-	  LAL_CALL( LALCalculateUalpha ( &status, &ualpha->data[j], amplitudes,
-					 &signalPhaseList->data[index1],
-					 &signalPhaseList->data[index2],
-					 uvar_averagePsi, beamfns[index1],
-					 beamfns[index2], &sigmasq->data[j]),
-		    &status);
+	  /*if we are averaging over psi and cos(iota), call the simplified 
+ 	    Ualpha function*/
+	  if (uvar_averagePsi && uvar_averageIota) {
+	    LAL_CALL( LALCalculateAveUalpha ( &status, &ualpha->data[j], 
+		 			   &signalPhaseList->data[index1],
+					   &signalPhaseList->data[index2],
+					   beamfns[index1],
+					   beamfns[index2], &sigmasq->data[j]),
+		      &status);
+	  }
+	  else {
+	    LAL_CALL( LALCalculateUalpha ( &status, &ualpha->data[j], amplitudes,
+		 			   &signalPhaseList->data[index1],
+					   &signalPhaseList->data[index2],
+					   beamfns[index1],
+					   beamfns[index2], &sigmasq->data[j]),
+		      &status);
+	  }
 
 	  ualphacounter = ualphacounter + 1;
   	  } /*finish loop over sft pairs*/
