@@ -60,7 +60,7 @@ fi > first_coire.dag
 if [ 1 ]; then
   echo "universe = standard"
   echo "executable = ${coire_path}"
-  echo "arguments = --glob septime_files/${cat}/\$(macroinfile) --output first_coire_files/${cat}/\$(macrooutfile) --data-type all_data --coinc-stat effective_snrsq --cluster-time 4000"
+  echo "arguments = --glob septime_files/${cat}/\$(macroinfile) --output first_coire_files/${cat}/\$(macrooutfile) --data-type all_data --coinc-stat effective_snrsq --cluster-time 10000"
   echo "log = " `mktemp -p ${log_path}`
   echo "error = logs/coire-\$(cluster)-\$(process).err"
   echo "output = logs/coire-\$(cluster)-\$(process).out"
@@ -116,7 +116,7 @@ for injstring in BBH001INJ BNS001INJ NSBH001INJ SPIN001INJ FULLRANGE001INJ; do
   if [ 1 ]; then
     echo "universe = standard"
     echo "executable = ${coire_path}"
-    echo "arguments = --glob septime_files/${injstring}_${cat}/\$(macroinfile) --output first_coire_files/${injstring}/\$(macrooutfile) --data-type all_data --coinc-stat effective_snrsq --cluster-time 4000 --injection-file \$(macroinjectionfile) --injection-window 100"
+    echo "arguments = --glob septime_files/${injstring}_${cat}/\$(macroinfile) --output first_coire_files/${injstring}/\$(macrooutfile) --data-type all_data --coinc-stat effective_snrsq --cluster-time 10000 --injection-file \$(macroinjectionfile) --injection-window 100"
     echo "log = " `mktemp -p ${log_path}`
     echo "error = logs/coire-\$(cluster)-\$(process).err"
     echo "output = logs/coire-\$(cluster)-\$(process).out"
@@ -163,7 +163,7 @@ fi > first_coire_slide.dag
 if [ 1 ]; then
   echo "universe = vanilla"
   echo "executable = ${coire_path}"
-  echo "arguments = --glob septime_files/${cat}/\$(macroinfile) --output first_coire_files/${cat}/\$(macrooutfile) --data-type all_data --coinc-stat effective_snrsq --cluster-time 4000 --num-slides 50"
+  echo "arguments = --glob septime_files/${cat}/\$(macroinfile) --output first_coire_files/${cat}/\$(macrooutfile) --data-type all_data --coinc-stat effective_snrsq --cluster-time 10000 --num-slides 50"
   echo "log = " `mktemp -p ${log_path}`
   echo "error = logs/coire_slide-\$(cluster)-\$(process).err"
   echo "output = logs/coire_slide-\$(cluster)-\$(process).out"
