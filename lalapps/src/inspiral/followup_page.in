@@ -85,8 +85,9 @@ def link_checklist(pdict, wiki, server):
   ifos = pdict['All']['Type']
   id = pdict['All']['ID']
   path = glob.glob('CHECKLIST/*-makeChecklist_*'+id+'*.html')
-  lnstr = '\n[' + server +'/' + path[0] + ' Detection Checklist]\n'
-  write_columns([lnstr],wiki)
+  if path: 
+    lnstr = '[' + server +'/' + path[0] + ' Detection Checklist]'
+    write_columns([lnstr],wiki,'rgb(255,200,200)', 'bold')
 
 # put some qscan plots in the wiki in a table by ifo
 def qscan(pdict, wiki, plot, server):
@@ -149,13 +150,17 @@ def write_header(wiki):
   wiki.write('\n[[TableOfContents]]\n\n')
 
 # how to run the followup pipeline and run this page
-def how_to(log, wiki):
+def how_to(log, cp, wiki):
   fulog = open('followup_pipe.log').readlines()
   wiki.write('\n\n== How to make this page ==\n\n')
   wiki.write('The followup pipeline was run with:')
   wiki.write('{{{\n')
   for l in fulog:
     wiki.write(l)
+  wiki.write('}}}\n')
+  wiki.write('The relevant portion of the followup ini file is:\n{{{\n[followup-triggers]\n')
+  for l in cp.options('followup-triggers'):
+    wiki.write(l + ' = ' + cp.get('followup-triggers',l) + '\n')
   wiki.write('}}}\n')
   wiki.write('The followup page was made by doing:')
   wiki.write('{{{\nlalapps_followup_page\n}}}\n')
@@ -198,7 +203,7 @@ for line in triginfo:
   plotsnr(paramdict, wiki, 'fft_of_template_and_asd',server)
 
 # tell everyone how we did it
-how_to('followup_pipe.log', wiki)
+how_to('followup_pipe.log', cp, wiki)
 
 # we're done
 wiki.close()
