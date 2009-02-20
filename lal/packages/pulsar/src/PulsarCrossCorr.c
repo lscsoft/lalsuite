@@ -391,14 +391,14 @@ void LALCalculateAveUalpha(LALStatus *status,
 {
   REAL8 deltaPhi;
   REAL8 re, im;
-  INITSTATUS (status, "CalculateUalpha", rcsid);
+  INITSTATUS (status, "CalculateAveUalpha", rcsid);
   ATTATCHSTATUSPTR (status);
 
   deltaPhi = *phiI - *phiJ;
 
   /*calculate G_IJ. In this case, we have <G_IJ> = 0.1*(-exp^(delta phi)) * (aIaJ + bIbJ)*/
   re = 0.1 * cos(deltaPhi) * beamfnsI.Fplus_or_a*beamfnsJ.Fplus_or_a + beamfnsI.Fcross_or_b*beamfnsJ.Fcross_or_b;
-  im = 0.1 * sin(-deltaPhi);
+  im = 0.1 * sin(-deltaPhi) * beamfnsI.Fplus_or_a*beamfnsJ.Fplus_or_a + beamfnsI.Fcross_or_b*beamfnsJ.Fcross_or_b;
 
   /*calculate Ualpha*/
   out->re = re/(*sigmasq);
@@ -438,9 +438,9 @@ void LALCalculateUalpha(LALStatus *status,
 
 
   /*calculate G_IJ*/
-  re = 0.25 * cos(deltaPhi) * ((FplusIFplusJ * (amplitudes.Aplussq)) 
+  re = 0.25 * (cos(deltaPhi) + sin(deltaPhi)) * ((FplusIFplusJ * (amplitudes.Aplussq)) 
 	    + (FcrossIFcrossJ * (amplitudes.Acrosssq)) );
-  im = 0.25 * sin(-deltaPhi) * (-(FplusIFcrossJ - FcrossIFplusJ) 
+  im = 0.25 * (-cos(deltaPhi) + sin(-deltaPhi)) * (-(FplusIFcrossJ - FcrossIFplusJ) 
 	   * (amplitudes.AplusAcross) );
 
 
