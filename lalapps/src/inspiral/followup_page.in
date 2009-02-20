@@ -37,9 +37,11 @@ def imageLink(path):
   return '[[ImageLink('+path+','+path.replace('_thumbnail','').replace('_thumb','')+',width=400][,alt=none])]]'
 
 # Glob the path for an image (use thumbnails)
-def link_path(wiki, server, pathstr):
+def link_path(server, pathstr):
   path = glob.glob(pathstr)
-  if path: wiki.write('||'+imageLink(server+'/'+path[0]))
+  if path: 
+    return imageLink( server+'/'+path[0] ) 
+  else: return ""
 
 def param_from_str(trig, param):
   for c in trig:
@@ -70,16 +72,26 @@ def dict_from_str(trig):
 def plotsnr(pdict, wiki, plot, server):
   ifos = ifos_from_str(pdict['All']['Type'])
   id = pdict['All']['ID']
-  for ifo in ifos:
-    link_path(wiki,server, 'plotSNRCHISQJob/Images/'+ifo+'*_'+id+'_'+plot+'-*_thumb.png')
-  wiki.write('||\n')
+  cols = []
+  for p in plot:
+    for ifo in ifos:
+      cols.append(link_path(server, 'plotSNRCHISQJob/Images/'+ifo+'*_'+id+'_'+p+'-*_thumb.png'))
+    write_columns(cols, wiki,'white','normal')
+    cols = []
 
 # Put the coherent inspiral jobs in the wiki
 def plotcoh(pdict, wiki, plot, server):
+  
   ifos = pdict['All']['Type']
   id = pdict['All']['ID']
-  link_path(wiki,server, 'plotChiaJob/Images/'+ifos+'*_'+id+'_'+plot+'-*_thumb.png')
-  wiki.write("||")
+  cols = []
+  for p in plot:
+    astr = link_path(server, 'plotChiaJob/Images/'+ifos+'*_'+id+'_'+p+'-*_thumb.png')
+    if astr: cols.append(astr)
+    if len(cols) == 2: # just keep the table to 2 columns
+      write_columns(cols, wiki,'white','normal')
+      cols = []
+  if cols: write_columns(cols, wiki,'white','normal')
 
 def link_checklist(pdict, wiki, server):
   ifos = pdict['All']['Type']
@@ -92,9 +104,12 @@ def link_checklist(pdict, wiki, server):
 # put some qscan plots in the wiki in a table by ifo
 def qscan(pdict, wiki, plot, server):
   ifos = ifos_from_str(pdict['All']['Type'])
-  for ifo in ifos:
-    link_path(wiki,server, "QSCAN/foreground-hoft-qscan/"+ifo+"/"+pdict[ifo]['time']+"/"+pdict[ifo]['time']+"*1.00_"+plot+"_thumbnail.png")
-  wiki.write('||\n')
+  cols = []
+  for p in plot:
+    for ifo in ifos:
+      cols.append( link_path(server, "QSCAN/foreground-hoft-qscan/"+ifo+"/"+pdict[ifo]['time']+"/"+pdict[ifo]['time']+"*1.00_"+p+"_thumbnail.png") )
+    write_columns(cols, wiki,'white','normal')
+    cols = []
 
 # Color map for H1,H2,L1,V1
 def get_colors():
@@ -166,7 +181,8 @@ def how_to(log, cp, wiki):
   wiki.write('{{{\nlalapps_followup_page\n}}}\n')
   wiki.write('This gives a file called wiki.txt that you can cut and paste into your favorite moin moin spot')
 
-
+def header(wiki, paramdict, text, level= 3):
+  wiki.write("\n" + "="*level + " " + text + " " + paramdict['All']['ID'] + " " + "="*level + "\n")
 ###############################################################################
 # MAIN "PROGRAM"
 ###############################################################################
@@ -182,25 +198,19 @@ write_header(wiki)
 for line in triginfo:
   trig = line.split(',')
   paramdict = dict_from_str(trig)
-  wiki.write("\n== Rank: " + paramdict['All']['Rank']+" - Follow up of event " + paramdict['All']['ID']+" ==\n")
+
+  header(wiki, paramdict, "Ranked: " + paramdict['All']['Rank']+" - Follow up of event",2)
   link_checklist(paramdict, wiki, server)
-  #Skymap
-  wiki.write("\n=== Parameters for " + paramdict['All']['ID']+" ===\n")
+
+  header(wiki, paramdict, "Parameters and Sky Map for:")
   param_table(paramdict, wiki, server)
-  #Coherent code
-  wiki.write("\n=== Coherent code output for " + paramdict['All']['ID']+" ===\n") 
-  plotcoh(paramdict, wiki, "snr-squared", server) 
-  plotcoh(paramdict, wiki, "cohsnrh1h2null", server)
-  #Qscans and snr and ...
-  wiki.write("\n=== h(t), snr, chisq, etc " + paramdict['All']['ID']+" ===\n")
-  qscan(paramdict, wiki, 'timeseries_whitened',server)
-  qscan(paramdict, wiki, 'spectrogram_whitened',server)     
-  plotsnr(paramdict, wiki, 'snr',server)
-  plotsnr(paramdict, wiki, 'rsq',server)
-  plotsnr(paramdict, wiki, 'chisq',server)
-  plotsnr(paramdict, wiki, 'template',server)
-  plotsnr(paramdict, wiki, 'white_template',server)
-  plotsnr(paramdict, wiki, 'fft_of_template_and_asd',server)
+
+  header(wiki, paramdict, "Coherent code output for:")
+  plotcoh(paramdict, wiki, ["snr-squared","cohsnrh1h2nullZoomed", "cohnullsnrh1Zoomed", "phasediffh1h2Zoomed"], server)
+
+  header(wiki, paramdict, "h(t), snr, chisq, etc for:")
+  qscan(paramdict, wiki, ['timeseries_whitened','spectrogram_whitened'],server)
+  plotsnr(paramdict, wiki, ['snr','rsq', 'rsq', 'template', 'white_template','fft_of_template_and_asd'],server)
 
 # tell everyone how we did it
 how_to('followup_pipe.log', cp, wiki)
