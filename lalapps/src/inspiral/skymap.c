@@ -29,8 +29,9 @@
 const char* h1_frame_file = 0;
 const char* l1_frame_file = 0;
 const char* v1_frame_file = 0;
+const char* h2_frame_file = 0;
 
-char* xml_file[3] = { 0, 0, 0};
+char* xml_file[4] = { 0, 0, 0, 0};
 
 const char* output_file = "skymap.txt";
 
@@ -89,32 +90,37 @@ int main(int argc, char** argv)
                 {"h1-frame-file", required_argument, 0, 'h'},
                 {"l1-frame-file", required_argument, 0, 'l'},
                 {"v1-frame-file", required_argument, 0, 'v'},
+                {"h2-frame-file", required_argument, 0, 'i'},             
                 {"output-file", required_argument, 0, 'o'},
                 {"ra-res", required_argument, 0, 'a'},
                 {"dec-res", required_argument, 0, 'd'},
                 {"h1-xml-file", required_argument, 0, 't'},
                 {"l1-xml-file", required_argument, 0, 's'},
                 {"v1-xml-file", required_argument, 0, 'r'},
+                {"h2-xml-file", required_argument, 0, 'q'},
                 {"event-id", required_argument, 0, 'e'},
                 {"sample-rate", required_argument, 0, 'f'},
                 {0, 0, 0, 0}
             };
         int option_index = 0;
-        c = getopt_long_only(argc, argv, "h:l:v:o:a:d:t:s:r:e:f:", long_options, &option_index);
+        c = getopt_long_only(argc, argv, "h:l:v:i:o:a:d:t:s:r:q:e:f:", long_options, &option_index);
         if (c == -1)
             break;
         
         switch (c)
         {
             case 'h':
-		if (strcmp(optarg,"none")) h1_frame_file = optarg;
+                h1_frame_file = optarg;
                 break;
             case 'l':
-		if (strcmp(optarg,"none")) l1_frame_file = optarg;
+                l1_frame_file = optarg;
                 break;
             case 'v':
-                if (strcmp(optarg,"none")) v1_frame_file = optarg;
+                v1_frame_file = optarg;
                 break;
+            case 'i':
+                h2_frame_file = optarg;
+                break;              
             case 'o':
                 output_file = optarg;
                 break;
@@ -125,13 +131,16 @@ int main(int argc, char** argv)
                 dec_res = atoi(optarg);
                 break;
             case 't':
-                if (strcmp(optarg,"none")) xml_file[0] = (optarg);
+                xml_file[0] = optarg;
                 break;
-	    case 's':
-	        if (strcmp(optarg,"none")) xml_file[1] = (optarg);
-		break;
+            case 's':
+                xml_file[1] = optarg;
+                break;
             case 'r':
-	        if (strcmp(optarg,"none")) xml_file[2] = (optarg);
+                xml_file[2] = optarg;
+                break;
+            case 'q':
+                xml_file[3] = optarg;
                 break;
             case 'e':
                 event_id = optarg;
@@ -155,8 +164,18 @@ int main(int argc, char** argv)
         exit(1);
     }
     
+    /* support "none" arguments */
+    if (h1_frame_file && !strcmp("none", h1_frame_file)) { h1_frame_file = 0; }
+    if (l1_frame_file && !strcmp("none", l1_frame_file)) { l1_frame_file = 0; }
+    if (v1_frame_file && !strcmp("none", v1_frame_file)) { v1_frame_file = 0; }
+    if (h2_frame_file && !strcmp("none", h2_frame_file)) { h2_frame_file = 0; }
+    if (xml_file[0] && !strcmp("none", xml_file[0])) { xml_file[0] = 0; }
+    if (xml_file[1] && !strcmp("none", xml_file[1])) { xml_file[1] = 0; }   
+    if (xml_file[2] && !strcmp("none", xml_file[2])) { xml_file[2] = 0; } 
+    if (xml_file[3] && !strcmp("none", xml_file[3])) { xml_file[3] = 0; }   
+    
     /* check sanity */
-    if (!(h1_frame_file || l1_frame_file || v1_frame_file))
+    if (!(h1_frame_file || l1_frame_file || v1_frame_file || h2_frame_file))
     {
         fprintf(stderr, "error: Supply at least one of --h1-frame-file, --l1-frame-file or --v1-frame-file\n");
         exit(1);
@@ -176,6 +195,11 @@ int main(int argc, char** argv)
         fprintf(stderr, "error: Supply --v1-xml-file to match --v1-frame-file\n");
         exit(1);
     }
+    if (h2_frame_file && !xml_file[3])
+    {
+        fprintf(stderr, "error: Supply --h2-xml-file to match --h2-frame-file\n");
+        exit(1);
+    }
     if (!h1_frame_file && xml_file[0])
     {
         fprintf(stderr, "error: Supply --h1-frame-file to match --h1-xml-file\n");
@@ -191,11 +215,31 @@ int main(int argc, char** argv)
         fprintf(stderr, "error: Supply --v1-frame-file to match --v1-xml-file\n");
         exit(1);
     }
+    if (!h2_frame_file && xml_file[3])
+    {
+        fprintf(stderr, "error: Supply --h2-frame-file to match --h2-xml-file\n");
+        exit(1);
+    }
     
     if (frequency <= 0)
     {
         fprintf(stderr, "error: Supply positive integer Hertz --sample-rate\n");
         exit(1);
+    }
+    
+    /* handle h2 */
+    if (h2_frame_file)
+    {
+        if (h1_frame_file)
+        {
+            fprintf(stderr, "warning: H1 and H2 both supplied; H2 will be ignored\n");
+        }
+        else
+        {
+            /* rebadge H2 as H1 */
+            h1_frame_file = h2_frame_file;
+            xml_file[0] = xml_file[3];
+        }
     }
 
     /* examine one second of data around the injection */
@@ -212,6 +256,10 @@ int main(int argc, char** argv)
     load_data(0, h1_frame_file, "H");
     load_data(1, l1_frame_file, "L");
     load_data(2, v1_frame_file, "V");
+        
+    /*
+     * Analyze the data and save the skymap
+     */
 
     analyze();
     
@@ -231,7 +279,9 @@ void load_metadata(char* file, int detector)
         }
         w[detector] = sqrt(a->sigmasq);
         greenwich = fmod(XLALGreenwichMeanSiderealTime(&(a->end_time)), LAL_TWOPI);
+        /*
         fprintf(stderr, "GPS %d -> GMS %e -> RAD %e \n", a->end_time.gpsSeconds, XLALGreenwichMeanSiderealTime(&(a->end_time)), greenwich);
+         */
     }
 }
 
@@ -281,14 +331,6 @@ void load_data(int detector, const char* file, const char* initial)
     }
 }
 
-void dump_data_to_file(FILE* h)
-{
-    int i;
-    for (i = 0; i != samples; ++i)
-    {
-        fprintf(h, "%e %e %e %e %e %e %e\n", ((double) i)/frequency, x[0][i], x[3][i], x[1][i], x[4][i], x[2][i], x[5][i]);
-    }
-}
 #define NSIGMA 11
 
 void analyze(void)
@@ -440,107 +482,4 @@ void analyze(void)
     }
 
 }
-
-#ifdef SKYMAP_PNG
-        {
-            FILE* fp;
-            png_structp png_ptr;
-            png_infop info_ptr;
-            
-            unsigned char* row_ptr;
-            int i;
-            int j;
-            double minimum;
-            double maximum;
-            
-            fp = fopen(output_file, "wb");
-            
-            png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, 0, 0, 0);
-            info_ptr = png_create_info_struct(png_ptr);
-            png_init_io(png_ptr, fp);
-            
-            png_set_IHDR(png_ptr, info_ptr, ra_res, dec_res, 8, 
-                PNG_COLOR_TYPE_GRAY, PNG_INTERLACE_NONE, 
-                PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
-            
-            png_write_info(png_ptr, info_ptr);
-            
-            i = 0;
-            while (isinf(render[i]))
-                ++i;
-            minimum = render[i];
-            maximum = render[i];
-            for (++i; i != dec_res * ra_res; ++i)
-            {
-                if (!isinf(render[i]))
-                {
-                    if (render[i] < minimum)
-                        minimum = render[i];
-                    if (render[i] > maximum)
-                        maximum = render[i];
-                }
-            }
-            
-            printf("[%e, %e]\n", minimum, maximum);
-            
-            row_ptr = malloc(ra_res);
-            
-            for (i = 0; i != dec_res; ++i)
-            {
-                for (j = 0; j != ra_res; ++j)
-                {
-                    row_ptr[j] = (int) (255.0 * (render[i + j * dec_res] - minimum) / (maximum - minimum));
-                    /*printf("%d\n",row_ptr[j]);*/
-                }
-                png_write_row(png_ptr, row_ptr);            
-            }
-            
-            free(row_ptr);
-            
-            png_write_end(png_ptr, 0);
-            png_destroy_write_struct(&png_ptr, &info_ptr);
-            
-            fclose(fp);
-        }       
-#endif   
-
-#if 0
-
-void load_test_data(const char* file);
-
-void load_test_data(const char* file)
-{
-    FILE* h;
-    int i;
-
-    fprintf(stderr, "warning: overwriting with test data\n");
-
-    for (i = 0; i != 6; ++i)
-    {
-	if(!(x[i] = (double*) malloc(samples * sizeof(double))))
-        {
-            fprintf(stderr, "malloc test data failed\n");
-        }
-    }
-
-    if(!(h = fopen(file, "rt")))
-    {
-        fprintf(stderr, "open test file failed\n");
-    }
-    
-    for (i = 0; i != samples; ++i)
-    {
-        int j;
-    	fscanf(h, "%le %le %le %le %le %le\n", x[0] + i, x[3] + i, x[1] + i, x[4] + i, x[2] + i, x[5] + i);
-        for(j=0; j!= 6;++j)
-        {
-           /*fprintf(stderr, "%e ", x[j][i]);*/
-        }
-        /*fprintf(stderr,"\n");*/
-    }
-    fclose(h);
-
-    /*fprintf(stderr, "warning: overwrote with test data\n");*/
-}
-#endif
 
