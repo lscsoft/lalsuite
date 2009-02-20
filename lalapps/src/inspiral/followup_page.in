@@ -9,6 +9,8 @@ import ConfigParser
 
 # USEFUL FUNCTION DEFINITIONS
 
+# Function to extract the followup pipeline ini file and get relevant info
+# It assumes the ini file is something like *followup_pipe.ini
 def getIni():
   cp = ConfigParser.ConfigParser()
   path = glob.glob('*followup_pipe.ini')
@@ -20,6 +22,8 @@ def getIni():
   server = cp.get('followup-output','url')
   return dest,server,cp
 
+# A quick utility function to extract a list of ifos from strings
+# This probably exists in other places, oh well
 def ifos_from_str(ifostr):
   out = []
   for i in range(len(ifostr)/2):
@@ -27,25 +31,29 @@ def ifos_from_str(ifostr):
   out.sort()
   return out
 
+# using the standard pylal naming conventions for thumbs and qscan naming 
+# conventions, link the image (ASSUME PATH IS TO THUMBNAIL!)
 def imageLink(path):
   return '[[ImageLink('+path+','+path.replace('_thumbnail','').replace('_thumb','')+',width=400][,alt=none])]]'
 
+# Glob the path for an image (use thumbnails)
 def link_path(wiki, server, pathstr):
   path = glob.glob(pathstr)
   if path: wiki.write('||'+imageLink(server+'/'+path[0]))
-   
+
 def param_from_str(trig, param):
   for c in trig:
     if c.split(':')[0] == param: return c.split(':')[1]
 
-
+# Turn the followup pipeline trigger output into a dictionary
+# There are things true for all IFOs and IFO dependent things
 def dict_from_str(trig):   
   ifos = ifos_from_str(param_from_str(trig,'Type'))
   ifodict = {}
   # ifo dependent things
   for ifo in ifos:
-    paramdict = {'time':None, 'mchirp':None, 'eta':None, 'mass1':None, 'mass2':None}
-    for param in ["time","mchirp","eta","mass1","mass2"]:      
+    paramdict = {'time':None, 'mchirp':None, 'eta':None, 'mass1':None, 'mass2':None, 'snr':None, 'chisq':None, 'chisq_dof':None,'eff_snr':None, 'duration':None}
+    for param in ["time","mchirp","eta","mass1","mass2","snr","chisq","chisq_dof","eff_snr","duration"]:      
       tstr = ifo+param
       for c in trig:
         if c.split(':')[0] == tstr: paramdict[param] = c.split(':')[1]
@@ -58,41 +66,72 @@ def dict_from_str(trig):
   ifodict['All'] = paramdict
   return ifodict
 
-  
+# Put the plot snr/chisq plots in a table
 def plotsnr(pdict, wiki, plot, server):
   ifos = ifos_from_str(pdict['All']['Type'])
   id = pdict['All']['ID']
   for ifo in ifos:
-    link_path(wiki,server, 'plotSNRCHISQJob/Images/*'+ifo+'*_'+id+'_'+plot+'-*_thumb.png')
+    link_path(wiki,server, 'plotSNRCHISQJob/Images/'+ifo+'*_'+id+'_'+plot+'-*_thumb.png')
   wiki.write('||\n')
 
+# Put the coherent inspiral jobs in the wiki
+def plotcoh(pdict, wiki, plot, server):
+  ifos = pdict['All']['Type']
+  id = pdict['All']['ID']
+  link_path(wiki,server, 'plotChiaJob/Images/'+ifos+'*_'+id+'_'+plot+'-*_thumb.png')
+  wiki.write("||")
+
+def link_checklist(pdict, wiki, server):
+  ifos = pdict['All']['Type']
+  id = pdict['All']['ID']
+  path = glob.glob('CHECKLIST/*-makeChecklist_*'+id+'*.html')
+  lnstr = '\n[' + server +'/' + path[0] + ' Detection Checklist]\n'
+  write_columns([lnstr],wiki)
+
+# put some qscan plots in the wiki in a table by ifo
 def qscan(pdict, wiki, plot, server):
   ifos = ifos_from_str(pdict['All']['Type'])
   for ifo in ifos:
     link_path(wiki,server, "QSCAN/foreground-hoft-qscan/"+ifo+"/"+pdict[ifo]['time']+"/"+pdict[ifo]['time']+"*1.00_"+plot+"_thumbnail.png")
   wiki.write('||\n')
 
+# Color map for H1,H2,L1,V1
+def get_colors():
+  colordict = {'H1':'rgb(255,150,150)', 'H2':'rgb(150,150,255)', 'L1':'rgb(150,255,150)', 'V1':'rgb(255,150,255)'}
+  colors = {}
+  for ifo in ['H1','H2','L1','V1']:
+    colors[ifo] = '<style="background-color: '+ colordict[ifo] +';">';
+  return colors, colordict
+
+# turn a list into a table row
+def write_columns(tl, wiki, color='rgb(230,230,230)', style='bold'):
+  for t in tl:
+    wiki.write('||<style="font-weight: ' + style + '; background-color: ' + color + ';">' + t)
+  wiki.write("||\n")
+
+# put the parameters of the triggers into a table
 def param_table(pdict, wiki, server):
   
-  # Sorry this isn't very elegant
-  id = pdict['All']['ID']
   ifos = ifos_from_str(pdict['All']['Type'])
-  nrows = 6+len(ifos)
-  colordict = {'H1':'red', 'H2':'blue', 'L1':'green', 'V1':'purple'}
-  skypath = glob.glob('pylal_skyPlotJob/Images/*plot_inspiral_skymap_*' + id + '*_skylocation-unspecified-gpstime_thumb.png')
+  nrows = 4+2*len(ifos)
+  colors,colordict = get_colors()
+
+  skypath = glob.glob('pylal_skyPlotJob/Images/*plot_inspiral_skymap_*' + pdict['All']['ID'] + '*_skylocation-unspecified-gpstime_thumb.png')
   wiki.write('||<|'+str(nrows)+'>'+imageLink(server+'/'+skypath[0]))
-  wiki.write('|| ||<style="font-weight: bold; background-color: rgb(225,225,225);">RANK||<style="font-weight: bold;background-color: rgb(225,225,225);">COINC TYPE||<style="font-weight: bold;background-color: rgb(225,225,225);">EVENT ID||<style="font-weight: bold;background-color: rgb(225,225,225);">STAT||<style="font-weight: bold;background-color: rgb(225,225,225);">FAR||\n')
-  wiki.write('|| ||' + pdict['All']['Rank']+ '||'+pdict['All']['Type']+'||'+pdict['All']['ID']+'||'+pdict['All']['Stat']+'||'+pdict['All']['FAR']+'||\n')
-  wiki.write('||<-6> ||\n')
-  wiki.write('||<-6> ||\n')
-  wiki.write('||<-6> ||\n')
-  wiki.write('|| ||<style="font-weight: bold;background-color: rgb(225,225,225);">TIME||<style="font-weight: bold;background-color: rgb(225,225,225);">MCHIRP||<style="font-weight: bold;background-color: rgb(225,225,225);">ETA||<style="font-weight: bold;background-color: rgb(225,225,225);">MASS 1||<style="font-weight: bold;background-color: rgb(225,225,225);">MASS 2||\n')
+  write_columns(['RANK','COINC TYPE','EVENT ID','STAT','FAR'],wiki)
+  write_columns([pdict['All']['Rank'],pdict['All']['Type'],pdict['All']['ID'],pdict['All']['Stat'],pdict['All']['FAR']], wiki,'white','normal')
+
+  # IFO DEPENDENT PARAMETERS
+  write_columns(['SNR','CHISQ','CHISQ DOF','EFF SNR','DURATION'],wiki)
   for ifo in ifos:
-    wiki.write('||<style="background-color: '+ colordict[ifo] +';">'+ifo +'||<style="background-color: '+ colordict[ifo] +';">'+pdict[ifo]['time']+ '||<style="background-color: '+ colordict[ifo] +';">'+pdict[ifo]['mchirp']+'||<style="background-color: '+ colordict[ifo] +';">'+pdict[ifo]['eta']+'||<style="background-color: '+ colordict[ifo] +';">'+pdict[ifo]['mass1']+'||<style="background-color: '+ colordict[ifo] +';">'+pdict[ifo]['mass2']+'||\n')
+    write_columns([ pdict[ifo]['snr'],pdict[ifo]['chisq'],pdict[ifo]['chisq_dof'],pdict[ifo]['eff_snr'],pdict[ifo]['duration'] ],wiki, colordict[ifo],'normal')
+  write_columns(['TIME','MCHIRP','ETA','MASS1','MASS2'],wiki)
+  for ifo in ifos:
+    write_columns([pdict[ifo]['time'],pdict[ifo]['mchirp'],pdict[ifo]['eta'],pdict[ifo]['mass1'],pdict[ifo]['mass2']], wiki,colordict[ifo],'normal')
 
-
+# Copy the directories into the html directory
 def setup(dest, server):
-  sections = ['FrCheckJob','IFOstatus_checkJob', 'QSCAN', 'analyseQscanJob', 'h1h2QeventJob', 'plotSNRCHISQJob', 'pylal_skyPlotJob']
+  sections = ['FrCheckJob','IFOstatus_checkJob', 'QSCAN', 'analyseQscanJob', 'h1h2QeventJob', 'plotSNRCHISQJob', 'pylal_skyPlotJob', 'plotChiaJob', 'CHECKLIST']
 
   # Make a destination directory if it doesn't exist
   if not os.path.isdir(dest):
@@ -105,9 +144,11 @@ def setup(dest, server):
     try: shutil.copytree(sec, os.path.join(dest,sec))
     except: print "could not copy, destination probably exists"
 
+# table of contents
 def write_header(wiki):
   wiki.write('\n[[TableOfContents]]\n\n')
 
+# how to run the followup pipeline and run this page
 def how_to(log, wiki):
   fulog = open('followup_pipe.log').readlines()
   wiki.write('\n\n== How to make this page ==\n\n')
@@ -118,14 +159,12 @@ def how_to(log, wiki):
   wiki.write('}}}\n')
   wiki.write('The followup page was made by doing:')
   wiki.write('{{{\nlalapps_followup_page\n}}}\n')
+  wiki.write('This gives a file called wiki.txt that you can cut and paste into your favorite moin moin spot')
 
 
 ###############################################################################
 # MAIN "PROGRAM"
 ###############################################################################
-
-#dest = '/archive/home/channa/public_html/highmass23_24equinox/' 
-#server = 'https://ldas-jobs.ligo.caltech.edu/~channa/highmass23_24equinox/'
 
 dest, server, cp = getIni()
 setup(dest, server)
@@ -134,16 +173,21 @@ wiki = open('wiki.txt','w')
 
 write_header(wiki)
 
+# go event by event and make an entry
 for line in triginfo:
   trig = line.split(',')
   paramdict = dict_from_str(trig)
-  wiki.write("\n\n== Rank: " + paramdict['All']['Rank']+" - Follow up of event " + paramdict['All']['ID']+" ==\n\n")
+  wiki.write("\n== Rank: " + paramdict['All']['Rank']+" - Follow up of event " + paramdict['All']['ID']+" ==\n")
+  link_checklist(paramdict, wiki, server)
   #Skymap
-  wiki.write("\n\n=== Parameters for " + paramdict['All']['ID']+" ===\n\n")
+  wiki.write("\n=== Parameters for " + paramdict['All']['ID']+" ===\n")
   param_table(paramdict, wiki, server)
-  
+  #Coherent code
+  wiki.write("\n=== Coherent code output for " + paramdict['All']['ID']+" ===\n") 
+  plotcoh(paramdict, wiki, "snr-squared", server) 
+  plotcoh(paramdict, wiki, "cohsnrh1h2null", server)
   #Qscans and snr and ...
-  wiki.write("\n\n=== h(t), snr, chisq, etc " + paramdict['All']['ID']+" ===\n\n")
+  wiki.write("\n=== h(t), snr, chisq, etc " + paramdict['All']['ID']+" ===\n")
   qscan(paramdict, wiki, 'timeseries_whitened',server)
   qscan(paramdict, wiki, 'spectrogram_whitened',server)     
   plotsnr(paramdict, wiki, 'snr',server)
@@ -153,6 +197,7 @@ for line in triginfo:
   plotsnr(paramdict, wiki, 'white_template',server)
   plotsnr(paramdict, wiki, 'fft_of_template_and_asd',server)
 
+# tell everyone how we did it
 how_to('followup_pipe.log', wiki)
 
 # we're done

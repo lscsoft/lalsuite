@@ -308,13 +308,18 @@ if not opts.disable_followup and not opts.read_times:
   print "Reading files from cache..."
   numtrigs, found, coincs, search = cache.readTriggerFiles(cp,opts)
   missed = None
-  print "found " + str(len(coincs)) + " triggers..."
+  if coincs: print "found " + str(len(coincs)) + " triggers..."
+  else: print "WARNING: NO COINCS FOUND..."
   if opts.trig_bank: trigbank_test = 1
   else: trigbank_test = 0
   if opts.disable_ifarsorting: ifar = False
   else: ifar = True
   trigtype = cp.get("followup-triggers", "trigger-type").strip()
   followuptrigs = getfollowuptrigs(cp,numtrigs,trigtype,dag.page,coincs,missed,search,trigbank_test,ifar,opts.add_trig_columns)
+  # write out the info on the found triggers
+  trigInfo = open("trigger_info.txt","w")
+  for trig in followuptrigs: trig.write_trigger_info(trigInfo)
+  trigInfo.close()
 
   print "\n.......Found " + str(len(followuptrigs)) + " trigs to follow up" 
 
@@ -663,5 +668,16 @@ if opts.do_remote_ifo:
 dag.writeAll()
 if opts.write_to_iulgroup:
   dag.publishToHydra()
+
+# write out a log file for this script
+log_fh = open(opts.config_file.replace('.ini','.log'), 'w')
+
+log_fh.write("lalapps_followup_pipe")
+for arg in command_line:
+  if arg[0] == '-':
+    log_fh.write( "\n" )
+  log_fh.write( arg + ' ')
+
+
 
 sys.exit(0)
