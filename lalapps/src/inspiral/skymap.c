@@ -454,7 +454,7 @@ void analyze(void)
                 {
                     double dec;
                     dec = LAL_PI_2 - (LAL_PI * (i + 0.5)) / m;
-                    gzprintf(h, "%.10e %.10e %.10e\n", ra, dec, exp(render[i + m * j]));
+                    gzprintf(h, "%.10e %.10e %.10e\n", ra, dec, (render[i + m * j]));
                 }
             }
             gzclose(h);
