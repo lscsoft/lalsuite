@@ -405,7 +405,7 @@ def findSegmentsToAnalyze(config,ifo,dqSegFile,generate_segments=True,\
 
 
 ##############################################################################
-# Function to set up lalapps_inspiral_hipe
+# Function to make sure we don't slide by more than the length of our data
 def slide_sanity(config, playOnly = False):
   """
   check that the requested number of slides makes sense
