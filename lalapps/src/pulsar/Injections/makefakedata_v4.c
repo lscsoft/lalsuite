@@ -90,11 +90,10 @@ RCSID ("$Id$");
 #define GPS2REAL(gps) (gps.gpsSeconds + 1e-9 * gps.gpsNanoSeconds )
 
 /*----------------------------------------------------------------------*/
-
 /** Struct to define parameters of a 'transient window' to be applied to obtain transient signals */
 typedef enum {
   TRANSIENT_NONE = 0,
-  TRANSIENT_HEAVISIDE = 1,
+  TRANSIENT_RECTANGULAR = 1,
   TRANSIENT_EXPONENTIAL,
   TRANSIENT_LAST
 } transientWindowType_t;
@@ -102,7 +101,7 @@ typedef enum {
 
 typedef struct
 {
-  transientWindowType_t type;	/**< window-type: none, heaviside, exponential, .... */
+  transientWindowType_t type;	/**< window-type: none, rectangular, exponential, .... */
   REAL8 t0;			/**< GPS start-time 't0' */
   REAL8 tau;			/**< transient timescale tau in seconds */
 } transientWindow_t;
@@ -268,6 +267,10 @@ INT4 uvar_randSeed;		/**< allow user to specify random-number seed for reproduci
 
 CHAR *uvar_parfile;             /** option .par file path */
 CHAR *uvar_transient_Name;	/**< name of transient window ('heavi', 'exp',...) */
+REAL8 uvar_transient_t0;	/**< GPS start-time of transient window */
+REAL8 uvar_transient_tau;	/**< time-scale of transient window */
+
+CHAR *uvar_transient_Name;	/**< name of transient window ('rect', 'exp',...) */
 REAL8 uvar_transient_t0;	/**< GPS start-time of transient window */
 REAL8 uvar_transient_tau;	/**< time-scale of transient window */
 
@@ -1335,23 +1338,15 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
 
   LALFree ( channelName );
 
-
   /* ----- handle transient-signal window if given ----- */
   if ( !LALUserVarWasSet ( &uvar_transient_Name ) || !strcmp ( uvar_transient_Name, "none") )
     cfg->transientWindow.type = TRANSIENT_NONE;		/* default: no transient signal window */
   else
     {
-      if ( !strcmp ( uvar_transient_Name, "heavi" ) )
+      if ( !strcmp ( uvar_transient_Name, "rect" ) )
 	{
-	  cfg->transientWindow.type = TRANSIENT_HEAVISIDE;		/* heaviside window [t0, t0+tau] */
-	}
-      else if ( !strcmp ( uvar_transient_Name, "exp" ) )
-	{
-	  cfg->transientWindow.type = TRANSIENT_EXPONENTIAL;		/* exponential decay window e^[-(t-t0)/tau for t>t0, 0 otherwise */
-	}
-      else
-	{
-	  XLALPrintError ("Illegal transient window '%s' specified: valid are 'none', 'heavi' or 'exp'\n", uvar_transient_Name);
+	  cfg->transientWindow.type = TRANSIENT_RECTANGULAR;		/* rectangular window [t0, t0+tau] */
+	  XLALPrintError ("Illegal transient window '%s' specified: valid are 'none', 'rect' or 'exp'\n", uvar_transient_Name);
 	  ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
 	}
 
@@ -1522,7 +1517,7 @@ InitUserVars (LALStatus *status)
   LALregSTRINGUserVar(status, parfile,           'p', UVAR_OPTIONAL, "Directory path for optional .par files");            /*registers .par file in mfd*/
 
   /* transient signal window properties (name, start, duration) */
-  LALregSTRINGUserVar(status, transient_Name,	  0, UVAR_DEVELOPER, "Name of transient signal window to use. ('none', 'heavi', 'exp').");
+  LALregSTRINGUserVar(status, transient_Name,	  0, UVAR_DEVELOPER, "Name of transient signal window to use. ('none', 'rect', 'exp').");
   LALregREALUserVar(status,   transient_t0,  	  0, UVAR_DEVELOPER, "GPS start-time 't0' of transient signal window.");
   LALregREALUserVar(status,   transient_tau,      0, UVAR_DEVELOPER, "Timescale 'tau' of transient signal window in seconds.");
 
@@ -1978,7 +1973,6 @@ LALGenerateLineFeature ( LALStatus *status, REAL4TimeSeries **Tseries, const Pul
 
 } /* LALGenerateLineFeature() */
 
-
 int
 XLALApplyTransientWindow ( REAL4TimeSeries *series, transientWindow_t TransientWindowParams )
 {
@@ -2007,7 +2001,7 @@ XLALApplyTransientWindow ( REAL4TimeSeries *series, transientWindow_t TransientW
       return XLAL_SUCCESS;	/* nothing to be done here */
       break;
 
-    case TRANSIENT_HEAVISIDE:	/* standard 'rectangular window */
+    case TRANSIENT_RECTANGULAR:	/* standard 'rectangular window */
       for ( i = 0; i < (UINT4)i0; i ++ ) {
 	series->data->data[i] = 0;
       }
