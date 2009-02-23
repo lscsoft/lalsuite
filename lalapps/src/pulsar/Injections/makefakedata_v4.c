@@ -90,6 +90,24 @@ RCSID ("$Id$");
 #define GPS2REAL(gps) (gps.gpsSeconds + 1e-9 * gps.gpsNanoSeconds )
 
 /*----------------------------------------------------------------------*/
+
+/** Struct to define parameters of a 'transient window' to be applied to obtain transient signals */
+typedef enum {
+  TRANSIENT_NONE = 0,
+  TRANSIENT_HEAVISIDE = 1,
+  TRANSIENT_EXPONENTIAL,
+  TRANSIENT_LAST
+} transientWindowType_t;
+
+
+typedef struct
+{
+  transientWindowType_t type;	/**< window-type: none, heaviside, exponential, .... */
+  REAL8 t0;			/**< GPS start-time 't0' */
+  REAL8 tau;			/**< transient timescale tau in seconds */
+} transientWindow_t;
+
+
 /** configuration-variables derived from user-variables */
 typedef struct
 {
@@ -115,8 +133,10 @@ typedef struct
 
   INT4 randSeed;		/**< random-number seed: either taken from user or /dev/urandom */
 
+  transientWindow_t transientWindow;	/**< properties of transient-signal window */
   CHAR *VCSInfoString;          /**< LAL + LALapps Git version string */
 } ConfigVars_t;
+
 
 /** Default year-span of ephemeris-files to be used */
 #define EPHEM_YEARS  "00-04"
@@ -142,6 +162,9 @@ void LALGenerateLineFeature ( LALStatus *status, REAL4TimeSeries **Tseries, cons
 extern void write_timeSeriesR4 (FILE *fp, const REAL4TimeSeries *series);
 extern void write_timeSeriesR8 (FILE *fp, const REAL8TimeSeries *series);
 BOOLEAN is_directory ( const CHAR *fname );
+
+int XLALApplyTransientWindow ( REAL4TimeSeries *series, transientWindow_t TransientWindowParams );
+
 
 /*----------------------------------------------------------------------*/
 static const ConfigVars_t empty_GV;
@@ -244,6 +267,9 @@ BOOLEAN uvar_version;		/**< output version information */
 INT4 uvar_randSeed;		/**< allow user to specify random-number seed for reproducible noise-realizations */
 
 CHAR *uvar_parfile;             /** option .par file path */
+CHAR *uvar_transient_Name;	/**< name of transient window ('heavi', 'exp',...) */
+REAL8 uvar_transient_t0;	/**< GPS start-time of transient window */
+REAL8 uvar_transient_tau;	/**< time-scale of transient window */
 
 /*----------------------------------------------------------------------*/
 
@@ -375,6 +401,13 @@ main(int argc, char *argv[])
 	{
 	  LAL_CALL ( LALGeneratePulsarSignal(&status, &Tseries, &params), &status );
 	}
+
+
+      if ( XLALApplyTransientWindow ( Tseries, GV.transientWindow ) ) {
+	XLALPrintError ("XLALApplyTransientWindow() failed!\n");
+	exit ( MAKEFAKEDATAC_ESUB );
+      }
+
 
       /* for HARDWARE-INJECTION:
        * before the first chunk we send magic number and chunk-length to stdout
@@ -1302,6 +1335,32 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
 
   LALFree ( channelName );
 
+
+  /* ----- handle transient-signal window if given ----- */
+  if ( !LALUserVarWasSet ( &uvar_transient_Name ) || !strcmp ( uvar_transient_Name, "none") )
+    cfg->transientWindow.type = TRANSIENT_NONE;		/* default: no transient signal window */
+  else
+    {
+      if ( !strcmp ( uvar_transient_Name, "heavi" ) )
+	{
+	  cfg->transientWindow.type = TRANSIENT_HEAVISIDE;		/* heaviside window [t0, t0+tau] */
+	}
+      else if ( !strcmp ( uvar_transient_Name, "exp" ) )
+	{
+	  cfg->transientWindow.type = TRANSIENT_EXPONENTIAL;		/* exponential decay window e^[-(t-t0)/tau for t>t0, 0 otherwise */
+	}
+      else
+	{
+	  XLALPrintError ("Illegal transient window '%s' specified: valid are 'none', 'heavi' or 'exp'\n", uvar_transient_Name);
+	  ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
+	}
+
+      cfg->transientWindow.t0   = uvar_transient_t0;
+      cfg->transientWindow.tau  = uvar_transient_tau;
+
+    } /* if transient window != none */
+
+
   DETATCHSTATUSPTR (status);
   RETURN (status);
 
@@ -1366,6 +1425,9 @@ InitUserVars (LALStatus *status)
   uvar_outSingleSFT = FALSE;
 
   uvar_randSeed = 0;
+#define DEFAULT_TRANSIENT "none"
+  uvar_transient_Name = LALMalloc(strlen(DEFAULT_TRANSIENT)+1);
+  strcpy ( uvar_transient_Name, DEFAULT_TRANSIENT );
 
   /* ---------- register all our user-variable ---------- */
   LALregBOOLUserVar(status,   help,		'h', UVAR_HELP    , "Print this help/usage message");
@@ -1458,6 +1520,11 @@ InitUserVars (LALStatus *status)
   LALregINTUserVar(status,    randSeed,           0, UVAR_DEVELOPER, "Specify random-number seed for reproducible noise (use /dev/urandom otherwise).");
 
   LALregSTRINGUserVar(status, parfile,           'p', UVAR_OPTIONAL, "Directory path for optional .par files");            /*registers .par file in mfd*/
+
+  /* transient signal window properties (name, start, duration) */
+  LALregSTRINGUserVar(status, transient_Name,	  0, UVAR_DEVELOPER, "Name of transient signal window to use. ('none', 'heavi', 'exp').");
+  LALregREALUserVar(status,   transient_t0,  	  0, UVAR_DEVELOPER, "GPS start-time 't0' of transient signal window.");
+  LALregREALUserVar(status,   transient_tau,      0, UVAR_DEVELOPER, "Timescale 'tau' of transient signal window in seconds.");
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
@@ -1910,3 +1977,68 @@ LALGenerateLineFeature ( LALStatus *status, REAL4TimeSeries **Tseries, const Pul
   RETURN ( status );
 
 } /* LALGenerateLineFeature() */
+
+
+int
+XLALApplyTransientWindow ( REAL4TimeSeries *series, transientWindow_t TransientWindowParams )
+{
+  const CHAR *fn = "XLALApplyTransientWindow()";
+  UINT4 i;
+
+  REAL8 ts_t0, ts_dt, ts_T;	/* start-time, stepsize and duration of input timeseries */
+  REAL8 ti;
+  INT4 i0, i1;			/* time-series index corresonding to start-time (and end-time) of transient window */
+
+  if ( !series || !series->data ){
+    XLALPrintError ("%s: Illegal NULL in input timeseries!\n", fn );
+    return XLAL_EINVAL;
+  }
+
+  ts_t0 = GPS2REAL ( series->epoch );
+  ts_dt = series->deltaT;
+  ts_T  = ts_dt * series->data->length;
+
+  i0 = ( TransientWindowParams.t0 - ts_t0 ) / ts_dt;
+  if ( i0 < 0 ) i0 = 0;
+
+  switch ( TransientWindowParams.type )
+    {
+    case TRANSIENT_NONE:
+      return XLAL_SUCCESS;	/* nothing to be done here */
+      break;
+
+    case TRANSIENT_HEAVISIDE:	/* standard 'rectangular window */
+      for ( i = 0; i < (UINT4)i0; i ++ ) {
+	series->data->data[i] = 0;
+      }
+      i1 = (TransientWindowParams.t0 + TransientWindowParams.tau - ts_t0 ) / ts_dt + 1;
+      if ( i1 < 0 ) i1 = 0;
+      if ( (UINT4)i1 >= series->data->length ) i1 = series->data->length - 1;
+
+      for ( i = i1; i < series->data->length; i ++) {
+	series->data->data[i] = 0;
+      }
+      break;
+
+    case TRANSIENT_EXPONENTIAL:
+      for ( i = 0; i < (UINT4)i0; i ++ ) {
+	series->data->data[i] = 0;
+      }
+      ti = 0;
+      for ( i=i0; i < series->data->length; i ++)
+	{
+	  REAL8 fact = exp( - ti / TransientWindowParams.tau );
+	  ti += ts_dt;
+	  series->data->data[i] *= fact;
+	}
+      break;
+
+    default:
+      XLALPrintError("Illegal transient-signal window type specified '%d'\n", TransientWindowParams.type );
+      return XLAL_EINVAL;
+      break;
+    }
+
+  return XLAL_SUCCESS;
+
+} /* XLALApplyTransientWindow() */
