@@ -210,7 +210,7 @@ for line in triginfo:
 
   header(wiki, paramdict, "h(t), snr, chisq, etc for:")
   qscan(paramdict, wiki, ['timeseries_whitened','spectrogram_whitened'],server)
-  plotsnr(paramdict, wiki, ['snr','rsq', 'rsq', 'template', 'white_template','fft_of_template_and_asd'],server)
+  plotsnr(paramdict, wiki, ['snr','rsq', 'chisq', 'template', 'white_template','fft_of_template_and_asd'],server)
 
 # tell everyone how we did it
 how_to('followup_pipe.log', cp, wiki)
