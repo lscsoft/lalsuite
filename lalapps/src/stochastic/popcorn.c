@@ -120,8 +120,8 @@ UINT4 mcstat=2;
 REAL8 mu = 0.5;
 REAL8 ksi = -1.;
 REAL8 sigma = 0.5;
-REAL8 sigma1 = 1.;
-REAL8 sigma2 = 1.;
+REAL8 sigma1_ref = 1.;
+REAL8 sigma2_ref = 1.;
 REAL8 mu0 = 0.1;
 REAL8 ksi0=-1.;
 REAL8 sigma0 = 0.1;
@@ -154,7 +154,7 @@ INT4 main (INT4 argc, CHAR *argv[])
   /* signal */
   double var,varn,sigman,varmean,snr;
   double meangw,vargw,skewgw,kurtgw;
-  double var1,var2,sigmaref;
+  double sigma1,sigma2,var1,var2,sigmaref;
   double ksi_ml,sigma_ml,CP[1000][1000],cp0,pmax;
   double muest, ksiest, sigmaest, varest, varmeanest, sigma1est, sigma2est;
   double muestMean, ksiestMean, sigmaestMean, varmeanestMean, sigma1estMean, sigma2estMean;
@@ -224,7 +224,7 @@ INT4 main (INT4 argc, CHAR *argv[])
   
   /* signal-to-noise ratio rho = varmean*sqrt(N)/(sigma1*sigma2)*/
   var=sigma*sigma;
-  snr=var*sqrt(Npt)/(sigma1*sigma2);
+  snr=var*sqrt(Npt)/(sigma1_ref*sigma2_ref);
   if (mcstat==1){
    snr=ksi*snr;
    varmean=ksi*var;}
@@ -273,7 +273,7 @@ INT4 main (INT4 argc, CHAR *argv[])
   muestMean=0.;ksiestMean=0.;sigmaestMean=0.;varmeanestMean=0.;
   sigma1estMean=0.;sigma2estMean=0.;
   for(j=0;j<nsegment;j++){
-
+   sigma1=sigma1_ref; sigma2=sigma2_ref;
    /* allocate memory for time series */	 
    h=NULL;n1.data=NULL; n2.data=NULL; s1=NULL; s2=NULL;e12=NULL;
   
@@ -306,8 +306,8 @@ INT4 main (INT4 argc, CHAR *argv[])
      fprintf(stdout, "generate gaussian noise with variance sigma1=%f and sigma2=%f...\n",sigma1,sigma2);}
    /* generate gaussian noise */ 
    for(i=0;i<Npt;i++){
-    n1.data->data[i] = gsl_ran_gaussian_ziggurat (rrgn,sigma1);
-    n2.data->data[i] = gsl_ran_gaussian_ziggurat (rrgn,sigma2);   }
+    n1.data->data[i] = gsl_ran_gaussian (rrgn,sigma1);
+    n2.data->data[i] = gsl_ran_gaussian (rrgn,sigma2);   }
    sigmaref=sqrt(sigma1*sigma2);
   }
   else{
@@ -435,7 +435,7 @@ INT4 main (INT4 argc, CHAR *argv[])
 	 Ne++;
      varn = var*(double)n;                                          
      sigman = sqrt(varn);
-	 h->data[i] = gsl_ran_gaussian_ziggurat (rrgn,sigman);
+	 h->data[i] = gsl_ran_gaussian (rrgn,sigman);
 	 //fprintf(stdout, "%e\n",h->data[i]);
     }
 	s1->data[i] = n1.data->data[i]+h->data[i];                                 
@@ -672,8 +672,9 @@ INT4 main (INT4 argc, CHAR *argv[])
 	  CP[m][l]=-(double)Npt*lambda1(x,NULL);
 	  }}
 	for(m=1;m<500;m++)
-	 for(l=1;l<500;l++)
-	  fprintf(pf4,"{%f,%f,%f},",(double)m*0.001,(double)l*0.001,CP[m][l]);
+	 for(l=1;l<500;l++){
+	  if(CP[m][l]>50.)
+	  fprintf(pf4,"{%f,%f,%f},",(double)m*0.001,(double)l*0.001,CP[m][l]);}
 	  
     fclose(pf4);
    }
@@ -858,9 +859,9 @@ double lambda1 (gsl_vector *x,void *params)
 double lambda2 (gsl_vector *x,void *params)
 {
 
-  int i,j,np;
+  int i,j;
   double y;
-  double dsum,psum,pcleft,pcsum;
+  double dsum,psum,cfd;
   double pksi,pmu,psigma,psigma1,psigma2;
   double pv,pv1,pv2,psig12,pv12,pvv1,pvv2,v1opv1,v2opv2;
   double pc[10],a[10],b[10]; 
@@ -870,7 +871,6 @@ double lambda2 (gsl_vector *x,void *params)
   psigma1=gsl_vector_get(x,2);
   psigma2=gsl_vector_get(x,3);
  
-
   if((pksi>0.)&&(pksi<1.)&&(psigma>0.)&&(psigma1>0.)&&(psigma2>0.)){
 
    pv=psigma*psigma;
@@ -884,18 +884,17 @@ double lambda2 (gsl_vector *x,void *params)
    v2opv2=v2/pv2;   
    
    pmu=-log(1.-pksi);
-   pc[0]=gsl_ran_poisson_pdf(0,pmu);
+   pc[0]=1.-pksi;
+   cfd=pksi;
    psum=0.;
-   pcsum=0.;
+
    for(j=1;j<nmax;j++){
-	pc[j]=gsl_ran_poisson_pdf(j,pmu);
-	pcsum=pcsum+pc[j];	
-	a[j]=1./sqrt(pv12+j*(pvv1+pvv2))*pc[j];
-	b[j]=2.*(1./pv1+1./pv2+1./(j*pv));
+    pc[j]=pc[j-1]*pmu/(double)j;
+	cfd=cfd-pc[j];
+	a[j]=1./sqrt(pv12+(double)j*(pvv1+pvv2))*pc[j];
+	b[j]=2.*(1./pv1+1./pv2+1./((double)j*pv));
    }
-   
-   pcleft=pksi-pcsum;
-   a[nmax]=1./sqrt(pv12+nmax*(pvv1+pvv2))*pcleft;
+   a[nmax]=1./sqrt(pv12+(double)nmax*(pvv1+pvv2))*cfd;
    b[nmax]=2.*(1./pv1+1./pv2+1./(nmax*pv));
    
    dsum=0.;
@@ -904,26 +903,12 @@ double lambda2 (gsl_vector *x,void *params)
      e12->data[i]= e12->data[i]*e12->data[i];
 	 psum=0.;
 	 for(j=1;j<=nmax;j++){
-      psum=psum+a[j]*exp(e12->data[i]/b[j]);}
-	 psum=(1.-pksi)+psig12*psum; 
-     dsum=dsum+log(psum);
-   /*
-   for(j=1;j<=nmax;j++){
-    pc[j]=gsl_ran_poisson_pdf(j,pmu);
-    a[j]=1./sqrt(pv12+j*(pvv1+pvv2))*pc[j];
-	b[j]=2.*(1./pv1+1./pv2+1./(j*pv));
+      psum=psum+a[j]*exp(e12->data[i]/b[j]);
+	  }
+	 psum=(1.-pksi)+psig12*psum;
+	 dsum=dsum+log(psum);
    }
-   dsum=0.;
-   for(i=0;i<Npt;i++){
-     e12->data[i]=(s1->data[i]/pv1+s2->data[i]/pv2);
-     e12->data[i]= e12->data[i]*e12->data[i];
-	 psum=0.;
-	 for(j=1;j<=nmax;j++){
-      psum = psum + a[j]*exp(e12->data[i]/b[j]);}
-	 psum=(1.-pksi)+psig12*psum; 
-     dsum=dsum+log(psum);*/
-   }
-   y=-(0.5*(log(v1opv1*v2opv2)-(v1opv1+v2opv2))+1.+(1./Npt)*dsum);
+   y=-(0.5*(log(v1opv1*v2opv2)-(v1opv1+v2opv2))+1.+(1./(double)Npt)*dsum);
   }
   else y=10000.;
   return y; 
@@ -970,8 +955,8 @@ void parseOptions(INT4 argc, CHAR *argv[])
 	  {"mu0", required_argument, 0, 'M'},
       {"sigma", required_argument, 0, 's'},
 	  {"sigma0", required_argument, 0, 'S'},
-	  {"sigma1", required_argument, 0, 'g'},
-	  {"sigma2", required_argument, 0, 'G'},
+	  {"sigma1_ref", required_argument, 0, 'g'},
+	  {"sigma2_ref", required_argument, 0, 'G'},
 	  {"nmax", required_argument, 0, 'p'},
       {"channel1", required_argument, 0, 'c'},
       {"channel2", required_argument, 0, 'C'},
@@ -985,7 +970,7 @@ void parseOptions(INT4 argc, CHAR *argv[])
     int option_index = 0;
 
     c = getopt_long(argc, argv, 
-                  "hn:t:T:l:N:r:R:a:A:k:K:m:M:s:S:g:G:p:c:C:d:D:v",
+                  "hn:t:T:l:N:r:R:a:A:k:K:m:M:s:S:g:G:p:c:C:d:D:v:",
  		   long_options, &option_index);
 
     if (c == -1)
@@ -1081,11 +1066,11 @@ void parseOptions(INT4 argc, CHAR *argv[])
 
 			   
 	  case 'g':
-	           sigma1 = atof(optarg);
+	           sigma1_ref = atof(optarg);
 	           break;
 			   
 	  case 'G':
-	           sigma2 = atof(optarg);
+	           sigma2_ref = atof(optarg);
 	           break;
 			   
 	  case 'p':
