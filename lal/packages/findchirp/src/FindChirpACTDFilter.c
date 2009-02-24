@@ -56,7 +56,7 @@ LALFindChirpACTDFilterSegment (
     )
 /* </lalVerbatim> */
 {
-  UINT4                 j, k, kmax;
+  UINT4                 i, j, k, kmax;
   UINT4                 numPoints;
   UINT4                 tmpltLength;
   UINT4                 deltaEventIndex;
@@ -177,15 +177,15 @@ LALFindChirpACTDFilterSegment (
   qtilde = params->qtildeVecACTD;
   q      = params->qVecACTD;
 
-  for( j = 0; j < NACTDVECS; ++j )
+  for( i = 0; i < NACTDVECS; ++i )
   {
     /* filter */
-	  memset( qtilde[j]->data, 0, numPoints * sizeof( COMPLEX8 ) );
-    memset( q[j]->data, 0, numPoints * sizeof( COMPLEX8 ) );
+	  memset( qtilde[i]->data, 0, numPoints * sizeof( COMPLEX8 ) );
+    memset( q[i]->data, 0, numPoints * sizeof( COMPLEX8 ) );
 
 		/* template */
-    tmpltSignal[j].length = tmpltLength;
-    tmpltSignal[j].data   = input->fcTmplt->ACTDtilde->data + j * tmpltLength;
+    tmpltSignal[i].length = tmpltLength;
+    tmpltSignal[i].data   = input->fcTmplt->ACTDtilde->data + i * tmpltLength;
   }
 
 
@@ -196,9 +196,11 @@ LALFindChirpACTDFilterSegment (
   deltaT = params->deltaT;
 
   deltaF = 1.0 / ( deltaT * (REAL8)(numPoints)  );
-  kmax = input->fcTmplt->tmplt.fFinal / deltaF < numPoints/2 ? 
-  input->fcTmplt->tmplt.fFinal / deltaF : numPoints/2;
-
+  /*kmax = input->fcTmplt->tmplt.fFinal / deltaF < numPoints/2 ? 
+  input->fcTmplt->tmplt.fFinal / deltaF : numPoints/2;*/
+  /* Craig: I suspect the limits of integration are incorrect. I will
+     artificially set it to numPoints/2. */
+  kmax = numPoints / 2;
 
   /*
    *
@@ -259,24 +261,24 @@ LALFindChirpACTDFilterSegment (
 
 
   /* qtilde positive frequency, not DC or nyquist */
-  for ( k = 0; k < kmax; ++k )
+  for ( k = 1; k < kmax; ++k )
   {
     REAL4 r = inputData[k].re;
     REAL4 s = inputData[k].im;
 
-    for( j = 0; j < NACTDVECS; ++j )
+    for( i = 0; i < NACTDVECS; ++i )
     {    
-      REAL4 x = tmpltSignal[j].data[k].re;
-      REAL4 y = 0 - tmpltSignal[j].data[k].im; /* NB: Complex conj. */
-      qtilde[j]->data[k].re = r*x - s*y;
-      qtilde[j]->data[k].im = r*y + s*x;
+      REAL4 x = tmpltSignal[i].data[k].re;
+      REAL4 y = 0 - tmpltSignal[i].data[k].im; /* NB: Complex conj. */
+      qtilde[i]->data[k].re = r*x - s*y;
+      qtilde[i]->data[k].im = r*y + s*x;
     }
   }
 
   /* inverse fft to get q */
-  for( j = 0; j < NACTDVECS; ++j )
+  for( i = 0; i < NACTDVECS; ++i )
   {
-    LALCOMPLEX8VectorFFT( status->statusPtr, q[j], qtilde[j], params->invPlan );
+    LALCOMPLEX8VectorFFT( status->statusPtr, q[i], qtilde[i], params->invPlan );
     CHECKSTATUSPTR( status );
   }
   
@@ -296,8 +298,9 @@ LALFindChirpACTDFilterSegment (
   if (params->cVec )
     memset( params->cVec->data->data, 0, numPoints * sizeof( COMPLEX8 ) ); 
 
+
   /* normalisation */
-  normFac = 4.0 / numPoints;
+  normFac = 4.0 * deltaT / (REAL4)(numPoints);
 	normFacSq = pow( normFac, 2.0 );
 
 	/* normalised snr threhold */
@@ -314,17 +317,17 @@ LALFindChirpACTDFilterSegment (
         sizeof(LIGOTimeGPS) );
     params->rhosqVec->deltaT = input->segment->deltaT;
 
-    for ( k = 0; k < numPoints; ++k )
+    for ( j = 0; j < numPoints; ++j )
     {
       REAL4 rhoSq = 0.0;
       
-      for( j = 0; j < NACTDVECS; ++j )
+      for( i = 0; i < NACTDVECS; ++i )
       {
-        rhoSq += q[j]->data[k].re * q[j]->data[k].re;
-        rhoSq += q[j]->data[k].im * q[j]->data[k].im;
+        rhoSq += q[i]->data[j].re * q[i]->data[j].re;
+        rhoSq += q[i]->data[j].im * q[i]->data[j].im;
 			}
 
-      params->rhosqVec->data->data[k] = rhoSq * normFacSq;
+      params->rhosqVec->data->data[j] = rhoSq * normFacSq ;
     }
   }
 
