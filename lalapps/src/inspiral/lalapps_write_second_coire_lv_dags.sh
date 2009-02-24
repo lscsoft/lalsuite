@@ -1,5 +1,4 @@
 #!/bin/bash
-mb
 
 ################################################################################
 # get needed options from ini file
@@ -699,7 +698,7 @@ if [ 1 ]; then
 fi > second_coire_slide.dag
 
 if [ 1 ]; then
-  echo "universe = standard"
+  echo "universe = local"
   echo "executable = ${coire_path}"
   echo "arguments = --input first_coire_files/${cat}/\$(macroinfile) --output second_coire_files/${cat}/\$(macrooutfile) --data-type all_data --coinc-stat effective_snrsq --cluster-time 10000 --coinc-cut \$(macrocombo) --num-slides 50"
   echo "log = " `mktemp -p ${log_path}`
@@ -711,7 +710,7 @@ if [ 1 ]; then
 fi > second_coire_slide.coire.sub
 
 if [ 1 ]; then
-  echo "universe = standard"
+  echo "universe = local"
   echo "executable = ${coire_path}"
   echo "arguments = --glob second_coire_files/${cat}/\$(macroinfile) --output second_coire_files/${cat}/\$(macrooutfile) --data-type all_data --coinc-stat effective_snrsq --cluster-time 10000 --num-slides 50 --mass-cut mchirp --mass-range-low \$(macrolowmass) --mass-range-high \$(macrohighmass)"
   echo "log = " `mktemp -p ${log_path}`
