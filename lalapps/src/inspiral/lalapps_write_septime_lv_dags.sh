@@ -239,7 +239,7 @@ if [ 1 ]; then
   echo "priority=${condor_priority}"
   echo "queue 1"
 fi > septime_slide.septime.sub
-echo -e "\n...done."i
+echo -e "\n...done."
 
 #setup directory structure
 if [ ! -d septime_files ] ; then
