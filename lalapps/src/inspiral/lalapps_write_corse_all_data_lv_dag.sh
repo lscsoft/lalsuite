@@ -367,7 +367,7 @@ fi > corse_all_data.dag
 
 #write add_septime.sub file
 if [ 1 ] ; then
-  echo "universe = vanilla"
+  echo "universe = local"
   echo "executable = add_septime.py"
   # add --set-zero-lag-time-to 31536000 below to normilze IFARs to 1 year
   echo "arguments = --input-file septime_files/\$(macroinfile) --output-file septime_files/\$(macrooutfile) --num-slides 50"
@@ -382,7 +382,7 @@ fi > corse_all_data.add_septime.sub
  
 #write corse.sub files
 if [ 1 ] ; then
-  echo "universe = standard"
+  echo "universe = local"
   echo "executable = ${corse_path}"
   echo "arguments = --glob-zero \$(macrozerofile) --glob-slide \$(macroslidefile) --output \$(macrooutfile) --data-type \$(macrodatatype) --coinc-stat effective_snrsq --num-slides 50 --time-analyzed-file  \$(macrotimeanalyzedfile) --summary-file \$(macrosummaryfile) --mass-tag \$(macromasstag)"
   echo "log = " `mktemp -p ${log_path}`
@@ -396,7 +396,7 @@ echo " done."
 
 #write injection.corse.sub files
 if [ 1 ] ; then
-  echo "universe = standard"
+  echo "universe = local"
   echo "executable = ${corse_path}"
   echo "arguments = --glob-zero \$(macrozerofile) --glob-slide \$(macroslidefile) --output \$(macrooutfile) --data-type \$(macrodatatype) --coinc-stat effective_snrsq --num-slides 50 --time-analyzed-file  \$(macrotimeanalyzedfile) --summary-file \$(macrosummaryfile) --mass-tag \$(macromasstag) --injection-window 100 --missed-injections \$(macromissedinjectionfile) --injection-file \$(macroinjectionfile)"
   echo "log = " `mktemp -p ${log_path}`
