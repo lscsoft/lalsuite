@@ -460,6 +460,7 @@ INT4 main (INT4 argc, CHAR *argv[])
    */	
   
   /*statistics of the GW signal*/
+  
    if(stat_flag){
     fprintf(stdout,"statistics of the GW signal\n");
     fprintf(stdout,"number of data points containing a GW signal: %d or a ratio of %e\n",Ne, (double)Ne/(double)Npt);
@@ -728,12 +729,12 @@ INT4 main (INT4 argc, CHAR *argv[])
 	gsl_vector_set(x,0,sigmaest);
 	gsl_vector_set(x,1,sigma1est);
 	gsl_vector_set(x,2,sigma2est);
-	cp0=lambda1(x,NULL);
+	cp0=lambda0(x,NULL);
 	printf("likelihood function at estimated parameters: %e\n",-(double)Npt*cp0);
 	gsl_vector_set(x,0,sigma);
 	gsl_vector_set(x,1,sigma1);
 	gsl_vector_set(x,2,sigma2);
-	cp0=lambda1(x,NULL);
+	cp0=lambda0(x,NULL);
 	printf("likelihood function at injected parameters: %e\n",-(double)Npt*cp0);
    }
   gsl_multimin_fminimizer_free (s);
