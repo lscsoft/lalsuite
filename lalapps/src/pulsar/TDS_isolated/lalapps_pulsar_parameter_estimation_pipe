@@ -289,7 +289,7 @@ while i < len(param_files):
               if do_priors:
                 pulsarsCov[count2].set_usepriors()
 
-                if "uniform" in h0pri || "jeffreys" in h0pri:
+                if "uniform" in h0pri or "jeffreys" in h0pri:
                   pulsarsCov[count2].set_h0prior(h0pri)
 
                 if "gaussian" in h0pri:
@@ -349,39 +349,39 @@ while i < len(param_files):
 
               # set priors
               if do_priors:
-                pulsarsCov[count2].set_usepriors()
+                pulsars[count1].set_usepriors()
 
-                if "uniform" in h0pri || "jeffreys" in h0pri:
-                  pulsarsCov[count2].set_h0prior(h0pri)
+                if "uniform" in h0pri or "jeffreys" in h0pri:
+                  pulsars[count1].set_h0prior(h0pri)
 
                 if "gaussian" in h0pri:
-                  pulsarsCov[count2].set_h0prior(h0pri)
-                  pulsarsCov[count2].set_h0mean(h0mean)
-                  pulsarsCov[count2].set_h0sig(h0sig)
+                  pulsars[count1].set_h0prior(h0pri)
+                  pulsars[count1].set_h0mean(h0mean)
+                  pulsars[count1].set_h0sig(h0sig)
 
                 if "uniform" in phipri:
-                  pulsarsCov[count2].set_phiprior(phipri)
+                  pulsars[count1].set_phiprior(phipri)
 
                 if "gaussian" in phipri:
-                  pulsarsCov[count2].set_phiprior(phipri)
-                  pulsarsCov[count2].set_phimean(phimean)
-                  pulsarsCov[count2].set_phisig(phisig)
+                  pulsars[count1].set_phiprior(phipri)
+                  pulsars[count1].set_phimean(phimean)
+                  pulsars[count1].set_phisig(phisig)
 
                 if "uniform" in psipri:
-                  pulsarsCov[count2].set_psiprior(psipri)
+                  pulsars[count1].set_psiprior(psipri)
 
                 if "gaussian" in psipri:
-                  pulsarsCov[count2].set_psiprior(psipri)
-                  pulsarsCov[count2].set_psimean(psimean)
-                  pulsarsCov[count2].set_psisig(psisig)
+                  pulsars[count1].set_psiprior(psipri)
+                  pulsars[count1].set_psimean(psimean)
+                  pulsars[count1].set_psisig(psisig)
 
                 if "uniform" in iotapri:
-                  pulsarsCov[count2].set_iotaprior(iotapri)
+                  pulsars[count1].set_iotaprior(iotapri)
 
                 if "gaussian" in iotapri:
-                  pulsarsCov[count2].set_iotaprior(iotapri)
-                  pulsarsCov[count2].set_iotamean(iotamean)
-                  pulsarsCov[count2].set_iotasig(iotasig)
+                  pulsars[count1].set_iotaprior(iotapri)
+                  pulsars[count1].set_iotamean(iotamean)
+                  pulsars[count1].set_iotasig(iotasig)
 
               dag.add_node(pulsars[count1])
               count1 = count1 + 1
@@ -410,40 +410,40 @@ while i < len(param_files):
         pulsars[j].set_psisteps(psisteps)
 
       # set priors
-       if do_priors:
-         pulsarsCov[count2].set_usepriors()
+      if do_priors:
+        pulsars[j].set_usepriors()
 
-         if "uniform" in h0pri || "jeffreys" in h0pri:
-           pulsarsCov[count2].set_h0prior(h0pri)
+        if "uniform" in h0pri or "jeffreys" in h0pri:
+          pulsars[j].set_h0prior(h0pri)
 
-         if "gaussian" in h0pri:
-           pulsarsCov[count2].set_h0prior(h0pri)
-           pulsarsCov[count2].set_h0mean(h0mean)
-           pulsarsCov[count2].set_h0sig(h0sig)
+        if "gaussian" in h0pri:
+          pulsars[j].set_h0prior(h0pri)
+          pulsars[j].set_h0mean(h0mean)
+          pulsars[j].set_h0sig(h0sig)
 
-         if "uniform" in phipri:
-           pulsarsCov[count2].set_phiprior(phipri)
+        if "uniform" in phipri:
+          pulsars[j].set_phiprior(phipri)
 
-         if "gaussian" in phipri:
-           pulsarsCov[count2].set_phiprior(phipri)
-           pulsarsCov[count2].set_phimean(phimean)
-           pulsarsCov[count2].set_phisig(phisig)
+        if "gaussian" in phipri:
+          pulsars[j].set_phiprior(phipri)
+          pulsars[j].set_phimean(phimean)
+          pulsars[j].set_phisig(phisig)
 
-         if "uniform" in psipri:
-           pulsarsCov[count2].set_psiprior(psipri)
+        if "uniform" in psipri:
+          pulsars[j].set_psiprior(psipri)
 
-         if "gaussian" in psipri:
-           pulsarsCov[count2].set_psiprior(psipri)
-           pulsarsCov[count2].set_psimean(psimean)
-           pulsarsCov[count2].set_psisig(psisig)
+        if "gaussian" in psipri:
+          pulsars[j].set_psiprior(psipri)
+          pulsars[j].set_psimean(psimean)
+          pulsars[j].set_psisig(psisig)
 
-         if "uniform" in iotapri:
-           pulsarsCov[count2].set_iotaprior(iotapri)
+        if "uniform" in iotapri:
+          pulsars[j].set_iotaprior(iotapri)
 
-         if "gaussian" in iotapri:
-           pulsarsCov[count2].set_iotaprior(iotapri)
-           pulsarsCov[count2].set_iotamean(iotamean)
-           pulsarsCov[count2].set_iotasig(iotasig)
+        if "gaussian" in iotapri:
+          pulsars[j].set_iotaprior(iotapri)
+          pulsars[j].set_iotamean(iotamean)
+          pulsars[j].set_iotasig(iotasig)
 
       if do_ul:
         pulsars[j].set_ul(dob_ul)
