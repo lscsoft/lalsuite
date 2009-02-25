@@ -388,6 +388,63 @@ while i < len(param_files):
               break
           m = m + 1
 
+      else:
+        pulsars.append(pulsar_parameter_estimation.parameterNode(parameter_job))
+
+        if do_only:
+          pulsars[count1].set_onlyjoint()
+
+        pulsars[count1].set_mcmc()
+        pulsars[count1].set_iterations(iterations)
+        pulsars[count1].set_burnin(burnin)
+        pulsars[count1].set_temperature(temperature)
+        pulsars[count1].set_outputrate(outputrate)
+
+        pulsars[count1].set_detectors(detectors)
+        pulsars[count1].set_param_file(param_file)
+        pulsars[count1].set_pulsar(pulsar)
+        pulsars[count1].set_input_dir(input_dir)
+        pulsars[count1].set_output_dir(output_dir)
+
+        # set priors
+        if do_priors:
+          pulsars[count1].set_usepriors()
+
+        if "uniform" in h0pri or "jeffreys" in h0pri:
+          pulsars[count1].set_h0prior(h0pri)
+
+        if "gaussian" in h0pri:
+          pulsars[count1].set_h0prior(h0pri)
+          pulsars[count1].set_h0mean(h0mean)
+          pulsars[count1].set_h0sig(h0sig)
+
+        if "uniform" in phipri:
+          pulsars[count1].set_phiprior(phipri)
+
+        if "gaussian" in phipri:
+          pulsars[count1].set_phiprior(phipri)
+          pulsars[count1].set_phimean(phimean)
+          pulsars[count1].set_phisig(phisig)
+
+        if "uniform" in psipri:
+          pulsars[count1].set_psiprior(psipri)
+
+        if "gaussian" in psipri:
+          pulsars[count1].set_psiprior(psipri)
+          pulsars[count1].set_psimean(psimean)
+          pulsars[count1].set_psisig(psisig)
+
+        if "uniform" in iotapri:
+          pulsars[count1].set_iotaprior(iotapri)
+
+        if "gaussian" in iotapri:
+          pulsars[count1].set_iotaprior(iotapri)
+          pulsars[count1].set_iotamean(iotamean)
+          pulsars[count1].set_iotasig(iotasig)
+
+        dag.add_node(pulsars[count1])
+        count1 = count1 + 1
+
     else: # add a regular job
       pulsars.append(pulsar_parameter_estimation.parameterNode(parameter_job))
 
