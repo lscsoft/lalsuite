@@ -200,15 +200,31 @@ if do_mcmc:
   temperature = cp.get('mcmc','temperature') # temperature of burn in  
   outputrate = cp.get('mcmc','output_rate') # output rate of MCMC chain
 
-  h0width = None
-  phiwidth = None
-  psiwidth = None
-  ciwidth = None
-
   h0width = cp.get('mcmc','h0_width') # width of h0 proposal
   phiwidth = cp.get('mcmc','phi_width') # width of phi0 proposal
   psiwidth = cp.get('mcmc','psi_width') # width of psi proposal
   ciwidth = cp.get('mcmc','ci_width') # width of cos(iota) proposal
+
+  # test if variables defined
+  try:
+    h0width
+  except NameError:
+    h0width = None
+
+  try:
+    phiwidth
+  except NameError:
+    phiwidth = None
+
+  try:
+    psiwidth
+  except NameError:
+    psiwidth = None
+
+  try:
+    ciwidth
+  except NameError:
+    ciwidth = None
 
   if do_cov:
     covdir = cp.get('mcmc','cov_dir') # directory containing cov matrices  
@@ -331,17 +347,17 @@ while i < len(param_files):
                   pulsarsCov[count2].set_iotamean(iotamean)
                   pulsarsCov[count2].set_iotasig(iotasig)
 
-              if h0width != None:
-                pulsarCov[count2].set_h0width(h0width)
+              if h0width:
+                pulsarsCov[count2].set_h0width(h0width)
 
-              if phiwidth != None:
-                pulsarCov[count2].set_phiwidth(phiwidth)
+              if phiwidth:
+                pulsarsCov[count2].set_phiwidth(phiwidth)
 
-              if psiwidth != None:
-                pulsarCov[count2].set_psiwidth(psiwidth)
+              if psiwidth:
+                pulsarsCov[count2].set_psiwidth(psiwidth)
 
-              if ciwidth != None:
-                pulsarCov[count2].set_ciwidth(ciwidth)
+              if ciwidth:
+                pulsarsCov[count2].set_ciwidth(ciwidth)
 
               if do_verbose:
                 pulsarsCov[count2].set_verbose()
@@ -405,16 +421,16 @@ while i < len(param_files):
                   pulsars[count1].set_iotamean(iotamean)
                   pulsars[count1].set_iotasig(iotasig)
 
-              if h0width != None:
+              if h0width:
                 pulsars[count1].set_h0width(h0width)
 
-              if phiwidth != None:
+              if phiwidth:
                 pulsars[count1].set_phiwidth(phiwidth)
 
-              if psiwidth != None:
+              if psiwidth:
                 pulsars[count1].set_psiwidth(psiwidth)
 
-              if ciwidth != None:
+              if ciwidth:
                 pulsars[count1].set_ciwidth(ciwidth)
 
               dag.add_node(pulsars[count1])
@@ -475,6 +491,18 @@ while i < len(param_files):
             pulsars[count1].set_iotaprior(iotapri)
             pulsars[count1].set_iotamean(iotamean)
             pulsars[count1].set_iotasig(iotasig)
+
+        if h0width:
+          pulsars[count1].set_h0width(h0width)
+
+        if phiwidth:
+          pulsars[count1].set_phiwidth(phiwidth)
+
+        if psiwidth:
+          pulsars[count1].set_psiwidth(psiwidth)
+
+        if ciwidth:
+          pulsars[count1].set_ciwidth(ciwidth)
 
         dag.add_node(pulsars[count1])
         count1 = count1 + 1

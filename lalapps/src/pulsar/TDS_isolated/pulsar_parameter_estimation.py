@@ -167,7 +167,7 @@ class parameterNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     self.add_var_opt('psiprior',psiprior)
     self.__psiprior = psiprior
 
-  def set_iotaprior(self,iotasprior):
+  def set_iotaprior(self,iotaprior):
     # set the iota prior
     self.add_var_opt('iotaprior',iotaprior)
     self.__iotaprior = iotaprior
