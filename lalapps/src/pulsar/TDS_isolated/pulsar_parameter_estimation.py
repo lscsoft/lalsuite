@@ -77,6 +77,18 @@ class parameterNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     self.__sunephem = None
     self.__covfile = None
     self.__ul = None
+    self.__h0prior = None
+    self.__phiprior = None
+    self.__psiprior = None
+    self.__iotaprior = None
+    self.__h0mean = None
+    self.__phimean = None
+    self.__psimean = None
+    self.__iotamean = None
+    self.__h0sig = None
+    self.__phisig = None
+    self.__psisig = None
+    self.__iotasig = None
 
   def set_output_dir(self,output_dir):
     # set output directory
@@ -111,6 +123,70 @@ class parameterNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
   def set_mcmc(self):
     # set to perform posterior calculation via an MCMC
     self.add_var_opt('mcmc', '')
+  
+  def set_usepriors(self):
+    # set to use priors
+    self.add_var_opt('use-priors', '')
+    
+  def set_h0prior(self,h0prior):
+    # set the h0 prior
+    self.add_var_opt('h0prior',h0prior)
+    self.__h0prior = h0prior
+  
+  def set_phiprior(self,phiprior):
+    # set the phi0 prior
+    self.add_var_opt('phi0prior',phiprior)
+    self.__phiprior = phiprior
+
+  def set_psiprior(self,psiprior):
+    # set the psi prior
+    self.add_var_opt('psiprior',psiprior)
+    self.__psiprior = psiprior
+
+  def set_iotaprior(self,iotsprior):
+    # set the iota prior
+    self.add_var_opt('iotaprior',iotaprior)
+    self.__iotaprior = iotaprior
+
+  def set_h0mean(self,h0mean):
+    # set mean of h0 prior
+    self.add_var_opt('h0mean',h0mean)
+    self.__h0mean = h0mean
+
+  def set_phimean(self,phimean):
+    # set mean of phi0 prior
+    self.add_var_opt('phi0mean',phimean)
+    self.__phimean = phimean
+
+  def set_psimean(self,psimean):
+    # set mean of psi prior
+    self.add_var_opt('psimean',psimean)
+    self.__psimean = psimean
+
+  def set_iotamean(self,iotamean):
+    # set mean of iota prior
+    self.add_var_opt('iotamean',iotamean)
+    self.__iotamean = iotamean
+
+  def set_h0sig(self,h0sig):
+    # set sigma of h0 prior
+    self.add_var_opt('h0sig',h0sig)
+    self.__h0sig = h0sig
+
+  def set_phisig(self,phisig):
+    # set sigma of phi0 prior
+    self.add_var_opt('phi0sig',phisig)
+    self.__phisig = phisig
+
+  def set_psisig(self,psisig):
+    # set sigma of psi prior
+    self.add_var_opt('psisig',psisig)
+    self.__psisig = psisig
+
+  def set_iotasig(self,iotasig):
+    # set sigma of iota prior
+    self.add_var_opt('iotasig',iotasig)
+    self.__iotasig = iotasig
 
   def set_covfile(self,covfile):
     # set the covariance matrix file
