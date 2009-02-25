@@ -81,7 +81,7 @@ do_ul = None
 do_mcmc = None
 do_cov = None
 do_only = None
-do_prior = None
+do_priors = None
 
 # process options
 for o, a in opts:
@@ -106,7 +106,7 @@ for o, a in opts:
   elif o in ("-o", "--only-joint"):
     do_only = 1; # only perform the joint posterior for MCMC
   elif o in ("-p", "--use-priors"):
-    do_prior = 1;
+    do_priors = 1;
   else:
     print >> sys.stderr, "Unknown option:", o
     usage()
@@ -173,7 +173,7 @@ if do_ul:
   dob_ul = cp.get('input','dob_ul')
 
 # get prior values if given
-if do_prior:
+if do_priors:
   h0pri = cp.get('priors','h0prior')
   h0mean = cp.get('priors','h0mean')
   h0sig = cp.get('priors','h0sig')
@@ -410,37 +410,37 @@ while i < len(param_files):
         if do_priors:
           pulsars[count1].set_usepriors()
 
-        if "uniform" in h0pri or "jeffreys" in h0pri:
-          pulsars[count1].set_h0prior(h0pri)
+          if "uniform" in h0pri or "jeffreys" in h0pri:
+            pulsars[count1].set_h0prior(h0pri)
 
-        if "gaussian" in h0pri:
-          pulsars[count1].set_h0prior(h0pri)
-          pulsars[count1].set_h0mean(h0mean)
-          pulsars[count1].set_h0sig(h0sig)
+          if "gaussian" in h0pri:
+            pulsars[count1].set_h0prior(h0pri)
+            pulsars[count1].set_h0mean(h0mean)
+            pulsars[count1].set_h0sig(h0sig)
 
-        if "uniform" in phipri:
-          pulsars[count1].set_phiprior(phipri)
+          if "uniform" in phipri:
+            pulsars[count1].set_phiprior(phipri)
 
-        if "gaussian" in phipri:
-          pulsars[count1].set_phiprior(phipri)
-          pulsars[count1].set_phimean(phimean)
-          pulsars[count1].set_phisig(phisig)
+          if "gaussian" in phipri:
+            pulsars[count1].set_phiprior(phipri)
+            pulsars[count1].set_phimean(phimean)
+            pulsars[count1].set_phisig(phisig)
 
-        if "uniform" in psipri:
-          pulsars[count1].set_psiprior(psipri)
+          if "uniform" in psipri:
+            pulsars[count1].set_psiprior(psipri)
 
-        if "gaussian" in psipri:
-          pulsars[count1].set_psiprior(psipri)
-          pulsars[count1].set_psimean(psimean)
-          pulsars[count1].set_psisig(psisig)
+          if "gaussian" in psipri:
+            pulsars[count1].set_psiprior(psipri)
+            pulsars[count1].set_psimean(psimean)
+            pulsars[count1].set_psisig(psisig)
 
-        if "uniform" in iotapri:
-          pulsars[count1].set_iotaprior(iotapri)
+          if "uniform" in iotapri:
+            pulsars[count1].set_iotaprior(iotapri)
 
-        if "gaussian" in iotapri:
-          pulsars[count1].set_iotaprior(iotapri)
-          pulsars[count1].set_iotamean(iotamean)
-          pulsars[count1].set_iotasig(iotasig)
+          if "gaussian" in iotapri:
+            pulsars[count1].set_iotaprior(iotapri)
+            pulsars[count1].set_iotamean(iotamean)
+            pulsars[count1].set_iotasig(iotasig)
 
         dag.add_node(pulsars[count1])
         count1 = count1 + 1
