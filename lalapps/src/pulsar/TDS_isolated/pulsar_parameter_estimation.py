@@ -89,6 +89,10 @@ class parameterNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     self.__phisig = None
     self.__psisig = None
     self.__iotasig = None
+    self.__h0width = None
+    self.__phiwidth = None
+    self.__psiwidth = None
+    self.__ciwidth = None
 
   def set_output_dir(self,output_dir):
     # set output directory
@@ -123,16 +127,36 @@ class parameterNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
   def set_mcmc(self):
     # set to perform posterior calculation via an MCMC
     self.add_var_opt('mcmc', '')
-  
+
+  def set_h0width(h0width):
+    # set width of h0 prior
+    self.add_var_opt('h0-width',h0width)
+    self.__h0width = h0width
+
+  def set_phiwidth(phiwidth):
+    # set width of phi0 prior
+    self.add_var_opt('phi0-width',phiwidth)
+    self.__phiwidth = phiwidth
+
+  def set_psiwidth(psiwidth):
+    # set width of psi prior
+    self.add_var_opt('psi-width',psiwidth)
+    self.__psiwidth = psiwidth
+
+  def set_ciwidth(ciwidth):
+    # set width of ci prior
+    self.add_var_opt('ci-width',ciwidth)
+    self.__ciwidth = ciwidth
+
   def set_usepriors(self):
     # set to use priors
     self.add_var_opt('use-priors', '')
-    
+
   def set_h0prior(self,h0prior):
     # set the h0 prior
     self.add_var_opt('h0prior',h0prior)
     self.__h0prior = h0prior
-  
+
   def set_phiprior(self,phiprior):
     # set the phi0 prior
     self.add_var_opt('phi0prior',phiprior)
