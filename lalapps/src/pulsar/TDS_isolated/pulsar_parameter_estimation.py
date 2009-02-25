@@ -128,22 +128,22 @@ class parameterNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     # set to perform posterior calculation via an MCMC
     self.add_var_opt('mcmc', '')
 
-  def set_h0width(h0width):
+  def set_h0width(self,h0width):
     # set width of h0 prior
     self.add_var_opt('h0-width',h0width)
     self.__h0width = h0width
 
-  def set_phiwidth(phiwidth):
+  def set_phiwidth(self,phiwidth):
     # set width of phi0 prior
     self.add_var_opt('phi0-width',phiwidth)
     self.__phiwidth = phiwidth
 
-  def set_psiwidth(psiwidth):
+  def set_psiwidth(self,psiwidth):
     # set width of psi prior
     self.add_var_opt('psi-width',psiwidth)
     self.__psiwidth = psiwidth
 
-  def set_ciwidth(ciwidth):
+  def set_ciwidth(self,ciwidth):
     # set width of ci prior
     self.add_var_opt('ci-width',ciwidth)
     self.__ciwidth = ciwidth
@@ -167,7 +167,7 @@ class parameterNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     self.add_var_opt('psiprior',psiprior)
     self.__psiprior = psiprior
 
-  def set_iotaprior(self,iotsprior):
+  def set_iotaprior(self,iotasprior):
     # set the iota prior
     self.add_var_opt('iotaprior',iotaprior)
     self.__iotaprior = iotaprior
