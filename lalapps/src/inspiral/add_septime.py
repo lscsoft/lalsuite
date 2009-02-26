@@ -32,7 +32,11 @@ def parse_command_line():
 
   parser.add_option("","--num-slides",action="store",type="int",default=0,\
       metavar=" NUM_SLIDES",help="number of time slides performed" )
+  
+  parser.add_option("","--set-zero-lag-time-to",action="store",type="int",default=0,\
+      metavar=" NUM_SLIDES",help="sets zero lag to a unit time (e.g. 1 year) in seconds" )
 
+ 
   (options,args) = parser.parse_args()
 
 
@@ -102,6 +106,10 @@ if opts.output_file:
   savefig(plotName)
 
 ##################################
+
+if opts.set_zero_lag_time_to:
+  analyzedTimes["0"] = opts.set_zero_lag_time_to
+
 #  write output file
 if opts.output_file:
   fp = open(opts.output_file, 'w')
