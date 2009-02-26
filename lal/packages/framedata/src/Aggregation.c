@@ -23,6 +23,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <unistd.h>
+#include <sys/stat.h>
 
 #include <lal/LALStdio.h>
 #include <lal/LALDatatypes.h>
@@ -33,6 +35,7 @@
 #include <lal/FrameCache.h>
 #include <lal/FrameStream.h>
 #include <lal/TimeSeries.h>
+#include <lal/AVFactories.h>
 
 
 /* return frame gps start time for given gps time */
@@ -668,4 +671,62 @@ UINT4 XLALAggregationDQGap(INT4TimeSeries *series,
   }
   else
     return 0;
+}
+
+
+/* return gps time of latest frame written to disk */
+LIGOTimeGPS *XLALAggregationLatestGPS(CHAR *ifo)
+{
+  static const char *func = "XLALAggregationLatestGPS";
+
+  /* declare variables */
+  CHAR *base_dir;
+  CHAR path[FILENAME_MAX];
+  struct stat file_status;
+  FILE *file_ptr;
+  static LIGOTimeGPS gps = {0, 0};
+  int i;
+
+  /* checkout arguments */
+  if (!ifo)
+    XLAL_ERROR_NULL(func, XLAL_EFAULT);
+
+  /* determine directory from environment */
+  base_dir = getenv("ONLINEHOFT");
+  if (base_dir == NULL)
+  {
+    /* ONLINEHOFT environment variable not set */
+    XLAL_ERROR_NULL(func, XLAL_EINVAL);
+  }
+
+  /* determine path to latest file */
+  LALSnprintf(path, FILENAME_MAX, "%s/%s/latest", base_dir, ifo);
+
+  /* check file status */
+  if (stat(path, &file_status) == -1)
+  {
+    /* failed to find file */
+    XLAL_ERROR_NULL(func, XLAL_EIO);
+  }
+
+  /* open latest file */
+  file_ptr = fopen(path, "r");
+  if (file_ptr == NULL)
+  {
+    /* failed to open file */
+    XLAL_ERROR_NULL(func, XLAL_EIO);
+  }
+
+  /* determine gps time of latest frame file written */
+  i = fscanf(file_ptr, "%d", &gps.gpsSeconds);
+  if (i != 1)
+  {
+    /* failed to get latest gps time */
+    XLAL_ERROR_NULL(func, XLAL_EIO);
+  }
+
+  /* close file */
+  fclose(file_ptr);
+
+  return &gps;
 }

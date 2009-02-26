@@ -107,6 +107,9 @@ REAL8TimeSeries *XLALAggregationDQStrainData(CHAR *ifo,
 UINT4 XLALAggregationDQGap(INT4TimeSeries *series,
     INT4 dq_bitmask);
 
+/* return gps time of latest frame written to disk */
+LIGOTimeGPS *XLALAggregationLatestGPS(CHAR *ifo);
+
 #ifdef __cplusplus
 }
 #endif

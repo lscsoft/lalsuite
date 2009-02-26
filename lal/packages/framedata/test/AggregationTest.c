@@ -126,6 +126,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 {
   /* declare variables */
   LIGOTimeGPS *start;
+  LIGOTimeGPS *latest;
   CHAR *type;
   REAL8TimeSeries *series;
   INT4TimeSeries *dq_vector;
@@ -139,6 +140,14 @@ INT4 main(INT4 argc, CHAR *argv[])
 
   /* parse command line options */
   parse_options(argc, argv);
+
+  /* determine gps time of latest frame file written */
+  latest = XLALAggregationLatestGPS(ifo);
+  if (latest == NULL)
+  {
+    static const char *func = "XLALAggregationLatestGPS";
+    XLAL_ERROR(func, XLAL_EIO);
+  }
 
   /* determine frame start time */
   start = XLALAggregationFrameStart(&gps);
