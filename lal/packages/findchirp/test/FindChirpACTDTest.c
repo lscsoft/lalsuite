@@ -70,6 +70,7 @@ static void print_usage()
 {
   fprintf( stderr, " --help                     : Print this message! \n");
   fprintf( stderr, " --overlap                  : Normalises input data \n");
+  fprintf( stderr, " --signal                   : Replaces data with signal\n");
   fprintf( stderr, " --dynrange DYNRANGE        : set the dynamic range \n");
   fprintf( stderr, " --flatpsd                  : Use flat psd \n");
   fprintf( stderr, " --dominant                 : Inject only the domintnat harmonic \n");

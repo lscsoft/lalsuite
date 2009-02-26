@@ -129,7 +129,8 @@ REAL4  XLALFindChirpACTDInnerProduct(
     COMPLEX8Vector *b,
     COMPLEX8       *wtilde,
     REAL4           lower,
-    REAL4           deltaF
+    REAL4           deltaT,
+    UINT4           numPoints
     );
        
 
