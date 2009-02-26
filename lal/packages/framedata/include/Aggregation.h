@@ -70,6 +70,9 @@ CHAR *XLALAggregationFramePathFilename(CHAR *ifo,
 CHAR *XLALAggregationFrameURL(CHAR *ifo,
     LIGOTimeGPS *gps);
 
+/* return gps time of latest frame written to disk */
+LIGOTimeGPS *XLALAggregationLatestGPS(CHAR *ifo);
+
 /* return frame cache given ifo, gps time, and duration */
 FrCache *XLALAggregationFrameCache(CHAR *ifo,
     LIGOTimeGPS *start,
@@ -107,8 +110,11 @@ REAL8TimeSeries *XLALAggregationDQStrainData(CHAR *ifo,
 UINT4 XLALAggregationDQGap(INT4TimeSeries *series,
     INT4 dq_bitmask);
 
-/* return gps time of latest frame written to disk */
-LIGOTimeGPS *XLALAggregationLatestGPS(CHAR *ifo);
+/* low-level routine to read single-precision frame data */
+INT4TimeSeries *XLALAggregationDQVectorWait(CHAR *ifo,
+    LIGOTimeGPS *start,
+    REAL8 duration,
+    INT4 max_wait);
 
 #ifdef __cplusplus
 }
