@@ -19,7 +19,7 @@ import glob
 from glue  import markup
 from glue.markup import oneliner as e
 import ConfigParser
-sys.path.append('/home/spxiwh/lscsoft/executables/HEAD/lalapps//lib/python2.4/site-packages/lalapps')
+sys.path.append('@PYTHONLIBDIR@')
 
 # ***************************************************************************
 def initialize_page(title,style,script):
