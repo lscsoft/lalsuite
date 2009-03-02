@@ -37,86 +37,24 @@
 
 RCSID( "$Id$");
 
-void LALCombineAllSFTs ( LALStatus *status,
-			 SFTVector **outsfts,	   
-			 MultiSFTVector *multiSFTs,  
-			 REAL8 length)
-{
-  SFTVector *ret;
-  SFTtype *tmpsft = NULL;
-  INT4 j,k, counter = 0;
-
-
-  INITSTATUS (status, "CombineAllSFTs", rcsid);
-  ATTATCHSTATUSPTR (status);
-
-
-  /*initialise return sftvector*/
-  ret = (SFTVector *)LALCalloc(1, sizeof(SFTVector));
-  ret->length = length;
-  ret->data = LALCalloc(ret->length, sizeof(COMPLEX8FrequencySeries));
- 
-  for (j=0; j < (INT4)multiSFTs->length; j++) {
- 	for (k=0; k < (INT4)multiSFTs->data[j]->length; k++) {
-
-		TRY (LALCopySFT(status->statusPtr, &(ret->data[counter++]), &(multiSFTs->data[j]->data[k])), status);
-  	}
-  }
-
-  /* now sort the sfts according to epoch using insertion sort... inefficient?*/
-
-  /*initialise tmp SFT */
-
-  for (j=1; j < length; j++) {
-  TRY (LALCreateSFTtype(status->statusPtr, &tmpsft, 0), status);
-
-	tmpsft->data = NULL;
- 	TRY (LALCopySFT(status->statusPtr, tmpsft, &(ret->data[j])), status);
-	k = j-1;
-	while ( (k >= 0) && (XLALGPSDiff(&(ret->data[k].epoch), &(tmpsft->epoch)) > 0) ) {
-
-		/*need to destroy the sfttype before copying otherwise will cause memory leak*/
-		XLALDestroyCOMPLEX8Sequence(ret->data[k+1].data);
-		ret->data[k+1].data = NULL;
-
-		TRY (LALCopySFT(status->statusPtr, &(ret->data[k+1]), &(ret->data[k])), status);
-
-		k = k-1;
-
-		XLALDestroyCOMPLEX8Sequence(ret->data[k+1].data);
-		ret->data[k+1].data = NULL;
-		TRY (LALCopySFT(status->statusPtr, &(ret->data[k+1]), tmpsft), status);
-
-    	} 
-  TRY (LALDestroySFTtype(status->statusPtr, &tmpsft),status);
-
-  }
-
-  (*outsfts) = ret;
-
-
-
-  DETATCHSTATUSPTR (status);
-	
-  /* normal exit */	
-  RETURN (status);
-
-}
 
 void LALCreateSFTPairsIndicesFrom2SFTvectors(LALStatus          *status,
 					     INT4VectorSequence **out,
-					     SFTVector          *in,
+					     SFTListElement     *in,
 					     SFTPairParams      *par,
+					     INT4		listLength,	
 					     INT4 		detChoice)
 {
   
-  UINT4 i, j, numsft, numPairs;
+  INT4 i, j, numPairs;
   INT4 thisPair;
   INT4 sameDet = 0;
   INT4Vector *List1, *List2;
   INT4VectorSequence *ret;
   COMPLEX8FrequencySeries  *thisSFT1, *thisSFT2;	       
-
+  LIGOTimeGPS t1, t2;
+  REAL8 timeDiff;
+  SFTListElement *sfttmp;
 
   INITSTATUS (status, "CreateSFTPairsIndicesFrom2SFTvectors", rcsid);
   ATTATCHSTATUSPTR (status);
@@ -124,46 +62,41 @@ void LALCreateSFTPairsIndicesFrom2SFTvectors(LALStatus          *status,
   ASSERT (in, status, PULSARCROSSCORR_ENULL, PULSARCROSSCORR_MSGENULL);
   ASSERT (par, status, PULSARCROSSCORR_ENULL, PULSARCROSSCORR_MSGENULL);
 
-  /* number of SFTs */
-  numsft = in->length;
+  *out = NULL;
+
   
-  List1 = XLALCreateINT4Vector(numsft*numsft);
-  List2 = XLALCreateINT4Vector(numsft*numsft);
+  List1 = XLALCreateINT4Vector(listLength);
+  List2 = XLALCreateINT4Vector(listLength);
 
   numPairs = 0; /* initialization */
 
-
-
   thisPair = 0;
-
+  sfttmp = in;
   
-  /* go over all sfts */
-  for (i=0; i<numsft; i++) {
+  /*just need to check the first sft against the others */
+  thisSFT1 = &(in->sft);
+  i = 0;
 
-    thisSFT1 = in->data + i;
-    
-    /* go over all sfts again and check if it should be paired with thisSFT1 */
-    /* this can be made more efficient if necessary */
-    for (j=i; j<numsft; j++) {
+  for (j=1; j<listLength; j++) {
 
-      LIGOTimeGPS t1, t2;
-      REAL8 timeDiff;
+      sfttmp = (SFTListElement *)sfttmp->nextSFT;
 
-      thisSFT2 = in->data + j;
-
+      thisSFT2 = &(sfttmp->sft);
       /* calculate time difference */      
       t1 = thisSFT1->epoch;
       t2 = thisSFT2->epoch;
       timeDiff = XLALGPSDiff( &t1, &t2);
       
       sameDet = strcmp(thisSFT1->name, thisSFT2->name);
+/*printf("i j numpairs %d %d %d\n", i, j, numPairs);*/
+
 
       if (sameDet != 0) { sameDet = 1; }
       
       if (detChoice == 2) { sameDet = detChoice; }
 
       /* decide whether to add this pair or not */
-      if ((sameDet == detChoice) && (fabs(timeDiff) <= par->lag) && (i != j) ) {
+      if ((sameDet == detChoice) && (fabs(timeDiff) <= par->lag) ) {
 	numPairs++;
 
 	List1->data[thisPair] = i;
@@ -174,15 +107,11 @@ void LALCreateSFTPairsIndicesFrom2SFTvectors(LALStatus          *status,
     } /* end loop over second sft set */
      
     thisSFT1 = NULL;
-  } /* end loop over first sft set */ 
-
+ /* } end loop over first sft set */ 
 
 
   /* initialise pair list vector*/
-  ret = (INT4VectorSequence *) LALCalloc(1, sizeof(INT4VectorSequence));
-  ret->length = 2;
-  ret->vectorLength = numPairs;
-  ret->data = LALCalloc(ret->length * ret->vectorLength, sizeof(INT4));
+  ret = XLALCreateINT4VectorSequence(2, numPairs);
 
   for (i=0; i < numPairs; i++) {
 
@@ -190,12 +119,12 @@ void LALCreateSFTPairsIndicesFrom2SFTvectors(LALStatus          *status,
   ret->data[i+numPairs] = List2->data[i];
   }
 
+
   (*out) = ret;
 
   XLALDestroyINT4Vector(List1);
   XLALDestroyINT4Vector(List2);
-  thisSFT1 = NULL;
-  thisSFT2 = NULL;  
+  sfttmp = NULL;
 
   DETATCHSTATUSPTR (status);
 	
@@ -212,8 +141,8 @@ void LALCorrelateSingleSFTPair(LALStatus                *status,
 			       COMPLEX8FrequencySeries  *sft2,
 			       REAL8FrequencySeries     *psd1,
 			       REAL8FrequencySeries     *psd2,
-			       REAL8                    *freq1,
-			       REAL8                    *freq2)
+			       REAL8                    freq1,
+			       REAL8                    freq2)
 {  
   INT4 bin1, bin2;
   REAL8 deltaF;
@@ -229,14 +158,13 @@ void LALCorrelateSingleSFTPair(LALStatus                *status,
 
   /* assume both sfts have the same freq. resolution */
   deltaF = sft1->deltaF;
-  bin1 = (INT4)ceil( ((*freq1 - sft1->f0) / (deltaF)) - 0.5);
-  bin2 = (INT4)ceil( ((*freq2 - sft2->f0)/ (deltaF)) - 0.5);
+  bin1 = (INT4)ceil( ((freq1 - sft1->f0) / (deltaF)) - 0.5);
+  bin2 = (INT4)ceil( ((freq2 - sft2->f0)/ (deltaF)) - 0.5);
 
   re1 = sft1->data->data[bin1].re;
   im1 = sft1->data->data[bin1].im;
   re2 = sft2->data->data[bin2].re;
   im2 = sft2->data->data[bin2].im;
-
   out->re = (deltaF * deltaF * sqrt(psd1->data->data[bin1] * psd2->data->data[bin2])) * (re1*re2 + im1*im2);
   out->im = (deltaF * deltaF * sqrt(psd1->data->data[bin1] * psd2->data->data[bin2])) * (re1*im2 - re2*im1);
 
@@ -253,10 +181,9 @@ void LALCorrelateSingleSFTPair(LALStatus                *status,
 /** Calculate the frequency of the SFT at a given epoch */
 void LALGetSignalFrequencyInSFT(LALStatus                *status,
 				REAL8                    *out,
-				COMPLEX8FrequencySeries  *sft1,
+				LIGOTimeGPS		 *epoch,
 				PulsarDopplerParams      *dopp,
-				REAL8Vector              *vel,
-				LIGOTimeGPS	         *firstTimeStamp)
+				REAL8Vector              *vel)
 {  
   UINT4 k;
   REAL8 alpha, delta;
@@ -277,7 +204,7 @@ void LALGetSignalFrequencyInSFT(LALStatus                *status,
   /* fhat = f_0 + f_1(t-t0) + f_2(t-t0)^2/2 + ... */
 
   /* this is the sft reference time  - the pulsar reference time */
-  timeDiff = XLALGPSDiff( &(sft1->epoch), firstTimeStamp);
+  timeDiff = XLALGPSDiff( (epoch), &(dopp->refTime));
 
   fhat = dopp->fkdot[0]; /* initialization */
   factor = 1.0;
@@ -285,7 +212,6 @@ void LALGetSignalFrequencyInSFT(LALStatus                *status,
     factor *= timeDiff / k;  
     fhat += dopp->fkdot[k] * factor;
   }
-
   *out = fhat * (1 + vDotn);  
 
 
@@ -300,13 +226,13 @@ void LALGetSignalFrequencyInSFT(LALStatus                *status,
 /** Get signal phase at a given epoch */
 void LALGetSignalPhaseInSFT(LALStatus               *status,
 			    REAL8                   *out,
-			    COMPLEX8FrequencySeries *sft1,
+			    LIGOTimeGPS 	    *epoch,
 			    PulsarDopplerParams     *dopp,
 			    REAL8Vector             *pos)
 {  
   UINT4 k;
   REAL8 alpha, delta;
-  REAL8 rDotn, phihat, factor, timeDiff;
+  REAL8 rDotn, phihat, factor, timeDiff, phihat2;
   LIGOTimeGPS ssbt;
   
   INITSTATUS (status, "GetSignalPhaseInSFT", rcsid);
@@ -325,30 +251,32 @@ void LALGetSignalPhaseInSFT(LALStatus               *status,
   /* this is an approximation... need to change in the future? */
 
   /* this is the sft reference time  - the pulsar reference time */
-  XLALGPSSetREAL8(&ssbt, XLALGPSGetREAL8(&(sft1->epoch)) + rDotn);
-/*  refTime = XLALGPSAdd(&(dopp->refTime), rDotn);*/
+  XLALGPSSetREAL8(&ssbt, XLALGPSGetREAL8((epoch)) + rDotn);
 
   timeDiff = XLALGPSDiff( &ssbt, &(dopp->refTime) );
+/*  timeDiff = XLALGPSDiff(epoch, &(dopp->refTime));*/
 
 
 /*  fhat = dopp->fkdot[0];  initialization */
   phihat = 0.0;
+  phihat2 = 0.0;
 
   factor = 1.0;
 
  for (k = 1;  k < PULSAR_MAX_SPINS; k++) {
+    phihat2 += dopp->fkdot[k-1]*factor;
     factor *= timeDiff / k;  
 /*    fhat += dopp->fkdot[k] * factor;*/
     phihat += dopp->fkdot[k-1] * factor;
 
   }
 
+    phihat2 += dopp->fkdot[k-1]*factor;
     factor *= timeDiff / k;
     phihat += dopp->fkdot[k-1] * factor;
 
-
-  *out = LAL_TWOPI * ( phihat );
-
+  *out = LAL_TWOPI * ( phihat ) + LAL_TWOPI*(phihat2)*rDotn;
+*out = LAL_TWOPI * ( phihat );
 
   DETATCHSTATUSPTR (status);
 	
@@ -383,8 +311,8 @@ void LALCalculateSigmaAlphaSq(LALStatus            *status,
 /** Calculate pair weights (U_alpha) for an average over Psi and cos(iota) **/
 void LALCalculateAveUalpha(LALStatus *status,
 			COMPLEX16 *out,
-			REAL8     *phiI,
-			REAL8     *phiJ,
+			REAL8     phiI,
+			REAL8     phiJ,
 			CrossCorrBeamFn beamfnsI,
 			CrossCorrBeamFn beamfnsJ,
 			REAL8     *sigmasq)
@@ -394,7 +322,7 @@ void LALCalculateAveUalpha(LALStatus *status,
   INITSTATUS (status, "CalculateAveUalpha", rcsid);
   ATTATCHSTATUSPTR (status);
 
-  deltaPhi = *phiI - *phiJ;
+  deltaPhi = phiI - phiJ;
 
   /*calculate G_IJ. In this case, we have <G_IJ> = 0.1*(-exp^(delta phi)) * (aIaJ + bIbJ)*/
   re = 0.1 * cos(deltaPhi) * beamfnsI.Fplus_or_a*beamfnsJ.Fplus_or_a + beamfnsI.Fcross_or_b*beamfnsJ.Fcross_or_b;
@@ -416,8 +344,8 @@ void LALCalculateAveUalpha(LALStatus *status,
 void LALCalculateUalpha(LALStatus *status,
 			COMPLEX16 *out,
 			CrossCorrAmps amplitudes,
-			REAL8     *phiI,
-			REAL8     *phiJ,
+			REAL8     phiI,
+			REAL8     phiJ,
 			CrossCorrBeamFn beamfnsI,
 			CrossCorrBeamFn beamfnsJ,
 			REAL8     *sigmasq)
@@ -429,7 +357,7 @@ void LALCalculateUalpha(LALStatus *status,
   INITSTATUS (status, "CalculateUalpha", rcsid);
   ATTATCHSTATUSPTR (status);
 
-  deltaPhi = *phiI - *phiJ;
+  deltaPhi = phiI - phiJ;
 
   FplusIFplusJ = beamfnsI.Fplus_or_a * (beamfnsJ.Fplus_or_a);
   FcrossIFcrossJ = beamfnsI.Fcross_or_b * (beamfnsJ.Fcross_or_b);
