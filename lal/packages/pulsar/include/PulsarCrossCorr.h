@@ -152,21 +152,34 @@ NRCSID (PULSARCROSSCORRH, "$Id$");
 	REAL8 Fcross_or_b;
 	} CrossCorrBeamFn;
 
+  typedef struct tagSFTListElement {
+	SFTtype sft;
+	struct SFTListElement *nextSFT;
+ 	} SFTListElement;
 
+  typedef struct tagPSDListElement {
+	REAL8FrequencySeries psd;
+	struct PSDListElement *nextPSD;
+  	} PSDListElement;
 
+  typedef struct tagREAL8ListElement {
+	REAL8 val;
+	struct REAL8ListElement *nextVal;
+  } REAL8ListElement;
+
+  typedef struct {
+	CrossCorrBeamFn beamfn;
+	struct CrossCorrBeamFnListElement *nextBeamfn;
+  } CrossCorrBeamFnListElement;
 /*
  *  Functions Declarations (i.e., prototypes).
  */
 
-void LALCombineAllSFTs ( LALStatus *status,
-			 SFTVector **outsfts,
-			 MultiSFTVector *multiSFTs,
-			 REAL8 length);
-
 void LALCreateSFTPairsIndicesFrom2SFTvectors(LALStatus          *status,
 					     INT4VectorSequence **out,
-					     SFTVector          *in,
+					     SFTListElement     *in,
 					     SFTPairParams      *par,
+					     INT4		listLength,
 					     INT4 		detChoice);
 
 void LALCorrelateSingleSFTPair(LALStatus                *status,
@@ -175,19 +188,18 @@ void LALCorrelateSingleSFTPair(LALStatus                *status,
 			       COMPLEX8FrequencySeries  *sft2,
 			       REAL8FrequencySeries     *psd1,
 			       REAL8FrequencySeries     *psd2,
-			       REAL8                    *freq1,
-			       REAL8                    *freq2);
+			       REAL8                    freq1,
+			       REAL8                    freq2);
 
 void LALGetSignalFrequencyInSFT(LALStatus                *status,
 				REAL8                    *out,
-				COMPLEX8FrequencySeries  *sft1,
+				LIGOTimeGPS		 *epoch,
 				PulsarDopplerParams      *dopp,
-				REAL8Vector              *vel,
-				LIGOTimeGPS	         *firstTimeStamp);
+				REAL8Vector              *vel);
 
 void LALGetSignalPhaseInSFT(LALStatus               *status,
 			    REAL8                   *out,
-			    COMPLEX8FrequencySeries *sft1,
+			    LIGOTimeGPS		    *epoch,
 			    PulsarDopplerParams     *dopp,
 			    REAL8Vector             *pos);
 
@@ -200,8 +212,8 @@ void LALCalculateSigmaAlphaSq(LALStatus            *status,
 
 void LALCalculateAveUalpha(LALStatus *status,
 			COMPLEX16 *out,
-			REAL8     *phiI,
-			REAL8     *phiJ,
+			REAL8     phiI,
+			REAL8     phiJ,
 			CrossCorrBeamFn beamfnsI,
 			CrossCorrBeamFn beamfnsJ,
 			REAL8     *sigmasq);
@@ -209,8 +221,8 @@ void LALCalculateAveUalpha(LALStatus *status,
 void LALCalculateUalpha(LALStatus *status,
 			COMPLEX16 *out,
 			CrossCorrAmps amplitudes,
-			REAL8     *phiI,
-			REAL8     *phiJ,
+			REAL8     phiI,
+			REAL8     phiJ,
 			CrossCorrBeamFn beamfnsI,
 			CrossCorrBeamFn beamfnsJ,
 			REAL8     *sigmasq);
