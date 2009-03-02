@@ -95,6 +95,7 @@
 #define MYMIN(x,y) ( (x) < (y) ? (x) : (y) )
 
 #define SQ(x) ((x)*(x))
+#define SIGN(x) ( (x) < 0 ? -1 : 1 )
 
 /** Signal (amplitude) parameter ranges
  */
@@ -179,17 +180,20 @@ int XLALsynthesizeSignals ( gsl_matrix **A_Mu_i, gsl_matrix **s_mu_i, gsl_matrix
 int XLALsynthesizeNoise ( gsl_matrix **n_mu_i, const gsl_matrix *M_mu_nu, gsl_rng * rng, UINT4 numDraws );
 
 int XLALcomputeLogLikelihood ( gsl_vector **lnL, const gsl_matrix *A_Mu_i, const gsl_matrix *s_mu_i, const gsl_matrix *x_mu_i);
-int XLALcomputeFstatistic ( gsl_vector **Fstat, const gsl_matrix *M_mu_nu, const gsl_matrix *x_mu_i );
+int XLALcomputeFstatistic ( gsl_vector **Fstat, gsl_matrix **A_Mu_MLE_i, const gsl_matrix *M_mu_nu, const gsl_matrix *x_mu_i );
 
 int XLALcomputeBstatisticMC ( gsl_vector **Bstat, const gsl_matrix *M_mu_nu, const gsl_matrix *x_mu_i, gsl_rng * rng, UINT4 numMCpoints );
 int XLALcomputeBstatisticGauss ( gsl_vector **Bstat, const gsl_matrix *M_mu_nu, const gsl_matrix *x_mu_i );
+
+int XLALcomputeBhatStatistic ( gsl_vector **Bhat_i, const gsl_vector *Fstat_i, const gsl_matrix *A_Mu_MLE_i );
+
 
 double BstatIntegrandOuter ( double cosi, void *p );
 double BstatIntegrandInner ( double psi, void *p );
 double BstatIntegrand ( double A[], size_t dim, void *p );
 
 int XLALAmplitudeParams2Vect ( gsl_vector *A_Mu, REAL8 h0, REAL8 cosi, REAL8 psi, REAL8 phi0 );
-
+int XLALAmplitudeVect2Params ( REAL8 *h0, REAL8 *cosi, REAL8 *psi, REAL8 *phi0, const gsl_vector *A_Mu );
 
 /*---------- empty initializers ---------- */
 ConfigVariables empty_ConfigVariables;
@@ -216,12 +220,14 @@ int main(int argc,char *argv[])
   gsl_matrix *s_mu_i = NULL;		/**< list of 'numDraws' (covariant) signal amplitude vectors {s_mu = (s|h_mu) = M_mu_nu A^nu} */
   gsl_matrix *n_mu_i = NULL;		/**< list of 'numDraws' (covariant) noise vectors {n_mu = (n|h_mu)} */
   gsl_matrix *x_mu_i = NULL;		/**< list of 'numDraws' (covariant) data vectors {x_mu = n_mu + s_mu} */
+  gsl_matrix *x_Mu_i = NULL;		/**< list of 'numDraws' (contravariant) data-vectors x^mu = A^mu_MLE = M^{mu nu} x_nu */
 
   /* detection statistics */
-  gsl_vector *rho2 = NULL;		/**< list of 'numDraws' optimal SNRs^2 */
-  gsl_vector *lnL = NULL;		/**< list of 'numDraws' log-likelihood statistics */
-  gsl_vector *Fstat = NULL;		/**< list of 'numDraws' F-statistics */
-  gsl_vector *Bstat = NULL;		/**< list of 'numDraws' B-statistics */
+  gsl_vector *rho2_i = NULL;		/**< list of 'numDraws' optimal SNRs^2 */
+  gsl_vector *lnL_i = NULL;		/**< list of 'numDraws' log-likelihood statistics */
+  gsl_vector *Fstat_i = NULL;		/**< list of 'numDraws' F-statistics */
+  gsl_vector *Bstat_i = NULL;		/**< list of 'numDraws' B-statistics */
+  gsl_vector *Bhat_i  = NULL;		/**< list of 'numDraws' approximat B-statistics 'Bhat' */
 
   int gslstat;
 
@@ -255,7 +261,7 @@ int main(int argc,char *argv[])
   }
 
   /* ---------- generate numDraws random draws of signals (A^mu, s_mu) */
-  if ( XLALsynthesizeSignals( &A_Mu_i, &s_mu_i, &Amp_i, &rho2, GV.M_mu_nu, GV.AmpRange, GV.rng, uvar.numDraws ) ) {
+  if ( XLALsynthesizeSignals( &A_Mu_i, &s_mu_i, &Amp_i, &rho2_i, GV.M_mu_nu, GV.AmpRange, GV.rng, uvar.numDraws ) ) {
     LogPrintf (LOG_CRITICAL, "XLALsynthesizeSignal() failed with error = %d\n", xlalErrno );
     return 1;
   }
@@ -292,29 +298,29 @@ int main(int argc,char *argv[])
   }
 
   /* ---------- compute log likelihood ratio lnL ---------- */
-  if ( XLALcomputeLogLikelihood ( &lnL, A_Mu_i, s_mu_i, x_mu_i) ) {
+  if ( XLALcomputeLogLikelihood ( &lnL_i, A_Mu_i, s_mu_i, x_mu_i) ) {
     LogPrintf (LOG_CRITICAL, "XLALcomputeLogLikelihood() failed with error = %d\n", xlalErrno );
     return 1;
   }
 
   /* ---------- compute F-statistic ---------- */
-  if ( XLALcomputeFstatistic ( &Fstat, GV.M_mu_nu, x_mu_i ) ) {
+  if ( XLALcomputeFstatistic ( &Fstat_i, &x_Mu_i, GV.M_mu_nu, x_mu_i ) ) {
     LogPrintf (LOG_CRITICAL, "XLALcomputeFstatistic() failed with error = %d\n", xlalErrno );
     return 1;
   }
 
-  /* ---------- compute B-statistic ---------- */
+  /* ---------- compute (full) B-statistic ---------- */
   switch ( uvar.integrationMethod )
     {
     case 0:
-      if ( XLALcomputeBstatisticGauss ( &Bstat, GV.M_mu_nu, x_mu_i ) ) {
+      if ( XLALcomputeBstatisticGauss ( &Bstat_i, GV.M_mu_nu, x_mu_i ) ) {
 	LogPrintf (LOG_CRITICAL, "XLALcomputeBstatisticGauss() failed with error = %d\n", xlalErrno );
 	return 1;
       }
       break;
 
     case 1:
-      if ( XLALcomputeBstatisticMC ( &Bstat, GV.M_mu_nu, x_mu_i, GV.rng, uvar.numMCpoints ) ) {
+      if ( XLALcomputeBstatisticMC ( &Bstat_i, GV.M_mu_nu, x_mu_i, GV.rng, uvar.numMCpoints ) ) {
 	LogPrintf (LOG_CRITICAL, "XLALcomputeBstatisticMC() failed with error = %d\n", xlalErrno );
 	return 1;
       }
@@ -325,6 +331,14 @@ int main(int argc,char *argv[])
       return 1;
       break;
     } /* switch integrationMethod */
+
+
+  /* ---------- compute (approximate) B-statistic 'Bhat' ---------- */
+  if ( XLALcomputeBhatStatistic ( &Bhat_i, Fstat_i, x_Mu_i ) ) {
+    LogPrintf (LOG_CRITICAL, "XLALcomputeBhatStatistic() failed with error = %d\n", xlalErrno );
+    return 1;
+  }
+
 
   /* ---------- output F-statistic and B-statistic samples into file, if requested */
   if (uvar.outputStats)
@@ -350,9 +364,9 @@ int main(int argc,char *argv[])
       LALFree ( id1 ); LALFree ( id2 );
 
       /* append 'dataSummary' */
-      fprintf (fpStat, "%%%% h0Nat        cosi       psi        phi0          n1         n2         n3         n4              rho2            lnL            2F           Bstat\n");
-      for ( i=0; i < Bstat->size; i ++ )
-	fprintf ( fpStat, "%10f %10f %10f %10f    %10f %10f %10f %10f    %12f    %12f   %12f   %12f\n",
+      fprintf (fpStat, "%%%% h0Nat        cosi       psi        phi0          n1         n2         n3         n4              rho2            lnL            2F           Bstat        Bhat\n");
+      for ( i=0; i < Bstat_i->size; i ++ )
+	fprintf ( fpStat, "%10f %10f %10f %10f    %10f %10f %10f %10f    %12f    %12f   %12f   %12f   %12f\n",
 		  gsl_matrix_get ( Amp_i, i, 0 ),
 		  gsl_matrix_get ( Amp_i, i, 1 ),
 		  gsl_matrix_get ( Amp_i, i, 2 ),
@@ -363,11 +377,13 @@ int main(int argc,char *argv[])
 		  gsl_matrix_get ( n_mu_i, i, 2 ),
 		  gsl_matrix_get ( n_mu_i, i, 3 ),
 
-		  gsl_vector_get ( rho2, i ),
+		  gsl_vector_get ( rho2_i, i ),
 
-		  gsl_vector_get ( lnL, i ),
-		  gsl_vector_get ( Fstat, i ),
-		  gsl_vector_get ( Bstat, i )
+		  gsl_vector_get ( lnL_i, i ),
+		  gsl_vector_get ( Fstat_i, i ),
+		  gsl_vector_get ( Bstat_i, i ),
+
+		  gsl_vector_get ( Bhat_i, i )
 		  );
 
       fclose (fpStat);
@@ -380,11 +396,14 @@ int main(int argc,char *argv[])
   gsl_matrix_free ( s_mu_i );
   gsl_matrix_free ( Amp_i );
   gsl_matrix_free ( A_Mu_i );
-  gsl_vector_free ( lnL );
-  gsl_vector_free ( Fstat );
+  gsl_vector_free ( rho2_i );
+  gsl_vector_free ( lnL_i );
+  gsl_vector_free ( Fstat_i );
   gsl_matrix_free ( x_mu_i );
+  gsl_matrix_free ( x_Mu_i );
   gsl_matrix_free ( n_mu_i );
-  gsl_vector_free ( Bstat );
+  gsl_vector_free ( Bstat_i );
+  gsl_vector_free ( Bhat_i );
 
   gsl_rng_free (GV.rng);
 
@@ -548,7 +567,7 @@ int
 XLALsynthesizeSignals ( gsl_matrix **A_Mu_i,		/**< [OUT] list of numDraws 4D line-vectors {A^nu} */
 			gsl_matrix **s_mu_i,		/**< [OUT] list of numDraws 4D line-vectors {s_mu = M_mu_nu A^nu} */
 			gsl_matrix **Amp_i,		/**< [OUT] list of numDraws 4D amplitude-parameters {h0, cosi, psi, phi} */
-			gsl_vector **rho2,		/**< [OUT] optimal SNR^2 */
+			gsl_vector **rho2_i,		/**< [OUT] optimal SNR^2 */
 			const gsl_matrix *M_mu_nu,	/**< antenna-pattern matrix M_mu_nu */
 			AmpParamsRange_t AmpRange,	/**< signal amplitude-parameters ranges: lower bound + bands */
 			gsl_rng * rng,			/**< gsl random-number generator */
@@ -599,7 +618,7 @@ XLALsynthesizeSignals ( gsl_matrix **A_Mu_i,		/**< [OUT] list of numDraws 4D lin
     return XLAL_ENOMEM;
   }
 
-  if ( ( (*rho2) = gsl_vector_calloc ( numDraws )) == NULL ) {
+  if ( ( (*rho2_i) = gsl_vector_calloc ( numDraws )) == NULL ) {
     LogPrintf ( LOG_CRITICAL, "%s: gsl_vector_calloc (%d) failed.\n", fn, numDraws);
     return XLAL_ENOMEM;
   }
@@ -666,7 +685,7 @@ XLALsynthesizeSignals ( gsl_matrix **A_Mu_i,		/**< [OUT] list of numDraws 4D lin
 	gsl_vector_scale ( s_mu, rescale_h0);
       }
 
-      gsl_vector_set ( *rho2, row, res_rho2 );
+      gsl_vector_set ( *rho2_i, row, res_rho2 );
 
       gsl_matrix_set ( *Amp_i,  row, 0, h0Nat   );
       gsl_matrix_set ( *Amp_i,  row, 1, cosi );
@@ -790,7 +809,7 @@ XLALsynthesizeNoise ( gsl_matrix **n_mu_i,		/**< [OUT] list of numDraws 4D line-
 /** Compute log-likelihood function for given input data
  */
 int
-XLALcomputeLogLikelihood ( gsl_vector **lnL,		/**< [OUT] log-likelihood vector */
+XLALcomputeLogLikelihood ( gsl_vector **lnL_i,		/**< [OUT] log-likelihood vector */
 			   const gsl_matrix *A_Mu_i,	/**< 4D amplitude-vector (FIXME: numDraws) */
 			   const gsl_matrix *s_mu_i,	/**< 4D signal-component vector s_mu = (s|h_mu) [FIXME] */
 			   const gsl_matrix *x_mu_i	/**< numDraws x 4D data-vectors x_mu */
@@ -803,8 +822,8 @@ XLALcomputeLogLikelihood ( gsl_vector **lnL,		/**< [OUT] log-likelihood vector *
   REAL8 res_lnL;
 
   /* ----- check input arguments ----- */
-  if ( (*lnL) != NULL )  {
-    LogPrintf ( LOG_CRITICAL, "%s: output vector lnL must be set to NULL.\n", fn);
+  if ( (*lnL_i) != NULL )  {
+    LogPrintf ( LOG_CRITICAL, "%s: output vector 'lnL_i' must be set to NULL.\n", fn);
     return XLAL_EINVAL;
   }
   if ( !A_Mu_i || !s_mu_i || !x_mu_i ) {
@@ -831,8 +850,8 @@ XLALcomputeLogLikelihood ( gsl_vector **lnL,		/**< [OUT] log-likelihood vector *
     return XLAL_EINVAL;
   }
 
-  /* ----- allocate return signal amplitude vectors ---------- */
-  if ( ( (*lnL) = gsl_vector_calloc ( numDraws )) == NULL ) {
+  /* ----- allocate return statistics vector ---------- */
+  if ( ( (*lnL_i) = gsl_vector_calloc ( numDraws )) == NULL ) {
     LogPrintf ( LOG_CRITICAL, "%s: gsl_vector_calloc (%d) failed.\n", fn, numDraws);
     return XLAL_ENOMEM;
   }
@@ -863,7 +882,7 @@ XLALcomputeLogLikelihood ( gsl_vector **lnL,		/**< [OUT] log-likelihood vector *
 	return 1;
       }
 
-      gsl_vector_set ( *lnL, row, res_lnL );
+      gsl_vector_set ( *lnL_i, row, res_lnL );
 
 
     } /* for row < numDraws */
@@ -878,7 +897,8 @@ XLALcomputeLogLikelihood ( gsl_vector **lnL,		/**< [OUT] log-likelihood vector *
 /** Compute F-statistic for given input data
  */
 int
-XLALcomputeFstatistic ( gsl_vector **Fstat,		/**< [OUT] F-statistic vector */
+XLALcomputeFstatistic ( gsl_vector **Fstat_i,		/**< [OUT] F-statistic vector */
+			gsl_matrix **A_Mu_MLE_i,	/**< [OUT] vector of {A^mu_MLE} amplitude-vectors */
 			const gsl_matrix *M_mu_nu,	/**< antenna-pattern matrix M_mu_nu */
 			const gsl_matrix *x_mu_i	/**< data-vectors x_mu: numDraws x 4 */
 			)
@@ -886,7 +906,6 @@ XLALcomputeFstatistic ( gsl_vector **Fstat,		/**< [OUT] F-statistic vector */
   const char *fn = "XLALcomputeFstatistic()";
 
   int sig;
-  gsl_vector *x_Mu = gsl_vector_alloc ( 4 );
   gsl_permutation *perm = gsl_permutation_calloc ( 4 );
   gsl_matrix *Mmunu_LU = gsl_matrix_calloc ( 4, 4 );
   int gslstat;
@@ -897,8 +916,8 @@ XLALcomputeFstatistic ( gsl_vector **Fstat,		/**< [OUT] F-statistic vector */
     LogPrintf ( LOG_CRITICAL, "%s: input M_mu_nu and x_mu_i must not be NULL.\n", fn);
     return XLAL_EINVAL;
   }
-  if ( ((*Fstat) != NULL) ) {
-    LogPrintf ( LOG_CRITICAL, "%s: output vector 'Fstat' must be set to NULL.\n", fn);
+  if ( ((*Fstat_i) != NULL) ) {
+    LogPrintf ( LOG_CRITICAL, "%s: output vector 'Fstat_i' must be set to NULL.\n", fn);
     return XLAL_EINVAL;
   }
 
@@ -917,11 +936,16 @@ XLALcomputeFstatistic ( gsl_vector **Fstat,		/**< [OUT] F-statistic vector */
     return XLAL_EINVAL;
   }
 
-  /* ----- allocate return signal amplitude vectors ---------- */
-  if ( ( (*Fstat) = gsl_vector_calloc ( numDraws )) == NULL ) {
+  /* ----- allocate return statistics vector ---------- */
+  if ( ( (*Fstat_i) = gsl_vector_calloc ( numDraws )) == NULL ) {
     LogPrintf ( LOG_CRITICAL, "%s: gsl_vector_calloc (%d) failed.\n", fn, numDraws);
     return XLAL_ENOMEM;
   }
+  if ( ( (*A_Mu_MLE_i) = gsl_matrix_calloc ( numDraws, 4 )) == NULL ) {
+    LogPrintf ( LOG_CRITICAL, "%s: gsl_matrix_calloc (%d)x4 failed.\n", fn, numDraws);
+    return XLAL_ENOMEM;
+  }
+
 
   gsl_matrix_memcpy (Mmunu_LU, M_mu_nu);
 
@@ -945,6 +969,7 @@ XLALcomputeFstatistic ( gsl_vector **Fstat,		/**< [OUT] F-statistic vector */
   for ( row=0; row < numDraws; row ++ )
     {
       gsl_vector_const_view xi = gsl_matrix_const_row ( x_mu_i, row );
+      gsl_vector_view x_Mu = gsl_matrix_row ( (*A_Mu_MLE_i), row );
       double x2;
 
       /* STEP 1: compute x^mu = M^{mu,nu} x_nu */
@@ -954,7 +979,7 @@ XLALcomputeFstatistic ( gsl_vector **Fstat,		/**< [OUT] F-statistic vector */
        * These functions solve the square system A x = b using the LU decomposition of A into (LU, p) given by
        * gsl_linalg_LU_decomp or gsl_linalg_complex_LU_decomp.
        */
-      if ( (gslstat = gsl_linalg_LU_solve (Mmunu_LU, perm, &(xi.vector), x_Mu)) ) {
+      if ( (gslstat = gsl_linalg_LU_solve (Mmunu_LU, perm, &(xi.vector), &(x_Mu.vector))) ) {
 	LogPrintf ( LOG_CRITICAL, "%s: gsl_linalg_LU_solve (x^Mu = M^{mu,nu} x_nu) failed: %s\n", fn, gsl_strerror (gslstat) );
 	return 1;
       }
@@ -965,19 +990,18 @@ XLALcomputeFstatistic ( gsl_vector **Fstat,		/**< [OUT] F-statistic vector */
        *
        * These functions compute the scalar product x^T y for the vectors x and y, returning the result in result.
        */
-      if ( (gslstat = gsl_blas_ddot (&(xi.vector), x_Mu, &x2)) ) {
+      if ( (gslstat = gsl_blas_ddot (&(xi.vector), &(x_Mu.vector), &x2)) ) {
 	LogPrintf ( LOG_CRITICAL, "%s: row = %d: int gsl_blas_ddot (x_mu x^mu) failed: %s\n", fn, row, gsl_strerror (gslstat) );
 	return 1;
       }
 
       /* write result into Fstat (=2F) vector */
-      gsl_vector_set ( *Fstat, row, x2 );
+      gsl_vector_set ( *Fstat_i, row, x2 );
 
     } /* for row < numDraws */
 
   gsl_permutation_free ( perm );
   gsl_matrix_free ( Mmunu_LU );
-  gsl_vector_free ( x_Mu );
 
   return 0;
 
@@ -990,7 +1014,7 @@ XLALcomputeFstatistic ( gsl_vector **Fstat,		/**< [OUT] F-statistic vector */
  * Currently uses the Vegas Monte-Carlo integrator, which samples more densely where the integrand is larger.
  */
 int
-XLALcomputeBstatisticMC ( gsl_vector **Bstat,		/**< [OUT] vector of numDraws B-statistic values */
+XLALcomputeBstatisticMC ( gsl_vector **Bstat_i,		/**< [OUT] vector of numDraws B-statistic values */
 			  const gsl_matrix *M_mu_nu,	/**< antenna-pattern matrix M_mu_nu */
 			  const gsl_matrix *x_mu_i,	/**< data-vectors x_mu: numDraws x 4 */
 			  gsl_rng * rng,		/**< gsl random-number generator */
@@ -1010,8 +1034,8 @@ XLALcomputeBstatisticMC ( gsl_vector **Bstat,		/**< [OUT] vector of numDraws B-s
     LogPrintf ( LOG_CRITICAL, "%s: input M_mu_nu, x_mu_i and rng must not be NULL.\n", fn);
     return XLAL_EINVAL;
   }
-  if ( ((*Bstat) != NULL) ) {
-    LogPrintf ( LOG_CRITICAL, "%s: output vector 'Bstat' must be set to NULL.\n", fn);
+  if ( ((*Bstat_i) != NULL) ) {
+    LogPrintf ( LOG_CRITICAL, "%s: output vector 'Bstat_i' must be set to NULL.\n", fn);
     return XLAL_EINVAL;
   }
 
@@ -1031,7 +1055,7 @@ XLALcomputeBstatisticMC ( gsl_vector **Bstat,		/**< [OUT] vector of numDraws B-s
   }
 
   /* ----- allocate return signal amplitude vectors ---------- */
-  if ( ( (*Bstat) = gsl_vector_calloc ( numDraws )) == NULL ) {
+  if ( ( (*Bstat_i) = gsl_vector_calloc ( numDraws )) == NULL ) {
     LogPrintf ( LOG_CRITICAL, "%s: gsl_vector_calloc (%d) failed.\n", fn, numDraws);
     return XLAL_ENOMEM;
   }
@@ -1079,7 +1103,7 @@ XLALcomputeBstatisticMC ( gsl_vector **Bstat,		/**< [OUT] vector of numDraws B-s
 	LogPrintf ( LOG_CRITICAL, "%s: row = %d: gsl_monte_vegas_integrate() failed: %s\n", fn, row, gsl_strerror (gslstat) );
 	return 1;
       }
-      gsl_vector_set ( *Bstat, row, 2.0 * log(Bb) );
+      gsl_vector_set ( *Bstat_i, row, 2.0 * log(Bb) );
 
     } /* row < numDraws */
 
@@ -1095,7 +1119,7 @@ XLALcomputeBstatisticMC ( gsl_vector **Bstat,		/**< [OUT] vector of numDraws B-s
  *
  */
 int
-XLALcomputeBstatisticGauss ( gsl_vector **Bstat,	/**< [OUT] vector of numDraws B-statistic values */
+XLALcomputeBstatisticGauss ( gsl_vector **Bstat_i,	/**< [OUT] vector of numDraws B-statistic values */
 			     const gsl_matrix *M_mu_nu,	/**< antenna-pattern matrix M_mu_nu */
 			     const gsl_matrix *x_mu_i	/**< data-vectors x_mu: numDraws x 4 */
 			     )
@@ -1118,8 +1142,8 @@ XLALcomputeBstatisticGauss ( gsl_vector **Bstat,	/**< [OUT] vector of numDraws B
     return XLAL_EINVAL;
   }
 
-  if ( ((*Bstat) != NULL) ) {
-    LogPrintf ( LOG_CRITICAL, "%s: output vector 'Bstat' must be set to NULL.\n", fn);
+  if ( ((*Bstat_i) != NULL) ) {
+    LogPrintf ( LOG_CRITICAL, "%s: output vector 'Bstat_i' must be set to NULL.\n", fn);
     return XLAL_EINVAL;
   }
 
@@ -1139,7 +1163,7 @@ XLALcomputeBstatisticGauss ( gsl_vector **Bstat,	/**< [OUT] vector of numDraws B
   }
 
   /* ----- allocate return signal amplitude vectors ---------- */
-  if ( ( (*Bstat) = gsl_vector_calloc ( numDraws )) == NULL ) {
+  if ( ( (*Bstat_i) = gsl_vector_calloc ( numDraws )) == NULL ) {
     LogPrintf ( LOG_CRITICAL, "%s: gsl_vector_calloc (%d) failed.\n", fn, numDraws);
     return XLAL_ENOMEM;
   }
@@ -1181,7 +1205,7 @@ XLALcomputeBstatisticGauss ( gsl_vector **Bstat,	/**< [OUT] vector of numDraws B
 	return 1;
       }
 
-      gsl_vector_set ( *Bstat, row, 2.0 * log(Bb) );
+      gsl_vector_set ( *Bstat_i, row, 2.0 * log(Bb) );
 
     } /* row < numDraws */
 
@@ -1331,6 +1355,72 @@ BstatIntegrand ( double Amp[], size_t dim, void *p )
 } /* BstatIntegrand() */
 
 
+/** Compute an approximation to the full B-statistic, without using any integrations!
+ */
+int
+XLALcomputeBhatStatistic ( gsl_vector **Bhat_i,		/**< [OUT] Bhat-statistic vector */
+			   const gsl_vector *Fstat_i,	/**< F-stat vector (numDraws) */
+			   const gsl_matrix *A_Mu_MLE_i	/**< A^mu_MLE vector (numDraws x 4) */
+			   )
+{
+  const char *fn = "XLALcomputeBhatStatistic()";
+
+  UINT4 row, numDraws;
+
+  /* ----- check input arguments ----- */
+  if ( !Fstat_i || !A_Mu_MLE_i ) {
+    LogPrintf ( LOG_CRITICAL, "%s: input Fstat_i and A_Mu_MLE_i must not be NULL.\n", fn);
+    return XLAL_EINVAL;
+  }
+  if ( ((*Bhat_i) != NULL) ) {
+    LogPrintf ( LOG_CRITICAL, "%s: output vector 'Bhat_i' must be set to NULL.\n", fn);
+    return XLAL_EINVAL;
+  }
+
+  numDraws = Fstat_i->size;
+  if ( ! (numDraws > 0) ) {
+    LogPrintf ( LOG_CRITICAL, "%s: Invalid input, numDraws must be > 0.", fn );
+    return XLAL_EINVAL;
+  }
+
+  if ( (A_Mu_MLE_i->size1 != numDraws) || (A_Mu_MLE_i->size2 != 4) ) {
+    LogPrintf ( LOG_CRITICAL, "%s: input vector-list A_Mu_MLE_i must be numDraws(=%d) x 4.\n", numDraws, fn);
+    return XLAL_EINVAL;
+  }
+
+  /* ----- allocate return statistics vectors ---------- */
+  if ( ( (*Bhat_i) = gsl_vector_calloc ( numDraws )) == NULL ) {
+    LogPrintf ( LOG_CRITICAL, "%s: gsl_vector_calloc (%d) failed.\n", fn, numDraws);
+    return XLAL_ENOMEM;
+  }
+
+  for ( row=0; row < numDraws; row ++ )
+    {
+      REAL8 Bhat, Fstat, h0MLE, cosiMLE, psiMLE, phi0MLE;
+      gsl_vector_const_view A_Mu_MLE = gsl_matrix_const_row ( A_Mu_MLE_i, row );
+      REAL8 tmp;
+
+      if ( XLALAmplitudeVect2Params ( &h0MLE, &cosiMLE, &psiMLE, &phi0MLE, &(A_Mu_MLE.vector) ) ) {
+	LogPrintf (LOG_CRITICAL, "XLALcomputeBstatisticMC() failed with error = %d\n", xlalErrno );
+	return XLAL_EFUNC;
+      }
+
+      Fstat = gsl_vector_get ( Fstat_i, row );
+
+      tmp = fabs ( h0MLE * SQ(cosiMLE) - 1.0 );
+      Bhat = Fstat - 2.0 * 3.0 * log ( tmp );
+
+      gsl_vector_set ( *Bhat_i, row, Bhat );
+
+    } /* for row < numDraws */
+
+
+  return XLAL_SUCCESS;
+
+} /* XLALcomputeBhatStatistic() */
+
+
+
 /** Convert amplitude params {h0, cosi, psi, phi0} into amplitude vector A^mu.
  *
  * NOTE: We rely on Amu[] being allocated 4-dim vector!
@@ -1338,6 +1428,8 @@ BstatIntegrand ( double Amp[], size_t dim, void *p )
 int
 XLALAmplitudeParams2Vect ( gsl_vector *A_Mu, REAL8 h0, REAL8 cosi, REAL8 psi, REAL8 phi0 )
 {
+  const char *fn = "XLALAmplitudeParams2Vect()";
+
   REAL8 aPlus = 0.5 * h0 * ( 1.0 + SQ(cosi) );
   REAL8 aCross = h0 * cosi;
   REAL8 cos2psi = cos ( 2.0 * psi );
@@ -1346,14 +1438,104 @@ XLALAmplitudeParams2Vect ( gsl_vector *A_Mu, REAL8 h0, REAL8 cosi, REAL8 psi, RE
   REAL8 sinphi0 = sin ( phi0 );
 
   if ( !A_Mu || (A_Mu->size != 4) )
-    return -1;
+    {
+      LogPrintf (LOG_CRITICAL, "%s: Invalid output vector A_Mu: must be allocated 4D\n", fn );
+      return XLAL_EINVAL;
+    }
 
   gsl_vector_set ( A_Mu, 0,  aPlus * cos2psi * cosphi0 - aCross * sin2psi * sinphi0 );
   gsl_vector_set ( A_Mu, 1,  aPlus * sin2psi * cosphi0 + aCross * cos2psi * sinphi0 );
   gsl_vector_set ( A_Mu, 2, -aPlus * cos2psi * sinphi0 - aCross * sin2psi * cosphi0 );
   gsl_vector_set ( A_Mu, 3, -aPlus * sin2psi * sinphi0 + aCross * cos2psi * cosphi0 );
 
-  return 0;
+  return XLAL_SUCCESS;
 
 } /* XLALAmplitudeParams2Vect() */
 
+
+/** Compute amplitude params {A^\tilde{mu} = {h0,cosi,psi,phi0} from amplitude-vector A^mu
+    Adapted from algorithm in LALEstimatePulsarAmplitudeParams().
+*/
+int
+XLALAmplitudeVect2Params ( REAL8 *h0, REAL8 *cosi, REAL8 *psi, REAL8 *phi0, const gsl_vector *A_Mu )
+{
+  const char *fn = "XLALAmplitudeVect2Params()";
+
+  REAL8 h0Ret, cosiRet, psiRet, phi0Ret;
+
+  REAL8 A1, A2, A3, A4, Asq, Da, disc;
+  REAL8 Ap2, Ac2, aPlus, aCross;
+  REAL8 beta, b1, b2, b3;
+
+  if ( !A_Mu || (A_Mu->size != 4) )
+    {
+      LogPrintf (LOG_CRITICAL, "%s: Invalid input vector A_Mu: must be allocated 4D\n", fn );
+      return XLAL_EINVAL;
+    }
+
+  A1 = gsl_vector_get ( A_Mu, 0 );
+  A2 = gsl_vector_get ( A_Mu, 1 );
+  A3 = gsl_vector_get ( A_Mu, 2 );
+  A4 = gsl_vector_get ( A_Mu, 3 );
+
+  Asq = SQ(A1) + SQ(A2) + SQ(A3) + SQ(A4);
+  Da = A1 * A4 - A2 * A3;
+
+  disc = sqrt ( SQ(Asq) - 4.0 * SQ(Da) );
+
+  Ap2  = 0.5 * ( Asq + disc );
+  aPlus = sqrt(Ap2);
+
+  Ac2 = 0.5 * ( Asq - disc );
+  aCross = SIGN(Da) * sqrt( Ac2 );
+
+  beta = aCross / aPlus;
+
+  b1 =   A4 - beta * A1;
+  b2 =   A3 + beta * A2;
+  b3 = - A1 + beta * A4 ;
+
+  /* amplitude params in LIGO conventions */
+  psiRet  = 0.5 * atan2 ( b1,  b2 );  /* [-pi/2,pi/2] */
+  phi0Ret =       atan2 ( b2,  b3 );  /* [-pi, pi] */
+
+  /* Fix remaining sign-ambiguity by checking sign of reconstructed A1 */
+  {
+    REAL8 A1check = aPlus * cos(phi0Ret) * cos(2.0*psiRet) - aCross * sin(phi0Ret) * sin(2*psiRet);
+    if ( A1check * A1 < 0 )
+      phi0Ret += LAL_PI;
+  }
+
+  h0Ret = aPlus + sqrt ( disc );
+  cosiRet = aCross / h0Ret;
+
+  /* make unique by fixing the gauge to be psi in [-pi/4, pi/4], phi0 in [0, 2*pi] */
+  while ( psiRet > LAL_PI_4 )
+    {
+      psiRet  -= LAL_PI_2;
+      phi0Ret -= LAL_PI;
+    }
+  while ( psiRet < - LAL_PI_4 )
+    {
+      psiRet  += LAL_PI_2;
+      phi0Ret += LAL_PI;
+    }
+  while ( phi0Ret < 0 )
+    {
+      phi0Ret += LAL_TWOPI;
+    }
+
+  while ( phi0Ret > LAL_TWOPI )
+    {
+      phi0Ret -= LAL_TWOPI;
+    }
+
+  /* Return final answer */
+  (*h0)   = h0Ret;
+  (*cosi) = cosiRet;
+  (*psi)  = psiRet;
+  (*phi0) = phi0Ret;
+
+  return XLAL_SUCCESS;
+
+} /* XLALAmplitudeVect2Params() */
