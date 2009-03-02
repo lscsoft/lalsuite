@@ -41,98 +41,6 @@ RCSID( "$Id$");
 
 extern int lalDebugLevel;
 
-#define DEFAULT_EPHEMDIR "env LAL_DATA_PATH"
-#define EPHEM_YEARS "00-04"
-
-#define F0 100
-#define FBAND 1
-#define LAL_INT4_MAX 2147483647
-
-
-#define BLOCKSRNGMED 51
-#define MAXFILENAMELENGTH 512 /* maximum # of characters  of a filename */
-
-#define DIROUT "./output/"   /* output directory */
-#define BASENAMEOUT "radio"    /* prefix file output */
-
-#define SKYFILE "./skypatchfile"
-#define SKYREGION "allsky"
-
-#define TRUE (1==1)
-#define FALSE (1==0)
-
-
-int main(int argc, char *argv[]){
-  /* LALStatus pointer */
-  static LALStatus status;  
-  
-  /* sft related variables */ 
-
-  SFTVector *inputSFTs = NULL;
-  REAL8 deltaF, timeBase, freq = 0, *freq1 = &freq;
-  REAL8 phase = 0, *phase1 = &phase, psi; 
-  UINT4 numsft, counter = 0; 
-  COMPLEX8FrequencySeries *sft = NULL, *sft1 = NULL, *sft2 = NULL;
-  INT4 index1, index2;
-  REAL8FrequencySeries *psd1, *psd2;
-  COMPLEX16Vector *yalpha = NULL, *ualpha = NULL;
-
-  CrossCorrAmps amplitudes;
-  CrossCorrBeamFn *beamfns;
-  SFTPairParams pairParams;
-
-  /* information about all the ifos */
-  PSDVector *psdVec = NULL;  
-  LALDetector *det;
- 
-  LIGOTimeGPS firstTimeStamp, lastTimeStamp;
-  REAL8 tObs, tOffs;
-  REAL8 patchSizeX, patchSizeY;
- 
-  /* ephemeris */
-  EphemerisData    *edat=NULL;
-  INT4 tmpLeap;
-  LALLeapSecFormatAndAcc  lsfas = {LALLEAPSEC_GPSUTC, LALLEAPSEC_LOOSE};
-  CHAR EphemEarth[MAXFILENAMELENGTH];
-  CHAR EphemSun[MAXFILENAMELENGTH];
-
-  /* skypatch info */
-  REAL8  *skyAlpha=NULL, *skyDelta=NULL,
-    *skySizeAlpha=NULL, *skySizeDelta=NULL; 
-  INT4   nSkyPatches, skyCounter=0; 
-  SkyPatchesInfo skyInfo;
-  INT4  j;
-
-  /* frequency loop info */
-  INT4 nfreqLoops, freqCounter = 0;
-  INT4 nParams = 0;
-  REAL8 f_current = 0.0;
-  REAL8 *stddev, ualphacounter=0.0;
-
-  /* frequency derivative loop info. we can go up to f_doubledot */
-  INT4 nfdotLoops = 1, fdotCounter = 0;
-  INT4 nfddotLoops = 1, fddotCounter = 0;
-  REAL8 fdot_current = 0.0, delta_fdot = 0.0;
-  REAL8 fddot_current = 0.0, delta_fddot = 0.0; 
-
-  static INT4VectorSequence  *sftPairIndexList;
-  REAL8Vector *frequencyShiftList, *signalPhaseList, *sigmasq;
-  PulsarDopplerParams thisPoint;
-  static REAL8Vector thisVel, thisPos, *weights;
- 
-
-  REAL8 doppWings, fMin, fMax;
-
-  AMCoeffs *AMcoef = NULL; 
-
-  /* output file */
-  FILE *fp = NULL;
-  CHAR filename[MAXFILENAMELENGTH];
-
-  /* sft constraint variables */
-  LIGOTimeGPS startTimeGPS, endTimeGPS, refTime;
-  LIGOTimeGPSVector *ts=NULL;
-
   /* user input variables */
   BOOLEAN  uvar_help;
   BOOLEAN  uvar_averagePsi;
@@ -156,16 +64,123 @@ int main(int argc, char *argv[]){
   CHAR     *uvar_fbasenameOut=NULL;
   CHAR     *uvar_skyfile=NULL;
   CHAR     *uvar_skyRegion=NULL;
+
+#define DEFAULT_EPHEMDIR "env LAL_DATA_PATH"
+#define EPHEM_YEARS "00-04"
+
+#define F0 100
+#define FBAND 1
+#define LAL_INT4_MAX 2147483647
+
+
+#define BLOCKSRNGMED 51
+#define MAXFILENAMELENGTH 512 /* maximum # of characters  of a filename */
+
+#define DIROUT "./output/"   /* output directory */
+#define BASENAMEOUT "radio"    /* prefix file output */
+
+#define SKYFILE "./skypatchfile"
+#define SKYREGION "allsky"
+
+#define TRUE (1==1)
+#define FALSE (1==0)
+
+void initUserVars (LALStatus *status);
+
+
+int main(int argc, char *argv[]){
+  /* LALStatus pointer */
+  static LALStatus status;  
+  
+  /* sft related variables */ 
+
+  SFTVector *inputSFTs = NULL;
+  SFTtype *tmpSFT = NULL; 
+  REAL8FrequencySeries *tmpPSD = NULL;
+
+  SFTListElement *sftList, *sftHead = NULL, *sftTail = NULL;
+  PSDListElement *psdList, *psdHead = NULL, *psdTail = NULL;
+  REAL8ListElement *freqList, *freqHead = NULL, *freqTail = NULL;
+  REAL8ListElement *phaseList, *phaseHead = NULL, *phaseTail = NULL;
+  REAL8 deltaF, timeBase;
+  REAL8  psi; 
+  UINT4 counter = 0; 
+  COMPLEX8FrequencySeries *sft1 = NULL, *sft2 = NULL;
+  INT4 index1, index2;
+  REAL8FrequencySeries *psd1, *psd2;
+  COMPLEX16Vector *yalpha = NULL, *ualpha = NULL;
+
+  CrossCorrAmps amplitudes;
+  CrossCorrBeamFn *beamfns1, *beamfns2;
+  CrossCorrBeamFnListElement *beamList, *beamHead = NULL, *beamTail = NULL;
+  
+  SFTPairParams pairParams;
+
+  /* information about all the ifos */
+ 
+  
+ 
+  LIGOTimeGPS firstTimeStamp, lastTimeStamp;
+  REAL8 tObs, tOffs;
+  REAL8 patchSizeX, patchSizeY;
+ 
+  /* ephemeris */
+  EphemerisData    *edat=NULL;
+  INT4 tmpLeap;
+  LALLeapSecFormatAndAcc  lsfas = {LALLEAPSEC_GPSUTC, LALLEAPSEC_LOOSE};
+  CHAR EphemEarth[MAXFILENAMELENGTH];
+  CHAR EphemSun[MAXFILENAMELENGTH];
+
+  /* skypatch info */
+  REAL8  *skyAlpha=NULL, *skyDelta=NULL,
+    *skySizeAlpha=NULL, *skySizeDelta=NULL; 
+  INT4   nSkyPatches, skyCounter=0; 
+  SkyPatchesInfo skyInfo;
+  INT4  j,i;
+
+  /* frequency loop info */
+  INT4 nfreqLoops, freqCounter = 0;
+  INT4 nParams = 0;
+  REAL8 f_current = 0.0;
+  INT4 ualphacounter=0.0;
+
+  /* frequency derivative loop info. we can go up to f_doubledot */
+  INT4 nfdotLoops = 1, fdotCounter = 0;
+  INT4 nfddotLoops = 1, fddotCounter = 0;
+  REAL8 fdot_current = 0.0, delta_fdot = 0.0;
+  REAL8 fddot_current = 0.0, delta_fddot = 0.0; 
+
+  static INT4VectorSequence  *sftPairIndexList=NULL;
+  REAL8Vector  *sigmasq;
+  PulsarDopplerParams thisPoint;
+  static REAL8Vector *rho, *stddev;
+  REAL8 tmpstat, freq1, phase1, freq2, phase2;
+  REAL8 *tmpVal;
+ 
+
+  REAL8 doppWings, fMin, fMax;
+
+
+  /* output file */
+  FILE *fp = NULL;
+  CHAR filename[MAXFILENAMELENGTH];
+
+  /* sft constraint variables */
+  LIGOTimeGPS startTimeGPS, endTimeGPS, refTime;
+
   FILE	   *skytest=NULL;
  
+
  
   SkyPosition skypos; 
 
   /* new SFT I/O data types */
   SFTCatalog *catalog = NULL;
+  SFTCatalog *slidingcat = NULL;
   static SFTConstraints constraints;
+  INT4 sftcounter = 0, slidingcounter = 1, listLength = 0;
 
-  MultiSFTVector *multiSFTs = NULL;   
+/*  MultiSFTVector *multiSFTs = NULL;   */
 
   /* LAL error-handler */
   lal_errhandler = LAL_ERR_EXIT;
@@ -173,192 +188,8 @@ int main(int argc, char *argv[]){
   lalDebugLevel = 0;  /* LALDebugLevel must be called before anything else */
   LAL_CALL( LALGetDebugLevel( &status, argc, argv, 'd'), &status);
    
-  uvar_maxlag = 0;
- 
-  uvar_help = FALSE;
-  uvar_averagePsi = TRUE;
-  uvar_averageIota = TRUE;
-  uvar_blocksRngMed = BLOCKSRNGMED;
-  uvar_searchfddot = FALSE;
-  uvar_detChoice = 2;
-  uvar_f0 = F0;
-  uvar_startTime = 0.0;
-  uvar_endTime = LAL_INT4_MAX;
-  uvar_fdot = 0.0;
-  uvar_fdotBand = 0.0;
-  uvar_fdotResolution = 0.0;
-  uvar_fddot = 0.0;
-  uvar_fddotBand = 0.0;
-  uvar_fddotResolution = 0.0;
-  uvar_fBand = FBAND;
-  uvar_dAlpha = 0.2;
-  uvar_dDelta = 0.2;
-  uvar_psi = 0.0;
-  uvar_refTime = 0.0;
-  uvar_cosi = 0.0;
- 
-  uvar_ephemDir = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
-  strcpy(uvar_ephemDir,DEFAULT_EPHEMDIR);
- 
-  uvar_ephemYear = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
-  strcpy(uvar_ephemYear,EPHEM_YEARS);
- 
-  uvar_dirnameOut = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
-  strcpy(uvar_dirnameOut,DIROUT);
- 
-  uvar_fbasenameOut = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
-  strcpy(uvar_fbasenameOut,BASENAMEOUT);
- 
-  uvar_skyfile = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
-  strcpy(uvar_skyfile,SKYFILE);
- 
-  /* register user input variables */
-  LAL_CALL( LALRegisterBOOLUserVar( &status, "help",
-				    'h', UVAR_HELP,
-				    "Print this message",
-				    &uvar_help),
-	    &status);  
-  LAL_CALL( LALRegisterBOOLUserVar( &status, "averagePsi",
-				    0, UVAR_OPTIONAL,
-				    "Use average over psi",
-				    &uvar_averagePsi),
-	    &status); 
-  LAL_CALL( LALRegisterBOOLUserVar( &status, "averageIota",
-				    0, UVAR_OPTIONAL,
-				    "Use average over iota",
-				    &uvar_averageIota),
-	    &status); 
-  LAL_CALL( LALRegisterREALUserVar( &status, "f0",
-				    'f', UVAR_OPTIONAL,
-				    "Start search frequency",
-				    &uvar_f0),
-	    &status);
-  LAL_CALL( LALRegisterREALUserVar( &status, "fdot",
-				    0, UVAR_OPTIONAL,
-				    "Start search frequency derivative",
-				    &uvar_fdot),
-	    &status);
-  LAL_CALL( LALRegisterREALUserVar( &status, "fBand",
-				    'b', UVAR_OPTIONAL,
-				    "Search frequency band",
-				    &uvar_fBand),
-	    &status);
-  LAL_CALL( LALRegisterREALUserVar( &status, "fdotBand",
-				    0, UVAR_OPTIONAL,
-				    "Search frequency derivative band",
-				    &uvar_fdotBand),
-	    &status);
-  LAL_CALL( LALRegisterREALUserVar( &status, "fdotRes",
-				    'r', UVAR_OPTIONAL,
-				    "Search frequency derivative resolution",
-				    &uvar_fdotResolution),
-	    &status);
-  LAL_CALL( LALRegisterBOOLUserVar( &status, "searchfddot",
-				    0, UVAR_OPTIONAL,
-				    "Search a range of frequency double derivative",
-				    &uvar_searchfddot),
-	    &status);
-  LAL_CALL( LALRegisterREALUserVar( &status, "fddot",
-				    0, UVAR_OPTIONAL,
-				    "Start frequency double derivative",
-				    &uvar_fddot),
-	    &status);
-  LAL_CALL( LALRegisterREALUserVar( &status, "fddotBand",
-				    0, UVAR_OPTIONAL,
-				    "Search frequency double derivative band",
-				    &uvar_fddotBand),
-	    &status);
-  LAL_CALL( LALRegisterREALUserVar( &status, "fddotRes",
-				    0, UVAR_OPTIONAL,
-				    "Search frequency double derivative resolution",
-				    &uvar_fddotResolution),
-	    &status);
-  LAL_CALL( LALRegisterREALUserVar( &status, "startTime",
-				    0, UVAR_OPTIONAL,
-				    "GPS start time of observation",
-				    &uvar_startTime),
-	    &status);
-  LAL_CALL( LALRegisterREALUserVar( &status, "endTime",
-				    0, UVAR_OPTIONAL,
-				    "GPS end time of observation",
-				    &uvar_endTime),
-	    &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "skyRegion",
-				      0, UVAR_OPTIONAL,
-				      "sky-region polygon (or 'allsky')",
-				      &uvar_skyRegion),
-	    &status);
-  LAL_CALL( LALRegisterREALUserVar( &status, "dAlpha",
-				    0, UVAR_OPTIONAL,
-				    "Sky resolution (flat/isotropic) (rad)",
-				    &uvar_dAlpha),
-	    &status);
-  LAL_CALL( LALRegisterREALUserVar( &status, "dDelta",
-				    0, UVAR_OPTIONAL,
-				    "Sky resolution (flat/isotropic) (rad)",
-				    &uvar_dDelta),
-	    &status);
-  LAL_CALL( LALRegisterREALUserVar( &status, "psi",
-				    0, UVAR_OPTIONAL,
-				    "Polarisation angle (rad)",
-				    &uvar_psi),
-	    &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "skyfile",
-				      0, UVAR_OPTIONAL,
-				      "Alternative: input skypatch file",
-				      &uvar_skyfile),
-	    &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "ephemDir",
-				      'E', UVAR_OPTIONAL,
-				  "Directory where ephemeris files are located",
-				      &uvar_ephemDir),
-	    &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "ephemYear",
-				      'y', UVAR_OPTIONAL,
-		       "Year (or range of years) of ephemeris files to be used",
-				      &uvar_ephemYear),
-	    &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "sftDir",
-				      'D', UVAR_REQUIRED,
-				      "SFT filename pattern",
-				      &uvar_sftDir),
-	    &status);
-  LAL_CALL( LALRegisterREALUserVar( &status, "maxlag",
-				    0,  UVAR_OPTIONAL,
-				    "Maximum time lag for correlating sfts",
-				    &uvar_maxlag),
-	    &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "dirnameOut",
-				      'o', UVAR_OPTIONAL,
-				      "Output directory",
-				      &uvar_dirnameOut),
-	    &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "fbasenameOut",
-				      0, UVAR_OPTIONAL,
-				      "Output file basename",
-				      &uvar_fbasenameOut),
-	    &status);
-  LAL_CALL( LALRegisterINTUserVar( &status, "blocksRngMed",
-				   0, UVAR_OPTIONAL,
-				   "Running Median block size",
-				   &uvar_blocksRngMed),
-	    &status);
-  LAL_CALL( LALRegisterINTUserVar( &status, "detChoice",
-				   0, UVAR_OPTIONAL,
-   "0: Correlate SFTs from same IFOs only; 1: different IFOs only; 2: all IFOs",
-				   &uvar_detChoice),
-	    &status);
-  LAL_CALL( LALRegisterREALUserVar( &status, "refTime",
-				    0, UVAR_OPTIONAL,
-				    "Pulsar reference time (SSB)",
-				    &uvar_refTime),
-	    &status); 
-  LAL_CALL( LALRegisterREALUserVar( &status, "cosi",
-				    0, UVAR_OPTIONAL,
-				    "cos(iota) inclination angle",
-				    &uvar_cosi),
-	    &status); 
- 
+  LAL_CALL (initUserVars(&status), &status);
+
   /* read all command line variables */
   LAL_CALL( LALUserVarReadAllInput(&status, argc, argv), &status);
   /* exit if help was required */
@@ -403,20 +234,25 @@ int main(int argc, char *argv[]){
   /* set detector constraint */
   constraints.detector = NULL;
   constraints.timestamps = NULL;
+  constraints.startTime = NULL;
+  constraints.endTime = NULL;
+
+  XLALGPSSet(&startTimeGPS, 0, 0);
+  XLALGPSSet(&endTimeGPS, LAL_INT4_MAX, 0); 
 
   if ( LALUserVarWasSet( &uvar_startTime ) ) {
-    LAL_CALL ( LALFloatToGPS( &status, &startTimeGPS, &uvar_startTime),
-	       &status);
+    XLALGPSSetREAL8(&startTimeGPS, uvar_startTime);
+
     constraints.startTime = &startTimeGPS;
   }
 
   if ( LALUserVarWasSet( &uvar_endTime ) ) {
-    LAL_CALL ( LALFloatToGPS( &status, &endTimeGPS, &uvar_endTime), &status);
+    XLALGPSSetREAL8(&endTimeGPS, uvar_endTime);
     constraints.endTime = &endTimeGPS;
   }
 
   if (LALUserVarWasSet ( &uvar_refTime )) {
-    LAL_CALL(LALFloatToGPS(&status, &refTime, &uvar_refTime), &status);
+    XLALGPSSetREAL8(&refTime, uvar_refTime);
   }
 
   /* get sft catalog */
@@ -428,15 +264,17 @@ int main(int argc, char *argv[]){
     exit(1);
   }
 
+
   /* first some sft parameters */
   deltaF = catalog->data[0].header.deltaF;  /* frequency resolution */
   timeBase= 1.0/deltaF; /* coherent integration time */
+  tOffs = 0.5/deltaF;
+
 
   /* catalog is ordered in time so we can get start, end time and tObs */
   firstTimeStamp = catalog->data[0].header.epoch;
   lastTimeStamp = catalog->data[catalog->length - 1].header.epoch;
   tObs = XLALGPSDiff( &lastTimeStamp, &firstTimeStamp ) + timeBase;
-
   nfreqLoops = ceil(uvar_fBand/deltaF);
 
   /* only loop through more than 1 fdot value if fdotBand and fdotRes
@@ -478,6 +316,7 @@ int main(int argc, char *argv[]){
   (*edat).ephiles.earthEphemeris = EphemEarth;
   (*edat).ephiles.sunEphemeris = EphemSun;
 
+  /* XLALGPSLeapSeconds (tmpLeap);*/
   LAL_CALL( LALLeapSecs(&status, &tmpLeap, &firstTimeStamp, &lsfas), &status);
   (*edat).leap = (INT2)tmpLeap;
 
@@ -514,72 +353,132 @@ int main(int argc, char *argv[]){
   skySizeAlpha = skyInfo.alphaSize;
   skySizeDelta = skyInfo.deltaSize;
 
+
   /* initialise output arrays */
-  nParams = nSkyPatches * nfreqLoops *nfdotLoops;
+  nParams = nSkyPatches * nfreqLoops *nfdotLoops * nfddotLoops;
 
-  weights = XLALCreateREAL8Vector(nParams);
+  rho = XLALCreateREAL8Vector(nParams);
+  stddev = XLALCreateREAL8Vector(nParams);
 
-  stddev = LALCalloc(1, sizeof(REAL8));
+  for (j=0; j < nParams; j++) {
+	rho->data[j] = 0.0;
+	stddev->data[j] = 0.0;
+  }
+
 
   /* set the max. allowable time lag between 2 sfts */
   pairParams.lag = uvar_maxlag;
 
-  /* read the sfts */
-  /* first load them into a MultiSFTVector, then concatenate the
-     various vectors into one */
-  /* read sft files making sure to add extra bins for running median */
   /* add wings for Doppler modulation and running median block size */
   /* remove fBand from doppWings because we are going bin-by-bin (?) */
   doppWings = (uvar_f0 + (freqCounter*deltaF)) * VTOT;
   fMin = uvar_f0 - doppWings - uvar_blocksRngMed * deltaF;
   fMax = uvar_f0 + uvar_fBand + doppWings + uvar_blocksRngMed * deltaF;
 
-  /* combine all sfts into a single sftvector */
-  LAL_CALL( LALLoadMultiSFTs ( &status, &multiSFTs, catalog, fMin, fMax), &status);
-  LAL_CALL( LALCombineAllSFTs (&status, &inputSFTs, multiSFTs, catalog->length), &status);
- 
-  /* clean up sft catalog and multisftvector */
-  LAL_CALL(LALDestroyMultiSFTVector(&status, &multiSFTs), &status);
-  LAL_CALL( LALDestroySFTCatalog( &status, &catalog ), &status);
+  slidingcounter = 0;
 
-  /* find number of sfts */
-  numsft = inputSFTs->length;
+ 	   
 
-  /* initialise PSD vector */
-  psdVec = (PSDVector *) LALCalloc(1, sizeof(PSDVector));
-  psdVec->length = numsft;
+  /*outer loop over all sfts in catalog, so that we load only the relevant sfts each time*/
+  for(sftcounter=0; sftcounter < (INT4)catalog->length -1; sftcounter++) {
+  	tmpSFT = NULL;
+	tmpPSD = NULL;
+  	slidingcat = NULL;
+	sftPairIndexList = NULL;
+	yalpha = NULL;
+	ualpha = NULL;
+	sigmasq = NULL;
 
-  psdVec->data = (REAL8FrequencySeries *)
-  		  LALCalloc (psdVec->length, sizeof(REAL8FrequencySeries));
+	  counter = 0;
 
-  /*loop over all sfts, get their PSDs and normalise them with LALNormalizeSFT*/
-  for (j=0; j < (INT4)numsft; j++) {
+printf("sftcounter %d\n", sftcounter);
 
-    psdVec->data[j].data = NULL;
-    psdVec->data[j].data = (REAL8Sequence *)
-    			    LALCalloc (1,sizeof(REAL8Sequence));
-    psdVec->data[j].data->length = inputSFTs->data[j].data->length;
-    psdVec->data[j].data->data = (REAL8 *)
-    				LALCalloc (inputSFTs->data[j].data->length, sizeof(REAL8));
+  	/* throw away first sft from inputSFTs, and first psdvector, frequency, phase vectors, beamfns */
+  	if (sftcounter > 0) {
+
+		sftList = sftHead;
+		sftHead = (SFTListElement *)sftHead->nextSFT;
+
+		tmpSFT = &(sftList->sft);
+		LAL_CALL(LALDestroySFTtype(&status, &tmpSFT), &status);
+		sftList = NULL;
+
+		psdList = psdHead;
+		psdHead = (PSDListElement *)psdHead->nextPSD;
+		tmpPSD = &(psdList->psd);
+		XLALDestroyREAL8FrequencySeries (tmpPSD);
+		psdList = NULL;
+
+		freqList = freqHead;
+		freqHead = (REAL8ListElement *)freqHead->nextVal;
+		tmpVal = &(freqList->val);
+		LALFree(tmpVal);
+		freqList = NULL;
+
 	
-    LAL_CALL( LALNormalizeSFT (&status, psdVec->data + j,
-     			       inputSFTs->data + j, uvar_blocksRngMed),
-	 	&status);
-	
+		phaseList = phaseHead;
+		phaseHead = (REAL8ListElement *)phaseHead->nextVal;
+		tmpVal = &(phaseList->val);
+		LALFree(tmpVal);
+		phaseList = NULL;
+
+		beamList = beamHead;
+		beamHead = (CrossCorrBeamFnListElement *)beamHead->nextBeamfn;
+		beamfns1 = &(beamList->beamfn);
+		LALFree(beamfns1);
+		beamList = NULL;
+
+  	}
+
+  /* make a second sft catalog with only the ones within maxlag of the current sft*/
+  /* do all sfts with same time together */
+  while((slidingcounter < (INT4)catalog->length) &&
+	(XLALGPSDiff(&catalog->data[slidingcounter].header.epoch, &catalog->data[sftcounter].header.epoch) <= pairParams.lag)) {
+
+	inputSFTs = NULL;
+	  
+   	LAL_CALL( CopySFTFromCatalog(&status, catalog, &inputSFTs, fMin, fMax, slidingcounter), &status);
+
+  	LAL_CALL( AddSFTtoList(&status, &sftHead, &sftTail, &(inputSFTs->data[0])), &status);
+
+	LAL_CALL( AddPSDtoList(&status, &psdHead, &psdTail, sftTail->sft.data->length),&status);
+
+	tmpSFT = &(sftTail->sft);
+	tmpPSD = &(psdTail->psd);
+    
+	LAL_CALL( LALNormalizeSFT (&status, tmpPSD,
+				       tmpSFT, uvar_blocksRngMed),	&status);
+
+        LAL_CALL( AddREAL8toList(&status, &freqHead, &freqTail), &status);
+
+  	LAL_CALL( AddREAL8toList(&status, &phaseHead, &phaseTail), &status);
+
+	LAL_CALL( AddBeamFntoList(&status, &beamHead, &beamTail), &status);
+
+	slidingcounter++;
+	XLALDestroySFTVector(inputSFTs);
+
   }
+	listLength = slidingcounter - sftcounter;
 
+ 	/* create sft pair indices */
+	LAL_CALL ( LALCreateSFTPairsIndicesFrom2SFTvectors( &status,
+ 						    	    &sftPairIndexList,
+						      	    sftHead,
+						            &pairParams,
+						    	    listLength,
+						      	    uvar_detChoice),
+		     &status);
 
-  /* create sft pair indices */
-  LAL_CALL ( LALCreateSFTPairsIndicesFrom2SFTvectors( &status,
- 						      &sftPairIndexList,
-						      inputSFTs,
-						      &pairParams,
-						      uvar_detChoice),
-	     &status);
-
+        /* initialise Y, u, sigmasq vectors  */
+        yalpha = XLALCreateCOMPLEX16Vector(sftPairIndexList->vectorLength);
+        ualpha = XLALCreateCOMPLEX16Vector(sftPairIndexList->vectorLength);
+ 	sigmasq = XLALCreateREAL8Vector(sftPairIndexList->vectorLength);
+ 
+ 
   /* start frequency loop */
-
   for (freqCounter = 0; freqCounter < nfreqLoops; freqCounter++) {
+
     f_current = uvar_f0 + (deltaF*freqCounter);
 
     /* frequency derivative loop */
@@ -592,26 +491,11 @@ int main(int argc, char *argv[]){
 
 	fddot_current = uvar_fddot + (delta_fddot*fddotCounter++);
  
-        ts = XLALCreateTimestampVector (1);
-        tOffs = 0.5/deltaF;
-
-        beamfns = (CrossCorrBeamFn *) LALCalloc(numsft, sizeof(CrossCorrBeamFn));
-
-        frequencyShiftList = XLALCreateREAL8Vector(numsft);
-        signalPhaseList = XLALCreateREAL8Vector(numsft);
-
-
-        /* initialise frequency and phase vectors *
-         * initialise Y, u, weight vectors */
-        yalpha = XLALCreateCOMPLEX16Vector(sftPairIndexList->vectorLength);
-        ualpha = XLALCreateCOMPLEX16Vector(sftPairIndexList->vectorLength);
-
-        sigmasq = XLALCreateREAL8Vector(sftPairIndexList->vectorLength);
-
-        /*printf("starting loops over sky patches\n");*/
 
         /* loop over sky patches -- main calculations  */
-        for (skyCounter = 0; skyCounter < nSkyPatches; skyCounter++) { 
+        for (skyCounter = 0; skyCounter < nSkyPatches; skyCounter++) {
+
+ 
    	  /* initialize Doppler parameters of the potential source */
 	  thisPoint.Alpha = skyAlpha[skyCounter]; 
 	  thisPoint.Delta = skyDelta[skyCounter]; 
@@ -620,10 +504,7 @@ int main(int argc, char *argv[]){
 	  thisPoint.fkdot[2] = fddot_current;
  	  thisPoint.fkdot[3] = 0.0;
 	  thisPoint.refTime = refTime;
- 
-	  thisVel.length = 3;
-	  thisPos.length = 3;
-  
+   
     	  /* set sky positions and skypatch sizes  */
 	  patchSizeX = skySizeDelta[skyCounter]; 
 	  patchSizeY = skySizeAlpha[skyCounter]; 
@@ -633,183 +514,159 @@ int main(int argc, char *argv[]){
 	  skypos.longitude = thisPoint.Alpha; 
 	  skypos.latitude = thisPoint.Delta; 
 	  skypos.system = COORDINATESYSTEM_EQUATORIAL; 
-
-	  /* loop over each SFT to get frequency, then store in
-	     frequencyShiftList */
-	  for (j=0; j < (INT4)numsft; j++) {
-     
-            /* get information about all detectors including velocity and
-             timestamps */
-	    /*only have 1 element in detectorStateSeries and AMCoeffs because
-	      the detector has to be updated for every SFT */
-	    DetectorStateSeries *detState = NULL;
-	    AMcoef = (AMCoeffs *)LALCalloc(1, sizeof(AMCoeffs));
-	    AMcoef->a = XLALCreateREAL4Vector(1);
-	    AMcoef->b = XLALCreateREAL4Vector(1);
-
-	    det = XLALGetSiteInfo (inputSFTs->data[j].name); 
-	    ts->data[0] = inputSFTs->data[j].epoch;
-
-            /* note that this function returns the velocity at the
-               mid-time of the SFTs -- should not make any difference */
-
-	    LAL_CALL ( LALGetDetectorStates ( &status, &detState, ts, det,
-					    edat, tOffs),
-		     &status);
-
-	    detState->detector = *det;
-
-	    LAL_CALL ( LALGetAMCoeffs ( &status, AMcoef, detState, skypos),
-		     &status); 
-
-  	    thisVel.data = detState->data[0].vDetector;
-	    thisPos.data = detState->data[0].rDetector;
-	    sft = &(inputSFTs->data[j]);
-
-
-	    LAL_CALL( LALGetSignalFrequencyInSFT( &status, freq1, sft, &thisPoint,
-						&thisVel, &firstTimeStamp),
-		    &status);
-	    LAL_CALL( LALGetSignalPhaseInSFT( &status, phase1, sft, &thisPoint,
-	 				    &thisPos),
-	  	    &status);
-
-	    frequencyShiftList->data[j] = *freq1; 
-	    signalPhaseList->data[j] = *phase1;
-
-	    /* There is some ambiguity here. If uvar_averagePsi = true,
-	       then we can't directly calculate the <F F> products
-	       (because <F_+> = <F_x> = 0) so we store a and b in the
-	       variables.
-
-	       The <F F> products will be calculated later in the
-	       calculateUalpha function.
-
-	       If uvar_averagePsi = false, then there is no problem and
-	       we calculate Fplus_or_a and Fcross_or_b here */
-
-	    if(uvar_averagePsi) {
-	      beamfns[j].Fplus_or_a = (AMcoef->a->data[0]);
-	      beamfns[j].Fcross_or_b = (AMcoef->b->data[0]);
-	    } else {
-	      beamfns[j].Fplus_or_a = (AMcoef->a->data[0] * cos(2.0*psi))
-	      + (AMcoef->b->data[0] * sin(2.0*psi));
-
-	      beamfns[j].Fcross_or_b = (AMcoef->b->data[0] * cos(2.0*psi))
-	      - (AMcoef->a->data[0] * sin(2.0*psi));
-	    }
-
-	    sft = NULL;
-	
-	    /* clean up AMcoefs */
-	    XLALDestroyAMCoeffs(AMcoef);
-	    XLALDestroyDetectorStateSeries(detState);
-	    XLALFree(det);
-
-	  } /*finish loop over individual sfts */
+  	
+ 
+ 	  LAL_CALL( GetBeamInfo( &status, beamHead, sftHead, freqHead, phaseHead, skypos, 
+		    edat, &thisPoint, psi), &status);
 
 	  /* loop over SFT pairs */
+	  ualphacounter = 0;
 
-	  ualphacounter = 0.0;
 	  for (j=0; j < (INT4)sftPairIndexList->vectorLength; j++) {
-  
-	  /*  correlate sft pairs  */
-	  index1 = sftPairIndexList->data[j];
-	  index2 = sftPairIndexList->data[j + sftPairIndexList->vectorLength];
 
-	  sft1 = &(inputSFTs->data[index1]);
-	  sft2 = &(inputSFTs->data[index2]);
 
-	  psd1 = &(psdVec->data[index1]);
-	  psd2 = &(psdVec->data[index2]);
-  	
-	  LAL_CALL( LALCorrelateSingleSFTPair( &status, &(yalpha->data[j]),
-					       sft1, sft2, psd1, psd2,
-					    &(frequencyShiftList->data[index1]),
-					   &(frequencyShiftList->data[index2])),
-		    &status);
+		/*  correlate sft pairs  */
+		index1 = sftPairIndexList->data[j]; /*this is always 0?*/
+		index2 = sftPairIndexList->data[j + sftPairIndexList->vectorLength];
 
-	  LAL_CALL( LALCalculateSigmaAlphaSq( &status, &sigmasq->data[j],
-					      frequencyShiftList->data[index1],
-					      frequencyShiftList->data[index2],
-					      psd1, psd2),
-		    &status);
+		sftList = sftHead;
+		psdList = psdHead;
+		freqList = freqHead;
+		phaseList = phaseHead;
+		beamList = beamHead;
 
-	  /*if we are averaging over psi and cos(iota), call the simplified 
- 	    Ualpha function*/
-	  if (uvar_averagePsi && uvar_averageIota) {
-	    LAL_CALL( LALCalculateAveUalpha ( &status, &ualpha->data[j], 
-		 			   &signalPhaseList->data[index1],
-					   &signalPhaseList->data[index2],
-					   beamfns[index1],
-					   beamfns[index2], &sigmasq->data[j]),
-		      &status);
-	  }
-	  else {
-	    LAL_CALL( LALCalculateUalpha ( &status, &ualpha->data[j], amplitudes,
-		 			   &signalPhaseList->data[index1],
-					   &signalPhaseList->data[index2],
-					   beamfns[index1],
-					   beamfns[index2], &sigmasq->data[j]),
-		      &status);
-	  }
+		sft1 = &(sftList->sft);
+		psd1 = &(psdList->psd);
+		freq1 = freqList->val;
+		phase1 = phaseList->val;
+		beamfns1 = &(beamList->beamfn);
 
-	  ualphacounter = ualphacounter + 1;
+		for (i = 1; i <= index2; i++) {
+			/*use sftlist, psdlist as tmps */
+			sftList = (SFTListElement *)sftList->nextSFT;
+			psdList = (PSDListElement *)psdList->nextPSD;
+			freqList = (REAL8ListElement *)freqList->nextVal;
+			phaseList = (REAL8ListElement *)phaseList->nextVal;
+			beamList = (CrossCorrBeamFnListElement *)beamList->nextBeamfn;
+		}
+
+		sft2 = &(sftList->sft);
+		psd2 = &(psdList->psd);
+		freq2 = freqList->val;
+		phase2 = phaseList->val;
+		beamfns2 = &(beamList->beamfn);
+		
+		LAL_CALL( LALCorrelateSingleSFTPair( &status, &(yalpha->data[ualphacounter]),
+						       sft1, sft2, psd1, psd2, freq1, freq2),
+	  					     &status);
+
+	  	LAL_CALL( LALCalculateSigmaAlphaSq( &status, &sigmasq->data[ualphacounter],
+					      	      	freq1, freq2, psd1, psd2),
+		    				    &status);
+
+		/*if we are averaging over psi and cos(iota), call the simplified 
+ 	    	  Ualpha function*/
+	  	if (uvar_averagePsi && uvar_averageIota) {
+	    		LAL_CALL( LALCalculateAveUalpha ( &status, &ualpha->data[ualphacounter], 
+		 					   phase1, phase2, *beamfns1, *beamfns2, 
+							   &sigmasq->data[ualphacounter]),
+		 				         &status);
+
+		  }
+		else {
+	    		LAL_CALL( LALCalculateUalpha ( &status, &ualpha->data[ualphacounter], amplitudes,
+		 					   phase1, phase2, *beamfns1, *beamfns2,
+					   		   &sigmasq->data[ualphacounter]),
+		    					&status);
+		}
+/*printf("yalpha, sigmaalpha, ualpha %e\t %e\t %e\t %e\t %e\n", yalpha->data[ualphacounter].re, yalpha->data[ualphacounter].im, sigmasq->data[ualphacounter], ualpha->data[ualphacounter].re, ualpha->data[ualphacounter].im);*/
+
+	       ualphacounter++;
   	  } /*finish loop over sft pairs*/
 
+/*printf("finish loop over pairs\n");*/
 
-	  /* calculate rho (weights) from Yalpha and Ualpha */
-	  LAL_CALL( LALCalculateCrossCorrPower( &status,
-					      &(weights->data[counter]),
-					      yalpha, ualpha),
-		  &status);
+
+	  /* calculate rho from Yalpha and Ualpha */
+	  tmpstat = 0;
+	  LAL_CALL( LALCalculateCrossCorrPower( &status, &tmpstat, yalpha, ualpha),
+		  				&status);
+
+	  rho->data[counter] += tmpstat;
 
 	  /* calculate standard deviation of rho (Eq 4.6) */
-	  LAL_CALL( LALNormaliseCrossCorrPower( &status, stddev, ualpha, sigmasq),
-		  &status); 
+	  LAL_CALL( LALNormaliseCrossCorrPower( &status, &tmpstat, ualpha, sigmasq),
+		  				&status); 
 
+	  stddev->data[counter] += tmpstat;
 
-	  weights->data[counter] = weights->data[counter]/(*stddev);
-
-	  /* select candidates  */
-	  /* print all variables to file */
-
-	  fprintf(fp, "%1.5f\t %1.5f\t %1.5f\t %e\t %e\t %1.10f\n", thisPoint.Alpha,
-	  	thisPoint.Delta, f_current,
-		fdot_current, fddot_current, weights->data[counter]);
+/*printf("counter stddev rho %d %f %f\n", counter, *stddev, rho->data[counter]);*/
 
  	  counter++;
 
-        } /* finish loop over skypatches */ 
-      printf("Frequency %f\n", f_current);
+          } /* finish loop over skypatches */ 
 
-      /* free memory */
-
-
-      XLALDestroyTimestampVector(ts);
-
-      XLALDestroyCOMPLEX16Vector(yalpha);
-      XLALDestroyCOMPLEX16Vector(ualpha);
-      XLALDestroyREAL8Vector(frequencyShiftList);
-      XLALDestroyREAL8Vector(signalPhaseList);
-
-      XLALDestroyREAL8Vector(sigmasq);
-      XLALFree(beamfns); 
-
-      /*  XLALDestroyDetectorStateSeries ( detStates );*/
 
       } /*finish loop over frequency double derivatives*/
 
     } /*finish loop over frequency derivatives*/
-
+   /*   printf("Frequency %f\n", f_current);*/
   } /*finish loop over frequencies */
+
+  XLALDestroyCOMPLEX16Vector(yalpha);
+  XLALDestroyCOMPLEX16Vector(ualpha);
+
+  XLALDestroyREAL8Vector(sigmasq);
+
+
+
+  XLALFree(sftPairIndexList->data);
+  XLALFree(sftPairIndexList);
+
+
+/*printf("finish loop over all frequencies, sftcounter %d\n", sftcounter);*/
+
+  } /* finish loop over all sfts */
+printf("finish loop over all sfts\n");
+
+    counter = 0;
+
+  /* print all variables to file */
+  for (freqCounter = 0; freqCounter < nfreqLoops; freqCounter++) {
+
+    f_current = uvar_f0 + (deltaF*freqCounter);
+
+    /* frequency derivative loop */
+    for (fdotCounter = 0; fdotCounter < nfdotLoops; fdotCounter++) {
+
+      fdot_current = uvar_fdot + (delta_fdot*fdotCounter);
+
+      /* frequency double derivative loop */
+      for (fddotCounter = 0; fddotCounter < nfddotLoops; fddotCounter++) {
+        for (skyCounter = 0; skyCounter < nSkyPatches; skyCounter++) { 
+   	  /* initialize Doppler parameters of the potential source */
+	  thisPoint.Alpha = skyAlpha[skyCounter]; 
+	  thisPoint.Delta = skyDelta[skyCounter]; 
+
+	  /*normalise rho*/
+	  rho->data[counter] = rho->data[counter]/stddev->data[counter];
+	  fprintf(fp, "%1.5f\t %1.5f\t %1.5f\t %e\t %e\t %1.10f\n", thisPoint.Alpha,
+	  	thisPoint.Delta, f_current,
+		fdot_current, fddot_current, rho->data[counter]);
+		counter++;
+	 }
+       }
+    }
+  }
+
+	  /* select candidates  */
+
+
+  
 
   fclose (fp);
 
-  LAL_CALL (LALDestroySFTVector(&status, &inputSFTs), &status );
-  LAL_CALL ( LALDestroyPSDVector  ( &status, &psdVec), &status);
-  XLALFree(sftPairIndexList->data);
-  XLALFree(sftPairIndexList);
+  LAL_CALL( LALDestroySFTCatalog( &status, &catalog ), &status);
 
   LALFree(edat->ephemE);
   LALFree(edat->ephemS);
@@ -818,10 +675,23 @@ int main(int argc, char *argv[]){
   LALFree(skyDelta);
   LALFree(skySizeAlpha);
   LALFree(skySizeDelta);
-  LALFree(stddev);
+  XLALDestroyREAL8Vector(stddev);
+  XLALDestroyREAL8Vector(rho);
 
-  XLALDestroyREAL8Vector(weights);
+  XLALFree(beamHead);
+  XLALFree(beamTail);
+  tmpSFT = &(sftHead->sft);
+  LAL_CALL(LALDestroySFTtype(&status, &tmpSFT),&status);
+  tmpSFT = &(sftTail->sft);
+  LAL_CALL(LALDestroySFTtype(&status, &tmpSFT),&status);
 
+  XLALDestroyREAL8FrequencySeries (&(psdHead->psd));
+  XLALDestroyREAL8FrequencySeries(&(psdTail->psd));
+  XLALFree(phaseHead);
+  XLALFree(phaseTail);
+  XLALFree(freqHead);
+  XLALFree(freqTail);
+ 
   LAL_CALL (LALDestroyUserVars(&status), &status);
 
   LALCheckMemoryLeaks();
@@ -945,3 +815,462 @@ void SetUpRadiometerSkyPatches(LALStatus           *status,
   /* normal exit */	
   RETURN (status);
 }
+
+
+void GetBeamInfo(LALStatus *status, 
+		 CrossCorrBeamFnListElement *beamHead, 
+		 SFTListElement *sftHead, 
+		 REAL8ListElement *freqHead,
+		 REAL8ListElement *phaseHead, 
+		 SkyPosition skypos, 
+		 EphemerisData *edat, 
+		 PulsarDopplerParams *thisPoint,
+		 REAL8 psi){
+
+  REAL8 freq1;
+  REAL8 phase1;
+  REAL8Vector thisVel, thisPos;
+  LIGOTimeGPSVector *ts=NULL;
+  LALDetector *det;
+  REAL8 tOffs;
+  AMCoeffs *AMcoef = NULL; 
+  SFTListElement *sft = NULL;
+  REAL8ListElement *freqtmp, *phasetmp;
+  CrossCorrBeamFnListElement *beamtmp;
+  LIGOTimeGPS *epoch = NULL;
+
+  INITSTATUS (status, "GetBeamInfo", rcsid);
+  ATTATCHSTATUSPTR (status);
+
+  freq1 = 0;
+  phase1 = 0;
+
+
+  sft = sftHead;
+  freqtmp = freqHead;
+  phasetmp = phaseHead;
+  beamtmp = beamHead;
+
+  ts = XLALCreateTimestampVector(1);
+
+ 
+	  thisVel.length = 3;
+	  thisPos.length = 3;
+  	tOffs = 0.5/sft->sft.deltaF;
+
+
+	/* get information about all detectors including velocity and
+	   timestamps */
+	/*only have 1 element in detectorStateSeries and AMCoeffs because
+	  the detector has to be updated for every SFT */
+	while (sft) {
+
+		DetectorStateSeries *detState = NULL;
+		AMcoef = (AMCoeffs *)LALCalloc(1, sizeof(AMCoeffs));
+	    	AMcoef->a = XLALCreateREAL4Vector(1);
+	    	AMcoef->b = XLALCreateREAL4Vector(1);
+
+		epoch = &(sft->sft.epoch);
+		det = XLALGetSiteInfo (sft->sft.name); 
+	        ts->data[0] = sft->sft.epoch;
+
+        	/* note that this function returns the velocity at the
+            	mid-time of the SFTs -- should not make any difference */
+
+         	LALGetDetectorStates ( status->statusPtr, &detState, ts, det,
+					    edat, tOffs);
+
+         	detState->detector = *det;
+
+	 	LALGetAMCoeffs ( status->statusPtr, AMcoef, detState, skypos);
+		     
+	 	thisVel.data = detState->data[0].vDetector;
+	 	thisPos.data = detState->data[0].rDetector;
+
+
+	 	LALGetSignalFrequencyInSFT( status->statusPtr, &freq1, epoch, thisPoint,
+						&thisVel);
+			    
+         	LALGetSignalPhaseInSFT( status->statusPtr, &phase1, epoch, thisPoint,
+					    &thisPos);
+
+	 	freqtmp->val = freq1; 
+	 	phasetmp->val = phase1;
+
+	    /* There is some ambiguity here. If uvar_averagePsi = true,
+	       then we can't directly calculate the <F F> products
+	       (because <F_+> = <F_x> = 0) so we store a and b in the
+	       variables.
+
+	       The <F F> products will be calculated later in the
+	       calculateUalpha function.
+
+	       If uvar_averagePsi = false, then there is no problem and
+	       we calculate Fplus_or_a and Fcross_or_b here */
+
+	    	if(uvar_averagePsi) {
+	     	 	beamtmp->beamfn.Fplus_or_a = (AMcoef->a->data[0]);
+	      		beamtmp->beamfn.Fcross_or_b = (AMcoef->b->data[0]);
+	    	} else {
+	     		beamtmp->beamfn.Fplus_or_a = (AMcoef->a->data[0] * cos(2.0*psi))
+						      + (AMcoef->b->data[0] * sin(2.0*psi));
+	      		beamtmp->beamfn.Fcross_or_b = (AMcoef->b->data[0] * cos(2.0*psi))
+						      - (AMcoef->a->data[0] * sin(2.0*psi));
+	    	}
+		
+	    	/* clean up AMcoefs */
+	    	XLALDestroyAMCoeffs(AMcoef);
+	    	XLALDestroyDetectorStateSeries(detState);
+	    	XLALFree(det);
+	    	sft = (SFTListElement *)sft->nextSFT;
+		freqtmp = (REAL8ListElement *)freqtmp->nextVal;
+		phasetmp = (REAL8ListElement *)phasetmp->nextVal;
+		beamtmp = (CrossCorrBeamFnListElement *)beamtmp->nextBeamfn;
+	}
+
+   XLALDestroyTimestampVector(ts);
+   sft = NULL;
+   freqtmp = NULL;
+   phasetmp = NULL;
+   beamtmp = NULL;  
+
+   DETATCHSTATUSPTR (status);
+	
+   RETURN (status);
+
+}
+
+
+void CopySFTFromCatalog(LALStatus *status,
+		   	SFTCatalog *catalog,
+			SFTVector **sft,
+			REAL8 fMin,
+			REAL8 fMax,
+			INT4 index) 
+{
+  SFTCatalog *slidingcat;
+  SFTDescriptor *desc;
+
+  INITSTATUS (status, "CopySFTFromCatalog", rcsid);
+  ATTATCHSTATUSPTR (status);
+
+
+  slidingcat = NULL;
+  *sft = NULL;
+
+  ASSERT ( catalog, status, PULSAR_CROSSCORR_ENULL, PULSAR_CROSSCORR_MSGENULL );
+
+
+  if ( (slidingcat = LALCalloc ( 1, sizeof ( SFTCatalog ))) == NULL ) {
+	ABORT(status, PULSAR_CROSSCORR_EMEM, PULSAR_CROSSCORR_MSGEMEM);
+  }
+
+  slidingcat->length = 1;
+  slidingcat->data = LALRealloc(slidingcat->data, 1*sizeof(*(slidingcat->data)));
+ /* memset(&(slidingcat->data[0]), 0, sizeof(ret->data[0]));*/
+  desc = &(slidingcat->data[0]);
+/*  desc->locator = LALCalloc(1, sizeof(*(desc->locator)));*/
+
+  desc->locator = catalog->data[index].locator;
+  desc->header = catalog->data[index].header;
+  desc->comment = catalog->data[index].comment;
+  desc->numBins = catalog->data[index].numBins;
+  desc->version = catalog->data[index].version;
+  desc->crc64 = catalog->data[index].crc64;
+
+  LALLoadSFTs(status->statusPtr, sft, slidingcat, fMin, fMax); 
+/* LALDestroySFTCatalog ( status->statusPtr, &slidingcat );*/
+  XLALFree(slidingcat->data);
+  LALFree(slidingcat);
+
+  DETATCHSTATUSPTR (status);
+	
+  RETURN (status);
+
+}
+
+void AddSFTtoList(LALStatus *status,
+		  SFTListElement **sftHead,
+		  SFTListElement **sftTail,
+		  SFTtype *sft)
+{
+
+  SFTListElement *sftList;
+
+  INITSTATUS (status, "AddSFTtoList", rcsid);
+  ATTATCHSTATUSPTR (status);
+
+  sftList = (SFTListElement *)LALCalloc(1, sizeof(SFTListElement));
+
+  LALCopySFT(status->statusPtr, &(sftList->sft), sft);
+
+   sftList->nextSFT = NULL;
+  if (!(*sftHead)) { 
+	*sftHead = sftList; 
+  }
+  else {
+	(*sftTail)->nextSFT = (struct SFTListElement *)sftList;
+  }
+	
+  *sftTail = sftList;
+
+  DETATCHSTATUSPTR (status);
+	
+  RETURN (status);
+
+
+}
+
+void AddPSDtoList(LALStatus *status,
+		  PSDListElement **psdHead,
+		  PSDListElement **psdTail,
+		  INT4 length)
+{
+  PSDListElement *psdList;
+
+  INITSTATUS (status, "AddPSDtoList", rcsid);
+  ATTATCHSTATUSPTR (status);
+
+	psdList = (PSDListElement *)LALCalloc(1, sizeof(PSDListElement));
+	psdList->psd.data = XLALCreateREAL8Sequence(length);
+	psdList->nextPSD = NULL;
+	if (!(*psdHead)) {
+		*psdHead = psdList;
+	}
+	else {
+		(*psdTail)->nextPSD = (struct PSDListElement *)psdList;
+	}
+	*psdTail = psdList;
+ 
+  DETATCHSTATUSPTR (status);
+	
+  RETURN (status);
+
+
+}
+
+void AddREAL8toList(LALStatus *status,
+		    REAL8ListElement **head,
+		    REAL8ListElement **tail)
+{
+  REAL8ListElement *List;
+
+  INITSTATUS (status, "AddREAL8toList", rcsid);
+  ATTATCHSTATUSPTR (status);
+
+
+	List = (REAL8ListElement *)LALCalloc(1, sizeof(REAL8ListElement));
+	List->val = 0;
+	List->nextVal = NULL;
+	if (!(*head)) {
+		*head = List;
+	}
+	else {
+		(*tail)->nextVal = (struct REAL8ListElement *)List;
+	}
+	*tail = List;
+
+  DETATCHSTATUSPTR (status);
+	
+  RETURN (status);
+
+
+}
+
+void AddBeamFntoList(LALStatus *status,
+		     CrossCorrBeamFnListElement **beamHead,
+		     CrossCorrBeamFnListElement **beamTail)
+{
+
+  CrossCorrBeamFnListElement *beamList;
+
+  INITSTATUS (status, "AddBeamFntoList", rcsid);
+  ATTATCHSTATUSPTR (status);
+
+
+  beamList = (CrossCorrBeamFnListElement *)LALCalloc(1, sizeof(CrossCorrBeamFnListElement));
+  beamList->beamfn.Fplus_or_a = 0;
+  beamList->beamfn.Fcross_or_b = 0;
+  beamList->nextBeamfn = NULL;
+  if (!(*beamHead)) {
+	*beamHead = beamList;	
+  }
+  else {
+	(*beamTail)->nextBeamfn = (struct CrossCorrBeamFnListElement *)beamList;
+  }
+  *beamTail = beamList;
+
+  DETATCHSTATUSPTR (status);
+	
+  RETURN (status);
+
+}
+
+void initUserVars (LALStatus *status)
+ {
+   INITSTATUS( status, "initUserVars", rcsid );
+   ATTATCHSTATUSPTR (status);
+ 
+
+  uvar_maxlag = 0;
+ 
+  uvar_help = FALSE;
+  uvar_averagePsi = TRUE;
+  uvar_averageIota = TRUE;
+  uvar_blocksRngMed = BLOCKSRNGMED;
+  uvar_searchfddot = FALSE;
+  uvar_detChoice = 2;
+  uvar_f0 = F0;
+  uvar_startTime = 0.0;
+  uvar_endTime = LAL_INT4_MAX;
+  uvar_fdot = 0.0;
+  uvar_fdotBand = 0.0;
+  uvar_fdotResolution = 0.0;
+  uvar_fddot = 0.0;
+  uvar_fddotBand = 0.0;
+  uvar_fddotResolution = 0.0;
+  uvar_fBand = FBAND;
+  uvar_dAlpha = 0.2;
+  uvar_dDelta = 0.2;
+  uvar_psi = 0.0;
+  uvar_refTime = 0.0;
+  uvar_cosi = 0.0;
+ 
+  uvar_ephemDir = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
+  strcpy(uvar_ephemDir,DEFAULT_EPHEMDIR);
+ 
+  uvar_ephemYear = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
+  strcpy(uvar_ephemYear,EPHEM_YEARS);
+ 
+  uvar_dirnameOut = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
+  strcpy(uvar_dirnameOut,DIROUT);
+ 
+  uvar_fbasenameOut = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
+  strcpy(uvar_fbasenameOut,BASENAMEOUT);
+ 
+  uvar_skyfile = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
+  strcpy(uvar_skyfile,SKYFILE);
+ 
+  /* register user input variables */
+  LALRegisterBOOLUserVar( status->statusPtr, "help",
+				    'h', UVAR_HELP,
+				    "Print this message",
+				    &uvar_help);
+  LALRegisterBOOLUserVar( status->statusPtr, "averagePsi",
+				    0, UVAR_OPTIONAL,
+				    "Use average over psi",
+				    &uvar_averagePsi);
+  LALRegisterBOOLUserVar( status->statusPtr, "averageIota",
+				    0, UVAR_OPTIONAL,
+				    "Use average over iota",
+				    &uvar_averageIota);
+  LALRegisterREALUserVar( status->statusPtr, "f0",
+				    'f', UVAR_OPTIONAL,
+				    "Start search frequency",
+				    &uvar_f0);
+  LALRegisterREALUserVar( status->statusPtr, "fdot",
+				    0, UVAR_OPTIONAL,
+				    "Start search frequency derivative",
+				    &uvar_fdot);
+  LALRegisterREALUserVar( status->statusPtr, "fBand",
+				    'b', UVAR_OPTIONAL,
+				    "Search frequency band",
+				    &uvar_fBand);
+  LALRegisterREALUserVar( status->statusPtr, "fdotBand",
+				    0, UVAR_OPTIONAL,
+				    "Search frequency derivative band",
+				    &uvar_fdotBand);
+  LALRegisterREALUserVar( status->statusPtr, "fdotRes",
+				    'r', UVAR_OPTIONAL,
+				    "Search frequency derivative resolution",
+				    &uvar_fdotResolution);
+  LALRegisterBOOLUserVar( status->statusPtr, "searchfddot",
+				    0, UVAR_OPTIONAL,
+				    "Search a range of frequency double derivative",
+				    &uvar_searchfddot);
+  LALRegisterREALUserVar( status->statusPtr, "fddot",
+				    0, UVAR_OPTIONAL,
+				    "Start frequency double derivative",
+				    &uvar_fddot);
+  LALRegisterREALUserVar( status->statusPtr, "fddotBand",
+				    0, UVAR_OPTIONAL,
+				    "Search frequency double derivative band",
+				    &uvar_fddotBand);
+  LALRegisterREALUserVar( status->statusPtr, "fddotRes",
+				    0, UVAR_OPTIONAL,
+				    "Search frequency double derivative resolution",
+				    &uvar_fddotResolution);
+  LALRegisterREALUserVar( status->statusPtr, "startTime",
+				    0, UVAR_OPTIONAL,
+				    "GPS start time of observation",
+				    &uvar_startTime);
+  LALRegisterREALUserVar( status->statusPtr, "endTime",
+				    0, UVAR_OPTIONAL,
+				    "GPS end time of observation",
+				    &uvar_endTime);
+  LALRegisterSTRINGUserVar( status->statusPtr, "skyRegion",
+				      0, UVAR_OPTIONAL,
+				      "sky-region polygon (or 'allsky')",
+				      &uvar_skyRegion);
+  LALRegisterREALUserVar( status->statusPtr, "dAlpha",
+				    0, UVAR_OPTIONAL,
+				    "Sky resolution (flat/isotropic) (rad)",
+				    &uvar_dAlpha);
+  LALRegisterREALUserVar( status->statusPtr, "dDelta",
+				    0, UVAR_OPTIONAL,
+				    "Sky resolution (flat/isotropic) (rad)",
+				    &uvar_dDelta);
+  LALRegisterREALUserVar( status->statusPtr, "psi",
+				    0, UVAR_OPTIONAL,
+				    "Polarisation angle (rad)",
+				    &uvar_psi);
+  LALRegisterSTRINGUserVar( status->statusPtr, "skyfile",
+				      0, UVAR_OPTIONAL,
+				      "Alternative: input skypatch file",
+				      &uvar_skyfile);
+  LALRegisterSTRINGUserVar( status->statusPtr, "ephemDir",
+				      'E', UVAR_OPTIONAL,
+				  "Directory where ephemeris files are located",
+				      &uvar_ephemDir);
+  LALRegisterSTRINGUserVar( status->statusPtr, "ephemYear",
+				      'y', UVAR_OPTIONAL,
+		       "Year (or range of years) of ephemeris files to be used",
+				      &uvar_ephemYear);
+  LALRegisterSTRINGUserVar( status->statusPtr, "sftDir",
+				      'D', UVAR_REQUIRED,
+				      "SFT filename pattern",
+				      &uvar_sftDir);
+  LALRegisterREALUserVar( status->statusPtr, "maxlag",
+				    0,  UVAR_OPTIONAL,
+				    "Maximum time lag for correlating sfts",
+				    &uvar_maxlag);
+  LALRegisterSTRINGUserVar( status->statusPtr, "dirnameOut",
+				      'o', UVAR_OPTIONAL,
+				      "Output directory",
+				      &uvar_dirnameOut);
+  LALRegisterSTRINGUserVar( status->statusPtr, "fbasenameOut",
+				      0, UVAR_OPTIONAL,
+				      "Output file basename",
+				      &uvar_fbasenameOut);
+  LALRegisterINTUserVar( status->statusPtr, "blocksRngMed",
+				   0, UVAR_OPTIONAL,
+				   "Running Median block size",
+				   &uvar_blocksRngMed);
+  LALRegisterINTUserVar( status->statusPtr, "detChoice",
+				   0, UVAR_OPTIONAL,
+   "0: Correlate SFTs from same IFOs only; 1: different IFOs only; 2: all IFOs",
+				   &uvar_detChoice);
+  LALRegisterREALUserVar( status->statusPtr, "refTime",
+				    0, UVAR_OPTIONAL,
+				    "Pulsar reference time (SSB)",
+				    &uvar_refTime);
+  LALRegisterREALUserVar( status->statusPtr, "cosi",
+				    0, UVAR_OPTIONAL,
+				    "cos(iota) inclination angle",
+				    &uvar_cosi); 
+
+  DETATCHSTATUSPTR (status);
+   RETURN (status);
+ }
+
+

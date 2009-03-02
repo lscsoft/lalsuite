@@ -129,43 +129,6 @@ void SetUpRadiometerSkyPatches(LALStatus *status,
 			       REAL8 dAlpha,
 			       REAL8 dDelta);
 
-void GetBeamInfo(LALStatus *status, 
-		 CrossCorrBeamFnListElement *beamHead, 
-		 SFTListElement *sftHead, 
-		 REAL8ListElement *freqHead,
-		 REAL8ListElement *phaseHead, 
-		 SkyPosition skypos, 
-		 EphemerisData *edat, 
-		 PulsarDopplerParams *thisPoint,
-		 REAL8 psi);
-
-void CopySFTFromCatalog(LALStatus *status,
-		   	SFTCatalog *catalog,
-			SFTVector **sft,
-			REAL8 fMin,
-			REAL8 fMax,
-			INT4 index);
-
-void AddSFTtoList(LALStatus *status,
-		  SFTListElement **sftHead,
-		  SFTListElement **sftTail,
-		  SFTtype *sft);
-
-void AddPSDtoList(LALStatus *status,
-		  PSDListElement **psdHead,
-		  PSDListElement **psdTail,
-		  INT4 length);
-
-void AddREAL8toList(LALStatus *status,
-		    REAL8ListElement **head,
-		    REAL8ListElement **tail);
-
-void AddBeamFntoList(LALStatus *status,
-		     CrossCorrBeamFnListElement **beamHead,
-		     CrossCorrBeamFnListElement **beamTail);
-		     
-
-
 /* ****************************************************** */
 
 #ifdef  __cplusplus

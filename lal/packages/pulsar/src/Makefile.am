@@ -14,7 +14,6 @@ libpulsar_la_SOURCES = \
   FlatPulsarMetric.c ComplexAM.c UniversalDopplerMetric.c                \
   FlatLatticeTilingPulsar.c PulsarCrossCorr.c
 
-
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex
