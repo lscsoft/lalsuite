@@ -45,95 +45,6 @@ def add_page_footer(page):
   # sub pages.
   return page
 
-# **************************************************************************
-def add_main_page_css():
-  """
-  A function to add style information to the main ihope page.
-  """
-  page = '''
-body {
-padding: 0px;
-background-color: #dddddd;
-font-family: Helvetica, Verdana, sans-serif;
-font-size: 0.8em;
-}
-
-#wrapper {
-position: relative;
-margin: 10px auto 10px auto;
-width: 950px;
-}
-
-#ihope { 
-position: absolute;
-width: 150px;
-height: 150px;
-top: 0px;
-left: 0px;
-background-color: #990000;
-color: #ffffff;
-text-align: center;
-}
-
-#header {
-position: absolute;
-width: 800px;
-height: 150px;
-right: 0px;
-background-color: #995555;
-color: #ffffff;
-text-align: center;
-}
-
-#menubar {
-position: absolute;
-width: 150px;
-top: 150px;
-background-color: #aeadac;
-}
-
-#menu {
-position: absolute;
-width: 150px;
-background-color: #aeadac;
-}
-
-.menuitem {
-position: relative;
-text-align: right;
-font-size: 10pt;
-font-weight: bold;
-right: 0px;
-width: 140px;
-top: 5px;
-padding-top: 5px;
-padding-bottom: 5px;
-padding-right: 5px;
-}
-
-a.menulink { text-decoration: none; }
-
-a.menulink:link { color: #aa0517; }
-a.menulink:visited { color: #aa0517; }
-a.menulink:active { color: #aa0517; }
-
-a.menulink:hover { color: #8eebec; }
-
-#iframecontent {
-position: absolute;
-width: 800px;
-top: 150px;
-left: 150px;
-padding: 0px;
-background-color: #ffffff;
-}
-
-#placeholder {
-text-align: center;
-}
-'''
-  return page
-
 # ***************************************************************************
 def write_sub_page(opts,section,html_sections,style,script):
   """ 
@@ -328,74 +239,11 @@ def create_toggle():
   @return: nothing
   """
   fname = open("toggle.js", "w")
-  fname.write("function toggleVisible(division) {\n"+\
-    "  if (document.getElementById(\"div_\" + division).style.display =="\
-   + " \"none\") {\n document.getElementById(\"div_\" + division).style.display"\
-   + " = \"block\";\n document.getElementById(\"input_\" + division).checked "\
-   + " = true;\n } else {\n document.getElementById(\"div_\" + "\
-   + " division).style.display = \"none\";\n document.getElementById("\
-   + "\"input_\" + division).checked = false;\n  }\n  }\n" )
-
-  # common part to expandall and clearall function
-  txt=""
-  txt += "  var section = new Array();\n"
-  number = 0
-  for each_section in html_order:
-    id = each_section.replace(" ","_")     
-    txt += "section[" + str(number) + "] = \""+id+"\";\n"
-    number+=1
-  txt += "  for (x in section){\n"
-  txt += "     division = section[x];\n"
-  
-  txtclose="  }\n}\n"
-
-  # first function
-  fname.write( "function expandall(max){\n")
-  fname.write(txt)
-  fname.write("      if (document.getElementById(\"div_\" + division).style.display == \"none\") {\n")
-  fname.write("      document.getElementById(\"div_\" + division).style.display = \"block\";\n")
-  fname.write("      document.getElementById(\"input_\" + division).checked  = true;\n")
-  fname.write(txtclose)
-  fname.write("    for (i=0; i<max;i++){\n")
-  fname.write("      division = i+''\n")
-  fname.write("      if (document.getElementById(\"div_\" + division).style.display == \"none\") {\n")
-  fname.write("      document.getElementById(\"div_\" + division).style.display = \"block\";\n")
-  fname.write("      document.getElementById(\"input_\" + division).checked  = true;\n")
-  fname.write(txtclose)
-  fname.write("}\n")
-  
-  # second function clearall
-  fname.write( "function clearall(max){\n")
-  fname.write(txt)
-  fname.write("      if (document.getElementById(\"div_\" + division).style.display == \"block\") {\n")
-  fname.write("      document.getElementById(\"div_\" + division).style.display = \"none\";\n")
-  fname.write("      document.getElementById(\"input_\" + division).checked  = false;\n")
-  fname.write(txtclose)
-  fname.write("    for (i=0; i<max;i++){\n")
-  fname.write("      division = i+''\n")
-  fname.write("      if (document.getElementById(\"div_\" + division).style.display == \"block\") {\n")
-  fname.write("      document.getElementById(\"div_\" + division).style.display = \"none\";\n")
-  fname.write("      document.getElementById(\"input_\" + division).checked  = false;\n")
-  fname.write(txtclose)
-  fname.write("}\n")
-
-  # function to replace the non-strict  "target" html key
-  fname.write("""function externalLinks() {
-    if (!document.getElementsByTagName) return;
-    var anchors = document.getElementsByTagName("a");
-    for (var i=0; i<anchors.length; i++) {
-      var anchor = anchors[i];
-      if (anchor.getAttribute("href") &&
-          anchor.getAttribute("rel") == "external")
-        anchor.target = "_blank";
-     }
-    }
-   window.onload = externalLinks;
-  """)
   fname.write("""function afterLoadFrame() {
     $('#iframecontent h3').click(function() { $(this).next().toggle('fast'); });
     $('#iframecontent a[rel="external"]').attr('target','_blank');
     $('#iframecontent input').hide();
+    $('#iframecontent p:first').hide();
     }
   function loadFrame(sourceURL) {
     $("#iframecontent").load(sourceURL,{},afterLoadFrame);
@@ -1456,8 +1304,6 @@ def heading(page, title="None", label="Switch details on/off", heading="h3"):
   h3_num = h3_num + 1
   text = label 
 
-  page.input(id="input_"+input, type="button", \
-      onclick="toggleVisible('"+input+"')", value=text ,class_="toggle")
   page.add("</"+heading+">")
   page.div(id="div_"+input , style='display:none') 
 
@@ -2104,7 +1950,6 @@ try:
   opts.gps_end_time 	= configcp.get("main", "gps-end-time")
   opts.ihope_directory 	= configcp.get("main", "ihope-directory")
   opts.title	 	= configcp.get("main", "title")
-  opts.url	 	= configcp.get("main", "url")
   opts.output	 	= configcp.get("main", "output")
   opts.html_directory 	= configcp.get("main", "html-directory")
   monthLead             = configcp.get("main", "month-lead")
@@ -2119,7 +1964,7 @@ except:
 #sub-products of the ini file parsing
 opts.gpsdir =  '/'+str(opts.gps_start_time)+'-'+str(opts.gps_end_time)+'/'   # note the / at the end
 opts.duration = str(int(opts.gps_end_time) - int(opts.gps_start_time))
-opts.webdir = opts.url + opts.gpsdir
+opts.webdir = './'
 opts.datadir = opts.ihope_directory + opts.gpsdir 
 opts.physdir = opts.html_directory + opts.gpsdir
 opts.txt_suffix = '-'+opts.gps_start_time+'-'+opts.duration+'.txt'
@@ -2134,11 +1979,6 @@ except:
   msg = "Cannot open %" % opts.output
   print >>sys.stderr, msg
   raise
-
-# Making main page css file
-css_file = file('mainpage.css',"w")
-css_file.write(add_main_page_css())
-css_file.close()
 
 
 #-----------------------------------------
@@ -2156,11 +1996,6 @@ mkdir(opts.physdir+'/Images')
 
 # get the style file and copy it (must happen after the html directories have been created)
 opts.style = set_style()
-# Copy the main page style file.
-commnd = 'cp ' + "mainpage.css " +opts.physdir
-make_external_call(commnd, opts.debug, opts.debug, True )
-
-
 
 #-----------------------------------------
 # now we can parse the ihope.ini file itself
@@ -2224,7 +2059,7 @@ create_toggle()
 msg =   "Creating HTML document"
 logText(logfile, msg)
 
-mainpage = initialize_page(title,'mainpage.css',script)
+mainpage = initialize_page(title,opts.style,script)
 
 mainpage.div(id_="wrapper")
 mainpage.div(id_="menubar")
