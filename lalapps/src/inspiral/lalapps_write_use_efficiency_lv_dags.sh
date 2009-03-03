@@ -144,7 +144,7 @@ if [ 1 ]; then
   echo "EFactors-file = bns001inj_efficiency_factors.stat"
   echo "loudest-stats-file = loudest_stats.stat"
   echo "; choices are constant, exponent, two-sigma"
-  echo "extrapolation-method = exponent"
+  echo "extrapolation-method = two-sigma"
 
 fi > addEfficiencyFactors.ini
 
