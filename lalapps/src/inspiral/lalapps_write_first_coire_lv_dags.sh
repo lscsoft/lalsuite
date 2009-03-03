@@ -3,12 +3,12 @@
 ################################################################################
 # get needed options from ini file
 
-cat=`cat write_ifar_scripts.ini | grep 'cat' | awk '{print $3}'`
+cat=`cat write_ifar_scripts_lv.ini | grep 'cat' | awk '{print $3}'`
 
-coire_path=`cat write_ifar_scripts.ini | grep 'coire_path' | awk '{print $3}'`
+coire_path=`cat write_ifar_scripts_lv.ini | grep 'coire_path' | awk '{print $3}'`
 
-log_path=`cat write_ifar_scripts.ini | grep 'log_path' | awk '{print $3}'`
-condor_priority=`cat write_ifar_scripts.ini | grep 'condor_priority' | awk '{print $3}'`
+log_path=`cat write_ifar_scripts_lv.ini | grep 'log_path' | awk '{print $3}'`
+condor_priority=`cat write_ifar_scripts_lv.ini | grep 'condor_priority' | awk '{print $3}'`
 
 #Print options out to screen for verification
 echo "Options used are:"
