@@ -106,6 +106,9 @@ def parse_command_line():
   parser.add_option( "-g", "--glob", action = "store", type = "string", \
         default = None, metavar = " GLOB", \
         help = "glob of CORSE files to read" )
+  parser.add_option( "-R", "--min-rate", action = "store", type = "float", \
+      default = None, metavar = "MINRATE", \
+      help = "The minimum combined IFAR needed to output to xml for followup" )
   parser.add_option( "-I", "--cache-file", \
         help = "read CORSE file names from cache input file; " + \
         "Currently does not work.")
@@ -319,9 +322,16 @@ for ii in range(0,len(FANc)):
 
 combinedTrigs = lsctables.New( lsctables.SnglInspiralTable , columns=[])
 loudestTrig = lsctables.New( lsctables.SnglInspiralTable , columns=[])
+
+if opts.min_rate:
+  minIFAN = opts.min_rate/(FrgrndTime/3.15567360E7)
+  maxFAN = 1/minIFAN
+
 for column in columnList():
   combinedTrigs.appendColumn(column)
   loudestTrig.appendColumn(column)
+
+loudestTrigTemp = []
 loudestTrigFAR = 99999999999.
 for thisfile in corsefiles:
   insptrigs = SnglInspiralUtils.ReadSnglInspiralFromFiles( [thisfile] )
@@ -337,20 +347,25 @@ for thisfile in corsefiles:
             break # go to next fan in FANc
           elif jj == len(maxFANs)-1: # all categories active
             trig.alpha = trig.alpha * len(maxFANs)
-      if trig.alpha < (loudestTrigFAR-0.000001):
-        loudestTrigTemp = [trig]
-        loudestTrigFAR = trig.alpha
-      elif not trig.alpha > (loudestTrigFAR+0.000001):
-        loudestTrigTemp.append(trig)
       combinedTrigs.append(trig)
+      if opts.min_rate:
+        if trig.alpha < (maxFAN):	  
+          loudestTrig.append(trig)
+	elif len(loudestTrig) == 0:
+	  if trig.alpha < (loudestTrigFAR-0.000001):
+            loudestTrigTemp = [trig]
+            loudestTrigFAR = trig.alpha
+          elif not trig.alpha > (loudestTrigFAR+0.000001):
+            loudestTrigTemp.append(trig)
 
-print >> sys.stdout, opts.ifo_times
-print >> sys.stdout, corsefiles[0]
-if loudestTrigFAR == 0: loudestTrigFAR = 0.0000000001
-print >> sys.stdout, 'Loudest IFAR = ' + str(1./loudestTrigFAR) 
-
-for trig in loudestTrigTemp:
-  loudestTrig.append(trig)
+if opts.min_rate:
+  if len(loudestTrig) == 0:
+    for trig in loudestTrigTemp:
+      loudestTrig.append(trig)
+  print >> sys.stdout, 'The time analyzed was' , FrgrndTime
+  print >> sys.stdout, 'Accepting triggers with IFAN >' , minIFAN
+  print >> sys.stdout, 'Accepting triggers with FAN <' , maxFAN
+  print >> sys.stdout, 'Accepted' , len(loudestTrig) , ' SINGLE triggers.'
 
 flag = False
 integ = 0
@@ -366,11 +381,14 @@ parent = origtbl.parentNode
 parent.replaceChild(combinedTrigs,origtbl)
 utils.write_filename(outputFile,opts.output_file, \
     gz = opts.output_file.endswith('gz'))
-newtbl = tab.get_table(outputFile, lsctables.SnglInspiralTable.tableName)
-parent = newtbl.parentNode
-parent.replaceChild(loudestTrig,newtbl)
-utils.write_filename(outputFile,opts.output_file_loudest, \
-    gz = opts.output_file.endswith('gz'))
+if opts.min_rate:
+  for trig in loudestTrig:
+    trig.alpha = trig.alpha / (FrgrndTime/3.15567360E7)
+  newtbl = tab.get_table(outputFile, lsctables.SnglInspiralTable.tableName)
+  parent = newtbl.parentNode
+  parent.replaceChild(loudestTrig,newtbl)
+  utils.write_filename(outputFile,opts.output_file_loudest, \
+      gz = opts.output_file.endswith('gz'))
 
 #searchSumm = lsctables.New(lsctables.SearchSummaryTable)
 #summVal = lsctables.New(lsctables.SummValueTable)
