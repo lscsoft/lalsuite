@@ -415,7 +415,7 @@ def create_combineposterior_job(dagman,posteriorFiles,
   dagman += ' macrominmass ="' + minMass + '"'
   dagman += ' macromaxmass ="' + maxMass + '"'
   dagman += ' macroreldir ="' + relDir + '"'
-  dagman += ' macromasstype ="' + massType + '"'
+  dagman += ' macromasstype ="' + massType.replace('_',' ') + '"'
   dagman += ' \n'
   dagman += 'CATEGORY ' + jobName + ' corse \n'
   return dagman,jobName
@@ -565,15 +565,15 @@ nonSpinInjRuns = []
 injSeeds = {}
 spinInjRuns = []
 if runNonSpin:
-  temp = cp.options('non-spin-injection-runs')
-  for string in temp:
+  temp = cp.items('non-spin-injection-runs')
+  for dummy,string in temp:
     name,seed=string.split(',')
     nonSpinInjRuns.append(name)
     injSeeds[name] = seed
   nonspin = nonSpinInjRuns[0]
 if runSpin:
-  temp = cp.options('spin-injection-runs')
-  for string in temp:
+  temp = cp.items('spin-injection-runs')
+  for dummy,string in temp:
     name,seed=string.split(',')
     spinInjRuns.append(name)
     injSeeds[name] = seed

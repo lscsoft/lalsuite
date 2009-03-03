@@ -69,6 +69,22 @@ if [ 1 ]; then
   echo "MAXJOBS ifarcombined 20"
 fi > combined_ifar_${data_type}.dag
 
+if [ 1 ]; then
+  # run plotifar on all the mass bins globbed together 
+    for combo in H1L1 H2L1 H1H2L1; do
+      job_name="${combo}-ifar-combined_ALL_MASSES_${slide_data_type}"
+      glob_files="corse_all_data_files/${slide_data_type}/${combo}*CORSE_`echo ${slide_data_type} | tr '[a-z]' '[A-Z]'`_*_${cat}-${month_gps_time}-${month_duration}.xml.gz"
+      outpath="combined_ifar_files/${slide_data_type}/"
+      time_correct_file="second_coire_files/summ_files_all_data/${combo}-SECOND_COIRE_${cat}_${combo}-${month_gps_time}-${month_duration}.txt"
+      user_tag="ALL_MASSES-${slide_data_type}"
+      echo "JOB $job_name ifar_result.ifar_combined_fu.sub"
+      echo "RETRY $job_name 0"
+      echo "VARS $job_name macroglob=\"$glob_files\" macrooutpath=\"$outpath\" macroifotimes=\"$combo\" macrotcorrfile=\"$time_correct_file\" macrousertag=\"$user_tag\""
+      echo "CATEGORY $job_name ifarcombined"
+      echo
+    done
+    echo "MAXJOBS ifarcombined 20"
+fi > combined_ifar_${slide_data_type}.dag
 
 if [ 1 ]; then
   for injstring in BNSLININJ BNSLOGINJ BNSSPINLININJ BNSSPINLOGINJ NSBHLININJ NSBHLOGINJ NSBHSPINLININJ NSBHSPINLOGINJ BBHLININJ BBHLOGINJ BBHSPINLININJ BBHSPINLOGINJ; do
@@ -102,6 +118,20 @@ if [ 1 ]; then
   echo "queue 1"
 fi > ifar_result.ifar_combined.sub
 
+if [ 1 ]; then
+  echo "universe = vanilla"
+  echo "executable = ${combinedFAR_path}"
+  echo "arguments = --glob \$(macroglob) --output-path \$(macrooutpath) --ifo-times \$(macroifotimes) --gps-start-time ${month_gps_time} --gps-end-time ${gps_end_time} --time-correct-file \$(macrotcorrfile) --user-tag \$(macrousertag) --min-rate 0.02"
+  echo "getenv = True"
+  echo "log = " `mktemp -p ${log_path}`
+  echo "error = logs/ifarcombined-\$(cluster)-\$(process).err"
+  echo "output = logs/ifarcombined-\$(cluster)-\$(process).out"
+  echo "notification = never"
+  echo "priority = ${condor_priority}"
+  echo "queue 1"
+fi > ifar_result.ifar_combined_fu.sub
+
+
 #make directory structure
 if [ ! -d combined_ifar_files ] ; then
  mkdir combined_ifar_files
@@ -109,7 +139,7 @@ fi
 if [ ! -d combined_ifar_files/summ_files ] ; then
   mkdir combined_ifar_files/summ_files
 fi
-for string in ${data_type} ${slide_data_type}_slide BNSLININJ BNSLOGINJ BNSSPINLININJ BNSSPINLOGINJ NSBHLININJ NSBHLOGINJ NSBHSPINLININJ NSBHSPINLOGINJ BBHLININJ BBHLOGINJ BBHSPINLININJ BBHSPINLOGINJ; do
+for string in ${data_type} ${slide_data_type} ${slide_data_type}_slide BNSLININJ BNSLOGINJ BNSSPINLININJ BNSSPINLOGINJ NSBHLININJ NSBHLOGINJ NSBHSPINLININJ NSBHSPINLOGINJ BBHLININJ BBHLOGINJ BBHSPINLININJ BBHSPINLOGINJ; do
   if [ ! -d combined_ifar_files/${string} ] ; then
     mkdir combined_ifar_files/${string}
   fi
@@ -117,6 +147,7 @@ done
 echo " done."
 echo "*******************************************************************"
 echo "  Now run: condor_submit_dag combined_ifar_${data_type}.dag"
+echo "      and: condor_submit_dag combined_ifar_${slide_data_type}.dag"
 echo "      and: condor_submit_dag combined_ifar_${slide_data_type}_slide.dag"
 echo "      and: condor_submit_dag combined_ifar_injection.dag"
 echo "*******************************************************************"

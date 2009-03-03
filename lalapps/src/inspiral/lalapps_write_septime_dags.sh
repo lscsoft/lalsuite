@@ -120,7 +120,7 @@ if [ 1 ]; then
       echo "## JOB $job_name requires input file $infile"
     done
   done
-  echo "MAXJOBS septime 20"
+  echo "MAXJOBS septime 200"
 fi > septime_injection.dag
 
 for injstring in BNSLININJ BNSLOGINJ BNSSPINLININJ BNSSPINLOGINJ NSBHLININJ NSBHLOGINJ NSBHSPINLININJ NSBHSPINLOGINJ BBHLININJ BBHLOGINJ BBHSPINLININJ BBHSPINLOGINJ; do
