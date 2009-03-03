@@ -63,7 +63,7 @@ def dict_from_str(trig):
 
   # things true for all ifos
   paramdict = {}
-  for param in ['Rank', 'ID', 'Stat', 'FAR', 'Type']:
+  for param in ['Rank', 'ID', 'Stat', 'FAR', 'Type', 'IfoTime']:
     paramdict[param] = param_from_str(trig, param)
   ifodict['All'] = paramdict
   return ifodict
@@ -82,7 +82,7 @@ def plotsnr(pdict, wiki, plot, server):
 # Put the coherent inspiral jobs in the wiki
 def plotcoh(pdict, wiki, plot, server):
   
-  ifos = pdict['All']['Type']
+  ifos = pdict['All']['IfoTime']
   id = pdict['All']['ID']
   cols = []
   for p in plot:
@@ -134,8 +134,8 @@ def param_table(pdict, wiki, server):
 
   skypath = glob.glob('pylal_skyPlotJob/Images/*plot_inspiral_skymap_*' + pdict['All']['ID'] + '*_skylocation-unspecified-gpstime_thumb.png')
   wiki.write('||<|'+str(nrows)+'>'+imageLink(server+'/'+skypath[0]))
-  write_columns(['RANK','COINC TYPE','EVENT ID','STAT','FAR'],wiki)
-  write_columns([pdict['All']['Rank'],pdict['All']['Type'],pdict['All']['ID'],pdict['All']['Stat'],pdict['All']['FAR']], wiki,'white','normal')
+  write_columns(['RANK','COINC TYPE','IFO TIME','EVENT ID','STAT','FAR'],wiki)
+  write_columns([pdict['All']['Rank'],pdict['All']['Type'],pdict['All']['IfoTime'],pdict['All']['ID'],pdict['All']['Stat'],pdict['All']['FAR']], wiki,'white','normal')
 
   # IFO DEPENDENT PARAMETERS
   write_columns(['SNR','CHISQ','CHISQ DOF','EFF SNR','DURATION'],wiki)
