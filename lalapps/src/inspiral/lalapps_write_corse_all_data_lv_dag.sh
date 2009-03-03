@@ -370,7 +370,7 @@ if [ 1 ] ; then
   echo "universe = local"
   echo "executable = add_septime.py"
   # add --set-zero-lag-time-to 31536000 below to normilze IFARs to 1 year
-  echo "arguments = --input-file septime_files/\$(macroinfile) --output-file septime_files/\$(macrooutfile) --num-slides 50"
+  echo "arguments = --input-file septime_files/\$(macroinfile) --output-file septime_files/\$(macrooutfile) --num-slides 50 --set-zero-lag-time-to 31536000"
   echo "getenv = True"
   echo "log = " `mktemp -p ${log_path}`
   echo "error = logs/add_septime-\$(cluster)-\$(process).err"
