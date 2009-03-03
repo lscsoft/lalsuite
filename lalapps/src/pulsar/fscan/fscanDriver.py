@@ -13,6 +13,8 @@ __date__ = '$Date$'
 __version__ = '$Revision$'[11:-2]
 
 # REVISIONS:
+# 03/02/2009 gam; implement -g --segment-file option; if not given run on Science,Injections times, if -g ALL given then use start and end times as segment.
+# 03/02/2009 gam; if createSFTs then splice in the SFT DAG.
 
 # import standard modules and append the lalapps prefix to the python path
 import sys, os
@@ -52,6 +54,7 @@ Usage: [options]
   -p, --sft-path             path to SFTs (either already existing or where to output them)
   -v, --sft-version          (optional) SFT version number (1 or 2; default is 1)
   -C  --create-sfts          (optional) create the SFTs !!! (/tmp will be appended to the sft-path and SFTs will be generated there!)
+  -g, --segment-file         (optional) used only if creating sfts; gives alternative file with segments to use, otherwise LSCsegFind is used to find Science,Injection segments; if -g ALL is given then [start_time, start_time + duration) is used.
   -o, --sub-log-path         (optional) path to log files given in .sub files (default is $PWD/logs; this directory must exist and usually should be under a local file system.)
   -N, --channel-name         name of input time-domain channel to read from frames
   -i, --ifo                  (optional) ifo to use with LSCsegFind and MakeSFTDAG: e.g., H1, H2, L1, G1; PEM channels can start with H0, L0, or G0 (default: use start of channel name)
@@ -398,20 +401,40 @@ if (createSFTs):
   ###################################################
   # FIND SCIENCE MODE SEGMENTS; RUN LSCsegFind
   #
-  segmentFile = 'tmpSegs%stmp.txt' % tagString
-  segCommand = 'LSCsegFind --type Science --interferometer %s --gps-start-time %d --gps-end-time %d > %s' % (segIFO,analysisStartTime, analysisEndTime,segmentFile)
-  print >> sys.stdout,"Trying: ",segCommand,"\n"
-  try:
-    segFindExit = os.system(segCommand)
-    if (segFindExit > 0):
-       print >> sys.stderr, 'LSCsegFind failed: %s \n' % segFindExit
-       sys.exit(1)
-    else:
-       print >> sys.stderr, 'LSCsegFind succeeded! \n'
-  except:
-    print >> sys.stderr, 'LSCsegFind failed: %s \n' % segFindExit
-    sys.exit(1)
-  
+  # 03/02/2009 gam; in default case change Science to Science,Injection; add segment file options as elif and else options:
+  if not segmentFile:
+    segmentFile = 'tmpSegs%stmp.txt' % tagString
+    segCommand = 'LSCsegFind --type Science,Injection --interferometer %s --gps-start-time %d --gps-end-time %d > %s' % (segIFO,analysisStartTime, analysisEndTime,segmentFile)
+    print >> sys.stdout,"Trying: ",segCommand,"\n"
+    try:
+      segFindExit = os.system(segCommand)
+      if (segFindExit > 0):
+         print >> sys.stderr, 'LSCsegFind failed: %s \n' % segFindExit
+         sys.exit(1)
+      else:
+         print >> sys.stderr, 'LSCsegFind succeeded! \n'
+    except:
+      print >> sys.stderr, 'LSCsegFind failed: %s \n' % segFindExit
+      sys.exit(1)
+  elif segmentFile == "ALL":
+    segmentFile = 'tmpSegs%stmp.txt' % tagString
+    segCommand = '/bin/echo %d %d > %s' % (analysisStartTime,analysisEndTime,segmentFile)
+    print >> sys.stdout,"Trying: ",segCommand,"\n"
+    try:
+      segFindExit = os.system(segCommand)
+      if (segFindExit > 0):
+         print >> sys.stderr, 'Failed: %s \n' % segFindExit
+         sys.exit(1)
+      else:
+         print >> sys.stderr, 'Succeeded! \n'
+    except:
+      print >> sys.stderr, 'Failed: %s \n' % segFindExit
+      sys.exit(1)  
+  else:
+    # Just continue with the name given on the command line.
+    print >> sys.stderr, 'Using segmentFile == %s \n' % segmentFile
+
+    
   ###################################################
   # CHECK THE SEGMENT FILE
   #
@@ -477,31 +500,39 @@ dagFileName = 'tmpSUPERDAG%stmp.dag' % tagString
 dagFileName = 'SUPERDAG%stmp.dag' % tagString
 dagFID = file(dagFileName,'w')
 
-sftDAGSUBJobName = None
+# 03/02/2009 gam; use SPLICE to insert SFT DAG
+#sftDAGSUBJobName = None
+spliceSFTDAGName = None
 if (createSFTs):
   # IF GENERATING SFTS ADD THIS TO THE SUPER DAG WHICH RUNS EVERYTHING
   # First write a submit file for summitting a dag to condor
-  condorDAGSUBFileFID = file('condorDAGSUBFile.sub','w')
-  condorDAGSUBFileLogFile = subLogPath + '/' + 'condorDAGSUBFile_' + dagFileName + '.log'
-  condorDAGSUBFileFID.write('universe = scheduler\n')
-  condorDAGSUBFileFID.write('executable = $ENV(CONDOR_LOCATION)/bin/condor_dagman\n')
-  condorDAGSUBFileFID.write('getenv = True\n')
-  condorDAGSUBFileFID.write('arguments = $(argList)\n')
-  condorDAGSUBFileFID.write('log = %s\n' % condorDAGSUBFileLogFile)
-  condorDAGSUBFileFID.write('error = %s/condorDAGSUBFile_$(tagstring).err\n' % logPath)
-  condorDAGSUBFileFID.write('output = %s/condorDAGSUBFile_$(tagstring).out\n' % logPath)
-  condorDAGSUBFileFID.write('notification = never\n')
-  condorDAGSUBFileFID.write('queue 1\n')
-  condorDAGSUBFileFID.close
-  # Now add a jobs to run the sft dag to the super dag
+  # 03/02/2009 gam; comment out next lines; no longer need to create condor sub file:
+  #condorDAGSUBFileFID = file('condorDAGSUBFile.sub','w')
+  #condorDAGSUBFileLogFile = subLogPath + '/' + 'condorDAGSUBFile_' + dagFileName + '.log'
+  #condorDAGSUBFileFID.write('universe = scheduler\n')
+  #condorDAGSUBFileFID.write('executable = $ENV(CONDOR_LOCATION)/bin/condor_dagman\n')
+  #condorDAGSUBFileFID.write('getenv = True\n')
+  #condorDAGSUBFileFID.write('arguments = $(argList)\n')
+  #condorDAGSUBFileFID.write('log = %s\n' % condorDAGSUBFileLogFile)
+  #condorDAGSUBFileFID.write('error = %s/condorDAGSUBFile_$(tagstring).err\n' % logPath)
+  #condorDAGSUBFileFID.write('output = %s/condorDAGSUBFile_$(tagstring).out\n' % logPath)
+  #condorDAGSUBFileFID.write('notification = never\n')
+  #condorDAGSUBFileFID.write('queue 1\n')
+  #condorDAGSUBFileFID.close
+  ## Now add a jobs to run the sft dag to the super dag
+  #sftNodeCount = 0L
+  #sftDAGSUBJobName = 'runSFTDAGSUB_%i' % sftNodeCount
+  #dagFID.write('JOB %s condorDAGSUBFile.sub\n' % sftDAGSUBJobName)
+  #dagFID.write('RETRY %s 1\n' % sftDAGSUBJobName)
+  #sftDAGSUBFileLogFile = subLogPath + '/' + 'sftDAGSUBFile_' + dagFileName + '.log'
+  #argList = '-f -l . -Debug 3 -Lockfile %s.lock -Condorlog %s -Dag %s -Rescue %s.rescue -MaxJobs 40 -MaxPre 1 -MaxPost 1' % (sftDAGFile, sftDAGSUBFileLogFile, sftDAGFile, sftDAGFile)
+  #tagStringOut = '%s_%i' % (tagString, sftNodeCount)
+  #dagFID.write('VARS %s argList="%s" tagstring="%s"\n'%(sftDAGSUBJobName,argList,tagStringOut))
+  
+  # 03/02/2009 gam; instead of above, add splice in SFT DAG:
   sftNodeCount = 0L
-  sftDAGSUBJobName = 'runSFTDAGSUB_%i' % sftNodeCount
-  dagFID.write('JOB %s condorDAGSUBFile.sub\n' % sftDAGSUBJobName)
-  dagFID.write('RETRY %s 1\n' % sftDAGSUBJobName)
-  sftDAGSUBFileLogFile = subLogPath + '/' + 'sftDAGSUBFile_' + dagFileName + '.log'
-  argList = '-f -l . -Debug 3 -Lockfile %s.lock -Condorlog %s -Dag %s -Rescue %s.rescue -MaxJobs 40 -MaxPre 1 -MaxPost 1' % (sftDAGFile, sftDAGSUBFileLogFile, sftDAGFile, sftDAGFile)
-  tagStringOut = '%s_%i' % (tagString, sftNodeCount)
-  dagFID.write('VARS %s argList="%s" tagstring="%s"\n'%(sftDAGSUBJobName,argList,tagStringOut))
+  spliceSFTDAGName = 'spliceSFTDAG_%i' % sftNodeCount
+  dagFID.write('SPLICE %s %s\n' % (spliceSFTDAGName, sftDAGFile))
 
 # CREATE A CONDOR .sub FILE TO RUN lalapps_spec_avg
 spectrumAverageFID = file('spectrumAverage.sub','w')
@@ -592,8 +623,10 @@ while (thisEndFreq < endFreq):
      argList = '--startGPS %d --endGPS %d --IFO %s --fMin %d --fMax %d --SFTs %s/SFT*' % (analysisStartTime,analysisEndTime,ifo,thisStartFreq,thisEndFreq,pathToSFTs)
   tagStringOut = '%s_%i' % (tagString, nodeCount)  
   dagFID.write('VARS %s argList="%s" tagstring="%s"\n'%(specAvgJobName,argList,tagStringOut))
-  if (createSFTs):  
-    dagFID.write('PARENT %s CHILD %s\n'%(sftDAGSUBJobName,specAvgJobName))
+  if (createSFTs):
+    # 03/02/2009 gam; use SPLICE to insert SFT DAG
+    #dagFID.write('PARENT %s CHILD %s\n'%(sftDAGSUBJobName,specAvgJobName))
+    dagFID.write('PARENT %s CHILD %s\n'%(spliceSFTDAGName,specAvgJobName))
   if (makeMatlabPlots):
      runMatlabPlotScriptJobName = 'runMatlabPlotScript_%i' % nodeCount
      dagFID.write('JOB %s runMatlabPlotScript.sub\n' % runMatlabPlotScriptJobName)
