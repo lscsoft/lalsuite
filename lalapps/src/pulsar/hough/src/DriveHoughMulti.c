@@ -14,7 +14,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with with program; see the file COPYING. If not, write to the 
  *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, 
- *  MA  02111-1307  USA
+ *  MA  02111-1307  USA2
  */
 
 /**
@@ -437,7 +437,7 @@ int main(int argc, char *argv[]){
   LAL_CALL( LALRegisterINTUserVar(    &status, "numSkyPartitions",0,UVAR_OPTIONAL, "Number of (equi-)partitions to split skygrid into", &uvar_numSkyPartitions), &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "partitionIndex",0,UVAR_OPTIONAL, "Index [0,numSkyPartitions-1] of sky-partition to generate", &uvar_partitionIndex), &status);
   LAL_CALL( LALRegisterREALUserVar( &status, "refTime",         0,  UVAR_OPTIONAL, "GPS reference time of observation", &uvar_refTime), &status);
-  LAL_CALL( LALRegisterREALUserVar( &status, "deltaF1dot",         0,  UVAR_OPTIONAL, "Stepsize for f1dot [Default: 1/(Tcoh*Tobs)]", &uvar_deltaF1dot), &status);
+  LAL_CALL( LALRegisterREALUserVar( &status, "deltaF1dot",         0,  UVAR_OPTIONAL, "(Step size for f1dot)*Tcoh [Default: 1/Tobs]", &uvar_deltaF1dot), &status);
 
   /* developer input variables */
   LAL_CALL( LALRegisterINTUserVar(    &status, "blocksRngMed",    0, UVAR_DEVELOPER, "Running Median block size", &uvar_blocksRngMed), &status);
@@ -2533,7 +2533,7 @@ void ComputeFoft_NM(LALStatus   *status,
   REAL8   sourceDelta, sourceAlpha, cosDelta;
   INT4    j,i, nspin, factorialN; 
   REAL8Cart3Coor  sourceLocation;
-  
+
   /* --------------------------------------------- */
   INITSTATUS (status, "ComputeFoft", rcsid);
   ATTATCHSTATUSPTR (status);
@@ -2547,15 +2547,15 @@ void ComputeFoft_NM(LALStatus   *status,
   ASSERT (foft->data,  status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
   ASSERT (timeDiffV->data,  status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
   ASSERT (velV->data,  status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
-  
+
   sourceDelta = pulsarTemplate->latitude;
   sourceAlpha = pulsarTemplate->longitude;
-  cosDelta = cos(sourceDelta);
-  
+  cosDelta = cos(sourceDelta);  
+
   sourceLocation.x = cosDelta* cos(sourceAlpha);
   sourceLocation.y = cosDelta* sin(sourceAlpha);
   sourceLocation.z = sin(sourceDelta);
-    
+  
   mObsCoh = foft->length;    
   nspin = pulsarTemplate->spindown.length;
   
@@ -2573,8 +2573,10 @@ void ComputeFoft_NM(LALStatus   *status,
       timeDiffN *= timeDiffN;
     }
     foft->data[j] = f0new * (1.0 +vcProdn);
+    /*foft->data[j] = floor(f0new*1800+0.5) * (1.0 +vcProdn)/1800;*/
   }    
-    
+  
+  
   DETATCHSTATUSPTR (status);
   /* normal exit */
   RETURN (status);
