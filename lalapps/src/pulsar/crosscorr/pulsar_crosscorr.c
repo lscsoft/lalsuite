@@ -459,7 +459,6 @@ int main(int argc, char *argv[]){
 
 	listLength = slidingcounter - sftcounter;
 
-
    if (listLength > 1) {
  	/* create sft pair indices */
 	LAL_CALL ( LALCreateSFTPairsIndicesFrom2SFTvectors( &status,
@@ -661,7 +660,6 @@ printf("finish loop over all sfts\n");
 
 	  /* select candidates  */
 
-
   
 
   fclose (fp);
@@ -678,20 +676,39 @@ printf("finish loop over all sfts\n");
   XLALDestroyREAL8Vector(stddev);
   XLALDestroyREAL8Vector(rho);
 
-  XLALFree(beamHead);
-  XLALFree(beamTail);
-  tmpSFT = &(sftHead->sft);
-  LAL_CALL(LALDestroySFTtype(&status, &tmpSFT),&status);
-  tmpSFT = &(sftTail->sft);
-  LAL_CALL(LALDestroySFTtype(&status, &tmpSFT),&status);
 
-  XLALDestroyREAL8FrequencySeries (&(psdHead->psd));
-  XLALDestroyREAL8FrequencySeries(&(psdTail->psd));
-  XLALFree(phaseHead);
-  XLALFree(phaseTail);
-  XLALFree(freqHead);
-  XLALFree(freqTail);
+  /*free the last few elements (if they're not already free). */
+  if (beamHead) {
+	if (beamHead != beamTail) { XLALFree(beamTail); }
+	 XLALFree(beamHead);
+  }
  
+  if(sftHead) {
+	 if (sftHead != sftTail) {
+		 tmpSFT = &(sftTail->sft);
+  		 LAL_CALL(LALDestroySFTtype(&status, &tmpSFT),&status);
+	 }
+  	tmpSFT = &(sftHead->sft);
+  	LAL_CALL(LALDestroySFTtype(&status, &tmpSFT),&status);
+  }  
+  if (psdHead) {
+	if (psdHead != psdTail) {
+		  XLALDestroyREAL8FrequencySeries(&(psdTail->psd));
+  	}
+
+  	XLALDestroyREAL8FrequencySeries (&(psdHead->psd));
+  }
+
+  if (phaseHead) {
+	if (phaseHead != phaseTail) { XLALFree(phaseTail);}
+	XLALFree(phaseHead);
+  }
+  
+  if (freqHead) {
+	if (freqHead != freqTail) {XLALFree(freqTail);}
+	XLALFree(freqHead);
+  }
+
   LAL_CALL (LALDestroyUserVars(&status), &status);
 
   LALCheckMemoryLeaks();
