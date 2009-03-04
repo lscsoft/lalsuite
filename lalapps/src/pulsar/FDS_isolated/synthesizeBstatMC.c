@@ -655,6 +655,15 @@ XLALsynthesizeSignals ( gsl_matrix **A_Mu_i,		/**< [OUT] list of numDraws 4D lin
       phi0 = gsl_ran_flat ( rng, phi0Min, phi0Max );
 
       XLALAmplitudeParams2Vect ( A_Mu, h0Nat, cosi, psi, phi0 );
+      /* testing inversion property
+      {
+	REAL8 a1, a2, a3, a4;
+	XLALAmplitudeVect2Params ( &a1, &a2, &a3, &a4, A_Mu );
+	printf ("h0 = %f, cosi = %f, psi = %f, phi0 = %f\n", h0Nat, cosi, psi, phi0 );
+	printf ("a1 = %f, a2   = %f, a3  = %f,   a4 = %f\n", a1, a2, a3, a4 );
+      }
+      */
+
 
       /* GSL-doc: int gsl_blas_dsymv (CBLAS_UPLO_t Uplo, double alpha, const gsl_matrix * A,
        *                              const gsl_vector * x, double beta, gsl_vector * y )
@@ -1407,7 +1416,7 @@ XLALcomputeBhatStatistic ( gsl_vector **Bhat_i,		/**< [OUT] Bhat-statistic vecto
 
       Fstat = gsl_vector_get ( Fstat_i, row );
 
-      tmp = fabs ( h0MLE * SQ(cosiMLE) - 1.0 );
+      tmp = h0MLE * fabs( 1.0 - SQ(cosiMLE) );
       Bhat = Fstat - 2.0 * 3.0 * log ( tmp );
 
       gsl_vector_set ( *Bhat_i, row, Bhat );
