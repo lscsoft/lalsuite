@@ -142,34 +142,34 @@ NRCSID (PULSARCROSSCORRH, "$Id$");
 
   /* define structs to hold combinations of F's and A's */
   typedef struct tagCrossCorrAmps {
-	REAL8 Aplussq;
-	REAL8 Acrosssq;
-	REAL8 AplusAcross;
-	} CrossCorrAmps;
+    REAL8 Aplussq;
+    REAL8 Acrosssq;
+    REAL8 AplusAcross;
+  } CrossCorrAmps;
 
   typedef struct tagCrossCorrBeamFn{
-	REAL8 Fplus_or_a;
-	REAL8 Fcross_or_b;
-	} CrossCorrBeamFn;
+    REAL8 Fplus_or_a;
+    REAL8 Fcross_or_b;
+  } CrossCorrBeamFn;
 
   typedef struct tagSFTListElement {
-	SFTtype sft;
-	struct SFTListElement *nextSFT;
- 	} SFTListElement;
+    SFTtype sft;
+    struct SFTListElement *nextSFT;
+  } SFTListElement;
 
   typedef struct tagPSDListElement {
-	REAL8FrequencySeries psd;
-	struct PSDListElement *nextPSD;
-  	} PSDListElement;
+    REAL8FrequencySeries psd;
+    struct PSDListElement *nextPSD;
+  } PSDListElement;
 
   typedef struct tagREAL8ListElement {
-	REAL8 val;
-	struct REAL8ListElement *nextVal;
+    REAL8 val;
+    struct REAL8ListElement *nextVal;
   } REAL8ListElement;
 
   typedef struct {
-	CrossCorrBeamFn beamfn;
-	struct CrossCorrBeamFnListElement *nextBeamfn;
+    CrossCorrBeamFn beamfn;
+    struct CrossCorrBeamFnListElement *nextBeamfn;
   } CrossCorrBeamFnListElement;
 /*
  *  Functions Declarations (i.e., prototypes).
