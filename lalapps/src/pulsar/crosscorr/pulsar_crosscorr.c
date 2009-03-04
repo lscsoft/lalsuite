@@ -375,10 +375,9 @@ int main(int argc, char *argv[]){
   fMin = uvar_f0 - doppWings - uvar_blocksRngMed * deltaF;
   fMax = uvar_f0 + uvar_fBand + doppWings + uvar_blocksRngMed * deltaF;
 
+
   slidingcounter = 0;
-
  	   
-
   /*outer loop over all sfts in catalog, so that we load only the relevant sfts each time*/
   for(sftcounter=0; sftcounter < (INT4)catalog->length -1; sftcounter++) {
   	tmpSFT = NULL;
@@ -389,7 +388,7 @@ int main(int argc, char *argv[]){
 	ualpha = NULL;
 	sigmasq = NULL;
 
-	  counter = 0;
+	counter = 0;
 
 
   	/* throw away first sft from inputSFTs, and first psdvector, frequency, phase vectors, beamfns */
@@ -428,7 +427,6 @@ int main(int argc, char *argv[]){
 		beamList = NULL;
 
   	}
-
   /* make a second sft catalog with only the ones within maxlag of the current sft*/
   /* do all sfts with same time together */
   while((slidingcounter < (INT4)catalog->length) &&
@@ -458,8 +456,11 @@ int main(int argc, char *argv[]){
 	XLALDestroySFTVector(inputSFTs);
 
   }
+
 	listLength = slidingcounter - sftcounter;
 
+
+   if (listLength > 1) {
  	/* create sft pair indices */
 	LAL_CALL ( LALCreateSFTPairsIndicesFrom2SFTvectors( &status,
  						    	    &sftPairIndexList,
@@ -622,7 +623,7 @@ int main(int argc, char *argv[]){
   XLALFree(sftPairIndexList->data);
   XLALFree(sftPairIndexList);
 
-
+  } /*end if listlength > 1*/
 /*printf("finish loop over all frequencies, sftcounter %d\n", sftcounter);*/
 
   } /* finish loop over all sfts */
