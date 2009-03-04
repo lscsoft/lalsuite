@@ -34,8 +34,8 @@
  *     Note the naming convention!
  */
 
-#ifndef _PULSARCROSSCORR_H
-#define _PULSARCROSSCORR_H
+#ifndef _PULSARCROSSCORR_V0_H
+#define _PULSARCROSSCORR_V0_H
 
 #include <unistd.h>
 #include <sys/types.h>
@@ -82,75 +82,46 @@ extern "C" {
  *  Assignment of Id string using NRCSID()
  */
 
-NRCSID (PULSARCROSSCORRH, "$Id$");
+NRCSID (PULSARCROSSCORR_V0_H, "$Id$");
 
 /******************************************************
  *  Error codes and messages.
  */
  
-#define PULSARCROSSCORR_ENULL 1
-#define PULSARCROSSCORR_ENONULL 2
+#define PULSARCROSSCORR_V0_ENULL 1
+#define PULSARCROSSCORR_V0_ENONULL 2
 
-#define PULSARCROSSCORR_MSGENULL "Null pointer"
-#define PULSARCROSSCORR_MSGENONULL "Non-null pointer"
+#define PULSARCROSSCORR_V0_MSGENULL "Null pointer"
+#define PULSARCROSSCORR_V0_MSGENONULL "Non-null pointer"
 
 /* ******************************************************************
  *  Structure, enum, union, etc., typdefs.
  */
 
   /** struct holding info about skypoints */
-  typedef struct tagSkyPatchesInfo{
+  typedef struct tagSkyPatchesInfo_v0{
     UINT4 numSkyPatches;
     REAL8 *alpha;
     REAL8 *delta;
     REAL8 *alphaSize;
     REAL8 *deltaSize;
-  } SkyPatchesInfo;
+  } SkyPatchesInfo_v0;
 
-  /** A pair of SFTs which will be correlated 
-      -- this struct contains all information needed 
-      to calculate the cross correlation for some given 
-      parameter space point   */
-  typedef struct tagSingleSFTpair{
-    COMPLEX8FrequencySeries  *sft1; 
-    COMPLEX8FrequencySeries  *sft2; 
-    REAL8FrequencySeries     *psd1;
-    REAL8FrequencySeries     *psd2;
-    REAL8 vel1[3];
-    REAL8 vel2[3];
-    REAL8 pos1[3];
-    REAL8 pos2[3];
-  } SingleSFTpair;
-
-  /** vector of SFT pairs */
-  typedef struct tagSFTPairVec{
-    UINT4 length;
-    SingleSFTpair *data;
-  } SFTPairVec;  
-
-  typedef struct tagSFTPairparams{
+  typedef struct tagSFTPairparams_v0{
     REAL8 lag;
-  } SFTPairParams;
-
-  typedef struct tagSFTDetectorInfo{
-    COMPLEX8FrequencySeries *sft;
-    REAL8 vDetector[3];
-    REAL8 rDetector[3];
-    REAL8 a;
-    REAL8 b;
-  } SFTDetectorInfo;
+  } SFTPairParams_v0;
 
   /* define structs to hold combinations of F's and A's */
-  typedef struct tagCrossCorrAmps {
+  typedef struct tagCrossCorrAmps_v0 {
 	REAL8 Aplussq;
 	REAL8 Acrosssq;
 	REAL8 AplusAcross;
-	} CrossCorrAmps;
+	} CrossCorrAmps_v0;
 
-  typedef struct tagCrossCorrBeamFn{
+  typedef struct tagCrossCorrBeamFn_v0{
 	REAL8 Fplus_or_a;
 	REAL8 Fcross_or_b;
-	} CrossCorrBeamFn;
+	} CrossCorrBeamFn_v0;
 
 
 
@@ -158,18 +129,18 @@ NRCSID (PULSARCROSSCORRH, "$Id$");
  *  Functions Declarations (i.e., prototypes).
  */
 
-void LALCombineAllSFTs ( LALStatus *status,
+void LALCombineAllSFTs_v0 ( LALStatus *status,
 			 SFTVector **outsfts,
 			 MultiSFTVector *multiSFTs,
 			 REAL8 length);
 
-void LALCreateSFTPairsIndicesFrom2SFTvectors(LALStatus          *status,
+void LALCreateSFTPairsIndicesFrom2SFTvectors_v0(LALStatus          *status,
 					     INT4VectorSequence **out,
 					     SFTVector          *in,
-					     SFTPairParams      *par,
+					     SFTPairParams_v0      *par,
 					     INT4 		detChoice);
 
-void LALCorrelateSingleSFTPair(LALStatus                *status,
+void LALCorrelateSingleSFTPair_v0(LALStatus                *status,
 			       COMPLEX16                *out,
 			       COMPLEX8FrequencySeries  *sft1,
 			       COMPLEX8FrequencySeries  *sft2,
@@ -178,49 +149,49 @@ void LALCorrelateSingleSFTPair(LALStatus                *status,
 			       REAL8                    *freq1,
 			       REAL8                    *freq2);
 
-void LALGetSignalFrequencyInSFT(LALStatus                *status,
+void LALGetSignalFrequencyInSFT_v0(LALStatus                *status,
 				REAL8                    *out,
 				COMPLEX8FrequencySeries  *sft1,
 				PulsarDopplerParams      *dopp,
 				REAL8Vector              *vel,
 				LIGOTimeGPS	         *firstTimeStamp);
 
-void LALGetSignalPhaseInSFT(LALStatus               *status,
+void LALGetSignalPhaseInSFT_v0(LALStatus               *status,
 			    REAL8                   *out,
 			    COMPLEX8FrequencySeries *sft1,
 			    PulsarDopplerParams     *dopp,
 			    REAL8Vector             *pos);
 
-void LALCalculateSigmaAlphaSq(LALStatus            *status,
+void LALCalculateSigmaAlphaSq_v0(LALStatus            *status,
 			      REAL8                *out,
 			      REAL8                freq1,
 			      REAL8                freq2,
 			      REAL8FrequencySeries *psd1,
 			      REAL8FrequencySeries *psd2);
 
-void LALCalculateAveUalpha(LALStatus *status,
+void LALCalculateAveUalpha_v0(LALStatus *status,
 			COMPLEX16 *out,
 			REAL8     *phiI,
 			REAL8     *phiJ,
-			CrossCorrBeamFn beamfnsI,
-			CrossCorrBeamFn beamfnsJ,
+			CrossCorrBeamFn_v0 beamfnsI,
+			CrossCorrBeamFn_v0 beamfnsJ,
 			REAL8     *sigmasq);
 
-void LALCalculateUalpha(LALStatus *status,
+void LALCalculateUalpha_v0(LALStatus *status,
 			COMPLEX16 *out,
-			CrossCorrAmps amplitudes,
+			CrossCorrAmps_v0 amplitudes,
 			REAL8     *phiI,
 			REAL8     *phiJ,
-			CrossCorrBeamFn beamfnsI,
-			CrossCorrBeamFn beamfnsJ,
+			CrossCorrBeamFn_v0 beamfnsI,
+			CrossCorrBeamFn_v0 beamfnsJ,
 			REAL8     *sigmasq);
 
-void LALCalculateCrossCorrPower(LALStatus       *status,
+void LALCalculateCrossCorrPower_v0(LALStatus       *status,
 				REAL8	        *out,
 				COMPLEX16Vector *yalpha,
 				COMPLEX16Vector *ualpha);
 
-void LALNormaliseCrossCorrPower(LALStatus        *status,
+void LALNormaliseCrossCorrPower_v0(LALStatus        *status,
 				REAL8		 *out,
 				COMPLEX16Vector  *ualpha,
 				REAL8Vector      *sigmaAlphasq);
