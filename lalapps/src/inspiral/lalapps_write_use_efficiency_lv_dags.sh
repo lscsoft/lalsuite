@@ -90,7 +90,7 @@ fi >  findLoudestEvents.sub
 if [ 1 ]; then
   echo "universe = local"
   echo "executable = ${search_summary_path}"
-  echo "arguments = --slides-glob "CAT_3/all_data/*SLIDE*" --zero-lag-glob \$(macrozerolag) --statistic lvS5stat --num-events 20 --save-background-stats --output-background-file \$(macropickle) --num-slides 50 --output-path \$(macrooutput) --enable-output"
+  echo "arguments = --slides-glob \$(macroslideglob) --zero-lag-glob \$(macrozerolag) --statistic lvS5stat --num-events 20 --save-background-stats --output-background-file \$(macropickle) --num-slides 50 --output-path \$(macrooutput) --enable-output --make_zoomed_histogram --no-bg-zero-lag-glob \$(macronobg) --verbose --ignore-IFO-times H1H2_H1H2,H1H2_H1H2L1,H1H2_H1H2V1,H1H2_H1H2L1V1,H2L1_H1H2L1,H2L1_H1H2L1V1,H2V1_H1H2V1,H2V1_H1H2L1V1,H2L1V1_H1H2L1V1"
   echo "getenv = True"
   echo "log = " `mktemp -p ${log_path}`
   echo "error = logs/search_summary-\$(cluster)-\$(process).err"
@@ -164,11 +164,11 @@ if [ 1 ]; then
 
   echo ""
   echo "JOB 1004 search_summary.sub"
-  echo "VARS 1004 macrozerolag=\"CAT_3/playground_only/*LIKELIHOOD_PLAY*\" macropickle=\"playground_loudestbg.pickle\" macrooutput=\"search_summary_playground_only/\""
+  echo "VARS 1004 macroslideglob=\"CAT_3/playground_only/*SLIDE*\"  macrozerolag=\"CAT_3/playground_only/*LIKELIHOOD_PLAY*\" macropickle=\"playground_loudestbg.pickle\" macrooutput=\"search_summary_playground_only/\" macronobg=\"CAT_3/playground_only/no_background*\""
 
   echo ""
   echo "JOB 1005 search_summary.sub"
-  echo "VARS 1005 macrozerolag=\"CAT_3/all_data/*LIKELIHOOD_ALL_DATA*\" macropickle=\"all_data_loudestbg.pickle\" macrooutput=\"search_summary_all_data/\""
+  echo "VARS 1005 macroslideglob=\"CAT_3/all_data/*SLIDE*\"  macrozerolag=\"CAT_3/all_data/*LIKELIHOOD_ALL_DATA*\" macropickle=\"all_data_loudestbg.pickle\" macrooutput=\"search_summary_all_data/\" macronobg=\"CAT_3/all_data/no_background*\""
 
   echo ""
   echo "PARENT 1001 CHILD 1002"
