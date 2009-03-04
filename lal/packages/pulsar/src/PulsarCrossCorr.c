@@ -88,7 +88,6 @@ void LALCreateSFTPairsIndicesFrom2SFTvectors(LALStatus          *status,
       timeDiff = XLALGPSDiff( &t1, &t2);
       
       sameDet = strcmp(thisSFT1->name, thisSFT2->name);
-/*printf("i j numpairs %d %d %d\n", i, j, numPairs);*/
 
 
       if (sameDet != 0) { sameDet = 1; }
@@ -366,9 +365,6 @@ void LALCalculateUalpha(LALStatus *status,
 	       -sin(deltaPhi) * (FplusIFplusJ * amplitudes.Aplussq + FcrossIFcrossJ * amplitudes.Acrosssq)); 
 
 
-/*printf("fplusi, fplusj, fcrossi, fcrossj %f %f %f %f\n",beamfnsI.Fplus_or_a, beamfnsI.Fplus_or_a, beamfnsI.Fcross_or_b, beamfnsI.Fcross_or_b);
-*/
-
   /*calculate Ualpha*/
   out->re = re/(*sigmasq);
   out->im = -im/(*sigmasq);
@@ -429,11 +425,11 @@ void LALNormaliseCrossCorrPower(LALStatus        *status,
 
   for (i=0; i < (INT4)ualpha->length; i++) {
 	variance += (pow(ualpha->data[i].re, 2) + pow(ualpha->data[i].im, 2)) * sigmaAlphasq->data[i];
+
   }
   
   variance *= 2.0;
-  *out = sqrt(variance);
-
+  *out = variance;
   DETATCHSTATUSPTR (status);
 	
   /* normal exit */	
