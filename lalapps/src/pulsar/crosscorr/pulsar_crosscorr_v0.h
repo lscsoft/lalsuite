@@ -32,8 +32,8 @@
  *     Note the naming convention!
  */
 
-#ifndef _PULSAR_CROSSCORR_H
-#define _PULSAR_CROSSCORR_H
+#ifndef _PULSAR_CROSSCORR_V0_H
+#define _PULSAR_CROSSCORR_V0_H
 
 #include <unistd.h>
 #include <sys/types.h>
@@ -66,7 +66,7 @@
 #include <gsl/gsl_cdf.h>
 #include <lal/FrequencySeries.h>
 #include <lal/Sequence.h>
-#include <lal/PulsarCrossCorr.h>
+#include <lal/PulsarCrossCorr_v0.h>
 
 
 /******************************************************
@@ -88,27 +88,27 @@ NRCSID (PULSAR_CROSSCORRH, "$Id$");
  *  Error codes and messages.
  */
  
-#define PULSAR_CROSSCORR_ENORM 0
-#define PULSAR_CROSSCORR_ESUB  1
-#define PULSAR_CROSSCORR_EARG  2
-#define PULSAR_CROSSCORR_EBAD  3
-#define PULSAR_CROSSCORR_EFILE 4
-#define PULSAR_CROSSCORR_EDIR 4
-#define PULSAR_CROSSCORR_ENULL 5
-#define PULSAR_CROSSCORR_ENONULL 6
-#define PULSAR_CROSSCORR_EVAL 5
-#define PULSAR_CROSSCORR_EMEM 14
+#define PULSAR_CROSSCORR_V0_ENORM 0
+#define PULSAR_CROSSCORR_V0_ESUB  1
+#define PULSAR_CROSSCORR_V0_EARG  2
+#define PULSAR_CROSSCORR_V0_EBAD  3
+#define PULSAR_CROSSCORR_V0_EFILE 4
+#define PULSAR_CROSSCORR_V0_EDIR 4
+#define PULSAR_CROSSCORR_V0_ENULL 5
+#define PULSAR_CROSSCORR_V0_ENONULL 6
+#define PULSAR_CROSSCORR_V0_EVAL 5
+#define PULSAR_CROSSCORR_V0_EMEM 14
 
-#define PULSAR_CROSSCORR_MSGENORM "Normal exit"
-#define PULSAR_CROSSCORR_MSGESUB  "Subroutine failed"
-#define PULSAR_CROSSCORR_MSGEARG  "Error parsing arguments"
-#define PULSAR_CROSSCORR_MSGEBAD  "Bad argument values"
-#define PULSAR_CROSSCORR_MSGEFILE "Could not create output file"
-#define PULSAR_CROSSCORR_MSGEDIR  "Could not create directory"
-#define PULSAR_CROSSCORR_MSGENULL "Null pointer"
-#define PULSAR_CROSSCORR_MSGENONULL "Non-null pointer"
-#define PULSAR_CROSSCORR_MSGEVAL "Invalid value"
-#define PULSAR_CROSSCORR_MSGEMEM "Out of memory"
+#define PULSAR_CROSSCORR_V0_MSGENORM "Normal exit"
+#define PULSAR_CROSSCORR_V0_MSGESUB  "Subroutine failed"
+#define PULSAR_CROSSCORR_V0_MSGEARG  "Error parsing arguments"
+#define PULSAR_CROSSCORR_V0_MSGEBAD  "Bad argument values"
+#define PULSAR_CROSSCORR_V0_MSGEFILE "Could not create output file"
+#define PULSAR_CROSSCORR_V0_MSGEDIR  "Could not create directory"
+#define PULSAR_CROSSCORR_V0_MSGENULL "Null pointer"
+#define PULSAR_CROSSCORR_V0_MSGENONULL "Non-null pointer"
+#define PULSAR_CROSSCORR_V0_MSGEVAL "Invalid value"
+#define PULSAR_CROSSCORR_V0_MSGEMEM "Out of memory"
 
 #define PIXELFACTOR  2 
 
@@ -122,8 +122,8 @@ NRCSID (PULSAR_CROSSCORRH, "$Id$");
  *  Functions Declarations (i.e., prototypes).
  */
 
-void SetUpRadiometerSkyPatches(LALStatus *status,
-			       SkyPatchesInfo *out,
+void SetUpRadiometerSkyPatches_v0(LALStatus *status,
+			       SkyPatchesInfo_v0 *out,
 			       CHAR *skyFileName,
 			       CHAR *skyRegion,
 			       REAL8 dAlpha,
@@ -136,4 +136,4 @@ void SetUpRadiometerSkyPatches(LALStatus *status,
 #endif
 
 
-#endif     /* Close double-include protection _PULSAR_CROSSCORR_H */
+#endif     /* Close double-include protection _PULSAR_CROSSCORR_V0_H */

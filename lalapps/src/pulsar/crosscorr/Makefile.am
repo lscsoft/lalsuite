@@ -5,8 +5,8 @@
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps  -I$(top_srcdir)/src/pulsar/FDS_isolated
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
-bin_PROGRAMS = lalapps_pulsar_crosscorr 
+bin_PROGRAMS = lalapps_pulsar_crosscorr lalapps_pulsar_crosscorr_v0
 
 lalapps_pulsar_crosscorr_SOURCES = pulsar_crosscorr.c pulsar_crosscorr.h
 
-#lalapps_pulsar_crosscorr_v2_SOURCES = pulsar_crosscorr_v2.c pulsar_crosscorr_v2.h
+lalapps_pulsar_crosscorr_v0_SOURCES = pulsar_crosscorr_v0.c pulsar_crosscorr_v0.h

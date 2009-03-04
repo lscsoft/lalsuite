@@ -30,8 +30,8 @@
 
 / lalapps includes */
 #include <lalapps.h>
-#include <pulsar_crosscorr.h>
-#include <lal/PulsarCrossCorr.h>
+#include <pulsar_crosscorr_v0.h>
+#include <lal/PulsarCrossCorr_v0.h>
 #include <lal/DopplerScan.h>
 #include <gsl/gsl_permutation.h>
 
@@ -77,9 +77,9 @@ int main(int argc, char *argv[]){
   REAL8FrequencySeries *psd1, *psd2;
   COMPLEX16Vector *yalpha = NULL, *ualpha = NULL;
 
-  CrossCorrAmps amplitudes;
-  CrossCorrBeamFn *beamfns;
-  SFTPairParams pairParams;
+  CrossCorrAmps_v0 amplitudes;
+  CrossCorrBeamFn_v0 *beamfns;
+  SFTPairParams_v0 pairParams;
 
   /* information about all the ifos */
   PSDVector *psdVec = NULL;  
@@ -100,7 +100,7 @@ int main(int argc, char *argv[]){
   REAL8  *skyAlpha=NULL, *skyDelta=NULL,
     *skySizeAlpha=NULL, *skySizeDelta=NULL; 
   INT4   nSkyPatches, skyCounter=0; 
-  SkyPatchesInfo skyInfo;
+  SkyPatchesInfo_v0 skyInfo;
   INT4  j;
 
   /* frequency loop info */
@@ -389,7 +389,7 @@ int main(int argc, char *argv[]){
 
   /* open output file */
   strcpy (filename, uvar_dirnameOut);
-  strcat(filename, "Radiometer_out.txt");
+  strcat(filename, "Radiometer_out_v0.txt");
 
   if ((fp = fopen(filename, "w")) == NULL) {
     fprintf(stderr, "error opening output file\n");
@@ -504,7 +504,7 @@ int main(int argc, char *argv[]){
     fprintf(stderr, "skyfile doesn't exist\n");
   }
 
-  LAL_CALL( SetUpRadiometerSkyPatches( &status, &skyInfo,
+  LAL_CALL( SetUpRadiometerSkyPatches_v0( &status, &skyInfo,
 				       uvar_skyfile, uvar_skyRegion,
 				       uvar_dAlpha, uvar_dDelta),
 	    &status);
@@ -536,7 +536,7 @@ int main(int argc, char *argv[]){
 
   /* combine all sfts into a single sftvector */
   LAL_CALL( LALLoadMultiSFTs ( &status, &multiSFTs, catalog, fMin, fMax), &status);
-  LAL_CALL( LALCombineAllSFTs (&status, &inputSFTs, multiSFTs, catalog->length), &status);
+  LAL_CALL( LALCombineAllSFTs_v0 (&status, &inputSFTs, multiSFTs, catalog->length), &status);
  
   /* clean up sft catalog and multisftvector */
   LAL_CALL(LALDestroyMultiSFTVector(&status, &multiSFTs), &status);
@@ -570,7 +570,7 @@ int main(int argc, char *argv[]){
 
 
   /* create sft pair indices */
-  LAL_CALL ( LALCreateSFTPairsIndicesFrom2SFTvectors( &status,
+  LAL_CALL ( LALCreateSFTPairsIndicesFrom2SFTvectors_v0( &status,
  						      &sftPairIndexList,
 						      inputSFTs,
 						      &pairParams,
@@ -595,7 +595,7 @@ int main(int argc, char *argv[]){
         ts = XLALCreateTimestampVector (1);
         tOffs = 0.5/deltaF;
 
-        beamfns = (CrossCorrBeamFn *) LALCalloc(numsft, sizeof(CrossCorrBeamFn));
+        beamfns = (CrossCorrBeamFn_v0 *) LALCalloc(numsft, sizeof(CrossCorrBeamFn_v0));
 
         frequencyShiftList = XLALCreateREAL8Vector(numsft);
         signalPhaseList = XLALCreateREAL8Vector(numsft);
@@ -667,10 +667,10 @@ int main(int argc, char *argv[]){
 	    sft = &(inputSFTs->data[j]);
 
 
-	    LAL_CALL( LALGetSignalFrequencyInSFT( &status, freq1, sft, &thisPoint,
+	    LAL_CALL( LALGetSignalFrequencyInSFT_v0( &status, freq1, sft, &thisPoint,
 						&thisVel, &firstTimeStamp),
 		    &status);
-	    LAL_CALL( LALGetSignalPhaseInSFT( &status, phase1, sft, &thisPoint,
+	    LAL_CALL( LALGetSignalPhaseInSFT_v0( &status, phase1, sft, &thisPoint,
 	 				    &thisPos),
 	  	    &status);
 
@@ -723,13 +723,13 @@ int main(int argc, char *argv[]){
 	  psd1 = &(psdVec->data[index1]);
 	  psd2 = &(psdVec->data[index2]);
   	
-	  LAL_CALL( LALCorrelateSingleSFTPair( &status, &(yalpha->data[j]),
+	  LAL_CALL( LALCorrelateSingleSFTPair_v0( &status, &(yalpha->data[j]),
 					       sft1, sft2, psd1, psd2,
 					    &(frequencyShiftList->data[index1]),
 					   &(frequencyShiftList->data[index2])),
 		    &status);
 
-	  LAL_CALL( LALCalculateSigmaAlphaSq( &status, &sigmasq->data[j],
+	  LAL_CALL( LALCalculateSigmaAlphaSq_v0( &status, &sigmasq->data[j],
 					      frequencyShiftList->data[index1],
 					      frequencyShiftList->data[index2],
 					      psd1, psd2),
@@ -738,7 +738,7 @@ int main(int argc, char *argv[]){
 	  /*if we are averaging over psi and cos(iota), call the simplified 
  	    Ualpha function*/
 	  if (uvar_averagePsi && uvar_averageIota) {
-	    LAL_CALL( LALCalculateAveUalpha ( &status, &ualpha->data[j], 
+	    LAL_CALL( LALCalculateAveUalpha_v0 ( &status, &ualpha->data[j], 
 		 			   &signalPhaseList->data[index1],
 					   &signalPhaseList->data[index2],
 					   beamfns[index1],
@@ -746,7 +746,7 @@ int main(int argc, char *argv[]){
 		      &status);
 	  }
 	  else {
-	    LAL_CALL( LALCalculateUalpha ( &status, &ualpha->data[j], amplitudes,
+	    LAL_CALL( LALCalculateUalpha_v0 ( &status, &ualpha->data[j], amplitudes,
 		 			   &signalPhaseList->data[index1],
 					   &signalPhaseList->data[index2],
 					   beamfns[index1],
@@ -759,15 +759,14 @@ int main(int argc, char *argv[]){
 
 
 	  /* calculate rho (weights) from Yalpha and Ualpha */
-	  LAL_CALL( LALCalculateCrossCorrPower( &status,
+	  LAL_CALL( LALCalculateCrossCorrPower_v0( &status,
 					      &(weights->data[counter]),
 					      yalpha, ualpha),
 		  &status);
 
 	  /* calculate standard deviation of rho (Eq 4.6) */
-	  LAL_CALL( LALNormaliseCrossCorrPower( &status, stddev, ualpha, sigmasq),
+	  LAL_CALL( LALNormaliseCrossCorrPower_v0( &status, stddev, ualpha, sigmasq),
 		  &status); 
-
 
 	  weights->data[counter] = weights->data[counter]/(*stddev);
 
@@ -837,8 +836,8 @@ int main(int argc, char *argv[]){
 /** Set up location of skypatch centers and sizes
     If user specified skyRegion then use DopplerScan function
     to construct an isotropic grid. Otherwise use skypatch file. */
-void SetUpRadiometerSkyPatches(LALStatus           *status,
-			       SkyPatchesInfo      *out,   /**< output skypatches info */
+void SetUpRadiometerSkyPatches_v0(LALStatus           *status,
+			       SkyPatchesInfo_v0      *out,   /**< output skypatches info */
 			       CHAR                *skyFileName, /**< name of skypatch file */
 			       CHAR                *skyRegion,  /**< skyregion (if isotropic grid is to be constructed) */
 			       REAL8               dAlpha,      /**< alpha resolution (if isotropic grid is to be constructed) */
@@ -853,9 +852,9 @@ void SetUpRadiometerSkyPatches(LALStatus           *status,
   INITSTATUS (status, "SetUpRadiometerSkyPatches", rcsid);
   ATTATCHSTATUSPTR (status);
 
-  ASSERT (out, status, PULSAR_CROSSCORR_ENULL, PULSAR_CROSSCORR_MSGENULL);
-  ASSERT (dAlpha > 0, status, PULSAR_CROSSCORR_EBAD, PULSAR_CROSSCORR_MSGEBAD);
-  ASSERT (dDelta > 0, status, PULSAR_CROSSCORR_EBAD, PULSAR_CROSSCORR_MSGEBAD);
+  ASSERT (out, status, PULSAR_CROSSCORR_V0_ENULL, PULSAR_CROSSCORR_V0_MSGENULL);
+  ASSERT (dAlpha > 0, status, PULSAR_CROSSCORR_V0_EBAD, PULSAR_CROSSCORR_V0_MSGEBAD);
+  ASSERT (dDelta > 0, status, PULSAR_CROSSCORR_V0_EBAD, PULSAR_CROSSCORR_V0_MSGEBAD);
 
   if (skyRegion ) {
 
@@ -911,10 +910,10 @@ void SetUpRadiometerSkyPatches(LALStatus           *status,
       INT4   r;
       REAL8  temp1, temp2, temp3, temp4;
 
-      ASSERT (skyFileName, status, PULSAR_CROSSCORR_ENULL, PULSAR_CROSSCORR_MSGENULL);
+      ASSERT (skyFileName, status, PULSAR_CROSSCORR_V0_ENULL, PULSAR_CROSSCORR_V0_MSGENULL);
 
       if ( (fpsky = fopen(skyFileName, "r")) == NULL) {
-	ABORT ( status, PULSAR_CROSSCORR_EFILE, PULSAR_CROSSCORR_MSGEFILE );
+	ABORT ( status, PULSAR_CROSSCORR_V0_EFILE, PULSAR_CROSSCORR_V0_MSGEFILE );
       }
 
       nSkyPatches = 0;
