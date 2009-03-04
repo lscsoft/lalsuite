@@ -30,14 +30,14 @@
  */
 
 #include <lal/DopplerScan.h>
-#include <lal/PulsarCrossCorr.h>
+#include <lal/PulsarCrossCorr_v0.h>
 #include <gsl/gsl_permutation.h>
 
 
 
 RCSID( "$Id$");
 
-void LALCombineAllSFTs ( LALStatus *status,
+void LALCombineAllSFTs_v0 ( LALStatus *status,
 			 SFTVector **outsfts,	   
 			 MultiSFTVector *multiSFTs,  
 			 REAL8 length)
@@ -103,10 +103,10 @@ void LALCombineAllSFTs ( LALStatus *status,
 
 }
 
-void LALCreateSFTPairsIndicesFrom2SFTvectors(LALStatus          *status,
+void LALCreateSFTPairsIndicesFrom2SFTvectors_v0(LALStatus          *status,
 					     INT4VectorSequence **out,
 					     SFTVector          *in,
-					     SFTPairParams      *par,
+					     SFTPairParams_v0      *par,
 					     INT4 		detChoice)
 {
   
@@ -121,8 +121,8 @@ void LALCreateSFTPairsIndicesFrom2SFTvectors(LALStatus          *status,
   INITSTATUS (status, "CreateSFTPairsIndicesFrom2SFTvectors", rcsid);
   ATTATCHSTATUSPTR (status);
 
-  ASSERT (in, status, PULSARCROSSCORR_ENULL, PULSARCROSSCORR_MSGENULL);
-  ASSERT (par, status, PULSARCROSSCORR_ENULL, PULSARCROSSCORR_MSGENULL);
+  ASSERT (in, status, PULSARCROSSCORR_V0_ENULL, PULSARCROSSCORR_V0_MSGENULL);
+  ASSERT (par, status, PULSARCROSSCORR_V0_ENULL, PULSARCROSSCORR_V0_MSGENULL);
 
   /* number of SFTs */
   numsft = in->length;
@@ -206,7 +206,7 @@ void LALCreateSFTPairsIndicesFrom2SFTvectors(LALStatus          *status,
 
 
 /** Correlate a single pair of SFT at a parameter space point*/
-void LALCorrelateSingleSFTPair(LALStatus                *status,
+void LALCorrelateSingleSFTPair_v0(LALStatus                *status,
 			       COMPLEX16                *out,
 			       COMPLEX8FrequencySeries  *sft1,
 			       COMPLEX8FrequencySeries  *sft2,
@@ -221,10 +221,10 @@ void LALCorrelateSingleSFTPair(LALStatus                *status,
 
   INITSTATUS (status, "CorrelateSingleSFTPair", rcsid);
   ATTATCHSTATUSPTR (status);
-  ASSERT (sft1, status, PULSARCROSSCORR_ENULL, PULSARCROSSCORR_MSGENULL);
-  ASSERT (sft2, status, PULSARCROSSCORR_ENULL, PULSARCROSSCORR_MSGENULL);
-  ASSERT (psd1, status, PULSARCROSSCORR_ENULL, PULSARCROSSCORR_MSGENULL);
-  ASSERT (psd2, status, PULSARCROSSCORR_ENULL, PULSARCROSSCORR_MSGENULL);
+  ASSERT (sft1, status, PULSARCROSSCORR_V0_ENULL, PULSARCROSSCORR_V0_MSGENULL);
+  ASSERT (sft2, status, PULSARCROSSCORR_V0_ENULL, PULSARCROSSCORR_V0_MSGENULL);
+  ASSERT (psd1, status, PULSARCROSSCORR_V0_ENULL, PULSARCROSSCORR_V0_MSGENULL);
+  ASSERT (psd2, status, PULSARCROSSCORR_V0_ENULL, PULSARCROSSCORR_V0_MSGENULL);
 
 
   /* assume both sfts have the same freq. resolution */
@@ -251,7 +251,7 @@ void LALCorrelateSingleSFTPair(LALStatus                *status,
 
 
 /** Calculate the frequency of the SFT at a given epoch */
-void LALGetSignalFrequencyInSFT(LALStatus                *status,
+void LALGetSignalFrequencyInSFT_v0(LALStatus                *status,
 				REAL8                    *out,
 				COMPLEX8FrequencySeries  *sft1,
 				PulsarDopplerParams      *dopp,
@@ -298,7 +298,7 @@ void LALGetSignalFrequencyInSFT(LALStatus                *status,
 
 
 /** Get signal phase at a given epoch */
-void LALGetSignalPhaseInSFT(LALStatus               *status,
+void LALGetSignalPhaseInSFT_v0(LALStatus               *status,
 			    REAL8                   *out,
 			    COMPLEX8FrequencySeries *sft1,
 			    PulsarDopplerParams     *dopp,
@@ -356,7 +356,7 @@ void LALGetSignalPhaseInSFT(LALStatus               *status,
   RETURN (status);
 }
 
-void LALCalculateSigmaAlphaSq(LALStatus            *status,
+void LALCalculateSigmaAlphaSq_v0(LALStatus            *status,
 			      REAL8                *out,
 			      REAL8                freq1,
 			      REAL8                freq2,
@@ -381,12 +381,12 @@ void LALCalculateSigmaAlphaSq(LALStatus            *status,
 }
 
 /** Calculate pair weights (U_alpha) for an average over Psi and cos(iota) **/
-void LALCalculateAveUalpha(LALStatus *status,
+void LALCalculateAveUalpha_v0(LALStatus *status,
 			COMPLEX16 *out,
 			REAL8     *phiI,
 			REAL8     *phiJ,
-			CrossCorrBeamFn beamfnsI,
-			CrossCorrBeamFn beamfnsJ,
+			CrossCorrBeamFn_v0 beamfnsI,
+			CrossCorrBeamFn_v0 beamfnsJ,
 			REAL8     *sigmasq)
 {
   REAL8 deltaPhi;
@@ -413,13 +413,13 @@ void LALCalculateAveUalpha(LALStatus *status,
 
 }
 /** Calculate pair weights (U_alpha) for the general case **/
-void LALCalculateUalpha(LALStatus *status,
+void LALCalculateUalpha_v0(LALStatus *status,
 			COMPLEX16 *out,
-			CrossCorrAmps amplitudes,
+			CrossCorrAmps_v0 amplitudes,
 			REAL8     *phiI,
 			REAL8     *phiJ,
-			CrossCorrBeamFn beamfnsI,
-			CrossCorrBeamFn beamfnsJ,
+			CrossCorrBeamFn_v0 beamfnsI,
+			CrossCorrBeamFn_v0 beamfnsJ,
 			REAL8     *sigmasq)
 {
   REAL8 deltaPhi;
@@ -445,8 +445,7 @@ void LALCalculateUalpha(LALStatus *status,
 
 
 
-/*printf("fplusi, fplusj, fcrossi, fcrossj %f %f %f %f\n",beamfnsI.Fplus_or_a, beamfnsI.Fplus_or_a, beamfnsI.Fcross_or_b, beamfnsI.Fcross_or_b);
-*/
+
 
   /*calculate Ualpha*/
   out->re = re/(*sigmasq);
@@ -462,7 +461,7 @@ void LALCalculateUalpha(LALStatus *status,
 
 
 
-void LALCalculateCrossCorrPower(LALStatus       *status,
+void LALCalculateCrossCorrPower_v0(LALStatus       *status,
 				REAL8	        *out,
 				COMPLEX16Vector *yalpha,
 				COMPLEX16Vector *ualpha)
@@ -472,9 +471,9 @@ void LALCalculateCrossCorrPower(LALStatus       *status,
   INITSTATUS (status, "CalculateCrossCorrPower", rcsid);
   ATTATCHSTATUSPTR (status);
 
-  ASSERT (out, status, PULSARCROSSCORR_ENULL, PULSARCROSSCORR_MSGENULL);
-  ASSERT (yalpha, status, PULSARCROSSCORR_ENULL, PULSARCROSSCORR_MSGENULL);
-  ASSERT (ualpha, status, PULSARCROSSCORR_ENULL, PULSARCROSSCORR_MSGENULL);
+  ASSERT (out, status, PULSARCROSSCORR_V0_ENULL, PULSARCROSSCORR_V0_MSGENULL);
+  ASSERT (yalpha, status, PULSARCROSSCORR_V0_ENULL, PULSARCROSSCORR_V0_MSGENULL);
+  ASSERT (ualpha, status, PULSARCROSSCORR_V0_ENULL, PULSARCROSSCORR_V0_MSGENULL);
 
   *out = 0;
   
@@ -492,7 +491,7 @@ void LALCalculateCrossCorrPower(LALStatus       *status,
 
 }
 
-void LALNormaliseCrossCorrPower(LALStatus        *status,
+void LALNormaliseCrossCorrPower_v0(LALStatus        *status,
 				REAL8		 *out,
 				COMPLEX16Vector  *ualpha,
 				REAL8Vector      *sigmaAlphasq)
@@ -503,12 +502,13 @@ void LALNormaliseCrossCorrPower(LALStatus        *status,
   INITSTATUS (status, "NormaliseCrossCorrPower", rcsid);
   ATTATCHSTATUSPTR (status);
 
-  ASSERT (ualpha, status, PULSARCROSSCORR_ENULL, PULSARCROSSCORR_MSGENULL);
-  ASSERT (sigmaAlphasq, status, PULSARCROSSCORR_ENULL, PULSARCROSSCORR_MSGENULL);
+  ASSERT (ualpha, status, PULSARCROSSCORR_V0_ENULL, PULSARCROSSCORR_V0_MSGENULL);
+  ASSERT (sigmaAlphasq, status, PULSARCROSSCORR_V0_ENULL, PULSARCROSSCORR_V0_MSGENULL);
 
 
   for (i=0; i < (INT4)ualpha->length; i++) {
 	variance += (pow(ualpha->data[i].re, 2) + pow(ualpha->data[i].im, 2)) * sigmaAlphasq->data[i];
+
   }
   
   variance *= 2.0;

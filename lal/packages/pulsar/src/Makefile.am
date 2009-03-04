@@ -12,7 +12,7 @@ libpulsar_la_SOURCES = \
   ComputeSkyBinary.c ExtrapolatePulsarSpins.c LatticeCovering.c		\
   ComputeFstat.c LISAspecifics.c SFTutils.c DetectorStates.c PulsarDataTypes.c 	\
   FlatPulsarMetric.c ComplexAM.c UniversalDopplerMetric.c                \
-  FlatLatticeTilingPulsar.c PulsarCrossCorr.c
+  FlatLatticeTilingPulsar.c PulsarCrossCorr.c PulsarCrossCorr_v0.c
 
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 MOSTLYCLEANFILES = .dvi-dep
