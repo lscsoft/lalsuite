@@ -391,7 +391,6 @@ int main(int argc, char *argv[]){
 
 	  counter = 0;
 
-printf("sftcounter %d\n", sftcounter);
 
   	/* throw away first sft from inputSFTs, and first psdvector, frequency, phase vectors, beamfns */
   	if (sftcounter > 0) {
@@ -600,7 +599,7 @@ printf("sftcounter %d\n", sftcounter);
 
 	  stddev->data[counter] += tmpstat;
 
-/*printf("counter stddev rho %d %f %f\n", counter, *stddev, rho->data[counter]);*/
+/*if (counter == 0) {printf("%e \n", stddev->data[counter]);}*/
 
  	  counter++;
 
@@ -649,7 +648,7 @@ printf("finish loop over all sfts\n");
 	  thisPoint.Delta = skyDelta[skyCounter]; 
 
 	  /*normalise rho*/
-	  rho->data[counter] = rho->data[counter]/stddev->data[counter];
+	  rho->data[counter] = rho->data[counter]/sqrt(stddev->data[counter]);
 	  fprintf(fp, "%1.5f\t %1.5f\t %1.5f\t %e\t %e\t %1.10f\n", thisPoint.Alpha,
 	  	thisPoint.Delta, f_current,
 		fdot_current, fddot_current, rho->data[counter]);
