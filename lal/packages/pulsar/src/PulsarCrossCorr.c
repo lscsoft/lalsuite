@@ -79,34 +79,34 @@ void LALCreateSFTPairsIndicesFrom2SFTvectors(LALStatus          *status,
 
   for (j=1; j<listLength; j++) {
 
-    sfttmp = (SFTListElement *)sfttmp->nextSFT;
+      sfttmp = (SFTListElement *)sfttmp->nextSFT;
 
-    thisSFT2 = &(sfttmp->sft);
-    /* calculate time difference */      
-    t1 = thisSFT1->epoch;
-    t2 = thisSFT2->epoch;
-    timeDiff = XLALGPSDiff( &t1, &t2);
+      thisSFT2 = &(sfttmp->sft);
+      /* calculate time difference */      
+      t1 = thisSFT1->epoch;
+      t2 = thisSFT2->epoch;
+      timeDiff = XLALGPSDiff( &t1, &t2);
       
-    sameDet = strcmp(thisSFT1->name, thisSFT2->name);
+      sameDet = strcmp(thisSFT1->name, thisSFT2->name);
 
 
-    if (sameDet != 0) { sameDet = 1; }
+      if (sameDet != 0) { sameDet = 1; }
       
-    if (detChoice == 2) { sameDet = detChoice; }
+      if (detChoice == 2) { sameDet = detChoice; }
 
-    /* decide whether to add this pair or not */
-    if ((sameDet == detChoice) && (fabs(timeDiff) <= par->lag) ) {
-      numPairs++;
+      /* decide whether to add this pair or not */
+      if ((sameDet == detChoice) && (fabs(timeDiff) <= par->lag) ) {
+	numPairs++;
 
-      List1->data[thisPair] = i;
-      List2->data[thisPair++] = j;
-    } /* if ( numPairs < out->length)  */
+	List1->data[thisPair] = i;
+	List2->data[thisPair++] = j;
+      } /* if ( numPairs < out->length)  */
 	
-    thisSFT2 = NULL;
-  } /* end loop over second sft set */
+      thisSFT2 = NULL;
+    } /* end loop over second sft set */
      
-  thisSFT1 = NULL;
-  /* } end loop over first sft set */ 
+    thisSFT1 = NULL;
+ /* } end loop over first sft set */ 
 
 
   /* initialise pair list vector*/
@@ -114,8 +114,8 @@ void LALCreateSFTPairsIndicesFrom2SFTvectors(LALStatus          *status,
 
   for (i=0; i < numPairs; i++) {
 
-    ret->data[i] = List1->data[i];
-    ret->data[i+numPairs] = List2->data[i];
+  ret->data[i] = List1->data[i];
+  ret->data[i+numPairs] = List2->data[i];
   }
 
   (*out) = ret;
@@ -258,15 +258,15 @@ void LALGetSignalPhaseInSFT(LALStatus               *status,
 
   factor = 1.0;
 
-  for (k = 1;  k < PULSAR_MAX_SPINS; k++) {
+ for (k = 1;  k < PULSAR_MAX_SPINS; k++) {
     factor *= timeDiff / k;  
-    /*    fhat += dopp->fkdot[k] * factor;*/
+/*    fhat += dopp->fkdot[k] * factor;*/
     phihat += dopp->fkdot[k-1] * factor;
 
   }
 
-  factor *= timeDiff / k;
-  phihat += dopp->fkdot[k-1] * factor;
+    factor *= timeDiff / k;
+    phihat += dopp->fkdot[k-1] * factor;
 
   *out = LAL_TWOPI * ( phihat );
 
@@ -302,12 +302,12 @@ void LALCalculateSigmaAlphaSq(LALStatus            *status,
 
 /** Calculate pair weights (U_alpha) for an average over Psi and cos(iota) **/
 void LALCalculateAveUalpha(LALStatus *status,
-			   COMPLEX16 *out,
-			   REAL8     phiI,
-			   REAL8     phiJ,
-			   CrossCorrBeamFn beamfnsI,
-			   CrossCorrBeamFn beamfnsJ,
-			   REAL8     *sigmasq)
+			COMPLEX16 *out,
+			REAL8     phiI,
+			REAL8     phiJ,
+			CrossCorrBeamFn beamfnsI,
+			CrossCorrBeamFn beamfnsJ,
+			REAL8     *sigmasq)
 {
   REAL8 deltaPhi;
   REAL8 re, im;
@@ -316,8 +316,8 @@ void LALCalculateAveUalpha(LALStatus *status,
 
   deltaPhi = phiI - phiJ;
   /*calculate G_IJ. In this case, we have <G_IJ> = 0.1*(-exp^(delta phi)) * (aIaJ + bIbJ)*/
-  re = 0.1 * cos(deltaPhi) * beamfnsI.Fplus_or_a*beamfnsJ.Fplus_or_a + beamfnsI.Fcross_or_b*beamfnsJ.Fcross_or_b;
-  im = 0.1 * sin(-deltaPhi) * beamfnsI.Fplus_or_a*beamfnsJ.Fplus_or_a + beamfnsI.Fcross_or_b*beamfnsJ.Fcross_or_b;
+  re = 0.1 * cos(deltaPhi) * ((beamfnsI.Fplus_or_a * beamfnsJ.Fplus_or_a) + (beamfnsI.Fcross_or_b * beamfnsJ.Fcross_or_b));
+  im = 0.1 * sin(-deltaPhi) * ((beamfnsI.Fplus_or_a * beamfnsJ.Fplus_or_a) + (beamfnsI.Fcross_or_b * beamfnsJ.Fcross_or_b));
 
   /*calculate Ualpha*/
   out->re = re/(*sigmasq);
@@ -357,12 +357,12 @@ void LALCalculateUalpha(LALStatus *status,
 
 
   /*calculate G_IJ*/
-  re = 0.25 * ( cos(deltaPhi)*(FplusIFplusJ * amplitudes.Aplussq + FcrossIFcrossJ * amplitudes.Acrosssq) 
+  re = 0.25 * ( cos(deltaPhi)*((FplusIFplusJ * amplitudes.Aplussq) + (FcrossIFcrossJ * amplitudes.Acrosssq)) 
 		-sin(deltaPhi)*((FplusIFcrossJ - FcrossIFplusJ) * amplitudes.AplusAcross) );
 
 
   im = 0.25 * (-cos(deltaPhi) * ((FplusIFcrossJ - FcrossIFplusJ)*amplitudes.AplusAcross)
-	       -sin(deltaPhi) * (FplusIFplusJ * amplitudes.Aplussq + FcrossIFcrossJ * amplitudes.Acrosssq)); 
+	       -sin(deltaPhi) * ((FplusIFplusJ * amplitudes.Aplussq) + (FcrossIFcrossJ * amplitudes.Acrosssq))); 
 
 
   /*calculate Ualpha*/
@@ -397,7 +397,7 @@ void LALCalculateCrossCorrPower(LALStatus       *status,
   
   for (i=0; i < (INT4)yalpha->length; i++) {
 
-    *out += 2.0 * ((yalpha->data[i].re * ualpha->data[i].re) - (yalpha->data[i].im * ualpha->data[i].im));
+  *out += 2.0 * ((yalpha->data[i].re * ualpha->data[i].re) - (yalpha->data[i].im * ualpha->data[i].im));
 
   }
 
@@ -424,7 +424,7 @@ void LALNormaliseCrossCorrPower(LALStatus        *status,
 
 
   for (i=0; i < (INT4)ualpha->length; i++) {
-    variance += (pow(ualpha->data[i].re, 2) + pow(ualpha->data[i].im, 2)) * sigmaAlphasq->data[i];
+	variance += (pow(ualpha->data[i].re, 2) + pow(ualpha->data[i].im, 2)) * sigmaAlphasq->data[i];
 
   }
   
@@ -437,3 +437,5 @@ void LALNormaliseCrossCorrPower(LALStatus        *status,
 
 
 }
+
+

@@ -397,8 +397,8 @@ void LALCalculateAveUalpha_v0(LALStatus *status,
   deltaPhi = *phiI - *phiJ;
 
   /*calculate G_IJ. In this case, we have <G_IJ> = 0.1*(-exp^(delta phi)) * (aIaJ + bIbJ)*/
-  re = 0.1 * cos(deltaPhi) * beamfnsI.Fplus_or_a*beamfnsJ.Fplus_or_a + beamfnsI.Fcross_or_b*beamfnsJ.Fcross_or_b;
-  im = 0.1 * sin(-deltaPhi) * beamfnsI.Fplus_or_a*beamfnsJ.Fplus_or_a + beamfnsI.Fcross_or_b*beamfnsJ.Fcross_or_b;
+  re = 0.1 * cos(deltaPhi) * ((beamfnsI.Fplus_or_a * beamfnsJ.Fplus_or_a) + (beamfnsI.Fcross_or_b * beamfnsJ.Fcross_or_b));
+  im = 0.1 * sin(-deltaPhi) * ((beamfnsI.Fplus_or_a * beamfnsJ.Fplus_or_a) + (beamfnsI.Fcross_or_b * beamfnsJ.Fcross_or_b));
 
   /*calculate Ualpha*/
   out->re = re/(*sigmasq);
@@ -436,16 +436,13 @@ void LALCalculateUalpha_v0(LALStatus *status,
   FplusIFcrossJ = beamfnsI.Fplus_or_a * (beamfnsJ.Fcross_or_b);	
   FcrossIFplusJ = beamfnsI.Fcross_or_b * (beamfnsJ.Fplus_or_a);
 
-
   /*calculate G_IJ*/
-  re = 0.25 * (cos(deltaPhi) + sin(deltaPhi)) * ((FplusIFplusJ * (amplitudes.Aplussq)) 
-	    + (FcrossIFcrossJ * (amplitudes.Acrosssq)) );
-  im = 0.25 * (-cos(deltaPhi) + sin(-deltaPhi)) * (-(FplusIFcrossJ - FcrossIFplusJ) 
-	   * (amplitudes.AplusAcross) );
+  re = 0.25 * ( cos(deltaPhi)*((FplusIFplusJ * amplitudes.Aplussq) + (FcrossIFcrossJ * amplitudes.Acrosssq)) 
+		-sin(deltaPhi)*((FplusIFcrossJ - FcrossIFplusJ) * amplitudes.AplusAcross) );
 
 
-
-
+  im = 0.25 * (-cos(deltaPhi) * ((FplusIFcrossJ - FcrossIFplusJ)*amplitudes.AplusAcross)
+	       -sin(deltaPhi) * ((FplusIFplusJ * amplitudes.Aplussq) + (FcrossIFcrossJ * amplitudes.Acrosssq))); 
 
   /*calculate Ualpha*/
   out->re = re/(*sigmasq);
