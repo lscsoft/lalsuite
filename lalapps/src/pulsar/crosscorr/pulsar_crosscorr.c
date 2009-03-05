@@ -155,7 +155,6 @@ int main(int argc, char *argv[]){
   PulsarDopplerParams thisPoint;
   static REAL8Vector *rho, *stddev;
   REAL8 tmpstat, freq1, phase1, freq2, phase2;
-  REAL8 *tmpVal;
 
 
   REAL8 doppWings, fMin, fMax;
@@ -394,37 +393,16 @@ int main(int argc, char *argv[]){
     /* throw away first sft from inputSFTs, and first psdvector, frequency, phase vectors, beamfns */
     if (sftcounter > 0) {
 
-      sftList = sftHead;
-      sftHead = (SFTListElement *)sftHead->nextSFT;
+      LAL_CALL(DeleteSFTHead(&status, &sftHead), &status);
 
-      tmpSFT = &(sftList->sft);
-      LAL_CALL(LALDestroySFTtype(&status, &tmpSFT), &status);
-      sftList = NULL;
+      LAL_CALL (DeletePSDHead (&status, &psdHead), &status);
 
-      psdList = psdHead;
-      psdHead = (PSDListElement *)psdHead->nextPSD;
-      tmpPSD = &(psdList->psd);
-      XLALDestroyREAL8FrequencySeries (tmpPSD);
-      psdList = NULL;
+      LAL_CALL (DeleteREAL8Head(&status, &freqHead), &status);
+	
+      LAL_CALL (DeleteREAL8Head (&status, &phaseHead), &status);
 
-      freqList = freqHead;
-      freqHead = (REAL8ListElement *)freqHead->nextVal;
-      tmpVal = &(freqList->val);
-      LALFree(tmpVal);
-      freqList = NULL;
+      LAL_CALL (DeleteBeamFnHead (&status, &beamHead), &status);
 
-
-      phaseList = phaseHead;
-      phaseHead = (REAL8ListElement *)phaseHead->nextVal;
-      tmpVal = &(phaseList->val);
-      LALFree(tmpVal);
-      phaseList = NULL;
-
-      beamList = beamHead;
-      beamHead = (CrossCorrBeamFnListElement *)beamHead->nextBeamfn;
-      beamfns1 = &(beamList->beamfn);
-      LALFree(beamfns1);
-      beamList = NULL;
 
     }
     /* make a second sft catalog with only the ones within maxlag of the current sft*/
@@ -1112,6 +1090,93 @@ void AddBeamFntoList(LALStatus *status,
     (*beamTail)->nextBeamfn = (struct CrossCorrBeamFnListElement *)beamList;
   }
   *beamTail = beamList;
+
+  DETATCHSTATUSPTR (status);
+	
+  RETURN (status);
+
+}
+
+void DeleteSFTHead (LALStatus *status, 
+		    SFTListElement **sftHead)
+{
+  SFTListElement *sftList;
+  SFTtype *tmpSFT;
+
+  INITSTATUS (status, "DeleteSFTHead", rcsid);
+  ATTATCHSTATUSPTR (status);
+
+
+  sftList = *sftHead;
+  *sftHead = (SFTListElement *)(*sftHead)->nextSFT;
+
+  tmpSFT = &(sftList->sft);
+  LALDestroySFTtype(status->statusPtr, &tmpSFT);
+  sftList = NULL;
+
+  DETATCHSTATUSPTR (status);
+	
+  RETURN (status);
+
+}
+
+void DeletePSDHead (LALStatus *status, 
+		    PSDListElement **psdHead)
+{
+  PSDListElement *psdList;
+  REAL8FrequencySeries *tmpPSD;
+
+  INITSTATUS (status, "DeletePSDHead", rcsid);
+  ATTATCHSTATUSPTR (status);
+
+  psdList = *psdHead;
+  *psdHead = (PSDListElement *)(*psdHead)->nextPSD;
+  tmpPSD = &(psdList->psd);
+  XLALDestroyREAL8FrequencySeries (tmpPSD);
+  psdList = NULL;
+
+  DETATCHSTATUSPTR (status);
+	
+  RETURN (status);
+
+}
+
+void DeleteREAL8Head (LALStatus *status,
+		      REAL8ListElement **head)
+{
+  REAL8ListElement *List;
+  REAL8 *tmpVal;
+
+  INITSTATUS (status, "DeleteREAL8Head", rcsid);
+  ATTATCHSTATUSPTR (status);
+
+
+  List = *head;
+  *head = (REAL8ListElement *)(*head)->nextVal;
+  tmpVal = &(List->val);
+  LALFree(tmpVal);
+  List = NULL;
+
+  DETATCHSTATUSPTR (status);
+	
+  RETURN (status);
+
+}
+
+void DeleteBeamFnHead (LALStatus *status,
+		       CrossCorrBeamFnListElement **beamHead)
+{
+  CrossCorrBeamFnListElement *beamList;
+  CrossCorrBeamFn *beamfns;
+
+  INITSTATUS (status, "DeleteBeamFnHead", rcsid);
+  ATTATCHSTATUSPTR (status);
+
+  beamList = *beamHead;
+  *beamHead = (CrossCorrBeamFnListElement *)(*beamHead)->nextBeamfn;
+  beamfns = &(beamList->beamfn);
+  LALFree(beamfns);
+  beamList = NULL;
 
   DETATCHSTATUSPTR (status);
 	

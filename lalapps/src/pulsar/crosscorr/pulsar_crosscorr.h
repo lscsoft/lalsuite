@@ -163,9 +163,20 @@ void AddREAL8toList(LALStatus *status,
 void AddBeamFntoList(LALStatus *status,
 		     CrossCorrBeamFnListElement **beamHead,
 		     CrossCorrBeamFnListElement **beamTail);
+
+void DeleteSFTHead (LALStatus *status, 
+		    SFTListElement **sftHead);
+
+void DeletePSDHead (LALStatus *status, 
+		    PSDListElement **psdHead);
+
+void DeleteREAL8Head (LALStatus *status,
+		      REAL8ListElement **head);
+
+void DeleteBeamFnHead (LALStatus *status,
+		       CrossCorrBeamFnListElement **beamHead);
+
 		     
-
-
 /* ****************************************************** */
 
 #ifdef  __cplusplus
