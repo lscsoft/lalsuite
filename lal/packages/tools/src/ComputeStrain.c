@@ -109,7 +109,16 @@ REAL8IIRFilter ALPHASLPFIR;
        {
 	 output->hC.data->data[p]=input->DARM.data->data[p];
        }
-   }else
+     /* set to 0 the sampleUnits: they are not used anyway, and
+      * leaving them uninitialized can cause a mess */
+     output->hC.sampleUnits.powerOfTen = 0;
+     for (p=0; p < LALNumUnits; p++)
+       {
+         output->hC.sampleUnits.unitNumerator[p] = 0;
+         output->hC.sampleUnits.unitDenominatorMinusOne[p] = 0;
+       }
+   }
+ else
    {
      /* If DARM_ERR only calibration copy DARM_ERR data into control
 	signal */
