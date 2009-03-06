@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (C) 2008 Antony Searle
+ * Copyright (C) 2008-9 Antony Searle
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -51,7 +51,7 @@ typedef struct tagXLALSkymapPlanType
     /*  physical delays between the detectors,
         rounded to the nearest integer sample,
         range over [-hl, +hl] and [-hv, +hv] */
-    int hl, hv; /* lv */
+    int hl, hv, lv;
 
     XLALSkymapPixelType* pixel;
     int pixelCount;
@@ -71,6 +71,8 @@ void XLALSkymapDestroyPlan(XLALSkymapPlanType* plan);
  * Produce a skymap according to a plan
  */
 int XLALSkymapSignalHypothesis(XLALSkymapPlanType* plan, double* p, double sigma, double w[3], int begin[3], int end[3], double** x, int *counts, int *modes);
+int XLALSkymapSignalHypothesisWithLimits(XLALSkymapPlanType* plan, double* p, double sigma, double w[3], int begin[3], int end[3], double** x, int *counts, int *modes, int delay_limits[6]);
+
 /* deprecated legacy interface */
 int XLALSkymapEllipticalHypothesis(XLALSkymapPlanType* plan, double* p, double sigma, double w[3], int begin[3], int end[3], double** x, int* bests);
 /* deprecated legacy interface*/
@@ -112,9 +114,7 @@ void XLALSkymapModeThetaPhi(XLALSkymapPlanType* plan, double* p, double thetaphi
  * Render the skymap from the internal format to a variety of map projections
  */
 int XLALSkymapRenderEqualArea(int m, int n, double* q, XLALSkymapPlanType* plan, double* p);
-
 int XLALSkymapRenderEquirectangular(int m, int n, double* q, XLALSkymapPlanType* plan, double* p);
-
 int XLALSkymapRenderMollweide(int m, int n, double* q, XLALSkymapPlanType* plan, double* p);
 
 #ifdef __cplusplus

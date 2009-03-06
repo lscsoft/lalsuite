@@ -227,7 +227,7 @@ static double det22(double a[2][2])
 
 /* log functions */
 
-/* FIXME : declare the C99 function log1p to suppress warning */
+/* declare the C99 function log1p to suppress warning */
 double log1p(double x);
 
 double XLALSkymapLogSumExp(double a, double b)
@@ -243,7 +243,7 @@ double XLALSkymapLogDifferenceExp(double a, double b)
     return a + log(1.0 - exp(b - a));
 }
 
-double* findmax(double* begin, double* end)
+static double* findmax(double* begin, double* end)
 {
     double* p;
     double* m;
@@ -320,7 +320,7 @@ static int index_from_delays(XLALSkymapPlanType* plan, int hl, int hv, int hemis
 	(hemisphere   ) * (plan->hl * 2 + 1) * (plan->hv * 2 + 1);
 }
 
-static delays_from_index(XLALSkymapPlanType *plan, int index, int delays[3])
+static void delays_from_index(XLALSkymapPlanType *plan, int index, int delays[3])
 {
     delays[2] = index / ((plan->hl * 2 + 1) * (plan->hv * 2 + 1));
     index %= ((plan->hl * 2 + 1) * (plan->hv * 2 + 1));
@@ -328,10 +328,12 @@ static delays_from_index(XLALSkymapPlanType *plan, int index, int delays[3])
     delays[0] = (index % (plan->hl * 2 + 1)) - plan->hl;
 }
 
+/*
 static int index_from_times(XLALSkymapPlanType* plan, int times[3], int hemisphere)
 {
     return index_from_delays(plan, times[1] - times[0], times[2] - times[0], hemisphere);
 }
+*/
 
 void XLALSkymapDelaysFromDirection(XLALSkymapPlanType* plan, int delays[3], double direction[3])
 {
@@ -381,15 +383,18 @@ XLALSkymapPlanType* XLALSkymapConstructPlan(int sampleFrequency)
     construct_hlv(plan->site);
     
     {   /* compute the baselines */
-        double v_hl[3], v_hv[3];
+        double v_hl[3], v_hv[3], v_lv[3];
         sub3(v_hl, plan->site[1].location, plan->site[0].location);
         sub3(v_hv, plan->site[2].location, plan->site[0].location);
+        sub3(v_lv, plan->site[2].location, plan->site[1].location);
         div3(v_hl, v_hl, LAL_C_SI);
         div3(v_hv, v_hv, LAL_C_SI);
+        div3(v_lv, v_lv, LAL_C_SI);
         cross(plan->siteNormal, v_hl, v_hv);
         /* compute the maximum delay rounded to nearest sample */ 
         plan->hl = (int) floor(nrm3(v_hl) * plan->sampleFrequency + 0.5);
         plan->hv = (int) floor(nrm3(v_hv) * plan->sampleFrequency + 0.5);
+        plan->lv = (int) floor(nrm3(v_lv) * plan->sampleFrequency + 0.5);
     }
 
     plan->pixelCount = (plan->hl * 2 + 1) * (plan->hv * 2 + 1) * 2;    
@@ -630,7 +635,7 @@ static void compute_kernel1(XLALSkymapPlanType* plan, int index, double sigma, d
 
 int XLALSkymapGlitchHypothesis(XLALSkymapPlanType* plan, double *p, double sigma, double w[3], int begin[3], int end[3], double** x)
 {
-    static const char func[] = "XLALSkymapGlitchHypothesis";
+    /* static const char func[] = "XLALSkymapGlitchHypothesis"; */
     double* buffer;
     int i;
     
@@ -644,7 +649,6 @@ int XLALSkymapGlitchHypothesis(XLALSkymapPlanType* plan, double *p, double sigma
         if (x[i])
         {
             int t;
-            double d;
             double k;
             double *m;
             /* compute the kernel */
@@ -668,23 +672,33 @@ int XLALSkymapGlitchHypothesis(XLALSkymapPlanType* plan, double *p, double sigma
         }
     }    
     XLALFree(buffer);    
-    return;
+    return 0;
 }
 
 /* a new interface is required that instead produces a per-tile product */
 
 /* return not a skymap but a grid of odds ratios for each direction individually */
 /* to make a skymap requires correcting for unequal areas and unequal time ranges */
+
 int XLALSkymapSignalHypothesis(XLALSkymapPlanType* plan, double* p, double sigma, double w[3], int begin[3], int end[3], double** x, int *counts, int *modes)
 {
-    static const char func[] = "XLALSkymapSignalHypothesis";
+    int delay_limits[6];
+    delay_limits[0] = -plan->hl;
+    delay_limits[1] =  plan->hl;
+    delay_limits[2] = -plan->hv;
+    delay_limits[3] =  plan->hv;
+    delay_limits[4] = -plan->lv;
+    delay_limits[5] =  plan->lv;    
+    return XLALSkymapSignalHypothesisWithLimits(plan, p, sigma, w, begin, end, x, counts, modes, delay_limits);
+}
+
+int XLALSkymapSignalHypothesisWithLimits(XLALSkymapPlanType* plan, double* p, double sigma, double w[3], int begin[3], int end[3], double** x, int *counts, int *modes, int delay_limits[6])
+{
+    /* static const char func[] = "XLALSkymapSignalHypothesis"; */
     
     double* buffer;
     int hl;
     double total_normalization;
-    
-    int best_time[3], best_hemisphere;
-    double best_plausibility = log(0);
     
     total_normalization = 0;
     
@@ -729,8 +743,22 @@ int XLALSkymapSignalHypothesis(XLALSkymapPlanType* plan, double* p, double sigma
                 p[index] = log(0);
                 counts[index] = 0;
                 modes[index] = 0;
-                /* test if the delays are physical */
-                if (plan->pixel[index].area > 0) 
+                /* test if the delays are physical and relevant */
+                if (
+                    (plan->pixel[index].area > 0)
+                    &&
+                    (hl >= delay_limits[0])
+                    &&
+                    (hl <= delay_limits[1])
+                    &&
+                    (hv >= delay_limits[2])
+                    &&
+                    (hv <= delay_limits[3])
+                    &&
+                    ((hv - hl) >= delay_limits[4])
+                    &&
+                    ((hv - hl) <= delay_limits[5])
+                    )
                 { 
                     /* compute the begin and end times */
                     int b;
@@ -973,7 +1001,7 @@ int XLALSkymapEllipticalHypothesis(XLALSkymapPlanType* plan, double* p, double s
 {
     /* indicate that a detector has no data by x[i] == 0 */
     
-    static const char func[] = "XLALSkymapEllipticalHypothesis";
+    /* static const char func[] = "XLALSkymapEllipticalHypothesis"; */
     
     int *counts;
     int *modes;
@@ -1011,15 +1039,15 @@ int XLALSkymapEllipticalHypothesis(XLALSkymapPlanType* plan, double* p, double s
     if (bests) {
         /* find the most likely arrival times */
         double *a;
-        int i;
+        int j;
         int delays[3];
         a = findmax(p, p + plan->pixelCount);
-        i = a - p;
-        printf("i = %d\n", i);
-        delays_from_index(plan, i, delays);
+        j = a - p;
+        printf("i = %d\n", j);
+        delays_from_index(plan, j, delays);
         printf("delays[] = { %d, %d, %d}\n", delays[0], delays[1], delays[2]);
         printf("index_from_delays(delays) = %d\n", index_from_delays(plan, delays[0], delays[1], delays[2])); 
-        bests[0] = modes[i];
+        bests[0] = modes[j];
         bests[1] = bests[0] + delays[0];
         bests[2] = bests[0] + delays[1];
         bests[3] = delays[2];        

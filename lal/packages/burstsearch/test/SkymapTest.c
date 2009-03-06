@@ -1,3 +1,87 @@
+#include <stdlib.h>
+#include <math.h>
+
+#include <fftw3.h>
+
+typedef struct XLALSkymapFollowupInputStruct
+{
+    fftw_complex *data[3]; /* one-sided frequency domain double-whitened data */
+    double *psd[3]; /* one-sided power spectrum */
+    
+    int duration; /* seconds */
+    int inputRate; /* power-of-two integer */
+    int analysisRate; /* power-of-two integer */
+    
+    double minFrequency;
+    double maxFrequency;
+    double minTime;
+    double maxTime;  
+    
+} XLALSkymapFollowupInput;
+
+typedef struct XLALSkymapFollowupOutputStruct
+{
+} XLALSkymapFollowupOutput;
+
+/* declare a C99 function */
+double log2(double);
+
+XLALSkymapFollowupOutput* XLALSkymapFollowup(XLALSkymapFollowupInput* in)
+{    
+    /* validate arguments */
+    
+    /* now perform a time-freqiency-Q decomposition of the region of interest */
+    
+    printf("%f volume\n", (in->maxTime - in->minTime) * (in->maxFrequency - in->minFrequency));
+ 
+    {
+        int width;
+        
+        int minWidth = pow(2, ceil(log2(in->duration / (in->maxTime - in->minTime))));
+        int maxWidth = pow(2, floor(log2(in->duration * (in->maxFrequency - in->minFrequency))));
+                        
+        for (width = minWidth; width <= maxWidth; width *= 2)
+        {
+            int f;
+            
+            int minFrequency = ceil(4 * in->minFrequency * in->duration / width) * width / 4;
+            int maxFrequency = floor(4 * in->maxFrequency * in->duration / width) * width / 4 - width;
+            
+            printf("%f Hz (%f...%f)\n", ((double) width) / in->duration, ((double) minFrequency) / in->duration, ((double) maxFrequency + width) / in->duration);
+            
+            for (f = minFrequency; f <= maxFrequency; f += (width / 4))
+            {
+                printf("    [%f, %f)\n", ((double) f) / in->duration, ((double) f + width) / in->duration);
+            }
+        }
+        
+    }
+    
+    return 0;
+}
+
+int main(int argc, char** argv)
+{
+    XLALSkymapFollowupInput* in;
+    
+    in = (XLALSkymapFollowupInput *) malloc(sizeof(XLALSkymapFollowupInput));
+    
+    in->duration  =   64;
+    in->inputRate = 4096;
+    in->analysisRate = 8192;
+    
+    in->minFrequency = 100;
+    in->maxFrequency = 300;
+    in->minTime = 31.9;
+    in->maxTime = 32.1;
+    
+    XLALSkymapFollowup(in);
+    
+    return 0;
+}
+
+#if 0
+
 #include <malloc.h>
 #include <stdio.h>
 #include <math.h>
@@ -170,7 +254,7 @@ int main(int argc, char **argv)
     int width;
     
     double *probabilities, *scores;
-    int *widths, *frequencies, *times, *used;
+    int *widths, *frequencies, *times[3], *used;
     int n_bands;
     int i_band;
     int* index;
@@ -200,7 +284,7 @@ int main(int argc, char **argv)
     printf("    ...done\n");
     
     add_injection(plan, 10);
-    /* add_glitch(10); */
+    /*add_glitch(10);*/
     
     printf("transforming data...\n");
     make_h_f();
@@ -212,11 +296,13 @@ int main(int argc, char **argv)
     n_bands = (1024 / 16) * 4 * 2;
     i_band = 0;
     probabilities = (double*) malloc(sizeof(double) * n_bands);
-    scores = (double*) malloc(sizeof(double) * n_bands);
-    widths = (int*) malloc(sizeof(int) * n_bands);
-    frequencies = (int *) malloc(sizeof(int) * n_bands);
-    times = (int*) malloc(sizeof(int) * n_bands);
-    used = (int*) malloc(sizeof(int) * n_bands);
+    scores        = (double*) malloc(sizeof(double) * n_bands);
+    widths        = (int   *) malloc(sizeof(int   ) * n_bands);
+    frequencies   = (int   *) malloc(sizeof(int   ) * n_bands);
+    times[0]      = (int   *) malloc(sizeof(int   ) * n_bands);
+    times[1]      = (int   *) malloc(sizeof(int   ) * n_bands);
+    times[2]      = (int   *) malloc(sizeof(int   ) * n_bands);
+    used          = (int   *) malloc(sizeof(int   ) * n_bands);
     
     /* loop through window bandwidths */
     for (width = 16; width <= 1024; width *= 2)
@@ -251,6 +337,7 @@ int main(int argc, char **argv)
             /* loop through detectors */
             int d;
             double p_detectors;
+            double p_sigmas[3] = { log(0), log(0), log(0) };
             
             printf("    [%d, %d) Hz", f, f + width);
             p_detectors = 0.0;
@@ -258,8 +345,8 @@ int main(int argc, char **argv)
             {
                 double s;   
                 int j;
-                double p_sigmas = log(0);
                 
+                double p_sigma;
                 s = 1.0 / sqrt(width * duration);
                 for (i = 0; i != width * duration; ++i)
                 {
@@ -268,11 +355,30 @@ int main(int argc, char **argv)
                 }
                 fftw_execute(dft_backward);
                 fwrite(dft_out, sizeof(fftw_complex), n, g);
-
+                
+                
+                {
+                    /* find the peak power, which will be where the peak 
+                     * probability will be for any sigma */
+                    int best_i = 0;
+                    double best_power = 0;
+                    for (i = 0; i != n; ++i)
+                    {
+                        double power = sq(dft_out[i][0]) + sq(dft_out[i][1]);
+                        if (power > best_power)
+                        {
+                            best_power = power;
+                            best_i = i;
+                        }
+                    }
+                    times[d][i_band] = best_i * samples / n;
+                }
+                
+                /* compute the marginalized likelihood ratio */
                 for (j = 0; j != n_sigmas; ++j)
                 {
                     double kernel;
-                    double p_sigma;
+                    
                     
                     kernel = 0.5 / (sq(w[d]) + 1.0 / sq(sigmas[j]));
                     
@@ -281,10 +387,10 @@ int main(int argc, char **argv)
                         buffer[i] = kernel * (sq(dft_out[i][0]) + sq(dft_out[i][1]));
                     }
                     p_sigma = XLALSkymapLogTotalExp(buffer, buffer + n) - log(sq(sigmas[j]) * sq(w[d]) + 1.0) - log(n);
-                    p_sigmas = XLALSkymapLogSumExp(p_sigmas, p_sigma);
+                    p_sigmas[d] = XLALSkymapLogSumExp(p_sigmas[d], p_sigma);
                 }
                 /* the log odds that a waveform was added to a detector */
-                p_sigmas -= log(n_sigmas);
+                p_sigmas[d] -= log(n_sigmas);
                 /* compute the log odds that a waveform was added to all detectors */
                 p_detectors += XLALSkymapLogSumExp(p_sigmas, 0);
             }
@@ -292,14 +398,22 @@ int main(int argc, char **argv)
             p_detectors = XLALSkymapLogDifferenceExp(p_detectors, 0);
             p_detectors -= log(7);
             
-            printf(" %f\n", p_detectors);
+            printf(" %f %f %f %f\n", p_detectors, ((double) times[0][i_band])/rate, ((double) times[1][i_band])/rate, ((double) times[2][i_band])/rate);
             
             probabilities[i_band] = p_detectors;
             widths[i_band] = width;
             frequencies[i_band] = f;
             used[i_band] = 0;
             scores[i_band] = p_detectors / width;
-            times[i_band] = samples/2;
+            
+            if (p_sigmas[1] > max(p_sigmas[0], p_sigmas[2]))
+            {
+                times[0][i_band] = times[1][i_band];
+            }
+            if (p_sigmas[2] > max(p_sigmas[0], p_sigmas[1]))
+            {
+                times[0][i_band] = times[2][i_band];
+            }
             
             ++i_band;
         }
@@ -346,7 +460,7 @@ int main(int argc, char **argv)
 
         width = widths     [index[i_band]];
         f     = frequencies[index[i_band]];
-        time  = times      [index[i_band]];
+        time  = times[0]   [index[i_band]];
         
         /* printf("with %d frequency %d time %d\n", width, f, time); */
         
@@ -368,7 +482,7 @@ int main(int argc, char **argv)
         if (used[i_band])
         {
            
-            printf("[%d, %d) Hz time %d probability %f\n", f, f+width, time, probabilities[index[i_band]]);
+            printf("[%d, %d) Hz time %f probability %f\n", f, f+width, ((double)time)/rate, probabilities[index[i_band]]);
             
             dft_in  = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * samples);
             dft_out = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * samples);
@@ -426,11 +540,13 @@ int main(int argc, char **argv)
                 
                 modes = (int *) malloc(sizeof(int) * plan->pixelCount);
                 counts = (int *) malloc(sizeof(int) * plan->pixelCount); 
-
                 
-                begin[0] = max(time - (rate / 32), 0);
-                begin[1] = begin[0]; begin[2] = begin[0];
-                end[0] = min(time + (rate / 32), samples); end[1] = end[0]; end[2] = end[0];
+                begin[0] = max(times[0][i_band] - (rate / 32), 0);
+                begin[1] = max(times[0][i_band] - (rate / 32), 0);
+                begin[2] = max(times[0][i_band] - (rate / 32), 0);
+                end[0] = min(times[0][i_band] + (rate / 32), samples); 
+                end[1] = min(times[0][i_band] + (rate / 32), samples); 
+                end[2] = min(times[0][i_band] + (rate / 32), samples); 
 
                 for (k = 0; k != n_sigmas; ++k)
                 {
@@ -536,6 +652,7 @@ int main(int argc, char **argv)
 
 }
 
+#endif
 #if 0
 
 RandomParams* rng_parameters;
