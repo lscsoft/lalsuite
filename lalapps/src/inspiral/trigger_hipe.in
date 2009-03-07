@@ -499,22 +499,24 @@ parser.add_option("-l","--list",action="store",type="string",\
 # what parameters?
 parser.add_option("-a","--onsource-left",action="store",type="int",\
     default=120, metavar=" ONLEFT",\
-    help="Specifies the left onsource time window (default: 120)")
+    help="Specifies the left on-source time window in seconds (default: 120)")
 parser.add_option("-b","--onsource-right",action="store",type="int",\
     default=60, metavar=" ONRIGHT",\
-    help="Specifies the right onsource time window (default:60)")
+    help="Specifies the right on-source time window in seconds (default:60)")
 parser.add_option("-c","--number-buffer-left",action="store",type="int",\
     default=0, metavar=" BUFFERLEFT",\
-    help="Specifies the number of buffers to the left of the onsource segment "\
-    " in units of trials (default: 0)")
+    help="Specifies the number of buffer trials to the left of the on-source "\
+    "segment (default: 0)")
 parser.add_option("-d","--number-buffer-right",action="store",type="int",\
     default=0, metavar=" BUFFERRIGHT",\
-    help="Specifies the number of buffers to the right of the onsource segment "\
-    " in units of trials (default: 0)")
+    help="Specifies the number of buffer trials to the right of the on-source "\
+    "segment (default: 0)")
 parser.add_option("-t", "--padding-time", type="int", default=0,
-  help="padding time on each side of an analysis segment")
+  help="padding time on each side of an analysis segment in seconds")
 parser.add_option("-n", "--num-trials", type="int",
-  help="the off-source segment should contain NUM_TRIALS segments of the length of the on-source segment")
+  help="the off-source segment's full extent should contain NUM_TRIALS "\
+  "segments of the length of the on-source segment; this includes the sum "\
+  "of on-source, buffer, and off-source trials.")
 parser.add_option("-s", "--symmetric", action="store_true", default=False,
   help="restrict the off-source trials to be arranged symmetrically about "\
        "the on-source segment (default: asymmetrical distribution allowed)")
