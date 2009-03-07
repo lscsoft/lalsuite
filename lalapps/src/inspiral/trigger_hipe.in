@@ -690,20 +690,12 @@ for grb in ext_trigs:
       min_trials=opts.num_trials, symmetric=opts.symmetric)
   grb_ifolist.sort()
   ifo_times = "".join(grb_ifolist)
-  
+
   if offSourceSegment is None:
-    print "Warning: Trigger for GRB %s cannot be found in any segment for %s.  Skipping." % (grb.event_number_grb, ifo)
+    print >>sys.stderr, "Warning: insufficient multi-IFO data to construct an off-source segment for GRB %s; skipping" % grb.event_number_grb
     continue
   elif opts.verbose:
     print "Sufficient off-source data has been found in", ifo_times, "time."
-  
-  if len(grb_ifolist) == 0:
-    print >>sys.stderr, "Warning: could not construct offsource segment for GRB %s; skipping" % grb.event_number_grb
-    continue
-  if len(grb_ifolist) > 4:
-    while len(grb_ifolist) > 4:
-      del grb_ifolist[4]
-    print >>sys.stderr, "Warning: inspiral_hipe cannot handle more than 4 IFOs; truncating to first four alphabetically."
 
   # write out the segment list to a segwizard file
   offsource_segfile = idirectory + "/offSourceSeg.txt"
