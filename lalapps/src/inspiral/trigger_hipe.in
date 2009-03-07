@@ -607,13 +607,20 @@ ifolist.sort()
 if opts.do_dataquality:
   dq_segdict = segments.segmentlistdict()
   
-  # download and parse DQ segments once for each IFO
+  # parse DQ segments once for each IFO
   for ifo in ifolist:
-    # download (if necessary) and parse DQ segments
+    # parse DQ segments into segmentlistdict as "ifo:flag_v99" ==> segmentlist
+    if opts.verbose:
+      print "parsing", ifo, "DQ segments..."
     dq_segfile = cp.get("segments", ifo.lower() + "-dq-segfile")
-    dq_segdict.update(dqutils.download_and_parse_dq_segs(dq_segfile, ifo,
-                                                         verbose=opts.verbose))
-  
+    if not os.path.exists(dq_segfile):
+      raise ValueError, "%s-dq-segfile '%s' does not exist" \
+        % (ifo.lower(), dq_segfile)
+    new_dict = dqutils.fromDQsegments_fast(open(dq_segfile))
+    for flag, val in new_dict.iteritems():
+        val.sort()  # guarantee an important segmentlist invariant
+        dq_segdict["%s:%s" % (ifo, flag)] = val  # rename to keep track of IFO
+
   # determine category 1 vetoes and remove from analyzable segments
   print "Calculating category 1 vetoes..."
   for ifo in ifolist:
