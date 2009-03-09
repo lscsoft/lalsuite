@@ -2180,7 +2180,7 @@ void CalcTimeSeries(MultiSFTVector *multiSFTs)
       C.length = NumofBlocks + 1;
 
       /* Now lets calculate the number of data points in the Time Series */
-      PointsinTimeSeries = round((Fmax-Fmin)*(EndTime-StartTime));
+      PointsinTimeSeries = Round((Fmax-Fmin)*(EndTime-StartTime));
       fprintf(stderr,"Fmax = %f , Fmin = %f, EndTime = %f, StartTime = %f, Multiplied = %15.12f, not typecast = %f, floored = %d, 1e-6'ed = %d ceiled = %d, my own floor = %f\n",Fmax,Fmin,EndTime,StartTime,(Fmax-Fmin)*(EndTime-StartTime),floor((Fmax-Fmin)*(EndTime-StartTime)),(UINT4)floor((Fmax-Fmin)*(EndTime-StartTime)),PointsinTimeSeries,(UINT4)ceil((Fmax-Fmin)*(EndTime-StartTime)),floor(1120.0000000000));
 
       fprintf(stderr,"Difference = %15.12f\n",((Fmax-Fmin)*(EndTime-StartTime))-1120.00000000000);
@@ -2232,10 +2232,10 @@ void CalcTimeSeries(MultiSFTVector *multiSFTs)
       for(k=0;k<C.length;k++)
 	{
 	  REAL8 DeltaTimeStamp = C.NumContinuous[k]*SFTTimeBaseline + C.Gap[k];
-	  UINT4 N = round(SFTTimeBaseline*C.NumContinuous[k]*(Fmax-Fmin));
+	  UINT4 N = Round(SFTTimeBaseline*C.NumContinuous[k]*(Fmax-Fmin));
 	  
 	  CurrentTime = C.StartTime[k];
-	  for(p=0;p<(N + round(C.Gap[k]/dt));p++)
+	  for(p=0;p<(N + Round(C.Gap[k]/dt));p++)
 	    {
 	      Times->data[TimeIndex + p] = CurrentTime + p*dt - StartTime;
 	    }
@@ -2257,7 +2257,7 @@ void CalcTimeSeries(MultiSFTVector *multiSFTs)
 	  COMPLEX16FFTPlan *plan;
 
 	  /* Number of data points in this contiguous block */
-	  UINT4 N = round(SFTTimeBaseline*C.NumContinuous[k]*(Fmax-Fmin));
+	  UINT4 N = Round(SFTTimeBaseline*C.NumContinuous[k]*(Fmax-Fmin));
 	  fprintf(stderr,"N = %d\n",N);
 	  fprintf(stderr,"SFT = %f, Cont = %d, Fmax = %f, Fmin = %f N without rounding = %f\n",SFTTimeBaseline,C.NumContinuous[k],Fmax,Fmin,SFTTimeBaseline*C.NumContinuous[k]*(Fmax-Fmin));
 
@@ -2317,7 +2317,7 @@ void CalcTimeSeries(MultiSFTVector *multiSFTs)
 	      TSeries->Imag[i]->data[TimeIndex+p] = SmallT->data[p].im*deltaF/C.NumContinuous[k];
 	    }
 	  
-	  TimeIndex += round(C.Gap[k]/dt);
+	  TimeIndex += Round(C.Gap[k]/dt);
 	  TimeIndex += N;
 	  CurrentTime = C.StartTime[k] - StartTime;
 	  StartIndex += C.NumContinuous[k];
