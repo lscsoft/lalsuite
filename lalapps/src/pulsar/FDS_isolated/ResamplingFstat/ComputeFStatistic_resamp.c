@@ -2614,7 +2614,7 @@ void ApplyAandB(REAL8Sequence *CorrTimes,REAL8Sequence *DetTimes,REAL8Sequence *
       FaIn->data[i][0] = Real->data[i] * y;
       FaIn->data[i][1] = Imag->data[i] * y;
     }
-
+  fprintf(stderr,"lenght of a = %d, Index = %d\n",a->length,DetTimesIndex);
   DetTimesIndex = 0;
   for(i=0;i<CorrTimes->length;i++)
     {
@@ -2625,6 +2625,8 @@ void ApplyAandB(REAL8Sequence *CorrTimes,REAL8Sequence *DetTimes,REAL8Sequence *
       FbIn->data[i][0] = Real->data[i] * y;
       FbIn->data[i][1] = Imag->data[i] * y;
     }
+  fprintf(stderr,"lenght of b = %d, Index = %d\n",b->length,DetTimesIndex);
+
 }
 
 
