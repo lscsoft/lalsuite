@@ -2977,7 +2977,9 @@ void ComputeFStat_resamp(LALStatus *status,REAL8FrequencySeries *fstatVector, co
 	  ApplyAandB(CorrDetTimes,BaryTimes,a_at_DetectorTimes,b_at_DetectorTimes,ResampledReal,ResampledImag,FaIn,FbIn,SFTTimeBaseline);	  
 	  BaryStartTime = BaryTimes->data[0] - SFTTimeBaseline/2.0;
 	  
-	  ApplySpinDowns(doppler->fkdot,dt,FaIn,FbIn,StartTime,BaryStartTime,CorrDetTimes);
+	  /*ApplySpinDowns(doppler->fkdot,dt,FaIn,FbIn,StartTime,BaryStartTime,CorrDetTimes);*/
+
+	  fprintf(stderr,"My lengths are %d %d\n",ResampledReal->length,ResampledImag->length);
 	  
 	  XLALDestroyREAL8Sequence(ResampledReal);
 	  XLALDestroyREAL8Sequence(ResampledImag);
