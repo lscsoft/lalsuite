@@ -668,7 +668,7 @@ int main(int argc, char *argv[]){
 
 
 	    LAL_CALL( LALGetSignalFrequencyInSFT_v0( &status, freq1, sft, &thisPoint,
-						&thisVel, &firstTimeStamp),
+						&thisVel),
 		    &status);
 	    LAL_CALL( LALGetSignalPhaseInSFT_v0( &status, phase1, sft, &thisPoint,
 	 				    &thisPos),
