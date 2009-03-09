@@ -2180,7 +2180,10 @@ void CalcTimeSeries(MultiSFTVector *multiSFTs)
       C.length = NumofBlocks + 1;
 
       /* Now lets calculate the number of data points in the Time Series */
-      PointsinTimeSeries = floor((Fmax-Fmin)*(EndTime-StartTime)+1e-6);
+      PointsinTimeSeries = round((Fmax-Fmin)*(EndTime-StartTime));
+      fprintf(stderr,"Fmax = %f , Fmin = %f, EndTime = %f, StartTime = %f, Multiplied = %15.12f, not typecast = %f, floored = %d, 1e-6'ed = %d ceiled = %d, my own floor = %f\n",Fmax,Fmin,EndTime,StartTime,(Fmax-Fmin)*(EndTime-StartTime),floor((Fmax-Fmin)*(EndTime-StartTime)),(UINT4)floor((Fmax-Fmin)*(EndTime-StartTime)),PointsinTimeSeries,(UINT4)ceil((Fmax-Fmin)*(EndTime-StartTime)),floor(1120.0000000000));
+
+      fprintf(stderr,"Difference = %15.12f\n",((Fmax-Fmin)*(EndTime-StartTime))-1120.00000000000);
  
       /* Also declare a dt, which is the time between two consecutive data points */
       dt = 1.0/(Fmax-Fmin);
@@ -2198,7 +2201,7 @@ void CalcTimeSeries(MultiSFTVector *multiSFTs)
       /* Store the Starting time */
       TSeries->epoch = REAL82GPS(StartTime);
       
-      /* Store the deltaT */
+      /* Store the deltaT */ /*Extra???*/
       TSeries->deltaT = 1.0/(Fmax-Fmin);  
 
       /* Initialize TotalAnalysisTime */
@@ -2229,10 +2232,10 @@ void CalcTimeSeries(MultiSFTVector *multiSFTs)
       for(k=0;k<C.length;k++)
 	{
 	  REAL8 DeltaTimeStamp = C.NumContinuous[k]*SFTTimeBaseline + C.Gap[k];
-	  UINT4 N = floor(SFTTimeBaseline*C.NumContinuous[k]*(Fmax-Fmin)+1e-6);
+	  UINT4 N = round(SFTTimeBaseline*C.NumContinuous[k]*(Fmax-Fmin));
 	  
 	  CurrentTime = C.StartTime[k];
-	  for(p=0;p<(N + floor(C.Gap[k]/dt + 1e-6));p++)
+	  for(p=0;p<(N + round(C.Gap[k]/dt));p++)
 	    {
 	      Times->data[TimeIndex + p] = CurrentTime + p*dt - StartTime;
 	    }
@@ -2254,7 +2257,7 @@ void CalcTimeSeries(MultiSFTVector *multiSFTs)
 	  COMPLEX16FFTPlan *plan;
 
 	  /* Number of data points in this contiguous block */
-	  UINT4 N = floor(SFTTimeBaseline*C.NumContinuous[k]*(Fmax-Fmin)+1e-6);
+	  UINT4 N = round(SFTTimeBaseline*C.NumContinuous[k]*(Fmax-Fmin));
 	  fprintf(stderr,"N = %d\n",N);
 	  fprintf(stderr,"SFT = %f, Cont = %d, Fmax = %f, Fmin = %f N without rounding = %f\n",SFTTimeBaseline,C.NumContinuous[k],Fmax,Fmin,SFTTimeBaseline*C.NumContinuous[k]*(Fmax-Fmin));
 
@@ -2314,7 +2317,7 @@ void CalcTimeSeries(MultiSFTVector *multiSFTs)
 	      TSeries->Imag[i]->data[TimeIndex+p] = SmallT->data[p].im*deltaF/C.NumContinuous[k];
 	    }
 	  
-	  TimeIndex += floor(C.Gap[k]/dt+1e-6);
+	  TimeIndex += round(C.Gap[k]/dt);
 	  TimeIndex += N;
 	  CurrentTime = C.StartTime[k] - StartTime;
 	  StartIndex += C.NumContinuous[k];
