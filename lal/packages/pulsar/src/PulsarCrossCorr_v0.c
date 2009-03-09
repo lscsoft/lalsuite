@@ -255,8 +255,7 @@ void LALGetSignalFrequencyInSFT_v0(LALStatus                *status,
 				REAL8                    *out,
 				COMPLEX8FrequencySeries  *sft1,
 				PulsarDopplerParams      *dopp,
-				REAL8Vector              *vel,
-				LIGOTimeGPS	         *firstTimeStamp)
+				REAL8Vector              *vel)
 {  
   UINT4 k;
   REAL8 alpha, delta;
@@ -277,7 +276,7 @@ void LALGetSignalFrequencyInSFT_v0(LALStatus                *status,
   /* fhat = f_0 + f_1(t-t0) + f_2(t-t0)^2/2 + ... */
 
   /* this is the sft reference time  - the pulsar reference time */
-  timeDiff = XLALGPSDiff( &(sft1->epoch), firstTimeStamp);
+  timeDiff = XLALGPSDiff( &(sft1->epoch), &(dopp->refTime));
 
   fhat = dopp->fkdot[0]; /* initialization */
   factor = 1.0;
