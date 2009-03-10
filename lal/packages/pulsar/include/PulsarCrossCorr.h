@@ -98,6 +98,13 @@ NRCSID (PULSARCROSSCORRH, "$Id$");
  *  Structure, enum, union, etc., typdefs.
  */
 
+  typedef enum
+  { SAME,
+    DIFFERENT,
+    ALL
+  } DetChoice;
+
+
   /** struct holding info about skypoints */
   typedef struct tagSkyPatchesInfo{
     UINT4 numSkyPatches;
@@ -106,31 +113,6 @@ NRCSID (PULSARCROSSCORRH, "$Id$");
     REAL8 *alphaSize;
     REAL8 *deltaSize;
   } SkyPatchesInfo;
-
-  /** A pair of SFTs which will be correlated 
-      -- this struct contains all information needed 
-      to calculate the cross correlation for some given 
-      parameter space point   */
-  typedef struct tagSingleSFTpair{
-    COMPLEX8FrequencySeries  *sft1; 
-    COMPLEX8FrequencySeries  *sft2; 
-    REAL8FrequencySeries     *psd1;
-    REAL8FrequencySeries     *psd2;
-    REAL8 vel1[3];
-    REAL8 vel2[3];
-    REAL8 pos1[3];
-    REAL8 pos2[3];
-  } SingleSFTpair;
-
-  /** vector of SFT pairs */
-  typedef struct tagSFTPairVec{
-    UINT4 length;
-    SingleSFTpair *data;
-  } SFTPairVec;  
-
-  typedef struct tagSFTPairparams{
-    REAL8 lag;
-  } SFTPairParams;
 
   typedef struct tagSFTDetectorInfo{
     COMPLEX8FrequencySeries *sft;
@@ -148,8 +130,8 @@ NRCSID (PULSARCROSSCORRH, "$Id$");
   } CrossCorrAmps;
 
   typedef struct tagCrossCorrBeamFn{
-    REAL8 Fplus_or_a;
-    REAL8 Fcross_or_b;
+    REAL8 a;
+    REAL8 b;
   } CrossCorrBeamFn;
 
   typedef struct tagSFTListElement {
@@ -178,9 +160,10 @@ NRCSID (PULSARCROSSCORRH, "$Id$");
 void LALCreateSFTPairsIndicesFrom2SFTvectors(LALStatus          *status,
 					     INT4VectorSequence **out,
 					     SFTListElement     *in,
-					     SFTPairParams      *par,
+					     REAL8	        lag,
 					     INT4		listLength,
-					     INT4 		detChoice);
+					     DetChoice 		detChoice,
+					     BOOLEAN	        autoCorrelate);
 
 void LALCorrelateSingleSFTPair(LALStatus                *status,
 			       COMPLEX16                *out,
@@ -225,7 +208,8 @@ void LALCalculateUalpha(LALStatus *status,
 			REAL8     phiJ,
 			CrossCorrBeamFn beamfnsI,
 			CrossCorrBeamFn beamfnsJ,
-			REAL8     *sigmasq);
+			REAL8     *sigmasq,
+			REAL8     psi);
 
 void LALCalculateCrossCorrPower(LALStatus       *status,
 				REAL8	        *out,
