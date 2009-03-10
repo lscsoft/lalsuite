@@ -41,12 +41,13 @@ RCSID( "$Id$");
 void LALCreateSFTPairsIndicesFrom2SFTvectors(LALStatus          *status,
 					     INT4VectorSequence **out,
 					     SFTListElement     *in,
-					     SFTPairParams      *par,
+					     REAL8	        lag,
 					     INT4		listLength,	
-					     INT4 		detChoice)
+					     DetChoice 		detChoice,
+					     BOOLEAN	 	autoCorrelate)
 {
   
-  INT4 i, j, numPairs;
+  INT4 i, j, numPairs, initj;
   INT4 thisPair;
   INT4 sameDet = 0;
   INT4Vector *List1, *List2;
@@ -60,7 +61,6 @@ void LALCreateSFTPairsIndicesFrom2SFTvectors(LALStatus          *status,
   ATTATCHSTATUSPTR (status);
 
   ASSERT (in, status, PULSARCROSSCORR_ENULL, PULSARCROSSCORR_MSGENULL);
-  ASSERT (par, status, PULSARCROSSCORR_ENULL, PULSARCROSSCORR_MSGENULL);
 
   *out = NULL;
 
@@ -74,28 +74,40 @@ void LALCreateSFTPairsIndicesFrom2SFTvectors(LALStatus          *status,
   sfttmp = in;
   
   /*just need to check the first sft against the others */
-  thisSFT1 = &(in->sft);
+  thisSFT1 = &(sfttmp->sft);
   i = 0;
 
-  for (j=1; j<listLength; j++) {
+  /*if we're autocorrelating, then j starts from 0, otherwise it starts from 1*/
+  if (autoCorrelate) {
+    initj = 0;
+  } else {
+    initj = 1;
+  }
 
-      sfttmp = (SFTListElement *)sfttmp->nextSFT;
+  for (j=initj; j<listLength; j++) {
 
+      if (j > 0) {
+	sfttmp = (SFTListElement *)sfttmp->nextSFT;
+      }
+ 
       thisSFT2 = &(sfttmp->sft);
       /* calculate time difference */      
       t1 = thisSFT1->epoch;
       t2 = thisSFT2->epoch;
       timeDiff = XLALGPSDiff( &t1, &t2);
       
+      /*strcmp returns 0 if strings are equal, >0 if strings are different*/
       sameDet = strcmp(thisSFT1->name, thisSFT2->name);
 
-
+      /* if they are different, set sameDet to 1 so that it will match if
+	 detChoice == DIFFERENT */
       if (sameDet != 0) { sameDet = 1; }
       
-      if (detChoice == 2) { sameDet = detChoice; }
+      /* however, if detChoice = ALL, then we want sameDet to match it */
+      if (detChoice == ALL) { sameDet = detChoice; }
 
       /* decide whether to add this pair or not */
-      if ((sameDet == detChoice) && (fabs(timeDiff) <= par->lag) ) {
+      if ((sameDet == (INT4)detChoice) && (fabs(timeDiff) <= lag) ) {
 	numPairs++;
 
 	List1->data[thisPair] = i;
@@ -109,13 +121,18 @@ void LALCreateSFTPairsIndicesFrom2SFTvectors(LALStatus          *status,
  /* } end loop over first sft set */ 
 
 
-  /* initialise pair list vector*/
-  ret = XLALCreateINT4VectorSequence(2, numPairs);
+  /* initialise pair list vector, if we have pairs*/
+  if (numPairs > 0) {
+    ret = XLALCreateINT4VectorSequence(2, numPairs);
 
-  for (i=0; i < numPairs; i++) {
+    for (i=0; i < numPairs; i++) {
 
-  ret->data[i] = List1->data[i];
-  ret->data[i+numPairs] = List2->data[i];
+      ret->data[i] = List1->data[i];
+      ret->data[i+numPairs] = List2->data[i];
+    }
+  }
+  else {
+    ret = NULL;
   }
 
   (*out) = ret;
@@ -316,8 +333,8 @@ void LALCalculateAveUalpha(LALStatus *status,
 
   deltaPhi = phiI - phiJ;
   /*calculate G_IJ. In this case, we have <G_IJ> = 0.1*(-exp^(delta phi)) * (aIaJ + bIbJ)*/
-  re = 0.1 * cos(deltaPhi) * ((beamfnsI.Fplus_or_a * beamfnsJ.Fplus_or_a) + (beamfnsI.Fcross_or_b * beamfnsJ.Fcross_or_b));
-  im = 0.1 * sin(-deltaPhi) * ((beamfnsI.Fplus_or_a * beamfnsJ.Fplus_or_a) + (beamfnsI.Fcross_or_b * beamfnsJ.Fcross_or_b));
+  re = 0.1 * cos(deltaPhi) * ((beamfnsI.a * beamfnsJ.a) + (beamfnsI.b * beamfnsJ.b));
+  im = 0.1 * sin(-deltaPhi) * ((beamfnsI.a * beamfnsJ.a) + (beamfnsI.b * beamfnsJ.b));
 
   /*calculate Ualpha*/
   out->re = re/(*sigmasq);
@@ -339,31 +356,33 @@ void LALCalculateUalpha(LALStatus *status,
 			REAL8     phiJ,
 			CrossCorrBeamFn beamfnsI,
 			CrossCorrBeamFn beamfnsJ,
-			REAL8     *sigmasq)
+			REAL8     *sigmasq,
+			REAL8     psi)
 {
   REAL8 deltaPhi;
   REAL8 re, im;
-  REAL8 FplusIFplusJ, FcrossIFcrossJ, FplusIFcrossJ, FcrossIFplusJ;
+  REAL8 FplusI, FplusJ, FcrossI, FcrossJ;
 	    
   INITSTATUS (status, "CalculateUalpha", rcsid);
   ATTATCHSTATUSPTR (status);
 
   deltaPhi = phiI - phiJ;
 
-  FplusIFplusJ = beamfnsI.Fplus_or_a * (beamfnsJ.Fplus_or_a);
-  FcrossIFcrossJ = beamfnsI.Fcross_or_b * (beamfnsJ.Fcross_or_b);
-  FplusIFcrossJ = beamfnsI.Fplus_or_a * (beamfnsJ.Fcross_or_b);	
-  FcrossIFplusJ = beamfnsI.Fcross_or_b * (beamfnsJ.Fplus_or_a);
+  FplusI = (beamfnsI.a * cos(2.0*psi)) + (beamfnsI.b * sin(2.0*psi));
+  FplusJ = (beamfnsJ.a * cos(2.0*psi)) + (beamfnsJ.b * sin(2.0*psi));
+  FcrossI = (beamfnsI.b * cos(2.0 * psi)) - (beamfnsI.a * sin(2.0 * psi));
+  FcrossJ = (beamfnsJ.b * cos(2.0 * psi)) - (beamfnsJ.a * sin(2.0 * psi));;	
 
 
   /*calculate G_IJ*/
-  re = 0.25 * ( cos(deltaPhi)*((FplusIFplusJ * amplitudes.Aplussq) + (FcrossIFcrossJ * amplitudes.Acrosssq)) 
-		-sin(deltaPhi)*((FplusIFcrossJ - FcrossIFplusJ) * amplitudes.AplusAcross) );
+  re = 0.25 * ( (cos(deltaPhi)*
+		   ((FplusI*FplusJ * amplitudes.Aplussq) + (FcrossI*FcrossJ * amplitudes.Acrosssq)) )
+		-(sin(deltaPhi)*((FplusI*FcrossJ - FcrossI*FplusJ) * amplitudes.AplusAcross)) );
 
 
-  im = 0.25 * (-cos(deltaPhi) * ((FplusIFcrossJ - FcrossIFplusJ)*amplitudes.AplusAcross)
-	       -sin(deltaPhi) * ((FplusIFplusJ * amplitudes.Aplussq) + (FcrossIFcrossJ * amplitudes.Acrosssq))); 
-
+  im = 0.25 * ( -(cos(deltaPhi) * ((FplusI*FcrossJ - FcrossI*FplusJ)*amplitudes.AplusAcross))
+	       - (sin(deltaPhi) * 
+		   ((FplusI*FplusJ * amplitudes.Aplussq) + (FcrossI*FcrossJ * amplitudes.Acrosssq))) );
 
   /*calculate Ualpha*/
   out->re = re/(*sigmasq);
