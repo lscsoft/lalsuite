@@ -1935,7 +1935,6 @@ INT4 CombineSFTs(COMPLEX16Vector *L,SFTVector *sft_vect,REAL8 FMIN,REAL8 FMAX,IN
   
   XLALFree(sinVal);
   XLALFree(cosVal);
-  fprintf(stderr,"Maximum index of L written to is %d\n",m+number);
   return 0;
 
 }/*CombineSFTs()*/
@@ -2181,9 +2180,9 @@ void CalcTimeSeries(MultiSFTVector *multiSFTs)
 
       /* Now lets calculate the number of data points in the Time Series */
       PointsinTimeSeries = Round((Fmax-Fmin)*(EndTime-StartTime));
-      fprintf(stderr,"Fmax = %f , Fmin = %f, EndTime = %f, StartTime = %f, Multiplied = %15.12f, not typecast = %f, floored = %d, 1e-6'ed = %d ceiled = %d, my own floor = %f\n",Fmax,Fmin,EndTime,StartTime,(Fmax-Fmin)*(EndTime-StartTime),floor((Fmax-Fmin)*(EndTime-StartTime)),(UINT4)floor((Fmax-Fmin)*(EndTime-StartTime)),PointsinTimeSeries,(UINT4)ceil((Fmax-Fmin)*(EndTime-StartTime)),floor(1120.0000000000));
+      /*fprintf(stderr,"Fmax = %f , Fmin = %f, EndTime = %f, StartTime = %f, Multiplied = %15.12f, not typecast = %f, floored = %d, 1e-6'ed = %d ceiled = %d, my own floor = %f\n",Fmax,Fmin,EndTime,StartTime,(Fmax-Fmin)*(EndTime-StartTime),floor((Fmax-Fmin)*(EndTime-StartTime)),(UINT4)floor((Fmax-Fmin)*(EndTime-StartTime)),PointsinTimeSeries,(UINT4)ceil((Fmax-Fmin)*(EndTime-StartTime)),floor(1120.0000000000));
 
-      fprintf(stderr,"Difference = %15.12f\n",((Fmax-Fmin)*(EndTime-StartTime))-1120.00000000000);
+	fprintf(stderr,"Difference = %15.12f\n",((Fmax-Fmin)*(EndTime-StartTime))-1120.00000000000);*/
  
       /* Also declare a dt, which is the time between two consecutive data points */
       dt = 1.0/(Fmax-Fmin);
@@ -2258,8 +2257,8 @@ void CalcTimeSeries(MultiSFTVector *multiSFTs)
 
 	  /* Number of data points in this contiguous block */
 	  UINT4 N = Round(SFTTimeBaseline*C.NumContinuous[k]*(Fmax-Fmin));
-	  fprintf(stderr,"N = %d\n",N);
-	  fprintf(stderr,"SFT = %f, Cont = %d, Fmax = %f, Fmin = %f N without rounding = %f\n",SFTTimeBaseline,C.NumContinuous[k],Fmax,Fmin,SFTTimeBaseline*C.NumContinuous[k]*(Fmax-Fmin));
+	  /*fprintf(stderr,"N = %d\n",N);
+	    fprintf(stderr,"SFT = %f, Cont = %d, Fmax = %f, Fmin = %f N without rounding = %f\n",SFTTimeBaseline,C.NumContinuous[k],Fmax,Fmin,SFTTimeBaseline*C.NumContinuous[k]*(Fmax-Fmin));*/
 
 	   /* Since the data in the Frequency and Time domain both have the same length, we can use one Tukey window for it all */
 	  REAL8Window *Win;
@@ -2276,7 +2275,6 @@ void CalcTimeSeries(MultiSFTVector *multiSFTs)
 
 	  /* Assign some memory */
 	  L = XLALCreateCOMPLEX16Vector(N);
-	  fprintf(stderr,"Make sure L's length is %d, it is %d\n",N,L->length);
 	  SmallT = XLALCreateCOMPLEX16Vector(N);
 
 	  TotalAnalysisTime->data[i] += SFTTimeBaseline*C.NumContinuous[k];
@@ -2322,11 +2320,8 @@ void CalcTimeSeries(MultiSFTVector *multiSFTs)
 	  CurrentTime = C.StartTime[k] - StartTime;
 	  StartIndex += C.NumContinuous[k];
 	  
-	  fprintf(stderr,"I am going to fail in the next two steps, if I get through them, then great\n");
 	  XLALDestroyCOMPLEX16Vector(L);
-	  fprintf(stderr,"I freed L\n");
 	  XLALDestroyCOMPLEX16Vector(SmallT);
-	  fprintf(stderr,"I freed SmallT\n");
 	  XLALDestroyCOMPLEX16FFTPlan(plan);
 	  XLALDestroyREAL8Window(Win);
 	}/* Loop over Contiguous Blocks (k) */
@@ -2535,7 +2530,6 @@ void ApplySpinDowns(REAL8* SpinDowns, REAL8 dt, FFTWCOMPLEXSeries *FaIn, FFTWCOM
   REAL8 Fbreal,Fbimag;
   REAL8 DT;
   REAL8 Phi_M;
-  fprintf(stderr,"%d %d\n",CorrTimes->length,FaIn->length);
   for(i=0;i<CorrTimes->length;i++)
     {
       /* BaryRefTime is the reference time in the barycentric frame */
@@ -2608,25 +2602,24 @@ void ApplyAandB(REAL8Sequence *CorrTimes,REAL8Sequence *DetTimes,REAL8Sequence *
   for(i=0;i<CorrTimes->length;i++)
     {
       if(CorrTimes->data[i] > (DetTimes->data[DetTimesIndex] + TSFT/2.0))
-	DetTimesIndex++;
+	if(DetTimesIndex < (DetTimes->length - 1))
+	  DetTimesIndex++;
 	
       y = a->data[DetTimesIndex];
       FaIn->data[i][0] = Real->data[i] * y;
       FaIn->data[i][1] = Imag->data[i] * y;
     }
-  fprintf(stderr,"lenght of a = %d, Index = %d\n",a->length,DetTimesIndex);
   DetTimesIndex = 0;
   for(i=0;i<CorrTimes->length;i++)
     {
       if(CorrTimes->data[i] > (DetTimes->data[DetTimesIndex] + TSFT/2.0))
-	DetTimesIndex++;
+	if(DetTimesIndex < (DetTimes->length - 1))
+	  DetTimesIndex++;
 	
       y = b->data[DetTimesIndex];
       FbIn->data[i][0] = Real->data[i] * y;
       FbIn->data[i][1] = Imag->data[i] * y;
     }
-  fprintf(stderr,"lenght of b = %d, Index = %d\n",b->length,DetTimesIndex);
-
 }
 
 
@@ -2950,7 +2943,7 @@ void ComputeFStat_resamp(LALStatus *status,REAL8FrequencySeries *fstatVector, co
 	  /*fprintf(stderr,"length = %d, new_length = %d \n",length,new_length);
 	    fprintf(stderr,"dF = %f, uvar_dFreq = %f\n",dF,uvar_dFreq);*/
 	  /* FaIn and FbIn get allocated */
-	  if(uvar_dFreq >= dF)
+	  if(uvar_dFreq >= dF || (uvar_dFreq == 0))
 	    {
 	      FaIn = XLALCreateFFTWCOMPLEXSeries(length);
 	      FbIn = XLALCreateFFTWCOMPLEXSeries(length);
