@@ -472,7 +472,7 @@ int main(int argc, char *argv[]){
 							  detChoice,
 							  uvar_autoCorrelate),
 		 &status);
-if (!sftPairIndexList) {printf("null list\n");}
+
     if (sftPairIndexList) {	/*if there are no pairs, sftPairIndexList will be NULL*/
       /* initialise Y, u, sigmasq vectors  */
       yalpha = XLALCreateCOMPLEX16Vector(sftPairIndexList->vectorLength);
