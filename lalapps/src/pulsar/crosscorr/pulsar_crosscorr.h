@@ -117,7 +117,6 @@ NRCSID (PULSAR_CROSSCORRH, "$Id$");
  *  Structure, enum, union, etc., typdefs.
  */
 
-
 /*
  *  Functions Declarations (i.e., prototypes).
  */
@@ -136,15 +135,14 @@ void GetBeamInfo(LALStatus *status,
 		 REAL8ListElement *phaseHead, 
 		 SkyPosition skypos, 
 		 EphemerisData *edat, 
-		 PulsarDopplerParams *thisPoint,
-		 REAL8 psi);
+		 PulsarDopplerParams *thisPoint);
 
 void CopySFTFromCatalog(LALStatus *status,
 		   	SFTCatalog *catalog,
 			SFTVector **sft,
 			REAL8 fMin,
 			REAL8 fMax,
-			INT4 index);
+			INT4 sftindex);
 
 void AddSFTtoList(LALStatus *status,
 		  SFTListElement **sftHead,
