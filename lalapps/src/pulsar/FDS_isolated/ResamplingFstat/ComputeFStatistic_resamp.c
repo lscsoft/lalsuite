@@ -1854,7 +1854,8 @@ INT4 CombineSFTs(COMPLEX16Vector *L,SFTVector *sft_vect,REAL8 FMIN,REAL8 FMAX,IN
   /*REAL8 ifmax = ceil(Fmax*STimeBaseLine)+uvar_Dterms;*/
 
   /* Loop over frequencies to be demodulated */
-  for(m = -number ; m < (number)*(if1-if0-1) ; m++ )
+  /*for(m = -number ; m < (number)*(if1-if0-1) ; m++ )*/
+  for(m = -number; m < ((INT4)L->length - number); m++)
   {
     llSFT.re =0.0;
     llSFT.im =0.0;
@@ -1932,7 +1933,6 @@ INT4 CombineSFTs(COMPLEX16Vector *L,SFTVector *sft_vect,REAL8 FMIN,REAL8 FMAX,IN
     
     
   }
-  
   XLALFree(sinVal);
   XLALFree(cosVal);
   return 0;
@@ -2180,9 +2180,10 @@ void CalcTimeSeries(MultiSFTVector *multiSFTs)
 
       /* Now lets calculate the number of data points in the Time Series */
       PointsinTimeSeries = Round((Fmax-Fmin)*(EndTime-StartTime));
+      fprintf(stderr,"Points in Time Series is %d\n",PointsinTimeSeries);
       /*fprintf(stderr,"Fmax = %f , Fmin = %f, EndTime = %f, StartTime = %f, Multiplied = %15.12f, not typecast = %f, floored = %d, 1e-6'ed = %d ceiled = %d, my own floor = %f\n",Fmax,Fmin,EndTime,StartTime,(Fmax-Fmin)*(EndTime-StartTime),floor((Fmax-Fmin)*(EndTime-StartTime)),(UINT4)floor((Fmax-Fmin)*(EndTime-StartTime)),PointsinTimeSeries,(UINT4)ceil((Fmax-Fmin)*(EndTime-StartTime)),floor(1120.0000000000));
 
-	fprintf(stderr,"Difference = %15.12f\n",((Fmax-Fmin)*(EndTime-StartTime))-1120.00000000000);*/
+	fprintf(stderr,"Difference = %15.12f\n",((Fmax-Fmin)*(EndTime-StartTime)));*/
  
       /* Also declare a dt, which is the time between two consecutive data points */
       dt = 1.0/(Fmax-Fmin);
@@ -2314,7 +2315,7 @@ void CalcTimeSeries(MultiSFTVector *multiSFTs)
 	      TSeries->Real[i]->data[TimeIndex+p] = SmallT->data[p].re*deltaF/C.NumContinuous[k];
 	      TSeries->Imag[i]->data[TimeIndex+p] = SmallT->data[p].im*deltaF/C.NumContinuous[k];
 	    }
-	  
+	  /*fprintf(stderr,"length of TSeries = %d, TimeIndex+p = %d\n",TSeries->Real[i]->length,TimeIndex+p);*/
 	  TimeIndex += Round(C.Gap[k]/dt);
 	  TimeIndex += N;
 	  CurrentTime = C.StartTime[k] - StartTime;
@@ -2974,7 +2975,7 @@ void ComputeFStat_resamp(LALStatus *status,REAL8FrequencySeries *fstatVector, co
 	  
 	  /*ApplySpinDowns(doppler->fkdot,dt,FaIn,FbIn,StartTime,BaryStartTime,CorrDetTimes);*/
 
-	  fprintf(stderr,"My lengths are %d %d\n",ResampledReal->length,ResampledImag->length);
+	  /*fprintf(stderr,"My lengths are %d %d\n",ResampledReal->length,ResampledImag->length);*/
 	  
 	  XLALDestroyREAL8Sequence(ResampledReal);
 	  XLALDestroyREAL8Sequence(ResampledImag);
