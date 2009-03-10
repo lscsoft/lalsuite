@@ -185,7 +185,7 @@ int XLALcomputeFstatistic ( gsl_vector **Fstat, gsl_matrix **A_Mu_MLE_i, const g
 int XLALcomputeBstatisticMC ( gsl_vector **Bstat, const gsl_matrix *M_mu_nu, const gsl_matrix *x_mu_i, gsl_rng * rng, UINT4 numMCpoints );
 int XLALcomputeBstatisticGauss ( gsl_vector **Bstat, const gsl_matrix *M_mu_nu, const gsl_matrix *x_mu_i );
 
-int XLALcomputeBhatStatistic ( gsl_vector **Bhat_i, const gsl_vector *Fstat_i, const gsl_matrix *A_Mu_MLE_i );
+int XLALcomputeBhatStatistic ( gsl_vector **Bhat_i, const gsl_vector *Fstat_i, const gsl_matrix *A_Mu_MLE_i, const gsl_matrix *M_mu_nu );
 
 
 double BstatIntegrandOuter ( double cosi, void *p );
@@ -334,7 +334,7 @@ int main(int argc,char *argv[])
 
 
   /* ---------- compute (approximate) B-statistic 'Bhat' ---------- */
-  if ( XLALcomputeBhatStatistic ( &Bhat_i, Fstat_i, x_Mu_i ) ) {
+  if ( XLALcomputeBhatStatistic ( &Bhat_i, Fstat_i, x_Mu_i, GV.M_mu_nu ) ) {
     LogPrintf (LOG_CRITICAL, "XLALcomputeBhatStatistic() failed with error = %d\n", xlalErrno );
     return 1;
   }
@@ -1369,12 +1369,14 @@ BstatIntegrand ( double Amp[], size_t dim, void *p )
 int
 XLALcomputeBhatStatistic ( gsl_vector **Bhat_i,		/**< [OUT] Bhat-statistic vector */
 			   const gsl_vector *Fstat_i,	/**< F-stat vector (numDraws) */
-			   const gsl_matrix *A_Mu_MLE_i	/**< A^mu_MLE vector (numDraws x 4) */
+			   const gsl_matrix *A_Mu_MLE_i,/**< A^mu_MLE vector (numDraws x 4) */
+			   const gsl_matrix *M_mu_nu	/**< antenna-pattern matrix M_mu_nu */
 			   )
 {
   const char *fn = "XLALcomputeBhatStatistic()";
 
   UINT4 row, numDraws;
+  REAL8 A, B, C, E, D;
 
   /* ----- check input arguments ----- */
   if ( !Fstat_i || !A_Mu_MLE_i ) {
@@ -1403,21 +1405,55 @@ XLALcomputeBhatStatistic ( gsl_vector **Bhat_i,		/**< [OUT] Bhat-statistic vecto
     return XLAL_ENOMEM;
   }
 
+  A = gsl_matrix_get ( M_mu_nu, 0, 0);
+  B = gsl_matrix_get ( M_mu_nu, 1, 1);
+  C = gsl_matrix_get ( M_mu_nu, 0, 1);
+  E = gsl_matrix_get ( M_mu_nu, 0, 3);
+
+  D = A * B - SQ(C) - SQ(E);
+
   for ( row=0; row < numDraws; row ++ )
     {
-      REAL8 Bhat, Fstat, h0MLE, cosiMLE, psiMLE, phi0MLE;
-      gsl_vector_const_view A_Mu_MLE = gsl_matrix_const_row ( A_Mu_MLE_i, row );
-      REAL8 tmp;
+      REAL8 Bhat, Fstat;
+      /*      gsl_vector_const_view A_Mu_MLE = gsl_matrix_const_row ( A_Mu_MLE_i, row ); */
 
+      REAL8 al1, al2, al3, al4;
+      REAL8 A1, A2, A3, A4;
+      REAL8 Delta, Chi;
+
+
+      /*
       if ( XLALAmplitudeVect2Params ( &h0MLE, &cosiMLE, &psiMLE, &phi0MLE, &(A_Mu_MLE.vector) ) ) {
 	LogPrintf (LOG_CRITICAL, "XLALcomputeBstatisticMC() failed with error = %d\n", xlalErrno );
 	return XLAL_EFUNC;
       }
 
+      printf ("h0MLE = %g, cosiMLE = %g\n", h0MLE, cosiMLE );
+      */
+
       Fstat = gsl_vector_get ( Fstat_i, row );
 
-      tmp = h0MLE * fabs( 1.0 - SQ(cosiMLE) );
-      Bhat = Fstat - 2.0 * 3.0 * log ( tmp );
+      A1 = gsl_matrix_get ( A_Mu_MLE_i, row, 0 );
+      A2 = gsl_matrix_get ( A_Mu_MLE_i, row, 1 );
+      A3 = gsl_matrix_get ( A_Mu_MLE_i, row, 2 );
+      A4 = gsl_matrix_get ( A_Mu_MLE_i, row, 3 );
+
+      printf ("A1 = %g, A2 = %g, A3 = %g, A4 = %g\n", A1, A2, A3, A4);
+
+      al1 = SQ(A1) + SQ(A3);
+      al2 = SQ(A2) + SQ(A4);
+      al3 = A1 * A2 + A3 * A4;
+      al4 = A1 * A4 - A2 * A3;
+
+      Delta = SQ ( al1 + al2 ) - 4.0 * SQ(al4);	/* disc^2 = As^4 - 4Da^2 = (Aplus^2 - Across^2)^2 */
+
+      printf ("Delta = %g\n", Delta );
+
+      Fstat = gsl_vector_get ( Fstat_i, row );	/* => 2F !! */
+
+      Chi = (1.0/D) * ( B * al1 + A * al2 - 2.0 * C * al3 + 2.0 * E * al4 );
+
+      Bhat = Fstat  - 1.5 * log(Delta) + 2.0 * log( 1.0 + 4.5 * Chi / Delta );
 
       gsl_vector_set ( *Bhat_i, row, Bhat );
 
