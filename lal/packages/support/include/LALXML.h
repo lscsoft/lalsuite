@@ -1,5 +1,6 @@
 /*
 *  Copyright (C) 2007 Jolien Creighton
+*  Copyright (C) 2009 Oliver Bock
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -18,5 +19,12 @@
 */
 
 #include <lal/LALRCSID.h>
+#include <libxml/tree.h>
+#include <lal/LALDatatypes.h>
+
 NRCSID( LALXMLH, "$Id$" );
+
 int XLALXMLFilePrintElements(const char *fname);
+xmlDocPtr XLALCreateVOTableXMLFromTree(const xmlNodePtr xmlTree);
+xmlNodePtr XLALLIGOTimeGPS2VOTableNode(const LIGOTimeGPS *const ltg, const char *name);
+xmlChar * XLALLIGOTimeGPS2XML(const LIGOTimeGPS *const ltg, const char *name);
