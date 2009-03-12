@@ -61,7 +61,7 @@ int XLALXMLFilePrintElements(const char *fname)
 xmlDocPtr XLALCreateVOTableXMLFromTree(const xmlNodePtr xmlTree)
 {
 	/* set up local variables */
-	static const char *logReference = "XLALCreateVOTableXMLFromTree";
+	static const CHAR *logReference = "XLALCreateVOTableXMLFromTree";
 	xmlDocPtr xmlDoc = NULL;
     xmlNodePtr xmlRootNode = NULL;
 
@@ -111,7 +111,7 @@ xmlDocPtr XLALCreateVOTableXMLFromTree(const xmlNodePtr xmlTree)
 xmlChar * XLALGetSingleNodeContentByXPath(const xmlDocPtr xmlDoc, const char *xpath)
 {
 	/* set up local variables */
-	static const char *logReference = "XLALGetSingleNodeContentByXPath";
+	static const CHAR *logReference = "XLALGetSingleNodeContentByXPath";
 	xmlXPathContextPtr xpathCtx = NULL;
 	xmlChar *xpathExpr = NULL;
 	xmlXPathObjectPtr xpathObj = NULL;
@@ -196,9 +196,9 @@ xmlChar * XLALGetSingleNodeContentByXPath(const xmlDocPtr xmlDoc, const char *xp
 xmlNodePtr XLALLIGOTimeGPS2VOTableNode(const LIGOTimeGPS *const ltg, const char *name)
 {
 	/* set up local variables */
-	static const char *logReference = "XLALLIGOTimeGPS2VOTableNode";
-	char gpsSecondsBuffer[INT4STR_MAXLEN] = {0};
-	char gpsNanoSecondsBuffer[INT4STR_MAXLEN] = {0};
+	static const CHAR *logReference = "XLALLIGOTimeGPS2VOTableNode";
+	CHAR gpsSecondsBuffer[INT4STR_MAXLEN] = {0};
+	CHAR gpsNanoSecondsBuffer[INT4STR_MAXLEN] = {0};
     xmlNodePtr xmlResourceNode = NULL;
     xmlNodePtr xmlParamNodeGpsSeconds = NULL;
     xmlNodePtr xmlParamNodeGpsNanoSeconds = NULL;
@@ -325,7 +325,7 @@ xmlNodePtr XLALLIGOTimeGPS2VOTableNode(const LIGOTimeGPS *const ltg, const char 
 xmlChar * XLALLIGOTimeGPS2VOTableXML(const LIGOTimeGPS *const ltg, const char *name)
 {
 	/* set up local variables */
-	static const char *logReference = "XLALLIGOTimeGPS2VOTableXML";
+	static const CHAR *logReference = "XLALLIGOTimeGPS2VOTableXML";
 	xmlChar *xmlStringBuffer = NULL;
 	INT4 xmlStringBufferSize = -1;
 
@@ -382,10 +382,10 @@ xmlChar * XLALLIGOTimeGPS2VOTableXML(const LIGOTimeGPS *const ltg, const char *n
 INT4 XLALVOTableXML2LIGOTimeGPSByName(const char *xml, const char *name, LIGOTimeGPS *ltg)
 {
 	/* set up local variables */
-	static const char *logReference = "XLALVOTableXML2LIGOTimeGPSByName";
+	static const CHAR *logReference = "XLALVOTableXML2LIGOTimeGPSByName";
 	xmlDocPtr xmlDoc = NULL;
 	xmlChar *nodeContent = NULL;
-	char xpath[XPATHSTR_MAXLEN] = {0};
+	CHAR xpath[XPATHSTR_MAXLEN] = {0};
 	INT4 retval = 0;
 
 	/* sanity checks */
