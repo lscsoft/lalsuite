@@ -75,17 +75,34 @@ xmlDocPtr XLALCreateVOTableXMLFromTree(const xmlNodePtr xmlTree)
 		XLAL_ERROR_NULL(logReference, XLAL_EINVAL);
 	}
 
-	/* TODO: XML exception handling */
-
 	/* set up XML document */
     xmlDoc = xmlNewDoc(BAD_CAST("1.0"));
+    if(xmlDoc == NULL) {
+		XLALPrintError("VOTable document instantiation failed\n");
+		XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+    }
 
     /* set up root node */
     xmlRootNode = xmlNewNode(NULL, BAD_CAST("VOTABLE"));
+    if(xmlRootNode == NULL) {
+    	/* clean up */
+    	xmlFreeDoc(xmlDoc);
+
+		XLALPrintError("VOTable root element instantiation failed\n");
+		XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+    }
+
     xmlDocSetRootElement(xmlDoc, xmlRootNode);
 
     /* append tree to root node */
-    xmlAddChild(xmlRootNode, xmlTree);
+    if(!xmlAddChild(xmlRootNode, xmlTree)) {
+    	/* clean up */
+    	xmlFreeNode(xmlRootNode);
+    	xmlFreeDoc(xmlDoc);
+
+		XLALPrintError("Couldn't append given tree to VOTable root element\n");
+		XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+    }
 
 	/* return VOTable document (needs to be xmlFreeDoc'd by caller!!!) */
 	return xmlDoc;
@@ -115,7 +132,7 @@ xmlChar * XLALGetSingleNodeContentByXPath(const xmlDocPtr xmlDoc, const char *xp
 	/* prepare xpath context */
     xpathCtx = xmlXPathNewContext(xmlDoc);
     if(xpathCtx == NULL) {
-		XLALPrintError("XPATH context creation failed\n");
+		XLALPrintError("XPATH context instantiation failed\n");
 		XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
     }
 
@@ -204,26 +221,102 @@ xmlNodePtr XLALLIGOTimeGPS2VOTableNode(const LIGOTimeGPS *const ltg, const char 
 		XLAL_ERROR_NULL(logReference, XLAL_EINVAL);
 	}
 
-	/* TODO: XML exception handling */
-
     /* set up RESOURCE node*/
     xmlResourceNode = xmlNewNode(NULL, BAD_CAST("RESOURCE"));
-    xmlNewProp(xmlResourceNode, BAD_CAST("utype"), BAD_CAST("LIGOTimeGPS"));
-    xmlNewProp(xmlResourceNode, BAD_CAST("name"), BAD_CAST(name));
+    if(xmlResourceNode == NULL) {
+		XLALPrintError("Element instantiation failed: RESOURCE\n");
+		XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+    }
+    if(!xmlNewProp(xmlResourceNode, BAD_CAST("utype"), BAD_CAST("LIGOTimeGPS"))) {
+    	/* clean up */
+    	xmlFreeNode(xmlResourceNode);
+
+		XLALPrintError("Attribute instantiation failed: utype\n");
+		XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+	}
+    if(!xmlNewProp(xmlResourceNode, BAD_CAST("name"), BAD_CAST(name))) {
+    	/* clean up */
+    	xmlFreeNode(xmlResourceNode);
+
+		XLALPrintError("Attribute instantiation failed: name\n");
+		XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+	}
 
     /* set up RESOURCE node child (first PARAM) */
     xmlParamNodeGpsSeconds = xmlNewChild(xmlResourceNode, NULL, BAD_CAST("PARAM"), NULL);
-    xmlNewProp(xmlParamNodeGpsSeconds, BAD_CAST("name"), BAD_CAST("gpsSeconds"));
-    xmlNewProp(xmlParamNodeGpsSeconds, BAD_CAST("datatype"), BAD_CAST("int"));
-    xmlNewProp(xmlParamNodeGpsSeconds, BAD_CAST("unit"), BAD_CAST("s"));
-    xmlNewProp(xmlParamNodeGpsSeconds, BAD_CAST("value"), BAD_CAST(gpsSecondsBuffer));
+    if(xmlParamNodeGpsSeconds == NULL) {
+    	/* clean up */
+    	xmlFreeNode(xmlResourceNode);
+
+    	XLALPrintError("Element instantiation failed: PARAM\n");
+    	XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+    }
+    if(!xmlNewProp(xmlParamNodeGpsSeconds, BAD_CAST("name"), BAD_CAST("gpsSeconds"))) {
+    	/* clean up */
+    	xmlFreeNode(xmlResourceNode);
+
+		XLALPrintError("Attribute instantiation failed: name\n");
+		XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+    }
+    if(!xmlNewProp(xmlParamNodeGpsSeconds, BAD_CAST("datatype"), BAD_CAST("int"))) {
+    	/* clean up */
+    	xmlFreeNode(xmlResourceNode);
+
+		XLALPrintError("Attribute instantiation failed: datatype\n");
+		XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+    }
+    if(!xmlNewProp(xmlParamNodeGpsSeconds, BAD_CAST("unit"), BAD_CAST("s"))) {
+    	/* clean up */
+    	xmlFreeNode(xmlResourceNode);
+
+		XLALPrintError("Attribute instantiation failed: unit\n");
+		XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+    }
+    if(!xmlNewProp(xmlParamNodeGpsSeconds, BAD_CAST("value"), BAD_CAST(gpsSecondsBuffer))) {
+    	/* clean up */
+    	xmlFreeNode(xmlResourceNode);
+
+		XLALPrintError("Attribute instantiation failed: value\n");
+		XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+    }
 
     /* set up RESOURCE node child (second PARAM) */
     xmlParamNodeGpsNanoSeconds = xmlNewChild(xmlResourceNode, NULL, BAD_CAST("PARAM"), NULL);
-    xmlNewProp(xmlParamNodeGpsNanoSeconds, BAD_CAST("name"), BAD_CAST("gpsNanoSeconds"));
-    xmlNewProp(xmlParamNodeGpsNanoSeconds, BAD_CAST("datatype"), BAD_CAST("int"));
-    xmlNewProp(xmlParamNodeGpsNanoSeconds, BAD_CAST("unit"), BAD_CAST("ns"));
-    xmlNewProp(xmlParamNodeGpsNanoSeconds, BAD_CAST("value"), BAD_CAST(gpsNanoSecondsBuffer));
+    if(xmlParamNodeGpsNanoSeconds == NULL) {
+    	/* clean up */
+    	xmlFreeNode(xmlResourceNode);
+
+    	XLALPrintError("Element instantiation failed: PARAM\n");
+    	XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+    }
+    if(!xmlNewProp(xmlParamNodeGpsNanoSeconds, BAD_CAST("name"), BAD_CAST("gpsNanoSeconds"))) {
+    	/* clean up */
+    	xmlFreeNode(xmlResourceNode);
+
+		XLALPrintError("Attribute instantiation failed: name\n");
+		XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+    }
+    if(!xmlNewProp(xmlParamNodeGpsNanoSeconds, BAD_CAST("datatype"), BAD_CAST("int"))) {
+    	/* clean up */
+    	xmlFreeNode(xmlResourceNode);
+
+		XLALPrintError("Attribute instantiation failed: datatype\n");
+		XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+    }
+    if(!xmlNewProp(xmlParamNodeGpsNanoSeconds, BAD_CAST("unit"), BAD_CAST("ns"))) {
+    	/* clean up */
+    	xmlFreeNode(xmlResourceNode);
+
+		XLALPrintError("Attribute instantiation failed: unit\n");
+		XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+    }
+    if(!xmlNewProp(xmlParamNodeGpsNanoSeconds, BAD_CAST("value"), BAD_CAST(gpsNanoSecondsBuffer))) {
+    	/* clean up */
+    	xmlFreeNode(xmlResourceNode);
+
+		XLALPrintError("Attribute instantiation failed: value\n");
+		XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+    }
 
     /* return RESOURCE node (needs to be xmlFreeNode'd or xmlFreeDoc'd by caller!!!) */
     return xmlResourceNode;
@@ -246,17 +339,37 @@ xmlChar * XLALLIGOTimeGPS2VOTableXML(const LIGOTimeGPS *const ltg, const char *n
 		XLAL_ERROR_NULL(logReference, XLAL_EINVAL);
 	}
 
-	/* TODO: XML exception handling */
-
 	/* prepare XML serialization */
 	xmlThrDefIndentTreeOutput(1);
 
-	/* build XML document */
+	/* build VOTable fragment (tree) */
 	xmlNodePtr xmlTree = XLALLIGOTimeGPS2VOTableNode(ltg, name);
-	xmlDocPtr xmlDoc = XLALCreateVOTableXMLFromTree(xmlTree);
+    if(xmlTree == NULL) {
+    	XLALPrintError("VOTable fragment construction failed\n");
+    	XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+    }
 
-    /* dump XML document */
+    /* build VOTable document */
+	xmlDocPtr xmlDoc = XLALCreateVOTableXMLFromTree(xmlTree);
+    if(xmlDoc == NULL) {
+    	/* clean up */
+    	xmlFreeNode(xmlTree);
+    	xmlCleanupParser();
+
+    	XLALPrintError("VOTable document construction failed\n");
+    	XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+    }
+
+    /* dump VOTable document to formatted XML string */
 	xmlDocDumpFormatMemoryEnc(xmlDoc, &xmlStringBuffer, &xmlStringBufferSize, "UTF-8", 1);
+	if(xmlStringBufferSize <= 0) {
+		/* clean up */
+		xmlFreeDoc(xmlDoc);
+		xmlCleanupParser();
+
+		XLALPrintError("VOTable document dump failed\n");
+		XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+	}
 
 	/* clean up */
 	xmlFreeDoc(xmlDoc);
@@ -289,17 +402,30 @@ INT4 XLALVOTableXML2LIGOTimeGPSByName(const char *xml, const char *name, LIGOTim
 		XLAL_ERROR(logReference, XLAL_EINVAL);
 	}
 
-	/* TODO: XML exception handling */
-
 	/* parse XML document */
 	xmlDoc = xmlReadMemory(xml, strlen(xml), NULL, "UTF-8", 0);
+    if(xmlDoc == NULL) {
+    	/* clean up */
+    	xmlCleanupParser();
+
+    	XLALPrintError("VOTable document parsing failed\n");
+    	XLAL_ERROR(logReference, XLAL_EFAILED);
+    }
 
 	/* prepare XPATH search for LIGOTimeGPS.gpsSeconds */
-	snprintf(
-		xpath,
-		XPATHSTR_MAXLEN,
-		"//RESOURCE[@utype='LIGOTimeGPS' and @name='%s']/PARAM[@name='gpsSeconds']/@value",
-		name);
+	if(snprintf(
+			xpath,
+			XPATHSTR_MAXLEN,
+			"//RESOURCE[@utype='LIGOTimeGPS' and @name='%s']/PARAM[@name='gpsSeconds']/@value",
+			name) < 0)
+	{
+    	/* clean up */
+		xmlFreeDoc(xmlDoc);
+    	xmlCleanupParser();
+
+    	XLALPrintError("XPATH statement construction failed: LIGOTimeGPS.gpsSeconds\n");
+    	XLAL_ERROR(logReference, XLAL_EFAILED);
+	}
 
 	/* retrieve LIGOTimeGPS.gpsSeconds */
 	nodeContent = (xmlChar *) XLALGetSingleNodeContentByXPath(xmlDoc, xpath);
@@ -316,11 +442,20 @@ INT4 XLALVOTableXML2LIGOTimeGPSByName(const char *xml, const char *name, LIGOTim
 	}
 
 	/* prepare XPATH search for LIGOTimeGPS.gpsNanoSeconds */
-	snprintf(
-		xpath,
-		XPATHSTR_MAXLEN,
-		"//RESOURCE[@utype='LIGOTimeGPS' and @name='%s']/PARAM[@name='gpsNanoSeconds']/@value",
-		name);
+	if(snprintf(
+			xpath,
+			XPATHSTR_MAXLEN,
+			"//RESOURCE[@utype='LIGOTimeGPS' and @name='%s']/PARAM[@name='gpsNanoSeconds']/@value",
+			name) < 0)
+	{
+	    /* clean up */
+		xmlFree(nodeContent);
+		xmlFreeDoc(xmlDoc);
+	    xmlCleanupParser();
+
+	    XLALPrintError("XPATH statement construction failed: LIGOTimeGPS.gpsNanoSeconds\n");
+	    XLAL_ERROR(logReference, XLAL_EFAILED);
+	}
 
 	/* retrieve LIGOTimeGPS.gpsNanoSeconds */
 	nodeContent = (xmlChar *)XLALGetSingleNodeContentByXPath(xmlDoc, xpath);
