@@ -20,6 +20,7 @@ __version__ = '$Revision$'[11:-2]
 import sys, os
 import getopt, re, string
 import tempfile
+import math #cg, so I can use the ceiling functionS
 #import ConfigParser
 #sys.path.append('')
 
@@ -52,6 +53,7 @@ Usage: [options]
   -k, --filter-knee-freq     (optional) high pass filter knee frequency used on time domain data before generating SFTs (default = 40 Hz)
   -T, --time-baseline        time baseline of SFTs  (e.g., 60 or 1800 seconds)
   -p, --sft-path             path to SFTs (either already existing or where to output them)
+  -c, --freq-res	     the frequency resolution of the spectragrams produced.
   -v, --sft-version          (optional) SFT version number (1 or 2; default is 1)
   -C  --create-sfts          (optional) create the SFTs !!! (/tmp will be appended to the sft-path and SFTs will be generated there!)
   -g, --segment-file         (optional) used only if creating sfts; gives alternative file with segments to use, otherwise LSCsegFind is used to find Science,Injection segments; if -g ALL is given then [start_time, start_time + duration) is used.
@@ -81,8 +83,8 @@ Usage: [options]
 ####################################
 # PARSE COMMAND LINE OPTIONS 
 #
-shortop = "s:L:G:d:x:M:k:T:p:o:N:i:w:P:u:v:c:F:B:b:O:W:r:e:q:y:D:X:m:g:l:hSHZCR"
-longop = [
+shortop = "s:L:G:d:x:M:k:T:p:f:o:N:i:w:P:u:v:c:F:B:b:O:W:r:e:q:y:D:X:m:g:l:hSHZCR" #cg; shortop is a string.
+longop = [  #cg; longopt is a list
   "help",
   "analysis-start-time=",
   "duration=",
@@ -94,6 +96,7 @@ longop = [
   "filter-knee-freq=",
   "time-baseline=",
   "sft-path=",
+  "freq-res=",
   "create-sfts=",
   "log-path=",
   "sub-log-path=",
@@ -156,7 +159,7 @@ overlapFraction = 0.0
 sftVersion = 1
 commentField = None
 startFreq = 48.0
-freqBand = 100.0
+freqBand = 50.0
 freqSubBand = 10.0
 plotOutputPath = None
 makeMatlabPlots = False
@@ -175,6 +178,7 @@ useSingle = False
 useHoT = False
 makeTmpFile = False
 runCondorSubmitDag = False
+freqRes = 2.0
 
 for o, a in opts:
   if o in ("-h", "--help"):
@@ -198,6 +202,8 @@ for o, a in opts:
     timeBaseline = long(a)
   elif o in ("-p", "--sft-path"):
     pathToSFTs = a
+  elif o in ("-c", "--freq-res"):
+    freqRes = float(a)
   elif o in ("-C", "--create-sfts"):
     createSFTs = True
   elif o in ("-o", "--sub-log-path"):
@@ -356,6 +362,11 @@ if (freqSubBand < 0.0):
 
 if (makeGPSDirs < 0) or (makeGPSDirs > 10):
   print >> sys.stderr, "Invalid make gps dirs specified."
+  print >> sys.stderr, "Use --help for usage details."
+  sys.exit(1)
+
+if (freqRes < 0.001) or (freqRes > 100.0):
+  print >> sys.stderr, "Specify a frequency resoltuion between 100 and 0.001"
   print >> sys.stderr, "Use --help for usage details."
   sys.exit(1)
 
@@ -535,9 +546,9 @@ if (createSFTs):
   dagFID.write('SPLICE %s %s\n' % (spliceSFTDAGName, sftDAGFile))
 
 # CREATE A CONDOR .sub FILE TO RUN lalapps_spec_avg
-spectrumAverageFID = file('spectrumAverage.sub','w')
+spectrumAverageFID = file('spectrumAverage.sub','w') #cg; open then file for writing
 spectrumAverageLogFile = subLogPath + '/' + 'spectrumAverage_' + dagFileName + '.log'
-spectrumAverageFID.write('universe = vanilla\n')
+spectrumAverageFID.write('universe = vanilla\n') #cg; write these followig lines into the file.
 spectrumAverageFID.write('executable = $ENV(SPECAVG_PATH)/lalapps_spec_avg\n')
 spectrumAverageFID.write('arguments = $(argList)\n')
 spectrumAverageFID.write('log = %s\n' % spectrumAverageLogFile)
@@ -545,7 +556,7 @@ spectrumAverageFID.write('error = %s/spectrumAverage_$(tagstring).err\n' % logPa
 spectrumAverageFID.write('output = %s/spectrumAverage_$(tagstring).out\n' % logPath)
 spectrumAverageFID.write('notification = never\n')
 spectrumAverageFID.write('queue 1\n')
-spectrumAverageFID.close
+spectrumAverageFID.close()
 
 # MAKE A SUBMIT FILE FOR RUNNING THE MATLAB DRIVER SCRIPT
 if (makeMatlabPlots):
@@ -561,10 +572,11 @@ if (makeMatlabPlots):
   runMatlabScriptFID.write('output = %s/runMatlabPlotScript_$(tagstring).out\n' % logPath)
   runMatlabScriptFID.write('notification = never\n')
   runMatlabScriptFID.write('queue 1\n')
-  runMatlabScriptFID.close
+  runMatlabScriptFID.close()
 
+#cg; Creates the html file, or at least the initial parts of it.
 if (htmlFilename != None):
-  htmlFID = file(htmlFilename,'w')
+  htmlFID = file(htmlFilename,'w')#opens the html file specified in the command line for writing, is having trouble for some reason.
   htmlFID.write('<html>\n')
   htmlFID.write('<head>\n')
   htmlFID.write('<meta content="text/html; charset=ISO-8859-1" http-equiv="content-type">\n')
@@ -602,11 +614,21 @@ if (htmlFilename != None):
   htmlFID.write('<table style="width: 100%; text-align: left;" border="1" cellpadding="2" cellspacing="2">\n')
   htmlFID.write('<tbody>\n')
 
+
+if (freqSubBand == 0):
+  freqSubBand = 10
+
 # Write lalapps_spec_avg jobs to SUPER DAG:
 endFreq = startFreq + freqBand
 thisStartFreq = startFreq
 thisEndFreq = thisStartFreq + freqSubBand
 nodeCount = 0L
+
+if (thisEndFreq == endFreq):
+  endFreq=endFreq+1
+
+
+
 while (thisEndFreq < endFreq):
   # Because SFTs are in the band [startFreq,endFreq) but lalapps_spec_avg works on [startFreq,endFreq]
   # we need to avoid the last subBand requested. The user thus should request 1 Hz more than
@@ -614,13 +636,24 @@ while (thisEndFreq < endFreq):
   #if (thisEndFreq >= endFreq):
      # Fix off-by-one bin end frequency error; for simplicity remove final 1 Hz
      #thisEndFreq = endFreq - 1
+  
+  print >> sys.stdout,"startfreq: ",startFreq,"\n"
+  print >> sys.stdout,"endfreq: ",endFreq,"\n"
+  print >> sys.stdout,"thisStartfreq: ",thisStartFreq,"\n"
+  print >> sys.stdout,"thisEndfreq: ",thisEndFreq,"\n"
+
+  freqrange = thisEndFreq - thisStartFreq
+
+  #This section of code writes the arguments for spec_avg.c
+  #------------------------------------------------------------
   specAvgJobName = 'SpecAvg_%i' % nodeCount
   dagFID.write('JOB %s spectrumAverage.sub\n' % specAvgJobName)
   dagFID.write('RETRY %s 10\n' % specAvgJobName)
+  #the variable names in the arglist below are the names of the variables in spec_avg.c not in this code
   if (sftVersion == 2):
-     argList = '--startGPS %d --endGPS %d --IFO %s --fMin %d --fMax %d --SFTs %s/*.sft' % (analysisStartTime,analysisEndTime,ifo,thisStartFreq,thisEndFreq,pathToSFTs)
+     argList = '--startGPS %d --endGPS %d --IFO %s --fMin %d --fMax %d --freqRes %f  --timeBaseline %d --SFTs %s/*.sft' % (analysisStartTime,analysisEndTime,ifo,thisStartFreq,thisEndFreq,freqRes,timeBaseline,pathToSFTs)
   else:
-     argList = '--startGPS %d --endGPS %d --IFO %s --fMin %d --fMax %d --SFTs %s/SFT*' % (analysisStartTime,analysisEndTime,ifo,thisStartFreq,thisEndFreq,pathToSFTs)
+     argList = '--startGPS %d --endGPS %d --IFO %s --fMin %d --fMax %d --freqRes %f --timeBaseline %d --SFTs %s/SFT*' % (analysisStartTime,analysisEndTime,ifo,thisStartFreq,thisEndFreq,freqRes,timeBaseline,pathToSFTs)
   tagStringOut = '%s_%i' % (tagString, nodeCount)  
   dagFID.write('VARS %s argList="%s" tagstring="%s"\n'%(specAvgJobName,argList,tagStringOut))
   if (createSFTs):
@@ -633,11 +666,17 @@ while (thisEndFreq < endFreq):
      dagFID.write('RETRY %s 3\n' % runMatlabPlotScriptJobName)
      inputFileName = 'spec_%d.00_%d.00_%s_%d_%d' % (thisStartFreq,thisEndFreq,ifo,analysisStartTime,analysisEndTime)
      # Matlab will append .pdf and .png to outputFileName to save plots:
-     outputFileName = '%s/%s' % (plotOutputPath, inputFileName)     
-     effTBase = timeBaseline/180.0
+     outputFileName = '%s/%s' % (plotOutputPath, inputFileName)   
+    
+     #check that the freq resolution does not exceed that of the raw sft freq resolution, if it does replace by max resolution.
+     if (freqRes < 1/timeBaseline):
+      freqRes = (1/timeBaseline)
+     effTBase = 1/freqRes
      effTBaseFull = timeBaseline
-     deltaFTicks = 5
+
+     deltaFTicks=freqrange# divide deltaFticks by 10 in matlab script.
      taveFlag = 1
+
      if (htmlReferenceDir != None):
         referenceFileName = '%s/spec_%d.00_%d.00_%s' % (htmlReferenceDir,thisStartFreq,thisEndFreq,htmlRefIFOEpoch)
      else:
@@ -646,12 +685,18 @@ while (thisEndFreq < endFreq):
      tagStringOut = '%s_%i' % (tagString, nodeCount)  
      dagFID.write('VARS %s argList="%s" tagstring="%s"\n'%(runMatlabPlotScriptJobName,argList,tagStringOut))
      dagFID.write('PARENT %s CHILD %s\n'%(specAvgJobName,runMatlabPlotScriptJobName))
+  
+  #add stuff to the html file to show the plots produced in matlab.
+  #-----------------------------------------------------------------
   if (htmlFilename != None):
      inputFileName = 'spec_%d.00_%d.00_%s_%d_%d' % (thisStartFreq,thisEndFreq,ifo,analysisStartTime,analysisEndTime)
      # Matlab will append .pdf and .png to outputFileName to save plots.
      htmlFID.write('  <tr>\n')
      htmlFID.write('  <td style="vertical-align: top;">\n')
      htmlFID.write('    <a href="%s.pdf"><img alt="" src="%s.png" style="border: 0px solid ; width: 576px; height: 432px;"></a><br>\n' % (inputFileName,inputFileName))
+     htmlFID.write('    <a href="%s_2.pdf"><img alt="" src="%s_2.png" style="border: 0px solid ; width: 576px; height: 432px;"></a><br>\n' % (inputFileName,inputFileName))
+     #cg, to add in the extra image write a line here, similar to above, but with some changes to the file name.
+     #HERE ******************************  HERE ******************* HERE **********************
      htmlFID.write('  </td>\n')
      if (htmlReferenceDir != None):
         referenceFileName = '%s/spec_%d.00_%d.00_%s' % (htmlReferenceDir,thisStartFreq,thisEndFreq,htmlRefIFOEpoch)
@@ -683,7 +728,7 @@ while (thisEndFreq < endFreq):
   nodeCount = nodeCount + 1
 
 # Close the DAG file
-dagFID.close
+dagFID.close()
 
 if (htmlFilename != None):
   htmlFID.write('</tbody>\n')
@@ -698,7 +743,7 @@ if (htmlFilename != None):
      htmlLinesFID.write('</span>\n')
      htmlLinesFID.write('</body>\n')
      htmlLinesFID.write('</html>\n')
-     htmlLinesFID.close
+     htmlLinesFID.close()
 
 ###################################################
 # SUBMIT THE .dag FILE TO CONDOR; RUN condor_submit_dag
