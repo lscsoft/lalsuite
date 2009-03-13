@@ -86,6 +86,9 @@ CHAR     *uvar_filenameOut=NULL;
 #define TRUE (1==1)
 #define FALSE (1==0)
 
+#define SQUARE(x) (x*x)
+#define CUBE(x) (x*x*x)
+
 void initUserVars (LALStatus *status);
 
 
@@ -104,10 +107,10 @@ int main(int argc, char *argv[]){
   REAL8ListElement *freqList, *freqHead = NULL, *freqTail = NULL;
   REAL8ListElement *phaseList, *phaseHead = NULL, *phaseTail = NULL;
   REAL8 deltaF_SFT, timeBase;
-  REAL8  psi; 
+  REAL8  *psi = NULL; 
   UINT4 counter = 0; 
   COMPLEX8FrequencySeries *sft1 = NULL, *sft2 = NULL;
-  INT4 index1, index2;
+  INT4 sameDet;
   REAL8FrequencySeries *psd1, *psd2;
   COMPLEX16Vector *yalpha = NULL, *ualpha = NULL;
 
@@ -134,7 +137,6 @@ int main(int argc, char *argv[]){
     *skySizeAlpha=NULL, *skySizeDelta=NULL; 
   INT4   nSkyPatches, skyCounter=0; 
   SkyPatchesInfo skyInfo;
-  INT4  j,i;
 
   /* frequency loop info */
   INT4 nfreqLoops, freqCounter = 0;
@@ -233,6 +235,17 @@ int main(int argc, char *argv[]){
     exit(1);
   } 
 
+  if (uvar_averageIota && LALUserVarWasSet (&uvar_cosi)) {
+    fprintf(stderr, "if uvar_averageIota = TRUE, cosi will not be used\n");
+    exit(1);
+  } 
+
+  if (uvar_autoCorrelate) {
+    fprintf(stderr, "autoCorrelate option is not currently usable\n");
+    exit(1);
+  }
+
+
   /* open output file */
   strcpy (filename, uvar_dirnameOut);
   strcat(filename, uvar_filenameOut);
@@ -277,6 +290,7 @@ int main(int argc, char *argv[]){
     exit(1);
   }
 
+
   /* get SFT parameters so that we can initialise search frequency resolutions */
   /* calculate deltaF_SFT */
   deltaF_SFT = catalog->data[0].header.deltaF;  /* frequency resolution */
@@ -301,11 +315,11 @@ int main(int argc, char *argv[]){
   }
 
   if (!(LALUserVarWasSet (&uvar_fdotResolution))) {
-    uvar_fdotResolution = pow(1/tObs, 2);
+    uvar_fdotResolution = SQUARE(1/tObs);
   }
 
   if (!(LALUserVarWasSet (&uvar_fddotResolution))) {
-    uvar_fddotResolution = pow(1/tObs, 3);
+    uvar_fddotResolution = CUBE(1/tObs);
   }
 
   /*get number of frequency loops*/
@@ -368,17 +382,18 @@ int main(int argc, char *argv[]){
     amplitudes.Acrosssq = 1.0/3.0;
     amplitudes.AplusAcross = 0;
   } else {
-    amplitudes.Aplussq = pow(((1.0 + uvar_cosi*uvar_cosi)/2.0),2);
-    amplitudes.Acrosssq = pow(uvar_cosi,2);
-    amplitudes.AplusAcross = (uvar_cosi/2) + (pow(uvar_cosi,3)/2);
+    amplitudes.Aplussq = SQUARE((1.0 + uvar_cosi*uvar_cosi)/2.0);
+    amplitudes.Acrosssq = SQUARE(uvar_cosi);
+    amplitudes.AplusAcross = (uvar_cosi/2) + (CUBE(uvar_cosi)/2);
   }
 
   /* polarisation angle */
   if (LALUserVarWasSet(&uvar_psi)) { 
-    psi = uvar_psi;
+    psi = (REAL8 *) LALCalloc(1, sizeof(REAL8));
+    *psi = uvar_psi;
   }
   else {
-    psi = 0.0;
+    psi = NULL;
   }
 
   /* initialise output arrays */
@@ -463,22 +478,6 @@ int main(int argc, char *argv[]){
     listLength = slidingcounter - sftcounter;
    
   if (listLength > 1) {
-    /* create sft pair indices */
-    LAL_CALL ( LALCreateSFTPairsIndicesFrom2SFTvectors( &status,
-							  &sftPairIndexList,
-							  sftHead,
-							  uvar_maxlag,
-							  listLength,
-							  detChoice,
-							  uvar_autoCorrelate),
-		 &status);
-
-    if (sftPairIndexList) {	/*if there are no pairs, sftPairIndexList will be NULL*/
-      /* initialise Y, u, sigmasq vectors  */
-      yalpha = XLALCreateCOMPLEX16Vector(sftPairIndexList->vectorLength);
-      ualpha = XLALCreateCOMPLEX16Vector(sftPairIndexList->vectorLength);
-      sigmasq = XLALCreateREAL8Vector(sftPairIndexList->vectorLength);
-
  
       /* start frequency loop */
       for (freqCounter = 0; freqCounter < nfreqLoops; freqCounter++) {
@@ -493,7 +492,7 @@ int main(int argc, char *argv[]){
 	  /* frequency double derivative loop */
 	  for (fddotCounter = 0; fddotCounter < nfddotLoops; fddotCounter++) {
 
-	    fddot_current = uvar_fddot + (delta_fddot*fddotCounter++);
+	    fddot_current = uvar_fddot + (delta_fddot*fddotCounter);
 
 
 	    /* loop over sky patches -- main calculations  */
@@ -523,85 +522,117 @@ int main(int argc, char *argv[]){
 	      LAL_CALL( GetBeamInfo( &status, beamHead, sftHead, freqHead, phaseHead, skypos, 
 				     edat, &thisPoint), &status);
 
-	      /* loop over SFT pairs */
+	      /* loop over SFT mini-list to get pairs */
 	      ualphacounter = 0;
 
-	      for (j=0; j < (INT4)sftPairIndexList->vectorLength; j++) {
+	      /*  correlate sft pairs  */
+ 	      sftList = sftHead;
+	      psdList = psdHead;
+	      freqList = freqHead;
+	      phaseList = phaseHead;
+	      beamList = beamHead;
 
+	      sft1 = &(sftList->sft);
+	      psd1 = &(psdList->psd);
+	      freq1 = freqList->val;
+	      phase1 = phaseList->val;
+	      beamfns1 = &(beamList->beamfn);
 
-		/*  correlate sft pairs  */
-		index1 = sftPairIndexList->data[j]; /*this is always 0*/
-		index2 = sftPairIndexList->data[j + sftPairIndexList->vectorLength];
+	      /*while there are elements in the sft minilist, keep
+	        going and check whether it should be paired with SFT1. 
+	        there is no need to check the lag as the sfts must satisfy this condition 
+ 	        already to be in the mini-list*/
+	      while (sftList->nextSFT) {
+		/*if we are autocorrelating, we want the head to be paired with itself first*/
+ 		if ((sftList == sftHead) && uvar_autoCorrelate) { 
+		  sft2 = &(sftList->sft);
+		  psd2 = &(psdList->psd);
+	  	  freq2 = freqList->val;
+		  phase2 = phaseList->val;
+		  beamfns2 = &(beamList->beamfn);
 
-		sftList = sftHead;
-		psdList = psdHead;
-		freqList = freqHead;
-		phaseList = phaseHead;
-		beamList = beamHead;
+ 		  sftList = (SFTListElement *)sftList->nextSFT;
+		  psdList = (PSDListElement *)psdList->nextPSD;
+		  freqList = (REAL8ListElement *)freqList->nextVal;
+		  phaseList = (REAL8ListElement *)phaseList->nextVal;
+		  beamList = (CrossCorrBeamFnListElement *)beamList->nextBeamfn;
 
-		sft1 = &(sftList->sft);
-		psd1 = &(psdList->psd);
-		freq1 = freqList->val;
-		phase1 = phaseList->val;
-		beamfns1 = &(beamList->beamfn);
+		} else { /*otherwise just step to the next sft*/
 
-		for (i = 1; i <= index2; i++) {
-		  /*use sftlist, psdlist as tmps */
 		  sftList = (SFTListElement *)sftList->nextSFT;
 		  psdList = (PSDListElement *)psdList->nextPSD;
 		  freqList = (REAL8ListElement *)freqList->nextVal;
 		  phaseList = (REAL8ListElement *)phaseList->nextVal;
 		  beamList = (CrossCorrBeamFnListElement *)beamList->nextBeamfn;
-		}
 
-		sft2 = &(sftList->sft);
-		psd2 = &(psdList->psd);
-		freq2 = freqList->val;
-		phase2 = phaseList->val;
-		beamfns2 = &(beamList->beamfn);
+	  	  sft2 = &(sftList->sft);
+		  psd2 = &(psdList->psd);
+	  	  freq2 = freqList->val;
+		  phase2 = phaseList->val;
+		  beamfns2 = &(beamList->beamfn);
+ 		}
+      
+                /*strcmp returns 0 if strings are equal, >0 if strings are different*/
+                sameDet = strcmp(sft1->name, sft2->name);
 
-		LAL_CALL( LALCorrelateSingleSFTPair( &status, &(yalpha->data[ualphacounter]),
+    	        /* if they are different, set sameDet to 1 so that it will match if
+	 	   detChoice == DIFFERENT */
+      		if (sameDet != 0) { sameDet = 1; }
+      
+      		/* however, if detChoice = ALL, then we want sameDet to match it */
+      		if (detChoice == ALL) { sameDet = detChoice; }
+	  	  
+	        /* decide whether to add this pair or not */
+     		if ((sameDet == (INT4)detChoice)) {
+
+	          /* increment the size of  Y, u, sigmasq vectors by 1  */
+ 	          yalpha = XLALResizeCOMPLEX16Vector(yalpha, 1 + ualphacounter);
+      		  ualpha = XLALResizeCOMPLEX16Vector(ualpha, 1 + ualphacounter);
+      		  sigmasq = XLALResizeREAL8Vector(sigmasq, 1 + ualphacounter);
+
+ 		  LAL_CALL( LALCorrelateSingleSFTPair( &status, &(yalpha->data[ualphacounter]),
 						     sft1, sft2, psd1, psd2, freq1, freq2),
-			  &status);
+		  	    &status);
 
-	  	LAL_CALL( LALCalculateSigmaAlphaSq( &status, &sigmasq->data[ualphacounter],
+	  	  LAL_CALL( LALCalculateSigmaAlphaSq( &status, &sigmasq->data[ualphacounter],
 						    freq1, freq2, psd1, psd2),
-			  &status);
+			    &status);
 
-		/*if we are averaging over psi and cos(iota), call the simplified 
- 	    	  Ualpha function*/
-	  	if (uvar_averagePsi && uvar_averageIota) {
-		  LAL_CALL( LALCalculateAveUalpha ( &status, &ualpha->data[ualphacounter], 
+		  /*if we are averaging over psi and cos(iota), call the simplified 
+ 	    	    Ualpha function*/
+	  	  if (uvar_averagePsi && uvar_averageIota) {
+		    LAL_CALL( LALCalculateAveUalpha ( &status, &ualpha->data[ualphacounter], 
 						    phase1, phase2, *beamfns1, *beamfns2, 
-						    &sigmasq->data[ualphacounter]),
-			    &status);
+						    sigmasq->data[ualphacounter]),
+			       &status);
 
-		} else {
-		  LAL_CALL( LALCalculateUalpha ( &status, &ualpha->data[ualphacounter], amplitudes,
+		  } else {
+		    LAL_CALL( LALCalculateUalpha ( &status, &ualpha->data[ualphacounter], amplitudes,
 						 phase1, phase2, *beamfns1, *beamfns2,
-						 &sigmasq->data[ualphacounter], uvar_psi),
-			    &status);
-		}
-
-		ualphacounter++;
+						 sigmasq->data[ualphacounter], psi),
+			      &status);
+		
+		  }
+		  ualphacounter++;
+                }
 	      } /*finish loop over sft pairs*/
 
 	      /*printf("finish loop over pairs\n");*/
 
-
-	      /* calculate rho from Yalpha and Ualpha */
-	      tmpstat = 0;
-	      LAL_CALL( LALCalculateCrossCorrPower( &status, &tmpstat, yalpha, ualpha),
+	      /* calculate rho from Yalpha and Ualpha, if there were pairs */
+ 	      if (ualphacounter > 0) {
+	        tmpstat = 0;
+	        LAL_CALL( LALCalculateCrossCorrPower( &status, &tmpstat, yalpha, ualpha),
 			&status);
 
-	      rho->data[counter] += tmpstat;
+	        rho->data[counter] += tmpstat;
 
-	      /* calculate standard deviation of rho (Eq 4.6) */
-	      LAL_CALL( LALNormaliseCrossCorrPower( &status, &tmpstat, ualpha, sigmasq),
+	        /* calculate standard deviation of rho (Eq 4.6) */
+	        LAL_CALL( LALNormaliseCrossCorrPower( &status, &tmpstat, ualpha, sigmasq),
 			&status); 
 
-	      stddev->data[counter] += tmpstat;
-
+	        stddev->data[counter] += tmpstat;
+	      }
 
 	      counter++;
 
@@ -619,13 +650,7 @@ int main(int argc, char *argv[]){
 
       XLALDestroyREAL8Vector(sigmasq);
 
-
-
-      XLALFree(sftPairIndexList->data);
-      XLALFree(sftPairIndexList);
-
-      } /*end if listlength > 1*/
-    } /*end if sftPairIndexList */
+    } /*end if listLength > 1 */
 
   } /* finish loop over all sfts */
   printf("finish loop over all sfts\n");
@@ -900,7 +925,7 @@ void GetBeamInfo(LALStatus *status,
 
     detState->detector = *det;
 
-    LALGetAMCoeffs ( status->statusPtr, AMcoef, detState, skypos);
+    LALNewGetAMCoeffs ( status->statusPtr, AMcoef, detState, skypos);
 		     
     thisVel.data = detState->data[0].vDetector;
     thisPos.data = detState->data[0].rDetector;
@@ -963,6 +988,10 @@ void CopySFTFromCatalog(LALStatus *status,
 
   ASSERT ( catalog, status, PULSAR_CROSSCORR_ENULL, PULSAR_CROSSCORR_MSGENULL );
 
+  /*check that we are loading an sensible frequency range*/
+  if (fMin < catalog->data[sftindex].header.f0 || fMax > (catalog->data[sftindex].header.f0 + catalog->data[sftindex].numBins*catalog->data[sftindex].header.deltaF)) {
+    ABORT(status, PULSAR_CROSSCORR_EVAL, PULSAR_CROSSCORR_MSGEVAL);
+  }
 
   if ( (slidingcat = LALCalloc ( 1, sizeof ( SFTCatalog ))) == NULL ) {
     ABORT(status, PULSAR_CROSSCORR_EMEM, PULSAR_CROSSCORR_MSGEMEM);
