@@ -33,7 +33,7 @@
 #include <lal/PulsarCrossCorr.h>
 #include <gsl/gsl_permutation.h>
 
-
+#define SQUARE(x) (x*x)
 
 RCSID( "$Id$");
 
@@ -170,9 +170,20 @@ void LALCorrelateSingleSFTPair(LALStatus                *status,
   ASSERT (psd1, status, PULSARCROSSCORR_ENULL, PULSARCROSSCORR_MSGENULL);
   ASSERT (psd2, status, PULSARCROSSCORR_ENULL, PULSARCROSSCORR_MSGENULL);
 
-
   /* assume both sfts have the same freq. resolution */
   deltaF = sft1->deltaF;
+
+  /* check that frequencies are in the right range */
+  if ((freq1 < sft1->f0) || (freq1 > (sft1->f0 + deltaF*sft1->data->length)) ) {
+	ABORT(status, PULSARCROSSCORR_EVAL, PULSARCROSSCORR_MSGEVAL);
+  }
+  /* check that frequencies are in the right range */
+  if ((freq2 < sft2->f0) || (freq2 > (sft2->f0 + deltaF*sft2->data->length)) ) {
+	ABORT(status, PULSARCROSSCORR_EVAL, PULSARCROSSCORR_MSGEVAL);
+  }
+
+
+
   bin1 = (INT4)ceil( ((freq1 - sft1->f0) / (deltaF)) - 0.5);
   bin2 = (INT4)ceil( ((freq2 - sft2->f0)/ (deltaF)) - 0.5);
 
@@ -206,6 +217,10 @@ void LALGetSignalFrequencyInSFT(LALStatus                *status,
   
   INITSTATUS (status, "GetSignalFrequencyInSFT", rcsid);
   ATTATCHSTATUSPTR (status);
+
+  ASSERT(epoch, status, PULSARCROSSCORR_ENULL, PULSARCROSSCORR_MSGENULL);
+  ASSERT(dopp, status, PULSARCROSSCORR_ENULL, PULSARCROSSCORR_MSGENULL);
+  ASSERT(vel, status, PULSARCROSSCORR_ENULL, PULSARCROSSCORR_MSGENULL);
 
   alpha = dopp->Alpha;
   delta = dopp->Delta;
@@ -253,6 +268,10 @@ void LALGetSignalPhaseInSFT(LALStatus               *status,
   INITSTATUS (status, "GetSignalPhaseInSFT", rcsid);
   ATTATCHSTATUSPTR (status);
 
+  ASSERT(epoch, status, PULSARCROSSCORR_ENULL, PULSARCROSSCORR_MSGENULL);
+  ASSERT(dopp, status, PULSARCROSSCORR_ENULL, PULSARCROSSCORR_MSGENULL);
+  ASSERT(pos, status, PULSARCROSSCORR_ENULL, PULSARCROSSCORR_MSGENULL);
+
   alpha = dopp->Alpha;
   delta = dopp->Delta;
 
@@ -277,7 +296,6 @@ void LALGetSignalPhaseInSFT(LALStatus               *status,
 
  for (k = 1;  k < PULSAR_MAX_SPINS; k++) {
     factor *= timeDiff / k;  
-/*    fhat += dopp->fkdot[k] * factor;*/
     phihat += dopp->fkdot[k-1] * factor;
 
   }
@@ -305,11 +323,15 @@ void LALCalculateSigmaAlphaSq(LALStatus            *status,
 
   INITSTATUS (status, "CalculateSigmaAlphaSq", rcsid);
   ATTATCHSTATUSPTR (status);
+
+  ASSERT(psd1, status, PULSARCROSSCORR_ENULL, PULSARCROSSCORR_MSGENULL);
+  ASSERT(psd2, status, PULSARCROSSCORR_ENULL, PULSARCROSSCORR_MSGENULL);
+
   deltaF = psd1->deltaF;
 
   bin1 = (INT8)ceil( ((freq1 - psd1->f0) / (deltaF)) - 0.5);
   bin2 = (INT8)ceil( ((freq2 - psd2->f0)/ (deltaF)) - 0.5);
-  *out = pow(deltaF, 4) * psd1->data->data[bin1] * psd2->data->data[bin2];
+  *out = SQUARE(deltaF)*SQUARE(deltaF) * psd1->data->data[bin1] * psd2->data->data[bin2];
   DETATCHSTATUSPTR (status);
 	
   /* normal exit */	
@@ -324,7 +346,7 @@ void LALCalculateAveUalpha(LALStatus *status,
 			REAL8     phiJ,
 			CrossCorrBeamFn beamfnsI,
 			CrossCorrBeamFn beamfnsJ,
-			REAL8     *sigmasq)
+			REAL8     sigmasq)
 {
   REAL8 deltaPhi;
   REAL8 re, im;
@@ -337,8 +359,8 @@ void LALCalculateAveUalpha(LALStatus *status,
   im = 0.1 * sin(-deltaPhi) * ((beamfnsI.a * beamfnsJ.a) + (beamfnsI.b * beamfnsJ.b));
 
   /*calculate Ualpha*/
-  out->re = re/(*sigmasq);
-  out->im = -im/(*sigmasq);
+  out->re = re/(sigmasq);
+  out->im = -im/(sigmasq);
 
 
   DETATCHSTATUSPTR (status);
@@ -356,37 +378,59 @@ void LALCalculateUalpha(LALStatus *status,
 			REAL8     phiJ,
 			CrossCorrBeamFn beamfnsI,
 			CrossCorrBeamFn beamfnsJ,
-			REAL8     *sigmasq,
-			REAL8     psi)
+			REAL8     sigmasq,
+			REAL8     *psi)
 {
   REAL8 deltaPhi;
   REAL8 re, im;
   REAL8 FplusI, FplusJ, FcrossI, FcrossJ;
+  REAL8 FpIFpJ, FcIFcJ, FpIFcJ, FcIFpJ;
 	    
   INITSTATUS (status, "CalculateUalpha", rcsid);
   ATTATCHSTATUSPTR (status);
 
   deltaPhi = phiI - phiJ;
 
-  FplusI = (beamfnsI.a * cos(2.0*psi)) + (beamfnsI.b * sin(2.0*psi));
-  FplusJ = (beamfnsJ.a * cos(2.0*psi)) + (beamfnsJ.b * sin(2.0*psi));
-  FcrossI = (beamfnsI.b * cos(2.0 * psi)) - (beamfnsI.a * sin(2.0 * psi));
-  FcrossJ = (beamfnsJ.b * cos(2.0 * psi)) - (beamfnsJ.a * sin(2.0 * psi));;	
+  /*if not averaging over psi, calculate F+, Fx exactly*/
+  if (psi) {
+    FplusI = (beamfnsI.a * cos(2.0*(*psi))) + (beamfnsI.b * sin(2.0*(*psi)));
+    FplusJ = (beamfnsJ.a * cos(2.0*(*psi))) + (beamfnsJ.b * sin(2.0*(*psi)));
+    FcrossI = (beamfnsI.b * cos(2.0 * (*psi))) - (beamfnsI.a * sin(2.0 * (*psi)));
+    FcrossJ = (beamfnsJ.b * cos(2.0 * (*psi))) - (beamfnsJ.a * sin(2.0 * (*psi)));;	
 
-
-  /*calculate G_IJ*/
-  re = 0.25 * ( (cos(deltaPhi)*
+    /*calculate G_IJ*/
+    re = 0.25 * ( (cos(deltaPhi)*
 		   ((FplusI*FplusJ * amplitudes.Aplussq) + (FcrossI*FcrossJ * amplitudes.Acrosssq)) )
 		-(sin(deltaPhi)*((FplusI*FcrossJ - FcrossI*FplusJ) * amplitudes.AplusAcross)) );
 
 
-  im = 0.25 * ( -(cos(deltaPhi) * ((FplusI*FcrossJ - FcrossI*FplusJ)*amplitudes.AplusAcross))
-	       - (sin(deltaPhi) * 
+    im = 0.25 * ( -(cos(deltaPhi) * ((FplusI*FcrossJ - FcrossI*FplusJ)*amplitudes.AplusAcross))
+	          - (sin(deltaPhi) * 
 		   ((FplusI*FplusJ * amplitudes.Aplussq) + (FcrossI*FcrossJ * amplitudes.Acrosssq))) );
 
+
+  }
+  else {
+    FpIFpJ = 0.5*((beamfnsI.a * beamfnsJ.a) + (beamfnsI.b * beamfnsJ.b));
+    FcIFcJ = 0.5*((beamfnsI.a * beamfnsJ.a) + (beamfnsI.b * beamfnsJ.b));
+    FpIFcJ = 0.5*((beamfnsI.a * beamfnsJ.b) - (beamfnsI.b * beamfnsJ.a));
+    FcIFpJ = 0.5*((beamfnsJ.a * beamfnsI.b) - (beamfnsJ.b * beamfnsI.a));
+
+    /*calculate G_IJ*/
+    re = 0.25 * ( (cos(deltaPhi)*
+		   ((FpIFpJ * amplitudes.Aplussq) + (FcIFcJ * amplitudes.Acrosssq)) )
+  		  -(sin(deltaPhi)*((FpIFcJ - FcIFpJ) * amplitudes.AplusAcross)) );
+
+
+    im = 0.25 * ( -(cos(deltaPhi) * ((FpIFcJ - FcIFpJ)*amplitudes.AplusAcross))
+	       - (sin(deltaPhi) * 
+		   ((FpIFpJ * amplitudes.Aplussq) + (FcIFcJ * amplitudes.Acrosssq))) );
+
+  }
+
   /*calculate Ualpha*/
-  out->re = re/(*sigmasq);
-  out->im = -im/(*sigmasq);
+  out->re = re/(sigmasq);
+  out->im = -im/(sigmasq);
 
 
   DETATCHSTATUSPTR (status);
@@ -438,12 +482,13 @@ void LALNormaliseCrossCorrPower(LALStatus        *status,
   INITSTATUS (status, "NormaliseCrossCorrPower", rcsid);
   ATTATCHSTATUSPTR (status);
 
+  ASSERT (out, status, PULSARCROSSCORR_ENULL, PULSARCROSSCORR_MSGENULL);
   ASSERT (ualpha, status, PULSARCROSSCORR_ENULL, PULSARCROSSCORR_MSGENULL);
   ASSERT (sigmaAlphasq, status, PULSARCROSSCORR_ENULL, PULSARCROSSCORR_MSGENULL);
 
 
   for (i=0; i < (INT4)ualpha->length; i++) {
-	variance += (pow(ualpha->data[i].re, 2) + pow(ualpha->data[i].im, 2)) * sigmaAlphasq->data[i];
+	variance += (SQUARE(ualpha->data[i].re) + SQUARE(ualpha->data[i].im)) * sigmaAlphasq->data[i];
 
   }
   
