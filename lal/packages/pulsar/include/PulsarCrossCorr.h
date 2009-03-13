@@ -90,9 +90,11 @@ NRCSID (PULSARCROSSCORRH, "$Id$");
  
 #define PULSARCROSSCORR_ENULL 1
 #define PULSARCROSSCORR_ENONULL 2
+#define PULSARCROSSCORR_EVAL 3
 
 #define PULSARCROSSCORR_MSGENULL "Null pointer"
 #define PULSARCROSSCORR_MSGENONULL "Non-null pointer"
+#define PULSARCROSSCORR_MSGEVAL "Invalid value"
 
 /* ******************************************************************
  *  Structure, enum, union, etc., typdefs.
@@ -199,7 +201,7 @@ void LALCalculateAveUalpha(LALStatus *status,
 			REAL8     phiJ,
 			CrossCorrBeamFn beamfnsI,
 			CrossCorrBeamFn beamfnsJ,
-			REAL8     *sigmasq);
+			REAL8     sigmasq);
 
 void LALCalculateUalpha(LALStatus *status,
 			COMPLEX16 *out,
@@ -208,8 +210,8 @@ void LALCalculateUalpha(LALStatus *status,
 			REAL8     phiJ,
 			CrossCorrBeamFn beamfnsI,
 			CrossCorrBeamFn beamfnsJ,
-			REAL8     *sigmasq,
-			REAL8     psi);
+			REAL8     sigmasq,
+			REAL8     *psi);
 
 void LALCalculateCrossCorrPower(LALStatus       *status,
 				REAL8	        *out,
