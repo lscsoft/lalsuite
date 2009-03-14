@@ -25,13 +25,14 @@
 #define LALXMLC_MSGENOM "Nominal exit"
 #define LALXMLC_MSGEFUN "Subroutine returned error"
 #define LALXMLC_MSGEVAL "Result validation failed"
-#define LALXMLC_NAME "LALXMLTest"
+#define LALXMLC_NAME "timeGPS"
 
 int main(void)
 {
 	/* set up local variables */
 	LIGOTimeGPS timeSource;
 	LIGOTimeGPS timeDestination;
+	xmlChar *xml;
 
 	/* initialize test data */
 	timeSource.gpsSeconds = 15;
@@ -39,42 +40,47 @@ int main(void)
 	timeDestination.gpsSeconds = 0;
 	timeDestination.gpsNanoSeconds = 0;
 
-	fprintf(stderr, "Running LALXMLTest...\n");
-	fprintf(stderr, "LALXMLTest: [XLALLIGOTimeGPS2XML: starting...]\n");
+	fprintf(stderr, "Running LALXMLTest...\n\n");
+
+
+	fprintf(stderr, "Initial LIGOTimeGPS struct:\n");
+	fprintf(stderr, "%s = { %d, %d }\n\n", LALXMLC_NAME, timeSource.gpsSeconds, timeSource.gpsNanoSeconds );
 
 	/* invoke and check first function (set) */
-	xmlChar *xml = (xmlChar *) XLALLIGOTimeGPS2VOTableXML(&timeSource, LALXMLC_NAME);
+	xml = (xmlChar *) XLALLIGOTimeGPS2VOTableXML(&timeSource, LALXMLC_NAME);
 	if(!xml) {
 		fprintf(stderr, "LALXMLTest: [XLALLIGOTimeGPS2XML: %s]\n", LALXMLC_MSGEFUN);
 		return LALXMLC_EFUN;
 	}
+-	fprintf(stderr, "LALXMLTest: [XLALLIGOTimeGPS2VOTableXML(): %s]\n", LALXMLC_MSGENOM);
 
 	/* debug mode only */
-	/* fprintf(stderr, xml); */
-
-	fprintf(stderr, "LALXMLTest: [XLALLIGOTimeGPS2XML: %s]\n", LALXMLC_MSGENOM);
-	fprintf(stderr, "LALXMLTest: [XLALVOTableXML2LIGOTimeGPSByName: starting...]\n");
+	fprintf(stderr, "Serialized VOTable XML:\n");
+	fprintf(stderr, "----------------------------------------------------------------------\n");
+	fprintf(stderr, (char*)xml);
+	fprintf(stderr, "----------------------------------------------------------------------\n");
 
 	/* invoke and check second function (set) */
-	if(XLALVOTableXML2LIGOTimeGPSByName(xml, LALXMLC_NAME, &timeDestination)) {
+	if(XLALVOTableXML2LIGOTimeGPSByName((char*)xml, LALXMLC_NAME, &timeDestination)) {
 		fprintf(stderr, "LALXMLTest: [XLALVOTableXML2LIGOTimeGPSByName: %s]\n", LALXMLC_MSGEFUN);
 		return LALXMLC_EFUN;
 	}
+-	fprintf(stderr, "\nLALXMLTest: [XLALVOTableXML2LIGOTimeGPSByName(): %s]\n", LALXMLC_MSGENOM);
 
 	/* clean up */
 	xmlFree(xml);
+
+	fprintf(stderr, "LIGOTimeGPS struct parsed back from VOTable:\n");
+	fprintf(stderr, "%s = { %d, %d }\n\n", LALXMLC_NAME, timeDestination.gpsSeconds, timeDestination.gpsNanoSeconds );
 
 	/* validate test results */
 	if(
 		timeSource.gpsSeconds != timeDestination.gpsSeconds ||
 		timeSource.gpsNanoSeconds != timeDestination.gpsNanoSeconds)
 	{
-		fprintf(stderr, "LALXMLTest: [XLALVOTableXML2LIGOTimeGPSByName: %s]\n", LALXMLC_MSGEVAL);
+		fprintf(stderr, "LALXMLTest: [XLALVOTableXML2LIGOTimeGPSByName: %s]\n\n", LALXMLC_MSGEVAL);
 		return LALXMLC_EVAL;
 	}
-
-	fprintf(stderr, "LALXMLTest: [XLALVOTableXML2LIGOTimeGPSByName: %s]\n", LALXMLC_MSGENOM);
-	fprintf(stderr, "LALXMLTest: %s\n", LALXMLC_MSGENOM);
 
 	return LALXMLC_ENOM;
 }
