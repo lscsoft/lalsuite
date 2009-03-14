@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007, 2008 Badri Krishnan, Chad Hanna, Lucia Santamaria Lara,
+ * Copyright (C) 2007-2009 Badri Krishnan, Chad Hanna, Lucia Santamaria Lara,
  * Robert Adam Mercer, Stephen Fairhurst
  *
  * This program is free software; you can redistribute it and/or modify
