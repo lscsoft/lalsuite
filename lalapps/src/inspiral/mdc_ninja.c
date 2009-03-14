@@ -239,7 +239,7 @@ INT4 main( INT4 argc, CHAR *argv[] )
         fprintf( stdout, "%s - Numerical Relativity MDC Injection Program\n" \
             "CVS Version: %s\nCVS Tag: %s\n", PROGRAM_NAME, CVS_ID_STRING, \
             CVS_NAME_STRING );
-	fprintf( stdout, lalappsGitID );
+        fprintf( stdout, lalappsGitID );
         exit( 0 );
         break;
 
