@@ -1,93 +1,92 @@
-% Code to read in the output of coincringread (for injections or playground) and separate 
-% the triggers into doubles and triples. These lists are then savead as .mat
-% files
 
-%  The user needs to either change the files names hardwired, or change their filename to
-%  match with what I used. It's easiest if the injection files from various runs are indexed; 
-%  with the index appearing in the array A.
+function separate(type, file_list )
 
-clear
+%
+% NULL = separate ( type, file_list )
+% 
+% separte breaks trigger files into subfiles (stored as .mat binaries) for each type of trigger: H1H2 doubles, 
+% H1H2L1 triples, etc.
+% 
+% type = 'bg', 'inj', 'pg', 'int'
+%     describes the type of run: background (timeslides), injections, playground, intime (zero lag) respectively
+%
+% file_list
+%     is a column vector of filenames, typically output of lalapps_coincringread that you wish to separate.
+% 
+% EXAMPLE:
+% 
+% file_list = ['injH1H2L1coincs_m1-3.xml'; 'injH1H2L1coincs_m4-6.xml'];
+% separte( 'inj', file_list );
+% 
 
+N_files = length(file_list(:,1));
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%% read in the file(s) %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+% read injection files  
+  if strcmp(type,'inj')
+    %create the structure by reading in the first file
+    eval(['coincs=readMeta(''injH1H2L1coincs.xml'',''sngl_ringdown'',0,''ifo,start_time,start_time_ns,frequency,quality,epsilon,eff_dist,snr,event_id'');'])
 
-type='bg'  % set to inj for injections
-            %         bg for background
-            %         pg for playground
-            %        int for zerolag
-
-
-% for injections
-if strcmp(type,'inj')
-  A=[1];  % index of files in my numbering convention
-%create the structure reading in the first file
-  eval(['coincs=readMeta(''injH1H2L1coincs.xml'',''sngl_ringdown'',0,''ifo,start_time,start_time_ns,frequency,quality,epsilon,eff_dist,snr,event_id'');'])
-  
-  for k=1:length(coincs.snr)
-    coincs.run(k)=A(1);  % this is just an index to identify the injection run
-  end
-  coincs.run=transpose(coincs.run);
-
-% now read in the rest of the injection files  
-%{
-  for i=2:length(A)
-    eval(['coincsi=readMeta(''H1H2L1coincs_' num2str(A(i)) '-h1h2cl.xml'',''sngl_ringdown'',0,''ifo,start_time,start_time_ns,frequency,quality,epsilon,eff_dist,snr,event_id'');'])
-    for k=1:length(coincsi.snr)
-      coincsi.run(k)=A(i);
+    for k=1:length(coincs.snr)
+      coincs.run(k)=1;  % this is just an index to identify the injection run
     end
-    coincsi.run=transpose(coincsi.run);
-    coincs.ifo=[coincs.ifo;coincsi.ifo];
-    coincs.start_time=[coincs.start_time;coincsi.start_time];
-    coincs.start_time_ns=[coincs.start_time_ns;coincsi.start_time_ns];
-    coincs.frequency=[coincs.frequency;coincsi.frequency];
-    coincs.quality=[coincs.quality;coincsi.quality];
-    coincs.eff_dist=[coincs.eff_dist;coincsi.eff_dist];
-    coincs.snr=[coincs.snr;coincsi.snr];
-    coincs.event_id=[coincs.event_id;coincsi.event_id];
-    coincs.run=[coincs.run;coincsi.run];
-    coincs.epsilon=[coincs.epsilon;coincsi.epsilon];
-  end 
-%}
-end
+    coincs.run=transpose(coincs.run);
 
-% if the file is background, playground or intime
-if strcmp(type,'bg')||strcmp(type,'pg')||strcmp(type,'int')
-  coincs=readMeta('bgH1H2L1coincs.xml','sngl_ringdown',0,'ifo,start_time,start_time_ns,frequency,quality,epsilon,eff_dist,snr,event_id');
-  A=[0];
-
-  % add a field which says which injection run a trigger is from
-  for k=1:length(coincs.snr)
-      coincs.run(k)=A(1);
+    % read in the rest of the injection files  
+    for i=2:N_files
+      eval(['coincsi=readMeta( file_list(i),''sngl_ringdown'',0,''ifo,start_time,start_time_ns,frequency,quality,epsilon,eff_dist,snr,event_id'');'])
+      for k=1:length(coincsi.snr)
+        coincsi.run(k)=i;
+      end
+      coincsi.run=transpose(coincsi.run);
+      coincs.ifo=[coincs.ifo;coincsi.ifo];
+      coincs.start_time=[coincs.start_time;coincsi.start_time];
+      coincs.start_time_ns=[coincs.start_time_ns;coincsi.start_time_ns];
+      coincs.frequency=[coincs.frequency;coincsi.frequency];
+      coincs.quality=[coincs.quality;coincsi.quality];
+      coincs.eff_dist=[coincs.eff_dist;coincsi.eff_dist];
+      coincs.snr=[coincs.snr;coincsi.snr];
+      coincs.event_id=[coincs.event_id;coincsi.event_id];
+      coincs.run=[coincs.run;coincsi.run];
+      coincs.epsilon=[coincs.epsilon;coincsi.epsilon];
+    end
   end
 
-end
+% read background, playground or intime
+  if strcmp(type,'bg')||strcmp(type,'pg')||strcmp(type,'int')
 
-% simplify the names
-coincs.run=transpose(coincs.run);
-coincs.t=coincs.start_time+coincs.start_time_ns/1e9;
-coincs.f=coincs.frequency;
-coincs.Q=coincs.quality;
-coincs.d=coincs.eff_dist;
-coincs.id=coincs.event_id;
-coincs.dst=coincs.epsilon;
+    coincs=readMeta( file_list(i),'sngl_ringdown',0,'ifo,start_time,start_time_ns,frequency,quality,epsilon,eff_dist,snr,event_id');
+    % add a field which says which run a trigger is from
+    for k=1:length(coincs.snr)
+      coincs.run(k)=i;
+    end 
+  end
 
+    % simplify the names
+    coincs.run=transpose(coincs.run);
+    coincs.t=coincs.start_time+coincs.start_time_ns/1e9;
+    coincs.f=coincs.frequency;
+    coincs.Q=coincs.quality;
+    coincs.d=coincs.eff_dist;
+    coincs.id=coincs.event_id;
+    coincs.dst=coincs.epsilon;
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%% separate into doubles and triples %%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
 % create an index which is the same for each member of a triple or double
-j=1;
-coincs.ind(1)=1;
-for i=2:length(coincs.f)  
-  if strcmp(coincs.id(i),coincs.id(i-1))
-    coincs.ind(i)=j;
-  else
-    j=j+1;
-    coincs.ind(i)=j;
+  j=1;
+  coincs.ind(1)=1;
+  for i=2:length(coincs.f)  
+    if strcmp(coincs.id(i),coincs.id(i-1))
+      coincs.ind(i)=j;
+    else
+      j=j+1;
+      coincs.ind(i)=j;
+    end
   end
-end
    
 
 % spilt the triggers into double and triples
