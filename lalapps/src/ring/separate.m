@@ -26,7 +26,7 @@ N_files = length(file_list(:,1));
 % read injection files  
   if strcmp(type,'inj')
     %create the structure by reading in the first file
-    eval(['coincs=readMeta(''injH1H2L1coincs.xml'',''sngl_ringdown'',0,''ifo,start_time,start_time_ns,frequency,quality,epsilon,eff_dist,snr,event_id'');'])
+    eval(['coincs=readMeta( file_list(1,:),''sngl_ringdown'',0,''ifo,start_time,start_time_ns,frequency,quality,epsilon,eff_dist,snr,event_id'');'])
 
     for k=1:length(coincs.snr)
       coincs.run(k)=1;  % this is just an index to identify the injection run
@@ -35,7 +35,7 @@ N_files = length(file_list(:,1));
 
     % read in the rest of the injection files  
     for i=2:N_files
-      eval(['coincsi=readMeta( file_list(i),''sngl_ringdown'',0,''ifo,start_time,start_time_ns,frequency,quality,epsilon,eff_dist,snr,event_id'');'])
+      eval(['coincsi=readMeta( file_list(i,:),''sngl_ringdown'',0,''ifo,start_time,start_time_ns,frequency,quality,epsilon,eff_dist,snr,event_id'');'])
       for k=1:length(coincsi.snr)
         coincsi.run(k)=i;
       end
@@ -56,7 +56,7 @@ N_files = length(file_list(:,1));
 % read background, playground or intime
   if strcmp(type,'bg')||strcmp(type,'pg')||strcmp(type,'int')
 
-    coincs=readMeta( file_list(i),'sngl_ringdown',0,'ifo,start_time,start_time_ns,frequency,quality,epsilon,eff_dist,snr,event_id');
+    coincs=readMeta( file_list(1,:),'sngl_ringdown',0,'ifo,start_time,start_time_ns,frequency,quality,epsilon,eff_dist,snr,event_id');
     % add a field which says which run a trigger is from
     for k=1:length(coincs.snr)
       coincs.run(k)=i;
