@@ -101,6 +101,7 @@ void XLALSkymapSum(XLALSkymapPlanType* plan, double* a, const double* b, const d
  * Lightweight coordinate transformations
  */ 
 void XLALSkymapCartesianFromSpherical(double a[3], double theta, double phi);
+void XLALSkymapSphericalFromCartesian(double a[2], double b[3]);
 void XLALSkymapDelaysFromDirection(XLALSkymapPlanType* plan, int delays[3], double direction[3]);
 int XLALSkymapIndexFromDirection(XLALSkymapPlanType* plan, double direction[3]);
 

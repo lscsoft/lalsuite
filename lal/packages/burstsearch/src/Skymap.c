@@ -276,7 +276,7 @@ void XLALSkymapCartesianFromSpherical(double a[3], double theta, double phi)
     set3(a, sin(theta) * cos(phi), sin(theta) * sin(phi), cos(theta));
 }
 
-static void spherical_from_cartesian(double a[2], double b[3])
+void XLALSkymapSphericalFromCartesian(double a[2], double b[3])
 {
     set2(a, acos(b[2]), atan2(b[1], b[0]));
 }
@@ -291,7 +291,7 @@ static double site_time(LALDetector* site, double direction[3])
 static void site_response(double f[2], LALDetector* site, double direction[3])
 {
     double thetaphi[2];
-    spherical_from_cartesian(thetaphi, direction);
+    XLALSkymapSphericalFromCartesian(thetaphi, direction);
     XLALComputeDetAMResponse(&f[0], &f[1], site->response, thetaphi[1], LAL_PI_2 - thetaphi[0], 0, 0);
 }
 
@@ -700,6 +700,8 @@ int XLALSkymapSignalHypothesisWithLimits(XLALSkymapPlanType* plan, double* p, do
     int hl;
     double total_normalization;
     
+    /* double* times[3]; Arrival time posterior for each detector */
+    
     total_normalization = 0;
     
     buffer = 0;
@@ -725,6 +727,24 @@ int XLALSkymapSignalHypothesisWithLimits(XLALSkymapPlanType* plan, double* p, do
             }
         }
     }    
+
+    /* Initialize the arrival time posterior for each detector
+    {
+        int d;
+        for (d = 0; d != 3; ++d)
+        {
+            if (x[d])
+            {
+                int i;
+                times[d] = (double*) XLALMalloc(sizeof(double) * end[d]);
+                for (i = 0; i != end[d]; ++i)
+                {
+                    times[d][i] = log(0);
+                }
+            }
+        }
+    }
+     */
     
     /* loop over hanford-livingston delay */
     for (hl = -plan->hl; hl <= plan->hl; ++hl) 
@@ -985,7 +1005,20 @@ int XLALSkymapSignalHypothesisWithLimits(XLALSkymapPlanType* plan, double* p, do
                                 log_normalization * 2 - log(e - b);
                         counts[index] = e - b;
                         modes[index] = b + (m - buffer);
-                                
+                        
+                        /* Compute the arrival time posterior for each detector
+                        {
+                            int i;
+                            for (i = b; i != e; ++i)
+                            {
+                                double np;
+                                np = buffer[i - b] + log_normalization * 2 + log(plan->pixel[index].area);
+                                times[0][i] = XLALSkymapLogSumExp(times[0][i], np);
+                                times[1][i + hl] = XLALSkymapLogSumExp(times[1][i + hl], np);
+                                times[2][i + hv] = XLALSkymapLogSumExp(times[2][i + hv], np);
+                            }                            
+                        }
+                        */
                     } /* end test if there is enough data to analyze */
                 } /* end test if the delays are physical */
             } /* end loop over hemisphere */
@@ -1089,7 +1122,7 @@ void XLALSkymapModeThetaPhi(XLALSkymapPlanType* plan, double* p, double thetaphi
             }
         }
     }
-    spherical_from_cartesian(thetaphi, plan->pixel[mode_i].direction);
+    XLALSkymapSphericalFromCartesian(thetaphi, plan->pixel[mode_i].direction);
 }
 
 int XLALSkymapRenderEquirectangular(int m, int n, double* q, XLALSkymapPlanType* plan, double* p)
