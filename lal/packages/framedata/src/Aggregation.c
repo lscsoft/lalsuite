@@ -501,12 +501,32 @@ REAL8TimeSeries *XLALAggregationStrainData(CHAR *ifo,
   FrStream *stream;
   REAL8TimeSeries *series;
   CHAR channel[LIGOMETA_CHANNEL_MAX];
+  LIGOTimeGPS *latest;
+  INT4 end_time;
 
   /* check arguments */
   if (!ifo)
     XLAL_ERROR_NULL(func, XLAL_EFAULT);
   if (!start)
     XLAL_ERROR_NULL(func, XLAL_EFAULT);
+
+  /* determine gps time of latest frame file written */
+  latest = XLALAggregationLatestGPS(ifo);
+  if (latest == NULL)
+  {
+    /* failed to determine gps time */
+    XLAL_ERROR_NULL(func, XLAL_EIO);
+  }
+
+  /* get end time of requested data */
+  end_time = start->gpsSeconds + (INT4)round(duration + 0.5);
+
+  /* check that requested data has been written */
+  if (latest->gpsSeconds < end_time)
+  {
+    /* requested data has not been written yet */
+    XLAL_ERROR_NULL(func, XLAL_EIO);
+  }
 
   /* open frame stream */
   stream = XLALAggregationFrameStream(ifo, start, duration);
@@ -546,12 +566,32 @@ INT4TimeSeries *XLALAggregationDQVector(CHAR *ifo,
   FrStream *stream;
   INT4TimeSeries *series;
   CHAR channel[LIGOMETA_CHANNEL_MAX];
+  LIGOTimeGPS *latest;
+  INT4 end_time;
 
   /* check arguments */
   if (!ifo)
     XLAL_ERROR_NULL(func, XLAL_EFAULT);
   if (!start)
     XLAL_ERROR_NULL(func, XLAL_EFAULT);
+
+  /* determine gps time of latest frame file written */
+  latest = XLALAggregationLatestGPS(ifo);
+  if (latest == NULL)
+  {
+    /* failed to determine gps time */
+    XLAL_ERROR_NULL(func, XLAL_EIO);
+  }
+
+  /* get end time of requested data */
+  end_time = start->gpsSeconds + (INT4)round(duration + 0.5);
+
+  /* check that requested data has been written */
+  if (latest->gpsSeconds < end_time)
+  {
+    /* requested data has not been written yet */
+    XLAL_ERROR_NULL(func, XLAL_EIO);
+  }
 
   /* open frame stream */
   stream = XLALAggregationFrameStream(ifo, start, duration);
@@ -592,12 +632,32 @@ INT4TimeSeries *XLALAggregationStateVector(CHAR *ifo,
   INT4TimeSeries *series;
   CHAR channel[LIGOMETA_CHANNEL_MAX];
   UINT4 i;
+  LIGOTimeGPS *latest;
+  INT4 end_time;
 
   /* check arguments */
   if (!ifo)
     XLAL_ERROR_NULL(func, XLAL_EFAULT);
   if (!start)
     XLAL_ERROR_NULL(func, XLAL_EFAULT);
+
+  /* determine gps time of latest frame file written */
+  latest = XLALAggregationLatestGPS(ifo);
+  if (latest == NULL)
+  {
+    /* failed to determine gps time */
+    XLAL_ERROR_NULL(func, XLAL_EIO);
+  }
+
+  /* get end time of requested data */
+  end_time = start->gpsSeconds + (INT4)round(duration + 0.5);
+
+  /* check that requested data has been written */
+  if (latest->gpsSeconds < end_time)
+  {
+    /* requested data has not been written yet */
+    XLAL_ERROR_NULL(func, XLAL_EIO);
+  }
 
   /* open frame stream */
   stream = XLALAggregationFrameStream(ifo, start, duration);
