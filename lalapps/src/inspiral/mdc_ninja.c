@@ -602,6 +602,12 @@ INT4 main( INT4 argc, CHAR *argv[] )
         numInjections, injectionFile );
   }
 
+  if ( numInjections == 0 )
+  {
+    fprintf( stderr, "ERROR: No injections in specified time\n");
+    exit( 1 );
+  }
+
   if ( numInjections < 0 )
   {
     fprintf( stderr, "ERROR: Cannot read injection file '%s'\n", injectionFile );
