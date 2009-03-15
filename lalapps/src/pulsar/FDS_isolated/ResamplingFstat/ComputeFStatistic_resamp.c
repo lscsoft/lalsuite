@@ -2242,16 +2242,13 @@ void CalcTimeSeries(MultiSFTVector *multiSFTs)
 	}
       for(k=0;k<C.length;k++)
 	{
-	  REAL8 DeltaTimeStamp = C.NumContinuous[k]*SFTTimeBaseline + C.Gap[k];
-	  UINT4 N = Round(SFTTimeBaseline*C.NumContinuous[k]*(Fmax-Fmin));
+	  UINT4 N = Round(SFTTimeBaseline*C.NumContinuous[k]/dt + C.Gap[k]/dt);
 	  
-	  CurrentTime = C.StartTime[k];
-	  for(p=0;p<(N + Round(C.Gap[k]/dt));p++)
+	  CurrentTime = C.StartTime[k] - StartTime;
+	  for(p=0;p<N;p++)
 	    {
-	      Times->data[TimeIndex + p] = CurrentTime + p*dt - StartTime;
+	      Times->data[TimeIndex + p] = CurrentTime + p*dt;
 	    }
-	  m = TimeIndex + p;
-	  TimeIndex += floor(C.Gap[k]/dt+1e-6);
 	  TimeIndex += N;
 	}
       
