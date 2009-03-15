@@ -2177,16 +2177,27 @@ void CalcTimeSeries(MultiSFTVector *multiSFTs)
       C.Gap[NumofBlocks] = 0;
       C.NumContinuous[NumofBlocks] = NumCount;
       C.length = NumofBlocks + 1;
+      
+      /* Also declare a dt, which is the time between two consecutive data points */
+      dt = 1.0/(Fmax-Fmin);
+      
+      
+      PointsinTimeSeries = 0;
+      for(k=0;k<C.length;k++)
+	{
+	  /*fprintf(stderr,"%f %f %d\n",C.NumContinuous[k]*SFTTimeBaseline/dt,C.Gap[k],floor(C.NumContinuous[k]*SFTTimeBaseline + C.Gap[k]/dt));*/
+	  PointsinTimeSeries += Round(C.NumContinuous[k]*SFTTimeBaseline/dt + C.Gap[k]/dt);
+	}
 
+      /*fprintf(stderr,"%d %d\n",PointsinTimeSeries,Round((Fmax-Fmin)*(EndTime-StartTime)));*/
       /* Now lets calculate the number of data points in the Time Series */
-      PointsinTimeSeries = Round((Fmax-Fmin)*(EndTime-StartTime));
-      fprintf(stderr,"Points in Time Series is %d\n",PointsinTimeSeries);
+      /*PointsinTimeSeries = Round((Fmax-Fmin)*(EndTime-StartTime));
+	fprintf(stderr,"Points in Time Series is %d\n",PointsinTimeSeries); */
       /*fprintf(stderr,"Fmax = %f , Fmin = %f, EndTime = %f, StartTime = %f, Multiplied = %15.12f, not typecast = %f, floored = %d, 1e-6'ed = %d ceiled = %d, my own floor = %f\n",Fmax,Fmin,EndTime,StartTime,(Fmax-Fmin)*(EndTime-StartTime),floor((Fmax-Fmin)*(EndTime-StartTime)),(UINT4)floor((Fmax-Fmin)*(EndTime-StartTime)),PointsinTimeSeries,(UINT4)ceil((Fmax-Fmin)*(EndTime-StartTime)),floor(1120.0000000000));
 
 	fprintf(stderr,"Difference = %15.12f\n",((Fmax-Fmin)*(EndTime-StartTime)));*/
  
-      /* Also declare a dt, which is the time between two consecutive data points */
-      dt = 1.0/(Fmax-Fmin);
+      
 
       /* For purposes of readability, I will use two REAL8sequence pointers called Real and Imag for now and then assign them to the TSeries as and when required */
       TSeries->Real[i]  = (REAL8Sequence*)XLALCreateREAL8Sequence(PointsinTimeSeries);
@@ -2412,11 +2423,6 @@ REAL8Sequence* ResampleSeries(REAL8Sequence *X_Real,REAL8Sequence *X_Imag,REAL8S
   gsl_spline *splineinter;
   gsl_interp *lininter;
 
-
-
-  DetTimes = (REAL8Sequence*)XLALCreateREAL8Sequence(X_Real->length);
-  
-  DetTimes = Times;
   
   CorrespondingDetTimes = (REAL8Sequence*)XLALCreateREAL8Sequence(length);
 
@@ -2457,23 +2463,23 @@ REAL8Sequence* ResampleSeries(REAL8Sequence *X_Real,REAL8Sequence *X_Imag,REAL8S
   if(interptype == 3)
     {
       splineinter = gsl_spline_alloc(gsl_interp_cspline,X_Real->length);
-      gsl_spline_init(splineinter,DetTimes->data,X_Real->data,X_Real->length);
+      gsl_spline_init(splineinter,Times->data,X_Real->data,X_Real->length);
     }
   else if (interptype == 2)
     {
       lininter = gsl_interp_alloc(gsl_interp_linear,X_Real->length);
-      gsl_interp_init(lininter,DetTimes->data,X_Real->data,X_Real->length); 
+      gsl_interp_init(lininter,Times->data,X_Real->data,X_Real->length); 
     } 
   
   for(i=0;i<length;i++)
     {
       x = CorrespondingDetTimes->data[i];
       if(interptype == 2)
-	y = gsl_interp_eval(lininter,DetTimes->data,X_Real->data,x,accl);
+	y = gsl_interp_eval(lininter,Times->data,X_Real->data,x,accl);
       else if (interptype == 3)
 	y = gsl_spline_eval(splineinter,x,accl);
       else if(interptype == 1)
-	y = strob(DetTimes->data,X_Real->data,x,X_Real->length);
+	y = strob(Times->data,X_Real->data,x,X_Real->length);
 
       Y_Real->data[i] = y;
     }
@@ -2488,24 +2494,24 @@ REAL8Sequence* ResampleSeries(REAL8Sequence *X_Real,REAL8Sequence *X_Imag,REAL8S
   if(interptype == 2)
     {
       lininter = gsl_interp_alloc(gsl_interp_linear,X_Imag->length);
-      gsl_interp_init(lininter,DetTimes->data,X_Imag->data,X_Imag->length);
+      gsl_interp_init(lininter,Times->data,X_Imag->data,X_Imag->length);
     }
 
   else if(interptype == 3)
     {
       splineinter = gsl_spline_alloc(gsl_interp_cspline,X_Imag->length);
-      gsl_spline_init(splineinter,DetTimes->data,X_Imag->data,X_Imag->length);
+      gsl_spline_init(splineinter,Times->data,X_Imag->data,X_Imag->length);
     }
   
   for(i=0;i<length;i++)
     {
       x = CorrespondingDetTimes->data[i];
       if(interptype == 2)
-	y = gsl_interp_eval(lininter,DetTimes->data,X_Imag->data,x,accl);
+	y = gsl_interp_eval(lininter,Times->data,X_Imag->data,x,accl);
       else if(interptype == 3)
 	y = gsl_spline_eval(splineinter,x,accl);
       else if(interptype == 1)
-	y = strob(DetTimes->data,X_Imag->data,x,X_Imag->length);
+	y = strob(Times->data,X_Imag->data,x,X_Imag->length);
 
       Y_Imag->data[i] = y;
     }
@@ -2516,7 +2522,6 @@ REAL8Sequence* ResampleSeries(REAL8Sequence *X_Real,REAL8Sequence *X_Imag,REAL8S
     gsl_interp_free(lininter);
   gsl_interp_accel_free(accl);
 
-  /*XLALDestroyREAL8Sequence(DetTimes);*/
   return(CorrespondingDetTimes);
 
 }
