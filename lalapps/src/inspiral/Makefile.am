@@ -1,5 +1,8 @@
 ## Process this file with automake to produce Makefile.in
 # $Id$
+
+SUBDIRS = posterior
+
 INSPIRALSRC 	= inspiral.c inspiralutils.c inspiral.h
 TMPLTBANKSRC 	= tmpltbank.c inspiralutils.c inspiral.h
 COHERESRC 	= coherent_inspiral.c
