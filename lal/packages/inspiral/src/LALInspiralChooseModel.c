@@ -506,6 +506,7 @@ LALInspiralChooseModel(
          case TaylorF2:
          case SpinTaylorT3:
          case SpinTaylor:
+         case IMRPhenomA:
             ak->vn = ak->vlso = vlso = ak->vlsoT0;
             f->dEnergy = dEt0;
             f->flux = Ft0;
@@ -518,7 +519,6 @@ LALInspiralChooseModel(
          case PadeF1:
          case EOB:
          case EOBNR:
-         case IMRPhenomA:
             ABORT(status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
             break;
          default:
@@ -542,6 +542,7 @@ LALInspiralChooseModel(
          case TaylorF2:
          case SpinTaylorT3: 
          case SpinTaylor:
+         case IMRPhenomA:
 
             ak->vn = ak->vlso = vlso = ak->vlsoT2;
             f->dEnergy = dEt2;
@@ -555,7 +556,6 @@ LALInspiralChooseModel(
          case PadeF1:
          case EOB:
          case EOBNR:
-         case IMRPhenomA:
             ABORT(status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
             break;
          default:
@@ -576,6 +576,7 @@ LALInspiralChooseModel(
          case TaylorF2:
          case SpinTaylorT3: 
          case SpinTaylor:
+         case IMRPhenomA:
             ak->vn = ak->vlso = vlso = ak->vlsoT2;
             f->dEnergy = dEt2;
             f->flux = Ft3;
@@ -592,7 +593,6 @@ LALInspiralChooseModel(
          case PadeF1:
          case EOB:
          case EOBNR:
-         case IMRPhenomA:
             ABORT(status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
             break;
          default:
