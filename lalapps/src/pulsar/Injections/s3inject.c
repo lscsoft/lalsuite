@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2007 Duncan Brown, Reinhard Prix
+*  Copyright (C) 2003-9 Bruce Allen
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -20,7 +20,11 @@
 /* 
    multipulsar injection routine, written for E10/S3 by Bruce Allen,
    10/2003.  Calls to Signal Injection Library added by Peter
-   Shawhan 
+   Shawhan.  
+   
+   2005/02 - Duncan Brown renamed variable to avoid Condor conflict
+
+   2005/02 - Reinhard Prix removed the actuation scaling options
 */
 
 #define _GNU_SOURCE
