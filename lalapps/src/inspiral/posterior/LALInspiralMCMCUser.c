@@ -928,8 +928,8 @@ REAL8 MCMCLikelihoodMultiCoherent(LALMCMCInput *inputMCMC,LALMCMCParameter *para
 		chisq+=(REAL8)( 0.5 * (inputMCMC->invspec[det_i]->data->length-lowBin) * log(2.0*LAL_PI));
 
 		/* Free template */
-		LALDestroyREAL4TimeSeries(&status,template);
-		LALDestroyCOMPLEX8FrequencySeries(&status,Ftemplate);
+		XLALDestroyREAL4TimeSeries(template);
+		XLALDestroyCOMPLEX8FrequencySeries(Ftemplate);
 		logL-=chisq;
 	}
 	/* Free co_wave structures */
