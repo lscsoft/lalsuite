@@ -389,7 +389,6 @@ INT4 XLALVOTableXML2LIGOTimeGPSByName(const char *xml, const char *name, LIGOTim
 	xmlDocPtr xmlDocument = NULL;
 	xmlChar *nodeContent = NULL;
 	CHAR xpath[XPATHSTR_MAXLEN] = {0};
-	INT4 retval = 0;
 
 	/* sanity checks */
 	if(!xml) {
@@ -479,5 +478,5 @@ INT4 XLALVOTableXML2LIGOTimeGPSByName(const char *xml, const char *name, LIGOTim
 	xmlFreeDoc(xmlDocument);
 	xmlCleanupParser();
 
-	return retval;
+	return XLAL_SUCCESS;
 }
