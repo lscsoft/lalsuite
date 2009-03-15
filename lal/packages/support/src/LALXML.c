@@ -63,7 +63,7 @@ xmlDocPtr XLALCreateVOTableXMLFromTree(const xmlNodePtr xmlTree)
 {
 	/* set up local variables */
 	static const CHAR *logReference = "XLALCreateVOTableXMLFromTree";
-	xmlDocPtr xmlDoc0 = NULL;
+	xmlDocPtr xmlDocument = NULL;
     xmlNodePtr xmlRootNode = NULL;
 
 	/* make sure that the shared library is the same as the
@@ -77,8 +77,8 @@ xmlDocPtr XLALCreateVOTableXMLFromTree(const xmlNodePtr xmlTree)
 	}
 
 	/* set up XML document */
-    xmlDoc0 = xmlNewDoc(BAD_CAST("1.0"));
-    if(xmlDoc0 == NULL) {
+    xmlDocument = xmlNewDoc(BAD_CAST("1.0"));
+    if(xmlDocument == NULL) {
 		XLALPrintError("VOTable document instantiation failed\n");
 		XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
     }
@@ -87,29 +87,29 @@ xmlDocPtr XLALCreateVOTableXMLFromTree(const xmlNodePtr xmlTree)
     xmlRootNode = xmlNewNode(NULL, BAD_CAST("VOTABLE"));
     if(xmlRootNode == NULL) {
     	/* clean up */
-    	xmlFreeDoc(xmlDoc0);
+    	xmlFreeDoc(xmlDocument);
 
 		XLALPrintError("VOTable root element instantiation failed\n");
 		XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
     }
 
-    xmlDocSetRootElement(xmlDoc0, xmlRootNode);
+    xmlDocSetRootElement(xmlDocument, xmlRootNode);
 
     /* append tree to root node */
     if(!xmlAddChild(xmlRootNode, xmlTree)) {
     	/* clean up */
     	xmlFreeNode(xmlRootNode);
-    	xmlFreeDoc(xmlDoc0);
+    	xmlFreeDoc(xmlDocument);
 
 		XLALPrintError("Couldn't append given tree to VOTable root element\n");
 		XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
     }
 
 	/* return VOTable document (needs to be xmlFreeDoc'd by caller!!!) */
-	return xmlDoc0;
+	return xmlDocument;
 }
 
-xmlChar * XLALGetSingleNodeContentByXPath(const xmlDocPtr xmlDoc0, const char *xpath)
+xmlChar * XLALGetSingleNodeContentByXPath(const xmlDocPtr xmlDocument, const char *xpath)
 {
 	/* set up local variables */
 	static const CHAR *logReference = "XLALGetSingleNodeContentByXPath";
@@ -121,8 +121,8 @@ xmlChar * XLALGetSingleNodeContentByXPath(const xmlDocPtr xmlDoc0, const char *x
 	INT4 nodeCount;
 
 	/* sanity checks */
-	if(!xmlDoc0) {
-		XLALPrintError("Invalid input parameter: xmlDoc0\n");
+	if(!xmlDocument) {
+		XLALPrintError("Invalid input parameter: xmlDocument\n");
 		XLAL_ERROR_NULL(logReference, XLAL_EINVAL);
 	}
 	if(!xpath || strlen(xpath) <= 0) {
@@ -131,7 +131,7 @@ xmlChar * XLALGetSingleNodeContentByXPath(const xmlDocPtr xmlDoc0, const char *x
 	}
 
 	/* prepare xpath context */
-    xpathCtx = xmlXPathNewContext(xmlDoc0);
+    xpathCtx = xmlXPathNewContext(xmlDocument);
     if(xpathCtx == NULL) {
 		XLALPrintError("XPATH context instantiation failed\n");
 		XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
@@ -182,7 +182,7 @@ xmlChar * XLALGetSingleNodeContentByXPath(const xmlDocPtr xmlDoc0, const char *x
 		XLAL_ERROR_NULL(logReference, XLAL_EDOM);
 	}
 	else {
-		nodeContent = xmlNodeListGetString(xmlDoc0, xmlNodes->nodeTab[0]->xmlChildrenNode, 1);
+		nodeContent = xmlNodeListGetString(xmlDocument, xmlNodes->nodeTab[0]->xmlChildrenNode, 1);
 	}
 
     /* clean up */
@@ -330,7 +330,7 @@ xmlChar * XLALLIGOTimeGPS2VOTableXML(const LIGOTimeGPS *const ltg, const char *n
 	xmlChar *xmlStringBuffer = NULL;
 	INT4 xmlStringBufferSize = -1;
 	xmlNodePtr xmlTree;
-	xmlDocPtr xmlDoc0;
+	xmlDocPtr xmlDocument;
 
 	/* sanity checks */
 	if(!ltg) {
@@ -353,8 +353,8 @@ xmlChar * XLALLIGOTimeGPS2VOTableXML(const LIGOTimeGPS *const ltg, const char *n
     }
 
     /* build VOTable document */
-	xmlDoc0 = XLALCreateVOTableXMLFromTree(xmlTree);
-    if(xmlDoc0 == NULL) {
+	xmlDocument = XLALCreateVOTableXMLFromTree(xmlTree);
+    if(xmlDocument == NULL) {
     	/* clean up */
     	xmlFreeNode(xmlTree);
     	xmlCleanupParser();
@@ -364,10 +364,10 @@ xmlChar * XLALLIGOTimeGPS2VOTableXML(const LIGOTimeGPS *const ltg, const char *n
     }
 
     /* dump VOTable document to formatted XML string */
-	xmlDocDumpFormatMemoryEnc(xmlDoc0, &xmlStringBuffer, &xmlStringBufferSize, "UTF-8", 1);
+	xmlDocDumpFormatMemoryEnc(xmlDocument, &xmlStringBuffer, &xmlStringBufferSize, "UTF-8", 1);
 	if(xmlStringBufferSize <= 0) {
 		/* clean up */
-		xmlFreeDoc(xmlDoc0);
+		xmlFreeDoc(xmlDocument);
 		xmlCleanupParser();
 
 		XLALPrintError("VOTable document dump failed\n");
@@ -375,7 +375,7 @@ xmlChar * XLALLIGOTimeGPS2VOTableXML(const LIGOTimeGPS *const ltg, const char *n
 	}
 
 	/* clean up */
-	xmlFreeDoc(xmlDoc0);
+	xmlFreeDoc(xmlDocument);
 	xmlCleanupParser();
 
 	/* return XML string (needs to be xmlFree'd by caller!!!) */
@@ -386,7 +386,7 @@ INT4 XLALVOTableXML2LIGOTimeGPSByName(const char *xml, const char *name, LIGOTim
 {
 	/* set up local variables */
 	static const CHAR *logReference = "XLALVOTableXML2LIGOTimeGPSByName";
-	xmlDocPtr xmlDoc0 = NULL;
+	xmlDocPtr xmlDocument = NULL;
 	xmlChar *nodeContent = NULL;
 	CHAR xpath[XPATHSTR_MAXLEN] = {0};
 	INT4 retval = 0;
@@ -406,8 +406,8 @@ INT4 XLALVOTableXML2LIGOTimeGPSByName(const char *xml, const char *name, LIGOTim
 	}
 
 	/* parse XML document */
-	xmlDoc0 = xmlReadMemory(xml, strlen(xml), NULL, "UTF-8", 0);
-    if(xmlDoc0 == NULL) {
+	xmlDocument = xmlReadMemory(xml, strlen(xml), NULL, "UTF-8", 0);
+    if(xmlDocument == NULL) {
     	/* clean up */
     	xmlCleanupParser();
 
@@ -423,7 +423,7 @@ INT4 XLALVOTableXML2LIGOTimeGPSByName(const char *xml, const char *name, LIGOTim
 			name) < 0)
 	{
     	/* clean up */
-		xmlFreeDoc(xmlDoc0);
+		xmlFreeDoc(xmlDocument);
     	xmlCleanupParser();
 
     	XLALPrintError("XPATH statement construction failed: LIGOTimeGPS.gpsSeconds\n");
@@ -431,13 +431,13 @@ INT4 XLALVOTableXML2LIGOTimeGPSByName(const char *xml, const char *name, LIGOTim
 	}
 
 	/* retrieve LIGOTimeGPS.gpsSeconds */
-	nodeContent = (xmlChar *) XLALGetSingleNodeContentByXPath(xmlDoc0, xpath);
+	nodeContent = (xmlChar *) XLALGetSingleNodeContentByXPath(xmlDocument, xpath);
 
 	/* parse and finally store content */
 	if(!nodeContent || sscanf((char*)nodeContent, "%i", &ltg->gpsSeconds) == EOF) {
 		/* clean up*/
 		xmlFree(nodeContent);
-		xmlFreeDoc(xmlDoc0);
+		xmlFreeDoc(xmlDocument);
 		xmlCleanupParser();
 
 		XLALPrintError("Invalid node content encountered: gpsSeconds\n");
@@ -453,7 +453,7 @@ INT4 XLALVOTableXML2LIGOTimeGPSByName(const char *xml, const char *name, LIGOTim
 	{
 	    /* clean up */
 		xmlFree(nodeContent);
-		xmlFreeDoc(xmlDoc0);
+		xmlFreeDoc(xmlDocument);
 	    xmlCleanupParser();
 
 	    XLALPrintError("XPATH statement construction failed: LIGOTimeGPS.gpsNanoSeconds\n");
@@ -461,13 +461,13 @@ INT4 XLALVOTableXML2LIGOTimeGPSByName(const char *xml, const char *name, LIGOTim
 	}
 
 	/* retrieve LIGOTimeGPS.gpsNanoSeconds */
-	nodeContent = (xmlChar *)XLALGetSingleNodeContentByXPath(xmlDoc0, xpath);
+	nodeContent = (xmlChar *)XLALGetSingleNodeContentByXPath(xmlDocument, xpath);
 
 	/* parse and finally store content */
 	if(!nodeContent || sscanf((char*)nodeContent, "%i", &ltg->gpsNanoSeconds) == EOF) {
 		/* clean up*/
 		xmlFree(nodeContent);
-		xmlFreeDoc(xmlDoc0);
+		xmlFreeDoc(xmlDocument);
 		xmlCleanupParser();
 
 		XLALPrintError("Invalid node content encountered: gpsNanoSeconds\n");
@@ -476,7 +476,7 @@ INT4 XLALVOTableXML2LIGOTimeGPSByName(const char *xml, const char *name, LIGOTim
 
 	/* clean up*/
 	xmlFree(nodeContent);
-	xmlFreeDoc(xmlDoc0);
+	xmlFreeDoc(xmlDocument);
 	xmlCleanupParser();
 
 	return retval;
