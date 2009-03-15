@@ -26,7 +26,7 @@ N_files = length(file_list(:,1));
 % read injection files  
   if strcmp(type,'inj')
     %create the structure by reading in the first file
-    eval(['coincs=readMeta( file_list(1,:),''sngl_ringdown'',0,''ifo,start_time,start_time_ns,frequency,quality,epsilon,eff_dist,snr,event_id'');'])
+    eval(['coincs=readMeta(file_list(1,:),''sngl_ringdown'',0,''ifo,start_time,start_time_ns,frequency,quality,epsilon,eff_dist,snr,event_id'');'])
 
     for k=1:length(coincs.snr)
       coincs.run(k)=1;  % this is just an index to identify the injection run
@@ -59,7 +59,7 @@ N_files = length(file_list(:,1));
     coincs=readMeta( file_list(1,:),'sngl_ringdown',0,'ifo,start_time,start_time_ns,frequency,quality,epsilon,eff_dist,snr,event_id');
     % add a field which says which run a trigger is from
     for k=1:length(coincs.snr)
-      coincs.run(k)=i;
+      coincs.run(k)=1i;
     end 
   end
 
