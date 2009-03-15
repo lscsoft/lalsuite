@@ -185,8 +185,7 @@ int XLALcomputeFstatistic ( gsl_vector **Fstat, gsl_matrix **A_Mu_MLE_i, const g
 int XLALcomputeBstatisticMC ( gsl_vector **Bstat, const gsl_matrix *M_mu_nu, const gsl_matrix *x_mu_i, gsl_rng * rng, UINT4 numMCpoints );
 int XLALcomputeBstatisticGauss ( gsl_vector **Bstat, const gsl_matrix *M_mu_nu, const gsl_matrix *x_mu_i );
 
-int XLALcomputeBhatStatistic ( gsl_vector **Bhat_i, const gsl_vector *Fstat_i, const gsl_matrix *A_Mu_MLE_i, const gsl_matrix *M_mu_nu );
-
+int XLALcomputeBhatStatistic ( gsl_vector **Bhat_i, const gsl_matrix *M_mu_nu, const gsl_matrix *x_mu_i );
 
 double BstatIntegrandOuter ( double cosi, void *p );
 double BstatIntegrandInner ( double psi, void *p );
@@ -334,7 +333,7 @@ int main(int argc,char *argv[])
 
 
   /* ---------- compute (approximate) B-statistic 'Bhat' ---------- */
-  if ( XLALcomputeBhatStatistic ( &Bhat_i, Fstat_i, x_Mu_i, GV.M_mu_nu ) ) {
+  if ( XLALcomputeBhatStatistic ( &Bhat_i, GV.M_mu_nu, x_mu_i) ) {
     LogPrintf (LOG_CRITICAL, "XLALcomputeBhatStatistic() failed with error = %d\n", xlalErrno );
     return 1;
   }
@@ -655,6 +654,8 @@ XLALsynthesizeSignals ( gsl_matrix **A_Mu_i,		/**< [OUT] list of numDraws 4D lin
       phi0 = gsl_ran_flat ( rng, phi0Min, phi0Max );
 
       XLALAmplitudeParams2Vect ( A_Mu, h0Nat, cosi, psi, phi0 );
+
+
       /* testing inversion property
       {
 	REAL8 a1, a2, a3, a4;
@@ -703,6 +704,13 @@ XLALsynthesizeSignals ( gsl_matrix **A_Mu_i,		/**< [OUT] list of numDraws 4D lin
 
       gsl_matrix_set_row ( *A_Mu_i, row, A_Mu );
       gsl_matrix_set_row ( *s_mu_i, row, s_mu );
+
+      /*
+      printf("A^mu = ");
+      XLALfprintfGSLvector ( stdout, "%g", A_Mu );
+      printf("s_mu = ");
+      XLALfprintfGSLvector ( stdout, "%g", s_mu );
+      */
 
     } /* row < numDraws */
 
@@ -955,7 +963,6 @@ XLALcomputeFstatistic ( gsl_vector **Fstat_i,		/**< [OUT] F-statistic vector */
     return XLAL_ENOMEM;
   }
 
-
   gsl_matrix_memcpy (Mmunu_LU, M_mu_nu);
 
   /* Function: int gsl_linalg_LU_decomp (gsl_matrix * A, gsl_permutation * p, int * signum)
@@ -983,6 +990,11 @@ XLALcomputeFstatistic ( gsl_vector **Fstat_i,		/**< [OUT] F-statistic vector */
 
       /* STEP 1: compute x^mu = M^{mu,nu} x_nu */
 
+      /*
+      printf("x_mu = ");
+      XLALfprintfGSLvector ( stdout, "%g", &(xi.vector) );
+      */
+
       /* Function: int gsl_linalg_LU_solve (const gsl_matrix * LU, const gsl_permutation * p, const gsl_vector * b, gsl_vector * x)
        *
        * These functions solve the square system A x = b using the LU decomposition of A into (LU, p) given by
@@ -992,6 +1004,17 @@ XLALcomputeFstatistic ( gsl_vector **Fstat_i,		/**< [OUT] F-statistic vector */
 	LogPrintf ( LOG_CRITICAL, "%s: gsl_linalg_LU_solve (x^Mu = M^{mu,nu} x_nu) failed: %s\n", fn, gsl_strerror (gslstat) );
 	return 1;
       }
+
+#if 0
+      {
+	REAL8 h0, cosi, psi, phi0;
+
+	XLALAmplitudeVect2Params ( &h0, &cosi, &psi, &phi0, &(x_Mu.vector) );
+	fprintf(stderr, "A^mu_MLE = ");
+	XLALfprintfGSLvector ( stderr, "%g", &(x_Mu.vector) );
+	fprintf (stderr, "MLE: h0 = %g, cosi = %g, psi = %g, phi0 = %g\n", h0, cosi, psi, phi0 );
+      }
+#endif
 
       /* STEP 2: compute scalar product x_mu x^mu */
 
@@ -1316,7 +1339,7 @@ BstatIntegrand ( double Amp[], size_t dim, void *p )
   double eta, etaSQ, etaSQp1SQ;
   double psi, sin2psi, cos2psi, sin2psiSQ, cos2psiSQ;
   double gammaSQ, qSQ, Xi;
-  double integrand;
+  double integrand, integrand2;
 
   if ( dim != 2 ) {
     LogPrintf (LOG_CRITICAL, "Error: BstatIntegrand() was called with illegal dim = %d != 2\n", dim );
@@ -1354,10 +1377,10 @@ BstatIntegrand ( double Amp[], size_t dim, void *p )
   /* STEP3 : put all the pieces together */
   Xi = 0.25 * qSQ  / gammaSQ;
 
-  integrand = pow(gammaSQ, -0.5) * exp(Xi) * gsl_sf_bessel_I0(Xi);
+  integrand = exp(Xi); /* * pow(gammaSQ, -0.5) * gsl_sf_bessel_I0(Xi); */
 
   if ( lalDebugLevel >= 2 )
-    printf ("%f   %f    %f   %f %f\n", eta, psi, integrand, gammaSQ, Xi );
+    printf ("%f   %f    %f   %f %f %f\n", eta, psi, integrand, gammaSQ, Xi, integrand2 );
 
   return integrand;
 
@@ -1368,34 +1391,47 @@ BstatIntegrand ( double Amp[], size_t dim, void *p )
  */
 int
 XLALcomputeBhatStatistic ( gsl_vector **Bhat_i,		/**< [OUT] Bhat-statistic vector */
-			   const gsl_vector *Fstat_i,	/**< F-stat vector (numDraws) */
-			   const gsl_matrix *A_Mu_MLE_i,/**< A^mu_MLE vector (numDraws x 4) */
-			   const gsl_matrix *M_mu_nu	/**< antenna-pattern matrix M_mu_nu */
+			   const gsl_matrix *M_mu_nu,	/**< antenna-pattern matrix M_mu_nu */
+			   const gsl_matrix *x_mu_i	/**< data-vectors x_mu: numDraws x 4 */
 			   )
 {
   const char *fn = "XLALcomputeBhatStatistic()";
 
+  gsl_matrix *ADA_D;
+  gsl_matrix *CC;
+  gsl_matrix *MpCC_LU;
+
+  gsl_vector *Ahat;
+  gsl_permutation *perm = gsl_permutation_calloc ( 4 );
+  int sig;
+
+  REAL8 Delta;
   UINT4 row, numDraws;
-  REAL8 A, B, C, E, D;
+  int gslstat;
 
   /* ----- check input arguments ----- */
-  if ( !Fstat_i || !A_Mu_MLE_i ) {
-    LogPrintf ( LOG_CRITICAL, "%s: input Fstat_i and A_Mu_MLE_i must not be NULL.\n", fn);
-    return XLAL_EINVAL;
-  }
-  if ( ((*Bhat_i) != NULL) ) {
-    LogPrintf ( LOG_CRITICAL, "%s: output vector 'Bhat_i' must be set to NULL.\n", fn);
+  if ( !M_mu_nu || !x_mu_i ) {
+    LogPrintf ( LOG_CRITICAL, "%s: input M_mu_nu, x_mu_i must not be NULL.\n", fn);
     return XLAL_EINVAL;
   }
 
-  numDraws = Fstat_i->size;
+  numDraws = x_mu_i->size1;
   if ( ! (numDraws > 0) ) {
     LogPrintf ( LOG_CRITICAL, "%s: Invalid input, numDraws must be > 0.", fn );
     return XLAL_EINVAL;
   }
 
-  if ( (A_Mu_MLE_i->size1 != numDraws) || (A_Mu_MLE_i->size2 != 4) ) {
-    LogPrintf ( LOG_CRITICAL, "%s: input vector-list A_Mu_MLE_i must be numDraws(=%d) x 4.\n", numDraws, fn);
+  if ( (M_mu_nu->size1 != 4) || (M_mu_nu->size2 != 4) ) {
+    LogPrintf ( LOG_CRITICAL, "%s: antenna-pattern matrix M_mu_nu must be 4x4.\n", fn);
+    return XLAL_EINVAL;
+  }
+  if ( (x_mu_i->size1 != numDraws) || (x_mu_i->size2 != 4) ) {
+    LogPrintf ( LOG_CRITICAL, "%s: input vector-list x_mu_i must be numDraws x 4.\n", fn);
+    return XLAL_EINVAL;
+  }
+
+  if ( ((*Bhat_i) != NULL) ) {
+    LogPrintf ( LOG_CRITICAL, "%s: output vector 'Bhat_i' must be set to NULL.\n", fn);
     return XLAL_EINVAL;
   }
 
@@ -1405,60 +1441,117 @@ XLALcomputeBhatStatistic ( gsl_vector **Bhat_i,		/**< [OUT] Bhat-statistic vecto
     return XLAL_ENOMEM;
   }
 
-  A = gsl_matrix_get ( M_mu_nu, 0, 0);
-  B = gsl_matrix_get ( M_mu_nu, 1, 1);
-  C = gsl_matrix_get ( M_mu_nu, 0, 1);
-  E = gsl_matrix_get ( M_mu_nu, 0, 3);
+  /* ----- allocate intermediate vectors and matrices ----------*/
+  CC      = gsl_matrix_alloc ( 4, 4 );
+  MpCC_LU = gsl_matrix_alloc ( 4, 4 );
+  ADA_D   = gsl_matrix_alloc ( 4, 4 );
 
-  D = A * B - SQ(C) - SQ(E);
+  Ahat    = gsl_vector_alloc ( 4 );
 
   for ( row=0; row < numDraws; row ++ )
     {
-      REAL8 Bhat, Fstat;
-      /*      gsl_vector_const_view A_Mu_MLE = gsl_matrix_const_row ( A_Mu_MLE_i, row ); */
+      REAL8 Bhat, tmp;
+      UINT4 it, numIt = 2;
+      gsl_vector_const_view xi = gsl_matrix_const_row ( x_mu_i, row );
 
-      REAL8 al1, al2, al3, al4;
-      REAL8 A1, A2, A3, A4;
-      REAL8 Delta, Chi;
+      /* iterate recursive solution for Ahat */
+      for ( it = 0; it <= numIt; it ++ )
+	{
 
+	  /* compute CC */
+	  if ( it == 0 )
+	    {
+	      gsl_matrix_set_zero ( CC );
+	    }
+	  else
+	    {
+	      REAL8 A1, A2, A3, A4;
+	      REAL8 al1, al2, al4;
+	      REAL8 AIA, ADA;
 
-      /*
-      if ( XLALAmplitudeVect2Params ( &h0MLE, &cosiMLE, &psiMLE, &phi0MLE, &(A_Mu_MLE.vector) ) ) {
-	LogPrintf (LOG_CRITICAL, "XLALcomputeBstatisticMC() failed with error = %d\n", xlalErrno );
-	return XLAL_EFUNC;
+	      A1 = gsl_vector_get ( Ahat, 0 );
+	      A2 = gsl_vector_get ( Ahat, 1 );
+	      A3 = gsl_vector_get ( Ahat, 2 );
+	      A4 = gsl_vector_get ( Ahat, 3 );
+
+	      al1 = SQ(A1) + SQ(A3);
+	      al2 = SQ(A2) + SQ(A4);
+	      al4 = A1 * A4 - A2 * A3;
+
+	      AIA = SQ ( al1 + al2 );
+	      ADA = 2.0 * al4;
+
+	      Delta = SQ ( AIA ) - SQ ( ADA );
+
+	      /* CC = 3/(2*Delta) * ( AIA * Id - ADA * DD ) */
+	      gsl_matrix_set_identity ( CC );
+	      gsl_matrix_scale ( CC, AIA );
+
+	      gsl_matrix_set ( ADA_D, 0, 3,  ADA);
+	      gsl_matrix_set ( ADA_D, 1, 2, -ADA);
+	      gsl_matrix_set ( ADA_D, 2, 1, -ADA);
+	      gsl_matrix_set ( ADA_D, 3, 0,  ADA);
+
+	      gsl_matrix_sub ( CC, ADA_D );
+
+	      gsl_matrix_scale ( CC, 1.5 / Delta );
+	    }
+
+	  if ( it < numIt )
+	    {
+	      /* compute MpCC = M + CC */
+	      gsl_matrix_memcpy (MpCC_LU, M_mu_nu);
+	      gsl_matrix_add ( MpCC_LU, CC );
+
+	      /* prepare matrix inversion: first get LU-decomposition [see XLALcomputeFstatistic()] */
+	      if( (gslstat = gsl_linalg_LU_decomp (MpCC_LU, perm, &sig)) ) {
+		LogPrintf ( LOG_CRITICAL, "%s: gsl_linalg_LU_decomp (MpCC_LU) failed: %s\n", fn, gsl_strerror (gslstat) );
+		return 1;
+	      }
+
+	      /* ---------- now solve the equation: (M + CC) A = x ---------- */
+	      /* Function: int gsl_linalg_LU_solve (const gsl_matrix * LU, const gsl_permutation * p, const gsl_vector * b, gsl_vector * x)
+	       *
+	       * These functions solve the square system A x = b using the LU decomposition of A into (LU, p) given by
+	       * gsl_linalg_LU_decomp or gsl_linalg_complex_LU_decomp.
+	       */
+	      if ( (gslstat = gsl_linalg_LU_solve (MpCC_LU, perm, &(xi.vector), Ahat)) ) {
+		LogPrintf ( LOG_CRITICAL, "%s: gsl_linalg_LU_solve (M+CC). Ahat = x failed: %s\n", fn, gsl_strerror (gslstat) );
+		return 1;
+	      }
+	      /*
+	      XLALfprintfGSLvector ( stdout, "%g", Ahat );
+	      */
+	    }
+
+	} /* for it <= numIt */
+
+      printf ("\n");
+
+      /* compute scalar product Ahat . x */
+
+      /* Function: int gsl_blas_ddot (const gsl_vector * x, const gsl_vector * y, double * result)
+       * These functions compute the scalar product x^T y for the vectors x and y, returning the result in result.
+       */
+      if ( (gslstat = gsl_blas_ddot ( Ahat, &(xi.vector), &tmp )) ) {
+	LogPrintf ( LOG_CRITICAL, "%s: row = %d: int gsl_blas_ddot (Ahat . x) failed: %s\n", fn, row, gsl_strerror (gslstat) );
+	return 1;
       }
 
-      printf ("h0MLE = %g, cosiMLE = %g\n", h0MLE, cosiMLE );
-      */
-
-      Fstat = gsl_vector_get ( Fstat_i, row );
-
-      A1 = gsl_matrix_get ( A_Mu_MLE_i, row, 0 );
-      A2 = gsl_matrix_get ( A_Mu_MLE_i, row, 1 );
-      A3 = gsl_matrix_get ( A_Mu_MLE_i, row, 2 );
-      A4 = gsl_matrix_get ( A_Mu_MLE_i, row, 3 );
-
-      printf ("A1 = %g, A2 = %g, A3 = %g, A4 = %g\n", A1, A2, A3, A4);
-
-      al1 = SQ(A1) + SQ(A3);
-      al2 = SQ(A2) + SQ(A4);
-      al3 = A1 * A2 + A3 * A4;
-      al4 = A1 * A4 - A2 * A3;
-
-      Delta = SQ ( al1 + al2 ) - 4.0 * SQ(al4);	/* disc^2 = As^4 - 4Da^2 = (Aplus^2 - Across^2)^2 */
-
-      printf ("Delta = %g\n", Delta );
-
-      Fstat = gsl_vector_get ( Fstat_i, row );	/* => 2F !! */
-
-      Chi = (1.0/D) * ( B * al1 + A * al2 - 2.0 * C * al3 + 2.0 * E * al4 );
-
-      Bhat = Fstat  - 1.5 * log(Delta) + 2.0 * log( 1.0 + 4.5 * Chi / Delta );
+      Bhat = tmp; /*  - 1.5 * log(Delta); */
 
       gsl_vector_set ( *Bhat_i, row, Bhat );
 
     } /* for row < numDraws */
 
+
+  gsl_permutation_free ( perm );
+
+  gsl_matrix_free ( CC );
+  gsl_matrix_free ( MpCC_LU );
+  gsl_matrix_free ( ADA_D );
+
+  gsl_vector_free ( Ahat );
 
   return XLAL_SUCCESS;
 
