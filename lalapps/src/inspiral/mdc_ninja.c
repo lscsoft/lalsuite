@@ -687,8 +687,6 @@ INT4 main( INT4 argc, CHAR *argv[] )
         /* reset the channel name to IFO:STRAIN as LALFindChirpInjectSignals()
          * messes with it */
         strncpy(injData[i]->name, channel, LALNameLength);
-
-        printf("injData[%d] length = %d\n", i, injData[i]->data->length); 
       }
       else
       {
