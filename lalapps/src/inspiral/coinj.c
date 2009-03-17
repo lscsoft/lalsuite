@@ -37,6 +37,7 @@
 #include <lal/TimeFreqFFT.h>
 #include <lal/InspiralInjectionParams.h>
 #include <lal/VectorOps.h>
+#include <lal/FrameStream.h>
 
 #define PROGRAM_NAME "coinj"
 
@@ -73,6 +74,8 @@ typedef struct actuationparameters
 	REAL4	length;
 } ActuationParametersType;
 
+typedef void (NoiseFunc)(LALStatus *status,REAL8 *psd,REAL8 f);
+
 int main(int argc, char *argv[])
 {
 LALStatus	status=blank_status;
@@ -81,9 +84,10 @@ CHAR		injtype[30];
 CHAR		det_name[10];
 LIGOTimeGPS inj_epoch;
 REAL8		deltaT= 1.0/16384.0;
-REAL8		injLength=50.0; /* Ten seconds at end */
-REAL8		LeadupTime=40.0;
+REAL8		injLength=100.0; /* Ten seconds at end */
+REAL8		LeadupTime=95.0;
 REAL8		dynRange=1.0/3.0e-23;
+REAL8		tmp;
 UINT4		Nsamples,det_idx,i,inj_num=0;
 ActuationParametersType actuationParams[LAL_NUM_IFO];
 ActuationParametersType actData;
@@ -92,15 +96,22 @@ FILE *		outfile;
 CHAR		outfilename[FILENAME_MAX];
 const LALUnit strainPerCount={0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
 const LALUnit countPerStrain={0,{0,0,0,0,0,-1,1},{0,0,0,0,0,0,0}};
-
+NoiseFunc *PSD;
 int c;
 SimInspiralTable *injTable=NULL;
 SimInspiralTable this_injection;
 REAL4TimeSeries *TimeSeries;
+REAL4TimeSeries *SNRTimeSeries;
 COMPLEX8FrequencySeries *resp;
 COMPLEX8FrequencySeries *actuationResp;
 COMPLEX8FrequencySeries *transfer;
 COMPLEX8Vector *unity;
+COMPLEX8FrequencySeries *DesignNoise;
+FrOutPar	VirgoOutPars;
+CHAR		VirgoParsSource[100];
+CHAR		VirgoParsInfo[100];
+REAL4		SNR,NetworkSNR;
+
 
 /*vrbflg=6;
 lalDebugLevel=6; */
@@ -185,7 +196,7 @@ do{
 memcpy(&this_injection,injTable,sizeof(SimInspiralTable));
 this_injection.next=NULL;
 injTable=injTable->next;
-
+NetworkSNR=0.0;
 /* Set epoch */
 memcpy(&inj_epoch,&(this_injection.geocent_end_time),sizeof(LIGOTimeGPS));
 LAL_CALL(LALAddFloatToGPS(&status,&inj_epoch,&(this_injection.geocent_end_time),-LeadupTime),&status);
@@ -200,12 +211,12 @@ for(det_idx=0;det_idx<LAL_NUM_IFO;det_idx++){
 	
 	switch(det_idx)
 	{
-		case LAL_IFO_H1: sprintf(det_name,"H1"); break;
-		case LAL_IFO_H2: sprintf(det_name,"H2"); break;
-		case LAL_IFO_L1: sprintf(det_name,"L1"); break;
-		case LAL_IFO_V1: sprintf(det_name,"V1"); break;
-		case LAL_IFO_G1: sprintf(det_name,"G1"); break;
-		case LAL_IFO_T1: sprintf(det_name,"T1"); break;
+		case LAL_IFO_H1: sprintf(det_name,"H1"); PSD=&LALLIGOIPsd; break;
+		case LAL_IFO_H2: sprintf(det_name,"H2"); PSD=&LALLIGOIPsd; break;
+		case LAL_IFO_L1: sprintf(det_name,"L1"); PSD=&LALLIGOIPsd; break;
+		case LAL_IFO_V1: sprintf(det_name,"V1"); PSD=&LALVIRGOPsd; break;
+		case LAL_IFO_G1: sprintf(det_name,"G1"); PSD=&LALGEOPsd;   break;
+		case LAL_IFO_T1: sprintf(det_name,"T1"); PSD=&LALTAMAPsd;  break;
 	}
 
 	TimeSeries=XLALCreateREAL4TimeSeries(det_name,&inj_epoch,0.0,deltaT,&lalADCCountUnit,(size_t)Nsamples);
@@ -241,6 +252,8 @@ for(det_idx=0;det_idx<LAL_NUM_IFO;det_idx++){
 			break;
 	}
 
+	/* Calculate SNR */
+
 	if(injectionResponse!=unityResponse) {
 		unity = XLALCreateCOMPLEX8Vector(actuationResp->data->length);
 		transfer = XLALCreateCOMPLEX8FrequencySeries("transfer",&inj_epoch,0.0,1.0/(2.0*injLength),&countPerStrain,(size_t)Nsamples+1);
@@ -257,12 +270,26 @@ for(det_idx=0;det_idx<LAL_NUM_IFO;det_idx++){
 	
 	sprintf(outfilename,"%s_HWINJ_%i_%s_%i.txt",det_name,inj_num,injtype,inj_epoch.gpsSeconds);
 	outfile=fopen(outfilename,"w");
-	fprintf(stdout,"Injected signal %i for %s in file %s\n",inj_num,det_name,outfilename);
+	fprintf(stdout,"Injected signal %i for %s into file %s\n",inj_num,det_name,outfilename);
 	for(i=0;i<TimeSeries->data->length;i++) fprintf(outfile,"%10.10e\n",TimeSeries->data->data[i]);
 	fclose(outfile);
+
+	if(det_idx==LAL_IFO_V1){ /* Also output frames for Virgo */
+		sprintf(VirgoParsSource,"%s-INSP%i",det_name,inj_num);
+		VirgoOutPars.source=VirgoParsSource;
+		sprintf(VirgoParsInfo,"HWINJ-%s",injtype);
+		VirgoOutPars.description=VirgoParsInfo;
+		VirgoOutPars.type=ProcDataChannel;
+		VirgoOutPars.nframes=(UINT4)ceil(injLength/16.0);
+		VirgoOutPars.frame=0;
+		VirgoOutPars.run=2;
+		LALFrWriteREAL4TimeSeries(&status,TimeSeries,&VirgoOutPars);
+	}
+	
 	
 	XLALDestroyREAL4TimeSeries(TimeSeries);
 } /* End loop over detectors */
+/*fprintf(stdout,"Finished injecting signal %i, network SNR %f\n",inj_num,sqrt(NetworkSNR));*/
 inj_num++;
 }while(injTable!=NULL);
 return(0);
