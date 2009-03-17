@@ -675,13 +675,13 @@ INT4 main( INT4 argc, CHAR *argv[] )
         fflush(stdout);
       }
 
+      /* set the channel name */
+      LALSnprintf(channel, LALNameLength, "%s:STRAIN", ifo);
+      strncpy(injData[i]->name, channel, LALNameLength);
+
       if (strncmp(injectionType, "approximant", strlen(injectionType) + 1) == 0)
       {
-        /* set the channel name */
-        LALSnprintf(channel, LALNameLength, "%s:STRAIN", ifo);
-        strncpy(injData[i]->name, channel, LALNameLength);
-
-        /* injected specified waveforms */
+        /* inject the specified waveforms */
         LAL_CALL( LALFindChirpInjectSignals( &status, injData[i], injections, response), &status);
 
         /* reset the channel name to IFO:STRAIN as LALFindChirpInjectSignals()
@@ -690,10 +690,7 @@ INT4 main( INT4 argc, CHAR *argv[] )
       }
       else
       {
-        /* now we can finally inject the numerical waveforms */
-        LALSnprintf(channel, LALNameLength, "%s:STRAIN", ifo);
-        strncpy(injData[i]->name, channel, LALNameLength);
-
+        /* inject the numerical waveforms */
         LAL_CALL( InjectNumRelWaveforms ( &status, injData[i], injections, ifo,
               dynRange, freqLowCutoff, snrLow, snrHigh,
               fnameOutXML), &status);
