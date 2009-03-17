@@ -919,7 +919,10 @@ static void output_multi_channel_frame(INT4 num_ifos,
 
 
 /* function to write a Burst MDC log file */
-static void write_mdc_log_file(CHAR *filename, SimInspiralTable *injections, INT4 gps_start, CHAR *set_name)
+static void write_mdc_log_file(CHAR *filename,
+    SimInspiralTable *injections,
+    INT4 gps_start,
+    CHAR *set_name)
 {
   /* variables */
   FILE *output;
