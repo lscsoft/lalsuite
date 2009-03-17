@@ -870,6 +870,7 @@ static void output_multi_channel_frame(INT4 num_ifos,
   FrameH *frame;
   INT4 i;
   CHAR creator[HISTORY_COMMENT];
+  CHAR *ifo = NULL;
 
   /* get frame filename */
   duration = gpsEnd - gpsStart;
@@ -894,7 +895,9 @@ static void output_multi_channel_frame(INT4 num_ifos,
   /* add channels to frame */
   for( i = 0; i < num_ifos; i++ )
   {
-    printf("adding channel %d to frame\n", i);
+    ifo = (CHAR*)calloc(LIGOMETA_IFO_MAX, sizeof(CHAR));
+    XLALReturnIFO(ifo, i);
+    printf("adding %s channel to frame\n", ifo);
     XLALFrameAddREAL4TimeSeriesSimData( frame, injData[i] );
   }
 
