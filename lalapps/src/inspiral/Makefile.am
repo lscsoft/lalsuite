@@ -32,6 +32,7 @@ CALCEXPSNRSRC	= calcexpsnr.c
 SNEDSRC		= sned.c
 CORSESRC	= corse.c
 SKYMAPSRC	= skymap.c
+COINJSRC	= coinj.c
 
 ## make sure LALAPPSgitID.h is re-generated at every 'make'
 .PHONY: gitID
@@ -51,7 +52,7 @@ bin_PROGRAMS = lalapps_inspiral lalapps_tmpltbank \
                lalapps_coherentbank lalapps_coinext \
                lalapps_randombank lalapps_ninja lalapps_fr_ninja \
                lalapps_mdc_ninja lalapps_calcexpsnr lalapps_sned \
-               lalapps_corse lalapps_skymap
+               lalapps_corse lalapps_skymap lalapps_coinj
 
 lalapps_inspiral_SOURCES 	= $(INSPIRALSRC)
 lalapps_coherent_inspiral_SOURCES = $(COHERESRC)
@@ -82,6 +83,7 @@ lalapps_calcexpsnr_SOURCES	= $(CALCEXPSNRSRC)
 lalapps_sned_SOURCES		= $(SNEDSRC)
 lalapps_corse_SOURCES		= $(CORSESRC)
 lalapps_skymap_SOURCES		= $(SKYMAPSRC)
+lalapps_coinj_SOURCES		= $(COINJSRC)
 else
 bin_PROGRAMS = 
 endif
