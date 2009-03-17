@@ -2807,6 +2807,7 @@ class candidateList:
             relativeTimeCM=self.__getTraitField__(trait,"ww")[0]
             relativeFreqCM=self.__getTraitField__(trait,"ee")[0]
             zScoreCM=self.__getTraitField__(trait,"rr")[0]
+            snrEstimate=self.__getTraitField__(trait,"pp")[0]
             #
             ###symmetryCM=trigger.getSymmetryFactor(brightPixel,weight)
             #(+) if T_bp > T_cm
@@ -2841,7 +2842,8 @@ class candidateList:
                                  relativeFreqCM+unitTraitOffset,#14
                                  zScoreCM+zScoreTraitOffset,    #15
                                  spanTnorm+unitTraitOffset,     #16
-                                 spanFnorm+unitTraitOffset]     #17
+                                 spanFnorm+unitTraitOffset,     #17
+                                 snrEstimate]                   #18
             glitchDatabase.append(glitchDatabaseEntry)
         spinner.closeSpinner()
         return glitchDatabase
