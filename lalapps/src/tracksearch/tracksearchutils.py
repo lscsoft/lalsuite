@@ -1196,7 +1196,8 @@ class candidateList:
         spinner.setTag('Writing')
         for entry in self.curves:
             CurveId,Length,Power=entry.getKurveHeader()
-            text="Curve number,length,power:"+str(CurveId)+','+str(Length)+','+str(Power)+'\n'
+            curveSNR=entry.getKurveSNR()
+            text="Curve number,length,power:"+str(CurveId)+','+str(Length)+','+str(Power)+','+str(curveSNR)+'\n'
             output_fp.write(text)
             text=""
             data=[]
@@ -2240,6 +2241,7 @@ class candidateList:
             ww=float(self.__getCurveField__(lineInfo,"ww")[0])
             ee=float(self.__getCurveField__(lineInfo,"ee")[0])
             rr=float(self.__getCurveField__(lineInfo,"rr")[0])
+            pp=float(self.__getCurveField__(lineInfo,"pp")[0])
             evalResult=False
             try:
                 evalResult=eval(testExp)
