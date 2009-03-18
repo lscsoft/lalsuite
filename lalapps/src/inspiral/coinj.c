@@ -22,6 +22,7 @@
 #include <config.h>
 #include <math.h>
 #include <getopt.h>
+#include <string.h>
 
 #include <lalapps.h>
 #include <processtable.h>
@@ -171,7 +172,7 @@ while(1)
 			exit(0);
 			break;
 		case 'i':
-			if(strlcpy(inputfile,optarg,FILENAME_MAX)>=FILENAME_MAX){
+			if(strncpy(inputfile,optarg,FILENAME_MAX-1)>=FILENAME_MAX-1){
 				fprintf(stderr,"Error: Input file name %s too long\n",optarg);
 				exit(1);
 			}
