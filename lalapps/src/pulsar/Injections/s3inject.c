@@ -41,9 +41,12 @@
 #include <time.h>
 #include <signal.h>
 #include <math.h>
+#include <sys/stat.h>
 #ifdef ONLINE
 #include "SIStr.h"
 #endif
+
+#include <FrameL.h>
 
 #define MAXPULSARS 64
 /* blocksize for gathering results from children */
@@ -64,6 +67,7 @@ char *programname;
 int show=0;
 int do_axis=0;
 int do_text=0;
+int write_frames=0;
 long long count=0;
 long blocks=0;
 const char *ifo_name = NULL;
@@ -192,6 +196,7 @@ void usage(FILE *filep){
 	  "-p            Print the calibration line frequencies in Hz then exit(0)\n"
 	  "-I STRING     Detector: LHO, LLO, GEO, VIRGO, TAMA, CIT, ROME [REQUIRED]\n"
 	  "-A STRING     File containing detector actuation-function     [OPTIONAL]\n"
+          "-F            Write frame files to output\n"
 	  , MAXPULSARS
 	  );
   return;
@@ -201,7 +206,7 @@ void usage(FILE *filep){
 int parseinput(int argc, char **argv){
   
   int c;
-  const char *optionlist="hL:M:H:n:d:e:DG:c:TXspI:A:";
+  const char *optionlist="hL:M:H:n:d:e:DG:c:TXspI:A:F";
   opterr=0;
   
   /* set some defaults */
@@ -300,6 +305,9 @@ int parseinput(int argc, char **argv){
       break;
     case 'A':
       actuation = optarg;
+      break;
+    case 'F':
+      write_frames=1;
       break;
     default:
       /* error case -- option not recognized */
@@ -504,8 +512,16 @@ int main(int argc, char *argv[]){
     readfrombuff[i]=bufflen[i];
   }
   
+#if 0
+  /* are we writing frames? */
+  if (write_frames) {
+      /* put whatever is needed here to init frame lib */
+  }
+#endif
+
   /* are we calling the excitation engine directly? */
   if (channel) {
+
 #ifdef ONLINE
     /* Report some information about this injection client */
     cwd = getcwd( NULL, 256 );
@@ -623,8 +639,61 @@ int main(int argc, char *argv[]){
       readfrombuff[i]+=BLOCKSIZE;
     }
     
+    /* now output the total signal to frames */
+    if (write_frames) {
+	FrFile *oFile;
+	FrameH *frame;
+	FrSimData *sim;
+
+	int m, level = 0;
+	double sampleRate = SRATE;
+	long ndata = BLOCKSIZE;
+
+	const char *framename[256];
+	static int counter=0;
+	struct stat statbuf;
+	
+	/* create next frame file*/
+	sprintf(framename, "CW_Injection_%d.gwf", counter+gpstime);
+	counter++;
+	frame = FrameHNew(framename);
+	if (!frame) {
+	    syserror(1, "FrameNew failed (%s)", FrErrorGetHistory());
+	    exit(1);
+	}
+	
+	/* set up GPS time, sample interval, copy data */
+	frame->GTimeS = gpstime+counter;
+	frame->GTimeN = 0;
+	frame->dt = ndata/sampleRate;  
+	sim = FrSimDataNew(frame,"CW_simulated", sampleRate, ndata, -32);
+	for (m=0; m < ndata; m++) {
+	    sim->data->dataF[m] = total[m];
+	}
+    
+	/* open file, write file, close file */
+	oFile = FrFileONew(framename, level); 
+	if (!oFile) {
+	    syserror(1, "Cannot open output file %s\n", framename);
+	    exit(1);
+	}
+	if (FR_OK != FrameWrite(frame, oFile)) {
+	    syserror(1, "Error during frame write\n"
+		   "  Last errors are:\n%s", FrErrorGetHistory());
+	    exit(1);
+	}  
+	FrFileOEnd(oFile);
+	FrameFree(frame);
+
+	/* Always keep 5 frame files on disk... */
+	sprintf(framename, "CW_Injection_%d.gwf", counter+gpstime-5);
+	while (!stat(framename, &statbuf)) {
+	    sleep(1);
+	}
+    }
+
     /* now output the total signal... */
-    if (channel){
+    else if (channel){
 #ifdef ONLINE
       /* ... to the excitation engine ... */
       status = SIStrAppend( &sis, total, BLOCKSIZE, 1.0 );
