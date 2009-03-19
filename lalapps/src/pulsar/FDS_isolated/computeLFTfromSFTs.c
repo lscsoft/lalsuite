@@ -32,11 +32,15 @@
 #include <unistd.h>
 #endif
 
+#include <fftw3.h>
+
 /* LAL-includes */
 #include <lal/AVFactories.h>
 #include <lal/UserInput.h>
 #include <lal/SFTfileIO.h>
 #include <lal/LogPrintf.h>
+#include <lal/TimeSeries.h>
+#include <lal/RealFFT.h>
 
 #include <lal/lalGitID.h>
 #include <lalappsGitID.h>
@@ -51,8 +55,6 @@ RCSID( "$Id$");
 #define DTERMS 32
 
 /** convert GPS-time to REAL8 */
-#define GPS2REAL8(gps) (1.0 * (gps).gpsSeconds + 1.e-9 * (gps).gpsNanoSeconds )
-
 #define MYMAX(x,y) ( (x) > (y) ? (x) : (y) )
 #define MYMIN(x,y) ( (x) < (y) ? (x) : (y) )
 
@@ -79,17 +81,15 @@ RCSID( "$Id$");
  * These are 'pre-processed' settings, which have been derived from the user-input.
  */
 typedef struct {
-  SFTVector *SFTvect;		/**< input SFT vector */
+  MultiSFTVector *multiSFTs;	/**< input SFT vector */
   CHAR *dataSummary;            /**< descriptive string describing the data */
-  UINT4 numSFTs;		/**< number of SFTs = Tobs/Tsft */
   REAL8 Tsft;			/**< duration of each SFT */
-  REAL8 Tspan;			/**< total time spanned by input SFTs */
-  REAL8 Tdata;			/**< actual data content of input SFTs (sum over all IFOs) */
   LIGOTimeGPS startTime;	/**< start-time of SFTs */
   LIGOTimeGPS endTime;
   REAL8 fmin;			/**< smallest frequency contained in input SFTs */
   UINT4 numBins;		/**< number of frequency bins in input SFTs */
 } ConfigVariables;
+
 
 /*---------- Global variables ----------*/
 extern int vrbflg;		/**< defined in lalapps.c */
@@ -116,6 +116,8 @@ int main(int argc, char *argv[]);
 
 void LALInitUserVars ( LALStatus *status, UserInput_t *uvar);
 void LoadInputSFTs ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar );
+int XLALWeightedSumOverSFTVector ( SFTVector **outSFT, const SFTVector *inVect, const COMPLEX8Vector *weights );
+MultiREAL4TimeSeries *XLALMultiSFTsToTimeseries ( const MultiSFTVector *multiSFTs );
 
 /*---------- empty initializers ---------- */
 
@@ -132,7 +134,7 @@ int main(int argc, char *argv[])
   ConfigVariables GV;			/**< container for various derived configuration settings */
   SFTVector *outputLFT = NULL;		/**< output 'Long Fourier Transform */
   UINT4 j, LFTnumBins;			/**< number of frequency bins in output LFT */
-  COMPLEX8Vector *weights;
+  MultiREAL4TimeSeries *multiTS = NULL;
 
   lalDebugLevel = 0;
   vrbflg = 1;	/* verbose error-messages */
@@ -159,28 +161,13 @@ int main(int argc, char *argv[])
   /* Load SFTs */
   LAL_CALL ( LoadInputSFTs(&status, &GV, &uvar ), &status);
 
-  LFTnumBins = GV.numSFTs * GV.numBins;
 
-  if ( (weights = XLALCreateCOMPLEX8Vector ( GV.numSFTs )) == NULL ) {
-    LogPrintf ( LOG_CRITICAL, "%s: XLALCreateCOMPLEX8Vector (%d)\n", argv[0], GV.numSFTs );
-    return -1;
-  }
-  for ( j=0; j < GV.numSFTs; j ++)
+  if ( (multiTS = XLALMultiSFTsToTimeseries ( GV.multiSFTs )) == NULL )
     {
-      weights->data[j].re = 1.0;
-      weights->data[j].im = 1.0;
-    }
-
-  LAL_CALL ( upsampleSFTVector (&status,  GV.SFTvect, GV.numSFTs, DTERMS), &status );
-
-  if ( XLALWeightedSumOverSFTVector ( &outputLFT, GV.SFTvect, weights ) )
-    {
-      LogPrintf ( LOG_CRITICAL, "%s: XLALWeightedSumOverSFTVector() failed\n", argv[0] );
+      LogPrintf ( LOG_CRITICAL, "%s: call to XLALMultiSFTsToTimeseries() failed! errno = %d\n", argv[0], xlalErrno );
       return -1;
     }
-  XLALDestroyCOMPLEX8Vector ( weights );
 
-  outputLFT->data[0].deltaF /= GV.numSFTs;
 
   /* write output LFT */
   if ( uvar.outputLFT ) {
@@ -191,7 +178,7 @@ int main(int argc, char *argv[])
   LAL_CALL (LALDestroyUserVars (&status), &status);
 
   LALFree ( GV.dataSummary );
-  LAL_CALL ( LALDestroySFTVector (&status, &GV.SFTvect), &status);
+  LAL_CALL ( LALDestroyMultiSFTVector (&status, &GV.multiSFTs), &status);
 
 
   /* did we forget anything ? */
@@ -248,6 +235,8 @@ LoadInputSFTs ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar
 
   LIGOTimeGPS minStartTimeGPS, maxEndTimeGPS;
   MultiSFTVector *multiSFTs = NULL;	    	/* multi-IFO SFT-vectors */
+  UINT4 numDet, numSFTs;
+  REAL8 Tspan, Tdata;
 
   INITSTATUS( status, fn, rcsid );
   ATTATCHSTATUSPTR (status);
@@ -273,13 +262,13 @@ LoadInputSFTs ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar
 
   /* ----- deduce start- and end-time of the observation spanned by the data */
   {
-    cfg->numSFTs = catalog->length;	/* total number of SFTs */
+    numSFTs = catalog->length;	/* total number of SFTs */
     cfg->Tsft = 1.0 / catalog->data[0].header.deltaF;
     cfg->startTime = catalog->data[0].header.epoch;
-    cfg->endTime   = catalog->data[cfg->numSFTs-1].header.epoch;
+    cfg->endTime   = catalog->data[numSFTs-1].header.epoch;
     LALAddFloatToGPS(status->statusPtr, &cfg->endTime, &cfg->endTime, cfg->Tsft );	/* can't fail */
-    cfg->Tspan = GPS2REAL8(cfg->endTime) - GPS2REAL8 (cfg->startTime);
-    cfg->Tdata = cfg->numSFTs * cfg->Tsft;
+    Tspan = XLALGPSGetREAL8(&cfg->endTime) - XLALGPSGetREAL8(&cfg->startTime);
+    Tdata = numSFTs * cfg->Tsft;
   }
 
   {/* ----- load the multi-IFO SFT-vectors ----- */
@@ -298,11 +287,7 @@ LoadInputSFTs ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar
     cfg->fmin = multiSFTs->data[0]->data[0].f0;
     cfg->numBins = multiSFTs->data[0]->data[0].data->length;
 
-    if ( multiSFTs->length != 1 )
-      {
-	LogPrintf ( LOG_CRITICAL, "%s: Only SFTs from a single-IFO can be handled at the moment (found %d)", fn, multiSFTs->length);
-	ABORT ( status,  LFTFROMSFTS_EINPUT,  LFTFROMSFTS_MSGEINPUT);
-      }
+    numDet = multiSFTs->length;
   }
 
   /* ----- produce a log-string describing the data-specific setup ----- */
@@ -310,8 +295,7 @@ LoadInputSFTs ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar
     struct tm utc;
     time_t tp;
     CHAR dateStr[512], line[512], summary[1024];
-    UINT4 i, numDet;
-    numDet = multiSFTs->length;
+    UINT4 i;
     tp = time(NULL);
     sprintf (summary, "%%%% Date: %s", asctime( gmtime( &tp ) ) );
     strcat (summary, "%% Loaded SFTs: [ " );
@@ -320,12 +304,12 @@ LoadInputSFTs ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar
 	       (i < numDet - 1)?", ":" ]\n");
       strcat ( summary, line );
     }
-    utc = *XLALGPSToUTC( &utc, (INT4)GPS2REAL8(cfg->startTime) );
+    utc = *XLALGPSToUTC( &utc, (INT4)XLALGPSGetREAL8(&cfg->startTime) );
     strcpy ( dateStr, asctime(&utc) );
     dateStr[ strlen(dateStr) - 1 ] = 0;
-    sprintf (line, "%%%% Start GPS time tStart = %12.3f    (%s GMT)\n", GPS2REAL8(cfg->startTime), dateStr);
+    sprintf (line, "%%%% Start GPS time tStart = %12.3f    (%s GMT)\n", XLALGPSGetREAL8(&cfg->startTime), dateStr);
     strcat ( summary, line );
-    sprintf (line, "%%%% Total time spanned    = %12.3f s  (%.1f hours)\n", cfg->Tspan, cfg->Tspan/3600 );
+    sprintf (line, "%%%% Total time spanned    = %12.3f s  (%.1f hours)\n", Tspan, Tspan/3600 );
     strcat ( summary, line );
 
     if ( (cfg->dataSummary = LALCalloc(1, strlen(summary) + 1 )) == NULL ) {
@@ -336,13 +320,98 @@ LoadInputSFTs ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar
     LogPrintfVerbatim( LOG_DEBUG, cfg->dataSummary );
   } /* write dataSummary string */
 
-
-  cfg->SFTvect = multiSFTs->data[0];
-  multiSFTs->data[0] = NULL; /* avoid this getting freed */
-
-  TRY ( LALDestroyMultiSFTVector (status->statusPtr, &multiSFTs ), status );
+  cfg->multiSFTs = multiSFTs;
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
 
 } /* LoadInputSFTs() */
+
+/** Turn the given multi-IFO SFTvectors into REAL4 timeseries, one per IFO
+ */
+MultiREAL4TimeSeries *
+XLALMultiSFTsToTimeseries ( const MultiSFTVector *multiSFTs )
+{
+  const CHAR *fn = "XLALMultiSFTsToTimeseries()";
+
+  MultiREAL4TimeSeries *mts = NULL;
+  UINT4 X, numDet;
+  REAL4FFTPlan *plan;
+
+  UINT4 numBinsSFT;	/* identical for all SFTs ! */
+  REAL8 f0;
+  REAL8 deltaF;
+  LIGOTimeGPS epoch = {0,0};
+  REAL8 deltaT;
+
+  REAL4TimeSeries *sTS = NULL; 		/* short time-series corresponding to a single SFT */
+
+  if ( !multiSFTs || (multiSFTs->length == 0) )
+    {
+      XLALPrintError ("%s: empty SFT input!\n", fn );
+      XLAL_ERROR_NULL (fn, XLAL_EINVAL);
+    }
+
+  numDet = multiSFTs->length;
+
+
+  /* ---------- first create the multi-IFO TimeSeries vector ---------- */
+  if ( (mts = XLALMalloc ( sizeof(*mts) )) == NULL )
+    {
+      XLALPrintError ("%s: XLALMalloc (%s) failed!\n", fn, sizeof(*mts) );
+      XLAL_ERROR_NULL (fn, XLAL_ENOMEM);
+    }
+
+  mts->length = numDet;
+  for ( X=0; X < numDet; X ++)
+    {
+      SFTtype *thisHead = &(multiSFTs->data[X]->data[0]);
+      UINT4 numSFTs = multiSFTs->data[X]->length;
+
+      REAL8 FreqBand = f0 + 2.0 * numBinsSFT * thisHead->deltaF;	/* count positive and negative frequencies */
+      REAL8 Tsft = 1.0 / deltaF;
+      REAL8 startTime = XLALGPSGetREAL8 ( &multiSFTs->data[X]->data[0].epoch );
+      REAL8 endTime   = XLALGPSGetREAL8 ( &multiSFTs->data[X]->data[numSFTs-1].epoch ) + Tsft;
+      REAL8 Tspan = endTime - startTime;
+      REAL8 numBinsTS = floor ( Tspan / deltaT );
+
+      numBinsSFT = thisHead->data->length;
+      f0 = thisHead->f0;
+      deltaF = thisHead->deltaF;
+      deltaT  = 0.5 / FreqBand;	/* sampling-frequency = 2*Band */
+
+      mts->data[X] = XLALCreateREAL4TimeSeries ( thisHead->name, &thisHead->epoch, f0, deltaT, NULL, numBinsTS );
+      if ( mts->data[X] == NULL )
+	{
+	  XLALPrintError ("%s: XLALCreateREAL4TimeSeries() failed to create timseries with %d bins!\n", fn, numBinsTS );
+	  XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+	}
+
+      /* set timeseries to zeros */
+      memset( mts->data[X]->data->data, 0, numBinsTS * sizeof(REAL4) );
+
+    } /* for X < numDet */
+
+
+  /* Prepare invFFT: compute plan for FFTW */
+  if ( (plan = XLALCreateReverseREAL4FFTPlan( numBinsSFT, FFTW_ESTIMATE )) == NULL )
+    {
+      XLALPrintError ( "%s: XLALCreateReverseREAL4FFTPlan(%d, ESTIMATE ) failed! errno = %d!\n", fn, numBinsSFT, xlalErrno );
+      XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+    }
+
+  /* Prepare short time-series holding the invFFT of a single SFT */
+  if ( (sTS = XLALCreateREAL4TimeSeries ( "short timeseries", &epoch, f0, deltaT, NULL, numBinsSFT )) == NULL )
+    {
+      XLALPrintError ( "%s: XLALCreateREAL4TimeSeries() for %d timesteps failed! errno = %d!\n", fn, numBinsSFT, xlalErrno );
+      XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+    }
+
+
+  /* cleanup memory */
+  XLALDestroyREAL4TimeSeries ( sTS );
+  XLALDestroyREAL4FFTPlan ( plan );
+
+  return mts;
+
+} /* XLALMultiSFTsToTimeseries() */
