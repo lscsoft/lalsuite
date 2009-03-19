@@ -48,6 +48,8 @@
 RCSID( "$Id$");
 
 /*---------- DEFINES ----------*/
+#define DTERMS 32
+
 /** convert GPS-time to REAL8 */
 #define GPS2REAL8(gps) (1.0 * (gps).gpsSeconds + 1.e-9 * (gps).gpsNanoSeconds )
 
@@ -77,7 +79,7 @@ RCSID( "$Id$");
  * These are 'pre-processed' settings, which have been derived from the user-input.
  */
 typedef struct {
-  MultiSFTVector *multiSFTs;	/**< SFT vector */
+  SFTVector *SFTvect;		/**< input SFT vector */
   CHAR *dataSummary;            /**< descriptive string describing the data */
   UINT4 numSFTs;		/**< number of SFTs = Tobs/Tsft */
   REAL8 Tsft;			/**< duration of each SFT */
@@ -129,7 +131,8 @@ int main(int argc, char *argv[])
   LALStatus status = blank_status;	/* initialize status */
   ConfigVariables GV;			/**< container for various derived configuration settings */
   SFTVector *outputLFT = NULL;		/**< output 'Long Fourier Transform */
-  UINT4 LFTnumBins;			/**< number of frequency bins in output LFT */
+  UINT4 j, LFTnumBins;			/**< number of frequency bins in output LFT */
+  COMPLEX8Vector *weights;
 
   lalDebugLevel = 0;
   vrbflg = 1;	/* verbose error-messages */
@@ -158,24 +161,38 @@ int main(int argc, char *argv[])
 
   LFTnumBins = GV.numSFTs * GV.numBins;
 
-  if ( (outputLFT = XLALCreateSFTVector (1, 0)) == NULL ){
-    LogPrintf ( LOG_CRITICAL, "%s: XLALCreateSFTVector (1, %d)\n", argv[0], LFTnumBins );
+  if ( (weights = XLALCreateCOMPLEX8Vector ( GV.numSFTs )) == NULL ) {
+    LogPrintf ( LOG_CRITICAL, "%s: XLALCreateCOMPLEX8Vector (%d)\n", argv[0], GV.numSFTs );
     return -1;
   }
+  for ( j=0; j < GV.numSFTs; j ++)
+    {
+      weights->data[j].re = 1.0;
+      weights->data[j].im = 1.0;
+    }
 
-  LAL_CALL ( LALCopySFT (&status, &outputLFT->data[0], &GV.multiSFTs->data[0]->data[0]), &status );
+  LAL_CALL ( upsampleSFTVector (&status,  GV.SFTvect, GV.numSFTs, DTERMS), &status );
+
+  if ( XLALWeightedSumOverSFTVector ( &outputLFT, GV.SFTvect, weights ) )
+    {
+      LogPrintf ( LOG_CRITICAL, "%s: XLALWeightedSumOverSFTVector() failed\n", argv[0] );
+      return -1;
+    }
+  XLALDestroyCOMPLEX8Vector ( weights );
+
+  outputLFT->data[0].deltaF /= GV.numSFTs;
 
   /* write output LFT */
   if ( uvar.outputLFT ) {
-    LAL_CALL ( LALWriteSFT2file ( &status, &outputLFT->data[0], uvar.outputLFT, NULL), &status);
+    LAL_CALL ( LALWriteSFT2file ( &status, &outputLFT->data[0], uvar.outputLFT, GV.dataSummary), &status);
   }
-
 
   /* Free config-Variables and userInput stuff */
   LAL_CALL (LALDestroyUserVars (&status), &status);
 
   LALFree ( GV.dataSummary );
-  LAL_CALL ( LALDestroyMultiSFTVector (&status, &GV.multiSFTs), &status);
+  LAL_CALL ( LALDestroySFTVector (&status, &GV.SFTvect), &status);
+
 
   /* did we forget anything ? */
   LALCheckMemoryLeaks();
@@ -266,9 +283,8 @@ LoadInputSFTs ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar
   }
 
   {/* ----- load the multi-IFO SFT-vectors ----- */
-    REAL8 fMin, fMax;
-    fMin = -1;	/* default: all */
-    fMax = -1;
+    REAL8 fMin = -1, fMax = -1; /* default: all */
+
     if ( LALUserVarWasSet ( &uvar->fmin ) )
       fMin = uvar->fmin;
     if ( LALUserVarWasSet ( &uvar->fmax ) )
@@ -281,6 +297,12 @@ LoadInputSFTs ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar
 
     cfg->fmin = multiSFTs->data[0]->data[0].f0;
     cfg->numBins = multiSFTs->data[0]->data[0].data->length;
+
+    if ( multiSFTs->length != 1 )
+      {
+	LogPrintf ( LOG_CRITICAL, "%s: Only SFTs from a single-IFO can be handled at the moment (found %d)", fn, multiSFTs->length);
+	ABORT ( status,  LFTFROMSFTS_EINPUT,  LFTFROMSFTS_MSGEINPUT);
+      }
   }
 
   /* ----- produce a log-string describing the data-specific setup ----- */
@@ -314,7 +336,11 @@ LoadInputSFTs ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar
     LogPrintfVerbatim( LOG_DEBUG, cfg->dataSummary );
   } /* write dataSummary string */
 
-  cfg->multiSFTs = multiSFTs;
+
+  cfg->SFTvect = multiSFTs->data[0];
+  multiSFTs->data[0] = NULL; /* avoid this getting freed */
+
+  TRY ( LALDestroyMultiSFTVector (status->statusPtr, &multiSFTs ), status );
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
