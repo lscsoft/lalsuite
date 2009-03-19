@@ -5,10 +5,10 @@ extra_args="$@"
 
 ##---------- names of codes and input/output files
 saf_code="lalapps_SemiAnalyticF"
-mfd_code="lalapps_Makefakedata"
+mfd_code="lalapps_Makefakedata_v4"
 cfs_code="lalapps_ComputeFStatistic"
 cfs_resamp_code="./ComputeFStatistic_resamp"
-cmp_code="compareFstats"
+cmp_code="lalapps_compareFstats"
 
 SFTdir="./_testSFTs"
 
@@ -110,7 +110,7 @@ echo "----------------------------------------------------------------------"
 echo "STEP 2: run CFS_v1 with perfect match"
 echo "----------------------------------------------------------------------"
 echo
-outfile_v1="Fstat_v1.dat";
+outfile_v1="./Fstat_v1.dat";
 ## common cmdline-options for v1 and _resamp
 cfs_CL="--IFO=$IFO --Freq=$Freq --FreqBand=$cfsFreqBand --Alpha=$Alpha --Delta=$Delta --f1dot=$f1dot --DataFiles='$SFTdir/testSFT*' --refTime=$refTime"
 if [ "$haveNoise" = false ]; then
@@ -130,7 +130,7 @@ echo "----------------------------------------------------------------------"
 echo " STEP 3: run CFS_resamp with perfect match"
 echo "----------------------------------------------------------------------"
 echo
-outfile_resamp="Fstat_resamp.dat";
+outfile_resamp="./Fstat_resamp.dat";
 cmdline_resamp="$cfs_resamp_code $cfs_CL --outputFstat=$outfile_resamp --TwoFthreshold=0 --UseNoiseWeights=false $extra_args";
 echo $cmdline_resamp;
 if ! eval $cmdline_resamp; then
