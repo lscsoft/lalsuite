@@ -196,7 +196,7 @@ void usage(FILE *filep){
 	  "-p            Print the calibration line frequencies in Hz then exit(0)\n"
 	  "-I STRING     Detector: LHO, LLO, GEO, VIRGO, TAMA, CIT, ROME [REQUIRED]\n"
 	  "-A STRING     File containing detector actuation-function     [OPTIONAL]\n"
-          "-F            Write frame files to output\n"
+          "-F INT        Keep N frame files on disk.  If N==0 write all frames immediately.\n"
 	  , MAXPULSARS
 	  );
   return;
@@ -206,7 +206,7 @@ void usage(FILE *filep){
 int parseinput(int argc, char **argv){
   
   int c;
-  const char *optionlist="hL:M:H:n:d:e:DG:c:TXspI:A:F";
+  const char *optionlist="hL:M:H:n:d:e:DG:c:TXspI:A:F:";
   opterr=0;
   
   /* set some defaults */
@@ -307,8 +307,15 @@ int parseinput(int argc, char **argv){
       actuation = optarg;
       break;
     case 'F':
-      write_frames=1;
-      break;
+	{
+	    int how_many = atoi(optarg);
+	    if (how_many < 0) {
+		syserror(0,"%s: argument -F %d must be non-negative.\n", argv[0], how_many);
+		exit(1);
+	    }
+	    write_frames = 1 + how_many;
+	    break;
+	}
     default:
       /* error case -- option not recognized */
       syserror(0,"%s: Option argument: -%c unrecognized or missing argument.\n"
@@ -685,10 +692,16 @@ int main(int argc, char *argv[]){
 	FrFileOEnd(oFile);
 	FrameFree(frame);
 
-	/* Always keep 5 frame files on disk... */
-	sprintf(framename, "CW_Injection_%d.gwf", counter+gpstime-5);
-	while (!stat(framename, &statbuf)) {
-	    sleep(1);
+	/* Does the user want us to keep a limited set of frames on disk? */
+	if (write_frames>1) {
+	    sprintf(framename, "CW_Injection_%d.gwf", counter + gpstime - write_frames + 1);
+		    while (!stat(framename, &statbuf)) {
+			/* if enough files in place, sleep 0.1 seconds */
+			struct timespec rqtp;
+			rqtp.tv_sec = 0;
+			rqtp.tv_nsec = 100000000; 
+			nanosleep(&rqtp, NULL);
+		    }
 	}
     }
 
