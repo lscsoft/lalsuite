@@ -179,6 +179,7 @@ void usage(FILE *filep){
   fprintf(filep, 
 	  "Options are:\n"
 	  "-h            THIS help message\n"
+          "-v            CVS ID information\n"
 	  "-n INT        Number of pulsars to simulate: 0, 1, 2, ..., %d\n"
 	  "-d DIRECTORY  Directory containing command line files in.0, in.1, ...\n"
 	  "              Default is: . (current working directory)\n"
@@ -206,7 +207,7 @@ void usage(FILE *filep){
 int parseinput(int argc, char **argv){
   
   int c;
-  const char *optionlist="hL:M:H:n:d:e:DG:c:TXspI:A:F:";
+  const char *optionlist="hL:M:H:n:d:e:DG:c:TXspI:A:F:v";
   opterr=0;
   
   /* set some defaults */
@@ -218,6 +219,9 @@ int parseinput(int argc, char **argv){
     char *end;
     double tempamp;
     switch (c) {
+    case 'v':
+	printf("%s: $Id$\n", argv[0]);
+        exit(0);
     case 'p':
       printf("The calibration line frequencies are:\n"
 	     "  L: %18.14f Hz\n"
