@@ -220,7 +220,7 @@ int parseinput(int argc, char **argv){
     double tempamp;
     switch (c) {
     case 'v':
-	printf("%s: $Id$\n", argv[0]);
+	printf("%s: CVS version is $Id$\n", argv[0]);
         exit(0);
     case 'p':
       printf("The calibration line frequencies are:\n"
