@@ -41,6 +41,7 @@ class InspiralAnalysisJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     executable = cp.get('condor',exec_name)
     pipeline.CondorDAGJob.__init__(self,universe,executable)
     pipeline.AnalysisJob.__init__(self,cp,dax)
+    self.add_condor_cmd('copy_to_spool','False')
 
     for sec in sections:
       if cp.has_section(sec):
