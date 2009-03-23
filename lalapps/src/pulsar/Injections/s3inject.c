@@ -661,8 +661,7 @@ int main(int argc, char *argv[]){
 	struct stat statbuf;
 	
 	/* create next frame file*/
-	sprintf(framename, "CW_Injection_%d.gwf", counter+gpstime);
-	counter++;
+	sprintf(framename, "CW_Injection_%d.gwf", counter + gpstime);
 	frame = FrameHNew(framename);
 	if (!frame) {
 	    syserror(1, "FrameNew failed (%s)", FrErrorGetHistory());
@@ -670,7 +669,7 @@ int main(int argc, char *argv[]){
 	}
 	
 	/* set up GPS time, sample interval, copy data */
-	frame->GTimeS = gpstime+counter;
+	frame->GTimeS = gpstime + counter;
 	frame->GTimeN = 0;
 	frame->dt = ndata/sampleRate;  
 	sim = FrSimDataNew(frame,"CW_simulated", sampleRate, ndata, -32);
@@ -694,7 +693,7 @@ int main(int argc, char *argv[]){
 
 	/* Does the user want us to keep a limited set of frames on disk? */
 	if (write_frames>1) {
-	    sprintf(framename, "CW_Injection_%d.gwf", counter + gpstime - write_frames + 1);
+	    sprintf(framename, "CW_Injection_%d.gwf", counter + gpstime - write_frames + 2);
 		    while (!stat(framename, &statbuf)) {
 			/* if enough files in place, sleep 0.1 seconds */
 			struct timespec rqtp;
@@ -703,6 +702,8 @@ int main(int argc, char *argv[]){
 			nanosleep(&rqtp, NULL);
 		    }
 	}
+
+	counter++;
     }
 
     /* now output the total signal... */
