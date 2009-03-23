@@ -18,6 +18,8 @@
 */
 
 /* 
+   $Id$
+  
    multipulsar injection routine, written for E10/S3 by Bruce Allen,
    10/2003.  Calls to Signal Injection Library added by Peter
    Shawhan.  
@@ -53,6 +55,9 @@
 #define BLOCKSIZE 16384
 /* sample rate of output */
 #define SRATE 16384
+
+/* Give 'ident' something to recognize in the executable */
+const char *cvsid="$Id$";
 
 /* Flag to initiate graceful shutdown, set by sighandler */
 volatile int shutdown_pulsar_injection = 0;
@@ -812,3 +817,5 @@ int main(int argc, char *argv[]){
   /* and exit cleanly */
   exit(0);
 }
+
+
