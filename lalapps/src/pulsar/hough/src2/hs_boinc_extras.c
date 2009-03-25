@@ -44,7 +44,7 @@
 
 /* our own exception handler / runtime debugger */
 #ifdef __MINGW32__
-  ExchndlSetup();
+#include "exchndl.h"
 #endif
 
 /* headers of our own code */
