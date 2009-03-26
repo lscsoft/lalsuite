@@ -76,18 +76,18 @@ RCSID( "$Id$");
 #define LFTFROMSFTS_MSGENONULL "Output pointer is non-NULL"
 #define LFTFROMSFTS_MSGEXLAL	"XLALFunction-call failed"
 
-/** Configuration settings required for and defining a coherent pulsar search.
- * These are 'pre-processed' settings, which have been derived from the user-input.
+/** Structure containing input SFTs plus useful meta-data about those SFTs.
  */
 typedef struct {
   MultiSFTVector *multiSFTs;	/**< input SFT vector */
   CHAR *dataSummary;            /**< descriptive string describing the data */
+  UINT4 numDet;			/**< number of detectors in multiSFT vector */
   REAL8 Tsft;			/**< duration of each SFT */
   LIGOTimeGPS startTime;	/**< start-time of SFTs */
   LIGOTimeGPS endTime;
   REAL8 fmin;			/**< smallest frequency contained in input SFTs */
   UINT4 numBins;		/**< number of frequency bins in input SFTs */
-} ConfigVariables;
+} InputSFTData;
 
 
 /*---------- Global variables ----------*/
@@ -115,7 +115,7 @@ static LALUnit empty_LALUnit;
 int main(int argc, char *argv[]);
 
 void LALInitUserVars ( LALStatus *status, UserInput_t *uvar);
-void LoadInputSFTs ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar );
+void LoadInputSFTs ( LALStatus *status, InputSFTData *data, const UserInput_t *uvar );
 int XLALWeightedSumOverSFTVector ( SFTVector **outSFT, const SFTVector *inVect, const COMPLEX8Vector *weights );
 
 SFTtype *XLALSFTVectorToLFT ( const SFTVector *sfts );
@@ -132,7 +132,7 @@ int main(int argc, char *argv[])
 {
   UserInput_t uvar = empty_UserInput;
   LALStatus status = blank_status;	/* initialize status */
-  ConfigVariables GV;			/**< container for various derived configuration settings */
+  InputSFTData inputData;		/**< container for input-data and its meta-info */
   SFTtype *outputLFT = NULL;		/**< output 'Long Fourier Transform */
   UINT4 X, numDet;
 
@@ -159,20 +159,18 @@ int main(int argc, char *argv[])
   }
 
   /* Load SFTs */
-  LAL_CALL ( LoadInputSFTs(&status, &GV, &uvar ), &status);
+  LAL_CALL ( LoadInputSFTs(&status, &inputData, &uvar ), &status);
 
-  numDet = GV.multiSFTs->length;
-
-  if ( numDet != 1 )
+  if ( inputData.numDet != 1 )
     {
       LogPrintf ( LOG_CRITICAL, "Sorry, can only deal with SFTs from single IFO at the moment!\n");
       return -1;
     }
 
-  for ( X=0; X < numDet; X ++ )
+  for ( X=0; X < inputData.numDet; X ++ )
     {
 
-      if ( (outputLFT = XLALSFTVectorToLFT ( GV.multiSFTs->data[X] )) == NULL )
+      if ( (outputLFT = XLALSFTVectorToLFT ( inputData.multiSFTs->data[X] )) == NULL )
 	{
 	  LogPrintf ( LOG_CRITICAL, "%s: call to XLALSFTVectorToLFT() failed! errno = %d\n", argv[0], xlalErrno );
 	  return -1;
@@ -181,14 +179,14 @@ int main(int argc, char *argv[])
 
   /* write output LFT */
   if ( uvar.outputLFT ) {
-    LAL_CALL ( LALWriteSFT2file ( &status, outputLFT, uvar.outputLFT, GV.dataSummary), &status);
+    LAL_CALL ( LALWriteSFT2file ( &status, outputLFT, uvar.outputLFT, inputData.dataSummary), &status);
   }
 
   /* Free config-Variables and userInput stuff */
   LAL_CALL (LALDestroyUserVars (&status), &status);
 
-  LALFree ( GV.dataSummary );
-  LAL_CALL ( LALDestroyMultiSFTVector (&status, &GV.multiSFTs), &status );
+  LALFree ( inputData.dataSummary );
+  LAL_CALL ( LALDestroyMultiSFTVector (&status, &inputData.multiSFTs), &status );
   LAL_CALL ( LALDestroySFTtype ( &status, &outputLFT ), &status );
 
   /* did we forget anything ? */
@@ -237,7 +235,7 @@ LALInitUserVars ( LALStatus *status, UserInput_t *uvar )
 
 /** Initialize code: handle user-input and set everything up. */
 void
-LoadInputSFTs ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
+LoadInputSFTs ( LALStatus *status, InputSFTData *sftData, const UserInput_t *uvar )
 {
   const CHAR *fn = "LoadInputSFTs()";
   SFTCatalog *catalog = NULL;
@@ -245,7 +243,7 @@ LoadInputSFTs ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar
 
   LIGOTimeGPS minStartTimeGPS, maxEndTimeGPS;
   MultiSFTVector *multiSFTs = NULL;	    	/* multi-IFO SFT-vectors */
-  UINT4 numDet, numSFTs;
+  UINT4 numSFTs;
   REAL8 Tspan, Tdata;
 
   INITSTATUS( status, fn, rcsid );
@@ -273,12 +271,12 @@ LoadInputSFTs ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar
   /* ----- deduce start- and end-time of the observation spanned by the data */
   {
     numSFTs = catalog->length;	/* total number of SFTs */
-    cfg->Tsft = 1.0 / catalog->data[0].header.deltaF;
-    cfg->startTime = catalog->data[0].header.epoch;
-    cfg->endTime   = catalog->data[numSFTs-1].header.epoch;
-    LALAddFloatToGPS(status->statusPtr, &cfg->endTime, &cfg->endTime, cfg->Tsft );	/* can't fail */
-    Tspan = XLALGPSGetREAL8(&cfg->endTime) - XLALGPSGetREAL8(&cfg->startTime);
-    Tdata = numSFTs * cfg->Tsft;
+    sftData->Tsft = 1.0 / catalog->data[0].header.deltaF;
+    sftData->startTime = catalog->data[0].header.epoch;
+    sftData->endTime   = catalog->data[numSFTs-1].header.epoch;
+    LALAddFloatToGPS(status->statusPtr, &sftData->endTime, &sftData->endTime, sftData->Tsft );	/* can't fail */
+    Tspan = XLALGPSGetREAL8(&sftData->endTime) - XLALGPSGetREAL8(&sftData->startTime);
+    Tdata = numSFTs * sftData->Tsft;
   }
 
   {/* ----- load the multi-IFO SFT-vectors ----- */
@@ -294,10 +292,10 @@ LoadInputSFTs ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar
     LogPrintfVerbatim (LOG_DEBUG, "done.\n");
     TRY ( LALDestroySFTCatalog ( status->statusPtr, &catalog ), status );
 
-    cfg->fmin = multiSFTs->data[0]->data[0].f0;
-    cfg->numBins = multiSFTs->data[0]->data[0].data->length;
+    sftData->fmin = multiSFTs->data[0]->data[0].f0;
+    sftData->numBins = multiSFTs->data[0]->data[0].data->length;
 
-    numDet = multiSFTs->length;
+    sftData->numDet = multiSFTs->length;
   }
 
   /* ----- produce a log-string describing the data-specific setup ----- */
@@ -309,28 +307,28 @@ LoadInputSFTs ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar
     tp = time(NULL);
     sprintf (summary, "%%%% Date: %s", asctime( gmtime( &tp ) ) );
     strcat (summary, "%% Loaded SFTs: [ " );
-    for ( i=0; i < numDet; i ++ ) {
+    for ( i=0; i < sftData->numDet; i ++ ) {
       sprintf (line, "%s:%d%s",  multiSFTs->data[i]->data->name, multiSFTs->data[i]->length,
-	       (i < numDet - 1)?", ":" ]\n");
+	       (i < sftData->numDet - 1)?", ":" ]\n");
       strcat ( summary, line );
     }
-    utc = *XLALGPSToUTC( &utc, (INT4)XLALGPSGetREAL8(&cfg->startTime) );
+    utc = *XLALGPSToUTC( &utc, (INT4)XLALGPSGetREAL8(&sftData->startTime) );
     strcpy ( dateStr, asctime(&utc) );
     dateStr[ strlen(dateStr) - 1 ] = 0;
-    sprintf (line, "%%%% Start GPS time tStart = %12.3f    (%s GMT)\n", XLALGPSGetREAL8(&cfg->startTime), dateStr);
+    sprintf (line, "%%%% Start GPS time tStart = %12.3f    (%s GMT)\n", XLALGPSGetREAL8(&sftData->startTime), dateStr);
     strcat ( summary, line );
     sprintf (line, "%%%% Total time spanned    = %12.3f s  (%.1f hours)\n", Tspan, Tspan/3600 );
     strcat ( summary, line );
 
-    if ( (cfg->dataSummary = LALCalloc(1, strlen(summary) + 1 )) == NULL ) {
+    if ( (sftData->dataSummary = LALCalloc(1, strlen(summary) + 1 )) == NULL ) {
       ABORT (status, LFTFROMSFTS_EMEM, LFTFROMSFTS_MSGEMEM);
     }
-    strcpy ( cfg->dataSummary, summary );
+    strcpy ( sftData->dataSummary, summary );
 
-    LogPrintfVerbatim( LOG_DEBUG, cfg->dataSummary );
+    LogPrintfVerbatim( LOG_DEBUG, sftData->dataSummary );
   } /* write dataSummary string */
 
-  cfg->multiSFTs = multiSFTs;
+  sftData->multiSFTs = multiSFTs;
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
