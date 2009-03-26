@@ -134,7 +134,8 @@ int main(int argc, char *argv[])
   LALStatus status = blank_status;	/* initialize status */
   InputSFTData inputData;		/**< container for input-data and its meta-info */
   SFTtype *outputLFT = NULL;		/**< output 'Long Fourier Transform */
-  UINT4 X, numDet;
+  MultiSFTVector *SSBmultiSFTs = NULL;	/**< SFT vector transferred to the SSB */
+  UINT4 X;
 
   lalDebugLevel = 0;
   vrbflg = 1;	/* verbose error-messages */
@@ -158,7 +159,7 @@ int main(int argc, char *argv[])
     return 0;
   }
 
-  /* Load SFTs */
+  /* ----- Load SFTs */
   LAL_CALL ( LoadInputSFTs(&status, &inputData, &uvar ), &status);
 
   if ( inputData.numDet != 1 )
@@ -167,10 +168,60 @@ int main(int argc, char *argv[])
       return -1;
     }
 
+  /* ----- allocate container for SSB-demodulated multi-SFTs */
+  {
+    UINT4Vector *numSFTs = NULL;
+
+    if ( (numSFTs = XLALCreateUINT4Vector ( inputData.numDet )) == NULL )
+      {
+	LogPrintf ( LOG_CRITICAL, "Failed to XLALCreateUINT4Vector(%d)!\n", inputData.numDet );
+	return -1;
+      }
+    for ( X=0; X < inputData.numDet; X ++ ) {
+      numSFTs->data[X] = inputData.multiSFTs->data[X]->length;		/* number of sfts for IFO X */
+    }
+
+    LAL_CALL ( LALCreateMultiSFTVector ( &status, &SSBmultiSFTs, inputData.numBins, numSFTs ), &status );
+
+    XLALDestroyUINT4Vector ( numSFTs );
+
+  } /* allocate SSBmultiSFTs */
+
+
+  /* ----- Central Demodulation step: time-shift each SFT into SSB */
+  /* we do this in the frequency-domain, ie multiply each bin by a complex phase-factor */
+
+
+  for ( X = 0; X < inputData.numDet; X ++ )
+    {
+      UINT4 n;
+      SFTVector *thisVect = SSBmultiSFTs->data[X];
+      REAL4 fact = 1.0 / inputData.numBins;
+      for ( n = 0; n < thisVect->length; n ++ )
+	{
+	  UINT4 k;
+	  SFTtype *inputSFT = &(inputData.multiSFTs->data[X]->data[n]);
+	  SFTtype *thisSFT = &thisVect->data[n];
+	  for ( k = 0; k < thisSFT->data->length; k ++ )
+	    {
+	      COMPLEX8Vector *theData = thisSFT->data;	/* pointer backup copy */
+	      (*thisSFT) = (*inputSFT);			/* struct copy */
+	      thisSFT->data = theData;			/* restore data-pointer */
+
+	      thisSFT->data->data[k].re = fact * inputSFT->data->data[k].re;
+	      thisSFT->data->data[k].im = fact * inputSFT->data->data[k].im;
+	    } /* for k < numBins */
+	} /* for n < numSFTs */
+
+    } /* for X < numDet */
+
+
+
+  /* ----- turn SFT vectors into long Fourier-transforms */
   for ( X=0; X < inputData.numDet; X ++ )
     {
 
-      if ( (outputLFT = XLALSFTVectorToLFT ( inputData.multiSFTs->data[X] )) == NULL )
+      if ( (outputLFT = XLALSFTVectorToLFT ( SSBmultiSFTs->data[X] )) == NULL )
 	{
 	  LogPrintf ( LOG_CRITICAL, "%s: call to XLALSFTVectorToLFT() failed! errno = %d\n", argv[0], xlalErrno );
 	  return -1;
