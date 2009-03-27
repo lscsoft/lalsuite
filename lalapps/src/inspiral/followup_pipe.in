@@ -175,6 +175,11 @@ parser.add_option("", "--convert-eventid",action="store_true",\
     the local directory and use the \"ligolw_conv_inspid\" to convert the \
     event_id into the correct type.")
 
+parser.add_option("", "--create-localcopy",action="store_true",\
+    default=False, help="If this option is called, the followup pipeline will \
+    make a local copy of all the useful xml files. This option is ignored \
+    when --convert-eventid is called.")
+
 parser.add_option("", "--add-trig-columns",action="store_true",\
     default=False, help="For the analysis of teh second year branch, \
     we want to be able to use the followup code of the TRUNK. This requires to \
@@ -246,7 +251,7 @@ if not opts.write_to_iulgroup and not opts.generate_fu_cache and \
   opts.analyse_hoft_qscan and not opts.distrib_remote_q and not \
   opts.coh_inspiral and not opts.sky_map and not opts.sky_map_plot and not \
   opts.convert_eventid and not opts.odds and not opts.plot_chia \
-  and not opts.make_checklist:
+  and not opts.make_checklist and not opts.create_localcopy:
 
   print >> sys.stderr, "No steps of the pipeline specified."
   print >> sys.stderr, "Please specify at least one of"
@@ -258,7 +263,8 @@ if not opts.write_to_iulgroup and not opts.generate_fu_cache and \
   print >> sys.stderr, "--analyse-qscan, --analyse-seis-qscan,"
   print >> sys.stderr, "--analyse-hoft-qscan, --distrib-remote-q,"
   print >> sys.stderr, "--mcmc, --plot-mcmc, --coh-inspiral, --plot-chia,"
-  print >> sys.stderr, "--sky-map, --sky-map-plot, --convert-eventid,"
+  print >> sys.stderr, "--sky-map, --sky-map-plot,"
+  print >> sys.stderr, "--convert-eventid, --create-localcopy,"
   print >> sys.stderr, "--ifo-status-check, --single-qevent, --H1H2-qevent"
   print >> sys.stderr, "--make-checklist or --write-to-iulgroup" 
   sys.exit(1)
@@ -301,7 +307,7 @@ if not opts.disable_followup and not opts.read_times:
 
   # if the option convert-eventid is called, we need to prepare the directory 
   # where the .xml files will be copied
-  if opts.convert_eventid:
+  if opts.convert_eventid or opts.create_localcopy:
     if not os.access('LOCAL_XML_COPY',os.F_OK):
       os.mkdir('LOCAL_XML_COPY')
     else: pass
