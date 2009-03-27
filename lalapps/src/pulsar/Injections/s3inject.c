@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2003-9 Bruce Allen
+*  Copyright (C) 2003-9 Bruce Allen, Peter Shawhan
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -212,7 +212,7 @@ void usage(FILE *filep){
 int parseinput(int argc, char **argv){
   
   int c;
-  const char *optionlist="hL:M:H:n:d:e:DG:c:TXspI:A:F:v";
+  const char *optionlist="hL:M:H:n:d:e:DG:TXspI:A:F:v";
   opterr=0;
   
   /* set some defaults */
