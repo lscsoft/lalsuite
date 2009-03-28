@@ -354,6 +354,7 @@ LoadInputSFTs ( LALStatus *status, InputSFTData *sftData, const UserInput_t *uva
     struct tm utc;
     time_t tp;
     CHAR dateStr[512], line[512], summary[1024];
+    CHAR *cmdline = NULL;
     UINT4 i;
     tp = time(NULL);
     sprintf (summary, "%%%% Date: %s", asctime( gmtime( &tp ) ) );
@@ -371,10 +372,13 @@ LoadInputSFTs ( LALStatus *status, InputSFTData *sftData, const UserInput_t *uva
     sprintf (line, "%%%% Total time spanned    = %12.3f s  (%.1f hours)\n", Tspan, Tspan/3600 );
     strcat ( summary, line );
 
-    if ( (sftData->dataSummary = LALCalloc(1, strlen(summary) + 1 )) == NULL ) {
+    TRY ( LALUserVarGetLog (status->statusPtr, &cmdline,  UVAR_LOGFMT_CMDLINE ), status);
+
+    if ( (sftData->dataSummary = LALCalloc(1, strlen(summary) + strlen(cmdline) + 20)) == NULL ) {
       ABORT (status, LFTFROMSFTS_EMEM, LFTFROMSFTS_MSGEMEM);
     }
-    strcpy ( sftData->dataSummary, summary );
+    sprintf( sftData->dataSummary, "\nCommandline: %s\n", cmdline);
+    strcat ( sftData->dataSummary, summary );
 
     LogPrintfVerbatim( LOG_DEBUG, sftData->dataSummary );
   } /* write dataSummary string */
