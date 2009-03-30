@@ -199,17 +199,12 @@ int main(int argc, char *argv[])
     {
       UINT4 n;
       SFTVector *SSBthisVect = SSBmultiSFTs->data[X];
-      UINT4 N0 = inputData.multiSFTs->data[0]->data[0].data->length;   	/* number of bins in input SFTs */
-      UINT4 N1 = SSBthisVect->data[0].data->length;
-
-      UINT4 NhalfPos = floor( (N0/2.0) + 0.5 );	/* DC + positive frequency bins */
-      UINT4 NhalfNeg = N0 - NhalfPos;		/* negative frequency bins */
-
-      REAL4 fact = 1.0 / N1;
+      UINT4 N0 = inputData.numBins;   		/* number of bins in input SFTs */
+      REAL4 fact = 1.0 / N0;
 
       for ( n = 0; n < SSBthisVect->length; n ++ )
 	{
-	  UINT4 k0, k1;
+	  UINT4 k;
 	  SFTtype *inputSFT = &(inputData.multiSFTs->data[X]->data[n]);
 	  SFTtype *SSBthisSFT = &SSBthisVect->data[n];
 	  COMPLEX8Vector *SSBsftData = SSBthisSFT->data;	/* backup copy of data pointer  */
@@ -217,25 +212,11 @@ int main(int argc, char *argv[])
 	  (*SSBthisSFT) = (*inputSFT);				/* struct copy (kills data-pointer) */
 	  SSBthisSFT->data = SSBsftData;			/* restore data-pointer */
 
-	  /* set output SFT data to ZERO */
-	  memset ( SSBsftData->data, 0, N1 * sizeof(*SSBsftData->data) );
-
-	  /* DC and positive frequency bins */
-	  k1 = 0;
-	  for ( k0 = NhalfNeg; k0 < N0; k0 ++ )
+	  for ( k = 0; k < N0; k ++ )
 	    {
-	      SSBsftData->data[k1].re = fact * inputSFT->data->data[k0].re;
-	      SSBsftData->data[k1].im = fact * inputSFT->data->data[k0].im;
-	      k1 ++;
-	    } /* for DC + positive frequencies */
-
-	  /* negative frequency bins */
-	  for ( k0 = 0; k0 < NhalfNeg; k0 ++ )
-	    {
-	      SSBsftData->data[k1].re = fact * inputSFT->data->data[k0].re;
-	      SSBsftData->data[k1].im = fact * inputSFT->data->data[k0].im;
-	      k1 ++;
-	    } /* for negative frequencies */
+	      SSBsftData->data[k].re = fact * inputSFT->data->data[k].re;
+	      SSBsftData->data[k].im = fact * inputSFT->data->data[k].im;
+	    } /* k < numBins */
 
 	} /* for n < numSFTs */
 
@@ -263,6 +244,7 @@ int main(int argc, char *argv[])
   LALFree ( inputData.dataSummary );
   LAL_CALL ( LALDestroyMultiSFTVector (&status, &inputData.multiSFTs), &status );
   LAL_CALL ( LALDestroySFTtype ( &status, &outputLFT ), &status );
+  LAL_CALL ( LALDestroyMultiSFTVector (&status, &SSBmultiSFTs), &status);
 
   /* did we forget anything ? */
   LALCheckMemoryLeaks();
@@ -405,6 +387,8 @@ LoadInputSFTs ( LALStatus *status, InputSFTData *sftData, const UserInput_t *uva
     strcat ( sftData->dataSummary, summary );
 
     LogPrintfVerbatim( LOG_DEBUG, sftData->dataSummary );
+
+    XLALFree ( cmdline );
   } /* write dataSummary string */
 
   sftData->multiSFTs = multiSFTs;
@@ -516,13 +500,11 @@ XLALSFTVectorToLFT ( const SFTVector *sfts )
       UINT4 bin0_n;
       REAL8 startTime_n;
 
-      /*
       if ( XLALReorderSFTtoFFTW (thisSFT->data) != XLAL_SUCCESS )
 	{
 	  XLALPrintError ( "%s: XLALReorderSFTtoFFTW() failed! errno = %d!\n", fn, xlalErrno );
 	  XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
 	}
-      */
 
       if ( XLALCOMPLEX8VectorFFT( sTS->data, thisSFT->data, SFTplan ) != XLAL_SUCCESS )
 	{
