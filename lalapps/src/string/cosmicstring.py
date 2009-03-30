@@ -79,7 +79,7 @@ class InjJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     cp = ConfigParser object from which options are read.
     """
     self.__executable = cp.get('condor','injection')
-    self.__universe = 'scheduler'
+    self.__universe = 'local'
     pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
     pipeline.AnalysisJob.__init__(self,cp)
 
