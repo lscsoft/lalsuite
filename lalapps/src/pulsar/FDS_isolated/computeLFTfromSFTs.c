@@ -105,6 +105,8 @@ typedef struct {
   REAL8 fmin;		/**< minimal frequency to include */
   REAL8 fmax;		/**< maximal frequency to include */
 
+  REAL8 upsampling;	/**< factor by which to upsample the frequency resolution by */
+
   BOOLEAN version;	/**< output version-info */
 } UserInput_t;
 
@@ -118,7 +120,7 @@ void LALInitUserVars ( LALStatus *status, UserInput_t *uvar);
 void LoadInputSFTs ( LALStatus *status, InputSFTData *data, const UserInput_t *uvar );
 int XLALWeightedSumOverSFTVector ( SFTVector **outSFT, const SFTVector *inVect, const COMPLEX8Vector *weights );
 
-SFTtype *XLALSFTVectorToLFT ( const SFTVector *sfts );
+SFTtype *XLALSFTVectorToLFT ( const SFTVector *sfts, REAL8 upsampling );
 int XLALReorderFFTWtoSFT (COMPLEX8Vector *X);
 int XLALReorderSFTtoFFTW (COMPLEX8Vector *X);
 
@@ -183,7 +185,6 @@ int main(int argc, char *argv[])
       numSFTs->data[X] = inputData.multiSFTs->data[X]->length;		/* number of sfts for IFO X */
     }
 
-    /* double the frequency band to avoid aliasing */
     LAL_CALL ( LALCreateMultiSFTVector ( &status, &SSBmultiSFTs, inputData.numBins, numSFTs ), &status );
 
     XLALDestroyUINT4Vector ( numSFTs );
@@ -226,9 +227,10 @@ int main(int argc, char *argv[])
   /* ----- turn SFT vectors into long Fourier-transforms */
   for ( X=0; X < SSBmultiSFTs->length; X ++ )
     {
-      if ( (outputLFT = XLALSFTVectorToLFT ( SSBmultiSFTs->data[X] )) == NULL )
+      if ( (outputLFT = XLALSFTVectorToLFT ( SSBmultiSFTs->data[X], uvar.upsampling )) == NULL )
 	{
-	  LogPrintf ( LOG_CRITICAL, "%s: call to XLALSFTVectorToLFT() failed! errno = %d\n", argv[0], xlalErrno );
+	  LogPrintf ( LOG_CRITICAL, "%s: call to XLALSFTVectorToLFT() failed (upsample=%f) ! errno = %d\n",
+		      argv[0], uvar.upsampling, xlalErrno );
 	  return -1;
 	}
     } /* for X < numDet */
@@ -270,6 +272,7 @@ LALInitUserVars ( LALStatus *status, UserInput_t *uvar )
   uvar->minStartTime = 0;
   uvar->maxEndTime = LAL_INT4_MAX;
 
+  uvar->upsampling = 1;
 
   /* register all our user-variables */
   LALregBOOLUserStruct(status,	help, 		'h', UVAR_HELP,     "Print this message");
@@ -284,6 +287,9 @@ LALInitUserVars ( LALStatus *status, UserInput_t *uvar )
 
   LALregREALUserStruct(status,   fmin,		'f', UVAR_OPTIONAL, "Lowest frequency to extract from SFTs. [Default: lowest in inputSFTs]");
   LALregREALUserStruct(status,   fmax,		'F', UVAR_OPTIONAL, "Highest frequency to extract from SFTs. [Default: highest in inputSFTs]");
+
+  LALregREALUserStruct(status, upsampling,	'u', UVAR_OPTIONAL, "Factor to upsample the frequency resolution by");
+
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
@@ -401,7 +407,7 @@ LoadInputSFTs ( LALStatus *status, InputSFTData *sftData, const UserInput_t *uva
 /** Turn the given multi-IFO SFTvectors into one long Fourier transform (LFT) over the total observation time
  */
 SFTtype *
-XLALSFTVectorToLFT ( const SFTVector *sfts )
+XLALSFTVectorToLFT ( const SFTVector *sfts, REAL8 upsampling )
 {
   static const CHAR *fn = "XLALSFTVectorToLFT()";
 
@@ -433,6 +439,11 @@ XLALSFTVectorToLFT ( const SFTVector *sfts )
       XLALPrintError ("%s: empty SFT input!\n", fn );
       XLAL_ERROR_NULL (fn, XLAL_EINVAL);
     }
+  if ( upsampling < 1 )
+    {
+      XLALPrintError ("%s: upsampling factor (%f) must be >= 1 \n", fn, upsampling );
+      XLAL_ERROR_NULL (fn, XLAL_EINVAL);
+    }
 
   /* obtain quantities that are constant for all SFTs */
   numSFTs = sfts->length;
@@ -447,9 +458,9 @@ XLALSFTVectorToLFT ( const SFTVector *sfts )
   startTime = XLALGPSGetREAL8 ( &sfts->data[0].epoch );
   endTime   = XLALGPSGetREAL8 ( &sfts->data[numSFTs-1].epoch ) + Tsft;
 
-  Tspan = endTime - startTime;
+  Tspan = (endTime - startTime) * upsampling;		/* upsampled Tspan >= Tspan(actual) */
   numTimeSamples = (UINT4)(Tspan / deltaT + 0.5);	/* round */
-  Tspan = numTimeSamples * deltaT;			/* correct Tspan to actual time-samples */
+  Tspan = numTimeSamples * deltaT;			/* correct Tspan to (upsampled) number of time-samples */
 
   /* ----- Prepare invFFT: compute plan for FFTW */
   if ( (SFTplan = XLALCreateReverseCOMPLEX8FFTPlan( numBins, 0 )) == NULL )
