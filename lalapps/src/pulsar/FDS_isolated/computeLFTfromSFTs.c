@@ -119,6 +119,8 @@ void LoadInputSFTs ( LALStatus *status, InputSFTData *data, const UserInput_t *u
 int XLALWeightedSumOverSFTVector ( SFTVector **outSFT, const SFTVector *inVect, const COMPLEX8Vector *weights );
 
 SFTtype *XLALSFTVectorToLFT ( const SFTVector *sfts );
+int XLALReorderFFTWtoSFT (COMPLEX8Vector *X);
+int XLALReorderSFTtoFFTW (COMPLEX8Vector *X);
 
 /*---------- empty initializers ---------- */
 
@@ -181,6 +183,7 @@ int main(int argc, char *argv[])
       numSFTs->data[X] = inputData.multiSFTs->data[X]->length;		/* number of sfts for IFO X */
     }
 
+    /* double the frequency band to avoid aliasing */
     LAL_CALL ( LALCreateMultiSFTVector ( &status, &SSBmultiSFTs, inputData.numBins, numSFTs ), &status );
 
     XLALDestroyUINT4Vector ( numSFTs );
@@ -195,32 +198,53 @@ int main(int argc, char *argv[])
   for ( X = 0; X < inputData.numDet; X ++ )
     {
       UINT4 n;
-      SFTVector *thisVect = SSBmultiSFTs->data[X];
-      REAL4 fact = 1.0 / inputData.numBins;
-      for ( n = 0; n < thisVect->length; n ++ )
-	{
-	  UINT4 k;
-	  SFTtype *inputSFT = &(inputData.multiSFTs->data[X]->data[n]);
-	  SFTtype *thisSFT = &thisVect->data[n];
-	  for ( k = 0; k < thisSFT->data->length; k ++ )
-	    {
-	      COMPLEX8Vector *theData = thisSFT->data;	/* pointer backup copy */
-	      (*thisSFT) = (*inputSFT);			/* struct copy */
-	      thisSFT->data = theData;			/* restore data-pointer */
+      SFTVector *SSBthisVect = SSBmultiSFTs->data[X];
+      UINT4 N0 = inputData.multiSFTs->data[0]->data[0].data->length;   	/* number of bins in input SFTs */
+      UINT4 N1 = SSBthisVect->data[0].data->length;
 
-	      thisSFT->data->data[k].re = fact * inputSFT->data->data[k].re;
-	      thisSFT->data->data[k].im = fact * inputSFT->data->data[k].im;
-	    } /* for k < numBins */
+      UINT4 NhalfPos = floor( (N0/2.0) + 0.5 );	/* DC + positive frequency bins */
+      UINT4 NhalfNeg = N0 - NhalfPos;		/* negative frequency bins */
+
+      REAL4 fact = 1.0 / N1;
+
+      for ( n = 0; n < SSBthisVect->length; n ++ )
+	{
+	  UINT4 k0, k1;
+	  SFTtype *inputSFT = &(inputData.multiSFTs->data[X]->data[n]);
+	  SFTtype *SSBthisSFT = &SSBthisVect->data[n];
+	  COMPLEX8Vector *SSBsftData = SSBthisSFT->data;	/* backup copy of data pointer  */
+
+	  (*SSBthisSFT) = (*inputSFT);				/* struct copy (kills data-pointer) */
+	  SSBthisSFT->data = SSBsftData;			/* restore data-pointer */
+
+	  /* set output SFT data to ZERO */
+	  memset ( SSBsftData->data, 0, N1 * sizeof(*SSBsftData->data) );
+
+	  /* DC and positive frequency bins */
+	  k1 = 0;
+	  for ( k0 = NhalfNeg; k0 < N0; k0 ++ )
+	    {
+	      SSBsftData->data[k1].re = fact * inputSFT->data->data[k0].re;
+	      SSBsftData->data[k1].im = fact * inputSFT->data->data[k0].im;
+	      k1 ++;
+	    } /* for DC + positive frequencies */
+
+	  /* negative frequency bins */
+	  for ( k0 = 0; k0 < NhalfNeg; k0 ++ )
+	    {
+	      SSBsftData->data[k1].re = fact * inputSFT->data->data[k0].re;
+	      SSBsftData->data[k1].im = fact * inputSFT->data->data[k0].im;
+	      k1 ++;
+	    } /* for negative frequencies */
+
 	} /* for n < numSFTs */
 
     } /* for X < numDet */
 
 
-
   /* ----- turn SFT vectors into long Fourier-transforms */
-  for ( X=0; X < inputData.numDet; X ++ )
+  for ( X=0; X < SSBmultiSFTs->length; X ++ )
     {
-
       if ( (outputLFT = XLALSFTVectorToLFT ( SSBmultiSFTs->data[X] )) == NULL )
 	{
 	  LogPrintf ( LOG_CRITICAL, "%s: call to XLALSFTVectorToLFT() failed! errno = %d\n", argv[0], xlalErrno );
@@ -254,7 +278,7 @@ int main(int argc, char *argv[])
 void
 LALInitUserVars ( LALStatus *status, UserInput_t *uvar )
 {
-  const CHAR *fn = "XLALInitUserVars()";
+  static const CHAR *fn = "XLALInitUserVars()";
 
   INITSTATUS( status, fn, rcsid );
   ATTATCHSTATUSPTR (status);
@@ -288,7 +312,7 @@ LALInitUserVars ( LALStatus *status, UserInput_t *uvar )
 void
 LoadInputSFTs ( LALStatus *status, InputSFTData *sftData, const UserInput_t *uvar )
 {
-  const CHAR *fn = "LoadInputSFTs()";
+  static const CHAR *fn = "LoadInputSFTs()";
   SFTCatalog *catalog = NULL;
   SFTConstraints constraints = empty_SFTConstraints;
 
@@ -390,12 +414,12 @@ LoadInputSFTs ( LALStatus *status, InputSFTData *sftData, const UserInput_t *uva
 
 } /* LoadInputSFTs() */
 
-/** Turn the given multi-IFO SFTvectors into COMPLEX8 (heterodyned) timeseries, one per IFO
+/** Turn the given multi-IFO SFTvectors into one long Fourier transform (LFT) over the total observation time
  */
 SFTtype *
 XLALSFTVectorToLFT ( const SFTVector *sfts )
 {
-  const CHAR *fn = "XLALSFTVectorToTimeseries()";
+  static const CHAR *fn = "XLALSFTVectorToLFT()";
 
   COMPLEX8FFTPlan *SFTplan, *LFTplan;
   LIGOTimeGPS epoch = {0,0};
@@ -492,6 +516,14 @@ XLALSFTVectorToLFT ( const SFTVector *sfts )
       UINT4 bin0_n;
       REAL8 startTime_n;
 
+      /*
+      if ( XLALReorderSFTtoFFTW (thisSFT->data) != XLAL_SUCCESS )
+	{
+	  XLALPrintError ( "%s: XLALReorderSFTtoFFTW() failed! errno = %d!\n", fn, xlalErrno );
+	  XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+	}
+      */
+
       if ( XLALCOMPLEX8VectorFFT( sTS->data, thisSFT->data, SFTplan ) != XLAL_SUCCESS )
 	{
 	  XLALPrintError ( "%s: XLALCOMPLEX8VectorFFT() failed! errno = %d!\n", fn, xlalErrno );
@@ -523,6 +555,12 @@ XLALSFTVectorToLFT ( const SFTVector *sfts )
       XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
     }
 
+  if ( XLALReorderFFTWtoSFT (outputLFT->data) != XLAL_SUCCESS )
+    {
+      XLALPrintError ( "%s: XLALReorderFFTWtoSFT() failed! errno = %d!\n", fn, xlalErrno );
+      XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+    }
+
   /* cleanup memory */
   XLALDestroyCOMPLEX8TimeSeries ( sTS );
   XLALDestroyCOMPLEX8TimeSeries ( lTS );
@@ -531,4 +569,96 @@ XLALSFTVectorToLFT ( const SFTVector *sfts )
 
   return outputLFT;
 
-} /* XLALMultiSFTsToTimeseries() */
+} /* XLALSFTVectorToLFT() */
+
+
+/** Change frequency-bin order from fftw-convention to a 'SFT'
+ * ie. from FFTW: f[0], f[1],...f[N/2], f[-(N-1)/2], ... f[-2], f[-1]
+ * to: f[-(N-1)/2], ... f[-1], f[0], f[1], .... f[N/2]
+ */
+int
+XLALReorderFFTWtoSFT (COMPLEX8Vector *X)
+{
+  static const CHAR *fn = "XLALReorderFFTWtoSFT()";
+  UINT4 N, NhalfPos, NhalfNeg;
+
+  /* temporary storage for data */
+  COMPLEX8 *tmp;
+
+
+  if ( !X || (X->length==0) )
+    {
+      XLALPrintError ("%s: empty input vector 'X'!\n", fn );
+      XLAL_ERROR (fn, XLAL_EINVAL);
+    }
+
+  N = X -> length;
+  NhalfPos = floor( N/2.0 + 0.5 );	/* DC + positive frequencies: round up */
+  NhalfNeg = N - NhalfPos;
+
+  /* allocate temporary storage for swap */
+  if ( (tmp = XLALMalloc ( N * sizeof(*tmp) )) == NULL )
+    {
+      XLALPrintError ("%s: Failed to allocate XLALMalloc(%d)\n", fn, N * sizeof(*tmp));
+      XLAL_ERROR (fn, XLAL_ENOMEM);
+    }
+
+  memcpy ( tmp, X->data, N * sizeof(*tmp) );
+
+  /* Copy second half from FFTW: 'negative' frequencies */
+  memcpy ( X->data, tmp + NhalfPos, NhalfNeg * sizeof(*tmp) );
+
+  /* Copy first half from FFTW: 'DC + positive' frequencies */
+  memcpy ( X->data + NhalfNeg, tmp, NhalfPos * sizeof(*tmp) );
+
+  XLALFree(tmp);
+
+  return XLAL_SUCCESS;
+
+}  /* XLALReorderFFTWtoSFT() */
+
+/** Change frequency-bin order from 'SFT' to fftw-convention
+ * ie. from f[-(N-1)/2], ... f[-1], f[0], f[1], .... f[N/2]
+ * to FFTW: f[0], f[1],...f[N/2], f[-(N-1)/2], ... f[-2], f[-1]
+ */
+int
+XLALReorderSFTtoFFTW (COMPLEX8Vector *X)
+{
+  static const CHAR *fn = "XLALReorderSFTtoFFTW()";
+  UINT4 N, NhalfPos, NhalfNeg;
+
+  /* temporary storage for data */
+  COMPLEX8 *tmp;
+
+
+  if ( !X || (X->length==0) )
+    {
+      XLALPrintError ("%s: empty input vector 'X'!\n", fn );
+      XLAL_ERROR (fn, XLAL_EINVAL);
+    }
+
+  N = X -> length;
+  NhalfPos = floor( N/2.0 + 0.5 );	/* DC + positive frequencies: round up */
+  NhalfNeg = N - NhalfPos;
+
+  /* allocate temporary storage for swap */
+  if ( (tmp = XLALMalloc ( N * sizeof(*tmp) )) == NULL )
+    {
+      XLALPrintError ("%s: Failed to allocate XLALMalloc(%d)\n", fn, N * sizeof(*tmp));
+      XLAL_ERROR (fn, XLAL_ENOMEM);
+    }
+
+  memcpy ( tmp, X->data, N * sizeof(*tmp) );
+
+  /* Copy second half of FFTW: 'negative' frequencies */
+  memcpy ( X->data + NhalfPos, tmp, NhalfNeg * sizeof(*tmp) );
+
+  /* Copy first half of FFTW: 'DC + positive' frequencies */
+  memcpy ( X->data, tmp + NhalfNeg, NhalfPos * sizeof(*tmp) );
+
+  XLALFree(tmp);
+
+  return XLAL_SUCCESS;
+
+}  /* XLALReorderSFTtoFFTW() */
+
