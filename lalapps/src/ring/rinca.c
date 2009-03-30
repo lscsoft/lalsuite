@@ -830,10 +830,7 @@ if ( vrbflg)
 
   if ( numIFO == 2 && multiIfoCoinc )
   {
-    if ( vrbflg)
-    {
-      fprintf( stderr, "Must specify three IFOs to do multi-ifo coincidence\n");
-    }
+    fprintf( stderr, "Must specify three IFOs to do multi-ifo coincidence\n");
     exit ( 1 );
   }
 
@@ -876,7 +873,7 @@ if ( vrbflg)
       if( vrbflg && haveTrig[ifoNumber] ) fprintf( stdout, 
           "Performing a slide of multiples of %d seconds on %s\n", 
           slideStep[ifoNumber], ifoA);
-
+          
       for( ifoTwo = ifoNumber + 1; ifoTwo < LAL_NUM_IFO; ifoTwo++ )
       {
         if ( haveTrig[ifoTwo] && haveTrig[ifoNumber] &&
