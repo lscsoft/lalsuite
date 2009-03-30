@@ -141,7 +141,7 @@ struct GlobalVariablesTag {
   INT4 duration;                /* duration of entire segment to be analysed */
   LIGOTimeGPS gpsepoch;         /* GPS epoch of start of entire segment to be analysed */ 
   REAL8TimeSeries ht;           /* raw input data */
-  REAL4TimeSeries ht_proc;      /* processed (band-pass filtered and down-sampled) input data */
+  REAL4TimeSeries *ht_proc;     /* processed (band-pass filtered and down-sampled) input data */
   REAL4FrequencySeries Spec;    /* average spectrum */
   RealFFTPlan *fplan;           /* fft plans */
   RealFFTPlan *rplan;           /* fft plans */
@@ -251,7 +251,7 @@ int main(int argc,char *argv[])
  if (CommandLineArgs.InjectionFile != NULL) 
    {
      if (AddInjections(CommandLineArgs)) return 3;
-     if ( CommandLineArgs.printinjectionflag ) LALSPrintTimeSeries( &GV.ht_proc, "injection.txt" );
+     if ( CommandLineArgs.printinjectionflag ) LALSPrintTimeSeries( GV.ht_proc, "injection.txt" );
    }
 
  if (WindowData()) return 4;
@@ -261,8 +261,8 @@ int main(int argc,char *argv[])
  if ( CommandLineArgs.printdataflag )
    {
      int p;
-     for (p=0; p<(int)GV.ht_proc.data->length; p++)
-       fprintf(stdout,"%1.15le\n",GV.ht_proc.data->data[p]);
+     for (p=0; p<(int)GV.ht_proc->data->length; p++)
+       fprintf(stdout,"%1.15le\n",GV.ht_proc->data->data[p]);
      return 0;
    }
 
@@ -271,9 +271,9 @@ int main(int argc,char *argv[])
 
 	
  /* re-size the time series to remove the pad */
- LALResizeREAL4TimeSeries(&status, &(GV.ht_proc), (int)(CommandLineArgs.pad/GV.ht_proc.deltaT+0.5),
-			  GV.ht_proc.data->length-2*(UINT4)(CommandLineArgs.pad/GV.ht_proc.deltaT+0.5));
- TESTSTATUS( &status );
+ if(!XLALResizeREAL4TimeSeries(GV.ht_proc, (int)(CommandLineArgs.pad/GV.ht_proc->deltaT+0.5),
+			  GV.ht_proc->data->length-2*(UINT4)(CommandLineArgs.pad/GV.ht_proc->deltaT+0.5)))
+   return 6;
 
 
 
@@ -367,7 +367,7 @@ int AddInjections(struct CommandLineArgsTag CLA)
   unsigned p;
 
   XLALGPSAdd(&startTime, CLA.ShortSegDuration / 4 + CLA.pad);
-  XLALGPSAdd(&stopTime, GV.ht_proc.data->length * GV.ht_proc.deltaT - CLA.ShortSegDuration / 4 - CLA.pad);
+  XLALGPSAdd(&stopTime, GV.ht_proc->data->length * GV.ht_proc->deltaT - CLA.ShortSegDuration / 4 - CLA.pad);
 
   /* Get info from injection file */
   sim_burst = XLALSimBurstTableFromLIGOLw(CLA.InjectionFile, &startTime, &stopTime);
@@ -375,14 +375,14 @@ int AddInjections(struct CommandLineArgsTag CLA)
   /* new injection code is double precision, so we need to create a
    * buffer to put the injections in and then quantize to single precision
    * for the string code */
-  injections = XLALCreateREAL8TimeSeries(GV.ht_proc.name, &GV.ht_proc.epoch, GV.ht_proc.f0, GV.ht_proc.deltaT, &GV.ht_proc.sampleUnits, GV.ht_proc.data->length);
+  injections = XLALCreateREAL8TimeSeries(GV.ht_proc->name, &GV.ht_proc->epoch, GV.ht_proc->f0, GV.ht_proc->deltaT, &GV.ht_proc->sampleUnits, GV.ht_proc->data->length);
   memset(injections->data->data, 0, injections->data->length * sizeof(*injections->data->data));
 
   /* Inject the signals into ht_proc; ht_proc has been set to zero 
      so I can print out injecitons */
   XLALBurstInjectSignals(injections, sim_burst, NULL);
-  for(p = 0; p < GV.ht_proc.data->length; p++)
-    GV.ht_proc.data->data[p] += injections->data->data[p];
+  for(p = 0; p < GV.ht_proc->data->length; p++)
+    GV.ht_proc->data->data[p] += injections->data->data[p];
   XLALDestroyREAL8TimeSeries(injections);
 
   /* free the injection table */
@@ -394,7 +394,7 @@ int AddInjections(struct CommandLineArgsTag CLA)
 
   /* add injections into the data */
   for(p = 0; p < GV.ht.data->length; p++)  
-    GV.ht.data->data[p] += GV.ht_proc.data->data[p];
+    GV.ht.data->data[p] += GV.ht_proc->data->data[p];
 
   return 0;
 }
@@ -494,8 +494,8 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 
     {
       REAL4 maximum = 0.0;
       INT4 pmax=p;
-      INT8  timeNS  = (INT8)( 1000000000 ) * (INT8)(GV.ht_proc.epoch.gpsSeconds+GV.seg_length*i/2*GV.ht_proc.deltaT);
-      timeNS  +=   (INT8)( 1e9 * GV.ht_proc.deltaT * p );
+      INT8  timeNS  = (INT8)( 1000000000 ) * (INT8)(GV.ht_proc->epoch.gpsSeconds+GV.seg_length*i/2*GV.ht_proc->deltaT);
+      timeNS  +=   (INT8)( 1e9 * GV.ht_proc->deltaT * p );
 
       /* Do we have the start of a cluster? */
       if ( (fabs(vector->data[p]) > CLA.threshold) && ( (double)(1e-9*timeNS) > (double)CLA.trigstarttime))
@@ -504,7 +504,7 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 
           INT8  peaktime, starttime;
 	  REAL8 duration;
 
-	  timeNS  = (INT8)( 1000000000 ) * (INT8)(GV.ht_proc.epoch.gpsSeconds+GV.seg_length*i/2*GV.ht_proc.deltaT);
+	  timeNS  = (INT8)( 1000000000 ) * (INT8)(GV.ht_proc->epoch.gpsSeconds+GV.seg_length*i/2*GV.ht_proc->deltaT);
 
 	  if ( *thisEvent ) /* create a new event */
             {
@@ -523,7 +523,7 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 
 	    }
 
 	  /* Clustering in time: While we are above threshold, or within clustering time of the last point above threshold... */
-	  while( ((fabs(vector->data[p]) > CLA.threshold) || ((p-pend)* GV.ht_proc.deltaT < (float)(CLA.cluster)) ) 
+	  while( ((fabs(vector->data[p]) > CLA.threshold) || ((p-pend)* GV.ht_proc->deltaT < (float)(CLA.cluster)) ) 
 		 && p<(int)(3*vector->length/4))
 	    {
 	      /* This keeps track of the largest SNR point of the cluster */
@@ -540,10 +540,10 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 
 	      p++;
 	    }
 
-	  peaktime = timeNS + (INT8)( 1e9 * GV.ht_proc.deltaT * pmax );
-	  duration = GV.ht_proc.deltaT * ( pend - pstart );
+	  peaktime = timeNS + (INT8)( 1e9 * GV.ht_proc->deltaT * pmax );
+	  duration = GV.ht_proc->deltaT * ( pend - pstart );
 
-	  starttime = timeNS + (INT8)( 1e9 * GV.ht_proc.deltaT * pstart );
+	  starttime = timeNS + (INT8)( 1e9 * GV.ht_proc->deltaT * pstart );
 
 	  /* Now copy stuff into event */
 	  strncpy( (*thisEvent)->ifo, CLA.ChannelName, sizeof(ifo)-1 );
@@ -551,8 +551,8 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 
 	  strncpy( (*thisEvent)->channel, CLA.ChannelName, sizeof( (*thisEvent)->channel ) );
 
 	  /* give trigger a 1 sample fuzz on either side */
-	  starttime -= GV.ht_proc.deltaT *1e9;
-	  duration += 2*GV.ht_proc.deltaT;
+	  starttime -= GV.ht_proc->deltaT *1e9;
+	  duration += 2*GV.ht_proc->deltaT;
 
 	  (*thisEvent)->start_time.gpsSeconds     = starttime / 1000000000;
 	  (*thisEvent)->start_time.gpsNanoSeconds = starttime % 1000000000;
@@ -594,7 +594,7 @@ int FindStringBurst(struct CommandLineArgsTag CLA)
       for(i=0; i < 2*GV.duration/CLA.ShortSegDuration - 1 ;i++)
 	{
 	  /* populate vector that will hold the data for each overlapping chunk */
-	  memcpy( vector->data, GV.ht_proc.data->data + i*GV.seg_length/2,vector->length*sizeof( *vector->data ) );
+	  memcpy( vector->data, GV.ht_proc->data->data + i*GV.seg_length/2,vector->length*sizeof( *vector->data ) );
 	  
 	  /* fft it */
 	  LALForwardRealFFT( &status, vtilde, vector, GV.fplan );
@@ -603,8 +603,8 @@ int FindStringBurst(struct CommandLineArgsTag CLA)
 	  /* multiply FT of data and String Filter and deltaT (latter not included in LALForwardRealFFT) */
 	  for ( p = 0 ; p < (int) vtilde->length; p++ )
 	    {
-	      vtilde->data[p].re *= strtemplate[m].StringFilter.data->data[p]*GV.ht_proc.deltaT;
-	      vtilde->data[p].im *= strtemplate[m].StringFilter.data->data[p]*GV.ht_proc.deltaT;
+	      vtilde->data[p].re *= strtemplate[m].StringFilter.data->data[p]*GV.ht_proc->deltaT;
+	      vtilde->data[p].im *= strtemplate[m].StringFilter.data->data[p]*GV.ht_proc->deltaT;
 	    }
 
 	  LALReverseRealFFT( &status, vector, vtilde,  GV.rplan);
@@ -693,8 +693,8 @@ int CreateStringFilters(struct CommandLineArgsTag CLA)
 	 we are dealing with the sqrt of the filter at the moment*/
       if(CLA.TruncSecs != 0.0) 
 	{
-	  memset( vector->data + (INT4)(CLA.TruncSecs/2/GV.ht_proc.deltaT +0.5), 0,
-		  ( vector->length -  2 * (INT4)(CLA.TruncSecs/2/GV.ht_proc.deltaT +0.5)) 
+	  memset( vector->data + (INT4)(CLA.TruncSecs/2/GV.ht_proc->deltaT +0.5), 0,
+		  ( vector->length -  2 * (INT4)(CLA.TruncSecs/2/GV.ht_proc->deltaT +0.5)) 
 		  * sizeof( *vector->data ) );
 	}
 
@@ -704,8 +704,8 @@ int CreateStringFilters(struct CommandLineArgsTag CLA)
 
       for ( p = 0 ; p < (int)vtilde->length-1; p++ )
 	{
-	  REAL4 re = vtilde->data[p].re * GV.ht_proc.deltaT;
-	  REAL4 im = vtilde->data[p].im * GV.ht_proc.deltaT;
+	  REAL4 re = vtilde->data[p].re * GV.ht_proc->deltaT;
+	  REAL4 im = vtilde->data[p].im * GV.ht_proc->deltaT;
 	  
 	  strtemplate[m].StringFilter.data->data[p] = (re * re + im * im);
 	}
@@ -730,16 +730,16 @@ int CreateStringFilters(struct CommandLineArgsTag CLA)
 	  REAL4TimeSeries series;
 	  CHAR filterfilename[256];
 
-	  series.deltaT=GV.ht_proc.deltaT;
+	  series.deltaT=GV.ht_proc->deltaT;
 	  series.f0 = 0.0;
 	  strncpy(series.name, "fir filter", LALNameLength);
-	  series.epoch=GV.ht_proc.epoch;
-	  series.sampleUnits=GV.ht_proc.sampleUnits;
+	  series.epoch=GV.ht_proc->epoch;
+	  series.sampleUnits=GV.ht_proc->sampleUnits;
 
 	  for ( p = 0 ; p < (int)vtilde->length-1; p++ )
 	    {
-	      REAL4 re = vtilde->data[p].re * GV.ht_proc.deltaT;
-	      REAL4 im = vtilde->data[p].im * GV.ht_proc.deltaT;
+	      REAL4 re = vtilde->data[p].re * GV.ht_proc->deltaT;
+	      REAL4 im = vtilde->data[p].im * GV.ht_proc->deltaT;
 	      
 	      vtilde->data[p].re = (re * re + im * im);
 	      vtilde->data[p].im = 0.0;
@@ -770,7 +770,7 @@ int CreateTemplateBank(struct CommandLineArgsTag CLA)
   REAL8 fmax,f,t1t1,t2t2, epsilon;
   int p,f_low_index,f_high_index,k;
 
-  fmax = (1.0/GV.ht_proc.deltaT) / 2.0;
+  fmax = (1.0/GV.ht_proc->deltaT) / 2.0;
 
   f_low_index = CLA.fbankstart / GV.Spec.deltaF;
   f_high_index = fmax / GV.Spec.deltaF;
@@ -829,7 +829,7 @@ int CreateTemplateBank(struct CommandLineArgsTag CLA)
 int AvgSpectrum(struct CommandLineArgsTag CLA)
 {
  
-  GV.seg_length = (int)(CLA.ShortSegDuration/GV.ht_proc.deltaT + 0.5);
+  GV.seg_length = (int)(CLA.ShortSegDuration/GV.ht_proc->deltaT + 0.5);
 
   LALSCreateVector( &status, &GV.Spec.data, GV.seg_length / 2 + 1 );
   TESTSTATUS( &status );
@@ -847,7 +847,7 @@ int AvgSpectrum(struct CommandLineArgsTag CLA)
 	{
 	  GV.Spec.data->data[p]=2/SAMPLERATE;
 	}
-      GV.Spec.deltaF=1/(GV.seg_length*GV.ht_proc.deltaT);
+      GV.Spec.deltaF=1/(GV.seg_length*GV.ht_proc->deltaT);
     }
   else
     {
@@ -856,7 +856,7 @@ int AvgSpectrum(struct CommandLineArgsTag CLA)
       REAL4Window  *window  = NULL;
 
       window = XLALCreateHannREAL4Window( segmentLength );
-      XLALREAL4AverageSpectrumMedianMean( &GV.Spec, &GV.ht_proc, segmentLength,
+      XLALREAL4AverageSpectrumMedianMean( &GV.Spec, GV.ht_proc, segmentLength,
 					  segmentStride, window, GV.fplan );
       XLALDestroyREAL4Window( window );
     }
@@ -874,7 +874,7 @@ int DownSample(struct CommandLineArgsTag CLA)
   resamplepar.deltaT     = 1.0/CLA.samplerate;
   resamplepar.filterType = defaultButterworth;
 
-  LALResampleREAL4TimeSeries( &status, &GV.ht_proc, &resamplepar );
+  LALResampleREAL4TimeSeries( &status, GV.ht_proc, &resamplepar );
   TESTSTATUS( &status );
 
   return 0;
@@ -891,7 +891,7 @@ int ProcessData(void)
   
   for (p=0; p<(int)GV.ht.data->length; p++)  
     {
-      GV.ht_proc.data->data[p]=GV.ht.data->data[p]; 
+      GV.ht_proc->data->data[p]=GV.ht.data->data[p]; 
     } 
 
   /* destroy double precision vector */
@@ -924,23 +924,25 @@ int ReadData(struct CommandLineArgsTag CLA)
   GV.gpsepoch.gpsSeconds=CLA.GPSStart; /* Set global variable epoch */
   GV.gpsepoch.gpsNanoSeconds=0;
 
+  /* Read frame files to extract time series metadata */
+  /* FIXME:  there are XLAL functions to do this */
   LALFrSeek(&status,&GV.gpsepoch,framestream);
   TESTSTATUS( &status );
   LALFrGetREAL8TimeSeries(&status,&GV.ht,&chanin_ht,framestream);
+  GV.ht.sampleUnits=lalStrainUnit;
   TESTSTATUS( &status );
 
   /* Allocate space for data vectors */
   LALDCreateVector(&status,&GV.ht.data,(UINT4)(GV.duration/GV.ht.deltaT +0.5));
   TESTSTATUS( &status );
-  LALSCreateVector(&status,&GV.ht_proc.data,(UINT4)(GV.duration/GV.ht.deltaT +0.5));
-  TESTSTATUS( &status );
+  GV.ht_proc = XLALCreateREAL4TimeSeries(GV.ht.name, &GV.ht.epoch, GV.ht.f0, GV.ht.deltaT, &GV.ht.sampleUnits, (UINT4)(GV.duration/GV.ht.deltaT +0.5));
 
   SAMPLERATE=1.0/GV.ht.deltaT;
   
   /* zero out data */
   for (p=0; p<(int)GV.ht.data->length; p++)
     {
-      GV.ht.data->data[p] = GV.ht_proc.data->data[p] = 0.0;
+      GV.ht.data->data[p] = GV.ht_proc->data->data[p] = 0.0;
     }
   
   /* If we are reading real noise then read it*/
@@ -953,7 +955,7 @@ int ReadData(struct CommandLineArgsTag CLA)
       TESTSTATUS( &status );
 
       /* Scale data to avoid single float precision problems */
-      for (p=0; p<(int)GV.ht_proc.data->length; p++)
+      for (p=0; p<(int)GV.ht.data->length; p++)
 	{
 	  GV.ht.data->data[p] *= SCALE;
 	}
@@ -997,12 +999,6 @@ int ReadData(struct CommandLineArgsTag CLA)
       LALSDestroyVector (&status, &v1);
       TESTSTATUS( &status );   
     }
-
-  /* copy all relevant info to ht_proc */
-  strncpy(GV.ht_proc.name, GV.ht.name, LALNameLength);
-  GV.ht_proc.deltaT=GV.ht.deltaT;
-  GV.ht_proc.epoch=GV.ht.epoch;
-  GV.ht_proc.sampleUnits=GV.ht.sampleUnits=lalStrainUnit;
 
   LALFrClose(&status,&framestream);
   TESTSTATUS( &status );
@@ -1417,8 +1413,7 @@ int FreeMem(void)
 {
   int m;
 
-  LALSDestroyVector(&status,&GV.ht_proc.data);
-  TESTSTATUS( &status );
+  XLALDestroyREAL4TimeSeries(GV.ht_proc);
 
   LALSDestroyVector(&status,&GV.Spec.data);
   TESTSTATUS( &status );
