@@ -22,6 +22,8 @@ import ConfigParser
 
 # import the modules we need to build the pipeline
 from glue import pipeline
+from glue import segments
+from glue import segmentsUtils
 from lalapps import cosmicstring
 
 def usage():
@@ -149,136 +151,91 @@ length = int(cp.get('pipeline', 'segment-length'))+2*pad
 trig_overlap = int(cp.get('pipeline', 'trig-overlap'))
 overlap = 2*(short_seg_lenth/4+pad)
 
-# read science segs that are greater or equal to a chunk from the input file
-data = pipeline.ScienceData()
-data.read(cp.get('input','segments'),length)
+# get the instruments and snr thresholds
+ifos = [s.strip() for s in cp.get('pipeline','ifos').split(",")]
+snr = dict((ifo, cp.get('pipeline','threshold_%s' % ifo)) for ifo in ifos)
 
-# create the chunks from the science segments
-data.make_chunks(length,overlap+trig_overlap,playground,0,0)
-#make_chunks(self, length, overlap=0, play=0, sl=0, excl_play=0)
-data.make_chunks_from_unused(length,overlap/2+trig_overlap,playground,0,0,0)
-#make_chunks_from_unused(self, length, trig_overlap, play=0, min_length=0, sl=0, excl_play=0)
+# get the segments
+seglists = segments.segmentlistdict((ifo, segmentsUtils.fromsegwizard(file(cp.get('input','segments_%s' % ifo))).coalesce()) for ifo in ifos)
 
-# get the order of the ifos to filter
-ifo1 = cp.get('pipeline','ifo1')
-ifo2 = cp.get('pipeline','ifo2')
-ifo3 = cp.get('pipeline','ifo3')
-snrH1 = cp.get('pipeline','thresholdH1')
-snrH2 = cp.get('pipeline','thresholdH2')
-snrL1 = cp.get('pipeline','thresholdL1')
+# create injection job
+if do_inj:
+  seg = seglists.extent_all()
+  inject = cosmicstring.InjNode(injection_job)
+  inject.set_start(int(seg[0]))
+  inject.set_end(int(seg[1]))
+  seed = int(1e6 * random.uniform(0.0,1.0))
+  inject.add_var_opt('seed',seed)
+  inject.set_name("inj")
+  dag.add_node(inject)
 
-datatype1 = cp.get('input','type1') 
-datatype2 = cp.get('input','type2') 
-datatype3 = cp.get('input','type3')
+# write out a log file for this script
+log_fh = open(basename + '.pipeline.log', 'w')
 
-# create all the LSCdataFind jobs to run in sequence
+print >>log_fh, "$Id$\n"
+print >>log_fh, "Invoked with arguments:"
+for o, a in opts:
+  print >>log_fh, "%s %s" % (o, a)
+print >>log_fh
 
-segment_number = -1
-for seg in data:
+# loop over instruments, constructing trigger generator jobs
 
-  segment_number=segment_number+1
+for ifo in ifos:
+  # read science segs that are greater or equal to a chunk from the input file
+  data = pipeline.ScienceData()
+  data.read(cp.get('input','segments_%s' % ifo),length)
 
+  # create the chunks from the science segments
+  data.make_chunks(length,overlap+trig_overlap,playground,0,0)
+  #make_chunks(self, length, overlap=0, play=0, sl=0, excl_play=0)
+  data.make_chunks_from_unused(length,overlap/2+trig_overlap,playground,0,0,0)
+  #make_chunks_from_unused(self, length, trig_overlap, play=0, min_length=0, sl=0, excl_play=0)
 
-  # find all the data for first ifo
-  df1 = pipeline.LSCDataFindNode(df_job)
-  df1.set_start(seg.start())
-  df1.set_end(seg.end())
-  df1.set_observatory(ifo1[0])
-  df1.set_type(datatype1)
-  df1.set_name("df_"+ifo1+"_"+str(segment_number))
-  if do_datafind:
-    dag.add_node(df1)
+  # create all the LSCdataFind jobs to run in sequence
+  datatype = cp.get('input','type_%s' % ifo) 
 
-  # find data for second ifo
-  df2 = pipeline.LSCDataFindNode(df_job)
-  df2.set_start(seg.start())
-  df2.set_end(seg.end())
-  df2.set_observatory(ifo2[0])
-  df2.set_type(datatype2)
-  df2.set_name("df_"+ifo2+"_"+str(segment_number))
-  if do_datafind:
-    dag.add_node(df2)
+  # loop over segments
+  for segment_number, seg in enumerate(data):
 
-  # find data for third ifo
-  df3 = pipeline.LSCDataFindNode(df_job)
-  df3.set_start(seg.start())
-  df3.set_end(seg.end())
-  df3.set_observatory(ifo3[0])
-  df3.set_type(datatype3)
-  df3.set_name("df_"+ifo3+"_"+str(segment_number))
-  if do_datafind:
-    dag.add_node(df3)
-
-  if do_inj:
-    # create injection jobs
-    inject1  = cosmicstring.InjNode(injection_job)
-    injstart=int(seg.start())+overlap
-    injend=int(seg.end())-overlap
-    inject1.set_start(injstart)
-    inject1.set_end(injend)
-    seed = int(1e6 * random.uniform(0.0,1.0))
-    inject1.add_var_opt('seed',seed)
-    inject1.set_name("inj_"+str(segment_number))
-    dag.add_node(inject1)
-
-  chunk_number=-1    
-  for chunk in seg:
-    
-    chunk_number=chunk_number+1    
-
-    #string job for first ifo
-    string1 = cosmicstring.StringNode(string_job)
-    string1.set_start(chunk.start())
-    string1.set_end(chunk.end())
-    string1.set_ifo(ifo1)
-    string1.set_cache(df1.get_output())
-    string1.add_var_opt('threshold',snrH1)
-    string1.add_var_opt('trig-start-time',chunk.trig_start())
-    string1.add_var_opt('outfile',string1.get_output())
+    # find all the data for ifo
+    df = pipeline.LSCDataFindNode(df_job)
+    df.set_start(seg.start())
+    df.set_end(seg.end())
+    df.set_observatory(ifo[0])
+    df.set_type(datatype)
+    df.set_name("df_%s_%d" % (ifo, segment_number))
     if do_datafind:
-      string1.add_parent(df1)
-    string1.set_name("string_"+ifo1+"_"+str(segment_number)+"_"+str(chunk_number))
-    if do_inj:
-      string1.add_parent(inject1)
-      string1.add_var_opt('injection-file',inject1.get_output())
-    if do_burstsearch:
-      dag.add_node(string1)
+      dag.add_node(df)
 
-    #string job for second ifo  
-    string2 = cosmicstring.StringNode(string_job)
-    string2.set_start(chunk.start())
-    string2.set_end(chunk.end())
-    string2.set_ifo(ifo2)
-    string2.set_cache(df2.get_output())
-    string2.add_var_opt('threshold',snrL1)
-    string2.add_var_opt('trig-start-time',chunk.trig_start())
-    string2.add_var_opt('outfile',string2.get_output())
-    if do_datafind:
-      string2.add_parent(df2)
-    string2.set_name("string_"+ifo2+"_"+str(segment_number)+"_"+str(chunk_number))
-    if do_inj:
-      string2.add_parent(inject1)
-      string2.add_var_opt('injection-file',inject1.get_output())
-    if do_burstsearch:
-      dag.add_node(string2)
+    # string jobs for this segment
+    for chunk_number, chunk in enumerate(seg):
+      string = cosmicstring.StringNode(string_job)
+      string.set_start(chunk.start())
+      string.set_end(chunk.end())
+      string.set_ifo(ifo)
+      string.set_cache(df.get_output())
+      string.add_var_opt('threshold',snr[ifo])
+      string.add_var_opt('trig-start-time',chunk.trig_start())
+      string.add_var_opt('outfile',string.get_output())
+      if do_datafind:
+        string.add_parent(df)
+      string.set_name("string_%s_%d_%d" % (ifo, segment_number, chunk_number))
+      if do_inj:
+        string.add_parent(inject)
+        string.add_var_opt('injection-file',inject.get_output())
+      if do_burstsearch:
+        dag.add_node(string)
 
-    #string job for second ifo  
-    string3 = cosmicstring.StringNode(string_job)
-    string3.set_start(chunk.start())
-    string3.set_end(chunk.end())
-    string3.set_ifo(ifo3)
-    string3.set_cache(df3.get_output())
-    string3.add_var_opt('threshold',snrH2)
-    string3.add_var_opt('trig-start-time',chunk.trig_start())
-    string3.add_var_opt('outfile',string3.get_output())
-    if do_datafind:
-      string3.add_parent(df3)
-    string3.set_name("string_"+ifo3+"_"+str(segment_number)+"_"+str(chunk_number))
-    if do_inj:
-      string3.add_parent(inject1)
-      string3.add_var_opt('injection-file',inject1.get_output())
-    if do_burstsearch:
-      dag.add_node(string3)
+  print >>log_fh, "\n===========================================\n"
+  print >>log_fh, "Parsed %d science segments for %s" % (len(data), ifo)
+  print >>log_fh, "total data = %d" % sum(len(chunk) for seg in data for chunk in seg)
+  print >>log_fh, "\n===========================================\n"
+  print >>log_fh, data
+  for seg in data:
+    print >>log_fh, seg
+    for chunk in seg:
+      print >>log_fh, chunk
+  print >>log_fh, "\n===========================================\n"
 
 # write out the DAG
 dag.write_sub_files()
@@ -298,28 +255,6 @@ proxy certificate on the condor submit machine by running the commands
 Contact the administrator of your cluster to find the hostname and port of the
 LSCdataFind server.
 """
-
-# write out a log file for this script
-log_fh = open(basename + '.pipeline.log', 'w')
-  
-log_fh.write( "$Id$" + "\n\n" )
-log_fh.write( "Invoked with arguments:\n" )
-for o, a in opts:
-  log_fh.write( o + ' ' + a + '\n' )
-log_fh.write( "\n" )
-log_fh.write( "Parsed " + str(len(data)) + " science segments\n" )
-total_data = 0
-for seg in data:
-  for chunk in seg:
-    total_data += len(chunk)
-print >> log_fh, "total data =", total_data
-
-print >> log_fh, "\n===========================================\n"
-print >> log_fh, data
-for seg in data:
-  print >> log_fh, seg
-  for chunk in seg:
-    print >> log_fh, chunk
 
 sys.exit(0)
 
