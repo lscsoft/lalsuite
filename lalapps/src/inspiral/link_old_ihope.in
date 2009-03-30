@@ -130,17 +130,17 @@ for run in runs:
     filetypes.append("THINCA*SECOND_*" + runCaps)
   if opts.thinca_second_veto:
     filetypes.append("THINCA*SECOND_*" + runCaps + "*CAT*VETO")
-  if opts.thinca_first:
+  if opts.sire_first:
     filetypes.append("SIRE*FIRST_" + runCaps)
-  if opts.thinca_second:
+  if opts.sire_second:
     filetypes.append("SIRE*SECOND_*" + runCaps)
-  if opts.thinca_second_veto:
+  if opts.sire_second_veto:
     filetypes.append("SIRE*SECOND_*" + runCaps + "*CAT*VETO")
-  if opts.thinca_first:
+  if opts.coire_first:
     filetypes.append("COIRE*FIRST_" + runCaps) 
-  if opts.thinca_second:
+  if opts.coire_second:
     filetypes.append("COIRE*SECOND_*" + runCaps)
-  if opts.thinca_second_veto:
+  if opts.coire_second_veto:
     filetypes.append("COIRE*SECOND_*" + runCaps + "*CAT*VETO")
   if opts.trigbank:
     filetypes.append("TRIGBANK*" + runCaps)
