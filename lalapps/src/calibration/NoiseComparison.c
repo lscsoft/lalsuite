@@ -195,7 +195,7 @@ REAL8 gamma_fac[MAXFACTORS];
 REAL8 frequencies[MAXFREQUENCIES]; /* frequency array */
 INT4 Nfrequencies;  /* number of frequencies */
 
-void printmemuse() 
+static void printmemuse(void) 
 {
    pid_t mypid=getpid();
    char commandline[256];
@@ -788,10 +788,10 @@ int ComputeNoise(struct CommandLineArgsTag CLA, int n)
   if (CLA.decimate == 1)
     {
     /* resize the time series back to original length */
-    LALResizeREAL8TimeSeries(&status, &hoft, 0,hoft.data->length*DECIMATE);
+    XLALResizeREAL8TimeSeries(&hoft, 0,hoft.data->length*DECIMATE);
     hoft.deltaT= hoft.deltaT/DECIMATE;
    
-    LALResizeREAL4TimeSeries(&status, &derr, 0,derr.data->length*DECIMATE);
+    XLALResizeREAL4TimeSeries(&derr, 0,derr.data->length*DECIMATE);
     derr.deltaT= derr.deltaT/DECIMATE;
 
      #ifdef DEBUG

@@ -149,15 +149,15 @@ int main(int argc,char *argv[])
   TESTSTATUS( &status );
 
 
-  LALResizeREAL8TimeSeries(&status, &(OutputData.hR), (int)(InputData.wings/OutputData.hR.deltaT),
-			   OutputData.hR.data->length-2*(UINT4)(InputData.wings/OutputData.hR.deltaT));
-  TESTSTATUS( &status );
-  LALResizeREAL8TimeSeries(&status, &(OutputData.hC), (int)(InputData.wings/OutputData.hC.deltaT),
-			   OutputData.hC.data->length-2*(UINT4)(InputData.wings/OutputData.hC.deltaT));
-  TESTSTATUS( &status );
-  LALResizeREAL8TimeSeries(&status, &(OutputData.h), (int)(InputData.wings/OutputData.h.deltaT),
-			   OutputData.h.data->length-2*(UINT4)(InputData.wings/OutputData.h.deltaT));
-  TESTSTATUS( &status );
+  if(!XLALResizeREAL8TimeSeries(&(OutputData.hR), (int)(InputData.wings/OutputData.hR.deltaT),
+                           OutputData.hR.data->length-2*(UINT4)(InputData.wings/OutputData.hR.deltaT)))
+    return 4;
+  if(!XLALResizeREAL8TimeSeries(&(OutputData.hC), (int)(InputData.wings/OutputData.hC.deltaT),
+                           OutputData.hC.data->length-2*(UINT4)(InputData.wings/OutputData.hC.deltaT)))
+    return 5;
+  if(!XLALResizeREAL8TimeSeries(&(OutputData.h), (int)(InputData.wings/OutputData.h.deltaT),
+                           OutputData.h.data->length-2*(UINT4)(InputData.wings/OutputData.h.deltaT)))
+    return 6;
 
   strncpy( OutputData.hR.name, CommandLineArgs.strainchannel, sizeof( OutputData.hR.name ) );
   strncpy( OutputData.hC.name, CommandLineArgs.strainchannel, sizeof( OutputData.hC.name ) );
@@ -182,7 +182,7 @@ int main(int argc,char *argv[])
       TESTSTATUS( &status );
     }
     
-  if (WriteFiltersFile(CommandLineArgs)) return 4;
+  if (WriteFiltersFile(CommandLineArgs)) return 7;
   
   if(FreeMem()) return 8;
 

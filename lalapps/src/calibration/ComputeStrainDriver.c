@@ -240,6 +240,7 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
   /* This is mostly ripped off some code Jolien sent me a while back,
      and calibration frame writing code */
 
+  static const char func[] = "WriteFrame";
   FrFile *frfile;
   FrameH *frame;
   char fname[FILENAME_MAX];
@@ -268,43 +269,43 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
   char dqName[] = "Xn:LSC-DATA_QUALITY_VECTOR";
 
   /*re-size h(t) and data time series*/
-  LALResizeREAL8TimeSeries(&status, &(OutputData.h), (int)(InputData.wings/OutputData.h.deltaT),
-			   OutputData.h.data->length-2*(UINT4)(InputData.wings/OutputData.h.deltaT));
-  TESTSTATUS( &status );
+  if(!XLALResizeREAL8TimeSeries(&(OutputData.h), (int)(InputData.wings/OutputData.h.deltaT),
+			   OutputData.h.data->length-2*(UINT4)(InputData.wings/OutputData.h.deltaT)))
+    XLAL_ERROR(func, XLAL_EFUNC);
   strncpy( OutputData.h.name,  CLA.strainchannel, sizeof( OutputData.h.name  ) );
 
   /* resize alpha and gamma time series */
-  LALResizeCOMPLEX16TimeSeries(&status, &(OutputData.alpha), (int)(InputData.wings/OutputData.alpha.deltaT),
-			   OutputData.alpha.data->length-2*(UINT4)(InputData.wings/OutputData.alpha.deltaT));
-  TESTSTATUS( &status );
-  LALResizeCOMPLEX16TimeSeries(&status, &(OutputData.alphabeta), (int)(InputData.wings/OutputData.alphabeta.deltaT),
-			   OutputData.alphabeta.data->length-2*(UINT4)(InputData.wings/OutputData.alphabeta.deltaT));
-  TESTSTATUS( &status );
+  if(!XLALResizeCOMPLEX16TimeSeries(&(OutputData.alpha), (int)(InputData.wings/OutputData.alpha.deltaT),
+			   OutputData.alpha.data->length-2*(UINT4)(InputData.wings/OutputData.alpha.deltaT)))
+    XLAL_ERROR(func, XLAL_EFUNC);
+  if(!XLALResizeCOMPLEX16TimeSeries(&(OutputData.alphabeta), (int)(InputData.wings/OutputData.alphabeta.deltaT),
+			   OutputData.alphabeta.data->length-2*(UINT4)(InputData.wings/OutputData.alphabeta.deltaT)))
+    XLAL_ERROR(func, XLAL_EFUNC);
 
   /* Resize State Vector and Data Quality time series */
-  LALResizeREAL4TimeSeries(&status, &(StateVector), (int)(InputData.wings/StateVector.deltaT),
-               StateVector.data->length-2*(UINT4)(InputData.wings/StateVector.deltaT));  /* safe for the *input* state vector?? */
-  TESTSTATUS( &status );
-  LALResizeINT4TimeSeries(&status, &(OutputDQ), (int)(InputData.wings/OutputDQ.deltaT),
-			   OutputDQ.data->length-2*(UINT4)(InputData.wings/OutputDQ.deltaT));
-  TESTSTATUS( &status );
+  if(!XLALResizeREAL4TimeSeries(&(StateVector), (int)(InputData.wings/StateVector.deltaT),
+               StateVector.data->length-2*(UINT4)(InputData.wings/StateVector.deltaT)))  /* safe for the *input* state vector?? */
+    XLAL_ERROR(func, XLAL_EFUNC);
+  if(!XLALResizeINT4TimeSeries(&(OutputDQ), (int)(InputData.wings/OutputDQ.deltaT),
+			   OutputDQ.data->length-2*(UINT4)(InputData.wings/OutputDQ.deltaT)))
+    XLAL_ERROR(func, XLAL_EFUNC);
   strncpy(OutputDQ.name,
           memcpy(dqName, OutputData.h.name, 2), sizeof( OutputDQ.name  ) );
 
   /* Resize DARM_CTRL, DARM_ERR, EXC and AS_Q*/
-  LALResizeREAL4TimeSeries(&status, &(InputData.DARM), (int)(InputData.wings/InputData.DARM.deltaT),
-			   InputData.DARM.data->length-2*(UINT4)(InputData.wings/InputData.DARM.deltaT));
-  TESTSTATUS( &status );
-  LALResizeREAL4TimeSeries(&status, &(InputData.DARM_ERR), (int)(InputData.wings/InputData.DARM_ERR.deltaT),
-			   InputData.DARM_ERR.data->length-2*(UINT4)(InputData.wings/InputData.DARM_ERR.deltaT));
-  TESTSTATUS( &status );
-  LALResizeREAL4TimeSeries(&status, &(InputData.EXC), (int)(InputData.wings/InputData.EXC.deltaT),
-			   InputData.EXC.data->length-2*(UINT4)(InputData.wings/InputData.EXC.deltaT));
-  TESTSTATUS( &status );
-  LALResizeREAL4TimeSeries(&status, &(InputData.AS_Q), (int)(InputData.wings/InputData.AS_Q.deltaT),
-			   InputData.AS_Q.data->length-2*(UINT4)(InputData.wings/InputData.AS_Q.deltaT));
-  TESTSTATUS( &status );
-
+  if(!XLALResizeREAL4TimeSeries(&(InputData.DARM), (int)(InputData.wings/InputData.DARM.deltaT),
+			   InputData.DARM.data->length-2*(UINT4)(InputData.wings/InputData.DARM.deltaT)))
+    XLAL_ERROR(func, XLAL_EFUNC);
+  if(!XLALResizeREAL4TimeSeries(&(InputData.DARM_ERR), (int)(InputData.wings/InputData.DARM_ERR.deltaT),
+			   InputData.DARM_ERR.data->length-2*(UINT4)(InputData.wings/InputData.DARM_ERR.deltaT)))
+    XLAL_ERROR(func, XLAL_EFUNC);
+  if(!XLALResizeREAL4TimeSeries(&(InputData.EXC), (int)(InputData.wings/InputData.EXC.deltaT),
+			   InputData.EXC.data->length-2*(UINT4)(InputData.wings/InputData.EXC.deltaT)))
+    XLAL_ERROR(func, XLAL_EFUNC);
+  if(!XLALResizeREAL4TimeSeries(&(InputData.AS_Q), (int)(InputData.wings/InputData.AS_Q.deltaT),
+			   InputData.AS_Q.data->length-2*(UINT4)(InputData.wings/InputData.AS_Q.deltaT)))
+    XLAL_ERROR(func, XLAL_EFUNC);
+  
   /* Names for factors time series */
   memcpy( alphaName, OutputData.h.name, 2 );
   memcpy( gammaName, OutputData.h.name, 2 );
