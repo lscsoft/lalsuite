@@ -147,7 +147,7 @@ def param_table(pdict, wiki, server):
 
 # Copy the directories into the html directory
 def setup(dest, server):
-  sections = ['FrCheckJob','IFOstatus_checkJob', 'QSCAN', 'analyseQscanJob', 'h1h2QeventJob', 'plotSNRCHISQJob', 'pylal_skyPlotJob', 'plotChiaJob', 'CHECKLIST']
+  sections = ['FrCheckJob','IFOstatus_checkJob', 'QSCAN', 'analyseQscanJob', 'h1h2QeventJob', 'plotSNRCHISQJob', 'pylal_skyPlotJob', 'plotChiaJob', 'CHECKLIST','followUpTriggers']
 
   # Make a destination directory if it doesn't exist
   if not os.path.isdir(dest):

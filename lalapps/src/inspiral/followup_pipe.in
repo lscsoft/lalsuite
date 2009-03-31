@@ -209,6 +209,9 @@ parser.add_option("-O","--odds",action="store_true",default=False,\
 parser.add_option("-c", "--plot-chia",action="store_true",default=False,\
     help="Plot Coherent Inspiral results (experimental)")
 
+parser.add_option("", "--followup-triggers",action="store_true",default=False,\
+    help="Make plots of triggers versus time")
+
 parser.add_option("", "--make-checklist",action="store_true",default=False,\
     help="Make checklist html files")
 
@@ -251,7 +254,8 @@ if not opts.write_to_iulgroup and not opts.generate_fu_cache and \
   opts.analyse_hoft_qscan and not opts.distrib_remote_q and not \
   opts.coh_inspiral and not opts.sky_map and not opts.sky_map_plot and not \
   opts.convert_eventid and not opts.odds and not opts.plot_chia \
-  and not opts.make_checklist and not opts.create_localcopy:
+  and not opts.make_checklist and not opts.create_localcopy \
+  and not opts.followup_triggers:
 
   print >> sys.stderr, "No steps of the pipeline specified."
   print >> sys.stderr, "Please specify at least one of"
@@ -263,7 +267,7 @@ if not opts.write_to_iulgroup and not opts.generate_fu_cache and \
   print >> sys.stderr, "--analyse-qscan, --analyse-seis-qscan,"
   print >> sys.stderr, "--analyse-hoft-qscan, --distrib-remote-q,"
   print >> sys.stderr, "--mcmc, --plot-mcmc, --coh-inspiral, --plot-chia,"
-  print >> sys.stderr, "--sky-map, --sky-map-plot,"
+  print >> sys.stderr, "--sky-map, --sky-map-plot, --followup-triggers,"
   print >> sys.stderr, "--convert-eventid, --create-localcopy,"
   print >> sys.stderr, "--ifo-status-check, --single-qevent, --H1H2-qevent"
   print >> sys.stderr, "--make-checklist or --write-to-iulgroup" 
@@ -354,6 +358,7 @@ if not opts.disable_followup:
     chiaCDataInspJob= followUpInspJob(cp, 'chia')
     chiaJob         = followUpChiaJob(opts,cp)
     chiaPlotJob     = plotChiaJob(opts,cp)
+    fuTriggerJob    = followupTriggerJob(opts,cp)
     checkListJob    = makeCheckListJob(opts,cp)
 
 dataJob         = followupDataFindJob(cp,'futrig')
@@ -512,7 +517,7 @@ if not opts.disable_followup and not opts.read_times:
  
     # Initialization of local variables
     dHoftNode = {}
-    
+
     # We need a source localization and a chia node at the 
     # coincident trigger level. it takes many ifos as input. 
     skyNode = lalapps_skyMapNode(skyMapJob,trig,opts)
@@ -523,6 +528,9 @@ if not opts.disable_followup and not opts.read_times:
     if not opts.disable_ifarsorting:
       event_title += ' FAR = ' + str(trig.far)
     dag.appendSection(event_title)
+
+    # PLOT TRIGGERS VERSUS TIME
+    fuTriggerNode = followupTriggerNode(fuTriggerJob,trig,cp,opts,dag)
  
     # TRY GETTING INSPIRAL PROCESS PARAMS... 
     # currently done even when inspiral jobs are not requested... fix?
