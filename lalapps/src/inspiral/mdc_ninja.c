@@ -54,6 +54,7 @@
 #include <lal/FindChirp.h>
 #include <lal/Random.h>
 #include <lal/LALNoiseModels.h>
+#include <lal/Date.h>
 #include <lal/lalGitID.h>
 #include <lalappsGitID.h>
 
@@ -943,6 +944,10 @@ static void write_mdc_log_file(CHAR *filename,
   /* loop over injections */
   for (thisInj = injections; thisInj; thisInj = thisInj->next)
   {
+    /* declare variables */
+    REAL8 gmst;
+    REAL8 longitude;
+
     /* GravEn_SimID */
     if (strncmp(thisInj->waveform, "NumRel", LIGOMETA_WAVEFORM_MAX) == 0)
       fprintf(output, "%s ", thisInj->numrel_data);
@@ -961,7 +966,11 @@ static void write_mdc_log_file(CHAR *filename,
     /* External_x */
     fprintf(output, "%g ", cos(thisInj->latitude - LAL_PI_2));
     /* External_phi */
-    fprintf(output, "%g ", thisInj->longitude);
+    gmst = fmod(XLALGreenwichMeanSiderealTime(&thisInj->geocent_end_time), LAL_TWOPI);
+    longitude = fmod(thisInj->longitude - gmst, LAL_TWOPI);
+    if (longitude < 0)
+      longitude += LAL_TWOPI;
+    fprintf(output, "%g ", longitude);
     /* External_psi */
     fprintf(output, "%g ", thisInj->polarization);
     /* FrameGPS */
