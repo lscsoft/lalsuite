@@ -7,6 +7,7 @@ LALEtaTau02.c\
 LALEtaTau04.c\
 LALInspiralAmplitude.c\
 LALInspiralChooseModel.c\
+LALInspiralEccentricity.c\
 LALInspiralFrequency3.c\
 LALInspiralInit.c\
 LALInspiralParameterCalc.c\
@@ -27,7 +28,9 @@ LALInspiralTofVIntegrand.c\
 LALInspiralVelocity.c\
 LALInspiralWaveLength.c\
 LALInspiralWave.c\
-LALInspiralEccentricity.c\
+LALInspiralTaylorEtWaveform.c\
+LALInspiralTaylorNWaveform.c\
+LALInspiralTaylorT4Waveform.c\
 LALInspiralWave1.c\
 LALInspiralWave2.c\
 LALInspiralWave3.c\

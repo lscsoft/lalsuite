@@ -177,6 +177,19 @@ int XLALInspiralGetApproximantString( CHAR        *output,
       LALSnprintf( approxString, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
           "EOBNR" ); 
       break;
+    case TaylorEt: 
+      LALSnprintf( approxString, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
+          "TaylorEt" ); 
+      break;
+    case TaylorT4: 
+      LALSnprintf( approxString, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
+          "TaylorT4" ); 
+      break;
+
+    case TaylorN: 
+      LALSnprintf( approxString, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
+          "TaylorN" ); 
+      break;
 
     default:
       XLALPrintError("Unknown or unsupported approximant.\n");

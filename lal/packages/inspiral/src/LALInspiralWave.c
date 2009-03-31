@@ -214,6 +214,18 @@ LALInspiralWave(
    	   LALInspiralEccentricity(status->statusPtr, signal, params);
 	   CHECKSTATUSPTR(status);	   
       	   break;
+      case TaylorEt:
+   	   LALTaylorEtWaveform(status->statusPtr, signal, params);
+	   CHECKSTATUSPTR(status);	   
+      	   break;
+      case TaylorT4:
+   	   LALTaylorT4Waveform(status->statusPtr, signal, params);
+	   CHECKSTATUSPTR(status);	   
+      	   break;
+      case TaylorN:
+   	   LALTaylorNWaveform(status->statusPtr, signal, params);
+	   CHECKSTATUSPTR(status);	   
+      	   break;
       default:
            ABORT( status, 9999, "Unknown case in switch." );
    }

@@ -154,6 +154,12 @@ void LALInspiralITStructureParseParameters(LALStatus *status,
 	  params->massChoice  = m1Andm2;
 	  if (strcmp(argv[++i],"AmpCorPPN")==0){
 	    params->approximant = AmpCorPPN; }
+          else if (strcmp(argv[i],"TaylorN")==0){
+	    params->approximant = TaylorN; }
+          else if (strcmp(argv[i],"TaylorEt")==0){
+	    params->approximant = TaylorEt; }
+          else if (strcmp(argv[i],"TaylorT4")==0){
+	    params->approximant = TaylorT4; }
           else if (strcmp(argv[i],"TaylorT1")==0){
 	    params->approximant = TaylorT1; }
 	  else if (strcmp(argv[i],"TaylorT2")==0){
@@ -407,17 +413,17 @@ void LALInspiralITStructureHelp()
 {
 
   fprintf(stderr,"InspiralTemplate Structure; parsing arguments\n");
-  fprintf(stderr,"--approximant (TaylorT1, TaylorT2, TaylorT3, EOB, BCV, BCVSpin, PadeT1, AmpCorPPN)\n");
+  fprintf(stderr,"--approximant (TaylorT1, TaylorT2, TaylorT3, EOB, BCV, BCVSpin,\nPadeT1, TaylorEt, TaylorT4, TaylorN, AmpCorPPN)\n");
   fprintf(stderr,"--order       (0, 1, 2, 3, 4, 5, 6 (i.e. 4==twoPN)\n");
   fprintf(stderr,"--ampOrder    (0, 1, 2, 3, 4, 5 (i.e. 4==twoPN)\n");
   fprintf(stderr,"--mass1       (in solar mass)\n"); 
   fprintf(stderr,"--mass2       (in solar mass)\n");
-  fprintf(stderr,"--fcutoff (currently not implemented) \n");
   fprintf(stderr,"--fLower      \n");
   fprintf(stderr,"--tSampling   \n");
   fprintf(stderr,"--distance    \n");
   fprintf(stderr,"--startPhase  \n");
   fprintf(stderr,"--startTime   \n");
+  fprintf(stderr,"--fCutoff     \n");
 
   fprintf(stderr,"--zeta2       (EOB 3PN)\n");
   fprintf(stderr,"--omegaS      (EOB 3PN)\n");
