@@ -48,8 +48,32 @@
 #ifndef _HETERODYNECRABPULSAR_H
 #define _HETERODYNECRABPULSAR_H
 
+/* lal headers */
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
+#include <lal/LALConstants.h>
+#include <lal/BinaryPulsarTiming.h>
+#include <lal/LALBarycenter.h>
+#include <lal/LALInitBarycenter.h>
+#include <lal/SkyCoordinates.h> 
+#include <lal/DetectorSite.h>
+#include <lal/BandPassTimeSeries.h>
+#include <lal/FrequencySeries.h>
+#include <lal/RealFFT.h>
+#include <lal/ComplexFFT.h>
+#include <lal/SFTutils.h>
+#include <lal/LALString.h>
+#include <lal/Units.h>
+#include <lal/TimeSeries.h>
+#include <lal/XLALError.h>
+#include <lal/LALRCSID.h>
+#include <lal/LALAtomicDatatypes.h>
+#include <lal/LALDatatypes.h>
+#include <lal/AVFactories.h>
+#include <lal/FrameCache.h>
+#include <lal/FrameStream.h>
+#include <lal/IIRFilter.h>
+#include <lal/ZPGFilter.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -248,7 +272,10 @@ void
 LALTimingNoiseHeterodyne	( LALStatus		*status,
 				  TNHeterodyneOutput	*output,
 					TNHeterodyneInput	*input,
-				  ParamsForHeterodyne	*params );
+				  ParamsForHeterodyne	*params,
+                                  EphemerisData *edat,
+                                  BarycenterInput baryinput,
+                                  EarthState earth );
 
 #ifdef __cplusplus
 }

@@ -32,21 +32,20 @@ $Id$
 #include <string.h>
 #include <math.h>
 
-/* lal headers */
-#include <lal/LALStdlib.h>
-#include <lal/AVFactories.h>
-#include <lal/LALConstants.h>
-#include <lal/BinaryPulsarTiming.h>
-
 /* Crab heterodyne specific headers */
 #include "HeterodyneCrabPulsar.h"
 
 INT4 lalDebugLevel = 1;
 
-#define MAXLENGTH 700000
+#define MAXLENGTH 10000010
 /* max num of lines in crab ephem file (ok for next 61 years file contains 266 lines as of 15 Jan
 2004) */
 #define NUM 1000
+
+#define EARTHFILE \
+"/data/phlebas/matthew/lscsoft/lal/packages/pulsar/test/earth05-09-DE405.dat"
+#define SUNFILE \
+"/data/phlebas/matthew/lscsoft/lal/packages/pulsar/test/sun05-09-DE405.dat"
 
 int main(int argc, char *argv[]){
   static LALStatus status;
@@ -69,6 +68,13 @@ int main(int argc, char *argv[]){
   ParamsForHeterodyne hetParams;
   TNHeterodyneInput TNInput;
   TNHeterodyneOutput TNOutput;
+  
+  /* vars for solar system ephemeris */
+  EarthState earth;
+  EphemerisData *edat=NULL;
+  BarycenterInput baryinput;
+  CHAR detName[5];
+  LALDetector det;
 
   /* pulsar params */
   BinaryPulsarParams pulsarParams;
@@ -76,16 +82,17 @@ int main(int argc, char *argv[]){
   LIGOTimeGPS dataEpoch;
   
   /* check command line inputs */
-  if(argc!=5){
+  if(argc!=6){
     fprintf(stderr, "Wrong number of input params:\n\tparfile inputfile\
- outputfile ephemerisfile\n");
+ outputfile detector ephemerisfile\n");
     return 0;
   }
   
   sprintf(psrInput, "%s", argv[1]);
   sprintf(inputFile, "%s", argv[2]);
   sprintf(outputFile, "%s", argv[3]);
-  input.filename = argv[4]; /* ephemeris file */
+  sprintf(detName, "%s", argv[4]);
+  input.filename = argv[5]; /* ephemeris file */
    
   /* read in Crab pulsar parameters used in heterodyning */
   LALReadTEMPOParFile(&status, &pulsarParams, psrInput);
@@ -156,8 +163,23 @@ TNInput.f1, TNInput.f2, TNInput.t0);
   fpout = fopen(outputFile, "w");
   phifp = fopen("DPhase.txt", "w");
   
+  /* set SSB ephemeris files */
+  edat = XLALMalloc(sizeof(*edat));
+  (*edat).ephiles.earthEphemeris = EARTHFILE;
+  (*edat).ephiles.sunEphemeris = SUNFILE;
+  LALInitBarycenter(&status, edat);
+
+  det = *XLALGetSiteInfo( detName );
+
+  baryinput.dInv = 0.;
+  baryinput.site.location[0] = det.location[0]/LAL_C_SI;
+  baryinput.site.location[1] = det.location[1]/LAL_C_SI;
+  baryinput.site.location[2] = det.location[2]/LAL_C_SI;
+
   /* perform timing noise heterodyne */
   for(j=0;j<i-1;j++){
+    REAL8 dtpos = time->data[j] - TNInput.t0;
+
     dataEpoch.gpsSeconds = (INT8)floor(time->data[j]);
     dataEpoch.gpsNanoSeconds = 0;
     
@@ -170,6 +192,21 @@ TNInput.f1, TNInput.f2, TNInput.t0);
     /* set values for timing noise removal */
     LALSetSpindownParams( &status, &hetParams, &crabOutput, dataEpoch );
   
+    if(time->data[j] <= 820108813)
+      (*edat).leap = 13;
+    else if(time->data[j] <= 914803214)
+      (*edat).leap = 14;
+    else
+      (*edat).leap = 15;
+
+    baryinput.tgps.gpsSeconds = TNInput.epoch.gpsSeconds;
+    baryinput.tgps.gpsNanoSeconds = TNInput.epoch.gpsNanoSeconds;
+
+    /* set up RA, DEC, and distance variables for LALBarycenter*/
+    baryinput.delta = pulsarParams.dec + dtpos*pulsarParams.pmdec;
+    baryinput.alpha = pulsarParams.ra +
+      dtpos*pulsarParams.pmra/cos(baryinput.delta);
+    
     if(j==0)
     {
       REAL8 dt;
@@ -180,8 +217,11 @@ TNInput.f1, TNInput.f2, TNInput.t0);
       (1.0/120.0)*hetParams.f4*dt*dt*dt*dt*dt);
     }
 
+    LALBarycenterEarth(&status, &earth, &baryinput.tgps, edat);
+
     /* perform TN heterodyne */
-    LALTimingNoiseHeterodyne( &status, &TNOutput, &TNInput, &hetParams);
+    LALTimingNoiseHeterodyne( &status, &TNOutput, &TNInput, &hetParams, edat,
+      baryinput, earth );
     
     fprintf(fpout, "%lf\t%e\t%e\n", time->data[j], TNOutput.Vh.re,
     TNOutput.Vh.im);
@@ -204,6 +244,10 @@ TNInput.f1, TNInput.f2, TNInput.t0);
   LALDDestroyVector(&status, &crabOutput.f2);
   LALDDestroyVector(&status, &crabOutput.f3);
   LALDDestroyVector(&status, &crabOutput.f4);
+
+  XLALFree(edat->ephemE);
+  XLALFree(edat->ephemS);
+  XLALFree(edat);
 
   return 0;
 }

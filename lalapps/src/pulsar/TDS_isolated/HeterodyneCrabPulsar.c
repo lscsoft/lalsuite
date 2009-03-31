@@ -446,12 +446,20 @@ void
 LALTimingNoiseHeterodyne	( LALStatus  *status,
           TNHeterodyneOutput  *output,
           TNHeterodyneInput *input,
-          ParamsForHeterodyne *params )
+          ParamsForHeterodyne *params,
+          EphemerisData *edat,
+          BarycenterInput baryinput,
+          EarthState earth )
 {
   REAL8 DPhi; /* phase difference to be removed */
   REAL8 t1; 
   REAL8 t;
   REAL8 phi, phi0; /* phases with and without timing noise */
+
+  EmissionTime emit;
+
+  /* find the SSB barycenter time delay */
+  LALBarycenter(status, &emit, &baryinput, &earth);
 
   INITSTATUS( status, "LALTimingNoiseHeterodyne", HETERODYNECRABPULSARC);
   ATTATCHSTATUSPTR (status);
@@ -467,10 +475,10 @@ LALTimingNoiseHeterodyne	( LALStatus  *status,
   HETERODYNECRABPULSARH_MSGEINVALIDF0);
 
   t = (REAL8)input->epoch.gpsSeconds+(REAL8)input->epoch.gpsNanoSeconds/1.e9;
-  
+
   /* Dt between time of data point and the epoch of the FIRST data point */
   /* epoch of the FIRST data point is always the GPS time of that point  */
-  t = t - (REAL8)input->t0;
+  t = t - (REAL8)input->t0 + emit.deltaT;
   
   /* Dt between time of data point and the epoch of that data point */
   t1 = t + (REAL8)input->t0 - (REAL8)params->epoch;
@@ -486,7 +494,6 @@ LALTimingNoiseHeterodyne	( LALStatus  *status,
     (params->f3/24.0)*t1*t1*t1*t1 + (params->f4/120.0)*t1*t1*t1*t1*t1);
     
   DPhi = phi-phi0;
-  
   DPhi = 2.0*(REAL8)LAL_PI*fmod(DPhi,1.0);
 
   output->Dphase = DPhi;
