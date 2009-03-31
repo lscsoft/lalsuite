@@ -172,6 +172,52 @@ coincidence.
 </lalLaTeX>
 #endif
 
+
+/* <lalVerbatim file="CoincRingdownUtilsCP"> */
+int
+XLALCoincRingdownIfosDiscard(
+    CoincRingdownTable **coincHead,
+    char                *ifos
+    )
+/* </lalVerbatim> */
+{
+  CoincRingdownTable    *prevCoinc = NULL;
+  CoincRingdownTable    *thisCoinc = NULL;
+  int                    numCoinc = 0;
+
+  thisCoinc = *coincHead;
+  *coincHead = NULL;
+
+  while ( thisCoinc )   {
+    CoincRingdownTable *tmpCoinc = thisCoinc;
+    thisCoinc = thisCoinc->next;
+
+    if ( XLALCoincRingdownIfos( tmpCoinc, ifos ) )
+    {
+      /* ifos match so discard tmpCoinc */
+      XLALFreeCoincRingdown( &tmpCoinc );
+    }
+    else
+    {
+      /* keep tmpCoinc */
+      if ( ! *coincHead  )
+      {
+        *coincHead = tmpCoinc;
+      }
+      else
+      {
+        prevCoinc->next = tmpCoinc;
+      }
+      tmpCoinc->next = NULL;
+      prevCoinc = tmpCoinc;
+      ++numCoinc;
+    }
+  }
+
+  return( numCoinc );
+}
+
+
 /* <lalVerbatim file="CoincRingdownUtilsCP"> */
 void
 LALCreateTwoIFORingdownCoincList(
