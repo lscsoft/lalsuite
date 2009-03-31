@@ -99,7 +99,7 @@ int main( int argc, char *argv[] )
 	fprintf( fp,"%%     p           n           epsilon         Gmu       gammaAverage    gammaMin      gammaMax\n");
 	for ( i = 0; i <  CLA.nepsilon; i++ )
 	  {
-	    epsilon=pow(10.0,CLA.logepsilonstart+i*(CLA.logepsilonend-CLA.logepsilonstart)/(CLA.nepsilon));
+	    epsilon=pow(10.0,CLA.logepsilonstart+i*(CLA.logepsilonend-CLA.logepsilonstart)/(CLA.nepsilon-1));
 	    
 	    for ( j = 0; j <  CLA.nGmu; j++ )
 	      {
