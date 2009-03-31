@@ -515,25 +515,36 @@ int main( int argc, char *argv[] )
   /* make sure we start at head of linked list */
   thisInjection = injectionHead;
 
-  LAL_CALL( LALCreateREAL4TimeSeries( &status, &chanDummy, "", epoch, f0,
-        deltaT, lalADCCountUnit, numRawPoints ), &status );
+  chanDummy = XLALCreateREAL4TimeSeries( "", &epoch, f0,
+        deltaT, &lalADCCountUnit, numRawPoints );
+  if ( !chanDummy ){
+    XLALPrintError("failure allocating chanDummy");
+    exit(1);
+  }
 
   /*
    *
    * set up the response function
    *
    */
-  LAL_CALL( LALCreateCOMPLEX8FrequencySeries( &status, &resp, chanDummy->name,
-        chanDummy->epoch, f0, deltaF, strainPerCount, (numRawPoints / 2 + 1) ),
-      &status );
+  resp = XLALCreateCOMPLEX8FrequencySeries( chanDummy->name, &chanDummy->epoch,
+         f0, deltaF, &strainPerCount, (numRawPoints / 2 + 1) );
+  if ( !resp ){
+    XLALPrintError("failure allocating response function");
+    exit(1);
+  }
 
   /* create vector that will contain detector.transfer info, since this 
    * is constant I calculate it once outside of all the loops and pass it 
    * in to detector.transfer when required 
    */
-  LAL_CALL( LALCreateCOMPLEX8FrequencySeries( &status, &detTransDummy,
-        chanDummy->name, chanDummy->epoch, f0, deltaF, strainPerCount,
-        (numRawPoints / 2 + 1) ), &status );
+  detTransDummy = XLALCreateCOMPLEX8FrequencySeries( chanDummy->name,
+                  &chanDummy->epoch, f0, deltaF, &strainPerCount,
+                  (numRawPoints / 2 + 1) );
+  if ( !detTransDummy ){
+    XLALPrintError("failure allocating detector.transfer");
+    exit(1);
+  }
 
   /* invert the response function to get the transfer function */
   unity = XLALCreateCOMPLEX8Vector( resp->data->length );
@@ -686,8 +697,12 @@ int main( int argc, char *argv[] )
           memcpy(&(nonSpinningWaveform.phi->epoch), &(waveform.a->epoch),
               sizeof(LIGOTimeGPS) );
 
-          LAL_CALL( LALCreateREAL4TimeSeries( &status, &chan, "", epoch, f0,
-                deltaT, lalADCCountUnit, numRawPoints ), &status );
+          chan = XLALCreateREAL4TimeSeries( "", &epoch, f0,
+                deltaT, &lalADCCountUnit, numRawPoints );
+          if ( !chan ) {
+            XLALPrintError("failure allocating chan");
+            exit(1);
+          }
 
           /* reset chan structure */
           memcpy( &chan->epoch, &gpsStartTime, sizeof(LIGOTimeGPS) );
@@ -758,20 +773,28 @@ int main( int argc, char *argv[] )
 
           LAL_CALL( LALCreateForwardRealFFTPlan( &status, &pfwd,
                 chan->data->length, 0), &status);
-          LAL_CALL( LALCreateCOMPLEX8FrequencySeries( &status, &fftStandardData,
-                chan->name, chan->epoch, f0, deltaF, lalDimensionlessUnit,
-                (numPoints / 2 + 1) ), &status );
+          fftStandardData = XLALCreateCOMPLEX8FrequencySeries( 
+                chan->name, &chan->epoch, f0, deltaF, &lalDimensionlessUnit,
+                (numPoints / 2 + 1) );
+          if ( !fftStandardData ){
+            XLALPrintError("failure allocating fftStandardData");
+            exit(1);
+          }
           LAL_CALL( LALTimeFreqRealFFT( &status, fftStandardData, chan, pfwd ),
               &status);
           LAL_CALL( LALDestroyRealFFTPlan( &status, &pfwd ), &status);
           pfwd = NULL;
 
           /* reset chan structure */
-          LAL_CALL( LALDestroyREAL4TimeSeries( &status, chan ), &status );
+          XLALDestroyREAL4TimeSeries( chan );
         } /* end if ( ! snrflg ) */
 
-        LAL_CALL( LALCreateREAL4TimeSeries( &status, &chan, "", epoch, f0,
-              deltaT, lalADCCountUnit, numRawPoints ), &status );
+        chan = XLALCreateREAL4TimeSeries( "", &epoch, f0,
+              deltaT, &lalADCCountUnit, numRawPoints );
+        if ( !chan ){
+          XLALPrintError("failure allocating chan");
+          exit(1);
+        }
         memcpy( &chan->epoch, &gpsStartTime, sizeof(LIGOTimeGPS) );
 
         /* reset chan structure */
@@ -853,9 +876,13 @@ int main( int argc, char *argv[] )
 
         LAL_CALL( LALCreateForwardRealFFTPlan( &status, &pfwd,
               chan->data->length, 0), &status);
-        LAL_CALL( LALCreateCOMPLEX8FrequencySeries( &status, &fftData,
-              chan->name, chan->epoch, f0, deltaF, lalDimensionlessUnit,
-              (numPoints / 2 + 1) ), &status );
+        fftData = XLALCreateCOMPLEX8FrequencySeries(
+              chan->name, &chan->epoch, f0, deltaF, &lalDimensionlessUnit,
+              (numPoints / 2 + 1) );
+        if ( !fftData ){
+          XLALPrintError("failure allocating fftData");
+          exit(1);
+        }
         LAL_CALL( LALTimeFreqRealFFT( &status, fftData, chan, pfwd ), &status);
         LAL_CALL( LALDestroyRealFFTPlan( &status, &pfwd ), &status);
         pfwd = NULL;
@@ -1070,14 +1097,10 @@ int main( int argc, char *argv[] )
 
         thisSigmasq *= 4*fftData->deltaF;
         spinningSigmasqVec[ifoNumber] = thisSigmasq; 
-        LAL_CALL( LALDestroyCOMPLEX8FrequencySeries( &status, fftData),
-            &status );
+        XLALDestroyCOMPLEX8FrequencySeries(fftData);
 
         if ( ! snrflg )
-        {
-          LAL_CALL( LALDestroyCOMPLEX8FrequencySeries( &status, fftStandardData),
-              &status );
-        }
+          XLALDestroyCOMPLEX8FrequencySeries(fftStandardData);
 
         if ( vrbflg )
         {
@@ -1097,7 +1120,7 @@ int main( int argc, char *argv[] )
           LALFree( detector.site);
           detector.site = NULL;
         }
-        LAL_CALL( LALDestroyREAL4TimeSeries( &status, chan ), &status );
+        XLALDestroyREAL4TimeSeries( chan );
       }
     }
     /* end loop over ifo */
@@ -1416,10 +1439,9 @@ int main( int argc, char *argv[] )
     }
   }
   /* Freeing memory */
-  LAL_CALL( LALDestroyREAL4TimeSeries( &status, chanDummy ), &status );
-  LAL_CALL( LALDestroyCOMPLEX8FrequencySeries( &status, resp ), &status );
-  LAL_CALL( LALDestroyCOMPLEX8FrequencySeries( &status, detTransDummy ),
-      &status );
+  XLALDestroyREAL4TimeSeries( chanDummy );
+  XLALDestroyCOMPLEX8FrequencySeries( resp );
+  XLALDestroyCOMPLEX8FrequencySeries( detTransDummy );
 
 
   /*check for memory leaks */

@@ -483,9 +483,16 @@ int main( int argc, char *argv[] )
   }
 
   /* create vector for H1, H2 and L1 spectrums */
-  LAL_CALL( LALCreateREAL8FrequencySeries ( &status, &specH1, "",epoch, f0, deltaF, lalADCCountUnit, (numPoints / 2 + 1) ), &status);
-  LAL_CALL( LALCreateREAL8FrequencySeries ( &status, &specH2, "",epoch, f0, deltaF, lalADCCountUnit, (numPoints / 2 + 1) ), &status);
-  LAL_CALL( LALCreateREAL8FrequencySeries ( &status, &specL1, "",epoch, f0, deltaF, lalADCCountUnit, (numPoints / 2 + 1) ), &status);
+  specH1 = XLALCreateREAL8FrequencySeries ( "",&epoch, f0, deltaF, &lalADCCountUnit, (numPoints / 2 + 1) );
+  specH2 = XLALCreateREAL8FrequencySeries ( "",&epoch, f0, deltaF, &lalADCCountUnit, (numPoints / 2 + 1) );
+  specL1 = XLALCreateREAL8FrequencySeries ( "",&epoch, f0, deltaF, &lalADCCountUnit, (numPoints / 2 + 1) );
+  if (!specH1 || !specH2 || !specL1){
+    XLALDestroyREAL8FrequencySeries ( specH1 );
+    XLALDestroyREAL8FrequencySeries ( specH2 );
+    XLALDestroyREAL8FrequencySeries ( specL1 );
+    XLALPrintError("failure allocating H1, H2 and L1 spectra");
+    exit(1);
+  }
 
   if (!ligosrd){
     /* read in H1 spectrum */ 
@@ -510,24 +517,35 @@ int main( int argc, char *argv[] )
      }
   }
 
-  LAL_CALL( LALCreateREAL4TimeSeries( &status, &chan, "", epoch, f0, deltaT, 
-                                     lalADCCountUnit, numPoints ), &status );
+  chan = XLALCreateREAL4TimeSeries( "", &epoch, f0, deltaT, 
+                                     &lalADCCountUnit, numPoints );
+  if ( !chan ){
+    XLALPrintError("failure allocating chan");
+    exit(1);
+  }
 
   /*
    *
    * set up the response function
    *
    */
-  LAL_CALL( LALCreateCOMPLEX8FrequencySeries( &status, &resp, chan->name, 
-     chan->epoch, f0, deltaF, strainPerCount, (numPoints / 2 + 1) ), &status );
+  resp = XLALCreateCOMPLEX8FrequencySeries( chan->name, 
+     &chan->epoch, f0, deltaF, &strainPerCount, (numPoints / 2 + 1) );
+  if ( !resp ){
+    XLALPrintError("failure allocating response function");
+    exit(1);
+  }
 
   /* create vector that will contain detector.transfer info, since this 
    * is constant I calculate it once outside of all the loops and pass it 
    * in to detector.transfer when required 
    */
-  LAL_CALL( LALCreateCOMPLEX8FrequencySeries( &status, &detTransDummy, 
-                  chan->name, chan->epoch, f0, deltaF, strainPerCount, 
-                  (numPoints / 2 + 1) ), &status );
+  detTransDummy = XLALCreateCOMPLEX8FrequencySeries( chan->name, &chan->epoch,
+                  f0, deltaF, &strainPerCount, (numPoints / 2 + 1) );
+  if ( !detTransDummy ){
+    XLALPrintError("failure allocating detector.transfer info");
+    exit(1);
+  }
 
   /* invert the response function to get the transfer function */
   unity = XLALCreateCOMPLEX8Vector( resp->data->length );
@@ -706,8 +724,12 @@ int main( int argc, char *argv[] )
 
       LAL_CALL( LALCreateForwardRealFFTPlan( &status, &pfwd, chan->data->length, 0), &status);
 
-      LAL_CALL( LALCreateCOMPLEX8FrequencySeries( &status, &fftData, chan->name, chan->epoch, f0, deltaF, 
-                                                   lalDimensionlessUnit, (numPoints / 2 + 1) ), &status );
+      fftData = XLALCreateCOMPLEX8FrequencySeries( chan->name, &chan->epoch, f0, deltaF, 
+                                                   &lalDimensionlessUnit, (numPoints / 2 + 1) );
+      if ( !fftData ){
+        XLALPrintError("failure allocating fftData");
+        exit(1);
+      }
    
       LAL_CALL( LALTimeFreqRealFFT( &status, fftData, chan, pfwd ), &status);
    
@@ -752,7 +774,7 @@ int main( int argc, char *argv[] )
         * we must index snrVec 0..2 
         */ 
        snrVec[ifoNumber-1] = thisSnr; 
-       LAL_CALL( LALDestroyCOMPLEX8FrequencySeries( &status, fftData), &status );
+       XLALDestroyCOMPLEX8FrequencySeries(fftData);
 
        if ( vrbflg ){
           fprintf( stdout, "thisSnrsq %e\n", thisSnrsq );
@@ -868,12 +890,12 @@ int main( int argc, char *argv[] )
   LAL_CALL( LALCloseLIGOLwXMLFile ( &status, &xmlStream), &status);
 
   /* Freeing memory */
-  LAL_CALL( LALDestroyREAL4TimeSeries( &status, chan), &status );
-  LAL_CALL( LALDestroyCOMPLEX8FrequencySeries( &status, resp), &status );
-  LAL_CALL( LALDestroyCOMPLEX8FrequencySeries( &status, detTransDummy), &status );
-  LAL_CALL( LALDestroyREAL8FrequencySeries ( &status, specH1 ), &status);
-  LAL_CALL( LALDestroyREAL8FrequencySeries ( &status, specH2 ), &status);
-  LAL_CALL( LALDestroyREAL8FrequencySeries ( &status, specL1 ), &status);
+  XLALDestroyREAL4TimeSeries(chan);
+  XLALDestroyCOMPLEX8FrequencySeries(resp);
+  XLALDestroyCOMPLEX8FrequencySeries(detTransDummy);
+  XLALDestroyREAL8FrequencySeries ( specH1 );
+  XLALDestroyREAL8FrequencySeries ( specH2 );
+  XLALDestroyREAL8FrequencySeries ( specL1 );
 
 
   free( specFileH1 );
