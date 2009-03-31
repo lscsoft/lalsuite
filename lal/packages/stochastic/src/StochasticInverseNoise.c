@@ -262,9 +262,11 @@ LALStochasticInverseNoiseCal(
   strncpy(invNoise->name, "Calibrated invserse noise PSD", LALNameLength);
 
   /* allocate memory for half calibrated inverse noise */
-  TRY(LALCreateCOMPLEX8FrequencySeries(status->statusPtr, &hcInvNoise, \
-        "half-calibrated invserse noise PSD", wNoise->epoch, f0, deltaF, \
-        lalDimensionlessUnit, length), status);
+  hcInvNoise = XLALCreateCOMPLEX8FrequencySeries(\
+        "half-calibrated invserse noise PSD", &wNoise->epoch, f0, deltaF, \
+        &lalDimensionlessUnit, length);
+  if(!hcInvNoise)
+    ABORTXLAL(status);
 
   /* unit structure manipulation */
 
