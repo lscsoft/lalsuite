@@ -313,6 +313,7 @@ LALInspiralCreateCoarseBank(
     case TaylorT1: 
     case TaylorT2: 
     case TaylorT3: 
+    case TaylorT4: 
     case TaylorF1: 
     case TaylorF2: 
     case Eccentricity: 
@@ -320,6 +321,8 @@ LALInspiralCreateCoarseBank(
     case PadeF1: 
     case EOB:     
     case EOBNR:     
+    case TaylorEt:     
+    case TaylorN:
     case FindChirpPTF:
       ASSERT( coarseIn.space == Tau0Tau2 || coarseIn.space == Tau0Tau3, status,
           LALINSPIRALBANKH_ECHOICE, LALINSPIRALBANKH_MSGECHOICE );

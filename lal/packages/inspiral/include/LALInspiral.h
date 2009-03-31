@@ -460,6 +460,9 @@ typedef enum {
    Eccentricity,
    EOBNR,
    IMRPhenomA,
+   TaylorEt,
+   TaylorT4,
+   TaylorN,
    NumApproximants
  } Approximant;
 /* </lalVerbatim>  */
@@ -1172,6 +1175,16 @@ void LALEOBWaveformForInjection(
 
 void LALBCVWaveform(
      LALStatus *status,
+     REAL4Vector *signalvec, 
+     InspiralTemplate *params);
+
+void LALTaylorEtWaveform(
+     LALStatus *status,
+     REAL4Vector *signalvec, 
+     InspiralTemplate *params);
+
+void LALTaylorT4Waveform(
+     LALStatus *status, 
      REAL4Vector *signalvec, 
      InspiralTemplate *params);
 

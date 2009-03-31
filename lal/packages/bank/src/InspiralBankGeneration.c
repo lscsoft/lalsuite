@@ -67,11 +67,14 @@ LALInspiralBankGeneration(
   case EOBNR:
   case PadeT1:
   case PadeF1:
+  case TaylorT4:
   case TaylorF1:
   case TaylorF2:
   case TaylorT1:
   case TaylorT2:
   case TaylorT3:
+  case TaylorEt:
+  case TaylorN:
   case AmpCorPPN:
   case Eccentricity:
 

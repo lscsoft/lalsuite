@@ -430,8 +430,7 @@ LALInspiralWave3ForInjection (
       ppnParams->tc     = (double)(count-1) / params->tSampling ;
       ppnParams->length = count;
       ppnParams->dfdt   = ((REAL4)(waveform->f->data->data[count-1] 
-				   - waveform->f->data->data[count-2]))
-	* ppnParams->deltaT;
+			- waveform->f->data->data[count-2])) * ppnParams->deltaT;
       ppnParams->fStop  = params->fFinal;
       ppnParams->termCode        = GENERATEPPNINSPIRALH_EFSTOP;
       ppnParams->termDescription = GENERATEPPNINSPIRALH_MSGEFSTOP;
@@ -491,8 +490,8 @@ LALInspiralWave3Engine(
 
 {
   INT4 i, startShift, count;
-  REAL8 dt, fu, ieta, eta, tc, totalMass, t, td, c1, phi0, phi1, phi;
-  REAL8 v, f, fHigh, amp, tmax, fOld, phase, omega;
+  REAL8 dt, fu, eta, tc, totalMass, t, td, c1, phi0, phi1, phi;
+  REAL8 v, v2, f, fHigh, tmax, fOld, phase, omega;
   DFindRootIn rootIn;
   expnFunc func;
   expnCoeffs ak;
@@ -503,13 +502,7 @@ LALInspiralWave3Engine(
   
   /* Only used in injection case */
   REAL8 unitHz = 0.;
-  REAL8 f2a = 0.;
-  REAL8 mu = 0.;
-  REAL8 mTot = 0.;
   REAL8 cosI = 0.;/* cosine of system inclination */
-  REAL8 etab = 0.;
-  REAL8 fFac = 0.; /* SI normalization for f and t */
-  REAL8 f2aFac = 0.;/* factor multiplying f in amplitude function */
   REAL8 apFac = 0., acFac = 0.;/* extra factor in plus and cross amplitudes */
 
 
@@ -522,22 +515,13 @@ LALInspiralWave3Engine(
   if (output2 || a)
       params->nStartPad = 0; /* must be zero for templates and injections */
 
+  eta = params->eta;   /* Symmetric mass ratio  */
   /* Only in injection case.. */
-  if (a || h)
-  {
-    mTot   =  params->mass1 + params->mass2;
-    etab   =  params->mass1 * params->mass2;
-    etab  /= mTot;
-    etab  /= mTot;
-    unitHz = (mTot) *LAL_MTSUN_SI*(REAL8)LAL_PI;
-    cosI   = cos( params->inclination );
-    mu     = etab * mTot;
-    fFac   = 1.0 / ( 4.0*LAL_TWOPI*LAL_MTSUN_SI*mTot );
-    f2aFac = LAL_PI*LAL_MTSUN_SI*mTot*fFac;
-    apFac  = acFac = -2.0 * mu * LAL_MRSUN_SI/params->distance;
-    apFac *= 1.0 + cosI*cosI;
-    acFac *= 2.0 * cosI;
-  }
+  unitHz = params->totalMass*LAL_MTSUN_SI*(REAL8)LAL_PI;
+  cosI   = cos( params->inclination );
+  apFac  = acFac = -2.0 * eta *params->totalMass * LAL_MRSUN_SI/params->distance;
+  apFac *= 1.0 + cosI*cosI;
+  acFac *= 2.0 * cosI;
 
   dt = 1.0/(params->tSampling);    /* sampling rate  */
   fu = params->fCutoff;            /* upper frequency cutoff  */
@@ -546,8 +530,6 @@ LALInspiralWave3Engine(
 
 
   tc=params->tC;       /* Instant of coalescence of the compact objects */
-  eta = params->eta;   /* Symmetric mass ratio  */
-  ieta = params->ieta;
   totalMass = (params->totalMass)*LAL_MTSUN_SI; /* mass of the system in seconds */
 
 
@@ -657,12 +639,20 @@ LALInspiralWave3Engine(
 
     fOld = f; 
     v = pow(f*LAL_PI*totalMass, oneby3);
-    amp = params->signalAmplitude * v*v;
+    v2 = v*v;
     if (output1)
     { 
-      output1->data[i] = (REAL4) amp * cos(phase+phi0);
+        
+        
+      /*
+      output1->data[i]   = LALInspiralHPlusPolarization( phase+phi0, v, params );
+      */
+      output1->data[i]   = (REAL4) (apFac * v2) * cos(phase+phi0);
       if (output2)
-        output2->data[i] = (REAL4) amp * cos(phase+phi1);
+      /*
+        output2->data[i] = LALInspiralHCrossPolarization( phase+phi1, v, params );
+      */
+        output2->data[i] = (REAL4) (apFac * v2) * cos(phase+phi1);
     }
     else if (a) 
     {
@@ -671,13 +661,11 @@ LALInspiralWave3Engine(
       ico = ice + 1;
       omega = v*v*v;
       
-      ff->data[count] = (REAL4)(omega/unitHz);
-      f2a = pow(f2aFac * omega, 2. / 3.);
-
-      a->data[ice]          = (REAL4)(4.*apFac * f2a);
-      a->data[ico]        = (REAL4)(4.*acFac * f2a);
-      phiv->data[count]          = (REAL8)(phase);
-
+      ff->data[count]     = (REAL4)(omega/unitHz);
+      a->data[ice]        = (REAL4)(apFac * v2 );
+      a->data[ico]        = (REAL4)(acFac * v2 );
+      phiv->data[count]   = (REAL8)(phase );
+ 
       if (h)
       {
         h->data[ice] = LALInspiralHPlusPolarization( phase, v, params );

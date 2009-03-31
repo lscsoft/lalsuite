@@ -538,7 +538,7 @@ LALInspiralWave2Engine(
   ASSERT(fHigh < 0.5/dt, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
   ASSERT(fHigh > params->fLower, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
                                                                                                                              
-  rootIn.xmax = 1.1*fu;
+  rootIn.xmax = 1.2*fu;
   rootIn.xacc = 1.0e-8;
   rootIn.xmin = 0.999999*fs;
                                                                                                                              
@@ -599,6 +599,7 @@ LALInspiralWave2Engine(
     /*
        Determine the frequency at the current time by solving timing2(v;tC,t)=0
     */
+    rootIn.xmin = 0.8*freq;
     LALDBisectionFindRoot(status->statusPtr, &freq, &rootIn, funcParams);
     CHECKSTATUSPTR(status);
     } while (freq < fHigh && freq > fOld && toffIn.t < -tC);

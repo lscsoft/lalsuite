@@ -146,7 +146,7 @@ omegaofrP4PN (
 static 
 void LALHCapDerivatives(	REAL8Vector *values, 
 				REAL8Vector *dvalues, 
-				void 		*funcParams);
+				void        *funcParams);
 
 static 
 void LALprInit(	REAL8 		*pr, 
