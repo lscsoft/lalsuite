@@ -119,6 +119,9 @@ LALInspiralWaveOverlap
 	case PadeT1:
 	case EOB:
 	case EOBNR:
+	case TaylorEt:
+	case TaylorT4:
+	case TaylorN:
 	case SpinTaylorT3: 
         case SpinTaylor:
 		/*
