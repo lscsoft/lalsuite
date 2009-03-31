@@ -1457,6 +1457,12 @@ XLALVetoSingleRingdown (
     CHAR                       *ifo
     );
 
+int
+XLALCoincRingdownIfosDiscard(
+    CoincRingdownTable **coincHead,
+    char                *ifos
+    );
+
 void
 LALIfoCutSingleRingdown(
     LALStatus                  *status,
