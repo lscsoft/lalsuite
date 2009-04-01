@@ -519,7 +519,6 @@ LALInspiralChooseModel(
          case PadeF1:
          case EOB:
          case EOBNR:
-         case IMRPhenomA:
          case TaylorEt:
          case TaylorT4:
          case TaylorN:
@@ -560,7 +559,6 @@ LALInspiralChooseModel(
          case PadeF1:
          case EOB:
          case EOBNR:
-         case IMRPhenomA:
          case TaylorEt:
          case TaylorT4:
          case TaylorN:
@@ -601,7 +599,6 @@ LALInspiralChooseModel(
          case PadeF1:
          case EOB:
          case EOBNR:
-         case IMRPhenomA:
          case TaylorEt:
          case TaylorT4:
          case TaylorN:
