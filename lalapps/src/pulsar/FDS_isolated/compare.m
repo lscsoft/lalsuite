@@ -1,7 +1,7 @@
 ts = load("ts.dat");
 tddSFT = load("tddSFT.dat");
 Tsft = 1800;
-numTS = 1;
+numTS = 9;
 
 tdd0 = load("tdd.dat.00");
 tddEnd = load( sprintf("tdd.dat.0%d", numTS - 1) );
@@ -11,8 +11,8 @@ tEnd = tddEnd(end,1);
 numBinsSFT = 3602;
 dt = tdd0(2,1) - tdd0(1,1);
 
-Tspan = tEnd + dt - t0
-numTimeSamples = round(Tspan / dt)
+Tspan = tEnd + dt - t0;
+numTimeSamples = round(Tspan / dt);
 
 tdd = zeros(numTimeSamples,2);
 tdd(:,1) = (0:numTimeSamples-1) * dt;
@@ -23,7 +23,6 @@ for i = 1:numTS
   i1_n = i0_n + length(thisTdd) - 1;
   tdd(i0_n:i1_n, 2) = thisTdd(:,2);
 endfor
-
 
 # %% nock out timesamples falling into gaps, if any
 # binMask = ones(1,numTimeSamples);	%% start with unity mask
@@ -47,7 +46,7 @@ Tspan = numTimeSamples * dt;
 df = 1 / Tspan;
 
 fMax = (numBins - 1) * df;
-f0 = 100.1234;
+f0 = 100.12333333333333;
 freqBins = 0:df:fMax;
 freqBins += f0;
 
@@ -56,11 +55,11 @@ lftPos = dt * lft(1:numBins);
 
 lft0 = load("lft.dat");
 
-clg;
+clf;
 hold on;
 plot ( freqBins, abs(lftPos).^2, "b+;FFT timeseries;" );
 plot ( lft0(:,1), lft0(:,2).^2 + lft0(:,3).^2, "r-x;LFTfromSFTs_Band;" );
-%%axis([100.12  100.13]);
+axis([101.12  101.13]);
 hold off;
 
 

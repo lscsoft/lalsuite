@@ -41,8 +41,6 @@ startTime=711595934
 refTime=701595833  ## $startTime
 duration=144000		## 40 hours
 
-mfd_FreqBand=2
-
 Alpha=2.0
 Delta=-0.5
 
@@ -53,8 +51,10 @@ psi=0.6
 phi0=1.5
 
 Freq=101.12345
+
+mfd_FreqBand=2
 mfd_fmin=100.1234
-mfd_fmax=$(echo $mfd_fmin $mfd_FreqBand | awk '{printf "%g", $1 + $2}');
+mfd_fmax=102.1234
 
 f1dot=-1e-10;
 
@@ -97,7 +97,7 @@ else
 fi
 
 # this part of the command-line is compatible with SemiAnalyticF:
-mfd_CL1=" --Alpha=$Alpha --Delta=$Delta --IFO=$IFO --Tsft=$Tsft --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0 --fmin=$mfd_fmin --Band=$mfd_FreqBand --Freq=$Freq --f1dot=$f1dot --refTime=$refTime --TDDfile=$TDDfile --timestampsFile=./ts.dat --generationMode=0 --outSFTbname=$SFTdir1/"
+mfd_CL1=" --Alpha=$Alpha --Delta=$Delta --IFO=$IFO --Tsft=$Tsft --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0 --fmin=$mfd_fmin --Band=$mfd_FreqBand --Freq=$Freq --f1dot=$f1dot --refTime=$refTime --TDDfile=$TDDfile --timestampsFile=./ts.dat --generationMode=1 --outSFTbname=$SFTdir1/"
 
 mfd_CL2=" --Alpha=$Alpha --Delta=$Delta --IFO=$IFO --Tsft=$Tsft --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0 --fmin=0 --Band=103 --Freq=$Freq --f1dot=$f1dot --refTime=$refTime --timestampsFile=./ts.dat --generationMode=0 --outSFTbname=${SFTdir2}/"
 
