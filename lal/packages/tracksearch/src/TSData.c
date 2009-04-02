@@ -302,15 +302,14 @@ LALCreateTSDataSegmentVector (
   segmentLength=params->dataSegmentPoints+(2*params->SegBufferPoints);
   for (i = 0; i < (INT4)((*vector)->length); i++)
     {
-      LALCreateREAL4TimeSeries(status->statusPtr,
-			       &((*vector)->dataSeg[i]),
-			       "Uninitialized",
-			       gps_zero,
+      (*vector)->dataSeg[i] = XLALCreateREAL4TimeSeries("Uninitialized",
+			       &gps_zero,
 			       0,
 			       1,
-			       lalDimensionlessUnit,
+			       &lalDimensionlessUnit,
 			       segmentLength);
-      CHECKSTATUSPTR (status);
+      if(!(*vector)->dataSeg[i])
+        ABORTXLAL (status);
     }
   DETATCHSTATUSPTR (status);
   RETURN (status);
@@ -333,10 +332,7 @@ LALDestroyTSDataSegmentVector (
 	  TSDATA_ENULL, 
 	  TSDATA_MSGENULL);
   for (i = 0; i < (INT4)(vector->length) ; i++)
-    {
-      LALDestroyREAL4TimeSeries(status->statusPtr,(vector->dataSeg[i]));
-      CHECKSTATUSPTR (status);
-    }
+      XLALDestroyREAL4TimeSeries(vector->dataSeg[i]);
   if (vector->dataSeg)
     LALFree(vector->dataSeg);
   if (vector)
@@ -517,13 +513,11 @@ LALTrackSearchWhitenREAL4TimeSeries(
   CHECKSTATUSPTR (status);
 
   /* Allocate space for FFT */
-  LALCreateCOMPLEX8FrequencySeries(status->statusPtr,
-				   &signalFFT,
-				   "tmpSegPSD",
-				   gps_zero,
+  signalFFT = XLALCreateCOMPLEX8FrequencySeries("tmpSegPSD",
+				   &gps_zero,
 				   0,
 				   1/(signal->deltaT*signal->data->length),
-				   lalDimensionlessUnit,
+				   &lalDimensionlessUnit,
 				   planLength/2+1);
   /* FFT the time series */
   LALForwardREAL4FFT(status->statusPtr,
@@ -598,11 +592,7 @@ LALTrackSearchWhitenREAL4TimeSeries(
   /* 
    *Release the temporary memory 
    */
-  if (signalFFT)
-    {
-      LALDestroyCOMPLEX8FrequencySeries(status->statusPtr,signalFFT);
-      CHECKSTATUSPTR (status);
-    }
+  XLALDestroyCOMPLEX8FrequencySeries(signalFFT);
   if (forwardPlan)
     {
       LALDestroyREAL4FFTPlan(status->statusPtr,&forwardPlan);
@@ -716,13 +706,11 @@ LALTrackSearchCalibrateREAL4TimeSeries(LALStatus               *status,
   /*
    * Allocate RAM for temp Freq series
    */
-  LALCreateCOMPLEX8FrequencySeries(status->statusPtr,
-				   &signalFFT,
-				   "tmpSignalFFT",
-				   signal->epoch,
+  signalFFT = XLALCreateCOMPLEX8FrequencySeries("tmpSignalFFT",
+				   &signal->epoch,
 				   0,
 				   1/signal->deltaT,
-				   lalDimensionlessUnit,
+				   &lalDimensionlessUnit,
 				   planLength/2+1);
   /*
    * FFT the data segment for calibration 
@@ -762,11 +750,7 @@ LALTrackSearchCalibrateREAL4TimeSeries(LALStatus               *status,
   /*
    * Destroy signalFFT Temp variable
    */
-  if (signalFFT)
-    {
-      LALDestroyCOMPLEX8FrequencySeries(status->statusPtr,signalFFT);
-      CHECKSTATUSPTR (status);
-    }
+  XLALDestroyCOMPLEX8FrequencySeries(signalFFT);
   /*
    * Destroy the FFT plans
    */
