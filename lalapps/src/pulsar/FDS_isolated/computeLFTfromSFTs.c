@@ -432,7 +432,7 @@ XLALSFTVectorToLFT ( const SFTVector *sfts, REAL8 upsampling )
   REAL8 endTime;
   UINT4 n;
   REAL8 Tspan;
-  REAL8 numTimeSamples;
+  UINT4 numTimeSamples;
 
   if ( !sfts || (sfts->length == 0) )
     {
@@ -527,11 +527,30 @@ XLALSFTVectorToLFT ( const SFTVector *sfts, REAL8 upsampling )
       startTime_n = XLALGPSGetREAL8 ( &sfts->data[n].epoch );
       bin0_n = (UINT4) ( ( startTime_n - startTime ) / deltaT + 0.5 );	/* round to closest bin */
 
+      {
+	REAL8 offset;
+	REAL8 t0_n;
+
+	t0_n = startTime + bin0_n * deltaT;
+	offset = t0_n - startTime_n;
+
+	printf ("n = %d: t0_n = %f, sft_tn =(%d,%d), bin-offset = %g s, corresponding to %g timesteps\n",
+		n, t0_n, sfts->data[n].epoch.gpsSeconds,  sfts->data[n].epoch.gpsNanoSeconds, offset, offset/deltaT );
+      }
+
       /* copy short timeseries into correct location within long timeseries */
       memcpy ( &lTS->data->data[bin0_n], sTS->data->data, numBins * sizeof(lTS->data->data[bin0_n]) );
 
     } /* for n < numSFTs */
 
+  /* debug-output timeseries */
+  {
+    REAL8 t0 = XLALGPSGetREAL8 ( &lTS->epoch );
+    REAL8 dt = lTS->deltaT;
+    UINT4 i;
+    for ( i = 0; i < lTS->data->length; i ++ )
+      fprintf ( stderr, "%f   %f %f\n", t0 + i * dt, lTS->data->data[i].re, lTS->data->data[i].im);
+  }
 
   /* ---------- now FFT the complete timeseries ---------- */
 
@@ -586,7 +605,8 @@ XLALReorderFFTWtoSFT (COMPLEX8Vector *X)
     }
 
   N = X -> length;
-  NhalfPos = floor( N/2.0 + 0.5 );	/* DC + positive frequencies: round up */
+  NhalfPos = floor( N/2.0 + 0.5 );
+  /* NhalfPos = floor( N/2.0 + 1e-6) + 1; */	/* DC + positive frequencies: round up */
   NhalfNeg = N - NhalfPos;
 
   /* allocate temporary storage for swap */
@@ -630,8 +650,9 @@ XLALReorderSFTtoFFTW (COMPLEX8Vector *X)
       XLAL_ERROR (fn, XLAL_EINVAL);
     }
 
-  N = X -> length;
-  NhalfPos = floor( N/2.0 + 0.5 );	/* DC + positive frequencies: round up */
+  N = X->length;
+  NhalfPos = floor( N/2.0 + 0.5 );
+  /* NhalfPos = floor( N/2.0 + 1e-6 ) + 1;*/	/* DC + positive frequencies: round up */
   NhalfNeg = N - NhalfPos;
 
   /* allocate temporary storage for swap */
