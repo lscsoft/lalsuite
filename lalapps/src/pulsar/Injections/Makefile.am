@@ -37,6 +37,6 @@ lalapps_makefakedata_test_LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 s3inject_SOURCES = s3inject.c
 
 EXTRA_DIST = testMakefakedata.sh testT8_1800
-TESTS = testMakefakedata.sh
+TESTS = testMakefakedata.sh testMFDv4.sh
 
 CLEANFILES =
