@@ -50,9 +50,10 @@ psi=0.6
 phi0=1.5
 
 
-fmin=100.1234
+fmin=99.12345
 Freq=101.12345
-fmax=102.1234
+fmax=102.12277   ## make sure we get an effective band of exactly 3Hz
+fUpper=103
 
 f1dot=-1e-10;
 
@@ -90,7 +91,7 @@ if [ "$noiseSqrtSh" != 0 ]; then
 	rm -f $noiseSFTdir/*;
     fi
 
-    mfd_CL=" --IFO=$IFO --Tsft=$Tsft --h0=0 --fmin=0 --Band=$fmax --timestampsFile=./ts.dat --generationMode=0 --outSFTbname=${noiseSFTdir}/ --noiseSqrtSh=$noiseSqrtSh"
+    mfd_CL=" --IFO=$IFO --Tsft=$Tsft --h0=0 --fmin=0 --Band=$fUpper --timestampsFile=./ts.dat --generationMode=0 --outSFTbname=${noiseSFTdir}/ --noiseSqrtSh=$noiseSqrtSh"
 
     cmdline="$mfd_code $mfd_CL";
     echo $cmdline;
@@ -108,7 +109,7 @@ echo " STEP 1: Generate (full-band) timeseries and SFTs"
 echo "----------------------------------------------------------------------"
 echo
 
-mfd_CL=" --Alpha=$Alpha --Delta=$Delta --IFO=$IFO --Tsft=$Tsft --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0 --fmin=0 --Band=$fmax --Freq=$Freq --f1dot=$f1dot --refTime=$refTime --TDDfile=$TDDfile --timestampsFile=./ts.dat --generationMode=0 --outSFTbname=${SFTdir}/ -v1"
+mfd_CL=" --Alpha=$Alpha --Delta=$Delta --IFO=$IFO --Tsft=$Tsft --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0 --fmin=0 --Band=$fUpper --Freq=$Freq --f1dot=$f1dot --refTime=$refTime --TDDfile=$TDDfile --timestampsFile=./ts.dat --generationMode=0 --outSFTbname=${SFTdir}/ -v1"
 
 if [ "$noiseSqrtSh" != 0 ]; then
     mfd_CL="$mfd_CL --noiseSFTs='${noiseSFTdir}/*.sft'"
