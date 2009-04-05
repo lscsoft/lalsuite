@@ -428,11 +428,10 @@ XLALSFTVectorToLFT ( const SFTVector *sfts, REAL8 upsampling )
   REAL8 deltaT;
 
   UINT4 numSFTs;
-  REAL8 startTime;
-  REAL8 endTime;
   UINT4 n;
   REAL8 Tspan;
   UINT4 numTimeSamples;
+  REAL8 startTime;
 
   if ( !sfts || (sfts->length == 0) )
     {
@@ -455,12 +454,13 @@ XLALSFTVectorToLFT ( const SFTVector *sfts, REAL8 upsampling )
   f0 = firstHead->f0;
   deltaT = 1.0 / ( numBins * deltaF );
 
-  startTime = XLALGPSGetREAL8 ( &sfts->data[0].epoch );
-  endTime   = XLALGPSGetREAL8 ( &sfts->data[numSFTs-1].epoch ) + Tsft;
+  Tspan = XLALGPSDiff ( &sfts->data[numSFTs-1].epoch, &sfts->data[0].epoch ) + Tsft;
+  Tspan *= upsampling;
 
-  Tspan = (endTime - startTime) * upsampling;		/* upsampled Tspan >= Tspan(actual) */
   numTimeSamples = (UINT4)(Tspan / deltaT + 0.5);	/* round */
   Tspan = numTimeSamples * deltaT;			/* correct Tspan to (upsampled) number of time-samples */
+
+  startTime = XLALGPSGetREAL8 ( &sfts->data[0].epoch );
 
   /* ----- Prepare invFFT: compute plan for FFTW */
   if ( (SFTplan = XLALCreateReverseCOMPLEX8FFTPlan( numBins, 0 )) == NULL )
@@ -509,7 +509,7 @@ XLALSFTVectorToLFT ( const SFTVector *sfts, REAL8 upsampling )
     {
       SFTtype *thisSFT = &(sfts->data[n]);
       UINT4 bin0_n;
-      REAL8 startTime_n;
+      REAL8 offset_n, nudge_n;
 
       if ( XLALReorderSFTtoFFTW (thisSFT->data) != XLAL_SUCCESS )
 	{
@@ -524,22 +524,17 @@ XLALSFTVectorToLFT ( const SFTVector *sfts, REAL8 upsampling )
 	}
 
       /* find bin in long timeseries corresponding to starttime of *this* SFT */
-      startTime_n = XLALGPSGetREAL8 ( &sfts->data[n].epoch );
-      bin0_n = (UINT4) ( ( startTime_n - startTime ) / deltaT + 0.5 );	/* round to closest bin */
+      offset_n = XLALGPSDiff ( &sfts->data[n].epoch, &sfts->data[0].epoch );
+      bin0_n = (UINT4) ( offset_n / deltaT + 0.5 );	/* round to closest bin */
 
-      {
-	REAL8 offset;
-	REAL8 t0_n;
+      nudge_n = bin0_n * deltaT - offset_n;		/* rounding error */
+      nudge_n = 1e-9 * (UINT4)(nudge_n * 1e9 + 0.5);	/* round to closest nanosecond */
 
-	t0_n = startTime + bin0_n * deltaT;
-	offset = t0_n - startTime_n;
-
-	printf ("n = %d: t0_n = %f, sft_tn =(%d,%d), bin-offset = %g s, corresponding to %g timesteps\n",
-		n, t0_n, sfts->data[n].epoch.gpsSeconds,  sfts->data[n].epoch.gpsNanoSeconds, offset, offset/deltaT );
-      }
+      printf ("n = %d: t0_n = %f, sft_tn =(%d,%d), bin-offset = %g s, corresponding to %g timesteps\n",
+	      n, startTime + bin0_n * deltaT, sfts->data[n].epoch.gpsSeconds,  sfts->data[n].epoch.gpsNanoSeconds, nudge_n, nudge_n/deltaT );
 
       /* copy short timeseries into correct location within long timeseries */
-      memcpy ( &lTS->data->data[bin0_n], sTS->data->data, numBins * sizeof(lTS->data->data[bin0_n]) );
+      memcpy ( &lTS->data->data[bin0_n], sTS->data->data, numBins * sizeof(lTS->data->data[0]) );
 
     } /* for n < numSFTs */
 
