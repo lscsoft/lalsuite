@@ -1,14 +1,12 @@
 ts = load("ts.dat");
 tddSFT = load("tddSFT.dat");
 Tsft = 1800;
-numTS = 9;
+numTS = 1;
 
 tdd0 = load("tdd.dat.00");
 tddEnd = load( sprintf("tdd.dat.0%d", numTS - 1) );
 t0 = tdd0(1,1);
 tEnd = tddEnd(end,1);
-
-numBinsSFT = 3602;
 dt = tdd0(2,1) - tdd0(1,1);
 
 Tspan = tEnd + dt - t0;
@@ -24,42 +22,40 @@ for i = 1:numTS
   tdd(i0_n:i1_n, 2) = thisTdd(:,2);
 endfor
 
-# %% nock out timesamples falling into gaps, if any
-# binMask = ones(1,numTimeSamples);	%% start with unity mask
-# gaps = diff ( ts(:,1) ) - Tsft;
-# indGaps = find ( gaps != 0 )
+%% nock out timesamples falling into gaps, if any
+binMask = ones(1,numTimeSamples);	%% start with unity mask
+gaps = diff ( ts(:,1) ) - Tsft;
+indGaps = find ( gaps != 0 )
 
 tddGaps = tdd;
-# for i = indGaps
-#   ii = round ( i * Tsft / dt );		%% start-index of this gap
-#   Ni = round(gaps(i) / dt);		%% number of gap-bins for this gap
-#   tddGaps ( ii:(ii+Ni), 2) = 0;		%% set this gap-bin to 0
-# endfor
+for i = indGaps
+  ii = round ( i * Tsft / dt );		%% start-index of this gap
+  Ni = round(gaps(i) / dt);		%% number of gap-bins for this gap
+  tddGaps ( ii:(ii+Ni), 2) = 0;		%% set this gap-bin to 0
+endfor
 
 
-lft = fft ( tddGaps(:,2) );
+lft0 = fft ( tddGaps(:,2) );
 
-
-numBins = numTimeSamples /2 + 1;
-
-Tspan = numTimeSamples * dt;
+numBins0 = numTimeSamples /2 + 1;
+lftPos0 = dt * lft0(1:numBins0);
 df = 1 / Tspan;
 
-fMax = (numBins - 1) * df;
-f0 = 100.12333333333333;
-freqBins = 0:df:fMax;
-freqBins += f0;
+fMax0 = (numBins0 - 1) * df;
+fMin0 = 0;
+freqBins0 = df * (0:numBins0-1);
 
+lft1 = load("lft.dat");  ## computed by computeLFTfromSFTs
+fmin1 = lft1(1,1);
+fmax1 = lft1(end,1);
 
-lftPos = dt * lft(1:numBins);
-
-lft0 = load("lft.dat");
+imin0 = find ( abs(freqBins0 - fmin1) < df/2)
 
 clf;
 hold on;
-plot ( freqBins, abs(lftPos).^2, "b+;FFT timeseries;" );
-plot ( lft0(:,1), lft0(:,2).^2 + lft0(:,3).^2, "r-x;LFTfromSFTs_Band;" );
-axis([101.12  101.13]);
+plot ( freqBins0(imin0:end), abs(lftPos0(imin0:end)).^2, "b+;FFT full timeseries;" );
+plot ( lft1(:,1), lft1(:,2).^2 + lft1(:,3).^2, "r-x;LFTfromSFTs_Band;" );
+axis([fmin1  fmax1]);
 hold off;
 
 

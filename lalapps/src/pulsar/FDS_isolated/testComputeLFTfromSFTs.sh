@@ -18,8 +18,9 @@ lft_code="${builddir}lalapps_computeLFTfromSFTs"
 dumpSFT_code="${injectdir}lalapps_dumpSFT"
 extract_code="lalapps_ConvertToSFTv2"
 
-SFTdir1="./testSFTs"
-SFTdir2="./testSFTs2"
+noiseSFTdir="./noiseSFTs"
+SFTdir="./SFTdir"
+
 
 # test if LAL_DATA_PATH has been set ... needed to locate ephemeris-files
 if [ -z "$LAL_DATA_PATH" ]; then
@@ -37,9 +38,7 @@ fi
 
 # ---------- fixed parameter of our test-signal
 Tsft=1800;
-startTime=711595934
 refTime=701595833  ## $startTime
-duration=144000		## 40 hours
 
 Alpha=2.0
 Delta=-0.5
@@ -50,11 +49,10 @@ cosi=-0.3
 psi=0.6
 phi0=1.5
 
-Freq=101.12345
 
-mfd_FreqBand=2
-mfd_fmin=100.1234
-mfd_fmax=102.1234
+fmin=100.1234
+Freq=101.12345
+fmax=102.1234
 
 f1dot=-1e-10;
 
@@ -65,77 +63,70 @@ LFTfile="out.lft"
 LFTascii="lft.dat"
 
 ## ------------------------------------------------------------
+IFO=H1
 
-if [ "$noiseSqrtSh" != 0 ]; then
-    sqrtSh=$noiseSqrtSh
-    haveNoise=true;
+## Prepare SFT directories
+if [ ! -d "$SFTdir" ]; then
+    mkdir $SFTdir;
 else
-    sqrtSh=1;	## for SemiAnalyticF signal-only case
-    haveNoise=false;
+    rm -f $SFTdir/*;
 fi
 
-IFO=LHO
 
 ##--------------------------------------------------
 ## test starts here
 ##--------------------------------------------------
 
+if [ "$noiseSqrtSh" != 0 ]; then
+    echo
+    echo "----------------------------------------------------------------------"
+    echo " STEP 0: Generate (full-band) noise SFTs"
+    echo "----------------------------------------------------------------------"
+    echo
+
+    if [ ! -d "$noiseSFTdir" ]; then
+	mkdir $noiseSFTdir;
+    else
+	rm -f $noiseSFTdir/*;
+    fi
+
+    mfd_CL=" --IFO=$IFO --Tsft=$Tsft --h0=0 --fmin=0 --Band=$fmax --timestampsFile=./ts.dat --generationMode=0 --outSFTbname=${noiseSFTdir}/ --noiseSqrtSh=$noiseSqrtSh"
+
+    cmdline="$mfd_code $mfd_CL";
+    echo $cmdline;
+    if ! eval $cmdline; then
+	echo "Error.. something failed when running '$mfd_code' ..."
+	exit 1
+    fi
+
+fi ## if noiseSqrtSh
+
+
 echo
 echo "----------------------------------------------------------------------"
-echo " STEP 1: Generate Fake Signal"
+echo " STEP 1: Generate (full-band) timeseries and SFTs"
 echo "----------------------------------------------------------------------"
 echo
-if [ ! -d "$SFTdir1" ]; then
-    mkdir $SFTdir1;
-else
-    rm -f $SFTdir1/*;
-fi
-if [ ! -d "$SFTdir2" ]; then
-    mkdir $SFTdir2;
-else
-    rm -f $SFTdir2/*;
+
+mfd_CL=" --Alpha=$Alpha --Delta=$Delta --IFO=$IFO --Tsft=$Tsft --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0 --fmin=0 --Band=$fmax --Freq=$Freq --f1dot=$f1dot --refTime=$refTime --TDDfile=$TDDfile --timestampsFile=./ts.dat --generationMode=0 --outSFTbname=${SFTdir}/ -v1"
+
+if [ "$noiseSqrtSh" != 0 ]; then
+    mfd_CL="$mfd_CL --noiseSFTs='${noiseSFTdir}/*.sft'"
 fi
 
-# this part of the command-line is compatible with SemiAnalyticF:
-mfd_CL1=" --Alpha=$Alpha --Delta=$Delta --IFO=$IFO --Tsft=$Tsft --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0 --fmin=$mfd_fmin --Band=$mfd_FreqBand --Freq=$Freq --f1dot=$f1dot --refTime=$refTime --TDDfile=$TDDfile --timestampsFile=./ts.dat --generationMode=1 --outSFTbname=$SFTdir1/"
-
-mfd_CL2=" --Alpha=$Alpha --Delta=$Delta --IFO=$IFO --Tsft=$Tsft --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0 --fmin=0 --Band=103 --Freq=$Freq --f1dot=$f1dot --refTime=$refTime --timestampsFile=./ts.dat --generationMode=0 --outSFTbname=${SFTdir2}/"
-
-if [ "$haveNoise" = true ]; then
-    mfd_CL1="$mfd_CL1 --noiseSqrtSh=$sqrtSh";
-    mfd_CL2="$mfd_CL2 --noiseSqrtSh=$sqrtSh";
-fi
-
-cmdline="$mfd_code $mfd_CL1";
+cmdline="$mfd_code $mfd_CL";
 echo $cmdline;
 if ! eval $cmdline; then
     echo "Error.. something failed when running '$mfd_code' ..."
     exit 1
 fi
 
-## ---------- make high-freq SFT then extract sub-band
-cmdline="$mfd_code $mfd_CL2";
-echo $cmdline;
-if ! eval $cmdline; then
-    echo "Error.. something failed when running '$mfd_code' ..."
-    exit 1
-fi
-
-## extract relevant frequency-band
-extract_CL="--inputSFTs='$SFTdir2/*.sft' --fmin=$mfd_fmin --fmax=$mfd_fmax --outputDir=$SFTdir2 --descriptionMisc=Band"
-cmdline="$extract_code $extract_CL"
-echo $cmdline;
-if ! eval $cmdline; then
-    echo "Error.. something failed when running '$extract_code' ..."
-    exit 1
-fi
-
 echo
 echo "----------------------------------------------------------------------"
-echo "STEP 2: run computeLFTfromSFTs"
+echo "STEP 2: run computeLFTfromSFTs on small band extracted from SFTs"
 echo "----------------------------------------------------------------------"
 echo
-lft_CL=" --inputSFTs='$SFTdir1/*.sft' --outputLFT=$LFTfile --upsampling=1 2> tddSFT.dat"  ##  --fmin=100.0123451 --fmax=100.1994
+lft_CL=" --inputSFTs='${SFTdir}/*.sft' --outputLFT=$LFTfile --fmin=$fmin --fmax=$fmax --upsampling=1 2> tddSFT.dat"
 
 cmdline="$lft_code $lft_CL";
 echo $cmdline;
@@ -145,11 +136,7 @@ if ! eval $cmdline; then
     exit 1
 fi
 
-echo
-echo "----------------------------------------------------------------------"
-echo " STEP 3: convert output LFT into ASCII"
-echo "----------------------------------------------------------------------"
-echo
+## convert output LFT into ASCII"
 cmdline="$dumpSFT_code --SFTfiles=$LFTfile --noHeader > $LFTascii";
 echo $cmdline;
 if ! eval $cmdline; then
@@ -157,7 +144,8 @@ if ! eval $cmdline; then
     exit 1;
 fi
 
+
 ## clean up files
 if [ -z "$NOCLEANUP" ]; then
-    rm -rf $SFTdir1 $SFTdir2
+    rm -rf $SFTdir $noiseSFTdir
 fi
