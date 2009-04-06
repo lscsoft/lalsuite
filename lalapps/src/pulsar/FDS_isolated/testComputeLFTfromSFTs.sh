@@ -109,7 +109,7 @@ echo " STEP 1: Generate (full-band) timeseries and SFTs"
 echo "----------------------------------------------------------------------"
 echo
 
-mfd_CL=" --Alpha=$Alpha --Delta=$Delta --IFO=$IFO --Tsft=$Tsft --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0 --fmin=0 --Band=$fUpper --Freq=$Freq --f1dot=$f1dot --refTime=$refTime --TDDfile=$TDDfile --timestampsFile=./ts.dat --generationMode=0 --outSFTbname=${SFTdir}/ -v1"
+mfd_CL=" --lineFeature --Alpha=$Alpha --Delta=$Delta --IFO=$IFO --Tsft=$Tsft --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0 --fmin=0 --Band=$fUpper --Freq=$Freq --f1dot=$f1dot --refTime=$refTime --TDDfile=$TDDfile --timestampsFile=./ts.dat --generationMode=0 --outSFTbname=${SFTdir}/ -v1"
 
 if [ "$noiseSqrtSh" != 0 ]; then
     mfd_CL="$mfd_CL --noiseSFTs='${noiseSFTdir}/*.sft'"

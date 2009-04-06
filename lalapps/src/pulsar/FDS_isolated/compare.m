@@ -45,7 +45,7 @@ clf;
 hold on;
 plot ( freqBins0(imin0:end), abs(lftPos0(imin0:end)).^2, "b+;FFT full timeseries;" );
 plot ( lft1(:,1), lft1(:,2).^2 + lft1(:,3).^2, "r-x;LFTfromSFTs_Band;" );
-axis([101.124 101.126]); %% axis([fmin1  fmax1]);
+axis([101.12 101.13]); %% axis([fmin1  fmax1]);
 hold off;
 
 
