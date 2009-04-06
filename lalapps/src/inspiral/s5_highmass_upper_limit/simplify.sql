@@ -6,17 +6,15 @@
 CREATE TABLE _idmap_ AS
 	SELECT
 		old_definer.coinc_def_id AS old,
-		(
-			SELECT
-				MIN(new_definer.coinc_def_id)
-			FROM
-				coinc_definer AS new_definer
-			WHERE
-				new_definer.search == old_definer.search
-				AND new_definer.search_coinc_type == old_definer.search_coinc_type
-		) AS new
+		MIN(new_definer.coinc_def_id) AS new
 	FROM
-		coinc_definer AS old_definer;
+		coinc_definer AS old_definer
+		JOIN coinc_definer AS new_definer ON (
+			new_definer.search == old_definer.search
+			AND new_definer.search_coinc_type == old_definer.search_coinc_type
+		)
+	GROUP BY
+		old_definer.coinc_def_id;
 
 CREATE INDEX idm_o_index ON _idmap_ (old);
 UPDATE coinc_event SET coinc_def_id = (SELECT new FROM _idmap_ WHERE old == coinc_def_id);
