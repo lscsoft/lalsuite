@@ -1,5 +1,4 @@
 *.patch
-*~
 Makefile.in
 /README.install
 /acinclude.m4
