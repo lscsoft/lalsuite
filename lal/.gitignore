@@ -49,6 +49,7 @@ libtool
 misc/__lalGitID.h
 misc/lal-user-env.*sh
 misc/lalGitID.h
+misc/uninstall-lal.sh
 packages/*/doc/main.pdf
 packages/*/include/*.tex
 packages/*/src/*.tex
@@ -101,12 +102,12 @@ packages/factories/test/VectorFactoriesTest
 packages/factories/test/VectorFactoriesTest.c
 packages/factories/test/VectorSequenceFactoriesTest
 packages/factories/test/VectorSequenceFactoriesTest.c
+packages/fft/test/*.dat
 packages/fft/test/AverageSpectrumTest
 packages/fft/test/AvgSpecTest
 packages/fft/test/ComplexFFTTest
 packages/fft/test/RealFFTTest
 packages/fft/test/TimeFreqFFTTest
-packages/fft/test/*.dat
 packages/findchirp/test/FindChirpBCVSpinTest
 packages/findchirp/test/FindChirpTDTest
 packages/framedata/src/FrameSeries.c
