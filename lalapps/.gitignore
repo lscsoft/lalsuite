@@ -1,9 +1,9 @@
-aclocal.m4
-configure
 *.patch
 Makefile.in
-autom4te.cache/
-auto/
 __lalappsGitID.h
-lalappsGitID.h
+aclocal.m4
+auto/
+autom4te.cache/
 config.h.in
+configure
+lalappsGitID.h
