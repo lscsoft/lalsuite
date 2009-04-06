@@ -5,8 +5,9 @@ FROM
 
 CREATE TEMPORARY TABLE maxsnrs AS
 	SELECT
-		MAX(coinc_inspiral.snr) AS snr,
-		coinc_inspiral.end_time AS end_time
+		coinc_inspiral.end_time AS end_time,
+		coinc_event.time_slide_id AS time_slide_id,
+		MAX(coinc_inspiral.snr) AS snr
 	FROM
 		coinc_inspiral
 		JOIN coinc_event ON (
@@ -16,7 +17,7 @@ CREATE TEMPORARY TABLE maxsnrs AS
 		coinc_inspiral.end_time,
 		coinc_event.time_slide_id;
 
-CREATE INDEX ms_et_index ON maxsnrs (end_time);
+CREATE INDEX ms_et_index ON maxsnrs (end_time, time_slide_id);
 DELETE FROM
 	coinc_inspiral
 WHERE
@@ -25,8 +26,12 @@ WHERE
 			coinc_inspiral.coinc_event_id
 		FROM
 			coinc_inspiral
+			JOIN coinc_event ON (
+				coinc_event.coinc_event_id == coinc_inspiral.coinc_event_id
+			)
 			JOIN maxsnrs ON (
 				maxsnrs.end_time == coinc_inspiral.end_time
+				AND maxsnrs.time_slide_id == coinc_event.time_slide_id
 			)
 		WHERE
 			coinc_inspiral.snr >= maxsnrs.snr
