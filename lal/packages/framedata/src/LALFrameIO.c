@@ -40,6 +40,9 @@ int gethostname(char *name, int len);
 #include <lal/LALRCSID.h>
 NRCSID (LALFRAMEIOC,"$Id$");
 
+/* FIXME: WARNING: this value might need to change in the future */
+#define FR_FILE_HEADER_SIZE 40 /* size of frame file header in bytes */
+
 struct FrFile * XLALFrOpenURL( const char *url )
 {
   static const char *func = "XLALFrOpenURL";
@@ -108,6 +111,8 @@ int XLALFrFileCheckSum( FrFile *iFile )
   iFile->chkSumFiFlag = FR_YES;
   iFile->chkSumFrFlag = FR_NO;
   /* sequential read */
+  /* FIXME: WARNING: HACK: following line may need to be updated in future */
+  FrIOSet(iFile->frfd, FR_FILE_HEADER_SIZE);
   while ((frame = FrameReadRecycle(iFile, frame)))
     ;
   iFile->chkSumFiFlag = chkSumFiFlag;
