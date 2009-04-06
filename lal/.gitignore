@@ -5,7 +5,6 @@ Makefile.in
 /aclocal.m4
 autom4te.cache/
 configure
-configure.ac
 doc/doxygen/
 include/config.h.in
 misc/__lalGitID.h
