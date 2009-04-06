@@ -11,7 +11,7 @@ gitID:
 BUILT_SOURCES = gitID
 
 if FRAME
-frameprogs = lalapps_MakeSFTs
+frameprogs = lalapps_MakeSFTs lalapps_MakeCleanSFTs
 else
 frameprogs =
 endif
@@ -20,6 +20,7 @@ bin_PROGRAMS = $(frameprogs) lalapps_ConvertToSFTv2 lalapps_LISAmakeSFTs
 
 if FRAME
 lalapps_MakeSFTs_SOURCES = MakeSFTs.c
+lalapps_MakeCleanSFTs_SOURCES=MakeCleanSFTs.c
 endif
 
 lalapps_ConvertToSFTv2_SOURCES = ConvertToSFTv2.c
