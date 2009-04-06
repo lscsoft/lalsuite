@@ -41,6 +41,8 @@
 #include <lal/TimeSeries.h>
 #include <lal/ComplexFFT.h>
 
+#include <lal/ComputeFstat.h>
+
 #include <lal/lalGitID.h>
 #include <lalappsGitID.h>
 
@@ -58,6 +60,10 @@ RCSID( "$Id$");
 #define MYMIN(x,y) ( (x) < (y) ? (x) : (y) )
 
 #define SQ(x) ((x)*(x))
+
+#define NhalfPos(N) (floor( (N)/2.0 + 0.5 ))
+#define NhalfNeg(N) ((N) - NhalfPos(N))
+
 
 #define LAL_INT4_MAX    LAL_UINT8_C(2147483647)
 
@@ -140,6 +146,7 @@ int main(int argc, char *argv[])
   SFTtype *outputLFT = NULL;		/**< output 'Long Fourier Transform */
   MultiSFTVector *SSBmultiSFTs = NULL;	/**< SFT vector transferred to the SSB */
   UINT4 X;
+  REAL8 fHet;	/* heterodyning frequency [FIXME: clean this up] */
 
   lalDebugLevel = 0;
   vrbflg = 1;	/* verbose error-messages */
@@ -192,31 +199,58 @@ int main(int argc, char *argv[])
   } /* allocate SSBmultiSFTs */
 
 
+  { /* find effective heterodyning frequency */
+    UINT4 Nneg = NhalfNeg ( inputData.numBins );
+    fHet = inputData.fmin + Nneg / inputData.Tsft;	/* DC for our internal DFTs */
+    printf ("fmin = %.9f, fHet = %.9f\n", inputData.fmin, fHet );
+  }
   /* ----- Central Demodulation step: time-shift each SFT into SSB */
   /* we do this in the frequency-domain, ie multiply each bin by a complex phase-factor */
 
-
+  /* loop over detectors X */
   for ( X = 0; X < inputData.numDet; X ++ )
     {
       UINT4 n;
       SFTVector *SSBthisVect = SSBmultiSFTs->data[X];
       UINT4 N0 = inputData.numBins;   		/* number of bins in input SFTs */
-      REAL4 fact = 1.0 / N0;
+      REAL4 norm = 1.0 / N0;
+      LIGOTimeGPS t0;
 
+      t0 = inputData.multiSFTs->data[X]->data[0].epoch;
+
+      /* loop over SFTs n */
       for ( n = 0; n < SSBthisVect->length; n ++ )
 	{
 	  UINT4 k;
 	  SFTtype *inputSFT = &(inputData.multiSFTs->data[X]->data[n]);
 	  SFTtype *SSBthisSFT = &SSBthisVect->data[n];
 	  COMPLEX8Vector *SSBsftData = SSBthisSFT->data;	/* backup copy of data pointer  */
+	  REAL8 offset_t0, hetCycles;
+	  REAL4 hetCorr_re, hetCorr_im;
+	  REAL4 fact_re, fact_im;
 
+	  /* determine heterodyning phase-correction for this SFT */
+	  offset_t0 = XLALGPSDiff ( &inputSFT->epoch, &t0 );
+	  /* offset_t0 = 1e-9 * (UINT4)( offset_t0 * 1e9 + 0.5 );	*/ /* round to closest integer multiple of nanoseconds */
+
+	  hetCycles = - fHet * offset_t0;	/* heterodyning phase-correction for this SFT */
+	  sin_cos_2PI_LUT (&hetCorr_im, &hetCorr_re, hetCycles );
+
+	  /* prepare new SFT copy */
 	  (*SSBthisSFT) = (*inputSFT);				/* struct copy (kills data-pointer) */
 	  SSBthisSFT->data = SSBsftData;			/* restore data-pointer */
 
+	  /* apply all phase- and normalizing factors */
+
+	  fact_re = norm * hetCorr_re;
+	  fact_im = norm * hetCorr_im;
+
+	  printf ("SFT n = %d: (tn - t0) = %g, hetCycles = %g, ==> fact = %g + i %g\n", n, offset_t0, hetCycles, fact_re, fact_im );
+
 	  for ( k = 0; k < N0; k ++ )
 	    {
-	      SSBsftData->data[k].re = fact * inputSFT->data->data[k].re;
-	      SSBsftData->data[k].im = fact * inputSFT->data->data[k].im;
+	      SSBsftData->data[k].re = fact_re * inputSFT->data->data[k].re - fact_im * inputSFT->data->data[k].im;
+	      SSBsftData->data[k].im = fact_re * inputSFT->data->data[k].im + fact_im * inputSFT->data->data[k].re;
 	    } /* k < numBins */
 
 	} /* for n < numSFTs */
@@ -587,7 +621,7 @@ int
 XLALReorderFFTWtoSFT (COMPLEX8Vector *X)
 {
   static const CHAR *fn = "XLALReorderFFTWtoSFT()";
-  UINT4 N, NhalfPos, NhalfNeg;
+  UINT4 N, Npos, Nneg;
 
   /* temporary storage for data */
   COMPLEX8 *tmp;
@@ -600,9 +634,8 @@ XLALReorderFFTWtoSFT (COMPLEX8Vector *X)
     }
 
   N = X -> length;
-  NhalfPos = floor( N/2.0 + 0.5 );
-  /* NhalfPos = floor( N/2.0 + 1e-6) + 1; */	/* DC + positive frequencies: round up */
-  NhalfNeg = N - NhalfPos;
+  Npos = NhalfPos ( N );
+  Nneg = NhalfNeg ( N );
 
   /* allocate temporary storage for swap */
   if ( (tmp = XLALMalloc ( N * sizeof(*tmp) )) == NULL )
@@ -614,10 +647,10 @@ XLALReorderFFTWtoSFT (COMPLEX8Vector *X)
   memcpy ( tmp, X->data, N * sizeof(*tmp) );
 
   /* Copy second half from FFTW: 'negative' frequencies */
-  memcpy ( X->data, tmp + NhalfPos, NhalfNeg * sizeof(*tmp) );
+  memcpy ( X->data, tmp + Npos, Nneg * sizeof(*tmp) );
 
   /* Copy first half from FFTW: 'DC + positive' frequencies */
-  memcpy ( X->data + NhalfNeg, tmp, NhalfPos * sizeof(*tmp) );
+  memcpy ( X->data + Nneg, tmp, Npos * sizeof(*tmp) );
 
   XLALFree(tmp);
 
@@ -633,7 +666,7 @@ int
 XLALReorderSFTtoFFTW (COMPLEX8Vector *X)
 {
   static const CHAR *fn = "XLALReorderSFTtoFFTW()";
-  UINT4 N, NhalfPos, NhalfNeg;
+  UINT4 N, Npos, Nneg;
 
   /* temporary storage for data */
   COMPLEX8 *tmp;
@@ -646,9 +679,8 @@ XLALReorderSFTtoFFTW (COMPLEX8Vector *X)
     }
 
   N = X->length;
-  NhalfPos = floor( N/2.0 + 0.5 );
-  /* NhalfPos = floor( N/2.0 + 1e-6 ) + 1;*/	/* DC + positive frequencies: round up */
-  NhalfNeg = N - NhalfPos;
+  Npos = NhalfPos ( N );
+  Nneg = NhalfNeg ( N );
 
   /* allocate temporary storage for swap */
   if ( (tmp = XLALMalloc ( N * sizeof(*tmp) )) == NULL )
@@ -660,10 +692,10 @@ XLALReorderSFTtoFFTW (COMPLEX8Vector *X)
   memcpy ( tmp, X->data, N * sizeof(*tmp) );
 
   /* Copy second half of FFTW: 'negative' frequencies */
-  memcpy ( X->data + NhalfPos, tmp, NhalfNeg * sizeof(*tmp) );
+  memcpy ( X->data + Npos, tmp, Nneg * sizeof(*tmp) );
 
   /* Copy first half of FFTW: 'DC + positive' frequencies */
-  memcpy ( X->data, tmp + NhalfNeg, NhalfPos * sizeof(*tmp) );
+  memcpy ( X->data, tmp + Nneg, Npos * sizeof(*tmp) );
 
   XLALFree(tmp);
 
