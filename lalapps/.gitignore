@@ -1,4 +1,3 @@
-*.patch
 Makefile.in
 __lalappsGitID.h
 aclocal.m4
