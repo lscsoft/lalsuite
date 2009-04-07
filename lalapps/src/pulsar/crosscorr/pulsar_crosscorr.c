@@ -24,7 +24,7 @@
  * \file
  * \brief Perform CW cross-correlation search
  *
- * $Id$
+ * $Id: pulsar_crosscorr.c,v 1.23 2009/03/13 00:43:04 cchung Exp $
  *
 
 
@@ -35,7 +35,7 @@
 #include <lal/DopplerScan.h>
 #include <gsl/gsl_permutation.h>
 
-RCSID( "$Id$");
+RCSID( "$Id: pulsar_crosscorr.c,v 1.23 2009/03/13 00:43:04 cchung Exp $");
 
 /* globals, constants and defaults */
 
@@ -46,6 +46,7 @@ BOOLEAN  uvar_help;
 BOOLEAN  uvar_averagePsi;
 BOOLEAN  uvar_averageIota;
 BOOLEAN  uvar_autoCorrelate;
+BOOLEAN  uvar_spindownParams;
 INT4     uvar_blocksRngMed; 
 INT4     uvar_detChoice;
 REAL8    uvar_startTime, uvar_endTime;
@@ -57,6 +58,9 @@ REAL8    uvar_maxlag;
 REAL8    uvar_psi;
 REAL8    uvar_refTime;
 REAL8    uvar_cosi;
+REAL8    uvar_epsilon;
+REAL8    uvar_magfield;
+REAL8    uvar_brakingindex;
 CHAR     *uvar_ephemDir=NULL;
 CHAR     *uvar_ephemYear=NULL;
 CHAR     *uvar_sftDir=NULL;
@@ -88,6 +92,8 @@ CHAR     *uvar_filenameOut=NULL;
 
 #define SQUARE(x) (x*x)
 #define CUBE(x) (x*x*x)
+
+#define N_SPINDOWN_DERIVS 6
 
 void initUserVars (LALStatus *status);
 
@@ -139,7 +145,7 @@ int main(int argc, char *argv[]){
   SkyPatchesInfo skyInfo;
 
   /* frequency loop info */
-  INT4 nfreqLoops, freqCounter = 0;
+  INT4 nfreqLoops=1, freqCounter = 0;
   INT4 nParams = 0;
   REAL8 f_current = 0.0;
   INT4 ualphacounter=0.0;
@@ -149,6 +155,9 @@ int main(int argc, char *argv[]){
   INT4 nfddotLoops = 1, fddotCounter = 0;
   REAL8 fdot_current = 0.0, delta_fdot = 0.0;
   REAL8 fddot_current = 0.0, delta_fddot = 0.0; 
+
+  /* frequency derivative array, if we search over q1, q2, n */
+  REAL8Vector *fdots = NULL;
 
   static INT4VectorSequence  *sftPairIndexList=NULL;
   REAL8Vector  *sigmasq;
@@ -314,25 +323,34 @@ int main(int argc, char *argv[]){
     uvar_fResolution = 1/tObs;
   }
 
-  if (!(LALUserVarWasSet (&uvar_fdotResolution))) {
-    uvar_fdotResolution = SQUARE(1/tObs);
-  }
-
-  if (!(LALUserVarWasSet (&uvar_fddotResolution))) {
-    uvar_fddotResolution = CUBE(1/tObs);
-  }
-
   /*get number of frequency loops*/
   nfreqLoops = ceil(uvar_fBand/uvar_fResolution);
 
-  nfdotLoops = 1 + ceil(uvar_fdotBand/uvar_fdotResolution);
+  /* if we are using spindown parameters, initialise the fdots array */
+  if (uvar_spindownParams) {
+    fdots = (REAL8Vector *)LALCalloc(1, sizeof(REAL8Vector));
+    fdots->length = N_SPINDOWN_DERIVS;
+    fdots->data = (REAL8 *)LALCalloc(fdots->length, sizeof(REAL8));
+  }
+  /*otherwise just search over f0, fdot, fddot */
+  else {
 
-  nfddotLoops = 1 + ceil(uvar_fddotBand/uvar_fddotResolution);
+    if (!(LALUserVarWasSet (&uvar_fdotResolution))) {
+      uvar_fdotResolution = SQUARE(1/tObs);
+    }
 
-  delta_fdot = uvar_fdotResolution;
+    if (!(LALUserVarWasSet (&uvar_fddotResolution))) {
+      uvar_fddotResolution = CUBE(1/tObs);
+    }
+
+    nfdotLoops = 1 + ceil(uvar_fdotBand/uvar_fdotResolution);
+
+    nfddotLoops = 1 + ceil(uvar_fddotBand/uvar_fddotResolution);
+
+    delta_fdot = uvar_fdotResolution;
  
-  delta_fddot = uvar_fddotResolution;
-
+    delta_fddot = uvar_fddotResolution;
+  }
 
   /*  set up ephemeris  */
   if(uvar_ephemDir) {
@@ -483,7 +501,7 @@ int main(int argc, char *argv[]){
       for (freqCounter = 0; freqCounter < nfreqLoops; freqCounter++) {
 
 	f_current = uvar_f0 + (uvar_fResolution*freqCounter);
-
+ 
 	/* frequency derivative loop */
 	for (fdotCounter = 0; fdotCounter < nfdotLoops; fdotCounter++) {
 
@@ -494,10 +512,16 @@ int main(int argc, char *argv[]){
 
 	    fddot_current = uvar_fddot + (delta_fddot*fddotCounter);
 
+	    if (uvar_spindownParams) {
+
+              CalculateFdots(&status, fdots, f_current, uvar_epsilon, uvar_magfield, uvar_brakingindex);
+	      fdot_current = fdots->data[0];
+	      fddot_current = fdots->data[1]; 	  
+
+     	    }
 
 	    /* loop over sky patches -- main calculations  */
 	    for (skyCounter = 0; skyCounter < nSkyPatches; skyCounter++) {
-
 
 	      /* initialize Doppler parameters of the potential source */
 	      thisPoint.Alpha = skyAlpha[skyCounter]; 
@@ -1222,6 +1246,95 @@ void DeleteBeamFnHead (LALStatus *status,
 
 }
 
+void CalculateFdots (LALStatus *status,
+		     REAL8Vector *fdots,
+		     REAL8 f0,
+		     REAL8 epsilon,
+		     REAL8 magfield,
+		     REAL8 n)
+{
+  REAL8 grav, rstar, inertia, c, mu0;
+  REAL8 q1, q2;
+
+
+  INITSTATUS (status, "CalculateFdots", rcsid);
+  ATTATCHSTATUSPTR (status);
+
+  grav = 6.67e-11;
+  rstar = 1e4;
+  c = 2.998e8;
+  inertia = 0.4*1.4*1.99e30*rstar*rstar;
+  mu0 = 1.2566e-6;
+
+  q1 = 32*grav*inertia*SQUARE(M_PI)*SQUARE(M_PI)*SQUARE(epsilon)/(5*CUBE(c)*SQUARE(c));
+
+  q2 = 2*CUBE(M_PI)*CUBE(rstar)*CUBE(rstar)*SQUARE(magfield)/(3*mu0*inertia*CUBE(c));
+
+  /* multiply q2 by the (pi R/c)^n-3 term*/
+  q2 = q2*pow(M_PI*rstar/c, n-3);
+
+  /* hard code each derivative. symbolic differentiation too hard? */
+  fdots->data[0] = -(q1 * pow(f0, 5)) - (q2 * pow(f0, n));
+
+  fdots->data[1] = -(5.0 * q1 * pow(f0, 4) * fdots->data[0])
+		   -(n * q2 * pow(f0, n-1) * fdots->data[0]);
+
+  fdots->data[2] = -q1 * (20.0 * CUBE(f0) * SQUARE(fdots->data[0]) + 5.0 * pow(f0, 4) * fdots->data[1])
+		   -q2 * ((n-1) * n * pow(f0, n-2) * SQUARE(fdots->data[0]) + n * pow(f0,n-1) * fdots->data[1]);
+
+  fdots->data[3] = -q1 * (60.0*SQUARE(f0)*CUBE(fdots->data[0]) + 60.0*CUBE(f0)*fdots->data[0]*fdots->data[1] 
+			  + 5.0*pow(f0,4)*fdots->data[2])
+		   -q2 * ((n-2)*(n-1)*n*pow(f0,n-3)*CUBE(fdots->data[0])
+			   + 3*n*(n-1)*pow(f0,n-2)*fdots->data[0]*fdots->data[1] + n*pow(f0, n-1)*fdots->data[2]);
+
+  fdots->data[4] = -q1 * (120.0*f0*pow(fdots->data[0],4) + 360.0*SQUARE(f0)*SQUARE(fdots->data[0])*fdots->data[1] 
+		   	+ 60.0*CUBE(f0)*SQUARE(fdots->data[1]) + 80.0*CUBE(f0)*fdots->data[0]*fdots->data[2] 
+			+ 5.0*SQUARE(f0)*SQUARE(f0)*fdots->data[3])
+		   -q2 * ((n-3)*(n-2)*(n-1)*n*pow(f0,n-4)*pow(fdots->data[0],4)
+			  + 6.0*(n-2)*(n-1)*n*pow(f0,n-3)*SQUARE(fdots->data[0])*fdots->data[1] 
+			  + 3.0*(n-1)*n*pow(f0,n-2)*SQUARE(fdots->data[1]) 
+			  + 4.0*(n-1)*n*pow(f0,n-2)*fdots->data[0]*fdots->data[2] + n*pow(f0, n-1)*fdots->data[3]);
+
+  fdots->data[5] = -q1 * (120.0*pow(fdots->data[0],5) + 1200.0*f0*CUBE(fdots->data[0])*fdots->data[1] 
+			  + 900.0*SQUARE(f0)*fdots->data[0]*SQUARE(fdots->data[1]) + 600.0*SQUARE(f0)*SQUARE(fdots->data[0])*fdots->data[2]
+			  + 200.0*CUBE(f0)*fdots->data[1]*fdots->data[2] + 100.0*CUBE(f0)*fdots->data[0]*fdots->data[3]
+			  + 5.0*pow(f0,4)*fdots->data[4])
+		   -q2 * ((n-4)*(n-3)*(n-2)*(n-1)*n*pow(f0,n-5)*pow(fdots->data[0],5) 
+			 + 10.0*(n-3)*(n-2)*(n-1)*n*pow(f0,n-4)*CUBE(fdots->data[0])*fdots->data[1]
+			 + 15.0*(n-2)*(n-1)*n*pow(f0,n-3)*fdots->data[0]*SQUARE(fdots->data[1])
+			 + 10.0*(n-2)*(n-1)*n*pow(f0,n-3)*SQUARE(fdots->data[1])*fdots->data[2]
+			 + 10.0*(n-1)*n*pow(f0,n-2)*fdots->data[1]*fdots->data[2]
+ 			 + 5.0*(n-1)*n*pow(f0,n-2)*fdots->data[0]*fdots->data[3]
+			 + n*pow(f0,n-1)*fdots->data[4]);
+
+/*  for (i=1; i < fdots->length; i++) {
+    counter = 1;
+    gwcounter = gwBrakingIndex;
+    emcounter = emBrakingIndex;
+    gwfactorial = 1;
+    emfactorial = 1;
+    fdotfactorial = 1;
+
+    while (counter <= i) {
+ 
+      gwfactorial *= gwcounter;
+      emfactorial *= emcounter;
+      fdotfactorial *=
+
+      fdots->data[i] += -(gwfactorial * q1 * pow(f0, gwcounter-1) * pow(fdots->data[i-counter], counter) )
+ 		        -(emfactorial * q2 * pow(fdots->data[i-counter], counter) *pow(f0, emcounter-1))
+      gwcounter--;
+      emcounter--;
+      counter++;
+    }
+  }
+*/
+
+  DETATCHSTATUSPTR (status);
+
+  RETURN (status);
+}
+
 void initUserVars (LALStatus *status)
 {
   INITSTATUS( status, "initUserVars", rcsid );
@@ -1234,6 +1347,7 @@ void initUserVars (LALStatus *status)
   uvar_averagePsi = TRUE;
   uvar_averageIota = TRUE;
   uvar_autoCorrelate = FALSE;
+  uvar_spindownParams = FALSE;
   uvar_blocksRngMed = BLOCKSRNGMED;
   uvar_detChoice = 2;
   uvar_f0 = F0;
@@ -1252,6 +1366,9 @@ void initUserVars (LALStatus *status)
   uvar_psi = 0.0;
   uvar_refTime = 0.0;
   uvar_cosi = 0.0;
+  uvar_epsilon = 1e-5;
+  uvar_magfield = 1e12;
+  uvar_brakingindex = 3;
 
   uvar_ephemDir = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
   strcpy(uvar_ephemDir,DEFAULT_EPHEMDIR);
@@ -1389,6 +1506,23 @@ void initUserVars (LALStatus *status)
 			  0, UVAR_OPTIONAL,
 			  "cos(iota) inclination angle",
 			  &uvar_cosi); 
+  LALRegisterREALUserVar( status->statusPtr, "epsilon",
+			  0, UVAR_OPTIONAL,
+			  "pulsar's ellipticity",
+			  &uvar_epsilon); 
+  LALRegisterREALUserVar( status->statusPtr, "magfield",
+			  0, UVAR_OPTIONAL,
+			  "pulsar's magnetic field (G)",
+			  &uvar_magfield); 
+  LALRegisterREALUserVar( status->statusPtr, "braking",
+			  0, UVAR_OPTIONAL,
+			  "pulsar's electromagnetic braking index",
+			  &uvar_brakingindex); 
+  LALRegisterBOOLUserVar( status->statusPtr, "spindownParams",
+			  0, UVAR_OPTIONAL,
+			  "specify pulsar spindown parameters for search",
+			  &uvar_spindownParams); 
+
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
