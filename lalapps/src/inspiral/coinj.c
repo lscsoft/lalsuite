@@ -46,12 +46,12 @@
 "lalpps_coinj [options]\n \
 --help                       display this message \n \
 --input <injection.xml>      Specify input SimInspiralTable xml file\n\
---response-type TYPE         TYPE of injection, [ strain | etmx | etmy ]\n\n\
+--response-type TYPE         TYPE of injection, [ strain | etmx | etmy ]\n\
 --frames                     Create h(t) frame files\n\n\
 lalapps_coinj: create coherent injection files for LIGO and VIRGO\n"
 
 
-RCSID("$Id: coinj.c,v 1.3 2009/03/18 18:34:33 jveitch Exp $");
+RCSID("$Id");
 
 extern int vrbflg;
 extern int lalDebugLevel;
@@ -285,7 +285,7 @@ for(det_idx=0;det_idx<LAL_NUM_IFO;det_idx++){
 		sprintf(VirgoParsInfo,"HWINJ-STRAIN",injtype);
 		VirgoOutPars.description=VirgoParsInfo;
 		VirgoOutPars.type=ProcDataChannel;
-		VirgoOutPars.nframes=(UINT4)ceil(injLength/16.0);
+		VirgoOutPars.nframes=(UINT4)injLength;
 		VirgoOutPars.frame=0;
 		VirgoOutPars.run=2;
 		fprintf(stdout,"Generating frame file for %s-%s-%i\n",VirgoParsSource,VirgoParsInfo,TimeSeries->epoch.gpsSeconds);
