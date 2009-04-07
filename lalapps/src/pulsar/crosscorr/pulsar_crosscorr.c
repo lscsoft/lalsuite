@@ -1460,12 +1460,12 @@ void CalculateFdots (LALStatus *status,
   inertia = 0.4*1.4*1.99e30*rstar*rstar;
   mu0 = 1.2566e-6;
 
-  q1 = 32*grav*inertia*SQUARE(M_PI)*SQUARE(M_PI)*SQUARE(epsilon)/(5*CUBE(c)*SQUARE(c));
+  q1 = 32*grav*inertia*SQUARE(LAL_PI)*SQUARE(LAL_PI)*SQUARE(epsilon)/(5*CUBE(c)*SQUARE(c));
 
-  q2 = 2*CUBE(M_PI)*CUBE(rstar)*CUBE(rstar)*SQUARE(magfield)/(3*mu0*inertia*CUBE(c));
+  q2 = 2*CUBE(LAL_PI)*CUBE(rstar)*CUBE(rstar)*SQUARE(magfield)/(3*mu0*inertia*CUBE(c));
 
   /* multiply q2 by the (pi R/c)^n-3 term*/
-  q2 = q2*pow(M_PI*rstar/c, n-3);
+  q2 = q2*pow(LAL_PI*rstar/c, n-3);
 
   /* hard code each derivative. symbolic differentiation too hard? */
   fdots->data[0] = -(q1 * pow(f0, 5)) - (q2 * pow(f0, n));
