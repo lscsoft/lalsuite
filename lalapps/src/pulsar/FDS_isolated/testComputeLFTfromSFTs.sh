@@ -50,10 +50,10 @@ psi=0.6
 phi0=1.5
 
 
-fmin=99.12345
-Freq=101.12345
-fmax=102.12277   ## make sure we get an effective band of exactly 3Hz
-fUpper=103
+fmin=9.12345
+Freq=12.12345
+fmax=15.12277    ## make sure we get an effective band of exactly 6Hz
+fUpper=20
 
 f1dot=-1e-10;
 
