@@ -93,7 +93,6 @@ typedef struct {
   LIGOTimeGPS endTime;
   REAL8 fmin;			/**< smallest frequency contained in input SFTs */
   UINT4 numBins;		/**< number of frequency bins in input SFTs */
-  REAL8 fHet;			/**< frequency that will be used to heterodyne this data */
 } InputSFTData;
 
 
@@ -127,9 +126,11 @@ void LALInitUserVars ( LALStatus *status, UserInput_t *uvar);
 void LoadInputSFTs ( LALStatus *status, InputSFTData *data, const UserInput_t *uvar );
 int XLALWeightedSumOverSFTVector ( SFTVector **outSFT, const SFTVector *inVect, const COMPLEX8Vector *weights );
 
-SFTtype *XLALSFTVectorToLFT ( const SFTVector *sfts, REAL8 fHet, REAL8 upsampling );
+SFTtype *XLALSFTVectorToLFT ( const SFTVector *sfts, REAL8 upsampling );
 int XLALReorderFFTWtoSFT (COMPLEX8Vector *X);
 int XLALReorderSFTtoFFTW (COMPLEX8Vector *X);
+
+int XLALTimeShiftSFT ( SFTtype *sft, REAL8 shift );
 
 /*---------- empty initializers ---------- */
 
@@ -206,51 +207,21 @@ int main(int argc, char *argv[])
     {
       UINT4 n;
       SFTVector *SSBthisVect = SSBmultiSFTs->data[X];
-      UINT4 N0 = inputData.numBins;   		/* number of bins in input SFTs */
-      REAL4 norm = 1.0 / N0;
-      LIGOTimeGPS t0;
-
-      t0 = inputData.multiSFTs->data[X]->data[0].epoch;
 
       /* loop over SFTs n */
       for ( n = 0; n < SSBthisVect->length; n ++ )
 	{
-	  UINT4 k;
 	  SFTtype *inputSFT = &(inputData.multiSFTs->data[X]->data[n]);
 	  SFTtype *SSBthisSFT = &SSBthisVect->data[n];
-	  COMPLEX8Vector *SSBsftData = SSBthisSFT->data;	/* backup copy of data pointer  */
-	  REAL8 offset_t0, hetCycles;
-	  REAL4 hetCorr_re, hetCorr_im;
-	  REAL4 fact_re, fact_im;
-
-	  /* determine heterodyning phase-correction for this SFT */
-	  offset_t0 = XLALGPSDiff ( &inputSFT->epoch, &t0 );
-	  /* offset_t0 = 1e-9 * (UINT4)( offset_t0 * 1e9 + 0.5 );	*/ /* round to closest integer multiple of nanoseconds */
-
-	  hetCycles = inputData.fHet * offset_t0;	/* heterodyning phase-correction for this SFT */
-	  hetCycles -= floor ( hetCycles );
-
-	  sin_cos_2PI_LUT (&hetCorr_im, &hetCorr_re, -hetCycles );
-
-	  hetCorr_re = cos(-LAL_TWOPI * hetCycles);
-	  hetCorr_im = sin(-LAL_TWOPI * hetCycles);
+	  COMPLEX8Vector *SSBsftData;
 
 	  /* prepare new SFT copy */
+	  SSBsftData = SSBthisSFT->data;	/* backup copy of data pointer  */
 	  (*SSBthisSFT) = (*inputSFT);				/* struct copy (kills data-pointer) */
 	  SSBthisSFT->data = SSBsftData;			/* restore data-pointer */
 
-	  /* apply all phase- and normalizing factors */
-
-	  fact_re = norm * hetCorr_re;
-	  fact_im = norm * hetCorr_im;
-
-	  printf ("SFT n = %d: (tn - t0) = %g, hetCycles = %g, ==> fact = %g + i %g\n", n, offset_t0, hetCycles, fact_re, fact_im );
-
-	  for ( k = 0; k < N0; k ++ )
-	    {
-	      SSBsftData->data[k].re = fact_re * inputSFT->data->data[k].re - fact_im * inputSFT->data->data[k].im;
-	      SSBsftData->data[k].im = fact_re * inputSFT->data->data[k].im + fact_im * inputSFT->data->data[k].re;
-	    } /* k < numBins */
+	  /* copy SFT data */
+	  memcpy ( SSBthisSFT->data->data, inputSFT->data->data, SSBthisSFT->data->length * sizeof(SSBthisSFT->data->data[0]) );
 
 	} /* for n < numSFTs */
 
@@ -260,7 +231,7 @@ int main(int argc, char *argv[])
   /* ----- turn SFT vectors into long Fourier-transforms */
   for ( X=0; X < SSBmultiSFTs->length; X ++ )
     {
-      if ( (outputLFT = XLALSFTVectorToLFT ( SSBmultiSFTs->data[X], inputData.fHet, uvar.upsampling )) == NULL )
+      if ( (outputLFT = XLALSFTVectorToLFT ( SSBmultiSFTs->data[X], uvar.upsampling )) == NULL )
 	{
 	  LogPrintf ( LOG_CRITICAL, "%s: call to XLALSFTVectorToLFT() failed (upsample=%f) ! errno = %d\n",
 		      argv[0], uvar.upsampling, xlalErrno );
@@ -377,7 +348,6 @@ LoadInputSFTs ( LALStatus *status, InputSFTData *sftData, const UserInput_t *uva
 
   {/* ----- load the multi-IFO SFT-vectors ----- */
     REAL8 fMin = -1, fMax = -1; /* default: all */
-    UINT4 Nneg;
 
     if ( LALUserVarWasSet ( &uvar->fmin ) )
       fMin = uvar->fmin;
@@ -393,12 +363,6 @@ LoadInputSFTs ( LALStatus *status, InputSFTData *sftData, const UserInput_t *uva
     sftData->numBins = multiSFTs->data[0]->data[0].data->length;
 
     sftData->numDet = multiSFTs->length;
-
-    Nneg = NhalfNeg ( sftData->numBins );
-    /* determine our heterodyning frequency */
-    /* fHet = DC for our internal DFTs */
-    sftData->fHet = sftData->fmin + 1.0 * Nneg * multiSFTs->data[0]->data[0].deltaF;
-    printf ("fmin = %.9f, fHet = %.9f\n", sftData->fmin, sftData->fHet );
   }
 
   /* ----- produce a log-string describing the data-specific setup ----- */
@@ -448,33 +412,33 @@ LoadInputSFTs ( LALStatus *status, InputSFTData *sftData, const UserInput_t *uva
  */
 SFTtype *
 XLALSFTVectorToLFT ( const SFTVector *sfts,	/**< input SFT vector */
-		     REAL8 fHet,		/**< heterodyning frequency */
 		     REAL8 upsampling )		/**< upsampling factor >= 1 */
 {
   static const CHAR *fn = "XLALSFTVectorToLFT()";
 
   COMPLEX8FFTPlan *SFTplan, *LFTplan;
-  LIGOTimeGPS epoch = {0,0};
 
   COMPLEX8TimeSeries *lTS = NULL;		/* long time-series corresponding to full set of SFTs */
   COMPLEX8TimeSeries *sTS = NULL; 		/* short time-series corresponding to a single SFT */
 
+  REAL8 fHet;				/* heterodyning frequency */
+  LIGOTimeGPS epoch = {0,0};
+
   /* constant quantities for all SFTs */
-  SFTtype *firstHead;
+  SFTtype *firstSFT;
   SFTtype *outputLFT;
   UINT4 numBinsSFT;
-  REAL8 dfSFT, dfLFT;
+  REAL8 dfSFT;
   REAL8 Tsft;
 
-  REAL8 f0SFT, f0LFT;
   REAL8 deltaT;
 
   UINT4 numSFTs;
   UINT4 n;
   REAL8 Tspan;
   UINT4 numTimeSamples;
-  REAL8 startTime;
-  UINT4 Nneg;
+  UINT4 NnegSFT, NnegLFT;
+  REAL8 f0SFT, f0LFT;
   UINT4 numSFTsFit;
 
   if ( !sfts || (sfts->length == 0) )
@@ -488,30 +452,42 @@ XLALSFTVectorToLFT ( const SFTVector *sfts,	/**< input SFT vector */
       XLAL_ERROR_NULL (fn, XLAL_EINVAL);
     }
 
-  /* obtain quantities that are constant for all SFTs */
+  /* some useful shorthands */
   numSFTs = sfts->length;
-  firstHead = &(sfts->data[0]);
-  numBinsSFT = firstHead->data->length;
-  dfSFT = firstHead->deltaF;
+  firstSFT = &(sfts->data[0]);
+  numBinsSFT = firstSFT->data->length;
+  dfSFT = firstSFT->deltaF;
   Tsft = 1.0 / dfSFT;
-
-  f0SFT = firstHead->f0;
   deltaT = 1.0 / ( numBinsSFT * dfSFT );
 
+  f0SFT = firstSFT->f0;
+
+  /* ---------- determine time-span of the final long time-series */
   Tspan = XLALGPSDiff ( &sfts->data[numSFTs-1].epoch, &sfts->data[0].epoch ) + Tsft;
   Tspan *= upsampling;
 
   /* NOTE: Tspan MUST be an integer multiple of Tsft,
    * in order for the frequency bins of the final FFT
    * to be commensurate with the SFT bins.
-   * This is required so that fHet is an integer
+   * This is required so that fHet is an exact
    * frequency-bin in both cases
    */
   numSFTsFit = (UINT4)floor(Tspan / Tsft + 0.5);	/* round */
   Tspan = numSFTsFit * Tsft;
   numTimeSamples = (UINT4)floor(Tspan / deltaT + 0.5);	/* round */
 
-  startTime = XLALGPSGetREAL8 ( &sfts->data[0].epoch );
+  /* determine the heterodyning frequency */
+  /* fHet = DC of our internal DFTs */
+  NnegSFT = NhalfNeg ( numBinsSFT );
+  fHet = f0SFT + 1.0 * NnegSFT * dfSFT;
+
+  /* translate this back into fmin for the LFT (counting down from DC==fHet) */
+  NnegLFT = NhalfNeg ( numTimeSamples );
+  f0LFT = fHet - NnegLFT / Tspan;
+
+  printf ("NSFT = %d, NLFT = %d, fminSFT = %.9f, fHet = %.9f, fminLFT = %.9f\n",
+	  numBinsSFT, numTimeSamples, f0SFT, fHet, f0LFT );
+
 
   /* ----- Prepare invFFT: compute plan for FFTW */
   if ( (SFTplan = XLALCreateReverseCOMPLEX8FFTPlan( numBinsSFT, 0 )) == NULL )
@@ -521,7 +497,7 @@ XLALSFTVectorToLFT ( const SFTVector *sfts,	/**< input SFT vector */
     }
 
   /* ----- prepare long TimeSeries container ---------- */
-  if ( (lTS = XLALCreateCOMPLEX8TimeSeries ( firstHead->name, &firstHead->epoch, fHet, deltaT, &empty_LALUnit, numTimeSamples )) == NULL )
+  if ( (lTS = XLALCreateCOMPLEX8TimeSeries ( firstSFT->name, &firstSFT->epoch, 0, deltaT, &empty_LALUnit, numTimeSamples )) == NULL )
     {
       XLALPrintError ("%s: XLALCreateCOMPLEX8TimeSeries() for %d timesteps failed! errno = %d!\n", fn, numTimeSamples, xlalErrno );
       XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
@@ -529,7 +505,7 @@ XLALSFTVectorToLFT ( const SFTVector *sfts,	/**< input SFT vector */
   memset ( lTS->data->data, 0, numTimeSamples * sizeof(*lTS->data->data)); /* set all time-samples to zero */
 
   /* ----- Prepare short time-series holding ONE invFFT of a single SFT */
-  if ( (sTS = XLALCreateCOMPLEX8TimeSeries ( "short timeseries", &epoch, fHet, deltaT, &empty_LALUnit, numBinsSFT )) == NULL )
+  if ( (sTS = XLALCreateCOMPLEX8TimeSeries ( "short timeseries", &epoch, 0, deltaT, &empty_LALUnit, numBinsSFT )) == NULL )
     {
       XLALPrintError ( "%s: XLALCreateCOMPLEX8TimeSeries() for %d timesteps failed! errno = %d!\n", fn, numBinsSFT, xlalErrno );
       XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
@@ -542,18 +518,13 @@ XLALSFTVectorToLFT ( const SFTVector *sfts,	/**< input SFT vector */
       XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
     }
 
-  /* find new lowest frequency bin in LFT, counting from heterodyning frequency fHet */
-  dfLFT = 1.0 / Tspan;
-  Nneg = NhalfNeg ( numTimeSamples );
-  f0LFT = fHet - Nneg * dfLFT;
-
   /* prepare LFT header */
-  strcpy ( outputLFT->name, firstHead->name );
+  strcpy ( outputLFT->name, firstSFT->name );
   strcat ( outputLFT->name, ":long Fourier transform");
-  outputLFT->epoch  = firstHead->epoch;
+  outputLFT->epoch  = firstSFT->epoch;
   outputLFT->f0     = f0LFT;
-  outputLFT->deltaF = dfLFT;
-  outputLFT->sampleUnits = firstHead->sampleUnits;
+  outputLFT->deltaF = 1.0 / Tspan;
+  outputLFT->sampleUnits = firstSFT->sampleUnits;
 
   if ( (outputLFT->data = XLALCreateCOMPLEX8Vector ( numTimeSamples )) == NULL )
     {
@@ -567,7 +538,60 @@ XLALSFTVectorToLFT ( const SFTVector *sfts,	/**< input SFT vector */
       SFTtype *thisSFT = &(sfts->data[n]);
       UINT4 bin0_n;
       REAL8 offset_n, nudge_n;
-      UINT4 copyLen;
+      UINT4 copyLen, binsLeft;
+
+      UINT4 k;
+      REAL8 offset0, offsetEff, hetCycles;
+      REAL4 hetCorr_re, hetCorr_im;
+      REAL4 fact_re, fact_im;
+      REAL4 norm = 1.0 / numBinsSFT;
+
+
+      /* find bin in long timeseries corresponding to starttime of *this* SFT */
+      offset_n = XLALGPSDiff ( &thisSFT->epoch, &firstSFT->epoch );
+      bin0_n = (UINT4) ( offset_n / deltaT + 0.5 );	/* round to closest bin */
+
+      nudge_n = bin0_n * deltaT - offset_n;		/* rounding error */
+      nudge_n = 1e-9 * (floor)(nudge_n * 1e9 + 0.5);	/* round to closest nanosecond */
+      {
+	REAL8 t0 = XLALGPSGetREAL8 ( &firstSFT->epoch );
+	printf ("n = %d: t0_n = %f, sft_tn =(%d,%d), bin-offset = %g s, corresponding to %g timesteps\n",
+		n, t0 + bin0_n * deltaT, sfts->data[n].epoch.gpsSeconds,  sfts->data[n].epoch.gpsNanoSeconds, nudge_n, nudge_n/deltaT );
+      }
+
+      if ( (nudge_n != 0) && (XLALTimeShiftSFT ( thisSFT, nudge_n ) != XLAL_SUCCESS) )
+	{
+	  XLALPrintError ( "%s: XLALTimeShiftSFT(sft-%d, %g) failed! errno = %d!\n", fn, n, nudge_n, xlalErrno );
+	  XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+	}
+
+
+      /* determine heterodyning phase-correction for this SFT */
+      offset0 = XLALGPSDiff ( &thisSFT->epoch, &firstSFT->epoch );
+      /* we know that fHet * Tsft = integer, so we only need the remainder of offset_t0 % Tsft */
+      offsetEff = fmod ( offset0, Tsft );
+      offsetEff = 1e-9 * (floor)( offsetEff * 1e9 + 0.5 );	/* round to closest integer multiple of nanoseconds */
+
+      hetCycles = fmod ( fHet * offsetEff, 1);	/* required heterodyning phase-correction for this SFT */
+
+      sin_cos_2PI_LUT (&hetCorr_im, &hetCorr_re, -hetCycles );
+
+      /* apply all phase- and normalizing factors */
+      fact_re = norm * hetCorr_re;
+      fact_im = norm * hetCorr_im;
+
+      printf ("SFT n = %d: (tn - t0) = %g s EQUIV %g s, hetCycles = %g, ==> fact = %g + i %g\n", n, offset0, offsetEff, hetCycles, fact_re, fact_im );
+
+      for ( k = 0; k < numBinsSFT; k ++ )
+	{
+	  REAL8 binReal, binImag;
+
+	  binReal = fact_re * thisSFT->data->data[k].re - fact_im * thisSFT->data->data[k].im;
+	  binImag = fact_re * thisSFT->data->data[k].im + fact_im * thisSFT->data->data[k].re;
+
+	  thisSFT->data->data[k].re = binReal;
+	  thisSFT->data->data[k].im = binImag;
+	} /* k < numBins */
 
       if ( XLALReorderSFTtoFFTW (thisSFT->data) != XLAL_SUCCESS )
 	{
@@ -581,35 +605,14 @@ XLALSFTVectorToLFT ( const SFTVector *sfts,	/**< input SFT vector */
 	  XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
 	}
 
-      /* find bin in long timeseries corresponding to starttime of *this* SFT */
-      offset_n = XLALGPSDiff ( &sfts->data[n].epoch, &sfts->data[0].epoch );
-      bin0_n = (UINT4) ( offset_n / deltaT + 0.5 );	/* round to closest bin */
-
-      nudge_n = bin0_n * deltaT - offset_n;		/* rounding error */
-      /*       nudge_n = 1e-9 * (UINT4)(nudge_n * 1e9 + 0.5);	*/ /* round to closest nanosecond */
-
-      printf ("n = %d: t0_n = %f, sft_tn =(%d,%d), bin-offset = %g s, corresponding to %g timesteps\n",
-	      n, startTime + bin0_n * deltaT, sfts->data[n].epoch.gpsSeconds,  sfts->data[n].epoch.gpsNanoSeconds, nudge_n, nudge_n/deltaT );
-
-      /* copy short timeseries into correct location within long timeseries */
-      copyLen = numBinsSFT;
-      if ( bin0_n + numBinsSFT >= numTimeSamples )
-	copyLen = numTimeSamples - bin0_n - 1;
-
+      /* copy short (shifted) timeseries into correct location within long timeseries */
+      binsLeft = numTimeSamples - bin0_n - 1;
+      copyLen = MYMIN ( numBinsSFT, binsLeft );		/* make sure not to write past the end of the long TS */
       memcpy ( &lTS->data->data[bin0_n], sTS->data->data, copyLen * sizeof(lTS->data->data[0]) );
 
     } /* for n < numSFTs */
 
-  /* debug-output timeseries */
-  {
-    REAL8 t0 = XLALGPSGetREAL8 ( &lTS->epoch );
-    REAL8 dt = lTS->deltaT;
-    UINT4 i;
-    for ( i = 0; i < lTS->data->length; i ++ )
-      fprintf ( stderr, "%f   %f %f\n", t0 + i * dt, lTS->data->data[i].re, lTS->data->data[i].im);
-  }
-
-  /* ---------- now FFT the complete timeseries ---------- */
+  /* ---------- now FFT the long timeseries ---------- */
 
   /* ----- compute plan for FFTW */
   if ( (LFTplan = XLALCreateForwardCOMPLEX8FFTPlan( numTimeSamples, 0 )) == NULL )
@@ -629,6 +632,17 @@ XLALSFTVectorToLFT ( const SFTVector *sfts,	/**< input SFT vector */
       XLALPrintError ( "%s: XLALReorderFFTWtoSFT() failed! errno = %d!\n", fn, xlalErrno );
       XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
     }
+
+
+  /* ---------- debug-output timeseries */
+  {
+    REAL8 t0 = XLALGPSGetREAL8 ( &lTS->epoch );
+    REAL8 dt = lTS->deltaT;
+    UINT4 i;
+    for ( i = 0; i < lTS->data->length; i ++ )
+      fprintf ( stderr, "%f   %f %f\n", t0 + i * dt, lTS->data->data[i].re, lTS->data->data[i].im);
+  }
+
 
   /* cleanup memory */
   XLALDestroyCOMPLEX8TimeSeries ( sTS );
@@ -731,3 +745,43 @@ XLALReorderSFTtoFFTW (COMPLEX8Vector *X)
 
 }  /* XLALReorderSFTtoFFTW() */
 
+
+/** Time-shift the given SFT by an amount of 'shift' seconds,
+ * using the frequency-domain expression y(f) = x(f) * e^(-i 2pi f tau),
+ * which shifts x(t) into y(t) = x(t - tau)
+ */
+int
+XLALTimeShiftSFT ( SFTtype *sft, REAL8 shift )
+{
+  const CHAR *fn = "XLALTimeShiftSFT()";
+  UINT4 k;
+
+  if ( !sft || !sft->data )
+    {
+      XLALPrintError ("%s: empty input SFT!\n", fn );
+      XLAL_ERROR (fn, XLAL_EINVAL);
+    }
+
+  for ( k=0; k < sft->data->length; k++)
+    {
+      REAL8 fk = sft->f0 + k * sft->deltaF;	/* frequency of k-th bin */
+      REAL8 shiftCyles = shift * fk;
+      REAL4 fact_re, fact_im;			/* complex phase-shift factor e^(-2pi f tau) */
+      REAL4 yRe, yIm;
+
+      sin_cos_2PI_LUT ( &fact_im, &fact_re, shiftCyles );
+
+      yRe = fact_re * sft->data->data[k].re - fact_im * sft->data->data[k].im;
+      yIm = fact_re * sft->data->data[k].im + fact_im * sft->data->data[k].re;
+
+      sft->data->data[k].re = yRe;
+      sft->data->data[k].im = yIm;
+
+    } /* for k < numBins */
+
+  /* adjust SFTs epoch to the shift */
+  XLALGPSAdd( &sft->epoch, shift );
+
+  return XLAL_SUCCESS;
+
+} /* XLALTimeShiftSFT() */
