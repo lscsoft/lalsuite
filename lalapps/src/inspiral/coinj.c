@@ -202,6 +202,7 @@ NetworkSNR=0.0;
 /* Set epoch */
 memcpy(&inj_epoch,&(this_injection.geocent_end_time),sizeof(LIGOTimeGPS));
 LAL_CALL(LALAddFloatToGPS(&status,&inj_epoch,&(this_injection.geocent_end_time),-LeadupTime),&status);
+inj_epoch.gpsNanoSeconds=0;
 
 /* Loop over detectors */
 for(det_idx=0;det_idx<LAL_NUM_IFO;det_idx++){
@@ -270,8 +271,9 @@ for(det_idx=0;det_idx<LAL_NUM_IFO;det_idx++){
 
 	XLALDestroyCOMPLEX8FrequencySeries(actuationResp);
 
-	for(i=0;i<TimeSeries->data->length;i++) TimeSeries->data->data[i]/=dynRange;
-	
+	for(i=0;i<TimeSeries->data->length;i++) {
+	  TimeSeries->data->data[i]=TimeSeries->data->data[i]/dynRange +0.0;
+	}
 	
 	sprintf(outfilename,"%s_HWINJ_%i_%s_%i.txt",det_name,inj_num,injtype,inj_epoch.gpsSeconds);
 	outfile=fopen(outfilename,"w");
