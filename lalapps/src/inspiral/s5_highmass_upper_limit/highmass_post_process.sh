@@ -24,11 +24,21 @@ echo "Using " ${LIGOLW_THINCA_TO_COINC} " on full data"
 if ${LIGOLW_THINCA_TO_COINC} --cache-description=FULL_DATA --ihope-cache=${FULLDATACACHE} --veto-segments=vetoes_CAT_3.xml.gz --veto-segments-name=vetoes --output=FULL_DATA.xml.gz --verbose; then echo "Done."; else exit; fi
 
 echo "Using " ${LIGOLW_SQLITE} " to insert into database"
-if ${LIGOLW_SQLITE} -d FULL_DATA.sqlite -t /tmp -v FULL_DATA.xml.gz; then echo "Done."; else exit; fi
+if ${LIGOLW_SQLITE} -d FULL_DATA.sqlite -t /tmp -v *FULL_DATA.xml.gz; then echo "Done."; else exit; fi
 
 #clean up after ourselves
 echo "cleaning up xml files..."
 if rm *FULL_DATA.xml.gz; then echo "Done."; else exit; fi
+
+#Simplify and cluster
+echo "Simplifying FULL_DATA.sqlite..."
+if ${SQLITE} FULL_DATA.sqlite < simplify.sql; then echo "Done."; else exit; fi
+echo "Removing H1H2 in " ${f}
+if ${SQLITE} FULL_DATA.sqlite < remove_h1h2.sql; then echo "Done."; else exit; fi
+echo "Clustering " ${f}
+if ${SQLITE} FULL_DATA.sqlite < cluster.sql; then echo "Done."; else exit; fi
+
+
 
 #Run thinca_to_coinc on injections
 for f in $(grep HL- ${INJCACHE} | awk '{print $2}')
@@ -39,48 +49,39 @@ for f in $(grep HL- ${INJCACHE} | awk '{print $2}')
 	echo "Using " ${LIGOLW_THINCA_TO_COINC} " on " ${INJ_DESC} " ..."
 	if ${LIGOLW_THINCA_TO_COINC} --cache-description=${INJ_DESC} --ihope-cache=${INJCACHE} --veto-segments=vetoes_CAT_3.xml.gz --veto-segments-name=vetoes --output=${INJ_DESC}.xml.gz --verbose; then echo "Done."; else exit; fi
 
-        echo "Using " ${{LIGOLW_SQLITE} " on " ${INJ_DESC} ".xml.gz ..."
-	if ${LIGOLW_SQLITE} -d ${INJ_DESC}.sqlite -t /tmp -v ${INJ_DESC}.xml.gz; then echo "Done."; else exit; fi
+        echo "Using " ${LIGOLW_SQLITE} " on " ${INJ_DESC} ".xml.gz ..."
+	if ${LIGOLW_SQLITE} -d ${INJ_DESC}.sqlite -t /tmp -v *${INJ_DESC}.xml.gz; then echo "Done."; else exit; fi
 	#clean up after ourselves
 
-        echo "Using " ${{LIGOLW_SQLITE} " to insert sims from " ${INJ_FILE} " ..."
+        echo "Using " ${LIGOLW_SQLITE} " to insert sims from " ${INJ_FILE} " ..."
         if ${LIGOLW_SQLITE} -d ${INJ_DESC}.sqlite -t /tmp -v ${INJ_FILE}; then echo "Done."; else exit; fi
         #clean up after ourselves
 
 	echo "cleaning up xml files..."
 	if rm *${INJ_DESC}.xml.gz; then echo "Done."; else exit; fi
+
+	#Simplify and Cluster
+        echo "Simplifying " ${INJ_DESC}.sqlite
+        if ${SQLITE} ${INJ_DESC}.sqlite < simplify.sql; then echo "Done."; else exit; fi
+        echo "Removing H1H2 in " ${INJ_DESC}.sqlite
+        if ${SQLITE} ${INJ_DESC}.sqlite < remove_h1h2.sql; then echo "Done."; else exit; fi
+        echo "Clustering " ${INJ_DESC}.sqlite
+        if ${SQLITE} ${INJ_DESC}.sqlite < cluster.sql; then echo "Done."; else exit; fi
+
+	#Put the injections back to XML so that the injection
+	#finder will work
+        echo "transforming " ${INJ_DESC}.sqlite " to XML..."
+        if ${LIGOLW_SQLITE} -d ${INJ_DESC}.sqlite -v -x ${INJ_DESC}.sqlite.xml.gz; then echo "Done."; else exit; fi
+
+	#Find the injections
+	echo "Finding injections..."
+	if ${LIGOLW_INSPINJFIND} -v ${INJ_DESC}.sqlite.xml.gz; then echo "Done."; else exit; fi
+
+   	#Put them back to sqlite
+	echo "transforming " ${INJ_DESC}.sqlite.xml.gz " to sqlite..."
+        if ${LIGOLW_SQLITE} -d ${INJ_DESC}.sqlite -v -r ${INJ_DESC}.sqlite.xml.gz; then echo "Done."; else exit; fi
+
 	done
-
-#Prepare and cluster the sqlite files
-for f in *.sqlite
-	do
-	echo "Simplifying " ${f}
-	if ${SQLITE} ${f} < simplify.sql; then echo "Done."; else exit; fi
-        echo "Removing H1H2 in " ${f}
-	if ${SQLITE} ${f} < remove_h1h2.sql; then echo "Done."; else exit; fi
-        echo "Clustering " ${f}
-	if ${SQLITE} ${f} < cluster.sql; then echo "Done."; else exit; fi
-	done
-
-#Put the injections back to XML so that the injection
-#finder will work
-for f in *INJ*.sqlite
-	do
-	echo "transforming " ${f} " to XML..."
-	if ${LIGOLW_SQLITE} -d ${f} -v -x ${f}.xml.gz; then echo "Done."; else exit; fi
-	done
-
-#Find the injections
-echo "Finding injections..."
-if ${LIGOLW_INSPINJFIND} -v *INJ*.sqlite.xml.gz; then echo "Done."; else exit; fi
-
-#Put the injections back to DB 
-#WARNING REPLACES ORIGINAL DB FOR INJECTIONS
-for f in *INJ*.sqlite
-        do
-        echo "transforming " ${f} " to sqlite..."
-        if ${LIGOLW_SQLITE} -d ${f} -v -r ${f}.xml.gz; then echo "Done."; else exit; fi
-        done
 
 #Run new corse *Actual total mass range should be ~ [25-100], 
 #here boundaries are 0 and inf just to catch things that aren't 
