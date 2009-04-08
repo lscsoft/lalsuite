@@ -79,6 +79,7 @@ def twoD_SearchVolume(found, missed, twodbin, dbin, wnfunc, bootnum=1):
   tbin.denominator.array /= bootnum
   tbin.numerator.array /= bootnum 
   # make denom total, regularize and smooth
+  print >>sys.stderr, "\n"
   for k in range(z): 
     tbins = rArrays[k]
     tbins.denominator.array += tbins.numerator.array
@@ -87,7 +88,7 @@ def twoD_SearchVolume(found, missed, twodbin, dbin, wnfunc, bootnum=1):
     tbins.regularize()
     # logarithmic(d)
     volArray.array += 4.0 * pi * tbins.ratio() * dbin.centres()[k]**3 * dbin.delta
-    print >>sys.stderr, "\nCalculating smoothed volume:\t%.1f%%\r" % (100.0 * k / z),
+    print >>sys.stderr, "Calculating smoothed volume:\t%.1f%%\r" % (100.0 * k / z),
   return volArray.array
  
 
