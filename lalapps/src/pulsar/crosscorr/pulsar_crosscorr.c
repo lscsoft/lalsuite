@@ -276,8 +276,12 @@ int main(int argc, char *argv[]){
     exit(1);
   }
 
-  fprintf(fp, "##Alpha\tDelta\tFrequency\t Fdot \t Fddot \t Normalised Power\n");
-
+  if (uvar_spindownParams) {
+    fprintf(fp, "##Alpha\tDelta\tFrequency\tEpsilon\tB Field (T)\tBraking Index\tNormalised Power\n");
+  }
+  else {
+    fprintf(fp, "##Alpha\tDelta\tFrequency\t Fdot \t Fddot \t Normalised Power\n");
+  }
 
   /* set sft catalog constraints */
   constraints.detector = NULL;
@@ -527,6 +531,8 @@ int main(int argc, char *argv[]){
 
         f_current = uvar_f0 + (uvar_fResolution*freqCounter);
 
+ 	/**************** Option 1: Searching over spindown parameters ******************/
+
         if (uvar_spindownParams) { /*if searching over q1, q2, n*/
  
   	  /* Q1 loop */
@@ -686,7 +692,7 @@ int main(int argc, char *argv[]){
 
 	      counter++;
 
- 	     } /*finish loop over sky patches*/
+ 	      } /*finish loop over sky patches*/
 	    } /* finish loop over n*/ 
 
 
@@ -696,6 +702,8 @@ int main(int argc, char *argv[]){
  
        
       } /*endif*/
+
+      /***************** Option 2: Searching over frequency derivatives *************/
 
       else { /* if searching through f, fdots instead */
  
@@ -877,27 +885,64 @@ int main(int argc, char *argv[]){
 
     f_current = uvar_f0 + (uvar_fResolution*freqCounter);
 
-    /* frequency derivative loop */
-    for (fdotCounter = 0; fdotCounter < nfdotLoops; fdotCounter++) {
+    if (uvar_spindownParams) { /*if searching over q1, q2, n*/
+ 
+        /* Q1 loop */
+	for (q1Counter = 0; q1Counter < nq1Loops; q1Counter++) {
 
-      fdot_current = uvar_fdot + (delta_fdot*fdotCounter);
+	  eps_current = uvar_epsilon + (delta_eps*q1Counter);
 
-      /* frequency double derivative loop */
-      for (fddotCounter = 0; fddotCounter < nfddotLoops; fddotCounter++) {
-        for (skyCounter = 0; skyCounter < nSkyPatches; skyCounter++) { 
-   	  /* initialize Doppler parameters of the potential source */
-	  thisPoint.Alpha = skyAlpha[skyCounter]; 
-	  thisPoint.Delta = skyDelta[skyCounter]; 
+	  /* Q2 loop */
+	  for (q2Counter = 0; q2Counter < nq2Loops; q2Counter++) {
 
-	  /*normalise rho*/
-	  rho->data[counter] = rho->data[counter]/sqrt(stddev->data[counter]);
-	  fprintf(fp, "%1.5f\t %1.5f\t %1.5f\t %e\t %e\t %1.10f\n", thisPoint.Alpha,
+	    mag_current = uvar_magfield + (delta_mag*q2Counter);
+
+  	    /* n loop */
+	    for (nCounter = 0; nCounter < nnLoops; nCounter++) {
+	    
+              n_current = uvar_brakingindex + (delta_n*nCounter);
+
+ 	      for (skyCounter = 0; skyCounter < nSkyPatches; skyCounter++) { 
+   		/* initialize Doppler parameters of the potential source */
+	        thisPoint.Alpha = skyAlpha[skyCounter]; 
+	        thisPoint.Delta = skyDelta[skyCounter]; 
+
+	        /*normalise rho*/
+	        rho->data[counter] = rho->data[counter]/sqrt(stddev->data[counter]);
+	        fprintf(fp, "%1.5f\t %1.5f\t %1.5f\t %e\t %e\t %e\t %1.10f\n", thisPoint.Alpha,
+		thisPoint.Delta, f_current,
+		eps_current, mag_current, n_current, rho->data[counter]);
+	        counter++;
+ 	      }
+	    } /*end n loop*/
+          } /*end q2loop*/
+        } /*end q1 loop*/
+    } /*endif */
+    
+    else {  
+
+      /* frequency derivative loop */
+      for (fdotCounter = 0; fdotCounter < nfdotLoops; fdotCounter++) {
+
+        fdot_current = uvar_fdot + (delta_fdot*fdotCounter);
+
+        /* frequency double derivative loop */
+        for (fddotCounter = 0; fddotCounter < nfddotLoops; fddotCounter++) {
+          for (skyCounter = 0; skyCounter < nSkyPatches; skyCounter++) { 
+   	    /* initialize Doppler parameters of the potential source */
+	    thisPoint.Alpha = skyAlpha[skyCounter]; 
+	    thisPoint.Delta = skyDelta[skyCounter]; 
+
+	    /*normalise rho*/
+	    rho->data[counter] = rho->data[counter]/sqrt(stddev->data[counter]);
+	    fprintf(fp, "%1.5f\t %1.5f\t %1.5f\t %e\t %e\t %1.10f\n", thisPoint.Alpha,
 		  thisPoint.Delta, f_current,
 		  fdot_current, fddot_current, rho->data[counter]);
-	  counter++;
-	}
+	    counter++;
+ 	  }
+        }
       }
-    }
+    } /*endelse*/
   }
 
   /* select candidates  */
