@@ -231,8 +231,8 @@ tagBinaryPulsarParams
   REAL8 f1Err;
   REAL8 f2Err;
   REAL8 f3Err;
-  REAL8 f4err;
-  REAL8 f5err;
+  REAL8 f4Err;
+  REAL8 f5Err;
 
   REAL8 pepochErr;
   REAL8 posepochErr;
