@@ -148,7 +148,7 @@ else
       LAL_INTEL_FFT_LIBS_MSG_ERROR
     else
       AC_CHECK_LIB(mkl_ia32, DftiCreateDescriptor, , [AC_MSG_ERROR(could not find the Intel FFT library)])
-    fi  
+    fi
   else
     AC_CHECK_LIB(mkl, DftiCreateDescriptor, , [AC_MSG_ERROR(could not find the Intel FFT library)])
   fi
