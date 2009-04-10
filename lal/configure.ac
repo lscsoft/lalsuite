@@ -1,5 +1,4 @@
 dnl Process this file with autoconf to produce a configure script.
-dnl $Id$
 AC_INIT([lal],[5.3],[lal-discuss@gravity.phys.uwm.edu])
 AM_INIT_AUTOMAKE([])
 AM_CONFIG_HEADER([include/config.h] [include/lal/LALConfig.h])
