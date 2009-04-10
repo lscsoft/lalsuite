@@ -29,9 +29,7 @@ def get_2d_mass_bins(low, high, bins):
   mass1Bin = rate.LinearBins(low,high,bins)
   mass2Bin = rate.LinearBins(low,high,bins)
   twoDMB=rate.NDBins( (mass1Bin,mass2Bin) )
-  X = numpy.array( list(twoDMB.lower()[0]) + [twoDMB.upper()[0][-1]] )
-  Y = numpy.array( list(twoDMB.lower()[1]) + [twoDMB.upper()[1][-1]] )
-  return X, Y, twoDMB
+  return twoDMB
     
 def scramble_pop(m, f):
   """
@@ -89,7 +87,7 @@ def twoD_SearchVolume(found, missed, twodbin, dbin, wnfunc, bootnum=1):
     # logarithmic(d)
     volArray.array += 4.0 * pi * tbins.ratio() * dbin.centres()[k]**3 * dbin.delta
     print >>sys.stderr, "Calculating smoothed volume:\t%.1f%%\r" % (100.0 * k / z),
-  return volArray.array
+  return volArray
  
 
 def cut_distance(sims, mnd, mxd):
@@ -99,23 +97,6 @@ def cut_distance(sims, mnd, mxd):
   for k in range(len(sims)):
     if sims[k].distance >= mxd or sims[k].distance <= mnd: sims.pop(k)
  
-def trim_mass_space(minM, maxM, eff, twodbin,minthresh=-2):
-  """
-  restricts array to only have data within the mass space and sets everything
-  outside the mass space to some canonical value, minthresh
-  """
-  x = eff.shape[0]
-  y = eff.shape[1]
-  c1 = twodbin.centres()[0]
-  c2 = twodbin.centres()[1]
-  numbins = 0
-  for i in range(x):
-    for j in range(y):
-      if c1[i] > c2[j] or (c1[i] + c2[j]) > maxM or (c1[i]+c2[j]) < minM: eff[i][j] = minthresh
-      #if (c1[i] + c2[j]) > maxM or (c1[i]+c2[j]) < minM: eff[i][j] = 0
-      else: numbins+=1
-  print "found " + str(numbins) + " bins"
-
 
 ######################## ACTUAL PROGRAM #######################################
 ###############################################################################
@@ -130,7 +111,6 @@ Missed = SimInspiralUtils.ReadSimInspiralFromFiles(glob.glob('*MISSED*.xml'),ver
 
 
 # replace these with pylal versions ?
-# make m1 the smaller mass 
 fix_masses(Found)
 fix_masses(Missed)
 
@@ -139,30 +119,15 @@ cut_distance(Found, 1, 2000)
 cut_distance(Missed, 1, 2000)
 
 # get a 2D mass binning
-X, Y, twoDMassBins = get_2d_mass_bins(1, 99, 100)
+twoDMassBins = get_2d_mass_bins(1, 99, 100)
 #dBin = rate.LinearBins(0,2000,200)
 dBin = rate.LogarithmicBins(0.1,2500,200)
 
 
 gw = rate.gaussian_window2d(11,11)
 #FIXME make search volume above loudest event
-vA = twoD_SearchVolume(Found, Missed, twoDMassBins, dBin, gw, 100)
+vA = twoD_SearchVolume(Found, Missed, twoDMassBins, dBin, gw, 1)
 
-# FIXME needs to multiply by the live time to give a meaningful 
-ul = pylab.log10(2.3 / (vA + 1)) + 3 # just a temporary scaling for the sake of making a plot that won't get everyone all worked up until the real calculation is done
-
-trim_mass_space(25, 100, ul, twoDMassBins)
-#pylab.gray()
-pylab.pcolor(X,Y, ul)
-#pylab.hold(1)
-#cn = pylab.contour(twoDMassBins.centres()[0], twoDMassBins.centres()[1], ul)
-#pylab.clabel(cn)
-#pylab.hold(0)
-pylab.colorbar()
-pylab.ylim([0, 51])
-pylab.xlim([11, 101])
-pylab.title("Log10(Rate)",fontsize=14)
-pylab.xlabel("Mass 2",fontsize=14)
-pylab.ylabel("Mass 1",fontsize=14)
-pylab.grid()
-pylab.show()
+#output an XML file with the result
+xml = rate.binned_array_to_xml(vA, "2Dsearchvolume")
+xml.write(open("2Dsearchvolume.xml","w"))
