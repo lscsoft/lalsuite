@@ -9,6 +9,9 @@ cat=${7}
 
 if ${LIGOLW_THINCA_TO_COINC} --ihope-cache=${INJ_DESC}${cat}.cache --veto-segments=vetoes_${cat}.xml.gz --veto-segments-name=vetoes --output-prefix=S5_HM_INJ --effective-snr-factor=50; then echo $(date) " : Done with thinca to coinc on " ${INJ_DESC}${cat}.cache >> successes.txt; else echo $(date) ": Failed thinca to coinc for injections on " ${INJ_DESC}${cat}.cache >> errors.txt; exit; fi;
 
+#FIXME:  add error checking, etc.
+ligolw_cut --verbose --delete-column "sngl_inspiral:mtotal" S5_HM_INJ*${INJ_DESC}*${cat}*.xml.gz
+
 if ${LIGOLW_SQLITE} -d ${INJ_DESC}${cat}.sqlite -t /tmp -v S5_HM_INJ*${INJ_DESC}*${cat}*.xml.gz; then echo $(date) " : Done adding triggers to DB for " ${INJ_DESC}${cat}.cache >> successes.txt; else echo $(date) ": Failed Adding triggers to DB failed for " ${INJ_DESC}${cat}.cache >> errors.txt; exit; fi;
 
 if ${LIGOLW_SQLITE} -d ${INJ_DESC}${cat}.sqlite -t /tmp -v ${INJ_FILE}; then echo $(date) " : Done adding sims to DB for " ${INJ_DESC}${cat}.cache >> successes.txt; else echo $(date) ": Failed Adding sims failed for injections on " ${INJ_DESC}${cat}.cache >> errors.txt; exit; fi;
