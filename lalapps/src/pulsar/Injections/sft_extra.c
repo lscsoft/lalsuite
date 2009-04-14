@@ -29,21 +29,22 @@
   void
 write_timeSeriesR4 (FILE *fp, const REAL4TimeSeries *series)
 {
-  REAL8 timestamp; 
+  REAL8 timestamp0, timestamp;
   UINT4 i;
 
   if (series == NULL)
   {
     printf ("\nempty input!\n");
-    return; 
+    return;
   }
 
-  timestamp = 1.0*series->epoch.gpsSeconds + series->epoch.gpsNanoSeconds * 1.0e-9;
+  timestamp0 = 1.0*series->epoch.gpsSeconds + series->epoch.gpsNanoSeconds * 1.0e-9;
 
   for( i = 0; i < series->data->length; i++)
   {
+    timestamp = timestamp0 + 1.0 * i * series->deltaT;
     fprintf( fp, "%16.9f %e\n", timestamp, series->data->data[i] );
-    timestamp += series->deltaT;
+
   }
 
   return;
@@ -53,15 +54,15 @@ write_timeSeriesR4 (FILE *fp, const REAL4TimeSeries *series)
   void
 write_timeSeriesR8 (FILE *fp, const REAL8TimeSeries *series)
 {
-  REAL8 timestamp; 
+  REAL8 timestamp0, timestamp;
   UINT4 i;
 
-  timestamp = 1.0*series->epoch.gpsSeconds + series->epoch.gpsNanoSeconds * 1.0e-9;
+  timestamp0 = 1.0*series->epoch.gpsSeconds + series->epoch.gpsNanoSeconds * 1.0e-9;
 
   for( i = 0; i < series->data->length; i++)
   {
+    timestamp = timestamp0 + i * series->deltaT;
     fprintf( fp, "%f %e\n", timestamp, series->data->data[i] );
-    timestamp += series->deltaT;
   }
 
   return;
