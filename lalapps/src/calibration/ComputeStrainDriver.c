@@ -130,8 +130,6 @@ struct CommandLineArgsTag {
   char *datadirL1;
   char *datadirL2;
   INT4 checkfilename;
-  char *filenameC;         /* file with FD official calibration sensing */
-  char *filenameH;         /* file with FD official calibration open loop gain */
 } CommandLineArgs;
 
 /***************************************************************************/
@@ -385,26 +383,6 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
   /* Add in the data quality data */
   XLALFrameAddINT4TimeSeriesProcData( frame, &OutputDQ);
 
-  /* write level 2 frame */
-  {
-    char fname2[FILENAME_MAX];
-    char tmpfname2[FILENAME_MAX];
-
-    LALSnprintf( fname2, sizeof( fname2 ), "%s/%c-%s%s-%d-%d.gwf", CLA.datadirL2,site, CLA.frametype,"_L2", t0, dt );
-    LALSnprintf( tmpfname2, sizeof( tmpfname2 ), "%s.tmp", fname2 );
-    
-    /* write first to tmpfile then rename it */
-    frfile = FrFileONew( tmpfname2, -1); /* 1 = GZIP */
-    if ( ! frfile )
-      return 1;  /* Error: could not open frame file */
-    
-    FrameWrite( frame, frfile );
-    FrFileOEnd( frfile );
-    /* now rename */
-    if ( rename( tmpfname2, fname2 ) < 0 )
-      return 1; /* Error: system error */      
-  }
-
   /* Add in the factors data */
   alpha = XLALCreateREAL4TimeSeries( alphaName, &OutputData.alpha.epoch, 0.0, OutputData.alpha.deltaT, 
 				     &lalDimensionlessUnit,  OutputData.alpha.data->length);
@@ -433,128 +411,27 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
   XLALDestroyREAL4TimeSeries( gammaim );
   XLALDestroyREAL4TimeSeries( alphaim );
 
-  /* If Level 1: Add DARM_CTRL, DARM_ERR, DARM_CTRL_EXC_DAQ, AS_Q, and all filters */
-  XLALFrameAddREAL4TimeSeriesAdcData( frame, &(InputData.DARM));
-  XLALFrameAddREAL4TimeSeriesAdcData( frame, &(InputData.DARM_ERR) );
-  XLALFrameAddREAL4TimeSeriesAdcData( frame, &(InputData.EXC));
-  XLALFrameAddREAL4TimeSeriesAdcData( frame, &(InputData.AS_Q));
 
-  /* Add FD calibration files */ 
+  /* write level 2 frame */
   {
-    COMPLEX8FrequencySeries *seriesH = NULL, *seriesC = NULL;
-    REAL8 FrDurationC,FrDurationH;
+    char fname2[FILENAME_MAX];
+    char tmpfname2[FILENAME_MAX];
 
-    XLALASCIIFileReadCalRef( &seriesC, &FrDurationC, CLA.filenameC );
-    XLALASCIIFileReadCalRef( &seriesH, &FrDurationH, CLA.filenameH );
-
-    XLALFrameAddCalRef( frame, seriesC, atoi(&CLA.frametype[9]), FrDurationC );
-    XLALFrameAddCalRef( frame, seriesH, atoi(&CLA.frametype[9]), FrDurationH );
-
-    XLALDestroyCOMPLEX8FrequencySeries( seriesC );
-    XLALDestroyCOMPLEX8FrequencySeries( seriesH );
-  }
-
-  /* Add TD filters */  
-  {
-    FrVect *vectA, *vectD, *vectC;
-    char seconds[LALUnitTextSize] = "s";
-    int tstart;
-    int tend;
-    FrStatData *sdatA, *sdatD, *sdatC;
-    FrDetector *detector;
-    char prefix[3];
-
-    /* To find the detector, look for the detector prefix stored as the first
-     * two characters of the channel name. */
-    prefix[0] = InputData.DARM_ERR.name[0];
-    prefix[1] = InputData.DARM_ERR.name[1];
-    prefix[2] = 0;
+    LALSnprintf( fname2, sizeof( fname2 ), "%s/%c-%s%s-%d-%d.gwf", CLA.datadirL2,site, CLA.frametype,"_L2", t0, dt );
+    LALSnprintf( tmpfname2, sizeof( tmpfname2 ), "%s.tmp", fname2 );
     
-    detector = FrameFindDetector( frame, prefix );
-    if ( ! detector )
-      {
-        fprintf( stderr, "No detector associated with prefix in frame\n");
-	return 1;
-      }
-
-    /* start and end times for the static filter data */
-    tstart = InputData.DARM_ERR.epoch.gpsSeconds;
-    tend = (int)ceil( InputData.DARM_ERR.epoch.gpsSeconds + 1e-9*InputData.DARM_ERR.epoch.gpsNanoSeconds 
-		      + InputData.DARM_ERR.data->length * InputData.DARM_ERR.deltaT );
-
-    /* Actuation */
-    vectA = FrVectNew1D( "Actuation", FR_VECT_8R, InputData.A->directCoef->length, InputData.DARM_ERR.deltaT, seconds, seconds );
-    if ( ! vectA )
-      { 
-	fprintf(stderr,"Unable to write actuation TD filter into frame.\n");
-	return 1;
-      }
-    vectA->startX[0] = 0.0;
-    memcpy( vectA->data, InputData.A->directCoef->data,  InputData.A->directCoef->length* sizeof( * InputData.A->directCoef->data) );
-
-    /* Servo */
-    vectD = FrVectNew1D( "Servo", FR_VECT_8R, InputData.D->directCoef->length, InputData.DARM_ERR.deltaT, seconds, seconds );
-    if ( ! vectD )
-      { 
-	fprintf(stderr,"Unable to write servo TD filter into frame.\n");
-	return 1;
-      }
-    vectD->startX[0] = 0.0;
-    memcpy( vectD->data, InputData.D->directCoef->data,  InputData.D->directCoef->length* sizeof( * InputData.D->directCoef->data) );
-
-    /* Sensing */
-    vectC = FrVectNew1D( "Inverse_Sensing", FR_VECT_8R, InputData.Cinv->directCoef->length, InputData.DARM_ERR.deltaT/InputData.CinvUSF, 
-			 seconds, seconds );
-    if ( ! vectC )
-      { 
-	fprintf(stderr,"Unable to write inverse sensing TD filter into frame.\n");
-	return 1;
-      }
-    vectC->startX[0] = 0.0;
-    memcpy( vectC->data, InputData.Cinv->directCoef->data,  InputData.Cinv->directCoef->length* sizeof( * InputData.Cinv->directCoef->data) );
-
-
-    /* Add the static data to the frames */
-    sdatA = FrStatDataNew( "Actuation", "time domain FIR filter", "time_series", tstart, tend, atoi(&CLA.frametype[9]), vectA, NULL );
-    if ( ! sdatA )
-      { 
-	fprintf(stderr,"Unable to write actuation TD filter into frame. 2.\n");
-	return 1;
-      }
-    FrStatDataAdd( detector, sdatA );
-
-    sdatD = FrStatDataNew( "Servo", "time domain FIR filter", "time_series", tstart, tend, atoi(&CLA.frametype[9]), vectD, NULL );
-    if ( ! sdatD )
-      { 
-	fprintf(stderr,"Unable to write servo TD filter into frame. 2.\n");
-	return 1;
-      }
-    FrStatDataAdd( detector, sdatD );
-
-    sdatC = FrStatDataNew( "Inverse_Sensing", "time domain FIR filter", "time_series", tstart, tend, atoi(&CLA.frametype[9]), vectC, NULL );
-    if ( ! sdatC )
-      { 
-	fprintf(stderr,"Unable to write inverse sensing TD filter into frame. 2.\n");
-	return 1;
-      }
-    FrStatDataAdd( detector, sdatC );
+    /* write first to tmpfile then rename it */
+    frfile = FrFileONew( tmpfname2, -1); /* 1 = GZIP */
+    if ( ! frfile )
+      return 1;  /* Error: could not open frame file */
+    
+    FrameWrite( frame, frfile );
+    FrFileOEnd( frfile );
+    /* now rename */
+    if ( rename( tmpfname2, fname2 ) < 0 )
+      return 1; /* Error: system error */      
   }
 
-  /* Add cvs version of filters file used */
-  
-  /* write first to tmpfile then rename it */
-  frfile = FrFileONew( tmpfname, -1); /* 1 = GZIP */
-  if ( ! frfile )
-    return 1;  /* Error: could not open frame file */
-  
-  FrameWrite( frame, frfile );
-  FrFileOEnd( frfile );
-  FrameFree( frame ); /* this frees proc and vect */
-  
-  /* now rename */
-  if ( rename( tmpfname, fname ) < 0 )
-    return 1; /* Error: system error */
-  
   return 0;
 
 }
@@ -776,8 +653,6 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     {"data-dirL1",          required_argument, NULL,           'z'},
     {"data-dirL2",          required_argument, NULL,           'p'},
     {"check-file-exists",   no_argument, NULL,                 'v'},
-    {"olg-file",            required_argument, NULL,           'a'},
-    {"sensing-file",        required_argument, NULL,           'b'},
     {"darm-err-only",       no_argument, NULL,                 'w'},
     {"gamma-fudge-factor",  required_argument, NULL,           'y'},
     {"help",                no_argument, NULL,                 'h'},
@@ -812,8 +687,6 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   CLA->datadirL1=NULL;
   CLA->datadirL2=NULL;
   CLA->checkfilename=0;
-  CLA->filenameC=NULL;
-  CLA->filenameH=NULL;
 
   InputData.delta=0;
   InputData.wings=0;
@@ -950,14 +823,8 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     case 'v':
       CLA->checkfilename=1;       
       break;
-    case 'a':
-      CLA->filenameH=optarg;       
-      break;
-    case 'b':
-      CLA->filenameC=optarg;       
-      break;
     case 'w':
-      /* don't use calibration factors in teh strain computation */
+      /* don't use calibration factors in the strain computation */
       InputData.darmctrl=0;
       break;
     case 'y':
@@ -994,11 +861,9 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stdout,"\tgamma-fudge-factor (-y)\tFLOAT\t Fudge factor used to adjust factor values. Gamma is divided by that value.\n");
       fprintf(stdout,"\tframe-type (-T)\tSTRING\t Frame type to be written (eg, H1_RDS_C01_LX).\n");
       fprintf(stdout,"\tstrain-channel (-S)\tSTRING\t Strain channel name in frame (eg, H1:LSC-STRAIN).\n");
-      fprintf(stdout,"\tdata-dirL1 (-z)\tSTRING\t Ouput L1 frame to this directory (eg, /tmp/S4/H1/).\n");
+      fprintf(stdout,"\tdata-dirL1 (-z)\tSTRING\t Ouput L1 frame to this directory (eg, /tmp/S4/H1/) [DEPRECATED].\n");
       fprintf(stdout,"\tdata-dirL2 (-z)\tSTRING\t Ouput L2 frame to this directory (eg, /tmp/S4/H1/).\n");
       fprintf(stdout,"\tcheck-file-exists (-w)\tFLAG\t Checks frame files exist and if they do it exits gracefully.\n");
-      fprintf(stdout,"\tolg-file (-a)\tSTRING\t Name of official OLG file (for storage in frames).\n");
-      fprintf(stdout,"\tsensing-file (-b)\tSTRING\t Name of official sensing file (for storage in frames).\n");
       fprintf(stdout,"\tdarm-err-only (-w)\tFLAG\t Do darm_err only calibration. Default is to use darm_err and darm_ctrl. For first epoch of S5.\n");
       fprintf(stdout,"\thelp (-h)\tFLAG\t This message.\n");
       exit(0);
@@ -1126,31 +991,17 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stderr,"Try ./ComputeStrainDriver -h \n");
       return 1;
     }      
-   if(CLA->datadirL1 == NULL)
+   if(CLA->datadirL1 != NULL)
     {
-      fprintf(stderr,"No L1 frame directory specified.\n");
-      fprintf(stderr,"Try ./ComputeStrainDriver -h \n");
-      return 1;
+      fprintf(stdout,"Warning: L1 frame directory specified, but Level 1 "
+              "frames are not going to be produced anymore.\n");
     }      
    if(CLA->datadirL2 == NULL)
     {
       fprintf(stderr,"No L2 frame directory specified.\n");
       fprintf(stderr,"Try ./ComputeStrainDriver -h \n");
       return 1;
-    }      
-   if(CLA->filenameH == NULL)
-    {
-      fprintf(stderr,"No open loop gain file specified.\n");
-      fprintf(stderr,"Try ./ComputeStrainDriver -h \n");
-      return 1;
-    }      
-   if(CLA->filenameC == NULL)
-    {
-      fprintf(stderr,"No sensing file specified.\n");
-      fprintf(stderr,"Try ./ComputeStrainDriver -h \n");
-      return 1;
-    }      
-
+    }
    if ( (InputData.wings < 2) || (InputData.wings%2 != 0) )
      {
        fprintf(stderr,"Overlap %d is either not >=2, or not exactly divisible by two. Exiting.",InputData.wings);
