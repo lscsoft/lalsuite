@@ -1,14 +1,6 @@
 #!/bin/sh
 
-# make sure that 00boot and configure have run
-if ! test -f configure.ac ; then
-  if test -f configure.in ; then
-    echo "!!! autoconf-2.13 has been used: this script may not work"
-  else
-    echo "!!! no file configure.ac: run 00boot and configure first"
-    exit 1
-  fi
-fi
+# make sure configure has been run
 if ! test -f configure ; then
   echo "!!! no file configure: run 00boot and configure first"
   exit 1

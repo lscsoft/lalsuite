@@ -28,18 +28,6 @@ void `XLALDestroy'SERIESTYPE (
 }
 
 
-void `LALDestroy'SERIESTYPE (
-	LALStatus *status,
-	SERIESTYPE *series
-)
-{
-	INITSTATUS(status, "`LALDestroy'SERIESTYPE", FREQUENCYSERIESC);
-	XLALPrintDeprecationWarning ("`LALDestroy'SERIESTYPE", "`XLALDestroy'SERIESTYPE");
-	`XLALDestroy'SERIESTYPE (series);
-	RETURN(status);
-}
-
-
 SERIESTYPE *`XLALCreate'SERIESTYPE (
 	const CHAR *name,
 	const LIGOTimeGPS *epoch,
@@ -72,29 +60,6 @@ SERIESTYPE *`XLALCreate'SERIESTYPE (
 	new->data = sequence;
 
 	return new;
-}
-
-
-void `LALCreate'SERIESTYPE (
-	LALStatus *status,
-	SERIESTYPE **output,
-	const CHAR *name,
-	LIGOTimeGPS epoch,
-	REAL8 f0,
-	REAL8 deltaF,
-	LALUnit sampleUnits,
-	size_t length
-)
-{
-	INITSTATUS(status, "`LALCreate'SERIESTYPE", FREQUENCYSERIESC);
-	XLALPrintDeprecationWarning ("`LALCreate'SERIESTYPE", "`XLALCreate'SERIESTYPE");
-	ASSERT(output != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
-	*output = `XLALCreate'SERIESTYPE (name, &epoch, f0, deltaF, &sampleUnits, length);
-	if(*output == NULL) {
-		XLALClearErrno();
-		ABORT(status, LAL_NOMEM_ERR, LAL_NOMEM_MSG);
-	}
-	RETURN(status);
 }
 
 
