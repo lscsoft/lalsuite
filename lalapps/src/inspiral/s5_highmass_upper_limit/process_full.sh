@@ -6,6 +6,9 @@ cat=${5}
 
 if ${LIGOLW_THINCA_TO_COINC} --ihope-cache=${type}${cat}.cache --veto-segments=vetoes_${cat}.xml.gz --veto-segments-name=vetoes --output-prefix=S5_HM --effective-snr-factor=50; then echo $(date) " : Done with thinca to coinc on FULL DATA" ${cat} >> successes.txt; else echo $(date) ": Failed thinca to coinc failed for FULL DATA on " ${type}${cat}.cache >> errors.txt; exit; fi;
 
+#FIXME:  add error checking, etc.
+ligolw_cut --verbose --delete-column "sngl_inspiral:mtotal" S5_HM_*${type}*${cat}*.xml.gz
+
 if ${LIGOLW_SQLITE} -d ${type}${cat}.sqlite -t /tmp -v S5_HM_*${type}*${cat}*.xml.gz;  then echo $(date) " : Done inserting triggers into DB on FULL DATA" ${cat} >> successes.txt; else echo $(date) ": Failed Inserting into DB failed for FULL DATA on " ${type}${cat}.cache >> errors.txt; exit; fi;
 
 if ${SQLITE} ${type}${cat}.sqlite < simplify.sql;  then echo $(date) " : Done simplifying FULL DATA" ${cat} >> successes.txt; else echo $(date) ": Failed Simplifying failed for FULL DATA on " ${type}${cat}.cache >> errors.txt; exit; fi;
