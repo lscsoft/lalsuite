@@ -3,6 +3,181 @@ AC_INIT([lal],[5.3],[lal-discuss@gravity.phys.uwm.edu])
 AM_CONFIG_HEADER([include/config.h] [include/lal/LALConfig.h])
 AC_CONFIG_SRCDIR([include/config.h.in])
 AC_CONFIG_AUX_DIR([misc])
+AC_CONFIG_FILES([ \
+                 lal.spec \
+                 lal.pc \
+                 lalframe.pc \
+                 lalmetaio.pc \
+                 lalxml.pc \
+                 lalmpi.pc \
+                 lalsupport.pc \
+                 lal-config \
+                 Makefile \
+                 debian/Makefile \
+                 doc/Makefile \
+                 doc/laldoc/Makefile \
+                 doc/autodoc/Makefile \
+                 include/Makefile \
+                 include/lal/Makefile \
+                 lib/Makefile \
+                 misc/Makefile \
+                 packages/Makefile \
+                 packages/std/Makefile \
+                 packages/std/doc/Makefile \
+                 packages/std/include/Makefile
+                 packages/std/src/Makefile \
+                 packages/std/test/Makefile \
+                 packages/tools/Makefile \
+                 packages/tools/doc/Makefile \
+                 packages/tools/include/Makefile \
+                 packages/tools/src/Makefile \
+                 packages/tools/test/Makefile \
+                 packages/sample/Makefile \
+                 packages/sample/doc/Makefile \
+                 packages/sample/include/Makefile \
+                 packages/sample/src/Makefile \
+                 packages/sample/test/Makefile \
+                 packages/hello/Makefile \
+                 packages/hello/doc/Makefile \
+                 packages/hello/include/Makefile \
+                 packages/hello/src/Makefile \
+                 packages/hello/test/Makefile \
+                 packages/factories/Makefile \
+                 packages/factories/doc/Makefile \
+                 packages/factories/include/Makefile \
+                 packages/factories/src/Makefile \
+                 packages/factories/test/Makefile \
+                 packages/vectorops/Makefile \
+                 packages/vectorops/doc/Makefile \
+                 packages/vectorops/include/Makefile \
+                 packages/vectorops/src/Makefile \
+                 packages/vectorops/test/Makefile \
+                 packages/utilities/Makefile \
+                 packages/utilities/doc/Makefile \
+                 packages/utilities/include/Makefile \
+                 packages/utilities/src/Makefile \
+                 packages/utilities/test/Makefile \
+                 packages/stats/Makefile \
+                 packages/stats/doc/Makefile \
+                 packages/stats/include/Makefile \
+                 packages/stats/src/Makefile \
+                 packages/stats/test/Makefile \
+                 packages/inject/Makefile \
+                 packages/inject/doc/Makefile \
+                 packages/inject/include/Makefile \
+                 packages/inject/src/Makefile \
+                 packages/inject/test/Makefile \
+                 packages/date/Makefile \
+                 packages/date/doc/Makefile \
+                 packages/date/include/Makefile \
+                 packages/date/src/Makefile \
+                 packages/date/test/Makefile \
+                 packages/tdfilter/Makefile \
+                 packages/tdfilter/doc/Makefile \
+                 packages/tdfilter/include/Makefile \
+                 packages/tdfilter/src/Makefile \
+                 packages/tdfilter/test/Makefile \
+                 packages/window/Makefile \
+                 packages/window/doc/Makefile \
+                 packages/window/include/Makefile \
+                 packages/window/src/Makefile \
+                 packages/window/test/Makefile \
+                 packages/fft/Makefile \
+                 packages/fft/doc/Makefile \
+                 packages/fft/include/Makefile \
+                 packages/fft/src/Makefile \
+                 packages/fft/test/Makefile \
+                 packages/clremoval/Makefile \
+                 packages/clremoval/doc/Makefile \
+                 packages/clremoval/include/Makefile \
+                 packages/clremoval/src/Makefile \
+                 packages/clremoval/test/Makefile \
+                 packages/stochastic/Makefile \
+                 packages/stochastic/doc/Makefile \
+                 packages/stochastic/include/Makefile \
+                 packages/stochastic/src/Makefile \
+                 packages/stochastic/test/Makefile \
+                 packages/inspiral/Makefile \
+                 packages/inspiral/doc/Makefile \
+                 packages/inspiral/include/Makefile \
+                 packages/inspiral/src/Makefile \
+                 packages/inspiral/test/Makefile \
+                 packages/noisemodels/Makefile \
+                 packages/noisemodels/doc/Makefile \
+                 packages/noisemodels/include/Makefile \
+                 packages/noisemodels/src/Makefile \
+                 packages/noisemodels/test/Makefile \
+                 packages/bank/Makefile \
+                 packages/bank/doc/Makefile \
+                 packages/bank/include/Makefile \
+                 packages/bank/src/Makefile \
+                 packages/bank/test/Makefile \
+                 packages/ring/Makefile \
+                 packages/ring/doc/Makefile \
+                 packages/ring/include/Makefile \
+                 packages/ring/src/Makefile \
+                 packages/ring/test/Makefile \
+                 packages/findchirp/Makefile \
+                 packages/findchirp/doc/Makefile \
+                 packages/findchirp/include/Makefile \
+                 packages/findchirp/src/Makefile \
+                 packages/findchirp/test/Makefile \
+                 packages/pulsar/Makefile \
+                 packages/pulsar/doc/Makefile \
+                 packages/pulsar/include/Makefile \
+                 packages/pulsar/src/Makefile \
+                 packages/pulsar/test/Makefile \
+                 packages/houghpulsar/Makefile \
+                 packages/houghpulsar/doc/Makefile \
+                 packages/houghpulsar/include/Makefile \
+                 packages/houghpulsar/src/Makefile \
+                 packages/houghpulsar/test/Makefile \
+                 packages/burstsearch/Makefile \
+                 packages/burstsearch/doc/Makefile \
+                 packages/burstsearch/include/Makefile \
+                 packages/burstsearch/src/Makefile \
+                 packages/burstsearch/test/Makefile \
+                 packages/tracksearch/Makefile \
+                 packages/tracksearch/doc/Makefile \
+                 packages/tracksearch/include/Makefile \
+                 packages/tracksearch/src/Makefile \
+                 packages/tracksearch/test/Makefile \
+                 packages/tfclusters/Makefile \
+                 packages/tfclusters/doc/Makefile \
+                 packages/tfclusters/include/Makefile \
+                 packages/tfclusters/src/Makefile \
+                 packages/tfclusters/test/Makefile \
+                 packages/slopefilters/Makefile \
+                 packages/slopefilters/doc/Makefile \
+                 packages/slopefilters/include/Makefile \
+                 packages/slopefilters/src/Makefile \
+                 packages/slopefilters/test/Makefile \
+                 packages/block/Makefile \
+                 packages/block/doc/Makefile \
+                 packages/block/include/Makefile \
+                 packages/block/src/Makefile \
+                 packages/block/test/Makefile \
+                 packages/timefreq/Makefile \
+                 packages/timefreq/doc/Makefile \
+                 packages/timefreq/include/Makefile \
+                 packages/timefreq/src/Makefile \
+                 packages/timefreq/test/Makefile \
+                 packages/support/Makefile \
+                 packages/support/doc/Makefile \
+                 packages/support/include/Makefile \
+                 packages/support/src/Makefile \
+                 packages/support/test/Makefile \
+                 packages/comm/Makefile \
+                 packages/comm/doc/Makefile \
+                 packages/comm/include/Makefile \
+                 packages/comm/src/Makefile \
+                 packages/comm/test/Makefile \
+                 packages/framedata/Makefile \
+                 packages/framedata/doc/Makefile \
+                 packages/framedata/include/Makefile \
+                 packages/framedata/src/Makefile \
+                 packages/framedata/test/Makefile
+])
 AM_INIT_AUTOMAKE([])
 AH_TOP([
 #ifndef CONFIG_H__LAL
@@ -381,179 +556,6 @@ AC_SUBST_FILE(INCLUDEMKFILE)
 AC_SUBST_FILE(DOCMKFILE)
 AC_SUBST_FILE(DVIMKFILE)
 AC_OUTPUT_COMMANDS([chmod +x lal-config])
-AC_CONFIG_FILES([lal.spec])
-AC_CONFIG_FILES([lal.pc])
-AC_CONFIG_FILES([lalframe.pc])
-AC_CONFIG_FILES([lalmetaio.pc])
-AC_CONFIG_FILES([lalxml.pc])
-AC_CONFIG_FILES([lalmpi.pc])
-AC_CONFIG_FILES([lalsupport.pc])
-AC_CONFIG_FILES([lal-config])
-AC_CONFIG_FILES([Makefile])
-AC_CONFIG_FILES([debian/Makefile])
-AC_CONFIG_FILES([doc/Makefile])
-AC_CONFIG_FILES([doc/laldoc/Makefile])
-AC_CONFIG_FILES([doc/autodoc/Makefile])
-AC_CONFIG_FILES([include/Makefile])
-AC_CONFIG_FILES([include/lal/Makefile])
-AC_CONFIG_FILES([lib/Makefile])
-AC_CONFIG_FILES([misc/Makefile])
-AC_CONFIG_FILES([packages/Makefile])
-AC_CONFIG_FILES([packages/std/Makefile])
-AC_CONFIG_FILES([packages/std/doc/Makefile])
-AC_CONFIG_FILES([packages/std/include/Makefile])
-AC_CONFIG_FILES([packages/std/src/Makefile])
-AC_CONFIG_FILES([packages/std/test/Makefile])
-AC_CONFIG_FILES([packages/tools/Makefile])
-AC_CONFIG_FILES([packages/tools/doc/Makefile])
-AC_CONFIG_FILES([packages/tools/include/Makefile])
-AC_CONFIG_FILES([packages/tools/src/Makefile])
-AC_CONFIG_FILES([packages/tools/test/Makefile])
-AC_CONFIG_FILES([packages/sample/Makefile])
-AC_CONFIG_FILES([packages/sample/doc/Makefile])
-AC_CONFIG_FILES([packages/sample/include/Makefile])
-AC_CONFIG_FILES([packages/sample/src/Makefile])
-AC_CONFIG_FILES([packages/sample/test/Makefile])
-AC_CONFIG_FILES([packages/hello/Makefile])
-AC_CONFIG_FILES([packages/hello/doc/Makefile])
-AC_CONFIG_FILES([packages/hello/include/Makefile])
-AC_CONFIG_FILES([packages/hello/src/Makefile])
-AC_CONFIG_FILES([packages/hello/test/Makefile])
-AC_CONFIG_FILES([packages/factories/Makefile])
-AC_CONFIG_FILES([packages/factories/doc/Makefile])
-AC_CONFIG_FILES([packages/factories/include/Makefile])
-AC_CONFIG_FILES([packages/factories/src/Makefile])
-AC_CONFIG_FILES([packages/factories/test/Makefile])
-AC_CONFIG_FILES([packages/vectorops/Makefile])
-AC_CONFIG_FILES([packages/vectorops/doc/Makefile])
-AC_CONFIG_FILES([packages/vectorops/include/Makefile])
-AC_CONFIG_FILES([packages/vectorops/src/Makefile])
-AC_CONFIG_FILES([packages/vectorops/test/Makefile])
-AC_CONFIG_FILES([packages/utilities/Makefile])
-AC_CONFIG_FILES([packages/utilities/doc/Makefile])
-AC_CONFIG_FILES([packages/utilities/include/Makefile])
-AC_CONFIG_FILES([packages/utilities/src/Makefile])
-AC_CONFIG_FILES([packages/utilities/test/Makefile])
-AC_CONFIG_FILES([packages/stats/Makefile])
-AC_CONFIG_FILES([packages/stats/doc/Makefile])
-AC_CONFIG_FILES([packages/stats/include/Makefile])
-AC_CONFIG_FILES([packages/stats/src/Makefile])
-AC_CONFIG_FILES([packages/stats/test/Makefile])
-AC_CONFIG_FILES([packages/inject/Makefile])
-AC_CONFIG_FILES([packages/inject/doc/Makefile])
-AC_CONFIG_FILES([packages/inject/include/Makefile])
-AC_CONFIG_FILES([packages/inject/src/Makefile])
-AC_CONFIG_FILES([packages/inject/test/Makefile])
-AC_CONFIG_FILES([packages/date/Makefile])
-AC_CONFIG_FILES([packages/date/doc/Makefile])
-AC_CONFIG_FILES([packages/date/include/Makefile])
-AC_CONFIG_FILES([packages/date/src/Makefile])
-AC_CONFIG_FILES([packages/date/test/Makefile])
-AC_CONFIG_FILES([packages/tdfilter/Makefile])
-AC_CONFIG_FILES([packages/tdfilter/doc/Makefile])
-AC_CONFIG_FILES([packages/tdfilter/include/Makefile])
-AC_CONFIG_FILES([packages/tdfilter/src/Makefile])
-AC_CONFIG_FILES([packages/tdfilter/test/Makefile])
-AC_CONFIG_FILES([packages/window/Makefile])
-AC_CONFIG_FILES([packages/window/doc/Makefile])
-AC_CONFIG_FILES([packages/window/include/Makefile])
-AC_CONFIG_FILES([packages/window/src/Makefile])
-AC_CONFIG_FILES([packages/window/test/Makefile])
-AC_CONFIG_FILES([packages/fft/Makefile])
-AC_CONFIG_FILES([packages/fft/doc/Makefile])
-AC_CONFIG_FILES([packages/fft/include/Makefile])
-AC_CONFIG_FILES([packages/fft/src/Makefile])
-AC_CONFIG_FILES([packages/fft/test/Makefile])
-AC_CONFIG_FILES([packages/clremoval/Makefile])
-AC_CONFIG_FILES([packages/clremoval/doc/Makefile])
-AC_CONFIG_FILES([packages/clremoval/include/Makefile])
-AC_CONFIG_FILES([packages/clremoval/src/Makefile])
-AC_CONFIG_FILES([packages/clremoval/test/Makefile])
-AC_CONFIG_FILES([packages/stochastic/Makefile])
-AC_CONFIG_FILES([packages/stochastic/doc/Makefile])
-AC_CONFIG_FILES([packages/stochastic/include/Makefile])
-AC_CONFIG_FILES([packages/stochastic/src/Makefile])
-AC_CONFIG_FILES([packages/stochastic/test/Makefile])
-AC_CONFIG_FILES([packages/inspiral/Makefile])
-AC_CONFIG_FILES([packages/inspiral/doc/Makefile])
-AC_CONFIG_FILES([packages/inspiral/include/Makefile])
-AC_CONFIG_FILES([packages/inspiral/src/Makefile])
-AC_CONFIG_FILES([packages/inspiral/test/Makefile])
-AC_CONFIG_FILES([packages/noisemodels/Makefile])
-AC_CONFIG_FILES([packages/noisemodels/doc/Makefile])
-AC_CONFIG_FILES([packages/noisemodels/include/Makefile])
-AC_CONFIG_FILES([packages/noisemodels/src/Makefile])
-AC_CONFIG_FILES([packages/noisemodels/test/Makefile])
-AC_CONFIG_FILES([packages/bank/Makefile])
-AC_CONFIG_FILES([packages/bank/doc/Makefile])
-AC_CONFIG_FILES([packages/bank/include/Makefile])
-AC_CONFIG_FILES([packages/bank/src/Makefile])
-AC_CONFIG_FILES([packages/bank/test/Makefile])
-AC_CONFIG_FILES([packages/ring/Makefile])
-AC_CONFIG_FILES([packages/ring/doc/Makefile])
-AC_CONFIG_FILES([packages/ring/include/Makefile])
-AC_CONFIG_FILES([packages/ring/src/Makefile])
-AC_CONFIG_FILES([packages/ring/test/Makefile])
-AC_CONFIG_FILES([packages/findchirp/Makefile])
-AC_CONFIG_FILES([packages/findchirp/doc/Makefile])
-AC_CONFIG_FILES([packages/findchirp/include/Makefile])
-AC_CONFIG_FILES([packages/findchirp/src/Makefile])
-AC_CONFIG_FILES([packages/findchirp/test/Makefile])
-AC_CONFIG_FILES([packages/pulsar/Makefile])
-AC_CONFIG_FILES([packages/pulsar/doc/Makefile])
-AC_CONFIG_FILES([packages/pulsar/include/Makefile])
-AC_CONFIG_FILES([packages/pulsar/src/Makefile])
-AC_CONFIG_FILES([packages/pulsar/test/Makefile])
-AC_CONFIG_FILES([packages/houghpulsar/Makefile])
-AC_CONFIG_FILES([packages/houghpulsar/doc/Makefile])
-AC_CONFIG_FILES([packages/houghpulsar/include/Makefile])
-AC_CONFIG_FILES([packages/houghpulsar/src/Makefile])
-AC_CONFIG_FILES([packages/houghpulsar/test/Makefile])
-AC_CONFIG_FILES([packages/burstsearch/Makefile])
-AC_CONFIG_FILES([packages/burstsearch/doc/Makefile])
-AC_CONFIG_FILES([packages/burstsearch/include/Makefile])
-AC_CONFIG_FILES([packages/burstsearch/src/Makefile])
-AC_CONFIG_FILES([packages/burstsearch/test/Makefile])
-AC_CONFIG_FILES([packages/tracksearch/Makefile])
-AC_CONFIG_FILES([packages/tracksearch/doc/Makefile])
-AC_CONFIG_FILES([packages/tracksearch/include/Makefile])
-AC_CONFIG_FILES([packages/tracksearch/src/Makefile])
-AC_CONFIG_FILES([packages/tracksearch/test/Makefile])
-AC_CONFIG_FILES([packages/tfclusters/Makefile])
-AC_CONFIG_FILES([packages/tfclusters/doc/Makefile])
-AC_CONFIG_FILES([packages/tfclusters/include/Makefile])
-AC_CONFIG_FILES([packages/tfclusters/src/Makefile])
-AC_CONFIG_FILES([packages/tfclusters/test/Makefile])
-AC_CONFIG_FILES([packages/slopefilters/Makefile])
-AC_CONFIG_FILES([packages/slopefilters/doc/Makefile])
-AC_CONFIG_FILES([packages/slopefilters/include/Makefile])
-AC_CONFIG_FILES([packages/slopefilters/src/Makefile])
-AC_CONFIG_FILES([packages/slopefilters/test/Makefile])
-AC_CONFIG_FILES([packages/block/Makefile])
-AC_CONFIG_FILES([packages/block/doc/Makefile])
-AC_CONFIG_FILES([packages/block/include/Makefile])
-AC_CONFIG_FILES([packages/block/src/Makefile])
-AC_CONFIG_FILES([packages/block/test/Makefile])
-AC_CONFIG_FILES([packages/timefreq/Makefile])
-AC_CONFIG_FILES([packages/timefreq/doc/Makefile])
-AC_CONFIG_FILES([packages/timefreq/include/Makefile])
-AC_CONFIG_FILES([packages/timefreq/src/Makefile])
-AC_CONFIG_FILES([packages/timefreq/test/Makefile])
-AC_CONFIG_FILES([packages/support/Makefile])
-AC_CONFIG_FILES([packages/support/doc/Makefile])
-AC_CONFIG_FILES([packages/support/include/Makefile])
-AC_CONFIG_FILES([packages/support/src/Makefile])
-AC_CONFIG_FILES([packages/support/test/Makefile])
-AC_CONFIG_FILES([packages/comm/Makefile])
-AC_CONFIG_FILES([packages/comm/doc/Makefile])
-AC_CONFIG_FILES([packages/comm/include/Makefile])
-AC_CONFIG_FILES([packages/comm/src/Makefile])
-AC_CONFIG_FILES([packages/comm/test/Makefile])
-AC_CONFIG_FILES([packages/framedata/Makefile])
-AC_CONFIG_FILES([packages/framedata/doc/Makefile])
-AC_CONFIG_FILES([packages/framedata/include/Makefile])
-AC_CONFIG_FILES([packages/framedata/src/Makefile])
-AC_CONFIG_FILES([packages/framedata/test/Makefile])
 AC_OUTPUT
 frameenabled="`test x${frame} = xtrue && echo "ENABLED" || echo "DISABLED"`"
 metaioenabled="`test x${metaio} = xtrue && echo "ENABLED" || echo "DISABLED"`"
