@@ -753,16 +753,18 @@ void LALFFTFIRFilter(LALStatus *status, REAL8TimeSeries *tseries, REAL8IIRFilter
     }
   
   /* create time series that will hold FIR filter (with room for zero padding) */
-  LALCreateREAL8TimeSeries(status->statusPtr, &tseriesFIR, tseries->name, 
-			   tseries->epoch, 0.0, tseries->deltaT, tseries->sampleUnits, 
+  tseriesFIR = XLALCreateREAL8TimeSeries(tseries->name, 
+			   &tseries->epoch, 0.0, tseries->deltaT, &tseries->sampleUnits, 
 			   2*tseries->data->length);
-  CHECKSTATUSPTR( status );
+  if(!tseriesFIR)
+    ABORTXLAL( status );
 
   /* create time series that will hold data  (with room for zero padding) */
-  LALCreateREAL8TimeSeries(status->statusPtr, &tseriesDATA, tseries->name, 
-			   tseries->epoch, 0.0, tseries->deltaT, tseries->sampleUnits, 
+  tseriesDATA = XLALCreateREAL8TimeSeries(tseries->name, 
+			   &tseries->epoch, 0.0, tseries->deltaT, &tseries->sampleUnits, 
 			   2*tseries->data->length);
-  CHECKSTATUSPTR( status );
+  if(!tseriesDATA)
+    ABORTXLAL( status );
 
   /* initialise values in FIR time series */
   for (n = 0; n < (int)tseriesDATA->data->length; n++) 
@@ -783,14 +785,16 @@ void LALFFTFIRFilter(LALStatus *status, REAL8TimeSeries *tseries, REAL8IIRFilter
     }
 
   /* create frequency series that will hold FT's of both timne series */ 
-  LALCreateCOMPLEX16FrequencySeries(status->statusPtr, &vtilde,tseries->name , tseries->epoch, 0.0, 
+  vtilde = XLALCreateCOMPLEX16FrequencySeries(tseries->name , &tseries->epoch, 0.0, 
 				   1.0 / (tseries->data->length * tseries->deltaT), 
-				   tseries->sampleUnits, tseriesDATA->data->length / 2 + 1);
-  CHECKSTATUSPTR( status );
-  LALCreateCOMPLEX16FrequencySeries(status->statusPtr, &vtildeFIR,tseries->name , tseries->epoch, 0.0, 
+				   &tseries->sampleUnits, tseriesDATA->data->length / 2 + 1);
+  if(!vtilde)
+    ABORTXLAL( status );
+  vtildeFIR = XLALCreateCOMPLEX16FrequencySeries(tseries->name , &tseries->epoch, 0.0, 
 				   1.0 / (tseries->data->length * tseries->deltaT), 
-				   tseries->sampleUnits, tseriesDATA->data->length / 2 + 1);
-  CHECKSTATUSPTR( status );
+				   &tseries->sampleUnits, tseriesDATA->data->length / 2 + 1);
+  if(!vtildeFIR)
+    ABORTXLAL( status );
 
   /* make fft plans */
   LALCreateForwardREAL8FFTPlan(status->statusPtr, &fplan, tseriesDATA->data->length, 0 );
@@ -843,14 +847,10 @@ void LALFFTFIRFilter(LALStatus *status, REAL8TimeSeries *tseries, REAL8IIRFilter
   LALDestroyREAL8FFTPlan( status->statusPtr, &rplan );
   CHECKSTATUSPTR( status );
 
-  LALDestroyCOMPLEX16FrequencySeries(status->statusPtr, vtilde);
-  CHECKSTATUSPTR( status );
-  LALDestroyCOMPLEX16FrequencySeries(status->statusPtr, vtildeFIR);
-  CHECKSTATUSPTR( status );
-  LALDestroyREAL8TimeSeries(status->statusPtr, tseriesFIR);
-  CHECKSTATUSPTR( status );
-  LALDestroyREAL8TimeSeries(status->statusPtr, tseriesDATA);
-  CHECKSTATUSPTR( status );
+  XLALDestroyCOMPLEX16FrequencySeries(vtilde);
+  XLALDestroyCOMPLEX16FrequencySeries(vtildeFIR);
+  XLALDestroyREAL8TimeSeries(tseriesFIR);
+  XLALDestroyREAL8TimeSeries(tseriesDATA);
 
   DETATCHSTATUSPTR( status );
   RETURN( status );

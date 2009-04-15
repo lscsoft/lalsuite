@@ -134,8 +134,8 @@ main(int argc, char *argv[])
 	  printf ( "Locator:     '%s'\n", XLALshowSFTLocator ( ptr->locator ) );
 	  printf ( "Name:        '%s'\n", ptr->header.name );
 	  printf ( "epoch:       [%d, %d]\n", ptr->header.epoch.gpsSeconds, ptr->header.epoch.gpsNanoSeconds ); 
-	  printf ( "f0:          %f\n", ptr->header.f0 );
-	  printf ( "deltaF:      %f\n", ptr->header.deltaF );
+	  printf ( "f0:          %.9f\n", ptr->header.f0 );
+	  printf ( "deltaF:      %.9g\n", ptr->header.deltaF );
 	  printf ( "comment:     %s\n", (ptr->comment)?(ptr->comment) : "<none>" );
 	  printf ( "numBins:     %d\n", ptr->numBins );
 	  printf ("\n");
@@ -147,7 +147,7 @@ main(int argc, char *argv[])
 	  SFTtype *sft = &(sfts->data[i]);;
 	  if ( ! uvar_noHeader ) printf (" Frequency_Hz     Real           Imaginary \n");
 	  for ( k=0; k < sft->data->length; k ++ )
-	    printf ( "%10f      % 6e  % 6e  \n", sft->f0 + k * sft->deltaF, sft->data->data[k].re, sft->data->data[k].im );
+	    printf ( "%.9f      % 6e  % 6e  \n", sft->f0 + k * sft->deltaF, sft->data->data[k].re, sft->data->data[k].im );
 	  
 	  printf ("\n");
 	  

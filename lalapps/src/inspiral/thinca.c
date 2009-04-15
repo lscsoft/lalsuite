@@ -46,6 +46,8 @@
 #include <lal/Segments.h>
 #include <lal/SegmentsIO.h>
 #include <lalapps.h>
+#include <lal/lalGitID.h>
+#include <lalappsGitID.h>
 #include <processtable.h>
 
 RCSID("$Id$");
@@ -469,8 +471,16 @@ int main( int argc, char *argv[] )
   proctable.processTable = (ProcessTable *) calloc( 1, sizeof(ProcessTable) );
   LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->start_time),
         &accuracy ), &status );
-  LAL_CALL( populate_process_table( &status, proctable.processTable, 
-        PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE ), &status );
+  if (strcmp(CVS_REVISION, "$Revi" "sion$"))
+  {
+    XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME,
+        CVS_REVISION, CVS_SOURCE, CVS_DATE, 0);
+  }
+  else
+  {
+    XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME,
+        lalappsGitCommitID, lalappsGitGitStatus, lalappsGitCommitDate, 0);
+  }
   this_proc_param = processParamsTable.processParamsTable = 
     (ProcessParamsTable *) calloc( 1, sizeof(ProcessParamsTable) );
   memset( comment, 0, LIGOMETA_COMMENT_MAX * sizeof(CHAR) );
