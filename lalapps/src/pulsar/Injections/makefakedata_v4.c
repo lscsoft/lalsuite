@@ -993,11 +993,12 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
     edat.ephiles.earthEphemeris = earthdata;
     edat.ephiles.sunEphemeris   = sundata;
 
+    edat.leap = XLALGPSLeapSeconds( cfg->startTimeGPS.gpsSeconds );
     {
-      LALLeapSecFormatAndAcc formatAndAcc = {LALLEAPSEC_GPSUTC, LALLEAPSEC_LOOSE};
-      INT4 leapSecs;
-      TRY ( LALLeapSecs(status->statusPtr, &leapSecs,  &(cfg->startTimeGPS), &formatAndAcc), status);
-      edat.leap = (INT2) leapSecs;
+      INT4 err = xlalErrno;
+      if ( err != XLAL_SUCCESS ) {
+	ABORT ( status, err, "XLALLeapSeconds() failed!\n");
+      }
     }
 
     /* Init ephemerides */
