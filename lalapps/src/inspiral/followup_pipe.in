@@ -173,12 +173,13 @@ parser.add_option("", "--convert-eventid",action="store_true",\
     Therefore when analysing S5 second year data, one must activate this \
     option. The followup code will make a copy of the original xml files in \
     the local directory and use the \"ligolw_conv_inspid\" to convert the \
-    event_id into the correct type.")
+    event_id into the correct type. This option also enables event_id \
+    remapping when reading trigger files for plots of triggers versus time")
 
 parser.add_option("", "--create-localcopy",action="store_true",\
     default=False, help="If this option is called, the followup pipeline will \
     make a local copy of all the useful xml files. This option is ignored \
-    when --convert-eventid is called.")
+    when \"--convert-eventid\" is requested.")
 
 parser.add_option("", "--add-trig-columns",action="store_true",\
     default=False, help="For the analysis of teh second year branch, \
