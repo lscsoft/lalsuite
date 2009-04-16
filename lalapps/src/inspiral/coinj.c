@@ -115,7 +115,7 @@ CHAR		VirgoParsSource[100];
 CHAR		VirgoParsInfo[100];
 REAL4		SNR,NetworkSNR;
 INT4  makeFrames=0;
-
+INT4 outputRaw=0;
 
 /*vrbflg=6;
 lalDebugLevel=6; */
@@ -126,6 +126,7 @@ struct option long_options[]=
 	{"input",required_argument,0, 'i'},
 	{"response-type",required_argument,0,'r'},
 	{"frames",no_argument,&makeFrames,'F'},
+	{"rawstrain",no_argument,&outputRaw,'s'},
 	{"verbose",no_argument,&vrbflg,1},
 	{0,0,0,0}
  };
@@ -256,13 +257,14 @@ for(det_idx=0;det_idx<LAL_NUM_IFO;det_idx++){
 	}
 
 
-       	if(injectionResponse!=unityResponse) {
+	if(injectionResponse!=unityResponse) {
 	  	actuationTimeSeries=XLALCreateREAL4TimeSeries(det_name,&inj_epoch,0.0,deltaT,&lalADCCountUnit,(size_t)Nsamples);
 		unity = XLALCreateCOMPLEX8Vector(actuationResp->data->length);
 		transfer = XLALCreateCOMPLEX8FrequencySeries("transfer",&inj_epoch,0.0,1.0/(2.0*injLength),&countPerStrain,(size_t)Nsamples+1);
 		for(i=0;i<unity->length;i++) {unity->data[i].re=1.0; unity->data[i].im=0.0;}
 		XLALCCVectorDivide(transfer->data,unity,resp->data);
-		actuationTimeSeries = XLALRespFilt(TimeSeries,transfer);
+		for(i=0;i<Nsamples;i++) actuationTimeSeries->data->data[i]=TimeSeries->data->data[i];
+		actuationTimeSeries = XLALRespFilt(actuationTimeSeries,transfer);
 		XLALDestroyCOMPLEX8FrequencySeries(transfer);
 		XLALDestroyCOMPLEX8Vector(unity);
 		for(i=0;i<actuationTimeSeries->data->length;i++) actuationTimeSeries->data->data[i]/=dynRange;
