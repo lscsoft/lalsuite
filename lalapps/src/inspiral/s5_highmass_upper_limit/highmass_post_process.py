@@ -167,7 +167,7 @@ class ligolw_sqlite_node(pipeline.CondorDAGNode):
 
     pipeline.CondorDAGNode.__init__(self,job)
     self.add_var_opt("database", database)
-    self.add_var_opt("tmp-space", '\\tmp')
+    self.add_var_opt("tmp-space", '/tmp')
     self.add_var_opt("verbose","")
     self.add_file_arg(xml)
     if replace: self.add_var_opt("replace","")
@@ -221,7 +221,7 @@ class ligolw_segments_node(pipeline.CondorDAGNode):
     pipeline.CondorDAGNode.__init__(self,job)
     for k in ifodict.keys():
       print ifodict[k]
-      if ifodict[k]: self.add_var_opt("insert-from-segwizard","="+k.upper()+"="ifodict[k])
+      if ifodict[k]: self.add_var_opt("insert-from-segwizard","="+k.upper()+"="+ifodict[k])
     self.add_var_opt("name",name)
     self.add_var_opt("output",output)
     if coalesce: self.add_var_opt("coalesce","")
