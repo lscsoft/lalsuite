@@ -7,6 +7,7 @@ from math import *
 import sys
 import glob
 import copy
+from glue.ligolw import ligolw
 
 def fix_masses(sims):
   """
@@ -53,18 +54,28 @@ def scramble_dist(dist,relerr):
 def twoD_SearchVolume(found, missed, twodbin, dbin, wnfunc, bootnum=1):
   """ 
   Compute the search volume in the mass/mass plane, bootstrap
-  to marginalize the errors 
+  and measure the first and second moment (assumes the underlying 
+  distribution can be characterized by those two parameters) 
+  This is gonna be brutally slow
   """
   x = twodbin.shape[0]
   y = twodbin.shape[1]
   z = dbin.n
   rArrays = []
   volArray=rate.BinnedArray(twodbin)
-  #set up ratio arrays
+  volArray2=rate.BinnedArray(twodbin)
+
+  #set up ratio arrays for each distance bin
   for k in range(z):
     rArrays.append(rate.BinnedRatios(twodbin))
+
   # Bootstrap to account for errors
   for n in range(bootnum):
+    #initialize by setting these to zero
+    for k in range(z):
+      rArrays[k].numerator.array = numpy.zeros(rArrays[k].numerator.bins.shape)
+      rArrays[k].denominator.array = numpy.zeros(rArrays[k].numerator.bins.shape)
+    #Scramble the inj population
     sm, sf = scramble_pop(missed, found)
     for l in sf:#found:
       tbin = rArrays[dbin[scramble_dist(l.distance,0.1)]]
@@ -72,22 +83,22 @@ def twoD_SearchVolume(found, missed, twodbin, dbin, wnfunc, bootnum=1):
     for l in sm:#missed:
       tbin = rArrays[dbin[scramble_dist(l.distance,0.1)]]
       tbin.incdenominator( (l.mass1, l.mass2) )
-    print >>sys.stderr, "bootstrapping:\t%.1f%%\r" % (100.0 * n / bootnum),
-  # Take the mean, marginalize
-  tbin.denominator.array /= bootnum
-  tbin.numerator.array /= bootnum 
-  # make denom total, regularize and smooth
-  print >>sys.stderr, "\n"
-  for k in range(z): 
-    tbins = rArrays[k]
-    tbins.denominator.array += tbins.numerator.array
-    rate.filter_array(tbins.denominator.array,wnfunc)
-    rate.filter_array(tbins.numerator.array,wnfunc)
-    tbins.regularize()
-    # logarithmic(d)
-    volArray.array += 4.0 * pi * tbins.ratio() * dbin.centres()[k]**3 * dbin.delta
-    print >>sys.stderr, "Calculating smoothed volume:\t%.1f%%\r" % (100.0 * k / z),
-  return volArray
+    #print >>sys.stderr, "bootstrapping:\t%.1f%%\r" % (100.0 * n / bootnum),
+    # make denom total, regularize and smooth
+    for k in range(z): 
+      tbins = rArrays[k]
+      tbins.denominator.array += tbins.numerator.array
+      rate.filter_array(tbins.denominator.array,wnfunc)
+      rate.filter_array(tbins.numerator.array,wnfunc)
+      tbins.regularize()
+      # logarithmic(d)
+      volArray.array += 4.0 * pi * tbins.ratio() * dbin.centres()[k]**3 * dbin.delta
+      volArray2.array += (4.0 * pi * tbins.ratio() * dbin.centres()[k]**3 * dbin.delta)**2
+      print >>sys.stderr, "bootstrapping:\t%.1f%% and Calculating smoothed volume:\t%.1f%%\r" % ((100.0 * n / bootnum), (100.0 * k / z)),
+  print >>sys.stderr, "\n\nDone\n" 
+  volArray.array /= bootnum
+  volArray2.array /= bootnum
+  return volArray, volArray2
  
 
 def cut_distance(sims, mnd, mxd):
@@ -119,15 +130,18 @@ cut_distance(Found, 1, 2000)
 cut_distance(Missed, 1, 2000)
 
 # get a 2D mass binning
-twoDMassBins = get_2d_mass_bins(1, 99, 100)
+twoDMassBins = get_2d_mass_bins(1, 99, 99)
 #dBin = rate.LinearBins(0,2000,200)
 dBin = rate.LogarithmicBins(0.1,2500,200)
 
 
-gw = rate.gaussian_window2d(11,11)
+gw = rate.gaussian_window2d(11,11,4)
 #FIXME make search volume above loudest event
-vA = twoD_SearchVolume(Found, Missed, twoDMassBins, dBin, gw, 1)
+vA, vA2 = twoD_SearchVolume(Found, Missed, twoDMassBins, dBin, gw, 1)
 
 #output an XML file with the result
-xml = rate.binned_array_to_xml(vA, "2Dsearchvolume")
-xml.write(open("2Dsearchvolume.xml","w"))
+xmldoc = ligolw.Document()
+xmldoc.appendChild(ligolw.LIGO_LW())
+xmldoc.childNodes[-1].appendChild(rate.binned_array_to_xml(vA, "2DsearchvolumeFirstMoment"))
+xmldoc.childNodes[-1].appendChild(rate.binned_array_to_xml(vA2, "2DsearchvolumeSecondMoment"))
+xmldoc.write(open("2Dsearchvolume.xml","w"))
