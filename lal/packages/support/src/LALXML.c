@@ -59,6 +59,31 @@ int XLALXMLFilePrintElements(const char *fname)
     return 0;
 }
 
+
+/**
+ * \brief Takes a XML fragment (tree) and turns it into a VOTable document
+ *
+ * This function wraps a given XML fragment in a VOTABLE element to turn it into
+ * a valid document. Please make sure that the root element of the given fragment
+ * is a valid child of the VOTABLE element (VOTable schema 1.1):
+ * \li DESCRIPTION
+ * \li COOSYS
+ * \li PARAM
+ * \li INFO
+ * \li RESOURCE
+ *
+ * \param xmlTree The XML fragment to be turned into a VOTable document
+ *
+ * \return A pointer to a xmlDoc that represents the full VOTable XML document.
+ * In case of an error, a null-pointer is returned.\n
+ * \b Important: the caller is responsible to free the allocated memory (when the
+ * document isn't needed anymore) using xmlFreeDoc().
+ *
+ * \sa XLALLIGOTimeGPS2VOTableNode
+ *
+ * \author Oliver Bock\n
+ * Albert-Einstein-Institute Hannover, Germany
+ */
 xmlDocPtr XLALCreateVOTableXMLFromTree(const xmlNodePtr xmlTree)
 {
     /* set up local variables */
@@ -109,6 +134,28 @@ xmlDocPtr XLALCreateVOTableXMLFromTree(const xmlNodePtr xmlTree)
     return xmlDocument;
 }
 
+
+/**
+ * \brief Performs a XPath search on a XML document to retrieve the content of a single node
+ *
+ * This function searches the given XML document using the given XPath statement.
+ * The XPath statement \b must be specified in such a way that at most a single node
+ * will be found.
+ *
+ * \param xmlDocument The XML document to be searched
+ * \param xpath The XPath statement to be used to search the given XML document
+ *
+ * \return A pointer to a xmlChar that holds the content (string) of the node
+ * specified by the given XPath statement. The content will be encoded in UTF-8.
+ * In case of an error, a null-pointer is returned.\n
+ * \b Important: the caller is responsible to free the allocated memory (when the
+ * string isn't needed anymore) using xmlFree().
+ *
+ * \sa XLALVOTableXML2LIGOTimeGPSByName
+ *
+ * \author Oliver Bock\n
+ * Albert-Einstein-Institute Hannover, Germany
+ */
 xmlChar * XLALGetSingleNodeContentByXPath(const xmlDocPtr xmlDocument, const char *xpath)
 {
     /* set up local variables */
@@ -194,6 +241,29 @@ xmlChar * XLALGetSingleNodeContentByXPath(const xmlDocPtr xmlDocument, const cha
     return nodeContent;
 }
 
+
+/**
+ * \brief Serializes a LIGOTimeGPS structure into a VOTable XML node
+ *
+ * This function takes a LIGOTimeGPS structure and serializes it into a VOTable
+ * RESOURCE node identified by the given name. The returned xmlNode can then be
+ * embedded into an existing node hierarchy or turned into a full VOTable document.
+ *
+ * \param ltg Pointer to the LIGOTimeGPS structure to be serialized
+ * \param name Unique identifier of this particular LIGOTimeGPS structure instance
+ *
+ * \return A pointer to a xmlNode that holds the VOTable fragment that represents
+ * the LIGOTimeGPS structure.
+ * In case of an error, a null-pointer is returned.\n
+ * \b Important: the caller is responsible to free the allocated memory (when the
+ * fragment isn't needed anymore) using xmlFreeNode(). Alternatively, xmlFreeDoc()
+ * can be used later on when the returned fragment has been embedded in a XML document.
+ *
+ * \sa XLALCreateVOTableXMLFromTree
+ *
+ * \author Oliver Bock\n
+ * Albert-Einstein-Institute Hannover, Germany
+ */
 xmlNodePtr XLALLIGOTimeGPS2VOTableNode(const LIGOTimeGPS *const ltg, const char *name)
 {
     /* set up local variables */
@@ -323,6 +393,31 @@ xmlNodePtr XLALLIGOTimeGPS2VOTableNode(const LIGOTimeGPS *const ltg, const char 
     return xmlResourceNode;
 }
 
+
+/**
+ * \brief Serializes a LIGOTimeGPS structure into a VOTable XML string
+ *
+ * This function takes a LIGOTimeGPS structure and serializes it into a full-fledged
+ * VOTable XML string containing the serialized structure as the only child element.\n
+ * Essentially, this function is just a wrapper for XLALLIGOTimeGPS2VOTableNode and
+ * XLALCreateVOTableXMLFromTree followed by a dump of the VOTable document into a
+ * string.\n
+ *
+ * \param ltg Pointer to the LIGOTimeGPS structure to be serialized
+ * \param name Unique identifier of this particular LIGOTimeGPS structure instance
+ *
+ * \return A pointer to a xmlChar (string) that holds the VOTable document containing
+ * solely the LIGOTimeGPS structure. Please note that the string will be encoded in UTF-8.
+ * In case of an error, a null-pointer is returned.\n
+ * \b Important: the caller is responsible to free the allocated memory (when the
+ * string isn't needed anymore) using xmlFree().
+ *
+ * \sa XLALLIGOTimeGPS2VOTableNode
+ * \sa XLALCreateVOTableXMLFromTree
+ *
+ * \author Oliver Bock\n
+ * Albert-Einstein-Institute Hannover, Germany
+ */
 xmlChar * XLALLIGOTimeGPS2VOTableXML(const LIGOTimeGPS *const ltg, const char *name)
 {
     /* set up local variables */
@@ -382,6 +477,25 @@ xmlChar * XLALLIGOTimeGPS2VOTableXML(const LIGOTimeGPS *const ltg, const char *n
     return xmlStringBuffer;
 }
 
+
+/**
+ * \brief Deserializes a LIGOTimeGPS structure from a VOTable XML string
+ *
+ * This function takes a VOTable XML document (string) and deserializes (extracts)
+ * the LIGOTimeGPS structure identified by the given name.
+ *
+ * \param xml Pointer to the VOTable XML document (string) containing the structure
+ * \param name Unique identifier of the particular LIGOTimeGPS structure to be deserialized
+ * \param ltg Pointer to an empty LIGOTimeGPS structure to store the deserialized instance
+ *
+ * \return XLAL_SUCCESS if the specified LIGOTimeGPS structure could be found and
+ * deserialized successfully.
+ *
+ * \sa XLALGetSingleNodeContentByXPath
+ *
+ * \author Oliver Bock\n
+ * Albert-Einstein-Institute Hannover, Germany
+ */
 INT4 XLALVOTableXML2LIGOTimeGPSByName(const char *xml, const char *name, LIGOTimeGPS *ltg)
 {
     /* set up local variables */
