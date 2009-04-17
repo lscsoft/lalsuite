@@ -79,7 +79,7 @@ if exist('bgH1_trip.mat','file')
   ylabel('dt between H1 & L1 (ms)');
   title(['dt (H1L1) v. f for triple time background events']);
   grid on;
-  saveas(gcf,'TRIPbgdtvf.png')
+  saveas(gcf,'TRIPbgdt_H1L1_vf.png')
   
   % plot dt v. f for all events
   bgtrip2=load('bgH2_trip.mat');
@@ -91,7 +91,7 @@ if exist('bgH1_trip.mat','file')
   ylabel('dt between H1 & H2 (ms)');
   title(['dt (H1H2) v. f for triple time background events']);
   grid on;
-  saveas(gcf,'TRIPbgdtvf.png')
+  saveas(gcf,'TRIPbgdt_H2L1_vf.png')
 end
 
 for i=1:N_ifos
