@@ -22,6 +22,7 @@ doc/lalapps.log
 doc/lalapps.out
 doc/lalapps.pdf
 doc/lalapps.toc
+lalapps-*.tar.gz
 lalapps.spec
 lalappsGitID.h
 libtool
