@@ -38,7 +38,7 @@
 
 /* <lalVerbatim file="BinaryPulsarTimingCV">
    Author: Pitkin, M. D.
-   $Id$
+   $Id: BinaryPulsarTiming.c,v 1.31 2008/11/18 14:55:05 mpitkin Exp $
    </lalVerbatim>
    
    <lalLaTeX>

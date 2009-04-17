@@ -51,7 +51,7 @@
     and errors on parameters (if available) */
 /* <lalVerbatim file="BinaryPulsarTimingHV">
    Author: Pitkin, M. D.
-   $Id$
+   $Id: BinaryPulsarTiming.h,v 1.14 2008/11/12 12:53:30 mpitkin Exp $
 */
 /* Matt Pitkin 29/04/04 */
 

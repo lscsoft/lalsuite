@@ -59,7 +59,7 @@ N_files = length(file_list(:,1));
     coincs=readMeta( file_list(1,:),'sngl_ringdown',0,'ifo,start_time,start_time_ns,frequency,quality,epsilon,eff_dist,snr,event_id');
     % add a field which says which run a trigger is from
     for k=1:length(coincs.snr)
-      coincs.run(k)=1i;
+      coincs.run(k)=1;
     end 
   end
 
