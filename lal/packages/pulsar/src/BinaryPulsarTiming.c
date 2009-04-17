@@ -38,7 +38,7 @@
 
 /* <lalVerbatim file="BinaryPulsarTimingCV">
    Author: Pitkin, M. D.
-   $Id$
+   $Id: BinaryPulsarTiming.c,v 1.31 2008/11/18 14:55:05 mpitkin Exp $
    </lalVerbatim>
    
    <lalLaTeX>
@@ -930,52 +930,6 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
         }
         else{
           output->f3Err = atof(val[i+3]);
-        }
-        j+=2;
-      }
-    }
-    else if( !strcmp(val[i],"f4") || !strcmp(val[i],"F4")) {
-      CHAR *loc;
-
-      /* check if exponent contains e/E or d/D or neither */
-      if((loc = strstr(val[i+1], "D"))!=NULL || (loc = strstr(val[i+1], "d"))!=NULL){
-        output->f4 = atof(val[i+1])*pow(10, atof(loc+1));
-      }
-      else{
-        output->f4 = atof(val[i+1]);
-      }
-      j++;
-
-      if(atoi(val[i+2])==1 && i+2<k){
-        /* check if exponent contains e/E or d/D or neither */
-        if((loc = strstr(val[i+3], "D"))!=NULL || (loc = strstr(val[i+3], "d"))!=NULL){
-          output->f4Err = atof(val[i+3])*pow(10, atof(loc+1));
-        }
-        else{
-          output->f4Err = atof(val[i+3]);
-        }
-        j+=2;
-      }
-    }
-    else if( !strcmp(val[i],"f5") || !strcmp(val[i],"F5")) {
-      CHAR *loc;
-
-      /* check if exponent contains e/E or d/D or neither */
-      if((loc = strstr(val[i+1], "D"))!=NULL || (loc = strstr(val[i+1], "d"))!=NULL){
-        output->f5 = atof(val[i+1])*pow(10, atof(loc+1));
-      }
-      else{
-        output->f5 = atof(val[i+1]);
-      }
-      j++;
-
-      if(atoi(val[i+2])==1 && i+2<k){
-        /* check if exponent contains e/E or d/D or neither */
-        if((loc = strstr(val[i+3], "D"))!=NULL || (loc = strstr(val[i+3], "d"))!=NULL){
-          output->f5Err = atof(val[i+3])*pow(10, atof(loc+1));
-        }
-        else{
-          output->f5Err = atof(val[i+3]);
         }
         j+=2;
       }
