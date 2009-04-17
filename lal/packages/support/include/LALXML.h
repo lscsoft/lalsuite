@@ -18,6 +18,19 @@
 *  MA  02111-1307  USA
 */
 
+/**
+ * \defgroup XML
+ * \ingroup support
+ * \author Oliver Bock, Reinhard Prix, Jolien Creighton
+ * \brief Module for reading/writing/manipulating XML as well as data serialization.
+ */
+
+/**
+ * \file
+ * \ingroup XML
+ * \brief Header file declaring the public XML API
+ */
+
 #include <lal/LALRCSID.h>
 #include <libxml/tree.h>
 #include <lal/LALDatatypes.h>
