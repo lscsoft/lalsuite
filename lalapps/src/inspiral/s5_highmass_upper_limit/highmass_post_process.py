@@ -58,15 +58,16 @@ class sqlite_job(pipeline.CondorDAGJob):
     """
     """
     self.__prog__ = 'sqlite3'
-    self.__executable = string.strip(cp.get('condor','sqlite3'))
+    self.__executable = string.strip(cp.get('condor','bash'))
+    self.sqlite3 = string.strip(cp.get('condor','sqlite3'))
     self.__universe = "vanilla"
     pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
     self.add_condor_cmd('getenv','True')
     self.tag_base = tag_base
     self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
     self.set_sub_file(tag_base+'.sub')
-    self.set_stdout_file('logs/'+tag_base+'-$(macroid).out')
-    self.set_stderr_file('logs/'+tag_base+'-$(macroid).err')
+    self.set_stdout_file('logs/'+tag_base+'-$(macroid)-$(process).out')
+    self.set_stderr_file('logs/'+tag_base+'-$(macroid-$(process)).err')
 
 class ligolw_sqlite_job(pipeline.CondorDAGJob):
   """
@@ -76,15 +77,16 @@ class ligolw_sqlite_job(pipeline.CondorDAGJob):
     """
     """
     self.__prog__ = 'ligolw_sqlite'
-    self.__executable = string.strip(cp.get('condor','ligolw_sqlite'))
+    self.__executable = string.strip(cp.get('condor','bash'))
+    self.ligolw_sqlite = string.strip(cp.get('condor','ligolw_sqlite'))
     self.__universe = "vanilla"
     pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
     self.add_condor_cmd('getenv','True')
     self.tag_base = tag_base
     self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
     self.set_sub_file(tag_base+'.sub')
-    self.set_stdout_file('logs/'+tag_base+'-$(macroid).out')
-    self.set_stderr_file('logs/'+tag_base+'-$(macroid).err')
+    self.set_stdout_file('logs/'+tag_base+'-$(macroid)-$(process).out')
+    self.set_stderr_file('logs/'+tag_base+'-$(macroid)-$(process).err')
 
 
 class ligolw_inspinjfind_job(pipeline.CondorDAGJob):
@@ -102,8 +104,8 @@ class ligolw_inspinjfind_job(pipeline.CondorDAGJob):
     self.tag_base = tag_base
     self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
     self.set_sub_file(tag_base+'.sub')
-    self.set_stdout_file('logs/'+tag_base+'-$(macroid).out')
-    self.set_stderr_file('logs/'+tag_base+'-$(macroid).err')
+    self.set_stdout_file('logs/'+tag_base+'-$(macroid)-$(process).out')
+    self.set_stderr_file('logs/'+tag_base+'-$(macroid)-$(process).err')
 
 
 class lalapps_newcorse_job(pipeline.CondorDAGJob):
@@ -121,8 +123,8 @@ class lalapps_newcorse_job(pipeline.CondorDAGJob):
     self.tag_base = tag_base
     self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
     self.set_sub_file(tag_base+'.sub')
-    self.set_stdout_file('logs/'+tag_base+'-$(macroid).out')
-    self.set_stderr_file('logs/'+tag_base+'-$(macroid).err')
+    self.set_stdout_file('logs/'+tag_base+'-$(macroid)-$(process).out')
+    self.set_stderr_file('logs/'+tag_base+'-$(macroid)-$(process).err')
 
 class ligolw_segments_job(pipeline.CondorDAGJob):
   """
@@ -139,8 +141,8 @@ class ligolw_segments_job(pipeline.CondorDAGJob):
     self.tag_base = tag_base
     self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
     self.set_sub_file(tag_base+'.sub')
-    self.set_stdout_file('logs/'+tag_base+'-$(macroid).out')
-    self.set_stderr_file('logs/'+tag_base+'-$(macroid).err')
+    self.set_stdout_file('logs/'+tag_base+'-$(macroid)-$(process).out')
+    self.set_stderr_file('logs/'+tag_base+'-$(macroid)-$(process).err')
 
 class ligolw_thinca_to_coinc_job(pipeline.CondorDAGJob):
   """
@@ -157,23 +159,31 @@ class ligolw_thinca_to_coinc_job(pipeline.CondorDAGJob):
     self.tag_base = tag_base
     self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
     self.set_sub_file(tag_base+'.sub')
-    self.set_stdout_file('logs/'+tag_base+'-$(macroid).out')
-    self.set_stderr_file('logs/'+tag_base+'-$(macroid).err')
+    self.set_stdout_file('logs/'+tag_base+'-$(macroid)-$(process).out')
+    self.set_stderr_file('logs/'+tag_base+'-$(macroid)-$(process).err')
 
 class ligolw_sqlite_node(pipeline.CondorDAGNode):
   """
   """
-  def __init__(self, job, dag, database, xml, id, p_node=[], replace=False, extract=False):
+  def __init__(self, job, dag, database, xml, id, p_node=[], replace=True, extract=False):
 
     pipeline.CondorDAGNode.__init__(self,job)
-    self.add_var_opt("database", database)
-    self.add_var_opt("tmp-space", '/tmp')
-    self.add_var_opt("verbose","")
-    self.add_file_arg(xml)
+    cline = job.ligolw_sqlite + ' --database ' + database + ' --tmp-space /tmp --verbose '
+    if replace: cline += " --replace "
+    if extract: cline += " --extract " 
+    cline += xml
+    fn = "ligolw_sqlite"+str(id)+".sh"
+    f = open(fn,"w")
+    f.write(cline)
+    f.close
+    #self.add_var_opt("database", database)
+    #self.add_var_opt("tmp-space", '/tmp')
+    #self.add_var_opt("verbose","")
+    #self.add_var_opt("glob",xml)
     self.add_macro("macroid", id)
-    id+=1
-    if replace: self.add_var_opt("replace","")
-    if extract: self.add_var_opt("extract","")
+    self.add_file_arg(fn)
+    #if replace: self.add_var_opt("replace","")
+    #if extract: self.add_var_opt("extract","")
 
     for p in p_node:
       self.add_parent(p)
@@ -182,7 +192,7 @@ class ligolw_sqlite_node(pipeline.CondorDAGNode):
 class ligolw_thinca_to_coinc_node(pipeline.CondorDAGNode):
   """
   """
-  def __init__(self, job, dag, cache, vetoes, veto_name, prefix, id, effsnrfac=250.0, p_node=[], replace=False):
+  def __init__(self, job, dag, cache, vetoes, veto_name, prefix, id, effsnrfac=250.0, p_node=[]):
 
     pipeline.CondorDAGNode.__init__(self,job)
     self.add_var_opt("ihope-cache", cache)
@@ -202,8 +212,14 @@ class sqlite_node(pipeline.CondorDAGNode):
   def __init__(self, job, dag, database, sqlfile, id, p_node=[]):
 
     pipeline.CondorDAGNode.__init__(self,job)
-    self.add_var_arg(database+" < " + sqlfile)
+    #self.add_var_arg("-c \\\\\\'" + job.sqlite3 + ' ' + database+ ' < ' + sqlfile + "\\\\\\'")
     self.add_macro("macroid", id)
+    cline = job.sqlite3 + ' ' + database+ ' < ' + sqlfile
+    fn = "sqlite"+str(id)+".sh"
+    f = open(fn,"w")
+    f.write(cline)
+    f.close
+    self.add_file_arg(fn)
     id+=1
     for p in p_node:
       self.add_parent(p)
@@ -274,24 +290,34 @@ ligolwInspinjfindJob = ligolw_inspinjfind_job(cp)
 lalappsNewcorseJob = lalapps_newcorse_job(cp)
 ligolwSegmentsJob = ligolw_segments_job(cp)
 ligolwThincaToCoincJob =  ligolw_thinca_to_coinc_job(cp)
-id = 0
+n = 0
 #Do the segments node
 segNode = {}
 for cat in cats:
-  segNode[cat] = ligolw_segments_node(ligolwSegmentsJob, dag, ifo_seg_dict(cp), "vetoes", "vetoes_"+cat+".xml.gz", id) 
+  segNode[cat] = ligolw_segments_node(ligolwSegmentsJob, dag, ifo_seg_dict(cp), "vetoes", "vetoes_"+cat+".xml.gz", n); n+=1
 
 #Run thinca_to_coinc on zero lag and time slides
+ligolwThincaToCoincNode = {}
+ligolwSqliteNode = {}
+sqliteNodeSimplify = {}
+sqliteNodeRemoveH1H2 = {}
+sqliteNodeCluster = {}
+ligolwSqliteNode2 = {}
+ligolwSqliteNode3 = {}
+ligolwSqliteNode4 = {}
+ligolwInspinjfindNode = {}
+
 for type in types:
   for cat in cats:
     command = 'grep "'  + type + ".*" + cat + '" ' + FULLDATACACHE + " > " + type + cat + ".cache"
     print command
     popen = os.popen(command)
-    ligolwThincaToCoincNode = ligolw_thinca_to_coinc_node(ligolwThincaToCoincJob, dag, type+cat+".cache", "vetoes_"+cat+".xml.gz", "vetoes", "S5_HM", id, effsnrfac=50, p_node=[segNode[cat]])
+    ligolwThincaToCoincNode[type+cat] = ligolw_thinca_to_coinc_node(ligolwThincaToCoincJob, dag, type+cat+".cache", "vetoes_"+cat+".xml.gz", "vetoes", "S5_HM", n, effsnrfac=50, p_node=[segNode[cat]]); n+=1
     database = type+cat+".sqlite"
-    ligolwSqliteNode = ligolw_sqlite_node(ligolwSqliteJob, dag, database, "S5_HM_*"+type+"*"+cat+"*.xml.gz", id, p_node=[ligolwThincaToCoincNode], replace=True)
-    sqliteNodeSimplify = sqlite_node(sqliteJob, dag, database, string.strip(cp.get('input',"simplify")), id, p_node=[ligolwSqliteNode])
-    sqliteNodeRemoveH1H2 = sqlite_node(sqliteJob, dag, database, string.strip(cp.get('input',"remove_h1h2")),id, p_node=[sqliteNodeSimplify])
-    sqliteNodeCluster = sqlite_node(sqliteJob, dag, database, string.strip(cp.get('input',"cluster")),id, p_node=[sqliteNodeRemoveH1H2])
+    ligolwSqliteNode[type+cat] = ligolw_sqlite_node(ligolwSqliteJob, dag, database, "S5_HM_*"+type+"*"+cat+"*.xml.gz", n, p_node=[ligolwThincaToCoincNode[type+cat]], replace=True); n+=1
+    sqliteNodeSimplify[type+cat] = sqlite_node(sqliteJob, dag, database, string.strip(cp.get('input',"simplify")), n, p_node=[ligolwSqliteNode[type+cat]]); n+=1
+    sqliteNodeRemoveH1H2[type+cat] = sqlite_node(sqliteJob, dag, database, string.strip(cp.get('input',"remove_h1h2")),n, p_node=[sqliteNodeSimplify[type+cat]]); n+=1
+    sqliteNodeCluster[type+cat] = sqlite_node(sqliteJob, dag, database, string.strip(cp.get('input',"cluster")),n, p_node=[sqliteNodeRemoveH1H2[type+cat]]); n+=1
 
 
 # to get injection file entries from the cache
@@ -305,18 +331,17 @@ for inj in injcache:
     command = 'grep "' + type + '.*' + cat + '" ' + INJCACHE +" > " + cachefile
     print command
     popen = os.popen(command)
-    ligolwThincaToCoincNode = ligolw_thinca_to_coinc_node(ligolwThincaToCoincJob, dag, cachefile, "vetoes_"+cat+".xml.gz", "vetoes", "S5_HM_INJ", id, effsnrfac=50, p_node=[segNode[cat]])
+    ligolwThincaToCoincNode[type+cat] = ligolw_thinca_to_coinc_node(ligolwThincaToCoincJob, dag, cachefile, "vetoes_"+cat+".xml.gz", "vetoes", "S5_HM_INJ", n, effsnrfac=50, p_node=[segNode[cat]]);n+=1
     database = type+cat+".sqlite"
-    ligolwSqliteNode = ligolw_sqlite_node(ligolwSqliteJob, dag, database, "S5_HM_INJ*"+type+"*"+cat+"*.xml.gz",id, p_node=[ligolwThincaToCoincNode], replace=True)
-    ligolwSqliteNode2 = ligolw_sqlite_node(ligolwSqliteJob, dag, database, url, id, p_node=[ligolwSqliteNode], replace=True)
-    sqliteNodeSimplify = sqlite_node(sqliteJob, dag, database, string.strip(cp.get('input',"simplify")), id, p_node=[ligolwSqliteNode2])
-    sqliteNodeRemoveH1H2 = sqlite_node(sqliteJob, dag, database, string.strip(cp.get('input',"remove_h1h2")),id, p_node=[sqliteNodeSimplify])
-    sqliteNodeCluster = sqlite_node(sqliteJob, dag, database, string.strip(cp.get('input',"cluster")),id, p_node=[sqliteNodeRemoveH1H2])
-    ligolwSqliteNode3 = ligolw_sqlite_node(ligolwSqliteJob, dag, database, database+".xml.gz", id, p_node=[sqliteNodeCluster], replace=False, extract=True)
-    ligolwInspinjfindNode = ligolw_inspinjfind_node(ligolwInspinjfindJob, dag, database+".xml.gz", id, p_node=[ligolwSqliteNode3])
-    ligolwSqliteNode4 = ligolw_sqlite_node(ligolwSqliteJob, dag, database, database+".xml.gz", id, p_node=[ligolwInspinjfindNode], replace=True)
+    ligolwSqliteNode[type+cat] = ligolw_sqlite_node(ligolwSqliteJob, dag, database, "S5_HM_INJ*"+type+"*"+cat+"*.xml.gz",n, p_node=[ligolwThincaToCoincNode[type+cat]], replace=True);n+=1
+    ligolwSqliteNode2[type+cat] = ligolw_sqlite_node(ligolwSqliteJob, dag, database, url, n, p_node=[ligolwSqliteNode[type+cat]], replace=False);n+=1
+    sqliteNodeSimplify[type+cat] = sqlite_node(sqliteJob, dag, database, string.strip(cp.get('input',"simplify")), n, p_node=[ligolwSqliteNode2[type+cat]]);n+=1
+    sqliteNodeRemoveH1H2[type+cat] = sqlite_node(sqliteJob, dag, database, string.strip(cp.get('input',"remove_h1h2")),n, p_node=[sqliteNodeSimplify[type+cat]]);n+=1
+    sqliteNodeCluster[type+cat] = sqlite_node(sqliteJob, dag, database, string.strip(cp.get('input',"cluster")),n, p_node=[sqliteNodeRemoveH1H2[type+cat]]);n+=1
+    ligolwSqliteNode3[type+cat] = ligolw_sqlite_node(ligolwSqliteJob, dag, database, database+".xml.gz", n, p_node=[sqliteNodeCluster[type+cat]], replace=False, extract=True); n+=1
+    ligolwInspinjfindNode[type+cat] = ligolw_inspinjfind_node(ligolwInspinjfindJob, dag, database+".xml.gz", n, p_node=[ligolwSqliteNode3[type+cat]]);n+=1
+    ligolwSqliteNode4[type+cat] = ligolw_sqlite_node(ligolwSqliteJob, dag, database, database+".xml.gz", n, p_node=[ligolwInspinjfindNode[type+cat]], replace=True);n+=1
 
 dag.write_sub_files()
 dag.write_dag()
-
- 
+dag.write_script()
