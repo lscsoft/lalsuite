@@ -789,3 +789,55 @@ UINT4 XLALAggregationDQGap(INT4TimeSeries *series,
   else
     return 0;
 }
+
+
+/* return strain data time series for given ifo, gps time, duration, and
+ * a maximum wait time */
+REAL8TimeSeries *XLALAggregationStrainDataWait(CHAR *ifo,
+    LIGOTimeGPS *start,
+    REAL8 duration,
+    UINT4 max_wait)
+{
+  static const char *func = "XLALAggregationStrainDataWait";
+
+  /* declare variables */
+  FrStream *stream;
+  REAL8TimeSeries *series;
+  UINT4 wait;
+
+  /* check arguments */
+  if (!ifo)
+    XLAL_ERROR_NULL(func, XLAL_EFAULT);
+  if (!start)
+    XLAL_ERROR_NULL(func, XLAL_EFAULT);
+
+  /* open frame stream */
+  stream = XLALAggregationFrameStream(ifo, start, duration);
+  if (stream == NULL)
+    XLAL_ERROR_NULL(func, XLAL_EIO);
+
+  /* initialise wait */
+  wait = 0;
+  do
+  {
+    /* try to read data */
+    series = XLALAggregationStrainData(ifo, start, duration);
+    if ((series == NULL) && (wait > max_wait))
+    {
+      /* already waited for maximum duration */
+      XLALFrClose(stream);
+      XLAL_ERROR_NULL(func, XLAL_EIO);
+    }
+    else if (series == NULL)
+    {
+      /* failed to get series, wait */
+      wait += ONLINE_FRAME_DURATION;
+      sleep(ONLINE_FRAME_DURATION);
+    }
+  } while (series == NULL);
+
+  /* close frame stream */
+  XLALFrClose(stream);
+
+  return series;
+}
