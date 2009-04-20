@@ -117,6 +117,13 @@ REAL8TimeSeries *XLALAggregationStrainDataWait(CHAR *ifo,
     REAL8 duration,
     UINT4 max_wait);
 
+/* return data quality vector time series for given ifo, gps time,
+ * duration, and a maximum wait time */
+INT4TimeSeries *XLALAggregationDQVectorWait(CHAR *ifo,
+    LIGOTimeGPS *start,
+    REAL8 duration,
+    UINT4 max_wait);
+
 #ifdef __cplusplus
 }
 #endif
