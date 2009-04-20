@@ -893,3 +893,54 @@ INT4TimeSeries *XLALAggregationDQVectorWait(CHAR *ifo,
 
   return series;
 }
+
+/* return state vector time series for given ifo, gps time, duration,
+ * and a maximum wait time */
+INT4TimeSeries *XLALAggregationStateVectorWait(CHAR *ifo,
+    LIGOTimeGPS *start,
+    REAL8 duration,
+    UINT4 max_wait)
+{
+  static const char *func = "XLALAggregationStateVectorWait";
+
+  /* declare variables */
+  FrStream *stream;
+  INT4TimeSeries *series;
+  UINT4 wait;
+
+  /* check arguments */
+  if (!ifo)
+    XLAL_ERROR_NULL(func, XLAL_EFAULT);
+  if (!start)
+    XLAL_ERROR_NULL(func, XLAL_EFAULT);
+
+  /* open frame stream */
+  stream = XLALAggregationFrameStream(ifo, start, duration);
+  if (stream == NULL)
+    XLAL_ERROR_NULL(func, XLAL_EIO);
+
+  /* initialise wait */
+  wait = 0;
+  do
+  {
+    /* try to read data */
+    series = XLALAggregationStateVector(ifo, start, duration);
+    if ((series == NULL) && (wait > max_wait))
+    {
+      /* already waited for maximum duration */
+      XLALFrClose(stream);
+      XLAL_ERROR_NULL(func, XLAL_EIO);
+    }
+    else if (series == NULL)
+    {
+      /* failed to get series, wait */
+      wait += ONLINE_FRAME_DURATION;
+      sleep(ONLINE_FRAME_DURATION);
+    }
+  } while (series == NULL);
+
+  /* close frame stream */
+  XLALFrClose(stream);
+
+  return series;
+}

@@ -124,6 +124,13 @@ INT4TimeSeries *XLALAggregationDQVectorWait(CHAR *ifo,
     REAL8 duration,
     UINT4 max_wait);
 
+/* return state vector time series for given ifo, gps time, duration,
+ * and a maximum wait time */
+INT4TimeSeries *XLALAggregationStateVectorWait(CHAR *ifo,
+    LIGOTimeGPS *start,
+    REAL8 duration,
+    UINT4 max_wait);
+
 #ifdef __cplusplus
 }
 #endif
