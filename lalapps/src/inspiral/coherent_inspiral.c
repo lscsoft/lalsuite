@@ -82,6 +82,9 @@
 #include <lal/CoherentInspiral.h>
 #include <lal/LALStatusMacros.h>
 #include <lal/SkyCoordinates.h>
+#include <lal/lalGitID.h>
+#include <lalappsGitID.h>
+
 
 RCSID( "$Id$" );
 
@@ -290,8 +293,17 @@ int main( int argc, char *argv[] )
   proctable.processTable = (ProcessTable *) calloc( 1, sizeof(ProcessTable) );
   LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->start_time),
         &accuracy ), &status );
-  LAL_CALL( populate_process_table( &status, proctable.processTable, 
-        PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE ), &status );
+
+  if (strcmp(CVS_REVISION, "$Revi" "sion$"))
+  {
+    XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME,
+        CVS_REVISION, CVS_SOURCE, CVS_DATE, 0);
+  }
+  else
+  {
+    XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME,
+        lalappsGitCommitID, lalappsGitGitStatus, lalappsGitCommitDate, 0);
+  }
   this_proc_param = procparams.processParamsTable = (ProcessParamsTable *) 
     calloc( 1, sizeof(ProcessParamsTable) );
 
