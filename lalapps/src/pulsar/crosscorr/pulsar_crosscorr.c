@@ -303,7 +303,6 @@ int main(int argc, char *argv[]){
     constraints.endTime = &endTimeGPS;
   }
 
-
   /* get sft catalog */
   /* note that this code depends very heavily on the fact that the catalog
      returned by LALSFTdataFind is time sorted */
@@ -341,7 +340,6 @@ int main(int argc, char *argv[]){
 
   /*get number of frequency loops*/
   nfreqLoops = ceil(uvar_fBand/uvar_fResolution);
-
   /* if we are using spindown parameters, initialise the fdots array */
   if (uvar_spindownParams) {
 
@@ -349,7 +347,7 @@ int main(int argc, char *argv[]){
     fdots->length = N_SPINDOWN_DERIVS;
     fdots->data = (REAL8 *)LALCalloc(fdots->length, sizeof(REAL8));
 
-    nq1Loops = 1 + ceil(uvar_epsilonBand/uvar_epsilonResolution);
+    nq1Loops = 1 + (INT4)ceil(uvar_epsilonBand/uvar_epsilonResolution);
     
     nq2Loops = 1 + ceil(uvar_magfieldBand/uvar_magfieldResolution);
 
@@ -444,10 +442,16 @@ int main(int argc, char *argv[]){
   }
 
   /* initialise output arrays */
-  nParams = nSkyPatches * nfreqLoops *nfdotLoops * nfddotLoops;
+  if (uvar_spindownParams) {
+    nParams = nSkyPatches * nfreqLoops *nfdotLoops * nfddotLoops;
+  } else {
+    nParams = nSkyPatches * nfreqLoops * nq1Loops * nq2Loops * nnLoops;
+  }
 
   rho = (REAL8Vector *)LALCalloc(1, sizeof(REAL8Vector));
   stddev = (REAL8Vector *)LALCalloc(1, sizeof(REAL8Vector));
+  rho->length = nParams;
+  stddev->length = nParams;
   rho->data = (REAL8 *)LALCalloc(nParams, sizeof(REAL8));
   stddev->data = (REAL8 *)LALCalloc(nParams, sizeof(REAL8));
 
@@ -465,7 +469,6 @@ int main(int argc, char *argv[]){
   slidingcounter = 0;
  	   
   /***********start main calculations**************/
-
   /*outer loop over all sfts in catalog, so that we load only the relevant sfts each time*/
   for(sftcounter=0; sftcounter < (INT4)catalog->length -1; sftcounter++) {
     tmpSFT = NULL;
@@ -530,11 +533,9 @@ int main(int argc, char *argv[]){
       for (freqCounter = 0; freqCounter < nfreqLoops; freqCounter++) {
 
         f_current = uvar_f0 + (uvar_fResolution*freqCounter);
-
  	/**************** Option 1: Searching over spindown parameters ******************/
 
         if (uvar_spindownParams) { /*if searching over q1, q2, n*/
- 
   	  /* Q1 loop */
 	  for (q1Counter = 0; q1Counter < nq1Loops; q1Counter++) {
 
@@ -613,7 +614,7 @@ int main(int argc, char *argv[]){
 		   phaseList = (REAL8ListElement *)phaseList->nextVal;
 		   beamList = (CrossCorrBeamFnListElement *)beamList->nextBeamfn;
  
-		 } else { /*otherwise just step to the next sft*/
+		   } else { /*otherwise just step to the next sft*/
 
 		   sftList = (SFTListElement *)sftList->nextSFT;
 		   psdList = (PSDListElement *)psdList->nextPSD;
@@ -627,7 +628,6 @@ int main(int argc, char *argv[]){
 		   phase2 = phaseList->val;
 		   beamfns2 = &(beamList->beamfn);
  		 }
-       
                  /*strcmp returns 0 if strings are equal, >0 if strings are different*/
                  sameDet = strcmp(sft1->name, sft2->name);
 
@@ -650,10 +650,10 @@ int main(int argc, char *argv[]){
 						     sft1, sft2, psd1, psd2, freq1, freq2),
 		  	    &status);
 
+
 	  	  LAL_CALL( LALCalculateSigmaAlphaSq( &status, &sigmasq->data[ualphacounter],
 						    freq1, freq2, psd1, psd2),
 			    &status);
-
 		  /*if we are averaging over psi and cos(iota), call the simplified 
  	    	    Ualpha function*/
 	  	  if (uvar_averagePsi && uvar_averageIota) {
@@ -673,7 +673,6 @@ int main(int argc, char *argv[]){
                 }
 	      } /*finish loop over sft pairs*/
 
-	      /*printf("finish loop over pairs\n");*/
 
 	      /* calculate rho from Yalpha and Ualpha, if there were pairs */
  	      if (ualphacounter > 0) {
@@ -682,7 +681,6 @@ int main(int argc, char *argv[]){
 			&status);
 
 	        rho->data[counter] += tmpstat;
-
 	        /* calculate standard deviation of rho (Eq 4.6) */
 	        LAL_CALL( LALNormaliseCrossCorrPower( &status, &tmpstat, ualpha, sigmasq),
 			&status); 
@@ -700,7 +698,6 @@ int main(int argc, char *argv[]){
 
 	} /*finish loop over q1*/
  
-       
       } /*endif*/
 
       /***************** Option 2: Searching over frequency derivatives *************/
@@ -874,7 +871,6 @@ int main(int argc, char *argv[]){
       XLALDestroyREAL8Vector(sigmasq);
 
     } /*end if listLength > 1 */
-
   } /* finish loop over all sfts */
   printf("finish loop over all sfts\n");
 
@@ -963,6 +959,9 @@ int main(int argc, char *argv[]){
   XLALDestroyREAL8Vector(stddev);
   XLALDestroyREAL8Vector(rho);
 
+  if (uvar_spindownParams) {
+    XLALDestroyREAL8Vector(fdots);
+  }
 
   /*free the last few elements (if they're not already free). */
   if (beamHead) {
@@ -1545,7 +1544,6 @@ void CalculateFdots (LALStatus *status,
 			 + 10.0*(n-1)*n*pow(f0,n-2)*fdots->data[1]*fdots->data[2]
  			 + 5.0*(n-1)*n*pow(f0,n-2)*fdots->data[0]*fdots->data[3]
 			 + n*pow(f0,n-1)*fdots->data[4]);
-
 /*  for (i=1; i < fdots->length; i++) {
     counter = 1;
     gwcounter = gwBrakingIndex;
@@ -1590,7 +1588,8 @@ void initUserVars (LALStatus *status)
   uvar_blocksRngMed = BLOCKSRNGMED;
   uvar_detChoice = 2;
   uvar_f0 = F0;
-  uvar_fResolution = 0.0;
+  uvar_fBand = FBAND;
+  uvar_fResolution = uvar_fBand;
   uvar_startTime = 0.0;
   uvar_endTime = LAL_INT4_MAX;
   uvar_fdot = 0.0;
@@ -1599,7 +1598,6 @@ void initUserVars (LALStatus *status)
   uvar_fddot = 0.0;
   uvar_fddotBand = 0.0;
   uvar_fddotResolution = 0.0;
-  uvar_fBand = FBAND;
   uvar_dAlpha = 0.2;
   uvar_dDelta = 0.2;
   uvar_psi = 0.0;
@@ -1607,13 +1605,13 @@ void initUserVars (LALStatus *status)
   uvar_cosi = 0.0;
   uvar_epsilon = 1e-5;
   uvar_epsilonBand = 0.0;
-  uvar_epsilonResolution = 0.0;
+  uvar_epsilonResolution = uvar_epsilon/10.0;
   uvar_magfield = 1e9;
   uvar_magfieldBand = 0.0;
-  uvar_magfieldResolution = 0.0;
+  uvar_magfieldResolution = uvar_magfield/10.0;
   uvar_brakingindex = 3;
   uvar_brakingindexBand = 0.0;
-  uvar_brakingindexResolution = 0.0;
+  uvar_brakingindexResolution = uvar_brakingindex/10.0;
 
   uvar_ephemDir = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
   strcpy(uvar_ephemDir,DEFAULT_EPHEMDIR);
