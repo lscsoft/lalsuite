@@ -894,6 +894,7 @@ INT4TimeSeries *XLALAggregationDQVectorWait(CHAR *ifo,
   return series;
 }
 
+
 /* return state vector time series for given ifo, gps time, duration,
  * and a maximum wait time */
 INT4TimeSeries *XLALAggregationStateVectorWait(CHAR *ifo,
