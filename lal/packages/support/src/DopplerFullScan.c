@@ -50,6 +50,8 @@
 #define TRUE (1==1)
 #define FALSE (1==0)
 
+#define INIT_MEM(x) memset(&(x), 0, sizeof((x)))
+
 NRCSID( DOPPLERFULLSCANC, "$Id$" );
 
 /*---------- internal types ----------*/
@@ -438,6 +440,7 @@ XLALNextDopplerPos(PulsarDopplerParams *pos, DopplerFullScanState *scan)
       break;
 
     case GRID_FILE_FULLGRID:
+      INIT_MEM(pos->fkdot);
       pos->refTime  = scan->refTime;
       pos->fkdot[0] = scan->thisGridPoint->entry.data[0];
       pos->Alpha    = scan->thisGridPoint->entry.data[1];

@@ -126,6 +126,8 @@ extern INT4 lalDebugLevel;
 /** Simple Euklidean scalar product for two 3-dim vectors in cartesian coords */
 #define SCALAR(u,v) ((u)[0]*(v)[0] + (u)[1]*(v)[1] + (u)[2]*(v)[2])
 
+#define INIT_MEM(x) memset(&(x), 0, sizeof((x)))
+
 #define TRUE  (1==1)
 #define FALSE (1==0)
 
@@ -276,6 +278,7 @@ LALSimulateExactPulsarSignal (LALStatus *status,
       
       XLALGPSSetREAL8( &newEpoch, startTimeSSB );
 
+      INIT_MEM ( fkdotOld );
       fkdotOld[0] = f0;
       fkdotOld[1] = f1dot;
       fkdotOld[2] = f2dot;
