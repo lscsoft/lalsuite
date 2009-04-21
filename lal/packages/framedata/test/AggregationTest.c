@@ -96,6 +96,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
         fprintf(stdout, " --help             print this message\n");
         fprintf(stdout, " --verbose          run in verbose mode\n");
         fprintf(stdout, " --debug-level N    set lalDebugLevel\n");
+        fprintf(stdout, " --ifo IFO          set IFO\n");
         exit(0);
         break;
 
