@@ -1002,7 +1002,7 @@ INT4 XLALAggregationStatFiles(CHAR *ifo,
   static const char *func = "XLALAggregationStatFiles";
 
   /* declare variables */
-  LIGOTimeGPS *time_now;
+  LIGOTimeGPS time_now;
   FrCache *cache;
   UINT4 i;
 
@@ -1013,15 +1013,14 @@ INT4 XLALAggregationStatFiles(CHAR *ifo,
     XLAL_ERROR(func, XLAL_EFAULT);
 
   /* get current gps time */
-  time_now = XLALGPSTimeNow(time_now);
-  if (time_now == NULL)
+  if (XLALGPSTimeNow(&time_now) == NULL)
   {
     /* failed to get current time */
     XLAL_ERROR(func, XLAL_EFUNC);
   }
 
   /* check that requested data is not in the future */
-  if (XLALGPSCmp(time_now, start) == -1)
+  if (XLALGPSCmp(&time_now, start) == -1)
   {
     /* requested time in the future */
     XLAL_ERROR(func, XLAL_EFUNC);
