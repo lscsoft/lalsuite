@@ -36,6 +36,9 @@
 /* flags for getopt_long */
 int vrbflg;
 
+/* global variables */
+CHAR *ifo;
+
 /*
  * helper functions
  */
@@ -54,14 +57,16 @@ static void parse_options(INT4 argc, CHAR *argv[])
       /* options that don't set a flag */
       {"help", no_argument, 0, 'a'},
       {"debug-level", required_argument, 0, 'b'},
+      {"ifo", required_argument, 0, 'c'},
       {0, 0, 0, 0}
     };
 
     /* getopt_long stores the option here */
     int option_index = 0;
+    size_t optarg_len;
 
     /* parse options */
-    c = getopt_long_only(argc, argv, "ab:", long_options, &option_index);
+    c = getopt_long_only(argc, argv, "ab:c:", long_options, &option_index);
 
     if (c == -1)
     {
@@ -97,6 +102,13 @@ static void parse_options(INT4 argc, CHAR *argv[])
       case 'b':
         /* set debug level */
         lalDebugLevel = (INT4)optarg;
+        break;
+
+      case 'c':
+        /* set ifo */
+        optarg_len = strlen(optarg) + 1;
+        ifo = (CHAR *)calloc(optarg_len, sizeof(CHAR));
+        memcpy(ifo, optarg, optarg_len);
         break;
 
       case '?':
@@ -135,7 +147,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   INT4TimeSeries *state_vector;
 
   /* parameters */
-  CHAR ifo[LIGOMETA_IFO_MAX] = "H1";
   LIGOTimeGPS gps = {918073010, 0};
   INT4 duration = 32;
   INT4 dq_bitmask = LAL_DQ_INJECTION;
@@ -220,6 +231,9 @@ INT4 main(INT4 argc, CHAR *argv[])
   }
   LALDPrintTimeSeries(series, "series_dq.dat");
   XLALDestroyREAL8TimeSeries(series);
+
+  /* free memory */
+  free(ifo);
 
   /* check for memory leaks */
   LALCheckMemoryLeaks();
