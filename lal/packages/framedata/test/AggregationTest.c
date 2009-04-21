@@ -101,7 +101,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
       case 'b':
         /* set debug level */
-        lalDebugLevel = (INT4)optarg;
+        lalDebugLevel = atoi(optarg);
         break;
 
       case 'c':
