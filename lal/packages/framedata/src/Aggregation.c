@@ -36,6 +36,7 @@
 #include <lal/FrameStream.h>
 #include <lal/TimeSeries.h>
 #include <lal/AVFactories.h>
+#include <lal/Date.h>
 
 
 /* return frame gps start time for given gps time */
@@ -501,6 +502,7 @@ REAL8TimeSeries *XLALAggregationStrainData(CHAR *ifo,
   FrStream *stream;
   REAL8TimeSeries *series;
   CHAR channel[LIGOMETA_CHANNEL_MAX];
+  LIGOTimeGPS time_now;
   LIGOTimeGPS *latest;
   INT4 end_time;
 
@@ -509,6 +511,20 @@ REAL8TimeSeries *XLALAggregationStrainData(CHAR *ifo,
     XLAL_ERROR_NULL(func, XLAL_EFAULT);
   if (!start)
     XLAL_ERROR_NULL(func, XLAL_EFAULT);
+
+  /* get current gps time */
+  if (XLALGPSTimeNow(&time_now) == NULL)
+  {
+    /* failed to get current time */
+    XLAL_ERROR_NULL(func, XLAL_EFUNC);
+  }
+
+  /* check that requested data is not in the future */
+  if (XLALGPSCmp(&time_now, start) == -1)
+  {
+    /* requested time in the future */
+    XLAL_ERROR_NULL(func, XLAL_EFUNC);
+  }
 
   /* determine gps time of latest frame file written */
   latest = XLALAggregationLatestGPS(ifo);
@@ -566,6 +582,7 @@ INT4TimeSeries *XLALAggregationDQVector(CHAR *ifo,
   FrStream *stream;
   INT4TimeSeries *series;
   CHAR channel[LIGOMETA_CHANNEL_MAX];
+  LIGOTimeGPS time_now;
   LIGOTimeGPS *latest;
   INT4 end_time;
 
@@ -574,6 +591,20 @@ INT4TimeSeries *XLALAggregationDQVector(CHAR *ifo,
     XLAL_ERROR_NULL(func, XLAL_EFAULT);
   if (!start)
     XLAL_ERROR_NULL(func, XLAL_EFAULT);
+
+  /* get current gps time */
+  if (XLALGPSTimeNow(&time_now) == NULL)
+  {
+    /* failed to get current time */
+    XLAL_ERROR_NULL(func, XLAL_EFUNC);
+  }
+
+  /* check that requested data is not in the future */
+  if (XLALGPSCmp(&time_now, start) == -1)
+  {
+    /* requested time in the future */
+    XLAL_ERROR_NULL(func, XLAL_EFUNC);
+  }
 
   /* determine gps time of latest frame file written */
   latest = XLALAggregationLatestGPS(ifo);
@@ -632,6 +663,7 @@ INT4TimeSeries *XLALAggregationStateVector(CHAR *ifo,
   INT4TimeSeries *series;
   CHAR channel[LIGOMETA_CHANNEL_MAX];
   UINT4 i;
+  LIGOTimeGPS time_now;
   LIGOTimeGPS *latest;
   INT4 end_time;
 
@@ -640,6 +672,20 @@ INT4TimeSeries *XLALAggregationStateVector(CHAR *ifo,
     XLAL_ERROR_NULL(func, XLAL_EFAULT);
   if (!start)
     XLAL_ERROR_NULL(func, XLAL_EFAULT);
+
+  /* get current gps time */
+  if (XLALGPSTimeNow(&time_now) == NULL)
+  {
+    /* failed to get current time */
+    XLAL_ERROR_NULL(func, XLAL_EFUNC);
+  }
+
+  /* check that requested data is not in the future */
+  if (XLALGPSCmp(&time_now, start) == -1)
+  {
+    /* requested time in the future */
+    XLAL_ERROR_NULL(func, XLAL_EFUNC);
+  }
 
   /* determine gps time of latest frame file written */
   latest = XLALAggregationLatestGPS(ifo);
@@ -788,4 +834,226 @@ UINT4 XLALAggregationDQGap(INT4TimeSeries *series,
   }
   else
     return 0;
+}
+
+
+/* return strain data time series for given ifo, gps time, duration, and
+ * a maximum wait time */
+REAL8TimeSeries *XLALAggregationStrainDataWait(CHAR *ifo,
+    LIGOTimeGPS *start,
+    REAL8 duration,
+    UINT4 max_wait)
+{
+  static const char *func = "XLALAggregationStrainDataWait";
+
+  /* declare variables */
+  FrStream *stream;
+  REAL8TimeSeries *series;
+  UINT4 wait;
+
+  /* check arguments */
+  if (!ifo)
+    XLAL_ERROR_NULL(func, XLAL_EFAULT);
+  if (!start)
+    XLAL_ERROR_NULL(func, XLAL_EFAULT);
+
+  /* open frame stream */
+  stream = XLALAggregationFrameStream(ifo, start, duration);
+  if (stream == NULL)
+    XLAL_ERROR_NULL(func, XLAL_EIO);
+
+  /* initialise wait */
+  wait = 0;
+  do
+  {
+    /* try to read data */
+    series = XLALAggregationStrainData(ifo, start, duration);
+    if ((series == NULL) && (wait > max_wait))
+    {
+      /* already waited for maximum duration */
+      XLALFrClose(stream);
+      XLAL_ERROR_NULL(func, XLAL_EIO);
+    }
+    else if (series == NULL)
+    {
+      /* failed to get series, wait */
+      wait += ONLINE_FRAME_DURATION;
+      sleep(ONLINE_FRAME_DURATION);
+    }
+  } while (series == NULL);
+
+  /* close frame stream */
+  XLALFrClose(stream);
+
+  return series;
+}
+
+
+/* return data quality vector time series for given ifo, gps time,
+ * duration, and a maximum wait time */
+INT4TimeSeries *XLALAggregationDQVectorWait(CHAR *ifo,
+    LIGOTimeGPS *start,
+    REAL8 duration,
+    UINT4 max_wait)
+{
+  static const char *func = "XLALAggregationDQVectorWait";
+
+  /* declare variables */
+  FrStream *stream;
+  INT4TimeSeries *series;
+  UINT4 wait;
+
+  /* check arguments */
+  if (!ifo)
+    XLAL_ERROR_NULL(func, XLAL_EFAULT);
+  if (!start)
+    XLAL_ERROR_NULL(func, XLAL_EFAULT);
+
+  /* open frame stream */
+  stream = XLALAggregationFrameStream(ifo, start, duration);
+  if (stream == NULL)
+    XLAL_ERROR_NULL(func, XLAL_EIO);
+
+  /* initialise wait */
+  wait = 0;
+  do
+  {
+    /* try to read data */
+    series = XLALAggregationDQVector(ifo, start, duration);
+    if ((series == NULL) && (wait > max_wait))
+    {
+      /* already waited for maximum duration */
+      XLALFrClose(stream);
+      XLAL_ERROR_NULL(func, XLAL_EIO);
+    }
+    else if (series == NULL)
+    {
+      /* failed to get series, wait */
+      wait += ONLINE_FRAME_DURATION;
+      sleep(ONLINE_FRAME_DURATION);
+    }
+  } while (series == NULL);
+
+  /* close frame stream */
+  XLALFrClose(stream);
+
+  return series;
+}
+
+
+/* return state vector time series for given ifo, gps time, duration,
+ * and a maximum wait time */
+INT4TimeSeries *XLALAggregationStateVectorWait(CHAR *ifo,
+    LIGOTimeGPS *start,
+    REAL8 duration,
+    UINT4 max_wait)
+{
+  static const char *func = "XLALAggregationStateVectorWait";
+
+  /* declare variables */
+  FrStream *stream;
+  INT4TimeSeries *series;
+  UINT4 wait;
+
+  /* check arguments */
+  if (!ifo)
+    XLAL_ERROR_NULL(func, XLAL_EFAULT);
+  if (!start)
+    XLAL_ERROR_NULL(func, XLAL_EFAULT);
+
+  /* open frame stream */
+  stream = XLALAggregationFrameStream(ifo, start, duration);
+  if (stream == NULL)
+    XLAL_ERROR_NULL(func, XLAL_EIO);
+
+  /* initialise wait */
+  wait = 0;
+  do
+  {
+    /* try to read data */
+    series = XLALAggregationStateVector(ifo, start, duration);
+    if ((series == NULL) && (wait > max_wait))
+    {
+      /* already waited for maximum duration */
+      XLALFrClose(stream);
+      XLAL_ERROR_NULL(func, XLAL_EIO);
+    }
+    else if (series == NULL)
+    {
+      /* failed to get series, wait */
+      wait += ONLINE_FRAME_DURATION;
+      sleep(ONLINE_FRAME_DURATION);
+    }
+  } while (series == NULL);
+
+  /* close frame stream */
+  XLALFrClose(stream);
+
+  return series;
+}
+
+
+/* check that all frames files, for requested data segment, are
+ * available */
+INT4 XLALAggregationStatFiles(CHAR *ifo,
+    LIGOTimeGPS *start,
+    REAL8 duration)
+{
+  static const char *func = "XLALAggregationStatFiles";
+
+  /* declare variables */
+  LIGOTimeGPS time_now;
+  FrCache *cache;
+  UINT4 i;
+
+  /* check arguments */
+  if (!ifo)
+    XLAL_ERROR(func, XLAL_EFAULT);
+  if (!start)
+    XLAL_ERROR(func, XLAL_EFAULT);
+
+  /* get current gps time */
+  if (XLALGPSTimeNow(&time_now) == NULL)
+  {
+    /* failed to get current time */
+    XLAL_ERROR(func, XLAL_EFUNC);
+  }
+
+  /* check that requested data is not in the future */
+  if (XLALGPSCmp(&time_now, start) == -1)
+  {
+    /* requested time in the future */
+    XLAL_ERROR(func, XLAL_EFUNC);
+  }
+
+  /* generate frame cache for requested data */
+  cache = XLALAggregationFrameCache(ifo, start, duration);
+  if (cache == NULL)
+  {
+    /* failed to get cache */
+    XLAL_ERROR(func, XLAL_EINVAL);
+  }
+
+  /* loop through files in cache */
+  for (i = 0; i < cache->numFrameFiles; i++)
+  {
+    /* declare variables */
+    struct stat file_status;
+    CHAR *filename;
+
+    /* strip file://localhost from url */
+    filename = cache->frameFiles[i].url + 16;
+
+    /* check that file exists */
+    if (stat(filename, &file_status) == -1)
+    {
+      /* file doesn't exist */
+      XLAL_ERROR(func, XLAL_EIO);
+    }
+  }
+
+  /* close cache */
+  XLALFrDestroyCache(cache);
+
+  return 0;
 }
