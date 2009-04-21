@@ -338,7 +338,7 @@ def add_sim_inspiral_coinc(contents, sim, inspirals):
 	sngl_inspiral rows to the new coinc_event row.
 	"""
 	coinc = contents.new_coinc(contents.sb_coinc_def_id)
-	coinc.set_instruments(event.ifo for event in inspirals)
+	coinc.set_instruments(set(event.ifo for event in inspirals))
 	coinc.nevents = len(inspirals)
 
 	coincmap = lsctables.CoincMap()
