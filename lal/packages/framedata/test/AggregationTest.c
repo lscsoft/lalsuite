@@ -53,7 +53,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
       {"verbose", no_argument, &vrbflg, 1},
       /* options that don't set a flag */
       {"help", no_argument, 0, 'a'},
-      {"debug-level", required_argument, 0, 'd'},
+      {"debug-level", required_argument, 0, 'b'},
       {0, 0, 0, 0}
     };
 
@@ -61,7 +61,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
     int option_index = 0;
 
     /* parse options */
-    c = getopt_long_only(argc, argv, "d:", long_options, &option_index);
+    c = getopt_long_only(argc, argv, "b:", long_options, &option_index);
 
     if (c == -1)
     {
@@ -94,7 +94,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
         exit(0);
         break;
 
-      case 'd':
+      case 'b':
         /* set debug level */
         lalDebugLevel = (INT4)optarg;
         break;
