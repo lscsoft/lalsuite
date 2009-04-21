@@ -122,18 +122,6 @@ cp -f README.install ..
 cd ..
 
 
-echo "00boot: creating configuration file"
-
-
-## Now generate acinclude.m4 and acconfig.h (if needed)
-
-rm -f acinclude.m4 acconfig.h || fail "removing acinclude.m4 acconfig.h"
-cat misc/lal.m4 > acinclude.m4 || fail "creating acinclude.m4"
-cat misc/lallibtool.m4 >> acinclude.m4 || fail "creating acinclude.m4"
-cat misc/acx_pthread.m4 >> acinclude.m4 || fail "creating acinclude.m4"
-cat misc/pkg.m4 >> acinclude.m4 || fail "creating acinclude.m4"
-
-
 ## Now run m4 to generate sources
 echo "00boot: creating sources"
 
@@ -231,7 +219,7 @@ cd ../../.. || fail "creating sources in packages/tools/src"
 ## Generate the Makefile.in's and the configure script
 
 echo "00boot: running aclocal"
-$ACLOCAL || fail "aclocal"
+$ACLOCAL -I misc || fail "aclocal"
 echo "00boot: running autoheader"
 $AUTOHEADER || fail "autoheader"
 echo "00boot: running automake"

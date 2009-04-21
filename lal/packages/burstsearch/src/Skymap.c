@@ -70,12 +70,14 @@ static void sub3(double a[3], double b[3], double c[3])
     a[2] = b[2] - c[2];
 }
 
+/* unused
 static void mul3(double a[3], double b[3], double c)
 {
     a[0] = b[0] * c;
     a[1] = b[1] * c;
     a[2] = b[2] * c;
 }
+*/
 
 static void div2(double a[2], double b[2], double c)
 {
@@ -358,6 +360,11 @@ int XLALSkymapIndexFromDirection(XLALSkymapPlanType* plan, double direction[3])
 
 XLALSkymapPlanType* XLALSkymapConstructPlan(int sampleFrequency)
 {
+    return XLALSkymapConstructPlanMN(sampleFrequency, 1024, 2048);
+}
+
+XLALSkymapPlanType* XLALSkymapConstructPlanMN(int sampleFrequency, int m, int n)
+{
     static const char func[] = "XLALSkymapConstructPlan";
     XLALSkymapPlanType* plan;
 
@@ -378,6 +385,8 @@ XLALSkymapPlanType* XLALSkymapConstructPlan(int sampleFrequency)
   
     /* define the sample frequency */
     plan->sampleFrequency = sampleFrequency;
+    plan->m = m;
+    plan->n = n;
 
     /* set up the hanford-livingston-virgo network */
     construct_hlv(plan->site);
@@ -409,8 +418,6 @@ XLALSkymapPlanType* XLALSkymapConstructPlan(int sampleFrequency)
 
     /* compute the pixel properties */
     {
-        int m = 1024;
-        int n = 2048;
         int i, j;
         double area = 0;
 
@@ -428,18 +435,18 @@ XLALSkymapPlanType* XLALSkymapConstructPlan(int sampleFrequency)
                 double direction[3];
                 int k;
                 /* compute theta and phi */
-                double theta = (i + 0.5) * (pi / m);
+                double cos_theta = 1.0 - 2.0 * (i + 0.5) / m;
+                double theta = acos(cos_theta);
                 double phi   = (j + 0.5) * (2 * pi / n);
                 /* compute direction */
                 XLALSkymapCartesianFromSpherical(direction, theta, phi);
                 /* determine the corresponding pixel */
                 k = XLALSkymapIndexFromDirection(plan, direction);
                 /* increase the total area */
-                area += sin(theta);
+                area += 1.0;
                 /* increase the pixel area */
-                plan->pixel[k].area += sin(theta);
+                plan->pixel[k].area += 1.0;
                 /* accumulate the direction */
-                mul3(direction, direction, sin(theta));
                 add3(plan->pixel[k].direction, plan->pixel[k].direction, direction);
             }
         }

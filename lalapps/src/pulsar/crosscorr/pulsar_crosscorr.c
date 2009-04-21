@@ -24,7 +24,7 @@
  * \file
  * \brief Perform CW cross-correlation search
  *
- * $Id$
+ * $Id: pulsar_crosscorr.c,v 1.23 2009/03/13 00:43:04 cchung Exp $
  *
 
 
@@ -35,7 +35,7 @@
 #include <lal/DopplerScan.h>
 #include <gsl/gsl_permutation.h>
 
-RCSID( "$Id$");
+RCSID( "$Id: pulsar_crosscorr.c,v 1.23 2009/03/13 00:43:04 cchung Exp $");
 
 /* globals, constants and defaults */
 
@@ -46,6 +46,7 @@ BOOLEAN  uvar_help;
 BOOLEAN  uvar_averagePsi;
 BOOLEAN  uvar_averageIota;
 BOOLEAN  uvar_autoCorrelate;
+BOOLEAN  uvar_spindownParams;
 INT4     uvar_blocksRngMed; 
 INT4     uvar_detChoice;
 REAL8    uvar_startTime, uvar_endTime;
@@ -57,6 +58,17 @@ REAL8    uvar_maxlag;
 REAL8    uvar_psi;
 REAL8    uvar_refTime;
 REAL8    uvar_cosi;
+REAL8    uvar_epsilon;
+REAL8    uvar_magfield;
+REAL8    uvar_brakingindex;
+REAL8    uvar_epsilonBand;
+REAL8    uvar_epsilonResolution;
+REAL8    uvar_magfieldBand;
+REAL8    uvar_magfieldResolution;
+REAL8    uvar_brakingindexBand;
+REAL8    uvar_brakingindexResolution;
+
+
 CHAR     *uvar_ephemDir=NULL;
 CHAR     *uvar_ephemYear=NULL;
 CHAR     *uvar_sftDir=NULL;
@@ -89,6 +101,8 @@ CHAR     *uvar_filenameOut=NULL;
 #define SQUARE(x) (x*x)
 #define CUBE(x) (x*x*x)
 
+#define N_SPINDOWN_DERIVS 6
+
 void initUserVars (LALStatus *status);
 
 
@@ -108,7 +122,7 @@ int main(int argc, char *argv[]){
   REAL8ListElement *phaseList, *phaseHead = NULL, *phaseTail = NULL;
   REAL8 deltaF_SFT, timeBase;
   REAL8  *psi = NULL; 
-  UINT4 counter = 0; 
+  UINT4 counter = 0, i=0; 
   COMPLEX8FrequencySeries *sft1 = NULL, *sft2 = NULL;
   INT4 sameDet;
   REAL8FrequencySeries *psd1, *psd2;
@@ -139,7 +153,7 @@ int main(int argc, char *argv[]){
   SkyPatchesInfo skyInfo;
 
   /* frequency loop info */
-  INT4 nfreqLoops, freqCounter = 0;
+  INT4 nfreqLoops=1, freqCounter = 0;
   INT4 nParams = 0;
   REAL8 f_current = 0.0;
   INT4 ualphacounter=0.0;
@@ -149,6 +163,13 @@ int main(int argc, char *argv[]){
   INT4 nfddotLoops = 1, fddotCounter = 0;
   REAL8 fdot_current = 0.0, delta_fdot = 0.0;
   REAL8 fddot_current = 0.0, delta_fddot = 0.0; 
+
+  /* frequency derivative array, if we search over q1, q2, n */
+  INT4 nq1Loops = 1, nq2Loops = 1, nnLoops = 1;
+  INT4 q1Counter = 0, q2Counter = 0, nCounter = 0;
+  REAL8 eps_current = 0.0, mag_current = 0.0, n_current = 0.0;
+  REAL8 delta_eps = 0.0, delta_mag = 0.0, delta_n = 0.0;
+  REAL8Vector *fdots = NULL;
 
   static INT4VectorSequence  *sftPairIndexList=NULL;
   REAL8Vector  *sigmasq;
@@ -255,8 +276,12 @@ int main(int argc, char *argv[]){
     exit(1);
   }
 
-  fprintf(fp, "##Alpha\tDelta\tFrequency\t Fdot \t Fddot \t Normalised Power\n");
-
+  if (uvar_spindownParams) {
+    fprintf(fp, "##Alpha\tDelta\tFrequency\tEpsilon\tB Field (T)\tBraking Index\tNormalised Power\n");
+  }
+  else {
+    fprintf(fp, "##Alpha\tDelta\tFrequency\t Fdot \t Fddot \t Normalised Power\n");
+  }
 
   /* set sft catalog constraints */
   constraints.detector = NULL;
@@ -277,7 +302,6 @@ int main(int argc, char *argv[]){
     XLALGPSSetREAL8(&endTimeGPS, uvar_endTime);
     constraints.endTime = &endTimeGPS;
   }
-
 
   /* get sft catalog */
   /* note that this code depends very heavily on the fact that the catalog
@@ -314,25 +338,46 @@ int main(int argc, char *argv[]){
     uvar_fResolution = 1/tObs;
   }
 
-  if (!(LALUserVarWasSet (&uvar_fdotResolution))) {
-    uvar_fdotResolution = SQUARE(1/tObs);
-  }
-
-  if (!(LALUserVarWasSet (&uvar_fddotResolution))) {
-    uvar_fddotResolution = CUBE(1/tObs);
-  }
-
   /*get number of frequency loops*/
   nfreqLoops = ceil(uvar_fBand/uvar_fResolution);
+  /* if we are using spindown parameters, initialise the fdots array */
+  if (uvar_spindownParams) {
 
-  nfdotLoops = 1 + ceil(uvar_fdotBand/uvar_fdotResolution);
+    fdots = (REAL8Vector *)LALCalloc(1, sizeof(REAL8Vector));
+    fdots->length = N_SPINDOWN_DERIVS;
+    fdots->data = (REAL8 *)LALCalloc(fdots->length, sizeof(REAL8));
 
-  nfddotLoops = 1 + ceil(uvar_fddotBand/uvar_fddotResolution);
+    nq1Loops = 1 + (INT4)ceil(uvar_epsilonBand/uvar_epsilonResolution);
+    
+    nq2Loops = 1 + ceil(uvar_magfieldBand/uvar_magfieldResolution);
 
-  delta_fdot = uvar_fdotResolution;
+    nnLoops = 1 + ceil(uvar_brakingindexBand/uvar_brakingindexResolution);
+
+    delta_eps = uvar_epsilonResolution;
+  
+    delta_mag = uvar_magfieldResolution;
+
+    delta_n = uvar_brakingindexResolution; 
+  }
+  /*otherwise just search over f0, fdot, fddot */
+  else {
+
+    if (!(LALUserVarWasSet (&uvar_fdotResolution))) {
+      uvar_fdotResolution = SQUARE(1/tObs);
+    }
+
+    if (!(LALUserVarWasSet (&uvar_fddotResolution))) {
+      uvar_fddotResolution = CUBE(1/tObs);
+    }
+
+    nfdotLoops = 1 + ceil(uvar_fdotBand/uvar_fdotResolution);
+
+    nfddotLoops = 1 + ceil(uvar_fddotBand/uvar_fddotResolution);
+
+    delta_fdot = uvar_fdotResolution;
  
-  delta_fddot = uvar_fddotResolution;
-
+    delta_fddot = uvar_fddotResolution;
+  }
 
   /*  set up ephemeris  */
   if(uvar_ephemDir) {
@@ -397,10 +442,16 @@ int main(int argc, char *argv[]){
   }
 
   /* initialise output arrays */
-  nParams = nSkyPatches * nfreqLoops *nfdotLoops * nfddotLoops;
+  if (uvar_spindownParams) {
+    nParams = nSkyPatches * nfreqLoops *nfdotLoops * nfddotLoops;
+  } else {
+    nParams = nSkyPatches * nfreqLoops * nq1Loops * nq2Loops * nnLoops;
+  }
 
   rho = (REAL8Vector *)LALCalloc(1, sizeof(REAL8Vector));
   stddev = (REAL8Vector *)LALCalloc(1, sizeof(REAL8Vector));
+  rho->length = nParams;
+  stddev->length = nParams;
   rho->data = (REAL8 *)LALCalloc(nParams, sizeof(REAL8));
   stddev->data = (REAL8 *)LALCalloc(nParams, sizeof(REAL8));
 
@@ -418,7 +469,6 @@ int main(int argc, char *argv[]){
   slidingcounter = 0;
  	   
   /***********start main calculations**************/
-
   /*outer loop over all sfts in catalog, so that we load only the relevant sfts each time*/
   for(sftcounter=0; sftcounter < (INT4)catalog->length -1; sftcounter++) {
     tmpSFT = NULL;
@@ -477,13 +527,183 @@ int main(int argc, char *argv[]){
 
     listLength = slidingcounter - sftcounter;
    
-  if (listLength > 1) {
- 
+    if (listLength > 1) {
+
       /* start frequency loop */
       for (freqCounter = 0; freqCounter < nfreqLoops; freqCounter++) {
 
-	f_current = uvar_f0 + (uvar_fResolution*freqCounter);
+        f_current = uvar_f0 + (uvar_fResolution*freqCounter);
+ 	/**************** Option 1: Searching over spindown parameters ******************/
 
+        if (uvar_spindownParams) { /*if searching over q1, q2, n*/
+  	  /* Q1 loop */
+	  for (q1Counter = 0; q1Counter < nq1Loops; q1Counter++) {
+
+	    eps_current = uvar_epsilon + (delta_eps*q1Counter);
+
+	    /* Q2 loop */
+	    for (q2Counter = 0; q2Counter < nq2Loops; q2Counter++) {
+
+	      mag_current = uvar_magfield + (delta_mag*q2Counter);
+
+  	      /* n loop */
+	      for (nCounter = 0; nCounter < nnLoops; nCounter++) {
+
+	        n_current = uvar_brakingindex + (delta_n*nCounter);
+
+                CalculateFdots(&status, fdots, f_current, eps_current, mag_current, n_current);
+	   
+	        /* loop over sky patches -- main calculations  */
+	        for (skyCounter = 0; skyCounter < nSkyPatches; skyCounter++) {
+
+	         /* initialize Doppler parameters of the potential source */
+	         thisPoint.Alpha = skyAlpha[skyCounter]; 
+	         thisPoint.Delta = skyDelta[skyCounter]; 
+	         thisPoint.fkdot[0] = f_current;
+ 		 for (i=1; i < PULSAR_MAX_SPINS; i++) {
+	           thisPoint.fkdot[i] = fdots->data[i-1]; 
+                 }
+	         thisPoint.refTime = refTime;
+   
+	         /* set sky positions and skypatch sizes  */
+	         patchSizeX = skySizeDelta[skyCounter]; 
+	         patchSizeY = skySizeAlpha[skyCounter]; 
+
+  
+   	         /* get the amplitude modulation coefficients */
+	         skypos.longitude = thisPoint.Alpha; 
+	         skypos.latitude = thisPoint.Delta; 
+	         skypos.system = COORDINATESYSTEM_EQUATORIAL; 
+  	
+
+ 	         LAL_CALL( GetBeamInfo( &status, beamHead, sftHead, freqHead, phaseHead, skypos, 
+				     edat, &thisPoint), &status);
+ 
+  	         /* loop over SFT mini-list to get pairs */
+	         ualphacounter = 0;
+
+	         /*  correlate sft pairs  */
+ 	         sftList = sftHead;
+	         psdList = psdHead;
+	         freqList = freqHead;
+	         phaseList = phaseHead;
+	         beamList = beamHead;
+
+	         sft1 = &(sftList->sft);
+	         psd1 = &(psdList->psd);
+	         freq1 = freqList->val;
+	         phase1 = phaseList->val;
+	         beamfns1 = &(beamList->beamfn);
+
+	         /*while there are elements in the sft minilist, keep
+	          going and check whether it should be paired with SFT1. 
+	          there is no need to check the lag as the sfts must satisfy this condition 
+ 	          already to be in the mini-list*/
+	         while (sftList->nextSFT) {
+	  	   /*if we are autocorrelating, we want the head to be paired with itself first*/
+   	    	   if ((sftList == sftHead) && uvar_autoCorrelate) { 
+		     sft2 = &(sftList->sft);
+		     psd2 = &(psdList->psd);
+	  	     freq2 = freqList->val;
+		     phase2 = phaseList->val;
+		     beamfns2 = &(beamList->beamfn);
+ 
+ 		   sftList = (SFTListElement *)sftList->nextSFT;
+		   psdList = (PSDListElement *)psdList->nextPSD;
+		   freqList = (REAL8ListElement *)freqList->nextVal;
+		   phaseList = (REAL8ListElement *)phaseList->nextVal;
+		   beamList = (CrossCorrBeamFnListElement *)beamList->nextBeamfn;
+ 
+		   } else { /*otherwise just step to the next sft*/
+
+		   sftList = (SFTListElement *)sftList->nextSFT;
+		   psdList = (PSDListElement *)psdList->nextPSD;
+		   freqList = (REAL8ListElement *)freqList->nextVal;
+		   phaseList = (REAL8ListElement *)phaseList->nextVal;
+		   beamList = (CrossCorrBeamFnListElement *)beamList->nextBeamfn;
+
+	  	   sft2 = &(sftList->sft);
+		   psd2 = &(psdList->psd);
+	  	   freq2 = freqList->val;
+		   phase2 = phaseList->val;
+		   beamfns2 = &(beamList->beamfn);
+ 		 }
+                 /*strcmp returns 0 if strings are equal, >0 if strings are different*/
+                 sameDet = strcmp(sft1->name, sft2->name);
+
+    	         /* if they are different, set sameDet to 1 so that it will match if
+	 	   detChoice == DIFFERENT */
+      	 	 if (sameDet != 0) { sameDet = 1; }
+      
+      		 /* however, if detChoice = ALL, then we want sameDet to match it */
+      		 if (detChoice == ALL) { sameDet = detChoice; }
+	  	  
+	         /* decide whether to add this pair or not */
+     		 if ((sameDet == (INT4)detChoice)) {
+
+	          /* increment the size of  Y, u, sigmasq vectors by 1  */
+ 	          yalpha = XLALResizeCOMPLEX16Vector(yalpha, 1 + ualphacounter);
+      		  ualpha = XLALResizeCOMPLEX16Vector(ualpha, 1 + ualphacounter);
+      		  sigmasq = XLALResizeREAL8Vector(sigmasq, 1 + ualphacounter);
+
+ 		  LAL_CALL( LALCorrelateSingleSFTPair( &status, &(yalpha->data[ualphacounter]),
+						     sft1, sft2, psd1, psd2, freq1, freq2),
+		  	    &status);
+
+
+	  	  LAL_CALL( LALCalculateSigmaAlphaSq( &status, &sigmasq->data[ualphacounter],
+						    freq1, freq2, psd1, psd2),
+			    &status);
+		  /*if we are averaging over psi and cos(iota), call the simplified 
+ 	    	    Ualpha function*/
+	  	  if (uvar_averagePsi && uvar_averageIota) {
+		    LAL_CALL( LALCalculateAveUalpha ( &status, &ualpha->data[ualphacounter], 
+						    phase1, phase2, *beamfns1, *beamfns2, 
+						    sigmasq->data[ualphacounter]),
+			       &status);
+
+		  } else {
+		    LAL_CALL( LALCalculateUalpha ( &status, &ualpha->data[ualphacounter], amplitudes,
+						 phase1, phase2, *beamfns1, *beamfns2,
+						 sigmasq->data[ualphacounter], psi),
+			      &status);
+		
+		  }
+		  ualphacounter++;
+                }
+	      } /*finish loop over sft pairs*/
+
+
+	      /* calculate rho from Yalpha and Ualpha, if there were pairs */
+ 	      if (ualphacounter > 0) {
+	        tmpstat = 0;
+	        LAL_CALL( LALCalculateCrossCorrPower( &status, &tmpstat, yalpha, ualpha),
+			&status);
+
+	        rho->data[counter] += tmpstat;
+	        /* calculate standard deviation of rho (Eq 4.6) */
+	        LAL_CALL( LALNormaliseCrossCorrPower( &status, &tmpstat, ualpha, sigmasq),
+			&status); 
+
+	        stddev->data[counter] += tmpstat;
+	      }
+
+	      counter++;
+
+ 	      } /*finish loop over sky patches*/
+	    } /* finish loop over n*/ 
+
+
+	  } /*finish loop over q2*/
+
+	} /*finish loop over q1*/
+ 
+      } /*endif*/
+
+      /***************** Option 2: Searching over frequency derivatives *************/
+
+      else { /* if searching through f, fdots instead */
+ 
 	/* frequency derivative loop */
 	for (fdotCounter = 0; fdotCounter < nfdotLoops; fdotCounter++) {
 
@@ -494,10 +714,9 @@ int main(int argc, char *argv[]){
 
 	    fddot_current = uvar_fddot + (delta_fddot*fddotCounter);
 
-
+	   
 	    /* loop over sky patches -- main calculations  */
 	    for (skyCounter = 0; skyCounter < nSkyPatches; skyCounter++) {
-
 
 	      /* initialize Doppler parameters of the potential source */
 	      thisPoint.Alpha = skyAlpha[skyCounter]; 
@@ -642,8 +861,9 @@ int main(int argc, char *argv[]){
 	  } /*finish loop over frequency double derivatives*/
 
 	} /*finish loop over frequency derivatives*/
-	/*   printf("Frequency %f\n", f_current);*/
-      } /*finish loop over frequencies */
+ 
+      } /*endelse*/  
+    } /*finish loop over frequencies */
 
       XLALDestroyCOMPLEX16Vector(yalpha);
       XLALDestroyCOMPLEX16Vector(ualpha);
@@ -651,7 +871,6 @@ int main(int argc, char *argv[]){
       XLALDestroyREAL8Vector(sigmasq);
 
     } /*end if listLength > 1 */
-
   } /* finish loop over all sfts */
   printf("finish loop over all sfts\n");
 
@@ -662,27 +881,64 @@ int main(int argc, char *argv[]){
 
     f_current = uvar_f0 + (uvar_fResolution*freqCounter);
 
-    /* frequency derivative loop */
-    for (fdotCounter = 0; fdotCounter < nfdotLoops; fdotCounter++) {
+    if (uvar_spindownParams) { /*if searching over q1, q2, n*/
+ 
+        /* Q1 loop */
+	for (q1Counter = 0; q1Counter < nq1Loops; q1Counter++) {
 
-      fdot_current = uvar_fdot + (delta_fdot*fdotCounter);
+	  eps_current = uvar_epsilon + (delta_eps*q1Counter);
 
-      /* frequency double derivative loop */
-      for (fddotCounter = 0; fddotCounter < nfddotLoops; fddotCounter++) {
-        for (skyCounter = 0; skyCounter < nSkyPatches; skyCounter++) { 
-   	  /* initialize Doppler parameters of the potential source */
-	  thisPoint.Alpha = skyAlpha[skyCounter]; 
-	  thisPoint.Delta = skyDelta[skyCounter]; 
+	  /* Q2 loop */
+	  for (q2Counter = 0; q2Counter < nq2Loops; q2Counter++) {
 
-	  /*normalise rho*/
-	  rho->data[counter] = rho->data[counter]/sqrt(stddev->data[counter]);
-	  fprintf(fp, "%1.5f\t %1.5f\t %1.5f\t %e\t %e\t %1.10f\n", thisPoint.Alpha,
+	    mag_current = uvar_magfield + (delta_mag*q2Counter);
+
+  	    /* n loop */
+	    for (nCounter = 0; nCounter < nnLoops; nCounter++) {
+	    
+              n_current = uvar_brakingindex + (delta_n*nCounter);
+
+ 	      for (skyCounter = 0; skyCounter < nSkyPatches; skyCounter++) { 
+   		/* initialize Doppler parameters of the potential source */
+	        thisPoint.Alpha = skyAlpha[skyCounter]; 
+	        thisPoint.Delta = skyDelta[skyCounter]; 
+
+	        /*normalise rho*/
+	        rho->data[counter] = rho->data[counter]/sqrt(stddev->data[counter]);
+	        fprintf(fp, "%1.5f\t %1.5f\t %1.5f\t %e\t %e\t %e\t %1.10f\n", thisPoint.Alpha,
+		thisPoint.Delta, f_current,
+		eps_current, mag_current, n_current, rho->data[counter]);
+	        counter++;
+ 	      }
+	    } /*end n loop*/
+          } /*end q2loop*/
+        } /*end q1 loop*/
+    } /*endif */
+    
+    else {  
+
+      /* frequency derivative loop */
+      for (fdotCounter = 0; fdotCounter < nfdotLoops; fdotCounter++) {
+
+        fdot_current = uvar_fdot + (delta_fdot*fdotCounter);
+
+        /* frequency double derivative loop */
+        for (fddotCounter = 0; fddotCounter < nfddotLoops; fddotCounter++) {
+          for (skyCounter = 0; skyCounter < nSkyPatches; skyCounter++) { 
+   	    /* initialize Doppler parameters of the potential source */
+	    thisPoint.Alpha = skyAlpha[skyCounter]; 
+	    thisPoint.Delta = skyDelta[skyCounter]; 
+
+	    /*normalise rho*/
+	    rho->data[counter] = rho->data[counter]/sqrt(stddev->data[counter]);
+	    fprintf(fp, "%1.5f\t %1.5f\t %1.5f\t %e\t %e\t %1.10f\n", thisPoint.Alpha,
 		  thisPoint.Delta, f_current,
 		  fdot_current, fddot_current, rho->data[counter]);
-	  counter++;
-	}
+	    counter++;
+ 	  }
+        }
       }
-    }
+    } /*endelse*/
   }
 
   /* select candidates  */
@@ -703,6 +959,9 @@ int main(int argc, char *argv[]){
   XLALDestroyREAL8Vector(stddev);
   XLALDestroyREAL8Vector(rho);
 
+  if (uvar_spindownParams) {
+    XLALDestroyREAL8Vector(fdots);
+  }
 
   /*free the last few elements (if they're not already free). */
   if (beamHead) {
@@ -1222,6 +1481,97 @@ void DeleteBeamFnHead (LALStatus *status,
 
 }
 
+void CalculateFdots (LALStatus *status,
+		     REAL8Vector *fdots,
+		     REAL8 f0,
+		     REAL8 epsilon,
+		     REAL8 magfield,
+		     REAL8 n)
+{
+  REAL8 grav, rstar, inertia, c, mu0;
+  REAL8 q1, q2;
+
+
+  INITSTATUS (status, "CalculateFdots", rcsid);
+  ATTATCHSTATUSPTR (status);
+
+  ASSERT(fdots->length >= 6, status, PULSAR_CROSSCORR_ENULL, PULSAR_CROSSCORR_MSGENULL);
+
+
+  grav = 6.67e-11;
+  rstar = 1e4;
+  c = 2.998e8;
+  inertia = 0.4*1.4*1.99e30*rstar*rstar;
+  mu0 = 1.2566e-6;
+
+  q1 = 32*grav*inertia*SQUARE(LAL_PI)*SQUARE(LAL_PI)*SQUARE(epsilon)/(5*CUBE(c)*SQUARE(c));
+
+  q2 = 2*CUBE(LAL_PI)*CUBE(rstar)*CUBE(rstar)*SQUARE(magfield)/(3*mu0*inertia*CUBE(c));
+
+  /* multiply q2 by the (pi R/c)^n-3 term*/
+  q2 = q2*pow(LAL_PI*rstar/c, n-3);
+
+  /* hard code each derivative. symbolic differentiation too hard? */
+  fdots->data[0] = -(q1 * pow(f0, 5)) - (q2 * pow(f0, n));
+
+  fdots->data[1] = -(5.0 * q1 * pow(f0, 4) * fdots->data[0])
+		   -(n * q2 * pow(f0, n-1) * fdots->data[0]);
+
+  fdots->data[2] = -q1 * (20.0 * CUBE(f0) * SQUARE(fdots->data[0]) + 5.0 * pow(f0, 4) * fdots->data[1])
+		   -q2 * ((n-1) * n * pow(f0, n-2) * SQUARE(fdots->data[0]) + n * pow(f0,n-1) * fdots->data[1]);
+
+  fdots->data[3] = -q1 * (60.0*SQUARE(f0)*CUBE(fdots->data[0]) + 60.0*CUBE(f0)*fdots->data[0]*fdots->data[1] 
+			  + 5.0*pow(f0,4)*fdots->data[2])
+		   -q2 * ((n-2)*(n-1)*n*pow(f0,n-3)*CUBE(fdots->data[0])
+			   + 3*n*(n-1)*pow(f0,n-2)*fdots->data[0]*fdots->data[1] + n*pow(f0, n-1)*fdots->data[2]);
+
+  fdots->data[4] = -q1 * (120.0*f0*pow(fdots->data[0],4) + 360.0*SQUARE(f0)*SQUARE(fdots->data[0])*fdots->data[1] 
+		   	+ 60.0*CUBE(f0)*SQUARE(fdots->data[1]) + 80.0*CUBE(f0)*fdots->data[0]*fdots->data[2] 
+			+ 5.0*SQUARE(f0)*SQUARE(f0)*fdots->data[3])
+		   -q2 * ((n-3)*(n-2)*(n-1)*n*pow(f0,n-4)*pow(fdots->data[0],4)
+			  + 6.0*(n-2)*(n-1)*n*pow(f0,n-3)*SQUARE(fdots->data[0])*fdots->data[1] 
+			  + 3.0*(n-1)*n*pow(f0,n-2)*SQUARE(fdots->data[1]) 
+			  + 4.0*(n-1)*n*pow(f0,n-2)*fdots->data[0]*fdots->data[2] + n*pow(f0, n-1)*fdots->data[3]);
+
+  fdots->data[5] = -q1 * (120.0*pow(fdots->data[0],5) + 1200.0*f0*CUBE(fdots->data[0])*fdots->data[1] 
+			  + 900.0*SQUARE(f0)*fdots->data[0]*SQUARE(fdots->data[1]) + 600.0*SQUARE(f0)*SQUARE(fdots->data[0])*fdots->data[2]
+			  + 200.0*CUBE(f0)*fdots->data[1]*fdots->data[2] + 100.0*CUBE(f0)*fdots->data[0]*fdots->data[3]
+			  + 5.0*pow(f0,4)*fdots->data[4])
+		   -q2 * ((n-4)*(n-3)*(n-2)*(n-1)*n*pow(f0,n-5)*pow(fdots->data[0],5) 
+			 + 10.0*(n-3)*(n-2)*(n-1)*n*pow(f0,n-4)*CUBE(fdots->data[0])*fdots->data[1]
+			 + 15.0*(n-2)*(n-1)*n*pow(f0,n-3)*fdots->data[0]*SQUARE(fdots->data[1])
+			 + 10.0*(n-2)*(n-1)*n*pow(f0,n-3)*SQUARE(fdots->data[1])*fdots->data[2]
+			 + 10.0*(n-1)*n*pow(f0,n-2)*fdots->data[1]*fdots->data[2]
+ 			 + 5.0*(n-1)*n*pow(f0,n-2)*fdots->data[0]*fdots->data[3]
+			 + n*pow(f0,n-1)*fdots->data[4]);
+/*  for (i=1; i < fdots->length; i++) {
+    counter = 1;
+    gwcounter = gwBrakingIndex;
+    emcounter = emBrakingIndex;
+    gwfactorial = 1;
+    emfactorial = 1;
+    fdotfactorial = 1;
+
+    while (counter <= i) {
+ 
+      gwfactorial *= gwcounter;
+      emfactorial *= emcounter;
+      fdotfactorial *=
+
+      fdots->data[i] += -(gwfactorial * q1 * pow(f0, gwcounter-1) * pow(fdots->data[i-counter], counter) )
+ 		        -(emfactorial * q2 * pow(fdots->data[i-counter], counter) *pow(f0, emcounter-1))
+      gwcounter--;
+      emcounter--;
+      counter++;
+    }
+  }
+*/
+
+  DETATCHSTATUSPTR (status);
+
+  RETURN (status);
+}
+
 void initUserVars (LALStatus *status)
 {
   INITSTATUS( status, "initUserVars", rcsid );
@@ -1234,10 +1584,12 @@ void initUserVars (LALStatus *status)
   uvar_averagePsi = TRUE;
   uvar_averageIota = TRUE;
   uvar_autoCorrelate = FALSE;
+  uvar_spindownParams = FALSE;
   uvar_blocksRngMed = BLOCKSRNGMED;
   uvar_detChoice = 2;
   uvar_f0 = F0;
-  uvar_fResolution = 0.0;
+  uvar_fBand = FBAND;
+  uvar_fResolution = uvar_fBand;
   uvar_startTime = 0.0;
   uvar_endTime = LAL_INT4_MAX;
   uvar_fdot = 0.0;
@@ -1246,12 +1598,20 @@ void initUserVars (LALStatus *status)
   uvar_fddot = 0.0;
   uvar_fddotBand = 0.0;
   uvar_fddotResolution = 0.0;
-  uvar_fBand = FBAND;
   uvar_dAlpha = 0.2;
   uvar_dDelta = 0.2;
   uvar_psi = 0.0;
   uvar_refTime = 0.0;
   uvar_cosi = 0.0;
+  uvar_epsilon = 1e-5;
+  uvar_epsilonBand = 0.0;
+  uvar_epsilonResolution = uvar_epsilon/10.0;
+  uvar_magfield = 1e9;
+  uvar_magfieldBand = 0.0;
+  uvar_magfieldResolution = uvar_magfield/10.0;
+  uvar_brakingindex = 3;
+  uvar_brakingindexBand = 0.0;
+  uvar_brakingindexResolution = uvar_brakingindex/10.0;
 
   uvar_ephemDir = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
   strcpy(uvar_ephemDir,DEFAULT_EPHEMDIR);
@@ -1389,6 +1749,47 @@ void initUserVars (LALStatus *status)
 			  0, UVAR_OPTIONAL,
 			  "cos(iota) inclination angle",
 			  &uvar_cosi); 
+  LALRegisterREALUserVar( status->statusPtr, "epsilon",
+			  0, UVAR_OPTIONAL,
+			  "Start pulsar ellipticity",
+			  &uvar_epsilon); 
+  LALRegisterREALUserVar( status->statusPtr, "epsilonBand",
+			  0, UVAR_OPTIONAL,
+			  "Pulsar ellipticity search band",
+			  &uvar_epsilonBand); 
+  LALRegisterREALUserVar( status->statusPtr, "epsilonRes",
+			  0, UVAR_OPTIONAL,
+			  "Pulsar ellipticity search resolution",
+			  &uvar_epsilonResolution); 
+  LALRegisterREALUserVar( status->statusPtr, "magfield",
+			  0, UVAR_OPTIONAL,
+			  "Start pulsar magnetic field (T)",
+			  &uvar_magfield); 
+  LALRegisterREALUserVar( status->statusPtr, "magfieldBand",
+			  0, UVAR_OPTIONAL,
+			  "Pulsar magnetic field search band (T)",
+			  &uvar_magfieldBand); 
+  LALRegisterREALUserVar( status->statusPtr, "magfieldRes",
+			  0, UVAR_OPTIONAL,
+			  "Pulsar magnetic field search resolution (T)",
+			  &uvar_magfieldResolution); 
+  LALRegisterREALUserVar( status->statusPtr, "braking",
+			  0, UVAR_OPTIONAL,
+			  "Pulsar electromagnetic braking index",
+			  &uvar_brakingindex); 
+  LALRegisterREALUserVar( status->statusPtr, "brakingBand",
+			  0, UVAR_OPTIONAL,
+			  "Pulsar electromagnetic braking index search band",
+			  &uvar_brakingindexBand); 
+  LALRegisterREALUserVar( status->statusPtr, "brakingRes",
+			  0, UVAR_OPTIONAL,
+			  "Pulsar electromagnetic braking index search resolution",
+			  &uvar_brakingindexResolution); 
+  LALRegisterBOOLUserVar( status->statusPtr, "spindownParams",
+			  0, UVAR_OPTIONAL,
+			  "Search over pulsar spindown parameters instead of frequency derivatives",
+			  &uvar_spindownParams); 
+
 
   DETATCHSTATUSPTR (status);
   RETURN (status);

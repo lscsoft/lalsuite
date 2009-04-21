@@ -110,11 +110,26 @@ REAL8TimeSeries *XLALAggregationDQStrainData(CHAR *ifo,
 UINT4 XLALAggregationDQGap(INT4TimeSeries *series,
     INT4 dq_bitmask);
 
-/* low-level routine to read single-precision frame data */
+/* return strain data time series for given ifo, gps time, duration, and
+ * a maximum wait time */
+REAL8TimeSeries *XLALAggregationStrainDataWait(CHAR *ifo,
+    LIGOTimeGPS *start,
+    REAL8 duration,
+    UINT4 max_wait);
+
+/* return data quality vector time series for given ifo, gps time,
+ * duration, and a maximum wait time */
 INT4TimeSeries *XLALAggregationDQVectorWait(CHAR *ifo,
     LIGOTimeGPS *start,
     REAL8 duration,
-    INT4 max_wait);
+    UINT4 max_wait);
+
+/* return state vector time series for given ifo, gps time, duration,
+ * and a maximum wait time */
+INT4TimeSeries *XLALAggregationStateVectorWait(CHAR *ifo,
+    LIGOTimeGPS *start,
+    REAL8 duration,
+    UINT4 max_wait);
 
 #ifdef __cplusplus
 }

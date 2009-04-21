@@ -46,11 +46,12 @@
 "lalpps_coinj [options]\n \
 --help                       display this message \n \
 --input <injection.xml>      Specify input SimInspiralTable xml file\n\
---response-type TYPE         TYPE of injection, [ strain | etmx | etmy ]\n\n\
+--response-type TYPE         TYPE of injection, [ strain | etmx | etmy ]\n\
+--frames                     Create h(t) frame files\n\n\
 lalapps_coinj: create coherent injection files for LIGO and VIRGO\n"
 
 
-RCSID("$Id$");
+RCSID("$Id");
 
 extern int vrbflg;
 extern int lalDebugLevel;
@@ -103,6 +104,7 @@ SimInspiralTable *injTable=NULL;
 SimInspiralTable this_injection;
 REAL4TimeSeries *TimeSeries;
 REAL4TimeSeries *SNRTimeSeries;
+REAL4TimeSeries *actuationTimeSeries;
 COMPLEX8FrequencySeries *resp;
 COMPLEX8FrequencySeries *actuationResp;
 COMPLEX8FrequencySeries *transfer;
@@ -112,7 +114,8 @@ FrOutPar	VirgoOutPars;
 CHAR		VirgoParsSource[100];
 CHAR		VirgoParsInfo[100];
 REAL4		SNR,NetworkSNR;
-
+INT4  makeFrames=0;
+INT4 outputRaw=0;
 
 /*vrbflg=6;
 lalDebugLevel=6; */
@@ -122,6 +125,8 @@ struct option long_options[]=
 	{"help", no_argument, 0, 'h'},
 	{"input",required_argument,0, 'i'},
 	{"response-type",required_argument,0,'r'},
+	{"frames",no_argument,&makeFrames,'F'},
+	{"rawstrain",no_argument,&outputRaw,'s'},
 	{"verbose",no_argument,&vrbflg,1},
 	{0,0,0,0}
  };
@@ -163,7 +168,7 @@ struct option long_options[]=
 while(1)
 {
 	int option_idx=0;
-	c=getopt_long_only(argc,argv,"hi:",long_options,&option_idx);
+	c=getopt_long_only(argc,argv,"hFi:",long_options,&option_idx);
 	if(c==-1) break;
 	switch(c)
 	{
@@ -172,10 +177,7 @@ while(1)
 			exit(0);
 			break;
 		case 'i':
-			if(strncpy(inputfile,optarg,FILENAME_MAX-1)>=FILENAME_MAX-1){
-				fprintf(stderr,"Error: Input file name %s too long\n",optarg);
-				exit(1);
-			}
+		  strncpy(inputfile,optarg,FILENAME_MAX-1);
 			break;
 		case 'r':
 			if(!strcmp("strain",optarg))	  injectionResponse = unityResponse;
@@ -201,6 +203,7 @@ NetworkSNR=0.0;
 /* Set epoch */
 memcpy(&inj_epoch,&(this_injection.geocent_end_time),sizeof(LIGOTimeGPS));
 LAL_CALL(LALAddFloatToGPS(&status,&inj_epoch,&(this_injection.geocent_end_time),-LeadupTime),&status);
+inj_epoch.gpsNanoSeconds=0;
 
 /* Loop over detectors */
 for(det_idx=0;det_idx<LAL_NUM_IFO;det_idx++){
@@ -253,42 +256,49 @@ for(det_idx=0;det_idx<LAL_NUM_IFO;det_idx++){
 			break;
 	}
 
-	/* Calculate SNR */
 
 	if(injectionResponse!=unityResponse) {
+	  	actuationTimeSeries=XLALCreateREAL4TimeSeries(det_name,&inj_epoch,0.0,deltaT,&lalADCCountUnit,(size_t)Nsamples);
 		unity = XLALCreateCOMPLEX8Vector(actuationResp->data->length);
 		transfer = XLALCreateCOMPLEX8FrequencySeries("transfer",&inj_epoch,0.0,1.0/(2.0*injLength),&countPerStrain,(size_t)Nsamples+1);
 		for(i=0;i<unity->length;i++) {unity->data[i].re=1.0; unity->data[i].im=0.0;}
 		XLALCCVectorDivide(transfer->data,unity,resp->data);
-		TimeSeries = XLALRespFilt(TimeSeries,transfer);
+		for(i=0;i<Nsamples;i++) actuationTimeSeries->data->data[i]=TimeSeries->data->data[i];
+		actuationTimeSeries = XLALRespFilt(actuationTimeSeries,transfer);
 		XLALDestroyCOMPLEX8FrequencySeries(transfer);
 		XLALDestroyCOMPLEX8Vector(unity);
+		for(i=0;i<actuationTimeSeries->data->length;i++) actuationTimeSeries->data->data[i]/=dynRange;
 	}
-	
+	else actuationTimeSeries=TimeSeries;
+
 	XLALDestroyCOMPLEX8FrequencySeries(actuationResp);
 
-	for(i=0;i<TimeSeries->data->length;i++) TimeSeries->data->data[i]/=dynRange;
+	for(i=0;i<TimeSeries->data->length;i++) {
+	  TimeSeries->data->data[i]=TimeSeries->data->data[i]/dynRange +0.0;
+	}
 	
 	sprintf(outfilename,"%s_HWINJ_%i_%s_%i.txt",det_name,inj_num,injtype,inj_epoch.gpsSeconds);
 	outfile=fopen(outfilename,"w");
 	fprintf(stdout,"Injected signal %i for %s into file %s\n",inj_num,det_name,outfilename);
-	for(i=0;i<TimeSeries->data->length;i++) fprintf(outfile,"%10.10e\n",TimeSeries->data->data[i]);
+	for(i=0;i<actuationTimeSeries->data->length;i++) fprintf(outfile,"%10.10e\n",actuationTimeSeries->data->data[i]);
 	fclose(outfile);
 
-	if(det_idx==LAL_IFO_V1){ /* Also output frames for Virgo */
+	if(makeFrames){ /* Also output frames for Virgo */
 		sprintf(VirgoParsSource,"%s-INSP%i",det_name,inj_num);
 		VirgoOutPars.source=VirgoParsSource;
-		sprintf(VirgoParsInfo,"HWINJ-%s",injtype);
+		sprintf(VirgoParsInfo,"HWINJ-STRAIN",injtype);
 		VirgoOutPars.description=VirgoParsInfo;
 		VirgoOutPars.type=ProcDataChannel;
-		VirgoOutPars.nframes=(UINT4)ceil(injLength/16.0);
+		VirgoOutPars.nframes=(UINT4)injLength;
 		VirgoOutPars.frame=0;
 		VirgoOutPars.run=2;
+		fprintf(stdout,"Generating frame file for %s-%s-%i\n",VirgoParsSource,VirgoParsInfo,TimeSeries->epoch.gpsSeconds);
 		LALFrWriteREAL4TimeSeries(&status,TimeSeries,&VirgoOutPars);
 	}
 	
-	
 	XLALDestroyREAL4TimeSeries(TimeSeries);
+	if(injectionResponse!=unityResponse) XLALDestroyREAL4TimeSeries(actuationTimeSeries);
+
 } /* End loop over detectors */
 /*fprintf(stdout,"Finished injecting signal %i, network SNR %f\n",inj_num,sqrt(NetworkSNR));*/
 inj_num++;

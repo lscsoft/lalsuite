@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 EXTRA_DIST = doc.mk dvi.mk include.mk main.tex.in \
-             lal.m4 lallibtool.m4 lalam15patch.m4 pkg.m4 \
+             lal.m4 lallibtool.m4 pkg.m4 \
              capture-uninstall.sh
 
 CLEANFILES = uninstall-lal.sh lal-user-env.sh lal-user-env.csh
