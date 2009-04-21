@@ -61,7 +61,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
     int option_index = 0;
 
     /* parse options */
-    c = getopt_long_only(argc, argv, "b:", long_options, &option_index);
+    c = getopt_long_only(argc, argv, "ab:", long_options, &option_index);
 
     if (c == -1)
     {
