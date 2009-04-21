@@ -49,8 +49,10 @@ static void parse_options(INT4 argc, CHAR *argv[])
   {
     static struct option long_options[] =
     {
-      {"help", no_argument, 0, 'a'},
+      /* options that set a flag */
       {"verbose", no_argument, &vrbflg, 1},
+      /* options that don't set a flag */
+      {"help", no_argument, 0, 'a'},
       {"debug-level", required_argument, 0, 'd'},
       {0, 0, 0, 0}
     };
