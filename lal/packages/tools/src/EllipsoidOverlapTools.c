@@ -23,7 +23,7 @@
  *
  * Author: Anand S. Sengupta and Craig Robinson
  * 
- * Revision: $Id$
+ * Revision: $Id: EllipsoidOverlapTools.c,v 1.6 2008/02/13 11:52:16 spxcar Exp $
  * 
  *-----------------------------------------------------------------------
  */
@@ -31,14 +31,14 @@
 #if 0
 <lalVerbatim file="EllipsoidOverlapToolsCV">
 Author: Anand S. Sengupta and Craig Robinson
-$Id$
+$Id: EllipsoidOverlapTools.c,v 1.6 2008/02/13 11:52:16 spxcar Exp $
 </lalVerbatim> 
 #endif
 
 #include <lal/EllipsoidOverlapTools.h>
 
 NRCSID( ELLIPSOIDOVERLAPTOOLSC, 
-        "$Id$" );
+        "$Id: EllipsoidOverlapTools.c,v 1.6 2008/02/13 11:52:16 spxcar Exp $" );
 
 
 static REAL8 fContact (REAL8 x, void *params);
@@ -236,7 +236,7 @@ REAL8 XLALCheckOverlapOfEllipsoids (
         if (min_status != GSL_CONTINUE && min_status != GSL_SUCCESS ) 
           XLAL_ERROR_REAL8( func, XLAL_EFUNC );
     }
-    while (min_status == GSL_CONTINUE && iter < max_iter && s->f_minimum > -1.0L  );
+    while (min_status == GSL_CONTINUE && iter < max_iter );
     /* End of minimization routine */
 
     /* Throw an error if max iterations would have been exceeded */
