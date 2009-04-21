@@ -48,8 +48,8 @@ def scramble_dist(dist,relerr):
   function to handle random calibration error.  Individually srambles the distances
   of injection by a random error (log normal)
   """
-  return dist * float( scipy.exp( relerr * scipy.random.standard_normal(1) ) )
-
+  #return dist * float( scipy.exp( relerr * scipy.random.standard_normal(1) ) )
+  return dist * (1-relerr)
 
 def twoD_SearchVolume(found, missed, twodbin, dbin, wnfunc, bootnum=1):
   """ 
@@ -64,7 +64,6 @@ def twoD_SearchVolume(found, missed, twodbin, dbin, wnfunc, bootnum=1):
   rArrays = []
   volArray=rate.BinnedArray(twodbin)
   volArray2=rate.BinnedArray(twodbin)
-
   #set up ratio arrays for each distance bin
   for k in range(z):
     rArrays.append(rate.BinnedRatios(twodbin))
@@ -85,6 +84,8 @@ def twoD_SearchVolume(found, missed, twodbin, dbin, wnfunc, bootnum=1):
       tbin.incdenominator( (l.mass1, l.mass2) )
     #print >>sys.stderr, "bootstrapping:\t%.1f%%\r" % (100.0 * n / bootnum),
     # make denom total, regularize and smooth
+    
+    tmpArray2=rate.BinnedArray(twodbin) #start with a zero array to compute the mean square
     for k in range(z): 
       tbins = rArrays[k]
       tbins.denominator.array += tbins.numerator.array
@@ -93,11 +94,16 @@ def twoD_SearchVolume(found, missed, twodbin, dbin, wnfunc, bootnum=1):
       tbins.regularize()
       # logarithmic(d)
       volArray.array += 4.0 * pi * tbins.ratio() * dbin.centres()[k]**3 * dbin.delta
-      volArray2.array += (4.0 * pi * tbins.ratio() * dbin.centres()[k]**3 * dbin.delta)**2
+      tmpArray2.array += 4.0 * pi * tbins.ratio() * dbin.centres()[k]**3 * dbin.delta
       print >>sys.stderr, "bootstrapping:\t%.1f%% and Calculating smoothed volume:\t%.1f%%\r" % ((100.0 * n / bootnum), (100.0 * k / z)),
+    tmpArray2.array *= tmpArray2.array
+    volArray2.array += tmpArray2.array
+    
   print >>sys.stderr, "\n\nDone\n" 
+  #Mean and variance
   volArray.array /= bootnum
   volArray2.array /= bootnum
+  volArray2.array -= volArray.array**2 # Variance
   return volArray, volArray2
  
 
@@ -130,14 +136,14 @@ cut_distance(Found, 1, 2000)
 cut_distance(Missed, 1, 2000)
 
 # get a 2D mass binning
-twoDMassBins = get_2d_mass_bins(1, 99, 99)
+twoDMassBins = get_2d_mass_bins(1, 99, 50)
 #dBin = rate.LinearBins(0,2000,200)
 dBin = rate.LogarithmicBins(0.1,2500,200)
 
 
-gw = rate.gaussian_window2d(11,11,4)
+gw = rate.gaussian_window2d(7,7,4)
 #FIXME make search volume above loudest event
-vA, vA2 = twoD_SearchVolume(Found, Missed, twoDMassBins, dBin, gw, 1)
+vA, vA2 = twoD_SearchVolume(Found, Missed, twoDMassBins, dBin, gw, 1000)
 
 #output an XML file with the result
 xmldoc = ligolw.Document()
