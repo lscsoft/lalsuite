@@ -39,6 +39,7 @@ int vrbflg;
 
 /* global variables */
 CHAR *ifo;
+LIGOTimeGPS gps = {0, 0};
 
 /*
  * helper functions
@@ -59,6 +60,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
       {"help", no_argument, 0, 'a'},
       {"debug-level", required_argument, 0, 'b'},
       {"ifo", required_argument, 0, 'c'},
+      {"gps-start-time", required_argument, 0, 'd'},
       {0, 0, 0, 0}
     };
 
@@ -67,7 +69,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
     size_t optarg_len;
 
     /* parse options */
-    c = getopt_long_only(argc, argv, "ab:c:", long_options, &option_index);
+    c = getopt_long_only(argc, argv, "ab:c:d:", long_options, &option_index);
 
     if (c == -1)
     {
@@ -94,10 +96,11 @@ static void parse_options(INT4 argc, CHAR *argv[])
       case 'a':
         /* help */
         fprintf(stdout, "Usage: AggregationTest [options]\n");
-        fprintf(stdout, " --help             print this message\n");
-        fprintf(stdout, " --verbose          run in verbose mode\n");
-        fprintf(stdout, " --debug-level N    set lalDebugLevel\n");
-        fprintf(stdout, " --ifo IFO          set IFO\n");
+        fprintf(stdout, " --help                 print this message\n");
+        fprintf(stdout, " --verbose              run in verbose mode\n");
+        fprintf(stdout, " --debug-level N        set lalDebugLevel\n");
+        fprintf(stdout, " --ifo IFO              set IFO\n");
+        fprintf(stdout, " --gps-start-time GPS   set GPS start time\n");
         exit(0);
         break;
 
@@ -111,6 +114,12 @@ static void parse_options(INT4 argc, CHAR *argv[])
         optarg_len = strlen(optarg) + 1;
         ifo = (CHAR *)calloc(optarg_len, sizeof(CHAR));
         memcpy(ifo, optarg, optarg_len);
+        break;
+
+      case 'd':
+        /* set gps start time */
+        gps.gpsSeconds = atoi(optarg);
+        gps.gpsNanoSeconds = 0;
         break;
 
       case '?':
@@ -149,7 +158,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   INT4TimeSeries *state_vector;
 
   /* parameters */
-  LIGOTimeGPS gps = {918073010, 0};
   INT4 duration = 32;
   INT4 dq_bitmask = LAL_DQ_INJECTION;
 
