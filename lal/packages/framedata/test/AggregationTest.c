@@ -40,6 +40,7 @@ int vrbflg;
 /* global variables */
 CHAR *ifo;
 LIGOTimeGPS gps = {0, 0};
+REAL8 duration;
 
 /*
  * helper functions
@@ -61,6 +62,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
       {"debug-level", required_argument, 0, 'b'},
       {"ifo", required_argument, 0, 'c'},
       {"gps-start-time", required_argument, 0, 'd'},
+      {"duration", required_argument, 0, 'e'},
       {0, 0, 0, 0}
     };
 
@@ -69,7 +71,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
     size_t optarg_len;
 
     /* parse options */
-    c = getopt_long_only(argc, argv, "ab:c:d:", long_options, &option_index);
+    c = getopt_long_only(argc, argv, "ab:c:d:e:", long_options, &option_index);
 
     if (c == -1)
     {
@@ -101,6 +103,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
         fprintf(stdout, " --debug-level N        set lalDebugLevel\n");
         fprintf(stdout, " --ifo IFO              set IFO\n");
         fprintf(stdout, " --gps-start-time GPS   set GPS start time\n");
+        fprintf(stdout, " --duration TIME        set data duration]n");
         exit(0);
         break;
 
@@ -120,6 +123,11 @@ static void parse_options(INT4 argc, CHAR *argv[])
         /* set gps start time */
         gps.gpsSeconds = atoi(optarg);
         gps.gpsNanoSeconds = 0;
+        break;
+
+      case 'e':
+        /* set duration */
+        duration = atof(optarg);
         break;
 
       case '?':
@@ -158,7 +166,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   INT4TimeSeries *state_vector;
 
   /* parameters */
-  INT4 duration = 32;
   INT4 dq_bitmask = LAL_DQ_INJECTION;
 
   /* parse command line options */
