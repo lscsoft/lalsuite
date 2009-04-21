@@ -131,6 +131,12 @@ INT4TimeSeries *XLALAggregationStateVectorWait(CHAR *ifo,
     REAL8 duration,
     UINT4 max_wait);
 
+/* check that all frames files, for requested data segment, are
+ * available */
+INT4 XLALAggregationStatFiles(CHAR *ifo,
+    LIGOTimeGPS *start,
+    REAL8 duration);
+
 #ifdef __cplusplus
 }
 #endif

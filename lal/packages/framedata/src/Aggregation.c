@@ -502,7 +502,7 @@ REAL8TimeSeries *XLALAggregationStrainData(CHAR *ifo,
   FrStream *stream;
   REAL8TimeSeries *series;
   CHAR channel[LIGOMETA_CHANNEL_MAX];
-  LIGOTimeGPS *time_now;
+  LIGOTimeGPS time_now;
   LIGOTimeGPS *latest;
   INT4 end_time;
 
@@ -513,15 +513,14 @@ REAL8TimeSeries *XLALAggregationStrainData(CHAR *ifo,
     XLAL_ERROR_NULL(func, XLAL_EFAULT);
 
   /* get current gps time */
-  time_now = XLALGPSTimeNow(time_now);
-  if (time_now == NULL)
+  if (XLALGPSTimeNow(&time_now) == NULL)
   {
     /* failed to get current time */
     XLAL_ERROR_NULL(func, XLAL_EFUNC);
   }
 
   /* check that requested data is not in the future */
-  if (XLALGPSCmp(time_now, start) == -1)
+  if (XLALGPSCmp(&time_now, start) == -1)
   {
     /* requested time in the future */
     XLAL_ERROR_NULL(func, XLAL_EFUNC);
@@ -583,7 +582,7 @@ INT4TimeSeries *XLALAggregationDQVector(CHAR *ifo,
   FrStream *stream;
   INT4TimeSeries *series;
   CHAR channel[LIGOMETA_CHANNEL_MAX];
-  LIGOTimeGPS *time_now;
+  LIGOTimeGPS time_now;
   LIGOTimeGPS *latest;
   INT4 end_time;
 
@@ -594,15 +593,14 @@ INT4TimeSeries *XLALAggregationDQVector(CHAR *ifo,
     XLAL_ERROR_NULL(func, XLAL_EFAULT);
 
   /* get current gps time */
-  time_now = XLALGPSTimeNow(time_now);
-  if (time_now == NULL)
+  if (XLALGPSTimeNow(&time_now) == NULL)
   {
     /* failed to get current time */
     XLAL_ERROR_NULL(func, XLAL_EFUNC);
   }
 
   /* check that requested data is not in the future */
-  if (XLALGPSCmp(time_now, start) == -1)
+  if (XLALGPSCmp(&time_now, start) == -1)
   {
     /* requested time in the future */
     XLAL_ERROR_NULL(func, XLAL_EFUNC);
@@ -665,7 +663,7 @@ INT4TimeSeries *XLALAggregationStateVector(CHAR *ifo,
   INT4TimeSeries *series;
   CHAR channel[LIGOMETA_CHANNEL_MAX];
   UINT4 i;
-  LIGOTimeGPS *time_now;
+  LIGOTimeGPS time_now;
   LIGOTimeGPS *latest;
   INT4 end_time;
 
@@ -676,15 +674,14 @@ INT4TimeSeries *XLALAggregationStateVector(CHAR *ifo,
     XLAL_ERROR_NULL(func, XLAL_EFAULT);
 
   /* get current gps time */
-  time_now = XLALGPSTimeNow(time_now);
-  if (time_now == NULL)
+  if (XLALGPSTimeNow(&time_now) == NULL)
   {
     /* failed to get current time */
     XLAL_ERROR_NULL(func, XLAL_EFUNC);
   }
 
   /* check that requested data is not in the future */
-  if (XLALGPSCmp(time_now, start) == -1)
+  if (XLALGPSCmp(&time_now, start) == -1)
   {
     /* requested time in the future */
     XLAL_ERROR_NULL(func, XLAL_EFUNC);
@@ -993,4 +990,70 @@ INT4TimeSeries *XLALAggregationStateVectorWait(CHAR *ifo,
   XLALFrClose(stream);
 
   return series;
+}
+
+
+/* check that all frames files, for requested data segment, are
+ * available */
+INT4 XLALAggregationStatFiles(CHAR *ifo,
+    LIGOTimeGPS *start,
+    REAL8 duration)
+{
+  static const char *func = "XLALAggregationStatFiles";
+
+  /* declare variables */
+  LIGOTimeGPS time_now;
+  FrCache *cache;
+  UINT4 i;
+
+  /* check arguments */
+  if (!ifo)
+    XLAL_ERROR(func, XLAL_EFAULT);
+  if (!start)
+    XLAL_ERROR(func, XLAL_EFAULT);
+
+  /* get current gps time */
+  if (XLALGPSTimeNow(&time_now) == NULL)
+  {
+    /* failed to get current time */
+    XLAL_ERROR(func, XLAL_EFUNC);
+  }
+
+  /* check that requested data is not in the future */
+  if (XLALGPSCmp(&time_now, start) == -1)
+  {
+    /* requested time in the future */
+    XLAL_ERROR(func, XLAL_EFUNC);
+  }
+
+  /* generate frame cache for requested data */
+  cache = XLALAggregationFrameCache(ifo, start, duration);
+  if (cache == NULL)
+  {
+    /* failed to get cache */
+    XLAL_ERROR(func, XLAL_EINVAL);
+  }
+
+  /* loop through files in cache */
+  for (i = 0; i < cache->numFrameFiles; i++)
+  {
+    /* declare variables */
+    struct stat file_status;
+    CHAR *filename;
+
+    /* strip file://localhost from url */
+    filename = cache->frameFiles[i].url + 16;
+
+    /* check that file exists */
+    if (stat(filename, &file_status) == -1)
+    {
+      /* file doesn't exist */
+      XLAL_ERROR(func, XLAL_EIO);
+    }
+  }
+
+  /* close cache */
+  XLALFrDestroyCache(cache);
+
+  return 0;
 }
