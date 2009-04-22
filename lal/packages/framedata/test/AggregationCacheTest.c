@@ -1,5 +1,5 @@
 /*
- * AggregationTest.c - test online frame data aggregation routines
+ * AggregationCacheTest.c - test online frame data aggregation routines
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,6 +24,7 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include <lal/LALStdio.h>
 #include <lal/LALDatatypes.h>
 #include <lal/Aggregation.h>
 #include <lal/XLALError.h>
@@ -40,7 +41,7 @@ int vrbflg;
 /* global variables */
 CHAR *ifo;
 LIGOTimeGPS gps = {0, 0};
-REAL8 duration;
+INT4 duration;
 
 /*
  * helper functions
@@ -97,7 +98,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
       case 'a':
         /* help */
-        fprintf(stdout, "Usage: AggregationTest [options]\n");
+        fprintf(stdout, "Usage: AggregationCacheTest [options]\n");
         fprintf(stdout, " --help                 print this message\n");
         fprintf(stdout, " --verbose              run in verbose mode\n");
         fprintf(stdout, " --debug-level N        set lalDebugLevel\n");
@@ -127,7 +128,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
       case 'e':
         /* set duration */
-        duration = atof(optarg);
+        duration = atoi(optarg);
         break;
 
       case '?':
@@ -158,96 +159,34 @@ static void parse_options(INT4 argc, CHAR *argv[])
 INT4 main(INT4 argc, CHAR *argv[])
 {
   /* declare variables */
-  LIGOTimeGPS *start;
-  LIGOTimeGPS *latest;
+  FrCache *cache;
   CHAR *type;
-  REAL8TimeSeries *series;
-  INT4TimeSeries *dq_vector;
-  INT4TimeSeries *state_vector;
-
-  /* parameters */
-  INT4 dq_bitmask = LAL_DQ_INJECTION;
+  CHAR filename[FILENAME_MAX];
 
   /* parse command line options */
   parse_options(argc, argv);
 
-  /* determine gps time of latest frame file written */
-  latest = XLALAggregationLatestGPS(ifo);
-  if (latest == NULL)
+  /* get frame cache */
+  cache = XLALAggregationFrameCache(ifo, &gps, duration);
+  if (cache == NULL)
   {
-    static const char *func = "XLALAggregationLatestGPS";
-    XLAL_ERROR(func, XLAL_EIO);
+    fprintf(stderr, "error: failed to get frame cache\n");
+    exit(xlalErrno);
   }
 
-  /* determine frame start time */
-  start = XLALAggregationFrameStart(&gps);
-  if (start == NULL)
-  {
-    static const char *func = "XLALAggregationFrameStart";
-    XLAL_ERROR(func, XLAL_EINVAL);
-  }
-  /* check for correct value */
-  if (start->gpsSeconds != 918073008)
-  {
-    static const char *func = "XLALAggregationFrameStart";
-    XLAL_ERROR(func, XLAL_ETIME);
-  }
-  /* clear memory */
-  XLALFree(start);
-
-  /* determine frame type */
+  /* get frame type */
   type = XLALAggregationFrameType(ifo);
   if (type == NULL)
   {
-    static const char *func = "XLALAggregationFrameType";
-    XLAL_ERROR(func, XLAL_EINVAL);
-  }
-  /* check for correct value */
-  if (strncmp(type, "H1_DMT_C00_L2", LIGOMETA_TYPE_MAX) != 0)
-  {
-    static const char *func = "XLALAggregationFrameType";
-    XLAL_ERROR(func, XLAL_ENAME);
-  }
-
-  /* get strain data time series */
-  series = XLALAggregationStrainData(ifo, &gps, duration);
-  if (series == NULL)
-  {
-    fprintf(stderr, "failed: %d\n", xlalErrno);
+    fprintf(stderr, "error: failed to get frame type\n");
     exit(xlalErrno);
   }
-  LALDPrintTimeSeries(series, "series.dat");
-  XLALDestroyREAL8TimeSeries(series);
+  /* create name for cache file */
+  LALSnprintf(filename, FILENAME_MAX, "%c-%s-%d-%d.cache", ifo[0], \
+      type, gps.gpsSeconds, duration);
 
-  /* get data quality vector */
-  dq_vector = XLALAggregationDQVector(ifo, &gps, duration);
-  if (dq_vector == NULL)
-  {
-    fprintf(stderr, "failed: %d\n", xlalErrno);
-    exit(xlalErrno);
-  }
-  LALI4PrintTimeSeries(dq_vector, "dq_vector.dat");
-  XLALDestroyINT4TimeSeries(dq_vector);
-
-  /* get state vector */
-  state_vector = XLALAggregationStateVector(ifo, &gps, duration);
-  if (state_vector == NULL)
-  {
-    fprintf(stderr, "failed: %d\n", xlalErrno);
-    exit(xlalErrno);
-  }
-  LALI4PrintTimeSeries(state_vector, "state_vector.dat");
-  XLALDestroyINT4TimeSeries(state_vector);
-
-  /* get strain data time series, check data quality */
-  series = XLALAggregationDQStrainData(ifo, &gps, duration, dq_bitmask);
-  if (series == NULL)
-  {
-    fprintf(stderr, "failed: %d\n", xlalErrno);
-    exit(xlalErrno);
-  }
-  LALDPrintTimeSeries(series, "series_dq.dat");
-  XLALDestroyREAL8TimeSeries(series);
+  /* save cache */
+  XLALFrExportCache(cache, filename);
 
   /* free memory */
   free(ifo);
