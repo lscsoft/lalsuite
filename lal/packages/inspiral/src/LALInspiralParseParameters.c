@@ -19,7 +19,7 @@
 
 /*<lalVerbatim file="LALInspiralParseParametersCV"> 
   Author:  Cokelaer, T.
-  $Id$
+  $Id: LALInspiralParseParameters.c,v 1.24 2009/04/01 00:45:29 ajith Exp $
   </lalVerbatim>  */
 
 
@@ -178,6 +178,8 @@ void LALInspiralITStructureParseParameters(LALStatus *status,
 	    params->approximant = EOB;}
 	  else if (strcmp(argv[i],"EOBNR")==0){
 	    params->approximant = EOBNR;}
+	  else if (strcmp(argv[i],"IMRPhenomA")==0){
+	    params->approximant = IMRPhenomA;}
 	  else if (strcmp(argv[i],"SpinTaylor")==0){
 	    params->approximant = SpinTaylor;}
 	  else if (strcmp(argv[i],"BCV")==0){
