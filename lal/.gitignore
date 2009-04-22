@@ -41,6 +41,7 @@ include/config.h.in
 include/lal/*.h
 include/lal/stamp-h2
 include/stamp-h1
+lal-*.tar.gz
 lal-config
 lal.spec
 lib/LALBuildDate.c
@@ -121,6 +122,10 @@ packages/framedata/test/ReadGEOData
 packages/framedata/test/ReadLHOData
 packages/framedata/test/catalog
 packages/framedata/test/catalog.test
+packages/framedata/test/dq_vector.dat
+packages/framedata/test/series.dat
+packages/framedata/test/series_dq.dat
+packages/framedata/test/state_vector.dat
 packages/hello/test/LALHelloTest
 packages/houghpulsar/test/OutHistogram.asc
 packages/houghpulsar/test/OutHough.asc

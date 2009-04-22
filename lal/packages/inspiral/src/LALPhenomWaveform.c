@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2008 P. Ajith, Lucia Santamaria
+*  Copyright (C) 2008 P. Ajith, Badri Krishnan, Lucia Santamaria
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -72,7 +72,7 @@ static REAL4Vector *XLALCutAtFreq( REAL4Vector     *h,
 				       REAL8           cutFreq, 
 				       REAL8           deltaT);
 
-NRCSID (LALPHENOMWAVEFORMC, "$Id$");
+NRCSID (LALPHENOMWAVEFORMC, "$Id: LALPhenomWaveform.c,v 1.13 2009/04/01 00:54:59 ajith Exp $");
 
 
 /*********************************************************************/
@@ -127,22 +127,6 @@ static void XLALComputePhenomParams( BBHPhenomParams  *phenParams,
   else {
     return;
   }
-
-  /* Select the polynomial coefficients - tuned for JenaLongUMV2 waveforms.
-   * Ref. Table I of P. Ajith, arXiv:0712.0343 [gr-qc] */
-  /*   fMerg_a = 6.6389e-01; fMerg_b = -1.0321e-01; fMerg_c = 1.0979e-01; */
-  /*   fRing_a = 1.3278e+00; fRing_b = -2.0642e-01; fRing_c = 2.1957e-01; */
-  /*   sigma_a = 1.1383e+00; sigma_b = -1.7700e-01; sigma_c = 4.6834e-02; */
-  /*   fCut_a = 1.7086e+00; fCut_b = -2.6592e-01; fCut_c = 2.8236e-01; */
-  
-  
-  /*   psi0_a = -1.5829e-01; psi0_b = 8.7016e-02; psi0_c = -3.3382e-02; */
-  /*   psi2_a = 3.2967e+01; psi2_b = -1.9000e+01; psi2_c = 2.1345e+00; */
-  /*   psi3_a = -3.0849e+02; psi3_b = 1.8211e+02; psi3_c = -2.1727e+01; */
-  /*   psi4_a = 1.1525e+03; psi4_b = -7.1477e+02; psi4_c = 9.9692e+01; */
-  /*   psi6_a = 1.2057e+03; psi6_b = -8.4233e+02; psi6_c = 1.8046e+02; */
-  /*   psi7_a = -0.0000e+00; psi7_b = 0.0000e+00; psi7_c = 0.0000e+00; */
-
 
   fMerg_a = BBHPHENOMCOEFFSH_FMERG_A;
   fMerg_b = BBHPHENOMCOEFFSH_FMERG_B;
@@ -343,7 +327,7 @@ void LALBBHPhenWaveTimeDom ( LALStatus        *status,
 			     InspiralTemplate *template) 
 {
 
-  REAL8 sharpNessLow, sharpNessUpp, fLower;
+  REAL8 fLower;
   REAL8 fCut, fRes, f, totalMass, softWin;
   REAL8 fLowerOrig, eta, tau0;
   REAL8 winFLo, winFHi, sigLo, sigHi;
@@ -422,20 +406,6 @@ void LALBBHPhenWaveTimeDom ( LALStatus        *status,
 	  fclose(filePtr); */
   /************************************************************************/
   
-  /* We will apply a window function to soften the boundaries. The function has 
-     value 1e-15 at fLow-df and fCut+df*/
-/*   sharpNessLow = (-1./(fLower/4.)) * atanh(1e-15 - 1); */
-/*   sharpNessUpp = (-1./fCut) * atanh(1e-15 - 1); */
-  
-/*   softWin = (1+tanh(sharpNessLow*(0.0-fLower)))*(1-tanh(sharpNessUpp*(0.0-fCut)))/4.; */
-/*   signalFD1->data[0] *= softWin; */
-/*   for (k = 1; k <= n/2; k++) { */
-/*     f = k*fRes; */
-/*     softWin = (1+tanh(4.*sharpNessLow*(f-fLower)))*(1-tanh(4.*sharpNessUpp*(f-fCut)))/4.; */
-/*     signalFD1->data[k] *= softWin; */
-/*     signalFD1->data[n-k] *= softWin; */
-/*     } */
-
   winFLo = (fLowerOrig + fLower)/2.;
   winFHi = (fCut + phenParams.fCut)/2.;
   sigLo = 4.;
@@ -516,6 +486,10 @@ void LALBBHPhenWaveTimeDomTemplates( LALStatus        *status,
 				     InspiralTemplate *params) 
 {
 
+    UINT4 n, i, peakAmpIdx; 
+    REAL4Vector *f=NULL, *a=NULL; 
+    REAL8 peakAmp, dt; 
+
   INITSTATUS(status, "LALBBHPhenWaveTimeDomTemplates", LALPHENOMWAVEFORMC);
   ATTATCHSTATUSPTR(status);
   
@@ -527,7 +501,7 @@ void LALBBHPhenWaveTimeDomTemplates( LALStatus        *status,
   /* Initially the waveforms are empty */
   memset(signal1->data, 0, signal1->length * sizeof(REAL4));
   memset(signal2->data, 0, signal2->length * sizeof(REAL4));
-  
+
   /* generate one waveform with startPhase specified by the user */
   LALBBHPhenWaveTimeDom(status->statusPtr, signal1, params);
   CHECKSTATUSPTR(status);	 
@@ -536,13 +510,55 @@ void LALBBHPhenWaveTimeDomTemplates( LALStatus        *status,
   params->startPhase += LAL_PI_2;
   LALBBHPhenWaveTimeDom(status->statusPtr, signal2, params);
   CHECKSTATUSPTR(status);	 
+
+    /* compute the instantaneous frequency */
+    dt = 1./params->tSampling;
+    n = signal1->length;
+    f = XLALCreateREAL4Vector(n);
+    a = XLALCreateREAL4Vector(n);
+    if (f) XLALComputeInstantFreq(f, signal1, signal2, dt); 
+    peakAmp = 0.;
+    peakAmpIdx = 0;
+
+    /* find the peak amplitude of the waveform */ 
+    for (i=0; i<n; i++){
+        
+        a->data[i] = sqrt(pow(signal1->data[i],2.) + pow(signal2->data[i],2.));
+
+        /* find the peak amplitude*/
+        if (a->data[i] > peakAmp) {
+            peakAmp = a->data[i];
+            peakAmpIdx = i;
+        }
+    }
+
+    /* if the instantaneous amplitude is less than 1/1000 of the peak amplitude, set the 
+     * instantaneous freq to be zero. This frequency estimation can very well be corrput due
+     * to the very low amplitude of the signal, and is dominated by noise arising from the 
+     * edge effects */
+    for (i=0; i< f->length; i++) {
+        if (a->data[i] < 1.0e-3*peakAmp) {
+            f->data[i] = 0.0;
+        }
+    }
+
+    /* cut the waveform at the low freq given by the user */
+    signal1 = XLALCutAtFreq( signal1, f, params->fLower, dt);
+    signal2 = XLALCutAtFreq( signal2, f, params->fLower, dt);
+
+    /* store some paramteters for record keeping */
+    params->vFinal = 0.5;           /* this parameter has realy no meaning here*/   
+    params->tC = peakAmpIdx*dt;     /* time of coalescence. defined as the time 
+                                       corresponding to the peak amplitude*/
   
+    /* free the memory allocated to f and a */
+    XLALDestroyREAL4Vector(f);
+    XLALDestroyREAL4Vector(a);
+
   DETATCHSTATUSPTR(status);
   RETURN (status);
 
 }
-
-
 
 
 void LALBBHPhenTimeDomEngine( LALStatus        *status,
@@ -555,9 +571,8 @@ void LALBBHPhenTimeDomEngine( LALStatus        *status,
 			      InspiralTemplate *params)
 {
 
-    INT4 i, j, k, n, peakAmpIdx;
-    REAL8 dt, peakAmp;
-    REAL8 cosI;
+    INT4 i, j, k, n;
+    REAL8 dt, cosI; 
     REAL8Vector *phi=NULL;
     
     INITSTATUS(status, "LALBBHPhenTimeDomEngine", LALPHENOMWAVEFORMC);
@@ -605,12 +620,6 @@ void LALBBHPhenTimeDomEngine( LALStatus        *status,
         if (a) {
             a->data[j] = sqrt(pow(signal1->data[i],2.) + pow(signal2->data[i],2.));
             a->data[k] = sqrt(pow(signal1->data[i],2.) + pow(signal2->data[i],2.));
-        
-            /* find the peak amplitude*/
-            if (a->data[i] > peakAmp) {
-                peakAmp = a->data[i];
-                peakAmpIdx = i;
-            }
         }
 
         /* fill in the h vector, if required */
@@ -623,30 +632,11 @@ void LALBBHPhenTimeDomEngine( LALStatus        *status,
         }
      }
 
-    /* if the instantaneous amplitude is less than 1/1000 of the peak amplitude, set the 
-     * instantaneous freq to be zero. This frequency estimation can very well be corrput due
-     * to the very low amplitude of the signal, and is dominated by noise arising from the 
-     * edge effects */
-    for (i=0; i< f->length; i++) {
-        if (a->data[i] < 1.0e-3*peakAmp) {
-            f->data[i] = 0.0;
-        }
-    }
-
-    /* cut the waveform at the low freq given by */
-    signal1 = XLALCutAtFreq( signal1, f, params->fLower, dt);
-    signal2 = XLALCutAtFreq( signal2, f, params->fLower, dt);
-
     /* unwrap the phase */
     if (phiOut) {
         LALUnwrapREAL8Angle (status->statusPtr, phiOut, phi); 
         XLALDestroyREAL8Vector(phi);
     }
-
-    /* store some paramteters for record keeping */
-    params->vFinal = 0.5;           /* this parameter has realy no meaning here*/   
-    params->tC = peakAmpIdx*dt;     /* time of coalescence. defined as the time 
-                                       corresponding to the peak amplitude*/
 
     DETATCHSTATUSPTR(status);
     RETURN (status);
@@ -658,8 +648,7 @@ void LALBBHPhenTimeDomEngine( LALStatus        *status,
 void LALBBHPhenWaveTimeDomForInjection (LALStatus        *status,
 					CoherentGW       *waveform,
 					InspiralTemplate *params,
-					PPNParamStruc    *ppnParams) 
-{
+					PPNParamStruc    *ppnParams) {
 
   REAL4Vector *a=NULL;      /* amplitude  data */
   REAL4Vector *h=NULL;      /* polarization data */
@@ -792,6 +781,8 @@ void LALBBHPhenWaveTimeDomForInjection (LALStatus        *status,
       LALWarning(status, message);
   }
   else {
+
+      phiC =  phi->data[count-1] ;
       
       for (i=0; i<count;i++) {
 	    phi->data[i] =  -phiC + phi->data[i] + ppnParams->phi;

@@ -22,6 +22,7 @@
 #include <stdio.h>
 #include <getopt.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include <lal/LALDatatypes.h>
 #include <lal/Aggregation.h>
@@ -36,6 +37,11 @@
 /* flags for getopt_long */
 int vrbflg;
 
+/* global variables */
+CHAR *ifo;
+LIGOTimeGPS gps = {0, 0};
+REAL8 duration;
+
 /*
  * helper functions
  */
@@ -49,17 +55,23 @@ static void parse_options(INT4 argc, CHAR *argv[])
   {
     static struct option long_options[] =
     {
-      {"help", no_argument, 0, 'a'},
+      /* options that set a flag */
       {"verbose", no_argument, &vrbflg, 1},
-      {"debug-level", required_argument, 0, 'd'},
+      /* options that don't set a flag */
+      {"help", no_argument, 0, 'a'},
+      {"debug-level", required_argument, 0, 'b'},
+      {"ifo", required_argument, 0, 'c'},
+      {"gps-start-time", required_argument, 0, 'd'},
+      {"duration", required_argument, 0, 'e'},
       {0, 0, 0, 0}
     };
 
     /* getopt_long stores the option here */
     int option_index = 0;
+    size_t optarg_len;
 
     /* parse options */
-    c = getopt_long_only(argc, argv, "d:", long_options, &option_index);
+    c = getopt_long_only(argc, argv, "ab:c:d:e:", long_options, &option_index);
 
     if (c == -1)
     {
@@ -86,15 +98,36 @@ static void parse_options(INT4 argc, CHAR *argv[])
       case 'a':
         /* help */
         fprintf(stdout, "Usage: AggregationTest [options]\n");
-        fprintf(stdout, " --help             print this message\n");
-        fprintf(stdout, " --verbose          run in verbose mode\n");
-        fprintf(stdout, " --debug-level N    set lalDebugLevel\n");
+        fprintf(stdout, " --help                 print this message\n");
+        fprintf(stdout, " --verbose              run in verbose mode\n");
+        fprintf(stdout, " --debug-level N        set lalDebugLevel\n");
+        fprintf(stdout, " --ifo IFO              set IFO\n");
+        fprintf(stdout, " --gps-start-time GPS   set GPS start time\n");
+        fprintf(stdout, " --duration TIME        set data duration]n");
         exit(0);
         break;
 
-      case 'd':
+      case 'b':
         /* set debug level */
-        lalDebugLevel = (INT4)optarg;
+        lalDebugLevel = atoi(optarg);
+        break;
+
+      case 'c':
+        /* set ifo */
+        optarg_len = strlen(optarg) + 1;
+        ifo = (CHAR *)calloc(optarg_len, sizeof(CHAR));
+        memcpy(ifo, optarg, optarg_len);
+        break;
+
+      case 'd':
+        /* set gps start time */
+        gps.gpsSeconds = atoi(optarg);
+        gps.gpsNanoSeconds = 0;
+        break;
+
+      case 'e':
+        /* set duration */
+        duration = atof(optarg);
         break;
 
       case '?':
@@ -133,9 +166,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   INT4TimeSeries *state_vector;
 
   /* parameters */
-  CHAR ifo[LIGOMETA_IFO_MAX] = "H1";
-  LIGOTimeGPS gps = {918073010, 0};
-  INT4 duration = 32;
   INT4 dq_bitmask = LAL_DQ_INJECTION;
 
   /* parse command line options */
@@ -218,6 +248,9 @@ INT4 main(INT4 argc, CHAR *argv[])
   }
   LALDPrintTimeSeries(series, "series_dq.dat");
   XLALDestroyREAL8TimeSeries(series);
+
+  /* free memory */
+  free(ifo);
 
   /* check for memory leaks */
   LALCheckMemoryLeaks();
