@@ -34,6 +34,7 @@
 #include <lal/PrintFTSeries.h>
 #include <lal/TimeSeries.h>
 #include <lal/XLALError.h>
+#include <lal/Date.h>
 
 /* flags for getopt_long */
 int vrbflg;
@@ -196,12 +197,20 @@ static void parse_options(INT4 argc, CHAR *argv[])
 INT4 main(INT4 argc, CHAR *argv[])
 {
   /* declare variables */
+  LIGOTimeGPS time_now;
   FrCache *cache;
   CHAR *type;
   CHAR filename[FILENAME_MAX];
 
   /* parse command line options */
   parse_options(argc, argv);
+
+  /* get current gps time */
+  if (XLALGPSTimeNow(&time_now) == NULL)
+  {
+    fprintf(stderr, "error: unable to determine current time\n");
+    exit(1);
+  }
 
   /* get frame cache */
   cache = XLALAggregationFrameCache(ifo, &gps, duration);
