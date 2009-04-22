@@ -39,9 +39,9 @@
 int vrbflg;
 
 /* global variables */
-CHAR *ifo;
+CHAR *ifo = NULL;
 LIGOTimeGPS gps = {0, 0};
-INT4 duration;
+INT4 duration = 0;
 
 /*
  * helper functions
@@ -124,11 +124,23 @@ static void parse_options(INT4 argc, CHAR *argv[])
         /* set gps start time */
         gps.gpsSeconds = atoi(optarg);
         gps.gpsNanoSeconds = 0;
+        if (gps.gpsSeconds <= 0)
+        {
+          fprintf(stderr, "invalid argument to --%s: %d\n", \
+              long_options[option_index].name, gps.gpsSeconds);
+          exit(1);
+        }
         break;
 
       case 'e':
         /* set duration */
         duration = atoi(optarg);
+        if (duration <= 0)
+        {
+          fprintf(stderr, "invalid argument to --%s: %d\n", \
+              long_options[option_index].name, duration);
+          exit(1);
+        }
         break;
 
       case '?':
@@ -148,6 +160,31 @@ static void parse_options(INT4 argc, CHAR *argv[])
     {
       fprintf(stderr, "%s\n", argv[optind++]);
     }
+    exit(1);
+  }
+
+  /*
+   * check for required arguments
+   */
+
+  /* ifo */
+  if (ifo == NULL)
+  {
+    fprintf(stderr, "--ifo must be specified\n");
+    exit(1);
+  }
+
+  /* gps start time */
+  if (gps.gpsSeconds == 0)
+  {
+    fprintf(stderr, "--gps-start-time must be specified\n");
+    exit(1);
+  }
+
+  /* duration */
+  if (duration == 0)
+  {
+    fprintf(stderr, "--duration must be specified\n");
     exit(1);
   }
 
