@@ -797,6 +797,46 @@ REAL8TimeSeries *XLALAggregationDQStrainData(CHAR *ifo,
 }
 
 
+/* return start position of data gap */
+UINT4 XLALAggregationDQGapStart(INT4TimeSeries *series,
+    INT4 dq_bitmask)
+{
+  static const char *func = "XLALAggregationDQGapStart";
+
+  /* declare variables */
+  UINT4 i;
+  UINT4 gap = 0;
+
+  /* check arguments */
+  if (!series)
+    XLAL_ERROR(func, XLAL_EFAULT);
+
+  /* check for required bitmask */
+  for (i = 0; i < series->data->length; i++)
+  {
+    if ((series->data->data[i] & dq_bitmask) == dq_bitmask)
+    {
+      /* data matches bitmask */
+      gap = i
+    }
+    else
+    {
+      /* bad data */
+      continue;
+    }
+  }
+
+  /* return gap */
+  if (gap != 0)
+  {
+    gap += 1;
+    return gap;
+  }
+  else
+    return 0;
+}
+
+
 /* return end position of data gap */
 UINT4 XLALAggregationDQGapEnd(INT4TimeSeries *series,
     INT4 dq_bitmask)
