@@ -817,7 +817,7 @@ UINT4 XLALAggregationDQGapStart(INT4TimeSeries *series,
     if ((series->data->data[i] & dq_bitmask) == dq_bitmask)
     {
       /* data matches bitmask */
-      gap = i
+      gap = i;
     }
     else
     {
