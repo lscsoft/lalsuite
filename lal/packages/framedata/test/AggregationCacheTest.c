@@ -197,6 +197,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
 INT4 main(INT4 argc, CHAR *argv[])
 {
   /* declare variables */
+  LIGOTimeGPS *latest;
   LIGOTimeGPS time_now;
   FrCache *cache;
   CHAR *type;
@@ -204,6 +205,14 @@ INT4 main(INT4 argc, CHAR *argv[])
 
   /* parse command line options */
   parse_options(argc, argv);
+
+  /* get time of gps time of latest frame */
+  latest = XLALAggregationLatestGPS(ifo);
+  if (latest == NULL)
+  {
+    fprintf(stderr, "error: unable to determine latest GPS time\n");
+    exit(1);
+  }
 
   /* get current gps time */
   if (XLALGPSTimeNow(&time_now) == NULL)
