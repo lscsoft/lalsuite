@@ -103,7 +103,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
         fprintf(stdout, " --debug-level N        set lalDebugLevel\n");
         fprintf(stdout, " --ifo IFO              set IFO\n");
         fprintf(stdout, " --gps-start-time GPS   set GPS start time\n");
-        fprintf(stdout, " --duration TIME        set data duration]n");
+        fprintf(stdout, " --duration TIME        set data duration\n");
         exit(0);
         break;
 
