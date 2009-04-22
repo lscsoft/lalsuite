@@ -797,29 +797,6 @@ REAL8TimeSeries *XLALAggregationDQStrainData(CHAR *ifo,
 }
 
 
-/* return end position of data gap - deprecated */
-UINT4 XLALAggregationDQGap(INT4TimeSeries *series,
-    INT4 dq_bitmask)
-{
-  static const char *func = "XLALAggregationDQGap";
-
-  /* declare variables */
-  UINT4 gap = 0;
-
-  /* check arguments */
-  if (!series)
-    XLAL_ERROR(func, XLAL_EFAULT);
-
-  /* deprecation warning */
-  XLALPrintDeprecationWarning("XLALAggregationDQGap", "XLALAggregationDQGapEnd");
-
-  /* get end of data gap */
-  gap = XLALAggregationDQGapEnd(series, dq_bitmask);
-
-  return gap;
-}
-
-
 /* return end position of data gap */
 UINT4 XLALAggregationDQGapEnd(INT4TimeSeries *series,
     INT4 dq_bitmask)
@@ -857,6 +834,29 @@ UINT4 XLALAggregationDQGapEnd(INT4TimeSeries *series,
   }
   else
     return 0;
+}
+
+
+/* return end position of data gap - deprecated */
+UINT4 XLALAggregationDQGap(INT4TimeSeries *series,
+    INT4 dq_bitmask)
+{
+  static const char *func = "XLALAggregationDQGap";
+
+  /* declare variables */
+  UINT4 gap = 0;
+
+  /* check arguments */
+  if (!series)
+    XLAL_ERROR(func, XLAL_EFAULT);
+
+  /* deprecation warning */
+  XLALPrintDeprecationWarning("XLALAggregationDQGap", "XLALAggregationDQGapEnd");
+
+  /* get end of data gap */
+  gap = XLALAggregationDQGapEnd(series, dq_bitmask);
+
+  return gap;
 }
 
 
