@@ -837,6 +837,46 @@ UINT4 XLALAggregationDQGap(INT4TimeSeries *series,
 }
 
 
+/* return end position of data gap */
+UINT4 XLALAggregationDQGapEnd(INT4TimeSeries *series,
+    INT4 dq_bitmask)
+{
+  static const char *func = "XLALAggregationDQGapEnd";
+
+  /* declare variables */
+  UINT4 i;
+  UINT4 gap = 0;
+
+  /* check arguments */
+  if (!series)
+    XLAL_ERROR(func, XLAL_EFAULT);
+
+  /* check for required bitmask */
+  for (i = 0; i < series->data->length; i++)
+  {
+    if ((series->data->data[i] & dq_bitmask) == dq_bitmask)
+    {
+      /* data matches bitmask */
+      continue;
+    }
+    else
+    {
+      /* bad data */
+      gap = i;
+    }
+  }
+
+  /* return gap */
+  if (gap != 0)
+  {
+    gap += 1;
+    return gap;
+  }
+  else
+    return 0;
+}
+
+
 /* return strain data time series for given ifo, gps time, duration, and
  * a maximum wait time */
 REAL8TimeSeries *XLALAggregationStrainDataWait(CHAR *ifo,

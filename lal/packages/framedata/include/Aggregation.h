@@ -107,6 +107,10 @@ REAL8TimeSeries *XLALAggregationDQStrainData(CHAR *ifo,
     INT4 dq_bitmask);
 
 /* return end position of data gap */
+UINT4 XLALAggregationDQGapEnd(INT4TimeSeries *series,
+    INT4 dq_bitmask);
+
+/* return end position of data gap */
 UINT4 XLALAggregationDQGap(INT4TimeSeries *series,
     INT4 dq_bitmask);
 
