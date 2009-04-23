@@ -132,6 +132,7 @@ def twoD_SearchVolume(found, missed, twodbin, dbin, wnfunc, bootnum=1):
   rArrays = []
   volArray=rate.BinnedArray(twodbin)
   volArray2=rate.BinnedArray(twodbin)
+  MCErrorArray = rate.BinnedArray(twodbin)
   #set up ratio arrays for each distance bin
   for k in range(z):
     rArrays.append(rate.BinnedRatios(twodbin))
@@ -163,6 +164,7 @@ def twoD_SearchVolume(found, missed, twodbin, dbin, wnfunc, bootnum=1):
       # logarithmic(d)
       volArray.array += 4.0 * pi * tbins.ratio() * dbin.centres()[k]**3 * dbin.delta
       tmpArray2.array += 4.0 * pi * tbins.ratio() * dbin.centres()[k]**3 * dbin.delta
+      MCErrorArray += 4.0 * pi * (tbins.ratio() * (1- tbins.ratio() / tbins.denominator.array) * dbin.centres()[k]**3 * dbin.delta
       print >>sys.stderr, "bootstrapping:\t%.1f%% and Calculating smoothed volume:\t%.1f%%\r" % ((100.0 * n / bootnum), (100.0 * k / z)),
     tmpArray2.array *= tmpArray2.array
     volArray2.array += tmpArray2.array
@@ -172,7 +174,8 @@ def twoD_SearchVolume(found, missed, twodbin, dbin, wnfunc, bootnum=1):
   volArray.array /= bootnum
   volArray2.array /= bootnum
   volArray2.array -= volArray.array**2 # Variance
-  return volArray, volArray2
+  MCErrorArray /= bootnum
+  return volArray, volArray2, MCErrorArray
  
 
 def cut_distance(sims, mnd, mxd):
@@ -217,11 +220,12 @@ dBin = rate.LogarithmicBins(0.1,2500,200)
 
 gw = rate.gaussian_window2d(7,7,4)
 #FIXME make search volume above loudest event
-vA, vA2 = twoD_SearchVolume(Found, Missed, twoDMassBins, dBin, gw, 1000)
+vA, vA2, eA = twoD_SearchVolume(Found, Missed, twoDMassBins, dBin, gw, 1000)
 
 #output an XML file with the result
 xmldoc = ligolw.Document()
 xmldoc.appendChild(ligolw.LIGO_LW())
 xmldoc.childNodes[-1].appendChild(rate.binned_array_to_xml(vA, "2DsearchvolumeFirstMoment"))
 xmldoc.childNodes[-1].appendChild(rate.binned_array_to_xml(vA2, "2DsearchvolumeSecondMoment"))
+xmldoc.childNodes[-1].appendChild(rate.binned_array_to_xml(eA, "2DsearchvolumeMCError"))
 xmldoc.write(open("2Dsearchvolume.xml","w"))
