@@ -345,6 +345,7 @@ INT4 main(INT4 argc, CHAR *argv[])
     fprintf(stderr, "error: failed to get frame type\n");
     exit(xlalErrno);
   }
+
   /* create name for cache file */
   LALSnprintf(filename, FILENAME_MAX, "%c-%s-%d-%d.cache", ifo[0], \
       type, gps.gpsSeconds, duration);
