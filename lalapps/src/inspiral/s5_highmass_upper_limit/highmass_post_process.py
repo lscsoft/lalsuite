@@ -329,6 +329,8 @@ for type in types:
     command = 'grep "'  + type + ".*" + cat + '" ' + FULLDATACACHE + " > " + type + cat + ".cache"
     print command
     popen = os.popen(command)
+    try: os.mkdir(type+cat)
+    except: pass
     ligolwThincaToCoincNode[type+cat] = ligolw_thinca_to_coinc_node(ligolwThincaToCoincJob, dag, type+cat+".cache", "vetoes_"+cat+".xml.gz", "vetoes", type+cat+"/S5_HM", n, effsnrfac=50, p_node=[segNode[cat]]); n+=1
     database = type+cat+".sqlite"
     try: db[cat].append(database) 
@@ -349,6 +351,8 @@ for inj in injcache:
     cachefile = type + cat + ".cache"
     command = 'grep "' + type + '.*' + cat + '" ' + INJCACHE +" > " + cachefile
     print command
+    try: os.mkdir(type+cat)
+    except: pass
     popen = os.popen(command)
     ligolwThincaToCoincNode[type+cat] = ligolw_thinca_to_coinc_node(ligolwThincaToCoincJob, dag, cachefile, "vetoes_"+cat+".xml.gz", "vetoes", type+cat+"/S5_HM_INJ", n, effsnrfac=50, p_node=[segNode[cat]]);n+=1
     database = type+cat+".sqlite"
