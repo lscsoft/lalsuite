@@ -220,6 +220,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   CHAR filename[FILENAME_MAX];
   INT4 wait;
   CHAR *ptimeout;
+  INT4 total_wait;
 
   /* get maximum wait time from ONLINEHOFT_TIMEOUT */
   ptimeout = getenv("ONLINEHOFT_TIMEOUT");
@@ -270,6 +271,63 @@ INT4 main(INT4 argc, CHAR *argv[])
     /* wait for data to be available */
     fprintf(stdout, "requested data is in the future, waiting: %ds\n", wait);
     sleep(wait);
+  }
+
+  /* has requested data been written to disk */
+  if (XLALGPSCmp(latest, &gps_end) == -1)
+  {
+    /* determine wait time */
+    wait = (INT4)floor(XLALGPSDiff(&gps_end, latest) + 0.5);
+
+    /* does wait exceed timeout? */
+    if (wait > timeout)
+    {
+      fprintf(stderr, "data unavailable, wait exceeds timeout: %ds\n", wait);
+      exit(1);
+    }
+
+    /* wait for data to be available */
+    fprintf(stdout, "data unavailable, waiting %ds\n", wait);
+    sleep(wait);
+    total_wait += wait;
+
+    /* loop to wait for requested data */
+    do
+    {
+      /* get new latest gps time */
+      LIGOTimeGPS *latest;
+      latest = XLALAggregationLatestGPS(ifo);
+      if (latest == NULL)
+      {
+        fprintf(stderr, "error: unable to determine latest GPS time\n");
+        exit(1);
+      }
+
+      /* has requested data been written to disk? */
+      if (XLALGPSCmp(latest, &gps_end) == -1)
+      {
+        /* determine wait time */
+        wait = (INT4)floor(XLALGPSDiff(&gps_end, latest) + 0.5);
+
+        /* does required wait exceed timeout? */
+        if ((total_wait + wait) > timeout)
+        {
+          fprintf(stderr, "data unavailable, wait exceeds timeout: %ds\n", \
+              total_wait + wait);
+          exit(1);
+        }
+
+        /* wait for data to be available */
+        fprintf(stdout, "data unavailable, waiting %ds\n", wait);
+        sleep(wait);
+        total_wait += wait;
+      }
+      else
+      {
+        /* data is available, break do-while loop */
+        break;
+      }
+    } while(total_wait < timeout);
   }
 
   /* get frame cache */
