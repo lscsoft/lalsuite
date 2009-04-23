@@ -221,6 +221,14 @@ INT4 main(INT4 argc, CHAR *argv[])
     exit(1);
   }
 
+  /* report time info */
+  if (vrbflg)
+  {
+    fprintf(stdout, "current time:          %d\n", time_now.gpsSeconds);
+    fprintf(stdout, "latest data available: %d\n", latest->gpsSeconds);
+    fprintf(stdout, "requested:             %d\n", gps.gpsSeconds);
+  }
+
   /* get frame cache */
   cache = XLALAggregationFrameCache(ifo, &gps, duration);
   if (cache == NULL)
