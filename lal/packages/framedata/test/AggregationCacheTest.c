@@ -224,6 +224,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   ptimeout = getenv("ONLINEHOFT_TIMEOUT");
   if (ptimeout != NULL)
   {
+    /* get timout from environment */
     timeout = atoi(ptimeout);
   }
 
