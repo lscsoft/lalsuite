@@ -535,7 +535,7 @@ REAL8TimeSeries *XLALAggregationStrainData(CHAR *ifo,
   }
 
   /* get end time of requested data */
-  end_time = start->gpsSeconds + (INT4)round(duration + 0.5);
+  end_time = start->gpsSeconds + (INT4)floor(duration + 0.5);
 
   /* check that requested data has been written */
   if (latest->gpsSeconds < end_time)
@@ -615,7 +615,7 @@ INT4TimeSeries *XLALAggregationDQVector(CHAR *ifo,
   }
 
   /* get end time of requested data */
-  end_time = start->gpsSeconds + (INT4)round(duration + 0.5);
+  end_time = start->gpsSeconds + (INT4)floor(duration + 0.5);
 
   /* check that requested data has been written */
   if (latest->gpsSeconds < end_time)
@@ -696,7 +696,7 @@ INT4TimeSeries *XLALAggregationStateVector(CHAR *ifo,
   }
 
   /* get end time of requested data */
-  end_time = start->gpsSeconds + (INT4)round(duration + 0.5);
+  end_time = start->gpsSeconds + (INT4)floor(duration + 0.5);
 
   /* check that requested data has been written */
   if (latest->gpsSeconds < end_time)

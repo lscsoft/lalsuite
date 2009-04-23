@@ -23,6 +23,7 @@
 #include <getopt.h>
 #include <string.h>
 #include <stdlib.h>
+#include <math.h>
 
 #include <lal/LALStdio.h>
 #include <lal/LALDatatypes.h>
@@ -43,6 +44,7 @@ int vrbflg;
 CHAR *ifo = NULL;
 LIGOTimeGPS gps = {0, 0};
 INT4 duration = 0;
+INT4 timeout = 0;
 
 /*
  * helper functions
@@ -65,6 +67,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
       {"ifo", required_argument, 0, 'c'},
       {"gps-start-time", required_argument, 0, 'd'},
       {"duration", required_argument, 0, 'e'},
+      {"timeout", required_argument, 0, 'f'},
       {0, 0, 0, 0}
     };
 
@@ -73,7 +76,8 @@ static void parse_options(INT4 argc, CHAR *argv[])
     size_t optarg_len;
 
     /* parse options */
-    c = getopt_long_only(argc, argv, "ab:c:d:e:", long_options, &option_index);
+    c = getopt_long_only(argc, argv, "ab:c:d:e:f:", long_options, \
+        &option_index);
 
     if (c == -1)
     {
@@ -106,23 +110,24 @@ static void parse_options(INT4 argc, CHAR *argv[])
         fprintf(stdout, " --ifo IFO              set IFO\n");
         fprintf(stdout, " --gps-start-time GPS   set GPS start time\n");
         fprintf(stdout, " --duration TIME        set data duration\n");
+        fprintf(stdout, " --timeout TIME         set timeout\n");
         exit(0);
         break;
 
       case 'b':
-        /* set debug level */
+        /* get debug level */
         lalDebugLevel = atoi(optarg);
         break;
 
       case 'c':
-        /* set ifo */
+        /* get ifo */
         optarg_len = strlen(optarg) + 1;
         ifo = (CHAR *)calloc(optarg_len, sizeof(CHAR));
         memcpy(ifo, optarg, optarg_len);
         break;
 
       case 'd':
-        /* set gps start time */
+        /* get gps start time */
         gps.gpsSeconds = atoi(optarg);
         gps.gpsNanoSeconds = 0;
         if (gps.gpsSeconds <= 0)
@@ -134,7 +139,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
         break;
 
       case 'e':
-        /* set duration */
+        /* get duration */
         duration = atoi(optarg);
         if (duration <= 0)
         {
@@ -143,6 +148,16 @@ static void parse_options(INT4 argc, CHAR *argv[])
           exit(1);
         }
         break;
+
+      case 'f':
+        /* get timeout */
+        timeout = atoi(optarg);
+        if (timeout < 0)
+        {
+          fprintf(stderr, "invalid argument to --%s: %d\n", \
+              long_options[option_index].name, timeout);
+          exit(1);
+        }
 
       case '?':
         exit(1);
@@ -202,6 +217,16 @@ INT4 main(INT4 argc, CHAR *argv[])
   FrCache *cache;
   CHAR *type;
   CHAR filename[FILENAME_MAX];
+  INT4 wait;
+  CHAR *ptimeout;
+
+  /* get maximum wait time from ONLINEHOFT_TIMEOUT */
+  ptimeout = getenv("ONLINEHOFT_TIMEOUT");
+  if (ptimeout != NULL)
+  {
+    /* get timout from environment */
+    timeout = atoi(ptimeout);
+  }
 
   /* parse command line options */
   parse_options(argc, argv);
@@ -219,6 +244,26 @@ INT4 main(INT4 argc, CHAR *argv[])
   {
     fprintf(stderr, "error: unable to determine current time\n");
     exit(1);
+  }
+
+  /* report time info */
+  if (vrbflg)
+  {
+    fprintf(stdout, "current time:          %d\n", time_now.gpsSeconds);
+    fprintf(stdout, "latest data available: %d\n", latest->gpsSeconds);
+    fprintf(stdout, "requested start        %d\n", gps.gpsSeconds);
+    fprintf(stdout, "requested duration:    %9d\n", duration);
+  }
+
+  /* is requested data in the future? */
+  if (XLALGPSCmp(&time_now, &gps) == -1)
+  {
+    /* determine wait time */
+    wait = (INT4)floor(XLALGPSDiff(&gps, &time_now) + 0.5);
+
+    /* wait for data to be available */
+    fprintf(stdout, "requested data is in the future, waiting: %ds\n", wait);
+    sleep(wait);
   }
 
   /* get frame cache */
