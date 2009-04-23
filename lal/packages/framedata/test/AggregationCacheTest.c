@@ -224,10 +224,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   ptimeout = getenv("ONLINEHOFT_TIMEOUT");
   if (ptimeout != NULL)
   {
-    printf("env set\n");
     timeout = atoi(ptimeout);
   }
-  printf("timeout = %d\n", timeout);
 
   /* parse command line options */
   parse_options(argc, argv);
