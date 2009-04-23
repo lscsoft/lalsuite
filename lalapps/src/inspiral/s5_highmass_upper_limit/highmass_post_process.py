@@ -192,7 +192,7 @@ class ligolw_sqlite_node(pipeline.CondorDAGNode):
 class ligolw_thinca_to_coinc_node(pipeline.CondorDAGNode):
   """
   """
-  def __init__(self, job, dag, cache, vetoes, veto_name, prefix, id, effsnrfac=250.0, p_node=[]):
+  def __init__(self, job, dag, cache, vetoes, veto_name, prefix, id, effsnrfac=250.0, p_node=[], instruments='H1,H2,L1'):
 
     pipeline.CondorDAGNode.__init__(self,job)
     self.add_var_opt("ihope-cache", cache)
@@ -200,6 +200,7 @@ class ligolw_thinca_to_coinc_node(pipeline.CondorDAGNode):
     self.add_var_opt("veto-segments-name",veto_name)
     self.add_var_opt("output-prefix",prefix)
     self.add_var_opt("effective-snr-factor",effsnrfac)
+    self.add_var_opt("instruments",instruments)
     self.add_macro("macroid", id)
     for p in p_node:
       self.add_parent(p)
@@ -328,11 +329,13 @@ for type in types:
     command = 'grep "'  + type + ".*" + cat + '" ' + FULLDATACACHE + " > " + type + cat + ".cache"
     print command
     popen = os.popen(command)
-    ligolwThincaToCoincNode[type+cat] = ligolw_thinca_to_coinc_node(ligolwThincaToCoincJob, dag, type+cat+".cache", "vetoes_"+cat+".xml.gz", "vetoes", "S5_HM", n, effsnrfac=50, p_node=[segNode[cat]]); n+=1
+    try: os.mkdir(type+cat)
+    except: pass
+    ligolwThincaToCoincNode[type+cat] = ligolw_thinca_to_coinc_node(ligolwThincaToCoincJob, dag, type+cat+".cache", "vetoes_"+cat+".xml.gz", "vetoes", type+cat+"/S5_HM", n, effsnrfac=50, p_node=[segNode[cat]]); n+=1
     database = type+cat+".sqlite"
     try: db[cat].append(database) 
     except: db[cat] = [database]
-    ligolwSqliteNode[type+cat] = ligolw_sqlite_node(ligolwSqliteJob, dag, database, "S5_HM_*"+type+"*"+cat+"*.xml.gz", n, p_node=[ligolwThincaToCoincNode[type+cat]], replace=True); n+=1
+    ligolwSqliteNode[type+cat] = ligolw_sqlite_node(ligolwSqliteJob, dag, database, type+cat+"/S5_HM_*"+type+"*"+cat+"*.xml.gz", n, p_node=[ligolwThincaToCoincNode[type+cat]], replace=True); n+=1
     sqliteNodeSimplify[type+cat] = sqlite_node(sqliteJob, dag, database, string.strip(cp.get('input',"simplify")), n, p_node=[ligolwSqliteNode[type+cat]]); n+=1
     sqliteNodeRemoveH1H2[type+cat] = sqlite_node(sqliteJob, dag, database, string.strip(cp.get('input',"remove_h1h2")),n, p_node=[sqliteNodeSimplify[type+cat]]); n+=1
     sqliteNodeCluster[type+cat] = sqlite_node(sqliteJob, dag, database, string.strip(cp.get('input',"cluster")),n, p_node=[sqliteNodeRemoveH1H2[type+cat]]); n+=1
@@ -348,12 +351,14 @@ for inj in injcache:
     cachefile = type + cat + ".cache"
     command = 'grep "' + type + '.*' + cat + '" ' + INJCACHE +" > " + cachefile
     print command
+    try: os.mkdir(type+cat)
+    except: pass
     popen = os.popen(command)
-    ligolwThincaToCoincNode[type+cat] = ligolw_thinca_to_coinc_node(ligolwThincaToCoincJob, dag, cachefile, "vetoes_"+cat+".xml.gz", "vetoes", "S5_HM_INJ", n, effsnrfac=50, p_node=[segNode[cat]]);n+=1
+    ligolwThincaToCoincNode[type+cat] = ligolw_thinca_to_coinc_node(ligolwThincaToCoincJob, dag, cachefile, "vetoes_"+cat+".xml.gz", "vetoes", type+cat+"/S5_HM_INJ", n, effsnrfac=50, p_node=[segNode[cat]]);n+=1
     database = type+cat+".sqlite"
     try: db[cat].append(database)
     except: db[cat] = [database]
-    ligolwSqliteNode[type+cat] = ligolw_sqlite_node(ligolwSqliteJob, dag, database, "S5_HM_INJ*"+type+"*"+cat+"*.xml.gz",n, p_node=[ligolwThincaToCoincNode[type+cat]], replace=True);n+=1
+    ligolwSqliteNode[type+cat] = ligolw_sqlite_node(ligolwSqliteJob, dag, database, type+cat+"/S5_HM_INJ*"+type+"*"+cat+"*.xml.gz",n, p_node=[ligolwThincaToCoincNode[type+cat]], replace=True);n+=1
     ligolwSqliteNode2[type+cat] = ligolw_sqlite_node(ligolwSqliteJob, dag, database, url, n, p_node=[ligolwSqliteNode[type+cat]], replace=False);n+=1
     sqliteNodeSimplify[type+cat] = sqlite_node(sqliteJob, dag, database, string.strip(cp.get('input',"simplify")), n, p_node=[ligolwSqliteNode2[type+cat]]);n+=1
     sqliteNodeRemoveH1H2[type+cat] = sqlite_node(sqliteJob, dag, database, string.strip(cp.get('input',"remove_h1h2")),n, p_node=[sqliteNodeSimplify[type+cat]]);n+=1

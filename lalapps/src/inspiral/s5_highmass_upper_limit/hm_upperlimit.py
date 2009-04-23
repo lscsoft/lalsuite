@@ -2,12 +2,80 @@ from pylal import rate
 from pylal import SimInspiralUtils
 import scipy
 import numpy
-import pylab
+#import pylab
 from math import *
 import sys
 import glob
 import copy
 from glue.ligolw import ligolw
+try:
+        import sqlite3
+except ImportError:
+        # pre 2.5.x
+        from pysqlite2 import dbapi2 as sqlite3
+from glue.ligolw import dbtables
+
+
+class sim:
+  def __init__(self, distance, mass1, mass2):
+    self.distance = distance
+    self.mass1 = mass1
+    self.mass2 = mass2
+
+def get_injections(injfnames,ifos='H1H2L1'):
+  """
+  """
+  found = []
+  missed = []
+  for f in injfnames:
+    working_filename = dbtables.get_connection_filename(f, tmp_path = None, verbose = True)
+    connection = sqlite3.connect(working_filename)
+    cursor = connection.cursor()
+    #Create a view of the sim table where the intersection of instrument time restricts the injections (i.e. add a WHERE clause to look at only injections that were made during a given ifo time
+    try: cursor.execute('DROP VIEW sims;') 
+    except: pass
+    try: cursor.execute('DROP VIEW found;')
+    except: pass
+    sim_query = 'CREATE VIEW sims AS SELECT * FROM sim_inspiral WHERE EXISTS (SELECT in_start_time, in_end_time FROM search_summary WHERE (ifos=="'+ifos+'" AND in_start_time < sim_inspiral.geocent_end_time AND in_end_time > sim_inspiral.geocent_end_time));'
+    cursor.execute(sim_query)
+    #cursor.execute('CREATE VIEW sims AS SELECT * FROM sim_inspiral;') 
+
+    #First find injections that were not found even above threshold (these don't participate in coincs)
+    query = 'SELECT distance, mass1, mass2 FROM sims WHERE NOT EXISTS(SELECT * FROM coinc_event_map WHERE (sims.simulation_id == coinc_event_map.event_id AND coinc_event_map.table_name="sim_inspiral"));'
+    for (distance, mass1, mass2) in cursor.execute(query):
+        missed.append( sim(distance,mass1,mass2) )
+    
+    #Now we have to find the found / missed above the loudest event.  
+    query = '''CREATE VIEW found AS
+                 SELECT *
+                 FROM coinc_event 
+                 JOIN coinc_event_map AS mapa ON (coinc_event.coinc_event_id = mapa.coinc_event_id) 
+                 JOIN sims ON (sims.simulation_id == mapa.event_id)
+                 WHERE (
+                       coinc_event.coinc_def_id == "coinc_definer:coinc_def_id:2" 
+                       AND mapa.table_name == "sim_inspiral"
+                       );'''
+
+    cursor.execute(query)
+
+    #FIXME Require the coincs to have a FA rate above some value
+    exists_query = '''SELECT * FROM found JOIN coinc_event_map AS mapb ON (found.coinc_event_id = mapb.coinc_event_id)
+                               JOIN coinc_inspiral ON (mapb.event_id == coinc_inspiral.coinc_event_id)
+                               WHERE (mapb.table_name == "coinc_event")'''
+
+    # The found injections meet the exists query
+    query = 'SELECT distance, mass1, mass2 FROM found WHERE EXISTS(' + exists_query + ');'
+    print query
+    for (distance, mass1, mass2) in cursor.execute(query):
+        found.append( sim(distance,mass1,mass2) )
+    # The missed injections do not
+    query = 'SELECT distance, mass1, mass2 FROM found WHERE NOT EXISTS(' + exists_query + ');'
+    for (distance, mass1, mass2) in cursor.execute(query):
+        missed.append( sim(distance,mass1,mass2) )
+
+  return found, missed
+
+
 
 def fix_masses(sims):
   """
@@ -64,6 +132,7 @@ def twoD_SearchVolume(found, missed, twodbin, dbin, wnfunc, bootnum=1):
   rArrays = []
   volArray=rate.BinnedArray(twodbin)
   volArray2=rate.BinnedArray(twodbin)
+  MCErrorArray = rate.BinnedArray(twodbin)
   #set up ratio arrays for each distance bin
   for k in range(z):
     rArrays.append(rate.BinnedRatios(twodbin))
@@ -95,6 +164,7 @@ def twoD_SearchVolume(found, missed, twodbin, dbin, wnfunc, bootnum=1):
       # logarithmic(d)
       volArray.array += 4.0 * pi * tbins.ratio() * dbin.centres()[k]**3 * dbin.delta
       tmpArray2.array += 4.0 * pi * tbins.ratio() * dbin.centres()[k]**3 * dbin.delta
+      MCErrorArray += 4.0 * pi * (tbins.ratio() * (1- tbins.ratio() / tbins.denominator.array) * dbin.centres()[k]**3 * dbin.delta
       print >>sys.stderr, "bootstrapping:\t%.1f%% and Calculating smoothed volume:\t%.1f%%\r" % ((100.0 * n / bootnum), (100.0 * k / z)),
     tmpArray2.array *= tmpArray2.array
     volArray2.array += tmpArray2.array
@@ -104,7 +174,8 @@ def twoD_SearchVolume(found, missed, twodbin, dbin, wnfunc, bootnum=1):
   volArray.array /= bootnum
   volArray2.array /= bootnum
   volArray2.array -= volArray.array**2 # Variance
-  return volArray, volArray2
+  MCErrorArray /= bootnum
+  return volArray, volArray2, MCErrorArray
  
 
 def cut_distance(sims, mnd, mxd):
@@ -123,6 +194,12 @@ def cut_distance(sims, mnd, mxd):
 
 #FIXME needs to get injections from DB and separate different types
 # read the sim inspiral table
+
+#Found, Missed = get_injections(glob.glob("*INJCAT_3.sqlite"))
+
+#print len(Found), len(Missed)
+#sys.exit(0)
+
 Found = SimInspiralUtils.ReadSimInspiralFromFiles(glob.glob('*FOUND*.xml'),verbose=True)
 Missed = SimInspiralUtils.ReadSimInspiralFromFiles(glob.glob('*MISSED*.xml'),verbose=True)
 
@@ -143,11 +220,12 @@ dBin = rate.LogarithmicBins(0.1,2500,200)
 
 gw = rate.gaussian_window2d(7,7,4)
 #FIXME make search volume above loudest event
-vA, vA2 = twoD_SearchVolume(Found, Missed, twoDMassBins, dBin, gw, 1000)
+vA, vA2, eA = twoD_SearchVolume(Found, Missed, twoDMassBins, dBin, gw, 1000)
 
 #output an XML file with the result
 xmldoc = ligolw.Document()
 xmldoc.appendChild(ligolw.LIGO_LW())
 xmldoc.childNodes[-1].appendChild(rate.binned_array_to_xml(vA, "2DsearchvolumeFirstMoment"))
 xmldoc.childNodes[-1].appendChild(rate.binned_array_to_xml(vA2, "2DsearchvolumeSecondMoment"))
+xmldoc.childNodes[-1].appendChild(rate.binned_array_to_xml(eA, "2DsearchvolumeMCError"))
 xmldoc.write(open("2Dsearchvolume.xml","w"))

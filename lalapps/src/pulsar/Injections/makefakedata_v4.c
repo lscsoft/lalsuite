@@ -993,11 +993,12 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
     edat.ephiles.earthEphemeris = earthdata;
     edat.ephiles.sunEphemeris   = sundata;
 
+    edat.leap = XLALGPSLeapSeconds( cfg->startTimeGPS.gpsSeconds );
     {
-      LALLeapSecFormatAndAcc formatAndAcc = {LALLEAPSEC_GPSUTC, LALLEAPSEC_LOOSE};
-      INT4 leapSecs;
-      TRY ( LALLeapSecs(status->statusPtr, &leapSecs,  &(cfg->startTimeGPS), &formatAndAcc), status);
-      edat.leap = (INT2) leapSecs;
+      INT4 err = xlalErrno;
+      if ( err != XLAL_SUCCESS ) {
+	ABORT ( status, err, "XLALLeapSeconds() failed!\n");
+      }
     }
 
     /* Init ephemerides */
@@ -1493,31 +1494,25 @@ WriteMFDlog (LALStatus *status, char *argv[], const char *logfile)
 
     /* write out a log describing the complete user-input (in cfg-file format) */
     TRY (LALUserVarGetLog(status->statusPtr, &logstr,  UVAR_LOGFMT_CFGFILE), status);
-
     fprintf (fplog, "## LOG-FILE of Makefakedata run\n\n");
-    fprintf (fplog, "# User-input:\n");
+    fprintf (fplog, "# User-input: [formatted as config-file]\n");
     fprintf (fplog, "# ----------------------------------------------------------------------\n\n");
+    fprintf (fplog, logstr);
+    LALFree (logstr);
+    logstr = NULL;
 
+    /* write out a log describing the complete user-input (in commandline format) */
+    TRY (LALUserVarGetLog(status->statusPtr, &logstr,  UVAR_LOGFMT_CMDLINE), status);
+    fprintf (fplog, "\n\n# User-input: [formatted as commandline]\n");
+    fprintf (fplog, "# ----------------------------------------------------------------------\n\n");
     fprintf (fplog, logstr);
     LALFree (logstr);
 
-    /* append an ident-string defining the exact CVS-version of the code used */
-    fprintf (fplog, "\n\n# CVS-versions of executable:\n");
+    /* append an VCS-version string of the code used */
+    fprintf (fplog, "\n\n# VCS-versions of executable:\n");
     fprintf (fplog, "# ----------------------------------------------------------------------\n");
-
-    /* append an ident-string defining the exact RC-version of the code used */
-    fprintf (fplog, "\n\n%% SC-version of executable:\n");
-    fprintf (fplog, "%% CommitID = " );
+    fprintf (fplog, "\n%s\n%s\n", lalGitID, lalappsGitID );
     fclose (fplog);
-    sprintf (command, "ident %s 2> /dev/null | sort -u >> %s", argv[0], uvar_logfile);
-    system (command);   /* we currently don't check this. If it fails, we assume that */
-                        /* one of the system-commands was not available, and */
-                        /* therefore the CVS-versions will simply not be logged */
-
-
-
-
-
 
     DETATCHSTATUSPTR (status);
     RETURN(status);

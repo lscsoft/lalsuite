@@ -174,6 +174,10 @@ LALInspiralWave(
            LALEOBWaveform(status->statusPtr, signal, params);
            CHECKSTATUSPTR(status);
 	   break;
+      case IMRPhenomA:
+           LALBBHPhenWaveTimeDom(status->statusPtr, signal, params);
+           CHECKSTATUSPTR(status);
+       break; 
       case BCV:
            LALBCVWaveform(status->statusPtr, signal, params);
            CHECKSTATUSPTR(status);
@@ -282,6 +286,10 @@ LALInspiralWaveTemplates(
       case EOB:
       case EOBNR:
            LALEOBWaveformTemplates(status->statusPtr, signal1, signal2, params);
+           CHECKSTATUSPTR(status);
+           break;
+      case IMRPhenomA:
+           LALBBHPhenWaveTimeDomTemplates(status->statusPtr, signal1, signal2, params);
            CHECKSTATUSPTR(status);
            break;
       case TaylorF1:

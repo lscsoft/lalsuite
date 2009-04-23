@@ -112,6 +112,7 @@ packages/fft/test/TimeFreqFFTTest
 packages/findchirp/test/FindChirpBCVSpinTest
 packages/findchirp/test/FindChirpTDTest
 packages/framedata/src/FrameSeries.c
+packages/framedata/test/AggregationCacheTest
 packages/framedata/test/AggregationTest
 packages/framedata/test/FrameCacheTest
 packages/framedata/test/FrameStreamTest

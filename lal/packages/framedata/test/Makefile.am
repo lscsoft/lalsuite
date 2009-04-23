@@ -5,7 +5,7 @@ L-CAL_FAC_V03-729273600-5094000.gwf L-CAL_REF_V03-731488397-64.gwf
 
 if FRAME
 #check_PROGRAMS   = FrameStreamTest Read40mData ReadGEOData ReadLHOData MakeFrames FrameCacheTest FrameCalibrationTest
-check_PROGRAMS   = FrameStreamTest Read40mData ReadGEOData ReadLHOData MakeFrames FrameCacheTest AggregationTest
+check_PROGRAMS   = FrameStreamTest Read40mData ReadGEOData ReadLHOData MakeFrames FrameCacheTest AggregationTest AggregationCacheTest
 #TESTS            = FrameCacheTest.sh FrameStreamTest FrameCalibrationTest
 TESTS            = FrameCacheTest.sh FrameStreamTest
 else
@@ -33,6 +33,8 @@ ReadGEOData_SOURCES = ReadGEOData.c
 ReadLHOData_SOURCES = ReadLHOData.c
 MakeFrames_SOURCES = MakeFrames.c
 #FrameCalibrationTest_SOURCES = FrameCalibrationTest.c
+AggregationTest_SOURCES = AggregationTest.c
+AggregationCacheTest_SOURCES = AggregationCacheTest.c
 
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 MOSTLYCLEANFILES = .dvi-dep *.out *.[0-9][0-9][0-9] catalog.out Response*.txt
