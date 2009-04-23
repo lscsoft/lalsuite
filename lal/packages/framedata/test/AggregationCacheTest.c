@@ -250,7 +250,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   {
     fprintf(stdout, "current time:          %d\n", time_now.gpsSeconds);
     fprintf(stdout, "latest data available: %d\n", latest->gpsSeconds);
-    fprintf(stdout, "requested:             %d\n", gps.gpsSeconds);
+    fprintf(stdout, "requested start        %d\n", gps.gpsSeconds);
+    fprintf(stdout, "requested duration:    %9d\n", duration);
   }
 
   /* is requested data in the future? */
