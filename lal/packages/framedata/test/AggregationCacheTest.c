@@ -115,19 +115,19 @@ static void parse_options(INT4 argc, CHAR *argv[])
         break;
 
       case 'b':
-        /* set debug level */
+        /* get debug level */
         lalDebugLevel = atoi(optarg);
         break;
 
       case 'c':
-        /* set ifo */
+        /* get ifo */
         optarg_len = strlen(optarg) + 1;
         ifo = (CHAR *)calloc(optarg_len, sizeof(CHAR));
         memcpy(ifo, optarg, optarg_len);
         break;
 
       case 'd':
-        /* set gps start time */
+        /* get gps start time */
         gps.gpsSeconds = atoi(optarg);
         gps.gpsNanoSeconds = 0;
         if (gps.gpsSeconds <= 0)
@@ -139,7 +139,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
         break;
 
       case 'e':
-        /* set duration */
+        /* get duration */
         duration = atoi(optarg);
         if (duration <= 0)
         {
