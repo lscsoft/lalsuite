@@ -212,6 +212,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
 INT4 main(INT4 argc, CHAR *argv[])
 {
   /* declare variables */
+  LIGOTimeGPS gps_end;
   LIGOTimeGPS *latest;
   LIGOTimeGPS time_now;
   FrCache *cache;
@@ -219,6 +220,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   CHAR filename[FILENAME_MAX];
   INT4 wait;
   CHAR *ptimeout;
+  INT4 total_wait;
 
   /* get maximum wait time from ONLINEHOFT_TIMEOUT */
   ptimeout = getenv("ONLINEHOFT_TIMEOUT");
@@ -230,6 +232,10 @@ INT4 main(INT4 argc, CHAR *argv[])
 
   /* parse command line options */
   parse_options(argc, argv);
+
+  /* get gps end time of requested data */
+  gps_end.gpsSeconds = gps.gpsSeconds + duration;
+  gps_end.gpsNanoSeconds = 0;
 
   /* get time of gps time of latest frame */
   latest = XLALAggregationLatestGPS(ifo);
@@ -251,19 +257,77 @@ INT4 main(INT4 argc, CHAR *argv[])
   {
     fprintf(stdout, "current time:          %d\n", time_now.gpsSeconds);
     fprintf(stdout, "latest data available: %d\n", latest->gpsSeconds);
-    fprintf(stdout, "requested start        %d\n", gps.gpsSeconds);
+    fprintf(stdout, "requested start:       %d\n", gps.gpsSeconds);
+    fprintf(stdout, "requested end:         %d\n", gps_end.gpsSeconds);
     fprintf(stdout, "requested duration:    %9d\n", duration);
   }
 
   /* is requested data in the future? */
-  if (XLALGPSCmp(&time_now, &gps) == -1)
+  if (XLALGPSCmp(&time_now, &gps_end) == -1)
   {
     /* determine wait time */
-    wait = (INT4)floor(XLALGPSDiff(&gps, &time_now) + 0.5);
+    wait = (INT4)floor(XLALGPSDiff(&gps_end, &time_now) + 0.5);
 
     /* wait for data to be available */
     fprintf(stdout, "requested data is in the future, waiting: %ds\n", wait);
     sleep(wait);
+  }
+
+  /* has requested data been written to disk */
+  if (XLALGPSCmp(latest, &gps_end) == -1)
+  {
+    /* determine wait time */
+    wait = (INT4)floor(XLALGPSDiff(&gps_end, latest) + 0.5);
+
+    /* does wait exceed timeout? */
+    if (wait > timeout)
+    {
+      fprintf(stderr, "data unavailable, wait exceeds timeout: %ds\n", wait);
+      exit(1);
+    }
+
+    /* wait for data to be available */
+    fprintf(stdout, "data unavailable, waiting %ds\n", wait);
+    sleep(wait);
+    total_wait += wait;
+
+    /* loop to wait for requested data */
+    do
+    {
+      /* get new latest gps time */
+      LIGOTimeGPS *latest;
+      latest = XLALAggregationLatestGPS(ifo);
+      if (latest == NULL)
+      {
+        fprintf(stderr, "error: unable to determine latest GPS time\n");
+        exit(1);
+      }
+
+      /* has requested data been written to disk? */
+      if (XLALGPSCmp(latest, &gps_end) == -1)
+      {
+        /* determine wait time */
+        wait = (INT4)floor(XLALGPSDiff(&gps_end, latest) + 0.5);
+
+        /* does required wait exceed timeout? */
+        if ((total_wait + wait) > timeout)
+        {
+          fprintf(stderr, "data unavailable, wait exceeds timeout: %ds\n", \
+              total_wait + wait);
+          exit(1);
+        }
+
+        /* wait for data to be available */
+        fprintf(stdout, "data unavailable, waiting %ds\n", wait);
+        sleep(wait);
+        total_wait += wait;
+      }
+      else
+      {
+        /* data is available, break do-while loop */
+        break;
+      }
+    } while(total_wait < timeout);
   }
 
   /* get frame cache */
@@ -281,6 +345,7 @@ INT4 main(INT4 argc, CHAR *argv[])
     fprintf(stderr, "error: failed to get frame type\n");
     exit(xlalErrno);
   }
+
   /* create name for cache file */
   LALSnprintf(filename, FILENAME_MAX, "%c-%s-%d-%d.cache", ifo[0], \
       type, gps.gpsSeconds, duration);
