@@ -23,6 +23,7 @@
 #include <getopt.h>
 #include <string.h>
 #include <stdlib.h>
+#include <math.h>
 
 #include <lal/LALStdio.h>
 #include <lal/LALDatatypes.h>
@@ -202,6 +203,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   FrCache *cache;
   CHAR *type;
   CHAR filename[FILENAME_MAX];
+  INT4 wait;
 
   /* parse command line options */
   parse_options(argc, argv);
@@ -227,6 +229,17 @@ INT4 main(INT4 argc, CHAR *argv[])
     fprintf(stdout, "current time:          %d\n", time_now.gpsSeconds);
     fprintf(stdout, "latest data available: %d\n", latest->gpsSeconds);
     fprintf(stdout, "requested:             %d\n", gps.gpsSeconds);
+  }
+
+  /* is requested data in the future? */
+  if (XLALGPSCmp(&time_now, &gps) == -1)
+  {
+    /* determine wait time */
+    wait = (INT4)floor(XLALGPSDiff(&gps, &time_now) + 0.5);
+
+    /* wait for data to be available */
+    fprintf(stdout, "requested data is in the future, waiting: %ds\n", wait);
+    sleep(wait);
   }
 
   /* get frame cache */
