@@ -33,6 +33,7 @@ def istrue(arg):
 
 vA = None
 vA2 = None
+eA = None
 for f in glob.glob('2Dsearchvolume*.xml'):
   xmldoc = utils.load_filename(f, verbose=True, gz = (f or "stdin").endswith(".gz"))
   xmldoc = xmldoc.childNodes[0]
@@ -40,6 +41,9 @@ for f in glob.glob('2Dsearchvolume*.xml'):
   else: vA = rate.binned_array_from_xml(xmldoc.childNodes[0], "2DsearchvolumeFirstMoment")
   if vA2: vA2 += rate.binned_array_from_xml(xmldoc.childNodes[1], "2DsearchvolumeSecondMoment")
   else: vA2 = rate.binned_array_from_xml(xmldoc.childNodes[1], "2DsearchvolumeSecondMoment")
+  #if eA: eA += rate.binned_array_from_xml(xmldoc.childNodes[2], "2DsearchvolumeMCError")
+  #else: eA = rate.binned_array_from_xml(xmldoc.childNodes[2], "2DsearchvolumeMCError")
+
 
 twoDMassBins = rate.bins_from_xml(xmldoc.childNodes[0])
 
@@ -55,8 +59,9 @@ log_vol = pylab.log10(vA.array)
 #log_vol = vA.array
 
 vol_error = vA2.array**0.5 / (vA.array + 0.0001)
+#vol_error = eA.array**0.5
 
-trim_mass_space(25, 100, log_vol, twoDMassBins, 6)
+trim_mass_space(25, 100, log_vol, twoDMassBins, 5)
 trim_mass_space(25, 100, vol_error, twoDMassBins, 0)
 
 

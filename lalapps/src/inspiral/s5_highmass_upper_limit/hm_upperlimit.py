@@ -8,12 +8,12 @@ import sys
 import glob
 import copy
 from glue.ligolw import ligolw
-try:
-        import sqlite3
-except ImportError:
-        # pre 2.5.x
-        from pysqlite2 import dbapi2 as sqlite3
-from glue.ligolw import dbtables
+#try:
+#        import sqlite3
+#except ImportError:
+#        # pre 2.5.x
+#        from pysqlite2 import dbapi2 as sqlite3
+#from glue.ligolw import dbtables
 
 
 class sim:
@@ -126,13 +126,22 @@ def twoD_SearchVolume(found, missed, twodbin, dbin, wnfunc, bootnum=1):
   distribution can be characterized by those two parameters) 
   This is gonna be brutally slow
   """
+  #print wnfunc.data
+  #print wnfunc.shape
+  #index = (wnfunc.shape[0]-1) / 2 * wnfunc.shape[1] + (wnfunc.shape[1]-1) / 2
+  #print index
+  #print wnfunc
+  #print max(wnfunc.data)
+  #print len(wnfunc.data)
+  wnfunc /= wnfunc[(wnfunc.shape[0]-1) / 2, (wnfunc.shape[1]-1) / 2]
   x = twodbin.shape[0]
   y = twodbin.shape[1]
   z = dbin.n
   rArrays = []
   volArray=rate.BinnedArray(twodbin)
   volArray2=rate.BinnedArray(twodbin)
-  MCErrorArray = rate.BinnedArray(twodbin)
+  #MCErrorArray = rate.BinnedArray(twodbin)
+  #one = numpy.ones(twodbin.shape)
   #set up ratio arrays for each distance bin
   for k in range(z):
     rArrays.append(rate.BinnedRatios(twodbin))
@@ -162,9 +171,11 @@ def twoD_SearchVolume(found, missed, twodbin, dbin, wnfunc, bootnum=1):
       rate.filter_array(tbins.numerator.array,wnfunc)
       tbins.regularize()
       # logarithmic(d)
-      volArray.array += 4.0 * pi * tbins.ratio() * dbin.centres()[k]**3 * dbin.delta
-      tmpArray2.array += 4.0 * pi * tbins.ratio() * dbin.centres()[k]**3 * dbin.delta
-      MCErrorArray += 4.0 * pi * (tbins.ratio() * (1- tbins.ratio() / tbins.denominator.array) * dbin.centres()[k]**3 * dbin.delta
+      integrand = 4.0 * pi * tbins.ratio() * dbin.centres()[k]**3 * dbin.delta
+      volArray.array += integrand
+      tmpArray2.array += integrand #4.0 * pi * tbins.ratio() * dbin.centres()[k]**3 * dbin.delta
+      #print tbins.denominator.array
+      #MCErrorArray.array += 4.0 * pi * tbins.ratio() * ( 1.0-tbins.ratio() ) / tbins.denominator.array * dbin.centres()[k]**3 * dbin.delta
       print >>sys.stderr, "bootstrapping:\t%.1f%% and Calculating smoothed volume:\t%.1f%%\r" % ((100.0 * n / bootnum), (100.0 * k / z)),
     tmpArray2.array *= tmpArray2.array
     volArray2.array += tmpArray2.array
@@ -174,8 +185,8 @@ def twoD_SearchVolume(found, missed, twodbin, dbin, wnfunc, bootnum=1):
   volArray.array /= bootnum
   volArray2.array /= bootnum
   volArray2.array -= volArray.array**2 # Variance
-  MCErrorArray /= bootnum
-  return volArray, volArray2, MCErrorArray
+  #MCErrorArray.array /= bootnum
+  return volArray, volArray2
  
 
 def cut_distance(sims, mnd, mxd):
@@ -218,14 +229,14 @@ twoDMassBins = get_2d_mass_bins(1, 99, 50)
 dBin = rate.LogarithmicBins(0.1,2500,200)
 
 
-gw = rate.gaussian_window2d(7,7,4)
+gw = rate.gaussian_window2d(5,5,4)
 #FIXME make search volume above loudest event
-vA, vA2, eA = twoD_SearchVolume(Found, Missed, twoDMassBins, dBin, gw, 1000)
+vA, vA2 = twoD_SearchVolume(Found, Missed, twoDMassBins, dBin, gw, 100)
 
 #output an XML file with the result
 xmldoc = ligolw.Document()
 xmldoc.appendChild(ligolw.LIGO_LW())
 xmldoc.childNodes[-1].appendChild(rate.binned_array_to_xml(vA, "2DsearchvolumeFirstMoment"))
 xmldoc.childNodes[-1].appendChild(rate.binned_array_to_xml(vA2, "2DsearchvolumeSecondMoment"))
-xmldoc.childNodes[-1].appendChild(rate.binned_array_to_xml(eA, "2DsearchvolumeMCError"))
+#xmldoc.childNodes[-1].appendChild(rate.binned_array_to_xml(eA, "2DsearchvolumeMCError"))
 xmldoc.write(open("2Dsearchvolume.xml","w"))
