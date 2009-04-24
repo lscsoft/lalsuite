@@ -20,7 +20,7 @@ uninstall-lal-sh-target:
 	top_builddir=$(top_builddir) ; export top_builddir ; \
         $(SHELL) $(srcdir)/capture-uninstall.sh uninstall-lal.sh
 
-lal-user-env.sh:
+lal-user-env.sh: Makefile
 	@echo "creating $@" ;\
 	echo "# Source this file to access LAL" >$@ ;\
 	echo "LAL_PREFIX=\"$(prefix)\"" >>$@ ;\
@@ -32,7 +32,7 @@ lal-user-env.sh:
 	echo "PKG_CONFIG_PATH=\"$(libdir)/pkgconfig:\$${PKG_CONFIG_PATH}\"" >>$@ ;\
 	echo "export PATH MANPATH LD_LIBRARY_PATH DYLD_LIBRARY_PATH PKG_CONFIG_PATH" >>$@
 
-lal-user-env.csh:
+lal-user-env.csh: Makefile
 	@echo "creating $@" ;\
 	echo "# Source this file to access LAL" >$@ ;\
 	echo "setenv LAL_PREFIX \"$(prefix)\"" >>$@ ;\
