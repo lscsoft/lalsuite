@@ -33,6 +33,7 @@ def istrue(arg):
 
 vA = None
 vA2 = None
+eA = None
 for f in glob.glob('2Dsearchvolume*.xml'):
   xmldoc = utils.load_filename(f, verbose=True, gz = (f or "stdin").endswith(".gz"))
   xmldoc = xmldoc.childNodes[0]
@@ -40,6 +41,9 @@ for f in glob.glob('2Dsearchvolume*.xml'):
   else: vA = rate.binned_array_from_xml(xmldoc.childNodes[0], "2DsearchvolumeFirstMoment")
   if vA2: vA2 += rate.binned_array_from_xml(xmldoc.childNodes[1], "2DsearchvolumeSecondMoment")
   else: vA2 = rate.binned_array_from_xml(xmldoc.childNodes[1], "2DsearchvolumeSecondMoment")
+  if eA: eA += rate.binned_array_from_xml(xmldoc.childNodes[2], "2DsearchvolumeDerivative")
+  else: eA = rate.binned_array_from_xml(xmldoc.childNodes[2], "2DsearchvolumeDerivative")
+
 
 twoDMassBins = rate.bins_from_xml(xmldoc.childNodes[0])
 
@@ -47,6 +51,7 @@ twoDMassBins = rate.bins_from_xml(xmldoc.childNodes[0])
 X = numpy.array( list(twoDMassBins.lower()[0]) + [twoDMassBins.upper()[0][-1]] )
 Y = numpy.array( list(twoDMassBins.lower()[1]) + [twoDMassBins.upper()[1][-1]] )
 
+print len(X), len(Y), vA.array.shape
 
 #ul = pylab.log10(2.3 / (vA.array + 1)) + 3 # just a temporary scaling for the sake of making a plot that won't get everyone all worked up until the real calculation is done
 
@@ -55,9 +60,13 @@ log_vol = pylab.log10(vA.array)
 #log_vol = vA.array
 
 vol_error = vA2.array**0.5 / (vA.array + 0.0001)
+#vol_error = eA.array**0.5
 
-trim_mass_space(25, 100, log_vol, twoDMassBins, 6)
+#der = eA.array
+
+trim_mass_space(25, 100, log_vol, twoDMassBins, 5)
 trim_mass_space(25, 100, vol_error, twoDMassBins, 0)
+#trim_mass_space(25, 100, der, twoDMassBins, 0)
 
 
 pylab.figure(1)
@@ -85,6 +94,18 @@ pylab.title("Fractional Error on Volume [std/mean]",fontsize=14)
 pylab.xlabel("Mass 2",fontsize=14)
 pylab.ylabel("Mass 1",fontsize=14)
 pylab.grid()
+
+pylab.figure(3)
+pylab.pcolor(X,Y, der)
+pylab.colorbar()
+pylab.ylim([0, 51])
+pylab.xlim([11, 101])
+pylab.title("Volume derivative",fontsize=14)
+pylab.xlabel("Mass 2",fontsize=14)
+pylab.ylabel("Mass 1",fontsize=14)
+pylab.grid()
+
+
 pylab.show()
 
 
