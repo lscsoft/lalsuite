@@ -188,14 +188,12 @@ if test "$LAL_BUILD" != "true" ; then
   AC_CHECK_LIB(lalxml, XLALXMLFilePrintElements, , lalxml="false")
 fi
 
-AC_CHECK_LIB(mysqlclient, mysql_init)
 AC_CHECK_LIB(datacondCaller, DatacondCaller)
 
 dnl Checks for header files.
 AC_HEADER_STDC
 AC_CHECK_HEADERS(getopt.h)
 AC_CHECK_HEADERS([gsl/gsl_fft_real.h])
-AC_CHECK_HEADERS(mysql.h)
 AC_CHECK_HEADERS(mpi.h)
 if test "$LAL_BUILD" != "true" ; then
   AC_CHECK_HEADERS([lal/LALStdlib.h])
