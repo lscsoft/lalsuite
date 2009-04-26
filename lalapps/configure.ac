@@ -188,8 +188,6 @@ if test "$LAL_BUILD" != "true" ; then
   AC_CHECK_LIB(lalxml, XLALXMLFilePrintElements, , lalxml="false")
 fi
 
-AC_CHECK_LIB(datacondCaller, DatacondCaller)
-
 dnl Checks for header files.
 AC_HEADER_STDC
 AC_CHECK_HEADERS(getopt.h)
@@ -198,7 +196,6 @@ AC_CHECK_HEADERS(mpi.h)
 if test "$LAL_BUILD" != "true" ; then
   AC_CHECK_HEADERS([lal/LALStdlib.h])
 fi
-AC_CHECK_HEADERS([datacondAPI/DatacondCaller.h])
 AC_CHECK_HEADERS(glob.h)
 AC_CHECK_HEADERS(unistd.h)
 
