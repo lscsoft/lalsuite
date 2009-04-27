@@ -162,6 +162,24 @@ class ligolw_thinca_to_coinc_job(pipeline.CondorDAGJob):
     self.set_stdout_file('logs/'+tag_base+'-$(macroid)-$(process).out')
     self.set_stderr_file('logs/'+tag_base+'-$(macroid)-$(process).err')
 
+class hm_upperlimit_job(pipeline.CondorDAGJob):
+  """
+  A hm_upperlimit_job
+  """
+  def __init__(self, cp, tag_base='HM_UPPERLIMIT'):
+    """
+    """
+    self.__prog__ = 'hm_upperlimit'
+    self.__executable = string.strip(cp.get('condor','hm_upperlimit'))
+    self.__universe = "vanilla"
+    pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
+    self.add_condor_cmd('getenv','True')
+    self.tag_base = tag_base
+    self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
+    self.set_sub_file(tag_base+'.sub')
+    self.set_stdout_file('logs/'+tag_base+'-$(macroid)-$(process).out')
+    self.set_stderr_file('logs/'+tag_base+'-$(macroid)-$(process).err')
+
 class ligolw_sqlite_node(pipeline.CondorDAGNode):
   """
   """
@@ -255,8 +273,7 @@ class ligolw_segments_node(pipeline.CondorDAGNode):
 class lalapps_newcorse_node(pipeline.CondorDAGNode):
   """
   """
-  def __init__(self, job, dag, veto_segments, veto_segments_name, database, id, p_node=[],instruments = "H1,H2,L1", mass_bins="0,50,85,inf", live_time_program="thinca", ):
-
+  def __init__(self, job, dag, veto_segments, veto_segments_name, database, id, p_node=[],instruments = "H1,H2,L1", mass_bins="0,50,85,inf", live_time_program="thinca"):
     pipeline.CondorDAGNode.__init__(self,job)
     #self.add_var_opt("tmp-space","/tmp")
     #self.add_var_opt("instruments",instruments)
@@ -270,6 +287,23 @@ class lalapps_newcorse_node(pipeline.CondorDAGNode):
       self.add_parent(p)
     dag.add_node(self)
 
+class hm_upperlimit_node(pipeline.CondorDAGNode):
+  """
+  hm_upperlimit.py --ifos --output-name-tag --full-data-file --inj-data-glob --bootstrap-iterations
+  """
+  def __init__(self, job, dag, ifos, output_name_tag, full_data_file, inj_data_glob, bootstrap_iterations, id, p_node=[]):
+    pipeline.CondorDAGNode.__init__(self,job)
+    #self.add_var_opt("tmp-space","/tmp")
+    #self.add_var_opt("instruments",instruments)
+    self.add_var_opt("ifos",ifos)
+    self.add_var_opt("output-name-tag",output_name_tag)
+    self.add_var_opt("full-data-file",full_data_file)
+    self.add_var_opt("inj-data-glob",inj_data_glob)
+    self.add_var_opt("bootstrap-iterations",bootstrap_iterations)
+    self.add_macro("macroid", id)
+    for p in p_node:
+      self.add_parent(p)
+    dag.add_node(self)
 
 def ifo_seg_dict(cp):
   out = {}
@@ -305,6 +339,8 @@ ligolwInspinjfindJob = ligolw_inspinjfind_job(cp)
 lalappsNewcorseJob = lalapps_newcorse_job(cp)
 ligolwSegmentsJob = ligolw_segments_job(cp)
 ligolwThincaToCoincJob =  ligolw_thinca_to_coinc_job(cp)
+hmUpperlimitJob = hm_upperlimit_job(cp)
+
 n = 0
 #Do the segments node
 segNode = {}
@@ -322,6 +358,7 @@ ligolwSqliteNode3 = {}
 ligolwSqliteNode4 = {}
 ligolwInspinjfindNode = {}
 lallappsNewcorseNode = {}
+hmUpperlimitNode = {}
 db = {}
 
 for type in types:
@@ -377,6 +414,11 @@ for k in sqliteNodeCluster.keys():
 
 for cat in cats:
   lallappsNewcorseNode[cat] = lalapps_newcorse_node(lalappsNewcorseJob, dag, "vetoes_"+cat+".xml.gz", "vetoes", " ".join(db[cat]), n, p_nodes);n+=1
+
+for cat in ['CAT3']: 
+  hmUpperlimitNode[cat] = hm_upperlimit(hmUpperlimitNode, dag, "H1H2L1", "", "FULL_DATACAT_3.sqlite", "*INJCAT_3.sqlite", 10000, n, p_node=[lallappsNewcorseNode[cat]]);n+=1
+  hmUpperlimitNode[cat] = hm_upperlimit(hmUpperlimitNode, dag, "H1L1", "", "FULL_DATACAT_3.sqlite", "*INJCAT_3.sqlite", 10000, n, p_node=[lallappsNewcorseNode[cat]]);n+=1
+  hmUpperlimitNode[cat] = hm_upperlimit(hmUpperlimitNode, dag, "H2L1", "", "FULL_DATACAT_3.sqlite", "*INJCAT_3.sqlite", 10000, n, p_node=[lallappsNewcorseNode[cat]]);n+=1
 
 dag.write_sub_files()
 dag.write_dag()
