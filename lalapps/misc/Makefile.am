@@ -16,7 +16,7 @@ gitID:
 
 
 if HAVE_PYTHON
-lalapps-user-env.sh:
+lalapps-user-env.sh: Makefile
 	@echo "creating $@" ;\
 	echo "# Source this file to access LALApps" >$@ ;\
 	echo "PATH=\"$(bindir):\$${PATH}\"" >>$@ ;\
@@ -27,7 +27,7 @@ lalapps-user-env.sh:
 		echo "PYTHONPATH=\"$(pythondir):\$${PYTHONPATH}\"" >>$@ ;\
 	fi ;\
 	echo "export PATH MANPATH PYTHONPATH" >>$@
-lalapps-user-env.csh:
+lalapps-user-env.csh: Makefile
 	@echo "creating $@" ;\
 	echo "# Source this file to access LALApps" >$@ ;\
 	echo "setenv PATH \"$(bindir):\$${PATH}\"" >>$@ ;\
@@ -50,13 +50,13 @@ lalapps-user-env.csh:
 	fi ;\
 	echo "endif" >>$@
 else
-lalapps-user-env.sh:
+lalapps-user-env.sh: Makefile
 	@echo "creating $@" ;\
 	echo "# Source this file to access LALApps" >$@ ;\
 	echo "PATH=\"$(bindir):\$${PATH}\"" >>$@ ;\
 	echo "MANPATH=\"$(mandir):\$${MANPATH}\"" >>$@ ;\
 	echo "export PATH MANPATH" >>$@
-lalapps-user-env.csh:
+lalapps-user-env.csh: Makefile
 	@echo "creating $@" ;\
 	echo "# Source this file to access LALApps" >$@ ;\
 	echo "setenv PATH \"$(bindir):\$${PATH}\"" >>$@ ;\

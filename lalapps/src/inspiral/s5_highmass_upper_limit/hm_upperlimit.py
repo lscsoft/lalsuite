@@ -1,6 +1,7 @@
 from pylal import rate
 from pylal import SimInspiralUtils
 import scipy
+from scipy import interpolate
 import numpy
 #import pylab
 from math import *
@@ -22,12 +23,66 @@ class sim:
     self.mass1 = mass1
     self.mass2 = mass2
 
-def get_injections(injfnames,ifos='H1H2L1'):
+def get_zero_lag_far(zerofname, ifos='H1H2L1'):
+  query = 'SELECT min(false_alarm_rate) FROM coinc_inspiral JOIN coinc_event ON (coinc_event.coinc_event_id == coinc_inspiral.coinc_event_id) WHERE NOT EXISTS(SELECT * FROM time_slide WHERE time_slide.time_slide_id == coinc_event.time_slide_id AND time_slide.offset != 0);'
+  working_filename = dbtables.get_connection_filename(zerofname, tmp_path = None, verbose = True)
+  connection = sqlite3.connect(working_filename)
+  cursor = connection.cursor()
+  result = cursor.execute(query)
+  for r in result:
+    out = r[0]
+  cursor.close()
+  return out
+
+def get_volume_derivative(injfnames, twoDMassBins, dBin, FAR, live_time = 3*10**6, ifos = "H1H2L1"):
+  FARh = FAR*100000
+  FARl = FAR*0.001
+  nbins = 5
+  FARS = rate.LogarithmicBins(FARl, FARh, nbins)
+  gw = rate.gaussian_window2d(3,3,10)
+  vA = []
+  vA2 = []
+  print FARS.centres()
+  for far in FARS.centres():
+    m, f = get_injections(injfnames, far, ifos)
+    print >>sys.stderr, "computing volume at FAR " + str(far)
+    vAt, vA2t = twoD_SearchVolume(f, m, twoDMassBins, dBin, gw, 1)  
+    vAt.array = scipy.log10(vAt.array + 0.001)
+    vA.append(vAt)
+  # the derivitive is calcuated with respect to FAR * t
+  FARS = rate.LogarithmicBins(FARl * live_time, FARh * live_time, nbins)
+  return derivitave_fit(FARS, FAR * live_time, vA, twoDMassBins)
+  
+  
+def derivitave_fit(farts, FARt, vAs, twodbin):
+  '''A = [1, 4, 9, 16, 25, 36, 49, 64, 81, 100]
+     B = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+     C = interpolate.splrep(B,A,s=0, k=4)
+     interpolate.splev(5,C,der=1) 
+     10.000
+  '''
+  dA = rate.BinnedArray(twodbin)
+  for m1 in range(dA.array.shape[0]):
+    for m2 in range(dA.array.shape[1]):
+      da = []
+      for f in farts.centres():
+        da.append(vAs[farts[f]].array[m1][m2])
+      fit = interpolate.splrep(farts.centres(),da,k=4)
+      val = 0.0 - interpolate.splev(FARt,fit,der=1)
+      #if val < 0: val = 0
+      dA.array[m1][m2] = val# minus the derivitave
+  return dA
+
+def get_injections(injfnames, FAR=0, ifos='H1H2L1'):
   """
   """
   found = []
   missed = []
+  cnt = 0
+  print >>sys.stderr, ""
   for f in injfnames:
+    print >>sys.stderr, "getting injections below FAR: " + str(FAR) + ":\t%.1f%%\r" % (100.0 * cnt / len(injfnames),),
+    cnt= cnt+1
     working_filename = dbtables.get_connection_filename(f, tmp_path = None, verbose = True)
     connection = sqlite3.connect(working_filename)
     cursor = connection.cursor()
@@ -36,7 +91,7 @@ def get_injections(injfnames,ifos='H1H2L1'):
     except: pass
     try: cursor.execute('DROP VIEW found;')
     except: pass
-    sim_query = 'CREATE VIEW sims AS SELECT * FROM sim_inspiral WHERE EXISTS (SELECT in_start_time, in_end_time FROM search_summary WHERE (ifos=="'+ifos+'" AND in_start_time < sim_inspiral.geocent_end_time AND in_end_time > sim_inspiral.geocent_end_time));'
+    sim_query = 'CREATE TEMPORARY VIEW sims AS SELECT * FROM sim_inspiral WHERE EXISTS (SELECT in_start_time, in_end_time FROM search_summary WHERE (ifos=="'+ifos+'" AND in_start_time < sim_inspiral.geocent_end_time AND in_end_time > sim_inspiral.geocent_end_time));'
     cursor.execute(sim_query)
     #cursor.execute('CREATE VIEW sims AS SELECT * FROM sim_inspiral;') 
 
@@ -46,7 +101,7 @@ def get_injections(injfnames,ifos='H1H2L1'):
         missed.append( sim(distance,mass1,mass2) )
     
     #Now we have to find the found / missed above the loudest event.  
-    query = '''CREATE VIEW found AS
+    query = '''CREATE TEMPORARY VIEW found AS
                  SELECT *
                  FROM coinc_event 
                  JOIN coinc_event_map AS mapa ON (coinc_event.coinc_event_id = mapa.coinc_event_id) 
@@ -58,21 +113,23 @@ def get_injections(injfnames,ifos='H1H2L1'):
 
     cursor.execute(query)
 
-    #FIXME Require the coincs to have a FA rate above some value
+    #FIXME Require the coincs to have a FA rate below some value
     exists_query = '''SELECT * FROM found JOIN coinc_event_map AS mapb ON (found.coinc_event_id = mapb.coinc_event_id)
                                JOIN coinc_inspiral ON (mapb.event_id == coinc_inspiral.coinc_event_id)
-                               WHERE (mapb.table_name == "coinc_event")'''
+                               WHERE (mapb.table_name == "coinc_event") AND coinc_inspiral.false_alarm_rate < ''' + str(FAR)
+    exists_query = '''SELECT * FROM coinc_event_map AS mapa JOIN coinc_event_map AS mapb ON (mapa.coinc_event_id == mapb.coinc_event_id) JOIN coinc_inspiral ON (mapb.table_name == "coinc_event" AND mapb.event_id == coinc_inspiral.coinc_event_id) WHERE mapa.table_name == "sim_inspiral" AND mapa.event_id == found.simulation_id AND coinc_inspiral.false_alarm_rate < ''' + str(FAR)
 
     # The found injections meet the exists query
     query = 'SELECT distance, mass1, mass2 FROM found WHERE EXISTS(' + exists_query + ');'
-    print query
+    #print query
     for (distance, mass1, mass2) in cursor.execute(query):
         found.append( sim(distance,mass1,mass2) )
     # The missed injections do not
     query = 'SELECT distance, mass1, mass2 FROM found WHERE NOT EXISTS(' + exists_query + ');'
     for (distance, mass1, mass2) in cursor.execute(query):
         missed.append( sim(distance,mass1,mass2) )
-
+    cursor.close()
+  print >>sys.stderr, "\nFound = " + str(len(found)) + " Missed = " + str(len(missed))
   return found, missed
 
 
@@ -126,13 +183,22 @@ def twoD_SearchVolume(found, missed, twodbin, dbin, wnfunc, bootnum=1):
   distribution can be characterized by those two parameters) 
   This is gonna be brutally slow
   """
+  #print wnfunc.data
+  #print wnfunc.shape
+  #index = (wnfunc.shape[0]-1) / 2 * wnfunc.shape[1] + (wnfunc.shape[1]-1) / 2
+  #print index
+  #print wnfunc
+  #print max(wnfunc.data)
+  #print len(wnfunc.data)
+  wnfunc /= wnfunc[(wnfunc.shape[0]-1) / 2, (wnfunc.shape[1]-1) / 2]
   x = twodbin.shape[0]
   y = twodbin.shape[1]
   z = dbin.n
   rArrays = []
   volArray=rate.BinnedArray(twodbin)
   volArray2=rate.BinnedArray(twodbin)
-  MCErrorArray = rate.BinnedArray(twodbin)
+  #MCErrorArray = rate.BinnedArray(twodbin)
+  #one = numpy.ones(twodbin.shape)
   #set up ratio arrays for each distance bin
   for k in range(z):
     rArrays.append(rate.BinnedRatios(twodbin))
@@ -144,7 +210,8 @@ def twoD_SearchVolume(found, missed, twodbin, dbin, wnfunc, bootnum=1):
       rArrays[k].numerator.array = numpy.zeros(rArrays[k].numerator.bins.shape)
       rArrays[k].denominator.array = numpy.zeros(rArrays[k].numerator.bins.shape)
     #Scramble the inj population
-    sm, sf = scramble_pop(missed, found)
+    if bootnum > 1: sm, sf = scramble_pop(missed, found)
+    else: sm, sf = missed, found
     for l in sf:#found:
       tbin = rArrays[dbin[scramble_dist(l.distance,0.1)]]
       tbin.incnumerator( (l.mass1, l.mass2) )
@@ -162,20 +229,22 @@ def twoD_SearchVolume(found, missed, twodbin, dbin, wnfunc, bootnum=1):
       rate.filter_array(tbins.numerator.array,wnfunc)
       tbins.regularize()
       # logarithmic(d)
-      volArray.array += 4.0 * pi * tbins.ratio() * dbin.centres()[k]**3 * dbin.delta
-      tmpArray2.array += 4.0 * pi * tbins.ratio() * dbin.centres()[k]**3 * dbin.delta
-      MCErrorArray += 4.0 * pi * (tbins.ratio() * (1- tbins.ratio() / tbins.denominator.array) * dbin.centres()[k]**3 * dbin.delta
+      integrand = 4.0 * pi * tbins.ratio() * dbin.centres()[k]**3 * dbin.delta
+      volArray.array += integrand
+      tmpArray2.array += integrand #4.0 * pi * tbins.ratio() * dbin.centres()[k]**3 * dbin.delta
+      #print tbins.denominator.array
+      #MCErrorArray.array += 4.0 * pi * tbins.ratio() * ( 1.0-tbins.ratio() ) / tbins.denominator.array * dbin.centres()[k]**3 * dbin.delta
       print >>sys.stderr, "bootstrapping:\t%.1f%% and Calculating smoothed volume:\t%.1f%%\r" % ((100.0 * n / bootnum), (100.0 * k / z)),
     tmpArray2.array *= tmpArray2.array
     volArray2.array += tmpArray2.array
     
-  print >>sys.stderr, "\n\nDone\n" 
+  print >>sys.stderr, "" 
   #Mean and variance
   volArray.array /= bootnum
   volArray2.array /= bootnum
   volArray2.array -= volArray.array**2 # Variance
-  MCErrorArray /= bootnum
-  return volArray, volArray2, MCErrorArray
+  #MCErrorArray.array /= bootnum
+  return volArray, volArray2
  
 
 def cut_distance(sims, mnd, mxd):
@@ -195,13 +264,17 @@ def cut_distance(sims, mnd, mxd):
 #FIXME needs to get injections from DB and separate different types
 # read the sim inspiral table
 
-#Found, Missed = get_injections(glob.glob("*INJCAT_3.sqlite"))
-
+injfnames = glob.glob("*INJCAT_3.sqlite")
+FAR = get_zero_lag_far("FULL_DATACAT_3.sqlite")
+print FAR
+Found, Missed = get_injections(injfnames, FAR)
+print FAR
 #print len(Found), len(Missed)
 #sys.exit(0)
 
-Found = SimInspiralUtils.ReadSimInspiralFromFiles(glob.glob('*FOUND*.xml'),verbose=True)
-Missed = SimInspiralUtils.ReadSimInspiralFromFiles(glob.glob('*MISSED*.xml'),verbose=True)
+
+#Found = SimInspiralUtils.ReadSimInspiralFromFiles(glob.glob('*FOUND*.xml'),verbose=True)
+#Missed = SimInspiralUtils.ReadSimInspiralFromFiles(glob.glob('*MISSED*.xml'),verbose=True)
 
 
 # replace these with pylal versions ?
@@ -218,14 +291,20 @@ twoDMassBins = get_2d_mass_bins(1, 99, 50)
 dBin = rate.LogarithmicBins(0.1,2500,200)
 
 
-gw = rate.gaussian_window2d(7,7,4)
+gw = rate.gaussian_window2d(3,3,4)
+
+#Get derivative of volume with respect to FAR
+#get_volume_derivative(injfnames, twoDMassBins, dBin, gw, FAR, live_time = 3*10**7, ifos = "H1H2L1")
+dvA = get_volume_derivative(injfnames, twoDMassBins, dBin, FAR)
+
 #FIXME make search volume above loudest event
-vA, vA2, eA = twoD_SearchVolume(Found, Missed, twoDMassBins, dBin, gw, 1000)
+print >>sys.stderr, "computing volume at FAR " + str(FAR)
+vA, vA2 = twoD_SearchVolume(Found, Missed, twoDMassBins, dBin, gw, 1)
 
 #output an XML file with the result
 xmldoc = ligolw.Document()
 xmldoc.appendChild(ligolw.LIGO_LW())
 xmldoc.childNodes[-1].appendChild(rate.binned_array_to_xml(vA, "2DsearchvolumeFirstMoment"))
 xmldoc.childNodes[-1].appendChild(rate.binned_array_to_xml(vA2, "2DsearchvolumeSecondMoment"))
-xmldoc.childNodes[-1].appendChild(rate.binned_array_to_xml(eA, "2DsearchvolumeMCError"))
+xmldoc.childNodes[-1].appendChild(rate.binned_array_to_xml(dvA, "2DsearchvolumeDerivative"))
 xmldoc.write(open("2Dsearchvolume.xml","w"))
