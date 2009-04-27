@@ -99,6 +99,7 @@ CHAR		outfilename[FILENAME_MAX];
 const LALUnit strainPerCount={0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
 const LALUnit countPerStrain={0,{0,0,0,0,0,-1,1},{0,0,0,0,0,0,0}};
 NoiseFunc *PSD;
+REAL8 PSDscale;
 int c;
 SimInspiralTable *injTable=NULL;
 SimInspiralTable this_injection;
@@ -116,6 +117,9 @@ CHAR		VirgoParsInfo[100];
 REAL4		SNR,NetworkSNR;
 INT4  makeFrames=0;
 INT4 outputRaw=0;
+COMPLEX8FrequencySeries *fftData;
+REAL8 mySNRsq;
+REAL4FFTPlan *fwd_plan;
 
 /*vrbflg=6;
 lalDebugLevel=6; */
@@ -215,12 +219,12 @@ for(det_idx=0;det_idx<LAL_NUM_IFO;det_idx++){
 	
 	switch(det_idx)
 	{
-		case LAL_IFO_H1: sprintf(det_name,"H1"); PSD=&LALLIGOIPsd; break;
-		case LAL_IFO_H2: sprintf(det_name,"H2"); PSD=&LALLIGOIPsd; break;
-		case LAL_IFO_L1: sprintf(det_name,"L1"); PSD=&LALLIGOIPsd; break;
-		case LAL_IFO_V1: sprintf(det_name,"V1"); PSD=&LALVIRGOPsd; break;
-		case LAL_IFO_G1: sprintf(det_name,"G1"); PSD=&LALGEOPsd;   break;
-		case LAL_IFO_T1: sprintf(det_name,"T1"); PSD=&LALTAMAPsd;  break;
+	case LAL_IFO_H1: sprintf(det_name,"H1"); PSD=&LALLIGOIPsd; PSDscale=9E-46; break;
+	case LAL_IFO_H2: sprintf(det_name,"H2"); PSD=&LALLIGOIPsd; PSDscale=9E-46; break;
+	case LAL_IFO_L1: sprintf(det_name,"L1"); PSD=&LALLIGOIPsd; PSDscale=9E-46; break;
+	case LAL_IFO_V1: sprintf(det_name,"V1"); PSD=&LALVIRGOPsd; PSDscale=1.0; break;
+	case LAL_IFO_G1: sprintf(det_name,"G1"); PSD=&LALGEOPsd; PSDscale=1E-46;  break;
+	case LAL_IFO_T1: sprintf(det_name,"T1"); PSD=&LALTAMAPsd; PSDscale=75E-46; break;
 	}
 
 	TimeSeries=XLALCreateREAL4TimeSeries(det_name,&inj_epoch,0.0,deltaT,&lalADCCountUnit,(size_t)Nsamples);
@@ -232,6 +236,7 @@ for(det_idx=0;det_idx<LAL_NUM_IFO;det_idx++){
 	LAL_CALL( LALFindChirpInjectSignals(&status,TimeSeries,&this_injection,resp) , &status);
 
 	XLALDestroyCOMPLEX8FrequencySeries(resp);
+
 
 	/* -=-=-=-=-=-=- Prepare actuations -=-=-=-=-=-=- */
 
@@ -276,6 +281,31 @@ for(det_idx=0;det_idx<LAL_NUM_IFO;det_idx++){
 	for(i=0;i<TimeSeries->data->length;i++) {
 	  TimeSeries->data->data[i]=TimeSeries->data->data[i]/dynRange +0.0;
 	}
+
+	/* Calculate SNR for this injection */
+	fwd_plan = XLALCreateForwardREAL4FFTPlan( TimeSeries->data->length, 0 );
+	fftData = XLALCreateCOMPLEX8FrequencySeries(TimeSeries->name,&(TimeSeries->epoch),0,1.0/TimeSeries->deltaT,&lalDimensionlessUnit,TimeSeries->data->length/2 +1);
+	XLALREAL4TimeFreqFFT(fftData,TimeSeries,fwd_plan);
+	XLALDestroyREAL4FFTPlan(fwd_plan);
+	
+	mySNRsq = 0.0;
+	for(i=1;i<fftData->data->length;i++){
+		REAL8 freq;
+		REAL8 sim_psd_value=0;
+		freq = fftData->deltaF * i;
+		PSD( &status, &sim_psd_value, freq );
+		mySNRsq += fftData->data->data[i].re * fftData->data->data[i].re /
+		  (sim_psd_value*PSDscale);
+		mySNRsq += fftData->data->data[i].im * fftData->data->data[i].im /
+		  (sim_psd_value*PSDscale);
+	}
+	mySNRsq *= 4.0*fftData->deltaF;
+	XLALDestroyCOMPLEX8FrequencySeries( fftData );
+	if(det_idx==LAL_IFO_H2) mySNRsq/=4.0;
+	fprintf(stdout,"SNR in design %s of injection %i = %lf\n",det_name,inj_num,sqrt(mySNRsq));
+	
+
+
 	
 	sprintf(outfilename,"%s_HWINJ_%i_%s_%i.txt",det_name,inj_num,injtype,inj_epoch.gpsSeconds);
 	outfile=fopen(outfilename,"w");
@@ -286,7 +316,7 @@ for(det_idx=0;det_idx<LAL_NUM_IFO;det_idx++){
 	if(makeFrames){ /* Also output frames for Virgo */
 		sprintf(VirgoParsSource,"%s-INSP%i",det_name,inj_num);
 		VirgoOutPars.source=VirgoParsSource;
-		sprintf(VirgoParsInfo,"HWINJ-STRAIN",injtype);
+		sprintf(VirgoParsInfo,"HWINJ-STRAIN");
 		VirgoOutPars.description=VirgoParsInfo;
 		VirgoOutPars.type=ProcDataChannel;
 		VirgoOutPars.nframes=(UINT4)injLength;
