@@ -1,6 +1,7 @@
 from pylal import rate
 from pylal import SimInspiralUtils
 import scipy
+from scipy import interpolate
 import numpy
 #import pylab
 from math import *
@@ -33,22 +34,44 @@ def get_zero_lag_far(zerofname, ifos='H1H2L1'):
   cursor.close()
   return out
 
-def get_volume_derivative(injfnames, twoDMassBins, dBin, gw, FAR, live_time = 1, ifos = "H1H2L1"):
-  FARh = FAR*10
-  FARl = FAR*0.1
-  dFAR = FARh-FARl
-  ml, fl, = get_injections(injfnames, FARl, ifos)
-  mh, fh, = get_injections(injfnames, FARh, ifos)
-  print >>sys.stderr, "computing volume at FAR " + str(FARl)
-  vAl, vA2l = twoD_SearchVolume(fl, ml, twoDMassBins, dBin, gw, 1)
-  print >>sys.stderr, "computing volume at FAR " + str(FARh)
-  vAh, vA2h = twoD_SearchVolume(fh, mh, twoDMassBins, dBin, gw, 1)
-  #approximate derivative
-  vAl.array = vAl.array - vAh.array
-  vAl.array = vAl.array / (dFAR*live_time)
-  return vAl
+def get_volume_derivative(injfnames, twoDMassBins, dBin, FAR, live_time = 3*10**6, ifos = "H1H2L1"):
+  FARh = FAR*100000
+  FARl = FAR*0.001
+  nbins = 5
+  FARS = rate.LogarithmicBins(FARl, FARh, nbins)
+  gw = rate.gaussian_window2d(3,3,10)
+  vA = []
+  vA2 = []
+  print FARS.centres()
+  for far in FARS.centres():
+    m, f = get_injections(injfnames, far, ifos)
+    print >>sys.stderr, "computing volume at FAR " + str(far)
+    vAt, vA2t = twoD_SearchVolume(f, m, twoDMassBins, dBin, gw, 1)  
+    vAt.array = scipy.log10(vAt.array + 0.001)
+    vA.append(vAt)
+  # the derivitive is calcuated with respect to FAR * t
+  FARS = rate.LogarithmicBins(FARl * live_time, FARh * live_time, nbins)
+  return derivitave_fit(FARS, FAR * live_time, vA, twoDMassBins)
   
-
+  
+def derivitave_fit(farts, FARt, vAs, twodbin):
+  '''A = [1, 4, 9, 16, 25, 36, 49, 64, 81, 100]
+     B = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+     C = interpolate.splrep(B,A,s=0, k=4)
+     interpolate.splev(5,C,der=1) 
+     10.000
+  '''
+  dA = rate.BinnedArray(twodbin)
+  for m1 in range(dA.array.shape[0]):
+    for m2 in range(dA.array.shape[1]):
+      da = []
+      for f in farts.centres():
+        da.append(vAs[farts[f]].array[m1][m2])
+      fit = interpolate.splrep(farts.centres(),da,k=4)
+      val = 0.0 - interpolate.splev(FARt,fit,der=1)
+      #if val < 0: val = 0
+      dA.array[m1][m2] = val# minus the derivitave
+  return dA
 
 def get_injections(injfnames, FAR=0, ifos='H1H2L1'):
   """
@@ -68,7 +91,7 @@ def get_injections(injfnames, FAR=0, ifos='H1H2L1'):
     except: pass
     try: cursor.execute('DROP VIEW found;')
     except: pass
-    sim_query = 'CREATE VIEW sims AS SELECT * FROM sim_inspiral WHERE EXISTS (SELECT in_start_time, in_end_time FROM search_summary WHERE (ifos=="'+ifos+'" AND in_start_time < sim_inspiral.geocent_end_time AND in_end_time > sim_inspiral.geocent_end_time));'
+    sim_query = 'CREATE TEMPORARY VIEW sims AS SELECT * FROM sim_inspiral WHERE EXISTS (SELECT in_start_time, in_end_time FROM search_summary WHERE (ifos=="'+ifos+'" AND in_start_time < sim_inspiral.geocent_end_time AND in_end_time > sim_inspiral.geocent_end_time));'
     cursor.execute(sim_query)
     #cursor.execute('CREATE VIEW sims AS SELECT * FROM sim_inspiral;') 
 
@@ -78,7 +101,7 @@ def get_injections(injfnames, FAR=0, ifos='H1H2L1'):
         missed.append( sim(distance,mass1,mass2) )
     
     #Now we have to find the found / missed above the loudest event.  
-    query = '''CREATE VIEW found AS
+    query = '''CREATE TEMPORARY VIEW found AS
                  SELECT *
                  FROM coinc_event 
                  JOIN coinc_event_map AS mapa ON (coinc_event.coinc_event_id = mapa.coinc_event_id) 
@@ -243,8 +266,9 @@ def cut_distance(sims, mnd, mxd):
 
 injfnames = glob.glob("*INJCAT_3.sqlite")
 FAR = get_zero_lag_far("FULL_DATACAT_3.sqlite")
+print FAR
 Found, Missed = get_injections(injfnames, FAR)
-
+print FAR
 #print len(Found), len(Missed)
 #sys.exit(0)
 
@@ -270,11 +294,12 @@ dBin = rate.LogarithmicBins(0.1,2500,200)
 gw = rate.gaussian_window2d(3,3,4)
 
 #Get derivative of volume with respect to FAR
-dvA = get_volume_derivative(injfnames, twoDMassBins, dBin, gw, FAR)
+#get_volume_derivative(injfnames, twoDMassBins, dBin, gw, FAR, live_time = 3*10**7, ifos = "H1H2L1")
+dvA = get_volume_derivative(injfnames, twoDMassBins, dBin, FAR)
 
 #FIXME make search volume above loudest event
 print >>sys.stderr, "computing volume at FAR " + str(FAR)
-vA, vA2 = twoD_SearchVolume(Found, Missed, twoDMassBins, dBin, gw, 10)
+vA, vA2 = twoD_SearchVolume(Found, Missed, twoDMassBins, dBin, gw, 1)
 
 #output an XML file with the result
 xmldoc = ligolw.Document()

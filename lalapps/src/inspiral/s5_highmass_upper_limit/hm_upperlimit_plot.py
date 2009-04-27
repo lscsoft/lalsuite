@@ -62,11 +62,11 @@ log_vol = pylab.log10(vA.array)
 vol_error = vA2.array**0.5 / (vA.array + 0.0001)
 #vol_error = eA.array**0.5
 
-#der = eA.array
+der = eA.array #pylab.log10(eA.array)
 
 trim_mass_space(25, 100, log_vol, twoDMassBins, 5)
 trim_mass_space(25, 100, vol_error, twoDMassBins, 0)
-#trim_mass_space(25, 100, der, twoDMassBins, 0)
+trim_mass_space(25, 100, der, twoDMassBins, 0)
 
 
 pylab.figure(1)
@@ -96,7 +96,7 @@ pylab.ylabel("Mass 1",fontsize=14)
 pylab.grid()
 
 pylab.figure(3)
-pylab.pcolor(X,Y, der)
+pylab.pcolor(X,Y, der )
 pylab.colorbar()
 pylab.ylim([0, 51])
 pylab.xlim([11, 101])
