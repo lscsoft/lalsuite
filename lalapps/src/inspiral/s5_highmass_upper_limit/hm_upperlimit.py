@@ -263,14 +263,15 @@ parser = OptionParser(
 parser.add_option("-i", "--ifos", default="H1H2L1", metavar = "ifo1ifo2...", help = "Set on instruments to compute upper limit for. Example H1H2L1")
 parser.add_option("-t", "--output-name-tag", default = "", metavar = "name", help = "Set the file output name tag, real name is 2Dsearchvolume-<tag>-<ifos>.xml")
 parser.add_option("-f", "--full-data-file", default = "FULL_DATACAT_3.sqlite", metavar = "pattern", help = "File in which to find the full data, example FULL_DATACAT_3.sqlite")
-parser.add_option("-f", "--inj-data-glob", default = "*INJCAT_3.sqlite", metavar = "pattern", help = "Glob for files to find the inj data, example *INJCAT_3.sqlite")
+parser.add_option("-s", "--inj-data-glob", default = "*INJCAT_3.sqlite", metavar = "pattern", help = "Glob for files to find the inj data, example *INJCAT_3.sqlite")
+parser.add_option("-b", "--bootstrap-iterations", default = 1, metavar = "number", help = "Number of iterations to compute mean and variance of volume MUST BE GREATER THAN 1 TO GET USABLE NUMBERS, a good number is 10000")
 
 
 opts, filenames = parser.parse_args()
 
 
 ifos = opts.ifos #"H1H2L1"
-iters = 1
+iters = int(opts.bootstrap_iterations)
 
 injfnames = glob.glob(opts.inj_data_glob)
 FAR, livetime = get_zero_lag_far(opts.full_data_file, ifos)
