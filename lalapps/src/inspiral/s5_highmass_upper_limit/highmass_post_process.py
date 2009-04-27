@@ -415,7 +415,7 @@ for k in sqliteNodeCluster.keys():
 for cat in cats:
   lallappsNewcorseNode[cat] = lalapps_newcorse_node(lalappsNewcorseJob, dag, "vetoes_"+cat+".xml.gz", "vetoes", " ".join(db[cat]), n, p_nodes);n+=1
 
-for cat in ['CAT3']: 
+for cat in ['CAT_3']: 
   hmUpperlimitNode[cat] = hm_upperlimit_node(hmUpperlimitJob, dag, "H1H2L1", "", "FULL_DATACAT_3.sqlite", "*INJCAT_3.sqlite", 10000, n, p_node=[lallappsNewcorseNode[cat]]);n+=1
   hmUpperlimitNode[cat] = hm_upperlimit_node(hmUpperlimitJob, dag, "H1L1", "", "FULL_DATACAT_3.sqlite", "*INJCAT_3.sqlite", 10000, n, p_node=[lallappsNewcorseNode[cat]]);n+=1
   hmUpperlimitNode[cat] = hm_upperlimit_node(hmUpperlimitJob, dag, "H2L1", "", "FULL_DATACAT_3.sqlite", "*INJCAT_3.sqlite", 10000, n, p_node=[lallappsNewcorseNode[cat]]);n+=1
