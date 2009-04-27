@@ -799,11 +799,7 @@ int MAIN( int argc, char *argv[]) {
   thisPoint.refTime = tMidGPS; 
   /* binary orbit and higher spindowns not considered */
   thisPoint.orbit = NULL;
-  {
-    UINT4 s;
-    for ( s = 2; s < PULSAR_MAX_SPINS; s ++ )
-      thisPoint.fkdot[s] = 0.0;
-  }
+  INIT_MEM ( thisPoint.fkdot );
 
   /* some compute F params */
   CFparams.Dterms = uvar_Dterms;
