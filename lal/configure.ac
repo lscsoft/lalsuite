@@ -9,7 +9,6 @@ AC_CONFIG_FILES([ \
                  lalframe.pc \
                  lalmetaio.pc \
                  lalxml.pc \
-                 lalmpi.pc \
                  lalsupport.pc \
                  lal-config \
                  Makefile \
@@ -167,11 +166,6 @@ AC_CONFIG_FILES([ \
                  packages/support/include/Makefile \
                  packages/support/src/Makefile \
                  packages/support/test/Makefile \
-                 packages/comm/Makefile \
-                 packages/comm/doc/Makefile \
-                 packages/comm/include/Makefile \
-                 packages/comm/src/Makefile \
-                 packages/comm/test/Makefile \
                  packages/framedata/Makefile \
                  packages/framedata/doc/Makefile \
                  packages/framedata/include/Makefile \
@@ -196,7 +190,6 @@ AH_BOTTOM([
 AC_CANONICAL_HOST
 
 LAL_WITH_CC
-LAL_WITH_MPICC
 LAL_WITH_CFLAGS
 LAL_WITH_EXTRA_CFLAGS
 LAL_WITH_EXTRA_CPPFLAGS
@@ -208,7 +201,6 @@ LAL_ENABLE_INTELFFT
 LAL_ENABLE_FRAME
 LAL_ENABLE_METAIO
 LAL_ENABLE_XML
-LAL_ENABLE_MPI
 
 LAL_ENABLE_DEBUG
 LAL_ENABLE_MACROS
@@ -406,28 +398,6 @@ if test "${lal_pthread_lock}" = "true"; then
 fi
 
 
-dnl Checks for optional MPI libraries and header files.
-if test "${mpi}" = "true"; then
-  AC_CHECK_PROGS(MPICC, mpicc hcc, $CC)
-  LAL_CHECK_MPI_FLAGS
-  lal_pre_mpi_LIBS="$LIBS"
-  lal_pre_mpi_CPPFLAGS="$CPPFLAGS"
-  lal_pre_mpi_CFLAGS="$CFLAGS"
-  LIBS="$LIBS $MPI_LDFLAGS"
-  CPPFLAGS="$CPPFLAGS $MPI_CPPFLAGS"
-  CFLAGS="$CFLAGS $MPI_CFLAGS"
-  AC_SEARCH_LIBS(MPI_Init, mpi, , [AC_MSG_ERROR([can't find MPI library])])
-  AC_CHECK_HEADERS(mpi.h, , [AC_MSG_ERROR([can't find mpi.h header])])
-  LIBS="$lal_pre_mpi_LIBS"
-  CPPFLAGS="$lal_pre_mpi_CPPFLAGS"
-  CFLAGS="$lal_pre_mpi_CFLAGS"
-else
-  MPI_CFLAGS=
-  MPI_CPPFLAGS=
-  MPI_LDFLAGS=
-fi
-
-
 dnl Define variables describing what was enabled.
 if test "${fftw3}" = "true"; then
   AC_DEFINE(LAL_FFTW3_ENABLED, 1, [Define if using fftw3 library])
@@ -441,9 +411,6 @@ fi
 if test "${xml}" = "true"; then
   AC_DEFINE(LAL_XML_ENABLED, 1, [Define if using xml2 library])
 fi
-if test "${mpi}" = "true"; then
-  AC_DEFINE(LAL_MPI_ENABLED, 1, [Define if using MPI])
-fi
 
 
 dnl Record the libraries needed for linking LAL.
@@ -453,10 +420,6 @@ AC_SUBST(LALLIBADD)
 LAL_LIBADD="$LIBS $LALLIBADD"
 AC_SUBST(LAL_LIBADD)
 AC_SUBST(LALSUPPORT_LIBADD)
-AC_SUBST(MPI_CFLAGS)
-AC_SUBST(MPI_CPPFLAGS)
-AC_SUBST(MPI_LDFLAGS)
-AC_SUBST(LAL_MPI_ENABLED)
 
 
 dnl Checks for typedefs, structures, and compiler characteristics.
@@ -485,8 +448,6 @@ AC_SUBST(pkgdocdir)
 
 dnl Setup automake conditionals
 AM_CONDITIONAL(FRAME, test x$frame = xtrue)
-AM_CONDITIONAL(MPI, test x$mpi = xtrue)
-AM_CONDITIONAL(FRAMEANDMPI, test x$frame = xtrue -a x$mpi = xtrue)
 AM_CONDITIONAL(METAIO, test x$metaio = xtrue)
 AM_CONDITIONAL(XML, test x$xml = xtrue)
 AM_CONDITIONAL(INTELFFT, test x$intelfft = xtrue)
@@ -532,23 +493,14 @@ if test "$GCC" = yes; then
   CFLAGS="$CFLAGS $lal_gcc_flags"
 fi
 LIBLISTBASE='$(top_builddir)/packages/std/src/libstd.la $(top_builddir)/packages/tools/src/libtools.la $(top_builddir)/packages/sample/src/libsample.la $(top_builddir)/packages/hello/src/libhello.la $(top_builddir)/packages/factories/src/libfactories.la $(top_builddir)/packages/vectorops/src/libvectorops.la $(top_builddir)/packages/utilities/src/libutilities.la $(top_builddir)/packages/stats/src/libstats.la $(top_builddir)/packages/inject/src/libinject.la $(top_builddir)/packages/date/src/libdate.la $(top_builddir)/packages/tdfilter/src/libtdfilter.la $(top_builddir)/packages/window/src/libwindow.la $(top_builddir)/packages/fft/src/libfft.la $(top_builddir)/packages/clremoval/src/libclremoval.la $(top_builddir)/packages/stochastic/src/libstochastic.la $(top_builddir)/packages/inspiral/src/libinspiral.la $(top_builddir)/packages/noisemodels/src/libnoisemodels.la $(top_builddir)/packages/bank/src/libbank.la $(top_builddir)/packages/ring/src/libring.la $(top_builddir)/packages/findchirp/src/libfindchirp.la $(top_builddir)/packages/pulsar/src/libpulsar.la $(top_builddir)/packages/houghpulsar/src/libhoughpulsar.la $(top_builddir)/packages/burstsearch/src/libburstsearch.la $(top_builddir)/packages/tracksearch/src/libtracksearch.la $(top_builddir)/packages/tfclusters/src/libtfclusters.la $(top_builddir)/packages/slopefilters/src/libslopefilters.la $(top_builddir)/packages/block/src/libblock.la $(top_builddir)/packages/timefreq/src/libtimefreq.la '
-LIBLISTMPI='$(top_builddir)/packages/comm/src/libcomm.la '
 LIBLISTFRAME='$(top_builddir)/packages/framedata/src/libframedata.la '
-LIBLISTMPIFRAME=''
-if test x$mpi = xfalse; then
-  LIBLISTMPI=
-  LIBLISTMPIFRAME=
-fi
 if test x$frame = xfalse; then
   LIBLISTFRAME=
-  LIBLISTMPIFRAME=
 fi
-PKGLIST="std tools sample hello factories vectorops utilities stats inject date tdfilter window fft clremoval stochastic inspiral noisemodels bank ring findchirp pulsar houghpulsar burstsearch tracksearch tfclusters slopefilters block timefreq support comm framedata  "
+PKGLIST="std tools sample hello factories vectorops utilities stats inject date tdfilter window fft clremoval stochastic inspiral noisemodels bank ring findchirp pulsar houghpulsar burstsearch tracksearch tfclusters slopefilters block timefreq support framedata  "
 AC_SUBST(PKGLIST)
 AC_SUBST(LIBLISTBASE)
-AC_SUBST(LIBLISTMPI)
 AC_SUBST(LIBLISTFRAME)
-AC_SUBST(LIBLISTMPIFRAME)
 INCLUDEMKFILE=$srcdir/misc/include.mk
 DOCMKFILE=$srcdir/misc/doc.mk
 DVIMKFILE=$srcdir/misc/dvi.mk
@@ -560,7 +512,6 @@ AC_OUTPUT
 frameenabled="`test x${frame} = xtrue && echo "ENABLED" || echo "DISABLED"`"
 metaioenabled="`test x${metaio} = xtrue && echo "ENABLED" || echo "DISABLED"`"
 xmlenabled="`test x${xml} = xtrue && echo "ENABLED" || echo "DISABLED"`"
-mpienabled="`test x${mpi} = xtrue && echo "ENABLED" || echo "DISABLED"`"
 echo "
 ================================================================
 
@@ -569,7 +520,6 @@ echo "
                 LAL Frame library support is $frameenabled
                 LAL MetaIo library support is $metaioenabled
                 LAL XML library support is $xmlenabled
-                LAL MPI support is $mpienabled
 
         Now run 'make' to build LAL
  	and run 'make install' to install LAL

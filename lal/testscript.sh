@@ -123,7 +123,6 @@ CONFIGARGS=""
 INCLUDEDEPS=""
 GCCFLAGS="yes"
 FRAME="yes"
-MPI="yes"
 STATIC="yes"
 SHARED="yes"
 PRODUCTION="no"
@@ -145,7 +144,6 @@ while test $# -gt 0 ; do
     -extra-config-args=* | --extra-config-args=* ) CONFIGARGS="$CONFIGARGS $optarg";;
     -without-gcc-flags | --without-gcc-flags ) GCCFLAGS="no";;
     -disable-frame | --disable-frame ) FRAME="no";;
-    -disable-mpi | --disable-mpi ) MPI="no";;
     -disable-static | --disable-static ) STATIC="no";;
     -disable-shared | --disable-shared ) SHARED="no";;
     -production | --production ) PRODUCTION="yes";;
@@ -159,9 +157,6 @@ if test "x$GCCFLAGS" = "xyes" ; then
 fi
 if test "x$FRAME" = "xyes" ; then
   CONFIGARGS="$CONFIGARGS --enable-frame"
-fi
-if test "x$MPI" = "xyes" ; then
-  CONFIGARGS="$CONFIGARGS --enable-mpi"
 fi
 if test "x$STATIC" = "xno" ; then
   CONFIGARGS="$CONFIGARGS --disable-static"

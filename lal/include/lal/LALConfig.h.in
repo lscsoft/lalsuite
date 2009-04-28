@@ -62,9 +62,6 @@
 /* Define if using Frame library */
 #undef LAL_FRAME_ENABLED
 
-/* Define if using MPI */
-#undef LAL_MPI_ENABLED
-
 /* Define if using MetaIo library */
 #undef LAL_METAIO_ENABLED
 
