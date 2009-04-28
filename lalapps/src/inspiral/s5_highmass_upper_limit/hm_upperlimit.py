@@ -42,12 +42,12 @@ def get_zero_lag_far(zerofname, ifos):
   cursor.close()
   return far, time
 
-def get_volume_derivative(injfnames, twoDMassBins, dBin, FAR, live_time, ifos):
+def get_volume_derivative(injfnames, twoDMassBins, dBin, FAR, live_time, ifos, gw):
   FARh = FAR*100000
   FARl = FAR*0.001
   nbins = 5
   FARS = rate.LogarithmicBins(FARl, FARh, nbins)
-  gw = rate.gaussian_window2d(3,3,10)
+  #gw = rate.gaussian_window2d(3,3,10)
   vA = []
   vA2 = []
   for far in FARS.centres():
@@ -82,8 +82,7 @@ def derivitave_fit(farts, FARt, vAs, twodbin):
         da.append(vAs[farts[f]].array[m1][m2])
       fit = interpolate.splrep(farts.centres(),da,k=4)
       val = 0.0 - interpolate.splev(FARt,fit,der=1)
-      #if val < 0: val = 0
-      dA.array[m1][m2] = val# minus the derivitave
+      dA.array[m1][m2] = val # minus the derivitave
   return dA
 
 def get_injections(injfnames, FAR, ifos):
@@ -275,7 +274,9 @@ iters = int(opts.bootstrap_iterations)
 
 injfnames = glob.glob(opts.inj_data_glob)
 FAR, livetime = get_zero_lag_far(opts.full_data_file, ifos)
-livetime/=31556926.0 # convert seconds to years
+#livetime/=31556926.0 # convert seconds to years
+
+print FAR, livetime
 
 Found, Missed = get_injections(injfnames, FAR, ifos)
 
@@ -300,7 +301,7 @@ dBin = rate.LogarithmicBins(0.1,2500,200)
 gw = rate.gaussian_window2d(3,3,4)
 
 #Get derivative of volume with respect to FAR
-dvA = get_volume_derivative(injfnames, twoDMassBins, dBin, FAR, livetime, ifos)
+dvA = get_volume_derivative(injfnames, twoDMassBins, dBin, FAR, livetime, ifos, gw)
 
 print >>sys.stderr, "computing volume at FAR " + str(FAR)
 vA, vA2 = twoD_SearchVolume(Found, Missed, twoDMassBins, dBin, gw, livetime, iters)

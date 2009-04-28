@@ -853,7 +853,7 @@ are occasions when violations must be allowed.  In such cases, the violations
 are under strict control of the LAL Librarian.
 
 
-\section{Beyond LAL... LALSupport, LALMetaIo, LALFrame, LALMPI}
+\section{Beyond LAL... LALSupport, LALMetaIo, LALFrame}
 
 Of the LAL requirements, the most \emph{functionally} limiting is the
 requirement that no I/O is allowed.  This requirement is in place to
@@ -869,12 +869,12 @@ need to conform to all of the LAL standards; in particular, their purpose
 is to provide the I/O functions that are missing from LAL.
 
 \begin{lalrule}
-The \verb+LALSupport+, \verb+LALMetaIo+, \verb+LALFrame+, and \verb+LALMPI+
-libraries contain routines that need not conform to all of the LAL
-specifications; in particular, they contain routines that perform file
-I/O and/or require additional libraries.  Routines from these libraries
-are intended to be used along with LAL routines, but LAL routines shall
-not call any routine from (or in any other way be dependent upon) these
+The \verb+LALSupport+, \verb+LALMetaIo+, and \verb+LALFrame+ libraries
+contain routines that need not conform to all of the LAL specifications;
+in particular, they contain routines that perform file I/O and/or
+require additional libraries.  Routines from these libraries are
+intended to be used along with LAL routines, but LAL routines shall not
+call any routine from (or in any other way be dependent upon) these
 libraries.
 \end{lalrule}
 
@@ -905,17 +905,6 @@ data format.  These routines use the \textsc{Frame} library
 routines as their engine.  This library is conditionally built and installed
 by LAL if the \textsc{Frame} library is available.
 
-\subsection{The \texttt{LALMPI} library}
-
-This library provides routines that wrap certain MPI functions for easy use
-in communicating various LAL structures between different nodes using MPI.
-The library requires a suitable MPI library (e.g., LAM or MPICH) to be
-present; if one of these is available, the \texttt{LALMPI} library can be
-conditionally built and installed.
-
-
-
- 
 \appendix
 
 \section{Language issues}

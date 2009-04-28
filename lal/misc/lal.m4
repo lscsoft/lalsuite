@@ -75,17 +75,6 @@ AC_DEFUN([LAL_WITH_EXTRA_LIBS],
 	],)
 ])
 
-AC_DEFUN([LAL_WITH_MPICC],
-[AC_ARG_WITH(
-        [mpicc], 
-        [  --with-mpicc=MPICC      use the MPICC C compiler for MPI code],
-        [ if test -n "${with_mpicc}"
-          then
-            MPICC="${with_mpicc}";
-          fi
-        ],)
-])
-
 AC_DEFUN([LAL_WITH_CC],
 [AC_ARG_WITH(
         [cc], 
@@ -108,18 +97,6 @@ AC_DEFUN([LAL_ENABLE_FRAME],
             *) AC_MSG_ERROR(bad value ${enableval} for --enable-frame) ;;
           esac
         ], [ frame=true ] )
-])
-
-AC_DEFUN([LAL_ENABLE_MPI],
-[AC_ARG_ENABLE(
-        [mpi],
-        [  --enable-mpi            compile code that requires MPI [default=no] ],
-        [ case "${enableval}" in
-            yes) mpi=true;;
-            no)  mpi=false ;;
-            *) AC_MSG_ERROR(bad value ${enableval} for --enable-mpi) ;;
-          esac
-        ], [ mpi=false ] )
 ])
 
 AC_DEFUN([LAL_ENABLE_METAIO],
@@ -281,55 +258,6 @@ int main(void)
 }
   ], [AC_MSG_RESULT(yes)], [AC_MSG_ERROR(could not find required version of GSL)], [echo $ac_n "cross compiling; assumed OK... $ac_c"])
 ])
-
-AC_DEFUN([LAL_CHECK_MPI_FLAGS],
-[ AC_MSG_CHECKING([for mpicc flags])
-  SHOWARG=""
-  MPI_CPPFLAGS=""
-  MPI_CFLAGS=""
-  MPI_LDFLAGS=""
-  MPI_TYPE=NONE
-  if (($MPICC -compile_info 1>/dev/null 2>/dev/null) && ($MPICC -link_info 1>/dev/null 2>/dev/null)) ; then
-    MPI_TYPE=MPICH
-    for mpiarg in `$MPICC -compile_info` ; do
-      case $mpiarg in
-        -D*) MPI_CPPFLAGS="$MPI_CPPFLAGS $mpiarg" ;;
-        -I*) MPI_CPPFLAGS="$MPI_CPPFLAGS $mpiarg" ;;
-      esac
-    done
-    for mpiarg in `$MPICC -link_info` ; do
-      case $mpiarg in
-        -L*) MPI_LDFLAGS="$MPI_LDFLAGS $mpiarg" ;;
-        -l*) MPI_LDFLAGS="$MPI_LDFLAGS $mpiarg" ;;
-      esac
-    done
-  else
-    if ($MPICC -show 1>/dev/null 2>/dev/null) ; then
-      MPI_TYPE=MPICH
-      SHOWARG="-show"
-    elif ($MPICC -showme 1>/dev/null 2>/dev/null) ; then
-      MPI_TYPE=LAM
-      SHOWARG="-showme"
-    else
-      AC_MSG_WARN([couldn't determine mpi compile flags])
-    fi
-    if test -n "$SHOWARG" ; then
-      for mpiarg in `$MPICC $SHOWARG` ; do
-        case $mpiarg in
-          -D*) MPI_CPPFLAGS="$MPI_CPPFLAGS $mpiarg" ;;
-          -I*) MPI_CPPFLAGS="$MPI_CPPFLAGS $mpiarg" ;;
-          -L*) MPI_LDFLAGS="$MPI_LDFLAGS $mpiarg" ;;
-          -l*) MPI_LDFLAGS="$MPI_LDFLAGS $mpiarg" ;;
-          -pthread) MPI_LDFLAGS="$MPI_LDFLAGS -lpthread" ;;
-          -Wl*) MPI_CFLAGS="$MPI_CFLAGS $mpiarg" ;;
-        esac
-      done
-    fi
-  fi
-  AC_MSG_RESULT([$MPI_CPPFLAGS $MPI_CFLAGS $MPI_LDFLAGS])
-  AC_SUBST(MPI_TYPE)dnl
-])
-
 
 dnl This is AC_CHECK_SIZEOF but prepends LAL.
 
