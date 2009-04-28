@@ -60,17 +60,19 @@ there is data on the cluster the analysis is being run.
 
 3) Find the data on the cluster.  Can be skipped with --skip-datafind.
 
-4) The search itself.  Can be skipped with --skip-search.
+4) Generate the template banks.  Can be skipped with --skip-tmpltbank.
 
-5) The application of the data quality vetoes.  Can be skipped with
+5) The search itself.  Can be skipped with --skip-search.
+
+6) The application of the data quality vetoes.  Can be skipped with
 --skip-data-quality.
 
-6) Make plots of the output.  Can be skipped with --skip-plots.
+7) Make plots of the output.  Can be skipped with --skip-plots.
 
-7) Followup the loudest events (currently not working).  Can be skipped
+8) Followup the loudest events (currently not working).  Can be skipped
 with --skip-followup.
 
-For options 4-7, you can run 3 types of analysis:
+For options 5-8, you can run 3 types of analysis:
 a) playground and playground time slides. Skipped with --skip-playground
 b) full data and full data time slides.  Skipped with --skip-full-data
 c) software injections. Skipped with --skip-injections
@@ -111,6 +113,9 @@ parser.add_option("-V", "--skip-generate-veto-segments",action="store_false",\
 
 parser.add_option("-B", "--skip-datafind",action="store_false",\
     default=True, dest="run_datafind", help="skip the datafind step")
+
+parser.add_option("-T", "--skip-tmpltbank",action="store_false",\
+    default=True, dest="run_tmpltbank", help="skip the template bank generation")
 
 parser.add_option("-F", "--skip-full-data",action="store_false",\
     default=True, dest="run_full_data", help="skip the full data + slides")
@@ -333,11 +338,11 @@ if opts.run_hardware_injections:
 os.chdir("..")
 
 ##############################################################################
-# Run lalapps_inspiral_hipe for datafind
-if opts.run_datafind:
-  print "Running inspiral hipe for datafind run"
+# Run lalapps_inspiral_hipe for datafind and template bank generation
+if opts.run_datafind or opts.run_tmpltbank:
+  print "Running inspiral hipe for datafind/template bank run"
   hipeDfNode = inspiralutils.hipe_setup("datafind", cp, ifos, \
-      opts.log_path, dfOnly = True)
+      opts.log_path, dataFind = opts.run_datafind, tmpltBank = opts.run_tmpltbank)
   dag.add_node(hipeDfNode)
 
 ##############################################################################
@@ -347,26 +352,33 @@ cachelist = []
 cachefilename = basename + '.cache'
 
 if opts.run_search:
+  # We need to get the names of the template bank files that are generated in
+  # the datafind step, so we can link them into all the search directories
+  datafind_cache_filename = "datafind/" + inspiralutils.hipe_cache(ifos, \
+      "DATAFIND", opts.gps_start_time, opts.gps_end_time)
+  tmpltbank_cache = inspiralutils.tmpltbank_cache(datafind_cache_filename)
 
   if opts.run_playground:
     print "Running inspiral hipe for playground run"
     hipePlayNode = inspiralutils.hipe_setup("playground", cp, ifos, \
          opts.log_path, playOnly = True, dax=opts.dax, \
+         tmpltbankCache = tmpltbank_cache, \
          site=cp.get("sites","playground"))
     for cacheFile in hipePlayNode.get_output_files():
       cachelist.append("playground/" + cacheFile)
     dag.add_node(hipePlayNode)
-    if opts.run_datafind:
+    if opts.run_datafind or opts_runtmpltbank:
       hipePlayNode.add_parent(hipeDfNode)
 
   if opts.run_full_data:
     print "Running inspiral hipe for analysis run"
     hipeAnalysisNode = inspiralutils.hipe_setup("full_data", cp, ifos, \
+        tmpltbankCache = tmpltbank_cache, \
         opts.log_path,dax=opts.dax,site=cp.get("sites","full_data"))
     for cacheFile in hipeAnalysisNode.get_output_files():
       cachelist.append("full_data/" + cacheFile)
     dag.add_node(hipeAnalysisNode)
-    if opts.run_datafind:
+    if opts.run_datafind or opts.run_tmpltbank:
       hipeAnalysisNode.add_parent(hipeDfNode)
 
   if opts.run_hardware_injections:
@@ -384,11 +396,12 @@ if opts.run_search:
     for (injDir, injSeed) in cp.items("injections"):
       hipeInjNode[injDir] = inspiralutils.hipe_setup(injDir, cp, ifos, \
            opts.log_path, injSeed, dax=opts.dax, \
+           tmpltbankCache = tmpltbank_cache, \
            site=cp.get("sites",injDir))
       for cacheFile in hipeInjNode[injDir].get_output_files():
         cachelist.append(injDir + "/" + cacheFile)
       dag.add_node(hipeInjNode[injDir])
-      if opts.run_datafind:
+      if opts.run_datafind or opts.run_tmpltbank:
         hipeInjNode[injDir].add_parent(hipeDfNode)
 
 ################################################################################
@@ -401,22 +414,24 @@ if opts.reverse_analysis:
     print "Running inspiral hipe for reverse playground run"
     hipePlayNode = inspiralutils.hipe_setup("playground_reverse", cp, ifos, \
          opts.log_path, playOnly = True, dax = opts.dax, \
+         tmpltbankCache = tmpltbank_cache, \
          site = cp.get("sites","playground"))
     for cacheFile in hipePlayNode.get_output_files():
       cachelist.append("playground_reverse/" + cacheFile)
     dag.add_node(hipePlayNode)
-    if opts.run_datafind:
+    if opts.run_datafind or opts.run_tmpltbank:
       hipePlayNode.add_parent(hipeDfNode)
 
   if opts.run_full_data:
     cp.set ("inspiral","reverse-chirp-bank","")
     print "Running inspiral hipe for reverse analysis run"
     hipeAnalysisNode = inspiralutils.hipe_setup("full_data_reverse", cp, ifos, \
+        tmpltbankCache = tmpltbank_cache, \
         opts.log_path, dax=opts.dax, site = cp.get("sites","full_data"))
     for cacheFile in hipeAnalysisNode.get_output_files():
       cachelist.append("full_data_reverse/" + cacheFile)
     dag.add_node(hipeAnalysisNode)
-    if opts.run_datafind:
+    if opts.run_datafind or opts.run_tmpltbank:
       hipeAnalysisNode.add_parent(hipeDfNode)
 
   if opts.run_injections:
@@ -426,11 +441,12 @@ if opts.reverse_analysis:
     for (injDir, injSeed) in cp.items("injections_reverse"):
       hipeInjNode[injDir] = inspiralutils.hipe_setup(injDir, cp, ifos, \
            opts.log_path, injSeed, dax=opts.dax, \
+           tmpltbankCache = tmpltbank_cache, \
            site= cp.get("sites",injDir))
       for cacheFile in hipeInjNode[injDir].get_output_files():
         cachelist.append(injDir + "/" + cacheFile)
       dag.add_node(hipeInjNode[injDir])
-      if opts.run_datafind:
+      if opts.run_datafind or opts.run_tmpltbank:
         hipeInjNode[injDir].add_parent(hipeDfNode)
 
 ##############################################################################
