@@ -492,8 +492,6 @@ dnl Add gcc specific flags --- must be done at end or tests will break!
 if test "$GCC" = yes; then
   CFLAGS="$CFLAGS $lal_gcc_flags"
 fi
-PKGLIST="std tools sample hello factories vectorops utilities stats inject date tdfilter window fft clremoval stochastic inspiral noisemodels bank ring findchirp pulsar houghpulsar burstsearch tracksearch tfclusters slopefilters block timefreq support framedata"
-AC_SUBST(PKGLIST)
 INCLUDEMKFILE=$srcdir/misc/include.mk
 DOCMKFILE=$srcdir/misc/doc.mk
 DVIMKFILE=$srcdir/misc/dvi.mk
