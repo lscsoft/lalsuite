@@ -493,14 +493,9 @@ if test "$GCC" = yes; then
   CFLAGS="$CFLAGS $lal_gcc_flags"
 fi
 LIBLISTBASE='$(top_builddir)/packages/std/src/libstd.la $(top_builddir)/packages/tools/src/libtools.la $(top_builddir)/packages/sample/src/libsample.la $(top_builddir)/packages/hello/src/libhello.la $(top_builddir)/packages/factories/src/libfactories.la $(top_builddir)/packages/vectorops/src/libvectorops.la $(top_builddir)/packages/utilities/src/libutilities.la $(top_builddir)/packages/stats/src/libstats.la $(top_builddir)/packages/inject/src/libinject.la $(top_builddir)/packages/date/src/libdate.la $(top_builddir)/packages/tdfilter/src/libtdfilter.la $(top_builddir)/packages/window/src/libwindow.la $(top_builddir)/packages/fft/src/libfft.la $(top_builddir)/packages/clremoval/src/libclremoval.la $(top_builddir)/packages/stochastic/src/libstochastic.la $(top_builddir)/packages/inspiral/src/libinspiral.la $(top_builddir)/packages/noisemodels/src/libnoisemodels.la $(top_builddir)/packages/bank/src/libbank.la $(top_builddir)/packages/ring/src/libring.la $(top_builddir)/packages/findchirp/src/libfindchirp.la $(top_builddir)/packages/pulsar/src/libpulsar.la $(top_builddir)/packages/houghpulsar/src/libhoughpulsar.la $(top_builddir)/packages/burstsearch/src/libburstsearch.la $(top_builddir)/packages/tracksearch/src/libtracksearch.la $(top_builddir)/packages/tfclusters/src/libtfclusters.la $(top_builddir)/packages/slopefilters/src/libslopefilters.la $(top_builddir)/packages/block/src/libblock.la $(top_builddir)/packages/timefreq/src/libtimefreq.la '
-LIBLISTFRAME='$(top_builddir)/packages/framedata/src/libframedata.la '
-if test x$frame = xfalse; then
-  LIBLISTFRAME=
-fi
 PKGLIST="std tools sample hello factories vectorops utilities stats inject date tdfilter window fft clremoval stochastic inspiral noisemodels bank ring findchirp pulsar houghpulsar burstsearch tracksearch tfclusters slopefilters block timefreq support framedata  "
 AC_SUBST(PKGLIST)
 AC_SUBST(LIBLISTBASE)
-AC_SUBST(LIBLISTFRAME)
 INCLUDEMKFILE=$srcdir/misc/include.mk
 DOCMKFILE=$srcdir/misc/doc.mk
 DVIMKFILE=$srcdir/misc/dvi.mk
