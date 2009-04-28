@@ -47,7 +47,6 @@ notably \texttt{BlockSearchParams}.
 #include <lal/SeqFactories.h>
 #include <lal/LALConstants.h>
 #include <lal/LALMoment.h>
-#include <lal/Comm.h>
 #include <lal/Matrix.h>
 
 /* C++ protection */

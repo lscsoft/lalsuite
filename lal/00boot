@@ -184,11 +184,6 @@ cd packages/stats/src || fail "creating sources in packages/stats/src"
 ${M4} LALMoment.m4 > LALMoment.c || fail "creating sources in packages/stats/src"
 cd ../../.. || fail "creating sources in packages/stats/src"
 
-cd packages/comm/src || fail "creating sources in packages/comm/src"
-${M4} SendRecv.m4 > SendRecv.c || fail "creating sources in packages/comm/src"
-${M4} Exchange.m4 > Exchange.c || fail "creating sources in packages/comm/src"
-cd ../../.. || fail "creating sources in packages/comm/src"
-
 cd packages/framedata/src || fail "creating sources in packages/framedata/src"
 ${M4} FrameSeries.m4 > FrameSeries.c || fail "creating sources in packages/framedata/src"
 cd ../../.. || fail "creating sources in packages/framedata/src"

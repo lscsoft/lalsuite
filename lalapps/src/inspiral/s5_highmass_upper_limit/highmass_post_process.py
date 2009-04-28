@@ -162,6 +162,24 @@ class ligolw_thinca_to_coinc_job(pipeline.CondorDAGJob):
     self.set_stdout_file('logs/'+tag_base+'-$(macroid)-$(process).out')
     self.set_stderr_file('logs/'+tag_base+'-$(macroid)-$(process).err')
 
+class hm_upperlimit_job(pipeline.CondorDAGJob):
+  """
+  A hm_upperlimit_job
+  """
+  def __init__(self, cp, tag_base='HM_UPPERLIMIT'):
+    """
+    """
+    self.__prog__ = 'hm_upperlimit'
+    self.__executable = string.strip(cp.get('condor','hm_upperlimit'))
+    self.__universe = "vanilla"
+    pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
+    self.add_condor_cmd('getenv','True')
+    self.tag_base = tag_base
+    self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
+    self.set_sub_file(tag_base+'.sub')
+    self.set_stdout_file('logs/'+tag_base+'-$(macroid)-$(process).out')
+    self.set_stderr_file('logs/'+tag_base+'-$(macroid)-$(process).err')
+
 class ligolw_sqlite_node(pipeline.CondorDAGNode):
   """
   """
@@ -192,7 +210,7 @@ class ligolw_sqlite_node(pipeline.CondorDAGNode):
 class ligolw_thinca_to_coinc_node(pipeline.CondorDAGNode):
   """
   """
-  def __init__(self, job, dag, cache, vetoes, veto_name, prefix, id, effsnrfac=250.0, p_node=[]):
+  def __init__(self, job, dag, cache, vetoes, veto_name, prefix, id, effsnrfac=250.0, p_node=[], instruments='H1,H2,L1'):
 
     pipeline.CondorDAGNode.__init__(self,job)
     self.add_var_opt("ihope-cache", cache)
@@ -200,6 +218,7 @@ class ligolw_thinca_to_coinc_node(pipeline.CondorDAGNode):
     self.add_var_opt("veto-segments-name",veto_name)
     self.add_var_opt("output-prefix",prefix)
     self.add_var_opt("effective-snr-factor",effsnrfac)
+    self.add_var_opt("instruments",instruments)
     self.add_macro("macroid", id)
     for p in p_node:
       self.add_parent(p)
@@ -254,11 +273,10 @@ class ligolw_segments_node(pipeline.CondorDAGNode):
 class lalapps_newcorse_node(pipeline.CondorDAGNode):
   """
   """
-  def __init__(self, job, dag, veto_segments, veto_segments_name, database, id, p_node=[],instruments = "H1,H2,L1", mass_bins="0,50,85,inf", live_time_program="thinca", ):
-
+  def __init__(self, job, dag, veto_segments, veto_segments_name, database, id, p_node=[],instruments = "H1,H2,L1", mass_bins="0,50,85,inf", live_time_program="thinca"):
     pipeline.CondorDAGNode.__init__(self,job)
     #self.add_var_opt("tmp-space","/tmp")
-    self.add_var_opt("instruments",instruments)
+    #self.add_var_opt("instruments",instruments)
     self.add_var_opt("mass-bins",mass_bins)
     self.add_var_opt("live-time-program",live_time_program)
     self.add_var_opt("veto-segments",veto_segments)
@@ -269,6 +287,23 @@ class lalapps_newcorse_node(pipeline.CondorDAGNode):
       self.add_parent(p)
     dag.add_node(self)
 
+class hm_upperlimit_node(pipeline.CondorDAGNode):
+  """
+  hm_upperlimit.py --ifos --output-name-tag --full-data-file --inj-data-glob --bootstrap-iterations
+  """
+  def __init__(self, job, dag, ifos, output_name_tag, full_data_file, inj_data_glob, bootstrap_iterations, id, p_node=[]):
+    pipeline.CondorDAGNode.__init__(self,job)
+    #self.add_var_opt("tmp-space","/tmp")
+    #self.add_var_opt("instruments",instruments)
+    self.add_var_opt("ifos",ifos)
+    self.add_var_opt("output-name-tag",output_name_tag)
+    self.add_var_opt("full-data-file",full_data_file)
+    self.add_var_opt("inj-data-glob",inj_data_glob)
+    self.add_var_opt("bootstrap-iterations",bootstrap_iterations)
+    self.add_macro("macroid", id)
+    for p in p_node:
+      self.add_parent(p)
+    dag.add_node(self)
 
 def ifo_seg_dict(cp):
   out = {}
@@ -304,6 +339,8 @@ ligolwInspinjfindJob = ligolw_inspinjfind_job(cp)
 lalappsNewcorseJob = lalapps_newcorse_job(cp)
 ligolwSegmentsJob = ligolw_segments_job(cp)
 ligolwThincaToCoincJob =  ligolw_thinca_to_coinc_job(cp)
+hmUpperlimitJob = hm_upperlimit_job(cp)
+
 n = 0
 #Do the segments node
 segNode = {}
@@ -321,6 +358,7 @@ ligolwSqliteNode3 = {}
 ligolwSqliteNode4 = {}
 ligolwInspinjfindNode = {}
 lallappsNewcorseNode = {}
+hmUpperlimitNode = {}
 db = {}
 
 for type in types:
@@ -328,11 +366,13 @@ for type in types:
     command = 'grep "'  + type + ".*" + cat + '" ' + FULLDATACACHE + " > " + type + cat + ".cache"
     print command
     popen = os.popen(command)
-    ligolwThincaToCoincNode[type+cat] = ligolw_thinca_to_coinc_node(ligolwThincaToCoincJob, dag, type+cat+".cache", "vetoes_"+cat+".xml.gz", "vetoes", "S5_HM", n, effsnrfac=50, p_node=[segNode[cat]]); n+=1
+    try: os.mkdir(type+cat)
+    except: pass
+    ligolwThincaToCoincNode[type+cat] = ligolw_thinca_to_coinc_node(ligolwThincaToCoincJob, dag, type+cat+".cache", "vetoes_"+cat+".xml.gz", "vetoes", type+cat+"/S5_HM", n, effsnrfac=50, p_node=[segNode[cat]]); n+=1
     database = type+cat+".sqlite"
     try: db[cat].append(database) 
     except: db[cat] = [database]
-    ligolwSqliteNode[type+cat] = ligolw_sqlite_node(ligolwSqliteJob, dag, database, "S5_HM_*"+type+"*"+cat+"*.xml.gz", n, p_node=[ligolwThincaToCoincNode[type+cat]], replace=True); n+=1
+    ligolwSqliteNode[type+cat] = ligolw_sqlite_node(ligolwSqliteJob, dag, database, type+cat+"/S5_HM_*"+type+"*"+cat+"*.xml.gz", n, p_node=[ligolwThincaToCoincNode[type+cat]], replace=True); n+=1
     sqliteNodeSimplify[type+cat] = sqlite_node(sqliteJob, dag, database, string.strip(cp.get('input',"simplify")), n, p_node=[ligolwSqliteNode[type+cat]]); n+=1
     sqliteNodeRemoveH1H2[type+cat] = sqlite_node(sqliteJob, dag, database, string.strip(cp.get('input',"remove_h1h2")),n, p_node=[sqliteNodeSimplify[type+cat]]); n+=1
     sqliteNodeCluster[type+cat] = sqlite_node(sqliteJob, dag, database, string.strip(cp.get('input',"cluster")),n, p_node=[sqliteNodeRemoveH1H2[type+cat]]); n+=1
@@ -348,12 +388,14 @@ for inj in injcache:
     cachefile = type + cat + ".cache"
     command = 'grep "' + type + '.*' + cat + '" ' + INJCACHE +" > " + cachefile
     print command
+    try: os.mkdir(type+cat)
+    except: pass
     popen = os.popen(command)
-    ligolwThincaToCoincNode[type+cat] = ligolw_thinca_to_coinc_node(ligolwThincaToCoincJob, dag, cachefile, "vetoes_"+cat+".xml.gz", "vetoes", "S5_HM_INJ", n, effsnrfac=50, p_node=[segNode[cat]]);n+=1
+    ligolwThincaToCoincNode[type+cat] = ligolw_thinca_to_coinc_node(ligolwThincaToCoincJob, dag, cachefile, "vetoes_"+cat+".xml.gz", "vetoes", type+cat+"/S5_HM_INJ", n, effsnrfac=50, p_node=[segNode[cat]]);n+=1
     database = type+cat+".sqlite"
     try: db[cat].append(database)
     except: db[cat] = [database]
-    ligolwSqliteNode[type+cat] = ligolw_sqlite_node(ligolwSqliteJob, dag, database, "S5_HM_INJ*"+type+"*"+cat+"*.xml.gz",n, p_node=[ligolwThincaToCoincNode[type+cat]], replace=True);n+=1
+    ligolwSqliteNode[type+cat] = ligolw_sqlite_node(ligolwSqliteJob, dag, database, type+cat+"/S5_HM_INJ*"+type+"*"+cat+"*.xml.gz",n, p_node=[ligolwThincaToCoincNode[type+cat]], replace=True);n+=1
     ligolwSqliteNode2[type+cat] = ligolw_sqlite_node(ligolwSqliteJob, dag, database, url, n, p_node=[ligolwSqliteNode[type+cat]], replace=False);n+=1
     sqliteNodeSimplify[type+cat] = sqlite_node(sqliteJob, dag, database, string.strip(cp.get('input',"simplify")), n, p_node=[ligolwSqliteNode2[type+cat]]);n+=1
     sqliteNodeRemoveH1H2[type+cat] = sqlite_node(sqliteJob, dag, database, string.strip(cp.get('input',"remove_h1h2")),n, p_node=[sqliteNodeSimplify[type+cat]]);n+=1
@@ -372,6 +414,11 @@ for k in sqliteNodeCluster.keys():
 
 for cat in cats:
   lallappsNewcorseNode[cat] = lalapps_newcorse_node(lalappsNewcorseJob, dag, "vetoes_"+cat+".xml.gz", "vetoes", " ".join(db[cat]), n, p_nodes);n+=1
+
+for cat in ['CAT_3']: 
+  hmUpperlimitNode[cat] = hm_upperlimit_node(hmUpperlimitJob, dag, "H1H2L1", "", "FULL_DATACAT_3.sqlite", "*INJCAT_3.sqlite", 10000, n, p_node=[lallappsNewcorseNode[cat]]);n+=1
+  hmUpperlimitNode[cat] = hm_upperlimit_node(hmUpperlimitJob, dag, "H1L1", "", "FULL_DATACAT_3.sqlite", "*INJCAT_3.sqlite", 10000, n, p_node=[lallappsNewcorseNode[cat]]);n+=1
+  hmUpperlimitNode[cat] = hm_upperlimit_node(hmUpperlimitJob, dag, "H2L1", "", "FULL_DATACAT_3.sqlite", "*INJCAT_3.sqlite", 10000, n, p_node=[lallappsNewcorseNode[cat]]);n+=1
 
 dag.write_sub_files()
 dag.write_dag()
