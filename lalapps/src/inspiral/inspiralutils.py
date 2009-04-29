@@ -476,9 +476,9 @@ def slide_sanity(config, playOnly = False):
 
 ##############################################################################
 # Function to set up lalapps_inspiral_hipe
-def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dfOnly = False, \
-    playOnly = False, vetoCat = None, vetoFiles = None, hardwareInj = False, \
-    site = "local", dax=None):
+def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
+    tmpltBank = False, playOnly = False, vetoCat = None, vetoFiles = None, \
+    hardwareInj = False, site = "local", dax=None, tmpltbankCache = None):
   """
   run lalapps_inspiral_hipe and add job to dag
   hipeDir   = directory in which to run inspiral hipe
