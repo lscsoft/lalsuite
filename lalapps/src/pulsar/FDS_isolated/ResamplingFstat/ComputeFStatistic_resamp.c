@@ -314,6 +314,7 @@ double sinc(double t);
 void retband(REAL8 t0, REAL8 dt, REAL8* t,REAL8* x, REAL8* y,UINT4 n,UINT4 size, UINT4 terms);
 REAL8 strob(REAL8* Xdata, REAL8* Ydata, REAL8 X, UINT4 N1);
 REAL8Sequence* ResampleSeries(REAL8Sequence *X_Real,REAL8Sequence *X_Imag,REAL8Sequence *Y_Real,REAL8Sequence *Y_Imag,REAL8 dt,REAL8Vector *BaryTimes, REAL8Sequence *DetectorTimes,REAL8 TSFT, REAL8Sequence *Times);
+void Heterodyne(REAL8 f_het,REAL8 dt,REAL8 StartTime,REAL8Sequence *Real,REAL8Sequence *Imag);
 
 
 /* Resampling prototypes (end) */
@@ -474,9 +475,7 @@ int main(int argc,char *argv[])
 	{
       
 	  REAL8 thisF = fstatVector->data->data[k];
-	  /*REAL8 thisFreq = fstatVector->f0 + k * fstatVector->deltaF;*/
-	  REAL8 thisFreq = uvar_Freq + k* fstatVector->deltaF;
-	  /*fprintf(stderr,"f0 = %f , deltaF = %f\n",fstatVector->f0,fstatVector->deltaF);*/
+	  REAL8 thisFreq = fstatVector->f0 + k * fstatVector->deltaF;
 	  /* sanity check on the result */
 	  if ( !finite ( thisF ) )
 	    {
@@ -1863,7 +1862,7 @@ INT4 CombineSFTs(COMPLEX16Vector *L,SFTVector *sft_vect,REAL8 FMIN,REAL8 FMAX,IN
 
   /* Loop over frequencies to be demodulated */
   /*for(m = -number ; m < (number)*(if1-if0-1) ; m++ )*/
-  for(m = 0; m < ((INT4)L->length); m++)
+  for(m = -number; m < ((INT4)L->length)-number; m++)
   {
     llSFT.re =0.0;
     llSFT.im =0.0;
@@ -1934,11 +1933,8 @@ INT4 CombineSFTs(COMPLEX16Vector *L,SFTVector *sft_vect,REAL8 FMIN,REAL8 FMAX,IN
 	}
       }      
 
-    if(doprint)
-      exit(0);
-    L->data[m].re = llSFT.re; 
-    L->data[m].im = llSFT.im; 
-    /*printf("%d %d\n",m,m+number);*/
+    L->data[m+number].re = llSFT.re; 
+    L->data[m+number].im = llSFT.im; 
     
   }
   XLALFree(sinVal);
@@ -2347,7 +2343,7 @@ MultiCOMPLEX8TimeSeries* CalcTimeSeries(MultiSFTVector *multiSFTs)
       XLALFree(C.StartTime);
       for(p=0;p<TSeries->Real[0]->length;p++)
 	{
-	  /*printf("%d %f %f %f %f %f %f\n",p,TSeries->Times[i]->data[p],TSeries->Times[i]->data[p]-p,TSeries->Real[i]->data[p], TSeries->Imag[i]->data[p],TSeries->Real[i]->data[p]*TSeries->Real[i]->data[p] + TSeries->Imag[i]->data[p]*TSeries->Imag[i]->data[p],atan2(TSeries->Imag[i]->data[p],TSeries->Real[i]->data[p]));*/
+	  printf("%d %f %f %f %f %f %f\n",p,TSeries->Times[i]->data[p],TSeries->Times[i]->data[p]-p,TSeries->Real[i]->data[p], TSeries->Imag[i]->data[p],TSeries->Real[i]->data[p]*TSeries->Real[i]->data[p] + TSeries->Imag[i]->data[p]*TSeries->Imag[i]->data[p],atan2(TSeries->Imag[i]->data[p],TSeries->Real[i]->data[p]));
 	}
 
     }/*Loop over Multi-IFOs */
@@ -2409,49 +2405,58 @@ void retband(REAL8 t0, REAL8 dt, REAL8* t,REAL8* x, REAL8* y,UINT4 n,UINT4 size,
     }
 }
 
+/* Resamples the Time Series and returns a timestamps vector, which corresponds to detector times linearly sampled in the barycentric frame */
 REAL8Sequence* ResampleSeries(REAL8Sequence *X_Real,REAL8Sequence *X_Imag,REAL8Sequence *Y_Real,REAL8Sequence *Y_Imag,REAL8 dt,REAL8Vector *BaryTimes, REAL8Sequence *DetectorTimes,REAL8 TSFT, REAL8Sequence *Times)
 {
-  UINT4 length = X_Real->length;
-  UINT4 interp_length = BaryTimes->length;
+  UINT4 length = X_Real->length; /* length of data */
+  UINT4 interp_length = BaryTimes->length; /* length of interplation data */
   
   UINT4 i;
   REAL8 x,y;
   REAL8 X0;
-  REAL8Sequence *CorrespondingDetTimes;
+  REAL8Sequence *CorrespondingDetTimes; /* Timestamps vector to be returned with detector times corresponding to linear sampling in the barycentric frame */
   gsl_interp_accel *accl;
   gsl_spline *splineinter;
   
-  CorrespondingDetTimes = (REAL8Sequence*)XLALCreateREAL8Sequence(length);
+  CorrespondingDetTimes = (REAL8Sequence*)XLALCreateREAL8Sequence(length); 
 
+  /* Initialize GSL */
   accl = gsl_interp_accel_alloc();
   splineinter = gsl_spline_alloc(gsl_interp_cspline,interp_length);
+  /* Xdata is BaryTimes and Ydata is DetectorTimes */
   gsl_spline_init(splineinter,BaryTimes->data,DetectorTimes->data,interp_length);
   
+  /* Starting point  in Barycentric frame, not exact but close enough*/
   X0 = BaryTimes->data[0] - TSFT/2.0;
   
   for(i=0;i<length;i++)
     {
-      x = X0 + i*dt;
-      y = gsl_spline_eval(splineinter,x,accl);
-      CorrespondingDetTimes->data[i] = y;
+      x = X0 + i*dt; /* Linear Sampling in Barycentric Frame */
+      y = gsl_spline_eval(splineinter,x,accl); /* Calculate Detector Time */
+      CorrespondingDetTimes->data[i] = y; /* Store it */
     }
 
+  /* Free GSL stuff */
   gsl_spline_free(splineinter);
   gsl_interp_accel_free(accl);
 
   
+  /* Reallocate GSL stuff */
   accl = gsl_interp_accel_alloc();
   splineinter = gsl_spline_alloc(gsl_interp_cspline,X_Real->length);
+  /* Xdata is TimeStamps and Ydata is Real part of Time Series */
   gsl_spline_init(splineinter,Times->data,X_Real->data,X_Real->length);
     
   for(i=0;i<length;i++)
     {
-      x = CorrespondingDetTimes->data[i];
-      y = gsl_spline_eval(splineinter,x,accl);
-      Y_Real->data[i] = y;
+      x = CorrespondingDetTimes->data[i]; /* New time to calculate at */
+      y = gsl_spline_eval(splineinter,x,accl); /* Interpolate and calculate */
+      Y_Real->data[i] = y; /* Store */
     }
 
   gsl_spline_free(splineinter);
+
+  /* Repeat for Imaginary Part */
 
   accl = gsl_interp_accel_alloc();
   splineinter = gsl_spline_alloc(gsl_interp_cspline,X_Imag->length);
@@ -2467,6 +2472,7 @@ REAL8Sequence* ResampleSeries(REAL8Sequence *X_Real,REAL8Sequence *X_Imag,REAL8S
   gsl_spline_free(splineinter);
   gsl_interp_accel_free(accl);
 
+  /* Return TimeStamps Vector */
   return(CorrespondingDetTimes);
 
 }
@@ -2492,7 +2498,6 @@ void ApplySpinDowns(REAL8* SpinDowns, REAL8 dt, FFTWCOMPLEXSeries *FaIn, FFTWCOM
 
       for(j=1;j<3;j++)
 	{
-	  /*Phi += 2.0*LAL_PI*SpinDowns[j]*(pow(DT,j+1)/factorial(j+1));*/
 	  Phi += 2.0*LAL_PI*SpinDowns[j]*pow(DT,j+1)/factorial(j+1) + 2.0*LAL_PI*Phi_M*SpinDowns[j]*pow(DT,j)/factorial(j);
 	}   
 
@@ -2511,55 +2516,64 @@ void ApplySpinDowns(REAL8* SpinDowns, REAL8 dt, FFTWCOMPLEXSeries *FaIn, FFTWCOM
   
 }
 
-
+/* Applies the extra factor termed by PP as heterodyne correction */
 void ApplyHetCorrection(REAL8Sequence *BaryTimes, REAL8Sequence *DetectorTimes, REAL8Sequence *Real, REAL8Sequence *Imag, REAL8Sequence *Times, MultiCOMPLEX8TimeSeries *TSeries)
 {
-  UINT4 i;
-  REAL8 Phi,retemp,imtemp;
-  REAL8 shift,cosshift,sinshift;
+  UINT4 i; /* Counter */
+  REAL8 Phi,retemp,imtemp; /* Temporary variables */ 
+  REAL8 shift,cosshift,sinshift; 
   REAL8 x;
   REAL8 y;
-  REAL8 Het = TSeries->f_het;
+  REAL8 Het = TSeries->f_het; /* Heterodyne Frequency */
+
+  /* GSL's interpolation accelerator initialized */
   gsl_interp_accel *accl = gsl_interp_accel_alloc();
+  /* GSL's memory allocated for DetectorTimes->length, which is the lenght of the data set */
   gsl_interp *lininter = gsl_interp_alloc(gsl_interp_linear,DetectorTimes->length);
+  /* Xdata = DetectorTimes, Ydata = BaryTimes */
   gsl_interp_init(lininter,DetectorTimes->data,BaryTimes->data,DetectorTimes->length);
  
   for(i=0;i<Real->length;i++)
     {
-      x = Times->data[i];
-      y = gsl_interp_eval(lininter,DetectorTimes->data,BaryTimes->data,x,accl);
-      Phi = y-x;
-      shift = -2.0*LAL_PI*Phi*Het;
+      x = Times->data[i]; /* Select Detector Time */
+      y = gsl_interp_eval(lininter,DetectorTimes->data,BaryTimes->data,x,accl); /* Calculate Barycenter time by interpolating */
+      Phi = y-x; /* Phi_m as termed in JKS */
+      shift = -2.0*LAL_PI*Phi*Het; /* Calculated Shift */
       cosshift = cos(shift);
       sinshift = sin(shift);
       retemp = Real->data[i];
       imtemp = Imag->data[i];
       Real->data[i] = retemp*cosshift - imtemp*sinshift;
-      Imag->data[i] = retemp*sinshift + imtemp*cosshift;
+      Imag->data[i] = retemp*sinshift + imtemp*cosshift; /* Apply it */
     }
-
+  
+  /* Free GSL stuff */
   gsl_interp_free(lininter);
   gsl_interp_accel_free(accl);
 
 }
 
+/* Multiply the Time Series with the Antenna Patterns */
 void ApplyAandB(REAL8Sequence *CorrTimes,REAL8Sequence *DetTimes,REAL8Sequence *a,REAL8Sequence *b,REAL8Sequence *Real,REAL8Sequence *Imag,FFTWCOMPLEXSeries *FaIn, FFTWCOMPLEXSeries *FbIn,REAL8 TSFT)
 {
-  UINT4 i;
-  REAL8 y;
-  UINT4 DetTimesIndex = 0;
+  UINT4 i;  /* Counter */
+  REAL8 y;  /* Temporary Storage*/
+  UINT4 DetTimesIndex = 0; /* Index of the SFT, whose antenna pattern is to be used */
 
   for(i=0;i<CorrTimes->length;i++)
     {
+      /* Check if the time currently is smaller than the SFT being used */
       if(CorrTimes->data[i] > (DetTimes->data[DetTimesIndex] + TSFT/2.0))
 	if(DetTimesIndex < (DetTimes->length - 1))
-	  DetTimesIndex++;
+	  DetTimesIndex++; /* If not, increment, i.e. use next SFT */
 	
-      y = a->data[DetTimesIndex];
-      FaIn->data[i][0] = Real->data[i] * y;
+      y = a->data[DetTimesIndex]; /* Store the a */
+      FaIn->data[i][0] = Real->data[i] * y; 
       FaIn->data[i][1] = Imag->data[i] * y;
     }
+  /* Reset index to 0 */
   DetTimesIndex = 0;
+  /* Apply same logic as in a for b */
   for(i=0;i<CorrTimes->length;i++)
     {
       if(CorrTimes->data[i] > (DetTimes->data[DetTimesIndex] + TSFT/2.0))
@@ -2572,12 +2586,29 @@ void ApplyAandB(REAL8Sequence *CorrTimes,REAL8Sequence *DetTimes,REAL8Sequence *
     }
 }
 
+/* Heterodynes Time Series */
+void Heterodyne(REAL8 f_het,REAL8 dt,REAL8 StartTime,REAL8Sequence *Real,REAL8Sequence *Imag)
+{
+  UINT4 p;
+  REAL8 phase,sinphi,cosphi;
+  REAL8 RealPart,ImagPart;
+  for(p=0;p<Real->length;p++)
+    {
+      RealPart = Real->data[p];
+      ImagPart = Imag->data[p];
+      phase = -2*LAL_PI*f_het*(StartTime+p*dt);
+      cosphi = cos(phase);
+      sinphi = sin(phase);
+      Real->data[p] = RealPart*cosphi-ImagPart*sinphi;
+      Imag->data[p] = RealPart*sinphi+ImagPart*cosphi;
+    }
+}
 
 void ComputeFStat_resamp(LALStatus *status,REAL8FrequencySeries *fstatVector, const PulsarDopplerParams *doppler, const MultiSFTVector *multiSFTs, const MultiNoiseWeights *multiWeights, const MultiDetectorStateSeries *multiDetStates,const ComputeFParams *params,ReSampBuffer *Buffer,ConfigVariables* GV, MultiCOMPLEX8TimeSeries *TSeries)
 {
 
-  UINT4 numDetectors, numBins;
-  REAL8 deltaF,SFTTimeBaseline = 0;
+  UINT4 numDetectors;
+  REAL8 SFTTimeBaseline = 0;
   PulsarDopplerParams thisPoint;
   UINT4 i,p;
   MultiSSBtimes *multiSSB = NULL;
@@ -2592,12 +2623,6 @@ void ComputeFStat_resamp(LALStatus *status,REAL8FrequencySeries *fstatVector, co
   MultiFFTWCOMPLEXSeries *Saved_b;
   BOOLEAN SAMESKYPOSITION = FALSE;
 
-  /* Length of the Data set (Delta Freq) * (Time Span) */
-  UINT4 length = TSeries->Real[0]->length;
-
-  /* Lenght of actual FFT, if nominal dF is used, then it is same as length */
-  UINT4 new_length = length;
-
   /* Starttime of the analysis */
   REAL8 StartTime = GPS2REAL8(TSeries->epoch);
 
@@ -2608,10 +2633,16 @@ void ComputeFStat_resamp(LALStatus *status,REAL8FrequencySeries *fstatVector, co
   REAL8 EndTime = StartTime + Tspan;
 
    /* Time spacing */
-  REAL8 dt = TSeries->Tspan/(length-1);
+  REAL8 dt = TSeries->deltaT;
 
   /* Actual StartTime in Bary Frame */
   REAL8 BaryStartTime = 0;
+
+  /* Length of the Data set (Delta Freq) * (Time Span) */
+  UINT4 length = floor(Tspan/dt + 0.5);
+
+  /* Lenght of actual FFT, if nominal dF is used, then it is same as length */
+  UINT4 new_length = length;
 
   /* This stores the times in the detector frame that correspond to a nice linear spacing in the barycentric frame */
   REAL8Sequence* CorrDetTimes = NULL;
@@ -2631,12 +2662,20 @@ void ComputeFStat_resamp(LALStatus *status,REAL8FrequencySeries *fstatVector, co
   /* Closest dF to Requested frequency spacing */
   REAL8 dF_closest = dF;
 
+  /* Amount to Heterodyne by to make uvar_Freq a bin */
+  REAL8 freq_offset = 0;
+
    /* Pick lengths and dF's */
   if(uvar_dFreq <= dF && (uvar_dFreq > 0))
     {
       new_length = floor(length/uvar_dFreq*dF + 0.5);
       dF_closest = length*dF/new_length;
     }
+  
+  /* Calculate the heterodyne frequency required */
+  freq_offset = dF_closest*((TSeries->f_het-uvar_Freq)/dF_closest - (INT4)((TSeries->f_het-uvar_Freq)/dF_closest));
+  fprintf(stderr,"%f is StartTime, %f is EndTime %f is Tspan\n",StartTime,EndTime,TSeries->Tspan);
+  fprintf(stderr,"%f is freq_offset, %f is dF_closest and %f is dF\n",freq_offset,dF_closest,dF);
 
   /* Allocate Memory to some common variables */
   Fa_Real = XLALCreateREAL8Sequence(new_length);
@@ -2676,9 +2715,6 @@ void ComputeFStat_resamp(LALStatus *status,REAL8FrequencySeries *fstatVector, co
 
   /* copy values from 'doppler' to local variable 'thisPoint' */
   thisPoint = *doppler;
-
-  numBins = fstatVector->data->length;
-  deltaF = fstatVector->deltaF;
 
   /* check input */
   ASSERT ( multiSFTs, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
@@ -2922,7 +2958,9 @@ void ComputeFStat_resamp(LALStatus *status,REAL8FrequencySeries *fstatVector, co
 
 	  /* Resample Real and Image and store in ResampledReal and ResampledImag , also return the calculated CorrDetTimes */
 	  CorrDetTimes = ResampleSeries(Real,Imag,ResampledReal,ResampledImag,dt,BaryTimes,DetectorTimes,SFTTimeBaseline,TSeries->Times[i]); 
-
+	  
+	  /* Heterodyne to shift DC such that uvar_Freq is a fully resolved bin */
+	  /*Heterodyne(freq_offset,dt,StartTime,ResampledReal,ResampledImag);*/
 
 	  /* FaIn and FbIn get allocated */
 	  FaIn = XLALCreateFFTWCOMPLEXSeries(new_length);
@@ -3002,8 +3040,10 @@ void ComputeFStat_resamp(LALStatus *status,REAL8FrequencySeries *fstatVector, co
   {
     UINT4 fmin_index = 0;
     UINT4 q,p;
-    fmin_index = floor((TSeries->f_het-uvar_Freq)/dF_closest+0.5);
+    fmin_index = floor((TSeries->f_het-uvar_Freq)/dF_closest);
     q = 0;
+    fstatVector->f0 = TSeries->f_het-fmin_index*dF_closest;
+    fstatVector->deltaF = dF_closest;
     for(p=length-fmin_index;p<length;p++)
       fstatVector->data->data[q++] = Fstat_temp->data[p];
     for(p=0;p<fmin_index;p++)
