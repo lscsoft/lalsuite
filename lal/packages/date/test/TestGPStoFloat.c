@@ -36,18 +36,19 @@ static int test_random_doubles(unsigned int seed)
 
 	srandom(seed);
 
-	for(i = 0; i < 1000000; i++) {
+	for(i = 0; i < 100000000; i++) {
 		double in;
 		double out;
 		LIGOTimeGPS gps;
 
-		in = random() * 1e-12;
+		in = random() * 2000000000.0 / RAND_MAX;
+		in += (double) random() / RAND_MAX;
 
 		out = XLALGPSGetREAL8(XLALGPSSetREAL8(&gps, in));
 
-		/* error must not exceed 0.5001 ns */
-		if(fabs(in - out) > .5001e-9) {
-			fprintf(stderr, "XLALGPSSetREAL8() + XLALGPSGetREAL8() failed:  input = %.17g s, output = %.17g s, difference = %.16g ns\n", in, out, (in - out) * 1e9);
+		/* max allowed round-trip error is 1 ns */
+		if(fabs(in - out) > 1e-9) {
+			fprintf(stderr, "XLALGPSSetREAL8() + XLALGPSGetREAL8() failed:  input = %.17g s, output = %.17g s, difference = %.16g ns ~ %.2g%% (seed was %u)\n", in, out, (in - out) * 1e9, fabs(in - out) / in * 100.0, seed);
 			return -1;
 		}
 	}
@@ -173,7 +174,7 @@ int main(int argc, char *argv[])
     }
 
   /* 5 */
-  if(test_random_doubles(0)) {
+  if(test_random_doubles(time(NULL))) {
       return 5;
   }
 
