@@ -33,7 +33,8 @@ liblal_la_LIBADD = \
 	$(top_builddir)/packages/tfclusters/src/libtfclusters.la \
 	$(top_builddir)/packages/slopefilters/src/libslopefilters.la \
 	$(top_builddir)/packages/block/src/libblock.la \
-	$(top_builddir)/packages/timefreq/src/libtimefreq.la
+	$(top_builddir)/packages/timefreq/src/libtimefreq.la \
+	@LALLIBADD@
 liblal_la_DEPENDENCIES = \
 	$(top_builddir)/packages/std/src/libstd.la \
 	$(top_builddir)/packages/tools/src/libtools.la \
