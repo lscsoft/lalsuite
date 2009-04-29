@@ -23,7 +23,7 @@
  * \date $Id$
  * \brief The primative LAL datatypes.
  *
- * This header defines the primative LAL datatypes.  These datatypes 
+ * This header defines the primative LAL datatypes.  These datatypes
  * are: CHAR, INT2, INT4, INT8 (signed integer types); UCHAR, UINT2
  * UINT4, UINT8 (unsigned integer types); REAL4, REAL8 (single- and
  * double-precision floating point types); and COMPLEX8 and COMPLEX16
@@ -342,7 +342,7 @@ typedef uint64_t UINT8;
 /* Macros for integer constants */
 #if LAL_SIZEOF_LONG == 8
 #define LAL_INT8_C(v) (v ## L)
-#define LAL_UINT8_C(v) (v ## UL) 
+#define LAL_UINT8_C(v) (v ## UL)
 #elif LAL_SIZEOF_LONG_LONG == 8
 #ifdef __GNUC__
 #define LAL_INT8_C(v) (__extension__ v ## LL)
