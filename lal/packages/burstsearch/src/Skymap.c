@@ -156,8 +156,8 @@ static void set22(double a[2][2], double a00, double a01, double a10, double a11
 static void inv22(double a[2][2], double b[2][2])
 {
     a[0][0] = b[1][1];
-    a[0][1] = -b[1][0];
-    a[1][0] = -b[0][1];
+    a[0][1] = -b[0][1];
+    a[1][0] = -b[1][0];
     a[1][1] = b[0][0];
     div22(a, a, b[0][0] * b[1][1] - b[0][1] * b[1][0]);
 }

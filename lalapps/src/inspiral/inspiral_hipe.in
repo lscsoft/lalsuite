@@ -225,7 +225,18 @@ def analyze_ifo(ifo_name,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
               if not opts.disable_dag_priorities:
                 df.set_priority(100)
               df.set_observatory(ifo_name[0])
-              df.set_start(seg.start())
+              # add a padding time to the start of the datafind call (but don't change datafind output name)
+              if ifo_name == 'G1':
+                dfsect = 'geo-data'
+              elif ifo_name == 'V1':
+                dfsect = 'virgo-data'
+              else:
+                dfsect = 'ligo-data'
+              if cp.has_option(dfsect,ifo_name.lower() + '-datafind-start-padding'):
+                padding=cp.get(dfsect,ifo_name.lower()+'-datafind-start-padding')
+              else:
+                padding=0.
+              df.set_start(seg.start(),padding)
               df.set_end(seg.end())
               seg.set_df_node(df)
               if type: df.set_type(type)
