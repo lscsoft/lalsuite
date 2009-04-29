@@ -2,7 +2,7 @@ dnl lal.m4
 
 AC_DEFUN([LAL_WITH_GCC_FLAGS],
 [AC_ARG_WITH(
-        [gcc_flags],   
+        [gcc_flags],
         [  --with-gcc-flags        turn on strict gcc warning flags],
         [ if test -n "${with_gcc_flags}"
           then
@@ -21,7 +21,7 @@ AC_DEFUN([LAL_WITH_GCC_FLAGS],
 
 AC_DEFUN([LAL_WITH_EXTRA_CPPFLAGS],
 [AC_ARG_WITH(
-	[extra_cppflags], 
+	[extra_cppflags],
         [  --with-extra-cppflags=CPPFLAGS  additional C preprocessor flags],
 	[ if test -n "${with_extra_cppflags}"
 	  then
@@ -32,7 +32,7 @@ AC_DEFUN([LAL_WITH_EXTRA_CPPFLAGS],
 
 AC_DEFUN([LAL_WITH_CFLAGS],
 [AC_ARG_WITH(
-	[cflags], 
+	[cflags],
         [  --with-cflags=CFLAGS        C compiler flags],
 	[ if test -n "${with_cflags}"
 	  then
@@ -43,7 +43,7 @@ AC_DEFUN([LAL_WITH_CFLAGS],
 
 AC_DEFUN([LAL_WITH_EXTRA_CFLAGS],
 [AC_ARG_WITH(
-	[extra_cflags], 
+	[extra_cflags],
         [  --with-extra-cflags=CFLAGS  additional C compiler flags],
 	[ if test -n "${with_extra_cflags}"
 	  then
@@ -54,7 +54,7 @@ AC_DEFUN([LAL_WITH_EXTRA_CFLAGS],
 
 AC_DEFUN([LAL_WITH_EXTRA_LDFLAGS],
 [AC_ARG_WITH(
-	[extra_ldflags], 
+	[extra_ldflags],
         [  --with-extra-ldflags=LDFLAGS  additional linker flags],
 	[ if test -n "${with_extra_ldflags}"
 	  then
@@ -65,7 +65,7 @@ AC_DEFUN([LAL_WITH_EXTRA_LDFLAGS],
 
 AC_DEFUN([LAL_WITH_EXTRA_LIBS],
 [AC_ARG_WITH(
-	[extra_libs], 
+	[extra_libs],
         [  --with-extra-libs=LIBS  additional -l and -L linker flags],
 	[ if test -n "${with_extra_libs}"
 	  then
@@ -76,7 +76,7 @@ AC_DEFUN([LAL_WITH_EXTRA_LIBS],
 
 AC_DEFUN([LAL_WITH_CC],
 [AC_ARG_WITH(
-        [cc], 
+        [cc],
         [  --with-cc=CC            use the CC C compiler],
         [ if test -n "${with_cc}"
           then
@@ -173,7 +173,6 @@ AC_DEFUN([LAL_ENABLE_NIGHTLY],
         [ NIGHTLY_VERSION="" ] )
  AC_SUBST(NIGHTLY_VERSION)
 ])
-                
 
 AC_DEFUN([LAL_ENABLE_PTHREAD_LOCK],
 [AC_ARG_ENABLE(
@@ -227,7 +226,7 @@ AC_MSG_ERROR([Intel FFT must use either static or shared libraries])
 ])
 
 AC_DEFUN([LAL_CHECK_GSL_VERSION],
-[ 
+[
   lal_min_gsl_version=ifelse([$1], ,1.0,$1)
   AC_MSG_CHECKING(for GSL version >= $lal_min_gsl_version)
   AC_TRY_RUN([
