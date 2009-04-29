@@ -602,7 +602,7 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
   hipecp.write(file(iniFile,"w"))
 
   print "Running hipe in directory " + hipeDir
-  if dataFind or tmpltBank: print "Running datafind only"
+  if dataFind or tmpltBank: print "Running datafind / template bank generation"
   elif hardwareInj: print "Running hardware injection analysis"
   elif injSeed: print "Injection seed: " + injSeed
   else: print "No injections, " + str(hipecp.get("input","num-slides")) + \
@@ -638,7 +638,7 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
     if hardwareInj:
       omit = ["disable-dag-categories", "disable-dag-priorities"]
     else:
-      omit = ["datafind", "disable-dag-categories", "disable-dag-priorities"]
+      omit = ["datafind", "template-bank", "disable-dag-categories", "disable-dag-priorities"]
     for (opt, arg) in config.items("hipe-arguments"):
       if opt not in omit:
         hipeCommand += "--" + opt + " " + arg 
