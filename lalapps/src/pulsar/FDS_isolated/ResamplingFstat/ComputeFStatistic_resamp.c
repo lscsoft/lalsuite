@@ -449,7 +449,7 @@ int main(int argc,char *argv[])
   /*Call the CalcTimeSeries Function Here*/
   LogPrintf (LOG_DEBUG, "Calculating Time Series.\n");
   TSeries = CalcTimeSeries(GV.multiSFTs);
-  /*fprintf(stderr, "\n WARNING!!! Only the middle half of the band you asked for or is usable. Rest of it is destroyed by Interpolation. Please ask for a larger band. In the future, this will be done automatically. \n"); */
+  fprintf(stderr, "\n WARNING!!! Only the middle half of the band you asked for or is usable. Rest of it is destroyed by Interpolation. Please ask for a larger band. In the future, this will be done automatically. \n");
   LogPrintf (LOG_DEBUG, "Done Calculating Time Series.\n");
 
   LogPrintf (LOG_DEBUG, "Starting Main Resampling Loop.\n");
@@ -1816,6 +1816,7 @@ INT4 CombineSFTs(COMPLEX16Vector *L,SFTVector *sft_vect,REAL8 FMIN,REAL8 FMAX,IN
 {
   REAL8* sinVal;
   REAL8* cosVal;
+  UINT4 index;
   INT4 k = 0;
   INT4 res=64;
   REAL8 STimeBaseLine = 0;
@@ -1838,7 +1839,7 @@ INT4 CombineSFTs(COMPLEX16Vector *L,SFTVector *sft_vect,REAL8 FMIN,REAL8 FMAX,IN
   UINT4 doprint = 0;
 
 
-
+  
   sinVal=(REAL8 *)XLALMalloc((res+1)*sizeof(REAL8));
   cosVal=(REAL8 *)XLALMalloc((res+1)*sizeof(REAL8)); 
   for (k=0; k<=res; k++)
@@ -1860,20 +1861,14 @@ INT4 CombineSFTs(COMPLEX16Vector *L,SFTVector *sft_vect,REAL8 FMIN,REAL8 FMAX,IN
   ifmin = floor(FMIN*STimeBaseLine)-uvar_Dterms;
   /*REAL8 ifmax = ceil(Fmax*STimeBaseLine)+uvar_Dterms;*/
 
-  if(doprint)
-    fprintf(stderr,"if0 = %f, if1 = %f, ifmin = %f\n",if0,if1,ifmin);
   /* Loop over frequencies to be demodulated */
   /*for(m = -number ; m < (number)*(if1-if0-1) ; m++ )*/
-  for(m = 2; m < ((INT4)L->length); m++)
+  for(m = 0; m < ((INT4)L->length); m++)
   {
-    if(doprint)
-      fprintf(stderr,"For m = %d\n",m);
     llSFT.re =0.0;
     llSFT.im =0.0;
 
     f=if0*deltaF+m*deltaF/number;
-    if(doprint)
-      fprintf(stderr,"f = %f,Fmin = %f\n",f,FMIN);
 
     /* Loop over SFTs that contribute to F-stat for a given frequency */
     for(alpha=0;alpha<number;alpha++)
@@ -1885,24 +1880,25 @@ INT4 CombineSFTs(COMPLEX16Vector *L,SFTVector *sft_vect,REAL8 FMIN,REAL8 FMAX,IN
 	imagXP = 0.0;
 	/* find correct index into LUT -- pick closest point */
 	tempFreq = xTemp-(INT4)xTemp;
-	if(doprint)
-	  fprintf(stderr,"if0 = %f, xTemp = %f, tempFreq = %f \n",if0,xTemp,tempFreq);
-	tsin = sin(LAL_TWOPI*xTemp);
-	tcos = cos(LAL_TWOPI*xTemp) - 1.0;
+	index=(INT4)(tempFreq*64 + 0.5); /*just like res above */
+	      
+	{
+	  REAL8 d=LAL_TWOPI*(tempFreq-(REAL8)index/64.0);/*just like res above */
+	  REAL8 d2=0.5*d*d;
+	  REAL8 ts=sinVal[index];
+	  REAL8 tc=cosVal[index];
+		
+	  tsin=ts+d*tc-d2*ts;
+	  tcos=tc-d*ts-d2*tc-1.0;
+	}
 
-	if(doprint && 0)
-	  fprintf(stderr,"tsin = %f, tsinlong = %f\n",tsin,sin(LAL_TWOPI*xTemp));
-	 
-
-        tempFreq=LAL_TWOPI*(tempFreq+uvar_Dterms);
-        k1=(INT4)xTemp-uvar_Dterms;
+        tempFreq=LAL_TWOPI*(tempFreq+uvar_Dterms-1);
+        k1=(INT4)xTemp-uvar_Dterms+1;
         /* Loop over terms in dirichlet Kernel */
         for(k=0;k<2*uvar_Dterms;k++)
 	  {
 	    COMPLEX8 Xalpha_k;
 	    x = tempFreq-LAL_TWOPI*(REAL8)k;
-	    if(doprint)
-	      fprintf(stderr,"xTemp = %f, tempFreq = %f, x = %f,2pi*k = %f\n",xTemp,tempFreq,x,LAL_TWOPI*k);
 	    realP = tsin/x;
 	    imagP = tcos/x;
 
@@ -1913,8 +1909,9 @@ INT4 CombineSFTs(COMPLEX16Vector *L,SFTVector *sft_vect,REAL8 FMIN,REAL8 FMAX,IN
 		imagP = 0.0;
 	      }	 
  
-	    sftIndex=k1+k-ifmin;
+	    sftIndex=k1+k-ifmin+1;
 
+	   
 	    /* these four lines compute P*xtilde */
 	    Xalpha_k = Xalpha[sftIndex];
 
@@ -2071,7 +2068,7 @@ MultiCOMPLEX8TimeSeries* CalcTimeSeries(MultiSFTVector *multiSFTs)
       
       /* Time_Baseline = 1/deltaF*/
       deltaF = SFT_Vect->data[0].deltaF;
-      SFTTimeBaseline = floor(1.0/deltaF);
+      SFTTimeBaseline = floor(1.0/deltaF + 0.5);
 
       /* Set StartTime and EndTime for minimization/maximization respectively. */
       /* Also calculate the Fmin and Fmax */
