@@ -70,7 +70,7 @@ This example shows how to add a package called "mypackage" to LAL.
      and test and a Makefile.am that contains the single line:
      SUBDIRS = include src test doc
 
-       cd mypackage   
+       cd mypackage
        mkdir include src test doc
        echo "SUBDIRS = include src test doc" > Makefile.am
 
@@ -80,7 +80,7 @@ This example shows how to add a package called "mypackage" to LAL.
        cp ../../sample/doc/Makefile.am .
 
      Edit this Makefile.am and change the line
-   
+
        DOCSOURCEFILES = sample.tex
 
      to
@@ -99,7 +99,7 @@ This example shows how to add a package called "mypackage" to LAL.
        cp ../../sample/include/Makefile.am .
 
      Change this Makefile.am as follows:
-     
+
      Change the line
 
      pkginclude_HEADERS = LALSample.h LALTemplate.h
@@ -109,70 +109,70 @@ This example shows how to add a package called "mypackage" to LAL.
      this line would read:
 
      pkginclude_HEADERS = MyHeaderA.h MyHeaderB.h MyHeaderC.h
-     
+
 (5)  Enter the src directory and copy src/Makefile.am from packages/sample
 
        cd ../src
        cp ../../sample/src/Makefile.am .
-                                             
+
      In this Makefile.am change every "libsample" to "libmypacakage". Change
-                                                                           
-     noinst_LTLIBRARIES = libsample.la                                     
+
+     noinst_LTLIBRARIES = libsample.la
 
      to
 
      noinst_LTLIBRARIES = libmypackage.la
-                                         
+
      and change
-     
+
      libsample_la_SOURCES = LALSample.c LALTemplate.c
-     
+
      to list your source files, for example
-     
+
      libmypackage_la_SOURCES = MySourceA.c MySourceB.c MySourceC.c
-         
+
      If your package requires any of the optional packages in LAL (frame
      and/or mpi) use the Makefile.am's in
      packages/[framedata|comm|findchirp]/src
      as a guide to constructing your own.
 
 (6)  Enter the test directory and copy test/Makefile.am from packages/sample
-     
+
        cd ../test
        cp ../../sample/test/Makefile.am .
-         
+
      Change the line
-                    
+
      check_PROGRAMS = LALSampleTest LALTemplateTest
-                                                   
+
      to list the names of the test programs you wish to run, for example
-                    
+
      check_PROGRAMS = MyTestProgA MyTestProgB
-                                             
+
      For each test program, there should be two lines that list the sources
-     and link them to LAL. Change the lines                                
-     
+     and link them to LAL. Change the lines
+
      LALSampleTest_SOURCES = LALSampleTest.c
      LALSampleTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
      LALTemplateTest_SOURCES = LALTemplateTest.c
      LALTemplateTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
-                                                          
+
      to
-          
+
      MyTestProgA_SOURCES = MyTestProgA.c
      MyTestProgA_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
-     MyTestProgB_SOURCES = MyTestProgB.c              
+     MyTestProgB_SOURCES = MyTestProgB.c
      MyTestProgB_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
-     
-     and the line                            
-     
-     TESTS = LALSampleTest LALTemplateTest                                 
-     
+
+     and the line
+
+     TESTS = LALSampleTest LALTemplateTest
+
      should list the test programs you want run at make check (generally
-     the same as check_PROGRAMS)                                        
-                                
+     the same as check_PROGRAMS)
+
      TESTS = MyTestProgA MyTestProgB
-                                         
+
      If your test programs require data files, e.g., mypackage.dat, then add:
 
      TESTS_ENVIRONMENT = LAL_DATA_PATH=$(srcdir)
@@ -206,7 +206,7 @@ Appendix: how to use laldoc to generate documentation.
      In the package's doc directory there needs to be the following texfile:
 
      mypackage.tex
-     
+
      This file is read by a driver texfile to make the documentation in the
      packages/mypackage/doc directory and is also read by lsd.tex in the
      top-level doc directory to make the mypackage documentation in the lsd
@@ -217,7 +217,7 @@ Appendix: how to use laldoc to generate documentation.
      that is contained in the package.
 
      The contents of mypackage.tex should look something like the following:
-     
+
      \chapter{Package: \texttt{mypackage}}
      This package does the things that I want to do.
      \newpage\input{MyHeaderAH}
