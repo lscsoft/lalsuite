@@ -28,8 +28,8 @@ The following rules will assist in maintaining a stable LAL:
    make any change to files above the package subdirectory without
    consulting the LAL librarian.
 
-2. Before commiting any changes to the CVS archive, you should run the
-   testscript.sh and make sure it completes successfully.  This test
+2. Before commiting any changes to the Git repository, you should run
+   the testscript.sh and make sure it completes successfully.  This test
    script checks for esoteric errors that you may not notice doing a
    vanilla install, so it is important to run it before committing.
 
@@ -42,10 +42,10 @@ lal/packages), follow the instructions below.
 * Note: Only the LAL librarian is allowed to add packages (since this
 involves adding directories). Once a package has been added, you can
 modify the code in it and add additional contents withing the package as
-normal via CVS.
+normal via Git.
 
 Contact the LAL librarian, Jolien Creighton
-<jolien@gravity.phys.uwm.edu> prior to add the package to CVS. You
+<jolien@gravity.phys.uwm.edu> prior to add the package to Git. You
 should send the librarian a tar file of the package you wish to add.
 
 This file tells you how to develop a new package for submission. It is
