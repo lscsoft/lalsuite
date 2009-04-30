@@ -6,10 +6,10 @@ This file describes how to perform a basic install of LAL.
 
 1. PRE-INSTALLATION
 
-Certain software needs to be pre-installed on your system.  For several systems
-it is possible to download and install pre-compiled binaries.  If you need to
-compile the software and install it in your home directory, that is possible
-too.  For instructions, please see:
+Certain software needs to be pre-installed on your system.  For several
+systems it is possible to download and install pre-compiled binaries.
+If you need to compile the software and install it in your home
+directory, that is possible too.  For instructions, please see:
 
         http://www.lsc-group.phys.uwm.edu/daswg/download/repositories.html
 
@@ -59,7 +59,7 @@ SGI running IRIX 6.5 with gcc:
         $ systune -r
         systune-> ncargs 204800
         systune-> quit
-    
+
     This increases the command line length maximum until reboot.
     Change it permanently with systune -b.
 
@@ -85,30 +85,32 @@ Mac OS X (10.2.x, possibly 10.1.x, but NOT 10.3.x) with bundled cc/gcc:
 
   * Configure with:  --with-extra-cflags="-D_ANSI_SOURCE -no-cpp-precomp"
 
-  * Note: I (Jolien) don't need these with 10.2 ... perhaps it depends on the
-    version of the developer tools.  Also, do NOT use these flags with 10.3.
+  * Note: I (Jolien) don't need these with 10.2 ... perhaps it depends
+    on the version of the developer tools.  Also, do NOT use these flags
+    with 10.3.
 
 
 TROUBLESHOOTING
 
-* If you need to re-run configure after it has failed while checking for a
-  working FFTW, FrameL, or MPI, make sure to remove the file config.cache.
+* If you need to re-run configure after it has failed while checking for
+  a working FFTW, FrameL, Metaio, or GSL, make sure to remove the file
+  config.cache.
 
-* The configure script assumes that ranlib is necessary unless it cannot find
-  the program in your path.  If ranlib is on your path and you don't need
-  ranlib, set the environment RANLIB to echo.
+* The configure script assumes that ranlib is necessary unless it cannot
+  find the program in your path.  If ranlib is on your path and you don't
+  need ranlib, set the environment RANLIB to echo.
 
 * "make dvi" must be run after "make" since make dvi requires the program
   laldoc must be compiled for "make dvi" to work.
 
-* If you want to use a different latex program than the one chosen by the
-  configure script, set it in the environment variable LATEX.  Also, if you
-  want to have different tex flags (e.g., you want to disable the batchmode
-  that the configure script uses) set the TEXFLAGS environment variable
-  to the flags you want (or a space if you don't want any flags used).
+* If you want to use a different latex program than the one chosen by
+  the configure script, set it in the environment variable LATEX.  Also,
+  if you want to have different tex flags (e.g., you want to disable
+  the batchmode that the configure script uses) set the TEXFLAGS
+  environment variable to the flags you want (or a space if you don't
+  want any flags used).
 
-* If you want to make a shared library version (default) of LAL with frame
-  library and/or MPI interface, you need to make a shared library version of
-  fftw, the frame library, and mpi too.  To make a static LAL library only,
-  use the --disable-shared option when configuring LAL.
-
+* If you want to make a shared library version (default) of LAL with
+  the frame library, you need to make a shared library version of fftw
+  and the frame too.  To make a static LAL library only, use the
+  --disable-shared option when configuring LAL.
