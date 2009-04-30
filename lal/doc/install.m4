@@ -93,7 +93,7 @@ Mac OS X (10.2.x, possibly 10.1.x, but NOT 10.3.x) with bundled cc/gcc:
 TROUBLESHOOTING
 
 * If you need to re-run configure after it has failed while checking for
-  a working FFTW, FrameL, or MPI, make sure to remove the file
+  a working FFTW, FrameL, Metaio, or GSL, make sure to remove the file
   config.cache.
 
 * The configure script assumes that ranlib is necessary unless it cannot
