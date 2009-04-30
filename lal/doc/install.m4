@@ -59,7 +59,7 @@ SGI running IRIX 6.5 with gcc:
         $ systune -r
         systune-> ncargs 204800
         systune-> quit
-    
+
     This increases the command line length maximum until reboot.
     Change it permanently with systune -b.
 
