@@ -111,7 +111,6 @@ TROUBLESHOOTING
   want any flags used).
 
 * If you want to make a shared library version (default) of LAL with
-  frame library and/or MPI interface, you need to make a shared library
-  version of fftw, the frame library, and mpi too.  To make a static LAL
-  library only, use the --disable-shared option when configuring LAL.
-
+  the frame library, you need to make a shared library version of fftw
+  and the frame too.  To make a static LAL library only, use the
+  --disable-shared option when configuring LAL.
