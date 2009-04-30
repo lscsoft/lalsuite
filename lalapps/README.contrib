@@ -50,7 +50,7 @@ instructions.
 
    Documentation is essential if you want anyone to use your program.  The
    documentation is located in the doc subdirectory.
-   
+
    The way to document your program is to write a texfile to be included in the
    lalapps texfile lalapps.tex.  You would write a texfile called myprog.tex.
    It should start with:
@@ -109,12 +109,4 @@ instructions.
      make cvs-clean
 
    If one of these things fails, and it is because of something you did,
-   fix it before committing your changes to the cvs repository.
-
-   If everything works, then you can add your files to the cvs repository.  Use
-   cvs add to add each file that is needed.  Then do a cvs commit to actually
-   put them in.
-
-   If you are really paranoid, checkout a brand new copy of lalapps from the
-   cvs repository and make sure that things work.  This will let you know if
-   you forgot to add a critical file.
+   fix it before committing your changes to the git repository.
