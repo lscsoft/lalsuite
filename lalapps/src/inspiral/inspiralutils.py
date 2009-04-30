@@ -126,11 +126,11 @@ def science_segments(ifo, config, generate_segments = True):
   @param config: the configParser object with analysis details
   @param generate_segments: whether or not to actually make segments
   """
-  start = config.getint("input","gps-start-time")
-  end = config.getint("input","gps-end-time")
+  start = config.get("input","gps-start-time")
+  end = config.get("input","gps-end-time")
 
-  segFindFile = ifo + "-SCIENCE_SEGMENTS-" + str(start) + "-" + \
-      str(end - start) + ".txt"
+  segFindFile = ifo + "-SCIENCE_SEGMENTS-" + start + "-" + \
+      str(int(end) - int(start)) + ".txt"
 
   # if not generating segments, all we need is the name of the segment file
   if not generate_segments: return segFindFile
@@ -139,55 +139,131 @@ def science_segments(ifo, config, generate_segments = True):
 
   whichtoanalyze = ifo.lower() + "-analyze"
   print "For " + ifo + ", analyze " +config.get("segments",whichtoanalyze)
+  
+  # get xml-to-txt converter
+  xml_to_txt_converter = config.get("condor", "ligolw_print")
 
   # run segFind to determine science segments
   segFindCall = executable 
-  for opt,arg in config.items("segfind"):
-    segFindCall += " --" + opt + " " + arg
-  segFindCall +=  " --interferometer=" + ifo + \
-      " --type=\"" + config.get("segments", whichtoanalyze) + "\""\
-      " --gps-start-time=" + str(start) + \
-      " --gps-end-time=" + str(end) + " > " + segFindFile
+  segFindCall = ' '.join([ segFindCall,
+	"--query-segments",
+	"--segment", config.get("segfind", "server"),
+	"--gps-start-time", start,
+	"--gps-end-time", end,
+	"--include-segments",
+	   ''.join([ '"', config.get("segments", whichtoanalyze), '"' ]),
+      "|",
+      xml_to_txt_converter,
+	"-t segment -c start_time -c end_time -d ' '",
+      ">", segFindFile ])
   make_external_call(segFindCall)
 
   return segFindFile
 
 ##############################################################################
+# Function to set up the veto-category xml files from the vetoDefFile
+def generate_veto_cat_files(config, vetoDefFile, generateVetoes):
+  """
+  Generate veto category xml files for each ifo using the
+  veto-definer file.
+  @param config: the configParser object with analysis details
+  @param vetoDefFile: veto-definer xml file 
+  @param generateVetoes: generate the veto files
+  """
+  executable = config.get("condor", "segs_from_cats")
+  start = config.get("input", "gps-start-time")
+  end = config.get("input", "gps-end-time")
+
+  genVetoCall = executable
+  genVetoCall = ' '.join([ genVetoCall,
+	"--segment", config.get("segfind", "server"),
+	"--veto-file", vetoDefFile,
+	"--gps-start-time", start,
+	"--gps-end-time", end ])
+  
+  if generateVetoes:
+    print "Generating veto category xml files... this may take awhile..."
+    make_external_call(genVetoCall)
+
+##############################################################################
+# Function to convert a veto-category xml file to a txt file
+def convert_veto_cat_xml_to_txt(config, veto_cat_file, output_file):
+  """
+  Converts a veto-category xml file into a veto-segments txt file.
+  Note: if the veto_cat_file doesn't exist, or if there are no
+  vetoes in that veto_cat_file, the output file is still written;
+  it just will contain the header with no segments listed.
+
+  @param config: the configParser object with analysis details
+  @param veto_cat_file: name (and loction) of veto_cat_file to convert
+  @param output_file: name (and location) of output txt file to save to
+  """
+  print "Converting veto-category xml file %s to txt file %s" \
+	%(veto_cat_file, output_file)
+  sys.stdout.flush()
+  # get xml-to-txt converter
+  xml_to_txt_converter = config.get("condor", "ligolw_print")
+
+  convertCall = ' '.join([ xml_to_txt_converter,
+	"-t segment -c start_time -c end_time", veto_cat_file ])
+  tempfile = os.popen(convertCall)
+  
+  # get times from tempfile
+  times = tempfile.readlines()
+
+  tempfile.close()
+
+  if times:
+    vetoes_available = True
+  else:
+    vetoes_available = False
+
+  # open output file for writing
+  file = open(output_file, "w")
+  file.write("# seg\tstart    \tstop     \tduration\n")
+  
+  for n,line in enumerate(times):
+    (start,end) = line.split(',')
+    duration = str(int(end) - int(start))
+    newline = "\t".join([ str(n), start, end.strip(), duration ])
+    file.write( newline + "\n" )
+
+  file.close()
+
+  return vetoes_available
+
+##############################################################################
 # Function to set up the segments for the analysis
-def veto_segments(ifo, config, segmentList, dqSegFile, categories, 
-  generateVetoes): 
+def veto_segments(ifo, config, categories, generateVetoes): 
   """
   generate veto segments for the given ifo
 
   @param ifo         : name of the ifo
-  @param segmentList : list of science mode segments
-  @param dqSegfile   : the file containing dq flags
+  @param config	     : the configParser object with analysis details
   @param categories  : list of veto categories
   @param generateVetoes: generate the veto files
   """
-  executable = config.get("condor", "query_dq")
+  
   start = config.getint("input","gps-start-time")
   end = config.getint("input","gps-end-time")
   vetoFiles = {}
-
+  
   for category in categories:
-    dqFile = config.get("segments", ifo.lower() + "-cat-" + str(category) + \
-        "-veto-file")
+    veto_cat_file = ifo + "-VETOTIME_CAT" + str(category) + "*.xml"
 
     vetoFile = ifo + "-CATEGORY_" + str(category) + "_VETO_SEGS-" + \
         str(start) + "-" + \
         str(end - start) + ".txt"
 
-    dqCall = executable + " --ifo " + ifo + " --dq-segfile " + dqSegFile + \
-        " --segfile " + segmentList + " --flagfile " + dqFile + \
-        " --outfile " + vetoFile
-
-    # generate the segments
-    if generateVetoes: make_external_call(dqCall)
+    if generateVetoes: 
+      return_val = convert_veto_cat_xml_to_txt(config, veto_cat_file, vetoFile)
+      if not return_val:
+        print "No vetoes found for %s cat %i. %s will contain no segments." \
+          %(ifo, category, vetoFile) 
+      
 
     # if there are previous vetoes, generate combined
     if (category-1) in categories: 
-
       combinedFile = ifo + "-COMBINED_CAT_" + str(category) + "_VETO_SEGS-" + \
           str(start) + "-" + \
           str(end - start) + ".txt"
@@ -304,6 +380,26 @@ def copyCategoryFiles(config,vetoes,directory,\
     config.set("segments", vetoes, rel_outfile)
 
 ##############################################################################
+# Function to download the VetoDefFile
+def downloadVetoDefFile(config,generate_segments):
+  """
+  Download the vetoDefFile from a html location
+  @param config      : the configParser object with analysis details
+  @param generate_segments : If False do not download, just return filename 
+  """
+
+  vetoDefurl = config.get("segments", "veto-def-server-url")
+  vetoDefFile = config.get("segments", "veto-def-file")
+
+  if generate_segments:
+    print "Downloading veto-definer file " + vetoDefFile + " from " \
+	+ vetoDefurl
+    vetoDefFile, info = urllib.urlretrieve(vetoDefurl + '/' + vetoDefFile,
+	vetoDefFile)
+
+  return vetoDefFile
+
+##############################################################################
 # Function to download the dqSegFiles
 def downloadDqSegFiles(config,ifo,generate_segments):
   """
@@ -371,8 +467,8 @@ def downloadDqHWSegFiles(config,ifo,generate_segments,dqSegFile):
 ##############################################################################
 # Function to determine the segments to analyze 
 #(science segments, data quality, missing segments)
-def findSegmentsToAnalyze(config,ifo,dqSegFile,generate_segments=True,\
-    use_available_data=False,data_quality_vetoes=False):
+def findSegmentsToAnalyze(config, ifo, generate_segments=True,\
+    use_available_data=False, data_quality_vetoes=False):
   """
   generate segments for the given ifo
 
@@ -396,26 +492,19 @@ def findSegmentsToAnalyze(config,ifo,dqSegFile,generate_segments=True,\
     print "Generating science segments for " + ifo + " ...",
     sys.stdout.flush()
   sciSegFile = science_segments(ifo, config, generate_segments)
+
+  # generate vetoFiles
   if generate_segments: 
     sciSegs = segmentsUtils.fromsegwizard(file(sciSegFile)).coalesce()
     print " done."
+    print "Generating cat 1 veto segments for " + ifo + " ...",
+    sys.stdout.flush()
+    vetoFiles = veto_segments(ifo, config, [1], generate_segments)
+    print "done"
 
-  # download the dq segments to generate the veto files
-  if generate_segments:
-    dq_segdb_file = config.get("segments", ifo.lower() + '-dq-file')
-    if dq_segdb_file == "":
-      print >>sys.stderr, "warning: no file provided to %s-dq-file; " \
-        "running without data quality" % ifo.lower()
-    else:
-      print "Generating cat 1 veto segments for " + ifo + " ...",
-      sys.stdout.flush()
-      vetoFiles = veto_segments(ifo, config, sciSegFile, dqSegFile, [1], \
-          generate_segments )
-      print "done"
-
-      # remove cat 1 veto times
-      vetoSegs = segmentsUtils.fromsegwizard(open(vetoFiles[1])).coalesce()
-      sciSegs = sciSegs.__and__(vetoSegs.__invert__())
+    # remove cat 1 veto times
+    vetoSegs = segmentsUtils.fromsegwizard(open(vetoFiles[1])).coalesce()
+    sciSegs = sciSegs.__and__(vetoSegs.__invert__())
 
     if use_available_data:
       dfSegs = datafind_segments(ifo, config)
@@ -436,10 +525,9 @@ def findSegmentsToAnalyze(config,ifo,dqSegFile,generate_segments=True,\
     print "done"
 
   if data_quality_vetoes: 
-    print "Generating veto segments for " + ifo + "..."
+    print "Generating cat 2, 3, and 4 veto segments for " + ifo + "..."
     sys.stdout.flush()
-  dqVetoes = veto_segments(ifo, config, segFile, dqSegFile, [2,3,4], 
-      data_quality_vetoes )
+  dqVetoes = veto_segments(ifo, config, [2,3,4], data_quality_vetoes )
   if data_quality_vetoes: print "done"
 
   return tuple([segFile, dqVetoes])
