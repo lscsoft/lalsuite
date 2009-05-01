@@ -75,7 +75,8 @@ LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
 CLEANFILES = lalapps_tracksearch_handler \
 	lalapps_tracksearch_pipe lalapps_tracksearch_housekeeper \
-	lalapps_tracksearch_tune_pipe lalapps_tracksearch_cutpipe
+	lalapps_tracksearch_tune_pipe lalapps_tracksearch_cutpipe \
+	lalapps_tracksearch_mapcachebuilder python_config.sed
 
 MOSTLYCLEANFILES = *.candidates *.dat *.pgm *.aux *.raw *.diag \
 	*.pyc tsaMap* Candidate* Pre-*
