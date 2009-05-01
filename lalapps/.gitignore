@@ -231,6 +231,17 @@ src/stochastic/lalapps_stopp
 src/stochastic/lalapps_stopp_bayes
 src/stochastic/python_config.sed
 src/string/lalapps_StringSearch
+src/tracksearch/lalapps_tracksearch
+src/tracksearch/lalapps_tracksearch_averager
+src/tracksearch/lalapps_tracksearch_cutpipe
+src/tracksearch/lalapps_tracksearch_dat2pgm
+src/tracksearch/lalapps_tracksearch_datagen
+src/tracksearch/lalapps_tracksearch_handler
+src/tracksearch/lalapps_tracksearch_housekeeper
+src/tracksearch/lalapps_tracksearch_mapcachebuilder
+src/tracksearch/lalapps_tracksearch_pipe
+src/tracksearch/lalapps_tracksearch_tune_pipe
+src/tracksearch/python_config.sed
 src/zmsearch/lalapps_build_zm_frames
 src/zmsearch/lalapps_zmcompare
 src/zmsearch/lalapps_zmdft
