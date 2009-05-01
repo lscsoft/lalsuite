@@ -103,12 +103,8 @@ printf "00boot:\t%-16s %s\n" "automake-$automake_version:" "`which $AUTOMAKE`"
 printf "00boot:\t%-16s %s\n" "autoheader-$autoheader_version:" "`which $AUTOHEADER`"
 printf "00boot:\t%-16s %s\n" "autoconf-$autoconf_version:" "`which $AUTOCONF`"
 
-echo "00boot: creating README.install"
-
-## First generate README.install
-test -f README.install || rm -f README.install
+echo "00boot: creating install docs"
 cd doc
-test -f README.install || rm -f README.install
 sed -f scrstrip.sed lal-preinstall-x.sh > lal-preinstall.sh
 sed -f texstrip.sed lal-preinstall-x.sh > lal-preinstall.tex
 sed -f txtstrip.sed lal-preinstall-x.sh > lal-preinstall.txt
@@ -117,8 +113,6 @@ sed -f texstrip.sed lal-install-x.sh > lal-install.tex
 sed -f txtstrip.sed lal-install-x.sh > lal-install.txt
 chmod +x lal-install.sh
 chmod +x lal-preinstall.sh
-${M4} install.m4 > README.install
-cp -f README.install ..
 cd ..
 
 
