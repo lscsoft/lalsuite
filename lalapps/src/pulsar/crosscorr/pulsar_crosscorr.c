@@ -122,7 +122,7 @@ int main(int argc, char *argv[]){
   REAL8ListElement *phaseList, *phaseHead = NULL, *phaseTail = NULL;
   REAL8 deltaF_SFT, timeBase;
   REAL8  *psi = NULL; 
-  UINT4 counter = 0, i=0; 
+  UINT4 counter = 0; 
   COMPLEX8FrequencySeries *sft1 = NULL, *sft2 = NULL;
   INT4 sameDet;
   REAL8FrequencySeries *psd1, *psd2;
@@ -170,6 +170,8 @@ int main(int argc, char *argv[]){
   REAL8 eps_current = 0.0, mag_current = 0.0, n_current = 0.0;
   REAL8 delta_eps = 0.0, delta_mag = 0.0, delta_n = 0.0;
   REAL8Vector *fdots = NULL;
+
+  INT4 paramCounter = 0;
 
   static INT4VectorSequence  *sftPairIndexList=NULL;
   REAL8Vector  *sigmasq;
@@ -529,105 +531,120 @@ int main(int argc, char *argv[]){
    
     if (listLength > 1) {
 
-      /* start frequency loop */
-      for (freqCounter = 0; freqCounter < nfreqLoops; freqCounter++) {
+      while (paramCounter < nParams) {
+        if (uvar_spindownParams) {
+  	  skyCounter++;
+	  if (skyCounter == nSkyPatches) {
+	    skyCounter = 0;
+	    nCounter++;
+	  } 
+          if (nCounter == nnLoops) {
+	    nCounter = 0;
+	    q2Counter++;
+ 	  }
+	  if (q2Counter == nq2Loops) {
+	    q2Counter = 0;
+	    q1Counter++;
+ 	  }
+  	  if (q1Counter == nq1Loops) {
+	    q1Counter = 0;
+	    freqCounter++;
+          }
+
+          eps_current = uvar_epsilon + (delta_eps*q1Counter);
+          mag_current = uvar_magfield + (delta_mag*q2Counter);
+          n_current = uvar_brakingindex + (delta_n*nCounter);
+
+
+        } else {
+	  skyCounter++;
+	  if (skyCounter == nSkyPatches) {
+	    skyCounter = 0;
+	    fddotCounter++;
+	  }
+	  if (fddotCounter == nfddotLoops) {
+	    fddotCounter = 0;
+	    fdotCounter++;
+	  }
+	  if (fdotCounter == nfdotLoops) {
+	    fdotCounter = 0;
+	    freqCounter++;
+	  }
+  	  fdot_current = uvar_fdot + (delta_fdot*fdotCounter);
+	  fddot_current = uvar_fddot + (delta_fddot*fddotCounter);
+
+        }
 
         f_current = uvar_f0 + (uvar_fResolution*freqCounter);
- 	/**************** Option 1: Searching over spindown parameters ******************/
+ 
+   	LAL_CALL( InitDoppParams(&status, fdots, &thisPoint, refTime, f_current, eps_current, mag_current, n_current,
+				 fdot_current, fddot_current), &status);
 
-        if (uvar_spindownParams) { /*if searching over q1, q2, n*/
-  	  /* Q1 loop */
-	  for (q1Counter = 0; q1Counter < nq1Loops; q1Counter++) {
+       /* set sky positions and skypatch sizes  */
+        thisPoint.Alpha = skyAlpha[skyCounter]; 
+        thisPoint.Delta = skyDelta[skyCounter]; 
 
-	    eps_current = uvar_epsilon + (delta_eps*q1Counter);
-
-	    /* Q2 loop */
-	    for (q2Counter = 0; q2Counter < nq2Loops; q2Counter++) {
-
-	      mag_current = uvar_magfield + (delta_mag*q2Counter);
-
-  	      /* n loop */
-	      for (nCounter = 0; nCounter < nnLoops; nCounter++) {
-
-	        n_current = uvar_brakingindex + (delta_n*nCounter);
-
-                CalculateFdots(&status, fdots, f_current, eps_current, mag_current, n_current);
-	   
-	        /* loop over sky patches -- main calculations  */
-	        for (skyCounter = 0; skyCounter < nSkyPatches; skyCounter++) {
-
-	         /* initialize Doppler parameters of the potential source */
-	         thisPoint.Alpha = skyAlpha[skyCounter]; 
-	         thisPoint.Delta = skyDelta[skyCounter]; 
-	         thisPoint.fkdot[0] = f_current;
- 		 for (i=1; i < PULSAR_MAX_SPINS; i++) {
-	           thisPoint.fkdot[i] = fdots->data[i-1]; 
-                 }
-	         thisPoint.refTime = refTime;
-   
-	         /* set sky positions and skypatch sizes  */
-	         patchSizeX = skySizeDelta[skyCounter]; 
-	         patchSizeY = skySizeAlpha[skyCounter]; 
-
-  
-   	         /* get the amplitude modulation coefficients */
-	         skypos.longitude = thisPoint.Alpha; 
-	         skypos.latitude = thisPoint.Delta; 
-	         skypos.system = COORDINATESYSTEM_EQUATORIAL; 
+         patchSizeX = skySizeDelta[skyCounter]; 
+         patchSizeY = skySizeAlpha[skyCounter]; 
+ 
+         /* get the amplitude modulation coefficients */
+         skypos.longitude = thisPoint.Alpha; 
+         skypos.latitude = thisPoint.Delta; 
+         skypos.system = COORDINATESYSTEM_EQUATORIAL; 
   	
 
- 	         LAL_CALL( GetBeamInfo( &status, beamHead, sftHead, freqHead, phaseHead, skypos, 
+         LAL_CALL( GetBeamInfo( &status, beamHead, sftHead, freqHead, phaseHead, skypos, 
 				     edat, &thisPoint), &status);
  
-  	         /* loop over SFT mini-list to get pairs */
-	         ualphacounter = 0;
+          /* loop over SFT mini-list to get pairs */
+         ualphacounter = 0;
 
-	         /*  correlate sft pairs  */
- 	         sftList = sftHead;
-	         psdList = psdHead;
-	         freqList = freqHead;
-	         phaseList = phaseHead;
-	         beamList = beamHead;
+        /*  correlate sft pairs  */
+         sftList = sftHead;
+         psdList = psdHead;
+         freqList = freqHead;
+         phaseList = phaseHead;
+         beamList = beamHead;
 
-	         sft1 = &(sftList->sft);
-	         psd1 = &(psdList->psd);
-	         freq1 = freqList->val;
-	         phase1 = phaseList->val;
-	         beamfns1 = &(beamList->beamfn);
+         sft1 = &(sftList->sft);
+         psd1 = &(psdList->psd);
+         freq1 = freqList->val;
+         phase1 = phaseList->val;
+         beamfns1 = &(beamList->beamfn);
 
-	         /*while there are elements in the sft minilist, keep
-	          going and check whether it should be paired with SFT1. 
-	          there is no need to check the lag as the sfts must satisfy this condition 
- 	          already to be in the mini-list*/
-	         while (sftList->nextSFT) {
-	  	   /*if we are autocorrelating, we want the head to be paired with itself first*/
-   	    	   if ((sftList == sftHead) && uvar_autoCorrelate) { 
-		     sft2 = &(sftList->sft);
-		     psd2 = &(psdList->psd);
-	  	     freq2 = freqList->val;
-		     phase2 = phaseList->val;
-		     beamfns2 = &(beamList->beamfn);
+         /*while there are elements in the sft minilist, keep
+          going and check whether it should be paired with SFT1. 
+          there is no need to check the lag as the sfts must satisfy this condition 
+          already to be in the mini-list*/
+         while (sftList->nextSFT) {
+  	   /*if we are autocorrelating, we want the head to be paired with itself first*/
+    	   if ((sftList == sftHead) && uvar_autoCorrelate) { 
+	     sft2 = &(sftList->sft);
+	     psd2 = &(psdList->psd);
+  	     freq2 = freqList->val;
+	     phase2 = phaseList->val;
+	     beamfns2 = &(beamList->beamfn);
  
- 		   sftList = (SFTListElement *)sftList->nextSFT;
-		   psdList = (PSDListElement *)psdList->nextPSD;
-		   freqList = (REAL8ListElement *)freqList->nextVal;
-		   phaseList = (REAL8ListElement *)phaseList->nextVal;
-		   beamList = (CrossCorrBeamFnListElement *)beamList->nextBeamfn;
+	   sftList = (SFTListElement *)sftList->nextSFT;
+	   psdList = (PSDListElement *)psdList->nextPSD;
+	   freqList = (REAL8ListElement *)freqList->nextVal;
+	   phaseList = (REAL8ListElement *)phaseList->nextVal;
+	   beamList = (CrossCorrBeamFnListElement *)beamList->nextBeamfn;
  
-		   } else { /*otherwise just step to the next sft*/
+	   } else { /*otherwise just step to the next sft*/
 
-		   sftList = (SFTListElement *)sftList->nextSFT;
-		   psdList = (PSDListElement *)psdList->nextPSD;
-		   freqList = (REAL8ListElement *)freqList->nextVal;
-		   phaseList = (REAL8ListElement *)phaseList->nextVal;
-		   beamList = (CrossCorrBeamFnListElement *)beamList->nextBeamfn;
+	   sftList = (SFTListElement *)sftList->nextSFT;
+	   psdList = (PSDListElement *)psdList->nextPSD;
+	   freqList = (REAL8ListElement *)freqList->nextVal;
+	   phaseList = (REAL8ListElement *)phaseList->nextVal;
+	   beamList = (CrossCorrBeamFnListElement *)beamList->nextBeamfn;
 
-	  	   sft2 = &(sftList->sft);
-		   psd2 = &(psdList->psd);
-	  	   freq2 = freqList->val;
-		   phase2 = phaseList->val;
-		   beamfns2 = &(beamList->beamfn);
- 		 }
+  	   sft2 = &(sftList->sft);
+	   psd2 = &(psdList->psd);
+  	   freq2 = freqList->val;
+	   phase2 = phaseList->val;
+	   beamfns2 = &(beamList->beamfn);
+	 }
                  /*strcmp returns 0 if strings are equal, >0 if strings are different*/
                  sameDet = strcmp(sft1->name, sft2->name);
 
@@ -689,181 +706,9 @@ int main(int argc, char *argv[]){
 	      }
 
 	      counter++;
+	 paramCounter++;
 
- 	      } /*finish loop over sky patches*/
-	    } /* finish loop over n*/ 
-
-
-	  } /*finish loop over q2*/
-
-	} /*finish loop over q1*/
- 
-      } /*endif*/
-
-      /***************** Option 2: Searching over frequency derivatives *************/
-
-      else { /* if searching through f, fdots instead */
- 
-	/* frequency derivative loop */
-	for (fdotCounter = 0; fdotCounter < nfdotLoops; fdotCounter++) {
-
-	  fdot_current = uvar_fdot + (delta_fdot*fdotCounter);
-
-	  /* frequency double derivative loop */
-	  for (fddotCounter = 0; fddotCounter < nfddotLoops; fddotCounter++) {
-
-	    fddot_current = uvar_fddot + (delta_fddot*fddotCounter);
-
-	   
-	    /* loop over sky patches -- main calculations  */
-	    for (skyCounter = 0; skyCounter < nSkyPatches; skyCounter++) {
-
-	      /* initialize Doppler parameters of the potential source */
-	      thisPoint.Alpha = skyAlpha[skyCounter]; 
-	      thisPoint.Delta = skyDelta[skyCounter]; 
-	      thisPoint.fkdot[0] = f_current;
-	      thisPoint.fkdot[1] = fdot_current; 
-	      thisPoint.fkdot[2] = fddot_current;
-	      thisPoint.fkdot[3] = 0.0;
-	      thisPoint.refTime = refTime;
-   
-	      /* set sky positions and skypatch sizes  */
-	      patchSizeX = skySizeDelta[skyCounter]; 
-	      patchSizeY = skySizeAlpha[skyCounter]; 
-
-  
-	      /* get the amplitude modulation coefficients */
-	      skypos.longitude = thisPoint.Alpha; 
-	      skypos.latitude = thisPoint.Delta; 
-	      skypos.system = COORDINATESYSTEM_EQUATORIAL; 
-  	
-
-	      LAL_CALL( GetBeamInfo( &status, beamHead, sftHead, freqHead, phaseHead, skypos, 
-				     edat, &thisPoint), &status);
-
-	      /* loop over SFT mini-list to get pairs */
-	      ualphacounter = 0;
-
-	      /*  correlate sft pairs  */
- 	      sftList = sftHead;
-	      psdList = psdHead;
-	      freqList = freqHead;
-	      phaseList = phaseHead;
-	      beamList = beamHead;
-
-	      sft1 = &(sftList->sft);
-	      psd1 = &(psdList->psd);
-	      freq1 = freqList->val;
-	      phase1 = phaseList->val;
-	      beamfns1 = &(beamList->beamfn);
-
-	      /*while there are elements in the sft minilist, keep
-	        going and check whether it should be paired with SFT1. 
-	        there is no need to check the lag as the sfts must satisfy this condition 
- 	        already to be in the mini-list*/
-	      while (sftList->nextSFT) {
-		/*if we are autocorrelating, we want the head to be paired with itself first*/
- 		if ((sftList == sftHead) && uvar_autoCorrelate) { 
-		  sft2 = &(sftList->sft);
-		  psd2 = &(psdList->psd);
-	  	  freq2 = freqList->val;
-		  phase2 = phaseList->val;
-		  beamfns2 = &(beamList->beamfn);
-
- 		  sftList = (SFTListElement *)sftList->nextSFT;
-		  psdList = (PSDListElement *)psdList->nextPSD;
-		  freqList = (REAL8ListElement *)freqList->nextVal;
-		  phaseList = (REAL8ListElement *)phaseList->nextVal;
-		  beamList = (CrossCorrBeamFnListElement *)beamList->nextBeamfn;
-
-		} else { /*otherwise just step to the next sft*/
-
-		  sftList = (SFTListElement *)sftList->nextSFT;
-		  psdList = (PSDListElement *)psdList->nextPSD;
-		  freqList = (REAL8ListElement *)freqList->nextVal;
-		  phaseList = (REAL8ListElement *)phaseList->nextVal;
-		  beamList = (CrossCorrBeamFnListElement *)beamList->nextBeamfn;
-
-	  	  sft2 = &(sftList->sft);
-		  psd2 = &(psdList->psd);
-	  	  freq2 = freqList->val;
-		  phase2 = phaseList->val;
-		  beamfns2 = &(beamList->beamfn);
- 		}
-      
-                /*strcmp returns 0 if strings are equal, >0 if strings are different*/
-                sameDet = strcmp(sft1->name, sft2->name);
-
-    	        /* if they are different, set sameDet to 1 so that it will match if
-	 	   detChoice == DIFFERENT */
-      		if (sameDet != 0) { sameDet = 1; }
-      
-      		/* however, if detChoice = ALL, then we want sameDet to match it */
-      		if (detChoice == ALL) { sameDet = detChoice; }
-	  	  
-	        /* decide whether to add this pair or not */
-     		if ((sameDet == (INT4)detChoice)) {
-
-	          /* increment the size of  Y, u, sigmasq vectors by 1  */
- 	          yalpha = XLALResizeCOMPLEX16Vector(yalpha, 1 + ualphacounter);
-      		  ualpha = XLALResizeCOMPLEX16Vector(ualpha, 1 + ualphacounter);
-      		  sigmasq = XLALResizeREAL8Vector(sigmasq, 1 + ualphacounter);
-
- 		  LAL_CALL( LALCorrelateSingleSFTPair( &status, &(yalpha->data[ualphacounter]),
-						     sft1, sft2, psd1, psd2, freq1, freq2),
-		  	    &status);
-
-	  	  LAL_CALL( LALCalculateSigmaAlphaSq( &status, &sigmasq->data[ualphacounter],
-						    freq1, freq2, psd1, psd2),
-			    &status);
-
-		  /*if we are averaging over psi and cos(iota), call the simplified 
- 	    	    Ualpha function*/
-	  	  if (uvar_averagePsi && uvar_averageIota) {
-		    LAL_CALL( LALCalculateAveUalpha ( &status, &ualpha->data[ualphacounter], 
-						    phase1, phase2, *beamfns1, *beamfns2, 
-						    sigmasq->data[ualphacounter]),
-			       &status);
-
-		  } else {
-		    LAL_CALL( LALCalculateUalpha ( &status, &ualpha->data[ualphacounter], amplitudes,
-						 phase1, phase2, *beamfns1, *beamfns2,
-						 sigmasq->data[ualphacounter], psi),
-			      &status);
-		
-		  }
-		  ualphacounter++;
-                }
-	      } /*finish loop over sft pairs*/
-
-	      /*printf("finish loop over pairs\n");*/
-
-	      /* calculate rho from Yalpha and Ualpha, if there were pairs */
- 	      if (ualphacounter > 0) {
-	        tmpstat = 0;
-	        LAL_CALL( LALCalculateCrossCorrPower( &status, &tmpstat, yalpha, ualpha),
-			&status);
-
-	        rho->data[counter] += tmpstat;
-
-	        /* calculate standard deviation of rho (Eq 4.6) */
-	        LAL_CALL( LALNormaliseCrossCorrPower( &status, &tmpstat, ualpha, sigmasq),
-			&status); 
-
-	        stddev->data[counter] += tmpstat;
-	      }
-
-	      counter++;
-
-	    } /* finish loop over skypatches */ 
-
-
-	  } /*finish loop over frequency double derivatives*/
-
-	} /*finish loop over frequency derivatives*/
- 
-      } /*endelse*/  
-    } /*finish loop over frequencies */
+      } /*endwhile*/
 
       XLALDestroyCOMPLEX16Vector(yalpha);
       XLALDestroyCOMPLEX16Vector(ualpha);
@@ -1118,6 +963,57 @@ void SetUpRadiometerSkyPatches(LALStatus           *status,
   /* normal exit */	
   RETURN (status);
 }
+
+void InitDoppParams(LALStatus *status,
+ 		    REAL8Vector *fdots,
+		    PulsarDopplerParams *thisPoint,
+		    LIGOTimeGPS refTime,
+  		    REAL8 f_current,
+ 		    REAL8 eps_current,
+		    REAL8 mag_current,
+	 	    REAL8 n_current,
+		    REAL8 fdot_current,
+		    REAL8 fddot_current) 
+{ 
+
+  INT4 i; 
+
+  INITSTATUS (status, "InitDoppParams", rcsid);
+  ATTATCHSTATUSPTR (status);
+
+
+    /**************** Option 1: Searching over spindown parameters ******************/
+
+    if (uvar_spindownParams) { /*if searching over q1, q2, n*/
+
+
+           CalculateFdots(status->statusPtr, fdots, f_current, eps_current, mag_current, n_current);
+            /* initialize Doppler parameters of the potential source */
+ 	    thisPoint->fkdot[0] = f_current;
+ 	    for (i=1; i < PULSAR_MAX_SPINS; i++) {
+	      thisPoint->fkdot[i] = fdots->data[i-1]; 
+            }
+	    thisPoint->refTime = refTime;
+         } /*endif*/
+
+    else { /* if searching through f, fdots instead */
+ 
+   
+	    /* initialize Doppler parameters of the potential source */
+
+	    thisPoint->fkdot[0] = f_current;
+	    thisPoint->fkdot[1] = fdot_current; 
+	    thisPoint->fkdot[2] = fddot_current;
+	    thisPoint->fkdot[3] = 0.0;
+	    thisPoint->refTime = refTime;
+    } /*endelse*/
+
+  DETATCHSTATUSPTR (status);
+	
+  /* normal exit */	
+  RETURN (status);
+
+}  
 
 
 void GetBeamInfo(LALStatus *status, 
