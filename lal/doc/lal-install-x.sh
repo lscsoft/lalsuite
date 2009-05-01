@@ -57,7 +57,7 @@ fail() {
 # build and install LAL (the "--with-gcc-flags" tells gcc to use flags
 # that will produce warnings about possibly non-portable code)
 #ignore
-if test -x 00boot ; then # distribution from CVS
+if test -x 00boot ; then # distribution from Git
   ./00boot || fail
 fi
 #/ignore

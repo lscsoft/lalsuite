@@ -8,7 +8,6 @@
 .deps
 .dvi-dep
 .libs
-/README.install
 /acinclude.m4
 /aclocal.m4
 Makefile

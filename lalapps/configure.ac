@@ -307,6 +307,7 @@ AC_OUTPUT( \
   src/pulsar/MakeSFTs/Makefile \
   src/pulsar/crosscorr/Makefile \
   src/pulsar/fscan/Makefile \
+  src/tracksearch/Makefile \
 )
 
 lalframeenabled="`test x${lalframe} = xtrue && echo "ENABLED" || echo "DISABLED"`"
