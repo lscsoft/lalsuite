@@ -235,7 +235,7 @@ if test "$lal_pthread_lock" = "true" ; then
     CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
     CC="$PTHREAD_CC"
   else
-    AC_MSG_ERROR([don't know how to compile posix threads])
+    AC_MSG_ERROR([do not know how to compile posix threads])
   fi
 fi
 
