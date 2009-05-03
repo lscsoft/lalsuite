@@ -46,7 +46,7 @@ BOOLEAN  uvar_help;
 BOOLEAN  uvar_averagePsi;
 BOOLEAN  uvar_averageIota;
 BOOLEAN  uvar_autoCorrelate;
-BOOLEAN  uvar_spindownParams;
+BOOLEAN  uvar_QCoeffs;
 INT4     uvar_blocksRngMed; 
 INT4     uvar_detChoice;
 REAL8    uvar_startTime, uvar_endTime;
@@ -58,13 +58,13 @@ REAL8    uvar_maxlag;
 REAL8    uvar_psi;
 REAL8    uvar_refTime;
 REAL8    uvar_cosi;
-REAL8    uvar_epsilon;
-REAL8    uvar_magfield;
+REAL8    uvar_q1;
+REAL8    uvar_q2;
 REAL8    uvar_brakingindex;
-REAL8    uvar_epsilonBand;
-REAL8    uvar_epsilonResolution;
-REAL8    uvar_magfieldBand;
-REAL8    uvar_magfieldResolution;
+REAL8    uvar_q1Band;
+REAL8    uvar_q1Resolution;
+REAL8    uvar_q2Band;
+REAL8    uvar_q2Resolution;
 REAL8    uvar_brakingindexBand;
 REAL8    uvar_brakingindexResolution;
 
@@ -167,8 +167,8 @@ int main(int argc, char *argv[]){
   /* frequency derivative array, if we search over q1, q2, n */
   INT4 nq1Loops = 1, nq2Loops = 1, nnLoops = 1;
   INT4 q1Counter = 0, q2Counter = 0, nCounter = 0;
-  REAL8 eps_current = 0.0, mag_current = 0.0, n_current = 0.0;
-  REAL8 delta_eps = 0.0, delta_mag = 0.0, delta_n = 0.0;
+  REAL8 q1_current = 0.0, q2_current = 0.0, n_current = 0.0;
+  REAL8 delta_q1 = 0.0, delta_q2 = 0.0, delta_n = 0.0;
   REAL8Vector *fdots = NULL;
 
   INT4 paramCounter = 0;
@@ -278,7 +278,7 @@ int main(int argc, char *argv[]){
     exit(1);
   }
 
-  if (uvar_spindownParams) {
+  if (uvar_QCoeffs) {
     fprintf(fp, "##Alpha\tDelta\tFrequency\tEpsilon\tB Field (T)\tBraking Index\tNormalised Power\n");
   }
   else {
@@ -343,21 +343,21 @@ int main(int argc, char *argv[]){
   /*get number of frequency loops*/
   nfreqLoops = ceil(uvar_fBand/uvar_fResolution);
   /* if we are using spindown parameters, initialise the fdots array */
-  if (uvar_spindownParams) {
+  if (uvar_QCoeffs) {
 
     fdots = (REAL8Vector *)LALCalloc(1, sizeof(REAL8Vector));
     fdots->length = N_SPINDOWN_DERIVS;
     fdots->data = (REAL8 *)LALCalloc(fdots->length, sizeof(REAL8));
 
-    nq1Loops = 1 + (INT4)ceil(uvar_epsilonBand/uvar_epsilonResolution);
+    nq1Loops = 1 + (INT4)ceil(uvar_q1Band/uvar_q1Resolution);
     
-    nq2Loops = 1 + ceil(uvar_magfieldBand/uvar_magfieldResolution);
+    nq2Loops = 1 + ceil(uvar_q2Band/uvar_q2Resolution);
 
     nnLoops = 1 + ceil(uvar_brakingindexBand/uvar_brakingindexResolution);
 
-    delta_eps = uvar_epsilonResolution;
+    delta_q1 = uvar_q1Resolution;
   
-    delta_mag = uvar_magfieldResolution;
+    delta_q2 = uvar_q2Resolution;
 
     delta_n = uvar_brakingindexResolution; 
   }
@@ -444,7 +444,7 @@ int main(int argc, char *argv[]){
   }
 
   /* initialise output arrays */
-  if (uvar_spindownParams) {
+  if (uvar_QCoeffs) {
     nParams = nSkyPatches * nfreqLoops *nfdotLoops * nfddotLoops;
   } else {
     nParams = nSkyPatches * nfreqLoops * nq1Loops * nq2Loops * nnLoops;
@@ -532,7 +532,7 @@ int main(int argc, char *argv[]){
     if (listLength > 1) {
 
       while (paramCounter < nParams) {
-        if (uvar_spindownParams) {
+        if (uvar_QCoeffs) {
   	  skyCounter++;
 	  if (skyCounter == nSkyPatches) {
 	    skyCounter = 0;
@@ -551,8 +551,8 @@ int main(int argc, char *argv[]){
 	    freqCounter++;
           }
 
-          eps_current = uvar_epsilon + (delta_eps*q1Counter);
-          mag_current = uvar_magfield + (delta_mag*q2Counter);
+          q1_current = uvar_q1 + (delta_q1*q1Counter);
+          q2_current = uvar_q2 + (delta_q2*q2Counter);
           n_current = uvar_brakingindex + (delta_n*nCounter);
 
 
@@ -577,7 +577,7 @@ int main(int argc, char *argv[]){
 
         f_current = uvar_f0 + (uvar_fResolution*freqCounter);
  
-   	LAL_CALL( InitDoppParams(&status, fdots, &thisPoint, refTime, f_current, eps_current, mag_current, n_current,
+   	LAL_CALL( InitDoppParams(&status, fdots, &thisPoint, refTime, f_current, q1_current, q2_current, n_current,
 				 fdot_current, fddot_current), &status);
 
        /* set sky positions and skypatch sizes  */
@@ -726,17 +726,17 @@ int main(int argc, char *argv[]){
 
     f_current = uvar_f0 + (uvar_fResolution*freqCounter);
 
-    if (uvar_spindownParams) { /*if searching over q1, q2, n*/
+    if (uvar_QCoeffs) { /*if searching over q1, q2, n*/
  
         /* Q1 loop */
 	for (q1Counter = 0; q1Counter < nq1Loops; q1Counter++) {
 
-	  eps_current = uvar_epsilon + (delta_eps*q1Counter);
+	  q1_current = uvar_q1 + (delta_q1*q1Counter);
 
 	  /* Q2 loop */
 	  for (q2Counter = 0; q2Counter < nq2Loops; q2Counter++) {
 
-	    mag_current = uvar_magfield + (delta_mag*q2Counter);
+	    q2_current = uvar_q2 + (delta_q2*q2Counter);
 
   	    /* n loop */
 	    for (nCounter = 0; nCounter < nnLoops; nCounter++) {
@@ -752,7 +752,7 @@ int main(int argc, char *argv[]){
 	        rho->data[counter] = rho->data[counter]/sqrt(stddev->data[counter]);
 	        fprintf(fp, "%1.5f\t %1.5f\t %1.5f\t %e\t %e\t %e\t %1.10f\n", thisPoint.Alpha,
 		thisPoint.Delta, f_current,
-		eps_current, mag_current, n_current, rho->data[counter]);
+		q1_current, q2_current, n_current, rho->data[counter]);
 	        counter++;
  	      }
 	    } /*end n loop*/
@@ -804,7 +804,7 @@ int main(int argc, char *argv[]){
   XLALDestroyREAL8Vector(stddev);
   XLALDestroyREAL8Vector(rho);
 
-  if (uvar_spindownParams) {
+  if (uvar_QCoeffs) {
     XLALDestroyREAL8Vector(fdots);
   }
 
@@ -969,8 +969,8 @@ void InitDoppParams(LALStatus *status,
 		    PulsarDopplerParams *thisPoint,
 		    LIGOTimeGPS refTime,
   		    REAL8 f_current,
- 		    REAL8 eps_current,
-		    REAL8 mag_current,
+ 		    REAL8 q1_current,
+		    REAL8 q2_current,
 	 	    REAL8 n_current,
 		    REAL8 fdot_current,
 		    REAL8 fddot_current) 
@@ -984,10 +984,10 @@ void InitDoppParams(LALStatus *status,
 
     /**************** Option 1: Searching over spindown parameters ******************/
 
-    if (uvar_spindownParams) { /*if searching over q1, q2, n*/
+    if (uvar_QCoeffs) { /*if searching over q1, q2, n*/
 
 
-           CalculateFdots(status->statusPtr, fdots, f_current, eps_current, mag_current, n_current);
+           CalculateFdots(status->statusPtr, fdots, f_current, q1_current, q2_current, n_current);
             /* initialize Doppler parameters of the potential source */
  	    thisPoint->fkdot[0] = f_current;
  	    for (i=1; i < PULSAR_MAX_SPINS; i++) {
@@ -1380,12 +1380,11 @@ void DeleteBeamFnHead (LALStatus *status,
 void CalculateFdots (LALStatus *status,
 		     REAL8Vector *fdots,
 		     REAL8 f0,
-		     REAL8 epsilon,
-		     REAL8 magfield,
+		     REAL8 q1,
+		     REAL8 q2,
 		     REAL8 n)
 {
   REAL8 grav, rstar, inertia, c, mu0;
-  REAL8 q1, q2;
 
 
   INITSTATUS (status, "CalculateFdots", rcsid);
@@ -1400,12 +1399,12 @@ void CalculateFdots (LALStatus *status,
   inertia = 0.4*1.4*1.99e30*rstar*rstar;
   mu0 = 1.2566e-6;
 
-  q1 = 32*grav*inertia*SQUARE(LAL_PI)*SQUARE(LAL_PI)*SQUARE(epsilon)/(5*CUBE(c)*SQUARE(c));
+  /*q1 = 32*grav*inertia*SQUARE(LAL_PI)*SQUARE(LAL_PI)*SQUARE(epsilon)/(5*CUBE(c)*SQUARE(c));
 
   q2 = 2*CUBE(LAL_PI)*CUBE(rstar)*CUBE(rstar)*SQUARE(magfield)/(3*mu0*inertia*CUBE(c));
-
+  */
   /* multiply q2 by the (pi R/c)^n-3 term*/
-  q2 = q2*pow(LAL_PI*rstar/c, n-3);
+  /*q2 = q2*pow(LAL_PI*rstar/c, n-3);*/
 
   /* hard code each derivative. symbolic differentiation too hard? */
   fdots->data[0] = -(q1 * pow(f0, 5)) - (q2 * pow(f0, n));
@@ -1430,7 +1429,7 @@ void CalculateFdots (LALStatus *status,
 			  + 4.0*(n-1)*n*pow(f0,n-2)*fdots->data[0]*fdots->data[2] + n*pow(f0, n-1)*fdots->data[3]);
 
   fdots->data[5] = -q1 * (120.0*pow(fdots->data[0],5) + 1200.0*f0*CUBE(fdots->data[0])*fdots->data[1] 
-			  + 900.0*SQUARE(f0)*fdots->data[0]*SQUARE(fdots->data[1]) + 600.0*SQUARE(f0)*SQUARE(fdots->data[0])*fdots->data[2]
+		  + 900.0*SQUARE(f0)*fdots->data[0]*SQUARE(fdots->data[1]) + 600.0*SQUARE(f0)*SQUARE(fdots->data[0])*fdots->data[2]
 			  + 200.0*CUBE(f0)*fdots->data[1]*fdots->data[2] + 100.0*CUBE(f0)*fdots->data[0]*fdots->data[3]
 			  + 5.0*pow(f0,4)*fdots->data[4])
 		   -q2 * ((n-4)*(n-3)*(n-2)*(n-1)*n*pow(f0,n-5)*pow(fdots->data[0],5) 
@@ -1474,13 +1473,14 @@ void initUserVars (LALStatus *status)
   ATTATCHSTATUSPTR (status);
 
 
+
   uvar_maxlag = 0;
 
   uvar_help = FALSE;
   uvar_averagePsi = TRUE;
   uvar_averageIota = TRUE;
   uvar_autoCorrelate = FALSE;
-  uvar_spindownParams = FALSE;
+  uvar_QCoeffs = FALSE;
   uvar_blocksRngMed = BLOCKSRNGMED;
   uvar_detChoice = 2;
   uvar_f0 = F0;
@@ -1499,12 +1499,12 @@ void initUserVars (LALStatus *status)
   uvar_psi = 0.0;
   uvar_refTime = 0.0;
   uvar_cosi = 0.0;
-  uvar_epsilon = 1e-5;
-  uvar_epsilonBand = 0.0;
-  uvar_epsilonResolution = uvar_epsilon/10.0;
-  uvar_magfield = 1e9;
-  uvar_magfieldBand = 0.0;
-  uvar_magfieldResolution = uvar_magfield/10.0;
+  uvar_q1 = 1e-24;
+  uvar_q1Band = 0.0;
+  uvar_q1Resolution = 1e-25;
+  uvar_q2 = 1e-20;
+  uvar_q2Band = 0.0;
+  uvar_q2Resolution = 1e-21;
   uvar_brakingindex = 3;
   uvar_brakingindexBand = 0.0;
   uvar_brakingindexResolution = uvar_brakingindex/10.0;
@@ -1645,30 +1645,30 @@ void initUserVars (LALStatus *status)
 			  0, UVAR_OPTIONAL,
 			  "cos(iota) inclination angle",
 			  &uvar_cosi); 
-  LALRegisterREALUserVar( status->statusPtr, "epsilon",
+  LALRegisterREALUserVar( status->statusPtr, "q1",
 			  0, UVAR_OPTIONAL,
-			  "Start pulsar ellipticity",
-			  &uvar_epsilon); 
-  LALRegisterREALUserVar( status->statusPtr, "epsilonBand",
+			  "Starting Q1 value",
+			  &uvar_q1); 
+  LALRegisterREALUserVar( status->statusPtr, "q1Band",
 			  0, UVAR_OPTIONAL,
-			  "Pulsar ellipticity search band",
-			  &uvar_epsilonBand); 
-  LALRegisterREALUserVar( status->statusPtr, "epsilonRes",
+			  "Q1 search band",
+			  &uvar_q1Band); 
+  LALRegisterREALUserVar( status->statusPtr, "q1Res",
 			  0, UVAR_OPTIONAL,
 			  "Pulsar ellipticity search resolution",
-			  &uvar_epsilonResolution); 
-  LALRegisterREALUserVar( status->statusPtr, "magfield",
+			  &uvar_q1Resolution); 
+  LALRegisterREALUserVar( status->statusPtr, "q2",
 			  0, UVAR_OPTIONAL,
-			  "Start pulsar magnetic field (T)",
-			  &uvar_magfield); 
-  LALRegisterREALUserVar( status->statusPtr, "magfieldBand",
+			  "Starting Q2 value",
+			  &uvar_q2); 
+  LALRegisterREALUserVar( status->statusPtr, "q2Band",
 			  0, UVAR_OPTIONAL,
-			  "Pulsar magnetic field search band (T)",
-			  &uvar_magfieldBand); 
-  LALRegisterREALUserVar( status->statusPtr, "magfieldRes",
+			  "Q2 search band",
+			  &uvar_q2Band); 
+  LALRegisterREALUserVar( status->statusPtr, "q2Res",
 			  0, UVAR_OPTIONAL,
-			  "Pulsar magnetic field search resolution (T)",
-			  &uvar_magfieldResolution); 
+			  "Q2 search resolution",
+			  &uvar_q2Resolution); 
   LALRegisterREALUserVar( status->statusPtr, "braking",
 			  0, UVAR_OPTIONAL,
 			  "Pulsar electromagnetic braking index",
@@ -1681,10 +1681,10 @@ void initUserVars (LALStatus *status)
 			  0, UVAR_OPTIONAL,
 			  "Pulsar electromagnetic braking index search resolution",
 			  &uvar_brakingindexResolution); 
-  LALRegisterBOOLUserVar( status->statusPtr, "spindownParams",
+  LALRegisterBOOLUserVar( status->statusPtr, "QCoeffs",
 			  0, UVAR_OPTIONAL,
 			  "Search over pulsar spindown parameters instead of frequency derivatives",
-			  &uvar_spindownParams); 
+			  &uvar_QCoeffs); 
 
 
   DETATCHSTATUSPTR (status);
