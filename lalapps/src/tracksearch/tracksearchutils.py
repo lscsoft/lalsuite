@@ -33,6 +33,7 @@ import gzip
 disableGraphics=False
 #Try importing GTK first if it fails import pylab non-interactive
 #Try getting display env variable upon importing this module.
+
 import numarray
 
 if os.getenv("DISPLAY") == None:
