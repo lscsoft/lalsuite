@@ -101,6 +101,8 @@ CHAR     *uvar_filenameOut=NULL;
 #define SQUARE(x) (x*x)
 #define CUBE(x) (x*x*x)
 
+#define INIT_MEM(x) memset(&(x), 0, sizeof((x)))
+
 #define N_SPINDOWN_DERIVS 6
 
 void initUserVars (LALStatus *status);
@@ -1001,10 +1003,10 @@ void InitDoppParams(LALStatus *status,
    
 	    /* initialize Doppler parameters of the potential source */
 
+	    INIT_MEM( thisPoint->fkdot );
 	    thisPoint->fkdot[0] = f_current;
 	    thisPoint->fkdot[1] = fdot_current; 
 	    thisPoint->fkdot[2] = fddot_current;
-	    thisPoint->fkdot[3] = 0.0;
 	    thisPoint->refTime = refTime;
     } /*endelse*/
 
