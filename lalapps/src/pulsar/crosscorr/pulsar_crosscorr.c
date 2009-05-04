@@ -279,7 +279,7 @@ int main(int argc, char *argv[]){
   }
 
   if (uvar_QCoeffs) {
-    fprintf(fp, "##Alpha\tDelta\tFrequency\tEpsilon\tB Field (T)\tBraking Index\tNormalised Power\n");
+    fprintf(fp, "##Alpha\tDelta\tFrequency\tQ1\tQ2\tBraking Index\tNormalised Power\n");
   }
   else {
     fprintf(fp, "##Alpha\tDelta\tFrequency\t Fdot \t Fddot \t Normalised Power\n");
@@ -1681,7 +1681,7 @@ void initUserVars (LALStatus *status)
 			  0, UVAR_OPTIONAL,
 			  "Pulsar electromagnetic braking index search resolution",
 			  &uvar_brakingindexResolution); 
-  LALRegisterBOOLUserVar( status->statusPtr, "QCoeffs",
+  LALRegisterBOOLUserVar( status->statusPtr, "useQCoeffs",
 			  0, UVAR_OPTIONAL,
 			  "Search over pulsar spindown parameters instead of frequency derivatives",
 			  &uvar_QCoeffs); 
