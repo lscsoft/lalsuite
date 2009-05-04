@@ -2839,24 +2839,22 @@ class candidateList:
             #for zScore we have (-inf,inf) to (-inf+10,inf+10)
             unitTraitOffset=2
             zScoreTraitOffset=10
-            glitchDatabaseEntry=[triggerStartString,            #0,1
-                                 triggerStartFloat,             #2
-                                 triggerLowF,                   #3
-                                 triggerDuration,               #4
-                                 triggerBandwidth,              #5
-                                 int(triggerLength),            #6
-                                 triggerIntegratedPower,        #7
-                                 meanPixelPower,                #8
-                                 varPixelPower,                 #9
-                                 relativeTimeBP+unitTraitOffset,#10
-                                 relativeFreqBP+unitTraitOffset,#11
-                                 zScoreBP+zScoreTraitOffset,    #12
-                                 relativeTimeCM+unitTraitOffset,#13
-                                 relativeFreqCM+unitTraitOffset,#14
-                                 zScoreCM+zScoreTraitOffset,    #15
-                                 spanTnorm+unitTraitOffset,     #16
-                                 spanFnorm+unitTraitOffset,     #17
-                                 snrEstimate]                   #18
+            ## Cristina continue from here Wed-Apr-22-2009:200904221728 
+            glitchDatabaseEntry=[triggerStartString, #0,#1
+                                    snrEstimate,           #2
+                                    triggerCentralFreq,    #3
+                                    triggerBandwidth,      #4
+                                    triggerDuration,       #5
+                                    kurveAngle,            #6
+                                    zScoreBP,              #7
+                                    zScoreCM,              #8
+                                    relativeTimeBP,        #9
+                                    relativeFreqBP,       #10
+                                    relativeTimeCM,       #11
+                                    relativeFreqCM,       #12
+                                    snrEstimate,          #13
+                                    spanTnorm,            #14
+                                    spanFnorm]            #15
             glitchDatabase.append(glitchDatabaseEntry)
         spinner.closeSpinner()
         return glitchDatabase
