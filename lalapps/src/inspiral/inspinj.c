@@ -1896,7 +1896,7 @@ int main( int argc, char *argv[] )
 
   /* check if the mass area is properly specified */
   if ( mDistr!=gaussianMassDist && (minMass1 <=0.0 || minMass2 <=0.0 || 
-        maxMass1 <=0.0 || maxMass2 <=0.0) )
+	 maxMass1 <=0.0 || maxMass2 <=0.0) )
   {
     fprintf( stderr, 
         "Must specify --min-mass1/2 and --max-mass1/2 if choosing"
@@ -2145,9 +2145,16 @@ int main( int argc, char *argv[] )
       simTable->longitude = longitude;
       simTable->latitude = latitude;
     }
-    else
+    else if (lDistr == uniformSkyLocation)
     {
       simTable=XLALRandomInspiralSkyLocation(simTable, randParams); 
+    }
+    else
+    {
+      fprintf( stderr,
+	       "Unknown location distribution specified. Possible choices: "
+	       "source, exttrig, random or fixed\n" );
+      exit( 1 );
     }
 
     /* populate orientations */
