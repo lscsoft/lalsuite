@@ -147,7 +147,7 @@ def science_segments(ifo, config, generate_segments = True):
   segFindCall = executable 
   segFindCall = ' '.join([ segFindCall,
 	"--query-segments",
-	"--segment", config.get("segfind", "server"),
+	"--segment-url", config.get("segfind", "server"),
 	"--gps-start-time", start,
 	"--gps-end-time", end,
 	"--include-segments",
