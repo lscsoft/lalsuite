@@ -2856,7 +2856,7 @@ class candidateList:
                                     spanTnorm,            #14
                                     spanFnorm]            #15
             glitchDatabaseEntry=newGlitchDatabaseEntry
-            glitachDatabase.append(glitchDatabaseEntry)
+            glitchDatabase.append(glitchDatabaseEntry)
         spinner.closeSpinner()
         return glitchDatabase
         #End createGraphingSummary
