@@ -33,6 +33,7 @@
 #include <pulsar_crosscorr.h>
 #include <lal/PulsarCrossCorr.h>
 #include <lal/DopplerScan.h>
+#include <lal/ExtrapolatePulsarSpins.h>
 #include <gsl/gsl_permutation.h>
 
 RCSID( "$Id: pulsar_crosscorr.c,v 1.23 2009/03/13 00:43:04 cchung Exp $");
@@ -46,7 +47,7 @@ BOOLEAN  uvar_help;
 BOOLEAN  uvar_averagePsi;
 BOOLEAN  uvar_averageIota;
 BOOLEAN  uvar_autoCorrelate;
-BOOLEAN  uvar_spindownParams;
+BOOLEAN  uvar_QCoeffs;
 INT4     uvar_blocksRngMed; 
 INT4     uvar_detChoice;
 REAL8    uvar_startTime, uvar_endTime;
@@ -58,13 +59,13 @@ REAL8    uvar_maxlag;
 REAL8    uvar_psi;
 REAL8    uvar_refTime;
 REAL8    uvar_cosi;
-REAL8    uvar_epsilon;
-REAL8    uvar_magfield;
+REAL8    uvar_q1;
+REAL8    uvar_q2;
 REAL8    uvar_brakingindex;
-REAL8    uvar_epsilonBand;
-REAL8    uvar_epsilonResolution;
-REAL8    uvar_magfieldBand;
-REAL8    uvar_magfieldResolution;
+REAL8    uvar_q1Band;
+REAL8    uvar_q1Resolution;
+REAL8    uvar_q2Band;
+REAL8    uvar_q2Resolution;
 REAL8    uvar_brakingindexBand;
 REAL8    uvar_brakingindexResolution;
 
@@ -100,6 +101,8 @@ CHAR     *uvar_filenameOut=NULL;
 
 #define SQUARE(x) (x*x)
 #define CUBE(x) (x*x*x)
+
+#define INIT_MEM(x) memset(&(x), 0, sizeof((x)))
 
 #define N_SPINDOWN_DERIVS 6
 
@@ -167,8 +170,8 @@ int main(int argc, char *argv[]){
   /* frequency derivative array, if we search over q1, q2, n */
   INT4 nq1Loops = 1, nq2Loops = 1, nnLoops = 1;
   INT4 q1Counter = 0, q2Counter = 0, nCounter = 0;
-  REAL8 eps_current = 0.0, mag_current = 0.0, n_current = 0.0;
-  REAL8 delta_eps = 0.0, delta_mag = 0.0, delta_n = 0.0;
+  REAL8 q1_current = 0.0, q2_current = 0.0, n_current = 0.0;
+  REAL8 delta_q1 = 0.0, delta_q2 = 0.0, delta_n = 0.0;
   REAL8Vector *fdots = NULL;
 
   INT4 paramCounter = 0;
@@ -278,8 +281,8 @@ int main(int argc, char *argv[]){
     exit(1);
   }
 
-  if (uvar_spindownParams) {
-    fprintf(fp, "##Alpha\tDelta\tFrequency\tEpsilon\tB Field (T)\tBraking Index\tNormalised Power\n");
+  if (uvar_QCoeffs) {
+    fprintf(fp, "##Alpha\tDelta\tFrequency\tQ1\tQ2\tBraking Index\tNormalised Power\n");
   }
   else {
     fprintf(fp, "##Alpha\tDelta\tFrequency\t Fdot \t Fddot \t Normalised Power\n");
@@ -343,21 +346,21 @@ int main(int argc, char *argv[]){
   /*get number of frequency loops*/
   nfreqLoops = ceil(uvar_fBand/uvar_fResolution);
   /* if we are using spindown parameters, initialise the fdots array */
-  if (uvar_spindownParams) {
+  if (uvar_QCoeffs) {
 
     fdots = (REAL8Vector *)LALCalloc(1, sizeof(REAL8Vector));
     fdots->length = N_SPINDOWN_DERIVS;
     fdots->data = (REAL8 *)LALCalloc(fdots->length, sizeof(REAL8));
 
-    nq1Loops = 1 + (INT4)ceil(uvar_epsilonBand/uvar_epsilonResolution);
+    nq1Loops = 1 + (INT4)ceil(uvar_q1Band/uvar_q1Resolution);
     
-    nq2Loops = 1 + ceil(uvar_magfieldBand/uvar_magfieldResolution);
+    nq2Loops = 1 + ceil(uvar_q2Band/uvar_q2Resolution);
 
     nnLoops = 1 + ceil(uvar_brakingindexBand/uvar_brakingindexResolution);
 
-    delta_eps = uvar_epsilonResolution;
+    delta_q1 = uvar_q1Resolution;
   
-    delta_mag = uvar_magfieldResolution;
+    delta_q2 = uvar_q2Resolution;
 
     delta_n = uvar_brakingindexResolution; 
   }
@@ -444,7 +447,7 @@ int main(int argc, char *argv[]){
   }
 
   /* initialise output arrays */
-  if (uvar_spindownParams) {
+  if (uvar_QCoeffs) {
     nParams = nSkyPatches * nfreqLoops *nfdotLoops * nfddotLoops;
   } else {
     nParams = nSkyPatches * nfreqLoops * nq1Loops * nq2Loops * nnLoops;
@@ -461,11 +464,85 @@ int main(int argc, char *argv[]){
   detChoice = uvar_detChoice;
 
 
-  /* add wings for Doppler modulation and running median block size */
-  /* remove fBand from doppWings because we are going bin-by-bin (?) */
-  doppWings = (uvar_f0 + (freqCounter*deltaF_SFT)) * VTOT;
-  fMin = uvar_f0 - doppWings - uvar_blocksRngMed * deltaF_SFT;
-  fMax = uvar_f0 + uvar_fBand + doppWings + uvar_blocksRngMed * deltaF_SFT;
+  {
+    /* block for calculating frequency range to reag from SFTs */
+    /* user specifies freq and fdot range at reftime
+       we translate this range of fdots to start and endtime and find
+       the largest frequency band required to cover the 
+       frequency evolution  */
+    PulsarSpinRange spinRange_startTime; /**< freq and fdot range at start-time of observation */
+    PulsarSpinRange spinRange_endTime;   /**< freq and fdot range at end-time of observation */
+    PulsarSpinRange spinRange_refTime;   /**< freq and fdot range at the reference time */
+
+    REAL8 startTime_freqLo, startTime_freqHi, endTime_freqLo, endTime_freqHi, freqLo, freqHi;
+
+    REAL8Vector *fdotsMin=NULL;
+    REAL8Vector *fdotsMax=NULL;
+
+    UINT4 k;
+
+    fdotsMin = (REAL8Vector *)LALCalloc(1, sizeof(REAL8Vector));
+    fdotsMin->length = N_SPINDOWN_DERIVS;
+    fdotsMin->data = (REAL8 *)LALCalloc(fdotsMin->length, sizeof(REAL8));
+
+    fdotsMax = (REAL8Vector *)LALCalloc(1, sizeof(REAL8Vector));
+    fdotsMax->length = N_SPINDOWN_DERIVS;
+    fdotsMax->data = (REAL8 *)LALCalloc(fdotsMax->length, sizeof(REAL8));
+
+    INIT_MEM(spinRange_startTime);
+    INIT_MEM(spinRange_endTime);
+    INIT_MEM(spinRange_refTime);
+
+    spinRange_refTime.refTime = refTime;
+    spinRange_refTime.fkdot[0] = uvar_f0;
+    spinRange_refTime.fkdotBand[0] = uvar_fBand;
+
+    /* this assumes that user input parameter ranges such as uvar_fBand are positive */
+    if (uvar_QCoeffs) {
+
+      LAL_CALL (CalculateFdots (&status, fdotsMin, uvar_f0, uvar_q1, 
+				uvar_q2, uvar_brakingindex), &status);
+
+      LAL_CALL (CalculateFdots (&status, fdotsMax, uvar_f0 + uvar_fBand, 
+				uvar_q1 + uvar_q1Band, uvar_q2 + uvar_q2Band, 
+				uvar_brakingindex + uvar_brakingindexBand), &status); 
+
+      for (k = 1; k < fdotsMin->length; k++) {
+	spinRange_refTime.fkdot[k] = fdotsMin->data[k-1];
+	spinRange_refTime.fkdotBand[k] = fdotsMax->data[k-1] - fdotsMin->data[k-1];
+      }
+
+    }
+    else {
+      spinRange_refTime.fkdot[1] = uvar_fdot;
+      spinRange_refTime.fkdotBand[1] = uvar_fdotBand;
+
+      spinRange_refTime.fkdot[2] = uvar_fddot;
+      spinRange_refTime.fkdotBand[2] = uvar_fddotBand;
+    }
+
+    LAL_CALL( LALExtrapolatePulsarSpinRange( &status, &spinRange_startTime, firstTimeStamp, &spinRange_refTime), &status); 
+    LAL_CALL( LALExtrapolatePulsarSpinRange( &status, &spinRange_endTime, lastTimeStamp, &spinRange_refTime), &status); 
+
+    startTime_freqLo = spinRange_startTime.fkdot[0]; /* lowest search freq at start time */
+    startTime_freqHi = startTime_freqLo + spinRange_startTime.fkdotBand[0]; /* highest search freq. at start time*/
+    endTime_freqLo = spinRange_endTime.fkdot[0];
+    endTime_freqHi = endTime_freqLo + spinRange_endTime.fkdotBand[0];
+
+    /* freqLo = min of low frequencies and freqHi = max of high frequencies */
+    freqLo = startTime_freqLo < endTime_freqLo ? startTime_freqLo : endTime_freqLo;
+    freqHi = startTime_freqHi > endTime_freqHi ? startTime_freqHi : endTime_freqHi; 
+
+    /* add wings for Doppler modulation and running median block size */
+    /* remove fBand from doppWings because we are going bin-by-bin (?) */
+    
+    doppWings = freqHi * VTOT;
+    fMin = freqLo - doppWings - uvar_blocksRngMed * deltaF_SFT;
+    fMax = freqHi + doppWings + uvar_blocksRngMed * deltaF_SFT;
+
+    XLALDestroyREAL8Vector(fdotsMin);
+    XLALDestroyREAL8Vector(fdotsMax);
+  }
 
 
   slidingcounter = 0;
@@ -532,7 +609,7 @@ int main(int argc, char *argv[]){
     if (listLength > 1) {
 
       while (paramCounter < nParams) {
-        if (uvar_spindownParams) {
+        if (uvar_QCoeffs) {
   	  skyCounter++;
 	  if (skyCounter == nSkyPatches) {
 	    skyCounter = 0;
@@ -551,8 +628,8 @@ int main(int argc, char *argv[]){
 	    freqCounter++;
           }
 
-          eps_current = uvar_epsilon + (delta_eps*q1Counter);
-          mag_current = uvar_magfield + (delta_mag*q2Counter);
+          q1_current = uvar_q1 + (delta_q1*q1Counter);
+          q2_current = uvar_q2 + (delta_q2*q2Counter);
           n_current = uvar_brakingindex + (delta_n*nCounter);
 
 
@@ -577,7 +654,7 @@ int main(int argc, char *argv[]){
 
         f_current = uvar_f0 + (uvar_fResolution*freqCounter);
  
-   	LAL_CALL( InitDoppParams(&status, fdots, &thisPoint, refTime, f_current, eps_current, mag_current, n_current,
+   	LAL_CALL( InitDoppParams(&status, fdots, &thisPoint, refTime, f_current, q1_current, q2_current, n_current,
 				 fdot_current, fddot_current), &status);
 
        /* set sky positions and skypatch sizes  */
@@ -726,17 +803,17 @@ int main(int argc, char *argv[]){
 
     f_current = uvar_f0 + (uvar_fResolution*freqCounter);
 
-    if (uvar_spindownParams) { /*if searching over q1, q2, n*/
+    if (uvar_QCoeffs) { /*if searching over q1, q2, n*/
  
         /* Q1 loop */
 	for (q1Counter = 0; q1Counter < nq1Loops; q1Counter++) {
 
-	  eps_current = uvar_epsilon + (delta_eps*q1Counter);
+	  q1_current = uvar_q1 + (delta_q1*q1Counter);
 
 	  /* Q2 loop */
 	  for (q2Counter = 0; q2Counter < nq2Loops; q2Counter++) {
 
-	    mag_current = uvar_magfield + (delta_mag*q2Counter);
+	    q2_current = uvar_q2 + (delta_q2*q2Counter);
 
   	    /* n loop */
 	    for (nCounter = 0; nCounter < nnLoops; nCounter++) {
@@ -752,7 +829,7 @@ int main(int argc, char *argv[]){
 	        rho->data[counter] = rho->data[counter]/sqrt(stddev->data[counter]);
 	        fprintf(fp, "%1.5f\t %1.5f\t %1.5f\t %e\t %e\t %e\t %1.10f\n", thisPoint.Alpha,
 		thisPoint.Delta, f_current,
-		eps_current, mag_current, n_current, rho->data[counter]);
+		q1_current, q2_current, n_current, rho->data[counter]);
 	        counter++;
  	      }
 	    } /*end n loop*/
@@ -804,7 +881,7 @@ int main(int argc, char *argv[]){
   XLALDestroyREAL8Vector(stddev);
   XLALDestroyREAL8Vector(rho);
 
-  if (uvar_spindownParams) {
+  if (uvar_QCoeffs) {
     XLALDestroyREAL8Vector(fdots);
   }
 
@@ -969,8 +1046,8 @@ void InitDoppParams(LALStatus *status,
 		    PulsarDopplerParams *thisPoint,
 		    LIGOTimeGPS refTime,
   		    REAL8 f_current,
- 		    REAL8 eps_current,
-		    REAL8 mag_current,
+ 		    REAL8 q1_current,
+		    REAL8 q2_current,
 	 	    REAL8 n_current,
 		    REAL8 fdot_current,
 		    REAL8 fddot_current) 
@@ -984,10 +1061,10 @@ void InitDoppParams(LALStatus *status,
 
     /**************** Option 1: Searching over spindown parameters ******************/
 
-    if (uvar_spindownParams) { /*if searching over q1, q2, n*/
+    if (uvar_QCoeffs) { /*if searching over q1, q2, n*/
 
 
-           CalculateFdots(status->statusPtr, fdots, f_current, eps_current, mag_current, n_current);
+           CalculateFdots(status->statusPtr, fdots, f_current, q1_current, q2_current, n_current);
             /* initialize Doppler parameters of the potential source */
  	    thisPoint->fkdot[0] = f_current;
  	    for (i=1; i < PULSAR_MAX_SPINS; i++) {
@@ -1001,10 +1078,10 @@ void InitDoppParams(LALStatus *status,
    
 	    /* initialize Doppler parameters of the potential source */
 
+	    INIT_MEM( thisPoint->fkdot );
 	    thisPoint->fkdot[0] = f_current;
 	    thisPoint->fkdot[1] = fdot_current; 
 	    thisPoint->fkdot[2] = fddot_current;
-	    thisPoint->fkdot[3] = 0.0;
 	    thisPoint->refTime = refTime;
     } /*endelse*/
 
@@ -1380,12 +1457,11 @@ void DeleteBeamFnHead (LALStatus *status,
 void CalculateFdots (LALStatus *status,
 		     REAL8Vector *fdots,
 		     REAL8 f0,
-		     REAL8 epsilon,
-		     REAL8 magfield,
+		     REAL8 q1,
+		     REAL8 q2,
 		     REAL8 n)
 {
   REAL8 grav, rstar, inertia, c, mu0;
-  REAL8 q1, q2;
 
 
   INITSTATUS (status, "CalculateFdots", rcsid);
@@ -1400,12 +1476,12 @@ void CalculateFdots (LALStatus *status,
   inertia = 0.4*1.4*1.99e30*rstar*rstar;
   mu0 = 1.2566e-6;
 
-  q1 = 32*grav*inertia*SQUARE(LAL_PI)*SQUARE(LAL_PI)*SQUARE(epsilon)/(5*CUBE(c)*SQUARE(c));
+  /*q1 = 32*grav*inertia*SQUARE(LAL_PI)*SQUARE(LAL_PI)*SQUARE(epsilon)/(5*CUBE(c)*SQUARE(c));
 
   q2 = 2*CUBE(LAL_PI)*CUBE(rstar)*CUBE(rstar)*SQUARE(magfield)/(3*mu0*inertia*CUBE(c));
-
+  */
   /* multiply q2 by the (pi R/c)^n-3 term*/
-  q2 = q2*pow(LAL_PI*rstar/c, n-3);
+  /*q2 = q2*pow(LAL_PI*rstar/c, n-3);*/
 
   /* hard code each derivative. symbolic differentiation too hard? */
   fdots->data[0] = -(q1 * pow(f0, 5)) - (q2 * pow(f0, n));
@@ -1430,7 +1506,7 @@ void CalculateFdots (LALStatus *status,
 			  + 4.0*(n-1)*n*pow(f0,n-2)*fdots->data[0]*fdots->data[2] + n*pow(f0, n-1)*fdots->data[3]);
 
   fdots->data[5] = -q1 * (120.0*pow(fdots->data[0],5) + 1200.0*f0*CUBE(fdots->data[0])*fdots->data[1] 
-			  + 900.0*SQUARE(f0)*fdots->data[0]*SQUARE(fdots->data[1]) + 600.0*SQUARE(f0)*SQUARE(fdots->data[0])*fdots->data[2]
+		  + 900.0*SQUARE(f0)*fdots->data[0]*SQUARE(fdots->data[1]) + 600.0*SQUARE(f0)*SQUARE(fdots->data[0])*fdots->data[2]
 			  + 200.0*CUBE(f0)*fdots->data[1]*fdots->data[2] + 100.0*CUBE(f0)*fdots->data[0]*fdots->data[3]
 			  + 5.0*pow(f0,4)*fdots->data[4])
 		   -q2 * ((n-4)*(n-3)*(n-2)*(n-1)*n*pow(f0,n-5)*pow(fdots->data[0],5) 
@@ -1474,13 +1550,14 @@ void initUserVars (LALStatus *status)
   ATTATCHSTATUSPTR (status);
 
 
+
   uvar_maxlag = 0;
 
   uvar_help = FALSE;
   uvar_averagePsi = TRUE;
   uvar_averageIota = TRUE;
   uvar_autoCorrelate = FALSE;
-  uvar_spindownParams = FALSE;
+  uvar_QCoeffs = FALSE;
   uvar_blocksRngMed = BLOCKSRNGMED;
   uvar_detChoice = 2;
   uvar_f0 = F0;
@@ -1499,12 +1576,12 @@ void initUserVars (LALStatus *status)
   uvar_psi = 0.0;
   uvar_refTime = 0.0;
   uvar_cosi = 0.0;
-  uvar_epsilon = 1e-5;
-  uvar_epsilonBand = 0.0;
-  uvar_epsilonResolution = uvar_epsilon/10.0;
-  uvar_magfield = 1e9;
-  uvar_magfieldBand = 0.0;
-  uvar_magfieldResolution = uvar_magfield/10.0;
+  uvar_q1 = 1e-24;
+  uvar_q1Band = 0.0;
+  uvar_q1Resolution = 1e-25;
+  uvar_q2 = 1e-20;
+  uvar_q2Band = 0.0;
+  uvar_q2Resolution = 1e-21;
   uvar_brakingindex = 3;
   uvar_brakingindexBand = 0.0;
   uvar_brakingindexResolution = uvar_brakingindex/10.0;
@@ -1645,30 +1722,30 @@ void initUserVars (LALStatus *status)
 			  0, UVAR_OPTIONAL,
 			  "cos(iota) inclination angle",
 			  &uvar_cosi); 
-  LALRegisterREALUserVar( status->statusPtr, "epsilon",
+  LALRegisterREALUserVar( status->statusPtr, "q1",
 			  0, UVAR_OPTIONAL,
-			  "Start pulsar ellipticity",
-			  &uvar_epsilon); 
-  LALRegisterREALUserVar( status->statusPtr, "epsilonBand",
+			  "Starting Q1 value",
+			  &uvar_q1); 
+  LALRegisterREALUserVar( status->statusPtr, "q1Band",
 			  0, UVAR_OPTIONAL,
-			  "Pulsar ellipticity search band",
-			  &uvar_epsilonBand); 
-  LALRegisterREALUserVar( status->statusPtr, "epsilonRes",
+			  "Q1 search band",
+			  &uvar_q1Band); 
+  LALRegisterREALUserVar( status->statusPtr, "q1Res",
 			  0, UVAR_OPTIONAL,
 			  "Pulsar ellipticity search resolution",
-			  &uvar_epsilonResolution); 
-  LALRegisterREALUserVar( status->statusPtr, "magfield",
+			  &uvar_q1Resolution); 
+  LALRegisterREALUserVar( status->statusPtr, "q2",
 			  0, UVAR_OPTIONAL,
-			  "Start pulsar magnetic field (T)",
-			  &uvar_magfield); 
-  LALRegisterREALUserVar( status->statusPtr, "magfieldBand",
+			  "Starting Q2 value",
+			  &uvar_q2); 
+  LALRegisterREALUserVar( status->statusPtr, "q2Band",
 			  0, UVAR_OPTIONAL,
-			  "Pulsar magnetic field search band (T)",
-			  &uvar_magfieldBand); 
-  LALRegisterREALUserVar( status->statusPtr, "magfieldRes",
+			  "Q2 search band",
+			  &uvar_q2Band); 
+  LALRegisterREALUserVar( status->statusPtr, "q2Res",
 			  0, UVAR_OPTIONAL,
-			  "Pulsar magnetic field search resolution (T)",
-			  &uvar_magfieldResolution); 
+			  "Q2 search resolution",
+			  &uvar_q2Resolution); 
   LALRegisterREALUserVar( status->statusPtr, "braking",
 			  0, UVAR_OPTIONAL,
 			  "Pulsar electromagnetic braking index",
@@ -1681,10 +1758,10 @@ void initUserVars (LALStatus *status)
 			  0, UVAR_OPTIONAL,
 			  "Pulsar electromagnetic braking index search resolution",
 			  &uvar_brakingindexResolution); 
-  LALRegisterBOOLUserVar( status->statusPtr, "spindownParams",
+  LALRegisterBOOLUserVar( status->statusPtr, "useQCoeffs",
 			  0, UVAR_OPTIONAL,
 			  "Search over pulsar spindown parameters instead of frequency derivatives",
-			  &uvar_spindownParams); 
+			  &uvar_QCoeffs); 
 
 
   DETATCHSTATUSPTR (status);

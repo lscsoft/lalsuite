@@ -1,7 +1,5 @@
-dnl $Id$
-dnl process this file with m4 to get installation instructions
 INSTALLATION INSTRUCTIONS
-changequote(@@,@@)
+
 This file describes how to perform a basic install of LAL.
 
 1. PRE-INSTALLATION

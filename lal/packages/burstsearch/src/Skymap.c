@@ -227,10 +227,53 @@ static double det22(double a[2][2])
     return a[0][0] * a[1][1] - a[0][1] * a[1][0];
 }
 
-/* log functions */
+/* log functions
+ *
+ * These functions assist in working with values that might overflow if we
+ * ever explicitly constructed their exponentials.
+ */
 
-/* declare the C99 function log1p to suppress warning */
+/* 
+ * FIXME: when the C99 transition is complete, remove log1p declaration 
+ */
+
+/* 
+ * declare the C99 function log1p to suppress warning
+ *
+ * log1p(x) = log(1 + x), but is more accurate for |x| << 1
+ */
 double log1p(double x);
+
+/* 
+ * XLALSkymapLogSumExp(a, b) computes log(exp(a) + exp(b)) but will not
+ * overflow for a or b > ~300
+ *
+ * For a > b, we use the identity
+ *
+ * log(exp(a) + exp(b)
+ *     = log(exp(a) * (1 + exp(b) / exp(a)))
+ *     = a + log(1 + exp(b - a))
+ *     = a + log1p(exp(b - a))
+ *
+ * where b - a < 0 and exp(b - a) cannot overflow (though it may 
+ * underflow).
+ *
+ * And for a < b
+ *
+ * log(exp(a) + exp(b))
+ *     = log(exp(b) * (exp(a) / exp(b) + 1))
+ *     = b + log(exp(a - b) + 1)
+ *     = b + log1p(exp(a - b))
+ *
+ * If neither a < b nor a > b, we either have equality or both values
+ * are (the same) plus or minus infinity.  Forming (a - b) in the case of
+ * infinities results in a NaN, so we must use a third expression
+ * 
+ * log(exp(a) + exp(b)) 
+ *     = log(exp(a) + exp(a))
+ *     = log(2 * exp(a))
+ *     = log(2) + a
+ */
 
 double XLALSkymapLogSumExp(double a, double b)
 {
@@ -314,6 +357,30 @@ static void construct_pixel(XLALSkymapPixelType* pixel)
 
 /* properties of a network and a sample rate */
 
+/*
+ * These functions convert between integer time delays that index a 
+ * conceptual three-dimensional array, and a linear index corresponding
+ * to how the array is actually packed in memory
+ *
+ * For a simple L x M x N array, the indices (i, j, k) map to a linear 
+   index
+ *     
+ *     p = (M * N) * i + N * j + k
+ *
+ * To store pixels, we have an array with
+ *
+ *     L = 2                 (hemispheres)
+ *     M = 2 * plan->hv + 1  (delays from -plan->hv to +plan->hv)
+ *     N = 2 * plan->hl + 1  (delays from -plan->hl to +plan->hl)
+ *
+ * and indices that are offset delays (so that they are >= 0)
+ *
+ *     i = hemisphere
+ *     j = hv + plan->hv
+ *     k = hl + plan->hl
+ *
+ */
+
 static int index_from_delays(XLALSkymapPlanType* plan, int hl, int hv, int hemisphere)
 {
     return
@@ -358,6 +425,7 @@ int XLALSkymapIndexFromDirection(XLALSkymapPlanType* plan, double direction[3])
     return index_from_delays(plan, i[0], i[1], i[2]); 
 }
 
+/* deprecated legacy interface */
 XLALSkymapPlanType* XLALSkymapConstructPlan(int sampleFrequency)
 {
     return XLALSkymapConstructPlanMN(sampleFrequency, 1024, 2048);
@@ -365,7 +433,7 @@ XLALSkymapPlanType* XLALSkymapConstructPlan(int sampleFrequency)
 
 XLALSkymapPlanType* XLALSkymapConstructPlanMN(int sampleFrequency, int m, int n)
 {
-    static const char func[] = "XLALSkymapConstructPlan";
+    static const char func[] = "XLALSkymapConstructPlanMN";
     XLALSkymapPlanType* plan;
 
     if (sampleFrequency <= 0)
