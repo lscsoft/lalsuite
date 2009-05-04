@@ -2855,26 +2855,6 @@ class candidateList:
                                     snrEstimate,          #13
                                     spanTnorm,            #14
                                     spanFnorm]            #15
-                                    
-            oldGlitchDatabaseEntry=[triggerStartString,            #0,1
-                                 triggerStartFloat,             #2
-                                 triggerLowF,                   #3
-                                 triggerDuration,               #4
-                                 triggerBandwidth,              #5
-                                 int(triggerLength),            #6
-                                 triggerIntegratedPower,        #7
-                                 meanPixelPower,                #8
-                                 varPixelPower,                 #9
-                                 relativeTimeBP+unitTraitOffset,#10
-                                 relativeFreqBP+unitTraitOffset,#11
-                                 zScoreBP+zScoreTraitOffset,    #12
-                                 relativeTimeCM+unitTraitOffset,#13
-                                 relativeFreqCM+unitTraitOffset,#14
-                                 zScoreCM+zScoreTraitOffset,    #15
-                                 spanTnorm+unitTraitOffset,     #16
-                                 spanFnorm+unitTraitOffset,     #17
-                                 snrEstimate]                   #18
-
             glitchDatabaseEntry=newGlitchDatabaseEntry
             glitachDatabase.append(glitchDatabaseEntry)
         spinner.closeSpinner()
