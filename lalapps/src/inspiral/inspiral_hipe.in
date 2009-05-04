@@ -172,7 +172,7 @@ def analyze_ifo(ifo_name,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
     data_opts = 'ligo-data'
     try: 
       type = cp.get('input','ligo-type')
-      if (type == 'RDS_R_L4') or ('RDS_C' in type):
+      if (type == 'RDS_R_L4') or ('RDS_C' in type) or ('DMT_C' in type):
         type = ifo_name + '_' + type
     except: type = None
     channel = cp.get('input','ligo-channel')
