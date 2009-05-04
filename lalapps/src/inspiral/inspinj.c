@@ -241,7 +241,7 @@ static void print_usage(char *program)
       "  --gps-start-time start   GPS start time for injections\n"\
       "  --gps-end-time end       GPS end time for injections\n"\
       "  [--time-step] step       space injections by average of step seconds\n"\
-      "                           (default : 2630 / pi seconds)\n"\
+      "                           (suggestion : 2630 / pi seconds)\n"\
       "  [--time-interval] int    distribute injections in an interval, int s\n"\
       "                           (default : 0 seconds)\n"\
       "\n"\
@@ -871,7 +871,7 @@ int main( int argc, char *argv[] )
   LIGOTimeGPS currentGpsTime;
   long gpsDuration;
 
-  REAL8 meanTimeStep = 2630 / LAL_PI; /* seconds between injections     */
+  REAL8 meanTimeStep = -1;
   REAL8 timeInterval = 0;
   REAL4 fLower = -1;
   REAL4 eps=0.01;  /* needed for some awkward spinning injections */
@@ -2014,6 +2014,13 @@ int main( int argc, char *argv[] )
           "Minimal kappa must be less than maximal kappa\n" );
       exit( 1 );
     }
+  }
+
+  if (meanTimeStep<=0)
+  {
+    fprintf( stderr,
+	     "Minimum time step value must be larger than zero\n" );
+    exit( 1 );
   }
 
   
