@@ -1885,8 +1885,8 @@ int main( int argc, char *argv[] )
 
 
   /* check for gaussian mass distribution parameters */
-  if ( mDistr==gaussianMassDist && (meanMass1 < 0.0 || massStdev1 < 0.0 || 
-        meanMass2 < 0.0 || massStdev2 < 0.0))
+  if ( mDistr==gaussianMassDist && (meanMass1 <= 0.0 || massStdev1 <= 0.0 || 
+        meanMass2 <= 0.0 || massStdev2 <= 0.0))
   {
     fprintf( stderr, 
         "Must specify --mean-mass1/2 and --stdev-mass1/2 if choosing"
@@ -1895,8 +1895,8 @@ int main( int argc, char *argv[] )
   }
 
   /* check if the mass area is properly specified */
-  if ( mDistr!=gaussianMassDist && (minMass1 <0.0 || minMass2 <0.0 || 
-        maxMass1 <0.0 || maxMass2 <0.0) )
+  if ( mDistr!=gaussianMassDist && (minMass1 <=0.0 || minMass2 <=0.0 || 
+        maxMass1 <=0.0 || maxMass2 <=0.0) )
   {
     fprintf( stderr, 
         "Must specify --min-mass1/2 and --max-mass1/2 if choosing"
