@@ -465,12 +465,29 @@ int main(int argc, char *argv[]){
 
 
   {
-
+    /* block for calculating frequency range to reag from SFTs */
+    /* user specifies freq and fdot range at reftime
+       we translate this range of fdots to start and endtime and find
+       the largest frequency band required to cover the 
+       frequency evolution  */
     PulsarSpinRange spinRange_startTime; /**< freq and fdot range at start-time of observation */
     PulsarSpinRange spinRange_endTime;   /**< freq and fdot range at end-time of observation */
     PulsarSpinRange spinRange_refTime;   /**< freq and fdot range at the reference time */
 
     REAL8 startTime_freqLo, startTime_freqHi, endTime_freqLo, endTime_freqHi, freqLo, freqHi;
+
+    REAL8Vector *fdotsMin=NULL;
+    REAL8Vector *fdotsMax=NULL;
+
+    UINT4 k;
+
+    fdotsMin = (REAL8Vector *)LALCalloc(1, sizeof(REAL8Vector));
+    fdotsMin->length = N_SPINDOWN_DERIVS;
+    fdotsMin->data = (REAL8 *)LALCalloc(fdotsMin->length, sizeof(REAL8));
+
+    fdotsMax = (REAL8Vector *)LALCalloc(1, sizeof(REAL8Vector));
+    fdotsMax->length = N_SPINDOWN_DERIVS;
+    fdotsMax->data = (REAL8 *)LALCalloc(fdotsMax->length, sizeof(REAL8));
 
     INIT_MEM(spinRange_startTime);
     INIT_MEM(spinRange_endTime);
@@ -478,11 +495,31 @@ int main(int argc, char *argv[]){
 
     spinRange_refTime.refTime = refTime;
     spinRange_refTime.fkdot[0] = uvar_f0;
-    spinRange_refTime.fkdot[1] = uvar_fdot;
-    spinRange_refTime.fkdot[2] = uvar_fddot;
     spinRange_refTime.fkdotBand[0] = uvar_fBand;
-    spinRange_refTime.fkdotBand[1] = uvar_fdotBand;
-    spinRange_refTime.fkdotBand[2] = uvar_fddotBand;
+
+    /* this assumes that user input parameter ranges such as uvar_fBand are positive */
+    if (uvar_QCoeffs) {
+
+      LAL_CALL (CalculateFdots (&status, fdotsMin, uvar_f0, uvar_q1, 
+				uvar_q2, uvar_brakingindex), &status);
+
+      LAL_CALL (CalculateFdots (&status, fdotsMax, uvar_f0 + uvar_fBand, 
+				uvar_q1 + uvar_q1Band, uvar_q2 + uvar_q2Band, 
+				uvar_brakingindex + uvar_brakingindexBand), &status); 
+
+      for (k = 1; k < fdotsMin->length; k++) {
+	spinRange_refTime.fkdot[k] = fdotsMin->data[k-1];
+	spinRange_refTime.fkdotBand[k] = fdotsMax->data[k-1] - fdotsMin->data[k-1];
+      }
+
+    }
+    else {
+      spinRange_refTime.fkdot[1] = uvar_fdot;
+      spinRange_refTime.fkdotBand[1] = uvar_fdotBand;
+
+      spinRange_refTime.fkdot[2] = uvar_fddot;
+      spinRange_refTime.fkdotBand[2] = uvar_fddotBand;
+    }
 
     LAL_CALL( LALExtrapolatePulsarSpinRange( &status, &spinRange_startTime, firstTimeStamp, &spinRange_refTime), &status); 
     LAL_CALL( LALExtrapolatePulsarSpinRange( &status, &spinRange_endTime, lastTimeStamp, &spinRange_refTime), &status); 
@@ -503,6 +540,8 @@ int main(int argc, char *argv[]){
     fMin = freqLo - doppWings - uvar_blocksRngMed * deltaF_SFT;
     fMax = freqHi + doppWings + uvar_blocksRngMed * deltaF_SFT;
 
+    XLALDestroyREAL8Vector(fdotsMin);
+    XLALDestroyREAL8Vector(fdotsMax);
   }
 
 
