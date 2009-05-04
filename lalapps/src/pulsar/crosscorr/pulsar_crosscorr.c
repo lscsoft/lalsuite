@@ -33,6 +33,7 @@
 #include <pulsar_crosscorr.h>
 #include <lal/PulsarCrossCorr.h>
 #include <lal/DopplerScan.h>
+#include <lal/ExtrapolatePulsarSpins.h>
 #include <gsl/gsl_permutation.h>
 
 RCSID( "$Id: pulsar_crosscorr.c,v 1.23 2009/03/13 00:43:04 cchung Exp $");
@@ -463,11 +464,33 @@ int main(int argc, char *argv[]){
   detChoice = uvar_detChoice;
 
 
-  /* add wings for Doppler modulation and running median block size */
-  /* remove fBand from doppWings because we are going bin-by-bin (?) */
-  doppWings = (uvar_f0 + (freqCounter*deltaF_SFT)) * VTOT;
-  fMin = uvar_f0 - doppWings - uvar_blocksRngMed * deltaF_SFT;
-  fMax = uvar_f0 + uvar_fBand + doppWings + uvar_blocksRngMed * deltaF_SFT;
+  {
+
+    PulsarSpinRange spinRange_startTime; /**< freq and fdot range at start-time of observation */
+    PulsarSpinRange spinRange_endTime;   /**< freq and fdot range at end-time of observation */
+    PulsarSpinRange spinRange_refTime;   /**< freq and fdot range at the reference time */
+
+    spinRange_refTime.refTime = refTime;
+    spinRange_refTime.fkdot[0] = uvar_f0;
+    spinRange_refTime.fkdot[1] = uvar_fdot;
+    spinRange_refTime.fkdot[2] = uvar_fddot;
+    spinRange_refTime.fkdotBand[0] = uvar_fBand;
+    spinRange_refTime.fkdotBand[1] = uvar_fdotBand;
+    spinRange_refTime.fkdotBand[2] = uvar_fddotBand;
+
+    LAL_CALL( LALExtrapolatePulsarSpinRange( &status, &spinRange_startTime, firstTimeStamp, &spinRange_refTime), &status); 
+    LAL_CALL( LALExtrapolatePulsarSpinRange( &status, &spinRange_endTime, lastTimeStamp, &spinRange_refTime), &status); 
+
+    
+    /* add wings for Doppler modulation and running median block size */
+    /* remove fBand from doppWings because we are going bin-by-bin (?) */
+    
+    doppWings = (uvar_f0 + (freqCounter*deltaF_SFT)) * VTOT;
+    fMin = uvar_f0 - doppWings - uvar_blocksRngMed * deltaF_SFT;
+    fMax = uvar_f0 + uvar_fBand + doppWings + uvar_blocksRngMed * deltaF_SFT;
+
+
+  }
 
 
   slidingcounter = 0;
