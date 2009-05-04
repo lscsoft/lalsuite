@@ -470,6 +470,12 @@ int main(int argc, char *argv[]){
     PulsarSpinRange spinRange_endTime;   /**< freq and fdot range at end-time of observation */
     PulsarSpinRange spinRange_refTime;   /**< freq and fdot range at the reference time */
 
+    REAL8 startTime_freqLo, startTime_freqHi, endTime_freqLo, endTime_freqHi, freqLo, freqHi;
+
+    INIT_MEM(spinRange_startTime);
+    INIT_MEM(spinRange_endTime);
+    INIT_MEM(spinRange_refTime);
+
     spinRange_refTime.refTime = refTime;
     spinRange_refTime.fkdot[0] = uvar_f0;
     spinRange_refTime.fkdot[1] = uvar_fdot;
@@ -481,14 +487,21 @@ int main(int argc, char *argv[]){
     LAL_CALL( LALExtrapolatePulsarSpinRange( &status, &spinRange_startTime, firstTimeStamp, &spinRange_refTime), &status); 
     LAL_CALL( LALExtrapolatePulsarSpinRange( &status, &spinRange_endTime, lastTimeStamp, &spinRange_refTime), &status); 
 
-    
+    startTime_freqLo = spinRange_startTime.fkdot[0]; /* lowest search freq at start time */
+    startTime_freqHi = startTime_freqLo + spinRange_startTime.fkdotBand[0]; /* highest search freq. at start time*/
+    endTime_freqLo = spinRange_endTime.fkdot[0];
+    endTime_freqHi = endTime_freqLo + spinRange_endTime.fkdotBand[0];
+
+    /* freqLo = min of low frequencies and freqHi = max of high frequencies */
+    freqLo = startTime_freqLo < endTime_freqLo ? startTime_freqLo : endTime_freqLo;
+    freqHi = startTime_freqHi > endTime_freqHi ? startTime_freqHi : endTime_freqHi; 
+
     /* add wings for Doppler modulation and running median block size */
     /* remove fBand from doppWings because we are going bin-by-bin (?) */
     
-    doppWings = (uvar_f0 + (freqCounter*deltaF_SFT)) * VTOT;
-    fMin = uvar_f0 - doppWings - uvar_blocksRngMed * deltaF_SFT;
-    fMax = uvar_f0 + uvar_fBand + doppWings + uvar_blocksRngMed * deltaF_SFT;
-
+    doppWings = freqHi * VTOT;
+    fMin = freqLo - doppWings - uvar_blocksRngMed * deltaF_SFT;
+    fMax = freqHi + doppWings + uvar_blocksRngMed * deltaF_SFT;
 
   }
 
