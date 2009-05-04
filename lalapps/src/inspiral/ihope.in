@@ -183,6 +183,13 @@ if opts.gps_end_time < opts.gps_start_time:
   print >> sys.stderr, "The GPS end time must be after the GPS start time"
   sys.exit(1)
 
+#FIXME: run hardware injections option will no longer work with the switch
+# to ligolw_segment_query. For now, will print error message and exit; once
+# fixed, remove this.
+if opts.run_hardware_injections:
+  print >> sys.stderr, "--run-hardware-injections currently does not work"
+  sys.exit(1)
+
 ##############################################################################
 # set up the analysis directory
 analysisDirectory = str(opts.gps_start_time) + "-" + str(opts.gps_end_time)
