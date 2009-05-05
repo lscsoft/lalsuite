@@ -297,8 +297,8 @@ LALGetCrabEphemeris	( LALStatus			*status,
   
   /* convert time in MJD to secs in TDB */
   for(i=0;i<j;i++){
-    /* GPStemp = (MJDVec[i]-44244.)*86400.; */
-    GPStemp = LALTDBMJDtoGPS(MJDVec[i]);
+    /* GPStemp = LALTDBMJDtoGPS(MJDVec[i]); */
+    GPStemp = LALTTMJDtoGPS(MJDVec[i]);
 
     MJDVec[i] = GPStemp + tArrVec[i];
     
@@ -384,7 +384,7 @@ LALComputeFreqDerivatives	( LALStatus			*status,
     f2 = -(15.0/(2.0*t1*t1*t1))*a - (3.0/(2.0*t1*t1))*b + (3.0/(4.0*t1))*c;
     f3 = (45.0/(2.0*t1*t1*t1*t1))*a + (3.0/(2.0*t1*t1*t1))*b - (15.0/(4.0*t1*t1))*c;
     f4 = -(45.0/(2.0*t1*t1*t1*t1*t1))*a + (15.0/(4.0*t1*t1*t1))*c;
-    
+
     output->f0->data[i-1] = f0;
     output->f1->data[i-1] = f1;
     output->f2->data[i-1] = f2;
@@ -479,11 +479,9 @@ LALTimingNoiseHeterodyne	( LALStatus  *status,
   /* Dt between time of data point and the epoch of the FIRST data point */
   /* epoch of the FIRST data point is always the GPS time of that point  */
   t = t - (REAL8)input->t0 + emit.deltaT;
-  
+
   /* Dt between time of data point and the epoch of that data point */
   t1 = t + (REAL8)input->t0 - (REAL8)params->epoch;
-
-  //fprintf(stderr, "params->epoch = %lf\n", params->epoch);
   
   /* calculate phase difference between signal with timing noise and one without */
   /* phi - phi0 */
