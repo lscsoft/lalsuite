@@ -333,6 +333,9 @@ void load_data(int detector, const char* file, const char* initial)
 
 #define NSIGMA 11
 
+/* declare C99 function */
+int isnan(double);
+
 void analyze(void)
 {
 
@@ -368,6 +371,37 @@ void analyze(void)
     s[8]  =  1./64;
     s[9]  =  1./256;
     s[10] = 1./1024;
+    
+    
+    {
+        /* Validate the input */
+        
+        for (i = 0; i != 3; ++i)
+        {
+            if (x[i])
+            {
+                if (!((w[i] > 0) && (w[i] < -log(0))))
+                {
+                    fprintf(stderr, "error: w[%d] is %e\n", i, w[i]);
+                    exit(1);
+                }
+                for (j = 0; j != samples; ++j)
+                {
+                    if (!((x[i][j] > log(0)) && (x[i][j] < -log(0))))
+                    {
+                        fprintf(stderr, "error: x[%d][%d] = %e\n", i, j, x[i][j]);
+                        exit(1);
+                    }
+                    if (!((x[i + 3][j] > log(0)) && (x[i + 3][j] < -log(0))))
+                    {
+                        fprintf(stderr, "error: x[%d][%d] = %e\n", i + 3, j, x[i + 3][j]);
+                        exit(1);
+                    }
+                }
+            }
+        }
+        
+    }
      
     /*   
      *  the sky tiles implied by the frequency) 
@@ -392,6 +426,18 @@ void analyze(void)
 
     free(raw);
     raw = accumulator;
+    
+    {
+        /* validate the output */
+        for (i = 0; i != plan->pixelCount; ++i)
+        {
+            if ((plan->pixel[i].area != 0) && isnan(raw[i]))
+            {
+                fprintf(stderr, "plan->pixel[%d].area = %e && raw[%d] = %e\n", i, plan->pixel[i].area, i, raw[i]);
+                exit(1);
+            }
+        }
+    }
 
     {   /*  
          *  Get the mode 
@@ -412,16 +458,33 @@ void analyze(void)
         int n = ra_res;
         double maximum;
         render = (double*) malloc(m * n * sizeof(double));
-        XLALSkymapRenderEquirectangular(m, n, render, plan, raw);
-        /*XLALSkymapRenderMollweide(m, n, render, plan, raw);*/
-
-        maximum = render[0];
-        for (j = 1; j != m * n; ++j)
+        XLALSkymapRenderEqualArea(m, n, render, plan, raw);
+        
+        for (j = 0; j != m * n; ++j)
         {
+            if (isnan(render[j]))
+            {
+                fprintf(stderr, "WARNING: The rendered skymap contains a NaN at pixel %d\n", j);
+            }
+        }
+
+        maximum = log(0);
+        for (j = 0; j != m * n; ++j)
+        {
+            if (isnan(maximum))
+            {
+                fprintf(stderr, "ERROR: The rendered skymap's progressive maximum became NaN before pixel %d\n", j);
+                exit(1);
+            }               
             if (render[j] > maximum)
             {
                 maximum = render[j];
             }
+        }
+        if (!(maximum < -log(0)))
+        {
+            fprintf(stderr, "ERROR: The skymap maximum was not finite, and normalization cannot be performed\n");
+            exit(0);
         }
         for (j = 0; j != m * n; ++j)
         {
@@ -453,7 +516,7 @@ void analyze(void)
                 for (i = 0; i != m; ++i)
                 {
                     double dec;
-                    dec = LAL_PI_2 - (LAL_PI * (i + 0.5)) / m;
+                    dec = acos(1. - (i + 0.5) * (2. / m));
                     gzprintf(h, "%.10e %.10e %.10e\n", ra, dec, (render[i + m * j]));
                 }
             }
