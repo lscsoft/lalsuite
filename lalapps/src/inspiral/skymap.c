@@ -458,7 +458,7 @@ void analyze(void)
         int n = ra_res;
         double maximum;
         render = (double*) malloc(m * n * sizeof(double));
-        XLALSkymapRenderEqualArea(m, n, render, plan, raw);
+        XLALSkymapRender(render, plan, raw);
         
         for (j = 0; j != m * n; ++j)
         {
