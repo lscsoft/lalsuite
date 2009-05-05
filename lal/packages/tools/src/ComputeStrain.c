@@ -204,14 +204,21 @@ REAL8IIRFilter ALPHASLPFIR;
  /* copy factors into time series */
  for (p=0; p<(int)ALPHAS.data->length; p++) 
    {
-      /* check alphabeta: If values are outside bounds we replace factors with 1 */
-      if( (output->alphabeta.data->data[p].re < 0.8) ||  ( output->alphabeta.data->data[p].re > 1.2) 
-	  || (isnan(output->alphabeta.data->data[p].re)) || isinf(output->alphabeta.data->data[p].re)) 
-	{
-	  ALPHAS.data->data[p]=1.0;
-	  if ( p > 0 )  ALPHAS.data->data[p]= ALPHAS.data->data[p-1];
-	}  
-     ALPHAS.data->data[p]=output->alphabeta.data->data[p].re;
+     REAL8 r = output->alphabeta.data->data[p].re;
+
+     /* check alphabeta: If values are outside bounds we replace
+      * factors with the last one, or with 1 if it is the first */
+     if ( (r < 0.8) ||  (r > 1.2) || (isnan(r)) || isinf(r))
+       {
+         if (p > 0)
+           ALPHAS.data->data[p] = ALPHAS.data->data[p-1];
+         else
+           ALPHAS.data->data[p] = 1.0;
+       }
+     else
+       {
+         ALPHAS.data->data[p] = r;  /* this is the "standard" nice case */
+       }
    }
  
  /* upsample using a linear interpolation */
