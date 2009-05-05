@@ -810,7 +810,8 @@ def remove_plot_meta_option(plotcp,patternType,plottingCode):
 ##############################################################################
 # Function to set up lalapps_plot_hipe
 def plot_setup(plotDir, config, logPath, stage, injectionSuffix,
-    zerolagSuffix, slideSuffix, bankSuffix, cacheFile, injdirType, tag = None):
+    zerolagSuffix, slideSuffix, bankSuffix, cacheFile, injdirType, tag = None, 
+    ifos = None, cat = 3):
   """
   run lalapps_plot_hipe and add job to dag
   plotDir   = directory in which to run inspiral hipe
@@ -884,18 +885,10 @@ def plot_setup(plotDir, config, logPath, stage, injectionSuffix,
     inspmissedVetoDir = "../hardware_inj_segments"
   else:
     inspmissedVetoDir = "../segments"
-  plotcp.set("plotinspmissed","followup-vetofile-h1",
-        inspmissedVetoDir + "/H1-COMBINED_CAT_3_VETO_SEGS-" + analysisstart 
-        + "-" + str(analysisduration) + ".txt")
-  plotcp.set("plotinspmissed","followup-vetofile-h2",
-        inspmissedVetoDir + "/H2-COMBINED_CAT_3_VETO_SEGS-" + analysisstart 
-        + "-" + str(analysisduration) + ".txt")
-  plotcp.set("plotinspmissed","followup-vetofile-l1",
-        inspmissedVetoDir + "/L1-COMBINED_CAT_3_VETO_SEGS-" + analysisstart 
-        + "-" + str(analysisduration) + ".txt")
-  plotcp.set("plotinspmissed","followup-vetofile-v1",
-        inspmissedVetoDir + "/V1-COMBINED_CAT_3_VETO_SEGS-" + analysisstart
-        + "-" + str(analysisduration) + ".txt")
+  for ifo in ifos:
+    plotcp.set("plotinspmissed","followup-vetofile-" + ifo.lower(),
+        inspmissedVetoDir + "/" + ifo + "-COMBINED_CAT_" + str(cat) + 
+        "_VETO_SEGS-" + analysisstart + "-" + str(analysisduration) + ".txt")
 
   # Adding followup option to plotinspfound and plotinspmissed
   plotcp.set("plotinspfound","followup-tag",injdirType)
@@ -980,7 +973,7 @@ def plot_setup(plotDir, config, logPath, stage, injectionSuffix,
 # Function to set up zero/slide plots:
 def zeroSlidePlots(dag, plotDir, config, logPath, zerolagSuffix, slideSuffix, 
     cacheFile, doDagCategories, parentDags = None, vetoParentDags = None, 
-    vetoCat = 3):
+    vetoCat = 3, ifos = []):
   """
   set up plots for zero lag and time slides
   dag       = the dag
@@ -1008,7 +1001,7 @@ def zeroSlidePlots(dag, plotDir, config, logPath, zerolagSuffix, slideSuffix,
     plotcp.set("plotthinca","zero-lag-playground","")
 
   plotNode = plot_setup(plotDir, plotcp, logPath, "first", \
-      "", zerolagSuffix, slideSuffix, slideSuffix, cacheFile, "")
+      "", zerolagSuffix, slideSuffix, slideSuffix, cacheFile, "", ifos=ifos)
   if doDagCategories:
     plotNode.set_category('plotting')
   dag.add_node(plotNode)
@@ -1028,7 +1021,7 @@ def zeroSlidePlots(dag, plotDir, config, logPath, zerolagSuffix, slideSuffix,
   plotVetoNode = plot_setup(plotDir, plotcp, logPath, "second", \
       "", zerolagSuffix + vetoString, slideSuffix + vetoString, \
       slideSuffix + vetoString, cacheFile, "", \
-      tag=vetoString[1:])
+      tag=vetoString[1:], ifos=ifos, cat=vetoCat)
   if doDagCategories:
     plotVetoNode.set_category('plotting')
   dag.add_node(plotVetoNode)
@@ -1047,7 +1040,7 @@ def zeroSlidePlots(dag, plotDir, config, logPath, zerolagSuffix, slideSuffix,
 # Function to set up inj/zero/slide plots:
 def injZeroSlidePlots(dag, plotDir, config, logPath, injectionSuffix,
     zerolagSuffix, slideSuffix, cacheFile, doDagCategories, parentDags = None, 
-    vetoParentDags = None, vetoCat = 3):
+    vetoParentDags = None, vetoCat = 3, ifos = []):
   """
   set up plots for injections, zero lag and time slides
   dag       = the dag
@@ -1073,7 +1066,7 @@ def injZeroSlidePlots(dag, plotDir, config, logPath, injectionSuffix,
   plotcp.set("plot-arguments","write-script","")
   injPlotNode = plot_setup( plotDir, \
       plotcp, logPath, "first", injectionSuffix, zerolagSuffix, \
-      slideSuffix, injectionSuffix, cacheFile, injectionSuffix )
+      slideSuffix, injectionSuffix, cacheFile, injectionSuffix, ifos=ifos )
   if doDagCategories:
     injPlotNode.set_category('plotting')
   dag.add_node(injPlotNode)
@@ -1099,7 +1092,7 @@ def injZeroSlidePlots(dag, plotDir, config, logPath, injectionSuffix,
       plotcp, logPath, "second", injectionSuffix + vetoString, \
       zerolagSuffix + vetoString, slideSuffix + vetoString, \
       injectionSuffix + vetoString, cacheFile, injectionSuffix, \
-      tag=vetoString[1:])
+      tag=vetoString[1:], ifos=ifos, cat=vetoCat)
   if doDagCategories:
     injPlotVetoNode.set_category('plotting')
   dag.add_node(injPlotVetoNode)
