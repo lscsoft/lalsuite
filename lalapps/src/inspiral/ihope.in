@@ -378,7 +378,7 @@ if opts.run_search:
     for cacheFile in hipePlayNode.get_output_files():
       cachelist.append("playground/" + cacheFile)
     dag.add_node(hipePlayNode)
-    if opts.run_datafind or opts_runtmpltbank:
+    if opts.run_datafind or opts.run_tmpltbank:
       hipePlayNode.add_parent(hipeDfNode)
 
   if opts.run_full_data:
