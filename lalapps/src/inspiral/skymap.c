@@ -23,6 +23,9 @@
 
 #define max(A,B) (((A) > (B)) ? (A) : (B))
 
+/* declare C99 function */
+int (isnan)(double);
+
 /*
  *  File names for input and output
  */
@@ -332,9 +335,6 @@ void load_data(int detector, const char* file, const char* initial)
 }
 
 #define NSIGMA 11
-
-/* declare C99 function */
-int isnan(double);
 
 void analyze(void)
 {
