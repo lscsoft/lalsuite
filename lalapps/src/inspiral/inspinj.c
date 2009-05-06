@@ -261,7 +261,7 @@ static void print_usage(char *program)
       "                           volume: uniform distribution in volume\n"\
       "  --i-distr INCDIST        set the inclination distribution, must be either\n"\
       "                           uniform: distribute uniformly over arccos(i)\n"\
-      "                           gaussian: gaussian distributed in arccos(i)\n"\
+      "                           gaussian: gaussian distributed in (i)\n"\
       "                           fixed: no distribution, fixed valued of (i)\n"\
       " --polarization psi        set the polarization angle for all \n"
       "                           injections (degrees)\n"\
