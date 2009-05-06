@@ -368,7 +368,7 @@ AC_CHECK_HEADERS(gsl/gsl_errno.h, , [AC_MSG_ERROR(could not find gsl/gsl_errno.h
 if test "${intelfft}" = "false" ; then
   AC_CHECK_HEADERS(fftw3.h, , [AC_MSG_ERROR(could not find fftw3.h)])
 fi
-AC_CHECK_HEADER(stdint.h, , [AC_MSG_WARN(could not find stdint.h)])
+AC_CHECK_HEADER(stdint.h, , [AC_MSG_ERROR(could not find stdint.h)])
 AC_CHECK_HEADER(inttypes.h, , [AC_MSG_WARN(could not find inttypes.h)])
 
 AC_MSG_CHECKING(for gethostname prototype in unistd.h)
