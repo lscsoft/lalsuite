@@ -406,7 +406,7 @@ void analyze(void)
     /*   
      *  the sky tiles implied by the frequency) 
      */
-    plan = XLALSkymapConstructPlan(frequency);  
+    plan = XLALSkymapConstructPlanMN(frequency, dec_res, ra_res);  
     /*
      *  Allocate a chunk of memory tto hold the sky map in the internal 
      *  timing format
@@ -458,7 +458,7 @@ void analyze(void)
         int n = ra_res;
         double maximum;
         render = (double*) malloc(m * n * sizeof(double));
-        XLALSkymapRenderEqualArea(m, n, render, plan, raw);
+        XLALSkymapRender(render, plan, raw);
         
         for (j = 0; j != m * n; ++j)
         {

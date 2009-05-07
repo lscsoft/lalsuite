@@ -1,4 +1,5 @@
 ## Process this file with automake to produce Makefile.in
+ACLOCAL_AMFLAGS = -I misc
 SUBDIRS = include packages doc lib misc debian @subdirs@
 MAINTAINERCLEANFILES = README.install lal.spec
 EXTRA_DIST = README.bugs README.contrib README.install \

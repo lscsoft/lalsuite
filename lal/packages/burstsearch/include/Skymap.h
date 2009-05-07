@@ -66,9 +66,6 @@ typedef struct tagXLALSkymapPlanType
  */
 XLALSkymapPlanType* XLALSkymapConstructPlanMN(int sampleFrequency, int m, int n);
 
-/* deprecated legacy interface */
-XLALSkymapPlanType* XLALSkymapConstructPlan(int sampleFrequency);
-
 /* 
  * Destroy an analysis plan
  */
@@ -122,9 +119,7 @@ void XLALSkymapModeThetaPhi(XLALSkymapPlanType* plan, double* p, double thetaphi
 /*
  * Render the skymap from the internal format to a variety of map projections
  */
-int XLALSkymapRenderEqualArea(int m, int n, double* q, XLALSkymapPlanType* plan, double* p);
-int XLALSkymapRenderEquirectangular(int m, int n, double* q, XLALSkymapPlanType* plan, double* p);
-int XLALSkymapRenderMollweide(int m, int n, double* q, XLALSkymapPlanType* plan, double* p);
+int XLALSkymapRender(double* q, XLALSkymapPlanType* plan, double* p);
 
 #ifdef __cplusplus
 }
