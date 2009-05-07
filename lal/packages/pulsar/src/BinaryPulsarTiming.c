@@ -354,8 +354,8 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
           gamma)*sin(u))*(1.0 - params->fb[0]*(x*cos(w)*sqrt(1.0 -
           e*e)*cos(u) - x*sin(w)*sin(u))/(1.0 - e*cos(u))); */
         dt += (x*sw*(cu-e) + (x*cw*sqrt(1.0-e*e) +
-          gamma)*su)*(1.0 - params->fb[0]*(x*cw*sqrt(1.0 -
-          e*e)*u - x*w*su)/(1.0 - e*cu));
+          gamma)*su)*(1.0 - LAL_TWOPI*params->fb[0]*(x*cw*sqrt(1.0 -
+          e*e)*cu - x*sw*su)/(1.0 - e*cu));
       }
       else{
         /* dt += (x*sin(w)*(cos(u)-e) + (x*cos(w)*sqrt(1.0-e*e) +
@@ -367,7 +367,7 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
       }
     /**********************************************************/
     }
-
+    
     /* use method from Taylor etal 1976 ApJ Lett and used in bnrybt.f */
     /**********************************************************/
     /*tt = 1.0-e*e;
@@ -1851,7 +1851,7 @@ REAL8 LALTDBMJDtoGPS(REAL8 MJD){
      are ~36525 times larger than what I use here as the time T they use is in
      Julian centuries rather than Julian days) */
   Tdiff = MJD + (2400000.5-2451545.0);
-  
+
   /* time diff in seconds */
   TDBtoTT = 0.0016568*sin((357.5 + 0.98560028*Tdiff) * LAL_PI_180) +
             0.0000224*sin((246.0 + 0.90251882*Tdiff) * LAL_PI_180) +
@@ -1880,7 +1880,7 @@ REAL8 LALTCBMJDtoGPS(REAL8 MJD){
   }
 
   /* from Seidelmann and Fukushima */
-  Tdiff = MJD + (2400000.5 - 2443144.5)*86400.;
+  Tdiff = (MJD + 2400000.5 - 2443144.5)*86400.;
   TCBtoTDB = 1.550506e-8 * Tdiff;
 
   /* convert from TDB to GPS */
