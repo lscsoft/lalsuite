@@ -71,7 +71,7 @@ fi
 
 dnl Checks for programs.
 AC_PROG_AWK
-AC_PROG_CC
+AC_PROG_CC_STDC
 AC_PROG_CPP
 
 AC_CANONICAL_HOST
