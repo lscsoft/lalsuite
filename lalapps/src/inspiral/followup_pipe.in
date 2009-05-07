@@ -615,6 +615,11 @@ if not opts.disable_followup and not opts.read_times:
         #Lets append a new subsection to the last section
         dag.appendSubSection(str(ifo)+" (non coincident ifo)")
 
+        # Write time in file for deported qscans
+        if opts.do_remote_ifo and ifo==depIfo:
+           if opts.qscan or opts.seis_qscan:
+             depQscanTFile.write(repr(trig.gpsTime[trig.ifolist_in_coinc[0]])+'\n')
+
         # SETUP DATAFIND JOBS FOR HOFT QCANS
         dHoftNode = followupDataFindNode(dataJob,'futrig','q-hoft-datafind',cp,trig.gpsTime[trig.ifolist_in_coinc[0]],ifo,opts,dag,'hoft_datafind')
 
