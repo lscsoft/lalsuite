@@ -20,6 +20,7 @@ import subprocess
 from glue import segments
 from glue import segmentsUtils
 from glue import pipeline
+from glue import lal
 
 ##############################################################################
 # Functions used in setting up the dag:
@@ -75,6 +76,46 @@ def hipe_cache(ifos, usertag, gps_start_time, gps_end_time):
       str(gps_end_time - gps_start_time)  + ".cache"
 
   return hipeCache
+
+##############################################################################
+def tmpltbank_cache(datafind_filename):
+  """
+  open and read the datafind hipe cache, find only the tmpltbank files
+  return a lal.Cache class with only the tmpltbanks
+
+  datafind_filename = datafind cache filename relative to current path
+  """
+  cache_file = open(datafind_filename)
+  result_cache = lal.Cache.fromfile(cache_file)
+  cache_file.close()
+
+  return result_cache.sieve(description="TMPLTBANK")
+
+##############################################################################
+def symlink_tmpltbank(tmpltbank_cache, user_tag):
+  """
+  Symlinks the tmpltbank files from the datafind directory into the current
+  directory
+  Returns 
+
+  tmpltbank_cache = lal.Cache of the tmpltbank files in the datafind dir
+  usertag = playground, full_data, or the name of the injection directory
+  """
+  new_dir = user_tag.lower()
+  file_tag = user_tag.upper()
+
+  for entry in tmpltbank_cache:
+    old_file = os.path.basename(entry.path())
+    new_file = old_file.replace("DATAFIND",file_tag)
+    try: # Remove file if it already exists
+      os.remove(new_file)
+    except: pass
+    os.symlink("../datafind/" + old_file, new_file)
+
+  new_pfnlist = [url.replace("datafind",new_dir).replace("DATAFIND",file_tag)
+      for url in tmpltbank_cache.pfnlist()]
+
+  return lal.Cache.from_urls(new_pfnlist)
 
 ##############################################################################
 # Function to set up the segments for the analysis
@@ -435,18 +476,20 @@ def slide_sanity(config, playOnly = False):
 
 ##############################################################################
 # Function to set up lalapps_inspiral_hipe
-def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dfOnly = False, \
-    playOnly = False, vetoCat = None, vetoFiles = None, hardwareInj = False, \
-    site = "local", dax=None):
+def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
+    tmpltBank = False, playOnly = False, vetoCat = None, vetoFiles = None, \
+    hardwareInj = False, site = "local", dax=None, tmpltbankCache = None):
   """
   run lalapps_inspiral_hipe and add job to dag
   hipeDir   = directory in which to run inspiral hipe
   config    = config file
   logPath   = location where log files will be written
   injSeed   = injection file to use when running
-  dfOnly    = only run the datafind step of the pipeline
+  dataFind  = run the datafind step of the pipeline
+  tmpltBank = run the template bank step (part of the datafind dag)
   vetoCat   = run this category of veto
   vetoFiles = dictionary of veto files
+  tmpltbankCache = lal.Cache of template bank files
   """
   # don't create a pegasus workflow for local dags
   if site=="local": dax=None
@@ -455,9 +498,13 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dfOnly = False, \
 
   # create the hipe config parser, keep only relevant info
   hipecp = copy.deepcopy(config)
-  if dfOnly:
+  if dataFind or tmpltBank: # Template generation and datafind share a number of options
     hipeSections = ["condor", "pipeline", "input", "datafind","data",\
         "ligo-data","inspiral","virgo-data", "condor-max-jobs"]
+    if tmpltBank: # Template generation needs some extra options that datafind doesn't
+      hipeSections.extend(["calibration", "geo-data", "tmpltbank", \
+          "tmpltbank-1", "tmpltbank-2", "h1-tmpltbank", "h2-tmpltbank", \
+          "l1-tmpltbank", "v1-tmpltbank", "g1-tmpltbank"])
   elif vetoCat:
     hipeSections = ["condor", "pipeline", "input", "data", "ligo-data", \
         "inspiral", "thinca", "thinca-2", "datafind", "virgo-data", \
@@ -535,7 +582,7 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dfOnly = False, \
     hipecp.set("input","injection-seed",injSeed)
     hipecp.set("input", "num-slides", "")
 
-  elif hardwareInj and not dfOnly:
+  elif hardwareInj and not dataFind and not tmpltBank:
     hipecp.set("input","hardware-injection","")
     hipecp.set("inspiral","hardware-injection","")
     hipecp.set("input", "num-slides", "")
@@ -555,7 +602,7 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dfOnly = False, \
   hipecp.write(file(iniFile,"w"))
 
   print "Running hipe in directory " + hipeDir
-  if dfOnly: print "Running datafind only"
+  if dataFind or tmpltBank: print "Running datafind / template bank generation"
   elif hardwareInj: print "Running hardware injection analysis"
   elif injSeed: print "Injection seed: " + injSeed
   else: print "No injections, " + str(hipecp.get("input","num-slides")) + \
@@ -577,8 +624,11 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dfOnly = False, \
         config.get("hipe-arguments",hipe_arg)
     return(hipeCommand)
 
-  if dfOnly:
-    hipeCommand = test_and_add_hipe_arg(hipeCommand,"datafind")
+  if dataFind or tmpltBank:
+    if dataFind:
+      hipeCommand = test_and_add_hipe_arg(hipeCommand,"datafind")
+    if tmpltBank:
+      hipeCommand = test_and_add_hipe_arg(hipeCommand,"template-bank")
   elif vetoCat:
     for hipe_arg in ["second-coinc", "coire-second-coinc", 
         "summary-coinc-triggers", "sire-second-coinc", 
@@ -588,7 +638,7 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dfOnly = False, \
     if hardwareInj:
       omit = ["disable-dag-categories", "disable-dag-priorities"]
     else:
-      omit = ["datafind", "disable-dag-categories", "disable-dag-priorities"]
+      omit = ["datafind", "template-bank", "disable-dag-categories", "disable-dag-priorities"]
     for (opt, arg) in config.items("hipe-arguments"):
       if opt not in omit:
         hipeCommand += "--" + opt + " " + arg 
@@ -600,11 +650,21 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dfOnly = False, \
   make_external_call(hipeCommand)
 
   # link datafind
-  if not dfOnly and not vetoCat and not hardwareInj:
+  if not dataFind and not tmpltBank and not vetoCat and not hardwareInj:
     try:
       os.rmdir("cache")
       os.symlink("../datafind/cache", "cache")
     except: pass
+
+  # symlink in the template banks, and add them to the inspiral hipe cache
+  if tmpltbankCache:
+    symlinkedCache = symlink_tmpltbank(tmpltbankCache, hipeDir)
+
+    inspiral_hipe_file = open(hipe_cache(ifos, usertag, \
+        hipecp.getint("input", "gps-start-time"), \
+        hipecp.getint("input", "gps-end-time")), "a")
+    symlinkedCache.tofile(inspiral_hipe_file)
+    inspiral_hipe_file.close()
 
   # make hipe job/node
   # check to see if it should be a dax

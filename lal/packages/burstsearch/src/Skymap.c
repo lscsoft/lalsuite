@@ -227,10 +227,53 @@ static double det22(double a[2][2])
     return a[0][0] * a[1][1] - a[0][1] * a[1][0];
 }
 
-/* log functions */
+/* log functions
+ *
+ * These functions assist in working with values that might overflow if we
+ * ever explicitly constructed their exponentials.
+ */
 
-/* declare the C99 function log1p to suppress warning */
+/* 
+ * FIXME: when the C99 transition is complete, remove log1p declaration 
+ */
+
+/* 
+ * declare the C99 function log1p to suppress warning
+ *
+ * log1p(x) = log(1 + x), but is more accurate for |x| << 1
+ */
 double log1p(double x);
+
+/* 
+ * XLALSkymapLogSumExp(a, b) computes log(exp(a) + exp(b)) but will not
+ * overflow for a or b > ~300
+ *
+ * For a > b, we use the identity
+ *
+ * log(exp(a) + exp(b)
+ *     = log(exp(a) * (1 + exp(b) / exp(a)))
+ *     = a + log(1 + exp(b - a))
+ *     = a + log1p(exp(b - a))
+ *
+ * where b - a < 0 and exp(b - a) cannot overflow (though it may 
+ * underflow).
+ *
+ * And for a < b
+ *
+ * log(exp(a) + exp(b))
+ *     = log(exp(b) * (exp(a) / exp(b) + 1))
+ *     = b + log(exp(a - b) + 1)
+ *     = b + log1p(exp(a - b))
+ *
+ * If neither a < b nor a > b, we either have equality or both values
+ * are (the same) plus or minus infinity.  Forming (a - b) in the case of
+ * infinities results in a NaN, so we must use a third expression
+ * 
+ * log(exp(a) + exp(b)) 
+ *     = log(exp(a) + exp(a))
+ *     = log(2 * exp(a))
+ *     = log(2) + a
+ */
 
 double XLALSkymapLogSumExp(double a, double b)
 {
@@ -314,6 +357,30 @@ static void construct_pixel(XLALSkymapPixelType* pixel)
 
 /* properties of a network and a sample rate */
 
+/*
+ * These functions convert between integer time delays that index a 
+ * conceptual three-dimensional array, and a linear index corresponding
+ * to how the array is actually packed in memory
+ *
+ * For a simple L x M x N array, the indices (i, j, k) map to a linear 
+   index
+ *     
+ *     p = (M * N) * i + N * j + k
+ *
+ * To store pixels, we have an array with
+ *
+ *     L = 2                 (hemispheres)
+ *     M = 2 * plan->hv + 1  (delays from -plan->hv to +plan->hv)
+ *     N = 2 * plan->hl + 1  (delays from -plan->hl to +plan->hl)
+ *
+ * and indices that are offset delays (so that they are >= 0)
+ *
+ *     i = hemisphere
+ *     j = hv + plan->hv
+ *     k = hl + plan->hl
+ *
+ */
+
 static int index_from_delays(XLALSkymapPlanType* plan, int hl, int hv, int hemisphere)
 {
     return
@@ -358,14 +425,9 @@ int XLALSkymapIndexFromDirection(XLALSkymapPlanType* plan, double direction[3])
     return index_from_delays(plan, i[0], i[1], i[2]); 
 }
 
-XLALSkymapPlanType* XLALSkymapConstructPlan(int sampleFrequency)
-{
-    return XLALSkymapConstructPlanMN(sampleFrequency, 1024, 2048);
-}
-
 XLALSkymapPlanType* XLALSkymapConstructPlanMN(int sampleFrequency, int m, int n)
 {
-    static const char func[] = "XLALSkymapConstructPlan";
+    static const char func[] = "XLALSkymapConstructPlanMN";
     XLALSkymapPlanType* plan;
 
     if (sampleFrequency <= 0)
@@ -374,6 +436,11 @@ XLALSkymapPlanType* XLALSkymapConstructPlanMN(int sampleFrequency, int m, int n)
       XLAL_ERROR_NULL(func, XLAL_EINVAL);
     }
     
+    if(m <= 0 || n <= 0)
+    {
+        XLALPrintError("%s(): invalid raster size %d x %d\n", func, m, n);
+        XLAL_ERROR_NULL(func, XLAL_EINVAL);
+    }
   
     plan = (XLALSkymapPlanType*) XLALMalloc(sizeof(*plan));
     
@@ -435,9 +502,8 @@ XLALSkymapPlanType* XLALSkymapConstructPlanMN(int sampleFrequency, int m, int n)
                 double direction[3];
                 int k;
                 /* compute theta and phi */
-                double cos_theta = 1.0 - 2.0 * (i + 0.5) / m;
-                double theta = acos(cos_theta);
-                double phi   = (j + 0.5) * (2 * pi / n);
+                double theta = acos(1. - (i + 0.5) * (2. / plan->m));
+                double phi   = (j + 0.5) * (2. * pi / plan->n);
                 /* compute direction */
                 XLALSkymapCartesianFromSpherical(direction, theta, phi);
                 /* determine the corresponding pixel */
@@ -1132,56 +1198,21 @@ void XLALSkymapModeThetaPhi(XLALSkymapPlanType* plan, double* p, double thetaphi
     XLALSkymapSphericalFromCartesian(thetaphi, plan->pixel[mode_i].direction);
 }
 
-int XLALSkymapRenderEquirectangular(int m, int n, double* q, XLALSkymapPlanType* plan, double* p)
+int XLALSkymapRender(double* q, XLALSkymapPlanType* plan, double* p)
 {
-    static const char func[] = "XLALSkymapRenderEquirectangular";
+    static const char func[] = "XLALSkymapRender";
     int i, j;
 
-    if(m <= 0 || n <= 0)
-        XLAL_ERROR(func, XLAL_EINVAL);
-
     /* scan over the sky */
-    for (i = 0; i != m; ++i)
+    for (i = 0; i != plan->m; ++i)
     {
-        for (j = 0; j != n; ++j)
+        for (j = 0; j != plan->n; ++j)
         {
             double direction[3];
             int k;
             /* compute theta and phi */
-            double theta = (i + 0.5) * (pi / m);
-            double phi   = (j + 0.5) * (2 * pi / n);
-            /* compute direction */
-            XLALSkymapCartesianFromSpherical(direction, theta, phi);
-            /* determine the corresponding pixel */
-            k = XLALSkymapIndexFromDirection(plan, direction);
-
-            q[i + j * m] = p[k];
-            /* apply area corrections */
-            q[i + j * m] += log(sin(theta) / plan->pixel[k].area);
-        }
-    }
-
-    return 0;
-}
-
-int XLALSkymapRenderEqualArea(int m, int n, double* q, XLALSkymapPlanType* plan, double* p)
-{
-    static const char func[] = "XLALSkymapRenderEqualArea";
-    int i, j;
-
-    if(m <= 0 || n <= 0)
-        XLAL_ERROR(func, XLAL_EINVAL);
-
-    /* scan over the sky */
-    for (i = 0; i != m; ++i)
-    {
-        for (j = 0; j != n; ++j)
-        {
-            double direction[3];
-            int k;
-            /* compute theta and phi */
-            double theta = acos(1. - (i + 0.5) * (2. / m));
-            double phi   = (j + 0.5) * (2. * pi / n);
+            double theta = acos(1. - (i + 0.5) * (2. / plan->m));
+            double phi   = (j + 0.5) * (2. * pi / plan->n);
             /* compute direction */
             XLALSkymapCartesianFromSpherical(direction, theta, phi);
             /* determine the corresponding pixel */
@@ -1189,46 +1220,22 @@ int XLALSkymapRenderEqualArea(int m, int n, double* q, XLALSkymapPlanType* plan,
 
             if (plan->pixel[k].area > 0)
             {
-                q[i + j * m] = p[k];
-                /* apply area corrections */
-                q[i + j * m] -= log(plan->pixel[k].area);
+                if ((p[k] > log(0)) && (p[k] < -log(0)))
+                {
+                    q[i + j * plan->m] = p[k];
+                    /* apply area corrections */
+                    q[i + j * plan->m] -= log(plan->pixel[k].area);
+                }
+                else
+                {
+                    XLALPrintError("%s(): attempted to render from a pixel with nonfinite value to (%i, %j)\n", func, i, j);
+                    XLAL_ERROR(func, XLAL_EINVAL);                   
+                }
             }
             else
             {
-                q[i + j * m] = log(0);
-            }
-        }
-    }
-
-    return 0;
-}
-
-
-int XLALSkymapRenderMollweide(int m, int n, double* q, XLALSkymapPlanType* plan, double* p)
-{
-    static const char func[] = "XLALSkymapRenderMollweide";
-    int i, j;
-
-    if(m <= 0 || n <= 0)
-        XLAL_ERROR(func, XLAL_EINVAL);
-
-    /* scan over the sky */
-    for (i = 0; i != m; ++i)
-    {
-        for (j = 0; j != n; ++j)
-        {
-            double theta = asin(((i + 0.5) / m) * 2 - 1);
-            double lambda = pi*(((j + 0.5) / n) * 2 - 1)/cos(theta);
-            if ((lambda >= -pi) && (lambda <= pi))
-            {
-                double phi = asin(((2*theta)+sin(2*theta))/pi);
-                double direction[3];
-                /* compute direction */
-                XLALSkymapCartesianFromSpherical(direction, pi/2 - phi, lambda);
-                /* determine the corresponding pixel */
-                q[i + j * m] = p[XLALSkymapIndexFromDirection(plan, direction)];
-                /* undo area prior since this is an equiarea projection */
-                q[i + j * m] -= log(plan->pixel[XLALSkymapIndexFromDirection(plan, direction)].area);
+                XLALPrintError("%s(): attempted to render from a pixel with zero area to (%i, %j)\n", func, i, j);
+                XLAL_ERROR(func, XLAL_EINVAL);
             }
         }
     }

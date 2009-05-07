@@ -1,9 +1,8 @@
 dnl lal.m4
-dnl $Id$
 
 AC_DEFUN([LAL_WITH_GCC_FLAGS],
 [AC_ARG_WITH(
-        [gcc_flags],   
+        [gcc_flags],
         [  --with-gcc-flags        turn on strict gcc warning flags],
         [ if test -n "${with_gcc_flags}"
           then
@@ -22,7 +21,7 @@ AC_DEFUN([LAL_WITH_GCC_FLAGS],
 
 AC_DEFUN([LAL_WITH_EXTRA_CPPFLAGS],
 [AC_ARG_WITH(
-	[extra_cppflags], 
+	[extra_cppflags],
         [  --with-extra-cppflags=CPPFLAGS  additional C preprocessor flags],
 	[ if test -n "${with_extra_cppflags}"
 	  then
@@ -33,7 +32,7 @@ AC_DEFUN([LAL_WITH_EXTRA_CPPFLAGS],
 
 AC_DEFUN([LAL_WITH_CFLAGS],
 [AC_ARG_WITH(
-	[cflags], 
+	[cflags],
         [  --with-cflags=CFLAGS        C compiler flags],
 	[ if test -n "${with_cflags}"
 	  then
@@ -44,7 +43,7 @@ AC_DEFUN([LAL_WITH_CFLAGS],
 
 AC_DEFUN([LAL_WITH_EXTRA_CFLAGS],
 [AC_ARG_WITH(
-	[extra_cflags], 
+	[extra_cflags],
         [  --with-extra-cflags=CFLAGS  additional C compiler flags],
 	[ if test -n "${with_extra_cflags}"
 	  then
@@ -55,7 +54,7 @@ AC_DEFUN([LAL_WITH_EXTRA_CFLAGS],
 
 AC_DEFUN([LAL_WITH_EXTRA_LDFLAGS],
 [AC_ARG_WITH(
-	[extra_ldflags], 
+	[extra_ldflags],
         [  --with-extra-ldflags=LDFLAGS  additional linker flags],
 	[ if test -n "${with_extra_ldflags}"
 	  then
@@ -66,7 +65,7 @@ AC_DEFUN([LAL_WITH_EXTRA_LDFLAGS],
 
 AC_DEFUN([LAL_WITH_EXTRA_LIBS],
 [AC_ARG_WITH(
-	[extra_libs], 
+	[extra_libs],
         [  --with-extra-libs=LIBS  additional -l and -L linker flags],
 	[ if test -n "${with_extra_libs}"
 	  then
@@ -75,20 +74,9 @@ AC_DEFUN([LAL_WITH_EXTRA_LIBS],
 	],)
 ])
 
-AC_DEFUN([LAL_WITH_MPICC],
-[AC_ARG_WITH(
-        [mpicc], 
-        [  --with-mpicc=MPICC      use the MPICC C compiler for MPI code],
-        [ if test -n "${with_mpicc}"
-          then
-            MPICC="${with_mpicc}";
-          fi
-        ],)
-])
-
 AC_DEFUN([LAL_WITH_CC],
 [AC_ARG_WITH(
-        [cc], 
+        [cc],
         [  --with-cc=CC            use the CC C compiler],
         [ if test -n "${with_cc}"
           then
@@ -108,18 +96,6 @@ AC_DEFUN([LAL_ENABLE_FRAME],
             *) AC_MSG_ERROR(bad value ${enableval} for --enable-frame) ;;
           esac
         ], [ frame=true ] )
-])
-
-AC_DEFUN([LAL_ENABLE_MPI],
-[AC_ARG_ENABLE(
-        [mpi],
-        [  --enable-mpi            compile code that requires MPI [default=no] ],
-        [ case "${enableval}" in
-            yes) mpi=true;;
-            no)  mpi=false ;;
-            *) AC_MSG_ERROR(bad value ${enableval} for --enable-mpi) ;;
-          esac
-        ], [ mpi=false ] )
 ])
 
 AC_DEFUN([LAL_ENABLE_METAIO],
@@ -197,7 +173,6 @@ AC_DEFUN([LAL_ENABLE_NIGHTLY],
         [ NIGHTLY_VERSION="" ] )
  AC_SUBST(NIGHTLY_VERSION)
 ])
-                
 
 AC_DEFUN([LAL_ENABLE_PTHREAD_LOCK],
 [AC_ARG_ENABLE(
@@ -251,7 +226,7 @@ AC_MSG_ERROR([Intel FFT must use either static or shared libraries])
 ])
 
 AC_DEFUN([LAL_CHECK_GSL_VERSION],
-[ 
+[
   lal_min_gsl_version=ifelse([$1], ,1.0,$1)
   AC_MSG_CHECKING(for GSL version >= $lal_min_gsl_version)
   AC_TRY_RUN([
@@ -281,55 +256,6 @@ int main(void)
 }
   ], [AC_MSG_RESULT(yes)], [AC_MSG_ERROR(could not find required version of GSL)], [echo $ac_n "cross compiling; assumed OK... $ac_c"])
 ])
-
-AC_DEFUN([LAL_CHECK_MPI_FLAGS],
-[ AC_MSG_CHECKING([for mpicc flags])
-  SHOWARG=""
-  MPI_CPPFLAGS=""
-  MPI_CFLAGS=""
-  MPI_LDFLAGS=""
-  MPI_TYPE=NONE
-  if (($MPICC -compile_info 1>/dev/null 2>/dev/null) && ($MPICC -link_info 1>/dev/null 2>/dev/null)) ; then
-    MPI_TYPE=MPICH
-    for mpiarg in `$MPICC -compile_info` ; do
-      case $mpiarg in
-        -D*) MPI_CPPFLAGS="$MPI_CPPFLAGS $mpiarg" ;;
-        -I*) MPI_CPPFLAGS="$MPI_CPPFLAGS $mpiarg" ;;
-      esac
-    done
-    for mpiarg in `$MPICC -link_info` ; do
-      case $mpiarg in
-        -L*) MPI_LDFLAGS="$MPI_LDFLAGS $mpiarg" ;;
-        -l*) MPI_LDFLAGS="$MPI_LDFLAGS $mpiarg" ;;
-      esac
-    done
-  else
-    if ($MPICC -show 1>/dev/null 2>/dev/null) ; then
-      MPI_TYPE=MPICH
-      SHOWARG="-show"
-    elif ($MPICC -showme 1>/dev/null 2>/dev/null) ; then
-      MPI_TYPE=LAM
-      SHOWARG="-showme"
-    else
-      AC_MSG_WARN([couldn't determine mpi compile flags])
-    fi
-    if test -n "$SHOWARG" ; then
-      for mpiarg in `$MPICC $SHOWARG` ; do
-        case $mpiarg in
-          -D*) MPI_CPPFLAGS="$MPI_CPPFLAGS $mpiarg" ;;
-          -I*) MPI_CPPFLAGS="$MPI_CPPFLAGS $mpiarg" ;;
-          -L*) MPI_LDFLAGS="$MPI_LDFLAGS $mpiarg" ;;
-          -l*) MPI_LDFLAGS="$MPI_LDFLAGS $mpiarg" ;;
-          -pthread) MPI_LDFLAGS="$MPI_LDFLAGS -lpthread" ;;
-          -Wl*) MPI_CFLAGS="$MPI_CFLAGS $mpiarg" ;;
-        esac
-      done
-    fi
-  fi
-  AC_MSG_RESULT([$MPI_CPPFLAGS $MPI_CFLAGS $MPI_LDFLAGS])
-  AC_SUBST(MPI_TYPE)dnl
-])
-
 
 dnl This is AC_CHECK_SIZEOF but prepends LAL.
 

@@ -1458,7 +1458,6 @@ void XLALPSDRegressorReset(LALPSDRegressor *r)
 int XLALPSDRegressorAdd(LALPSDRegressor *r, const COMPLEX16FrequencySeries *sample)
 {
   static const char func[] = "XLALPSDRegressorAdd";
-  const double max_sigma_sq = 64;
   double delta_epoch;
   unsigned i;
 
@@ -1509,19 +1508,6 @@ int XLALPSDRegressorAdd(LALPSDRegressor *r, const COMPLEX16FrequencySeries *samp
      * epoch */
 
     COMPLEX16 z = XLALCOMPLEX16Mul(sample->data->data[i], XLALCOMPLEX16Polar(1.0, -LAL_TWOPI * (sample->f0 + i * sample->deltaF) * delta_epoch));
-
-#if 0
-    /* clip samples against the boundary defined by the maximum allowed
-     * deviation from the mean */
-
-    if(r->n_samples > 1)
-    {
-      /* sigma_sq = |z - <z>|^2 / (<|z|^2> - |<z>|^2) */
-      double sigma_sq = XLALCOMPLEX16Abs2(XLALCOMPLEX16Sub(z, r->mean->data->data[i])) / (r->mean_square->data->data[i] - XLALCOMPLEX16Abs2(r->mean->data->data[i]));
-      if(sigma_sq > max_sigma_sq)
-        z = XLALCOMPLEX16Add(r->mean->data->data[i], XLALCOMPLEX16MulReal(XLALCOMPLEX16Sub(z, r->mean->data->data[i]), sqrt(max_sigma_sq / sigma_sq)));
-    }
-#endif
 
     /* update the mean and mean square */
 

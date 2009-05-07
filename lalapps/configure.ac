@@ -71,9 +71,8 @@ fi
 
 dnl Checks for programs.
 AC_PROG_AWK
-AC_PROG_CC
+AC_PROG_CC_STDC
 AC_PROG_CPP
-AC_PROG_CXX
 
 AC_CANONICAL_HOST
 if test "x$condor" = "xtrue"; then
@@ -308,6 +307,7 @@ AC_OUTPUT( \
   src/pulsar/MakeSFTs/Makefile \
   src/pulsar/crosscorr/Makefile \
   src/pulsar/fscan/Makefile \
+  src/tracksearch/Makefile \
 )
 
 lalframeenabled="`test x${lalframe} = xtrue && echo "ENABLED" || echo "DISABLED"`"

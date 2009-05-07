@@ -7,7 +7,7 @@ Standards-Version: 3.7.2
 
 Package: lalapps
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, zlib1g, libgsl0 (>= 1.9) | libgsl0ldbl (>= 1.9), libframe0, libmetaio1 (>=8.2), fftw3, libcfitsio3, lal (>= 5.3), libxml2 (>= 2.6), python2.4
+Depends: ${shlibs:Depends}, ${misc:Depends}, zlib1g, libgsl0 (>= 1.9) | libgsl0ldbl (>= 1.9), libframe1, libmetaio1 (>=8.2), fftw3, libcfitsio3, lal (>= 5.3), libxml2 (>= 2.6), python2.4
 Recommends: python2.5
 Description: LSC Algorithm Library Applications
  The LSC Algorithm Library Applications for gravitational wave data analysis.
