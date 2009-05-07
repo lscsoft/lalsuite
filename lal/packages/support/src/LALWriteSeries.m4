@@ -56,8 +56,7 @@ SFUNC ( LALStatus *stat, FILE *stream, STYPE *series )
 
   /* Print the epoch, deltaT, and f0. */
   if ( fprintf( stream, "# epoch = %" LAL_INT8_FORMAT "\n",
-		(INT8)( series->epoch.gpsSeconds )*1000000000LL +
-		(INT8)( series->epoch.gpsNanoSeconds ) ) < 0 ||
+                XLALGPSToINT8NS( &series->epoch ) ) < 0 ||
        fprintf( stream, "# deltaT = %.16e\n", series->deltaT ) < 0 ||
        fprintf( stream, "# f0 = %.16e\n", series->f0 ) < 0 ) {
     ABORT( stat, STREAMOUTPUTH_EPRN, STREAMOUTPUTH_MSGEPRN );
@@ -175,8 +174,7 @@ VFUNC ( LALStatus *stat, FILE *stream, VTYPE *series )
 
   /* Print the epoch, deltaT, and f0. */
   if ( fprintf( stream, "# epoch = %" LAL_INT8_FORMAT "\n",
-		(INT8)( series->epoch.gpsSeconds )*1000000000LL +
-		(INT8)( series->epoch.gpsNanoSeconds ) ) < 0 ||
+                XLALGPSToINT8NS( &series->epoch ) ) < 0 ||
        fprintf( stream, "# deltaT = %.16e\n", series->deltaT ) < 0 ||
        fprintf( stream, "# f0 = %.16e\n", series->f0 ) < 0 ) {
     ABORT( stat, STREAMOUTPUTH_EPRN, STREAMOUTPUTH_MSGEPRN );
@@ -316,8 +314,7 @@ AFUNC ( LALStatus *stat, FILE *stream, ATYPE *series )
 
   /* Print the epoch, deltaT, and f0. */
   if ( fprintf( stream, "# epoch = %" LAL_INT8_FORMAT "\n",
-		(INT8)( series->epoch.gpsSeconds )*1000000000LL +
-		(INT8)( series->epoch.gpsNanoSeconds ) ) < 0 ||
+                XLALGPSToINT8NS( &series->epoch ) ) < 0 ||
        fprintf( stream, "# deltaT = %.16e\n", series->deltaT ) < 0 ||
        fprintf( stream, "# f0 = %.16e\n", series->f0 ) < 0 ) {
     ABORT( stat, STREAMOUTPUTH_EPRN, STREAMOUTPUTH_MSGEPRN );
@@ -463,10 +460,9 @@ FFUNC ( LALStatus *stat, FILE *stream, FTYPE *series )
 
   /* Print the epoch, deltaF, and f0. */
   if ( fprintf( stream, "# epoch = %" LAL_INT8_FORMAT "\n",
-		(INT8)( series->epoch.gpsSeconds )*1000000000LL +
-		(INT8)( series->epoch.gpsNanoSeconds ) ) < 0 ||
-       fprintf( stream, "# f0 = %.16e\n", series->f0 ) < 0 ||
-       fprintf( stream, "# deltaF = %.16e\n", series->deltaF ) < 0 ) {
+                XLALGPSToINT8NS( &series->epoch ) ) < 0 ||
+       fprintf( stream, "# deltaF = %.16e\n", series->deltaF ) < 0 ||
+       fprintf( stream, "# f0 = %.16e\n", series->f0 ) < 0 ) {
     ABORT( stat, STREAMOUTPUTH_EPRN, STREAMOUTPUTH_MSGEPRN );
   }
 

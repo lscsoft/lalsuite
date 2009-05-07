@@ -72,7 +72,7 @@ developers.
 To achieve portability, the library is a library of routines written in a
 subset of C89, which is well supported on nearly every computing environment,
 and the routines can easily be used by programs written in other languages
-(C++, Fortran, Python, etc.).  
+(C++, Fortran, Python, etc.).
 
 The first edition of this specification contained several highly restrictive
 rules that were conceived to give LAL routines a standard ``look and feel''
@@ -282,8 +282,8 @@ NRCSID( LALTHISSOURCEFILEC, "$Id$" );
 
 
 \subsection{Language requirements}
-LAL code should all be in ``clean C,'' i.e., that language that is a 
-subset of both C and C++.  This is not quite the same as just the C 
+LAL code should all be in ``clean C,'' i.e., that language that is a
+subset of both C and C++.  This is not quite the same as just the C
 programming language.  Only C-style comments should be used and avoid
 any constructs that would behave differently with C++-style comments.
 Names of variables, functions, etc., should not be any of the reserved
@@ -349,7 +349,7 @@ Specifically this means that routines in \verb+stdio.h+ are not allowed (except
 for \verb+sprintf+, but there is a LAL replacement for this,
 \verb+LALSnprintf+, which should be used instead), several routines in
 \verb+stdlib.h+ including \verb+rand+ and \verb+srand+ (there are LAL
-replacements for these), \verb+system+, and \verb+getenv+.  
+replacements for these), \verb+system+, and \verb+getenv+.
 
 \begin{lalrule}
 Functions will not perform any file I/O or have any dependence on the
@@ -362,7 +362,7 @@ used.
 \subsection{Memory management}
 
 Memory should always be allocated or freed with one of the LAL custom
-memory managers: \verb+LALMalloc+, \verb+LALCalloc+, \verb+LALRealloc+, 
+memory managers: \verb+LALMalloc+, \verb+LALCalloc+, \verb+LALRealloc+,
 and \verb+LALFree+, and \emph{not} with \verb+malloc+, \verb+calloc+,
 \verb+realloc+, and \verb+free+.  The LAL memory managers have additional
 memory leak checking ability that will assist in debugging if the debug
@@ -431,7 +431,7 @@ Thus the routines \verb+exit+, \verb+atexit+, and routines in \verb+signal.h+
 and \verb+assert.h+ should not be used.  (But note the exception that XLAL
 functions do call an error handler, which can be set outside of the library to
 abort or exit.)  Also, long-jumps are not allowed, so any routine in
-\verb+setjmp.h+ is not allowed. 
+\verb+setjmp.h+ is not allowed.
 \begin{lalrule}
 All functions will return control to the calling function.  Functions such
 as \verb+exit+, \verb+atexit+, \verb+raise+, \verb+assert+, \verb+abort+
@@ -577,7 +577,7 @@ is to design some rules for the XLAL functions that try to approach some
 degree of uniformity without overly hampering their interface.
 \end{enumerate}
 For the purpose of providing a relatively uniform error reporting system, it
-is necessary to categorize XLAL functions into four likely types, which are 
+is necessary to categorize XLAL functions into four likely types, which are
 based on their return types.
 \begin{lalrule}
 All XLAL functions shall have a name beginning with \verb+XLAL+ followed by
@@ -712,10 +712,10 @@ string and \verb+errnum+ is the XLAL error number (see below).
 
 \subsection{XLAL error numbers and error handlers}
 
-XLAL functions use the modifiable lvalue \verb+xlalErrno+ (think of it as 
+XLAL functions use the modifiable lvalue \verb+xlalErrno+ (think of it as
 a global \verb+int+-type variable) to codify the nature of a failure.  It
 should not be used for any other purpose.  The values that \verb+xlalErrno+
-is allowed to have are controlled.  It is quite analogous to the standard 
+is allowed to have are controlled.  It is quite analogous to the standard
 C \verb+errno+.
 
 To use \verb+xlalErrno+, set it to zero (no error) before calling an XLAL
@@ -785,7 +785,7 @@ occurs.  \emph{However, the error handler should not be changed within a
 LAL or an XLAL function.}  Replacing the error handler should always be
 done in the top-level program.
 
-To assist in setting \verb+xlalErrno+ and invoking the error handler, 
+To assist in setting \verb+xlalErrno+ and invoking the error handler,
 the function
 \begin{verbatim}
 void XLALError( const char *func, const char *file, int line, int errnum );
@@ -996,7 +996,7 @@ others, it is important to respect these when coding the interface.
 \item Names prefixed with \texttt{gr\_} are reserved in \verb+grp.h+.
 \item Names suffixed with \texttt{\_MAX} are reserved in \verb+limits.h+.
 \item Names prefixed with \texttt{pw\_} are reserved in \verb+pwd.h+.
-\item Names prefixed with \texttt{sa\_} and \texttt{SA\_} are reserved 
+\item Names prefixed with \texttt{sa\_} and \texttt{SA\_} are reserved
 in \verb+signal.h+.
 \item Names prefixed with \texttt{st\_} and \texttt{S\_} are reserved in
 \verb+sys/stat.h+.
