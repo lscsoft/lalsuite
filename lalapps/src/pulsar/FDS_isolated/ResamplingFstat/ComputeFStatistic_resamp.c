@@ -295,7 +295,6 @@ MultiCOMPLEX8TimeSeries* XLALCreateMultiCOMPLEX8TimeSeries(UINT4 i);
 void XLALDestroyMultiCOMPLEX8TimeSeries(MultiCOMPLEX8TimeSeries* T);
 void XLALDestroyReSampBuffer ( ReSampBuffer *cfb);
 void XLALDestroyMultiFFTWCOMPLEXSeries(MultiFFTWCOMPLEXSeries *X);
-void XLALDestroyMultiCOMPLEX8TimeSeries(MultiCOMPLEX8TimeSeries *T);
 void XLALDestroyFFTWCOMPLEXSeries(FFTWCOMPLEXSeries *X);
 void XLALDestroyREAL8Sequence(REAL8Sequence *X);
 void XLALDestroyMultiCmplxAMCoeffs(MultiCmplxAMCoeffs *X);
@@ -1716,7 +1715,7 @@ FFTWCOMPLEXSeries *XLALCreateFFTWCOMPLEXSeries(UINT4 length)
 {
   FFTWCOMPLEXSeries *new;
   fftw_complex *data;
-  new = malloc(sizeof(*new));
+  new = XLALMalloc(sizeof(*new));
   new->length = length;
   data = fftw_malloc(sizeof(fftw_complex)*length);
   new->data = data;
@@ -1728,7 +1727,7 @@ void XLALDestroyFFTWCOMPLEXSeries(FFTWCOMPLEXSeries *X)
 {
   if(X)
     fftw_free(X->data);
-  free(X);
+  XLALFree(X);
 }
 
 
@@ -2596,7 +2595,6 @@ void ComputeFStat_resamp(LALStatus *status, const PulsarDopplerParams *doppler, 
   MultiAMCoeffs *multiAMcoef = NULL;
   REAL8 Ad, Bd, Cd, Dd_inv;
   SkyPosition skypos;
-  MultiCOMPLEX8TimeSeries *Resampled;
   MultiFFTWCOMPLEXSeries *Saved_a;
   MultiFFTWCOMPLEXSeries *Saved_b;
   BOOLEAN SAMESKYPOSITION = FALSE;
@@ -2709,10 +2707,6 @@ void ComputeFStat_resamp(LALStatus *status, const PulsarDopplerParams *doppler, 
   numDetectors = multiSFTs->length;
 
   ASSERT ( multiDetStates->length == numDetectors, status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT );
-  ASSERT ( fstatVector, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
-  ASSERT ( fstatVector->data, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
-  ASSERT ( fstatVector->data->data, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
-  ASSERT ( fstatVector->data->length > 0, status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT );
 
   /* check input */
   ASSERT ( multiSFTs, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
@@ -2855,18 +2849,12 @@ void ComputeFStat_resamp(LALStatus *status, const PulsarDopplerParams *doppler, 
       /* The integrals once calculated are stored in FaOut and FbOut */
       FFTWCOMPLEXSeries *FaOut, *FbOut;
 
-      /* If not same skyposition, allocate some new memory */
-      if(!SAMESKYPOSITION)
-	{
-	  Resampled = XLALCreateMultiCOMPLEX8TimeSeries(numDetectors);
-	}
-  
       /* Go through the whole process if not the same sky position */
       if(!SAMESKYPOSITION)
 	{
 	  /* Seperate the Real and Imaginary Parts */
-	  REAL8Sequence* ResampledReal = Resampled->Real[i];
-	  REAL8Sequence* ResampledImag = Resampled->Imag[i];
+	  REAL8Sequence* ResampledReal;
+	  REAL8Sequence* ResampledImag;
    
 	  /* BaryTimes is a sequence containing the times at the barycenter at the centers of each SFT */
 	  REAL8Vector* BaryTimes;
