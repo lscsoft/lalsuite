@@ -603,8 +603,6 @@ int main(int argc,char *argv[])
   LAL_CALL ( FreeDopplerFullScan(&status, &GV.scanState), &status);
   LogPrintfVerbatim ( LOG_DEBUG, "done.\n");
 
-  XLALDestroyREAL8FrequencySeries ( fstatVector );
-
   XLALDestroyReSampBuffer ( &Buffer );
 
   LAL_CALL ( Freemem(&status, &GV), &status);
@@ -2387,7 +2385,7 @@ void retband(REAL8 t0, REAL8 dt, REAL8* t,REAL8* x, REAL8* y,UINT4 n,UINT4 size,
 /* Resamples the Time Series and returns a timestamps vector, which corresponds to detector times linearly sampled in the barycentric frame */
 REAL8Sequence* ResampleSeries(REAL8Sequence *X_Real,REAL8Sequence *X_Imag,REAL8Sequence *Y_Real,REAL8Sequence *Y_Imag,REAL8 dt,REAL8Vector *BaryTimes, REAL8Sequence *DetectorTimes, REAL8Sequence *Times)
 {
-  UINT4 length = X_Real->length; /* length of data */
+  UINT4 length = Y_Real->length; /* length of data */
   
   UINT4 i;
   REAL8 x,y;
