@@ -38,6 +38,7 @@
 NRCSID( LALXMLH, "$Id$" );
 
 int XLALXMLFilePrintElements(const char *fname);
+xmlNodePtr XLALCreateVOTableResourceNode(const char *type, const char *identifier);
 xmlDocPtr XLALCreateVOTableXMLFromTree(const xmlNodePtr xmlTree);
 INT4 XLALCreateVOTableStringFromTree(const xmlNodePtr xmlTree, xmlChar **xmlStringBuffer, INT4 *xmlStringBufferSize);
 xmlChar * XLALGetSingleNodeContentByXPath(const xmlDocPtr xmlDoc, const char *xpath);

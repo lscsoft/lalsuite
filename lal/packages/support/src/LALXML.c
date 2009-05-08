@@ -66,6 +66,36 @@ int XLALXMLFilePrintElements(const char *fname)
 }
 
 
+xmlNodePtr XLALCreateVOTableResourceNode(const char *type, const char *identifier)
+{
+    /* set up local variables */
+    static const CHAR *logReference = "XLALCreateVOTableStringFromTree";
+    xmlNodePtr xmlResourceNode = NULL;
+
+    xmlResourceNode = xmlNewNode(NULL, BAD_CAST("RESOURCE"));
+    if(xmlResourceNode == NULL) {
+        XLALPrintError("Element instantiation failed: RESOURCE\n");
+        XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+    }
+    if(!xmlNewProp(xmlResourceNode, BAD_CAST("utype"), BAD_CAST(type))) {
+        /* clean up */
+        xmlFreeNode(xmlResourceNode);
+
+        XLALPrintError("Attribute instantiation failed: utype\n");
+        XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+    }
+    if(!xmlNewProp(xmlResourceNode, BAD_CAST("name"), BAD_CAST(identifier))) {
+        /* clean up */
+        xmlFreeNode(xmlResourceNode);
+
+        XLALPrintError("Attribute instantiation failed: name\n");
+        XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+    }
+
+    return xmlResourceNode;
+}
+
+
 /**
  * \brief Takes a XML fragment (tree) and turns it into a VOTable document
  *
@@ -349,24 +379,10 @@ xmlNodePtr XLALLIGOTimeGPS2VOTableNode(const LIGOTimeGPS *const ltg, const char 
     }
 
     /* set up RESOURCE node*/
-    xmlResourceNode = xmlNewNode(NULL, BAD_CAST("RESOURCE"));
+    xmlResourceNode = XLALCreateVOTableResourceNode("LIGOTimeGPS", name);
     if(xmlResourceNode == NULL) {
-        XLALPrintError("Element instantiation failed: RESOURCE\n");
-        XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
-    }
-    if(!xmlNewProp(xmlResourceNode, BAD_CAST("utype"), BAD_CAST("LIGOTimeGPS"))) {
-        /* clean up */
-        xmlFreeNode(xmlResourceNode);
-
-        XLALPrintError("Attribute instantiation failed: utype\n");
-        XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
-    }
-    if(!xmlNewProp(xmlResourceNode, BAD_CAST("name"), BAD_CAST(name))) {
-        /* clean up */
-        xmlFreeNode(xmlResourceNode);
-
-        XLALPrintError("Attribute instantiation failed: name\n");
-        XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+        XLALPrintError("Couldn't create RESOURCE node: LIGOTimeGPS\n");
+        XLAL_ERROR_NULL(logReference, XLAL_EINVAL);
     }
 
     /* set up RESOURCE node child (first PARAM) */
