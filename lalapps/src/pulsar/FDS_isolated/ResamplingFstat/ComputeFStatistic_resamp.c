@@ -310,14 +310,15 @@ void ApplyWindow(REAL8Window *Win, COMPLEX16Vector *X);
 void Reshuffle(COMPLEX16Vector *X);
 void PrintL(FFTWCOMPLEXSeries* L,REAL8 min,REAL8 step);
 void ApplyHetCorrection(REAL8Sequence *BaryTimes, REAL8Sequence *DetectorTimes,  const REAL8Sequence *Real, const REAL8Sequence *Imag, REAL8Sequence *Times, MultiCOMPLEX8TimeSeries *TSeries, REAL8Sequence* Real_Corrected, REAL8Sequence* Imag_Corrected);
-void ApplySpinDowns(PulsarSpins SpinDowns, REAL8 dt, FFTWCOMPLEXSeries *FaIn, FFTWCOMPLEXSeries *FbIn, REAL8 BaryStartTime,REAL8Sequence *CorrTimes,REAL8 RefTime);
+void ApplySpinDowns(const PulsarSpins *SpinDowns, REAL8 dt, FFTWCOMPLEXSeries *FaIn, FFTWCOMPLEXSeries *FbIn, REAL8 BaryStartTime,REAL8Sequence *CorrTimes,REAL8 RefTime);
 void ApplyAandB(REAL8Sequence *FineBaryTimes,REAL8Sequence *BaryTimes,REAL8Sequence *a,REAL8Sequence *b,REAL8Sequence *Real,REAL8Sequence *Imag,FFTWCOMPLEXSeries *FaIn, FFTWCOMPLEXSeries *FbIn, REAL8 TSFT);
 double sinc(double t);
 void retband(REAL8 t0, REAL8 dt, REAL8* t,REAL8* x, REAL8* y,UINT4 n,UINT4 size, UINT4 terms);
 REAL8 strob(REAL8* Xdata, REAL8* Ydata, REAL8 X, UINT4 N1);
 REAL8Sequence* ResampleSeries(REAL8Sequence *X_Real,REAL8Sequence *X_Imag,REAL8Sequence *Y_Real,REAL8Sequence *Y_Imag,REAL8 dt,REAL8Vector *BaryTimes, REAL8Sequence *DetectorTimes, REAL8Sequence *Times);
 void Heterodyne(REAL8 f_het,REAL8 dt,REAL8 StartTime,REAL8Sequence *Real,REAL8Sequence *Imag);
-
+MultiREAL8Sequence* XLALCreateMultiREAL8Sequence(UINT4 length);
+void XLALDestroyMultiREAL8Sequence(MultiREAL8Sequence *X);
 
 /* Resampling prototypes (end) */
 
@@ -2395,14 +2396,15 @@ REAL8Sequence* ResampleSeries(REAL8Sequence *X_Real,REAL8Sequence *X_Imag,REAL8S
   REAL8Sequence *CorrespondingDetTimes; /* Timestamps vector to be returned with detector times corresponding to linear sampling in the barycentric frame */
   gsl_interp_accel *accl;
   gsl_spline *splineinter;
-  
-  CorrespondingDetTimes = (REAL8Sequence*)XLALCreateREAL8Sequence(length); 
+
+  /* GSL's memory allocated for BaryTimes->length, which is the lenght of the data set */
+  gsl_interp *lininter = gsl_interp_alloc(gsl_interp_linear,BaryTimes->length);
+
+  CorrespondingDetTimes = (REAL8Sequence*)XLALCreateREAL8Sequence(length);
 
   /* Initialize GSL */
   accl = gsl_interp_accel_alloc();
 
-  /* GSL's memory allocated for BaryTimes->length, which is the lenght of the data set */
-  gsl_interp *lininter = gsl_interp_alloc(gsl_interp_linear,BaryTimes->length);
   /* Xdata = BaryTimes, Ydata = DetectorTimes */
   gsl_interp_init(lininter,BaryTimes->data,DetectorTimes->data,BaryTimes->length);  
   /* Starting point  in Barycentric frame, not exact but close enough*/
@@ -2457,7 +2459,7 @@ REAL8Sequence* ResampleSeries(REAL8Sequence *X_Real,REAL8Sequence *X_Imag,REAL8S
 
 }
 
-void ApplySpinDowns(PulsarSpins SpinDowns, REAL8 dt, FFTWCOMPLEXSeries *FaIn, FFTWCOMPLEXSeries *FbIn, REAL8 BaryStartTime,REAL8Sequence *CorrTimes, REAL8 RefTime)
+void ApplySpinDowns(const PulsarSpins *SpinDowns, REAL8 dt, FFTWCOMPLEXSeries *FaIn, FFTWCOMPLEXSeries *FbIn, REAL8 BaryStartTime,REAL8Sequence *CorrTimes, REAL8 RefTime)
 {
   UINT4 i;
   UINT4 j;
@@ -2477,7 +2479,7 @@ void ApplySpinDowns(PulsarSpins SpinDowns, REAL8 dt, FFTWCOMPLEXSeries *FaIn, FF
 
       for(j=1;j<PULSAR_MAX_SPINS;j++)
 	{
-	  Phi += 2.0*LAL_PI*SpinDowns[j]*pow(DT,j+1)/factorial(j+1) + 2.0*LAL_PI*Phi_M*SpinDowns[j]*pow(DT,j)/factorial(j);
+	  Phi += 2.0*LAL_PI* (*SpinDowns)[j] *pow(DT,j+1)/factorial(j+1) + 2.0*LAL_PI*Phi_M* (*SpinDowns)[j] * pow(DT,j)/factorial(j);
 	}   
 
       sinphi = sin(Phi);
@@ -2986,7 +2988,7 @@ void ComputeFStat_resamp(LALStatus *status, const PulsarDopplerParams *doppler, 
 	  FbIn = Saved_b->data[i];
 	}
 
-      ApplySpinDowns(doppler->fkdot,dt,FaIn,FbIn,BaryStartTime,MultiCorrDetTimes->data[i],GPS2REAL8(doppler->refTime)-StartTime);
+      ApplySpinDowns(&(doppler->fkdot),dt,FaIn,FbIn,BaryStartTime,MultiCorrDetTimes->data[i],GPS2REAL8(doppler->refTime)-StartTime);
 
       /* Allocate Memory for FaOut and FbOut*/
       FaOut = XLALCreateFFTWCOMPLEXSeries(new_length);
@@ -3027,7 +3029,7 @@ void ComputeFStat_resamp(LALStatus *status, const PulsarDopplerParams *doppler, 
   {
     UINT4 fmin_index = 0;
     UINT4 fstatVectorlength = fstatVector->data->length;
-    UINT4 q,p;
+    UINT4 q,r;
     if(fstatVectorlength > new_length)
       {
 	fprintf(stderr," fstatVector's length is greater than total number of bins calculated. Something went wrong allocating fstatVector \n");
@@ -3035,11 +3037,11 @@ void ComputeFStat_resamp(LALStatus *status, const PulsarDopplerParams *doppler, 
       }
     fmin_index = floor((TSeries->f_het-fstatVector->f0)/dF_closest + 0.5);
     q = 0;
-    for(p=new_length-fmin_index;p<new_length;p++)
-      fstatVector->data->data[q++] = Fstat_temp->data[p];
-    p = 0;
+    for(r=new_length-fmin_index;r<new_length;r++)
+      fstatVector->data->data[q++] = Fstat_temp->data[r];
+    r = 0;
     while(q<fstatVectorlength)
-      fstatVector->data->data[q++] = Fstat_temp->data[p++];
+      fstatVector->data->data[q++] = Fstat_temp->data[r++];
   }
   
   XLALDestroyREAL8Sequence(Fa_Real);
