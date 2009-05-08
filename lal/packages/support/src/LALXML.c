@@ -34,8 +34,10 @@
 #include <lal/LALDatatypes.h>
 #include <lal/LALStdio.h>
 
+
 #define INT4STR_MAXLEN 15
 #define XPATHSTR_MAXLEN 150
+
 
 static void print_element_names(xmlNode *node)
 {
@@ -66,11 +68,84 @@ int XLALXMLFilePrintElements(const char *fname)
 }
 
 
-xmlNodePtr XLALCreateVOTableResourceNode(const char *type, const char *identifier)
+INT4 XLALGetLALVOTableParamMapEntry(LAL_VOTABLE_PARAM type, char **name, char **datatype, char **unit)
 {
     /* set up local variables */
-    static const CHAR *logReference = "XLALCreateVOTableStringFromTree";
+    static const CHAR *logReference = "XLALGetLALVOTableParamMapEntry";
+
+    /* the actual type map table */
+    static char *lalVOTableParamMap[][3] = {
+            {"gpsSeconds", "int", "s"},
+            {"gpsNanoSeconds", "int", "ns"}
+    };
+
+    /* return map entry*/
+    *name = lalVOTableParamMap[type][0];
+    *datatype = lalVOTableParamMap[type][1];
+    *unit = lalVOTableParamMap[type][2];
+
+    return XLAL_SUCCESS;
+}
+
+
+xmlNodePtr XLALCreateVOTableParamNode(LAL_VOTABLE_PARAM type, const char *value)
+{
+    /* set up local variables */
+    static const CHAR *logReference = "XLALCreateVOTableParamNode";
+    xmlNodePtr xmlParamNode = NULL;
+    CHAR *paramName = "\0";
+    CHAR *paramDatatype = "\0";
+    CHAR *paramUnit = "\0";
+
+    /* configure PARAM node*/
+    XLALGetLALVOTableParamMapEntry(type, &paramName, &paramDatatype, &paramUnit);
+
+    /* create node and add attributes*/
+    xmlParamNode = xmlNewNode(NULL, BAD_CAST("PARAM"));
+    if(xmlParamNode == NULL) {
+        XLALPrintError("Element instantiation failed: PARAM\n");
+        XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+    }
+    if(!xmlNewProp(xmlParamNode, BAD_CAST("name"), BAD_CAST(paramName))) {
+        /* clean up */
+        xmlFreeNode(xmlParamNode);
+
+        XLALPrintError("Attribute instantiation failed: name\n");
+        XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+    }
+    if(!xmlNewProp(xmlParamNode, BAD_CAST("datatype"), BAD_CAST(paramDatatype))) {
+        /* clean up */
+        xmlFreeNode(xmlParamNode);
+
+        XLALPrintError("Attribute instantiation failed: datatype\n");
+        XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+    }
+    if(!xmlNewProp(xmlParamNode, BAD_CAST("unit"), BAD_CAST(paramUnit))) {
+        /* clean up */
+        xmlFreeNode(xmlParamNode);
+
+        XLALPrintError("Attribute instantiation failed: unit\n");
+        XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+    }
+    if(!xmlNewProp(xmlParamNode, BAD_CAST("value"), BAD_CAST(value))) {
+        /* clean up */
+        xmlFreeNode(xmlParamNode);
+
+        XLALPrintError("Attribute instantiation failed: value\n");
+        XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+    }
+
+    /* return PARAM node (needs to be xmlFreeNode'd or xmlFreeDoc'd by caller!!!) */
+    return xmlParamNode;
+}
+
+
+xmlNodePtr XLALCreateVOTableResourceNode(const char *type, const char *identifier, xmlNodePtr *children, INT4 childCount)
+{
+    /* set up local variables */
+    static const CHAR *logReference = "XLALCreateVOTableResourceNode";
     xmlNodePtr xmlResourceNode = NULL;
+    INT4 i = 0;
 
     xmlResourceNode = xmlNewNode(NULL, BAD_CAST("RESOURCE"));
     if(xmlResourceNode == NULL) {
@@ -92,6 +167,18 @@ xmlNodePtr XLALCreateVOTableResourceNode(const char *type, const char *identifie
         XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
     }
 
+    /* add children */
+    for(i = 0; i < childCount; ++i) {
+        if(!xmlAddChild(xmlResourceNode, children[i])) {
+            /* clean up */
+            xmlFreeNode(xmlResourceNode);
+
+            XLALPrintError("Couldn't add child node to RESOURCE node: #%i\n", i);
+            XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+        }
+    }
+
+    /* return RESOURCE node (needs to be xmlFreeNode'd or xmlFreeDoc'd by caller!!!) */
     return xmlResourceNode;
 }
 
@@ -357,8 +444,7 @@ xmlNodePtr XLALLIGOTimeGPS2VOTableNode(const LIGOTimeGPS *const ltg, const char 
     CHAR gpsSecondsBuffer[INT4STR_MAXLEN] = {0};
     CHAR gpsNanoSecondsBuffer[INT4STR_MAXLEN] = {0};
     xmlNodePtr xmlResourceNode = NULL;
-    xmlNodePtr xmlParamNodeGpsSeconds = NULL;
-    xmlNodePtr xmlParamNodeGpsNanoSeconds = NULL;
+    xmlNodePtr xmlResourceParamNodes[2] = {NULL};
 
     /* make sure that the shared library is the same as the
      * library version the code was compiled against */
@@ -378,86 +464,24 @@ xmlNodePtr XLALLIGOTimeGPS2VOTableNode(const LIGOTimeGPS *const ltg, const char 
         XLAL_ERROR_NULL(logReference, XLAL_EINVAL);
     }
 
-    /* set up RESOURCE node*/
-    xmlResourceNode = XLALCreateVOTableResourceNode("LIGOTimeGPS", name);
-    if(xmlResourceNode == NULL) {
-        XLALPrintError("Couldn't create RESOURCE node: LIGOTimeGPS\n");
-        XLAL_ERROR_NULL(logReference, XLAL_EINVAL);
-    }
-
     /* set up RESOURCE node child (first PARAM) */
-    xmlParamNodeGpsSeconds = xmlNewChild(xmlResourceNode, NULL, BAD_CAST("PARAM"), NULL);
-    if(xmlParamNodeGpsSeconds == NULL) {
-        /* clean up */
-        xmlFreeNode(xmlResourceNode);
-
-        XLALPrintError("Element instantiation failed: PARAM\n");
-        XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
-    }
-    if(!xmlNewProp(xmlParamNodeGpsSeconds, BAD_CAST("name"), BAD_CAST("gpsSeconds"))) {
-        /* clean up */
-        xmlFreeNode(xmlResourceNode);
-
-        XLALPrintError("Attribute instantiation failed: name\n");
-        XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
-    }
-    if(!xmlNewProp(xmlParamNodeGpsSeconds, BAD_CAST("datatype"), BAD_CAST("int"))) {
-        /* clean up */
-        xmlFreeNode(xmlResourceNode);
-
-        XLALPrintError("Attribute instantiation failed: datatype\n");
-        XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
-    }
-    if(!xmlNewProp(xmlParamNodeGpsSeconds, BAD_CAST("unit"), BAD_CAST("s"))) {
-        /* clean up */
-        xmlFreeNode(xmlResourceNode);
-
-        XLALPrintError("Attribute instantiation failed: unit\n");
-        XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
-    }
-    if(!xmlNewProp(xmlParamNodeGpsSeconds, BAD_CAST("value"), BAD_CAST(gpsSecondsBuffer))) {
-        /* clean up */
-        xmlFreeNode(xmlResourceNode);
-
-        XLALPrintError("Attribute instantiation failed: value\n");
+    xmlResourceParamNodes[0] = XLALCreateVOTableParamNode(GPS_SECONDS, gpsSecondsBuffer);
+    if(!xmlResourceParamNodes[0]) {
+        XLALPrintError("Couldn't create PARAM node: gpsSeconds\n");
         XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
     }
 
     /* set up RESOURCE node child (second PARAM) */
-    xmlParamNodeGpsNanoSeconds = xmlNewChild(xmlResourceNode, NULL, BAD_CAST("PARAM"), NULL);
-    if(xmlParamNodeGpsNanoSeconds == NULL) {
-        /* clean up */
-        xmlFreeNode(xmlResourceNode);
-
-        XLALPrintError("Element instantiation failed: PARAM\n");
+    xmlResourceParamNodes[1] = XLALCreateVOTableParamNode(GPS_NANOSECONDS, gpsNanoSecondsBuffer);
+    if(!xmlResourceParamNodes[1]) {
+        XLALPrintError("Couldn't create PARAM node: gpsNanoSeconds\n");
         XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
     }
-    if(!xmlNewProp(xmlParamNodeGpsNanoSeconds, BAD_CAST("name"), BAD_CAST("gpsNanoSeconds"))) {
-        /* clean up */
-        xmlFreeNode(xmlResourceNode);
 
-        XLALPrintError("Attribute instantiation failed: name\n");
-        XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
-    }
-    if(!xmlNewProp(xmlParamNodeGpsNanoSeconds, BAD_CAST("datatype"), BAD_CAST("int"))) {
-        /* clean up */
-        xmlFreeNode(xmlResourceNode);
-
-        XLALPrintError("Attribute instantiation failed: datatype\n");
-        XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
-    }
-    if(!xmlNewProp(xmlParamNodeGpsNanoSeconds, BAD_CAST("unit"), BAD_CAST("ns"))) {
-        /* clean up */
-        xmlFreeNode(xmlResourceNode);
-
-        XLALPrintError("Attribute instantiation failed: unit\n");
-        XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
-    }
-    if(!xmlNewProp(xmlParamNodeGpsNanoSeconds, BAD_CAST("value"), BAD_CAST(gpsNanoSecondsBuffer))) {
-        /* clean up */
-        xmlFreeNode(xmlResourceNode);
-
-        XLALPrintError("Attribute instantiation failed: value\n");
+    /* set up RESOURCE node*/
+    xmlResourceNode = XLALCreateVOTableResourceNode("LIGOTimeGPS", name, xmlResourceParamNodes, 2);
+    if(!xmlResourceNode) {
+        XLALPrintError("Couldn't create RESOURCE node: LIGOTimeGPS\n");
         XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
     }
 

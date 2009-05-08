@@ -37,8 +37,16 @@
 
 NRCSID( LALXMLH, "$Id$" );
 
+
+typedef enum {
+    GPS_SECONDS,
+    GPS_NANOSECONDS
+} LAL_VOTABLE_PARAM;
+
+
 int XLALXMLFilePrintElements(const char *fname);
-xmlNodePtr XLALCreateVOTableResourceNode(const char *type, const char *identifier);
+INT4 XLALGetLALVOTableParamMapEntry(LAL_VOTABLE_PARAM type, char **name, char **datatype, char **unit);
+xmlNodePtr XLALCreateVOTableResourceNode(const char *type, const char *identifier, xmlNodePtr *children, INT4 childCount);
 xmlDocPtr XLALCreateVOTableXMLFromTree(const xmlNodePtr xmlTree);
 INT4 XLALCreateVOTableStringFromTree(const xmlNodePtr xmlTree, xmlChar **xmlStringBuffer, INT4 *xmlStringBufferSize);
 xmlChar * XLALGetSingleNodeContentByXPath(const xmlDocPtr xmlDoc, const char *xpath);
