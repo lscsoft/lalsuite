@@ -1,8 +1,48 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_INIT(src/config.h.in)
-AC_CONFIG_AUX_DIR([misc])
-AM_INIT_AUTOMAKE(lalapps, 5.3)
+AC_INIT([lalapps],[5.3],[lal-discuss@gravity.phys.uwm.edu])
 AM_CONFIG_HEADER(src/config.h)
+AC_CONFIG_SRCDIR([src/config.h.in])
+AC_CONFIG_AUX_DIR([misc])
+AC_CONFIG_FILES([\
+  Makefile \
+  lalapps.spec \
+  debian/Makefile \
+  doc/Makefile \
+  man/Makefile \
+  misc/Makefile \
+  src/Makefile \
+  src/lalapps/Makefile \
+  src/example/Makefile \
+  src/calibration/Makefile \
+  src/frametools/Makefile \
+  src/findchirp/Makefile \
+  src/stochastic/Makefile \
+  src/power/Makefile \
+  src/ring/Makefile \
+  src/string/Makefile \
+  src/pulsar/Makefile \
+  src/pulsar/FDS_isolated/Makefile \
+  src/pulsar/FDS_isolated/ResamplingFstat/Makefile \
+  src/pulsar/Injections/Makefile \
+  src/pulsar/FDS_griphyn/Makefile \
+  src/pulsar/hough/Makefile \
+  src/pulsar/hough/src/Makefile \
+  src/pulsar/FDS_binary/Makefile \
+  src/pulsar/SideBand/Makefile \
+  src/pulsar/templateBanks/Makefile \
+  src/pulsar/TimingTests/Makefile \
+  src/pulsar/TDS_isolated/Makefile \
+  src/inspiral/Makefile \
+  src/inspiral/posterior/Makefile \
+  src/zmsearch/Makefile \
+  src/detresponse/Makefile \
+  src/pulsar/hough/src2/Makefile \
+  src/pulsar/MakeSFTs/Makefile \
+  src/pulsar/crosscorr/Makefile \
+  src/pulsar/fscan/Makefile \
+  src/tracksearch/Makefile \
+])
+AM_INIT_AUTOMAKE([])
 AH_TOP([/*
 *  Copyright (C) 2007 Jolien Creighton
 *
@@ -25,6 +65,8 @@ AH_TOP([/*
 #ifndef CONFIG_H
 #define CONFIG_H])
 AH_BOTTOM([#endif /* CONFIG_H */])
+
+AC_CANONICAL_HOST
 
 LALAPPS_WITH_CC
 LALAPPS_WITH_LAL_PREFIX
@@ -73,7 +115,6 @@ AC_PROG_AWK
 AC_PROG_CC_STDC
 AC_PROG_CPP
 
-AC_CANONICAL_HOST
 if test "x$condor" = "xtrue"; then
   AC_CHECK_PROGS(CONDOR_COMPILE, condor_compile)
   CC="$CONDOR_COMPILE $CC"
@@ -269,45 +310,7 @@ if test "${allstatic}" = "true" ; then
   LDFLAGS="-all-static $LDFLAGS"
 fi
 
-AC_OUTPUT( \
-  Makefile \
-  lalapps.spec \
-  debian/Makefile \
-  doc/Makefile \
-  man/Makefile \
-  misc/Makefile \
-  src/Makefile \
-  src/lalapps/Makefile \
-  src/example/Makefile \
-  src/calibration/Makefile \
-  src/frametools/Makefile \
-  src/findchirp/Makefile \
-  src/stochastic/Makefile \
-  src/power/Makefile \
-  src/ring/Makefile \
-  src/string/Makefile \
-  src/pulsar/Makefile \
-  src/pulsar/FDS_isolated/Makefile \
-  src/pulsar/FDS_isolated/ResamplingFstat/Makefile \
-  src/pulsar/Injections/Makefile \
-  src/pulsar/FDS_griphyn/Makefile \
-  src/pulsar/hough/Makefile \
-  src/pulsar/hough/src/Makefile \
-  src/pulsar/FDS_binary/Makefile \
-  src/pulsar/SideBand/Makefile \
-  src/pulsar/templateBanks/Makefile \
-  src/pulsar/TimingTests/Makefile \
-  src/pulsar/TDS_isolated/Makefile \
-  src/inspiral/Makefile \
-  src/inspiral/posterior/Makefile \
-  src/zmsearch/Makefile \
-  src/detresponse/Makefile \
-  src/pulsar/hough/src2/Makefile \
-  src/pulsar/MakeSFTs/Makefile \
-  src/pulsar/crosscorr/Makefile \
-  src/pulsar/fscan/Makefile \
-  src/tracksearch/Makefile \
-)
+AC_OUTPUT
 
 lalframeenabled="`test x${lalframe} = xtrue && echo "ENABLED" || echo "DISABLED"`"
 lalmetaioenabled="`test x${lalmetaio} = xtrue && echo "ENABLED" || echo "DISABLED"`"
