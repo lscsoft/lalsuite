@@ -18,6 +18,7 @@
  */
 
 #include <lal/LALXML.h>
+#include <LALStatusMacros.h>
 
 #define LALXMLC_ENOM 0
 #define LALXMLC_EFUN 1
@@ -27,8 +28,12 @@
 #define LALXMLC_MSGEVAL "Result validation failed"
 #define LALXMLC_NAME "timeGPS"
 
+
 int main(void)
 {
+    /* set debug level*/
+    lalDebugLevel = LALMSGLVL3 | LALMEMTRACE;
+
     /* set up local variables */
     LIGOTimeGPS timeSource;
     LIGOTimeGPS timeDestination;
@@ -48,7 +53,7 @@ int main(void)
     /* invoke and check first function (set) */
     xml = (xmlChar *) XLALLIGOTimeGPS2VOTableXML(&timeSource, LALXMLC_NAME);
     if(!xml) {
-        fprintf(stderr, "LALXMLTest: [XLALLIGOTimeGPS2XML: %s]\n", LALXMLC_MSGEFUN);
+        fprintf(stderr, "LALXMLTest: [XLALLIGOTimeGPS2VOTableXML(): %s]\n", LALXMLC_MSGEFUN);
         return LALXMLC_EFUN;
     }
     fprintf(stderr, "LALXMLTest: [XLALLIGOTimeGPS2VOTableXML(): %s]\n\n", LALXMLC_MSGENOM);
@@ -61,7 +66,7 @@ int main(void)
 
     /* invoke and check second function (set) */
     if(XLALVOTableXML2LIGOTimeGPSByName((char*)xml, LALXMLC_NAME, &timeDestination)) {
-        fprintf(stderr, "LALXMLTest: [XLALVOTableXML2LIGOTimeGPSByName: %s]\n", LALXMLC_MSGEFUN);
+        fprintf(stderr, "LALXMLTest: [XLALVOTableXML2LIGOTimeGPSByName(): %s]\n", LALXMLC_MSGEFUN);
         return LALXMLC_EFUN;
     }
     fprintf(stderr, "\nLALXMLTest: [XLALVOTableXML2LIGOTimeGPSByName(): %s]\n\n", LALXMLC_MSGENOM);
@@ -77,7 +82,7 @@ int main(void)
             timeSource.gpsSeconds != timeDestination.gpsSeconds ||
             timeSource.gpsNanoSeconds != timeDestination.gpsNanoSeconds)
     {
-        fprintf(stderr, "LALXMLTest: [XLALVOTableXML2LIGOTimeGPSByName: %s]\n\n", LALXMLC_MSGEVAL);
+        fprintf(stderr, "LALXMLTest: [XLALVOTableXML2LIGOTimeGPSByName(): %s]\n\n", LALXMLC_MSGEVAL);
         return LALXMLC_EVAL;
     }
 
