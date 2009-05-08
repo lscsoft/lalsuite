@@ -22,7 +22,7 @@ __date__ = '$Date: 2009/03/17 21:26:04 $'
 __version__ = ''
 
 import getopt
-import math
+import numpy
 import os
 import string
 import sys
@@ -33,7 +33,6 @@ import gzip
 disableGraphics=False
 #Try importing GTK first if it fails import pylab non-interactive
 #Try getting display env variable upon importing this module.
-import numarray
 
 if os.getenv("DISPLAY") == None:
     #Non-interactive
@@ -128,10 +127,10 @@ class kurve:
         duration=self.getCandidateDuration()
         try:
             slope=(stopF-startF)/duration
-            angle=math.atan(slope)*(180/math.pi)
+            angle=numpy.arctan(slope)*(180/numpy.pi)
         except ZeroDivisionError:
-            slope=math.pow(10,10)
-            angle=math.atan(slope)*(180/math.pi)
+            slope=numpy.power(10,10)
+            angle=numpy.arctan(slope)*(180/numpy.pi)
         return angle
     #End get angle function
 
@@ -174,10 +173,10 @@ class kurve:
            Lvect[index]=Lvect[index]/(weight**index)
         for index in range(0,Rvect.__len__(),1):
            Rvect[index]=Rvect[index]/(weight**index)
-        LdotR=numarray.innerproduct(Lvect,Rvect)
-        NormLR=math.sqrt(
-            numarray.innerproduct(Lvect,Lvect)*
-            numarray.innerproduct(Rvect,Rvect)
+        LdotR=numpy.inner(Lvect,Rvect)
+        NormLR=numpy.sqrt(
+            numpy.inner(Lvect,Lvect)*
+            numpy.inner(Rvect,Rvect)
             )
         symmetryFactor=LdotR/NormLR
         return symmetryFactor
@@ -395,7 +394,7 @@ class kurve:
         varBright=self.getBrightPixelAndStats()[2]
         zScore=0
         try:
-            zScore=(brightPower-meanBright)/math.sqrt(varBright)
+            zScore=(brightPower-meanBright)/numpy.sqrt(varBright)
         except:
             zScore=0
         return zScore
@@ -410,7 +409,7 @@ class kurve:
         varBright=self.getBrightPixelAndStats()[2]
         zScore=0
         try:
-            zScore=(brightPower-meanBright)/math.sqrt(varBright)
+            zScore=(brightPower-meanBright)/numpy.sqrt(varBright)
         except:
             zScore=0
         return zScore
@@ -571,7 +570,7 @@ class kurve:
             r=0
             tmpCM=tmpCM + (index*m)
             index=index+1
-        rCM=int(math.floor(tmpCM/M))
+        rCM=int(numpy.floor(tmpCM/M))
         try:
             return self.element[rCM]
         except:
@@ -941,7 +940,7 @@ class candidateList:
         the requested number of seconds given via:
         numOfPixel=ceil(seconds/pixelDuration)
         """
-        return int(math.ceil(seconds/self.gpsWidth.__asFloat__()))
+        return int(numpy.ceil(seconds/self.gpsWidth.__asFloat__()))
 
     def __filemaskGlob__(self):
         """
@@ -2599,7 +2598,7 @@ class candidateList:
         pylab.cm.ScalarMappable().set_cmap(myColorMap)
         linearColorScale=pylab.matplotlib.colors.normalize(minValue,maxValue)
         if (minValue > 0) and (maxValue > 0):
-            logColorScale=pylab.matplotlib.colors.normalize(math.log(minValue),math.log(maxValue))
+            logColorScale=pylab.matplotlib.colors.normalize(numpy.log(minValue),numpy.log(maxValue))
         else:
             logColorScale=linearColorScale
             sys.stderr.write("Unable to properly colormap using log scaling.\n")
@@ -2638,7 +2637,7 @@ class candidateList:
             if useLogColors:
                 try:
                     myRed,myGreen,myBlue,myAlpha=currentPalette(
-                        logColorScale(math.log(entry[2])))
+                        logColorScale(numpy.log(entry[2])))
                 except:
                     sys.stderr.write("Problem mapping trigger log color.\n")
                     sys.stderr.write("Value causing errors is %e\n"%(entry[3]))
@@ -3046,7 +3045,7 @@ def determineDataPadding(cp):
         mapBins=int(cp.get('tracksearchtime','number_of_time_bins'))
         binDuration=float(mapTime/mapBins)
         #Force pad to be at least 1 second long
-        thePad=math.ceil((binDuration*(timeBins)))
+        thePad=numpy.ceil((binDuration*(timeBins)))
         return float(thePad)
     else:
         return float(0)
