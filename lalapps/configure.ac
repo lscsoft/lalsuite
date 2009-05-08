@@ -1,5 +1,4 @@
 dnl Process this file with autoconf to produce a configure script.
-dnl $Id$
 AC_INIT(src/config.h.in)
 AC_CONFIG_AUX_DIR([misc])
 AM_INIT_AUTOMAKE(lalapps, 5.3)
