@@ -69,7 +69,7 @@ int XLALXMLFilePrintElements(const char *fname)
 /**
  * \brief Takes a XML fragment (tree) and turns it into a VOTable document
  *
- * This function wraps a given XML fragment in a \c VOTABLE element to turn it into
+ * This function wraps a given VOTable XML fragment in a \c VOTABLE element to turn it into
  * a valid document. Please make sure that the root element of the given fragment
  * is a valid child of the \c VOTABLE element (VOTable schema 1.1):
  * \li \c DESCRIPTION
@@ -85,7 +85,7 @@ int XLALXMLFilePrintElements(const char *fname)
  * \b Important: the caller is responsible to free the allocated memory (when the
  * document isn't needed anymore) using \c xmlFreeDoc.
  *
- * \sa XLALLIGOTimeGPS2VOTableNode
+ * \sa XLALCreateVOTableStringFromTree
  *
  * \author Oliver Bock\n
  * Albert-Einstein-Institute Hannover, Germany
@@ -138,6 +138,56 @@ xmlDocPtr XLALCreateVOTableXMLFromTree(const xmlNodePtr xmlTree)
 
     /* return VOTable document (needs to be xmlFreeDoc'd by caller!!!) */
     return xmlDocument;
+}
+
+
+/**
+ * \brief Takes a XML fragment (tree) and turns it into a VOTable document string
+ *
+ * This function takes a VOTable XML fragment and returns a full-fledged VOTable XML string.
+ * Please note that all restrictions described for \c XLALCreateVOTableXMLFromTree also apply here!
+ *
+ * \param xmlTree The XML fragment to be turned into a VOTable document
+ * \param xmlStringBuffer Pointer to the (uninitialized) buffer that will hold the XML string
+ * \param xmlStringBufferSize Pointer to a variable that will hold the size of \c xmlStringBuffer
+ *
+ * \return \c XLAL_SUCCESS if the specified XML tree could be successfully serialized and dumped into a string.
+ * The content will be encoded in UTF-8.\n
+ * \b Important: the caller is responsible to free the allocated memory of \c xmlStringBuffer (when the
+ * string isn't needed anymore) using \c xmlFree.
+ *
+ * \sa XLALCreateVOTableXMLFromTree
+ *
+ * \author Oliver Bock\n
+ * Albert-Einstein-Institute Hannover, Germany
+ */
+INT4 XLALCreateVOTableStringFromTree(const xmlNodePtr xmlTree, xmlChar **xmlStringBuffer, INT4 *xmlStringBufferSize)
+{
+    /* set up local variables */
+    static const CHAR *logReference = "XLALCreateVOTableStringFromTree";
+    xmlDocPtr xmlDocument;
+
+    /* build VOTable document */
+    xmlDocument = XLALCreateVOTableXMLFromTree(xmlTree);
+    if(xmlDocument == NULL) {
+        XLALPrintError("VOTable document construction failed\n");
+        XLAL_ERROR(logReference, XLAL_EFAILED);
+    }
+
+    /* dump VOTable document to formatted XML string */
+    xmlDocDumpFormatMemoryEnc(xmlDocument, xmlStringBuffer, xmlStringBufferSize, "UTF-8", 1);
+    if(*xmlStringBufferSize <= 0) {
+        /* clean up */
+        xmlFreeDoc(xmlDocument);
+
+        XLALPrintError("VOTable document dump failed\n");
+        XLAL_ERROR(logReference, XLAL_EFAILED);
+    }
+
+    /* clean up */
+    xmlFreeDoc(xmlDocument);
+
+    return XLAL_SUCCESS;
 }
 
 
@@ -431,7 +481,6 @@ xmlChar * XLALLIGOTimeGPS2VOTableXML(const LIGOTimeGPS *const ltg, const char *n
     xmlChar *xmlStringBuffer = NULL;
     INT4 xmlStringBufferSize = -1;
     xmlNodePtr xmlTree;
-    xmlDocPtr xmlDocument;
 
     /* sanity checks */
     if(!ltg) {
@@ -453,30 +502,15 @@ xmlChar * XLALLIGOTimeGPS2VOTableXML(const LIGOTimeGPS *const ltg, const char *n
         XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
     }
 
-    /* build VOTable document */
-    xmlDocument = XLALCreateVOTableXMLFromTree(xmlTree);
-    if(xmlDocument == NULL) {
+    /* retrieve full VOTable XML document (string) */
+    if(XLALCreateVOTableStringFromTree(xmlTree, &xmlStringBuffer, &xmlStringBufferSize)) {
         /* clean up */
-        xmlFreeNode(xmlTree);
         xmlCleanupParser();
 
-        XLALPrintError("VOTable document construction failed\n");
-        XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
-    }
-
-    /* dump VOTable document to formatted XML string */
-    xmlDocDumpFormatMemoryEnc(xmlDocument, &xmlStringBuffer, &xmlStringBufferSize, "UTF-8", 1);
-    if(xmlStringBufferSize <= 0) {
-        /* clean up */
-        xmlFreeDoc(xmlDocument);
-        xmlCleanupParser();
-
-        XLALPrintError("VOTable document dump failed\n");
         XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
     }
 
     /* clean up */
-    xmlFreeDoc(xmlDocument);
     xmlCleanupParser();
 
     /* return XML string (needs to be xmlFree'd by caller!!!) */

@@ -39,6 +39,7 @@ NRCSID( LALXMLH, "$Id$" );
 
 int XLALXMLFilePrintElements(const char *fname);
 xmlDocPtr XLALCreateVOTableXMLFromTree(const xmlNodePtr xmlTree);
+INT4 XLALCreateVOTableStringFromTree(const xmlNodePtr xmlTree, xmlChar **xmlStringBuffer, INT4 *xmlStringBufferSize);
 xmlChar * XLALGetSingleNodeContentByXPath(const xmlDocPtr xmlDoc, const char *xpath);
 xmlNodePtr XLALLIGOTimeGPS2VOTableNode(const LIGOTimeGPS *const ltg, const char *name);
 INT4 XLALVOTableXML2LIGOTimeGPSByName(const char *xml, const char *name, LIGOTimeGPS *ltg);
