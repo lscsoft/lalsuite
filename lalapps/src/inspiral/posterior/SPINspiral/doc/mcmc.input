@@ -1,0 +1,21 @@
+  #SPINspiral:  Main input file.  The LINE NUMBER for each parameter should not change!!!
+
+  #Value:                                  Variable:                Description:
+  
+  #Operation and output:
+  1                                        doSNR                    Calculate the SNR: 0-no, 1-yes.
+  1                                        doMCMC                   Do MCMC: 0-no, 1-yes.
+  0                                        doMatch                  Calculate matches: 0-no, 1-yes.
+  0                                        intscrout                Print initialisation output to screen: 0-no, 1-yes.
+  0                                        writeSignal              Write signal, noise, PSDs to file: 0-no, 1-yes.
+  0                                        printMuch                Print long stretches of output (1) or not (0).
+  
+    
+  #Secondary input files:
+  mcmc.mcmc                                mcmcFilename             File name of the MCMC input file, e.g. mcmc.mcmc
+  mcmc.data                                dataFilename             File name of the data/noise input file, e.g. mcmc.data
+  mcmc.injection                           injectionFilename        File name of the data/noise input file, e.g. mcmc.parameters
+  mcmc.parameters                          parameterFilename        File name of the data/noise input file, e.g. mcmc.parameters
+
+
+
