@@ -88,6 +88,26 @@ INT4 XLALGetLALVOTableParamMapEntry(LAL_VOTABLE_PARAM type, char **name, char **
 }
 
 
+/**
+ * \brief Creates a VOTable \c PARAM node
+ *
+ * This function creates a VOTable \c PARAM node with the specified value.
+ *
+ * \param type Type of the \c PARAM node (defined in \c LAL_VOTABLE_PARAM)
+ * \param value Identifier (name) of the \c RESOURCE node
+ *
+ * \return A \c xmlNodePtr that holds the new \c PARAM node.
+ * In case of an error, a null-pointer is returned.\n
+ * \b Important: the caller is responsible to free the allocated memory (when the
+ * node isn't needed anymore) using \c xmlFreeNode. Alternatively, \c xmlFreeDoc
+ * can be used later on when the returned fragment has been embedded in a XML document.
+ *
+ * \sa LAL_VOTABLE_PARAM
+ * \sa XLALGetLALVOTableParamMapEntry
+ *
+ * \author Oliver Bock\n
+ * Albert-Einstein-Institute Hannover, Germany
+ */
 xmlNodePtr XLALCreateVOTableParamNode(LAL_VOTABLE_PARAM type, const char *value)
 {
     /* set up local variables */
@@ -140,6 +160,26 @@ xmlNodePtr XLALCreateVOTableParamNode(LAL_VOTABLE_PARAM type, const char *value)
 }
 
 
+/**
+ * \brief Creates a VOTable \c RESOURCE node
+ *
+ * This function creates a VOTable \c RESOURCE node with the specified identifier and assigns
+ * the given children to it.
+ *
+ * \param type Type of the \c RESOURCE node (typically the \c struct type name)
+ * \param identifier Identifier (name) of the \c RESOURCE node
+ * \param children Pointer to an array of \c xmlNodes that are to be assigned as children
+ * \param childCount The number of child nodes referenced by \c children
+ *
+ * \return A \c xmlNodePtr that holds the new \c RESOURCE node (incl. all children).
+ * In case of an error, a null-pointer is returned.\n
+ * \b Important: the caller is responsible to free the allocated memory (when the
+ * node isn't needed anymore) using \c xmlFreeNode. Alternatively, \c xmlFreeDoc
+ * can be used later on when the returned fragment has been embedded in a XML document.
+ *
+ * \author Oliver Bock\n
+ * Albert-Einstein-Institute Hannover, Germany
+ */
 xmlNodePtr XLALCreateVOTableResourceNode(const char *type, const char *identifier, xmlNodePtr *children, INT4 childCount)
 {
     /* set up local variables */
@@ -432,6 +472,8 @@ xmlChar * XLALGetSingleNodeContentByXPath(const xmlDocPtr xmlDocument, const cha
  * fragment isn't needed anymore) using \c xmlFreeNode. Alternatively, \c xmlFreeDoc
  * can be used later on when the returned fragment has been embedded in a XML document.
  *
+ * \sa XLALCreateVOTableParamNode
+ * \sa XLALCreateVOTableResourceNode
  * \sa XLALCreateVOTableXMLFromTree
  *
  * \author Oliver Bock\n
