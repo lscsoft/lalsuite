@@ -8,8 +8,8 @@ EXTRA_DIST = \
 	include.mk \
 	install-sh \
 	lal.m4 \
-	lallibtool.m4 \
 	lalsuite_c99.m4 \
+	libtool.m4 \
 	ltmain.sh \
 	main.tex.in \
 	missing \
