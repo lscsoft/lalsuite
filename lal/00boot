@@ -29,8 +29,6 @@ helpmsg="$helpmsg
 helpmsg="$helpmsg
   --include-deps                pass option --include-deps to automake [no]"
 
-INCLUDEDEPS=""
-
 ## Process args
 verbose="false"
 while test $# -gt 0 ; do
@@ -43,7 +41,6 @@ while test $# -gt 0 ; do
     -h | -help | --help ) echo "$helpmsg"; exit 0;;
     -q | -quiet | --quiet ) exec 1>/dev/null;;
     -v | -verb* | --verb* ) verbose="true";;
-    -include-deps | --include-deps ) INCLUDEDEPS=" --include-deps";;
     -with-m4=* | --with-m4=* ) M4="$optarg";;
     -with-aclocal=* | --with-aclocal=* ) ACLOCAL="$optarg";;
     -with-autoheader=* | --with-autoheader=* ) AUTOHEADER="$optarg";;
@@ -196,7 +193,7 @@ $ACLOCAL -I misc || fail "aclocal"
 echo "00boot: running autoheader"
 $AUTOHEADER || fail "autoheader"
 echo "00boot: running automake"
-$AUTOMAKE $INCLUDEDEPS || fail "automake"
+$AUTOMAKE || fail "automake"
 echo "00boot: running autoconf"
 $AUTOCONF || fail "autoconf"
 
