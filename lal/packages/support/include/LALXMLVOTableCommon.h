@@ -48,7 +48,8 @@ typedef enum {
 
 
 INT4 XLALGetLALVOTableParamMapEntry(const LAL_VOTABLE_PARAM type, const char **const name, const char **const datatype, const char **const unit);
-xmlNodePtr XLALCreateVOTableParamNode(const LAL_VOTABLE_PARAM type, const char *value);
+xmlNodePtr XLALCreateVOTableCustomParamNode(const char *name, const char *datatype, const char *unit, const char *value);
+xmlNodePtr XLALCreateVOTableTypedParamNode(const LAL_VOTABLE_PARAM type, const char *value);
 xmlNodePtr XLALCreateVOTableResourceNode(const char *type, const char *identifier, const xmlNodePtr *children, const INT4 childCount);
 xmlDocPtr XLALCreateVOTableXMLFromTree(const xmlNodePtr xmlTree);
 INT4 XLALCreateVOTableStringFromTree(const xmlNodePtr xmlTree, xmlChar **xmlStringBuffer, INT4 *xmlStringBufferSize);

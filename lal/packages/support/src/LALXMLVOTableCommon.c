@@ -78,12 +78,14 @@ INT4 XLALGetLALVOTableParamMapEntry(const LAL_VOTABLE_PARAM type, const char **c
 
 
 /**
- * \brief Creates a VOTable \c PARAM %node
+ * \brief Creates a VOTable \c PARAM %node with custom properties
  *
- * This function creates a VOTable \c PARAM %node with the specified value.
+ * This function creates a VOTable \c PARAM %node with the specified properties.
  *
- * \param type [in] Type of the \c PARAM %node (defined in \ref LAL_VOTABLE_PARAM)
- * \param value [in] Identifier (name) of the \c RESOURCE %node
+ * \param name [in] Content of the \c name attribute of the \c PARAM %node
+ * \param datatype [in] Content of the \c datatype attribute of the \c PARAM %node
+ * \param unit [in] Content of the \c unit attribute of the \c PARAM %node
+ * \param value [in] Content of the \c value attribute of the \c PARAM %node
  *
  * \return A \c xmlNodePtr that holds the new \c PARAM %node.
  * In case of an error, a null-pointer is returned.\n
@@ -91,26 +93,14 @@ INT4 XLALGetLALVOTableParamMapEntry(const LAL_VOTABLE_PARAM type, const char **c
  * %node isn't needed anymore) using \c xmlFreeNode. Alternatively, \c xmlFreeDoc
  * can be used later on when the returned fragment has been embedded in a XML document.
  *
- * \sa LAL_VOTABLE_PARAM
- * \sa XLALGetLALVOTableParamMapEntry
- *
  * \author Oliver Bock\n
  * Albert-Einstein-Institute Hannover, Germany
  */
-xmlNodePtr XLALCreateVOTableParamNode(const LAL_VOTABLE_PARAM type, const char *value)
+xmlNodePtr XLALCreateVOTableCustomParamNode(const char *name, const char *datatype, const char *unit, const char *value)
 {
     /* set up local variables */
-    static const CHAR *logReference = "XLALCreateVOTableParamNode";
+    static const CHAR *logReference = "XLALCreateVOTableCustomParamNode";
     xmlNodePtr xmlParamNode = NULL;
-    const CHAR *paramName = "\0";
-    const CHAR *paramDatatype = "\0";
-    const CHAR *paramUnit = "\0";
-
-    /* configure PARAM node*/
-    if(XLALGetLALVOTableParamMapEntry(type, &paramName, &paramDatatype, &paramUnit)) {
-        XLALPrintError("Couldn't retrieve PARAM configuration!\n");
-        XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
-    }
 
     /* create node and add attributes*/
     xmlParamNode = xmlNewNode(NULL, BAD_CAST("PARAM"));
@@ -118,21 +108,21 @@ xmlNodePtr XLALCreateVOTableParamNode(const LAL_VOTABLE_PARAM type, const char *
         XLALPrintError("Element instantiation failed: PARAM\n");
         XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
     }
-    if(!xmlNewProp(xmlParamNode, BAD_CAST("name"), BAD_CAST(paramName))) {
+    if(!xmlNewProp(xmlParamNode, BAD_CAST("name"), BAD_CAST(name))) {
         /* clean up */
         xmlFreeNode(xmlParamNode);
 
         XLALPrintError("Attribute instantiation failed: name\n");
         XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
     }
-    if(!xmlNewProp(xmlParamNode, BAD_CAST("datatype"), BAD_CAST(paramDatatype))) {
+    if(!xmlNewProp(xmlParamNode, BAD_CAST("datatype"), BAD_CAST(datatype))) {
         /* clean up */
         xmlFreeNode(xmlParamNode);
 
         XLALPrintError("Attribute instantiation failed: datatype\n");
         XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
     }
-    if(!xmlNewProp(xmlParamNode, BAD_CAST("unit"), BAD_CAST(paramUnit))) {
+    if(!xmlNewProp(xmlParamNode, BAD_CAST("unit"), BAD_CAST(unit))) {
         /* clean up */
         xmlFreeNode(xmlParamNode);
 
@@ -149,6 +139,44 @@ xmlNodePtr XLALCreateVOTableParamNode(const LAL_VOTABLE_PARAM type, const char *
 
     /* return PARAM node (needs to be xmlFreeNode'd or xmlFreeDoc'd by caller!!!) */
     return xmlParamNode;
+}
+
+
+/**
+ * \brief Creates a VOTable \c PARAM %node based on a pre-defined set of properties
+ *
+ * This function creates a VOTable \c PARAM %node based on \c type with the specified \c value.
+ *
+ * \param type [in] Type of the \c PARAM %node (defined in \ref LAL_VOTABLE_PARAM)
+ * \param value [in] Content of the \c value attribute of the \c PARAM %node
+ *
+ * \return A \c xmlNodePtr that holds the new \c PARAM %node.
+ * In case of an error, a null-pointer is returned.\n
+ * \b Important: the caller is responsible to free the allocated memory (when the
+ * %node isn't needed anymore) using \c xmlFreeNode. Alternatively, \c xmlFreeDoc
+ * can be used later on when the returned fragment has been embedded in a XML document.
+ *
+ * \sa LAL_VOTABLE_PARAM
+ * \sa XLALGetLALVOTableParamMapEntry
+ *
+ * \author Oliver Bock\n
+ * Albert-Einstein-Institute Hannover, Germany
+ */
+xmlNodePtr XLALCreateVOTableTypedParamNode(const LAL_VOTABLE_PARAM type, const char *value)
+{
+    /* set up local variables */
+    static const CHAR *logReference = "XLALCreateVOTableTypedParamNode";
+    const CHAR *paramName = "\0";
+    const CHAR *paramDatatype = "\0";
+    const CHAR *paramUnit = "\0";
+
+    /* configure PARAM node*/
+    if(XLALGetLALVOTableParamMapEntry(type, &paramName, &paramDatatype, &paramUnit)) {
+        XLALPrintError("Couldn't retrieve PARAM configuration!\n");
+        XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+    }
+
+    return XLALCreateVOTableCustomParamNode(paramName, paramDatatype, paramUnit, value);
 }
 
 
