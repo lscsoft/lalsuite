@@ -789,7 +789,7 @@ def candidateListProperties():
         ["rr","Z Score for CM Pixel","getCMZScore()"],
         ["pp","Estimated SNR for Curve","getKurveSNR()"],
         ]
-    return qualitites
+    return qualities
 #end candidateListProperties
 
 class candidateList:
