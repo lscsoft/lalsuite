@@ -821,7 +821,7 @@ class candidateList:
         self.kurvesHaveSNR=bool(False)
         #Variable to be set if traitSummary is read in Ok.
         self.validTraitSummary=bool(False)
-        self.properties=candidateListProperties()
+        self.qualities=candidateListProperties()
     #End init method
 
     def showQualityLegend(self):
