@@ -2800,6 +2800,7 @@ class candidateList:
             triggerID=self.__getTraitField__(trait,"curveid")[0]
             triggerLength=self.__getTraitField__(trait,"l")[0]
             triggerIntegratedPower=self.__getTraitField__(trait,"p")[0]
+            kurveAngle=self.__getTraitField__(trait,"a")[0]
             brightPixelTime=self.__getTraitField__(trait,"h")[0]
             brightPixelFreq=self.__getTraitField__(trait,"v")[0]
             brightPixelPower=self.__getTraitField__(trait,"j")[0]
