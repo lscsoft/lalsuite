@@ -49,7 +49,7 @@ extern "C" {
 NRCSID( PULSARDATATYPESH, "$Id$");
 
 /** maximal number of spin-parameters (Freq + spindowns) we can handle */
-#define PULSAR_MAX_SPINS	4    
+#define PULSAR_MAX_SPINS	7
 
 /** Type defining the orbital parameters of a binary pulsar */
 typedef struct {
