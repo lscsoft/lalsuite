@@ -13,10 +13,6 @@ Options: [defaults in brackets after description]"
 helpmsg="$helpmsg
   --help                        print this message"
 helpmsg="$helpmsg
-  --quiet                       omit non-error messages"
-helpmsg="$helpmsg
-  --verbose                     echo everything that is done"
-helpmsg="$helpmsg
   --with-m4=M4                  use GNU-m4 program M4 [m4]"
 helpmsg="$helpmsg
   --with-aclocal=ACLOCAL        use aclocal program ACLOCAL [aclocal]"
@@ -39,8 +35,6 @@ while test $# -gt 0 ; do
   esac
   case $option in
     -h | -help | --help ) echo "$helpmsg"; exit 0;;
-    -q | -quiet | --quiet ) exec 1>/dev/null;;
-    -v | -verb* | --verb* ) verbose="true";;
     -with-m4=* | --with-m4=* ) M4="$optarg";;
     -with-aclocal=* | --with-aclocal=* ) ACLOCAL="$optarg";;
     -with-autoheader=* | --with-autoheader=* ) AUTOHEADER="$optarg";;
