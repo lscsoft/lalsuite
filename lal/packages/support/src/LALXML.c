@@ -68,6 +68,26 @@ int XLALXMLFilePrintElements(const char *fname)
 }
 
 
+/**
+ * \brief Retrieves the \c PARAM %node configuration for a given LAL parameter
+ *
+ * This function takes a type specifier and returns its \c PARAM %node configuration
+ * (name, datatype, unit).\n
+ * \b Important: the actual LAL<->VOTable type map is maintained in this function
+ * (\c lalVOTableParamMap) and \b must be in sync with (in the same order as) \ref LAL_VOTABLE_PARAM!
+ *
+ * \param type  [in] Type of the \c PARAM %node (defined in \ref LAL_VOTABLE_PARAM)
+ * \param name [out] Pointer to the variable to store the parameter \c name
+ * \param datatype [out] Pointer to the variable to store the parameter \c datatype
+ * \param unit [out] Pointer to the variable to store the parameter \c unit
+ *
+ * \return \c XLAL_SUCCESS (no explicit error handling)
+ *
+ * \sa LAL_VOTABLE_PARAM
+ *
+ * \author Oliver Bock\n
+ * Albert-Einstein-Institute Hannover, Germany
+ */
 INT4 XLALGetLALVOTableParamMapEntry(LAL_VOTABLE_PARAM type, char **name, char **datatype, char **unit)
 {
     /* set up local variables */
@@ -93,8 +113,8 @@ INT4 XLALGetLALVOTableParamMapEntry(LAL_VOTABLE_PARAM type, char **name, char **
  *
  * This function creates a VOTable \c PARAM %node with the specified value.
  *
- * \param type Type of the \c PARAM %node (defined in \c LAL_VOTABLE_PARAM)
- * \param value Identifier (name) of the \c RESOURCE %node
+ * \param type [in] Type of the \c PARAM %node (defined in \ref LAL_VOTABLE_PARAM)
+ * \param value [in] Identifier (name) of the \c RESOURCE %node
  *
  * \return A \c xmlNodePtr that holds the new \c PARAM %node.
  * In case of an error, a null-pointer is returned.\n
@@ -166,10 +186,10 @@ xmlNodePtr XLALCreateVOTableParamNode(LAL_VOTABLE_PARAM type, const char *value)
  * This function creates a VOTable \c RESOURCE %node with the specified identifier and assigns
  * the given children to it.
  *
- * \param type Type of the \c RESOURCE %node (typically the \c struct type name)
- * \param identifier Identifier (name) of the \c RESOURCE %node
- * \param children Pointer to an array of \c xmlNodes that are to be assigned as children
- * \param childCount The number of child nodes referenced by \c children
+ * \param type [in] Type of the \c RESOURCE %node (typically the \c struct type name)
+ * \param identifier [in] Identifier (name) of the \c RESOURCE %node
+ * \param children [in] Pointer to an array of \c xmlNodes that are to be assigned as children
+ * \param childCount [in] The number of child nodes referenced by \c children
  *
  * \return A \c xmlNodePtr that holds the new \c RESOURCE %node (incl. all children).
  * In case of an error, a null-pointer is returned.\n
@@ -235,7 +255,7 @@ xmlNodePtr XLALCreateVOTableResourceNode(const char *type, const char *identifie
  * \li \c INFO
  * \li \c RESOURCE
  *
- * \param xmlTree The XML fragment to be turned into a VOTable document
+ * \param xmlTree [in] The XML fragment to be turned into a VOTable document
  *
  * \return A pointer to a \c xmlDoc that represents the full VOTable XML document.
  * In case of an error, a null-pointer is returned.\n
@@ -302,11 +322,11 @@ xmlDocPtr XLALCreateVOTableXMLFromTree(const xmlNodePtr xmlTree)
  * \brief Takes a XML fragment (tree) and turns it into a VOTable document string
  *
  * This function takes a VOTable XML fragment and returns a full-fledged VOTable XML string.
- * Please note that all restrictions described for \c XLALCreateVOTableXMLFromTree also apply here!
+ * Please note that all restrictions described for \ref XLALCreateVOTableXMLFromTree also apply here!
  *
- * \param xmlTree The XML fragment to be turned into a VOTable document
- * \param xmlStringBuffer Pointer to the (uninitialized) buffer that will hold the XML string
- * \param xmlStringBufferSize Pointer to a variable that will hold the size of \c xmlStringBuffer
+ * \param xmlTree [in] The XML fragment to be turned into a VOTable document
+ * \param xmlStringBuffer [out] Pointer to the (uninitialized) buffer that will hold the XML string
+ * \param xmlStringBufferSize [out] Pointer to a variable that will hold the size of \c xmlStringBuffer
  *
  * \return \c XLAL_SUCCESS if the specified XML tree could be successfully serialized and dumped into a string.
  * The content will be encoded in UTF-8.\n
@@ -355,8 +375,8 @@ INT4 XLALCreateVOTableStringFromTree(const xmlNodePtr xmlTree, xmlChar **xmlStri
  * The XPath statement \b must be specified in such a way that at most a single %node
  * will be found.
  *
- * \param xmlDocument The XML document to be searched
- * \param xpath The XPath statement to be used to search the given XML document
+ * \param xmlDocument [in] The XML document to be searched
+ * \param xpath [in] The XPath statement to be used to search the given XML document
  *
  * \return A pointer to a \c xmlChar that holds the content (string) of the %node
  * specified by the given XPath statement. The content will be encoded in UTF-8.
@@ -462,8 +482,8 @@ xmlChar * XLALGetSingleNodeContentByXPath(const xmlDocPtr xmlDocument, const cha
  * \c RESOURCE %node identified by the given name. The returned \c xmlNode can then be
  * embedded into an existing %node hierarchy or turned into a full VOTable document.
  *
- * \param ltg Pointer to the \c LIGOTimeGPS structure to be serialized
- * \param name Unique identifier of this particular \c LIGOTimeGPS structure instance
+ * \param ltg [in] Pointer to the \c LIGOTimeGPS structure to be serialized
+ * \param name [in] Unique identifier of this particular \c LIGOTimeGPS structure instance
  *
  * \return A pointer to a \c xmlNode that holds the VOTable fragment that represents
  * the \c LIGOTimeGPS structure.
@@ -537,12 +557,12 @@ xmlNodePtr XLALLIGOTimeGPS2VOTableNode(const LIGOTimeGPS *const ltg, const char 
  *
  * This function takes a \c LIGOTimeGPS structure and serializes it into a full-fledged
  * VOTable XML string containing the serialized structure as the only child element.\n
- * Essentially, this function is just a wrapper for \c XLALLIGOTimeGPS2VOTableNode and
- * \c XLALCreateVOTableXMLFromTree followed by a dump of the VOTable document into a
+ * Essentially, this function is just a wrapper for \ref XLALLIGOTimeGPS2VOTableNode and
+ * \ref XLALCreateVOTableXMLFromTree followed by a dump of the VOTable document into a
  * string.\n
  *
- * \param ltg Pointer to the \c LIGOTimeGPS structure to be serialized
- * \param name Unique identifier of this particular \c LIGOTimeGPS structure instance
+ * \param ltg [in] Pointer to the \c LIGOTimeGPS structure to be serialized
+ * \param name [in] Unique identifier of this particular \c LIGOTimeGPS structure instance
  *
  * \return A pointer to a \c xmlChar (string) that holds the VOTable document containing
  * solely the \c LIGOTimeGPS structure. Please note that the string will be encoded in UTF-8.
@@ -606,9 +626,9 @@ xmlChar * XLALLIGOTimeGPS2VOTableXML(const LIGOTimeGPS *const ltg, const char *n
  * This function takes a VOTable XML document (string) and deserializes (extracts)
  * the \c LIGOTimeGPS structure identified by the given name.
  *
- * \param xml Pointer to the VOTable XML document (string) containing the structure
- * \param name Unique identifier of the particular \c LIGOTimeGPS structure to be deserialized
- * \param ltg Pointer to an empty \c  LIGOTimeGPS structure to store the deserialized instance
+ * \param xml [in] Pointer to the VOTable XML document (string) containing the structure
+ * \param name [in] Unique identifier of the particular \c LIGOTimeGPS structure to be deserialized
+ * \param ltg [out] Pointer to an empty \c  LIGOTimeGPS structure to store the deserialized instance
  *
  * \return \c XLAL_SUCCESS if the specified \c LIGOTimeGPS structure could be found and
  * deserialized successfully.

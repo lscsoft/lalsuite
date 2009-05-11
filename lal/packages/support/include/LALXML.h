@@ -38,6 +38,19 @@
 NRCSID( LALXMLH, "$Id$" );
 
 
+/**
+ * \brief List of all supported LAL parameters with a VOTable \c PARAM element attribute mapping
+ *
+ * This enumeration contains all supported LAL parameters that are mapped to their corresponding
+ * VOTable \c PARAM element attributes.\n
+ * \b Important: the actual LAL<->VOTable type map is maintained in \ref XLALGetLALVOTableParamMapEntry
+ * and \b must be in sync with this enumeration!
+ *
+ * \sa XLALGetLALVOTableParamMapEntry
+ *
+ * \author Oliver Bock\n
+ * Albert-Einstein-Institute Hannover, Germany
+ */
 typedef enum {
     GPS_SECONDS,
     GPS_NANOSECONDS
