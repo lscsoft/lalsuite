@@ -13,6 +13,8 @@ Options: [defaults in brackets after description]"
 helpmsg="$helpmsg
   --help                        print this message"
 helpmsg="$helpmsg
+  --with-autoreconf=AUTORECONF  use autoreconf program AUTORECONF [autoreconf]"
+helpmsg="$helpmsg
   --with-aclocal=ACLOCAL        use aclocal program ACLOCAL [aclocal]"
 helpmsg="$helpmsg
   --with-autoheader=AUTOHEADER  use autoheader program AUTOHEADER [autoheader]"
@@ -32,6 +34,7 @@ while test $# -gt 0 ; do
   esac
   case $option in
     -h | -help | --help ) echo "$helpmsg"; exit 0;;
+    -with-autoreconf=* | --with-autoreconf=* ) AUTORECONF="$optarg";;
     -with-aclocal=* | --with-aclocal=* ) ACLOCAL="$optarg";;
     -with-autoheader=* | --with-autoheader=* ) AUTOHEADER="$optarg";;
     -with-automake=* | --with-automake=* ) AUTOMAKE="$optarg";;
@@ -41,18 +44,22 @@ while test $# -gt 0 ; do
   shift
 done
 
-echo "00boot: checking versions of aclocal, automake, autoheader and autoconf"
+echo "00boot: checking versions of autotools"
 
-
+AUTORECONF=${AUTORECONF:-"autoreconf"}
 ACLOCAL=${ACLOCAL:-"aclocal"}
 AUTOHEADER=${AUTOHEADER:-"autoheader"}
 AUTOMAKE=${AUTOMAKE:-"automake"}
 AUTOCONF=${AUTOCONF:-"autoconf"}
 
+autoreconf_version="`$AUTORECONF --version 2>/dev/null | sed -n '1s/^.* \([0-9.]*\)/\1/p'`"
 aclocal_version="`$ACLOCAL --version 2>/dev/null | sed -n '1s/^.* \([0-9.]*\)/\1/p'`"
 autoheader_version="`$AUTOHEADER --version 2>/dev/null | sed -n '1s/^.* \([0-9.]*\)/\1/p'`"
 automake_version="`$AUTOMAKE --version 2>/dev/null | sed -n '1s/^.* \([0-9.]*\)/\1/p'`"
 autoconf_version="`$AUTOCONF --version 2>/dev/null | sed -n '1s/^.* \([0-9.]*\)/\1/p'`"
+if test -z "$autoreconf_version"; then
+  fail "finding program autoreconf"
+fi
 if test -z "$aclocal_version"; then
   fail "finding program aclocal"
 fi
@@ -67,6 +74,7 @@ if test -z "$autoconf_version"; then
 fi
 
 echo "00boot: using:"
+printf "00boot:\t%-16s %s\n" "autoreconf-$autoreconf_version:" "`which $AUTORECONF`"
 printf "00boot:\t%-16s %s\n" "aclocal-$aclocal_version:" "`which $ACLOCAL`"
 printf "00boot:\t%-16s %s\n" "autoheader-$autoheader_version:" "`which $AUTOHEADER`"
 printf "00boot:\t%-16s %s\n" "automake-$automake_version:" "`which $AUTOMAKE`"
@@ -74,14 +82,8 @@ printf "00boot:\t%-16s %s\n" "autoconf-$autoconf_version:" "`which $AUTOCONF`"
 
 ## Generate the Makefile.in's and the configure script
 
-echo "00boot: running aclocal"
-$ACLOCAL -I misc || fail "aclocal"
-echo "00boot: running autoheader"
-$AUTOHEADER || fail "autoheader"
-echo "00boot: running automake"
-$AUTOMAKE || fail "automake"
-echo "00boot: running autoconf"
-$AUTOCONF || fail "autoconf"
+echo "00boot: running autoreconf"
+$AUTORECONF || fail "autoreconf"
 
 echo "00boot: success"
 echo "
