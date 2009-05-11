@@ -19,20 +19,16 @@
 */
 
 /**
- * \defgroup XML
- * \ingroup support
- * \author Oliver Bock, Reinhard Prix, Jolien Creighton
- * \brief Module for reading/writing/manipulating XML as well as data serialization.
- */
-
-/**
  * \file
  * \ingroup XML
- * \brief Header file declaring the public XML API
+ * \brief Header file declaring the public VOTable serializers XML API
  */
 
 #include <libxml/tree.h>
 
+#include <lal/LALDatatypes.h>
 
-int XLALXMLFilePrintElements(const char *fname);
-xmlChar * XLALGetSingleNodeContentByXPath(const xmlDocPtr xmlDoc, const char *xpath);
+
+xmlNodePtr XLALLIGOTimeGPS2VOTableNode(const LIGOTimeGPS *const ltg, const char *name);
+INT4 XLALVOTableXML2LIGOTimeGPSByName(const char *xml, const char *name, LIGOTimeGPS *ltg);
+xmlChar * XLALLIGOTimeGPS2VOTableXML(const LIGOTimeGPS *const ltg, const char *name);
