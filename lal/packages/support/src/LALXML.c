@@ -81,7 +81,7 @@ int XLALXMLFilePrintElements(const char *fname)
  * \param datatype [out] Pointer to the variable to store the parameter \c datatype
  * \param unit [out] Pointer to the variable to store the parameter \c unit
  *
- * \return \c XLAL_SUCCESS (no explicit error handling)
+ * \return \c XLAL_SUCCESS if the parameter configuration could be retrieved successfully
  *
  * \sa LAL_VOTABLE_PARAM
  *
@@ -99,10 +99,16 @@ INT4 XLALGetLALVOTableParamMapEntry(const LAL_VOTABLE_PARAM type, const char **c
             {"gpsNanoSeconds", "int", "ns"}
     };
 
-    /* return map entry*/
-    *name = lalVOTableParamMap[type][0];
-    *datatype = lalVOTableParamMap[type][1];
-    *unit = lalVOTableParamMap[type][2];
+    /* sanity check */
+    if(type <= ENUM_BEGIN || type >= ENUM_END) {
+        XLALPrintError("Invalid type specifier encountered: %i\n", type);
+        return XLAL_EINVAL;
+    }
+
+    /* return map entry (type-1 required to compensate for the offset caused by ENUM_BEGIN) */
+    *name = lalVOTableParamMap[type-1][0];
+    *datatype = lalVOTableParamMap[type-1][1];
+    *unit = lalVOTableParamMap[type-1][2];
 
     return XLAL_SUCCESS;
 }
@@ -138,7 +144,10 @@ xmlNodePtr XLALCreateVOTableParamNode(const LAL_VOTABLE_PARAM type, const char *
     const CHAR *paramUnit = "\0";
 
     /* configure PARAM node*/
-    XLALGetLALVOTableParamMapEntry(type, &paramName, &paramDatatype, &paramUnit);
+    if(XLALGetLALVOTableParamMapEntry(type, &paramName, &paramDatatype, &paramUnit)) {
+        XLALPrintError("Couldn't retrieve PARAM configuration!\n");
+        XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+    }
 
     /* create node and add attributes*/
     xmlParamNode = xmlNewNode(NULL, BAD_CAST("PARAM"));

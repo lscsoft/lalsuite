@@ -52,8 +52,10 @@ NRCSID( LALXMLH, "$Id$" );
  * Albert-Einstein-Institute Hannover, Germany
  */
 typedef enum {
+    ENUM_BEGIN,
     GPS_SECONDS,
-    GPS_NANOSECONDS
+    GPS_NANOSECONDS,
+    ENUM_END
 } LAL_VOTABLE_PARAM;
 
 
