@@ -21,13 +21,14 @@ __author__ = 'Cristina Torres <cristina@phys.utb.edu>'
 __date__ = '$Date$'
 __version__ = ''
 
+import sys
+sys.path.append('@PYTHONLIBDIR@')
 from optparse import OptionParser
 import ConfigParser
 import getopt
 import math
 import os
 import string
-import sys
 import time
 import commands
 
