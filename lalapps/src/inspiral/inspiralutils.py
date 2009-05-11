@@ -147,7 +147,7 @@ def science_segments(ifo, config, generate_segments = True):
   segFindCall = executable 
   segFindCall = ' '.join([ segFindCall,
 	"--query-segments",
-	"--segment-url", config.get("segfind", "server"),
+	"--segment-url", config.get("segfind", "segment-url"),
 	"--gps-start-time", start,
 	"--gps-end-time", end,
 	"--include-segments",
@@ -175,14 +175,14 @@ def generate_veto_cat_files(config, vetoDefFile, generateVetoes):
   end = config.get("input", "gps-end-time")
 
   genVetoCall = executable
-  genVetoCall = ' '.join([ genVetoCall,
-	"--segment", config.get("segfind", "server"),
+  genVetoCall = ' '.join([ genVetoCall, "--separate-categories", 
+	"--segment-url", config.get("segfind", "segment-url"),
 	"--veto-file", vetoDefFile,
 	"--gps-start-time", start,
 	"--gps-end-time", end ])
   
   if generateVetoes:
-    print "Generating veto category xml files... this may take awhile..."
+    print "Generating veto category xml files... this may take some time`..."
     make_external_call(genVetoCall)
 
 ##############################################################################
