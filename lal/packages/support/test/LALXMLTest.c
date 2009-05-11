@@ -17,7 +17,7 @@
  *  MA  02111-1307  USA
  */
 
-#include <lal/LALXML.h>
+#include <lal/LALXMLVOTableSerializers.h>
 #include <LALStatusMacros.h>
 
 #define LALXMLC_ENOM 0
