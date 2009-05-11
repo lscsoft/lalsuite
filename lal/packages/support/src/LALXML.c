@@ -76,7 +76,7 @@ int XLALXMLFilePrintElements(const char *fname)
  * \b Important: the actual LAL<->VOTable type map is maintained in this function
  * (\c lalVOTableParamMap) and \b must be in sync with (in the same order as) \ref LAL_VOTABLE_PARAM!
  *
- * \param type  [in] Type of the \c PARAM %node (defined in \ref LAL_VOTABLE_PARAM)
+ * \param type [in] Type of the \c PARAM %node (defined in \ref LAL_VOTABLE_PARAM)
  * \param name [out] Pointer to the variable to store the parameter \c name
  * \param datatype [out] Pointer to the variable to store the parameter \c datatype
  * \param unit [out] Pointer to the variable to store the parameter \c unit
@@ -88,13 +88,13 @@ int XLALXMLFilePrintElements(const char *fname)
  * \author Oliver Bock\n
  * Albert-Einstein-Institute Hannover, Germany
  */
-INT4 XLALGetLALVOTableParamMapEntry(LAL_VOTABLE_PARAM type, char **name, char **datatype, char **unit)
+INT4 XLALGetLALVOTableParamMapEntry(const LAL_VOTABLE_PARAM type, const char **const name, const char **const datatype, const char **const unit)
 {
     /* set up local variables */
     static const CHAR *logReference = "XLALGetLALVOTableParamMapEntry";
 
     /* the actual type map table */
-    static char *lalVOTableParamMap[][3] = {
+    static char *const lalVOTableParamMap[][3] = {
             {"gpsSeconds", "int", "s"},
             {"gpsNanoSeconds", "int", "ns"}
     };
@@ -128,14 +128,14 @@ INT4 XLALGetLALVOTableParamMapEntry(LAL_VOTABLE_PARAM type, char **name, char **
  * \author Oliver Bock\n
  * Albert-Einstein-Institute Hannover, Germany
  */
-xmlNodePtr XLALCreateVOTableParamNode(LAL_VOTABLE_PARAM type, const char *value)
+xmlNodePtr XLALCreateVOTableParamNode(const LAL_VOTABLE_PARAM type, const char *value)
 {
     /* set up local variables */
     static const CHAR *logReference = "XLALCreateVOTableParamNode";
     xmlNodePtr xmlParamNode = NULL;
-    CHAR *paramName = "\0";
-    CHAR *paramDatatype = "\0";
-    CHAR *paramUnit = "\0";
+    const CHAR *paramName = "\0";
+    const CHAR *paramDatatype = "\0";
+    const CHAR *paramUnit = "\0";
 
     /* configure PARAM node*/
     XLALGetLALVOTableParamMapEntry(type, &paramName, &paramDatatype, &paramUnit);
@@ -200,7 +200,7 @@ xmlNodePtr XLALCreateVOTableParamNode(LAL_VOTABLE_PARAM type, const char *value)
  * \author Oliver Bock\n
  * Albert-Einstein-Institute Hannover, Germany
  */
-xmlNodePtr XLALCreateVOTableResourceNode(const char *type, const char *identifier, xmlNodePtr *children, INT4 childCount)
+xmlNodePtr XLALCreateVOTableResourceNode(const char *type, const char *identifier, const xmlNodePtr *children, const INT4 childCount)
 {
     /* set up local variables */
     static const CHAR *logReference = "XLALCreateVOTableResourceNode";
