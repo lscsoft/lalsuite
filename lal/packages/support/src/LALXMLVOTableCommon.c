@@ -102,11 +102,11 @@ INT4 XLALGetLALVOTableParamMapEntry(const LAL_VOTABLE_PARAM type,
  *
  * This function creates a VOTable \c PARAM %node with the specified properties.
  *
- * \param name [in] Content of the \c name attribute of the \c PARAM %node
- * \param unit [in] Content of the \c unit attribute of the \c PARAM %node
- * \param datatype [in] Content of the \c datatype attribute of the \c PARAM %node
- * \param arraysize [in] Content of the \c arraysize attribute of the \c PARAM %node
- * \param value [in] Content of the \c value attribute of the \c PARAM %node
+ * \param name [in] Content of the \c name attribute of the \c PARAM %node (mandatory)
+ * \param unit [in] Content of the \c unit attribute of the \c PARAM %node (optional)
+ * \param datatype [in] Content of the \c datatype attribute of the \c PARAM %node (mandatory)
+ * \param arraysize [in] Content of the \c arraysize attribute of the \c PARAM %node (optional)
+ * \param value [in] Content of the \c value attribute of the \c PARAM %node (mandatory, empty value allowed)
  *
  * \return A \c xmlNodePtr that holds the new \c PARAM %node.
  * In case of an error, a null-pointer is returned.\n
