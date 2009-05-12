@@ -41,13 +41,13 @@
  */
 typedef enum {
     ENUM_BEGIN,
-    GPS_SECONDS,
-    GPS_NANOSECONDS,
+    LIGOTimeGPS_gpsSeconds,
+    LIGOTimeGPS_gpsNanoSeconds,
     ENUM_END
 } LAL_VOTABLE_PARAM;
 
 
-INT4 XLALGetLALVOTableParamMapEntry(const LAL_VOTABLE_PARAM type, const char **const name, const char **const datatype, const char **const unit);
+INT4 XLALGetLALVOTableParamMapEntry(const LAL_VOTABLE_PARAM type, const char **const structure, const char **const member, const char **const datatype, const char **const unit);
 xmlNodePtr XLALCreateVOTableCustomParamNode(const char *name, const char *datatype, const char *unit, const char *value);
 xmlNodePtr XLALCreateVOTableTypedParamNode(const LAL_VOTABLE_PARAM type, const char *value);
 xmlNodePtr XLALCreateVOTableResourceNode(const char *type, const char *identifier, const xmlNodePtr *children, const INT4 childCount);

@@ -26,6 +26,7 @@
 #include <libxml/tree.h>
 
 #include <lal/LALDatatypes.h>
+#include <lal/PulsarDataTypes.h>
 
 
 xmlNodePtr XLALLIGOTimeGPS2VOTableNode(const LIGOTimeGPS *const ltg, const char *name);

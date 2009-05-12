@@ -35,12 +35,13 @@
  * \brief Retrieves the \c PARAM %node configuration for a given LAL parameter
  *
  * This function takes a type specifier and returns its \c PARAM %node configuration
- * (name, datatype, unit).\n
+ * (structure name, member name, datatype, unit).\n
  * \b Important: the actual LAL<->VOTable type map is maintained in this function
  * (\c lalVOTableParamMap) and \b must be in sync with (in the same order as) \ref LAL_VOTABLE_PARAM!
  *
  * \param type [in] Type of the \c PARAM %node (defined in \ref LAL_VOTABLE_PARAM)
- * \param name [out] Pointer to the variable to store the parameter \c name
+ * \param structure [out] Pointer to the variable to store the \c PARAM's parent \c utype
+ * \param member [out] Pointer to the variable to store the parameter \c name
  * \param datatype [out] Pointer to the variable to store the parameter \c datatype
  * \param unit [out] Pointer to the variable to store the parameter \c unit
  *
@@ -51,15 +52,15 @@
  * \author Oliver Bock\n
  * Albert-Einstein-Institute Hannover, Germany
  */
-INT4 XLALGetLALVOTableParamMapEntry(const LAL_VOTABLE_PARAM type, const char **const name, const char **const datatype, const char **const unit)
+INT4 XLALGetLALVOTableParamMapEntry(const LAL_VOTABLE_PARAM type, const char **const structure, const char **const member, const char **const datatype, const char **const unit)
 {
     /* set up local variables */
     static const CHAR *logReference = "XLALGetLALVOTableParamMapEntry";
 
     /* the actual type map table */
-    static char *const lalVOTableParamMap[][3] = {
-            {"gpsSeconds", "int", "s"},
-            {"gpsNanoSeconds", "int", "ns"}
+    static char *const lalVOTableParamMap[][4] = {
+            {"LIGOTimeGPS", "gpsSeconds", "int", "s"},
+            {"LIGOTimeGPS", "gpsNanoSeconds", "int", "ns"}
     };
 
     /* sanity check */
@@ -69,9 +70,10 @@ INT4 XLALGetLALVOTableParamMapEntry(const LAL_VOTABLE_PARAM type, const char **c
     }
 
     /* return map entry (type-1 required to compensate for the offset caused by ENUM_BEGIN) */
-    *name = lalVOTableParamMap[type-1][0];
-    *datatype = lalVOTableParamMap[type-1][1];
-    *unit = lalVOTableParamMap[type-1][2];
+    *structure = lalVOTableParamMap[type-1][0];
+    *member = lalVOTableParamMap[type-1][1];
+    *datatype = lalVOTableParamMap[type-1][2];
+    *unit = lalVOTableParamMap[type-1][3];
 
     return XLAL_SUCCESS;
 }
@@ -166,17 +168,18 @@ xmlNodePtr XLALCreateVOTableTypedParamNode(const LAL_VOTABLE_PARAM type, const c
 {
     /* set up local variables */
     static const CHAR *logReference = "XLALCreateVOTableTypedParamNode";
-    const CHAR *paramName = "\0";
+    const CHAR *paramStruct = "\0";
+    const CHAR *paramMember = "\0";
     const CHAR *paramDatatype = "\0";
     const CHAR *paramUnit = "\0";
 
     /* configure PARAM node*/
-    if(XLALGetLALVOTableParamMapEntry(type, &paramName, &paramDatatype, &paramUnit)) {
+    if(XLALGetLALVOTableParamMapEntry(type, &paramStruct, &paramMember, &paramDatatype, &paramUnit)) {
         XLALPrintError("Couldn't retrieve PARAM configuration!\n");
         XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
     }
 
-    return XLALCreateVOTableCustomParamNode(paramName, paramDatatype, paramUnit, value);
+    return XLALCreateVOTableCustomParamNode(paramMember, paramDatatype, paramUnit, value);
 }
 
 

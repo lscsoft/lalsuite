@@ -91,14 +91,14 @@ xmlNodePtr XLALLIGOTimeGPS2VOTableNode(const LIGOTimeGPS *const ltg, const char 
     }
 
     /* set up RESOURCE node child (first PARAM) */
-    xmlResourceParamNodes[0] = XLALCreateVOTableTypedParamNode(GPS_SECONDS, gpsSecondsBuffer);
+    xmlResourceParamNodes[0] = XLALCreateVOTableTypedParamNode(LIGOTimeGPS_gpsSeconds, gpsSecondsBuffer);
     if(!xmlResourceParamNodes[0]) {
         XLALPrintError("Couldn't create PARAM node: gpsSeconds\n");
         XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
     }
 
     /* set up RESOURCE node child (second PARAM) */
-    xmlResourceParamNodes[1] = XLALCreateVOTableTypedParamNode(GPS_NANOSECONDS, gpsNanoSecondsBuffer);
+    xmlResourceParamNodes[1] = XLALCreateVOTableTypedParamNode(LIGOTimeGPS_gpsNanoSeconds, gpsNanoSecondsBuffer);
     if(!xmlResourceParamNodes[1]) {
         XLALPrintError("Couldn't create PARAM node: gpsNanoSeconds\n");
         XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
