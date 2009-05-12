@@ -23,6 +23,8 @@
  * \brief Implementation of the common VOTable XML API
  */
 
+#include <string.h>
+
 #include <libxml/parser.h>
 #include <libxml/tree.h>
 #include <libxml/xpath.h>
@@ -35,32 +37,47 @@
  * \brief Retrieves the \c PARAM %node configuration for a given LAL parameter
  *
  * This function takes a type specifier and returns its \c PARAM %node configuration
- * (structure name, member name, datatype, unit).\n
+ * (structure name, member name, unit, datatype, arraysize).\n
  * \b Important: the actual LAL<->VOTable type map is maintained in this function
  * (\c lalVOTableParamMap) and \b must be in sync with (in the same order as) \ref LAL_VOTABLE_PARAM!
  *
  * \param type [in] Type of the \c PARAM %node (defined in \ref LAL_VOTABLE_PARAM)
  * \param structure [out] Pointer to the variable to store the \c PARAM's parent \c utype
  * \param member [out] Pointer to the variable to store the parameter \c name
- * \param datatype [out] Pointer to the variable to store the parameter \c datatype
  * \param unit [out] Pointer to the variable to store the parameter \c unit
+ * \param datatype [out] Pointer to the variable to store the parameter \c datatype
+ * \param arraysize [out] Pointer to the variable to store the parameter \c arraysize
  *
  * \return \c XLAL_SUCCESS if the parameter configuration could be retrieved successfully
  *
  * \sa LAL_VOTABLE_PARAM
  *
+ * \todo The type map should be implemented as an associative array (hash map)!
+ *
  * \author Oliver Bock\n
  * Albert-Einstein-Institute Hannover, Germany
  */
-INT4 XLALGetLALVOTableParamMapEntry(const LAL_VOTABLE_PARAM type, const char **const structure, const char **const member, const char **const datatype, const char **const unit)
+INT4 XLALGetLALVOTableParamMapEntry(const LAL_VOTABLE_PARAM type,
+                                    const char **const structure,
+                                    const char **const member,
+                                    const char **const unit,
+                                    const char **const datatype,
+                                    const char **const arraysize)
 {
     /* set up local variables */
     static const CHAR *logReference = "XLALGetLALVOTableParamMapEntry";
 
     /* the actual type map table */
-    static char *const lalVOTableParamMap[][4] = {
-            {"LIGOTimeGPS", "gpsSeconds", "int", "s"},
-            {"LIGOTimeGPS", "gpsNanoSeconds", "int", "ns"}
+    static char *const lalVOTableParamMap[][5] = {
+            {"LIGOTimeGPS",         "gpsSeconds",       "s",    "int",          ""},
+            {"LIGOTimeGPS",         "gpsNanoSeconds",   "ns",   "int",          ""},
+            {"BinaryOrbitParams",   "argp",             "rad",  "double",       ""},
+            {"BinaryOrbitParams",   "asini",            "s",    "double",       ""},
+            {"BinaryOrbitParams",   "ecc",              "",     "double",       ""},
+            {"BinaryOrbitParams",   "period",           "s",    "double",       ""},
+            {"PulsarDopplerParams", "Alpha",            "rad",  "double",       ""},
+            {"PulsarDopplerParams", "Delta",            "rad",  "double",       ""},
+            {"PulsarDopplerParams", "fkdot",            "",     "double",       "4"}
     };
 
     /* sanity check */
@@ -72,8 +89,9 @@ INT4 XLALGetLALVOTableParamMapEntry(const LAL_VOTABLE_PARAM type, const char **c
     /* return map entry (type-1 required to compensate for the offset caused by ENUM_BEGIN) */
     *structure = lalVOTableParamMap[type-1][0];
     *member = lalVOTableParamMap[type-1][1];
-    *datatype = lalVOTableParamMap[type-1][2];
-    *unit = lalVOTableParamMap[type-1][3];
+    *unit = lalVOTableParamMap[type-1][2];
+    *datatype = lalVOTableParamMap[type-1][3];
+    *arraysize = lalVOTableParamMap[type-1][4];
 
     return XLAL_SUCCESS;
 }
@@ -85,8 +103,9 @@ INT4 XLALGetLALVOTableParamMapEntry(const LAL_VOTABLE_PARAM type, const char **c
  * This function creates a VOTable \c PARAM %node with the specified properties.
  *
  * \param name [in] Content of the \c name attribute of the \c PARAM %node
- * \param datatype [in] Content of the \c datatype attribute of the \c PARAM %node
  * \param unit [in] Content of the \c unit attribute of the \c PARAM %node
+ * \param datatype [in] Content of the \c datatype attribute of the \c PARAM %node
+ * \param arraysize [in] Content of the \c arraysize attribute of the \c PARAM %node
  * \param value [in] Content of the \c value attribute of the \c PARAM %node
  *
  * \return A \c xmlNodePtr that holds the new \c PARAM %node.
@@ -98,7 +117,11 @@ INT4 XLALGetLALVOTableParamMapEntry(const LAL_VOTABLE_PARAM type, const char **c
  * \author Oliver Bock\n
  * Albert-Einstein-Institute Hannover, Germany
  */
-xmlNodePtr XLALCreateVOTableCustomParamNode(const char *name, const char *datatype, const char *unit, const char *value)
+xmlNodePtr XLALCreateVOTableCustomParamNode(const char *name,
+                                            const char *unit,
+                                            const char *datatype,
+                                            const char *arraysize,
+                                            const char *value)
 {
     /* set up local variables */
     static const CHAR *logReference = "XLALCreateVOTableCustomParamNode";
@@ -110,31 +133,54 @@ xmlNodePtr XLALCreateVOTableCustomParamNode(const char *name, const char *dataty
         XLALPrintError("Element instantiation failed: PARAM\n");
         XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
     }
+    /* mandatory: name */
+    if(strlen(name) <= 0) {
+        /* clean up */
+        xmlFreeNode(xmlParamNode);
+        XLALPrintError("Missing mandatory attribute: name\n");
+        XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+    }
     if(!xmlNewProp(xmlParamNode, BAD_CAST("name"), BAD_CAST(name))) {
         /* clean up */
         xmlFreeNode(xmlParamNode);
-
         XLALPrintError("Attribute instantiation failed: name\n");
+        XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+    }
+    /* optional: unit */
+    if(strlen(unit) > 0) {
+        if(!xmlNewProp(xmlParamNode, BAD_CAST("unit"), BAD_CAST(unit))) {
+            /* clean up */
+            xmlFreeNode(xmlParamNode);
+            XLALPrintError("Attribute instantiation failed: unit\n");
+            XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+        }
+    }
+    /* mandatory: datatype */
+    if(strlen(datatype) <= 0) {
+        /* clean up */
+        xmlFreeNode(xmlParamNode);
+        XLALPrintError("Missing mandatory attribute: datatype\n");
         XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
     }
     if(!xmlNewProp(xmlParamNode, BAD_CAST("datatype"), BAD_CAST(datatype))) {
         /* clean up */
         xmlFreeNode(xmlParamNode);
-
         XLALPrintError("Attribute instantiation failed: datatype\n");
         XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
     }
-    if(!xmlNewProp(xmlParamNode, BAD_CAST("unit"), BAD_CAST(unit))) {
-        /* clean up */
-        xmlFreeNode(xmlParamNode);
-
-        XLALPrintError("Attribute instantiation failed: unit\n");
-        XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+    /* optional: arraysize */
+    if(strlen(arraysize) > 0) {
+        if(!xmlNewProp(xmlParamNode, BAD_CAST("arraysize"), BAD_CAST(arraysize))) {
+            /* clean up */
+            xmlFreeNode(xmlParamNode);
+            XLALPrintError("Attribute instantiation failed: arraysize\n");
+            XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+        }
     }
+    /* mandatory: value */
     if(!xmlNewProp(xmlParamNode, BAD_CAST("value"), BAD_CAST(value))) {
         /* clean up */
         xmlFreeNode(xmlParamNode);
-
         XLALPrintError("Attribute instantiation failed: value\n");
         XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
     }
@@ -170,16 +216,17 @@ xmlNodePtr XLALCreateVOTableTypedParamNode(const LAL_VOTABLE_PARAM type, const c
     static const CHAR *logReference = "XLALCreateVOTableTypedParamNode";
     const CHAR *paramStruct = "\0";
     const CHAR *paramMember = "\0";
-    const CHAR *paramDatatype = "\0";
     const CHAR *paramUnit = "\0";
+    const CHAR *paramDatatype = "\0";
+    const CHAR *paramArraysize = "\0";
 
     /* configure PARAM node*/
-    if(XLALGetLALVOTableParamMapEntry(type, &paramStruct, &paramMember, &paramDatatype, &paramUnit)) {
+    if(XLALGetLALVOTableParamMapEntry(type, &paramStruct, &paramMember, &paramUnit, &paramDatatype, &paramArraysize)) {
         XLALPrintError("Couldn't retrieve PARAM configuration!\n");
         XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
     }
 
-    return XLALCreateVOTableCustomParamNode(paramMember, paramDatatype, paramUnit, value);
+    return XLALCreateVOTableCustomParamNode(paramMember, paramUnit, paramDatatype, paramArraysize, value);
 }
 
 
