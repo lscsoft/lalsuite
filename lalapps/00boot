@@ -1,13 +1,13 @@
 #!/bin/sh
 
-## Function to report failure
+# function to report failure
 fail () {
   echo "!!! 00boot: $1 failed" >&2
   echo "!!! 00boot: consult the file 'README' for help" >&2
   exit 1
 }
 
-# Help message
+# help message
 helpmsg="Usage $0 [options]
 Options: [defaults in brackets after description]"
 helpmsg="$helpmsg
@@ -25,7 +25,7 @@ helpmsg="$helpmsg
 helpmsg="$helpmsg
   --include-deps                pass option --include-deps to automake [no]"
 
-## Process args
+# process args
 while test $# -gt 0 ; do
   option=$1
   case "$option" in
@@ -44,14 +44,13 @@ while test $# -gt 0 ; do
   shift
 done
 
+# check autotools versions
 echo "00boot: checking versions of autotools"
-
 AUTORECONF=${AUTORECONF:-"autoreconf"}
 ACLOCAL=${ACLOCAL:-"aclocal"}
 AUTOHEADER=${AUTOHEADER:-"autoheader"}
 AUTOMAKE=${AUTOMAKE:-"automake"}
 AUTOCONF=${AUTOCONF:-"autoconf"}
-
 autoreconf_version="`$AUTORECONF --version 2>/dev/null | sed -n '1s/^.* \([0-9.]*\)/\1/p'`"
 aclocal_version="`$ACLOCAL --version 2>/dev/null | sed -n '1s/^.* \([0-9.]*\)/\1/p'`"
 autoheader_version="`$AUTOHEADER --version 2>/dev/null | sed -n '1s/^.* \([0-9.]*\)/\1/p'`"
@@ -73,6 +72,7 @@ if test -z "$autoconf_version"; then
   fail "finding program autoconf"
 fi
 
+# report autotools versions
 echo "00boot: using:"
 printf "00boot:\t%-16s %s\n" "autoreconf-$autoreconf_version:" "`which $AUTORECONF`"
 printf "00boot:\t%-16s %s\n" "aclocal-$aclocal_version:" "`which $ACLOCAL`"
@@ -80,11 +80,11 @@ printf "00boot:\t%-16s %s\n" "autoheader-$autoheader_version:" "`which $AUTOHEAD
 printf "00boot:\t%-16s %s\n" "automake-$automake_version:" "`which $AUTOMAKE`"
 printf "00boot:\t%-16s %s\n" "autoconf-$autoconf_version:" "`which $AUTOCONF`"
 
-## Generate the Makefile.in's and the configure script
-
+# generate build system
 echo "00boot: running autoreconf"
 $AUTORECONF || fail "autoreconf"
 
+# report success
 echo "00boot: success"
 echo "
 =================================================================

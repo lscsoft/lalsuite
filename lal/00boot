@@ -1,13 +1,13 @@
 #!/bin/sh
 
-## This is a script for the software librarian to use to generate neccessary
-## files from the minimal set in the cvs archive.
-##
-## This script is not to be included in the distribution.
+# function to report failure
+fail () {
+  echo "!!! 00boot: $1 failed" >&2
+  echo "!!! 00boot: consult the file 'README.install' for help" >&2
+  exit 1
+}
 
-## <<<< !!!!  Do not edit below here !!!! >>>> ##
-
-# Help message
+# help message
 helpmsg="Usage $0 [options]
 Options: [defaults in brackets after description]"
 helpmsg="$helpmsg
@@ -27,7 +27,7 @@ helpmsg="$helpmsg
 helpmsg="$helpmsg
   --include-deps                pass option --include-deps to automake [no]"
 
-## Process args
+# process args
 verbose="false"
 while test $# -gt 0 ; do
   option=$1
@@ -48,30 +48,14 @@ while test $# -gt 0 ; do
   shift
 done
 
-test "$verbose" = "true" && set -x
-
-
-
-
-
-
-## Function to report failure
-fail () {
-  echo "00boot: failed $1" >&2
-  echo "00boot: failure: consult the file 'README.install' for help" >&2
-  exit 1
-}
-
-
+# check autotools versions
 echo "00boot: checking versions of autotools"
-
 M4=${M4:-"m4"}
 AUTORECONF=${AUTORECONF:-"autoreconf"}
 ACLOCAL=${ACLOCAL:-"aclocal"}
 AUTOHEADER=${AUTOHEADER:-"autoheader"}
 AUTOMAKE=${AUTOMAKE:-"automake"}
 AUTOCONF=${AUTOCONF:-"autoconf"}
-
 autoreconf_version="`$AUTORECONF --version 2>/dev/null | sed -n '1s/^.* \([0-9.]*\)/\1/p'`"
 aclocal_version="`$ACLOCAL --version 2>/dev/null | sed -n '1s/^.* \([0-9.]*\)/\1/p'`"
 autoheader_version="`$AUTOHEADER --version 2>/dev/null | sed -n '1s/^.* \([0-9.]*\)/\1/p'`"
@@ -93,7 +77,7 @@ if test -z "$autoconf_version"; then
   fail "finding program autoconf"
 fi
 
-
+# report autotools versions
 echo "00boot: using:"
 printf "00boot:\t%-16s %s\n" "autoreconf-$autoreconf_version:" "`which $AUTORECONF`"
 printf "00boot:\t%-16s %s\n" "aclocal-$aclocal_version:" "`which $ACLOCAL`"
@@ -101,7 +85,7 @@ printf "00boot:\t%-16s %s\n" "autoheader-$autoheader_version:" "`which $AUTOHEAD
 printf "00boot:\t%-16s %s\n" "automake-$automake_version:" "`which $AUTOMAKE`"
 printf "00boot:\t%-16s %s\n" "autoconf-$autoconf_version:" "`which $AUTOCONF`"
 
-## Now run m4 to generate sources
+# run m4 to generate sources
 echo "00boot: creating sources"
 
 cd packages/std/src || fail "creating sources in packages/std/src"
@@ -189,17 +173,17 @@ ${M4} Sequence.m4 > Sequence.c || fail "creating sources in packages/tools/src"
 ${M4} TimeSeries.m4 > TimeSeries.c || fail "creating sources in packages/tools/src"
 cd ../../.. || fail "creating sources in packages/tools/src"
 
-## Generate the Makefile.in's and the configure script
-
+# generate build system
 echo "00boot: running autoreconf"
 $AUTORECONF || fail "autoreconf"
 
-## If there is a lalapps subdirectory run 00boot within this directory too
+# if there is a lalapps subdirectory run 00boot within this directory too
 if test -d lalapps ; then
   echo "00boot: running 00boot within lalapps subdir"
   ( cd lalapps && ./00boot )  || fail "lalapps 00boot"
 fi
 
+# report success
 echo "00boot: success"
 echo "
 =================================================================
