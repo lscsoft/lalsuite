@@ -35,8 +35,9 @@
 #include <lal/LALXMLVOTableSerializers.h>
 
 
-#define INT4STR_MAXLEN 15
-#define XPATHSTR_MAXLEN 150
+#define INT4STR_MAXLEN          15
+#define REAL8STR_MAXLEN         25
+#define XPATHSTR_MAXLEN         150
 
 
 /**
@@ -67,10 +68,11 @@ xmlNodePtr XLALLIGOTimeGPS2VOTableNode(const LIGOTimeGPS *const ltg, const char 
 {
     /* set up local variables */
     static const CHAR *logReference = "XLALLIGOTimeGPS2VOTableNode";
-    CHAR gpsSecondsBuffer[INT4STR_MAXLEN] = {0};
-    CHAR gpsNanoSecondsBuffer[INT4STR_MAXLEN] = {0};
     xmlNodePtr xmlResourceNode = NULL;
     xmlNodePtr xmlResourceParamNodes[2] = {NULL};
+
+    CHAR gpsSecondsBuffer[INT4STR_MAXLEN] = {0};
+    CHAR gpsNanoSecondsBuffer[INT4STR_MAXLEN] = {0};
 
     /* make sure that the shared library is the same as the
      * library version the code was compiled against */
@@ -299,4 +301,366 @@ INT4 XLALVOTableXML2LIGOTimeGPSByName(const char *xml, const char *name, LIGOTim
     xmlCleanupParser();
 
     return XLAL_SUCCESS;
+}
+
+
+/**
+ * \brief Serializes a \c BinaryOrbitParams structure into a VOTable XML %node
+ *
+ * This function takes a \c BinaryOrbitParams structure and serializes it into a VOTable
+ * \c RESOURCE %node identified by the given name. The returned \c xmlNode can then be
+ * embedded into an existing %node hierarchy or turned into a full VOTable document.
+ *
+ * \param bop [in] Pointer to the \c BinaryOrbitParams structure to be serialized
+ * \param name [in] Unique identifier of this particular \c BinaryOrbitParams structure instance
+ *
+ * \return A pointer to a \c xmlNode that holds the VOTable fragment that represents
+ * the \c BinaryOrbitParams structure.
+ * In case of an error, a null-pointer is returned.\n
+ * \b Important: the caller is responsible to free the allocated memory (when the
+ * fragment isn't needed anymore) using \c xmlFreeNode. Alternatively, \c xmlFreeDoc
+ * can be used later on when the returned fragment has been embedded in a XML document.
+ *
+ * \sa XLALCreateVOTableCustomParamNode
+ * \sa XLALCreateVOTableResourceNode
+ * \sa XLALCreateVOTableXMLFromTree
+ *
+ * \author Oliver Bock\n
+ * Albert-Einstein-Institute Hannover, Germany
+ */
+xmlNodePtr XLALBinaryOrbitParams2VOTableNode(const BinaryOrbitParams *const bop, const char *name)
+{
+    /* set up local variables */
+    static const CHAR *logReference = "XLALBinaryOrbitParams2VOTableNode";
+    xmlNodePtr xmlParentNode = NULL;
+    xmlNodePtr xmlParentChildNodes[5] = {NULL};
+
+    CHAR argp[REAL8STR_MAXLEN] = {0};
+    CHAR asini[REAL8STR_MAXLEN] = {0};
+    CHAR ecc[REAL8STR_MAXLEN] = {0};
+    CHAR period[REAL8STR_MAXLEN] = {0};
+
+    /* make sure that the shared library is the same as the
+     * library version the code was compiled against */
+    LIBXML_TEST_VERSION
+
+    /* check and prepare input parameters */
+    if(!bop || LALSnprintf(argp, REAL8STR_MAXLEN, "%g", bop->argp) < 0) {
+        XLALPrintError("Invalid input parameter: PulsarDopplerParams->argp\n");
+        XLAL_ERROR_NULL(logReference, XLAL_EINVAL);
+    }
+    if(!bop || LALSnprintf(asini, REAL8STR_MAXLEN, "%g", bop->asini) < 0) {
+        XLALPrintError("Invalid input parameter: PulsarDopplerParams->asini\n");
+        XLAL_ERROR_NULL(logReference, XLAL_EINVAL);
+    }
+    if(!bop || LALSnprintf(ecc, REAL8STR_MAXLEN, "%g", bop->ecc) < 0) {
+        XLALPrintError("Invalid input parameter: PulsarDopplerParams->ecc\n");
+        XLAL_ERROR_NULL(logReference, XLAL_EINVAL);
+    }
+    if(!bop || LALSnprintf(period, REAL8STR_MAXLEN, "%g", bop->period) < 0) {
+        XLALPrintError("Invalid input parameter: PulsarDopplerParams->period\n");
+        XLAL_ERROR_NULL(logReference, XLAL_EINVAL);
+    }
+    if(!name || strlen(name) <= 0) {
+        XLALPrintError("Invalid input parameter: name\n");
+        XLAL_ERROR_NULL(logReference, XLAL_EINVAL);
+    }
+
+    /* set up RESOURCE node (refTime)*/
+    xmlParentChildNodes[0] = XLALLIGOTimeGPS2VOTableNode(&bop->tp, "tp");
+    if(!xmlParentChildNodes[0]) {
+        XLALPrintError("Couldn't create RESOURCE node: BinaryOrbitParams.tp\n");
+        XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+    }
+
+    /* set up PARAM node (argp) */
+    xmlParentChildNodes[1] = XLALCreateVOTableTypedParamNode(BinaryOrbitParams_argp, argp);
+    if(!xmlParentChildNodes[1]) {
+        XLALPrintError("Couldn't create PARAM node: BinaryOrbitParams.argp\n");
+        XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+    }
+
+    /* set up PARAM node (asini) */
+    xmlParentChildNodes[2] = XLALCreateVOTableTypedParamNode(BinaryOrbitParams_asini, asini);
+    if(!xmlParentChildNodes[2]) {
+        XLALPrintError("Couldn't create PARAM node: BinaryOrbitParams.asini\n");
+        XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+    }
+
+    /* set up PARAM node (ecc) */
+    xmlParentChildNodes[3] = XLALCreateVOTableTypedParamNode(BinaryOrbitParams_ecc, ecc);
+    if(!xmlParentChildNodes[3]) {
+        XLALPrintError("Couldn't create PARAM node: BinaryOrbitParams.ecc\n");
+        XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+    }
+
+    /* set up PARAM node (period) */
+    xmlParentChildNodes[4] = XLALCreateVOTableTypedParamNode(BinaryOrbitParams_period, period);
+    if(!xmlParentChildNodes[4]) {
+        XLALPrintError("Couldn't create PARAM node: BinaryOrbitParams.period\n");
+        XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+    }
+
+    /* set up parent RESOURCE node*/
+    xmlParentNode = XLALCreateVOTableResourceNode("BinaryOrbitParams", name, xmlParentChildNodes, 5);
+    if(!xmlParentNode) {
+        XLALPrintError("Couldn't create RESOURCE node: BinaryOrbitParams\n");
+        XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+    }
+
+    /* return RESOURCE node (needs to be xmlFreeNode'd or xmlFreeDoc'd by caller!!!) */
+    return xmlParentNode;
+}
+
+
+/**
+ * \brief Serializes a \c BinaryOrbitParams structure into a VOTable XML string
+ *
+ * This function takes a \c BinaryOrbitParams structure and serializes it into a full-fledged
+ * VOTable XML string containing the serialized structure as the only child element.\n
+ * Essentially, this function is just a wrapper for \ref XLALBinaryOrbitParams2VOTableNode and
+ * \ref XLALCreateVOTableXMLFromTree followed by a dump of the VOTable document into a
+ * string.\n
+ *
+ * \param bop [in] Pointer to the \c BinaryOrbitParams structure to be serialized
+ * \param name [in] Unique identifier of this particular \c BinaryOrbitParams structure instance
+ *
+ * \return A pointer to a \c xmlChar (string) that holds the VOTable document containing
+ * solely the \c BinaryOrbitParams structure. Please note that the string will be encoded in UTF-8.
+ * In case of an error, a null-pointer is returned.\n
+ * \b Important: the caller is responsible to free the allocated memory (when the
+ * string isn't needed anymore) using \c xmlFree.
+ *
+ * \sa XLALBinaryOrbitParams2VOTableNode
+ * \sa XLALCreateVOTableXMLFromTree
+ *
+ * \author Oliver Bock\n
+ * Albert-Einstein-Institute Hannover, Germany
+ */
+xmlChar * XLALBinaryOrbitParams2VOTableXML(const BinaryOrbitParams *const bop, const char *name)
+{
+    /* set up local variables */
+    static const CHAR *logReference = "XLALBinaryOrbitParams2VOTableXML";
+    xmlChar *xmlStringBuffer = NULL;
+    INT4 xmlStringBufferSize = -1;
+    xmlNodePtr xmlTree;
+
+    /* sanity checks */
+    if(!bop) {
+        XLALPrintError("Invalid input parameter: bop\n");
+        XLAL_ERROR_NULL(logReference, XLAL_EINVAL);
+    }
+    if(!name || strlen(name) <= 0) {
+        XLALPrintError("Invalid input parameter: name\n");
+        XLAL_ERROR_NULL(logReference, XLAL_EINVAL);
+    }
+
+    /* prepare XML serialization */
+    xmlThrDefIndentTreeOutput(1);
+
+    /* build VOTable fragment (tree) */
+    xmlTree = XLALBinaryOrbitParams2VOTableNode(bop, name);
+    if(xmlTree == NULL) {
+        XLALPrintError("VOTable fragment construction failed\n");
+        XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+    }
+
+    /* retrieve full VOTable XML document (string) */
+    if(XLALCreateVOTableStringFromTree(xmlTree, &xmlStringBuffer, &xmlStringBufferSize)) {
+        /* clean up */
+        xmlCleanupParser();
+
+        XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+    }
+
+    /* clean up */
+    xmlCleanupParser();
+
+    /* return XML string (needs to be xmlFree'd by caller!!!) */
+    return xmlStringBuffer;
+}
+
+
+/**
+ * \brief Serializes a \c PulsarDopplerParams structure into a VOTable XML %node
+ *
+ * This function takes a \c PulsarDopplerParams structure and serializes it into a VOTable
+ * \c RESOURCE %node identified by the given name. The returned \c xmlNode can then be
+ * embedded into an existing %node hierarchy or turned into a full VOTable document.
+ *
+ * \param pdp [in] Pointer to the \c PulsarDopplerParams structure to be serialized
+ * \param name [in] Unique identifier of this particular \c PulsarDopplerParams structure instance
+ *
+ * \return A pointer to a \c xmlNode that holds the VOTable fragment that represents
+ * the \c PulsarDopplerParams structure.
+ * In case of an error, a null-pointer is returned.\n
+ * \b Important: the caller is responsible to free the allocated memory (when the
+ * fragment isn't needed anymore) using \c xmlFreeNode. Alternatively, \c xmlFreeDoc
+ * can be used later on when the returned fragment has been embedded in a XML document.
+ *
+ * \sa XLALCreateVOTableCustomParamNode
+ * \sa XLALCreateVOTableResourceNode
+ * \sa XLALCreateVOTableXMLFromTree
+ *
+ * \author Oliver Bock\n
+ * Albert-Einstein-Institute Hannover, Germany
+ */
+xmlNodePtr XLALPulsarDopplerParams2VOTableNode(const PulsarDopplerParams *const pdp, const char *name)
+{
+    /* set up local variables */
+    static const CHAR *logReference = "XLALPulsarDopplerParams2VOTableNode";
+    xmlNodePtr xmlParentNode = NULL;
+    xmlNodePtr xmlParentChildNodes[5] = {NULL};
+    int i;
+
+    CHAR Alpha[REAL8STR_MAXLEN] = {0};
+    CHAR Delta[REAL8STR_MAXLEN] = {0};
+    CHAR fkdot[PULSAR_MAX_SPINS*REAL8STR_MAXLEN] = {0};
+    CHAR fkDotTemp[REAL8STR_MAXLEN] = {0};
+
+    /* make sure that the shared library is the same as the
+     * library version the code was compiled against */
+    LIBXML_TEST_VERSION
+
+    /* check and prepare input parameters */
+    if(!pdp || LALSnprintf(Alpha, REAL8STR_MAXLEN, "%g", pdp->Alpha) < 0) {
+        XLALPrintError("Invalid input parameter: PulsarDopplerParams->Alpha\n");
+        XLAL_ERROR_NULL(logReference, XLAL_EINVAL);
+    }
+    if(!pdp || LALSnprintf(Delta, REAL8STR_MAXLEN, "%g", pdp->Delta) < 0) {
+        XLALPrintError("Invalid input parameter: PulsarDopplerParams->Delta\n");
+        XLAL_ERROR_NULL(logReference, XLAL_EINVAL);
+    }
+    for(i = 0; i < PULSAR_MAX_SPINS; ++i) {
+        if(!pdp || LALSnprintf(fkDotTemp, REAL8STR_MAXLEN, "%g", pdp->fkdot[i]) < 0) {
+            XLALPrintError("Invalid input parameter: PulsarDopplerParams->fkdot[%i]\n", i);
+            XLAL_ERROR_NULL(logReference, XLAL_EINVAL);
+        }
+        if(!strncat(fkdot, fkDotTemp, REAL8STR_MAXLEN)) {
+            XLALPrintError("Couldn't serialize parameter: PulsarDopplerParams->fkdot[%i]\n", i);
+            XLAL_ERROR_NULL(logReference, XLAL_EINVAL);
+        }
+        /* add delimiter (SPACE)*/
+        if(i<PULSAR_MAX_SPINS-1 && !strncat(fkdot, " ", 1)) {
+            XLALPrintError("Couldn't add delimiter to parameter: PulsarDopplerParams->fkdot[%i]\n", i);
+            XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+        }
+    }
+    if(!name || strlen(name) <= 0) {
+        XLALPrintError("Invalid input parameter: name\n");
+        XLAL_ERROR_NULL(logReference, XLAL_EINVAL);
+    }
+
+    /* set up RESOURCE node (refTime)*/
+    xmlParentChildNodes[0] = XLALLIGOTimeGPS2VOTableNode(&pdp->refTime, "refTime");
+    if(!xmlParentChildNodes[0]) {
+        XLALPrintError("Couldn't create RESOURCE node: PulsarDopplerParams.refTime\n");
+        XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+    }
+
+    /* set up PARAM node (Alpha) */
+    xmlParentChildNodes[1] = XLALCreateVOTableTypedParamNode(PulsarDopplerParams_Alpha, Alpha);
+    if(!xmlParentChildNodes[1]) {
+        XLALPrintError("Couldn't create PARAM node: PulsarDopplerParams.Alpha\n");
+        XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+    }
+
+    /* set up PARAM node (Delta) */
+    xmlParentChildNodes[2] = XLALCreateVOTableTypedParamNode(PulsarDopplerParams_Delta, Delta);
+    if(!xmlParentChildNodes[2]) {
+        XLALPrintError("Couldn't create PARAM node: PulsarDopplerParams.Delta\n");
+        XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+    }
+
+    /* set up PARAM node (fkdot) */
+    xmlParentChildNodes[3] = XLALCreateVOTableTypedParamNode(PulsarDopplerParams_fkdot, fkdot);
+    if(!xmlParentChildNodes[3]) {
+        XLALPrintError("Couldn't create PARAM node: PulsarDopplerParams.fkdot\n");
+        XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+    }
+
+    /* set up RESOURCE node (orbit)*/
+    xmlParentChildNodes[4] = XLALBinaryOrbitParams2VOTableNode(pdp->orbit, "orbit");
+    if(!xmlParentChildNodes[4]) {
+        XLALPrintError("Couldn't create RESOURCE node: PulsarDopplerParams.orbit\n");
+        XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+    }
+
+    /* set up parent RESOURCE node*/
+    xmlParentNode = XLALCreateVOTableResourceNode("PulsarDopplerParams", name, xmlParentChildNodes, 5);
+    if(!xmlParentNode) {
+        XLALPrintError("Couldn't create RESOURCE node: PulsarDopplerParams\n");
+        XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+    }
+
+    /* return RESOURCE node (needs to be xmlFreeNode'd or xmlFreeDoc'd by caller!!!) */
+    return xmlParentNode;
+}
+
+
+/**
+ * \brief Serializes a \c PulsarDopplerParams structure into a VOTable XML string
+ *
+ * This function takes a \c PulsarDopplerParams structure and serializes it into a full-fledged
+ * VOTable XML string containing the serialized structure as the only child element.\n
+ * Essentially, this function is just a wrapper for \ref XLALPulsarDopplerParams2VOTableNode and
+ * \ref XLALCreateVOTableXMLFromTree followed by a dump of the VOTable document into a
+ * string.\n
+ *
+ * \param pdp [in] Pointer to the \c PulsarDopplerParams structure to be serialized
+ * \param name [in] Unique identifier of this particular \c PulsarDopplerParams structure instance
+ *
+ * \return A pointer to a \c xmlChar (string) that holds the VOTable document containing
+ * solely the \c PulsarDopplerParams structure. Please note that the string will be encoded in UTF-8.
+ * In case of an error, a null-pointer is returned.\n
+ * \b Important: the caller is responsible to free the allocated memory (when the
+ * string isn't needed anymore) using \c xmlFree.
+ *
+ * \sa XLALPulsarDopplerParams2VOTableNode
+ * \sa XLALCreateVOTableXMLFromTree
+ *
+ * \author Oliver Bock\n
+ * Albert-Einstein-Institute Hannover, Germany
+ */
+xmlChar * XLALPulsarDopplerParams2VOTableXML(const PulsarDopplerParams *const pdp, const char *name)
+{
+    /* set up local variables */
+    static const CHAR *logReference = "XLALPulsarDopplerParams2VOTableXML";
+    xmlChar *xmlStringBuffer = NULL;
+    INT4 xmlStringBufferSize = -1;
+    xmlNodePtr xmlTree;
+
+    /* sanity checks */
+    if(!pdp) {
+        XLALPrintError("Invalid input parameter: pdp\n");
+        XLAL_ERROR_NULL(logReference, XLAL_EINVAL);
+    }
+    if(!name || strlen(name) <= 0) {
+        XLALPrintError("Invalid input parameter: name\n");
+        XLAL_ERROR_NULL(logReference, XLAL_EINVAL);
+    }
+
+    /* prepare XML serialization */
+    xmlThrDefIndentTreeOutput(1);
+
+    /* build VOTable fragment (tree) */
+    xmlTree = XLALPulsarDopplerParams2VOTableNode(pdp, name);
+    if(xmlTree == NULL) {
+        XLALPrintError("VOTable fragment construction failed\n");
+        XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+    }
+
+    /* retrieve full VOTable XML document (string) */
+    if(XLALCreateVOTableStringFromTree(xmlTree, &xmlStringBuffer, &xmlStringBufferSize)) {
+        /* clean up */
+        xmlCleanupParser();
+
+        XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+    }
+
+    /* clean up */
+    xmlCleanupParser();
+
+    /* return XML string (needs to be xmlFree'd by caller!!!) */
+    return xmlStringBuffer;
 }

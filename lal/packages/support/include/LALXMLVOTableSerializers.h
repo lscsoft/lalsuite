@@ -30,5 +30,11 @@
 
 
 xmlNodePtr XLALLIGOTimeGPS2VOTableNode(const LIGOTimeGPS *const ltg, const char *name);
-INT4 XLALVOTableXML2LIGOTimeGPSByName(const char *xml, const char *name, LIGOTimeGPS *ltg);
 xmlChar * XLALLIGOTimeGPS2VOTableXML(const LIGOTimeGPS *const ltg, const char *name);
+INT4 XLALVOTableXML2LIGOTimeGPSByName(const char *xml, const char *name, LIGOTimeGPS *ltg);
+
+xmlNodePtr XLALBinaryOrbitParams2VOTableNode(const BinaryOrbitParams *const bop, const char *name);
+xmlChar * XLALBinaryOrbitParams2VOTableXML(const BinaryOrbitParams *const bop, const char *name);
+
+xmlNodePtr XLALPulsarDopplerParams2VOTableNode(const PulsarDopplerParams *const pdp, const char *name);
+xmlChar * XLALPulsarDopplerParams2VOTableXML(const PulsarDopplerParams *const pdp, const char *name);
