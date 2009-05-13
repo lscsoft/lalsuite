@@ -93,14 +93,22 @@ xmlNodePtr XLALLIGOTimeGPS2VOTableNode(const LIGOTimeGPS *const ltg, const char 
     }
 
     /* set up RESOURCE node child (first PARAM) */
-    xmlResourceParamNodes[0] = XLALCreateVOTableTypedParamNode(LIGOTimeGPS_gpsSeconds, gpsSecondsBuffer);
+    xmlResourceParamNodes[0] = XLALCreateVOTableParamNode("gpsSeconds",
+                                                          "s",
+                                                          "int",
+                                                          NULL,
+                                                          gpsSecondsBuffer);
     if(!xmlResourceParamNodes[0]) {
         XLALPrintError("Couldn't create PARAM node: gpsSeconds\n");
         XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
     }
 
     /* set up RESOURCE node child (second PARAM) */
-    xmlResourceParamNodes[1] = XLALCreateVOTableTypedParamNode(LIGOTimeGPS_gpsNanoSeconds, gpsNanoSecondsBuffer);
+    xmlResourceParamNodes[1] = XLALCreateVOTableParamNode("gpsNanoSeconds",
+                                                          "ns",
+                                                          "int",
+                                                          NULL,
+                                                          gpsNanoSecondsBuffer);
     if(!xmlResourceParamNodes[1]) {
         XLALPrintError("Couldn't create PARAM node: gpsNanoSeconds\n");
         XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
@@ -411,28 +419,44 @@ xmlNodePtr XLALBinaryOrbitParams2VOTableNode(const BinaryOrbitParams *const bop,
     }
 
     /* set up PARAM node (argp) */
-    xmlParentChildNodes[1] = XLALCreateVOTableTypedParamNode(BinaryOrbitParams_argp, argp);
+    xmlParentChildNodes[1] = XLALCreateVOTableParamNode("argp",
+                                                        "rad",
+                                                        "double",
+                                                        NULL,
+                                                        argp);
     if(!xmlParentChildNodes[1]) {
         XLALPrintError("Couldn't create PARAM node: BinaryOrbitParams.argp\n");
         XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
     }
 
     /* set up PARAM node (asini) */
-    xmlParentChildNodes[2] = XLALCreateVOTableTypedParamNode(BinaryOrbitParams_asini, asini);
+    xmlParentChildNodes[2] = XLALCreateVOTableParamNode("asini",
+                                                        "s",
+                                                        "double",
+                                                        NULL,
+                                                        asini);
     if(!xmlParentChildNodes[2]) {
         XLALPrintError("Couldn't create PARAM node: BinaryOrbitParams.asini\n");
         XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
     }
 
     /* set up PARAM node (ecc) */
-    xmlParentChildNodes[3] = XLALCreateVOTableTypedParamNode(BinaryOrbitParams_ecc, ecc);
+    xmlParentChildNodes[3] = XLALCreateVOTableParamNode("ecc",
+                                                        NULL,
+                                                        "double",
+                                                        NULL,
+                                                        ecc);
     if(!xmlParentChildNodes[3]) {
         XLALPrintError("Couldn't create PARAM node: BinaryOrbitParams.ecc\n");
         XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
     }
 
     /* set up PARAM node (period) */
-    xmlParentChildNodes[4] = XLALCreateVOTableTypedParamNode(BinaryOrbitParams_period, period);
+    xmlParentChildNodes[4] = XLALCreateVOTableParamNode("period",
+                                                        "s",
+                                                        "double",
+                                                        NULL,
+                                                        period);
     if(!xmlParentChildNodes[4]) {
         XLALPrintError("Couldn't create PARAM node: BinaryOrbitParams.period\n");
         XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
@@ -806,21 +830,33 @@ xmlNodePtr XLALPulsarDopplerParams2VOTableNode(const PulsarDopplerParams *const 
     }
 
     /* set up PARAM node (Alpha) */
-    xmlParentChildNodes[1] = XLALCreateVOTableTypedParamNode(PulsarDopplerParams_Alpha, Alpha);
+    xmlParentChildNodes[1] = XLALCreateVOTableParamNode("Alpha",
+                                                        "rad",
+                                                        "double",
+                                                        NULL,
+                                                        Alpha);
     if(!xmlParentChildNodes[1]) {
         XLALPrintError("Couldn't create PARAM node: PulsarDopplerParams.Alpha\n");
         XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
     }
 
     /* set up PARAM node (Delta) */
-    xmlParentChildNodes[2] = XLALCreateVOTableTypedParamNode(PulsarDopplerParams_Delta, Delta);
+    xmlParentChildNodes[2] = XLALCreateVOTableParamNode("Delta",
+                                                        "rad",
+                                                        "double",
+                                                        NULL,
+                                                        Delta);
     if(!xmlParentChildNodes[2]) {
         XLALPrintError("Couldn't create PARAM node: PulsarDopplerParams.Delta\n");
         XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
     }
 
     /* set up PARAM node (fkdot) */
-    xmlParentChildNodes[3] = XLALCreateVOTableTypedParamNode(PulsarDopplerParams_fkdot, fkdot);
+    xmlParentChildNodes[3] = XLALCreateVOTableParamNode("fkdot",
+                                                        NULL,
+                                                        "double",
+                                                        "4",
+                                                        fkdot);
     if(!xmlParentChildNodes[3]) {
         XLALPrintError("Couldn't create PARAM node: PulsarDopplerParams.fkdot\n");
         XLAL_ERROR_NULL(logReference, XLAL_EFAILED);

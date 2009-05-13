@@ -34,71 +34,7 @@
 
 
 /**
- * \brief Retrieves the \c PARAM %node configuration for a given LAL parameter
- *
- * This function takes a type specifier and returns its \c PARAM %node configuration
- * (structure name, member name, unit, datatype, arraysize).\n
- * \b Important: the actual LAL<->VOTable type map is maintained in this function
- * (\c lalVOTableParamMap) and \b must be in sync with (in the same order as) \ref LAL_VOTABLE_PARAM!
- *
- * \param type [in] Type of the \c PARAM %node (defined in \ref LAL_VOTABLE_PARAM)
- * \param structure [out] Pointer to the variable to store the \c PARAM's parent \c utype
- * \param member [out] Pointer to the variable to store the parameter \c name
- * \param unit [out] Pointer to the variable to store the parameter \c unit
- * \param datatype [out] Pointer to the variable to store the parameter \c datatype
- * \param arraysize [out] Pointer to the variable to store the parameter \c arraysize
- *
- * \return \c XLAL_SUCCESS if the parameter configuration could be retrieved successfully
- *
- * \sa LAL_VOTABLE_PARAM
- *
- * \todo The type map should be implemented as an associative array (hash map)!
- *
- * \author Oliver Bock\n
- * Albert-Einstein-Institute Hannover, Germany
- */
-INT4 XLALGetLALVOTableParamMapEntry(const LAL_VOTABLE_PARAM type,
-                                    const char **const structure,
-                                    const char **const member,
-                                    const char **const unit,
-                                    const char **const datatype,
-                                    const char **const arraysize)
-{
-    /* set up local variables */
-    static const CHAR *logReference = "XLALGetLALVOTableParamMapEntry";
-
-    /* the actual type map table */
-    static char *const lalVOTableParamMap[][5] = {
-            {"LIGOTimeGPS",         "gpsSeconds",       "s",    "int",          ""},
-            {"LIGOTimeGPS",         "gpsNanoSeconds",   "ns",   "int",          ""},
-            {"BinaryOrbitParams",   "argp",             "rad",  "double",       ""},
-            {"BinaryOrbitParams",   "asini",            "s",    "double",       ""},
-            {"BinaryOrbitParams",   "ecc",              "",     "double",       ""},
-            {"BinaryOrbitParams",   "period",           "s",    "double",       ""},
-            {"PulsarDopplerParams", "Alpha",            "rad",  "double",       ""},
-            {"PulsarDopplerParams", "Delta",            "rad",  "double",       ""},
-            {"PulsarDopplerParams", "fkdot",            "",     "double",       "4"}
-    };
-
-    /* sanity check */
-    if(type <= ENUM_BEGIN || type >= ENUM_END) {
-        XLALPrintError("Invalid type specifier encountered: %i\n", type);
-        return XLAL_EINVAL;
-    }
-
-    /* return map entry (type-1 required to compensate for the offset caused by ENUM_BEGIN) */
-    *structure = lalVOTableParamMap[type-1][0];
-    *member = lalVOTableParamMap[type-1][1];
-    *unit = lalVOTableParamMap[type-1][2];
-    *datatype = lalVOTableParamMap[type-1][3];
-    *arraysize = lalVOTableParamMap[type-1][4];
-
-    return XLAL_SUCCESS;
-}
-
-
-/**
- * \brief Creates a VOTable \c PARAM %node with custom properties
+ * \brief Creates a VOTable \c PARAM %node
  *
  * This function creates a VOTable \c PARAM %node with the specified properties.
  *
@@ -117,14 +53,14 @@ INT4 XLALGetLALVOTableParamMapEntry(const LAL_VOTABLE_PARAM type,
  * \author Oliver Bock\n
  * Albert-Einstein-Institute Hannover, Germany
  */
-xmlNodePtr XLALCreateVOTableCustomParamNode(const char *name,
+xmlNodePtr XLALCreateVOTableParamNode(const char *name,
                                             const char *unit,
                                             const char *datatype,
                                             const char *arraysize,
                                             const char *value)
 {
     /* set up local variables */
-    static const CHAR *logReference = "XLALCreateVOTableCustomParamNode";
+    static const CHAR *logReference = "XLALCreateVOTableParamNode";
     xmlNodePtr xmlParamNode = NULL;
 
     /* create node and add attributes*/
@@ -193,46 +129,6 @@ xmlNodePtr XLALCreateVOTableCustomParamNode(const char *name,
 
     /* return PARAM node (needs to be xmlFreeNode'd or xmlFreeDoc'd by caller!!!) */
     return xmlParamNode;
-}
-
-
-/**
- * \brief Creates a VOTable \c PARAM %node based on a pre-defined set of properties
- *
- * This function creates a VOTable \c PARAM %node based on \c type with the specified \c value.
- *
- * \param type [in] Type of the \c PARAM %node (defined in \ref LAL_VOTABLE_PARAM)
- * \param value [in] Content of the \c value attribute of the \c PARAM %node
- *
- * \return A \c xmlNodePtr that holds the new \c PARAM %node.
- * In case of an error, a null-pointer is returned.\n
- * \b Important: the caller is responsible to free the allocated memory (when the
- * %node isn't needed anymore) using \c xmlFreeNode. Alternatively, \c xmlFreeDoc
- * can be used later on when the returned fragment has been embedded in a XML document.
- *
- * \sa LAL_VOTABLE_PARAM
- * \sa XLALGetLALVOTableParamMapEntry
- *
- * \author Oliver Bock\n
- * Albert-Einstein-Institute Hannover, Germany
- */
-xmlNodePtr XLALCreateVOTableTypedParamNode(const LAL_VOTABLE_PARAM type, const char *value)
-{
-    /* set up local variables */
-    static const CHAR *logReference = "XLALCreateVOTableTypedParamNode";
-    const CHAR *paramStruct = "\0";
-    const CHAR *paramMember = "\0";
-    const CHAR *paramUnit = "\0";
-    const CHAR *paramDatatype = "\0";
-    const CHAR *paramArraysize = "\0";
-
-    /* configure PARAM node*/
-    if(XLALGetLALVOTableParamMapEntry(type, &paramStruct, &paramMember, &paramUnit, &paramDatatype, &paramArraysize)) {
-        XLALPrintError("Couldn't retrieve PARAM configuration!\n");
-        XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
-    }
-
-    return XLALCreateVOTableCustomParamNode(paramMember, paramUnit, paramDatatype, paramArraysize, value);
 }
 
 
