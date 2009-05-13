@@ -101,7 +101,7 @@ xmlNodePtr XLALLIGOTimeGPS2VOTableNode(const LIGOTimeGPS *const ltg, const char 
                                                           NULL,
                                                           gpsSecondsBuffer);
     if(!xmlResourceParamNodes[0]) {
-        XLALPrintError("Couldn't create PARAM node: gpsSeconds\n");
+        XLALPrintError("Couldn't create PARAM node: LIGOTimeGPS.gpsSeconds\n");
         XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
     }
 
@@ -114,7 +114,7 @@ xmlNodePtr XLALLIGOTimeGPS2VOTableNode(const LIGOTimeGPS *const ltg, const char 
     if(!xmlResourceParamNodes[1]) {
         /* clean up */
         xmlFree(xmlResourceParamNodes[0]);
-        XLALPrintError("Couldn't create PARAM node: gpsNanoSeconds\n");
+        XLALPrintError("Couldn't create PARAM node: LIGOTimeGPS.gpsNanoSeconds\n");
         XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
     }
 
@@ -258,7 +258,7 @@ INT4 XLALVOTableDoc2LIGOTimeGPSByName(xmlDocPtr xmlDocument, const char *name, L
     if(!nodeContent || sscanf((char*)nodeContent, "%i", &ltg->gpsSeconds) == EOF) {
         /* clean up*/
         if(nodeContent) xmlFree(nodeContent);
-        XLALPrintError("Invalid node content encountered: gpsSeconds\n");
+        XLALPrintError("Invalid node content encountered: LIGOTimeGPS.gpsSeconds\n");
         XLAL_ERROR(logReference, XLAL_EDATA);
     }
 
@@ -283,7 +283,7 @@ INT4 XLALVOTableDoc2LIGOTimeGPSByName(xmlDocPtr xmlDocument, const char *name, L
     if(!nodeContent || sscanf((char*)nodeContent, "%i", &ltg->gpsNanoSeconds) == EOF) {
         /* clean up*/
         if(nodeContent) xmlFree(nodeContent);
-        XLALPrintError("Invalid node content encountered: gpsNanoSeconds\n");
+        XLALPrintError("Invalid node content encountered: LIGOTimeGPS.gpsNanoSeconds\n");
         XLAL_ERROR(logReference, XLAL_EDATA);
     }
 
