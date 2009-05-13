@@ -10,7 +10,7 @@ CREATE TEMPORARY TABLE is_playground AS
 		coinc_inspiral.coinc_event_id AS coinc_event_id,
 		-- did the last playground segment start less than 600
 		-- seconds prior to this coinc?
-		((((coinc_inspiral.end_time - 729273613) / 6370) * 6370) + 729273613) BETWEEN (coinc_inspiral.end_time - 600) AND (coinc_inspiral.end_time - 1) AS is_playground
+		((coinc_inspiral.end_time - 729273613) % 6370) < 600 AS is_playground
 	FROM
 		coinc_inspiral;
 CREATE INDEX ip_cei_index ON is_playground (coinc_event_id);
