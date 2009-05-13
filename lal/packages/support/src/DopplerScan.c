@@ -46,6 +46,8 @@
 #define MIN(x,y) (x < y ? x : y)
 #define MAX(x,y) (x > y ? x : y)
 
+#define INIT_MEM(x) memset(&(x), 0, sizeof((x)))
+
 #define TRUE (1==1)
 #define FALSE (1==0)
 
@@ -300,10 +302,9 @@ InitDopplerSkyScan( LALStatus *status,
 
     gridpoint.Alpha = skyScan->skyGrid->Alpha;
     gridpoint.Delta = skyScan->skyGrid->Delta;
+
+    INIT_MEM ( gridpoint.fkdot );
     gridpoint.fkdot[0] = init->Freq;
-    gridpoint.fkdot[1] = 0;
-    gridpoint.fkdot[2] = 0;
-    gridpoint.fkdot[3] = 0;
 
     TRY ( getGridSpacings( status->statusPtr, &gridSpacings, gridpoint, init), status);
 
@@ -1747,13 +1748,17 @@ getMetricEllipse(LALStatus *status,
 int
 fprintfDopplerParams ( FILE *fp, const PulsarDopplerParams *params )
 {
+  UINT4 s;
   if ( !fp || !params )
     return -1;
 
-  fprintf ( fp, " sky = {%f, %f}, fkdot = { %f, %g, %g, %g }\n",
-	    params->Alpha, params->Delta,
-	    params->fkdot[0], params->fkdot[1], params->fkdot[2], params->fkdot[3]
-	    );
+  fprintf ( fp, " sky = {%f, %f}, ", params->Alpha, params->Delta );
+
+  fprintf ( fp, "fkdot = { %f ", params->fkdot[0] );
+  for ( s=1; s < PULSAR_MAX_SPINS; s ++ )
+    fprintf ( fp, ", %g", params->fkdot[s] );
+
+  fprintf ( fp, "}\n");
 
   return 0;
 } /* printfDopplerParams() */
