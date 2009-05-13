@@ -35,10 +35,7 @@ def get_far_threshold_and_segments(zerofname, live_time_program, verbose = False
   query = 'SELECT MIN(coinc_inspiral.false_alarm_rate) FROM coinc_inspiral JOIN coinc_event ON (coinc_event.coinc_event_id == coinc_inspiral.coinc_event_id) WHERE NOT EXISTS(SELECT * FROM time_slide WHERE time_slide.time_slide_id == coinc_event.time_slide_id AND time_slide.offset != 0);'
   far, = connection.cursor().execute(query).selectone()
 
-  # extract segments.  note:  this method of extracting the segments erases
-  # knowledge of the ring boundaries, but this is OK because we only care
-  # aobut zero-lag livetime so there is no need to wrap veto segments
-  # around the rings.
+  # extract segments.
   seglists = llwapp.segmentlistdict_fromsearchsummary(dbtables.get_xml(connection), live_time_program)
 
   # done
@@ -107,12 +104,11 @@ def get_injections(injfnames, FAR, zero_lag_segments, verbose = False):
     print >>sys.stderr, "getting injections below FAR: " + str(FAR) + ":\t%.1f%%\r" % (100.0 * cnt / len(injfnames),),
     working_filename = dbtables.get_connection_filename(f, tmp_path = None, verbose = verbose)
     connection = sqlite3.connect(working_filename)
-    xmldoc = dbtables.get_xml(connection)
     connection.create_function("injection_was_made", 2, injection_was_made)
 
-    make_sim_inspiral = lsctables.table.get_table(xmldoc, lsctables.SimInspiralTable.tableName)._row_from_cols
+    make_sim_inspiral = lsctables.table.get_table(dbtables.get_xml(connection), lsctables.SimInspiralTable.tableName)._row_from_cols
 
-    for values in connection.cursor.execute("""
+    for values in connection.cursor().execute("""
 SELECT
   sim_inspiral.*,
   -- true if injection matched a coinc below the false alarm rate threshold
@@ -259,8 +255,7 @@ def cut_distance(sims, mnd, mxd):
   """
   Exclude sims outside some distance range to avoid errors when binning
   """
-  for k in range(len(sims)):
-    if sims[k].distance >= mxd or sims[k].distance <= mnd: sims.pop(k)
+  return [sim for sim in sims if mnd <= sim.distance <= mxd]
  
 
 ######################## ACTUAL PROGRAM #######################################
@@ -292,7 +287,7 @@ def parse_command_line():
 
 opts, filenames = parse_command_line()
 
-if opts.veto_segments:
+if opts.veto_segments is not None:
   dbtables.ligolwtypes.ToPyType["ilwd:char"] = unicode
   connection = sqlite3.connect(":memory:")
   dbtables.DBTable_set_connection(connection)
@@ -309,7 +304,8 @@ seglists.coalesce()
 
 
 # times when only exactly the required instruments are on
-seglists -= veto_segments
+if opts.veto_segments is not None:
+  seglists -= veto_segments
 zero_lag_segments = seglists.intersection(opts.instruments) - seglists.union(set(seglists.keys()) - opts.instruments)
 
 print FAR, abs(zero_lag_segments)
@@ -319,12 +315,13 @@ Found, Missed = get_injections(opts.injfnames, FAR, zero_lag_segments, verbose =
 
 
 # replace these with pylal versions ?
+# FIXME:  does this interact correctly with scramble_pop()?
 fix_masses(Found)
 fix_masses(Missed)
 
 # restrict the sims to a distance range
-cut_distance(Found, 1, 2000)
-cut_distance(Missed, 1, 2000)
+Found = cut_distance(Found, 1, 2000)
+Missed = cut_distance(Missed, 1, 2000)
 
 # get a 2D mass binning
 twoDMassBins = get_2d_mass_bins(1, 99, 50)
