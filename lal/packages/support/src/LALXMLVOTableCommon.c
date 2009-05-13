@@ -134,11 +134,11 @@ xmlNodePtr XLALCreateVOTableCustomParamNode(const char *name,
         XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
     }
     /* mandatory: name */
-    if(strlen(name) <= 0) {
+    if(!name || strlen(name) <= 0) {
         /* clean up */
         xmlFreeNode(xmlParamNode);
         XLALPrintError("Missing mandatory attribute: name\n");
-        XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+        XLAL_ERROR_NULL(logReference, XLAL_EINVAL);
     }
     if(!xmlNewProp(xmlParamNode, BAD_CAST("name"), BAD_CAST(name))) {
         /* clean up */
@@ -147,7 +147,7 @@ xmlNodePtr XLALCreateVOTableCustomParamNode(const char *name,
         XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
     }
     /* optional: unit */
-    if(strlen(unit) > 0) {
+    if(unit && strlen(unit) > 0) {
         if(!xmlNewProp(xmlParamNode, BAD_CAST("unit"), BAD_CAST(unit))) {
             /* clean up */
             xmlFreeNode(xmlParamNode);
@@ -156,11 +156,11 @@ xmlNodePtr XLALCreateVOTableCustomParamNode(const char *name,
         }
     }
     /* mandatory: datatype */
-    if(strlen(datatype) <= 0) {
+    if(!datatype || strlen(datatype) <= 0) {
         /* clean up */
         xmlFreeNode(xmlParamNode);
         XLALPrintError("Missing mandatory attribute: datatype\n");
-        XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+        XLAL_ERROR_NULL(logReference, XLAL_EINVAL);
     }
     if(!xmlNewProp(xmlParamNode, BAD_CAST("datatype"), BAD_CAST(datatype))) {
         /* clean up */
@@ -169,7 +169,7 @@ xmlNodePtr XLALCreateVOTableCustomParamNode(const char *name,
         XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
     }
     /* optional: arraysize */
-    if(strlen(arraysize) > 0) {
+    if(arraysize && strlen(arraysize) > 0) {
         if(!xmlNewProp(xmlParamNode, BAD_CAST("arraysize"), BAD_CAST(arraysize))) {
             /* clean up */
             xmlFreeNode(xmlParamNode);
@@ -177,7 +177,13 @@ xmlNodePtr XLALCreateVOTableCustomParamNode(const char *name,
             XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
         }
     }
-    /* mandatory: value */
+    /* mandatory: value (empty value allowed) */
+    if(!value) {
+        /* clean up */
+        xmlFreeNode(xmlParamNode);
+        XLALPrintError("Missing mandatory attribute: value\n");
+        XLAL_ERROR_NULL(logReference, XLAL_EINVAL);
+    }
     if(!xmlNewProp(xmlParamNode, BAD_CAST("value"), BAD_CAST(value))) {
         /* clean up */
         xmlFreeNode(xmlParamNode);
