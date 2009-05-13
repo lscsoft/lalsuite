@@ -2852,9 +2852,8 @@ class candidateList:
                                     relativeFreqBP,       #10
                                     relativeTimeCM,       #11
                                     relativeFreqCM,       #12
-                                    snrEstimate,          #13
-                                    spanTnorm,            #14
-                                    spanFnorm]            #15
+                                    spanTnorm,            #13
+                                    spanFnorm]            #14
             glitchDatabase.append(glitchDatabaseEntry)
         spinner.closeSpinner()
         return glitchDatabase
