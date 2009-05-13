@@ -54,14 +54,15 @@
  * Albert-Einstein-Institute Hannover, Germany
  */
 xmlNodePtr XLALCreateVOTableParamNode(const char *name,
-                                            const char *unit,
-                                            const char *datatype,
-                                            const char *arraysize,
-                                            const char *value)
+                                      const char *unit,
+                                      VOTABLE_DATATYPE datatype,
+                                      const char *arraysize,
+                                      const char *value)
 {
     /* set up local variables */
     static const CHAR *logReference = "XLALCreateVOTableParamNode";
     xmlNodePtr xmlParamNode = NULL;
+    static const CHAR *datatypeString;
 
     /* create node and add attributes*/
     xmlParamNode = xmlNewNode(NULL, BAD_CAST("PARAM"));
@@ -92,13 +93,55 @@ xmlNodePtr XLALCreateVOTableParamNode(const char *name,
         }
     }
     /* mandatory: datatype */
-    if(!datatype || strlen(datatype) <= 0) {
+    if(!datatype) {
         /* clean up */
         xmlFreeNode(xmlParamNode);
         XLALPrintError("Missing mandatory attribute: datatype\n");
         XLAL_ERROR_NULL(logReference, XLAL_EINVAL);
     }
-    if(!xmlNewProp(xmlParamNode, BAD_CAST("datatype"), BAD_CAST(datatype))) {
+    else {
+        switch(datatype) {
+            case VOT_BOOL:
+                datatypeString = "boolean";
+                break;
+            case VOT_BIT:
+                datatypeString = "bit";
+                break;
+            case VOT_CHAR:
+                datatypeString = "char";
+                break;
+            case VOT_CHAR_UTF:
+                datatypeString = "unicodeChar";
+                break;
+            case VOT_INT1:
+                datatypeString = "unsignedByte";
+                break;
+            case VOT_INT2:
+                datatypeString = "short";
+                break;
+            case VOT_INT4:
+                datatypeString = "int";
+                break;
+            case VOT_INT8:
+                datatypeString = "long";
+                break;
+            case VOT_REAL4:
+                datatypeString = "float";
+                break;
+            case VOT_REAL8:
+                datatypeString = "double";
+                break;
+            case VOT_COMPLEX_REAL4:
+                datatypeString = "floatComplex";
+                break;
+            case VOT_COMPLEX_REAL8:
+                datatypeString = "doubleComplex";
+                break;
+            default:
+                datatypeString = "UNKNOWN";
+        }
+    }
+    if(!xmlNewProp(xmlParamNode, BAD_CAST("datatype"), BAD_CAST(datatypeString))) {
         /* clean up */
         xmlFreeNode(xmlParamNode);
         XLALPrintError("Attribute instantiation failed: datatype\n");

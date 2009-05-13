@@ -26,11 +26,37 @@
 #include <libxml/tree.h>
 
 
+/**
+ * \brief List of all supported VOTable data types
+ *
+ * This enumeration contains all supported VOTable data types.
+ * They are used for \c PARAM elements for instance.
+ *
+ * \sa XLALCreateVOTableParamNode
+ *
+ * \author Oliver Bock\n
+ * Albert-Einstein-Institute Hannover, Germany
+ */
+typedef enum {
+    VOT_BOOL = 1,
+    VOT_BIT,
+    VOT_CHAR,
+    VOT_CHAR_UTF,
+    VOT_INT1,
+    VOT_INT2,
+    VOT_INT4,
+    VOT_INT8,
+    VOT_REAL4,
+    VOT_REAL8,
+    VOT_COMPLEX_REAL4,
+    VOT_COMPLEX_REAL8
+} VOTABLE_DATATYPE;
+
 xmlNodePtr XLALCreateVOTableParamNode(const char *name,
-                                            const char *unit,
-                                            const char *datatype,
-                                            const char *arraysize,
-                                            const char *value);
+                                      const char *unit,
+                                      VOTABLE_DATATYPE datatype,
+                                      const char *arraysize,
+                                      const char *value);
 
 xmlNodePtr XLALCreateVOTableResourceNode(const char *type,
                                          const char *identifier,

@@ -95,7 +95,7 @@ xmlNodePtr XLALLIGOTimeGPS2VOTableNode(const LIGOTimeGPS *const ltg, const char 
     /* set up RESOURCE node child (first PARAM) */
     xmlResourceParamNodes[0] = XLALCreateVOTableParamNode("gpsSeconds",
                                                           "s",
-                                                          "int",
+                                                          VOT_INT4,
                                                           NULL,
                                                           gpsSecondsBuffer);
     if(!xmlResourceParamNodes[0]) {
@@ -106,7 +106,7 @@ xmlNodePtr XLALLIGOTimeGPS2VOTableNode(const LIGOTimeGPS *const ltg, const char 
     /* set up RESOURCE node child (second PARAM) */
     xmlResourceParamNodes[1] = XLALCreateVOTableParamNode("gpsNanoSeconds",
                                                           "ns",
-                                                          "int",
+                                                          VOT_INT4,
                                                           NULL,
                                                           gpsNanoSecondsBuffer);
     if(!xmlResourceParamNodes[1]) {
@@ -421,7 +421,7 @@ xmlNodePtr XLALBinaryOrbitParams2VOTableNode(const BinaryOrbitParams *const bop,
     /* set up PARAM node (argp) */
     xmlParentChildNodes[1] = XLALCreateVOTableParamNode("argp",
                                                         "rad",
-                                                        "double",
+                                                        VOT_REAL8,
                                                         NULL,
                                                         argp);
     if(!xmlParentChildNodes[1]) {
@@ -432,7 +432,7 @@ xmlNodePtr XLALBinaryOrbitParams2VOTableNode(const BinaryOrbitParams *const bop,
     /* set up PARAM node (asini) */
     xmlParentChildNodes[2] = XLALCreateVOTableParamNode("asini",
                                                         "s",
-                                                        "double",
+                                                        VOT_REAL8,
                                                         NULL,
                                                         asini);
     if(!xmlParentChildNodes[2]) {
@@ -443,7 +443,7 @@ xmlNodePtr XLALBinaryOrbitParams2VOTableNode(const BinaryOrbitParams *const bop,
     /* set up PARAM node (ecc) */
     xmlParentChildNodes[3] = XLALCreateVOTableParamNode("ecc",
                                                         NULL,
-                                                        "double",
+                                                        VOT_REAL8,
                                                         NULL,
                                                         ecc);
     if(!xmlParentChildNodes[3]) {
@@ -454,7 +454,7 @@ xmlNodePtr XLALBinaryOrbitParams2VOTableNode(const BinaryOrbitParams *const bop,
     /* set up PARAM node (period) */
     xmlParentChildNodes[4] = XLALCreateVOTableParamNode("period",
                                                         "s",
-                                                        "double",
+                                                        VOT_REAL8,
                                                         NULL,
                                                         period);
     if(!xmlParentChildNodes[4]) {
@@ -832,7 +832,7 @@ xmlNodePtr XLALPulsarDopplerParams2VOTableNode(const PulsarDopplerParams *const 
     /* set up PARAM node (Alpha) */
     xmlParentChildNodes[1] = XLALCreateVOTableParamNode("Alpha",
                                                         "rad",
-                                                        "double",
+                                                        VOT_REAL8,
                                                         NULL,
                                                         Alpha);
     if(!xmlParentChildNodes[1]) {
@@ -843,7 +843,7 @@ xmlNodePtr XLALPulsarDopplerParams2VOTableNode(const PulsarDopplerParams *const 
     /* set up PARAM node (Delta) */
     xmlParentChildNodes[2] = XLALCreateVOTableParamNode("Delta",
                                                         "rad",
-                                                        "double",
+                                                        VOT_REAL8,
                                                         NULL,
                                                         Delta);
     if(!xmlParentChildNodes[2]) {
@@ -854,7 +854,7 @@ xmlNodePtr XLALPulsarDopplerParams2VOTableNode(const PulsarDopplerParams *const 
     /* set up PARAM node (fkdot) */
     xmlParentChildNodes[3] = XLALCreateVOTableParamNode("fkdot",
                                                         NULL,
-                                                        "double",
+                                                        VOT_REAL8,
                                                         "4",
                                                         fkdot);
     if(!xmlParentChildNodes[3]) {
