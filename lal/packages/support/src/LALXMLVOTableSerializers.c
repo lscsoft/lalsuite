@@ -482,6 +482,194 @@ xmlChar * XLALBinaryOrbitParams2VOTableXML(const BinaryOrbitParams *const bop, c
 
 
 /**
+ * \brief Deserializes a \c BinaryOrbitParams structure from a VOTable XML string
+ *
+ * This function takes a VOTable XML document (string) and deserializes (extracts)
+ * the \c BinaryOrbitParams structure identified by the given name.
+ *
+ * \param xml [in] Pointer to the VOTable XML document (string) containing the structure
+ * \param name [in] Unique identifier of the particular \c BinaryOrbitParams structure to be deserialized
+ * \param bop [out] Pointer to an empty \c  BinaryOrbitParams structure to store the deserialized instance
+ *
+ * \return \c XLAL_SUCCESS if the specified \c BinaryOrbitParams structure could be found and
+ * deserialized successfully.
+ *
+ * \sa XLALGetSingleNodeContentByXPath
+ *
+ * \author Oliver Bock\n
+ * Albert-Einstein-Institute Hannover, Germany
+ */
+INT4 XLALVOTableXML2BinaryOrbitParamsByName(const char *xml, const char *name, BinaryOrbitParams *bop)
+{
+    /* set up local variables */
+    static const CHAR *logReference = "XLALVOTableXML2BinaryOrbitParamsByName";
+    xmlDocPtr xmlDocument = NULL;
+    xmlChar *nodeContent = NULL;
+    CHAR xpath[XPATHSTR_MAXLEN] = {0};
+
+    /* sanity checks */
+    if(!xml) {
+        XLALPrintError("Invalid input parameter: xml\n");
+        XLAL_ERROR(logReference, XLAL_EINVAL);
+    }
+    if(!name || strlen(name) <= 0) {
+        XLALPrintError("Invalid input parameter: name\n");
+        XLAL_ERROR(logReference, XLAL_EINVAL);
+    }
+    if(!bop) {
+        XLALPrintError("Invalid input parameter: bop\n");
+        XLAL_ERROR(logReference, XLAL_EINVAL);
+    }
+
+    /* parse XML document */
+    xmlDocument = xmlReadMemory(xml, strlen(xml), NULL, "UTF-8", 0);
+    if(xmlDocument == NULL) {
+        /* clean up */
+        xmlCleanupParser();
+
+        XLALPrintError("VOTable document parsing failed\n");
+        XLAL_ERROR(logReference, XLAL_EFAILED);
+    }
+
+    /* retrieve BinaryOrbitParams.tp */
+    if(XLALVOTableXML2LIGOTimeGPSByName(xml, "tp", &bop->tp)) {
+        /* clean up */
+        xmlFreeDoc(xmlDocument);
+        xmlCleanupParser();
+
+        XLALPrintError("Error parsing XML document content: BinaryOrbitParams.tp\n");
+        XLAL_ERROR(logReference, XLAL_EFAILED);
+    }
+
+    /* prepare XPATH search for BinaryOrbitParams.argp */
+    if(LALSnprintf(
+            xpath,
+            XPATHSTR_MAXLEN,
+            "//RESOURCE[@utype='BinaryOrbitParams' and @name='%s']/PARAM[@name='argp']/@value",
+            name) < 0)
+    {
+        /* clean up */
+        xmlFreeDoc(xmlDocument);
+        xmlCleanupParser();
+
+        XLALPrintError("XPATH statement construction failed: BinaryOrbitParams.argp\n");
+        XLAL_ERROR(logReference, XLAL_EFAILED);
+    }
+
+    /* retrieve BinaryOrbitParams.argp */
+    nodeContent = (xmlChar *) XLALGetSingleNodeContentByXPath(xmlDocument, xpath);
+
+    /* parse and finally store content */
+    if(!nodeContent || sscanf((char*)nodeContent, "%lf", &bop->argp) == EOF) {
+        /* clean up*/
+        xmlFree(nodeContent);
+        xmlFreeDoc(xmlDocument);
+        xmlCleanupParser();
+
+        XLALPrintError("Invalid node content encountered: BinaryOrbitParams.argp\n");
+        XLAL_ERROR(logReference, XLAL_EDATA);
+    }
+
+    /* prepare XPATH search for PulsarDopplerParams.asini */
+    if(LALSnprintf(
+            xpath,
+            XPATHSTR_MAXLEN,
+            "//RESOURCE[@utype='BinaryOrbitParams' and @name='%s']/PARAM[@name='asini']/@value",
+            name) < 0)
+    {
+        /* clean up */
+        xmlFree(nodeContent);
+        xmlFreeDoc(xmlDocument);
+        xmlCleanupParser();
+
+        XLALPrintError("XPATH statement construction failed: BinaryOrbitParams.asini\n");
+        XLAL_ERROR(logReference, XLAL_EFAILED);
+    }
+
+    /* retrieve BinaryOrbitParams.Delta */
+    nodeContent = (xmlChar *)XLALGetSingleNodeContentByXPath(xmlDocument, xpath);
+
+    /* parse and finally store content */
+    if(!nodeContent || sscanf((char*)nodeContent, "%lf", &bop->asini) == EOF) {
+        /* clean up*/
+        xmlFree(nodeContent);
+        xmlFreeDoc(xmlDocument);
+        xmlCleanupParser();
+
+        XLALPrintError("Invalid node content encountered: BinaryOrbitParams.asini\n");
+        XLAL_ERROR(logReference, XLAL_EDATA);
+    }
+
+    /* prepare XPATH search for BinaryOrbitParams.ecc */
+    if(LALSnprintf(
+            xpath,
+            XPATHSTR_MAXLEN,
+            "//RESOURCE[@utype='BinaryOrbitParams' and @name='%s']/PARAM[@name='ecc']/@value",
+            name) < 0)
+    {
+        /* clean up */
+        xmlFree(nodeContent);
+        xmlFreeDoc(xmlDocument);
+        xmlCleanupParser();
+
+        XLALPrintError("XPATH statement construction failed: BinaryOrbitParams.ecc\n");
+        XLAL_ERROR(logReference, XLAL_EFAILED);
+    }
+
+    /* retrieve PulsarDopplerParams.ecc */
+    nodeContent = (xmlChar *)XLALGetSingleNodeContentByXPath(xmlDocument, xpath);
+
+    /* parse and finally store content */
+    if(!nodeContent || sscanf((char*)nodeContent, "%lf", &bop->ecc) == EOF) {
+        /* clean up*/
+        xmlFree(nodeContent);
+        xmlFreeDoc(xmlDocument);
+        xmlCleanupParser();
+
+        XLALPrintError("Invalid node content encountered: BinaryOrbitParams.ecc\n");
+        XLAL_ERROR(logReference, XLAL_EDATA);
+    }
+
+    /* prepare XPATH search for BinaryOrbitParams.period */
+    if(LALSnprintf(
+            xpath,
+            XPATHSTR_MAXLEN,
+            "//RESOURCE[@utype='BinaryOrbitParams' and @name='%s']/PARAM[@name='period']/@value",
+            name) < 0)
+    {
+        /* clean up */
+        xmlFree(nodeContent);
+        xmlFreeDoc(xmlDocument);
+        xmlCleanupParser();
+
+        XLALPrintError("XPATH statement construction failed: BinaryOrbitParams.period\n");
+        XLAL_ERROR(logReference, XLAL_EFAILED);
+    }
+
+    /* retrieve PulsarDopplerParams.fkdot */
+    nodeContent = (xmlChar *)XLALGetSingleNodeContentByXPath(xmlDocument, xpath);
+
+    /* parse and finally store content */
+    if(!nodeContent || sscanf((char*)nodeContent, "%lf", &bop->period) == EOF) {
+        /* clean up*/
+        xmlFree(nodeContent);
+        xmlFreeDoc(xmlDocument);
+        xmlCleanupParser();
+
+        XLALPrintError("Invalid node content encountered: BinaryOrbitParams.period\n");
+        XLAL_ERROR(logReference, XLAL_EDATA);
+    }
+
+    /* clean up*/
+    xmlFree(nodeContent);
+    xmlFreeDoc(xmlDocument);
+    xmlCleanupParser();
+
+    return XLAL_SUCCESS;
+}
+
+
+/**
  * \brief Serializes a \c PulsarDopplerParams structure into a VOTable XML %node
  *
  * This function takes a \c PulsarDopplerParams structure and serializes it into a VOTable
@@ -663,4 +851,172 @@ xmlChar * XLALPulsarDopplerParams2VOTableXML(const PulsarDopplerParams *const pd
 
     /* return XML string (needs to be xmlFree'd by caller!!!) */
     return xmlStringBuffer;
+}
+
+
+/**
+ * \brief Deserializes a \c PulsarDopplerParams structure from a VOTable XML string
+ *
+ * This function takes a VOTable XML document (string) and deserializes (extracts)
+ * the \c PulsarDopplerParams structure identified by the given name.
+ *
+ * \param xml [in] Pointer to the VOTable XML document (string) containing the structure
+ * \param name [in] Unique identifier of the particular \c PulsarDopplerParams structure to be deserialized
+ * \param pdp [out] Pointer to an empty \c  PulsarDopplerParams structure to store the deserialized instance
+ *
+ * \return \c XLAL_SUCCESS if the specified \c PulsarDopplerParams structure could be found and
+ * deserialized successfully.
+ *
+ * \sa XLALGetSingleNodeContentByXPath
+ *
+ * \author Oliver Bock\n
+ * Albert-Einstein-Institute Hannover, Germany
+ */
+INT4 XLALVOTableXML2PulsarDopplerParamsByName(const char *xml, const char *name, PulsarDopplerParams *pdp)
+{
+    /* set up local variables */
+    static const CHAR *logReference = "XLALVOTableXML2PulsarDopplerParamsByName";
+    xmlDocPtr xmlDocument = NULL;
+    xmlChar *nodeContent = NULL;
+    CHAR xpath[XPATHSTR_MAXLEN] = {0};
+
+    /* sanity checks */
+    if(!xml) {
+        XLALPrintError("Invalid input parameter: xml\n");
+        XLAL_ERROR(logReference, XLAL_EINVAL);
+    }
+    if(!name || strlen(name) <= 0) {
+        XLALPrintError("Invalid input parameter: name\n");
+        XLAL_ERROR(logReference, XLAL_EINVAL);
+    }
+    if(!pdp) {
+        XLALPrintError("Invalid input parameter: pdp\n");
+        XLAL_ERROR(logReference, XLAL_EINVAL);
+    }
+
+    /* parse XML document */
+    xmlDocument = xmlReadMemory(xml, strlen(xml), NULL, "UTF-8", 0);
+    if(xmlDocument == NULL) {
+        /* clean up */
+        xmlCleanupParser();
+
+        XLALPrintError("VOTable document parsing failed\n");
+        XLAL_ERROR(logReference, XLAL_EFAILED);
+    }
+
+    /* retrieve PulsarDopplerParams.refTime */
+    if(XLALVOTableXML2LIGOTimeGPSByName(xml, "refTime", &pdp->refTime)) {
+        /* clean up */
+        xmlFreeDoc(xmlDocument);
+        xmlCleanupParser();
+
+        XLALPrintError("Error parsing XML document content: PulsarDopplerParams.refTime\n");
+        XLAL_ERROR(logReference, XLAL_EFAILED);
+    }
+
+    /* prepare XPATH search for PulsarDopplerParams.Alpha */
+    if(LALSnprintf(
+            xpath,
+            XPATHSTR_MAXLEN,
+            "//RESOURCE[@utype='PulsarDopplerParams' and @name='%s']/PARAM[@name='Alpha']/@value",
+            name) < 0)
+    {
+        /* clean up */
+        xmlFreeDoc(xmlDocument);
+        xmlCleanupParser();
+
+        XLALPrintError("XPATH statement construction failed: PulsarDopplerParams.Alpha\n");
+        XLAL_ERROR(logReference, XLAL_EFAILED);
+    }
+
+    /* retrieve PulsarDopplerParams.Alpha */
+    nodeContent = (xmlChar *) XLALGetSingleNodeContentByXPath(xmlDocument, xpath);
+
+    /* parse and finally store content */
+    if(!nodeContent || sscanf((char*)nodeContent, "%lf", &pdp->Alpha) == EOF) {
+        /* clean up*/
+        xmlFree(nodeContent);
+        xmlFreeDoc(xmlDocument);
+        xmlCleanupParser();
+
+        XLALPrintError("Invalid node content encountered: PulsarDopplerParams.Alpha\n");
+        XLAL_ERROR(logReference, XLAL_EDATA);
+    }
+
+    /* prepare XPATH search for PulsarDopplerParams.Delta */
+    if(LALSnprintf(
+            xpath,
+            XPATHSTR_MAXLEN,
+            "//RESOURCE[@utype='PulsarDopplerParams' and @name='%s']/PARAM[@name='Delta']/@value",
+            name) < 0)
+    {
+        /* clean up */
+        xmlFree(nodeContent);
+        xmlFreeDoc(xmlDocument);
+        xmlCleanupParser();
+
+        XLALPrintError("XPATH statement construction failed: PulsarDopplerParams.Delta\n");
+        XLAL_ERROR(logReference, XLAL_EFAILED);
+    }
+
+    /* retrieve PulsarDopplerParams.Delta */
+    nodeContent = (xmlChar *)XLALGetSingleNodeContentByXPath(xmlDocument, xpath);
+
+    /* parse and finally store content */
+    if(!nodeContent || sscanf((char*)nodeContent, "%lf", &pdp->Delta) == EOF) {
+        /* clean up*/
+        xmlFree(nodeContent);
+        xmlFreeDoc(xmlDocument);
+        xmlCleanupParser();
+
+        XLALPrintError("Invalid node content encountered: PulsarDopplerParams.Delta\n");
+        XLAL_ERROR(logReference, XLAL_EDATA);
+    }
+
+    /* prepare XPATH search for PulsarDopplerParams.fkdot */
+    if(LALSnprintf(
+            xpath,
+            XPATHSTR_MAXLEN,
+            "//RESOURCE[@utype='PulsarDopplerParams' and @name='%s']/PARAM[@name='fkdot']/@value",
+            name) < 0)
+    {
+        /* clean up */
+        xmlFree(nodeContent);
+        xmlFreeDoc(xmlDocument);
+        xmlCleanupParser();
+
+        XLALPrintError("XPATH statement construction failed: PulsarDopplerParams.fkdot\n");
+        XLAL_ERROR(logReference, XLAL_EFAILED);
+    }
+
+    /* retrieve PulsarDopplerParams.fkdot */
+    nodeContent = (xmlChar *)XLALGetSingleNodeContentByXPath(xmlDocument, xpath);
+
+    /* parse and finally store content */
+    if(!nodeContent || sscanf((char*)nodeContent, "%lf %lf %lf %lf", &pdp->fkdot[0], &pdp->fkdot[1], &pdp->fkdot[2], &pdp->fkdot[3]) == EOF) {
+        /* clean up*/
+        xmlFree(nodeContent);
+        xmlFreeDoc(xmlDocument);
+        xmlCleanupParser();
+
+        XLALPrintError("Invalid node content encountered: PulsarDopplerParams.fkdot\n");
+        XLAL_ERROR(logReference, XLAL_EDATA);
+    }
+
+    /* retrieve PulsarDopplerParams.orbit */
+    if(XLALVOTableXML2BinaryOrbitParamsByName(xml, "orbit", pdp->orbit)) {
+        /* clean up */
+        xmlFreeDoc(xmlDocument);
+        xmlCleanupParser();
+
+        XLALPrintError("Error parsing XML document content: PulsarDopplerParams.orbit\n");
+        XLAL_ERROR(logReference, XLAL_EFAILED);
+    }
+
+    /* clean up*/
+    xmlFree(nodeContent);
+    xmlFreeDoc(xmlDocument);
+    xmlCleanupParser();
+
+    return XLAL_SUCCESS;
 }

@@ -91,7 +91,7 @@ int testLIGOTimeGPS()
     fprintf(stderr, (char*)xml);
     fprintf(stderr, "----------------------------------------------------------------------\n");
 
-    /* invoke and check second function (set) */
+    /* invoke and check second function (get) */
     if(XLALVOTableXML2LIGOTimeGPSByName((char*)xml, LALXMLC_NAMETEST1, &timeDestination)) {
         fprintf(stderr, "LALXMLTest: [XLALVOTableXML2LIGOTimeGPSByName(): %s]\n", LALXMLC_MSGEFUN);
         return LALXMLC_EFUN;
@@ -122,6 +122,7 @@ int testPulsarDopplerParams()
     /* set up local variables */
     BinaryOrbitParams bopSource;
     PulsarDopplerParams pdpSource;
+    BinaryOrbitParams bopDestination;
     PulsarDopplerParams pdpDestination;
     xmlChar *xml;
 
@@ -142,6 +143,22 @@ int testPulsarDopplerParams()
     pdpSource.fkdot[3] = 0.0;
     pdpSource.orbit = &bopSource;
 
+    bopDestination.tp.gpsSeconds = 0;
+    bopDestination.tp.gpsNanoSeconds = 0;
+    bopDestination.argp = 0;
+    bopDestination.asini = 0;
+    bopDestination.ecc = 0;
+    bopDestination.period = 0;
+    pdpDestination.refTime.gpsSeconds = 0;
+    pdpDestination.refTime.gpsNanoSeconds = 0;
+    pdpDestination.Alpha = 0;
+    pdpDestination.Delta = 0;
+    pdpDestination.fkdot[0] = 0;
+    pdpDestination.fkdot[1] = 0;
+    pdpDestination.fkdot[2] = 0;
+    pdpDestination.fkdot[3] = 0;
+    pdpDestination.orbit = &bopDestination;
+
     fprintf(stderr, "1: Testing PulsarDopplerParams (de)serialization...\n\n");
 
     fprintf(stderr, "Initial PulsarDopplerParams struct:\n");
@@ -149,8 +166,8 @@ int testPulsarDopplerParams()
             "\trefTime: {%d, %d}\n"
             "\tAlpha: %g\n"
             "\tDelta: %g\n"
-            "\tfkdot: {%g, %g, %g, %g}}\n"
-            "\torbit->tp: {%d, %d}\n"
+            "\tfkdot: {%g, %g, %g, %g}\n"
+            "\torbit.tp: {%d, %d}\n"
             "\torbit.argp: %g\n"
             "\torbit.asini: %g\n"
             "\torbit.ecc: %g\n"
@@ -161,10 +178,10 @@ int testPulsarDopplerParams()
             pdpSource.Delta,
             pdpSource.fkdot[0], pdpSource.fkdot[1], pdpSource.fkdot[2], pdpSource.fkdot[3],
             pdpSource.orbit->tp.gpsSeconds, pdpSource.orbit->tp.gpsNanoSeconds,
-            bopSource.argp,
-            bopSource.asini,
-            bopSource.ecc,
-            bopSource.period);
+            pdpSource.orbit->argp,
+            pdpSource.orbit->asini,
+            pdpSource.orbit->ecc,
+            pdpSource.orbit->period);
 
     /* invoke and check first function (set) */
     xml = (xmlChar *) XLALPulsarDopplerParams2VOTableXML(&pdpSource, LALXMLC_NAMETEST2);
@@ -179,6 +196,59 @@ int testPulsarDopplerParams()
     fprintf(stderr, "----------------------------------------------------------------------\n");
     fprintf(stderr, (char*)xml);
     fprintf(stderr, "----------------------------------------------------------------------\n");
+
+    /* invoke and check second function (get) */
+    if(XLALVOTableXML2PulsarDopplerParamsByName((char*)xml, LALXMLC_NAMETEST2, &pdpDestination)) {
+        fprintf(stderr, "LALXMLTest: [XLALVOTableXML2PulsarDopplerParamsByName(): %s]\n", LALXMLC_MSGEFUN);
+        return LALXMLC_EFUN;
+    }
+    fprintf(stderr, "\nLALXMLTest: [XLALVOTableXML2PulsarDopplerParamsByName(): %s]\n\n", LALXMLC_MSGENOM);
+
+    /* clean up */
+    xmlFree(xml);
+
+    fprintf(stderr, "PulsarDopplerParams struct parsed back from VOTable:\n");
+    fprintf(stderr, "%s = {\n"
+            "\trefTime: {%d, %d}\n"
+            "\tAlpha: %g\n"
+            "\tDelta: %g\n"
+            "\tfkdot: {%g, %g, %g, %g}\n"
+            "\torbit.tp: {%d, %d}\n"
+            "\torbit.argp: %g\n"
+            "\torbit.asini: %g\n"
+            "\torbit.ecc: %g\n"
+            "\torbit.period: %g\n}\n\n",
+            LALXMLC_NAMETEST2,
+            pdpDestination.refTime.gpsSeconds, pdpDestination.refTime.gpsNanoSeconds,
+            pdpDestination.Alpha,
+            pdpDestination.Delta,
+            pdpDestination.fkdot[0], pdpDestination.fkdot[1], pdpDestination.fkdot[2], pdpDestination.fkdot[3],
+            pdpDestination.orbit->tp.gpsSeconds, pdpDestination.orbit->tp.gpsNanoSeconds,
+            pdpDestination.orbit->argp,
+            pdpDestination.orbit->asini,
+            pdpDestination.orbit->ecc,
+            pdpDestination.orbit->period);
+
+    /* validate test results */
+    if(
+            pdpSource.refTime.gpsSeconds != pdpDestination.refTime.gpsSeconds ||
+            pdpSource.refTime.gpsNanoSeconds != pdpDestination.refTime.gpsNanoSeconds ||
+            pdpSource.Alpha != pdpDestination.Alpha ||
+            pdpSource.Delta != pdpDestination.Delta ||
+            pdpSource.fkdot[0] != pdpDestination.fkdot[0] ||
+            pdpSource.fkdot[1] != pdpDestination.fkdot[1] ||
+            pdpSource.fkdot[2] != pdpDestination.fkdot[2] ||
+            pdpSource.fkdot[3] != pdpDestination.fkdot[3] ||
+            pdpSource.orbit->tp.gpsSeconds != pdpDestination.orbit->tp.gpsSeconds ||
+            pdpSource.orbit->tp.gpsNanoSeconds != pdpDestination.orbit->tp.gpsNanoSeconds ||
+            pdpSource.orbit->argp != pdpDestination.orbit->argp ||
+            pdpSource.orbit->asini != pdpDestination.orbit->asini ||
+            pdpSource.orbit->ecc != pdpDestination.orbit->ecc ||
+            pdpSource.orbit->period != pdpDestination.orbit->period)
+    {
+        fprintf(stderr, "LALXMLTest: [XLALVOTableXML2PulsarDopplerParamsByName(): %s]\n\n", LALXMLC_MSGEVAL);
+        return LALXMLC_EVAL;
+    }
 
     return LALXMLC_ENOM;
 }
