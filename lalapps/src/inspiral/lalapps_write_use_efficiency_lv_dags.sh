@@ -5,6 +5,7 @@
 
 month_gps_time=`cat write_ifar_scripts_lv.ini | grep 'month_gps_time' | awk '{print $3}'`
 month_duration=`cat write_ifar_scripts_lv.ini | grep 'month_duration' | awk '{print $3}'`
+month_gps_end=$(( ${month_gps_time} + ${month_duration} ))
 cat=`cat write_ifar_scripts_lv.ini | grep 'cat' | awk '{print $3}'`
 
 septime_path=`cat write_ifar_scripts_lv.ini | grep 'septime_path' | awk '{print $3}'`
@@ -24,6 +25,7 @@ hipe_cache=`cat write_ifar_scripts_lv.ini | grep 'hipe_cache' | awk '{print $3}'
 echo "Options used are:"
 echo "  month_gps_time = ${month_gps_time}"
 echo "  month_duration = ${month_duration}"
+echo "  month_gps_end = ${month_gps_end}"
 echo "  cat = ${cat}"
 echo "  septime_path = ${septime_path}"
 echo "  log_path = ${log_path}"
@@ -60,7 +62,7 @@ fi >  findEfficiencyFactors.sub
 if [ 1 ]; then
   echo "universe = local"
   echo "executable = ${addEfficiencyFactors_path}"
-  echo "arguments = --config-file addEfficiencyFactors.ini --data-type all-data --output-file addefficiency.out"
+  echo "arguments = --config-file addEfficiencyFactors.ini"
   echo "getenv = True"
   echo "log = " `mktemp -p ${log_path}`
   echo "error = logs/addEfficiencyFactors-\$(cluster)-\$(process).err"
@@ -92,7 +94,7 @@ fi >  findLoudestEvents.sub
 if [ 1 ]; then
   echo "universe = local"
   echo "executable = ${search_summary_path}"
-  echo "arguments = --slides-glob \$(macroslideglob) --zero-lag-glob \$(macrozerolag) --statistic lvS5stat --num-events 20 --save-background-stats --output-background-file \$(macropickle) --num-slides 50 --output-path \$(macrooutput) --enable-output --make_zoomed_histogram --no-bg-zero-lag-glob \$(macronobg) --verbose --ignore-IFO-times H1H2_H1H2,H1H2_H1H2L1,H1H2_H1H2V1,H1H2_H1H2L1V1,H2L1_H1H2L1,H2L1_H1H2L1V1,H2V1_H1H2V1,H2V1_H1H2L1V1,H2L1V1_H1H2L1V1"
+  echo "arguments = --slides-glob \$(macroslideglob) --zero-lag-glob \$(macrozerolag) --statistic lvS5stat --num-events 20 --save-background-stats --output-background-file \$(macropickle) --num-slides 50 --output-path \$(macrooutput) --enable-output  --no-bg-zero-lag-glob \$(macronobg) --make-effective-likelihood-histogram --plot-slides --plot-mchirp-vs-effective-snr --plot-mchirp-vs-stat --plot-ifar --septime-files \$(macroseptimefiles) --efactors-file \$(efactorsfile) --plot-efactors --h1-triggers --h2-triggers --l1-triggers --v1-triggers --verbose --ignore-IFO-times H1H2_H1H2,H1H2_H1H2L1,H1H2_H1H2V1,H1H2_H1H2L1V1,H2L1_H1H2L1,H2L1_H1H2L1V1,H2V1_H1H2V1,H2V1_H1H2L1V1,H2L1V1_H1H2L1V1"
   echo "getenv = True"
   echo "log = " `mktemp -p ${log_path}`
   echo "error = logs/search_summary-\$(cluster)-\$(process).err"
@@ -108,7 +110,7 @@ fi >  search_summary.sub
 if [ 1 ]; then
   echo "universe = local"
   echo "executable = ${sumtimes_path}"
-  echo "arguments = --input-glob \$(macroinputglob) --output-file combinedtimes_exclude_play.txt"
+  echo "arguments = --input-glob \$(macroinputglob) --output-file corse_all_data_files/exclude_play/H1H2L1V1_H1H2L1V1-CORSE_EXCLUDE_PLAY_mchirp_2_8_CAT_3-${month_gps_time}-${month_duration}.txt"
   echo "getenv = True"
   echo "log = " `mktemp -p ${log_path}`
   echo "error = logs/sumtimes-\$(cluster)-\$(process).err"
@@ -138,8 +140,7 @@ fi >  calculatefar_zerolag.sub
 ##############################################################################
 if [ 1 ]; then  echo "universe = local"
   echo "executable = ${calculatefar_path}"
-  echo "arguments = --events-glob \$(macroeventglob) --statistic \$(macrostat) --skip-timeslides --background-stats-file \$(macrobgfile) --
-verbose --output-path \$(macrooutputpath) --combine-output \$(macrocombineoutput) --num-slides 50 --septime-files \$(macroseptimefiles)"
+  echo "arguments = --events-glob \$(macroeventglob) --statistic \$(macrostat) --skip-timeslides --background-stats-file \$(macrobgfile) --verbose --output-path \$(macrooutputpath) --combine-output \$(macrocombineoutput) --num-slides 50 --septime-files \$(macroseptimefiles)"
   echo "getenv = True"
   echo "log = " `mktemp -p ${log_path}`
   echo "error = logs/calculatefar-\$(cluster)-\$(process).err"
@@ -183,7 +184,7 @@ if [ 1 ]; then
   echo ""
   echo "[exclude-playground-data]"
   echo "zero-lag-glob = corse_all_data_files/CAT_3/exclude_play/*-CORSE_EXCLUDE*.xml.gz"
-  echo "slides-glob = corse_all_data_files/CAT_3/all_data/*-CORSE_SLIDE_ALL_DATA*.xml.gz"
+  echo "slides-glob = corse_all_data_files/CAT_3/exclude_play/*-CORSE_SLIDE_EXCLUDE*.xml.gz"
   echo "no-background-candidates = no_background_candidates_exclude_play.xml"
   echo ""
   echo "[injections]"
@@ -265,15 +266,15 @@ if [ 1 ]; then
 
   echo ""
   echo "JOB 1004 search_summary.sub"
-  echo "VARS 1004 macroslideglob=\"CAT_3/playground_only/*SLIDE*\"  macrozerolag=\"CAT_3/playground_only/*LIKELIHOOD_PLAY*\" macropickle=\"playground_loudestbg.pickle\" macrooutput=\"search_summary_playground_only/\" macronobg=\"CAT_3/playground_only/no_background*\""
+  echo "VARS 1004 macroslideglob=\"CAT_3/playground_only/*SLIDE*\"  macrozerolag=\"CAT_3/playground_only/*LIKELIHOOD_PLAY*\" macropickle=\"playground_loudestbg.pickle\" macrooutput=\"search_summary_playground_only/\" macronobg=\"CAT_3/playground_only/no_background*\" macroseptimefiles=\"septime_files/*_V3_CAT*.txt\" efactorsfile=\"bns001inj_efficiency_factors.stat\""
 
   echo ""
   echo "JOB 1005 search_summary.sub"
-  echo "VARS 1005 macroslideglob=\"CAT_3/all_data/*SLIDE*\"  macrozerolag=\"CAT_3/all_data/*LIKELIHOOD_ALL_DATA*\" macropickle=\"all_data_loudestbg.pickle\" macrooutput=\"search_summary_all_data/\" macronobg=\"CAT_3/all_data/no_background*\""
+  echo "VARS 1005 macroslideglob=\"CAT_3/all_data/*SLIDE*\"  macrozerolag=\"CAT_3/all_data/*LIKELIHOOD_ALL_DATA*\" macropickle=\"all_data_loudestbg.pickle\" macrooutput=\"search_summary_all_data/\" macronobg=\"CAT_3/all_data/no_background*\" macroseptimefiles=\"septime_files/*_V3_CAT*.txt\" efactorsfile=\"bns001inj_efficiency_factors.stat\""
 
   echo ""
   echo "JOB 1006 search_summary.sub"
-  echo "VARS 1006 macroslideglob=\"CAT_3/exclude_play/*SLIDE*\"  macrozerolag=\"CAT_3/exclude_play/*LIKELIHOOD_EXCLUDE_PLAY*\" macropickle=\"exclude_play_loudestbg.pickle\" macrooutput=\"search_summary_exclude_play/\" macronobg=\"CAT_3/exclude_play/no_background*\""
+  echo "VARS 1006 macroslideglob=\"CAT_3/exclude_play/*SLIDE*\"  macrozerolag=\"CAT_3/exclude_play/*LIKELIHOOD_EXCLUDE_PLAY*\" macropickle=\"exclude_play_loudestbg.pickle\" macrooutput=\"search_summary_exclude_play/\" macronobg=\"CAT_3/exclude_play/no_background*\" macroseptimefiles=\"septime_files/*_V3_CAT*.txt\" efactorsfile=\"bns001inj_efficiency_factors.stat\""
 
   echo ""
   echo "JOB 1007 sumtimes.sub"
@@ -281,19 +282,19 @@ if [ 1 ]; then
 
   echo ""
   echo "JOB 1008 calculatefar_zerolag.sub"
-  echo "VARS 1008 macroslideglob=\"CAT_3/exclude_play/*SLIDE*\" macroeventglob=\"search_summary_exclude_play/loudest_zerolag.xml\" macrostat=\"lvS5stat\" macrobgfile=\"exclude_play_bg.stat\" macrooutputpath=\"uncombined_ifar_files/exclude_play/\" macrocombineoutput=\"combined_ifar_files/exclude_play/combinedifar_zerolag.xml\" macroseptimefiles=\"septime_files/*CAT*txt\" "
+  echo "VARS 1008 macroslideglob=\"CAT_3/exclude_play/*SLIDE*\" macroeventglob=\"search_summary_exclude_play/loudest_zerolag.xml\" macrostat=\"lvS5stat\" macrobgfile=\"exclude_play_bg.stat\" macrooutputpath=\"uncombined_ifar_files/exclude_play/\" macrocombineoutput=\"combined_ifar_files/exclude_play/H1H2L1V1-CORSE_ALL_MASSES-exclude_play_COMBINED_IFAR_CAT_3-${month_gps_time}-${month_gps_end}.xml.gz\" macroseptimefiles=\"septime_files/*CAT*txt\" "
 
   echo ""
   echo "JOB 1009 calculatefar_slides.sub"
-  echo "VARS 1009 macroeventglob=\"search_summary_exclude_play/loudest_timeslides.xml\" macrostat=\"lvS5stat\" macrobgfile=\"exclude_play_bg.stat\" macrooutputpath=\"uncombined_ifar_files/exclude_play/\" macrocombineoutput=\"combined_ifar_files/exclude_play/combinedifar_slides.xml\" macroseptimefiles=\"septime_files/*CAT*txt\" "
+  echo "VARS 1009 macroeventglob=\"search_summary_exclude_play/loudest_timeslides.xml\" macrostat=\"lvS5stat\" macrobgfile=\"exclude_play_bg.stat\" macrooutputpath=\"uncombined_ifar_files/exclude_play/\" macrocombineoutput=\"combined_ifar_files/all_data_slide/H1H2L1V1-CORSE_ALL_MASSES-all_data_slide_COMBINED_IFAR_CAT_3-${month_gps_time}-${month_gps_end}.xml.gz\" macroseptimefiles=\"septime_files/*CAT*txt\" "
 
 
   injcounter=1010
-  for injstring in bbhlininj bbhloginj bbhspinlininj bbhspinloginj bnslininj bnsloginj bnsspinlininj bnsspinloginj nsbhlininj nsbhloginj nsbhspinlininj nsbhspinloginj bns001inj; do
+  for injstring in BBHLININJ BBHLOGINJ BBHSPINLININJ BBHSPINLOGINJ BNSLININJ BNSLOGINJ BNSSPINLININJ BNSSPINLOGINJ NSBHLININJ NSBHLOGINJ NSBHSPINLININJ NSBHSPINLOGINJ BNS001INJ; do
     echo ""
     echo "JOB ${injcounter} calculatefar_inj.sub"
-    echo "VARS ${injcounter} macroeventglob=\"${injstring}/*LIKELIHOOD*FOUND*xml\" macrostat=\"lvS5stat\" macrobgfile=\"exclude_play_bg.stat\" macrooutputpath=\"uncombined_ifar_files/${injstring}/\" macrocombineoutput=\"combined_ifar_files/${injstring}/combinedifar_${injstring}.xml\" macroseptimefiles=\"septime_files/*CAT*txt\" "
-    injcounter+=1
+    echo "VARS ${injcounter} macroeventglob=\"${injstring}/*LIKELIHOOD*FOUND*xml\" macrostat=\"lvS5stat\" macrobgfile=\"exclude_play_bg.stat\" macrooutputpath=\"uncombined_ifar_files/${injstring}/\" macrocombineoutput=\"combined_ifar_files/${injstring}/H1H2L1V1-CORSE_ALL_MASSES-${injstring}_COMBINED_IFAR_CAT_3-${month_gps_time}-${month_gps_end}.xml.gz\" macroseptimefiles=\"septime_files/*CAT*txt\" "
+    injcounter=$(( ${injcounter} + 1 ))
   done
 
   echo ""
@@ -318,6 +319,5 @@ if [ 1 ]; then
   echo "PARENT 1019 CHILD 1020"
   echo "PARENT 1020 CHILD 1021"
   echo "PARENT 1021 CHILD 1022"
-  echo "PARENT 1022 CHILD 1023"
 
 fi > use_efficiency.dag
