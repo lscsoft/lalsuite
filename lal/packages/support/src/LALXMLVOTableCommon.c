@@ -33,7 +33,8 @@
 #include <lal/LALXMLVOTableCommon.h>
 
 
-#define XPATHSTR_MAXLEN         500
+#define VOTABLE_VERSION     "1.1"
+#define XPATHSTR_MAXLEN     500
 
 
 /**
@@ -274,6 +275,7 @@ xmlDocPtr XLALCreateVOTableXMLFromTree(const xmlNodePtr xmlTree)
     static const CHAR *logReference = "XLALCreateVOTableXMLFromTree";
     xmlDocPtr xmlDocument = NULL;
     xmlNodePtr xmlRootNode = NULL;
+    xmlNsPtr xmlSchemaNamespace = NULL;
 
     /* make sure that the shared library is the same as the
      * library version the code was compiled against */
@@ -300,6 +302,23 @@ xmlDocPtr XLALCreateVOTableXMLFromTree(const xmlNodePtr xmlTree)
 
         XLALPrintError("VOTable root element instantiation failed\n");
         XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+    }
+
+    /* add supplemental root node version information */
+    if(!xmlNewProp(xmlRootNode, BAD_CAST("version"), BAD_CAST(VOTABLE_VERSION))) {
+        XLALPrintWarning("VOTABLE attribute instantiation failed: version\n");
+    }
+
+    /* add supplemental root node schema instance information */
+    xmlSchemaNamespace = xmlNewNs(xmlRootNode,
+                                  BAD_CAST("http://www.w3.org/2001/XMLSchema-instance"),
+                                  BAD_CAST("xsi"));
+    if(!xmlSchemaNamespace || !xmlNewNsProp(xmlRootNode,
+                                            xmlSchemaNamespace,
+                                            BAD_CAST("noNamespaceSchemaLocation"),
+                                            BAD_CAST("http://www.ivoa.net/xml/VOTable/v"VOTABLE_VERSION)))
+    {
+        XLALPrintWarning("VOTABLE attribute instantiation failed: xsi:noNamespaceSchemaLocation\n");
     }
 
     xmlDocSetRootElement(xmlDocument, xmlRootNode);

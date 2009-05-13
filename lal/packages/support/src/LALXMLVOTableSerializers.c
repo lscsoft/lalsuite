@@ -35,9 +35,9 @@
 #include <lal/LALXMLVOTableSerializers.h>
 
 
-#define INT4STR_MAXLEN          15
-#define REAL8STR_MAXLEN         25
-#define NAMESTR_MAXLEN          50
+#define INT4STR_MAXLEN      15
+#define REAL8STR_MAXLEN     25
+#define NAMESTR_MAXLEN      50
 
 
 /**
