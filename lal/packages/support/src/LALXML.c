@@ -80,7 +80,7 @@ int XLALXMLFilePrintElements(const char *fname)
  * \b Important: the caller is responsible to free the allocated memory (when the
  * string isn't needed anymore) using \c xmlFree.
  *
- * \sa XLALVOTableXML2LIGOTimeGPSByName
+ * \sa XLALGetSingleVOTableResourceParamValue
  *
  * \author Oliver Bock\n
  * Albert-Einstein-Institute Hannover, Germany

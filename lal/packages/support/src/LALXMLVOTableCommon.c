@@ -33,6 +33,9 @@
 #include <lal/LALXMLVOTableCommon.h>
 
 
+#define XPATHSTR_MAXLEN         500
+
+
 /**
  * \brief Creates a VOTable \c PARAM %node
  *
@@ -195,7 +198,10 @@ xmlNodePtr XLALCreateVOTableParamNode(const char *name,
  * \author Oliver Bock\n
  * Albert-Einstein-Institute Hannover, Germany
  */
-xmlNodePtr XLALCreateVOTableResourceNode(const char *type, const char *identifier, const xmlNodePtr *children, const INT4 childCount)
+xmlNodePtr XLALCreateVOTableResourceNode(const char *type,
+                                         const char *identifier,
+                                         const xmlNodePtr *children,
+                                         const INT4 childCount)
 {
     /* set up local variables */
     static const CHAR *logReference = "XLALCreateVOTableResourceNode";
@@ -333,7 +339,9 @@ xmlDocPtr XLALCreateVOTableXMLFromTree(const xmlNodePtr xmlTree)
  * \author Oliver Bock\n
  * Albert-Einstein-Institute Hannover, Germany
  */
-INT4 XLALCreateVOTableStringFromTree(const xmlNodePtr xmlTree, xmlChar **xmlStringBuffer, INT4 *xmlStringBufferSize)
+INT4 XLALCreateVOTableStringFromTree(const xmlNodePtr xmlTree,
+                                     xmlChar **xmlStringBuffer,
+                                     INT4 *xmlStringBufferSize)
 {
     /* set up local variables */
     static const CHAR *logReference = "XLALCreateVOTableStringFromTree";
@@ -360,4 +368,50 @@ INT4 XLALCreateVOTableStringFromTree(const xmlNodePtr xmlTree, xmlChar **xmlStri
     xmlFreeDoc(xmlDocument);
 
     return XLAL_SUCCESS;
+}
+
+
+/**
+ * \brief Retrieves the content of a single VOTable \c RESOURCE->PARAM %node relation
+ *
+ * This function fetches the content of the \c value attribute of the specified \c PARAM element,
+ * which is a child of the specified \c RESOURCE element, from the given VOTable document.
+ *
+ * \param xmlDocument [in] The XML document to be searched
+ * \param resourceType [in] Value of the \c utype attribute of the \c RESOURCE element to be searched
+ * \param resourceName [in] Value of the \c name attribute of the \c RESOURCE element to be searched
+ * \param paramName [in] Value of the \c name attribute of the \c PARAM element to be searched
+ *
+ * \return A pointer to a \c xmlChar that holds the content (string) of the \c PARAM element's
+ * value attribute. The content will be encoded in UTF-8. In case of an error, a null-pointer is returned.\n
+ * \b Important: the caller is responsible to free the allocated memory (when the
+ * string isn't needed anymore) using \c xmlFree.
+ *
+ * \sa XLALGetSingleNodeContentByXPath
+ *
+ * \author Oliver Bock\n
+ * Albert-Einstein-Institute Hannover, Germany
+ */
+xmlChar * XLALGetSingleVOTableResourceParamValue(const xmlDocPtr xmlDocument,
+                                                 const char *resourceType,
+                                                 const char *resourceName,
+                                                 const char *paramName)
+{
+    /* set up local variables */
+    static const CHAR *logReference = "XLALGetSingleVOTableResourceParamValue";
+    CHAR xpath[XPATHSTR_MAXLEN] = {0};
+
+    /* prepare XPath search */
+    if(LALSnprintf(
+            xpath,
+            XPATHSTR_MAXLEN,
+            "//RESOURCE[@utype='%s' and @name='%s']/PARAM[@name='%s']/@value",
+            resourceType, resourceName, paramName) < 0)
+    {
+        XLALPrintError("XPath statement construction failed: %s.%s\n", resourceName, paramName);
+        XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+    }
+
+    /* retrieve LIGOTimeGPS.gpsSeconds */
+    return (xmlChar *)XLALGetSingleNodeContentByXPath(xmlDocument, xpath);
 }

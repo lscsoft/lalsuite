@@ -38,7 +38,6 @@
 #define INT4STR_MAXLEN          15
 #define REAL8STR_MAXLEN         25
 #define NAMESTR_MAXLEN          50
-#define XPATHSTR_MAXLEN         500
 
 
 /**
@@ -224,7 +223,6 @@ INT4 XLALVOTableDoc2LIGOTimeGPSByName(xmlDocPtr xmlDocument, const char *name, L
     /* set up local variables */
     static const CHAR *logReference = "XLALVOTableDoc2LIGOTimeGPSByName";
     xmlChar *nodeContent = NULL;
-    CHAR xpath[XPATHSTR_MAXLEN] = {0};
 
     /* sanity checks */
     if(!xmlDocument) {
@@ -240,19 +238,8 @@ INT4 XLALVOTableDoc2LIGOTimeGPSByName(xmlDocPtr xmlDocument, const char *name, L
         XLAL_ERROR(logReference, XLAL_EINVAL);
     }
 
-    /* prepare XPATH search for LIGOTimeGPS.gpsSeconds */
-    if(LALSnprintf(
-            xpath,
-            XPATHSTR_MAXLEN,
-            "//RESOURCE[@utype='LIGOTimeGPS' and @name='%s']/PARAM[@name='gpsSeconds']/@value",
-            name) < 0)
-    {
-        XLALPrintError("XPATH statement construction failed: LIGOTimeGPS.gpsSeconds\n");
-        XLAL_ERROR(logReference, XLAL_EFAILED);
-    }
-
     /* retrieve LIGOTimeGPS.gpsSeconds */
-    nodeContent = (xmlChar *) XLALGetSingleNodeContentByXPath(xmlDocument, xpath);
+    nodeContent = (xmlChar *)XLALGetSingleVOTableResourceParamValue(xmlDocument, "LIGOTimeGPS", name, "gpsSeconds");
 
     /* parse and finally store content */
     if(!nodeContent || sscanf((char*)nodeContent, "%i", &ltg->gpsSeconds) == EOF) {
@@ -262,22 +249,9 @@ INT4 XLALVOTableDoc2LIGOTimeGPSByName(xmlDocPtr xmlDocument, const char *name, L
         XLAL_ERROR(logReference, XLAL_EDATA);
     }
 
-    /* prepare XPATH search for LIGOTimeGPS.gpsNanoSeconds */
-    if(LALSnprintf(
-            xpath,
-            XPATHSTR_MAXLEN,
-            "//RESOURCE[@utype='LIGOTimeGPS' and @name='%s']/PARAM[@name='gpsNanoSeconds']/@value",
-            name) < 0)
-    {
-        /* clean up */
-        xmlFree(nodeContent);
-        XLALPrintError("XPATH statement construction failed: LIGOTimeGPS.gpsNanoSeconds\n");
-        XLAL_ERROR(logReference, XLAL_EFAILED);
-    }
-
     /* retrieve LIGOTimeGPS.gpsNanoSeconds */
     xmlFree(nodeContent);
-    nodeContent = (xmlChar *)XLALGetSingleNodeContentByXPath(xmlDocument, xpath);
+    nodeContent = (xmlChar *)XLALGetSingleVOTableResourceParamValue(xmlDocument, "LIGOTimeGPS", name, "gpsNanoSeconds");
 
     /* parse and finally store content */
     if(!nodeContent || sscanf((char*)nodeContent, "%i", &ltg->gpsNanoSeconds) == EOF) {
@@ -591,7 +565,6 @@ INT4 XLALVOTableDoc2BinaryOrbitParamsByName(xmlDocPtr xmlDocument, const char *n
     static const CHAR *logReference = "XLALVOTableDoc2BinaryOrbitParamsByName";
     CHAR childNameTp[NAMESTR_MAXLEN] = {0};
     xmlChar *nodeContent = NULL;
-    CHAR xpath[XPATHSTR_MAXLEN] = {0};
 
     /* sanity checks */
     if(!xmlDocument) {
@@ -619,19 +592,8 @@ INT4 XLALVOTableDoc2BinaryOrbitParamsByName(xmlDocPtr xmlDocument, const char *n
         XLAL_ERROR(logReference, XLAL_EFAILED);
     }
 
-    /* prepare XPATH search for BinaryOrbitParams.argp */
-    if(LALSnprintf(
-            xpath,
-            XPATHSTR_MAXLEN,
-            "//RESOURCE[@utype='BinaryOrbitParams' and @name='%s']/PARAM[@name='argp']/@value",
-            name) < 0)
-    {
-        XLALPrintError("XPATH statement construction failed: BinaryOrbitParams.argp\n");
-        XLAL_ERROR(logReference, XLAL_EFAILED);
-    }
-
     /* retrieve BinaryOrbitParams.argp */
-    nodeContent = (xmlChar *) XLALGetSingleNodeContentByXPath(xmlDocument, xpath);
+    nodeContent = (xmlChar *)XLALGetSingleVOTableResourceParamValue(xmlDocument, "BinaryOrbitParams", name, "argp");
 
     /* parse and finally store content */
     if(!nodeContent || sscanf((char*)nodeContent, "%lf", &bop->argp) == EOF) {
@@ -641,22 +603,9 @@ INT4 XLALVOTableDoc2BinaryOrbitParamsByName(xmlDocPtr xmlDocument, const char *n
         XLAL_ERROR(logReference, XLAL_EDATA);
     }
 
-    /* prepare XPATH search for PulsarDopplerParams.asini */
-    if(LALSnprintf(
-            xpath,
-            XPATHSTR_MAXLEN,
-            "//RESOURCE[@utype='BinaryOrbitParams' and @name='%s']/PARAM[@name='asini']/@value",
-            name) < 0)
-    {
-        /* clean up */
-        xmlFree(nodeContent);
-        XLALPrintError("XPATH statement construction failed: BinaryOrbitParams.asini\n");
-        XLAL_ERROR(logReference, XLAL_EFAILED);
-    }
-
     /* retrieve BinaryOrbitParams.asini */
     xmlFree(nodeContent);
-    nodeContent = (xmlChar *)XLALGetSingleNodeContentByXPath(xmlDocument, xpath);
+    nodeContent = (xmlChar *)XLALGetSingleVOTableResourceParamValue(xmlDocument, "BinaryOrbitParams", name, "asini");
 
     /* parse and finally store content */
     if(!nodeContent || sscanf((char*)nodeContent, "%lf", &bop->asini) == EOF) {
@@ -666,22 +615,9 @@ INT4 XLALVOTableDoc2BinaryOrbitParamsByName(xmlDocPtr xmlDocument, const char *n
         XLAL_ERROR(logReference, XLAL_EDATA);
     }
 
-    /* prepare XPATH search for BinaryOrbitParams.ecc */
-    if(LALSnprintf(
-            xpath,
-            XPATHSTR_MAXLEN,
-            "//RESOURCE[@utype='BinaryOrbitParams' and @name='%s']/PARAM[@name='ecc']/@value",
-            name) < 0)
-    {
-        /* clean up */
-        xmlFree(nodeContent);
-        XLALPrintError("XPATH statement construction failed: BinaryOrbitParams.ecc\n");
-        XLAL_ERROR(logReference, XLAL_EFAILED);
-    }
-
     /* retrieve PulsarDopplerParams.ecc */
     xmlFree(nodeContent);
-    nodeContent = (xmlChar *)XLALGetSingleNodeContentByXPath(xmlDocument, xpath);
+    nodeContent = (xmlChar *)XLALGetSingleVOTableResourceParamValue(xmlDocument, "BinaryOrbitParams", name, "ecc");
 
     /* parse and finally store content */
     if(!nodeContent || sscanf((char*)nodeContent, "%lf", &bop->ecc) == EOF) {
@@ -691,22 +627,9 @@ INT4 XLALVOTableDoc2BinaryOrbitParamsByName(xmlDocPtr xmlDocument, const char *n
         XLAL_ERROR(logReference, XLAL_EDATA);
     }
 
-    /* prepare XPATH search for BinaryOrbitParams.period */
-    if(LALSnprintf(
-            xpath,
-            XPATHSTR_MAXLEN,
-            "//RESOURCE[@utype='BinaryOrbitParams' and @name='%s']/PARAM[@name='period']/@value",
-            name) < 0)
-    {
-        /* clean up */
-        xmlFree(nodeContent);
-        XLALPrintError("XPATH statement construction failed: BinaryOrbitParams.period\n");
-        XLAL_ERROR(logReference, XLAL_EFAILED);
-    }
-
     /* retrieve PulsarDopplerParams.period */
     xmlFree(nodeContent);
-    nodeContent = (xmlChar *)XLALGetSingleNodeContentByXPath(xmlDocument, xpath);
+    nodeContent = (xmlChar *)XLALGetSingleVOTableResourceParamValue(xmlDocument, "BinaryOrbitParams", name, "period");
 
     /* parse and finally store content */
     if(!nodeContent || sscanf((char*)nodeContent, "%lf", &bop->period) == EOF) {
@@ -1031,7 +954,6 @@ INT4 XLALVOTableDoc2PulsarDopplerParamsByName(xmlDocPtr xmlDocument, const char 
     CHAR childNameRefTime[NAMESTR_MAXLEN] = {0};
     CHAR childNameOrbit[NAMESTR_MAXLEN] = {0};
     xmlChar *nodeContent = NULL;
-    CHAR xpath[XPATHSTR_MAXLEN] = {0};
 
     /* sanity checks */
     if(!xmlDocument) {
@@ -1059,19 +981,8 @@ INT4 XLALVOTableDoc2PulsarDopplerParamsByName(xmlDocPtr xmlDocument, const char 
         XLAL_ERROR(logReference, XLAL_EFAILED);
     }
 
-    /* prepare XPATH search for PulsarDopplerParams.Alpha */
-    if(LALSnprintf(
-            xpath,
-            XPATHSTR_MAXLEN,
-            "//RESOURCE[@utype='PulsarDopplerParams' and @name='%s']/PARAM[@name='Alpha']/@value",
-            name) < 0)
-    {
-        XLALPrintError("XPATH statement construction failed: PulsarDopplerParams.Alpha\n");
-        XLAL_ERROR(logReference, XLAL_EFAILED);
-    }
-
     /* retrieve PulsarDopplerParams.Alpha */
-    nodeContent = (xmlChar *) XLALGetSingleNodeContentByXPath(xmlDocument, xpath);
+    nodeContent = (xmlChar *)XLALGetSingleVOTableResourceParamValue(xmlDocument, "PulsarDopplerParams", name, "Alpha");
 
     /* parse and finally store content */
     if(!nodeContent || sscanf((char*)nodeContent, "%lf", &pdp->Alpha) == EOF) {
@@ -1081,22 +992,9 @@ INT4 XLALVOTableDoc2PulsarDopplerParamsByName(xmlDocPtr xmlDocument, const char 
         XLAL_ERROR(logReference, XLAL_EDATA);
     }
 
-    /* prepare XPATH search for PulsarDopplerParams.Delta */
-    if(LALSnprintf(
-            xpath,
-            XPATHSTR_MAXLEN,
-            "//RESOURCE[@utype='PulsarDopplerParams' and @name='%s']/PARAM[@name='Delta']/@value",
-            name) < 0)
-    {
-        /* clean up */
-        xmlFree(nodeContent);
-        XLALPrintError("XPATH statement construction failed: PulsarDopplerParams.Delta\n");
-        XLAL_ERROR(logReference, XLAL_EFAILED);
-    }
-
     /* retrieve PulsarDopplerParams.Delta */
     xmlFree(nodeContent);
-    nodeContent = (xmlChar *)XLALGetSingleNodeContentByXPath(xmlDocument, xpath);
+    nodeContent = (xmlChar *)XLALGetSingleVOTableResourceParamValue(xmlDocument, "PulsarDopplerParams", name, "Delta");
 
     /* parse and finally store content */
     if(!nodeContent || sscanf((char*)nodeContent, "%lf", &pdp->Delta) == EOF) {
@@ -1106,22 +1004,9 @@ INT4 XLALVOTableDoc2PulsarDopplerParamsByName(xmlDocPtr xmlDocument, const char 
         XLAL_ERROR(logReference, XLAL_EDATA);
     }
 
-    /* prepare XPATH search for PulsarDopplerParams.fkdot */
-    if(LALSnprintf(
-            xpath,
-            XPATHSTR_MAXLEN,
-            "//RESOURCE[@utype='PulsarDopplerParams' and @name='%s']/PARAM[@name='fkdot']/@value",
-            name) < 0)
-    {
-        /* clean up */
-        xmlFree(nodeContent);
-        XLALPrintError("XPATH statement construction failed: PulsarDopplerParams.fkdot\n");
-        XLAL_ERROR(logReference, XLAL_EFAILED);
-    }
-
     /* retrieve PulsarDopplerParams.fkdot */
     xmlFree(nodeContent);
-    nodeContent = (xmlChar *)XLALGetSingleNodeContentByXPath(xmlDocument, xpath);
+    nodeContent = (xmlChar *)XLALGetSingleVOTableResourceParamValue(xmlDocument, "PulsarDopplerParams", name, "fkdot");
 
     /* parse and finally store content */
     if(!nodeContent || sscanf((char*)nodeContent, "%lf %lf %lf %lf", &pdp->fkdot[0], &pdp->fkdot[1], &pdp->fkdot[2], &pdp->fkdot[3]) == EOF) {
