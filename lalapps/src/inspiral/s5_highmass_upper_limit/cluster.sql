@@ -17,11 +17,12 @@ CREATE INDEX ip_cei_index ON is_playground (coinc_event_id);
 
 
 -- temporary table containing highest SNR in each GPS second in each time
--- slide for both playground and non-playground  FIXME:  what about grouping by "on instruments"?
+-- slide in each on-instruments category for both playground and non-playground
 CREATE TEMPORARY TABLE maxsnrs AS
 	SELECT
 		coinc_inspiral.end_time AS end_time,
 		coinc_event.time_slide_id AS time_slide_id,
+		coinc_event.instruments AS on_instruments,
 		is_playground.is_playground AS is_playground,
 		MAX(coinc_inspiral.snr) AS snr
 	FROM
@@ -35,11 +36,12 @@ CREATE TEMPORARY TABLE maxsnrs AS
 	GROUP BY
 		coinc_inspiral.end_time,
 		coinc_event.time_slide_id,
+		coinc_event.instruments,
 		is_playground.is_playground;
 
 -- remove coincs whose SNRs are less than the highest SNR in their GPS
--- second and time slide  FIXME:  what about grouping by "on instruments"?
-CREATE INDEX ms_et_index ON maxsnrs (end_time, time_slide_id, is_playground);
+-- second and time slide and on-instrument category
+CREATE INDEX ms_et_index ON maxsnrs (end_time, time_slide_id, on_instruments, is_playground);
 DELETE FROM
 	coinc_inspiral
 WHERE
@@ -57,6 +59,7 @@ WHERE
 			JOIN maxsnrs ON (
 				maxsnrs.end_time == coinc_inspiral.end_time
 				AND maxsnrs.time_slide_id == coinc_event.time_slide_id
+				AND maxsnrs.on_instruments == coinc_event.instruments
 				AND maxsnrs.is_playground == is_playground.is_playground
 			)
 		WHERE
