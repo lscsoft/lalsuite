@@ -3,21 +3,43 @@ SELECT
 FROM
 	coinc_event;
 
+-- construct "is playground" look-up table.  See
+-- glue.segmentsUtils.S2playground() for definition of playground segments
+CREATE TEMPORARY TABLE is_playground AS
+	SELECT
+		coinc_inspiral.coinc_event_id AS coinc_event_id,
+		-- did the last playground segment start less than 600
+		-- seconds prior to this coinc?
+		((((coinc_inspiral.end_time - 729273613) / 6370) * 6370) + 729273613) BETWEEN (coinc_inspiral.end_time - 600) AND (coinc_inspiral.end_time - 1) AS is_playground
+	FROM
+		coinc_inspiral;
+CREATE INDEX ip_cei_index ON is_playground (coinc_event_id);
+
+
+-- temporary table containing highest SNR in each GPS second in each time
+-- slide for both playground and non-playground  FIXME:  what about grouping by "on instruments"?
 CREATE TEMPORARY TABLE maxsnrs AS
 	SELECT
 		coinc_inspiral.end_time AS end_time,
 		coinc_event.time_slide_id AS time_slide_id,
+		is_playground.is_playground AS is_playground,
 		MAX(coinc_inspiral.snr) AS snr
 	FROM
 		coinc_inspiral
 		JOIN coinc_event ON (
 			coinc_event.coinc_event_id == coinc_inspiral.coinc_event_id
 		)
+		JOIN is_playground ON (
+			is_playground.coinc_event_id == coinc_inspiral.coinc_event_id
+		)
 	GROUP BY
 		coinc_inspiral.end_time,
-		coinc_event.time_slide_id;
+		coinc_event.time_slide_id,
+		is_playground.is_playground;
 
-CREATE INDEX ms_et_index ON maxsnrs (end_time, time_slide_id);
+-- remove coincs whose SNRs are less than the highest SNR in their GPS
+-- second and time slide  FIXME:  what about grouping by "on instruments"?
+CREATE INDEX ms_et_index ON maxsnrs (end_time, time_slide_id, is_playground);
 DELETE FROM
 	coinc_inspiral
 WHERE
@@ -29,9 +51,13 @@ WHERE
 			JOIN coinc_event ON (
 				coinc_event.coinc_event_id == coinc_inspiral.coinc_event_id
 			)
+			JOIN is_playground ON (
+				is_playground.coinc_event_id == coinc_inspiral.coinc_event_id
+			)
 			JOIN maxsnrs ON (
 				maxsnrs.end_time == coinc_inspiral.end_time
 				AND maxsnrs.time_slide_id == coinc_event.time_slide_id
+				AND maxsnrs.is_playground == is_playground.is_playground
 			)
 		WHERE
 			coinc_inspiral.snr >= maxsnrs.snr
@@ -39,6 +65,7 @@ WHERE
 DROP INDEX ms_et_index;
 DROP TABLE maxsnrs;
 
+-- remove unused coinc_event rows
 DELETE FROM
 	coinc_event
 WHERE
@@ -49,7 +76,11 @@ WHERE
 			coinc_inspiral
 	);
 
--- find coincs that are within 10 s of coincs of higher effective SNR that involved the same instruments and were found in the same time slide
+-- find coincs that are within 10 s of coincs of higher effective SNR that
+-- involved the same instruments and were found in the same time slide
+-- NOTE:  this code involves some *very* careful use of indeces to make
+-- this go quick, including the application of the constraints in a special
+-- order
 CREATE INDEX ci_et_index ON coinc_inspiral (end_time);
 DELETE FROM
 	coinc_event
@@ -60,23 +91,35 @@ WHERE
 		FROM
 			coinc_inspiral AS coinc_inspiral_a
 			JOIN coinc_inspiral AS coinc_inspiral_b INDEXED BY ci_et_index ON (
+				-- apply coarse \Delta t cut
 				coinc_inspiral_b.end_time BETWEEN coinc_inspiral_a.end_time - 10 AND coinc_inspiral_a.end_time + 10
+				-- don't cluster coincs with themselves
 				AND coinc_inspiral_b.coinc_event_id != coinc_inspiral_a.coinc_event_id
 			)
 			JOIN coinc_event AS coinc_event_a INDEXED BY sqlite_autoindex_coinc_event_1 ON (
 				coinc_event_a.coinc_event_id == coinc_inspiral_a.coinc_event_id
 			)
+			JOIN is_playground AS is_playground_a INDEXED BY ip_cei_index ON (
+				is_playground_a.coinc_event_id == coinc_inspiral_a.coinc_event_id
+			)
 			JOIN coinc_event AS coinc_event_b INDEXED BY sqlite_autoindex_coinc_event_1 ON (
 				coinc_event_b.coinc_event_id == coinc_inspiral_b.coinc_event_id
+			)
+			JOIN is_playground AS is_playground_b INDEXED BY ip_cei_index ON (
+				is_playground_b.coinc_event_id == coinc_inspiral_b.coinc_event_id
 			)
 		WHERE
 			coinc_event_b.time_slide_id == coinc_event_a.time_slide_id
 			AND coinc_inspiral_b.snr >= coinc_inspiral_a.snr
 			AND coinc_event_b.instruments == coinc_event_a.instruments
+			AND is_playground_a.is_playground == is_playground_b.is_playground
 			AND coinc_event_b.coinc_def_id == coinc_event_a.coinc_def_id
+			-- apply fine \Delta t cut
 			AND abs((coinc_inspiral_b.end_time - coinc_inspiral_a.end_time) + (coinc_inspiral_b.end_time_ns - coinc_inspiral_a.end_time_ns) * 1e-9) < 10.0
 	);
 DROP INDEX ci_et_index;
+DROP INDEX ip_cei_index;
+DROP TABLE is_playground;
 
 SELECT
 	"Number of coincs after clustering: " || count(*)
