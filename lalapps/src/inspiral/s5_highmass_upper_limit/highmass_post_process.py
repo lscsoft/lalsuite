@@ -210,7 +210,7 @@ class ligolw_sqlite_node(pipeline.CondorDAGNode):
 class ligolw_thinca_to_coinc_node(pipeline.CondorDAGNode):
   """
   """
-  def __init__(self, job, dag, cache, vetoes, veto_name, prefix, id, effsnrfac=250.0, p_node=[], instruments='H1,H2,L1'):
+  def __init__(self, job, dag, cache, vetoes, veto_name, prefix, start, end, id, effsnrfac=250.0, p_node=[], instruments='H1,H2,L1'):
 
     pipeline.CondorDAGNode.__init__(self,job)
     self.add_var_opt("ihope-cache", cache)
@@ -219,6 +219,9 @@ class ligolw_thinca_to_coinc_node(pipeline.CondorDAGNode):
     self.add_var_opt("output-prefix",prefix)
     self.add_var_opt("effective-snr-factor",effsnrfac)
     self.add_var_opt("instruments",instruments)
+    self.add_var_opt("experiment-start-time",str(start))
+    self.add_var_opt("experiment-end-time",str(end))
+
     self.add_macro("macroid", id)
     for p in p_node:
       self.add_parent(p)
@@ -289,17 +292,18 @@ class lalapps_newcorse_node(pipeline.CondorDAGNode):
 
 class hm_upperlimit_node(pipeline.CondorDAGNode):
   """
-  hm_upperlimit.py --ifos --output-name-tag --full-data-file --inj-data-glob --bootstrap-iterations
+  hm_upperlimit.py --instruments --output-name-tag --full-data-file --inj-data-glob --bootstrap-iterations --veto-segments --veto-segments-name
   """
-  def __init__(self, job, dag, ifos, output_name_tag, full_data_file, inj_data_glob, bootstrap_iterations, id, p_node=[]):
+  def __init__(self, job, dag, ifos, output_name_tag, full_data_file, inj_data_glob, bootstrap_iterations, veto_segments, veto_segments_name, id, p_node=[]):
     pipeline.CondorDAGNode.__init__(self,job)
     #self.add_var_opt("tmp-space","/tmp")
-    #self.add_var_opt("instruments",instruments)
-    self.add_var_opt("ifos",ifos)
+    self.add_var_opt("instruments",ifos)
     self.add_var_opt("output-name-tag",output_name_tag)
     self.add_var_opt("full-data-file",full_data_file)
     self.add_var_opt("inj-data-glob",inj_data_glob)
     self.add_var_opt("bootstrap-iterations",bootstrap_iterations)
+    self.add_var_opt("veto-segments",veto_segments)
+    self.add_var_opt("veto-segments-name",veto_segments_name)
     self.add_macro("macroid", id)
     for p in p_node:
       self.add_parent(p)
@@ -361,6 +365,12 @@ lallappsNewcorseNode = {}
 hmUpperlimitNode = {}
 db = {}
 
+# to get injection file entries from the cache
+injcache = map(lal.CacheEntry, file("inj.cache"))
+inj = injcache[0]
+start_time = inj.segment[0]
+end_time = inj.segment[1]
+
 for type in types:
   for cat in cats:
     command = 'grep "'  + type + ".*" + cat + '" ' + FULLDATACACHE + " > " + type + cat + ".cache"
@@ -368,7 +378,7 @@ for type in types:
     popen = os.popen(command)
     try: os.mkdir(type+cat)
     except: pass
-    ligolwThincaToCoincNode[type+cat] = ligolw_thinca_to_coinc_node(ligolwThincaToCoincJob, dag, type+cat+".cache", "vetoes_"+cat+".xml.gz", "vetoes", type+cat+"/S5_HM", n, effsnrfac=50, p_node=[segNode[cat]]); n+=1
+    ligolwThincaToCoincNode[type+cat] = ligolw_thinca_to_coinc_node(ligolwThincaToCoincJob, dag, type+cat+".cache", "vetoes_"+cat+".xml.gz", "vetoes", type+cat+"/S5_HM", start_time, end_time, n, effsnrfac=50, p_node=[segNode[cat]]); n+=1
     database = type+cat+".sqlite"
     try: db[cat].append(database) 
     except: db[cat] = [database]
@@ -379,7 +389,7 @@ for type in types:
 
 
 # to get injection file entries from the cache
-injcache = map(lal.CacheEntry, file("inj.cache"))
+#injcache = map(lal.CacheEntry, file("inj.cache"))
 
 for inj in injcache:
   for cat in cats:
@@ -391,7 +401,7 @@ for inj in injcache:
     try: os.mkdir(type+cat)
     except: pass
     popen = os.popen(command)
-    ligolwThincaToCoincNode[type+cat] = ligolw_thinca_to_coinc_node(ligolwThincaToCoincJob, dag, cachefile, "vetoes_"+cat+".xml.gz", "vetoes", type+cat+"/S5_HM_INJ", n, effsnrfac=50, p_node=[segNode[cat]]);n+=1
+    ligolwThincaToCoincNode[type+cat] = ligolw_thinca_to_coinc_node(ligolwThincaToCoincJob, dag, cachefile, "vetoes_"+cat+".xml.gz", "vetoes", type+cat+"/S5_HM_INJ", start_time, end_time, n, effsnrfac=50, p_node=[segNode[cat]]);n+=1
     database = type+cat+".sqlite"
     try: db[cat].append(database)
     except: db[cat] = [database]
@@ -413,12 +423,12 @@ for k in sqliteNodeCluster.keys():
   p_nodes.append(sqliteNodeCluster[k])
 
 for cat in cats:
-  lallappsNewcorseNode[cat] = lalapps_newcorse_node(lalappsNewcorseJob, dag, "vetoes_"+cat+".xml.gz", "vetoes", " ".join(db[cat]), n, p_nodes);n+=1
+  lallappsNewcorseNode[cat] = lalapps_newcorse_node(lalappsNewcorseJob, dag, "vetoes_%s.xml.gz" % cat, "vetoes", " ".join(db[cat]), n, p_nodes);n+=1
 
 for cat in ['CAT_3']: 
-  hmUpperlimitNode[cat] = hm_upperlimit_node(hmUpperlimitJob, dag, "H1H2L1", "", "FULL_DATACAT_3.sqlite", "*INJCAT_3.sqlite", 10000, n, p_node=[lallappsNewcorseNode[cat]]);n+=1
-  hmUpperlimitNode[cat] = hm_upperlimit_node(hmUpperlimitJob, dag, "H1L1", "", "FULL_DATACAT_3.sqlite", "*INJCAT_3.sqlite", 10000, n, p_node=[lallappsNewcorseNode[cat]]);n+=1
-  hmUpperlimitNode[cat] = hm_upperlimit_node(hmUpperlimitJob, dag, "H2L1", "", "FULL_DATACAT_3.sqlite", "*INJCAT_3.sqlite", 10000, n, p_node=[lallappsNewcorseNode[cat]]);n+=1
+  hmUpperlimitNode[cat] = hm_upperlimit_node(hmUpperlimitJob, dag, "H1,H2,L1", "", "FULL_DATACAT_3.sqlite", "*INJCAT_3.sqlite", 10000, "vetoes_%s.xml.gz" % cat, "vetoes", n, p_node=[lallappsNewcorseNode[cat]]);n+=1
+  hmUpperlimitNode[cat] = hm_upperlimit_node(hmUpperlimitJob, dag, "H1,L1", "", "FULL_DATACAT_3.sqlite", "*INJCAT_3.sqlite", 10000, "vetoes_%s.xml.gz" % cat, "vetoes", n, p_node=[lallappsNewcorseNode[cat]]);n+=1
+  hmUpperlimitNode[cat] = hm_upperlimit_node(hmUpperlimitJob, dag, "H2,L1", "", "FULL_DATACAT_3.sqlite", "*INJCAT_3.sqlite", 10000, "vetoes_%s.xml.gz" % cat, "vetoes", n, p_node=[lallappsNewcorseNode[cat]]);n+=1
 
 dag.write_sub_files()
 dag.write_dag()

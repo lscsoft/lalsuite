@@ -41,6 +41,8 @@ RCSID( "$Id$");
 #define SSMAX(x,y) ( (x) > (y) ? (x) : (y) )
 #define SSMIN(x,y) ( (x) < (y) ? (x) : (y) )
 
+#define INIT_MEM(x) memset(&(x), 0, sizeof((x)))
+
 extern int lalDebugLevel;
 
 #define BLOCKSIZE_REALLOC 50
@@ -202,30 +204,27 @@ void StackSlideVecF(LALStatus *status,
   /* The input parameter space point */
   inputPoint.refTime = refTimeGPS;
   inputPoint.orbit = NULL;
+  INIT_MEM ( inputPoint.fkdot );
   inputPoint.fkdot[0] = fmid;
   inputPoint.fkdot[1] = fdot;
-  inputPoint.fkdot[2] = 0.0;
-  inputPoint.fkdot[3] = 0.0;
   inputPoint.Alpha = alpha;
   inputPoint.Delta = delta;
 
   /* Values for output parameter space point that do not change */  
   outputPoint.refTime = refTimeGPS;
   outputPoint.orbit = NULL;
-  outputPoint.fkdot[2] = 0.0;
-  outputPoint.fkdot[3] = 0.0;
+  INIT_MEM ( outputPoint.fkdot );
 
   /* uncertainties in the output parameter space point */
   outputPointUnc.refTime = refTimeGPS;
   outputPointUnc.orbit = NULL;
+  INIT_MEM ( outputPointUnc.fkdot );
   outputPointUnc.fkdot[0] = deltaF;
   outputPointUnc.fkdot[1] = dfdot;
-  outputPointUnc.fkdot[2] = 0.0;
-  outputPointUnc.fkdot[3] = 0.0;
   outputPointUnc.Delta = dDelta;
 
   /* Let the loops over sky position and spindown values begin! */
-  
+
   /* loop over delta */
   for (idelta = 0; idelta<ndelta; idelta++) {
 

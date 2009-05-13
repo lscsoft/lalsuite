@@ -18,6 +18,7 @@
   *  MA  02111-1307  USA
 """
 import sys
+sys.path.append('@PYTHONLIBDIR@')
 import os
 import getopt
 import time
