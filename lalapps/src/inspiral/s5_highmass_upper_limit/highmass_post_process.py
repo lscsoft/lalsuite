@@ -58,10 +58,12 @@ class sqlite_job(pipeline.CondorDAGJob):
     """
     """
     self.__prog__ = 'sqlite3'
-    self.__executable = string.strip(cp.get('condor','bash'))
-    self.sqlite3 = string.strip(cp.get('condor','sqlite3'))
+    #self.__executable = string.strip(cp.get('condor','bash'))
+    #self.sqlite3 = string.strip(cp.get('condor','sqlite3'))
+    self.__executable = string.strip(cp.get('condor','sqlite3'))
     self.__universe = "vanilla"
     pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
+    self.add_condor_cmd("input","$(macroinput)")
     self.add_condor_cmd('getenv','True')
     self.tag_base = tag_base
     self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
@@ -190,7 +192,7 @@ class ligolw_sqlite_node(pipeline.CondorDAGNode):
     if replace: cline += " --replace "
     if extract: cline += " --extract " 
     cline += xml
-    fn = "ligolw_sqlite"+str(id)+".sh"
+    fn = "bash_scripts/ligolw_sqlite"+str(id)+".sh"
     f = open(fn,"w")
     f.write(cline)
     f.close
@@ -235,12 +237,14 @@ class sqlite_node(pipeline.CondorDAGNode):
     pipeline.CondorDAGNode.__init__(self,job)
     #self.add_var_arg("-c \\\\\\'" + job.sqlite3 + ' ' + database+ ' < ' + sqlfile + "\\\\\\'")
     self.add_macro("macroid", id)
-    cline = job.sqlite3 + ' ' + database+ ' < ' + sqlfile
-    fn = "sqlite"+str(id)+".sh"
-    f = open(fn,"w")
-    f.write(cline)
-    f.close
-    self.add_file_arg(fn)
+    #cline = job.sqlite3 + ' ' + database+ ' < ' + sqlfile
+    #fn = "sqlite"+str(id)+".sh"
+    #f = open(fn,"w")
+    #f.write(cline)
+    #f.close
+    self.add_file_arg(database)
+    self.add_macro("macroinput", sqlfile)
+    #self.add_condor_cmd("input",sqlfile)
     for p in p_node:
       self.add_parent(p)
     dag.add_node(self)
@@ -324,6 +328,9 @@ cp = ConfigParser.ConfigParser()
 cp.read("hm_post.ini")
 
 try: os.mkdir("logs")
+except: pass
+
+try: os.mkdir("bash_scripts")
 except: pass
 
 cats = ["CAT_2","CAT_3"]
