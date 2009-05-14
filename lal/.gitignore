@@ -44,6 +44,7 @@ lal-*.tar.gz
 lal-config
 lal.spec
 lib/LALBuildDate.c
+lib/LALVCSInfo.h
 lib/lal-version
 libtool
 misc/__lalGitID.h

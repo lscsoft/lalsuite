@@ -43,3 +43,6 @@ MOSTLYCLEANFILES = LALBuildDate.c
 TESTS = lal-version
 LALBuildDate.c: $(liblal_la_DEPENDENCIES)
 	echo 'const char *lalBuildDate = "'`date +"%Y-%m-%dT%H:%M:%S%z"`'";' >$@
+LALVCSInfo.h: LALVCSInfo.h.in
+	(cd $(srcdir) && eval sed `./git_version --sed` LALVCSInfo.h.in) > LALVCSInfo.h
+
