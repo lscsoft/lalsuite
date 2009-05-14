@@ -210,8 +210,7 @@ class ligolw_sqlite_node(pipeline.CondorDAGNode):
 class ligolw_thinca_to_coinc_node(pipeline.CondorDAGNode):
   """
   """
-  def __init__(self, job, dag, cache, vetoes, veto_name, prefix, start, end, id, effsnrfac=250.0, p_node=[], instruments='H1,H2,L1'):
-
+  def __init__(self, job, dag, cache, vetoes, veto_name, prefix, id, effsnrfac=250.0, p_node=[], instruments='H1,H2,L1'):
     pipeline.CondorDAGNode.__init__(self,job)
     self.add_var_opt("ihope-cache", cache)
     self.add_var_opt("veto-segments", vetoes)
@@ -219,8 +218,6 @@ class ligolw_thinca_to_coinc_node(pipeline.CondorDAGNode):
     self.add_var_opt("output-prefix",prefix)
     self.add_var_opt("effective-snr-factor",effsnrfac)
     self.add_var_opt("instruments",instruments)
-    self.add_var_opt("experiment-start-time",str(start))
-    self.add_var_opt("experiment-end-time",str(end))
 
     self.add_macro("macroid", id)
     for p in p_node:
@@ -262,9 +259,8 @@ class ligolw_segments_node(pipeline.CondorDAGNode):
   """
   def __init__(self, job, dag, ifodict, name, output, id, p_node=[], coalesce=True):
     pipeline.CondorDAGNode.__init__(self,job)
-    for k in ifodict.keys():
-      print ifodict[k]
-      if ifodict[k]: self.add_var_opt("insert-from-segwizard",k.upper()+"="+ifodict[k])
+    # HA HA, we win!
+    self.add_var_opt("insert-from-segwizard", " --insert-from-segwizard ".join(["%s=%s" % (instrument.upper(), filename) for instrument, filename in ifodict.items()]))
     self.add_var_opt("name",name)
     self.add_var_opt("output",output)
     self.add_macro("macroid", id)
@@ -379,7 +375,7 @@ for type in types:
     popen = os.popen(command)
     try: os.mkdir(type+cat)
     except: pass
-    ligolwThincaToCoincNode[type+cat] = ligolw_thinca_to_coinc_node(ligolwThincaToCoincJob, dag, type+cat+".cache", "vetoes_"+cat+".xml.gz", "vetoes", type+cat+"/S5_HM", start_time, end_time, n, effsnrfac=50, p_node=[segNode[cat]]); n+=1
+    ligolwThincaToCoincNode[type+cat] = ligolw_thinca_to_coinc_node(ligolwThincaToCoincJob, dag, type+cat+".cache", "vetoes_"+cat+".xml.gz", "vetoes", type+cat+"/S5_HM", n, effsnrfac=50, p_node=[segNode[cat]]); n+=1
     database = type+cat+".sqlite"
     try: db[cat].append(database) 
     except: db[cat] = [database]
@@ -403,7 +399,7 @@ for inj in injcache:
     try: os.mkdir(type+cat)
     except: pass
     popen = os.popen(command)
-    ligolwThincaToCoincNode[type+cat] = ligolw_thinca_to_coinc_node(ligolwThincaToCoincJob, dag, cachefile, "vetoes_"+cat+".xml.gz", "vetoes", type+cat+"/S5_HM_INJ", start_time, end_time, n, effsnrfac=50, p_node=[segNode[cat]]);n+=1
+    ligolwThincaToCoincNode[type+cat] = ligolw_thinca_to_coinc_node(ligolwThincaToCoincJob, dag, cachefile, "vetoes_"+cat+".xml.gz", "vetoes", type+cat+"/S5_HM_INJ", n, effsnrfac=50, p_node=[segNode[cat]]);n+=1
     database = type+cat+".sqlite"
     try: db[cat].append(database)
     except: db[cat] = [database]
