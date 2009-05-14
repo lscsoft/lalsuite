@@ -58,8 +58,6 @@ class sqlite_job(pipeline.CondorDAGJob):
     """
     """
     self.__prog__ = 'sqlite3'
-    #self.__executable = string.strip(cp.get('condor','bash'))
-    #self.sqlite3 = string.strip(cp.get('condor','sqlite3'))
     self.__executable = string.strip(cp.get('condor','sqlite3'))
     self.__universe = "vanilla"
     pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
@@ -196,14 +194,8 @@ class ligolw_sqlite_node(pipeline.CondorDAGNode):
     f = open(fn,"w")
     f.write(cline)
     f.close
-    #self.add_var_opt("database", database)
-    #self.add_var_opt("tmp-space", '/tmp')
-    #self.add_var_opt("verbose","")
-    #self.add_var_opt("glob",xml)
     self.add_macro("macroid", id)
     self.add_file_arg(fn)
-    #if replace: self.add_var_opt("replace","")
-    #if extract: self.add_var_opt("extract","")
 
     for p in p_node:
       self.add_parent(p)
@@ -232,16 +224,9 @@ class sqlite_node(pipeline.CondorDAGNode):
   def __init__(self, job, dag, database, sqlfile, id, p_node=[]):
 
     pipeline.CondorDAGNode.__init__(self,job)
-    #self.add_var_arg("-c \\\\\\'" + job.sqlite3 + ' ' + database+ ' < ' + sqlfile + "\\\\\\'")
     self.add_macro("macroid", id)
-    #cline = job.sqlite3 + ' ' + database+ ' < ' + sqlfile
-    #fn = "sqlite"+str(id)+".sh"
-    #f = open(fn,"w")
-    #f.write(cline)
-    #f.close
     self.add_file_arg(database)
     self.add_macro("macroinput", sqlfile)
-    #self.add_condor_cmd("input",sqlfile)
     for p in p_node:
       self.add_parent(p)
     dag.add_node(self)
@@ -278,8 +263,8 @@ class lalapps_newcorse_node(pipeline.CondorDAGNode):
   """
   def __init__(self, job, dag, veto_segments, veto_segments_name, database, id, p_node=[],instruments = "H1,H2,L1", mass_bins="0,50,85,inf", live_time_program="thinca"):
     pipeline.CondorDAGNode.__init__(self,job)
+    #FIXME make temp space?
     #self.add_var_opt("tmp-space","/tmp")
-    #self.add_var_opt("instruments",instruments)
     self.add_var_opt("mass-bins",mass_bins)
     self.add_var_opt("live-time-program",live_time_program)
     self.add_var_opt("veto-segments",veto_segments)
@@ -296,6 +281,7 @@ class hm_upperlimit_node(pipeline.CondorDAGNode):
   """
   def __init__(self, job, dag, ifos, output_name_tag, full_data_file, inj_data_glob, bootstrap_iterations, veto_segments, veto_segments_name, id, p_node=[]):
     pipeline.CondorDAGNode.__init__(self,job)
+    #FIXME make temp space?
     #self.add_var_opt("tmp-space","/tmp")
     self.add_var_opt("instruments",ifos)
     self.add_var_opt("output-name-tag",output_name_tag)
