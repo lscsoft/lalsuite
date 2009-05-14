@@ -273,7 +273,7 @@ def parse_command_line():
   parser.add_option("-b", "--bootstrap-iterations", default = 1, metavar = "integer", type = "int", help = "Number of iterations to compute mean and variance of volume MUST BE GREATER THAN 1 TO GET USABLE NUMBERS, a good number is 10000")
   parser.add_option("--veto-segments", help = "Load veto segments from this XML document.  See ligolw_segments for information on constructing such a document.")
   parser.add_option("--veto-segments-name", help = "Set the name of the veto segments to use from the XML document.")
-  parser.add_option("--verbose", action = "set_true", help = "Be verbose.")
+  parser.add_option("--verbose", action = "store_true", help = "Be verbose.")
 
   opts, filenames = parser.parse_args()
 
