@@ -269,10 +269,10 @@ xmlNodePtr XLALCreateVOTableResourceNode(const char *type,
  * \author Oliver Bock\n
  * Albert-Einstein-Institute Hannover, Germany
  */
-xmlDocPtr XLALCreateVOTableXMLFromTree(const xmlNodePtr xmlTree)
+xmlDocPtr XLALCreateVOTableDocumentFromTree(const xmlNodePtr xmlTree)
 {
     /* set up local variables */
-    static const CHAR *logReference = "XLALCreateVOTableXMLFromTree";
+    static const CHAR *logReference = "XLALCreateVOTableDocumentFromTree";
     xmlDocPtr xmlDocument = NULL;
     xmlNodePtr xmlRootNode = NULL;
     xmlNsPtr xmlSchemaNamespace = NULL;
@@ -342,7 +342,7 @@ xmlDocPtr XLALCreateVOTableXMLFromTree(const xmlNodePtr xmlTree)
  * \brief Takes a XML fragment (tree) and turns it into a VOTable document string
  *
  * This function takes a VOTable XML fragment and returns a full-fledged VOTable XML string.
- * Please note that all restrictions described for \ref XLALCreateVOTableXMLFromTree also apply here!
+ * Please note that all restrictions described for \ref XLALCreateVOTableDocumentFromTree also apply here!
  *
  * \param xmlTree [in] The XML fragment to be turned into a VOTable document
  * \param xmlStringBuffer [out] Pointer to the (uninitialized) buffer that will hold the XML string
@@ -353,7 +353,7 @@ xmlDocPtr XLALCreateVOTableXMLFromTree(const xmlNodePtr xmlTree)
  * \b Important: the caller is responsible to free the allocated memory of \c xmlStringBuffer (when the
  * string isn't needed anymore) using \c xmlFree.
  *
- * \sa XLALCreateVOTableXMLFromTree
+ * \sa XLALCreateVOTableDocumentFromTree
  *
  * \author Oliver Bock\n
  * Albert-Einstein-Institute Hannover, Germany
@@ -367,7 +367,7 @@ INT4 XLALCreateVOTableStringFromTree(const xmlNodePtr xmlTree,
     xmlDocPtr xmlDocument;
 
     /* build VOTable document */
-    xmlDocument = XLALCreateVOTableXMLFromTree(xmlTree);
+    xmlDocument = XLALCreateVOTableDocumentFromTree(xmlTree);
     if(xmlDocument == NULL) {
         XLALPrintError("VOTable document construction failed\n");
         XLAL_ERROR(logReference, XLAL_EFAILED);

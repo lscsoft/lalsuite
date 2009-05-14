@@ -59,7 +59,7 @@
  *
  * \sa XLALCreateVOTableParamNode
  * \sa XLALCreateVOTableResourceNode
- * \sa XLALCreateVOTableXMLFromTree
+ * \sa XLALCreateVOTableDocumentFromTree
  *
  * \author Oliver Bock\n
  * Albert-Einstein-Institute Hannover, Germany
@@ -137,7 +137,7 @@ xmlNodePtr XLALLIGOTimeGPS2VOTableNode(const LIGOTimeGPS *const ltg, const char 
  * This function takes a \c LIGOTimeGPS structure and serializes it into a full-fledged
  * VOTable XML string containing the serialized structure as the only child element.\n
  * Essentially, this function is just a wrapper for \ref XLALLIGOTimeGPS2VOTableNode and
- * \ref XLALCreateVOTableXMLFromTree followed by a dump of the VOTable document into a
+ * \ref XLALCreateVOTableDocumentFromTree followed by a dump of the VOTable document into a
  * string.\n
  *
  * \param ltg [in] Pointer to the \c LIGOTimeGPS structure to be serialized
@@ -150,7 +150,7 @@ xmlNodePtr XLALLIGOTimeGPS2VOTableNode(const LIGOTimeGPS *const ltg, const char 
  * string isn't needed anymore) using \c xmlFree.
  *
  * \sa XLALLIGOTimeGPS2VOTableNode
- * \sa XLALCreateVOTableXMLFromTree
+ * \sa XLALCreateVOTableDocumentFromTree
  *
  * \author Oliver Bock\n
  * Albert-Einstein-Institute Hannover, Germany
@@ -348,7 +348,7 @@ INT4 XLALVOTableXML2LIGOTimeGPSByName(const char *xml, const char *name, LIGOTim
  *
  * \sa XLALCreateVOTableCustomParamNode
  * \sa XLALCreateVOTableResourceNode
- * \sa XLALCreateVOTableXMLFromTree
+ * \sa XLALCreateVOTableDocumentFromTree
  *
  * \author Oliver Bock\n
  * Albert-Einstein-Institute Hannover, Germany
@@ -478,7 +478,7 @@ xmlNodePtr XLALBinaryOrbitParams2VOTableNode(const BinaryOrbitParams *const bop,
  * This function takes a \c BinaryOrbitParams structure and serializes it into a full-fledged
  * VOTable XML string containing the serialized structure as the only child element.\n
  * Essentially, this function is just a wrapper for \ref XLALBinaryOrbitParams2VOTableNode and
- * \ref XLALCreateVOTableXMLFromTree followed by a dump of the VOTable document into a
+ * \ref XLALCreateVOTableDocumentFromTree followed by a dump of the VOTable document into a
  * string.\n
  *
  * \param bop [in] Pointer to the \c BinaryOrbitParams structure to be serialized
@@ -491,7 +491,7 @@ xmlNodePtr XLALBinaryOrbitParams2VOTableNode(const BinaryOrbitParams *const bop,
  * string isn't needed anymore) using \c xmlFree.
  *
  * \sa XLALBinaryOrbitParams2VOTableNode
- * \sa XLALCreateVOTableXMLFromTree
+ * \sa XLALCreateVOTableDocumentFromTree
  *
  * \author Oliver Bock\n
  * Albert-Einstein-Institute Hannover, Germany
@@ -726,7 +726,7 @@ INT4 XLALVOTableXML2BinaryOrbitParamsByName(const char *xml, const char *name, B
  *
  * \sa XLALCreateVOTableCustomParamNode
  * \sa XLALCreateVOTableResourceNode
- * \sa XLALCreateVOTableXMLFromTree
+ * \sa XLALCreateVOTableDocumentFromTree
  *
  * \author Oliver Bock\n
  * Albert-Einstein-Institute Hannover, Germany
@@ -866,7 +866,7 @@ xmlNodePtr XLALPulsarDopplerParams2VOTableNode(const PulsarDopplerParams *const 
  * This function takes a \c PulsarDopplerParams structure and serializes it into a full-fledged
  * VOTable XML string containing the serialized structure as the only child element.\n
  * Essentially, this function is just a wrapper for \ref XLALPulsarDopplerParams2VOTableNode and
- * \ref XLALCreateVOTableXMLFromTree followed by a dump of the VOTable document into a
+ * \ref XLALCreateVOTableDocumentFromTree followed by a dump of the VOTable document into a
  * string.\n
  *
  * \param pdp [in] Pointer to the \c PulsarDopplerParams structure to be serialized
@@ -879,7 +879,7 @@ xmlNodePtr XLALPulsarDopplerParams2VOTableNode(const PulsarDopplerParams *const 
  * string isn't needed anymore) using \c xmlFree.
  *
  * \sa XLALPulsarDopplerParams2VOTableNode
- * \sa XLALCreateVOTableXMLFromTree
+ * \sa XLALCreateVOTableDocumentFromTree
  *
  * \author Oliver Bock\n
  * Albert-Einstein-Institute Hannover, Germany
