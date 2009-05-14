@@ -152,7 +152,7 @@ def science_segments(ifo, config, generate_segments = True):
         "--output-file", segFindXML ])
   make_external_call(segFindCall)
 
-  segsToTxtCall = ' ',join([ config.get("condor", "ligolw_print"),
+  segsToTxtCall = ' '.join([ config.get("condor", "ligolw_print"),
         "--table segment --column start_time --column end_time",
         "--delimiter ' '",
         segFindXML,
