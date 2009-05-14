@@ -42,6 +42,12 @@
 #include <stdlib.h>
 #include <string.h>
 
+/* for finding out and logging the glibc version */
+#ifdef __GLIBC__
+#define _GNU_SOURCE
+#include <gnu/libc-version.h>
+#endif
+
 /* our own exception handler / runtime debugger */
 #ifdef __MINGW32__
 #include "exchndl.h"
@@ -851,6 +857,10 @@ static void worker (void) {
   }
 #endif
 
+#ifdef __GLIBC__
+  /* log the glibc version */
+  fprintf(stderr, "glibc version/release: %s/%s\n", gnu_get_libc_version(), gnu_get_libc_release());
+#endif
 
   /* if there already was an error, there is no use in continuing */
   if (res) {
