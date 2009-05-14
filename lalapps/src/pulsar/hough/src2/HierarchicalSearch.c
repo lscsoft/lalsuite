@@ -136,6 +136,7 @@ RCSID( "$Id$");
 #define INSERT_INTO_HOUGHFSTAT_TOPLIST insert_into_houghFStat_toplist
 #define SHOW_PROGRESS(rac,dec,tpl_count,tpl_total,freq,fband)
 #define SET_CHECKPOINT
+#define REARRANGE_SFT_DATA
 #define MAIN  main
 #define FOPEN fopen
 #define COMPUTEFSTATFREQBAND ComputeFStatFreqBand
@@ -1043,6 +1044,9 @@ int MAIN( int argc, char *argv[]) {
 
 	  } 
 	} /* loop over stacks */
+
+	REARRANGE_SFT_DATA;
+
       } /* fstat memory allocation block */
       
       

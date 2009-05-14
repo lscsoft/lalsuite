@@ -40,8 +40,12 @@
 
 #ifdef _MSC_VER
 #include <Windows.h>
+#include <process.h>
+#define getpid _getpid
 #else
 #include <sys/time.h>
+#include <sys/types.h>
+#include <unistd.h>
 #endif
 
 #include <time.h>
@@ -146,7 +150,7 @@ LogPrintf_va (LogLevel_t level, const char* format, va_list va )
   if (LogOutput == NULL)
     LogOutput = LogOutputDefault;
      
-  fprintf(LogOutput, "%s [%s]: ", LogGetTimestamp(), LogFormatLevel(level) );
+  fprintf(LogOutput, "%s (%d) [%s]: ", LogGetTimestamp(), getpid(), LogFormatLevel(level) );
   vfprintf(LogOutput, format, va);
   fflush(LogOutput);
 

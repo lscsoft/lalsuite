@@ -266,12 +266,12 @@ SimInspiralTable* XLALGaussianInspiralMasses(
 {       
   REAL4 m1, m2, mtotal;
   
-  m1 = 0.0;
+  m1 = -1.0;
   while ( (m1-mass1Max)*(m1-mass1Min) > 0 )
   {
     m1 = mass1Mean + mass1Std * XLALNormalDeviate( randParams );
   }
-  m2 = 0.0;
+  m2 = -1.0;
   while ( (m2-mass2Max)*(m2-mass2Min) > 0 )
   {
     m2 = mass2Mean + mass2Std * XLALNormalDeviate( randParams );
