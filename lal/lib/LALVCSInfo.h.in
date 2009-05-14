@@ -29,13 +29,19 @@ extern "C" {
 /* vcs information defines */
 #define LAL_VCS_ID "$@ID@ $"
 #define LAL_VCS_DATE "$@DATE@ $"
+#define LAL_VCS_BRANCH "$@BRANCH@ $"
 #define LAL_VCS_TAG "$@TAG@ $"
+#define LAL_VCS_AUTHOR "$@AUTHOR@ $"
+#define LAL_VCS_COMMITTER "$@COMMITTER@ $"
 #define LAL_VCS_STATUS "$@STATUS@ $"
 
 /* global variables for vcs information, defined in LALVCSInfo.c */
 extern const char *lalVCSId;
 extern const char *lalVCSDate;
+extern const char *lalVCSBranch;
 extern const char *lalVCSTag;
+extern const char *lalVCSAuthor;
+extern const char *lalVCSCommitter;
 extern const char *lalVCSStatus;
 
 /* define vcs information structure */
@@ -43,14 +49,18 @@ typedef struct tagLALVCSInfo
 {
   const char *vcsId;
   const char *vcsDate;
+  const char *vcsBranch;
   const char *vcsTag;
+  const char *vcsAuthor;
+  const char *vcsCommitter;
   const char *vcsStatus;
 } LALVCSInfo;
 
 /* header and library vcs information structures */
 extern struct tagLALVCSInfo lalLibraryVCSInfo;
 static struct tagLALVCSInfo lalHeaderVCSInfo = {LAL_VCS_ID, \
-  LAL_VCS_DATE, LAL_VCS_TAG, LAL_VCS_STATUS};
+  LAL_VCS_DATE, LAL_VCS_BRANCH, LAL_VCS_TAG, LAL_VCS_AUTHOR, \
+  LAL_VCS_COMMITTER, LAL_VCS_STATUS};
 
 #ifdef __cplusplus
 }

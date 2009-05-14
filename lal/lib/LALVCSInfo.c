@@ -24,11 +24,16 @@
 /* global variables for vcs information */
 const char *lalVCSId = LAL_VCS_ID;
 const char *lalVCSDate = LAL_VCS_DATE;
+const char *lalVCSBranch = LAL_VCS_BRANCH;
 const char *lalVCSTag = LAL_VCS_TAG;
+const char *lalVCSAuthor = LAL_VCS_AUTHOR;
+const char *lalVCSCommitter = LAL_VCS_COMMITTER;
 const char *lalVCSStatus = LAL_VCS_STATUS;
 
 /* library vcs information structure */
-struct tagLALVCSInfo lalLibraryVCSInfo = {LAL_VCS_ID, LAL_VCS_DATE, LAL_VCS_TAG, LAL_VCS_STATUS};
+struct tagLALVCSInfo lalLibraryVCSInfo = {LAL_VCS_ID, \
+  LAL_VCS_DATE, LAL_VCS_BRANCH, LAL_VCS_TAG, LAL_VCS_AUTHOR, \
+  LAL_VCS_COMMITTER, LAL_VCS_STATUS};
 
 /*
  * vim: tw=0 ts=2 et
