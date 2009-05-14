@@ -302,6 +302,12 @@ def ifo_seg_dict(cp):
   out["L1"] = string.strip(cp.get('input','l1vetosegments'))
   return out
 
+def grep(string, inname, outname):
+    o = open(outname, "w")
+    print "grepping " + inname + " for " + string + " and sending it to " + outname
+    expr = re.compile(string)
+    o.write(''.join(filter(expr.search,open(inname).readlines())))
+
 ###############################################################################
 # MAIN PROGRAM
 ###############################################################################
@@ -321,9 +327,9 @@ FULLDATACACHE = string.strip(cp.get('input','fulldatacache'))
 INJCACHE = string.strip(cp.get('input','injcache'))
 dag = hm_post_DAG("hm_post.ini", string.strip(cp.get('output','logpath')))
 # to get injection file entries from the cache
-command = 'grep HL ' + INJCACHE + " > " + "inj.cache"
-print command
-popen = os.popen(command)
+
+#break down the cache to save on parsing
+grep('HL', INJCACHE, "inj.cache")
 
 #Setup jobs
 sqliteJob = sqlite_job(cp)
@@ -363,9 +369,8 @@ end_time = inj.segment[1]
 
 for type in types:
   for cat in cats:
-    command = 'grep "'  + type + ".*" + cat + '" ' + FULLDATACACHE + " > " + type + cat + ".cache"
-    print command
-    popen = os.popen(command)
+    #break down the cache to save on parsing
+    grep(type + ".*" + cat, FULLDATACACHE, type + cat + ".cache")
     try: os.mkdir(type+cat)
     except: pass
     ligolwThincaToCoincNode[type+cat] = ligolw_thinca_to_coinc_node(ligolwThincaToCoincJob, dag, type+cat+".cache", "vetoes_"+cat+".xml.gz", "vetoes", type+cat+"/S5_HM", n, effsnrfac=50, p_node=[segNode[cat]]); n+=1
@@ -379,19 +384,15 @@ for type in types:
     sqliteNodeCluster[type+cat] = sqlite_node(sqliteJob, dag, database, string.strip(cp.get('input',"cluster")),n, p_node=[sqliteNodeRemoveH1H2[type+cat]]); n+=1
 
 
-# to get injection file entries from the cache
-#injcache = map(lal.CacheEntry, file("inj.cache"))
-
 for inj in injcache:
   for cat in cats:
     type = "_".join(inj.description.split("_")[2:])
     url = inj.url
     cachefile = type + cat + ".cache"
-    command = 'grep "' + type + '.*' + cat + '" ' + INJCACHE +" > " + cachefile
-    print command
     try: os.mkdir(type+cat)
     except: pass
-    popen = os.popen(command)
+    #break down the cache
+    grep(type + '.*' + cat, INJCACHE, cachefile)
     ligolwThincaToCoincNode[type+cat] = ligolw_thinca_to_coinc_node(ligolwThincaToCoincJob, dag, cachefile, "vetoes_"+cat+".xml.gz", "vetoes", type+cat+"/S5_HM_INJ", n, effsnrfac=50, p_node=[segNode[cat]]);n+=1
     database = type+cat+".sqlite"
     try: db[cat].append(database)
