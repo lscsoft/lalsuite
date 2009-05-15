@@ -45,7 +45,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#if HAVE_GLOB_H
 #include <glob.h>
+#endif
 #include <time.h>
 #include <errno.h> 
 

@@ -65,6 +65,7 @@ LocalComputeFstatHoughMap ( LALStatus *status,
 
 #define SHOW_PROGRESS show_progress
 #define fopen boinc_fopen
+#define REARRANGE_SFT_DATA
 
 #ifndef HS_CHECKPOINTING
 #define HS_CHECKPOINTING 1

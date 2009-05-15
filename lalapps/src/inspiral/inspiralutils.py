@@ -130,33 +130,34 @@ def science_segments(ifo, config, generate_segments = True):
   end = config.get("input","gps-end-time")
 
   segFindFile = ifo + "-SCIENCE_SEGMENTS-" + start + "-" + \
-      str(int(end) - int(start)) + ".txt"
+      str(int(end) - int(start))
+
+  segFindXML = segFindFile + ".xml"
+  segFindFile = segFindFile + ".txt"
 
   # if not generating segments, all we need is the name of the segment file
   if not generate_segments: return segFindFile
 
-  executable = config.get("condor", "segfind")
-
   whichtoanalyze = ifo.lower() + "-analyze"
   print "For " + ifo + ", analyze " +config.get("segments",whichtoanalyze)
   
-  # get xml-to-txt converter
-  xml_to_txt_converter = config.get("condor", "ligolw_print")
-
   # run segFind to determine science segments
-  segFindCall = executable 
-  segFindCall = ' '.join([ segFindCall,
+  segFindCall = ' '.join([ config.get("condor", "segfind"),
 	"--query-segments",
 	"--segment-url", config.get("segfind", "segment-url"),
 	"--gps-start-time", start,
 	"--gps-end-time", end,
 	"--include-segments",
 	   ''.join([ '"', config.get("segments", whichtoanalyze), '"' ]),
-      "|",
-      xml_to_txt_converter,
-	"-t segment -c start_time -c end_time -d ' '",
-      ">", segFindFile ])
+        "--output-file", segFindXML ])
   make_external_call(segFindCall)
+
+  segsToTxtCall = ' '.join([ config.get("condor", "ligolw_print"),
+        "--table segment --column start_time --column end_time",
+        "--delimiter ' '",
+        segFindXML,
+        ">", segFindFile ])
+  make_external_call(segsToTxtCall)
 
   return segFindFile
 
