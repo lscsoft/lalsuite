@@ -17,6 +17,9 @@ from glue import segmentsUtils
 from glue.ligolw import lsctables
 from glue.ligolw import dbtables
 from pylal import db_thinca_rings
+from pylal.xlal.date import LIGOTimeGPS
+
+lsctables.LIGOTimeGPS = LIGOTimeGPS
 
 def fix_numbers(a, val=0.01):
   for i in range(len(a)):
@@ -53,11 +56,15 @@ class Summary(object):
     # instruments
     #
 
+    if verbose:
+      print >>sys.stderr, "computing background livetime:",
     for on_instruments, livetime in db_thinca_rings.get_thinca_livetimes(db_thinca_rings.get_thinca_rings_by_available_instruments(connection, program_name = live_time_program), veto_segments, db_thinca_rings.get_background_offset_vectors(connection), verbose = verbose).items():
       try:
-        self.background_livetime[on_instruments] += livetime
+        self.background_livetime[on_instruments] += float(livetime)
       except KeyError:
-        self.background_livetime[on_instruments] = livetime
+        self.background_livetime[on_instruments] = float(livetime)
+    if verbose:
+      print >>sys.stderr
 
     #
     # compute the playground and non-playground zero-lag live time for each
@@ -65,16 +72,21 @@ class Summary(object):
     #
 
     zero_lag_segs = db_thinca_rings.get_thinca_zero_lag_segments(connection, program_name = live_time_program) - veto_segments
-    playground_segs = segmentUtils.S2playground(zero_lag_segs.extent_all())
+    playground_segs = segmentsUtils.S2playground(zero_lag_segs.extent_all())
 
+    if verbose:
+      print >>sys.stderr, "computing zero-lag livetime:",
     available_instruments = set(zero_lag_segs.keys())
     for on_instruments in (on_instruments for m in range(2, len(available_instruments) + 1) for on_instruments in iterutils.choices(sorted(available_instruments), m)):
-      on_instruments = frozeset(on_instruments)
+      on_instruments = frozenset(on_instruments)
+
+      if verbose:
+        print >>sys.stderr, ",".join(sorted(on_instruments)),
 
       # compute times when only exactly on_instruments were on
       segs = zero_lag_segs.intersection(on_instruments) - zero_lag_segs.union(available_instruments - on_instruments)
-      playground_livetime = abs(segs & playground_segs)
-      nonplayground_livetime = abs(seg - playground_segs)
+      playground_livetime = float(abs(segs & playground_segs))
+      nonplayground_livetime = float(abs(segs - playground_segs))
 
       try:
         self.playground_livetime[on_instruments] += playground_livetime
@@ -82,11 +94,15 @@ class Summary(object):
       except KeyError:
         self.playground_livetime[on_instruments] = playground_livetime
         self.nonplayground_livetime[on_instruments] = nonplayground_livetime
+    if verbose:
+      print >>sys.stderr
 
     #
     # collect the false alarm rates from each choice of on instruments
     #
 
+    if verbose:
+      print >>sys.stderr, "collecting false alarm rate ranks ..."
     for on_instruments in (on_instruments for on_instruments, in connection.cursor().execute("SELECT DISTINCT(instruments) FROM coinc_event;")):
       key = frozenset(lsctables.instrument_set_from_ifos(on_instruments))
       if key not in self.background_ifar:
@@ -133,7 +149,6 @@ summary = Summary()
 for file in sys.argv[1:]:
   summary.update_from_db(file, verbose = True)
 
-
 figcnt = 0
 #FIXME fails if there is no background in a given ifo combo
 for on_instruments in summary.nonplayground_ifar.keys():
@@ -152,7 +167,7 @@ for on_instruments in summary.nonplayground_ifar.keys():
   pylab.fill(xc, y[2], alpha=0.25, facecolor=[0.5, 0.5, 0.5])
   pylab.fill(xc, y[3], alpha=0.25, facecolor=[0.75, 0.75, 0.75])
   pylab.xlim( x[-1], x[0] )
-  pylab.ylim(0.01, len(summary.zero_ifar[on_instruments]) )
+  pylab.ylim(0.01, len(summary.background_ifar[on_instruments]) )
   pylab.ylabel('Number')
   pylab.xlabel('IFAR based Rank')
   pylab.legend(("zero lag", "expected background, N", "1*sqrt(N)", "2*sqrt(N)","3*sqrt(N)"), loc="lower left")
