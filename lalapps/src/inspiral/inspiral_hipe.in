@@ -1501,11 +1501,12 @@ try:
     print >> sys.stderr, "exttrig-inj-stop must be larger than "\
                          "exttrig-inj-start."
     sys.exit(1)
-
   doExtTrig = True
-except:
+except ConfigParser.NoOptionError:
   exttrigInjections=[0,0]
   doExtTrig = False
+except:
+  raise Exception,  "Unknown exception %s : %s" %( sys.exc_type, sys.exc_value)
 
 
 # datafind:
