@@ -179,13 +179,13 @@ class hm_upperlimit_job(pipeline.CondorDAGJob):
 class ligolw_sqlite_node(pipeline.CondorDAGNode):
   """
   """
-  def __init__(self, job, dag, database, xml, id, p_node=[], replace=True, extract=False):
+  def __init__(self, job, dag, database, xml_list, id, p_node=[], replace=True, extract=False):
 
     pipeline.CondorDAGNode.__init__(self,job)
     cline = job.ligolw_sqlite + ' --database ' + database + ' --tmp-space /tmp --verbose '
     if replace: cline += " --replace "
     if extract: cline += " --extract " 
-    cline += xml
+    for xml in xml_list: cline += xml + " "
     fn = "bash_scripts/ligolw_sqlite"+str(id)+".sh"
     f = open(fn,"w")
     f.write(cline)
@@ -347,11 +347,9 @@ ligolwThincaToCoincNode = {}
 sqliteNodeSimplify = {}
 sqliteNodeRemoveH1H2 = {}
 sqliteNodeCluster = {}
-ligolwSqliteNodeVetoes = {}
 ligolwSqliteNode = {}
-ligolwSqliteNode2 = {}
-ligolwSqliteNode3 = {}
-ligolwSqliteNode4 = {}
+ligolwSqliteNodeInjDBtoXML = {}
+ligolwSqliteNodeInjXMLtoDB = {}
 ligolwInspinjfindNode = {}
 lallappsNewcorseNode = {}
 hmUpperlimitNode = {}
@@ -369,13 +367,21 @@ for type in types:
     grep(type + ".*" + cat, FULLDATACACHE, type + cat + ".cache")
     try: os.mkdir(type+cat)
     except: pass
+
     ligolwThincaToCoincNode[type+cat] = ligolw_thinca_to_coinc_node(ligolwThincaToCoincJob, dag, type+cat+".cache", "vetoes_"+cat+".xml.gz", "vetoes", type+cat+"/S5_HM", n, effsnrfac=50, p_node=[segNode[cat]]); n+=1
+
     database = type+cat+".sqlite"
     try: db[cat].append(database) 
     except: db[cat] = [database]
-    ligolwSqliteNode[type+cat] = ligolw_sqlite_node(ligolwSqliteJob, dag, database, type+cat+"/S5_HM_*"+type+"*"+cat+"*.xml.gz", n, p_node=[ligolwThincaToCoincNode[type+cat]], replace=True); n+=1
-    ligolwSqliteNodeVetoes[type+cat] = ligolw_sqlite_node(ligolwSqliteJob, dag, database, "vetoes_"+cat+".xml.gz", n, p_node=[ligolwSqliteNode[type+cat]], replace=False); n+=1
-    sqliteNodeSimplify[type+cat] = sqlite_node(sqliteJob, dag, database, string.strip(cp.get('input',"simplify")), n, p_node=[ligolwSqliteNodeVetoes[type+cat]]); n+=1
+    
+    xml_list = [type+cat+"/S5_HM_*"+type+"*"+cat+"*.xml.gz", "vetoes_"+cat+".xml.gz"]
+    ligolwSqliteNode[type+cat] = ligolw_sqlite_node(ligolwSqliteJob, dag, database, xml_list, n, p_node=[ligolwThincaToCoincNode[type+cat]], replace=True); n+=1
+
+    #ligolwSqliteNode[type+cat] = ligolw_sqlite_node(ligolwSqliteJob, dag, database, type+cat+"/S5_HM_*"+type+"*"+cat+"*.xml.gz", n, p_node=[ligolwThincaToCoincNode[type+cat]], replace=True); n+=1
+    #ligolwSqliteNodeVetoes[type+cat] = ligolw_sqlite_node(ligolwSqliteJob, dag, database, "vetoes_"+cat+".xml.gz", n, p_node=[ligolwSqliteNode[type+cat]], replace=False); n+=1
+    #sqliteNodeSimplify[type+cat] = sqlite_node(sqliteJob, dag, database, string.strip(cp.get('input',"simplify")), n, p_node=[ligolwSqliteNodeVetoes[type+cat]]); n+=1
+
+    sqliteNodeSimplify[type+cat] = sqlite_node(sqliteJob, dag, database, string.strip(cp.get('input',"simplify")), n, p_node=[ligolwSqliteNode[type+cat]]); n+=1
     sqliteNodeRemoveH1H2[type+cat] = sqlite_node(sqliteJob, dag, database, string.strip(cp.get('input',"remove_h1h2")),n, p_node=[sqliteNodeSimplify[type+cat]]); n+=1
     sqliteNodeCluster[type+cat] = sqlite_node(sqliteJob, dag, database, string.strip(cp.get('input',"cluster")),n, p_node=[sqliteNodeRemoveH1H2[type+cat]]); n+=1
 
@@ -389,25 +395,33 @@ for inj in injcache:
     except: pass
     #break down the cache
     grep(type + '.*' + cat, INJCACHE, cachefile)
+
     ligolwThincaToCoincNode[type+cat] = ligolw_thinca_to_coinc_node(ligolwThincaToCoincJob, dag, cachefile, "vetoes_"+cat+".xml.gz", "vetoes", type+cat+"/S5_HM_INJ", n, effsnrfac=50, p_node=[segNode[cat]]);n+=1
+
     database = type+cat+".sqlite"
     try: db[cat].append(database)
     except: db[cat] = [database]
-    ligolwSqliteNode[type+cat] = ligolw_sqlite_node(ligolwSqliteJob, dag, database, type+cat+"/S5_HM_INJ*"+type+"*"+cat+"*.xml.gz",n, p_node=[ligolwThincaToCoincNode[type+cat]], replace=True);n+=1
-    ligolwSqliteNode2[type+cat] = ligolw_sqlite_node(ligolwSqliteJob, dag, database, url, n, p_node=[ligolwSqliteNode[type+cat]], replace=False);n+=1
-    ligolwSqliteNodeVetoes[cat] = ligolw_sqlite_node(ligolwSqliteJob, dag, database, "vetoes_"+cat+".xml.gz", n, p_node=[ligolwSqliteNode2[type+cat]], replace=False); n+=1
-    sqliteNodeSimplify[type+cat] = sqlite_node(sqliteJob, dag, database, string.strip(cp.get('input',"simplify")), n, p_node=[ligolwSqliteNode2[type+cat]]);n+=1
+
+    xml_list = [type+cat+"/S5_HM_INJ*"+type+"*"+cat+"*.xml.gz", url, "vetoes_"+cat+".xml.gz"]
+    ligolwSqliteNode[type+cat] = ligolw_sqlite_node(ligolwSqliteJob, dag, database, xml_list, n, p_node=[ligolwThincaToCoincNode[type+cat]], replace=True);n+=1
+
+    #ligolwSqliteNode[type+cat] = ligolw_sqlite_node(ligolwSqliteJob, dag, database, type+cat+"/S5_HM_INJ*"+type+"*"+cat+"*.xml.gz",n, p_node=[ligolwThincaToCoincNode[type+cat]], replace=True);n+=1
+    #ligolwSqliteNode2[type+cat] = ligolw_sqlite_node(ligolwSqliteJob, dag, database, url, n, p_node=[ligolwSqliteNode[type+cat]], replace=False);n+=1
+    #ligolwSqliteNodeVetoes[cat] = ligolw_sqlite_node(ligolwSqliteJob, dag, database, "vetoes_"+cat+".xml.gz", n, p_node=[ligolwSqliteNode2[type+cat]], replace=False); n+=1
+    #sqliteNodeSimplify[type+cat] = sqlite_node(sqliteJob, dag, database, string.strip(cp.get('input',"simplify")), n, p_node=[ligolwSqliteNodeVetoes[type+cat]]);n+=1
+
+    sqliteNodeSimplify[type+cat] = sqlite_node(sqliteJob, dag, database, string.strip(cp.get('input',"simplify")), n, p_node=[ligolwSqliteNode[type+cat]]);n+=1
     sqliteNodeRemoveH1H2[type+cat] = sqlite_node(sqliteJob, dag, database, string.strip(cp.get('input',"remove_h1h2")),n, p_node=[sqliteNodeSimplify[type+cat]]);n+=1
     sqliteNodeCluster[type+cat] = sqlite_node(sqliteJob, dag, database, string.strip(cp.get('input',"cluster")),n, p_node=[sqliteNodeRemoveH1H2[type+cat]]);n+=1
-    ligolwSqliteNode3[type+cat] = ligolw_sqlite_node(ligolwSqliteJob, dag, database, os.path.splitext(database)[0]+".xml.gz", n, p_node=[sqliteNodeCluster[type+cat]], replace=False, extract=True); n+=1
-    ligolwInspinjfindNode[type+cat] = ligolw_inspinjfind_node(ligolwInspinjfindJob, dag, database+".xml.gz", n, p_node=[ligolwSqliteNode3[type+cat]]);n+=1
-    ligolwSqliteNode4[type+cat] = ligolw_sqlite_node(ligolwSqliteJob, dag, database, os.path.splitext(database)[0]+".xml.gz", n, p_node=[ligolwInspinjfindNode[type+cat]], replace=True);n+=1
+    ligolwSqliteNodeInjDBtoXML[type+cat] = ligolw_sqlite_node(ligolwSqliteJob, dag, database, [os.path.splitext(database)[0]+".xml.gz"], n, p_node=[sqliteNodeCluster[type+cat]], replace=False, extract=True); n+=1
+    ligolwInspinjfindNode[type+cat] = ligolw_inspinjfind_node(ligolwInspinjfindJob, dag, database+".xml.gz", n, p_node=[ligolwSqliteNodeInjDBtoXML[type+cat]]);n+=1
+    ligolwSqliteNodeInjXMLtoDB[type+cat] = ligolw_sqlite_node(ligolwSqliteJob, dag, database, [os.path.splitext(database)[0]+".xml.gz"], n, p_node=[ligolwInspinjfindNode[type+cat]], replace=True);n+=1
 
 # New corse
 # First work out the parent/child relationships
 p_nodes = []
 for k in ligolwInspinjfindNode.keys():
-  p_nodes.append(ligolwInspinjfindNode[k])
+  p_nodes.append(ligolwSqliteNodeInjXMLtoDB[k])
 for k in sqliteNodeCluster.keys():
   p_nodes.append(sqliteNodeCluster[k])
 
