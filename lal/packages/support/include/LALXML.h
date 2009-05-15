@@ -34,5 +34,37 @@
 #include <libxml/tree.h>
 
 
+/**
+ * \brief This type represents a XML namespace
+ *
+ * \sa XML_NAMESPACE_VECTOR
+ * \sa XLALGetSingleNodeContentByXPath
+ *
+ * \author Oliver Bock\n
+ * Albert-Einstein-Institute Hannover, Germany
+ */
+typedef struct {
+    const xmlChar *prefix;
+    const xmlChar *url;
+} XML_NAMESPACE;
+
+
+/**
+ * \brief This type represents a vector of XML namespaces
+  *
+ * \sa XML_NAMESPACE
+ * \sa XLALGetSingleNodeContentByXPath
+ *
+ * \author Oliver Bock\n
+ * Albert-Einstein-Institute Hannover, Germany
+ */
+typedef struct {
+    const XML_NAMESPACE *items;
+    const int count;
+} XML_NAMESPACE_VECTOR;
+
+
 int XLALXMLFilePrintElements(const char *fname);
-xmlChar * XLALGetSingleNodeContentByXPath(const xmlDocPtr xmlDoc, const char *xpath);
+xmlChar * XLALGetSingleNodeContentByXPath(const xmlDocPtr xmlDoc, const char *xpath, const XML_NAMESPACE_VECTOR *xmlNsVector);
+INT4 XLALValidateDocumentByInternalSchema(const xmlDocPtr xmlDocument);
+INT4 XLALValidateDocumentByExternalSchema(const xmlDocPtr xmlDocument, const xmlChar *url);

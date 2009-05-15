@@ -31,8 +31,9 @@
 #define LALXMLC_NAMETEST2 "cand1"
 
 
-int testLIGOTimeGPS();
-int testPulsarDopplerParams();
+INT4 testLIGOTimeGPS();
+INT4 testPulsarDopplerParams();
+INT4 validateDocumentString(const xmlChar *xml);
 
 int main(void)
 {
@@ -42,35 +43,37 @@ int main(void)
     /* set debug level*/
     lalDebugLevel = LALMSGLVL3 | LALMEMTRACE;
 
-    fprintf(stderr, "======================================================================\n");
+    fprintf(stderr, "**********************************************************************\n");
     fprintf(stderr, "Running LALXMLTest...\n\n");
 
     result = testLIGOTimeGPS();
     if(result != LALXMLC_ENOM) {
         return result;
     }
+
+    fprintf(stderr, "======================================================================\n\n");
+
     result = testPulsarDopplerParams();
     if(result != LALXMLC_ENOM) {
         return result;
     }
 
-    fprintf(stderr, "======================================================================\n");
+    fprintf(stderr, "**********************************************************************\n");
     return LALXMLC_ENOM;
 }
 
 
-int testLIGOTimeGPS()
+INT4 testLIGOTimeGPS()
 {
     /* set up local variables */
-    LIGOTimeGPS timeSource;
-    LIGOTimeGPS timeDestination;
+    static LIGOTimeGPS timeSource;
+    static LIGOTimeGPS timeDestination;
     xmlChar *xml;
+    INT4 result;
 
     /* initialize test data */
     timeSource.gpsSeconds = 15;
     timeSource.gpsNanoSeconds = 200;
-    timeDestination.gpsSeconds = 0;
-    timeDestination.gpsNanoSeconds = 0;
 
     fprintf(stderr, "1: Testing LIGOTimeGPS (de)serialization...\n\n");
 
@@ -90,6 +93,20 @@ int testLIGOTimeGPS()
     fprintf(stderr, "----------------------------------------------------------------------\n");
     fprintf(stderr, (char*)xml);
     fprintf(stderr, "----------------------------------------------------------------------\n");
+
+    /* validate XML document */
+    result = validateDocumentString(xml);
+    if(result == XLAL_SUCCESS) {
+        fprintf(stderr, "LALXMLTest: [XLALValidateDocumentByInternalSchema(): %s]\n", LALXMLC_MSGENOM);
+    }
+    else if(result == XLAL_FAILURE) {
+        fprintf(stderr, "LALXMLTest: [XLALValidateDocumentByInternalSchema(): %s]\n", LALXMLC_MSGEVAL);
+        return LALXMLC_EVAL;
+    }
+    else {
+        fprintf(stderr, "LALXMLTest: [XLALValidateDocumentByInternalSchema(): %s]\n", LALXMLC_MSGEFUN);
+        return LALXMLC_EFUN;
+    }
 
     /* invoke and check second function (get) */
     if(XLALVOTableXML2LIGOTimeGPSByName((char*)xml, LALXMLC_NAMETEST1, &timeDestination)) {
@@ -117,14 +134,15 @@ int testLIGOTimeGPS()
 }
 
 
-int testPulsarDopplerParams()
+INT4 testPulsarDopplerParams()
 {
     /* set up local variables */
-    BinaryOrbitParams bopSource;
-    PulsarDopplerParams pdpSource;
-    BinaryOrbitParams bopDestination;
-    PulsarDopplerParams pdpDestination;
+    static BinaryOrbitParams bopSource;
+    static PulsarDopplerParams pdpSource;
+    static BinaryOrbitParams bopDestination;
+    static PulsarDopplerParams pdpDestination;
     xmlChar *xml;
+    INT4 result;
 
     /* initialize test data */
     bopSource.tp.gpsSeconds = 913399939;
@@ -143,23 +161,9 @@ int testPulsarDopplerParams()
     pdpSource.fkdot[3] = 0.0;
     pdpSource.orbit = &bopSource;
 
-    bopDestination.tp.gpsSeconds = 0;
-    bopDestination.tp.gpsNanoSeconds = 0;
-    bopDestination.argp = 0;
-    bopDestination.asini = 0;
-    bopDestination.ecc = 0;
-    bopDestination.period = 0;
-    pdpDestination.refTime.gpsSeconds = 0;
-    pdpDestination.refTime.gpsNanoSeconds = 0;
-    pdpDestination.Alpha = 0;
-    pdpDestination.Delta = 0;
-    pdpDestination.fkdot[0] = 0;
-    pdpDestination.fkdot[1] = 0;
-    pdpDestination.fkdot[2] = 0;
-    pdpDestination.fkdot[3] = 0;
     pdpDestination.orbit = &bopDestination;
 
-    fprintf(stderr, "1: Testing PulsarDopplerParams (de)serialization...\n\n");
+    fprintf(stderr, "2: Testing PulsarDopplerParams (de)serialization...\n\n");
 
     fprintf(stderr, "Initial PulsarDopplerParams struct:\n");
     fprintf(stderr, "%s = {\n"
@@ -196,6 +200,20 @@ int testPulsarDopplerParams()
     fprintf(stderr, "----------------------------------------------------------------------\n");
     fprintf(stderr, (char*)xml);
     fprintf(stderr, "----------------------------------------------------------------------\n");
+
+    /* validate XML document */
+    result = validateDocumentString(xml);
+    if(result == XLAL_SUCCESS) {
+        fprintf(stderr, "LALXMLTest: [XLALValidateDocumentByInternalSchema(): %s]\n", LALXMLC_MSGENOM);
+    }
+    else if(result == XLAL_FAILURE) {
+        fprintf(stderr, "LALXMLTest: [XLALValidateDocumentByInternalSchema(): %s]\n", LALXMLC_MSGEVAL);
+        return LALXMLC_EVAL;
+    }
+    else {
+        fprintf(stderr, "LALXMLTest: [XLALValidateDocumentByInternalSchema(): %s]\n", LALXMLC_MSGEFUN);
+        return LALXMLC_EFUN;
+    }
 
     /* invoke and check second function (get) */
     if(XLALVOTableXML2PulsarDopplerParamsByName((char*)xml, LALXMLC_NAMETEST2, &pdpDestination)) {
@@ -251,4 +269,34 @@ int testPulsarDopplerParams()
     }
 
     return LALXMLC_ENOM;
+}
+
+
+INT4 validateDocumentString(const xmlChar *xml)
+{
+    /* set up local variables */
+    xmlDocPtr xmlDocument = NULL;
+    INT4 result;
+
+    /* parse XML document */
+    xmlDocument = xmlReadMemory(xml, strlen(xml), NULL, "UTF-8", 0);
+    if(xmlDocument == NULL) {
+        /* clean up */
+        xmlCleanupParser();
+        fprintf(stderr, "VOTable document parsing failed\n");
+        return XLAL_EFAILED;
+    }
+
+    /* validate document */
+    /**
+     * \todo Call external version with path to XSD file
+     * (instead of internally referenced online resource)
+     */
+    result = XLALValidateDocumentByInternalSchema(xmlDocument);
+
+    /* clean up */
+    xmlFreeDoc(xmlDocument);
+    xmlCleanupParser();
+
+    return result;
 }
