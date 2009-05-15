@@ -1,13 +1,9 @@
 #!/usr/bin/env @PYTHONPROG@
 """
 This program makes the S5 high mass post processing dag
-
-$Id$
-
-This program creates cache files for the output of inspiral hipe
 """
 
-__author__ = 'Chad Hanna <channa@phys.lsu.edu>'
+__author__ = 'Chad Hanna <channa@caltech.edu>'
 __date__ = '$Date$'
 __version__ = '$Revision$'[11:-2]
 
@@ -403,10 +399,9 @@ for inj in injcache:
     sqliteNodeSimplify[type+cat] = sqlite_node(sqliteJob, dag, database, string.strip(cp.get('input',"simplify")), n, p_node=[ligolwSqliteNode2[type+cat]]);n+=1
     sqliteNodeRemoveH1H2[type+cat] = sqlite_node(sqliteJob, dag, database, string.strip(cp.get('input',"remove_h1h2")),n, p_node=[sqliteNodeSimplify[type+cat]]);n+=1
     sqliteNodeCluster[type+cat] = sqlite_node(sqliteJob, dag, database, string.strip(cp.get('input',"cluster")),n, p_node=[sqliteNodeRemoveH1H2[type+cat]]);n+=1
-
-    ligolwSqliteNode3[type+cat] = ligolw_sqlite_node(ligolwSqliteJob, dag, database, database+".xml.gz", n, p_node=[sqliteNodeCluster[type+cat]], replace=False, extract=True); n+=1
+    ligolwSqliteNode3[type+cat] = ligolw_sqlite_node(ligolwSqliteJob, dag, database, os.path.splitext(database)[0]+".xml.gz", n, p_node=[sqliteNodeCluster[type+cat]], replace=False, extract=True); n+=1
     ligolwInspinjfindNode[type+cat] = ligolw_inspinjfind_node(ligolwInspinjfindJob, dag, database+".xml.gz", n, p_node=[ligolwSqliteNode3[type+cat]]);n+=1
-    ligolwSqliteNode4[type+cat] = ligolw_sqlite_node(ligolwSqliteJob, dag, database, database+".xml.gz", n, p_node=[ligolwInspinjfindNode[type+cat]], replace=True);n+=1
+    ligolwSqliteNode4[type+cat] = ligolw_sqlite_node(ligolwSqliteJob, dag, database, os.path.splitext(database)[0]+".xml.gz", n, p_node=[ligolwInspinjfindNode[type+cat]], replace=True);n+=1
 
 # New corse
 # First work out the parent/child relationships
