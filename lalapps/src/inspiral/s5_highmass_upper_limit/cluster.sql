@@ -1,3 +1,5 @@
+PRAGMA temp_store_directory = '/tmp';
+
 SELECT
 	"Number of coincs before clustering: " || count(*)
 FROM
@@ -8,11 +10,14 @@ FROM
 CREATE TEMPORARY TABLE is_playground AS
 	SELECT
 		coinc_inspiral.coinc_event_id AS coinc_event_id,
-		-- did the last playground segment start less than 600
-		-- seconds prior to this coinc?
-		((coinc_inspiral.end_time - 729273613) % 6370) < 600 AS is_playground
+		-- is this a zero-lag coinc, and did the last playground
+		-- segment start less than 600 seconds prior to it?
+		NOT EXISTS (SELECT * FROM time_slide WHERE time_slide.time_slide_id == coinc_event.time_slide_id AND time_slide.offset != 0) AND ((coinc_inspiral.end_time - 729273613) % 6370) < 600 AS is_playground
 	FROM
-		coinc_inspiral;
+		coinc_inspiral
+		JOIN coinc_event ON (
+			coinc_event.coinc_event_id == coinc_inspiral.coinc_event_id
+		);
 CREATE INDEX ip_cei_index ON is_playground (coinc_event_id);
 
 
@@ -50,13 +55,13 @@ WHERE
 			coinc_inspiral.coinc_event_id
 		FROM
 			coinc_inspiral
-			JOIN coinc_event ON (
+			JOIN coinc_event INDEXED BY sqlite_autoindex_coinc_event_1 ON (
 				coinc_event.coinc_event_id == coinc_inspiral.coinc_event_id
 			)
-			JOIN is_playground ON (
+			JOIN is_playground INDEXED BY ip_cei_index ON (
 				is_playground.coinc_event_id == coinc_inspiral.coinc_event_id
 			)
-			JOIN maxsnrs ON (
+			JOIN maxsnrs INDEXED BY ms_et_index ON (
 				maxsnrs.end_time == coinc_inspiral.end_time
 				AND maxsnrs.time_slide_id == coinc_event.time_slide_id
 				AND maxsnrs.on_instruments == coinc_event.instruments
