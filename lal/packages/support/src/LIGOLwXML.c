@@ -77,7 +77,10 @@ files.
 
 \subsubsection*{Description}
 
-The routine \verb+LALOpenLIGOLwXMLFile+ calls the C standard library function
+The routine \verb+LALOpenLIGOLwXMLFile+ 
+
+The routine \verb+XLALCreateLIGOLwXMLFileName+ creates a name for a  LIGO lightweight XML file that is in accordance with the specifications of document T050017.
+
 \verb+fopen+ to open a file specified by the \verb+path+ argument. The file is
 truncated to zero length if already exists. The standard LIGO lightweight XML
 header, \verb+LIGOLW_XML_HEADER+ given in LIGOLwXMLHeaders.h, is then written
@@ -1319,6 +1322,8 @@ int XLALWriteLIGOLwXMLSimBurstTable(
 	static const char func[] = "XLALWriteLIGOLwXMLSimBurstTable";
 	const char *row_head = "\n\t\t\t";
 
+        
+
 	if(xml->table != no_table) {
 		XLALPrintError("a table is still open");
 		XLAL_ERROR(func, XLAL_EFAILED);
@@ -1388,5 +1393,56 @@ int XLALWriteLIGOLwXMLSimBurstTable(
 	/* done */
 
 	return 0;
+}
+
+/**
+ * Creates a XML filename accordingly to document T050017
+ */
+
+int XLALCreateLIGOLwXMLFileName(
+        char* filename,
+        const char* dataSource,
+        const char* dataDescription,
+        const LIGOTimeGPS* gpsStartTime,
+        const LIGOTimeGPS* gpsEndTime,
+        INT4 compress
+)
+{
+     static const char func[] = "XLALCreateLIGOLwXMLFileName";
+  
+     INT4 gpsDuration;
+  
+     /* check input structures */
+     if (!filename || !dataSource || !dataDescription || 
+	 !gpsStartTime || !gpsEndTime)
+          XLAL_ERROR(func, XLAL_EFAULT);
+  
+     /* check the correctnes of the input strings */
+     if ( strchr(dataSource, '-') || strchr(dataDescription, '-'))
+     {
+          filename = NULL;
+          XLALPrintError("the input character strings are not allowed"
+			 " to contain dashes ('-').");
+          XLAL_ERROR(func, XLAL_EINVAL);
+      }
+
+      /* calculate the GPS duration */
+      gpsDuration = gpsEndTime->gpsSeconds - gpsStartTime->gpsSeconds;
+      if (gpsEndTime->gpsNanoSeconds > 0) ++gpsDuration;
+
+      /* and here put it all together */
+      if (compress)
+      {
+	   LALSnprintf( filename, FILENAME_MAX, "%s-%s-%d-%d.xml.gz",
+			dataSource, dataDescription, gpsStartTime->gpsSeconds, 
+			gpsDuration );
+      } else {
+	   LALSnprintf( filename, FILENAME_MAX, "%s-%s-%d-%d.xml",
+			dataSource, dataDescription, gpsStartTime->gpsSeconds, 
+			gpsDuration );
+      }
+
+      /* return success */
+      return 1;
 }
 

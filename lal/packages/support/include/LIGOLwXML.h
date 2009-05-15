@@ -196,6 +196,16 @@ int XLALWriteLIGOLwXMLSimBurstTable(
 	const SimBurst *
 );
 
+int XLALCreateLIGOLwXMLFileName(
+        char* filename,
+        const char* dataSource,
+        const char* dataDescription,
+        const LIGOTimeGPS* startTime,
+        const LIGOTimeGPS* endTime,
+        INT4 compress
+);
+
+
 #if 0
 <lalLaTeX>
 \vfill{\footnotesize\input{LIGOLwXMLHV}}
