@@ -16,6 +16,7 @@ from glue.ligolw import ligolw
 from glue.ligolw import lsctables
 from glue.ligolw import dbtables
 from glue.ligolw import utils
+from pylal import db_thinca_rings
 from pylal import llwapp
 from pylal import rate
 from pylal import SimInspiralUtils
@@ -36,7 +37,7 @@ def get_far_threshold_and_segments(zerofname, live_time_program, verbose = False
   far, = connection.cursor().execute(query).selectone()
 
   # extract segments.
-  seglists = llwapp.segmentlistdict_fromsearchsummary(dbtables.get_xml(connection), live_time_program)
+  seglists = get_thinca_zero_lag_segments(connection, program_name = live_time_program)
 
   # done
   connection.close()
@@ -291,16 +292,15 @@ if opts.veto_segments is not None:
   dbtables.ligolwtypes.ToPyType["ilwd:char"] = unicode
   connection = sqlite3.connect(":memory:")
   dbtables.DBTable_set_connection(connection)
-  opts.veto_segments = ligolw_segments.segmenttable_get_by_name(utils.load_filename(opts.veto_segments, gz = (opts.veto_segments or "stdin").endswith(".gz"), verbose = opts.verbose), opts.veto_segments_name).coalesce()
+  utils.load_filename(opts.veto_segments, gz = (opts.veto_segments or "stdin").endswith(".gz"), verbose = opts.verbose)
+  opts.veto_segments = db_thinca_rings.get_veto_segments(connection, opts.veto_segments_name)
   connection.close()
   dbtables.DBTable_set_connection(None)
 
 
+# FIXME:  don't you need to request the min(FAR) for the given "on"
+# instruments?
 FAR, seglists = get_far_threshold_and_segments(opts.full_data_file, opts.live_time_program, verbose = opts.verbose)
-# FIXME: this causes a loss of livetime if the rings overlap.  Is that a
-# problem?  They are not supposed to overlap, but is there a check anywhere
-# to trap it if they do?
-seglists.coalesce()
 
 
 # times when only exactly the required instruments are on
