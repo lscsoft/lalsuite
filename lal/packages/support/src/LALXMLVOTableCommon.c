@@ -79,7 +79,7 @@ xmlNodePtr XLALCreateVOTableParamNode(const char *name,
     xmlNsPtr xmlVOTableNamespace = NULL;
     static const CHAR *datatypeString;
 
-    /* create node and add attributes*/
+    /* create node */
     xmlParamNode = xmlNewNode(NULL, BAD_CAST("PARAM"));
     if(xmlParamNode == NULL) {
         XLALPrintError("Element instantiation failed: PARAM\n");
@@ -231,6 +231,21 @@ xmlNodePtr XLALCreateVOTableResourceNode(const char *type,
     xmlNsPtr xmlVOTableNamespace = NULL;
     INT4 i = 0;
 
+    /* sanity check */
+    if(!type) {
+        XLALPrintError("Invalid input parameter: type\n");
+        XLAL_ERROR_NULL(logReference, XLAL_EINVAL);
+    }
+    if(!identifier) {
+        XLALPrintError("Invalid input parameter: identifier\n");
+        XLAL_ERROR_NULL(logReference, XLAL_EINVAL);
+    }
+    if((!children && childCount > 0) || (children && childCount <= 0)) {
+        XLALPrintError("Invalid input parameter: children/childCount\n");
+        XLAL_ERROR_NULL(logReference, XLAL_EINVAL);
+    }
+
+    /* create node */
     xmlResourceNode = xmlNewNode(NULL, BAD_CAST("RESOURCE"));
     if(xmlResourceNode == NULL) {
         XLALPrintError("Element instantiation failed: RESOURCE\n");
@@ -249,14 +264,12 @@ xmlNodePtr XLALCreateVOTableResourceNode(const char *type,
     if(!xmlNewProp(xmlResourceNode, BAD_CAST("utype"), BAD_CAST(type))) {
         /* clean up */
         xmlFreeNode(xmlResourceNode);
-
         XLALPrintError("Attribute instantiation failed: utype\n");
         XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
     }
     if(!xmlNewProp(xmlResourceNode, BAD_CAST("name"), BAD_CAST(identifier))) {
         /* clean up */
         xmlFreeNode(xmlResourceNode);
-
         XLALPrintError("Attribute instantiation failed: name\n");
         XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
     }
@@ -266,7 +279,6 @@ xmlNodePtr XLALCreateVOTableResourceNode(const char *type,
         if(!xmlAddChild(xmlResourceNode, children[i])) {
             /* clean up */
             xmlFreeNode(xmlResourceNode);
-
             XLALPrintError("Couldn't add child node to RESOURCE node: #%i\n", i);
             XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
         }
@@ -408,6 +420,20 @@ INT4 XLALCreateVOTableStringFromTree(const xmlNodePtr xmlTree,
     static const CHAR *logReference = "XLALCreateVOTableStringFromTree";
     xmlDocPtr xmlDocument;
 
+    /* sanity check */
+    if(!xmlTree) {
+        XLALPrintError("Invalid input parameters: xmlTree\n");
+        XLAL_ERROR(logReference, XLAL_EINVAL);
+    }
+    if(!xmlStringBuffer) {
+        XLALPrintError("Invalid input parameters: xmlStringBuffer\n");
+        XLAL_ERROR(logReference, XLAL_EINVAL);
+    }
+    if(!xmlStringBufferSize) {
+        XLALPrintError("Invalid input parameters: xmlStringBufferSize\n");
+        XLAL_ERROR(logReference, XLAL_EINVAL);
+    }
+
     /* build VOTable document */
     xmlDocument = XLALCreateVOTableDocumentFromTree(xmlTree);
     if(xmlDocument == NULL) {
@@ -420,7 +446,6 @@ INT4 XLALCreateVOTableStringFromTree(const xmlNodePtr xmlTree,
     if(*xmlStringBufferSize <= 0) {
         /* clean up */
         xmlFreeDoc(xmlDocument);
-
         XLALPrintError("VOTable document dump failed\n");
         XLAL_ERROR(logReference, XLAL_EFAILED);
     }
@@ -463,6 +488,24 @@ xmlChar * XLALGetSingleVOTableResourceParamValue(const xmlDocPtr xmlDocument,
     CHAR xpath[XPATHSTR_MAXLEN] = {0};
     const XML_NAMESPACE xmlVOTableNamespace[1] = {VOTABLE_NS_PREFIX, VOTABLE_NS_URL};
     const XML_NAMESPACE_VECTOR xmlNsVector = {xmlVOTableNamespace, 1};
+
+    /* sanity check */
+    if(!xmlDocument) {
+        XLALPrintError("Invalid input parameters: xmlDocument\n");
+        XLAL_ERROR_NULL(logReference, XLAL_EINVAL);
+    }
+    if(!resourceType) {
+        XLALPrintError("Invalid input parameters: resourceType\n");
+        XLAL_ERROR_NULL(logReference, XLAL_EINVAL);
+    }
+    if(!resourceName) {
+        XLALPrintError("Invalid input parameters: resourceName\n");
+        XLAL_ERROR_NULL(logReference, XLAL_EINVAL);
+    }
+    if(!paramName) {
+        XLALPrintError("Invalid input parameters: paramName\n");
+        XLAL_ERROR_NULL(logReference, XLAL_EINVAL);
+    }
 
     /* prepare XPath search */
     if(LALSnprintf(
