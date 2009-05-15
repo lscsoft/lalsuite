@@ -257,13 +257,12 @@ class ligolw_segments_node(pipeline.CondorDAGNode):
 class lalapps_newcorse_node(pipeline.CondorDAGNode):
   """
   """
-  def __init__(self, job, dag, veto_segments, veto_segments_name, database, id, p_node=[],instruments = "H1,H2,L1", mass_bins="0,50,85,inf", live_time_program="thinca"):
+  def __init__(self, job, dag, veto_segments_name, database, id, p_node=[],instruments = "H1,H2,L1", mass_bins="0,50,85,inf", live_time_program="thinca"):
     pipeline.CondorDAGNode.__init__(self,job)
     #FIXME make temp space?
     #self.add_var_opt("tmp-space","/tmp")
     self.add_var_opt("mass-bins",mass_bins)
     self.add_var_opt("live-time-program",live_time_program)
-    self.add_var_opt("veto-segments",veto_segments)
     self.add_var_opt("veto-segments-name",veto_segments_name)
     self.add_var_arg(database)
     self.add_macro("macroid", id)
@@ -273,9 +272,9 @@ class lalapps_newcorse_node(pipeline.CondorDAGNode):
 
 class hm_upperlimit_node(pipeline.CondorDAGNode):
   """
-  hm_upperlimit.py --instruments --output-name-tag --full-data-file --inj-data-glob --bootstrap-iterations --veto-segments --veto-segments-name
+  hm_upperlimit.py --instruments --output-name-tag --full-data-file --inj-data-glob --bootstrap-iterations --veto-segments-name
   """
-  def __init__(self, job, dag, ifos, output_name_tag, full_data_file, inj_data_glob, bootstrap_iterations, veto_segments, veto_segments_name, id, p_node=[]):
+  def __init__(self, job, dag, ifos, output_name_tag, full_data_file, inj_data_glob, bootstrap_iterations, veto_segments_name, id, p_node=[]):
     pipeline.CondorDAGNode.__init__(self,job)
     #FIXME make temp space?
     #self.add_var_opt("tmp-space","/tmp")
@@ -284,7 +283,6 @@ class hm_upperlimit_node(pipeline.CondorDAGNode):
     self.add_var_opt("full-data-file",full_data_file)
     self.add_var_opt("inj-data-glob",inj_data_glob)
     self.add_var_opt("bootstrap-iterations",bootstrap_iterations)
-    self.add_var_opt("veto-segments",veto_segments)
     self.add_var_opt("veto-segments-name",veto_segments_name)
     self.add_macro("macroid", id)
     for p in p_node:
@@ -426,12 +424,12 @@ for k in sqliteNodeCluster.keys():
   p_nodes.append(sqliteNodeCluster[k])
 
 for cat in cats:
-  lallappsNewcorseNode[cat] = lalapps_newcorse_node(lalappsNewcorseJob, dag, "vetoes_%s.xml.gz" % cat, "vetoes", " ".join(db[cat]), n, p_nodes);n+=1
+  lallappsNewcorseNode[cat] = lalapps_newcorse_node(lalappsNewcorseJob, dag, "vetoes", " ".join(db[cat]), n, p_nodes);n+=1
 
 for cat in ['CAT_3']: 
-  hmUpperlimitNode[cat] = hm_upperlimit_node(hmUpperlimitJob, dag, "H1,H2,L1", "", "FULL_DATACAT_3.sqlite", "*INJCAT_3.sqlite", 10000, "vetoes_%s.xml.gz" % cat, "vetoes", n, p_node=[lallappsNewcorseNode[cat]]);n+=1
-  hmUpperlimitNode[cat] = hm_upperlimit_node(hmUpperlimitJob, dag, "H1,L1", "", "FULL_DATACAT_3.sqlite", "*INJCAT_3.sqlite", 10000, "vetoes_%s.xml.gz" % cat, "vetoes", n, p_node=[lallappsNewcorseNode[cat]]);n+=1
-  hmUpperlimitNode[cat] = hm_upperlimit_node(hmUpperlimitJob, dag, "H2,L1", "", "FULL_DATACAT_3.sqlite", "*INJCAT_3.sqlite", 10000, "vetoes_%s.xml.gz" % cat, "vetoes", n, p_node=[lallappsNewcorseNode[cat]]);n+=1
+  hmUpperlimitNode[cat] = hm_upperlimit_node(hmUpperlimitJob, dag, "H1,H2,L1", "", "FULL_DATACAT_3.sqlite", "*INJCAT_3.sqlite", 10000, "vetoes", n, p_node=[lallappsNewcorseNode[cat]]);n+=1
+  hmUpperlimitNode[cat] = hm_upperlimit_node(hmUpperlimitJob, dag, "H1,L1", "", "FULL_DATACAT_3.sqlite", "*INJCAT_3.sqlite", 10000, "vetoes", n, p_node=[lallappsNewcorseNode[cat]]);n+=1
+  hmUpperlimitNode[cat] = hm_upperlimit_node(hmUpperlimitJob, dag, "H2,L1", "", "FULL_DATACAT_3.sqlite", "*INJCAT_3.sqlite", 10000, "vetoes", n, p_node=[lallappsNewcorseNode[cat]]);n+=1
 
 dag.write_sub_files()
 dag.write_dag()
