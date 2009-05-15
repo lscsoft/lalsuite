@@ -12,6 +12,7 @@ import glob
 import copy
 from optparse import OptionParser
 
+from glue import segments
 from glue.ligolw import ligolw
 from glue.ligolw import lsctables
 from glue.ligolw import dbtables
@@ -272,7 +273,6 @@ def parse_command_line():
   parser.add_option("-f", "--full-data-file", default = "FULL_DATACAT_3.sqlite", metavar = "pattern", help = "File in which to find the full data, example FULL_DATACAT_3.sqlite")
   parser.add_option("-s", "--inj-data-glob", default = "*INJCAT_3.sqlite", metavar = "pattern", help = "Glob for files to find the inj data, example *INJCAT_3.sqlite")
   parser.add_option("-b", "--bootstrap-iterations", default = 1, metavar = "integer", type = "int", help = "Number of iterations to compute mean and variance of volume MUST BE GREATER THAN 1 TO GET USABLE NUMBERS, a good number is 10000")
-  parser.add_option("--veto-segments", help = "Load veto segments from this XML document.  See ligolw_segments for information on constructing such a document.")
   parser.add_option("--veto-segments-name", help = "Set the name of the veto segments to use from the XML document.")
   parser.add_option("--verbose", action = "store_true", help = "Be verbose.")
 
@@ -288,14 +288,16 @@ def parse_command_line():
 
 opts, filenames = parse_command_line()
 
-if opts.veto_segments is not None:
-  dbtables.ligolwtypes.ToPyType["ilwd:char"] = unicode
-  connection = sqlite3.connect(":memory:")
+if opts.veto_segments_name is not None:
+  working_filename = dbtables.get_connection_filename(opts.full_data_file, verbose = opts.verbose)
+  connection = sqlite3.connect(working_filename)
   dbtables.DBTable_set_connection(connection)
-  utils.load_filename(opts.veto_segments, gz = (opts.veto_segments or "stdin").endswith(".gz"), verbose = opts.verbose)
-  opts.veto_segments = db_thinca_rings.get_veto_segments(connection, opts.veto_segments_name)
+  veto_segments = db_thinca_rings.get_veto_segments(connection, opts.veto_segments_name)
   connection.close()
+  dbtables.discard_connection_filename(opts.full_data_file, working_filename, verbose = opts.verbose)
   dbtables.DBTable_set_connection(None)
+else:
+  veto_segments = segments.segmentlistdict()
 
 
 # FIXME:  don't you need to request the min(FAR) for the given "on"
@@ -304,8 +306,7 @@ FAR, seglists = get_far_threshold_and_segments(opts.full_data_file, opts.live_ti
 
 
 # times when only exactly the required instruments are on
-if opts.veto_segments is not None:
-  seglists -= veto_segments
+seglists -= veto_segments
 zero_lag_segments = seglists.intersection(opts.instruments) - seglists.union(set(seglists.keys()) - opts.instruments)
 
 print FAR, abs(zero_lag_segments)
