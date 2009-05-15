@@ -32,6 +32,9 @@ import subprocess
 import re
 import optparse
 
+# output file
+outfile = 'git_info.sed'
+
 # version info class
 class git_info:
   def __init__(self):
@@ -52,6 +55,8 @@ def parse_args():
   parser = optparse.OptionParser(usage=usage)
   parser.add_option('--sed', action='store_true', default=False,
       help='output sed commands for version replacement')
+  parser.add_option('--file', action='store_true', default=False,
+      help='output sed file for version replacement')
 
   # parse command line options
   opts, args = parser.parse_args()
@@ -60,7 +65,15 @@ def parse_args():
   if (len(args) != 0):
     parser.error('incorrect number of command line options specified')
 
-  return opts.sed
+  # check that both --sed and --file are not specified
+  if (opts.sed is True) and (opts.file is True):
+    parser.error('cannot specify both --sed and --file')
+
+  return opts
+
+#
+# process management method
+#
 
 # return output from running given command
 def run_external_command(command, honour_ret_code=True):
@@ -117,7 +130,7 @@ def generate_git_version_info():
   date_cmd = 'git log -1 --pretty="format:%ct"'
   git_udate = float(run_external_command(date_cmd))
   git_date = time.strftime('%Y-%m-%d %H:%M:%S +0000', time.gmtime(git_udate))
-  
+
   # escape '+' in date
   git_date = git_date.replace('+', '\+')
 
@@ -173,17 +186,29 @@ def generate_git_version_info():
 #
 
 # parse command line options
-sed = parse_args()
+options = parse_args()
 
 # check if we are in a git repo
 # FIXME: 128 seems to be a magic number that indicates the the git
 # status command has failed
 git_ok = (external_command_retcode('git status') != 128)
 
+# generate sed command file, if appropriate
 if git_ok is True:
   info = generate_git_version_info()
 
-  if sed:
+  if options.file:
+    # generate sed command file
+    sed_file = open(outfile, 'w')
+    sed_file.write('s+@ID@+%s+g\n' % info.id)
+    sed_file.write('s+@DATE@+%s+g\n' % info.date)
+    sed_file.write('s+@BRANCH@+%s+g\n' % info.branch)
+    sed_file.write('s+@TAG@+%s+g\n' % info.tag)
+    sed_file.write('s+@AUTHOR@+%s+g\n' % info.author)
+    sed_file.write('s+@COMMITTER@+%s+g\n' % info.committer)
+    sed_file.write('s+@STATUS@+%s+g\n' % info.status)
+    sed_file.close()
+  elif options.sed:
     # generate sed command file
     sed_cmd = '-e "s/@ID@/%s/"' % info.id
     sed_cmd += ' -e "s/@DATE@/%s/"' % info.date
@@ -192,8 +217,6 @@ if git_ok is True:
     sed_cmd += ' -e "s/@AUTHOR@/%s/"' % info.author
     sed_cmd += ' -e "s/@COMMITTER@/%s/"' % info.committer
     sed_cmd += ' -e "s/@STATUS@/%s/"' % info.status
-
-    # output sed command line options
     print sed_cmd
   else:
     # output version info
