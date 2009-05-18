@@ -30,10 +30,18 @@
 #define LALXMLC_NAMETEST1 "timeGPS"
 #define LALXMLC_NAMETEST2 "cand1"
 
+#ifndef LAL_PREFIX
+    #define LAL_PREFIX "/usr/local"
+#endif
+
+#define PATH_MAXLEN 256
+
 
 INT4 testLIGOTimeGPS();
 INT4 testPulsarDopplerParams();
 INT4 validateDocumentString(const xmlChar *xml);
+INT4 findFileInLALDataPath(const char *filename, char **validatedPath);
+
 
 int main(void)
 {
@@ -276,6 +284,8 @@ INT4 validateDocumentString(const xmlChar *xml)
 {
     /* set up local variables */
     xmlDocPtr xmlDocument = NULL;
+    char *schemaPath = NULL;
+    char schemaUrl[PATH_MAXLEN+10] = "file://";
     INT4 result;
 
     /* parse XML document */
@@ -287,16 +297,156 @@ INT4 validateDocumentString(const xmlChar *xml)
         return XLAL_EFAILED;
     }
 
+    /* find schema definition file */
+    result = findFileInLALDataPath("VOTable-1.1.xsd", &schemaPath);
+
     /* validate document */
-    /**
-     * \todo Call external version with path to XSD file
-     * (instead of internally referenced online resource)
-     */
-    result = XLALValidateDocumentByInternalSchema(xmlDocument);
+    if(result == XLAL_SUCCESS) {
+        strncat(schemaUrl, schemaPath, PATH_MAXLEN);
+        result = XLALValidateDocumentByExternalSchema(xmlDocument, schemaUrl);
+        LALFree(schemaPath);
+    }
+    else {
+        fprintf(stderr, "Warning: schema definition file not found! "
+                        "Falling back to internal schema definition (online resource)!\n");
+        result = XLALValidateDocumentByInternalSchema(xmlDocument);
+    }
 
     /* clean up */
     xmlFreeDoc(xmlDocument);
     xmlCleanupParser();
 
     return result;
+}
+
+INT4 findFileInLALDataPath(const char *filename, char **validatedPath)
+{
+    /* set up local variables */
+    char *absolutePath;
+    char workingDir[256] = {0};
+    const char *dataPathEnv;
+    char *dataPath;
+    const char *currentDataPath;
+    char *nextDataPath;
+    FILE *fileCheck;
+    int n;
+
+    /* basic sanity checks */
+    if(!filename) {
+        fprintf(stderr, "No filename specified!\n");
+        return XLAL_EINVAL;
+    }
+    if(*filename == '/') {
+        fprintf(stderr, "Absolute path given!\n");
+        return XLAL_EINVAL;
+    }
+    if(!validatedPath) {
+        fprintf(stderr, "No destination buffer specified!\n");
+        return XLAL_EINVAL;
+    }
+
+    /* allocate buffer for final path */
+    if((absolutePath = LALCalloc(PATH_MAXLEN, 1)) == NULL) {
+        fprintf(stderr, "Can't allocate memory (%i)!\n", PATH_MAXLEN);
+        return XLAL_EFAILED;
+    }
+
+    /* get current working directory */
+    if(!getcwd(workingDir, PATH_MAXLEN)) {
+        fprintf(stderr, "Can't determine current working directory!\n");
+        LALFree(absolutePath);
+        return XLAL_EFAILED;
+    }
+
+    /* get data path (set when using "make check")*/
+    dataPathEnv = getenv("LAL_DATA_PATH");
+
+    /* LAL_DATA_PATH unavailable */
+    if(!dataPathEnv || !strlen(dataPathEnv)) {
+        fprintf(stderr, "Warning: LAL_DATA_PATH not set! Trying working directory...\n");
+        fileCheck = LALFopen(filename, "r");
+        if(!fileCheck) {
+            fprintf(stderr, "Specified file (%s) not found!\n", filename);
+            LALFree(absolutePath);
+            return XLAL_FAILURE;
+        }
+        else {
+            LALFclose(fileCheck);
+        }
+
+        /* build absolute path */
+        n = LALSnprintf(absolutePath, PATH_MAXLEN, "%s/./%s", workingDir, filename);
+        if(n >= PATH_MAXLEN) {
+            /* data file name too long */
+            fprintf(stderr, "Absolute path exceeds limit of %i characters!\n", PATH_MAXLEN);
+            LALFree(absolutePath);
+            return XLAL_EFAILED;
+        }
+
+        /* success: return path */
+        *validatedPath = absolutePath;
+        return XLAL_SUCCESS;
+    }
+
+    /* LAL_DATA_PATH available: scan through all directories in colon-delimited list */
+    if((dataPath = LALCalloc(strlen(dataPathEnv)+1, 1)) == NULL)
+    {
+        fprintf(stderr, "Can't allocate memory (%i)!\n", strlen(dataPathEnv)+1);
+        return XLAL_EFAILED;
+    }
+
+    /* create working copy */
+    strcpy(dataPath, dataPathEnv);
+    currentDataPath = dataPath;
+
+    do {
+        /* look for additional directories */
+        nextDataPath = strchr(currentDataPath, ':');
+        if(nextDataPath) {
+            /* there are more things in the list */
+            /* NUL-terminate current directory */
+            *nextDataPath++ = 0;
+        }
+        if(!strlen(currentDataPath)) {
+            /* this directory is empty */
+            /* default data directory */
+            currentDataPath = LAL_PREFIX"/share/lal";
+        }
+
+        /* build absolute path (required by "file" URI scheme) */
+        n = LALSnprintf(absolutePath,
+                        PATH_MAXLEN,
+                        "%s/%s/%s",
+                        workingDir,
+                        currentDataPath ? currentDataPath : ".",
+                        filename);
+
+        if(n >= PATH_MAXLEN) {
+            /* data file name too long */
+            fprintf(stderr, "Absolute path exceeds limit of %i characters!\n", PATH_MAXLEN);
+            LALFree(absolutePath);
+            LALFree(dataPath);
+            return XLAL_EFAILED;
+        }
+
+        /* check if file is accessible */
+        fileCheck = LALFopen(absolutePath, "r");
+        if(fileCheck) {
+            /* success: return path */
+            *validatedPath = absolutePath;
+            LALFclose(fileCheck);
+            LALFree(dataPath);
+            return XLAL_SUCCESS;
+        }
+
+        currentDataPath = nextDataPath;
+    }
+    while(currentDataPath);
+
+    /* clean up */
+    LALFree(dataPath);
+
+    /* return error */
+    fprintf(stderr, "Specified file (%s) not found!\n", filename);
+    return XLAL_FAILURE;
 }
