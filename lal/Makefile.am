@@ -1,12 +1,11 @@
 ## Process this file with automake to produce Makefile.in
 ACLOCAL_AMFLAGS = -I misc
 SUBDIRS = include packages doc lib misc debian @subdirs@
-MAINTAINERCLEANFILES = README.install lal.spec
+MAINTAINERCLEANFILES = lal.spec
 EXTRA_DIST = README.bugs README.contrib README.install \
   lal.pc.in lalsupport.pc.in lalframe.pc.in lalmetaio.pc.in lalxml.pc.in \
   lal-config.in aclocal.m4 \
   lal.spec.in lal.spec
-BUILT_SOURCES = README.install
 bin_SCRIPTS = lal-config
 
 if FRAME
@@ -46,14 +45,6 @@ cvs-clean: maintainer-clean
 	rm -f config.status
 	rm -f config.log
 	rm -f config.h.in
-
-# make README.install
-README.install:
-	@set fnord $(MAKEFLAGS); amf=$$2; \
-	echo "Making README.install in $(top_builddir)/doc"; \
-	(cd $(top_builddir)/doc && $(MAKE) $(AM_MAKEFLAGS) README.install) \
-	  || case "$$amf" in *=*) exit1;; *k*) fail=yes;; *) exit 1;; esac; \
-	test -z "$$fail"
 
 all-local:
 	@echo "";\
