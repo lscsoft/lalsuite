@@ -24,7 +24,6 @@
  * \brief Implementation of the XML API
  */
 
-#include <stdio.h>
 #include <string.h>
 
 #include <libxml/parser.h>
@@ -32,6 +31,7 @@
 #include <libxml/xpath.h>
 #include <libxml/xmlschemas.h>
 
+#include <lal/LALStdio.h>
 #include <lal/XLALError.h>
 #include <lal/LALXML.h>
 
