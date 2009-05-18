@@ -199,15 +199,13 @@ if git_ok is True:
 
   if options.file:
     # generate sed command file
-    sed_file = open(outfile, 'w')
-    sed_file.write('s+@ID@+%s+g\n' % info.id)
-    sed_file.write('s+@DATE@+%s+g\n' % info.date)
-    sed_file.write('s+@BRANCH@+%s+g\n' % info.branch)
-    sed_file.write('s+@TAG@+%s+g\n' % info.tag)
-    sed_file.write('s+@AUTHOR@+%s+g\n' % info.author)
-    sed_file.write('s+@COMMITTER@+%s+g\n' % info.committer)
-    sed_file.write('s+@STATUS@+%s+g\n' % info.status)
-    sed_file.close()
+    print 's+@ID@+%s+g' % info.id
+    print 's+@DATE@+%s+g' % info.date
+    print 's+@BRANCH@+%s+g' % info.branch
+    print 's+@TAG@+%s+g' % info.tag
+    print 's+@AUTHOR@+%s+g' % info.author
+    print 's+@COMMITTER@+%s+g' % info.committer
+    print 's+@STATUS@+%s+g' % info.status
   elif options.sed:
     # generate sed command line options
     sed_cmd = '-e "s/@ID@/%s/"' % info.id

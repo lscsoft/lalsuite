@@ -46,8 +46,8 @@ LALBuildDate.c: $(liblal_la_DEPENDENCIES)
 .vcsinfo:
 	touch .vcsinfo
 LALVCSInfo.h: LALVCSInfo.h.in .vcsinfo
-	cd $(srcdir); ./git_version --file
-	cd ${srcdir}; test -f git_info.sed && sed -f git_info.sed LALVCSInfo.h.in > ${builddir}/LALVCSInfo.h || true
+	$(srcdir)/git_version --file > git_info.sed
+	test -s git_info.sed && sed -f git_info.sed $(srcdir)/LALVCSInfo.h.in > LALVCSInfo.h || true
 	-rm -f .vcsinfo
 
 all-local: include-link
