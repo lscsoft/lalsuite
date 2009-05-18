@@ -43,6 +43,7 @@ AC_CONFIG_FILES([\
   src/tracksearch/Makefile \
 ])
 AM_INIT_AUTOMAKE([])
+AC_ARG_VAR(LALSUITE_BUILD,[Set if part of lalsuite build])
 AH_TOP([
 #ifndef CONFIG_H
 #define CONFIG_H])
@@ -99,6 +100,7 @@ AC_PROG_AWK
 AC_PROG_CC_STDC
 AC_PROG_CPP
 
+AC_ENABLE_SHARED
 if test "x$condor" = "xtrue"; then
   AC_CHECK_PROGS(CONDOR_COMPILE, condor_compile)
   CC="$CONDOR_COMPILE $CC"
@@ -125,44 +127,38 @@ dnl Checks for libraries.
 AC_CHECK_LIB(m, sin)
 AC_CHECK_LIB(z, compress)
 
-dnl LAL and LALSupport (required unless part of a lal build).
-if test "${LAL_BUILD:="false"}" = "true" ; then
-  AC_MSG_NOTICE([building lalapps as part of lal])
-else
-  if test -n "$LAL_PREFIX" ; then
-    PKG_CONFIG_PATH="$LAL_PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH"
-    LAL_CFLAGS="-I$LAL_PREFIX/include"
-    LAL_LIBS="-L$LAL_PREFIX/lib -llal"
-    LALSUPPORT_CFLAGS="-I$LAL_PREFIX/include"
-    LALSUPPORT_LIBS="-L$LAL_PREFIX/lib -llalsupport"
-  fi
-  PKG_CHECK_MODULES(LAL, lal, [ true ], [ false ])
-  PKG_CHECK_MODULES(LALSUPPORT, lalsupport , [ true ], [ false ])
-  CPPFLAGS="$CPPFLAGS $LAL_CFLAGS $LALSUPPORT_CFLAGS"
-  LIBS="$LALSUPPORT_LIBS $LAL_LIBS $LIBS"
-  AC_CHECK_LIB(lal, LALVersion, , AC_MSG_ERROR(could not find the LAL library))
-  AC_CHECK_LIB(lalsupport, LALOpenDataFile, , AC_MSG_ERROR(could not find the LAL support library))
-  dnl LALFrame, LALMetaIo, and LALXML (optional).
-  lalframe="true"
-  lalmetaio="true"
-  lalxml="true"
-  PKG_CHECK_MODULES(LALFRAME, lalframe, [ true ], [ false ])
-  PKG_CHECK_MODULES(LALMETAIO, lalmetaio, [ true ], [ false ])
-  PKG_CHECK_MODULES(LALXML, lalxml, [ true ], [ false ])
-  CPPFLAGS="$CPPFLAGS $LALFRAME_CFLAGS $LALMETAIO_CFLAGS $LALXML_CFLAGS"
-  LIBS="$LIBS $LALFRAME_LIBS $LALMETAIO_LIBS $LALXML_LIBS"
-  dnl do actual checks for libraries after checking for gsl and FrameL
+PKG_CHECK_MODULES(LAL, lal, [ true ], [ false ])
+PKG_CHECK_MODULES(LALSUPPORT, lalsupport , [ true ], [ false ])
+if test "$LALSUITE_BUILD" != "true" ; then
+	CPPFLAGS="$CPPFLAGS $LAL_CFLAGS $LALSUPPORT_CFLAGS"
+	LIBS="$LALSUPPORT_LIBS $LAL_LIBS $LIBS"
+	AC_CHECK_LIB(lal, LALVersion, , AC_MSG_ERROR(could not find the LAL library))
+	AC_CHECK_LIB(lalsupport, LALOpenDataFile, , AC_MSG_ERROR(could not find the LAL support library))
+fi 
+
+dnl LALFrame, LALMetaIo, and LALXML (optional).
+lalframe="true"
+lalmetaio="true"
+lalxml="true"
+PKG_CHECK_MODULES(LALFRAME, lalframe, [ true ], [ false ])
+PKG_CHECK_MODULES(LALMETAIO, lalmetaio, [ true ], [ false ])
+PKG_CHECK_MODULES(LALXML, lalxml, [ true ], [ false ])
+if test "$LALSUITE_BUILD" != "true" ; then
+	CPPFLAGS="$CPPFLAGS $LALFRAME_CFLAGS $LALMETAIO_CFLAGS $LALXML_CFLAGS"
+	LIBS="$LALFRAME_LIBS $LALMETAIO_LIBS $LALXML_LIBS $LIBS"
 fi
 
 dnl cfitsio
 PKG_CHECK_MODULES(CFITSIO, cfitsio, [ true ], [ false ])
 CPPFLAGS="$CPPFLAGS $CFITSIO_CFLAGS"
-LIBS="$LIBS $CFITSIO_LIBS"
+LIBS="$CFITSIO_LIBS $LIBS"
 
 dnl GSL
 PKG_CHECK_MODULES(GSL, gsl, [ true ], [ false ])
 CPPFLAGS="$CPPFLAGS $GSL_CFLAGS"
-LIBS="$LIBS $GSL_LIBS"
+LIBS="$GSL_LIBS $LIBS"
+extra_CPPFLAGS="$extra_CPPFLAGS $GSL_CFLAGS"
+extra_LIBS="$GSL_LIBS $extra_LIBS"
 AC_CHECK_LIB(gslcblas, main)
 AC_CHECK_LIB(gsl, gsl_version)
 
@@ -205,7 +201,7 @@ if test "${cfitsio}" = "true"; then
 fi
 
 dnl Now check for LALFrame and LALMetaIo
-if test "$LAL_BUILD" != "true" ; then
+if test "$LALSUITE_BUILD" != "true" ; then
   AC_CHECK_LIB(lalframe, LALFrOpen, , lalframe="false")
   AC_CHECK_LIB(lalmetaio, LALSnglInspiralTableFromLIGOLw, , lalmetaio="false")
   AC_CHECK_LIB(lalxml, XLALXMLFilePrintElements, , lalxml="false")
@@ -216,7 +212,7 @@ AC_HEADER_STDC
 AC_CHECK_HEADERS(getopt.h)
 AC_CHECK_HEADERS([gsl/gsl_fft_real.h])
 AC_CHECK_HEADERS(mpi.h)
-if test "$LAL_BUILD" != "true" ; then
+if test "$LALSUITE_BUILD" != "true" ; then
   AC_CHECK_HEADERS([lal/LALStdlib.h])
 fi
 AC_CHECK_HEADERS(glob.h)
@@ -267,19 +263,16 @@ AC_MSG_RESULT(no))
 
 AC_CHECK_FUNCS(setenv)
 
-if test "$LAL_BUILD" = "true"; then
-  LIBS="$LALXML_LIBS $LALFRAME_LIBS $LALMETAIO_LIBS $LALSUPPORT_LIBS $LAL_LIBS $CFITSIO_LIBS $LIBS"
-  CPPFLAGS="$CPPFLAGS $CFITSIO_CFLAGS $LAL_CFLAGS $LALSUPPORT_CFLAGS $LALFRAME_CFLAGS $LALMETAIO_CFLAGS $LALXML_LIBS"
+if test "$LALSUITE_BUILD" = "true"; then
+  LIBS="$LALXML_LIBS $LALFRAME_LIBS $LALMETAIO_LIBS $LALSUPPORT_LIBS $LAL_LIBS $LIBS"
+  CPPFLAGS="$CPPFLAGS $LAL_CFLAGS $LALSUPPORT_CFLAGS $LALFRAME_CFLAGS $LALMETAIO_CFLAGS $LALXML_LIBS"
   lalframe="false"
   lalmetaio="false"
   lalxml="false"
-  cfitsio="false"
-  test -z "$LALFRAME_LIBS" && test -z "$LALFRAME_CFLAGS" && lalframe="true"
-  test -z "$LALMETAIO_LIBS" && test -z "$LALMETAIO_CFLAGS" && lalmetaio="true"
-  test -z "$LALXML_LIBS" && test -z "$LALXML_CFLAGS" && lalxml="true"
-  test -z "$CFITSIO_LIBS" && test -z "$CFITSIO_CFLAGS" && cfitsio="true"
+  test -n "$LALFRAME_LIBS" && lalframe="true"
+  test -n "$LALMETAIO_LIBS" && lalmetaio="true"
+  test -n "$LALXML_LIBS" && lalxml="true"
 fi
-AC_ARG_VAR(LAL_BUILD,[set to "true" if lalapps is built as part of a lal build])
 
 AM_CONDITIONAL(FRAME, test x$frame = xtrue)
 AM_CONDITIONAL(LALFRAME, test x$lalframe = xtrue)

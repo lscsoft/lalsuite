@@ -1,3 +1,13 @@
 *.swp
 *~
 .DS_Store
+Makefile
+Makefile.in
+aclocal.m4
+autom4te.cache/
+config.log
+config.status
+configure
+lalsuite-*.tar.gz
+lalsuite.spec
+libtool
