@@ -363,7 +363,6 @@ int MAIN( int argc, char *argv[]) {
   BOOLEAN uvar_log = FALSE; 	/* logging done if true */
 
   BOOLEAN uvar_printCand1 = FALSE; 	/* if 1st stage candidates are to be printed */
-  BOOLEAN uvar_followUp = FALSE;
   BOOLEAN uvar_printFstat1 = FALSE;
   BOOLEAN uvar_useToplist1 = FALSE;
   BOOLEAN uvar_useWeights  = FALSE;
@@ -453,7 +452,6 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterINTUserVar(    &status, "method",       0,  UVAR_OPTIONAL, "0=Hough,1=stackslide,-1=fstat", &uvar_method ), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "semiCohToplist",0, UVAR_OPTIONAL, "Print semicoh toplist?", &uvar_semiCohToplist ), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "useWeights",   0,  UVAR_OPTIONAL, "Weight each stack using noise and AM?", &uvar_useWeights ), &status);
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "followUp",     0,  UVAR_OPTIONAL, "Follow up stage?", &uvar_followUp), &status);  
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "DataFiles1",   0,  UVAR_REQUIRED, "1st SFT file pattern", &uvar_DataFiles1), &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "skyRegion",    0,  UVAR_OPTIONAL, "sky-region polygon (or 'allsky')", &uvar_skyRegion), &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "numSkyPartitions",0,UVAR_OPTIONAL, "Number of (equi-)partitions to split skygrid into", &uvar_numSkyPartitions), &status);
@@ -2113,7 +2111,9 @@ void FstatVectToPeakGram (LALStatus *status,
   if ( FstatVect->data == NULL ) {
     ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
   }  
-
+  if ( pgV == NULL ) {
+    ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+  }  
 
   nStacks = FstatVect->length;
   nSearchBins = FstatVect->data->data->length;
