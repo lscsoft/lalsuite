@@ -209,7 +209,7 @@ if git_ok is True:
     sed_file.write('s+@STATUS@+%s+g\n' % info.status)
     sed_file.close()
   elif options.sed:
-    # generate sed command file
+    # generate sed command line options
     sed_cmd = '-e "s/@ID@/%s/"' % info.id
     sed_cmd += ' -e "s/@DATE@/%s/"' % info.date
     sed_cmd += ' -e "s/@BRANCH@/%s/"' % info.branch
