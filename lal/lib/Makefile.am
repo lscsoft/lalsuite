@@ -49,3 +49,6 @@ LALVCSInfo.h: LALVCSInfo.h.in .vcsinfo
 	cd $(srcdir); ./git_version --file
 	cd ${srcdir}; test -f git_info.sed && sed -f git_info.sed LALVCSInfo.h.in > ${builddir}/LALVCSInfo.h || true
 	-rm -f .vcsinfo
+
+all-local: include-link
+@INCLUDEMKFILE@

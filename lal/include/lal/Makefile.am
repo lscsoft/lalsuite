@@ -9,3 +9,7 @@ all-local:
 		(cd $$d && $(MAKE) $(AM_MAKEFLAGS) include-links) \
 			|| case "$$amf" in *=*) exit1;; *k*) fail=yes;; *) exit 1;; esac; \
 		test -z "$$fail"
+		d=$(top_builddir)/lib; \
+		(cd $$d && $(MAKE) $(AM_MAKEFLAGS) LALVCSInfo.h include-link) \
+			|| case "$$amf" in *=*) exit1;; *k*) fail=yes;; *) exit 1;; esac; \
+		test -z "$$fail"
