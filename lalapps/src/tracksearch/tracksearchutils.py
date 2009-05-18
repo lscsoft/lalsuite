@@ -2841,19 +2841,19 @@ class candidateList:
             zScoreTraitOffset=10
             ## Cristina continue from here Wed-Apr-22-2009:200904221728 
             glitchDatabaseEntry=[triggerStartString, #0,#1
-                                    snrEstimate,           #2
-                                    triggerCentralFreq,    #3
-                                    triggerBandwidth,      #4
-                                    triggerDuration,       #5
-                                    kurveAngle,            #6
-                                    zScoreBP,              #7
-                                    zScoreCM,              #8
-                                    relativeTimeBP,        #9
-                                    relativeFreqBP,       #10
-                                    relativeTimeCM,       #11
-                                    relativeFreqCM,       #12
-                                    spanTnorm,            #13
-                                    spanFnorm]            #14
+                                 snrEstimate,           #2
+                                 triggerCentralFreq,    #3
+                                 triggerBandwidth,      #4
+                                 triggerDuration,       #5
+                                 kurveAngle,            #6
+                                 zScoreBP,              #7
+                                 zScoreCM,              #8
+                                 relativeTimeBP,        #9
+                                 relativeFreqBP,       #10
+                                 relativeTimeCM,       #11
+                                 relativeFreqCM,       #12
+                                 spanTnorm,            #13
+                                 spanFnorm]            #14
             glitchDatabase.append(glitchDatabaseEntry)
         spinner.closeSpinner()
         return glitchDatabase
