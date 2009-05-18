@@ -198,7 +198,7 @@ if git_ok is True:
   info = generate_git_version_info()
 
   if options.file:
-    # generate sed command file
+    # output sed command file to stdout
     print 's+@ID@+%s+g' % info.id
     print 's+@DATE@+%s+g' % info.date
     print 's+@BRANCH@+%s+g' % info.branch
@@ -207,7 +207,7 @@ if git_ok is True:
     print 's+@COMMITTER@+%s+g' % info.committer
     print 's+@STATUS@+%s+g' % info.status
   elif options.sed:
-    # generate sed command line options
+    # output sed command line options to stdout
     sed_cmd = '-e "s/@ID@/%s/"' % info.id
     sed_cmd += ' -e "s/@DATE@/%s/"' % info.date
     sed_cmd += ' -e "s/@BRANCH@/%s/"' % info.branch
