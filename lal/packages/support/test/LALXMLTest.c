@@ -49,7 +49,7 @@ int main(void)
     int result = LALXMLC_ENOM;
 
     /* set debug level*/
-    lalDebugLevel = LALMSGLVL3 | LALMEMTRACE;
+    lalDebugLevel = LALMSGLVL3;
 
     fprintf(stderr, "**********************************************************************\n");
     fprintf(stderr, "Running LALXMLTest...\n\n");
