@@ -2839,7 +2839,7 @@ class candidateList:
             #for zScore we have (-inf,inf) to (-inf+10,inf+10)
             unitTraitOffset=2
             zScoreTraitOffset=10
-            ## Cristina continue from here Wed-Apr-22-2009:200904221728 
+            ## Matlab script needs revision Mon-May-18-2009:200905181511 
             glitchDatabaseEntry=[triggerStartString, #0,#1
                                  snrEstimate,           #2
                                  triggerCentralFreq,    #3
