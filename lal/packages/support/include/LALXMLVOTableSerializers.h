@@ -23,6 +23,16 @@
  * \brief Header file declaring the public VOTable serializers XML API
  */
 
+
+/* Double-include protection. */
+#ifndef _LALXMLVOTABLESERIALIZERS_H
+#define _LALXMLVOTABLESERIALIZERS_H
+
+/* C++ protection. */
+#ifdef  __cplusplus
+extern "C" {
+#endif
+
 #include <libxml/tree.h>
 
 #include <lal/LALDatatypes.h>
@@ -43,3 +53,12 @@ xmlNodePtr XLALPulsarDopplerParams2VOTableNode(const PulsarDopplerParams *const 
 xmlChar * XLALPulsarDopplerParams2VOTableXML(const PulsarDopplerParams *const pdp, const char *name);
 INT4 XLALVOTableDoc2PulsarDopplerParamsByName(xmlDocPtr xmlDocument, const char *name, PulsarDopplerParams *pdp);
 INT4 XLALVOTableXML2PulsarDopplerParamsByName(const char *xml, const char *name, PulsarDopplerParams *pdp);
+
+
+
+#ifdef  __cplusplus
+}
+#endif  
+/* C++ protection. */
+
+#endif  /* Double-include protection. */

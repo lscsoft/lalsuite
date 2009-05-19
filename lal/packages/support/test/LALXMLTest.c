@@ -17,6 +17,12 @@
  *  MA  02111-1307  USA
  */
 
+#include <config.h>
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
+#include <lal/LALXML.h>
 #include <lal/LALXMLVOTableSerializers.h>
 #include <LALStatusMacros.h>
 
@@ -37,8 +43,8 @@
 #define PATH_MAXLEN 256
 
 
-INT4 testLIGOTimeGPS();
-INT4 testPulsarDopplerParams();
+INT4 testLIGOTimeGPS(void);
+INT4 testPulsarDopplerParams(void);
 INT4 validateDocumentString(const xmlChar *xml);
 INT4 findFileInLALDataPath(const char *filename, char **validatedPath);
 
@@ -71,7 +77,7 @@ int main(void)
 }
 
 
-INT4 testLIGOTimeGPS()
+INT4 testLIGOTimeGPS(void)
 {
     /* set up local variables */
     static LIGOTimeGPS timeSource;
@@ -289,7 +295,7 @@ INT4 validateDocumentString(const xmlChar *xml)
     INT4 result;
 
     /* parse XML document */
-    xmlDocument = xmlReadMemory(xml, strlen(xml), NULL, "UTF-8", 0);
+    xmlDocument = xmlReadMemory((const char*)xml, strlen((const char*)xml), NULL, "UTF-8", 0);
     if(xmlDocument == NULL) {
         /* clean up */
         xmlCleanupParser();
@@ -303,7 +309,7 @@ INT4 validateDocumentString(const xmlChar *xml)
     /* validate document */
     if(result == XLAL_SUCCESS) {
         strncat(schemaUrl, schemaPath, PATH_MAXLEN);
-        result = XLALValidateDocumentByExternalSchema(xmlDocument, schemaUrl);
+        result = XLALValidateDocumentByExternalSchema(xmlDocument, BAD_CAST(schemaUrl));
         LALFree(schemaPath);
     }
     else {

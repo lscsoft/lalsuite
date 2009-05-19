@@ -31,8 +31,17 @@
  * \brief Header file declaring the public XML API
  */
 
-#include <libxml/tree.h>
+/* Double-include protection. */
+#ifndef _LALXML_H
+#define _LALXML_H
 
+/* C++ protection. */
+#ifdef  __cplusplus
+extern "C" {
+#endif
+
+#include <libxml/tree.h>
+#include <lal/LALDatatypes.h>
 
 /**
  * \brief This type represents a XML namespace
@@ -68,3 +77,12 @@ int XLALXMLFilePrintElements(const char *fname);
 xmlChar * XLALGetSingleNodeContentByXPath(const xmlDocPtr xmlDoc, const char *xpath, const XML_NAMESPACE_VECTOR *xmlNsVector);
 INT4 XLALValidateDocumentByInternalSchema(const xmlDocPtr xmlDocument);
 INT4 XLALValidateDocumentByExternalSchema(const xmlDocPtr xmlDocument, const xmlChar *url);
+
+
+
+#ifdef  __cplusplus
+}
+#endif  
+/* C++ protection. */
+
+#endif  /* Double-include protection. */

@@ -29,6 +29,7 @@
 #include <libxml/tree.h>
 #include <libxml/xpath.h>
 
+#include <lal/LALStdio.h>
 #include <lal/XLALError.h>
 #include <lal/LALXMLVOTableCommon.h>
 #include <lal/LALXML.h>
@@ -486,7 +487,7 @@ xmlChar * XLALGetSingleVOTableResourceParamValue(const xmlDocPtr xmlDocument,
     /* set up local variables */
     static const CHAR *logReference = "XLALGetSingleVOTableResourceParamValue";
     CHAR xpath[XPATHSTR_MAXLEN] = {0};
-    const XML_NAMESPACE xmlVOTableNamespace[1] = {VOTABLE_NS_PREFIX, VOTABLE_NS_URL};
+    static const XML_NAMESPACE xmlVOTableNamespace[1] = {{BAD_CAST(VOTABLE_NS_PREFIX), BAD_CAST(VOTABLE_NS_URL)}};
     const XML_NAMESPACE_VECTOR xmlNsVector = {xmlVOTableNamespace, 1};
 
     /* sanity check */
@@ -530,7 +531,7 @@ xmlChar * XLALGetSingleVOTableResourceParamValue(const xmlDocPtr xmlDocument,
  * This is a requirement for proper VOTable document validation using the VOTable
  * schema definition.\n\n
  *
- * \param xmlNode [in] The XML node to be assigned to the namespace
+ * \param xmlElementNode [in] The XML node to be assigned to the namespace
  * \param rootElement [in] TRUE if the given node represents the \c VOTABLE root element,
  * FALSE if it represents a \c VOTABLE child element
  *
@@ -543,7 +544,7 @@ xmlChar * XLALGetSingleVOTableResourceParamValue(const xmlDocPtr xmlDocument,
  * \author Oliver Bock\n
  * Albert-Einstein-Institute Hannover, Germany
  */
-xmlNsPtr XLALAssignVOTableNamespace(const xmlNodePtr xmlNode, BOOLEAN rootElement)
+xmlNsPtr XLALAssignVOTableNamespace(const xmlNodePtr xmlElementNode, BOOLEAN rootElement)
 {
     /* set up local variables */
     static const CHAR *logReference = "XLALGetVOTableNamespace";
@@ -551,8 +552,8 @@ xmlNsPtr XLALAssignVOTableNamespace(const xmlNodePtr xmlNode, BOOLEAN rootElemen
     xmlNsPtr xmlVOTableNamespace = NULL;
 
     /* sanity check */
-    if(!xmlNode) {
-        XLALPrintError("Invalid input parameters: xmlNode\n");
+    if(!xmlElementNode) {
+        XLALPrintError("Invalid input parameters: xmlElementNode\n");
         XLAL_ERROR_NULL(logReference, XLAL_EINVAL);
     }
 
@@ -562,7 +563,7 @@ xmlNsPtr XLALAssignVOTableNamespace(const xmlNodePtr xmlNode, BOOLEAN rootElemen
     }
 
     /* set up namespace (required for validation and XPath searches!) */
-    xmlVOTableNamespace = xmlNewNs(xmlNode,
+    xmlVOTableNamespace = xmlNewNs(xmlElementNode,
                                    xmlNamespaceUrl,
                                    BAD_CAST(VOTABLE_NS_PREFIX));
 
@@ -572,7 +573,7 @@ xmlNsPtr XLALAssignVOTableNamespace(const xmlNodePtr xmlNode, BOOLEAN rootElemen
     }
 
     /* assign namespace to its host element */
-    xmlSetNs(xmlNode, xmlVOTableNamespace);
+    xmlSetNs(xmlElementNode, xmlVOTableNamespace);
 
     return xmlVOTableNamespace;
 }

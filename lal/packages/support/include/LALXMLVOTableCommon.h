@@ -23,6 +23,15 @@
  * \brief Header file declaring the public common VOTable XML API
  */
 
+/* Double-include protection. */
+#ifndef _LALXMLVOTABLECOMMON_H
+#define _LALXMLVOTABLECOMMON_H
+
+/* C++ protection. */
+#ifdef  __cplusplus
+extern "C" {
+#endif
+
 #include <libxml/tree.h>
 
 
@@ -73,3 +82,11 @@ xmlChar * XLALGetSingleVOTableResourceParamValue(const xmlDocPtr xmlDocument,
                                                  const char *resourceType,
                                                  const char *resourceName,
                                                  const char *paramName);
+
+
+#ifdef  __cplusplus
+}
+#endif  
+/* C++ protection. */
+
+#endif  /* Double-include protection. */

@@ -29,6 +29,7 @@
 #include <libxml/parser.h>
 #include <libxml/tree.h>
 #include <libxml/xpath.h>
+#include <libxml/xpathInternals.h>
 #include <libxml/xmlschemas.h>
 
 #include <lal/LALStdio.h>
@@ -284,7 +285,7 @@ INT4 XLALValidateDocumentByExternalSchema(const xmlDocPtr xmlDocument, const xml
     }
 
     /* retrieve schema and prepare parser */
-    xmlSchemaParser = xmlSchemaNewParserCtxt(schemaUrl);
+    xmlSchemaParser = xmlSchemaNewParserCtxt((const char*)schemaUrl);
     if(!xmlSchemaParser) {
             XLALPrintError("Schema parser creation failed!\n");
             XLAL_ERROR(logReference, XLAL_EFAILED);
