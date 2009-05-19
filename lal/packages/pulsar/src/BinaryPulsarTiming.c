@@ -38,7 +38,7 @@
 
 /* <lalVerbatim file="BinaryPulsarTimingCV">
    Author: Pitkin, M. D.
-   $Id: BinaryPulsarTiming.c,v 1.31 2008/11/18 14:55:05 mpitkin Exp $
+   $Id$
    </lalVerbatim>
    
    <lalLaTeX>
@@ -354,8 +354,8 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
           gamma)*sin(u))*(1.0 - params->fb[0]*(x*cos(w)*sqrt(1.0 -
           e*e)*cos(u) - x*sin(w)*sin(u))/(1.0 - e*cos(u))); */
         dt += (x*sw*(cu-e) + (x*cw*sqrt(1.0-e*e) +
-          gamma)*su)*(1.0 - params->fb[0]*(x*cw*sqrt(1.0 -
-          e*e)*u - x*w*su)/(1.0 - e*cu));
+          gamma)*su)*(1.0 - LAL_TWOPI*params->fb[0]*(x*cw*sqrt(1.0 -
+          e*e)*cu - x*sw*su)/(1.0 - e*cu));
       }
       else{
         /* dt += (x*sin(w)*(cos(u)-e) + (x*cos(w)*sqrt(1.0-e*e) +
@@ -367,7 +367,7 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
       }
     /**********************************************************/
     }
-
+    
     /* use method from Taylor etal 1976 ApJ Lett and used in bnrybt.f */
     /**********************************************************/
     /*tt = 1.0-e*e;
@@ -683,6 +683,8 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
   output->f1=0.0;
   output->f2=0.0;
   output->f3=0.0;
+  output->f4=0.0;
+  output->f5=0.0;
 
   output->ra=0.0;
   output->dec=0.0;
@@ -736,6 +738,8 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
   output->f1Err=0.0;
   output->f2Err=0.0;
   output->f3Err=0.0;
+  output->f4Err=0.0;
+  output->f5Err=0.0;
 
   output->eErr =0.0;
   output->w0Err=0.0;
@@ -930,6 +934,52 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
         }
         else{
           output->f3Err = atof(val[i+3]);
+        }
+        j+=2;
+      }
+    }
+    else if( !strcmp(val[i],"f4") || !strcmp(val[i],"F4")) {
+      CHAR *loc;
+
+      /* check if exponent contains e/E or d/D or neither */
+      if((loc = strstr(val[i+1], "D"))!=NULL || (loc = strstr(val[i+1], "d"))!=NULL){
+        output->f4 = atof(val[i+1])*pow(10, atof(loc+1));
+      }
+      else{
+        output->f4 = atof(val[i+1]);
+      }
+      j++;
+
+      if(atoi(val[i+2])==1 && i+2<k){
+        /* check if exponent contains e/E or d/D or neither */
+        if((loc = strstr(val[i+3], "D"))!=NULL || (loc = strstr(val[i+3], "d"))!=NULL){
+          output->f4Err = atof(val[i+3])*pow(10, atof(loc+1));
+        }
+        else{
+          output->f4Err = atof(val[i+3]);
+        }
+        j+=2;
+      }
+    }
+    else if( !strcmp(val[i],"f5") || !strcmp(val[i],"F5")) {
+      CHAR *loc;
+
+      /* check if exponent contains e/E or d/D or neither */
+      if((loc = strstr(val[i+1], "D"))!=NULL || (loc = strstr(val[i+1], "d"))!=NULL){
+        output->f5 = atof(val[i+1])*pow(10, atof(loc+1));
+      }
+      else{
+        output->f5 = atof(val[i+1]);
+      }
+      j++;
+
+      if(atoi(val[i+2])==1 && i+2<k){
+        /* check if exponent contains e/E or d/D or neither */
+        if((loc = strstr(val[i+3], "D"))!=NULL || (loc = strstr(val[i+3], "d"))!=NULL){
+          output->f5Err = atof(val[i+3])*pow(10, atof(loc+1));
+        }
+        else{
+          output->f5Err = atof(val[i+3]);
         }
         j+=2;
       }
@@ -1801,7 +1851,7 @@ REAL8 LALTDBMJDtoGPS(REAL8 MJD){
      are ~36525 times larger than what I use here as the time T they use is in
      Julian centuries rather than Julian days) */
   Tdiff = MJD + (2400000.5-2451545.0);
-  
+
   /* time diff in seconds */
   TDBtoTT = 0.0016568*sin((357.5 + 0.98560028*Tdiff) * LAL_PI_180) +
             0.0000224*sin((246.0 + 0.90251882*Tdiff) * LAL_PI_180) +
@@ -1830,7 +1880,7 @@ REAL8 LALTCBMJDtoGPS(REAL8 MJD){
   }
 
   /* from Seidelmann and Fukushima */
-  Tdiff = MJD + (2400000.5 - 2443144.5)*86400.;
+  Tdiff = (MJD + 2400000.5 - 2443144.5)*86400.;
   TCBtoTDB = 1.550506e-8 * Tdiff;
 
   /* convert from TDB to GPS */
