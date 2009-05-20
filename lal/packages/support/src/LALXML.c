@@ -366,3 +366,45 @@ INT4 XLALValidateDocument(const xmlDocPtr xmlDocument, const xmlSchemaValidCtxtP
         return XLAL_FAILURE;
     }
 }
+
+
+/**
+ * \brief Assigns the given namespace to the given root element and all its children
+ *
+ * This function iterates recursively over the given root element and all its child
+ * elements. Every element is assigned to the given namespace.\n
+ * \n
+ * \b Note: this functionality is seemingly not provided by \c libxml2. The closest candidates
+ * are \c xmlReconciliateNs() and \c xmlDOMWrapReconcileNamespaces() but they don't work in
+ * this scenario (bottom-up document construction)!
+ *
+ * \param xmlRootElement [in]
+ * \param xmlNamespace [in]
+ *
+ * \return \c XLAL_SUCCESS if the namespace could be successfully assigned to all elements.
+ * Please note that this function can't return anything else than XLAL_SUCCESS.
+ *
+ * \sa XLALCreateVOTableDocumentFromTree
+ *
+ * \author Oliver Bock\n
+ * Albert-Einstein-Institute Hannover, Germany
+ */
+INT4 XLALReconcileDefaultNamespace(const xmlNodePtr xmlRootElement, const xmlNsPtr xmlNamespace)
+{
+    /* set up local variables */
+    static const CHAR *logReference = "XLALReconcileDefaultNamespace";
+    xmlNodePtr xmlCurrentNode = NULL;
+
+    /* iterate over the root element and all its children */
+    for(xmlCurrentNode = xmlRootElement; xmlCurrentNode != NULL; xmlCurrentNode = xmlCurrentNode->next) {
+        if (xmlCurrentNode->type == XML_ELEMENT_NODE) {
+            /* can't be checked for errors */
+            xmlSetNs(xmlCurrentNode, xmlNamespace);
+        }
+
+        /* recurse into next child (tree) */
+        XLALReconcileDefaultNamespace(xmlCurrentNode->children, xmlNamespace);
+    }
+
+    return XLAL_SUCCESS;
+}

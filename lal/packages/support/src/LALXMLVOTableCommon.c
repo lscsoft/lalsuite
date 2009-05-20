@@ -44,10 +44,6 @@
 #define FALSE 0
 
 
-/* private prototypes */
-xmlNsPtr XLALAssignVOTableNamespace(const xmlNodePtr xmlNode, BOOLEAN rootElement);
-
-
 /**
  * \brief Creates a VOTable \c PARAM %node
  *
@@ -77,7 +73,6 @@ xmlNodePtr XLALCreateVOTableParamNode(const char *name,
     /* set up local variables */
     static const CHAR *logReference = "XLALCreateVOTableParamNode";
     xmlNodePtr xmlParamNode = NULL;
-    xmlNsPtr xmlVOTableNamespace = NULL;
     static const CHAR *datatypeString;
 
     /* create node */
@@ -87,15 +82,7 @@ xmlNodePtr XLALCreateVOTableParamNode(const char *name,
         XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
     }
 
-    /* set up and assign VOTable namespace (required for validation!) */
-    xmlVOTableNamespace = XLALAssignVOTableNamespace(xmlParamNode, FALSE);
-    if(xmlVOTableNamespace == NULL) {
-        /* clean up */
-        xmlFreeNode(xmlParamNode);
-        XLALPrintError("VOTABLE namespace instantiation/assignment failed\n");
-        XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
-    }
-
+    /* add attributes */
     /* mandatory: name */
     if(!name || strlen(name) <= 0) {
         /* clean up */
@@ -229,7 +216,6 @@ xmlNodePtr XLALCreateVOTableResourceNode(const char *type,
     /* set up local variables */
     static const CHAR *logReference = "XLALCreateVOTableResourceNode";
     xmlNodePtr xmlResourceNode = NULL;
-    xmlNsPtr xmlVOTableNamespace = NULL;
     INT4 i = 0;
 
     /* sanity check */
@@ -253,15 +239,7 @@ xmlNodePtr XLALCreateVOTableResourceNode(const char *type,
         XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
     }
 
-    /* set up and assign VOTable namespace (required for validation!) */
-    xmlVOTableNamespace = XLALAssignVOTableNamespace(xmlResourceNode, FALSE);
-    if(xmlVOTableNamespace == NULL) {
-        /* clean up */
-        xmlFreeNode(xmlResourceNode);
-        XLALPrintError("VOTABLE namespace instantiation/assignment failed\n");
-        XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
-    }
-
+    /* add attributes */
     if(!xmlNewProp(xmlResourceNode, BAD_CAST("utype"), BAD_CAST(type))) {
         /* clean up */
         xmlFreeNode(xmlResourceNode);
@@ -319,7 +297,7 @@ xmlDocPtr XLALCreateVOTableDocumentFromTree(const xmlNodePtr xmlTree)
     /* set up local variables */
     static const CHAR *logReference = "XLALCreateVOTableDocumentFromTree";
     xmlDocPtr xmlDocument = NULL;
-    xmlNodePtr xmlRootNode = NULL;
+    xmlNodePtr xmlRootElement = NULL;
     xmlNsPtr xmlVOTableNamespace = NULL;
     xmlNsPtr xmlSchemaNamespace = NULL;
 
@@ -341,36 +319,37 @@ xmlDocPtr XLALCreateVOTableDocumentFromTree(const xmlNodePtr xmlTree)
     }
 
     /* set up root node */
-    xmlRootNode = xmlNewNode(NULL, BAD_CAST("VOTABLE"));
-    if(xmlRootNode == NULL) {
+    xmlRootElement = xmlNewNode(NULL, BAD_CAST("VOTABLE"));
+    if(xmlRootElement == NULL) {
         /* clean up */
         xmlFreeDoc(xmlDocument);
         XLALPrintError("VOTABLE root element instantiation failed\n");
         XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
     }
 
-    /* set up and assign VOTable namespace (required for validation!) */
-    xmlVOTableNamespace = XLALAssignVOTableNamespace(xmlRootNode, TRUE);
-    if(xmlVOTableNamespace == NULL) {
-        /* clean up */
-        xmlFreeDoc(xmlDocument);
-        XLALPrintError("VOTABLE namespace instantiation/assignment failed\n");
-        XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
-    }
-
     /* add supplemental root node version information */
-    if(!xmlNewProp(xmlRootNode, BAD_CAST("version"), BAD_CAST(VOTABLE_VERSION))) {
+    if(!xmlNewProp(xmlRootElement, BAD_CAST("version"), BAD_CAST(VOTABLE_VERSION))) {
         XLALPrintWarning("VOTABLE attribute instantiation failed: version\n");
     }
 
+    /* set up default namespace (required for validation) */
+    xmlVOTableNamespace = xmlNewNs(xmlRootElement,
+                                   BAD_CAST(VOTABLE_NS_URL),
+                                   NULL);
+
+    if(xmlVOTableNamespace == NULL) {
+        XLALPrintError("VOTABLE namespace instantiation failed\n");
+        XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+    }
+
     /* add supplemental root node schema instance information */
-    xmlSchemaNamespace = xmlNewNs(xmlRootNode,
+    xmlSchemaNamespace = xmlNewNs(xmlRootElement,
                                   BAD_CAST("http://www.w3.org/2001/XMLSchema-instance"),
                                   BAD_CAST("xsi"));
     if(!xmlSchemaNamespace) {
         XLALPrintWarning("VOTABLE namespace instantiation failed: xsi\n");
     }
-    else if(!xmlNewNsProp(xmlRootNode,
+    else if(!xmlNewNsProp(xmlRootElement,
                           xmlSchemaNamespace,
                           BAD_CAST("noNamespaceSchemaLocation"),
                           BAD_CAST(VOTABLE_SCHEMA)))
@@ -378,13 +357,22 @@ xmlDocPtr XLALCreateVOTableDocumentFromTree(const xmlNodePtr xmlTree)
         XLALPrintWarning("VOTABLE attribute instantiation failed: xsi:noNamespaceSchemaLocation\n");
     }
 
-    xmlDocSetRootElement(xmlDocument, xmlRootNode);
-
     /* append tree to root node */
-    if(!xmlAddChild(xmlRootNode, xmlTree)) {
+    if(!xmlAddChild(xmlRootElement, xmlTree)) {
         /* clean up */
         xmlFreeDoc(xmlDocument);
         XLALPrintError("Couldn't append given tree to VOTABLE root element\n");
+        XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
+    }
+
+    /* finally, assign root element to document */
+    xmlDocSetRootElement(xmlDocument, xmlRootElement);
+
+    /* reconcile default namespace with all document elements */
+    if(XLALReconcileDefaultNamespace(xmlRootElement, xmlVOTableNamespace) != XLAL_SUCCESS) {
+        /* clean up */
+        xmlFreeDoc(xmlDocument);
+        XLALPrintError("Default namespace reconciliation failed!\n");
         XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
     }
 
@@ -521,59 +509,4 @@ xmlChar * XLALGetSingleVOTableResourceParamValue(const xmlDocPtr xmlDocument,
 
     /* retrieve LIGOTimeGPS.gpsSeconds */
     return (xmlChar *)XLALGetSingleNodeContentByXPath(xmlDocument, xpath, &xmlNsVector);
-}
-
-
-/**
- * \brief Creates the VOTable XML namespace and assigns the given XML node to it
- *
- * This function creates a VOTable XML namespace and assigns the given node to it.
- * This is a requirement for proper VOTable document validation using the VOTable
- * schema definition.\n\n
- *
- * \param xmlElementNode [in] The XML node to be assigned to the namespace
- * \param rootElement [in] TRUE if the given node represents the \c VOTABLE root element,
- * FALSE if it represents a \c VOTABLE child element
- *
- * \return \c A pointer to the VOTable namespace instance of the given node.
- * In case of an error, a null-pointer is returned.\n
- * \b Important: the caller is responsible to free the namespace using \c xmlFree.
- *
- * \sa XLALCreateVOTableDocumentFromTree
- *
- * \author Oliver Bock\n
- * Albert-Einstein-Institute Hannover, Germany
- */
-xmlNsPtr XLALAssignVOTableNamespace(const xmlNodePtr xmlElementNode, BOOLEAN rootElement)
-{
-    /* set up local variables */
-    static const CHAR *logReference = "XLALGetVOTableNamespace";
-    xmlChar *xmlNamespaceUrl = NULL;
-    xmlNsPtr xmlVOTableNamespace = NULL;
-
-    /* sanity check */
-    if(!xmlElementNode) {
-        XLALPrintError("Invalid input parameters: xmlElementNode\n");
-        XLAL_ERROR_NULL(logReference, XLAL_EINVAL);
-    }
-
-    /* namespace definition or reference? */
-    if(rootElement) {
-        xmlNamespaceUrl = BAD_CAST(VOTABLE_NS_URL);
-    }
-
-    /* set up namespace (required for validation and XPath searches!) */
-    xmlVOTableNamespace = xmlNewNs(xmlElementNode,
-                                   xmlNamespaceUrl,
-                                   BAD_CAST(VOTABLE_NS_PREFIX));
-
-    if(xmlVOTableNamespace == NULL) {
-        XLALPrintError("VOTABLE namespace instantiation failed\n");
-        XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
-    }
-
-    /* assign namespace to its host element */
-    xmlSetNs(xmlElementNode, xmlVOTableNamespace);
-
-    return xmlVOTableNamespace;
 }
