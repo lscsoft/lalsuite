@@ -20,9 +20,11 @@ bin_PROGRAMS = $(frameprogs) lalapps_ConvertToSFTv2 lalapps_LISAmakeSFTs
 
 if FRAME
 lalapps_MakeSFTs_SOURCES = MakeSFTs.c
-lalapps_MakeCleanSFTs_SOURCES=MakeCleanSFTs.c
+lalapps_MakeCleanSFTs_SOURCES = MakeCleanSFTs.c
+lalapps_MakePSSCleanSFTs_SOURCES = MakePSSCleanSFTs.c XLALPSSInterface.c
 endif
 
 lalapps_ConvertToSFTv2_SOURCES = ConvertToSFTv2.c
 
 lalapps_LISAmakeSFTs_SOURCES = LISAmakeSFTs.c readxml.c readxml.h ezxml.c ezxml.h
+
