@@ -39,7 +39,7 @@ liblal_la_LIBADD = $(liblal_la_DEPENDENCIES) @LALLIBADD@
 bin_PROGRAMS = lal-version
 lal_version_SOURCES = lal-version.c
 lal_version_LDADD = liblal.la
-MOSTLYCLEANFILES = LALBuildDate.c
+MOSTLYCLEANFILES = LALBuildDate.c git_info.sed .vcsinfo
 TESTS = lal-version
 LALBuildDate.c: $(liblal_la_DEPENDENCIES)
 	echo 'const char *lalBuildDate = "'`date +"%Y-%m-%dT%H:%M:%S%z"`'";' >$@
