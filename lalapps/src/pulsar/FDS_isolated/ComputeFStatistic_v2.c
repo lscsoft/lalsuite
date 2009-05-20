@@ -1766,10 +1766,14 @@ write_PulsarCandidate_to_fp ( FILE *fp,  const PulsarCandidate *pulsarParams, co
 int
 compareFstatCandidates ( const void *candA, const void *candB )
 {
-  if ( ((const FstatCandidate *)candA)->Fstat.F < ((const FstatCandidate *)candB)->Fstat.F )
+  REAL8 F1 = ((const FstatCandidate *)candA)->Fstat.F;
+  REAL8 F2 = ((const FstatCandidate *)candB)->Fstat.F;
+  if ( F1 < F2 )
     return 1;
-  else
+  else if ( F1 > F2 )
     return -1;
+  else
+    return 0;
 
 } /* compareFstatCandidates() */
 
