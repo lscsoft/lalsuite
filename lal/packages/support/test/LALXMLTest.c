@@ -43,10 +43,17 @@
 #define PATH_MAXLEN 256
 
 
+/* private test prototypes */
 INT4 testLIGOTimeGPS(void);
 INT4 testPulsarDopplerParams(void);
-INT4 validateDocumentString(const xmlChar *xml);
+
+/* private utility prototypes */
+INT4 validateDocument(const xmlDocPtr xmlDocument);
 INT4 findFileInLALDataPath(const char *filename, char **validatedPath);
+
+/* \todo factor out -> generic XML */
+INT4 xmlDocument2String(const xmlDocPtr xmlDocument, xmlChar **xmlString);
+INT4 xmlString2Document(const xmlChar *xmlString, xmlDocPtr *xmlDocument);
 
 
 int main(void)
@@ -82,7 +89,9 @@ INT4 testLIGOTimeGPS(void)
     /* set up local variables */
     static LIGOTimeGPS timeSource;
     static LIGOTimeGPS timeDestination;
-    xmlChar *xml;
+    xmlNodePtr xmlFragment = NULL;
+    xmlDocPtr xmlDocument = NULL;
+    xmlChar *xmlString = NULL;
     INT4 result;
 
     /* initialize test data */
@@ -94,43 +103,88 @@ INT4 testLIGOTimeGPS(void)
     fprintf(stderr, "Initial LIGOTimeGPS struct:\n");
     fprintf(stderr, "%s = { %d, %d }\n\n", LALXMLC_NAMETEST1, timeSource.gpsSeconds, timeSource.gpsNanoSeconds );
 
-    /* invoke and check first function (set) */
-    xml = (xmlChar *) XLALLIGOTimeGPS2VOTableXML(&timeSource, LALXMLC_NAMETEST1);
-    if(!xml) {
-        fprintf(stderr, "LALXMLTest: [XLALLIGOTimeGPS2VOTableXML(): %s]\n", LALXMLC_MSGEFUN);
+    /* serialize structure into VOTable fragment */
+    xmlFragment = XLALLIGOTimeGPS2VOTableNode(&timeSource, LALXMLC_NAMETEST1);
+    if(!xmlFragment) {
+        fprintf(stderr, "LALXMLTest: [XLALLIGOTimeGPS2VOTableNode(): %s]\n", LALXMLC_MSGEFUN);
         return LALXMLC_EFUN;
     }
-    fprintf(stderr, "LALXMLTest: [XLALLIGOTimeGPS2VOTableXML(): %s]\n\n", LALXMLC_MSGENOM);
+    fprintf(stderr, "LALXMLTest: [XLALLIGOTimeGPS2VOTableNode(): %s]\n\n", LALXMLC_MSGENOM);
+
+    /* convert VOTable fragment into VOTable document */
+    xmlDocument = (xmlDocPtr)XLALCreateVOTableDocumentFromTree((const xmlNodePtr)xmlFragment);
+    if(!xmlFragment) {
+        xmlFree(xmlFragment);
+        fprintf(stderr, "LALXMLTest: [XLALCreateVOTableDocumentFromTree(): %s]\n", LALXMLC_MSGEFUN);
+        return LALXMLC_EFUN;
+    }
+    fprintf(stderr, "LALXMLTest: [XLALCreateVOTableDocumentFromTree(): %s]\n\n", LALXMLC_MSGENOM);
+
+    /* convert VOTable document into XML string */
+    if(!xmlDocument2String(xmlDocument, &xmlString)) {
+        xmlFreeDoc(xmlDocument);
+        return LALXMLC_EFUN;
+    }
 
     /* display serialized structure */
     fprintf(stderr, "Serialized VOTable XML:\n");
     fprintf(stderr, "----------------------------------------------------------------------\n");
-    fprintf(stderr, (char*)xml);
+    fprintf(stderr, (char*)xmlString);
     fprintf(stderr, "----------------------------------------------------------------------\n");
 
     /* validate XML document */
-    result = validateDocumentString(xml);
+    result = validateDocument(xmlDocument);
     if(result == XLAL_SUCCESS) {
-        fprintf(stderr, "LALXMLTest: [XLALValidateDocumentByInternalSchema(): %s]\n", LALXMLC_MSGENOM);
+        fprintf(stderr, "LALXMLTest: [XLALValidateDocumentBy[Ex|In]ternalSchema(): %s]\n", LALXMLC_MSGENOM);
     }
     else if(result == XLAL_FAILURE) {
-        fprintf(stderr, "LALXMLTest: [XLALValidateDocumentByInternalSchema(): %s]\n", LALXMLC_MSGEVAL);
+        fprintf(stderr, "LALXMLTest: [XLALValidateDocumentBy[Ex|In]ternalSchema(): %s]\n", LALXMLC_MSGEVAL);
+        xmlFree(xmlString);
+        xmlFreeDoc(xmlDocument);
         return LALXMLC_EVAL;
     }
     else {
-        fprintf(stderr, "LALXMLTest: [XLALValidateDocumentByInternalSchema(): %s]\n", LALXMLC_MSGEFUN);
+        fprintf(stderr, "LALXMLTest: [XLALValidateDocumentBy[Ex|In]ternalSchema(): %s]\n", LALXMLC_MSGEFUN);
+        xmlFree(xmlString);
+        xmlFreeDoc(xmlDocument);
         return LALXMLC_EFUN;
     }
 
-    /* invoke and check second function (get) */
-    if(XLALVOTableXML2LIGOTimeGPSByName((char*)xml, LALXMLC_NAMETEST1, &timeDestination)) {
-        fprintf(stderr, "LALXMLTest: [XLALVOTableXML2LIGOTimeGPSByName(): %s]\n", LALXMLC_MSGEFUN);
+    /* convert XML string to VOTable document (not necessary here, serves as an example!) */
+    xmlFreeDoc(xmlDocument);
+    if(xmlString2Document(xmlString, &xmlDocument)) {
+        xmlFree(xmlString);
         return LALXMLC_EFUN;
     }
-    fprintf(stderr, "\nLALXMLTest: [XLALVOTableXML2LIGOTimeGPSByName(): %s]\n\n", LALXMLC_MSGENOM);
+    else {
+        xmlFree(xmlString);
+    }
+
+    /* validate XML document (not necessary here, serves as an example!) */
+    result = validateDocument(xmlDocument);
+    if(result == XLAL_SUCCESS) {
+        fprintf(stderr, "LALXMLTest: [XLALValidateDocumentBy[Ex|In]ternalSchema(): %s]\n", LALXMLC_MSGENOM);
+    }
+    else if(result == XLAL_FAILURE) {
+        fprintf(stderr, "LALXMLTest: [XLALValidateDocumentBy[Ex|In]ternalSchema(): %s]\n", LALXMLC_MSGEVAL);
+        xmlFreeDoc(xmlDocument);
+        return LALXMLC_EVAL;
+    }
+    else {
+        fprintf(stderr, "LALXMLTest: [XLALValidateDocumentBy[Ex|In]ternalSchema(): %s]\n", LALXMLC_MSGEFUN);
+        xmlFreeDoc(xmlDocument);
+        return LALXMLC_EFUN;
+    }
+
+    /* deserialize VOTable document into structure */
+    if(XLALVOTableDoc2LIGOTimeGPSByName(xmlDocument, LALXMLC_NAMETEST1, &timeDestination)) {
+        fprintf(stderr, "LALXMLTest: [XLALVOTableDoc2LIGOTimeGPSByName(): %s]\n", LALXMLC_MSGEFUN);
+        return LALXMLC_EFUN;
+    }
+    fprintf(stderr, "\nLALXMLTest: [XLALVOTableDoc2LIGOTimeGPSByName(): %s]\n\n", LALXMLC_MSGENOM);
 
     /* clean up */
-    xmlFree(xml);
+    xmlFreeDoc(xmlDocument);
 
     fprintf(stderr, "LIGOTimeGPS struct parsed back from VOTable:\n");
     fprintf(stderr, "%s = { %d, %d }\n\n", LALXMLC_NAMETEST1, timeDestination.gpsSeconds, timeDestination.gpsNanoSeconds );
@@ -155,7 +209,9 @@ INT4 testPulsarDopplerParams()
     static PulsarDopplerParams pdpSource;
     static BinaryOrbitParams bopDestination;
     static PulsarDopplerParams pdpDestination;
-    xmlChar *xml;
+    xmlNodePtr xmlFragment = NULL;
+    xmlDocPtr xmlDocument = NULL;
+    xmlChar *xmlString = NULL;
     INT4 result;
 
     /* initialize test data */
@@ -201,43 +257,88 @@ INT4 testPulsarDopplerParams()
             pdpSource.orbit->ecc,
             pdpSource.orbit->period);
 
-    /* invoke and check first function (set) */
-    xml = (xmlChar *) XLALPulsarDopplerParams2VOTableXML(&pdpSource, LALXMLC_NAMETEST2);
-    if(!xml) {
-        fprintf(stderr, "LALXMLTest: [XLALPulsarDopplerParams2VOTableXML(): %s]\n", LALXMLC_MSGEFUN);
+    /* serialize structure into VOTable fragment */
+    xmlFragment = XLALPulsarDopplerParams2VOTableNode(&pdpSource, LALXMLC_NAMETEST2);
+    if(!xmlFragment) {
+        fprintf(stderr, "LALXMLTest: [XLALPulsarDopplerParams2VOTableNode(): %s]\n", LALXMLC_MSGEFUN);
         return LALXMLC_EFUN;
     }
-    fprintf(stderr, "LALXMLTest: [XLALPulsarDopplerParams2VOTableXML(): %s]\n\n", LALXMLC_MSGENOM);
+    fprintf(stderr, "LALXMLTest: [XLALPulsarDopplerParams2VOTableNode(): %s]\n\n", LALXMLC_MSGENOM);
+
+    /* convert VOTable fragment into VOTable document */
+    xmlDocument = (xmlDocPtr)XLALCreateVOTableDocumentFromTree((const xmlNodePtr)xmlFragment);
+    if(!xmlFragment) {
+        xmlFree(xmlFragment);
+        fprintf(stderr, "LALXMLTest: [XLALCreateVOTableDocumentFromTree(): %s]\n", LALXMLC_MSGEFUN);
+        return LALXMLC_EFUN;
+    }
+    fprintf(stderr, "LALXMLTest: [XLALCreateVOTableDocumentFromTree(): %s]\n\n", LALXMLC_MSGENOM);
+
+    /* convert VOTable document into XML string */
+    if(!xmlDocument2String(xmlDocument, &xmlString)) {
+        xmlFreeDoc(xmlDocument);
+        return LALXMLC_EFUN;
+    }
 
     /* display serialized structure */
     fprintf(stderr, "Serialized VOTable XML:\n");
     fprintf(stderr, "----------------------------------------------------------------------\n");
-    fprintf(stderr, (char*)xml);
+    fprintf(stderr, (char*)xmlString);
     fprintf(stderr, "----------------------------------------------------------------------\n");
 
     /* validate XML document */
-    result = validateDocumentString(xml);
+    result = validateDocument(xmlDocument);
     if(result == XLAL_SUCCESS) {
-        fprintf(stderr, "LALXMLTest: [XLALValidateDocumentByInternalSchema(): %s]\n", LALXMLC_MSGENOM);
+        fprintf(stderr, "LALXMLTest: [XLALValidateDocumentBy[Ex|In]ternalSchema(): %s]\n", LALXMLC_MSGENOM);
     }
     else if(result == XLAL_FAILURE) {
-        fprintf(stderr, "LALXMLTest: [XLALValidateDocumentByInternalSchema(): %s]\n", LALXMLC_MSGEVAL);
+        fprintf(stderr, "LALXMLTest: [XLALValidateDocumentBy[Ex|In]ternalSchema(): %s]\n", LALXMLC_MSGEVAL);
+        xmlFree(xmlString);
+        xmlFreeDoc(xmlDocument);
         return LALXMLC_EVAL;
     }
     else {
-        fprintf(stderr, "LALXMLTest: [XLALValidateDocumentByInternalSchema(): %s]\n", LALXMLC_MSGEFUN);
+        fprintf(stderr, "LALXMLTest: [XLALValidateDocumentBy[Ex|In]ternalSchema(): %s]\n", LALXMLC_MSGEFUN);
+        xmlFree(xmlString);
+        xmlFreeDoc(xmlDocument);
         return LALXMLC_EFUN;
     }
 
-    /* invoke and check second function (get) */
-    if(XLALVOTableXML2PulsarDopplerParamsByName((char*)xml, LALXMLC_NAMETEST2, &pdpDestination)) {
-        fprintf(stderr, "LALXMLTest: [XLALVOTableXML2PulsarDopplerParamsByName(): %s]\n", LALXMLC_MSGEFUN);
+    /* convert XML string to VOTable document (not necessary here, serves as an example!) */
+    xmlFreeDoc(xmlDocument);
+    if(xmlString2Document(xmlString, &xmlDocument)) {
+        xmlFree(xmlString);
         return LALXMLC_EFUN;
     }
-    fprintf(stderr, "\nLALXMLTest: [XLALVOTableXML2PulsarDopplerParamsByName(): %s]\n\n", LALXMLC_MSGENOM);
+    else {
+        xmlFree(xmlString);
+    }
+
+    /* validate XML document (not necessary here, serves as an example!) */
+    result = validateDocument(xmlDocument);
+    if(result == XLAL_SUCCESS) {
+        fprintf(stderr, "LALXMLTest: [XLALValidateDocumentBy[Ex|In]ternalSchema(): %s]\n", LALXMLC_MSGENOM);
+    }
+    else if(result == XLAL_FAILURE) {
+        fprintf(stderr, "LALXMLTest: [XLALValidateDocumentBy[Ex|In]ternalSchema(): %s]\n", LALXMLC_MSGEVAL);
+        xmlFreeDoc(xmlDocument);
+        return LALXMLC_EVAL;
+    }
+    else {
+        fprintf(stderr, "LALXMLTest: [XLALValidateDocumentBy[Ex|In]ternalSchema(): %s]\n", LALXMLC_MSGEFUN);
+        xmlFreeDoc(xmlDocument);
+        return LALXMLC_EFUN;
+    }
+
+    /* deserialize VOTable document into structure */
+    if(XLALVOTableDoc2PulsarDopplerParamsByName(xmlDocument, LALXMLC_NAMETEST2, &pdpDestination)) {
+        fprintf(stderr, "LALXMLTest: [XLALVOTableDoc2PulsarDopplerParamsByName(): %s]\n", LALXMLC_MSGEFUN);
+        return LALXMLC_EFUN;
+    }
+    fprintf(stderr, "\nLALXMLTest: [XLALVOTableDoc2PulsarDopplerParamsByName(): %s]\n\n", LALXMLC_MSGENOM);
 
     /* clean up */
-    xmlFree(xml);
+    xmlFreeDoc(xmlDocument);
 
     fprintf(stderr, "PulsarDopplerParams struct parsed back from VOTable:\n");
     fprintf(stderr, "%s = {\n"
@@ -286,22 +387,51 @@ INT4 testPulsarDopplerParams()
 }
 
 
-INT4 validateDocumentString(const xmlChar *xml)
+INT4 xmlDocument2String(const xmlDocPtr xmlDocument, xmlChar **xmlString)
 {
     /* set up local variables */
-    xmlDocPtr xmlDocument = NULL;
+    INT4 xmlStringBufferSize = 0;
+
+    /* prepare XML serialization (here: indentation) */
+    xmlThrDefIndentTreeOutput(1);
+
+    /* dump document to a string buffer */
+    xmlDocDumpFormatMemoryEnc(xmlDocument, xmlString, &xmlStringBufferSize, "UTF-8", 1);
+    if(xmlStringBufferSize <= 0) {
+        fprintf(stderr, "XML document dump failed!\n");
+        return XLAL_EFAILED;
+    }
+
+    /* return string size (0 in case of error) */
+    return xmlStringBufferSize;
+}
+
+
+INT4 xmlString2Document(const xmlChar *xmlString, xmlDocPtr *xmlDocument)
+{
+    /* set up local variables */
+    INT4 result = XLAL_SUCCESS;
+
+    /* parse XML document */
+    *xmlDocument = xmlReadMemory(xmlString, strlen(xmlString), NULL, "UTF-8", 0);
+    if(*xmlDocument == NULL) {
+        fprintf(stderr, "XML document parsing failed!\n");
+        result = XLAL_EFAILED;
+    }
+
+    /* clean up */
+    xmlCleanupParser();
+
+    return result;
+}
+
+
+INT4 validateDocument(const xmlDocPtr xmlDocument)
+{
+    /* set up local variables */
     char *schemaPath = NULL;
     char schemaUrl[PATH_MAXLEN+10] = "file://";
     INT4 result;
-
-    /* parse XML document */
-    xmlDocument = xmlReadMemory((const char*)xml, strlen((const char*)xml), NULL, "UTF-8", 0);
-    if(xmlDocument == NULL) {
-        /* clean up */
-        xmlCleanupParser();
-        fprintf(stderr, "VOTable document parsing failed\n");
-        return XLAL_EFAILED;
-    }
 
     /* find schema definition file */
     result = findFileInLALDataPath("VOTable-1.1.xsd", &schemaPath);
@@ -317,10 +447,6 @@ INT4 validateDocumentString(const xmlChar *xml)
                         "Falling back to internal schema definition (online resource)!\n");
         result = XLALValidateDocumentByInternalSchema(xmlDocument);
     }
-
-    /* clean up */
-    xmlFreeDoc(xmlDocument);
-    xmlCleanupParser();
 
     return result;
 }
