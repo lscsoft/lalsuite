@@ -17,6 +17,7 @@
 *  MA  02111-1307  USA
 */
 
+
 /*************************************************/
 /*                                               */
 /*  Coherent follow-up MCMC code                 */
@@ -104,8 +105,8 @@ enum template {
   iLALTT3PN10,    /* 10) LAL Taylor T3 1.0 PN                   */
   iLALTT3PN15,    /* 11) LAL Taylor T3 1.5 PN                   */
   iLALTT3PN20,    /* 12) LAL Taylor T3 2.0 PN                   */
-  iLALIMRPhenomA, /* 13) LAL Phenomenological                   */
-  iLALEOBNR,      /* 14) LAL EOBNR                              */
+  iLALIMRPhenomA, /* 13) LAL Phenomenological                   */   /* (Phenom. doesn't work yet) */
+  iLALEOBNR,      /* 14) LAL EOBNR                              */   /* (EOBNR neither)            */
   bSineGaussian   /* 15) sine-gaussian burst                    */
 };
 
@@ -789,6 +790,7 @@ void printhelpmessage()
   printf(" |   --priorparameters                      vector of prior parameters\n");
   printf(" | \n");
   printf(" | - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -\n");
+  printf(" | \n");
   printf(" | Example 1 -- Simulate data, inject a signal and recover it:\n");
   printf(" | \n");
   printf(" | ./followupMcmc --network [H,L,V] --randomseed [123,456] --tcenter 100 --logf\n");
@@ -809,6 +811,7 @@ void printhelpmessage()
   printf(" | 0,0.13,873739911.131,40]\n");
   printf(" | \n");
   printf(" | - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -\n");
+  printf(" | \n");
   printf(" | There are currently 13 different waveform templates implemented:\n");
   printf(" |  - 'InspiralNoSpin' templates (9 parameters):\n");
   printf(" |    - 2.0 PN stationary phase approximation          ('20SP')\n");
@@ -864,7 +867,8 @@ void printhelpmessage()
   printf(" |  - expected amplitude\n");
   printf(" |  - expected sigma\n");
   printf(" | \n");
-  printf(" | For more details, please see the manual.\n");
+  printf(" | For more details, please see also the manual at:\n");
+  printf(" |   .../lalapps/src/inspiral/posterior/followupMcmc-manual.pdf\n");
   printf(" | \n");
 }
 
@@ -3261,7 +3265,7 @@ void templateLAL(DataFramework *DF, vector *parameter, double Fplus, double Fcro
   double *timedomainwaveform=NULL;
   double timeshift = 0.0; /* time by which to shift template (in seconds) */
   double twopit;
-  double complex *cosinechirp=NULL, *sinechirp=NULL;
+  double complex *cosinechirp=NULL;  /*, *sinechirp=NULL; */
 
   /* some (fixed) settings: */
   params.OmegaS      = 0.0;     /* (?) */
@@ -3355,7 +3359,7 @@ for (i=0; i<DF->dataSize; ++i) LALSignal->data[i] = 0.0;
   LALInspiralWave(&status, LALSignal, &params);
   /* REPORTSTATUS(&status); */
 
-  /*printf(" :  tC after     : %f\n", params.tC);/*
+  /*printf(" :  tC after     : %f\n", params.tC);*/
   /* REPORTSTATUS(&status);*/
   /* frequency domain or time domain waveform? */
   FDomain = ((params.approximant == TaylorF1)
