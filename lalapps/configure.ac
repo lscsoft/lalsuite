@@ -134,7 +134,7 @@ if test "$LALSUITE_BUILD" != "true" ; then
 	LIBS="$LALSUPPORT_LIBS $LAL_LIBS $LIBS"
 	AC_CHECK_LIB(lal, LALVersion, , AC_MSG_ERROR(could not find the LAL library))
 	AC_CHECK_LIB(lalsupport, LALOpenDataFile, , AC_MSG_ERROR(could not find the LAL support library))
-fi 
+fi
 
 dnl LALFrame, LALMetaIo, and LALXML (optional).
 lalframe="true"
