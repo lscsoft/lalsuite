@@ -37,8 +37,8 @@ injH2inL1daftercut.ind = injH2inL1d.ind;
 % make veto files into .mat files
 if length(veto_list)>0 && exist('H1vetolist.mat','file')==0
   H1veto=load(veto_list(1,:));
-  H1vetostart=H1veto(:,1);
-  H1vetoend=H1veto(:,2);
+  H1vetostart=H1veto(:,2);
+  H1vetoend=H1veto(:,3);
   % make a list of all the gps seconds vetoes
   j=1;
   for i=1:length(H1vetostart)
@@ -49,9 +49,9 @@ if length(veto_list)>0 && exist('H1vetolist.mat','file')==0
   end
   save H1vetolist.mat H1vetolist
 
-  H2veto=load(veto_list(3,:));
-  H2vetostart=H2veto(:,1);
-  H2vetoend=H2veto(:,2);
+  H2veto=load(veto_list(2,:));
+  H2vetostart=H2veto(:,2);
+  H2vetoend=H2veto(:,3);
   j=1;
   for i=1:length(H2vetostart)
     for k=H2vetostart(i):H2vetoend(i)-1    
@@ -62,8 +62,8 @@ if length(veto_list)>0 && exist('H1vetolist.mat','file')==0
   save H2vetolist.mat H2vetolist
 
   L1veto=load(veto_list(3,:));
-  L1vetostart=L1veto(:,1);
-  L1vetoend=L1veto(:,2);
+  L1vetostart=L1veto(:,2);
+  L1vetoend=L1veto(:,3);
   j=1;
   for i=1:length(L1vetostart)
     for k=L1vetostart(i):L1vetoend(i)-1
@@ -248,6 +248,11 @@ losttriptimes=[vetoedinH1H2L1,vetoedinH1H2,vetoedinH1L1,vetoedinL1H2,vetoedinH1,
 
 % list the injections that were missed during these times
 vetot.t=msim.th(ismember(floor(msim.th),losttriptimes));
+vetot.d=msim.d(ismember(floor(msim.th),losttriptimes));
+vetot.dh=msim.dh(ismember(floor(msim.th),losttriptimes));
+vetot.dl=msim.dl(ismember(floor(msim.th),losttriptimes));
+vetot.f=msim.f(ismember(floor(msim.th),losttriptimes));
+
 % list the injections that were missed outside of these times (ie MISSED in TRIPLE time)
 [missed.th,ind]=setdiff(msim.th,vetot.t);
 missed.f=msim.f(ind);
@@ -374,14 +379,22 @@ hH1H2=loglog([fsimH1H2dt.f;fsimH1H2dd.f],[fsimH1H2dt.dh;fsimH1H2dd.dh],'g*');
 hold on
 hH1L1=loglog([fsimH1L1dt.f;fsimH1L1dd.f],[fsimH1L1dt.dh;fsimH1L1dd.dh],'c*');
 hL1H2=loglog([fsimL1H2dt.f;fsimL1H2dd.f],[fsimL1H2dt.dh;fsimL1H2dd.dh],'m*');
-hm=loglog([missed.f;missedd.f],[missed.dh;missedd.dh],'ro');
+if length(veto_list)>0
+  hv=semilogy([fsimH1H2dd.f;fsimH1L1dd.f;fsimL1H2dd.f;vetot.f],[fsimH1H2dd.dh;fsimH1L1dd.dh;fsimL1H2dd.dh;vetot.dh],'ko');
+end
+%hm=loglog([missed.f;missedd.f],[missed.dh;missedd.dh],'r.');
+hm=loglog(msim.f,msim.dh,'r.');
 hl=plot([50,50],[1e-2,1e5],'k');
 hu=plot([2000,2000],[1e-2,1e5],'k');
 grid on
 grid minor
 h_xlab=xlabel('f / Hz');
 h_ylab=ylabel('d_H / Mpc');
-hleg=legend('triples','H1H2 doubles','H1L1 doubles','L1H2 doubles','missed');
+if length(veto_list)>0
+  hleg=legend('triples','H1H2 doubles','H1L1 doubles','L1H2 doubles','vetoed','missed','template bank boundary');
+else
+  hleg=legend('triples','H1H2 doubles','H1L1 doubles','L1H2 doubles','missed','template bank boundary');
+end
 set(h_xlab,'FontSize',16,'FontName','Times');
 set(h_ylab,'FontSize',16,'FontName','Times');
 set(gca,'FontSize',16,'FontName','Times');
@@ -397,14 +410,22 @@ hH1H2=loglog([fsimH1H2dt.f;fsimH1H2dd.f],[fsimH1H2dt.dl;fsimH1H2dd.dl],'g*');
 hold on
 hH1L1=loglog([fsimH1L1dt.f;fsimH1L1dd.f],[fsimH1L1dt.dl;fsimH1L1dd.dl],'c*');
 hL1H2=loglog([fsimL1H2dt.f;fsimL1H2dd.f],[fsimL1H2dt.dl;fsimL1H2dd.dl],'m*');
-hm=loglog([missed.f;missedd.f],[missed.dl;missedd.dl],'ro');
+if length(veto_list)>0
+  hv=semilogy([fsimH1H2dd.f;fsimH1L1dd.f;fsimL1H2dd.f;vetot.f],[fsimH1H2dd.dl;fsimH1L1dd.dl;fsimL1H2dd.dl;vetot.dl],'ko');
+end
+%hm=loglog([missed.f;missedd.f],[missed.dl;missedd.dl],'ro');
+hm=loglog(msim.f,msim.dl,'r.');
 hl=plot([50,50],[1e-2,1e5],'k');
 hu=plot([2000,2000],[1e-2,1e5],'k');
 grid on
 grid minor
 h_xlab=xlabel('f / Hz');
 h_ylab=ylabel('d_L / Mpc');
-hleg=legend('triples','H1H2 doubles','H1L1 doubles','L1H2 doubles','missed');
+if length(veto_list)>0
+  hleg=legend('triples','H1H2 doubles','H1L1 doubles','L1H2 doubles','vetoed','missed','template bank boundary');
+else
+  hleg=legend('triples','H1H2 doubles','H1L1 doubles','L1H2 doubles','missed','template bank boundary');
+end
 set(h_xlab,'FontSize',16,'FontName','Times');
 set(h_ylab,'FontSize',16,'FontName','Times');
 set(gca,'FontSize',16,'FontName','Times');
@@ -412,31 +433,47 @@ saveas(gcf,'mf_allvL.png')
 
 % Hanford effective distance versus frequency, missed injs
 figure(3)
-hm=loglog([missed.f;missedd.f],[missed.dh;missedd.dh],'ro');
+%hm=loglog([missed.f;missedd.f],[missed.dh;missedd.dh],'ro');
+hm=loglog(msim.f,msim.dh,'r.');
 hold on
+if length(veto_list)>0
+  hv=semilogy(vetot.f,vetot.dh,'ko');
+end
 hl=plot([50,50],[1e-2,1e5],'k');
 hu=plot([2000,2000],[1e-2,1e5],'k');
 grid on
 grid minor
 h_xlab=xlabel('f / Hz');
 h_ylab=ylabel('d_H / Mpc');
-hleg=legend('missed');
+if length(veto_list)>0
+  hleg=legend('missed','vetoed','template bank boundary');
+else
+  hleg=legend('missed','template bank boundary');
+end
 set(h_xlab,'FontSize',16,'FontName','Times');
 set(h_ylab,'FontSize',16,'FontName','Times');
 set(gca,'FontSize',16,'FontName','Times');
 saveas(gcf,'m_vH.png')
 
-% Hanford effective distance versus frequency, missed injs
+% Livingston effective distance versus frequency, missed injs
 figure(4)
-hm=loglog([missed.f;missedd.f],[missed.dl;missedd.dl],'ro');
+%hm=loglog([missed.f;missedd.f],[missed.dl;missedd.dl],'ro');
+hm=loglog(msim.f,msim.dl,'r.');
 hold on
+if length(veto_list)>0
+  hv=semilogy(vetot.f,vetot.dl,'ko');
+end
 hl=plot([50,50],[1e-2,1e5],'k');
 hu=plot([2000,2000],[1e-2,1e5],'k');
 grid on
 grid minor
 h_xlab=xlabel('f / Hz');
 h_ylab=ylabel('d_L / Mpc');
-hleg=legend('missed');
+if length(veto_list)>0
+  hleg=legend('missed','vetoed','template bank boundary');
+else
+  hleg=legend('missed','template bank boundary');
+end
 set(h_xlab,'FontSize',16,'FontName','Times');
 set(h_ylab,'FontSize',16,'FontName','Times');
 set(gca,'FontSize',16,'FontName','Times');
@@ -449,13 +486,20 @@ hH1H2=loglog([fsimH1H2dt.f;fsimH1H2dd.f],[fsimH1H2dt.dh;fsimH1H2dd.dh],'g*');
 hold on
 hH1L1=loglog([fsimH1L1dt.f;fsimH1L1dd.f],[fsimH1L1dt.dh;fsimH1L1dd.dh],'c*');
 hL1H2=loglog([fsimL1H2dt.f;fsimL1H2dd.f],[fsimL1H2dt.dh;fsimL1H2dd.dh],'m*');
+if length(veto_list)>0
+  hv=semilogy([fsimH1H2dd.f;fsimH1L1dd.f;fsimL1H2dd.f],[fsimH1H2dd.dh;fsimH1L1dd.dh;fsimL1H2dd.dh],'ko');
+end
 hl=plot([50,50],[1e-2,1e5],'k');
 hu=plot([2000,2000],[1e-2,1e5],'k');
 grid on
 grid minor
 h_xlab=xlabel('f / Hz');
 h_ylab=ylabel('d_H / Mpc');
-hleg=legend('H1H2 doubles','H1L1 doubles','L1H2 doubles');
+if length(veto_list)>0
+  hleg=legend('H1H2 doubles','H1L1 doubles','L1H2 doubles','vetoed','template bank boundary');
+else
+  hleg=legend('H1H2 doubles','H1L1 doubles','L1H2 doubles','template bank boundary');
+end
 set(h_xlab,'FontSize',16,'FontName','Times');
 set(h_ylab,'FontSize',16,'FontName','Times');
 set(gca,'FontSize',16,'FontName','Times');
@@ -467,13 +511,20 @@ hH1H2=loglog([fsimH1H2dt.f;fsimH1H2dd.f],[fsimH1H2dt.dl;fsimH1H2dd.dl],'g*');
 hold on
 hH1L1=loglog([fsimH1L1dt.f;fsimH1L1dd.f],[fsimH1L1dt.dl;fsimH1L1dd.dl],'c*');
 hL1H2=loglog([fsimL1H2dt.f;fsimL1H2dd.f],[fsimL1H2dt.dl;fsimL1H2dd.dl],'m*');
+if length(veto_list)>0
+  hv=semilogy([fsimH1H2dd.f;fsimH1L1dd.f;fsimL1H2dd.f],[fsimH1H2dd.dl;fsimH1L1dd.dl;fsimL1H2dd.dl],'ko');
+end
 hl=plot([50,50],[1e-2,1e5],'k');
 hu=plot([2000,2000],[1e-2,1e5],'k');
 grid on
 grid minor
 h_xlab=xlabel('f / Hz');
 h_ylab=ylabel('d_L / Mpc');
-hleg=legend('H1H2 doubles','H1L1 doubles','L1H2 doubles');
+if length(veto_list)>0
+  hleg=legend('H1H2 doubles','H1L1 doubles','L1H2 doubles','vetoed','template bank boundary');
+else
+  hleg=legend('H1H2 doubles','H1L1 doubles','L1H2 doubles','template bank boundary');
+end
 set(h_xlab,'FontSize',16,'FontName','Times');
 set(h_ylab,'FontSize',16,'FontName','Times');
 set(gca,'FontSize',16,'FontName','Times');
