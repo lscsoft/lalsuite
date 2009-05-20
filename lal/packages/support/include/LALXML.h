@@ -31,14 +31,15 @@
  * \brief Header file declaring the public XML API
  */
 
-/* Double-include protection. */
+/* Double-include protection */
 #ifndef _LALXML_H
 #define _LALXML_H
 
-/* C++ protection. */
-#ifdef  __cplusplus
+/* C++ protection */
+#ifdef __cplusplus
 extern "C" {
 #endif
+
 
 #include <libxml/tree.h>
 #include <lal/LALDatatypes.h>
@@ -79,10 +80,10 @@ INT4 XLALValidateDocumentByInternalSchema(const xmlDocPtr xmlDocument);
 INT4 XLALValidateDocumentByExternalSchema(const xmlDocPtr xmlDocument, const xmlChar *url);
 
 
-
-#ifdef  __cplusplus
+/* C++ protection */
+#ifdef __cplusplus
 }
-#endif  
-/* C++ protection. */
+#endif
 
-#endif  /* Double-include protection. */
+/* Double-include protection */
+#endif
