@@ -55,6 +55,21 @@
  *
  * This ensures that the range will be correctly extrapolated even if \f$\tau_1 < \tau_0\f$, i.e. \f$\Delta\tau < 0\f$.
  *
+ *
+ * The initial-phase extrapolation in LALExtrapolatePulsarPhase() proceeds in the other direction, extrapolating
+ * \f$\phi(\tau_0)\f$ to \f$\phi(\tau_1)\f$, where the spins are given at \f$\tau_1\f$, i.e. \f$f^{(k)}(\tau_1)\f$.
+ *
+ * By using the above equations, one can arrive at the following expression
+ * \f[
+ * \phi(\tau_1) = \phi(\tau_0) - \sum_{k=0}^s \frac{f^{(k)}(\tau_1)}{(k+1)!}\,\Delta\tau^{k+1}\,,
+ * \f]
+ * where <b>NOW</b> we have defined
+ * \f[
+ * \Delta\tau \equiv \tau_0 - \tau_1\,.
+ * \f]
+ *
+ * This function is used in LALEstimatePulsarAmplitudeParams() to propagate the estimated initial phase
+ * from the internal reference time back to the user-input reference time.
  */
 
 /** \file

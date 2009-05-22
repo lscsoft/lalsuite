@@ -70,9 +70,9 @@ to develop a \emph{portable} and \emph{convenient} library, both for users and
 developers.
 
 To achieve portability, the library is a library of routines written in a
-subset of C89, which is well supported on nearly every computing environment,
-and the routines can easily be used by programs written in other languages
-(C++, Fortran, Python, etc.).
+subset of C99, which is well supported on nearly every modern computing
+environment, and the routines can easily be used by programs written in
+other languages (C++, Fortran, Python, etc.).
 
 The first edition of this specification contained several highly restrictive
 rules that were conceived to give LAL routines a standard ``look and feel''
@@ -910,9 +910,9 @@ by LAL if the \textsc{Frame} library is available.
 \section{Language issues}
 \label{a:language}
 
-The C89 standard specifies certain keywords and standard library functions.
+The C99 standard specifies certain keywords and standard library functions.
 Only a subset of these are suitable for LAL functions.  However, for maximum
-portability, one should avoid various extensions to the C89 keywords and
+portability, one should avoid various extensions to the C99 keywords and
 functions.  Here are some guidelines on writing portable LAL code.
 
 \subsection{Namespace requirements}
@@ -942,24 +942,22 @@ using        virtual      void         volatile     wchar_t        while
 xor          xor_eq
 \end{verbatim}
 It is not a good idea to use \verb+fortran+ or \verb+entry+ either as these
-are sometimes reserved.  Of these keywords, the ones that are C89 keywords are
+are sometimes reserved.  Of these keywords, the ones that are C99 keywords are
 \begin{verbatim}
-auto            double          int             struct
-break           else            long            switch
-case            enum            register        typedef
-char            extern          return          union
-const           float           short           unsigned
-continue        for             signed          void
-default         goto            sizeof          volatile
-do              if              static          while
+_Bool           _Complex        _Imaginary      auto
+break           case            char            const
+continue        default         do              double
+else            enum            extern          float
+for             goto            if              inline
+int             long            register        restrict
+return          short           signed          sizeof
+static          struct          switch          typedef
+union           unsigned        void            volatile
+while
 \end{verbatim}
 Of these there is (almost) no need to use \verb+auto+, \verb+char+,
 \verb+double+, \verb+float+, \verb+long+, \verb+register+, \verb+short+,
 \verb+signed+, \verb+unsigned+, or \verb+volatile+.
-
-There are also a few new keywords in C99.  These are
-\verb+inline+, \verb+_Imaginary+, \verb+_Complex+, and \verb+_Bool+,
-and \verb+restrict+.  These should be avoided.
 
 \subsubsection*{Reserved names}
 
@@ -1019,9 +1017,9 @@ uppercase letter.
 
 \subsection{Allowed functions from standard C}
 
-C libraries often have various extensions from the C89 standard C library,
+C libraries often have various extensions from the C99 standard C library,
 but for portability purposes only those functions that are specified by the
-C89 standard should be used (note: LAL does require a \emph{hosted} rather
+C99 standard should be used (note: LAL does require a \emph{hosted} rather
 than \emph{freestanding} environment).  Also, many of these should \emph{not}
 be used in LAL because they would cause the LAL functions to violate one of the
 above rules (e.g., would be used for file I/O, would cause a function to not

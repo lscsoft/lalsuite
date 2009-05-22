@@ -39,14 +39,14 @@ liblal_la_LIBADD = $(liblal_la_DEPENDENCIES) @LALLIBADD@
 bin_PROGRAMS = lal-version
 lal_version_SOURCES = lal-version.c
 lal_version_LDADD = liblal.la
-MOSTLYCLEANFILES = LALBuildDate.c
+MOSTLYCLEANFILES = LALBuildDate.c git_info.sed .vcsinfo
 TESTS = lal-version
 LALBuildDate.c: $(liblal_la_DEPENDENCIES)
 	echo 'const char *lalBuildDate = "'`date +"%Y-%m-%dT%H:%M:%S%z"`'";' >$@
 .vcsinfo:
 	touch .vcsinfo
 LALVCSInfo.h: LALVCSInfo.h.in .vcsinfo
-	$(srcdir)/git_version --file > git_info.sed
+	d="`pwd`" && cd $(srcdir) && ./git_version --file > "$$d/git_info.sed"
 	test -s git_info.sed && sed -f git_info.sed $(srcdir)/LALVCSInfo.h.in > LALVCSInfo.h || true
 	-rm -f .vcsinfo
 

@@ -1,0 +1,85 @@
+%define _prefix @prefix@
+%define _mandir %{_prefix}/share/man
+%define _sysconfdir %{_prefix}/etc
+Name: @PACKAGE@
+Version: @VERSION@
+Release: 1
+Summary: LSC Algorithm Library Suite
+License: GPL
+Group: LAL
+Source: %{name}-%{version}.tar.gz
+URL: http://www.lsc-group.phys.uwm.edu/lal
+Packager: Jolien Creighton <jolien@uwm.edu>
+BuildRoot: %{_tmppath}/%{name}-%{version}-root
+Requires: gsl fftw libframe libmetaio libxml2
+Prefix: %{_prefix}
+
+%description
+The LSC Algorithm Library for gravitational wave data analysis.
+This package contains the shared-object libraries and applications.
+
+%package devel
+Summary: Files and documentation needed for compiling programs that use LAL
+Group: LAL
+Requires: %{name} = %{version}
+Requires: gsl-devel libframe-devel libmetaio-devel libxml2-devel
+%description devel
+The LSC Algorithm Library for gravitational wave data analysis.
+This package contains files needed build applications that use the LAL library
+as well as the documentation for the library.
+
+%package apps
+Summary: Application programs that use LAL
+Group: LAL
+Requires: %{name} = %{version}
+Requires: cfitsio python
+%description apps
+The LSC Algorithm Library for gravitational wave data analysis.
+This package contains the application programs that use the LAL library.
+
+%prep
+%setup -q
+
+%build
+source /opt/lscsoft/lscsoft-user-env.sh
+nightly_version=@NIGHTLY_VERSION@
+%configure --enable-nightly=${nightly_version:-no} --disable-debug
+%{__make}
+
+%install
+%makeinstall
+
+%post
+ldconfig
+
+%postun
+ldconfig
+
+%clean
+[ ${RPM_BUILD_ROOT} != "/" ] && rm -Rf ${RPM_BUILD_ROOT}
+rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
+
+%files
+%defattr(-,root,root)
+%{_bindir}/lal-version
+%{_sbindir}/uninstall-lal.sh
+%{_libdir}/*.so*
+%{_sysconfdir}/lal-user-env.*
+
+%files devel
+%defattr(-,root,root)
+%{_bindir}/lal-config
+%{_libdir}/*a
+%{_libdir}/pkgconfig/*
+%{_includedir}/lal
+%{_datadir}/*
+%{_mandir}/man1/lal-config.1*
+%{_mandir}/man3/lal.3*
+
+%files apps
+%defattr(-,root,root)
+%{_bindir}/*
+%{_pkgpythondir}/*
+%{_mandir}/man1/*
+%{_datadir}/lalapps/*
+%{_sysconfdir}/lalapps-user-env.*
