@@ -16,7 +16,6 @@ def posterior(VT, sigma, Lambda):
         #FIXME, drew said this was cool?
         mu = numpy.arange(length) * 100.0 / VT.sum() / length
 
-        #FIXME this is just ones with the right dtype
         post = numpy.ones(len(mu), dtype="float")
 
         for vt, k, lam in zip(VT, K, Lambda):
