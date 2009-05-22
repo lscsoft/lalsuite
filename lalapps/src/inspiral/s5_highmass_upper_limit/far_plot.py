@@ -1,8 +1,19 @@
 import scipy
 import numpy
 import matplotlib
-matplotlib.use('Agg')
-import pylab
+matplotlib.rcParams.update({
+  "font.size": 8.0,
+  "axes.titlesize": 10.0,
+  "axes.labelsize": 10.0,
+  "xtick.labelsize": 8.0,
+  "ytick.labelsize": 8.0,
+  "legend.fontsize": 8.0,
+  "figure.dpi": 600,
+  "savefig.dpi": 600,
+  "text.usetex": True
+})
+from matplotlib import figure
+from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 import sys
 try:
         import sqlite3
@@ -10,7 +21,6 @@ except ImportError:
         # pre 2.5.x
         from pysqlite2 import dbapi2 as sqlite3
 
-from glue import iterutils
 from glue import segmentsUtils
 from glue.ligolw import lsctables
 from glue.ligolw import dbtables
@@ -19,8 +29,8 @@ from pylal.xlal.date import LIGOTimeGPS
 
 lsctables.LIGOTimeGPS = LIGOTimeGPS
 
-def sigma_region(m, s, n):
-  return numpy.concatenate((m-n*s, (m+n*s)[::-1]))
+def sigma_region(mean, nsigma):
+  return numpy.concatenate((mean - nsigma * numpy.sqrt(mean), (mean + nsigma * numpy.sqrt(mean))[::-1]))
 
 class Summary(object):
   def __init__(self):
@@ -49,7 +59,10 @@ class Summary(object):
     if verbose:
       print >>sys.stderr, "computing background livetime:",
     for on_instruments, livetime in db_thinca_rings.get_thinca_livetimes(db_thinca_rings.get_thinca_rings_by_available_instruments(connection, program_name = live_time_program), veto_segments, db_thinca_rings.get_background_offset_vectors(connection), verbose = verbose).items():
-      self.background_livetime[on_instruments] = self.background_livetime.get(on_instruments, 0.0) + float(livetime)
+      self.background_livetime[on_instruments] = self.background_livetime.get(on_instruments, 0.0) + livetime
+      self.background_ifar.setdefault(on_instruments, [])
+      self.playground_ifar.setdefault(on_instruments, [])
+      self.nonplayground_ifar.setdefault(on_instruments, [])
     if verbose:
       print >>sys.stderr
 
@@ -64,30 +77,25 @@ class Summary(object):
     if verbose:
       print >>sys.stderr, "computing zero-lag livetime:",
     available_instruments = set(zero_lag_segs.keys())
-    for on_instruments in (on_instruments for m in range(2, len(available_instruments) + 1) for on_instruments in iterutils.choices(sorted(available_instruments), m)):
+    for on_instruments in self.background_livetime:
       if verbose:
         print >>sys.stderr, ",".join(on_instruments),
 
       # compute times when only exactly on_instruments were on
-      on_instruments = frozenset(on_instruments)
-      segs = zero_lag_segs.intersection(on_instruments) - zero_lag_segs.union(available_instruments - on_instruments)
+      selected_segs = zero_lag_segs.intersection(on_instruments) - zero_lag_segs.union(available_instruments - on_instruments)
 
-      self.playground_livetime[on_instruments] = self.playground_livetime.get(on_instruments, 0.0) + float(abs(segs & playground_segs))
-      self.nonplayground_livetime[on_instruments] = self.nonplayground_livetime.get(on_instruments, 0.0) + float(abs(segs - playground_segs))
+      self.playground_livetime[on_instruments] = self.playground_livetime.get(on_instruments, 0.0) + float(abs(selected_segs & playground_segs))
+      self.nonplayground_livetime[on_instruments] = self.nonplayground_livetime.get(on_instruments, 0.0) + float(abs(selected_segs - playground_segs))
     if verbose:
       print >>sys.stderr
 
     #
-    # collect the false alarm rates from each choice of on instruments
+    # collect the false alarm rates
     #
 
     if verbose:
       print >>sys.stderr, "collecting false alarm rate ranks ..."
 
-    for on_instruments in self.background_livetime:
-      self.background_ifar.setdefault(on_instruments, [])
-      self.playground_ifar.setdefault(on_instruments, [])
-      self.nonplayground_ifar.setdefault(on_instruments, [])
     for ifar, end_time, end_time_ns, on_instruments, is_background in connection.cursor().execute("""
 SELECT
   1.0 / coinc_inspiral.false_alarm_rate,
@@ -131,12 +139,12 @@ for file in sys.argv[1:]:
 
 if verbose:
   print >>sys.stderr, "generating plots:"
-for figcnt, on_instruments in enumerate(summary.background_livetime):
+for on_instruments in summary.background_livetime:
   if verbose:
     print >>sys.stderr, "\t%s:" % ",".join(sorted(on_instruments))
-  summary.background_ifar.setdefault(on_instruments, []).sort(reverse = True)
-  summary.playground_ifar.setdefault(on_instruments, []).sort(reverse = True)
-  summary.nonplayground_ifar.setdefault(on_instruments, []).sort(reverse = True)
+  summary.background_ifar[on_instruments].sort(reverse = True)
+  summary.playground_ifar[on_instruments].sort(reverse = True)
+  summary.nonplayground_ifar[on_instruments].sort(reverse = True)
 
   if verbose:
     print >>sys.stderr, "\t%f s background livetime, %f s non-playground zero-lag livetime (%f to 1)" % (summary.background_livetime[on_instruments], summary.nonplayground_livetime[on_instruments], summary.background_livetime[on_instruments] / summary.nonplayground_livetime[on_instruments])
@@ -145,31 +153,37 @@ for figcnt, on_instruments in enumerate(summary.background_livetime):
       print >>sys.stderr, "\tno events, skipping"
     continue
 
-  pylab.figure(figcnt)
-  N = numpy.arange(len(summary.nonplayground_ifar[on_instruments])) + 1
+  fig = figure.Figure()
+  FigureCanvas(fig)
+  axes = fig.gca()
+  axes.loglog()
+  N = numpy.arange(len(summary.nonplayground_ifar[on_instruments]), dtype = "double") + 1.0
   if verbose:
     print >>sys.stderr, "\t%d non-playground zero-lag events" % max(N)
+  x = numpy.array(summary.nonplayground_ifar[on_instruments], dtype = "double")
+  axes.plot(x.repeat(2)[1:], N.repeat(2)[:-1], 'k', linewidth=2)
+  minX, maxX = min(x), max(x)
   minN, maxN = min(N), max(N)
-  pylab.loglog(summary.nonplayground_ifar[on_instruments], N, 'k', linewidth=2)
-  pylab.hold(1)
-  N = numpy.arange(len(summary.background_ifar[on_instruments])) + 1
+  N = numpy.arange(len(summary.background_ifar[on_instruments]), dtype = "double") + 1.0
   if verbose:
     print >>sys.stderr, "\t%d background events" % max(N)
-  N = N * summary.nonplayground_livetime[on_instruments] / summary.background_livetime[on_instruments]
+  N *= summary.nonplayground_livetime[on_instruments] / summary.background_livetime[on_instruments]
+  x = numpy.array(summary.background_ifar[on_instruments], dtype = "double")
+  axes.plot(x.repeat(2)[1:], N.repeat(2)[:-1], 'k--', linewidth=1)
+  minX, maxX = min(minX, min(x)), max(maxX, max(x))
   minN, maxN = min(minN, min(N)), max(maxN, max(N))
-  pylab.loglog(summary.background_ifar[on_instruments], N, 'k--', linewidth=1)
-  x = numpy.array(summary.background_ifar[on_instruments])
-  minX, maxX = min(x), max(x)
-  xc = numpy.concatenate((x, x[::-1]))
-  pylab.fill(xc, sigma_region(N, numpy.sqrt(N), 1).clip(minN, maxN), alpha=0.25, facecolor=[0.25, 0.25, 0.25])
-  pylab.fill(xc, sigma_region(N, numpy.sqrt(N), 2).clip(minN, maxN), alpha=0.25, facecolor=[0.5, 0.5, 0.5])
-  pylab.fill(xc, sigma_region(N, numpy.sqrt(N), 3).clip(minN, maxN), alpha=0.25, facecolor=[0.75, 0.75, 0.75])
-  pylab.xlim(minX, maxX)
-  pylab.ylim(minN, maxN)
-  pylab.ylabel('Number')
-  pylab.xlabel('IFAR based Rank')
-  pylab.legend(("zero lag", "expected background, N", r"$\pm\sqrt{N}$", r"$\pm 2\sqrt{N}$","$\pm 3\sqrt{N}$"), loc="lower left")
-  pylab.hold(0)
-  pylab.savefig(sys.argv[1]+'_'+''.join(sorted(on_instruments))+"_far.png")
+  x = x.repeat(2)[1:]
+  x = numpy.concatenate((x, x[::-1]))
+  N = N.repeat(2)[:-1]
+  axes.fill(x, sigma_region(N, 3.0).clip(minN, maxN), alpha=0.25, facecolor=[0.75, 0.75, 0.75])
+  axes.fill(x, sigma_region(N, 2.0).clip(minN, maxN), alpha=0.25, facecolor=[0.5, 0.5, 0.5])
+  axes.fill(x, sigma_region(N, 1.0).clip(minN, maxN), alpha=0.25, facecolor=[0.25, 0.25, 0.25])
+  axes.set_xlim(minX, maxX)
+  axes.set_ylim(minN, maxN)
+  axes.set_title('Zero-lag Events Observed Compared to Background')
+  axes.set_xlabel('IFAR based Rank')
+  axes.set_ylabel(r'Number of Events $\geq$ Rank')
+  axes.legend(("zero lag", "expected background, N", r"$\pm 3\sqrt{N}$", r"$\pm 2\sqrt{N}$","$\pm\sqrt{N}$"), loc="lower left")
+  fig.savefig(sys.argv[1]+'_'+''.join(sorted(on_instruments))+"_far.png")
   if verbose:
     print >>sys.stderr

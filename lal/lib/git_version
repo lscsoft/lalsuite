@@ -1,0 +1,234 @@
+#!/usr/bin/env python
+#
+# git_version - determine git version info
+#
+# Based on generateGitID.sh by Reinhard Prix
+#
+# Copyright (C) 2009, Adam Mercer <adam.mercer@ligo.org>
+# Copyright (C) 2008-2009, John T. Whelan <john.whelan@ligo.org>
+# Copyright (C) 2008, Reinhard Prix <reinhard.ligo.org>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or (at
+# your option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <http://www.gnu.org/licenses/>.
+
+#
+# preamble
+#
+
+# metadata
+__author__ = 'Adam Mercer <adam.mercer@ligo.org>'
+
+# import required system modules
+import os
+import sys
+import time
+import subprocess
+import re
+import optparse
+
+# output file
+outfile = 'git_info.sed'
+
+# version info class
+class git_info:
+  def __init__(self):
+    id = None
+    date = None
+    branch = None
+    tag = None
+    author = None
+    committer = None
+    status = None
+
+# command line option parsing
+def parse_args():
+  # usage information
+  usage = '%prog [options]'
+
+  # define option parser
+  parser = optparse.OptionParser(usage=usage)
+  parser.add_option('--sed', action='store_true', default=False,
+      help='output sed commands for version replacement')
+  parser.add_option('--file', action='store_true', default=False,
+      help='output sed file for version replacement')
+
+  # parse command line options
+  opts, args = parser.parse_args()
+
+  # check for positional arguments
+  if (len(args) != 0):
+    parser.error('incorrect number of command line options specified')
+
+  # check that both --sed and --file are not specified
+  if (opts.sed is True) and (opts.file is True):
+    parser.error('cannot specify both --sed and --file')
+
+  return opts
+
+#
+# process management method
+#
+
+# return output from running given command
+def run_external_command(command, honour_ret_code=True):
+  # start external command process
+  p = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE,
+      stderr=subprocess.PIPE, close_fds=True)
+
+  # get outputs
+  try:
+    output = p.stdout.read()
+    err = p.stderr.read()
+    ret_code = p.wait()
+  finally:
+    p.stdout.close()
+    p.stderr.close()
+
+  # write stderr and exit if process failed
+  if honour_ret_code and (ret_code != 0):
+    sys.stderr.write(err)
+    sys.exit('error: failed to run "%s"' % command)
+
+  return output
+
+
+# get return code from running given command
+def external_command_retcode(command):
+  # start external command process
+  p = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE,
+      stderr=subprocess.PIPE, close_fds=True)
+
+  # get process id and return code
+  ret_code = p.wait()
+
+  # close stdout and stderr
+  p.stdout.close()
+  p.stderr.close()
+
+  return ret_code
+
+#
+# git version method
+#
+
+# generate sed command file containing version info
+def generate_git_version_info():
+  # info object
+  info = git_info()
+
+  # determine git id
+  id_cmd = 'git log -1 --pretty="format:%H"'
+  git_id = run_external_command(id_cmd)
+
+  # determine commit date, iso utc
+  date_cmd = 'git log -1 --pretty="format:%ct"'
+  git_udate = float(run_external_command(date_cmd))
+  git_date = time.strftime('%Y-%m-%d %H:%M:%S +0000', time.gmtime(git_udate))
+
+  # escape '+' in date
+  git_date = git_date.replace('+', '\+')
+
+  # determine branch
+  branch_cmd = 'git branch --no-color'
+  branch_regexp = re.compile(r"\* ((?!\(no branch\)).*)", re.MULTILINE)
+  branch_match = branch_regexp.search(run_external_command(branch_cmd))
+  if branch_match is None:
+    git_branch = None
+  else:
+    git_branch = branch_match.group(1)
+
+  # determine tag
+  tag_cmd = 'git describe --exact-match --tags %s' % git_id
+  if external_command_retcode(tag_cmd) == 0:
+    git_tag = run_external_command(tag_cmd).strip()
+  else:
+    git_tag = None
+
+  # determine author and committer
+  author_name_cmd = 'git log -1 --pretty="format:%an"'
+  author_email_cmd = 'git log -1 --pretty="format:%ae"'
+  committer_name_cmd = 'git log -1 --pretty="format:%cn"'
+  committer_email_cmd = 'git log -1 --pretty="format:%ce"'
+  git_author_name = run_external_command(author_name_cmd)
+  git_author_email = run_external_command(author_email_cmd)
+  git_author = '%s <%s>' % (git_author_name, git_author_email)
+  git_committer_name = run_external_command(committer_name_cmd)
+  git_committer_email = run_external_command(committer_email_cmd)
+  git_committer = '%s <%s>' % (git_committer_name, git_committer_email)
+
+  # determine tree status
+  status_cmd = 'git status'
+  status_output = run_external_command(status_cmd, honour_ret_code=False).strip()
+  if status_output.endswith('no changes added to commit (use "git add" and/or "git commit -a")'):
+      git_status = 'UNCLEAN: Some modifications not committed'
+  else:
+    git_status = 'CLEAN: All modifications committed'
+
+  # determine version strings
+  info.id = 'Id: %s' % git_id
+  info.date = 'Date: %s' % git_date
+  info.branch = 'Branch: %s' % git_branch
+  info.tag = 'Tag: %s' % git_tag
+  info.author = 'Author: %s' % git_author
+  info.committer = 'Committer: %s' % git_committer
+  info.status = 'Status: %s' % git_status
+
+  return info
+
+#
+# main program entry point
+#
+
+# parse command line options
+options = parse_args()
+
+# check if we are in a git repo
+# FIXME: 128 seems to be a magic number that indicates the the git
+# status command has failed
+git_ok = (external_command_retcode('git status') != 128)
+
+# generate sed command file, if appropriate
+if git_ok is True:
+  info = generate_git_version_info()
+
+  if options.file:
+    # output sed command file to stdout
+    print 's+@ID@+%s+g' % info.id
+    print 's+@DATE@+%s+g' % info.date
+    print 's+@BRANCH@+%s+g' % info.branch
+    print 's+@TAG@+%s+g' % info.tag
+    print 's+@AUTHOR@+%s+g' % info.author
+    print 's+@COMMITTER@+%s+g' % info.committer
+    print 's+@STATUS@+%s+g' % info.status
+  elif options.sed:
+    # output sed command line options to stdout
+    sed_cmd = '-e "s/@ID@/%s/"' % info.id
+    sed_cmd += ' -e "s/@DATE@/%s/"' % info.date
+    sed_cmd += ' -e "s/@BRANCH@/%s/"' % info.branch
+    sed_cmd += ' -e "s/@TAG@/%s/"' % info.tag
+    sed_cmd += ' -e "s/@AUTHOR@/%s/"' % info.author
+    sed_cmd += ' -e "s/@COMMITTER@/%s/"' % info.committer
+    sed_cmd += ' -e "s/@STATUS@/%s/"' % info.status
+    print sed_cmd
+  else:
+    # output version info
+    print info.id
+    print info.date
+    print info.branch
+    print info.tag
+    print info.author
+    print info.committer
+    print info.status
+
+# exit
+sys.exit(0)

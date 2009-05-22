@@ -43,7 +43,10 @@ include/stamp-h1
 lal-*.tar.gz
 lal-config
 lal.spec
+lib/.vcsinfo
 lib/LALBuildDate.c
+lib/LALVCSInfo.h
+lib/git_info.sed
 lib/lal-version
 libtool
 misc/__lalGitID.h

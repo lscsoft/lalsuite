@@ -1,7 +1,8 @@
 ## Process this file with automake to produce Makefile.in
 # $Id$
 if LALMETAIO
-LALMETAIOPROGRAMS = lalapps_exc_resp lalapps_ivana lalapps_chirplen
+LALMETAIOPROGRAMS = lalapps_exc_resp lalapps_ivana lalapps_chirplen \
+	lalapps_BankEfficiency
 # lalapps_inspmultiawg
 else
 LALMETAIOPROGRAMS = 
@@ -23,9 +24,15 @@ lalapps_exc_resp_SOURCES 		= exc_resp.c
 lalapps_ivana_SOURCES 			= ivana.c
 #lalapps_inspmultiawg_SOURCES 		= inspmultiawg.c 
 lalapps_chirplen_SOURCES 		= chirplen.c
+lalapps_BankEfficiency_SOURCES		= BankEfficiency.c BankEfficiency.h
 endif
 
-INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
+.PHONY: gitID
+gitID:
+	cd $(top_builddir)/misc && $(MAKE) gitID
+BUILT_SOURCES = gitID
+
+INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(top_srcdir)/misc
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
 EXTRA_DIST = 	exc_resp.c ivana.c inspmultiawg.c chirplen.c TestRandomBank.c BankEfficiency.c BankEfficiency.h \
