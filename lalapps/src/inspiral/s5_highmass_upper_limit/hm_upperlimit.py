@@ -1,3 +1,4 @@
+#!/usr/bin/python
 import scipy
 from scipy import interpolate
 import numpy
