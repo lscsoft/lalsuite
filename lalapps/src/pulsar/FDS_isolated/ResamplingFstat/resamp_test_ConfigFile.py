@@ -2,9 +2,6 @@
 # For parameters with a _min and _max function, if parameter > 0, then it is 
 # set as the value, else it is chosen uniformly from _min to _max
 
-# SFT time baseline
-TSFT = 1800
-
 # Strength of signal
 h0 = 0.1
 
@@ -24,13 +21,13 @@ phi0_min = 0
 phi0_max = 1
 
 # Number of Dirichlet terms used.
-Dterms = 16
+Dterms = 64
 
 # Interferometer
 IFO = 'H2'
 
 # Start Time
-t0 = 820000000
+t0 = 820000000 
 
 # Reference Time in SSB
 refTime = 820000000
@@ -39,22 +36,25 @@ refTime = 820000000
 Out= './SFTs'
 
 # Ephemeris Directory 
-Ephem = '/Users/ppatel/home/opt/lscsoft/lal/share/lal'
+Ephem = '/Users/ppatel/lalsuite/install/lal/share/lal'
 
 # Ephemeris Year
 EphemYear = '05-09'
 
 # Noise Sh
-Sh = 2
+Sh = 2*0
 
 # Duration of Analysis
-TSpan = 200000
+TSpan = 25000
+
+# SFT time baseline
+TSFT = 1800
 
 # Number of SFTs to add
-NumSFTs = 100
+NumSFTs = 10
 
 # Number of Gaps to add
-NumGaps = 4
+NumGaps = 5
 
 # Alpha (Right Ascension)
 Alpha = 0
@@ -67,18 +67,18 @@ Delta_min = -1.57
 Delta_max = 1.57
 
 # Minimum Frequency
-Fmin = 55.0
+Fmin = 4
 
 # Band of Analysis
-Band = 0.1
+Band = 2.0
 
 # Injection Frequency
-Finj = 55.055
+Finj = 4.9
 Finj_min = 55.0
 Finj_max = 55.1
 
 # Spindown
-FDot = 1e-11
+FDot = 1e-11*0
 FDot_min = 1e-10
 FDot_max = 1e-11
 
@@ -87,4 +87,10 @@ debug = 1
 
 # Resolution
 Res = 1.0/TSpan/3
+
+# OutputTimeSeries
+TimeSeriesOut = 'TSeries'
+
+# TimeStampsFile
+#TimeStampsFile = 'TimeStampsFile'
  
