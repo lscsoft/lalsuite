@@ -1,4 +1,4 @@
--- PRAGMA temp_store_directory = '/tmp';
+PRAGMA temp_store_directory = '/tmp';
 
 SELECT
 	"Number of coincs before clustering: " || count(*)
@@ -168,3 +168,6 @@ WHERE
 		WHERE
 			table_name == 'sngl_inspiral'
 	);
+
+-- VACUUM, this reduces the file size by ~6
+VACUUM;
