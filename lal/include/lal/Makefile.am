@@ -10,6 +10,6 @@ all-local:
 			|| case "$$amf" in *=*) exit1;; *k*) fail=yes;; *) exit 1;; esac; \
 		test -z "$$fail"
 		d=$(top_builddir)/lib; \
-		(cd $$d && $(MAKE) $(AM_MAKEFLAGS) LALVCSInfo.h include-link) \
+		(cd $$d && $(MAKE) $(AM_MAKEFLAGS) include-link) \
 			|| case "$$amf" in *=*) exit1;; *k*) fail=yes;; *) exit 1;; esac; \
 		test -z "$$fail"
