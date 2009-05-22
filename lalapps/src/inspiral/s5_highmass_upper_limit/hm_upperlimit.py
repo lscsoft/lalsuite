@@ -38,7 +38,7 @@ def get_far_threshold_and_segments(zerofname, live_time_program, verbose = False
   far, = connection.cursor().execute(query).fetchone()
 
   # extract segments.
-  seglists = get_thinca_zero_lag_segments(connection, program_name = live_time_program)
+  seglists = db_thinca_rings.get_thinca_zero_lag_segments(connection, program_name = live_time_program)
 
   # done
   connection.close()
