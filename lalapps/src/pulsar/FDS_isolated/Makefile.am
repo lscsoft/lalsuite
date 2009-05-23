@@ -62,7 +62,7 @@ lalapps_synthesizeBstatMC_SOURCES = synthesizeBstatMC.c
 
 lalapps_computeLFTfromSFTs_SOURCES = computeLFTfromSFTs.c
 
-lalapps_CFSv3_SOURCES = CFSv3.c
+lalapps_CFSv3_SOURCES = CFSv3.c Fstat_v3.c Fstat_v3.h
 
 EXTRA_DIST = testFStat.sh testCFSv2.sh testGridv2.sh Fstats.ref1 Fstats.ref2 testPredictFStat.sh
 
