@@ -20,7 +20,7 @@ bin_PROGRAMS = lalapps_ComputeFStatistic lalapps_FstatShapeTest lalapps_SemiAnal
 	lalapps_ComputeFStatAnalyticMonteCarloUpperLimit	\
 	lalapps_synthesizeBstatMC
 
-EXTRA_PROGRAMS = lalapps_computeLFTfromSFTs
+EXTRA_PROGRAMS = lalapps_CFSv3
 
 lalapps_zellepolka_SOURCES = zellepolka.c
 lalapps_monteint_SOURCES = monteint.c
@@ -61,6 +61,8 @@ lalapps_ComputeFStatAnalyticMonteCarloUpperLimit_SOURCES = ComputeFStatAnalyticM
 lalapps_synthesizeBstatMC_SOURCES = synthesizeBstatMC.c
 
 lalapps_computeLFTfromSFTs_SOURCES = computeLFTfromSFTs.c
+
+lalapps_CFSv3_SOURCES = CFSv3.c
 
 EXTRA_DIST = testFStat.sh testCFSv2.sh testGridv2.sh Fstats.ref1 Fstats.ref2 testPredictFStat.sh
 

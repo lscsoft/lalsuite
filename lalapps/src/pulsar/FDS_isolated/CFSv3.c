@@ -19,7 +19,7 @@
 
 /*********************************************************************************/
 /** \author R. Prix
- * \file
+ * \file CFSv3
  * \brief
  * Calculate the Fourier transform over the total timespan from a set of SFTs
  *
