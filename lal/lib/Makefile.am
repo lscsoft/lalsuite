@@ -52,10 +52,10 @@ LALVCSInfo.h: LALVCSInfo.h.in .vcsinfo
 
 all-local: include-link
 include-link: LALVCSInfo.h
-	@builddir=`pwd`; \
+	@d=`pwd`; \
 		targetdir=`cd $(top_builddir)/include/lal && pwd`; \
 		if test ! -r $$targetdir/LALVCSInfo.h ; then \
 			rm -f $$targetdir/LALVCSInfo.h; \
-			$(LN_S) $$builddir/LALVCSInfo.h $$targetdir; \
-			echo "$(LN_S) $$builddir/LALVCSInfo.h $$targetdir"; \
+			$(LN_S) $$d/LALVCSInfo.h $$targetdir; \
+			echo "$(LN_S) $$d/LALVCSInfo.h $$targetdir"; \
 		fi
