@@ -2,6 +2,7 @@
 ACLOCAL_AMFLAGS = -I misc
 SUBDIRS = include packages doc lib misc debian @subdirs@
 MAINTAINERCLEANFILES = lal.spec
+distcleancheck_listfiles = find . -type f \! -name "LALVCSInfo.h" -print
 EXTRA_DIST = README.bugs README.contrib README.install \
   lal.pc.in lalsupport.pc.in lalframe.pc.in lalmetaio.pc.in lalxml.pc.in \
   lal-config.in aclocal.m4 \
