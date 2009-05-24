@@ -22,6 +22,9 @@ from pylal import db_thinca_rings
 from pylal import llwapp
 from pylal import rate
 from pylal import SimInspiralUtils
+from pylal.xlal.date import LIGOTimeGPS
+
+lsctables.LIGOTimeGPS = LIGOTimeGPS
 
 
 def get_far_threshold_and_segments(zerofname, live_time_program, verbose = False):
