@@ -44,6 +44,7 @@
 #include <lal/LogPrintf.h>
 #include <lal/TimeSeries.h>
 #include <lal/ComplexFFT.h>
+#include <lal/SFTfileIO.h>
 
 #include <lal/GeneratePulsarSignal.h>
 #include <lal/ComputeFstat.h>
@@ -78,8 +79,11 @@ int main(int argc, char *argv[]);
 int test_XLALSFTVectorToCOMPLEX8TimeSeries(void);
 int XLALgenerateRandomData ( REAL4TimeSeries **ts, SFTVector **sfts );
 
+void write_timeSeriesR4 (FILE *fp, const REAL4TimeSeries *series);
+
 /*---------- empty initializers ---------- */
 static LALUnit empty_LALUnit;
+static LALStatus empty_LALStatus;
 
 int lalDebugLevel = 1;
 
@@ -92,13 +96,11 @@ int lalDebugLevel = 1;
 int main(int argc, char *argv[])
 {
   const CHAR *fn = "testFstat_v3";
-  REAL4TimeSeries *ts = NULL;
-  SFTVector *sfts = NULL;
   int res1;
 
 
   LogPrintf (LOG_NORMAL, "%s: Now testing XLALSFTVectorToCOMPLEX8TimeSeries() ... ", fn);
-  if ( (res1 = XLALgenerateRandomData(&ts, &sfts)) != TEST_PASSED )
+  if ( (res1 = test_XLALSFTVectorToCOMPLEX8TimeSeries()) != TEST_PASSED )
     {
       LogPrintfVerbatim (LOG_CRITICAL, "failed.\n\n");
       return res1;
@@ -108,15 +110,59 @@ int main(int argc, char *argv[])
       LogPrintfVerbatim (LOG_NORMAL, "succeeded.\n\n");
     }
 
-  XLALDestroyREAL4TimeSeries ( ts );
-  XLALDestroySFTVector ( sfts );
-
   LALCheckMemoryLeaks();
 
   return TEST_PASSED;
 
 } /* main() */
 
+/** Unit-Test for function XLALSFTVectorToCOMPLEX8TimeSeries().
+ *  Generates random data (timeseries + SFTs), feeds the SFTs into XLALSFTVectorToCOMPLEX8TimeSeries()
+ *  and checks correctness of output timeseries.
+ *
+ * returns TEST_PASSED, TEST_FAILED or TEST_ABORTED
+ */
+int
+test_XLALSFTVectorToCOMPLEX8TimeSeries(void)
+{
+  const CHAR *fn = "test_XLALSFTVectorToCOMPLEX8TimeSeries()";
+
+  REAL4TimeSeries *ts = NULL;
+  SFTVector *sfts = NULL;
+
+  if ( XLALgenerateRandomData ( &ts, &sfts ) != XLAL_SUCCESS ) {
+    XLALPrintError ("%s: XLALgenerateRandomData() failed!\n", fn);
+    return TEST_ABORTED;
+  }
+
+
+  { /* debug output */
+    LALStatus status = empty_LALStatus;
+    FILE *fp;
+    const CHAR *fname = "testFstat_v3-timeseries.dat";
+    if ( (fp = fopen(fname, "wb")) == NULL ) {
+      LogPrintf (LOG_CRITICAL, "%s: failed to open '%s' for writing.\n", fn, fname );
+    }
+    write_timeSeriesR4 (fp, ts );
+    fclose ( fp );
+
+
+    LALWriteSFTVector2Dir (&status, sfts, "./", "test SFTs with random data", "testFstat_v3" );
+    if ( status.statusCode ) {
+      XLALPrintError("\n%s: LALWriteSFTVector2Dir() failed, with LAL error %d\n", fn, status.statusCode );
+      return TEST_ABORTED;
+    }
+
+  } /* debug-output */
+
+
+  /* free memory */
+  XLALDestroyREAL4TimeSeries ( ts );
+  XLALDestroySFTVector ( sfts );
+
+  return TEST_PASSED;
+
+} /* test_XLALSFTVectorToCOMPLEX8TimeSeries() */
 
 
 /**
@@ -197,7 +243,7 @@ XLALgenerateRandomData ( REAL4TimeSeries **ts, SFTVector **sfts )
   duration = numSamplesTS * deltaT;
 
   /* ----- allocate timeseries ----- */
-  if ( (outTS = XLALCreateREAL4TimeSeries ("input TS", &epoch0, 0, deltaT, &empty_LALUnit, numSamplesTS )) == NULL )
+  if ( (outTS = XLALCreateREAL4TimeSeries ("H1:test timeseries", &epoch0, 0, deltaT, &empty_LALUnit, numSamplesTS )) == NULL )
     {
       XLALPrintError ("%s: XLALCreateREAL4TimeSeries() failed for numSamples = %d\n", numSamplesTS );
       XLAL_ERROR ( fn, XLAL_EFUNC );
@@ -249,8 +295,8 @@ XLALgenerateRandomData ( REAL4TimeSeries **ts, SFTVector **sfts )
 
   /* ----- generate SFTs from this timeseries ---------- */
   {
-    SFTParams sftParams = {0};
-    LALStatus status = {0};
+    SFTParams sftParams = empty_SFTParams;
+    LALStatus status = empty_LALStatus;
 
     sftParams.Tsft = Tsft;
     sftParams.timestamps = timestampsSFT;
@@ -278,3 +324,30 @@ XLALgenerateRandomData ( REAL4TimeSeries **ts, SFTVector **sfts )
   return XLAL_SUCCESS;
 
 } /* XLALgenerateRandomData() */
+
+
+/* write a time-series into a text-file */
+void
+write_timeSeriesR4 (FILE *fp, const REAL4TimeSeries *series)
+{
+  REAL8 timestamp0, timestamp;
+  UINT4 i;
+
+  if (series == NULL)
+  {
+    printf ("\nempty input!\n");
+    return;
+  }
+
+  timestamp0 = 1.0*series->epoch.gpsSeconds + series->epoch.gpsNanoSeconds * 1.0e-9;
+
+  for( i = 0; i < series->data->length; i++)
+  {
+    timestamp = timestamp0 + 1.0 * i * series->deltaT;
+    fprintf( fp, "%16.9f %e\n", timestamp, series->data->data[i] );
+
+  }
+
+  return;
+
+} /* write_timeSeriesR4() */
