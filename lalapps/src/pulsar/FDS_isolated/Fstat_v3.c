@@ -186,7 +186,7 @@ XLALSFTVectorToLFT ( const SFTVector *sfts,	/**< input SFT vector */
 
   if ( (outputLFT->data = XLALCreateCOMPLEX8Vector ( numTimeSamples )) == NULL )
     {
-      XLALPrintError ( "%s: XLALCreateCOMPLEX8Vector(%d) failed!\n", fn, numTimeSamples );
+      XLALPrintError ( "%s: XLALCreateCOMPLEX8Vector(%d) failed! xlalErrno = %d\n", fn, numTimeSamples, xlalErrno );
       XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
     }
 
@@ -290,17 +290,6 @@ XLALSFTVectorToLFT ( const SFTVector *sfts,	/**< input SFT vector */
       XLALPrintError ( "%s: XLALReorderFFTWtoSFT() failed! errno = %d!\n", fn, xlalErrno );
       XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
     }
-
-
-  /* ---------- debug-output timeseries */
-  {
-    REAL8 t0 = XLALGPSGetREAL8 ( &lTS->epoch );
-    REAL8 dt = lTS->deltaT;
-    UINT4 i;
-    for ( i = 0; i < lTS->data->length; i ++ )
-      fprintf ( stderr, "%f   %f %f\n", t0 + i * dt, lTS->data->data[i].re, lTS->data->data[i].im);
-  }
-
 
   /* cleanup memory */
   XLALDestroyCOMPLEX8TimeSeries ( sTS );
