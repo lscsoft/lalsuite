@@ -43,6 +43,7 @@
 #include <lal/LALStdlib.h>
 #include <lal/LogPrintf.h>
 #include <lal/TimeSeries.h>
+#include <lal/RealFFT.h>
 #include <lal/ComplexFFT.h>
 #include <lal/SFTfileIO.h>
 
@@ -127,38 +128,104 @@ test_XLALSFTVectorToCOMPLEX8TimeSeries(void)
 {
   const CHAR *fn = "test_XLALSFTVectorToCOMPLEX8TimeSeries()";
 
-  REAL4TimeSeries *ts = NULL;
   SFTVector *sfts = NULL;
+  SFTtype *lftOrig = NULL;
+  SFTtype *lftTest = NULL;
 
-  if ( XLALgenerateRandomData ( &ts, &sfts ) != XLAL_SUCCESS ) {
+  REAL4TimeSeries *tsOrig = NULL;
+  COMPLEX8TimeSeries *tsTest = NULL;
+
+  COMPLEX8FFTPlan *LFTplanC8;
+  REAL4FFTPlan *LFTplanR4;
+  LALStatus status = empty_LALStatus;
+  UINT4 numSamples;
+
+  if ( XLALgenerateRandomData ( &tsOrig, &sfts ) != XLAL_SUCCESS ) {
     XLALPrintError ("%s: XLALgenerateRandomData() failed!\n", fn);
     return TEST_ABORTED;
   }
 
 
-  { /* debug output */
-    LALStatus status = empty_LALStatus;
-    FILE *fp;
-    const CHAR *fname = "testFstat_v3-timeseries.dat";
-    if ( (fp = fopen(fname, "wb")) == NULL ) {
-      LogPrintf (LOG_CRITICAL, "%s: failed to open '%s' for writing.\n", fn, fname );
+  if ( ( tsTest = XLALSFTVectorToCOMPLEX8TimeSeries ( sfts ) ) == NULL ) {
+    XLALPrintError ("%s: call to XLALSFTVectorToCOMPLEX8TimeSeries() failed. xlalErrrno = %d\n", fn, xlalErrno );
+    return TEST_ABORTED;
+  }
+
+  numSamples = tsTest->data->length;	/* number of (complex) time- or frequency samples */
+
+  /* ----- prepare long-timebaseline FFT ---------- */
+  status = empty_LALStatus;
+  LALCreateSFTtype (&status, &lftTest, numSamples);
+  if ( status.statusCode ) {
+    XLALPrintError("\n%s: LALCreateSFTtype() failed, with LAL error %d\n", fn, status.statusCode );
+    return TEST_ABORTED;
+  }
+
+  strcpy ( lftTest->name, tsTest->name );
+  lftTest->f0 = 0;
+  lftTest->epoch = tsTest->epoch;
+  lftTest->deltaF = 1.0 / ( numSamples * tsTest->deltaT );
+
+  /* ----- compute FFTW on computed C8 timeseries ---------- */
+  if ( (LFTplanC8 = XLALCreateForwardCOMPLEX8FFTPlan( numSamples, 0 )) == NULL )
+    {
+      XLALPrintError ( "%s: XLALCreateForwardCOMPLEX8FFTPlan(%d, ESTIMATE ) failed! errno = %d!\n", fn, numSamples, xlalErrno );
+      return TEST_ABORTED;
     }
-    write_timeSeriesR4 (fp, ts );
+
+  if ( XLALCOMPLEX8VectorFFT( lftTest->data, tsTest->data, LFTplanC8 ) != XLAL_SUCCESS )
+    {
+      XLALPrintError ( "%s: XLALCOMPLEX8VectorFFT() failed! errno = %d!\n", fn, xlalErrno );
+      return TEST_ABORTED;
+    }
+
+  if ( XLALReorderFFTWtoSFT (lftTest->data) != XLAL_SUCCESS )
+    {
+      XLALPrintError ( "%s: XLALReorderFFTWtoSFT() failed! errno = %d!\n", fn, xlalErrno );
+      return TEST_ABORTED;
+    }
+
+
+  /* debug output */
+  {
+    const CHAR *fnameTS = "testFstat_v3-timeseries.dat";
+    const CHAR *fnameLFT = "testFstat_v3-LFT.sft";
+    FILE *fp;
+
+    if ( (fp = fopen(fnameTS, "wb")) == NULL ) {
+      LogPrintf (LOG_CRITICAL, "%s: failed to open '%s' for writing.\n", fn, fnameTS );
+      return TEST_ABORTED;
+    }
+    write_timeSeriesR4 (fp, tsOrig );
     fclose ( fp );
 
-
+    /*
     LALWriteSFTVector2Dir (&status, sfts, "./", "test SFTs with random data", "testFstat_v3" );
     if ( status.statusCode ) {
       XLALPrintError("\n%s: LALWriteSFTVector2Dir() failed, with LAL error %d\n", fn, status.statusCode );
       return TEST_ABORTED;
     }
+    */
 
-  } /* debug-output */
+    status = empty_LALStatus;
+    LALWriteSFT2file ( &status, lftTest, fnameLFT, "test data LFT from SFTs");
+    if ( status.statusCode ) {
+      XLALPrintError("\n%s: LALWriteSFT2file() failed, with LAL error %d\n", fn, status.statusCode );
+      return TEST_ABORTED;
+    }
 
+  } /* debug output */
 
   /* free memory */
-  XLALDestroyREAL4TimeSeries ( ts );
+  XLALDestroyREAL4TimeSeries ( tsOrig );
+  XLALDestroyCOMPLEX8TimeSeries ( tsTest );
+
   XLALDestroySFTVector ( sfts );
+  XLALDestroyCOMPLEX8FFTPlan ( LFTplanC8 );
+  XLALDestroyREAL4FFTPlan ( LFTplanR4 );
+
+  status = empty_LALStatus;
+  LALDestroySFTtype ( &status, &lftTest );
 
   return TEST_PASSED;
 
