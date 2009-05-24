@@ -14,7 +14,7 @@ fi
 
 ##---------- names of codes and input/output files
 mfd_code="${injectdir}lalapps_Makefakedata_v4"
-lft_code="${builddir}lalapps_computeLFTfromSFTs"
+cfs_code="${builddir}lalapps_CFSv3"
 dumpSFT_code="${injectdir}lalapps_dumpSFT"
 extract_code="lalapps_ConvertToSFTv2"
 
@@ -124,16 +124,16 @@ fi
 
 echo
 echo "----------------------------------------------------------------------"
-echo "STEP 2: run computeLFTfromSFTs on small band extracted from SFTs"
+echo "STEP 2: run CFSv3 on small band extracted from SFTs"
 echo "----------------------------------------------------------------------"
 echo
-lft_CL=" --inputSFTs='${SFTdir}/*.sft' --outputLFT=$LFTfile --fmin=$fmin --fmax=$fmax --upsampling=1 2> tddSFT.dat"
+cfs_CL=" --inputSFTs='${SFTdir}/*.sft' --outputLFT=$LFTfile --fmin=$fmin --fmax=$fmax --upsampling=1 2> tddSFT.dat"
 
-cmdline="$lft_code $lft_CL";
+cmdline="$cfs_code $cfs_CL";
 echo $cmdline;
 
 if ! eval $cmdline; then
-    echo "Error.. something failed when running '$lft_code' ..."
+    echo "Error.. something failed when running '$cfs_code' ..."
     exit 1
 fi
 
