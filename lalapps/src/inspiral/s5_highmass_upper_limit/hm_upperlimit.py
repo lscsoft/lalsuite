@@ -38,7 +38,7 @@ def get_far_threshold_and_segments(zerofname, live_time_program, verbose = False
   dbtables.DBTable_set_connection(connection)
 
   # extract false alarm rate threshold
-  query = 'SELECT MIN(coinc_inspiral.false_alarm_rate) FROM coinc_inspiral JOIN coinc_event ON (coinc_event.coinc_event_id == coinc_inspiral.coinc_event_id) WHERE NOT EXISTS(SELECT * FROM time_slide WHERE time_slide.time_slide_id == coinc_event.time_slide_id AND time_slide.offset != 0);'
+  query = 'SELECT MIN(coinc_inspiral.combined_far) FROM coinc_inspiral JOIN coinc_event ON (coinc_event.coinc_event_id == coinc_inspiral.coinc_event_id) WHERE NOT EXISTS(SELECT * FROM time_slide WHERE time_slide.time_slide_id == coinc_event.time_slide_id AND time_slide.offset != 0);'
   far, = connection.cursor().execute(query).fetchone()
 
   # extract segments.
@@ -133,7 +133,7 @@ SELECT
     WHERE
       mapa.table_name == "sim_inspiral"
       AND mapa.event_id == sim_inspiral.simulation_id
-      AND coinc_inspiral.false_alarm_rate < ?
+      AND coinc_inspiral.combined_far < ?
   )
 FROM
   sim_inspiral
@@ -149,7 +149,7 @@ WHERE
 
     # done
     connection.close()
-    dbtables.discard_connection_filename(zerofname, working_filename, verbose = verbose)
+    dbtables.discard_connection_filename(f, working_filename, verbose = verbose)
     dbtables.DBTable_set_connection(None)
 
   print >>sys.stderr, "\nFound = %d Missed = %d" % (len(found), len(missed))
