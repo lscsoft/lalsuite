@@ -71,7 +71,6 @@ xmlNodePtr XLALLIGOTimeGPS2VOTableNode(const LIGOTimeGPS *const ltg, const char 
     xmlNodePtr xmlParentNode = NULL;
     xmlNodePtr xmlChildNode = NULL;
     xmlNodePtr xmlChildNodeList = NULL;
-    int i;
 
     CHAR gpsSecondsBuffer[INT4STR_MAXLEN] = {0};
     CHAR gpsNanoSecondsBuffer[INT4STR_MAXLEN] = {0};
@@ -239,7 +238,6 @@ xmlNodePtr XLALBinaryOrbitParams2VOTableNode(const BinaryOrbitParams *const bop,
     xmlNodePtr xmlParentNode = NULL;
     xmlNodePtr xmlChildNode = NULL;
     xmlNodePtr xmlChildNodeList = NULL;
-    int i;
 
     CHAR argp[REAL8STR_MAXLEN] = {0};
     CHAR asini[REAL8STR_MAXLEN] = {0};
