@@ -78,10 +78,11 @@ INT4 XLALCreateVOTableStringFromTree(const xmlNodePtr xmlTree,
                                      xmlChar **xmlStringBuffer,
                                      INT4 *xmlStringBufferSize);
 
-xmlChar * XLALGetSingleVOTableResourceParamValue(const xmlDocPtr xmlDocument,
-                                                 const char *resourceType,
-                                                 const char *resourceName,
-                                                 const char *paramName);
+xmlChar * XLALGetSingleVOTableResourceParamAttribute(const xmlDocPtr xmlDocument,
+                                                     const char *resourceType,
+                                                     const char *resourceName,
+                                                     const char *paramName,
+                                                     const char *paramAttribute);
 
 
 /* C++ protection */

@@ -444,18 +444,19 @@ INT4 XLALCreateVOTableStringFromTree(const xmlNodePtr xmlTree,
 
 
 /**
- * \brief Retrieves the content of a single VOTable \c RESOURCE->PARAM %node relation
+ * \brief Retrieves a specific attribute of a single VOTable \c RESOURCE->PARAM %node relation
  *
- * This function fetches the content of the \c value attribute of the specified \c PARAM element,
+ * This function fetches the content of the specified attribute of the specified \c PARAM element,
  * which is a child of the specified \c RESOURCE element, from the given VOTable document.
  *
  * \param xmlDocument [in] The XML document to be searched
  * \param resourceType [in] Value of the \c utype attribute of the \c RESOURCE element to be searched
  * \param resourceName [in] Value of the \c name attribute of the \c RESOURCE element to be searched
  * \param paramName [in] Value of the \c name attribute of the \c PARAM element to be searched
+ * \param paramAttribute [in] Attribute of the \c PARAM element to be searched for
  *
- * \return A pointer to a \c xmlChar that holds the content (string) of the \c PARAM element's
- * value attribute. The content will be encoded in UTF-8. In case of an error, a null-pointer is returned.\n
+ * \return A pointer to a \c xmlChar that holds the content (string) of the specified \c PARAM element
+ * attribute. The content will be encoded in UTF-8. In case of an error, a null-pointer is returned.\n
  * \b Important: the caller is responsible to free the allocated memory (when the
  * string isn't needed anymore) using \c xmlFree.
  *
@@ -464,13 +465,14 @@ INT4 XLALCreateVOTableStringFromTree(const xmlNodePtr xmlTree,
  * \author Oliver Bock\n
  * Albert-Einstein-Institute Hannover, Germany
  */
-xmlChar * XLALGetSingleVOTableResourceParamValue(const xmlDocPtr xmlDocument,
-                                                 const char *resourceType,
-                                                 const char *resourceName,
-                                                 const char *paramName)
+xmlChar * XLALGetSingleVOTableResourceParamAttribute(const xmlDocPtr xmlDocument,
+                                                     const char *resourceType,
+                                                     const char *resourceName,
+                                                     const char *paramName,
+                                                     const char *paramAttribute)
 {
     /* set up local variables */
-    static const CHAR *logReference = "XLALGetSingleVOTableResourceParamValue";
+    static const CHAR *logReference = "XLALGetSingleVOTableResourceParamAttribute";
     CHAR xpath[XPATHSTR_MAXLEN] = {0};
     static const XML_NAMESPACE xmlVOTableNamespace[1] = {{BAD_CAST(VOTABLE_NS_PREFIX), BAD_CAST(VOTABLE_NS_URL)}};
     const XML_NAMESPACE_VECTOR xmlNsVector = {xmlVOTableNamespace, 1};
@@ -492,18 +494,22 @@ xmlChar * XLALGetSingleVOTableResourceParamValue(const xmlDocPtr xmlDocument,
         XLALPrintError("Invalid input parameters: paramName\n");
         XLAL_ERROR_NULL(logReference, XLAL_EINVAL);
     }
+    if(!paramAttribute) {
+        XLALPrintError("Invalid input parameters: paramAttribute\n");
+        XLAL_ERROR_NULL(logReference, XLAL_EINVAL);
+    }
 
     /* prepare XPath search */
     if(LALSnprintf(
             xpath,
             XPATHSTR_MAXLEN,
-            "//"VOTABLE_NS_PREFIX":RESOURCE[@utype='%s' and @name='%s']/"VOTABLE_NS_PREFIX":PARAM[@name='%s']/@value",
-            resourceType, resourceName, paramName) < 0)
+            "//"VOTABLE_NS_PREFIX":RESOURCE[@utype='%s' and @name='%s']/"VOTABLE_NS_PREFIX":PARAM[@name='%s']/@%s",
+            resourceType, resourceName, paramName, paramAttribute) < 0)
     {
-        XLALPrintError("XPath statement construction failed: %s.%s\n", resourceName, paramName);
+        XLALPrintError("XPath statement construction failed: %s.%s.%s\n", resourceName, paramName, paramAttribute);
         XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
     }
 
-    /* retrieve LIGOTimeGPS.gpsSeconds */
+    /* retrieve specified attribute (content) */
     return (xmlChar *)XLALGetSingleNodeContentByXPath(xmlDocument, xpath, &xmlNsVector);
 }
