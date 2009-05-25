@@ -40,13 +40,20 @@ extern "C" {
 
 
 xmlNodePtr XLALLIGOTimeGPS2VOTableNode(const LIGOTimeGPS *const ltg, const char *name);
-INT4 XLALVOTableDoc2LIGOTimeGPSByName(xmlDocPtr xmlDocument, const char *name, LIGOTimeGPS *ltg);
+INT4 XLALVOTableDoc2LIGOTimeGPSByName(const xmlDocPtr xmlDocument, const char *name, LIGOTimeGPS *ltg);
 
 xmlNodePtr XLALBinaryOrbitParams2VOTableNode(const BinaryOrbitParams *const bop, const char *name);
-INT4 XLALVOTableDoc2BinaryOrbitParamsByName(xmlDocPtr xmlDocument, const char *name, BinaryOrbitParams *bop);
+INT4 XLALVOTableDoc2BinaryOrbitParamsByName(const xmlDocPtr xmlDocument, const char *name, BinaryOrbitParams *bop);
+
+xmlNodePtr XLALPulsarSpins2VOTableNode(const PulsarSpins *const spins, const char *name);
+INT4 XLALVOTableDoc2PulsarSpinsByName(const xmlDocPtr xmlDocument,
+                                      const char *resourceType,
+                                      const char *resourceName,
+                                      const char *paramName,
+                                      PulsarSpins spins);
 
 xmlNodePtr XLALPulsarDopplerParams2VOTableNode(const PulsarDopplerParams *const pdp, const char *name);
-INT4 XLALVOTableDoc2PulsarDopplerParamsByName(xmlDocPtr xmlDocument, const char *name, PulsarDopplerParams *pdp);
+INT4 XLALVOTableDoc2PulsarDopplerParamsByName(const xmlDocPtr xmlDocument, const char *name, PulsarDopplerParams *pdp);
 
 
 /* C++ protection */
