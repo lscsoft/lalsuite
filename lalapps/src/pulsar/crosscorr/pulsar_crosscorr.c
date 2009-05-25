@@ -629,7 +629,6 @@ int main(int argc, char *argv[]){
           }
 
           q1_current = uvar_q1 + (delta_q1*q1Counter);
-printf("%e\n", q1_current);
           q2_current = uvar_q2 + (delta_q2*q2Counter);
           n_current = uvar_brakingindex + (delta_n*nCounter);
 
@@ -829,7 +828,6 @@ printf("%e\n", q1_current);
 
 	        /*normalise rho*/
 	        rho->data[counter] = rho->data[counter]/sqrt(stddev->data[counter]);
-/*printf("%f\n", rho->data[counter]);*/
 	        fprintf(fp, "%1.5f\t %1.5f\t %1.5f\t %e\t %e\t %e\t %1.10f\n", thisPoint.Alpha,
 		thisPoint.Delta, f_current,
 		q1_current, q2_current, n_current, rho->data[counter]);
@@ -853,7 +851,6 @@ printf("%e\n", q1_current);
    	    /* initialize Doppler parameters of the potential source */
 	    thisPoint.Alpha = skyAlpha[skyCounter]; 
 	    thisPoint.Delta = skyDelta[skyCounter]; 
-printf("%e\n", rho->data[counter]);
 	    /*normalise rho*/
 	    rho->data[counter] = rho->data[counter]/sqrt(stddev->data[counter]);
 	    fprintf(fp, "%1.5f\t %1.5f\t %1.5f\t %e\t %e\t %1.10f\n", thisPoint.Alpha,
