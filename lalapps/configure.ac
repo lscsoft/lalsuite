@@ -211,7 +211,6 @@ dnl Checks for header files.
 AC_HEADER_STDC
 AC_CHECK_HEADERS(getopt.h)
 AC_CHECK_HEADERS([gsl/gsl_fft_real.h])
-AC_CHECK_HEADERS(mpi.h)
 if test "$LALSUITE_BUILD" != "true" ; then
   AC_CHECK_HEADERS([lal/LALStdlib.h])
 fi
