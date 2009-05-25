@@ -51,7 +51,7 @@ def get_far_threshold_and_segments(zerofname, live_time_program, verbose = False
   return far, seglists
 
 def get_volume_derivative(injfnames, twoDMassBins, dBin, FAR, zero_lag_segments, gw):
-  live_time = abs(zero_lag_segments)
+  livetime = float(abs(zero_lag_segments))
   FARh = FAR*100000
   FARl = FAR*0.001
   nbins = 5
@@ -62,12 +62,12 @@ def get_volume_derivative(injfnames, twoDMassBins, dBin, FAR, zero_lag_segments,
   for far in FARS.centres():
     m, f = get_injections(injfnames, far, zero_lag_segments)
     print >>sys.stderr, "computing volume at FAR " + str(far)
-    vAt, vA2t = twoD_SearchVolume(f, m, twoDMassBins, dBin, gw, live_time, 1)  
+    vAt, vA2t = twoD_SearchVolume(f, m, twoDMassBins, dBin, gw, livetime, 1)  
     vAt.array = scipy.log10(vAt.array + 0.001)
     vA.append(vAt)
   # the derivitive is calcuated with respect to FAR * t
-  FARS = rate.LogarithmicBins(FARl * live_time, FARh * live_time, nbins)
-  return derivitave_fit(FARS, FAR * live_time, vA, twoDMassBins)
+  FARS = rate.LogarithmicBins(FARl * livetime, FARh * livetime, nbins)
+  return derivitave_fit(FARS, FAR * livetime, vA, twoDMassBins)
   
   
 def derivitave_fit(farts, FARt, vAs, twodbin):
@@ -350,7 +350,7 @@ gw = rate.gaussian_window2d(3,3,4)
 dvA = get_volume_derivative(opts.injfnames, twoDMassBins, dBin, FAR, zero_lag_segments, gw)
 
 print >>sys.stderr, "computing volume at FAR " + str(FAR)
-vA, vA2 = twoD_SearchVolume(Found, Missed, twoDMassBins, dBin, gw, abs(zero_lag_segments), opts.bootstrap_iterations)
+vA, vA2 = twoD_SearchVolume(Found, Missed, twoDMassBins, dBin, gw, float(abs(zero_lag_segments)), opts.bootstrap_iterations)
 
 #Trim the array to have sane values outside the total mass area of interest
 trim_mass_space(dvA, twoDMassBins, minthresh=0.0, minM=25.0, maxM=100.0)
