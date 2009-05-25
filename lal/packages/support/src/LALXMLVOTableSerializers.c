@@ -223,7 +223,7 @@ INT4 XLALVOTableDoc2LIGOTimeGPSByName(xmlDocPtr xmlDocument, const char *name, L
  * fragment isn't needed anymore) using \c xmlFreeNode. Alternatively, \c xmlFreeDoc
  * can be used later on when the returned fragment has been embedded in a XML document.
  *
- * \sa XLALCreateVOTableCustomParamNode
+ * \sa XLALCreateVOTableParamNode
  * \sa XLALCreateVOTableResourceNode
  * \sa XLALCreateVOTableDocumentFromTree
  *
@@ -488,7 +488,7 @@ INT4 XLALVOTableDoc2BinaryOrbitParamsByName(xmlDocPtr xmlDocument, const char *n
  * fragment isn't needed anymore) using \c xmlFreeNode. Alternatively, \c xmlFreeDoc
  * can be used later on when the returned fragment has been embedded in a XML document.
  *
- * \sa XLALCreateVOTableCustomParamNode
+ * \sa XLALCreateVOTableParamNode
  * \sa XLALCreateVOTableResourceNode
  * \sa XLALCreateVOTableDocumentFromTree
  *
