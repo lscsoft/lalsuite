@@ -1,3 +1,5 @@
+#!/usr/bin/python
+import sys
 from pylal import rate
 from pylal import SimInspiralUtils
 import scipy
@@ -10,70 +12,55 @@ import copy
 from glue.ligolw.utils import ligolw_add
 from glue.ligolw import ligolw, utils
 
-def trim_mass_space(minM, maxM, eff, twodbin,minthresh=-2):
-  """
-  restricts array to only have data within the mass space and sets everything
-  outside the mass space to some canonical value, minthresh
-  """
-  x = eff.shape[0]
-  y = eff.shape[1]
-  c1 = twodbin.centres()[0]
-  c2 = twodbin.centres()[1]
-  numbins = 0
-  for i in range(x):
-    for j in range(y):
-      if c1[i] > c2[j] or (c1[i] + c2[j]) > maxM or (c1[i]+c2[j]) < minM: eff[i][j] = minthresh
-      #if (c1[i] + c2[j]) > maxM or (c1[i]+c2[j]) < minM: eff[i][j] = 0
-      else: numbins+=1
-  print "found " + str(numbins) + " bins"
+# FIXME, I apparently don't know how to read XML as cleverly as I thought, how do I find the table
+# without specifying the childnode number?
+def get_combined_array(tablename, childnode):
+  # FIXME assumes that all the xml files have the same binned array tables
+  # Figure out the shape of the arrays in the file, make an array with one more
+  # dimension, the number of files from sys.argv[1:]
+  xmldoc = utils.load_filename(sys.argv[1], verbose=True, gz = (f or "stdin").endswith(".gz"))
+  xmldoc = xmldoc.childNodes[0]
+  A  = rate.binned_array_from_xml(xmldoc.childNodes[0], tablename) 
+  bins = rate.bins_from_xml(xmldoc.childNodes[0])
+  out = numpy.zeros((len(sys.argv[1:]),)+A.shape,dtype="float")
+  # Read the data
+  for i, f in enumerate(sys.argv[1:]):
+    xmldoc = utils.load_filename(f, verbose=True, gz = (f or "stdin").endswith(".gz"))
+    xmldoc = xmldoc.childNodes[0]
+    out[i] = rate.binned_array_from_xml(xmldoc.childNodes[childnode], tablename).array
+  A.array = numpy.zeros(A.shape)
+  return bins, out, 
 
 
 def istrue(arg):
   return True
 
-vA = None
-vA2 = None
-eA = None
-for f in glob.glob('2Dsearchvolume*.xml'):
-  xmldoc = utils.load_filename(f, verbose=True, gz = (f or "stdin").endswith(".gz"))
-  xmldoc = xmldoc.childNodes[0]
-  if vA: vA += rate.binned_array_from_xml(xmldoc.childNodes[0], "2DsearchvolumeFirstMoment")
-  else: vA = rate.binned_array_from_xml(xmldoc.childNodes[0], "2DsearchvolumeFirstMoment")
-  if vA2: vA2 += rate.binned_array_from_xml(xmldoc.childNodes[1], "2DsearchvolumeSecondMoment")
-  else: vA2 = rate.binned_array_from_xml(xmldoc.childNodes[1], "2DsearchvolumeSecondMoment")
-  if eA: eA += rate.binned_array_from_xml(xmldoc.childNodes[2], "2DsearchvolumeDerivative")
-  else: eA = rate.binned_array_from_xml(xmldoc.childNodes[2], "2DsearchvolumeDerivative")
-
-
-twoDMassBins = rate.bins_from_xml(xmldoc.childNodes[0])
+# bins is the same for each call and ulA is an empty binnedArray that has the right shape
+# that can hold the upperlimit when we get around to computing it later, so it is okay
+# that bins, and ulA are overwritten in each call. vA, vA2 and dvA are the important ones
+bins, vA, ulA = get_combined_array("2DsearchvolumeFirstMoment", 0)
+bins, vA2, ulA = get_combined_array("2DsearchvolumeSecondMoment", 1)
+bins, dvA, ulA = get_combined_array("2DsearchvolumeDerivative", 2)
 
 #bin edges Number of bins + 1 for pcolor
-X = numpy.array( list(twoDMassBins.lower()[0]) + [twoDMassBins.upper()[0][-1]] )
-Y = numpy.array( list(twoDMassBins.lower()[1]) + [twoDMassBins.upper()[1][-1]] )
+X = numpy.array( list(bins.lower()[0]) + [bins.upper()[0][-1]] )
+Y = numpy.array( list(bins.lower()[1]) + [bins.upper()[1][-1]] )
 
-print len(X), len(Y), vA.array.shape
+print len(X), len(Y), vA[0].shape
 
-#ul = pylab.log10(2.3 / (vA.array + 1)) + 3 # just a temporary scaling for the sake of making a plot that won't get everyone all worked up until the real calculation is done
 
-log_vol = pylab.log10(vA.array)
+log_vol = pylab.log10(vA[0])
 
-#log_vol = vA.array
 
-vol_error = vA2.array**0.5 / (vA.array + 0.0001)
-#vol_error = eA.array**0.5
+vol_error = vA2[0]**0.5 / (vA[0] + 0.0001)
 
-der = eA.array #pylab.log10(eA.array)
-
-trim_mass_space(25, 100, log_vol, twoDMassBins, 5)
-trim_mass_space(25, 100, vol_error, twoDMassBins, 0)
-trim_mass_space(25, 100, der, twoDMassBins, 0)
-
+der = dvA[0] #pylab.log10(eA.array)
 
 pylab.figure(1)
 pylab.gray()
 pylab.pcolor(X,Y, log_vol)
 #pylab.hold(1)
-#cn = pylab.contour(twoDMassBins.centres()[0], twoDMassBins.centres()[1], ul)
+#cn = pylab.contour(bins.centres()[0], bins.centres()[1], ul)
 #pylab.clabel(cn)
 #pylab.hold(0)
 pylab.colorbar()

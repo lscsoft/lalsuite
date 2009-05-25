@@ -2052,21 +2052,22 @@ for ifo in ifo_list:
 ##############################################################################
 # Step 5: Run inca in single ifo mode on the single ifo triggers.
 
-print "setting up jobs to inca single IFO data...",
-sys.stdout.flush()
+if not opts.ringdown:
+  print "setting up jobs to inca single IFO data...",
+  sys.stdout.flush()
 
-single_coinc_nodes = {}
-for ifo in ifo_list:
-  single_coinc_nodes[ifo] = []
-  single_coinc_nodes[ifo] = single_coinc(chunks_analyzed[ifo],ifo,
-     analyzed_data[ifo],single_inca_job,dag,usertag)
+  single_coinc_nodes = {}
+  for ifo in ifo_list:
+    single_coinc_nodes[ifo] = []
+    single_coinc_nodes[ifo] = single_coinc(chunks_analyzed[ifo],ifo,
+       analyzed_data[ifo],single_inca_job,dag,usertag)
    
-  # Step 5S: Run sire on the single ifo triggers
-  sire_segments_individually(single_coinc_nodes[ifo], sire_job, dag, 
-      opts.coire_coincidence, opts.coincidence, ifo,
-      inj_file=inj_file, usertag=usertag, ifotag="FIRST", inspinjNode = inspinj)
+    # Step 5S: Run sire on the single ifo triggers
+    sire_segments_individually(single_coinc_nodes[ifo], sire_job, dag, 
+        opts.coire_coincidence, opts.coincidence, ifo,
+        inj_file=inj_file, usertag=usertag, ifotag="FIRST", inspinjNode = inspinj)
 
-print "done"
+  print "done"
   
  
 ##############################################################################
