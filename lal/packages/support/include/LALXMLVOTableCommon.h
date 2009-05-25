@@ -70,8 +70,7 @@ xmlNodePtr XLALCreateVOTableParamNode(const char *name,
 
 xmlNodePtr XLALCreateVOTableResourceNode(const char *type,
                                          const char *identifier,
-                                         const xmlNodePtr *children,
-                                         const INT4 childCount);
+                                         const xmlNodePtr childNodeList);
 
 xmlDocPtr XLALCreateVOTableDocumentFromTree(const xmlNodePtr xmlTree);
 

@@ -210,13 +210,12 @@ xmlNodePtr XLALCreateVOTableParamNode(const char *name,
  */
 xmlNodePtr XLALCreateVOTableResourceNode(const char *type,
                                          const char *identifier,
-                                         const xmlNodePtr *children,
-                                         const INT4 childCount)
+                                         const xmlNodePtr childNodeList)
 {
     /* set up local variables */
     static const CHAR *logReference = "XLALCreateVOTableResourceNode";
     xmlNodePtr xmlResourceNode = NULL;
-    INT4 i = 0;
+    xmlNodePtr xmlChildNode = childNodeList;
 
     /* sanity check */
     if(!type) {
@@ -225,10 +224,6 @@ xmlNodePtr XLALCreateVOTableResourceNode(const char *type,
     }
     if(!identifier) {
         XLALPrintError("Invalid input parameter: identifier\n");
-        XLAL_ERROR_NULL(logReference, XLAL_EINVAL);
-    }
-    if((!children && childCount > 0) || (children && childCount <= 0)) {
-        XLALPrintError("Invalid input parameter: children/childCount\n");
         XLAL_ERROR_NULL(logReference, XLAL_EINVAL);
     }
 
@@ -254,13 +249,15 @@ xmlNodePtr XLALCreateVOTableResourceNode(const char *type,
     }
 
     /* add children */
-    for(i = 0; i < childCount; ++i) {
-        if(!xmlAddChild(xmlResourceNode, children[i])) {
+    while(xmlChildNode) {
+        if(!xmlAddChild(xmlResourceNode, xmlChildNode)) {
             /* clean up */
             xmlFreeNode(xmlResourceNode);
-            XLALPrintError("Couldn't add child node to RESOURCE node: #%i\n", i);
+            XLALPrintError("Couldn't add child node to RESOURCE node!\n");
             XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
         }
+        /* advance to next sibling in list */
+        xmlChildNode = xmlChildNode->next;
     }
 
     /* return RESOURCE node (needs to be xmlFreeNode'd or xmlFreeDoc'd by caller!!!) */
