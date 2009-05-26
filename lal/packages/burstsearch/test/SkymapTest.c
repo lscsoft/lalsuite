@@ -1,3 +1,93 @@
+#include <malloc.h>
+#include <stdio.h>
+#include <math.h>
+#include <time.h>
+
+#include <lal/LALConstants.h>
+#include <lal/Skymap.h>
+#include <lal/Random.h>
+#include <lal/Sort.h>
+
+#include <fftw3.h>
+
+int main(int argc, char** argv)
+{
+    
+    int sampleFrequency = 8192;
+    int m = 1024;
+    int n = 2048;
+    
+    XLALSkymapPlanType* plan = 0;
+    
+    double* p = 0;
+    double sigma = 1;
+    double w[3] = {1, 1, 1};
+    int begin[3] = { 4000, 4000, 4000 };
+    int end[3] = {4200, 4200, 4200 };
+    double* x[6] = { 0, 0, 0, 0, 0, 0 };
+    int* counts = 0;
+    int* modes = 0;
+    int delay_limits[6] = { -8192, 8192, -8192, 8192, -8192, 8192 };
+
+    RandomParams* rng_parameters;    
+    
+    FILE* h;
+    
+    double* q = 0;
+    
+    int i;
+    int j;
+    
+    lalDebugLevel = 0xFFFFFFFF;
+            
+    if (!(plan = XLALSkymapConstructPlanMN(sampleFrequency, m, n)))
+    {
+        printf("XLALSkymapConstructPlanMN failed\n");
+        exit(1);
+    }
+    
+    rng_parameters = XLALCreateRandomParams(0);
+    
+    for (i = 0; i != 6; ++i)
+    {
+        x[i] = XLALMalloc(sizeof(double) * sampleFrequency);
+        for (j = 0; j != sampleFrequency; ++j)
+        {
+            x[i][j] = XLALNormalDeviate(rng_parameters);
+        }
+    }
+    
+    p = (double*) XLALMalloc(sizeof(double) * plan->pixelCount);
+    counts = (int*) XLALMalloc(sizeof(int) * plan->pixelCount);
+    modes = (int*) XLALMalloc(sizeof(int) * plan->pixelCount);
+            
+    if (XLALSkymapSignalHypothesisWithLimits(plan, p, sigma, w, begin, end, x, counts, modes, delay_limits))
+    {
+        printf("XLALSkymapSignalHypothesisWithLimits failed\n");
+        exit(1);
+    }
+    
+    h = fopen("p.bin", "w");
+    fwrite(p, sizeof(double), plan->pixelCount, h);
+    fclose(h);
+    
+    q = XLALMalloc(sizeof(double) * m * n);
+    
+    if (XLALSkymapRender(q, plan, p))
+    {
+        printf("XLALSkymapRender failed\n");
+        exit(1);
+    }
+    
+    h = fopen("q.bin", "w");
+    fwrite(q, sizeof(double), m * n, h);
+    fclose(h);    
+    
+    return 0;
+}
+
+
+#if 0
 #include <stdlib.h>
 #include <math.h>
 
@@ -79,6 +169,8 @@ int main(int argc, char** argv)
     
     return 0;
 }
+
+#endif
 
 #if 0
 
