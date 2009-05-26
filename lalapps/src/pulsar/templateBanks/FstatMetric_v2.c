@@ -105,7 +105,7 @@ typedef struct
 {
   EphemerisData *edat;			/**< ephemeris data (from LALInitBarycenter()) */
   LIGOTimeGPS startTime;		/**< start time of observation */
-  PulsarDopplerParams dopplerPoint;	/**< doppler point */
+  PulsarParams signalParams;		/**< GW signal parameters: Amplitudes + doppler */
   MultiDetectorInfo detInfo;		/**< (multi-)detector info */
   DopplerCoordinateSystem coordSys; 	/**< array of enums describing Doppler-coordinates to compute metric in */
 } ConfigVariables;
@@ -129,8 +129,10 @@ typedef struct
   REAL8 startTime;	/**< GPS start time of observation */
   REAL8 duration;	/**< length of observation in seconds */
 
+  REAL8 h0;		/**< GW amplitude h_0 */
   REAL8 cosi;		/**< cos(iota) */
   REAL8 psi;		/**< polarization-angle psi */
+  REAL8 phi0;           /**< initial GW phase phi_0 */
 
   CHAR* outputMetric;	/**< filename to write metrics into */
 
@@ -181,6 +183,7 @@ main(int argc, char *argv[])
   UserVariables_t uvar = empty_UserVariables;
   FILE *fpMetric = 0;
   DopplerMetric *metric;
+  DopplerMetricParams metricParams = empty_DopplerMetricParams;
 
   lalDebugLevel = 0;
   vrbflg = 1;	/* verbose error-messages */
@@ -211,7 +214,7 @@ main(int argc, char *argv[])
   if ( uvar.coordsHelp )
     {
       CHAR *helpstr;
-      if ( (helpstr = (CHAR*)XLALDopplerCoordinateHelpAll()) == NULL )
+      if ( (helpstr = XLALDopplerCoordinateHelpAll()) == NULL )
 	{
 	  LogPrintf ( LOG_CRITICAL, "XLALDopplerCoordinateHelpAll() failed!\n\n");
 	  return -1;
@@ -224,41 +227,26 @@ main(int argc, char *argv[])
   /* basic setup and initializations */
   LAL_CALL ( InitCode(&status, &config, &uvar), &status);
 
+  metricParams.coordSys      = config.coordSys;
+  metricParams.detMotionType = uvar.detMotionType;
+  metricParams.startTime     = config.startTime;
+  metricParams.Tspan         = uvar.duration;
+  metricParams.detInfo       = config.detInfo;
+  metricParams.signalParams  = config.signalParams;
+
+  metricParams.fullFmetric   = uvar.fullFmetric;
+
   /* ----- setup metric computation and call XLALDopplerMetric() ---------- */
-  if ( ! uvar.fullFmetric )
+  if ( ! metricParams.fullFmetric )
     {
-      metric = XLALDopplerPhaseMetric ( &config.coordSys,
-					uvar.detMotionType,
-					&config.dopplerPoint,
-					config.startTime,
-					uvar.duration,
-					config.edat,
-					uvar.IFOs->data[0]
-					);
-      if ( !metric ) {
+      if ( (metric = XLALDopplerPhaseMetric ( &metricParams, config.edat )) == NULL ) {
 	LogPrintf (LOG_CRITICAL, "Something failed in XLALDopplerPhaseMetric()\n\n");
 	return -1;
       }
     } /* if Phase metric */
   else
     {
-      MultiDetectorInfo detInfo = empty_MultiDetectorInfo;
-      if ( XLALParseMultiDetectorInfo ( &detInfo, uvar.IFOs, uvar.IFOweights ) != XLAL_SUCCESS ) {
-	LogPrintf (LOG_CRITICAL, "Failed to parse detector names and/or weights\n\n");
-	return -1;
-      }
-
-      metric = XLALDopplerFstatMetric ( &config.coordSys,
-					uvar.detMotionType,
-					&config.dopplerPoint,
-					config.startTime,
-					uvar.duration,
-					config.edat,
-					&detInfo,
-					uvar.cosi,
-					uvar.psi
-					);
-      if ( !metric ) {
+      if ( (metric = XLALDopplerFstatMetric ( &metricParams, config.edat )) == NULL ) {
 	LogPrintf (LOG_CRITICAL, "Something failed in XLALDopplerFstatMetric()\n\n");
 	return -1;
       }
@@ -271,7 +259,8 @@ main(int argc, char *argv[])
       UINT4 i;
       CHAR *id1, *id2;
       CHAR *cmdline = NULL;
-      const DopplerMetricParams* meta = &(metric->meta);
+      const DopplerMetricParams *meta = &metricParams;
+      const PulsarDopplerParams *doppler = &(meta->signalParams.Doppler);
 
       if ( (fpMetric = fopen ( uvar.outputMetric, "wb" )) == NULL )
 	return FSTATMETRIC_EFILE;
@@ -295,13 +284,13 @@ main(int argc, char *argv[])
       fprintf ( fpMetric, "%%%% DetectorMotionType = '%s'\n", XLALDetectorMotionName(meta->detMotionType) );
       fprintf ( fpMetric, "%%%% DopplerPoint = {\n");
       fprintf ( fpMetric, "%%%% 	refTime = {%d, %d}\n",
-		meta->dopplerPoint.refTime.gpsSeconds, meta->dopplerPoint.refTime.gpsNanoSeconds );
-      fprintf ( fpMetric, "%%%% 	Alpha = %f rad; Delta = %f rad\n", meta->dopplerPoint.Alpha, meta->dopplerPoint.Delta );
+		doppler->refTime.gpsSeconds, doppler->refTime.gpsNanoSeconds );
+      fprintf ( fpMetric, "%%%% 	Alpha = %f rad; Delta = %f rad\n", doppler->Alpha, doppler->Delta );
       fprintf ( fpMetric, "%%%% 	fkdot = [%f, %g, %g, %g ]\n",
-		meta->dopplerPoint.fkdot[0], meta->dopplerPoint.fkdot[1], meta->dopplerPoint.fkdot[2], meta->dopplerPoint.fkdot[3] );
-      if ( meta->dopplerPoint.orbit )
+		doppler->fkdot[0], doppler->fkdot[1], doppler->fkdot[2], doppler->fkdot[3] );
+      if ( doppler->orbit )
 	{
-	  const BinaryOrbitParams *orbit = meta->dopplerPoint.orbit;
+	  const BinaryOrbitParams *orbit = doppler->orbit;
 	  fprintf ( fpMetric, "%%%% 	   orbit = { \n");
 	  fprintf ( fpMetric, "%%%% 		tp = {%d, %d}\n", orbit->tp.gpsSeconds, orbit->tp.gpsNanoSeconds );
 	  fprintf ( fpMetric, "%%%% 		argp  = %g\n", orbit->argp );
@@ -329,14 +318,16 @@ main(int argc, char *argv[])
 	}
       fprintf ( fpMetric, "];\n");
 
-      if ( ! metric->meta.fullFmetric )
+      if ( ! meta->fullFmetric )
 	{
 	  fprintf ( fpMetric, "\ng_ij = \\\n" ); XLALfprintfGSLmatrix ( fpMetric, METRIC_FORMAT,  metric->g_ij );
 	} /* simple phase metric */
       else
 	{
 	  REAL4 D = metric->A * metric->B - SQ(metric->C);
-	  fprintf ( fpMetric, "%%%% cosi = %g; psi = %g\n", meta->cosi, meta->psi );
+	  const PulsarAmplitudeParams *Amp = &(meta->signalParams.Amp);
+
+	  fprintf ( fpMetric, "%%%% h0 = %g; cosi = %g; psi = %g; phi0 = %g;\n", Amp->h0, Amp->cosi, Amp->psi, Amp->phi0 );
 	  fprintf ( fpMetric, "\ng_ij = \\\n" ); XLALfprintfGSLmatrix ( fpMetric, METRIC_FORMAT,  metric->g_ij );
 
 	  fprintf ( fpMetric, "\nA = %.16g; B = %.16g; C = %.16g; D = %.16g;\n", metric->A, metric->B, metric->C, D );
@@ -376,6 +367,8 @@ initUserVars (LALStatus *status, UserVariables_t *uvar)
 
   uvar->Freq = 100;
   uvar->f1dot = 0.0;
+  uvar->h0 = 1;
+  uvar->phi0 = 0;
 
   uvar->startTime = 714180733;
   uvar->duration = 10 * 3600;
@@ -409,8 +402,12 @@ initUserVars (LALStatus *status, UserVariables_t *uvar)
   LALregREALUserStruct(status,  duration,	'T', UVAR_OPTIONAL,	"Alternative: Duration of observation in seconds");
   LALregSTRINGUserStruct(status,ephemDir, 	'E', UVAR_OPTIONAL,     "Directory where Ephemeris files are located");
   LALregSTRINGUserStruct(status,ephemYear, 	'y', UVAR_OPTIONAL,     "Year (or range of years) of ephemeris files to be used");
+
+  LALregREALUserStruct(status, 	h0,	 	 0, UVAR_OPTIONAL,	"GW amplitude h0" );
   LALregREALUserStruct(status, 	cosi,	 	 0, UVAR_OPTIONAL,	"Pulsar orientation-angle cos(iota) [-1,1]" );
   LALregREALUserStruct(status,	psi,		 0, UVAR_OPTIONAL,	"Wave polarization-angle psi [0, pi]" );
+  LALregREALUserStruct(status,	phi0,		 0, UVAR_OPTIONAL,	"GW initial phase phi_0 [0, 2pi]" );
+
   LALregSTRINGUserStruct(status, outputMetric,	'o', UVAR_OPTIONAL,	"Output the metric components (in octave format) into this file.");
   LALregINTUserStruct(status,   projection,      0,  UVAR_OPTIONAL,     "Coordinate of metric projection: 0=none, 1=f, 2=Alpha, 3=Delta, 4=f1dot");
 
@@ -447,13 +444,21 @@ InitCode (LALStatus *status, ConfigVariables *cfg, const UserVariables_t *uvar)
   }
 
   /* ----- get parameter-space point from user-input) */
-  cfg->dopplerPoint = empty_PulsarDopplerParams;
-  cfg->dopplerPoint.refTime = cfg->startTime;
-  cfg->dopplerPoint.Alpha = uvar->Alpha;
-  cfg->dopplerPoint.Delta = uvar->Delta;
-  cfg->dopplerPoint.fkdot[0] = uvar->Freq;
-  cfg->dopplerPoint.fkdot[1] = uvar->f1dot;
-  cfg->dopplerPoint.orbit = NULL;
+  cfg->signalParams.Amp.h0 = uvar->h0;
+  cfg->signalParams.Amp.cosi = uvar->cosi;
+  cfg->signalParams.Amp.psi = uvar->psi;
+  cfg->signalParams.Amp.phi0 = uvar->phi0;
+
+  {
+    PulsarDopplerParams *dop = &(cfg->signalParams.Doppler);
+    (*dop) = empty_PulsarDopplerParams;
+    dop->refTime = cfg->startTime;
+    dop->Alpha = uvar->Alpha;
+    dop->Delta = uvar->Delta;
+    dop->fkdot[0] = uvar->Freq;
+    dop->fkdot[1] = uvar->f1dot;
+    dop->orbit = NULL;
+  }
 
   /* ----- initialize IFOs and (Multi-)DetectorStateSeries  ----- */
   {
@@ -472,6 +477,12 @@ InitCode (LALStatus *status, ConfigVariables *cfg, const UserVariables_t *uvar)
 
     if ( ! uvar->fullFmetric && (numDet > 1) ) {
       LogPrintf ( LOG_CRITICAL, "PhaseMetric (fullFmetric==FALSE) allows specifying only a single detector!\n");
+      ABORT (status, FSTATMETRIC_EINPUT, FSTATMETRIC_MSGEINPUT);
+    }
+
+    cfg->detInfo = empty_MultiDetectorInfo;
+    if ( XLALParseMultiDetectorInfo ( &cfg->detInfo, uvar->IFOs, uvar->IFOweights ) != XLAL_SUCCESS ) {
+      LogPrintf (LOG_CRITICAL, "%s: XLALParseMultiDetectorInfo() failed to parse detector names and/or weights. errno = %d.\n\n", fn, xlalErrno);
       ABORT (status, FSTATMETRIC_EINPUT, FSTATMETRIC_MSGEINPUT);
     }
 

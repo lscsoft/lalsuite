@@ -197,12 +197,11 @@ typedef struct
   DopplerCoordinateSystem coordSys;		/**< number of dimensions and coordinate-IDs of Doppler-metric */
   DetectorMotionType detMotionType;		/**< the type of detector-motion assumed: full spin+orbit, pure orbital, Ptole, ... */
 
-  PulsarDopplerParams dopplerPoint;		/**< doppler-point to compute metric for */
   LIGOTimeGPS startTime;			/**< startTime of the observation */
   REAL8 Tspan;					/**< total spanned duration of the observation */
   MultiDetectorInfo detInfo;			/**< detectors (and their noise-weights) to compute metric for */
 
-  REAL8 cosi, psi;				/**< amplitude-parameters, only used if fullFmetric == TRUE */
+  PulsarParams signalParams;			/**< parameter-space point to compute metric for (doppler + amplitudes) */
 } DopplerMetricParams;
 
 
@@ -248,27 +247,22 @@ extern DopplerMetricParams empty_DopplerMetricParams;
 extern MultiDetectorInfo empty_MultiDetectorInfo;
 
 /*---------- exported prototypes [API] ----------*/
-DopplerMetric*
-XLALDopplerPhaseMetric ( const DopplerCoordinateSystem *coordSys,
-			 DetectorMotionType detMotionType,
-			 const PulsarDopplerParams *dopplerPoint,
-			 LIGOTimeGPS startTime,
-			 REAL8 Tspan,
-			 const EphemerisData *edat,
-			 const CHAR *detName
+DopplerMetric *
+XLALDopplerPhaseMetric ( const DopplerMetricParams *metricParams,
+			 const EphemerisData *edat
 			 );
 
 DopplerMetric*
-XLALDopplerFstatMetric ( const DopplerCoordinateSystem *coordSys,
-			 DetectorMotionType detMotionType,
-			 const PulsarDopplerParams *dopplerPoint,
-			 LIGOTimeGPS startTime,
-			 REAL8 Tspan,
-			 const EphemerisData *edat,
-			 const MultiDetectorInfo *detInfo,
-			 REAL8 cosi,
-			 REAL8 psi
+XLALDopplerFstatMetric ( const DopplerMetricParams *metricParams,
+			 const EphemerisData *edat
 			 );
+
+
+FmetricAtoms_t*
+XLALComputeFmetricAtoms ( const DopplerMetricParams *metricParams,
+			  const EphemerisData *edat
+			  );
+
 
 int
 XLALDetectorPosVel ( PosVel3D_t *pos_vel3D,
@@ -278,16 +272,9 @@ XLALDetectorPosVel ( PosVel3D_t *pos_vel3D,
 		    DetectorMotionType special
 		    );
 
+int
+XLALAmplitudeParams2Vect ( PulsarAmplitudeVect *Amu, const PulsarAmplitudeParams *Amp );
 
-FmetricAtoms_t*
-XLALComputeFmetricAtoms ( const DopplerCoordinateSystem *coordSys,
-			  DetectorMotionType detMotionType,
-			  const PulsarDopplerParams *dopplerPoint,
-			  LIGOTimeGPS startTime,
-			  REAL8 Tspan,
-			  const EphemerisData *edat,
-			  const MultiDetectorInfo *detInfo
-			  );
 
 FmetricAtoms_t* XLALCreateFmetricAtoms ( UINT4 dim );
 void XLALDestroyFmetricAtoms ( FmetricAtoms_t *atoms );
@@ -303,7 +290,7 @@ int XLALDopplerCoordinateNames2System ( DopplerCoordinateSystem *system, const L
 const CHAR *XLALDetectorMotionName ( DetectorMotionType detType );
 const CHAR *XLALDopplerCoordinateName ( DopplerCoordinateID coordID );
 const CHAR *XLALDopplerCoordinateHelp ( DopplerCoordinateID coordID );
-const CHAR *XLALDopplerCoordinateHelpAll ( void );
+CHAR *XLALDopplerCoordinateHelpAll ( void );
 int XLALParseMultiDetectorInfo ( MultiDetectorInfo *detInfo, const LALStringVector *detNames, const LALStringVector *detWeights );
 
 
