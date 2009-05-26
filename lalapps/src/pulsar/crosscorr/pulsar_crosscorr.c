@@ -359,7 +359,7 @@ int main(int argc, char *argv[]){
     nnLoops = 1 + ceil(uvar_brakingindexBand/uvar_brakingindexResolution);
 
     delta_q1 = uvar_q1Resolution;
-  
+    
     delta_q2 = uvar_q2Resolution;
 
     delta_n = uvar_brakingindexResolution; 
@@ -448,9 +448,9 @@ int main(int argc, char *argv[]){
 
   /* initialise output arrays */
   if (uvar_QCoeffs) {
-    nParams = nSkyPatches * nfreqLoops *nfdotLoops * nfddotLoops;
-  } else {
     nParams = nSkyPatches * nfreqLoops * nq1Loops * nq2Loops * nnLoops;
+  } else {
+    nParams = nSkyPatches * nfreqLoops *nfdotLoops * nfddotLoops;
   }
 
   rho = (REAL8Vector *)LALCalloc(1, sizeof(REAL8Vector));
@@ -546,8 +546,8 @@ int main(int argc, char *argv[]){
 
 
   slidingcounter = 0;
- 	   
-  /***********start main calculations**************/
+ 
+ /***********start main calculations**************/
   /*outer loop over all sfts in catalog, so that we load only the relevant sfts each time*/
   for(sftcounter=0; sftcounter < (INT4)catalog->length -1; sftcounter++) {
     tmpSFT = NULL;
@@ -653,7 +653,7 @@ int main(int argc, char *argv[]){
         }
 
         f_current = uvar_f0 + (uvar_fResolution*freqCounter);
- 
+
    	LAL_CALL( InitDoppParams(&status, fdots, &thisPoint, refTime, f_current, q1_current, q2_current, n_current,
 				 fdot_current, fddot_current), &status);
 
@@ -763,6 +763,7 @@ int main(int argc, char *argv[]){
 			      &status);
 		
 		  }
+
 		  ualphacounter++;
                 }
 	      } /*finish loop over sft pairs*/
@@ -850,7 +851,6 @@ int main(int argc, char *argv[]){
    	    /* initialize Doppler parameters of the potential source */
 	    thisPoint.Alpha = skyAlpha[skyCounter]; 
 	    thisPoint.Delta = skyDelta[skyCounter]; 
-
 	    /*normalise rho*/
 	    rho->data[counter] = rho->data[counter]/sqrt(stddev->data[counter]);
 	    fprintf(fp, "%1.5f\t %1.5f\t %1.5f\t %e\t %e\t %1.10f\n", thisPoint.Alpha,
