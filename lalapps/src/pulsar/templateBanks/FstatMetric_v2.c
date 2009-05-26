@@ -107,6 +107,7 @@ typedef struct
   LIGOTimeGPS startTime;		/**< start time of observation */
   PulsarDopplerParams dopplerPoint;	/**< doppler point */
   MultiDetectorInfo detInfo;		/**< (multi-)detector info */
+  DopplerCoordinateSystem coordSys; 	/**< array of enums describing Doppler-coordinates to compute metric in */
 } ConfigVariables;
 
 
@@ -179,7 +180,6 @@ main(int argc, char *argv[])
   ConfigVariables config = empty_ConfigVariables;
   UserVariables_t uvar = empty_UserVariables;
   FILE *fpMetric = 0;
-  CHAR dummy[512];
   DopplerMetric *metric;
 
   lalDebugLevel = 0;
@@ -211,7 +211,7 @@ main(int argc, char *argv[])
   if ( uvar.coordsHelp )
     {
       CHAR *helpstr;
-      if ( (helpstr = XLALDopplerCoordinateHelpAll()) == NULL )
+      if ( (helpstr = (CHAR*)XLALDopplerCoordinateHelpAll()) == NULL )
 	{
 	  LogPrintf ( LOG_CRITICAL, "XLALDopplerCoordinateHelpAll() failed!\n\n");
 	  return -1;
@@ -227,7 +227,7 @@ main(int argc, char *argv[])
   /* ----- setup metric computation and call XLALDopplerMetric() ---------- */
   if ( ! uvar.fullFmetric )
     {
-      metric = XLALDopplerPhaseMetric ( uvar.coords,
+      metric = XLALDopplerPhaseMetric ( &config.coordSys,
 					uvar.detMotionType,
 					&config.dopplerPoint,
 					config.startTime,
@@ -248,7 +248,7 @@ main(int argc, char *argv[])
 	return -1;
       }
 
-      metric = XLALDopplerFstatMetric ( uvar.coords,
+      metric = XLALDopplerFstatMetric ( &config.coordSys,
 					uvar.detMotionType,
 					&config.dopplerPoint,
 					config.startTime,
@@ -433,8 +433,9 @@ initUserVars (LALStatus *status, UserVariables_t *uvar)
 void
 InitCode (LALStatus *status, ConfigVariables *cfg, const UserVariables_t *uvar)
 {
+  const CHAR *fn = "InitCode()";
 
-  INITSTATUS (status, "InitCode", rcsid);
+  INITSTATUS (status, fn, rcsid);
   ATTATCHSTATUSPTR (status);
 
   /* ----- determine start-time from user-input */
@@ -475,6 +476,14 @@ InitCode (LALStatus *status, ConfigVariables *cfg, const UserVariables_t *uvar)
     }
 
   } /* handle detector input */
+
+
+  /* ---------- translate coordinate system into internal representation ---------- */
+  if ( XLALDopplerCoordinateNames2System ( &cfg->coordSys, uvar->coords ) ) {
+    XLALPrintError ("%s: Call to XLALDopplerCoordinateNames2System() failed. errno = %d\n\n", fn, xlalErrno );
+    ABORT ( status,  FSTATMETRIC_EINPUT, FSTATMETRIC_MSGEINPUT);
+  }
+
 
   DETATCHSTATUSPTR (status);
   RETURN (status);

@@ -206,7 +206,30 @@ typedef struct
 } DopplerMetricParams;
 
 
-/** struct hold a DopplerMetric, including meta-info on the number of
+
+/** Struct to hold the 'atoms', ie weighted phase-derivative averages like \f$\langle a^2 \partial_i \phi \partial_j \phi\rangle>\f$
+ *  from which the F-metric is computed, but also the full Fisher-matrix. The noise-weighted average is defined as
+ * \f$\langle Q\rangle \equiv \frac{1}{T} \, \sum_X w^X\, \int_0^T Q\, dt \f$, where \f$w^X\f$ is the noise-weight for detector X,
+ * and \f$T\f$ is the observation time, see \ref Prix07 for details.
+ */
+typedef struct
+{
+  REAL8 a_a;		/**< \f$ \langle a^2 \rangle = A \f$ */
+  REAL8 a_b;		/**< \f$ \langle a b \rangle = C \f$ */
+  REAL8 b_b;		/**< \f$ \langle b^2 \rangle = B \f$ */
+
+  gsl_vector *a_a_i;	/**< \f$ \langle a^2 \, \partial_i\phi \rangle \f$ */
+  gsl_vector *a_b_i;	/**< \f$ \langle a\, b \, \partial_i\phi \rangle \f$ */
+  gsl_vector *b_b_i;	/**< \f$ \langle b^2 \, \partial_i\phi \rangle \f$ */
+
+  gsl_matrix *a_a_i_j;	/**< \f$ \langle a^2 \, \partial_i\phi \, \partial_j\phi \rangle \f$ */
+  gsl_matrix *a_b_i_j;	/**< \f$ \langle a\,b \, \partial_i\phi \, \partial_j\phi \rangle \f$ */
+  gsl_matrix *b_b_i_j;	/**< \f$ \langle b^2 \, \partial_i\phi \, \partial_j\phi \rangle \f$ */
+
+} FmetricAtoms_t;
+
+
+/** struct to hold a DopplerMetric, including meta-info on the number of
  * dimensions, the coordinate-system and type of metric.
  */
 typedef struct
@@ -226,7 +249,7 @@ extern MultiDetectorInfo empty_MultiDetectorInfo;
 
 /*---------- exported prototypes [API] ----------*/
 DopplerMetric*
-XLALDopplerPhaseMetric ( const LALStringVector *coords,
+XLALDopplerPhaseMetric ( const DopplerCoordinateSystem *coordSys,
 			 DetectorMotionType detMotionType,
 			 const PulsarDopplerParams *dopplerPoint,
 			 LIGOTimeGPS startTime,
@@ -236,7 +259,7 @@ XLALDopplerPhaseMetric ( const LALStringVector *coords,
 			 );
 
 DopplerMetric*
-XLALDopplerFstatMetric ( const LALStringVector *coords,
+XLALDopplerFstatMetric ( const DopplerCoordinateSystem *coordSys,
 			 DetectorMotionType detMotionType,
 			 const PulsarDopplerParams *dopplerPoint,
 			 LIGOTimeGPS startTime,
@@ -254,6 +277,20 @@ XLALDetectorPosVel ( PosVel3D_t *pos_vel3D,
 		    const EphemerisData *edat,
 		    DetectorMotionType special
 		    );
+
+
+FmetricAtoms_t*
+XLALComputeFmetricAtoms ( const DopplerCoordinateSystem *coordSys,
+			  DetectorMotionType detMotionType,
+			  const PulsarDopplerParams *dopplerPoint,
+			  LIGOTimeGPS startTime,
+			  REAL8 Tspan,
+			  const EphemerisData *edat,
+			  const MultiDetectorInfo *detInfo
+			  );
+
+FmetricAtoms_t* XLALCreateFmetricAtoms ( UINT4 dim );
+void XLALDestroyFmetricAtoms ( FmetricAtoms_t *atoms );
 
 
 DopplerMetric* XLALCreateDopplerMetric ( UINT4 dim, BOOLEAN fullFmetric );
