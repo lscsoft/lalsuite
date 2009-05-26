@@ -3038,7 +3038,7 @@ void ComputeFStat_resamp(LALStatus *status, const PulsarDopplerParams *doppler, 
     if(fstatVectorlength > new_length)
       {
 	fprintf(stderr," fstatVector's length is greater than total number of bins calculated. Something went wrong allocating fstatVector \n");
-	exit(0);
+	exit(1);
       }
     fmin_index = floor((TSeries->f_het-fstatVector->f0)/dF_closest + 0.5);
     q = 0;
@@ -3055,7 +3055,6 @@ void ComputeFStat_resamp(LALStatus *status, const PulsarDopplerParams *doppler, 
   XLALDestroyREAL8Sequence(Fb_Imag);
   XLALDestroyREAL8Sequence(Fstat_temp);
 
-  DETATCHSTATUSPTR (status);
   RETURN (status);
 
 }
