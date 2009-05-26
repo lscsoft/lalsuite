@@ -91,13 +91,13 @@ LALFree()
 #include <lal/LALInspiralBank.h>
 #include <lal/GenerateInspiral.h>
 #include <lal/GenerateInspRing.h>
-#include <lal/FrameStream.h>
+#include <lal/TimeSeries.h>
 
 
 NRCSID( FINDCHIRPIMRSIMULATIONC, "$Id$" );
 
 /* <lalVerbatim file="FindChirpIMRSimulationCP"> */
-SimRingdownTable *
+void
 LALFindChirpInjectIMR (
     LALStatus                  *status,
     REAL4TimeSeries            *chan,
@@ -283,7 +283,7 @@ LALFindChirpInjectIMR (
         fprintf( stderr, "Too much merger\n");
         XLALDestroyREAL4TimeSeries( chan );     
         xlalErrno = XLAL_SUCCESS;
-        return ( NULL );
+        return;
       }
       else exit ( 1 );
     }
