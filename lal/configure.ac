@@ -239,9 +239,12 @@ if test "$lal_pthread_lock" = "true" ; then
   fi
 fi
 
+# check for c compiler
+m4_pattern_allow([AC_PROG_CC_C99])
+m4_ifdef([AC_PROG_CC_C99], [AC_PROG_CC_C99], [LAL_AC_PROG_CC_C99])
+
 dnl Checks for programs.
 AC_PROG_AWK
-AC_PROG_CC_STDC
 AC_PROG_CPP
 AC_PROG_INSTALL
 AC_PROG_LN_S

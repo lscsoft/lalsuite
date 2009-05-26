@@ -52,6 +52,13 @@
 #define rint(x) (floor((x)+0.5))
 double modf( double value, double *integerPart );
 int compare( const void* a, const void* b );
+double XLALComputeNullStatCase3b(INT4 caseID[6], double fplus[4], double fcross[4], REAL8 *sigmasq, MultiInspiralTable *thisEvent);
+double XLALComputeNullStatCase4a(INT4 caseID[6], double fplus[4], double fcross[4], REAL8 *sigmasq, MultiInspiralTable *thisEvent);
+double XLALComputeNullTimeSeriesCase3b(INT4 caseID[6], double fplus[4], double fcross[4], REAL8 *sigmasq, COMPLEX8 quadTemp[6]);
+double XLALComputeNullTimeSeriesCase4a(INT4 caseID[6], double fplus[4], double fcross[4], REAL8 *sigmasq, COMPLEX8 quadTemp[6]);
+void XLALCoherentCBCEstimateDistanceCase2a(double *eff_distance0,double *eff_distance1,double *eff_distanceH1H2, double C_Real0, double C_Im0, double C_Real1, double C_Im1, REAL8 *sigmasq4DArray);
+void XLALCoherentCBCEstimateDistanceCase2b(double *eff_distance0,double *eff_distance1, double C_Real0, double C_Im0, double C_Real1, double C_Im1, REAL8 *sigmasq4DArray);
+void XLALCoherentCBCEstimateDistanceCase3a(double *eff_distance0,double *eff_distance1,double *eff_distance2, double *eff_distanceH1H2, double C_Real0, double C_Im0, double C_Real1,double C_Im1, double C_Real2, double C_Im2, REAL8 *sigmasq4DArray);
 
 NRCSID (COHERENTINSPIRALFILTERC, "$Id$");
 
@@ -631,6 +638,50 @@ LALCoherentInspiralFilterParamsInit (
     ENDFAIL( status );
   }
 
+  /* Allocate memory for H1H2 null-statistic, if required */
+  if( params->nullStatH1H2Out )
+    {
+        outputPtr->nullStatH1H2Vec = (REAL4TimeSeries *)
+          LALCalloc( 1, sizeof(REAL4TimeSeries) );
+        LALCreateVector (status->statusPtr, &(outputPtr->nullStatH1H2Vec->data),
+                         params->numPoints);
+    BEGINFAIL( status ) {
+      if( params->nullStatOut )
+        {
+          TRY( LALDestroyVector( status->statusPtr, &(outputPtr->nullStatVec->data)),
+               status);
+          LALFree( outputPtr->nullStatVec );
+          outputPtr->nullStatVec = NULL;
+        }
+      if( params->cohH1H2SNROut )
+        {
+          TRY( LALDestroyVector( status->statusPtr, &(outputPtr->cohH1H2SNRVec->data)),
+               status);
+          LALFree( outputPtr->cohH1H2SNRVec );
+          outputPtr->cohH1H2SNRVec = NULL;
+        }
+      if( params->cohSNROut )
+        {
+          TRY( LALDestroyVector( status->statusPtr, &(outputPtr->cohSNRVec->data)),
+               status);
+          LALFree( outputPtr->cohSNRVec );
+          outputPtr->cohSNRVec = NULL;
+        }
+      if( outputPtr->detIDVec )
+        {
+          TRY( LALU2DestroyVector (status->statusPtr, &(outputPtr->detIDVec)),
+               status);
+          LALFree( outputPtr->detIDVec );
+          outputPtr->detIDVec = NULL;
+        }
+      LALFree( outputPtr->detectorVec );
+      outputPtr->detectorVec = NULL;
+      LALFree( outputPtr );
+      *output = NULL;
+    }
+    ENDFAIL( status );
+  }
+
   /* normal exit */
   DETATCHSTATUSPTR( status );
   RETURN( status );
@@ -704,7 +755,7 @@ LALCoherentInspiralFilterParamsFinalize (
   
   /*
    *
-   * destroy H1-H2 null statistic vector, if it exists
+   * destroy network null statistic vector, if it exists
    *
    */
   if ( outputPtr->nullStatVec ) {
@@ -713,7 +764,19 @@ LALCoherentInspiralFilterParamsFinalize (
     LALFree( outputPtr->nullStatVec );
     outputPtr->nullStatVec = NULL;
   }
-  
+ 
+  /*
+   *
+   * destroy H1-H2 null statistic vector, if it exists
+   *
+   */
+  if ( outputPtr->nullStatH1H2Vec ) {
+    LALDestroyVector( status->statusPtr, &(outputPtr->nullStatH1H2Vec->data) );
+    CHECKSTATUSPTR( status );
+    LALFree( outputPtr->nullStatH1H2Vec );
+    outputPtr->nullStatH1H2Vec = NULL;
+  }
+ 
   LALFree( outputPtr );
   *output = NULL;
 
@@ -1293,6 +1356,7 @@ LALCoherentInspiralFilterSegment (
   UINT4                               detIdSlidTimePt = 0;
   UINT4                               cohSNROut = 0;
   UINT4                               nullStatOut = 0;
+  UINT4                               nullStatH1H2Out = 0;
   UINT4                               case2a = 0;
   UINT4                               case2b = 0;
   UINT4                               case3a = 0;
@@ -1335,6 +1399,7 @@ LALCoherentInspiralFilterSegment (
   REAL4                               nullNumerRe   = 0.0;
   REAL4                               nullNumerIm   = 0.0;
   REAL8                              *sigmasq = NULL;
+  REAL8                               sigmasq4DArray[4]={0.0,0.0,0.0,0.0};
   REAL8                               deltaT = 0.0;
   REAL8                               tempTime = 0.0;
   REAL8                               fracpart = 0.0;
@@ -1444,6 +1509,7 @@ LALCoherentInspiralFilterSegment (
   cohSNRThresh  = params->cohSNRThresh;
   cohSNROut = params->cohSNROut;
   nullStatOut = params->nullStatOut;
+  nullStatH1H2Out = params->nullStatH1H2Out;
   deltaT = params->deltaT;
   segmentLength = params->segmentLength;
   raStep = (double) params->raStep; 
@@ -1453,20 +1519,20 @@ LALCoherentInspiralFilterSegment (
   buffer = rint( (timingError/deltaT) + 1.0 );
   chirpMass = pow(input->tmplt->eta,3.0/5.0)*input->tmplt->totalMass;
   /* Compute signal amplitude in units of Mpc */
-  /* CHECK: The following reset is done is the CData commputed for r_L = 1Mpc 
-     amplitudeConst = 1.0;
+  /* The following setting is CORRECT since sigmasq 
+     includes N_Curly*sqrt{xi}*g: amplitudeConst = 1.0; */
+  /* Because of the above, the following is not required:
      amplitudeConst = 2.0*pow((double)LAL_MRSUN_SI*(double)chirpMass,5.0/3.0) ;
      amplitudeConst *= pow((double)LAL_PI*params->fLow/((double)LAL_C_SI),2.0/3.0);
      amplitudeConst /= 1e6 * LAL_PC_SI;
-  */
-  /*CHECK:
-    amplitudeConst = (2.0*pow((double)LAL_G_SI*(double)chirpMass,5.0/3.0)*
-    pow((double)LAL_PI*params->fLow,2.0/3.0)/pow((double)LAL_C_SI,4.0));
-  */
-    
-  /* if the full coherent snr vector is required, set it to zero */
+   */ 
+  /* if the full coherent snr / null vector is required, set it to zero */
   if ( cohSNROut ) {
     memset( params->cohSNRVec->data->data, 0, numPoints * sizeof( REAL4 ));
+  }
+
+  if ( nullStatOut ) {
+    memset( params->nullStatVec->data->data, 0, numPoints * sizeof( REAL4 ));
   }
 
   /*CHECK: hardwired to 6 detectors for now */
@@ -1474,13 +1540,17 @@ LALCoherentInspiralFilterSegment (
     {
       caseID[l] = params->detIDVec->data[l];
     }
-  
+ 
+  /*** get detector-site locations */
+  sigmasq = params->sigmasqVec->data;
+ 
   i = 0;  
   for (l=0 ;l<6 ;l++)
     {
       if( caseID[l] )
 	{
 	  indexarray[i] = l;
+          sigmasq4DArray[i] = sigmasq[l];
 	  i++;
 	}
     }
@@ -1528,9 +1598,6 @@ LALCoherentInspiralFilterSegment (
       break;
     }
     
-  /*** get detector-site locations */
-  sigmasq = params->sigmasqVec->data;
-
   /* read in CData */  
   for ( l=0 ; l < (INT4) params->numDetectors ; l++) {
     cData[l] = input->multiCData->cData[l];
@@ -1658,9 +1725,23 @@ LALCoherentInspiralFilterSegment (
               thisEvent->null_statistic = ( nullStatRe*nullStatRe + nullStatIm*nullStatIm ) / nullNorm ;
 
 	      /*Calculate distance/effective distance */
-	      LALCoherentInspiralEstimateDistance( status->statusPtr, sigmasq, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
-	      thisEvent->eff_distance = distanceEstimate;
-	      
+              XLALCoherentCBCEstimateDistanceCase2a( &eff_distance0, &eff_distance1, 
+                  &eff_distanceH1H2,(double) quadTemp[0].re,(double) quadTemp[0].im,
+                  (double) quadTemp[1].re,(double) quadTemp[1].im, sigmasq4DArray);
+
+              thisEvent->ifo1_eff_distance = (REAL4) eff_distance0;
+              thisEvent->ifo2_eff_distance = (REAL4) eff_distance1;
+              thisEvent->tau4 = (REAL4) eff_distanceH1H2;
+              thisEvent->tau5 = -1; /* store network null-statistic for numDetectors >2*/
+              thisEvent->ligo_angle = -1001;
+              thisEvent->ligo_angle_sig = -1001;
+              thisEvent->eff_distance = -1;
+              thisEvent->inclination = -1001;
+              thisEvent->polarization = -1001;
+              thisEvent->coa_phase = -1001;
+              thisEvent->ligo_axis_ra = -1001;
+              thisEvent->ligo_axis_dec = -1001;
+
 	      tempTime = 0.0;
 	      fracpart = 0.0;
 	      intpart = 0.0;
@@ -1756,9 +1837,23 @@ LALCoherentInspiralFilterSegment (
                 - thisEvent->h2quad.im / sqrt(sigmasq[2]);
               thisEvent->null_statistic = ( nullStatRe*nullStatRe + nullStatIm*nullStatIm ) / nullNorm ;
 	      /*Calculate distance/effective distance */
-	      LALCoherentInspiralEstimateDistance( status->statusPtr, sigmasq, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
-	      thisEvent->eff_distance = distanceEstimate;
-	      
+              XLALCoherentCBCEstimateDistanceCase2a( &eff_distance0, &eff_distance1, 
+                  &eff_distanceH1H2,(double) quadTemp[0].re,(double) quadTemp[0].im,
+                  (double) quadTemp[1].re,(double) quadTemp[1].im, sigmasq4DArray);
+
+              thisEvent->ifo1_eff_distance = (REAL4) eff_distance0;
+              thisEvent->ifo2_eff_distance = (REAL4) eff_distance1;
+              thisEvent->tau4 = (REAL4) eff_distanceH1H2;
+              thisEvent->tau5 = -1; /* store network null-statistic for numDetectors >2*/
+              thisEvent->ligo_angle = -1001;
+              thisEvent->ligo_angle_sig = -1001;
+              thisEvent->eff_distance = -1;
+              thisEvent->inclination = -1001;
+              thisEvent->polarization = -1001;
+              thisEvent->coa_phase = -1001;
+              thisEvent->ligo_axis_ra = -1001;
+              thisEvent->ligo_axis_dec = -1001;
+ 
 	      tempTime = 0.0;
 	      fracpart = 0.0;
 	      intpart = 0.0;
@@ -1868,9 +1963,23 @@ LALCoherentInspiralFilterSegment (
                 - thisEvent->h2quad.im / sqrt(sigmasq[2]);
               thisEvent->null_statistic = ( nullStatRe*nullStatRe + nullStatIm*nullStatIm ) / nullNorm ;
 	      /*Calculate distance/effective distance */
-	      LALCoherentInspiralEstimateDistance( status->statusPtr, sigmasq, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
-	      thisEvent->eff_distance = distanceEstimate;
-	      
+              XLALCoherentCBCEstimateDistanceCase2a( &eff_distance0, &eff_distance1, 
+                  &eff_distanceH1H2,(double) quadTemp[0].re,(double) quadTemp[0].im,
+                  (double) quadTemp[1].re,(double) quadTemp[1].im, sigmasq4DArray);
+
+              thisEvent->ifo1_eff_distance = (REAL4) eff_distance0;
+              thisEvent->ifo2_eff_distance = (REAL4) eff_distance1;
+              thisEvent->tau4 = (REAL4) eff_distanceH1H2;
+              thisEvent->tau5 = -1; /* store network null-statistic for numDetectors >2*/
+              thisEvent->ligo_angle = -1001;
+              thisEvent->ligo_angle_sig = -1001;
+              thisEvent->eff_distance = -1;
+              thisEvent->inclination = -1001;
+              thisEvent->polarization = -1001;
+              thisEvent->coa_phase = -1001;
+              thisEvent->ligo_axis_ra = -1001;
+              thisEvent->ligo_axis_dec = -1001;
+ 
 	      /* Need to initialize the event start index to new value */
 	      if( k > (eventStartIdx + deltaEventIndex) )
 		{
@@ -2029,12 +2138,13 @@ LALCoherentInspiralFilterSegment (
 		thisEvent->eta = input->tmplt->eta;
                 /* With two non-coaligned ifo, the null-statistic is not meaningful */
                 thisEvent->null_statistic = -1;
-		/* CHECK: LALCoherentInspiralEstimateDistance( status->statusPtr, sigmasq, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
-		   calculates a valid effective distance for H1-H2. Since not both 
-		   are present here, set the effective distance to zero
-		*/
-		thisEvent->eff_distance = 0.0;
-		
+                XLALCoherentCBCEstimateDistanceCase2b( &eff_distance0, &eff_distance1, 
+                  (double) quadTemp[0].re,(double) quadTemp[0].im,
+                  (double) quadTemp[1].re,(double) quadTemp[1].im, sigmasq4DArray);
+
+                thisEvent->ifo1_eff_distance = (REAL4) eff_distance0;
+                thisEvent->ifo2_eff_distance = (REAL4) eff_distance1;
+	
 		thisEvent->ligo_angle = acos( LAL_C_SI * deltaT * abs(k-w) / distance[1] );
 		if( (k-w) > 0 )
 		  {
@@ -2044,6 +2154,17 @@ LALCoherentInspiralFilterSegment (
 		  {
 		    thisEvent->ligo_angle_sig = -1;
 		  }
+
+                thisEvent->tau3 = -1;
+                thisEvent->tau4 = -1;
+                thisEvent->tau5 = -1; /* store network null-statistic for numDetectors >2*/
+                thisEvent->eff_distance = -1;
+                thisEvent->inclination = -1001;
+                thisEvent->polarization = -1001;
+                thisEvent->coa_phase = -1001;
+                thisEvent->ligo_axis_ra = -1001;
+                thisEvent->ligo_axis_dec = -1001;
+
 		tempTime = 0.0;
 		fracpart = 0.0;
 		intpart = 0.0;
@@ -2137,8 +2258,12 @@ LALCoherentInspiralFilterSegment (
 		thisEvent->eta = input->tmplt->eta;
                 /* With two non-coaligned ifo, the null-statistic is not meaningful */
                 thisEvent->null_statistic = -1;
-		LALCoherentInspiralEstimateDistance( status->statusPtr, sigmasq, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
-		thisEvent->eff_distance = distanceEstimate;
+                XLALCoherentCBCEstimateDistanceCase2b( &eff_distance0, &eff_distance1,   
+                  (double) quadTemp[0].re,(double) quadTemp[0].im,
+                  (double) quadTemp[1].re,(double) quadTemp[1].im, sigmasq4DArray);
+
+                thisEvent->ifo1_eff_distance = (REAL4) eff_distance0;
+                thisEvent->ifo2_eff_distance = (REAL4) eff_distance1;
 		thisEvent->ligo_angle = acos( LAL_C_SI * deltaT * abs(k-w) / distance[1] );
 		if( (k-w) > 0 )
 		  {
@@ -2148,6 +2273,16 @@ LALCoherentInspiralFilterSegment (
 		  {
 		    thisEvent->ligo_angle_sig = -1;
 		  }
+
+                thisEvent->tau3 = -1;
+                thisEvent->tau4 = -1;
+                thisEvent->tau5 = -1; /* store network null-statistic for numDetectors >2*/
+                thisEvent->eff_distance = -1;
+                thisEvent->inclination = -1001;
+                thisEvent->polarization = -1001;
+                thisEvent->coa_phase = -1001;
+                thisEvent->ligo_axis_ra = -1001;
+                thisEvent->ligo_axis_dec = -1001;
 
 		tempTime = 0.0;
 		fracpart = 0.0;
@@ -2253,9 +2388,13 @@ LALCoherentInspiralFilterSegment (
 		thisEvent->eta = input->tmplt->eta;
                 /* With two non-coaligned ifo, the null-statistic is not meaningful */
                 thisEvent->null_statistic = -1;
-		LALCoherentInspiralEstimateDistance( status->statusPtr, sigmasq, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
-		thisEvent->eff_distance = distanceEstimate;
-		thisEvent->ligo_angle = acos( LAL_C_SI * deltaT * abs(k-w) / distance[1] );
+		XLALCoherentCBCEstimateDistanceCase2b( &eff_distance0, &eff_distance1,   
+                  (double) quadTemp[0].re,(double) quadTemp[0].im,
+                  (double) quadTemp[1].re,(double) quadTemp[1].im, sigmasq4DArray);
+
+                thisEvent->ifo1_eff_distance = (REAL4) eff_distance0;
+                thisEvent->ifo2_eff_distance = (REAL4) eff_distance1;
+                thisEvent->ligo_angle = acos( LAL_C_SI * deltaT * abs(k-w) / distance[1] );
 		if( (k-w) > 0 )
 		  {
 		    thisEvent->ligo_angle_sig = 1;
@@ -2270,6 +2409,17 @@ LALCoherentInspiralFilterSegment (
 		  {
 		    eventStartIdx = k;
 		  }
+
+                thisEvent->tau3 = -1;
+                thisEvent->tau4 = -1;
+                thisEvent->tau5 = -1; /* store network null-statistic for numDetectors >2*/
+                thisEvent->eff_distance = -1;
+                thisEvent->inclination = -1001;
+                thisEvent->polarization = -1001;
+                thisEvent->coa_phase = -1001;
+                thisEvent->ligo_axis_ra = -1001;
+                thisEvent->ligo_axis_dec = -1001;
+
 		tempTime = 0.0;
 		fracpart= 0.0;
 		intpart = 0.0;
@@ -2448,10 +2598,24 @@ LALCoherentInspiralFilterSegment (
                     nullStatIm = thisEvent->h1quad.im / sqrt(sigmasq[1])
                       - thisEvent->h2quad.im / sqrt(sigmasq[2]);
                     thisEvent->null_statistic = ( nullStatRe*nullStatRe + nullStatIm*nullStatIm ) / nullNorm ;
-		    LALCoherentInspiralEstimateDistance( status->statusPtr, sigmasq, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
-		    thisEvent->eff_distance = distanceEstimate;
-		    
+		    XLALCoherentCBCEstimateDistanceCase3a( &eff_distance0, &eff_distance1,   
+                       &eff_distance2, &eff_distanceH1H2, (double) quadTemp[0].re,(double) quadTemp[0].im,
+                       (double) quadTemp[1].re,(double) quadTemp[1].im, 
+                       (double) quadTemp[2].re,(double) quadTemp[2].im, sigmasq4DArray);
+
+                    thisEvent->ifo1_eff_distance = (REAL4) eff_distance0;
+                    thisEvent->ifo2_eff_distance = (REAL4) eff_distance1;
+                    thisEvent->tau3 = (REAL4) eff_distance2;
+                    thisEvent->tau4 = (REAL4) eff_distanceH1H2;
+                    thisEvent->tau5 = -1; /* store network null-statistic for numDetectors >2*/
 		    thisEvent->ligo_angle = acos( LAL_C_SI * deltaT * abs(k-w) / distance[1] );
+                    thisEvent->eff_distance = -1;
+                    thisEvent->inclination = -1001;
+                    thisEvent->polarization = -1001;
+                    thisEvent->coa_phase = -1001;
+                    thisEvent->ligo_axis_ra = -1001;
+                    thisEvent->ligo_axis_dec = -1001;
+
 		    if( (k-w) > 0 )
 		      {
 			thisEvent->ligo_angle_sig = 1;
@@ -2563,9 +2727,24 @@ LALCoherentInspiralFilterSegment (
                     nullStatIm = thisEvent->h1quad.im / sqrt(sigmasq[1])
                       - thisEvent->h2quad.im / sqrt(sigmasq[2]);
                     thisEvent->null_statistic = ( nullStatRe*nullStatRe + nullStatIm*nullStatIm ) / nullNorm ;
-		    LALCoherentInspiralEstimateDistance( status->statusPtr, sigmasq, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
-		    thisEvent->eff_distance = distanceEstimate;
+                    XLALCoherentCBCEstimateDistanceCase3a( &eff_distance0, &eff_distance1,               
+                       &eff_distance2,&eff_distanceH1H2, (double) quadTemp[0].re,(double) quadTemp[0].im,
+                       (double) quadTemp[1].re,(double) quadTemp[1].im,
+                       (double) quadTemp[2].re,(double) quadTemp[2].im, sigmasq4DArray);
+
+                    thisEvent->ifo1_eff_distance = (REAL4) eff_distance0;
+                    thisEvent->ifo2_eff_distance = (REAL4) eff_distance1;
+                    thisEvent->tau3 = (REAL4) eff_distance2;
+                    thisEvent->tau4 = (REAL4) eff_distanceH1H2;
+                    thisEvent->tau5 = -1; /* store network null-statistic for numDetectors >2*/
 		    thisEvent->ligo_angle = acos( LAL_C_SI * deltaT * abs(k-w) / distance[1] );
+                    thisEvent->eff_distance = -1;
+                    thisEvent->inclination = -1001;
+                    thisEvent->polarization = -1001;
+                    thisEvent->coa_phase = -1001;
+                    thisEvent->ligo_axis_ra = -1001;
+                    thisEvent->ligo_axis_dec = -1001;
+
 		    if( (k-w) > 0 )
 		      {
 			thisEvent->ligo_angle_sig = 1;
@@ -2690,9 +2869,24 @@ LALCoherentInspiralFilterSegment (
                     nullStatIm = thisEvent->h1quad.im / sqrt(sigmasq[1])
                       - thisEvent->h2quad.im / sqrt(sigmasq[2]);
                     thisEvent->null_statistic = ( nullStatRe*nullStatRe + nullStatIm*nullStatIm ) / nullNorm ;
-		    LALCoherentInspiralEstimateDistance( status->statusPtr, sigmasq, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
-		    thisEvent->eff_distance = distanceEstimate;
+                    XLALCoherentCBCEstimateDistanceCase3a( &eff_distance0, &eff_distance1,               
+                       &eff_distance2,&eff_distanceH1H2,(double) quadTemp[0].re,(double) quadTemp[0].im,
+                       (double) quadTemp[1].re,(double) quadTemp[1].im,
+                       (double) quadTemp[2].re,(double) quadTemp[2].im, sigmasq4DArray);
+
+                    thisEvent->ifo1_eff_distance = (REAL4) eff_distance0;
+                    thisEvent->ifo2_eff_distance = (REAL4) eff_distance1;
+                    thisEvent->tau3 = (REAL4) eff_distance2;
+                    thisEvent->tau4 = (REAL4) eff_distanceH1H2;
+                    thisEvent->tau5 = -1; /* store network null-statistic for numDetectors >2*/
 		    thisEvent->ligo_angle = acos( LAL_C_SI * deltaT * abs(k-w) / distance[1] );
+                    thisEvent->eff_distance = -1;
+                    thisEvent->inclination = -1001;
+                    thisEvent->polarization = -1001;
+                    thisEvent->coa_phase = -1001;
+                    thisEvent->ligo_axis_ra = -1001;
+                    thisEvent->ligo_axis_dec = -1001;
+
 		    if( (k-w) > 0 )
 		      {
 			thisEvent->ligo_angle_sig = 1;
@@ -2806,7 +3000,9 @@ LALCoherentInspiralFilterSegment (
 	      if( ( timePt[0] < (0-sortedSlidePoints3D[0]) )
 		  ||  ( timePt[0]> (numPoints-sortedSlidePoints3D[2]) ) ) {
 		cohSNR = 0.0;
+                nullStatistic = 0.0;
 		if( cohSNROut ) params->cohSNRVec->data->data[timePt[0]] = cohSNR;
+                if( nullStatOut ) params->nullStatVec->data->data[timePt[0]] = nullStatistic;
 	      }
 	      else {
 		/* Compute antenna-patterns and coherent SNR */
@@ -2930,9 +3126,10 @@ LALCoherentInspiralFilterSegment (
 		    quadTemp[detId].im=cData[detId]->data->data[detIdSlidTimePt].im;
 		    timePtTemp[detId] = detIdSlidTimePt;
 		  }
+                  if( cohSNROut ) params->cohSNRVec->data->data[timePt[0]] = cohSNR;
+                  if( nullStatOut ) params->nullStatVec->data->data[timePt[0]] = (REAL4) XLALComputeNullTimeSeriesCase3b(caseID,fplus,fcross,sigmasq,quadTemp);
 		}
-		
-		if( cohSNROut ) params->cohSNRVec->data->data[timePt[0]] = cohSNR;
+
 		if ( cohSNR > cohSNRThresh ) {
 		  /* Initialize CData factor for parameter-estimation */
 		    if ( !*eventList ) {
@@ -3028,7 +3225,17 @@ LALCoherentInspiralFilterSegment (
 		      thisEvent->mass2 = input->tmplt->mass2;
 		      thisEvent->mchirp = input->tmplt->totalMass * pow( input->tmplt->eta, 3.0/5.0 );
 		      thisEvent->eta = input->tmplt->eta;
-		      
+                      /* Compute null-statistic for H1-H2 at just trigger end-time */
+                      nullNorm = ( 1.0 / sigmasq[1]  + 1.0 /  sigmasq[2] );
+                      nullStatRe = thisEvent->h1quad.re / sqrt(sigmasq[1])
+                        - thisEvent->h2quad.re / sqrt(sigmasq[2]);
+                      nullStatIm = thisEvent->h1quad.im / sqrt(sigmasq[1])
+                        - thisEvent->h2quad.im / sqrt(sigmasq[2]);
+                      thisEvent->null_statistic = ( nullStatRe*nullStatRe + nullStatIm*nullStatIm ) / nullNorm ;
+
+                      /* Compute network null-statistic at just trigger end-time */
+                      thisEvent->tau5 = (REAL4) XLALComputeNullStatCase3b(caseID,fplus,fcross,sigmasq,thisEvent);
+
 		      /* CHECK: Move this to post-processing to save time
 		      for ( detId=0 ; detId<params->numDetectors ; detId++ ) {
 			cDataTemp[detId].re=cData[detId]->data->data[timePtTemp[detId]].re;
@@ -3071,7 +3278,7 @@ LALCoherentInspiralFilterSegment (
 			&inclination, &coaPhase, aa[0], aa[1], aa[2], aa[3],
 			&eff_distance0,&eff_distance1,&eff_distance2,&eff_distanceH1H2,amplitudeConst,
 			(double) chirpTime,(double) quadTemp[0].re,(double) quadTemp[0].im,
-									   (double) quadTemp[1].re,(double) quadTemp[1].im,(double) quadTemp[2].re,(double) quadTemp[2].im, sigmasq);
+									   (double) quadTemp[1].re,(double) quadTemp[1].im,(double) quadTemp[2].re,(double) quadTemp[2].im, sigmasq4DArray);
 		      
  
 		      /* CHECK		      distance = XLALCoherentCBCParamEstim( double *psi_est, double *iota_est, double *coa_phase_est, double a1, double a2, double a3, double a4, double *eff_distance0,double *eff_distance1,double *eff_distance2,double amplitudeConst, double chirpTime, double C_Real0, double C_Real1, double C_Real2,double C_Im0, double C_Im1, double C_Im2) */
@@ -3080,7 +3287,11 @@ LALCoherentInspiralFilterSegment (
                       thisEvent->coa_phase = (REAL4) coaPhase;
 		      thisEvent->ligo_axis_ra = (REAL4) phi;
 		      thisEvent->ligo_axis_dec = (REAL4) theta;
-		      
+		     
+                      thisEvent->ifo1_eff_distance = (REAL4) eff_distance0;
+                      thisEvent->ifo2_eff_distance = (REAL4) eff_distance1;
+                      thisEvent->tau3 = (REAL4) eff_distance2;
+                      thisEvent->tau4 = (REAL4) eff_distanceH1H2; 
 		      tempTime = 0.0;
 		      fracpart = 0.0;
 		      intpart = 0.0;
@@ -3169,6 +3380,15 @@ LALCoherentInspiralFilterSegment (
 		       thisEvent->mass2 = input->tmplt->mass2;
 		       thisEvent->mchirp = input->tmplt->totalMass * pow( input->tmplt->eta, 3.0/5.0 );
 		       thisEvent->eta = input->tmplt->eta;
+                       /* Compute null-statistic for H1-H2 at just trigger end-time */
+                       nullNorm = ( 1.0 / sigmasq[1]  + 1.0 /  sigmasq[2] );
+                       nullStatRe = thisEvent->h1quad.re / sqrt(sigmasq[1])
+                         - thisEvent->h2quad.re / sqrt(sigmasq[2]);
+                       nullStatIm = thisEvent->h1quad.im / sqrt(sigmasq[1])
+                         - thisEvent->h2quad.im / sqrt(sigmasq[2]);
+                       thisEvent->null_statistic = ( nullStatRe*nullStatRe + nullStatIm*nullStatIm ) / nullNorm ;
+                       /* Compute network null-statistic at just trigger end-time */
+                       thisEvent->tau5 = (REAL4) XLALComputeNullStatCase3b(caseID,fplus,fcross,sigmasq,thisEvent);
 
 		      /* Parameter estimation: Distance
 		       for ( detId=0 ; detId<params->numDetectors ; detId++ ) {*/
@@ -3201,7 +3421,7 @@ LALCoherentInspiralFilterSegment (
 			&inclination, &coaPhase, aa[0], aa[1], aa[2], aa[3],
 			&eff_distance0,&eff_distance1,&eff_distance2,&eff_distanceH1H2,amplitudeConst,
 			(double) chirpTime,(double) quadTemp[0].re,(double) quadTemp[0].im,
-									   (double) quadTemp[1].re,(double) quadTemp[1].im,(double) quadTemp[2].re,(double) quadTemp[2].im, sigmasq);
+									   (double) quadTemp[1].re,(double) quadTemp[1].im,(double) quadTemp[2].re,(double) quadTemp[2].im, sigmasq4DArray);
 		      
  
 		      /* CHECK		      distance = XLALCoherentCBCParamEstim( double *psi_est, double *iota_est, double *coa_phase_est, double a1, double a2, double a3, double a4, double *eff_distance0,double *eff_distance1,double *eff_distance2,double amplitudeConst, double chirpTime, double C_Real0, double C_Real1, double C_Real2,double C_Im0, double C_Im1, double C_Im2) */
@@ -3210,6 +3430,10 @@ LALCoherentInspiralFilterSegment (
                       thisEvent->coa_phase = (REAL4) coaPhase;
 		      thisEvent->ligo_axis_ra = (REAL4) phi;
 		      thisEvent->ligo_axis_dec = (REAL4) theta;
+                      thisEvent->ifo1_eff_distance = (REAL4) eff_distance0;
+                      thisEvent->ifo2_eff_distance = (REAL4) eff_distance1;
+                      thisEvent->tau3 = (REAL4) eff_distance2;
+                      thisEvent->tau4 = (REAL4) eff_distanceH1H2;
 
 		      /* CHECK		      distance = XLALCoherentCBCParamEstim( double *psi_est, double *iota_est, double *coa_phase_est, double a1, double a2, double a3, double a4, double *eff_distance0,double *eff_distance1,double *eff_distance2,double amplitudeConst, double chirpTime, double C_Real0, double C_Real1, double C_Real2,double C_Im0, double C_Im1, double C_Im2) */
 		      /* CHECK: Move this to post-processing to save time
@@ -3326,6 +3550,15 @@ LALCoherentInspiralFilterSegment (
 		       thisEvent->mass2 = input->tmplt->mass2;
 		       thisEvent->mchirp = input->tmplt->totalMass * pow( input->tmplt->eta, 3.0/5.0 );
 		       thisEvent->eta = input->tmplt->eta;
+                       /* Compute null-statistic for H1-H2 at just trigger end-time */
+                       nullNorm = ( 1.0 / sigmasq[1]  + 1.0 /  sigmasq[2] );
+                       nullStatRe = thisEvent->h1quad.re / sqrt(sigmasq[1])
+                         - thisEvent->h2quad.re / sqrt(sigmasq[2]);
+                       nullStatIm = thisEvent->h1quad.im / sqrt(sigmasq[1])
+                         - thisEvent->h2quad.im / sqrt(sigmasq[2]);
+                       thisEvent->null_statistic = ( nullStatRe*nullStatRe + nullStatIm*nullStatIm ) / nullNorm ;
+                       /* Compute network null-statistic at just trigger end-time */
+                       thisEvent->tau5 = (REAL4) XLALComputeNullStatCase3b(caseID,fplus,fcross,sigmasq,thisEvent);
 
 		      /* Parameter estimation: Distance
 		       for ( detId=0 ; detId<params->numDetectors ; detId++ ) {*/
@@ -3358,7 +3591,7 @@ LALCoherentInspiralFilterSegment (
 			&inclination, &coaPhase, aa[0], aa[1], aa[2], aa[3],
 			&eff_distance0,&eff_distance1,&eff_distance2,&eff_distanceH1H2,amplitudeConst,
 			(double) chirpTime,(double) quadTemp[0].re,(double) quadTemp[0].im,
-			(double) quadTemp[1].re,(double) quadTemp[1].im,(double) quadTemp[2].re,(double) quadTemp[2].im, sigmasq);
+			(double) quadTemp[1].re,(double) quadTemp[1].im,(double) quadTemp[2].re,(double) quadTemp[2].im, sigmasq4DArray);
 		      
  
 		      /* CHECK		      distance = XLALCoherentCBCParamEstim( double *psi_est, double *iota_est, double *coa_phase_est, double a1, double a2, double a3, double a4, double *eff_distance0,double *eff_distance1,double *eff_distance2,double amplitudeConst, double chirpTime, double C_Real0, double C_Real1, double C_Real2,double C_Im0, double C_Im1, double C_Im2) */
@@ -3367,6 +3600,10 @@ LALCoherentInspiralFilterSegment (
                       thisEvent->coa_phase = (REAL4) coaPhase;
 		      thisEvent->ligo_axis_ra = (REAL4) phi;
 		      thisEvent->ligo_axis_dec = (REAL4) theta;
+                      thisEvent->ifo1_eff_distance = (REAL4) eff_distance0;
+                      thisEvent->ifo2_eff_distance = (REAL4) eff_distance1;
+                      thisEvent->tau3 = (REAL4) eff_distance2;
+                      thisEvent->tau4 = (REAL4) eff_distanceH1H2;
 
 		      /* CHECK		      distance = XLALCoherentCBCParamEstim( double *psi_est, double *iota_est, double *coa_phase_est, double a1, double a2, double a3, double a4, double *eff_distance0,double *eff_distance1,double *eff_distance2,double amplitudeConst, double chirpTime, double C_Real0, double C_Real1, double C_Real2,double C_Im0, double C_Im1, double C_Im2) */
 		       /* CHECK: Move this to post-processing to save time
@@ -3485,7 +3722,9 @@ LALCoherentInspiralFilterSegment (
 	      if( ( timePt[0] < (0-sortedSlidePoints4D[0]) )
 		  ||  ( timePt[0]> (numPoints-sortedSlidePoints4D[3]) ) ) {
 		cohSNR = 0.0;
-		if( cohSNROut ) params->cohSNRVec->data->data[timePt[0]] = cohSNR;
+                nullStatistic = 0.0;
+                if( cohSNROut ) params->cohSNRVec->data->data[timePt[0]] = cohSNR;
+                if( nullStatOut ) params->nullStatVec->data->data[timePt[0]] = nullStatistic;
 	      }
 	      else {
 		/* Compute antenna-patterns and coherent SNR */
@@ -3618,9 +3857,10 @@ LALCoherentInspiralFilterSegment (
 		    quadTemp[detId].im=cData[detId]->data->data[detIdSlidTimePt].im;
 		    timePtTemp[detId] = detIdSlidTimePt;
 		  }
+                  if( cohSNROut ) params->cohSNRVec->data->data[timePt[0]] = cohSNR;
+                  if( nullStatOut ) params->nullStatVec->data->data[timePt[0]] = (REAL4) XLALComputeNullTimeSeriesCase4a(caseID,fplus,fcross,sigmasq,quadTemp);
 		}
-		
-		if( cohSNROut ) params->cohSNRVec->data->data[timePt[0]] = cohSNR;
+
 		if ( cohSNR > cohSNRThresh ) {
 		  if ( !*eventList ) {
 			/* store the start of the crossing */
@@ -3723,7 +3963,16 @@ LALCoherentInspiralFilterSegment (
 		        thisEvent->mass2 = input->tmplt->mass2;
 			thisEvent->mchirp = input->tmplt->totalMass * pow( input->tmplt->eta, 3.0/5.0 );
 			thisEvent->eta = input->tmplt->eta;
-
+                        /* Compute null-statistic for H1-H2 at just trigger end-time */
+                        nullNorm = ( 1.0 / sigmasq[1]  + 1.0 /  sigmasq[2] );
+                        nullStatRe = thisEvent->h1quad.re / sqrt(sigmasq[1])
+                          - thisEvent->h2quad.re / sqrt(sigmasq[2]);
+                        nullStatIm = thisEvent->h1quad.im / sqrt(sigmasq[1])
+                          - thisEvent->h2quad.im / sqrt(sigmasq[2]);
+                        thisEvent->null_statistic = ( nullStatRe*nullStatRe + nullStatIm*nullStatIm ) / nullNorm ;
+                        /* Compute network null-statistic at just trigger end-time */
+                        /* CHECK: thisEvent->tau5 = (REAL4) XLALComputeNullStatCase4a(caseID[1],fplus[0],fplus[1],fplus[2],fcross[0],fcross[1],fcross[2],sigmasq,thisEvent); */
+                        thisEvent->tau5 = (REAL4) XLALComputeNullStatCase4a(caseID,fplus,fcross,sigmasq,thisEvent);
 			/* Parameter estimation: Distance
 			   for ( detId=0 ; detId<params->numDetectors ; detId++ ) {*/
 			for ( i=0 ; i < 3 ; i++ ) {
@@ -3756,7 +4005,7 @@ LALCoherentInspiralFilterSegment (
 			  &inclination, &coaPhase, aa[0], aa[1], aa[2], aa[3],
 			  &eff_distance0,&eff_distance1,&eff_distance2,&eff_distanceH1H2,amplitudeConst,
 			  (double) chirpTime,(double) quadTemp[0].re,(double) quadTemp[0].im,
-			  (double) quadTemp[1].re,(double) quadTemp[1].im,(double) quadTemp[2].re,(double) quadTemp[2].im, sigmasq);
+			  (double) quadTemp[1].re,(double) quadTemp[1].im,(double) quadTemp[2].re,(double) quadTemp[2].im, sigmasq4DArray);
 			
 			/* CHECK		      distance = XLALCoherentCBCParamEstim( double *psi_est, double *iota_est, double *coa_phase_est, double a1, double a2, double a3, double a4, double *eff_distance0,double *eff_distance1,double *eff_distance2,double amplitudeConst, double chirpTime, double C_Real0, double C_Real1, double C_Real2,double C_Im0, double C_Im1, double C_Im2) */
 			thisEvent->inclination = (REAL4) inclination;
@@ -3764,6 +4013,10 @@ LALCoherentInspiralFilterSegment (
 			thisEvent->coa_phase = (REAL4) coaPhase;
 			thisEvent->ligo_axis_ra = (REAL4) phi;
 			thisEvent->ligo_axis_dec = (REAL4) theta;
+                        thisEvent->ifo1_eff_distance = (REAL4) eff_distance0;
+                        thisEvent->ifo2_eff_distance = (REAL4) eff_distance1;
+                        thisEvent->tau3 = (REAL4) eff_distance2;
+                        thisEvent->tau4 = (REAL4) eff_distanceH1H2;
 
 			/* CHECK: Move this to post-processing to save time
 			   for ( detId=0 ; detId<params->numDetectors ; detId++ ) {
@@ -3871,6 +4124,15 @@ LALCoherentInspiralFilterSegment (
 		        thisEvent->mass2 = input->tmplt->mass2;
 			thisEvent->mchirp = input->tmplt->totalMass * pow( input->tmplt->eta, 3.0/5.0 );
 			thisEvent->eta = input->tmplt->eta;
+                        /* Compute null-statistic for H1-H2 at just trigger end-time */
+                        nullNorm = ( 1.0 / sigmasq[1]  + 1.0 /  sigmasq[2] );
+                        nullStatRe = thisEvent->h1quad.re / sqrt(sigmasq[1])
+                          - thisEvent->h2quad.re / sqrt(sigmasq[2]);
+                        nullStatIm = thisEvent->h1quad.im / sqrt(sigmasq[1])
+                          - thisEvent->h2quad.im / sqrt(sigmasq[2]);
+                        thisEvent->null_statistic = ( nullStatRe*nullStatRe + nullStatIm*nullStatIm ) / nullNorm ;
+                        /* Compute network null-statistic at just trigger end-time */
+                        thisEvent->tau5 = (REAL4) XLALComputeNullStatCase4a(caseID,fplus,fcross,sigmasq,thisEvent);
 			/* Parameter estimation: Distance
 			   for ( detId=0 ; detId<params->numDetectors ; detId++ ) {*/
 			for ( i=0 ; i < 3 ; i++ ) {
@@ -3902,7 +4164,7 @@ LALCoherentInspiralFilterSegment (
                           &inclination, &coaPhase, aa[0], aa[1], aa[2], aa[3],
                           &eff_distance0,&eff_distance1,&eff_distance2,&eff_distanceH1H2,amplitudeConst,
                           (double) chirpTime,(double) quadTemp[0].re,(double) quadTemp[0].im,
-                          (double) quadTemp[1].re,(double) quadTemp[1].im,(double) quadTemp[2].re,(double) quadTemp[2].im, sigmasq);
+                          (double) quadTemp[1].re,(double) quadTemp[1].im,(double) quadTemp[2].re,(double) quadTemp[2].im, sigmasq4DArray);
 
                         /* CHECK                      distance = XLALCoherentCBCParamEstim( double *psi_est, double *iota_est, double *coa_phase_est, double a1, double a2, double a3, double a4, double *eff_distance0,double *eff_distance1,double *eff_distance2,double amplitudeConst, double chirpTime, double C_Real0, double C_Real1, double C_Real2,double C_Im0, double C_Im1, double C_Im2) */
                         thisEvent->inclination = (REAL4) inclination;
@@ -3910,7 +4172,11 @@ LALCoherentInspiralFilterSegment (
                         thisEvent->coa_phase = (REAL4) coaPhase;
                         thisEvent->ligo_axis_ra = (REAL4) phi;
                         thisEvent->ligo_axis_dec = (REAL4) theta;
-			
+                        thisEvent->ifo1_eff_distance = (REAL4) eff_distance0;
+                        thisEvent->ifo2_eff_distance = (REAL4) eff_distance1;
+                        thisEvent->tau3 = (REAL4) eff_distance2;
+                        thisEvent->tau4 = (REAL4) eff_distanceH1H2;
+	
 			/* CHECK: Move this to post-processing to save time
 			for ( detId=0 ; detId<params->numDetectors ; detId++ ) {
 			  cDataTemp[detId].re=cData[detId]->data->data[timePtTemp[detId]].re;
@@ -4029,7 +4295,15 @@ LALCoherentInspiralFilterSegment (
 		        thisEvent->mass2 = input->tmplt->mass2;
 			thisEvent->mchirp = input->tmplt->totalMass * pow( input->tmplt->eta, 3.0/5.0 );
 			thisEvent->eta = input->tmplt->eta;
-
+                        /* Compute null-statistic for H1-H2 at just trigger end-time */
+                        nullNorm = ( 1.0 / sigmasq[1]  + 1.0 /  sigmasq[2] );
+                        nullStatRe = thisEvent->h1quad.re / sqrt(sigmasq[1])
+                          - thisEvent->h2quad.re / sqrt(sigmasq[2]);
+                        nullStatIm = thisEvent->h1quad.im / sqrt(sigmasq[1])
+                          - thisEvent->h2quad.im / sqrt(sigmasq[2]);
+                        thisEvent->null_statistic = ( nullStatRe*nullStatRe + nullStatIm*nullStatIm ) / nullNorm ;
+                        /* Compute network null-statistic at just trigger end-time */
+                        thisEvent->tau5 = (REAL4) XLALComputeNullStatCase4a(caseID,fplus,fcross,sigmasq,thisEvent);
 		        inclination = 0.0;
 		        polarization = 0.0;
 			/* CHECK: Move this to post-processing to save time
@@ -4079,15 +4353,18 @@ LALCoherentInspiralFilterSegment (
                           &inclination, &coaPhase, aa[0], aa[1], aa[2], aa[3],
                           &eff_distance0,&eff_distance1,&eff_distance2,&eff_distanceH1H2,amplitudeConst,
 			  (double) chirpTime,(double) quadTemp[0].re,(double) quadTemp[0].im,
-			  (double) quadTemp[1].re,(double) quadTemp[1].im,(double) quadTemp[2].re,(double) quadTemp[2].im, sigmasq);
+			  (double) quadTemp[1].re,(double) quadTemp[1].im,(double) quadTemp[2].re,(double) quadTemp[2].im, sigmasq4DArray);
 			
                         /* CHECK                      distance = XLALCoherentCBCParamEstim( double *psi_est, double *iota_est, double *coa_phase_est, double a1, double a2, double a3, double a4, double *eff_distance0,double *eff_distance1,double *eff_distance2,double amplitudeConst, double chirpTime, double C_Real0, double C_Real1, double C_Real2,double C_Im0, double C_Im1, double C_Im2) */
                         thisEvent->inclination = (REAL4) inclination;
                         thisEvent->polarization = (REAL4) polarization;
                         thisEvent->coa_phase = (REAL4) coaPhase;
                         thisEvent->ligo_axis_ra = (REAL4) phi;
-                        thisEvent->ligo_axis_dec = (REAL4) theta;
-			
+                        thisEvent->ligo_axis_dec = (REAL4) theta;			                  thisEvent->ifo1_eff_distance = (REAL4) eff_distance0;
+                        thisEvent->ifo2_eff_distance = (REAL4) eff_distance1;
+                        thisEvent->tau3 = (REAL4) eff_distance2;
+                        thisEvent->tau4 = (REAL4) eff_distanceH1H2;
+
 		        /* Need to initialize the event start index to new value */
 		        if( timePt[0] > (eventStartIdx + deltaEventIndex) )
 		          {
@@ -4108,7 +4385,7 @@ LALCoherentInspiralFilterSegment (
 
   /* Compute null-statistic for H1-H2 at just trigger end-time,
      and NOT the H1H2 null-statistic time-series */
-  if( thisEvent && !(params->nullStatOut) && (case2a || case3a)) {
+  if( thisEvent && !(params->nullStatH1H2Out) && (case2a || case3a)) {
     /* Prepare norm for null statistic */
     nullNorm = ( 1.0 / sigmasq[1]  + 1.0 /  sigmasq[2] );
 
@@ -4125,15 +4402,16 @@ LALCoherentInspiralFilterSegment (
   }
 
   /* Compute null-statistic, just for H1-H2 as of now,
-     and cohSNRH1H2, if not computed above already */
-  if( thisEvent && params->nullStatOut && params->cohH1H2SNROut
+     and cohSNRH1H2, if not computed above already 
+     if( thisEvent && params->nullStatOut && params->cohH1H2SNROut
       && !(case3b || case4a) ) {
-    
+  */
+  if( thisEvent && params->nullStatH1H2Out && params->cohH1H2SNROut ) {
     /* Prepare norm for null statistic */
     nullNorm = ( 1.0 / sigmasq[1]  + 1.0 /  sigmasq[2] );
     
     /* Allocate memory for null statistic */
-    memset( params->nullStatVec->data->data, 0, numPoints*sizeof(REAL4));
+    memset( params->nullStatH1H2Vec->data->data, 0, numPoints*sizeof(REAL4));
 
     /* Allocate memory for cohSNRH1H2Vec if that SNR has 
        not been computed above already*/
@@ -4159,21 +4437,30 @@ LALCoherentInspiralFilterSegment (
         - cData[1]->data->data[k].re / sqrt(sigmasq[2]);
       nullStatIm = cData[0]->data->data[k].im / sqrt(sigmasq[1])
         - cData[1]->data->data[k].im / sqrt(sigmasq[2]);
-      params->nullStatVec->data->data[k] = 
+      params->nullStatH1H2Vec->data->data[k] = 
         ( nullStatRe*nullStatRe + nullStatIm*nullStatIm ) / nullNorm ;
     }
-    thisEvent->null_statistic = params->nullStatVec->data->data[(INT4)(numPoints/2)];
+    /* CHECK: 
+      thisEvent->null_statistic = params->nullStatVec->data->data[(INT4)(numPoints/2)];
+    */
+    nullStatRe = thisEvent->h1quad.re / sqrt(sigmasq[1])
+      - thisEvent->h2quad.re / sqrt(sigmasq[2]);
+    nullStatIm = thisEvent->h1quad.im / sqrt(sigmasq[1])
+      - thisEvent->h2quad.im / sqrt(sigmasq[2]);
+
+    thisEvent->null_statistic = ( nullStatRe*nullStatRe + nullStatIm*nullStatIm ) / nullNorm ;
+
   }
 
   /* Compute null-statistic ONLY, just for H1-H2 as of now, and NOT cohH1H2SNR */
-  if( thisEvent && params->nullStatOut && !(params->cohH1H2SNROut)
+  if( thisEvent && params->nullStatH1H2Out && !(params->cohH1H2SNROut)
       && !(case3b || case4a) ) {
     
     /* Prepare norm for null statistic */
     nullNorm = ( 1.0 / sigmasq[1]  + 1.0 /  sigmasq[2] );
 
     /* Allocate memory for null statistic */
-    memset( params->nullStatVec->data->data, 0, numPoints*sizeof(REAL4));
+    memset( params->nullStatH1H2Vec->data->data, 0, numPoints*sizeof(REAL4));
 
     /*CHECK: Will not give intended result if first det is "G1", since it 
       assumes that cdata[0] is H1 and cdata[1] is H2; rectify this in next rev. */
@@ -4184,15 +4471,15 @@ LALCoherentInspiralFilterSegment (
         - cData[1]->data->data[k].re / sqrt(sigmasq[2]);
       nullStatIm = cData[0]->data->data[k].im / sqrt(sigmasq[1])
         - cData[1]->data->data[k].im / sqrt(sigmasq[2]);
-      params->nullStatVec->data->data[k] = 
+      params->nullStatH1H2Vec->data->data[k] = 
         ( nullStatRe*nullStatRe + nullStatIm*nullStatIm ) / nullNorm ;
     }
-    thisEvent->null_statistic = params->nullStatVec->data->data[(INT4)(numPoints/2)];
+    thisEvent->null_statistic = params->nullStatH1H2Vec->data->data[(INT4)(numPoints/2)];
   }
 
   /* Compute cohSNRH1H2 ONLY, if not computed above already, 
      but NOT the full  null-statistic time-series */
-  if( params->cohH1H2SNROut && !nullStatOut ) {
+  if( params->cohH1H2SNROut && !nullStatH1H2Out ) {
     /* Allocate memory for cohSNRH1H2Vec if that SNR has 
        not been computed above already*/
     memset( params->cohH1H2SNRVec->data->data, 0, numPoints*sizeof(REAL4));
@@ -4213,9 +4500,11 @@ LALCoherentInspiralFilterSegment (
     }
   }
 
-  /*CHECK: Next update will handle null-statistic time-series computation
+  /*CHECK: The following is deactivated for now (because of the "0"
+    in the condition of the "if" statment.
+    Next update will handle null-statistic time-series computation
     if( thisEvent && params->nullStatOut && case3b ){ */
-  if( thisEvent && case3b ){
+  if( thisEvent && case3b && !(params->nullStatOut) ){
     /* This trigger is from either H1 or H2 but not both */
     REAL8 sigmasqH = 0.0;
     REAL8 nullNorm8 = 0.0;
@@ -4268,9 +4557,11 @@ LALCoherentInspiralFilterSegment (
     thisEvent->null_statistic = (REAL4) nullStatistic;
   }
 
-  /*CHECK: Next update will handle null-statistic time-series computation
+  /*CHECK:  The following is deactivated for now (because of the "0"
+    in the condition of the "if" statment.
+    Next update will handle null-statistic time-series computation
     if( thisEvent && params->nullStatOut && case4a ){ */
-  if( thisEvent && case4a ){
+  if( thisEvent && case4a && !(params->nullStatOut) ){
     /* This trigger is from both H1 and H2;
      but using H1 and not H2 for now*/
     REAL8 nullNorm8 = 0.0;
@@ -4312,6 +4603,145 @@ LALCoherentInspiralFilterSegment (
   RETURN( status );
 }
 
+/* Function for computing 3-site-3-ifo null-statistic at trigger end-time*/
+double XLALComputeNullStatCase3b(INT4 caseID[6], double fplus[4], double fcross[4], REAL8 *sigmasq, MultiInspiralTable *thisEvent) {
+    /* This trigger is from either H1 or H2 but not both */
+    double sigmasqH = 0.0;
+    double nullNorm8 = 0.0;
+    double nullNumerRe8 = 0.0;
+    double nullNumerIm8 = 0.0;
+    double nullStatistic = 0.0;
+
+    if ( (caseID[1] == 0) ) {
+      /* This is a H2 trigger */
+      sigmasqH = sigmasq[2];
+
+      nullNumerRe8 = fplus[1]*fcross[2]*thisEvent->h2quad.re/ sqrt(sigmasqH) +
+        fplus[2]*fcross[0]*thisEvent->l1quad.re / sqrt(sigmasq[3]) +
+        fplus[0]*fcross[1]*thisEvent->v1quad.re / sqrt(sigmasq[5]);
+
+      nullNumerIm8 = fplus[1]*fcross[2]*thisEvent->h2quad.im / sqrt(sigmasqH) +
+        fplus[2]*fcross[0]*thisEvent->l1quad.im / sqrt(sigmasq[3]) +
+        fplus[0]*fcross[1]*thisEvent->v1quad.im / sqrt(sigmasq[5]) ;
+    }
+    else {
+      sigmasqH = sigmasq[1];
+
+      nullNumerRe8 = fplus[1]*fcross[2]*thisEvent->h1quad.re/ sqrt(sigmasqH) +
+        fplus[2]*fcross[0]*thisEvent->l1quad.re / sqrt(sigmasq[3]) +
+        fplus[0]*fcross[1]*thisEvent->v1quad.re / sqrt(sigmasq[5]);
+
+      nullNumerIm8 = fplus[1]*fcross[2]*thisEvent->h1quad.im / sqrt(sigmasqH) +
+        fplus[2]*fcross[0]*thisEvent->l1quad.im / sqrt(sigmasq[3]) +
+        fplus[0]*fcross[1]*thisEvent->v1quad.im / sqrt(sigmasq[5]) ;
+    }
+    /* Prepare norm for null statistic */
+    nullNorm8 = fplus[1]*fcross[2]*fplus[1]*fcross[2]/ sigmasqH +
+      fplus[2]*fcross[0]*fplus[2]*fcross[0]/ sigmasq[3] +
+      fplus[0]*fcross[1]*fplus[0]*fcross[1]/ sigmasq[5] ;
+
+    nullStatistic = ( nullNumerRe8*nullNumerRe8
+                         + nullNumerIm8*nullNumerIm8)  / nullNorm8;
+    return nullStatistic;
+}
+
+double XLALComputeNullTimeSeriesCase3b(INT4 caseID[6], double fplus[4], double fcross[4], REAL8 *sigmasq, COMPLEX8 quadTemp[6]) {
+    /* This trigger is from either H1 or H2 but not both */
+    double sigmasqH = 0.0;
+    double nullNorm8 = 0.0;
+    double nullNumerRe8 = 0.0;
+    double nullNumerIm8 = 0.0;
+    double nullStatistic = 0.0;
+
+    if ( (caseID[1] == 0) ) {
+      /* This is a H2 trigger */
+      sigmasqH = sigmasq[2];
+
+      nullNumerRe8 = fplus[1]*fcross[2]*quadTemp[0].re/ sqrt(sigmasqH) +
+        fplus[2]*fcross[0]*quadTemp[1].re / sqrt(sigmasq[3]) +
+        fplus[0]*fcross[1]*quadTemp[2].re / sqrt(sigmasq[5]);
+
+      nullNumerIm8 = fplus[1]*fcross[2]*quadTemp[0].im / sqrt(sigmasqH) +
+        fplus[2]*fcross[0]*quadTemp[1].im / sqrt(sigmasq[3]) +
+        fplus[0]*fcross[1]*quadTemp[2].im / sqrt(sigmasq[5]) ;
+    }
+    else {
+      sigmasqH = sigmasq[1];
+
+      nullNumerRe8 = fplus[1]*fcross[2]*quadTemp[0].re/ sqrt(sigmasqH) +
+        fplus[2]*fcross[0]*quadTemp[1].re / sqrt(sigmasq[3]) +
+        fplus[0]*fcross[1]*quadTemp[2].re / sqrt(sigmasq[5]);
+
+      nullNumerIm8 = fplus[1]*fcross[2]*quadTemp[0].im / sqrt(sigmasqH) +
+        fplus[2]*fcross[0]*quadTemp[1].im / sqrt(sigmasq[3]) +
+        fplus[0]*fcross[1]*quadTemp[2].im / sqrt(sigmasq[5]) ;
+    }
+    /* Prepare norm for null statistic */
+    nullNorm8 = fplus[1]*fcross[2]*fplus[1]*fcross[2]/ sigmasqH +
+      fplus[2]*fcross[0]*fplus[2]*fcross[0]/ sigmasq[3] +
+      fplus[0]*fcross[1]*fplus[0]*fcross[1]/ sigmasq[5] ;
+
+    nullStatistic = ( nullNumerRe8*nullNumerRe8
+                         + nullNumerIm8*nullNumerIm8)  / nullNorm8;
+    return nullStatistic;
+}
+
+/* Function for computing 3-site-4-ifo null-statistic at trigger end-time*/
+double XLALComputeNullStatCase4a(INT4 caseID[6], double fplus[4], double fcross[4], REAL8 *sigmasq, MultiInspiralTable *thisEvent) {
+    /* This trigger is from both H1 and H2;
+     but using H1 and not H2 for now*/
+    double nullNorm8 = 0.0;
+    double nullNumerRe8 = 0.0;
+    double nullNumerIm8 = 0.0;
+    double nullStatistic = 0.0;
+
+    /* Prepare norm for null statistic */
+    nullNorm8 = fplus[1]*fcross[2]*fplus[1]*fcross[2]/ sigmasq[1] +
+      fplus[2]*fcross[0]*fplus[2]*fcross[0]/ sigmasq[3] +
+      fplus[0]*fcross[1]*fplus[0]*fcross[1]/ sigmasq[5] ;
+
+    nullNumerRe8 = fplus[1]*fcross[2]*thisEvent->h1quad.re / sqrt(sigmasq[1]) +
+      fplus[2]*fcross[0]*thisEvent->l1quad.re / sqrt(sigmasq[3]) +
+      fplus[0]*fcross[1]*thisEvent->v1quad.re / sqrt(sigmasq[5]);
+
+    nullNumerIm8 = fplus[1]*fcross[2]*thisEvent->h1quad.im / sqrt(sigmasq[1]) +
+      fplus[2]*fcross[0]*thisEvent->l1quad.im / sqrt(sigmasq[3]) +
+      fplus[0]*fcross[1]*thisEvent->v1quad.im / sqrt(sigmasq[5]) ;
+
+    nullStatistic = ( nullNumerRe8*nullNumerRe8
+                         + nullNumerIm8*nullNumerIm8)  / nullNorm8;
+
+    return nullStatistic;
+}
+
+double XLALComputeNullTimeSeriesCase4a(INT4 caseID[6], double fplus[4], double fcross[4], REAL8 *sigmasq, COMPLEX8 quadTemp[6]) {
+    /* This trigger is from both H1 and H2;
+     but using H1 and not H2 for now*/
+    double nullNorm8 = 0.0;
+    double nullNumerRe8 = 0.0;
+    double nullNumerIm8 = 0.0;
+    double nullStatistic = 0.0;
+
+    /* Prepare norm for null statistic */
+    nullNorm8 = fplus[1]*fcross[2]*fplus[1]*fcross[2]/ sigmasq[1] +
+      fplus[2]*fcross[0]*fplus[2]*fcross[0]/ sigmasq[3] +
+      fplus[0]*fcross[1]*fplus[0]*fcross[1]/ sigmasq[5] ;
+
+    nullNumerRe8 = fplus[1]*fcross[2]*quadTemp[0].re / sqrt(sigmasq[1]) +
+      fplus[2]*fcross[0]*quadTemp[2].re / sqrt(sigmasq[3]) +
+      fplus[0]*fcross[1]*quadTemp[3].re / sqrt(sigmasq[5]);
+
+    nullNumerIm8 = fplus[1]*fcross[2]*quadTemp[0].im / sqrt(sigmasq[1]) +
+      fplus[2]*fcross[0]*quadTemp[2].im / sqrt(sigmasq[3]) +
+      fplus[0]*fcross[1]*quadTemp[3].im / sqrt(sigmasq[5]) ;
+
+    nullStatistic = ( nullNumerRe8*nullNumerRe8
+                         + nullNumerIm8*nullNumerIm8)  / nullNorm8;
+
+
+    return nullStatistic;
+}
+
 int compare( const void* a, const void* b ) {
   const double* arg1 = (const double*) a;
   const double* arg2 = (const double*) b;
@@ -4320,8 +4750,38 @@ int compare( const void* a, const void* b ) {
   else return 1;
 }
 
+void XLALCoherentCBCEstimateDistanceCase2a(double *eff_distance0,double *eff_distance1,double *eff_distanceH1H2, double C_Real0, double C_Im0, double C_Real1, double C_Im1, REAL8 *sigmasq) {
+ /* Sigmasq includes chirpTime! */
+ *eff_distance0 = sqrt(sigmasq[0])/pow((C_Real0*C_Real0+C_Im0*C_Im0),.5);
+ *eff_distance1 = sqrt(sigmasq[1])/pow((C_Real1*C_Real1+C_Im1*C_Im1),.5);
 
-double XLALCoherentCBCParamEstim( double *psi_est, double *iota_est, double *coa_phase_est, double a1, double a2, double a3, double a4, double *eff_distance0,double *eff_distance1,double *eff_distance2,double *eff_distanceH1H2,double amplitudeConst, double chirpTime, double C_Real0, double C_Real1, double C_Real2,double C_Im0, double C_Im1, double C_Im2, REAL8 *sigmasq) {
+ /*CHECK: Need to update the code here so that the C's correspond to H1 and H2 */
+ *eff_distanceH1H2 = (sigmasq[0]+
+     sigmasq[1])/sqrt(sigmasq[0]*(C_Real0*C_Real0+C_Im0*C_Im0)+
+     sigmasq[1]*(C_Real1*C_Real1+C_Im1*C_Im1)+
+     2*sqrt(sigmasq[0]*sigmasq[1])*(C_Real0*C_Real1+C_Im0*C_Im1));
+}
+
+void XLALCoherentCBCEstimateDistanceCase2b(double *eff_distance0,double *eff_distance1, double C_Real0, double C_Im0, double C_Real1, double C_Im1, REAL8 *sigmasq) {
+ /* Sigmasq includes chirpTime! */
+ *eff_distance0 = sqrt(sigmasq[0])/pow((C_Real0*C_Real0+C_Im0*C_Im0),.5);
+ *eff_distance1 = sqrt(sigmasq[1])/pow((C_Real1*C_Real1+C_Im1*C_Im1),.5);
+}
+
+void XLALCoherentCBCEstimateDistanceCase3a(double *eff_distance0,double *eff_distance1,double *eff_distance2, double *eff_distanceH1H2, double C_Real0, double C_Im0, double C_Real1,double C_Im1, double C_Real2, double C_Im2, REAL8 *sigmasq) {
+ /* Sigmasq includes chirpTime! */
+ *eff_distance0 = sqrt(sigmasq[0])/pow((C_Real0*C_Real0+C_Im0*C_Im0),.5);
+ *eff_distance1 = sqrt(sigmasq[1])/pow((C_Real1*C_Real1+C_Im1*C_Im1),.5);
+ *eff_distance2 = sqrt(sigmasq[2])/pow((C_Real2*C_Real2+C_Im2*C_Im2),.5);
+
+ /*CHECK: Need to update the code here so that the C's correspond to H1 and H2 */
+ *eff_distanceH1H2 = (sigmasq[0]+
+     sigmasq[1])/sqrt(sigmasq[0]*(C_Real0*C_Real0+C_Im0*C_Im0)+
+     sigmasq[1]*(C_Real1*C_Real1+C_Im1*C_Im1)+
+     2*sqrt(sigmasq[0]*sigmasq[1])*(C_Real0*C_Real1+C_Im0*C_Im1));
+}
+
+double XLALCoherentCBCParamEstim( double *psi_est, double *iota_est, double *coa_phase_est, double a1, double a2, double a3, double a4, double *eff_distance0,double *eff_distance1,double *eff_distance2,double *eff_distanceH1H2,double amplitudeConst, double chirpTime, double C_Real0, double C_Im0, double C_Real1,double C_Im1, double C_Real2, double C_Im2, REAL8 *sigmasq) {
 
 
  double lum_dist_est,f_a,f_a_sq,g_a,h_a,iota_est_CHECK = 0.0,sine_psi=0.0,sine_coa_phase=0.0,p=0.0; 
@@ -4398,15 +4858,15 @@ double XLALCoherentCBCParamEstim( double *psi_est, double *iota_est, double *coa
        }
    }
 
- /* Amplitude constant below does not include a sigma. */
- *eff_distance0 = 2.*amplitudeConst*sqrt(sigmasq[0])*pow(chirpTime,.5)/pow((C_Real0*C_Real0+C_Im0*C_Im0),.5);
- *eff_distance1 = 2.*amplitudeConst*sqrt(sigmasq[1])*pow(chirpTime,.5)/pow((C_Real1*C_Real1+C_Im1*C_Im1),.5);
- *eff_distance2 = 2.*amplitudeConst*sqrt(sigmasq[2])*pow(chirpTime,.5)/pow((C_Real2*C_Real2+C_Im2*C_Im2),.5);
+ /* Sigmasq includes chirpTime! */
+ *eff_distance0 = amplitudeConst*sqrt(sigmasq[0])/pow((C_Real0*C_Real0+C_Im0*C_Im0),.5);
+ *eff_distance1 = amplitudeConst*sqrt(sigmasq[1])/pow((C_Real1*C_Real1+C_Im1*C_Im1),.5);
+ *eff_distance2 = amplitudeConst*sqrt(sigmasq[2])/pow((C_Real2*C_Real2+C_Im2*C_Im2),.5);
  /*CHECK: Need to update the code here so that the C's correspond to H1 and H2 */
- *eff_distanceH1H2 = 2.*amplitudeConst*pow(chirpTime,.5)*(sigmasq[0]*sigmasq[0]+
-     sigmasq[1]*sigmasq[1])/(sigmasq[0]*sigmasq[0]*(C_Real1*C_Real1+C_Im1*C_Im1)+
-     sigmasq[1]*sigmasq[1]*(C_Real2*C_Real2+C_Im2*C_Im2)+
-     2*sigmasq[0]*sigmasq[1]*(C_Real1*C_Real2+C_Im1*C_Im2));
+ *eff_distanceH1H2 = amplitudeConst*(sigmasq[0]+
+     sigmasq[1])/sqrt(sigmasq[0]*(C_Real0*C_Real0+C_Im0*C_Im0)+
+     sigmasq[1]*(C_Real1*C_Real1+C_Im1*C_Im1)+
+     2*sqrt(sigmasq[0]*sigmasq[1])*(C_Real0*C_Real1+C_Im0*C_Im1));
 
  return lum_dist_est;
 }
