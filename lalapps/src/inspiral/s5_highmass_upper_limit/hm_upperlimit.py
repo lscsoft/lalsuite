@@ -332,7 +332,7 @@ FAR, seglists = get_far_threshold_and_segments(opts.full_data_file, opts.live_ti
 seglists -= veto_segments
 zero_lag_segments = seglists.intersection(opts.instruments) - seglists.union(set(seglists.keys()) - opts.instruments)
 
-print FAR, abs(zero_lag_segments)
+print FAR, float(abs(zero_lag_segments))
 
 
 Found, Missed = get_injections(opts.injfnames, FAR, zero_lag_segments, verbose = opts.verbose)

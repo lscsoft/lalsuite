@@ -52,6 +52,7 @@ src/detresponse/lalapps_ifo_skyavg_ts
 src/detresponse/lalapps_test_earth
 src/detresponse/lalapps_test_gridding
 src/example/lalapps_hello
+src/findchirp/lalapps_BankEfficiency
 src/findchirp/lalapps_DistanceVsMass
 src/findchirp/lalapps_InspiralOverlap
 src/findchirp/lalapps_chirplen
