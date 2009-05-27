@@ -239,6 +239,8 @@ typedef struct
   gsl_matrix *gFav_ij;			/**< 'average' Fstat-metric, or NULL (see \ref Prix07): only used if fullFmetric==TRUE */
   gsl_matrix *m1_ij, *m2_ij, *m3_ij;	/**< Fstat-metric sub components, or NULL (see \ref Prix07): only used if fullFmetric==TRUE */
   REAL4 A, B, C;			/**< Antenna-pattern coefficients: only used if fullFMetric==TRUE */
+
+  gsl_matrix *Fisher_ab;		/**< Full parameter-space Fisher matrix, ie amplitude + Doppler space (only computed if fullMetric == TRUE)*/
 } DopplerMetric;
 
 
@@ -259,9 +261,9 @@ XLALDopplerFstatMetric ( const DopplerMetricParams *metricParams,
 
 
 FmetricAtoms_t*
-XLALComputeFmetricAtoms ( const DopplerMetricParams *metricParams,
-			  const EphemerisData *edat
-			  );
+XLALComputeAtomsForFmetric ( const DopplerMetricParams *metricParams,
+			     const EphemerisData *edat
+			     );
 
 
 int
