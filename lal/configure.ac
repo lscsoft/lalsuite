@@ -239,9 +239,12 @@ if test "$lal_pthread_lock" = "true" ; then
   fi
 fi
 
+# check for c compiler
+m4_pattern_allow([AC_PROG_CC_C99])
+m4_ifdef([AC_PROG_CC_C99], [AC_PROG_CC_C99], [LAL_AC_PROG_CC_C99])
+
 dnl Checks for programs.
 AC_PROG_AWK
-AC_PROG_CC_STDC
 AC_PROG_CPP
 AC_PROG_INSTALL
 AC_PROG_LN_S
@@ -364,6 +367,8 @@ AC_CHECK_HEADERS(gsl/gsl_errno.h, , [AC_MSG_ERROR(could not find gsl/gsl_errno.h
 if test "${intelfft}" = "false" ; then
   AC_CHECK_HEADERS(fftw3.h, , [AC_MSG_ERROR(could not find fftw3.h)])
 fi
+AC_CHECK_HEADER(stdint.h, , [AC_MSG_WARN(could not find stdint.h)])
+AC_CHECK_HEADER(inttypes.h, , [AC_MSG_WARN(could not find inttypes.h)])
 
 AC_MSG_CHECKING(for gethostname prototype in unistd.h)
 AC_EGREP_HEADER(gethostname, unistd.h,AC_MSG_RESULT(yes)

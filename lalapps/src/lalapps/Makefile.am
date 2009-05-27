@@ -12,7 +12,7 @@ bin_PROGRAMS = lalapps_version lalapps_tconvert lalapps_cache
 lalapps_version_SOURCES = version.c lalapps.h
 lalapps_tconvert_SOURCES = tconvert.c getdate.c getdate.h
 lalapps_cache_SOURCES = cache.c
-LDADD = liblalapps.la
+LDADD = liblalapps.la @LAL_LIBS@
 INCLUDES = -I$(top_srcdir)/src
 if HAVE_PYTHON
 pkgpython_DATA = __init__.py

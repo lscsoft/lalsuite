@@ -210,8 +210,8 @@ LogDtime (void)
   double t;
   GetSystemTimeAsFileTime(&sysTime);
   time.LowPart = sysTime.dwLowDateTime;
-  time.HighPart = sysTime.dwHighDateTime;  // Time is in 100 ns units
-  t = (double)time.QuadPart;    // Convert to 1 s units
+  time.HighPart = sysTime.dwHighDateTime;  /* Time is in 100 ns units */
+  t = (double)time.QuadPart;    /* Convert to 1 s units */
   t /= TEN_MILLION;                /* In seconds */
   t -= EPOCHFILETIME_SEC;     /* Offset to the Epoch time */
   return t;
