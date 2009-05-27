@@ -324,18 +324,30 @@ main(int argc, char *argv[])
 	} /* simple phase metric */
       else
 	{
-	  REAL4 D = metric->A * metric->B - SQ(metric->C);
 	  const PulsarAmplitudeParams *Amp = &(meta->signalParams.Amp);
 
 	  fprintf ( fpMetric, "%%%% h0 = %g; cosi = %g; psi = %g; phi0 = %g;\n", Amp->h0, Amp->cosi, Amp->psi, Amp->phi0 );
 	  fprintf ( fpMetric, "\ng_ij = \\\n" ); XLALfprintfGSLmatrix ( fpMetric, METRIC_FORMAT,  metric->g_ij );
-
-	  fprintf ( fpMetric, "\nA = %.16g; B = %.16g; C = %.16g; D = %.16g;\n", metric->A, metric->B, metric->C, D );
 	  fprintf ( fpMetric, "\ngFav_ij = \\\n" ); XLALfprintfGSLmatrix ( fpMetric, METRIC_FORMAT,  metric->gFav_ij );
 	  fprintf ( fpMetric, "\nm1_ij = \\\n" ); XLALfprintfGSLmatrix ( fpMetric, METRIC_FORMAT,  metric->m1_ij );
 	  fprintf ( fpMetric, "\nm2_ij = \\\n" ); XLALfprintfGSLmatrix ( fpMetric, METRIC_FORMAT,  metric->m2_ij );
 	  fprintf ( fpMetric, "\nm3_ij = \\\n" ); XLALfprintfGSLmatrix ( fpMetric, METRIC_FORMAT,  metric->m3_ij );
 	} /* full Fstat-metric */
+
+      if ( metric->Fisher_ab )
+	{
+	  REAL8 A, B, C, D;
+	  A = gsl_matrix_get ( metric->Fisher_ab, 0, 0 );
+	  B = gsl_matrix_get ( metric->Fisher_ab, 1, 1 );
+	  C = gsl_matrix_get ( metric->Fisher_ab, 0, 1 );
+
+	  D = A * B - C * C;
+
+	  fprintf ( fpMetric, "\nA = %.16g; B = %.16g; C = %.16g; D = %.16g;\n", A, B, C, D );
+	  fprintf ( fpMetric, "\nrho2 = %.16g;\n", metric->rho2 );
+
+	  fprintf (fpMetric, "\nFisher_ab = \\\n" ); XLALfprintfGSLmatrix ( fpMetric, METRIC_FORMAT,  metric->Fisher_ab );
+	}
 
       fclose ( fpMetric );
 

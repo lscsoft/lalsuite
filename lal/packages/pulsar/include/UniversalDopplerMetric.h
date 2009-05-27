@@ -238,9 +238,9 @@ typedef struct
 
   gsl_matrix *gFav_ij;			/**< 'average' Fstat-metric, or NULL (see \ref Prix07): only used if fullFmetric==TRUE */
   gsl_matrix *m1_ij, *m2_ij, *m3_ij;	/**< Fstat-metric sub components, or NULL (see \ref Prix07): only used if fullFmetric==TRUE */
-  REAL4 A, B, C;			/**< Antenna-pattern coefficients: only used if fullFMetric==TRUE */
 
   gsl_matrix *Fisher_ab;		/**< Full parameter-space Fisher matrix, ie amplitude + Doppler space (only computed if fullMetric == TRUE)*/
+  REAL8 rho2;				/**< signal SNR rho^2 = A^mu M_mu_nu A^nu */
 } DopplerMetric;
 
 

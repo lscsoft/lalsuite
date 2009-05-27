@@ -107,7 +107,8 @@ MultiDetectorInfo empty_MultiDetectorInfo;
 NRCSID( UNIVERSALDOPPLERMETRICC, "$Id$");
 
 /*---------- internal prototypes ----------*/
-DopplerMetric *XLALComputeFmetricFromAtoms ( const FmetricAtoms_t *atoms, REAL8 cosi, REAL8 psi );
+DopplerMetric* XLALComputeFmetricFromAtoms ( const FmetricAtoms_t *atoms, REAL8 cosi, REAL8 psi );
+gsl_matrix* XLALComputeFisherFromAtoms ( const FmetricAtoms_t *atoms, const PulsarAmplitudeParams *Amp );
 
 double CW_am1_am2_Phi_i_Phi_j ( double tt, void *params );
 double XLALAverage_am1_am2_Phi_i_Phi_j ( const intparams_t *params );
@@ -738,6 +739,13 @@ XLALDopplerFstatMetric ( const DopplerMetricParams *metricParams,  	/**< input p
   if ( (metric = XLALComputeFmetricFromAtoms ( atoms, cosi, psi)) == NULL ) {
     XLALPrintError ("%s: XLALComputeFmetricFromAtoms() failed, errno = %d\n\n", fn, xlalErrno );
     XLALDestroyFmetricAtoms ( atoms );
+    XLAL_ERROR_NULL( fn, XLAL_EFUNC );
+  }
+
+  if ( (metric->Fisher_ab = XLALComputeFisherFromAtoms ( atoms, &metricParams->signalParams.Amp )) == NULL ) {
+    XLALPrintError ("%s: XLALComputeFisherFromAtoms() failed. errno = %d\n\n", xlalErrno );
+    XLALDestroyFmetricAtoms ( atoms );
+    XLALDestroyDopplerMetric ( metric );
     XLAL_ERROR_NULL( fn, XLAL_EFUNC );
   }
 
@@ -1416,12 +1424,11 @@ XLALComputeFmetricFromAtoms ( const FmetricAtoms_t *atoms, REAL8 cosi, REAL8 psi
 {
   const CHAR *fn = "XLALComputeFmetricFromAtoms()";
 
+  DopplerMetric *metric;		/* output matrix */
+
   UINT4 dim, i, j;			/* Doppler index counters */
   REAL8 A, B, C, D;			/* 'standard' antenna-pattern coefficients (gsl-integrated, though) */
   REAL8 alpha1, alpha2, alpha3, eta2, cos2psi, sin2psi;
-  REAL8 rho2;
-  DopplerMetric *metric;
-
 
   if ( !atoms ) {
     XLALPrintError ("%s: illegal NULL input.\n\n", fn );
@@ -1452,16 +1459,11 @@ XLALComputeFmetricFromAtoms ( const FmetricAtoms_t *atoms, REAL8 cosi, REAL8 psi
     XLAL_ERROR_NULL (fn, XLAL_ENOMEM );
   }
 
-
   A = atoms->a_a;
   B = atoms->b_b;
   C = atoms->a_b;
 
   D = A * B - C * C;	/* determinant of [A, C; C, B] */
-
-  metric->A = A;
-  metric->B = B;
-  metric->C = C;
 
   /* get amplitude-parameter factors alpha_1, alpha_2, alpha_3 */
   eta2 = SQUARE ( cosi );
@@ -1471,7 +1473,7 @@ XLALComputeFmetricFromAtoms ( const FmetricAtoms_t *atoms, REAL8 cosi, REAL8 psi
   alpha2 = 0.25 * SQUARE ( 1.0 + eta2 ) * SQUARE ( sin2psi ) + eta2 * SQUARE ( cos2psi );
   alpha3 = 0.25 * SQUARE ( 1.0 - eta2 ) * sin2psi * cos2psi;
 
-  rho2 = alpha1 * A + alpha2 * B + 2.0 * alpha3 * C;
+  metric->rho2 = alpha1 * A + alpha2 * B + 2.0 * alpha3 * C;
 
   /* ---------- compute components of the metric ---------- */
   for ( i=0; i < dim; i ++ )
@@ -1533,7 +1535,7 @@ XLALComputeFmetricFromAtoms ( const FmetricAtoms_t *atoms, REAL8 cosi, REAL8 psi
 	  /* assemble the 'full' F-stat metric from these ingredients, see Eq.(87) */
 	  gg = alpha1 * gsl_matrix_get (metric->m1_ij, i, j ) + alpha2 * gsl_matrix_get (metric->m2_ij, i, j )
 	    + 2.0 * alpha3 * gsl_matrix_get (metric->m3_ij, i, j );
-	  gg /= rho2;
+	  gg /= metric->rho2;
 
 	  gsl_matrix_set (metric->g_ij, i, j, gg);
 	  gsl_matrix_set (metric->g_ij, j, i, gg);
@@ -1554,3 +1556,113 @@ XLALComputeFmetricFromAtoms ( const FmetricAtoms_t *atoms, REAL8 cosi, REAL8 psi
 
 } /* XLALComputeFmetricFromAtoms() */
 
+
+/** Function to compute *full* 4+n dimensional Fisher matric for the
+ *  full CW parameter-space of Amplitude + Doppler parameters !
+ */
+gsl_matrix*
+XLALComputeFisherFromAtoms ( const FmetricAtoms_t *atoms, const PulsarAmplitudeParams *Amp )
+{
+  const CHAR *fn = "XLALComputeFisherFromAtoms()";
+  gsl_matrix *fisher = NULL;	/* output matrix */
+
+  UINT4 dimDoppler, dimFull, i, j;
+  PulsarAmplitudeVect Amu;
+  REAL8 al1, al2, al3;
+
+  /* check input consistency */
+  if ( !atoms || !Amp ) {
+    XLALPrintError ("%s: illegal NULL input.\n\n", fn );
+    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+  }
+
+  if ( !atoms->a_a_i || !atoms->a_b_i || !atoms->b_b_i || !atoms->a_a_i_j || !atoms->a_b_i_j || !atoms->b_b_i_j ) {
+    XLALPrintError ("%s: input Fmetric-atoms not fully allocated.\n\n", fn );
+    XLAL_ERROR_NULL (fn, XLAL_EINVAL );
+  }
+
+  if ( XLALAmplitudeParams2Vect ( &Amu, Amp ) != XLAL_SUCCESS ) {
+    XLALPrintError ( "%s: XLALAmplitudeParams2Vect() failed with errno = %d\n\n", fn, xlalErrno );
+    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+  }
+
+  dimDoppler = atoms->a_a_i->size;
+  dimFull = 4 + dimDoppler;	/* 4 amplitude params + n Doppler params */
+
+  if ( (fisher = gsl_matrix_calloc ( dimFull, dimFull )) == NULL ) {
+    XLALPrintError ("%s: gsl_matric_calloc(%d,%d) failed.\n\n", fn, dimFull, dimFull );
+    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+  }
+
+  /* ----- set pure Amplitude block 4x4: M_mu_nu ---------- */
+  {
+    REAL8 A, B, C;
+    A = atoms->a_a;
+    B = atoms->b_b;
+    C = atoms->a_b;
+
+    gsl_matrix_set ( fisher, 0, 0, A );
+    gsl_matrix_set ( fisher, 2, 2, A );
+
+    gsl_matrix_set ( fisher, 1, 1, B );
+    gsl_matrix_set ( fisher, 3, 3, B );
+
+    gsl_matrix_set ( fisher, 0, 1, C );
+    gsl_matrix_set ( fisher, 1, 0, C );
+    gsl_matrix_set ( fisher, 2, 3, C );
+    gsl_matrix_set ( fisher, 3, 2, C );
+  } /* amplitude-param block M_mu_nu */
+
+
+  /* ----- set Doppler block (4+i,4+j) ---------- */
+  al1 = SQUARE(Amu.A1) + SQUARE(Amu.A3);
+  al2 = Amu.A1 * Amu.A2 + Amu.A3 * Amu.A4;
+  al3 = SQUARE(Amu.A2) + SQUARE(Amu.A4);
+
+  for ( i=0; i < dimDoppler; i ++ )
+    {
+      for ( j=0; j <= i; j ++ )
+	{
+	  REAL8 gg, a_a_i_j, a_b_i_j, b_b_i_j;
+
+	  a_a_i_j = gsl_matrix_get(atoms->a_a_i_j, i, j);
+	  a_b_i_j = gsl_matrix_get(atoms->a_b_i_j, i, j);
+	  b_b_i_j = gsl_matrix_get(atoms->b_b_i_j, i, j);
+
+	  gg = al1 * a_a_i_j + 2.0 * al2 * a_b_i_j + al3 * b_b_i_j;
+
+	  gsl_matrix_set ( fisher, 4 + i, 4 + j, gg );
+	  gsl_matrix_set ( fisher, 4 + j, 4 + i, gg );
+
+	} /* for j <= i */
+    } /* for i < dimDoppler */
+
+
+  /* ----- compute mixed Amplitude-Doppler block ( non-square ) */
+  for ( i=0; i < dimDoppler; i ++ )
+    {
+      REAL8 a_a_i, a_b_i, b_b_i;
+      REAL8 AR[4];
+      UINT4 mu;
+
+      a_a_i = gsl_vector_get ( atoms->a_a_i, i );
+      a_b_i = gsl_vector_get ( atoms->a_b_i, i );
+      b_b_i = gsl_vector_get ( atoms->b_b_i, i );
+
+      AR[0] =  Amu.A3 * a_a_i + Amu.A4 * a_b_i;
+      AR[1] =  Amu.A3 * a_b_i + Amu.A4 * b_b_i;
+      AR[2] = -Amu.A1 * a_a_i - Amu.A2 * a_b_i;
+      AR[3] = -Amu.A1 * a_b_i - Amu.A2 * b_b_i;
+
+      for ( mu = 0; mu < 4; mu ++ )
+	{
+	  gsl_matrix_set ( fisher, mu, 4 + i, AR[mu] );
+	  gsl_matrix_set ( fisher, 4 + i, mu, AR[mu] );
+	}
+
+    } /* for i < dimDoppler */
+
+
+  return fisher;
+
+} /* XLALComputeFisherFromAtoms() */
