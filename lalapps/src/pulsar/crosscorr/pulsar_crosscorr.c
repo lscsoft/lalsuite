@@ -343,7 +343,7 @@ int main(int argc, char *argv[]){
   time(&t2);
 
   if (uvar_timingOn) {
-    printf("Time taken to load sft catalog: %f s\n", difftime(t2,t1));
+    fprintf(stderr, "Time taken to load sft catalog: %f s\n", difftime(t2,t1));
   }
 
   /* get SFT parameters so that we can initialise search frequency resolutions */
@@ -827,7 +827,7 @@ int main(int argc, char *argv[]){
   time(&t2);
 
   if (uvar_timingOn) {
-    printf("Time taken for main loop: %f\n",difftime(t2, t1));
+    fprintf(stderr,"Time taken for main loop: %f\n",difftime(t2, t1));
   }
 
   counter = 0;
@@ -899,7 +899,7 @@ int main(int argc, char *argv[]){
 
   time(&t2);
   if (uvar_timingOn) {
-    printf("Time taken to write to output file: %f\n", difftime(t2, t1));
+    fprintf(stderr,"Time taken to write to output file: %f\n", difftime(t2, t1));
   }
   /* select candidates  */
 
