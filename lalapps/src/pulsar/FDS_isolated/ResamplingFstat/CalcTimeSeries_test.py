@@ -296,7 +296,7 @@ def main():
     # Generate Fake data string
     # If TimeSeries Output is set, then add it in 
     if(TimeSeriesOut_Is_Set):
-        optionalstring = ' --TDDfile ' + Vars['TimeSeriesOut'] + ' '
+        optionalstring = ' --TDDfile ' + Vars['TimeSeriesOut'] + ' ' 
         FakeDataString = GenFakeDataString(1,Vars,optionalstring)
     else:
         FakeDataString = GenFakeDataString(1,Vars)
@@ -316,7 +316,7 @@ def main():
     # Run Resamp
     OutputFile = "OutputR"
     startstring = "./lalapps_ComputeFStatistic_resamp --outputFstat " + OutputFile + " -F " + str(Vars['FThres']) + " "
-    endstring = " -S " + " -t " + str(Vars['Dterms']) + " --outputTimeSeries " + str(Vars['ResampOutput'])
+    endstring = " -S " + " -t " + str(Vars['Dterms']) + " --outputTimeSeries " + str(Vars['ResampOutput']) + " -W FALSE "
     RDataString = GenDataString(startstring,endstring,Vars)
     if(Vars['debug']):
         print "-------- Resamp String -----------"

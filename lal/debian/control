@@ -2,12 +2,12 @@ Source: lal
 Section: lscsoft
 Priority: optional
 Maintainer: Steffen Grunewald <steffen.grunewald@aei.mpg.de>
-Build-Depends: debhelper (>= 5), autotools-dev, automake, m4, libgsl0-dev (>= 1.9), libframe-dev, libmetaio-dev (>= 8.2), fftw3-dev, zlib1g-dev, libxml2-dev (>= 2.6), pkg-config
+Build-Depends: debhelper (>= 5), autotools-dev, automake, m4, libgsl0-dev (>= 1.9), libframe-dev, libmetaio-dev (>= 8.2), fftw3-dev, zlib1g-dev, libxml2-dev (>= 2.6), pkg-config, python2.4-dev, python2.5-dev, git-core
 Standards-Version: 3.7.2
 
 Package: lal
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, libgsl0 (>= 1.9) | libgsl0ldbl (>= 1.10), libframe1, libmetaio1 (>= 8.2), fftw3, zlib1g, libxml2 (>= 2.6)
+Depends: ${shlibs:Depends}, ${misc:Depends}, libgsl0 (>= 1.9) | libgsl0ldbl (>= 1.10), libframe1, libmetaio1 (>= 8.2), fftw3, zlib1g, libxml2 (>= 2.6), python2.4
 Description: LSC Algorithm Library
  The LSC Algorithm Library for gravitational wave analysis.
  This package contains the shared-object libraries needed to run applications
@@ -15,7 +15,7 @@ Description: LSC Algorithm Library
 
 Package: lal-dev
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, libgsl0-dev (>= 1.9), libframe-dev, libmetaio-dev (>= 8.2), fftw3-dev, zlib1g-dev, libxml2-dev (>= 2.6)
+Depends: ${shlibs:Depends}, ${misc:Depends}, libgsl0-dev (>= 1.9), libframe-dev, libmetaio-dev (>= 8.2), fftw3-dev, zlib1g-dev, libxml2-dev (>= 2.6), python2.4
 Description: Files and documentation needed for compiling programs that use LAL
  The LSC Algorithm Library for gravitational wave analysis.
  This package contains files needed to build applications that use the LAL library
