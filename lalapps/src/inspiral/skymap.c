@@ -458,7 +458,11 @@ void analyze(void)
         int n = ra_res;
         double maximum;
         render = (double*) malloc(m * n * sizeof(double));
-        XLALSkymapRender(render, plan, raw);
+        if (XLALSkymapRender(render, plan, raw))
+        {
+            fprintf(stderr, "XLALSkymapRender failed\n");
+            exit(1);
+        }
         
         for (j = 0; j != m * n; ++j)
         {
