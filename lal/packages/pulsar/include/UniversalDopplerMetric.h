@@ -193,7 +193,6 @@ typedef struct
  */
 typedef struct
 {
-  BOOLEAN fullFmetric;				/**< full Fstat-metric including antenna patterns (TRUE), or simplified "phase-metric" (FALSE) */
   DopplerCoordinateSystem coordSys;		/**< number of dimensions and coordinate-IDs of Doppler-metric */
   DetectorMotionType detMotionType;		/**< the type of detector-motion assumed: full spin+orbit, pure orbital, Ptole, ... */
 
@@ -234,12 +233,14 @@ typedef struct
 typedef struct
 {
   DopplerMetricParams meta;		/**< "meta-info" describing/specifying the type of Doppler metric */
-  gsl_matrix *g_ij;			/**< symmetric matrix holding the Phase- or Fstat-metric (depending on fullFmetric={TRUE|FALSE})*/
 
-  gsl_matrix *gFav_ij;			/**< 'average' Fstat-metric, or NULL (see \ref Prix07): only used if fullFmetric==TRUE */
-  gsl_matrix *m1_ij, *m2_ij, *m3_ij;	/**< Fstat-metric sub components, or NULL (see \ref Prix07): only used if fullFmetric==TRUE */
+  gsl_matrix *g_ij;			/**< symmetric matrix holding the usual Phase-metric */
 
-  gsl_matrix *Fisher_ab;		/**< Full parameter-space Fisher matrix, ie amplitude + Doppler space (only computed if fullMetric == TRUE)*/
+  gsl_matrix *gF_ij;			/**< full F-statistic metric gF_ij, including antenna-pattern effects (see \ref Prix07) */
+  gsl_matrix *gFav_ij;			/**< 'average' Fstat-metric */
+  gsl_matrix *m1_ij, *m2_ij, *m3_ij;	/**< Fstat-metric sub components */
+
+  gsl_matrix *Fisher_ab;		/**< Full 4+n dimensional Fisher matrix, ie amplitude + Doppler space */
   REAL8 rho2;				/**< signal SNR rho^2 = A^mu M_mu_nu A^nu */
 } DopplerMetric;
 
@@ -249,7 +250,7 @@ extern DopplerMetricParams empty_DopplerMetricParams;
 extern MultiDetectorInfo empty_MultiDetectorInfo;
 
 /*---------- exported prototypes [API] ----------*/
-DopplerMetric *
+gsl_matrix *
 XLALDopplerPhaseMetric ( const DopplerMetricParams *metricParams,
 			 const EphemerisData *edat
 			 );
@@ -281,8 +282,6 @@ XLALAmplitudeParams2Vect ( PulsarAmplitudeVect *Amu, const PulsarAmplitudeParams
 FmetricAtoms_t* XLALCreateFmetricAtoms ( UINT4 dim );
 void XLALDestroyFmetricAtoms ( FmetricAtoms_t *atoms );
 
-
-DopplerMetric* XLALCreateDopplerMetric ( UINT4 dim, BOOLEAN fullFmetric );
 void XLALDestroyDopplerMetric ( DopplerMetric *metric );
 
 DetectorMotionType XLALParseDetectorMotionString ( const CHAR *detMotionString );

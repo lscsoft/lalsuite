@@ -136,8 +136,6 @@ typedef struct
 
   CHAR* outputMetric;	/**< filename to write metrics into */
 
-  BOOLEAN fullFmetric;	/**< compute the 'full' F-metric including antenna-patterns, otherwise == phaseMetric */
-
   INT4 detMotionType;	/**< enum-value DetectorMotionType specifying type of detector-motion to use */
 
   INT4 projection;     /**< project metric onto surface */
@@ -220,7 +218,7 @@ main(int argc, char *argv[])
 	  return -1;
 	}
       printf ( "\n%s\n", helpstr );
-      LALFree ( helpstr );
+      XLALFree ( helpstr );
       return 0;
     } /* if coordsHelp */
 
@@ -234,24 +232,11 @@ main(int argc, char *argv[])
   metricParams.detInfo       = config.detInfo;
   metricParams.signalParams  = config.signalParams;
 
-  metricParams.fullFmetric   = uvar.fullFmetric;
-
-  /* ----- setup metric computation and call XLALDopplerMetric() ---------- */
-  if ( ! metricParams.fullFmetric )
-    {
-      if ( (metric = XLALDopplerPhaseMetric ( &metricParams, config.edat )) == NULL ) {
-	LogPrintf (LOG_CRITICAL, "Something failed in XLALDopplerPhaseMetric()\n\n");
-	return -1;
-      }
-    } /* if Phase metric */
-  else
-    {
-      if ( (metric = XLALDopplerFstatMetric ( &metricParams, config.edat )) == NULL ) {
-	LogPrintf (LOG_CRITICAL, "Something failed in XLALDopplerFstatMetric()\n\n");
-	return -1;
-      }
-
-    } /* if full Fstat Metric */
+  /* ----- compute metric full metric + Fisher matrix ---------- */
+  if ( (metric = XLALDopplerFstatMetric ( &metricParams, config.edat )) == NULL ) {
+    LogPrintf (LOG_CRITICAL, "Something failed in XLALDopplerFstatMetric(). errno = %d\n\n", xlalErrno);
+    return -1;
+  }
 
   /* ---------- output results ---------- */
   if ( uvar.outputMetric )
@@ -259,8 +244,10 @@ main(int argc, char *argv[])
       UINT4 i;
       CHAR *id1, *id2;
       CHAR *cmdline = NULL;
+      REAL8 A, B, C, D;
       const DopplerMetricParams *meta = &metricParams;
       const PulsarDopplerParams *doppler = &(meta->signalParams.Doppler);
+      const PulsarAmplitudeParams *Amp = &(meta->signalParams.Amp);
 
       if ( (fpMetric = fopen ( uvar.outputMetric, "wb" )) == NULL )
 	return FSTATMETRIC_EFILE;
@@ -282,6 +269,7 @@ main(int argc, char *argv[])
 	}
       fprintf ( fpMetric, "];\n");
       fprintf ( fpMetric, "%%%% DetectorMotionType = '%s'\n", XLALDetectorMotionName(meta->detMotionType) );
+      fprintf ( fpMetric, "%%%% h0 = %g; cosi = %g; psi = %g; phi0 = %g;\n", Amp->h0, Amp->cosi, Amp->psi, Amp->phi0 );
       fprintf ( fpMetric, "%%%% DopplerPoint = {\n");
       fprintf ( fpMetric, "%%%% 	refTime = {%d, %d}\n",
 		doppler->refTime.gpsSeconds, doppler->refTime.gpsNanoSeconds );
@@ -318,36 +306,27 @@ main(int argc, char *argv[])
 	}
       fprintf ( fpMetric, "];\n");
 
-      if ( ! meta->fullFmetric )
-	{
-	  fprintf ( fpMetric, "\ng_ij = \\\n" ); XLALfprintfGSLmatrix ( fpMetric, METRIC_FORMAT,  metric->g_ij );
-	} /* simple phase metric */
-      else
-	{
-	  const PulsarAmplitudeParams *Amp = &(meta->signalParams.Amp);
+      /* ----- output phase metric ---------- */
+      fprintf ( fpMetric, "\ng_ij = \\\n" ); XLALfprintfGSLmatrix ( fpMetric, METRIC_FORMAT,  metric->g_ij );
 
-	  fprintf ( fpMetric, "%%%% h0 = %g; cosi = %g; psi = %g; phi0 = %g;\n", Amp->h0, Amp->cosi, Amp->psi, Amp->phi0 );
-	  fprintf ( fpMetric, "\ng_ij = \\\n" ); XLALfprintfGSLmatrix ( fpMetric, METRIC_FORMAT,  metric->g_ij );
-	  fprintf ( fpMetric, "\ngFav_ij = \\\n" ); XLALfprintfGSLmatrix ( fpMetric, METRIC_FORMAT,  metric->gFav_ij );
-	  fprintf ( fpMetric, "\nm1_ij = \\\n" ); XLALfprintfGSLmatrix ( fpMetric, METRIC_FORMAT,  metric->m1_ij );
-	  fprintf ( fpMetric, "\nm2_ij = \\\n" ); XLALfprintfGSLmatrix ( fpMetric, METRIC_FORMAT,  metric->m2_ij );
-	  fprintf ( fpMetric, "\nm3_ij = \\\n" ); XLALfprintfGSLmatrix ( fpMetric, METRIC_FORMAT,  metric->m3_ij );
-	} /* full Fstat-metric */
+      /* ----- output F-metric (and related matrices ---------- */
+      fprintf ( fpMetric, "\ngF_ij = \\\n" );   XLALfprintfGSLmatrix ( fpMetric, METRIC_FORMAT,  metric->gF_ij );
+      fprintf ( fpMetric, "\ngFav_ij = \\\n" ); XLALfprintfGSLmatrix ( fpMetric, METRIC_FORMAT,  metric->gFav_ij );
+      fprintf ( fpMetric, "\nm1_ij = \\\n" );   XLALfprintfGSLmatrix ( fpMetric, METRIC_FORMAT,  metric->m1_ij );
+      fprintf ( fpMetric, "\nm2_ij = \\\n" );   XLALfprintfGSLmatrix ( fpMetric, METRIC_FORMAT,  metric->m2_ij );
+      fprintf ( fpMetric, "\nm3_ij = \\\n" );   XLALfprintfGSLmatrix ( fpMetric, METRIC_FORMAT,  metric->m3_ij );
 
-      if ( metric->Fisher_ab )
-	{
-	  REAL8 A, B, C, D;
-	  A = gsl_matrix_get ( metric->Fisher_ab, 0, 0 );
-	  B = gsl_matrix_get ( metric->Fisher_ab, 1, 1 );
-	  C = gsl_matrix_get ( metric->Fisher_ab, 0, 1 );
+      /*  ----- output Fisher matrix ---------- */
+      A = gsl_matrix_get ( metric->Fisher_ab, 0, 0 );
+      B = gsl_matrix_get ( metric->Fisher_ab, 1, 1 );
+      C = gsl_matrix_get ( metric->Fisher_ab, 0, 1 );
 
-	  D = A * B - C * C;
+      D = A * B - C * C;
 
-	  fprintf ( fpMetric, "\nA = %.16g; B = %.16g; C = %.16g; D = %.16g;\n", A, B, C, D );
-	  fprintf ( fpMetric, "\nrho2 = %.16g;\n", metric->rho2 );
+      fprintf ( fpMetric, "\nA = %.16g; B = %.16g; C = %.16g; D = %.16g;\n", A, B, C, D );
+      fprintf ( fpMetric, "\nrho2 = %.16g;\n", metric->rho2 );
 
-	  fprintf (fpMetric, "\nFisher_ab = \\\n" ); XLALfprintfGSLmatrix ( fpMetric, METRIC_FORMAT,  metric->Fisher_ab );
-	}
+      fprintf (fpMetric, "\nFisher_ab = \\\n" ); XLALfprintfGSLmatrix ( fpMetric, METRIC_FORMAT,  metric->Fisher_ab );
 
       fclose ( fpMetric );
 
@@ -374,7 +353,7 @@ initUserVars (LALStatus *status, UserVariables_t *uvar)
   uvar->help = FALSE;
 
 #define EPHEM_YEAR  "00-04"
-  uvar->ephemYear = LALCalloc (1, strlen(EPHEM_YEAR)+1);
+  uvar->ephemYear = XLALCalloc (1, strlen(EPHEM_YEAR)+1);
   strcpy (uvar->ephemYear, EPHEM_YEAR);
 
   uvar->Freq = 100;
@@ -393,7 +372,6 @@ initUserVars (LALStatus *status, UserVariables_t *uvar)
 
   uvar->IFOweights = NULL;
 
-  uvar->fullFmetric = FALSE;
   uvar->detMotionType = DETMOTION_SPIN_ORBIT;
 
   if ( (uvar->coords = XLALCreateStringVector ( "Freq_Nat", "Alpha", "Delta", "f1dot_Nat", NULL )) == NULL ) {
@@ -426,7 +404,6 @@ initUserVars (LALStatus *status, UserVariables_t *uvar)
   LALregLISTUserStruct(status,	coords,		'c', UVAR_OPTIONAL, 	"Doppler-coordinates to compute metric in (see --coordsHelp)");
   LALregBOOLUserStruct(status,	coordsHelp,      0,  UVAR_OPTIONAL,     "output help-string explaining all the possible Doppler-coordinate names for --coords");
 
-  LALregBOOLUserStruct(status,	fullFmetric,     0,  UVAR_OPTIONAL,     "Compute the 'full' F-metric including antenna-patterns; if FALSE: phaseMetric");
   LALregINTUserStruct(status,  	detMotionType,	 0,  UVAR_DEVELOPER,	"Detector-motion: 0=spin+orbit, 1=orbit, 2=spin, 3=spin+ptoleorbit, 4=ptoleorbit");
 
   LALregBOOLUserStruct(status,	version,        'V', UVAR_SPECIAL,      "Output code version");
@@ -486,11 +463,6 @@ InitCode (LALStatus *status, ConfigVariables *cfg, const UserVariables_t *uvar)
 		   uvar->IFOweights->length, numDet );
 	ABORT (status, FSTATMETRIC_EINPUT, FSTATMETRIC_MSGEINPUT);
       }
-
-    if ( ! uvar->fullFmetric && (numDet > 1) ) {
-      LogPrintf ( LOG_CRITICAL, "PhaseMetric (fullFmetric==FALSE) allows specifying only a single detector!\n");
-      ABORT (status, FSTATMETRIC_EINPUT, FSTATMETRIC_MSGEINPUT);
-    }
 
     cfg->detInfo = empty_MultiDetectorInfo;
     if ( XLALParseMultiDetectorInfo ( &cfg->detInfo, uvar->IFOs, uvar->IFOweights ) != XLAL_SUCCESS ) {
@@ -680,8 +652,8 @@ InitEphemeris (const CHAR *ephemDir,	/**< directory containing ephems */
   EphemSun[FNAME_LENGTH-1] = 0;
 
   /* allocate memory for ephemeris-data to be returned */
-  if ( (edat = LALCalloc ( 1, sizeof(*edat))) == NULL ) {
-    XLALPrintError("\n%s: Out of memory!\n", fn );
+  if ( (edat = XLALCalloc ( 1, sizeof(*edat))) == NULL ) {
+    XLALPrintError("%s: XLALCalloc(1, %d) failed.\n", fn, sizeof(*edat) );
     return NULL;
   }
 
@@ -696,7 +668,7 @@ InitEphemeris (const CHAR *ephemDir,	/**< directory containing ephems */
   LALInitBarycenter(&status, edat);
 
   if ( status.statusCode != 0 ) {
-    LogPrintf ( LOG_CRITICAL, "Call to LALInitBarycenter() failed! code = %d, msg = '%s'", status.statusCode, status.statusDescription );
+    XLALPrintError ( "%s: LALInitBarycenter() failed! code = %d, msg = '%s'", status.statusCode, status.statusDescription );
     return NULL;
   }
 
