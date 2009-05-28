@@ -77,13 +77,16 @@ REAL8TimeSeries *XLALConvertPSSTimeseriesToREAL8Timeseries(REAL8TimeSeries *ts, 
     XLAL_ERROR_NULL( "XLALConvertPSSTimeseriesToREAL8Timeseries", XLAL_EFAULT );
   if (tsPSS->n != (int)ts->data->length)
     XLAL_ERROR_NULL( "XLALConvertPSSTimeseriesToREAL8Timeseries", XLAL_EINVAL ); 
+
   for(i = 0; i < ts->data->length; i++)
     ts->data->data[i] = tsPSS->y[i];
+
   strncpy(ts->name, tsPSS->name, LALNameLength);
-  /* XLALFloatToGPS(&(ts->epoch), tsPSS->ini); /* FIXME: needs newer LAL */
+  XLALGPSSetREAL8(&(ts->epoch), tsPSS->ini);
   ts->deltaT = tsPSS->dx;
   ts->f0     = 0.0; /* no heterodyning */
   XLALParseUnitString( &(ts->sampleUnits), tsPSS->capt );
+
   return ts;
 }
 
@@ -91,10 +94,13 @@ PSSTimeseries *XLALConvertREAL8TimeseriesToPSSTimeseries(PSSTimeseries *tsPSS, R
   UINT4 i;
   char unit[LALNameLength];
 
+  /* input sanity checking */
   if ( !tsPSS || !ts )
     XLAL_ERROR_NULL( "XLALConvertREAL8TimeseriesToPSSTimeseries", XLAL_EFAULT );
   if (tsPSS->nall != (int)ts->data->length)
     XLAL_ERROR_NULL( "XLALConvertREAL8TimeseriesToPSSTimeseries", XLAL_EINVAL ); 
+
+  /* doing caption / units first, because it involves memory allocation for the string */
   if( XLALUnitAsString( unit, LALNameLength, &(ts->sampleUnits) ) ) {
     tsPSS->capt = (char*)malloc(strlen(unit)+1);
     if( !tsPSS->capt )
@@ -103,35 +109,34 @@ PSSTimeseries *XLALConvertREAL8TimeseriesToPSSTimeseries(PSSTimeseries *tsPSS, R
   } else {
     tsPSS->capt = NULL;
   }
+
+  /* now convert the actual data */
   for(i = 0; i < ts->data->length; i++)
     tsPSS->y[i] = ts->data->data[i];
   tsPSS->n = ts->data->length;
+
+  /* other parameters */
   strncpy(tsPSS->name, ts->name, sizeof(tsPSS->name)); /* sizeof(tsPSS->name) = 20 */
-  /* XLALFloatToGPS(&(ts->epoch), tsPSS->ini); /* FIXME: needs newer LAL */
+  tsPSS->ini = XLALGPSGetREAL8(&(ts->epoch));
   tsPSS->dx = ts->deltaT;
 
   return tsPSS;
 }
 
 PSSTimeseries *XLALPSSHighpassData(PSSTimeseries *tsout, PSSTimeseries *tsin, PSSHeaderParams* hp, REAL4 f) {
-  int ret;
   if ( !tsout || !tsin || !hp )
     XLAL_ERROR_NULL( "XLALCreatePSSTimeseries", XLAL_EFAULT );
-  ret = highpass_data_bil(tsout,tsin,hp,f);
-  if ( ret != 0 )
+  if ( highpass_data_bil(tsout,tsin,hp,f) )
     XLAL_ERROR_NULL( "XLALCreatePSSTimeseries", XLAL_EFAULT );
   return tsout;
 }
 
 PSSEventParams *XLALIdentifyPSSCleaningEvents(PSSEventParams *events, PSSTimeseries *ts, PSSHeaderParams* hp) {
-  int ret;
   if ( !events || !ts )
     XLAL_ERROR_NULL( "XLALIdentifyPSSCleaningEvents", XLAL_EFAULT );
-  ret = sn_medsig(ts,events,hp);
-  if ( ret != 0 )
+  if ( sn_medsig(ts,events,hp) )
     XLAL_ERROR_NULL( "XLALIdentifyPSSCleaningEvents", XLAL_EFUNC );
-  ret = even_anst(ts,events);
-  if ( ret != 0 )
+  if ( even_anst(ts,events) )
     XLAL_ERROR_NULL( "XLALIdentifyPSSCleaningEvents", XLAL_EFUNC );
   return events;
 }
@@ -139,11 +144,9 @@ PSSEventParams *XLALIdentifyPSSCleaningEvents(PSSEventParams *events, PSSTimeser
 PSSTimeseries *XLALSubstractPSSCleaningEvents(PSSTimeseries *tsout, PSSTimeseries *tsin,
 					      PSSTimeseries *tshp, PSSEventParams *events,
 					      PSSHeaderParams* hp) {
-  int ret;
   if ( !tsout || !tsin || !tshp || !events )
     XLAL_ERROR_NULL( "XLALSubstractPSSCleaningEvents", XLAL_EFAULT );
-  ret = purge_data_subtract(tsout,tsin,tshp,events,hp);
-  if ( ret != 0 )
+  if ( purge_data_subtract(tsout,tsin,tshp,events,hp) )
     XLAL_ERROR_NULL( "XLALSubstractPSSCleaningEvents", XLAL_EFUNC );
   return tsout;
 }
