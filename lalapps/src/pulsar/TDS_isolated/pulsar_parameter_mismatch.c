@@ -527,7 +527,7 @@ REAL8Vector *get_phi( double start, double deltaT, int npoints,
     deltat2 = deltat*deltat;
     phis->data[i] = 2.*(params.f0*deltat + 0.5*params.f1*deltat2
       + SIXTH*params.f2*deltat*deltat2
-      + TWENTYFOURTH*params.f3*deltat2*deltat2)
+      + TWENTYFOURTH*params.f3*deltat2*deltat2
       + (1./120.)*params.f4*deltat2*deltat2 
       + (1./720.)*params.f5*deltat2*deltat2*deltat);
   }
