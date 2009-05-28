@@ -1,6 +1,6 @@
 /* <lalVerbatim file="LALInspiralMCMCUserHV">
 Author: Dietz, A. & Veitch, J.
-$Id$
+$Id: LALInspiralMCMC.h,v 1.79 2007/02/19 15:52:17 thomas Exp $
 </lalVerbatim>  */
 
 
@@ -51,7 +51,7 @@ Header file for the MCMC user code.
 extern "C" { 
 #endif*/
 
-NRCSID( LALINSPIRALMCMCUSERH, "$Id$" );
+NRCSID( LALINSPIRALMCMCUSERH, "$Id: LALInspiralMCMC.h,v 1.79 2007/02/19 15:52:17 thomas Exp $" );
 
 
 /*  <lalLaTeX>
@@ -83,8 +83,8 @@ NRCSID( LALINSPIRALMCMCUSERH, "$Id$" );
 --------------------------------------------------------------------- 
 </lalLaTeX>  */
 
-extern gsl_rng *RNG;
-extern double timewindow;
+gsl_rng *RNG;
+double timewindow;
 
 double mc2mass1(double mc, double eta);
 
@@ -115,6 +115,8 @@ INT4 MCMCPriorTest(
 
 REAL8 NestPrior(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter);
 
+REAL8 GRBPrior(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter);
+
 void NestInitInj(LALMCMCParameter *parameter, void *iT);
 
 void NestInitInjNINJA(LALMCMCParameter *parameter, void *iT);
@@ -130,11 +132,10 @@ REAL8 MCMCLikelihood1IFO(LALMCMCInput *inputMCMC, LALMCMCParameter *parameter, i
 
 void MCMCInit1IFO(LALMCMCParameter *parameter, SnglInspiralTable *inspiralTable);
 
-extern REAL4Vector *model;
-extern REAL4Vector *Tmodel;
-extern REAL8Sequence **topdown_sum;
-extern REAL8 *normalisations;
-static REAL4FFTPlan *likelihoodPlan;
+REAL4Vector *model;
+REAL4Vector *Tmodel;
+REAL8Sequence **topdown_sum;
+REAL8 *normalisations;
 
 
 REAL8 MCMCLikelihoodMultiCoherent(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter);

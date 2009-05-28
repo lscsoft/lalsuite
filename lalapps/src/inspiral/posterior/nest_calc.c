@@ -15,21 +15,12 @@
 #include "nest_calc.h"
 #include <float.h>
 
-gsl_matrix *cov_mat;
-
-CHAR outfile[256];
-double etawindow;
-
-INT4 seed;
-
 #define infosafe 1.5
 
 double logadd(double a,double b){
 if(a>b) return(a+log(1.0+exp(b-a)));
 else return(b+log(1.0+exp(a-b)));
 }
-
-
 
 void NestInit2PN(LALMCMCParameter *parameter, void *iT){
 REAL8 time;
@@ -133,17 +124,19 @@ REAL8 nestZ(INT4 Nruns, INT4 Nlive, LALMCMCParameter **Live, LALMCMCInput *MCMCi
 	static LALStatus status;
 	REAL4 accept;
 	REAL8 *logZarray,*logwarray,*Harray,*oldZarray,*Wtarray;
-	REAL8 logw,H,logLmin,logWt,logZ,logZnew,deltaZ;
+	REAL8 logw,H=0.0,logLmin,logWt,logZ,logZnew,deltaZ;
 	REAL8 MCMCfail=0;
 	REAL8 logZnoise=0.0;
+	REAL8 logLmax=-DBL_MAX;
 	REAL4 rngseed=0;
 	FILE *fpout=NULL;
-	
+	CHAR outEnd[1000];
 	LALMCMCParameter *temp=(LALMCMCParameter *)malloc(sizeof(LALMCMCParameter));
 	
 	if(!(MCMCinput->randParams)) LALCreateRandomParams(&status,&(MCMCinput->randParams),seed);
 	
-	
+	MCMCinput->Live=Live;
+	MCMCinput->Nlive=(UINT4)Nlive;
 	/* Initialise the RNG */
 	gsl_rng_env_setup();
 	RNG=gsl_rng_alloc(gsl_rng_default);
@@ -181,6 +174,7 @@ REAL8 nestZ(INT4 Nruns, INT4 Nlive, LALMCMCParameter **Live, LALMCMCInput *MCMCi
 	/* Set up covariance matrix */
 	cov_mat = gsl_matrix_alloc(MCMCinput->dim,MCMCinput->dim);
 
+
 	calcCVM(cov_mat,Live,Nlive);
 	
 	for(i=0;i<Nlive;i++) {
@@ -188,6 +182,9 @@ REAL8 nestZ(INT4 Nruns, INT4 Nlive, LALMCMCParameter **Live, LALMCMCInput *MCMCi
 	  if(i%50==0)fprintf(stderr,".");
 	}
 	if(MCMCinput->verbose) fprintf(stderr,"Set up %i live points\n",Nlive);
+
+	/* Find max likelihood currently */
+	for(i=1,logLmax=Live[0]->logLikelihood;i<Nlive;i++) logLmax=logLmax>Live[i]->logLikelihood ? logLmax : Live[i]->logLikelihood;
 
 	/* Set up arrays for parallel runs */
 	logZarray = calloc(Nruns,sizeof(REAL8));
@@ -208,7 +205,10 @@ REAL8 nestZ(INT4 Nruns, INT4 Nlive, LALMCMCParameter **Live, LALMCMCInput *MCMCi
 	/* =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- Nested sampling loop -=-=-=-=--=-=-=-=-==-=-=-=-=-=-= */
 /*	while(((REAL8)i)<=((REAL8)Nlive)*infosafe*H || i<3*Nlive) */
 	deltaZ=1.0;
-	while((REAL8)i<=((REAL8)Nlive)*infosafe*H ? 1 : Nlive*fabs(deltaZ/logZ)>1e-6)
+	/*	while((REAL8)i<=((REAL8)Nlive)*infosafe*H ? 1 : Nlive*fabs(deltaZ/logZ)>1e-6)*/
+	while(((REAL8)i)<=((REAL8)Nlive) || logLmax+logw > logZ-5) /* This termination condition: when remaining prior can't
+					     account for more than exp(-5) of the evidence, even
+					     if entire support is at Lmax */
 	{
 	minpos=0;
 	/* Find minimum likelihood sample to replace */
@@ -221,7 +221,7 @@ REAL8 nestZ(INT4 Nruns, INT4 Nlive, LALMCMCParameter **Live, LALMCMCInput *MCMCi
 		logZarray[j]=logadd(logZarray[j],Live[minpos]->logLikelihood + logwarray[j]);
 		Wtarray[j]=logwarray[j]+Live[minpos]->logLikelihood;
 		Harray[j]= exp(Wtarray[j]-logZarray[j])*Live[minpos]->logLikelihood
-				 + exp(oldZarray[j]-logZarray[j])*(H+oldZarray[j])-logZarray[j];
+				 + exp(oldZarray[j]-logZarray[j])*(Harray[j]+oldZarray[j])-logZarray[j];
 		}
 	logZnew=mean(logZarray,Nruns);
 	deltaZ=logZnew-logZ;
@@ -229,8 +229,9 @@ REAL8 nestZ(INT4 Nruns, INT4 Nlive, LALMCMCParameter **Live, LALMCMCInput *MCMCi
 	logZ=logZnew;
 	for(j=0;j<Nruns;j++) oldZarray[j]=logZarray[j];
 	MCMCfail=0.0;
+	/* Update covariance matrix every so often */
+	if(!(i%(Nlive/4)))	calcCVM(cov_mat,Live,Nlive);
 	/* generate new live point */
-	if(!(i%Nlive)) calcCVM(cov_mat,Live,Nlive);
 	do{
 		while((j=gsl_rng_uniform_int(RNG,Nlive))==minpos){};
 		XLALMCMCCopyPara(&(Live[minpos]),Live[j]);
@@ -239,6 +240,7 @@ REAL8 nestZ(INT4 Nruns, INT4 Nlive, LALMCMCParameter **Live, LALMCMCInput *MCMCi
 		MCMCinput->funcPrior(MCMCinput,Live[minpos]);
 		MCMCfail+=1.0;
 		}while((Live[minpos]->logLikelihood<=logLmin)||(accept==0.0));
+	if(Live[minpos]->logLikelihood > logLmax) logLmax = Live[minpos]->logLikelihood;
 	for(j=0;j<Nruns;j++) logwarray[j]+=sample_logt(Nlive);
 	logw=mean(logwarray,Nruns);
 	if(MCMCinput->verbose) fprintf(stderr,"%i: (%2.1lf%%) accpt: %1.3f H: %3.3lf nats (%3.3lf b) logL:%lf ->%lf logZ: %lf Zratio: %lf db\n",
@@ -264,14 +266,22 @@ REAL8 nestZ(INT4 Nruns, INT4 Nlive, LALMCMCParameter **Live, LALMCMCInput *MCMCi
 		logZ=logadd(logZ,Live[i]->logLikelihood+logw);
 		for(j=0;j<Nruns;j++){
 			logwarray[j]+=sample_logt(Nlive);
-			logZarray[j]=logadd(logZarray[j],Live[i]->logLikelihood+logwarray[j]);
+			logZarray[j]=logadd(logZarray[j],Live[i]->logLikelihood+logwarray[j]-log((double)Nlive));
 			}
 		fprintSample(fpout,Live[i]);
 		}
-	fprintf(stdout,"MaxL = %lf\nReduced chi squared = %lf\n",Live[Nlive-1]->logLikelihood,-Live[Nlive-1]->logLikelihood \
-		/(MCMCinput->numberDataStreams*(MCMCinput->stilde[0]->data->length-(int)(MCMCinput->fLow/MCMCinput->stilde[0]->deltaF))));
+	double Npoints = MCMCinput->numberDataStreams*MCMCinput->stilde[0]->data->length-(int)(MCMCinput->fLow/MCMCinput->deltaF);
+	fprintf(stdout,"MaxL = %lf\nReduced chi squared = %lf\n",Live[Nlive-1]->logLikelihood,-Live[Nlive-1]->logLikelihood/Npoints);
 	logZ=mean(logZarray,Nruns);
+	fprintf(stdout,"deltaLmax = %lf\n",Live[Nlive-1]->logLikelihood-logZnoise);
+	double zscore =( -2.0*Live[Nlive-1]->logLikelihood - Npoints) / sqrt(2.0*Npoints);
+	fprintf(stdout,"Z-score = %lf\n",zscore);
+	
 	close(fpout);
+	sprintf(outEnd,"%s_B.txt",outfile);
+	fpout=fopen(outEnd,"w");
+	fprintf(fpout,"%lf %lf %lf %lf %lf\n",logZ-logZnoise,logZ,logZnoise,Live[Nlive-1]->logLikelihood-logZnoise,zscore);
+	fclose(fpout);
 	free(Harray); free(logwarray); free(Wtarray); free(oldZarray); free(logZarray);
 	fprintf(stdout,"lodds ratio %lf\n",logZ-logZnoise);
 	return logZ;
@@ -294,6 +304,7 @@ REAL4 MCMCSampleLimitedPrior(LALMCMCParameter *sample, LALMCMCParameter *temp, L
 int i=0;
 int a_cnt=0;
 int accept=0;
+int nreflect=0;
 REAL8 logL,logPri,phi;
 REAL8 jump_select=0;
 REAL8 scale_temp;
@@ -301,20 +312,33 @@ REAL8 scalefactor_small=1E-4;
 int ret=0;
 
 MCMCInput->funcPrior(MCMCInput,sample);
+
 XLALMCMCCopyPara(&temp,sample);
-for (i=0;i<N;i++){
-  XLALMCMCJump(MCMCInput,temp,covM);
-  if(MCMCInput->numberDataStreams>1) jump_select = gsl_rng_uniform(RNG);
-  else jump_select=0;
-  if(jump_select>0.8) {
-	ret=0;
-	/* Custom proposal for symmetry of the sky sphere */
-	if(MCMCInput->numberDataStreams>=3 && jump_select>0.9) ret=XLALMCMCReflectDetPlane(MCMCInput,temp);
-	if(ret==-1 || jump_select <=0.9 || MCMCInput->numberDataStreams==2) XLALMCMCRotateSky(MCMCInput,temp);
-	/* Custom proposal for mass/eta1 surface of constant 1PN term */
-	/* if(gsl_rng_uniform(RNG)<0.1) XLALMCMC1PNMasseta(MCMCInput,temp); */
+
+i=0;
+while (i<N || (nreflect==a_cnt && nreflect>0 && nreflect%2==0)){
+  i++;
+  jump_select = gsl_rng_uniform(RNG);
+  if(jump_select<0.1 && MCMCInput->numberDataStreams>1){
+	if(MCMCInput->numberDataStreams>1) jump_select = gsl_rng_uniform(RNG);
+	else jump_select=0;
+	if(jump_select>0.5) {
+		ret=0;
+		/* Custom proposal for symmetry of the sky sphere */
+		if(MCMCInput->numberDataStreams>=3 && jump_select>0.9) ret=XLALMCMCReflectDetPlane(MCMCInput,temp);
+		if(ret==0) nreflect++;
+		if(ret==-1 || jump_select <=0.9 || MCMCInput->numberDataStreams==2) XLALMCMCRotateSky(MCMCInput,temp);
+		/* Custom proposal for mass/eta1 surface of constant 1PN term */
+		/* if(gsl_rng_uniform(RNG)<0.1) XLALMCMC1PNMasseta(MCMCInput,temp); */
 	}
+	else  XLALMCMCDifferentialEvolution(MCMCInput,temp);
   /* Evaluate MH ratio */
+  }
+  else if( (jump_select=gsl_rng_uniform(RNG))<0.1) XLALMCMCDifferentialEvolution(MCMCInput,temp);
+  /*else if(jump_select<0.6) XLALMCMCJumpIntrinsic(MCMCInput,temp,covM);*/
+  else XLALMCMCJump(MCMCInput,temp,covM);
+  
+  
   MCMCInput->funcPrior(MCMCInput,temp);
   if(temp->logPrior!=-DBL_MAX && ( (temp->logPrior - sample->logPrior) > log(gsl_rng_uniform(RNG)) )) {
     /* this would be accepted based on the priors, we can now confirm that its likelihood is above the limit
@@ -335,6 +359,10 @@ REAL8 *means;
 LALMCMCParam *p;
 LALMCMCParam *jp;
 LALMCMCParam *kp;
+gsl_matrix *oldcvm;
+
+oldcvm = gsl_matrix_alloc(ND,ND);
+gsl_matrix_memcpy (oldcvm, cvm);
 
 /* clear the matrix */
 for(i=0;i<cvm->size1;i++) for(j=0;j<cvm->size2;j++) gsl_matrix_set(cvm,i,j,0.0);
@@ -348,7 +376,7 @@ for(i=0;i<N;i++){
 	}
 for(j=0;j<ND;j++) means[j]/=(REAL8)N;
 
-/* Find the variances */
+/* Find the (co)-variances */
 for(i=0;i<N;i++){
 	kp=jp=p=samples[i]->param;
 	for(j=0;j<ND;j++){
@@ -375,6 +403,39 @@ for(p=samples[0]->param,j=0;j<ND;j++,p=p->next) {
 /* the other half */
 for(i=0;i<ND;i++) for(j=0;j<i;j++) gsl_matrix_set(cvm,j,i,gsl_matrix_get(cvm,i,j));
 
+/*fprintf(stderr,"shrinkage: ");
+for(i=0;i<ND;i++) fprintf(stderr,"%lf ",sqrt(gsl_matrix_get(oldcvm,i,i)/gsl_matrix_get(cvm,i,i)));
+fprintf(stderr,"\n");
+*/
+/* Check the 2nd order first moment - indicates non-gaussian structure */
+/* double *twopt=calloc(ND,sizeof(double));
+double *max=calloc(ND,sizeof(double));
+double *min=calloc(ND,sizeof(double));
+for(k=0;k<ND;k++) {min[k]=DBL_MAX; max[k]=-DBL_MAX;}
+for(i=0;i<N;i++){
+	p=samples[i]->param;
+	for(k=0;k<ND;k++){
+		min[k]=min[k]<p->value?min[k]:p->value;
+		max[k]=max[k]>p->value?max[k]:p->value;
+		p=p->next;
+	}
+}
+for(i=0;i<N;i++) for(j=i+1;j<N;j++) {
+	p=samples[i]->param;
+	jp=samples[j]->param;
+	for(k=0;k<ND;k++) {
+		twopt[k]+=fabs(p->value-jp->value);
+		p=p->next; jp=jp->next;}
+}
+
+
+for(k=0;k<ND;k++) twopt[k]/= (1.0/(2.0*sqrt(2.0)))*((double)(N*(N-1)/2))*(max[k]-min[k]);
+fprintf(stderr,"structure indicator: ");
+for(k=0;k<ND;k++) fprintf(stderr,"%lf ",twopt[k]);
+fprintf(stderr,"\n");
+free(twopt);
+free(max); free(min);
+*/
 /* Debug output the matrix 
 for(i=0;i<ND;i++){
 	for(j=0;j<ND;j++){ fprintf(stderr,"%e ",gsl_matrix_get(cvm,i,j));}
