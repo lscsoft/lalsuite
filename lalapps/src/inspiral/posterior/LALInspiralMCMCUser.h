@@ -1,6 +1,6 @@
 /* <lalVerbatim file="LALInspiralMCMCUserHV">
 Author: Dietz, A. & Veitch, J.
-$Id$
+$Id: LALInspiralMCMC.h,v 1.79 2007/02/19 15:52:17 thomas Exp $
 </lalVerbatim>  */
 
 
@@ -51,7 +51,7 @@ Header file for the MCMC user code.
 extern "C" { 
 #endif*/
 
-NRCSID( LALINSPIRALMCMCUSERH, "$Id$" );
+NRCSID( LALINSPIRALMCMCUSERH, "$Id: LALInspiralMCMC.h,v 1.79 2007/02/19 15:52:17 thomas Exp $" );
 
 
 /*  <lalLaTeX>
@@ -115,6 +115,8 @@ INT4 MCMCPriorTest(
 
 REAL8 NestPrior(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter);
 
+REAL8 GRBPrior(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter);
+
 void NestInitInj(LALMCMCParameter *parameter, void *iT);
 
 void NestInitInjNINJA(LALMCMCParameter *parameter, void *iT);
@@ -134,7 +136,6 @@ extern REAL4Vector *model;
 extern REAL4Vector *Tmodel;
 extern REAL8Sequence **topdown_sum;
 extern REAL8 *normalisations;
-static REAL4FFTPlan *likelihoodPlan;
 
 
 REAL8 MCMCLikelihoodMultiCoherent(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter);

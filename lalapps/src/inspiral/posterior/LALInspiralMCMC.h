@@ -1,6 +1,6 @@
 /* <lalVerbatim file="LALInspiralMCMCHV">
 Author: Dietz, A. & Veitch, J.
-$Id$
+$Id: LALInspiralMCMC.h,v 1.79 2007/02/19 15:52:17 thomas Exp $
 </lalVerbatim>  */
 
 
@@ -51,7 +51,7 @@ Header file for the MCMC tools code.
 extern "C" { 
 #endif
 
-NRCSID( LALINSPIRALMCMCH, "$Id$" );
+NRCSID( LALINSPIRALMCMCH, "$Id: LALInspiralMCMC.h,v 1.79 2007/02/19 15:52:17 thomas Exp $" );
 
 /*  <lalLaTeX>
 \subsection*{Error codes}
@@ -334,6 +334,10 @@ tagLALMCMCInput
   REAL4 burninThreshold;
   UINT4 burninMaxNumber;  /* maximum number of trials */
 
+	/* Parameter for nested sampling */
+	UINT4 Nlive;
+	LALMCMCParameter **Live;
+
 }  LALMCMCInput;
 /* </lalVerbatim>  */
 
@@ -430,12 +434,26 @@ XLALMCMCJump(
    LALMCMCParameter *parameter,
    gsl_matrix *covMat);
 
+void 
+XLALMCMCJumpIntrinsic(
+  LALMCMCInput     *inputMCMC,
+  LALMCMCParameter *parameter, 
+  gsl_matrix       *covMat
+  );
+
+void XLALMCMCCyclicReflectiveBound(LALMCMCParameter *parameter);
+
+
 void XLALMCMCGetCartesianPos(REAL8 vec[3],LALMCMCParameter *parameter);
 
 void CartesianToSkyPos(REAL8 pos[3],LALMCMCParameter *parameter);
 
 
 void crossProduct(REAL8 out[3],REAL8 x[3],REAL8 y[3]);
+
+INT4 XLALMCMCDifferentialEvolution(
+        LALMCMCInput *inputMCMC,
+        LALMCMCParameter *parameter);
 
 INT4 XLALMCMCReflectDetPlane(
 	LALMCMCInput *inputMCMC,

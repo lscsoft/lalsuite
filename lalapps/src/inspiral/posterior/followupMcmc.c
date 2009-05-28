@@ -1,21 +1,21 @@
 /*
-*  Copyright (C) 2009 Christian Roever
-*
-*  This program is free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
-*
-*  This program is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
-*  along with with program; see the file COPYING. If not, write to the
-*  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-*  MA  02111-1307  USA
-*/
+ *  Copyright (C) 2009 Christian Roever
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with with program; see the file COPYING. If not, write to the
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ *  MA  02111-1307  USA
+ */
 
 
 /*************************************************/
@@ -187,7 +187,8 @@ typedef struct {
   gsl_matrix *covcholesky;   /* Cholesky decomposition of above covariance matrix                 */
   double studentDF;          /* degrees-of-freedom parameter for Student-t proposals (0.0=Normal) */
   double *guessparameters;   /* parameters of "guessing distribution"                             */
-  char   *logfilename;       /* name of output log-file                                           */
+  char   *logfilename;       /* name of (general) log file ("*.log")                              */
+  char   *csvfilename;       /* name of MCMC output CSV file ("*.csv")                            */
   long   iterations;         /* number of MCMC iterations to run                                  */
   double secPerIteration;    /* (estimated) seconds per iteration                                 */
 } McmcFramework;
@@ -307,10 +308,14 @@ void proposeBurstSineGaussian(McmcFramework *MF, DataFramework *DF, int coherent
 void importanceresample(DataFramework *DF, int coherentN, McmcFramework *MF,
                         vector *parameter, 
                         long samplesize, long subsamplesize);
-void logtofile(McmcFramework *MF, vector *parameter, 
-               long iteration, long accepted, 
-               double logprior, double loglikelihood, double logposterior);
+
+void logtoCSVfile(McmcFramework *MF, vector *parameter, 
+                 long iteration, long accepted, 
+                 double logprior, double loglikelihood, double logposterior);
+void logtoLOGfile(McmcFramework *MF, char *entryname, char *entry);
+
 void printtime();
+void DateTimeString(char *charvec);
 void savePSD(DataFramework *DF, char *filename);
 void metropolishastings(McmcFramework *MF, DataFramework *DF, int coherentN);
 void printDF(DataFramework *DF);
@@ -318,6 +323,7 @@ int numberIfoSites(DataFramework *DF, int coherentN);
 double GMST(double GPSsec);
 double rightAscension(double longi, double gmst);
 double longitude(double rightascension, double gmst);
+
 
 void vectorInit(vector *vec)
 /* Very basic initialisation of a vector. */
@@ -764,7 +770,7 @@ void printhelpmessage()
   printf(" | Options:              (default:)         \n");
   printf(" |   --help                                 print this message        \n");
   printf(" |   --template                             specify signal template   \n");
-  printf(" |   --logfilename                          output (text) file name   \n");
+  printf(" |   --outfilename                          output (text) file name   \n");
   printf(" |   --iterations          (1000000)        number of MCMC iterations \n");
   printf(" |   --randomseed                           1-2 integers for initialisation\n");
   printf(" |   --tcenter                              'center' of data to be analysed\n");
@@ -793,22 +799,22 @@ void printhelpmessage()
   printf(" | \n");
   printf(" | Example 1 -- Simulate data, inject a signal and recover it:\n");
   printf(" | \n");
-  printf(" | ./followupMcmc --network [H,L,V] --randomseed [123,456] --tcenter 100 --logf\n");
-  printf(" | ilename /home/user/data/example01.txt --template 25SP --specdens [initialLig\n");
-  printf(" | o,initialLigo,Virgo] --freqlower [40,40,30] --tbefore [20.0,20.0,30.0] --inj\n");
-  printf(" | ect [chirpmass=2.0,massratio=0.24,inclination=1.0,time=100.0,logdistance=3.2\n");
-  printf(" | ,latitude=0.5,longitude=-1.0,polarisation=1.0,phase=3.0] --guess [chirpmass=\n");
-  printf(" | 2.0,massratio=0.24,time=100,distance=25.0] --importanceresample 10000\n");
+  printf(" | ./lalapps_followupMcmc --network [H,L,V] --randomseed [123,456] --tcenter 10\n");
+  printf(" | 0 --outfilename /home/user/data/example01 --template 25SP --specdens [initia\n");
+  printf(" | lLigo,initialLigo,Virgo] --freqlower [40,40,30] --tbefore [20.0,20.0,30.0] -\n");
+  printf(" | -inject [chirpmass=2.0,massratio=0.24,inclination=1.0,time=100.0,logdistance\n");
+  printf(" | =3.2,latitude=0.5,longitude=-1.0,polarisation=1.0,phase=3.0] --guess [chirpm\n");
+  printf(" | ass=2.0,massratio=0.24,time=100,distance=25.0] --importanceresample 10000   \n");
   printf(" | \n");
   printf(" | Example 2 -- Run MCMC on data read from files:\n");
   printf(" | \n");
-  printf(" | ./followupMcmc --cachefile [/home/user/data/H1.cache,/home/user/data/H2.cach\n");
-  printf(" | e,/home/user/data/L1.cache] --template 25SP --tcenter 873739911.131 --tbefor\n");
-  printf(" | e 20.0 --filechannel [H1:LSC-STRAIN,H2:LSC-STRAIN,L1:LSC-STRAIN] --psdestima\n");
-  printf(" | testart 873737200 --psdestimateend 873739500 --importanceresample 100000 --r\n");
-  printf(" | andomseed 123 --logfilename /home/user/data/example02.txt --iterations 10000\n");
-  printf(" | 000 --priorparameters [0.75,7,873739911.081,873739911.181,40,80] --guess [2.\n");
-  printf(" | 0,0.13,873739911.131,40]\n");
+  printf(" | ./lalapps_followupMcmc --cachefile [/home/user/data/H1.cache,/home/user/data\n");
+  printf(" | /H2.cache,/home/user/data/L1.cache] --template 25SP --tcenter 873739911.131 \n");
+  printf(" | --tbefore 20.0 --filechannel [H1:LSC-STRAIN,H2:LSC-STRAIN,L1:LSC-STRAIN] --p\n");
+  printf(" | sdestimatestart 873737200 --psdestimateend 873739500 --importanceresample 10\n");
+  printf(" | 0000 --randomseed 123 --outfilename /home/user/data/example02 --iterations 1\n");
+  printf(" | 0000000 --priorparameters [0.75,7,873739911.081,873739911.181,40,80] --guess\n");
+  printf(" |  [2.0,0.13,873739911.131,40]                                                \n");
   printf(" | \n");
   printf(" | - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -\n");
   printf(" | \n");
@@ -882,16 +888,18 @@ int init(DataFramework *DFarg[], McmcFramework *MFarg[],
 {
   DataFramework *DF = NULL;
   McmcFramework *MF = NULL;
+  FILE *logfile;
   long i, j, importancedraws;
   unsigned long int seed1=12345, seed2=67890; /* random seeds */
-  char CLtemplate[512], CLlogfilename[512], CLiterations[512], CLrandomseed[512], 
+  char CLtemplate[512], CLoutfilename[512], CLiterations[512], CLrandomseed[512], 
        CLtimeCenter[512], CLtimeBefore[512], CLtimeAfter[512], CLtukeypar[512], 
        CLsimulateData[512], CLframeChannel[512],
        CLPsdEstimateStart[512], CLPsdEstimateEnd[512], CLPsdEstimateN[512], 
        CLcachefile[512], CLnetwork[512], CLnoiseModel[512], CLsimulatePsd[512], 
        CLfrequencyLower[512], CLfrequencyUpper[512], 
        CLfixedpar[512], CLstartpar[512], CLguesspar[512], CLinjectpar[512], 
-       CLinjecttemplate[512], CLimportancedraws[512], CLpriorpar[512];
+       CLinjecttemplate[512], CLimportancedraws[512], CLpriorpar[512],
+       datetime[32], logstring[32];
   char **argNames;
   double *argValues=NULL;
   int argN;
@@ -907,7 +915,7 @@ int init(DataFramework *DFarg[], McmcFramework *MFarg[],
   double startGPS, endGPS;
   static struct option long_options[] = {
     {"template",           required_argument, 0, 't'},
-    {"logfilename",        required_argument, 0, 'l'},
+    {"outfilename",        required_argument, 0, 'l'},
     {"iterations",         required_argument, 0, 'i'},
     {"randomseed",         required_argument, 0, 'r'},
     {"tcenter",            required_argument, 0, 'c'},
@@ -936,10 +944,12 @@ int init(DataFramework *DFarg[], McmcFramework *MFarg[],
   };
   int optparse, optionIndex;
 
+  DateTimeString(datetime);
+
   sprintf(ifoName, "LIGO-Livingston\0");
 
   /* initialise strings to take command line arguments: */
-  CLtemplate[0]=0; CLlogfilename[0]=0; CLiterations[0]=0; CLrandomseed[0]=0; 
+  CLtemplate[0]=0; CLoutfilename[0]=0; CLiterations[0]=0; CLrandomseed[0]=0; 
   CLtimeCenter[0]=0; CLtimeBefore[0]=0; CLtimeAfter[0]=0; CLtukeypar[0]=0; 
   CLsimulateData[0]=0; CLframeChannel[0]=0;
   CLPsdEstimateStart[0]=0; CLPsdEstimateEnd[0]=0; CLPsdEstimateN[0]=0;
@@ -974,7 +984,7 @@ int init(DataFramework *DFarg[], McmcFramework *MFarg[],
     if (optparse == -1) break;
     switch (optparse) {
       case 't': {strcpy(CLtemplate, optarg); break;}            /* --template                    */
-      case 'l': {strcpy(CLlogfilename, optarg); break;}         /* --logfilename                 */
+      case 'l': {strcpy(CLoutfilename, optarg); break;}         /* --outfilename                 */
       case 'i': {strcpy(CLiterations, optarg); break;}          /* --iterations                  */
       case 'r': {strcpy(CLrandomseed, optarg); break;}          /* --randomseed                  */
       case 'c': {strcpy(CLtimeCenter, optarg); break;}          /* --tcenter                     */
@@ -1061,8 +1071,8 @@ int init(DataFramework *DFarg[], McmcFramework *MFarg[],
   if (CLcachefile[0] != '\0') {
     if (noVectorStrg(CLcachefile)) {
       if (*coherentN == 1) {
-        strcpy(DF[i].datacachefile, CLcachefile);
-        strcpy(DF[i].noisecachefile, CLcachefile);
+        strcpy(DF[0].datacachefile, CLcachefile);
+        strcpy(DF[0].noisecachefile, CLcachefile);
       }
       else
         printf(" : WARNING: cannot make sense out of \"--cachefile\" argument!\n");
@@ -1452,10 +1462,26 @@ int init(DataFramework *DFarg[], McmcFramework *MFarg[],
     injecttemplate = MF->template;
   /* (by default injection template same as recovery template) */
 
+  /*--  "--outfilename" argument:  --*/
   MF->logfilename = (char*) malloc(sizeof(char)*256);
-  if (CLlogfilename[0] != '\0')
-    strcpy(MF->logfilename, CLlogfilename);
-  else printf(" : WARNING: \"--logfile\" argument missing!\n");
+  MF->csvfilename = (char*) malloc(sizeof(char)*256);
+  if (CLoutfilename[0] != '\0') {
+    sprintf(MF->logfilename, "%s.log", CLoutfilename);
+    sprintf(MF->csvfilename, "%s.csv", CLoutfilename);
+    /* start the log file (header line): */
+    logfile = fopen(MF->logfilename, "w");
+    fprintf(logfile, "\"name\",\"value\"\n");
+    /* log file's first entry are the command line arguments: */
+    fprintf(logfile, "\"command line\",\"%s", argv[0]);
+    for (i=1; i<argc; ++i)
+      fprintf(logfile, " %s", argv[i]);
+    fprintf(logfile, "\"\n");
+    fclose(logfile);
+    logtoLOGfile(MF, "init() start", datetime);
+    /* (MCMC CSV file is started later, in "metropolishastings()", */
+    /* once parameter names &c are figured out...)                 */
+  }
+  else printf(" : WARNING: \"--outfilename\" argument missing!\n");
 
   /* derive GMST:                                                                  */
   /* first average over individual `timeCenter' values (usually identical anyway): */
@@ -1745,7 +1771,10 @@ int init(DataFramework *DFarg[], McmcFramework *MFarg[],
   long lhdf = 0;
   for (i=0; i<*coherentN; ++i)
     lhdf += 2 * (DF[i].maxInd - DF[i].minInd + 1);
-  printf(" : (log-) likelihood degrees-of-freedom: %d\n",lhdf);
+  if (verbose) printf(" : (log-) likelihood degrees-of-freedom: %d\n",lhdf);
+
+  sprintf(logstring, "%d", lhdf);
+  logtoLOGfile(MF, "log-likelihood degrees-of-freedom", logstring);
 
   /* initialise random number gernerator for (now following) MCMC part: */
   gsl_rng_set(GSLrandom, seed2);
@@ -1755,7 +1784,7 @@ int init(DataFramework *DFarg[], McmcFramework *MFarg[],
 
   *DFarg = DF;
   *MFarg = MF;
-    
+
   return InitialisationOK;
 } /*--  end of "init()".  --*/
 
@@ -4343,7 +4372,7 @@ void proposeInspiralNospin(McmcFramework *MF, DataFramework *DF, int coherentN,
       i = 1;
       while ((DF[i].ifo->latitude == DF[0].ifo->latitude) 
               && (DF[i].ifo->longitude == DF[0].ifo->longitude)) ++i;
-      if (i >= coherentN) printf(" : WARNING: something's definitely fishy here!!\n");
+      if (i >= coherentN) printf(" : WARNING: index out of range in `proposeInspiralNoSpin()' !!\n");
       /* set "pivotvec" to be the connecting line between the two interferometers: */
       pivotvec[0] = DF[0].ifo->positionVector[0] - DF[i].ifo->positionVector[0];
       pivotvec[1] = DF[0].ifo->positionVector[1] - DF[i].ifo->positionVector[1];
@@ -4510,7 +4539,7 @@ void proposeBurstSineGaussian(McmcFramework *MF, DataFramework *DF, int coherent
       i = 1;
       while ((DF[i].ifo->latitude == DF[0].ifo->latitude) 
               && (DF[i].ifo->longitude == DF[0].ifo->longitude)) ++i;
-      if (i >= coherentN) printf(" : WARNING: something's definitely fishy here!!\n");
+      if (i >= coherentN) printf(" : WARNING: index out of range in `proposeBurstSineGaussian()' !!\n");
       /* set "pivotvec" to be the connecting line between the two interferometers: */
       pivotvec[0] = DF[0].ifo->positionVector[0] - DF[i].ifo->positionVector[0];
       pivotvec[1] = DF[0].ifo->positionVector[1] - DF[i].ifo->positionVector[1];
@@ -4771,12 +4800,20 @@ void importanceresample(DataFramework *DF, int coherentN, McmcFramework *MF,
 }
 
 
-void logtofile(McmcFramework *MF, vector *parameter, 
-               long iteration, long accepted, 
-               double logprior, double loglikelihood, double logposterior)
-/* "iteration" indicates the iteration number.                                  */
-/* For  "iteration==LONG_MIN"  a new, empty file (header only) is created       */
-/* (or possibly overwritten), otherwise a line is appended to an existing file. */
+
+void logtoCSVfile(McmcFramework *MF, vector *parameter, 
+                  long iteration, long accepted, 
+                  double logprior, double loglikelihood, double logposterior)
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* Add a line to the MCMC log file. The MCMC log file is a text file             */
+/* in CSV (comma-seperated-values) format.                                       */
+/* Its path & name are given in the "MF->csvfilename" slot.                      */
+/* CSV format is specified e.g. here:  http://tools.ietf.org/html/rfc4180        */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* "iteration" indicates the iteration number.                                   */
+/* For  "iteration==LONG_MIN"  a new, empty file (header only) is created        */
+/* (or possibly overwritten), otherwise a line is appended to an existing file.  */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 {
   FILE *logfile;
   int i;
@@ -4799,28 +4836,43 @@ void logtofile(McmcFramework *MF, vector *parameter,
   else vectorCopy(parameter, &outvector);
 
   if (iteration==LONG_MIN) {  /* set up new file: */
-    if (verbose) printf(" | logging to file \"%s\"\n",MF->logfilename);
-    logfile = fopen(MF->logfilename, "w");
-    fprintf(logfile, "iteration accepted logprior loglikelihood logposterior");
+    if (verbose) printf(" | logging to file \"%s\"\n",MF->csvfilename);
+    logfile = fopen(MF->csvfilename, "w");
+    fprintf(logfile, "\"iteration\",\"accepted\",\"logprior\",\"loglikelihood\",\"logposterior\"");
     for (i=0; i<outvector.dimension; ++i)
       if ((!vectorIsElement(&MF->fixed, outvector.name[i]))
           || ((strcmp(outvector.name[i],"declination")==0) && (!vectorIsElement(&MF->fixed, "latitude")))
           || ((strcmp(outvector.name[i],"rightascension")==0) && (!vectorIsElement(&MF->fixed, "longitude"))))
-        fprintf(logfile, " %s", outvector.name[i]);
+        fprintf(logfile, ",\"%s\"", outvector.name[i]);
     fprintf(logfile, "\n");
     fclose(logfile);
   }
   else { /* append to existing file: */
-    logfile = fopen(MF->logfilename, "a");
-    fprintf(logfile, "%d %d %.6f %.6f %.6f", iteration, accepted, 
+    logfile = fopen(MF->csvfilename, "a");
+    fprintf(logfile, "%d,%d,%.6f,%.6f,%.6f", iteration, accepted, 
             logprior, loglikelihood, logposterior);
     for (i=0; i<outvector.dimension; ++i)
       if (!vectorIsElement(&MF->fixed, outvector.name[i]))
-        fprintf(logfile, " %.14e", outvector.value[i]);
+        fprintf(logfile, ",%.14e", outvector.value[i]);
     fprintf(logfile, "\n");
     fclose(logfile);
   }
   vectorDispose(&outvector);
+}
+
+
+void logtoLOGfile(McmcFramework *MF, char *entryname, char *entry)
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* Add an entry (i.e. a line) to the (existing!) "general" log file.             */
+/* This file is kept in CSV format as well; it contains two columns of (quoted?) */
+/* entries, the first columns contains entry names, the second column contains   */
+/* the entries themselves.                                                       */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+{
+  FILE *logfile;
+  logfile = fopen(MF->logfilename, "a");
+  fprintf(logfile, "\"%s\",\"%s\"\n", entryname, entry);
+  fclose(logfile);
 }
 
 
@@ -4836,6 +4888,22 @@ void printtime()
   printf("%02i.%02i.%04i  %02i:%02i:%02i\n", ltime->tm_mday, ltime->tm_mon,
           ltime->tm_year, ltime->tm_hour, ltime->tm_min, ltime->tm_sec);
 }
+
+
+void DateTimeString(char *charvec)
+/* return date & time */
+{
+  time_t tm;
+  struct tm *ltime;
+  time( &tm );
+  ltime = localtime( &tm );
+  ltime->tm_mon++;
+  ltime->tm_year += 1900;
+  sprintf(charvec, "%04i-%02i-%02i %02i:%02i:%02i", 
+          ltime->tm_year, ltime->tm_mon, ltime->tm_mday,
+          ltime->tm_hour, ltime->tm_min, ltime->tm_sec);
+}
+
 
 void savePSD(DataFramework *DF, char *filename)
 /* save the (1-sided) power spectral density (given in 'DF->powspec') to a file */
@@ -4866,6 +4934,10 @@ void metropolishastings(McmcFramework *MF, DataFramework *DF, int coherentN)
   int accept;
   time_t starttime, endtime;
   double seconds;
+  char logstring[32];
+
+  DateTimeString(logstring);
+  logtoLOGfile(MF, "metropolishastings() start", logstring);
 
   vectorInit(&state);
   vectorSetup(&state, MF->parameterset);
@@ -4873,13 +4945,18 @@ void metropolishastings(McmcFramework *MF, DataFramework *DF, int coherentN)
   vectorSetup(&proposal, MF->parameterset);
 
   /* create log file:                                                 */
-  logtofile(MF, &state, LONG_MIN, 0, 0.0, 0.0, 0.0);
+  logtoCSVfile(MF, &state, LONG_MIN, 0, 0.0, 0.0, 0.0);
 
   /* first compute "null" likelihood, for no signal present:          */
   llikeli = loglikelihood(DF, coherentN, MF->template, NULL);
   /* log as "negative 1st" iteration, with all zero parameter values: */
   if (verbose) printf(" | 'null' likelihood         :  %.3f\n", llikeli);
-  logtofile(MF, &state, -1, 0, 0.0, llikeli, 0.0);
+
+  logtoCSVfile(MF, &state, -1, 0, 0.0, llikeli, 0.0);
+  sprintf(logstring, "%.5f", MF->GMST);
+  logtoLOGfile(MF, "GMST", logstring);
+  sprintf(logstring, "%.5f", llikeli);
+  logtoLOGfile(MF, "null likelihood", logstring);
 
   /* now proceed at starting parameter values:                        */
   vectorCopy(&MF->startvalue, &state);
@@ -4890,7 +4967,7 @@ void metropolishastings(McmcFramework *MF, DataFramework *DF, int coherentN)
   }
   llikeli = loglikelihood(DF, coherentN, MF->template, &state);
   if (verbose) printf(" | starting value likelihood :  %.3f\n", llikeli);
-  logtofile(MF, &state, 0, 0, lprior, llikeli, lprior+llikeli);
+  logtoCSVfile(MF, &state, 0, 0, lprior, llikeli, lprior+llikeli);
 
   if (verbose){
     printf(" | starting Metropolis-sampler; signal template used: '#%d'\n | iterations: %d", 
@@ -4927,8 +5004,8 @@ void metropolishastings(McmcFramework *MF, DataFramework *DF, int coherentN)
       acceptcount += 1;
     }
     if (i % 100 == 0)          /* log every 100th iteration                              */
-      logtofile(MF, &state, i, acceptcount, lprior, llikeli, lprior+llikeli);
-    if (verbose && (fmod(log((double)i)/log(2.0),1.0) == 0.0)){
+      logtoCSVfile(MF, &state, i, acceptcount, lprior, llikeli, lprior+llikeli);
+    if (verbose && (fmod(log((double)i)/log(2.0),1.0) == 0.0)){  /* screen output        */
       time(&endtime);
       seconds = difftime(endtime, starttime);
       if (seconds > 0.0)
@@ -4936,6 +5013,8 @@ void metropolishastings(McmcFramework *MF, DataFramework *DF, int coherentN)
                seconds/((double)i), ((double)i)/(seconds));
     }
   }
+  /*-- end of M-H sampler. --*/
+
   time(&endtime);
   seconds = difftime(endtime, starttime);
   if (verbose) {
@@ -4945,6 +5024,9 @@ void metropolishastings(McmcFramework *MF, DataFramework *DF, int coherentN)
   }
   vectorDispose(&state);
   vectorDispose(&proposal);
+
+  DateTimeString(logstring);
+  logtoLOGfile(MF, "metropolishastings() finish", logstring);
 }
 
 
@@ -5064,7 +5146,7 @@ int main(int argc, char *argv[])
   int initOK;
 
   if (verbose) 
-    printf(" +----[ followupMcmc ]---------------------------------------------------------\n");
+    printf(" +----[ lalapps_followupMcmc ]-------------------------------------------------\n");
 
   /* initialise GSL random number generator: */
   gsl_rng_env_setup();

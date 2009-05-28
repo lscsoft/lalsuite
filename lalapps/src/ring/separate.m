@@ -26,7 +26,7 @@ N_files = length(file_list(:,1));
 % read injection files  
   if strcmp(type,'inj')
     %create the structure by reading in the first file
-    eval(['coincs=readMeta(file_list(1,:),''sngl_ringdown'',0,''ifo,start_time,start_time_ns,frequency,quality,epsilon,eff_dist,snr,event_id'');'])
+    eval(['coincs=readMeta(file_list(1,:),''sngl_ringdown'',0,''ifo,start_time,start_time_ns,frequency,quality,epsilon,eff_dist,snr,ds2_H1L1,ds2_H2L1,ds2_H1H2,event_id'');'])
 
     for k=1:length(coincs.snr)
       coincs.run(k)=1;  % this is just an index to identify the injection run
@@ -35,7 +35,7 @@ N_files = length(file_list(:,1));
 
     % read in the rest of the injection files  
     for i=2:N_files
-      eval(['coincsi=readMeta( file_list(i,:),''sngl_ringdown'',0,''ifo,start_time,start_time_ns,frequency,quality,epsilon,eff_dist,snr,event_id'');'])
+      eval(['coincsi=readMeta( file_list(i,:),''sngl_ringdown'',0,''ifo,start_time,start_time_ns,frequency,quality,epsilon,eff_dist,snr,ds2_H1L1,ds2_H2L1,ds2_H1H2,event_id'');'])
       for k=1:length(coincsi.snr)
         coincsi.run(k)=i;
       end
@@ -47,6 +47,9 @@ N_files = length(file_list(:,1));
       coincs.quality=[coincs.quality;coincsi.quality];
       coincs.eff_dist=[coincs.eff_dist;coincsi.eff_dist];
       coincs.snr=[coincs.snr;coincsi.snr];
+      coincs.ds2_h1l1=[coincs.ds2_h1l1;coincsi.ds2_h1l1];
+      coincs.ds2_h1h2=[coincs.ds2_h1h2;coincsi.ds2_h1h2];
+      coincs.ds2_h2l1=[coincs.ds2_h2l1;coincsi.ds2_h2l1];
       coincs.event_id=[coincs.event_id;coincsi.event_id];
       coincs.run=[coincs.run;coincsi.run];
       coincs.epsilon=[coincs.epsilon;coincsi.epsilon];
@@ -56,7 +59,7 @@ N_files = length(file_list(:,1));
 % read background, playground or intime
   if strcmp(type,'bg')||strcmp(type,'pg')||strcmp(type,'int')
 
-    coincs=readMeta( file_list(1,:),'sngl_ringdown',0,'ifo,start_time,start_time_ns,frequency,quality,epsilon,eff_dist,snr,event_id');
+    coincs=readMeta( file_list(1,:),'sngl_ringdown',0,'ifo,start_time,start_time_ns,frequency,quality,epsilon,eff_dist,snr,ds2_H1L1,ds2_H2L1,ds2_H1H2,event_id');
     % add a field which says which run a trigger is from
     for k=1:length(coincs.snr)
       coincs.run(k)=1;
@@ -103,6 +106,9 @@ while i<=length(coincs.ifo)-2
      trip.Q(j:j+2)=coincs.Q(i:i+2);
      trip.ifo(j:j+2)=coincs.ifo(i:i+2);
      trip.snr(j:j+2)=coincs.snr(i:i+2);
+     trip.ds2_h1l1(j:j+2)=coincs.ds2_h1l1(i:i+2);
+     trip.ds2_h1h2(j:j+2)=coincs.ds2_h1h2(i:i+2);
+     trip.ds2_h2l1(j:j+2)=coincs.ds2_h2l1(i:i+2);
      trip.id(j:j+2)=coincs.id(i:i+2);
      trip.d(j:j+2)=coincs.d(i:i+2);
      trip.ind(j:j+2)=coincs.ind(i:i+2);
@@ -117,6 +123,9 @@ while i<=length(coincs.ifo)-2
      doub.Q(k:k+1)=coincs.Q(i:i+1);
      doub.ifo(k:k+1)=coincs.ifo(i:i+1);
      doub.snr(k:k+1)=coincs.snr(i:i+1);
+     doub.ds2_h1l1(k:k+1)=coincs.ds2_h1l1(i:i+1);
+     doub.ds2_h2l1(k:k+1)=coincs.ds2_h2l1(i:i+1);
+     doub.ds2_h1h2(k:k+1)=coincs.ds2_h1h2(i:i+1);
      doub.id(k:k+1)=coincs.id(i:i+1);
      doub.d(k:k+1)=coincs.d(i:i+1);
      doub.ind(k:k+1)=coincs.ind(i:i+1);
@@ -137,6 +146,9 @@ if ~isequal(coincs.ind(length(coincs.ind)-2),coincs.ind(length(coincs.ind)))&...
   doub.Q(k:k+1)=coincs.Q(i:i+1);
   doub.ifo(k:k+1)=coincs.ifo(i:i+1);
   doub.snr(k:k+1)=coincs.snr(i:i+1);
+  doub.ds2_h1l1(k:k+1)=coincs.ds2_h1l1(i:i+1);
+  doub.ds2_h2l1(k:k+1)=coincs.ds2_h2l1(i:i+1);
+  doub.ds2_h1h2(k:k+1)=coincs.ds2_h1h2(i:i+1);
   doub.id(k:k+1)=coincs.id(i:i+1);
   doub.d(k:k+1)=coincs.d(i:i+1);
   doub.ind(k:k+1)=coincs.ind(i:i+1);
@@ -156,6 +168,9 @@ if triple>0
       trigH1t.f(x)=trip.f(i);
       trigH1t.Q(x)=trip.Q(i);
       trigH1t.snr(x)=trip.snr(i);
+      trigH1t.ds2_h1l1(x)=trip.ds2_h1l1(i);
+      trigH1t.ds2_h1h2(x)=trip.ds2_h1h2(i);
+      trigH1t.ds2_h2l1(x)=trip.ds2_h2l1(i);
       trigH1t.id(x)=trip.id(i);
       trigH1t.d(x)=trip.d(i);
       trigH1t.ind(x)=trip.ind(i);
@@ -167,6 +182,9 @@ if triple>0
       trigH2t.f(y)=trip.f(i);
       trigH2t.Q(y)=trip.Q(i);
       trigH2t.snr(y)=trip.snr(i);
+      trigH2t.ds2_h1l1(y)=trip.ds2_h1l1(i);
+      trigH2t.ds2_h1h2(y)=trip.ds2_h1h2(i);
+      trigH2t.ds2_h2l1(y)=trip.ds2_h2l1(i);
       trigH2t.id(y)=trip.id(i);
       trigH2t.d(y)=trip.d(i);
       trigH2t.ind(y)=trip.ind(i);
@@ -178,6 +196,9 @@ if triple>0
       trigL1t.f(z)=trip.f(i);
       trigL1t.Q(z)=trip.Q(i);
       trigL1t.snr(z)=trip.snr(i);
+      trigL1t.ds2_h1l1(z)=trip.ds2_h1l1(i);
+      trigL1t.ds2_h1h2(z)=trip.ds2_h1h2(i);
+      trigL1t.ds2_h2l1(z)=trip.ds2_h2l1(i);
       trigL1t.id(z)=trip.id(i);
       trigL1t.d(z)=trip.d(i);
       trigL1t.ind(z)=trip.ind(i);
@@ -209,6 +230,9 @@ if double>0
       trigH1d.f(x)=doub.f(i);
       trigH1d.Q(x)=doub.Q(i);
       trigH1d.snr(x)=doub.snr(i);
+      trigH1d.ds2_h1l1(x)=doub.ds2_h1l1(i);
+      trigH1d.ds2_h2l1(x)=doub.ds2_h2l1(i);
+      trigH1d.ds2_h1h2(x)=doub.ds2_h1h2(i);
       trigH1d.id(x)=doub.id(i);
       trigH1d.d(x)=doub.d(i);
       trigH1d.ind(x)=doub.ind(i);
@@ -220,6 +244,9 @@ if double>0
       trigH2d.f(y)=doub.f(i);
       trigH2d.Q(y)=doub.Q(i);
       trigH2d.snr(y)=doub.snr(i);
+      trigH2d.ds2_h1l1(y)=doub.ds2_h1l1(i);
+      trigH2d.ds2_h2l1(y)=doub.ds2_h2l1(i);
+      trigH2d.ds2_h1h2(y)=doub.ds2_h1h2(i);
       trigH2d.id(y)=doub.id(i);
       trigH2d.d(y)=doub.d(i);
       trigH2d.ind(y)=doub.ind(i);
@@ -231,6 +258,9 @@ if double>0
       trigL1d.f(z)=doub.f(i);
       trigL1d.Q(z)=doub.Q(i);
       trigL1d.snr(z)=doub.snr(i);
+      trigL1d.ds2_h1l1(z)=doub.ds2_h1l1(i);
+      trigL1d.ds2_h2l1(z)=doub.ds2_h2l1(i);
+      trigL1d.ds2_h1h2(z)=doub.ds2_h1h2(i);
       trigL1d.id(z)=doub.id(i);
       trigL1d.d(z)=doub.d(i);
       trigL1d.ind(z)=doub.ind(i);
@@ -240,89 +270,107 @@ if double>0
     end
     i=i+1;
   end
-end
 
 % save as mat file
-eval(['save ' type 'H1d.mat -struct trigH1d'])
-eval(['save ' type 'H2d.mat -struct trigH2d'])
-eval(['save ' type 'L1d.mat -struct trigL1d'])
-
+  eval(['save ' type 'H1d.mat -struct trigH1d'])
+  eval(['save ' type 'H2d.mat -struct trigH2d'])
+  eval(['save ' type 'L1d.mat -struct trigL1d'])
 
 % put the H1L1 doubles in a structure
-[com,H1,L1]=intersect(trigH1d.ind,trigL1d.ind);
-trigH1inL1d.ind=trigH1d.ind(H1);
-trigH1inL1d.t=trigH1d.t(H1);
-trigH1inL1d.f=trigH1d.f(H1);
-trigH1inL1d.Q=trigH1d.Q(H1);
-trigH1inL1d.id=trigH1d.id(H1);
-trigH1inL1d.d=trigH1d.d(H1);
-trigH1inL1d.snr=trigH1d.snr(H1);
-trigH1inL1d.run=trigH1d.run(H1);
-trigH1inL1d.dst=trigH1d.dst(H1);
+  [com,H1,L1]=intersect(trigH1d.ind,trigL1d.ind);
+  trigH1inL1d.ind=trigH1d.ind(H1);
+  trigH1inL1d.t=trigH1d.t(H1);
+  trigH1inL1d.f=trigH1d.f(H1);
+  trigH1inL1d.Q=trigH1d.Q(H1);
+  trigH1inL1d.id=trigH1d.id(H1);
+  trigH1inL1d.d=trigH1d.d(H1);
+  trigH1inL1d.snr=trigH1d.snr(H1);
+  trigH1inL1d.ds2_h1l1=trigH1d.ds2_h1l1(H1);
+  trigH1inL1d.ds2_h1h2=trigH1d.ds2_h1h2(H1);
+  trigH1inL1d.ds2_h2l1=trigH1d.ds2_h2l1(H1);
+  trigH1inL1d.run=trigH1d.run(H1);
+  trigH1inL1d.dst=trigH1d.dst(H1);
 
-eval(['save ' type 'H1inL1_doub.mat -struct trigH1inL1d'])
+  eval(['save ' type 'H1inL1_doub.mat -struct trigH1inL1d'])
 
-trigL1inH1d.ind=trigL1d.ind(L1);
-trigL1inH1d.t=trigL1d.t(L1);
-trigL1inH1d.f=trigL1d.f(L1);
-trigL1inH1d.Q=trigL1d.Q(L1);
-trigL1inH1d.id=trigL1d.id(L1);
-trigL1inH1d.d=trigL1d.d(L1);
-trigL1inH1d.snr=trigL1d.snr(L1);
-trigL1inH1d.run=trigL1d.run(L1);
-trigL1inH1d.dst=trigL1d.dst(L1);
+  trigL1inH1d.ind=trigL1d.ind(L1);
+  trigL1inH1d.t=trigL1d.t(L1);
+  trigL1inH1d.f=trigL1d.f(L1);
+  trigL1inH1d.Q=trigL1d.Q(L1);
+  trigL1inH1d.id=trigL1d.id(L1);
+  trigL1inH1d.d=trigL1d.d(L1);
+  trigL1inH1d.snr=trigL1d.snr(L1);
+  trigL1inH1d.ds2_h1l1=trigL1d.ds2_h1l1(L1);
+  trigL1inH1d.ds2_h1h2=trigL1d.ds2_h1h2(L1);
+  trigL1inH1d.ds2_h2l1=trigL1d.ds2_h2l1(L1);
+  trigL1inH1d.run=trigL1d.run(L1);
+  trigL1inH1d.dst=trigL1d.dst(L1);
 
-eval(['save ' type 'L1inH1_doub.mat -struct trigL1inH1d'])
+  eval(['save ' type 'L1inH1_doub.mat -struct trigL1inH1d'])
 
 % put the H1H2 doubles in a structure
-[com,H1,H2]=intersect(trigH1d.ind,trigH2d.ind);
-trigH1inH2d.ind=trigH1d.ind(H1);
-trigH1inH2d.t=trigH1d.t(H1);
-trigH1inH2d.f=trigH1d.f(H1);
-trigH1inH2d.Q=trigH1d.Q(H1);
-trigH1inH2d.id=trigH1d.id(H1);
-trigH1inH2d.d=trigH1d.d(H1);
-trigH1inH2d.snr=trigH1d.snr(H1);
-trigH1inH2d.run=trigH1d.run(H1);
-trigH1inH2d.dst=trigH1d.dst(H1);
+  [com,H1,H2]=intersect(trigH1d.ind,trigH2d.ind);
+  trigH1inH2d.ind=trigH1d.ind(H1);
+  trigH1inH2d.t=trigH1d.t(H1);
+  trigH1inH2d.f=trigH1d.f(H1);
+  trigH1inH2d.Q=trigH1d.Q(H1);
+  trigH1inH2d.id=trigH1d.id(H1);
+  trigH1inH2d.d=trigH1d.d(H1);
+  trigH1inH2d.snr=trigH1d.snr(H1);
+  trigH1inH2d.ds2_h1l1=trigH1d.ds2_h1l1(H1);
+  trigH1inH2d.ds2_h1h2=trigH1d.ds2_h1h2(H1);
+  trigH1inH2d.ds2_h2l1=trigH1d.ds2_h2l1(H1);
+  trigH1inH2d.run=trigH1d.run(H1);
+  trigH1inH2d.dst=trigH1d.dst(H1);
+  
+  eval(['save ' type 'H1inH2_doub.mat -struct trigH1inH2d'])
 
-eval(['save ' type 'H1inH2_doub.mat -struct trigH1inH2d'])
+  trigH2inH1d.ind=trigH2d.ind(H2);
+  trigH2inH1d.t=trigH2d.t(H2);
+  trigH2inH1d.f=trigH2d.f(H2);
+  trigH2inH1d.Q=trigH2d.Q(H2);
+  trigH2inH1d.id=trigH2d.id(H2);
+  trigH2inH1d.d=trigH2d.d(H2);
+  trigH2inH1d.snr=trigH2d.snr(H2);
+  trigH2inH1d.ds2_h1l1=trigH2d.ds2_h1l1(H2);
+  trigH2inH1d.ds2_h1h2=trigH2d.ds2_h1h2(H2);
+  trigH2inH1d.ds2_h2l1=trigH2d.ds2_h2l1(H2);
+  trigH2inH1d.run=trigH2d.run(H2);
+  trigH2inH1d.dst=trigH2d.dst(H2);
 
-trigH2inH1d.ind=trigH2d.ind(H2);
-trigH2inH1d.t=trigH2d.t(H2);
-trigH2inH1d.f=trigH2d.f(H2);
-trigH2inH1d.Q=trigH2d.Q(H2);
-trigH2inH1d.id=trigH2d.id(H2);
-trigH2inH1d.d=trigH2d.d(H2);
-trigH2inH1d.snr=trigH2d.snr(H2);
-trigH2inH1d.run=trigH2d.run(H2);
-trigH2inH1d.dst=trigH2d.dst(H2);
-
-eval(['save ' type 'H2inH1_doub.mat -struct trigH2inH1d'])
+  eval(['save ' type 'H2inH1_doub.mat -struct trigH2inH1d'])
 
 % put the L1H2 doubles in a structure
-[com,L1,H2]=intersect(trigL1d.ind,trigH2d.ind);
-trigL1inH2d.ind=trigL1d.ind(L1);
-trigL1inH2d.t=trigL1d.t(L1);
-trigL1inH2d.f=trigL1d.f(L1);
-trigL1inH2d.Q=trigL1d.Q(L1);
-trigL1inH2d.id=trigL1d.id(L1);
-trigL1inH2d.d=trigL1d.d(L1);
-trigL1inH2d.snr=trigL1d.snr(L1);
-trigL1inH2d.run=trigL1d.run(L1);
-trigL1inH2d.dst=trigL1d.dst(L1);
+  [com,L1,H2]=intersect(trigL1d.ind,trigH2d.ind);
+  trigL1inH2d.ind=trigL1d.ind(L1);
+  trigL1inH2d.t=trigL1d.t(L1);
+  trigL1inH2d.f=trigL1d.f(L1);
+  trigL1inH2d.Q=trigL1d.Q(L1);
+  trigL1inH2d.id=trigL1d.id(L1);
+  trigL1inH2d.d=trigL1d.d(L1);
+  trigL1inH2d.snr=trigL1d.snr(L1);
+  trigL1inH2d.ds2_h1l1=trigL1d.ds2_h1l1(L1);
+  trigL1inH2d.ds2_h2l1=trigL1d.ds2_h2l1(L1);
+  trigL1inH2d.ds2_h1h2=trigL1d.ds2_h1h2(L1);
+  trigL1inH2d.run=trigL1d.run(L1);
+  trigL1inH2d.dst=trigL1d.dst(L1);
 
-eval(['save ' type 'L1inH2_doub.mat -struct trigL1inH2d'])
+  eval(['save ' type 'L1inH2_doub.mat -struct trigL1inH2d'])
 
-trigH2inL1d.ind=trigH2d.ind(H2);
-trigH2inL1d.t=trigH2d.t(H2);
-trigH2inL1d.f=trigH2d.f(H2);
-trigH2inL1d.Q=trigH2d.Q(H2);
-trigH2inL1d.id=trigH2d.id(H2);
-trigH2inL1d.d=trigH2d.d(H2);
-trigH2inL1d.snr=trigH2d.snr(H2);
-trigH2inL1d.run=trigH2d.run(H2);
-trigH2inL1d.dst=trigH2d.dst(H2);
+  trigH2inL1d.ind=trigH2d.ind(H2);
+  trigH2inL1d.t=trigH2d.t(H2);
+  trigH2inL1d.f=trigH2d.f(H2);
+  trigH2inL1d.Q=trigH2d.Q(H2);
+  trigH2inL1d.id=trigH2d.id(H2);
+  trigH2inL1d.d=trigH2d.d(H2);
+  trigH2inL1d.snr=trigH2d.snr(H2);
+  trigH2inL1d.ds2_h1l1=trigH2d.ds2_h1l1(H2);
+  trigH2inL1d.ds2_h2l1=trigH2d.ds2_h2l1(H2);
+  trigH2inL1d.ds2_h1h2=trigH2d.ds2_h1h2(H2);
+  trigH2inL1d.run=trigH2d.run(H2);
+  trigH2inL1d.dst=trigH2d.dst(H2);
+ 
+  eval(['save ' type 'H2inL1_doub.mat -struct trigH2inL1d'])
 
-eval(['save ' type 'H2inL1_doub.mat -struct trigH2inL1d'])
+end
 
