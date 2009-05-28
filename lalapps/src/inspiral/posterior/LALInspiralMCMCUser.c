@@ -1,6 +1,6 @@
 /*  <lalVerbatim file="LALInspiralMCMCUSERCV">
 Author: A. Dietz, J. Veitch, C. Roever 
-$Id$
+$Id: LALInspiralPhase.c,v 1.9 2003/04/14 00:27:22 sathya Exp $
 </lalVerbatim>  */
 
 
@@ -55,8 +55,7 @@ The algorithms used in these functions are explained in detail in [Ref Needed].
 #define rint(x) floor((x)+0.5)
 #define MpcInMeters 3.08568025e22
 
-#define DEBUGMODEL 1
-
+#define DEBUGMODEL 0
 gsl_rng *RNG;
 double timewindow;
 REAL4Vector *model;
@@ -64,7 +63,7 @@ REAL4Vector *Tmodel;
 REAL8Sequence **topdown_sum;
 REAL8 *normalisations;
 
-/*NRCSID (LALINSPIRALMCMCUSERC, "$Id$"); */
+/*NRCSID (LALINSPIRALMCMCUSERC, "$Id: LALInspiralPhase.c,v 1.9 2003/04/14 00:27:22 sathya Exp $"); */
 
 double mc2mass1(double mc, double eta)
 /* mass 1 (the smaller one) for given mass ratio & chirp mass */
@@ -321,6 +320,31 @@ XLALMCMCAddParam(parameter,"iota",LAL_PI*gsl_rng_uniform(RNG),0,LAL_PI,0);
 return;
 }
 
+REAL8 GRBPrior(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter)
+{
+  REAL8 mNS,mComp;
+  REAL8 mc,eta;
+  /* Priors for the GRB component masses */
+#define m1min 1.0
+#define m1max 3.0
+#define m2min 1.0
+#define m2max 35.0
+
+  mc=XLALMCMCGetParameter(parameter,"mchirp");
+  eta=XLALMCMCGetParameter(parameter,"eta");
+  parameter->logPrior+=log(fabs(cos(XLALMCMCGetParameter(parameter,"lat"))));
+  parameter->logPrior+=log(fabs(sin(XLALMCMCGetParameter(parameter,"iota"))));
+  parameter->logPrior-=logJacobianMcEta(mc,eta);
+  parameter->logPrior-=2.0*log(XLALMCMCGetParameter(parameter,"distMpc"));
+  ParamInRange(parameter);
+  /*check GRB component masses */
+  mNS=mc2mass1(mc,eta);
+  mComp=mc2mass2(mc,eta);
+  if(mNS<m1min || mNS>m1max || mComp<m2min || mComp>m2max) parameter->logPrior=-DBL_MAX;
+  return(parameter->logPrior);
+  
+}
+
 REAL8 NestPrior(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter)
 {
 	REAL8 m1,m2,logdl,ampli,a=50,b=21;
@@ -341,7 +365,7 @@ REAL8 NestPrior(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter)
 	
 	parameter->logPrior+=log(fabs(cos(XLALMCMCGetParameter(parameter,"lat"))));
 	parameter->logPrior+=log(fabs(sin(XLALMCMCGetParameter(parameter,"iota"))));
-	parameter->logPrior-=logJacobianMcEta(mc,eta);
+	/*	parameter->logPrior-=logJacobianMcEta(mc,eta);*/
 	ParamInRange(parameter);
 	if(inputMCMC->approximant==IMRPhenomA && mc2mt(mc,eta)>475.0) parameter->logPrior=-DBL_MAX;
 	if(mc2mass1(mc,eta)<minCompMass) parameter->logPrior=-DBL_MAX;
@@ -452,13 +476,15 @@ REAL8 MCMCLikelihoodMultiCoherentF(LALMCMCInput *inputMCMC,LALMCMCParameter *par
 in the frequency domain */
 {
 	REAL8 logL=0.0;
-	int det_i;
+	UINT4 det_i;
 	CHAR name[10] = "inspiral";
 	REAL8 TimeFromGC; /* Time delay from geocentre */
 	static LALStatus status;
+	REAL4FFTPlan *likelihoodPlan=NULL;
 	REAL8 resp_r,resp_i,ci;
 	InspiralTemplate template;
 	UINT4 Nmodel; /* Length of the model */
+	UINT4 idx;
 	INT4 i,NtimeModel;
 	LALDetAMResponse det_resp;
 	int Fdomain;
@@ -506,7 +532,7 @@ in the frequency domain */
 		LALInspiralWave(&status,Tmodel,&template);
 		float winNorm = sqrt(inputMCMC->window->sumofsquares/inputMCMC->window->data->length);
 		float Norm = winNorm * inputMCMC->deltaT;
-		for(i=0;i<Tmodel->length;i++) Tmodel->data[i]*=(REAL4)inputMCMC->window->data->data[i] * Norm; /* window & normalise */
+		for(idx=0;idx<Tmodel->length;idx++) Tmodel->data[idx]*=(REAL4)inputMCMC->window->data->data[idx] * Norm; /* window & normalise */
 
 		if(likelihoodPlan==NULL) {LALCreateForwardREAL4FFTPlan(&status,&likelihoodPlan,(UINT4) NtimeModel,FFTW_PATIENT); fprintf(stderr,"Created FFTW plan\n");}
 		LALREAL4VectorFFT(&status,model,Tmodel,likelihoodPlan); /* REAL4VectorFFT doesn't normalise like TimeFreqRealFFT, so we do this above in Norm */
@@ -593,24 +619,24 @@ in the frequency domain */
 		int lowBin = (int)(inputMCMC->fLow / inputMCMC->stilde[det_i]->deltaF);
 		int highBin = (int)(template.fFinal / inputMCMC->stilde[det_i]->deltaF);
 
-		for(i=lowBin;i<Nmodel/2;i++){
-			time_sin = sin(LAL_TWOPI*(TimeFromGC+TimeShiftToGC)*((double) i)*deltaF);
-			time_cos = cos(LAL_TWOPI*(TimeFromGC+TimeShiftToGC)*((double) i)*deltaF);
+		for(idx=lowBin;idx<Nmodel/2;idx++){
+			time_sin = sin(LAL_TWOPI*(TimeFromGC+TimeShiftToGC)*((double) idx)*deltaF);
+			time_cos = cos(LAL_TWOPI*(TimeFromGC+TimeShiftToGC)*((double) idx)*deltaF);
 
 /* Version derived 19/08/08 */
-			REAL8 hc = (REAL8)model->data[i]*time_cos + (REAL8)model->data[Nmodel-i]*time_sin;
-			REAL8 hs = (REAL8)model->data[Nmodel-i]*time_cos - (REAL8)model->data[i]*time_sin;
+			REAL8 hc = (REAL8)model->data[idx]*time_cos + (REAL8)model->data[Nmodel-idx]*time_sin;
+			REAL8 hs = (REAL8)model->data[Nmodel-idx]*time_cos - (REAL8)model->data[idx]*time_sin;
 			resp_r = det_resp.plus * hc - det_resp.cross * hs;
 			resp_i = det_resp.cross * hc + det_resp.plus * hs;
 
-			real=inputMCMC->stilde[det_i]->data->data[i].re - resp_r/deltaF;
-			imag=inputMCMC->stilde[det_i]->data->data[i].im - resp_i/deltaF;
+			real=inputMCMC->stilde[det_i]->data->data[idx].re - resp_r/deltaF;
+			imag=inputMCMC->stilde[det_i]->data->data[idx].im - resp_i/deltaF;
 
 
 /* Gaussian version */
 /* NOTE: The factor deltaF is to make ratio dimensionless, when using the specific definitions of the vectors
 that LAL uses. Please check this whenever any change is made */
-			chisq+=(real*real + imag*imag)*inputMCMC->invspec[det_i]->data->data[i]; 
+			chisq+=(real*real + imag*imag)*inputMCMC->invspec[det_i]->data->data[idx]; 
 
 /* Student-t version */
 /*			chisq+=log(real*real+imag*imag); */
@@ -651,6 +677,7 @@ in the frequency domain */
 	UINT4 Nmodel; /* Length of the model */
 	INT4 i,NtimeModel;
 	LALDetAMResponse det_resp;
+	REAL4FFTPlan *likelihoodPlan=NULL;
 	int Fdomain;
 	REAL8 chisq=0.0;
 	REAL8 real,imag,f,t;
