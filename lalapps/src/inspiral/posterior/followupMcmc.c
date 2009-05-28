@@ -324,6 +324,7 @@ double GMST(double GPSsec);
 double rightAscension(double longi, double gmst);
 double longitude(double rightascension, double gmst);
 
+
 void vectorInit(vector *vec)
 /* Very basic initialisation of a vector. */
 /* NEEDS TO BE RUN FOR ANY NEW VECTOR !!  */
@@ -1070,8 +1071,8 @@ int init(DataFramework *DFarg[], McmcFramework *MFarg[],
   if (CLcachefile[0] != '\0') {
     if (noVectorStrg(CLcachefile)) {
       if (*coherentN == 1) {
-        strcpy(DF[i].datacachefile, CLcachefile);
-        strcpy(DF[i].noisecachefile, CLcachefile);
+        strcpy(DF[0].datacachefile, CLcachefile);
+        strcpy(DF[0].noisecachefile, CLcachefile);
       }
       else
         printf(" : WARNING: cannot make sense out of \"--cachefile\" argument!\n");
@@ -1770,7 +1771,7 @@ int init(DataFramework *DFarg[], McmcFramework *MFarg[],
   long lhdf = 0;
   for (i=0; i<*coherentN; ++i)
     lhdf += 2 * (DF[i].maxInd - DF[i].minInd + 1);
-  printf(" : (log-) likelihood degrees-of-freedom: %d\n",lhdf);
+  if (verbose) printf(" : (log-) likelihood degrees-of-freedom: %d\n",lhdf);
 
   sprintf(logstring, "%d", lhdf);
   logtoLOGfile(MF, "log-likelihood degrees-of-freedom", logstring);
@@ -4371,7 +4372,7 @@ void proposeInspiralNospin(McmcFramework *MF, DataFramework *DF, int coherentN,
       i = 1;
       while ((DF[i].ifo->latitude == DF[0].ifo->latitude) 
               && (DF[i].ifo->longitude == DF[0].ifo->longitude)) ++i;
-      if (i >= coherentN) printf(" : WARNING: something's definitely fishy here!!\n");
+      if (i >= coherentN) printf(" : WARNING: index out of range in `proposeInspiralNoSpin()' !!\n");
       /* set "pivotvec" to be the connecting line between the two interferometers: */
       pivotvec[0] = DF[0].ifo->positionVector[0] - DF[i].ifo->positionVector[0];
       pivotvec[1] = DF[0].ifo->positionVector[1] - DF[i].ifo->positionVector[1];
@@ -4538,7 +4539,7 @@ void proposeBurstSineGaussian(McmcFramework *MF, DataFramework *DF, int coherent
       i = 1;
       while ((DF[i].ifo->latitude == DF[0].ifo->latitude) 
               && (DF[i].ifo->longitude == DF[0].ifo->longitude)) ++i;
-      if (i >= coherentN) printf(" : WARNING: something's definitely fishy here!!\n");
+      if (i >= coherentN) printf(" : WARNING: index out of range in `proposeBurstSineGaussian()' !!\n");
       /* set "pivotvec" to be the connecting line between the two interferometers: */
       pivotvec[0] = DF[0].ifo->positionVector[0] - DF[i].ifo->positionVector[0];
       pivotvec[1] = DF[0].ifo->positionVector[1] - DF[i].ifo->positionVector[1];
@@ -4898,8 +4899,6 @@ void DateTimeString(char *charvec)
   ltime = localtime( &tm );
   ltime->tm_mon++;
   ltime->tm_year += 1900;
-  /* printf("%02i.%02i.%04i  %02i:%02i:%02i\n", ltime->tm_mday, ltime->tm_mon,
-            ltime->tm_year, ltime->tm_hour, ltime->tm_min, ltime->tm_sec);*/
   sprintf(charvec, "%04i-%02i-%02i %02i:%02i:%02i", 
           ltime->tm_year, ltime->tm_mon, ltime->tm_mday,
           ltime->tm_hour, ltime->tm_min, ltime->tm_sec);
@@ -5006,7 +5005,7 @@ void metropolishastings(McmcFramework *MF, DataFramework *DF, int coherentN)
     }
     if (i % 100 == 0)          /* log every 100th iteration                              */
       logtoCSVfile(MF, &state, i, acceptcount, lprior, llikeli, lprior+llikeli);
-    if (verbose && (fmod(log((double)i)/log(2.0),1.0) == 0.0)){
+    if (verbose && (fmod(log((double)i)/log(2.0),1.0) == 0.0)){  /* screen output        */
       time(&endtime);
       seconds = difftime(endtime, starttime);
       if (seconds > 0.0)
@@ -5014,6 +5013,8 @@ void metropolishastings(McmcFramework *MF, DataFramework *DF, int coherentN)
                seconds/((double)i), ((double)i)/(seconds));
     }
   }
+  /*-- end of M-H sampler. --*/
+
   time(&endtime);
   seconds = difftime(endtime, starttime);
   if (verbose) {
@@ -5143,13 +5144,6 @@ int main(int argc, char *argv[])
   int ifoN=0;    /* number of Ifos for which geographic location etc is available. */
   int coherentN; /* number of data sets (coherently) used.                         */
   int initOK;
-
-  /*int i;
-  //printf(" : argc = %d\n", argc);
-  //for (i=0; i<argc; ++i) {
-  //  printf(" : argv[%d] = '%s'\n", i, argv[i]);
-  //}
-  //printtime(); */
 
   if (verbose) 
     printf(" +----[ lalapps_followupMcmc ]-------------------------------------------------\n");
