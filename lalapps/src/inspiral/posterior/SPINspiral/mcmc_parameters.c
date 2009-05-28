@@ -67,6 +67,7 @@ void readMainInputfile(struct runPar *run)
   fgets(bla,500,fin); sscanf(bla,"%s",run->dataFilename);
   fgets(bla,500,fin); sscanf(bla,"%s",run->injectionFilename);
   fgets(bla,500,fin); sscanf(bla,"%s",run->parameterFilename);
+  fgets(bla,500,fin); sscanf(bla,"%s",run->systemFilename);
   
   fclose(fin);
 }  //End of readMainInputfile
@@ -211,7 +212,7 @@ void writeMainInputfile(struct runPar *run)
   
   fprintf(fout, "\n");
   fprintf(fout, "  \n  #Secondary input files:\n");
-  fprintf(fout, "  %-39s  %-18s  %-s\n",      run->dataFilename,       "dataFilename",        "File name of the data/noise input file, e.g. mcmc.data");
+  fprintf(fout, "  %-39s  %-18s  %-s\n",      run->dataFilename,       "dataFilename",        "File name of the data/noise input file, e.g. mcmc.input.data");
   
   //Formats used:
   //fprintf(fout, "  \n  #:\n");
@@ -225,38 +226,6 @@ void writeMainInputfile(struct runPar *run)
 // ****************************************************************************************************************************************************  
 
   */
-
-
-
-
-//Read the input file for local (system-dependent) variables: mcmc.local
-// ****************************************************************************************************************************************************  
-void readLocalInputfile()
-{
-  int i;
-  char localfilename[99], bla[500];
-  FILE *fin;
-  
-  sprintf(localfilename,"mcmc.local");
-  if((fin = fopen(localfilename,"r")) == NULL) {
-    printf("   Error reading local file: %s, aborting.\n\n\n",localfilename);
-    exit(1);
-  }
-  
-  //Use and l for floats: %lf, %lg, etc, rather than %f, %g
-  for(i=1;i<=3;i++) { //Read first 3 lines
-    fgets(bla,500,fin);
-  }  
-
-  //Data directory:
-  fscanf(fin, "%s",datadir);
-  
-  fclose(fin);
-}  //End of readLocalInputfile
-// ****************************************************************************************************************************************************  
-
-
-
 
 
 
@@ -306,7 +275,7 @@ void readMCMCinputfile(struct runPar *run)
     printf("     1: Apostolatos, simple precession, 12 parameters\n");
     printf("     2: LAL, single spin, 12 parameters\n");
     printf("     3: LAL, double spin, 15 parameters\n");
-    printf("   Please set mcmcWaveform in mcmc.input to one of these values.\n\n");
+    printf("   Please set mcmcWaveform in %s to one of these values.\n\n",run->mcmcFilename);
     exit(1);
   }
   run->nInjectPar = run->nMCMCpar;
@@ -505,7 +474,7 @@ void readInjectionInputfile(struct runPar *run)
       printf("     1: Apostolatos, simple precession, 12 parameters\n");
       printf("     2: LAL, single spin, 12 parameters\n");
       printf("     3: LAL, double spin, 15 parameters\n");
-      printf("   Please set injectionWaveform in mcmc.input to one of these values.\n\n");
+      printf("   Please set injectionWaveform in %s to one of these values.\n\n",run->injectionFilename);
       exit(1);
     }
   }
@@ -754,7 +723,14 @@ void readParameterInputfile(struct runPar *run)
       exit(1);
     }
     
-  } //End for
+    //Check whether  lower prior boundary <= INJECTION value <= upper boundary
+    if(run->injParVal[i] < run->priorBoundLow[i] || run->injParVal[i] > run->priorBoundUp[i]) {
+      printf("\n\n   Error reading parameter input file %s, parameter %d (%s):\n     the injection value lies outside the prior range.\n   Aborting...\n\n",
+	     run->parameterFilename,run->parNumber[i],run->parAbrev[run->parID[i]]);
+      exit(1);
+    }
+    
+  } //End for (i)
   
   
   if(run->injectSignal<=0) {
@@ -796,33 +772,75 @@ void readParameterInputfile(struct runPar *run)
 
 
 
+//Read the input file for system (system-dependent) variables, e.g. mcmc.input.system
 // ****************************************************************************************************************************************************  
-void setRandomInjectionParameters(struct runPar *run)  //Get random values for the 'true' parameters for the 12-parameter spinning template. Contain priors for the injection, not the MCMC. 
+void readSystemInputfile(struct runPar *run)
+{
+  int i;
+  char bla[500];
+  FILE *fin;
+  
+  if((fin = fopen(run->systemFilename,"r")) == NULL) {
+    printf("   Error reading system file: %s, aborting.\n\n\n",run->systemFilename);
+    exit(1);
+  } else {
+    printf("   Using system input file: %s.\n",run->parameterFilename);
+  }
+  
+  //Use and l for floats: %lf, %lg, etc, rather than %f, %g
+  for(i=1;i<=3;i++) { //Read first 3 lines
+    fgets(bla,500,fin);
+  }  
+
+  //Data directory:
+  fscanf(fin, "%s",datadir);
+  
+  fclose(fin);
+}  //End of readSystemInputfile
+// ****************************************************************************************************************************************************  
+
+
+
+
+
+
+
+
+
+
+
+
+// ****************************************************************************************************************************************************  
+void setRandomInjectionParameters(struct runPar *run)  
+// Get random values for the injection parameters.
 {
   int i=0;
   gsl_rng *ran;
-  double rannr1 = 0.0, rannr2=0.0, db=0.0;
+  double ranGauss = 0.0, ranUnif=0.0, db=0.0;
   ran = gsl_rng_alloc(gsl_rng_mt19937);  // GSL random-number seed
-  if(1==2 && run->injRanSeed == 0) {  //Select a random seed, *** ONLY FOR TESTING ***
+  
+  // Manually select a random seed, *** USE ONLY FOR TESTING ***
+  if(1==2 && run->injRanSeed == 0) {
     printf("\n  *** SELECTING RANDOM SEED ***  This should only be done while testing!!! setRandomInjectionParameters() \n\n");
     run->injRanSeed = 0;
     setseed(&run->injRanSeed);
     printf("  Seed: %d\n", run->injRanSeed);
   }
+  
   gsl_rng_set(ran, run->injRanSeed);     // Set seed
   
   for(i=0;i<run->nInjectPar;i++) {
-    db = run->injBoundUp[i]-run->injBoundLow[i];
-    rannr1 = gsl_ran_gaussian(ran,1.0);                                                   //Make sure you always draw the same number of random variables
-    rannr2 = gsl_rng_uniform(ran);                                                        //Make sure you always draw the same number of random variables
+    ranGauss = gsl_ran_gaussian(ran,run->injSigma[i]);                                    //Make sure you always draw the same number of random variables
+    ranUnif = gsl_rng_uniform(ran);                                                       //Make sure you always draw the same number of random variables
     if(run->injRanPar[i]==0) {                  
       run->injParVal[i] = run->injParValOrig[i];                                          //Keep the suggested value
     } else if(run->injRanPar[i]==1) {                                                     
-      run->injParVal[i] = run->injParValOrig[i] + rannr1*run->injSigma[i];                    //Draw random number from Gaussian
+      run->injParVal[i] = run->injParValOrig[i] + ranGauss;                               //Draw random number from Gaussian with width ranGauss
       run->injParVal[i] = max(run->injParVal[i],run->injBoundLow[i]);                     //Stick to the boundary, rather than redrawing to keep number of random numbers constant
       run->injParVal[i] = min(run->injParVal[i],run->injBoundUp[i]);
     } else if(run->injRanPar[i]==2) {
-      run->injParVal[i] = run->injBoundLow[i] + rannr2*db;                                //Draw random number from uniform range
+      db = run->injBoundUp[i]-run->injBoundLow[i];                                        //Width of the range
+      run->injParVal[i] = run->injBoundLow[i] + ranUnif*db;                               //Draw random number from uniform range with width db
     }
   }
   

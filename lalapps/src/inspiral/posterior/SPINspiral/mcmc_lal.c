@@ -556,7 +556,7 @@ void LALHpHc15(LALStatus *status, CoherentGW *waveform, SimInspiralTable *injPar
     
   // 4 parameters used after the computation of h+,x ********************//
   injParams->coa_phase = (float)par->par[7];
-  injParams->longitude = (float)par->par[4];
+  injParams->longitude = (float)fmod(longitude(par->par[4],GMST(par->par[2]))+mtpi,tpi);  //par[4] contains RA 
   injParams->latitude = (float)asin(par->par[5]);
   injParams->polarization = (float)par->par[8];
   

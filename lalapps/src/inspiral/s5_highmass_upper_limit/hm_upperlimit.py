@@ -1,3 +1,4 @@
+#!/usr/bin/python
 import scipy
 from scipy import interpolate
 import numpy
@@ -21,6 +22,9 @@ from pylal import db_thinca_rings
 from pylal import llwapp
 from pylal import rate
 from pylal import SimInspiralUtils
+from pylal.xlal.date import LIGOTimeGPS
+
+lsctables.LIGOTimeGPS = LIGOTimeGPS
 
 
 def get_far_threshold_and_segments(zerofname, live_time_program, verbose = False):
@@ -35,10 +39,10 @@ def get_far_threshold_and_segments(zerofname, live_time_program, verbose = False
 
   # extract false alarm rate threshold
   query = 'SELECT MIN(coinc_inspiral.false_alarm_rate) FROM coinc_inspiral JOIN coinc_event ON (coinc_event.coinc_event_id == coinc_inspiral.coinc_event_id) WHERE NOT EXISTS(SELECT * FROM time_slide WHERE time_slide.time_slide_id == coinc_event.time_slide_id AND time_slide.offset != 0);'
-  far, = connection.cursor().execute(query).selectone()
+  far, = connection.cursor().execute(query).fetchone()
 
   # extract segments.
-  seglists = get_thinca_zero_lag_segments(connection, program_name = live_time_program)
+  seglists = db_thinca_rings.get_thinca_zero_lag_segments(connection, program_name = live_time_program)
 
   # done
   connection.close()
@@ -47,7 +51,7 @@ def get_far_threshold_and_segments(zerofname, live_time_program, verbose = False
   return far, seglists
 
 def get_volume_derivative(injfnames, twoDMassBins, dBin, FAR, zero_lag_segments, gw):
-  live_time = abs(zero_lag_segments)
+  livetime = float(abs(zero_lag_segments))
   FARh = FAR*100000
   FARl = FAR*0.001
   nbins = 5
@@ -58,12 +62,12 @@ def get_volume_derivative(injfnames, twoDMassBins, dBin, FAR, zero_lag_segments,
   for far in FARS.centres():
     m, f = get_injections(injfnames, far, zero_lag_segments)
     print >>sys.stderr, "computing volume at FAR " + str(far)
-    vAt, vA2t = twoD_SearchVolume(f, m, twoDMassBins, dBin, gw, live_time, 1)  
+    vAt, vA2t = twoD_SearchVolume(f, m, twoDMassBins, dBin, gw, livetime, 1)  
     vAt.array = scipy.log10(vAt.array + 0.001)
     vA.append(vAt)
   # the derivitive is calcuated with respect to FAR * t
-  FARS = rate.LogarithmicBins(FARl * live_time, FARh * live_time, nbins)
-  return derivitave_fit(FARS, FAR * live_time, vA, twoDMassBins)
+  FARS = rate.LogarithmicBins(FARl * livetime, FARh * livetime, nbins)
+  return derivitave_fit(FARS, FAR * livetime, vA, twoDMassBins)
   
   
 def derivitave_fit(farts, FARt, vAs, twodbin):
@@ -152,6 +156,21 @@ WHERE
   return found, missed
 
 
+def trim_mass_space(eff, twodbin, minthresh=0.0, minM=25.0, maxM=100.0):
+  """
+  restricts array to only have data within the mass space and sets everything
+  outside the mass space to some canonical value, minthresh
+  """
+  x = eff.shape[0]
+  y = eff.shape[1]
+  c1 = twodbin.centres()[0]
+  c2 = twodbin.centres()[1]
+  numbins = 0
+  for i in range(x):
+    for j in range(y):
+      if c1[i] > c2[j] or (c1[i] + c2[j]) > maxM or (c1[i]+c2[j]) < minM: eff[i][j] = minthresh
+      else: numbins+=1
+
 def fix_masses(sims):
   """
   Function to duplicate the mass pairs to remove edge effects 
@@ -189,7 +208,7 @@ def scramble_pop(m, f):
 def scramble_dist(dist,relerr):
   """
   function to handle random calibration error.  Individually srambles the distances
-  of injection by a random error (log normal)
+  of injection by an error.
   """
   #return dist * float( scipy.exp( relerr * scipy.random.standard_normal(1) ) )
   return dist * (1-relerr)
@@ -309,16 +328,11 @@ FAR, seglists = get_far_threshold_and_segments(opts.full_data_file, opts.live_ti
 seglists -= veto_segments
 zero_lag_segments = seglists.intersection(opts.instruments) - seglists.union(set(seglists.keys()) - opts.instruments)
 
-print FAR, abs(zero_lag_segments)
+print FAR, float(abs(zero_lag_segments))
 
 
 Found, Missed = get_injections(opts.injfnames, FAR, zero_lag_segments, verbose = opts.verbose)
 
-
-# replace these with pylal versions ?
-# FIXME:  does this interact correctly with scramble_pop()?
-fix_masses(Found)
-fix_masses(Missed)
 
 # restrict the sims to a distance range
 Found = cut_distance(Found, 1, 2000)
@@ -326,9 +340,9 @@ Missed = cut_distance(Missed, 1, 2000)
 
 # get a 2D mass binning
 twoDMassBins = get_2d_mass_bins(1, 99, 50)
-# get log distance bins
-dBin = rate.LogarithmicBins(0.1,2500,200)
 
+# get log distance bins
+dBin = rate.LogarithmicBins(0.1,2500,100)
 
 gw = rate.gaussian_window2d(3,3,4)
 
@@ -336,7 +350,12 @@ gw = rate.gaussian_window2d(3,3,4)
 dvA = get_volume_derivative(opts.injfnames, twoDMassBins, dBin, FAR, zero_lag_segments, gw)
 
 print >>sys.stderr, "computing volume at FAR " + str(FAR)
-vA, vA2 = twoD_SearchVolume(Found, Missed, twoDMassBins, dBin, gw, abs(zero_lag_segments), opts.bootstrap_iterations)
+vA, vA2 = twoD_SearchVolume(Found, Missed, twoDMassBins, dBin, gw, float(abs(zero_lag_segments)), opts.bootstrap_iterations)
+
+#Trim the array to have sane values outside the total mass area of interest
+trim_mass_space(dvA, twoDMassBins, minthresh=0.0, minM=25.0, maxM=100.0)
+trim_mass_space(vA, twoDMassBins, vA.min()/10.0, minM=25.0, maxM=100.0)
+trim_mass_space(vA2, twoDMassBins, minthresh=0.0, minM=25.0, maxM=100.0)
 
 #output an XML file with the result
 xmldoc = ligolw.Document()

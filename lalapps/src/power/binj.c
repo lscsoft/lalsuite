@@ -61,9 +61,6 @@
 #include <lalappsGitID.h>
 
 
-int snprintf(char *str, size_t size, const char *format, ...);
-
-
 RCSID("$Id$");
 
 
