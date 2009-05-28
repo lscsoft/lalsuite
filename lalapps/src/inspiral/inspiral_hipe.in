@@ -1878,16 +1878,16 @@ if not gps_end_time:
 #   Step 2: determine analyzable times
 
 # Select on-source vs off-source (for triggered searches)
-try:
+if doExtTrig:
   exttrig_analyze = cp.get('input', 'exttrig-analyze')
-except:
+else:
   exttrig_analyze = None
 
 # Read segments for external trigger analysis
 exttrig_segments = pipeline.ScienceData()
-try:
+if doExtTrig:
   exttrig_segments.read(cp.get('input', 'exttrig-segments'), 0)
-except:
+else:
   assert (exttrig_analyze == 'all') or (exttrig_analyze is None), \
     "To use exttrig-analyze, exttrig-segments must point to a valid "\
     "segment file."
