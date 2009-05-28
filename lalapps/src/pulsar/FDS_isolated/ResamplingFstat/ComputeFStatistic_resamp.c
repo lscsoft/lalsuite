@@ -2239,6 +2239,9 @@ MultiCOMPLEX8TimeSeries* CalcTimeSeries(MultiSFTVector *multiSFTs,FILE *Out)
 	  /* Beta is a parameter used to create a Tukey window and signifies what fraction of the total length will constitute a rise and a fall */
 	  REAL8 Win_beta = (2.0*uvar_Dterms)/(REAL8)(N);
 
+	  if(Win_beta > 0.01)
+	    Win_beta = 0.01;
+
 	  /* Create the Window */
 	  Win = XLALCreateTukeyREAL8Window(N,Win_beta);
 
@@ -3055,6 +3058,7 @@ void ComputeFStat_resamp(LALStatus *status, const PulsarDopplerParams *doppler, 
   XLALDestroyREAL8Sequence(Fb_Imag);
   XLALDestroyREAL8Sequence(Fstat_temp);
 
+  DETATCHSTATUSPTR (status);
   RETURN (status);
 
 }
