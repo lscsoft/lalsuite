@@ -1488,7 +1488,8 @@ else:
 # create the Condor jobs that will be used in the DAG
 
 # check number of exttrig injections
-try:
+doExtTrig = cp.has_option('pipeline', 'exttrig-inj-start') and cp.has_option('pipeline', 'exttrig-inj-stop')
+if doExtTrig:
   startExttrig=int(cp.get('pipeline','exttrig-inj-start'))
   stopExttrig=int(cp.get('pipeline','exttrig-inj-stop'))
   exttrigInjections=[startExttrig, stopExttrig]
@@ -1501,12 +1502,8 @@ try:
     print >> sys.stderr, "exttrig-inj-stop must be larger than "\
                          "exttrig-inj-start."
     sys.exit(1)
-  doExtTrig = True
-except ConfigParser.NoOptionError:
+else:
   exttrigInjections=[0,0]
-  doExtTrig = False
-except:
-  raise Exception,  "Unknown exception %s : %s" %( sys.exc_type, sys.exc_value)
 
 
 # datafind:
