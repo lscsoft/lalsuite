@@ -56,7 +56,12 @@ The algorithms used in these functions are explained in detail in [Ref Needed].
 #define MpcInMeters 3.08568025e22
 
 #define DEBUGMODEL 0
-
+gsl_rng *RNG;
+double timewindow;
+REAL4Vector *model;
+REAL4Vector *Tmodel;
+REAL8Sequence **topdown_sum;
+REAL8 *normalisations;
 
 /*NRCSID (LALINSPIRALMCMCUSERC, "$Id: LALInspiralPhase.c,v 1.9 2003/04/14 00:27:22 sathya Exp $"); */
 

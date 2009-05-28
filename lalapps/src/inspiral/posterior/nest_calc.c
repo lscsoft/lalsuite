@@ -17,6 +17,13 @@
 
 #define infosafe 1.5
 
+gsl_matrix *cov_mat;
+ 
+CHAR outfile[512];
+double etawindow;
+ 
+INT4 seed;
+
 double logadd(double a,double b){
 if(a>b) return(a+log(1.0+exp(b-a)));
 else return(b+log(1.0+exp(a-b)));

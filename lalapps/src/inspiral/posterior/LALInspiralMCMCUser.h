@@ -83,8 +83,8 @@ NRCSID( LALINSPIRALMCMCUSERH, "$Id: LALInspiralMCMC.h,v 1.79 2007/02/19 15:52:17
 --------------------------------------------------------------------- 
 </lalLaTeX>  */
 
-gsl_rng *RNG;
-double timewindow;
+extern gsl_rng *RNG;
+extern double timewindow;
 
 double mc2mass1(double mc, double eta);
 
@@ -132,10 +132,10 @@ REAL8 MCMCLikelihood1IFO(LALMCMCInput *inputMCMC, LALMCMCParameter *parameter, i
 
 void MCMCInit1IFO(LALMCMCParameter *parameter, SnglInspiralTable *inspiralTable);
 
-REAL4Vector *model;
-REAL4Vector *Tmodel;
-REAL8Sequence **topdown_sum;
-REAL8 *normalisations;
+extern REAL4Vector *model;
+extern REAL4Vector *Tmodel;
+extern REAL8Sequence **topdown_sum;
+extern REAL8 *normalisations;
 
 
 REAL8 MCMCLikelihoodMultiCoherent(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter);

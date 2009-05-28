@@ -3,14 +3,14 @@
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_linalg.h>
 
-gsl_matrix *cov_mat;
+extern gsl_matrix *cov_mat;
 
-CHAR outfile[512];
-double etawindow;
+extern CHAR outfile[512];
+extern double etawindow;
 
 double logadd(double a,double b);
 
-INT4 seed;
+extern INT4 seed;
 
 void NestInit2PN(LALMCMCParameter *parameter, void *iT);
 
