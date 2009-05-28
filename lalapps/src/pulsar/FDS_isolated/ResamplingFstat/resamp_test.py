@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # Resampling Test Code. This code is much more readable and reusable than its predecessor. Author - Pinkesh Patel
-import sys,random,commands
+import sys,random,commands,math
 
 def main():
     
@@ -15,14 +15,14 @@ def main():
         Vars['TSFT'] = config.TSFT
     except:
         print "TSFT cannot be read"
-        sys.exit(0)
+        sys.exit(1)
 
     # Strength of signal
     try:
         Vars['h0'] = config.h0
     except:
         print "h0 cannot be read"
-        sys.exit(0)
+        sys.exit(1)
 
     # Cosine of iota
     try:
@@ -32,10 +32,10 @@ def main():
             Vars['cosi'] = random.uniform(config.cosi_min,config.cosi_max)
         except:
             print "Cannot read in cosi variable"
-            sys.exit(0)
-    if(Vars['cosi'] < 0):
-        print "cosi < 0 !!!"
-        sys.exit(0)
+            sys.exit(1)
+    if(math.fabs(Vars['cosi']) > 1):
+        print "abs(cosi) > 1 !!!"
+        sys.exit(1)
 
 
     # Initial Phase
@@ -46,10 +46,7 @@ def main():
             Vars['phi0'] = random.uniform(config.phi0_min,config.phi0_max)
         except:
             print "Cannot read in phi0 variable"
-            sys.exit(0)
-    if(Vars['phi0'] < 0):
-        print "phi0 < 0 !!!"
-        sys.exit(0)
+            sys.exit(1)
 
     # Polarization Angle
     try:
@@ -59,87 +56,84 @@ def main():
             Vars['psi'] = random.uniform(config.psi_min,config.psi_max)
         except:
             print "Cannot read in psi variable"
-            sys.exit(0)
-    if(Vars['psi'] < 0):
-        print "psi < 0 !!!"
-        sys.exit(0)
+            sys.exit(1)
 
     # Number of Dirichlet terms used.
     try:
         Vars['Dterms'] = float(config.Dterms)
     except:
         print "Dterms cannot be read"
-        sys.exit(0)
+        sys.exit(1)
 
     # Interferometer
     try:
         Vars['IFO'] = config.IFO
     except:
         print "IFO cannot be read"
-        sys.exit(0)
+        sys.exit(1)
 
     # Start Time
     try:
         Vars['t0'] = float(config.t0)
     except:
         print "t0 cannot be read"
-        sys.exit(0)
+        sys.exit(1)
 
     # Reference Time in SSB
     try:
         Vars['refTime'] = float(config.refTime)
     except:
         print "refTime cannot be read"
-        sys.exit(0)
+        sys.exit(1)
 
     # Output Directory
     try:
         Vars['Out'] = config.Out
     except:
         print "Out cannot be read"
-        sys.exit(0)
+        sys.exit(1)
 
     # Ephemeris Directory
     try:
         Vars['Ephem'] = config.Ephem
     except:
         print "Ephem cannot be read"
-        sys.exit(0)
+        sys.exit(1)
 
     # Ephemeris Year
     try:
         Vars['EphemYear'] = config.EphemYear
     except:
         print "EphemYear cannot be read"
-        sys.exit(0)
+        sys.exit(1)
 
     # Noise Sh
     try:
         Vars['Sh'] = float(config.Sh)
     except:
         print "Sh cannot be read"
-        sys.exit(0)
+        sys.exit(1)
  
     # Duration of Analysis
     try:
         Vars['TSpan'] = int(config.TSpan)
     except:
         print "TSpan cannot be read"
-        sys.exit(0)
+        sys.exit(1)
 
     # Number of SFTs to add
     try:
         Vars['NumSFTs'] = int(config.NumSFTs)
     except:
         print "NumSFTs cannot be read"
-        sys.exit(0)
+        sys.exit(1)
 
     # Number of Gaps to add
     try:
         Vars['NumGaps'] = int(config.NumGaps)
     except:
         print "NumGaps cannot be read"
-        sys.exit(0)
+        sys.exit(1)
 
     # Alpha (Right Ascension)
     try:
@@ -149,10 +143,10 @@ def main():
             Vars['Alpha'] = random.uniform(config.Alpha_min,config.Alpha_max)
         except:
             print "Cannot read in Alpha variable"
-            sys.exit(0)
-    if(Vars['Alpha'] < 0):
-        print "Alpha < 0 !!!"
-        sys.exit(0)
+            sys.exit(1)
+    if(Vars['Alpha'] < 0 or Vars['Alpha'] > 2.0*math.pi):
+        print "Alpha out of bounds !!!"
+        sys.exit(1)
 
     # Delta (Declination)
     try:
@@ -162,24 +156,24 @@ def main():
             Vars['Delta'] = random.uniform(config.Delta_min,config.Delta_max)
         except:
             print "Cannot read in Delta variable"
-            sys.exit(0)
-    if(Vars['Delta'] < 0):
-        print "Delta < 0 !!!"
-        sys.exit(0)
+            sys.exit(1)
+    if(math.fabs(Vars['Delta']) > math.pi/2.0):
+        print "abs(Delta) > pi/2 !!!"
+        sys.exit(1)
 
     # Minimum Frequency
     try:
         Vars['Fmin'] = config.Fmin
     except:
         print "Fmin cannot be read"
-        sys.exit(0)
+        sys.exit(1)
 
     # Band of Analysis
     try:
         Vars['Band'] = config.Band
     except:
         print "Band cannot be read"
-        sys.exit(0)
+        sys.exit(1)
 
     # Injection Frequency
     try: 
@@ -189,10 +183,10 @@ def main():
             Vars['Finj'] = random.uniform(config.Finj_min,config.Finj_max)
         except:
             print "Cannot read in Finj variable"
-            sys.exit(0)
+            sys.exit(1)
     if(Vars['Finj'] < 0):
         print "Finj < 0 !!!"
-        sys.exit(0)
+        sys.exit(1)
 
     # Spindown/ FDOT
     try: 
@@ -202,10 +196,7 @@ def main():
             Vars['FDot'] = random.uniform(config.FDot_min,config.FDot_max)
         except:
             print "Cannot read in FDot variable"
-            sys.exit(0)
-    if(Vars['FDot'] < 0):
-        print "FDot < 0 !!!"
-        sys.exit(0)
+            sys.exit(1)
 
     # Resolution
     try:
@@ -215,7 +206,7 @@ def main():
             Vars['Res'] = 1.0/Vars['TSpan']
         if(Vars['Res'] < 0):
             print "Resolution < 0"
-            sys.exit(0)
+            sys.exit(1)
     except:
         Vars['Res'] = 1.0/Vars['TSpan']
 
@@ -258,7 +249,7 @@ def main():
         G = commands.getoutput(FakeDataString)
     except:
         print "Tried to generate SFTs, failed"
-        sys.exit(0)
+        sys.exit(1)
 
     # Run v2()
     OutputFile = "OutputV"
@@ -362,8 +353,13 @@ def CreateTimeStampFile(Vars):
             
 
 def GenFakeDataString(addtonoise,Vars):
-    CreationBand = Vars['Band']*2
-    CreationFmin = Vars['Fmin']-Vars['Band']/2
+    if(Vars['Band'] > 1e-2):
+        CreationBand = Vars['Band']*2
+        CreationFmin = Vars['Fmin']-Vars['Band']/2
+    else:
+        CreationBand = 1
+        CreationFmin = Vars['Fmin'] - 0.5
+
     S = 'lalapps_Makefakedata_v4 ' + ' --Tsft ' + str(Vars['TSFT']) + ' --fmin ' + str(CreationFmin) + ' --h0 ' + str(Vars['h0']) + ' --Band ' + str(CreationBand) + ' --cosi ' + str(Vars['cosi']) + ' --psi ' + str(Vars['psi']) + ' --phi0 ' + str(Vars['phi0']) + ' --Freq ' + str(Vars['Finj']) + ' --Alpha ' + str(Vars['Alpha']) + ' --Delta ' + str(Vars['Delta']) + ' --IFO ' + str(Vars['IFO']) + ' --refTime ' + str(Vars['refTime']) + ' --outSFTbname ' + str(Vars['Out']) + ' --ephemDir ' + str(Vars['Ephem']) + ' --ephemYear ' + str(Vars['EphemYear']) + ' --f1dot ' + str(Vars['FDot']) + ' --noiseSqrtSh ' + str(Vars['Sh']**0.5) + ' --timestampsFile timestampsFile '
     return(S)
                          

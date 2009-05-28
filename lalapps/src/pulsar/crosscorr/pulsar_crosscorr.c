@@ -34,6 +34,7 @@
 #include <lal/PulsarCrossCorr.h>
 #include <lal/DopplerScan.h>
 #include <lal/ExtrapolatePulsarSpins.h>
+#include <lal/LogPrintf.h>
 #include <gsl/gsl_permutation.h>
 
 RCSID( "$Id: pulsar_crosscorr.c,v 1.23 2009/03/13 00:43:04 cchung Exp $");
@@ -48,6 +49,7 @@ BOOLEAN  uvar_averagePsi;
 BOOLEAN  uvar_averageIota;
 BOOLEAN  uvar_autoCorrelate;
 BOOLEAN  uvar_QCoeffs;
+BOOLEAN  uvar_timingOn;
 INT4     uvar_blocksRngMed; 
 INT4     uvar_detChoice;
 REAL8    uvar_startTime, uvar_endTime;
@@ -68,6 +70,7 @@ REAL8    uvar_q2Band;
 REAL8    uvar_q2Resolution;
 REAL8    uvar_brakingindexBand;
 REAL8    uvar_brakingindexResolution;
+REAL8    uvar_fRef;
 
 
 CHAR     *uvar_ephemDir=NULL;
@@ -203,7 +206,9 @@ int main(int argc, char *argv[]){
   static SFTConstraints constraints;
   INT4 sftcounter = 0, slidingcounter = 1, listLength = 0;
 
-  /*  MultiSFTVector *multiSFTs = NULL;   */
+  /* to time the code*/
+  clock_t t1;
+  clock_t t2;
 
   /* LAL error-handler */
   lal_errhandler = LAL_ERR_EXIT;
@@ -236,6 +241,16 @@ int main(int argc, char *argv[]){
     exit(1);
   }
 
+  if (uvar_QCoeffs && (LALUserVarWasSet(&uvar_fdot) || LALUserVarWasSet(&uvar_fddot))) {
+    fprintf(stderr, "fdot and fddot are not used if useQCoeffs is set\n");
+    exit(1);
+  }
+
+  if (!uvar_QCoeffs && (LALUserVarWasSet(&uvar_q1) || LALUserVarWasSet(&uvar_q1) || LALUserVarWasSet(&uvar_brakingindex))) {
+    fprintf(stderr, "useQCoeffs must be set in order to search over q1, q2 or braking index\n");
+    exit(1);
+  }
+
   if (uvar_fdotBand < 0) {
     fprintf(stderr, "frequency derivative band must be positive\n");
     exit(1);
@@ -248,6 +263,11 @@ int main(int argc, char *argv[]){
 
   if (uvar_fddotBand < 0) {
     fprintf(stderr, "frequency double derivative band must be positive\n");
+    exit(1);
+  }
+
+  if (uvar_fRef < 0) {
+    fprintf(stderr, "reference frequency must be positive\n");
     exit(1);
   }
 
@@ -311,6 +331,9 @@ int main(int argc, char *argv[]){
   /* get sft catalog */
   /* note that this code depends very heavily on the fact that the catalog
      returned by LALSFTdataFind is time sorted */
+
+  t1 = clock();
+
   LAL_CALL( LALSFTdataFind( &status, &catalog, uvar_sftDir, &constraints),
 	    &status);
   if ( (catalog == NULL) || (catalog->length == 0) ) {
@@ -319,6 +342,11 @@ int main(int argc, char *argv[]){
     exit(1);
   }
 
+  t2 = clock();
+
+  if (uvar_timingOn) {
+    LogPrintf(LOG_NORMAL, "Time taken to load sft catalog: %g s\n", ((double)(t2-t1)/(double)CLOCKS_PER_SEC));
+  }
 
   /* get SFT parameters so that we can initialise search frequency resolutions */
   /* calculate deltaF_SFT */
@@ -546,7 +574,8 @@ int main(int argc, char *argv[]){
 
 
   slidingcounter = 0;
- 
+  
+  t1 = clock(); 
  /***********start main calculations**************/
   /*outer loop over all sfts in catalog, so that we load only the relevant sfts each time*/
   for(sftcounter=0; sftcounter < (INT4)catalog->length -1; sftcounter++) {
@@ -797,8 +826,15 @@ int main(int argc, char *argv[]){
   } /* finish loop over all sfts */
   printf("finish loop over all sfts\n");
 
+  t2 = clock();
+
+  if (uvar_timingOn) {
+    LogPrintf(LOG_NORMAL, "Time taken for main loop: %g\n",((double)(t2-t1)/(double)CLOCKS_PER_SEC));
+  }
+
   counter = 0;
 
+  t1 = clock();
   /* print all variables to file */
   for (freqCounter = 0; freqCounter < nfreqLoops; freqCounter++) {
 
@@ -863,6 +899,10 @@ int main(int argc, char *argv[]){
     } /*endelse*/
   }
 
+  t2 = clock();
+  if (uvar_timingOn) {
+    LogPrintf(LOG_NORMAL, "Time taken to write to output file: %g\n", ((double)(t2-t1)/(double)CLOCKS_PER_SEC));
+  }
   /* select candidates  */
 
 
@@ -1469,7 +1509,6 @@ void CalculateFdots (LALStatus *status,
 
   ASSERT(fdots->length >= 6, status, PULSAR_CROSSCORR_ENULL, PULSAR_CROSSCORR_MSGENULL);
 
-
   grav = 6.67e-11;
   rstar = 1e4;
   c = 2.998e8;
@@ -1483,7 +1522,10 @@ void CalculateFdots (LALStatus *status,
   /* multiply q2 by the (pi R/c)^n-3 term*/
   /*q2 = q2*pow(LAL_PI*rstar/c, n-3);*/
 
-  /* hard code each derivative. symbolic differentiation too hard? */
+  q1 = q1/pow(uvar_fRef,5);
+  q2 = q2/pow(uvar_fRef, n);
+
+  /* hard code each derivative. symbolic differentiation too hard */
   fdots->data[0] = -(q1 * pow(f0, 5)) - (q2 * pow(f0, n));
 
   fdots->data[1] = -(5.0 * q1 * pow(f0, 4) * fdots->data[0])
@@ -1516,28 +1558,6 @@ void CalculateFdots (LALStatus *status,
 			 + 10.0*(n-1)*n*pow(f0,n-2)*fdots->data[1]*fdots->data[2]
  			 + 5.0*(n-1)*n*pow(f0,n-2)*fdots->data[0]*fdots->data[3]
 			 + n*pow(f0,n-1)*fdots->data[4]);
-/*  for (i=1; i < fdots->length; i++) {
-    counter = 1;
-    gwcounter = gwBrakingIndex;
-    emcounter = emBrakingIndex;
-    gwfactorial = 1;
-    emfactorial = 1;
-    fdotfactorial = 1;
-
-    while (counter <= i) {
- 
-      gwfactorial *= gwcounter;
-      emfactorial *= emcounter;
-      fdotfactorial *=
-
-      fdots->data[i] += -(gwfactorial * q1 * pow(f0, gwcounter-1) * pow(fdots->data[i-counter], counter) )
- 		        -(emfactorial * q2 * pow(fdots->data[i-counter], counter) *pow(f0, emcounter-1))
-      gwcounter--;
-      emcounter--;
-      counter++;
-    }
-  }
-*/
 
   DETATCHSTATUSPTR (status);
 
@@ -1559,6 +1579,7 @@ void initUserVars (LALStatus *status)
   uvar_autoCorrelate = FALSE;
   uvar_QCoeffs = FALSE;
   uvar_blocksRngMed = BLOCKSRNGMED;
+  uvar_timingOn = FALSE;
   uvar_detChoice = 2;
   uvar_f0 = F0;
   uvar_fBand = FBAND;
@@ -1585,6 +1606,7 @@ void initUserVars (LALStatus *status)
   uvar_brakingindex = 3;
   uvar_brakingindexBand = 0.0;
   uvar_brakingindexResolution = uvar_brakingindex/10.0;
+  uvar_fRef = 1.0;
 
   uvar_ephemDir = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
   strcpy(uvar_ephemDir,DEFAULT_EPHEMDIR);
@@ -1618,6 +1640,10 @@ void initUserVars (LALStatus *status)
 			  0, UVAR_OPTIONAL,
 			  "Include autocorrelations",
 			  &uvar_autoCorrelate);
+  LALRegisterBOOLUserVar( status->statusPtr, "timingOn",
+			  0, UVAR_OPTIONAL,
+			  "Print code timing information",
+			  &uvar_timingOn);
   LALRegisterREALUserVar( status->statusPtr, "f0",
 			  'f', UVAR_OPTIONAL,
 			  "Start search frequency",
@@ -1642,6 +1668,10 @@ void initUserVars (LALStatus *status)
 			  'r', UVAR_OPTIONAL,
 			  "Search frequency derivative resolution. Default: 1/T^2",
 			  &uvar_fdotResolution);
+  LALRegisterREALUserVar( status->statusPtr, "fRef",
+			  0, UVAR_OPTIONAL,
+			  "Reference frequency",
+			  &uvar_fRef);
   LALRegisterREALUserVar( status->statusPtr, "fddot",
 			  0, UVAR_OPTIONAL,
 			  "Start frequency double derivative",

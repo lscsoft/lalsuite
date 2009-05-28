@@ -18,8 +18,6 @@
 */
 
 /* 
-   $Id$
-  
    multipulsar injection routine, written for E10/S3 by Bruce Allen,
    10/2003.  Calls to Signal Injection Library added by Peter
    Shawhan.  
@@ -27,6 +25,8 @@
    2005/02 - Duncan Brown renamed variable to avoid Condor conflict
 
    2005/02 - Reinhard Prix removed the actuation scaling options
+
+   28 May 2009: renamed this code from 's3inject' to 'psinject' in lalsuite-GIT
 */
 
 #define _GNU_SOURCE

@@ -2239,6 +2239,9 @@ MultiCOMPLEX8TimeSeries* CalcTimeSeries(MultiSFTVector *multiSFTs,FILE *Out)
 	  /* Beta is a parameter used to create a Tukey window and signifies what fraction of the total length will constitute a rise and a fall */
 	  REAL8 Win_beta = (2.0*uvar_Dterms)/(REAL8)(N);
 
+	  if(Win_beta > 0.01)
+	    Win_beta = 0.01;
+
 	  /* Create the Window */
 	  Win = XLALCreateTukeyREAL8Window(N,Win_beta);
 
@@ -3038,7 +3041,7 @@ void ComputeFStat_resamp(LALStatus *status, const PulsarDopplerParams *doppler, 
     if(fstatVectorlength > new_length)
       {
 	fprintf(stderr," fstatVector's length is greater than total number of bins calculated. Something went wrong allocating fstatVector \n");
-	exit(0);
+	exit(1);
       }
     fmin_index = floor((TSeries->f_het-fstatVector->f0)/dF_closest + 0.5);
     q = 0;
