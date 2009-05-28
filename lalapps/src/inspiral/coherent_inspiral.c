@@ -171,6 +171,8 @@ LIGOTimeGPS gpsStartTime;           /* input data GPS start time    */
 INT8  gpsEndTimeNS     = 0;         /* input data GPS end time ns   */
 LIGOTimeGPS gpsEndTime;             /* input data GPS end time      */
 
+double raStep = 6.0;
+double decStep = 3.0;
 int  gpsStartTimeTemp   = 0;         /* input data GPS start time ns */
 int  gpsEndTimeTemp   = 0;         /* input data GPS start time ns */
 INT8   outTimeNS        = 0;            /* search summ out time    */
@@ -248,16 +250,12 @@ int main( int argc, char *argv[] )
   INT4   numCoincs        = 0;
   UINT4  numCohFiles      = 1;
   UINT4  cohFileID        = 1;
-  INT4   numCohTrigs      = 2000;  /*CHECK: should be in parse options */
 
   REAL4 totMass = 0.0;
   REAL8 muMass = 0.0;
   REAL8 deltaT= 0.0;
   REAL4 distNorm = 0.0;
   REAL4 templateNorm = 0.0;
-  /* CHECK: */
-  double raStep = 90.0;
-  double decStep = 45.0;
   REAL8 c0= 0.0;
   REAL8 c2= 0.0;
   REAL4 c3= 0.0;
@@ -1204,6 +1202,8 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 "  --maximize-over-chirp        do clustering\n"\
 "  --gps-start-time SEC         GPS second of data start time (needed if globbing)\n"\
 "  --gps-end-time SEC           GPS second of data end time (needed if globbing)\n"\
+"  --ra-step         raStep     right-ascension step-size (in degrees)\n"\
+"  --dec-step        decStep    declination step-size (in degrees)\n"\
 "\n"
 #define USAGE3 \
 "  --write-events               write events\n"\
@@ -1253,6 +1253,8 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
      {"write-cohh1h2snr",         no_argument,       &cohH1H2SNROut,     1 },
      {"gps-start-time",           required_argument, 0,                 'a'},
      {"gps-end-time",             required_argument, 0,                 'b'},
+     {"ra-step",                  required_argument, 0,                 'R'},
+     {"dec-step",                 required_argument, 0,                 'D'},
      {"output-path",              required_argument, 0,                 'P'},
      {"H1-framefile",             required_argument, 0,                 'A'},
      {"H2-framefile",             required_argument, 0,                 'Z'},
@@ -1273,7 +1275,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
        size_t optarg_len;
 
        c = getopt_long_only( argc, argv,
-           "A:B:a:b:G:I:L:l:e:g:W:X:Y:t:w:n:P:T:V:Z:d:f:h:p:r:u:v:",
+           "A:B:a:b:D:G:I:L:l:e:g:W:X:Y:t:w:n:P:R:T:V:Z:d:f:h:p:r:u:v:",
            long_options, &option_index );
 
        if ( c == -1 )
@@ -1303,6 +1305,16 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
            H1file = 1;
 	   ADD_PROCESS_PARAM( "string", "%s", optarg );
 	   break;
+
+         case 'D': /* set right-ascension step-size (in degrees) */
+           decStep = atof (optarg);
+           ADD_PROCESS_PARAM( "float", "%e", decStep );
+           break;
+
+         case 'R': /* set right-ascension step-size (in degrees) */
+           raStep = atof (optarg);
+           ADD_PROCESS_PARAM( "float", "%e", raStep );
+           break;
 
          case 'G':
 	   optarg_len = strlen( optarg ) + 1;
