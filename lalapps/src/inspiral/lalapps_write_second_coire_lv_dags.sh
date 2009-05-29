@@ -255,7 +255,7 @@ echo " done."
 
 #get first_coire injection files
 /bin/echo -n "Generating first_coire injection file list..."
-for injstring in BNS001INJ NSBH001INJ BBH001INJ SPIN001INJ FULLRANGE001INJ; do
+for injstring in BBHLININJ BBHLOGINJ BBHSPINLININJ BBHSPINLOGINJ BNSLININJ BNSLOGINJ BNSSPINLININJ BNSSPINLOGINJ NSBHLININJ NSBHLOGINJ NSBHSPINLININJ NSBHSPINLOGINJ BNS001INJ; do
   pushd first_coire_files/${injstring}/ > /dev/null
   for combo in H1H2L1V1 H1H2L1 H1H2V1 H1L1V1 H2L1V1 H1H2 H1L1 H2L1 H1V1 H2V1 L1V1; do
     for file in ${combo}-COIRE_${injstring}_${cat}*xml.gz; do
@@ -268,7 +268,7 @@ done
 
 /bin/echo -n "Generating injection second_coire.dag and .sub files..."
 if [ 1 ]; then
-  for injstring in BNS001INJ NSBH001INJ BBH001INJ SPIN001INJ FULLRANGE001INJ; do
+  for injstring in BBHLININJ BBHLOGINJ BBHSPINLININJ BBHSPINLOGINJ BNSLININJ BNSLOGINJ BNSSPINLININJ BNSSPINLOGINJ NSBHLININJ NSBHLOGINJ NSBHSPINLININJ NSBHSPINLOGINJ BNS001INJ; do
     #get HL-INJ file
     for file in `ls ../*inj/HL*${injstring}*`; do
       hlinjfile=$file
@@ -466,7 +466,7 @@ if [ 1 ]; then
   echo "MAXJOBS coire 20"
 fi > second_coire_injection.dag
 
-for injstring in BNS001INJ NSBH001INJ BBH001INJ SPIN001INJ FULLRANGE001INJ; do
+for injstring in BBHLININJ BBHLOGINJ BBHSPINLININJ BBHSPINLOGINJ BNSLININJ BNSLOGINJ BNSSPINLININJ BNSSPINLOGINJ NSBHLININJ NSBHLOGINJ NSBHSPINLININJ NSBHSPINLOGINJ BNS001INJ; do
   if [ 1 ]; then
     echo "universe = standard"
     echo "executable = ${coire_path}"
@@ -481,7 +481,7 @@ for injstring in BNS001INJ NSBH001INJ BBH001INJ SPIN001INJ FULLRANGE001INJ; do
   fi > second_coire_${injstring}.coire.sub
 done
 
-for injstring in BNS001INJ NSBH001INJ BBH001INJ SPIN001INJ FULLRANGE001INJ; do
+for injstring in BBHLININJ BBHLOGINJ BBHSPINLININJ BBHSPINLOGINJ BNSLININJ BNSLOGINJ BNSSPINLININJ BNSSPINLOGINJ NSBHLININJ NSBHLOGINJ NSBHSPINLININJ NSBHSPINLOGINJ BNS001INJ; do
   if [ 1 ]; then
     echo "universe = standard"
     echo "executable = ${coire_path}"
@@ -739,7 +739,7 @@ for mass in mchirp_2_8 mchirp_8_17 mchirp_17_35; do
     mkdir second_coire_files/${cat}/${mass}
   fi
 done
-for injstring in BNS001INJ NSBH001INJ BBH001INJ SPIN001INJ FULLRANGE001INJ; do
+for injstring in BBHLININJ BBHLOGINJ BBHSPINLININJ BBHSPINLOGINJ BNSLININJ BNSLOGINJ BNSSPINLININJ BNSSPINLOGINJ NSBHLININJ NSBHLOGINJ NSBHSPINLININJ NSBHSPINLOGINJ BNS001INJ; do
   if [ ! -d second_coire_files/${injstring} ] ; then
     mkdir second_coire_files/${injstring}
   fi

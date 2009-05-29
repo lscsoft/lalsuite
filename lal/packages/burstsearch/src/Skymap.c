@@ -760,8 +760,8 @@ int XLALSkymapSignalHypothesis(XLALSkymapPlanType* plan, double* p, double sigma
     delay_limits[1] =  plan->hl;
     delay_limits[2] = -plan->hv;
     delay_limits[3] =  plan->hv;
-    delay_limits[4] = -plan->lv;
-    delay_limits[5] =  plan->lv;    
+    delay_limits[4] = -plan->lv - 1;
+    delay_limits[5] =  plan->lv + 1;    
     return XLALSkymapSignalHypothesisWithLimits(plan, p, sigma, w, begin, end, x, counts, modes, delay_limits);
 }
 

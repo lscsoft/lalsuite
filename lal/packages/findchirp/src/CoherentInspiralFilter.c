@@ -1393,7 +1393,7 @@ LALCoherentInspiralFilterSegment (
   REAL4                               nullStatRe    = 0.0;
   REAL4                               nullStatIm    = 0.0;
   REAL4                               nullNorm      = 0.0;
-  REAL8                               nullStatistic = 0.0;
+  REAL4                               nullStatistic = 0.0;
   REAL4                               cohSnrRe      = 0.0;
   REAL4                               cohSnrIm      = 0.0;
   REAL4                               nullNumerRe   = 0.0;

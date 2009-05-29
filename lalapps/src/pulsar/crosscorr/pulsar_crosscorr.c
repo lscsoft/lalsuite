@@ -34,7 +34,6 @@
 #include <lal/PulsarCrossCorr.h>
 #include <lal/DopplerScan.h>
 #include <lal/ExtrapolatePulsarSpins.h>
-#include <lal/LogPrintf.h>
 #include <gsl/gsl_permutation.h>
 
 RCSID( "$Id: pulsar_crosscorr.c,v 1.23 2009/03/13 00:43:04 cchung Exp $");
@@ -207,8 +206,7 @@ int main(int argc, char *argv[]){
   INT4 sftcounter = 0, slidingcounter = 1, listLength = 0;
 
   /* to time the code*/
-  clock_t t1;
-  clock_t t2;
+  time_t t1, t2;
 
   /* LAL error-handler */
   lal_errhandler = LAL_ERR_EXIT;
@@ -332,7 +330,7 @@ int main(int argc, char *argv[]){
   /* note that this code depends very heavily on the fact that the catalog
      returned by LALSFTdataFind is time sorted */
 
-  t1 = clock();
+  time(&t1);
 
   LAL_CALL( LALSFTdataFind( &status, &catalog, uvar_sftDir, &constraints),
 	    &status);
@@ -342,10 +340,10 @@ int main(int argc, char *argv[]){
     exit(1);
   }
 
-  t2 = clock();
+  time(&t2);
 
   if (uvar_timingOn) {
-    LogPrintf(LOG_NORMAL, "Time taken to load sft catalog: %g s\n", ((double)(t2-t1)/(double)CLOCKS_PER_SEC));
+    fprintf(stderr, "Time taken to load sft catalog: %f s\n", difftime(t2,t1));
   }
 
   /* get SFT parameters so that we can initialise search frequency resolutions */
@@ -575,7 +573,7 @@ int main(int argc, char *argv[]){
 
   slidingcounter = 0;
   
-  t1 = clock(); 
+  time(&t1); 
  /***********start main calculations**************/
   /*outer loop over all sfts in catalog, so that we load only the relevant sfts each time*/
   for(sftcounter=0; sftcounter < (INT4)catalog->length -1; sftcounter++) {
@@ -826,15 +824,15 @@ int main(int argc, char *argv[]){
   } /* finish loop over all sfts */
   printf("finish loop over all sfts\n");
 
-  t2 = clock();
+  time(&t2);
 
   if (uvar_timingOn) {
-    LogPrintf(LOG_NORMAL, "Time taken for main loop: %g\n",((double)(t2-t1)/(double)CLOCKS_PER_SEC));
+    fprintf(stderr,"Time taken for main loop: %f\n",difftime(t2, t1));
   }
 
   counter = 0;
 
-  t1 = clock();
+  time(&t1);
   /* print all variables to file */
   for (freqCounter = 0; freqCounter < nfreqLoops; freqCounter++) {
 
@@ -899,9 +897,9 @@ int main(int argc, char *argv[]){
     } /*endelse*/
   }
 
-  t2 = clock();
+  time(&t2);
   if (uvar_timingOn) {
-    LogPrintf(LOG_NORMAL, "Time taken to write to output file: %g\n", ((double)(t2-t1)/(double)CLOCKS_PER_SEC));
+    fprintf(stderr,"Time taken to write to output file: %f\n", difftime(t2, t1));
   }
   /* select candidates  */
 
