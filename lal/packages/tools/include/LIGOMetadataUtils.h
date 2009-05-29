@@ -477,12 +477,12 @@ LALIfoScanSearchSummary(
     );
 
 void
-LALDistanceScanSummValue (
+LALDistanceScanSummValueTable (
     LALStatus            *status,
-    SummValueTable       *summList,
+    SummValueTable       *summValueList,
     LIGOTimeGPS          gps,
-    CHAR                 *ifo,
-    REAL4                 distance
+    const CHAR           *ifo,
+    REAL4                *distance
     );
 
 void
@@ -864,11 +864,11 @@ XLALInspiralIotaCutBCVC(
 
 void
 LALInspiralDistanceCutCleaning(
-    LALStatus *status, 
+    LALStatus                  *status, 
     CoincInspiralTable        **coincInspiral,
     InspiralAccuracyList       *accuracyParams,
     REAL4 			snrThreshold,
-    SummValueTable            **summValueList,
+    SummValueTable             *summValueList,
     LALSegList                 *vetoSegsH1,
     LALSegList                 *vetoSegsH2
     );

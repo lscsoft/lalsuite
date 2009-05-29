@@ -705,7 +705,7 @@ LALDistanceScanSummValueTable (
     LALStatus            *status,
     SummValueTable       *summValueList,
     LIGOTimeGPS          gps,
-    CHAR                 *ifo,
+    const CHAR           *ifo,
     REAL4                *distance)
 /* </lalVerbatim> */
 {
