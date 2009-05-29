@@ -62,6 +62,32 @@ typedef enum {
     VOT_COMPLEX_REAL8
 } VOTABLE_DATATYPE;
 
+/**
+ * \brief List of all supported VOTable \c PARAM element attributes
+ *
+ * This enumeration contains all supported attributes of the
+ * VOTable \c PARAM element
+ *
+ * \sa XLALGetSingleVOTableResourceParamAttribute
+ *
+ * \author Oliver Bock\n
+ * Albert-Einstein-Institute Hannover, Germany
+ */
+typedef enum {
+    VOT_ID = 1,
+    VOT_UNIT,
+    VOT_DATATYPE,
+    VOT_PRECISION,
+    VOT_WIDTH,
+    VOT_REF,
+    VOT_NAME,
+    VOT_UCD,
+    VOT_UTYPE,
+    VOT_ARRAYSIZE,
+    VOT_VALUE
+} VOTABLE_PARAM_ATTRIBUTE;
+
+
 xmlNodePtr XLALCreateVOTableParamNode(const char *name,
                                       const char *unit,
                                       VOTABLE_DATATYPE datatype,
@@ -82,7 +108,7 @@ xmlChar * XLALGetSingleVOTableResourceParamAttribute(const xmlDocPtr xmlDocument
                                                      const char *resourceType,
                                                      const char *resourceName,
                                                      const char *paramName,
-                                                     const char *paramAttribute);
+                                                     VOTABLE_PARAM_ATTRIBUTE paramAttribute);
 
 
 /* C++ protection */

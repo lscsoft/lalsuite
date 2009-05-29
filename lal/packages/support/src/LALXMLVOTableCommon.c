@@ -469,10 +469,11 @@ xmlChar * XLALGetSingleVOTableResourceParamAttribute(const xmlDocPtr xmlDocument
                                                      const char *resourceType,
                                                      const char *resourceName,
                                                      const char *paramName,
-                                                     const char *paramAttribute)
+                                                     VOTABLE_PARAM_ATTRIBUTE paramAttribute)
 {
     /* set up local variables */
     static const CHAR *logReference = "XLALGetSingleVOTableResourceParamAttribute";
+    CHAR *paramAttributeString = NULL;
     CHAR xpath[XPATHSTR_MAXLEN] = {0};
     static const XML_NAMESPACE xmlVOTableNamespace[1] = {{BAD_CAST(VOTABLE_NS_PREFIX), BAD_CAST(VOTABLE_NS_URL)}};
     const XML_NAMESPACE_VECTOR xmlNsVector = {xmlVOTableNamespace, 1};
@@ -494,9 +495,48 @@ xmlChar * XLALGetSingleVOTableResourceParamAttribute(const xmlDocPtr xmlDocument
         XLALPrintError("Invalid input parameters: paramName\n");
         XLAL_ERROR_NULL(logReference, XLAL_EINVAL);
     }
-    if(!paramAttribute) {
+    if(paramAttribute <= 0) {
         XLALPrintError("Invalid input parameters: paramAttribute\n");
         XLAL_ERROR_NULL(logReference, XLAL_EINVAL);
+    }
+    else {
+        switch(paramAttribute) {
+            case VOT_ID:
+                paramAttributeString = "ID";
+                break;
+            case VOT_UNIT:
+                paramAttributeString = "unit";
+                break;
+            case VOT_DATATYPE:
+                paramAttributeString = "datatype";
+                break;
+            case VOT_PRECISION:
+                paramAttributeString = "precision";
+                break;
+            case VOT_WIDTH:
+                paramAttributeString = "width";
+                break;
+            case VOT_REF:
+                paramAttributeString = "ref";
+                break;
+            case VOT_NAME:
+                paramAttributeString = "name";
+                break;
+            case VOT_UCD:
+                paramAttributeString = "ucd";
+                break;
+            case VOT_UTYPE:
+                paramAttributeString = "utype";
+                break;
+            case VOT_ARRAYSIZE:
+                paramAttributeString = "arraysize";
+                break;
+            case VOT_VALUE:
+                paramAttributeString = "value";
+                break;
+            default:
+                paramAttributeString = "UNKNOWN";
+        }
     }
 
     /* prepare XPath search */
@@ -504,9 +544,9 @@ xmlChar * XLALGetSingleVOTableResourceParamAttribute(const xmlDocPtr xmlDocument
             xpath,
             XPATHSTR_MAXLEN,
             "//"VOTABLE_NS_PREFIX":RESOURCE[@utype='%s' and @name='%s']/"VOTABLE_NS_PREFIX":PARAM[@name='%s']/@%s",
-            resourceType, resourceName, paramName, paramAttribute) < 0)
+            resourceType, resourceName, paramName, paramAttributeString) < 0)
     {
-        XLALPrintError("XPath statement construction failed: %s.%s.%s\n", resourceName, paramName, paramAttribute);
+        XLALPrintError("XPath statement construction failed: %s.%s.%s\n", resourceName, paramName, paramAttributeString);
         XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
     }
 

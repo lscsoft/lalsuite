@@ -178,7 +178,7 @@ INT4 XLALVOTableDoc2LIGOTimeGPSByName(const xmlDocPtr xmlDocument, const char *n
     }
 
     /* retrieve LIGOTimeGPS.gpsSeconds */
-    nodeContent = (xmlChar *)XLALGetSingleVOTableResourceParamAttribute(xmlDocument, "LIGOTimeGPS", name, "gpsSeconds", "value");
+    nodeContent = (xmlChar *)XLALGetSingleVOTableResourceParamAttribute(xmlDocument, "LIGOTimeGPS", name, "gpsSeconds", VOT_VALUE);
 
     /* parse and finally store content */
     if(!nodeContent || sscanf((char*)nodeContent, "%i", &ltg->gpsSeconds) == EOF) {
@@ -190,7 +190,7 @@ INT4 XLALVOTableDoc2LIGOTimeGPSByName(const xmlDocPtr xmlDocument, const char *n
 
     /* retrieve LIGOTimeGPS.gpsNanoSeconds */
     xmlFree(nodeContent);
-    nodeContent = (xmlChar *)XLALGetSingleVOTableResourceParamAttribute(xmlDocument, "LIGOTimeGPS", name, "gpsNanoSeconds", "value");
+    nodeContent = (xmlChar *)XLALGetSingleVOTableResourceParamAttribute(xmlDocument, "LIGOTimeGPS", name, "gpsNanoSeconds", VOT_VALUE);
 
     /* parse and finally store content */
     if(!nodeContent || sscanf((char*)nodeContent, "%i", &ltg->gpsNanoSeconds) == EOF) {
@@ -419,7 +419,7 @@ INT4 XLALVOTableDoc2BinaryOrbitParamsByName(const xmlDocPtr xmlDocument, const c
     }
 
     /* retrieve BinaryOrbitParams.argp */
-    nodeContent = (xmlChar *)XLALGetSingleVOTableResourceParamAttribute(xmlDocument, "BinaryOrbitParams", name, "argp", "value");
+    nodeContent = (xmlChar *)XLALGetSingleVOTableResourceParamAttribute(xmlDocument, "BinaryOrbitParams", name, "argp", VOT_VALUE);
 
     /* parse and finally store content */
     if(!nodeContent || sscanf((char*)nodeContent, "%lf", &bop->argp) == EOF) {
@@ -431,7 +431,7 @@ INT4 XLALVOTableDoc2BinaryOrbitParamsByName(const xmlDocPtr xmlDocument, const c
 
     /* retrieve BinaryOrbitParams.asini */
     xmlFree(nodeContent);
-    nodeContent = (xmlChar *)XLALGetSingleVOTableResourceParamAttribute(xmlDocument, "BinaryOrbitParams", name, "asini", "value");
+    nodeContent = (xmlChar *)XLALGetSingleVOTableResourceParamAttribute(xmlDocument, "BinaryOrbitParams", name, "asini", VOT_VALUE);
 
     /* parse and finally store content */
     if(!nodeContent || sscanf((char*)nodeContent, "%lf", &bop->asini) == EOF) {
@@ -443,7 +443,7 @@ INT4 XLALVOTableDoc2BinaryOrbitParamsByName(const xmlDocPtr xmlDocument, const c
 
     /* retrieve PulsarDopplerParams.ecc */
     xmlFree(nodeContent);
-    nodeContent = (xmlChar *)XLALGetSingleVOTableResourceParamAttribute(xmlDocument, "BinaryOrbitParams", name, "ecc", "value");
+    nodeContent = (xmlChar *)XLALGetSingleVOTableResourceParamAttribute(xmlDocument, "BinaryOrbitParams", name, "ecc", VOT_VALUE);
 
     /* parse and finally store content */
     if(!nodeContent || sscanf((char*)nodeContent, "%lf", &bop->ecc) == EOF) {
@@ -455,7 +455,7 @@ INT4 XLALVOTableDoc2BinaryOrbitParamsByName(const xmlDocPtr xmlDocument, const c
 
     /* retrieve PulsarDopplerParams.period */
     xmlFree(nodeContent);
-    nodeContent = (xmlChar *)XLALGetSingleVOTableResourceParamAttribute(xmlDocument, "BinaryOrbitParams", name, "period", "value");
+    nodeContent = (xmlChar *)XLALGetSingleVOTableResourceParamAttribute(xmlDocument, "BinaryOrbitParams", name, "period", VOT_VALUE);
 
     /* parse and finally store content */
     if(!nodeContent || sscanf((char*)nodeContent, "%lf", &bop->period) == EOF) {
@@ -615,7 +615,7 @@ INT4 XLALVOTableDoc2PulsarSpinsByName(const xmlDocPtr xmlDocument,
     }
 
     /* retrieve arraysize (number of pulsar spins) */
-    nodeContent = XLALGetSingleVOTableResourceParamAttribute(xmlDocument, resourceType, resourceName, paramName, "arraysize");
+    nodeContent = XLALGetSingleVOTableResourceParamAttribute(xmlDocument, resourceType, resourceName, paramName, VOT_ARRAYSIZE);
     if(!nodeContent || sscanf((char*)nodeContent, "%i", &arraySize) == EOF || arraySize == 0) {
         /* clean up*/
         if(nodeContent) xmlFree(nodeContent);
@@ -625,7 +625,7 @@ INT4 XLALVOTableDoc2PulsarSpinsByName(const xmlDocPtr xmlDocument,
 
     /* retrieve pulsar spin array (string) */
     xmlFree(nodeContent);
-    nodeContent = (xmlChar *)XLALGetSingleVOTableResourceParamAttribute(xmlDocument, resourceType, resourceName, paramName, "value");
+    nodeContent = (xmlChar *)XLALGetSingleVOTableResourceParamAttribute(xmlDocument, resourceType, resourceName, paramName, VOT_VALUE);
     if(!nodeContent) {
         XLALPrintError("Invalid node content encountered: %s.%s\n", resourceName, paramName);
         XLAL_ERROR(logReference, XLAL_EDATA);
@@ -864,7 +864,7 @@ INT4 XLALVOTableDoc2PulsarDopplerParamsByName(const xmlDocPtr xmlDocument, const
     }
 
     /* retrieve PulsarDopplerParams.Alpha */
-    nodeContent = (xmlChar *)XLALGetSingleVOTableResourceParamAttribute(xmlDocument, "PulsarDopplerParams", name, "Alpha", "value");
+    nodeContent = (xmlChar *)XLALGetSingleVOTableResourceParamAttribute(xmlDocument, "PulsarDopplerParams", name, "Alpha", VOT_VALUE);
 
     /* parse and finally store content */
     if(!nodeContent || sscanf((char*)nodeContent, "%lf", &pdp->Alpha) == EOF) {
@@ -876,7 +876,7 @@ INT4 XLALVOTableDoc2PulsarDopplerParamsByName(const xmlDocPtr xmlDocument, const
 
     /* retrieve PulsarDopplerParams.Delta */
     xmlFree(nodeContent);
-    nodeContent = (xmlChar *)XLALGetSingleVOTableResourceParamAttribute(xmlDocument, "PulsarDopplerParams", name, "Delta", "value");
+    nodeContent = (xmlChar *)XLALGetSingleVOTableResourceParamAttribute(xmlDocument, "PulsarDopplerParams", name, "Delta", VOT_VALUE);
 
     /* parse and finally store content */
     if(!nodeContent || sscanf((char*)nodeContent, "%lf", &pdp->Delta) == EOF) {
