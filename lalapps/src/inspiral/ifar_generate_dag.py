@@ -126,3 +126,26 @@ print "\n   condor_submit_dag lvS5stat.dag"
 print "\nfrom a condor submit machine (e.g. hydra.phys.uwm.edu)"
 
 subprocess.call(["condor_submit_dag lvS5stat.dag"],shell=True)
+
+dagstatus = 1
+
+while dagstatus==1:
+
+  subprocess.call(["sleep 600"],shell=True)
+
+  subprocess.call(["tail -1 lvS5stat.dag.dagman.out | awk '{print $10 \" \" $11}' > lastline_lvS5stat.txt"],shell=True)
+
+  dagfile = open("lastline_lvS5stat.txt", "r")
+  for line in dagfile:
+    dexit=line.rstrip()
+    if dexit == "STATUS 0":
+      print "The lvS5stat dag is complete!"
+      dagstatus=0
+    else:
+      dagstatus=1
+  dagfile.close()
+
+subprocess.call(["lalapps_generate_upper_limits -f upper_limit.ini"],shell=True)
+
+subprocess.call(["condor_submit_dag upper_limit.dag"],shell=True)
+

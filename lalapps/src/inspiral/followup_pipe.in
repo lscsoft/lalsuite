@@ -358,6 +358,7 @@ if not opts.disable_followup:
     oddsJob         = followupoddsJob(opts,cp)
     chiaCDataInspJob= followUpInspJob(cp, 'chia')
     chiaJob         = followUpChiaJob(opts,cp)
+    cohireJob       = followUpCohireJob(opts,cp)
     chiaPlotJob     = plotChiaJob(opts,cp)
     fuTriggerJob    = followupTriggerJob(opts,cp)
     checkListJob    = makeCheckListJob(opts,cp)
@@ -523,6 +524,8 @@ if not opts.disable_followup and not opts.read_times:
     # coincident trigger level. it takes many ifos as input. 
     skyNode = lalapps_skyMapNode(skyMapJob,trig,opts)
     chiaNode = followUpChiaNode(chiaJob,trig,opts,dag,cp)
+    cohireNode = followUpCohireNode(cohireJob,chiaJob.outputPath,trig,chiaNode,dag,dag.page,opts)
+    chiaPlotNode = plotChiaNode(chiaPlotJob,chiaJob.outputPath,trig,cohireNode,dag,dag.page,opts,cp)
  
     #Lets make a new section for this event
     event_title = 'Trigger ID = '+str(trig.eventID)+ ' Stat = '+str(trig.statValue)
@@ -572,7 +575,8 @@ if not opts.disable_followup and not opts.read_times:
       chiaCDataNode = followUpInspNode(chiaCDataInspJob,inspiral_process_params[ifo], ifo, trig, cp, opts, dag, inspiralDataFindNode.outputFileName,inspiralDataFindNode,'inspiral_datafind',type='chia')
       #skyNode.append_insp_node(inspiralNode,ifo)
       skyNode.append_insp_node(cohInspNode,ifo)
-      chiaNode.append_insp_node(chiaCDataNode,ifo)      
+      chiaNode.append_insp_node(chiaCDataNode,ifo)     
+      chiaPlotNode.append_insp_node(chiaCDataNode,ifo) 
       headInspiralNode = followUpInspNode(headInspJob,inspiral_process_params[ifo], ifo, trig, cp, opts, dag, inspiralDataFindNode.outputFileName,inspiralDataFindNode,'inspiral_datafind', 'head', bank)
 
 
@@ -637,6 +641,7 @@ if not opts.disable_followup and not opts.read_times:
         cohInspNodeNotrig = followUpInspNode(cohInspJob,inspiral_process_params[ifo], trig.ifolist_in_coinc[0], trig, cp, opts, dag, inspiralDataFindNode.outputFileName,inspiralDataFindNode,'inspiral_datafind',type='coh')
         chiaCDataNodeNotrig = followUpInspNode(chiaCDataInspJob,inspiral_process_params[ifo], trig.ifolist_in_coinc[0], trig, cp, opts, dag, inspiralDataFindNode.outputFileName,inspiralDataFindNode,'inspiral_datafind',type='chia')
         chiaNode.append_insp_node(chiaCDataNodeNotrig,ifo)
+        chiaPlotNode.append_insp_node(chiaCDataNodeNotrig,ifo)
         skyNode.append_insp_node(cohInspNodeNotrig,ifo)
 
         # generate the snr/chisq time series for each triggered template
@@ -672,12 +677,9 @@ if not opts.disable_followup and not opts.read_times:
     oddsNode = followupoddsNode(oddsJob,inspiral_process_params, trig, randomseed, cp, opts, dag)
 
     #SETUP CHIA JOBS
-    #CHECK: chiaNode.add_node_to_dag(dag,opts,trig)
-    chiaPlotNode = plotChiaNode(chiaPlotJob,chiaJob.outputPath,trig,chiaNode,dag,dag.page,opts)
-    #CHECK: chiaPlotNode = followUpChiaPlotNode(chiaPlotJob,trig,chiaNode,dag,page,opts)
-    #Need to create this from scratch: chia_process_params
-    #CHECK:chiaNode = followUpChiaNode(chiaJob,inspiral_process_params[maxIFO],trig, cp, opts, dag , skyNode , skyNodeNotrig )
-
+    #chiaPlotNode = plotChiaNode(chiaPlotJob,chiaJob.outputPath,trig,chiaNode,dag,dag.page,opts)
+    #cohireNode = followUpCohireNode(cohireJob,chiaJob.outputPath,trig,chiaNode,dag,dag.page,opts)
+    #chiaPlotNode = plotChiaNode(chiaPlotJob,chiaJob.outputPath,trig,cohireNode,dag,dag.page,opts,cp)
 
   # Loop for analyseQscan jobs (which must be children of all qscan jobs)
   for trig in followuptrigs:
