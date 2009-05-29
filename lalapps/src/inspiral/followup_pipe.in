@@ -584,15 +584,15 @@ if not opts.disable_followup and not opts.read_times:
 
       # MCMC JOBS
       # run multiple MCMC chains for each trigger (1 chain = 1 node)
-      chainNumber = string.strip(cp.get('followup-mcmc','chain_nb'))
-      mcmcIdList = []
-      for k in range(int(chainNumber)):
-        randomseed = [str(trig.gpsTime[ifo] + k).split('.')[0][5:9],str(trig.gpsTime[ifo]).split('.')[1]]
-        MCMCNode = followupmcmcNode(MCMCJob,inspiral_process_params[ifo], ifo, trig, randomseed, cp, opts, dag)
-        mcmcIdList.append(MCMCNode.id)
+#      chainNumber = string.strip(cp.get('followup-mcmc','chain_nb'))
+#      mcmcIdList = []
+#      for k in range(int(chainNumber)):
+#        randomseed = [str(trig.gpsTime[ifo] + k).split('.')[0][5:9],str(trig.gpsTime[ifo]).split('.')[1]]
+#        MCMCNode = followupmcmcNode(MCMCJob,inspiral_process_params[ifo], ifo, trig, randomseed, cp, opts, dag)
+#        mcmcIdList.append(MCMCNode.id)
 
       # PLOT MCMC JOBS
-      PLOTMCMCNode = plotmcmcNode(PLOTMCMCJob,ifo,trig,mcmcIdList,cp,opts,dag)
+#      PLOTMCMCNode = plotmcmcNode(PLOTMCMCJob,ifo,trig,mcmcIdList,cp,opts,dag)
 
       # SETUP STATUS SUMMARY PLOT JOBS
       statusNode = IFOstatus_checkNode(statusJob, ifo, trig, cp, opts, dag)
@@ -656,6 +656,19 @@ if not opts.disable_followup and not opts.read_times:
     # the names we need. 
     skyNode.add_node_to_dag(dag,opts,trig)
     skyPlotNode = pylal_skyPlotNode(skyPlotJob,trig,skyNode,dag,dag.page,opts)
+
+    # MCMC JOBS
+    # run multiple MCMC chains for each trigger (1 chain = 1 node)
+    chainNumber = string.strip(cp.get('followup-mcmc','chain_nb'))
+    mcmcIdList = []
+    for k in range(int(chainNumber)):
+      randomseed = [str(trig.gpsTime[ifo] + k).split('.')[0][5:9],str(trig.gpsTime[ifo]).split('.')[1]]
+      MCMCNode = followupmcmcNode(MCMCJob,inspiral_process_params, trig, randomseed, cp, opts, dag)
+      mcmcIdList.append(MCMCNode.id)
+
+    # PLOT MCMC JOBS
+#    PLOTMCMCNode = plotmcmcNode(PLOTMCMCJob,ifo,trig,mcmcIdList,cp,opts,dag)
+
     oddsNode = followupoddsNode(oddsJob,inspiral_process_params, trig, randomseed, cp, opts, dag)
 
     #SETUP CHIA JOBS
