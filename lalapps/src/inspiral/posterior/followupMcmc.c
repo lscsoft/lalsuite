@@ -43,7 +43,6 @@
 /*************************************************/
 
 
-
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -74,12 +73,6 @@ const double pi   = 3.141592653589793;
 const double earthRadiusEquator = 6378137.0;           /* (WGS84 value)                    */
 const double earthFlattening    = 0.00335281066474748; /* (WGS84 value: 1.0/298.257223563) */
 /*const double earthRadiusPole    = 6356752.314; */    /* (WGS84 value)                    */
-
-/*-- set verbosity flag: --*/
-const int verbose = 1;
-
-/*-- set downsampling factor (=1 for no downsampling; 2, 4, or 8 otherwise): --*/
-const int downsamplingfactor = 8;
 
 /*-- set flag forcing signal into flat part of Tukey window: --*/
 const int forceFlatTukey = 1;
@@ -144,6 +137,7 @@ typedef struct {
   int          simulateData;    /* flag indicating whether to simulate data (or read from file) */
   int          simulatePsd;     /* flag indicating whether to copy PSD or simulate estimation   */
   /* elements referring to data:                                                                */
+  int          downsample;      /* downsampling factor (1,2,4 or 8)                             */
   double       dataStart;       /* time point of first sample in the data (GPS seconds)         */
   double       dataDeltaT;      /* time resolution of the data (aka `cadence', `dt')            */
   long         dataSize;        /* number of samples in data                                    */
@@ -193,7 +187,9 @@ typedef struct {
   double secPerIteration;    /* (estimated) seconds per iteration                                 */
 } McmcFramework;
 
-gsl_rng *GSLrandom;             /* GSL random number generator */
+
+int verbose = 1;                /* verbosity flag (set through "--quiet" option) */
+gsl_rng *GSLrandom;             /* GSL random number generator                   */
 
 void vectorInit(vector *vec);
 void vectorAdd(vector *vec, char name[], double value);
@@ -274,6 +270,7 @@ double signaltonoiseratio(DataFramework *DF, int coherentN, int waveform, vector
                           double indivSNRs[]);
 
 void clearMF(McmcFramework *MF);
+int parindex(McmcFramework *MF, char parametername[]);
 
 void setcov(McmcFramework *MF, int parameter1, int parameter2, double covariance);
 void setvar(McmcFramework *MF, int parameter, double variance);
@@ -548,7 +545,6 @@ int char2template(char *templatename)
     result = i2025;
   else if (strcmp(templatename, "2535")==0)  
     result = i2025;
-
   else if (strcmp(templatename, "LALTaylorT2PN00")==0)  
     result = iLALTT2PN00;
   else if (strcmp(templatename, "LALTaylorT2PN10")==0)  
@@ -571,7 +567,6 @@ int char2template(char *templatename)
   }
   else if (strcmp(templatename, "LALEOBNR")==0)  
     result = iLALEOBNR;
-
   else if (strcmp(templatename, "SineGaussian")==0)  
     result = bSineGaussian;
   return result;
@@ -630,7 +625,7 @@ void parseParameterOptionString(char *input, char **parnames[], double **parvalu
 /*   parvalues:  {3.1415, 0.24, 700009616.123}                             */
 /* length of parameter names is by now limited to 31 characters.           */
 {
-  int i,j,k,l,m;
+  int i,j,k=-5,l,m;
   char strg[32];
 
   /* perform a very basic well-formedness-check and count number of parameters: */
@@ -899,7 +894,7 @@ int init(DataFramework *DFarg[], McmcFramework *MFarg[],
        CLfrequencyLower[512], CLfrequencyUpper[512], 
        CLfixedpar[512], CLstartpar[512], CLguesspar[512], CLinjectpar[512], 
        CLinjecttemplate[512], CLimportancedraws[512], CLpriorpar[512],
-       datetime[32], logstring[32];
+       CLdownsample[512], datetime[32], logstring[32];
   char **argNames;
   double *argValues=NULL;
   int argN;
@@ -911,7 +906,6 @@ int init(DataFramework *DFarg[], McmcFramework *MFarg[],
   int injecttemplate;
   vector injectpar;
   int InitialisationOK = 1;
-  char ifoName[32];
   double startGPS, endGPS;
   static struct option long_options[] = {
     {"template",           required_argument, 0, 't'},
@@ -922,6 +916,7 @@ int init(DataFramework *DFarg[], McmcFramework *MFarg[],
     {"tbefore",            required_argument, 0, 'b'},
     {"tafter",             required_argument, 0, 'a'},
     {"tukey",              required_argument, 0, 'T'},
+    {"downsample",         required_argument, 0, 'S'},
     {"filechannel",        required_argument, 0, 'C'},
     {"psdestimatestart",   required_argument, 0, 'R'},
     {"psdestimateend",     required_argument, 0, 'e'},
@@ -940,13 +935,12 @@ int init(DataFramework *DFarg[], McmcFramework *MFarg[],
     {"importanceresample", required_argument, 0, 'm'},
     {"priorparameters",    required_argument, 0, 'O'},
     {"help",               no_argument,       0, 'h'},
+    {"quiet",              no_argument,       0, 'q'},
     {0,                    0,                 0,   0}
   };
   int optparse, optionIndex;
 
   DateTimeString(datetime);
-
-  sprintf(ifoName, "LIGO-Livingston\0");
 
   /* initialise strings to take command line arguments: */
   CLtemplate[0]=0; CLoutfilename[0]=0; CLiterations[0]=0; CLrandomseed[0]=0; 
@@ -956,7 +950,8 @@ int init(DataFramework *DFarg[], McmcFramework *MFarg[],
   CLcachefile[0]=0; CLnetwork[0]=0; CLnoiseModel[0]=0; CLsimulatePsd[0]=0; 
   CLfrequencyLower[0]=0; CLfrequencyUpper[0]=0; 
   CLfixedpar[0]=0; CLstartpar[0]=0; CLguesspar[0]=0; CLinjectpar[0]=0; 
-  CLinjecttemplate[0]=0; CLimportancedraws[0]=0; CLpriorpar[0]=0;
+  CLinjecttemplate[0]=0; CLimportancedraws[0]=0; CLpriorpar[0]=0; 
+  CLdownsample[0]=0;
 
   /* set default values: */
   strcpy(CLtimeBefore,      "30.0");
@@ -970,6 +965,7 @@ int init(DataFramework *DFarg[], McmcFramework *MFarg[],
   strcpy(CLimportancedraws, "0");
   strcpy(CLiterations,      "1000000");
   strcpy(CLnoiseModel,      "initialLigo");
+  strcpy(CLdownsample,      "4");
   injecttemplate = -1;
 
   /* read in ALL command line arguments before proceeding further   */
@@ -979,7 +975,7 @@ int init(DataFramework *DFarg[], McmcFramework *MFarg[],
   /* loop over command line arguments: */
   while (1) {
     optparse = getopt_long(argc, argv,
-                           "t::l::i::r::c::b::a::T::C::R::e::n::s::w::d::D::f::F::x::v::g::V::I::m::O::h::",
+                           "t::l::i::r::c::b::a::T::S::C::R::e::n::s::w::d::D::f::F::x::v::g::V::I::m::O::h::q::",
                            long_options, &optionIndex);
     if (optparse == -1) break;
     switch (optparse) {
@@ -991,6 +987,7 @@ int init(DataFramework *DFarg[], McmcFramework *MFarg[],
       case 'b': {strcpy(CLtimeBefore, optarg); break;}          /* --tbefore                     */
       case 'a': {strcpy(CLtimeAfter, optarg); break;}           /* --tafter                      */
       case 'T': {strcpy(CLtukeypar, optarg); break;}            /* --tukey                       */
+      case 'S': {strcpy(CLdownsample, optarg); break;}          /* --downsample                  */
       case 'C': {strcpy(CLframeChannel, optarg); break;}        /* --filechannel                 */
       case 'R': {strcpy(CLPsdEstimateStart, optarg); break;}    /* --psdestimatestart            */
       case 'e': {strcpy(CLPsdEstimateEnd, optarg); break;}      /* --psdestimateend              */
@@ -1009,6 +1006,7 @@ int init(DataFramework *DFarg[], McmcFramework *MFarg[],
       case 'm': {strcpy(CLimportancedraws, optarg); break;}     /* --importanceresample          */
       case 'O': {strcpy(CLpriorpar, optarg); break;}            /* --priorparameters             */
       case 'h': {printhelpmessage(); return 0; break;}          /* --help                        */
+      case 'q': {break;}                                        /* --quiet                       */
     }
   }
   /* command line arguments require further processing...: */
@@ -1063,6 +1061,7 @@ int init(DataFramework *DFarg[], McmcFramework *MFarg[],
     DF[i].noiseModel = (char*) malloc(sizeof(char)*64);
     strcpy(DF[i].noiseModel, "initialLigo");
     DF[i].ifo = NULL;
+    DF[i].downsample = 4;
   }
 
   tmpInt = (CLsimulateData[0]=='1');
@@ -1090,7 +1089,7 @@ int init(DataFramework *DFarg[], McmcFramework *MFarg[],
     if (verbose) {
       printf(" | cache files:\n");
       for (i=0; i<(*coherentN); ++i)
-        printf(" | %d) \"%s\"\n", i+1, DF[i].datacachefile);
+        printf(" | %ld) \"%s\"\n", i+1, DF[i].datacachefile);
     }
   }
   else if (CLsimulateData[0]=='0') printf(" : WARNING: \"--cachefile\" argument missing!\n");
@@ -1117,7 +1116,7 @@ int init(DataFramework *DFarg[], McmcFramework *MFarg[],
     }
     if (verbose) {
       for (i=0; i<(*coherentN); ++i)
-        printf(" | %d) \"%s\"\n", i+1, DF[i].ifo->name);
+        printf(" | %ld) \"%s\"\n", i+1, DF[i].ifo->name);
     }
   }
 
@@ -1169,7 +1168,27 @@ int init(DataFramework *DFarg[], McmcFramework *MFarg[],
   /*--  "--tukey" argument:  --*/
   tmpDbl = atof(CLtukeypar);
   for (i=0; i<(*coherentN); ++i) DF[i].tukeypar = tmpDbl;
- 
+
+  /*--  "--downsample" argument:  --*/
+  if (noVectorStrg(CLdownsample)) {
+    tmpDbl = atof(CLdownsample);
+    for (i=0; i<(*coherentN); ++i) DF[i].downsample = tmpDbl;
+  }
+  else {
+    parseParameterOptionString(CLdownsample, &argNames, &argValues, &argN);
+    if ((argN != *coherentN) && (argN != 1))
+      printf(" : ERROR: incompatible number of \"--downsample\" arguments (%d)!\n",argN);
+    else for (i=0; i<(*coherentN); ++i) DF[i].downsample = argValues[argN==1 ? 0 : i];
+    for (i=0; i<argN; ++i) free(argNames[i]);
+    free(argNames); free(argValues);
+  }
+  /* check: */
+  for (i=0; i<(*coherentN); ++i) 
+    if ((DF[i].downsample!=1)&(DF[i].downsample!=2)&(DF[i].downsample!=4)&(DF[i].downsample!=8)) {
+      printf(" : WARNING: incorrect \"--downsample\" setting (%d) !!\n", DF[i].downsample);
+      printf(" :          (allowed values are 1, 2, 4 and 8)\n");
+    }
+
   /*--  "--filechannel" argument:  --*/
   if (CLsimulateData[0]=='0') {
     if (CLframeChannel[0] != '\0') {
@@ -1335,7 +1354,7 @@ int init(DataFramework *DFarg[], McmcFramework *MFarg[],
   
   if (CLsimulateData[0]=='1') { /* generate fake data w/ given noise PSD:             */
     for (i=0; i<(*coherentN); ++i) {
-      if (verbose) printf(" | Ifo %d: generating data using '%s' noise PSD.\n", i+1, DF[i].noiseModel);
+      if (verbose) printf(" | Ifo %ld: generating data using '%s' noise PSD.\n", i+1, DF[i].noiseModel);
       simulateData(&DF[i]);
     }
   }
@@ -1386,9 +1405,9 @@ int init(DataFramework *DFarg[], McmcFramework *MFarg[],
     DF[i].minInd = ceil((DF[i].minF/((DF[i].FTSize-1)*DF[i].FTDeltaF))*(DF[i].FTSize-1));
     DF[i].maxInd = floor((DF[i].maxF/((DF[i].FTSize-1)*DF[i].FTDeltaF))*(DF[i].FTSize-1));
     if (verbose) {
-      printf(" | Ifo %d (%s):\n", i+1, DF[i].ifo->name);
-      printf(" | (time domain) data size: %d\n", DF[i].dataSize);
-      printf(" | (freq. domain) FT size : %d\n", DF[i].FTSize);
+      printf(" | Ifo %ld (%s):\n", i+1, DF[i].ifo->name);
+      printf(" | (time domain) data size: %ld\n", DF[i].dataSize);
+      printf(" | (freq. domain) FT size : %ld\n", DF[i].FTSize);
       printf(" | Nyquist frequency      : %.1f Hz\n", (DF[i].FTSize-1)*DF[i].FTDeltaF);
       printf(" | frequency range: %.1f -- %.1f Hz\n", 
              DF[i].minInd*DF[i].FTDeltaF, DF[i].maxInd*DF[i].FTDeltaF);
@@ -1771,9 +1790,9 @@ int init(DataFramework *DFarg[], McmcFramework *MFarg[],
   long lhdf = 0;
   for (i=0; i<*coherentN; ++i)
     lhdf += 2 * (DF[i].maxInd - DF[i].minInd + 1);
-  if (verbose) printf(" : (log-) likelihood degrees-of-freedom: %d\n",lhdf);
+  if (verbose) printf(" : (log-) likelihood degrees-of-freedom: %ld\n",lhdf);
 
-  sprintf(logstring, "%d", lhdf);
+  sprintf(logstring, "%ld", lhdf);
   logtoLOGfile(MF, "log-likelihood degrees-of-freedom", logstring);
 
   /* initialise random number gernerator for (now following) MCMC part: */
@@ -1829,8 +1848,8 @@ int readData(DataFramework *DF)
   to    =  ceil(DF->timeCenter + DF->timeAfter  + extramargin);
   /* this range is rounded to an integer number of seconds */
   /* in order to make life easier for the DFT algorithm.   */
-
-  if (downsamplingfactor > 1){
+  
+  if (DF->downsample > 1){
     /* downsampling will shorten the above range, so another extra margin is added. */
     /* This again requires the sampling rate to be known,                           */
     /* so a few samples are read in order to check:                                 */
@@ -1858,8 +1877,8 @@ int readData(DataFramework *DF)
     /* within the "filter()" function.                                    */
 
     /* account for how much the downsampling/filtering will nibble off the data */
-    /* (downsamplingfactor*20, according to LAL documentation):                 */
-    extramargin = (downsamplingfactor*20) / ((double) samplerate);
+    /* (DF->downsample*20, according to LAL documentation):                     */
+    extramargin = (DF->downsample*20) / ((double) samplerate);
     from -= extramargin;
     to   += extramargin;
   }
@@ -1900,19 +1919,19 @@ int readData(DataFramework *DF)
   FrVectFree(dataVector);
   FrFileIEnd(iFile);
 
-  if (downsamplingfactor > 1){
+  if (DF->downsample > 1){
     /*-- downsample (by factor 4)   --*/
     /*-- !! changes value of `N' !! --*/
     if (verbose) printf(" | downsampling... ");
-    DF->data = downsample(origData, &N, downsamplingfactor);
-    samplerate /= downsamplingfactor;
+    DF->data = downsample(origData, &N, DF->downsample);
+    samplerate /= DF->downsample;
     if (verbose) {
       printf("new sample size and rate: %d at %d Hz\n", N, samplerate);
       /*printf(" | (double-check:  %d = %d x %d + %d)\n", N, N/samplerate, samplerate, N % samplerate); */
     }
     /* set parameters: */
     /*DF->dataStart  = from + ((double)(ncoef-1))/((double)(samplerate*4)); */
-    DF->dataStart  = from + ((double)(downsamplingfactor*20))/((double)(samplerate*downsamplingfactor)); 
+    DF->dataStart  = from + ((double)(DF->downsample*20))/((double)(samplerate*DF->downsample)); 
     /*  --> need to account for sampling rate BEFORE downsampling, hence factor 4  */
     DF->dataDeltaT = 1.0/((double) samplerate);
     DF->dataSize   = N;
@@ -2032,7 +2051,7 @@ void generateNoise(double deltat, int N,
   int halfN = Neven ? N/2 : (N-1)/2;
   double deltaf = 1.0 / (((double)N) * deltat);
   int i;
-  double f, kappa, stdev, a, b, real, imag;
+  double f, kappa, stdev=0.0, a, b, real, imag;
   fftw_complex *FTinput=NULL;
   fftw_plan InvFTplan;
   int modelIndex = 0;
@@ -2096,7 +2115,7 @@ void simulateData(DataFramework *DF)
   else  if (strcmp(DF->noiseModel, "Geo")==0)  
     DF->dataDeltaT = 1.0/16384.0; /* Geo           */
   else printf(" : ERROR: referring to undefined noise model ('%s') in 'simulateData()'!\n",DF->noiseModel);
-  DF->dataDeltaT *= downsamplingfactor;
+  DF->dataDeltaT *= DF->downsample;
 
   if (forceFlatTukey)
     extramargin = (DF->timeBefore+DF->timeAfter) * 0.5 * (DF->tukeypar/(1.0-DF->tukeypar));
@@ -2168,9 +2187,9 @@ int estimatePSD(DataFramework *DF)
     for (i=0; i<N; ++i)
       origData[i] = dataVector->dataF[i];
     FrVectFree(dataVector);
-    if (downsamplingfactor > 1){
+    if (DF->downsample > 1){
       /*-- downsample data: --*/
-      dsdata = downsample(origData, &N, downsamplingfactor);
+      dsdata = downsample(origData, &N, DF->downsample);
     }
     else {
       dsdata = (double*) malloc(sizeof(double) * N);
@@ -2274,17 +2293,17 @@ double *downsample(double data[], int *datalength, int factor)
     resampPars.filterType = LDASfirLP;
     /*  (the `LDASfirLP' option is used here because it  */ 
     /*  guarantees a fixed number of corrupted samples)  */
-    for (i=0; i<lalTS.data->length; ++i)
+    for (i=0; i<((int)lalTS.data->length); ++i)
       lalTS.data->data[i] = data[i];
     LALResampleREAL4TimeSeries(&status, &lalTS, &resampPars);
     /* according to LAL documentation,                                  */
     /* there should now be  20  corrupted (=zero) samples at both ends: */
     newlength = (*datalength - 2*20*factor) / factor;
-    if (newlength != (lalTS.data->length - 40))
+    if (newlength != (((int)lalTS.data->length) - 40))
       printf(" : ERROR: vector size mismatch in `downsample()': newlength=%d vs. data->length-40=%d\n",
 	     newlength, lalTS.data->length - 40);
     decimated = (double*) malloc(newlength * sizeof(double));
-    for (i=0; i<(lalTS.data->length - 40); ++i)
+    for (i=0; i<(((int)lalTS.data->length) - 40); ++i)
       decimated[i] = lalTS.data->data[i+20];
     LALSDestroyVector(&status, &lalTS.data);
   }
@@ -3887,6 +3906,7 @@ int parindex(McmcFramework *MF, char parametername[])
   return index;
 }
 
+
 void setcov(McmcFramework *MF, int parameter1, int parameter2, double covariance)
 /* Set an element of the proposal covariance matrix. */
 {
@@ -4230,6 +4250,7 @@ void guess(McmcFramework *MF, vector *parameter)
     if (vectorIsElement(&MF->fixed, parameter->name[i])) 
       vectorSetValue(parameter, parameter->name[i], vectorGetValue(&MF->fixed,parameter->name[i]));
 }
+
 
 void guessInspiralNospin(McmcFramework *MF, vector *parameter)
 /* Generates a random draw from the "guessing" distribution.  */
@@ -4678,10 +4699,14 @@ void importanceresample(DataFramework *DF, int coherentN, McmcFramework *MF,
   int m = subsamplesize;
   double postdiff = ((double)MF->startvalue.dimension)/2.0 
                     + 3.0*sqrt(((double)MF->startvalue.dimension)/2.0);
+  char logstring[32];
+
   /* n : number of prior draws (internal)                         */
   /* m : number of importance from above draws (result)           */
   /* postdiff : max. posterior difference                         */
 
+  DateTimeString(logstring);
+  logtoLOGfile(MF, "importanceresample() start", logstring);
   if (verbose) {
     printf(" | importance resampling: %d out of %d,\n", m, n);
     printf(" | posterior difference threshold = %.2f\n", postdiff);
@@ -4797,8 +4822,9 @@ void importanceresample(DataFramework *DF, int coherentN, McmcFramework *MF,
   seconds = difftime(endtime, starttime);
   if (verbose) printf(" | ...finished at %.3f samples per second.\n", ((double)n)/seconds);
   MF->secPerIteration = seconds/((double)n);
+  DateTimeString(logstring);
+  logtoLOGfile(MF, "importanceresample() finish", logstring);
 }
-
 
 
 void logtoCSVfile(McmcFramework *MF, vector *parameter, 
@@ -4849,7 +4875,7 @@ void logtoCSVfile(McmcFramework *MF, vector *parameter,
   }
   else { /* append to existing file: */
     logfile = fopen(MF->csvfilename, "a");
-    fprintf(logfile, "%d,%d,%.6f,%.6f,%.6f", iteration, accepted, 
+    fprintf(logfile, "%ld,%ld,%.6f,%.6f,%.6f", iteration, accepted, 
             logprior, loglikelihood, logposterior);
     for (i=0; i<outvector.dimension; ++i)
       if (!vectorIsElement(&MF->fixed, outvector.name[i]))
@@ -4970,7 +4996,7 @@ void metropolishastings(McmcFramework *MF, DataFramework *DF, int coherentN)
   logtoCSVfile(MF, &state, 0, 0, lprior, llikeli, lprior+llikeli);
 
   if (verbose){
-    printf(" | starting Metropolis-sampler; signal template used: '#%d'\n | iterations: %d", 
+    printf(" | starting Metropolis-sampler; signal template used: '#%d'\n | iterations: %ld", 
            MF->template, MF->iterations);
     if (MF->secPerIteration > 0.0)
       printf(", estimated time: %.2f hrs", (MF->iterations*MF->secPerIteration)/3600.0);
@@ -5048,16 +5074,16 @@ void printDF(DataFramework *DF)
   printf(" : simulatePsd                 %d\n", DF->simulatePsd);
   printf(" : dataStart                   %.3f\n", DF->dataStart);
   printf(" : dataDeltaT                  %.5f s\n", DF->dataDeltaT);
-  printf(" : dataSize                    %d\n", DF->dataSize);
-  printf(" : *data                       %d\n", DF->data);
-  printf(" : *window                     %d\n", DF->window);
+  printf(" : dataSize                    %ld\n", DF->dataSize);
+  printf(" : *data                       %ld\n", ((long)DF->data));
+  printf(" : *window                     %ld\n", ((long)DF->window));
   printf(" : winss                       %.1f\n", DF->winss);
-  printf(" : *dataFT                     %d\n", DF->dataFT);
-  printf(" : FTsize                      %d\n", DF->FTSize);
+  printf(" : *dataFT                     %ld\n", ((long)DF->dataFT));
+  printf(" : FTsize                      %ld\n", DF->FTSize);
   printf(" : FTDeltaF                    %.3f Hz\n", DF->FTDeltaF);
-  printf(" : *powspec                    %d\n", DF->powspec);
+  printf(" : *powspec                    %ld\n", ((long)DF->powspec));
   printf(" : noiseModel                  \"%s\"\n", DF->noiseModel);
-  printf(" : minInd, maxInd              %d, %d\n", DF->minInd, DF->maxInd);
+  printf(" : minInd, maxInd              %ld, %ld\n", DF->minInd, DF->maxInd);
   printf(" : rawDataRange                %.3f s\n", DF->rawDataRange);
   printf(" : ifo->name                   \"%s\"\n", DF->ifo->name);
   if (DF->data != NULL) for (i=0; i<5; ++i) 
@@ -5085,6 +5111,7 @@ int numberIfoSites(DataFramework *DF, int coherentN)
   }
   return count;
 }
+
 
 double GMST(double GPSsec)
 /* Derives the `Greenwich Mean Sidereal Time' (in radians!) */
@@ -5115,6 +5142,7 @@ double GMST(double GPSsec)
   return result;
 }
 
+
 double rightAscension(double longi, double gmst)
 /* Derives right ascension (in radians!) from longitude given GMST (radians). */
 /* Declination == latitude for equatorial coordinates.                        */
@@ -5125,6 +5153,7 @@ double rightAscension(double longi, double gmst)
   /*result *= 24.0/(2.0*pi);*/
   return result;
 }
+
 
 double longitude(double rightascension, double gmst)
 /* Derives longitude from right ascension (radians), given GMST (radians).    */
@@ -5144,6 +5173,12 @@ int main(int argc, char *argv[])
   int ifoN=0;    /* number of Ifos for which geographic location etc is available. */
   int coherentN; /* number of data sets (coherently) used.                         */
   int initOK;
+  int i;
+
+  /*-- very first thing: check for the "--quiet" command-line-option and set "verbose" flag accordingly: --*/
+  verbose = 1;
+  for (i=1; i<argc; ++i)
+    if (strcmp(argv[i],"--quiet") == 0) verbose = 0;
 
   if (verbose) 
     printf(" +----[ lalapps_followupMcmc ]-------------------------------------------------\n");
@@ -5151,7 +5186,6 @@ int main(int argc, char *argv[])
   /* initialise GSL random number generator: */
   gsl_rng_env_setup();
   GSLrandom = gsl_rng_alloc(gsl_rng_mt19937);  /* use `Mersenne Twister' algorithm         */
-  /* printf(" : Using GSL's \"%s\" random number generator.\n", gsl_rng_name (GSLrandom)); */
   /* (random seed is set later in `init()' function)                                       */
 
   if (argc==1)
@@ -5166,7 +5200,6 @@ int main(int argc, char *argv[])
      *  savePSD(&DatFW[0], "/home/christian/temp/spec8.txt");
      *  initOK = 0;
      */
-
     /* printf(" : number of (different) ifo sites: %d\n", numberIfoSites(DatFW,coherentN)); */
 
     if (initOK) {
