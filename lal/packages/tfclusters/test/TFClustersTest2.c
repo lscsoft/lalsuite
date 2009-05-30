@@ -61,6 +61,8 @@ Returns 0 on success, otherwise returns 1.
 
 </lalLaTeX> */
 
+#include <stdio.h>
+
 #include "lal/LALRCSID.h"
 
 NRCSID (MAIN, "$Id$");
