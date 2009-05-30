@@ -230,8 +230,8 @@ INT4 XLALValidateDocumentByInternalSchema(const xmlDocPtr xmlDocument)
         XLAL_ERROR(logReference, XLAL_EFAILED);
     }
     xmlSchemaLocation = xmlGetNsProp(xmlRootNode,
-                                     BAD_CAST("noNamespaceSchemaLocation"),
-                                     BAD_CAST("http://www.w3.org/2001/XMLSchema-instance"));
+                                     CAST_CONST_XMLCHAR("noNamespaceSchemaLocation"),
+                                     CAST_CONST_XMLCHAR("http://www.w3.org/2001/XMLSchema-instance"));
     if(!xmlSchemaLocation) {
         XLALPrintError("Schema location retrieval failed!\n");
         XLAL_ERROR(logReference, XLAL_EFAILED);
@@ -392,7 +392,6 @@ INT4 XLALValidateDocument(const xmlDocPtr xmlDocument, const xmlSchemaValidCtxtP
 INT4 XLALReconcileDefaultNamespace(const xmlNodePtr xmlRootElement, const xmlNsPtr xmlNamespace)
 {
     /* set up local variables */
-    static const CHAR *logReference = "XLALReconcileDefaultNamespace";
     xmlNodePtr xmlCurrentNode = NULL;
 
     /* iterate over the root element and all its children */

@@ -586,9 +586,8 @@ INT4 XLALVOTableDoc2PulsarSpinsByName(const xmlDocPtr xmlDocument,
 {
     /* set up local variables */
     static const CHAR *logReference = "XLALVOTableDoc2PulsarSpinsByName";
-    CHAR pulsarSpins[PULSAR_MAX_SPINS*REAL8STR_MAXLEN] = {0};
-    xmlChar *nodeContent = NULL;
-    xmlChar *nodeContentWorker = NULL;
+    CHAR *nodeContent = NULL;
+    CHAR *nodeContentWorker = NULL;
     int arraySize = 0;
     int i;
 
@@ -615,7 +614,7 @@ INT4 XLALVOTableDoc2PulsarSpinsByName(const xmlDocPtr xmlDocument,
     }
 
     /* retrieve arraysize (number of pulsar spins) */
-    nodeContent = XLALGetSingleVOTableResourceParamAttribute(xmlDocument, resourceType, resourceName, paramName, VOT_ARRAYSIZE);
+    nodeContent = (CHAR*)XLALGetSingleVOTableResourceParamAttribute(xmlDocument, resourceType, resourceName, paramName, VOT_ARRAYSIZE);
     if(!nodeContent || sscanf((char*)nodeContent, "%i", &arraySize) == EOF || arraySize == 0) {
         /* clean up*/
         if(nodeContent) xmlFree(nodeContent);
@@ -625,7 +624,7 @@ INT4 XLALVOTableDoc2PulsarSpinsByName(const xmlDocPtr xmlDocument,
 
     /* retrieve pulsar spin array (string) */
     xmlFree(nodeContent);
-    nodeContent = (xmlChar *)XLALGetSingleVOTableResourceParamAttribute(xmlDocument, resourceType, resourceName, paramName, VOT_VALUE);
+    nodeContent = (CHAR *)XLALGetSingleVOTableResourceParamAttribute(xmlDocument, resourceType, resourceName, paramName, VOT_VALUE);
     if(!nodeContent) {
         XLALPrintError("Invalid node content encountered: %s.%s\n", resourceName, paramName);
         XLAL_ERROR(logReference, XLAL_EDATA);

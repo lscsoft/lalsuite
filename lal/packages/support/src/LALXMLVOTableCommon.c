@@ -76,7 +76,7 @@ xmlNodePtr XLALCreateVOTableParamNode(const char *name,
     static const CHAR *datatypeString;
 
     /* create node */
-    xmlParamNode = xmlNewNode(NULL, BAD_CAST("PARAM"));
+    xmlParamNode = xmlNewNode(NULL, CAST_CONST_XMLCHAR("PARAM"));
     if(xmlParamNode == NULL) {
         XLALPrintError("Element instantiation failed: PARAM\n");
         XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
@@ -90,7 +90,7 @@ xmlNodePtr XLALCreateVOTableParamNode(const char *name,
         XLALPrintError("Missing mandatory attribute: name\n");
         XLAL_ERROR_NULL(logReference, XLAL_EINVAL);
     }
-    if(!xmlNewProp(xmlParamNode, BAD_CAST("name"), BAD_CAST(name))) {
+    if(!xmlNewProp(xmlParamNode, CAST_CONST_XMLCHAR("name"), CAST_CONST_XMLCHAR(name))) {
         /* clean up */
         xmlFreeNode(xmlParamNode);
         XLALPrintError("Attribute instantiation failed: name\n");
@@ -98,7 +98,7 @@ xmlNodePtr XLALCreateVOTableParamNode(const char *name,
     }
     /* optional: unit */
     if(unit && strlen(unit) > 0) {
-        if(!xmlNewProp(xmlParamNode, BAD_CAST("unit"), BAD_CAST(unit))) {
+        if(!xmlNewProp(xmlParamNode, CAST_CONST_XMLCHAR("unit"), CAST_CONST_XMLCHAR(unit))) {
             /* clean up */
             xmlFreeNode(xmlParamNode);
             XLALPrintError("Attribute instantiation failed: unit\n");
@@ -154,7 +154,7 @@ xmlNodePtr XLALCreateVOTableParamNode(const char *name,
                 datatypeString = "UNKNOWN";
         }
     }
-    if(!xmlNewProp(xmlParamNode, BAD_CAST("datatype"), BAD_CAST(datatypeString))) {
+    if(!xmlNewProp(xmlParamNode, CAST_CONST_XMLCHAR("datatype"), CAST_CONST_XMLCHAR(datatypeString))) {
         /* clean up */
         xmlFreeNode(xmlParamNode);
         XLALPrintError("Attribute instantiation failed: datatype\n");
@@ -162,7 +162,7 @@ xmlNodePtr XLALCreateVOTableParamNode(const char *name,
     }
     /* optional: arraysize */
     if(arraysize && strlen(arraysize) > 0) {
-        if(!xmlNewProp(xmlParamNode, BAD_CAST("arraysize"), BAD_CAST(arraysize))) {
+        if(!xmlNewProp(xmlParamNode, CAST_CONST_XMLCHAR("arraysize"), CAST_CONST_XMLCHAR(arraysize))) {
             /* clean up */
             xmlFreeNode(xmlParamNode);
             XLALPrintError("Attribute instantiation failed: arraysize\n");
@@ -176,7 +176,7 @@ xmlNodePtr XLALCreateVOTableParamNode(const char *name,
         XLALPrintError("Missing mandatory attribute: value\n");
         XLAL_ERROR_NULL(logReference, XLAL_EINVAL);
     }
-    if(!xmlNewProp(xmlParamNode, BAD_CAST("value"), BAD_CAST(value))) {
+    if(!xmlNewProp(xmlParamNode, CAST_CONST_XMLCHAR("value"), CAST_CONST_XMLCHAR(value))) {
         /* clean up */
         xmlFreeNode(xmlParamNode);
         XLALPrintError("Attribute instantiation failed: value\n");
@@ -228,20 +228,20 @@ xmlNodePtr XLALCreateVOTableResourceNode(const char *type,
     }
 
     /* create node */
-    xmlResourceNode = xmlNewNode(NULL, BAD_CAST("RESOURCE"));
+    xmlResourceNode = xmlNewNode(NULL, CAST_CONST_XMLCHAR("RESOURCE"));
     if(xmlResourceNode == NULL) {
         XLALPrintError("Element instantiation failed: RESOURCE\n");
         XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
     }
 
     /* add attributes */
-    if(!xmlNewProp(xmlResourceNode, BAD_CAST("utype"), BAD_CAST(type))) {
+    if(!xmlNewProp(xmlResourceNode, CAST_CONST_XMLCHAR("utype"), CAST_CONST_XMLCHAR(type))) {
         /* clean up */
         xmlFreeNode(xmlResourceNode);
         XLALPrintError("Attribute instantiation failed: utype\n");
         XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
     }
-    if(!xmlNewProp(xmlResourceNode, BAD_CAST("name"), BAD_CAST(identifier))) {
+    if(!xmlNewProp(xmlResourceNode, CAST_CONST_XMLCHAR("name"), CAST_CONST_XMLCHAR(identifier))) {
         /* clean up */
         xmlFreeNode(xmlResourceNode);
         XLALPrintError("Attribute instantiation failed: name\n");
@@ -309,14 +309,14 @@ xmlDocPtr XLALCreateVOTableDocumentFromTree(const xmlNodePtr xmlTree)
     }
 
     /* set up XML document */
-    xmlDocument = xmlNewDoc(BAD_CAST("1.0"));
+    xmlDocument = xmlNewDoc(CAST_CONST_XMLCHAR("1.0"));
     if(xmlDocument == NULL) {
         XLALPrintError("VOTable document instantiation failed\n");
         XLAL_ERROR_NULL(logReference, XLAL_EFAILED);
     }
 
     /* set up root node */
-    xmlRootElement = xmlNewNode(NULL, BAD_CAST("VOTABLE"));
+    xmlRootElement = xmlNewNode(NULL, CAST_CONST_XMLCHAR("VOTABLE"));
     if(xmlRootElement == NULL) {
         /* clean up */
         xmlFreeDoc(xmlDocument);
@@ -325,13 +325,13 @@ xmlDocPtr XLALCreateVOTableDocumentFromTree(const xmlNodePtr xmlTree)
     }
 
     /* add supplemental root node version information */
-    if(!xmlNewProp(xmlRootElement, BAD_CAST("version"), BAD_CAST(VOTABLE_VERSION))) {
+    if(!xmlNewProp(xmlRootElement, CAST_CONST_XMLCHAR("version"), CAST_CONST_XMLCHAR(VOTABLE_VERSION))) {
         XLALPrintWarning("VOTABLE attribute instantiation failed: version\n");
     }
 
     /* set up default namespace (required for validation) */
     xmlVOTableNamespace = xmlNewNs(xmlRootElement,
-                                   BAD_CAST(VOTABLE_NS_URL),
+                                   CAST_CONST_XMLCHAR(VOTABLE_NS_URL),
                                    NULL);
 
     if(xmlVOTableNamespace == NULL) {
@@ -341,15 +341,15 @@ xmlDocPtr XLALCreateVOTableDocumentFromTree(const xmlNodePtr xmlTree)
 
     /* add supplemental root node schema instance information */
     xmlSchemaNamespace = xmlNewNs(xmlRootElement,
-                                  BAD_CAST("http://www.w3.org/2001/XMLSchema-instance"),
-                                  BAD_CAST("xsi"));
+                                  CAST_CONST_XMLCHAR("http://www.w3.org/2001/XMLSchema-instance"),
+                                  CAST_CONST_XMLCHAR("xsi"));
     if(!xmlSchemaNamespace) {
         XLALPrintWarning("VOTABLE namespace instantiation failed: xsi\n");
     }
     else if(!xmlNewNsProp(xmlRootElement,
                           xmlSchemaNamespace,
-                          BAD_CAST("noNamespaceSchemaLocation"),
-                          BAD_CAST(VOTABLE_SCHEMA)))
+                          CAST_CONST_XMLCHAR("noNamespaceSchemaLocation"),
+                          CAST_CONST_XMLCHAR(VOTABLE_SCHEMA)))
     {
         XLALPrintWarning("VOTABLE attribute instantiation failed: xsi:noNamespaceSchemaLocation\n");
     }
@@ -473,9 +473,9 @@ xmlChar * XLALGetSingleVOTableResourceParamAttribute(const xmlDocPtr xmlDocument
 {
     /* set up local variables */
     static const CHAR *logReference = "XLALGetSingleVOTableResourceParamAttribute";
-    CHAR *paramAttributeString = NULL;
+    const CHAR *paramAttributeString = NULL;
     CHAR xpath[XPATHSTR_MAXLEN] = {0};
-    static const XML_NAMESPACE xmlVOTableNamespace[1] = {{BAD_CAST(VOTABLE_NS_PREFIX), BAD_CAST(VOTABLE_NS_URL)}};
+    static const XML_NAMESPACE xmlVOTableNamespace[1] = {{CAST_CONST_XMLCHAR(VOTABLE_NS_PREFIX), CAST_CONST_XMLCHAR(VOTABLE_NS_URL)}};
     const XML_NAMESPACE_VECTOR xmlNsVector = {xmlVOTableNamespace, 1};
 
     /* sanity check */

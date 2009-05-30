@@ -44,6 +44,16 @@ extern "C" {
 #include <libxml/tree.h>
 #include <lal/LALDatatypes.h>
 
+/** Cast macro to use instead of libxml2's 'BAD_CAST' macro,
+ * with are more descriptive name.
+ */
+#define CAST_XMLCHAR (xmlChar *)
+
+/** Cast macro to use instead of libxml2's BAD_CAST macro for const pointers.
+ */
+#define CAST_CONST_XMLCHAR (const xmlChar *)
+
+
 /**
  * \brief This type represents a XML namespace
  *
