@@ -18,6 +18,7 @@
 */
 
 #include <lal/LPC.h>
+#include <lal/LALStatusMacros.h>
 
 NRCSID (LPCTESTC,"$Id$");
 
