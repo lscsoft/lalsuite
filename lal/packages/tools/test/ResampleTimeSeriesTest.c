@@ -107,6 +107,8 @@
 #include <lal/Units.h>
 #include <lal/ResampleTimeSeries.h>
 #include <lal/FrameStream.h>
+#include <lal/AVFactories.h>
+#include <lal/LALStdio.h>
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
