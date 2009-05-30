@@ -1,9 +1,14 @@
 ## Process this file with automake to produce Makefile.in
+if XML
+XML_PROGS = LALXMLTest
+else
+XML_PROGS =
+endif
 check_PROGRAMS = PrintVectorTest\
 	         PrintFTSeriesTest ReadFTSeriesTest StreamInputTest\
                  StreamSeriesInputTest SFTfileIOTest \
 		 ConfigFileTest UserInputTest LALMath3DPlotTest LALMathNDPlotTest \
-		 SegmentsIOTest NRWaveIOTest LALXMLTest
+		 SegmentsIOTest NRWaveIOTest $(XML_PROGS)
 
 noinst_DATA = StreamInput.data StreamSeriesInput.data inputsft.0 inputsft.1 ConfigFileSample.cfg SegmentsInput1.data \
 	SFT-bad1   SFT-bad13  SFT-bad4	SFT-bad8   SFT-test2  SFT-test6 SFT-bad10  SFT-bad14  SFT-bad5	SFT-bad9   \
@@ -49,8 +54,10 @@ SegmentsIOTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(t
 NRWaveIOTest_SOURCES = NRWaveIOTest.c
 NRWaveIOTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 
+if XML
 LALXMLTest_SOURCES = LALXMLTest.c
 LALXMLTest_LDADD = $(top_builddir)/packages/support/src/liblalxml.la $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
+endif
 
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 #TESTS = PrintVectorTest \
@@ -65,7 +72,7 @@ TESTS = PrintVectorTest \
         ReadFTSeriesTest PrintFTSeriesTest StreamInputTest \
         StreamSeriesInputTest ConfigFileTest UserInputTest \
         LALMath3DPlotTest LALMathNDPlotTest SegmentsIOTest \
-        LALXMLTest SFTfileIOTest
+        SFTfileIOTest $(XML_PROGS)
 
 TESTS_ENVIRONMENT = 1>/dev/null 2>/dev/null LAL_DATA_PATH=$(srcdir)
 MOSTLYCLEANFILES = .dvi-dep *.dat *PrintVector.00* *.out  outputsft.0 \
