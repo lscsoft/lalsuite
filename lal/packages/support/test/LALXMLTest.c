@@ -23,6 +23,7 @@
 #endif
 
 #include <lal/LALXML.h>
+#include <lal/LALXMLVOTableCommon.h>
 #include <lal/LALXMLVOTableSerializers.h>
 #include <LALStatusMacros.h>
 
@@ -413,7 +414,7 @@ INT4 xmlString2Document(const xmlChar *xmlString, xmlDocPtr *xmlDocument)
     INT4 result = XLAL_SUCCESS;
 
     /* parse XML document */
-    *xmlDocument = xmlReadMemory(xmlString, strlen(xmlString), NULL, "UTF-8", 0);
+    *xmlDocument = xmlReadMemory((const char*)xmlString, strlen((const char*)xmlString), NULL, "UTF-8", 0);
     if(*xmlDocument == NULL) {
         fprintf(stderr, "XML document parsing failed!\n");
         result = XLAL_EFAILED;
