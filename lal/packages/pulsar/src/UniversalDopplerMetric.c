@@ -687,8 +687,12 @@ XLALDopplerPhaseMetric ( const DopplerMetricParams *metricParams,  	/**< input p
  *  and the Fisher-matrix derived in \ref Prix07.
  *
  * Note: The returned DopplerMetric struct contains the matrices
- * g_ij (the phase metric), gF_ij (the F-metric), gFav_ij (the average F-metric), m1_ij, m2_ij, m3_ij (auxiliary matrices)
- * and Fisher_ab (the full 4+n dimensional Fisher matrix)
+ * g_ij (the phase metric), gF_ij (the F-metric), gFav_ij (the average F-metric),
+ * m1_ij, m2_ij, m3_ij (auxiliary matrices)
+ * and Fisher_ab (the full 4+n dimensional Fisher matrix).
+ *
+ * The returned metric struct also carries the meta-info about
+ * the metrics in the field 'DopplerMetricParams meta'.
  *
  * Note: Reference time is always assumed to be equal to the startTime !
  *
