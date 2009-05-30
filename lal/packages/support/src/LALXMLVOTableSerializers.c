@@ -914,3 +914,236 @@ INT4 XLALVOTableDoc2PulsarDopplerParamsByName(const xmlDocPtr xmlDocument, const
 
     return XLAL_SUCCESS;
 }
+
+
+
+
+
+/**
+ * \brief Serializes a \c gsl_vector into a VOTable XML %node
+ *
+ * This function takes a \c gsl_vector pointer and serializes it into a VOTable
+ * \c PARAM %node identified by the given name. The returned \c xmlNode can then be
+ * embedded into an existing %node hierarchy.
+ *
+ * \return A pointer to a \c xmlNode that holds the VOTable fragment that represents
+ * the \c gsl_vector. In case of an error, a null-pointer is returned.\n
+ *
+ * \note All matrix elements are writting with maximal precision "%.16g" for a double
+ *
+ * \b Important: the caller is responsible to free the allocated memory (when the
+ * fragment isn't needed anymore) using \c xmlFreeNode. Alternatively, \c xmlFreeDoc
+ * can be used later on when the returned fragment has been embedded in a XML document.
+ *
+ * \sa XLALCreateVOTableParamNode
+ *
+ * \author Reinhard Prix\n
+ * Albert-Einstein-Institute Hannover, Germany
+ */
+xmlNodePtr
+XLALgsl_vector2VOTableNode(const gsl_vector *vect,	/**< [in] input gsl_vector to serialize */
+			   const CHAR *name,		/**< [in] Unique identifier for this gsl_vector */
+			   const CHAR *unitName		/**< [in] optional unit-name (can be NULL) */
+			   )
+{
+  static const CHAR *fn = "XLALgsl_vector2VOTableNode()";
+
+  xmlNodePtr xmlParamNode = NULL;
+  CHAR REAL8Str[REAL8STR_MAXLEN] = {0};		/* buffer to hold string representations of REAL8s */
+  size_t arrayStrLen;
+  CHAR *arrayStr = NULL;			/* holds full list of dim x REAL8 strings */
+  CHAR arraySizeStr[INT4STR_MAXLEN] = {0}; 	/* buffer to hold argument to "arraysize" attribute */
+  size_t i, dim;
+
+  /* sanity checks */
+  if ( !vect || !vect->size ) {
+    XLALPrintError("%s: Invalid NULL or empty input: vect\n\n", fn);
+    XLAL_ERROR_NULL (fn, XLAL_EINVAL);
+  }
+  if ( !name || strlen(name) <= 0) {
+    XLALPrintError("%s: Invalid NULL or empty input parameter: name\n\n", fn);
+    XLAL_ERROR_NULL(fn, XLAL_EINVAL);
+  }
+
+  /* parse input vector */
+  dim = vect->size;	/* guaranteed to be >= 1 */
+
+  /* prepare string to hold array of numbers */
+  arrayStrLen = dim * REAL8STR_MAXLEN;
+  if ( (arrayStr = XLALCalloc( 1, arrayStrLen )) == NULL ) {
+    XLALPrintError ("%s: Failed to XLALCalloc(1, %d).\n\n", fn, arrayStrLen );
+    XLAL_ERROR_NULL(fn, XLAL_ENOMEM );
+  }
+
+  for ( i = 0; i < dim; i++ )
+    {
+      /* add vector element [i] to arrayStr */
+      if( LALSnprintf ( REAL8Str, sizeof(REAL8Str), "%.16g", gsl_vector_get ( vect, i ) ) < 0 ) {
+	XLALFree ( arrayStr );
+	XLALPrintError("%s: failed to convert vector element to string: vect[%d]\n", i);
+	XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+      }
+      strcat ( arrayStr, REAL8Str );
+
+      /* add delimiter (SPACE)*/
+      if ( i < dim-1 )
+	strcat ( arrayStr, " ");
+
+    } /* for i < dim */
+
+    /* prepare array size attribute */
+  if ( LALSnprintf ( arraySizeStr, sizeof(arraySizeStr), "%d", dim ) < 0 ) {
+    XLALFree ( arrayStr );
+    XLALPrintError("%s: LALSnprintf() failed for arraySizeStr.\n\n", fn );
+    XLAL_ERROR_NULL (fn, XLAL_EFAILED);
+  }
+
+  /* set up PARAM node */
+  if ( (xmlParamNode = XLALCreateVOTableParamNode(name, unitName, VOT_REAL8, arraySizeStr, arrayStr )) == NULL ){
+    XLALFree ( arrayStr );
+    XLALPrintError("%s: XLALCreateVOTableParamNode() failed to create PARAM node: '%s'. xlalErrno = %d\n", fn, name, xlalErrno);
+    XLAL_ERROR_NULL (fn, XLAL_EFUNC);
+  }
+
+  XLALFree ( arrayStr );
+
+  /* return PARAM node (needs to be xmlFreeNode'd or xmlFreeDoc'd by caller!!!) */
+  return xmlParamNode;
+
+} /* XLALgsl_vector2VOTableNode() */
+
+
+
+/**
+ * \brief Deserializes a \c gsl_vector from a VOTable XML document
+ *
+ * This function takes a VOTable XML document and deserializes (extracts) the \c gsl_vector
+ * (found as a \c PARAM element in the specified \c RESOURCE element) identified by the given name.
+ *
+ * \param xmlDocument [in] Pointer to the VOTable XML document containing the array
+ * \param resourceType [in] Value of the \c utype attribute of the parent RESOURCE element
+ * \param resourceName [in] Unique identifier of the parent RESOURCE element
+ * \param paramName [in] Unique identifier of the particular \c gsl_vector to be deserialized
+ * \param unitName [in] Optional unit-name. If != NULL, it MUST agree with the units specified in XML
+ *
+ * \return \c pointer to deserialized \c gsl_vector, which is allocated by this function.
+ *
+ * \sa XLALGetSingleVOTableResourceParamAttribute
+ *
+ * \author Reinhard Prix\n
+ * Albert-Einstein-Institute Hannover, Germany
+ */
+gsl_vector *
+XLALVOTableDoc2gsl_vectorByName(const xmlDocPtr xmlDocument,
+				const char *resourceType,
+				const char *resourceName,
+				const char *paramName,
+				const CHAR *unitName
+				)
+{
+  static const CHAR *fn = "XLALVOTableDoc2gsl_vectorByName()";
+  CHAR *nodeContent = NULL;
+  CHAR *nodeContentWorker = NULL;
+  int arraySize = 0;
+  int i;
+  gsl_vector *vect = NULL;
+  double el;
+
+  /* input sanity check */
+  if( !xmlDocument ) {
+    XLALPrintError ( "%s: Invalid input parameters: xmlDocument\n", fn);
+    XLAL_ERROR_NULL (fn, XLAL_EINVAL);
+  }
+  if( !resourceType ) {
+    XLALPrintError ( "%s: Invalid input parameters: resourceType\n", fn);
+    XLAL_ERROR_NULL (fn, XLAL_EINVAL);
+  }
+  if( !resourceName ) {
+    XLALPrintError ( "%s; Invalid input parameters: resourceName\n", fn);
+    XLAL_ERROR_NULL (fn, XLAL_EINVAL);
+  }
+  if( !paramName ) {
+    XLALPrintError("%s: Invalid input parameters: paramName\n", fn);
+    XLAL_ERROR_NULL (fn, XLAL_EINVAL);
+  }
+
+  /* retrieve arraysize (number of vector elements) */
+  nodeContent = (CHAR*)XLALGetSingleVOTableResourceParamAttribute(xmlDocument, resourceType, resourceName, paramName, VOT_ARRAYSIZE);
+  if(!nodeContent || sscanf((char*)nodeContent, "%i", &arraySize) == EOF || arraySize == 0) {
+    if(nodeContent) xmlFree(nodeContent);
+    XLALPrintError("%s: Invalid node content encountered: %s.%s.arraysize\n", fn, resourceName, paramName);
+    XLAL_ERROR_NULL (fn, XLAL_EDATA);
+  }
+  xmlFree(nodeContent);
+
+  /* retrieve and check unitName, if given by caller */
+  if ( unitName )
+    {
+      nodeContent = (CHAR*)XLALGetSingleVOTableResourceParamAttribute(xmlDocument, resourceType, resourceName, paramName, VOT_UNIT );
+      if ( !nodeContent ) {
+	xmlFree(nodeContent);
+	XLALPrintError("%s: failed to find %s.%s.unit, but caller requested '%s'.\n\n", fn, resourceName, paramName, unitName );
+	XLAL_ERROR_NULL ( fn, XLAL_EDATA );
+      }
+      /* check that unit in XML agrees with caller's requirement */
+      if ( strcmp ( unitName, nodeContent ) ) {
+	XLALPrintError("%s: %s.%s.unit = '%s', but caller requested '%s'. Sorry, I can't do unit conversions.\n",
+		       fn, resourceName, paramName, nodeContent, unitName );
+	xmlFree(nodeContent);
+	XLAL_ERROR_NULL ( fn, XLAL_EDATA );
+      }
+
+      xmlFree(nodeContent);
+    } /* check unitName */
+
+
+  /* retrieve pulsar gsl_vector array (string) */
+  nodeContent = (CHAR *)XLALGetSingleVOTableResourceParamAttribute(xmlDocument, resourceType, resourceName, paramName, VOT_VALUE);
+  fprintf (stderr, "%s: nodeContent = '%s'\n", fn, nodeContent );
+
+  if(!nodeContent) {
+    XLALPrintError("%s: Invalid node content encountered: %s.%s\n", fn, resourceName, paramName);
+    XLAL_ERROR_NULL (fn, XLAL_EDATA);
+  }
+
+  /* allocate output gsl_vector */
+  if ( (vect = gsl_vector_calloc ( arraySize )) == NULL ) {
+    XLALPrintError ("%s: failed to gsl_vector_calloc(%d).\n", fn, arraySize );
+    XLAL_ERROR_NULL (fn, XLAL_ENOMEM);
+  }
+
+  /* finally, parse and store individual vector elements */
+  if ( (nodeContentWorker = strtok(nodeContent, " ")) == NULL ) {
+    gsl_vector_free ( vect );
+    xmlFree(nodeContent);
+    XLALPrintError ("%s: failed to parse first array element in node: %s.%s.\n",
+		    fn, resourceName, paramName );
+    XLAL_ERROR_NULL (fn, XLAL_EDATA);
+  }
+  for(i = 0; i < arraySize; i++)
+    {
+      /* scan current item */
+      if ( sscanf( nodeContentWorker, "%lf", &el) == EOF) {
+	xmlFree(nodeContent);
+	gsl_vector_free ( vect );
+	XLALPrintError("%s: Invalid node content encountered: %s.%s[%i] = '%s'\n", fn, resourceName, paramName, i, nodeContentWorker );
+	XLAL_ERROR_NULL (fn, XLAL_EDATA);
+      }
+
+      gsl_vector_set ( vect, i, el );
+
+      /* advance to next item */
+      if ( (i < arraySize - 1) && (nodeContentWorker = strtok(NULL, " ")) == NULL ) {
+	gsl_vector_free ( vect );
+	xmlFree(nodeContent);
+	XLALPrintError ("%s: failed to parse %d-th array element in node: %s.%s'.\n", fn, i, resourceName, paramName );
+	XLAL_ERROR_NULL (fn, XLAL_EDATA);
+      }
+    } /* for i < arraySize */
+
+  /* clean up*/
+  xmlFree(nodeContent);
+
+  return vect;
+
+} /* XLALVOTableDoc2gsl_vectorByName() */

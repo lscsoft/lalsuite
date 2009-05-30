@@ -55,6 +55,9 @@ INT4 XLALVOTableDoc2PulsarSpinsByName(const xmlDocPtr xmlDocument,
 xmlNodePtr XLALPulsarDopplerParams2VOTableNode(const PulsarDopplerParams *const pdp, const char *name);
 INT4 XLALVOTableDoc2PulsarDopplerParamsByName(const xmlDocPtr xmlDocument, const char *name, PulsarDopplerParams *pdp);
 
+xmlNodePtr XLALgsl_vector2VOTableNode(const gsl_vector *vect, const char *name, const CHAR *unitName );
+gsl_vector *XLALVOTableDoc2gsl_vectorByName(const xmlDocPtr xmlDocument, const char *resourceType, const char *resourceName, const char *paramName, const CHAR *unitName);
+
 
 /* C++ protection */
 #ifdef __cplusplus
