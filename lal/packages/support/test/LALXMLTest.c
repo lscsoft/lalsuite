@@ -47,6 +47,10 @@
 #define LALXMLC_TYPETEST3 "gsl_vector_wrapper"
 #define LALXMLC_NAMETEST3 "myVect"
 
+#define LALXMLC_TYPETEST4 "gsl_matrix_wrapper"
+#define LALXMLC_NAMETEST4 "myMatrix"
+
+
 #define REAL8TOL 1e-15
 
 #ifndef LAL_PREFIX
@@ -60,6 +64,7 @@
 int testLIGOTimeGPS(void);
 int testPulsarDopplerParams(void);
 int test_gsl_vector(void);
+int test_gsl_matrix(void);
 
 /* private utility prototypes */
 int validateDocument(const xmlDocPtr xmlDocument);
@@ -99,6 +104,12 @@ int main(void)
       return result;
     }
 
+    fprintf(stderr, "======================================================================\n\n");
+
+    if ( (result = test_gsl_matrix()) != LALXMLC_ENOM ) {
+      return result;
+    }
+
     fprintf(stderr, "**********************************************************************\n");
 
     return LALXMLC_ENOM;
@@ -131,7 +142,7 @@ int testLIGOTimeGPS(void)
         fprintf(stderr, "LALXMLTest: [XLALLIGOTimeGPS2VOTableNode(): %s]\n", LALXMLC_MSGEFUN);
         return LALXMLC_EFUN;
     }
-    fprintf(stderr, "LALXMLTest: [XLALLIGOTimeGPS2VOTableNode(): %s]\n\n", LALXMLC_MSGENOM);
+    fprintf(stderr, "LALXMLTest: [XLALLIGOTimeGPS2VOTableNode(): %s]\n", LALXMLC_MSGENOM);
 
     /* convert VOTable fragment into VOTable document */
     xmlDocument = (xmlDocPtr)XLALCreateVOTableDocumentFromTree((const xmlNodePtr)xmlFragment);
@@ -140,7 +151,7 @@ int testLIGOTimeGPS(void)
         fprintf(stderr, "LALXMLTest: [XLALCreateVOTableDocumentFromTree(): %s]\n", LALXMLC_MSGEFUN);
         return LALXMLC_EFUN;
     }
-    fprintf(stderr, "LALXMLTest: [XLALCreateVOTableDocumentFromTree(): %s]\n\n", LALXMLC_MSGENOM);
+    fprintf(stderr, "LALXMLTest: [XLALCreateVOTableDocumentFromTree(): %s]\n", LALXMLC_MSGENOM);
 
     /* convert VOTable document into XML string */
     if(!xmlDocument2String(xmlDocument, &xmlString)) {
@@ -203,7 +214,7 @@ int testLIGOTimeGPS(void)
         fprintf(stderr, "LALXMLTest: [XLALVOTableDoc2LIGOTimeGPSByName(): %s]\n", LALXMLC_MSGEFUN);
         return LALXMLC_EFUN;
     }
-    fprintf(stderr, "\nLALXMLTest: [XLALVOTableDoc2LIGOTimeGPSByName(): %s]\n\n", LALXMLC_MSGENOM);
+    fprintf(stderr, "LALXMLTest: [XLALVOTableDoc2LIGOTimeGPSByName(): %s]\n", LALXMLC_MSGENOM);
 
     /* clean up */
     xmlFreeDoc(xmlDocument);
@@ -286,7 +297,7 @@ int testPulsarDopplerParams(void)
         fprintf(stderr, "LALXMLTest: [XLALPulsarDopplerParams2VOTableNode(): %s]\n", LALXMLC_MSGEFUN);
         return LALXMLC_EFUN;
     }
-    fprintf(stderr, "LALXMLTest: [XLALPulsarDopplerParams2VOTableNode(): %s]\n\n", LALXMLC_MSGENOM);
+    fprintf(stderr, "LALXMLTest: [XLALPulsarDopplerParams2VOTableNode(): %s]\n", LALXMLC_MSGENOM);
 
     /* convert VOTable fragment into VOTable document */
     xmlDocument = (xmlDocPtr)XLALCreateVOTableDocumentFromTree((const xmlNodePtr)xmlFragment);
@@ -295,7 +306,7 @@ int testPulsarDopplerParams(void)
         fprintf(stderr, "LALXMLTest: [XLALCreateVOTableDocumentFromTree(): %s]\n", LALXMLC_MSGEFUN);
         return LALXMLC_EFUN;
     }
-    fprintf(stderr, "LALXMLTest: [XLALCreateVOTableDocumentFromTree(): %s]\n\n", LALXMLC_MSGENOM);
+    fprintf(stderr, "LALXMLTest: [XLALCreateVOTableDocumentFromTree(): %s]\n", LALXMLC_MSGENOM);
 
     /* convert VOTable document into XML string */
     if(!xmlDocument2String(xmlDocument, &xmlString)) {
@@ -358,7 +369,7 @@ int testPulsarDopplerParams(void)
         fprintf(stderr, "LALXMLTest: [XLALVOTableDoc2PulsarDopplerParamsByName(): %s]\n", LALXMLC_MSGEFUN);
         return LALXMLC_EFUN;
     }
-    fprintf(stderr, "\nLALXMLTest: [XLALVOTableDoc2PulsarDopplerParamsByName(): %s]\n\n", LALXMLC_MSGENOM);
+    fprintf(stderr, "LALXMLTest: [XLALVOTableDoc2PulsarDopplerParamsByName(): %s]\n", LALXMLC_MSGENOM);
 
     /* clean up */
     xmlFreeDoc(xmlDocument);
@@ -416,7 +427,7 @@ test_gsl_vector(void)
 {
   static const char *fn = "test_gsl_vector()";
 
-  size_t i, dim;
+  int i, dim;
   gsl_vector *in_vect, *out_vect;
   xmlNodePtr xmlChildNodeList = NULL;
 
@@ -424,6 +435,7 @@ test_gsl_vector(void)
   xmlDocPtr xmlDocument = NULL;
   xmlChar *xmlString = NULL;
   int result;
+  REAL8 err, maxerr = 0;
 
   /* ---------- initialize input test data ---------- */
 
@@ -442,7 +454,7 @@ test_gsl_vector(void)
     } /* for i < dim */
 
 
-  fprintf(stderr, "1: Testing gsl_vector (de)serialization...\n\n");
+  fprintf(stderr, "3: Testing gsl_vector (de)serialization...\n\n");
 
   fprintf(stderr, "Initial gsl_vector:\n");
   fprintf(stderr, "%s = ", LALXMLC_NAMETEST3 );
@@ -453,7 +465,7 @@ test_gsl_vector(void)
     fprintf(stderr, "LALXMLTest: [XLALgsl_vector2VOTableNode(): %s]\n", LALXMLC_MSGEFUN);
     return LALXMLC_EFUN;
   }
-  fprintf(stderr, "LALXMLTest: [XLALgsl_vector2VOTableNode(): %s]\n\n", LALXMLC_MSGENOM);
+  fprintf(stderr, "LALXMLTest: [XLALgsl_vector2VOTableNode(): %s]\n", LALXMLC_MSGENOM);
 
   /* wrap into a dummy RESOURCE node*/
   if ( (xmlFragment = XLALCreateVOTableResourceNode(LALXMLC_TYPETEST3, LALXMLC_NAMETEST3, xmlChildNodeList)) == NULL ) {
@@ -468,7 +480,7 @@ test_gsl_vector(void)
     fprintf(stderr, "LALXMLTest: [XLALCreateVOTableDocumentFromTree(): %s]\n", LALXMLC_MSGEFUN);
     return LALXMLC_EFUN;
   }
-  fprintf(stderr, "LALXMLTest: [XLALCreateVOTableDocumentFromTree(): %s]\n\n", LALXMLC_MSGENOM);
+  fprintf(stderr, "LALXMLTest: [XLALCreateVOTableDocumentFromTree(): %s]\n", LALXMLC_MSGENOM);
 
   /* convert VOTable document into XML string */
   if(!xmlDocument2String(xmlDocument, &xmlString)) {
@@ -500,7 +512,7 @@ test_gsl_vector(void)
     fprintf(stderr, "LALXMLTest: [XLALVOTableDoc2gsl_vectorByName(): %s]\n", LALXMLC_MSGEFUN);
     return LALXMLC_EFUN;
   }
-  fprintf(stderr, "\nLALXMLTest: [XLALVOTableDoc2gsl_vectorByName(): %s]\n\n", LALXMLC_MSGENOM);
+  fprintf(stderr, "LALXMLTest: [XLALVOTableDoc2gsl_vectorByName(): %s]\n", LALXMLC_MSGENOM);
 
 
   fprintf(stderr, "gsl_vector parsed back from VOTable:\n");
@@ -513,14 +525,16 @@ test_gsl_vector(void)
       REAL8 in, out;
       in  = gsl_vector_get ( in_vect, i );
       out = gsl_vector_get ( out_vect, i );
-      if ( abs ( (in - out) / (0.5 * (in + out))) > REAL8TOL ) {
-	XLALPrintError ("%s: element %d in gsl_vector '%s' differs by more than tolerance %g: in=%.16g, out=%.16g.\n\n",
-			fn, i, LALXMLC_NAMETEST3, REAL8TOL, in, out );
+      err = abs ( (in - out) / (0.5 * (in + out)));
+      if ( err > maxerr ) maxerr = err;
+      if (  err > REAL8TOL ) {
+	XLALPrintError ("%s: element %d in gsl_vector '%s' differs by more (%g) than tolerance %g: in=%.16g, out=%.16g.\n\n",
+			fn, i, LALXMLC_NAMETEST3, err, REAL8TOL, in, out );
 	fprintf(stderr, "LALXMLTest: [XLALVOTableDoc2gsl_vectorByName(): %s]\n\n", LALXMLC_MSGEVAL);
 	return LALXMLC_EVAL;
       }
     } /* for i < dim */
-  fprintf (stderr, "%s: relative error within tolerance of %g.\n\n", fn, REAL8TOL );
+  fprintf (stderr, "%s: maximal relative error %g is within tolerance of %g.\n\n", fn, maxerr, REAL8TOL );
 
   /* free memory */
   xmlFreeDoc(xmlDocument);
@@ -530,6 +544,139 @@ test_gsl_vector(void)
   return LALXMLC_ENOM;
 
 } /* test_gsl_vector() */
+
+
+
+/* test (de-)serialization of a gsl_matrix type */
+int
+test_gsl_matrix(void)
+{
+  static const char *fn = "test_gsl_matrix()";
+
+  int row, col, numRows, numCols;
+  gsl_matrix *in_matrix, *out_matrix;
+  xmlNodePtr xmlChildNodeList = NULL;
+
+  xmlNodePtr xmlFragment = NULL;
+  xmlDocPtr xmlDocument = NULL;
+  xmlChar *xmlString = NULL;
+  int result;
+  REAL8 err, maxerr = 0;
+
+  /* ---------- initialize input test data ---------- */
+
+  /* pick a random number of dimensions between [2, 6] */
+  srand(time(NULL));	/* pick random seed */
+  numRows = 2 + (1.0 * rand() / RAND_MAX) * 4;
+  numCols = 2 + (1.0 * rand() / RAND_MAX) * 4;
+
+  if ( (in_matrix = gsl_matrix_alloc ( numRows, numCols )) == NULL ) {
+    XLALPrintError ("%s: failed to gsl_matrix_alloc(%d,%d).\n\n", fn, numRows, numCols );
+    return XLAL_ENOMEM;
+  }
+  for (row=0; row < numRows; row ++ )
+    {
+      for ( col=0; col < numCols; col ++ )
+	{
+	  REAL8 val = (2.0 * rand()/RAND_MAX) - 1.0;	/* double between [-1,1] */
+	  gsl_matrix_set ( in_matrix, row, col, val );
+	} /* for col < numCols */
+    } /* for row < numRows */
+
+  fprintf(stderr, "4: Testing gsl_matrix (de)serialization...\n\n");
+
+  fprintf(stderr, "Initial gsl_matrix:\n");
+  fprintf(stderr, "%s = ", LALXMLC_NAMETEST4 );
+  XLALfprintfGSLmatrix ( stderr, "%.16g", in_matrix );
+
+  /* ---------- serialize gsl_matrix into VOTable fragment */
+  if ( (xmlChildNodeList = XLALgsl_matrix2VOTableNode(in_matrix, "matrix", "ms")) == NULL ) {
+    fprintf(stderr, "LALXMLTest: [XLALgsl_matrix2VOTableNode(): %s]\n", LALXMLC_MSGEFUN);
+    return LALXMLC_EFUN;
+  }
+  fprintf(stderr, "LALXMLTest: [XLALgsl_matrix2VOTableNode(): %s]\n", LALXMLC_MSGENOM);
+
+  /* wrap into a dummy RESOURCE node*/
+  if ( (xmlFragment = XLALCreateVOTableResourceNode(LALXMLC_TYPETEST4, LALXMLC_NAMETEST4, xmlChildNodeList)) == NULL ) {
+    xmlFreeNodeList(xmlChildNodeList);
+    XLALPrintError("%s: Couldn't create RESOURCE node: %s\n", fn, LALXMLC_NAMETEST4);
+    return LALXMLC_EFUN;
+  }
+
+
+  /* convert VOTable fragment into VOTable document */
+  if ( (xmlDocument = (xmlDocPtr)XLALCreateVOTableDocumentFromTree((const xmlNodePtr)xmlFragment)) == NULL ) {
+    fprintf(stderr, "LALXMLTest: [XLALCreateVOTableDocumentFromTree(): %s]\n", LALXMLC_MSGEFUN);
+    return LALXMLC_EFUN;
+  }
+  fprintf(stderr, "LALXMLTest: [XLALCreateVOTableDocumentFromTree(): %s]\n", LALXMLC_MSGENOM);
+
+  /* convert VOTable document into XML string */
+  if(!xmlDocument2String(xmlDocument, &xmlString)) {
+    return LALXMLC_EFUN;
+  }
+
+  /* ---------- display serialized structure */
+  fprintf(stderr, "Serialized VOTable XML:\n");
+  fprintf(stderr, "----------------------------------------------------------------------\n");
+  fprintf(stderr, (char*)xmlString);
+  fprintf(stderr, "----------------------------------------------------------------------\n");
+
+  /* ---------- validate XML document */
+  result = validateDocument(xmlDocument);
+  if(result == XLAL_SUCCESS) {
+    fprintf(stderr, "LALXMLTest: [XLALValidateDocumentBy[Ex|In]ternalSchema(): %s]\n", LALXMLC_MSGENOM);
+  }
+  else if(result == XLAL_FAILURE) {
+    fprintf(stderr, "LALXMLTest: [XLALValidateDocumentBy[Ex|In]ternalSchema(): %s]\n", LALXMLC_MSGEVAL);
+    return LALXMLC_EVAL;
+  }
+  else {
+    fprintf(stderr, "LALXMLTest: [XLALValidateDocumentBy[Ex|In]ternalSchema(): %s]\n", LALXMLC_MSGEFUN);
+    return LALXMLC_EFUN;
+  }
+
+  /* ---------- deserialize VOTable document into structure */
+  if( (out_matrix = XLALVOTableDoc2gsl_matrixByName(xmlDocument, LALXMLC_TYPETEST4, LALXMLC_NAMETEST4, "matrix", "ms")) == NULL ) {
+    fprintf(stderr, "LALXMLTest: [XLALVOTableDoc2gsl_matrixByName(): %s]\n", LALXMLC_MSGEFUN);
+    return LALXMLC_EFUN;
+  }
+  fprintf(stderr, "LALXMLTest: [XLALVOTableDoc2gsl_matrixByName(): %s]\n", LALXMLC_MSGENOM);
+
+
+  fprintf(stderr, "gsl_matrix parsed back from VOTable:\n");
+  fprintf(stderr, "%s = ", LALXMLC_NAMETEST4 );
+  XLALfprintfGSLmatrix ( stderr, "%.16g", out_matrix );
+
+  /* ---------- validate test results */
+  for (row=0; row < numRows; row ++ )
+    {
+      for ( col=0; col < numCols; col ++ )
+	{
+	  REAL8 in, out;
+	  in  = gsl_matrix_get ( in_matrix, row, col );
+	  out = gsl_matrix_get ( out_matrix, row, col );
+	  err = abs ( (in - out) / (0.5 * (in + out) ) );
+	  if ( err > maxerr ) maxerr = err;
+	  if ( err > REAL8TOL ) {
+	    XLALPrintError ("%s: element (%d,%d) in gsl_matrix '%s' differs by more (%g) than tolerance %g: in=%.16g, out=%.16g.\n\n",
+			    fn, row, col, LALXMLC_NAMETEST4, err, REAL8TOL, in, out );
+	    fprintf(stderr, "LALXMLTest: [XLALVOTableDoc2gsl_matrixByName(): %s]\n\n", LALXMLC_MSGEVAL);
+	    return LALXMLC_EVAL;
+	  }
+	} /* for col < numCols */
+    } /* for row < numRows */
+  fprintf (stderr, "%s: maximal relative error %g is within tolerance of %g.\n\n", fn, maxerr, REAL8TOL );
+
+  /* free memory */
+  xmlFreeDoc(xmlDocument);
+  gsl_matrix_free ( in_matrix );
+  gsl_matrix_free ( out_matrix );
+
+  return LALXMLC_ENOM;
+
+} /* test_gsl_matrix() */
+
 
 
 
