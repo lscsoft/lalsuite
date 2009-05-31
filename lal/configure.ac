@@ -368,8 +368,8 @@ AC_CHECK_HEADERS(gsl/gsl_errno.h, , [AC_MSG_ERROR(could not find gsl/gsl_errno.h
 if test "${intelfft}" = "false" ; then
   AC_CHECK_HEADERS(fftw3.h, , [AC_MSG_ERROR(could not find fftw3.h)])
 fi
-AC_CHECK_HEADER(stdint.h, , [AC_MSG_WARN(could not find stdint.h)])
-AC_CHECK_HEADER(inttypes.h, , [AC_MSG_WARN(could not find inttypes.h)])
+AC_CHECK_HEADER(stdint.h, , [AC_MSG_ERROR(could not find stdint.h)])
+AC_CHECK_HEADER(inttypes.h, , [AC_MSG_ERROR(could not find inttypes.h)])
 
 AC_MSG_CHECKING(for gethostname prototype in unistd.h)
 AC_EGREP_HEADER(gethostname, unistd.h,AC_MSG_RESULT(yes)
@@ -434,10 +434,6 @@ AC_C_CONST
 AC_C_STRINGIZE
 AC_TYPE_SIZE_T
 AC_HEADER_TIME
-LAL_CHECK_SIZEOF(short, 2)
-LAL_CHECK_SIZEOF(int, 4)
-LAL_CHECK_SIZEOF(long, 4)
-LAL_CHECK_SIZEOF(long long, 8)
 LAL_CHECK_SIZEOF(float, 4)
 LAL_CHECK_SIZEOF(double, 8)
 

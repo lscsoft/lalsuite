@@ -1193,6 +1193,15 @@ void LALBCVSpinWaveform(
      REAL4Vector *signalvec, 
      InspiralTemplate *params);
 
+/* <lalLaTeX>
+\newpage\input{LALInspiralTaylorNWaveformC}
+</lalLaTeX> */
+
+void LALTaylorNWaveform (
+     LALStatus        *status,
+     REAL4Vector      *signal,
+     InspiralTemplate *params);
+
 /*  <lalLaTeX>
 \newpage\input{LALInspiralSpinningBHBinaryC}
 </lalLaTeX>  */
@@ -1275,6 +1284,11 @@ void LALBBHPhenTimeDomEngine( LALStatus        *status,
 			      REAL4Vector      *f,
 			      REAL8Vector      *phiOut,
 			      InspiralTemplate *params);
+
+void LALBBHPhenWaveTimeDomForInjection (LALStatus        *status,
+					CoherentGW       *waveform,
+					InspiralTemplate *params,
+					PPNParamStruc    *ppnParams);
 
 
 /* --- OTHER PROTOTYPES --- */

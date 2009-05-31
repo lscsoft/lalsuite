@@ -71,6 +71,7 @@ LALSnprintf()
 #include <lal/GenerateRing.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/RealFFT.h>
+#include <lal/TimeFreqFFT.h>
 
 
 NRCSID( GENERATERINGC, "$Id$" );

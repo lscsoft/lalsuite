@@ -152,7 +152,8 @@ XLALAverage_am1_am2_Phi_i_Phi_j ( const intparams_t *params )
   integrand.function = &CW_am1_am2_Phi_i_Phi_j;
   XLAL_CALLGSL ( stat = gsl_integration_qng (&integrand, 0, 1, epsabs, epsrel, &ret, &abserr, &neval) );
   if ( stat != 0 ) {
-    XLALPrintError ( "\n%s: GSL-integration 'gsl_integration_qng()' of <Phi_i Phi_j> failed! abserr=%g, neval=%d\n", fn, abserr, neval);
+    XLALPrintError ( "\n%s: GSL-integration 'gsl_integration_qng()' of <am1_am2_Phi_i Phi_j> failed! Result = %g, abserr=%g, neval=%d\n",
+		     fn, ret, abserr, neval);
     XLAL_ERROR_REAL8( fn, XLAL_EFUNC );
   }
 
@@ -699,7 +700,7 @@ XLALDopplerFstatMetric ( const DopplerMetricParams *metricParams,  	/**< input p
 			 )
 {
   const CHAR *fn = "XLALDopplerFstatMetric()";
-  DopplerMetric *metric;
+  DopplerMetric *metric = NULL;
   REAL8 cosi, psi;
 
   FmetricAtoms_t *atoms;
@@ -713,7 +714,6 @@ XLALDopplerFstatMetric ( const DopplerMetricParams *metricParams,  	/**< input p
   /* ---------- compute Fmetric 'atoms', ie the averaged <a^2>, <a b Phi_i>, <a^2 Phi_i Phi_j>, etc ---------- */
   if ( (atoms = XLALComputeAtomsForFmetric ( metricParams, edat )) == NULL ) {
     XLALPrintError ("%s: XLALComputeAtomsForFmetric() failed. errno = %d\n\n", fn, xlalErrno );
-    XLALDestroyDopplerMetric ( metric );
     XLAL_ERROR_NULL( fn, XLAL_EFUNC );
   }
 
@@ -960,8 +960,8 @@ XLALComputeAtomsForFmetric ( const DopplerMetricParams *metricParams,  	/**< inp
 
  failed:
   XLALDestroyFmetricAtoms ( ret );
-  XLALPrintError ( "%s: XLALAverage_am1_am2_Phi_i_Phi_j() FAILED with errno = %d: am1 = %d, am2 = %d, i = %d, j = %d\n",
-		   fn, xlalErrno, intparams.amcomp1,intparams.amcomp2, intparams.deriv1, intparams.deriv2 );
+  XLALPrintError ( "%s: XLALAverage_am1_am2_Phi_i_Phi_j() FAILED with errno = %d: am1 = %d, am2 = %d, i = %d : '%s', j = %d : '%s'\n",
+		   fn, xlalErrno, intparams.amcomp1,intparams.amcomp2, i, DopplerCoordinateNames[i], j, DopplerCoordinateNames[j] );
   XLAL_ERROR_NULL( fn, XLAL_EFUNC );
 
 } /* XLALComputeAtomsForFmetric() */

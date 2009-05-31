@@ -42,6 +42,7 @@
 #include <lal/DetResponse.h>
 #include <lal/TimeDelay.h>
 #include <lal/InspiralInjectionParams.h>
+#include <lal/VectorOps.h>
 
 NRCSID (INSPIRALINJECTIONPARAMSC,"$Id$");
 

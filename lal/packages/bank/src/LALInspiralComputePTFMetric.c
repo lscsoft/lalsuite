@@ -109,6 +109,7 @@ LALFree
 #include <lal/LALInspiralBank.h>
 #include <lal/LALNoiseModels.h>
 #include <lal/MatrixUtils.h>
+#include <lal/FindChirpPTF.h>
 
 /* <lalVerbatim file="XLALInspiralComputePTFIntrinsicMetricCP">  */
 INT4 XLALInspiralComputePTFIntrinsicMetric (
