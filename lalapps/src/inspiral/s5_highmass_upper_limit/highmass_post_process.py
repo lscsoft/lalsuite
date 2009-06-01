@@ -116,6 +116,26 @@ class lalapps_newcorse_job(pipeline.CondorDAGJob):
     self.set_stdout_file('logs/'+tag_base+'-$(macroid)-$(process).out')
     self.set_stderr_file('logs/'+tag_base+'-$(macroid)-$(process).err')
 
+
+class lalapps_newcorse_combined_job(pipeline.CondorDAGJob):
+  """
+  A lalapps_newcorse_job
+  """
+  def __init__(self, cp, tag_base='LALAPPS_NEWCORSE_COMBINED'):
+    """
+    """
+    self.__prog__ = 'lalapps_newcorse'
+    self.__executable = string.strip(cp.get('condor','lalapps_newcorse'))
+    self.__universe = "vanilla"
+    pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
+    self.add_condor_cmd('getenv','True')
+    self.tag_base = tag_base
+    self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
+    self.set_sub_file(tag_base+'.sub')
+    self.set_stdout_file('logs/'+tag_base+'-$(macroid)-$(process).out')
+    self.set_stderr_file('logs/'+tag_base+'-$(macroid)-$(process).err')
+
+
 class ligolw_segments_job(pipeline.CondorDAGJob):
   """
   A ligolw_segments_job
@@ -170,7 +190,7 @@ class hm_upperlimit_job(pipeline.CondorDAGJob):
     self.set_stdout_file('logs/'+tag_base+'-$(macroid)-$(process).out')
     self.set_stderr_file('logs/'+tag_base+'-$(macroid)-$(process).err')
 
-class hm_upperlimit_job(pipeline.CondorDAGJob):
+class far_plot_job(pipeline.CondorDAGJob):
   """
   A far_plot Job
   """
@@ -276,7 +296,7 @@ class lalapps_newcorse_node(pipeline.CondorDAGNode):
     pipeline.CondorDAGNode.__init__(self,job)
     #FIXME make temp space?
     #self.add_var_opt("tmp-space","/tmp")
-    if mass_bins: self.add_var_opt("mass-bins", mass_bins)
+    if self.mass_bins: self.add_var_opt("mass-bins", mass_bins)
     self.add_var_opt("live-time-program",live_time_program)
     self.add_var_opt("veto-segments-name",veto_segments_name)
     self.add_var_arg(database)
@@ -358,7 +378,7 @@ sqliteJob = sqlite_job(cp)
 ligolwSqliteJob = ligolw_sqlite_job(cp)
 ligolwInspinjfindJob = ligolw_inspinjfind_job(cp)
 lalappsNewcorseJob = lalapps_newcorse_job(cp)
-lalappsNewcorseJobCombined = lalapps_newcorse_job(cp)
+lalappsNewcorseJobCombined = lalapps_newcorse_combined_job(cp)
 ligolwSegmentsJob = ligolw_segments_job(cp)
 ligolwThincaToCoincJob =  ligolw_thinca_to_coinc_job(cp)
 hmUpperlimitJob = hm_upperlimit_job(cp)
@@ -400,7 +420,7 @@ for type in types:
     try: os.mkdir(type+cat)
     except: pass
     ligolwThincaToCoincNode[type+cat] = ligolw_thinca_to_coinc_node(ligolwThincaToCoincJob, dag, type+cat+".cache", "vetoes_"+cat+".xml.gz", "vetoes", type+cat+"/S5_HM_"+timestr, n, start_time, end_time, effsnrfac=50, p_node=[segNode[cat]]); n+=1
-    database = type+cat+"_"+timestr".sqlite"
+    database = type+cat+"_"+timestr+".sqlite"
     try: db[cat].append(database) 
     except: db[cat] = [database]
     xml_list = [type+cat+"/S5_HM_"+timestr+"*"+type+"*"+cat+"*.xml.gz", "vetoes_"+cat+".xml.gz"]
