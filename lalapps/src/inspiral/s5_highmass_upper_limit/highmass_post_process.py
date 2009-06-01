@@ -296,7 +296,7 @@ class lalapps_newcorse_node(pipeline.CondorDAGNode):
     pipeline.CondorDAGNode.__init__(self,job)
     #FIXME make temp space?
     #self.add_var_opt("tmp-space","/tmp")
-    if self.mass_bins: self.add_var_opt("mass-bins", mass_bins)
+    if mass_bins: self.add_var_opt("mass-bins", mass_bins)
     self.add_var_opt("live-time-program",live_time_program)
     self.add_var_opt("veto-segments-name",veto_segments_name)
     self.add_var_arg(database)
