@@ -18,6 +18,7 @@ AC_CONFIG_FILES([ \
                  doc/autodoc/Makefile \
                  include/Makefile \
                  include/lal/Makefile \
+                 lib/git_version
                  lib/Makefile \
                  misc/Makefile \
                  packages/Makefile \
@@ -501,6 +502,7 @@ AC_SUBST_FILE(INCLUDEMKFILE)
 AC_SUBST_FILE(DOCMKFILE)
 AC_SUBST_FILE(DVIMKFILE)
 AC_CONFIG_COMMANDS([default-1],[[chmod +x lal-config]],[[]])
+AC_CONFIG_COMMANDS([default-2],[[chmod +x lib/git_version]],[[]])
 AC_OUTPUT
 frameenabled="`test x${frame} = xtrue && echo "ENABLED" || echo "DISABLED"`"
 metaioenabled="`test x${metaio} = xtrue && echo "ENABLED" || echo "DISABLED"`"
