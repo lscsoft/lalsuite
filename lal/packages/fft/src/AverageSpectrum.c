@@ -1518,6 +1518,120 @@ int XLALPSDRegressorAdd(LALPSDRegressor *r, const COMPLEX16FrequencySeries *samp
   return 0;
 }
 
+int XLALPSDRegressorAddToMean(LALPSDRegressor *r, const COMPLEX16FrequencySeries *sample)
+{
+  static const char func[] = "XLALPSDRegressorAddToMean";
+  double delta_epoch;
+  unsigned i;
+
+  /* FIXME:  also check units */
+  else if((sample->f0 != r->mean->f0) || (sample->deltaF != r->mean->deltaF) || (sample->data->length != r->mean->data->length))
+  {
+    XLALPrintError("%s(): input parameter mismatch", func);
+    XLAL_ERROR(func, XLAL_EDATA);
+  }
+
+  /* compute the change in epoch */
+
+  delta_epoch = XLALGPSDiff(&sample->epoch, &r->mean->epoch);
+
+  /* loop over frequency bins */
+
+  for(i = 0; i < sample->data->length; i++)
+  {
+    /* rotate the frequency bin by the phase accrued due to the change in
+     * epoch */
+
+    COMPLEX16 z = XLALCOMPLEX16Mul(sample->data->data[i], XLALCOMPLEX16Polar(1.0, -LAL_TWOPI * (sample->f0 + i * sample->deltaF) * delta_epoch));
+
+    /* update the mean */
+
+    r->mean->data->data[i] = XLALCOMPLEX16DivReal(XLALCOMPLEX16Add(XLALCOMPLEX16MulReal(r->mean->data->data[i], r->n_samples - 1), z), r->n_samples);
+  }
+
+  return 0;
+}
+
+int XLALPSDRegressorAddToMeanSquare(LALPSDRegressor *r, const REAL8FrequencySeries *sample_square)
+{
+  static const char func[] = "XLALPSDRegressorAddToMeanSquare";
+  double delta_epoch;
+  unsigned i;
+
+  /* FIXME:  also check units */
+  else if((sample_square->f0 != r->mean_square->f0) || (sample_square->deltaF != r->mean_square->deltaF) || (sample_square->data->length != r->mean_square->data->length))
+  {
+    XLALPrintError("%s(): input parameter mismatch", func);
+    XLAL_ERROR(func, XLAL_EDATA);
+  }
+
+  /* loop over frequency bins */
+
+  for(i = 0; i < sample_square->data->length; i++)
+  {
+    /* update the mean square */
+
+    r->mean_square->data->data[i] = (r->mean_square->data->data[i] * (r->n_samples - 1) + sample_square->data->data[i]) / r->n_samples;
+  }
+
+  return 0;
+}
+
+int XLALPSDRegressorAddSeparately(LALPSDRegressor *r, const COMPLEX16FrequencySeries *sample, const REAL8FrequencySeries *sample_square)
+{
+  static const char func[] = "XLALPSDRegressorAddSeparately";
+  double delta_epoch;
+  unsigned i;
+
+  /* create frequency series if required */
+
+  if(!r->mean)
+  {
+    r->mean = XLALCutCOMPLEX16FrequencySeries(sample, 0, sample->data->length);
+    r->mean_square = XLALCreateREAL8FrequencySeries(sample->name, &sample->epoch, sample->f0, sample->deltaF, &sample->sampleUnits, sample->data->length);
+    if(!r->mean || !r->mean_square)
+    {
+      XLALDestroyCOMPLEX16FrequencySeries(r->mean);
+      XLALDestroyREAL8FrequencySeries(r->mean_square);
+      r->mean = NULL;
+      r->mean_square = NULL;
+      XLAL_ERROR(func, XLAL_EFUNC);
+    }
+    XLALUnitSquare(&r->mean_square->sampleUnits, &r->mean_square->sampleUnits);
+    for(i = 0; i < r->mean_square->data->length; i++)
+      r->mean_square->data->data[i] = XLALCOMPLEX16Abs2(sample->data->data[i]);
+    r->n_samples = 1;
+    return 0;
+  }
+  /* FIXME:  also check units */
+  else if((sample->f0 != r->mean->f0) || (sample->deltaF != r->mean->deltaF) || (sample->data->length != r->mean->data->length) || (sample_square->f0 != r->mean_square->f0) || (sample_square->deltaF != r->mean_square->deltaF) || (sample_square->data->length != r->mean_square->data->length))
+  {
+    XLALPrintError("%s(): input parameter mismatch", func);
+    XLAL_ERROR(func, XLAL_EDATA);
+  }
+
+  /* bump the number of samples that have been recorded */
+
+  if(r->n_samples < r->max_samples)
+    r->n_samples++;
+  else
+    /* just in case */
+    r->n_samples = r->max_samples;
+
+  /* add sample to mean */
+
+  if(!XLALPSDRegressorAddToMean(r, sample) || !XLALPSDRegressorAddToMeanSquare(r, sample_square))
+  {
+    XLALDestroyCOMPLEX16FrequencySeries(r->mean);
+    XLALDestroyREAL8FrequencySeries(r->mean_square);
+    r->mean = NULL;
+    r->mean_square = NULL;
+    XLAL_ERROR(func, XLAL_EFUNC);
+  }
+
+  return 0;
+}
+
 
 /*
  * returns the square of the number of standard deviations by which the
