@@ -130,18 +130,29 @@ maximum of the component masses is fixed by \texttt{mMax} of the
 \item\texttt{FreqCut:}
 \input{LALFreqCutH}
 An enum that lists all the formulas that can be used to specify an upper 
-frequency cutoff. From lowest to highest, the choices are: SchwarzISCO, 
+frequency cutoff. From lowest to highest, the choices are:
+\begin{itemize}
+\item \texttt{FreqCut_SchwarzISCO}, 
 the innermost stable circular orbit (ISCO) for a test particle orbiting a 
-Schwarzschild black hole. BKLISCO, a mass ratio dependent ISCO derived from 
+Schwarzschild black hole.
+\item \texttt{FreqCut_BKLISCO},
+a mass ratio dependent ISCO derived from 
 estimates of the final spin of a merged black found in a paper by Buonanno, 
-Kidder, and Lehner (arXiv:0709.3839). LightRing, the unstable circular orbit 
-for photons orbiting a Schwarzschild black hole. FRD, the "Fundamental 
+Kidder, and Lehner (arXiv:0709.3839).
+\item \texttt{FreqCut_LightRing},
+the unstable circular orbit 
+for photons orbiting a Schwarzschild black hole.
+\item \texttt{FreqCut_FRD},
+the "Fundamental 
 RingDown" frequency which is calculated from the Berti, Cardoso and Will 
 (arXiv:gr-qc/0512160) value for the $\omega_{220}$ QNM frequency using mass 
 ratio dependent fits to the final BH mass and spin from Buonanno et al 
-(arXiv:0706.3732). ERD, an effective ringdown 
+(arXiv:0706.3732).
+\item \texttt{FreqCut_ERD},
+an effective ringdown 
 frequency studied in Pan et al (arXiv:0704.1964) that was found to give good 
-fit between stationary-phase templates and  numerical relativity waveforms. LRD, 
+fit between stationary-phase templates and  numerical relativity waveforms.
+\item \texttt{FreqCut_LRD}, 
 the "Lorentzian RingDown" frequency = 1.2*FRD which captures part of the 
 Lorentzian tail from the decay of the QNMs.
 
@@ -477,12 +488,12 @@ InspiralBankMassRange;
 /* <lalVerbatim file="LALFreqCutH"> */
 typedef enum
 {
-  SchwarzISCO,
-  BKLISCO,
-  LightRing,
-  ERD,
-  FRD,
-  LRD
+  FreqCut_SchwarzISCO,
+  FreqCut_BKLISCO,
+  FreqCut_LightRing,
+  FreqCut_ERD,
+  FreqCut_FRD,
+  FreqCut_LRD
 }
 FreqCut;
 /* </lalVerbatim> */
