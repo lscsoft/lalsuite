@@ -17,14 +17,14 @@
 *  MA  02111-1307  USA
 */
 
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: SnglInspiralUtils.c
  *
  * Author: Brady, P. R., Brown, D. A., Fairhurst, S. and Messaritaki, E.
- * 
+ *
  * Revision: $Id$
- * 
+ *
  *-----------------------------------------------------------------------
  */
 
@@ -32,7 +32,7 @@
 <lalVerbatim file="SnglInspiralUtilsCV">
 Author: Brown, D. A., Fairhurst, S. and Messaritaki, E.
 $Id$
-</lalVerbatim> 
+</lalVerbatim>
 #endif
 
 #include <math.h>
@@ -81,7 +81,7 @@ Provides a set of utilities for manipulating \texttt{snglInspiralTable}s.
 \idx{LALIfoCutSingleInspiral()}
 \idx{XLALIfoCutSingleInspiral()}
 \idx{LALIfoCountSingleInspiral()}
-\idx{LALTimeSlideSingleInspiral()} 
+\idx{LALTimeSlideSingleInspiral()}
 \idx{LALPlayTestSingleInspiral()}
 \idx{XLALPlayTestSingleInspiral()}
 \idx{LALCreateTrigBank()}
@@ -136,7 +136,7 @@ and before the \texttt{endTime}.
 
 \texttt{LALSNRCutSingleInspiral()} and \texttt{XLALSNRCutSingleInspiral()}
 take in a linked list of single inspiral tables and returns only those
-triggers which have snr values above a specific snrCut. 
+triggers which have snr values above a specific snrCut.
 
 \texttt{XLALRsqCutSingleInspiral()} performs the R-squared veto on a linked
 list of single inspiral tables.  Triggers whose snr is less than
@@ -168,7 +168,7 @@ events from the specified \texttt{ifo}, while on completion,
 \texttt{eventHead} contains the list of events from \textit{other} ifos.
 
 \texttt{LALIfoCountSingleInspiral()} scans through a linked list of single
-inspiral tables and counts the number which are from the requested IFO.  
+inspiral tables and counts the number which are from the requested IFO.
 This count is returned as \texttt{numTrigs}.
 
 \texttt{LALTimeSlideSingleInspiral()} performs a time slide on the triggers
@@ -183,13 +183,13 @@ this time window.
 test whether single inspiral events occured in playground or non-playground
 times.  It then returns the requested subset of events which occurred in the
 times specified by \texttt{dataType} which must be one of
-\texttt{playground\_only}, \texttt{exclude\_play} or \texttt{all\_data}.  
+\texttt{playground\_only}, \texttt{exclude\_play} or \texttt{all\_data}.
 
 \texttt{LALCreateTrigBank()} takes in a list of single inspiral tables and
 returns a template bank.  The function tests whether a given template produced
 multiple triggers.  If it did, only one copy of the template is retained.
 Triggers are tested for coincidence in \texttt{m1\_and\_m2} or
-\texttt{psi0\_and\_psi3}. 
+\texttt{psi0\_and\_psi3}.
 
 \texttt{LALIncaCoincidenceTest()} performs a coincidence test between triggers
 from two interferometers.  It tests pairs of events for both time and mass
@@ -270,7 +270,7 @@ XLALFreeSnglInspiral (
   {
     /* free any associated event_id's */
     (*eventHead)->event_id = (*eventHead)->event_id->next;
-    
+
     if( (thisCoinc = eventId->coincInspiralTable) )
     {
       /* this Sngl is still part of a coinc, set pointer to NULL */
@@ -325,15 +325,15 @@ XLALSortSnglInspiral (
   }
   if ( ! numEvents )
   {
-    XLALPrintInfo( 
+    XLALPrintInfo(
       "XLALSortSnglInspiral: Empty SnglInspiralTable passed as input\n" );
     return( eventHead );
   }
 
   /* allocate memory for an array of pts to sort and populate array */
-  eventHandle = (SnglInspiralTable **) 
+  eventHandle = (SnglInspiralTable **)
     LALCalloc( numEvents, sizeof(SnglInspiralTable *) );
-  for ( i = 0, thisEvent = eventHead; i < numEvents; 
+  for ( i = 0, thisEvent = eventHead; i < numEvents;
       ++i, thisEvent = thisEvent->next )
   {
     eventHandle[i] = thisEvent;
@@ -552,7 +552,7 @@ LALCompareSnglInspiral (
       }
     }
     else if ( params->test == m1_and_m2 )
-    {  
+    {
       dm1 = fabs( aPtr->mass1 - bPtr->mass1 );
       dm2 = fabs( aPtr->mass2 - bPtr->mass2 );
 
@@ -569,7 +569,7 @@ LALCompareSnglInspiral (
       }
     }
     else if ( params->test == mchirp_and_eta )
-    {  
+    {
       dmchirp = fabs( aPtr->mchirp - bPtr->mchirp );
       deta = fabs( aPtr->eta - bPtr->eta );
 
@@ -595,7 +595,7 @@ LALCompareSnglInspiral (
   /* check for distance consistency */
   if ( params->match && params->test == m1_and_m2 )
   {
-    if ( fabs( (aPtr->eff_distance - bPtr->eff_distance) / aPtr->eff_distance) 
+    if ( fabs( (aPtr->eff_distance - bPtr->eff_distance) / aPtr->eff_distance)
         < params->epsilon / bPtr->snr + params->kappa )
     {
       LALInfo( status, "Triggers are coincident in eff_distance" );
@@ -630,7 +630,7 @@ LALCompareInspirals (
   RETURN( status );
 }
 
-  
+
 
 /* <lalVerbatim file="SnglInspiralUtilsCP"> */
 int
@@ -668,7 +668,7 @@ XLALCompareInspirals (
 
   ifoaNum = XLALIFONumber( aPtr->ifo );
   ifobNum = XLALIFONumber( bPtr->ifo );
-  
+
   ta = XLALGPStoINT8( &(aPtr->end_time) );
   tb = XLALGPStoINT8( &(bPtr->end_time) );
 
@@ -690,7 +690,7 @@ XLALCompareInspirals (
     XLALPrintInfo( "Triggers pass time coincidence test\n" );
     params->match = 1;
   }
-  else 
+  else
   {
     XLALPrintInfo( "Triggers fail time coincidence test\n" );
     params->match = 0;
@@ -702,7 +702,7 @@ XLALCompareInspirals (
     case psi0_and_psi3:
       dpsi0 = fabs( aPtr->psi0 - bPtr->psi0 );
       dpsi3 = fabs( aPtr->psi3 - bPtr->psi3 );
-    
+
       /* compare psi0 and psi3 parameters */
       if ( ( dpsi0 <= (aAcc.dpsi0 + bAcc.dpsi0) )
           && ( dpsi3 <= (aAcc.dpsi3 + bAcc.dpsi3) ))
@@ -717,7 +717,7 @@ XLALCompareInspirals (
       }
       break;
 
-    case m1_and_m2:  
+    case m1_and_m2:
       dmass1 = fabs( aPtr->mass1 - bPtr->mass1 );
       dmass2 = fabs( aPtr->mass2 - bPtr->mass2 );
 
@@ -803,7 +803,7 @@ LALClusterSnglInspiralTable (
   INITSTATUS( status, "LALClusterSnglInspiralTable", SNGLINSPIRALUTILSC );
   ATTATCHSTATUSPTR( status );
 
-  ASSERT( inspiralEvent, status, 
+  ASSERT( inspiralEvent, status,
       LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
 
   XLALClusterSnglInspiralTable ( inspiralEvent, dtimeNS, clusterchoice );
@@ -813,14 +813,14 @@ LALClusterSnglInspiralTable (
   RETURN (status);
 }
 
-REAL4 
+REAL4
 XLALSnglInspiralStat(
     SnglInspiralTable         *snglInspiral,
     SnglInspiralClusterChoice  snglStat
     )
 {
   REAL4 statValue = 0;
-  
+
   if ( snglStat == snr )
   {
     statValue = snglInspiral->snr;
@@ -851,21 +851,21 @@ XLALClusterSnglInspiralTable (
   SnglInspiralTable     *prevEvent=NULL;
   SnglInspiralTable     *nextEvent=NULL;
   int                    numSnglClust = 0;
-  
+
   if ( !inspiralList )
   {
     XLAL_ERROR(func,XLAL_EIO);
   }
-  
+
   if ( ! *inspiralList )
   {
-    XLALPrintInfo( 
+    XLALPrintInfo(
       "XLALClusterSnglInspiralTable: Empty coincList passed as input\n" );
     return( 0 );
   }
 
 
-  
+
   thisEvent = *inspiralList;
   nextEvent = (*inspiralList)->next;
   *inspiralList = NULL;
@@ -900,7 +900,7 @@ XLALClusterSnglInspiralTable (
         nextEvent = thisEvent->next;
       }
     }
-    else 
+    else
     {
       /* otherwise we keep this unique event trigger */
       if ( ! *inspiralList )
@@ -920,7 +920,7 @@ XLALClusterSnglInspiralTable (
     *inspiralList = thisEvent;
   }
   ++numSnglClust;
-  
+
   return(numSnglClust);
 }
 
@@ -943,7 +943,7 @@ LALTimeCutSingleInspiral(
   DETATCHSTATUSPTR (status);
   RETURN (status);
 
-}  
+}
 
 /* <lalVerbatim file="SnglInspiralUtilsCP"> */
 SnglInspiralTable *
@@ -960,7 +960,7 @@ XLALTimeCutSingleInspiral(
   INT8                  startTimeNS = XLALGPStoINT8( startTime );
   INT8                  endTimeNS = XLALGPStoINT8( endTime );
 
-  
+
   /* Remove all the triggers before and after the requested */
   /* gps start and end times */
 
@@ -992,10 +992,10 @@ XLALTimeCutSingleInspiral(
       XLALFreeSnglInspiral ( &tmpEvent );
     }
   }
-  eventHead = inspiralEventList; 
+  eventHead = inspiralEventList;
 
   return (eventHead);
-}  
+}
 
 
 /* <lalVerbatim file="SnglInspiralUtilsCP"> */
@@ -1008,11 +1008,11 @@ void LALSNRCutSingleInspiral (
 {
   INITSTATUS( status, "LALSNRCutSingleInspiral", SNGLINSPIRALUTILSC );
   ATTATCHSTATUSPTR( status );
- 
+
   *eventHead = XLALSNRCutSingleInspiral( *eventHead, snrCut );
 
   DETATCHSTATUSPTR (status);
-  RETURN (status);   
+  RETURN (status);
 }
 
 /* <lalVerbatim file="SnglInspiralUtilsCP"> */
@@ -1029,12 +1029,12 @@ XLALSNRCutSingleInspiral (
 
   thisEvent = eventHead;
   eventHead = NULL;
-  
+
   while ( thisEvent )
   {
     SnglInspiralTable *tmpEvent = thisEvent;
     thisEvent = thisEvent->next;
-    
+
     if ( tmpEvent->snr >= snrCut )
     {
       /* keep this template */
@@ -1078,12 +1078,12 @@ XLALRsqCutSingleInspiral (
 
   thisEvent = eventHead;
   eventHead = NULL;
-  
+
   while ( thisEvent )
   {
     SnglInspiralTable *tmpEvent = thisEvent;
     thisEvent = thisEvent->next;
-    
+
     if ( (tmpEvent->snr <= rsqMaxSnr)
       && (tmpEvent->rsqveto_duration >= rsqVetoTimeThresh) )
     {
@@ -1120,7 +1120,7 @@ XLALRsqCutSingleInspiral (
 SnglInspiralTable *
 XLALVetoSingleInspiral (
     SnglInspiralTable          *eventHead,
-    LALSegList                 *vetoSegs, 
+    LALSegList                 *vetoSegs,
     CHAR 			*ifo
     )
 /* </lalVerbatim> */
@@ -1130,11 +1130,11 @@ XLALVetoSingleInspiral (
 
   thisEvent = eventHead;
   eventHead = NULL;
-  
+
   while ( thisEvent )
   {
     /*-- Check the time of this event against the veto segment list --*/
-    if ( XLALSegListSearch( vetoSegs, &(thisEvent->end_time) )  
+    if ( XLALSegListSearch( vetoSegs, &(thisEvent->end_time) )
 	&& (strcmp(thisEvent->ifo, ifo)==0) )
     {
       /*-- This event's end_time falls within one of the veto segments --*/
@@ -1144,8 +1144,8 @@ XLALVetoSingleInspiral (
       tmpEvent = thisEvent;
       thisEvent = thisEvent->next;
       XLALFreeSnglInspiral ( &tmpEvent );
-    } 
-    else 
+    }
+    else
     {
       /* This inspiral trigger does not fall within any veto segment */
       /* keep the trigger and increment the count of triggers */
@@ -1184,19 +1184,19 @@ LALBCVCVetoSingleInspiral(
     thisEvent = thisEvent->next;
     alphaF = tmpEvent->tau5 * pow( tmpEvent->f_final,(2.0/3.0) );
     veto = 0;
-    
+
     /* check the alphaf-range for each trigger */
-    if (strstr(tmpEvent->ifo, "H1") && 
+    if (strstr(tmpEvent->ifo, "H1") &&
 	( (alphaF < alphafParams.h1_lo) || (alphaF > alphafParams.h1_hi ) ) )
     {
       veto = 1;
-    } 
-    else if (strstr(tmpEvent->ifo, "H2") && 
+    }
+    else if (strstr(tmpEvent->ifo, "H2") &&
 	( (alphaF < alphafParams.h2_lo) || (alphaF > alphafParams.h2_hi ) ) )
     {
       veto = 1;
     }
-    else if (strstr(tmpEvent->ifo, "L1") && 
+    else if (strstr(tmpEvent->ifo, "L1") &&
 	( (alphaF < alphafParams.l1_lo) || (alphaF > alphafParams.l1_hi ) ) )
     {
       veto = 1;
@@ -1206,7 +1206,7 @@ LALBCVCVetoSingleInspiral(
     {
       veto =0;
     }
-	
+
     if ( veto == 0 )
     {
       /* keep this template */
@@ -1227,14 +1227,14 @@ LALBCVCVetoSingleInspiral(
       LALFreeSnglInspiral ( status->statusPtr, &tmpEvent );
     }
   }
-  *eventHead = inspiralEventList; 
+  *eventHead = inspiralEventList;
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
 
-} 
+}
 
- 
+
 /* <lalVerbatim file="SnglInspiralUtilsCP"> */
 void
 LALalphaFCutSingleInspiral(
@@ -1284,12 +1284,12 @@ LALalphaFCutSingleInspiral(
       LALFreeSnglInspiral ( status->statusPtr, &tmpEvent );
     }
   }
-  *eventHead = inspiralEventList; 
+  *eventHead = inspiralEventList;
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
 
-}  
+}
 
 
 
@@ -1309,7 +1309,7 @@ LALIfoCutSingleInspiral(
   ATTATCHSTATUSPTR( status );
 
   ifoHead = XLALIfoCutSingleInspiral( eventHead, ifo );
- 
+
   /* free events from other ifos */
   while ( *eventHead )
   {
@@ -1318,11 +1318,11 @@ LALIfoCutSingleInspiral(
 
     XLALFreeSnglInspiral( &thisEvent );
   }
-  
-  *eventHead = ifoHead; 
+
+  *eventHead = ifoHead;
   DETATCHSTATUSPTR (status);
   RETURN (status);
-}  
+}
 
 /* <lalVerbatim file="SnglInspiralUtilsCP"> */
 SnglInspiralTable *
@@ -1349,7 +1349,7 @@ XLALIfoCutSingleInspiral(
 
   thisEvent  = *eventHead;
   *eventHead = NULL;
-  
+
   while ( thisEvent )
   {
     if ( ! strcmp( thisEvent->ifo, ifo ) )
@@ -1389,7 +1389,7 @@ XLALIfoCutSingleInspiral(
   }
 
   return( ifoHead );
-}  
+}
 
 
 /* <lalVerbatim file="SnglInspiralUtilsCP"> */
@@ -1398,7 +1398,7 @@ LALIfoCountSingleInspiral(
     LALStatus                  *status,
     UINT4                      *numTrigs,
     SnglInspiralTable          *input,
-    InterferometerNumber        ifoNumber 
+    InterferometerNumber        ifoNumber
     )
 /* </lalVerbatim> */
 {
@@ -1408,9 +1408,9 @@ LALIfoCountSingleInspiral(
   ATTATCHSTATUSPTR( status );
 
   /* check that output is null and input non-null */
-  ASSERT( !(*numTrigs), status, 
+  ASSERT( !(*numTrigs), status,
       LIGOMETADATAUTILSH_ENNUL, LIGOMETADATAUTILSH_MSGENNUL );
-  ASSERT( input, status, 
+  ASSERT( input, status,
       LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
 
   /* Scan through a linked list of sngl_inspiral tables and return a
@@ -1426,7 +1426,7 @@ LALIfoCountSingleInspiral(
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
-}  
+}
 
 
 /* <lalVerbatim file="SnglInspiralUtilsCP"> */
@@ -1445,16 +1445,16 @@ void
   INT8       lengthTimeNS= 0;
   INT8       slideNS     = 0;
   INT8       segStartNS, segEndNS;
-  INT8       newStartNS, newEndNS; 
-  LALSeg     tmpSeg;     
-  LALSegList tmplist; 
+  INT8       newStartNS, newEndNS;
+  LALSeg     tmpSeg;
+  LALSegList tmplist;
   INT4       n,m,i=0;
 
   INITSTATUS( status, "LALTimeSlideSegList", SNGLINSPIRALUTILSC );
   ATTATCHSTATUSPTR( status );
 
   /* time slide segs in a seglist by a time = slideTime, except those from the
-   * instrument skipIfo which are left untouched. If you want to slide 
+   * instrument skipIfo which are left untouched. If you want to slide
    * all triggers, simply set skipIfo = LAL_UNKNOWN_IFO */
 
   /* check that seglist exist */
@@ -1462,7 +1462,7 @@ void
     DETATCHSTATUSPTR (status);
     RETURN(status);
   }
-  
+
   /* Make sure the segment list has been properly initialized */
   if ( seglist->initMagic != SEGMENTSH_INITMAGICVAL ) {
     DETATCHSTATUSPTR (status);
@@ -1492,9 +1492,9 @@ void
   /*  check the length of the segment list. */
   n=seglist->length;
 
-  /* loop over the entries in seglist */  
+  /* loop over the entries in seglist */
   for( i=0; i<n; i++ ) {
-         
+
     /* and seg time in nanoseconds */
     LALGPStoINT8( status->statusPtr, &segStartNS, &(seglist->segs[i].start) );
     LALGPStoINT8( status->statusPtr, &segEndNS,   &(seglist->segs[i].end) );
@@ -1502,7 +1502,7 @@ void
     /* do the slide */
     segStartNS += slideNS;
     segEndNS   += slideNS;
-    
+
 
     /* check times to lie on the ring... */
     if ( startTimeNS && endTimeNS) {
@@ -1510,11 +1510,11 @@ void
 
       /* print warning if the slide-time is too large...*/
       if (slideNS>lengthTimeNS) {
-	fprintf(stdout, 
+	fprintf(stdout,
 		"WARNING in LALTimeSlideSegList: slide-window LARGER than segment-length.\n");
       }
 
-      /* check the different cases where a segment can be 
+      /* check the different cases where a segment can be
 	 slide out of the ring completely or party.
 	 In the latter case, the segment has to be split */
       if ( segStartNS<startTimeNS ) {
@@ -1530,9 +1530,9 @@ void
 	  LALINT8toGPS( status->statusPtr, &(tmpSeg.end),   &newEndNS );
 	  XLALSegListAppend( &tmplist, &tmpSeg );
 
-	  segStartNS = startTimeNS;	  
+	  segStartNS = startTimeNS;
 	}
-	
+
       } else if (segEndNS>endTimeNS) {
 
 	if ( segStartNS>endTimeNS) {
@@ -1548,19 +1548,19 @@ void
 
 	  segEndNS = endTimeNS;
 	}
-      } 
+      }
     }
-    
+
     /* restore segment */
     LALINT8toGPS( status->statusPtr, &(tmpSeg.start), &segStartNS );
     LALINT8toGPS( status->statusPtr, &(tmpSeg.end),   &segEndNS );
     XLALSegListAppend( &tmplist, &tmpSeg );
-  }   
+  }
 
 
   /* clear the old list */
-  XLALSegListClear( seglist ); 
-  
+  XLALSegListClear( seglist );
+
   /* loop over all segments in this list */
   for (i=0; i<tmplist.length; i++) {
     XLALSegListAppend( seglist, &(tmplist.segs[i]));
@@ -1568,13 +1568,13 @@ void
 
   /* clear the temporary list */
   XLALSegListClear( &tmplist );
-  
+
   /* sort and clean up the new list */
   XLALSegListCoalesce( seglist );
-  
+
   DETATCHSTATUSPTR (status);
   RETURN (status);
-}  
+}
 
 
 /* ======================================= */
@@ -1598,14 +1598,14 @@ LALTimeSlideSingleInspiral(
   ATTATCHSTATUSPTR( status );
 
   /* time slide triggers by a time = slideTime, except those from the
-   * instrument skipIfo which are left untouched. If you want to slide 
+   * instrument skipIfo which are left untouched. If you want to slide
    * all triggers, simply set skipIfo = LAL_UNKNOWN_IFO */
 
-  
+
   /* check that input non-null */
-  ASSERT( triggerList, status, 
+  ASSERT( triggerList, status,
       LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
-  
+
   if ( startTime )
   {
     LALGPStoINT8( status->statusPtr, &startTimeNS, startTime );
@@ -1619,12 +1619,12 @@ LALTimeSlideSingleInspiral(
   for( thisEvent = triggerList; thisEvent; thisEvent = thisEvent->next )
   {
     /* calculate the slide time in nanoseconds */
-    LALGPStoINT8( status->statusPtr, &slideNS, 
+    LALGPStoINT8( status->statusPtr, &slideNS,
         &(slideTimes[XLALIFONumber(thisEvent->ifo)]) );
     /* and trig time in nanoseconds */
     LALGPStoINT8( status->statusPtr, &trigTimeNS, &(thisEvent->end_time));
     trigTimeNS += slideNS;
-    
+
     while ( startTimeNS && trigTimeNS < startTimeNS )
     {
       /* if before startTime, then wrap trigger time */
@@ -1635,14 +1635,14 @@ LALTimeSlideSingleInspiral(
       /* if after endTime, then wrap trigger time */
       trigTimeNS -= endTimeNS - startTimeNS;
     }
-   
+
     /* convert back to LIGOTimeGPS */
     LALINT8toGPS( status->statusPtr, &(thisEvent->end_time), &trigTimeNS );
-  }         
+  }
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
-}  
+}
 
 
 /* <lalVerbatim file="SnglInspiralUtilsCP"> */
@@ -1676,7 +1676,7 @@ XLALPlayTestSingleInspiral(
       triggerTime = XLALGPStoINT8( &(tmpEvent->end_time) );
       isPlay = XLALINT8NanoSecIsPlayground( &triggerTime );
 
-      if ( ( (*dataType == playground_only)  && isPlay ) || 
+      if ( ( (*dataType == playground_only)  && isPlay ) ||
           ( (*dataType == exclude_play) && ! isPlay) )
       {
         /* keep this trigger */
@@ -1698,7 +1698,7 @@ XLALPlayTestSingleInspiral(
         XLALFreeSnglInspiral ( &tmpEvent );
       }
     }
-    eventHead = inspiralEventList; 
+    eventHead = inspiralEventList;
     if ( *dataType == playground_only )
     {
       XLALPrintInfo( "Kept %d playground triggers \n", numTriggers );
@@ -1719,7 +1719,7 @@ XLALPlayTestSingleInspiral(
   }
 
   return(eventHead);
-}  
+}
 
 
 /* <lalVerbatim file="SnglInspiralUtilsCP"> */
@@ -1735,10 +1735,10 @@ LALPlayTestSingleInspiral(
   ATTATCHSTATUSPTR( status );
 
   *eventHead = XLALPlayTestSingleInspiral(*eventHead, dataType);
-   
+
   DETATCHSTATUSPTR (status);
   RETURN (status);
-}  
+}
 
 
 /* <lalVerbatim file="SnglInspiralUtilsCP"> */
@@ -1769,24 +1769,24 @@ LALCreateTrigBank(
     ++numEvents;
   }
 
-  eventHandle = (SnglInspiralTable **) 
+  eventHandle = (SnglInspiralTable **)
     LALCalloc( numEvents, sizeof(SnglInspiralTable *) );
 
-  for ( i = 0, thisEvent = *eventHead; i < numEvents; 
+  for ( i = 0, thisEvent = *eventHead; i < numEvents;
       ++i, thisEvent = thisEvent->next )
   {
     eventHandle[i] = thisEvent;
   }
 
   if ( *test == m1_and_m2 )
-  {     
-    LALInfo( status, "sorting events by mass... " ); 
-    qsort( eventHandle, numEvents, sizeof(eventHandle[0]), 
+  {
+    LALInfo( status, "sorting events by mass... " );
+    qsort( eventHandle, numEvents, sizeof(eventHandle[0]),
         LALCompareSnglInspiralByMass );
-    LALInfo( status, "done\n" ); 
+    LALInfo( status, "done\n" );
   }
   else if ( *test == psi0_and_psi3 )
-  { 
+  {
     LALInfo( status, "sorting events by psi... " );
     qsort( eventHandle, numEvents, sizeof(eventHandle[0]),
         LALCompareSnglInspiralByPsi );
@@ -1809,7 +1809,7 @@ LALCreateTrigBank(
     if ( *test == m1_and_m2 )
     {
       if ( (prevEvent->mass1 == eventHandle[i]->mass1)  &&
-          (prevEvent->mass2 == eventHandle[i]->mass2) ) 
+          (prevEvent->mass2 == eventHandle[i]->mass2) )
       {
         /* discard the event as it is a duplicate */
         LALFreeSnglInspiral( status->statusPtr, &(eventHandle[i]) );
@@ -1851,7 +1851,7 @@ LALCreateTrigBank(
 
   /* return the head of the linked list in eventHead */
 
-  *eventHead = trigBankList; 
+  *eventHead = trigBankList;
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
@@ -1898,7 +1898,7 @@ LALIncaCoincidenceTest(
 
   currentTrigger[1] = ifoBInput;
 
-  for( currentTrigger[0]=ifoAInput; currentTrigger[0]; 
+  for( currentTrigger[0]=ifoAInput; currentTrigger[0];
       currentTrigger[0] = currentTrigger[0]->next  )
   {
     LALGPStoINT8( status->statusPtr, &ta, &(currentTrigger[0]->end_time) );
@@ -1945,18 +1945,18 @@ LALIncaCoincidenceTest(
         {
           if ( ! coincidentEvents[j] )
           {
-            coincidentEvents[j] = outEvent[j] = (SnglInspiralTable *) 
+            coincidentEvents[j] = outEvent[j] = (SnglInspiralTable *)
               LALCalloc( 1, sizeof(SnglInspiralTable) );
           }
           else
           {
-            outEvent[j] = outEvent[j]->next = (SnglInspiralTable *) 
+            outEvent[j] = outEvent[j]->next = (SnglInspiralTable *)
               LALCalloc( 1, sizeof(SnglInspiralTable) );
           }
 
           memcpy( outEvent[j], currentTrigger[j], sizeof(SnglInspiralTable) );
           outEvent[j]->next = NULL;
-        }  
+        }
       }
 
       currentTrigger[1] = currentTrigger[1]->next;
@@ -2018,13 +2018,13 @@ LALTamaCoincidenceTest(
 
   currentTrigger[1] = ifoBInput;
 
-  for( currentTrigger[0]=ifoAInput; currentTrigger[0]; 
+  for( currentTrigger[0]=ifoAInput; currentTrigger[0];
       currentTrigger[0] = currentTrigger[0]->next  )
   {
     LALGPStoINT8( status->statusPtr, &ta, &(currentTrigger[0]->end_time) );
 
     LALInfo( status, printf("  using IFO A trigger at %d + %10.10f\n",
-          currentTrigger[0]->end_time.gpsSeconds, 
+          currentTrigger[0]->end_time.gpsSeconds,
           ((REAL4) currentTrigger[0]->end_time.gpsNanoSeconds * 1e-9) ));
 
     /* spin ifo b until the current trigger is within the coinicdence */
@@ -2060,16 +2060,16 @@ LALTamaCoincidenceTest(
         /* store all time coincident triggers */
         if ( ! timeCoincHead )
         {
-          timeCoincHead = thisTimeCoinc = (SnglInspiralTable *) 
+          timeCoincHead = thisTimeCoinc = (SnglInspiralTable *)
             LALCalloc( 1, sizeof(SnglInspiralTable) );
         }
         else
         {
-          thisTimeCoinc = thisTimeCoinc->next = (SnglInspiralTable *) 
+          thisTimeCoinc = thisTimeCoinc->next = (SnglInspiralTable *)
             LALCalloc( 1, sizeof(SnglInspiralTable) );
         }
 
-        memcpy( thisTimeCoinc, currentTrigger[1], 
+        memcpy( thisTimeCoinc, currentTrigger[1],
             sizeof(SnglInspiralTable) );
 
         thisTimeCoinc->next = NULL;
@@ -2083,7 +2083,7 @@ LALTamaCoincidenceTest(
     /* take the loudest time coincident trigger and compare other params */
     if ( timeCoincHead )
     {
-      LALClusterSnglInspiralTable ( status->statusPtr, &timeCoincHead, 
+      LALClusterSnglInspiralTable ( status->statusPtr, &timeCoincHead,
           2 * errorParams->dt, clusterchoice);
 
       currentTrigger[1] = timeCoincHead;
@@ -2102,18 +2102,18 @@ LALTamaCoincidenceTest(
         {
           if ( ! coincidentEvents[j] )
           {
-            coincidentEvents[j] = outEvent[j] = (SnglInspiralTable *) 
+            coincidentEvents[j] = outEvent[j] = (SnglInspiralTable *)
               LALCalloc( 1, sizeof(SnglInspiralTable) );
           }
           else
           {
-            outEvent[j] = outEvent[j]->next = (SnglInspiralTable *) 
+            outEvent[j] = outEvent[j]->next = (SnglInspiralTable *)
               LALCalloc( 1, sizeof(SnglInspiralTable) );
           }
 
           memcpy( outEvent[j], currentTrigger[j], sizeof(SnglInspiralTable) );
           outEvent[j]->next = NULL;
-        }  
+        }
       }
 
       /* reset the list of time coincident triggers to null */
@@ -2191,10 +2191,10 @@ XLALMaxSnglInspiralOverIntervals(
     }
   }
 
-  *eventHead = inspiralEventList; 
+  *eventHead = inspiralEventList;
 
   return (0);
-}  
+}
 
 /* <lalVerbatim file="SnglInspiralUtilsCP"> */
 INT4 XLALCountSnglInspiral( SnglInspiralTable *head )
@@ -2202,7 +2202,7 @@ INT4 XLALCountSnglInspiral( SnglInspiralTable *head )
 {
   INT4 length;
   SnglInspiralTable *event;
- 
+
   if ( !head )
   {
     return( 0 );
