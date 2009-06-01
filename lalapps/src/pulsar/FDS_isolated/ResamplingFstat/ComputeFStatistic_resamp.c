@@ -452,7 +452,6 @@ int main(int argc,char *argv[])
   tickCounter = 0;
   clock0 = time(NULL);
 
-  fprintf(stderr, "\n WARNING!!! Only the middle half of the band you asked for or is usable. Rest of it is destroyed by Interpolation. Please ask for a larger band. In the future, this will be done automatically. \n");
   LogPrintf (LOG_DEBUG, "Done Calculating Time Series.\n");
 
   LogPrintf (LOG_DEBUG, "Starting Main Resampling Loop.\n");
@@ -902,8 +901,8 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
     cfg->refTime = startTime;
 
   { /* ----- prepare spin-range at refTime (in *canonical format*, ie all Bands >= 0) ----- */
-    REAL8 fMin = MYMIN ( uvar_Freq, uvar_Freq + uvar_FreqBand );
-    REAL8 fMax = MYMAX ( uvar_Freq, uvar_Freq + uvar_FreqBand );
+    REAL8 fMin = MYMIN ( uvar_Freq - uvar_FreqBand/2.0 , uvar_Freq + 3.0*uvar_FreqBand/2.0 );
+    REAL8 fMax = MYMAX ( uvar_Freq - uvar_FreqBand/2.0 , uvar_Freq + 3.0*uvar_FreqBand/2.0 );
 
     REAL8 f1dotMin = MYMIN ( uvar_f1dot, uvar_f1dot + uvar_f1dotBand );
     REAL8 f1dotMax = MYMAX ( uvar_f1dot, uvar_f1dot + uvar_f1dotBand );
