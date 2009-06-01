@@ -32,9 +32,12 @@ __author__ = 'Adam Mercer <adam.mercer@ligo.org>'
 import os
 import sys
 import time
-import subprocess
 import re
 import optparse
+try:
+  import subprocess
+except ImportError:
+  sys.exit("Python-2.4, or higher is required")
 
 # output file
 outfile = 'git_info.sed'
