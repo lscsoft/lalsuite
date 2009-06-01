@@ -177,7 +177,7 @@ static void Rcfunc (REAL4 *result, REAL4 z)
 /*the normalisation factor 23 correspond to a cosmological model with omega_matter=0.3 and omega_vacuum=0.7*/
 static void  pzfunc (LALStatus *s, REAL4 *result, REAL4 z)
 {
-  REAL4 dV, Rc;
+  REAL4 dV=0, Rc;
   INITSTATUS (s, "pzfunc", SIMULATEPOPCORNC);
   ATTATCHSTATUSPTR (s);
   dVfunc(s->statusPtr,&dV,z);
@@ -253,13 +253,13 @@ LALSimPopcornTimeSeries (  LALStatus                *status,
   REAL4 devent;
   REAL4Vector *z = NULL;
   REAL4Vector *tevent = NULL;
-  REAL4 t,x, ampl, dlum, norm;
+  REAL4 t,x, ampl, dlum=0, norm;
    /* counters */
   UINT4 i, j, k, detect, dataset, Ndataset, nevent, inf, sup, jref;
 
   /* random generator */
   RandomParams *randParams=NULL;
-  REAL4 alea, alea1, alea2, reject;
+  REAL4 alea, alea1, alea2, reject=0;
   UINT4 seed;
 
   /* LAL structure needed as input/output for computing overlap
