@@ -1448,7 +1448,8 @@ void
   INT8       newStartNS, newEndNS;
   LALSeg     tmpSeg;
   LALSegList tmplist;
-  INT4       n,m,i=0;
+  INT4       m;
+  UINT4      n,i;
 
   INITSTATUS( status, "LALTimeSlideSegList", SNGLINSPIRALUTILSC );
   ATTATCHSTATUSPTR( status );
