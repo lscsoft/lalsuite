@@ -46,7 +46,7 @@ LALBuildDate.c: $(liblal_la_DEPENDENCIES)
 .vcsinfo:
 	touch .vcsinfo
 LALVCSInfo.h: LALVCSInfo.h.in .vcsinfo
-	d="`pwd`" && cd $(srcdir) && ./git_version --file > "$$d/git_info.sed"
+	d="`pwd`" && cd $(srcdir) && $$d/git_version --file > "$$d/git_info.sed"
 	test -s git_info.sed && sed -f git_info.sed $(srcdir)/LALVCSInfo.h.in > LALVCSInfo.h || true
 	-rm -f .vcsinfo
 
