@@ -2445,7 +2445,7 @@ int EventRemoval_dataDouble(REAL8TimeSeries *seriesCL, REAL8TimeSeries *series, 
 
 /*******************************************************************************/
 
-/*
+/**
   returns
   -1 if out of memory
   -2 if some computation failes
@@ -2465,8 +2465,10 @@ int PSSTDCleaningREAL8(REAL8TimeSeries *LALTS, REAL4 highpassFrequency) {
   if( !(LALTS) || !(LALTS->data) )
     return -3;
 
+
   /* number of samples in the original timeseries */
   samples = LALTS->data->length;
+
 
   /* creation / memory allocation */
   /* there can't be more events than there are samples,
@@ -2525,7 +2527,85 @@ int PSSTDCleaningREAL8(REAL8TimeSeries *LALTS, REAL4 highpassFrequency) {
   return retval;
 }
 
-int PSSTDCleaning(struct CommandLineArgsTag CLA) {
+
+int PSSTDCleaningREAL4(REAL4TimeSeries *LALTS, REAL4 highpassFrequency) {
+  UINT4 samples;                /**< number of samples in the timeseries */
+  PSSTimeseries *originalTS;    /**< the timeseries converted to a PSS timeseries */
+  PSSTimeseries *highpassTS;    /**< originalTS after high pass filtering */
+  PSSTimeseries *cleanedTS;     /**< originalTS after cleaning */
+  PSSEventParams *eventParams;  /**< keeps track of the "events" */
+  PSSHeaderParams headerParams; /**< dummy, we don't actually use this to write SFTs */
+  int retval = 0;               /**< return value of the function */
+
+  /* input sanity checks */
+  if( !(LALTS) || !(LALTS->data) )
+    return -3;
+
+  /* number of samples in the original timeseries */
+  samples = LALTS->data->length;
+
+  /* creation / memory allocation */
+  /* there can't be more events than there are samples,
+     so we prepare for as many events as we have samples */
+  if( (eventParams = XLALCreatePSSEventParams(samples)) == NULL) {
+    retval = -1;
+    goto PSSTDCleaningREAL4FreeNothing;
+  }
+  if( (originalTS = XLALCreatePSSTimeseries(samples)) == NULL) {
+    retval = -1;
+    goto PSSTDCleaningREAL4FreeEventParams;
+  }
+  if( (highpassTS = XLALCreatePSSTimeseries(samples)) == NULL) {
+    retval = -1;
+    goto PSSTDCleaningREAL4FreeOriginalTS;
+  }
+  if( (cleanedTS = XLALCreatePSSTimeseries(samples)) == NULL) {
+    retval = -1;
+    goto PSSTDCleaningREAL4FreeHighpassTS;
+  }
+
+
+  /* the actual cleaning */
+  if( XLALConvertREAL4TimeseriesToPSSTimeseries(originalTS, LALTS) == NULL) {
+    retval = -2;
+    goto PSSTDCleaningREAL4FreeAll;
+  }
+  if( XLALPSSHighpassData(highpassTS, originalTS, &headerParams, highpassFrequency) == NULL) {
+    retval = -2;
+    goto PSSTDCleaningREAL4FreeAll;
+  }
+  if( XLALIdentifyPSSCleaningEvents(eventParams, highpassTS, &headerParams) == NULL) {
+    retval = -2;
+    goto PSSTDCleaningREAL4FreeAll;
+  }
+  if( XLALSubstractPSSCleaningEvents(cleanedTS, originalTS, highpassTS, eventParams, &headerParams) == NULL) {
+    retval = -2;
+    goto PSSTDCleaningREAL4FreeAll;
+  }
+  if( XLALConvertPSSTimeseriesToREAL4Timeseries(LALTS, cleanedTS) == NULL) {
+    retval = -2;
+    goto PSSTDCleaningREAL4FreeAll;
+  }
+
+
+  /* cleanup & return */
+ PSSTDCleaningREAL4FreeAll:
+  XLALDestroyPSSTimeseries(cleanedTS);
+ PSSTDCleaningREAL4FreeHighpassTS:
+  XLALDestroyPSSTimeseries(highpassTS);
+ PSSTDCleaningREAL4FreeOriginalTS:
+  XLALDestroyPSSTimeseries(originalTS);
+ PSSTDCleaningREAL4FreeEventParams:
+  XLALDestroyPSSEventParams(eventParams);
+ PSSTDCleaningREAL4FreeNothing:
+  return retval;
+}
+
+int PSSTDCleaningSingle(struct CommandLineArgsTag CLA) {
+  return(PSSTDCleaningREAL4(&dataDouble, CLA.fc));
+}
+
+int PSSTDCleaningDouble(struct CommandLineArgsTag CLA) {
   return(PSSTDCleaningREAL8(&dataDouble, CLA.fc));
 }
 

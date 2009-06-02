@@ -100,11 +100,64 @@ PSSTimeseries *XLALConvertREAL8TimeseriesToPSSTimeseries(PSSTimeseries *tsPSS, R
   if (tsPSS->nall != (int)ts->data->length)
     XLAL_ERROR_NULL( "XLALConvertREAL8TimeseriesToPSSTimeseries", XLAL_EINVAL ); 
 
-  /* doing caption / units first, because it involves memory allocation for the string */
+  /* handle caption / units first, because it involves memory allocation for the string */
   if( XLALUnitAsString( unit, LALNameLength, &(ts->sampleUnits) ) ) {
     tsPSS->capt = (char*)malloc(strlen(unit)+1);
     if( !tsPSS->capt )
       XLAL_ERROR_NULL( "XLALConvertREAL8TimeseriesToPSSTimeseries", XLAL_ENOMEM );
+    strncpy(tsPSS->capt,unit,strlen(unit)+1);
+  } else {
+    tsPSS->capt = NULL;
+  }
+
+  /* now convert the actual data */
+  for(i = 0; i < ts->data->length; i++)
+    tsPSS->y[i] = ts->data->data[i];
+  tsPSS->n = ts->data->length;
+
+  /* other parameters */
+  strncpy(tsPSS->name, ts->name, sizeof(tsPSS->name)); /* sizeof(tsPSS->name) = 20 */
+  tsPSS->ini = XLALGPSGetREAL8(&(ts->epoch));
+  tsPSS->dx = ts->deltaT;
+
+  return tsPSS;
+}
+
+REAL4TimeSeries *XLALConvertPSSTimeseriesToREAL4Timeseries(REAL4TimeSeries *ts, PSSTimeseries *tsPSS) {
+  UINT4 i;
+
+  if ( !tsPSS || !ts )
+    XLAL_ERROR_NULL( "XLALConvertPSSTimeseriesToREAL4Timeseries", XLAL_EFAULT );
+  if (tsPSS->n != (int)ts->data->length)
+    XLAL_ERROR_NULL( "XLALConvertPSSTimeseriesToREAL4Timeseries", XLAL_EINVAL ); 
+
+  for(i = 0; i < ts->data->length; i++)
+    ts->data->data[i] = tsPSS->y[i];
+
+  strncpy(ts->name, tsPSS->name, LALNameLength);
+  XLALGPSSetREAL8(&(ts->epoch), tsPSS->ini);
+  ts->deltaT = tsPSS->dx;
+  ts->f0     = 0.0; /* no heterodyning */
+  XLALParseUnitString( &(ts->sampleUnits), tsPSS->capt );
+
+  return ts;
+}
+
+PSSTimeseries *XLALConvertREAL4TimeseriesToPSSTimeseries(PSSTimeseries *tsPSS, REAL4TimeSeries *ts) {
+  UINT4 i;
+  char unit[LALNameLength];
+
+  /* input sanity checking */
+  if ( !tsPSS || !ts )
+    XLAL_ERROR_NULL( "XLALConvertREAL4TimeseriesToPSSTimeseries", XLAL_EFAULT );
+  if (tsPSS->nall != (int)ts->data->length)
+    XLAL_ERROR_NULL( "XLALConvertREAL4TimeseriesToPSSTimeseries", XLAL_EINVAL ); 
+
+  /* handle caption / units first, because it involves memory allocation for the string */
+  if( XLALUnitAsString( unit, LALNameLength, &(ts->sampleUnits) ) ) {
+    tsPSS->capt = (char*)malloc(strlen(unit)+1);
+    if( !tsPSS->capt )
+      XLAL_ERROR_NULL( "XLALConvertREAL4TimeseriesToPSSTimeseries", XLAL_ENOMEM );
     strncpy(tsPSS->capt,unit,strlen(unit)+1);
   } else {
     tsPSS->capt = NULL;
