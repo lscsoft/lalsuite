@@ -65,6 +65,7 @@ LALFineHeterodyneToPulsar()
 #include <lal/Random.h>
 #include <lal/IIRFilter.h>
 #include <lal/ZPGFilter.h>
+#include <lal/LALInitBarycenter.h>
 
 /******* DEFINE RCS ID STRING ************/
 

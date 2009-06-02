@@ -168,3 +168,6 @@ WHERE
 		WHERE
 			table_name == 'sngl_inspiral'
 	);
+
+-- VACUUM, this reduces the file size by ~6
+VACUUM;

@@ -67,7 +67,6 @@ void mcmc(struct runPar run, struct interferometer *ifo[])
   // *** MEMORY ALLOCATION ********************************************************************************************************************************************************
   
   int i=0,j=0,j1=0,j2=0,iteri=0;
-  int nstart=0;
   double tempratio=1.0;
   
   
@@ -185,7 +184,7 @@ void mcmc(struct runPar run, struct interferometer *ifo[])
   
   
   
-  // ***  GET OFFSET STARTING VALUES  ***********************************************************************************************************************************************
+  // ***  GET (OFFSET) STARTING VALUES  ***********************************************************************************************************************************************
   
   // *** Get the starting values for the chain ***
   getStartParameters(&state, run);
@@ -194,65 +193,14 @@ void mcmc(struct runPar run, struct interferometer *ifo[])
   state.locazi   = (double*)calloc(mcmc.networksize,sizeof(double));
   state.locpolar = (double*)calloc(mcmc.networksize,sizeof(double));
   
-  //Offset starting values (only for the parameters we're fitting)
-  nstart = 0;
+  
   par2arrt(state, mcmc.param, mcmc);  //Put the variables in their array
-  if(mcmc.offsetMCMC==1 || mcmc.offsetMCMC==3) {
-    printf("\n");
+  if(mcmc.offsetMCMC == 0) { //Don't start MCMC offset; start from the injection values
     for(i=0;i<mcmc.nMCMCpar;i++) {
-      mcmc.nParam[tempi][i] = mcmc.param[tempi][i];  //Temporarily store the true values
+      mcmc.param[tempi][i] = mcmc.injParVal[i];
     }
-    mcmc.logL[tempi] = -1.e30;
-    
-    while(mcmc.logL[tempi] < 1.0) { //Accept only good starting values
-      mcmc.acceptprior[tempi] = 1;
-      for(i=0;i<mcmc.nMCMCpar;i++) {
-	//printf("  %d  %d  %d\n",i,mcmc.parFix[i],mcmc.parStartMCMC[i]);
-	if(mcmc.parFix[i]==0 && (mcmc.parStartMCMC[i]==2 || mcmc.parStartMCMC[i]==4 || mcmc.parStartMCMC[i]==5)) {
-	  mcmc.param[tempi][i] = mcmc.nParam[tempi][i] + mcmc.offsetX * (gsl_rng_uniform(mcmc.ran) - 0.5) * mcmc.parSigma[i];
-	  mcmc.acceptprior[tempi] *= (int)prior(&mcmc.param[tempi][i],i,mcmc);
-	}
-      }
-      if(mcmc.acceptprior[tempi]==1) {                     //Check the value of the likelihood for this draw
-	arr2part(mcmc.param, &state, mcmc);	                      //Get the parameters from their array
-	localpar(&state, ifo, mcmc.networksize);
-	mcmc.logL[tempi] = net_loglikelihood(&state, mcmc.networksize, ifo, mcmc.mcmcWaveform);  //Calculate the likelihood
-      }
-      nstart = nstart + 1;
-      
-      // Print each trial starting value:
-      if(printMuch>=1 && (nstart % thinOutput)==0) {
-	printf("%9d%10.3lf",nstart,mcmc.logL[tempi]);
-	for(i=0;i<mcmc.nMCMCpar;i++) {
-	  if(mcmc.parID[i]>=11 && mcmc.parID[i]<=19) {  //GPS time
-	    printf(" %18.4f",mcmc.param[tempi][i]);
-	  } else {
-	    printf(" %9.4f",mcmc.param[tempi][i]);
-	  }
-	}
-	printf("\n");
-      }
-    }  //while(mcmc.logL[tempi] < 1.0)
-    
-    printf("%9s%10s", "nDraws","logL");
-    for(i=0;i<mcmc.nMCMCpar;i++) {
-      if(mcmc.parID[i]>=11 && mcmc.parID[i]<=19) {  //GPS time
-	printf(" %18s",mcmc.parAbrev[mcmc.parID[i]]);
-      } else {
-	printf(" %9s",mcmc.parAbrev[mcmc.parID[i]]);
-      }
-    }
-    printf("\n");
-    
-    printf("%9d%10.3lf",nstart,mcmc.logL[tempi]);
-    for(i=0;i<mcmc.nMCMCpar;i++) {
-      if(mcmc.parID[i]>=11 && mcmc.parID[i]<=19) {  //GPS time
-	printf(" %18.4f",mcmc.param[tempi][i]);
-      } else {
-	printf(" %9.4f",mcmc.param[tempi][i]);
-      }
-    }
-    printf("\n");
+  } else {
+    startMCMCOffset(&state,&mcmc,ifo);  //Start MCMC offset
   }
   
   
@@ -264,9 +212,10 @@ void mcmc(struct runPar run, struct interferometer *ifo[])
     mcmc.scale[tempi][i] = 10.0 * mcmc.parSigma[i];
     //mcmc.sig[tempi][i]   = 3.0  * mcmc.parSigma[i]; //3-sigma = delta-100%
     //mcmc.scale[tempi][i] = 0.0 * mcmc.parSigma[i]; //No adaptation
-   // if(i==6 || i==8 || i==10 || i==11) mcmc.sig[tempi][i] = fmod(mcmc.sig[tempi][i]+mtpi,tpi);  //Bring the sigma between 0 and 2pi
+    // if(i==6 || i==8 || i==10 || i==11) mcmc.sig[tempi][i] = fmod(mcmc.sig[tempi][i]+mtpi,tpi);  //Bring the sigma between 0 and 2pi
     uncorrelated_mcmc_single_update_angle_prior(mcmc.sig[tempi][i], i, mcmc);
   }
+  
   
   
   
@@ -289,6 +238,7 @@ void mcmc(struct runPar run, struct interferometer *ifo[])
     write_mcmc_output(mcmc, ifo);  //Write output line to screen and/or file
   }
   tempi = 0;  //MUST be zero
+  
   
   
   
@@ -317,6 +267,10 @@ void mcmc(struct runPar run, struct interferometer *ifo[])
       //mcmc.corrupdate[mcmc.ntemps-1] = 0; //Correlated update proposals not for hottest chain
     }
   }
+  
+  
+  
+  
   
   
   
@@ -842,9 +796,7 @@ void write_mcmc_header(struct interferometer *ifo[], struct mcmcvariables mcmc, 
   
   // *** Print run parameters to screen ***
   if(mcmc.offsetMCMC==0) printf("   Starting MCMC from the true initial parameters\n\n");
-  if(mcmc.offsetMCMC==1) printf("   Starting MCMC from initial parameters randomly offset around the injection\n\n");
-  if(mcmc.offsetMCMC==2) printf("   Starting MCMC from specified (offset) initial parameters\n\n");
-  if(mcmc.offsetMCMC==3) printf("   Starting MCMC from initial parameters randomly offset around the specified values\n\n");
+  if(mcmc.offsetMCMC>=1) printf("   Starting MCMC from offset initial parameters\n\n");
   
   // *** Open the output file and write run parameters in the header ***
   for(tempi=0;tempi<mcmc.ntemps;tempi++) {
@@ -1577,4 +1529,92 @@ void copyRun2MCMC(struct runPar run, struct mcmcvariables *mcmc)
 // End copyRun2MCMC()
 
 
+
+
+
+  
+// ****************************************************************************************************************************************************  
+// Offset starting values (only for the parameters we're fitting); at least some of the starting parameters will be chosen randomly here
+void startMCMCOffset(struct parset *par, struct mcmcvariables *mcmc, struct interferometer *ifo[])
+{
+  int i=0, nstart=0;
+  double db = 0.0;
+  
+  printf("\n");
+  mcmc->logL[tempi] = -9999.999;
+  
+  for(i=0;i<mcmc->nMCMCpar;i++) {
+    if(mcmc->parFix[i]==0 && (mcmc->parStartMCMC[i]==1 || mcmc->parStartMCMC[i]==2)) mcmc->nParam[tempi][i] = mcmc->parBestVal[i];  //Start at or around BestValue
+    if(mcmc->parStartMCMC[i]==3 || mcmc->parStartMCMC[i]==4) mcmc->nParam[tempi][i] = mcmc->injParVal[i];  //Start at or around the injection value
+    mcmc->param[tempi][i] = mcmc->nParam[tempi][i];
+  }
+  printf("\n");
+  
+  
+  while(mcmc->logL[tempi] < 1.0) { // Accept only good starting values
+    mcmc->acceptprior[tempi] = 1;
+    
+    for(i=0;i<mcmc->nMCMCpar;i++) {  //For each MCMC parameter
+      if(mcmc->parFix[i]==0 && (mcmc->parStartMCMC[i]==2 || mcmc->parStartMCMC[i]==4 || mcmc->parStartMCMC[i]==5)) {  //Then find random offset parameters
+	
+	if(mcmc->parStartMCMC[i]==2 || mcmc->parStartMCMC[i]==4) {
+	  mcmc->param[tempi][i] = mcmc->nParam[tempi][i] + mcmc->offsetX * gsl_ran_gaussian(mcmc->ran, mcmc->parSigma[i]);  //Gaussian with width parSigma around either Injection or BestValue
+	} else if(mcmc->parStartMCMC[i]==5) {
+	  db = mcmc->priorBoundUp[i]-mcmc->priorBoundLow[i];                                     // Width of range
+	  mcmc->param[tempi][i] = mcmc->priorBoundLow[i] + gsl_rng_uniform(mcmc->ran)*db;        // Draw random number uniform on range with width db
+	}
+	mcmc->acceptprior[tempi] *= (int)prior(&mcmc->param[tempi][i],i,*mcmc);
+	
+      } // if(mcmc->parFix[i]==0 && (mcmc->parStartMCMC[i]==2 || mcmc->parStartMCMC[i]==4 || mcmc->parStartMCMC[i]==5)) {  //Then find random offset parameters
+    } //i
+    
+    if(mcmc->acceptprior[tempi]==1) {                     //Check the value of the likelihood for this draw
+      arr2part(mcmc->param, par, *mcmc);	                      //Get the parameters from their array
+      localpar(par, ifo, mcmc->networksize);
+      mcmc->logL[tempi] = net_loglikelihood(par, mcmc->networksize, ifo, mcmc->mcmcWaveform);  //Calculate the likelihood
+    }
+    nstart = nstart + 1;
+    
+    
+    
+    // Print each trial starting value:
+    if(printMuch>=1 && (nstart % thinOutput)==0) {
+      printf("%9d%10.3lf",nstart,mcmc->logL[tempi]);
+      for(i=0;i<mcmc->nMCMCpar;i++) {
+	if(mcmc->parID[i]>=11 && mcmc->parID[i]<=19) {  //GPS time
+	  printf(" %18.4f",mcmc->param[tempi][i]);
+	} else {
+	  printf(" %9.4f",mcmc->param[tempi][i]);
+	}
+      }
+      printf("\n");
+    }
+    
+  }  //while(mcmc->logL[tempi] < 1.0) // Accept only good starting values
+  
+  
+  
+  //Print starting parameters chosen:
+  printf("%9s%10s", "nDraws","logL");
+  for(i=0;i<mcmc->nMCMCpar;i++) {
+    if(mcmc->parID[i]>=11 && mcmc->parID[i]<=19) {  //GPS time
+      printf(" %18s",mcmc->parAbrev[mcmc->parID[i]]);
+    } else {
+      printf(" %9s",mcmc->parAbrev[mcmc->parID[i]]);
+    }
+  }
+  printf("\n");
+  
+  printf("%9d%10.3lf",nstart,mcmc->logL[tempi]);
+  for(i=0;i<mcmc->nMCMCpar;i++) {
+    if(mcmc->parID[i]>=11 && mcmc->parID[i]<=19) {  //GPS time
+      printf(" %18.4f",mcmc->param[tempi][i]);
+    } else {
+      printf(" %9.4f",mcmc->param[tempi][i]);
+    }
+  }
+  printf("\n");
+}
+// ****************************************************************************************************************************************************  
+// End void startOffset()
 

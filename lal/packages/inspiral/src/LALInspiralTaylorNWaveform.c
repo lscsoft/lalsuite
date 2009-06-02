@@ -88,12 +88,6 @@ void LALTaylorNDerivatives7PN(
   void        *funcParams
 );
 
-void LALTaylorNWaveform (
-  LALStatus        *status,
-  REAL4Vector      *signal,
-  InspiralTemplate *params
-);
-
 void 
 LALTaylorNWaveformEngine (
   LALStatus        *status,

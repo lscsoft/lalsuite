@@ -2560,8 +2560,8 @@ void BankEfficiencyInitInspiralCoarseBankIn(
   coarseBankIn->gridSpacing      = SquareNotOriented;
   coarseBankIn->computeMoments   = 0;
   coarseBankIn->numFreqCut       = 1;
-  coarseBankIn->maxFreqCut       = SchwarzISCO;
-  coarseBankIn->minFreqCut       = SchwarzISCO;
+  coarseBankIn->maxFreqCut       = FreqCut_SchwarzISCO;
+  coarseBankIn->minFreqCut       = FreqCut_SchwarzISCO;
 }
 
 

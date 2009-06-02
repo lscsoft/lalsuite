@@ -33,12 +33,11 @@ int main(int argc, char * argv[])
 {
   if(doMCMC>=1) printf("\n");
   printf("\n   Starting SPINspiral...\n");
-  printf("   Produced with source code version $Id: mcmc_main.c 149 2009-05-07 23:55:57Z sluys $ \n");
+  printf("   Produced with source code version $Id: mcmc_main.c 158 2009-05-24 21:36:09Z vivien $ \n");
   
   clock_t time0 = clock();
   int ifonr=0,i=0;
   double snr=0.0;
-  
   
   
   //Initialise stuff for the run
@@ -62,7 +61,6 @@ int main(int argc, char * argv[])
   sprintf(run.mainFilename,"mcmc.input");  //Default input filename
   if(argc > 1) sprintf(run.mainFilename,argv[1]);
   
-  readLocalInputfile();                  //Read system-dependent data, e.g. path to data files
   readMainInputfile(&run);               //Read main input data file for this run from input.mcmc
   readMCMCinputfile(&run);               //Read the input data on how to do MCMC 
   setseed(&run.MCMCseed);                //Set MCMCseed if 0, otherwise keep the current value
@@ -70,6 +68,7 @@ int main(int argc, char * argv[])
   //setRandomInjectionParameters(&run);    //Randomise the injection parameters where wanted (do this in readInjectionInputfile
   readParameterInputfile(&run);          //Read the input data on how to handle MCMC parameters
   //writeInputfile(&run);                //Write run data to nicely formatted input.mcmc.<MCMCseed>
+  readSystemInputfile(&run);             //Read system-dependent data, e.g. path to data files
   
   
   
@@ -333,8 +332,8 @@ int main(int argc, char * argv[])
   
   
   clock_t time3 = clock();
-  printf("   Timimg:\n");
-  if(1==2) { 
+  if(printMuch>=1) { 
+    printf("   Timing:\n");
     if(doMCMC>=1) {
       printf("     initialisation:%10.2lfs\n", ((double)time1 - (double)time0)*1.e-6 );
       printf("     MCMC:          %10.2lfs\n", ((double)time2 - (double)time1)*1.e-6 );

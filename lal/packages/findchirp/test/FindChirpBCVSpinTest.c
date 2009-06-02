@@ -50,6 +50,7 @@
 #include <lal/FindChirpDatatypes.h>
 #include <lal/FindChirp.h>
 #include <lal/FindChirpBCVSpin.h>
+#include <lal/FindChirpTD.h>
 
 NRCSID (MAIN, "$Id$");
 

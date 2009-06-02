@@ -95,9 +95,12 @@ else
   allstatic="true"
 fi
 
+# check for c compiler
+m4_pattern_allow([AC_PROG_CC_C99])
+m4_ifdef([AC_PROG_CC_C99], [AC_PROG_CC_C99], [LAL_AC_PROG_CC_C99])
+
 dnl Checks for programs.
 AC_PROG_AWK
-AC_PROG_CC_STDC
 AC_PROG_CPP
 
 AC_ENABLE_SHARED
@@ -211,7 +214,6 @@ dnl Checks for header files.
 AC_HEADER_STDC
 AC_CHECK_HEADERS(getopt.h)
 AC_CHECK_HEADERS([gsl/gsl_fft_real.h])
-AC_CHECK_HEADERS(mpi.h)
 if test "$LALSUITE_BUILD" != "true" ; then
   AC_CHECK_HEADERS([lal/LALStdlib.h])
 fi

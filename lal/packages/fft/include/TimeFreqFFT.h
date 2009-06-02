@@ -183,9 +183,10 @@ AverageSpectrumParams;
 typedef struct
 tagLALPSDRegressor
 {
-  int max_samples;
+  int average_samples;
+  int median_samples;
   int n_samples;
-  COMPLEX16FrequencySeries *mean;
+  REAL8FrequencySeries **history;
   REAL8FrequencySeries *mean_square;
 }
 LALPSDRegressor;
@@ -406,7 +407,8 @@ LALFreqTimeComplexFFT(
 
 LALPSDRegressor *
 XLALPSDRegressorNew(
-    int max_samples
+    int average_samples,
+    int median_samples
 );
 
 void
@@ -423,13 +425,6 @@ int
 XLALPSDRegressorAdd(
     LALPSDRegressor *r,
     const COMPLEX16FrequencySeries *sample
-);
-
-COMPLEX16FrequencySeries *
-XLALPSDRegressorGetMean(
-    const LALPSDRegressor *r,
-    const LIGOTimeGPS *epoch,
-    REAL8 min_sigma_sq
 );
 
 REAL8FrequencySeries *

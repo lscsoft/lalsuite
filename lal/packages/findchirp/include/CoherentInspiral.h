@@ -186,6 +186,7 @@ tagCoherentInspiralInitParams
   UINT4                         numBeamPoints;
   UINT4                         cohSNROut;
   UINT4                         cohH1H2SNROut;
+  UINT4                         nullStatH1H2Out;
   UINT4                         nullStatOut;
 }
 CoherentInspiralInitParams;
@@ -235,11 +236,13 @@ tagCoherentInspiralFilterParams
   INT4                          segmentLength; /* time points */
   UINT4                         cohSNROut;
   UINT4                         cohH1H2SNROut;
+  UINT4                         nullStatH1H2Out;
   UINT4                         nullStatOut;
   UINT2Vector                  *detIDVec; /* Note: H1, H2 are from same site, but are different detectors */
   DetectorVector               *detectorVec; /*stores detectors' site info */
   REAL4TimeSeries              *cohSNRVec;
   REAL4TimeSeries              *cohH1H2SNRVec;
+  REAL4TimeSeries              *nullStatH1H2Vec;
   REAL4TimeSeries              *nullStatVec;
   REAL4                         chirpTime;
   double                        decStep;

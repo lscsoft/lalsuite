@@ -24,6 +24,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
+#include <unistd.h>
 
 #include <lal/LALStdio.h>
 #include <lal/LALDatatypes.h>

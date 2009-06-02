@@ -94,6 +94,7 @@ Character  & Effect \\ \hline
 #include <lal/FileIO.h>
 #include <lal/Segments.h>
 #include <lal/SegmentsIO.h>
+#include <lal/StringInput.h>
 
 NRCSID( SEGMENTSIOC, "$Id$" );
 

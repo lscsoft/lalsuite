@@ -1273,7 +1273,7 @@ MultiInspiralTable    * XLALMultiInspiralTableFromLIGOLw (
       }
       else if ( tableDir[j].idx == 39 )
       {
-        thisEvent->null_statistic = r8colData;
+        thisEvent->null_statistic = r4colData;
       }
       else if ( tableDir[j].idx == 40 )
       {
@@ -4073,7 +4073,7 @@ LALMultiInspiralTableFromLIGOLw (
       }
       else if ( tableDir[j].idx == 39 )
       {
-        thisEvent->null_statistic = r8colData;
+        thisEvent->null_statistic = r4colData;
       }
       else if ( tableDir[j].idx == 40 )
       {

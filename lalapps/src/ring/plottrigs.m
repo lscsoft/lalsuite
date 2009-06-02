@@ -36,42 +36,40 @@ injH2inL1daftercut.ind = injH2inL1d.ind;
 
 % make veto files into .mat files
 if length(veto_list)>0 && exist('H1vetolist.mat','file')==0
+  fprintf('generating veto lists\n   This might take a while.....\n');
   H1veto=load(veto_list(1,:));
+  H1vetolist=[];
   H1vetostart=H1veto(:,2);
   H1vetoend=H1veto(:,3);
   % make a list of all the gps seconds vetoes
   j=1;
   for i=1:length(H1vetostart)
-    for k=H1vetostart(i):H1vetoend(i)-1
-      H1vetolist(j)=k;
-      j=j+1;
-    end
+    H1vetolist=[H1vetolist, H1vetostart(i):H1vetoend(i)-1];
   end
   save H1vetolist.mat H1vetolist
+  fprintf('H1 veto list saved\n')
 
   H2veto=load(veto_list(2,:));
+  H2vetolist=[];
   H2vetostart=H2veto(:,2);
   H2vetoend=H2veto(:,3);
   j=1;
   for i=1:length(H2vetostart)
-    for k=H2vetostart(i):H2vetoend(i)-1    
-      H2vetolist(j)=k;
-      j=j+1;
-    end  
+    H2vetolist=[H1vetolist, H1vetostart(i):H1vetoend(i)-1];
   end
   save H2vetolist.mat H2vetolist
+  fprintf('H2 veto list saved\n')
 
   L1veto=load(veto_list(3,:));
+  L1vetolist=[];
   L1vetostart=L1veto(:,2);
   L1vetoend=L1veto(:,3);
   j=1;
   for i=1:length(L1vetostart)
-    for k=L1vetostart(i):L1vetoend(i)-1
-      L1vetolist(j)=k;
-      j=j+1;
-    end
+    L1vetolist=[H1vetolist, H1vetostart(i):H1vetoend(i)-1];
   end
   save L1vetolist.mat L1vetolist
+  fprintf('L1 veto list saved\n')
 end
 
 %=========================== Injected Quantities ===========================%

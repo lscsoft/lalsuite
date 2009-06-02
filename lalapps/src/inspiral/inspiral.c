@@ -2477,65 +2477,6 @@ int main( int argc, char *argv[] )
                   fcFilterParams->rhosqVec, "none", snrsqStr );
             }
 
-            if ( writeCData && ! strcmp(ifo, bankCurrent->ifo) )
-            {
-              trigTime = bankCurrent->end_time.gpsSeconds + 1e-9 * 
-                bankCurrent->end_time.gpsNanoSeconds;
-              lowerBound = 
-                gpsStartTime.gpsSeconds + numPoints/(4 * sampleRate );
-              upperBound = 
-                gpsEndTime.gpsSeconds - numPoints/(4 * sampleRate );
-
-              if ( trigTime >= lowerBound && trigTime <= upperBound )
-              {
-                tempTmplt = (SnglInspiralTable *) 
-                  LALCalloc(1, sizeof(SnglInspiralTable) );
-                tempTmplt->event_id = (EventIDColumn *) 
-                  LALCalloc(1, sizeof(EventIDColumn) );
-                tempTmplt->mass1 = bankCurrent->mass1;
-                tempTmplt->end_time.gpsSeconds = 
-                  bankCurrent->end_time.gpsSeconds;
-                tempTmplt->end_time.gpsNanoSeconds = 
-                  bankCurrent->end_time.gpsNanoSeconds;
-                tempTmplt->event_id->id = bankCurrent->event_id->id;
-
-                tempTmplt->sigmasq = candle.sigmasq;                		
-
-                LAL_CALL( LALFindChirpCreateCoherentInput( &status,
-                      &coherentInputData, fcFilterParams->cVec, 
-                      tempTmplt, 0.5, numPoints / 4 ), &status );
-
-                LALFree( tempTmplt->event_id );
-                LALFree( tempTmplt );
-
-                if ( coherentInputData )
-                {
-                  cDataForFrame = 1;
-                  LALSnprintf( cdataStr, LALNameLength*sizeof(CHAR),
-			       "%Ld", bankCurrent->event_id->id );
-                  LALSnprintf( coherentInputData->name,
-			       LALNameLength*sizeof(CHAR), 
-			       "%s:CBC-CData", ifo );
-                  if ( ! coherentFrames )
-                  {
-                    thisCoherentFrame = coherentFrames = (FrameHNode *) 
-                      LALCalloc( 1, sizeof(FrameHNode) );
-                  }
-                  else
-                  {
-                    thisCoherentFrame = thisCoherentFrame->next = 
-                      (FrameHNode *) LALCalloc( 1, sizeof(FrameHNode) );
-                  }
-                  thisCoherentFrame->frHeader = fr_add_proc_COMPLEX8TimeSeries( 
-                      outFrame, coherentInputData, "none", cdataStr );
-                  LAL_CALL( LALCDestroyVector( &status, 
-                        &(coherentInputData->data) ), &status );
-                  LALFree( coherentInputData );
-                  coherentInputData = NULL;
-                }
-              }
-            }
-
             if ( vrbflg ) 
               fprintf( stdout, "epoch = %d\n",
                   fcFilterInput->segment->data->epoch.gpsSeconds );
@@ -2660,7 +2601,66 @@ int main( int argc, char *argv[] )
                   outFrame = fr_add_proc_REAL4TimeSeries( outFrame,
                       &chisqts, "none", chisqStr );
                 }
-                
+            
+                if ( writeCData && ! strcmp(ifo, bankCurrent->ifo) )
+                {
+                  trigTime = bankCurrent->end_time.gpsSeconds + 1e-9 *
+                    bankCurrent->end_time.gpsNanoSeconds;
+                  lowerBound =
+                    gpsStartTime.gpsSeconds + numPoints/(4 * sampleRate );
+                  upperBound =
+                    gpsEndTime.gpsSeconds - numPoints/(4 * sampleRate );
+    
+                  if ( trigTime >= lowerBound && trigTime <= upperBound )
+                  {
+                    tempTmplt = (SnglInspiralTable *)
+                      LALCalloc(1, sizeof(SnglInspiralTable) );
+                    tempTmplt->event_id = (EventIDColumn *)
+                      LALCalloc(1, sizeof(EventIDColumn) );
+                    tempTmplt->mass1 = bankCurrent->mass1;
+                    tempTmplt->end_time.gpsSeconds =
+                      bankCurrent->end_time.gpsSeconds;
+                    tempTmplt->end_time.gpsNanoSeconds =
+                      bankCurrent->end_time.gpsNanoSeconds;
+                    tempTmplt->event_id->id = bankCurrent->event_id->id;
+    
+                    tempTmplt->sigmasq = eventList->sigmasq;
+    
+                    LAL_CALL( LALFindChirpCreateCoherentInput( &status,
+                          &coherentInputData, fcFilterParams->cVec,
+                          tempTmplt, 0.5, numPoints / 4 ), &status );
+    
+                    LALFree( tempTmplt->event_id );
+                    LALFree( tempTmplt );
+    
+                    if ( coherentInputData )
+                    {
+                      cDataForFrame = 1;
+                      LALSnprintf( cdataStr, LALNameLength*sizeof(CHAR),
+                                   "%Ld", bankCurrent->event_id->id );
+                      LALSnprintf( coherentInputData->name,
+                                   LALNameLength*sizeof(CHAR),
+                                   "%s:CBC-CData", ifo );
+                      if ( ! coherentFrames )
+                      {
+                        thisCoherentFrame = coherentFrames = (FrameHNode *)
+                          LALCalloc( 1, sizeof(FrameHNode) );
+                      }
+                      else
+                      {
+                        thisCoherentFrame = thisCoherentFrame->next =
+                          (FrameHNode *) LALCalloc( 1, sizeof(FrameHNode) );
+                      }
+                      thisCoherentFrame->frHeader = fr_add_proc_COMPLEX8TimeSeries(
+                          outFrame, coherentInputData, "none", cdataStr );
+                      LAL_CALL( LALCDestroyVector( &status,
+                            &(coherentInputData->data) ), &status );
+                      LALFree( coherentInputData );
+                      coherentInputData = NULL;
+                    }
+                  }
+                }
+    
                 /* apply the rsq veto to any surviving events */
                 if ( fcFilterParams->filterOutputVetoParams )
                 {

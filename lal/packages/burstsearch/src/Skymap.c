@@ -760,8 +760,8 @@ int XLALSkymapSignalHypothesis(XLALSkymapPlanType* plan, double* p, double sigma
     delay_limits[1] =  plan->hl;
     delay_limits[2] = -plan->hv;
     delay_limits[3] =  plan->hv;
-    delay_limits[4] = -plan->lv;
-    delay_limits[5] =  plan->lv;    
+    delay_limits[4] = -plan->lv - 1;
+    delay_limits[5] =  plan->lv + 1;    
     return XLALSkymapSignalHypothesisWithLimits(plan, p, sigma, w, begin, end, x, counts, modes, delay_limits);
 }
 
@@ -1202,7 +1202,7 @@ int XLALSkymapRender(double* q, XLALSkymapPlanType* plan, double* p)
 {
     static const char func[] = "XLALSkymapRender";
     int i, j;
-
+    
     /* scan over the sky */
     for (i = 0; i != plan->m; ++i)
     {
@@ -1220,7 +1220,7 @@ int XLALSkymapRender(double* q, XLALSkymapPlanType* plan, double* p)
 
             if (plan->pixel[k].area > 0)
             {
-                if ((p[k] > log(0)) && (p[k] < -log(0)))
+                if (p[k] < -log(0))
                 {
                     q[i + j * plan->m] = p[k];
                     /* apply area corrections */
@@ -1228,18 +1228,18 @@ int XLALSkymapRender(double* q, XLALSkymapPlanType* plan, double* p)
                 }
                 else
                 {
-                    XLALPrintError("%s(): attempted to render from a pixel with nonfinite value to (%i, %j)\n", func, i, j);
+                    XLALPrintError("%s(): attempted to render from a pixel with value +inf or nan to (%i, %j)\n", func, i, j);
                     XLAL_ERROR(func, XLAL_EINVAL);                   
                 }
             }
-            else
+            else                
             {
                 XLALPrintError("%s(): attempted to render from a pixel with zero area to (%i, %j)\n", func, i, j);
                 XLAL_ERROR(func, XLAL_EINVAL);
             }
         }
     }
-
+    
     return 0;
 }
 

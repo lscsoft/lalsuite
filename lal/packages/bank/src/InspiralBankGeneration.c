@@ -91,12 +91,12 @@ LALInspiralBankGeneration(
     for( cnt = 0; cnt < *ntiles; cnt++ )
     {
       /* Set the min and max fFinals using the appropriate formula*/
-      if( input->maxFreqCut == SchwarzISCO )
+      if( input->maxFreqCut == FreqCut_SchwarzISCO )
 	{
 	  maxfFinal = 1.0 / (6.0 * sqrt(6.0)*LAL_PI
                       *coarseList[cnt].params.totalMass*LAL_MTSUN_SI);
 	}
-      else if( input->maxFreqCut == BKLISCO )
+      else if( input->maxFreqCut == FreqCut_BKLISCO )
 	{
 	  if( coarseList[cnt].params.mass1 > coarseList[cnt].params.mass2 )
 	    {
@@ -106,16 +106,16 @@ LALInspiralBankGeneration(
 	      q = coarseList[cnt].params.mass1 / coarseList[cnt].params.mass2;
 	  maxfFinal = 1.0 / (6.0 * sqrt(6.0)*LAL_PI*coarseList[cnt].params.totalMass*LAL_MTSUN_SI) * ( 1 + 2.8*q - 2.6*q*q + 0.8*q*q*q );
 	}
-      else if( input->maxFreqCut == LightRing )
+      else if( input->maxFreqCut == FreqCut_LightRing )
 	{
 	  maxfFinal = 1.0 / (3.0 * sqrt(3.0)*LAL_PI
                       *coarseList[cnt].params.totalMass*LAL_MTSUN_SI);
 	}
-      else if( input->maxFreqCut == ERD )
+      else if( input->maxFreqCut == FreqCut_ERD )
 	{
 	  maxfFinal = 1.07*0.5326/(2*LAL_PI*0.955*coarseList[cnt].params.totalMass*LAL_MTSUN_SI);
 	}
-      else if( input->maxFreqCut == FRD )
+      else if( input->maxFreqCut == FreqCut_FRD )
 	{
 	  maxfFinal = ( 1. - 0.63*pow(1. - 3.4641016*coarseList[cnt].params.eta
                     + 2.9*coarseList[cnt].params.eta*coarseList[cnt].params.eta
@@ -124,7 +124,7 @@ LALInspiralBankGeneration(
                     *coarseList[cnt].params.eta*coarseList[cnt].params.eta)
                     *coarseList[cnt].params.totalMass*LAL_MTSUN_SI );
 	}
-      else if( input->maxFreqCut == LRD )
+      else if( input->maxFreqCut == FreqCut_LRD )
 	{
 	  maxfFinal = 1.2* ( 1. - 0.63*pow(1. - 3.4641016*coarseList[cnt].params.eta
                     + 2.9*coarseList[cnt].params.eta*coarseList[cnt].params.eta
@@ -136,12 +136,12 @@ LALInspiralBankGeneration(
       else
 	ABORT( status, LALINSPIRALBANKH_EFCUT, LALINSPIRALBANKH_MSGEFCUT );
 
-      if( input->minFreqCut == SchwarzISCO )
+      if( input->minFreqCut == FreqCut_SchwarzISCO )
 	{
 	  minfFinal = 1.0 / (6.0 * sqrt(6.0)*LAL_PI
                       *coarseList[cnt].params.totalMass*LAL_MTSUN_SI);
 	}
-      else if( input->minFreqCut == BKLISCO )
+      else if( input->minFreqCut == FreqCut_BKLISCO )
 	{
 	  if( coarseList[cnt].params.mass1 > coarseList[cnt].params.mass2 )
 	    {
@@ -151,16 +151,16 @@ LALInspiralBankGeneration(
 	      q = coarseList[cnt].params.mass1 / coarseList[cnt].params.mass2;
 	  minfFinal = 1.0 / (6.0 * sqrt(6.0)*LAL_PI*coarseList[cnt].params.totalMass*LAL_MTSUN_SI) * ( 1 + 2.8*q - 2.6*q*q + 0.8*q*q*q );
 	}
-      else if( input->minFreqCut == LightRing )
+      else if( input->minFreqCut == FreqCut_LightRing )
 	{
 	  minfFinal = 1.0 / (3.0 * sqrt(3.0)*LAL_PI
                       *coarseList[cnt].params.totalMass*LAL_MTSUN_SI);
 	}
-      else if( input->minFreqCut == ERD )
+      else if( input->minFreqCut == FreqCut_ERD )
 	{
 	  minfFinal = 1.07*0.5326/(2*LAL_PI*0.955*coarseList[cnt].params.totalMass*LAL_MTSUN_SI);
 	}
-      else if( input->minFreqCut == FRD )
+      else if( input->minFreqCut == FreqCut_FRD )
 	{
 	  minfFinal = ( 1. - 0.63*pow(1. - 3.4641016*coarseList[cnt].params.eta
                     + 2.9*coarseList[cnt].params.eta*coarseList[cnt].params.eta
@@ -169,7 +169,7 @@ LALInspiralBankGeneration(
                     *coarseList[cnt].params.eta*coarseList[cnt].params.eta)
                     *coarseList[cnt].params.totalMass*LAL_MTSUN_SI );
 	}
-      else if( input->minFreqCut == LRD )
+      else if( input->minFreqCut == FreqCut_LRD )
 	{
 	  minfFinal = 1.2* ( 1. - 0.63*pow(1. - 3.4641016*coarseList[cnt].params.eta
                     + 2.9*coarseList[cnt].params.eta*coarseList[cnt].params.eta

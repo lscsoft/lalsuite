@@ -153,7 +153,7 @@ points very close to the equator.
 #include <lal/PtoleMetric.h>
 #include <lal/StackMetric.h>
 #include <lal/TwoDMesh.h>
-#include <lal/LALBarycenter.h>
+#include <lal/LALInitBarycenter.h>
 
 
 
