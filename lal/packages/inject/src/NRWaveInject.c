@@ -454,7 +454,7 @@ XLALFindNRFile( NRWaveMetaData   *out,       /**< output wave data */
 {
 
   REAL8 massRatioIn, massRatio, diff, newDiff;
-  UINT4 k, best;
+  UINT4 k, best=0;
 
   /* check arguments are sensible */
   if ( !out ) {
