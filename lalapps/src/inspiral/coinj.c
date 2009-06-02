@@ -104,7 +104,7 @@ CHAR		outXML[FILENAME_MAX];
 const LALUnit strainPerCount={0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
 const LALUnit countPerStrain={0,{0,0,0,0,0,-1,1},{0,0,0,0,0,0,0}};
 NoiseFunc *PSD;
-REAL8 PSDscale;
+REAL8 PSDscale=1.0;
 int c;
 SimInspiralTable *injTable=NULL;
 SimInspiralTable this_injection;
@@ -121,7 +121,7 @@ COMPLEX8FrequencySeries *DesignNoise;
 FrOutPar	VirgoOutPars;
 CHAR		VirgoParsSource[100];
 CHAR		VirgoParsInfo[100];
-REAL4		SNR,NetworkSNR;
+REAL8		SNR,NetworkSNR;
 INT4  makeFrames=0;
 INT4 outputRaw=0;
 COMPLEX8FrequencySeries *fftData;
@@ -316,10 +316,6 @@ for(det_idx=0;det_idx<LAL_NUM_IFO;det_idx++){
 
 	XLALDestroyCOMPLEX8FrequencySeries(actuationResp);
 
-	for(i=0;i<TimeSeries->data->length;i++) {
-	  TimeSeries->data->data[i]=TimeSeries->data->data[i]/dynRange +0.0;
-	}
-
 	/* Calculate SNR for this injection */
 	fwd_plan = XLALCreateForwardREAL4FFTPlan( TimeSeries->data->length, 0 );
 	fftData = XLALCreateCOMPLEX8FrequencySeries(TimeSeries->name,&(TimeSeries->epoch),0,1.0/TimeSeries->deltaT,&lalDimensionlessUnit,TimeSeries->data->length/2 +1);
@@ -327,6 +323,7 @@ for(det_idx=0;det_idx<LAL_NUM_IFO;det_idx++){
 	XLALDestroyREAL4FFTPlan(fwd_plan);
 	
 	mySNRsq = 0.0;
+	mySNR=0.0;
 	for(i=1;i<fftData->data->length;i++){
 		REAL8 freq;
 		REAL8 sim_psd_value=0;
@@ -340,11 +337,15 @@ for(det_idx=0;det_idx<LAL_NUM_IFO;det_idx++){
 	mySNRsq *= 4.0*fftData->deltaF;
 	XLALDestroyCOMPLEX8FrequencySeries( fftData );
 	if(det_idx==LAL_IFO_H2) mySNRsq/=4.0;
-	mySNR = sqrt(mySNRsq);
+	mySNR = sqrt(mySNRsq)/dynRange;
 	fprintf(stdout,"SNR in design %s of injection %i = %lf\n",det_name,inj_num,mySNR);
 	
 	if(minSNR>mySNR) {minRatio=minRatio>(mySNR/minSNR)?(mySNR/minSNR):minRatio; SNROK=1;} /* Find the smallest fraction of the SNR in any IFO */
 	if(maxSNR!=0 && maxSNR<mySNR) {maxRatio=maxRatio<(mySNR/maxSNR)?(mySNR/maxSNR):maxRatio; SNROK=1;} /* find largest fraction... */
+
+	for(i=0;i<TimeSeries->data->length;i++) {
+	  TimeSeries->data->data[i]=TimeSeries->data->data[i]/dynRange +0.0;
+	}
 	
 	
 	sprintf(outfilename,"%s_HWINJ_%i_%s_%i.txt",det_name,inj_num,injtype,inj_epoch.gpsSeconds);
