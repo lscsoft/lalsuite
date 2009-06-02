@@ -825,7 +825,7 @@ INT4 XLALMCMCDifferentialEvolution(
 	LALMCMCParameter **Live=inputMCMC->Live;
 	int i=0,j=0,dim=0,same=1;
 	REAL4 randnum;
-	UINT4 Nlive = inputMCMC->Nlive;
+	int Nlive = (int)inputMCMC->Nlive;
 	LALMCMCParam *paraHead=NULL;
 	LALMCMCParam *paraA=NULL;
 	LALMCMCParam *paraB=NULL;
@@ -834,10 +834,10 @@ INT4 XLALMCMCDifferentialEvolution(
 	if(inputMCMC->randParams==NULL) LALCreateRandomParams(&status,&(inputMCMC->randParams),0);
 	/* Select two other samples A and B*/
 	LALUniformDeviate(&status,&randnum,inputMCMC->randParams);
-	i=(int)floorf((float)Nlive*randnum);
+	i=(int)(Nlive*randnum);
 	/* Draw two different samples from the basket. Will loop back here if the original sample is chosen*/
 	drawtwo:
-	do {LALUniformDeviate(&status,&randnum,inputMCMC->randParams); j=(int)floorf((float)Nlive*randnum);} while(j==i);
+	do {LALUniformDeviate(&status,&randnum,inputMCMC->randParams); j=(int)(Nlive*randnum);} while(j==i);
 	paraHead=parameter->param;
 	paraA=Live[i]->param; paraB=Live[j]->param;
 		/* Add the vector B-A */
