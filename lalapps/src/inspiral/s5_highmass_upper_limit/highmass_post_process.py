@@ -363,7 +363,7 @@ except: pass
 try: os.mkdir("bash_scripts")
 except: pass
 
-cats = ["CAT_2","CAT_3"]
+cats = ["CAT_3"]
 types = ["FULL_DATA"]
 FULLDATACACHE = string.strip(cp.get('input','fulldatacache'))
 INJCACHE = string.strip(cp.get('input','injcache'))
