@@ -168,6 +168,9 @@ INT4
 XLALFindNRCoalescenceTimeFromhoft(REAL8 *tc,
 				  const REAL4TimeSeries *in);
 
+INT4
+XLALFindNRCoalescenceTimeREAL8(REAL8 *tc,
+			       const REAL8TimeSeries *in);
 
 /** Spin weighted Spherical Harmonic  */
 INT4
