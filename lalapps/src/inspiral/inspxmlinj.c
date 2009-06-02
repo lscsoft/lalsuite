@@ -145,19 +145,19 @@ int main ( int argc, char *argv[] )
   proctable.processTable = (ProcessTable *) 
     calloc( 1, sizeof(ProcessTable) );
   LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->start_time),
-	&accuracy ), &status );
+        &accuracy ), &status );
   if (strcmp(CVS_REVISION,"$Revi" "sion$"))
     {
       LAL_CALL( populate_process_table( &status, proctable.processTable, 
-					PROGRAM_NAME, CVS_REVISION,
-					CVS_SOURCE, CVS_DATE ), &status );
+                                        PROGRAM_NAME, CVS_REVISION,
+                                        CVS_SOURCE, CVS_DATE ), &status );
     }
   else
     {
       LAL_CALL( populate_process_table( &status, proctable.processTable, 
-					PROGRAM_NAME, lalappsGitCommitID,
-					lalappsGitGitStatus,
-					lalappsGitCommitDate ), &status );
+                                        PROGRAM_NAME, lalappsGitCommitID,
+                                        lalappsGitGitStatus,
+                                        lalappsGitCommitDate ), &status );
     }
   snprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX, " " );
   this_proc_param = procparams.processParamsTable = (ProcessParamsTable *) 
@@ -184,7 +184,7 @@ int main ( int argc, char *argv[] )
     size_t optarg_len;
 
     c = getopt_long_only( argc, argv, 
-	"Ha:b:c:d:e:f:g:h:i:j:k:l:Z:", long_options, &option_index );
+        "Ha:b:c:d:e:f:g:h:i:j:k:l:Z:", long_options, &option_index );
 
     /* detect the end of the options */
     if ( c == - 1 )
@@ -195,18 +195,18 @@ int main ( int argc, char *argv[] )
     switch ( c )
     {
       case 0:
-	/* if this option set a flag, do nothing else now */
-	if ( long_options[option_index].flag != 0 )
-	{
-	  break;
-	}
-	else
-	{
-	  fprintf( stderr, "error parsing option %s with argument %s\n",
-	      long_options[option_index].name, optarg );
-	  exit( 1 );
-	}
-	break;
+        /* if this option set a flag, do nothing else now */
+        if ( long_options[option_index].flag != 0 )
+        {
+          break;
+        }
+        else
+        {
+          fprintf( stderr, "error parsing option %s with argument %s\n",
+              long_options[option_index].name, optarg );
+          exit( 1 );
+        }
+        break;
 
       case 'a':
         {
@@ -262,25 +262,25 @@ int main ( int argc, char *argv[] )
         break;
 
       case 'c':
-	injParams.mass1 = (REAL4) atof( optarg );
-	this_proc_param = this_proc_param->next = 
-	  next_process_param( long_options[option_index].name, "real_4", 
-	      "%d", rand_seed );
-	break;
+        injParams.mass1 = (REAL4) atof( optarg );
+        this_proc_param = this_proc_param->next = 
+          next_process_param( long_options[option_index].name, "real_4", 
+              "%d", rand_seed );
+        break;
 
       case 'd':
-	injParams.mass2 = (REAL4) atof( optarg );
-	this_proc_param = this_proc_param->next = 
-	  next_process_param( long_options[option_index].name, "real_4", 
-	      "%d", rand_seed );
-	break;
+        injParams.mass2 = (REAL4) atof( optarg );
+        this_proc_param = this_proc_param->next = 
+          next_process_param( long_options[option_index].name, "real_4", 
+              "%d", rand_seed );
+        break;
 
       case 'e':
-	injParams.distance = (REAL4) atof( optarg );
-	this_proc_param = this_proc_param->next = 
-	  next_process_param( long_options[option_index].name, "real_4", 
-	      "%d", rand_seed );
-	break;
+        injParams.distance = (REAL4) atof( optarg );
+        this_proc_param = this_proc_param->next = 
+          next_process_param( long_options[option_index].name, "real_4", 
+              "%d", rand_seed );
+        break;
 
       case 'f':
         abort();
@@ -295,64 +295,64 @@ int main ( int argc, char *argv[] )
         break;
 
       case 'i':
-	injParams.inclination = (REAL4) atof( optarg );
-	this_proc_param = this_proc_param->next = 
-	  next_process_param( long_options[option_index].name, "real_4", 
-	      "%d", rand_seed );
-	break;
+        injParams.inclination = (REAL4) atof( optarg );
+        this_proc_param = this_proc_param->next = 
+          next_process_param( long_options[option_index].name, "real_4", 
+              "%d", rand_seed );
+        break;
 
       case 'j':
-	injParams.coa_phase= (REAL4) atof( optarg );
-	this_proc_param = this_proc_param->next = 
-	  next_process_param( long_options[option_index].name, "real_4", 
-	      "%d", rand_seed );
-	break;
+        injParams.coa_phase= (REAL4) atof( optarg );
+        this_proc_param = this_proc_param->next = 
+          next_process_param( long_options[option_index].name, "real_4", 
+              "%d", rand_seed );
+        break;
 
       case 'k':
-	injParams.polarization = (REAL4) atof( optarg );
-	this_proc_param = this_proc_param->next = 
-	  next_process_param( long_options[option_index].name, "real_4", 
-	      "%d", rand_seed );
-	break;
+        injParams.polarization = (REAL4) atof( optarg );
+        this_proc_param = this_proc_param->next = 
+          next_process_param( long_options[option_index].name, "real_4", 
+              "%d", rand_seed );
+        break;
 
       case 'l':
-	snprintf( &(injParams.waveform), 
-            LIGOMETA_WAVEFORM_MAX * sizeof(CHAR), "%s", optarg );
-	this_proc_param = this_proc_param->next = 
-	  next_process_param( long_options[option_index].name, "string", 
-	      "%s", optarg );
+        snprintf( &(injParams.waveform), 
+                  LIGOMETA_WAVEFORM_MAX * sizeof(CHAR), "%s", optarg );
+        this_proc_param = this_proc_param->next = 
+          next_process_param( long_options[option_index].name, "string", 
+              "%s", optarg );
         break;
 
       case 'Z':
-	/* create storage for the usertag */
-	optarg_len = strlen( optarg ) + 1;
-	userTag = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
-	memcpy( userTag, optarg, optarg_len );
+        /* create storage for the usertag */
+        optarg_len = strlen( optarg ) + 1;
+        userTag = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
+        memcpy( userTag, optarg, optarg_len );
 
-	this_proc_param = this_proc_param->next = (ProcessParamsTable *)
-	  calloc( 1, sizeof(ProcessParamsTable) );
-	snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
-	    PROGRAM_NAME );
-	snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "-userTag" );
-	snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
-	snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
-	    optarg );
-	break;
+        this_proc_param = this_proc_param->next = (ProcessParamsTable *)
+          calloc( 1, sizeof(ProcessParamsTable) );
+        snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
+                  PROGRAM_NAME );
+        snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "-userTag" );
+        snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+        snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
+                  optarg );
+        break;
 
       case 'h':
-	fprintf( stderr, USAGE );
-	exit( 0 );
-	break;
+        fprintf( stderr, USAGE );
+        exit( 0 );
+        break;
 
       case '?':
-	fprintf( stderr, USAGE );
-	exit( 1 );
-	break;
+        fprintf( stderr, USAGE );
+        exit( 1 );
+        break;
 
       default:
-	fprintf( stderr, "unknown error while parsing options\n" );
-	fprintf( stderr, USAGE );
-	exit( 1 );
+        fprintf( stderr, "unknown error while parsing options\n" );
+        fprintf( stderr, USAGE );
+        exit( 1 );
     }
   }
 
@@ -360,7 +360,7 @@ int main ( int argc, char *argv[] )
   {
     /* default to Tev's GeneratePPNInspiral as used in */
     snprintf( waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR), 
-	"GeneratePPNtwoPN" );
+              "GeneratePPNtwoPN" );
   }
 
 
