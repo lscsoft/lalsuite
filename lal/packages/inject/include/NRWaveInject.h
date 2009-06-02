@@ -12,27 +12,27 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with with program; see the file COPYING. If not, write to the 
- *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, 
+ *  along with with program; see the file COPYING. If not, write to the
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
  */
 
 
 /** \defgroup NRWaveInject
- * \ingroup inject 
+ * \ingroup inject
  * \author S.Fairhurst, B. Krishnan, L.Santamaria
- * 
+ *
  * \brief Module for generating h(t) from Numrel waveforms
  *
 
  *
  */
- 
+
 /** \file NRWaveInject.h
- *  \ingroup NRWaveInject  
+ *  \ingroup NRWaveInject
  * \date $Date$
  *
- * 
+ *
  */
 
 #ifndef _NRWAVEINJECT_H
@@ -81,14 +81,14 @@ NRCSID( NRWAVEINJECTH, "$Id$");
 /* enum for list of numrel groups */
 typedef enum{
   NINJA_GROUP_AEI = 0,
-  NINJA_GROUP_CIT,  
+  NINJA_GROUP_CIT,
   NINJA_GROUP_LSU,
   NINJA_GROUP_JENA,
   NINJA_GROUP_RIT,
   NINJA_GROUP_CORNELL,
   NINJA_GROUP_PSU,
   NINJA_GROUP_FAU,
-  NINJA_GROUP_UTB,  
+  NINJA_GROUP_UTB,
   NINJA_GROUP_UIUC,
   NINJA_GROUP_PRINCETON,
   NINJA_GROUP_LAST
@@ -96,18 +96,18 @@ typedef enum{
 
 
 REAL4TimeVectorSeries *
-XLALSumStrain( 
-    REAL4TimeVectorSeries *tempstrain,  
+XLALSumStrain(
+    REAL4TimeVectorSeries *tempstrain,
     REAL4TimeVectorSeries *strain);
 
 REAL8TimeVectorSeries *
-XLALSumStrainREAL8( 
+XLALSumStrainREAL8(
     REAL8TimeVectorSeries *tempstrain,
     REAL8TimeVectorSeries *strain);
 
 /* REAL4TimeVectorSeries * */
 INT4
-XLALOrientNRWave( 
+XLALOrientNRWave(
     REAL4TimeVectorSeries *strain,
     UINT4                  modeL,
     INT4                   modeM,
@@ -115,16 +115,16 @@ XLALOrientNRWave(
     REAL4                  coa_phase);
 
 REAL8TimeVectorSeries *
-XLALOrientNRWaveREAL8( 
-    REAL8TimeVectorSeries *strain,     
-    UINT4                  modeL,      
-    INT4                   modeM,      
+XLALOrientNRWaveREAL8(
+    REAL8TimeVectorSeries *strain,
+    UINT4                  modeL,
+    INT4                   modeM,
     REAL4                  inclination,
     REAL4                  coa_phase);
 
 REAL4TimeSeries *
-XLALCalculateNRStrain( 
-    REAL4TimeVectorSeries *strain, 
+XLALCalculateNRStrain(
+    REAL4TimeVectorSeries *strain,
     SimInspiralTable      *thisInj,
     CHAR                  *ifo,
     INT4                   sampleRate);
@@ -133,23 +133,23 @@ REAL4TimeSeries *
 XLALInterpolateNRWave( REAL4TimeSeries *in,
 		       INT4      sampleRate);
 
-INT4 
+INT4
 XLALFindNRFile( NRWaveMetaData *out,
 		NRWaveCatalog *nrCatalog,
 		const SimInspiralTable  *inj,
-		INT4  modeL, 
+		INT4  modeL,
 		INT4  modeM);
 
 REAL4TimeVectorSeries *
-XLALSumStrain( 
-    REAL4TimeVectorSeries *tempstrain,     /**< storing variable */ 
+XLALSumStrain(
+    REAL4TimeVectorSeries *tempstrain,     /**< storing variable */
     REAL4TimeVectorSeries *strain          /**< variable to add  */);
 
-void LALInjectStrainGW( LALStatus *status, 
-			REAL4TimeSeries *injData, 
-			REAL4TimeVectorSeries *strain, 
-			SimInspiralTable *thisInj, 
-			CHAR *ifo, 
+void LALInjectStrainGW( LALStatus *status,
+			REAL4TimeSeries *injData,
+			REAL4TimeVectorSeries *strain,
+			SimInspiralTable *thisInj,
+			CHAR *ifo,
 			REAL8 dynRange);
 
 void LALInjectStrainGWREAL8( LALStatus                 *status,
@@ -161,22 +161,22 @@ void LALInjectStrainGWREAL8( LALStatus                 *status,
 
 
 INT4
-XLALFindNRCoalescenceTime(REAL8 *tc, 
+XLALFindNRCoalescenceTime(REAL8 *tc,
 			  const REAL4TimeVectorSeries *in);
 
 INT4
-XLALFindNRCoalescenceTimeFromhoft(REAL8 *tc, 
+XLALFindNRCoalescenceTimeFromhoft(REAL8 *tc,
 				  const REAL4TimeSeries *in);
 
 
 /** Spin weighted Spherical Harmonic  */
-INT4 
+INT4
 XLALSphHarm ( COMPLEX16 *out, /**< [out] the value of Y2_lm(theta,phi) */
 	      UINT4   L,  /**< the aziuhtal quantum number */
 	      INT4    M,  /**< the M value */
 	      REAL4   theta, /**< position - azimuthal angle */
 	      REAL4   phi ); /**< position - polar angle */
-  
+
 /** channel name for nr data in frame file */
 CHAR* XLALGetNinjaChannelName(CHAR *polarisation, /**< either plus or cross */
 			      UINT4 l, /**< azimuthal mode index */
