@@ -1394,7 +1394,7 @@ LALEOBWaveformEngine (
    REAL8                   v2, eta, m, rn, r, rOld, s, p, q, dt, t, v, omega, f, ampl0;
    REAL8                   omegamatch;
    /* Track change to help step back two points in integraion */
-   REAL8                   rpr1, rpr2, spr1, spr2, ppr1, ppr2, qpr1, qpr2;
+   REAL8                   rpr1=0, rpr2=0, spr1=0, spr2=0, ppr1=0, ppr2=0, qpr1=0, qpr2=0;
 
    void                    *funcParams1, *funcParams2, *funcParams3;
 
