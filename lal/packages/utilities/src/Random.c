@@ -145,7 +145,7 @@ RandomParams * XLALCreateRandomParams( INT4 seed )
 
 void XLALResetRandomParams( RandomParams *params, INT4 seed )
 {
-  static const char *func = "XLALResetRandomParams";
+  /* static const char *func = "XLALResetRandomParams"; */
   UINT4 n;
 
   params->i = seed;
