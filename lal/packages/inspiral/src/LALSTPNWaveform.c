@@ -661,7 +661,7 @@ LALSTPNWaveformEngine (
   /* declare code parameters and variables*/
   INT4 		nn = 11+1;              /* number of dynamical variables*/
                                         /* Michele-041208: added one for "test" */
-  INT4 		count;                  /* integration steps performed*/
+  UINT4 	count;                  /* integration steps performed*/
   INT4 		length;                 /* memory allocation structure*/
   INT4 		j;                      /* counter*/
 
