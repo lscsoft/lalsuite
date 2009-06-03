@@ -35,15 +35,15 @@ documentation for the function \texttt{LALInspiralWave}.
 \input{LALInspiralAmplitudeCorrectedWaveCP}
 \index{\verb&LALInspiralAmplitudeCorrectedWave()&}
 \begin{itemize}
-\item {\tt signal:} Output containing the inspiral waveform.
+\item {\tt signalvec:} Output containing the inspiral waveform.
 \item {\tt params:} Input containing binary chirp parameters.
 \end{itemize}
 
 \input{LALInspiralAmplitudeCorrectedWaveTemplatesCP}
 \index{\verb&LALInspiralAmplitudeCorrectedWaveTemplates()&}
 \begin{itemize}
-\item {\tt signal1:} Output containing the 0-phase inspiral waveform.
-\item {\tt signal2:} Output containing the $\pi/2$-phase inspiral waveform.
+\item {\tt signalvec1:} Output containing the 0-phase inspiral waveform.
+\item {\tt signalvec2:} Output containing the $\pi/2$-phase inspiral waveform.
 \item {\tt params:} Input containing binary chirp parameters.
 \end{itemize}
 
@@ -93,8 +93,8 @@ in Equation (\ref{eq:ode2}).
 static void
 LALInspiralAmplitudeCorrectedWaveEngine(
    LALStatus        *status,
-   REAL4Vector      *signal1,
-   REAL4Vector      *signal2,
+   REAL4Vector      *signalvec1,
+   REAL4Vector      *signalvec2,
    REAL4Vector      *a,
    REAL4Vector      *ff,
    REAL8Vector      *phi,
@@ -109,7 +109,7 @@ NRCSID (LALINSPIRALAMPLITUDECORRECTEDWAVEC, "$Id$");
 void
 LALInspiralAmplitudeCorrectedWave(
    LALStatus        *status,
-   REAL4Vector      *signal,
+   REAL4Vector      *signalvec,
    InspiralTemplate *params
    )
  { /* </lalVerbatim>  */
@@ -119,14 +119,14 @@ LALInspiralAmplitudeCorrectedWave(
    INITSTATUS(status, "LALInspiralAmplitudeCorrectedWave",LALINSPIRALAMPLITUDECORRECTEDWAVEC);
    ATTATCHSTATUSPTR(status);
 
-   ASSERT(signal, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   ASSERT(signal->data, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+   ASSERT(signalvec, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+   ASSERT(signalvec->data, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
 
    /* Initially the waveform is empty*/
-   memset(signal->data, 0, signal->length*sizeof(REAL4));
+   memset(signalvec->data, 0, signalvec->length*sizeof(REAL4));
 
    /*Call the engine function*/
-   LALInspiralAmplitudeCorrectedWaveEngine(status->statusPtr, signal, NULL, NULL, NULL, NULL, &count, params);
+   LALInspiralAmplitudeCorrectedWaveEngine(status->statusPtr, signalvec, NULL, NULL, NULL, NULL, &count, params);
    CHECKSTATUSPTR(status);
 
    DETATCHSTATUSPTR(status);
@@ -141,8 +141,8 @@ NRCSID (LALINSPIRALAMPLITUDECORRECTEDWAVETEMPLATESC, "$Id$");
 void
 LALInspiralAmplitudeCorrectedWaveTemplates(
    LALStatus        *status,
-   REAL4Vector      *signal1,
-   REAL4Vector      *signal2,
+   REAL4Vector      *signalvec1,
+   REAL4Vector      *signalvec2,
    InspiralTemplate *params
    )
  { /* </lalVerbatim>  */
@@ -152,17 +152,17 @@ LALInspiralAmplitudeCorrectedWaveTemplates(
    INITSTATUS(status, "LALInspiralAmplitudeCorrectedWaveTemplates",LALINSPIRALAMPLITUDECORRECTEDWAVETEMPLATESC);
    ATTATCHSTATUSPTR(status);
 
-   ASSERT(signal1, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   ASSERT(signal2, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   ASSERT(signal1->data, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   ASSERT(signal2->data, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+   ASSERT(signalvec1, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+   ASSERT(signalvec2, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+   ASSERT(signalvec1->data, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+   ASSERT(signalvec2->data, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
 
    /* Initially the waveforms are empty */
-   memset(signal1->data, 0, signal1->length * sizeof(REAL4));
-   memset(signal2->data, 0, signal2->length * sizeof(REAL4));
+   memset(signalvec1->data, 0, signalvec1->length * sizeof(REAL4));
+   memset(signalvec2->data, 0, signalvec2->length * sizeof(REAL4));
 
    /* Call the engine function */
-   LALInspiralAmplitudeCorrectedWaveEngine(status->statusPtr, signal1, signal2, NULL, NULL, NULL, &count, params);
+   LALInspiralAmplitudeCorrectedWaveEngine(status->statusPtr, signalvec1, signalvec2, NULL, NULL, NULL, &count, params);
    CHECKSTATUSPTR(status);
 
    DETATCHSTATUSPTR(status);
@@ -357,8 +357,8 @@ NRCSID (LALINSPIRALAMPLITUDECORRECTEDWAVEENGINEC, "$Id$");
 void
 LALInspiralAmplitudeCorrectedWaveEngine(
 		LALStatus        *status,
-		REAL4Vector      *signal1,
-		REAL4Vector      *signal2,
+		REAL4Vector      *signalvec1,
+		REAL4Vector      *signalvec2,
 		REAL4Vector      *a,
 		REAL4Vector      *ff,
 		REAL8Vector      *phi,
@@ -460,11 +460,11 @@ LALInspiralAmplitudeCorrectedWaveEngine(
 
 
    count = 0;
-   if (signal2) {
+   if (signalvec2) {
    params->nStartPad = 0;
    } /* for template genera  memset( &waveform, 0, sizeof(CoherentGW) );
 tion, that value must be zero*/
-   else if (signal1) {
+   else if (signalvec1) {
      count = params->nStartPad;
    }
 
@@ -479,16 +479,16 @@ tion, that value must be zero*/
   for (i=0;i<(INT4)waveform.h->data->length; i++)
   {
 	   /* Non-injection case */
-      if (signal1)
+      if (signalvec1)
       {
          /* For amplitude corrected waveforms, we do not want only h+ or only hx but F+h+ + FxHx*/
          hPlus  = (REAL4) waveform.h->data->data[2*i];
          hCross = (REAL4) waveform.h->data->data[2*i+1];
-         *(signal1->data + count) = fPlus * hPlus + fCross * hCross;
-         /* todo: add an Abort if signal2<>0*/
-	 if (signal2)
+         *(signalvec1->data + count) = fPlus * hPlus + fCross * hCross;
+         /* todo: add an Abort if signalvec2<>0*/
+	 if (signalvec2)
 	 {
-         *(signal2->data + count) = (REAL4) waveform.h->data->data[2*i+1];
+         *(signalvec2->data + count) = (REAL4) waveform.h->data->data[2*i+1];
 	 }
       }
 

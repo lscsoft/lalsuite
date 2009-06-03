@@ -91,7 +91,7 @@ void LALTaylorNDerivatives7PN(
 void
 LALTaylorNWaveformEngine (
   LALStatus        *status,
-  REAL4Vector      *signal,
+  REAL4Vector      *signalvec,
   InspiralTemplate *params,
   InspiralInit     *paramsInit
 );
@@ -336,7 +336,7 @@ void LALTaylorNDerivatives7PN(
 /*  <lalVerbatim file="LALTaylorNWaveformCP"> */
 void LALTaylorNWaveform (
    LALStatus        *status,
-   REAL4Vector      *signal,
+   REAL4Vector      *signalvec,
    InspiralTemplate *params
    )
 { /* </lalVerbatim> */
@@ -345,9 +345,9 @@ void LALTaylorNWaveform (
    INITSTATUS(status, "LALTaylorNWaveform", LALTAYLORETWAVEFORMC);
    ATTATCHSTATUSPTR(status);
 
-   ASSERT(signal,  status,
+   ASSERT(signalvec,  status,
 	LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   ASSERT(signal->data,  status,
+   ASSERT(signalvec->data,  status,
    	LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
    ASSERT(params,  status,
    	LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
@@ -368,10 +368,10 @@ void LALTaylorNWaveform (
 					 &(paramsInit.ak), params);
    CHECKSTATUSPTR(status);
 
-   memset(signal->data, 0, signal->length * sizeof( REAL4 ));
+   memset(signalvec->data, 0, signalvec->length * sizeof( REAL4 ));
 
    /* Call the engine function */
-   LALTaylorNWaveformEngine(status->statusPtr, signal, params, &paramsInit);
+   LALTaylorNWaveformEngine(status->statusPtr, signalvec, params, &paramsInit);
    CHECKSTATUSPTR( status );
 
    DETATCHSTATUSPTR(status);
@@ -382,7 +382,7 @@ void LALTaylorNWaveform (
 void
 LALTaylorNWaveformEngine (
                 LALStatus        *status,
-                REAL4Vector      *signal,
+                REAL4Vector      *signalvec,
                 InspiralTemplate *params,
                 InspiralInit     *paramsInit
                 )
@@ -436,7 +436,7 @@ LALTaylorNWaveformEngine (
    dt = 1./params->tSampling;
    ak   = paramsInit->ak;
    func = paramsInit->func;
-   length = signal->length;
+   length = signalvec->length;
    eta = ak.eta;
    m = ak.totalmass;
 
@@ -549,7 +549,7 @@ LALTaylorNWaveformEngine (
       }
 
       h = 4 * m * eta * xi * sin(2.*phi)/1.e14;
-      signal->data[ndx] = h;
+      signalvec->data[ndx] = h;
       /* fprintf(stdout, "%e %e %e\n", t, h, omega/(m*LAL_PI)); */
 
       /* Integrate one step forward */

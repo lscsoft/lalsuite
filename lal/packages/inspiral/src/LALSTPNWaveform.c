@@ -302,7 +302,7 @@ void LALSTPNderivatives(REAL8Vector *values, REAL8Vector *dvalues, void *mparams
 void
 LALSTPNWaveform (
    LALStatus        *status,
-   REAL4Vector      *signal,
+   REAL4Vector      *signalvec,
    InspiralTemplate *params
    )
 { /* </lalVerbatim> */
@@ -312,9 +312,9 @@ LALSTPNWaveform (
    INITSTATUS(status, "LALSTPNWaveform", LALSTPNWAVEFORMC);
    ATTATCHSTATUSPTR(status);
 
-   ASSERT(signal,  status,
+   ASSERT(signalvec,  status,
 	LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   ASSERT(signal->data,  status,
+   ASSERT(signalvec->data,  status,
    	LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
    ASSERT(params,  status,
    	LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
@@ -334,9 +334,9 @@ LALSTPNWaveform (
    LALInspiralChooseModel(status->statusPtr, &(paramsInit.func), &(paramsInit.ak), params);
    CHECKSTATUSPTR(status);
 
-   memset(signal->data, 0, signal->length * sizeof( REAL4 ));
+   memset(signalvec->data, 0, signalvec->length * sizeof( REAL4 ));
    /* Call the engine function */
-   LALSTPNWaveformEngine(status->statusPtr, signal, NULL,NULL, NULL, NULL, NULL, &count, params, &paramsInit);
+   LALSTPNWaveformEngine(status->statusPtr, signalvec, NULL,NULL, NULL, NULL, NULL, &count, params, &paramsInit);
    CHECKSTATUSPTR( status );
 
    DETATCHSTATUSPTR(status);
@@ -349,8 +349,8 @@ LALSTPNWaveform (
 void
 LALSTPNWaveformTemplates (
    LALStatus        *status,
-   REAL4Vector      *signal1,
-   REAL4Vector      *signal2,
+   REAL4Vector      *signalvec1,
+   REAL4Vector      *signalvec2,
    InspiralTemplate *params
    )
 { /* </lalVerbatim> */
@@ -362,13 +362,13 @@ LALSTPNWaveformTemplates (
    INITSTATUS(status, "LALSTPNWaveform", LALSTPNWAVEFORMC);
    ATTATCHSTATUSPTR(status);
 
-   ASSERT(signal1,  status,
+   ASSERT(signalvec1,  status,
 	LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   ASSERT(signal1->data,  status,
+   ASSERT(signalvec1->data,  status,
    	LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   ASSERT(signal2,  status,
+   ASSERT(signalvec2,  status,
 	LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   ASSERT(signal2->data,  status,
+   ASSERT(signalvec2->data,  status,
    	LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
    ASSERT(params,  status,
    	LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
@@ -391,11 +391,11 @@ LALSTPNWaveformTemplates (
    LALInspiralInit(status->statusPtr, params, &paramsInit);
 
 
-   memset(signal1->data, 0, signal1->length * sizeof( REAL4 ));
-   memset(signal2->data, 0, signal2->length * sizeof( REAL4 ));
+   memset(signalvec1->data, 0, signalvec1->length * sizeof( REAL4 ));
+   memset(signalvec2->data, 0, signalvec2->length * sizeof( REAL4 ));
 
    /* Call the engine function */
-   LALSTPNWaveformEngine(status->statusPtr, signal1, signal2, NULL, NULL, NULL, NULL, &count, params, &paramsInit);
+   LALSTPNWaveformEngine(status->statusPtr, signalvec1, signalvec2, NULL, NULL, NULL, NULL, &count, params, &paramsInit);
    CHECKSTATUSPTR( status );
 
    DETATCHSTATUSPTR(status);
@@ -641,8 +641,8 @@ LALSTPNWaveformForInjection (
 void
 LALSTPNWaveformEngine (
                 LALStatus        *status,
-                REAL4Vector      *signal1,
-                REAL4Vector      *signal2,
+                REAL4Vector      *signalvec1,
+                REAL4Vector      *signalvec2,
                 REAL4Vector      *a,
                 REAL4Vector      *ff,
                 REAL8Vector      *phi,
@@ -1037,13 +1037,13 @@ LALSTPNWaveformEngine (
    It might be an empty bin at beginning or a shift im time of one bin in the coherent
    code...*/
 
-  if (a || signal2)
+  if (a || signalvec2)
     params->nStartPad = 0; /* must be zero for templates and injection */
 
   do {
 
     /*    fprintf(stderr,"%d %d %15.12lf %15.12lf %15.12lf %15.12lf %15.12lf\n", count, length, omegadot, LNhz*LNhz, LNhztol, omega, unitHz);*/
-    if ((signal1 && count >= signal1->length) || (ff && count >= ff->length))
+    if ((signalvec1 && count >= signalvec1->length) || (ff && count >= ff->length))
       {
         XLALRungeKutta4Free( integrator );
 	LALFree(dummy.data);
@@ -1074,19 +1074,19 @@ LALSTPNWaveformEngine (
       /* a->data[2*count]          = (REAL4)(apcommon * f2a * (-0.25) * (3.0 + cos(2*i)));*/
       /* a->data[2*count+1]        = (REAL4)(apcommon * f2a * (-cos(i)));                 */
 
-      if (signal1)
+      if (signalvec1)
 	{
 	  v = pow(omega, oneby3);
 	  amp = params->signalAmplitude*v*v;
 
 
 	  h1 = -0.5 * amp * cos(2.*vphi) * cos(2.*alpha) * (1. + LNhz*LNhz) + amp * sin(2.*vphi) * sin(2.*alpha) * LNhz;
-	  *(signal1->data + count) = (REAL4) h1;
+	  *(signalvec1->data + count) = (REAL4) h1;
 
-	  if (signal2)
+	  if (signalvec2)
 	    {
 	      h2 = -0.5 * amp * cos(2.*vphi) * sin(2.*alpha) * (1. + LNhz*LNhz) - amp * sin(2.*vphi) * cos(2.*alpha) * LNhz;
-	      *(signal2->data + count) = (REAL4) h2;
+	      *(signalvec2->data + count) = (REAL4) h2;
 	    }
 
 	}
@@ -1191,7 +1191,7 @@ LALSTPNWaveformEngine (
 
   /* -? the EOB version saves some final values in params; I'm doing only fFinal*/
 
-  if (signal1 || signal2){
+  if (signalvec1 || signalvec2){
     params->fFinal = pow(v,3.)/(LAL_PI*m);
   }
   else if (a){
@@ -1202,7 +1202,7 @@ LALSTPNWaveformEngine (
   /*    this operations negates the use of initphi, which is set to 0.0 anyway*/
   /* -? I will comment this out to compare with my Mathematica code*/
 
-     if (signal1 && !signal2) params->tC = t;
+     if (signalvec1 && !signalvec2) params->tC = t;
    *countback = count;
 
 

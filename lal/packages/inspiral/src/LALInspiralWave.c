@@ -41,7 +41,7 @@ Either a time- or a frequency-domain signal is returned depending upon the
 \input{LALInspiralWaveCP}
 \idx{LALInspiralWave()}
 \begin{itemize}
-\item {\tt signal:} Output containing the inspiral waveform.
+\item {\tt signalvec:} Output containing the inspiral waveform.
 \item {\tt params:} Input containing binary chirp parameters.
 \end{itemize}
 
@@ -49,8 +49,8 @@ Either a time- or a frequency-domain signal is returned depending upon the
 \input{LALInspiralWaveTemplatesCP}
 \idx{LALInspiralWaveTemplates()}
 \begin{itemize}
-\item {\tt signal1:} Output containing the 0-phase inspiral waveform.
-\item {\tt signal2:} Output containing the $\pi/2$-phase inspiral waveform.
+\item {\tt signalvec1:} Output containing the 0-phase inspiral waveform.
+\item {\tt signalvec2:} Output containing the $\pi/2$-phase inspiral waveform.
 \item {\tt params:} Input containing binary chirp parameters.
 \end{itemize}
 
@@ -80,9 +80,9 @@ defined in Table \ref{table:energy}. In the case of {\tt EOB} approximant,
 defined only at orders greater than 2PN, the plunge waveform is
 terminated at the light-ring orbit defined by Equation~(\ref{eq:LightRing}).
 
-In the case of {\tt LALInspiralWaveTemplates} {\tt *signla1}
-contains the `0-phase' inspiral template and {\tt *signal2} contains
-a signal that is $\pi/2$ out of phase with respect to {\tt *signal1.}
+In the case of {\tt LALInspiralWaveTemplates} {\tt *signalvec1}
+contains the `0-phase' inspiral template and {\tt *signalvec2} contains
+a signal that is $\pi/2$ out of phase with respect to {\tt *signalvec1.}
 Currently, a template pair is generated only for the following {\tt approximants:}
 {\tt TaylorT1, TaylorT2, TaylorT3, PadeT1, EOB.}
 
@@ -111,11 +111,11 @@ Depending on the user inputs one of the following functions is called:\\
         {\tt TaylorF1, TaylorF2, BCV}.
          In these cases the code returns the real and imagninary parts of the
          Fourier domain signal in the convention of fftw. For a signal vector
-         of length {\tt n=signal->length} ({\tt n} even):
+         of length {\tt n=signalvec->length} ({\tt n} even):
      \begin{itemize}
-         \item {\tt signal->data[0]} is the {\it real} 0th frequency component of the Fourier transform.
-         \item {\tt signal->data[n/2]} is the {\it real} Nyquist frequency component of the Fourier transform.
-         \item {\tt signal->data[k]} and {\tt signal->data[n-k],} for {\tt k=1,\ldots, n/2-1,} are
+         \item {\tt signalvec->data[0]} is the {\it real} 0th frequency component of the Fourier transform.
+         \item {\tt signalvec->data[n/2]} is the {\it real} Nyquist frequency component of the Fourier transform.
+         \item {\tt signalvec->data[k]} and {\tt signalvec->data[n-k],} for {\tt k=1,\ldots, n/2-1,} are
              the real and imaginary parts of the Fourier transform at a frequency $k\Delta f=k/T,$ $T$ being
              the duration of the signal and $\Delta f=1/T$ is the frequency resolution.
      \end{itemize}
@@ -135,7 +135,7 @@ NRCSID (LALINSPIRALWAVEC, "$Id$");
 void
 LALInspiralWave(
    LALStatus        *status,
-   REAL4Vector      *signal,
+   REAL4Vector      *signalvec,
    InspiralTemplate *params
    )
 { /* </lalVerbatim>  */
@@ -143,9 +143,9 @@ LALInspiralWave(
    INITSTATUS(status, "LALInspiralWave", LALINSPIRALWAVEC);
    ATTATCHSTATUSPTR(status);
 
-   ASSERT (signal,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   ASSERT (signal->length >= 2, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-   ASSERT (signal->data,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+   ASSERT (signalvec,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+   ASSERT (signalvec->length >= 2, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+   ASSERT (signalvec->data,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
    ASSERT (params,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
 
 
@@ -158,76 +158,76 @@ LALInspiralWave(
    {
       case TaylorT1:
       case PadeT1:
-           LALInspiralWave1(status->statusPtr, signal, params);
+           LALInspiralWave1(status->statusPtr, signalvec, params);
            CHECKSTATUSPTR(status);
 	   break;
       case TaylorT2:
-           LALInspiralWave2(status->statusPtr, signal, params);
+           LALInspiralWave2(status->statusPtr, signalvec, params);
            CHECKSTATUSPTR(status);
 	   break;
       case TaylorT3:
-           LALInspiralWave3(status->statusPtr, signal, params);
+           LALInspiralWave3(status->statusPtr, signalvec, params);
            CHECKSTATUSPTR(status);
 	   break;
       case EOB:
       case EOBNR:
-           LALEOBWaveform(status->statusPtr, signal, params);
+           LALEOBWaveform(status->statusPtr, signalvec, params);
            CHECKSTATUSPTR(status);
 	   break;
       case IMRPhenomA:
-           LALBBHPhenWaveTimeDom(status->statusPtr, signal, params);
+           LALBBHPhenWaveTimeDom(status->statusPtr, signalvec, params);
            CHECKSTATUSPTR(status);
        break;
       case BCV:
-           LALBCVWaveform(status->statusPtr, signal, params);
+           LALBCVWaveform(status->statusPtr, signalvec, params);
            CHECKSTATUSPTR(status);
 	   break;
       case BCVSpin:
-           LALBCVSpinWaveform(status->statusPtr, signal, params);
+           LALBCVSpinWaveform(status->statusPtr, signalvec, params);
            CHECKSTATUSPTR(status);
 	   break;
       case TaylorF1:
-	   LALInspiralStationaryPhaseApprox1(status->statusPtr, signal, params);
+	   LALInspiralStationaryPhaseApprox1(status->statusPtr, signalvec, params);
            CHECKSTATUSPTR(status);
 	   break;
       case TaylorF2:
       case FindChirpSP:
-           LALInspiralStationaryPhaseApprox2(status->statusPtr, signal, params);
+           LALInspiralStationaryPhaseApprox2(status->statusPtr, signalvec, params);
            CHECKSTATUSPTR(status);
 	   break;
       case PadeF1:
            ABORT(status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
 	   break;
       case SpinTaylorT3:
-           LALInspiralSpinModulatedWave(status->statusPtr, signal, params);
+           LALInspiralSpinModulatedWave(status->statusPtr, signalvec, params);
            CHECKSTATUSPTR(status);
            break;
       case SpinTaylor:
-           /*GenerateTimeDomainWaveformForInjection (status->statusPtr, signal, params);
+           /*GenerateTimeDomainWaveformForInjection (status->statusPtr, signalvec, params);
            CHECKSTATUSPTR(status);*/
 	   /* this generate the h+ waveform whereas the one above takes into
             * account h+, hx and orientation of the system*/
-           LALSTPNWaveform(status->statusPtr, signal, params);
+           LALSTPNWaveform(status->statusPtr, signalvec, params);
            CHECKSTATUSPTR(status);
 	   break;
       case AmpCorPPN:
-   	   LALInspiralAmplitudeCorrectedWave(status->statusPtr, signal, params);
+   	   LALInspiralAmplitudeCorrectedWave(status->statusPtr, signalvec, params);
 	   CHECKSTATUSPTR(status);
       	   break;
       case Eccentricity:
-   	   LALInspiralEccentricity(status->statusPtr, signal, params);
+   	   LALInspiralEccentricity(status->statusPtr, signalvec, params);
 	   CHECKSTATUSPTR(status);
       	   break;
       case TaylorEt:
-   	   LALTaylorEtWaveform(status->statusPtr, signal, params);
+   	   LALTaylorEtWaveform(status->statusPtr, signalvec, params);
 	   CHECKSTATUSPTR(status);
       	   break;
       case TaylorT4:
-   	   LALTaylorT4Waveform(status->statusPtr, signal, params);
+   	   LALTaylorT4Waveform(status->statusPtr, signalvec, params);
 	   CHECKSTATUSPTR(status);
       	   break;
       case TaylorN:
-   	   LALTaylorNWaveform(status->statusPtr, signal, params);
+   	   LALTaylorNWaveform(status->statusPtr, signalvec, params);
 	   CHECKSTATUSPTR(status);
       	   break;
       default:
@@ -245,8 +245,8 @@ NRCSID (LALINSPIRALWAVETEMPLATESC, "$Id$");
 void
 LALInspiralWaveTemplates(
    LALStatus        *status,
-   REAL4Vector      *signal1,
-   REAL4Vector      *signal2,
+   REAL4Vector      *signalvec1,
+   REAL4Vector      *signalvec2,
    InspiralTemplate *params
    )
 { /* </lalVerbatim>  */
@@ -254,12 +254,12 @@ LALInspiralWaveTemplates(
    INITSTATUS(status, "LALInspiralWaveTemplates", LALINSPIRALWAVETEMPLATESC);
    ATTATCHSTATUSPTR(status);
 
-   ASSERT (signal1,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   ASSERT (signal2,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   ASSERT (signal1->length >= 2, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-   ASSERT (signal2->length >= 2, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-   ASSERT (signal1->data,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   ASSERT (signal2->data,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+   ASSERT (signalvec1,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+   ASSERT (signalvec2,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+   ASSERT (signalvec1->length >= 2, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+   ASSERT (signalvec2->length >= 2, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+   ASSERT (signalvec1->data,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+   ASSERT (signalvec2->data,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
    ASSERT (params,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
 
 
@@ -272,24 +272,24 @@ LALInspiralWaveTemplates(
    {
       case TaylorT1:
       case PadeT1:
-           LALInspiralWave1Templates(status->statusPtr, signal1, signal2, params);
+           LALInspiralWave1Templates(status->statusPtr, signalvec1, signalvec2, params);
            CHECKSTATUSPTR(status);
       	   break;
       case TaylorT2:
-           LALInspiralWave2Templates(status->statusPtr, signal1, signal2, params);
+           LALInspiralWave2Templates(status->statusPtr, signalvec1, signalvec2, params);
            CHECKSTATUSPTR(status);
       break;
       case TaylorT3:
-           LALInspiralWave3Templates(status->statusPtr, signal1, signal2, params);
+           LALInspiralWave3Templates(status->statusPtr, signalvec1, signalvec2, params);
            CHECKSTATUSPTR(status);
       	   break;
       case EOB:
       case EOBNR:
-           LALEOBWaveformTemplates(status->statusPtr, signal1, signal2, params);
+           LALEOBWaveformTemplates(status->statusPtr, signalvec1, signalvec2, params);
            CHECKSTATUSPTR(status);
            break;
       case IMRPhenomA:
-           LALBBHPhenWaveTimeDomTemplates(status->statusPtr, signal1, signal2, params);
+           LALBBHPhenWaveTimeDomTemplates(status->statusPtr, signalvec1, signalvec2, params);
            CHECKSTATUSPTR(status);
            break;
       case TaylorF1:
@@ -299,15 +299,15 @@ LALInspiralWaveTemplates(
       case BCV:
       case BCVSpin:
       case SpinTaylor:
-           LALSTPNWaveformTemplates(status->statusPtr, signal1, signal2, params);
+           LALSTPNWaveformTemplates(status->statusPtr, signalvec1, signalvec2, params);
            CHECKSTATUSPTR(status);
            break;
       case AmpCorPPN:
-      	   LALInspiralAmplitudeCorrectedWaveTemplates(status->statusPtr, signal1, signal2, params);
+      	   LALInspiralAmplitudeCorrectedWaveTemplates(status->statusPtr, signalvec1, signalvec2, params);
 	   CHECKSTATUSPTR(status);
 	   break;
       case Eccentricity:
-           LALInspiralEccentricityTemplates(status->statusPtr, signal1, signal2, params);
+           LALInspiralEccentricityTemplates(status->statusPtr, signalvec1, signalvec2, params);
            CHECKSTATUSPTR(status);
       	   break;
       default:

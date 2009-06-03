@@ -32,7 +32,7 @@
  * \input{LALInspiralStationaryPhaseApprox1CP}
  * \idx{LALInspiralStationaryPhaseApprox1()}
  * \begin{itemize}
- * \item {\tt signal:} Output containing the inspiral waveform.
+ * \item {\tt signalvec:} Output containing the inspiral waveform.
  * \item {\tt params:} Input containing binary chirp parameters.
  * \end{itemize}
  *
@@ -46,11 +46,11 @@
  * in Eq.~(\ref{eq:InspiralFourierPhase}) is solved numerically.
  * The code returns the Fourier transform packed in the same way as fftw
  * would for the Fourier transform of a real vector.  For a signal vector
- * of length {\tt n=signal->length} ({\tt n} even):
+ * of length {\tt n=signalvec->length} ({\tt n} even):
  * \begin{itemize}
- * \item {\tt signal->data[0]} is the {\it real} 0th frequency component of the Fourier transform.
- * \item {\tt signal->data[n/2]} is the {\it real} Nyquist frequency component of the Fourier transform.
- * \item {\tt signal->data[k]} and {\tt signal->data[n-k],} for {\tt k=1,\ldots, n/2-1,} are
+ * \item {\tt signalvec->data[0]} is the {\it real} 0th frequency component of the Fourier transform.
+ * \item {\tt signalvec->data[n/2]} is the {\it real} Nyquist frequency component of the Fourier transform.
+ * \item {\tt signalvec->data[k]} and {\tt signalvec->data[n-k],} for {\tt k=1,\ldots, n/2-1,} are
  * the real and imaginary parts of the Fourier transform at a frequency $k\Delta f=k/T,$ $T$ being
  * the duration of the signal and $\Delta f=1/T$ is the frequency resolution.
  * \end{itemize}
@@ -111,7 +111,7 @@ NRCSID (LALINSPIRALSTATIONARYPHASEAPPROX1C, "$Id$");
 void
 LALInspiralStationaryPhaseApprox1 (
    LALStatus        *status,
-   REAL4Vector      *signal,
+   REAL4Vector      *signalvec,
    InspiralTemplate *params
    )
 { /* </lalVerbatim>  */
@@ -126,8 +126,8 @@ LALInspiralStationaryPhaseApprox1 (
 
    INITSTATUS (status, "LALInspiralStationaryPhaseApprox1", LALINSPIRALSTATIONARYPHASEAPPROX1C);
    ATTATCHSTATUSPTR(status);
-   ASSERT (signal,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   ASSERT (signal->data,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+   ASSERT (signalvec,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+   ASSERT (signalvec->data,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
    ASSERT (params, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
 
 /* Set up the coefficients in post-Newtonian expansion, vlso, etc. */
@@ -143,9 +143,9 @@ LALInspiralStationaryPhaseApprox1 (
    psiIn.coeffs = &ak;
 
 /* Cast the struct required for computing initial conditions */
-   n = signal->length;
+   n = signalvec->length;
    nby2 = n/2;
-   df = params->tSampling/signal->length;
+   df = params->tSampling/signalvec->length;
    pimmc = LAL_PI * ak.totalmass;
    t = 0.0;
    tofvin.t = t;
@@ -170,8 +170,8 @@ LALInspiralStationaryPhaseApprox1 (
    phi =  params->startPhase + LAL_PI/4.L;
    amp0 = params->signalAmplitude * ak.totalmass * pow(LAL_PI/12.L, 0.5L) * df;
 
-   signal->data[0] = 0.;
-   signal->data[nby2] = 0.;
+   signalvec->data[0] = 0.;
+   signalvec->data[nby2] = 0.;
 /*
    Compute the standard stationary phase approximation.
 */
@@ -186,8 +186,8 @@ LALInspiralStationaryPhaseApprox1 (
 /*
    All frequency components below f0 and above fn are set to zero
 */
-         signal->data[i] = 0.;
-         signal->data[n-i] = 0.;
+         signalvec->data[i] = 0.;
+         signalvec->data[n-i] = 0.;
       }
       else
       {
@@ -221,8 +221,8 @@ LALInspiralStationaryPhaseApprox1 (
       dF/dt=(dF/dv)(dv/dt)=-dEnergybyFlux/(dF/dv)=-dEnergybyFlux 3v^2/(LAL_PI m^2)
 */
 	 amp = amp0 * pow(-func.dEnergy(v,&ak)/func.flux(v,&ak),0.5) * v;
-	 signal->data[i] = (REAL4) (amp * cos(psi));
-	 signal->data[n-i] = -(REAL4) (amp * sin(psi));
+	 signalvec->data[i] = (REAL4) (amp * cos(psi));
+	 signalvec->data[n-i] = -(REAL4) (amp * sin(psi));
       }
    }
    params->fFinal = fn;

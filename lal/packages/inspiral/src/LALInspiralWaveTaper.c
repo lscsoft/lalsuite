@@ -77,7 +77,7 @@ NRCSID(LALINSPIRALWAVETAPERC,
 /*  <lalVerbatim file="LALInspiralWaveTaperCP"> */
 void LALInspiralWaveTaper(
                    LALStatus   *status,
-                   REAL4Vector *signal,
+                   REAL4Vector *signalvec,
                    UINT4       bookends)
 { /* </lalVerbatim>  */
 
@@ -110,7 +110,7 @@ void LALInspiralWaveTaper(
     ABORT( status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE );
   }
 
-  if ( XLALInspiralWaveTaper( signal, taperType ) == XLAL_FAILURE )
+  if ( XLALInspiralWaveTaper( signalvec, taperType ) == XLAL_FAILURE )
   {
     ABORTXLAL( status );
   }
@@ -120,7 +120,7 @@ void LALInspiralWaveTaper(
 
 /*  <lalVerbatim file="LALInspiralWaveTaperCP"> */
 int XLALInspiralWaveTaper(
-                   REAL4Vector         *signal,
+                   REAL4Vector         *signalvec,
                    InspiralApplyTaper  bookends)
 { /* </lalVerbatim>  */
 
@@ -133,10 +133,10 @@ int XLALInspiralWaveTaper(
   REAL4 realN, realI;  /* REAL4 values of n & i used for the calculations */
 
 #ifndef LAL_NDEBUG
-  if ( !signal )
+  if ( !signalvec )
     XLAL_ERROR( func, XLAL_EFAULT );
 
-  if ( !signal->data )
+  if ( !signalvec->data )
     XLAL_ERROR( func, XLAL_EFAULT );
 #endif
 
@@ -144,7 +144,7 @@ int XLALInspiralWaveTaper(
   if ( (UINT4) bookends >= (UINT4) INSPIRAL_TAPER_NUM_OPTS )
     XLAL_ERROR( func, XLAL_EINVAL );
 
-  length = signal->length;
+  length = signalvec->length;
 
   if( bookends == INSPIRAL_TAPER_NONE )
   {
@@ -157,7 +157,7 @@ int XLALInspiralWaveTaper(
   i = 0;
   while(flag == 0 && i < length )
   {
-    if( signal->data[i] != 0.)
+    if( signalvec->data[i] != 0.)
     {
       start = i;
       flag = 1;
@@ -174,7 +174,7 @@ int XLALInspiralWaveTaper(
   i = length - 1;
   while(flag == 0)
   {
-    if( signal->data[i] != 0.)
+    if( signalvec->data[i] != 0.)
     {
       end = i;
       flag = 1;
@@ -202,10 +202,10 @@ int XLALInspiralWaveTaper(
       i = start+1;
       while( flag < 2 && i != mid)
       {
-        if( fabs(signal->data[i]) >= fabs(signal->data[i-1]) )
-          if( fabs(signal->data[i]) >= fabs(signal->data[i+1]) )
+        if( fabs(signalvec->data[i]) >= fabs(signalvec->data[i-1]) )
+          if( fabs(signalvec->data[i]) >= fabs(signalvec->data[i+1]) )
           {
-            if( fabs(signal->data[i]) == fabs(signal->data[i+1]) )
+            if( fabs(signalvec->data[i]) == fabs(signalvec->data[i+1]) )
               i++;
             flag++;
             n = i - start;
@@ -218,13 +218,13 @@ int XLALInspiralWaveTaper(
 
       /* Taper to that point */
       realN = (REAL4)(n);
-      signal->data[start] = 0.0;
+      signalvec->data[start] = 0.0;
       for(i=start+1; i < start + n - 1; i++)
       {
         realI = (REAL4)(i - start);
         z = (realN - 1.0)/realI + (realN - 1.0)/(realI - (realN - 1.0));
         sigma = 1.0/(exp(z) + 1.0);
-        signal->data[i] = signal->data[i]*sigma;
+        signalvec->data[i] = signalvec->data[i]*sigma;
       }
     }
 
@@ -235,10 +235,10 @@ int XLALInspiralWaveTaper(
       flag = 0;
       while( flag < 2 && i != mid )
       {
-        if( fabs(signal->data[i]) >= fabs(signal->data[i+1]) )
-          if( fabs(signal->data[i]) >= fabs(signal->data[i-1]) )
+        if( fabs(signalvec->data[i]) >= fabs(signalvec->data[i+1]) )
+          if( fabs(signalvec->data[i]) >= fabs(signalvec->data[i-1]) )
           {
-            if( fabs(signal->data[i]) == fabs(signal->data[i-1]) )
+            if( fabs(signalvec->data[i]) == fabs(signalvec->data[i-1]) )
               i--;
             flag++;
             n = end - i;
@@ -253,13 +253,13 @@ int XLALInspiralWaveTaper(
 
       /* Taper to that point */
       realN = (REAL4)(n);
-      signal->data[end] = 0.0;
+      signalvec->data[end] = 0.0;
       for(i=end-1; i > end-n+1; i--)
       {
         realI = (REAL4)(end - i);
         z = (realN - 1.0)/realI + (realN - 1.0)/(realI - (realN-1.0));
         sigma = 1.0/(exp(z) + 1.0);
-        signal->data[i] = signal->data[i]*sigma;
+        signalvec->data[i] = signalvec->data[i]*sigma;
       }
     }
   }

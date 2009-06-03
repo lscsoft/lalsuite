@@ -35,15 +35,15 @@ Module to generate effective-one-body waveforms.
 \input{LALEOBWaveformCP}
 \index{\verb&LALEOBWaveform()&}
 \begin{itemize}
-\item {\tt signal:} Output containing the inspiral waveform.
+\item {\tt signalvec:} Output containing the inspiral waveform.
 \item {\tt params:} Input containing binary chirp parameters.
 \end{itemize}
 
 \input{LALEOBWaveformTemplatesCP}
 \index{\verb&LALEOBWaveformTemplates()&}
 \begin{itemize}
-\item {\tt signal1:} Output containing the 0-phase inspiral waveform.
-\item {\tt signal2:} Output containing the $\pi/2$-phase inspiral waveform.
+\item {\tt signalvec1:} Output containing the 0-phase inspiral waveform.
+\item {\tt signalvec2:} Output containing the $\pi/2$-phase inspiral waveform.
 \item {\tt params:} Input containing binary chirp parameters.
 \end{itemize}
 
@@ -212,8 +212,8 @@ void LALvrP4PN(REAL8 *vr, void *params);
 static void
 LALEOBWaveformEngine (
                 LALStatus        *status,
-                REAL4Vector      *signal1,
-                REAL4Vector      *signal2,
+                REAL4Vector      *signalvec1,
+                REAL4Vector      *signalvec2,
                 REAL4Vector      *h,
                 REAL4Vector      *a,
                 REAL4Vector      *ff,
@@ -999,7 +999,7 @@ LALHCapDerivativesP4PN(
 void
 LALEOBWaveform (
    LALStatus        *status,
-   REAL4Vector      *signal,
+   REAL4Vector      *signalvec,
    InspiralTemplate *params
    )
 { /* </lalVerbatim> */
@@ -1009,9 +1009,9 @@ LALEOBWaveform (
    INITSTATUS(status, "LALEOBWaveform", LALEOBWAVEFORMC);
    ATTATCHSTATUSPTR(status);
 
-   ASSERT(signal,  status,
+   ASSERT(signalvec,  status,
 	LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   ASSERT(signal->data,  status,
+   ASSERT(signalvec->data,  status,
    	LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
    ASSERT(params,  status,
    	LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
@@ -1032,10 +1032,10 @@ LALEOBWaveform (
 					 &(paramsInit.ak), params);
    CHECKSTATUSPTR(status);
 
-   memset(signal->data, 0, signal->length * sizeof( REAL4 ));
+   memset(signalvec->data, 0, signalvec->length * sizeof( REAL4 ));
 
    /* Call the engine function */
-   LALEOBWaveformEngine(status->statusPtr, signal, NULL, NULL, NULL,
+   LALEOBWaveformEngine(status->statusPtr, signalvec, NULL, NULL, NULL,
 			NULL, NULL, &count, params, &paramsInit);
    CHECKSTATUSPTR( status );
 
@@ -1052,8 +1052,8 @@ NRCSID (LALEOBWAVEFORMTEMPLATESC,
 void
 LALEOBWaveformTemplates (
    LALStatus        *status,
-   REAL4Vector      *signal1,
-   REAL4Vector      *signal2,
+   REAL4Vector      *signalvec1,
+   REAL4Vector      *signalvec2,
    InspiralTemplate *params
    )
 { /* </lalVerbatim> */
@@ -1065,13 +1065,13 @@ LALEOBWaveformTemplates (
    INITSTATUS(status, "LALEOBWaveformTemplates", LALEOBWAVEFORMTEMPLATESC);
    ATTATCHSTATUSPTR(status);
 
-   ASSERT(signal1,  status,
+   ASSERT(signalvec1,  status,
 	LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   ASSERT(signal2,  status,
+   ASSERT(signalvec2,  status,
    	LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   ASSERT(signal1->data,  status,
+   ASSERT(signalvec1->data,  status,
    	LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   ASSERT(signal2->data,  status,
+   ASSERT(signalvec2->data,  status,
    	LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
    ASSERT(params,  status, LALINSPIRALH_ENULL,
    	LALINSPIRALH_MSGENULL);
@@ -1092,11 +1092,11 @@ LALEOBWaveformTemplates (
 					&(paramsInit.ak), params);
    CHECKSTATUSPTR(status);
 
-   memset(signal1->data, 0, signal1->length * sizeof( REAL4 ));
-   memset(signal2->data, 0, signal2->length * sizeof( REAL4 ));
+   memset(signalvec1->data, 0, signalvec1->length * sizeof( REAL4 ));
+   memset(signalvec2->data, 0, signalvec2->length * sizeof( REAL4 ));
 
    /* Call the engine function */
-   LALEOBWaveformEngine(status->statusPtr, signal1, signal2, NULL, NULL,
+   LALEOBWaveformEngine(status->statusPtr, signalvec1, signalvec2, NULL, NULL,
 			   NULL, NULL, &count, params, &paramsInit);
    CHECKSTATUSPTR( status );
 
@@ -1373,8 +1373,8 @@ LALEOBWaveformForInjection (
 static void
 LALEOBWaveformEngine (
                 LALStatus        *status,
-                REAL4Vector      *signal1,
-                REAL4Vector      *signal2,
+                REAL4Vector      *signalvec1,
+                REAL4Vector      *signalvec2,
                 REAL4Vector      *h,
                 REAL4Vector      *a,
                 REAL4Vector      *ff,
@@ -1465,7 +1465,7 @@ LALEOBWaveformEngine (
    }
 
 
-   if (signal1) length = signal1->length; else if (ff) length = ff->length;
+   if (signalvec1) length = signalvec1->length; else if (ff) length = ff->length;
 
 /* Allocate all the memory required to dummy and then point the various
    arrays to dummy - this makes it easier to handle memory failures */
@@ -1749,7 +1749,7 @@ LALEOBWaveformEngine (
    }
 
    count = 0;
-   if (a || signal2)
+   if (a || signalvec2)
       params->nStartPad = 0; /* must be zero for templates and injection */
 
    count = params->nStartPad;
@@ -1915,7 +1915,7 @@ LALEOBWaveformEngine (
    /* Record the final cutoff frequency of BD Waveforms for record keeping */
    /* ---------------------------------------------------------------------*/
    params->vFinal = v;
-   if (signal1 && !signal2) params->tC = t;
+   if (signalvec1 && !signalvec2) params->tC = t;
    if (params->approximant == EOB)
    {
      params->fFinal = pow(v,3.)/(LAL_PI*m);
@@ -2064,11 +2064,11 @@ LALEOBWaveformEngine (
        h->data[k] = sig2->data[i];
      }
    }
-   if (signal1) memcpy(signal1->data , sig1->data, length * (sizeof(REAL4)));
-   if (signal2) memcpy(signal2->data , sig2->data, length * (sizeof(REAL4)));
-   if (ff)      memcpy(ff->data      , freq->data, length * (sizeof(REAL4)));
-   if (a)       memcpy(a->data       , ampl->data, 2*length*(sizeof(REAL4)));
-   if (phi)     memcpy(phi->data     , phse->data, length * (sizeof(REAL8)));
+   if (signalvec1) memcpy(signalvec1->data , sig1->data, length * (sizeof(REAL4)));
+   if (signalvec2) memcpy(signalvec2->data , sig2->data, length * (sizeof(REAL4)));
+   if (ff)         memcpy(ff->data      , freq->data, length * (sizeof(REAL4)));
+   if (a)          memcpy(a->data       , ampl->data, 2*length*(sizeof(REAL4)));
+   if (phi)        memcpy(phi->data     , phse->data, length * (sizeof(REAL8)));
 
 #if 0
    sprintf(message, "fFinal=%10.5e count=%d\n", params->fFinal, *countback);

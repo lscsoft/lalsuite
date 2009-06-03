@@ -31,7 +31,7 @@
  * \input{LALBCVWaveformCP}
  * \idx{LALLALBCVWaveform()}
  * \begin{itemize}
- * \item {\tt signal:} Output containing the \emph {Fourier transform} of the inspiral waveform.
+ * \item {\tt signalvec:} Output containing the \emph {Fourier transform} of the inspiral waveform.
  * \item {\tt params:} Input containing binary chirp parameters;
  * it is necessary and sufficent to specify the following parameters
  * of the {\tt params} structure:
@@ -40,7 +40,7 @@
  * \input{LALBCVSpinWaveformCP}
  * \idx{LALLALBCVSpinWaveform()}
  * \begin{itemize}
- * \item {\tt signal:} Output containing the \emph {Fourier transform} of the inspiral waveform.
+ * \item {\tt signalvec:} Output containing the \emph {Fourier transform} of the inspiral waveform.
  * \item {\tt params:} Input containing binary chirp parameters;
  * it is necessary and sufficent to specify the following parameters
  * of the {\tt params} structure:
@@ -88,7 +88,7 @@ NRCSID (LALBCVWAVEFORMC, "$Id$");
 void
 LALBCVWaveform(
    LALStatus        *status,
-   REAL4Vector      *signal,
+   REAL4Vector      *signalvec,
    InspiralTemplate *params
    )
  { /* </lalVerbatim>  */
@@ -101,14 +101,14 @@ LALBCVWaveform(
   INITSTATUS(status, "LALBCVWaveform", LALBCVWAVEFORMC);
   ATTATCHSTATUSPTR(status);
 
-  ASSERT (signal,  status,       LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-  ASSERT (signal->data,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+  ASSERT (signalvec,  status,       LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+  ASSERT (signalvec->data,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
   ASSERT (params,  status,       LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
   ASSERT (params->nStartPad >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
   ASSERT (params->fLower > 0, status,     LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
   ASSERT (params->tSampling > 0, status,  LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
 
-  n = signal->length;
+  n = signalvec->length;
   Twoby3 = 2.L/3.L;
   Sevenby6 = 7.L/6.L;
   Fiveby3 = 5.L/3.L;
@@ -136,15 +136,15 @@ LALBCVWaveform(
   /*
   amp0 = params->signalAmplitude * pow(5./(384.*params->eta), 0.5) *
 	   totalMass * pow(LAL_PI * totalMass,-Sevenby6) *
-	   params->tSampling * (2. / signal->length);
+	   params->tSampling * (2. / signalvec->length);
 
    */
 
   amp0 = params->signalAmplitude;
   /*  Computing BCV waveform */
 
-  signal->data[0] = 0.0;
-  signal->data[n/2] = 0.0;
+  signalvec->data[0] = 0.0;
+  signalvec->data[n/2] = 0.0;
 
   for(i=1;i<n/2;i++)
   {
@@ -155,8 +155,8 @@ LALBCVWaveform(
 	  /*
 	   * All frequency components below params->fLower and above fn are set to zero
 	   */
-              signal->data[i] = 0.;
-              signal->data[n-i] = 0.;
+              signalvec->data[i] = 0.;
+              signalvec->data[n-i] = 0.;
 
 	  }
        	  else
@@ -165,8 +165,8 @@ LALBCVWaveform(
               psi =  (shift*f + phi + params->psi0*pow(f,-Fiveby3) + params->psi3*pow(f,-Twoby3));
 	      amp = amp0 * (1. - alpha * pow(f,Twoby3)) * pow(f,-Sevenby6);
 
-              signal->data[i] = (REAL4) (amp * cos(psi));
-              signal->data[n-i] = (REAL4) (-amp * sin(psi));
+              signalvec->data[i] = (REAL4) (amp * cos(psi));
+              signalvec->data[n-i] = (REAL4) (-amp * sin(psi));
           }
   }
   DETATCHSTATUSPTR(status);
@@ -181,7 +181,7 @@ LALBCVWaveform(
 void
 LALBCVSpinWaveform(
    LALStatus        *status,
-   REAL4Vector      *signal,
+   REAL4Vector      *signalvec,
    InspiralTemplate *params
    )
  { /* </lalVerbatim>  */
@@ -194,14 +194,14 @@ LALBCVSpinWaveform(
   INITSTATUS(status, "LALBCVSpinWaveform", LALBCVWAVEFORMC);
   ATTATCHSTATUSPTR(status);
 
-  ASSERT (signal,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-  ASSERT (signal->data,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+  ASSERT (signalvec,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+  ASSERT (signalvec->data,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
   ASSERT (params,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
   ASSERT (params->nStartPad >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
   ASSERT (params->fLower > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
   ASSERT (params->tSampling > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
 
-  n = signal->length;
+  n = signalvec->length;
   Twoby3 = 2.L/3.L;
   Sevenby6 = 7.L/6.L;
   Fiveby3 = 5.L/3.L;
@@ -223,14 +223,14 @@ LALBCVSpinWaveform(
   /*
   amp0 = params->signalAmplitude * pow(5./(384.*params->eta), 0.5) *
 	   totalMass * pow(LAL_PI * totalMass,-Sevenby6) *
-	   params->tSampling * (2. / signal->length);
+	   params->tSampling * (2. / signalvec->length);
 
    */
   amp0 = params->signalAmplitude;
   /*  Computing BCV waveform */
 
-  signal->data[0] = 0.0;
-  signal->data[n/2] = 0.0;
+  signalvec->data[0] = 0.0;
+  signalvec->data[n/2] = 0.0;
 
   for(i=1;i<n/2;i++)
   {
@@ -240,8 +240,8 @@ LALBCVSpinWaveform(
 	  /*
 	   * All frequency components below params->fLower and above fn are set to zero
 	   */
-              signal->data[i] = 0.;
-              signal->data[n-i] = 0.;
+              signalvec->data[i] = 0.;
+              signalvec->data[n-i] = 0.;
 
 	  }
        	  else
@@ -260,8 +260,8 @@ LALBCVSpinWaveform(
                          + (params->alpha5 * cos(modphase))
                          + (params->alpha6 * sin(modphase)));
 
-            signal->data[i]   = (REAL4) ((ampRe * cos(psi)) - (ampIm * sin(psi)));
-            signal->data[n-i] = (REAL4) -1.*((ampRe * sin(psi)) + (ampIm * cos(psi)));
+            signalvec->data[i]   = (REAL4) ((ampRe * cos(psi)) - (ampIm * sin(psi)));
+            signalvec->data[n-i] = (REAL4) -1.*((ampRe * sin(psi)) + (ampIm * cos(psi)));
           }
   }
 

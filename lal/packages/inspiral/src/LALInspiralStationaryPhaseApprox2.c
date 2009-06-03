@@ -34,7 +34,7 @@
  * \input{LALInspiralStationaryPhaseApprox2CP}
  * \idx{LALInspiralStationaryPhaseApprox2()}
  * \begin{itemize}
- * \item {\tt signal:} Output containing the inspiral waveform.
+ * \item {\tt signalvec:} Output containing the inspiral waveform.
  * \item {\tt params:} Input containing binary chirp parameters.
  * \end{itemize}
  *
@@ -45,11 +45,11 @@
  * Computes the Fourier transform of the chirp signal in the stationary
  * phase approximation and returns the real and imagninary parts of the
  * Fourier domain signal in the convention of fftw. For a signal vector
- * of length {\tt n=signal->length} ({\tt n} even):
+ * of length {\tt n=signalvec->length} ({\tt n} even):
  * \begin{itemize}
- * \item {\tt signal->data[0]} is the {\it real} 0th frequency component of the Fourier transform.
- * \item {\tt signal->data[n/2]} is the {\it real} Nyquist frequency component of the Fourier transform.
- * \item {\tt signal->data[k]} and {\tt signal->data[n-k],} for {\tt k=1,\ldots, n/2-1,} are
+ * \item {\tt signalvec->data[0]} is the {\it real} 0th frequency component of the Fourier transform.
+ * \item {\tt signalvec->data[n/2]} is the {\it real} Nyquist frequency component of the Fourier transform.
+ * \item {\tt signalvec->data[k]} and {\tt signalvec->data[n-k],} for {\tt k=1,\ldots, n/2-1,} are
  * the real and imaginary parts of the Fourier transform at a frequency $k\Delta f=k/T,$ $T$ being
  * the duration of the signal and $\Delta f=1/T$ is the frequency resolution.
  * \end{itemize}
@@ -110,7 +110,7 @@ NRCSID (LALINSPIRALSTATIONARYPHASEAPPROX2C, "$Id$");
 void
 LALInspiralStationaryPhaseApprox2 (
    LALStatus        *status,
-   REAL4Vector      *signal,
+   REAL4Vector      *signalvec,
    InspiralTemplate *params
    )
 { /* </lalVerbatim>  */
@@ -122,10 +122,10 @@ LALInspiralStationaryPhaseApprox2 (
 
    INITSTATUS (status, "LALInspiralStationaryPhaseApprox2", LALINSPIRALSTATIONARYPHASEAPPROX2C);
    ATTATCHSTATUSPTR(status);
-   ASSERT (signal,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   ASSERT (signal->data,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+   ASSERT (signalvec,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+   ASSERT (signalvec->data,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
    ASSERT (params, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   ASSERT (signal->length>2,  status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
+   ASSERT (signalvec->length>2,  status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
 
    switch (params->order)
    {
@@ -152,7 +152,7 @@ LALInspiralStationaryPhaseApprox2 (
 		   LALInspiralTaylorF2Phasing = LALInspiralTaylorF2Phasing7PN;
 		   break;
    }
-   n = signal->length;
+   n = signalvec->length;
    nby2 = n/2;
    memset( &ak, 0, sizeof( ak ) );
    LALInspiralSetup(status->statusPtr, &ak, params);
@@ -161,7 +161,7 @@ LALInspiralStationaryPhaseApprox2 (
    CHECKSTATUSPTR(status);
 
    Oneby3 = 1.L/3.L;
-   df = params->tSampling/signal->length;
+   df = params->tSampling/signalvec->length;
    pimmc = LAL_PI * params->totalMass * LAL_MTSUN_SI;
    f0 = params->fLower;
    fn = (params->fCutoff < ak.fn) ? params->fCutoff : ak.fn;
@@ -179,8 +179,8 @@ LALInspiralStationaryPhaseApprox2 (
 /*
    Compute the standard stationary phase approximation.
 */
-   h1 = signal->data[0] = 0.L;
-   h2 = signal->data[nby2] = 0.L;
+   h1 = signalvec->data[0] = 0.L;
+   h2 = signalvec->data[nby2] = 0.L;
    for (i=1; i<nby2; i++) {
       f = i * df;
       if (f < f0 || f > fn)
@@ -188,8 +188,8 @@ LALInspiralStationaryPhaseApprox2 (
 	      /*
 	       * All frequency components below f0 and above fn are set to zero
 	       */
-	      signal->data[i] = 0.;
-	      signal->data[n-i] = 0.;
+	      signalvec->data[i] = 0.;
+	      signalvec->data[n-i] = 0.;
       }
       else
       {
@@ -205,8 +205,8 @@ LALInspiralStationaryPhaseApprox2 (
 		     = amp0 * pow(-dEnergybyFlux(v), 0.5) * v;
 	      */
 	      amp = amp0 * pow(-func.dEnergy(v,&ak)/func.flux(v,&ak),0.5L) * v;
-	      signal->data[i] = (REAL4) (amp * cos(psi));
-	      signal->data[n-i] = (REAL4) (-amp * sin(psi));
+	      signalvec->data[i] = (REAL4) (amp * cos(psi));
+	      signalvec->data[n-i] = (REAL4) (-amp * sin(psi));
 
       }
       /*

@@ -34,7 +34,7 @@ two spinning compact stars.
 \input{LALInspiralSpinningBHBinaryCP}
 \index{\verb&LALInspiralSpinningBHBinary()&}
 \begin{itemize}
-\item {\tt signal:} Output containing the spin modulated inspiral waveform.
+\item {\tt signalvec:} Output containing the spin modulated inspiral waveform.
 \item {\tt in:} Input containing binary chirp parameters.
 \end{itemize}
 
@@ -100,7 +100,7 @@ NRCSID (LALINSPIRALSPINNINGBHBINARYC, "$Id$");
 void
 LALInspiralSpinModulatedWave(
    LALStatus        *status,
-   REAL4Vector      *signal,
+   REAL4Vector      *signalvec,
    InspiralTemplate *in
    )
 { /* </lalVerbatim> */
@@ -123,8 +123,8 @@ LALInspiralSpinModulatedWave(
 
 	INITSTATUS(status, "LALInspiralSpinngBHBinary", LALINSPIRALSPINNINGBHBINARYC);
 	ATTATCHSTATUSPTR(status);
-	ASSERT(signal,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-	ASSERT(signal->data,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+	ASSERT(signalvec,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+	ASSERT(signalvec->data,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
 	ASSERT(in,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
 
        	LALInspiralSetup (status->statusPtr, &ak, in);
@@ -212,7 +212,7 @@ LALInspiralSpinModulatedWave(
 	count = 0;
 	while ((INT4)count < in->nStartPad)
 	{
-		signal->data[count] = 0.L;
+		signalvec->data[count] = 0.L;
 		count++;
 	}
 
@@ -257,15 +257,15 @@ LALInspiralSpinModulatedWave(
 	fOld = f - 0.1;
 	while (f < fn && t < tMax && f>fOld)
 	{
-		ASSERT((INT4)count < (INT4)signal->length, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+		ASSERT((INT4)count < (INT4)signalvec->length, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
 		/* Subtract the constant initial phase (chosen to have a phase of in->startPhase) */
-		signal->data[count] = amp*cos(phase+phi0);
+		signalvec->data[count] = amp*cos(phase+phi0);
 
 		/*
 		double s1;
 		s1 = pow(pow(values.data[3],2.0) + pow(values.data[4], 2.0) +pow(values.data[5], 2.0), 0.5);
 		printf("%e %e %e %e %e\n", t, values.data[3], values.data[4], values.data[5], s1);
-		printf("%e %e %e %e %e %e %e %e\n", t, signal->data[count], Phi, phi, psi, NCapDotL/magL, Fcross, Fplus);
+		printf("%e %e %e %e %e %e %e %e\n", t, signalvec->data[count], Phi, phi, psi, NCapDotL/magL, Fcross, Fplus);
 		*/
 
 		/* Record the old values of frequency, polarisation angle and phase */
@@ -314,9 +314,9 @@ LALInspiralSpinModulatedWave(
 		/* The new phase of the signal is ... */
 		phase = Phi + phi;
 	}
-	while (count < signal->length)
+	while (count < signalvec->length)
 	{
-		signal->data[count] = 0.L;
+		signalvec->data[count] = 0.L;
 		count++;
 	}
         XLALRungeKutta4Free( integrator );
@@ -696,7 +696,7 @@ LALInspiralSpinModulatedWaveForInjection(
     fOld = f - 0.1;
     while (f < fn && t < tMax && f>fOld)
       {
-	/*ASSERT((INT4)count < (INT4)signal->length, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);*/
+	/*ASSERT((INT4)count < (INT4)signalvec->length, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);*/
 	/* Subtract the constant initial phase (chosen to have a phase of in->startPhase) */
 
 
@@ -714,7 +714,7 @@ LALInspiralSpinModulatedWaveForInjection(
 	  double s1;
 	  s1 = pow(pow(values.data[3],2.0) + pow(values.data[4], 2.0) +pow(values.data[5], 2.0), 0.5);
 	  printf("%e %e %e %e %e\n", t, values.data[3], values.data[4], values.data[5], s1);
-	  printf("%e %e %e %e %e %e %e %e\n", t, signal->data[count], Phi, phi, psi, NCapDotL/magL, Fcross, Fplus);
+	  printf("%e %e %e %e %e %e %e %e\n", t, signalvec->data[count], Phi, phi, psi, NCapDotL/magL, Fcross, Fplus);
 	*/
 
 	/* Record the old values of frequency, polarisation angle and phase */

@@ -35,15 +35,15 @@ documentation for the function \texttt{LALInspiralWave}.
 \input{LALInspiralWave1CP}
 \index{\verb&LALInspiralWave1()&}
 \begin{itemize}
-\item {\tt signal:} Output containing the inspiral waveform.
+\item {\tt signalvec:} Output containing the inspiral waveform.
 \item {\tt params:} Input containing binary chirp parameters.
 \end{itemize}
 
 \input{LALInspiralWave1TemplatesCP}
 \index{\verb&LALInspiralWave1Templates()&}
 \begin{itemize}
-\item {\tt signal1:} Output containing the 0-phase inspiral waveform.
-\item {\tt signal2:} Output containing the $\pi/2$-phase inspiral waveform.
+\item {\tt signalvec1:} Output containing the 0-phase inspiral waveform.
+\item {\tt signalvec2:} Output containing the $\pi/2$-phase inspiral waveform.
 \item {\tt params:} Input containing binary chirp parameters.
 \end{itemize}
 
@@ -90,8 +90,8 @@ in Equation (\ref{eq:ode2}).
 static void
 LALInspiralWave1Engine(
    LALStatus        *status,
-   REAL4Vector      *signal1,
-   REAL4Vector      *signal2,
+   REAL4Vector      *signalvec1,
+   REAL4Vector      *signalvec2,
    REAL4Vector      *h,
    REAL4Vector      *a,
    REAL4Vector      *ff,
@@ -107,7 +107,7 @@ NRCSID (LALINSPIRALWAVE1C, "$Id$");
 void
 LALInspiralWave1(
    LALStatus        *status,
-   REAL4Vector      *signal,
+   REAL4Vector      *signalvec,
    InspiralTemplate *params
    )
  { /* </lalVerbatim>  */
@@ -117,15 +117,15 @@ LALInspiralWave1(
    INITSTATUS(status, "LALInspiralWave1", LALINSPIRALWAVE1C);
    ATTATCHSTATUSPTR(status);
 
-   ASSERT(signal, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   ASSERT(signal->data, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+   ASSERT(signalvec, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+   ASSERT(signalvec->data, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
 
 
    /* Initially the waveform is empty*/
-   memset(signal->data, 0, signal->length*sizeof(REAL4));
+   memset(signalvec->data, 0, signalvec->length*sizeof(REAL4));
 
    /*Call the engine function*/
-   LALInspiralWave1Engine(status->statusPtr, signal, NULL, NULL, NULL, NULL, NULL, &count, params);
+   LALInspiralWave1Engine(status->statusPtr, signalvec, NULL, NULL, NULL, NULL, NULL, &count, params);
    CHECKSTATUSPTR(status);
 
    DETATCHSTATUSPTR(status);
@@ -146,8 +146,8 @@ NRCSID (LALINSPIRALWAVE1TEMPLATESC, "$Id$");
 void
 LALInspiralWave1Templates(
    LALStatus        *status,
-   REAL4Vector      *signal1,
-   REAL4Vector      *signal2,
+   REAL4Vector      *signalvec1,
+   REAL4Vector      *signalvec2,
    InspiralTemplate *params
    )
  { /* </lalVerbatim>  */
@@ -157,17 +157,17 @@ LALInspiralWave1Templates(
    INITSTATUS(status, "LALInspiralWave1Templates", LALINSPIRALWAVE1TEMPLATESC);
    ATTATCHSTATUSPTR(status);
 
-   ASSERT(signal1, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   ASSERT(signal2, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   ASSERT(signal1->data, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   ASSERT(signal2->data, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+   ASSERT(signalvec1, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+   ASSERT(signalvec2, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+   ASSERT(signalvec1->data, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+   ASSERT(signalvec2->data, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
 
    /* Initially the waveforms are empty */
-   memset(signal1->data, 0, signal1->length * sizeof(REAL4));
-   memset(signal2->data, 0, signal2->length * sizeof(REAL4));
+   memset(signalvec1->data, 0, signalvec1->length * sizeof(REAL4));
+   memset(signalvec2->data, 0, signalvec2->length * sizeof(REAL4));
 
    /* Call the engine function */
-   LALInspiralWave1Engine(status->statusPtr, signal1, signal2, NULL, NULL, NULL, NULL, &count, params);
+   LALInspiralWave1Engine(status->statusPtr, signalvec1, signalvec2, NULL, NULL, NULL, NULL, &count, params);
    CHECKSTATUSPTR(status);
 
    DETATCHSTATUSPTR(status);
@@ -396,8 +396,8 @@ NRCSID (LALINSPIRALWAVE1ENGINEC, "$Id$");
 void
 LALInspiralWave1Engine(
 		LALStatus        *status,
-		REAL4Vector      *signal1,
-		REAL4Vector      *signal2,
+		REAL4Vector      *signalvec1,
+		REAL4Vector      *signalvec2,
 		REAL4Vector      *h,
 		REAL4Vector      *a,
 		REAL4Vector      *ff,
@@ -553,17 +553,17 @@ LALInspiralWave1Engine(
    }
 
    count = 0;
-   if (signal2) {
+   if (signalvec2) {
    params->nStartPad = 0;} /* for template generation, that value must be zero*/
 
-   else if (signal1) {
+   else if (signalvec1) {
      count = params->nStartPad;
    }
 
    t = 0.0;
    do {
       /* Free up memory and abort if writing beyond the end of vector*/
-      if ((signal1 && (UINT4)count >= signal1->length) || (ff && (UINT4)count >= ff->length))
+      if ((signalvec1 && (UINT4)count >= signalvec1->length) || (ff && (UINT4)count >= ff->length))
       {
           XLALRungeKutta4Free( integrator );
           LALFree(dummy.data);
@@ -571,15 +571,15 @@ LALInspiralWave1Engine(
       }
 
       /* Non-injection case */
-      if (signal1)
+      if (signalvec1)
       {
          amp = params->signalAmplitude * v*v;
          h1 = amp * cos(p);
-         *(signal1->data + count) = (REAL4) h1;
-	 if (signal2)
+         *(signalvec1->data + count) = (REAL4) h1;
+	 if (signalvec2)
 	 {
             h2 = amp * cos(p+LAL_PI_2);
-            *(signal2->data + count) = (REAL4) h2;
+            *(signalvec2->data + count) = (REAL4) h2;
 	 }
       }
       /* Injection case */

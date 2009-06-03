@@ -61,13 +61,13 @@ void LALTaylorT4Derivatives7PN(
 
 void LALTaylorT4Waveform (
   LALStatus        *status,
-  REAL4Vector      *signal,
+  REAL4Vector      *signalvec,
   InspiralTemplate *params
 );
 
 void LALTaylorT4WaveformEngine (
   LALStatus        *status,
-  REAL4Vector      *signal,
+  REAL4Vector      *signalvec,
   InspiralTemplate *params,
   InspiralInit     *paramsInit
 );
@@ -277,7 +277,7 @@ void LALTaylorT4Derivatives7PN(
 /*  <lalVerbatim file="LALTaylorT4WaveformCP"> */
 void LALTaylorT4Waveform (
    LALStatus        *status,
-   REAL4Vector      *signal,
+   REAL4Vector      *signalvec,
    InspiralTemplate *params
    )
 { /* </lalVerbatim> */
@@ -286,9 +286,9 @@ void LALTaylorT4Waveform (
    INITSTATUS(status, "LALTaylorT4Waveform", LALTAYLORT4WAVEFORMC);
    ATTATCHSTATUSPTR(status);
 
-   ASSERT(signal,  status,
+   ASSERT(signalvec,  status,
 	LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   ASSERT(signal->data,  status,
+   ASSERT(signalvec->data,  status,
    	LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
    ASSERT(params,  status,
    	LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
@@ -309,10 +309,10 @@ void LALTaylorT4Waveform (
 					 &(paramsInit.ak), params);
    CHECKSTATUSPTR(status);
 
-   memset(signal->data, 0, signal->length * sizeof( REAL4 ));
+   memset(signalvec->data, 0, signalvec->length * sizeof( REAL4 ));
 
    /* Call the engine function */
-   LALTaylorT4WaveformEngine(status->statusPtr, signal, params, &paramsInit);
+   LALTaylorT4WaveformEngine(status->statusPtr, signalvec, params, &paramsInit);
    CHECKSTATUSPTR( status );
 
    DETATCHSTATUSPTR(status);
@@ -323,7 +323,7 @@ void LALTaylorT4Waveform (
 void
 LALTaylorT4WaveformEngine (
                 LALStatus        *status,
-                REAL4Vector      *signal,
+                REAL4Vector      *signalvec,
                 InspiralTemplate *params,
                 InspiralInit     *paramsInit
                 )
@@ -375,7 +375,7 @@ LALTaylorT4WaveformEngine (
    dt = 1./params->tSampling;
    ak   = paramsInit->ak;
    func = paramsInit->func;
-   length = signal->length;
+   length = signalvec->length;
    eta = ak.eta;
    m = ak.totalmass;
 
@@ -456,7 +456,7 @@ LALTaylorT4WaveformEngine (
       }
 
       h = 4 * m * eta * v*v * cos(2.*phi);
-      signal->data[ndx] = h;
+      signalvec->data[ndx] = h;
       /* fprintf(stdout, "%e %e %e\n", t, h, omega/(2.*m*LAL_PI)); */
 
       /* Integrate one step forward */
