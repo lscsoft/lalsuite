@@ -1484,6 +1484,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
                  "Bose/Seader <sukanta@wsu.edu>\n"
                  "CVS Version: " CVS_ID_STRING "\n"
                  "CVS Tag: " CVS_NAME_STRING "\n" );
+           fprintf( stdout, lalappsGitID );
            exit( 0 );
            break;
 

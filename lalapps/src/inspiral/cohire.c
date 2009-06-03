@@ -358,6 +358,7 @@ int main( int argc, char *argv[] )
         fprintf( stdout, "Single Inspiral Reader and Injection Analysis\n"
             "Patrick Brady, Duncan Brown and Steve Fairhurst\n"
             "CVS Version: " CVS_ID_STRING "\n" );
+        fprintf( stdout, lalappsGitID );
         exit( 0 );
         break;
 
