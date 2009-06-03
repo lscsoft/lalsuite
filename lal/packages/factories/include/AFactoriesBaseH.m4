@@ -1,4 +1,4 @@
-/* 
+/*
 dnl $Id$
 ifelse(TYPECODE,`I2',`define(`TYPE',`INT2')')
 ifelse(TYPECODE,`I4',`define(`TYPE',`INT4')')

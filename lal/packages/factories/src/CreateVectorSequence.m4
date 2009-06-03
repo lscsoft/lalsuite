@@ -13,7 +13,7 @@ ifelse(TYPECODE,`CHAR',`define(`TYPE',`CHAR')')
 ifelse(TYPECODE,`',`define(`TYPE',`REAL4')')
 define(`STYPE',`format(`%sVectorSequence',TYPE)')
 define(`FUNC',`format(`LAL%sCreateVectorSequence',TYPECODE)')
-ifelse( TYPECODE, `', `define(`XFUNC',`XLALCreateVectorSequence')', `define(`XFUNC',`format(`XLALCreate%s',STYPE)')' ) 
+ifelse( TYPECODE, `', `define(`XFUNC',`XLALCreateVectorSequence')', `define(`XFUNC',`format(`XLALCreate%s',STYPE)')' )
 
 
 STYPE * XFUNC ( UINT4 length, UINT4 veclen )
@@ -26,7 +26,7 @@ STYPE * XFUNC ( UINT4 length, UINT4 veclen )
   seq = LALMalloc( sizeof( *seq ) );
   if ( ! seq )
     XLAL_ERROR_NULL( "XFUNC", XLAL_ENOMEM );
-  
+
   seq->length = length;
   seq->vectorLength = veclen;
 
@@ -46,18 +46,18 @@ STYPE * XFUNC ( UINT4 length, UINT4 veclen )
 }
 
 /* <lalVerbatim file="VectorSequenceFactoriesD"> */
-void FUNC ( LALStatus *status, STYPE **vseq, CreateVectorSequenceIn *in ) 
+void FUNC ( LALStatus *status, STYPE **vseq, CreateVectorSequenceIn *in )
 { /* </lalVerbatim> */
-  /* 
+  /*
    * Initialize status
    */
-  INITSTATUS( status, "FUNC", VECTORSEQUENCEFACTORIESC );	
+  INITSTATUS( status, "FUNC", VECTORSEQUENCEFACTORIESC );
 
   /* Check input structure: report if NULL */
 
   ASSERT (in != NULL, status, SEQFACTORIESH_EINPTR, SEQFACTORIESH_MSGEINPTR);
-      
-  /* Check sequence length: report error if 0 
+
+  /* Check sequence length: report error if 0
    * Use of unsigned for length means we can't check if negative
    * length was passed
    */
@@ -65,17 +65,17 @@ void FUNC ( LALStatus *status, STYPE **vseq, CreateVectorSequenceIn *in )
   ASSERT (in->length > 0, status,
           SEQFACTORIESH_ESLENGTH, SEQFACTORIESH_MSGESLENGTH);
 
-  /* Check vector length: report error if 0 
+  /* Check vector length: report error if 0
    * Use of unsigned for length means we can't check if negative
    * length was passed
    */
 
   ASSERT (in->vectorLength > 0, status,
-          SEQFACTORIESH_EVLENGTH, SEQFACTORIESH_MSGEVLENGTH); 
+          SEQFACTORIESH_EVLENGTH, SEQFACTORIESH_MSGEVLENGTH);
 
-  /* 
+  /*
    * Check return structure: If return pointer does not point to a
-   *    valid pointer then report an error 
+   *    valid pointer then report an error
    */
 
   ASSERT (vseq != NULL, status, SEQFACTORIESH_EVPTR, SEQFACTORIESH_MSGEVPTR);
@@ -95,7 +95,7 @@ void FUNC ( LALStatus *status, STYPE **vseq, CreateVectorSequenceIn *in )
       }
       else
       {
-        ABORT (status, SEQFACTORIESH_EVLENGTH, SEQFACTORIESH_MSGEVLENGTH); 
+        ABORT (status, SEQFACTORIESH_EVLENGTH, SEQFACTORIESH_MSGEVLENGTH);
       }
     }
     if ( code == XLAL_ENOMEM )

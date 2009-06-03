@@ -38,28 +38,28 @@ VTYPE * XFUNC ( VTYPE * vector, UINT4 length )
 
 
 /* <lalVerbatim file="VectorFactoriesD"> */
-void RESIZEVECTOR ( LALStatus *status, VTYPE **vector, UINT4 length ) 
+void RESIZEVECTOR ( LALStatus *status, VTYPE **vector, UINT4 length )
 { /* </lalVerbatim> */
-  /* 
+  /*
    * Initialize status structure
    */
-  INITSTATUS( status, "RESIZEVECTOR", VECTORFACTORIESC );	
+  INITSTATUS( status, "RESIZEVECTOR", VECTORFACTORIESC );
 
   ASSERT ( vector != NULL, status, AVFACTORIESH_EVPTR, AVFACTORIESH_MSGEVPTR );
   ASSERT ( ! *vector || (*vector)->length, status, AVFACTORIESH_ELENGTH, AVFACTORIESH_MSGELENGTH );
   ASSERT ( length || *vector, status, AVFACTORIESH_ELENGTH, AVFACTORIESH_MSGELENGTH );
 
   /* Want this to behave like realloc(3), i.e.
-   * *vector == NULL => create a new vector 
-   * length == 0 => destroy the vector 
-   * otherwise => resize given vector 
+   * *vector == NULL => create a new vector
+   * length == 0 => destroy the vector
+   * otherwise => resize given vector
    */
 
   *vector = XFUNC ( *vector, length );
   if ( xlalErrno )
   {
     int code = xlalErrno;
-    XLALClearErrno(); 
+    XLALClearErrno();
     if ( code == XLAL_EBADLEN )
     {
       ABORT( status, AVFACTORIESH_ELENGTH, AVFACTORIESH_MSGELENGTH );
@@ -69,6 +69,6 @@ void RESIZEVECTOR ( LALStatus *status, VTYPE **vector, UINT4 length )
       ABORT( status, AVFACTORIESH_EMALLOC, AVFACTORIESH_MSGEMALLOC );
     }
   }
-      
+
   RETURN( status );
 }

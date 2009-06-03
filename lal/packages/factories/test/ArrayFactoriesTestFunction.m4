@@ -54,25 +54,25 @@ static void FUNC ( void )
   dims[2] *= 4;
   RFUNC ( &status, &array, &dimLength );
   TestStatus( &status, CODES( 0 ), 1 );
-  
+
   memset( array->data, 0, dims[0]*dims[1]*dims[2]*sizeof( TYPE ) );
-  
+
   /* resize down */
   dims[0] /= 2;
   dims[1] /= 3;
   dims[2] /= 2;
   RFUNC ( &status, &array, &dimLength );
   TestStatus( &status, CODES( 0 ), 1 );
-  
+
   memset( array->data, 0, dims[0]*dims[1]*dims[2]*sizeof( TYPE ) );
-  
+
   /* resize down again */
   dims[2] /= 2;
   RFUNC ( &status, &array, &dimLength );
   TestStatus( &status, CODES( 0 ), 1 );
-  
+
   memset( array->data, 0, dims[0]*dims[1]*dims[2]*sizeof( TYPE ) );
-  
+
   DFUNC ( &status, &array );
   TestStatus( &status, CODES( 0 ), 1 );
 
@@ -153,6 +153,6 @@ static void FUNC ( void )
 
   LALCheckMemoryLeaks();
   printf( "PASS: tests of CFUNC, RFUNC, and DFUNC \n" );
-          
+
   return;
 }
