@@ -19,7 +19,8 @@ fi
 
 for i in $epsfigures $cwd/*.eps; do
     ln -sf $i $figdir &> /dev/null;
-    ln -sf $i $latexdir &> /dev/null;## hack to get around doxygen missing some eps-figures for latex
+    # hack to get around doxygen missing some eps-figures for latex
+    ln -sf $i $latexdir &> /dev/null;
 done
 
 for i in $pngfigures $cwd/*.png; do
