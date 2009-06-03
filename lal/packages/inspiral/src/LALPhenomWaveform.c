@@ -58,7 +58,7 @@ static REAL8 XLALLorentzianFn ( REAL8 freq,
 
 
 static void XLALBBHPhenWaveFD ( BBHPhenomParams  *params,
-			 InspiralTemplate *template,
+			 InspiralTemplate *insp_template,
 			 REAL4Vector *signal);
 
 
@@ -193,7 +193,7 @@ static void XLALComputePhenomParams( BBHPhenomParams  *phenParams,
 
 
 static void XLALBBHPhenWaveFD ( BBHPhenomParams  *params,
-				InspiralTemplate *template,
+				InspiralTemplate *insp_template,
 				REAL4Vector *signal) {
 
     REAL8 df, shft, phi, amp0, ampEff, psiEff, fMerg, fNorm;
@@ -201,7 +201,7 @@ static void XLALBBHPhenWaveFD ( BBHPhenomParams  *params,
     INT4 i, j, n;
 
     /* freq resolution and the low-freq bin */
-    df = template->tSampling/signal->length;
+    df = insp_template->tSampling/signal->length;
     n = signal->length;
 
     /* If we want to pad with zeroes in the beginning then the instant of
@@ -209,23 +209,23 @@ static void XLALBBHPhenWaveFD ( BBHPhenomParams  *params,
     * is needed. Thus, in the equation below nStartPad occurs with a +ve sign.
     * This code doesn't support non-zero start-time. i.e. params->startTime
     * should be necessarily zero.*/
-    shft = 2.*LAL_PI * ((REAL4)signal->length/template->tSampling +
-            template->nStartPad/template->tSampling + template->startTime);
-    phi  = template->startPhase;
+    shft = 2.*LAL_PI * ((REAL4)signal->length/insp_template->tSampling +
+            insp_template->nStartPad/insp_template->tSampling + insp_template->startTime);
+    phi  = insp_template->startPhase;
 
     /* phenomenological  parameters*/
     fMerg = params->fMerger;
     fRing = params->fRing;
     sigma = params->sigma;
-    totalMass = template->mass1 + template->mass2;
-    eta = template->mass1 * template->mass2 / pow(totalMass, 2.);
+    totalMass = insp_template->mass1 + insp_template->mass2;
+    eta = insp_template->mass1 * insp_template->mass2 / pow(totalMass, 2.);
 
     /* Now compute the amplitude.  NOTE the params->distance is assumed to
      * me in meters. This is, in principle, inconsistent with the LAL
      * documentation (inspiral package). But this seems to be the convention
      * employed in the injection codes */
     amp0 = pow(LAL_MTSUN_SI*totalMass, 5./6.)*pow(fMerg,-7./6.)/pow(LAL_PI,2./3.);
-    amp0 *= pow(5.*eta/24., 1./2.)/(template->distance/LAL_C_SI);
+    amp0 *= pow(5.*eta/24., 1./2.)/(insp_template->distance/LAL_C_SI);
 
     /* fill the zero and Nyquist frequency with zeros */
     *(signal->data+0) = 0.;
@@ -242,7 +242,7 @@ static void XLALBBHPhenWaveFD ( BBHPhenomParams  *params,
         fNorm = f/fMerg;
 
     	/* compute the amplitude */
-        if ((f < template->fLower) || (f > params->fCut)) {
+        if ((f < insp_template->fLower) || (f > params->fCut)) {
             ampEff = 0.;
         }
         else if (f <= fMerg) {
@@ -324,7 +324,7 @@ void LALBBHPhenWaveFreqDomTemplates( LALStatus        *status,
 
 void LALBBHPhenWaveTimeDom ( LALStatus        *status,
 			     REAL4Vector      *signal,
-			     InspiralTemplate *template)
+			     InspiralTemplate *insp_template)
 {
 
   REAL8 fLower;
@@ -345,25 +345,25 @@ void LALBBHPhenWaveTimeDom ( LALStatus        *status,
   ATTATCHSTATUSPTR(status);
   ASSERT (signal,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
   ASSERT (signal->data,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-  ASSERT (template, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+  ASSERT (insp_template, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
   ASSERT (signal->length>2,  status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
-  ASSERT (template->nStartPad >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-  ASSERT (template->nEndPad >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-  ASSERT (template->fLower > 0.0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-  ASSERT (template->tSampling > 0.0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+  ASSERT (insp_template->nStartPad >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+  ASSERT (insp_template->nEndPad >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+  ASSERT (insp_template->fLower > 0.0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+  ASSERT (insp_template->tSampling > 0.0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
 
 
   /* compute the phenomenological parameters */
-  XLALComputePhenomParams(&phenParams, template);
+  XLALComputePhenomParams(&phenParams, insp_template);
 
-  totalMass = template->mass1 + template->mass2;
-  eta = template->mass1*template->mass2/pow(totalMass,2.);
+  totalMass = insp_template->mass1 + insp_template->mass2;
+  eta = insp_template->mass1*insp_template->mass2/pow(totalMass,2.);
 
   /* we will generate the waveform from a frequency which is lower than the
    * fLower chosen. Also the cutoff frequency is higher than the fCut. We
    * will later apply a window function, and truncate the time-domain waveform
    * below an instantaneous frequency  fLower */
-  fLowerOrig = template->fLower;    /* this is the low-freq set by the user */
+  fLowerOrig = insp_template->fLower;    /* this is the low-freq set by the user */
 
     /* Find an optimum value for fLower (using the definition of Newtonian chirp time)
      * such that the waveform has a minimum length of tau0. This is necessary to avoid
@@ -381,22 +381,22 @@ void LALBBHPhenWaveTimeDom ( LALStatus        *status,
 
   /* make sure that these frequencies are not too out of range */
   if (fLower > fLowerOrig) fLower = fLowerOrig;
-  if (fCut > template->tSampling/2.-100.) fCut = template->tSampling/2.-100.;
+  if (fCut > insp_template->tSampling/2.-100.) fCut = insp_template->tSampling/2.-100.;
 
   /* generate waveforms over this frequency range */
-  template->fLower = fLower;
-  phenParams.fCut = template->tSampling/2.;
+  insp_template->fLower = fLower;
+  phenParams.fCut = insp_template->tSampling/2.;
 
   /* make sure that fLower is not too low */
-   if (template->fLower < 0.5) template->fLower = 0.5;
+   if (insp_template->fLower < 0.5) insp_template->fLower = 0.5;
 
   /* generate the phenomenological waveform in frequency domain */
   n = signal->length;
   signalFD1 = XLALCreateREAL4Vector(n);
-  XLALBBHPhenWaveFD (&phenParams, template, signalFD1);
+  XLALBBHPhenWaveFD (&phenParams, insp_template, signalFD1);
 
   /* apply the softening window function */
-  fRes = template->tSampling/n;
+  fRes = insp_template->tSampling/n;
 
   /********************************* DEBUG ********************************/
   /*      filePtr = fopen("FreqDomPhenWave.txt","a");
@@ -439,41 +439,41 @@ void LALBBHPhenWaveTimeDom ( LALStatus        *status,
    * will match to the 'plus' and 'cross' polarisations of the hybrid waveforms,
      * respectively*/
   for (i = 0; i < n; i++) {
-    signal->data[i] *= -template->tSampling/n;
+    signal->data[i] *= -insp_template->tSampling/n;
   }
 
   /********************************* DEBUG ********************************/
   /*filePtr = fopen("TimeDomPhenWave.txt","a");
     for (i = 0; i < n; i++) {
-    fprintf(filePtr,"%e\t%e\n", i/template->tSampling, signal->data[i]);
+    fprintf(filePtr,"%e\t%e\n", i/insp_template->tSampling, signal->data[i]);
     }
     fclose(filePtr);*/
   /************************************************************************/
 
   /* apply a linearly increasing/decresing window at the beginning and at the end
    * of the waveform in order to avoid edge effects. This could be made fancier */
-   windowLength = 10.*totalMass * LAL_MTSUN_SI*template->tSampling;
+   windowLength = 10.*totalMass * LAL_MTSUN_SI*insp_template->tSampling;
    for (i=0; i< windowLength; i++){
          signal->data[n-i-1] *= i/windowLength;
    }
-   windowLength = 1000.*totalMass * LAL_MTSUN_SI*template->tSampling;
+   windowLength = 1000.*totalMass * LAL_MTSUN_SI*insp_template->tSampling;
    for (i=0; i< windowLength; i++){
         signal->data[i] *= i/windowLength;
    }
 
   /********************************* DEBUG ********************************/
   /* CHAR fileName[1000];
-     sprintf(fileName, "TimeDomPhenWave_Wind_Phi0%4.3f.txt",template->startPhase);
+     sprintf(fileName, "TimeDomPhenWave_Wind_Phi0%4.3f.txt",insp_template->startPhase);
      filePtr = fopen(fileName,"a");
      for (i = 0; i < n; i++) {
-     fprintf(filePtr,"%e\t%e\n", i/template->tSampling, signal->data[i]);
+     fprintf(filePtr,"%e\t%e\n", i/insp_template->tSampling, signal->data[i]);
      }
      fclose(filePtr); */
   /************************************************************************/
 
     /* reassign the original value of fLower */
-  template->fLower = fLowerOrig;
-  template->fFinal = phenParams.fCut;
+  insp_template->fLower = fLowerOrig;
+  insp_template->fFinal = phenParams.fCut;
 
   DETATCHSTATUSPTR(status);
   RETURN(status);
