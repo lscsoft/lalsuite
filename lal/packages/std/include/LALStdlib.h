@@ -136,7 +136,7 @@ for certain standard modules used by many LAL routines:
 #include <stdio.h>
 #include <stdarg.h>
 #include <lal/LALMalloc.h>
-/* </lalVerbatim> 
+/* </lalVerbatim>
 
 <lalLaTeX>
 \vfill{\footnotesize\input{LALStdlibHV}}
