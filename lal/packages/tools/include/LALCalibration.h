@@ -47,8 +47,8 @@ void XLALDestroyCalData( LALCalData *caldata );
 
 /** Averages calibration factors alpha and gamma for a specified period */
 int XLALAverageCalibrationFactors(
-    REAL8 *alpha,        /**< returned value of alpha factor */
-    REAL8 *gamma,        /**< returned value of gamma factor */
+    REAL8 *cal_alpha,    /**< returned value of alpha factor */
+    REAL8 *cal_gamma,    /**< returned value of gamma factor */
     LIGOTimeGPS *epoch,  /**< epoch to begin averaging */
     REAL8 duration,      /**< duration of averaging (0 = use just one point) */
     LALCalData *caldata  /**< calibration reference data */
@@ -58,8 +58,8 @@ int XLALAverageCalibrationFactors(
  * of alpha and gamma */
 COMPLEX8FrequencySeries * XLALUpdateReferenceResponse(
     LALCalData *caldata, /**< calibration reference data */
-    REAL8 alpha,         /**< value of the alpha factor */
-    REAL8 gamma          /**< value of the gamma factor */
+    REAL8 cal_alpha,     /**< value of the alpha factor */
+    REAL8 cal_gamma      /**< value of the gamma factor */
     );
 
 /** Creates a response function at a requested frequency resolution
@@ -84,7 +84,7 @@ COMPLEX16FrequencySeries * XLALCreateCOMPLEX16Response(
 
 /** Computes a response function at a requested frequency resolution
  * that is valid at a requested epoch. */
-int XLALUpdateResponse( 
+int XLALUpdateResponse(
     COMPLEX8FrequencySeries *response,  /**< response function to return */
     REAL8 duration,                     /**< duration for averaging factors */
     LALCalData *caldata                 /**< calibration reference data */
