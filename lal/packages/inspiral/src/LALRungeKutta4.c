@@ -82,10 +82,10 @@ rk4GSLIntegrator * XLALRungeKutta4Init( INT4 n,
                                         rk4In *input
                                       )
 { /* </lalVerbatim>  */
- 
-  static const char *func = "XLALRungeKutta4Init"; 
+
+  static const char *func = "XLALRungeKutta4Init";
   rk4GSLIntegrator  *integrator = NULL;
-  
+
   /* Check we have an input */
   if (!input)
     XLAL_ERROR_NULL(func, XLAL_EFAULT);
@@ -121,11 +121,11 @@ rk4GSLIntegrator * XLALRungeKutta4Init( INT4 n,
   }
 
   return integrator;
-}  
+}
 
 
 /*  <lalVerbatim file="LALRungeKutta4CP"> */
-void 
+void
 LALRungeKutta4(
    LALStatus        *status,
    REAL8Vector      *yout,
@@ -139,8 +139,8 @@ LALRungeKutta4(
    struct RungeGSLParams gslParams;
    rk4In *input = NULL;
    REAL8 h;
-   gsl_odeiv_system sys; 
-  
+   gsl_odeiv_system sys;
+
    INITSTATUS(status, "LALRungeKutta4", LALRUNGEKUTTA4C);
    ATTATCHSTATUSPTR(status);
 
@@ -153,14 +153,14 @@ LALRungeKutta4(
   /* Initialise GSL integrator */
 
   input = integrator->input;
-  h     = input->h;  
+  h     = input->h;
 
   gslParams.input = input;
   gslParams.params = params;
 
   sys.function = derivativeGSLWrapper;
   sys.jacobian =  NULL;
-  sys.dimension = input->n; 
+  sys.dimension = input->n;
   sys.params    = &gslParams;
 
 
@@ -175,7 +175,7 @@ LALRungeKutta4(
 				&t, input->h, &h, integrator->y), status );
     /*printf("h = %e, t = %e\n", h, t);*/
     BEGINFAIL(status)
-    {  
+    {
         ABORT(status, LALINSPIRALH_ESTOPPED, LALINSPIRALH_MSGESTOPPED);
     }
     ENDFAIL(status);
@@ -187,7 +187,7 @@ LALRungeKutta4(
            yout->data[i] = 0.0;
 
          ABORT(status, LALINSPIRALH_ESTOPPED, LALINSPIRALH_MSGESTOPPED);
-    } 
+    }
   }
 
   memcpy( yout->data, integrator->y, input->n * sizeof(REAL8));
@@ -219,8 +219,8 @@ void XLALRungeKutta4Free( rk4GSLIntegrator *integrator )
 /* A simple wrapper function to allow GSL to use the LAL
    derivative functions */
 static int derivativeGSLWrapper(
-				REAL8 t, 
-				const REAL8 y[], 
+				REAL8 t,
+				const REAL8 y[],
 				REAL8 dydx[],
 				void *params)
 {
