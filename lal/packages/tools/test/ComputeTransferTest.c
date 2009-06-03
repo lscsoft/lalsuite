@@ -24,7 +24,7 @@
 
 /**** <lalLaTeX>
  * \subsection{Program \texttt{ComputeTransferTest.c}}
- * 
+ *
  * Tests the computation of transfer functions.
  *
  * \subsubsection*{Usage}

@@ -118,25 +118,25 @@ The fields are:
 \item[\texttt{REAL8 orientation}] Orientation angle ($\psi$) of source:
   counter-clockwise angle $x$-axis makes with a line perpendicular to
   meridian of source in Westward direction (\textit{i.e.} North of West),
-  in decimal radians. 
+  in decimal radians.
 \end{description}
 
 </lalLaTeX> */
-  
+
 typedef struct
 tagLALSource
 {
   CHAR         name[LALNameLength];  /* name of source, e.g. catalog number */
   SkyPosition  equatorialCoords;     /* equatorial coordinates of source,
                                         in decimal RADIANS */
-  REAL8        orientation;          /* counter-clockwise angle x-axis makes 
-                                        with a line perpendicular to meridian 
-                                        of object in Westward direction, in 
+  REAL8        orientation;          /* counter-clockwise angle x-axis makes
+                                        with a line perpendicular to meridian
+                                        of object in Westward direction, in
                                         decimal RADIANS (i.e. North of West) */
 }
 LALSource;
-  
-/* <lalLaTeX> 
+
+/* <lalLaTeX>
 \subsubsection*{Structure \texttt{LALDetAndSource}}
 \idx[Type]{LALDetAndSource}
 
@@ -172,7 +172,7 @@ one source at one instance in time. The fields are:
 
 \begin{description}
 \item[\texttt{REAL4 plus}] Detector response to $+$-polarized gravitational
-  radiation 
+  radiation
 \item[\texttt{REAL4 cross}] Detector response to $\times$-polarized
   gravitational radiation
 \item[\texttt{REAL4 scalar}] Detector response to scalar gravitational

@@ -30,12 +30,12 @@ $Id$
 This is a dummy header which includes \texttt{LALDetectors.h}, for
 backwards compatibility.
 
-******************************************************* </lalLaTeX> */ 
+******************************************************* </lalLaTeX> */
 
 /**
  * \author John T. Whelan
  * \date 2007
- * \file 
+ * \file
  * \ingroup tools
  * \brief Dummy header file which includes LALDetectors.h for backwards compatibility
  *

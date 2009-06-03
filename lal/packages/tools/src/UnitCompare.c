@@ -19,7 +19,7 @@
 
 /************************************ <lalVerbatim file="UnitCompareCV">
 Author: J. T. Whelan <john.whelan@ligo.org>
-$Id$  
+$Id$
 ************************************* </lalVerbatim> */
 
 /********************************************************** <lalLaTeX>
@@ -40,7 +40,7 @@ This function determines whether the units represented by
 dimensionally and in the power-of-ten prefactor).  In this way,
 programs and programmers can verify that quantities have the expected
 units.
- 
+
 \subsubsection*{Algorithm}
 
 The function first uses \texttt{LALUnitNormalize()} to bring both unit
@@ -56,7 +56,7 @@ turn.
 
 \vfill{\footnotesize\input{UnitCompareCV}}
 
-******************************************************* </lalLaTeX> */ 
+******************************************************* </lalLaTeX> */
 
 #include <math.h>
 #include <string.h>
@@ -178,5 +178,5 @@ LALUnitCompare (LALStatus *status, BOOLEAN *output, const LALUnitPair *input)
 
   *output = code ? 0 : 1;
 
-  RETURN(status);  
+  RETURN(status);
 }

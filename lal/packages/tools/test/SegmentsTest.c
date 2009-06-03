@@ -702,7 +702,7 @@ int main( int argc, char *argv[] )
 
   }
 
-  /*------------------------------*/ 
+  /*------------------------------*/
   strcpy( testname, "XLALSegListAppend decimal place record - init" );
   status = XLALSegListInit( &seglist1 );
   if ( status ) {
@@ -755,7 +755,7 @@ int main( int argc, char *argv[] )
       seglist1ok = 0;
     } else if ( seglist1.segs && seglist1.arraySize == SEGMENTSH_ALLOCBLOCK &&
 		seglist1.length == 1 ) {
-      FUNCPASS( testname );      
+      FUNCPASS( testname );
     } else {
       FUNCFAIL( testname, "Failed to store first segment" );
       seglist1ok = 0;
@@ -865,7 +865,7 @@ int main( int argc, char *argv[] )
   } else {
     XLALPrintInfo( "Skip test: %s\n", testname );
   }
-  
+
 
   /*-------------------------------------------------------------------------*/
   XLALPrintInfo("\n========== XLALSegListCoalesce tests \n");
@@ -913,7 +913,7 @@ int main( int argc, char *argv[] )
   } else {
     XLALPrintInfo( "Skip test: %s\n", testname );
   }
-  
+
 
   /*------------------------------*/
   /*-- Add some segments to the existing segment list --*/
@@ -1008,7 +1008,7 @@ int main( int argc, char *argv[] )
   } else {
     XLALPrintInfo( "Skip test: %s\n", testname );
   }
-  
+
 
   /*-------------------------------------------------------------------------*/
   XLALPrintInfo("\n========== XLALSegListSearch tests \n");

@@ -19,7 +19,7 @@
 
 /************************************ <lalVerbatim file="UnitDefsCV">
 Author: J. T. Whelan <john.whelan@ligo.org>
-$Id$  
+$Id$
 ************************************* </lalVerbatim> */
 
 /********************************************************** <lalLaTeX>
@@ -69,51 +69,51 @@ None.
 \idx[Constant]{lalMeterUnit}
 \idx[Constant]{lalKiloGramUnit}
 \idx[Constant]{lalSecondUnit}
-\idx[Constant]{lalAmpereUnit} 
+\idx[Constant]{lalAmpereUnit}
 \idx[Constant]{lalKelvinUnit}
-\idx[Constant]{lalStrainUnit} 
-\idx[Constant]{lalADCCountUnit} 
-\idx[Constant]{lalHertzUnit} 
-\idx[Constant]{lalNewtonUnit} 
-\idx[Constant]{lalPascalUnit} 
-\idx[Constant]{lalJouleUnit} 
-\idx[Constant]{lalWattUnit} 
-\idx[Constant]{lalCoulombUnit} 
-\idx[Constant]{lalVoltUnit} 
-\idx[Constant]{lalOhmUnit} 
-\idx[Constant]{lalFaradUnit} 
-\idx[Constant]{lalWeberUnit} 
-\idx[Constant]{lalHenryUnit} 
-\idx[Constant]{lalTeslaUnit} 
-\idx[Constant]{lalYottaUnit} 
-\idx[Constant]{lalZettaUnit} 
-\idx[Constant]{lalExaUnit} 
-\idx[Constant]{lalPetaUnit} 
-\idx[Constant]{lalTeraUnit} 
-\idx[Constant]{lalGigaUnit} 
-\idx[Constant]{lalMegaUnit} 
-\idx[Constant]{lalKiloUnit} 
-\idx[Constant]{lalHectoUnit} 
-\idx[Constant]{lalDekaUnit} 
-\idx[Constant]{lalDeciUnit} 
-\idx[Constant]{lalCentiUnit} 
-\idx[Constant]{lalMilliUnit} 
-\idx[Constant]{lalMicroUnit} 
-\idx[Constant]{lalNanoUnit} 
-\idx[Constant]{lalPicoUnit} 
-\idx[Constant]{lalFemtoUnit} 
-\idx[Constant]{lalAttoUnit} 
-\idx[Constant]{lalZeptoUnit} 
-\idx[Constant]{lalYoctoUnit} 
-\idx[Constant]{lalGramUnit} 
-\idx[Constant]{lalAttoStrainUnit} 
-\idx[Constant]{lalPicoFaradUnit} 
+\idx[Constant]{lalStrainUnit}
+\idx[Constant]{lalADCCountUnit}
+\idx[Constant]{lalHertzUnit}
+\idx[Constant]{lalNewtonUnit}
+\idx[Constant]{lalPascalUnit}
+\idx[Constant]{lalJouleUnit}
+\idx[Constant]{lalWattUnit}
+\idx[Constant]{lalCoulombUnit}
+\idx[Constant]{lalVoltUnit}
+\idx[Constant]{lalOhmUnit}
+\idx[Constant]{lalFaradUnit}
+\idx[Constant]{lalWeberUnit}
+\idx[Constant]{lalHenryUnit}
+\idx[Constant]{lalTeslaUnit}
+\idx[Constant]{lalYottaUnit}
+\idx[Constant]{lalZettaUnit}
+\idx[Constant]{lalExaUnit}
+\idx[Constant]{lalPetaUnit}
+\idx[Constant]{lalTeraUnit}
+\idx[Constant]{lalGigaUnit}
+\idx[Constant]{lalMegaUnit}
+\idx[Constant]{lalKiloUnit}
+\idx[Constant]{lalHectoUnit}
+\idx[Constant]{lalDekaUnit}
+\idx[Constant]{lalDeciUnit}
+\idx[Constant]{lalCentiUnit}
+\idx[Constant]{lalMilliUnit}
+\idx[Constant]{lalMicroUnit}
+\idx[Constant]{lalNanoUnit}
+\idx[Constant]{lalPicoUnit}
+\idx[Constant]{lalFemtoUnit}
+\idx[Constant]{lalAttoUnit}
+\idx[Constant]{lalZeptoUnit}
+\idx[Constant]{lalYoctoUnit}
+\idx[Constant]{lalGramUnit}
+\idx[Constant]{lalAttoStrainUnit}
+\idx[Constant]{lalPicoFaradUnit}
 
 This file also defines a number of \texttt{constant} unit structures
 (declared \texttt{extern} in \texttt{Units.h}).  Zeroth is
-\texttt{lalDimensionlessUnit}, which is simply a \texttt{LALUnit} 
+\texttt{lalDimensionlessUnit}, which is simply a \texttt{LALUnit}
 structure to be associated with a unitless quantity.
-First, the relevant fundamental SI units and two custom units of use in 
+First, the relevant fundamental SI units and two custom units of use in
 gravitational wave detection:
 \begin{center}
 \begin{tabular}{|llll|}
@@ -201,7 +201,7 @@ Constant & Name & Abbr.\ & Def.\ & Fundamental\\
   $10^{-3}$ kg & $10^{-3}$ kg \\
 \texttt{lalAttoStrainUnit} & attostrain & a$\epsilon$ &
   $10^{-18} \epsilon$ & $10^{-18} \epsilon$ \\
-\texttt{lalPicoFaradUnit} & picofarad & pF & 
+\texttt{lalPicoFaradUnit} & picofarad & pF &
   $10^{-12}$ F & $10^{-12}$ m$^{-2}$ kg$^{-1}$ s$^4$ A$^2$\\
 \hline
 \end{tabular}
@@ -209,12 +209,12 @@ Constant & Name & Abbr.\ & Def.\ & Fundamental\\
 
 \vfill{\footnotesize\input{UnitDefsCV}}
 
-******************************************************* </lalLaTeX> */ 
+******************************************************* </lalLaTeX> */
 /**************************************** <lalLaTeX file="UnitDefsCB">
 \bibitem{tools:Halliday:2001}
 D.~Halliday, R.~Resnick, and J.~Walker, \textit{Fundamentals of
   Physics}.  (Wiley \& Sons, New York, 2001)
-******************************************************* </lalLaTeX> */ 
+******************************************************* </lalLaTeX> */
 
 #include <lal/LALStdlib.h>
 #include <string.h>
@@ -229,7 +229,7 @@ NRCSID( UNITDEFSC, "$Id$" );
  * define the names of the basic units.
  */
 
-const CHAR lalUnitName[LALNumUnits][LALUnitNameSize] = 
+const CHAR lalUnitName[LALNumUnits][LALUnitNameSize] =
 {
   "m", "kg", "s", "A", "K", "strain", "count"
 };
@@ -317,7 +317,7 @@ static int readNumber( char temp[], const char **charPtrPtr )
 
   if ( ! isdigit(**charPtrPtr) ) return 1;
 
-  do 
+  do
   {
     *tempPtr = **charPtrPtr;
     ++tempPtr, ++*charPtrPtr;
@@ -337,11 +337,11 @@ static int readString( char temp[UNITDEFSC_TEMPSIZE], const char **charPtrPtr )
 
   tempPtr = temp;
   /* make sure we don't fall off end of temporary array */
-  tempStopPtr = temp + UNITDEFSC_TEMPSIZE; 
+  tempStopPtr = temp + UNITDEFSC_TEMPSIZE;
 
   if ( ! isalpha(**charPtrPtr) ) return 1;
 
-  do 
+  do
   {
     *tempPtr = **charPtrPtr;
     ++tempPtr, ++*charPtrPtr;
@@ -374,7 +374,7 @@ char * XLALUnitAsString( char *string, UINT4 length, const LALUnit *input )
   if (input->powerOfTen != 0)
   {
     sprintf(temp, "10^%d", input->powerOfTen);
-    if ( charPtr + strlen(temp) >= charStopPtr) 
+    if ( charPtr + strlen(temp) >= charStopPtr)
       XLAL_ERROR_NULL( func, XLAL_EBADLEN );
     strncpy(charPtr, temp, charStopPtr - charPtr);
     charPtr += strlen(temp);
@@ -385,14 +385,14 @@ char * XLALUnitAsString( char *string, UINT4 length, const LALUnit *input )
     numer = input->unitNumerator[i];
     if (numer != 0)
     {
-      if (charPtr != string) 
+      if (charPtr != string)
       {
 	*charPtr = ' ';
 	++charPtr;
       } /* if (charPtr != output->data) */
-      if (input->unitDenominatorMinusOne[i] == 0) 
+      if (input->unitDenominatorMinusOne[i] == 0)
       {
-	if (numer == 1) 
+	if (numer == 1)
 	{
 	  sprintf(temp, "%s", lalUnitName[i]);
 	} /* if (numer == 1) */
@@ -405,7 +405,7 @@ char * XLALUnitAsString( char *string, UINT4 length, const LALUnit *input )
 	sprintf(temp, "%s^%d/%d", lalUnitName[i], numer,
 		 input->unitDenominatorMinusOne[i] + 1);
       }
-      if ( charPtr + strlen(temp) >= charStopPtr) 
+      if ( charPtr + strlen(temp) >= charStopPtr)
         XLAL_ERROR_NULL( func, XLAL_EBADLEN );
       strncpy(charPtr, temp, charStopPtr - charPtr);
       charPtr += strlen(temp);
@@ -416,7 +416,7 @@ char * XLALUnitAsString( char *string, UINT4 length, const LALUnit *input )
 }
 
 /* <lalVerbatim file="UnitDefsCP"> */
-void 
+void
 LALUnitAsString( LALStatus *status,
 		 CHARVector *output,
 		 const LALUnit *input )
@@ -484,11 +484,11 @@ LALUnit * XLALParseUnitString( LALUnit *output, const char *string )
     return output;
 
   charPtr = string;
-  charStopPtr = string + strlen(string); 
+  charStopPtr = string + strlen(string);
 
   /* Start with dimensionless (all zeros) and fill in from there */
   *output = lalDimensionlessUnit;
-  
+
   /* If the string is empty, it represents dimensionless */
   if (charPtr == charStopPtr)
     return output;
@@ -496,43 +496,43 @@ LALUnit * XLALParseUnitString( LALUnit *output, const char *string )
   /* Look for power of ten; note LALUnitsAsString is set up to say
    * "10^1" rather than "10", so need not allow for missing '^'
    */
-  if (*charPtr == '1' && *(charPtr+1) == '0' && *(charPtr+2) == '^') 
+  if (*charPtr == '1' && *(charPtr+1) == '0' && *(charPtr+2) == '^')
   {
-    charPtr += 3; 
+    charPtr += 3;
     /* now pointing at first digit of power of ten (or minus sign) */
 
-    if ( *charPtr == '-'  ) 
+    if ( *charPtr == '-'  )
     {
       sign = -1;
       ++charPtr;
     }
-    else 
+    else
     {
       sign = 1;
     }
-    
+
     /* read power of ten into temp[]; return value of 1 means failure */
-    if ( readNumber( temp, &charPtr ) ) 
+    if ( readNumber( temp, &charPtr ) )
     {
       if ( outputAllocated )
         LALFree( output );
       XLAL_ERROR_NULL( func, XLAL_EFAILED );
     }
     /* charPtr now points to one after end of power of ten */
-    
-    output->powerOfTen = sign*atoi(temp);    
+
+    output->powerOfTen = sign*atoi(temp);
 
     /* If the power of ten was all there was, return */
     if (*charPtr == '\0')
       return output;
 
-    if ( *charPtr != ' ') 
+    if ( *charPtr != ' ')
     {
       if ( outputAllocated )
         LALFree( output );
       XLAL_ERROR_NULL( func, XLAL_EFAILED );
     }
-    
+
     ++charPtr;
   } /* if (*charPtr == '1' && *(charPtr+1) == '0' && *(charPtr+2) == '^') */
 
@@ -579,12 +579,12 @@ LALUnit * XLALParseUnitString( LALUnit *output, const char *string )
       ++charPtr;
       /* now points to the first digit of the exponent, or minus sign */
 
-      if ( *charPtr == '-'  ) 
+      if ( *charPtr == '-'  )
       {
 	sign = -1;
 	++charPtr;
       }
-      else 
+      else
       {
 	sign = 1;
       }
@@ -615,7 +615,7 @@ LALUnit * XLALParseUnitString( LALUnit *output, const char *string )
 	output->unitDenominatorMinusOne[i] = atoi(temp) - 1;
       } /* if ( *charPtr == '/' ) */
     } /* else if ( *charPtr == '^' ) */
-    else 
+    else
     {
       if ( outputAllocated )
         LALFree( output );
@@ -626,13 +626,13 @@ LALUnit * XLALParseUnitString( LALUnit *output, const char *string )
 
   }
   while ( *charPtr != '\0' );
-  
+
   return output;
 }
 
 
 /* <lalVerbatim file="UnitDefsCP"> */
-void 
+void
 LALParseUnitString ( LALStatus *status,
 		     LALUnit *output,
 		     const CHARVector *input )
@@ -650,9 +650,9 @@ LALParseUnitString ( LALStatus *status,
 
   /* ensure that there's a '\0' within the input CHARVector */
   charPtr = input->data;
-  charStopPtr = charPtr + strlen(input->data); 
+  charStopPtr = charPtr + strlen(input->data);
   /* Should point to first '\0' in string */
-  if (charStopPtr >= charPtr + input->length) 
+  if (charStopPtr >= charPtr + input->length)
   {
     ABORT( status, UNITSH_EPARSE, UNITSH_MSGEPARSE );
   }

@@ -67,7 +67,7 @@ NRCSID( ERRORMATRIXFROMSNGLINSPIRALC, "$Id$" );
 a \texttt{gsl\_matrix} containing the the metric scaled appropriately for the
 given e-thinca parameter.
 
-\texttt{XLALGetPositionFromSnglInspiral()} takes in a 
+\texttt{XLALGetPositionFromSnglInspiral()} takes in a
 \texttt{SnglInspiralTable}, and returns the position vector associated with
 the trigger in $(t_C, \tau_0, \tau_3)$ space.
 
@@ -182,7 +182,7 @@ gsl_vector * XLALGetPositionFromSnglInspiral( SnglInspiralTable *table )
   fLow =  5.0 / (256.0 * table->eta * pow(mtotal, 5.0/3.0) * table->tau0 );
   fLow = pow(fLow, 3.0/8.0) / LAL_PI;
   freqRatio0 = pow(fLow, 8.0/3.0);
-  freqRatio3 = pow(fLow, 5.0/3.0); 
+  freqRatio3 = pow(fLow, 5.0/3.0);
 
   gsl_vector_set( position, 0, endTime );
   gsl_vector_set( position, 1, freqRatio0*table->tau0 );

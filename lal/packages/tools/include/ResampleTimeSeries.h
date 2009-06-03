@@ -90,24 +90,24 @@ NRCSID( RESAMPLETIMESERIESH, "$Id$" );
 
 \subsubsection*{Enum \texttt{ResampleTSFilter}}
 This enum type contains the different low pass filters available to
-prevent power above the new Nyquist frequency entering the resampled 
+prevent power above the new Nyquist frequency entering the resampled
 time series due to aliasing. The options are:
 
 \begin{description}
-\item[\texttt{defaultButterworth}] An IIR butterwoth filter of order 20 
+\item[\texttt{defaultButterworth}] An IIR butterwoth filter of order 20
 with attenuation 0.1 at the new Nyquist frequency. See the package tdfilters
 for documentation of butterworth filters in LAL.
 
 \item[\texttt{LDASfirLP}] For downsampling by a factor of 2, 4 or 8 an
 implementation of the FIR filter used by the LDAS datacondAPI resample().
-This is provided for testing the result of standalone codes and codes 
+This is provided for testing the result of standalone codes and codes
 running under LDAS. The LDAS filter provided here has filter order parameter
 10, so the order of the filter is $2 \times 10 \times q$ where $q$ is the
 resampling ratio.
 \end{description}
 
 \subsubsection*{Union \texttt{ResampleTSFilterParams}}
-This union is provided so that the code can store the parameters of the 
+This union is provided so that the code can store the parameters of the
 filter in a place accessible by the user for user designed low pass filters.
 This is not presently implemented and this structure may be ignored.
 \begin{description}
@@ -129,7 +129,7 @@ series.
 \item[\texttt{filterType}] The type of filter with which to perform the low
 pass filtering.
 
-\item[\texttt{filterParams}] Filter parameters for the low pass filter. 
+\item[\texttt{filterParams}] Filter parameters for the low pass filter.
 Presently ignored.
 \end{description}
 
@@ -160,7 +160,7 @@ tagResampleTimeSeriesParams
 ResampleTSParams;
 
 /**** <lalLaTeX>
- * 
+ *
  * \vfill{\footnotesize\input{ResampleTimeSeriesHV}}
  * \newpage\input{ResampleTimeSeriesC}
  * \newpage\input{ResampleTimeSeriesTestC}
@@ -173,7 +173,7 @@ int XLALResampleREAL8TimeSeries( REAL8TimeSeries *series, REAL8 dt );
 void
 LALResampleREAL4TimeSeries(
     LALStatus          *status,
-    REAL4TimeSeries    *ts, 
+    REAL4TimeSeries    *ts,
     ResampleTSParams   *params
     );
 
