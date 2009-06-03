@@ -50,6 +50,11 @@
 
 #include <FrameL.h>
 
+/* include lalsuite git IDs for this code */
+#include <lal/lalGitID.h>
+#include <lalappsGitID.h>
+
+
 #define MAXPULSARS 64
 /* blocksize for gathering results from children */
 #define BLOCKSIZE 16384
@@ -113,6 +118,7 @@ void syserror(int showerrno, const char *fmt, ...);
 void sighandler(int sig);
 void usage(FILE *filep);
 int parseinput(int argc, char **argv);
+void OutputVersion ( void );
 
 /* signal handler to monitor the status of children catch SIGCHLD */
 void sighandler(int sig){
@@ -184,7 +190,7 @@ void usage(FILE *filep){
   fprintf(filep, 
 	  "Options are:\n"
 	  "-h            THIS help message\n"
-          "-v            CVS ID information\n"
+          "-v            VCS ID information\n"
 	  "-n INT        Number of pulsars to simulate: 0, 1, 2, ..., %d\n"
 	  "-d DIRECTORY  Directory containing command line files in.0, in.1, ...\n"
 	  "              Default is: . (current working directory)\n"
@@ -225,7 +231,7 @@ int parseinput(int argc, char **argv){
     double tempamp;
     switch (c) {
     case 'v':
-	printf("%s: CVS version is $Id$\n", argv[0]);
+        OutputVersion();
         exit(0);
     case 'p':
       printf("The calibration line frequencies are:\n"
@@ -819,3 +825,13 @@ int main(int argc, char *argv[]){
 }
 
 
+/** Simply output version information to stdout */
+void
+OutputVersion ( void )
+{
+  printf ( "%s\n", lalGitID );
+  printf ( "%s\n", lalappsGitID );
+
+  return;
+
+} /* OutputVersion() */
