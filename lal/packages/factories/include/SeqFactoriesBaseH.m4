@@ -17,8 +17,8 @@ define(`CREATESEQFUN',`format(`LAL%sCreateSequence',TYPECODE)')
 define(`DESTROYSEQFUN',`format(`LAL%sDestroySequence',TYPECODE)')
 define(`CREATEVSEQFUN',`format(`LAL%sCreateVectorSequence',TYPECODE)')
 define(`DESTROYVSEQFUN',`format(`LAL%sDestroyVectorSequence',TYPECODE)')
-ifelse( TYPECODE, `', `define(`XCREATEVSEQFUN',`XLALCreateVectorSequence')', `define(`XCREATEVSEQFUN',`format(`XLALCreate%s',VSEQTYPE)')' ) 
-ifelse( TYPECODE, `', `define(`XDESTROYVSEQFUN',`XLALDestroyVectorSequence')', `define(`XDESTROYVSEQFUN',`format(`XLALDestroy%s',VSEQTYPE)')' ) 
+ifelse( TYPECODE, `', `define(`XCREATEVSEQFUN',`XLALCreateVectorSequence')', `define(`XCREATEVSEQFUN',`format(`XLALCreate%s',VSEQTYPE)')' )
+ifelse( TYPECODE, `', `define(`XDESTROYVSEQFUN',`XLALDestroyVectorSequence')', `define(`XDESTROYVSEQFUN',`format(`XLALDestroy%s',VSEQTYPE)')' )
 */
 
 VSEQTYPE * XCREATEVSEQFUN ( UINT4 length, UINT4 veclen );
@@ -27,14 +27,14 @@ void XDESTROYVSEQFUN ( VSEQTYPE * vecseq );
 void CREATESEQFUN ( LALStatus *status,
           SEQTYPE   **sequence,
           UINT4);
-          
+
 void DESTROYSEQFUN ( LALStatus  *status,
           SEQTYPE   **sequence);
-          
+
 void CREATEVSEQFUN ( LALStatus *status,
           VSEQTYPE **vectorSequence,
           CreateVectorSequenceIn *vSeqParams);
-          
+
 void DESTROYVSEQFUN ( LALStatus *status,
           VSEQTYPE **vectorSequence);
-          
+

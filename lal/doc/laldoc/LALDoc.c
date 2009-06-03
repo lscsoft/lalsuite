@@ -32,22 +32,22 @@ int main(int argc, char *argv[])
 
         ParseCommandLine( argc , argv , sourceFileName , &ptrInputFile );
 
-       /* 
+       /*
         *   Set the Enviroment flags:
        */
         SetLaTeXFlags   ( &LaTeXEnv    , sourceFileName , ptrInputFile );
         SetVerbatimFlags( &VerbatimEnv , sourceFileName , ptrInputFile );
         SetErrTableFlags( &ErrTableEnv , sourceFileName , ptrInputFile );
- 
- 
- 
-       /* 
-        *  Loop over the lines of code in the source file 
+
+
+
+       /*
+        *  Loop over the lines of code in the source file
        */
         while( LalDocGetLine(line,MAXSTR, ptrInputFile)>0  ){
- 
+
                lineNum++;
-  
+
                CheckEnvironment( line   ,  &LaTeXEnv     );
                CheckEnvironment( line   ,  &VerbatimEnv  );
                CheckEnvironment( line   ,  &ErrTableEnv  );
@@ -56,7 +56,7 @@ int main(int argc, char *argv[])
                if( LaTeXEnv.On    ) WriteLaTeX    ( line , &LaTeXEnv    ) ;
                if( VerbatimEnv.On ) WriteVerbatim ( line , &VerbatimEnv ) ;
                if( ErrTableEnv.On ) WriteErrTable ( line , &ErrTableEnv ) ;
- 
+
         } /* end loop over lines */
 
 

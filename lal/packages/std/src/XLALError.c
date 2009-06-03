@@ -186,7 +186,7 @@ int * XLALGetErrnoPtr( void )
   pthread_once( &xlalErrnoKeyOnce, XLALCreateErrnoKey );
 
   /* get the pointer to the XLAL error number in this thread */
-  xlalErrnoPtr = pthread_getspecific( xlalErrnoKey ); 
+  xlalErrnoPtr = pthread_getspecific( xlalErrnoKey );
   if ( ! xlalErrnoPtr ) /* haven't allocated pointer yet... do it now */
   {
     xlalErrnoPtr  = malloc( sizeof( *xlalErrnoPtr ) );
@@ -251,7 +251,7 @@ int XLALSetErrno( int errnum )
   }
 
   /* if xlalErrno is not zero, probably forgot to deal with previous error */
-  if ( xlalErrno ) 
+  if ( xlalErrno )
     XLALPrintWarning( "XLAL Warning - XLALSetErrno: "
         "Ignoring previous error (xlalErrno=%d) %s\n",
         xlalErrno, XLALErrorString( xlalErrno ) );
@@ -328,7 +328,7 @@ const char * XLALErrorString( int code )
 
   /* check to see if an internal function call has failed, but the error
    * number was not "or"ed against the mask XLAL_EFUNC */
-  if ( code == XLAL_EFUNC ) 
+  if ( code == XLAL_EFUNC )
     return "Internal function call failed";
 
   /* use this to report error strings... deals with possible mask for errors

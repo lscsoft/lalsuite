@@ -158,7 +158,7 @@ NRCSID( SEGMENTSH, "$Id$" );
 
 #define SEGMENTSH_ALLOCBLOCK 64  /**< Initial number of LALSeg spaces to
 				  * allocate in memory at one time; this is
-				  * intended to reduce the number of memory 
+				  * intended to reduce the number of memory
 				  * reallocation calls needing to be made to
 				  * build up a segment list.  For a large
 				  * segment list, the reallocation size
@@ -183,7 +183,7 @@ tagLALSeg
 LALSeg;
 /* </lalVerbatim> */
 
-  
+
 /* <lalVerbatim file="SegmentsHS"> */
 typedef struct
 tagLALSegList

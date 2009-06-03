@@ -26,11 +26,11 @@ $Id$
 
 \subsection{Module \texttt{LALInspiralTofV.c}}
 
-This module outputs 
+This module outputs
 \begin{equation}
 {\tt tofv} = t - t_0 + m \int_{v_0}^{v} \frac{E'(v)}{{\cal F}(v)} \, dv\,.
 \end{equation}
-where the constants $t,$ $t_0,$ $v_0,$ and functions in the integrand 
+where the constants $t,$ $t_0,$ $v_0,$ and functions in the integrand
 $E'(v)$ and ${\cal F}(v)$ are defined in the {\tt void} structure {\tt params.}
 
 \subsubsection*{Prototypes}
@@ -64,7 +64,7 @@ $E'(v)$ and ${\cal F}(v)$ are defined in the {\tt void} structure {\tt params.}
 NRCSID (LALINSPIRALTOFVC, "$Id$");
 
 /*  <lalVerbatim file="LALInspiralTofVCP"> */
-void 
+void
 LALInspiralTofV (
    LALStatus *status,
    REAL8 *tofv,
@@ -119,7 +119,7 @@ LALInspiralTofV (
       intinp.xmax = in1->v0;
       sign = -1.0;
    }
-	
+
    LALDRombergIntegrate (status->statusPtr, &answer, &intinp, funcParams);
    CHECKSTATUSPTR(status);
 

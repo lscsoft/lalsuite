@@ -40,7 +40,7 @@ RCSID("$Id$");
  * bit1=CON conlog unsets this bit is non-harmless epics changes
  * bit2=UP (set by locking scripts)
  * bit3=!INJ Injections unset this bit
- * bit4=EXC Unauthorized excitations cause this bit to be unset 
+ * bit4=EXC Unauthorized excitations cause this bit to be unset
  *
  * Channel Name: IFO:DMT-DATA_QUALITY_VECTOR where IFO is one of (H1, H2, L1)
  * Sample Rate: 1 Hz, for any state to be true, it must be true every
@@ -50,7 +50,7 @@ RCSID("$Id$");
  * The quality channel will use the following bitmask definition
  *
  * SCIENCE       1  // SV_SCIENCE & LIGHT
- * INJECTION     2  // Injection: same as statevector 
+ * INJECTION     2  // Injection: same as statevector
  * UP            4  // SV_UP & LIGHT
  * CALIBRATED    8  // SV_UP & LIGHT & (not TRANSIENT)
  * BADGAMMA     16  // Calibration is bad (outside 0.8 < gamma < 1.2)
@@ -65,7 +65,7 @@ RCSID("$Id$");
  *  t_bad_left:  time (in s) of the last NOT-UP event in the Data Quality
  *  t_bad_right: time (in s) of the next NOT-UP event in the Data Quality
  *  wings:       duration (in s) of the wings used for calibration
- * 
+ *
  * If t_bad_left < wings then it doesn't matter how much less it
  * is. Same thing for t_bad_right > wings.
  */
@@ -90,12 +90,12 @@ int XLALComputeDQ(REAL4* sv_data, int r_sv,
         sum_x = 0;
         sum_y = 0;
         for (j = 0; j < r_light; j++) {
-            sum_x += lax_data[i*r_light + j]; 
+            sum_x += lax_data[i*r_light + j];
             sum_y += lay_data[i*r_light + j];
         }
-        
+
         light = (sum_x/r_light > 100 && sum_y/r_light > 100);
-        
+
         /* science, injection, up (stuff coming from the state vector) */
         science = 1;    /* in science mode */
         injection = 0;  /* with no injection going on */
@@ -106,9 +106,9 @@ int XLALComputeDQ(REAL4* sv_data, int r_sv,
             if ((s & (1 << 3)) == 0)  injection = 1;
             if ((s & (1 << 2)) == 0)  up = 0;
         }
-        
+
         up = up && light;  /* this is the "up" definition of the DQ vector */
-        
+
         /* calibrated */
         /* Because we will have to compute UP for the Data Quality
          * everywhere before anything, to know if something funny
@@ -117,7 +117,7 @@ int XLALComputeDQ(REAL4* sv_data, int r_sv,
          * loop.
          */
     /*  calibrated = up && (! transient);  */
-        
+
         /* badgamma */
         badgamma = 0;
 
@@ -126,7 +126,7 @@ int XLALComputeDQ(REAL4* sv_data, int r_sv,
             if (re < 0.8 || re > 1.2)  /* || isnan(re) || isinf(re)  not C89 */
                 badgamma = 1;
         }
-        
+
         /* data quality */
         dq_value = 0;
         if (science)    dq_value += (1 << 0);
@@ -136,17 +136,17 @@ int XLALComputeDQ(REAL4* sv_data, int r_sv,
         if (badgamma)   dq_value += (1 << 4);
         if (light)      dq_value += (1 << 5);
         if (missing)    dq_value += (1 << 6);  /* directly from the argument */
-        
+
         dq_data[i] = dq_value;
     }
-    
+
     /* Now look for the transients and fill the "calibrated" bit. */
     for (i = 0; i < n_dq; i++) {
         calibrated = 1;
 
         if (i - wings < t_bad_left || i + wings > n_dq + t_bad_right)
             calibrated = 0;
-        
+
         for (j = 0; j < wings; j++) {
             int pos = i - j;
             if (pos > 0) {
@@ -159,7 +159,7 @@ int XLALComputeDQ(REAL4* sv_data, int r_sv,
                     calibrated = 0;
             }
         }
-        
+
         if (calibrated) dq_data[i] += (1 << 3);
     }
 

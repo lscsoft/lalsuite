@@ -65,9 +65,9 @@ typedef struct tagDetectorsData {
 typedef struct tagCoherentEstimation {
 
   UINT4 Ndetectors;        /* number of detectors */
-  LALDetector *detectors;  /* vector of detectors info */  
+  LALDetector *detectors;  /* vector of detectors info */
   REAL8IIRFilter **filters; /* vector of pre-processing filters */
-  
+
   BOOLEAN preProcessed;    /* set to 0 to for pre-processing */
   UINT2 nPreProcessed;     /* number of times to apply pre-proc filters */
 
@@ -85,23 +85,23 @@ typedef struct tagCoherentEstimation {
 
 
 void
-LALCoherentEstimation ( 
+LALCoherentEstimation (
 		       LALStatus          *status,
 		       REAL4TimeSeries *output,
 		       CoherentEstimation *params,
 		       DetectorsData      *in
 	              );
 
-void 
+void
 LALClearCoherentData (
 		      LALStatus     *status,
 		      DetectorsData *dat
 		      );
 
-void 
+void
 LALClearCoherentInfo (
 		      LALStatus     *status,
 		      CoherentEstimation *dat
 		      );
 
-#endif 
+#endif

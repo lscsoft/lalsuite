@@ -74,17 +74,17 @@ single inspiral tables and returns a list of two instrument coincidences.
 To determine coincidence, the triggers are modelled as ellipsoids in the
 parameter space. Triggers are deemed to be coincident if these ellipsoids
 are found to overlap.The ellipsoid scaling factor is given within the
-\texttt{accuracyParams} structure. When single inspirals from two different 
-instruments are found to be coincident, the code creates a new 
-\texttt{coincInspiralTable} and uses \texttt{LALAddSnglInspiralToCoinc()} 
-to add the single inspirals to the coinc. The function returns 
+\texttt{accuracyParams} structure. When single inspirals from two different
+instruments are found to be coincident, the code creates a new
+\texttt{coincInspiralTable} and uses \texttt{LALAddSnglInspiralToCoinc()}
+to add the single inspirals to the coinc. The function returns
 \texttt{coincOutput} which is a pointer to the head of a linked list of
 \texttt{CoincInspiralTable}s.
 
 \texttt{XLALSnglInspiralCoincTestEllipsoid()} is used in the creation of
 multiple IFO coincident events. It is called by \texttt{LALCreateNIFOCoincList()}
-when the coincidence test is set to be ellipsoid. Unlike in other coincidence 
-tests, coincidence here is determined by the use of event ids as opposed to 
+when the coincidence test is set to be ellipsoid. Unlike in other coincidence
+tests, coincidence here is determined by the use of event ids as opposed to
 calling the comparison function. This is because the test for ellipsoid overlap
 uses matrix inversions and function maximizations, which are potentially costly
 operations. If all members of the coinc are found to be
@@ -103,10 +103,10 @@ The maximum value for the e-thinca parameter is returned. If the two triggers
 do not overlap for an e-thinca parameter of 2.0, the triggers are not
 coincident, and an error is thrown.
 
-\texttt{XLALCalculateEThincaParameterForInjection()} takes in a 
+\texttt{XLALCalculateEThincaParameterForInjection()} takes in a
 \texttt{SnglInspiralTable} and a \texttt{SimInspiralTable}, and returns the
 e-thinca parameter between the trigger and the injection. This amounts to
-calculating the square of the metric distance between the two points in 
+calculating the square of the metric distance between the two points in
 $(t_C, \tau_0, \tau_3)$ space.
 
 \subsubsection*{Algorithm}
@@ -155,9 +155,9 @@ LALCreateTwoIFOCoincListEllipsoid(
 
   ASSERT( snglInput, status,
       LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
-  ASSERT( coincOutput, status, 
+  ASSERT( coincOutput, status,
       LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
-  ASSERT( ! *coincOutput, status, 
+  ASSERT( ! *coincOutput, status,
       LIGOMETADATAUTILSH_ENNUL, LIGOMETADATAUTILSH_MSGENNUL );
 
   memset( currentTriggerNS, 0, 2 * sizeof(INT8) );
@@ -203,14 +203,14 @@ LALCreateTwoIFOCoincListEllipsoid(
     ABORTXLAL( status );
   }
 
-  /* calculate the maximum time delay 
+  /* calculate the maximum time delay
    * set it equal to 2 * worst IFO timing accuracy plus
-   * light travel time for earths diameter 
+   * light travel time for earths diameter
    * (detectors cant be further apart than this) */
-  
-  maxTimeDiff = (INT8) (1e9 * 2.0 * timeError);    
+
+  maxTimeDiff = (INT8) (1e9 * 2.0 * timeError);
   maxTimeDiff += (INT8) ( 1e9 * 2 * LAL_REARTH_SI / LAL_C_SI );
-  
+
   for ( currentError[0] = errorListHead; currentError[0]->next;
       currentError[0] = currentError[0]->next)
   {
@@ -255,12 +255,12 @@ LALCreateTwoIFOCoincListEllipsoid(
         /* create a 2 IFO coinc and store */
         if ( ! coincHead  )
         {
-          coincHead = thisCoinc = (CoincInspiralTable *) 
+          coincHead = thisCoinc = (CoincInspiralTable *)
             LALCalloc( 1, sizeof(CoincInspiralTable) );
         }
         else
         {
-          thisCoinc = thisCoinc->next = (CoincInspiralTable *) 
+          thisCoinc = thisCoinc->next = (CoincInspiralTable *)
             LALCalloc( 1, sizeof(CoincInspiralTable) );
         }
 
@@ -271,14 +271,14 @@ LALCreateTwoIFOCoincListEllipsoid(
             currentError[1]->trigger );
 
         ++numEvents;
-         
+
       }
 
       /* scroll on to the next sngl inspiral */
-      
+
       if ( (currentError[1] = currentError[1]->next) )
       {
-        LALGPStoINT8( status->statusPtr, &currentTriggerNS[1], 
+        LALGPStoINT8( status->statusPtr, &currentTriggerNS[1],
             &(currentError[1]->trigger->end_time) );
       }
       else
@@ -354,7 +354,7 @@ XLALSnglInspiralCoincTestEllipsoid(
             accuracyParams->match = 1;
             break;
           }
-        }  
+        }
       }
       /* set match to zero if no match.  Keep same if match */
       match *= accuracyParams->match;
@@ -380,7 +380,7 @@ INT2 XLALCompareInspiralsEllipsoid(
       )
 /* </lalVerbatim> */
 {
- 
+
   static const char *func = "XLALCompareInspiralsEllipsoid";
 
   INT2  isCoinc   = 0;
@@ -408,7 +408,7 @@ INT2 XLALCompareInspiralsEllipsoid(
     curTimeBNS = XLALGPStoINT8( &(bPtr->trigger->end_time) );
 
     /* if analyzing a grb the position and time-delay is KNOWN */
-    if (params->exttrig) 
+    if (params->exttrig)
     {
       timeShift=travelTime;
     }
@@ -456,7 +456,7 @@ INT2 XLALCompareInspiralsEllipsoid(
 
 
 /* <lalVerbatim file="CoincInspiralEllipsoidCP"> */
-REAL8 XLALCalculateEThincaParameter( 
+REAL8 XLALCalculateEThincaParameter(
           SnglInspiralTable *table1,
           SnglInspiralTable *table2,
           InspiralAccuracyList* accuracyParams
@@ -468,7 +468,7 @@ REAL8 XLALCalculateEThincaParameter(
 
    TriggerErrorList   errorList[2];
 
-   REAL8 loMatch, hiMatch, midMatch;  
+   REAL8 loMatch, hiMatch, midMatch;
    INT4 i;
    INT2  isOverlap;
    fContactWorkSpace    *workSpace;
@@ -483,7 +483,7 @@ REAL8 XLALCalculateEThincaParameter(
   if (!workSpace)
   {
     XLAL_ERROR_REAL8( func, XLAL_EFUNC );
-  }  
+  }
 
   /* Set up the trigger lists */
   if ( XLALGPStoINT8( &(table1->end_time) ) < XLALGPStoINT8( &(table2->end_time )) )
@@ -532,7 +532,7 @@ REAL8 XLALCalculateEThincaParameter(
     errorList[i].err_matrix = XLALGetErrorMatrixFromSnglInspiral( errorList[i].trigger,
                                  hiMatch );
   }
-   
+
    isOverlap = XLALCompareInspiralsEllipsoid( &errorList[0], &errorList[1], workSpace,
                                         accuracyParams );
 
@@ -593,7 +593,7 @@ REAL8 XLALCalculateEThincaParameter(
 
 /* This function returns the e-thinca parameter between a trigger and an injection */
 /* <lalVerbatim file="CoincInspiralEllipsoidCP"> */
-REAL8 XLALEThincaParameterForInjection( 
+REAL8 XLALEThincaParameterForInjection(
                     SimInspiralTable  *injection,
                     SnglInspiralTable *trigger
                     )
@@ -665,21 +665,21 @@ REAL8 XLALEThincaParameterForInjection(
   return eMatch;
 }
 
-/* 
+/*
  * This function returns the largest time error associated with a
  * particular error ellipsoid.
  */
 static REAL8 getTimeError(const SnglInspiralTable *table, REAL8 eMatch)
 {
   REAL8 a11;
-  REAL8 a23; 
+  REAL8 a23;
   REAL8 a22;
   REAL8 a33;
   REAL8 a12;
   REAL8 a13;
   REAL8 x;
   REAL8 denom;
-  
+
   a11 = table->Gamma[0] / eMatch;
   a12 = table->Gamma[1] / eMatch;
   a13 = table->Gamma[2] / eMatch;

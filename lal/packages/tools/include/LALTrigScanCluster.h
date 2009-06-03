@@ -53,13 +53,13 @@ $Id$
 #include    <lal/Sort.h>
 #include    <lal/EllipsoidOverlapTools.h>
 
-NRCSID( LALTRIGSCANCLUSTERH, 
+NRCSID( LALTRIGSCANCLUSTERH,
         "$Id$");
 
-/* Cluster classification: 
- *     -1 for unclassified, 
- *      0 for noise and 
- *      an integer > 0 for a valid cluster 
+/* Cluster classification:
+ *     -1 for unclassified,
+ *      0 for noise and
+ *      an integer > 0 for a valid cluster
  */
 
 #define TRIGSCAN_UNCLASSIFIED     (-1)
@@ -89,8 +89,8 @@ typedef enum {
 trigScanValidEvent;
 
 typedef struct tagTrigScanInputPoint
-{ 
-    REAL8       y, z, tc_sec, tc_ns;  
+{
+    REAL8       y, z, tc_sec, tc_ns;
     REAL8       rho;
     INT4        clusterID;
     REAL8       Gamma[6];
@@ -99,7 +99,7 @@ typedef struct tagTrigScanInputPoint
 trigScanInputPoint;
 
 typedef struct tagTrigScanClusterIn
-{ 
+{
     INT2                  vrbflag, appendStragglers;
     REAL8                 rho_th1, chisq_th1;
     InputMasses           massChoice;
@@ -133,14 +133,14 @@ trigScanEpsSearchInput;
 /*--- Function prototypes ---*/
 void LALTrigScanClusterDriver (
         LALStatus           *status,
-        trigScanClusterIn   *clusterIn, 
-        trigScanClusterOut  **clusterOut, 
+        trigScanClusterIn   *clusterIn,
+        trigScanClusterOut  **clusterOut,
         INT4                *nclusters
         );
 
 /*--- Core functions which carry out clustering ---*/
 trigScanValidEvent XLALTrigScanExpandCluster (
-        INT4                  *list, 
+        INT4                  *list,
         trigScanClusterIn     *condenseIn,
         INT4                  nPoints,
         INT4                  currClusterID,
@@ -148,7 +148,7 @@ trigScanValidEvent XLALTrigScanExpandCluster (
         );
 
 void XLALTrigScanGetEpsNeighbourhood (
-        INT4                    seed, 
+        INT4                    seed,
         INT4                    **list,
         INT4                    *size,
         trigScanEpsSearchInput  *epsSearchIn
@@ -165,7 +165,7 @@ void LALTrigScanStoreThisCluster (
 
 void LALTrigScanAppendIsolatedTriggers (
         LALStatus               *status,
-        trigScanClusterIn       *condenseIn, 
+        trigScanClusterIn       *condenseIn,
         trigScanClusterOut      **condenseOut,
         INT4                    *nclusters
         );
@@ -174,7 +174,7 @@ INT4 XLALDeleteSnglInspiralTable (
         SnglInspiralTable **eventHead
         );
 
-SnglInspiralTable *  
+SnglInspiralTable *
 XLALTrimSnglInspiralTable (
         SnglInspiralTable   **inspiralEventList,
         trigScanClusterOut  *clusterOut,
@@ -189,7 +189,7 @@ INT4 XLALPopulateTrigScanInput (
         InspiralTemplate      *bankHead
         );
 
-void LALClusterSnglInspiralOverTemplatesAndEndTime ( 
+void LALClusterSnglInspiralOverTemplatesAndEndTime (
         LALStatus              *status,
         SnglInspiralTable      **eventHead,
         trigScanClusterIn      *condenseIn

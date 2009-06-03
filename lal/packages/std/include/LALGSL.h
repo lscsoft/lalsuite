@@ -115,7 +115,7 @@ do nothing.
 #define _LALGSL_H
 
 #include <lal/LALConfig.h>
-#ifdef NDEBUG 
+#ifdef NDEBUG
 #ifndef LAL_NDEBUG
 #define LAL_NDEBUG
 #endif
@@ -163,7 +163,7 @@ extern pthread_mutex_t lalGSLPthreadMutex;
  * FIXME: Must disable pthread safety commands.... Problems arise if the
  * statement calls a LAL function that tries to call a GSL function using
  * CALLGSL ... this blocks!  TODO: Instead, use thread-specific globals.
- * 
+ *
  */
 
 #define CALLGSL( statement, statusptr )                                       \

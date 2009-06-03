@@ -85,7 +85,7 @@ ATYPE * XFUNC ( ATYPE *array, UINT4Vector *dimLength )
 
   if ( ! size )
     XLAL_ERROR_NULL( "XFUNC", XLAL_EBADLEN );
-  
+
   /* resize array->dimLength vector if needed */
   if ( array->dimLength->length != ndim )
   {

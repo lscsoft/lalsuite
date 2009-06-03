@@ -36,13 +36,13 @@ the inspiralling binary system.
 
 \subsubsection*{Description}
 
-The function \texttt{LALInspiralVelocity} calculates the velocity $v$ corresponding to a time $t$ 
+The function \texttt{LALInspiralVelocity} calculates the velocity $v$ corresponding to a time $t$
 in the evolution of an inspiralling binary system.  It does this by iteratively solving
 \begin{equation}
 t(v) =  t_{0} - m \int_{v_{0}}^{v} \frac{E'(v)}{{\cal F}(v)} \, dv \,\,.
 \label{tofv}
 \end{equation}
-\texttt{LALInspiralVelocity} calculates $v$, given $t(v)$, 
+\texttt{LALInspiralVelocity} calculates $v$, given $t(v)$,
 $t_{0}$, $m$, $v_{0}$, $E^{\prime}(v)$ and $\mathcal{F}(v)$.
 
 \subsubsection*{Algorithm}
@@ -63,10 +63,10 @@ $t_{0}$, $m$, $v_{0}$, $E^{\prime}(v)$ and $\mathcal{F}(v)$.
 #include <lal/LALInspiral.h>
 #include <lal/FindRoot.h>
 
-NRCSID (LALINSPIRALVELOCITYC, "$Id$"); 
+NRCSID (LALINSPIRALVELOCITYC, "$Id$");
 
 /*  <lalVerbatim file="LALInspiralVelocityCP"> */
-void 
+void
 LALInspiralVelocity(
    LALStatus *status,
    REAL8     *v,
@@ -92,7 +92,7 @@ LALInspiralVelocity(
   funcParams = (void *) ak;
 
 
-  if (ak->t==ak->t0) 
+  if (ak->t==ak->t0)
   {
      *v = ak->v0;
      DETATCHSTATUSPTR(status);

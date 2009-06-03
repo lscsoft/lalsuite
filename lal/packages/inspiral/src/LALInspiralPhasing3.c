@@ -26,8 +26,8 @@ $Id$
 
 \subsection{Module \texttt{LALInspiralPhasing3.c}}
 
-The code \texttt{LALInspiralPhasing3.c} calculates the phase the waveform 
-from an inspiralling binary system as a function of time up to second post-Nowtonian 
+The code \texttt{LALInspiralPhasing3.c} calculates the phase the waveform
+from an inspiralling binary system as a function of time up to second post-Nowtonian
 order.
 
 \subsubsection*{Prototypes}
@@ -39,14 +39,14 @@ order.
 \index{\verb&LALInspiralPhasing3()&}
 \begin{itemize}
 \item {\tt phase:} Output, the phase of the wave at the current epoch.
-\item {\tt td:} Input, the PN expansion coefficients of phase $\phi^t_k$ as a function 
+\item {\tt td:} Input, the PN expansion coefficients of phase $\phi^t_k$ as a function
 of time (cf. Table \ref{table:flux}).
 \item {\tt ak:} Input containing PN expansion coefficients.
 \end{itemize}
 
 
 \subsubsection*{Description}
-The phase of the inspiral wave corresponding to the {\tt Approximant} {\tt TaylorT2} 
+The phase of the inspiral wave corresponding to the {\tt Approximant} {\tt TaylorT2}
 as in Equation~\ref{eq:InspiralWavePhase3}.
 
 
@@ -72,13 +72,13 @@ NRCSID (LALINSPIRALPHASING3C, "$Id$");
 
 /*  <lalVerbatim file="LALInspiralPhasing3CP"> */
 
-void 
+void
 LALInspiralPhasing3_0PN (
    LALStatus  *status,
    REAL8      *phase,
    REAL8       td,
    expnCoeffs *ak
-   ) 
+   )
 { /* </lalVerbatim>  */
 
   REAL8 theta5;
@@ -95,13 +95,13 @@ LALInspiralPhasing3_0PN (
 
 /*  <lalVerbatim file="LALInspiralPhasing3CP"> */
 
-void 
+void
 LALInspiralPhasing3_2PN (
    LALStatus  *status,
    REAL8      *phase,
    REAL8       td,
    expnCoeffs *ak
-   ) 
+   )
 { /* </lalVerbatim>  */
 
   REAL8 theta,theta2,theta5;
@@ -114,7 +114,7 @@ LALInspiralPhasing3_2PN (
   theta2 = theta*theta;
   theta5 = theta2*theta2*theta;
 
-  *phase = (ak->ptaN/theta5) * (1. 
+  *phase = (ak->ptaN/theta5) * (1.
          + ak->pta2*theta2);
   DETATCHSTATUSPTR(status);
   RETURN(status);
@@ -122,13 +122,13 @@ LALInspiralPhasing3_2PN (
 
 /*  <lalVerbatim file="LALInspiralPhasing3CP"> */
 
-void 
+void
 LALInspiralPhasing3_3PN (
    LALStatus  *status,
    REAL8      *phase,
    REAL8       td,
    expnCoeffs *ak
-   ) 
+   )
 { /* </lalVerbatim>  */
 
   REAL8 theta,theta2,theta3,theta5;
@@ -142,8 +142,8 @@ LALInspiralPhasing3_3PN (
   theta3 = theta2*theta;
   theta5 = theta2*theta3;
 
-  *phase = (ak->ptaN/theta5) * (1. 
-         + ak->pta2*theta2 
+  *phase = (ak->ptaN/theta5) * (1.
+         + ak->pta2*theta2
          + ak->pta3*theta3);
   DETATCHSTATUSPTR(status);
   RETURN(status);
@@ -151,13 +151,13 @@ LALInspiralPhasing3_3PN (
 
 /*  <lalVerbatim file="LALInspiralPhasing3CP"> */
 
-void 
+void
 LALInspiralPhasing3_4PN (
    LALStatus  *status,
    REAL8      *phase,
    REAL8       td,
    expnCoeffs *ak
-   ) 
+   )
 { /* </lalVerbatim>  */
 
   REAL8 theta,theta2,theta3,theta4,theta5;
@@ -172,8 +172,8 @@ LALInspiralPhasing3_4PN (
   theta4 = theta3*theta;
   theta5 = theta4*theta;
 
-  *phase = (ak->ptaN/theta5) * (1. 
-         + ak->pta2*theta2 
+  *phase = (ak->ptaN/theta5) * (1.
+         + ak->pta2*theta2
          + ak->pta3*theta3
          + ak->pta4*theta4);
   DETATCHSTATUSPTR(status);
@@ -182,13 +182,13 @@ LALInspiralPhasing3_4PN (
 
 /*  <lalVerbatim file="LALInspiralPhasing3CP"> */
 
-void 
+void
 LALInspiralPhasing3_5PN (
    LALStatus  *status,
    REAL8      *phase,
    REAL8       td,
    expnCoeffs *ak
-   ) 
+   )
 { /* </lalVerbatim>  */
 
   REAL8 theta,theta2,theta3,theta4,theta5;
@@ -203,10 +203,10 @@ LALInspiralPhasing3_5PN (
   theta4 = theta3*theta;
   theta5 = theta4*theta;
 
-  *phase = (ak->ptaN/theta5) * (1. 
-         + ak->pta2*theta2 
+  *phase = (ak->ptaN/theta5) * (1.
+         + ak->pta2*theta2
          + ak->pta3*theta3
-         + ak->pta4*theta4 
+         + ak->pta4*theta4
          + ak->pta5 * log(td/ak->tn) * theta5);
   DETATCHSTATUSPTR(status);
   RETURN(status);
@@ -214,13 +214,13 @@ LALInspiralPhasing3_5PN (
 
 /*  <lalVerbatim file="LALInspiralPhasing3CP"> */
 
-void 
+void
 LALInspiralPhasing3_6PN (
    LALStatus  *status,
    REAL8      *phase,
    REAL8       td,
    expnCoeffs *ak
-   ) 
+   )
 { /* </lalVerbatim>  */
 
   REAL8 theta,theta2,theta3,theta4,theta5,theta6;
@@ -236,10 +236,10 @@ LALInspiralPhasing3_6PN (
   theta5 = theta4*theta;
   theta6 = theta5*theta;
 
-  *phase = (ak->ptaN/theta5) * (1. 
-         + ak->pta2*theta2 
+  *phase = (ak->ptaN/theta5) * (1.
+         + ak->pta2*theta2
          + ak->pta3*theta3
-         + ak->pta4*theta4 
+         + ak->pta4*theta4
          + ak->pta5*log(td/ak->tn)*theta5
          +(ak->ptl6*log(td/256.) + ak->pta6)*theta6);
   DETATCHSTATUSPTR(status);
@@ -248,13 +248,13 @@ LALInspiralPhasing3_6PN (
 
 /*  <lalVerbatim file="LALInspiralPhasing3CP"> */
 
-void 
+void
 LALInspiralPhasing3_7PN (
    LALStatus  *status,
    REAL8      *phase,
    REAL8       td,
    expnCoeffs *ak
-   ) 
+   )
 { /* </lalVerbatim>  */
 
   REAL8 theta,theta2,theta3,theta4,theta5,theta6,theta7;
@@ -271,10 +271,10 @@ LALInspiralPhasing3_7PN (
   theta6 = theta5*theta;
   theta7 = theta6*theta;
 
-  *phase = (ak->ptaN/theta5) * (1. 
-         + ak->pta2*theta2 
+  *phase = (ak->ptaN/theta5) * (1.
+         + ak->pta2*theta2
          + ak->pta3*theta3
-         + ak->pta4*theta4 
+         + ak->pta4*theta4
          + ak->pta5*log(td/ak->tn)*theta5
          +(ak->ptl6*log(td/256.) + ak->pta6)*theta6
          + ak->pta7*theta7);

@@ -19,46 +19,46 @@
 
 #include "LALDoc.h"
 
-int 
-ParseErrLine(char *Ptr , LALEnvironment *Env, 
+int
+ParseErrLine(char *Ptr , LALEnvironment *Env,
              char *caps , char *errName , char *errStr , char *errNum );
 
 
-/* 
+/*
  * Module Contains the routine that sorts the error code information
  * and generates a nice LaTeX table.
  *
  * The table information in the code should be bracketed
- * by delimiters.  The entries must obey the file naming 
+ * by delimiters.  The entries must obey the file naming
  * convention Crap1.H --> CRAP1H_EMYMESSAGE, etc.
  * The entries may be grouped any which way.   The routine will
  * abort if it determines that for some Error Code there
  * does not exist a corresponding error string.
  *
- * An Example: 
+ * An Example:
 */
-  
-/*<lalErrTable file="MyCodes"> 
-  
+
+/*<lalErrTable file="MyCodes">
+
    The program will step over extraneous crap int he middle
    of the environment.
-  
+
    #define CRAP1C_ENUL  11
    #define CRAP1C_EOUT  234
-  
+
    You can rearragne these entries to your hearts content.
-  
+
    #define CRAP1C_MSGENUL  "Null pointer"
    #define CRAP1C_MSGEOUT  "Output already exists"
-  
-  
+
+
   </lalErrTable> */
 /*
  *
  *
 */
 
-int 
+int
 LALDocConstructErrorTable(  LALEnvironment *Env  )
 {
     char *linePtr , *errNumPrint , *errStrPrint;
@@ -94,7 +94,7 @@ LALDocConstructErrorTable(  LALEnvironment *Env  )
             j++;
     }
     /* and make sure it is even number Hash Defines. */
-    numLinesInTable = numberOfHashDefines/2; 
+    numLinesInTable = numberOfHashDefines/2;
     if( numberOfHashDefines % 2 ){
         LALDocErr("Table has odd number of errors and messages.",
         Env->sourceFile , __LINE__ , __FILE__ , 1 );
@@ -103,9 +103,9 @@ LALDocConstructErrorTable(  LALEnvironment *Env  )
 
 
 
-    /* 
+    /*
      *
-     * Loop over the lines in the Table environment 
+     * Loop over the lines in the Table environment
     */
     fgetpos( Env->InFilePtr , &filePositionY );
     numPairsFound = 0;
@@ -126,7 +126,7 @@ LALDocConstructErrorTable(  LALEnvironment *Env  )
         }
         fgetpos( Env->InFilePtr , &filePositionY );
 
-        /* inner loop over remaining entries in the Table env 
+        /* inner loop over remaining entries in the Table env
          * to find the other piece of the pair. */
         linePtr=strstr(line,HASHDEFINE) + szHASH;
         ParseErrLine(linePtr,Env,caps1,errName1,errStr1,errNum1);
@@ -160,7 +160,7 @@ LALDocConstructErrorTable(  LALEnvironment *Env  )
 
 int
 ParseErrLine( char *Ptr          , /* Ptr to string after #define)      */
-              LALEnvironment *Env, /* pass the Env variables            */ 
+              LALEnvironment *Env, /* pass the Env variables            */
               char *caps         , /* returns MYFILEH                   */
               char *errName      , /* returns EYOUSUCK, or MSGEYOUSUCK  */
               char *errStr       , /* returns string "you really suck"  */
@@ -179,16 +179,16 @@ ParseErrLine( char *Ptr          , /* Ptr to string after #define)      */
     }
 
 
-    /* 
-     * Find the all caps file name 
+    /*
+     * Find the all caps file name
     */
     sscanf(Ptr,"%s", caps );
     position = strstr(caps,"_");
     *position = '\0';
     sscanf(caps,"%s", Env->errCodePrfx);
 
-    /* 
-     * If there is ever an error code code convention violation flag it. 
+    /*
+     * If there is ever an error code code convention violation flag it.
      * [Flag it the first time, but ignore it after that.]
     */
     if( !Env->cnvtnVioltn &&  strcmp(Env->errCodePrfx, Env->allCaps) ) {
@@ -196,15 +196,15 @@ ParseErrLine( char *Ptr          , /* Ptr to string after #define)      */
             LALDocErr("Violation of LAL Error Table Naming Convention.",
                        Env->sourceFile , __LINE__ , __FILE__ , 0 );
     }
-    
-    /* 
-     * Find the Error Name and Descripiton               
-     * Look for E's and M's, stop if they aren't there.   
+
+    /*
+     * Find the Error Name and Descripiton
+     * Look for E's and M's, stop if they aren't there.
     */
     position = strstr(Ptr,"_");
     switch ( *(position+1)  ){
             case 'E' :  { sscanf(position+2,"%s",errName);
-                          break; 
+                          break;
                         }
             case 'M' :  { sscanf(position+5,"%s",errName);
                           break;
@@ -219,15 +219,15 @@ ParseErrLine( char *Ptr          , /* Ptr to string after #define)      */
     savePosition = position ;
     sscanf(position,"%s",errStr);
 
-    /* 
-     * Read the Error Number, ... 
+    /*
+     * Read the Error Number, ...
     */
-    if ( isdigit( (int)errStr[0] ) ) {      
+    if ( isdigit( (int)errStr[0] ) ) {
          sscanf(position,"%s",errNum);
          *errStr = '\0' ;
     }
-    /* 
-     * ... or read the error description string. 
+    /*
+     * ... or read the error description string.
     */
     else
     {

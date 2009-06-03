@@ -27,8 +27,8 @@ $Id$
 
 \subsection{Module \texttt{LALInspiralFrequency3.c}}
 
-The code \texttt{LALInspiralFrequency3.c} calculates the frequency the 
-waveform from an inspiralling binary system as a function of time up to 3.5 
+The code \texttt{LALInspiralFrequency3.c} calculates the frequency the
+waveform from an inspiralling binary system as a function of time up to 3.5
 post-Nowtonian order.
 
 \subsubsection*{Prototypes}
@@ -38,7 +38,7 @@ post-Nowtonian order.
 \begin{itemize}
 \item {\tt frequency:} Output containing the inspiral waveform.
 \item {\tt td:} Input containing PN expansion coefficients $F_k$ (cf. Table \ref{table:flux})
-of frequency as a function of time.  
+of frequency as a function of time.
 \item {\tt ak:} Input containing all PN expansion coefficients.
 \end{itemize}
 
@@ -74,13 +74,13 @@ NRCSID (LALINSPIRALFREQUENCY3C, "$Id$");
 
 /*  <lalVerbatim file="LALInspiralFrequency3CP"> */
 
-void 
+void
 LALInspiralFrequency3_0PN (
    LALStatus  *status,
    REAL8      *frequency,
    REAL8      td,
    expnCoeffs *ak
-   ) 
+   )
 { /* </lalVerbatim>  */
 
   REAL8 theta,theta3;
@@ -101,13 +101,13 @@ LALInspiralFrequency3_0PN (
 
 /*  <lalVerbatim file="LALInspiralFrequency3CP"> */
 
-void 
+void
 LALInspiralFrequency3_2PN (
    LALStatus *status,
    REAL8 *frequency,
    REAL8 td,
    expnCoeffs *ak
-   ) 
+   )
 { /* </lalVerbatim>  */
 
   REAL8 theta,theta2,theta3;
@@ -123,7 +123,7 @@ LALInspiralFrequency3_2PN (
 
   *frequency = theta3*ak->ftaN * (1.
              + ak->fta2*theta2);
-                      
+
 
   DETATCHSTATUSPTR(status);
   RETURN(status);
@@ -131,13 +131,13 @@ LALInspiralFrequency3_2PN (
 
 /*  <lalVerbatim file="LALInspiralFrequency3CP"> */
 
-void 
+void
 LALInspiralFrequency3_3PN (
    LALStatus *status,
    REAL8 *frequency,
    REAL8 td,
    expnCoeffs *ak
-   ) 
+   )
 { /* </lalVerbatim>  */
 
   REAL8 theta,theta2,theta3;
@@ -160,13 +160,13 @@ LALInspiralFrequency3_3PN (
 
 /*  <lalVerbatim file="LALInspiralFrequency3CP"> */
 
-void 
+void
 LALInspiralFrequency3_4PN (
    LALStatus *status,
    REAL8 *frequency,
    REAL8 td,
    expnCoeffs *ak
-   ) 
+   )
 { /* </lalVerbatim>  */
 
   REAL8 theta,theta2,theta3,theta4;
@@ -191,13 +191,13 @@ LALInspiralFrequency3_4PN (
 
 /*  <lalVerbatim file="LALInspiralFrequency3CP"> */
 
-void 
+void
 LALInspiralFrequency3_5PN (
    LALStatus *status,
    REAL8 *frequency,
    REAL8 td,
    expnCoeffs *ak
-   ) 
+   )
 { /* </lalVerbatim>  */
 
   REAL8 theta,theta2,theta3,theta4,theta5;
@@ -224,13 +224,13 @@ LALInspiralFrequency3_5PN (
 
 /*  <lalVerbatim file="LALInspiralFrequency3CP"> */
 
-void 
+void
 LALInspiralFrequency3_6PN (
    LALStatus *status,
    REAL8 *frequency,
    REAL8 td,
    expnCoeffs *ak
-   ) 
+   )
 { /* </lalVerbatim>  */
 
   REAL8 theta,theta2,theta3,theta4,theta5,theta6;
@@ -259,13 +259,13 @@ LALInspiralFrequency3_6PN (
 
 /*  <lalVerbatim file="LALInspiralFrequency3CP"> */
 
-void 
+void
 LALInspiralFrequency3_7PN (
    LALStatus *status,
    REAL8 *frequency,
    REAL8 td,
    expnCoeffs *ak
-   ) 
+   )
 { /* </lalVerbatim>  */
 
   REAL8 theta,theta2,theta3,theta4,theta5,theta6,theta7;

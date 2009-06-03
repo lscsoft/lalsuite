@@ -19,7 +19,7 @@
 
 /************************************ <lalVerbatim file="UnitRaiseCV">
 Author: J. T. Whelan <john.whelan@ligo.org>
-$Id$  
+$Id$
 ************************************* </lalVerbatim> */
 
 /********************************************************** <lalLaTeX>
@@ -47,8 +47,8 @@ It then multiplies each of the rational powers in \texttt{*input} by
 \texttt{*power} by na\"{\i}ve multiplication of rational numbers
 $$
 \left(\frac{N_1}{1+D_1}\right)\left( \frac{N_2}{1+D_2} \right)
-= \frac{N_1 N_2}{1 + (1+D_1)(1+D_2)-1} 
-$$ 
+= \frac{N_1 N_2}{1 + (1+D_1)(1+D_2)-1}
+$$
 and then calls \texttt{LALUnitNormalize()} to bring the result into
 standard form.
 
@@ -60,7 +60,7 @@ standard form.
 
 \vfill{\footnotesize\input{UnitRaiseCV}}
 
-******************************************************* </lalLaTeX> */ 
+******************************************************* </lalLaTeX> */
 #define TRUE 1
 #define FALSE 0
 
@@ -77,7 +77,7 @@ LALUnit * XLALUnitRaiseRAT4( LALUnit *output, const LALUnit *input,
   UINT2       i;
   INT4        numer;
   UINT4       denom, denom1, denom2;
-  
+
   if ( ! output || ! input || ! power )
     XLAL_ERROR_NULL( func, XLAL_EFAULT );
 
@@ -168,7 +168,7 @@ LALUnit * XLALUnitInvert( LALUnit *output, const LALUnit *input )
 
 
 /* <lalVerbatim file="UnitRaiseCP"> */
-void 
+void
 LALUnitRaise (LALStatus *status, LALUnit *output, const LALUnit *input, const RAT4 *power)
 /* </lalVerbatim> */
      /* Raise a Unit variable to a rational power */
@@ -185,7 +185,7 @@ LALUnitRaise (LALStatus *status, LALUnit *output, const LALUnit *input, const RA
 
   denom2 = power->denominatorMinusOne + 1;
 
-  ASSERT( input->powerOfTen % denom2 == 0, status, 
+  ASSERT( input->powerOfTen % denom2 == 0, status,
 	  UNITSH_ENONINT, UNITSH_MSGENONINT);
 
 

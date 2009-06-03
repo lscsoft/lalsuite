@@ -28,7 +28,7 @@
  * flavours: arithmetic and mathematical constants, fundamental (or
  * defined) physical constants, and measured astrophysical and
  * cosmological parameters.
- * 
+ *
  * Note that this header is not included automatically by the header
  * <tt>LALStdlib.h</tt>.  Include it explicitly if you need any of these
  * constants.

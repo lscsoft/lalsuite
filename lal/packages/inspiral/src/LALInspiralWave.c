@@ -26,14 +26,14 @@ $Id$
 
 \subsection{Module \texttt{LALInspiralWave.c} and \texttt{LALInspiralWaveTemplates.c}}
 
-Interface routine needed to generate all waveforms in the {\tt inspiral} package. 
+Interface routine needed to generate all waveforms in the {\tt inspiral} package.
 
-To generate a waveform 
+To generate a waveform
 a user is noramlly required to (a) choose the binary parameters, starting frequency, number of
 bins of leading and trailing zero-padding, etc., in the structure {\tt InspiralTemplate params}
 and (b) call the following three functions in the order given:
-{\tt LALInspiralParameterCalc,} {\tt LALInspiralWaveLength,} and {\tt LALInspiralWave.} 
-Either a time- or a frequency-domain signal is returned depending upon the 
+{\tt LALInspiralParameterCalc,} {\tt LALInspiralWaveLength,} and {\tt LALInspiralWave.}
+Either a time- or a frequency-domain signal is returned depending upon the
 {\tt approximant} requested (see Notes below).
 
 \subsubsection*{Prototypes}
@@ -60,28 +60,28 @@ The code \texttt{LALInspiralWave} is the user interface to the inspiral codes. I
 the physical parameters which specify the binary, and calls the relevent wave generation function.
 Currently nine different approximants are fully implemented. These are {\tt TaylorT1, TaylorT2,
 TaylorT3, TaylorF1, TaylorF2, PadeT1, EOB, BCV, SpinTaylorT3.}
-{\tt Taylor} approximants can all be generated at seven different post-Newtonian orders, 
-from Newtonian to 3.5 PN order, {\tt PadeT1} exists at order 1.5PN and higher, 
+{\tt Taylor} approximants can all be generated at seven different post-Newtonian orders,
+from Newtonian to 3.5 PN order, {\tt PadeT1} exists at order 1.5PN and higher,
 {\tt EOB} at orders 2 and higher. {\tt SpinTaylorT3} is implemented only at 2PN order
 by solving the evolution equations for the spin and orbital angular momenta and a
-time-domain phasing formula. Finally, PN order is undefined for {\tt BCV.} 
+time-domain phasing formula. Finally, PN order is undefined for {\tt BCV.}
 The approximant and the order are set up by the enums \texttt{Approximant} and \texttt{Order,}
 respectively.
 
 The waveforms are all terminated one bin before the last stable orbit is reached.
 The last stable orbit corresponding to a given {\tt Approximant} and {\tt Order} is
-defined as follows: For all {\tt Taylor} approximants at orders 0PN, 1PN and 1.5PN 
-$v_{\rm lso}^2=1/6,$ and at 2PN, 2.5PN, 3PN and 3.5PN 
-$v_{\rm lso}^2 = x^{\rm lso}_{T_4},$ where $x^{\rm lso}_{T_4}$ is 
+defined as follows: For all {\tt Taylor} approximants at orders 0PN, 1PN and 1.5PN
+$v_{\rm lso}^2=1/6,$ and at 2PN, 2.5PN, 3PN and 3.5PN
+$v_{\rm lso}^2 = x^{\rm lso}_{T_4},$ where $x^{\rm lso}_{T_4}$ is
 defined in Table \ref{table:energy}.  In the case of {\tt Pade} approximant
 at 1.5PN order $v_{\rm lso}^2=1/6,$ and at orders 2PN, 2.5PN, 3PN and 3.5PN
-$v_{\rm lso}^2 = x^{\rm lso}_{P_4},$ where $x^{\rm lso}_{P_4}$ is 
+$v_{\rm lso}^2 = x^{\rm lso}_{P_4},$ where $x^{\rm lso}_{P_4}$ is
 defined in Table \ref{table:energy}. In the case of {\tt EOB} approximant,
-defined only at orders greater than 2PN, the plunge waveform is 
+defined only at orders greater than 2PN, the plunge waveform is
 terminated at the light-ring orbit defined by Equation~(\ref{eq:LightRing}).
 
-In the case of {\tt LALInspiralWaveTemplates} {\tt *signla1} 
-contains the `0-phase' inspiral template and {\tt *signal2} contains 
+In the case of {\tt LALInspiralWaveTemplates} {\tt *signla1}
+contains the `0-phase' inspiral template and {\tt *signal2} contains
 a signal that is $\pi/2$ out of phase with respect to {\tt *signal1.}
 Currently, a template pair is generated only for the following {\tt approximants:}
 {\tt TaylorT1, TaylorT2, TaylorT3, PadeT1, EOB.}
@@ -108,9 +108,9 @@ Depending on the user inputs one of the following functions is called:\\
     \item A time-domain waveform is returned when the {\tt approximant} is one of
         {\tt TaylorT1, TaylorT2, TaylorT3, PadeT1, EOB, SpinTaylorT3}
     \item A frequency-domain waveform is returned when the {\tt approximant} is one of
-        {\tt TaylorF1, TaylorF2, BCV}. 
-         In these cases the code returns the real and imagninary parts of the 
-         Fourier domain signal in the convention of fftw. For a signal vector 
+        {\tt TaylorF1, TaylorF2, BCV}.
+         In these cases the code returns the real and imagninary parts of the
+         Fourier domain signal in the convention of fftw. For a signal vector
          of length {\tt n=signal->length} ({\tt n} even):
      \begin{itemize}
          \item {\tt signal->data[0]} is the {\it real} 0th frequency component of the Fourier transform.
@@ -132,7 +132,7 @@ Depending on the user inputs one of the following functions is called:\\
 NRCSID (LALINSPIRALWAVEC, "$Id$");
 
 /*  <lalVerbatim file="LALInspiralWaveCP"> */
-void 
+void
 LALInspiralWave(
    LALStatus        *status,
    REAL4Vector      *signal,
@@ -154,7 +154,7 @@ LALInspiralWave(
    ASSERT((int)params->order >= 0, status, LALINSPIRALH_EORDER, LALINSPIRALH_MSGEORDER);
    ASSERT(params->order <= 8, status, LALINSPIRALH_EORDER, LALINSPIRALH_MSGEORDER);
 
-   switch (params->approximant) 
+   switch (params->approximant)
    {
       case TaylorT1:
       case PadeT1:
@@ -177,7 +177,7 @@ LALInspiralWave(
       case IMRPhenomA:
            LALBBHPhenWaveTimeDom(status->statusPtr, signal, params);
            CHECKSTATUSPTR(status);
-       break; 
+       break;
       case BCV:
            LALBCVWaveform(status->statusPtr, signal, params);
            CHECKSTATUSPTR(status);
@@ -187,12 +187,12 @@ LALInspiralWave(
            CHECKSTATUSPTR(status);
 	   break;
       case TaylorF1:
-	   LALInspiralStationaryPhaseApprox1(status->statusPtr, signal, params); 
+	   LALInspiralStationaryPhaseApprox1(status->statusPtr, signal, params);
            CHECKSTATUSPTR(status);
 	   break;
       case TaylorF2:
       case FindChirpSP:
-           LALInspiralStationaryPhaseApprox2(status->statusPtr, signal, params); 
+           LALInspiralStationaryPhaseApprox2(status->statusPtr, signal, params);
            CHECKSTATUSPTR(status);
 	   break;
       case PadeF1:
@@ -207,28 +207,28 @@ LALInspiralWave(
            CHECKSTATUSPTR(status);*/
 	   /* this generate the h+ waveform whereas the one above takes into
             * account h+, hx and orientation of the system*/
-           LALSTPNWaveform(status->statusPtr, signal, params); 
+           LALSTPNWaveform(status->statusPtr, signal, params);
            CHECKSTATUSPTR(status);
 	   break;
       case AmpCorPPN:
    	   LALInspiralAmplitudeCorrectedWave(status->statusPtr, signal, params);
-	   CHECKSTATUSPTR(status);	   
+	   CHECKSTATUSPTR(status);
       	   break;
       case Eccentricity:
    	   LALInspiralEccentricity(status->statusPtr, signal, params);
-	   CHECKSTATUSPTR(status);	   
+	   CHECKSTATUSPTR(status);
       	   break;
       case TaylorEt:
    	   LALTaylorEtWaveform(status->statusPtr, signal, params);
-	   CHECKSTATUSPTR(status);	   
+	   CHECKSTATUSPTR(status);
       	   break;
       case TaylorT4:
    	   LALTaylorT4Waveform(status->statusPtr, signal, params);
-	   CHECKSTATUSPTR(status);	   
+	   CHECKSTATUSPTR(status);
       	   break;
       case TaylorN:
    	   LALTaylorNWaveform(status->statusPtr, signal, params);
-	   CHECKSTATUSPTR(status);	   
+	   CHECKSTATUSPTR(status);
       	   break;
       default:
            ABORT( status, 9999, "Unknown case in switch." );
@@ -242,7 +242,7 @@ LALInspiralWave(
 NRCSID (LALINSPIRALWAVETEMPLATESC, "$Id$");
 
 /*  <lalVerbatim file="LALInspiralWaveTemplatesCP"> */
-void 
+void
 LALInspiralWaveTemplates(
    LALStatus        *status,
    REAL4Vector      *signal1,
@@ -253,7 +253,7 @@ LALInspiralWaveTemplates(
 
    INITSTATUS(status, "LALInspiralWaveTemplates", LALINSPIRALWAVETEMPLATESC);
    ATTATCHSTATUSPTR(status);
-   
+
    ASSERT (signal1,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
    ASSERT (signal2,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
    ASSERT (signal1->length >= 2, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
@@ -268,7 +268,7 @@ LALInspiralWaveTemplates(
    ASSERT((INT4)params->order >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
    ASSERT((INT4)params->order <= 8, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
 
-   switch (params->approximant) 
+   switch (params->approximant)
    {
       case TaylorT1:
       case PadeT1:
@@ -301,7 +301,7 @@ LALInspiralWaveTemplates(
       case SpinTaylor:
            LALSTPNWaveformTemplates(status->statusPtr, signal1, signal2, params);
            CHECKSTATUSPTR(status);
-           break; 
+           break;
       case AmpCorPPN:
       	   LALInspiralAmplitudeCorrectedWaveTemplates(status->statusPtr, signal1, signal2, params);
 	   CHECKSTATUSPTR(status);
@@ -310,9 +310,9 @@ LALInspiralWaveTemplates(
            LALInspiralEccentricityTemplates(status->statusPtr, signal1, signal2, params);
            CHECKSTATUSPTR(status);
       	   break;
-      default: 
+      default:
            ABORT( status, 9999, "Unknown case in switch." );
-      	   
+
    }
 
    DETATCHSTATUSPTR(status);
@@ -324,7 +324,7 @@ LALInspiralWaveTemplates(
 NRCSID (LALINSPIRALWAVEFORINJECTIONC, "$Id$");
 
 /*  <lalVerbatim file="LALInspiralWaveForInjectionCP"> */
-void 
+void
 LALInspiralWaveForInjection(
    LALStatus        *status,
    CoherentGW       *waveform,
@@ -339,11 +339,11 @@ LALInspiralWaveForInjection(
    ASSERT (ppnParams,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
 
 
-   switch (inspiralParams->approximant) 
+   switch (inspiralParams->approximant)
      {
      case TaylorT1:
      case PadeT1:
-       LALInspiralWave1ForInjection(status->statusPtr, waveform, inspiralParams, ppnParams);	
+       LALInspiralWave1ForInjection(status->statusPtr, waveform, inspiralParams, ppnParams);
        CHECKSTATUSPTR(status);
        break;
      case TaylorT2:
@@ -362,7 +362,7 @@ LALInspiralWaveForInjection(
      case IMRPhenomA:
        LALBBHPhenWaveTimeDomForInjection (status->statusPtr, waveform, inspiralParams, ppnParams);
        CHECKSTATUSPTR(status);
-       break;  
+       break;
       case BCV:
 	/*       LALBCVWaveformForInjection(status->statusPtr, waveform, inspiralParams, ppnParams);*/
       case BCVSpin:
@@ -382,7 +382,7 @@ LALInspiralWaveForInjection(
      	break;
       default:
            ABORT( status, 9999, "Unknown case in switch." );
-       	
+
    }
 
    DETATCHSTATUSPTR(status);

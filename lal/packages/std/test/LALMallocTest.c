@@ -150,7 +150,7 @@ static int testOK( void )
   trial( p = LALMalloc( 1024 * sizeof( *p ) ), 0, "" );
   for ( i = 0; i < 1024; ++i ) p[i] = i;
   trial( q = LALCalloc( 1024, sizeof( *q ) ), 0, "" );
-  for ( i = 0; i < 1024; ++i ) if ( q[i] ) die( memory not blanked ); 
+  for ( i = 0; i < 1024; ++i ) if ( q[i] ) die( memory not blanked );
   trial( p = LALRealloc( p, 4096 * sizeof( *p ) ), 0, "" );
   for ( i = 0; i < 1024; ++i ) if ( p[i] != i ) die( memory not copied );
   trial( q = LALRealloc( q, 0 ), 0, "" );
@@ -165,7 +165,7 @@ static int testOK( void )
   trial( p = LALMalloc( 1024 * sizeof( *p ) ), 0, "" );
   for ( i = 0; i < 1024; ++i ) p[i] = i;
   trial( q = LALCalloc( 1024, sizeof( *q ) ), 0, "" );
-  for ( i = 0; i < 1024; ++i ) if ( q[i] ) die( memory not blanked ); 
+  for ( i = 0; i < 1024; ++i ) if ( q[i] ) die( memory not blanked );
   trial( p = LALRealloc( p, 4096 * sizeof( *p ) ), 0, "" );
   for ( i = 0; i < 1024; ++i ) if ( p[i] != i ) die( memory not copied );
   trial( q = LALRealloc( q, 0 ), 0, "" );
@@ -179,7 +179,7 @@ static int testOK( void )
   trial( p = LALMalloc( 1024 * sizeof( *p ) ), 0, "" );
   for ( i = 0; i < 1024; ++i ) p[i] = i;
   trial( q = LALCalloc( 1024, sizeof( *q ) ), 0, "" );
-  for ( i = 0; i < 1024; ++i ) if ( q[i] ) die( memory not blanked ); 
+  for ( i = 0; i < 1024; ++i ) if ( q[i] ) die( memory not blanked );
   trial( p = LALRealloc( p, 4096 * sizeof( *p ) ), 0, "" );
   for ( i = 0; i < 1024; ++i ) if ( p[i] != i ) die( memory not copied );
   trial( q = LALRealloc( q, 0 ), 0, "" );
@@ -194,7 +194,7 @@ static int testOK( void )
   trial( p = LALMalloc( 1024 * sizeof( *p ) ), 0, "" );
   for ( i = 0; i < 1024; ++i ) p[i] = i;
   trial( q = LALCalloc( 1024, sizeof( *q ) ), 0, "" );
-  for ( i = 0; i < 1024; ++i ) if ( q[i] ) die( memory not blanked ); 
+  for ( i = 0; i < 1024; ++i ) if ( q[i] ) die( memory not blanked );
   trial( p = LALRealloc( p, 4096 * sizeof( *p ) ), 0, "" );
   for ( i = 0; i < 1024; ++i ) if ( p[i] != i ) die( memory not copied );
   trial( q = LALRealloc( q, 0 ), 0, "" );
@@ -289,7 +289,7 @@ static int testAllocList( void )
   /* trial( s = LALRealloc( s, 1024 ), SIGSEGV, "not found" ); */
   trial( LALFree( p ), 0, "" );
   trial( LALCheckMemoryLeaks(), 0, "" );
-  
+
   free( s );
   lalDebugLevel = keep;
   return 0;

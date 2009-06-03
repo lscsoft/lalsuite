@@ -84,7 +84,7 @@ fContactWorkSpace;
 
 /* Function Prototypes */
 REAL8 XLALCheckOverlapOfEllipsoids (
-        const gsl_vector   *ra, 
+        const gsl_vector   *ra,
         const gsl_vector   *rb,
         fContactWorkSpace  *workSpace );
 

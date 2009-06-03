@@ -524,7 +524,7 @@ static void *PadAlloc( size_t *p, size_t n, int keep, const char *func )
     LALPrintError( "%s warning: zero size allocation at address %p\n",
         func, p + nprefix );
   }
-  
+
   /* store the size in a known position */
   p[0] = n;
   p[1] = magic;
@@ -576,7 +576,7 @@ static void *UnPadAlloc( void *p, int keep, const char *func )
     LALPrintError( "%s warning: tried to free a freed pointer at address %p\n",
         func, p );
   }
-          
+
   if ( q[1] != magic )
   {
     lalRaiseHook( SIGSEGV, "%s error: wrong magic for pointer at address %p\n",
@@ -590,7 +590,7 @@ static void *UnPadAlloc( void *p, int keep, const char *func )
         func, p );
     return NULL;
   }
-          
+
   /* check for writing past end of array: */
   for ( i = n; i < padFactor * n; ++i )
   {
@@ -603,7 +603,7 @@ static void *UnPadAlloc( void *p, int keep, const char *func )
       return NULL;
     }
   }
-          
+
   /* see if there is enough allocated memory to be freed */
   if ( lalMallocTotal < n )
   {
@@ -775,7 +775,7 @@ LALMallocLong( size_t n, const char *file, int line )
     {
       free( p );
     }
-  }    
+  }
   return q;
 }
 
@@ -817,7 +817,7 @@ LALCallocLong( size_t m, size_t n, const char *file, int line )
     {
       free( p );
     }
-  }    
+  }
   return q ? memset( q, 0, sz ) : NULL;
 }
 
@@ -857,7 +857,7 @@ LALReallocLong( void *q, size_t n, const char *file, const int line )
       {
         free( p );
       }
-    }    
+    }
     return q;
   }
 

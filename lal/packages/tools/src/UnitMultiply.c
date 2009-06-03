@@ -44,7 +44,7 @@ input unit structures, then adds each of the corresponding rational
 powers in \texttt{*(input->unitOne)} and \texttt{*(input->unitTwo)} by na\"{\i}ve
 addition of rational numbers
 $$
-\frac{N_1}{1+D_1} + \frac{N_2}{1+D_2} = 
+\frac{N_1}{1+D_1} + \frac{N_2}{1+D_2} =
 \frac{N_1 (1+D_2) +  N_2(1+D_1)}{1 + (1+D_1)(1+D_2)-1}
 $$
 and then calls \texttt{LALUnitNormalize()} to bring the result into
@@ -58,7 +58,7 @@ standard form.
 
 \vfill{\footnotesize\input{UnitMultiplyCV}}
 
-******************************************************* </lalLaTeX> */ 
+******************************************************* </lalLaTeX> */
 #define TRUE 1
 #define FALSE 0
 
@@ -126,7 +126,7 @@ LALUnit * XLALUnitDivide( LALUnit *output, const LALUnit *unit1, const LALUnit *
 
 
 /* <lalVerbatim file="UnitMultiplyCP"> */
-void 
+void
 LALUnitMultiply (LALStatus *status, LALUnit *output, const LALUnitPair *input)
 /* </lalVerbatim> */
 {
@@ -136,7 +136,7 @@ LALUnitMultiply (LALStatus *status, LALUnit *output, const LALUnitPair *input)
 
   ASSERT( output != NULL, status, UNITSH_ENULLPOUT, UNITSH_MSGENULLPOUT );
 
-  
+
   if ( ! XLALUnitMultiply( output, input->unitOne, input->unitTwo ) )
   {
     int code = xlalErrno;

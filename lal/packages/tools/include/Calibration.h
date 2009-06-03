@@ -96,18 +96,18 @@ CalibrationType;
  *
  * \subsubsection*{Type \texttt{CalFactors}}
  *
- **** </lalLaTeX> */  
+ **** </lalLaTeX> */
 /**** <lalVerbatim> */
-typedef struct 
-tagCalFactors 
+typedef struct
+tagCalFactors
 {
-  COMPLEX16 alpha;    
+  COMPLEX16 alpha;
   COMPLEX16 alphabeta;
   COMPLEX16 beta;
-  COMPLEX16 exc;    
-  COMPLEX16 asq;    
-  COMPLEX16 darm;   
-} 
+  COMPLEX16 exc;
+  COMPLEX16 asq;
+  COMPLEX16 darm;
+}
 CalFactors;
 /**** </lalVerbatim> */
 
@@ -211,9 +211,9 @@ CalibrationUpdateParams;
  * used in updating the calibration functions described previously.
  * (The response function can be computed from the open-loop gain and the
  * sensing function.  It is simply $R(f)=[1+H(f)]/C(f)$.)  In addition, this
- * structure contains the present epoch and the duration of the data to be 
+ * structure contains the present epoch and the duration of the data to be
  * calibrated to identify the particular set of
- * factors (from those recorded in the time series) to use.  
+ * factors (from those recorded in the time series) to use.
  *
  * \vfill{\footnotesize\input{CalibrationHV}}
  * \newpage\input{ComputeTransferC}
@@ -230,7 +230,7 @@ struct StrainOutTag {
   COMPLEX16TimeSeries alphabeta; /* alpha time series */
   INT2TimeSeries science_mode;   /* flag = 1 for science mode, 0 otherwise */
 } StrainOut;
-                                                                                                                               
+
 typedef
 struct StrainInTag {
   REAL4TimeSeries AS_Q ;   /* timeseries containing ASQ */
@@ -306,25 +306,25 @@ XLALResponseConvert(
 
 void LALComputeCalibrationFactors(
     LALStatus              *status,
-    CalFactors             *output,    
+    CalFactors             *output,
     UpdateFactorsParams    *input
     );
 
 void LALComputeStrain(
     LALStatus              *status,
-    StrainOut              *output,    
+    StrainOut              *output,
     StrainIn               *input
     );
 
 void LALComputeStrainDMT(
     LALStatus              *status,
-    StrainOut              *output,    
+    StrainOut              *output,
     StrainIn               *input
     );
 
 void LALGetFactors(
     LALStatus              *status,
-    StrainOut              *output,    
+    StrainOut              *output,
     StrainIn               *input
     );
 
@@ -333,25 +333,25 @@ int XLALFIRFilter(
     REAL8IIRFilter         *FIR
     );
 
-void LALMakeFIRLP(LALStatus *status, 
-		  REAL8IIRFilter *G, 
+void LALMakeFIRLP(LALStatus *status,
+		  REAL8IIRFilter *G,
 		  int USF);
 
-void LALMakeFIRLPALPHAS(LALStatus *status, 
+void LALMakeFIRLPALPHAS(LALStatus *status,
 		  REAL8IIRFilter *G);
 
-void LALMakeFIRHP(LALStatus *status, 
+void LALMakeFIRHP(LALStatus *status,
 		  REAL8IIRFilter *G);
 
-int XALFIRFilter(REAL8TimeSeries *tseries, 
+int XALFIRFilter(REAL8TimeSeries *tseries,
 		  REAL8IIRFilter *FIR);
 
-void LALFFTFIRFilter(LALStatus *status, 
-		     REAL8TimeSeries *tseries, 
+void LALFFTFIRFilter(LALStatus *status,
+		     REAL8TimeSeries *tseries,
 		     REAL8IIRFilter *FIR);
 
-void LALFIRFilter(LALStatus *status, 
-		     REAL8TimeSeries *tseries, 
+void LALFIRFilter(LALStatus *status,
+		     REAL8TimeSeries *tseries,
 		     REAL8IIRFilter *FIR);
 
 void LALFreeFilter(LALStatus *status, REAL8IIRFilter *F2, int ORDER);

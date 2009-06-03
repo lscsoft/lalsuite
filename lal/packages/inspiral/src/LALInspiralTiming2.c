@@ -63,14 +63,14 @@ None
 
 NRCSID (LALINSPIRALTIMING2C, "$Id$");
 
-/*  <lalVerbatim file="LALInspiralTiming2CP"> */   
-void 
+/*  <lalVerbatim file="LALInspiralTiming2CP"> */
+void
 LALInspiralTiming2_0PN (
    LALStatus *status,
    REAL8     *toff,
    REAL8      f,
    void      *params
-   ) 
+   )
 { /* </lalVerbatim>  */
 
   InspiralToffInput *toffIn;
@@ -97,14 +97,14 @@ LALInspiralTiming2_0PN (
   DETATCHSTATUSPTR(status);
   RETURN(status);
 }
-/*  <lalVerbatim file="LALInspiralTiming2CP"> */   
-void 
+/*  <lalVerbatim file="LALInspiralTiming2CP"> */
+void
 LALInspiralTiming2_2PN (
    LALStatus *status,
    REAL8     *toff,
    REAL8      f,
    void      *params
-   ) 
+   )
 { /* </lalVerbatim>  */
 
   InspiralToffInput *toffIn;
@@ -127,21 +127,21 @@ LALInspiralTiming2_2PN (
   v8 = v2*v2*v2*v2;
 
   *toff = - toffIn->t + toffIn->tc
-        + toffIn->tN / v8 * (1. 
+        + toffIn->tN / v8 * (1.
         + toffIn->t2 * v2);
 
 
   DETATCHSTATUSPTR(status);
   RETURN(status);
 }
-/*  <lalVerbatim file="LALInspiralTiming2CP"> */   
-void 
+/*  <lalVerbatim file="LALInspiralTiming2CP"> */
+void
 LALInspiralTiming2_3PN (
    LALStatus *status,
    REAL8     *toff,
    REAL8      f,
    void      *params
-   ) 
+   )
 { /* </lalVerbatim>  */
 
   InspiralToffInput *toffIn;
@@ -165,21 +165,21 @@ LALInspiralTiming2_3PN (
   v8 = v3*v3*v2;
 
   *toff = - toffIn->t + toffIn->tc
-        + toffIn->tN / v8 * (1. 
+        + toffIn->tN / v8 * (1.
         + toffIn->t2 * v2
         + toffIn->t3 * v3);
 
   DETATCHSTATUSPTR(status);
   RETURN(status);
 }
-/*  <lalVerbatim file="LALInspiralTiming2CP"> */   
-void 
+/*  <lalVerbatim file="LALInspiralTiming2CP"> */
+void
 LALInspiralTiming2_4PN (
    LALStatus *status,
    REAL8     *toff,
    REAL8      f,
    void      *params
-   ) 
+   )
 { /* </lalVerbatim>  */
 
   InspiralToffInput *toffIn;
@@ -204,7 +204,7 @@ LALInspiralTiming2_4PN (
   v8 = v4*v4;
 
   *toff = - toffIn->t + toffIn->tc
-        + toffIn->tN / v8 * (1. 
+        + toffIn->tN / v8 * (1.
         + toffIn->t2 * v2
         + toffIn->t3 * v3
         + toffIn->t4 * v4);
@@ -212,14 +212,14 @@ LALInspiralTiming2_4PN (
   DETATCHSTATUSPTR(status);
   RETURN(status);
 }
-/*  <lalVerbatim file="LALInspiralTiming2CP"> */   
-void 
+/*  <lalVerbatim file="LALInspiralTiming2CP"> */
+void
 LALInspiralTiming2_5PN (
    LALStatus *status,
    REAL8     *toff,
    REAL8      f,
    void      *params
-   ) 
+   )
 { /* </lalVerbatim>  */
 
   InspiralToffInput *toffIn;
@@ -245,7 +245,7 @@ LALInspiralTiming2_5PN (
   v8 = v4*v4;
 
   *toff = - toffIn->t + toffIn->tc
-        + toffIn->tN / v8 * (1. 
+        + toffIn->tN / v8 * (1.
         + toffIn->t2 * v2
         + toffIn->t3 * v3
         + toffIn->t4 * v4
@@ -254,14 +254,14 @@ LALInspiralTiming2_5PN (
   DETATCHSTATUSPTR(status);
   RETURN(status);
 }
-/*  <lalVerbatim file="LALInspiralTiming2CP"> */   
-void 
+/*  <lalVerbatim file="LALInspiralTiming2CP"> */
+void
 LALInspiralTiming2_6PN (
    LALStatus *status,
    REAL8     *toff,
    REAL8      f,
    void      *params
-   ) 
+   )
 { /* </lalVerbatim>  */
 
   InspiralToffInput *toffIn;
@@ -288,7 +288,7 @@ LALInspiralTiming2_6PN (
   v8 = v6*v2;
 
   *toff = - toffIn->t + toffIn->tc
-        + toffIn->tN / v8 * (1. 
+        + toffIn->tN / v8 * (1.
         + toffIn->t2 * v2
         + toffIn->t3 * v3
         + toffIn->t4 * v4
@@ -298,14 +298,14 @@ LALInspiralTiming2_6PN (
   DETATCHSTATUSPTR(status);
   RETURN(status);
 }
-/*  <lalVerbatim file="LALInspiralTiming2CP"> */   
-void 
+/*  <lalVerbatim file="LALInspiralTiming2CP"> */
+void
 LALInspiralTiming2_7PN (
    LALStatus *status,
    REAL8     *toff,
    REAL8      f,
    void      *params
-   ) 
+   )
 { /* </lalVerbatim>  */
 
   InspiralToffInput *toffIn;
@@ -333,7 +333,7 @@ LALInspiralTiming2_7PN (
   v8 = v7*v;
 
   *toff = - toffIn->t + toffIn->tc
-        + toffIn->tN / v8 * (1. 
+        + toffIn->tN / v8 * (1.
         + toffIn->t2 * v2
         + toffIn->t3 * v3
         + toffIn->t4 * v4

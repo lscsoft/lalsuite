@@ -27,51 +27,51 @@
  *
  *________________________________________________________________________
  */
-                                                                                                                                                
+
 /* ------------------------------ AUTO-DOC ---------------------------- */
 /* -------------------------------------------------------------------- */
-                                                                                                                                                
-                                                                                                                                                
+
+
 /*<lalVerbatim file="TemplateBankGenerationHV">
   Author: Hanna, C. R.
   $Id$
   </lalVerbatim> */
-                                                                                                                                                
+
 /*SECTION - HEADER - "TemplateBankGeneration.h" -------------------- <lalLaTeX>
   \section{Header \texttt{TemplateBankGeneration.h}}
   \label{s:TemplateBankGeneration.h}
   </lalLaTeX> */
-                                                                                                                                                
+
   /*SUBSECTION - SYNOPSIS ------------------------------------- <lalLaTeX>
     \subsection*{Synopsis}
     \begin{verbatim}
     #include <lal/TemplateBankGeneration.h>
-    \end{verbatim} 
+    \end{verbatim}
     \noindent This header file includes all the necessary types and
-    function prototypes for LALNDTemplateBank() and LALMakeTemplateBank().  
+    function prototypes for LALNDTemplateBank() and LALMakeTemplateBank().
     NDTemplateBank() provides a general way to tile a parameter space with
-    a constant metric ( currently only for less than 12 dimensions). 
-    MakeTemplateBank() provides a general way for applications to 
-    generate a template bank with suitable I/O. 
+    a constant metric ( currently only for less than 12 dimensions).
+    MakeTemplateBank() provides a general way for applications to
+    generate a template bank with suitable I/O.
   </lalLaTeX>
     END SUBSECTION - SYNOPSIS ----------------------------------------- */
-                                                                                                                                                
+
   /*<lalLaTeX>
     \vfill{\footnotesize\input{TemplateBankGenerationHV}}
   </lalLaTeX> */
-                                                                                                                                                
+
   /*NEWPAGE - SUBSECTION - ERROR CODES ------------------------ <lalLaTeX>
     \newpage
     \subsection*{Error codes}
     \input{TemplateBankGenerationHE}
     </lalLaTeX>
     END SUBSECTION - ERROR CODES -------------------------------------- */
-                                                                                                                                                
-                                                                                                                                                
+
+
   /*<lalLaTeX>
     \vfill{\footnotesize\input{TemplateBankGenerationHV}}
   </lalLaTeX> */
-                                                                                                                                                
+
   /*NEWPAGE - SUBSECTION - TYPES -------------------------------<lalLaTeX>
     \newpage
     \subsection*{Types}
@@ -91,7 +91,7 @@
     \idx[Type]{NDTemplateBankOutput}
     </lalLaTeX>
     END SUBSECTION TYPES ---------------------------------------------- */
-                                                                                                                                                
+
   /*SUBSECTION - NOTES -----------------------------------------<lalLaTeX>
     \subsection*{Notes}
     \noindent\begin{itemize}
@@ -99,26 +99,26 @@
     \end{itemize}
     </lalLaTeX>
     END SUBSECTION NOTES ---------------------------------------------- */
-                                                                                                                                                
+
   /*<lalLaTeX>
     \vfill{\footnotesize\input{TemplateBankGenerationHV}}
   </lalLaTeX> */
-                                                                                                                                                
+
   /*NEWPAGE - MODULES INPUT - ----------------------------------------- */
     /* <lalLaTeX>
     \newpage\input{NDTemplateBankC}
     \newpage\input{MakeTemplateBankC}
     </lalLaTeX>
     END - MODULES INPUT ----------------------------------------------- */
-                                                                                                                                                
+
   /*NEWPAGE - TESTS INPUT --------------------------------------------- */
     /* <lalLaTeX>
     </lalLaTeX>
     END - TESTS INPUT ------------------------------------------------- */
-                                                                                                                                                
+
 /*END SECTION - HEADER - "TemplateBankGeneration.h" ------------------------ */
-                                                                                                                                                
-                                                                                                                                                
+
+
 /* -------------------------------------------------------------------- */
 /* ------------------------- END AUTO-DOC ----------------------------- */
 
@@ -172,8 +172,8 @@ typedef struct {
      REAL4   mmFine;		/* not implemented? */
      INT4    iflso;		/* not implemented? */
   /* InspiralTemplate Parameters */
-     
- 
+
+
   /* InspiralSpinBank Additional Parameters */
      REAL4 mTwoMin;		/* minimum mass smaller body 	*/
      REAL4 mTwoMax;		/* maximum mass smaller body 	*/
@@ -188,7 +188,7 @@ typedef struct {
      INT4 placeholder;
      } PulsarTmpltBankCInput; /* not used yet */
 
-/* </lalVerbatim> */ 
+/* </lalVerbatim> */
 
 /* <lalVerbatim file="TemplateBankGenerationHT-BurstTmpltBankCInput"> */
 typedef struct {
@@ -202,11 +202,11 @@ typedef union {
      InspiralTmpltBankCInput *InspiralInput; 	/* Searches 100-199 */
      PulsarTmpltBankCInput *PulsarInput;	/* Searches 200-299 */
      BurstTmpltBankCInput *BurstInput;		/* Searches 300-399 */
-     } MakeTemplateBankInput;     
+     } MakeTemplateBankInput;
 
 /* </lalVerbatim> */
 #endif
-     
+
 /* <lalVerbatim file="TemplateBankGenerationHT-TemplateBankType"> */
 typedef enum {
   /* Binary Inspiral Searches 100-199 */
@@ -217,7 +217,7 @@ typedef enum {
      Pulsar,
   /* Burst Searches 300-399 */
      Burst
-  /* Other Searches 400-499 Etc... */ 
+  /* Other Searches 400-499 Etc... */
      } TemplateBankType;
 
 /* </lalVerbatim> */
@@ -231,7 +231,7 @@ typedef struct {
   INT2                 	dimension;          	/* 3D?, 4D? -> ND!       */
   REAL4                	mm;                 	/* mismatch              */
   TemplateBankType     	type;               	/* whats the search?     */
-  REAL8FrequencySeries *PSD;		   	/* Power Spec. Density   */  
+  REAL8FrequencySeries *PSD;		   	/* Power Spec. Density   */
   REAL4			f0;			/* Moment scaling freq	 */
   } NDTemplateBankInput;
 /* </lalVerbatim> */
@@ -244,7 +244,7 @@ typedef struct NDTemplateBankOutput{
   } NDTemplateBankOutput;
 /* </lalVerbatim> */
 
-                                                                                                                                                
+
 typedef void (*NDTemplateBankMetricPtr)( LALStatus *, NDTemplateBankInput *, REAL4Array *);
 typedef void (*NDTemplateBankTestPtr)(LALStatus *, NDTemplateBankInput *, NDTemplateBankOutput *, INT2 *);
 
@@ -255,7 +255,7 @@ typedef struct {
  /* Function Prototypes */
 
 void
-LALNDTemplateBank( 
+LALNDTemplateBank(
  	LALStatus *,
    	NDTemplateBankInput *,
         NDTemplateBankFunctionPtrs *,
@@ -263,12 +263,12 @@ LALNDTemplateBank(
 
 
 #if 0
-void 
+void
 LALMakeTemplateBank(
      	LALStatus *,
      	TemplateBankType *,
      	MakeTemplateBankInput *,
-     	MetadataTable *); 
+     	MetadataTable *);
      /* LALMakeTemplateBank(); */
 #endif
 

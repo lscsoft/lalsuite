@@ -18,10 +18,10 @@
 */
 
 /**** <lalVerbatim file="NDTemplateBankCV">
- * Author: Hanna, C. R. 
+ * Author: Hanna, C. R.
  * $Id$
  **** </lalVerbatim> */
-                                                                                                                                                
+
 /**** <lalLaTeX>
  *
  * \subsection{Module \texttt{NDTemplateBank.c}}
@@ -34,10 +34,10 @@
  * %% \idx{LALNDTemplateBank()}
  *
  * \subsubsection*{Description}
- * 
- * This module tiles up to a 12 dimensional space when given a metric and a 
- * function that determines the search region.  
- * 
+ *
+ * This module tiles up to a 12 dimensional space when given a metric and a
+ * function that determines the search region.
+ *
  * \subsubsection*{Algorithm}
  *
  * The algorithm first draws a rectilinear box in the primed coordinates
@@ -60,8 +60,8 @@
  * \vfill{\footnotesize\input{NDTemplateBankCV}}
  *
  **** </lalLaTeX> */
-                                                                                                                                                
-                                                                                                                                                
+
+
 
 
 
@@ -79,19 +79,19 @@
 
 
 NRCSID(NDTEMPLATEBANKC, "$Id");
-  
+
 static REAL4 DotProduct(REAL4 *EV, REAL4 *DX){
   INT2 loop = 0;
   REAL4 dot = 0.0;
-  
+
   for (loop = 0; loop < 12; loop++){
     dot  += EV[loop] * DX[loop];
     }
   return dot;
   }
 
-                                                                                     
-                                                                                                                                                
+
+
 void
 /* <lalVerbatim file="NDTemplateBankCP"> */
 LALNDTemplateBank( LALStatus *status,
@@ -100,7 +100,7 @@ LALNDTemplateBank( LALStatus *status,
 		   NDTemplateBankOutput **output)
 /* </lalVerbatim> */
 {
- 
+
   INT2 Dimension = input->dimension;
   REAL4Array  *metric =           NULL; /* parameter-space metric 	    */
   REAL4Array  *inverse = 	  NULL;
@@ -111,10 +111,10 @@ LALNDTemplateBank( LALStatus *status,
   NDTemplateBankOutput *first =   NULL;
   INT2 dimLoop = 0;
   INT2 loop = 0;
-  INT2 testFlag = 0; 
+  INT2 testFlag = 0;
   REAL4 dxLoop[12] = 		{0};
   REAL4 coordinatedxs[12] = 	{1,1,1,1,1,1,1,1,1,1,1,1};
-  REAL4 EV[12][12] =    	{{0}}; 
+  REAL4 EV[12][12] =    	{{0}};
   REAL4 EVinv[12][12] = 	{{0}};
   REAL4 minX[12] = 		{0};
   REAL4 maxX[12] = 		{0};
@@ -125,7 +125,7 @@ LALNDTemplateBank( LALStatus *status,
   INITSTATUS( status, "LALNDTemplateBank", NDTEMPLATEBANKC );
   ATTATCHSTATUSPTR( status );
 
- 
+
   /* Initialize unused portions of input arrays */
   for(dimLoop = Dimension; dimLoop < 12; dimLoop++){
     input->minCoordinates[dimLoop] = 0.0;
@@ -133,19 +133,19 @@ LALNDTemplateBank( LALStatus *status,
     input->minParameters[dimLoop] = 0.0;
     input->maxParameters[dimLoop] = 0.0;
     }
-     
-  
+
+
   /* Set up the metric stuff */
   LALSCreateVector( status->statusPtr, &eigenval, (UINT4) Dimension);
   LALU4CreateVector( status->statusPtr, &metricDimensions, (UINT4) 2 );
-  metricDimensions->data[1] = metricDimensions->data[0] = Dimension; 
+  metricDimensions->data[1] = metricDimensions->data[0] = Dimension;
   LALSCreateArray( status->statusPtr, &metric, metricDimensions );
   LALSCreateArray( status->statusPtr, &inverse, metricDimensions );
 
 
   /* Call Metric Function */
-  functionPtrs->metric(status->statusPtr, input, metric);   
-  
+  functionPtrs->metric(status->statusPtr, input, metric);
+
   /* Begin all the diagonalization business */
   LALSSymmetricEigenVectors( status->statusPtr, eigenval, metric );
   /*  Extract eigenvectors and determine displacements*/
@@ -164,23 +164,23 @@ LALNDTemplateBank( LALStatus *status,
 */
 
   for (dimLoop = 0; dimLoop < Dimension; dimLoop++){
-    coordinatedxs[dimLoop] = sqrt(2.0*input->mm/((REAL4) Dimension * eigenval->data[dimLoop])); 
+    coordinatedxs[dimLoop] = sqrt(2.0*input->mm/((REAL4) Dimension * eigenval->data[dimLoop]));
     }
 
   printf("\nCoordinatedxs = %f,%f,%f\n", coordinatedxs[0], coordinatedxs[1], coordinatedxs[2]);
 
   /* invert the transformation matrix */
-  TRY(LALSMatrixInverse(status->statusPtr, &det, metric, inverse), status);  
-  
-  
+  TRY(LALSMatrixInverse(status->statusPtr, &det, metric, inverse), status);
+
+
   for (dimLoop = 0; dimLoop < Dimension; dimLoop++){
     for (loop = 0; loop < Dimension; loop++){
       EVinv[dimLoop][loop] = inverse->data[loop*Dimension + dimLoop];
       }
     }
 
-  
-   
+
+
   printf("\nmin and max coordinates before transformation\n");
   for (dimLoop = 0; dimLoop < Dimension; dimLoop++){
      printf("MinX[%i] = %f\tMaxX[%i] = %f\n", dimLoop, input->minCoordinates[dimLoop], dimLoop, input->maxCoordinates[dimLoop]);
@@ -195,7 +195,7 @@ LALNDTemplateBank( LALStatus *status,
     printf("MinX[%i] = %f\tMaxX[%i] = %f\n", dimLoop, minX[dimLoop], dimLoop, maxX[dimLoop]);
     }
 
-  
+
   /*switch around the bounds according to sign */
   for (dimLoop = 0; dimLoop < Dimension; dimLoop++){
     if (minX[dimLoop] > maxX[dimLoop]){
@@ -247,7 +247,7 @@ LALNDTemplateBank( LALStatus *status,
                /* test spot */
                for(dimLoop=0; dimLoop < Dimension; dimLoop++){
                  bank->coordinateVals[dimLoop] = DotProduct(EV[dimLoop], dxLoop);
-               } 	       
+               }
                functionPtrs->test(status->statusPtr, input, bank, &testFlag);
                if (testFlag){
                  bank = bank->next = (NDTemplateBankOutput *) LALCalloc(1, sizeof(NDTemplateBankOutput));
@@ -260,10 +260,10 @@ LALNDTemplateBank( LALStatus *status,
                  for(loop=0; loop < dimLoop; loop++){
  		   bank->coordinateVals[loop] = DotProduct(EV[loop], dxLoop);
                  }
-                 /* test the next spot */ 
+                 /* test the next spot */
                  functionPtrs->test(status->statusPtr, input, bank, &testFlag);
                  /* if it fails test the halfway point */
-                 if (!testFlag){ 
+                 if (!testFlag){
                    bank->coordinateVals[dimLoop] = DotProduct(EV[dimLoop], dxLoop) - 0.5 * DotProduct(EV[dimLoop], coordinatedxs);
 		   functionPtrs->test(status->statusPtr, input, bank, &testFlag);
                    /* if the halfway point passes add it */
@@ -307,7 +307,7 @@ LALNDTemplateBank( LALStatus *status,
    }
   }
 
-  
+
   printf("\nExtra templates added = %i\n", cnt);
   /* setting the output to the first template bank tile */
   bank->next = NULL;

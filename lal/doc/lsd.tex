@@ -135,7 +135,7 @@ migrated to the LAL-Spec itself, and thus there is less need for
 such rules.  Furthermore, now there is a much
 larger body of example code  to help guide people in how to
 follow the LAL rules.  Therefore Part I of this new edition of
-the 
+the
 {{\textcolor{red}{\bf L}} {\textcolor{green}{\bf S}} {\textcolor{blue}{\bf D}} }
 is considerably shorter than its predessor.
 
@@ -215,7 +215,7 @@ An up to date release  of the LAL -- and a wealth of other information
     \item[$\bullet$ ] {\bf LSC software coordinator:} Click
                       to email your gripes to the software coordinator.
     \vspace*{-0.051in}
-    \item[$\bullet$ ] {\bf The LAL-Spec:} 
+    \item[$\bullet$ ] {\bf The LAL-Spec:}
                       www.ligo.caltech.edu/docs/T/T990030-07.pdf
     \vspace*{-0.051in}
     \item[$\bullet$ ] {\bf The CVS tree:}  There are instructions
@@ -224,19 +224,19 @@ An up to date release  of the LAL -- and a wealth of other information
                       instructions} can be found in the lal
                       directory in a file called {\tt INSTALL}
     \vspace*{-0.051in}
-    \item[$\bullet$]  {\bf Previous releases of LAL:} If you want an older 
+    \item[$\bullet$]  {\bf Previous releases of LAL:} If you want an older
                       version for sentimental reasons, you can find it here.
     \vspace*{-0.051in}
     \item[$\bullet$ ] {\bf Data:}  You can surf to the LIGO data archive to get
-                      data.  There is a short snippet of 40-m data called 
-                      {\tt lal.small} for testing.  This snippet of data 
-                      is not subject to the access restrictions that some 
+                      data.  There is a short snippet of 40-m data called
+                      {\tt lal.small} for testing.  This snippet of data
+                      is not subject to the access restrictions that some
                       of the other segments are.
     \vspace*{-0.051in}
     \item[$\bullet$ ] {\bf Links to other useful software:} In order to
                       fully use the LAL, you will need to install the
                       these packages:
-    \begin{itemize} 
+    \begin{itemize}
           \vspace*{-0.051in}
           \item {\texttt {FFTW}}:  Fastest Fourier Transform in the West.
           This {\it must} be installed in order to install the LAL.
@@ -248,7 +248,7 @@ An up to date release  of the LAL -- and a wealth of other information
           This is optional.
           In order to test these routines you will need some frame
           data. [See Data above.]
-    \end{itemize} 
+    \end{itemize}
 \end{itemize}
 
 \chapter{Notes about coding}
@@ -277,9 +277,9 @@ Please contact the Librarian.
 
 \bigskip
 
-{\noindent \bf Defining the RCS ID string:}  The LAL-Spec 
+{\noindent \bf Defining the RCS ID string:}  The LAL-Spec
 requires all header, module and test files to define the
-RCS ID String with the following macro: 
+RCS ID String with the following macro:
 \begin{verbatim}
           NRCSID(LALTEMPLATEH,"$Id$");
 \end{verbatim}
@@ -297,7 +297,7 @@ convention. These should be hash-defined in the header file, e.g. in
 \begin{verbatim}
 /* <lalErrTable file="MyHeaderHErrorTable"> */
 
-#define MYHEADERH_ENUL  1 
+#define MYHEADERH_ENUL  1
 #define MYHEADERH_EOUT  2
 #define MYHEADERH_EDIV  3
 
@@ -334,7 +334,7 @@ and example package tdfilter  (time domain filters).
 Along with any code submission to the LAL library, you will need to
 supply documentation. Keep in mind, the documentation, like the code,
 is a {\it deliverable} and it must be written to the standard outlined
-in the LAL-Spec.  This chapter gives specific instructions  on how 
+in the LAL-Spec.  This chapter gives specific instructions  on how
 to meet the standard.
 
 Also keep in mind that, unlike most code projects that physicists work
@@ -381,55 +381,55 @@ as possible by building the LAL documentation around header files and
 the modules and functions that include them.  This choice is also
 natural because the hierarchical lay out of the documentation exactly
 follows the hierarchy of the code.  [This is also the way books on
-programming in c document the c-libraries.] 
+programming in c document the c-libraries.]
 
 \begin{itemize}
     \vspace*{-0.1in}
-    \item Documentation for the N'th package forms chapter {\large \bf N}. 
+    \item Documentation for the N'th package forms chapter {\large \bf N}.
     \vspace*{-0.051in}
-    \begin{itemize} 
+    \begin{itemize}
         \vspace*{-0.051in}
         \item Documentation of header1.h in the package forms section
              {\large \bf N.1}.
-             \begin{itemize} 
+             \begin{itemize}
                  \vspace*{-0.051in}
-                 \item Documentation of Module1.1.c that 
+                 \item Documentation of Module1.1.c that
                        ``{\texttt {\#include}}'s'' header1.h
                        is in subsection {\large \bf N.1.1}.
                  \vspace*{-0.051in}
-                 \item Documentation of Module1.2.c that 
+                 \item Documentation of Module1.2.c that
                        ``{\texttt {\#include}}'s'' header1.h
                        is in subsection {\large \bf N.1.2}.
                  \vspace*{-0.051in}
                  \item ... additional modules.
-             \end{itemize} 
+             \end{itemize}
         \vspace*{-0.051in}
         \item Documentation of header2.h in the package forms section.
              {\large \bf N.2}.
-             \begin{itemize} 
+             \begin{itemize}
                  \vspace*{-0.051in}
-                 \item Documentation of Module2.1.c that 
+                 \item Documentation of Module2.1.c that
                        ``{\texttt {\#include}}'s'' header2.h
                        is in subsection {\large \bf N.2.1}.
                  \vspace*{-0.051in}
-                 \item Documentation of Module2.2.c that 
+                 \item Documentation of Module2.2.c that
                        ``{\texttt {\#include}}'s'' header2.h
                        is in subsection {\large \bf N.2.2}.
                  \vspace*{-0.051in}
                  \item ... additional modules
-             \end{itemize} 
+             \end{itemize}
         \vspace*{-0.051in}
         \item Documentation of header3.h in the package forms section.
              {\large \bf N.3}.
-             \begin{itemize} 
+             \begin{itemize}
                  \vspace*{-0.051in}
                  \item ... additional modules
-             \end{itemize} 
+             \end{itemize}
         \vspace*{-0.051in}
         \item ... additional headers
-    \end{itemize} 
+    \end{itemize}
     \vspace*{-0.1in}
-    \item Documentation for the N+1'th package forms chapter {\large \bf N+1}. 
+    \item Documentation for the N+1'th package forms chapter {\large \bf N+1}.
     \item ... additional packages
 \end{itemize}
 
@@ -459,9 +459,9 @@ more mature and some of it starts to perform highly integrated tasks,
 it will be necessary for coders to have quick access to the entire
 body of documentation.
 
-{\bf Documentation for a single package:} 
+{\bf Documentation for a single package:}
 The guts of the documentation for a package (e.g. {\tt sample}) should reside in the
-file {\tt /lal/packages/samplepackage/doc/sample.tex}.  
+file {\tt /lal/packages/samplepackage/doc/sample.tex}.
 This file may
 itself have many \verb@\input{}@ commands in it to include files that
 were auto extracted from the source-code files by {\tt laldoc}.
@@ -491,7 +491,7 @@ same role as {\tt main.tex} described above; however this file has an
 Figures are fine. When you submit a package of code and documentation
 the figures should be in the {\tt /lal/packages/mypackage/doc} directory.
 Please submit two versions of the figure: an {\tt .eps} and a {\tt .pdf}.
-We need both so we can build the documentation either with 
+We need both so we can build the documentation either with
 {\LaTeX} or {\tt pdflatex}.
 
 The syntax to use for putting in the figure should be something like this
@@ -499,7 +499,7 @@ The syntax to use for putting in the figure should be something like this
 \resizebox{0.5\textwidth}{!}{\includegraphics{myHeaderFileNameMyFig}}
 \end{verbatim}
 Note. Don't include the extension on the figure file name in
-the \verb@\includegraphics[]{}@ command. If you leave the extension off, 
+the \verb@\includegraphics[]{}@ command. If you leave the extension off,
 whatever method you use for building the documentation automatically
 looks for the appropriate file.
 
@@ -521,12 +521,12 @@ to include the documentation. See the LAL-Spec for the official
 list, but here are some examples
 
 \begin{itemize}
-  \item[$\bullet$] {\bf Function Prototypes} 
+  \item[$\bullet$] {\bf Function Prototypes}
   \item[$\bullet$] {\bf Error code tables }
   \item[$\bullet$] {\bf The author and version-control information.}  This
                         should appear as footnote at the bottom of all
                         header sections, and module and test subsections.
-                        This can be done with the {\LaTeX} command 
+                        This can be done with the {\LaTeX} command
                         \verb@\vfill{\footnotesize\input{MyFileHAuthVer}}@,
                         where {\tt MYFILEHAuthVer.tex} is the file where
                         the Author-Version information from {\tt MyFile.H}
@@ -555,7 +555,7 @@ code items that you must place in the index.
   use non-LAL datatypes, you must document them, and they must be
   included the index, so someone looking at your code can easily find
   the documentation.  The \verb@\idx[Type]{}@ command should be right after
-  in the section where they are explained in the documentation.  
+  in the section where they are explained in the documentation.
   Here is an example of the LAL {\LaTeX} command you would use to get the
   name of your structure into the index.
   \begin{verbatim}
@@ -579,7 +579,7 @@ code items that you must place in the index.
 
 An introductory description of what is in the package.
 There is no specific length limit, but $O[1]$ page seems
-reasonable. Note the naming conventions for packages: all lower case. 
+reasonable. Note the naming conventions for packages: all lower case.
 
 
 \newpage
@@ -625,7 +625,7 @@ $Id$
 \newpage
 
 \subsection{Module {\texttt {SampleModule1.c}}}
-Put a one sentence description explaining what this module will do. 
+Put a one sentence description explaining what this module will do.
 [Also, start a new page for documenting each module.]
 
 \subsection*{Prototypes}
@@ -741,15 +741,15 @@ built when the LAL is installed.
 \section{A four step introduction to the code parser {\texttt {laldoc}}}
 
 \noindent
-These four-step instructions are also outlined in the file 
+These four-step instructions are also outlined in the file
 {\tt /lal/doc/laldoc/README}.
 
 \begin{itemize}
-\item[(1)] Copy the executable ({\tt /lal/doc/laldoc/laldoc}) 
+\item[(1)] Copy the executable ({\tt /lal/doc/laldoc/laldoc})
 and the  sample input file ({\tt /lal/doc/laldoc/LalDocDemo.h}) to an
-empty  {\tt /home/alice/junk} directory. 
-\item[(2)] In {\tt /home/alice/junk} 
-run the command ``\verb@./laldoc LalDocDemo.h Errors.out@'' 
+empty  {\tt /home/alice/junk} directory.
+\item[(2)] In {\tt /home/alice/junk}
+run the command ``\verb@./laldoc LalDocDemo.h Errors.out@''
 \item[(3)] {\LaTeX} the file {\texttt {LalDocDemo\_LaTeX\_This\_File.tex}}.
 \item[(4)] Read the  document created in step 3
 ({\texttt {LalDocDemo\_LaTeX\_This\_File.dvi}}) . It will explain how
@@ -778,7 +778,7 @@ key-words, so the learning curve is flat and short! The source code
 storage files.  (The key-word also includes a space for user-specified file name
 where the fragment will be stored.)  When you write your documentation simply
 use the {\LaTeX} command \verb@\input{}@ to put the contents of the
-storage file in the document where you need it.  
+storage file in the document where you need it.
 
 When you install the LAL on your machine, the parser is automatically
 run on all {\tt .c} and {\tt .h} files. The extracted files are
@@ -807,7 +807,7 @@ line with the closing key-word will be extracted.
 
 \begin{description}
 \item[$\bullet$ ]
-The verbatim environment is opened key-word 
+The verbatim environment is opened key-word
 {\verb@<lalVerbatim file="myVerbatimJunk">@}  and closed with the key-word
 {\verb@</lalVerbatim>@}. The material between the two key-words will
 be wrapped in a {\LaTeX} {\tt verbatim} environment for later
@@ -817,15 +817,15 @@ documentation.  When the information is included with {\tt
 <lalVerbatim>} {\tt laldoc} supplies a small {\tt marginpar} gives the
 source-file name and line number where the snippet came from.
 \vspace*{-0.05in}
-\item[$\bullet$ ] 
+\item[$\bullet$ ]
 The {\LaTeX} environment is opened and closed with the key-words
 {\verb@<lalLaTeX file="myLatexJunk">@}  and {\verb@</lalLaTeX>@}. This is
 used to write {\LaTeX} in the source-code. The material between the two
 key-words is stored in a file {\tt myLatexJunk.tex}.  This allows (not
 recommended) a programmer to put large sections of {\LaTeX} prose in the
-source code.  
+source code.
 \vspace*{-0.05in}
-\item[$\bullet$ ] 
+\item[$\bullet$ ]
 The error-table environment.  There is a special environment for
 translating the source code that assign the error codes and messages
 directly into a {\LaTeX} table. All you need to do is wrap the code
@@ -858,7 +858,7 @@ inclusion, use the same file name for the extraction, i.e surround
 each prototype with
 the pair {\verb@<lalVerbatim file="MyModuleCPrototypes">@}  and
 {\verb@</lalVerbatim>@}.  Each prototype will be appended to the file
-{\tt MyModuleCPrototypes.tex}, and separate margin pars will tell 
+{\tt MyModuleCPrototypes.tex}, and separate margin pars will tell
 exactly where each came from.
 
 
@@ -878,7 +878,7 @@ of what you can do.
 
 \subsection{The {\texttt {<lalVerbatim>} }  environment }
 
-As an example, look at the code fragment in the source file 
+As an example, look at the code fragment in the source file
 \texttt{lal/packages/tdfilter/src/CreateZPGFilter.c}.
 
 \begin{verbatim}
@@ -935,9 +935,9 @@ this case,  the the ``P'' is for function {\it prototype}.
 The {\texttt {<lalLaTeX>} } environment works much the same
 was as the {\texttt {<lalVerbatim>} } environment. The distinction
 being that the extracted material should be valid {\LaTeX} ready
-for insertion into a {\LaTeX} file. 
+for insertion into a {\LaTeX} file.
 
-In the {\texttt {<lalLaTeX>}} environment, leading ``*'''s on a line 
+In the {\texttt {<lalLaTeX>}} environment, leading ``*'''s on a line
 will be stripped out by {\tt laldoc}. This is to accommodate the common
 practice in c of putting leading ``*'''s on comment lines.  The way
 this is done is {\tt laldoc} checks to see if the first non blank

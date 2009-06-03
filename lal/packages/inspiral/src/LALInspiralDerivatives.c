@@ -26,7 +26,7 @@ $Id$
 
 \subsection{Module \texttt{LALInspiralDerivatives.c}}
 
-Module to calculate the RHS of the differential equations 
+Module to calculate the RHS of the differential equations
 in Eq.~(\ref{eq:ode2}).
 
 \subsubsection*{Prototypes}
@@ -47,11 +47,11 @@ cast to a {\tt void.}\\
 
 This module calculates the right-hand sides of
 the follwoing two coupled first-order differential equations which are
-solved to obtain the gravitational wave phasing equation, 
+solved to obtain the gravitational wave phasing equation,
 as described in the documentation for the function \texttt{LALInspiralWave1}:
 The equations are
 \begin{equation}
-\frac{dv}{dt} = - \frac{\mathcal{F}(v)}{m E^{\prime}(v)},\ \ \ \ 
+\frac{dv}{dt} = - \frac{\mathcal{F}(v)}{m E^{\prime}(v)},\ \ \ \
 \frac{d \phi(t)}{dt} = \frac{2v^{3}}{m}.
 \label{ode2}
 \end{equation}
@@ -65,11 +65,11 @@ None.
 \subsubsection*{Notes}
 
 \begin{itemize}
-\item This function has been intentionally made non-LAL compliant in the sense that it 
+\item This function has been intentionally made non-LAL compliant in the sense that it
 has no status structure.  This is because this code
 outputs the RHS of the differential equations
 and is called repeatedly by a function that integrates the two differential
-equations and should therefore not suffer from undue overheads. 
+equations and should therefore not suffer from undue overheads.
 \item The input {\tt params} is of type {\tt InspiralDerivativesIn} and must
 be cast to a void before calling this function. For example,\\[5pt]
 \texttt {
@@ -92,7 +92,7 @@ be cast to a void before calling this function. For example,\\[5pt]
 NRCSID (LALINSPIRALDERIVATIVESC, "$Id$");
 
 /*  <lalVerbatim file="LALInspiralDerivativesCP"> */
-void 
+void
 LALInspiralDerivatives (
    REAL8Vector *values,
    REAL8Vector *dvalues,

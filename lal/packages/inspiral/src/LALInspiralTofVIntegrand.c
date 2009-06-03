@@ -36,9 +36,9 @@ These are the energy and flux functions which are used in the gravitational wave
 
 \subsubsection*{Description}
 
-The function \texttt{LALInspiralTofVIntegrand} calculates the quantity $E^{\prime}(v)/\mathcal{F}(v)$. 
+The function \texttt{LALInspiralTofVIntegrand} calculates the quantity $E^{\prime}(v)/\mathcal{F}(v)$.
 These are the energy and flux functions which are used in the gravitational wave phasing formula, which is
-defined as 
+defined as
 
 \begin{eqnarray}
 t(v) & = & t_{\rm ref} + m \int_v^{v_{\rm ref}} \,
@@ -58,7 +58,7 @@ $m$ is the total mass of the binary.
 
 This function calls the function which represents $E^{\prime}(v)$ and $\mathcal{F}(v)$. The pointer to each
 of these functions is set by a call to the function \texttt{LALInspiralChooseModel}.
- 
+
 \subsubsection*{Notes}
 
 \vfill{\footnotesize\input{LALInspiralTofVIntegrandCV}}
@@ -69,10 +69,10 @@ of these functions is set by a call to the function \texttt{LALInspiralChooseMod
 #include <lal/LALStdlib.h>
 #include <lal/LALInspiral.h>
 
-NRCSID (LALINSPIRALTOFVINTEGRANDC, "$Id$"); 
+NRCSID (LALINSPIRALTOFVINTEGRANDC, "$Id$");
 
 /*  <lalVerbatim file="LALInspiralTofVIntegrandCP"> */
-void 
+void
 LALInspiralTofVIntegrand (
    LALStatus *status,
    REAL8     *integrand,

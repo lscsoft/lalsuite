@@ -17,14 +17,14 @@
 *  MA  02111-1307  USA
 */
 
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: SimInspiralUtils.c
  *
  * Author: Brady, P. R., Brown, D. A., and Fairhurst, S
- * 
+ *
  * Revision: $Id$
- * 
+ *
  *-----------------------------------------------------------------------
  */
 
@@ -32,7 +32,7 @@
 <lalVerbatim file="SimInspiralUtilsCV">
 Author: Brown, D. A.
 $Id$
-</lalVerbatim> 
+</lalVerbatim>
 #endif
 
 #include <math.h>
@@ -73,7 +73,7 @@ inspiral signal from a specific location in the sky (\texttt{skyPos}) assumed
 to be given in equatorial coordinates.  The detector end time is obtained by
 using \texttt{LALTimeDelayFromEarthCenter()}, while the effective distance
 requires calculation of the detector response, calculated using
-\texttt{LALComputeDetAMResponse()}. 
+\texttt{LALComputeDetAMResponse()}.
 
 The function \texttt{LALPopulateSimInspiralSiteInfo()} populates the end time
 and effective distance for each of the interferometer sites.  The sky location
@@ -90,7 +90,7 @@ of the detectors, and setting the \texttt{detector} appropriately.
 
 \subsubsection*{Uses}
 
-\noindent LALGetInspiralParams, LALGPStoGMST1, LALTimeDelayFromEarthCenter, 
+\noindent LALGetInspiralParams, LALGPStoGMST1, LALTimeDelayFromEarthCenter,
   LALAddFloatToGPS, LALComputeDetAMResponse.
 
   \subsubsection*{Notes}
@@ -139,7 +139,7 @@ XLALPlayTestSimInspiral(
       triggerTime = XLALGPStoINT8( &(tmpEvent->geocent_end_time) );
       isPlay = XLALINT8NanoSecIsPlayground( &triggerTime );
 
-      if ( ( (*dataType == playground_only)  && isPlay ) || 
+      if ( ( (*dataType == playground_only)  && isPlay ) ||
           ( (*dataType == exclude_play) && ! isPlay) )
       {
         /* keep this trigger */
@@ -161,7 +161,7 @@ XLALPlayTestSimInspiral(
         XLALFreeSimInspiral ( &tmpEvent );
       }
     }
-    *eventHead = inspiralEventList; 
+    *eventHead = inspiralEventList;
     if ( *dataType == playground_only )
     {
       XLALPrintInfo( "Kept %d playground triggers \n", numTriggers );
@@ -173,18 +173,18 @@ XLALPlayTestSimInspiral(
   }
   else if ( *dataType == all_data )
   {
-    XLALPrintInfo( 
+    XLALPrintInfo(
         "XLALPlayTestSimInspiral: Keeping all triggers\n" );
   }
   else
   {
-    XLALPrintInfo( 
-        "XLALPlayTestSimInspiral: Unknown data type, returning no triggers\n" 
+    XLALPrintInfo(
+        "XLALPlayTestSimInspiral: Unknown data type, returning no triggers\n"
         );
     *eventHead = NULL;
   }
 
-}  
+}
 
 
 /* <lalVerbatim file="SimInspiralUtilsCP"> */
@@ -204,7 +204,7 @@ XLALSimInspiralInSearchedData(
   int numInj = 0;
 
   XLALTimeSortSearchSummary( summList, LALCompareSearchSummaryByOutTime );
-  XLALSortSimInspiral( eventHead, XLALCompareSimInspiralByGeocentEndTime ); 
+  XLALSortSimInspiral( eventHead, XLALCompareSimInspiralByGeocentEndTime );
 
   thisEvent = *eventHead;
   thisSearchSumm = *summList;
@@ -217,20 +217,20 @@ XLALSimInspiralInSearchedData(
 
     while ( thisSearchSumm )
     {
-      if ( geocent_end_time(tmpEvent) < 
+      if ( geocent_end_time(tmpEvent) <
           XLALGPStoINT8( &(thisSearchSumm->out_start_time) ))
       {
-        XLALPrintInfo( 
+        XLALPrintInfo(
             "XLALSimInspiralInSearchedData: Discarding injection\n" );
         LALFree( tmpEvent );
         break;
       }
       else
       {
-        if ( geocent_end_time(tmpEvent) < 
+        if ( geocent_end_time(tmpEvent) <
             XLALGPStoINT8( &(thisSearchSumm->out_end_time) ))
         {
-          XLALPrintInfo( 
+          XLALPrintInfo(
               "XLALSimInspiralInSearchedData: Keeping injection\n" );
           numInj++;
           if ( ! eventList )
@@ -252,16 +252,16 @@ XLALSimInspiralInSearchedData(
 
     if ( !thisSearchSumm )
     {
-      XLALPrintInfo( 
+      XLALPrintInfo(
           "XLALSimInspiralInSearchedData: Discarding injection\n" );
       LALFree( tmpEvent );
     }
   }
 
-  *eventHead = eventList; 
+  *eventHead = eventList;
 
   return(numInj);
-}  
+}
 
 
 /* <lalVerbatim file="SimInspiralUtilsCP"> */
@@ -470,11 +470,11 @@ LALGalacticInspiralParamsToSimInspiralTable(
   INITSTATUS( status, "LALGalacticParamsToSimInspiral", SIMINSPIRALUTILSC );
   ATTATCHSTATUSPTR( status );
 
-  ASSERT( output, status, 
+  ASSERT( output, status,
       LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
-  ASSERT( input, status, 
+  ASSERT( input, status,
       LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
-  ASSERT( params, status, 
+  ASSERT( params, status,
       LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
 
 
@@ -510,7 +510,7 @@ LALGalacticInspiralParamsToSimInspiralTable(
   output->geocent_end_time = input->geocentEndTime;
 
   /* populate gmst field */
-  LALGPStoGMST1( status->statusPtr, &(output->end_time_gmst), 
+  LALGPStoGMST1( status->statusPtr, &(output->end_time_gmst),
       &(output->geocent_end_time), &gmstUnits );
   CHECKSTATUSPTR( status );
 
@@ -551,7 +551,7 @@ LALGalacticInspiralParamsToSimInspiralTable(
 
   /* ligo hanford observatory */
   placeAndGPS.p_detector = &lho;
-  LALTimeDelayFromEarthCenter( status->statusPtr, &time_diff_ns, 
+  LALTimeDelayFromEarthCenter( status->statusPtr, &time_diff_ns,
       &detTimeAndSource );
   CHECKSTATUSPTR( status );
   LALAddFloatToGPS( status->statusPtr, &(output->h_end_time),
@@ -560,10 +560,10 @@ LALGalacticInspiralParamsToSimInspiralTable(
 
   /* ligo livingston observatory */
   placeAndGPS.p_detector = &llo;
-  LALTimeDelayFromEarthCenter( status->statusPtr, &time_diff_ns, 
+  LALTimeDelayFromEarthCenter( status->statusPtr, &time_diff_ns,
       &detTimeAndSource );
   CHECKSTATUSPTR( status );
-  LALAddFloatToGPS( status->statusPtr, &(output->l_end_time), 
+  LALAddFloatToGPS( status->statusPtr, &(output->l_end_time),
       &(output->l_end_time), time_diff_ns );
   CHECKSTATUSPTR( status );
 
@@ -588,7 +588,7 @@ LALGalacticInspiralParamsToSimInspiralTable(
   CHECKSTATUSPTR( status );
 
   /* compute the effective distance for LHO */
-  output->eff_dist_h /= sqrt( 
+  output->eff_dist_h /= sqrt(
       splus*splus*resp.plus*resp.plus + scross*scross*resp.cross*resp.cross );
 
   /* compute the response of the LLO detector */
@@ -598,11 +598,11 @@ LALGalacticInspiralParamsToSimInspiralTable(
   CHECKSTATUSPTR( status );
 
   /* compute the effective distance for LLO */
-  output->eff_dist_l /= sqrt( 
+  output->eff_dist_l /= sqrt(
       splus*splus*resp.plus*resp.plus + scross*scross*resp.cross*resp.cross );
 
 
-  /* 
+  /*
    *
    * normal exit
    *
@@ -615,7 +615,7 @@ LALGalacticInspiralParamsToSimInspiralTable(
 
 /* <lalVerbatim file="SimInspiralUtilsCP"> */
 void
-LALInspiralSiteTimeAndDist( 
+LALInspiralSiteTimeAndDist(
     LALStatus         *status,
     SimInspiralTable  *output,
     LALDetector       *detector,
@@ -638,15 +638,15 @@ LALInspiralSiteTimeAndDist(
   ATTATCHSTATUSPTR( status );
 
   /* check that the arguments are not null */
-  ASSERT( output, status, 
+  ASSERT( output, status,
       LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
-  ASSERT( detector, status, 
+  ASSERT( detector, status,
       LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
-  ASSERT( endTime, status, 
+  ASSERT( endTime, status,
       LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
-  ASSERT( effDist, status, 
+  ASSERT( effDist, status,
       LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
-  ASSERT( skyPos, status, 
+  ASSERT( skyPos, status,
       LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
 
   memset( &source, 0, sizeof(LALSource) );
@@ -674,7 +674,7 @@ LALInspiralSiteTimeAndDist(
   *endTime = output->geocent_end_time;
 
   /* calculate the detector end time */
-  LALTimeDelayFromEarthCenter( status->statusPtr, &time_diff_ns, 
+  LALTimeDelayFromEarthCenter( status->statusPtr, &time_diff_ns,
       &detTimeAndSource );
   CHECKSTATUSPTR( status );
   LALAddFloatToGPS( status->statusPtr, endTime,
@@ -693,7 +693,7 @@ LALInspiralSiteTimeAndDist(
   CHECKSTATUSPTR( status );
 
   /* compute the effective distance */
-  *effDist /= sqrt( 
+  *effDist /= sqrt(
       splus*splus*resp.plus*resp.plus + scross*scross*resp.cross*resp.cross );
 
   /* normal exit */
@@ -712,7 +712,7 @@ LALPopulateSimInspiralSiteInfo(
 /* </lalVerbatim> */
 {
   SkyPosition           skyPos;
-  LALDetector           detector; 
+  LALDetector           detector;
   REAL4                *eff_dist;
   LIGOTimeGPS          *end_time;
 
@@ -720,7 +720,7 @@ LALPopulateSimInspiralSiteInfo(
   INITSTATUS( status, "LALPopulateSimInspiralSiteInfo", SIMINSPIRALUTILSC );
   ATTATCHSTATUSPTR( status );
 
-  ASSERT( output, status, 
+  ASSERT( output, status,
       LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
 
   /* set up params for the geocent end time and source location */
@@ -734,38 +734,38 @@ LALPopulateSimInspiralSiteInfo(
   detector = lalCachedDetectors[LALDetectorIndexLHODIFF];
   end_time = &(output->h_end_time);
   eff_dist = &(output->eff_dist_h);
-  LALInspiralSiteTimeAndDist(status->statusPtr, output, &detector, end_time, 
+  LALInspiralSiteTimeAndDist(status->statusPtr, output, &detector, end_time,
       eff_dist, &skyPos);
 
   /* LIGO Livingston observatory*/
   detector = lalCachedDetectors[LALDetectorIndexLLODIFF];
   end_time = &(output->l_end_time);
   eff_dist = &(output->eff_dist_l);
-  LALInspiralSiteTimeAndDist(status->statusPtr, output, &detector, end_time, 
+  LALInspiralSiteTimeAndDist(status->statusPtr, output, &detector, end_time,
       eff_dist, &skyPos);
 
   /* GEO observatory*/
   detector = lalCachedDetectors[LALDetectorIndexGEO600DIFF];
   end_time = &(output->g_end_time);
   eff_dist = &(output->eff_dist_g);
-  LALInspiralSiteTimeAndDist(status->statusPtr, output, &detector, end_time, 
+  LALInspiralSiteTimeAndDist(status->statusPtr, output, &detector, end_time,
       eff_dist, &skyPos);
 
   /* TAMA observatory*/
   detector = lalCachedDetectors[LALDetectorIndexTAMA300DIFF];
   end_time = &(output->t_end_time);
   eff_dist = &(output->eff_dist_t);
-  LALInspiralSiteTimeAndDist(status->statusPtr, output, &detector, end_time, 
+  LALInspiralSiteTimeAndDist(status->statusPtr, output, &detector, end_time,
       eff_dist, &skyPos);
 
   /* Virgo observatory*/
   detector = lalCachedDetectors[LALDetectorIndexVIRGODIFF];
   end_time = &(output->v_end_time);
   eff_dist = &(output->eff_dist_v);
-  LALInspiralSiteTimeAndDist(status->statusPtr, output, &detector, end_time, 
+  LALInspiralSiteTimeAndDist(status->statusPtr, output, &detector, end_time,
       eff_dist, &skyPos);
 
-  /* 
+  /*
    *
    * normal exit
    *
@@ -780,7 +780,7 @@ LALPopulateSimInspiralSiteInfo(
 void
 XLALSortSimInspiral(
     SimInspiralTable **head,
-    int (*comparefunc)(const SimInspiralTable * const *, 
+    int (*comparefunc)(const SimInspiralTable * const *,
       const SimInspiralTable * const *)
     )
 /* </lalVerbatim> */
@@ -804,7 +804,7 @@ XLALSortSimInspiral(
     array[i++] = event;
 
   /* sort the array using the specified function */
-  qsort(array, length, sizeof(*array), 
+  qsort(array, length, sizeof(*array),
       (int(*)(const void *, const void *)) comparefunc);
 
   /* re-link the list according to the sorted array */
@@ -873,7 +873,7 @@ XLALReturnSimInspiralEndTime (
   {
     return( XLALGPStoINT8(&(event->l_end_time) ) );
   }
-  else if ( ! strcmp( "H1", ifo ) || 
+  else if ( ! strcmp( "H1", ifo ) ||
       ! strcmp( "H2", ifo ) )
   {
     return( XLALGPStoINT8(&(event->h_end_time) ) );
@@ -984,7 +984,7 @@ XLALSnglSimInspiralTest (
         {
           /* this event may be in coincidence window, need to check site
            * end time */
-          simSiteTime = XLALReturnSimInspiralEndTime( thisSimEvent, 
+          simSiteTime = XLALReturnSimInspiralEndTime( thisSimEvent,
               thisEvent->ifo );
 
 
@@ -992,9 +992,9 @@ XLALSnglSimInspiralTest (
               (inspiralTime < (simSiteTime + injectWindowNS)) )
           {
             /* this event is within the coincidence window  */
-           
+
             /* store the sim inspiral in the event_id's for this sngl */
-            thisId = thisEvent->event_id; 
+            thisId = thisEvent->event_id;
             while ( thisId )
             {
               thisId->simInspiralTable = thisSimEvent;
@@ -1151,7 +1151,7 @@ XLALCoincSimInspiralTest (
 
   if ( !*coincHead )
   {
-    XLALPrintInfo( 
+    XLALPrintInfo(
         "XLALCoincSimInspiral: Empty coincInspiral passed as input" );
     *missedSimHead = *simHead;
     *simHead = NULL;
@@ -1188,7 +1188,7 @@ XLALCoincSimInspiralTest (
     {
       /* thisCoinc is coincident with a thisSim */
       thisCoinc->simInspiral = thisSim;
-      
+
       /* set the event_id's */
       if ( !thisSim->event_id )
       {
@@ -1206,7 +1206,7 @@ XLALCoincSimInspiralTest (
       {
         *coincHead = thisCoinc;
       }
-      
+
       XLALPrintInfo( "+" );
       /* move on to next coinc */
       prevCoinc = thisCoinc;
@@ -1223,11 +1223,11 @@ XLALCoincSimInspiralTest (
       {
         thisMissedCoinc = thisMissedCoinc->next = thisCoinc;
       }
-      
+
       if ( prevCoinc ) prevCoinc->next = thisCoinc->next;
       thisCoinc = thisCoinc->next;
       XLALPrintInfo( "-" );
-      
+
       /* terminate the missed list */
       thisMissedCoinc->next = NULL;
     }
@@ -1237,7 +1237,7 @@ XLALCoincSimInspiralTest (
 
   thisSim = *simHead;
   *simHead = NULL;
-  
+
   while( thisSim )
   {
     if( thisSim->event_id )

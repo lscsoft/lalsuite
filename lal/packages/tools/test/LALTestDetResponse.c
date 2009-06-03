@@ -42,7 +42,7 @@ LALComputeDetAMResponse()
 
 \subsubsection*{Notes}
 
-</lalLaTeX> 
+</lalLaTeX>
 */
 
 #include <stdio.h>
@@ -83,7 +83,7 @@ typedef enum { xAxis = 1, yAxis = 2, zAxis = 3 } LALDR_Axis_t;
  *    result = a x b
  */
 static void
-LALDR_CrossProd3Vector(REAL8 result[3], 
+LALDR_CrossProd3Vector(REAL8 result[3],
                        const REAL8 a[3], const REAL8 b[3])
 {
   result[0] =  a[1]*b[2] - a[2]*b[1];
@@ -134,7 +134,7 @@ LALDR_DotProd33Matrix(REAL8 a[3][3], REAL8 b[3][3])
 /*
  * Sets all elements of a 3x3 matrix
  */
-static void 
+static void
 LALDR_Set33Matrix(REAL8 matrix[3][3],
                   REAL8 a11, REAL8 a12, REAL8 a13,
                   REAL8 a21, REAL8 a22, REAL8 a23,
@@ -193,7 +193,7 @@ LALDR_Multiply33Matrix(REAL8 product[3][3],
 {
   /* loop counters */
   INT4 i, j, k;
-    
+
   /*
    * Zero out output matrix
    */
@@ -315,7 +315,7 @@ LALDR_L2Norm33Matrix(const REAL8 matrix[3][3])
 
     return l2norm;
 }
-    
+
 
 
 
@@ -352,7 +352,7 @@ LALDR_InfNorm33Matrix(const REAL8 matrix[3][3])
         for (j = 0; j < 3; ++j)
             if (fabs((double)(matrix[i][j])) > infnorm)
                 infnorm = fabs(matrix[i][j]);
-    
+
     return infnorm;
 }
 
@@ -373,7 +373,7 @@ LALDR_Print33Matrix(const REAL8 matrix[3][3],
 
   REAL8 max;
 
-    
+
   /*
    * Human-readable format
    */
@@ -503,11 +503,11 @@ LALDR_GetEffectiveLoc(SkyPosition *eff_loc, const LALDetector *detector)
 
     SkyPosition delta_loc;
 
-    
+
     /*
      * First, we need the unit vectors representing the arm directions
      */
-    
+
     /* polar angle, x-arm */
     theta_x = LAL_PI_2 - detector->frDetector.xArmAltitudeRadians;
 
@@ -574,7 +574,7 @@ LALDR_GetEffectiveLoc(SkyPosition *eff_loc, const LALDetector *detector)
         - delta_loc.latitude;
 
     return;
-    
+
 } /* END: GetEffectiveLoc() */
 
 
@@ -596,7 +596,7 @@ static REAL8 deg_to_rad(REAL8 deg);
 
 int lalDebugLevel = 0;
 int verbose_p       = 1;
-              
+
 
 int main(int argc, char *argv[])
 {
@@ -660,7 +660,7 @@ int main(int argc, char *argv[])
       printf("Test number %d\n", testNumber);
       printf("---------------\n");
     }
-  
+
   TestOnePoint(&status, &passed, &frdet, &pulsar, &gps, &expectedResponse, 0);
 
   if (passed != 1)
@@ -749,7 +749,7 @@ int main(int argc, char *argv[])
       printf("Test number %d\n", testNumber);
       printf("---------------\n");
     }
-  
+
   TestOnePoint(&status, &passed, &frdet, &pulsar, &gps, &expectedResponse, 0);
 
   if (passed != 1)
@@ -793,7 +793,7 @@ int main(int argc, char *argv[])
       printf("Test number %d\n", testNumber);
       printf("---------------\n");
     }
-  
+
   TestOnePoint(&status, &passed, &frdet, &pulsar, &gps, &expectedResponse, 0);
 
   if (passed != 1)
@@ -837,7 +837,7 @@ int main(int argc, char *argv[])
       printf("Test number %d\n", testNumber);
       printf("---------------\n");
     }
-  
+
   TestOnePoint(&status, &passed, &frdet, &pulsar, &gps, &expectedResponse, 0);
 
   if (passed != 1)
@@ -881,7 +881,7 @@ int main(int argc, char *argv[])
       printf("Test number %d\n", testNumber);
       printf("---------------\n");
     }
-  
+
   TestOnePoint(&status, &passed, &frdet, &pulsar, &gps, &expectedResponse, 0);
 
   if (passed != 1)
@@ -890,7 +890,7 @@ int main(int argc, char *argv[])
       return 1;
     }
 
-  
+
   /****************
    * Test number 7
    ****************/
@@ -926,7 +926,7 @@ int main(int argc, char *argv[])
       printf("Test number %d\n", testNumber);
       printf("---------------\n");
     }
-  
+
   TestOnePoint(&status, &passed, &frdet, &pulsar, &gps, &expectedResponse, 0);
 
   if (passed != 1)
@@ -972,7 +972,7 @@ int main(int argc, char *argv[])
       printf("Test number %d\n", testNumber);
       printf("---------------\n");
     }
-  
+
   TestOnePoint(&status, &passed, &frdet, &pulsar, &gps, &expectedResponse, 0);
 
   if (passed != 1)
@@ -1018,7 +1018,7 @@ int main(int argc, char *argv[])
       printf("Test number %d\n", testNumber);
       printf("---------------\n");
     }
-  
+
   TestOnePoint(&status, &passed, &frdet, &pulsar, &gps, &expectedResponse, 0);
 
   if (passed != 1)
@@ -1064,7 +1064,7 @@ int main(int argc, char *argv[])
       printf("Test number %d\n", testNumber);
       printf("---------------\n");
     }
-  
+
   TestOnePoint(&status, &passed, &frdet, &pulsar, &gps, &expectedResponse, 0);
 
   if (passed != 1)
@@ -1110,7 +1110,7 @@ int main(int argc, char *argv[])
       printf("Test number %d\n", testNumber);
       printf("---------------\n");
     }
-  
+
   TestOnePoint(&status, &passed, &frdet, &pulsar, &gps, &expectedResponse, 0);
 
   if (passed != 1)
@@ -1156,7 +1156,7 @@ int main(int argc, char *argv[])
       printf("Test number %d\n", testNumber);
       printf("---------------\n");
     }
-  
+
   TestOnePoint(&status, &passed, &frdet, &pulsar, &gps, &expectedResponse, 0);
 
   if (passed != 1)
@@ -1217,7 +1217,7 @@ int main(int argc, char *argv[])
       printf("Test number %d\n", testNumber);
       printf("---------------\n");
     }
-  
+
   TestOnePoint(&status, &passed, &frdet, &pulsar, &gps, &expectedResponse, 0);
 
   if (passed != 1)
@@ -1277,7 +1277,7 @@ int main(int argc, char *argv[])
       printf("Test number %d\n", testNumber);
       printf("---------------\n");
     }
-  
+
   TestOnePoint(&status, &passed, &frdet, &pulsar, &gps, &expectedResponse, 0);
 
   if (passed != 1)
@@ -1285,7 +1285,7 @@ int main(int argc, char *argv[])
       printf("LALTestDetResponse: ERROR: failed test no. %d\n", testNumber);
       return 1;
     }
-  
+
 
   /****************
    * Test number 15
@@ -1338,7 +1338,7 @@ int main(int argc, char *argv[])
       printf("Test number %d\n", testNumber);
       printf("---------------\n");
     }
-  
+
   TestOnePoint(&status, &passed, &frdet, &pulsar, &gps, &expectedResponse, 0);
 
   if (passed != 1)
@@ -1346,7 +1346,7 @@ int main(int argc, char *argv[])
       printf("LALTestDetResponse: ERROR: failed test no. %d\n", testNumber);
       return 1;
     }
-  
+
 
   /****************
    * Test number 16
@@ -1392,7 +1392,7 @@ int main(int argc, char *argv[])
       printf("Test number %d\n", testNumber);
       printf("---------------\n");
     }
-  
+
   TestOnePoint(&status, &passed, &frdet, &pulsar, &gps, &expectedResponse, 0);
 
   if (passed != 1)
@@ -1400,13 +1400,13 @@ int main(int argc, char *argv[])
       printf("LALTestDetResponse: ERROR: failed test no. %d\n", testNumber);
       return 1;
     }
-  
 
 
-  
+
+
   return 0;
 }
-              
+
 
 /* returns 1 if computed values are as expected, 0 otherwise */
 /* only tests differential mode IFOs, and only plus and cross components */
@@ -1430,14 +1430,14 @@ void TestOnePoint(LALStatus              *status,
     {
       TRY( LALCreateDetector(status->statusPtr, &detector, p_frDetector,
                              LALDETECTORTYPE_IFODIFF), status );
-      
+
       detAndSource.pDetector = &detector;
     }
   else
     {
       detAndSource.pDetector = &(lalCachedDetectors[LALDetectorIndexLHODIFF]);
     }
-  
+
   detAndSource.pSource   = p_source;
 
   if (lalDebugLevel > 0 || verbose_p > 0)
@@ -1472,7 +1472,7 @@ void TestOnePoint(LALStatus              *status,
              (computedResponse.plus - p_expectedResponse->plus),
              (computedResponse.cross - p_expectedResponse->cross));
     }
-  
+
   if ((REAL4)fabs((double)(computedResponse.plus - p_expectedResponse->plus))
       > LALDR_REAL4_EPS ||
       (REAL4)fabs((double)(computedResponse.cross - p_expectedResponse->cross))
@@ -1532,13 +1532,13 @@ REAL8 AM_hor2azimuth(REAL8 dec,REAL8 lat, REAL8 alt)
 
                 if (dec < 0. && tmp2 == -(REAL8)LAL_PI_2)
                     tmp = (double)-1.;
-                
+
                 if (dec > 0. && tmp2 == (REAL8)LAL_PI_2)
                     tmp = (double)1.;
             }
-            
+
             /* printf("Hor2Azi: azi = %19.15e\n", rad_to_deg(acos(tmp))); */
-            
+
             return (REAL8)acos(tmp);
         }
     }
@@ -1589,7 +1589,7 @@ void AM_Eq2Hor(Status                 *status,
                REAL8                   lst)
 {
     REAL8 ha; /* in seconds */
-    
+
     INITSTATUS (status, "Eq2Hor", LALTESTDETRESPONSEC);
 
     /* compute Hour Angle of source in seconds */
@@ -1601,7 +1601,7 @@ void AM_Eq2Hor(Status                 *status,
     srcHorizon->latitude = AM_hor2altitude(srcEquatorial->latitude,
                                            observer->geodetic.latitude,
                                            ha);
-    
+
     srcHorizon->longitude = AM_hor2azimuth(srcEquatorial->latitude,
                                            observer->geodetic.latitude,
                                            srcHorizon->latitude);
@@ -1637,7 +1637,7 @@ void AM_ConvertSrc(Status                *status,
   REAL8 tmp;
   SkyPosition horCoords;
   EarthPosition ifoPosition;
-    
+
   INITSTATUS (status, "ConvertSrcOrien", LALTESTDETRESPONSEC);
 
   /*
@@ -1650,13 +1650,13 @@ void AM_ConvertSrc(Status                *status,
     deg_to_rad(p_detAndDate->p_detector->frDetector.vertexLatitudeDegrees);
   ifoPosition.geodetic.longitude =
     deg_to_rad(p_detAndDate->p_detector->frDetector.vertexLongititudeDegrees);
-  
-    
+
+
   AM_Eq2Hor(status, &horCoords, &(source->coords),
             &(p_detAndDate->p_detector->frDetector.vertexLocation), lst_sec);
-    
+
   lat_r = deg_to_rad(ifo->frDetector.vertexLatitudeDegrees);
-    
+
   /*
    * Convert angles to radians
    */
@@ -1690,7 +1690,7 @@ void AM_ConvertSrc(Status                *status,
     sourceHor->equatorialCoords.longitude += (REAL8)LAL_2_PI;
 
   sourceHor->coords.alt = horCoords.alt;
-    
+
   /* this orientation is w.r.t. vertical circle */
   sourceHor->orientation = source->orientation - tmp;
 
@@ -1727,11 +1727,11 @@ st_response(LALStatus             *status,
   /*
    * Convert source coords to alt-azi
    */
-  
+
 
   xi = deg_to_rad(pDetAndSrc->pSource->orientation) + LAL_PI_2;
 
-  
-  
-  
-  
+
+
+
+
