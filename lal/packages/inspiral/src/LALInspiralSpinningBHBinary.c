@@ -202,7 +202,7 @@ LALInspiralSpinModulatedWave(
           INT4 errNum = XLALClearErrno();
           LALFree(dummy.data);
 
-          if (errNum = XLAL_ENOMEM)
+          if (errNum == XLAL_ENOMEM)
             ABORT(status, LALINSPIRALH_EMEM, LALINSPIRALH_MSGEMEM);
           else
             ABORTXLAL( status );
@@ -644,7 +644,7 @@ LALInspiralSpinModulatedWaveForInjection(
       INT4 errNum = XLALClearErrno();
       LALFree(dummy.data);
 
-      if (errNum = XLAL_ENOMEM)
+      if (errNum == XLAL_ENOMEM)
         ABORT(status, LALINSPIRALH_EMEM, LALINSPIRALH_MSGEMEM);
       else
         ABORTXLAL( status );
