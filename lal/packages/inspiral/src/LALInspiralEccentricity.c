@@ -1,5 +1,5 @@
 /**
-*  Copyright (C) 2007 
+*  Copyright (C) 2007
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -26,8 +26,8 @@ $Id$
 
 \subsection{Module \texttt{LALInspiralEccentricity.c} and \texttt{LALInspiralEccentricityTemplates.c}}
 
-The code \texttt{LALInspiralEccentricity} generates a time-domain inspiral waveform corresponding to the 
-\texttt{approximant} \texttt{Eccentricity} as outlined PRD 60 for the Newtonian case. 
+The code \texttt{LALInspiralEccentricity} generates a time-domain inspiral waveform corresponding to the
+\texttt{approximant} \texttt{Eccentricity} as outlined PRD 60 for the Newtonian case.
 
 \subsubsection*{Prototypes}
 \vspace{0.1in}
@@ -48,17 +48,17 @@ The code \texttt{LALInspiralEccentricity} generates a time-domain inspiral wavef
 
 \subsubsection*{Description}
 
-\texttt{LALInspiralEccentricity} is called if the user has specified the 
+\texttt{LALInspiralEccentricity} is called if the user has specified the
 \texttt{enum} \texttt{approximant} to be
 either \texttt{TaylorT1} or \texttt{PadeT1}.
 {\tt LALInspiralEccentricityTemplates} is exactly the same as \texttt{LALInspiralEccentricity,} except that
-it generates two templates one for which the starting phase is 
+it generates two templates one for which the starting phase is
 \texttt{params.startPhase} and the other for which the phase is
 \texttt{params.startPhase + $\pi/2$}.
 
 
 \subsubsection*{Algorithm}
-This code uses a fourth-order Runge-Kutta algorithm to solve the ODEs 
+This code uses a fourth-order Runge-Kutta algorithm to solve the ODEs
 in Equation (\ref{eq:ode2}).
 
 \subsubsection*{Uses}
@@ -69,7 +69,7 @@ in Equation (\ref{eq:ode2}).
 \texttt{LALInspiralPhasing1}\\
 \texttt{LALInspiralDerivatives}\\
 \texttt{LALRungeKutta4}.
- 
+
 
 \subsubsection*{Notes}
 
@@ -77,7 +77,7 @@ in Equation (\ref{eq:ode2}).
 
 </lalLaTeX>  */
 
-/* 
+/*
    Interface routine needed to generate time-domain T- or a P-approximant
    waveforms by solving the ODEs using a 4th order Runge-Kutta; April 5, 00.
 */
@@ -97,7 +97,7 @@ tagecc_CBC_ODE_Struct
 ecc_CBC_ODE_Input;
 
 
-void 
+void
 LALInspiralEccentricityDerivatives (
    REAL8Vector *values,
    REAL8Vector *dvalues,
@@ -120,7 +120,7 @@ LALInspiralEccentricityEngine(
 NRCSID (LALINSPIRALECCENTRICITYC, "$Id$");
 
 /*  <lalVerbatim file="LALInspiralEccentricityCP"> */
-void 
+void
 LALInspiralEccentricity(
    LALStatus        *status,
    REAL4Vector      *signal,
@@ -129,7 +129,7 @@ LALInspiralEccentricity(
  { /* </lalVerbatim>  */
 
    INT4 count;
-   
+
    INITSTATUS(status, "LALInspiralEccentricity", LALINSPIRALECCENTRICITYC);
    ATTATCHSTATUSPTR(status);
 
@@ -143,7 +143,7 @@ LALInspiralEccentricity(
    /*Call the engine function*/
    LALInspiralEccentricityEngine(status->statusPtr, signal, NULL, NULL, NULL, NULL, &count, params);
    CHECKSTATUSPTR(status);
-   
+
    DETATCHSTATUSPTR(status);
    RETURN (status);
 
@@ -151,7 +151,7 @@ LALInspiralEccentricity(
 
 
 
-/* 
+/*
    Interface routine needed to generate time-domain T- or a P-approximant
    waveforms by solving the ODEs using a 4th order Runge-Kutta; April 5, 00.
 */
@@ -159,7 +159,7 @@ LALInspiralEccentricity(
 NRCSID (LALINSPIRALECCENTRICITYTEMPLATESC, "$Id$");
 
 /*  <lalVerbatim file="LALInspiralEccentricityTemplatesCP"> */
-void 
+void
 LALInspiralEccentricityTemplates(
    LALStatus        *status,
    REAL4Vector      *signal1,
@@ -169,7 +169,7 @@ LALInspiralEccentricityTemplates(
  { /* </lalVerbatim>  */
 
    INT4 count;
-   
+
    INITSTATUS(status, "LALInspiralEccentricityTemplates", LALINSPIRALECCENTRICITYTEMPLATESC);
    ATTATCHSTATUSPTR(status);
 
@@ -184,14 +184,14 @@ LALInspiralEccentricityTemplates(
 
    /* Call the engine function */
    LALInspiralEccentricityEngine(status->statusPtr, signal1, signal2, NULL, NULL, NULL, &count, params);
-   CHECKSTATUSPTR(status);   
+   CHECKSTATUSPTR(status);
 
    DETATCHSTATUSPTR(status);
    RETURN (status);
 
 }
 
-/* 
+/*
    Interface routine needed to generate time-domain T- or a P-approximant
    waveforms for injection packages T.Cokelaer sept 2003
 */
@@ -199,53 +199,53 @@ LALInspiralEccentricityTemplates(
 NRCSID (LALINSPIRALECCENTRICITYFORINJECTIONC, "$Id$");
 
 /*  <lalVerbatim file="LALInspiralEccentricityForInjectionCP"> */
-void 
+void
 LALInspiralEccentricityForInjection(
 			     LALStatus        *status,
 			     CoherentGW       *waveform,
 			     InspiralTemplate *params,
-			     PPNParamStruc  *ppnParams			     
+			     PPNParamStruc  *ppnParams
 			     )
 { /* </lalVerbatim>  */
- 
+
   INT4        count, i;
-  REAL8       p, phiC;  
-  
+  REAL8       p, phiC;
+
   REAL4Vector a;           /* pointers to generated amplitude  data */
   REAL4Vector ff;          /* pointers to generated  frequency data */
   REAL8Vector phi;         /* generated phase data */
-  
+
   CreateVectorSequenceIn in;
-  
+
   CHAR message[256];
-  
-  InspiralInit paramsInit;  
+
+  InspiralInit paramsInit;
 
   INITSTATUS(status, "LALInspiralEccentricityForInjection", LALINSPIRALECCENTRICITYTEMPLATESC);
   ATTATCHSTATUSPTR(status);
-  
+
   /* Make sure parameter and waveform structures exist. */
   ASSERT( params, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL );
-  ASSERT(waveform, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);  
+  ASSERT(waveform, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
   ASSERT( !( waveform->a ), status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL );
   ASSERT( !( waveform->f ), status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL );
   ASSERT( !( waveform->phi ), status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL );
-  
+
   /* Compute some parameters*/
   LALInspiralInit(status->statusPtr, params, &paramsInit);
-  CHECKSTATUSPTR(status);   
-  
+  CHECKSTATUSPTR(status);
+
   if (paramsInit.nbins == 0){
       DETATCHSTATUSPTR(status);
       RETURN (status);
   }
 
-  /* Now we can allocate memory and vector for coherentGW structure*/     
+  /* Now we can allocate memory and vector for coherentGW structure*/
 
   ff.length  = paramsInit.nbins;
   a.length   = 2* paramsInit.nbins;
   phi.length = paramsInit.nbins;
-  
+
   ff.data = (REAL4 *) LALCalloc(paramsInit.nbins, sizeof(REAL4));
   a.data  = (REAL4 *) LALCalloc(2 * paramsInit.nbins, sizeof(REAL4));
   phi.data= (REAL8 *) LALCalloc(paramsInit.nbins, sizeof(REAL8));
@@ -271,15 +271,15 @@ LALInspiralEccentricityForInjection(
     LALFree(phi.data);
   }
   ENDFAIL( status );
-     
+
   p = phi.data[count-1];
-  
+
   params->fFinal = ff.data[count-1];
   sprintf(message, "cycles = %f", p/(double)LAL_TWOPI);
   LALInfo(status, message);
 
   if ( (INT4)(p/LAL_TWOPI) < 2 ){
-    sprintf(message, "The waveform has only %f cycles; we don't keep waveform with less than 2 cycles.", 
+    sprintf(message, "The waveform has only %f cycles; we don't keep waveform with less than 2 cycles.",
 	       p/(double)LAL_TWOPI );
     XLALPrintError(message);
     LALWarning(status, message);
@@ -291,7 +291,7 @@ LALInspiralEccentricityForInjection(
 	{
 	  phi.data[i] =  phi.data[i] - phiC + ppnParams->phi;
 	}
-      
+
       /* Allocate the waveform structures. */
       if ( ( waveform->a = (REAL4TimeVectorSeries *)
 	     LALCalloc(1, sizeof(REAL4TimeVectorSeries) ) ) == NULL ) {
@@ -311,27 +311,27 @@ LALInspiralEccentricityForInjection(
 	ABORT( status, LALINSPIRALH_EMEM,
 	       LALINSPIRALH_MSGEMEM );
       }
-      
-      
+
+
       in.length = (UINT4)(count);
       in.vectorLength = 2;
-      
+
       LALSCreateVectorSequence( status->statusPtr, &( waveform->a->data ), &in );
-      CHECKSTATUSPTR(status);      
-      
+      CHECKSTATUSPTR(status);
+
       LALSCreateVector( status->statusPtr, &( waveform->f->data ), count);
-      CHECKSTATUSPTR(status);      
-      
+      CHECKSTATUSPTR(status);
+
       LALDCreateVector( status->statusPtr, &( waveform->phi->data ), count );
-      CHECKSTATUSPTR(status);        
-     
+      CHECKSTATUSPTR(status);
+
       memcpy(waveform->f->data->data , ff.data, count*(sizeof(REAL4)));
       memcpy(waveform->a->data->data , a.data, 2*count*(sizeof(REAL4)));
       memcpy(waveform->phi->data->data ,phi.data, count*(sizeof(REAL8)));
-      
+
       waveform->a->deltaT = waveform->f->deltaT = waveform->phi->deltaT
 	= ppnParams->deltaT;
-      
+
       waveform->a->sampleUnits    = lalStrainUnit;
       waveform->f->sampleUnits    = lalHertzUnit;
       waveform->phi->sampleUnits  = lalDimensionlessUnit;
@@ -341,24 +341,24 @@ LALInspiralEccentricityForInjection(
       LALSnprintf( waveform->a->name, LALNameLength,   "T1 inspiral amplitude" );
       LALSnprintf( waveform->f->name, LALNameLength,   "T1 inspiral frequency" );
       LALSnprintf( waveform->phi->name, LALNameLength, "T1 inspiral phase" );
-      
+
       /* --- fill some output ---*/
       ppnParams->tc     = (double)(count-1) / params->tSampling ;
       ppnParams->length = count;
-      ppnParams->dfdt   = ((REAL4)(waveform->f->data->data[count-1] 
+      ppnParams->dfdt   = ((REAL4)(waveform->f->data->data[count-1]
 				   - waveform->f->data->data[count-2]))
 	* ppnParams->deltaT;
       ppnParams->fStop  = params->fFinal;
       ppnParams->termCode        = GENERATEPPNINSPIRALH_EFSTOP;
       ppnParams->termDescription = GENERATEPPNINSPIRALH_MSGEFSTOP;
-      
+
       ppnParams->fStart   = ppnParams->fStartIn;
 
   /* --- free memory --- */
   LALFree(ff.data);
   LALFree(a.data);
-  LALFree(phi.data); 
- 
+  LALFree(phi.data);
+
   DETATCHSTATUSPTR(status);
   RETURN (status);
 }
@@ -384,9 +384,9 @@ LALInspiralEccentricityEngine(
    INT4 number_of_diff_equations = 3;
    INT4 count = 0;
    ecc_CBC_ODE_Input in3;
-   REAL8 phase; 
-   REAL8 orbital_element_p,orbital_element_e_squared; 
-   REAL8 orbital_element_e; 
+   REAL8 phase;
+   REAL8 orbital_element_p,orbital_element_e_squared;
+   REAL8 orbital_element_e;
    REAL8 twoPhim2Beta = 0;
    REAL8 threePhim2Beta = 0;
    REAL8 phim2Beta = 0;
@@ -394,8 +394,8 @@ LALInspiralEccentricityEngine(
    REAL8 rbyM=1e6, rbyMFlso=6.;
    REAL8 sin2Beta,cos2Beta,iota,onepCosSqI, SinSqI, cosI, e0, fmin, beta, p0;
 
- 
-   
+
+
    REAL8 amp, m, dt, t,  h1, h2, f,  fHigh, piM, fu;
    REAL8Vector dummy, values, dvalues, valuesNew, yt, dym, dyt;
    INT4 done=0;
@@ -409,13 +409,13 @@ LALInspiralEccentricityEngine(
    REAL8 mTot = 0;
    REAL8 unitHz = 0;
    REAL8 f2a = 0;
-   REAL8 mu = 0; 
+   REAL8 mu = 0;
    REAL8 etab = 0;
    REAL8 fFac = 0; /* SI normalization for f and t */
    REAL8 f2aFac = 0;/* factor multiplying f in amplitude function */
    REAL8 apFac = 0, acFac = 0;/* extra factor in plus and cross amplitudes */
 #endif
-     
+
    INITSTATUS(status, "LALInspiralEccentricityEngine", LALINSPIRALECCENTRICITYENGINEC);
    ATTATCHSTATUSPTR(status);
 
@@ -429,9 +429,9 @@ LALInspiralEccentricityEngine(
    CHECKSTATUSPTR(status);
    LALInspiralChooseModel(status->statusPtr, &func, &ak, params);
    CHECKSTATUSPTR(status);
-  
+
    m = ak.totalmass = params->mass1+params->mass2;
-   
+
    values.length = dvalues.length = valuesNew.length =
    yt.length = dym.length = dyt.length = number_of_diff_equations;
    dummy.length = number_of_diff_equations * 6;
@@ -453,23 +453,23 @@ LALInspiralEccentricityEngine(
    {
      /*to be implemented. */
 
-     
+
 /*      mTot   = params->mass1 + params->mass2;
       etab   = params->mass1 * params->mass2;
       etab  /= mTot;
       etab  /= mTot;
       unitHz = mTot *LAL_MTSUN_SI*(REAL8)LAL_PI;
       cosI   = cos( params->inclination );
-      mu     = etab * mTot;  
+      mu     = etab * mTot;
       fFac   = 1.0 / ( 4.0*LAL_TWOPI*LAL_MTSUN_SI*mTot );
-      f2aFac = LAL_PI*LAL_MTSUN_SI*mTot*fFac;   
+      f2aFac = LAL_PI*LAL_MTSUN_SI*mTot*fFac;
       apFac  = acFac = -2.0 * mu * LAL_MRSUN_SI/params->distance;
       apFac *= 1.0 + cosI*cosI;
       acFac *= 2.0*cosI;
       params->nStartPad = 0;
       */
    }
-   
+
    ASSERT(ak.totalmass > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
 
    t = 0.0;
@@ -480,21 +480,21 @@ LALInspiralEccentricityEngine(
    in3.eta = (params->mass1 * params->mass2) /(params->mass1 + params->mass2) / (params->mass1 + params->mass2);
    funcParams = (void *) &in3;
 
-   
+
    piM = LAL_PI * m * LAL_MTSUN_SI;
 /*   f = (v*v*v)/piM;
 
    fu = params->fCutoff;
-   if (fu) 
-      fHigh = (fu < ak.flso) ? fu : ak.flso; 
-   else 
+   if (fu)
+      fHigh = (fu < ak.flso) ? fu : ak.flso;
+   else
       fHigh = ak.flso;
    f = (v*v*v)/(LAL_PI*m);
 
    ASSERT(fHigh < 0.5/dt, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
    ASSERT(fHigh > params->fLower, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
 */
-   
+
 
    /* e0 is set at fmin */
    e0 = params->eccentricity;
@@ -502,7 +502,7 @@ LALInspiralEccentricityEngine(
    /* the second harmonic will start at fLower*2/3 */
    fmin = params->fLower;
    iota = params->inclination; /*overwritten later */
-   
+
    beta = 0.;
    twoBeta = 2.* beta;
    cos2Beta = cos(twoBeta);
@@ -513,14 +513,14 @@ LALInspiralEccentricityEngine(
    cosI = cos(iota);
 
    p0 = (1. - e0*e0)/pow(2. * LAL_PI * m * LAL_MTSUN_SI* fmin/3. , 2./3.);
-       
+
    *(values.data) = orbital_element_p = p0;
    *(values.data+1) = phase = params->startPhase;
-   *(values.data+2) = orbital_element_e = e0; 
+   *(values.data+2) = orbital_element_e = e0;
 
-   
 
-    
+
+
    in4.function = LALInspiralEccentricityDerivatives;
    in4.x = t;
    in4.y = &values;
@@ -529,7 +529,7 @@ LALInspiralEccentricityEngine(
    in4.yt = &yt;
    in4.dym = &dym;
    in4.dyt = &dyt;
-   
+
    xlalErrno = 0;
    /* Initialize GSL integrator */
    if (!(integrator = XLALRungeKutta4Init(number_of_diff_equations, &in4)))
@@ -546,22 +546,22 @@ LALInspiralEccentricityEngine(
    count = 0;
    if (signal2) {
    params->nStartPad = 0;} /* for template generation, that value must be zero*/
-   
+
    else if (signal1) {
      count = params->nStartPad;
    }
 
    t = 0.0;
 
-   
+
    fu = params->fCutoff;
-   if (fu) 
-      fHigh = (fu < ak.flso) ? fu : ak.flso; 
-   else 
+   if (fu)
+      fHigh = (fu < ak.flso) ? fu : ak.flso;
+   else
       fHigh = ak.flso;
-      
+
    f = 1./(pow(orbital_element_p, 3./2.))/piM;
- 
+
 
    /*fprintf(stderr, "fFinal = %f %f %f %f\n", fu,fHigh,f,ak.flso);*/
  done = 0;
@@ -583,14 +583,14 @@ LALInspiralEccentricityEngine(
         threePhim2Beta = 3.* phase - twoBeta;
         orbital_element_e_squared = orbital_element_e * orbital_element_e;
         amp = params->signalAmplitude / orbital_element_p;
-   
-/*        fprintf(stderr, "%e %e %e %e %e\n", twoBeta, twoPhim2Beta, phim2Beta, threePhim2Beta, orbital_element_e_squared);*/
-         
 
-        h1 = amp * ( ( 2. * cos(twoPhim2Beta) + 2.5 * orbital_element_e * cos(phim2Beta) 
+/*        fprintf(stderr, "%e %e %e %e %e\n", twoBeta, twoPhim2Beta, phim2Beta, threePhim2Beta, orbital_element_e_squared);*/
+
+
+        h1 = amp * ( ( 2. * cos(twoPhim2Beta) + 2.5 * orbital_element_e * cos(phim2Beta)
           + 0.5 * orbital_element_e * cos(threePhim2Beta) + orbital_element_e_squared * cos2Beta) * onepCosSqI +
           + ( orbital_element_e * cos(orbital_element_p) + orbital_element_e_squared) * SinSqI);
-        if (f>=params->fLower & done==0)
+        if ((f>=params->fLower) & (done==0))
         {
         /*fprintf(stderr, "freq=%e p=%e, e=%e, phase = %e\n", f,orbital_element_p, orbital_element_e, phase);fflush(stderr);
 */
@@ -604,7 +604,7 @@ LALInspiralEccentricityEngine(
 
 	 if (signal2)
 	 {
-            h2 = amp * ( ( 4. * sin(twoPhim2Beta) + 5 * orbital_element_e * sin(phim2Beta) 
+            h2 = amp * ( ( 4. * sin(twoPhim2Beta) + 5 * orbital_element_e * sin(phim2Beta)
           + orbital_element_e * sin(threePhim2Beta) - 2. * orbital_element_e_squared * sin2Beta) * cosI);
 /*           if (f>=params->fLower)*/
            {
@@ -616,10 +616,10 @@ LALInspiralEccentricityEngine(
       /* Injection case */
       else if (a)
       {
-        /*to be done*/  
+        /*to be done*/
         /*
         omega = v*v*v;
-    
+
           ff->data[count]       = (REAL4)(omega/unitHz);
           f2a                   = pow (f2aFac * omega, 2./3.);
           a->data[2*count]      = (REAL4)(4.*apFac * f2a);
@@ -627,16 +627,16 @@ LALInspiralEccentricityEngine(
           phi->data[count]      = (REAL8)(p);
           */
       }
-    
+
       LALInspiralEccentricityDerivatives(&values, &dvalues,funcParams);
       CHECKSTATUSPTR(status);
-      
+
       in4.dydx = &dvalues;
       in4.x=t;
-      
+
       LALRungeKutta4(status->statusPtr, &valuesNew, integrator, funcParams);
       CHECKSTATUSPTR(status);
-      
+
       *(values.data) = orbital_element_p = *(valuesNew.data);
       *(values.data+1) = phase = *(valuesNew.data+1);
       *(values.data+2) = orbital_element_e = *(valuesNew.data+2);
@@ -649,12 +649,12 @@ LALInspiralEccentricityEngine(
       rbyM = orbital_element_p/(1.+orbital_element_e * cos(phase));
       /*fprintf(stderr, "rbyM=%e rbyMFlso=%e t=%e, ak.tn=%e f=%e e=%e\n",rbyM, rbyMFlso, t, ak.tn,f,orbital_element_e);
       fflush(stderr);*/
-      
+
    } while ( (t < ak.tn) && (rbyM>rbyMFlso) && (f<fHigh));
 
 
    /*fprintf(stderr, "t=%e ak.tn=%e rbyM=%e rbyMFlso=%e f=%f fHigh=%f", t, ak.tn, rbyM, rbyMFlso, f, fHigh);*/
-   
+
    /*also need to add for the fupper nyquist frequency**/
    params->vFinal = orbital_element_p;
    params->fFinal = f;
@@ -667,12 +667,12 @@ LALInspiralEccentricityEngine(
    DETATCHSTATUSPTR(status);
    RETURN (status);
 
-}		       
+}
 
 
 
 
-void 
+void
 LALInspiralEccentricityDerivatives (
    REAL8Vector *values,
    REAL8Vector *dvalues,
@@ -695,7 +695,7 @@ LALInspiralEccentricityDerivatives (
   p2 = values->data[0] * values->data[0];
   p3 = p2 * values->data[0];
   p4 = p3 * values->data[0];
-  
+
   c1 = pow(1. - e2, 1.5);
 
   /* y[0] is p
@@ -706,16 +706,16 @@ LALInspiralEccentricityDerivatives (
 /*  fprintf(stderr, "before=%e %e %e\n", p0, e0, phi);*/
   /* Eq 6 */
   dvalues->data[1] = 1./(M * sqrt (p3)) * ( 1. + e0 * cos(phi) ) * ( 1. + e0 * cos(phi) );
-  
+
   /* Eq 8 */
   dvalues->data[0] = (-64./5.) * mu / M / M * c1 / p3 * (1 + 7./8. * e2);
 
   /* Eq 9*/
-  dvalues->data[2] = (-304./15.) * mu / M / M / p4 * c1 * e0 * (1. + 121./304. * e2);       
-      
-/*  fprintf(stderr, "new values p=%e, e=%e, phase = %e\n", 
-      dvalues->data[0], 
-      dvalues->data[2], 
+  dvalues->data[2] = (-304./15.) * mu / M / M / p4 * c1 * e0 * (1. + 121./304. * e2);
+
+/*  fprintf(stderr, "new values p=%e, e=%e, phase = %e\n",
+      dvalues->data[0],
+      dvalues->data[2],
       dvalues->data[1]);*/
 
   return;

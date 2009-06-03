@@ -1474,12 +1474,16 @@ void XLALPSDRegressorReset(LALPSDRegressor *r)
 int XLALPSDRegressorAdd(LALPSDRegressor *r, const COMPLEX16FrequencySeries *sample)
 {
   static const char func[] = "XLALPSDRegressorAdd";
-  unsigned i;
+  REAL8 *bin;
+  REAL8 biasfac, normfac;
+  unsigned i,j;
 
   /* create frequency series if required */
 
   if(!r->mean_square)
   {
+    /* create space for mean_square series */
+
     r->mean_square = XLALCreateREAL8FrequencySeries(sample->name, &sample->epoch, sample->f0, sample->deltaF, &sample->sampleUnits, sample->data->length);
     if(!r->mean_square)
     {
@@ -1487,9 +1491,33 @@ int XLALPSDRegressorAdd(LALPSDRegressor *r, const COMPLEX16FrequencySeries *samp
       r->mean_square = NULL;
       XLAL_ERROR(func, XLAL_EFUNC);
     }
+
+    /* copy data to mean_square series */
+
     XLALUnitSquare(&r->mean_square->sampleUnits, &r->mean_square->sampleUnits);
     for(i = 0; i < r->mean_square->data->length; i++)
       r->mean_square->data->data[i] = XLALCOMPLEX16Abs2(sample->data->data[i]);
+
+    /* create history frequency series */
+
+    for(i = 0; i < r->median_samples; i++){
+      /* create space for frequency series */
+
+      r->history[i] = XLALCreateREAL8FrequencySeries(r->mean_square->name, &r->mean_square->epoch, r->mean_square->f0, r->mean_square->deltaF, &r->mean_square->sampleUnits, r->mean_square->data->length);
+      if(!r->history[i])
+      {
+        XLALDestroyREAL8FrequencySeries(r->history[i]);
+        r->history[i] = NULL;
+        XLAL_ERROR(func, XLAL_EFUNC);
+      }
+
+      /* initialize all instances in history frequency series to current */
+
+      memcpy(r->history[i]->data->data, r->mean_square->data->data, r->mean_square->data->length * sizeof(*r->mean_square->data->data));
+    }
+
+    /* set n_samples to 1 */
+
     r->n_samples = 1;
     return 0;
   }
@@ -1498,6 +1526,33 @@ int XLALPSDRegressorAdd(LALPSDRegressor *r, const COMPLEX16FrequencySeries *samp
   {
     XLALPrintError("%s(): input parameter mismatch", func);
     XLAL_ERROR(func, XLAL_EDATA);
+  }
+  else
+  {
+    /* destroy oldest frequency series in history*/
+
+    XLALDestroyREAL8FrequencySeries(r->history[0]);
+
+    /* shuffle pointers in history to beginning*/
+
+    for(i = 0; i < r->median_samples - 1; i++)
+      r->history[i] = r->history[i + 1];
+
+    /* create space for new frequency series */
+
+    r->history[r->median_samples - 1] = XLALCreateREAL8FrequencySeries(sample->name, &sample->epoch, sample->f0, sample->deltaF, &sample->sampleUnits, sample->data->length);
+    if(!r->history[r->median_samples - 1])
+    {
+      XLALDestroyREAL8FrequencySeries(r->history[r->median_samples - 1]);
+      r->history[r->median_samples - 1] = NULL;
+      XLAL_ERROR(func, XLAL_EFUNC);
+    }
+
+    /* initialize new instance in history frequency series to current */
+
+    XLALUnitSquare(&r->history[r->median_samples - 1]->sampleUnits, &r->history[r->median_samples - 1]->sampleUnits);
+    for(i = 0; i < r->mean_square->data->length; i++)
+      r->history[r->median_samples - 1]->data->data[i] = XLALCOMPLEX16Abs2(sample->data->data[i]);
   }
 
   /* bump the number of samples that have been recorded */
@@ -1508,11 +1563,43 @@ int XLALPSDRegressorAdd(LALPSDRegressor *r, const COMPLEX16FrequencySeries *samp
     /* just in case */
     r->n_samples = r->average_samples;
 
-  /* update the mean square frequency bin by frequency bin */
+  /* create array to hold a particular frequency bin data */
 
-  for(i = 0; i < sample->data->length; i++)
-    r->mean_square->data->data[i] = (r->mean_square->data->data[i] * (r->n_samples - 1) + XLALCOMPLEX16Abs2(sample->data->data[i])) / r->n_samples;
+  bin = XLALMalloc(r->median_samples * sizeof(*bin));
+  if (!bin)
+  {
+    XLAL_ERROR(func, XLAL_ENOMEM);
+  }
 
+  /* compute median bias factor */
+
+  if(r->n_samples < r->median_samples)
+    biasfac = XLALMedianBias(r->n_samples);
+  else
+    biasfac = XLALMedianBias(r->median_samples);
+
+  /* normalization takes into account bias */
+
+  normfac = 1.0 / biasfac;
+
+  /* update the mean_square frequency using the median within frequency bin */
+
+  for(i = 0; i < sample->data->length; i++){
+    /* assign all instances of this frequency to bin array */
+
+    for (j = 0; j < r->median_samples; j++)
+      bin[j] = r->history[j]->data->data[i];
+
+    /* sort them and find median */
+
+    qsort(bin, r->median_samples, sizeof(*bin), compare_REAL8);
+
+    /* remove median bias and add this bin to average */
+
+    r->mean_square->data->data[i] = (r->mean_square->data->data[i] * (r->n_samples - 1) + (bin[r->median_samples/2] * normfac)) / r->n_samples;
+  }
+  
+  XLALFree(bin);
   return 0;
 }
 
@@ -1574,6 +1661,7 @@ int XLALPSDRegressorSetPSD(LALPSDRegressor *r, const REAL8FrequencySeries *psd, 
   {
     /* initialize the mean square to a copy of the PSD */
     r->mean_square = XLALCutREAL8FrequencySeries(psd, 0, psd->data->length);
+
     /* failure? */
     if(!r->mean_square)
     {
@@ -1581,8 +1669,25 @@ int XLALPSDRegressorSetPSD(LALPSDRegressor *r, const REAL8FrequencySeries *psd, 
       r->mean_square = NULL;
       XLAL_ERROR(func, XLAL_EFUNC);
     }
+
     /* normalization constant to be removed has units of Hz */
     XLALUnitDivide(&r->mean_square->sampleUnits, &r->mean_square->sampleUnits, &lalHertzUnit);
+
+    /* create history frequency series */
+    for(i = 0; i < r->median_samples; i++){
+
+      /* create space for frequency series */
+      r->history[i] = XLALCreateREAL8FrequencySeries(r->mean_square->name, &r->mean_square->epoch, r->mean_square->f0, r->mean_square->deltaF, &r->mean_square->sampleUnits, r->mean_square->data->length);
+      if(!r->history[i])
+      {
+        XLALDestroyREAL8FrequencySeries(r->history[i]);
+        r->history[i] = NULL;
+        XLAL_ERROR(func, XLAL_EFUNC);
+      }
+
+      /* initialize all instances in history frequency series to current */
+      memcpy(r->history[i]->data->data, r->mean_square->data->data, r->mean_square->data->length * sizeof(*r->mean_square->data->data));
+    }
   }
   /* FIXME:  also check units */
   else if((psd->f0 != r->mean_square->f0) || (psd->deltaF != r->mean_square->deltaF) || (psd->data->length != r->mean_square->data->length))
@@ -1592,8 +1697,10 @@ int XLALPSDRegressorSetPSD(LALPSDRegressor *r, const REAL8FrequencySeries *psd, 
   }
   else
   {
-    /* copy the PSD data into the mean square data */
+    /* copy the PSD data into the mean square and history data */
     memcpy(r->mean_square->data->data, psd->data->data, psd->data->length * sizeof(*psd->data->data));
+    for(i = 0; i < r->median_samples; i++)
+      memcpy(r->history[i]->data->data, psd->data->data, psd->data->length * sizeof(*psd->data->data));
   }
 
   /* remove the normalization factor from the input psd, and add the square

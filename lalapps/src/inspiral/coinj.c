@@ -48,6 +48,9 @@
 --input <injection.xml>      Specify input SimInspiralTable xml file\n\
 --response-type TYPE         TYPE of injection, [ strain | etmx | etmy ]\n\
 --frames                     Create h(t) frame files\n\n\
+[--minSNR min				 Adjust injections to have SNR >= min in all detectors]\n\
+[--maxSNR max				 Adjust injections to have SNR <= max in all detectors]\n\
+[--GPSstart A --GPSend B     Only generate waveforms for injection between GPS seconds A and B (int)]\n\
 lalapps_coinj: create coherent injection files for LIGO and VIRGO\n"
 
 
@@ -95,14 +98,18 @@ ActuationParametersType actuationParams[LAL_NUM_IFO];
 ActuationParametersType actData;
 ResponseType injectionResponse=noResponse;
 FILE *		outfile;
+LIGOLwXMLStream		xmlfp;
 CHAR		outfilename[FILENAME_MAX];
+CHAR		outXML[FILENAME_MAX];
 const LALUnit strainPerCount={0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
 const LALUnit countPerStrain={0,{0,0,0,0,0,-1,1},{0,0,0,0,0,0,0}};
 NoiseFunc *PSD;
-REAL8 PSDscale;
+REAL8 PSDscale=1.0;
 int c;
 SimInspiralTable *injTable=NULL;
 SimInspiralTable this_injection;
+SimInspiralTable *headTable=NULL;
+MetadataTable MDT;
 REAL4TimeSeries *TimeSeries;
 REAL4TimeSeries *SNRTimeSeries;
 REAL4TimeSeries *actuationTimeSeries;
@@ -114,12 +121,17 @@ COMPLEX8FrequencySeries *DesignNoise;
 FrOutPar	VirgoOutPars;
 CHAR		VirgoParsSource[100];
 CHAR		VirgoParsInfo[100];
-REAL4		SNR,NetworkSNR;
+REAL8		SNR,NetworkSNR;
 INT4  makeFrames=0;
 INT4 outputRaw=0;
 COMPLEX8FrequencySeries *fftData;
-REAL8 mySNRsq;
+REAL8 mySNRsq,mySNR;
 REAL4FFTPlan *fwd_plan;
+REAL8 minSNR=0.0,maxSNR=0.0;
+REAL8 maxRatio=1.0,minRatio=1.0;
+INT4 GPSstart=0,GPSend=2147483647;
+int SNROK=1;
+int rewriteXML=0;
 
 /*vrbflg=6;
 lalDebugLevel=6; */
@@ -132,6 +144,10 @@ struct option long_options[]=
 	{"frames",no_argument,&makeFrames,'F'},
 	{"rawstrain",no_argument,&outputRaw,'s'},
 	{"verbose",no_argument,&vrbflg,1},
+	{"minSNR",required_argument,0,2},
+	{"maxSNR",required_argument,0,3},
+	{"GPSstart",required_argument,0,4},
+	{"GPSend",required_argument,0,5},
 	{0,0,0,0}
  };
 
@@ -190,27 +206,49 @@ while(1)
 			else {fprintf(stderr,"Invalid argument to response-type: %s\nResponse type must be strain, etmy or etmx\n",\
 						  optarg); exit(1);}
 			break;
+		case 2:
+			minSNR=atof(optarg);
+			break;
+		case 3:
+			maxSNR=atof(optarg);
+			break;
+		case 4:
+			GPSstart=atoi(optarg);
+			break;
+		case 5:
+			GPSend=atoi(optarg);
+			break;
 	}
+}
+
+if(minSNR!=0 && maxSNR!=0 && (maxSNR<minSNR)){
+	fprintf(stderr,"Error: minSNR must be less than maxSNR\n");
+	exit(1);
 }
 
 memset(&status,0,sizeof(status));
 
 /* Read in the input XML */
 SimInspiralTableFromLIGOLw(&injTable,inputfile,0,0);
+headTable=injTable;
 Nsamples = (UINT4)injLength/deltaT;
 
 do{
 memcpy(&this_injection,injTable,sizeof(SimInspiralTable));
 this_injection.next=NULL;
-injTable=injTable->next;
 NetworkSNR=0.0;
 /* Set epoch */
 memcpy(&inj_epoch,&(this_injection.geocent_end_time),sizeof(LIGOTimeGPS));
 LAL_CALL(LALAddFloatToGPS(&status,&inj_epoch,&(this_injection.geocent_end_time),-LeadupTime),&status);
 inj_epoch.gpsNanoSeconds=0;
-
+SNROK=0; /* Reset this to 0 = OK */
+minRatio=2.0;
+maxRatio=0.0;
 /* Loop over detectors */
 for(det_idx=0;det_idx<LAL_NUM_IFO;det_idx++){
+	/* Only generate within chosen bounds, if specified */
+	if((this_injection.geocent_end_time.gpsSeconds-(int)LeadupTime )<GPSstart || (this_injection.geocent_end_time.gpsSeconds-(int)LeadupTime)>GPSend) continue;
+
 	if(det_idx==LAL_IFO_T1||det_idx==LAL_IFO_G1) continue; /* Don't generate for GEO or TAMA */
 	if(det_idx==LAL_IFO_V1 && injectionResponse!=unityResponse){
 		fprintf(stdout,"Skipping generation of non-strain injection for VIRGO\n");
@@ -278,10 +316,6 @@ for(det_idx=0;det_idx<LAL_NUM_IFO;det_idx++){
 
 	XLALDestroyCOMPLEX8FrequencySeries(actuationResp);
 
-	for(i=0;i<TimeSeries->data->length;i++) {
-	  TimeSeries->data->data[i]=TimeSeries->data->data[i]/dynRange +0.0;
-	}
-
 	/* Calculate SNR for this injection */
 	fwd_plan = XLALCreateForwardREAL4FFTPlan( TimeSeries->data->length, 0 );
 	fftData = XLALCreateCOMPLEX8FrequencySeries(TimeSeries->name,&(TimeSeries->epoch),0,1.0/TimeSeries->deltaT,&lalDimensionlessUnit,TimeSeries->data->length/2 +1);
@@ -289,6 +323,7 @@ for(det_idx=0;det_idx<LAL_NUM_IFO;det_idx++){
 	XLALDestroyREAL4FFTPlan(fwd_plan);
 	
 	mySNRsq = 0.0;
+	mySNR=0.0;
 	for(i=1;i<fftData->data->length;i++){
 		REAL8 freq;
 		REAL8 sim_psd_value=0;
@@ -302,10 +337,16 @@ for(det_idx=0;det_idx<LAL_NUM_IFO;det_idx++){
 	mySNRsq *= 4.0*fftData->deltaF;
 	XLALDestroyCOMPLEX8FrequencySeries( fftData );
 	if(det_idx==LAL_IFO_H2) mySNRsq/=4.0;
-	fprintf(stdout,"SNR in design %s of injection %i = %lf\n",det_name,inj_num,sqrt(mySNRsq));
+	mySNR = sqrt(mySNRsq)/dynRange;
+	fprintf(stdout,"SNR in design %s of injection %i = %lf\n",det_name,inj_num,mySNR);
 	
+	if(minSNR>mySNR) {minRatio=minRatio>(mySNR/minSNR)?(mySNR/minSNR):minRatio; SNROK=1;} /* Find the smallest fraction of the SNR in any IFO */
+	if(maxSNR!=0 && maxSNR<mySNR) {maxRatio=maxRatio<(mySNR/maxSNR)?(mySNR/maxSNR):maxRatio; SNROK=1;} /* find largest fraction... */
 
-
+	for(i=0;i<TimeSeries->data->length;i++) {
+	  TimeSeries->data->data[i]=TimeSeries->data->data[i]/dynRange +0.0;
+	}
+	
 	
 	sprintf(outfilename,"%s_HWINJ_%i_%s_%i.txt",det_name,inj_num,injtype,inj_epoch.gpsSeconds);
 	outfile=fopen(outfilename,"w");
@@ -331,7 +372,31 @@ for(det_idx=0;det_idx<LAL_NUM_IFO;det_idx++){
 
 } /* End loop over detectors */
 /*fprintf(stdout,"Finished injecting signal %i, network SNR %f\n",inj_num,sqrt(NetworkSNR));*/
-inj_num++;
+if(SNROK==0){
+	injTable=injTable->next;
+	inj_num++;
+} 
+/* Otherwise, change distance to make the SNR fit OK */
+else {
+	rewriteXML=1; /* re-write the table when done */
+	if(minRatio<1.0 && maxRatio>1.0) {fprintf(stderr,"error: Cannot adjust signal %i to desired SNR, try increasing maxSNR\n",inj_num); exit(1);}
+	if(minRatio<1.0) injTable->distance*=minRatio;
+	if(maxRatio>1.0) injTable->distance*=maxRatio;
+}
+
 }while(injTable!=NULL);
+
+/* If the distances were adjusted, re-write the SimInspiral table */
+if(rewriteXML){
+	memset(&MDT,0,sizeof(MDT));
+	MDT.simInspiralTable = headTable;
+	fprintf(stderr,"Overwriting %s with adjusted masses\n",inputfile);
+	LAL_CALL( LALOpenLIGOLwXMLFile( &status, &xmlfp, inputfile ), &status );
+    LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlfp, sim_inspiral_table ), &status );
+    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlfp, MDT,sim_inspiral_table ), &status );
+    LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlfp ), &status );
+	LAL_CALL( LALCloseLIGOLwXMLFile ( &status, &xmlfp ), &status );
+}
+
 return(0);
 }

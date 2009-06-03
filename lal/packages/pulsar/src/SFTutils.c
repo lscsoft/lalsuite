@@ -1473,7 +1473,7 @@ XLALrefineCOMPLEX8Vector (const COMPLEX8Vector *in,
     {
       
       REAL8 kappa_l_k;
-      REAL8 remainder, kstarREAL;
+      REAL8 remain, kstarREAL;
       UINT4 kstar, kmin, kmax, k;
       REAL8 sink, coskm1;
       REAL8 Yk_re, Yk_im, Xd_re, Xd_im;
@@ -1481,18 +1481,18 @@ XLALrefineCOMPLEX8Vector (const COMPLEX8Vector *in,
       kstarREAL = 1.0 * l  / refineby;
       kstar = (INT4)( kstarREAL + 0.5);	/* round to closest bin */
       kstar = MIN ( kstar, oldLen - 1 );	/* stay within the old SFT index-bounds */
-      remainder = kstarREAL - kstar;
+      remain = kstarREAL - kstar;
 
       /* boundaries for innermost loop */
       kmin = MAX( 0, (INT4)kstar - (INT4)Dterms );
       kmax = MIN( oldLen, kstar + Dterms );
 
       Yk_re = Yk_im = 0;
-      if ( fabs(remainder) > 1e-5 )	/* denominater doens't vanish */
+      if ( fabs(remain) > 1e-5 )	/* denominater doens't vanish */
 	{
 	  /* Optimization: sin(2pi*kappa(l,k)) = sin(2pi*kappa(l,0) and idem for cos */
-	  sink = sin ( LAL_TWOPI * remainder );
-	  coskm1 = cos ( LAL_TWOPI * remainder ) - 1.0;
+	  sink = sin ( LAL_TWOPI * remain );
+	  coskm1 = cos ( LAL_TWOPI * remain ) - 1.0;
 	  
 	  /* ---------- innermost loop: k over 2*Dterms around kstar ---------- */
 	  for (k = kmin; k < kmax; k++)

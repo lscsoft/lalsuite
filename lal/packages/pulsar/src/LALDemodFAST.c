@@ -107,17 +107,12 @@ void LALDemodFAST(LALStatus *status, LALFstat *Fstat, FFT **input, DemodPar *par
   INT4 alpha,i;                 /* loop indices */
   REAL8	*xSum=NULL, *ySum=NULL;	/* temp variables for computation of fs*as and fs*bs */
   INT4 s;		        /* local variable for spinDwn calcs. */
-  REAL8	xTemp;	                /* temp variable for phase model */
   REAL8	deltaF;	                /* width of SFT band */
-  INT4	k, k1;	                /* defining the sum over which is calculated */
+  INT4	k;	                /* defining the sum over which is calculated */
   REAL8 *skyConst;	        /* vector of sky constants data */
   REAL8 *spinDwn;	        /* vector of spinDwn parameters (maybe a structure? */
   INT4	spOrder;	        /* maximum spinDwn order */
-  REAL8	x;		        /* local variable for holding x */
-  REAL8	realXP, imagXP; 	/* temp variables used in computation of */
-  REAL8	realP, imagP;	        /* real and imaginary parts of P, see CVS */
   INT4	sftIndex;	        /* more temp variables */
-  REAL8	y;		        /* local variable for holding y */
   REAL8 realQ, imagQ;
   INT4 *tempInt1;
   REAL8 FaSq;
@@ -212,7 +207,6 @@ void LALDemodFAST(LALStatus *status, LALFstat *Fstat, FFT **input, DemodPar *par
     /* Loop over SFTs that contribute to F-stat for a given frequency */
     for(alpha=0;alpha<params->SFTno;alpha++)
       {
-	REAL8 tsin, tcos, tempFreq;
 	REAL8 realQXP;
 	REAL8 imagQXP;
 	REAL4 a = *aptr;

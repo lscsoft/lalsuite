@@ -1178,7 +1178,7 @@ LALGetAMCoeffs(LALStatus *status,
   REAL4 delta, alpha;
   REAL4 sin1delta, cos1delta, sin2delta, cos2delta;
 
-  REAL4 gamma, lambda;
+  REAL4 gam, lambda;
   REAL4 norm;
   UINT4 i, numSteps;
 
@@ -1207,7 +1207,7 @@ LALGetAMCoeffs(LALStatus *status,
     REAL8 yAzi = DetectorStates->detector.frDetector.yArmAzimuthRadians;
 
     /* get detector orientation gamma */
-    gamma = LAL_PI_2 - 0.5 * (xAzi + yAzi);
+    gam = LAL_PI_2 - 0.5 * (xAzi + yAzi);
     /* get detector position latitude (lambda) */
     lambda = DetectorStates->detector.frDetector.vertexLatitudeRadians;
     /*
@@ -1222,7 +1222,7 @@ LALGetAMCoeffs(LALStatus *status,
     REAL4 sin1lambda, cos1lambda;
     REAL4 sin2lambda, cos2lambda;
 
-    sin_cos_LUT (&sin2gamma, &cos2gamma, 2.0f * gamma );
+    sin_cos_LUT (&sin2gamma, &cos2gamma, 2.0f * gam );
     sin_cos_LUT (&sin1lambda, &cos1lambda, lambda );
 
     sin2lambda = 2.0f * sin1lambda * cos1lambda;

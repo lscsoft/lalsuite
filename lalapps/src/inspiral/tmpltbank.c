@@ -2348,27 +2348,27 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
       case '2':
         if ( ! strcmp( "SchwarzISCO", optarg ) )
         {
-          maxFreqCut = SchwarzISCO;
+          maxFreqCut = FreqCut_SchwarzISCO;
         }
         else if( ! strcmp( "BKLISCO", optarg ) )
         {
-          maxFreqCut = BKLISCO;
+          maxFreqCut = FreqCut_BKLISCO;
         }
         else if ( ! strcmp( "LightRing", optarg ) )
         {
-          maxFreqCut = LightRing;
+          maxFreqCut = FreqCut_LightRing;
         }
         else if ( ! strcmp( "FRD", optarg ) )
         {
-          maxFreqCut = FRD;
+          maxFreqCut = FreqCut_FRD;
         }
         else if ( ! strcmp( "ERD", optarg ) )
         {
-          maxFreqCut = ERD;
+          maxFreqCut = FreqCut_ERD;
         }
         else if ( ! strcmp( "LRD", optarg ) )
         {
-          maxFreqCut = LRD;
+          maxFreqCut = FreqCut_LRD;
         }
         else
         {
@@ -2385,27 +2385,27 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
       case '3':
         if ( ! strcmp( "SchwarzISCO", optarg ) )
         {
-          minFreqCut = SchwarzISCO;
+          minFreqCut = FreqCut_SchwarzISCO;
         }
         else if ( ! strcmp( "BKLISCO", optarg ) )
         {
-          minFreqCut = BKLISCO;
+          minFreqCut = FreqCut_BKLISCO;
         }
         else if ( ! strcmp( "LightRing", optarg ) )
         {
-          minFreqCut = LightRing;
+          minFreqCut = FreqCut_LightRing;
         }
         else if ( ! strcmp( "FRD", optarg ) )
         {
-          minFreqCut = FRD;
+          minFreqCut = FreqCut_FRD;
         }
         else if ( ! strcmp( "ERD", optarg ) )
         {
-          minFreqCut = ERD;
+          minFreqCut = FreqCut_ERD;
         }
         else if ( ! strcmp( "LRD", optarg ) )
         {
-          minFreqCut = LRD;
+          minFreqCut = FreqCut_LRD;
         }
         else
         {

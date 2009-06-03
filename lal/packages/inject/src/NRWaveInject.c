@@ -12,18 +12,18 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with with program; see the file COPYING. If not, write to the 
- *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, 
+ *  along with with program; see the file COPYING. If not, write to the
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
  */
 
 /** \file NRWaveInject.c
  *  \ingroup NRWaveInject
  *  \author S.Fairhurst, B.Krishnan, L.Santamaria
- * 
+ *
  *  \brief Functions for reading/writing numerical relativity waveforms
  *
- * $Id$ 
+ * $Id$
  *
  */
 
@@ -49,7 +49,7 @@
 #include <lal/TimeFreqFFT.h>
 #include <lal/Window.h>
 
-#include <gsl/gsl_heapsort.h> 
+#include <gsl/gsl_heapsort.h>
 
 
 
@@ -61,8 +61,8 @@ int compare_abs_double(const void *a, const void *b);
 /** Takes a strain of h+ and hx data and stores it in a temporal
  *  strain in order to perform the sum over l and m modes **/
 REAL4TimeVectorSeries *
-XLALSumStrain( 
-    REAL4TimeVectorSeries *tempstrain,     /**< storing variable */ 
+XLALSumStrain(
+    REAL4TimeVectorSeries *tempstrain,     /**< storing variable */
     REAL4TimeVectorSeries *strain          /**< variable to add  */)
 {
     UINT4      vecLength, length, k;
@@ -70,7 +70,7 @@ XLALSumStrain(
     vecLength = strain->data->vectorLength;
     length = strain->data->length;
 
-    for ( k = 0; k < vecLength*length; k++)    
+    for ( k = 0; k < vecLength*length; k++)
       {
 	tempstrain->data->data[k] += strain->data->data[k];
       }
@@ -79,8 +79,8 @@ XLALSumStrain(
 
 /* REAL8 version */
 REAL8TimeVectorSeries *
-XLALSumStrainREAL8( 
-    REAL8TimeVectorSeries *tempstrain,     /**< storing variable */ 
+XLALSumStrainREAL8(
+    REAL8TimeVectorSeries *tempstrain,     /**< storing variable */
     REAL8TimeVectorSeries *strain          /**< variable to add  */)
 {
     UINT4      vecLength, length, k;
@@ -88,7 +88,7 @@ XLALSumStrainREAL8(
     vecLength = strain->data->vectorLength;
     length = strain->data->length;
 
-    for ( k = 0; k < vecLength*length; k++)    
+    for ( k = 0; k < vecLength*length; k++)
       {
 	tempstrain->data->data[k] += strain->data->data[k];
       }
@@ -99,9 +99,9 @@ XLALSumStrainREAL8(
 /** Takes a (sky averaged) numerical relativity waveform and returns the
  * waveform appropriate for given coalescence phase and inclination angles */
 /* REAL4TimeVectorSeries */
-INT4 
-XLALOrientNRWave( 
-    REAL4TimeVectorSeries *strain,         /**< sky average h+, hx data */ 
+INT4
+XLALOrientNRWave(
+    REAL4TimeVectorSeries *strain,         /**< sky average h+, hx data */
     UINT4                  modeL,          /**< L                       */
     INT4                   modeM,          /**< M                       */
     REAL4                  inclination,    /**< binary inclination      */
@@ -123,11 +123,11 @@ XLALOrientNRWave(
 	tmp1 = strain->data->data[k];
 	tmp2 = strain->data->data[vecLength + k];
 
-	strain->data->data[k] = 
-	    (tmp1 * MultSphHarm.re) + 
+	strain->data->data[k] =
+	    (tmp1 * MultSphHarm.re) +
 	    (tmp2 * MultSphHarm.im);
 
-	strain->data->data[vecLength + k] = 
+	strain->data->data[vecLength + k] =
 	    (tmp2 * MultSphHarm.re) -
 	    (tmp1 * MultSphHarm.im);
     }
@@ -140,8 +140,8 @@ XLALOrientNRWave(
 /** Takes a (sky averaged) numerical relativity waveform and returns the
  * waveform appropriate for given coalescence phase and inclination angles */
 REAL8TimeVectorSeries *
-XLALOrientNRWaveREAL8( 
-    REAL8TimeVectorSeries *strain,         /**< sky average h+, hx data */ 
+XLALOrientNRWaveREAL8(
+    REAL8TimeVectorSeries *strain,         /**< sky average h+, hx data */
     UINT4                  modeL,          /**< L                       */
     INT4                   modeM,          /**< M                       */
     REAL4                  inclination,    /**< binary inclination      */
@@ -163,11 +163,11 @@ XLALOrientNRWaveREAL8(
 	tmp1 = strain->data->data[k];
 	tmp2 = strain->data->data[vecLength + k];
 
-	strain->data->data[k] = 
-	    (tmp1 * MultSphHarm.re) + 
+	strain->data->data[k] =
+	    (tmp1 * MultSphHarm.re) +
 	    (tmp2 * MultSphHarm.im);
 
-	strain->data->data[vecLength + k] = 
+	strain->data->data[vecLength + k] =
 	    (tmp2 * MultSphHarm.re) -
 	    (tmp1 * MultSphHarm.im);
     }
@@ -204,7 +204,7 @@ XLALCalculateNRStrain( REAL4TimeVectorSeries *strain, /**< h+, hx time series da
   else
   {
     /* compute detector response */
-    XLALComputeDetAMResponse(&fplus, &fcross, det.response, inj->longitude, 
+    XLALComputeDetAMResponse(&fplus, &fcross, det.response, inj->longitude,
           inj->latitude, inj->polarization, inj->end_time_gmst);
 
     /* calculate the time delay */
@@ -214,7 +214,7 @@ XLALCalculateNRStrain( REAL4TimeVectorSeries *strain, /**< h+, hx time series da
 
   /* create htData */
   htData = LALCalloc(1, sizeof(*htData));
-  if (!htData) 
+  if (!htData)
   {
     XLAL_ERROR_NULL( "XLALCalculateNRStrain", XLAL_ENOMEM );
   }
@@ -226,7 +226,7 @@ XLALCalculateNRStrain( REAL4TimeVectorSeries *strain, /**< h+, hx time series da
     XLAL_ERROR_NULL( "XLALCalculateNRStrain", XLAL_ENOMEM );
   }
 
-  /* store the htData */  
+  /* store the htData */
 
   /* add timedelay to inj->geocent_end_time */
   {
@@ -243,7 +243,7 @@ XLALCalculateNRStrain( REAL4TimeVectorSeries *strain, /**< h+, hx time series da
 
   for ( k = 0; k < vecLength; ++k )
   {
-    htData->data->data[k] = (fplus * strain->data->data[k]  + 
+    htData->data->data[k] = (fplus * strain->data->data[k]  +
 			     fcross * strain->data->data[vecLength + k]) / inj->distance;
   }
 
@@ -255,7 +255,7 @@ XLALCalculateNRStrain( REAL4TimeVectorSeries *strain, /**< h+, hx time series da
 
 
 
-/** Function for interpolating time series to a given sampling rate. 
+/** Function for interpolating time series to a given sampling rate.
     Input vector is destroyed and a new vector is allocated.
 */
 REAL4TimeSeries *
@@ -267,22 +267,22 @@ XLALInterpolateNRWave( REAL4TimeSeries *in,           /**< input strain time ser
   REAL8 deltaTin, deltaTout, r, y1, y2;
   REAL8 tObs; /* duration of signal */
   UINT4 k, lo, numPoints;
-  
-  deltaTin = in->deltaT;
-  tObs = deltaTin * in->data->length;  
 
-  /* length of output vector */ 
+  deltaTin = in->deltaT;
+  tObs = deltaTin * in->data->length;
+
+  /* length of output vector */
   numPoints = (UINT4) (sampleRate * tObs);
 
   /* allocate memory */
   ret = LALCalloc(1, sizeof(*ret));
-  if (!ret) 
+  if (!ret)
   {
     XLAL_ERROR_NULL( "XLALCalculateNRStrain", XLAL_ENOMEM );
   }
 
   ret->data = XLALCreateREAL4Vector( numPoints );
-  if (! ret->data) 
+  if (! ret->data)
   {
     XLAL_ERROR_NULL( "XLALCalculateNRStrain", XLAL_ENOMEM );
   }
@@ -312,12 +312,12 @@ XLALInterpolateNRWave( REAL4TimeSeries *in,           /**< input strain time ser
       /* we want to calculate y2*r + y1*(1-r) where
 	 r = (x-x1)/(x2-x1) */
       r = k*deltaTout / deltaTin - lo;
-      
+
       ret->data->data[k] = y2 * r + y1 * (1 - r);
     }
     else {
       ret->data->data[k] = 0.0;
-    }    
+    }
   }
 
   /* destroy input vector */
@@ -340,7 +340,7 @@ int compare_abs_float(const void *a, const void *b){
     return 1;
   else if  ( fabs(*af) < fabs(*bf))
     return -1;
-  else 
+  else
     return 0;
 }
 
@@ -356,14 +356,14 @@ int compare_abs_double(const void *a, const void *b){
     return 1;
   else if  ( fabs(*af) < fabs(*bf))
     return -1;
-  else 
+  else
     return 0;
 }
 
 
 /** Function for calculating the coalescence time (defined to be the peak) of a NR wave */
 INT4
-XLALFindNRCoalescenceTime(REAL8 *tc, 
+XLALFindNRCoalescenceTime(REAL8 *tc,
 			  const REAL4TimeVectorSeries *in   /**< input strain time series */)
 {
 
@@ -373,14 +373,14 @@ XLALFindNRCoalescenceTime(REAL8 *tc,
   UINT4 k;
 
   len = in->data->vectorLength;
-  ind = LALCalloc(1,len*sizeof(*ind));  
+  ind = LALCalloc(1,len*sizeof(*ind));
 
-  sumSquare = LALCalloc(1, len*sizeof(*sumSquare)); 
+  sumSquare = LALCalloc(1, len*sizeof(*sumSquare));
 
   for (k=0; k < len; k++) {
-    sumSquare[k] = in->data->data[k]*in->data->data[k] + 
+    sumSquare[k] = in->data->data[k]*in->data->data[k] +
       in->data->data[k + len]*in->data->data[k + len];
-  }    
+  }
 
   gsl_heapsort_index( ind, sumSquare, len, sizeof(REAL4), compare_abs_float);
 
@@ -394,11 +394,11 @@ XLALFindNRCoalescenceTime(REAL8 *tc,
 
 
 /** Function for calculating the coalescence time (defined to be the
-    peak) of a NR wave 
-    This uses the peak of h(t) 
+    peak) of a NR wave
+    This uses the peak of h(t)
 */
 INT4
-XLALFindNRCoalescenceTimeFromhoft(REAL8 *tc, 
+XLALFindNRCoalescenceTimeFromhoft(REAL8 *tc,
 			  const REAL4TimeSeries *in   /**< input strain time series */)
 {
 
@@ -406,7 +406,7 @@ XLALFindNRCoalescenceTimeFromhoft(REAL8 *tc,
   size_t len;
 
   len = in->data->length;
-  ind = LALCalloc(1,len*sizeof(*ind));  
+  ind = LALCalloc(1,len*sizeof(*ind));
 
 /*   gsl_heapsort_index( ind, in->data->data, len, sizeof(REAL4), compare_abs_float); */
 
@@ -420,7 +420,7 @@ XLALFindNRCoalescenceTimeFromhoft(REAL8 *tc,
 
 /** Function for calculating the coalescence time (defined to be the peak) of a NR wave */
 INT4
-XLALFindNRCoalescenceTimeREAL8(REAL8 *tc, 
+XLALFindNRCoalescenceTimeREAL8(REAL8 *tc,
 			       const REAL8TimeSeries *in   /**< input strain time series */)
 {
 
@@ -428,7 +428,7 @@ XLALFindNRCoalescenceTimeREAL8(REAL8 *tc,
   size_t len;
 
   len = in->data->length;
-  ind = LALCalloc(len, sizeof(*ind));  
+  ind = LALCalloc(len, sizeof(*ind));
 
   gsl_heapsort_index( ind, in->data->data, len, sizeof(REAL8), compare_abs_double);
 
@@ -441,9 +441,9 @@ XLALFindNRCoalescenceTimeREAL8(REAL8 *tc,
 
 
 
-/** For given inspiral parameters, find nearest waveform in 
+/** For given inspiral parameters, find nearest waveform in
     catalog of numerical relativity waveforms.  At the moment, only
-    the mass ratio is considered.  
+    the mass ratio is considered.
 */
 INT4
 XLALFindNRFile( NRWaveMetaData   *out,       /**< output wave data */
@@ -454,7 +454,7 @@ XLALFindNRFile( NRWaveMetaData   *out,       /**< output wave data */
 {
 
   REAL8 massRatioIn, massRatio, diff, newDiff;
-  UINT4 k, best;
+  UINT4 k, best=0;
 
   /* check arguments are sensible */
   if ( !out ) {
@@ -479,9 +479,9 @@ XLALFindNRFile( NRWaveMetaData   *out,       /**< output wave data */
   else {
      massRatioIn = inj->mass1/inj->mass2;
   }
- 
+
   /*   massRatio = nrCatalog->data[0].massRatio; */
-  
+
   /*   diff = fabs(massRatio - massRatioIn); */
 
   /* look over catalog and fimd waveform closest in mass ratio */
@@ -500,11 +500,11 @@ XLALFindNRFile( NRWaveMetaData   *out,       /**< output wave data */
 
       massRatio = nrCatalog->data[k].massRatio;
       newDiff = fabs(massRatio - massRatioIn);
-      
+
       if ( (diff < 0) || (diff > newDiff)) {
 	diff = newDiff;
 	best = k;
-      }    
+      }
     } /* if (modeL == ...) */
   } /* loop over waveform catalog */
 
@@ -527,7 +527,7 @@ INT4 XLALSphHarm ( COMPLEX16 *out, /**< output */
 		   INT4    M,      /**< value of M */
 		   REAL4   theta,  /**< angle with respect to the z axis */
 		   REAL4   phi     /**< angle with respect to the x axis */)
-     
+
 {
     REAL4      deptheta; /** dependency on theta */
 
@@ -545,31 +545,31 @@ INT4 XLALSphHarm ( COMPLEX16 *out, /**< output */
 	out->re = deptheta * cos( -2.0*phi );
 	out->im = deptheta * sin( -2.0*phi );
 	break;
-	
+
       case -1:
 	deptheta = sqrt( 5.0 / ( 16.0 * LAL_PI ) ) * sin( theta )*( 1.0 - cos( theta ));
 	out->re = deptheta * cos( -phi );
 	out->im = deptheta * sin( -phi );
 	break;
-	
+
       case 0:
 	deptheta = sqrt( 15.0 / ( 32.0 * LAL_PI ) ) * sin( theta )*sin( theta );
 	out->re = deptheta;
 	out->im = 0.0;
 	break;
-	
+
       case 1:
 	deptheta = sqrt( 5.0 / ( 16.0 * LAL_PI ) ) * sin( theta )*( 1.0 + cos( theta ));
 	out->re = deptheta * cos( phi );
 	out->im = deptheta * sin( phi );
 	break;
-	
+
       case 2:
 	deptheta = sqrt( 5.0 / ( 64.0 * LAL_PI ) ) * ( 1.0 + cos( theta ))*( 1.0 + cos( theta ));
 	out->re = deptheta * cos( 2.0*phi );
 	out->im = deptheta * sin( 2.0*phi );
-	break;	   
-	
+	break;
+
       default:
 	/* Error message informing that the chosen M is incompatible with L*/
 	LALPrintError ("\n Inconsistent (L, M) values \n\n");
@@ -577,7 +577,7 @@ INT4 XLALSphHarm ( COMPLEX16 *out, /**< output */
 	break;
       }  /* switch (M) */
     }  /* L==2*/
-    
+
     else if (L == 3)
       {
 	switch ( M ) {
@@ -586,109 +586,109 @@ INT4 XLALSphHarm ( COMPLEX16 *out, /**< output */
 	  out->re = deptheta * cos( -3.0*phi );
 	  out->im = deptheta * sin( -3.0*phi );
 	  break;
-	  
+
 	case -2:
 	  deptheta = sqrt(7./(4.*LAL_PI))*(2 + 3*cos(theta))*pow(sin(theta/2.),4);
 	  out->re = deptheta * cos( -2.0*phi );
 	  out->im = deptheta * sin( -2.0*phi );
 	  break;
-	  
+
 	case -1:
 	  deptheta = sqrt(35./(2.*LAL_PI))*(sin(theta) + 4*sin(2*theta) - 3*sin(3*theta))/32.;
 	  out->re = deptheta * cos( -phi );
 	  out->im = deptheta * sin( -phi );
 	  break;
-	  
+
 	case 0:
 	  deptheta = (sqrt(105./(2.*LAL_PI))*cos(theta)*pow(sin(theta),2))/4.;
 	  out->re = deptheta;
 	  out->im = 0.0;
 	  break;
-	  
+
 	case 1:
 	  deptheta = -sqrt(35./(2.*LAL_PI))*(sin(theta) - 4*sin(2*theta) - 3*sin(3*theta))/32.;
 	  out->re = deptheta * cos( phi );
 	  out->im = deptheta * sin( phi );
 	  break;
-	  
+
 	case 2:
 	  deptheta = sqrt(7./LAL_PI)*pow(cos(theta/2.),4)*(-2 + 3*cos(theta))/2.;
 	  out->re = deptheta * cos( 2.0*phi );
 	  out->im = deptheta * sin( 2.0*phi );
-	  break;	   
-	  
+	  break;
+
 	case 3:
 	  deptheta = -sqrt(21./(2.*LAL_PI))*pow(cos(theta/2.),5)*sin(theta/2.);
 	  out->re = deptheta * cos( 3.0*phi );
 	  out->im = deptheta * sin( 3.0*phi );
-	  break;	   
-	  
+	  break;
+
 	default:
 	  /* Error message informing that the chosen M is incompatible with L*/
 	  LALPrintError ("\n Inconsistent (L, M) values \n\n");
 	  XLAL_ERROR ( "XLALSphHarm", XLAL_EINVAL);
 	  break;
-	} 
-      }   /* L==3 */ 
-    
+	}
+      }   /* L==3 */
+
     else if (L == 4)
     {
       switch ( M )	{
-	
+
       case -4:
 	deptheta = 3.*sqrt(7./LAL_PI)*pow(cos(theta/2.),2)*pow(sin(theta/2.),6);
 	out->re = deptheta * cos( -4.0*phi );
 	out->im = deptheta * sin( -4.0*phi );
 	break;
-	
+
       case -3:
 	deptheta = 3.*sqrt(7./(2.*LAL_PI))*cos(theta/2.)*(1 + 2*cos(theta))*pow(sin(theta/2.),5);
 	out->re = deptheta * cos( -3.0*phi );
 	out->im = deptheta * sin( -3.0*phi );
 	break;
-	
+
       case -2:
 	deptheta = (3*(9. + 14.*cos(theta) + 7.*cos(2*theta))*pow(sin(theta/2.),4))/(4.*sqrt(LAL_PI));
 	out->re = deptheta * cos( -2.0*phi );
 	out->im = deptheta * sin( -2.0*phi );
 	break;
-	
+
       case -1:
 	deptheta = (3.*(3.*sin(theta) + 2.*sin(2*theta) + 7.*sin(3*theta) - 7.*sin(4*theta)))/(32.*sqrt(2*LAL_PI));
 	out->re = deptheta * cos( -phi );
 	out->im = deptheta * sin( -phi );
 	break;
-	
+
       case 0:
 	deptheta = (3.*sqrt(5./(2.*LAL_PI))*(5. + 7.*cos(2*theta))*pow(sin(theta),2))/16.;
 	out->re = deptheta;
 	out->im = 0.0;
 	break;
-	
+
       case 1:
 	deptheta = (3.*(3.*sin(theta) - 2.*sin(2*theta) + 7.*sin(3*theta) + 7.*sin(4*theta)))/(32.*sqrt(2*LAL_PI));
 	out->re = deptheta * cos( phi );
 	out->im = deptheta * sin( phi );
 	break;
-	
+
       case 2:
 	deptheta = (3.*pow(cos(theta/2.),4)*(9. - 14.*cos(theta) + 7.*cos(2*theta)))/(4.*sqrt(LAL_PI));
 	out->re = deptheta * cos( 2.0*phi );
 	out->im = deptheta * sin( 2.0*phi );
-	break;	   
-	
+	break;
+
       case 3:
 	deptheta = -3.*sqrt(7./(2.*LAL_PI))*pow(cos(theta/2.),5)*(-1. + 2.*cos(theta))*sin(theta/2.);
 	out->re = deptheta * cos( 3.0*phi );
 	out->im = deptheta * sin( 3.0*phi );
-	break;	   
-	
+	break;
+
       case 4:
 	deptheta = 3.*sqrt(7./LAL_PI)*pow(cos(theta/2.),6)*pow(sin(theta/2.),2);
 	out->re = deptheta * cos( 4.0*phi );
 	out->im = deptheta * sin( 4.0*phi );
-	break;	   
-	
+	break;
+
       default:
 	/* Error message informing that the chosen M is incompatible with L*/
 	LALPrintError ("\n Inconsistent (L, M) values \n\n");
@@ -696,7 +696,7 @@ INT4 XLALSphHarm ( COMPLEX16 *out, /**< output */
 	break;
       }
     }    /* L==4 */
-    
+
     else if (L == 5)
     {
 	switch ( M )	{
@@ -706,67 +706,67 @@ INT4 XLALSphHarm ( COMPLEX16 *out, /**< output */
 	  out->re = deptheta * cos( -5.0*phi );
 	  out->im = deptheta * sin( -5.0*phi );
 	  break;
-	  
+
 	case -4:
 	  deptheta = sqrt(33./LAL_PI)*pow(cos(theta/2.),2)*(2. + 5.*cos(theta))*pow(sin(theta/2.),6);
 	  out->re = deptheta * cos( -4.0*phi );
 	  out->im = deptheta * sin( -4.0*phi );
 	  break;
-	  
+
 	case -3:
 	  deptheta = (sqrt(33./(2.*LAL_PI))*cos(theta/2.)*(17. + 24.*cos(theta) + 15.*cos(2.*theta))*pow(sin(theta/2.),5))/4.;
 	  out->re = deptheta * cos( -3.0*phi );
 	  out->im = deptheta * sin( -3.0*phi );
 	  break;
-	  
+
 	case -2:
 	  deptheta = (sqrt(11./LAL_PI)*(32. + 57.*cos(theta) + 36.*cos(2.*theta) + 15.*cos(3.*theta))*pow(sin(theta/2.),4))/8.;
 	  out->re = deptheta * cos( -2.0*phi );
 	  out->im = deptheta * sin( -2.0*phi );
 	  break;
-	  
+
 	case -1:
 	  deptheta = (sqrt(77./LAL_PI)*(2.*sin(theta) + 8.*sin(2.*theta) + 3.*sin(3.*theta) + 12.*sin(4.*theta) - 15.*sin(5.*theta)))/256.;
 	  out->re = deptheta * cos( -phi );
 	  out->im = deptheta * sin( -phi );
 	  break;
-	  
+
 	case 0:
 	  deptheta = (sqrt(1155./(2.*LAL_PI))*(5.*cos(theta) + 3.*cos(3.*theta))*pow(sin(theta),2))/32.;
 	  out->re = deptheta;
 	  out->im = 0.0;
 	  break;
-	  
+
 	case 1:
 	  deptheta = sqrt(77./LAL_PI)*(-2.*sin(theta) + 8.*sin(2.*theta) - 3.*sin(3.*theta) + 12.*sin(4.*theta) + 15.*sin(5.*theta))/256.;
 	  out->re = deptheta * cos( phi );
 	  out->im = deptheta * sin( phi );
 	  break;
-	  
+
 	case 2:
 	  deptheta = sqrt(11./LAL_PI)*pow(cos(theta/2.),4)*(-32. + 57.*cos(theta) - 36.*cos(2.*theta) + 15.*cos(3.*theta))/8.;
 	  out->re = deptheta * cos( 2.0*phi );
 	  out->im = deptheta * sin( 2.0*phi );
-	  break;	   
-	  
+	  break;
+
 	case 3:
 	  deptheta = -sqrt(33./(2.*LAL_PI))*pow(cos(theta/2.),5)*(17. - 24.*cos(theta) + 15.*cos(2.*theta))*sin(theta/2.)/4.;
 	  out->re = deptheta * cos( 3.0*phi );
 	  out->im = deptheta * sin( 3.0*phi );
-	  break;	   
-	  
+	  break;
+
 	case 4:
 	  deptheta = sqrt(33./LAL_PI)*pow(cos(theta/2.),6)*(-2. + 5.*cos(theta))*pow(sin(theta/2.),2);
 	  out->re = deptheta * cos( 4.0*phi );
 	  out->im = deptheta * sin( 4.0*phi );
-	  break;	   
-	  
+	  break;
+
 	case 5:
 	  deptheta = -sqrt(330./LAL_PI)*pow(cos(theta/2.),7)*pow(sin(theta/2.),3);
 	  out->re = deptheta * cos( 5.0*phi );
 	  out->im = deptheta * sin( 5.0*phi );
-	  break;	   
-	  
+	  break;
+
 	default:
 	  /* Error message informing that the chosen M is incompatible with L*/
 	  LALPrintError ("\n Inconsistent (L, M) values \n\n");
@@ -774,15 +774,15 @@ INT4 XLALSphHarm ( COMPLEX16 *out, /**< output */
 	  break;
 	}
     }  /* L==5 */
-    
-    
-    else 
+
+
+    else
     {
       /* Error message informing that L!=2 is not yet implemented*/
       LALPrintError ("\n These (L, M) values not implemented yet \n\n");
       XLAL_ERROR ( "XLALSphHarm", XLAL_EINVAL);
     }
-    
+
     return 0;
 }
 
@@ -802,12 +802,12 @@ void LALInjectStrainGW( LALStatus                 *status,
   InspiralApplyTaper taper = INSPIRAL_TAPER_NONE;
 
   INITSTATUS (status, "LALNRInject",  NRWAVEINJECTC);
-  ATTATCHSTATUSPTR (status); 
+  ATTATCHSTATUSPTR (status);
 
   /* sampleRate = 1.0/strain->deltaT;   */
   /* use the sample rate required for the output time series */
   sampleRate = 1.0/injData->deltaT;
-    
+
   /*compute strain for given sky location*/
   htData = XLALCalculateNRStrain( strain, thisInj, ifo, sampleRate );
   if ( !htData )
@@ -825,7 +825,7 @@ void LALInjectStrainGW( LALStatus                 *status,
 
   XLALGPSAdd( &(htData->epoch), -offset);
 
-  
+
   /* Taper the signal if required */
   if ( strcmp( thisInj->taper, "TAPER_NONE" ) )
   {
@@ -876,17 +876,17 @@ void LALInjectStrainGW( LALStatus                 *status,
     LALFree( htData );
   }
   ENDFAIL( status );
-  
+
   /* set channel name */
   LALSnprintf( injData->name, LIGOMETA_CHANNEL_MAX * sizeof( CHAR ),
-    "%s:STRAIN", ifo ); 
+    "%s:STRAIN", ifo );
 
   XLALDestroyREAL4Vector ( htData->data);
   LALFree(htData);
 
   DETATCHSTATUSPTR(status);
   RETURN(status);
-  
+
 }
 
 
@@ -901,15 +901,15 @@ void LALInjectStrainGWREAL8( LALStatus                 *status,
 
   REAL8 sampleRate;
   REAL8TimeSeries *htData = NULL;
-  REAL8TimeSeries *hplus = NULL;  
-  REAL8TimeSeries *hcross = NULL;  
+  REAL8TimeSeries *hplus = NULL;
+  REAL8TimeSeries *hcross = NULL;
   UINT4  k, len;
   REAL8 offset;
   InterferometerNumber  ifoNumber = LAL_UNKNOWN_IFO;
   LALDetector det;
 
   INITSTATUS (status, "LALNRInject",  NRWAVEINJECTC);
-  ATTATCHSTATUSPTR (status); 
+  ATTATCHSTATUSPTR (status);
 
   /* get the detector information */
   memset( &det, 0, sizeof(LALDetector) );
@@ -928,28 +928,28 @@ void LALInjectStrainGWREAL8( LALStatus                 *status,
   sampleRate = 1.0/injData->deltaT;
   len = strain->data->vectorLength;
 
-  hplus = XLALCreateREAL8TimeSeries ( strain->name, &strain->epoch, strain->f0, 
+  hplus = XLALCreateREAL8TimeSeries ( strain->name, &strain->epoch, strain->f0,
 				      strain->deltaT, &strain->sampleUnits, len);
-  hcross = XLALCreateREAL8TimeSeries ( strain->name, &strain->epoch, strain->f0, 
+  hcross = XLALCreateREAL8TimeSeries ( strain->name, &strain->epoch, strain->f0,
 				       strain->deltaT, &strain->sampleUnits, len);
-  
+
   for ( k = 0; k < len; k++) {
     hplus->data->data[k] = strain->data->data[k];
     hplus->data->data[k] = strain->data->data[k + len];
   }
 
-  htData = XLALSimDetectorStrainREAL8TimeSeries( hplus, hcross, thisInj->longitude, 
-						 thisInj->latitude, thisInj->polarization, 
+  htData = XLALSimDetectorStrainREAL8TimeSeries( hplus, hcross, thisInj->longitude,
+						 thisInj->latitude, thisInj->polarization,
 						 &det);
 
   XLALFindNRCoalescenceTimeREAL8( &offset, htData);
   XLALGPSAdd( &(htData->epoch), -offset);
 
   XLALSimAddInjectionREAL8TimeSeries( injData, htData, NULL);
-  
+
   /* set channel name */
   LALSnprintf( injData->name, LIGOMETA_CHANNEL_MAX * sizeof( CHAR ),
-    "%s:STRAIN", ifo ); 
+    "%s:STRAIN", ifo );
 
   XLALDestroyREAL8TimeSeries ( htData);
   XLALDestroyREAL8TimeSeries ( hplus);
@@ -957,11 +957,11 @@ void LALInjectStrainGWREAL8( LALStatus                 *status,
 
   DETATCHSTATUSPTR(status);
   RETURN(status);
-  
+
 }
 
 
-/** construct the channel name corresponding to a particular mode 
+/** construct the channel name corresponding to a particular mode
     and polarization in frame file containing nr data */
 CHAR* XLALGetNinjaChannelName(CHAR *polarisation, UINT4 l, INT4 m)
 {
@@ -970,7 +970,7 @@ CHAR* XLALGetNinjaChannelName(CHAR *polarisation, UINT4 l, INT4 m)
   CHAR *channel=NULL;
 
   if ( !((strncmp(polarisation, "plus", 4) == 0) || (strncmp(polarisation, "cross", 5) == 0))) {
-    XLAL_ERROR_NULL( "XLALGetNinjaChannelName",   XLAL_EINVAL ); 
+    XLAL_ERROR_NULL( "XLALGetNinjaChannelName",   XLAL_EINVAL );
   }
 
   /* allocate memory for channel */
@@ -996,8 +996,8 @@ CHAR* XLALGetNinjaChannelName(CHAR *polarisation, UINT4 l, INT4 m)
 }
 
 
-/** Function for parsing numrel group name and converting it into a enum element. 
-    This needs to be robust enough to be able to handle the information as submitted 
+/** Function for parsing numrel group name and converting it into a enum element.
+    This needs to be robust enough to be able to handle the information as submitted
     by the groups. Is there a cleaner way to do this?
     add or modify the group names as required
 */
@@ -1033,5 +1033,5 @@ NumRelGroup XLALParseNumRelGroupName( CHAR *name)
   else if ( strstr( name, "UIUC") || strstr(name, "Urbana Champaign") )
     ret = NINJA_GROUP_UIUC;
 
-  return ret;    
+  return ret;
 }
