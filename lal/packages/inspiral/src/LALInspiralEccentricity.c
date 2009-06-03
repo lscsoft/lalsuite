@@ -392,7 +392,7 @@ LALInspiralEccentricityEngine(
    REAL8 phim2Beta = 0;
    REAL8 twoBeta;
    REAL8 rbyM=1e6, rbyMFlso=6.;
-   REAL8 sin2Beta,cos2Beta,iota,onepCosSqI, SinSqI, cosI, e0, fmin, beta, p0;
+   REAL8 sin2Beta,cos2Beta,iota,onepCosSqI, SinSqI, cosI, e0, f_min, beta, p0;
 
 
 
@@ -496,11 +496,11 @@ LALInspiralEccentricityEngine(
 */
 
 
-   /* e0 is set at fmin */
+   /* e0 is set at f_min */
    e0 = params->eccentricity;
 
    /* the second harmonic will start at fLower*2/3 */
-   fmin = params->fLower;
+   f_min = params->fLower;
    iota = params->inclination; /*overwritten later */
 
    beta = 0.;
@@ -512,7 +512,7 @@ LALInspiralEccentricityEngine(
    SinSqI = sin(iota) * sin(iota);
    cosI = cos(iota);
 
-   p0 = (1. - e0*e0)/pow(2. * LAL_PI * m * LAL_MTSUN_SI* fmin/3. , 2./3.);
+   p0 = (1. - e0*e0)/pow(2. * LAL_PI * m * LAL_MTSUN_SI* f_min/3. , 2./3.);
 
    *(values.data) = orbital_element_p = p0;
    *(values.data+1) = phase = params->startPhase;
