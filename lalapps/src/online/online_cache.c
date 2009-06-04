@@ -269,7 +269,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   if (XLALGPSCmp(&time_now, &gps_end) == -1)
   {
     /* determine wait time */
-    wait_time = (INT4)floor(XLALGPSDiff(&gps_end, &time_now) + 0.5);
+    wait_time = (INT4)round(XLALGPSDiff(&gps_end, &time_now));
 
     /* wait for data to be available */
     fprintf(stdout, "requested data is in the future, waiting: %ds\n", wait_time);
@@ -280,7 +280,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   if (XLALGPSCmp(latest_time, &gps_end) == -1)
   {
     /* determine wait time */
-    wait_time = (INT4)floor(XLALGPSDiff(&gps_end, latest_time) + 0.5);
+    wait_time = (INT4)round(XLALGPSDiff(&gps_end, latest_time));
 
     /* does wait exceed timeout? */
     if (wait_time > timeout)
@@ -310,7 +310,7 @@ INT4 main(INT4 argc, CHAR *argv[])
       if (XLALGPSCmp(latest_gps, &gps_end) == -1)
       {
         /* determine wait time */
-        wait_time = (INT4)floor(XLALGPSDiff(&gps_end, latest_gps) + 0.5);
+        wait_time = (INT4)round(XLALGPSDiff(&gps_end, latest_gps));
 
         /* does required wait exceed timeout? */
         if ((total_wait + wait_time) > timeout)
