@@ -618,8 +618,10 @@ LALAddSnglRingdownToCoinc(
     )
 /* </lalVerbatim> */
 {
+  /*
   CoincRingdownTable  *coincRingdown = NULL;
   EventIDColumn       *eventId = NULL;
+  */
 
   INITSTATUS( status, "LALAddSnglRingdownToCoinc", COINCRINGDOWNUTILSC );
   ATTATCHSTATUSPTR( status );
