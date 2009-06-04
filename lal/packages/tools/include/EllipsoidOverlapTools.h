@@ -61,7 +61,7 @@ NRCSID( ELLIPSOIDOVERLAPTOOLSH, "$Id$" );
 typedef struct tagfContactWorkSpace
 {
     /* Dimension of the matrices & vectors */
-    INT4              n;
+    UINT4             n;
 
     /* Vector r_AB = r_B - r_A and           */
     /* shape matrices for ellipsoid centered */
