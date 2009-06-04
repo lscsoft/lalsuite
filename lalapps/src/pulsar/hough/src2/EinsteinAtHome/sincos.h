@@ -1,6 +1,23 @@
-/** the way of trimming x to the interval [0..1) for the sin_cos_LUT functions
-    give significant differences in speed, so we provide various ways here.
-    We also record the way we are using for logging */
+/*
+  This file defines:
+  - a macro SINCOS_TRIM_X(y,x) which trims the value x to interval [0..2)
+  - global REAL4 arrays sincosLUTbase[] and sincosLUTdiff[] as lookup tables
+  - a function void local_sin_cos_2PI_LUT_init(void) that initailizes the lookup tables
+  - a function local_sin_cos_2PI_LUT_trimmed(*sin,*cos,x)
+  - macros SINCOS_STEP1..6 for the individual steps of the local_sin_cos_2PI_LUT_trimmed() function
+  - a type ux_t for a variable ux to be used in these macros
+  - the macros SINCOS_LUT_RES, SINCOS_ADDS, SINCOS_MASK1, SINCOS_MASK2, SINCOS_SHIFT
+
+  The following compile-switches (macros) are used:
+  _MSC_VER, _ARCH_PPC, LAL_NDEBUG, __BIG_ENDIAN__
+*/
+
+
+/*
+ the way of trimming x to the interval [0..1) for the sin_cos_LUT functions
+ give significant differences in speed, so we provide various ways here.
+ We also record the way we are using for logging
+*/
 
 #ifdef _MSC_VER /* no C99 rint() */
 #define SINCOS_TRIM_X(y,x) \
@@ -50,6 +67,8 @@ static void local_sin_cos_2PI_LUT_init (void)
   }
 }
 
+
+/* weird type definition to read the higher bits of a 'double' as an 'int' */
 typedef
 union {
   REAL8 asreal;
@@ -77,7 +96,7 @@ static int local_sin_cos_2PI_LUT_trimmed (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 
   }
 #endif
 
-  /*                          v--- down here is what actually happens */
+  /* v-- syntactic sugar      v--- down here is what actually happens */
 
 #define SINCOS_STEP1(ux,x)    ux.asreal = x + SINCOS_ADDS
   SINCOS_STEP1(ux,x);
