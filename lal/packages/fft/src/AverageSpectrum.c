@@ -1600,7 +1600,7 @@ int XLALPSDRegressorAdd(LALPSDRegressor *r, const COMPLEX16FrequencySeries *samp
      * that is so the correction factor is the same.
      */
 
-    r->mean_square->data->data[i] = (r->mean_square->data->data[i] * (r->n_samples - 1) + log(bin_history[history_length / 2] * median_bias)) / r->n_samples;
+    r->mean_square->data->data[i] = (r->mean_square->data->data[i] * (r->n_samples - 1) + (log(bin_history[history_length / 2] * median_bias) - LAL_GAMMA)) / r->n_samples;
   }
 
   XLALFree(bin_history);
