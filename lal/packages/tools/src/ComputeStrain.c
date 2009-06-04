@@ -591,7 +591,7 @@ INT4 k,m;
 
 REAL4 deltaT=input->AS_Q.deltaT, To=input->To;
 INT4 length = input->AS_Q.data->length;
-INT4 localtime = input->AS_Q.epoch.gpsSeconds;
+/*INT4 localtime = input->AS_Q.epoch.gpsSeconds;*/
 
  INITSTATUS( status, "LALGetFactors", COMPUTESTRAINC );
  ATTATCHSTATUSPTR( status );
