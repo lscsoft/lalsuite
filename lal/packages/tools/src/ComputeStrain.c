@@ -79,7 +79,7 @@ void LALComputeStrain(
 /* Inverse sensing, servo, analog actuation, digital x
 actuation  digital y actuation */
 static REAL8TimeSeries uphR,ALPHAS,upALPHAS;
-int p,l;
+int p;
 REAL8IIRFilter LPFIR;
 REAL8IIRFilter HPFIR;
 REAL8IIRFilter ALPHASLPFIR;
