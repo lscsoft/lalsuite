@@ -84,6 +84,8 @@ static INT8 end_time(const MultiInspiralTable *x)
 	return(XLALGPStoINT8(&x->end_time));
 }
 
+#if 0
+/* functions currently unused */
 static INT4 end_time_sec(const MultiInspiralTable *x)
 {
 	return(x->end_time.gpsSeconds);
@@ -93,6 +95,7 @@ static INT4 end_time_nsec(const MultiInspiralTable *x)
 {
 	return(x->end_time.gpsNanoSeconds);
 }
+#endif
 
 /* <lalVerbatim file="SnglInspiralUtilsCP"> */
 void
