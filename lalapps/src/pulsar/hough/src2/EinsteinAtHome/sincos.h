@@ -2,8 +2,7 @@
     give significant differences in speed, so we provide various ways here.
     We also record the way we are using for logging */
 
-#if EAH_SINCOS_ROUND == EAH_SINCOS_ROUND_PLUS2
-#ifdef _MSC_VER /* no C99 */
+#ifdef _MSC_VER /* no C99 rint() */
 #define SINCOS_TRIM_X(y,x) \
   { \
     __asm FLD     QWORD PTR x 	\
@@ -13,15 +12,14 @@
     __asm FADDP   ST(1),ST	\
     __asm FSTP    QWORD PTR y 	\
     }
-#else /* C99, no MSC */
-#define SINCOS_TRIM_X(y,x) \
-  y = x - rint(x) + 1.0;
-#endif /* C99 / MSC */
-
-#elif EAH_SINCOS_ROUND == EAH_SINCOS_ROUND_FLOOR 
-#define SINCOS_TRIM_X(y,x) \
-  y = x - floor(x);
+#elif _ARCH_PPC
+/* floor() is actually faster here, as we don't have to set the rounding mode */
+#define SINCOS_TRIM_X(y,x) y = x - floor(x);
+#else
+#define SINCOS_TRIM_X(y,x) y = x - rint(x) + 1.0;
 #endif
+
+
 
 /* sin/cos Lookup tables */
 #define SINCOS_LUT_RES 1024 /* should be multiple of 4 */
