@@ -1406,7 +1406,7 @@ XLALInspiralPsi0Psi3CutBCVC(
   CoincInspiralTable   *coincHead = NULL;
 
   INT4  discardTrigger = 0;
-  REAL4 psi0A, psi0B, psi3A, psi3B, snr, snrA, snrB, x, y, X, Y, theta=0.040;
+  REAL4 psi0A, psi0B, psi3A, psi3B, snrC, snrA, snrB, x, y, X, Y, theta=0.040;
 
   thisCoinc = *coincInspiral;
   coincHead = NULL;
@@ -1437,15 +1437,15 @@ XLALInspiralPsi0Psi3CutBCVC(
           snrB = tmpCoinc->snglInspiral[ifoB]->snr;
           if (snrA<snrB )
           {
-            snr = snrB;
+            snrC = snrB;
           }
           else
           {
-            snr = snrA;
+            snrC = snrA;
           }
 
-          x = (psi0A - psi0B) / snr ;
-          y = (psi3A - psi3B) / snr ;
+          x = (psi0A - psi0B) / snrC ;
+          y = (psi3A - psi3B) / snrC ;
           X = x * cos(theta) - y * sin(theta);
           Y = x * sin(theta) + y * cos(theta);
 
