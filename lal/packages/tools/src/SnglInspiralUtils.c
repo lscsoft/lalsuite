@@ -649,7 +649,7 @@ XLALCompareInspirals (
   InterferometerNumber ifoaNum,  ifobNum;
   SnglInspiralAccuracy aAcc, bAcc;
 
-  static const char *func = "XLALCompareInspirals";
+  /* static const char *func = "XLALCompareInspirals"; */
 
   params->match = 1;
 
