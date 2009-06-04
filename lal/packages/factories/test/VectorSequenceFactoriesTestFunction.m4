@@ -89,6 +89,6 @@ static void FUNC ( void )
 
   LALCheckMemoryLeaks();
   printf( "PASS: tests of CFUNC and DFUNC \n" );
-          
+
   return;
 }

@@ -7,27 +7,27 @@ use units in which $c=G=1$):
 \begin{equation}
 h(t) = A v^2 \cos(\phi(t)),
 \end{equation}
-where the coefficient $A$ is set equal to 1 for non-spinning binaries 
-and to the appropriate modulation function for spinning binaries (see below), 
-$v$ is the PN expansion parameter, and $\phi(t)$ is the appropriately 
-defined phasing formula which is either an explicit or an implicit 
+where the coefficient $A$ is set equal to 1 for non-spinning binaries
+and to the appropriate modulation function for spinning binaries (see below),
+$v$ is the PN expansion parameter, and $\phi(t)$ is the appropriately
+defined phasing formula which is either an explicit or an implicit
 function of time.  In what follows we summarize the basic formulas used
 in generating the waveforms. As we shall see there are are a number of
 ways in which these waveforms can be generated.  In the {\tt inspiral} package
-these are controlled by two {\tt enums:} The first {\tt enum,} called {\tt Order,} 
+these are controlled by two {\tt enums:} The first {\tt enum,} called {\tt Order,}
 controls the PN order to which the various quantities are defined and
 the second {\tt enum,} called {\tt Approximant,} controls the approximant used
 in generating the waveforms.
- 
-\section{Taylor and Pade approximants} 
-Theoretical calculations have given us PN expansions 
-(i.e.\ a series in terms of ascending powers of $v$) of an energy 
-function $E(x=v^2)$ and a gravitational wave (GW) luminosity 
+
+\section{Taylor and Pade approximants}
+Theoretical calculations have given us PN expansions
+(i.e.\ a series in terms of ascending powers of $v$) of an energy
+function $E(x=v^2)$ and a gravitational wave (GW) luminosity
 function $\mathcal{F}(v):$
 \begin{equation}
 E(x) = E_N \sum_n E_k x^k,\ \ \ \ {\cal F}(v) = {\cal F}_N \sum_j {\cal F}_j v^j.
 \end{equation}
-One can use kinematical equations $dt = (dt/dE)(dE/dv) dv,$ and 
+One can use kinematical equations $dt = (dt/dE)(dE/dv) dv,$ and
 $d\phi/dt = 2\pi F$ and the energy balance equation relating the
 luminosity in gravitational waves to the rate of change of
 binding energy ${\cal F} = - dE/dt$ , to obtain a phasing formula \cite {dis3}:
@@ -38,27 +38,27 @@ t(v) & = & t_{\rm ref} + m \int_v^{v_{\rm ref}} \,
 \frac{E'(v)}{{\cal F}(v)} \, dv,
 \label{InspiralWavePhasingFormula}
 \end{eqnarray}
-where $E'(v)=dE/dv,$ $v=(\pi m F)^{1/3}$ is an invariantly defined velocity, 
-$F$ is the instantaneous GW frequency, and $m$ is the total mass 
+where $E'(v)=dE/dv,$ $v=(\pi m F)^{1/3}$ is an invariantly defined velocity,
+$F$ is the instantaneous GW frequency, and $m$ is the total mass
 of the binary.  There are basically three ways of solving the problem:
 \begin{enumerate}
-\item Leave  $E^{\prime}(v)/\mathcal{F}(v)$ as it is and integrate the 
+\item Leave  $E^{\prime}(v)/\mathcal{F}(v)$ as it is and integrate the
 equations numerically. Using standard PN expansions for the
 energy and flux functions one generates the {\tt Approximant} called \texttt{TaylorT1.}
 If instead one uses the P-approximant for the energy and flux functions
-\cite{dis3,dis1} then one generates the approximant called \texttt{PadeT1.} 
+\cite{dis3,dis1} then one generates the approximant called \texttt{PadeT1.}
 In reality, it is computationally cheaper to use two ordinary differential
 equations instead of the integrals. These are:
 \begin{equation}
-\frac{dv}{dt} = - \frac{\mathcal{F}(v)}{m E^{\prime}(v)},\ \ \ \ 
+\frac{dv}{dt} = - \frac{\mathcal{F}(v)}{m E^{\prime}(v)},\ \ \ \
 \frac{d \phi(t)}{dt} = \frac{2v^{3}}{m}.
 \label{eq:ode2}
 \end{equation}
 These are implemented in modules {\tt LALInspiralWave1.}
- 
+
 \item Re-expand $E^{\prime}(v)/\mathcal{F}(v)$ in a Taylor expansion
-in which case the integrals can be solved analytically to obtain a 
-{\it parametric} representation of the phasing formula in terms of 
+in which case the integrals can be solved analytically to obtain a
+{\it parametric} representation of the phasing formula in terms of
 polynomial expressions in the auxiliary variable $v$
 \begin {eqnarray}
 \phi(v)&=& \phi_{\rm ref} +
@@ -68,18 +68,18 @@ t(v)&=& t_{\rm ref} +t_N(v) \sum_{k=0}^{n} {t}_k v^k,
 \end {eqnarray}
 This corresponds to \texttt{TaylorT2} in the enum \texttt{Approximant} \cite{dis3}.
 These are implemented in modules {\tt LALInspiralWave2.}
- 
+
 \item The second of the polynomials in Eq.~(\ref{eq:InspiralWavePhase2}) can
 be inverted and the resulting polynomial for $v$ in terms of
 $t$ can be substituted in $\phi(v)$ to arrive at an explicit  time-domain
 phasing formula
 \begin{equation}
 \phi(t)=\phi_{\rm ref}+\phi_N^t \sum_{k=0}^{n}
-{\phi}^t_k\theta^k, \ \ \ 
+{\phi}^t_k\theta^k, \ \ \
 F(t)= F_N \sum_{k=0}^{n} {F}_k \theta^k,
 \label{eq:InspiralWavePhase3}
-\end{equation}         
-where $\theta=[\eta (t_{\rm ref}-t)/(5m)]^{-1/8}$, 
+\end{equation}
+where $\theta=[\eta (t_{\rm ref}-t)/(5m)]^{-1/8}$,
 $F \equiv d \phi/ 2 \pi dt =v^3/(\pi m)$ is the instantaneous GW frequency
 and $\eta=m_1 m_2/m^2$ is the symmetric mass ratio.
 This corresponds to the {\tt Approximant} \texttt{TaylorT3}  \cite{BDIWW,BIWW,dis3}.
@@ -90,11 +90,11 @@ quantities are summarized in Tables \ref{table:energy} and \ref{table:flux}.
 
 \begin {table}[h]
 \caption {Taylor coefficients of the energy functions
-$E_{T_n}(x) = E_N \sum_{k=0} E_k x^k$ and $e_{T_n}(x) = e_N \sum_{k=0} e_k x^k,$ 
+$E_{T_n}(x) = E_N \sum_{k=0} E_k x^k$ and $e_{T_n}(x) = e_N \sum_{k=0} e_k x^k,$
 $e_{P_n}(x) = e_N/(1+c_1x/(1 + c_2x / (1 + c_3x/ \ldots )))$ and the corresponding
  location of the lso and pole.
-As there are no terms of order $v^{2k+1}$ we have exceptionally chosen 
-(for this Table only) the expansion 
+As there are no terms of order $v^{2k+1}$ we have exceptionally chosen
+(for this Table only) the expansion
 parameter to be $x\equiv v^2$ rather than $v.$ In all cases the
  $k=0$ coefficient
 is equal to 1, the last stable orbit is defined only for $k\ge 1$ in the
@@ -105,15 +105,15 @@ and $N$ denotes the ``Newtonian value''.}
 \hline
 $k$    & $N$ & 1  & 2 \\[3pt]
 \hline\\[-8pt]
-$E_k$ 
+$E_k$
      & $-\frac{\eta v^2}{2}$
      & $-\frac{9+\eta}{12}$
      & $-\frac{81-57\eta+\eta^2}{24}$\\[3pt]
-$e_k$  
+$e_k$
       & $-x(=-v^2)$
       & $-\frac{3+\eta}{3}$
       & $-\frac{36-35\eta}{12}$\\[3pt]
-$e_{P_k}$  
+$e_{P_k}$
       & $-x(=-v^2)$
       & $c_1=\frac{3+\eta}{3}$
       & $c_2=-\frac{144-81\eta+4 \eta^2}{36+12\eta}$\\[3pt]
@@ -136,31 +136,31 @@ $x^{\rm pole}_{P_k}$
 \end {table}
 
 \begin {table}[h]
-\caption {Taylor coefficients of the flux 
+\caption {Taylor coefficients of the flux
 ${\cal F}_{T_n}(x) \equiv {\cal F}_N(x) \sum_{k=0}^n {{\cal F}}_k(\eta)v^k,$
 PN expansion of the GW phase
 $\phi_{T_n}(v) =  \phi_{\rm ref} + \phi^v_N (v)\sum_{k=0}^{n} {\phi}^v_k v^k,$
 explicit time-domain phasing formula
-$\phi_{T_n}(t) = \phi_{\rm ref}+\phi_N^t \sum_{k=0}^{n} 
+$\phi_{T_n}(t) = \phi_{\rm ref}+\phi_N^t \sum_{k=0}^{n}
 {\phi}^t_k\theta^k,$
-PN expansion of time $t_{T_n}(v) = t_{\rm ref} +t^v_N(v) \sum_{k=0}^{n} {t}^v_k v^k,$ 
+PN expansion of time $t_{T_n}(v) = t_{\rm ref} +t^v_N(v) \sum_{k=0}^{n} {t}^v_k v^k,$
 explicit time-domain PN expansion of GW frequency,
 $F_{T_n}(t) =  F_N^t \sum_{k=0}^{n} {F}^t_k \theta^k,$
 and frequency-domain phase function obtained in the stationary phase approximation
 to the chirp,
-$\psi(f) = 2 \pi f t_{\rm ref} - \phi_{\rm ref} + 
+$\psi(f) = 2 \pi f t_{\rm ref} - \phi_{\rm ref} +
 \tau_N \sum_{k=0}^5 {\tau}_k (\pi m f)^{(k-5)/3}.$
-Here $N$ denotes the ``Newtonian value'' and 
+Here $N$ denotes the ``Newtonian value'' and
 $\theta=[\eta (t_{\rm lso}-t)/(5m)]^{-1/8}.$ In all cases the $k=0$ coefficient
 is 1 and the  $k=1$ coefficient is zero. In certain cases
 the 2.5 PN term involves $v^5 \log v$ or $\theta^5 \log \theta$
- term rather than a  $v^5$ or $\theta^5$ term.  
+ term rather than a  $v^5$ or $\theta^5$ term.
 In those cases  we conventionally include the $\log v$ dependence in the
 listed coefficient.
 Chirp parameters $\tau_k,$ $k\ge 1,$
 are related to the expansion parameters $t^v_k$ and $\phi^v_k$ via
-$\tau_k = ( 8 \phi^v_k - 5 t^v_k )/3.$ 
-We have given the simplified 
+$\tau_k = ( 8 \phi^v_k - 5 t^v_k )/3.$
+We have given the simplified
 expressions for these in all cases, except $k=5$ where no simplification occurs
 due to the presence of the log term in $\phi^v_5.$}
 \begin {center}
@@ -168,7 +168,7 @@ due to the presence of the log term in $\phi^v_5.$}
 \hline
 $k$ &  $N$ & 2  &  3  &  4  &  5  \\
 \hline\\[-8pt]
-${\cal F}_k$ 
+${\cal F}_k$
       & $\frac{32\eta^2 v^{10}}{5}$
       & $- \frac{1247}{336} - \frac{35\eta}{12}$
     & $4\pi$
@@ -184,28 +184,28 @@ $\phi^v_k$
       & $-\frac{1}{16\eta v^5}$
       & $\frac{3715}{1008}+\frac{55\eta}{12}$
       & $-10 \pi$
-      & $\frac{15293365}{1016064} + \frac{27145\eta}{1008 } + 
+      & $\frac{15293365}{1016064} + \frac{27145\eta}{1008 } +
 \frac{3085\eta^2}{144}$
-      & $ \left (\frac{38645}{672} + \frac{15\eta}{8 } \right ) \pi 
+      & $ \left (\frac{38645}{672} + \frac{15\eta}{8 } \right ) \pi
 \ln \left ( \frac{v}{v_{\rm lso}} \right ) $\\[3pt]
 $\phi^t_k$
       & $-\frac{2}{\eta \theta^5}$
       & $\frac{3715}{8064}+\frac{55\eta}{96}$
-      & $-\frac{3\pi}{4}$ 
-      & $\frac{9275495}{14450688}+\frac{284875\eta}{258048 } + 
+      & $-\frac{3\pi}{4}$
+      & $\frac{9275495}{14450688}+\frac{284875\eta}{258048 } +
 \frac{1855\eta^2}{2048 }$
-      & $\left (\frac {38645}{21504} + \frac{15\eta}{256 } \right ) \pi 
+      & $\left (\frac {38645}{21504} + \frac{15\eta}{256 } \right ) \pi
 \ln \left ( \frac {\theta}{\theta_{\rm lso}} \right ) $\\[3pt]
 $F^t_k$
       & $\frac{\theta^3}{8\pi m}$
-      & $\frac{743}{2688}+\frac{11\eta}{32}$ 
+      & $\frac{743}{2688}+\frac{11\eta}{32}$
       & $-\frac{3\pi}{10}$
-       & $\frac {1855099}{14450688} + \frac{56975\eta}{258048 } + 
-\frac{371\eta^2}{2048 }$ 
+       & $\frac {1855099}{14450688} + \frac{56975\eta}{258048 } +
+\frac{371\eta^2}{2048 }$
       & $- \left(\frac{7729}{21504} + \frac{3}{256}\eta\right)\pi$\\[3pt]
-$\tau_k$ 
+$\tau_k$
       & $\frac{3}{128\eta}$
-      & $ \frac{5}{9} 
+      & $ \frac{5}{9}
         \left ( \frac{743}{84} + 11\eta\right )$
       & $-16\pi $
       & $2  \phi^v_4$
@@ -229,7 +229,7 @@ continuously increasing. (We assume $F(t)>0$.)
  Now the Fourier transform $\tilde h(f)$ of $h(t)$ is defined as
 \begin {equation}
 \tilde{h}(f) \equiv \int_{-\infty}^{\infty} dt e^{2\pi ift} h(t)
-            = \int_{-\infty}^{\infty}\,dt\, a(t) 
+            = \int_{-\infty}^{\infty}\,dt\, a(t)
               \left[ e^{2\pi i f t - \phi(t)}  +  e^{2\pi ift +\phi(t)}\right ].
 \end {equation}
 The above transform can be computed in the stationary
@@ -237,13 +237,13 @@ phase approximation (SPA). For positive frequencies only the first term
 on the right  contributes and yields the following {\it usual} SPA:
 \begin {equation}
 \tilde{h}^{\rm uspa}(f)= \frac {a(t_f)} {\sqrt {\dot{F}(t_f)}}
-e^{ i\left[ \psi_f(t_f) -\pi/4\right]},\ \ 
-\psi_f(t) \equiv  2 \pi f t -\phi(t), 
+e^{ i\left[ \psi_f(t_f) -\pi/4\right]},\ \
+\psi_f(t) \equiv  2 \pi f t -\phi(t),
 \label{eq:inspiralspa1}
 \end {equation}
 and $t_f$ is the saddle point defined by solving for $t$, $ d \psi_f(t)/d t = 0$,
-i.e. the time $t_f$ when the GW frequency $F(t)$ becomes equal to the 
-Fourier variable $f$. In the adiabatic approximation where 
+i.e. the time $t_f$ when the GW frequency $F(t)$ becomes equal to the
+Fourier variable $f$. In the adiabatic approximation where
 the value of $t_f$ is given by the following integral:
 \begin{equation}
 t_f = t_{\rm ref} + m \int_{v_f}^{v_{\rm ref}} \frac{E'(v)}{{\cal F}(v)} dv,
@@ -253,11 +253,11 @@ t_f = t_{\rm ref} + m \int_{v_f}^{v_{\rm ref}} \frac{E'(v)}{{\cal F}(v)} dv,
 where $v_{\rm ref}$ is a fiducial reference point that sets the origin of
 time, $v_f \equiv (\pi m f)^{1/3},$ $E'(v)\equiv dE/dv$ is the derivative of
 the binding energy of the system and ${\cal F}(v)$ is the gravitational wave
-flux. 
-Using $t_f$ and $\phi(t_f)$ in the above equation and 
+flux.
+Using $t_f$ and $\phi(t_f)$ in the above equation and
 using it in the expression for $\psi_f(t)$ we find
 \begin{equation}
- \psi_f(t_f) = 2 \pi f t_{\rm ref} - \phi_{\rm ref} + 2\int_{v_f}^{v_{\rm ref}} 
+ \psi_f(t_f) = 2 \pi f t_{\rm ref} - \phi_{\rm ref} + 2\int_{v_f}^{v_{\rm ref}}
 (v_f^3 - v^3)
 \frac{E'(v)}{{\cal {\cal F}}(v)} dv .
 \label{eq:InspiralFourierPhase}
@@ -272,47 +272,47 @@ re-expanding the ratio $E'(v)/{\cal F}(v)$ in Eq.~(\ref{eq:InspiralFourierPhase}
 can solve the integral explicitly. This leads to the following
 explicit, Taylor-like, Fourier domain phasing formula:
 \begin{equation}
- \psi_f(t_f) = 2 \pi f t_{\rm ref} - \phi_{\rm ref} + 
- \psi_N \sum_{k=0}^5 {\psi}_k (\pi m f)^{(k-5)/3} 
+ \psi_f(t_f) = 2 \pi f t_{\rm ref} - \phi_{\rm ref} +
+ \psi_N \sum_{k=0}^5 {\psi}_k (\pi m f)^{(k-5)/3}
 \label{eq:InspiralFourierPhase:f2}
 \end{equation}
 where the coefficients ${\psi}_k$ up to 2.5 post-Newtonian approximation are given by:
-$$\psi_N =  \frac{3}{128\eta},\ \ \ \psi_0 = 1,\ \ \ \psi_1 = 0,\ \ \   
-\psi_2 =  \frac{5}{9} \left ( \frac{743}{84} + 11\eta\right ),\ \ \ 
+$$\psi_N =  \frac{3}{128\eta},\ \ \ \psi_0 = 1,\ \ \ \psi_1 = 0,\ \ \
+\psi_2 =  \frac{5}{9} \left ( \frac{743}{84} + 11\eta\right ),\ \ \
 \psi_3 =  -16\pi,$$
-$$\psi_4 = \frac{5}{72}\left(\frac{3058673}{7056} + \frac{5429}{7}\eta + 
+$$\psi_4 = \frac{5}{72}\left(\frac{3058673}{7056} + \frac{5429}{7}\eta +
 617\eta^2\right),$$
 $$\psi_5 =  \frac{5}{3} \left ( \frac{7729}{252} + \eta \right ) \pi +
-   \frac{8}{3} \left ( \frac{38645}{672} + \frac{15}{8} \eta \right ) 
+   \frac{8}{3} \left ( \frac{38645}{672} + \frac{15}{8} \eta \right )
 	\ln \left ( \frac{v}{v_{\rm ref}} \right )\pi.$$
 Eq.~(\ref{eq:InspiralFourierPhase:f2}) is (one of) the  standardly used frequency-domain phasing formulas.
 This is what is implemented in {\tt LALInspiralStationaryPhaseApproximation2}
 and corresponds to \texttt{TaylorF2} in the enum \texttt{Approximant.}
 
-Alternatively, substituting (without doing any re-expansion or re-summation) 
+Alternatively, substituting (without doing any re-expansion or re-summation)
 for the energy and flux functions their PN expansions
-or the P-approximants of energy and flux functions 
+or the P-approximants of energy and flux functions
 and solving the integral in Eq.~(\ref{eq:InspiralFourierPhase}) numerically
 one obtains the T-approximant SPA or P-approximant SPA, respectively.
-However, just as in the time-domain, the frequency-domain phasing is 
+However, just as in the time-domain, the frequency-domain phasing is
 most efficiently computed by a pair of coupled, non-linear, ODE's:
 \begin{equation}
 \frac{d\psi}{df} - 2\pi t = 0, \ \ \ \
 \frac{dt}{df} + \frac{\pi m^2}{3v^2} \frac{E'(f)}{{\cal F}(f)} = 0,
 \label {eq:frequencyDomainODE}
 \end{equation}
-rather  than by numerically computing the integral in  
-Eqs.~(\ref{eq:InspiralFourierPhase}).  However, the current implementation 
-in {\tt LALInspiralStationaryPhaseApproximation1} solves the integral 
+rather  than by numerically computing the integral in
+Eqs.~(\ref{eq:InspiralFourierPhase}).  However, the current implementation
+in {\tt LALInspiralStationaryPhaseApproximation1} solves the integral
 and corresponds to \texttt{TaylorF1} in the  \texttt{enum Approximant.}
 
 \subsection{Amplitude in the Fourier domain}
 The derivative of the frequency that occurs in the
 amplitude of the Fourier transform, namely
-$1/\sqrt{\dot{F}(t)},$ in Eq.~(\ref{eq:inspiralspa1}), 
+$1/\sqrt{\dot{F}(t)},$ in Eq.~(\ref{eq:inspiralspa1}),
 is computed using
 \begin{equation}
-\dot{F(t)} = \frac{dF}{dt} 
+\dot{F(t)} = \frac{dF}{dt}
            = \frac{dF}{dv}\frac{dv}{dE}\frac{dE}{dt}
            = \frac{3v^2}{\pi m}\left [\frac{{-\cal F}(v)}{E'(v)} \right ],
 \end{equation}
@@ -321,11 +321,11 @@ is related to the binding energy $E$ via the energy balance equation
 ${\cal F} = -dE/dt$ and that $F=v^3/(\pi m).$
 At the Newtonian order $E=-\eta m v^2/2,$ and ${\cal F} = 32\eta^2 v^{10}/5,$
 giving $\dot{F}(t(v)) = 96\eta v^{11}/(5\pi m^2).$ Taking
-$2a(t(v)) = v^2$ (i.e., $h(t) = v^2 \cos (\phi(t)),$ this gives, the 
-total amplitude of the Fourier transform to be 
+$2a(t(v)) = v^2$ (i.e., $h(t) = v^2 \cos (\phi(t)),$ this gives, the
+total amplitude of the Fourier transform to be
 $$\frac{a(t(v))}{\sqrt{\dot{F}(t(v))}} =  \sqrt{\frac{5\pi m^2}{384\eta}} v_f^{-7/2}.$$
 This is the amplitude used in most of literature. However, including the
-full PN expansion in $\dot{F}(t),$ gives a better agreement between the 
+full PN expansion in $\dot{F}(t),$ gives a better agreement between the
 time-domain and Fourier domains signals and this code therefore uses the full
 PN expansion \cite{dis2}.
 
@@ -333,13 +333,13 @@ PN expansion \cite{dis2}.
 \label{sec:BCV}
 
  The Fourier transform of a chirp waveform in the restricted post-Newtonian
- approximation in the stationary phase approximation is given, for 
+ approximation in the stationary phase approximation is given, for
  positive frequencies $f,$ by [cf. Eq.(\ref{eq:InspiralFourierPhase:f2})]
  \begin{equation}
  \tilde h(f) = h_0 f^{-7/6} \exp \left [ \sum_k \psi_k f^{(k-5)/3} \right ],
  \end{equation}
  where $h_0$ is a constant for a given system and $psi_k$ are parameters that
- depend on the two masses of the binary. Since the time-domain waveform 
+ depend on the two masses of the binary. Since the time-domain waveform
  is terminated at when the instantaneous GW frequency reaches a certain value
  $F_{\rm cut}$ (which is either the last stable
  orbit or the light-ring defined by the model) and since the contribution to
@@ -350,76 +350,76 @@ PN expansion \cite{dis2}.
  \begin{equation}
  \tilde h(f) = h_0 f^{-7/6} \theta(f-f_{\rm cut}) \exp \left [ \sum_k \psi_k f^{(k-5)/3} \right ],
  \end{equation}
- where $\theta(x<0)=0$ and $\theta(x\ge 0) =1.$ 
- We have seen that there are different post-Newtonian models such as the 
+ where $\theta(x<0)=0$ and $\theta(x\ge 0) =1.$
+ We have seen that there are different post-Newtonian models such as the
  standard post-Newtonian,
- P-approximants, effective one-body (see Sec.\ref{sec:EOB}), 
+ P-approximants, effective one-body (see Sec.\ref{sec:EOB}),
  and their overlaps with one another is not
- as good as we would like them to be. The main reason for this is that matched 
+ as good as we would like them to be. The main reason for this is that matched
  filtering is sensitive to the phasing of the waves. It is not clear which model
  best describes the true GW signal from a compact binary inspiral although some,
  like the EOB, are more robust in their predictions than others. Thus, Buonanno,
- Chen and Vallisneri proposed \cite{BCV03,BCV03b} 
+ Chen and Vallisneri proposed \cite{BCV03,BCV03b}
 a {\it phenomenological} model as a detection template
  family (DTF) based on the above expression for the Fourier transform. Indeed, they
- proposed to use a DTF that depends on four parameters 
+ proposed to use a DTF that depends on four parameters
 $(\psi_0,\, \psi_3,\, f_{\rm cut},\, \alpha)$ for non-spinning sources \cite{BCV03}
-and on six parameters 
+and on six parameters
 $(\psi_0,\, \psi_3,\, f_{\rm cut},\, \alpha_1,\, \alpha_2,\, \beta)$
 for spinning sources \cite{BCV03b}.
 We have implemented both the non-spinning and spinning waveforms
-in \texttt{LALBCVWaveform} and \texttt{LALBCVSpinWaveform,} respectively. 
+in \texttt{LALBCVWaveform} and \texttt{LALBCVSpinWaveform,} respectively.
 
 \subsection{DTF for non-spinning sources}
 
- The proposed waveform has structure similar to the one above: 
+ The proposed waveform has structure similar to the one above:
  \begin{equation}
- \tilde h(f) = h_0 f^{-7/6} \left (1 - \alpha f^{2/3} \right) \theta(f-f_{\rm cut}) 
+ \tilde h(f) = h_0 f^{-7/6} \left (1 - \alpha f^{2/3} \right) \theta(f-f_{\rm cut})
  \exp \left [ \psi_0 f^{-5/3} + \psi_3 f^{-2/3} \right ],
 \label{eq:BCV:NonSpinning}
  \end{equation}
  where the motivation to include an amplitude correction term $\alpha$ is based on the
  fact that the first post-Newtonian correction to the amplitude would induce a term like this.
- Note carefully that the phasing does not include the full post-Newtonian expansion 
+ Note carefully that the phasing does not include the full post-Newtonian expansion
  but only the Newtonian and 1.5 post-Newtonian terms. It turns out this four-parameter
  family of waveforms has good overlap with the two-parameter family of templates
  corresponding to different post-Newtonian models and their improvments.
 
 \subsection{DTF for spinning sources}
 In the generic case of spinning black hole binaries there are a total of 17
-parameters characterizing the waveform amplitude and shape 
+parameters characterizing the waveform amplitude and shape
 (see Sec.\ref{sec:smirches}.  However, the phasing
 of the waves is determined, in general, by about 10 parameters. Apostolatos
 et al. \cite {ACST94} studied the time-evolution based on which Apostolatos
-found \cite{TAA96} that far fewer parameters can be used to capture 
+found \cite{TAA96} that far fewer parameters can be used to capture
 the full structure of the spinning black hole binary
 waveforms. BCV suggested \cite{BCV03b} that one could use a DTF of waveforms that resembles
 the non-spinning case. Their proposal has the following structure:
 \begin{equation}
-\tilde h(f) = h_0 f^{-7/6} 
-\left [1 + \alpha_1 \cos ( \beta f^{-2/3} ) 
-         + \alpha_2 \sin ( \beta f^{-2/3} ) \right] 
-\theta(f-f_{\rm cut}) 
+\tilde h(f) = h_0 f^{-7/6}
+\left [1 + \alpha_1 \cos ( \beta f^{-2/3} )
+         + \alpha_2 \sin ( \beta f^{-2/3} ) \right]
+\theta(f-f_{\rm cut})
  \exp \left [ \psi_0 f^{-5/3} + \psi_3 f^{-2/3} \right ],
 \label{eq:BCV:Spinning}
 \end{equation}
 where $\alpha_1,$ $\alpha_2$ and $\beta$ are the parameters designed
-to capture the spin-induced modulation of the waveform. 
+to capture the spin-induced modulation of the waveform.
 
 \section{Effective one-body approach}
 \label{sec:EOB}
 \newcommand{\ww}{\widehat{\omega}}
 \newcommand{\wF}{\widehat{\cal F}}
-The entry \texttt{EOB} in the {\tt enum Approximant} corresponds to the 
-effective one-body (EOB) approach of Buonanno and Damour 
-\cite{BD99,BD00,DJS00,TD02}. The EOB formalism allows one to evolve 
-the dynamics of two black holes beyond the last stable orbit into 
+The entry \texttt{EOB} in the {\tt enum Approximant} corresponds to the
+effective one-body (EOB) approach of Buonanno and Damour
+\cite{BD99,BD00,DJS00,TD02}. The EOB formalism allows one to evolve
+the dynamics of two black holes beyond the last stable orbit into
 the plunge phase thereby increasing the number of
 wave cycles, and the signal-to-noise ratio, that can be extracted.
-Here a set of four ordinary differential equations (ODEs) are solved 
-by making an anzatz for the tangential radiation reaction force. 
+Here a set of four ordinary differential equations (ODEs) are solved
+by making an anzatz for the tangential radiation reaction force.
 
-In practical terms, the time-domain waveform 
+In practical terms, the time-domain waveform
 is obtained as the following function of the reduced time $\hat{t}=t/m$:
 \begin{equation}
 \label{4.1}
@@ -430,7 +430,7 @@ C} \, v_{\omega}^2 (\hat{t}) \cos (\phi (\hat{t}))\,, \quad v_{\omega}
 \end{equation}
 (The amplitude $\cal C$ is chosen to be equal to 1 in our codes.)
 The four ODEs correspond to the evolution of the radial and angular
-coordinates and the corresponding momenta: 
+coordinates and the corresponding momenta:
 \begin{eqnarray}
 \label{eq:3.28}
 &&\frac{dr}{d \hat{t}} = \frac{\partial \widehat{H}}{\partial p_r}
@@ -444,8 +444,8 @@ coordinates and the corresponding momenta:
 && \frac{d p_\varphi}{d \hat{t}} = \wF_\varphi(\ww (r,p_r,p_{\varphi}))\,.
 \label{3.31}
 \end{eqnarray}
-The reduced Hamiltonian $\widehat{H}$ (of the one-body problem) 
-is given, at the 2PN approximation, by 
+The reduced Hamiltonian $\widehat{H}$ (of the one-body problem)
+is given, at the 2PN approximation, by
 \label{eq:4.4}
 \begin{eqnarray}
 \label{eq:3.32}
@@ -464,20 +464,20 @@ The damping force $\cal{F}_{\varphi}$ is approximated by
 \label{eq:damp}
 \end{equation}
 where $
-{\cal F}_{P_n} (v_{\omega})  
+{\cal F}_{P_n} (v_{\omega})
 = \frac{32}{5}\,\eta^2\,v_\omega^{10}\,
-{\widehat{\cal F}}_{P_n} (v_{\omega})$  
+{\widehat{\cal F}}_{P_n} (v_{\omega})$
 is the P-approximant to the flux function.
 
 The initial data $(r_0, p_{r}^0, p_{\varphi}^0)$ are found using
 \begin{equation}
-r_0^3 \left [ \frac {1 + 2 \eta (\sqrt{z(r_0)} -1 )}{1- 3\eta/r_0^2} \right ]-  \omega_0^{-2} = 0,\ \ 
-p^0_\varphi = \left [\frac {r_0^2 - 3 \eta}{r_0^3 - 3 r_0^2 + 5 \eta} \right ]^{1/2}r_0,\ \ 
-p^0_r = \frac {{\cal F}_\varphi(\omega)}{C(r_0,p^0_\varphi) (dp^0_\varphi/dr_0)}\ \ 
+r_0^3 \left [ \frac {1 + 2 \eta (\sqrt{z(r_0)} -1 )}{1- 3\eta/r_0^2} \right ]-  \omega_0^{-2} = 0,\ \
+p^0_\varphi = \left [\frac {r_0^2 - 3 \eta}{r_0^3 - 3 r_0^2 + 5 \eta} \right ]^{1/2}r_0,\ \
+p^0_r = \frac {{\cal F}_\varphi(\omega)}{C(r_0,p^0_\varphi) (dp^0_\varphi/dr_0)}\ \
 \end{equation}
 where $z(r)$ and $C(r,p_\varphi)$ are given by
 \begin{equation}
-z(r) = \frac{r^3 A^2(r)}{r^3-3r^2+5 \eta},\ \ 
+z(r) = \frac{r^3 A^2(r)}{r^3-3r^2+5 \eta},\ \
 C(r,p_\varphi) = \frac{1}{\eta \widehat{H} (r,0,p_\varphi)
  \sqrt{z(r)}} \frac{A^2(r)}{(1-6\eta/r^2)}.
 \end{equation}
@@ -497,59 +497,59 @@ The orbital plane of a binary consisting of rapidly spinning compact
 objects precesses causing the polarization of the wave received at an
 antenna to continually change. This change depends on the source location
 on the sky and it might therefore be possible to resolve the direction
-to a source. It is therefore essential to specify the coordinate system 
+to a source. It is therefore essential to specify the coordinate system
 employed in the description of the waveform. As in Ref.~\cite{ACST94}
 the coordinate system is adapted to the detector with the x-y plane
 in the plane of the interferometer with the axes along the two arms.
 
-In the restricted post-Newtonian approximation the evolution of a binary 
-system comprising of two bodies of masses $m_1$ and $m_2,$ spins 
-${\mathbf S}_1=(s_1,\, \theta_1, \, \varphi_1)$ and 
+In the restricted post-Newtonian approximation the evolution of a binary
+system comprising of two bodies of masses $m_1$ and $m_2,$ spins
+${\mathbf S}_1=(s_1,\, \theta_1, \, \varphi_1)$ and
 ${\mathbf S}_2=(s_2,\, \theta_2, \, \varphi_2),$ orbital angular momentum
-${\mathbf L}=(L,\, \theta_0, \, \varphi_0),$ is governed by a 
+${\mathbf L}=(L,\, \theta_0, \, \varphi_0),$ is governed by a
 set of differential equations given by:
 \begin{eqnarray}
-\dot{\mathbf {L}} = 
-\left [ 
-\left ( \frac{4m_1+3m_2}{2m_1m^3} - \frac{3\,  {\mathbf S}_2 \cdot {\mathbf L}}{2\, L^2m^3} \right ) {\mathbf S}_1 + 
-\left ( \frac{4m_2+3m_1}{2m_2m^3} - \frac{3}{2}\frac{ {\mathbf S}_1 \cdot {\mathbf L}}{L^2m^3} \right ) {\mathbf S}_2 
+\dot{\mathbf {L}} =
+\left [
+\left ( \frac{4m_1+3m_2}{2m_1m^3} - \frac{3\,  {\mathbf S}_2 \cdot {\mathbf L}}{2\, L^2m^3} \right ) {\mathbf S}_1 +
+\left ( \frac{4m_2+3m_1}{2m_2m^3} - \frac{3}{2}\frac{ {\mathbf S}_1 \cdot {\mathbf L}}{L^2m^3} \right ) {\mathbf S}_2
 \right ] \times {\mathbf L} v^6 -\frac{32\eta^2 m}{5L} {\mathbf L} v^7,
 \label{eqn:precession1}
 \end{eqnarray}
 \begin{equation}
-\dot{ \mathbf  S}_1  = 
-\left [ \left ( \frac{4m_1+3m_2}{2m_1m^3} - \frac{3\, {\mathbf S}_2 \cdot {\mathbf L} }{2\, L^2m^3} 
+\dot{ \mathbf  S}_1  =
+\left [ \left ( \frac{4m_1+3m_2}{2m_1m^3} - \frac{3\, {\mathbf S}_2 \cdot {\mathbf L} }{2\, L^2m^3}
 \right ) {\mathbf L} \times {\mathbf S}_1 + \frac{ {\mathbf S}_2 \times {\mathbf S}_1 }{2m^3} \right ] v^6,
-\label{eqn:precession2} 
+\label{eqn:precession2}
 \end{equation}
 \begin{equation}
-\dot{ \mathbf  S}_2  = 
-\left [ \left ( \frac{4m_2+3m_1}{2m_2m^3} - \frac{3\, {\mathbf S}_1 \cdot {\mathbf L} }{2\, L^2m^3} 
+\dot{ \mathbf  S}_2  =
+\left [ \left ( \frac{4m_2+3m_1}{2m_2m^3} - \frac{3\, {\mathbf S}_1 \cdot {\mathbf L} }{2\, L^2m^3}
 \right ) {\mathbf L} \times {\mathbf S}_2 + \frac{ {\mathbf S}_1 \times {\mathbf S}_2 }{2m^3} \right ] v^6.
-\label{eqn:precession3} 
+\label{eqn:precession3}
 \end{equation}
 where as before $v=(\pi m f)^{1/3},$ $f$ is the gravitational wave frequency,
 $m = m_1+m_2$ is the total mass, and $\eta = m_1m_2/m^2$ is
 the (symmetric) mass ratio.  An overdot denotes the time-derivative.
-In the evolution of the orbital angular momentum we have included 
-the lowest order dissipative term [\,the second term containing 
-$v^7$ in Equation (\ref{eqn:precession1})\,] 
+In the evolution of the orbital angular momentum we have included
+the lowest order dissipative term [\,the second term containing
+$v^7$ in Equation (\ref{eqn:precession1})\,]
 while keeping the non-dissipative modulation effects
 caused by spin-orbit and spin-spin couplings
-[\,the first term within square brackets containing 
-$v^6$ in Equation (\ref{eqn:precession1})\,]. 
-The spins evolve non-dissipatively but their orientations change due to 
-spin-orbit and spin-spin couplings. 
+[\,the first term within square brackets containing
+$v^6$ in Equation (\ref{eqn:precession1})\,].
+The spins evolve non-dissipatively but their orientations change due to
+spin-orbit and spin-spin couplings.
 Though the non-dissipative terms are not responsible for
 gravitational wave emission, and therefore do not shrink the
 orbit, they cause to precess the orbit.
 
-In the absence of spins the antenna observes the same polarization at 
+In the absence of spins the antenna observes the same polarization at
 all times; the amplitude and frequency of the signal both
-increase monotonically, giving rise to a chirping signal. 
+increase monotonically, giving rise to a chirping signal.
 Precession of the orbit and spins cause modulations in the amplitude
 and phase of the signal and smear the signal's energy spectrum over a wide band.
-For this reason we shall call the spin modulated (sm) chirp, 
+For this reason we shall call the spin modulated (sm) chirp,
 a {\it smirch} (an anagram of {\it sm} and {\it chir}).
 
 The strain $h(t)$ produced by a smirch at the antenna is given by
@@ -559,52 +559,52 @@ The strain $h(t)$ produced by a smirch at the antenna is given by
 \end{eqnarray}
 where $A(t)$ is the precession-modulated amplitude of the signal,
 $\phi(t)$ is its post-Newtonian carrier phase that
-increases monotonically and $\varphi(t)$ is the polarization phase caused 
+increases monotonically and $\varphi(t)$ is the polarization phase caused
 by the changing polarization of the wave relative to the antenna. (We have
 neglected the Thomas precession of the orbit which induces additional, but
-small, corrections in the phase.) For a source with position vector 
+small, corrections in the phase.) For a source with position vector
 ${\mathbf N} = (D,\, \theta_S,\, \varphi_S)$ the amplitude is given by,
 \begin{equation}
  A(t) = \frac{2\eta m v^2}{D}
-\left[ \left( 1 + (\hat {\mathbf L}\cdot \hat {\mathbf N})^2\right )^2 F_{+}^2(\theta_S,\varphi_S,\psi) 
- + 4 \left ( \hat {\mathbf L}\cdot \hat {\mathbf N} \right )^2 F_\times^2(\theta_S,\varphi_S,\psi) \right]^{1/2}. 
+\left[ \left( 1 + (\hat {\mathbf L}\cdot \hat {\mathbf N})^2\right )^2 F_{+}^2(\theta_S,\varphi_S,\psi)
+ + 4 \left ( \hat {\mathbf L}\cdot \hat {\mathbf N} \right )^2 F_\times^2(\theta_S,\varphi_S,\psi) \right]^{1/2}.
 \label{eqn:amplitude}
 \end{equation}
-Here $\hat{\mathbf L} = {\mathbf L}/L,$ $\hat{\mathbf N} = {\mathbf N}/D$ ($D$ is the distance to 
-the source) and $\psi(t)$ is the precession-modulated polarization angle given by 
+Here $\hat{\mathbf L} = {\mathbf L}/L,$ $\hat{\mathbf N} = {\mathbf N}/D$ ($D$ is the distance to
+the source) and $\psi(t)$ is the precession-modulated polarization angle given by
 \begin{equation}
-\tan \psi(t) = 
+\tan \psi(t) =
 \frac{\hat{\mathbf L}(t)\cdot\hat{\mathbf z} - (\hat{\mathbf L}(t)\cdot\hat{\mathbf N})
 (\hat{\mathbf z}\cdot\hat{\mathbf N})}
 {\hat{\mathbf N}\cdot(\hat{\mathbf L}(t)\times\hat{\mathbf z})}.
 \label{eqn:psi(t)}
-\end{equation} 
+\end{equation}
 Also, $F_+$ and $F_\times$ are the antenna beam pattern functions are given by
 \begin{equation}
-F_+(\theta_S,\varphi_S,\psi) = \frac{1}{2}\left(1+\cos^2\theta_S\right)\cos{2\phi_S}\cos{2\psi} 
-- \cos\theta_S\sin{2\phi_S}\sin{2\psi}, 
+F_+(\theta_S,\varphi_S,\psi) = \frac{1}{2}\left(1+\cos^2\theta_S\right)\cos{2\phi_S}\cos{2\psi}
+- \cos\theta_S\sin{2\phi_S}\sin{2\psi},
 \end{equation}
 \begin{equation}
-F_{\times}(\theta_S,\phi_S,\psi) = 
+F_{\times}(\theta_S,\phi_S,\psi) =
 \frac{1}{2}\left(1+\cos^2\theta_S\right)\cos{2\phi_S}\sin{2\psi}
 + \cos\theta_S\sin{2\phi_S}\sin{2\psi}.
 \end{equation}
-Next, the polarization phase $\varphi(t)$ is 
+Next, the polarization phase $\varphi(t)$ is
 \begin{equation}
-\tan \varphi(t) = 
+\tan \varphi(t) =
 \frac{ 2 \hat {\mathbf L}(t) \cdot \hat {\mathbf N}\, F_\times(\theta_S,\varphi_S,\psi)}
 {\left [ 1 + \left ({\mathbf L}(t)\cdot {\mathbf N} \right )^2 \right ] F_{+}(\theta_S,\varphi_S,\psi)}.
 \label{eqn:varphi}
 \end{equation}
-And finally, for the carrier phase we use the post-Newtonian 
+And finally, for the carrier phase we use the post-Newtonian
 expression, but without the spin-orbit and
-spin-spin couplings. These spin couplings modify the carrier phase 
+spin-spin couplings. These spin couplings modify the carrier phase
 by amounts much smaller than the post-Newtonian effects.
 To second post-Newtonian order the carrier phase is given by
 \begin{equation}
-\phi(t) = 
+\phi(t) =
 \frac{-2}{\eta\theta^5}\left[1+\left(\frac{3715}{8064}+\frac
-{55}{96}\eta\right)\theta^2-\frac{3\pi}{4}\theta^3 
+{55}{96}\eta\right)\theta^2-\frac{3\pi}{4}\theta^3
 +\left(\frac{9275495}{14450688}+\frac{284875}{258048}\eta+\frac{1855}{2048}\eta^2\right)\theta^4\right].
 \label{eqn:phi}
 \end{equation}
@@ -614,24 +614,24 @@ merge together and the gravitational wave frequency formally diverges.
 
 \newpage\input{LALInspiralH}
 \begin{thebibliography}{}
-\bibitem {dis3} Post-Newtonian approximations implemented in this code are 
-summarized and compared to one another in: 
-T. Damour, B.R. Iyer and B.S. Sathyaprakash, 
+\bibitem {dis3} Post-Newtonian approximations implemented in this code are
+summarized and compared to one another in:
+T. Damour, B.R. Iyer and B.S. Sathyaprakash,
 Phys. Rev. D {\bf 63,} 044023 (2001); {\em ibid,} 027502 (2002).
 
 \bibitem{BDIWW}
-L. Blanchett, B.R. Iyer, C.M. Will and A.G. Wiseman, 
+L. Blanchett, B.R. Iyer, C.M. Will and A.G. Wiseman,
 Phys.\ Rev.\ Lett.\ {\bf 74}, 3515 (1995).
 
 \bibitem{BIWW}
-L. Blanchett, B.R. Iyer, C.M. Will and A.G. Wiseman, 
+L. Blanchett, B.R. Iyer, C.M. Will and A.G. Wiseman,
 Class. Quantum Grav., {\bf 13}, 575, (1996).
 
-\bibitem {dis1} T. Damour, B.R. Iyer and B.S. Sathyaprakash, 
-Phys. Rev. D {\bf 57,} 885 (1998). 
+\bibitem {dis1} T. Damour, B.R. Iyer and B.S. Sathyaprakash,
+Phys. Rev. D {\bf 57,} 885 (1998).
 
-\bibitem {dis2} T. Damour, B.R. Iyer and B.S. Sathyaprakash, 
-Phys. Rev. D {\bf 62,} 084036 (2000). 
+\bibitem {dis2} T. Damour, B.R. Iyer and B.S. Sathyaprakash,
+Phys. Rev. D {\bf 62,} 084036 (2000).
 
 \bibitem{BD99}
 A.\ Buonanno and T.\ Damour,
@@ -639,7 +639,7 @@ Phys.\ Rev.\ D {\bf 59}, 084006 (1999).
 
 \bibitem{BD00}
 A.\ Buonanno and T.\ Damour,
-Phys.\ Rev.\ D {\bf 62}, 064015 (2000). 
+Phys.\ Rev.\ D {\bf 62}, 064015 (2000).
 
 \bibitem{DJS00}
 T.\ Damour, P.\ Jaranowski, and G.\ Sch\"afer,
@@ -659,7 +659,7 @@ A.\ Buonanno, Y.\ Chen, and M.\ Vallisneri,
 Phys.\ Rev. \ D {\bf 67,} 104025 (2003)
 gr-qc/0211087.
 
-\bibitem{ACST94} 
+\bibitem{ACST94}
 T.A. Apostolatos, C. Cutler, G.J. Sussman
 and K.S. Thorne Phys. Rev. D {\bf 49,} 6274 (1994);
 

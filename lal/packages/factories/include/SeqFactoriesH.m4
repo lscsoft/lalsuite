@@ -1,4 +1,4 @@
-/*----------------------------------------------------------------------- 
+/*-----------------------------------------------------------------------
 
 File Name: SeqFactories.h
 
@@ -196,7 +196,7 @@ void LALDestroyVectorSequence(LALStatus *, REAL4VectorSequence**);
 void LALCreateArraySequence(LALStatus *, REAL4ArraySequence **,
                             CreateArraySequenceIn *);
 void LALDestroyArraySequence(LALStatus *, REAL4ArraySequence **);
-                       
+
 define(`TYPECODE',`CHAR')
 include(`SeqFactoriesBaseH.m4')
 

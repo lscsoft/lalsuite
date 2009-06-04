@@ -34,7 +34,7 @@
  * \input{LALInspiralStationaryPhaseApprox2CP}
  * \idx{LALInspiralStationaryPhaseApprox2()}
  * \begin{itemize}
- * \item {\tt signal:} Output containing the inspiral waveform.
+ * \item {\tt signalvec:} Output containing the inspiral waveform.
  * \item {\tt params:} Input containing binary chirp parameters.
  * \end{itemize}
  *
@@ -42,14 +42,14 @@
  *
  * %% A description of the data analysis task performed by this function;
  * %% this is the main place to document the module.
- * Computes the Fourier transform of the chirp signal in the stationary 
- * phase approximation and returns the real and imagninary parts of the 
- * Fourier domain signal in the convention of fftw. For a signal vector 
- * of length {\tt n=signal->length} ({\tt n} even):
+ * Computes the Fourier transform of the chirp signal in the stationary
+ * phase approximation and returns the real and imagninary parts of the
+ * Fourier domain signal in the convention of fftw. For a signal vector
+ * of length {\tt n=signalvec->length} ({\tt n} even):
  * \begin{itemize}
- * \item {\tt signal->data[0]} is the {\it real} 0th frequency component of the Fourier transform.
- * \item {\tt signal->data[n/2]} is the {\it real} Nyquist frequency component of the Fourier transform.
- * \item {\tt signal->data[k]} and {\tt signal->data[n-k],} for {\tt k=1,\ldots, n/2-1,} are
+ * \item {\tt signalvec->data[0]} is the {\it real} 0th frequency component of the Fourier transform.
+ * \item {\tt signalvec->data[n/2]} is the {\it real} Nyquist frequency component of the Fourier transform.
+ * \item {\tt signalvec->data[k]} and {\tt signalvec->data[n-k],} for {\tt k=1,\ldots, n/2-1,} are
  * the real and imaginary parts of the Fourier transform at a frequency $k\Delta f=k/T,$ $T$ being
  * the duration of the signal and $\Delta f=1/T$ is the frequency resolution.
  * \end{itemize}
@@ -63,16 +63,16 @@
  * it to one of the {\texttt static} functions defined within this function
  * that explicitly calculates the Fourier phase at the PN order chosen by the user.
  * The reference points are chosen so that on inverse Fourier transforming
- * the time-domain waveform will 
+ * the time-domain waveform will
  * \begin{itemize}
  * \item be padded with zeroes in the first {\tt params->nStartPad} bins,
  * \item begin with a phase shift of {\tt params->nStartPhase} radians,
- * \item have an amplitude of ${\tt n} v^2.$ 
+ * \item have an amplitude of ${\tt n} v^2.$
  * \end{itemize}
  * \subsubsection*{Uses}
- * \begin{verbatim} 
-   LALInspiralSetup 
-   LALInspiralChooseModel 
+ * \begin{verbatim}
+   LALInspiralSetup
+   LALInspiralChooseModel
    LALInspiralTaylorF2Phasing[0234567]PN
  * \end{verbatim}
  *
@@ -87,7 +87,7 @@
  * If it is required to compare the output of this module with a time domain
  * signal one should use an inverse Fourier transform routine that packs data
  * in the same way as fftw. Moreover, one should divide the resulting inverse
- * Fourier transform by a factor ${\tt n}/2$ to be consistent with the 
+ * Fourier transform by a factor ${\tt n}/2$ to be consistent with the
  * amplitude used in time-domain signal models.
  *
  * \vfill{\footnotesize\input{LALInspiralStationaryPhaseApprox2CV}}
@@ -107,12 +107,12 @@ static void LALInspiralTaylorF2Phasing7PN (REAL8 v, REAL8 *phase, expnCoeffs *ak
 NRCSID (LALINSPIRALSTATIONARYPHASEAPPROX2C, "$Id$");
 
 /*  <lalVerbatim file="LALInspiralStationaryPhaseApprox2CP"> */
-void 
+void
 LALInspiralStationaryPhaseApprox2 (
    LALStatus        *status,
-   REAL4Vector      *signal,
+   REAL4Vector      *signalvec,
    InspiralTemplate *params
-   ) 
+   )
 { /* </lalVerbatim>  */
    REAL8 Oneby3, h1, h2, pimmc, f, v, df, shft, phi, amp0, amp, psif, psi;
    INT4 n, nby2, i, f0, fn;
@@ -122,12 +122,12 @@ LALInspiralStationaryPhaseApprox2 (
 
    INITSTATUS (status, "LALInspiralStationaryPhaseApprox2", LALINSPIRALSTATIONARYPHASEAPPROX2C);
    ATTATCHSTATUSPTR(status);
-   ASSERT (signal,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   ASSERT (signal->data,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+   ASSERT (signalvec,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+   ASSERT (signalvec->data,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
    ASSERT (params, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   ASSERT (signal->length>2,  status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
+   ASSERT (signalvec->length>2,  status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
 
-   switch (params->order) 
+   switch (params->order)
    {
 	   case newtonian:
 	   case oneHalfPN:
@@ -152,7 +152,7 @@ LALInspiralStationaryPhaseApprox2 (
 		   LALInspiralTaylorF2Phasing = LALInspiralTaylorF2Phasing7PN;
 		   break;
    }
-   n = signal->length;
+   n = signalvec->length;
    nby2 = n/2;
    memset( &ak, 0, sizeof( ak ) );
    LALInspiralSetup(status->statusPtr, &ak, params);
@@ -161,11 +161,11 @@ LALInspiralStationaryPhaseApprox2 (
    CHECKSTATUSPTR(status);
 
    Oneby3 = 1.L/3.L;
-   df = params->tSampling/signal->length;
+   df = params->tSampling/signalvec->length;
    pimmc = LAL_PI * params->totalMass * LAL_MTSUN_SI;
    f0 = params->fLower;
-   fn = (params->fCutoff < ak.fn) ? params->fCutoff : ak.fn; 
-   v = pow(pimmc*f0, Oneby3); 
+   fn = (params->fCutoff < ak.fn) ? params->fCutoff : ak.fn;
+   v = pow(pimmc*f0, Oneby3);
 
    /* If we want to pad with zeroes in the beginning then the instant of
     * coalescence will be the chirp time + the duration for which padding
@@ -176,27 +176,27 @@ LALInspiralStationaryPhaseApprox2 (
    shft = 2.L*LAL_PI * (ak.tn + params->nStartPad/params->tSampling + params->startTime);
    phi =  params->startPhase + LAL_PI/4.L;
    amp0 = params->signalAmplitude * ak.totalmass * pow(LAL_PI/12.L, 0.5L) * df;
-/* 
-   Compute the standard stationary phase approximation. 
+/*
+   Compute the standard stationary phase approximation.
 */
-   h1 = signal->data[0] = 0.L;
-   h2 = signal->data[nby2] = 0.L;
+   h1 = signalvec->data[0] = 0.L;
+   h2 = signalvec->data[nby2] = 0.L;
    for (i=1; i<nby2; i++) {
       f = i * df;
       if (f < f0 || f > fn)
       {
-	      /* 
-	       * All frequency components below f0 and above fn are set to zero  
+	      /*
+	       * All frequency components below f0 and above fn are set to zero
 	       */
-	      signal->data[i] = 0.;
-	      signal->data[n-i] = 0.;
+	      signalvec->data[i] = 0.;
+	      signalvec->data[n-i] = 0.;
       }
       else
       {
 	      v = pow(pimmc * f, Oneby3);
 	      LALInspiralTaylorF2Phasing(v, &psif, &ak);
 	      psi = shft * f + phi + psif;
-	      /* 
+	      /*
 		 dEnergybyFlux computes 1/(dv/dt) while what we need is 1/(dF/dt):
 		 dF/dt=(dF/dv)(dv/dt)=-dEnergybyFlux/(dF/dv)=-dEnergybyFlux 3v^2/(pi m^2)
 		 Note that our energy is defined as E=-eta v^2/2 and NOT -eta m v^2/2.
@@ -205,8 +205,8 @@ LALInspiralStationaryPhaseApprox2 (
 		     = amp0 * pow(-dEnergybyFlux(v), 0.5) * v;
 	      */
 	      amp = amp0 * pow(-func.dEnergy(v,&ak)/func.flux(v,&ak),0.5L) * v;
-	      signal->data[i] = (REAL4) (amp * cos(psi));
-	      signal->data[n-i] = (REAL4) (-amp * sin(psi));
+	      signalvec->data[i] = (REAL4) (amp * cos(psi));
+	      signalvec->data[n-i] = (REAL4) (-amp * sin(psi));
 
       }
       /*
@@ -214,7 +214,7 @@ LALInspiralStationaryPhaseApprox2 (
 	 printf ("%e %e %e %e %e\n", f, pow(h1,2.)+pow(h2,2.), h2, psi, psif);
 	 printf ("&\n");
        */
-   
+
    }
    params->fFinal = fn;
    DETATCHSTATUSPTR(status);
@@ -271,9 +271,9 @@ static void LALInspiralTaylorF2Phasing6PN (REAL8 v, REAL8 *phase, expnCoeffs *ak
    x = v*v;
    y = x*x;
    z = y*x;
-   
+
    *phase = ak->pfaN * (1. + ak->pfa2 * x + ak->pfa3 * v*x + ak->pfa4 * y
-         + (ak->pfa5 + ak->pfl5 * log(v/ak->v0)) * y*v 
+         + (ak->pfa5 + ak->pfl5 * log(v/ak->v0)) * y*v
          + (ak->pfa6 + ak->pfl6 * log(4.*v) ) * z)
      /pow(v,5.);
 }
@@ -285,9 +285,9 @@ static void LALInspiralTaylorF2Phasing7PN (REAL8 v, REAL8 *phase, expnCoeffs *ak
    x = v*v;
    y = x*x;
    z = y*x;
-   
+
    *phase = ak->pfaN * (1. + ak->pfa2 * x + ak->pfa3 * v*x + ak->pfa4 * y
-         + (ak->pfa5 + ak->pfl5 * log(v/ak->v0)) * y*v 
+         + (ak->pfa5 + ak->pfl5 * log(v/ak->v0)) * y*v
          + (ak->pfa6 + ak->pfl6 * log(4.*v) ) * z
          + ak->pfa7 * z*v)
      /pow(v,5.);

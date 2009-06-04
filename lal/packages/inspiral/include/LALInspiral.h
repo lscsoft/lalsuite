@@ -995,12 +995,12 @@ LALInspiralInit(
 
 void LALInspiralWaveTaper(
      LALStatus    *status,
-     REAL4Vector  *signal,
+     REAL4Vector  *signalvec,
      UINT4       bookends
      );
 
 int XLALInspiralWaveTaper(
-                   REAL4Vector         *signal,
+                   REAL4Vector         *signalvec,
                    InspiralApplyTaper  bookends);
 
 /* --- HERE ARE THE WAVEFORMS/MODELS PROTOTYPES --- */
@@ -1199,7 +1199,7 @@ void LALBCVSpinWaveform(
 
 void LALTaylorNWaveform (
      LALStatus        *status,
-     REAL4Vector      *signal,
+     REAL4Vector      *signalvec,
      InspiralTemplate *params);
 
 /*  <lalLaTeX>
@@ -1232,8 +1232,8 @@ LALSTPNWaveformForInjection (
 void
 LALSTPNWaveformEngine (
                 LALStatus        *status,
-                REAL4Vector      *signal1,
-                REAL4Vector      *signal2,
+                REAL4Vector      *signalvec1,
+                REAL4Vector      *signalvec2,
                 REAL4Vector      *a,
                 REAL4Vector      *ff,
                 REAL8Vector      *phi,
@@ -1245,8 +1245,8 @@ LALSTPNWaveformEngine (
 void
 LALSTPNWaveformTemplates (
    LALStatus        *status,
-   REAL4Vector      *signal1,
-   REAL4Vector      *signal2,
+   REAL4Vector      *signalvec1,
+   REAL4Vector      *signalvec2,
    InspiralTemplate *params
    ) ;
 
@@ -1259,26 +1259,26 @@ void LALSTPNWaveform(
 /* Phenomenological waveform generation functions */
 
 void LALBBHPhenWaveFreqDom ( LALStatus        *status,
-			     REAL4Vector      *signal,
+			     REAL4Vector      *signalvec,
 			     InspiralTemplate *params);
 
 void LALBBHPhenWaveFreqDomTemplates( LALStatus        *status,
-				     REAL4Vector      *signal1,
-				     REAL4Vector      *signal2,
+				     REAL4Vector      *signalvec1,
+				     REAL4Vector      *signalvec2,
 				     InspiralTemplate *params);
 
 void LALBBHPhenWaveTimeDom ( LALStatus        *status,
-			     REAL4Vector      *signal,
+			     REAL4Vector      *signalvec,
 			     InspiralTemplate *insp_template);
 
 void LALBBHPhenWaveTimeDomTemplates( LALStatus        *status,
-				     REAL4Vector      *signal1,
-				     REAL4Vector      *signal2,
+				     REAL4Vector      *signalvec1,
+				     REAL4Vector      *signalvec2,
 				     InspiralTemplate *params);
 
 void LALBBHPhenTimeDomEngine( LALStatus        *status,
-			      REAL4Vector      *signal1,
-			      REAL4Vector      *signal2,
+			      REAL4Vector      *signalvec1,
+			      REAL4Vector      *signalvec2,
 			      REAL4Vector      *h,
 			      REAL4Vector      *a,
 			      REAL4Vector      *f,
@@ -1674,8 +1674,8 @@ INT4 XLALFinalMassSpin(
 
 INT4 XLALInspiralAttachRingdownWave (
         REAL4Vector 	 *Omega,
-        REAL4Vector 	 *signal1,
-        REAL4Vector  	 *signal2,
+        REAL4Vector 	 *signalvec1,
+        REAL4Vector  	 *signalvec2,
         InspiralTemplate *params);
 
 int XLALInspiralGetApproximantString( CHAR        *output,

@@ -1,4 +1,4 @@
-/*----------------------------------------------------------------------- 
+/*-----------------------------------------------------------------------
 
 File Name: ArrayFactories.c
 
@@ -13,7 +13,7 @@ Revision: $Id$
 \subsection{Module \texttt{ArrayFactories.c}}
 \label{ss:ArrayFactories.c}
 
-Create/destroy $\langle\mbox{datatype}\rangle$Array objects. 
+Create/destroy $\langle\mbox{datatype}\rangle$Array objects.
 
 \subsubsection*{Prototypes}
 \vspace{0.1in}

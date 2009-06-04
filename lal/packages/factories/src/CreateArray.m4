@@ -37,7 +37,7 @@ ATYPE * XFUNCL ( UINT4 ndim, ... )
   arr = XFUNCV ( ndim, dims );
   if ( ! arr )
     XLAL_ERROR_NULL( "XFUNCL", XLAL_EFUNC );
-  return arr; 
+  return arr;
 }
 
 ATYPE * XFUNCV ( UINT4 ndim, UINT4 *dims )
@@ -112,9 +112,9 @@ ATYPE * XFUNC ( UINT4Vector *dimLength )
 
 
 /* <lalVerbatim file="ArrayFactoriesD"> */
-void FUNC ( LALStatus *status, ATYPE **array, UINT4Vector *dimLength ) 
+void FUNC ( LALStatus *status, ATYPE **array, UINT4Vector *dimLength )
 { /* </lalVerbatim> */
-  INITSTATUS (status, "FUNC", ARRAYFACTORIESC);   
+  INITSTATUS (status, "FUNC", ARRAYFACTORIESC);
 
   /* make sure arguments are sane */
 

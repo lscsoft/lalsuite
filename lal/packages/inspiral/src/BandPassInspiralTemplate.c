@@ -63,12 +63,12 @@ int XLALBandPassInspiralTemplate(
     PassBandParamStruc signalLowpassParam;
 
     /* Check that the input makes sense */
-    if ( !sequence || sequence->length <= 0 || !sequence->data || 
+    if ( !sequence || sequence->length <= 0 || !sequence->data ||
             fLow > fHigh || fLow <= 0.0 || fHigh >= fSampling/2.0 )
           XLAL_ERROR( func, XLAL_EFAULT );
 
     /* Initialize signal */
-    signal = (REAL4TimeSeries *) 
+    signal = (REAL4TimeSeries *)
             LALCalloc(1, sizeof(REAL4TimeSeries));
 
     signal->deltaT = 1.0/fSampling;
@@ -82,7 +82,7 @@ int XLALBandPassInspiralTemplate(
     signalHighpassParam.a2 = 0.98;
 
     /* Call the Butterworth routine and check its success */
-    if ( XLALButterworthREAL4TimeSeries( 
+    if ( XLALButterworthREAL4TimeSeries(
                 signal, &signalHighpassParam ) != XLAL_SUCCESS )
     {
         if (signal) LALFree( signal );

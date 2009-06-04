@@ -12,7 +12,7 @@ ifelse(TYPECODE,`U8',`define(`TYPE',`UINT8')')
 ifelse(TYPECODE,`',`define(`TYPE',`REAL4')')
 define(`ATYPE',`format(`%sArray',TYPE)')
 define(`FUNC',`format(`LAL%sDestroyArray',TYPECODE)')
-ifelse( TYPECODE, `', `define(`XFUNC',`XLALDestroyArray')', `define(`XFUNC',`format(`XLALDestroy%s',ATYPE)')' ) 
+ifelse( TYPECODE, `', `define(`XFUNC',`XLALDestroyArray')', `define(`XFUNC',`format(`XLALDestroy%s',ATYPE)')' )
 
 void XFUNC ( ATYPE *array )
 {
@@ -32,8 +32,8 @@ void XFUNC ( ATYPE *array )
 /* <lalVerbatim file="ArrayFactoriesD"> */
 void FUNC ( LALStatus *status, ATYPE **array )
 { /* </lalVerbatim> */
-  INITSTATUS (status, "FUNC", ARRAYFACTORIESC);	
-      
+  INITSTATUS (status, "FUNC", ARRAYFACTORIESC);
+
   ASSERT (array,          status, AVFACTORIESH_EVPTR, AVFACTORIESH_MSGEVPTR);
   ASSERT (*array,         status, AVFACTORIESH_EUPTR, AVFACTORIESH_MSGEUPTR);
   ASSERT ((*array)->data, status, AVFACTORIESH_EDPTR, AVFACTORIESH_MSGEDPTR);

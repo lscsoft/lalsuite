@@ -34,15 +34,15 @@ The code \texttt{LALInspiralEccentricity} generates a time-domain inspiral wavef
 \input{LALInspiralEccentricityCP}
 \index{\verb&LALInspiralEccentricity()&}
 \begin{itemize}
-\item {\tt signal:} Output containing the inspiral waveform.
+\item {\tt signalvec:} Output containing the inspiral waveform.
 \item {\tt params:} Input containing binary chirp parameters and eccentricity.
 \end{itemize}
 
 \input{LALInspiralEccentricityTemplatesCP}
 \index{\verb&LALInspiralEccentricityTemplates()&}
 \begin{itemize}
-\item {\tt signal1:} Output containing the 0-phase inspiral waveform.
-\item {\tt signal2:} Output containing the $\pi/2$-phase inspiral waveform.
+\item {\tt signalvec1:} Output containing the 0-phase inspiral waveform.
+\item {\tt signalvec2:} Output containing the $\pi/2$-phase inspiral waveform.
 \item {\tt params:} Input containing binary chirp parameters.
 \end{itemize}
 
@@ -107,8 +107,8 @@ LALInspiralEccentricityDerivatives (
 static void
 LALInspiralEccentricityEngine(
    LALStatus        *status,
-   REAL4Vector      *signal1,
-   REAL4Vector      *signal2,
+   REAL4Vector      *signalvec1,
+   REAL4Vector      *signalvec2,
    REAL4Vector      *a,
    REAL4Vector      *ff,
    REAL8Vector      *phi,
@@ -123,7 +123,7 @@ NRCSID (LALINSPIRALECCENTRICITYC, "$Id$");
 void
 LALInspiralEccentricity(
    LALStatus        *status,
-   REAL4Vector      *signal,
+   REAL4Vector      *signalvec,
    InspiralTemplate *params
    )
  { /* </lalVerbatim>  */
@@ -133,15 +133,15 @@ LALInspiralEccentricity(
    INITSTATUS(status, "LALInspiralEccentricity", LALINSPIRALECCENTRICITYC);
    ATTATCHSTATUSPTR(status);
 
-   ASSERT(signal, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   ASSERT(signal->data, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+   ASSERT(signalvec, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+   ASSERT(signalvec->data, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
 
 
    /* Initially the waveform is empty*/
-   memset(signal->data, 0, signal->length*sizeof(REAL4));
+   memset(signalvec->data, 0, signalvec->length*sizeof(REAL4));
 
    /*Call the engine function*/
-   LALInspiralEccentricityEngine(status->statusPtr, signal, NULL, NULL, NULL, NULL, &count, params);
+   LALInspiralEccentricityEngine(status->statusPtr, signalvec, NULL, NULL, NULL, NULL, &count, params);
    CHECKSTATUSPTR(status);
 
    DETATCHSTATUSPTR(status);
@@ -162,8 +162,8 @@ NRCSID (LALINSPIRALECCENTRICITYTEMPLATESC, "$Id$");
 void
 LALInspiralEccentricityTemplates(
    LALStatus        *status,
-   REAL4Vector      *signal1,
-   REAL4Vector      *signal2,
+   REAL4Vector      *signalvec1,
+   REAL4Vector      *signalvec2,
    InspiralTemplate *params
    )
  { /* </lalVerbatim>  */
@@ -173,17 +173,17 @@ LALInspiralEccentricityTemplates(
    INITSTATUS(status, "LALInspiralEccentricityTemplates", LALINSPIRALECCENTRICITYTEMPLATESC);
    ATTATCHSTATUSPTR(status);
 
-   ASSERT(signal1, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   ASSERT(signal2, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   ASSERT(signal1->data, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   ASSERT(signal2->data, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+   ASSERT(signalvec1, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+   ASSERT(signalvec2, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+   ASSERT(signalvec1->data, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+   ASSERT(signalvec2->data, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
 
    /* Initially the waveforms are empty */
-   memset(signal1->data, 0, signal1->length * sizeof(REAL4));
-   memset(signal2->data, 0, signal2->length * sizeof(REAL4));
+   memset(signalvec1->data, 0, signalvec1->length * sizeof(REAL4));
+   memset(signalvec2->data, 0, signalvec2->length * sizeof(REAL4));
 
    /* Call the engine function */
-   LALInspiralEccentricityEngine(status->statusPtr, signal1, signal2, NULL, NULL, NULL, &count, params);
+   LALInspiralEccentricityEngine(status->statusPtr, signalvec1, signalvec2, NULL, NULL, NULL, &count, params);
    CHECKSTATUSPTR(status);
 
    DETATCHSTATUSPTR(status);
@@ -373,8 +373,8 @@ NRCSID (LALINSPIRALECCENTRICITYENGINEC, "$Id$");
 void
 LALInspiralEccentricityEngine(
 		LALStatus        *status,
-		REAL4Vector      *signal1,
-		REAL4Vector      *signal2,
+		REAL4Vector      *signalvec1,
+		REAL4Vector      *signalvec2,
 		REAL4Vector      *a,
 		REAL4Vector      *ff,
 		REAL8Vector      *phi,
@@ -392,7 +392,7 @@ LALInspiralEccentricityEngine(
    REAL8 phim2Beta = 0;
    REAL8 twoBeta;
    REAL8 rbyM=1e6, rbyMFlso=6.;
-   REAL8 sin2Beta,cos2Beta,iota,onepCosSqI, SinSqI, cosI, e0, fmin, beta, p0;
+   REAL8 sin2Beta,cos2Beta,iota,onepCosSqI, SinSqI, cosI, e0, f_min, beta, p0;
 
 
 
@@ -496,11 +496,11 @@ LALInspiralEccentricityEngine(
 */
 
 
-   /* e0 is set at fmin */
+   /* e0 is set at f_min */
    e0 = params->eccentricity;
 
    /* the second harmonic will start at fLower*2/3 */
-   fmin = params->fLower;
+   f_min = params->fLower;
    iota = params->inclination; /*overwritten later */
 
    beta = 0.;
@@ -512,7 +512,7 @@ LALInspiralEccentricityEngine(
    SinSqI = sin(iota) * sin(iota);
    cosI = cos(iota);
 
-   p0 = (1. - e0*e0)/pow(2. * LAL_PI * m * LAL_MTSUN_SI* fmin/3. , 2./3.);
+   p0 = (1. - e0*e0)/pow(2. * LAL_PI * m * LAL_MTSUN_SI* f_min/3. , 2./3.);
 
    *(values.data) = orbital_element_p = p0;
    *(values.data+1) = phase = params->startPhase;
@@ -544,10 +544,10 @@ LALInspiralEccentricityEngine(
    }
 
    count = 0;
-   if (signal2) {
+   if (signalvec2) {
    params->nStartPad = 0;} /* for template generation, that value must be zero*/
 
-   else if (signal1) {
+   else if (signalvec1) {
      count = params->nStartPad;
    }
 
@@ -567,8 +567,8 @@ LALInspiralEccentricityEngine(
  done = 0;
    do {
       /* Free up memory and abort if writing beyond the end of vector*/
-      /*if ((signal1 && (UINT4)count >= signal1->length) || (ff && (UINT4)count >= ff->length))*/
-      if ((signal1 && (UINT4)count >= signal1->length))
+      /*if ((signalvec1 && (UINT4)count >= signalvec1->length) || (ff && (UINT4)count >= ff->length))*/
+      if ((signalvec1 && (UINT4)count >= signalvec1->length))
       {
           XLALRungeKutta4Free( integrator );
           LALFree(dummy.data);
@@ -576,7 +576,7 @@ LALInspiralEccentricityEngine(
       }
 
       /* Non-injection case */
-      if (signal1)
+      if (signalvec1)
       {
         twoPhim2Beta = 2.* phase - twoBeta;
         phim2Beta = phase - twoBeta;
@@ -599,16 +599,16 @@ LALInspiralEccentricityEngine(
          }
          /*if (f>=params->fLower)*/
         {
-          *(signal1->data + count) = (REAL4) h1;
+          *(signalvec1->data + count) = (REAL4) h1;
          }
 
-	 if (signal2)
+	 if (signalvec2)
 	 {
             h2 = amp * ( ( 4. * sin(twoPhim2Beta) + 5 * orbital_element_e * sin(phim2Beta)
           + orbital_element_e * sin(threePhim2Beta) - 2. * orbital_element_e_squared * sin2Beta) * cosI);
 /*           if (f>=params->fLower)*/
            {
-              *(signal2->data + count) = (REAL4) h2;
+              *(signalvec2->data + count) = (REAL4) h2;
             }
 	 }
       }
