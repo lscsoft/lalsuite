@@ -1173,7 +1173,7 @@ XLALRecreateCoincFromSngls(
   UINT8                 eventId = 0;
   INT4                  numCoincs = 0;
   InterferometerNumber  ifoNumber = LAL_UNKNOWN_IFO;
-  InterferometerNumber  ifoInCoinc = LAL_UNKNOWN_IFO;
+  /* InterferometerNumber  ifoInCoinc = LAL_UNKNOWN_IFO; */
 
 
   if ( !snglInspiral )
