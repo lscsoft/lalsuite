@@ -126,7 +126,7 @@ gsl_matrix * XLALGetErrorMatrixFromSnglInspiral(
 gsl_vector * XLALGetPositionFromSnglInspiral( SnglInspiralTable *table );
 
 int XLALSetTimeInPositionVector( gsl_vector *position,
-                                 REAL8       time
+                                 REAL8       timeShift
                                );
 
 /* Function for calculating the e-thinca parameter between coincident events */
