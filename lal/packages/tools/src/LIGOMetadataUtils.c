@@ -710,7 +710,7 @@ LALDistanceScanSummValueTable (
 /* </lalVerbatim> */
 {
   SummValueTable    *thisSummValue = NULL;
-  INT4 test=0;
+  /*INT4 test=0;*/
   INT8 ta=0, tb=0, tc=0;
 
   INITSTATUS( status, "LALDistanceScanSummValueTable", LIGOMETADATAUTILSC );

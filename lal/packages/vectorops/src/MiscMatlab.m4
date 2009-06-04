@@ -15,9 +15,9 @@ that same manner.
 
 \subsection*{Description}
 
-This file reproduces the last few matlab functions that we needed for our purposes.  
+This file reproduces the last few matlab functions that we needed for our purposes.
 It creates useable forms of cumsum, sum, max, and finally an implemenation of the
-array addressing in matlab.  Matlab has an easy of inverting a vector, (end: -1: 1) 
+array addressing in matlab.  Matlab has an easy of inverting a vector, (end: -1: 1)
 and the final function, FlipVector returns a result vector that has been flipped in
 that same manner.
 
@@ -36,7 +36,7 @@ output[2] = input[0] + input[1] + input[2];
 etc
 
 \subsection*{Uses}
- 
+
 \begin{itemize}
 \item \texttt{LALDCreateVector}
 \end{itemize}

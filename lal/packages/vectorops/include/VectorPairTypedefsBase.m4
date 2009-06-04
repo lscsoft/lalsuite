@@ -18,7 +18,7 @@ define(`S1',`format(`%sVectorPair',TYPE)')
 */
 
 
-typedef struct 
+typedef struct
 S1TAG {
   VTYPE **head;
   VTYPE **tail;
