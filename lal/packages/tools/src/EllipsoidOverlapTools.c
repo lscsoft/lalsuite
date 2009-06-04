@@ -97,7 +97,7 @@ static REAL8 fContact (REAL8 x, void *params)
  * set by hand.
  * ------------------------------------------------------------------------*/
 fContactWorkSpace * XLALInitFContactWorkSpace(
-                       INT4                           n,
+                       UINT4                          n,
                        const gsl_matrix              *a,
                        const gsl_matrix              *b,
                        const gsl_min_fminimizer_type *T,
