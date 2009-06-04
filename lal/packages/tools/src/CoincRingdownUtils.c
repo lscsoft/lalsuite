@@ -567,7 +567,7 @@ XLALFreeCoincRingdown(
     CoincRingdownTable        **coincPtr
     )
 {
-  static const char *func = "FreeCoincRingdown";
+  /*static const char *func = "FreeCoincRingdown";*/
   InterferometerNumber          ifoNumber  = LAL_UNKNOWN_IFO;
   EventIDColumn                *prevID     = NULL;
   EventIDColumn                *thisID     = NULL;
