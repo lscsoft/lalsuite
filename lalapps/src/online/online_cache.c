@@ -350,7 +350,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   }
 
   /* create name for cache file */
-  LALSnprintf(filename, FILENAME_MAX, "%c-%s-%d-%d.cache", ifo[0], \
+  snprintf(filename, FILENAME_MAX, "%c-%s-%d-%d.cache", ifo[0], \
       type, gps.gpsSeconds, duration);
 
   /* save cache */
