@@ -22,7 +22,7 @@ $Id$
 **************** </lalVerbatim> ***********************************/
 
 /* <lalLaTeX>
-   
+
 \subsection{Program \texttt{VectorIndexRangeTest.c}}
 \label{ss:VectorIndexRangeTest.c}
 
@@ -150,13 +150,13 @@ main(int argc, char **argv)
     printf("* * * * * * * * * * * *\n");
 
   trail_status_maybe(&status);
-  
+
   /*
-  LALSCreateVector(&status, &y, 1); 
-  test_status(&status, CODES(0), 1); 
+  LALSCreateVector(&status, &y, 1);
+  test_status(&status, CODES(0), 1);
   printf("y->length = %d\n", y->length);
   */
-  
+
   LALSVectorIndexRange(&status, &y, x, index_range);
   test_status(&status, CODES(0), 1);
   trail_status_maybe(&status);
@@ -192,7 +192,7 @@ main(int argc, char **argv)
       printf("*-*-*-*-*-*-*\n");
       printf("trivial range:\n");
     }
-  
+
   /* test trivial range */
   index_range->data[0] = 32;
   index_range->data[1] = 32;
@@ -213,7 +213,7 @@ main(int argc, char **argv)
                 argv[0], __LINE__);
       goto end;
     }
-    
+
   if (verbose_p)
     {
       printf("\n");
@@ -224,8 +224,8 @@ main(int argc, char **argv)
    * VectorIndexHole
    */
   LALSDestroyVector(&status, &y);
-  test_status(&status, CODES(0), 1);  
-  
+  test_status(&status, CODES(0), 1);
+
   vector_pair.head = &y;
   vector_pair.tail = &z;
 
@@ -238,7 +238,7 @@ main(int argc, char **argv)
       printf("\n");
     }
 
-  
+
   for (iter = 0; iter < y->length; ++iter)
     {
       if (lalDebugLevel & 8)
@@ -296,10 +296,10 @@ main(int argc, char **argv)
   test_status(&status, CODES(0), 1);
 
   LALCheckMemoryLeaks();
-  
+
   if (result_ok_p)
     retval = 0;
-  
+
   return retval;
 } /* END: main() */
 
@@ -367,7 +367,7 @@ trail_status_maybe(LALStatus *status)
         printf("  status->statusPtr = %#x\n",
                (unsigned int)(status->statusPtr));
       printf("\n");
-      
+
       if (status)
         {
           REPORTSTATUS(status);
