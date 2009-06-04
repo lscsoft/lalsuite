@@ -538,7 +538,7 @@ int XLALUpsampleLinear(REAL8TimeSeries *uphR, REAL8TimeSeries *hR, int up_factor
   /* Set one in every up_factor to the value of hR x USR */
   for (n=0; n < (UINT4)hR->data->length; n++)
     {
-      REAL8 y_1=hR->data->data[n],y_2;
+      REAL8 y_1=hR->data->data[n],y_2=0;
 
       if(n < hR->data->length-1) y_2=hR->data->data[n+1];
       if(n == hR->data->length-1) y_2=hR->data->data[n];
