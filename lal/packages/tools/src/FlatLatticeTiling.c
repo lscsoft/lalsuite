@@ -759,11 +759,11 @@ UINT4 XLALTotalFlatLatticePointCount(
 }
 
 int XLALRandomPointInFlatLatticeParamSpace(
-					   FlatLatticeTiling *tiling, /**< Tiling structure */
-					   RandomParams *random,      /**< Random parameters for generating random point */
-					   gsl_vector* random_point,  /**< Random point */
-					   gsl_vector* point,         /**< Another point */
-					   REAL8* metric_dist         /**< Distance from random point to other point w.r.t. metric */
+					   FlatLatticeTiling *tiling,  /**< Tiling structure */
+					   RandomParams *randomParams, /**< Random parameters for generating random point */
+					   gsl_vector* random_point,   /**< Random point */
+					   gsl_vector* point,          /**< Another point */
+					   REAL8* metric_dist          /**< Distance from random point to other point w.r.t. metric */
 					   )
 {
 
@@ -782,7 +782,7 @@ int XLALRandomPointInFlatLatticeParamSpace(
     GetBounds(tiling, i, random_point, &lower, &upper, NULL);
 
     /* Generate random number */
-    random_number = XLALUniformDeviate(random);
+    random_number = XLALUniformDeviate(randomParams);
 
     /* Generate random point */
     gsl_vector_set(random_point, i, lower + random_number*(upper - lower));
