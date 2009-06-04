@@ -50,19 +50,22 @@ static void local_sin_cos_2PI_LUT_init (void)
   }
 }
 
+typedef
+union {
+  REAL8 asreal;
+  struct {
+    INT4 high;
+    INT4 low;
+  } as2int;
+} ux_t;
+
 
 /* x must already been trimmed to interval [0..2) */
 static int local_sin_cos_2PI_LUT_trimmed (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x) {
   static const REAL4* cosbase = sincosLUTbase + (SINCOS_LUT_RES/4);
   static const REAL4* cosdiff = sincosLUTdiff + (SINCOS_LUT_RES/4);
   INT4  i, n;
-  union {
-    REAL8 asreal;
-    struct {
-      INT4 high;
-      INT4 low;
-    } as2int;
-  } ux;
+  ux_t ux;
 
 #ifndef LAL_NDEBUG
   if(x > SINCOS_ADDS) {
@@ -74,18 +77,26 @@ static int local_sin_cos_2PI_LUT_trimmed (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 
   }
 #endif
 
-  ux.asreal = x + SINCOS_ADDS;
+  /*                          v--- down here is what actually happens */
+
+#define SINCOS_STEP1(ux,x)    ux.asreal = x + SINCOS_ADDS
+  SINCOS_STEP1(ux,x);
 #ifdef __BIG_ENDIAN__
-  i  = ux.as2int.low & SINCOS_MASK1;
-  n  = ux.as2int.low & SINCOS_MASK2;
+#define SINCOS_STEP2(i,ux)    i = ux.as2int.low & SINCOS_MASK1
+#define SINCOS_STEP3(n,ux)    n = ux.as2int.low & SINCOS_MASK2
 #else
-  i  = ux.as2int.high & SINCOS_MASK1;
-  n  = ux.as2int.high & SINCOS_MASK2;
+#define SINCOS_STEP2(i,ux)    i = ux.as2int.high & SINCOS_MASK1
+#define SINCOS_STEP3(n,ux)    n = ux.as2int.high & SINCOS_MASK2
 #endif
-  i  = i >> SINCOS_SHIFT;
+  SINCOS_STEP2(i,ux);
+  SINCOS_STEP3(n,ux);
+#define SINCOS_STEP4(i)       i = i >> SINCOS_SHIFT
+  SINCOS_STEP4(i);
   
-  (*sin2pix) = sincosLUTbase[i] + n * sincosLUTdiff[i];
-  (*cos2pix) = cosbase[i]       + n * cosdiff[i];
+#define SINCOS_STEP5(s,i,n)   s = sincosLUTbase[i] + n * sincosLUTdiff[i]
+  SINCOS_STEP5(*sin2pix,i,n);
+#define SINCOS_STEP6(c,i,n)   c = cosbase[i]       + n * cosdiff[i];
+  SINCOS_STEP6(*cos2pix,i,n);
 
   return XLAL_SUCCESS;
 }
