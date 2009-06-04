@@ -528,22 +528,22 @@ int XLALUpsample(REAL8TimeSeries *uphR, REAL8TimeSeries *hR, int up_factor)
 
 int XLALUpsampleLinear(REAL8TimeSeries *uphR, REAL8TimeSeries *hR, int up_factor)
 {
-  int n,m;
+  UINT4 n,m;
 
   /* Set all values to 0 */
-  for (n=0; n < (int)uphR->data->length; n++) {
+  for (n=0; n < (UINT4)uphR->data->length; n++) {
     uphR->data->data[n] = 0.0;
   }
 
   /* Set one in every up_factor to the value of hR x USR */
-  for (n=0; n < (int)hR->data->length; n++)
+  for (n=0; n < (UINT4)hR->data->length; n++)
     {
       REAL8 y_1=hR->data->data[n],y_2;
 
       if(n < hR->data->length-1) y_2=hR->data->data[n+1];
       if(n == hR->data->length-1) y_2=hR->data->data[n];
 
-      for (m=0; m < (int)up_factor; m++)
+      for (m=0; m < (UINT4)up_factor; m++)
 	{
 	  uphR->data->data[n*up_factor+m] = y_1+m*(y_2-y_1)/up_factor;
 	}
