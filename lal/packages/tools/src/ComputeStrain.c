@@ -637,7 +637,7 @@ INT4 localtime = input->AS_Q.epoch.gpsSeconds;
 
   for(m=0; m < (UINT4)(deltaT*length) / To; m++)
     {
-      int facterrflag=0;
+      /*int facterrflag=0;*/
 
       /* assign and window the data */
       for(k=0;k<(INT4)(To/asq.deltaT +0.5);k++)
