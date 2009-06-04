@@ -536,7 +536,7 @@ XLALMultiSimInspiralTest (
   MultiInspiralTable *prevEvent   = NULL;
   MultiInspiralTable *thisMissed  = NULL;
   EventIDColumn     *thisId      = NULL;
-  CHAR              *ifo;
+  CHAR              *ifo = NULL;
 
   int numSimFound  = 0;
   int coincidence = 0;
