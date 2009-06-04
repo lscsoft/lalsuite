@@ -3,7 +3,6 @@
     We also record the way we are using for logging */
 
 #if EAH_SINCOS_ROUND == EAH_SINCOS_ROUND_PLUS2
-/* this only makes sense for the linear sin/cos approximation */
 #ifdef _MSC_VER /* no C99 */
 #define SINCOS_TRIM_X(y,x) \
   { \
@@ -14,94 +13,21 @@
     __asm FADDP   ST(1),ST	\
     __asm FSTP    QWORD PTR y 	\
     }
-#else
+#else /* C99, no MSC */
 #define SINCOS_TRIM_X(y,x) \
   y = x - rint(x) + 1.0;
-#endif
+#endif /* C99 / MSC */
+
 #elif EAH_SINCOS_ROUND == EAH_SINCOS_ROUND_FLOOR 
 #define SINCOS_TRIM_X(y,x) \
   y = x - floor(x);
-#elif EAH_SINCOS_ROUND == EAH_SINCOS_ROUND_INT4
-#define SINCOS_TRIM_X(y,x) \
-  y = x-(INT4)x; \
-  if ( y < 0.0 ) { y += 1.0; }
-#elif EAH_SINCOS_ROUND == EAH_SINCOS_ROUND_INT8
-#define SINCOS_TRIM_X(y,x) \
-  y = x-(INT8)x; \
-  if ( y < 0.0 ) { y += 1.0; }
-#elif EAH_SINCOS_ROUND == EAH_SINCOS_ROUND_MODF
-#define SINCOS_TRIM_X(y,x) \
-{ \
-  REAL8 dummy; \
-  y = modf(x, &dummy); \
-  if ( y < 0.0 ) { y += 1.0; } \
-}
 #endif
 
 /* sin/cos Lookup tables */
-#if (EAH_SINCOS_VARIANT == EAH_SINCOS_VARIANT_LAL)
-#define SINCOS_LUT_RES 64 /* resolution of lookup-table */
-static REAL4 sinLUT[SINCOS_LUT_RES+1];
-static REAL4 cosLUT[SINCOS_LUT_RES+1];
-#elif (EAH_SINCOS_VARIANT == EAH_SINCOS_VARIANT_LINEAR)
 #define SINCOS_LUT_RES 1024 /* should be multiple of 4 */
+
 static REAL4 sincosLUTbase[SINCOS_LUT_RES+SINCOS_LUT_RES/4];
 static REAL4 sincosLUTdiff[SINCOS_LUT_RES+SINCOS_LUT_RES/4];
-#endif
-
-#define SINCOS_LUT_RES_F	(1.0 * SINCOS_LUT_RES)
-#define OO_SINCOS_LUT_RES	(1.0 / SINCOS_LUT_RES)
-
-#define X_TO_IND	(1.0 * SINCOS_LUT_RES * OOTWOPI )
-#define IND_TO_X	(LAL_TWOPI * OO_SINCOS_LUT_RES)
-
-#if (EAH_SINCOS_VARIANT == EAH_SINCOS_VARIANT_LAL)
-/* "traditional" version with 2 LUT */
-
-static void local_sin_cos_2PI_LUT_init (void)
-{
-  UINT4 k;
-  static REAL8 const oo_lut_res = OO_SINCOS_LUT_RES;
-  for (k=0; k <= SINCOS_LUT_RES; k++) {
-    sinLUT[k] = sin( LAL_TWOPI * k * oo_lut_res );
-    cosLUT[k] = cos( LAL_TWOPI * k * oo_lut_res );
-  }
-}
-
-static int local_sin_cos_2PI_LUT_trimmed (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x)
-{
-  INT4 i0;
-  REAL8 d, d2;
-  REAL8 ts, tc;
-  static REAL8 const oo_lut_res = OO_SINCOS_LUT_RES;
-
-#ifndef LAL_NDEBUG
-  if ( x < 0.0 || x >= 1.0 )
-    {
-      XLALPrintError("\nFailed numerica in local_sin_cos_2PI_LUT(): x = %f not in [0,1)\n\n", x );
-      return XLAL_FAILURE;
-    }
-#endif
-
-  i0 = (INT4)( x * SINCOS_LUT_RES_F + 0.5 );	/* i0 in [0, SINCOS_LUT_RES ] */
-  d = d2 = LAL_TWOPI * (x - oo_lut_res * i0);
-  d2 *= 0.5 * d;
-
-  ts = sinLUT[i0];
-  tc = cosLUT[i0];
-   
-  /* use Taylor-expansions for sin/cos around LUT-points */
-  (*sin2pix) = ts + d * tc - d2 * ts;
-  (*cos2pix) = tc - d * ts - d2 * tc;
-
-  return XLAL_SUCCESS;
-} /* local_sin_cos_2PI_LUT() */
-
-
-
-#elif (EAH_SINCOS_VARIANT == EAH_SINCOS_VARIANT_LINEAR)
-
-/* linear approximation developed with Akos */
 
 #define SINCOS_ADDS  402653184.0
 #define SINCOS_MASK1 0xFFFFFF
@@ -127,8 +53,11 @@ static void local_sin_cos_2PI_LUT_init (void)
 }
 
 
+/* x must already been trimmed to interval [0..2) */
 static int local_sin_cos_2PI_LUT_trimmed (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x) {
-  INT4  i, n, ix;
+  static const REAL4* cosbase = sincosLUTbase + (SINCOS_LUT_RES/4);
+  static const REAL4* cosdiff = sincosLUTdiff + (SINCOS_LUT_RES/4);
+  INT4  i, n;
   union {
     REAL8 asreal;
     struct {
@@ -136,9 +65,6 @@ static int local_sin_cos_2PI_LUT_trimmed (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 
       INT4 low;
     } as2int;
   } ux;
-
-  static const REAL4* cosbase = sincosLUTbase + (SINCOS_LUT_RES/4);
-  static const REAL4* cosdiff = sincosLUTdiff + (SINCOS_LUT_RES/4);
 
 #ifndef LAL_NDEBUG
   if(x > SINCOS_ADDS) {
@@ -150,28 +76,18 @@ static int local_sin_cos_2PI_LUT_trimmed (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 
   }
 #endif
 
-#if EAH_SINCOS_F2IBITS == EAH_SINCOS_F2IBITS_MEMCPY
-  ux.asreal = x + SINCOS_ADDS;
-  memcpy(&(ix), &ux.asreal, sizeof(ix));
-#elif EAH_SINCOS_F2IBITS == EAH_SINCOS_F2IBITS_UNION
   ux.asreal = x + SINCOS_ADDS;
 #ifdef __BIG_ENDIAN__
-  ix = ux.as2int.low;
-#else /* BIG_ENDIAN */
-  ix = ux.as2int.high;
-#endif /* BIG_ENDIAN */
-#endif /* EAH_SINCOS_F2IBITS */
-
-  i  = ix & SINCOS_MASK1;
-  n  = ix & SINCOS_MASK2;
+  i  = ux.as2int.low & SINCOS_MASK1;
+  n  = ux.as2int.low & SINCOS_MASK2;
+#else
+  i  = ux.as2int.high & SINCOS_MASK1;
+  n  = ux.as2int.high & SINCOS_MASK2;
+#endif
   i  = i >> SINCOS_SHIFT;
   
-  (*sin2pix) = sincosLUTbase[i]  + n * sincosLUTdiff[i];
-  (*cos2pix) = cosbase[i]        + n * cosdiff[i];
+  (*sin2pix) = sincosLUTbase[i] + n * sincosLUTdiff[i];
+  (*cos2pix) = cosbase[i]       + n * cosdiff[i];
 
   return XLAL_SUCCESS;
 }
-
-#else  /* EAH_SINCOS_VARIANT */
-#error no valid EAH_SINCOS_VARIANT specified
-#endif /* EAH_SINCOS_VARIANT */
