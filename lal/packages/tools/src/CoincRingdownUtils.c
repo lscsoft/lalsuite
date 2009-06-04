@@ -1512,7 +1512,7 @@ XLALRingdownDistanceCut(
     )
 /* </lalVerbatim> */
 {
-  static const char *func = "RingdownDistanceCut";
+  /*static const char *func = "RingdownDistanceCut";*/
   InterferometerNumber  ifoA = LAL_UNKNOWN_IFO;
   InterferometerNumber  ifoB = LAL_UNKNOWN_IFO;
   CoincRingdownTable   *thisCoinc = NULL;
