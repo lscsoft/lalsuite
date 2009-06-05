@@ -1471,6 +1471,73 @@ void XLALPSDRegressorReset(LALPSDRegressor *r)
 }
 
 
+int XLALPSDRegressorSetAverageSamples(LALPSDRegressor *r, unsigned average_samples)
+{
+  static const char func[] = "XLALPSDRegressorSetAverageSamples";
+  /* require the number of samples used for the average to be positive */
+  if(average_samples < 1)
+    XLAL_ERROR(func, XLAL_EINVAL);
+  r->average_samples = average_samples;
+  return 0;
+}
+
+
+unsigned XLALPSDRegressorGetAverageSamples(const LALPSDRegressor *r)
+{
+  return r->average_samples;
+}
+
+
+int XLALPSDRegressorSetMedianSamples(LALPSDRegressor *r, unsigned median_samples)
+{
+  static const char func[] = "XLALPSDRegressorSetMedianSamples";
+  unsigned i;
+  REAL8Sequence **history;
+
+  /* require the number of samples used for median to be positive and odd */
+  if(median_samples < 1 || !(median_samples & 1))
+    XLAL_ERROR(func, XLAL_EINVAL);
+
+  /* if the history buffer is being shrunk, delete discarded samples before
+   * resize */
+  for(i = median_samples; i < r->median_samples; i++)
+  {
+    XLALDestroyREAL8Sequence(r->history[i]);
+    r->history[i] = NULL;
+  }
+
+  /* resize history buffer */
+  history = XLALRealloc(r->history, median_samples * sizeof(*history));
+  if(!history)
+    XLAL_ERROR(func, XLAL_EFUNC);
+  r->history = history;
+
+  /* if there is already at least one sample in the buffer, and the history
+   * is being enlarged, allocate space for the new samples and initialize
+   * them to the value of the oldest sample in the history */
+  if(r->history[0])
+  {
+    for(i = r->median_samples; i < median_samples; i++)
+    {
+      r->history[i] = XLALCreateREAL8Sequence(r->history[0]->length);
+      if(!r->history[i])
+        XLAL_ERROR(func, XLAL_EFUNC);
+      memcpy(r->history[i]->data, r->history[r->median_samples - 1]->data, r->history[i]->length * sizeof(*r->history[i]->data));
+    }
+  }
+
+  r->median_samples = median_samples;
+
+  return 0;
+}
+
+
+unsigned XLALPSDRegressorGetMedianSamples(const LALPSDRegressor *r)
+{
+  return r->median_samples;
+}
+
+
 int XLALPSDRegressorAdd(LALPSDRegressor *r, const COMPLEX16FrequencySeries *sample)
 {
   static const char func[] = "XLALPSDRegressorAdd";
@@ -1532,21 +1599,13 @@ int XLALPSDRegressorAdd(LALPSDRegressor *r, const COMPLEX16FrequencySeries *samp
    * input sample has the correct parameters.  we need to update the
    * regressor */
 
-  /* destroy oldest frequency series in the median history buffer */
+  /* cyclically permute pointers in history buffer up one */
 
-  XLALDestroyREAL8Sequence(r->history[r->median_samples - 1]);
-
-  /* shuffle pointers in history buffer up one */
-
+  {
+  REAL8Sequence *oldest = r->history[r->median_samples - 1];
   memmove(r->history + 1, r->history, (r->median_samples - 1) * sizeof(*r->history));
-
-  /* create space in history buffer for new frequency series */
-
-  r->history[0] = XLALCreateREAL8Sequence(sample->data->length);
-  if(!r->history[0])
-    /* FIXME: shouldn't leave the NULL pointer without "saftying" the
-     * regressor object somehow */
-    XLAL_ERROR(func, XLAL_EFUNC);
+  r->history[0] = oldest;
+  }
 
   /* copy data from current sample into history buffer */
 
@@ -1568,9 +1627,10 @@ int XLALPSDRegressorAdd(LALPSDRegressor *r, const COMPLEX16FrequencySeries *samp
   if(!bin_history)
     XLAL_ERROR(func, XLAL_ENOMEM);
 
-  /* compute median bias factor */
+  /* compute the logarithm of the median bias factor */
+  /* FIXME:  this is close but incorrect */
 
-  median_bias = 1.0 / XLALMedianBias(history_length);
+  median_bias = LAL_GAMMA + log(XLALMedianBias(history_length));
 
   /* update the geometric mean square using the median in each frequency
    * bin */
@@ -1600,7 +1660,7 @@ int XLALPSDRegressorAdd(LALPSDRegressor *r, const COMPLEX16FrequencySeries *samp
      * that is so the correction factor is the same.
      */
 
-    r->mean_square->data->data[i] = (r->mean_square->data->data[i] * (r->n_samples - 1) + (log(bin_history[history_length / 2] * median_bias) - LAL_GAMMA)) / r->n_samples;
+    r->mean_square->data->data[i] = (r->mean_square->data->data[i] * (r->n_samples - 1) + log(bin_history[history_length / 2]) - median_bias) / r->n_samples;
   }
 
   XLALFree(bin_history);

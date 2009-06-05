@@ -421,6 +421,25 @@ XLALPSDRegressorReset(
     LALPSDRegressor *r
 );
 
+int XLALPSDRegressorSetAverageSamples(
+    LALPSDRegressor *r,
+    unsigned average_samples
+);
+
+
+unsigned XLALPSDRegressorGetAverageSamples(
+    const LALPSDRegressor *r
+);
+
+int XLALPSDRegressorSetMedianSamples(
+    LALPSDRegressor *r,
+    unsigned median_samples
+);
+
+unsigned XLALPSDRegressorGetMedianSamples(
+    const LALPSDRegressor *r
+);
+
 int
 XLALPSDRegressorAdd(
     LALPSDRegressor *r,
