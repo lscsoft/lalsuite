@@ -66,7 +66,7 @@ int
 main(int argc, char **argv)
 {
   /* top-level status structure */
-  static LALStatus status;     
+  static LALStatus status;
   static InspiralCoarseBankIn coarseIn;
   static InspiralTemplateList *list1, *list2;
 
@@ -83,7 +83,7 @@ main(int argc, char **argv)
   fpr = fopen("BCVTemplates.out", "w");
   nlist1 = 0;
   nlist2 = 0;
-  coarseIn.HighGM =6.; 
+  coarseIn.HighGM =6.;
   coarseIn.LowGM = 3.;
   coarseIn.fLower = 40.L;
   coarseIn.fUpper = 2000.L;
@@ -96,7 +96,7 @@ main(int argc, char **argv)
   coarseIn.mMin = 3.0;
   coarseIn.mMax = 20.0;
   coarseIn.MMax = coarseIn.mMax * 2.;
-  coarseIn.massRange = MinMaxComponentMass; 
+  coarseIn.massRange = MinMaxComponentMass;
   /* coarseIn.massRange = MinComponentMassMaxTotalMass;*/
   /* minimum value of eta */
   coarseIn.etamin = coarseIn.mMin * ( coarseIn.MMax - coarseIn.mMin) / pow(coarseIn.MMax,2.);
@@ -115,14 +115,14 @@ main(int argc, char **argv)
 
   coarseIn.approximant = BCV;
   coarseIn.space       = Psi0Psi3;
-  
+
   LALInspiralCreateCoarseBank(&status, &list1, &nlist1, coarseIn);
   for (j=0; j<nlist1; j++)
   {
-	  fprintf(fpr, "%e %e %e %e\n", 
-			  list1[j].params.psi0, 
-			  list1[j].params.psi3, 
-			  list1[j].params.totalMass, 
+	  fprintf(fpr, "%e %e %e %e\n",
+			  list1[j].params.psi0,
+			  list1[j].params.psi3,
+			  list1[j].params.totalMass,
 			  list1[j].params.fFinal);
   }
   fprintf(fpr, "&\n");
@@ -130,25 +130,25 @@ main(int argc, char **argv)
   coarseIn.space	= Tau0Tau3;
 
   LALInspiralCreateCoarseBank(&status, &list2, &nlist2, coarseIn);
-    
+
   for (j=0; j<nlist2; j++)
   {
-	  fprintf(fpr, "%e %e %e %e\n", 
-			  list2[j].params.t0, 
+	  fprintf(fpr, "%e %e %e %e\n",
+			  list2[j].params.t0,
 			  list2[j].params.t3,
-			  list2[j].params.mass1, 
-			  list2[j].params.mass2 
+			  list2[j].params.mass1,
+			  list2[j].params.mass2
 			  );
   }
-		
+
   fprintf(fpr, "&\n");
 
   /* Print rectagles*/
-  
+
     RectIn.dx = sqrt(2.0 * (1. - coarseIn.mmCoarse)/list1[0].metric.g00 );
     RectIn.dy = sqrt(2.0 * (1. - coarseIn.mmCoarse)/list1[0].metric.g11 );
     RectIn.theta = list1[0].metric.theta;
-    
+
     /* Print out the template parameters */
     for (j=0; j<nlist1; j++)
     {
@@ -161,19 +161,19 @@ main(int argc, char **argv)
 	LALInspiralValidParams(&status, &valid, bankParams, coarseIn);
 	*/
 	valid = 1;
-        if (valid) 
+        if (valid)
 	{
 		LALRectangleVertices(&status, &RectOut, &RectIn);
-		fprintf(fpr, "%e %e\n%e %e\n%e %e\n%e %e\n%e %e\n", 
-				RectOut.x1, RectOut.y1, 
-				RectOut.x2, RectOut.y2, 
-				RectOut.x3, RectOut.y3, 
-				RectOut.x4, RectOut.y4, 
+		fprintf(fpr, "%e %e\n%e %e\n%e %e\n%e %e\n%e %e\n",
+				RectOut.x1, RectOut.y1,
+				RectOut.x2, RectOut.y2,
+				RectOut.x3, RectOut.y3,
+				RectOut.x4, RectOut.y4,
 				RectOut.x5, RectOut.y5);
 		fprintf(fpr, "&\n");
 	}
     }
-  
+
   /* Free the list, and exit. */
   if (list1 != NULL) LALFree (list1);
   if (list2 != NULL) LALFree (list2);
