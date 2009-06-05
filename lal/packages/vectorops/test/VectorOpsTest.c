@@ -242,8 +242,8 @@ main ( int argc, char *argv[] )
     z1->data[i].im = (12.0 + i )*sin(LAL_PI/3.0*i);
   }
 
-  if (verbose) printf("\n"); 
-  LALCVectorAbs(&status, x1, z1);  
+  if (verbose) printf("\n");
+  LALCVectorAbs(&status, x1, z1);
   TestStatus( &status, CODES(0), 1 );
   for (i = 0; i < size; ++i)
     if (verbose) printf(" Abs(% f,%f)  = %f \n",
@@ -252,14 +252,14 @@ main ( int argc, char *argv[] )
 
   LALCVectorAngle(&status, x2, z1);
   TestStatus( &status, CODES(0), 1 );
-  for (i = 0; i < size; ++i)    
+  for (i = 0; i < size; ++i)
     if (verbose) printf(" Angle(%f,%f)  = %f \n",
         z1->data[i].re, z1->data[i].im,
         x2->data[i]);
 
-  LALUnwrapREAL4Angle(&status, x3, x2); 
+  LALUnwrapREAL4Angle(&status, x3, x2);
   TestStatus( &status, CODES(0), 1 );
-  for (i = 0; i < size; ++i)    
+  for (i = 0; i < size; ++i)
     if (verbose) printf(" Unwrap Phase Angle ( %f )  = %f \n",
         x2->data[i],
         x3->data[i]);
@@ -304,17 +304,17 @@ main ( int argc, char *argv[] )
     LALCVectorAngle(&status, y3, z1);
     TestStatus( &status, CODES(VECTOROPSH_ESIZE), 1 );
 
-    LALUnwrapREAL4Angle(&status, x3, NULL);   
+    LALUnwrapREAL4Angle(&status, x3, NULL);
     TestStatus( &status, CODES(VECTOROPSH_ENULL), 1 );
-    LALUnwrapREAL4Angle(&status, NULL, x2);   
+    LALUnwrapREAL4Angle(&status, NULL, x2);
     TestStatus( &status, CODES(VECTOROPSH_ENULL), 1 );
-    LALUnwrapREAL4Angle(&status, y_1, x2);   
+    LALUnwrapREAL4Angle(&status, y_1, x2);
     TestStatus( &status, CODES(VECTOROPSH_ESZMM), 1 );
-    LALUnwrapREAL4Angle(&status, y2, x2);   
+    LALUnwrapREAL4Angle(&status, y2, x2);
     TestStatus( &status, CODES(VECTOROPSH_ENULL), 1 );
-    LALUnwrapREAL4Angle(&status, y3, x2);   
+    LALUnwrapREAL4Angle(&status, y3, x2);
     TestStatus( &status, CODES(VECTOROPSH_ESIZE), 1 );
-    LALUnwrapREAL4Angle(&status, x2, x2);   
+    LALUnwrapREAL4Angle(&status, x2, x2);
     TestStatus( &status, CODES(VECTOROPSH_ESAME), 1 );
   }
 #endif

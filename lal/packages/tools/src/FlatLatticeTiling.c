@@ -50,6 +50,9 @@ NRCSID(FLATLATTICETILINGC, "$Id$");
 #define TRUE  (1==1)
 #define FALSE (1==0)
 
+/* macro to "use" unused function parameters */
+#define UNUSED(expr) do { (void)(expr); } while (0)
+
 /**
  * Create a new flat lattice tiling bound structure
  */
@@ -759,11 +762,11 @@ UINT4 XLALTotalFlatLatticePointCount(
 }
 
 int XLALRandomPointInFlatLatticeParamSpace(
-					   FlatLatticeTiling *tiling, /**< Tiling structure */
-					   RandomParams *random,      /**< Random parameters for generating random point */
-					   gsl_vector* random_point,  /**< Random point */
-					   gsl_vector* point,         /**< Another point */
-					   REAL8* metric_dist         /**< Distance from random point to other point w.r.t. metric */
+					   FlatLatticeTiling *tiling,  /**< Tiling structure */
+					   RandomParams *randomParams, /**< Random parameters for generating random point */
+					   gsl_vector* random_point,   /**< Random point */
+					   gsl_vector* point,          /**< Another point */
+					   REAL8* metric_dist          /**< Distance from random point to other point w.r.t. metric */
 					   )
 {
 
@@ -782,7 +785,7 @@ int XLALRandomPointInFlatLatticeParamSpace(
     GetBounds(tiling, i, random_point, &lower, &upper, NULL);
 
     /* Generate random number */
-    random_number = XLALUniformDeviate(random);
+    random_number = XLALUniformDeviate(randomParams);
 
     /* Generate random point */
     gsl_vector_set(random_point, i, lower + random_number*(upper - lower));
@@ -1203,6 +1206,9 @@ int XLALSetFlatTilingAnstarLattice(
  */
 static BOOLEAN ConstantBound(void *data, INT4 dimension, gsl_vector *point, REAL8 *lower, REAL8 *upper)
 {
+  /* dimension and point are unused in this function */
+  UNUSED(dimension);
+  UNUSED(point);
 
   /* Set lower and upper bound */
   *lower = gsl_vector_get((gsl_vector*)data, 0);

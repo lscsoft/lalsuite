@@ -499,7 +499,7 @@ INT4 XLALPopulateTrigScanInput (
         )
 {
     static const char *func = "XLALPopulateTrigScanInput";
-    UINT4        numPoints, ki;
+    UINT4        numPoints;
     REAL8        sampleRate, deltaF, deltaT;
 
     if ( !fcFilterParams || !fcTmpltParams || !fcDataParams || !bankHead )

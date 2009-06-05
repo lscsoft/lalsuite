@@ -183,10 +183,10 @@ AverageSpectrumParams;
 typedef struct
 tagLALPSDRegressor
 {
-  int average_samples;
-  int median_samples;
-  int n_samples;
-  REAL8FrequencySeries **history;
+  unsigned average_samples;
+  unsigned median_samples;
+  unsigned n_samples;
+  REAL8Sequence **history;
   REAL8FrequencySeries *mean_square;
 }
 LALPSDRegressor;
@@ -407,8 +407,8 @@ LALFreqTimeComplexFFT(
 
 LALPSDRegressor *
 XLALPSDRegressorNew(
-    int average_samples,
-    int median_samples
+    unsigned average_samples,
+    unsigned median_samples
 );
 
 void
@@ -419,6 +419,25 @@ XLALPSDRegressorFree(
 void
 XLALPSDRegressorReset(
     LALPSDRegressor *r
+);
+
+int XLALPSDRegressorSetAverageSamples(
+    LALPSDRegressor *r,
+    unsigned average_samples
+);
+
+
+unsigned XLALPSDRegressorGetAverageSamples(
+    const LALPSDRegressor *r
+);
+
+int XLALPSDRegressorSetMedianSamples(
+    LALPSDRegressor *r,
+    unsigned median_samples
+);
+
+unsigned XLALPSDRegressorGetMedianSamples(
+    const LALPSDRegressor *r
 );
 
 int
@@ -436,7 +455,7 @@ int
 XLALPSDRegressorSetPSD(
     LALPSDRegressor *r,
     const REAL8FrequencySeries *psd,
-    int weight
+    unsigned weight
 );
 
 #ifdef  __cplusplus

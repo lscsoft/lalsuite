@@ -195,10 +195,10 @@ gsl_vector * XLALGetPositionFromSnglInspiral( SnglInspiralTable *table )
 /* Sets the time in the position vector to the given value */
 /* <lalVerbatim file="GetErrorMatrixFromSnglInspiralCP"> */
 int XLALSetTimeInPositionVector( gsl_vector *position,
-                                 REAL8 time)
+                                 REAL8 timeShift)
 /* </lalVerbatim> */
 {
-    gsl_vector_set( position, 0, time );
+    gsl_vector_set( position, 0, timeShift );
 
     return XLAL_SUCCESS;
 }

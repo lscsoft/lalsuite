@@ -22,9 +22,9 @@ void F1 ( LALStatus *status,
           VTYPE    **result,
           VTYPE     *v,
           const UINT4Vector *indexVector );
-          
+
 void F2 ( LALStatus  *status,
           VPAIRTYPE  *result_pair,
           VTYPE      *v,
           const UINT4Vector *indexVector );
-         
+

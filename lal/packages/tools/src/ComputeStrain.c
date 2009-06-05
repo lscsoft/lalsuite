@@ -79,7 +79,7 @@ void LALComputeStrain(
 /* Inverse sensing, servo, analog actuation, digital x
 actuation  digital y actuation */
 static REAL8TimeSeries uphR,ALPHAS,upALPHAS;
-int p,l;
+int p;
 REAL8IIRFilter LPFIR;
 REAL8IIRFilter HPFIR;
 REAL8IIRFilter ALPHASLPFIR;
@@ -528,24 +528,24 @@ int XLALUpsample(REAL8TimeSeries *uphR, REAL8TimeSeries *hR, int up_factor)
 
 int XLALUpsampleLinear(REAL8TimeSeries *uphR, REAL8TimeSeries *hR, int up_factor)
 {
-  int n,m;
+  UINT4 n,m;
 
   /* Set all values to 0 */
-  for (n=0; n < (int)uphR->data->length; n++) {
+  for (n=0; n < (UINT4)uphR->data->length; n++) {
     uphR->data->data[n] = 0.0;
   }
 
   /* Set one in every up_factor to the value of hR x USR */
-  for (n=0; n < (int)hR->data->length; n++)
+  for (n=0; n < (UINT4)hR->data->length; n++)
     {
-      REAL8 y1=hR->data->data[n],y2;
+      REAL8 y_1=hR->data->data[n],y_2=0;
 
-      if(n < hR->data->length-1) y2=hR->data->data[n+1];
-      if(n == hR->data->length-1) y2=hR->data->data[n];
+      if(n < hR->data->length-1) y_2=hR->data->data[n+1];
+      if(n == hR->data->length-1) y_2=hR->data->data[n];
 
-      for (m=0; m < (int)up_factor; m++)
+      for (m=0; m < (UINT4)up_factor; m++)
 	{
-	  uphR->data->data[n*up_factor+m] = y1+m*(y2-y1)/up_factor;
+	  uphR->data->data[n*up_factor+m] = y_1+m*(y_2-y_1)/up_factor;
 	}
     }
   return 0;
@@ -591,7 +591,7 @@ INT4 k,m;
 
 REAL4 deltaT=input->AS_Q.deltaT, To=input->To;
 INT4 length = input->AS_Q.data->length;
-INT4 localtime = input->AS_Q.epoch.gpsSeconds;
+/*INT4 localtime = input->AS_Q.epoch.gpsSeconds;*/
 
  INITSTATUS( status, "LALGetFactors", COMPUTESTRAINC );
  ATTATCHSTATUSPTR( status );
@@ -637,7 +637,7 @@ INT4 localtime = input->AS_Q.epoch.gpsSeconds;
 
   for(m=0; m < (UINT4)(deltaT*length) / To; m++)
     {
-      int facterrflag=0;
+      /*int facterrflag=0;*/
 
       /* assign and window the data */
       for(k=0;k<(INT4)(To/asq.deltaT +0.5);k++)

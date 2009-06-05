@@ -41,6 +41,7 @@ AC_CONFIG_FILES([\
   src/pulsar/crosscorr/Makefile \
   src/pulsar/fscan/Makefile \
   src/tracksearch/Makefile \
+  src/online/Makefile \
 ])
 AM_INIT_AUTOMAKE([])
 AC_ARG_VAR(LALSUITE_BUILD,[Set if part of lalsuite build])
