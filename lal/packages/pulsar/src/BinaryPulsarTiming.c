@@ -838,13 +838,13 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
       }
     }
     else if(!strcmp(val[i],"pepoch") || !strcmp(val[i],"PEPOCH")) {
-      output->pepoch = LALTDBMJDtoGPS(atof(val[i+1])); /* convert all epochs to from MJD to
-        GPS seconds in TDB */
+      output->pepoch = LALTTMJDtoGPS(atof(val[i+1])); /* convert all epochs to
+        from MJD to GPS seconds in TDB */
       j++;
 
     }
     else if( !strcmp(val[i],"posepoch") || !strcmp(val[i],"POSEPOCH")){
-      output->posepoch = LALTDBMJDtoGPS(atof(val[i+1]));
+      output->posepoch = LALTTMJDtoGPS(atof(val[i+1]));
       j++;
       /* position epoch in GPS seconds TDB */
     }
@@ -1027,7 +1027,7 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
       }
     }
     else if( !strcmp(val[i], "T0")){
-      output->T0 = LALTDBMJDtoGPS(atof(val[i+1]));
+      output->T0 = LALTTMJDtoGPS(atof(val[i+1]));
       j++;
 
       if(atoi(val[i+2])==1 && i+2<k){
@@ -1036,7 +1036,7 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
       }
     }
     else if( !strcmp(val[i], "Tasc") || !strcmp(val[i], "TASC")){
-      output->Tasc = LALTDBMJDtoGPS(atof(val[i+1]));
+      output->Tasc = LALTTMJDtoGPS(atof(val[i+1]));
       j++;
 
       if(atoi(val[i+2])==1 && i+2<k){
@@ -1286,7 +1286,7 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
       }
     }
     else if( !strcmp(val[i], "T0_2")){
-      output->T02 = LALTDBMJDtoGPS(atof(val[i+1]));
+      output->T02 = LALTTMJDtoGPS(atof(val[i+1]));
       j++;
 
       if(atoi(val[i+2])==1 && i+2<k){
@@ -1332,7 +1332,7 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
       }
     }
     else if( !strcmp(val[i], "T0_3")){
-      output->T03 = LALTDBMJDtoGPS(atof(val[i+1]));
+      output->T03 = LALTTMJDtoGPS(atof(val[i+1]));
       j++;
 
       if(atoi(val[i+2])==1 && i+2<k){
