@@ -101,7 +101,7 @@ NRCSID( LOCALCOMPUTEFSTATC, "$Id$");
 #define PREFETCH(a) a
 #endif
 
-#include "sincos.h"
+#include "sincos.ci"
 
 /*----- SWITCHES -----*/
 
@@ -567,7 +567,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 
       /* ---------- calculate the (truncated to DTERMS) sum over k ---------- */
 
-#include "hotloop.h"
+#include "hotloop.ci"
 
       /* real- and imaginary part of e^{-i 2 pi lambda_alpha } */
       
