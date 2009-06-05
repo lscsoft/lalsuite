@@ -31,25 +31,24 @@
           COMPLEX8 XSums __attribute__ ((aligned (16))); /* sums of Xa.re and Xa.im for SSE */
 	  REAL4 kappa_s = kappa_star; /* single precision version of kappa_star */
 
-	  static REAL4 *scd 		  =  &(sincosLUTdiff[0]);
-	  static REAL4 *scb 		  =  &(sincosLUTbase[0]);
+	  static REAL4 *scd = &(sincosLUTdiff[0]);
+	  static REAL4 *scb = &(sincosLUTbase[0]);
 	  static REAL4 M1 = -1.0f;
 	  static REAL8 sincos_adds = 402653184.0;
 	  REAL8 tmp;
           REAL8 _lambda_alpha = -lambda_alpha;
           /* vector constants */
           /* having these not aligned will crash the assembler code */
-          static  REAL4 D2222[4] __attribute__ ((aligned (16))) = { 2,2,2,2 };
-	  
-	  static  REAL4 D1100[4] __attribute__ ((aligned (16))) = {1.0f, 1.0f, 0.0f, 0.0f};
-	  static  REAL4 D3322[4] __attribute__ ((aligned (16))) = {3.0f, 3.0f, 2.0f, 2.0f};
-	  static  REAL4 D5544[4] __attribute__ ((aligned (16))) = {5.0f, 5.0f, 4.0f, 4.0f};
-	  static  REAL4 D7766[4] __attribute__ ((aligned (16))) = {7.0f, 7.0f, 6.0f, 6.0f};
-
-	  static  REAL4 Daabb[4] __attribute__ ((aligned (16))) = {-1.0f, -1.0f, -2.0f, -2.0f};
-	  static  REAL4 Dccdd[4] __attribute__ ((aligned (16))) = {-3.0f, -3.0f, -4.0f, -4.0f};
-	  static  REAL4 Deeff[4] __attribute__ ((aligned (16))) = {-5.0f, -5.0f, -6.0f, -6.0f};
-	  static  REAL4 Dgghh[4] __attribute__ ((aligned (16))) = {-7.0f, -7.0f, -8.0f, -8.0f};
+#define ALIGNED_VECTOR(name) static REAL4 name[4] __attribute__ ((aligned (16)))
+          ALIGNED_VECTOR(D2222) = {2.0f, 2.0f, 2.0f, 2.0f};
+	  ALIGNED_VECTOR(D1100) = {1.0f, 1.0f, 0.0f, 0.0f};
+	  ALIGNED_VECTOR(D3322) = {3.0f, 3.0f, 2.0f, 2.0f};
+	  ALIGNED_VECTOR(D5544) = {5.0f, 5.0f, 4.0f, 4.0f};
+	  ALIGNED_VECTOR(D7766) = {7.0f, 7.0f, 6.0f, 6.0f};
+	  ALIGNED_VECTOR(Daabb) = {-1.0f, -1.0f, -2.0f, -2.0f};
+	  ALIGNED_VECTOR(Dccdd) = {-3.0f, -3.0f, -4.0f, -4.0f};
+	  ALIGNED_VECTOR(Deeff) = {-5.0f, -5.0f, -6.0f, -6.0f};
+	  ALIGNED_VECTOR(Dgghh) = {-7.0f, -7.0f, -8.0f, -8.0f};
 
 	  /* hand-coded SSE version from Akos */
 
