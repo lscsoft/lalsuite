@@ -116,8 +116,6 @@ static const LALStatus empty_status;
 
 
 /*---------- internal prototypes ----------*/
-extern int finite(double x);
-
 static void
 LocalComputeFStat ( LALStatus*, Fcomponents*, const PulsarDopplerParams*,
 		    const MultiSFTVector*, const MultiNoiseWeights*,
@@ -179,7 +177,7 @@ void LocalComputeFStatFreqBand ( LALStatus *status,
       /* init sin/cos lookup tables */
       local_sin_cos_2PI_LUT_init();
 
-      /* make sure Dterms is waht we expect */
+      /* make sure Dterms is what we expect */
       if (DTERMS != params->Dterms) {
 	LogPrintf(LOG_CRITICAL, "LocalComputeFstat has been compiled with fixed DTERMS (%d) != params->Dtems (%d)\n",DTERMS, params->Dterms);
 	ABORT ( status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT );
