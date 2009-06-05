@@ -100,10 +100,16 @@ bin_SCRIPTS = lalapps_inspiral_pipe lalapps_inspiral_hipe \
               lalapps_followup_pipe lalapps_plot_hipe \
               lalapps_ihope_status lalapps_write_ihope_page \
 	      lalapps_compare_ini lalapps_link_old_ihope \
-	      lalapps_generate_upper_limits lalapps_followup_page
+	      lalapps_generate_upper_limits lalapps_followup_page \
+	      lalapps_makeblindinj
 
 pkgpython_DATA = inspiral.py inspiralutils.py
+else
+bin_SCRIPTS = lalapps_makeblindinj
 endif
+
+lalapps_makeblindinj:
+	chmod a+x lalapps_makeblindinj
 
 python_config.sed:
 	-rm -f python_config.sed
