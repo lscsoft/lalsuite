@@ -450,7 +450,7 @@ int TDFilter(
 
 
   /* re-compute data normalization */
-  memset( fcSegVec->data->segNorm->data, 0, 
+  memset( fcSegVec->data->segNorm->data, 0,
       fcSegVec->data->segNorm->length * sizeof(REAL4) );
   segNormSum = 0;
   for ( k = 1; k < stilde->length; ++k )
@@ -460,7 +460,7 @@ int TDFilter(
     REAL4 power = re * re + im * im;
     segNormSum += power * dataParams->wtildeVec->data[k].re;
     fcSegVec->data->segNorm->data[k] += segNormSum;
-      
+
   }
 
 
