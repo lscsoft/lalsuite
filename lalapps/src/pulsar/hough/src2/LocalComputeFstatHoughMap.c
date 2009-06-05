@@ -25,7 +25,7 @@
    $Id$
 */
 
-#include "../HierarchicalSearch.h"
+#include "HierarchicalSearch.h"
 #include "LocalOptimizationFlags.h"
 
 RCSID( "$Id$");

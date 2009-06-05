@@ -55,8 +55,8 @@
 
 /* headers of our own code */
 #include <lal/LogPrintf.h>
-#include "../HierarchicalSearch.h"
-#include "../hs_boinc_extras.h"
+#include "HierarchicalSearch.h"
+#include "hs_boinc_extras.h"
 #include "hs_boinc_options.h"
 
 /* for Linux extended backtrace */
