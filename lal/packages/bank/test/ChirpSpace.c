@@ -27,11 +27,11 @@ $Id$
 \label{ss:bank:ChirpSpace.c}
 
 Test code for \texttt{LALInspiralParameterCalc} module.
-If the variable \texttt{type} is set to 1 the code works 
+If the variable \texttt{type} is set to 1 the code works
 out the boundary of the region enclosed
 by the parameter space specified by {\em maximum total
-mass} and {\em minimum companion masses,} as given in \texttt{mmin} 
-and \texttt{Mmax}. If the variable \texttt{type} is set to 0  
+mass} and {\em minimum companion masses,} as given in \texttt{mmin}
+and \texttt{Mmax}. If the variable \texttt{type} is set to 0
 it computes the boundary of the region corresponding to the companion
 masses in the range defined by \texttt{mmin} and \texttt{mmax}.
 
@@ -44,7 +44,7 @@ LALInspiralParameterCalc
 
 \vfill{\footnotesize\input{ChirpSpaceCV}}
 </lalLaTeX> */
-/* 
+/*
    This code generates the chirp parameter space for a given
    minimum companion mass mMin and maximum total mass MMax. One can use
    xmgr to plot the resulting file to plot as in the demo script.
@@ -64,11 +64,11 @@ int main ( void ) {
    double mmin, mmax, Mmax, totalMmax, compmmin, m1, m2, finalmass;
    UINT2 type;
    FILE *fpr;
-  
+
    fpr = fopen("ChirSpace.out", "w");
    /*
-    Change the parameters of the search space here 
-   
+    Change the parameters of the search space here
+
     type=0 creates a region defined by mMin and mMax
     i.e. maximum mass of the companion given by mMax
     type=1 creates a region defined by mMin and MMax
@@ -78,10 +78,10 @@ int main ( void ) {
    mmin = 1.;
    mmax = 20.;
    Mmax = mmax*2.;
-   p.ieta=1; 
-   p.fLower=40.0; 
+   p.ieta=1;
+   p.fLower=40.0;
    /*
-    Don't change anything below: 
+    Don't change anything below:
    */
    mmin = log10(mmin);
    mmax = log10(mmax);
@@ -102,12 +102,12 @@ int main ( void ) {
       p.mass2 = pow(10.,m2);
       LALInspiralParameterCalc (&status, &p);
       if (p.totalMass > totalMmax) break;
-      fprintf(fpr, "%e %e %e %e %e %e %e %e %e %e %e\n", 
+      fprintf(fpr, "%e %e %e %e %e %e %e %e %e %e %e\n",
          p.t0,
          p.t3,
          p.t2,
          p.mass2,
-         p.mass1, 
+         p.mass1,
          p.t4,
          p.totalMass,
          p.eta,
@@ -120,17 +120,17 @@ int main ( void ) {
    if (type)
    {
 	   p.totalMass = totalMmax;
-	   for (m2=log10(totalMmax-compmmin); m2>=mmin; m2-=0.01) 
+	   for (m2=log10(totalMmax-compmmin); m2>=mmin; m2-=0.01)
 	   {
 		   p.mass2 = pow(10.,m2);
 		   if ((p.mass1=p.totalMass - p.mass2) > p.totalMass/2.) break;
 		   LALInspiralParameterCalc (&status, &p);
-		   fprintf(fpr, "%e %e %e %e %e %e %e %e %e %e %e\n", 
+		   fprintf(fpr, "%e %e %e %e %e %e %e %e %e %e %e\n",
 				   p.t0,
 				   p.t3,
 				   p.t2,
 				   p.mass2,
-				   p.mass1, 
+				   p.mass1,
 				   p.t4,
 				   p.totalMass,
 				   p.eta,
@@ -143,18 +143,18 @@ int main ( void ) {
    {
 	   p.totalMass = totalMmax;
 	   p.mass2 = p.totalMass/2.;
-	   for (m1=mmin; m1<=mmax; m1+=0.01) 
+	   for (m1=mmin; m1<=mmax; m1+=0.01)
 	   {
 		   p.mass1 = pow(10.L,m1);
 		   LALInspiralParameterCalc (&status, &p);
-      
+
 		   if (p.totalMass > totalMmax) break;
-		   fprintf(fpr, "%e %e %e %e %e %e %e %e %e %e %e\n", 
+		   fprintf(fpr, "%e %e %e %e %e %e %e %e %e %e %e\n",
 				   p.t0,
 				   p.t3,
 				   p.t2,
 				   p.mass2,
-				   p.mass1, 
+				   p.mass1,
 				   p.t4,
 				   p.totalMass,
 				   p.eta,
@@ -169,12 +169,12 @@ int main ( void ) {
    for (m2=log10(totalMmax); m2>=mmin; m2-=0.01) {
       if ((p.totalMass = pow(10.,m2)) < 2.*compmmin) break;
       LALInspiralParameterCalc (&status, &p);
-      fprintf(fpr, "%e %e %e %e %e %e %e %e %e %e %e\n", 
+      fprintf(fpr, "%e %e %e %e %e %e %e %e %e %e %e\n",
          p.t0,
          p.t3,
          p.t2,
          p.mass2,
-         p.mass1, 
+         p.mass1,
          p.t4,
          p.totalMass,
          p.eta,
