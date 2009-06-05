@@ -27,18 +27,18 @@ then
 echo "Chose BNS injection"
 SNRMIN=8.5
 SNRMAX=9.5
-INSPINJCOM="lalapps_inspinj --seed $R --taper-injection start --gps-start-time $STARTTIME --gps-end-time $[$STARTTIME+1] --m-distr totalMass --min-mass1 1.4 --min-mass2 1.4 --max-mass1 2 --max-mass2 2 --max-mtotal 4 --min-mtotal 2.0 --d-distr uniform --i-distr uniform --min-distance 1000 --max-distance 30000 --waveform SpinTaylortwoPointFivePN --l-distr random --f-lower 30 --time-step 1 --band-pass-injection --max-spin1 0.2 --min-spin1 0.0 --max-spin2 0.0 --min-spin2 0.0 --enable-spin -o ${OUTFILE}"
+INSPINJCOM="lalapps_inspinj --seed $R --taper-injection start --gps-start-time $STARTTIME --gps-end-time $[$STARTTIME+1] --m-distr totalMass --min-mass1 1.0 --min-mass2 1.0 --max-mass1 2 --max-mass2 2 --max-mtotal 4 --min-mtotal 2.0 --d-distr uniform --i-distr uniform --min-distance 1000 --max-distance 30000 --waveform SpinTaylortwoPointFivePN --l-distr random --f-lower 30 --time-step 1 --band-pass-injection --max-spin1 0.2 --min-spin1 0.0 --max-spin2 0.0 --min-spin2 0.0 --enable-spin -o ${OUTFILE}"
 elif [ $R -le $[ $BNSFRAC + $BBHFRAC] ]
 then
 echo "Chose BBH injection"
-SNRMIN=10.0
-SNRMAX=12.0
+SNRMIN=11.0
+SNRMAX=13.0
 INSPINJCOM="lalapps_inspinj --seed $R --taper-injection start --gps-start-time $STARTTIME --gps-end-time $[$STARTTIME+1] --m-distr totalMass --min-mass1 2.0 --min-mass2 2.0 --max-mass1 30 --max-mass2 30 --max-mtotal 35 --min-mtotal 2.0 --d-distr uniform --i-distr uniform --min-distance 1000 --max-distance 30000 --waveform SpinTaylortwoPointFivePN --l-distr random --f-lower 30 --time-step 1 --band-pass-injection --max-spin1 1.0 --min-spin1 0.0 --max-spin2 0.0 --min-spin2 0.0 --enable-spin -o ${OUTFILE}"
 else
 echo "Chose NS-BH injection"
 SNRMIN=9.0
 SNRMAX=10.0
-INSPINJCOM="lalapps_inspinj --seed $R --taper-injection start --gps-start-time $STARTTIME --gps-end-time $[$STARTTIME+1] --m-distr totalMass --min-mass1 2.0 --min-mass2 1.4 --max-mass1 30.0 --max-mass2 2.0 --max-mtotal 35 --min-mtotal 2.0 --d-distr uniform --i-distr uniform --min-distance 1000 --max-distance 30000 --waveform SpinTaylortwoPointFivePN --l-distr random --f-lower 30 --time-step 1 --band-pass-injection --max-spin1 1.0 --min-spin1 0.0 --max-spin2 0.0 --min-spin2 0.0 --enable-spin -o ${OUTFILE}"
+INSPINJCOM="lalapps_inspinj --seed $R --taper-injection start --gps-start-time $STARTTIME --gps-end-time $[$STARTTIME+1] --m-distr totalMass --min-mass1 2.0 --min-mass2 1.0 --max-mass1 30.0 --max-mass2 2.0 --max-mtotal 35 --min-mtotal 2.0 --d-distr uniform --i-distr uniform --min-distance 1000 --max-distance 30000 --waveform SpinTaylortwoPointFivePN --l-distr random --f-lower 30 --time-step 1 --band-pass-injection --max-spin1 1.0 --min-spin1 0.0 --max-spin2 0.0 --min-spin2 0.0 --enable-spin -o ${OUTFILE}"
 fi
 # Run the inspinj command
 echo $INSPINJCOM
