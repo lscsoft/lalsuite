@@ -101,15 +101,18 @@ bin_SCRIPTS = lalapps_inspiral_pipe lalapps_inspiral_hipe \
               lalapps_ihope_status lalapps_write_ihope_page \
 	      lalapps_compare_ini lalapps_link_old_ihope \
 	      lalapps_generate_upper_limits lalapps_followup_page \
-	      lalapps_makeblindinj
+	      lalapps_makeblindinj lalapps_makeblindinj_himass
 
 pkgpython_DATA = inspiral.py inspiralutils.py
 else
-bin_SCRIPTS = lalapps_makeblindinj
+bin_SCRIPTS = lalapps_makeblindinj lalapps_makeblindinj_himass
 endif
 
 lalapps_makeblindinj:
 	chmod a+x lalapps_makeblindinj
+
+lalapps_makeblindinj_himass:
+	chmod a+x lalapps_makeblindinj_himass
 
 python_config.sed:
 	-rm -f python_config.sed
@@ -177,7 +180,7 @@ EXTRA_DIST = $(INSPIRALSRC) $(TMPLTBANKSRC) \
              inspiral_online_pipe_inject.in check_hipe_times.in \
 	     followup_pipe.in plot_hipe.in  write_ihope_page.in\
 	     compare_ini.in link_old_ihope.in generate_upper_limits.in\
-	     followup_page.in lalapps_makeblindinj\
+	     followup_page.in lalapps_makeblindinj lalapps_makeblindinj_himass\
              $(DATA)
 
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(top_srcdir)/misc
