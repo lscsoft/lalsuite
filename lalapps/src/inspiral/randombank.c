@@ -17,14 +17,14 @@
 *  MA  02111-1307  USA
 */
 
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: randombank.c
  *
  * Author: Brown, D. A.
- * 
+ *
  * Revision: $Id$
- * 
+ *
  *-----------------------------------------------------------------------
  */
 
@@ -131,24 +131,24 @@ int main ( int argc, char *argv[] )
   set_debug_level( "1" );
 
   /* create the process and process params tables */
-  proctable.processTable = (ProcessTable *) 
+  proctable.processTable = (ProcessTable *)
     calloc( 1, sizeof(ProcessTable) );
   LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->start_time),
         &accuracy ), &status );
   if (strcmp(CVS_REVISION,"$Revi" "sion$"))
     {
-      LAL_CALL( populate_process_table( &status, proctable.processTable, 
+      LAL_CALL( populate_process_table( &status, proctable.processTable,
 					PROGRAM_NAME, CVS_REVISION,
 					CVS_SOURCE, CVS_DATE ), &status );
     }
   else
     {
-      LAL_CALL( populate_process_table( &status, proctable.processTable, 
+      LAL_CALL( populate_process_table( &status, proctable.processTable,
 					PROGRAM_NAME, lalappsGitCommitID,
 					lalappsGitGitStatus,
 					lalappsGitCommitDate ), &status );
     }
-  this_proc_param = procparams.processParamsTable = (ProcessParamsTable *) 
+  this_proc_param = procparams.processParamsTable = (ProcessParamsTable *)
     calloc( 1, sizeof(ProcessParamsTable) );
 
   /* call the argument parse and check function */
@@ -165,9 +165,9 @@ int main ( int argc, char *argv[] )
 
 
   /* store the seed in the search summvars table */
-  this_search_summvar = searchsummvars.searchSummvarsTable = 
+  this_search_summvar = searchsummvars.searchSummvarsTable =
     (SearchSummvarsTable *) LALCalloc( 1, sizeof(SearchSummvarsTable) );
-  LALSnprintf( this_search_summvar->name, 
+  LALSnprintf( this_search_summvar->name,
       LIGOMETA_NAME_MAX * sizeof(CHAR), "template bank simulation seed" );
 
   if ( randSeedType == urandom )
@@ -175,7 +175,7 @@ int main ( int argc, char *argv[] )
     FILE   *fpRand = NULL;
     INT4    randByte;
 
-    if ( vrbflg ) 
+    if ( vrbflg )
       fprintf( stdout, "obtaining random seed from /dev/urandom: " );
 
     randomSeed = 0;
@@ -197,7 +197,7 @@ int main ( int argc, char *argv[] )
   }
   else if ( randSeedType == user )
   {
-    if ( vrbflg ) 
+    if ( vrbflg )
       fprintf( stdout, "using user specified random seed: " );
   }
 
@@ -256,7 +256,7 @@ int main ( int argc, char *argv[] )
     }
     else
     {
-      thisTmplt = thisTmplt->next = 
+      thisTmplt = thisTmplt->next =
         (SnglInspiralTable *) LALCalloc(1, sizeof(SnglInspiralTable));
     }
 
@@ -321,9 +321,9 @@ int main ( int argc, char *argv[] )
   LALSnprintf( proctable.processTable->ifos, LIGOMETA_IFO_MAX, "P1" );
   LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->end_time),
         &accuracy ), &status );
-  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, process_table ), 
+  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, process_table ),
       &status );
-  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, proctable, 
+  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, proctable,
         process_table ), &status );
   LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
   free( proctable.processTable );
@@ -336,9 +336,9 @@ int main ( int argc, char *argv[] )
   }
 
   /* write the process params table */
-  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, process_params_table ), 
+  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, process_params_table ),
       &status );
-  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, procparams, 
+  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, procparams,
         process_params_table ), &status );
   LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
   while( procparams.processParamsTable )
@@ -349,9 +349,9 @@ int main ( int argc, char *argv[] )
   }
 
   /* write the search summvars table */
-  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, 
+  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results,
         search_summvars_table ), &status );
-  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, searchsummvars, 
+  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, searchsummvars,
         search_summvars_table ), &status );
   LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
   while( searchsummvars.searchSummvarsTable )
@@ -364,9 +364,9 @@ int main ( int argc, char *argv[] )
   /* write the template bank to the file */
   if ( templateBank.snglInspiralTable )
   {
-    LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, sngl_inspiral_table ), 
+    LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, sngl_inspiral_table ),
         &status );
-    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, templateBank, 
+    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, templateBank,
           sngl_inspiral_table ), &status );
     LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
   }
@@ -454,7 +454,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     int option_index = 0;
     size_t optarg_len;
 
-    c = getopt_long_only( argc, argv, "hs:a:b:i:A:B:K:J:Z:z:", 
+    c = getopt_long_only( argc, argv, "hs:a:b:i:A:B:K:J:Z:z:",
         long_options, &option_index );
 
     /* detect the end of the options */
@@ -492,7 +492,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 
         this_proc_param = this_proc_param->next = (ProcessParamsTable *)
           calloc( 1, sizeof(ProcessParamsTable) );
-        LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
+        LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s",
             PROGRAM_NAME );
         LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "-userTag" );
         LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
@@ -546,7 +546,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "number of template bank simulations"
-              "must be greater than 1: (%d specified)\n", 
+              "must be greater than 1: (%d specified)\n",
               long_options[option_index].name, numTmplts );
           exit( 1 );
         }
@@ -559,7 +559,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
           if ( gstartt < 441417609 )
           {
             fprintf( stderr, "invalid argument to --%s:\n"
-                "GPS start time is prior to " 
+                "GPS start time is prior to "
                 "Jan 01, 1994  00:00:00 UTC:\n"
                 "(%ld specified)\n",
                 long_options[option_index].name, gstartt );
@@ -568,9 +568,9 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
           if ( gstartt > 999999999 )
           {
             fprintf( stderr, "invalid argument to --%s:\n"
-                "GPS start time is after " 
+                "GPS start time is after "
                 "Sep 14, 2011  01:46:26 UTC:\n"
-                "(%ld specified)\n", 
+                "(%ld specified)\n",
                 long_options[option_index].name, gstartt );
             exit( 1 );
           }
@@ -586,21 +586,21 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
           if ( gendt > 999999999 )
           {
             fprintf( stderr, "invalid argument to --%s:\n"
-                "GPS end time is after " 
+                "GPS end time is after "
                 "Sep 14, 2011  01:46:26 UTC:\n"
-                "(%ld specified)\n", 
+                "(%ld specified)\n",
                 long_options[option_index].name, gendt );
             exit( 1 );
           }
           else if ( gendt < 441417609 )
           {
             fprintf( stderr, "invalid argument to --%s:\n"
-                "GPS end time is prior to " 
+                "GPS end time is prior to "
                 "Jan 01, 1994  00:00:00 UTC:\n"
-                "(%ld specified)\n", 
+                "(%ld specified)\n",
                 long_options[option_index].name, gendt );
             exit( 1 );
-          }            
+          }
           gpsEndTime.gpsSeconds = (INT4) gendt;
           gpsEndTime.gpsNanoSeconds = 0;
           ADD_PROCESS_PARAM( "int", "%ld", gendt );
