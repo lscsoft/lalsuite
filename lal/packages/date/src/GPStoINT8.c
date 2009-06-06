@@ -44,16 +44,13 @@ Converts between \texttt{LIGOTimeGPS} and \texttt{INT8} formats.
 \vspace{0.1in}
 \input{GPStoINT8CP}
 \idx{LALGPStoINT8()}
-\idx{XLALGPStoINT8()}
 \idx{LALINT8toGPS()}
-\idx{XLALINT8toGPS()}
 
 \subsubsection*{Description}
 
-This modules contains two LAL routines and their XLAL counterparts.  One
-pair of routines converts from \texttt{LIGOTimeGPS} to \texttt{INT8}
-nanoseconds, and the other, from \texttt{INT8} nanoseconds to
-\texttt{LIGOTimeGPS}.
+This modules contains two obsolete LAL routines.  One routine converts from
+\texttt{LIGOTimeGPS} to \texttt{INT8} nanoseconds, and the other from
+\texttt{INT8} nanoseconds to \texttt{LIGOTimeGPS}.
 
 \subsubsection*{Algorithm}
 
@@ -72,24 +69,6 @@ nanoseconds, and the other, from \texttt{INT8} nanoseconds to
 NRCSID( GPSTOINT8C, "$Id$" );
 
 /* <lalVerbatim file="GPStoINT8CP"> */
-LIGOTimeGPS *
-XLALINT8toGPS ( 
-    LIGOTimeGPS *output,
-    INT8 input
-)
-/* </lalVerbatim> */
-{
-  INT8 s = input / LAL_INT8_C(1000000000);
-  
-  if(output) {
-    output->gpsSeconds = (INT4)( s );
-    output->gpsNanoSeconds = (INT4)( input - LAL_INT8_C(1000000000)*s );
-  }
-
-  return( output );
-}
-
-/* <lalVerbatim file="GPStoINT8CP"> */
 void
 LALINT8toGPS ( 
     LALStatus          *status,
@@ -102,21 +81,9 @@ LALINT8toGPS (
 
   XLALPrintDeprecationWarning("LALINT8toGPS", "XLALINT8NSToGPS");
 
-  XLALINT8toGPS( output, *input );
+  XLALINT8NSToGPS( output, *input );
 
   RETURN( status );
-}
-
-/*----------------------------------------------------------------------*/
-/* <lalVerbatim file="GPStoINT8CP"> */
-INT8
-XLALGPStoINT8 ( 
-    const LIGOTimeGPS *input
-)
-/* </lalVerbatim> */
-{
-  return( (INT8) input->gpsNanoSeconds 
-    + LAL_INT8_C(1000000000) * (INT8) input->gpsSeconds );
 }
 
 /*----------------------------------------------------------------------*/
@@ -133,7 +100,7 @@ LALGPStoINT8 (
 
   XLALPrintDeprecationWarning("LALGPStoINT8", "XLALGPSToINT8NS");
   
-  *output = XLALGPStoINT8( input );
+  *output = XLALGPSToINT8NS( input );
 
   RETURN( status );
 }

@@ -47,7 +47,7 @@ NRCSID (SIMRINGDOWNUTILSC,"$Id$");
   /* a few useful static functions */
 static INT8 geocent_start_time(const SimRingdownTable *x)
 {
-  return(XLALGPStoINT8(&x->geocent_start_time));
+  return(XLALGPSToINT8NS(&x->geocent_start_time));
 }
 
 
@@ -79,7 +79,7 @@ XLALPlayTestSimRingdown(
       SimRingdownTable *tmpEvent = thisEvent;
       thisEvent = thisEvent->next;
 
-      triggerTime = XLALGPStoINT8( &(tmpEvent->geocent_start_time) );
+      triggerTime = XLALGPSToINT8NS( &(tmpEvent->geocent_start_time) );
       isPlay = XLALINT8NanoSecIsPlayground( &triggerTime );
 
       if ( ( (*dataType == playground_only)  && isPlay ) ||
@@ -159,7 +159,7 @@ XLALSimRingdownInSearchedData(
     while ( thisSearchSumm )
     {
       if ( geocent_start_time(tmpEvent) <
-          XLALGPStoINT8( &(thisSearchSumm->out_start_time) ))
+          XLALGPSToINT8NS( &(thisSearchSumm->out_start_time) ))
       {
         XLALPrintInfo(
             "XLALSimRingdownInSearchedData: Discarding injection\n" );
@@ -169,7 +169,7 @@ XLALSimRingdownInSearchedData(
       else
       {
         if ( geocent_start_time(tmpEvent) <
-            XLALGPStoINT8( &(thisSearchSumm->out_end_time) ))
+            XLALGPSToINT8NS( &(thisSearchSumm->out_end_time) ))
         {
           XLALPrintInfo(
               "XLALSimRingdownInSearchedData: Keeping injection\n" );
@@ -298,12 +298,12 @@ XLALReturnSimRingdownStartTime (
     static const char *func = "ReturnSimRingdownStartTime";
       if ( ! strcmp( "L1", ifo ) )
       {
-        return( XLALGPStoINT8(&(event->l_start_time) ) );
+        return( XLALGPSToINT8NS(&(event->l_start_time) ) );
       }
       else if ( ! strcmp( "H1", ifo ) ||
           ! strcmp( "H2", ifo ) )
       {
-        return( XLALGPStoINT8(&(event->h_start_time) ) );
+        return( XLALGPSToINT8NS(&(event->h_start_time) ) );
       }
       else
       {
@@ -364,7 +364,7 @@ XLALSnglSimRingdownTest (
       while ( thisEvent )
       {
         /* compute the time in nanosec for thisEvent */
-        ringdownTime = XLALGPStoINT8( &(thisEvent->start_time) );
+        ringdownTime = XLALGPSToINT8NS( &(thisEvent->start_time) );
 
         if( ringdownTime < (simGeocentTime - earthRadiusNS - injectWindowNS ) )
         {
@@ -392,7 +392,7 @@ XLALSnglSimRingdownTest (
       while ( thisEvent )
       {
         /* compute the time in nanosec for thisEvent */
-        ringdownTime = XLALGPStoINT8( &(thisEvent->start_time) );
+        ringdownTime = XLALGPSToINT8NS( &(thisEvent->start_time) );
 
         if( ringdownTime < (simGeocentTime + earthRadiusNS + injectWindowNS ) )
         {

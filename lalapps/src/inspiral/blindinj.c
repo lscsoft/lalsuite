@@ -398,10 +398,10 @@ static REAL4TimeSeries *injectWaveform(
   XLALDestroyCOMPLEX8Vector( unity );
 
   /* set the injection time */
-  waveformStartTime = XLALGPStoINT8( &(inspInj->geocent_end_time));
+  waveformStartTime = XLALGPSToINT8NS( &(inspInj->geocent_end_time));
   waveformStartTime -= (INT8) ( 1000000000.0 * ppnParams.tc );
 
-  XLALINT8toGPS( &(waveform.a->epoch), waveformStartTime );
+  XLALINT8NSToGPS( &(waveform.a->epoch), waveformStartTime );
   memcpy(&(waveform.f->epoch), &(waveform.a->epoch), 
       sizeof(LIGOTimeGPS) );
   memcpy(&(waveform.phi->epoch), &(waveform.a->epoch),

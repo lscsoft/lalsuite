@@ -172,7 +172,7 @@ Triggers are tested for coincidence in \texttt{m1\_and\_m2} or
 
 static INT8 start_time(const SnglRingdownTable *x)
 {
-	return(XLALGPStoINT8(&x->start_time));
+	return(XLALGPSToINT8NS(&x->start_time));
 }
 
 static INT4 start_time_sec(const SnglRingdownTable *x)
@@ -728,8 +728,8 @@ XLALTimeCutSingleRingdown(
   SnglRingdownTable    *ringdownEventList = NULL;
   SnglRingdownTable    *thisEvent = NULL;
   SnglRingdownTable    *prevEvent = NULL;
-  INT8                  startTimeNS = XLALGPStoINT8( startTime );
-  INT8                  endTimeNS = XLALGPStoINT8( endTime );
+  INT8                  startTimeNS = XLALGPSToINT8NS( startTime );
+  INT8                  endTimeNS = XLALGPSToINT8NS( endTime );
 
 
   /* Remove all the triggers before and after the requested */
@@ -901,7 +901,7 @@ XLALPlayTestSingleRingdown(
         SnglRingdownTable *tmpEvent = thisEvent;
         thisEvent = thisEvent->next;
 
-        triggerTime = XLALGPStoINT8( &(tmpEvent->start_time) );
+        triggerTime = XLALGPSToINT8NS( &(tmpEvent->start_time) );
         isPlay = XLALINT8NanoSecIsPlayground( &triggerTime );
 
         if ( ( (*dataType == playground_only)  && isPlay ) ||

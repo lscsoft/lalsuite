@@ -949,15 +949,15 @@ int main( int argc, char *argv[] )
   {
     UINT8 outPlayNS, outStartNS, outEndNS, triggerTimeNS;
     LIGOTimeGPS inPlay, outPlay;
-    outStartNS = XLALGPStoINT8( &(thisSearchSumm->out_start_time) );
-    outEndNS = XLALGPStoINT8( &(thisSearchSumm->out_end_time) );
+    outStartNS = XLALGPSToINT8NS( &(thisSearchSumm->out_start_time) );
+    outEndNS = XLALGPSToINT8NS( &(thisSearchSumm->out_end_time) );
     triggerTimeNS = outEndNS - outStartNS;
  
     /* check for events and playground */
     if ( dataType != all_data )
     {
       XLALPlaygroundInSearchSummary( thisSearchSumm, &inPlay, &outPlay );
-      outPlayNS = XLALGPStoINT8( &outPlay );
+      outPlayNS = XLALGPSToINT8NS( &outPlay );
  
       if ( dataType == playground_only )
       {
@@ -1344,7 +1344,7 @@ why??????????????
       fprintf( fp, "number of triggers from %s ifos: %d \n", ifos, 
           numEventsInIfos );
     }    
-    XLALINT8toGPS( &triggerTime, triggerInputTimeNS );
+    XLALINT8NSToGPS( &triggerTime, triggerInputTimeNS );
     fprintf( fp, "amount of time analysed for triggers %d sec %d ns\n", 
         triggerTime.gpsSeconds, triggerTime.gpsNanoSeconds );
 
