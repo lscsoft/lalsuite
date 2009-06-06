@@ -284,6 +284,8 @@ int XLALREAL8AverageSpectrumWelch(
 
 REAL8 XLALMedianBias( UINT4 nn );
 
+REAL8 XLALLogMedianBiasGeometric( UINT4 nn );
+
 int XLALREAL4AverageSpectrumMedian(
     REAL4FrequencySeries        *spectrum,
     const REAL4TimeSeries       *tseries,

@@ -134,25 +134,26 @@ NRCSID( LALINSPIRALH, "$Id$" );
 
 \begin{enumerate}
 
-\item \texttt{Order:}
+\item \texttt{LALPNOrder:}
 Enum that tells which post-Newtonian order is being used.
 \input{LALInspiralOrderH}
 \begin{itemize}
-\item \texttt{newtonian:} Newtonain order, flux and enrgy both to the lowest order.
-\item \texttt{oneHalfPN:} same as before
-\item \texttt{onePN:} Both energy and flux to order $O(v^2)$ beyond the Newtonian order.
-\item \texttt{onePointFivePN:} Energy to order $O(v^2)$ and flux to order $O(v^3)$
-\item \texttt{twoPN:} Both energy and flux to order $O(v^4)$
-\item \texttt{twoPointFivePN:} Energy to order $O(v^4)$ and flux to order $O(v^5)$
-\item \texttt{threePN:} Both energy and flux to order $O(v^6)$
-\item \texttt{threePointFivePN:} Energy to order $O(v^6)$ and flux to order $O(v^7)$
+\item \texttt{LAL\_PNORDER\_NEWTONIAN:} Newtonain order, flux and enrgy both to the lowest order.
+\item \texttt{LAL\_PNORDER\_HALF:} same as before
+\item \texttt{LAL\_PNORDER\_ONE:} Both energy and flux to order $O(v^2)$ beyond the Newtonian order.
+\item \texttt{LAL\_PNORDER\_ONE\_POINT\_FIVE:} Energy to order $O(v^2)$ and flux to order $O(v^3)$
+\item \texttt{LAL\_PNORDER\_TWO:} Both energy and flux to order $O(v^4)$
+\item \texttt{LAL\_PNORDER\_TWO\_POINT\_FIVE:} Energy to order $O(v^4)$ and flux to order $O(v^5)$
+\item \texttt{LAL\_PNORDER\_THREE:} Both energy and flux to order $O(v^6)$
+\item \texttt{LAL\_PNORDER\_THREE\_POINT\_FIVE:} Energy to order $O(v^6)$ and flux to order $O(v^7)$
+\item \texttt{LAL\_PNORDER\_PSEUDIO\_FOUR:} Need to describe
 \end{itemize}
 In all cases, the gravitational wave phase (also frequency and time)
 as an expansion of the gauge invariant parameter $v$ is given up to
 the order specified by flux.  Note that there are certain undetermined
-parameters at \texttt{threePN} and \texttt{threePointFivePN.} The waveform
-generation codes use a specific
-value of those parameters while generating the wave.
+parameters at \texttt{LAL\_PNORDER\_THREE} and
+\texttt{LAL\_PNORDER\_THREE\_POINT\_FIVE}. The waveform generation codes use
+a specific value of those parameters while generating the wave.
 
 
 \item \texttt{Approximant:} Enum that specifies the PN approximant to
@@ -418,20 +419,20 @@ tagEtaTau04In
 
 /* <lalVerbatim file="LALInspiralOrderH">  */
 typedef enum {
-   newtonian,
-   oneHalfPN,
-   onePN,
-   onePointFivePN,
-   twoPN,
-   twoPointFivePN,
-   threePN,
-   threePointFivePN,
-   pseudoFourPN
- } Order;
+  LAL_PNORDER_NEWTONIAN,
+  LAL_PNORDER_HALF,
+  LAL_PNORDER_ONE,
+  LAL_PNORDER_ONE_POINT_FIVE,
+  LAL_PNORDER_TWO,
+  LAL_PNORDER_TWO_POINT_FIVE,
+  LAL_PNORDER_THREE,
+  LAL_PNORDER_THREE_POINT_FIVE,
+  LAL_PNORDER_PSEUDO_FOUR
+ } LALPNOrder;
 /* </lalVerbatim>  */
 
 /* <lalLaTeX>
-\idx[Type]{Order}
+\idx[Type]{LALPNOrder}
 </lalLaTeX>  */
 
 
@@ -502,8 +503,8 @@ tagInspiralTemplate
 {
 /*  Parameters needed to generate Taylor/Pade waveforms */
   Approximant approximant;
-  Order order;
-  Order ampOrder;
+  LALPNOrder order;
+  LALPNOrder ampOrder;
   REAL8 mass1;
   REAL8 mass2;
   REAL8 fCutoff;
@@ -1681,7 +1682,7 @@ INT4 XLALInspiralAttachRingdownWave (
 int XLALInspiralGetApproximantString( CHAR        *output,
                                       UINT4       length,
                                       Approximant approx,
-                                      Order       order
+                                      LALPNOrder       order
                                     );
 
 int XLALBandPassInspiralTemplate(

@@ -129,26 +129,26 @@ LALInspiralStationaryPhaseApprox2 (
 
    switch (params->order)
    {
-	   case newtonian:
-	   case oneHalfPN:
+	   case LAL_PNORDER_NEWTONIAN:
+	   case LAL_PNORDER_HALF:
 		   LALInspiralTaylorF2Phasing = LALInspiralTaylorF2Phasing0PN;
 		   break;
-	   case onePN:
+	   case LAL_PNORDER_ONE:
 		   LALInspiralTaylorF2Phasing = LALInspiralTaylorF2Phasing2PN;
 		   break;
-	   case onePointFivePN:
+	   case LAL_PNORDER_ONE_POINT_FIVE:
 		   LALInspiralTaylorF2Phasing = LALInspiralTaylorF2Phasing3PN;
 		   break;
-	   case twoPN:
+	   case LAL_PNORDER_TWO:
 		   LALInspiralTaylorF2Phasing = LALInspiralTaylorF2Phasing4PN;
 		   break;
-	   case twoPointFivePN:
+	   case LAL_PNORDER_TWO_POINT_FIVE:
 		   LALInspiralTaylorF2Phasing = LALInspiralTaylorF2Phasing5PN;
 		   break;
-	   case threePN:
+	   case LAL_PNORDER_THREE:
 		   LALInspiralTaylorF2Phasing = LALInspiralTaylorF2Phasing6PN;
 		   break;
-	   case threePointFivePN:
+	   case LAL_PNORDER_THREE_POINT_FIVE:
 		   LALInspiralTaylorF2Phasing = LALInspiralTaylorF2Phasing7PN;
 		   break;
    }

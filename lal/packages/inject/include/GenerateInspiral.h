@@ -29,18 +29,18 @@ $Id$
 \section{Header \texttt{GenerateInspiral.h}}
 \label{s:GenerateInspiral.h}
 
-Header file for the inspiral injection interface code. The 
-code contained in GenerateInspiral.c is an interface between the 
-injection package and the inspiral package. More precisely, the 
+Header file for the inspiral injection interface code. The
+code contained in GenerateInspiral.c is an interface between the
+injection package and the inspiral package. More precisely, the
 function GenerateInspiral.c is used within the FindChirpSimulation.c
 file of the FindChirp package in order to inject waveforms into real
-data. The injection is done through the inject package in order to 
+data. The injection is done through the inject package in order to
 take into account the interferometer position, binary orientation ...
 
-GenerateInspiral has the capability of injecting both waveform designed 
-within the inspiral package (TaylorT1, T2, T3, PadeT1, EOB, and spinning 
+GenerateInspiral has the capability of injecting both waveform designed
+within the inspiral package (TaylorT1, T2, T3, PadeT1, EOB, and spinning
 waveform) and the inject package (so-called PPN waveform).
-also a test code as well which allows to check the output of 
+also a test code as well which allows to check the output of
 code. It is called InjectionInterfaceTest.c
 
 \subsection*{Synopsis}
@@ -56,7 +56,7 @@ code. It is called InjectionInterfaceTest.c
 #include <lal/LALStdlib.h>
 #include <lal/LALInspiral.h>
 #include <lal/GeneratePPNInspiral.h>
- 
+
 #include <lal/GenerateSpinOrbitCW.h>
 #include <lal/GenerateTaylorCW.h>
 #include <lal/LIGOMetadataTables.h>
@@ -69,14 +69,14 @@ extern "C" {
 #pragma }
 #endif
 
-NRCSID( GENERATEINSPIRALH, 
+NRCSID( GENERATEINSPIRALH,
     "$Id$" );
 
 #if 0
 <lalLaTeX>
 \subsection*{Error codes}
 </lalLaTeX>
-#endif 
+#endif
 
 /* <lalErrTable> */
 #define GENERATEINSPIRALH_ENORM 0
@@ -109,24 +109,24 @@ NRCSID( GENERATEINSPIRALH,
 \newpage\input{GenerateInspiralC}
 </lalLaTeX>
 #endif
-void 
+void
 LALGenerateInspiral(
     LALStatus        *status,
     CoherentGW       *waveform,
-    SimInspiralTable *params, 
-    PPNParamStruc    *ppnParamsInputOutput 
+    SimInspiralTable *params,
+    PPNParamStruc    *ppnParamsInputOutput
     );
 
 
 /* three function to read the order and approximant from a string */
-void 
+void
 LALGetOrderFromString(
     LALStatus   *status,
     CHAR        *message,
-    Order       *result
+    LALPNOrder  *result
     );
 
-void 
+void
 LALGetApproximantFromString(
     LALStatus   *status,
     CHAR        *message,
@@ -134,14 +134,14 @@ LALGetApproximantFromString(
     );
 
 /*  three function to populate the needed structures */
-void  
+void
 LALGenerateInspiralPopulatePPN(
     LALStatus           *status,
     PPNParamStruc       *ppnParams,
     SimInspiralTable    *thisEvent
     );
 
-void 
+void
 LALGenerateInspiralPopulateInspiral(
     LALStatus           *status,
     InspiralTemplate    *inspiralParams,

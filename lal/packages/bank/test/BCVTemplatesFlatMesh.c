@@ -134,7 +134,7 @@ GetInspiralMoments (
 		REAL8FrequencySeries *psd,
 		InspiralTemplate     *params );
 
-void 
+void
 LALInspiralComputeBCVMetric(
    LALStatus            *status,
    InspiralMetric       *metric,
@@ -171,12 +171,12 @@ main(int argc, char **argv)
 
   params.OmegaS = 0.;
   params.Theta = 0.;
-  params.ieta=1; 
-  params.mass1=1.; 
-  params.mass2=1.; 
-  params.startTime=0.0; 
+  params.ieta=1;
+  params.mass1=1.;
+  params.mass2=1.;
+  params.startTime=0.0;
   params.startPhase=0.0;
-  params.fLower=40.0; 
+  params.fLower=40.0;
   params.fCutoff=2000.00;
   params.tSampling=4096.0;
   params.order=4;
@@ -205,7 +205,7 @@ main(int argc, char **argv)
   LALNoiseSpectralDensity (&status, shf.data, noisemodel, shf.deltaF );
 
   /* compute the metric at this point, update bankPars and add the params to the list */
-	  
+
   GetInspiralMoments (&status, &moments, &shf, &params);
   LALInspiralComputeMetric(&status, &metric, &params, &moments);
   /*
@@ -227,7 +227,7 @@ main(int argc, char **argv)
 
     corners->data[0] = 0.3;
     corners->data[1] = 0.15;
-    corners->data[2] = 43.; 
+    corners->data[2] = 43.;
     corners->data[3] = 1.25;
 
     /*
@@ -242,8 +242,8 @@ main(int argc, char **argv)
 	  REAL4 det;
 	  UINT4 i;
 
-    
-		  
+
+
 	  matrix->data[0] = -metric.G01/sqrt(pow(metric.G01,2.) + pow(metric.G00-metric.g00,2.))
 	  /sqrt(metric.g11);
 	  matrix->data[1] = -(metric.G00-metric.g00)/sqrt(pow(metric.G01,2.) + pow(metric.G00-metric.g00,2.))
@@ -265,19 +265,19 @@ main(int argc, char **argv)
           for (i=0; i<2*dim; i+=2) fprintf(fp, "%e\t%e\n", matrixInv->data[i], matrixInv->data[i+1]);
   }
 
-	  
+
   /* Apply mismatch threshold to the transformation matrices. */
   {
-    
+
 	  UINT4 i;
 	  REAL4 adjust = 2.0*mismatch/sqrt( (REAL4)(dim) );
 	  REAL4 *data;  /* pointer to matrix data */
-    
+
 	  i = matrix->length*matrix->vectorLength;
 	  data = matrix->data;
 	  while ( i-- )
 		  *(data++) *= adjust;
-    
+
 	  adjust = 1.0/adjust;
 	  i = matrixInv->length*matrixInv->vectorLength;
 	  data = matrixInv->data;
@@ -291,19 +291,19 @@ main(int argc, char **argv)
 	  INT2 direct;  /* sign of direction from first corner to second */
 	  REAL4 *data;  /* pointer to matrix data */
 	  REAL4 *width; /* maximum width of a patch in each dimension */
-    
+
 	  /* Allocate local memory. */
 	  width = (REAL4 *)LALCalloc( dim, sizeof(REAL4) );
 	  if ( !width ) {
 		  ERROR( FLATMESHTESTC_EMEM, FLATMESHTESTC_MSGEMEM, 0 );
 		  return FLATMESHTESTC_EMEM;
 	  }
-    
+
 	  /* Determine patch width. */
 	  for ( data = matrix->data, i = 0; i < dim; i++ )
 		  for ( j = 0; j < dim; j++, data++ )
 			  width[j] += fabs( *data );
-    
+
 	  /* Extend each corner by 0.5*width in the appropriate
 	     direction. */
 	  for ( data = corners->data, i = 0; i < dim; i++, data++ ) {
@@ -311,7 +311,7 @@ main(int argc, char **argv)
 		  data[0] += 0.5*direct*width[i];
 		  data[dim] -= 0.5*direct*width[i];
 	  }
-    
+
 	  /* Free local memory. */
 	  LALFree( width );
   }
@@ -329,10 +329,10 @@ main(int argc, char **argv)
     flatmesh.intersection = NULL;
     SUB( LALSCreateVector( &status, &(flatmesh.xMin), dim ), &status );
     SUB( LALSCreateVector( &status, &(flatmesh.xMax), dim ), &status );
-  
-    flatmesh.xMin->data[0] = 0.3; 
+
+    flatmesh.xMin->data[0] = 0.3;
     flatmesh.xMin->data[1] = 0.15;
-    flatmesh.xMax->data[0] = 43.; 
+    flatmesh.xMax->data[0] = 43.;
     flatmesh.xMax->data[1] = 1.25;
     /*
     flatmesh.xMin->data[0] = 1.e5;
@@ -354,7 +354,7 @@ main(int argc, char **argv)
   /* Prepare to print result. */
   {
     UINT4 i;
-    InspiralBankParams   bankParams; 
+    InspiralBankParams   bankParams;
     InspiralCoarseBankIn coarseIn;
     INT4 valid;
     UINT4 k=0;
@@ -366,7 +366,7 @@ main(int argc, char **argv)
     coarseIn.fUpper = 2000.L;
     coarseIn.iflso = 0.0L;
     coarseIn.tSampling = 4096.L;
-    coarseIn.order = twoPN;
+    coarseIn.order = LAL_PNORDER_TWO;
     coarseIn.space = Tau0Tau3;
     coarseIn.approximant = TaylorT1;
 
@@ -374,7 +374,7 @@ main(int argc, char **argv)
     coarseIn.mMax = 20.0;
     coarseIn.MMax = coarseIn.mMax * 2.;
 
-    coarseIn.massRange = MinMaxComponentMass; 
+    coarseIn.massRange = MinMaxComponentMass;
     /* coarseIn.massRange = MinComponentMassMaxTotalMass;*/
 
     /* minimum value of eta */
@@ -418,7 +418,7 @@ GetInspiralMoments (
 
    INITSTATUS (status, "GetInspiralMoments", FLATMESHTESTC);
    ATTATCHSTATUSPTR(status);
-  
+
    ASSERT (params, status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
    ASSERT (params->fLower>0, status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
    ASSERT (moments, status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
@@ -431,7 +431,7 @@ GetInspiralMoments (
    moments->a41 = 617.L * LAL_PI * LAL_PI / 384.L;
    moments->a42 = 5429.L/5376.L * pow ( 25.L * LAL_PI/2.L, 1.L/3.L);
    moments->a43 = 1.5293365L/1.0838016L * pow(5.L/(4.L*pow(LAL_PI,4.L)), 1.L/3.L);
-   
+
    /* setup the input structure needed in the computation of the moments */
 
    in.shf = psd;
@@ -439,21 +439,21 @@ GetInspiralMoments (
    in.shf->deltaF /= params->fLower;
    in.xmin = params->fLower/params->fLower;
    in.xmax = params->fCutoff/params->fLower;
-	   
+
    /* First compute the norm */
 
    in.norm = 1.L;
-   in.ndx = 7.L/3.L; 
-   LALInspiralMoments(status->statusPtr, &moments->j[7], in); 
+   in.ndx = 7.L/3.L;
+   LALInspiralMoments(status->statusPtr, &moments->j[7], in);
    CHECKSTATUSPTR(status);
    in.norm = moments->j[7];
 
    if (lalDebugLevel & LALINFO)
    {
-	   fprintf (stderr, "a01=%e a21=%e a22=%e a31=%e a41=%e a42=%e a43=%e \n", 
-			   moments->a01, moments->a21, moments->a22, moments->a31, 
+	   fprintf (stderr, "a01=%e a21=%e a22=%e a31=%e a41=%e a42=%e a43=%e \n",
+			   moments->a01, moments->a21, moments->a22, moments->a31,
 			   moments->a41, moments->a42, moments->a43);
-   
+
 	   fprintf(stderr, "j7=%e\n", moments->j[7]);
    }
 
@@ -461,14 +461,14 @@ GetInspiralMoments (
 
    for (k=1; k<=17; k++)
    {
-	   in.ndx = (REAL8) k /3.L; 
-	   LALInspiralMoments(status->statusPtr,&moments->j[k],in);  
+	   in.ndx = (REAL8) k /3.L;
+	   LALInspiralMoments(status->statusPtr,&moments->j[k],in);
 	   CHECKSTATUSPTR(status);
 	   if (lalDebugLevel==1) fprintf(stderr, "j%1i=%e\n", k,moments->j[k]);
    }
    in.shf->deltaF *= params->fLower;
    in.shf->f0 *= params->fLower;
-  
+
    DETATCHSTATUSPTR(status);
    RETURN (status);
 }
