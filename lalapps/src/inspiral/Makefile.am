@@ -177,7 +177,7 @@ EXTRA_DIST = $(INSPIRALSRC) $(TMPLTBANKSRC) \
              inspiral_online_pipe_inject.in check_hipe_times.in \
 	     followup_pipe.in plot_hipe.in  write_ihope_page.in\
 	     compare_ini.in link_old_ihope.in generate_upper_limits.in\
-	     followup_page.in\
+	     followup_page.in lalapps_makeblindinj\
              $(DATA)
 
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(top_srcdir)/misc
