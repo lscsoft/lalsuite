@@ -291,7 +291,7 @@ for(det_idx=0;det_idx<LAL_NUM_IFO;det_idx++){
 	/* -=-=-=-=-=-=- Prepare actuations -=-=-=-=-=-=- */
 
 	if(injectionResponse==actuationX || injectionResponse==actuationY) actData=actuationParams[det_idx];
-	actuationResp = XLALCreateCOMPLEX8FrequencySeries("actuationResponse",&inj_epoch,0.0,1.0/(2.0*injLength),&strainPerCount,(size_t)Nsamples+1);
+	actuationResp = XLALCreateCOMPLEX8FrequencySeries("actuationResponse",&inj_epoch,0.0,1.0/(2.0*injLength),&strainPerCount,(size_t)Nsamples/2+1);
 	/* Create actuation response */
 	switch(injectionResponse){
 		case unityResponse:
@@ -315,9 +315,9 @@ for(det_idx=0;det_idx<LAL_NUM_IFO;det_idx++){
 	if(injectionResponse!=unityResponse) {
 	  	actuationTimeSeries=XLALCreateREAL4TimeSeries(det_name,&inj_epoch,0.0,deltaT,&lalADCCountUnit,(size_t)Nsamples);
 		unity = XLALCreateCOMPLEX8Vector(actuationResp->data->length);
-		transfer = XLALCreateCOMPLEX8FrequencySeries("transfer",&inj_epoch,0.0,1.0/(2.0*injLength),&countPerStrain,(size_t)Nsamples+1);
+		transfer = XLALCreateCOMPLEX8FrequencySeries("transfer",&inj_epoch,0.0,1.0/(2.0*injLength),&countPerStrain,(size_t)Nsamples/2+1);
 		for(i=0;i<unity->length;i++) {unity->data[i].re=1.0; unity->data[i].im=0.0;}
-		XLALCCVectorDivide(transfer->data,unity,resp->data);
+		XLALCCVectorDivide(transfer->data,unity,actuationResp->data);
 		for(i=0;i<Nsamples;i++) actuationTimeSeries->data->data[i]=TimeSeries->data->data[i];
 		actuationTimeSeries = XLALRespFilt(actuationTimeSeries,transfer);
 		XLALDestroyCOMPLEX8FrequencySeries(transfer);
@@ -336,7 +336,7 @@ for(det_idx=0;det_idx<LAL_NUM_IFO;det_idx++){
 	fclose(outfile);
 
 calcSNRandwriteFrames:
-	
+
 	/* Calculate SNR for this injection */
 	fwd_plan = XLALCreateForwardREAL4FFTPlan( TimeSeries->data->length, 0 );
 	fftData = XLALCreateCOMPLEX8FrequencySeries(TimeSeries->name,&(TimeSeries->epoch),0,1.0/TimeSeries->deltaT,&lalDimensionlessUnit,TimeSeries->data->length/2 +1);
