@@ -261,7 +261,7 @@ for(det_idx=0;det_idx<LAL_NUM_IFO;det_idx++){
 	/* Only generate within chosen bounds, if specified */
 	if((this_injection.geocent_end_time.gpsSeconds-(int)LeadupTime )<GPSstart || (this_injection.geocent_end_time.gpsSeconds-(int)LeadupTime)>GPSend) continue;
 
-	if(det_idx==LAL_IFO_T1||det_idx==LAL_IFO_G1) continue; /* Don't generate for GEO or TAMA */
+	if(det_idx==LAL_IFO_T1||det_idx==LAL_IFO_G1||det_idx==LAL_IFO_H2) continue; /* Don't generate for GEO or TAMA */
 	
 	switch(det_idx)
 	{
