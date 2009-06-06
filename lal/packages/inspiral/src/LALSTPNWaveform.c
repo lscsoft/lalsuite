@@ -875,7 +875,7 @@ LALSTPNWaveformEngine (
 
   /* Michele-041208: added epnorb initialization; is newtonian = 0? */
 
-  for (j = newtonian; j <= 8; j++) {
+  for (j = LAL_PNORDER_NEWTONIAN; j <= 8; j++) {
     mparams->wdotorb[j] = ak.ST[j];
     mparams->epnorb[j] = 0.0;
   }
@@ -886,9 +886,9 @@ LALSTPNWaveformEngine (
 
 
   switch (params->order){
-  case     newtonian:
-  case     oneHalfPN:
-  case     onePN:
+  case     LAL_PNORDER_NEWTONIAN:
+  case     LAL_PNORDER_HALF:
+  case     LAL_PNORDER_ONE:
     for (j = params->order + 1; j <= 8; j++){
       mparams->wdotorb[j] = 0;
     }
@@ -902,7 +902,7 @@ LALSTPNWaveformEngine (
     mparams->epnorb[2]  = -(1.0/12.0) * (9.0 + params->eta); /* 1PN*/
 
     break;
-  case     onePointFivePN:
+  case     LAL_PNORDER_ONE_POINT_FIVE:
     for (j = params->order + 1; j <= 8; j++){
       mparams->wdotorb[j] = 0;
     }
@@ -916,10 +916,10 @@ LALSTPNWaveformEngine (
     mparams->epnorb[2]  = -(1.0/12.0) * (9.0 + params->eta); /* 1PN*/
 
     break;
-  case     twoPN:
-  case     twoPointFivePN:
-  case     threePN:
-  case     threePointFivePN:
+  case     LAL_PNORDER_TWO:
+  case     LAL_PNORDER_TWO_POINT_FIVE:
+  case     LAL_PNORDER_THREE:
+  case     LAL_PNORDER_THREE_POINT_FIVE:
     for (j = params->order +1; j <= 8; j++){
       mparams->wdotorb[j] = 0;
     }
@@ -932,7 +932,7 @@ LALSTPNWaveformEngine (
     mparams->S2dot15 	= (4.0 + 3.0 * mparams->m1m2) / 2.0 ;
     mparams->epnorb[2]  = -(1.0/12.0) * (9.0 + params->eta); /* 1PN*/
     mparams->epnorb[4]  = (1.0/24.0) * (-81.0 + 57.0*params->eta - params->eta*params->eta); /* 2PN*/
-    if(params->order == threePN || params->order == threePointFivePN)
+    if(params->order == LAL_PNORDER_THREE || params->order == LAL_PNORDER_THREE_POINT_FIVE)
       mparams->epnorb[6]  = ( -(675.0/64.0) /* 3PN*/
 			      +( (209323.0/4032.0) -(205.0/96.0)*LAL_PI*LAL_PI
 				 -(110.0/9.0) * (-1987.0/3080.0) ) * params->eta
@@ -940,9 +940,9 @@ LALSTPNWaveformEngine (
     break;
   }
 
-  if (params->order == threePN)
-    mparams->wdotorb[(int)(threePN+1)] = ak.ST[(int)(threePN+1)];
-  if (params->order == threePointFivePN)
+  if (params->order == LAL_PNORDER_THREE)
+    mparams->wdotorb[(int)(LAL_PNORDER_THREE+1)] = ak.ST[(int)(LAL_PNORDER_THREE+1)];
+  if (params->order == LAL_PNORDER_THREE_POINT_FIVE)
     mparams->wdotorb[8] = ak.ST[8];
 
 

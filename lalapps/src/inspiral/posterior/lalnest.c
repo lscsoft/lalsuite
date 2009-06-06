@@ -401,7 +401,7 @@ int main( int argc, char *argv[])
 		insptemplate.totalMass=InjParams.mTot;
 		insptemplate.eta = InjParams.eta;
 		insptemplate.approximant = TaylorF2;
-		insptemplate.order = twoPointFivePN;
+		insptemplate.order = LAL_PNORDER_TWO_POINT_FIVE;
 		insptemplate.fLower = inputMCMC.fLow;
 		insptemplate.massChoice = totalMassAndEta;
 		LALInspiralParameterCalc(&status,&insptemplate);

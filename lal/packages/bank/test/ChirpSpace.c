@@ -87,7 +87,7 @@ int main ( void ) {
    mmax = log10(mmax);
    Mmax = log10(Mmax);
 
-   p.order = twoPN;
+   p.order = LAL_PNORDER_TWO;
 
    totalMmax = pow(10.,Mmax);
    compmmin = pow(10.,mmin);

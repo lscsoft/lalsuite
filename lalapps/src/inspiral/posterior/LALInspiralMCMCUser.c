@@ -401,7 +401,7 @@ REAL8 MCMCLikelihood1IFO(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter,int
 	template.massChoice = totalMassAndEta;
 	template.fLower = inputMCMC->fLow;
 	template.distance = XLALMCMCGetParameter(parameter,"distMpc");
-	template.order=twoPN;
+	template.order=LAL_PNORDER_TWO;
 	template.approximant=inputMCMC->approximant;
 	template.tSampling = 1.0/inputMCMC->deltaT;
 	template.fCutoff = 0.5/inputMCMC->deltaT -1.0;
@@ -506,7 +506,7 @@ in the frequency domain */
 	template.massChoice = totalMassAndEta;
 	template.fLower = inputMCMC->fLow;
 	template.distance = XLALMCMCGetParameter(parameter,"distMpc"); /* This must be in Mpc, contrary to the docs */
-	template.order=twoPN;
+	template.order=LAL_PNORDER_TWO;
 	template.approximant=inputMCMC->approximant;
 	template.tSampling = 1.0/inputMCMC->deltaT;
 	template.fCutoff = 0.5/inputMCMC->deltaT -1.0;
@@ -697,7 +697,7 @@ in the frequency domain */
 	template.massChoice = totalMassAndEta;
 	template.fLower = inputMCMC->fLow;
 	template.distance = XLALMCMCGetParameter(parameter,"distMpc"); /* This must be in Mpc, contrary to the docs */
-	template.order=twoPN;
+	template.order=LAL_PNORDER_TWO;
 	template.approximant=inputMCMC->approximant;
 	template.tSampling = 1.0/inputMCMC->deltaT;
 	template.fCutoff = 0.5/inputMCMC->deltaT -1.0;

@@ -180,7 +180,7 @@ main ( void )
    coarseIn->fUpper = 2000;
    coarseIn->iflso = 0;
    coarseIn->tSampling = 4096.L;
-   coarseIn->order = twoPN;
+   coarseIn->order = LAL_PNORDER_TWO;
    coarseIn->approximant = TaylorT3;
    coarseIn->space = Tau0Tau3;
 

@@ -67,7 +67,7 @@ NRCSID (LALINSPIRALGETAPPROXIMANTSTRINGC, "$Id$");
 int XLALInspiralGetApproximantString( CHAR        *output,
                                       UINT4       length,
                                       Approximant approx,
-                                      Order       order
+                                      LALPNOrder  order
                                     )
 {
 
@@ -201,47 +201,47 @@ int XLALInspiralGetApproximantString( CHAR        *output,
   /* Now set the order */
   switch ( order )
   {
-    case newtonian:
+    case LAL_PNORDER_NEWTONIAN:
       LALSnprintf( orderString, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
           "newtonian" );
       break;
 
-    case oneHalfPN:
+    case LAL_PNORDER_HALF:
       LALSnprintf( orderString, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
           "oneHalfPN" );
       break;
 
-    case onePN:
+    case LAL_PNORDER_ONE:
       LALSnprintf( orderString, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
           "onePN" );
       break;
 
-    case onePointFivePN:
+    case LAL_PNORDER_ONE_POINT_FIVE:
       LALSnprintf( orderString, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
           "onePointFivePN" );
       break;
 
-    case twoPN:
+    case LAL_PNORDER_TWO:
       LALSnprintf( orderString, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
           "twoPN" );
       break;
 
-    case twoPointFivePN:
+    case LAL_PNORDER_TWO_POINT_FIVE:
       LALSnprintf( orderString, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
           "twoPointFivePN" );
       break;
 
-    case threePN:
+    case LAL_PNORDER_THREE:
       LALSnprintf( orderString, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
           "threePN" );
       break;
 
-    case threePointFivePN:
+    case LAL_PNORDER_THREE_POINT_FIVE:
       LALSnprintf( orderString, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
           "threePointFivePN" );
       break;
 
-    case pseudoFourPN:
+    case LAL_PNORDER_PSEUDO_FOUR:
       LALSnprintf( orderString, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
           "pseudoFourPN" );
       break;

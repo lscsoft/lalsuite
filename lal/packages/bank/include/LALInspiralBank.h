@@ -724,9 +724,9 @@ tagInspiralCoarseBankIn
   GridSpacing                   gridSpacing;
 
   /* post-Newtonian order( phase), approximant, and amplitude PN order */
-  Order                         order;
+  LALPNOrder                    order;
   Approximant                   approximant;
-  Order                         ampOrder;
+  LALPNOrder                    ampOrder;
 
   /* parameters for different/multiple freq. cutoffs */
   INT4                          numFreqCut;

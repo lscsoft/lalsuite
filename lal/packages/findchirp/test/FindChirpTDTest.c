@@ -104,7 +104,7 @@ int main( void )
    * do the SP- and TD-filtering... could loop over templates and data here
    * without re-initializing
    */
-  spTmpltParams->order = twoPN;
+  spTmpltParams->order = LAL_PNORDER_TWO;
 
   SPFilter( dataSegVec, mass1, mass2, filterInput, filterParams, fcSegVec,
       spTmpltParams, spDataParams );
@@ -409,7 +409,7 @@ int TDFilter(
   tmplt.signalAmplitude = 1;
   tmplt.nStartPad       = 0;
   tmplt.nEndPad         = 0;
-  tmplt.order           = twoPN;
+  tmplt.order           = LAL_PNORDER_TWO;
   tmplt.approximant     = TaylorT2;
   tmplt.massChoice      = m1Andm2;
   tmplt.OmegaS          = 0;
@@ -558,7 +558,7 @@ int MakeData(
   tmplt.signalAmplitude = 1;
   tmplt.nStartPad       = dataSegVec->data->chan->data->length / 2;
   tmplt.nEndPad         = 0;
-  tmplt.order           = twoPN;
+  tmplt.order           = LAL_PNORDER_TWO;
   tmplt.approximant     = TaylorT2;
   tmplt.massChoice      = m1Andm2;
   tmplt.OmegaS          = 0;

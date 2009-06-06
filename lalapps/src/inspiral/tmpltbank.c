@@ -162,7 +162,7 @@ REAL4   kappaMin        = -1.0;         /* minimum value of kappa for PTF */
 REAL4   kappaMax        = 1.0;          /* maximum value of kappa for PTF */
 INT4    nPointsChi      = 3;            /* PTF template bank density */
 INT4    nPointsKappa    = 5;            /* PTF templated bank density */
-Order   order;                          /* post-Newtonian order         */
+LALPNOrder order;                       /* post-Newtonian order         */
 Approximant approximant;                /* approximation method         */
 CoordinateSpace space;                  /* coordinate space used        */
 INT4    haveGridSpacing = 0;            /* flag to indicate gridspacing */
@@ -2051,35 +2051,35 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
       case 'E':
         if ( ! strcmp( "newtonian", optarg ) )
         {
-          order = newtonian;
+          order = LAL_PNORDER_NEWTONIAN;
         }
         else if ( ! strcmp( "oneHalfPN", optarg ) )
         {
-          order = oneHalfPN;
+          order = LAL_PNORDER_HALF;
         }
         else if ( ! strcmp( "onePN", optarg ) )
         {
-          order = onePN;
+          order = LAL_PNORDER_ONE;
         }
         else if ( ! strcmp( "onePointFivePN", optarg ) )
         {
-          order = onePointFivePN;
+          order = LAL_PNORDER_ONE_POINT_FIVE;
         }
         else if ( ! strcmp( "twoPN", optarg ) )
         {
-          order = twoPN;
+          order = LAL_PNORDER_TWO;
         }
         else if ( ! strcmp( "twoPointFive", optarg ) )
         {
-          order = twoPointFivePN;
+          order = LAL_PNORDER_TWO_POINT_FIVE;
         }
         else if ( ! strcmp( "threePN", optarg ) )
         {
-          order = threePN;
+          order = LAL_PNORDER_THREE;
         }
         else if ( ! strcmp( "threePointFivePN", optarg ) )
         {
-          order = threePointFivePN;
+          order = LAL_PNORDER_THREE_POINT_FIVE;
         }
         else
         {

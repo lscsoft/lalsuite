@@ -366,7 +366,7 @@ main(int argc, char **argv)
     coarseIn.fUpper = 2000.L;
     coarseIn.iflso = 0.0L;
     coarseIn.tSampling = 4096.L;
-    coarseIn.order = twoPN;
+    coarseIn.order = LAL_PNORDER_TWO;
     coarseIn.space = Tau0Tau3;
     coarseIn.approximant = TaylorT1;
 

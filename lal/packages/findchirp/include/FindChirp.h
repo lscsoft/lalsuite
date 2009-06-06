@@ -203,7 +203,7 @@ tagFindChirpInitParams
   BOOLEAN                       createRhosqVec;
   BOOLEAN                       createCVec;
   Approximant                   approximant;
-  Order                         order;
+  LALPNOrder                    order;
 }
 FindChirpInitParams;
 /* </lalVerbatim> */
@@ -369,7 +369,7 @@ tagFindChirpTmpltParams
   REAL4VectorSequence          *PTFe2;
   RealFFTPlan                  *fwdPlan;
   Approximant                   approximant;
-  Order                         order;
+  LALPNOrder                    order;
   INT4                          reverseChirpBank;
   INT4                          bandPassTmplt;
   InspiralApplyTaper            taperTmplt;
@@ -409,7 +409,7 @@ PadeT1, EOB, FindChirpSP, BCV and BCVSpin. For time domain templates the
 post-Newtonian order is always two. For stationary phase templates, the
 post-Newtonian order is specified by \texttt{order}.
 
-\item[\texttt{Order order}] Specifies the post-Newtonian order of the
+\item[\texttt{LALPNOrder order}] Specifies the post-Newtonian order of the
 templates. Valid pN orders are twoPN, twoPointFivePN, threePN,
 threePointFivePN, pseudoFourPN. pseudoFourPN is not the true four PN
 correction, but may increase the fitting factor between stationary phase and
@@ -507,7 +507,7 @@ tagFindChirpFilterParams
   UINT4                         ignoreIndex;
   FindChirpClustering           clusterMethod;
   Approximant                   approximant;
-  Order                         order;
+  LALPNOrder                    order;
   COMPLEX8Vector               *qVec;
   COMPLEX8Vector               *qVecBCV;
   COMPLEX8Vector               *qVecBCVSpin1;
@@ -721,7 +721,7 @@ typedef struct
 tagFindChirpBankSimParams
 {
   Approximant           approx;
-  Order                 order;
+  LALPNOrder            order;
   REAL4                 minMass;
   REAL4                 maxMass;
   RandomParams         *randParams;

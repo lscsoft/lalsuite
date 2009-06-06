@@ -95,7 +95,7 @@ main(int argc, char **argv)
   coarseIn.fLower       = 40.L;
   coarseIn.fUpper       = 2047.L;
   coarseIn.tSampling    = 4096.L;
-  coarseIn.order        = twoPN;
+  coarseIn.order        = LAL_PNORDER_TWO;
   coarseIn.space        = Tau0Tau3;
   coarseIn.mmCoarse     = 0.97;
   coarseIn.mmFine       = 0.97;

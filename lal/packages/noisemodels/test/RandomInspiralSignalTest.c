@@ -167,7 +167,7 @@ main ( void )
    randIn.param.OmegaS = 0.0;
    randIn.param.Theta = 0.0;
    randIn.param.approximant = EOB;
-   randIn.param.order = twoPN;
+   randIn.param.order = LAL_PNORDER_TWO;
    randIn.param.massChoice = totalMassAndEta;
    randIn.etaMin = randIn.mMin * ( randIn.MMax - randIn.mMin) /
       pow(randIn.MMax,2.);

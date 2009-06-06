@@ -173,7 +173,7 @@ main(int argc, char **argv)
   coarseIn.fLower       = 40.L;
   coarseIn.fUpper       = 2047L;
   coarseIn.tSampling    = 4096.L;
-  coarseIn.order        = twoPN;
+  coarseIn.order        = LAL_PNORDER_TWO;
   coarseIn.space        = Tau0Tau3;
   coarseIn.mmCoarse     = 0.98;
   coarseIn.mmFine       = 0.98;
@@ -424,7 +424,7 @@ void LALInspiralCreateBoundarySpace(InspiralCoarseBankIn coarseIn)
    mmax = log10(mmax);
    Mmax = log10(Mmax);
 
-   p.order = twoPN;
+   p.order = LAL_PNORDER_TWO;
 
    totalMmax = pow(10.,Mmax);
    compmmin = pow(10.,mmin);

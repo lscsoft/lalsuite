@@ -227,7 +227,7 @@ FindChirpClustering clusterMethod;      /* chosen clustering algorithm  */
 REAL4 clusterWindow     = -1;           /* cluster over time window     */
 Approximant approximant;                /* waveform approximant         */
 CHAR *approximantName   = NULL;         /* waveform approximant name    */
-Order order;                            /* pN order of waveform         */
+LALPNOrder order;                       /* pN order of waveform         */
 CHAR *orderName = NULL;                 /* pN order of the waveform     */
 INT4 bcvConstraint      = 0;            /* constraint BCV filter        */
 INT4 flagFilterInjOnly  = -1;           /* flag for filtering inj. only */
@@ -4126,23 +4126,23 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         memcpy( orderName, optarg, optarg_len );
         if ( ! strcmp( "twoPN", optarg ) )
         {
-          order = twoPN;
+          order = LAL_PNORDER_TWO;
         }
         else if ( ! strcmp( "twoPointFivePN", optarg ) )
         {
-          order = twoPointFivePN;
+          order = LAL_PNORDER_TWO_POINT_FIVE;
         }
         else if ( ! strcmp( "threePN", optarg ) )
         {
-          order = threePN;
+          order = LAL_PNORDER_THREE;
         }
         else if ( ! strcmp( "threePointFivePN", optarg ) )
         {
-          order = threePointFivePN;
+          order = LAL_PNORDER_THREE_POINT_FIVE;
         }
         else if ( ! strcmp( "pseudoFourPN", optarg ) )
         {
-          order = pseudoFourPN;
+          order = LAL_PNORDER_PSEUDO_FOUR;
         }
         else
         {

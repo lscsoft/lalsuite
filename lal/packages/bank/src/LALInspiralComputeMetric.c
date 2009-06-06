@@ -392,13 +392,13 @@ LALInspiralComputeMetric (
 
   /* use the order of the waveform to compute the metric */
   /* summation below will be carried out up to PNorder   */
-  if ( params->order != onePN &&
-      params->order != onePointFivePN &&
-      params->order != twoPN )
+  if ( params->order != LAL_PNORDER_ONE &&
+      params->order != LAL_PNORDER_ONE_POINT_FIVE &&
+      params->order != LAL_PNORDER_TWO )
   {
     /* Let us force the order to be twoPN because that is the only order
      * available for the template bank anyway. */
-    PNorder = twoPN;
+    PNorder = LAL_PNORDER_TWO;
   }
   else
   {

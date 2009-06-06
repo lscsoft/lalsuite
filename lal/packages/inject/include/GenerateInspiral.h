@@ -123,7 +123,7 @@ void
 LALGetOrderFromString(
     LALStatus   *status,
     CHAR        *message,
-    Order       *result
+    LALPNOrder  *result
     );
 
 void

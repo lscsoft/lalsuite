@@ -276,7 +276,7 @@ LALInspiralCreateBCVBank (
     (*list)[j].params.signalAmplitude	= 1.;
     (*list)[j].params.approximant		= BCV;
     (*list)[j].params.massChoice		= psi0Andpsi3;
-    (*list)[j].params.order				= twoPN;
+    (*list)[j].params.order				= LAL_PNORDER_TWO;
     (*list)[j].metric 					= metric;
     (*list)[j].params.alpha 			= coarseIn.alpha;
   }

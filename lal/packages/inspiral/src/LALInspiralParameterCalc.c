@@ -408,8 +408,8 @@ LALInspiralParameterCalc (
 
    switch (params->order) {
 
-      case newtonian:
-      case oneHalfPN:
+      case LAL_PNORDER_NEWTONIAN:
+      case LAL_PNORDER_HALF:
          params->t2=0.0;
 /*       params->t3=0.0;*/
          params->t4=0.0;
@@ -419,7 +419,7 @@ LALInspiralParameterCalc (
          params->tC = params->t0;
       break;
 
-      case onePN:
+      case LAL_PNORDER_ONE:
          params->t3=0.0;
          params->t4=0.0;
          params->t5=0.0;
@@ -428,7 +428,7 @@ LALInspiralParameterCalc (
          params->tC = params->t0 + params->t2;
       break;
 
-      case onePointFivePN:
+      case LAL_PNORDER_ONE_POINT_FIVE:
          params->t4=0.0;
          params->t5=0.0;
          params->t6=0.0;
@@ -436,26 +436,26 @@ LALInspiralParameterCalc (
          params->tC = params->t0 + params->t2 - params->t3;
       break;
 
-      case twoPN:
+      case LAL_PNORDER_TWO:
          params->t5=0.0;
          params->t6=0.0;
          params->t7=0.0;
          params->tC = params->t0 + params->t2 - params->t3 + params->t4;
       break;
 
-      case twoPointFivePN:
+      case LAL_PNORDER_TWO_POINT_FIVE:
          params->t6 = 0.0;
          params->t7 = 0.0;
          params->tC = params->t0 + params->t2 - params->t3 + params->t4 - params->t5;
 
-      case threePN:
+      case LAL_PNORDER_THREE:
          /*check the initialisation and then comment the next line. For now we
           * set t6=0*/
          params->t6 = 0;
          params->t7 = 0.0;
          params->tC = params->t0 + params->t2 - params->t3 + params->t4 - params->t5 + params->t6;
 
-      case threePointFivePN:
+      case LAL_PNORDER_THREE_POINT_FIVE:
       default:
          /*check the initialisation and then comment the next line. For now we
           * set t6=0 and t7=0*/

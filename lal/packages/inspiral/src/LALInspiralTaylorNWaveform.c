@@ -448,17 +448,16 @@ LALTaylorNWaveformEngine (
    rootIn.xmin = omega/2.;
    switch (params->order)
    {
-	case twoPN:
-
+	case LAL_PNORDER_TWO:
 	   rootIn.function = LALxiInit4PN;
 	   break;
-	case twoPointFivePN:
+	case LAL_PNORDER_TWO_POINT_FIVE:
 	   rootIn.function = LALxiInit5PN;
 	   break;
-	case threePN:
+	case LAL_PNORDER_THREE:
 	   rootIn.function = LALxiInit6PN;
 	   break;
-	case threePointFivePN:
+	case LAL_PNORDER_THREE_POINT_FIVE:
 	   rootIn.function = LALxiInit7PN;
 	   break;
 	default:
@@ -487,16 +486,16 @@ LALTaylorNWaveformEngine (
    /* Initialize the GSL integrator */
    switch (params->order)
    {
-	case twoPN:
+	case LAL_PNORDER_TWO:
 	   in4.function = LALTaylorNDerivatives4PN;
 	   break;
-	case twoPointFivePN:
+	case LAL_PNORDER_TWO_POINT_FIVE:
 	   in4.function = LALTaylorNDerivatives5PN;
 	   break;
-	case threePN:
+	case LAL_PNORDER_THREE:
 	   in4.function = LALTaylorNDerivatives6PN;
 	   break;
-	case threePointFivePN:
+	case LAL_PNORDER_THREE_POINT_FIVE:
 	   in4.function = LALTaylorNDerivatives7PN;
 	   break;
 	default:

@@ -225,7 +225,7 @@ int main ( int argc, char *argv[] )
   {
     memset( &newTmplt, 0, sizeof(InspiralTemplate) );
     newTmplt.massChoice = m1Andm2;
-    newTmplt.order = twoPN;
+    newTmplt.order = LAL_PNORDER_TWO;
     newTmplt.fLower = fLow;
 
     /* set up the injection masses */

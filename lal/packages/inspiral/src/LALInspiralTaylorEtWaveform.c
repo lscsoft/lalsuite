@@ -475,16 +475,16 @@ LALTaylorEtWaveformEngine (
    /* Initialize the GSL integrator */
    switch (params->order)
    {
-	case twoPN:
+	case LAL_PNORDER_TWO:
 	   rootIn.function = LALzetaInit4PN;
 	   break;
-	case twoPointFivePN:
+	case LAL_PNORDER_TWO_POINT_FIVE:
 	   rootIn.function = LALzetaInit5PN;
 	   break;
-	case threePN:
+	case LAL_PNORDER_THREE:
 	   rootIn.function = LALzetaInit6PN;
 	   break;
-	case threePointFivePN:
+	case LAL_PNORDER_THREE_POINT_FIVE:
 	   rootIn.function = LALzetaInit7PN;
 	   break;
 	default:
@@ -513,16 +513,16 @@ LALTaylorEtWaveformEngine (
    /* Initialize the GSL integrator */
    switch (params->order)
    {
-	case twoPN:
+	case LAL_PNORDER_TWO:
 	   in4.function = LALTaylorEtDerivatives4PN;
 	   break;
-	case twoPointFivePN:
+	case LAL_PNORDER_TWO_POINT_FIVE:
 	   in4.function = LALTaylorEtDerivatives5PN;
 	   break;
-	case threePN:
+	case LAL_PNORDER_THREE:
 	   in4.function = LALTaylorEtDerivatives6PN;
 	   break;
-	case threePointFivePN:
+case LAL_PNORDER_THREE_POINT_FIVE:
 	   in4.function = LALTaylorEtDerivatives7PN;
 	   break;
 	default:

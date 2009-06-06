@@ -219,21 +219,21 @@ LALFindChirpSPTemplate (
   /* Switch on PN order, set the appropriate phase coeffs for that order */
   switch( params->order )
   {
-    case pseudoFourPN:
+    case LAL_PNORDER_PSEUDO_FOUR:
       c40P = 3923.0;
-    case threePointFivePN:
+    case LAL_PNORDER_THREE_POINT_FIVE:
       c35 = LAL_PI*(77096675.0/254016.0 + eta*378515.0/1512.0
             - eta*eta*74045.0/756.0);
-    case threePN:
+    case LAL_PNORDER_THREE:
       c30 = 11583231236531.0/4694215680.0 - LAL_GAMMA*6848.0/21.0
             - LAL_PI*LAL_PI*640.0/3.0 + eta*(LAL_PI*LAL_PI*2255.0/12.0
             - 15737765635.0/3048192.0) + eta*eta*76055.0/1728.0
             - eta*eta*eta*127825.0/1296.0 - 6848.0*log(4.0)/21.0;
       c30Log = -6848.0/21.0;
-    case twoPointFivePN:
+    case LAL_PNORDER_TWO_POINT_FIVE:
       c25 = LAL_PI*38645.0/756.0 - LAL_PI*eta*65.0/9.0;
       c25Log = 3*c25;
-    case twoPN:
+    case LAL_PNORDER_TWO:
       c20 = 15293365.0/508032.0 + eta*(27145.0/504.0 + eta*3085.0/72.0);
       c15 = -16*LAL_PI;
       c10 = 3715.0/756.0 + eta*55.0/9.0;
@@ -345,18 +345,18 @@ LALFindChirpSPTemplate (
   /* Switch on PN order, set the chirp time coeffs for that order */
   switch( params->order )
   {
-    case pseudoFourPN:
-    case threePointFivePN:
+    case LAL_PNORDER_PSEUDO_FOUR:
+    case LAL_PNORDER_THREE_POINT_FIVE:
       c7T = LAL_PI*(14809.0*eta*eta - 75703.0*eta/756.0 - 15419335.0/127008.0);
-    case threePN:
+    case LAL_PNORDER_THREE:
       c6T = LAL_GAMMA*6848.0/105.0 - 10052469856691.0/23471078400.0
             + LAL_PI*LAL_PI*128.0/3.0 + eta*( 3147553127.0/3048192.0
             - LAL_PI*LAL_PI*451.0/12.0 ) - eta*eta*15211.0/1728.0
             + eta*eta*eta*25565.0/1296.0 + log(4.0)*6848.0/105.0;
       c6LogT = 6848.0/105.0;
-    case twoPointFivePN:
+    case LAL_PNORDER_TWO_POINT_FIVE:
       c5T = 13.0*LAL_PI*eta/3.0 - 7729.0/252.0;
-    case twoPN:
+    case LAL_PNORDER_TWO:
       c4T = 3058673.0/508032.0 + eta * (5429.0/504.0 + eta * 617.0/72.0);
       c3T = -32.0 * LAL_PI / 5.0;
       c2T = 743.0/252.0 + eta * 11.0/3.0;

@@ -43,7 +43,7 @@ main (INT4 argc, CHAR **argv )
   INT4                   i;
   INT4                   j;
   INT4                   thisTemplateIndex;
-  Order                  tempOrder;  /* temporary phase order */
+  LALPNOrder             tempOrder;  /* temporary phase order */
 
   /* --- the general input structure --- */
   UserParametersIn       userParam;
@@ -2142,7 +2142,7 @@ void BankEfficiencyGenerateInputData(
           randIn->polarisationAngleMin,randIn->polarisationAngleMax);
 
       if (randIn->param.approximant == EOBNR)
-        randIn->param.order = pseudoFourPN;
+        randIn->param.order = LAL_PNORDER_PSEUDO_FOUR;
 
       if (randIn->param.approximant == SpinTaylor)
       {
@@ -2553,7 +2553,7 @@ void BankEfficiencyInitInspiralCoarseBankIn(
   coarseBankIn->alpha            = 0.01;
   coarseBankIn->numFcutTemplates = 5;
   coarseBankIn->approximant      = EOB;
-  coarseBankIn->order            = twoPN;
+  coarseBankIn->order            = LAL_PNORDER_TWO;
   coarseBankIn->LowGM            = 3;
   coarseBankIn->insidePolygon    = 1;
   coarseBankIn->HighGM           = 6;
@@ -2574,7 +2574,7 @@ void BankEfficiencyInitRandomInspiralSignalIn(
   randIn->useed                 = 122888;  /* seed for MonteCarlo             */
   randIn->type                  = 0;       /* type of simulation: signal only */
   randIn->SignalAmp             = 10;      /* SNR of the signal if noise exits*/
-  randIn->param.order           = twoPN;   /* and its order                   */
+  randIn->param.order           = LAL_PNORDER_TWO; /* and its order           */
   randIn->param.alpha           = 0;       /* alpha paramBCV                  */
   randIn->param.ieta            = 1;       /*                                 */
   randIn->param.mass1           =-1;       /* To allocate memory              */
@@ -2936,7 +2936,7 @@ void BankEfficiencyParseParameters(
     else if (!strcmp(argv[i],   "--signal-amp-order")){
       INT4 temp;
       BankEfficiencyParseGetInt(argv, &i, &temp);
-      randIn->param.ampOrder = (Order)temp;
+      randIn->param.ampOrder = (LALPNOrder)temp;
     }
     else if (!strcmp(argv[i],   "--signal-alpha1")){
       BankEfficiencyParseGetDouble(argv, &i, &(randIn->param.alpha1));
@@ -2980,7 +2980,7 @@ void BankEfficiencyParseParameters(
     else if (!strcmp(argv[i],   "--signal-order")) {
       INT4 temp;
       BankEfficiencyParseGetInt(argv, &i, &temp);
-      randIn->param.order = (Order)temp;
+      randIn->param.order = (LALPNOrder)temp;
     }
     else if (!strcmp(argv[i],   "--signal-nstartpad")) {
       BankEfficiencyParseGetInt(argv, &i, (INT4*)&(randIn->param.nStartPad));
@@ -3069,7 +3069,7 @@ void BankEfficiencyParseParameters(
       else if (!strcmp(argv[i], "EOBNR"))
         {
           userParam->template = EOBNR;
-          coarseBankIn->order = pseudoFourPN;
+          coarseBankIn->order = LAL_PNORDER_PSEUDO_FOUR;
         }
       else if (!strcmp(argv[i], "BCV"))
         userParam->template = BCV;
@@ -3087,12 +3087,12 @@ void BankEfficiencyParseParameters(
     else if (!strcmp(argv[i],   "--template-order")) {
       INT4 temp;
       BankEfficiencyParseGetInt(argv, &i, &temp);
-      coarseBankIn->order = (Order)temp;
+      coarseBankIn->order = (LALPNOrder)temp;
     }
     else if (!strcmp(argv[i],   "--template-amp-order")) {
       INT4 temp;
       BankEfficiencyParseGetInt(argv, &i, &temp);
-      coarseBankIn->ampOrder = (Order)temp;
+      coarseBankIn->ampOrder = (LALPNOrder)temp;
     }
     else if (!strcmp(argv[i], "--user-tag")) {
       BankEfficiencyParseGetString(argv, &i);

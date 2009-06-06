@@ -122,7 +122,7 @@ LALGenerateInspiral(
     )
 /* </lalVerbatim> */
 {
-  Order	            order;              /* Order of the model             */
+  LALPNOrder        order;              /* Order of the model             */
   Approximant       approximant;        /* And its approximant value      */
   InspiralTemplate  inspiralParams;     /* structure for inspiral package */
   CHAR              warnMsg[1024];
@@ -270,9 +270,9 @@ LALGenerateInspiral(
 /* <lalVerbatim file="LALGetOrderFromStringCP"> */
 void
 LALGetOrderFromString(
-    LALStatus *status,
-    CHAR      *thisEvent,
-    Order     *order
+    LALStatus  *status,
+    CHAR       *thisEvent,
+    LALPNOrder *order
     )
 /* </lalVerbatim> */
 {
@@ -286,39 +286,39 @@ LALGetOrderFromString(
 
   if ( strstr(thisEvent, "newtonian") )
   {
-    *order = newtonian;
+    *order = LAL_PNORDER_NEWTONIAN;
   }
   else if ( strstr(thisEvent, "oneHalfPN") )
   {
-    *order = oneHalfPN;
+    *order = LAL_PNORDER_HALF;
   }
   else if ( strstr(thisEvent, "onePN") )
   {
-    *order = onePN;
+    *order = LAL_PNORDER_ONE;
   }
   else if ( strstr(thisEvent, "onePointFivePN") )
   {
-    *order = onePointFivePN;
+    *order = LAL_PNORDER_ONE_POINT_FIVE;
   }
   else if ( strstr(thisEvent, "twoPN") )
   {
-    *order = twoPN;
+    *order = LAL_PNORDER_TWO;
   }
   else if ( strstr(thisEvent, "twoPointFivePN") )
   {
-    *order = twoPointFivePN;
+    *order = LAL_PNORDER_TWO_POINT_FIVE;
   }
   else if (strstr(thisEvent, "threePN") )
   {
-    *order = threePN;
+    *order = LAL_PNORDER_THREE;
   }
   else if ( strstr(thisEvent, 	"threePointFivePN") )
   {
-    *order = threePointFivePN;
+    *order = LAL_PNORDER_THREE_POINT_FIVE;
   }
   else if ( strstr(thisEvent, 	"pseudoFourPN") )
   {
-    *order = pseudoFourPN;
+    *order = LAL_PNORDER_PSEUDO_FOUR;
   }
   else
   {
