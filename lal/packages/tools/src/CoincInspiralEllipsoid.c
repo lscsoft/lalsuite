@@ -322,7 +322,7 @@ XLALSnglInspiralCoincTestEllipsoid(
   INT4                  match = 1;
   INT4                  ifoNumber = 0;
 
-  static const char *func = "XLALSnglInspiralCoincTest";
+  /*static const char *func = "XLALSnglInspiralCoincTest";*/
 
 
   /* Loop over sngl_inspirals contained in coinc_inspiral */
@@ -468,7 +468,7 @@ REAL8 XLALCalculateEThincaParameter(
 
    TriggerErrorList   errorList[2];
 
-   REAL8 loMatch, hiMatch, midMatch;
+   REAL8 loMatch, hiMatch, midMatch=0;
    INT4 i;
    INT2  isOverlap;
    fContactWorkSpace    *workSpace;
