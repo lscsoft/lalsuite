@@ -468,7 +468,7 @@ REAL8 XLALCalculateEThincaParameter(
 
    TriggerErrorList   errorList[2];
 
-   REAL8 loMatch, hiMatch, midMatch;
+   REAL8 loMatch, hiMatch, midMatch=0;
    INT4 i;
    INT2  isOverlap;
    fContactWorkSpace    *workSpace;
