@@ -544,7 +544,7 @@ XLALDeriveRingdownParameters(
     SimRingdownTable    *ringInj      /**< ringdown details to be populated */
     )
 {
-  static const char *func = "XLALDeriveRingdownParameters";
+  /*static const char *func = "XLALDeriveRingdownParameters";*/
   REAL4 cosiota;
   double splus, scross, fplus, fcross;
   double tDelay, tStart;
