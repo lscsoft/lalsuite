@@ -299,6 +299,28 @@ int XLALSimInspiralPNPolarizationWaveforms(
 /**
  * Driver routine to compute the post-Newtonian inspiral waveform.
  *
+ * This routine allows the user to specify different pN orders
+ * for phasing calcuation vs. amplitude calculations.
+ */
+int XLALSimInspiralPNGenerator(
+		REAL8TimeSeries **hplus,  /**< +-polarization waveform */
+	       	REAL8TimeSeries **hcross, /**< x-polarization waveform */
+	       	LIGOTimeGPS *tc,          /**< coalescence time */
+	       	REAL8 phic,               /**< coalescence phase */
+	       	REAL8 x0,                 /**< tail-term gauge choice thing (if you don't know, just set it to zero) */
+	       	REAL8 deltaT,             /**< sampling interval */
+	       	REAL8 m1,                 /**< mass of companion 1 */
+	       	REAL8 m2,                 /**< mass of companion 2 */
+	       	REAL8 f_min,              /**< start frequency */
+	       	REAL8 r,                  /**< distance of source */
+	       	REAL8 i,                  /**< inclination of source (rad) */
+	       	int amplitudeO,           /**< twice post-Newtonian amplitude order */
+	       	int phaseO                /**< twice post-Newtonian phase order */
+		);
+
+/**
+ * Driver routine to compute the post-Newtonian inspiral waveform.
+ *
  * This routine uses the same pN order for phasing and amplitude
  * (unless the order is -1 in which case the highest available
  * order is used for both of these -- which might not be the same).
