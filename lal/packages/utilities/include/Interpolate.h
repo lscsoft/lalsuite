@@ -68,7 +68,7 @@ NRCSID (INTERPOLATEH, "$Id: Interpolate.h");
 #define INTERPOLATEH_EZERO 4
 
 #define INTERPOLATEH_MSGENULL "Null pointer"
-#define INTERPOLATEH_MSGESIZE "Invalid size" 
+#define INTERPOLATEH_MSGESIZE "Invalid size"
 #define INTERPOLATEH_MSGEZERO "Zero divide"
 
 #if 0 /* autodoc block */

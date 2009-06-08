@@ -354,7 +354,7 @@ LALSBisectionFindRoot (
     /* locate midpoint of domain */
     dx   /= 2;
     xmid  = x + dx;
-    
+
     /* evaluate function at midpoint */
     input->function (status->statusPtr, &ymid, xmid, params);
     CHECKSTATUSPTR (status);
@@ -522,7 +522,7 @@ LALDBisectionFindRoot (
     /* locate midpoint of domain */
     dx   /= 2;
     xmid  = x + dx;
-    
+
     /* evaluate function at midpoint */
     input->function (status->statusPtr, &ymid, xmid, params);
     CHECKSTATUSPTR (status);

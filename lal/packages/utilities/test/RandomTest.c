@@ -111,7 +111,7 @@ main (int argc, char *argv[])
   static RandomParams *randpar;
   UINT4                i;
 
-  
+
   /*
    *
    * Parse the command line options.
@@ -202,7 +202,7 @@ main (int argc, char *argv[])
     fclose (fp);
   }
 
-  
+
   /*
    *
    * Check to make sure that correct error codes are generated.
