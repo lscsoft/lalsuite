@@ -12,14 +12,14 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with with program; see the file COPYING. If not, write to the 
- *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, 
+ *  along with with program; see the file COPYING. If not, write to the
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
  */
 #include <lal/LALDatatypes.h>
 NRCSID(LALSIMINSPIRALH, "$Id$");
 
-#define LAL_PN_MODE_L_MAX 3 
+#define LAL_PN_MODE_L_MAX 3
 
 /**
  * Computes h(2,2) mode of spherical harmonic decomposition of
@@ -177,8 +177,8 @@ int XLALSimAddMode(
  * for non-spinning objects.
  *
  * Compare the overall coefficient, with nu=1/4, to Equation (45) of
- * Michael Boyle, Duncan A. Brown, Lawrence E. Kidder, Abdul H. Mroue, 
- * Harald P. Pfeiﬀer, Mark A. Scheel, Gregory B. Cook, and Saul A. Teukolsky 
+ * Michael Boyle, Duncan A. Brown, Lawrence E. Kidder, Abdul H. Mroue,
+ * Harald P. Pfeiﬀer, Mark A. Scheel, Gregory B. Cook, and Saul A. Teukolsky
  * "High-accuracy comparison of numerical relativity simulations with
  * post-Newtonian expansions"
  * arXiv:0710.0158v1 (2007).
@@ -195,8 +195,8 @@ REAL8 XLALSimInspiralPNAngularAcceleration(
  * This is from the definition of x.
  *
  * Implements Equation (46) of
- * Michael Boyle, Duncan A. Brown, Lawrence E. Kidder, Abdul H. Mroue, 
- * Harald P. Pfeiﬀer, Mark A. Scheel, Gregory B. Cook, and Saul A. Teukolsky 
+ * Michael Boyle, Duncan A. Brown, Lawrence E. Kidder, Abdul H. Mroue,
+ * Harald P. Pfeiﬀer, Mark A. Scheel, Gregory B. Cook, and Saul A. Teukolsky
  * "High-accuracy comparison of numerical relativity simulations with
  * post-Newtonian expansions"
  * arXiv:0710.0158v1 (2007).
@@ -221,7 +221,7 @@ REAL8 XLALSimInspiralPNAngularVelocity(
  * Yi Pan, Alessandra Buonanno, Yanbei Chen, and Michele Vallisneri,
  * "A physical template family for gravitational waves from precessing
  * binaries of spinning compact objects: Application to single-spin binaries"
- * arXiv:gr-qc/0310034v3 (2007). 
+ * arXiv:gr-qc/0310034v3 (2007).
  * Note: this equation is actually dx/dt rather than (domega/dt)/(omega)^2
  * so the leading coefficient is different.
  */
@@ -236,8 +236,8 @@ REAL8 XLALSimInspiralPNEnergy(
  * Evolves a post-Newtonian orbit using the Taylor T4 method.
  *
  * See:
- * Michael Boyle, Duncan A. Brown, Lawrence E. Kidder, Abdul H. Mroue, 
- * Harald P. Pfeiﬀer, Mark A. Scheel, Gregory B. Cook, and Saul A. Teukolsky 
+ * Michael Boyle, Duncan A. Brown, Lawrence E. Kidder, Abdul H. Mroue,
+ * Harald P. Pfeiﬀer, Mark A. Scheel, Gregory B. Cook, and Saul A. Teukolsky
  * "High-accuracy comparison of numerical relativity simulations with
  * post-Newtonian expansions"
  * arXiv:0710.0158v1 (2007).
@@ -298,7 +298,7 @@ int XLALSimInspiralPNPolarizationWaveforms(
 
 /**
  * Driver routine to compute the post-Newtonian inspiral waveform.
- * 
+ *
  * This routine uses the same pN order for phasing and amplitude
  * (unless the order is -1 in which case the highest available
  * order is used for both of these -- which might not be the same).
@@ -321,7 +321,7 @@ int XLALSimInspiralPN(
 
 /**
  * Driver routine to compute the restricted post-Newtonian inspiral waveform.
- * 
+ *
  * This routine computes the phasing to the specified order, but
  * only computes the amplitudes to the Newtonian (quadrupole) order.
  *

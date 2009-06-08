@@ -22,14 +22,14 @@
  * \author Creighton, T. D.
  * \date $Date$
  * \brief Automatically converts among sky coordinate systems.
- * 
+ *
  * $Id$
- * 
+ *
 
 \par Description
 
 The function LALConvertSkyCoordinates() transforms the contents
-of \a *input to the system  
+of \a *input to the system
 specified in \a *params, storing the result in \a *output
 (which may point to the same object as \a *input for an in-place
 transformation).  The routine makes calls to the functions in
@@ -48,7 +48,7 @@ angles into \f$[0, 2\pi) \times [-\pi/2, \pi/2]\f$ if they lie outside.
 LALConvertSkyCoordinates() is structured as a simple loop over
 transformations, each of which moves the output sky position one step
 closer to the desired final coordinates system.  The usual ``flow'' of
-the algorithm is: 
+the algorithm is:
 \image html inject_ConvFlow.png
 \latexonly
 \begin{center}
@@ -80,7 +80,7 @@ the secondary function call; if a parameter is absent or poorly
 formatted, the called function will return an error.
 
 \par Uses
-\code 
+\code
 LALHorizonToSystem()            LALSystemToHorizon()
 LALGeographicToEquatorial()     LALEquatorialToGeographic()
 LALEquatorialToEcliptic()       LALEclipticToEquatorial()
@@ -112,7 +112,7 @@ Automatically converts among sky coordinate systems.
 \subsubsection*{Description}
 
 The function \verb+LALConvertSkyCoordinates()+ transforms the contents
-of <tt>*input</tt> to the system  
+of <tt>*input</tt> to the system
 specified in <tt>*params</tt>, storing the result in <tt>*output</tt>
 (which may point to the same object as <tt>*input</tt> for an in-place
 transformation).  The routine makes calls to the functions in
@@ -129,7 +129,7 @@ angles into $[0, 2\pi) \times [-\pi/2, \pi/2]$ if they lie outside.
 \subsubsection*{Algorithm}
 
 \verb+LALConvertSkyCoordinates()+ is structured as a simple loop over
-transformations, each 
+transformations, each
 of which moves the output sky position one step closer to the desired
 final coordinates system.  The usual ``flow'' of the algorithm is:
 \begin{center}
@@ -275,17 +275,17 @@ LALConvertSkyCoordinates( LALStatus        *stat,
 
 
 
-/** LAL interface to XLALNormalizeSkyPosition() 
+/** LAL interface to XLALNormalizeSkyPosition()
  */
 void
-LALNormalizeSkyPosition (LALStatus *stat, 
+LALNormalizeSkyPosition (LALStatus *stat,
 			 SkyPosition *posOut, 		/**< [out] normalized sky-position */
 			 const SkyPosition *posIn)	/**< [in] general sky-position */
 {
   SkyPosition tmp;	/* allow posOut == posIn */
 
   INITSTATUS( stat, "NormalizeSkyPosition", SKYCOORDINATESC);
-  
+
   ASSERT (posIn, stat, SKYCOORDINATESH_ENUL ,  SKYCOORDINATESH_MSGENUL );
   ASSERT (posOut, stat, SKYCOORDINATESH_ENUL ,  SKYCOORDINATESH_MSGENUL );
 
@@ -300,10 +300,10 @@ LALNormalizeSkyPosition (LALStatus *stat,
 } /* LALNormalizeSkyPosition() */
 
 
-/** If sky-position is not in the canonical range 
+/** If sky-position is not in the canonical range
  * \f$(\alpha,\delta)\in [0,2\pi]\times[-\pi/2, \pi/2]\f$, normalize it
  * by mapping it into this coordinate-interval.
- * Based on Alicia's function with some additional "unwinding" added.  
+ * Based on Alicia's function with some additional "unwinding" added.
  * return 0 = OK, -1 = ERROR
  */
 int
@@ -315,8 +315,8 @@ XLALNormalizeSkyPosition ( SkyPosition *posInOut ) /**< [in,out] sky-position to
     return -1;
 
   tmp = *posInOut;
-  
-  /* FIRST STEP: completely "unwind" positions, i.e. make sure that 
+
+  /* FIRST STEP: completely "unwind" positions, i.e. make sure that
    * [0 <= alpha < 2pi] and [-pi < delta <= pi] */
   /* normalize longitude */
   while (tmp.longitude < 0)

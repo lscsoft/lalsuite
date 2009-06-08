@@ -21,7 +21,7 @@ The routines currently available are:
   - GenerateSpinOrbitCW.h:  Provides a routine to generate
   Taylor-parameterized waveforms, as above, with additional binary orbit
   Doppler modulations.
-  
+
 
 <li> Simulating a detector's theoretical response to an incoming
 gravitational wave.  The routines currently available are:

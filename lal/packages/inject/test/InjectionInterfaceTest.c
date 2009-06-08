@@ -35,13 +35,13 @@ Interface to generate any kind of gravitational waves signal.
 \end{verbatim}
 
 \subsubsection*{Description}
-Right now this test file read an input xml (injection.xml) file and for 
-each valid line it computes the approriate waveform. Those waveforms are 
-either produce within the inject package (PPN waveform) or within the 
-inspiral package (TaylorT[1,2,3], EOB, SpinTaylor, PadeT1). 
+Right now this test file read an input xml (injection.xml) file and for
+each valid line it computes the approriate waveform. Those waveforms are
+either produce within the inject package (PPN waveform) or within the
+inspiral package (TaylorT[1,2,3], EOB, SpinTaylor, PadeT1).
 
-Then the function LALGeneralInspiral create the amplitude, freq and phi 
-vectors needed for further injection including the data itself (noise, h(t)) 
+Then the function LALGeneralInspiral create the amplitude, freq and phi
+vectors needed for further injection including the data itself (noise, h(t))
 
 Finally, the injections are stored in a vector which is saved in "injection.dat"
 file.
@@ -140,7 +140,7 @@ int main(int argc, char **argv)
   UINT4 	k;
   UINT4 	numPoints 	= 524288  ; /* arbitrary length of the data*/
   UINT4         numInjections   = 0; /* by default no injection. */
-  REAL8 	sampling	= 2048.;  
+  REAL8 	sampling	= 2048.;
   static  LALStatus 	status;
   /* injection structure */
   SimInspiralTable    *injections = NULL;
@@ -150,7 +150,7 @@ int main(int argc, char **argv)
   COMPLEX8FrequencySeries       fs ; /* A freq series to store the psd 	*/
   FILE		*output;             /* output result*/
   CHAR *filename;
-  UINT4 lenfile;  
+  UINT4 lenfile;
 
    /* --- for debugging --- */
   lalDebugLevel = 33;
@@ -171,31 +171,31 @@ int main(int argc, char **argv)
       ERROR(INJECTIONINTERFACETESTC_EFILE,INJECTIONINTERFACETESTC_MSGEFILE, 0);
       exit(0);
     }
-    
-  /* let's allocate memory for to create some dummy data to 
+
+  /* let's allocate memory for to create some dummy data to
      inject the waveforms */
-  memset(&ts, 0, sizeof(REAL4TimeSeries));		
-  LALSCreateVector( &status, &(ts.data), numPoints);	
-  
-  memset( &fs, 0, sizeof(COMPLEX8FrequencySeries));	
+  memset(&ts, 0, sizeof(REAL4TimeSeries));
+  LALSCreateVector( &status, &(ts.data), numPoints);
+
+  memset( &fs, 0, sizeof(COMPLEX8FrequencySeries));
   LALCCreateVector( &status, &(fs.data), numPoints / 2 + 1 );
 
-  
+
   /* --- Let's fix some variables we have to be in agreement with the xml file data --- */
   ts.epoch.gpsSeconds 	= 729273600;		       	/* gps time of the time series		*/
-  startTime 		= 729273600;		       	/* start time and end time of ..	*/	
+  startTime 		= 729273600;		       	/* start time and end time of ..	*/
   endTime   		= startTime + 200;	       	/* ..injection; should be in agreement..*/
-  						       	/* ..with the xml file			*/ 
+  						       	/* ..with the xml file			*/
   ts.sampleUnits 	= lalADCCountUnit;	       	/*  UNITY ?? 				*/
   ts.deltaT 		= 1./sampling;		       	/* sampling				*/
-  ts.name[0]='H'; 					/* L, H, G, V or T for the detector 
-							   otherwise it is optimally oriented	*/ 
+  ts.name[0]='H'; 					/* L, H, G, V or T for the detector
+							   otherwise it is optimally oriented	*/
 
 
   fs.deltaF 		= sampling / numPoints;	       /* idem for fs				*/
   fs.sampleUnits 	= lalADCCountUnit;
 
-  /* --- the psd is flat for simplicity --- */		
+  /* --- the psd is flat for simplicity --- */
   for( k = 0 ; k< numPoints/2; k++){
     fs.data->data[k].re = 1;
     fs.data->data[k].im = 0.;
@@ -209,14 +209,14 @@ int main(int argc, char **argv)
   lenfile = strlen(INJECTIONINTERFACETEST_INJECTIONXMLFILE) + 1;
   filename = (CHAR *) calloc (lenfile, sizeof(CHAR *));
   memcpy( filename, INJECTIONINTERFACETEST_INJECTIONXMLFILE, lenfile);
-  
-   
+
+
   /* --- read injection  here --- */
-  SUB(numInjections = SimInspiralTableFromLIGOLw( &injections, 
+  SUB(numInjections = SimInspiralTableFromLIGOLw( &injections,
 						  filename,
 						  startTime,
 						  endTime), &status);
-  
+
   /* any injection to do ? */
   if ( numInjections <= 0 )
     {
@@ -225,20 +225,20 @@ int main(int argc, char **argv)
     }
   /* --- inject here --- */
   SUB( LALFindChirpInjectSignals( &status,
-				  &ts, 
+				  &ts,
 				  injections,
 				  &fs ), &status);
-  
+
 
   /* --- now we save the results --- */
   for (k = 0; k < numPoints; k++){
     fprintf(output,"%15.12f %e\n",  (float)k/sampling, ts.data->data[k]);
   }
   fclose(output);
-  
+
   SUB( LALSDestroyVector( &status, &(ts.data) ), &status );
   SUB( LALCDestroyVector( &status, &(fs.data) ), &status );
-  
+
   /* --- and finally free memory --- */
   while ( injections )
     {

@@ -125,7 +125,7 @@ LALSI2InjectVector( LALStatus    *stat,
     REAL4 d;                              /* current dithering */
 
     /* Compute the dithering. */
-    LALUniformDeviate( stat->statusPtr, &d, internal ); 
+    LALUniformDeviate( stat->statusPtr, &d, internal );
     BEGINFAIL( stat )
       if ( !params ) {
 	TRY( LALDestroyRandomParams( stat->statusPtr, &internal ),

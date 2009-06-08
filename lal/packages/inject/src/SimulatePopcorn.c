@@ -489,7 +489,7 @@ LALSimPopcornTimeSeries (  LALStatus                *status,
    }
 
    /* Fourier transform */
-   LALForwardRealFFT( status->statusPtr, Hvec[dataset], hvec[dataset], pfwd ); 
+   LALForwardRealFFT( status->statusPtr, Hvec[dataset], hvec[dataset], pfwd );
    }
 
    LALSDestroyVector(status->statusPtr,&z);

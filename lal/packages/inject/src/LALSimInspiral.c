@@ -12,8 +12,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with with program; see the file COPYING. If not, write to the 
- *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, 
+ *  along with with program; see the file COPYING. If not, write to the
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
  */
 
@@ -81,18 +81,18 @@ COMPLEX16 XLALSpinWeightedSphericalHarmonic(
 				case -1:
 					fac = sqrt( 5.0 / ( 16.0 * LAL_PI ) ) * sin( theta )*( 1.0 - cos( theta ));
 					break;
-	
+
 				case 0:
 					fac = sqrt( 15.0 / ( 32.0 * LAL_PI ) ) * sin( theta )*sin( theta );
 					break;
-	
+
 				case 1:
 					fac = sqrt( 5.0 / ( 16.0 * LAL_PI ) ) * sin( theta )*( 1.0 + cos( theta ));
 					break;
-	
+
 				case 2:
 					fac = sqrt( 5.0 / ( 64.0 * LAL_PI ) ) * ( 1.0 + cos( theta ))*( 1.0 + cos( theta ));
-					break;	   
+					break;
 				default:
 					XLALPrintError("XLAL Error - %s: Invalid mode s=%d, l=%d, m=%d - require |m| <= l\n", func, s, l, m );
 					XLAL_ERROR_VAL(func, XLAL_EINVAL, czero);
@@ -116,21 +116,21 @@ COMPLEX16 XLALSpinWeightedSphericalHarmonic(
 				case 1:
 					fac = -sqrt(35.0/(2.0*LAL_PI))*(sin(theta) - 4.0*sin(2.0*theta) - 3.0*sin(3.0*theta))/32.0;
 					break;
-	  
+
 				case 2:
 					fac = sqrt(7.0/LAL_PI)*pow(cos(theta/2.0),4.0)*(-2.0 + 3.0*cos(theta))/2.0;
-					break;	   
-	  
+					break;
+
 				case 3:
 					fac = -sqrt(21.0/(2.0*LAL_PI))*pow(cos(theta/2.0),5.0)*sin(theta/2.0);
-					break;	   
-	  
+					break;
+
 				default:
 					XLALPrintError("XLAL Error - %s: Invalid mode s=%d, l=%d, m=%d - require |m| <= l\n", func, s, l, m );
 					XLAL_ERROR_VAL(func, XLAL_EINVAL, czero);
 					break;
-			} 
-		}   /* l==3 */ 
+			}
+		}   /* l==3 */
 		else if ( l == 4 ) {
 			switch ( m ) {
 				case -4:
@@ -139,7 +139,7 @@ COMPLEX16 XLALSpinWeightedSphericalHarmonic(
 				case -3:
 					fac = 3.0*sqrt(7.0/(2.0*LAL_PI))*cos(theta/2.0)*(1.0 + 2.0*cos(theta))*pow(sin(theta/2.0),5.0);
 					break;
-	
+
 				case -2:
 					fac = (3.0*(9.0 + 14.0*cos(theta) + 7.0*cos(2.0*theta))*pow(sin(theta/2.0),4.0))/(4.0*sqrt(LAL_PI));
 					break;
@@ -154,13 +154,13 @@ COMPLEX16 XLALSpinWeightedSphericalHarmonic(
 					break;
 				case 2:
 					fac = (3.0*pow(cos(theta/2.0),4.0)*(9.0 - 14.0*cos(theta) + 7.0*cos(2.0*theta)))/(4.0*sqrt(LAL_PI));
-					break;	   
+					break;
 				case 3:
 					fac = -3.0*sqrt(7.0/(2.0*LAL_PI))*pow(cos(theta/2.0),5.0)*(-1.0 + 2.0*cos(theta))*sin(theta/2.0);
-					break;	   
+					break;
 				case 4:
 					fac = 3.0*sqrt(7.0/LAL_PI)*pow(cos(theta/2.0),6.0)*pow(sin(theta/2.0),2.0);
-					break;	   
+					break;
 				default:
 					XLALPrintError("XLAL Error - %s: Invalid mode s=%d, l=%d, m=%d - require |m| <= l\n", func, s, l, m );
 					XLAL_ERROR_VAL(func, XLAL_EINVAL, czero);
@@ -192,16 +192,16 @@ COMPLEX16 XLALSpinWeightedSphericalHarmonic(
 					break;
 				case 2:
 					fac = sqrt(11.0/LAL_PI)*pow(cos(theta/2.0),4.0)*(-32.0 + 57.0*cos(theta) - 36.0*cos(2.0*theta) + 15.0*cos(3.0*theta))/8.0;
-					break;	   
+					break;
 				case 3:
 					fac = -sqrt(33.0/(2.0*LAL_PI))*pow(cos(theta/2.0),5.0)*(17.0 - 24.0*cos(theta) + 15.0*cos(2.0*theta))*sin(theta/2.0)/4.0;
-					break;	   
+					break;
 				case 4:
 					fac = sqrt(33.0/LAL_PI)*pow(cos(theta/2.0),6.0)*(-2.0 + 5.0*cos(theta))*pow(sin(theta/2.0),2.0);
-					break;	   
+					break;
 				case 5:
 					fac = -sqrt(330.0/LAL_PI)*pow(cos(theta/2.0),7.0)*pow(sin(theta/2.0),3.0);
-					break;	   
+					break;
 				default:
 					XLALPrintError("XLAL Error - %s: Invalid mode s=%d, l=%d, m=%d - require |m| <= l\n", func, s, l, m );
 					XLAL_ERROR_VAL(func, XLAL_EINVAL, czero);
@@ -296,8 +296,8 @@ int XLALSimAddMode(
  * for non-spinning objects.
  *
  * Compare the overall coefficient, with nu=1/4, to Equation (45) of
- * Michael Boyle, Duncan A. Brown, Lawrence E. Kidder, Abdul H. Mroue, 
- * Harald P. Pfeiﬀer, Mark A. Scheel, Gregory B. Cook, and Saul A. Teukolsky 
+ * Michael Boyle, Duncan A. Brown, Lawrence E. Kidder, Abdul H. Mroue,
+ * Harald P. Pfeiﬀer, Mark A. Scheel, Gregory B. Cook, and Saul A. Teukolsky
  * "High-accuracy comparison of numerical relativity simulations with
  * post-Newtonian expansions"
  * arXiv:0710.0158v1 (2007).
@@ -347,8 +347,8 @@ REAL8 XLALSimInspiralPNAngularAcceleration(
  * This is from the definition of x.
  *
  * Implements Equation (46) of
- * Michael Boyle, Duncan A. Brown, Lawrence E. Kidder, Abdul H. Mroue, 
- * Harald P. Pfeiﬀer, Mark A. Scheel, Gregory B. Cook, and Saul A. Teukolsky 
+ * Michael Boyle, Duncan A. Brown, Lawrence E. Kidder, Abdul H. Mroue,
+ * Harald P. Pfeiﬀer, Mark A. Scheel, Gregory B. Cook, and Saul A. Teukolsky
  * "High-accuracy comparison of numerical relativity simulations with
  * post-Newtonian expansions"
  * arXiv:0710.0158v1 (2007).
@@ -380,7 +380,7 @@ REAL8 XLALSimInspiralPNAngularVelocity(
  * Yi Pan, Alessandra Buonanno, Yanbei Chen, and Michele Vallisneri,
  * "A physical template family for gravitational waves from precessing
  * binaries of spinning compact objects: Application to single-spin binaries"
- * arXiv:gr-qc/0310034v3 (2007). 
+ * arXiv:gr-qc/0310034v3 (2007).
  * Note: this equation is actually dx/dt rather than (domega/dt)/(omega)^2
  * so the leading coefficient is different.
  */
@@ -436,8 +436,8 @@ static int XLALSimInspiralPNEvolveOrbitTaylorT4Integrand(double t, const double 
  * Evolves a post-Newtonian orbit using the Taylor T4 method.
  *
  * See:
- * Michael Boyle, Duncan A. Brown, Lawrence E. Kidder, Abdul H. Mroue, 
- * Harald P. Pfeiﬀer, Mark A. Scheel, Gregory B. Cook, and Saul A. Teukolsky 
+ * Michael Boyle, Duncan A. Brown, Lawrence E. Kidder, Abdul H. Mroue,
+ * Harald P. Pfeiﬀer, Mark A. Scheel, Gregory B. Cook, and Saul A. Teukolsky
  * "High-accuracy comparison of numerical relativity simulations with
  * post-Newtonian expansions"
  * arXiv:0710.0158v1 (2007).
@@ -645,7 +645,7 @@ int XLALSimInspiralPNPolarizationWaveforms(
 
 /**
  * Driver routine to compute the post-Newtonian inspiral waveform.
- * 
+ *
  * This routine allows the user to specify different pN orders
  * for phasing calcuation vs. amplitude calculations.
  */
@@ -683,7 +683,7 @@ int XLALSimInspiralPNGenerator(
 
 /**
  * Driver routine to compute the post-Newtonian inspiral waveform.
- * 
+ *
  * This routine uses the same pN order for phasing and amplitude
  * (unless the order is -1 in which case the highest available
  * order is used for both of these -- which might not be the same).
@@ -710,7 +710,7 @@ int XLALSimInspiralPN(
 
 /**
  * Driver routine to compute the restricted post-Newtonian inspiral waveform.
- * 
+ *
  * This routine computes the phasing to the specified order, but
  * only computes the amplitudes to the Newtonian (quadrupole) order.
  *

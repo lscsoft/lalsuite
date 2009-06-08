@@ -204,7 +204,7 @@ LALSI2InjectTimeSeries( LALStatus       *stat,
     REAL4 y = signal->data->data[j];
 
     /* Compute the dithering. */
-    LALUniformDeviate( stat->statusPtr, &d, internal ); 
+    LALUniformDeviate( stat->statusPtr, &d, internal );
     BEGINFAIL( stat )
       if ( !params ) {
 	TRY( LALDestroyRandomParams( stat->statusPtr, &internal ),
