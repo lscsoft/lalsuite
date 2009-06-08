@@ -350,10 +350,10 @@ extern const SFTandSignalParams empty_SFTandSignalParams;
 
 
 /* Function prototypes */
-void LALGeneratePulsarSignal (LALStatus *, REAL4TimeSeries **signal, const PulsarSignalParams *params);
+void LALGeneratePulsarSignal (LALStatus *, REAL4TimeSeries **signalvec, const PulsarSignalParams *params);
 void LALSimulateExactPulsarSignal (LALStatus *, REAL4TimeSeries **timeSeries, const PulsarSignalParams *params);
 
-void LALSignalToSFTs (LALStatus *, SFTVector **outputSFTs, const REAL4TimeSeries *signal, const SFTParams *params);
+void LALSignalToSFTs (LALStatus *, SFTVector **outputSFTs, const REAL4TimeSeries *signalvec, const SFTParams *params);
 
 void LALComputeSkyAndZeroPsiAMResponse (LALStatus *, SkyConstAndZeroPsiAMResponse *output, const SFTandSignalParams *params);
 void LALFastGeneratePulsarSFTs (LALStatus *, SFTVector **outputSFTs, const SkyConstAndZeroPsiAMResponse *input, const SFTandSignalParams *params);

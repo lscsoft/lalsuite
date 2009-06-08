@@ -40,7 +40,7 @@ integers, with dithering.
 
 The function \verb@LALSI2InjectTimeSeries()@ (i.e.\ ``Single-precision
 to \verb@INT2@'') dithers each sample in \verb@*output@, adds the
-nearest time sample from \verb@*signal@, and rounds to the nearest
+nearest time sample from \verb@*signalvec@, and rounds to the nearest
 integer, storing the result back in \verb@*output@.  If desired, the
 random parameters for the dithering can be created outside this
 routine and passed in as \verb@*params@ (see \verb@Random.h@); if this
@@ -48,7 +48,7 @@ pointer is \verb@NULL@, the parameters will be generated internally.
 
 The function \verb@LALSSInjectVector()@ (i.e.\ ``Single-precision to
 single-precision'') simply takes each sample from \verb@*output@ and
-adds the nearest corresponding time sample from \verb@*signal@,
+adds the nearest corresponding time sample from \verb@*signalvec@,
 without performing any dithering.
 
 \subsubsection*{Algorithm}
@@ -57,12 +57,12 @@ The algorithm is as given in \verb@InjectVector.c@, with the following
 additional considerations.  Since the two time series each carry their
 own information about epoch and sampling interval, the value to be
 injected at a given point in \verb@*output@ is found by taking the
-nearest time sample in \verb@*signal@.  Injection is only performed
-over the range in times that \verb@*output@ and \verb@*signal@
+nearest time sample in \verb@*signalvec@.  Injection is only performed
+over the range in times that \verb@*output@ and \verb@*signalvec@
 overlap; other values in \verb@*output@ are untouched.
 
 Previous versions of this algorithm found the value to be injected by
-interpolating the two nearest samples in \verb@*signal@, which reduces
+interpolating the two nearest samples in \verb@*signalvec@, which reduces
 high-frequency aliasing noise and ensures that the pre- and
 post-injection signals agree in timing to within a fraction of a
 sample.  However, this interpolation effectively convolved the signal
@@ -102,15 +102,15 @@ NRCSID( INJECTTIMESERIESC, "$Id$" );
 void
 LALSI2InjectTimeSeries( LALStatus       *stat,
 			INT2TimeSeries  *output,
-			REAL4TimeSeries *signal,
+			REAL4TimeSeries *signalvec,
 			RandomParams    *params )
 { /* </lalVerbatim> */
   INT4 n;  /* 1 + highest index of output touched by the injection */
   INT4 i;  /* index over output data */
   INT2 *outData; /* pointer to output->data->data */
-  REAL8 dt;      /* output->deltaT in units of signal->deltaT */
-  REAL8 offset;  /* the time from the start of *signal to the start
-		     of *output, in units of signal->deltaT. */
+  REAL8 dt;      /* output->deltaT in units of signalvec->deltaT */
+  REAL8 offset;  /* the time from the start of *signalvec to the start
+		     of *output, in units of signalvec->deltaT. */
   RandomParams *internal = NULL; /* internal random parameters */
 
   const INT2 max = 32767;  /* largest INT2 */
@@ -120,17 +120,17 @@ LALSI2InjectTimeSeries( LALStatus       *stat,
   ATTATCHSTATUSPTR( stat );
 
   /* Make sure parameter structures and their fields exist. */
-  ASSERT( signal, stat, INJECTH_ENUL, INJECTH_MSGENUL );
-  ASSERT( signal->data, stat, INJECTH_ENUL, INJECTH_MSGENUL );
-  ASSERT( signal->data->data, stat, INJECTH_ENUL, INJECTH_MSGENUL );
+  ASSERT( signalvec, stat, INJECTH_ENUL, INJECTH_MSGENUL );
+  ASSERT( signalvec->data, stat, INJECTH_ENUL, INJECTH_MSGENUL );
+  ASSERT( signalvec->data->data, stat, INJECTH_ENUL, INJECTH_MSGENUL );
   ASSERT( output, stat, INJECTH_ENUL, INJECTH_MSGENUL );
   ASSERT( output->data, stat, INJECTH_ENUL, INJECTH_MSGENUL );
   ASSERT( output->data->data, stat, INJECTH_ENUL, INJECTH_MSGENUL );
   outData = output->data->data;
 
   /* Make sure we never divide by zero. */
-  ASSERT( signal->deltaT != 0.0, stat, INJECTH_EBAD, INJECTH_MSGEBAD );
-  dt = output->deltaT / signal->deltaT;
+  ASSERT( signalvec->deltaT != 0.0, stat, INJECTH_EBAD, INJECTH_MSGEBAD );
+  dt = output->deltaT / signalvec->deltaT;
   ASSERT( dt != 0.0, stat, INJECTH_EBAD, INJECTH_MSGEBAD );
 
   /* Check dimensions. */
@@ -139,7 +139,7 @@ LALSI2InjectTimeSeries( LALStatus       *stat,
     BOOLEAN unitsOK;
     LALUnitPair pair;
 
-    pair.unitOne = &(signal->sampleUnits);
+    pair.unitOne = &(signalvec->sampleUnits);
     pair.unitTwo = &lalADCCountUnit;
     TRY( LALUnitCompare( stat->statusPtr, &unitsOK, &pair ), stat );
     ASSERT( unitsOK, stat, INJECTH_EUNIT, INJECTH_MSGEUNIT );
@@ -147,7 +147,7 @@ LALSI2InjectTimeSeries( LALStatus       *stat,
     TRY( LALUnitCompare( stat->statusPtr, &unitsOK, &pair ), stat );
     ASSERT( unitsOK, stat, INJECTH_EUNIT, INJECTH_MSGEUNIT );
     LALSnprintf( newName, LALNameLength, "%s plus %s", output->name,
-		 signal->name );
+		 signalvec->name );
     memcpy( output->name, newName, LALNameLength*sizeof(CHAR) );
   }
 
@@ -159,11 +159,11 @@ LALSI2InjectTimeSeries( LALStatus       *stat,
     internal = params;
 
   /* Compute offset. */
-  offset = ( output->epoch.gpsSeconds - signal->epoch.gpsSeconds ) /
-    signal->deltaT;
+  offset = ( output->epoch.gpsSeconds - signalvec->epoch.gpsSeconds ) /
+    signalvec->deltaT;
   offset += ( output->epoch.gpsNanoSeconds -
-	      signal->epoch.gpsNanoSeconds ) * 1.0e-9 /
-    signal->deltaT;
+	      signalvec->epoch.gpsNanoSeconds ) * 1.0e-9 /
+    signalvec->deltaT;
 
   /* Compute initial value of i, and correct to ensure we will never
      index either array out of its bounds. */
@@ -178,10 +178,10 @@ LALSI2InjectTimeSeries( LALStatus       *stat,
 
   /* Compute final value of i+1, and correct to ensure we will never
      index either array out of its bounds. */
-  n = (INT4)( ( signal->data->length - offset ) / dt );
+  n = (INT4)( ( signalvec->data->length - offset ) / dt );
   if ( n > (INT4)( output->data->length ) )
     n = output->data->length;
-  while ( offset + n*dt > signal->data->length )
+  while ( offset + n*dt > signalvec->data->length )
     n--;
   if ( n <= 0 )
     LALWarning( stat, "Signal ends before the start of the output"
@@ -196,12 +196,12 @@ LALSI2InjectTimeSeries( LALStatus       *stat,
     REAL8 t = offset + i*dt;          interpolated signal index
     INT4 j = (INT4)floor( t );        signal index preceding t
     REAL4 frac = (REAL4)( t - j );    interpolation fraction
-    REAL4 y = frac*(signal->data->data[j+1]) +    interpolated signal
-      ( 1.0 - frac )*(signal->data->data[j]);     value */
+    REAL4 y = frac*(signalvec->data->data[j+1]) +    interpolated signal
+      ( 1.0 - frac )*(signalvec->data->data[j]);     value */
 
     /* Extract the nearest signal sample. */
     INT4 j = (INT4)floor( offset + i*dt + 0.5 );
-    REAL4 y = signal->data->data[j];
+    REAL4 y = signalvec->data->data[j];
 
     /* Compute the dithering. */
     LALUniformDeviate( stat->statusPtr, &d, internal );
@@ -235,30 +235,30 @@ LALSI2InjectTimeSeries( LALStatus       *stat,
 void
 LALSSInjectTimeSeries( LALStatus       *stat,
 		       REAL4TimeSeries *output,
-		       REAL4TimeSeries *signal )
+		       REAL4TimeSeries *signalvec )
 { /* </lalVerbatim> */
   INT4 n;  /* 1 + highest index of output touched by the injection */
   INT4 i;  /* index over output data */
   REAL4 *outData; /* pointer to output->data->data */
-  REAL8 dt;       /* output->deltaT in units of signal->deltaT */
-  REAL8 offset;   /* the time from the start of *signal to the start
-		     of *output, in units of signal->deltaT. */
+  REAL8 dt;       /* output->deltaT in units of signalvec->deltaT */
+  REAL8 offset;   /* the time from the start of *signalvec to the start
+		     of *output, in units of signalvec->deltaT. */
 
   INITSTATUS( stat, "LALSSInjectTimeSeries", INJECTTIMESERIESC );
   ATTATCHSTATUSPTR( stat );
 
   /* Make sure parameter structures and their fields exist. */
-  ASSERT( signal, stat, INJECTH_ENUL, INJECTH_MSGENUL );
-  ASSERT( signal->data, stat, INJECTH_ENUL, INJECTH_MSGENUL );
-  ASSERT( signal->data->data, stat, INJECTH_ENUL, INJECTH_MSGENUL );
+  ASSERT( signalvec, stat, INJECTH_ENUL, INJECTH_MSGENUL );
+  ASSERT( signalvec->data, stat, INJECTH_ENUL, INJECTH_MSGENUL );
+  ASSERT( signalvec->data->data, stat, INJECTH_ENUL, INJECTH_MSGENUL );
   ASSERT( output, stat, INJECTH_ENUL, INJECTH_MSGENUL );
   ASSERT( output->data, stat, INJECTH_ENUL, INJECTH_MSGENUL );
   ASSERT( output->data->data, stat, INJECTH_ENUL, INJECTH_MSGENUL );
   outData = output->data->data;
 
   /* Make sure we never divide by zero. */
-  ASSERT( signal->deltaT != 0.0, stat, INJECTH_EBAD, INJECTH_MSGEBAD );
-  dt = output->deltaT / signal->deltaT;
+  ASSERT( signalvec->deltaT != 0.0, stat, INJECTH_EBAD, INJECTH_MSGEBAD );
+  dt = output->deltaT / signalvec->deltaT;
   ASSERT( dt != 0.0, stat, INJECTH_EBAD, INJECTH_MSGEBAD );
 
   /* Check dimensions. */
@@ -267,7 +267,7 @@ LALSSInjectTimeSeries( LALStatus       *stat,
     BOOLEAN unitsOK;
     LALUnitPair pair;
 
-    pair.unitOne = &(signal->sampleUnits);
+    pair.unitOne = &(signalvec->sampleUnits);
     pair.unitTwo = &lalADCCountUnit;
     TRY( LALUnitCompare( stat->statusPtr, &unitsOK, &pair ), stat );
     ASSERT( unitsOK, stat, INJECTH_EUNIT, INJECTH_MSGEUNIT );
@@ -275,16 +275,16 @@ LALSSInjectTimeSeries( LALStatus       *stat,
     TRY( LALUnitCompare( stat->statusPtr, &unitsOK, &pair ), stat );
     ASSERT( unitsOK, stat, INJECTH_EUNIT, INJECTH_MSGEUNIT );
     LALSnprintf( newName, LALNameLength, "%s plus %s", output->name,
-		 signal->name );
+		 signalvec->name );
     memcpy( output->name, newName, LALNameLength*sizeof(CHAR) );
   }
 
   /* Compute offset. */
-  offset = ( output->epoch.gpsSeconds - signal->epoch.gpsSeconds ) /
-    signal->deltaT;
+  offset = ( output->epoch.gpsSeconds - signalvec->epoch.gpsSeconds ) /
+    signalvec->deltaT;
   offset += ( output->epoch.gpsNanoSeconds -
-	      signal->epoch.gpsNanoSeconds ) * 1.0e-9 /
-    signal->deltaT;
+	      signalvec->epoch.gpsNanoSeconds ) * 1.0e-9 /
+    signalvec->deltaT;
 
   /* Compute initial value of i, and correct to ensure we will never
      index either array out of its bounds. */
@@ -299,10 +299,10 @@ LALSSInjectTimeSeries( LALStatus       *stat,
 
   /* Compute final value of i+1, and correct to ensure we will never
      index either array out of its bounds. */
-  n = (INT4)( ( signal->data->length - offset ) / dt );
+  n = (INT4)( ( signalvec->data->length - offset ) / dt );
   if ( n > (INT4)( output->data->length ) )
     n = output->data->length;
-  while ( offset + n*dt > signal->data->length )
+  while ( offset + n*dt > signalvec->data->length )
     n--;
   if ( n <= 0 )
     LALWarning( stat, "Signal ends before the start of the output"
@@ -315,12 +315,12 @@ LALSSInjectTimeSeries( LALStatus       *stat,
     REAL8 t = offset + i*dt;          interpolated signal index
     INT4 j = (INT4)floor( t );        signal index preceding t
     REAL4 frac = (REAL4)( t - j );    interpolation fraction
-    REAL4 y = frac*(signal->data->data[j+1]) +    interpolated signal
-      ( 1.0 - frac )*(signal->data->data[j]);     value */
+    REAL4 y = frac*(signalvec->data->data[j+1]) +    interpolated signal
+      ( 1.0 - frac )*(signalvec->data->data[j]);     value */
 
     /* Extract the nearest signal sample. */
     INT4 j = (INT4)floor( offset + i*dt + 0.5 );
-    REAL4 y = signal->data->data[j];
+    REAL4 y = signalvec->data->data[j];
 
     /* Add the signal to the output. */
     outData[i] += y;

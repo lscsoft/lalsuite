@@ -77,7 +77,7 @@ const SFTandSignalParams empty_SFTandSignalParams;
  */
 void
 LALGeneratePulsarSignal (LALStatus *status,
-			 REAL4TimeSeries **signal, 	   /**< output time-series */
+			 REAL4TimeSeries **signalvec, 	   /**< output time-series */
 			 const PulsarSignalParams *params) /**< input params */
 {
   SpinOrbitCWParamStruc sourceParams = emptyCWParams;
@@ -91,8 +91,8 @@ LALGeneratePulsarSignal (LALStatus *status,
   INITSTATUS( status, "LALGeneratePulsarSignal", GENERATEPULSARSIGNALC );
   ATTATCHSTATUSPTR (status);
 
-  ASSERT (signal != NULL, status, GENERATEPULSARSIGNALH_ENULL, GENERATEPULSARSIGNALH_MSGENULL);
-  ASSERT (*signal == NULL, status,  GENERATEPULSARSIGNALH_ENONULL,  GENERATEPULSARSIGNALH_MSGENONULL);
+  ASSERT (signalvec != NULL, status, GENERATEPULSARSIGNALH_ENULL, GENERATEPULSARSIGNALH_MSGENULL);
+  ASSERT (*signalvec == NULL, status,  GENERATEPULSARSIGNALH_ENONULL,  GENERATEPULSARSIGNALH_MSGENONULL);
 
   /*----------------------------------------------------------------------
    *
@@ -244,7 +244,7 @@ LALGeneratePulsarSignal (LALStatus *status,
   TRY (LALDDestroyVector(status->statusPtr, &(sourceSignal.phi->data )), status);
   LALFree(sourceSignal.phi);
 
-  *signal = output;
+  *signalvec = output;
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
@@ -258,7 +258,7 @@ LALGeneratePulsarSignal (LALStatus *status,
 void
 LALSignalToSFTs (LALStatus *status,
 		 SFTVector **outputSFTs,	/**< [out] SFT-vector */
-		 const REAL4TimeSeries *signal, /**< input time-series */
+		 const REAL4TimeSeries *signalvec, /**< input time-series */
 		 const SFTParams *params)	/**< params for output-SFTs */
 {
   UINT4 numSFTs;			/* number of SFTs */
@@ -287,7 +287,7 @@ LALSignalToSFTs (LALStatus *status,
 
   ASSERT (outputSFTs != NULL, status, GENERATEPULSARSIGNALH_ENULL, GENERATEPULSARSIGNALH_MSGENULL);
   ASSERT (*outputSFTs == NULL, status,  GENERATEPULSARSIGNALH_ENONULL,  GENERATEPULSARSIGNALH_MSGENONULL);
-  ASSERT (signal != NULL, status, GENERATEPULSARSIGNALH_ENULL, GENERATEPULSARSIGNALH_MSGENULL);
+  ASSERT (signalvec != NULL, status, GENERATEPULSARSIGNALH_ENULL, GENERATEPULSARSIGNALH_MSGENULL);
   ASSERT (params != NULL, status, GENERATEPULSARSIGNALH_ENULL, GENERATEPULSARSIGNALH_MSGENULL);
 
   /* UPGRADING switch: complain loudly if user didn't set 'make_v2SFTs' to encourage upgrading */
@@ -302,8 +302,8 @@ LALSignalToSFTs (LALStatus *status,
       fprintf (stderr, "********************************************************************************\n\n");
     }
 
-  f0 = signal->f0;				/* lowest frequency */
-  dt = signal->deltaT;		/* timeseries timestep */
+  f0 = signalvec->f0;				/* lowest frequency */
+  dt = signalvec->deltaT;		/* timeseries timestep */
   Band = 1.0 / (2.0 * dt);		/* NOTE: frequency-band is determined by sampling-rate! */
   deltaF = 1.0 / params->Tsft;			/* frequency-resolution */
 
@@ -323,10 +323,10 @@ LALSignalToSFTs (LALStatus *status,
   TRY (LALCreateForwardRealFFTPlan(status->statusPtr, &pfwd, numTimesteps, 0), status);
 
   /* get some info about time-series */
-  tStart = signal->epoch;					/* start-time of time-series */
+  tStart = signalvec->epoch;					/* start-time of time-series */
 
   /* get last possible start-time for an SFT */
-  duration =  (UINT4) (1.0* signal->data->length * dt + 0.5); /* total duration rounded to seconds */
+  duration =  (UINT4) (1.0* signalvec->data->length * dt + 0.5); /* total duration rounded to seconds */
   TRY ( LALAddFloatToGPS(status->statusPtr, &tLast, &tStart, duration - params->Tsft), status);
 
   /* for simplicity we _always_ work with timestamps.
@@ -378,20 +378,20 @@ LALSignalToSFTs (LALStatus *status,
       /* find the start-bin for this SFT in the time-series */
       TRY ( LALDeltaFloatGPS(status->statusPtr, &delay, &(timestamps->data[iSFT]), &tPrev), status);
       /* round properly: picks *closest* timestep (==> "nudging") !!  */
-      relIndexShift = (INT4) (delay / signal->deltaT + 0.5);
+      relIndexShift = (INT4) (delay / signalvec->deltaT + 0.5);
       totalIndex += relIndexShift;
 
       timeStretch.length = numTimesteps;
-      timeStretch.data = signal->data->data + totalIndex; /* point to the right sample-bin */
+      timeStretch.data = signalvec->data->data + totalIndex; /* point to the right sample-bin */
 
       /* fill the header of the i'th output SFT */
-      realDelay = (REAL4)(relIndexShift * signal->deltaT);  /* avoid rounding-errors*/
+      realDelay = (REAL4)(relIndexShift * signalvec->deltaT);  /* avoid rounding-errors*/
       TRY (LALAddFloatToGPS(status->statusPtr, &tmpTime,&tPrev, realDelay),status);
 
-      strcpy ( thisSFT->name, signal->name );
+      strcpy ( thisSFT->name, signalvec->name );
       /* set the ACTUAL timestamp! (can be different from requested one ==> "nudging") */
       thisSFT->epoch = tmpTime;
-      thisSFT->f0 = signal->f0;			/* minimum frequency */
+      thisSFT->f0 = signalvec->f0;			/* minimum frequency */
       thisSFT->deltaF = 1.0 / params->Tsft;	/* frequency-spacing */
 
       tPrev = tmpTime;				/* prepare next loop */
@@ -406,7 +406,7 @@ LALSignalToSFTs (LALStatus *status,
 	      LALPrintError ("Warning: timestamp %d had to be 'nudged' by %e s to fit"
 			     "with time-series\n", iSFT, diff);
 	      /* double check if magnitude of nudging seems reasonable .. */
-	      if ( fabs(diff) >= signal->deltaT )
+	      if ( fabs(diff) >= signalvec->deltaT )
 		{
 		  LALPrintError ("WARNING: nudged by more than deltaT=%e... "
 				 "this sounds wrong! (We better stop)\n");
@@ -443,12 +443,12 @@ LALSignalToSFTs (LALStatus *status,
       } /* normalize data */
 
       /* correct heterodyning-phase, IF NECESSARY */
-      if ( ( (INT4)signal->f0 != signal->f0  )
-	   || (signal->epoch.gpsNanoSeconds != 0)
+      if ( ( (INT4)signalvec->f0 != signalvec->f0  )
+	   || (signalvec->epoch.gpsNanoSeconds != 0)
 	   || (thisSFT->epoch.gpsNanoSeconds != 0) )
 	{
-	  /* theterodyne = signal->epoch!*/
-	  correct_phase(status->statusPtr, thisSFT, signal->epoch);
+	  /* theterodyne = signalvec->epoch!*/
+	  correct_phase(status->statusPtr, thisSFT, signalvec->epoch);
 	  BEGINFAIL (status) {
 	    LALDestroySFTVector(status->statusPtr, &sftvect);
 	  } ENDFAIL (status);
