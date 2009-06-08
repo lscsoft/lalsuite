@@ -539,7 +539,7 @@ COMPLEX8FrequencySeries *generateActuation(
     REAL4                    pendQ  /* the pendulum Q */
     )
 {
-  INT4   k;
+  UINT4  k;
   REAL4  fNorm = 0;
   COMPLEX8Vector *num = NULL;
   COMPLEX8Vector *denom = NULL;
