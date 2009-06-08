@@ -109,7 +109,8 @@ XLALGenerateInspRing(
   REAL4                 orbAngMom, totalAngMom;
   REAL4                 Jx, Jy, Jz;
 
-  REAL4                 splus, scross, cosiota, cosiotaA, cosiotaB;
+  /*REAL4                 splus, scross, cosiotaA, cosiotaB;*/
+  REAL4                 cosiota;
 
   /*
    *
