@@ -94,8 +94,8 @@ XLALGenerateInspRing(
   REAL4 freqDot;
   REAL4 freq0;
   REAL4 freqDot0;
-  REAL4 polarization;
-  REAL4 polDot;
+  REAL4 polarization = 0;
+  REAL4 polDot = 0;
   REAL4 dampFac;
   REAL4 phaseFac;
   REAL4 A, lambda;
