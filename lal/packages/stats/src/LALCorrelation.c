@@ -19,7 +19,7 @@
 
 /************************************ <lalVerbatim file="LALCorrelationCV">
 Author: Yakushin, Igor
-$Id$  
+$Id$
 ************************************* </lalVerbatim> */
 
 /********************************************************** <lalLaTeX>
@@ -33,21 +33,21 @@ $Id$
 
 \subsubsection*{Description}
 
-\textbf{LALCorrelation} is designed to compute a time shifted correlation between 
+\textbf{LALCorrelation} is designed to compute a time shifted correlation between
 two time series given in \textbf{input->one} and \textbf{input->two}.
 The maximum time shift in nanoseconds is given in \textbf{params->maxTimeShiftNan}. The output consists of a correlation for each
 time shift in the range \textbf{out->timeShiftedCorrelation}, maximum and minimum values of correlations and corresponding time shifts.
 The original intention is to use this function to test coincendence bursts found in two detectors for correlation.
-For this to work one must apply a response function to the raw time series in order to get rid of hardware specific contributions 
-to each time series. The signature of the coincendence event is a clear maximum above some threshold in the graph of correlation vs time shift 
-(no more than 10 ms). 
+For this to work one must apply a response function to the raw time series in order to get rid of hardware specific contributions
+to each time series. The signature of the coincendence event is a clear maximum above some threshold in the graph of correlation vs time shift
+(no more than 10 ms).
 
 One might, of course, try to use the code to search for any correlations in the data caused by any kind of gravitational waves but
 that seems to be too computationally expensive.
 
 \subsubsection*{Algorithm}
 
-Just a straightforward computation of correlation for different time shifts. This computation is applied to time series of the length 
+Just a straightforward computation of correlation for different time shifts. This computation is applied to time series of the length
 $originalLength - maxShift$.
 
 \subsubsection*{Uses}
@@ -65,7 +65,7 @@ threshold on the maximum correlation value should be applied to declare a good c
 
 \vfill{\footnotesize\input{LALCorrelationCV}}
 
-******************************************************* </lalLaTeX> */ 
+******************************************************* </lalLaTeX> */
 
 /******* INCLUDE STANDARD LIBRARY HEADERS; ************/
 /* note LALStdLib.h already includes stdio.h and stdarg.h */
@@ -107,7 +107,7 @@ LALCorrelation( LALStatus                      *status,
   /******* DECLARE VARIABLES; for example: ************/
 
   REAL4 mean1, mean2, var1, var2, cov12, cor;
-  INT4 shift; 
+  INT4 shift;
   INT4 i;
   UINT4 length;
   REAL4 *data1, *data2;
@@ -132,7 +132,7 @@ LALCorrelation( LALStatus                      *status,
     ABORT( status, LALCORRELATIONH_ESTART, LALCORRELATIONH_MSGESTART);
   }
 
-  if(input->one->deltaT != input->two->deltaT || 
+  if(input->one->deltaT != input->two->deltaT ||
      input->one->data->length!=input->two->data->length){
     ABORT( status, LALCORRELATIONH_ESAMPLING, LALCORRELATIONH_MSGESAMPLING);
   }
@@ -214,7 +214,7 @@ static REAL4 findMean( REAL4 data[], UINT4 length ) {
 
   mean = 0.0;
 
-  for ( i = 0 ; i < length ; ++i ) 
+  for ( i = 0 ; i < length ; ++i )
   {
     mean += data[i];
   }
@@ -228,7 +228,7 @@ static REAL4 findVariance( REAL4 data[], REAL4 mean, UINT4 length ) {
 
   var = 0.0;
 
-  for ( i = 0 ; i < length ; ++i ) 
+  for ( i = 0 ; i < length ; ++i )
   {
     var += (data[i]-mean)*(data[i]-mean) ;
   }
@@ -243,7 +243,7 @@ static REAL4 findCrossProduct( REAL4 data1[], REAL4 mean1, REAL4 data2[], REAL4 
   for(i=0;i<length;i++){
     result+=(data1[i]-mean1)*(data2[i]-mean2);
   }
-  
+
   result/=length-1;
 
   return result;

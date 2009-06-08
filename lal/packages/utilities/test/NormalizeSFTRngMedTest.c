@@ -20,17 +20,17 @@
 /*-----------------------------------------------------------------------
  *
  * File Name: SFTCleanTest.c
- * Authors:  Krishnan, B. 
+ * Authors:  Krishnan, B.
  *
  * Revision: $Id$
  *
  * History:   Created by Krishnan August 2005
- *            
+ *
  *
  *-----------------------------------------------------------------------
  */
 /************************************ <lalVerbatim file="NormalizeSFTRngMedTestCV">
-Author: Krishnan, B.  
+Author: Krishnan, B.
 $Id$
 ************************************* </lalVerbatim> */
 
@@ -40,7 +40,7 @@ $Id$
 
 
 #include <lal/NormalizeSFTRngMed.h>
-#include <glob.h> 
+#include <glob.h>
 #include <lal/GeneratePulsarSignal.h>
 
 NRCSID (NORMALIZESFTRNGMEDC, "$Id$");
@@ -115,8 +115,8 @@ char *lalWatch;
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
 /* vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv------------------------------------ */
-int main(int argc, char *argv[]){ 
-  static LALStatus    status;  /* LALStatus pointer */ 
+int main(int argc, char *argv[]){
+  static LALStatus    status;  /* LALStatus pointer */
 
   static SFTVector  *sft=NULL;
 
@@ -142,7 +142,7 @@ int main(int argc, char *argv[]){
   uvar_help = FALSE;
 
   uvar_blockSize = BLKSIZE;
-  
+
   uvar_inputSFTDir = (CHAR *)LALMalloc(256 * sizeof(CHAR));
   strcpy(uvar_inputSFTDir, INPUTSFTDIR);
 
@@ -150,7 +150,7 @@ int main(int argc, char *argv[]){
   strcpy(uvar_outputSFTDir, OUTPUTSFTDIR);
 
   /* register user input variables */
-  SUB( LALRegisterBOOLUserVar(   &status, "help",         'h', UVAR_HELP,     "Print this message",    &uvar_help),         &status);  
+  SUB( LALRegisterBOOLUserVar(   &status, "help",         'h', UVAR_HELP,     "Print this message",    &uvar_help),         &status);
   SUB( LALRegisterSTRINGUserVar( &status, "inputSFTDir",  'i', UVAR_OPTIONAL, "Input SFT Directory",   &uvar_inputSFTDir),  &status);
   SUB( LALRegisterSTRINGUserVar( &status, "outputSFTDir", 'o', UVAR_OPTIONAL, "Output SFT Directory",  &uvar_outputSFTDir), &status);
   SUB( LALRegisterINTUserVar(    &status, "blockSize",    'b', UVAR_OPTIONAL, "Rng Med block size",    &uvar_blockSize),    &status);
@@ -160,7 +160,7 @@ int main(int argc, char *argv[]){
 
   /* exit if help was required */
   if (uvar_help)
-    exit(0); 
+    exit(0);
 
   fname = (CHAR *)LALMalloc(256*sizeof(CHAR));
   strcpy(fname, uvar_inputSFTDir);
@@ -183,7 +183,7 @@ int main(int argc, char *argv[]){
 
   SUB (LALDestroyUserVars(&status), &status);
 
-  LALCheckMemoryLeaks(); 
+  LALCheckMemoryLeaks();
 
   INFO( NORMALIZESFTRNGMEDC_MSGENORM );
   return NORMALIZESFTRNGMEDC_ENORM;

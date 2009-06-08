@@ -42,7 +42,7 @@ This program tests the function
 \texttt{LALMersenneRandom()},which generates a random
 number based on the Mersenne Twister algorithm.
 
-First, it tests that the correct error codes 
+First, it tests that the correct error codes
 are generated for the following error conditions passed
 to the function LALMersenneRandom() (tests in \textit{italics}
 are not performed if \verb+LAL_NEDEBUG+ is set, as the
@@ -54,7 +54,7 @@ corresponding checks in the code are made using the ASSERT macro):
 \item \textit{params not initialized}
 \end{itemize}
 
-Second, it tests that the correct error codes 
+Second, it tests that the correct error codes
 are generated for the following error conditions passed
 to the function LALMersenneRandomVector() (tests in \textit{italics}
 are not performed if \verb+LAL_NEDEBUG+ is set, as the
@@ -155,7 +155,7 @@ CheckStatus(LALStatus *status, const INT4 code, const CHAR *message,
             const INT4 exitcode, const CHAR *error);
 
 
-static void Usage 
+static void Usage
 (
 	const char	*program,
 	int		exitflag
@@ -314,7 +314,7 @@ int main( int argc, char *argv[] )
 	}
 	printf("\nPASS: outputVector length = 0 results in error:\n");
 	printf("       \"%s\"\n", RANDOMH_MSGEZERO);
-	outputVector->length = tempLength; 
+	outputVector->length = tempLength;
   }
 #endif
 
@@ -413,7 +413,7 @@ static void ParseOptions (int argc, char *argv[])
     }
 
     switch (c)
-    {        
+    {
       case 'd': /* set debug level */
         lalDebugLevel = atoi (optarg);
         break;
@@ -449,18 +449,18 @@ INT4
 CheckStatus(LALStatus *status, const INT4 code, const CHAR *message,
             const INT4 exitcode, const CHAR *error)
 {
-  
+
   if (optVerbose)
   {
     REPORTSTATUS (status);
   }
-  if (status->statusCode!= code) 
+  if (status->statusCode!= code)
   {
     if (code) printf ("  FAIL: did not recognize \"%s\"\n", message);
     if (optVerbose) printf("Exiting with error: %s\n", error);
     return(exitcode);
   }
-  else if (code && strcmp(message, status->statusDescription)) 
+  else if (code && strcmp(message, status->statusDescription))
   {
     printf("  FAIL: incorrect error message \"%s\" not \"%s\"\n",
            status->statusDescription, message);

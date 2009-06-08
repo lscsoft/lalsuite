@@ -40,23 +40,23 @@ Computes the response of a detector to a coherent gravitational wave.
 \subsubsection*{Description}
 
 (This is a temporary entry. It updates the SimulateCoherentGW.c routine
-in the following way. The SimulateCoherentGW.c routine time-shifts and 
+in the following way. The SimulateCoherentGW.c routine time-shifts and
 interpolates the time-domain waveform based on the input parameters. Further,
 it multiplies each time-point of this waveform with the value of the
-transfer function at the instantaneous frequency of the waveform at that 
-time-point. The modification below omits this last step. Instead it 
+transfer function at the instantaneous frequency of the waveform at that
+time-point. The modification below omits this last step. Instead it
 FFTs the time-shifted and interpolated time-domain waveform and multiplies
 the resulting frequency-domain waveform with the detector
 transfer function in the {\it frequency domain}. It then IFFTs the product
 to obtain the calibrated waveform. The position of the calibrated waveform
 in the output time-series is commensurate with the source sky-position, the
-detector location and the GPS start-time. 
+detector location and the GPS start-time.
 
 As such, all the changes can be found by searching for the string "CHECK:".
-But the main changes below are limited to the last several lines of the 
-routine. After completing the testing of these changes, we may decide to 
-migrate the modifications, which are essentially the last few lines, into a 
-separate routine that calls LALSimulateCoherentGW to do the time-shifting and 
+But the main changes below are limited to the last several lines of the
+routine. After completing the testing of these changes, we may decide to
+migrate the modifications, which are essentially the last few lines, into a
+separate routine that calls LALSimulateCoherentGW to do the time-shifting and
 the interpolation.)
 
 This function takes a quasiperiodic gravitational waveform given in
@@ -202,7 +202,7 @@ flag may be used to turn on other efficient trig algorithms on other
 #if defined HAVE_LIBSUNMATH && defined ONLINE
 #define USE_SINCOSP 1
 #endif
-#endif     
+#endif
 
 #include <math.h>
 #include <lal/LALStdio.h>
@@ -474,7 +474,7 @@ LALSimulateCoherentGW( LALStatus        *stat,
       TRY( LALConvertSkyCoordinates( stat->statusPtr, &source,
 				     &source, &params ), stat );
     }
-  } 
+  }
 
   /* Generate the table of propagation delays.
   dtDelayBy2 = (UINT4)( 38924.9/sqrt( output->f0 +
@@ -801,7 +801,7 @@ LALSimulateCoherentGW( LALStatus        *stat,
     INT4 j = (INT4)( -phiOff/phiDt - delayMax );
     if ( i < j )
       i = j;
-    while ( ( i < (INT4)( output->data->length ) ) && 
+    while ( ( i < (INT4)( output->data->length ) ) &&
 	    ( phiOff + TCENTRE( i )*phiDt < 0.0 ) )
       i++;
   }
@@ -1069,7 +1069,7 @@ LALSimulateCoherentGW( LALStatus        *stat,
 
   /* memset( tempWave->data, 0, startI*sizeof(REAL4) );
      memset( tempWave->data + n + 1, 0, (inTimeLength - n - 1) * sizeof(REAL4) );*/
- 
+
 
   for( l=0; l <= (inTimeLength - 1) ; l++)
     {
