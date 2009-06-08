@@ -42,21 +42,21 @@ int SetVerbatimFlags( LALEnvironment *VerbatimEnv, char *sourcefile , FILE *inSr
         VerbatimEnv->Preamble   = TopOfVerbatimEnv ;
         VerbatimEnv->PostFix    = EndOfVerbatimEnv ;
 
-    
+
         return 0;
 }
 
 /*
- * 
- * Routine that writes each line to the  LaTeX Verbatim  file 
+ *
+ * Routine that writes each line to the  LaTeX Verbatim  file
  *
  */
 int WriteVerbatim( char *line , LALEnvironment *Env )
-{  
+{
         char *onFlagOnCurrentLine;
         onFlagOnCurrentLine = strstr(line, Env->OnFlag );
 
-        if( onFlagOnCurrentLine  ){ 
+        if( onFlagOnCurrentLine  ){
 
              return 0;
         }
@@ -64,7 +64,7 @@ int WriteVerbatim( char *line , LALEnvironment *Env )
         {
              /* if we are in the in body of the Verbatim,  we print the line */
 	     /* deal with tabs */
-	     char tabout[MAXSTR];                        
+	     char tabout[MAXSTR];
 	     TabAlign(tabout, line, MAXSTR, TABSIZE);
              line = tabout ;
              /* fputs(line,stderr); */
@@ -107,12 +107,12 @@ EndOfVerbatimEnv(void  *recastToEnv )
 }
 
 
-/* 
- * Replaces tabs in verbatim code so that it is better formatted:  
- * Teviet Creighton 
+/*
+ * Replaces tabs in verbatim code so that it is better formatted:
+ * Teviet Creighton
  *
 */
-void 
+void
 TabAlign(char *out, char *in, int n, int tabsize)
      /* This routine writes an input string *in to string *out,
         replacing tab characters with spaces.  Each tab is replaced by

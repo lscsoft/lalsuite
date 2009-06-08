@@ -185,7 +185,6 @@ Phi_i ( double tt, void *params )
       LALStatus status = empty_status;
       EarthState earth;
       LIGOTimeGPS tGPS;
-      REAL8 rOrb[3];
       REAL8 rX, rY;
       REAL8 Rorb = LAL_AU_SI / LAL_C_SI;
 

@@ -25,7 +25,7 @@ define(`F2',`format(`LAL%sVectorIndexHole',TYPECODE)')
 
 /* Take a vector, and remove a range entries by given indices, then stuff
    that truncated vector in to the result vector */
-void F1 ( 
+void F1 (
          LALStatus  *status,
          VTYPE     **p_result,
          VTYPE      *p_v,
@@ -43,10 +43,10 @@ void F1 (
    * error-checking assertions
    */
   ASSERT(p_v, status, VECTORINDEXRANGEH_ENULL, VECTORINDEXRANGEH_MSGENULL);
-  ASSERT(p_v->length >= 1, status, VECTORINDEXRANGEH_ELNTH, 
+  ASSERT(p_v->length >= 1, status, VECTORINDEXRANGEH_ELNTH,
          VECTORINDEXRANGEH_MSGELNTH);
 
-  ASSERT(p_indexVector, status, VECTORINDEXRANGEH_ENULL, 
+  ASSERT(p_indexVector, status, VECTORINDEXRANGEH_ENULL,
          VECTORINDEXRANGEH_MSGENULL);
   ASSERT(p_indexVector->length == 2, status, VECTORINDEXRANGEH_ELNTH,
          VECTORINDEXRANGEH_MSGELNTH);
@@ -69,7 +69,7 @@ void F1 (
     {
       (*p_result)->data[iter - p_indexVector->data[0]] = p_v->data[iter];
     }
-  
+
   DETATCHSTATUSPTR( status );
   RETURN (status);
 }
@@ -115,7 +115,7 @@ void F2 ( LALStatus  *status,
 
   TRY(LAL`'TYPECODE`'VectorIndexRange(status->statusPtr, p_result_pair->head,
                                       p_v, head_index_range), status);
-  
+
   LAL`'TYPECODE`'VectorIndexRange(status->statusPtr, p_result_pair->tail,
                                   p_v, tail_index_range);
   BEGINFAIL(status)

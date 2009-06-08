@@ -16,20 +16,20 @@ define(`FUNC',`format(`LAL%sDestroyArraySequence',TYPECODE)')
 /* <lalVerbatim file="ArraySequenceFactoriesD"> */
 void FUNC ( LALStatus *status, STYPE **aseq )
 { /* </lalVerbatim> */
-  /* 
+  /*
    * Initialize status
    */
 
   INITSTATUS( status, "FUNC", ARRAYSEQUENCEFACTORIESC );
   ATTATCHSTATUSPTR( status );
-      
-  /* 
+
+  /*
    * Check aseq: is it non-NULL?
    */
 
-  ASSERT (aseq != NULL, status, SEQFACTORIESH_EVPTR, SEQFACTORIESH_MSGEVPTR); 
+  ASSERT (aseq != NULL, status, SEQFACTORIESH_EVPTR, SEQFACTORIESH_MSGEVPTR);
 
-  /* 
+  /*
    * Check aseq: does it point to non-NULL?
    */
 

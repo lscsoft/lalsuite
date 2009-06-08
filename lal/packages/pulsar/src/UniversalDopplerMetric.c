@@ -766,7 +766,7 @@ XLALComputeAtomsForFmetric ( const DopplerMetricParams *metricParams,  	/**< inp
   FmetricAtoms_t *ret;		/* return struct */
   intparams_t intparams = empty_intparams;
 
-  UINT4 dim, numDet, i, j, X;		/* index counters */
+  UINT4 dim, numDet, i=-1, j=-1, X;		/* index counters */
   REAL8 A, B, C;			/* antenna-pattern coefficients (gsl-integrated) */
 
   const LIGOTimeGPS *refTime, *startTime;

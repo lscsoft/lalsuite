@@ -22,12 +22,12 @@
 <lalVerbatim file="SimulatePopcornCV">
 Author: Tania Regimbau
 $Id$
-</lalVerbatim> 
+</lalVerbatim>
 <lalLaTeX>
 \subsection{Module \texttt{SimulatePopcorn.c}}
 \label{ss:SimulatePopcorn.c}
 
-Routine for simulating whitened time-domain signals in a pair 
+Routine for simulating whitened time-domain signals in a pair
 of detectors that arises from low duty cycle astrophysical backgrounds
 
 \subsubsection*{Prototypes}
@@ -36,13 +36,13 @@ of detectors that arises from low duty cycle astrophysical backgrounds
 
 \subsubsection*{Description}
 
-This routines  simulate stochastic backgrounds of astrophysical origin produced by the superposition of 'burst sources' since the beginning of the stellar activity. Depending on the ratio between the burst duration and the mean arrival time interval between events, such signals may be sequences of resolved bursts, 'popcorn noises' or continuous backgrounds. 
+This routines  simulate stochastic backgrounds of astrophysical origin produced by the superposition of 'burst sources' since the beginning of the stellar activity. Depending on the ratio between the burst duration and the mean arrival time interval between events, such signals may be sequences of resolved bursts, 'popcorn noises' or continuous backgrounds.
 
 \subsubsection*{Algorithm}
 
 The two unwhitened time series are produced according to the procedure discribed in Coward,Burman & Blair, 2002, MNRAS, 329.
 1) the arrival time of the events is randomly selected assuming a Poisson statistic.
-2) for each event, the distance z to the source is randomly selected. The probability distribution is given by normalizing the differential cosmic star formation rate. 
+2) for each event, the distance z to the source is randomly selected. The probability distribution is given by normalizing the differential cosmic star formation rate.
 3) for each event, the direction of arrival of the wave as well as the angle of polarization are randomly selected in order to compute the beam factors of the antenna.
 
 4) the resulting signal is the sum of the individual strain amplitudes expressed in our frame.
@@ -54,7 +54,7 @@ The frequency domain strains $\widetilde{o}_{1}$ and $\widetilde{o}_{2} in the o
 \begin {equation}
 \widetilde{o}_{2}  = \widetilde{R}_{2}(\widetilde{h}_{1}\gamma + \widetilde{h}_{1}\sqrt{1-\gamma^{2}})
 \end {equation}
-where  $widetilde{h}_{i}$ is the FFT and $\widetilde{R}_{i}$  the response function of the ith detector. 
+where  $widetilde{h}_{i}$ is the FFT and $\widetilde{R}_{i}$  the response function of the ith detector.
 In the second equation,  $\gamma$ is the overlap reduction function.
 
 Then the inverse FFTs give the whitened time series $o_{1}$ and $o_{2}$.
@@ -80,7 +80,7 @@ The cosmological model considered here corresponds to a flat Einstein de Sitter 
 #include <time.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
-#include <lal/StochasticCrossCorrelation.h> 
+#include <lal/StochasticCrossCorrelation.h>
 #include <lal/AVFactories.h>
 #include <lal/RealFFT.h>
 #include <lal/ComplexFFT.h>
@@ -90,7 +90,7 @@ The cosmological model considered here corresponds to a flat Einstein de Sitter 
 #include <lal/DetectorSite.h>
 #include "SimulatePopcorn.h"
 
-#define ho SIMULATEPOPCORN_ho 
+#define ho SIMULATEPOPCORN_ho
 #define om SIMULATEPOPCORN_OMEGAMATTER
 #define ov SIMULATEPOPCORN_OMEGAVACUUM
 NRCSID (SIMULATEPOPCORNC, "$Id$");
@@ -110,7 +110,7 @@ static void Fscalfunc (REAL4 *result, REAL4 Fp, REAL4 Fm);
 
 /* flat Einstein de Sitter universe */
 static void Ezfunc (REAL4 *result, REAL4 z)
- { 
+ {
   *result=sqrt(om*(1.+z)*(1.+z)*(1.+z)+ov);
   return;
  }
@@ -136,12 +136,12 @@ static void rfunc (LALStatus *s, REAL4 *result, REAL4 z)
   REAL4 r;
   INITSTATUS (s, "rfunc", SIMULATEPOPCORNC);
   ATTATCHSTATUSPTR (s);
-  
+
   zint.function = drfunc;
   zint.xmin     = 0;
   zint.xmax     = z;
   zint.type     = ClosedInterval;
-  LALSRombergIntegrate (s->statusPtr, &r, &zint, NULL); 
+  LALSRombergIntegrate (s->statusPtr, &r, &zint, NULL);
   *result=r;
   CHECKSTATUSPTR (s);
   DETATCHSTATUSPTR (s);
@@ -177,7 +177,7 @@ static void Rcfunc (REAL4 *result, REAL4 z)
 /*the normalisation factor 23 correspond to a cosmological model with omega_matter=0.3 and omega_vacuum=0.7*/
 static void  pzfunc (LALStatus *s, REAL4 *result, REAL4 z)
 {
-  REAL4 dV, Rc;
+  REAL4 dV=0, Rc;
   INITSTATUS (s, "pzfunc", SIMULATEPOPCORNC);
   ATTATCHSTATUSPTR (s);
   dVfunc(s->statusPtr,&dV,z);
@@ -191,7 +191,7 @@ static void  pzfunc (LALStatus *s, REAL4 *result, REAL4 z)
 /*distance luminosity: dL=(1+z)*r */
 static void  dLfunc (LALStatus *s, REAL4 *result, REAL4 z)
  {
-  REAL4 r;  
+  REAL4 r;
   INITSTATUS (s, "dLfunc", SIMULATEPOPCORNC);
   ATTATCHSTATUSPTR (s);
   rfunc(s->statusPtr,&r,z);
@@ -222,12 +222,10 @@ void
 LALSimPopcornTimeSeries (  LALStatus                *status,
                            SimPopcornOutputStruc    *output,
                            SimPopcornInputStruc     *input,
-                           SimPopcornParamsStruc     *params 
+                           SimPopcornParamsStruc     *params
                            )
 
-   
 {
-    
   /*time serie parameters */
   UINT4 length, srate, N, Nhalf, starttime;
   REAL8 deltat;
@@ -237,15 +235,15 @@ LALSimPopcornTimeSeries (  LALStatus                *status,
   /* frequency  serie parameters */
   UINT4 Nfreq;
   REAL8 f0=0.;
-  REAL8 deltaf;    
-  REAL8 fref; 
+  REAL8 deltaf;
+  REAL8 fref;
   REAL8 Href;
   COMPLEX8 resp0;
   COMPLEX8 resp1;
   COMPLEX8Vector *Hvec[2] = {NULL,NULL};
   REAL4Vector *omegavec[2] = {NULL,NULL};
 
-  /* source parameters*/  
+  /* source parameters*/
   REAL4LALWform  *wformfunc;
   REAL4 wform, duration, lambda;
   REAL4 Fp, Fm, Fscal, phi, psi,costeta, sgn;
@@ -255,116 +253,115 @@ LALSimPopcornTimeSeries (  LALStatus                *status,
   REAL4 devent;
   REAL4Vector *z = NULL;
   REAL4Vector *tevent = NULL;
-  REAL4 t,x, ampl, dlum, norm;
-   /* counters */ 
+  REAL4 t,x, ampl, dlum=0, norm;
+   /* counters */
   UINT4 i, j, k, detect, dataset, Ndataset, nevent, inf, sup, jref;
-  
+
   /* random generator */
   RandomParams *randParams=NULL;
-  REAL4 alea, alea1, alea2, reject;
+  REAL4 alea, alea1, alea2, reject=0;
   UINT4 seed;
- 
-  /* LAL structure needed as input/output for computing overlap 
+
+  /* LAL structure needed as input/output for computing overlap
      reduction function */
   LALDetectorPair detectors;
   REAL4FrequencySeries overlap;
   OverlapReductionFunctionParameters ORFparameters;
   REAL4 mygamma;
-  INT2 site0, site1;  
-  /* Plans for FFTs and reverse FFTs */ 
-  RealFFTPlan      *pfwd=NULL;  
-  RealFFTPlan      *prev=NULL;  
-  
+  INT2 site0, site1;
+  /* Plans for FFTs and reverse FFTs */
+  RealFFTPlan      *pfwd=NULL;
+  RealFFTPlan      *prev=NULL;
+
   /* initialize status pointer */
   INITSTATUS (status, "LALSimPopcornTimeSeries",SIMULATEPOPCORNC );
-  ATTATCHSTATUSPTR (status);  
+  ATTATCHSTATUSPTR (status);
 
 
   /***** check params/input/output  *****/
 
   /** output **/
-  ASSERT(output !=NULL, status, 
+  ASSERT(output !=NULL, status,
         SIMULATEPOPCORNH_ENULLP,
         SIMULATEPOPCORNH_MSGENULLP);
-  ASSERT(output->SimPopcorn0->data !=NULL, status, 
+  ASSERT(output->SimPopcorn0->data !=NULL, status,
         SIMULATEPOPCORNH_ENULLP,
         SIMULATEPOPCORNH_MSGENULLP);
-  ASSERT(output->SimPopcorn1->data !=NULL, status, 
+  ASSERT(output->SimPopcorn1->data !=NULL, status,
         SIMULATEPOPCORNH_ENULLP,
         SIMULATEPOPCORNH_MSGENULLP);
-  ASSERT(output->SimPopcorn0->data->data !=NULL, status, 
+  ASSERT(output->SimPopcorn0->data->data !=NULL, status,
         SIMULATEPOPCORNH_ENULLP,
         SIMULATEPOPCORNH_MSGENULLP);
-  ASSERT(output->SimPopcorn1->data->data !=NULL, status, 
+  ASSERT(output->SimPopcorn1->data->data !=NULL, status,
         SIMULATEPOPCORNH_ENULLP,
         SIMULATEPOPCORNH_MSGENULLP);
- 
-  ASSERT(output->omega0->data !=NULL, status, 
+
+  ASSERT(output->omega0->data !=NULL, status,
         SIMULATEPOPCORNH_ENULLP,
         SIMULATEPOPCORNH_MSGENULLP);
-  ASSERT(output->omega1->data !=NULL, status, 
+  ASSERT(output->omega1->data !=NULL, status,
         SIMULATEPOPCORNH_ENULLP,
         SIMULATEPOPCORNH_MSGENULLP);
-  ASSERT(output->omega0->data->data !=NULL, status, 
+  ASSERT(output->omega0->data->data !=NULL, status,
         SIMULATEPOPCORNH_ENULLP,
         SIMULATEPOPCORNH_MSGENULLP);
-  ASSERT(output->omega1->data->data !=NULL, status, 
+  ASSERT(output->omega1->data->data !=NULL, status,
         SIMULATEPOPCORNH_ENULLP,
         SIMULATEPOPCORNH_MSGENULLP);
 
   /** input **/
-  ASSERT(input != NULL, status, 
-        SIMULATEPOPCORNH_ENULLP,
-        SIMULATEPOPCORNH_MSGENULLP);
-  
-  ASSERT(input->inputduration > 0, status, 
-        SIMULATEPOPCORNH_EBV,
-        SIMULATEPOPCORNH_MSGEBV);
-  
-  ASSERT(input->inputlambda > 0, status, 
-        SIMULATEPOPCORNH_EBV,
-        SIMULATEPOPCORNH_MSGEBV);
-  
-  /* First detector's complex response (whitening filter) */
-  ASSERT(input->wfilter0 != NULL, status, 
+  ASSERT(input != NULL, status,
         SIMULATEPOPCORNH_ENULLP,
         SIMULATEPOPCORNH_MSGENULLP);
 
-  ASSERT(input->wfilter0->data != NULL, status, 
+  ASSERT(input->inputduration > 0, status,
+        SIMULATEPOPCORNH_EBV,
+        SIMULATEPOPCORNH_MSGEBV);
+
+  ASSERT(input->inputlambda > 0, status,
+        SIMULATEPOPCORNH_EBV,
+        SIMULATEPOPCORNH_MSGEBV);
+
+  /* First detector's complex response (whitening filter) */
+  ASSERT(input->wfilter0 != NULL, status,
         SIMULATEPOPCORNH_ENULLP,
         SIMULATEPOPCORNH_MSGENULLP);
-  
-  ASSERT(input->wfilter0->data->data != NULL, status, 
+
+  ASSERT(input->wfilter0->data != NULL, status,
+        SIMULATEPOPCORNH_ENULLP,
+        SIMULATEPOPCORNH_MSGENULLP);
+
+  ASSERT(input->wfilter0->data->data != NULL, status,
         SIMULATEPOPCORNH_ENULLP,
         SIMULATEPOPCORNH_MSGENULLP);
 
   /* Second detector's complex response (whitening filter)  */
-  ASSERT(input->wfilter1 != NULL, status, 
+  ASSERT(input->wfilter1 != NULL, status,
         SIMULATEPOPCORNH_ENULLP,
         SIMULATEPOPCORNH_MSGENULLP);
 
-  ASSERT(input->wfilter1->data != NULL, status, 
+  ASSERT(input->wfilter1->data != NULL, status,
         SIMULATEPOPCORNH_ENULLP,
         SIMULATEPOPCORNH_MSGENULLP);
 
-  ASSERT(input->wfilter1->data->data != NULL, status, 
+  ASSERT(input->wfilter1->data->data != NULL, status,
         SIMULATEPOPCORNH_ENULLP,
         SIMULATEPOPCORNH_MSGENULLP);
 
-   
+
   /** parameters **/
   /* length of the time series is non-zero  */
-  ASSERT(params->paramslength > 0, status, 
+  ASSERT(params->paramslength > 0, status,
         SIMULATEPOPCORNH_EBV,
         SIMULATEPOPCORNH_MSGEBV);
 
   /* sample rate of the time series is non-zero */
-  ASSERT(params->paramssrate > 0, status, 
+  ASSERT(params->paramssrate > 0, status,
         SIMULATEPOPCORNH_EBV,
         SIMULATEPOPCORNH_MSGEBV);
-    
+
   /** read input parameters **/
-  
   duration=input->inputduration;
   lambda=input->inputlambda;
   site0 = input->inputsite0;
@@ -378,96 +375,91 @@ LALSimPopcornTimeSeries (  LALStatus                *status,
   seed = params->paramsseed;
 
   N=length*srate; Nhalf=N/2; Nfreq=Nhalf+1;
-  deltat = 1./srate;  
+  deltat = 1./srate;
   deltaf = 1./length;
-   
- 
+
   /** check for mismatches **/
-  
-  if (input->wfilter0->data->length != Nfreq) 
+  if (input->wfilter0->data->length != Nfreq)
     {
       ABORT(status,
            SIMULATEPOPCORNH_EMMLEN,
            SIMULATEPOPCORNH_MSGEMMLEN);
     }
-  if (input->wfilter1->data->length != Nfreq) 
+  if (input->wfilter1->data->length != Nfreq)
     {
       ABORT(status,
            SIMULATEPOPCORNH_EMMLEN,
            SIMULATEPOPCORNH_MSGEMMLEN);
     }
 
-     
-  if (input->wfilter0->f0 != f0) 
+
+  if (input->wfilter0->f0 != f0)
     {
       ABORT(status,
            SIMULATEPOPCORNH_ENONNULLFMIN,
            SIMULATEPOPCORNH_MSGENONNULLFMIN);
     }
-  if (input->wfilter1->f0 != f0) 
+  if (input->wfilter1->f0 != f0)
     {
       ABORT(status,
            SIMULATEPOPCORNH_ENONNULLFMIN,
            SIMULATEPOPCORNH_MSGENONNULLFMIN);
     }
 
-  if (input->wfilter0->deltaF != deltaf) 
+  if (input->wfilter0->deltaF != deltaf)
     {
       ABORT(status,
            SIMULATEPOPCORNH_EMMDELTA,
            SIMULATEPOPCORNH_MSGEMMDELTA);
     }
-  if (input->wfilter1->deltaF != deltaf) 
+  if (input->wfilter1->deltaF != deltaf)
     {
       ABORT(status,
            SIMULATEPOPCORNH_EMMDELTA,
            SIMULATEPOPCORNH_MSGEMMDELTA);
     }
-  
+
   /*********** everything is O.K here  ***********/
-    
   LALCreateForwardRealFFTPlan( status->statusPtr, &pfwd, N, 0 );
   LALCreateReverseRealFFTPlan( status->statusPtr, &prev, N, 0 );
   LALSCreateVector( status->statusPtr, &h, N );
-  
-  
+
   for (detect=0;detect<2;detect++) {
   LALSCreateVector( status->statusPtr, &hvec[detect], N );
   LALCCreateVector( status->statusPtr, &Hvec[detect], Nfreq );
   LALSCreateVector( status->statusPtr, &omegavec[detect], Nfreq ); }
-  
+
   LALSCreateVector( status->statusPtr, &z, UE );
   LALSCreateVector( status->statusPtr, &tevent, UE );
 
   LALCreateRandomParams(status->statusPtr, &randParams, seed );
-   
-  for (dataset=0;dataset<Ndataset;dataset++){  
-  
+
+  for (dataset=0;dataset<Ndataset;dataset++){
+
   i=0;tevent->data[0]=-1.*duration;nevent=0;
   while(tevent->data[i]<length+0.5*duration)
-   { 
-     i++;   
+   {
+     i++;
      /*time interval between events (Poisson statistic)  */
      LALUniformDeviate( status->statusPtr, &alea1, randParams);
      devent=-lambda*log(alea1);
      tevent->data[i]=tevent->data[i-1]+devent;
-     
+
      /*z */
-     do { 
+     do {
      LALUniformDeviate( status->statusPtr, &alea1, randParams);
      LALUniformDeviate( status->statusPtr, &alea2, randParams);
      pzfunc(status->statusPtr,&reject,5.*alea1);}
      while (alea2>reject);
-     z->data[i]=5.*alea1;  
-   }   
+     z->data[i]=5.*alea1;
+   }
   nevent=i;
-  
 
 
 /*strain amplitude in the time domain   */
 
   inf=1;sup=1;
-  for (j=0;j<N;j++){hvec[dataset]->data[j]=0.;}  
+  for (j=0;j<N;j++){hvec[dataset]->data[j]=0.;}
   for (j=0;j<N;j++)
    {
      t=j*deltat;
@@ -488,9 +480,9 @@ LALSimPopcornTimeSeries (  LALStatus                *status,
          else{sgn=-1.;}
         LALUniformDeviate(status->statusPtr,&alea,randParams);
         costeta=sgn*alea;
-        Fpfunc(&Fp, phi, costeta, psi); 
-        Fmfunc(&Fm, phi, costeta, psi); 
-        Fscalfunc(&Fscal, Fp, Fm); 
+        Fpfunc(&Fp, phi, costeta, psi);
+        Fmfunc(&Fm, phi, costeta, psi);
+        Fscalfunc(&Fscal, Fp, Fm);
         wform=wform*Fscal;
         hvec[dataset]->data[j]=(wform/dlum)+hvec[dataset]->data[j];
        }
@@ -506,27 +498,27 @@ LALSimPopcornTimeSeries (  LALStatus                *status,
 
    if (fref==-1.) {norm=1.;}
     else {
-     if (fref < 0.) 
+     if (fref < 0.)
       {
         ABORT(status,
               SIMULATEPOPCORNH_EBV,
               SIMULATEPOPCORNH_MSGEBV);
        }
-     
+
       jref=fref*length;
-     
+
       Href=sqrt(Hvec[0]->data[jref].re*Hvec[0]->data[jref].re
                +Hvec[0]->data[jref].im*Hvec[0]->data[jref].im);
       norm=(4.E-19*ho*sqrt(length)/sqrt(fref*fref*fref))/Href;
       }
-     
+
      for (detect=0;detect<2;detect++)
        for (j=0;j<Nfreq;j++) {
         Hvec[detect]->data[j].re= Hvec[detect]->data[j].re*norm;
         Hvec[detect]->data[j].im= Hvec[detect]->data[j].im*norm;}
 
      /*model the relative orientation of the detectors*/
-  
+
     if (Ndataset==2)
      {
        overlap.data = NULL;
@@ -536,20 +528,20 @@ LALSimPopcornTimeSeries (  LALStatus                *status,
        ORFparameters.deltaF = deltaf;
        detectors.detectorOne  = lalCachedDetectors[site0];
        detectors.detectorTwo  = lalCachedDetectors[site1];
-      
+
        LALOverlapReductionFunction(status->statusPtr,&overlap,
                                   &detectors,&ORFparameters);
 
        for (j=0;j<Nfreq;j++)
         {
-         mygamma=overlap.data->data[j]; 
-         Hvec[1]->data[j].re=(Hvec[0]->data[j].re*mygamma 
+         mygamma=overlap.data->data[j];
+         Hvec[1]->data[j].re=(Hvec[0]->data[j].re*mygamma
                      +sqrt(1-mygamma*mygamma)*Hvec[1]->data[j].re);
-        
+
          Hvec[1]->data[j].im=(Hvec[1]->data[j].im*mygamma
                      +sqrt(1-mygamma*mygamma)*Hvec[1]->data[j].im);
          }
-        LALSDestroyVector(status->statusPtr, &(overlap.data));   
+        LALSDestroyVector(status->statusPtr, &(overlap.data));
       }
     else {
      for (j=0;j<Nfreq;j++)
@@ -561,7 +553,7 @@ LALSimPopcornTimeSeries (  LALStatus                *status,
    /*compute the spectrum of omega*/
    for (detect=0;detect<2;detect++){
     for (j=0;j<Nfreq;j++) {
-      omegavec[detect]->data[j]=6.26E36*(Hvec[detect]->data[j].re*Hvec[detect]->data[j].re+Hvec[detect]->data[j].im*Hvec[detect]->data[j].im)*(j*deltaf)*(j*deltaf)*(j*deltaf)/(ho*ho*length);}}   
+      omegavec[detect]->data[j]=6.26E36*(Hvec[detect]->data[j].re*Hvec[detect]->data[j].re+Hvec[detect]->data[j].im*Hvec[detect]->data[j].im)*(j*deltaf)*(j*deltaf)*(j*deltaf)/(ho*ho*length);}}
 
 
     /*whithening*/
@@ -574,12 +566,11 @@ LALSimPopcornTimeSeries (  LALStatus                *status,
       Hvec[1]->data[j].re=Hvec[1]->data[j].re*resp1.re;
       Hvec[1]->data[j].im=Hvec[1]->data[j].im*resp1.im;
     }
-     
-   
+
     /* Inverse Fourier transform */
    for (detect=0;detect<2;detect++)
      LALReverseRealFFT( status->statusPtr, hvec[detect], Hvec[detect], prev );
-   
+
    LALDestroyRealFFTPlan( status->statusPtr, &pfwd );
    LALDestroyRealFFTPlan( status->statusPtr, &prev );
 
@@ -594,38 +585,38 @@ LALSimPopcornTimeSeries (  LALStatus                *status,
    output->SimPopcorn0->epoch.gpsSeconds = starttime;
    output->SimPopcorn0->epoch.gpsNanoSeconds = 0;
    output->SimPopcorn0->sampleUnits = lalADCCountUnit;
-  
-   
+
+
    output->SimPopcorn1->f0 = f0;
    output->SimPopcorn1->deltaT = deltat;
    output->SimPopcorn1->epoch.gpsSeconds = starttime;
    output->SimPopcorn1->epoch.gpsNanoSeconds = 0;
    output->SimPopcorn1->sampleUnits = lalADCCountUnit;
 
-   
+
    for (j=0;j<Nfreq;j++) {
      output->omega0->data->data[j] = (omegavec[0]->data[j]);
      output->omega1->data->data[j] = (omegavec[1]->data[j]);}
-  
+
 
    output->omega0->f0 = f0;
    output->omega0->deltaF = deltaf;
    output->omega0->epoch.gpsSeconds = starttime;
    output->omega0->epoch.gpsNanoSeconds = 0;
-   
+
    output->omega1->f0 = f0;
    output->omega1->deltaF = deltaf;
    output->omega1->epoch.gpsSeconds = starttime;
    output->omega1->epoch.gpsNanoSeconds = 0;
-   
+
 
   for (detect=0;detect<2;detect++) {
   LALSDestroyVector(status->statusPtr,&hvec[detect]);
   LALCDestroyVector(status->statusPtr,&Hvec[detect]);
   LALSDestroyVector(status->statusPtr,&omegavec[detect]);}
- 
+
   CHECKSTATUSPTR (status);
   DETATCHSTATUSPTR (status);
   RETURN (status);
-   
+
 }

@@ -885,7 +885,7 @@ void LALRemoveKnownLinesInSFTVect (LALStatus   *status,
   static LineHarmonicsInfo harmonics; 
   INT4 nLines=0, count1, nHarmonicSets;
 
-  REAL8 fmin, fmax, deltaF;
+  REAL8 f_min, f_max, deltaF;
   UINT4 numBins;
 
   INITSTATUS (status, "LALRemoveKnownLinesInSFTVector", SFTCLEANC);
@@ -899,10 +899,10 @@ void LALRemoveKnownLinesInSFTVect (LALStatus   *status,
   ASSERT (width > 0, status, SFTCLEANH_EVAL, SFTCLEANH_MSGEVAL);  
   ASSERT (window > 0, status, SFTCLEANH_EVAL, SFTCLEANH_MSGEVAL);  
 
-  fmin = sftVect->data[0].f0;
+  f_min = sftVect->data[0].f0;
   deltaF = sftVect->data->deltaF;
   numBins = sftVect->data->data->length;
-  fmax = fmin + deltaF * numBins;
+  f_max = f_min + deltaF * numBins;
 
   TRY( LALFindNumberHarmonics (status->statusPtr, &harmonics, linefile), status); 
   nHarmonicSets = harmonics.nHarmonicSets; 
@@ -937,10 +937,10 @@ void LALRemoveKnownLinesInSFTVect (LALStatus   *status,
       lines2.leftWing = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
       lines2.rightWing = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
 
-      TRY( LALChooseLines( status->statusPtr, &lines2, &lines, fmin, fmax), status);
+      TRY( LALChooseLines( status->statusPtr, &lines2, &lines, f_min, f_max), status);
       nLines = lines2.nLines;
       
-      /* clean the sft vector if there were any lines between fmin and fmax*/
+      /* clean the sft vector if there were any lines between f_min and f_max*/
       if ( nLines > 0 ) {
 	TRY ( LALCleanSFTVector( status->statusPtr, sftVect, width, window, &lines2, randPar), status);
 

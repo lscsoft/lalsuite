@@ -96,7 +96,7 @@ main(void)
 
   /* polarization */
   params.polAngle = 0.2; /* radians */
-  
+
   /* create direct filter */
   filterInput.gain.re = 0.031689343849711;
   filterInput.gain.im = 0.0;
@@ -104,7 +104,7 @@ main(void)
   memcpy(P, Z, filLength * sizeof(COMPLEX16));
   memcpy(Z, buffer, filLength * sizeof(COMPLEX16));
   LALCreateREAL8IIRFilter(&stat, &filt, &filterInput);
-  
+
 
   /* Initialize input */
   in.Ndetectors = Ndetectors;
@@ -124,7 +124,7 @@ main(void)
     in.data[i].data = tmpVect;
     LALNormalDeviates(&stat, in.data[i].data, noiseParams);
 
-    /*    
+    /*
     LALIIRFilterREAL4Vector(&stat, in.data[i].data, params.filters[0]);
     for(j=0;j<length;j++)
       printf("%g\n",in.data[i].data->data[j]);
@@ -133,7 +133,7 @@ main(void)
 
     LALDIIRFilterREAL4Vector(&stat, in.data[i].data, filt);
   }
-  
+
   /* allocate output */
   outputData = NULL;
   LALSCreateVector(&stat, &outputData, length);

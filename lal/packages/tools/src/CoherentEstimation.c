@@ -41,7 +41,7 @@ LALCoherentEstimation ( LALStatus          *stat,
 			REAL4TimeSeries *output,
 			CoherentEstimation *params,
 			DetectorsData      *in) {
-  /* 
+  /*
      NOTES:
      o destroys input (in)
      o order of in must be same as order of params->filters
@@ -112,7 +112,7 @@ LALCoherentEstimation ( LALStatus          *stat,
   /* IIR filters twice                                                   */
   /***********************************************************************/
   if(!(params->preProcessed) && params->nPreProcessed) {
-  
+
     REAL8Vector *tmpR8 = NULL;
     UINT4 jind;
 
@@ -130,8 +130,8 @@ LALCoherentEstimation ( LALStatus          *stat,
       for(jind = 0; jind<in->data[i].data->length; jind++) {
 	tmpR8->data[jind] = (REAL8)(in->data[i].data->data[jind]);
       }
-     
-      for(j=0; j<params->nPreProcessed; j++) { 
+
+      for(j=0; j<params->nPreProcessed; j++) {
         TRY ( LALIIRFilterREAL8Vector( stat->statusPtr,
 	       			       tmpR8,
 				       params->filters[i]), stat );
@@ -200,12 +200,12 @@ LALCoherentEstimation ( LALStatus          *stat,
     pGPS.p_detector = dAs.pDetector = params->detectors + i;
 
     /* tDelays = arrival time at detector - arrival time a center of Earth */
-    TRY ( LALTimeDelayFromEarthCenter( stat->statusPtr, 
-				       tDelays + i, 
+    TRY ( LALTimeDelayFromEarthCenter( stat->statusPtr,
+				       tDelays + i,
 				       &dtS ), stat );
 
 
-    /* JC: isnan is not allowed 
+    /* JC: isnan is not allowed
     if(isnan(tDelays[i])) {
       ABORT ( stat, COHERENTESTIMATIONH_ENUM, COHERENTESTIMATIONH_MSGENUM );
     }
@@ -213,7 +213,7 @@ LALCoherentEstimation ( LALStatus          *stat,
 
     gpsAndAcc.gps = *pGPS.p_gps;
     gpsAndAcc.accuracy = LALLEAPSEC_LOOSE; /* FIXME ??? */
-    TRY ( LALComputeDetAMResponse ( stat->statusPtr, 
+    TRY ( LALComputeDetAMResponse ( stat->statusPtr,
 				    F + i,
 				    &dAs,
 				    &gpsAndAcc ), stat );
@@ -318,7 +318,7 @@ LALCoherentEstimation ( LALStatus          *stat,
   for(i=0; i<(INT4)params->Ndetectors; i++) {
 
     /* setup padding and weights */
-    if(tDelays[i] < 0.0) { 
+    if(tDelays[i] < 0.0) {
       /* need padding at beginning */
       iPad = (INT4)floor(-tDelays[i]/output->deltaT);
       ePad = 0;
@@ -329,8 +329,8 @@ LALCoherentEstimation ( LALStatus          *stat,
       /* set weights */
       p1 = ceil(tDelays[i] / output->deltaT) - tDelays[i] / output->deltaT;
       p2 = 1.0 - p1;
-    } else { 
-      /* need padding at end */ 
+    } else {
+      /* need padding at end */
       iPad = 0;
       ePad = (INT4)ceil(tDelays[i]/output->deltaT);
 
@@ -387,14 +387,14 @@ LALCoherentEstimation ( LALStatus          *stat,
 }
 
 
-void 
+void
 LALClearCoherentData (
 		      LALStatus     *stat,
 		      DetectorsData *dat
 		      ) {
 
   UINT4 i;
-  
+
   INITSTATUS( stat, "LALClearCoherentData", COHERENTESTIMATIONC);
   ATTATCHSTATUSPTR( stat );
 
@@ -417,14 +417,14 @@ LALClearCoherentData (
 
 
 
-void 
+void
 LALClearCoherentInfo (
 		      LALStatus     *stat,
 		      CoherentEstimation *dat
 		      ) {
 
   UINT4 i;
-  
+
   INITSTATUS( stat, "LALClearCoherentInfo", COHERENTESTIMATIONC);
   ATTATCHSTATUSPTR( stat );
 

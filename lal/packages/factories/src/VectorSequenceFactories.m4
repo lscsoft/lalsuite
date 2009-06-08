@@ -1,4 +1,4 @@
-/*----------------------------------------------------------------------- 
+/*-----------------------------------------------------------------------
 
 File Name: VectorSequenceFactories.c
 
@@ -13,7 +13,7 @@ Revision: $Id$
 \subsection{Module \texttt{VectorSequenceFactories.c}}
 \label{ss:VectorSequenceFactories.c}
 
-Create/destroy $\langle\mbox{datatype}\rangle$VectorSequence objects. 
+Create/destroy $\langle\mbox{datatype}\rangle$VectorSequence objects.
 
 \subsubsection*{Prototypes}
 \vspace{0.1in}

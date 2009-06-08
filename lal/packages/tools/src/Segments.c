@@ -910,7 +910,7 @@ XLALSegListShift(  LALSegList *seglist, const LIGOTimeGPS *shift )
   /* time shift each segment in this list */
   for (i=0; i<seglist->length; i++) {
     XLALGPSAddGPS( &seglist->segs[i].start, shift);
-    XLALGPSAddGPS( &seglist->segs[i].end, shift);    
+    XLALGPSAddGPS( &seglist->segs[i].end, shift);
   }
 
   /* done */

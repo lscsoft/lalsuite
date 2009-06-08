@@ -41,7 +41,7 @@ c[1] =	a[1] *	b[1];
 etc.
 
 \subsection*{Uses}
- 
+
 \begin{itemize}
 \item \texttt{LALDCreateVector}
 \end{itemize}

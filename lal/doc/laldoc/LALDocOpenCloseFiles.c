@@ -22,10 +22,10 @@
 /*
  *
  * Open a file
- * 
+ *
 */
 
-FILE 
+FILE
 *OpenAFile(const char *file, const char *rwa , int timeStamp  )
 {
         FILE *filePtr;
@@ -43,10 +43,10 @@ FILE
 /*
  *
  * Close  a file
- * 
+ *
 */
 
-int 
+int
 CloseAFile(FILE *filePtr, int timeStamp )
 {
         time_t tp;
@@ -56,6 +56,6 @@ CloseAFile(FILE *filePtr, int timeStamp )
                      asctime(localtime(&tp)));
         }
         fclose((FILE *)filePtr);
-   return 0; 
+   return 0;
 }
 

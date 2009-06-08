@@ -71,7 +71,7 @@
   Technology, Pasadena, California 91125, USA}\affiliation{\CIT}
 \newcommand*{\LIGO}{LIGO Laboratory, California Institute of
   Technology, Pasadena, California 91125, USA}\affiliation{\LIGO}
-\newcommand*{\CU}{Cardiff University, Cardiff, CF2 3YB, United 
+\newcommand*{\CU}{Cardiff University, Cardiff, CF2 3YB, United
   Kingdom}\affiliation{\CU}
 \newcommand*{\AEI}{Max-Planck-Institut f\"ur
   Gravitationsphysik, Albert-Einstein-Institut, Am M\"uhlenberg 1,
@@ -147,7 +147,7 @@ limitations and subtleties of gravitational wave interferometers. We
 hope that this opens the way to deeper interactions between the GW and
 NR communities and look forward to closer collaborations that may
 develop between the two communities as we explore the
-gravitational-wave Universe together. 
+gravitational-wave Universe together.
 
 The LIGO Scientific Collaboration
 
@@ -195,7 +195,7 @@ written in ANSI C89, and is distributed under the GNU General Public
 License. The latest version of this document is available within this
 library.\footnote{The location of the document is
  \texttt{lal/doc/NRDataFormat.tex}.}
-  
+
 The remainder of this document is structured as follows: section
 \ref{sec:multipoles} describes our conventions for decomposing the
 gravitational wave data in terms of spherical harmonics, section
@@ -273,7 +273,7 @@ transverse traceless basis tensors is}
   \end{alignat}
 \end{subequations}
 In the transverse traceless gauge, $h_{ij}$ has two independent
-polarizations 
+polarizations
 \begin{equation}
   \label{eq:2}
   \tens{h} = \sum_{i,j}h_{ij}\,\ihat\otimes\jhat
@@ -284,9 +284,9 @@ transverse-traceless tensors in the wave frame
 \begin{equation}
   \label{eq:9}
   \eplus = \iotahat\otimes\iotahat -
-  \phihat\otimes\phihat\,, \qquad \textrm{and} \qquad 
+  \phihat\otimes\phihat\,, \qquad \textrm{and} \qquad
   \ecross = \iotahat\otimes\phihat +
-  \phihat\otimes\iotahat\,. 
+  \phihat\otimes\iotahat\,.
 \end{equation}
 It is convenient to use the combination $h_+ - ih_\times$, which is
 related to $\Psi_4$ by two time derivatives\footnote{We define
@@ -316,7 +316,7 @@ modes using spin weighted spherical harmonics $\Ys_{lm}$ of weight
 \end{equation}
 The expansion parameters $H_{lm}$ are complex functions of the retarded time
 $t-r$ and, if we fix $r$ to be the radius of the sphere at which we
-extract waves, then $H_{lm}$ are functions of $t$ only. 
+extract waves, then $H_{lm}$ are functions of $t$ only.
 
 The explicit expression for the spin weighted spherical harmonics
 in terms of the Wigner $d$-functions is
@@ -329,8 +329,8 @@ where
   \label{eq:6}
   d^\ell_{m,s}(\iota) = \sum_{k = k_1}^{k_2}
     \frac{(-1)^k[(\ell+m)!(\ell-m)!(\ell+s)!(\ell-s)!]^{1/2}}{(\ell +m
-      -k)!(\ell-s-k)!k!(k+s-m)!}  
-    \times \left(\cos\left(\frac{\iota}{2}\right)\right)^{2\ell+m-s-2k}\left(\sin\left(\frac{\iota}{2}\right)\right)^{2k+s-m}  
+      -k)!(\ell-s-k)!k!(k+s-m)!}
+    \times \left(\cos\left(\frac{\iota}{2}\right)\right)^{2\ell+m-s-2k}\left(\sin\left(\frac{\iota}{2}\right)\right)^{2k+s-m}
 \end{equation}
 with $k_1 = \textrm{max}(0, m-s)$ and $k_2=\textrm{min}(\ell+m,
 \ell-s)$. For reference,
@@ -355,7 +355,7 @@ the integration constants are chosen. We define $h_+^{(\ell m)}$ and
 $h_\times^{(\ell m)}$ as
 \begin{equation}
   \label{eq:11}
-  rh_+^{(\ell m)}(t) -irh_\times^{(\ell m)}(t) := MH_{\ell m}(t)\,. 
+  rh_+^{(\ell m)}(t) -irh_\times^{(\ell m)}(t) := MH_{\ell m}(t)\,.
 \end{equation}
 It is these modes $rh_{+,\times}^{(\ell m)}$ of $rh_+$ and $rh_\times$
 that we suggest to be provided as functions of time in units of $M$.
@@ -572,7 +572,7 @@ angular momentum.
   but it can be ambiguous in many situations, especially when the spin
   of the black holes causes the orbital plane to precess significantly.
   In such cases, it is left to the numerical relativity group to decide
-  what the best choice of the ``orbital plane'' is. 
+  what the best choice of the ``orbital plane'' is.
 \end{itemize}
 What is the right choice for parameters such as the individual masses,
 the total mass and the spins?  Here are some possibilities:
@@ -620,7 +620,7 @@ How large are the error-bars on the numerical results?
 \begin{itemize}
 \item Is there a reliable way to estimate the systematic errors due to
   finite resolution effects, different gauge choices, wave extraction
-  methods etc?  
+  methods etc?
 \end{itemize}
 
 Numerical relativity groups are welcome to raise any other issues that

@@ -32,12 +32,12 @@ Given $\tau_0$ and $\tau_4$ solve for the mass ratio $\eta.$
 \idx{LALEtaTau04()}
 
 \subsubsection*{Description}
-Given $\tau_0$ and $\tau_4$ one can determine $\eta$ by solving 
+Given $\tau_0$ and $\tau_4$ one can determine $\eta$ by solving
 \begin{equation}
--\eta^{4/5} \tau_4 + A_4 \left ( \frac {\tau_0}{A_0} \right )^{1/5}  
+-\eta^{4/5} \tau_4 + A_4 \left ( \frac {\tau_0}{A_0} \right )^{1/5}
 \left (1 + B_4\eta + C_4 \eta^2 \right )  = 0,
 \end{equation}
-where $A_0 = 5/[256 (\pi f_{s} )^{8/3}],$ 
+where $A_0 = 5/[256 (\pi f_{s} )^{8/3}],$
 $A_4 = 5 \times 3058673/ [128 \times 1016064  (\pi f_s)^{4/3}],$
 $B_4 = 5429 \times 1016064 /(1008 \times 3058673),$ and $C_4 = 617 \times
 1016064/(144 \times 3058673).$
@@ -54,7 +54,7 @@ None.
 \subsubsection*{Notes}
 The {\tt void pointer} {\tt *p} should point to a {\tt struct}
 of type {\tt EtaTau04In}\\[10pt]
-{\tt 
+{\tt
 void *p;\\
 EtaTau04In q;\\[5pt]
 $\ldots$\\
@@ -66,13 +66,13 @@ p = (void *) \&q;\\
 
 NRCSID (LALETATAU04C, "$Id$");
 /*  <lalVerbatim file="LALEtaTau04CP"> */
-void 
+void
 LALEtaTau04(
-   LALStatus *status, 
-   REAL8     *x, 
-   REAL8     eta, 
+   LALStatus *status,
+   REAL8     *x,
+   REAL8     eta,
    void      *p
-   ) 
+   )
 { /* </lalVerbatim> */
    EtaTau04In *q;
    INITSTATUS(status, "LALEtaTau04", LALETATAU04C);

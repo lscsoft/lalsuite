@@ -75,16 +75,16 @@ void  XLALFree( void *p );
 
 #if defined NDEBUG || defined LAL_NDEBUG
 
-#define LALMalloc                          malloc     
-#define LALMallocShort                     malloc     
+#define LALMalloc                          malloc
+#define LALMallocShort                     malloc
 #define LALMallocLong( n, file, line )     malloc( n )
-#define LALCalloc                          calloc        
-#define LALCallocShort                     calloc        
+#define LALCalloc                          calloc
+#define LALCallocShort                     calloc
 #define LALCallocLong( m, n, file, line )  calloc( m, n )
 #define LALRealloc                         realloc
 #define LALReallocShort                    realloc
 #define LALReallocLong( p, n, file, line ) realloc( p, n )
-#define LALFree                            free      
+#define LALFree                            free
 #define LALCheckMemoryLeaks()
 
 #else

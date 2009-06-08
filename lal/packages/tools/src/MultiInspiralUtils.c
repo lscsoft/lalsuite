@@ -1,11 +1,11 @@
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: MultiInspiralUtils.c
  *
  * Author: Bose, S.
- * 
+ *
  * Revision: $Id$
- * 
+ *
  *-----------------------------------------------------------------------
  */
 
@@ -13,7 +13,7 @@
 <lalVerbatim file="MultiInspiralUtilsCV">
 Author: Bose, S.
 $Id$
-</lalVerbatim> 
+</lalVerbatim>
 #endif
 
 #include <math.h>
@@ -84,6 +84,8 @@ static INT8 end_time(const MultiInspiralTable *x)
 	return(XLALGPStoINT8(&x->end_time));
 }
 
+#if 0
+/* functions currently unused */
 static INT4 end_time_sec(const MultiInspiralTable *x)
 {
 	return(x->end_time.gpsSeconds);
@@ -93,6 +95,7 @@ static INT4 end_time_nsec(const MultiInspiralTable *x)
 {
 	return(x->end_time.gpsNanoSeconds);
 }
+#endif
 
 /* <lalVerbatim file="SnglInspiralUtilsCP"> */
 void
@@ -115,7 +118,7 @@ XLALFreeMultiInspiral (
 /* </lalVerbatim> */
 {
   EventIDColumn        *eventId;
-  
+
   while ( (eventId = (*eventHead)->event_id) )
     {
       /* free any associated event_id's */
@@ -123,7 +126,7 @@ XLALFreeMultiInspiral (
       LALFree( eventId );
     }
   LALFree( *eventHead );
-  
+
   return (0);
 }
 
@@ -147,15 +150,15 @@ XLALSortMultiInspiral (
   }
   if ( ! numEvents )
   {
-    XLALPrintInfo( 
+    XLALPrintInfo(
       "XLALSortMultiInspiral: Empty MultiInspiralTable passed as input\n" );
     return( eventHead );
   }
 
   /* allocate memory for an array of pts to sort and populate array */
-  eventHandle = (MultiInspiralTable **) 
+  eventHandle = (MultiInspiralTable **)
     LALCalloc( numEvents, sizeof(MultiInspiralTable *) );
-  for ( i = 0, thisEvent = eventHead; i < numEvents; 
+  for ( i = 0, thisEvent = eventHead; i < numEvents;
       ++i, thisEvent = thisEvent->next )
   {
     eventHandle[i] = thisEvent;
@@ -179,14 +182,14 @@ XLALSortMultiInspiral (
 }
 
 /* <lalVerbatim file="MultiInspiralUtilsCP"> */
-REAL4 
+REAL4
 XLALMultiInspiralStat(
     MultiInspiralTable         *multiInspiral,
     SnglInspiralClusterChoice  multiStat
     )
 {
   REAL4 statValue = 0;
-  
+
   if ( multiStat == snr )
   {
     statValue = multiInspiral->snr;
@@ -217,19 +220,19 @@ XLALClusterMultiInspiralTable (
   MultiInspiralTable     *prevEvent=NULL;
   MultiInspiralTable     *nextEvent=NULL;
   int                    numMultiClust = 0;
-  
+
   if ( !inspiralList )
   {
     XLAL_ERROR(func,XLAL_EIO);
   }
-  
+
   if ( ! *inspiralList )
   {
-    XLALPrintInfo( 
+    XLALPrintInfo(
       "XLALClusterMultiInspiralTable: Empty coincList passed as input\n" );
     return( 0 );
   }
-  
+
   thisEvent = *inspiralList;
   nextEvent = (*inspiralList)->next;
   *inspiralList = NULL;
@@ -264,7 +267,7 @@ XLALClusterMultiInspiralTable (
         nextEvent = thisEvent->next;
       }
     }
-    else 
+    else
     {
       /* otherwise we keep this unique event trigger */
       if ( ! *inspiralList )
@@ -284,7 +287,7 @@ XLALClusterMultiInspiralTable (
     *inspiralList = thisEvent;
   }
   ++numMultiClust;
-  
+
   return(numMultiClust);
 }
 
@@ -303,7 +306,7 @@ XLALTimeCutMultiInspiral(
   INT8                  startTimeNS = XLALGPStoINT8( startTime );
   INT8                  endTimeNS = XLALGPStoINT8( endTime );
 
-  
+
   /* Remove all the triggers before and after the requested */
   /* gps start and end times */
 
@@ -335,10 +338,10 @@ XLALTimeCutMultiInspiral(
       XLALFreeMultiInspiral ( &tmpEvent );
     }
   }
-  eventHead = inspiralEventList; 
+  eventHead = inspiralEventList;
 
   return (eventHead);
-}  
+}
 
 
 /* <lalVerbatim file="MultiInspiralUtilsCP"> */
@@ -354,7 +357,7 @@ XLALSNRCutMultiInspiral (
 
   thisEvent = eventHead;
   eventHead = NULL;
-  
+
   while ( thisEvent )
   {
     MultiInspiralTable *tmpEvent = thisEvent;
@@ -415,7 +418,7 @@ XLALPlayTestMultiInspiral(
       triggerTime = XLALGPStoINT8( &(tmpEvent->end_time) );
       isPlay = XLALINT8NanoSecIsPlayground( &triggerTime );
 
-      if ( ( (*dataType == playground_only)  && isPlay ) || 
+      if ( ( (*dataType == playground_only)  && isPlay ) ||
           ( (*dataType == exclude_play) && ! isPlay) )
       {
         /* keep this trigger */
@@ -437,7 +440,7 @@ XLALPlayTestMultiInspiral(
         XLALFreeMultiInspiral ( &tmpEvent );
       }
     }
-    eventHead = inspiralEventList; 
+    eventHead = inspiralEventList;
     if ( *dataType == playground_only )
     {
       XLALPrintInfo( "Kept %d playground triggers \n", numTriggers );
@@ -458,7 +461,7 @@ XLALPlayTestMultiInspiral(
   }
 
   return(eventHead);
-}  
+}
 
 /*CHECK: This function is not needed since XLALCountMultiInspiralTable
   in LIGOMetadataUtils in support already does that job */
@@ -468,7 +471,7 @@ INT4 XLALCountMultiInspiral( MultiInspiralTable *head )
 {
   INT4 length;
   MultiInspiralTable *event;
- 
+
   if ( !head )
   {
     return( 0 );
@@ -533,11 +536,11 @@ XLALMultiSimInspiralTest (
   MultiInspiralTable *prevEvent   = NULL;
   MultiInspiralTable *thisMissed  = NULL;
   EventIDColumn     *thisId      = NULL;
-  CHAR              *ifo; 
- 
+  CHAR              *ifo = NULL;
+
   int numSimFound  = 0;
   int coincidence = 0;
-  
+
   INT8 simGeocentTime, simSiteTime, inspiralTime;
   INT8 earthRadiusNS = (INT8) ( 1e9 * 2 * LAL_REARTH_SI / LAL_C_SI );
 
@@ -598,35 +601,35 @@ XLALMultiSimInspiralTest (
 
         if( inspiralTime < (simGeocentTime + earthRadiusNS + injectWindowNS ) )
         {
-	  /*CHECK: The following assumes that the first ifo 
+	  /*CHECK: The following assumes that the first ifo
 	    in the ifos string is the
-	    reference ifo for checking time consistency. */     
+	    reference ifo for checking time consistency. */
           /* This event may be in coincidence window, need to check site
            * end time
 	   strncpy( ifos, thisEvent->ifos, 2);
-	   simSiteTime = XLALReturnSimInspiralEndTime( thisSimEvent, 
+	   simSiteTime = XLALReturnSimInspiralEndTime( thisSimEvent,
 	                                                       ifos );
 	  */
 
 	  /* read in the first (single) ifo in the multiInspiral network (ifos) */
 	  LALSnprintf( ifo, LIGOMETA_IFO_MAX * sizeof(CHAR),
 		       "%s", thisEvent->ifos );
-	  
-	  simSiteTime = XLALReturnSimInspiralEndTime( thisSimEvent, ifo ); 
-	  
+
+	  simSiteTime = XLALReturnSimInspiralEndTime( thisSimEvent, ifo );
+
 	  if ( (inspiralTime > (simSiteTime - injectWindowNS)) &&
 	       (inspiralTime < (simSiteTime + injectWindowNS)) ) {
-	    
+
 	    /* this event is within the coincidence window  */
-	    
+
 	    /* store the sim inspiral in the event_id's for this sngl */
-	    thisId = thisEvent->event_id; 
+	    thisId = thisEvent->event_id;
 	    while ( thisId )
 	      {
 		thisId->simInspiralTable = thisSimEvent;
 		thisId = thisId->next;
 	      }
-	    
+
 	    /* store this event and move on to the next one */
 	    if ( ! *eventHead ) *eventHead = thisEvent;
 	    prevEvent = thisEvent;
@@ -645,7 +648,7 @@ XLALMultiSimInspiralTest (
 		{
 		  thisMissed = thisMissed->next = thisEvent;
 		}
-	      
+
 	      if ( prevEvent ) prevEvent->next = thisEvent->next;
 	      thisEvent = thisEvent->next;
 	      thisMissed->next = NULL;
@@ -658,7 +661,7 @@ XLALMultiSimInspiralTest (
 	    break;
 	  }
       }
-      
+
       if ( coincidence )
 	{
 	  /* keep this sim event in the list and move to the next sim event */

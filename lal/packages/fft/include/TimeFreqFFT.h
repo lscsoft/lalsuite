@@ -183,9 +183,10 @@ AverageSpectrumParams;
 typedef struct
 tagLALPSDRegressor
 {
-  int max_samples;
-  int n_samples;
-  COMPLEX16FrequencySeries *mean;
+  unsigned average_samples;
+  unsigned median_samples;
+  unsigned n_samples;
+  REAL8Sequence **history;
   REAL8FrequencySeries *mean_square;
 }
 LALPSDRegressor;
@@ -282,6 +283,8 @@ int XLALREAL8AverageSpectrumWelch(
     );
 
 REAL8 XLALMedianBias( UINT4 nn );
+
+REAL8 XLALLogMedianBiasGeometric( UINT4 nn );
 
 int XLALREAL4AverageSpectrumMedian(
     REAL4FrequencySeries        *spectrum,
@@ -406,7 +409,8 @@ LALFreqTimeComplexFFT(
 
 LALPSDRegressor *
 XLALPSDRegressorNew(
-    int max_samples
+    unsigned average_samples,
+    unsigned median_samples
 );
 
 void
@@ -419,17 +423,29 @@ XLALPSDRegressorReset(
     LALPSDRegressor *r
 );
 
+int XLALPSDRegressorSetAverageSamples(
+    LALPSDRegressor *r,
+    unsigned average_samples
+);
+
+
+unsigned XLALPSDRegressorGetAverageSamples(
+    const LALPSDRegressor *r
+);
+
+int XLALPSDRegressorSetMedianSamples(
+    LALPSDRegressor *r,
+    unsigned median_samples
+);
+
+unsigned XLALPSDRegressorGetMedianSamples(
+    const LALPSDRegressor *r
+);
+
 int
 XLALPSDRegressorAdd(
     LALPSDRegressor *r,
     const COMPLEX16FrequencySeries *sample
-);
-
-COMPLEX16FrequencySeries *
-XLALPSDRegressorGetMean(
-    const LALPSDRegressor *r,
-    const LIGOTimeGPS *epoch,
-    REAL8 min_sigma_sq
 );
 
 REAL8FrequencySeries *
@@ -441,7 +457,7 @@ int
 XLALPSDRegressorSetPSD(
     LALPSDRegressor *r,
     const REAL8FrequencySeries *psd,
-    int weight
+    unsigned weight
 );
 
 #ifdef  __cplusplus

@@ -24,7 +24,7 @@
 
 /**** <lalLaTeX>
  * \subsection{Program \texttt{ResampleTimeSeriesTest.c}}
- * 
+ *
  * Tests the routines in \verb|ResampleTimeSeries.h|
  *
  * \subsubsection*{Usage}
@@ -92,7 +92,7 @@
  * phase shift of the output at 4096 Hz, however there is attenuation and
  * phase shift of the output at 2048 Hz. This is due to the fact that the
  * signal is very close to the output Nyquist frequency. Care should be taken
- * to downsample to a suitable rate to avoid this type of attenuation.  
+ * to downsample to a suitable rate to avoid this type of attenuation.
  * }
  * \end{figure}
  *
@@ -116,7 +116,7 @@
 #include <getopt.h>
 #endif
 
-NRCSID (MAIN, "$Id$");  
+NRCSID (MAIN, "$Id$");
 
 extern char *optarg;
 extern int   optind;
@@ -159,7 +159,7 @@ main (int argc, char *argv[])
   chan.epoch.gpsSeconds = 100;
   resampPars.deltaT = 1.0 / (REAL8) outRate;
   resampPars.filterType = filtType;
-  
+
   for ( j = 0; j < chan.data->length; ++j )
   {
     chan.data->data[j] = sin( 2.0 * LAL_PI * sineFreq * j * chan.deltaT );
@@ -311,7 +311,7 @@ ParseOptions (int argc, char *argv[])
         {
           filtType = defaultButterworth;
         }
-        else 
+        else
         {
           Usage (argv[0], 1);
         }

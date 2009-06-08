@@ -129,9 +129,9 @@ int XLALSetFlatLatticeTilingSpindownFstatMetric(
  */
 static BOOLEAN AgeBrakingIndexBound(void *data, INT4 dimension, gsl_vector *point, REAL8 *lower, REAL8 *upper)
 {
-  
+  const char *fn = "AgeBrakingIndexBound()";
   double x;
-  
+
   /* Set constant based on dimension */
   switch (dimension) {
   case 0:
@@ -145,6 +145,9 @@ static BOOLEAN AgeBrakingIndexBound(void *data, INT4 dimension, gsl_vector *poin
     x *= x;
     x /= gsl_vector_get(point, 0);
     break;
+  default:
+    XLALPrintError ("%s: invalid dimension %d input, allowed are 0-2.\n", fn, dimension );
+    XLAL_ERROR ( fn, XLAL_EINVAL );
   }
 
   /* Set lower and upper bound */

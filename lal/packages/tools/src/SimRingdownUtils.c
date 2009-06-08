@@ -53,25 +53,25 @@ static INT8 geocent_start_time(const SimRingdownTable *x)
 
 /* <lalVerbatim file="SimInspiralUtilsCP"> */
 void
-XLALPlayTestSimRingdown(     
+XLALPlayTestSimRingdown(
     SimRingdownTable         **eventHead,
-    LALPlaygroundDataMask      *dataType     
+    LALPlaygroundDataMask      *dataType
     )
-/* </lalVerbatim> */ 
+/* </lalVerbatim> */
 {
   SimRingdownTable    *ringdownEventList = NULL;
   SimRingdownTable    *thisEvent = NULL;
   SimRingdownTable    *prevEvent = NULL;
 
   INT8 triggerTime = 0;
-  INT4 isPlay = 0;   
+  INT4 isPlay = 0;
   INT4 numTriggers;
-  
+
   /* Remove all the triggers which are not of the desired type */
- 
+
   numTriggers = 0;
-  thisEvent = *eventHead; 
- 
+  thisEvent = *eventHead;
+
   if ( (*dataType == playground_only) || (*dataType == exclude_play) )
   {
     while ( thisEvent )
@@ -309,7 +309,7 @@ XLALReturnSimRingdownStartTime (
       {
         XLAL_ERROR(func,XLAL_EIO);
       }
-      
+
 }
 
 int
@@ -558,10 +558,10 @@ XLALCoincSimRingdownTest (
   SimRingdownTable      *thisMissedSim   = NULL;
   SnglRingdownTable     *thisSngl        = NULL;
   EventIDColumn         *thisId          = NULL;
-  
+
   InterferometerNumber   ifoInCoinc = LAL_UNKNOWN_IFO;
   int                    numSimFound = 0;
-  
+
   if ( !*coincHead )
   {
     XLALPrintInfo(
@@ -570,14 +570,14 @@ XLALCoincSimRingdownTest (
     *simHead = NULL;
     return( 0 );
   }
-  
+
   *coincHead = NULL;
 
    while( thisCoinc )
    {
      thisSim = NULL;
      /* loop over the interferometers to get the event_id*/
-     
+
      for ( ifoInCoinc = 0; ifoInCoinc < LAL_NUM_IFO; ifoInCoinc++)
      {
        if ( (thisSngl = thisCoinc->snglRingdown[ifoInCoinc]) )
@@ -586,7 +586,7 @@ XLALCoincSimRingdownTest (
          break;
        }
      }
-     
+
      for ( ; ifoInCoinc < LAL_NUM_IFO; ifoInCoinc++)
      {
        if ( (thisSngl = thisCoinc->snglRingdown[ifoInCoinc]) &&
@@ -596,13 +596,13 @@ XLALCoincSimRingdownTest (
          break;
        }
      }
-     
+
      if ( thisSim )
-       
+
      {
        /* thisCoinc is coincident with a thisSim */
        thisCoinc->simRingdown = thisSim;
-       
+
        /* set the event_id's */
        if ( !thisSim->event_id )
        {
@@ -615,12 +615,12 @@ XLALCoincSimRingdownTest (
        }
        thisId->simRingdownTable = thisSim;
        thisId->coincRingdownTable = thisCoinc;
-       
+
        if ( ! *coincHead )
        {
          *coincHead = thisCoinc;
        }
-       
+
        XLALPrintInfo( "+" );
        /* move on to
         * * next coinc */
@@ -638,21 +638,21 @@ XLALCoincSimRingdownTest (
        {
          thisMissedCoinc = thisMissedCoinc->next = thisCoinc;
        }
-       
+
        if ( prevCoinc ) prevCoinc->next = thisCoinc->next;
        thisCoinc = thisCoinc->next;
        XLALPrintInfo( "-" );
-       
+
        /* terminate the missed list */
        thisMissedCoinc->next = NULL;
      }
    }
-   
+
    /* run through simRingdowns, keeping only those in coincs */
-   
+
    thisSim = *simHead;
    *simHead = NULL;
-   
+
    while( thisSim )
    {
      if( thisSim->event_id )
@@ -675,14 +675,14 @@ XLALCoincSimRingdownTest (
        {
          thisMissedSim = thisMissedSim->next = thisSim;
        }
-       
+
        /* ...and remove it from the list of found events */
        if ( prevSim ) prevSim->next = thisSim->next;
        XLALPrintInfo( "M" );
-       
+
        /* move to the next sim in the list */
        thisSim = thisSim->next;
-       
+
        /* make sure the missed sim list is terminated */
        thisMissedSim->next = NULL;
      }
@@ -692,5 +692,5 @@ XLALCoincSimRingdownTest (
 }
 
 
-       
-  
+
+

@@ -61,7 +61,7 @@
  * REAL8 XLALLogFactorial( INT4 n )
  * {
  *   REAL8 y;
- *   int errnum; 
+ *   int errnum;
  *   XLAL_TRY( y = XLALGammaFunction( n + 1 ), errnum );
  *   if ( XLAL_IS_REAL8_FAIL_NAN( y ) )
  *     switch ( errnum )
@@ -325,7 +325,7 @@ void XLALPerror( const char *func, const char *file, int line, int errnum );
  */
 
 /** The XLAL error handler type. */
-typedef void XLALErrorHandlerType( const char *func, const char *file, int line, int errnum ); 
+typedef void XLALErrorHandlerType( const char *func, const char *file, int line, int errnum );
 
 /** The default XLAL error handler. */
 void XLALDefaultErrorHandler( const char *func, const char *file, int line, int errnum );

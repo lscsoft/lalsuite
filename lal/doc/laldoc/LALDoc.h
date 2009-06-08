@@ -38,9 +38,9 @@ extern int lineNum;
 
 typedef void *(func) (void *p);
 
-typedef struct 
+typedef struct
 tagLALEnviroment
-{  
+{
     const char *OnFlag     ; /* String that turns the environment on          */
     const char *OffFlag    ; /* String that turns the environment off         */
     const char *closer     ; /* closeing brace ie ">"                         */
@@ -66,12 +66,12 @@ int LalDocGetLine(char *line, int max, FILE *fpin);
 int CheckEnvironment(char *line, LALEnvironment *Env);
 int FindNameOfOutPutFile( char *line , LALEnvironment *LaTeXEnv );
 int FindDefaultFileName( LALEnvironment *Env );
-int ParseCommandLine( int argcount , char **argvector , char *source , 
+int ParseCommandLine( int argcount , char **argvector , char *source ,
                       FILE **ptrptrInput);
 int LALDocErr( const char *message , const char *sourceCodeFileName,
                int laldocLineNumber, const char *laldocSourceCodeFile,
                int fatal );
-int CleanExit( FILE *ptrInput , FILE *ptrOutput , 
+int CleanExit( FILE *ptrInput , FILE *ptrOutput ,
                LALEnvironment *LaTeXEnv    ,
                LALEnvironment *VerbatimEnv ,
                LALEnvironment *ErrTableEnv );

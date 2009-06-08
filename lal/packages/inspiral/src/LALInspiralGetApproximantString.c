@@ -51,7 +51,7 @@ LALSnprintf
 \end{verbatim}
 
 \subsubsection*{Notes}
- 
+
 \vfill{\footnotesize\input{LALInspiralRingdownWaveCV}}
 
 </lalLaTeX>
@@ -67,7 +67,7 @@ NRCSID (LALINSPIRALGETAPPROXIMANTSTRINGC, "$Id$");
 int XLALInspiralGetApproximantString( CHAR        *output,
                                       UINT4       length,
                                       Approximant approx,
-                                      Order       order
+                                      LALPNOrder  order
                                     )
 {
 
@@ -113,12 +113,12 @@ int XLALInspiralGetApproximantString( CHAR        *output,
           "TaylorF2" );
       break;
 
-    case PadeT1: 
+    case PadeT1:
       LALSnprintf( approxString, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
           "PadeT1" );
       break;
 
-    case PadeF1: 
+    case PadeF1:
       LALSnprintf( approxString, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
           "PadeF1" );
       break;
@@ -138,9 +138,9 @@ int XLALInspiralGetApproximantString( CHAR        *output,
           "BCVSpin" );
       break;
 
-    case SpinTaylorT3: 
+    case SpinTaylorT3:
       LALSnprintf( approxString, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
-          "SpinTaylorT3" ); 
+          "SpinTaylorT3" );
       break;
 
     case SpinTaylor:
@@ -152,7 +152,7 @@ int XLALInspiralGetApproximantString( CHAR        *output,
       LALSnprintf( approxString, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
           "FindChirpSP" );
       break;
- 
+
     case FindChirpPTF:
       LALSnprintf( approxString, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
           "FindChirpPTF" );
@@ -163,32 +163,32 @@ int XLALInspiralGetApproximantString( CHAR        *output,
           "GeneratePPN" );
       break;
 
-    case BCVC: 
+    case BCVC:
       LALSnprintf( approxString, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
-          "BCVC" ); 
+          "BCVC" );
       break;
 
-    case Eccentricity: 
+    case Eccentricity:
       LALSnprintf( approxString, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
-          "Eccentricity" ); 
+          "Eccentricity" );
       break;
 
-    case EOBNR: 
+    case EOBNR:
       LALSnprintf( approxString, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
-          "EOBNR" ); 
+          "EOBNR" );
       break;
-    case TaylorEt: 
+    case TaylorEt:
       LALSnprintf( approxString, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
-          "TaylorEt" ); 
+          "TaylorEt" );
       break;
-    case TaylorT4: 
+    case TaylorT4:
       LALSnprintf( approxString, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
-          "TaylorT4" ); 
+          "TaylorT4" );
       break;
 
-    case TaylorN: 
+    case TaylorN:
       LALSnprintf( approxString, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
-          "TaylorN" ); 
+          "TaylorN" );
       break;
 
     default:
@@ -201,47 +201,47 @@ int XLALInspiralGetApproximantString( CHAR        *output,
   /* Now set the order */
   switch ( order )
   {
-    case newtonian:
+    case LAL_PNORDER_NEWTONIAN:
       LALSnprintf( orderString, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
           "newtonian" );
       break;
 
-    case oneHalfPN: 
+    case LAL_PNORDER_HALF:
       LALSnprintf( orderString, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
           "oneHalfPN" );
       break;
 
-    case onePN: 
+    case LAL_PNORDER_ONE:
       LALSnprintf( orderString, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
           "onePN" );
       break;
 
-    case onePointFivePN: 
+    case LAL_PNORDER_ONE_POINT_FIVE:
       LALSnprintf( orderString, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
           "onePointFivePN" );
       break;
 
-    case twoPN: 
+    case LAL_PNORDER_TWO:
       LALSnprintf( orderString, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
           "twoPN" );
       break;
 
-    case twoPointFivePN: 
+    case LAL_PNORDER_TWO_POINT_FIVE:
       LALSnprintf( orderString, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
           "twoPointFivePN" );
       break;
 
-    case threePN: 
+    case LAL_PNORDER_THREE:
       LALSnprintf( orderString, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
           "threePN" );
       break;
 
-    case threePointFivePN: 
+    case LAL_PNORDER_THREE_POINT_FIVE:
       LALSnprintf( orderString, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
           "threePointFivePN" );
       break;
 
-    case pseudoFourPN: 
+    case LAL_PNORDER_PSEUDO_FOUR:
       LALSnprintf( orderString, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
           "pseudoFourPN" );
       break;

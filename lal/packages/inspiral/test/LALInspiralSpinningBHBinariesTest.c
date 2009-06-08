@@ -25,7 +25,7 @@ $Id$
 /*  <lalLaTeX>
 
 \subsection{Module \texttt{LALInspiralSpinningBHBinariesTest.c}}
-Test routine for spin-modulted inspiral waveform generation code. First set the 
+Test routine for spin-modulted inspiral waveform generation code. First set the
 \texttt{InspiralTemplate} structure (example given below). Then call the function\\
 \texttt{
 	LALInspiralWaveLength (\&status, \&n, params)
@@ -35,28 +35,28 @@ to measure the length {\tt n} of the array required. Then call the function \\
 	LALInspiralWave(\&status, signal1, params);
 	}\\
 to generate the wave, which will be returned in \texttt{signal}.
-Example values of the parameters that can be set (with options in 
+Example values of the parameters that can be set (with options in
 brackets):
 
 \begin{verbatim}
    params.OmegaS = 0.;     (Unknown 3PN parameter in energy shown to be zero by DJS)
    params.ieta=1;          (1 for comparable masses model, 0 for test mass model)
-   params.mass1=1.4;       (masses of the component stars in solar masses) 
-   params.mass2=1.4; 
-   params.startTime=0.0;   (in sec. Defined so that the instantaneous GW frequency 
+   params.mass1=1.4;       (masses of the component stars in solar masses)
+   params.mass2=1.4;
+   params.startTime=0.0;   (in sec. Defined so that the instantaneous GW frequency
                             is params.fLower at params.startTime)
    params.startPhase=0.0;  (0 to LAL_PI_2)
    params.fLower=40.0;     (in Hz)
    params.fCutoff=1000.0;  (in Hz)
-   params.tSampling=4000.; (in Hz; should be larger than 2*fCutoff or 2*flso, 
+   params.tSampling=4000.; (in Hz; should be larger than 2*fCutoff or 2*flso,
                             whichever is smaller)
-   params.signalAmplitude=1.0; 
+   params.signalAmplitude=1.0;
    params.nStartPad=0;     (number of leading zero bins)
    params.nEndPad=0;       (number of trailing zero bins)
-   params.approximant=SpinTaylorT3; 
-   params.order=twoPN;     (also newtonian, onePN, oneAndHalfPN, twoPN, 
+   params.approximant=SpinTaylorT3;
+   params.order=twoPN;     (also newtonian, onePN, oneAndHalfPN, twoPN,
                             twoAndHalfPN, threePN, threeAndHalfPN)
-   params.massChoice=m1Andm2; (also t0t2, t0t3, t0t4, totalMassAndEta,totalMassAndMu) 
+   params.massChoice=m1Andm2; (also t0t2, t0t3, t0t4, totalMassAndEta,totalMassAndMu)
    params.Theta = 0.;
    params.distance = 1.e8 * LAL_PC_SI/LAL_C_SI; (distance in sec)
    params.sourceTheta = LAL_PI/6.L;   (Source co-latitute)
@@ -71,12 +71,12 @@ brackets):
    params.orbitPhi0 = LAL_PI/6.; (initial azimuth orientation of the orbit)
 
    (spin of body 1)
-   params.spin1[0] =  mass1Sq * spin1Frac * sin(spin1Theta) * cos(spin1Phi);  
+   params.spin1[0] =  mass1Sq * spin1Frac * sin(spin1Theta) * cos(spin1Phi);
    params.spin1[1] =  mass1Sq * spin1Frac * sin(spin1Theta) * sin(spin1Phi);
    params.spin1[2] =  mass1Sq * spin1Frac * cos(spin1Theta);
 
    (spin of body 2)
-   params.spin2[0] =  mass2Sq * spin2Frac * sin(spin2Theta) * cos(spin2Phi);  
+   params.spin2[0] =  mass2Sq * spin2Frac * sin(spin2Theta) * cos(spin2Phi);
    params.spin2[1] =  mass2Sq * spin2Frac * sin(spin2Theta) * sin(spin2Phi);
    params.spin2[2] =  mass2Sq * spin2Frac * cos(spin2Theta);
 \end{verbatim}
@@ -95,16 +95,16 @@ NRCSID (LALINSPIRALSPINNINGBHBINARIESTESTC,"$Id$");
 INT4 lalDebugLevel=0;
 
 void printf_timeseries (int n, float *signal, double delta, double t0) ;
-void printf_timeseries (int n, float *signal, double delta, double t0) 
+void printf_timeseries (int n, float *signal, double delta, double t0)
 {
   int i=0;
   FILE *outfile1;
 
   outfile1=fopen("wave1.dat","a");
 
-  do 
+  do
      fprintf (outfile1,"%e %e\n", i*delta+t0, *(signal+i));
-  while (n-++i); 
+  while (n-++i);
 
   fprintf(outfile1,"&\n");
   fclose(outfile1);
@@ -123,12 +123,12 @@ int main (void) {
    dPhi = LAL_TWOPI/1.9;
    params.OmegaS = 0.;
    params.Theta = 0.;
-   params.ieta=1; 
-   params.mass1=10.0; 
-   params.mass2=1.0; 
-   params.startTime=0.0; 
+   params.ieta=1;
+   params.mass1=10.0;
+   params.mass2=1.0;
+   params.startTime=0.0;
    params.startPhase=0.0;
-   params.fLower=40.0; 
+   params.fLower=40.0;
    params.fCutoff=2000.00;
    params.tSampling=4096.0;
    params.order=4;
@@ -173,10 +173,10 @@ int main (void) {
 	   params.spin2[0] =  mass2Sq * spin2Frac * sin(spin2Theta) * cos(spin2Phi);
 	   params.spin2[1] =  mass2Sq * spin2Frac * sin(spin2Theta) * sin(spin2Phi);
 	   params.spin2[2] =  mass2Sq * spin2Frac * cos(spin2Theta);
-   
+
 	   LALInspiralSpinModulatedWave(&status, signal1, &params);
 	   printf_timeseries(signal1->length, signal1->data, dt, params.startTime);
-   
+
 	   /*
 	    */
    }

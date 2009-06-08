@@ -23,7 +23,7 @@ $Id$
 ********* </lalVerbatim> ********/
 
 /* <lalLaTeX>
- * 
+ *
  * \section{Header \texttt{Matrix.h}}
  *
  * Matlab Routines to handle Matrices \& Vectors.
@@ -32,16 +32,16 @@ $Id$
  * \begin{verbatim}
  * #include <lal/Matrix.h>
  * \end{verbatim}
- * 
+ *
  * \subsection*{Error conditions}
  * \input{MatrixHE}
- * 
+ *
  * \vfill{\footnotesize\input{MatrixHV}}
  * \newpage\input{MatrixMultiplyC}
  * \newpage\input{MatrixDivideC}
  * \newpage\input{MatrixPowerC}
  * \newpage\input{MiscMatlabC}
- * 
+ *
  * </lalLaTeX> */
 
 #include <math.h>

@@ -24,7 +24,7 @@
 
 /**** <lalLaTeX>
  * \subsection{Program \texttt{ComputeCalibrationFactorsTest.c}}
- * 
+ *
  * Tests the computation of calibration factors.
  *
  * \subsubsection*{Usage}
@@ -74,8 +74,8 @@ struct CommandLineArgsTag {
   char *AFile;             /* Text file with the actuation function */
   char *FrCacheFile;       /* Frame cache file */
   char *SegmentsFile;      /* Text file with the segments */
-  char *exc_chan;          /* excitation channel name */    
-  char *darm_chan;         /* darm channel name */ 
+  char *exc_chan;          /* excitation channel name */
+  char *darm_chan;         /* darm channel name */
   char *asq_chan;          /* asq channel name */
 } CommandLineArgs;
 
@@ -83,7 +83,7 @@ typedef
 struct SegmentListTag {
   INT4 tgps;          /* GPS Seconds of start of segment group */
   INT4 nseg;          /* number of segments starting at tgps */
-  REAL4 seglength;    /* length of segment in seconds */       
+  REAL4 seglength;    /* length of segment in seconds */
 } SegmentList;
 
 static LALStatus status;
@@ -126,7 +126,7 @@ int FreeMem(void);
 int main(int argc,char *argv[])
 {
   FrPos pos;
-  int i,j,k; 
+  int i,j,k;
 
   if (ReadCommandLine(argc,argv,&CommandLineArgs)) return 1;
   if (ReadFiles(CommandLineArgs)) return 3;
@@ -153,7 +153,7 @@ int main(int argc,char *argv[])
 	  LALFrGetREAL4TimeSeries(&status,&asq,&chanin_asq,framestream);
 	  LALFrSetPos(&status,&pos,framestream);
 
- 	  /*Windowing*/ 
+ 	  /*Windowing*/
 	  for(k=0;k<(INT4)(SL[i].seglength/asq.deltaT +0.5);k++)
 	    {
 	      asq.data->data[k] *= 2.0*asqwin->data[k];
@@ -166,7 +166,7 @@ int main(int argc,char *argv[])
 	    {
 	      exc.data->data[k] *= 2.0*excwin->data[k];
 	    }
-	  
+
 	  /* set params to call LALComputeCalibrationFactors */
 	  params.darmCtrl = &darm;
 	  params.asQ = &asq;
@@ -177,7 +177,7 @@ int main(int argc,char *argv[])
 	  params.actuationFactor.im = Af0.im/4000.0; /*ACHTUNG: HARDWIRED !!*/
 	  params.responseFactor = Rf0;
 	  params.sensingFactor = Cf0;
-	  
+
 	  LALComputeCalibrationFactors(&status,&factors,&params);
 
 	  magexc=sqrt(factors.exc.re*factors.exc.re+factors.exc.im*factors.exc.im)*2/SL[i].seglength;
@@ -192,7 +192,7 @@ int main(int argc,char *argv[])
 
 	}
     }
-  
+
   if(FreeMem()) return 4;
 
   return 0;
@@ -214,7 +214,7 @@ int main(int argc,char *argv[])
   tgps->gpsNanoSeconds = (INT4)temp4;
 }
 
- 
+
 /*******************************************************************************/
 
 int GetChannelNames(struct CommandLineArgsTag CLA)
@@ -228,7 +228,7 @@ int GetChannelNames(struct CommandLineArgsTag CLA)
 
   chanin_asq.name = CLA.asq_chan;
   chanin_darm.name= CLA.darm_chan;
-  chanin_exc.name = CLA.exc_chan; 
+  chanin_exc.name = CLA.exc_chan;
 
   /* Get channel time step size by calling LALFrGetREAL4TimeSeries */
 
@@ -244,7 +244,7 @@ int GetChannelNames(struct CommandLineArgsTag CLA)
   LALFrRewind(&status,framestream);
 
   /* Determine from the sample rate how many data points to allocate for each segment */
-  
+
   LALCreateVector(&status,&asq.data,(INT4)(SL[0].seglength/asq.deltaT +0.5));
   LALCreateVector(&status,&darm.data,(INT4)(SL[0].seglength/darm.deltaT +0.5));
   LALCreateVector(&status,&exc.data,(INT4)(SL[0].seglength/exc.deltaT +0.5));
@@ -275,7 +275,7 @@ int GetChannelNames(struct CommandLineArgsTag CLA)
 
   fflush(stdout);
 
-  
+
   return 0;
 }
 
@@ -304,11 +304,11 @@ int ReadFiles(struct CommandLineArgsTag CLA)
   A0.f0=0.0;
   A0.deltaF=1.0/64.0;                   /*ACHTUNG: HARDWIRED !!*/
 
- /* This is kinda messy... Unfortunately there's no good way of doing this */ 
+ /* This is kinda messy... Unfortunately there's no good way of doing this */
  /* ------ Open and read Sensing file ------ */
  i=0;
  fpS=fopen(CLA.CFile,"r");
- if (fpS==NULL) 
+ if (fpS==NULL)
    {
      fprintf(stderr,"That's weird... %s doesn't exist!\n",CLA.CFile);
      return 1;
@@ -327,13 +327,13 @@ int ReadFiles(struct CommandLineArgsTag CLA)
      C0.data->data[i].im=Cmag*sin(Cphase);
      i++;
    }
- fclose(fpS);     
+ fclose(fpS);
  /* -- close Sensing file -- */
 
  /* ------ Open and read Response file ------ */
  i=0;
  fpR=fopen(CLA.RFile,"r");
- if (fpR==NULL) 
+ if (fpR==NULL)
    {
      fprintf(stderr,"That's weird... %s doesn't exist!\n",CLA.RFile);
      return 1;
@@ -352,13 +352,13 @@ int ReadFiles(struct CommandLineArgsTag CLA)
      R0.data->data[i].im=Rmag*sin(Rphase);
      i++;
    }
- fclose(fpR);     
+ fclose(fpR);
  /* -- close Sensing file -- */
 
  /* ------ Open and read Response file ------ */
  i=0;
  fpA=fopen(CLA.AFile,"r");
- if (fpA==NULL) 
+ if (fpA==NULL)
    {
      fprintf(stderr,"That's weird... %s doesn't exist!\n",CLA.AFile);
      return 1;
@@ -377,13 +377,13 @@ int ReadFiles(struct CommandLineArgsTag CLA)
      A0.data->data[i].im=Amag*sin(Aphase);
      i++;
    }
- fclose(fpA);     
+ fclose(fpA);
  /* -- close Sensing file -- */
 
  /* ------ Open and read Segment file ------ */
  i=0;
  fpSeg=fopen(CLA.SegmentsFile,"r");
- if (fpSeg==NULL) 
+ if (fpSeg==NULL)
    {
      fprintf(stderr,"That's weird... %s doesn't exist!\n",CLA.SegmentsFile);
      return 1;
@@ -401,7 +401,7 @@ int ReadFiles(struct CommandLineArgsTag CLA)
      i++;
    }
  numsegs=i;
- fclose(fpSeg);     
+ fclose(fpSeg);
  /* -- close Sensing file -- */
 
   /* compute C0 and R0 at correct frequency */
@@ -442,17 +442,17 @@ int ReadFiles(struct CommandLineArgsTag CLA)
 /*******************************************************************************/
 
 extern char *optarg;
-   int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA) 
+   int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
 {
   INT4 c, errflg = 0;
   optarg = NULL;
-  
+
   /* Initialize default values */
   CLA->f=0.0;
-  CLA->k=0.0;  
+  CLA->k=0.0;
   CLA->RFile="";
-  CLA->CFile="";   
-  CLA->AFile="";   
+  CLA->CFile="";
+  CLA->AFile="";
   CLA->FrCacheFile="";
   CLA->SegmentsFile="";
   CLA->exc_chan="";
@@ -493,15 +493,15 @@ extern char *optarg;
     case 'E':
       /* frequency bandwidth */
       CLA->exc_chan=optarg;
-      break;    
+      break;
     case 'A':
       /* frequency bandwidth */
       CLA->asq_chan=optarg;
-      break;    
+      break;
     case 'D':
       /* frequency bandwidth */
       CLA->darm_chan=optarg;
-      break;    
+      break;
    case 'h':
       /* print usage/help message */
       fprintf(stdout,"All arguments are required. They are:\n");
@@ -530,62 +530,62 @@ extern char *optarg;
       fprintf(stderr,"No calibration line frequency specified.\n");
       fprintf(stderr,"Try ./CCFDriver -h \n");
       exit( 77 );
-    }      
+    }
   if(CLA->k == 0)
     {
       fprintf(stderr,"No value of the output matrix to x arm specified.\n");
       fprintf(stderr,"Try ./CCFDriver -h \n");
       exit( 77 );
-    }      
+    }
   if(CLA->CFile == "")
     {
       fprintf(stderr,"No sensing function file specified.\n");
       fprintf(stderr,"Try ./CCFDriver -h \n");
       exit( 77 );
-    }      
+    }
   if(CLA->RFile == "")
     {
       fprintf(stderr,"No response function file specified.\n");
       fprintf(stderr,"Try ./CCFDriver -h \n");
       exit( 77 );
-    }      
+    }
   if(CLA->AFile == "")
     {
       fprintf(stderr,"No actuation function file specified.\n");
       fprintf(stderr,"Try ./CCFDriver -h \n");
       exit( 77 );
-    }      
+    }
   if(CLA->FrCacheFile=="")
     {
       fprintf(stderr,"No frame cache file specified.\n");
       fprintf(stderr,"Try ./CCFDriver -h \n");
       exit( 77 );
-    }      
+    }
   if(CLA->SegmentsFile=="")
     {
       fprintf(stderr,"No segments file specified.\n");
       fprintf(stderr,"Try ./CCFDriver -h \n");
       exit( 77 );
-    }      
+    }
    if(CLA->exc_chan == "")
     {
       fprintf(stderr,"No excitation channel specified.\n");
       fprintf(stderr,"Try ./CCFDriver -h \n");
       exit( 77 );
-    }      
+    }
    if(CLA->darm_chan == "")
     {
       fprintf(stderr,"No darm channel specified.\n");
       fprintf(stderr,"Try ./CCFDriver -h \n");
       exit( 77 );
-    }      
+    }
    if(CLA->asq_chan == "")
     {
       fprintf(stderr,"No asq channel specified.\n");
       fprintf(stderr,"Try ./CCFDriver -h \n");
       exit( 77 );
-    }      
- 
+    }
+
 
 
   return errflg;
@@ -607,7 +607,7 @@ int FreeMem(void)
   LALDestroyVector(&status,&excwin);
 
   LALCheckMemoryLeaks();
- 
+
   return 0;
 }
 #endif

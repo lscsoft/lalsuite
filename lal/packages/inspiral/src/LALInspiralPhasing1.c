@@ -27,7 +27,7 @@ $Id$
 \subsection{Module \texttt{LALInspiralPhasing1.c}}
 This module is used to set the phase of the waveform so that
 it is equal to the user specified phase $\phi_0$ when the `velocity' of the
-system is equal to $v.$ 
+system is equal to $v.$
 
 \subsubsection*{Prototypes}
 \vspace{0.1in}
@@ -42,13 +42,13 @@ the phasing formula,
 \phi(v) =  \phi_{0} - 2 \int_{v_{0}}^{v} v^{3} \frac{E'(v)}{{\cal F}(v)} \, dv \,\,.
 \label{phiofv}
 \end{equation}
-\texttt{LALInspiralPhasing1} calculates $\phi(v)$, given $\phi_{0}$, $v_{0}$,  
+\texttt{LALInspiralPhasing1} calculates $\phi(v)$, given $\phi_{0}$, $v_{0}$,
 $v$, $E^{\prime}(v)$ and $\mathcal{F}(v)$.  The user can specify the phase to
 be of a particular value at an arbitrary point on the waveform when the
 post-Newtonian evolution variable $v$ reaches a specific value. Choosing
 $v=v_0,$ the initial velocity, means that the initial phase of the wave is $\phi_0;$
 Choosing $v=v_{\rm lso}$ means that the phase at the last stable orbit is $\phi_0$ and
-so on. 
+so on.
 
 \subsubsection*{Algorithm}
 Numerical integration.
@@ -68,10 +68,10 @@ Numerical integration.
 #include <lal/LALInspiral.h>
 #include <lal/Integrate.h>
 
-NRCSID (LALINSPIRALPHASING1C, "$Id$"); 
+NRCSID (LALINSPIRALPHASING1C, "$Id$");
 
 /*  <lalVerbatim file="LALInspiralPhasing1CP"> */
-void 
+void
 LALInspiralPhasing1 (
    LALStatus *status,
    REAL8     *phiofv,
