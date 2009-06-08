@@ -450,7 +450,7 @@ int XLALSimInspiralPNEvolveOrbitTaylorT4(
 	       	REAL8 deltaT,          /**< sampling interval */
 		REAL8 m1,              /**< mass of companion 1 */
 		REAL8 m2,              /**< mass of companion 2 */
-		REAL8 fmin,            /**< start frequency */
+		REAL8 f_min,           /**< start frequency */
 		int O                  /**< twice post-Newtonian order */
 		)
 {
@@ -483,7 +483,7 @@ int XLALSimInspiralPNEvolveOrbitTaylorT4(
 	params.m2 = m2;
 	params.O  = O;
 
-	y[0] = (*x)->data->data[0] = pow(LAL_PI*LAL_G_SI*m*fmin/pow(LAL_C_SI,3.0), 2.0/3.0);
+	y[0] = (*x)->data->data[0] = pow(LAL_PI*LAL_G_SI*m*f_min/pow(LAL_C_SI,3.0), 2.0/3.0);
 	y[1] = (*phi)->data->data[0] = 0.0;
 	E = XLALSimInspiralPNEnergy(y[0], m1, m2, O);
 	if (XLALIsREAL8FailNaN(E))
@@ -658,7 +658,7 @@ int XLALSimInspiralPNGenerator(
 	       	REAL8 deltaT,             /**< sampling interval */
 	       	REAL8 m1,                 /**< mass of companion 1 */
 	       	REAL8 m2,                 /**< mass of companion 2 */
-	       	REAL8 fmin,               /**< start frequency */
+	       	REAL8 f_min,              /**< start frequency */
 	       	REAL8 r,                  /**< distance of source */
 	       	REAL8 i,                  /**< inclination of source (rad) */
 	       	int amplitudeO,           /**< twice post-Newtonian amplitude order */
@@ -670,7 +670,7 @@ int XLALSimInspiralPNGenerator(
 	REAL8TimeSeries *phi;
 	int status;
 	int n;
-	n = XLALSimInspiralPNEvolveOrbitTaylorT4(&x, &phi, tc, phic, deltaT, m1, m2, fmin, phaseO);
+	n = XLALSimInspiralPNEvolveOrbitTaylorT4(&x, &phi, tc, phic, deltaT, m1, m2, f_min, phaseO);
 	if ( n < 0 )
 		XLAL_ERROR(func, XLAL_EFUNC);
 	status = XLALSimInspiralPNPolarizationWaveforms(hplus, hcross, x, phi, x0, m1, m2, r, i, amplitudeO);
@@ -698,14 +698,14 @@ int XLALSimInspiralPN(
 	       	REAL8 deltaT,             /**< sampling interval */
 	       	REAL8 m1,                 /**< mass of companion 1 */
 	       	REAL8 m2,                 /**< mass of companion 2 */
-	       	REAL8 fmin,               /**< start frequency */
+	       	REAL8 f_min,              /**< start frequency */
 	       	REAL8 r,                  /**< distance of source */
 	       	REAL8 i,                  /**< inclination of source (rad) */
 	       	int O                     /**< twice post-Newtonian order */
 		)
 {
 	/* set x0=0 to ignore log terms */
-	return XLALSimInspiralPNGenerator(hplus, hcross, tc, phic, 0.0, deltaT, m1, m2, fmin, r, i, O, O);
+	return XLALSimInspiralPNGenerator(hplus, hcross, tc, phic, 0.0, deltaT, m1, m2, f_min, r, i, O, O);
 }
 
 /**
@@ -724,7 +724,7 @@ int XLALSimInspiralPNRestricted(
 	       	REAL8 deltaT,             /**< sampling interval */
 	       	REAL8 m1,                 /**< mass of companion 1 */
 	       	REAL8 m2,                 /**< mass of companion 2 */
-	       	REAL8 fmin,               /**< start frequency */
+	       	REAL8 f_min,              /**< start frequency */
 	       	REAL8 r,                  /**< distance of source */
 	       	REAL8 i,                  /**< inclination of source (rad) */
 	       	int O                     /**< twice post-Newtonian phase order */
@@ -732,7 +732,7 @@ int XLALSimInspiralPNRestricted(
 {
 	/* use Newtonian order for amplitude */
 	/* set x0=0 to ignore log terms */
-	return XLALSimInspiralPNGenerator(hplus, hcross, tc, phic, 0.0, deltaT, m1, m2, fmin, r, i, O, 0);
+	return XLALSimInspiralPNGenerator(hplus, hcross, tc, phic, 0.0, deltaT, m1, m2, f_min, r, i, O, 0);
 }
 
 
@@ -748,11 +748,11 @@ int main(void)
 	REAL8 m2 = 1.4*LAL_MSUN_SI;
 	REAL8 r = 1e6*LAL_PC_SI;
 	REAL8 i = 0.5*LAL_PI;
-	REAL8 fmin = 100.0;
+	REAL8 f_min = 100.0;
 	int O = -1;
 	REAL8TimeSeries *hplus;
 	REAL8TimeSeries *hcross;
-	XLALSimInspiralPN(&hplus, &hcross, &tc, phic, deltaT, m1, m2, fmin, r, i, O);
+	XLALSimInspiralPN(&hplus, &hcross, &tc, phic, deltaT, m1, m2, f_min, r, i, O);
 	LALDPrintTimeSeries(hplus, "hp.dat");
 	LALDPrintTimeSeries(hcross, "hc.dat");
 	XLALDestroyREAL8TimeSeries(hplus);

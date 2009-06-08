@@ -250,7 +250,7 @@ int XLALSimInspiralPNEvolveOrbitTaylorT4(
 	       	REAL8 deltaT,          /**< sampling interval */
 		REAL8 m1,              /**< mass of companion 1 */
 		REAL8 m2,              /**< mass of companion 2 */
-		REAL8 fmin,            /**< start frequency */
+		REAL8 f_min,           /**< start frequency */
 		int O                  /**< twice post-Newtonian order */
 		);
 
@@ -313,7 +313,7 @@ int XLALSimInspiralPN(
 	       	REAL8 deltaT,             /**< sampling interval */
 	       	REAL8 m1,                 /**< mass of companion 1 */
 	       	REAL8 m2,                 /**< mass of companion 2 */
-	       	REAL8 fmin,               /**< start frequency */
+	       	REAL8 f_min,              /**< start frequency */
 	       	REAL8 r,                  /**< distance of source */
 	       	REAL8 i,                  /**< inclination of source (rad) */
 	       	int O                     /**< twice post-Newtonian order */
@@ -335,7 +335,7 @@ int XLALSimInspiralPNRestricted(
 	       	REAL8 deltaT,             /**< sampling interval */
 	       	REAL8 m1,                 /**< mass of companion 1 */
 	       	REAL8 m2,                 /**< mass of companion 2 */
-	       	REAL8 fmin,               /**< start frequency */
+	       	REAL8 f_min,              /**< start frequency */
 	       	REAL8 r,                  /**< distance of source */
 	       	REAL8 i,                  /**< inclination of source (rad) */
 	       	int O                     /**< twice post-Newtonian phase order */
