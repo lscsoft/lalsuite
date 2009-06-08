@@ -419,10 +419,10 @@ XLALGenerateInspRing(
 
   /* ringdown start time */
   {
-    REAL8 tRing;
-    tRing = XLALGPSGetREAL8(&(inspiralInj->geocent_end_time));
-    tRing += ( mergerLength + endMerger + 1.0) * dt;
-    XLALGPSSetREAL8( &(ringInj->geocent_start_time), tRing );
+    REAL8 tRing2;
+    tRing2 = XLALGPSGetREAL8(&(inspiralInj->geocent_end_time));
+    tRing2 += ( mergerLength + endMerger + 1.0) * dt;
+    XLALGPSSetREAL8( &(ringInj->geocent_start_time), tRing2 );
   }
   XLALPrintInfo(
       "Ringdown start time = %d.%d\n", ringInj->geocent_start_time.gpsSeconds,
