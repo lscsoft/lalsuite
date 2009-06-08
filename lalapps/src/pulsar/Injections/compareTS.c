@@ -261,6 +261,9 @@ XLALcompareREAL4Vectors ( REAL4Vector *ts1, REAL4Vector *ts2 )
   reldiff_max = maxdiff / maxpower;
   reldiff_avg = sumdiff / total_power;
 
+  LogPrintf (LOG_DEBUG, "%s: maximal difference = %g, maximal amplitude = %g ==> relative error %g\n", fn, maxdiff, maxpower, reldiff_max );
+  LogPrintf (LOG_DEBUG, "%s: total difference = %g, total summed amplitude = %g ==> relative avg error %g\n", fn, sumdiff, total_power, reldiff_avg );
+
   reldiff = MYMAX ( reldiff_max, reldiff_avg );
 
   return (REAL4)reldiff;
