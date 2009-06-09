@@ -5,4 +5,4 @@ opt/lscsoft/lalsuite/lib/pkgconfig
 opt/lscsoft/lalsuite/sbin/uninstall-lal.sh
 opt/lscsoft/lalsuite/share/man/man1/lal-config.1*
 opt/lscsoft/lalsuite/share/man/man3/lal.3*
-#opt/lscsoft/lalsuite/datadir
+opt/lscsoft/lalsuite/share/lal
