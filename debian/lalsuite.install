@@ -1,0 +1,5 @@
+opt/lscsoft/lalsuite/bin/lal-version
+opt/lscsoft/lalsuite/etc/*-user-env.*
+opt/lscsoft/lalsuite/lib/*.so*
+opt/lscsoft/lalsuite/sbin/uninstall-*.sh
+opt/lscsoft/lalsuite/share/lal
