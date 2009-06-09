@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_INIT([lal],[5.3],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lal],[6.0],[lal-discuss@gravity.phys.uwm.edu])
 AC_CONFIG_HEADERS([include/config.h] [include/lal/LALConfig.h])
 AC_CONFIG_SRCDIR([include/config.h.in])
 AC_CONFIG_AUX_DIR([misc])
