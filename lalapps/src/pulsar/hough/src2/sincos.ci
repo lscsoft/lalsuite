@@ -78,6 +78,17 @@ static INT4 sincosI, sincosN;
 
 /* LUT evaluation */
 
+#ifndef LAL_NDEBUG
+#define SINCOS_2PI_TRIMMED(s,c,x)						\
+  if ( local_sin_cos_2PI_LUT_trimmed(s,c,x) ) {				\
+    XLAL_ERROR ( "LocalXLALComputeFaFb", XLAL_EFUNC);			\
+  }
+#else
+#define SINCOS_2PI_TRIMMED(s,c,x)			\
+  local_sin_cos_2PI_LUT_trimmed(s,c,x)
+#endif
+
+
 #ifndef SINCOS_X87_GNU_ASS
 
 

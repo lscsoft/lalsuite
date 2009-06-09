@@ -112,13 +112,7 @@
 #define LIN_SIN_COS_P4(sin) ""
 #define LIN_SIN_COS_P5(cos) ""		
 
-#ifndef LAL_NDEBUG
-	  if ( local_sin_cos_2PI_LUT_trimmed ( &s_alpha, &c_alpha, kappa_star ) ) {
-	    XLAL_ERROR ( "LocalXLALComputeFaFb", XLAL_EFUNC);
-	  }
-#else
-	  local_sin_cos_2PI_LUT_trimmed ( &s_alpha, &c_alpha, kappa_star );
-#endif	  
+	  SINCOS_2PI_TRIMMED ( &s_alpha, &c_alpha, kappa_star );
 
           SINCOS_TRIM_X (_lambda_alpha,_lambda_alpha);
 #endif /* EAH_HOTLOOP_INTERLEAVED */
@@ -325,13 +319,8 @@
 	   * We choose the value sin[ 2pi(Dphi_alpha - kstar) ] because it is the 
 	   * closest to zero and will pose no numerical difficulties !
 	   */
-#ifndef LAL_NDEBUG
-	  if ( local_sin_cos_2PI_LUT_trimmed ( &s_alpha, &c_alpha, kappa_star ) ) {
-	    XLAL_ERROR ( "LocalXLALComputeFaFb", XLAL_EFUNC);
-	  }
-#else
-	  local_sin_cos_2PI_LUT_trimmed ( &s_alpha, &c_alpha, kappa_star );
-#endif
+	  SINCOS_2PI_TRIMMED( &s_alpha, &c_alpha, kappa_star );
+
 	  c_alpha -= 1.0f;
 
 	  realXP = s_alpha * STn.re - c_alpha * STn.im;
@@ -785,13 +774,7 @@ LIN_SIN_COS_TRIM_P0A(_lambda_alpha)
 	  }
 	  
 	  {
-#ifndef LAL_NDEBUG
-	    if ( local_sin_cos_2PI_LUT_trimmed ( &s_alpha, &c_alpha, kappa_star ) ) {
-	      XLAL_ERROR ( "LocalXLALComputeFaFb", XLAL_EFUNC);
-	    }
-#else
-	    local_sin_cos_2PI_LUT_trimmed ( &s_alpha, &c_alpha, kappa_star );
-#endif
+	    SINCOS_2PI_TRIMMED( &s_alpha, &c_alpha, kappa_star );
 	    c_alpha -= 1.0f;
 	  }
 
@@ -866,13 +849,7 @@ LIN_SIN_COS_TRIM_P0A(_lambda_alpha)
 	  V_alpha = Tn / qn;
 #endif /* EAH_HOTLOOP_DIVS */
 
-#ifndef LAL_NDEBUG
-	  if ( local_sin_cos_2PI_LUT_trimmed ( &s_alpha, &c_alpha, kappa_star ) ) {
-	    XLAL_ERROR ( "LocalXLALComputeFaFb", XLAL_EFUNC);
-	  }
-#else
-	  local_sin_cos_2PI_LUT_trimmed ( &s_alpha, &c_alpha, kappa_star );
-#endif
+	  SINCOS_2PI_TRIMMED(&s_alpha, &c_alpha, kappa_star);
 	  c_alpha -= 1.0f;
 	
  	  realXP = s_alpha * U_alpha - c_alpha * V_alpha;
@@ -896,13 +873,7 @@ LIN_SIN_COS_TRIM_P0A(_lambda_alpha)
 #ifdef EAH_HOTLOOP_INTERLEAVED
 	REAL8 _lambda_alpha = -lambda_alpha;
 	SINCOS_TRIM_X (_lambda_alpha,_lambda_alpha);
-#ifndef LAL_NDEBUG
-	if ( local_sin_cos_2PI_LUT_trimmed ( &imagQ, &realQ, _lambda_alpha ) ) {
-	  XLAL_ERROR ( "LocalXLALComputeFaFb", XLAL_EFUNC);
-	}
-#else
-	local_sin_cos_2PI_LUT_trimmed ( &imagQ, &realQ, _lambda_alpha );
-#endif
+	SINCOS_2PI_TRIMMED( &imagQ, &realQ, _lambda_alpha );
 #endif
 	} /* if |remainder| <= LD_SMALL4 */
 
@@ -910,12 +881,6 @@ LIN_SIN_COS_TRIM_P0A(_lambda_alpha)
 #ifndef EAH_HOTLOOP_INTERLEAVED
 	REAL8 _lambda_alpha = -lambda_alpha;
 	SINCOS_TRIM_X (_lambda_alpha,_lambda_alpha);
-#ifndef LAL_NDEBUG
-	if ( local_sin_cos_2PI_LUT_trimmed ( &imagQ, &realQ, _lambda_alpha ) ) {
-	  XLAL_ERROR ( "LocalXLALComputeFaFb", XLAL_EFUNC);
-	}
-#else
-	local_sin_cos_2PI_LUT_trimmed ( &imagQ, &realQ, _lambda_alpha );
-#endif
+	SINCOS_2PI_TRIMMED( &imagQ, &realQ, _lambda_alpha );
 #endif
       }
