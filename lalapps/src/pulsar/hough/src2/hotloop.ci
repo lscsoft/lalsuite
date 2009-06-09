@@ -419,13 +419,7 @@
 #define LIN_SIN_COS_P4(sin) ""
 #define LIN_SIN_COS_P5(cos) ""		
 
-#ifndef LAL_NDEBUG
-	  if ( local_sin_cos_2PI_LUT_trimmed ( &s_alpha, &c_alpha, kappa_star ) ) {
-	    XLAL_ERROR ( "LocalXLALComputeFaFb", XLAL_EFUNC);
-	  }
-#else
-	  local_sin_cos_2PI_LUT_trimmed ( &s_alpha, &c_alpha, kappa_star );
-#endif	  
+	  SINCOS_2PI_TRIMMED ( &s_alpha, &c_alpha, kappa_star );
 
           SINCOS_TRIM_X (_lambda_alpha,_lambda_alpha);
 #endif
@@ -643,13 +637,7 @@ LIN_SIN_COS_TRIM_P0A(_lambda_alpha)
 	   * We choose the value sin[ 2pi(Dphi_alpha - kstar) ] because it is the 
 	   * closest to zero and will pose no numerical difficulties !
 	   */
-#ifndef LAL_NDEBUG
-	  if ( local_sin_cos_2PI_LUT_trimmed ( &s_alpha, &c_alpha, kappa_star ) ) {
-	    XLAL_ERROR ( "LocalXLALComputeFaFb", XLAL_EFUNC);
-	  }
-#else
-	  local_sin_cos_2PI_LUT_trimmed ( &s_alpha, &c_alpha, kappa_star );
-#endif
+	  SINCOS_2PI_TRIMMED ( &s_alpha, &c_alpha, kappa_star );
 	  c_alpha -= 1.0f;
 
 	  realXP = s_alpha * STn.re - c_alpha * STn.im;
@@ -661,13 +649,7 @@ LIN_SIN_COS_TRIM_P0A(_lambda_alpha)
 #elif (EAH_HOTLOOP_VARIANT == EAH_HOTLOOP_VARIANT_ALTIVEC)
 
 	{
-#ifndef LAL_NDEBUG
-	  if ( local_sin_cos_2PI_LUT_trimmed ( &s_alpha, &c_alpha, kappa_star ) ) {
-	  XLAL_ERROR ( "LocalXLALComputeFaFb", XLAL_EFUNC);
-	  }
-#else
-	  local_sin_cos_2PI_LUT_trimmed ( &s_alpha, &c_alpha, kappa_star );
-#endif
+	  SINCOS_2PI_TRIMMED ( &s_alpha, &c_alpha, kappa_star );
 	  c_alpha -= 1.0f;
 	  {
 	    REAL4 *Xalpha_kR4 = (REAL4*)(Xalpha_l);
