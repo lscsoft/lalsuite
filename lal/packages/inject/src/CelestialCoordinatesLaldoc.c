@@ -150,7 +150,7 @@ $$
 
 ******************************************************* </lalLaTeX> */
 
-/* <lalVerbatim file="CelestialCoordinatesCP"> 
+/* <lalVerbatim file="CelestialCoordinatesCP">
 void
 LALGalacticToEquatorial( LALStatus   *stat,
 			 SkyPosition *output,
@@ -164,14 +164,14 @@ LALEquatorialToGalactic( LALStatus   *stat,
 			 SkyPosition *input )
 { </lalVerbatim> */
 
-/* <lalVerbatim file="CelestialCoordinatesCP"> 
+/* <lalVerbatim file="CelestialCoordinatesCP">
 void
 LALEclipticToEquatorial( LALStatus   *stat,
 			 SkyPosition *output,
 			 SkyPosition *input )
 { </lalVerbatim> */
 
-/* <lalVerbatim file="CelestialCoordinatesCP"> 
+/* <lalVerbatim file="CelestialCoordinatesCP">
 void
 LALEquatorialToEcliptic( LALStatus   *stat,
 			 SkyPosition *output,

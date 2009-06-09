@@ -12,8 +12,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with with program; see the file COPYING. If not, write to the 
- *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, 
+ *  along with with program; see the file COPYING. If not, write to the
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
  */
 
@@ -21,17 +21,17 @@
 /** \file NRWaveIOTest.c
  * \ingroup NRWaveIO
  * \author S.Fairhurst, B.Krishnan, L.Santamaria
- * 
+ *
  * \brief Test-code for NRWaveIO
  *
- * $Id$ 
+ * $Id$
  *
  */
 
 /*---------- INCLUDES ----------*/
 #include <config.h>
 #include <lal/NRWaveIO.h>
-#include <lal/NRWaveInject.h> 
+#include <lal/NRWaveInject.h>
 
 NRCSID (NRWAVEIOTESTC, "$Id$");
 
@@ -135,7 +135,7 @@ INT4 lalDebugLevel = 3;
 
 /* ----------------------------------------------------------------------*/
 int main(int argc, char *argv[])
-{ 
+{
   LALStatus status = empty_status;
 
   CHAR filename[128];
@@ -151,10 +151,10 @@ int main(int argc, char *argv[])
 
   for ( k = 0; k < nrcatalog.length; k++) {
     fprintf(stdout,"\n\n Wave # %d:\n", k);
-    fprintf(stdout, "Mass ratio = %f, spin1=(%f,%f,%f), spin2=(%f,%f, %f), l=%d, m=%d, datafile=%s\n", 
+    fprintf(stdout, "Mass ratio = %f, spin1=(%f,%f,%f), spin2=(%f,%f, %f), l=%d, m=%d, datafile=%s\n",
 	    nrcatalog.data[k].massRatio, nrcatalog.data[k].spin1[0], nrcatalog.data[k].spin1[1],
 	    nrcatalog.data[k].spin1[2], nrcatalog.data[k].spin2[0], nrcatalog.data[k].spin1[1],
-	    nrcatalog.data[k].spin1[2], nrcatalog.data[k].mode[0], nrcatalog.data[k].mode[1], 
+	    nrcatalog.data[k].spin1[2], nrcatalog.data[k].mode[0], nrcatalog.data[k].mode[1],
 	    nrcatalog.data[k].filename);
   }
 
@@ -169,8 +169,8 @@ int main(int argc, char *argv[])
 
   LALFree(nrcatalog.data);
 
-  LALCheckMemoryLeaks(); 
- 
+  LALCheckMemoryLeaks();
+
   INFO( NRWAVEINJECTTESTC_MSGENORM );
   return NRWAVEINJECTTESTC_ENORM;
 }

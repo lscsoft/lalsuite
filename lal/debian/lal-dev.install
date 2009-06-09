@@ -1,0 +1,8 @@
+opt/lscsoft/lal/bin/lal-config
+opt/lscsoft/lal/include/lal*
+opt/lscsoft/lal/lib/*a
+opt/lscsoft/lal/lib/pkgconfig
+opt/lscsoft/lal/sbin/uninstall-lal.sh
+opt/lscsoft/lal/share/man/man1/lal-config.1*
+opt/lscsoft/lal/share/man/man3/lal.3*
+opt/lscsoft/lal/share/lal

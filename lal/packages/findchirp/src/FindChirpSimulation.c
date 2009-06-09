@@ -603,7 +603,7 @@ XLALFindChirpSetAnalyzeSegment (
     currentSegment = dataSegVec->data + i;
 
     /* compute the start and end of segment */
-    chanStartTime = XLALGPStoINT8( &currentSegment->chan->epoch );
+    chanStartTime = XLALGPSToINT8NS( &currentSegment->chan->epoch );
     chanEndTime = chanStartTime + 
       (INT8) (1e9 * currentSegment->chan->data->length * 
               currentSegment->chan->deltaT);
@@ -613,7 +613,7 @@ XLALFindChirpSetAnalyzeSegment (
     thisInjection=injections;
     while (thisInjection)
     {
-      INT8 ta = XLALGPStoINT8( &thisInjection->geocent_end_time );
+      INT8 ta = XLALGPSToINT8NS( &thisInjection->geocent_end_time );
 
       if ( ta > chanStartTime && ta <= chanEndTime )
       {
@@ -679,7 +679,7 @@ XLALFindChirpTagTemplateAndSegment (
     {
         REAL8    g11, g12, g22;
         
-        tc = XLALGPStoINT8( &thisEvent->end_time );
+        tc = XLALGPSToINT8NS( &thisEvent->end_time );
         flag = 0;
 
         /* Loop over segments */
@@ -690,7 +690,7 @@ XLALFindChirpTagTemplateAndSegment (
            currentSegment = dataSegVec->data + s;
 
            /* compute the start and end of segment */
-           chanStartTime = XLALGPStoINT8( &currentSegment->chan->epoch );
+           chanStartTime = XLALGPSToINT8NS( &currentSegment->chan->epoch );
            chanEndTime = chanStartTime +
                 (INT8) (1e9 * currentSegment->chan->data->length *
                 currentSegment->chan->deltaT);
@@ -789,7 +789,7 @@ XLALFindChirpSetFollowUpSegment (
     currentSegment = dataSegVec->data + i;
 
     /* compute the start and end of segment */
-    chanStartTime = XLALGPStoINT8( &currentSegment->chan->epoch );
+    chanStartTime = XLALGPSToINT8NS( &currentSegment->chan->epoch );
     chanEndTime = chanStartTime +
       (INT8) (1e9 * currentSegment->chan->data->length *
               currentSegment->chan->deltaT);
@@ -799,7 +799,7 @@ XLALFindChirpSetFollowUpSegment (
     thisEvent = *events;
     while (thisEvent)
     {
-      INT8 ta = XLALGPStoINT8( &thisEvent->end_time );
+      INT8 ta = XLALGPSToINT8NS( &thisEvent->end_time );
 
       if ( ta > chanStartTime && ta <= chanEndTime )
       {
@@ -1230,7 +1230,7 @@ XLALFindChirpBankSimInjectSignal (
     XLALFrClose( frStream );
 
     /* center the waveform in the data segment */
-    waveformStartTime = XLALGPStoINT8( &(dataSegVec->data->chan->epoch) );
+    waveformStartTime = XLALGPSToINT8NS( &(dataSegVec->data->chan->epoch) );
 
     for ( i = 0; i < frameData.data->length; ++i )
     {

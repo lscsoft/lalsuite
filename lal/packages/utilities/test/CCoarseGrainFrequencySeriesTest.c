@@ -50,7 +50,7 @@ This program tests the routine
 \texttt{LALCCoarseGrainFrequencySeries()}, which coarse-grains a
 frequency series.
 
-First, it tests that the correct error codes 
+First, it tests that the correct error codes
 (\textit{cf.}\ Sec.~\ref{utilities:s:CoarseGrainFrequencySeries.h})
 are generated for the following error conditions (tests in
 \textit{italics} are not performed if \verb+LAL_NDEBUG+ is set, as
@@ -80,7 +80,7 @@ f=3$, $N=3$; the expected output is $\{h_k\}=\{2/3,3,6\}$.
 \item $f_0'=40$, $\delta f'= 1$,
   $\{h_k\}=\{f_k+i\,f_k^{-1}|k=0,\ldots,4\}$, $f_0=41$,
 $f_0=f'_0$, $\delta f=2$.
-$\delta f'=3$, $N=$ ; the expected output is 
+$\delta f'=3$, $N=$ ; the expected output is
 $$
 \{h'_\ell\}=\left\{41+i\left(\frac{1}{40}+\frac{2}{41}+\frac{1}{42}\right),
   43+i\left(\frac{1}{42}+\frac{2}{43}+\frac{1}{44}\right)
@@ -244,36 +244,36 @@ ParseOptions (int argc, char *argv[]);
 #define CCOARSEGRAINFREQUENCYSERIESTESTC_MSGEUSE "Bad user-entered data"
 /***************************** </lalErrTable> */
 
-int 
+int
 main( int argc, char *argv[] )
 {
-   
+
    static LALStatus         status;
 
    UINT4      i;
    REAL8      f;
-   
+
    COMPLEX8                   *cPtr;
 
-   const COMPLEX8  testInputDataData[CCOARSEGRAINFREQUENCYSERIESTESTC_LENGTH0] 
+   const COMPLEX8  testInputDataData[CCOARSEGRAINFREQUENCYSERIESTESTC_LENGTH0]
      = {{0.0,0.0}, {1.0,0.0}, {2.0,0.0}, {3.0,0.0},
         {4.0,0.0}, {5.0,0.0}, {6.0,0.0}, {7.0,0.0}};
 
-   const COMPLEX8 
-     expectedOutput1DataData[CCOARSEGRAINFREQUENCYSERIESTESTC_LENGTH1] 
+   const COMPLEX8
+     expectedOutput1DataData[CCOARSEGRAINFREQUENCYSERIESTESTC_LENGTH1]
      = {{0.5,0.0}, {2.0,0.0}, {4.0,0.0}, {6.0,0.0}};
 
-   const COMPLEX8 
-     expectedOutput2DataData[CCOARSEGRAINFREQUENCYSERIESTESTC_LENGTH2] 
+   const COMPLEX8
+     expectedOutput2DataData[CCOARSEGRAINFREQUENCYSERIESTESTC_LENGTH2]
      = {{(2.0/3.0),0.0}, {3.0,0.0}, {6.0,0.0}};
 
    const COMPLEX8
-     testInput3DataData[CCOARSEGRAINFREQUENCYSERIESTESTC_LENGTH3] 
+     testInput3DataData[CCOARSEGRAINFREQUENCYSERIESTESTC_LENGTH3]
      = {{40.0,1.0/40.0}, {41.0,1.0/41.0}, {42.0,1.0/42.0},
         {43.0,1.0/43.0}, {44.0,1.0/44.0}};
-   
-   const COMPLEX8 
-     expectedOutput4DataData[CCOARSEGRAINFREQUENCYSERIESTESTC_LENGTH4] 
+
+   const COMPLEX8
+     expectedOutput4DataData[CCOARSEGRAINFREQUENCYSERIESTESTC_LENGTH4]
      = {{41.0, (1.0/40.0+2.0/41.0+1.0/42.0) / 4.0},
         {43.0, (1.0/42.0+2.0/43.0+1.0/44.0) / 4.0}};
 
@@ -337,7 +337,7 @@ main( int argc, char *argv[] )
    {
      /* test behavior for null pointer to output series */
      LALCCoarseGrainFrequencySeries(&status, NULL, &goodInput, &params);
-     if ( ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_ENULLPTR, 
+     if ( ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_ENULLPTR,
 			       COARSEGRAINFREQUENCYSERIESH_MSGENULLPTR,
 			       CCOARSEGRAINFREQUENCYSERIESTESTC_ECHK,
 			       CCOARSEGRAINFREQUENCYSERIESTESTC_MSGECHK) ) )
@@ -348,7 +348,7 @@ main( int argc, char *argv[] )
 
      /* test behavior for null pointer to input series */
      LALCCoarseGrainFrequencySeries(&status, &goodOutput, NULL, &params);
-     if ( ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_ENULLPTR, 
+     if ( ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_ENULLPTR,
 			       COARSEGRAINFREQUENCYSERIESH_MSGENULLPTR,
 			       CCOARSEGRAINFREQUENCYSERIESTESTC_ECHK,
 			       CCOARSEGRAINFREQUENCYSERIESTESTC_MSGECHK) ) )
@@ -356,10 +356,10 @@ main( int argc, char *argv[] )
        return code;
      }
      printf("  PASS: null pointer to input series results in error:\n       \"%s\"\n", COARSEGRAINFREQUENCYSERIESH_MSGENULLPTR);
-   
+
      /* test behavior for null pointer to parameter structure */
      LALCCoarseGrainFrequencySeries(&status, &goodOutput, &goodInput, NULL);
-     if ( ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_ENULLPTR, 
+     if ( ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_ENULLPTR,
 			       COARSEGRAINFREQUENCYSERIESH_MSGENULLPTR,
 			       CCOARSEGRAINFREQUENCYSERIESTESTC_ECHK,
 			       CCOARSEGRAINFREQUENCYSERIESTESTC_MSGECHK) ) )
@@ -367,10 +367,10 @@ main( int argc, char *argv[] )
        return code;
      }
      printf("  PASS: null pointer to parameter structure results in error:\n       \"%s\"\n", COARSEGRAINFREQUENCYSERIESH_MSGENULLPTR);
-   
+
      /* test behavior for null pointer to data member of output series */
      LALCCoarseGrainFrequencySeries(&status, &badOutput, &goodInput, &params);
-     if ( ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_ENULLPTR, 
+     if ( ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_ENULLPTR,
 			       COARSEGRAINFREQUENCYSERIESH_MSGENULLPTR,
 			       CCOARSEGRAINFREQUENCYSERIESTESTC_ECHK,
 			       CCOARSEGRAINFREQUENCYSERIESTESTC_MSGECHK) ) )
@@ -381,7 +381,7 @@ main( int argc, char *argv[] )
 
      /* test behavior for null pointer to data member of input series */
      LALCCoarseGrainFrequencySeries(&status, &goodOutput, &badInput, &params);
-     if ( ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_ENULLPTR, 
+     if ( ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_ENULLPTR,
 			       COARSEGRAINFREQUENCYSERIESH_MSGENULLPTR,
 			       CCOARSEGRAINFREQUENCYSERIESTESTC_ECHK,
 			       CCOARSEGRAINFREQUENCYSERIESTESTC_MSGECHK) ) )
@@ -401,7 +401,7 @@ main( int argc, char *argv[] )
      cPtr = badOutput.data->data;
      badOutput.data->data = NULL;
      LALCCoarseGrainFrequencySeries(&status, &badOutput, &goodInput, &params);
-     if ( ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_ENULLPTR, 
+     if ( ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_ENULLPTR,
 			       COARSEGRAINFREQUENCYSERIESH_MSGENULLPTR,
 			       CCOARSEGRAINFREQUENCYSERIESTESTC_ECHK,
 			       CCOARSEGRAINFREQUENCYSERIESTESTC_MSGECHK) ) )
@@ -417,7 +417,7 @@ main( int argc, char *argv[] )
      {
        return code;
      }
-     
+
      /* test behavior for null pointer to data member of data member of output series */
      LALCCreateVector(&status, &(badInput.data), CCOARSEGRAINFREQUENCYSERIESTESTC_LENGTH0);
      if ( ( code = CheckStatus(&status, 0 , "",
@@ -429,7 +429,7 @@ main( int argc, char *argv[] )
      cPtr = badInput.data->data;
      badInput.data->data = NULL;
      LALCCoarseGrainFrequencySeries(&status, &goodOutput, &badInput, &params);
-     if ( ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_ENULLPTR, 
+     if ( ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_ENULLPTR,
 			       COARSEGRAINFREQUENCYSERIESH_MSGENULLPTR,
 			       CCOARSEGRAINFREQUENCYSERIESTESTC_ECHK,
 			       CCOARSEGRAINFREQUENCYSERIESTESTC_MSGECHK) ) )
@@ -450,7 +450,7 @@ main( int argc, char *argv[] )
 
      /* input and output series */
      LALCCoarseGrainFrequencySeries(&status, &goodInput, &goodInput, &params);
-     if ( ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_ESAMEPTR, 
+     if ( ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_ESAMEPTR,
 			       COARSEGRAINFREQUENCYSERIESH_MSGESAMEPTR,
 			       CCOARSEGRAINFREQUENCYSERIESTESTC_ECHK,
 			       CCOARSEGRAINFREQUENCYSERIESTESTC_MSGECHK) ) )
@@ -464,7 +464,7 @@ main( int argc, char *argv[] )
 
      /* data members of input and output series */
      LALCCoarseGrainFrequencySeries(&status, &badOutput, &goodInput, &params);
-     if ( ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_ESAMEPTR, 
+     if ( ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_ESAMEPTR,
 			       COARSEGRAINFREQUENCYSERIESH_MSGESAMEPTR,
 			       CCOARSEGRAINFREQUENCYSERIESTESTC_ECHK,
 			       CCOARSEGRAINFREQUENCYSERIESTESTC_MSGECHK) ) )
@@ -487,7 +487,7 @@ main( int argc, char *argv[] )
      cPtr = badOutput.data->data;
      badOutput.data->data = goodInput.data->data;
      LALCCoarseGrainFrequencySeries(&status, &badOutput, &goodInput, &params);
-     if ( ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_ESAMEPTR, 
+     if ( ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_ESAMEPTR,
 			       COARSEGRAINFREQUENCYSERIESH_MSGESAMEPTR,
 			       CCOARSEGRAINFREQUENCYSERIESTESTC_ECHK,
 			       CCOARSEGRAINFREQUENCYSERIESTESTC_MSGECHK) ) )
@@ -540,7 +540,7 @@ main( int argc, char *argv[] )
        = CCOARSEGRAINFREQUENCYSERIESTESTC_LENGTH0;
 
      /* test behavior for negative frequency spacing */
-     goodInput.deltaF = params.deltaF 
+     goodInput.deltaF = params.deltaF
        = -CCOARSEGRAINFREQUENCYSERIESTESTC_DELTAF0;
      LALCCoarseGrainFrequencySeries(&status, &goodOutput, &goodInput, &params);
      if ( ( code = CheckStatus(&status,
@@ -548,7 +548,7 @@ main( int argc, char *argv[] )
 			       COARSEGRAINFREQUENCYSERIESH_MSGENONPOSDELTAF,
 			       CCOARSEGRAINFREQUENCYSERIESTESTC_ECHK,
 			       CCOARSEGRAINFREQUENCYSERIESTESTC_MSGECHK) ) )
-     { 
+     {
        return code;
      }
      printf("  PASS: negative frequency spacing results in error:\n       \"%s\"\n",
@@ -562,14 +562,14 @@ main( int argc, char *argv[] )
 			       COARSEGRAINFREQUENCYSERIESH_MSGENONPOSDELTAF,
 			       CCOARSEGRAINFREQUENCYSERIESTESTC_ECHK,
 			       CCOARSEGRAINFREQUENCYSERIESTESTC_MSGECHK) ) )
-     { 
+     {
        return code;
      }
      printf("  PASS: zero frequency spacing results in error:\n       \"%s\"\n",
 	    COARSEGRAINFREQUENCYSERIESH_MSGENONPOSDELTAF);
 
      /* reassign valid frequency spacing */
-     goodInput.deltaF = params.deltaF 
+     goodInput.deltaF = params.deltaF
        = CCOARSEGRAINFREQUENCYSERIESTESTC_DELTAF0;
 
    } /* if ( ! lalNoDebug ) */
@@ -641,7 +641,7 @@ main( int argc, char *argv[] )
             CCOARSEGRAINFREQUENCYSERIESTESTC_DELTAF1);
    }
    if ( fabs(goodOutput.deltaF-CCOARSEGRAINFREQUENCYSERIESTESTC_DELTAF1)
-        / CCOARSEGRAINFREQUENCYSERIESTESTC_DELTAF1 
+        / CCOARSEGRAINFREQUENCYSERIESTESTC_DELTAF1
         > CCOARSEGRAINFREQUENCYSERIESTESTC_TOL )
    {
      printf("  FAIL: Valid data test\n");
@@ -661,9 +661,9 @@ main( int argc, char *argv[] )
             CCOARSEGRAINFREQUENCYSERIESTESTC_EPOCHSEC,
             CCOARSEGRAINFREQUENCYSERIESTESTC_EPOCHNS);
    }
-   if ( goodOutput.epoch.gpsSeconds 
+   if ( goodOutput.epoch.gpsSeconds
         != CCOARSEGRAINFREQUENCYSERIESTESTC_EPOCHSEC
-        || goodOutput.epoch.gpsNanoSeconds 
+        || goodOutput.epoch.gpsNanoSeconds
         != CCOARSEGRAINFREQUENCYSERIESTESTC_EPOCHNS )
    {
      printf("  FAIL: Valid data test\n");
@@ -686,7 +686,7 @@ main( int argc, char *argv[] )
      return code;
    }
 
-   if (optVerbose) 
+   if (optVerbose)
    {
      unitString = NULL;
      LALCHARCreateVector(&status, &unitString, LALUnitTextSize);
@@ -696,7 +696,7 @@ main( int argc, char *argv[] )
      {
        return code;
      }
-    
+
      LALUnitAsString( &status, unitString, unitPair.unitTwo );
      if ( ( code = CheckStatus(&status, 0 , "",
 			       CCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
@@ -705,7 +705,7 @@ main( int argc, char *argv[] )
        return code;
      }
      printf( "Units are \"%s\", ", unitString->data );
-     
+
      LALUnitAsString( &status, unitString, unitPair.unitOne );
      if ( ( code = CheckStatus(&status, 0 , "",
 			       CCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
@@ -714,7 +714,7 @@ main( int argc, char *argv[] )
        return code;
      }
      printf( "should be \"%s\"\n", unitString->data );
-     
+
      LALCHARDestroyVector(&status, &unitString);
      if ( ( code = CheckStatus(&status, 0 , "",
 			       CCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
@@ -729,14 +729,14 @@ main( int argc, char *argv[] )
      printf("  FAIL: Valid data test #1\n");
      if (optVerbose)
      {
-       printf("Exiting with error: %s\n", 
+       printf("Exiting with error: %s\n",
               CCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS);
      }
      return CCOARSEGRAINFREQUENCYSERIESTESTC_EFLS;
    }
 
    /* check output values */
-   if (optVerbose) 
+   if (optVerbose)
    {
      printf("hBarTilde(0)=%g + %g i, should be %g + %g i\n",
             goodOutput.data->data[0].re, goodOutput.data->data[0].im,
@@ -757,13 +757,13 @@ main( int argc, char *argv[] )
        }
      return CCOARSEGRAINFREQUENCYSERIESTESTC_EFLS;
    }
-   
+
    for (i=1; i<CCOARSEGRAINFREQUENCYSERIESTESTC_LENGTH1; ++i)
    {
      f = i * CCOARSEGRAINFREQUENCYSERIESTESTC_DELTAF1;
-     if (optVerbose) 
+     if (optVerbose)
      {
-       printf("hBarTilde(%f Hz)=%g + %g i, should be %g + %g i\n", f, 
+       printf("hBarTilde(%f Hz)=%g + %g i, should be %g + %g i\n", f,
               goodOutput.data->data[i].re, goodOutput.data->data[i].im,
               expectedOutput1DataData[i].re, expectedOutput1DataData[i].im);
      }
@@ -858,9 +858,9 @@ main( int argc, char *argv[] )
             CCOARSEGRAINFREQUENCYSERIESTESTC_EPOCHSEC,
             CCOARSEGRAINFREQUENCYSERIESTESTC_EPOCHNS);
    }
-   if ( goodOutput.epoch.gpsSeconds 
+   if ( goodOutput.epoch.gpsSeconds
         != CCOARSEGRAINFREQUENCYSERIESTESTC_EPOCHSEC
-        || goodOutput.epoch.gpsNanoSeconds 
+        || goodOutput.epoch.gpsNanoSeconds
         != CCOARSEGRAINFREQUENCYSERIESTESTC_EPOCHNS )
    {
      printf("  FAIL: Valid data test #2\n");
@@ -883,7 +883,7 @@ main( int argc, char *argv[] )
      return code;
    }
 
-   if (optVerbose) 
+   if (optVerbose)
    {
      unitString = NULL;
      LALCHARCreateVector(&status, &unitString, LALUnitTextSize);
@@ -893,7 +893,7 @@ main( int argc, char *argv[] )
      {
        return code;
      }
-    
+
      LALUnitAsString( &status, unitString, unitPair.unitTwo );
      if ( ( code = CheckStatus(&status, 0 , "",
 			       CCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
@@ -902,7 +902,7 @@ main( int argc, char *argv[] )
        return code;
      }
      printf( "Units are \"%s\", ", unitString->data );
-     
+
      LALUnitAsString( &status, unitString, unitPair.unitOne );
      if ( ( code = CheckStatus(&status, 0 , "",
 			       CCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
@@ -911,7 +911,7 @@ main( int argc, char *argv[] )
        return code;
      }
      printf( "should be \"%s\"\n", unitString->data );
-     
+
      LALCHARDestroyVector(&status, &unitString);
      if ( ( code = CheckStatus(&status, 0 , "",
 			       CCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
@@ -926,14 +926,14 @@ main( int argc, char *argv[] )
      printf("  FAIL: Valid data test #2\n");
      if (optVerbose)
      {
-       printf("Exiting with error: %s\n", 
+       printf("Exiting with error: %s\n",
               CCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS);
      }
      return CCOARSEGRAINFREQUENCYSERIESTESTC_EFLS;
    }
 
    /* check output values */
-   if (optVerbose) 
+   if (optVerbose)
    {
      printf("hBarTilde(0)=%g + %g i, should be %g + %g i\n",
             goodOutput.data->data[0].re, goodOutput.data->data[0].im,
@@ -954,13 +954,13 @@ main( int argc, char *argv[] )
        }
      return CCOARSEGRAINFREQUENCYSERIESTESTC_EFLS;
    }
-   
+
    for (i=1; i<CCOARSEGRAINFREQUENCYSERIESTESTC_LENGTH2; ++i)
    {
      f = i * CCOARSEGRAINFREQUENCYSERIESTESTC_DELTAF2;
-     if (optVerbose) 
+     if (optVerbose)
      {
-       printf("hBarTilde(%f Hz)=%g + %g i, should be %g + %g i\n", f, 
+       printf("hBarTilde(%f Hz)=%g + %g i, should be %g + %g i\n", f,
               goodOutput.data->data[i].re, goodOutput.data->data[i].im,
               expectedOutput2DataData[i].re, expectedOutput2DataData[i].im);
      }
@@ -1084,9 +1084,9 @@ main( int argc, char *argv[] )
             CCOARSEGRAINFREQUENCYSERIESTESTC_EPOCHSEC,
             CCOARSEGRAINFREQUENCYSERIESTESTC_EPOCHNS);
    }
-   if ( goodOutput.epoch.gpsSeconds 
+   if ( goodOutput.epoch.gpsSeconds
         != CCOARSEGRAINFREQUENCYSERIESTESTC_EPOCHSEC
-        || goodOutput.epoch.gpsNanoSeconds 
+        || goodOutput.epoch.gpsNanoSeconds
         != CCOARSEGRAINFREQUENCYSERIESTESTC_EPOCHNS )
    {
      printf("  FAIL: Valid data test #3\n");
@@ -1109,7 +1109,7 @@ main( int argc, char *argv[] )
      return code;
    }
 
-   if (optVerbose) 
+   if (optVerbose)
    {
      unitString = NULL;
      LALCHARCreateVector(&status, &unitString, LALUnitTextSize);
@@ -1119,7 +1119,7 @@ main( int argc, char *argv[] )
      {
        return code;
      }
-    
+
      LALUnitAsString( &status, unitString, unitPair.unitTwo );
      if ( ( code = CheckStatus(&status, 0 , "",
 			       CCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
@@ -1128,7 +1128,7 @@ main( int argc, char *argv[] )
        return code;
      }
      printf( "Units are \"%s\", ", unitString->data );
-     
+
      LALUnitAsString( &status, unitString, unitPair.unitOne );
      if ( ( code = CheckStatus(&status, 0 , "",
 			       CCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
@@ -1137,7 +1137,7 @@ main( int argc, char *argv[] )
        return code;
      }
      printf( "should be \"%s\"\n", unitString->data );
-     
+
      LALCHARDestroyVector(&status, &unitString);
      if ( ( code = CheckStatus(&status, 0 , "",
 			       CCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
@@ -1152,14 +1152,14 @@ main( int argc, char *argv[] )
      printf("  FAIL: Valid data test #3\n");
      if (optVerbose)
      {
-       printf("Exiting with error: %s\n", 
+       printf("Exiting with error: %s\n",
               CCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS);
      }
      return CCOARSEGRAINFREQUENCYSERIESTESTC_EFLS;
    }
 
    /* check output values */
-   if (optVerbose) 
+   if (optVerbose)
    {
      printf("hBarTilde(0)=%g + %g i, should be %g + %g i\n",
             goodOutput.data->data[0].re, goodOutput.data->data[0].im,
@@ -1180,13 +1180,13 @@ main( int argc, char *argv[] )
        }
      return CCOARSEGRAINFREQUENCYSERIESTESTC_EFLS;
    }
-   
+
    for (i=1; i<CCOARSEGRAINFREQUENCYSERIESTESTC_LENGTH4; ++i)
    {
      f = i * CCOARSEGRAINFREQUENCYSERIESTESTC_DELTAF4;
-     if (optVerbose) 
+     if (optVerbose)
      {
-       printf("hBarTilde(%f Hz)=%g + %g i, should be %g + %g i\n", f, 
+       printf("hBarTilde(%f Hz)=%g + %g i, should be %g + %g i\n", f,
               goodOutput.data->data[i].re, goodOutput.data->data[i].im,
               expectedOutput4DataData[i].re, expectedOutput4DataData[i].im);
      }
@@ -1256,13 +1256,13 @@ main( int argc, char *argv[] )
      return code;
    }
 
-   /* construct plan */ 
+   /* construct plan */
    fftPlan = NULL;
 
-   LALCreateForwardRealFFTPlan(&status, &fftPlan, 
+   LALCreateForwardRealFFTPlan(&status, &fftPlan,
 			       CCOARSEGRAINFREQUENCYSERIESTESTC_TSLEN,
 			       CCOARSEGRAINFREQUENCYSERIESTESTC_FALSE);
-   if ( ( code = CheckStatus( &status, 0 , "", 
+   if ( ( code = CheckStatus( &status, 0 , "",
 			      CCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
 			      CCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS ) ) )
    {
@@ -1298,7 +1298,7 @@ main( int argc, char *argv[] )
      goodInput.data->data[i] = cZero;
    }
 
-   for ( i = CCOARSEGRAINFREQUENCYSERIESTESTC_FMAX / goodInput.deltaF ; 
+   for ( i = CCOARSEGRAINFREQUENCYSERIESTESTC_FMAX / goodInput.deltaF ;
 	 i < goodInput.data->length ;
 	 ++i )
    {
@@ -1314,10 +1314,10 @@ main( int argc, char *argv[] )
    fineTotal.re *= goodInput.deltaF;
    fineTotal.im *= goodInput.deltaF;
 
-   params.deltaF 
+   params.deltaF
      = goodInput.deltaF * CCOARSEGRAINFREQUENCYSERIESTESTC_RESRATIO;
    params.f0  = CCOARSEGRAINFREQUENCYSERIESTESTC_FMIN - params.deltaF;
-   params.length = (CCOARSEGRAINFREQUENCYSERIESTESTC_FMAX - params.f0) 
+   params.length = (CCOARSEGRAINFREQUENCYSERIESTESTC_FMAX - params.f0)
                    / params.deltaF + 3;
 
    goodOutput.data = NULL;
@@ -1370,8 +1370,8 @@ main( int argc, char *argv[] )
    }
 
    if ( cError.re * cError.re + cError.im * cError.im
-	> ( CCOARSEGRAINFREQUENCYSERIESTESTC_RANTOL 
-	    * CCOARSEGRAINFREQUENCYSERIESTESTC_RANTOL ) 
+	> ( CCOARSEGRAINFREQUENCYSERIESTESTC_RANTOL
+	    * CCOARSEGRAINFREQUENCYSERIESTESTC_RANTOL )
       )
    {
      printf("  FAIL: Valid data test #4 \n");
@@ -1422,14 +1422,14 @@ main( int argc, char *argv[] )
    {
      return code;
    }
-   
+
    LALCheckMemoryLeaks();
 
    printf("PASS: all tests\n");
 
    /**************** Process User-Entered Data, If Any **************/
 
-   if (optInputFile[0] && optOutputFile[0]) { 
+   if (optInputFile[0] && optOutputFile[0]) {
 
      params.f0 = optF0;
      params.length = optOutLength;
@@ -1461,7 +1461,7 @@ main( int argc, char *argv[] )
      {
        return code;
      }
-     
+
      /* coarse grain */
      LALCCoarseGrainFrequencySeries(&status, &goodOutput, &goodInput, &params);
      if ( ( code = CheckStatus( &status, 0 , "",
@@ -1472,9 +1472,9 @@ main( int argc, char *argv[] )
      }
 
      LALCPrintFrequencySeries(&goodOutput, optOutputFile);
-     
+
      printf("===== Coarse-Graining of User-Specified Series Written to File %s =====\n", optOutputFile);
-     
+
      /* clean up valid data */
      LALCDestroyVector(&status, &goodInput.data);
      if ( ( code = CheckStatus( &status, 0 , "",
@@ -1515,8 +1515,8 @@ Usage (const char *program, int exitcode)
   fprintf (stderr, "  -s ranseed        use random number seed ranseed\n");
   fprintf (stderr, "  -i filename    read fine grained series from file filename\n");
   fprintf (stderr, "  -o filename    print coarse grained series to file filename\n");
-  fprintf (stderr, "  -n length      input series contains length points\n"); 
-  fprintf (stderr, "  -m length      output series contains length points\n"); 
+  fprintf (stderr, "  -n length      input series contains length points\n");
+  fprintf (stderr, "  -m length      output series contains length points\n");
   fprintf (stderr, "  -e deltaF      set coarse grained frequency spacing to deltaF\n");
   fprintf (stderr, "  -f f0          set start frequency of output to f0\n");
   exit (exitcode);
@@ -1551,19 +1551,19 @@ ParseOptions (int argc, char *argv[])
       case 'o': /* specify output file */
         strncpy (optOutputFile, optarg, LALNameLength);
         break;
-        
+
       case 'n': /* specify number of points in input series */
         optInLength = atoi (optarg);
         break;
-      
+
       case 'm': /* specify number of points in output series */
         optOutLength = atoi (optarg);
         break;
-        
+
       case 'e': /* specify frequency resolution */
         optDeltaF = atof (optarg);
         break;
-        
+
       case 'f': /* specify start frequency */
         optF0 = atof (optarg);
         break;
@@ -1589,7 +1589,7 @@ ParseOptions (int argc, char *argv[])
         Usage (argv[0], 0);
         break;
 
-           
+
       default:
         Usage (argv[0], 1);
     }

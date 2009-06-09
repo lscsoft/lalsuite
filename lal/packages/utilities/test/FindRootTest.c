@@ -264,7 +264,7 @@ main (int argc, char *argv[])
     {
       printf ("\n===== Check Errors =====\n");
     }
-  
+
     /* recursive error from an error occurring in the function */
 
     if (verbose)

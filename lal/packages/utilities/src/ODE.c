@@ -72,7 +72,7 @@
  *   xdot->data[3] = - x->data[1] / rcb;
  * }
  * \end{verbatim}
- *   
+ *
  * The following programs integrate the Kepler problem.  The first program
  * integrates a circular orbit with fixed step sizes:
  * \begin{verbatim}

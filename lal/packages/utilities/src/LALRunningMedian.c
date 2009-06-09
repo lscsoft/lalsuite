@@ -96,11 +96,11 @@ struct rngmed_val_index4 {
 
 static int rngmed_sortindex8(const void *elem1, const void *elem2){
   /*Used in running qsort*/
-  
+
   const struct rngmed_val_index8 *A = elem1;
   const struct rngmed_val_index8 *B = elem2;
   REAL8 data1, data2;
-  
+
   data1=A->data;
   data2=B->data;
   if (data1 < data2)
@@ -113,11 +113,11 @@ static int rngmed_sortindex8(const void *elem1, const void *elem2){
 
 static int rngmed_sortindex4(const void *elem1, const void *elem2){
   /*Used in running qsort*/
-  
+
   const struct rngmed_val_index4 *A = elem1;
   const struct rngmed_val_index4 *B = elem2;
   REAL4 data1, data2;
-  
+
   data1=A->data;
   data2=B->data;
   if (data1 < data2)
@@ -135,7 +135,7 @@ static int rngmed_qsortindex8(const void *elem1, const void *elem2){
     REAL8 value;
     UINT4 index;
   };
-  
+
   const struct qsnode *A = elem1;
   const struct qsnode *B = elem2;
 
@@ -155,7 +155,7 @@ static int rngmed_qsortindex4(const void *elem1, const void *elem2){
     REAL4 value;
     UINT4 index;
   };
-  
+
   const struct qsnode *A = elem1;
   const struct qsnode *B = elem2;
 
@@ -186,17 +186,17 @@ void LALDRunningMedian( LALStatus *status,
     struct node *next_sorted, *next_sequence, *prev_sorted;
     int rank; /*Used for constructing optional output*/
   };
-  
+
   /*----------------------------------
     checks: Array to hold pointers to Checkpoint nodes.
     first_sequence: Pointer to first node of sequential list
     ------------------------------------*/
   struct node **checks = NULL;
-  struct node **node_addresses = NULL;    
+  struct node **node_addresses = NULL;
   struct node *first_sequence = NULL;
   struct node *last_sequence = NULL;
   struct node *currentnode = NULL;
-  struct node *previousnode = NULL; 
+  struct node *previousnode = NULL;
   struct node *leftnode = NULL;
   struct node *rightnode = NULL;
   struct node *reuse_next_sorted = NULL;
@@ -216,7 +216,7 @@ void LALDRunningMedian( LALStatus *status,
   struct rngmed_val_index8 *index_block;
 
   INITSTATUS( status, "LALDRunningMedian", LALRUNNINGMEDIANC );
-  
+
   /* check input parameters */
   /* input must not be NULL */
   ASSERT(input,status,LALRUNNINGMEDIANH_ENULL,LALRUNNINGMEDIANH_MSGENULL);
@@ -243,7 +243,7 @@ void LALDRunningMedian( LALStatus *status,
   }
 
   qsort(index_block, param.blocksize, sizeof(struct rngmed_val_index8),rngmed_sortindex8);
-  
+
   sorted_indices=(REAL8 *)LALCalloc(param.blocksize,sizeof(REAL8));
   if(!sorted_indices) {
     LALFree(index_block);
@@ -251,7 +251,7 @@ void LALDRunningMedian( LALStatus *status,
   }
 
   for(k=0;k<param.blocksize;k++){
-    sorted_indices[k]=index_block[k].index; 
+    sorted_indices[k]=index_block[k].index;
   }
 
   LALFree(index_block);
@@ -276,7 +276,7 @@ void LALDRunningMedian( LALStatus *status,
 
   /*---------------------------------
     Offsets for getting median from nearest
-    checkpoint: For param.blocksize even, 
+    checkpoint: For param.blocksize even,
     (node(offset(1))+node(offset(2)))/2;
     for param.blocksize odd,
     (node(offset(1))+node(offset(1)))/2;
@@ -289,7 +289,7 @@ void LALDRunningMedian( LALStatus *status,
   else{
     /*Even*/
     midpoint=param.blocksize/2-1;
-    numberoffsets=2;   
+    numberoffsets=2;
   }
   nearestchk=floor(midpoint/stepchkpts);
   offset=midpoint-nearestchk*stepchkpts;
@@ -404,11 +404,11 @@ void LALDRunningMedian( LALStatus *status,
     } else {
       /* corrected */
       /* new case */
-      if(nextsample<checks[0]->data){  
+      if(nextsample<checks[0]->data){
 	chkcount=0;
 	/* dummy_node=checks[0]; */
 	rightnode=checks[0];
-	leftnode=NULL;  
+	leftnode=NULL;
       }
     }
 
@@ -427,7 +427,7 @@ void LALDRunningMedian( LALStatus *status,
       dummy_node->next_sequence=NULL;
       last_sequence->next_sequence=dummy_node;
       last_sequence=dummy_node;
-      shift=0;                
+      shift=0;
     }
     else{
       reuse_next_sorted=rightnode;
@@ -457,7 +457,7 @@ void LALDRunningMedian( LALStatus *status,
 	}
 	shift=-1; /*Left shift*/
       }
-      else 
+      else
 	if(deletesample<nextsample){
 	  shiftcounter=0;
 	  for(k=chkcount;k>=0;k--){
@@ -474,7 +474,7 @@ void LALDRunningMedian( LALStatus *status,
 	}
       /* corrected: else case deleted */
     }
-    
+
     /*------------------------------
       Delete and Insert
       --------------------------------*/
@@ -487,7 +487,7 @@ void LALDRunningMedian( LALStatus *status,
       dummy_node->data=nextsample;
       dummy_node1=dummy_node->prev_sorted;
       dummy_node2=dummy_node->next_sorted;
-      
+
       /*-----------------------
 	Repair deletion point
 	------------------------*/
@@ -502,8 +502,8 @@ void LALDRunningMedian( LALStatus *status,
 	  dummy_node1->next_sorted=dummy_node2;
 	  dummy_node2->prev_sorted=dummy_node1;
 	}
-      }  
-      
+      }
+
       /*------------------------
 	Set pointers from neighbours to new node at insertion point
 	-------------------------*/
@@ -519,7 +519,7 @@ void LALDRunningMedian( LALStatus *status,
 	  rightnode->prev_sorted=dummy_node;
 	}
       }
-      
+
       /*-------------------------------
 	Shift check points before resetting sorted list
 	--------------------------------*/
@@ -534,9 +534,9 @@ void LALDRunningMedian( LALStatus *status,
 	  for(k=0;k<shiftcounter;k++){
 	    dummy_int=checks4shift[k];
 	    checks[dummy_int]=checks[dummy_int]->next_sorted;
-	  } 
+	  }
 	}
-      
+
       /*--------------------------------
 	insert node
 	--------------------------------*/
@@ -558,7 +558,7 @@ void LALDRunningMedian( LALStatus *status,
          }
          medians->data[samplecount-param.blocksize+1]=dummy/numberoffsets;
   }/*Outer For Loop*/
-  
+
 
   /*--------------------------------
     Clean Up
@@ -572,9 +572,9 @@ void LALDRunningMedian( LALStatus *status,
   }
   LALFree(checks4shift);
   LALFree(checks);
-  
+
   DETATCHSTATUSPTR( status );
-  RETURN( status );  
+  RETURN( status );
 }
 
 /* <lalVerbatim file="LALRunningMedianCP"> */
@@ -594,17 +594,17 @@ void LALSRunningMedian( LALStatus *status,
     struct node *next_sorted, *next_sequence, *prev_sorted;
     int rank; /*Used for constructing optional output*/
   };
-  
+
   /*----------------------------------
     checks: Array to hold pointers to Checkpoint nodes.
     first_sequence: Pointer to first node of sequential list
     ------------------------------------*/
   struct node **checks = NULL;
-  struct node **node_addresses = NULL;    
+  struct node **node_addresses = NULL;
   struct node *first_sequence = NULL;
   struct node *last_sequence = NULL;
   struct node *currentnode = NULL;
-  struct node *previousnode = NULL; 
+  struct node *previousnode = NULL;
   struct node *leftnode = NULL;
   struct node *rightnode = NULL;
   struct node *reuse_next_sorted = NULL;
@@ -625,7 +625,7 @@ void LALSRunningMedian( LALStatus *status,
 
 
   INITSTATUS( status, "LALSRunningMedian", LALRUNNINGMEDIANC );
-  
+
   /* check input parameters */
   /* input must not be NULL */
   ASSERT(input,status,LALRUNNINGMEDIANH_ENULL,LALRUNNINGMEDIANH_MSGENULL);
@@ -652,7 +652,7 @@ void LALSRunningMedian( LALStatus *status,
   }
 
   qsort(index_block, param.blocksize, sizeof(struct rngmed_val_index4),rngmed_sortindex4);
-  
+
   sorted_indices=(REAL4 *)LALCalloc(param.blocksize,sizeof(REAL4));
   if(!sorted_indices) {
     LALFree(index_block);
@@ -660,7 +660,7 @@ void LALSRunningMedian( LALStatus *status,
   }
 
   for(k=0;k<param.blocksize;k++){
-    sorted_indices[k]=index_block[k].index; 
+    sorted_indices[k]=index_block[k].index;
   }
 
   LALFree(index_block);
@@ -685,7 +685,7 @@ void LALSRunningMedian( LALStatus *status,
 
   /*---------------------------------
     Offsets for getting median from nearest
-    checkpoint: For param.blocksize even, 
+    checkpoint: For param.blocksize even,
     (node(offset(1))+node(offset(2)))/2;
     for param.blocksize odd,
     (node(offset(1))+node(offset(1)))/2;
@@ -698,7 +698,7 @@ void LALSRunningMedian( LALStatus *status,
   else{
     /*Even*/
     midpoint=param.blocksize/2-1;
-    numberoffsets=2;   
+    numberoffsets=2;
   }
   nearestchk=floor(midpoint/stepchkpts);
   offset=midpoint-nearestchk*stepchkpts;
@@ -813,11 +813,11 @@ void LALSRunningMedian( LALStatus *status,
     } else {
       /* corrected */
       /* new case */
-      if(nextsample<checks[0]->data){  
+      if(nextsample<checks[0]->data){
 	chkcount=0;
 	/* dummy_node=checks[0]; */
 	rightnode=checks[0];
-	leftnode=NULL;  
+	leftnode=NULL;
       }
     }
 
@@ -836,7 +836,7 @@ void LALSRunningMedian( LALStatus *status,
       dummy_node->next_sequence=NULL;
       last_sequence->next_sequence=dummy_node;
       last_sequence=dummy_node;
-      shift=0;                
+      shift=0;
     }
     else{
       reuse_next_sorted=rightnode;
@@ -866,7 +866,7 @@ void LALSRunningMedian( LALStatus *status,
 	}
 	shift=-1; /*Left shift*/
       }
-      else 
+      else
 	if(deletesample<nextsample){
 	  shiftcounter=0;
 	  for(k=chkcount;k>=0;k--){
@@ -883,7 +883,7 @@ void LALSRunningMedian( LALStatus *status,
 	}
       /* corrected: else case deleted */
     }
-    
+
     /*------------------------------
       Delete and Insert
       --------------------------------*/
@@ -896,7 +896,7 @@ void LALSRunningMedian( LALStatus *status,
       dummy_node->data=nextsample;
       dummy_node1=dummy_node->prev_sorted;
       dummy_node2=dummy_node->next_sorted;
-      
+
       /*-----------------------
 	Repair deletion point
 	------------------------*/
@@ -911,8 +911,8 @@ void LALSRunningMedian( LALStatus *status,
 	  dummy_node1->next_sorted=dummy_node2;
 	  dummy_node2->prev_sorted=dummy_node1;
 	}
-      }  
-      
+      }
+
       /*------------------------
 	Set pointers from neighbours to new node at insertion point
 	-------------------------*/
@@ -928,7 +928,7 @@ void LALSRunningMedian( LALStatus *status,
 	  rightnode->prev_sorted=dummy_node;
 	}
       }
-      
+
       /*-------------------------------
 	Shift check points before resetting sorted list
 	--------------------------------*/
@@ -943,9 +943,9 @@ void LALSRunningMedian( LALStatus *status,
 	  for(k=0;k<shiftcounter;k++){
 	    dummy_int=checks4shift[k];
 	    checks[dummy_int]=checks[dummy_int]->next_sorted;
-	  } 
+	  }
 	}
-      
+
       /*--------------------------------
 	insert node
 	--------------------------------*/
@@ -967,7 +967,7 @@ void LALSRunningMedian( LALStatus *status,
          }
          medians->data[samplecount-param.blocksize+1]=dummy/numberoffsets;
   }/*Outer For Loop*/
-  
+
 
   /*--------------------------------
     Clean Up
@@ -981,9 +981,9 @@ void LALSRunningMedian( LALStatus *status,
   }
   LALFree(checks4shift);
   LALFree(checks);
-  
+
   DETATCHSTATUSPTR( status );
-  RETURN( status );  
+  RETURN( status );
 }
 
 
@@ -997,7 +997,7 @@ void LALDRunningMedian2( LALStatus *status,
   /* a single "node"
    lesser  points to the next node with less or equal value
    greater points to the next node with greater or equal value
-   an index == blocksize is an end marker 
+   an index == blocksize is an end marker
   */
   struct node{
     REAL8 value;
@@ -1051,7 +1051,7 @@ void LALDRunningMedian2( LALStatus *status,
   ATTATCHSTATUSPTR( status );
 
   /* create nodes array */
-  nodes = (struct node*)LALCalloc(bsize, sizeof(struct node));  
+  nodes = (struct node*)LALCalloc(bsize, sizeof(struct node));
 
   /* determine checkpoint positions */
   stepchkpts = sqrt(bsize);
@@ -1074,7 +1074,7 @@ void LALDRunningMedian2( LALStatus *status,
   checkpts = (UINT4*)LALCalloc(ncheckpts,sizeof(UINT4));
 
   /* create array for qsort */
-  qsnodes = (struct qsnode*)LALCalloc(bsize, sizeof(struct qsnode));  
+  qsnodes = (struct qsnode*)LALCalloc(bsize, sizeof(struct qsnode));
 
   /* init qsort array
    the nodes get their values from the input,
@@ -1142,7 +1142,7 @@ void LALDRunningMedian2( LALStatus *status,
     for(rightcheckpt=0; rightcheckpt<ncheckpts; rightcheckpt++)
       if(newvalue <= nodes[checkpts[rightcheckpt]].value)
 	break;
-      
+
     /* assume we are inserting at the beginning: */
     prevnode = nil;
     if (rightcheckpt == 0)
@@ -1152,10 +1152,10 @@ void LALDRunningMedian2( LALStatus *status,
       /* we're beyond the first checkpoint, find the node we're inserting at: */
       nextnode = checkpts[rightcheckpt-1]; /* this also works if we found no
 					      checkpoint > newvalue, as
-					      then rightcheckpt == ncheckpts */ 
+					      then rightcheckpt == ncheckpts */
       /* the following loop is always ran at least once, as
 	 nodes[checkpts[rightcheckpt-1]].value < newvalue
-         after 'find checkpoint' loop */ 
+         after 'find checkpoint' loop */
       while((nextnode != nil) && (newvalue > nodes[nextnode].value)) {
 	prevnode = nextnode;
 	nextnode = nodes[nextnode].greater;
@@ -1206,7 +1206,7 @@ void LALDRunningMedian2( LALStatus *status,
       /* if there is a sequence of identical values, new values are inserted
 	 always at the left end. Thus, the oldest value has to be the rightmost
 	 of such a sequence. This requires proper init.
-	 
+
 	 This makes shifting of the checkpoints rather easy:
 	 if (oldvalue < newvalue), all checkpoints with
 	     oldvalue <(=) chkptvalue < newvalue are shifted,
@@ -1257,18 +1257,18 @@ void LALDRunningMedian2( LALStatus *status,
 	medians->data[nmedian] = (nodes[nextnode].value
 				  + nodes[nodes[nextnode].greater].value) / 2.0;
     }
-    
+
     /* next oldest node */
     oldestnode = (oldestnode + 1) % bsize; /* wrap around */
-    
+
   } /* for (nmedian...) */
-  
+
   /* cleanup */
   LALFree(checkpts);
   LALFree(nodes);
 
   DETATCHSTATUSPTR( status );
-  RETURN( status );  
+  RETURN( status );
 }
 
 /* <lalVerbatim file="LALRunningMedianCP"> */
@@ -1281,7 +1281,7 @@ void LALSRunningMedian2( LALStatus *status,
   /* a single "node"
    lesser  points to the next node with less or equal value
    greater points to the next node with greater or equal value
-   an index == blocksize is an end marker 
+   an index == blocksize is an end marker
   */
   struct node{
     REAL4 value;
@@ -1335,7 +1335,7 @@ void LALSRunningMedian2( LALStatus *status,
   ATTATCHSTATUSPTR( status );
 
   /* create nodes array */
-  nodes = (struct node*)LALCalloc(bsize, sizeof(struct node));  
+  nodes = (struct node*)LALCalloc(bsize, sizeof(struct node));
 
   /* determine checkpoint positions */
   stepchkpts = sqrt(bsize);
@@ -1358,7 +1358,7 @@ void LALSRunningMedian2( LALStatus *status,
   checkpts = (UINT4*)LALCalloc(ncheckpts,sizeof(UINT4));
 
   /* create array for qsort */
-  qsnodes = (struct qsnode*)LALCalloc(bsize, sizeof(struct qsnode));  
+  qsnodes = (struct qsnode*)LALCalloc(bsize, sizeof(struct qsnode));
 
   /* init qsort array
    the nodes get their values from the input,
@@ -1426,7 +1426,7 @@ void LALSRunningMedian2( LALStatus *status,
     for(rightcheckpt=0; rightcheckpt<ncheckpts; rightcheckpt++)
       if(newvalue <= nodes[checkpts[rightcheckpt]].value)
 	break;
-      
+
     /* assume we are inserting at the beginning: */
     prevnode = nil;
     if (rightcheckpt == 0)
@@ -1436,10 +1436,10 @@ void LALSRunningMedian2( LALStatus *status,
       /* we're beyond the first checkpoint, find the node we're inserting at: */
       nextnode = checkpts[rightcheckpt-1]; /* this also works if we found no
 					      checkpoint > newvalue, as
-					      then rightcheckpt == ncheckpts */ 
+					      then rightcheckpt == ncheckpts */
       /* the following loop is always ran at least once, as
 	 nodes[checkpts[rightcheckpt-1]].value < newvalue
-         after 'find checkpoint' loop */ 
+         after 'find checkpoint' loop */
       while((nextnode != nil) && (newvalue > nodes[nextnode].value)) {
 	prevnode = nextnode;
 	nextnode = nodes[nextnode].greater;
@@ -1490,7 +1490,7 @@ void LALSRunningMedian2( LALStatus *status,
       /* if there is a sequence of identical values, new values are inserted
 	 always at the left end. Thus, the oldest value has to be the rightmost
 	 of such a sequence. This requires proper init.
-	 
+
 	 This makes shifting of the checkpoints rather easy:
 	 if (oldvalue < newvalue), all checkpoints with
 	     oldvalue <(=) chkptvalue < newvalue are shifted,
@@ -1541,17 +1541,17 @@ void LALSRunningMedian2( LALStatus *status,
 	medians->data[nmedian] = (nodes[nextnode].value
 				  + nodes[nodes[nextnode].greater].value) / 2.0;
     }
-    
+
     /* next oldest node */
     oldestnode = (oldestnode + 1) % bsize; /* wrap around */
-    
+
   } /* for (nmedian...) */
-  
+
   /* cleanup */
   LALFree(checkpts);
   LALFree(nodes);
 
   DETATCHSTATUSPTR( status );
-  RETURN( status );  
+  RETURN( status );
 }
 

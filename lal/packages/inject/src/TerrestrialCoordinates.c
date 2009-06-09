@@ -22,9 +22,9 @@
  * \author Creighton, T. D.
  * \date  $Date$
  * \brief Converts among equatorial, geographic, and horizon coordinates.
- * 
+ *
  * $Id$
- * 
+ *
 
 \par Description
 
@@ -138,10 +138,10 @@ between geodetic and geocentric latitude.}}
 \end{center}
 \vspace{-2ex}
 \end{wrapfigure}
-\paragraph{Geocentric coordinates:} 
+\paragraph{Geocentric coordinates:}
 \endlatexonly \htmlonly
 <b>Geocentric coordinates:</b>\endhtmlonly
-As shown in 
+As shown in
 \latexonly Fig.~\ref{fig:geodetic},\endlatexonly
 \htmlonly Fig. 1,\endhtmlonly
 the ellipticity of the Earth means that the
@@ -1003,7 +1003,7 @@ LALGeocentricToGeodetic( LALStatus *stat, EarthPosition *location )
     if ( e > 0.0 || h > LAL_HSERIES )
       g = 0.5*( e + w );
     else
-      g = -0.25*e*h*( 1.0 - 0.25*h*( 1.0 - 0.5*h ) );      
+      g = -0.25*e*h*( 1.0 - 0.25*h*( 1.0 - 0.5*h ) );
     gh = fabs( pi*( f*pi - v*g )/w );
     h = gh/( g*g );
     if ( fabs( h ) > LAL_HSERIES )

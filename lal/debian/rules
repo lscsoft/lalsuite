@@ -75,18 +75,18 @@ install : build
 	dh_clean -k
 	dh_installdirs
 
-	$(MAKE) DESTDIR=$(CURDIR)/debian/lal install
+	$(MAKE) DESTDIR=$(CURDIR)/debian/tmp install
 
 	# split off -dev
 #	mkdir -p $(CURDIR)/debian/lal-dev/$(PREFIX)/bin $(CURDIR)/debian/lal-dev/$(PREFIX)/lib $(CURDIR)/debian/lal-dev/$(PREFIX)/include
-	mv $(CURDIR)/debian/lal/$(PREFIX)/bin/lal-config $(CURDIR)/debian/lal-dev/$(PREFIX)/bin/
-	mv $(CURDIR)/debian/lal/$(PREFIX)/lib/*a $(CURDIR)/debian/lal-dev/$(PREFIX)/lib/
-	mv $(CURDIR)/debian/lal/$(PREFIX)/lib/pkgconfig $(CURDIR)/debian/lal-dev/$(PREFIX)/lib/
-	mv $(CURDIR)/debian/lal/$(PREFIX)/include/* $(CURDIR)/debian/lal-dev/$(PREFIX)/include/
-	mv $(CURDIR)/debian/lal/$(PREFIX)/share/lal $(CURDIR)/debian/lal-dev/$(PREFIX)/share/
-	mv $(CURDIR)/debian/lal/$(PREFIX)/share/man* $(CURDIR)/debian/lal-dev/$(PREFIX)/share/
+##	mv $(CURDIR)/debian/lal/$(PREFIX)/bin/lal-config $(CURDIR)/debian/lal-dev/$(PREFIX)/bin/
+##	mv $(CURDIR)/debian/lal/$(PREFIX)/lib/*a $(CURDIR)/debian/lal-dev/$(PREFIX)/lib/
+##	mv $(CURDIR)/debian/lal/$(PREFIX)/lib/pkgconfig $(CURDIR)/debian/lal-dev/$(PREFIX)/lib/
+##	mv $(CURDIR)/debian/lal/$(PREFIX)/include/* $(CURDIR)/debian/lal-dev/$(PREFIX)/include/
+##	mv $(CURDIR)/debian/lal/$(PREFIX)/share/lal $(CURDIR)/debian/lal-dev/$(PREFIX)/share/
+##	mv $(CURDIR)/debian/lal/$(PREFIX)/share/man* $(CURDIR)/debian/lal-dev/$(PREFIX)/share/
 
-	dh_install -s
+	dh_install --sourcedir=debian/tmp
 
 
 binary-common :
@@ -102,7 +102,7 @@ binary-common :
 #	dh_installemacsen
 #	dh_installpam
 #	dh_installmime
-#	dh_python
+	dh_python
 #	dh_installinit
 #	dh_installcron
 #	dh_installinfo
