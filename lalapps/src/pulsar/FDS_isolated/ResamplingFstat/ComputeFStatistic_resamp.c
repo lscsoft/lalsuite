@@ -323,9 +323,6 @@ REAL8Sequence* ResampleSeries(REAL8Sequence *X_Real,REAL8Sequence *X_Imag,REAL8S
 void Heterodyne(REAL8 f_het,REAL8 dt,REAL8 StartTime,REAL8Sequence *Real,REAL8Sequence *Imag);
 MultiREAL8Sequence* XLALCreateMultiREAL8Sequence(UINT4 length);
 void XLALDestroyMultiREAL8Sequence(MultiREAL8Sequence *X);
-Resamp_Variables *XLALCreateResamp_Variables();
-void XLALDestroyResamp_Variables(Resamp_Variables *X);
-
 
 /* Resampling prototypes (end) */
 
@@ -386,7 +383,6 @@ int main(int argc,char *argv[])
   ConfigVariables GV = empty_ConfigVariables;		/**< global container for various derived configuration settings */
   REAL8FrequencySeries *fstatVector = Buffer.fstatVector;
   Resamp_Variables* Vars;
-  Vars = XLALCreateResamp_Variables();
   Buffer.fstatVector = NULL;
 
   lalDebugLevel = 0;
@@ -450,7 +446,7 @@ int main(int argc,char *argv[])
 
   /*Call the CalcTimeSeries Function Here*/
   LogPrintf (LOG_DEBUG, "Calculating Time Series.\n");
-  TSeries = CalcTimeSeries(GV.multiSFTs,fpTSeries,Vars);
+  TSeries = CalcTimeSeries(GV.multiSFTs,fpTSeries,&Vars);
 
   /*----------------------------------------------------------------------
    * main loop: demodulate data for each point in the sky-position grid
@@ -466,7 +462,7 @@ int main(int argc,char *argv[])
   while ( XLALNextDopplerPos( &dopplerpos, GV.scanState ) == 0 )
     {
       /* main function call: compute F-statistic over frequency-band  */ 
-      LAL_CALL( ComputeFStat_resamp ( &status, &dopplerpos, GV.multiSFTs, GV.multiNoiseWeights,GV.multiDetStates, &GV.CFparams, &Buffer, TSeries,Vars), &status );
+      LAL_CALL( ComputeFStat_resamp ( &status, &dopplerpos, GV.multiSFTs, GV.multiNoiseWeights,GV.multiDetStates, &GV.CFparams, &Buffer, TSeries,&Vars), &status );
 
       fstatVector = Buffer.fstatVector;
       /* Progress meter */
@@ -626,7 +622,6 @@ int main(int argc,char *argv[])
   LogPrintfVerbatim ( LOG_DEBUG, "done.\n");
 
   XLALDestroyReSampBuffer ( &Buffer );
-  XLALDestroyResamp_Variables(Vars);
 
   LAL_CALL ( Freemem(&status, &GV), &status);
 
@@ -1692,18 +1687,6 @@ MultiFFTWCOMPLEXSeries *XLALCreateMultiFFTWCOMPLEXSeries(UINT4 length)
   new->data = Temp2;
   new->length = length;
   return new;
-}
-
-Resamp_Variables *XLALCreateResamp_Variables()
-{
-  Resamp_Variables *new;
-  new = XLALMalloc(sizeof(*new));
-  return(new);
-}
-
-void XLALDestroyResamp_Variables(Resamp_Variables *X)
-{
-  XLALFree(X);
 }
 
 void XLALDestroyMultiREAL8Sequence(MultiREAL8Sequence *X)
