@@ -677,7 +677,7 @@ int main(int argc, char *argv[]){
 	double sampleRate = SRATE;
 	long ndata = BLOCKSIZE;
 
-	const char *framename[256];
+	char framename[256];
 	static int counter=0;
 	struct stat statbuf;
 	
