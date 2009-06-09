@@ -76,9 +76,10 @@ f3dot=0.0
 ## now we generate an equivalent mfd_v2 input file:
 v2_cfg=In.data-v2
 v4_cfg=In.data-v4
+v4_log=v4.log
 
 v2_CL="-i $v2_cfg -I $IFO -E $ephemdir -S $refTime -G $startTime -b"
-v4_CL="-I $IFO @${v4_cfg} --Tsft=$Tsft --startTime=$startTime --duration=$duration -E $ephemdir -y 00-04 -l v4.log --generationMode=1 -b"
+v4_CL="-I $IFO @${v4_cfg} --Tsft=$Tsft --startTime=$startTime --duration=$duration -E $ephemdir -y 00-04 -l $v4_log --generationMode=1 -b"
 
 ## produce In.data-v2 file for makefakedata_v2
 echo "
@@ -151,13 +152,13 @@ if ! eval $cmdline; then
 else
     echo "OK. Test passed within tolerance of $tol."
     echo
-    exit 0
 fi
 
 
 ## clean up files [allow turning off via 'NOCLEANUP' environment variable
 if [ -z "$NOCLEANUP" ]; then
-    rm -rf $testDIR $v2_cfg $v4_cfg
+    rm -rf $testDIR $v2_cfg $v4_cfg $v4_log
 fi
 
 
+exit 0
