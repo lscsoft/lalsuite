@@ -78,6 +78,7 @@ int show=0;
 int do_axis=0;
 int do_text=0;
 int write_frames=0;
+int secs_per_framefile=60;
 long long count=0;
 long blocks=0;
 const char *ifo_name = NULL;
@@ -209,6 +210,7 @@ void usage(FILE *filep){
 	  "-I STRING     Detector: LHO, LLO, GEO, VIRGO, TAMA, CIT, ROME [REQUIRED]\n"
 	  "-A STRING     File containing detector actuation-function     [OPTIONAL]\n"
           "-F INT        Keep N frame files on disk.  If N==0 write all frames immediately.\n"
+	  "-S INT        Number of 1-second frames per frame file (default 60).\n"
 	  , MAXPULSARS
 	  );
   return;
@@ -218,7 +220,7 @@ void usage(FILE *filep){
 int parseinput(int argc, char **argv){
   
   int c;
-  const char *optionlist="hL:M:H:n:d:e:DG:TXspI:A:F:v";
+  const char *optionlist="hL:M:H:n:d:e:DG:TXspI:A:F:vS:";
   opterr=0;
   
   /* set some defaults */
@@ -331,6 +333,9 @@ int parseinput(int argc, char **argv){
 	    write_frames = 1 + how_many;
 	    break;
 	}
+    case 'S':
+	secs_per_framefile = atoi(optarg);
+	break;
     default:
       /* error case -- option not recognized */
       syserror(0,"%s: Option argument: -%c unrecognized or missing argument.\n"
@@ -663,7 +668,8 @@ int main(int argc, char *argv[]){
     
     /* now output the total signal to frames */
     if (write_frames) {
-	FrFile *oFile;
+
+	static FrFile *oFile = NULL;
 	FrameH *frame;
 	FrSimData *sim;
 
@@ -675,8 +681,12 @@ int main(int argc, char *argv[]){
 	static int counter=0;
 	struct stat statbuf;
 	
-	/* create next frame file*/
-	sprintf(framename, "CW_Injection_%d.gwf", counter + gpstime);
+	/* Create next frame file. This leads to a names like:
+	   CW_Injection-921517800-60.gwf
+	*/
+	sprintf(framename, "CW_Injection");
+
+	/* sprintf(framename, "CW_Injection_%d.gwf", counter + gpstime); */
 	frame = FrameHNew(framename);
 	if (!frame) {
 	    syserror(1, "FrameNew failed (%s)", FrErrorGetHistory());
@@ -692,8 +702,30 @@ int main(int argc, char *argv[]){
 	    sim->data->dataF[m] = total[m];
 	}
     
+	
 	/* open file, write file, close file */
-	oFile = FrFileONew(framename, level); 
+	if  (!(counter % secs_per_framefile)) {
+	    if (oFile) {
+		FrFileOEnd(oFile);
+		oFile = NULL;
+	    }
+
+	    /* Does the user want us to keep a limited set of frames on disk? */
+	    if (write_frames>1) {
+		char listname[256];
+		int watchtime = gpstime + secs_per_framefile*(counter/secs_per_framefile - write_frames + 1);
+		sprintf(listname, "CW_Injection-%d-%d.gwf",  watchtime, secs_per_framefile);
+		while (!stat(listname, &statbuf)) {
+		    /* if enough files in place, sleep 0.1 seconds */
+		    struct timespec rqtp;
+		    rqtp.tv_sec = 0;
+		    rqtp.tv_nsec = 100000000; 
+		    nanosleep(&rqtp, NULL);
+		}
+	    }
+	    oFile = FrFileONewM(framename, level, argv[0], secs_per_framefile);
+	}
+
 	if (!oFile) {
 	    syserror(1, "Cannot open output file %s\n", framename);
 	    exit(1);
@@ -703,20 +735,8 @@ int main(int argc, char *argv[]){
 		   "  Last errors are:\n%s", FrErrorGetHistory());
 	    exit(1);
 	}  
-	FrFileOEnd(oFile);
+	/* FrFileOEnd(oFile); */
 	FrameFree(frame);
-
-	/* Does the user want us to keep a limited set of frames on disk? */
-	if (write_frames>1) {
-	    sprintf(framename, "CW_Injection_%d.gwf", counter + gpstime - write_frames + 2);
-		    while (!stat(framename, &statbuf)) {
-			/* if enough files in place, sleep 0.1 seconds */
-			struct timespec rqtp;
-			rqtp.tv_sec = 0;
-			rqtp.tv_nsec = 100000000; 
-			nanosleep(&rqtp, NULL);
-		    }
-	}
 
 	counter++;
     }
