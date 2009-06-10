@@ -169,9 +169,9 @@ void sighandler(int sig){
 
 /* Like perror() but takes variable numbers of arguments and includes program name */
 void syserror(int showerrno, const char *fmt, ...){
-  char *thiserror=NULL;
-  pid_t pid=getpid();
-  time_t t=time(NULL);
+  char *thiserror = NULL;
+  pid_t pid = getpid();
+  time_t t = time(NULL);
   va_list ap;
   /* initialize variable argument list  */
   va_start(ap,fmt);
@@ -188,7 +188,10 @@ void syserror(int showerrno, const char *fmt, ...){
 
 /* usage message */
 void usage(FILE *filep){    
-  fprintf(filep, 
+  fprintf(filep,
+          "--------------------------------------------------------------------------------\n"
+          "%s: %s\n" 
+          "--------------------------------------------------------------------------------\n"
 	  "Options are:\n"
 	  "-h            THIS help message\n"
           "-v            VCS ID information\n"
@@ -201,17 +204,18 @@ void usage(FILE *filep){
 	  "-T            Print human readable text rather than binary to stdout\n"
 	  "-X            Include X-axis in human-readable text output\n"
 	  "-s            Print commands that would be fork(2)ed, then exit(0)\n"
-	  "              ------------------------------------------------------------\n"
+	  "              ---------- --------------------------------------------------\n"
           "-L DOUBLE     | Inject  calibration lines. Here L,M,H denote Low/Mid/High |\n"
           "-M DOUBLE     | frequency.  The DOUBLE values specifies the corresponding |\n"
 	  "-H DOUBLE     | amplitude. If NOT given, the amplitude defaults to 0.0    |\n"
-	  "              ------------------------------------------------------------\n"
+	  "              ------------- -----------------------------------------------\n"
 	  "-p            Print the calibration line frequencies in Hz then exit(0)\n"
 	  "-I STRING     Detector: LHO, LLO, GEO, VIRGO, TAMA, CIT, ROME [REQUIRED]\n"
 	  "-A STRING     File containing detector actuation-function     [OPTIONAL]\n"
           "-F INT        Keep N frame files on disk.  If N==0 write all frames immediately.\n"
 	  "-S INT        Number of 1-second frames per frame file (default 60).\n"
-	  , MAXPULSARS
+          "--------------------------------------------------------------------------------\n"
+	  , programname, lalappsGitCommitID, MAXPULSARS
 	  );
   return;
 }
@@ -327,7 +331,7 @@ int parseinput(int argc, char **argv){
 	{
 	    int how_many = atoi(optarg);
 	    if (how_many < 0) {
-		syserror(0,"%s: argument -F %d must be non-negative.\n", argv[0], how_many);
+		syserror(0,"%s: fatal error, argument -F %d must be non-negative.\n", argv[0], how_many);
 		exit(1);
 	    }
 	    write_frames = 1 + how_many;
@@ -335,6 +339,13 @@ int parseinput(int argc, char **argv){
 	}
     case 'S':
 	secs_per_framefile = atoi(optarg);
+        if (secs_per_framefile < 1) {
+	    syserror(0,"%s: fatal error, argument -S %d must be at least 1 second.\n", argv[0], secs_per_framefile);
+	    exit(1);
+	}
+        if (secs_per_framefile > 3600) {
+	    syserror(0,"%s: caution, argument -S %d seconds is more than one hour!\n", argv[0], secs_per_framefile);
+	}
 	break;
     default:
       /* error case -- option not recognized */
