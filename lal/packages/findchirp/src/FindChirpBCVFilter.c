@@ -17,14 +17,14 @@
 *  MA  02111-1307  USA
 */
 
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: FindChirpBCVFilter.c
  *
  * Author: Brown, D. A. and Messaritaki E.
- * 
+ *
  * Revision: $Id$
- * 
+ *
  *-----------------------------------------------------------------------
  */
 
@@ -89,9 +89,9 @@ LALFindChirpBCVFilterSegment (
   REAL4                *tmpltPower    = NULL;
   REAL4                *tmpltPowerBCV = NULL;
   BOOLEAN               haveChisq     = 0;
-  COMPLEX8             *qtilde        = NULL; 
-  COMPLEX8             *qtildeBCV     = NULL; 
-  COMPLEX8             *q             = NULL; 
+  COMPLEX8             *qtilde        = NULL;
+  COMPLEX8             *qtildeBCV     = NULL;
+  COMPLEX8             *q             = NULL;
   COMPLEX8             *qBCV          = NULL;
   COMPLEX8             *inputData     = NULL;
   COMPLEX8             *inputDataBCV  = NULL;
@@ -99,8 +99,8 @@ LALFindChirpBCVFilterSegment (
   SnglInspiralTable    *thisEvent     = NULL;
   LALMSTUnitsAndAcc     gmstUnits;
   REAL4                 a1 = 0.0;
-  REAL4                 b1 = 0.0;                  
-  REAL4                 b2 = 0.0;                  
+  REAL4                 b1 = 0.0;
+  REAL4                 b2 = 0.0;
   REAL4                 templateNorm;
   /* REAL4                 modqsq; */
   REAL4                 Num1, Num2, Den1, Den2;
@@ -114,9 +114,9 @@ LALFindChirpBCVFilterSegment (
 
 
   /*
-   *    
+   *
    * check that the arguments are reasonable
-   *          
+   *
    */
 
   /* make sure the output handle exists, but points to a null pointer */
@@ -145,7 +145,7 @@ LALFindChirpBCVFilterSegment (
   ASSERT(params->qVecBCV, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
   ASSERT(params->qVecBCV->data, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
   ASSERT(params->qtildeVecBCV, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
-  ASSERT(params->qtildeVecBCV->data,status, FINDCHIRPH_ENULL, 
+  ASSERT(params->qtildeVecBCV->data,status, FINDCHIRPH_ENULL,
       FINDCHIRPH_MSGENULL);
 
   /* check that the chisq parameter and input structures exist */
@@ -163,7 +163,7 @@ LALFindChirpBCVFilterSegment (
   }
 
   /* if we are doing a chisq, check we can store the data */
-  if ( input->segment->chisqBinVec->length ) 
+  if ( input->segment->chisqBinVec->length )
   {
     ASSERT( params->chisqVec, status,
         FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
@@ -218,10 +218,10 @@ LALFindChirpBCVFilterSegment (
 
   if ( input->segment->chisqBinVec->length )
   {
-    /* 
+    /*
      * at this point, numChisqBins is only used as a parameter
      * on the basis of which we decide whether we will do a chisq test or not.
-     * the actual number of chisq bins is: 
+     * the actual number of chisq bins is:
      */
     numChisqBins = input->segment->chisqBinVec->length - 1;
     chisqBin    = input->segment->chisqBinVec->data;
@@ -242,11 +242,11 @@ LALFindChirpBCVFilterSegment (
   gmstUnits.units = MST_HRS;
   gmstUnits.accuracy = LALLEAPSEC_STRICT;
 
-  /* 
+  /*
    * template parameters, since FindChirpBCVFilterSegment is run
    * for every template
    */
-  psi0 = input->fcTmplt->tmplt.psi0;  
+  psi0 = input->fcTmplt->tmplt.psi0;
   psi3 = input->fcTmplt->tmplt.psi3;
   fFinal = input->fcTmplt->tmplt.fFinal;
 
@@ -260,7 +260,7 @@ LALFindChirpBCVFilterSegment (
   {
     /* length of the chirp:                                            */
     /* calculated according to chirplen, using the values of M and eta */
-    /* for the BCV tempaltes, as calculated using psi0 and psi3        */ 
+    /* for the BCV tempaltes, as calculated using psi0 and psi3        */
 
 #if 0
     /* REAL4 eta = input->fcTmplt->tmplt.eta; */
@@ -296,11 +296,11 @@ LALFindChirpBCVFilterSegment (
     {
       deltaEventIndex=(UINT4) rint((params->clusterWindow/params->deltaT)+1.0);
     }
-    else if ( params->clusterMethod == FindChirpClustering_tmplt ) 
+    else if ( params->clusterMethod == FindChirpClustering_tmplt )
     {
       ABORT( status, FINDCHIRPBCVH_ECLUW, FINDCHIRPBCVH_MSGECLUW );
     }
-       
+
 
     /* ignore corrupted data at start and end */
     ignoreIndex = ( input->segment->invSpecTrunc / 2 ) + deltaEventIndex;
@@ -347,8 +347,8 @@ LALFindChirpBCVFilterSegment (
 
   /* k that corresponds to fFinal */
   deltaF = 1.0 / ( (REAL4) params->deltaT * (REAL4) numPoints );
-  kFinal = fFinal / deltaF < numPoints/2 ? floor(fFinal / deltaF) 
-    : floor(numPoints/2); 
+  kFinal = fFinal / deltaF < numPoints/2 ? floor(fFinal / deltaF)
+    : floor(numPoints/2);
   myfmin = input->segment->fLow;
 
   /* assign the values to a1, b1 and b2 */
@@ -369,7 +369,7 @@ LALFindChirpBCVFilterSegment (
        LALSnprintf( newinfomsg, sizeof(newinfomsg) / sizeof(*newinfomsg),
               "a1 = %e b1 = %e b2 = %e\n"
               "fFinal = %e deltaF = %e numPoints = %d => kFinal = %d\n",
-               a1, b1, b2, fFinal, deltaF, numPoints, kFinal ); 
+               a1, b1, b2, fFinal, deltaF, numPoints, kFinal );
        LALInfo( status, newinfomsg );
     }
   }
@@ -377,7 +377,7 @@ LALFindChirpBCVFilterSegment (
 
   /*
    *
-   * compute qtilde, qtildeBCV, and q, qBCV 
+   * compute qtilde, qtildeBCV, and q, qBCV
    * using the correct combination of inputData and inputDataBCV
    *
    */
@@ -390,11 +390,11 @@ LALFindChirpBCVFilterSegment (
   for ( k = 1; k < numPoints/2; ++k )
   {
     REAL4 r    = a1 * inputData[k].re;
-    REAL4 s    = a1 * inputData[k].im;    
+    REAL4 s    = a1 * inputData[k].im;
     REAL4 rBCV = b1 * inputData[k].re + b2 * inputDataBCV[k].re;
-    REAL4 sBCV = b1 * inputData[k].im + b2 * inputDataBCV[k].im; 
+    REAL4 sBCV = b1 * inputData[k].im + b2 * inputDataBCV[k].im;
     REAL4 x = tmpltSignal[k].re;
-    REAL4 y = 0.0 - tmpltSignal[k].im; /* note complex conjugate */     
+    REAL4 y = 0.0 - tmpltSignal[k].im; /* note complex conjugate */
 
     qtilde[k].re = r * x - s * y ;
     qtilde[k].im = r * y + s * x ;
@@ -403,18 +403,18 @@ LALFindChirpBCVFilterSegment (
   }
 
   /* inverse fft to get q, and qBCV */
-  LALCOMPLEX8VectorFFT( status->statusPtr, params->qVec, 
+  LALCOMPLEX8VectorFFT( status->statusPtr, params->qVec,
       params->qtildeVec, params->invPlan );
   CHECKSTATUSPTR( status );
-  LALCOMPLEX8VectorFFT( status->statusPtr, params->qVecBCV, 
+  LALCOMPLEX8VectorFFT( status->statusPtr, params->qVecBCV,
       params->qtildeVecBCV, params->invPlan );
   CHECKSTATUSPTR( status );
 
 
 
-  /* 
+  /*
    *
-   * calculate signal to noise squared 
+   * calculate signal to noise squared
    *
    */
 
@@ -479,7 +479,7 @@ LALFindChirpBCVFilterSegment (
         ( 0.5 * sqrt( modqsqSP + modqsqBCV + ImProd ) +
           0.5 * sqrt( modqsqSP + modqsqBCV - ImProd ) ) ;
 
-      params->rhosqVec->data->data[j] = norm * newmodqsq;   
+      params->rhosqVec->data->data[j] = norm * newmodqsq;
     }
   }
 
@@ -488,13 +488,13 @@ LALFindChirpBCVFilterSegment (
    * calculation of the chisq bin boundaries
    * only if we are going to do a chisq veto
    */
-  
+
   numChisqBins = 0;
   /* the following happens only if we are doing a BCV chisq veto */
   if( input->segment->chisqBinVec->length )
   {
-    /* 
-     * Decide whether we do a chisq veto and what the 
+    /*
+     * Decide whether we do a chisq veto and what the
      * correct number of chisq bins is, based on fFinal
      */
     if ( fFinal <= 200.0 )
@@ -522,7 +522,7 @@ LALFindChirpBCVFilterSegment (
       for ( k = 1; k < kFinal; ++k )
       {
          Power    += 4.0 * a1 * a1 * tmpltPower[k] * tmpltPower[k];
-         PowerBCV += 4.0 * ( b1 * tmpltPower[k] + b2 * tmpltPowerBCV[k] ) 
+         PowerBCV += 4.0 * ( b1 * tmpltPower[k] + b2 * tmpltPowerBCV[k] )
                          * ( b1 * tmpltPower[k] + b2 * tmpltPowerBCV[k] );
       }
 
@@ -553,13 +553,13 @@ LALFindChirpBCVFilterSegment (
       nextBin   = increment;
       chisqPt   = 0;
       partSum   = 0.0;
-                      
+
       /* calculate the frequencies of the chi-squared bin boundaries */
       chisqBinBCV[chisqPt++] = 0;
 
       for ( k = 1; k < kFinal; ++k )
       {
-        partSum += 4.0 * ( b1 * tmpltPower[k] + b2 * tmpltPowerBCV[k] ) 
+        partSum += 4.0 * ( b1 * tmpltPower[k] + b2 * tmpltPowerBCV[k] )
                        * ( b1 * tmpltPower[k] + b2 * tmpltPowerBCV[k] );
         if ( partSum >= nextBin )
         {
@@ -567,12 +567,12 @@ LALFindChirpBCVFilterSegment (
           nextBin += increment;
           if ( chisqPt == numChisqBins ) break;
         }
-      } 
+      }
       chisqBinBCV[numChisqBins] = input->segment->dataBCV->data->length;
-  
+
     } /* end if ( numChisqBins ) */
 
-  } /* end: if( input->segment->chisqBinVec->length ) */ 
+  } /* end: if( input->segment->chisqBinVec->length ) */
 
 
   /* look for an event in the filter output */
@@ -589,7 +589,7 @@ LALFindChirpBCVFilterSegment (
 
 
     /* if snrsq exceeds threshold at any point */
-    if ( newmodqsq > modqsqThresh )                  
+    if ( newmodqsq > modqsqThresh )
     {
 
       /* compute chisq vector if it does not exist and we want it */
@@ -632,9 +632,9 @@ LALFindChirpBCVFilterSegment (
       }
 
 
-      /* 
+      /*
        * when we decide to impose a cut on alphaF, the calculation of
-       * alphaF must be done at this point, and the check on alphaF 
+       * alphaF must be done at this point, and the check on alphaF
        * should be in the if statement that follows
        */
 #if 0
@@ -649,18 +649,18 @@ LALFindChirpBCVFilterSegment (
 
       omega = 0.5 * InvTan1 + 0.5 * InvTan2 ;
       alpha = - b2 * tan(omega) / ( a1 + b1*tan(omega) );
-      alpha *= pow(params->deltaT, 2.0/3.0); 
+      alpha *= pow(params->deltaT, 2.0/3.0);
       alphaF = alpha * pow(fFinal, 2.0/3.0);
-      if ( (alphaF >= 0.0 && alphaF <= 2.0) &&  
+      if ( (alphaF >= 0.0 && alphaF <= 2.0) &&
            ( ! numChisqBins || params->chisqVec->data[j] <
            (params->chisqThresh * ( 1.0 + newmodqsq * chisqThreshFac )) ) )
 #endif
 
-      /* 
-       * if we don't have a chisq or the chisq drops below the 
-       * modified chisq threshold, start processing events 
+      /*
+       * if we don't have a chisq or the chisq drops below the
+       * modified chisq threshold, start processing events
        */
-      if ( ! numChisqBins || 
+      if ( ! numChisqBins ||
           params->chisqVec->data[j] <
           (params->chisqThresh * ( 1.0 + newmodqsq * chisqThreshFac )) )
       {
@@ -731,19 +731,19 @@ LALFindChirpBCVFilterSegment (
 
           thisEvent->coa_phase = 0.5 * InvTan1 - 0.5 * InvTan2 ;
           omega = 0.5 * InvTan1 + 0.5 * InvTan2 ;
-          thisEvent->alpha = - b2 * tan(omega) 
+          thisEvent->alpha = - b2 * tan(omega)
             / ( a1 + b1 * tan(omega) );
-          thisEvent->alpha *= pow(params->deltaT, 2.0/3.0);   
+          thisEvent->alpha *= pow(params->deltaT, 2.0/3.0);
 
           /* copy the template into the event */
-          thisEvent->psi0   = (REAL4) input->fcTmplt->tmplt.psi0; 
+          thisEvent->psi0   = (REAL4) input->fcTmplt->tmplt.psi0;
           thisEvent->psi3   = (REAL4) input->fcTmplt->tmplt.psi3;
           /* chirp mass in units of M_sun */
           thisEvent->mchirp = (1.0 / LAL_MTSUN_SI) * LAL_1_PI *
             pow( 3.0 / 128.0 / input->fcTmplt->tmplt.psi0 , 3.0/5.0 );
-          m =  fabs(thisEvent->psi3) / 
+          m =  fabs(thisEvent->psi3) /
             (16.0 * LAL_MTSUN_SI * LAL_PI * LAL_PI * thisEvent->psi0) ;
-          thisEvent->eta = 3.0 / (128.0*thisEvent->psi0 * 
+          thisEvent->eta = 3.0 / (128.0*thisEvent->psi0 *
               pow( (m*LAL_MTSUN_SI*LAL_PI), (5.0/3.0)) );
           thisEvent->f_final  = (REAL4) input->fcTmplt->tmplt.fFinal ;
 
@@ -772,11 +772,11 @@ LALFindChirpBCVFilterSegment (
           thisEvent->eff_distance = sqrt( thisEvent->eff_distance ) /
             pow(params->deltaT, 1.0/6.0);
 
-          thisEvent->snr *= norm;      
+          thisEvent->snr *= norm;
           thisEvent->snr = sqrt( thisEvent->snr );
 
           /* compute the time since the snr crossing */
-          thisEvent->event_duration = 
+          thisEvent->event_duration =
             (REAL8) timeIndex - (REAL8) eventStartIdx;
           thisEvent->event_duration *= (REAL8) deltaT;
 
@@ -802,7 +802,7 @@ LALFindChirpBCVFilterSegment (
   }
 
 
-  /* 
+  /*
    *
    * clean up the last event if there is one
    *
@@ -826,7 +826,7 @@ LALFindChirpBCVFilterSegment (
     CHECKSTATUSPTR( status );
 
     /* set the impuse time for the event */
-    thisEvent->template_duration = (REAL8) chirpTime; 
+    thisEvent->template_duration = (REAL8) chirpTime;
 
     /* record the ifo name for the event */
     strncpy( thisEvent->ifo, input->segment->data->name,
@@ -849,14 +849,14 @@ LALFindChirpBCVFilterSegment (
 
     thisEvent->coa_phase = 0.5 * InvTan1 - 0.5 * InvTan2 ;
     omega = 0.5 * InvTan1 + 0.5 * InvTan2 ;
-    thisEvent->alpha = - b2 * tan(omega) 
+    thisEvent->alpha = - b2 * tan(omega)
       / ( a1 + b1 * tan(omega) );
-    thisEvent->alpha *= pow(params->deltaT, 2.0/3.0); 
+    thisEvent->alpha *= pow(params->deltaT, 2.0/3.0);
 
 
     /* copy the template into the event */
-    thisEvent->psi0   = (REAL4) input->fcTmplt->tmplt.psi0;   
-    thisEvent->psi3   = (REAL4) input->fcTmplt->tmplt.psi3;  
+    thisEvent->psi0   = (REAL4) input->fcTmplt->tmplt.psi0;
+    thisEvent->psi3   = (REAL4) input->fcTmplt->tmplt.psi3;
     /* chirp mass in units of M_sun */
     thisEvent->mchirp = (1.0 / LAL_MTSUN_SI) * LAL_1_PI *
       pow( 3.0 / 128.0 / input->fcTmplt->tmplt.psi0, 3.0/5.0 );
@@ -893,7 +893,7 @@ LALFindChirpBCVFilterSegment (
     thisEvent->eff_distance = sqrt( thisEvent->eff_distance ) /
       pow(params->deltaT,1.0/6.0);
 
-    thisEvent->snr *=  norm ;   
+    thisEvent->snr *=  norm ;
     thisEvent->snr = sqrt( thisEvent->snr );
 
     /* compute the time since the snr crossing */

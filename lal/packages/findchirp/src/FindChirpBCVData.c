@@ -17,22 +17,22 @@
 *  MA  02111-1307  USA
 */
 
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: FindChirpBCVData.c
  *
  * Author: Brown D. A. and Messaritaki E.
- * 
+ *
  * Revision: $Id$
- * 
+ *
  *-----------------------------------------------------------------------
  */
 
-#if 0 
+#if 0
 <lalVerbatim file="FindChirpBCVDataCV">
 Author: Brown, D. A. and Messaritaki E.
 $Id$
-</lalVerbatim> 
+</lalVerbatim>
 
 <lalLaTeX>
 \subsection{Module \texttt{FindChirpBCVData.c}}
@@ -41,7 +41,7 @@ $Id$
 \input{FindChirpBCVDataCDoc}
 
 \vfill{\footnotesize\input{FindChirpBCVDataCV}}
-</lalLaTeX> 
+</lalLaTeX>
 #endif
 
 #include <lal/LALStdlib.h>
@@ -72,7 +72,7 @@ LALFindChirpBCVData (
 
   REAL4                *w;
   REAL4                *amp;
-  REAL4                *ampBCV; 
+  REAL4                *ampBCV;
   COMPLEX8             *wtilde;
   REAL4                *tmpltPower;
   REAL4                *tmpltPowerBCV;
@@ -143,7 +143,7 @@ LALFindChirpBCVData (
 
   /* check that the parameter structure is set */
   /* to the correct waveform approximant       */
-  ASSERT( params->approximant == BCV, status, 
+  ASSERT( params->approximant == BCV, status,
       FINDCHIRPBCVH_EMAPX, FINDCHIRPBCVH_MSGEMAPX );
 
   /* check that the workspace vectors exist */
@@ -152,7 +152,7 @@ LALFindChirpBCVData (
   ASSERT( params->ampVec->data, status,
       FINDCHIRPBCVH_ENULL, FINDCHIRPBCVH_MSGENULL );
   ASSERT( params->ampVecBCV, status,
-      FINDCHIRPBCVH_ENULL, FINDCHIRPBCVH_MSGENULL ); 
+      FINDCHIRPBCVH_ENULL, FINDCHIRPBCVH_MSGENULL );
   ASSERT( params->ampVecBCV->data, status,
       FINDCHIRPBCVH_ENULL, FINDCHIRPBCVH_MSGENULL );
 
@@ -212,7 +212,7 @@ LALFindChirpBCVData (
 
   w             = params->wVec->data;
   amp           = params->ampVec->data;
-  ampBCV        = params->ampVecBCV->data; 
+  ampBCV        = params->ampVecBCV->data;
   wtilde        = params->wtildeVec->data;
   tmpltPower    = params->tmpltPowerVec->data;
   tmpltPowerBCV = params->tmpltPowerVecBCV->data;
@@ -276,9 +276,9 @@ LALFindChirpBCVData (
     LALForwardRealFFT( status->statusPtr, fcSeg->data->data,
         dataVec, params->fwdPlan );
     CHECKSTATUSPTR( status );
-    LALForwardRealFFT( status->statusPtr, fcSeg->dataBCV->data, 
-        dataVec, params->fwdPlan );                             
-    CHECKSTATUSPTR( status );                                   
+    LALForwardRealFFT( status->statusPtr, fcSeg->dataBCV->data,
+        dataVec, params->fwdPlan );
+    CHECKSTATUSPTR( status );
 
     /* compute strain */
     for ( k = 0; k < fcSeg->data->data->length; ++k )
@@ -394,7 +394,7 @@ LALFindChirpBCVData (
 
     /*
      *
-     * compute BCV normalisation parameters a1, b1 and b2, 
+     * compute BCV normalisation parameters a1, b1 and b2,
      * segment normalization, outputData, point fcSeg at data segment
      *
      */
@@ -407,7 +407,7 @@ LALFindChirpBCVData (
     I73 = 0.0;
     I53 = 0.0;
     I1 = 0.0;
-     
+
 
     for ( k = 0; k < cut; ++k )
     {
@@ -425,7 +425,7 @@ LALFindChirpBCVData (
     memset( fcSeg->segNorm->data, 0, fcSeg->segNorm->length * sizeof(REAL4) );
 
     segNormSum = 0.0;
-    /* 
+    /*
      * moments necessary for the calculation of
      * the BCV normalization parameters
      */
@@ -434,7 +434,7 @@ LALFindChirpBCVData (
     {
       I73 += 4.0 * amp[k] * amp[k] * wtilde[k].re ;
       I53 += 4.0 * amp[k] *  ampBCV[k] * wtilde[k].re ;
-      I1 += 4.0 * ampBCV[k] * ampBCV[k] * wtilde[k].re;  
+      I1 += 4.0 * ampBCV[k] * ampBCV[k] * wtilde[k].re;
 
       segNormSum += amp[k] * amp[k] * wtilde[k].re;
       fcSeg->segNorm->data[k] = segNormSum;
@@ -459,7 +459,7 @@ LALFindChirpBCVData (
       tmpltPower[k]    = amp[k] * sqrt(wtilde[k].re);
       /* Power += tmpltPower[k]; */
       tmpltPowerBCV[k] = ampBCV[k] * sqrt(wtilde[k].re);
-      /* PowerBCV += tmpltPowerBCV[k] ; */ 
+      /* PowerBCV += tmpltPowerBCV[k] ; */
     }
 
     for ( k = cut; k < fcSeg->data->data->length; ++k )

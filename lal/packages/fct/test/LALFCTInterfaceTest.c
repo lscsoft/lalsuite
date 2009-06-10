@@ -120,7 +120,7 @@ REAL4 unitA(REAL4 x)
                        3         / f \ (-5/3)
       2 * pi * tau_0 * - * f_0 * | - |
                        5         \f_0/
-  
+
   and identify the phase function with
 
                3         / f \ (-5/3)
@@ -132,7 +132,7 @@ REAL4 unitA(REAL4 x)
   N is the length of the FCT in the frequency direction:
 
       tauhat_0 = ? * tau_0
-      
+
       phihat_0 = ? * phi
 */
 static
@@ -158,7 +158,7 @@ REAL4 newtPhi(const REAL4 x)
 
   The usual expression for the 1-PN part of the phase is
 
-                           
+
       tau_2 * 2 * (pi * f_0)^2 * f^(-1)
 
 
@@ -168,14 +168,14 @@ REAL4 newtPhi(const REAL4 x)
                                   / f \ (-1)
       2 * pi * tau_2 * pi * f_0 * | - |
                                   \f_0/
-  
+
   and identify the phase function with
 
                           / f \ (-1)
       phi(f) = pi * f_0 * | - |
                           \f_0/
 
-  or for simplicity			  
+  or for simplicity
 
       phi(f) = pi * f_0^2 / f
 
@@ -184,7 +184,7 @@ REAL4 newtPhi(const REAL4 x)
   N is the length of the FCT in the frequency direction:
 
       tauhat_1 = ? * tau_2
-      
+
       phihat_1 = ? * phi
 */
 static
@@ -205,10 +205,10 @@ REAL4 onePNPhi(const REAL4 x)
 
 /*
   Inspiral chirp amplitude
-  
+
   At this stage we neglect the overall scaling and just use the
   frequency-dependent part of the amplitude, f^(-7/6).
-  
+
   Again, the amplitude is cutoff at 40 Hz. We also don't need to
   worry about f0 because that is only needed in converting the
   coefficients of the phase function into chirp times (tau's)
@@ -345,7 +345,7 @@ void getTimeSeriesData(LALStatus* const status, REAL4Vector* const ts)
     {
 	ts->data[i] = 0.0;
     }
-    
+
 #if 1
     LALCreateRandomParams (status, &randpar, 0);
     LALNormalDeviates(status, ts, randpar);
@@ -361,12 +361,12 @@ void getTimeSeriesData(LALStatus* const status, REAL4Vector* const ts)
   The chirp function h_{tc,t0,t1}(f)
 
   Parameters are
-  
+
   f - the value at which to evaluate the chirp function
   tc - coefficient of the linear part of the phase ie. f
   tau0 - coefficient of the first phase function ie. phi0(f)
   tau2 - coefficient of the second phase function ie. phi1(f)
-  
+
 */
 static
 void chirpFn(const REAL8 f, const REAL8 tc,
@@ -396,7 +396,7 @@ insertChirp(COMPLEX8Vector* in)
       t0 = tau0*phi0Scale;
       t2 = tau2*phi1Scale;
     */
-    
+
     UINT8 l = 0;
 
     for (l = 0; l < gchirp->length; ++l)
@@ -417,7 +417,7 @@ insertChirp(COMPLEX8Vector* in)
 
 	in->data[l].re += gchirp->data[l].re;
  	in->data[l].im += gchirp->data[l].im;
-	
+
 	/* Zero out everything below the cutoff */
 	if (f <= fcutoff)
 	{
@@ -430,7 +430,7 @@ insertChirp(COMPLEX8Vector* in)
 
 static
 void
-generateFCTInput(LALStatus* const status, 
+generateFCTInput(LALStatus* const status,
 		 COMPLEX8Vector* out,
 		 REAL4Vector* in)
 {
@@ -501,7 +501,7 @@ calculateFCTCubes(LALStatus* status, COMPLEX8Vector* fct_in)
       To make the test shorter, set the number of templates to a
       small number unless --full-test is on
     */
-    
+
     if (doingFullTest)
     {
 	Ntemplates = NtemplateList;
@@ -554,7 +554,7 @@ calculateFCTCubes(LALStatus* status, COMPLEX8Vector* fct_in)
 	cube[0].start_locations[1]
 	    = (templateList[i].params.t0*phi0Scale + 0.5);
 	cube[0].end_locations[1] = cube[0].start_locations[1] + 1;
-	
+
 	tau0_start = cube[0].start_locations[1]/phi0Scale;
 	tau0_end   = (cube[0].end_locations[1] - 1)/phi0Scale;
 
@@ -562,31 +562,31 @@ calculateFCTCubes(LALStatus* status, COMPLEX8Vector* fct_in)
 	cube[0].start_locations[2]
 	    = (templateList[i].params.t2*phi1Scale + 0.5);
 	cube[0].end_locations[2] = cube[0].start_locations[2] + 1;
-	
+
 	tau2_start = cube[0].start_locations[2]/phi1Scale;
 	tau2_end   = (cube[0].end_locations[2] - 1)/phi1Scale;
 
 	testprintf("Searching over data cube bounded by:\n");
-	testprintf("    %5d <= k  <= %5d (%5f <= tc   <= %5f)\n", 
+	testprintf("    %5d <= k  <= %5d (%5f <= tc   <= %5f)\n",
 	       cube[0].start_locations[0],
 	       cube[0].end_locations[0] - 1,
 	       tc_start,
 	       tc_end);
-	testprintf("    %5d <= k0 <= %5d (%5f <= tau0 <= %5f)\n", 
+	testprintf("    %5d <= k0 <= %5d (%5f <= tau0 <= %5f)\n",
 	       cube[0].start_locations[1],
 	       cube[0].end_locations[1] - 1,
 	       tau0_start,
 	       tau0_end);
-	testprintf("    %5d <= k1 <= %5d (%5f <= tau2 <= %5f)\n", 
+	testprintf("    %5d <= k1 <= %5d (%5f <= tau2 <= %5f)\n",
 	       cube[0].start_locations[2],
 	       cube[0].end_locations[2] - 1,
 	       tau2_start,
 	       tau2_end);
 
 	LALFCTSetDataCubes(status, &dataCubesIn, fctPlan);
-	
+
 	LALFCTCalculate(status, gfct_out, fct_in, fctPlan);
-	
+
 	for (l = 0; l < gfct_out->length; ++l)
 	{
 	    pwr = gfct_out->data[l].re*gfct_out->data[l].re
@@ -597,15 +597,15 @@ calculateFCTCubes(LALStatus* status, COMPLEX8Vector* fct_in)
 		max_pwr_index = l;
 	    }
 	}
-	
+
 	/*
 	  Using the formula
-	  
+
 	  l = K0*data_length + K
-	  
+
 	  we can solve for K and K0
 	*/
-	
+
 	K = max_pwr_index % data_length;
 	m = (max_pwr_index - K)/data_length;
 	K0 = m % dim1_data_length;
@@ -617,7 +617,7 @@ calculateFCTCubes(LALStatus* status, COMPLEX8Vector* fct_in)
 
 	tau0 = k0/phi0Scale;
 	tau2 = k1/phi1Scale;
-	
+
 	testprintf("Max pwr: fct_out->data[%d](K = %d, K0 = %d, K1 = %d) = %g\n",
 	       max_pwr_index, K, K0, K1, max_pwr);
 	testprintf("    k  = %5d (tc   = %d)\n", k, k);
@@ -637,7 +637,7 @@ calculateFCTCubes(LALStatus* status, COMPLEX8Vector* fct_in)
 
     tau0_max = k0_max/phi0Scale;
     tau2_max = k1_max/phi1Scale;
-    
+
     testprintf("Overall max pwr: %g\n", overall_max);
     testprintf("    k  = %5d (tc   = %d)\n", k_max, k_max);
     testprintf("    k0 = %5d (tau0 = %f)\n", k0_max, tau0_max);
@@ -712,21 +712,21 @@ calculateFCTCubes2(LALStatus* status, COMPLEX8Vector* fct_in)
 	REAL4 tau0 = 0.0;
 
 	testprintf("Searching over data cube bounded by:\n");
-	testprintf("    %5d <= k  <= %5d (%5f <= tc   <= %5f)\n", 
+	testprintf("    %5d <= k  <= %5d (%5f <= tc   <= %5f)\n",
 	       cube[0].start_locations[0],
 	       cube[0].end_locations[0] - 1,
 	       tc_start,
 	       tc_end);
-	testprintf("    %5d <= k0 <= %5d (%5f <= tau0 <= %5f)\n", 
+	testprintf("    %5d <= k0 <= %5d (%5f <= tau0 <= %5f)\n",
 	       cube[0].start_locations[1],
 	       cube[0].end_locations[1] - 1,
 	       tau0_start,
 	       tau0_end);
 
 	LALFCTSetDataCubes(status, &dataCubesIn, fctPlan);
-	
+
 	LALFCTCalculate(status, gfct_out, fct_in, fctPlan);
-	
+
 	for (l = 0; l < gfct_out->length; ++l)
 	{
 	    pwr = gfct_out->data[l].re*gfct_out->data[l].re
@@ -737,12 +737,12 @@ calculateFCTCubes2(LALStatus* status, COMPLEX8Vector* fct_in)
 		max_pwr_index = l;
 	    }
 	}
-	
+
 	/*
 	  Using the formula
-	  
+
 	  l = K0*data_length + K
-	  
+
 	  we can solve for K and K0
 	*/
 	K0 = max_pwr_index/data_length;
@@ -752,7 +752,7 @@ calculateFCTCubes2(LALStatus* status, COMPLEX8Vector* fct_in)
 	k0 = cube[0].start_locations[1] + K0;
 
 	tau0 = k0/phi0Scale;
-	
+
 	testprintf("Max pwr: fct_out->data[%d](K = %d, K0 = %d) = %g\n",
 	       max_pwr_index, K, K0, max_pwr);
 	testprintf("    k  = %5d (tc   = %d)\n", k, k);
@@ -773,7 +773,7 @@ calculateFCTCubes2(LALStatus* status, COMPLEX8Vector* fct_in)
     }
 
     tau0_max = k0_max/phi0Scale;
-    
+
     testprintf("Overall max pwr: %g\n", overall_max);
     testprintf("    k  = %5d (tc   = %d)\n", k_max, k_max);
     testprintf("    k0 = %5d (tau0 = %f)\n", k0_max, tau0_max);
@@ -860,17 +860,17 @@ setupParamList(LALStatus* const status)
     LALDDestroyVector( status, &(coarseIn.shf.data) );
 
     testprintf("Generated %d sets of parameters\n", NtemplateList);
-    
+
     testprintf("tau0 tau2 tau3 M eta m1 m2\n");
     for (i = 0; i < NtemplateList; ++i)
     {
 	testprintf("%e %e %e %e %e %e %e\n",
-	       templateList[i].params.t0, 
-	       templateList[i].params.t2, 
-	       templateList[i].params.t3, 
+	       templateList[i].params.t0,
+	       templateList[i].params.t2,
+	       templateList[i].params.t3,
 	       templateList[i].params.totalMass,
-	       templateList[i].params.eta, 
-	       templateList[i].params.mass1, 
+	       templateList[i].params.eta,
+	       templateList[i].params.mass1,
 	       templateList[i].params.mass2);
 
 	if (t0_max < templateList[i].params.t0)
@@ -921,14 +921,14 @@ setupGlobals(LALStatus* const status, int argc, char **argv)
 	/* delta */
 	2.0/tseries_length
     };
-    
+
     LALFCTSetOversamplingFactorInput setOfac = { 0, 0 };
 
     UINT8 output_data_size = 0;
 
     /* I have to guess what the size of the list of chirp params will be */
     /* const INT4 Nlist = 5000; */
-    
+
     INT4 i = 0;
 
     /* Do command line arguments */
@@ -954,18 +954,18 @@ setupGlobals(LALStatus* const status, int argc, char **argv)
 	    exit(1);
 	}
     }
-    
+
     /*
       Set the global scaling functions.
-      
-      The relationship is that 
-      
+
+      The relationship is that
+
         t_i   = tau_i * scale factor
         phi_i = phase_fn_i / scale factor
     */
     newtPhiScale  = 3.0/5.0*f0*pow(fcutoff/f0, -5.0/3.0);
     onePNPhiScale = LAL_PI*f0*f0/fcutoff;
-    
+
     /* Set phase function scaling factors */
     phi0Scale = newtPhiScale;
     phi1Scale = onePNPhiScale;
@@ -1002,10 +1002,10 @@ setupGlobals(LALStatus* const status, int argc, char **argv)
      * --Jolien
      */
     LALCreateForwardComplexFFTPlan(status, &plan, gtmp_in->length, 0);
-    
+
     /* Set up the plan and output area */
     LALCreateFCTPlan(status, &fctPlan, &planIn);
-    
+
     setOfac.ofac = 1;
     setOfac.dim = 1;
     LALFCTSetOversamplingFactor(status, &setOfac, fctPlan);
@@ -1035,7 +1035,7 @@ setupGlobals(LALStatus* const status, int argc, char **argv)
 
     dataCubesIn.data_cube = &cube[0];
     dataCubesIn.num_data_cubes = NUM_DATA_CUBES;
-    
+
     /* Get the required output size */
     LALFCTSetDataCubes(status, &dataCubesIn, fctPlan);
     LALFCTOutputDataSize(status, &output_data_size, fctPlan);

@@ -17,14 +17,14 @@
 *  MA  02111-1307  USA
 */
 
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: CoherentInspiralInputTest.c
  *
  * Author: Seader, S. E.  Brown, D.
- * 
+ *
  * Revision: $Id$
- * 
+ *
  *-----------------------------------------------------------------------
  */
 
@@ -168,8 +168,8 @@ int main( int argc, char *argv[] )
  */
 static void
 TestStatus (
-    LALStatus  *status, 
-    const char *ignored, 
+    LALStatus  *status,
+    const char *ignored,
     int         exitcode
            )
 {

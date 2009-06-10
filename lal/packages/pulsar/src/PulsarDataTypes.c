@@ -12,15 +12,15 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with with program; see the file COPYING. If not, write to the 
- *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, 
+ *  along with with program; see the file COPYING. If not, write to the
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
  */
 
 /** \author R. Prix
- * \file 
+ * \file
  * \brief
- * Provides empty initializers for pulsar struct data-types. 
+ * Provides empty initializers for pulsar struct data-types.
  *
  */
 

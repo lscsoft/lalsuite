@@ -26,7 +26,7 @@
  * \subsection{Program \texttt{MakeFrames.c}}
  *
  * Make some frames with random Gaussian noise.
- * 
+ *
  * \subsubsection*{Usage}
  *
  * \begin{verbatim}

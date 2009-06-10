@@ -17,17 +17,17 @@
   *  MA  02111-1307  USA
   */
 
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: TSData.c
  *
  * Author: Torres C  (Univ of TX at Brownsville)
- * 
+ *
  * Revision: $Id$
- * 
+ *
  *-----------------------------------------------------------------------
  */
- 
+
 #include <lal/TSData.h>
 #include <lal/TSSearch.h>
 #include <lal/FrameCache.h>
@@ -36,7 +36,7 @@
 NRCSID (TSDATAC,"$Id$");
 
 /*
- * Local static functions 
+ * Local static functions
  */
 static REAL4 localGauss2(REAL4 lineWidth)
 {
@@ -146,14 +146,14 @@ LALTracksearchFindLambdaMean(
   REAL8 myFloor=10e20;/*Lowest value in TFR */
   INITSTATUS(status,"LALTracksearchFindLambdaMean", TSDATAC);
   ATTATCHSTATUSPTR (status);
-  
+
   ASSERT(searchParams,status, TSDATA_ENNUL, TSDATA_MSGENNUL);
   counter=0;
   sumX=0;
   sumXSqr=0;
   current=0;
   for (i = 0;i < map.tCol;i++)
-    { 
+    {
       for (j = 0;j <(map.fRow/2+1);j++)
 	{
 	  current=0;
@@ -222,7 +222,7 @@ LALTracksearchFindLambdaMedian(
   count=((map.tCol)*(map.fRow/2+1));
   vector=(REAL8*)LALMalloc(count*sizeof(REAL8));
   for (i = 0;i < map.tCol;i++)
-    { 
+    {
       for (j = 0;j <(map.fRow/2+1);j++)
 	{
 	  /*fprintf(stdout,"%i %i %i %i %f\n",i,j,k,count,map.map[i][j]);*/
@@ -278,17 +278,17 @@ LALCreateTSDataSegmentVector (
 
   ASSERT (!*vector, status, TSDATA_ENNUL, TSDATA_MSGENNUL);
   ASSERT (params, status, TSDATA_ENULL, TSDATA_MSGENULL);
-  ASSERT (params->numberDataSegments > 0, 
+  ASSERT (params->numberDataSegments > 0,
 	  status, TSDATA_ESEGZ, TSDATA_MSGESEGZ);
   ASSERT (params->dataSegmentPoints > 0,
 	  status, TSDATA_ENUMZ, TSDATA_MSGENUMZ);
-  
+
   *vector = (TSSegmentVector *) LALMalloc(sizeof(TSSegmentVector));
 
 
   (*vector)->length = params->numberDataSegments;
   (*vector)->SegBufferPoints=params->SegBufferPoints;
-  (*vector)->dataSeg  = (REAL4TimeSeries **) 
+  (*vector)->dataSeg  = (REAL4TimeSeries **)
     LALMalloc(params->numberDataSegments*sizeof(REAL4TimeSeries*));
   if ( !((*vector)->dataSeg) )
     {
@@ -327,9 +327,9 @@ LALDestroyTSDataSegmentVector (
 
   INITSTATUS (status, "LALDestroyTSDataSegmentVector", TSDATAC);
   ATTATCHSTATUSPTR (status);
-  ASSERT (vector, 
-	  status, 
-	  TSDATA_ENULL, 
+  ASSERT (vector,
+	  status,
+	  TSDATA_ENULL,
 	  TSDATA_MSGENULL);
   for (i = 0; i < (INT4)(vector->length) ; i++)
       XLALDestroyREAL4TimeSeries(vector->dataSeg[i]);
@@ -423,7 +423,7 @@ LALTrackSearchApplyThreshold(
       /* Count up number of useful curves to keep */
       for(i=0;i<curveinfo->numberOfCurves;i++)
 	{
-	  if ((curveinfo->curves[i].n >= params.MinLength) && 
+	  if ((curveinfo->curves[i].n >= params.MinLength) &&
 	      (curveinfo->curves[i].totalPower >= params.MinPower) &&
 	      (curveinfo->curves[i].snrEstimate >= params.MinSNR))
 	    {
@@ -462,7 +462,7 @@ LALTrackSearchApplyThreshold(
 	    }
 	}
       /*If nothing passes the threshold deallocate the pointer*/
-      if ((dataProduct->numberOfCurves == 0) && 
+      if ((dataProduct->numberOfCurves == 0) &&
 	  (dataProduct->curves != NULL))
 	{
 	  LALFree(dataProduct->curves);
@@ -525,7 +525,7 @@ LALTrackSearchWhitenREAL4TimeSeries(
 		     signal->data,
 		     forwardPlan);
   CHECKSTATUSPTR (status);
-   
+
   /*
    * Diagnostic code
    * Temporary
@@ -533,7 +533,7 @@ LALTrackSearchWhitenREAL4TimeSeries(
   print_complex8fseries(signalFFT,"dataFFTComplex.txt");
   /*
    * Perform whitening
-   * Look at Tech Doc T010095-00  Sec3 
+   * Look at Tech Doc T010095-00  Sec3
    */
   for (i=0;i<signalFFT->data->length;i++)
     {
@@ -548,7 +548,7 @@ LALTrackSearchWhitenREAL4TimeSeries(
       signalFFT->data->data[i].re = signalFFT->data->data[i].re * factor;
       signalFFT->data->data[i].im = signalFFT->data->data[i].im * factor;
     }
-  /* 
+  /*
    * Manipulate the LALUnits structure to reflect above operation
    */
   exponent.numerator=-1;
@@ -564,33 +564,33 @@ LALTrackSearchWhitenREAL4TimeSeries(
 		  &(signalFFT->sampleUnits),
 		  &tmpUnitPair);
   CHECKSTATUSPTR (status);
-  /* 
+  /*
    * Diagnostic code
    */
   print_complex8fseries(signalFFT,"dataFFTComplexPOST.txt");
-   
-  /* 
-   * Transform back to time domain 
+
+  /*
+   * Transform back to time domain
    */
   LALReverseREAL4FFT(status->statusPtr,
 		     signal->data,
 		     signalFFT->data,
 		     reversePlan);
   CHECKSTATUSPTR (status);
-  /* 
+  /*
    * The 1/n factor need to be applied
-   * See lsd-5 p 259 10.1 
+   * See lsd-5 p 259 10.1
    */
   for (i=0;i<signal->data->length;i++)
     signal->data->data[i]= signal->data->data[i]/signal->data->length;
 
-  /* 
+  /*
    * Diagnostic code
    */
   print_real4tseries(signal,"dataSegi.txt");
 
-  /* 
-   *Release the temporary memory 
+  /*
+   *Release the temporary memory
    */
   XLALDestroyCOMPLEX8FrequencySeries(signalFFT);
   if (forwardPlan)
@@ -628,10 +628,10 @@ LALTrackSearchWhitenCOMPLEX8FrequencySeries(
   INITSTATUS(status,"LALTrackSearchWhitenCOMPLEX8FrequencySeries",TSDATAC);
   ATTATCHSTATUSPTR (status);
   /*
-   * Error checking 
+   * Error checking
    */
 
-  /* 
+  /*
    * Need to add error check to see that deltaF for PSD matches
    * fSeries deltaF with TOL if not issue warning and match the PSD
    * to the fSeries otherwise throw error.
@@ -713,7 +713,7 @@ LALTrackSearchCalibrateREAL4TimeSeries(LALStatus               *status,
 				   &lalDimensionlessUnit,
 				   planLength/2+1);
   /*
-   * FFT the data segment for calibration 
+   * FFT the data segment for calibration
    */
   LALForwardREAL4FFT(status->statusPtr,
 		     signalFFT->data,
@@ -721,7 +721,7 @@ LALTrackSearchCalibrateREAL4TimeSeries(LALStatus               *status,
 		     forwardPlan);
   CHECKSTATUSPTR (status);
   /*
-   * Perform the frequency basis calibration as defined in 
+   * Perform the frequency basis calibration as defined in
    * LSD Conventions Eq 23.1 p 601
    */
   for (i=0;i<signal->data->length;i++)
@@ -740,9 +740,9 @@ LALTrackSearchCalibrateREAL4TimeSeries(LALStatus               *status,
 		     signalFFT->data,
 		     reversePlan);
   CHECKSTATUSPTR (status);
-  /* 
+  /*
    * The 1/n factor need to be applied
-   * See lsd-5 p 259 10.1 
+   * See lsd-5 p 259 10.1
    */
   for (i=0;i<signal->data->length;i++)
     signal->data->data[i]= signal->data->data[i]/signal->data->length;
@@ -766,7 +766,7 @@ LALTrackSearchCalibrateREAL4TimeSeries(LALStatus               *status,
     }
   DETATCHSTATUSPTR(status);
   RETURN(status);
-    
+
 }
 /* End calibration routine */
 
@@ -797,7 +797,7 @@ LALTrackSearchCalibrateCOMPLEX8FrequencySeries(
    * Calibration is done via applying expression
    * 23.1 Conventions
    * s(f) = R(f;t)v(f)
-   * Unit field is adjust appropriately and we return a 
+   * Unit field is adjust appropriately and we return a
    * calibrated data solution
    */
   for(i=0;i<fSeries->data->length;i++)
@@ -810,7 +810,7 @@ LALTrackSearchCalibrateCOMPLEX8FrequencySeries(
       fSeries->data->data[i].re=(a*c - b*d);
       fSeries->data->data[i].im=(a*d + b*c);
     }
-  /* 
+  /*
    * Unit manipulation
    */
   tmpUnitPair.unitOne=&(fSeries->sampleUnits);
@@ -931,8 +931,8 @@ LALSVectorPolynomialInterpolation(
       /*
        *Setup params
        */
-      
-      /* 
+
+      /*
        * Domain is ordered so use bisection technique to extract domain
        * point of interest.
        * Since we are interpolating using 5 points from the orignal range
@@ -942,7 +942,7 @@ LALSVectorPolynomialInterpolation(
       bottomElement=0;
       cut=1;
       while (cut)
-	{  
+	{
 	  if (newDomain->data[i] >= domain->data[currentElement])
 	    {
 	      bottomElement=currentElement;
@@ -981,7 +981,7 @@ LALSVectorPolynomialInterpolation(
   if (yfrag)
     {
       LALDestroyVector(status->statusPtr,&yfrag);
-      CHECKSTATUSPTR(status);     
+      CHECKSTATUSPTR(status);
     }
   DETATCHSTATUSPTR(status);
   RETURN(status);
@@ -989,8 +989,8 @@ LALSVectorPolynomialInterpolation(
 
 
 
-/* 
- * As written this routine most likely wont work 
+/*
+ * As written this routine most likely wont work
  * I think there is variable scope problems
  */
 void
@@ -1009,7 +1009,7 @@ connect2Segments(
   /* Determine DeltaY */
   /* Determine DeltaX */
   /* Connect via greater of two */
-  
+
   /* Determine points between head-tail to include */
   /* Calculate straight line segement between two points */
 
@@ -1017,7 +1017,7 @@ connect2Segments(
   deltaX=curveA->row[curveA->n]-curveB->row[0];
   newLength=0;
   intermediateSegment=(int)floor(sqrt(deltaY*deltaY+deltaX*deltaX));
-  
+
   newLength=curveA->n+curveB->n+intermediateSegment;
   /* Allocate concatenated curve */
   tempCurve.row=LALMalloc(sizeof(INT4) * newLength);
@@ -1070,7 +1070,7 @@ connect2Segments(
       tempCurve.depth[k]=curveB->depth[k];
       k++;
     };
-  /*Set total sum of power field */ 
+  /*Set total sum of power field */
   for (i=0;i<tempCurve.n;i++)
     {
       tempCurve.totalPower=tempCurve.totalPower+tempCurve.depth[i];
@@ -1113,7 +1113,7 @@ void cleanLinkedList(
   INT4 i;
   INT4 j;
   INT4 noc2;
-  
+
   UsefulCurves=0; /*Array numbering starts with zero */
   outList->curves = LALMalloc(sizeof(outList->curves));
   /* Count up number of useful curves to keep */
@@ -1128,11 +1128,11 @@ void cleanLinkedList(
 	  outList->numberOfCurves = UsefulCurves;
 	  /* Numbering starts at zero */
 	  noc2 = outList->numberOfCurves-1;
-	  outList->curves[noc2].row=LALMalloc(sizeof(INT4) * 
+	  outList->curves[noc2].row=LALMalloc(sizeof(INT4) *
 					      inList->curves[i].n);
-	  outList->curves[noc2].col=LALMalloc(sizeof(INT4) * 
+	  outList->curves[noc2].col=LALMalloc(sizeof(INT4) *
 					      inList->curves[i].n);
-	  outList->curves[noc2].depth=LALMalloc(sizeof(REAL4) * 
+	  outList->curves[noc2].depth=LALMalloc(sizeof(REAL4) *
 						inList->curves[i].n);
 	  outList->curves[noc2].n = inList->curves[i].n;
 	  outList->curves[noc2].totalPower = inList->curves[i].totalPower;
@@ -1187,7 +1187,7 @@ void WriteMap(
   i = 0;
   j = 0;
   for (i = 0;i < map.tCol;i++)
-    { 
+    {
       for (j = 0;j <(map.fRow/2+1);j++)
 	{
 	  fprintf(fp2,"%f\n",(&map)->map[i][j]);
@@ -1205,7 +1205,7 @@ void WriteMap(
   fclose(fp2);
 }
 
-/* 
+/*
  * Diagnostic code to create greyscale pgms of the map
  */
 void DumpTFImage(
@@ -1260,7 +1260,7 @@ void DumpTFImage(
   fp = fopen(datfilename,"w");
   maxnum = image[0][0]; /* Max Value no abs taken on value */
   for (i=(width-1);i>-1;i--)
-    { 
+    {
       for (j=0;j<height;j++)
 	{
 	  temppoint = image[j][i];
@@ -1369,7 +1369,7 @@ void DumpTFImageCHAR(
   CHAR       DAT[5]=".dat";
   CHAR       AUX[5]=".aux";
   INT4       scale=255;
-  
+
   maxval=0; /* Hold max abs (magnitude) value */
   minval=0;
   /* Alloc for two filenames dat and pgm */
@@ -1389,7 +1389,7 @@ void DumpTFImageCHAR(
   fp = fopen(datfilename,"w");
   maxnum = atof(&image[0][0]); /* Max Value no abs taken on value */
   for (i=(width-1);i>-1;i--)
-    { 
+    {
       for (j=0;j<height;j++)
 	{
 	  temppoint = atof(&image[j][i]);

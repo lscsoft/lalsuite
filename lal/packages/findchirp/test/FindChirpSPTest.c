@@ -17,14 +17,14 @@
 *  MA  02111-1307  USA
 */
 
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: FindChirpSPTest.c
  *
  * Author: Brown, D. A.
- * 
+ *
  * Revision: $Id$
- * 
+ *
  *-----------------------------------------------------------------------
  */
 
@@ -58,10 +58,10 @@ TestStatus (LALStatus *status, const char *expectedCodes, int exitCode);
 static void
 ClearStatus (LALStatus *status);
 
-static void 
+static void
 Usage (const char *program, int exitflag);
 
-static void 
+static void
 ParseOptions (int argc, char *argv[]);
 
 typedef enum
@@ -112,10 +112,10 @@ main (int argc, char *argv[])
 
   REAL4                         sigma;
   REAL4                         Sfk;
-  REAL4                         respRe; 
+  REAL4                         respRe;
   REAL4                         respIm;
   REAL4                         deltaT;
-  REAL4                         deltaF;   
+  REAL4                         deltaF;
 
   REAL4Vector                  *noiseVec = NULL;
 
@@ -149,7 +149,7 @@ main (int argc, char *argv[])
   /* override numSegments if outputting rhosq */
   if ( rhosqout )
   {
-    numSegments = 1; 
+    numSegments = 1;
     numTmplts = 1;
     fpRhosq = fopen ("rhosq.dat", "w");
   }
@@ -186,7 +186,7 @@ main (int argc, char *argv[])
   TestStatus (&status, "0", 1);
   ClearStatus (&status);
 
-  tmplt = filterInput->tmplt = 
+  tmplt = filterInput->tmplt =
     (InspiralTemplate *) LALMalloc (sizeof(InspiralTemplate));
   memset( tmplt, 0, sizeof(InspiralTemplate) );
 
@@ -206,7 +206,7 @@ main (int argc, char *argv[])
   TestStatus (&status, "0", 1);
   ClearStatus (&status);
 
-  LALFindChirpChisqVetoInit (&status, filterParams->chisqParams, 
+  LALFindChirpChisqVetoInit (&status, filterParams->chisqParams,
       numChisqBins, numPoints);
   TestStatus (&status, "0", 1);
   ClearStatus (&status);
@@ -241,11 +241,11 @@ main (int argc, char *argv[])
   fprintf( stdout, "        numSegments = %d\n\n", numSegments );
   fprintf( stdout, "            sigma^2 = %5.2f\n", sigmasq );
   fprintf( stdout, "                Sfk = %10.8f\n", Sfk );
-  fprintf( stdout, "             deltaT = %e\n             deltaF = %e\n\n", 
+  fprintf( stdout, "             deltaT = %e\n             deltaF = %e\n\n",
       deltaT, deltaF);
   fprintf( stdout, "       invSpecTrunc = %d\n", invSpecTrunc );
   fprintf( stdout, "               fLow = %5.3f\n\n", fLow );
-  fprintf( stdout, "     rhosqThreshold = %5.3f\n     chisqThreshold = %5.3f\n\n", 
+  fprintf( stdout, "     rhosqThreshold = %5.3f\n     chisqThreshold = %5.3f\n\n",
       rhosqThresh, chisqThresh);
   fprintf( stdout, "               mass = %5.2f\n\n", mass );
 
@@ -293,11 +293,11 @@ main (int argc, char *argv[])
 
         noise = floor( 0.5 + sigma * noiseVec->data[j] );
 
-        if ( noise > -2048 && noise < 2047 ) 
+        if ( noise > -2048 && noise < 2047 )
           ifodmro= noise;
-        else if ( noise < -2048 ) 
+        else if ( noise < -2048 )
           ifodmro = -2048.0;
-        else 
+        else
           ifodmro=2047.0;
 
         dataSeg[i].chan->data->data[j] = ifodmro;
@@ -339,9 +339,9 @@ main (int argc, char *argv[])
       /* read in ifodmro data */
       for ( j = 0; j < numPoints; ++j )
       {
-        if (( (flag = fscanf( fpData, "%f\n", 
-                  &(dataSeg[i].chan->data->data[j]) )) != 1 || flag == EOF ) 
-            && j < numPoints ) 
+        if (( (flag = fscanf( fpData, "%f\n",
+                  &(dataSeg[i].chan->data->data[j]) )) != 1 || flag == EOF )
+            && j < numPoints )
         {
           fprintf( stdout, "error reading input data\n" );
           fflush( stdout );
@@ -355,7 +355,7 @@ main (int argc, char *argv[])
       /* read in spec and resp */
       for ( k = 0; k < numPoints/2 + 1; ++k )
       {
-        if (( (flag = fscanf( fpSpec, "%f\n", 
+        if (( (flag = fscanf( fpSpec, "%f\n",
                   &(dataSeg[i].spec->data->data[k]) )) != 1 || flag == EOF )
             && k < numPoints/2 + 1 )
         {
@@ -367,8 +367,8 @@ main (int argc, char *argv[])
           goto abort;
         }
 
-        if (( (flag = fscanf( fpResp, "%f %f\n", 
-                  &(dataSeg[i].resp->data->data[k].re), 
+        if (( (flag = fscanf( fpResp, "%f %f\n",
+                  &(dataSeg[i].resp->data->data[k].re),
                   &(dataSeg[i].resp->data->data[k].im) )) != 2 || flag == EOF )
             && k < numPoints/2 + 1 )
         {
@@ -481,7 +481,7 @@ main (int argc, char *argv[])
           event = thisEvent->next;
 
           fprintf( stdout, "event id       = %d\n", thisEvent->id );
-          fprintf( stdout, "event GPS time = %d.%d\n", 
+          fprintf( stdout, "event GPS time = %d.%d\n",
               thisEvent->time.gpsSeconds, thisEvent->time.gpsNanoSeconds );
           fprintf( stdout, "timeIndex      = %d\n", thisEvent->timeIndex );
           fprintf( stdout, "m1             = %f\n", thisEvent->tmplt.mass1 );
@@ -602,8 +602,8 @@ abort:
  */
 static void
 TestStatus (
-    LALStatus  *status, 
-    const char *ignored, 
+    LALStatus  *status,
+    const char *ignored,
     int         exitcode
            )
 {
@@ -665,7 +665,7 @@ ClearStatus (
 
 static void
 Usage (
-    const char *program, 
+    const char *program,
     int         exitcode
       )
 {
@@ -700,7 +700,7 @@ Usage (
 
 static void
 ParseOptions (
-    int         argc, 
+    int         argc,
     char       *argv[]
              )
 {
@@ -803,10 +803,10 @@ ParseOptions (
  */
 static void
 graphREAL4 (
-    REAL4      *array, 
+    REAL4      *array,
     INT4        n,
     INT4        spacing
-           ) 
+           )
 {
   FILE *fp;
   INT4 i;
@@ -838,12 +838,12 @@ graphREAL4 (
  * function to graph an array of INT2's for debugging
  *
  */
-static void 
+static void
 graphINT2 (
-    INT2       *array, 
+    INT2       *array,
     INT4        n,
     INT4        spacing
-          ) 
+          )
 {
   FILE *fp;
   INT4 i;
@@ -875,12 +875,12 @@ graphINT2 (
  * function to graph an array of INT4's for debugging
  *
  */
-static void 
+static void
 graphINT4 (
-    INT4       *array, 
+    INT4       *array,
     INT4        n,
     INT4        spacing
-          ) 
+          )
 {
   FILE *fp;
   INT4 i;

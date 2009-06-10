@@ -413,7 +413,7 @@ int main(int argc, char **argv)
   return SUCCESS;
 } /* END: main() */
 
-
+
 
 static int print_compare_errmsg_maybe(const char *msg,
                                       LALGPSCompareResult expected_val,
@@ -475,7 +475,7 @@ static int print_compare_errmsg_maybe(const char *msg,
 }
 
 
-
+
 static BOOLEAN compare_gps_ok(LALStatus *status,
                               const LIGOTimeGPS *p_gps1,
                               const LIGOTimeGPS *p_gps2,
@@ -505,14 +505,14 @@ static BOOLEAN compare_gps_ok(LALStatus *status,
     }
 }
 
-
+
 static int sprint_gps_time(char *str, const LIGOTimeGPS *p_gps)
 {
   return snprintf(str, LONGESTSTR - 1 - strlen(str),
                   "%9d:%09d", p_gps->gpsSeconds, p_gps->gpsNanoSeconds);
 }
 
-
+
 #if 0 /* NOT USED */
 static int sprint_time_interval(char *str,
                                 const LALTimeInterval *p_time_interval)
@@ -524,7 +524,7 @@ static int sprint_time_interval(char *str,
 #endif
 
 
-
+
 
 static int print_incr_errmsg_maybe(const char *msg,
                                    const LIGOTimeGPS *p_expected_gps,
@@ -554,7 +554,7 @@ static int print_incr_errmsg_maybe(const char *msg,
 } /* END: print_incr_errmsg_maybe() */
 
 
-
+
 static BOOLEAN increment_gps_ok(LALStatus *status,
                                 LALTimeInterval *p_delta,
                                 LIGOTimeGPS *p_init_gps,
@@ -601,7 +601,7 @@ static BOOLEAN increment_gps_ok(LALStatus *status,
     }
 } /* END: increment_gps_ok() */
 
-
+
 
 static BOOLEAN decrement_gps_ok(LALStatus *status,
                                 LALTimeInterval *p_delta,

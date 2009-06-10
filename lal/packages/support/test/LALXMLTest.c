@@ -679,7 +679,7 @@ test_gsl_matrix(void)
 
 
 
-
+
 
 /* -------------------- Helper functions -------------------- */
 

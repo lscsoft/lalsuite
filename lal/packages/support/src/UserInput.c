@@ -12,15 +12,15 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with with program; see the file COPYING. If not, write to the 
- *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, 
+ *  along with with program; see the file COPYING. If not, write to the
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
  */
 
 /** \file
  * \ingroup UserInput
  * \author Reinhard Prix
- * 
+ *
  * \brief Convenient unified handling of user-input via config-file and/or command-line.
  *
  */
@@ -39,8 +39,8 @@ extern INT4 lalDebugLevel;
 #define TRUE  (1==1)
 #define FALSE (1==0)
 
-/** Defines the type of a "user-variable": bool, int, real or string. 
- * Should be used only internally !! 
+/** Defines the type of a "user-variable": bool, int, real or string.
+ * Should be used only internally !!
  */
 typedef enum {
   UVAR_BOOL,	/**< boolean */
@@ -72,7 +72,7 @@ extern char *optarg;
 extern int optind, opterr, optopt;
 
 /* ---------- internal prototypes ---------- */
-static void RegisterUserVar (LALStatus *, const CHAR *name, UserVarType type, CHAR optchar, 
+static void RegisterUserVar (LALStatus *, const CHAR *name, UserVarType type, CHAR optchar,
 			     UserVarState flag, const CHAR *helpstr, void *cvar);
 
 static void UvarValue2String (LALStatus *, CHAR **outstr, LALUserVariable *uvar);
@@ -85,77 +85,77 @@ void check_and_mark_as_set ( LALUserVariable *varp );
 
 /* these are type-specific wrappers to allow tighter type-checking! */
 void
-LALRegisterREALUserVar (LALStatus *status, 
-			const CHAR *name, 
-			CHAR optchar, 
+LALRegisterREALUserVar (LALStatus *status,
+			const CHAR *name,
+			CHAR optchar,
 			UserVarState flag,
-			const CHAR *helpstr, 
+			const CHAR *helpstr,
 			REAL8 *cvar)
 {
   RegisterUserVar (status, name, UVAR_REAL8, optchar, flag, helpstr, cvar);
 }
 
 void
-LALRegisterINTUserVar (LALStatus *status, 
-		       const CHAR *name, 
-		       CHAR optchar, 
+LALRegisterINTUserVar (LALStatus *status,
+		       const CHAR *name,
+		       CHAR optchar,
 		       UserVarState flag,
-		       const CHAR *helpstr, 
+		       const CHAR *helpstr,
 		       INT4 *cvar)
 {
   RegisterUserVar (status, name, UVAR_INT4, optchar, flag, helpstr, cvar);
-} 
+}
 
 void
-LALRegisterBOOLUserVar (LALStatus *status, 
-			const CHAR *name, 
-			CHAR optchar, 
+LALRegisterBOOLUserVar (LALStatus *status,
+			const CHAR *name,
+			CHAR optchar,
 			UserVarState flag,
-			const CHAR *helpstr, 
+			const CHAR *helpstr,
 			BOOLEAN *cvar)
 {
   RegisterUserVar (status, name, UVAR_BOOL, optchar, flag, helpstr, cvar);
-} 
+}
 
 void
-LALRegisterSTRINGUserVar (LALStatus *status, 
-			  const CHAR *name, 
-			  CHAR optchar, 
+LALRegisterSTRINGUserVar (LALStatus *status,
+			  const CHAR *name,
+			  CHAR optchar,
 			  UserVarState flag,
-			  const CHAR *helpstr, 
+			  const CHAR *helpstr,
 			  CHAR **cvar)
 {
   RegisterUserVar (status, name, UVAR_STRING, optchar, flag, helpstr, cvar);
-} 
+}
 
 void
 LALRegisterLISTUserVar (LALStatus *status,
 			const CHAR *name,
-			CHAR optchar, 
+			CHAR optchar,
 			UserVarState flag,
-			const CHAR *helpstr, 
+			const CHAR *helpstr,
 			LALStringVector **cvar)
 {
   RegisterUserVar ( status, name, UVAR_CSVLIST, optchar, flag, helpstr, cvar );
-} 
+}
 
 
-
+
 
 
 /** Register a user-variable with the module.
  *  Effectively put an appropriate entry into UVAR_vars
  *
  *  \note don't use this directly, as it's not type-safe!!
- *      ==> use one of the 4 wrappers: LALRegisterREALUserVar(), 
+ *      ==> use one of the 4 wrappers: LALRegisterREALUserVar(),
  *    LALRegisterINTUserVar(), LALRegisterBOOLUserVar(), LALRegisterSTRINGUserVar().
  *
  */
 static void
-RegisterUserVar (LALStatus *status, 
-		 const CHAR *name, 
-		 UserVarType type, 
-		 CHAR optchar, 
+RegisterUserVar (LALStatus *status,
+		 const CHAR *name,
+		 UserVarType type,
+		 CHAR optchar,
 		 UserVarState flag,
 		 const CHAR *helpstr,
 		 void *cvar)
@@ -163,13 +163,13 @@ RegisterUserVar (LALStatus *status,
   LALUserVariable *ptr;
 
   INITSTATUS( status, "LALRegisterUserVar", USERINPUTC );
-  
+
   ASSERT (cvar != NULL, status, USERINPUTH_ENULL, USERINPUTH_MSGENULL);
   ASSERT (name != NULL, status, USERINPUTH_ENULL, USERINPUTH_MSGENULL);
 
   /* find end of uvar-list */
   ptr = &UVAR_vars;
-  while (ptr->next) 
+  while (ptr->next)
     ptr = ptr->next;
 
   /* create new entry */
@@ -192,7 +192,7 @@ RegisterUserVar (LALStatus *status,
 
 } /* LALRegisterUserVar() */
 
-
+
 
 /** Free all memory associated with user-variable linked list
  */
@@ -210,7 +210,7 @@ LALDestroyUserVars (LALStatus *status)
   while ( (ptr=ptr->next) != NULL)
     {
       /* is an allocated string here? */
-      if ( (ptr->type == UVAR_STRING) && (*(CHAR**)(ptr->varp) != NULL) ) 
+      if ( (ptr->type == UVAR_STRING) && (*(CHAR**)(ptr->varp) != NULL) )
 	{
 	  LALFree ( *(CHAR**)(ptr->varp) );
 	  *(CHAR**)(ptr->varp) = NULL;		/* IMPORTANT: reset user-variable to NULL ! */
@@ -237,7 +237,7 @@ LALDestroyUserVars (LALStatus *status)
 
   /* clean head */
   memset (&UVAR_vars, 0, sizeof(UVAR_vars));
-  
+
   RETURN(status);
 } /* LALDestroyUserVars() */
 
@@ -268,12 +268,12 @@ LALUserVarReadCmdline (LALStatus *status, int argc, char *argv[])
   pos = 0;
   numvars = 0;
 
-  /* special treatment of head, which could contain the debug-option: 
-   * NOTE: this one will *NOT* be treated by the remaining function, 
-   * (as the head is always skipped), but it has to be in the optstring 
-   * to avoid an error if specified on the command-line. 
+  /* special treatment of head, which could contain the debug-option:
+   * NOTE: this one will *NOT* be treated by the remaining function,
+   * (as the head is always skipped), but it has to be in the optstring
+   * to avoid an error if specified on the command-line.
    * Treatment of debug-option reading has to be done separately using
-   * UVARgetDebugLevel() 
+   * UVARgetDebugLevel()
    */
   if ( (ptr->help != NULL) && (ptr->optchar != 0) )
     {
@@ -316,11 +316,11 @@ LALUserVarReadCmdline (LALStatus *status, int argc, char *argv[])
   long_options[pos].val = 0;
 
 
-  /* NOTE: in case we get called several times, we have to make sure here that getopt() gets 
+  /* NOTE: in case we get called several times, we have to make sure here that getopt() gets
    * properly reset/initialized. We do this using the (undocumented) feature of GNU getopt
    * of setting optind to 0. As we're linking our private version of GNU getopt, this should be
    * guaranteed to work.
-   * 
+   *
    * Bruce's notes: read getopt_long() source code, and in particular
    * _getopt_internal() to see what is initialized.
    */
@@ -369,7 +369,7 @@ LALUserVarReadCmdline (LALStatus *status, int argc, char *argv[])
 	   * eg, if no '=' was used, so we have to check for that case by hand: */
 
 	  /* if the next entry is not an option, take it as an argument */
-	  if (optarg == NULL && (optind<argc) && (argv[optind][0]!='-') && (argv[optind][0]!='@') )	 
+	  if (optarg == NULL && (optind<argc) && (argv[optind][0]!='-') && (argv[optind][0]!='@') )
 	    optarg = argv[optind];
 
 	  if ( optarg == NULL )	/* no argument found at all: defaults to TRUE */
@@ -390,7 +390,7 @@ LALUserVarReadCmdline (LALStatus *status, int argc, char *argv[])
 		ABORT (status, USERINPUTH_ECMDLARG, USERINPUTH_MSGECMDLARG);
 	      }
 	    } /* parse bool-argument */
-	  
+
 	  /* only set if we properly parsed something */
 	  if (ans != -1) {
 	    *(BOOLEAN*)(ptr->varp)  = (BOOLEAN)ans;
@@ -432,7 +432,7 @@ LALUserVarReadCmdline (LALStatus *status, int argc, char *argv[])
 	  /* return value */
 	  *(CHAR**)(ptr->varp) = strp;
 	  check_and_mark_as_set ( ptr );
-	  break; 
+	  break;
 
 	case UVAR_CSVLIST:	/* list of comma-separated values */
 	  csv = *(LALStringVector**)(ptr->varp);
@@ -466,11 +466,11 @@ LALUserVarReadCmdline (LALStatus *status, int argc, char *argv[])
 
 /** Read config-variables from cfgfile and parse into input-structure.
  *
- * An error is reported if the config-file reading fails, but the 
+ * An error is reported if the config-file reading fails, but the
  * individual variable-reads are treated as optional
  */
 void
-LALUserVarReadCfgfile (LALStatus *status, 
+LALUserVarReadCfgfile (LALStatus *status,
 		       const CHAR *cfgfile) 	   /* name of config-file */
 {
   LALParsedDataFile *cfg = NULL;
@@ -519,7 +519,7 @@ LALUserVarReadCfgfile (LALStatus *status,
 	    {
 	      strp = *(CHAR**)(ptr->varp);
 	      if ( strp != NULL) /* something allocated here before? */
-		LALFree ( strp ); 
+		LALFree ( strp );
 	      /* return value */
 	      *(CHAR**)(ptr->varp) = stringbuf;
 	      check_and_mark_as_set ( ptr );
@@ -568,7 +568,7 @@ LALUserVarReadCfgfile (LALStatus *status,
 /** Assemble all help-info from uvars into a help-string.
  */
 void
-LALUserVarHelpString (LALStatus *status, 
+LALUserVarHelpString (LALStatus *status,
 		      CHAR **helpstring, /* output: allocated here! */
 		      const CHAR *progname)
 {
@@ -577,7 +577,7 @@ LALUserVarHelpString (LALStatus *status,
   CHAR defaultstr[UVAR_MAXDEFSTR]; 	/* for display of default-value */
   CHAR optstr[10];			/* display of opt-char */
   /* we need strings for UVAR_BOOL, UVAR_INT4, UVAR_REAL8, UVAR_STRING: */
-  const CHAR *typestr[] = {"BOOL", "INT", "REAL", "STRING", "LIST"}; 
+  const CHAR *typestr[] = {"BOOL", "INT", "REAL", "STRING", "LIST"};
   LALUserVariable *ptr;
   LALUserVariable *helpptr = NULL;	/* pointer to help-option */
   CHAR *helpstr = NULL;
@@ -640,16 +640,16 @@ LALUserVarHelpString (LALStatus *status,
 	  LALFree (valstr);
 	  valstr=NULL;
 	}
-      
+
       if (ptr->optchar != 0)
 	sprintf (optstr, "-%c,", ptr->optchar);
       else
 	strcpy (optstr, "   ");
 
-      LALSnprintf (strbuf, UVAR_MAXHELPLINE,  "  %s --%-15s %-6s   %s [%s] \n", 
+      LALSnprintf (strbuf, UVAR_MAXHELPLINE,  "  %s --%-15s %-6s   %s [%s] \n",
 		   optstr,
-		   ptr->name ? ptr->name : "-NONE-", 
-		   typestr[ptr->type], 
+		   ptr->name ? ptr->name : "-NONE-",
+		   typestr[ptr->type],
 		   ptr->help ? ptr->help : "-NONE-",
 		   defaultstr);
 
@@ -664,8 +664,8 @@ LALUserVarHelpString (LALStatus *status,
 
     } /* while ptr->next */
 
-  /* ---------- SECOND PASS through user-options: 
-   * show DEVELOPER-options only if lalDebugLevel >= 1 
+  /* ---------- SECOND PASS through user-options:
+   * show DEVELOPER-options only if lalDebugLevel >= 1
    */
   if ( lalDebugLevel == 0)	/* only give instructions as to how to see developer-options */
     {
@@ -686,8 +686,8 @@ LALUserVarHelpString (LALStatus *status,
     }
   else	/* lalDebugLevel > 0 */
     {
-      strcpy(strbuf, 
-	     "\n   ---------- The following are 'Developer'-options not useful " 
+      strcpy(strbuf,
+	     "\n   ---------- The following are 'Developer'-options not useful "
 	     "for most users:----------\n\n");
       newlen += strlen (strbuf);
       helpstr = LALRealloc (helpstr, newlen);
@@ -696,7 +696,7 @@ LALUserVarHelpString (LALStatus *status,
       }
 
       strcat (helpstr, strbuf);	/* add this line to the helpstring */
-  
+
       ptr = &UVAR_vars;
       while ( (ptr=ptr->next) != NULL )
 	{
@@ -704,38 +704,38 @@ LALUserVarHelpString (LALStatus *status,
 
 	  if ( ! (ptr->state & UVAR_DEVELOPER) )	/* only treat developer-options */
 	    continue;
-	  
+
 	  haveDevOpt = 1;
-	  
+
 	  TRY ( UvarValue2String(status->statusPtr, &valstr, ptr), status);
 	  strncpy (defaultstr, valstr, UVAR_MAXDEFSTR);	/* cut short for default-entry */
 	  defaultstr[UVAR_MAXDEFSTR-1] = 0;
 	  LALFree (valstr);
 	  valstr = NULL;
-	  
+
 	  if (ptr->optchar != 0)
 	    sprintf (optstr, "-%c,", ptr->optchar);
 	  else
 	    strcpy (optstr, "   ");
-	  
-	  LALSnprintf (strbuf, UVAR_MAXHELPLINE,  "  %s --%-15s %-6s   %s [%s] \n", 
+
+	  LALSnprintf (strbuf, UVAR_MAXHELPLINE,  "  %s --%-15s %-6s   %s [%s] \n",
 		       optstr,
-		       ptr->name ? ptr->name : "-NONE-", 
-		       typestr[ptr->type], 
+		       ptr->name ? ptr->name : "-NONE-",
+		       typestr[ptr->type],
 		       ptr->help ? ptr->help : "-NONE-",
 		       defaultstr);
-	  
+
 	  /* now increase allocated memory by the right amount */
 	  newlen += strlen (strbuf);
 	  helpstr = LALRealloc (helpstr, newlen);
 	  if ( helpstr == NULL) {
 	    ABORT (status, USERINPUTH_EMEM, USERINPUTH_MSGEMEM);
 	  }
-	  
+
 	  strcat (helpstr, strbuf);	/* add this line to the helpstring */
-	  
+
 	} /* while ptr->next: 2nd PASS for DEVELOPER-options */
-      
+
       if ( !haveDevOpt )	/* no developer-options found: say something */
 	{
 	  strcpy(strbuf, "   -- NONE --\n\n");
@@ -744,7 +744,7 @@ LALUserVarHelpString (LALStatus *status,
 	  if ( helpstr == NULL) {
 	    ABORT (status, USERINPUTH_EMEM, USERINPUTH_MSGEMEM);
 	  }
-	  
+
 	  strcat (helpstr, strbuf);	/* add this line to the helpstring */
 	} /* if !haveDevOpt */
 
@@ -759,7 +759,7 @@ LALUserVarHelpString (LALStatus *status,
 } /* LALUserVarHelpString() */
 
 
-/** Put all the pieces together, and basically does everything: 
+/** Put all the pieces together, and basically does everything:
  * get config-filename from cmd-line (if found),
  * then interpret config-file and then the command-line
  */
@@ -794,7 +794,7 @@ LALUserVarReadAllInput (LALStatus *status, int argc, char *argv[])
 	  if ( (fname = LALCalloc (1, strlen(tmp) + 5 )) == NULL) {
 	    ABORT (status, USERINPUTH_EMEM,  USERINPUTH_MSGEMEM);
 	  }
-	  /* NOTE: if the filename given is not a relative or absolute path, 
+	  /* NOTE: if the filename given is not a relative or absolute path,
 	   * we want to ensure it is interpreted relative to the CURRENT directory,
 	   * NOT relative to LAL_DATA_PATH (if set), as we cannot rely on it containg
 	   * the local directory.
@@ -805,7 +805,7 @@ LALUserVarReadAllInput (LALStatus *status, int argc, char *argv[])
 	    sprintf (fname, "./%s", tmp);
 	  else
 	    strcpy (fname, tmp);
-	
+
 	} /* if argument starts with '@' */
 
     } /* for i < argc */
@@ -865,7 +865,7 @@ LALUserVarWasSet (const void *cvar)
 
   /* find this varname in the list of user-variables */
   ptr = &UVAR_vars;
-  while ( (ptr = ptr->next) != NULL) 
+  while ( (ptr = ptr->next) != NULL)
     if ( ptr->varp == cvar)
       break;
 
@@ -873,25 +873,25 @@ LALUserVarWasSet (const void *cvar)
     LogPrintf (LOG_CRITICAL, "Variable passed to UVARwasSet is not a registered User-variable\n");
     return (-1);
   }
-  
+
   /* we found it: has it been set by user? */
   return ( (ptr->state & UVAR_WAS_SET) != 0 );
 
 } /* LALUserVarWasSet() */
 
 /** Check that all required user-variables have been set successfully.
- * Print error if not 
+ * Print error if not
  */
 void
 LALUserVarCheckRequired (LALStatus *status)
 {
-  LALUserVariable *ptr;  
+  LALUserVariable *ptr;
 
   INITSTATUS( status, "LALUserVarCheckRequired", USERINPUTC);
 
   /* go through list of uvars */
   ptr = &UVAR_vars;
-  while ( (ptr = ptr->next) != NULL) 
+  while ( (ptr = ptr->next) != NULL)
     if ( (ptr->state & UVAR_REQUIRED) && !(ptr->state & UVAR_WAS_SET))
       {
 	LogPrintf (LOG_CRITICAL, "Required user-variable `%s` has not been specified!\n\n", ptr->name);
@@ -903,12 +903,12 @@ LALUserVarCheckRequired (LALStatus *status)
 } /* LALUserVarCheckRequired() */
 
 /** Handle the delicate setting of lalDebuglevel.
- * 
- * \note *NEVER* call this function after any LALMalloc/LALCalloc/LALRealloc 
- * have been used. A change of lalDebugLevel can then lead to inconsistencies 
- * in the LAL memory-checker. 
- * You should therefore call this function very early on in main(), before any 
- * LALMallocs ... 
+ *
+ * \note *NEVER* call this function after any LALMalloc/LALCalloc/LALRealloc
+ * have been used. A change of lalDebugLevel can then lead to inconsistencies
+ * in the LAL memory-checker.
+ * You should therefore call this function very early on in main(), before any
+ * LALMallocs ...
  */
 void
 LALGetDebugLevel (LALStatus *status, int argc, char *argv[], CHAR optchar)
@@ -924,7 +924,7 @@ LALGetDebugLevel (LALStatus *status, int argc, char *argv[], CHAR optchar)
   ASSERT (UVAR_vars.next == NULL, status, USERINPUTH_EDEBUG,  USERINPUTH_MSGEDEBUG);
   ASSERT (UVAR_vars.varp == NULL, status, USERINPUTH_EDEBUG,  USERINPUTH_MSGEDEBUG);
 
-  /* "register" the debug-level variable in the head of the UVAR-list, 
+  /* "register" the debug-level variable in the head of the UVAR-list,
    * to avoid any mallocs. We need this to show up in the help-string */
   UVAR_vars.name = NULL;
   UVAR_vars.type = UVAR_INT4;
@@ -936,7 +936,7 @@ LALGetDebugLevel (LALStatus *status, int argc, char *argv[], CHAR optchar)
 
   UVAR_vars.state = UVAR_OPTIONAL;
   UVAR_vars.next = NULL;
-  
+
   /* the command-line has to be processed by hand for this... ! */
   for (i=1; i < argc; i++)
     {
@@ -953,7 +953,7 @@ LALGetDebugLevel (LALStatus *status, int argc, char *argv[], CHAR optchar)
 	  }
 	  break;
 	} /* if debug-switch found */
-      
+
     } /* for i < argc */
 
   RETURN (status);
@@ -1054,7 +1054,7 @@ LALUserVarGetLog (LALStatus *status, CHAR **logstr,  UserVarLogFormat format)
 
 
 /** Return user log as a process-params table
- * 
+ *
  * \param[out] **procPar the output ProcessParamsTable
  * \param[in] *progname  name of calling code
  */
@@ -1062,7 +1062,7 @@ void
 LALUserVarGetProcParamsTable (LALStatus *status, ProcessParamsTable **out, CHAR *progname)
 {
   LALUserVariable *ptr = NULL;
-  CHAR *valstr=NULL; 
+  CHAR *valstr=NULL;
   CHAR *typestr=NULL;
   ProcessParamsTable *this_proc_param=NULL;
 
@@ -1084,27 +1084,27 @@ LALUserVarGetProcParamsTable (LALStatus *status, ProcessParamsTable **out, CHAR 
       TRY ( UvarType2String (status->statusPtr, &typestr, ptr), status);
 
       /* *out is null in the first iteration of this loop in which case
-	 we allocate memory for the header of the linked list, otherwise 
+	 we allocate memory for the header of the linked list, otherwise
 	 allocate memory for the nodes */
       if (*out == NULL)
-	this_proc_param = *out = (ProcessParamsTable *)LALCalloc( 1, sizeof(ProcessParamsTable) );    
-      else 
-	this_proc_param = this_proc_param->next = 
-	  (ProcessParamsTable *)LALCalloc( 1, sizeof(ProcessParamsTable) );    
+	this_proc_param = *out = (ProcessParamsTable *)LALCalloc( 1, sizeof(ProcessParamsTable) );
+      else
+	this_proc_param = this_proc_param->next =
+	  (ProcessParamsTable *)LALCalloc( 1, sizeof(ProcessParamsTable) );
 
       /* copy the strings into the procparams table */
-      LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, progname ); 
+      LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, progname );
       LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", ptr->name );
       LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, valstr );
       LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, typestr );
-      
+
       LALFree (valstr);
       valstr=NULL;
       LALFree(typestr);
       typestr = NULL;
 
     } /* while ptr->next */
-  
+
 
   DETATCHSTATUSPTR(status);
   RETURN (status);
@@ -1146,7 +1146,7 @@ void UvarType2String (LALStatus *status, CHAR **out, LALUserVariable *uvar)
     default:
       LogPrintf (LOG_CRITICAL, "ERROR: unkown UserVariable-type encountered\n");
       ABORT (status, USERINPUTH_ENULL, USERINPUTH_MSGENULL);
-      break;      
+      break;
     } /* switch */
 
   if ( (ret = LALMalloc (strlen(buf) + 1)) == NULL) {
@@ -1157,7 +1157,7 @@ void UvarType2String (LALStatus *status, CHAR **out, LALUserVariable *uvar)
   *out = ret;
 
   RETURN(status);
-  
+
 } /* UvarType2String() */
 
 
@@ -1235,7 +1235,7 @@ UvarValue2String (LALStatus *status, CHAR **outstr, LALUserVariable *uvar)
       LogPrintf (LOG_CRITICAL, "ERROR: unkown UserVariable-type encountered... this points to a coding error!\n");
       ABORT (status, USERINPUTH_ENULL, USERINPUTH_MSGENULL);
       break;
-      
+
     } /* switch uvar->type */
 
   if (str == NULL)
@@ -1245,15 +1245,15 @@ UvarValue2String (LALStatus *status, CHAR **outstr, LALUserVariable *uvar)
       }
       strcpy (str, buf);
     }
-  
+
   *outstr = str;
-	
+
   RETURN (status);
 
 } /* UvarValue2String() */
 
 /** Copy (and allocate) string 'in', possibly with quotes \" or \' removed.
- * If quotes are present at the beginning of 'in', they must have a matching 
+ * If quotes are present at the beginning of 'in', they must have a matching
  * quote at the end of string, otherwise an error is printed and return=NULL
  */
 CHAR *
@@ -1292,7 +1292,7 @@ copy_string_unquoted ( const CHAR *in )
       tmp = in;
       outlen = inlen;
     }
-  
+
   if ( (out = LALCalloc (1, outlen + 1)) == NULL ) {
     LogPrintf (LOG_CRITICAL, "Out of memory!\n");
     return NULL;
@@ -1304,14 +1304,14 @@ copy_string_unquoted ( const CHAR *in )
 
 } /* copy_string_unquoted() */
 
-/** Mark the user-variable as set, check if it has been 
+/** Mark the user-variable as set, check if it has been
  * set previously and issue a warning if set more than once ...
  */
 void
 check_and_mark_as_set ( LALUserVariable *varp )
 {
   /* check if this variable had been set before ... */
-  if ( (varp->state & UVAR_WAS_SET) ) 
+  if ( (varp->state & UVAR_WAS_SET) )
     LogPrintf ( LOG_NORMAL, "Warning: user-variable '%s' was set more than once!\n", varp->name ? varp->name : "(NULL)" );
 
   varp->state |= UVAR_WAS_SET;

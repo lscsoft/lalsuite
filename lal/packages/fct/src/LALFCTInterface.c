@@ -49,9 +49,9 @@ void LALCreateFCTPlan(LALStatus* const status,
                       const LALCreateFCTPlanInput* const in)
 {
     INT4 i = 0;
-    
+
     INITSTATUS(status, "LALCreateFCTPlan", LALFCTINTERFACEC);
-    
+
     /* No harm in checking this each time */
     ASSERT((sizeof(fct_real) == sizeof(REAL4)), status,
            LALFCTINTERFACEH_EDATATYPE, LALFCTINTERFACEH_MSGEDATATYPE);
@@ -79,20 +79,20 @@ void LALCreateFCTPlan(LALStatus* const status,
     fct_malloc_hook = LALMallocShort;
     fct_calloc_hook = LALCallocShort;
     fct_free_hook = LALFree;
-    
+
     /* Also set the FFTW hooks *unless* they've already been set */
     if (fftw_malloc_hook == 0)
     {
 	fftw_malloc_hook = LALMallocShort;
     }
-    
+
     if (fftw_free_hook == 0)
     {
 	fftw_free_hook = LALFree;
     }
 
     *plan_ptr = LALCalloc(1, sizeof(**plan_ptr));
-    
+
     (*plan_ptr)->status = LALCalloc(1, sizeof(*(*plan_ptr)->status));
 
     (*plan_ptr)->fctPlan = fct_init_plan(in->data_length,
@@ -268,7 +268,7 @@ void LALFCTOutputDataSize(LALStatus* const status,
         plan->fct_initialised = 1;
     }
 #endif
-    
+
     /*
       Divide by two since the output vector in LAL is an array
       of complex numbers but the output vector in FCT is an
@@ -308,7 +308,7 @@ void LALFCTCalculate(LALStatus* const status,
         plan->fct_initialised = 1;
     }
 #endif
-    
+
     output_data_size = fct_output_data_size(plan->fctPlan, plan->status)/2;
 
     ASSERT((out->length == output_data_size), status,

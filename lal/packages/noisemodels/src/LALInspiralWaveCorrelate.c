@@ -41,15 +41,15 @@ is present at time $t_0,$ then the correlation peaks at $t_0.$
 
 \subsubsection*{Description}
 The module expects two inputs \texttt{signal1, signal2}
-in the Fourier-domain, computes their correlation weighted by 
-the noise \texttt{psd},  and returns the correlated output in 
+in the Fourier-domain, computes their correlation weighted by
+the noise \texttt{psd},  and returns the correlated output in
 the time-domain. More precisely, given the Discrete
 Fourier transform (in the notation of {\em fftw})
 $H_k$ and $Q_k$ of vectors $h_k$ and $q_k,$
 $k=0,\ldots n-1,$ this module computes the inverse Fourier
 transform of the weighted correlation $C_k$ defined as
-$$C_k = \frac{H_k Q_k + H_{n-k} Q_{n-k} }{S_k}, \ \ 
-C_{n-k} = \frac{H_k Q_{n-k} + H_{n-k} Q_k }{S_k}, \ \ 
+$$C_k = \frac{H_k Q_k + H_{n-k} Q_{n-k} }{S_k}, \ \
+C_{n-k} = \frac{H_k Q_{n-k} + H_{n-k} Q_k }{S_k}, \ \
            k=1,\ldots,\frac{n}{2}-1.$$
 \subsubsection*{Algorithm}
 \subsubsection*{Uses}
@@ -97,21 +97,21 @@ LALInspiralWaveCorrelate
   n = corrin.signal1.length;
 
   buff.length = corrin.signal1.length;
-  if (! (buff.data = (REAL4*) LALMalloc(sizeof(REAL4)*buff.length))) 
+  if (! (buff.data = (REAL4*) LALMalloc(sizeof(REAL4)*buff.length)))
   {
      ABORT(status, LALNOISEMODELSH_EMEM, LALNOISEMODELSH_MSGEMEM);
   }
 
   nby2 = n/2;
-  for (i=1; i<nby2; i++) 
+  for (i=1; i<nby2; i++)
   {
      k=n-i;
      psd = corrin.psd.data[i];
      f = (REAL8)i * corrin.df;
      if (psd && f < corrin.fCutoff) {
-/* 
+/*
      if (psd) {
-     the following line computes output = signal1 . signal2* 
+     the following line computes output = signal1 . signal2*
 */
         r1 = corrin.signal1.data[i];
         r2 = corrin.signal2.data[i];
@@ -129,7 +129,7 @@ LALInspiralWaveCorrelate
         buff.data[i] = (r1*r2 - i1*i2) / (0.5*psd);
         buff.data[k] = (i1*r2 + r1*i2) / (0.5*psd);
         */
-        
+
 	/*
 	 * printf("%d %e %e\n", i, buff.data[i], buff.data[k]);
 	 */
@@ -142,7 +142,7 @@ LALInspiralWaveCorrelate
   }
   psd = corrin.psd.data[0];
   f = 0;
-  if (psd && f<corrin.fCutoff) 
+  if (psd && f<corrin.fCutoff)
   {
      r1 = corrin.signal1.data[0];
      r2 = corrin.signal2.data[0];
@@ -158,7 +158,7 @@ LALInspiralWaveCorrelate
 
   psd = corrin.psd.data[nby2];
   f = nby2 * corrin.df;
-  if (psd && f<corrin.fCutoff) 
+  if (psd && f<corrin.fCutoff)
   {
      r1 = corrin.signal1.data[nby2];
      r2 = corrin.signal2.data[nby2];
@@ -177,7 +177,7 @@ LALInspiralWaveCorrelate
   for (i=0; i<n; i++) output->data[i] /= ((double) n * corrin.samplingRate);
 
 
-  /* 
+  /*
    * printf("&\n");
    */
   LALFree(buff.data);

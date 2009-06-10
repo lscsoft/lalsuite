@@ -146,7 +146,7 @@ int main( void )
   zSequence = NULL;
 
   LALZCreateVector( &status, &zSequence, 8 );
-  if (status.statusCode != 0) 
+  if (status.statusCode != 0)
   {
     fprintf(stderr,"[%i]: %s [PrintFTSeriesTest:%s]\n",status.statusCode,
 	    status.statusDescription, PRINTFTSERIESTESTC_MSGEFUN);
@@ -164,7 +164,7 @@ int main( void )
   zTimeSeries.data = zSequence;
 
   LALZPrintTimeSeries(&zTimeSeries, "zTS.dat");
-  if (status.statusCode != 0) 
+  if (status.statusCode != 0)
   {
     fprintf(stderr,"[%i]: %s [PrintFTSeriesTest:%s]\n",status.statusCode,
 	    status.statusDescription, PRINTFTSERIESTESTC_MSGEFUN);
@@ -174,14 +174,14 @@ int main( void )
   fprintf(stderr,"Printing COMPLEX16FrequencySeries to zFS.dat\n");
 
   strncpy(zFrequencySeries.name,"Complex frequency series",LALNameLength);
-  zFrequencySeries.sampleUnits = lalDimensionlessUnit; 
+  zFrequencySeries.sampleUnits = lalDimensionlessUnit;
   zFrequencySeries.deltaF = 1;
   zFrequencySeries.epoch = t80;
   zFrequencySeries.f0 = 0;
   zFrequencySeries.data = zSequence;
 
   LALZPrintFrequencySeries(&zFrequencySeries, "zFS.dat");
-  if (status.statusCode != 0) 
+  if (status.statusCode != 0)
   {
     fprintf(stderr,"[%i]: %s [PrintFTSeriesTest:%s]\n",status.statusCode,
 	    status.statusDescription, PRINTFTSERIESTESTC_MSGEFUN);
@@ -189,7 +189,7 @@ int main( void )
   }
 
   LALZDestroyVector( &status, &zSequence );
-  if (status.statusCode != 0) 
+  if (status.statusCode != 0)
   {
     fprintf(stderr,"[%i]: %s [PrintFTSeriesTest:%s]\n",status.statusCode,
 	    status.statusDescription, PRINTFTSERIESTESTC_MSGEFUN);
@@ -201,7 +201,7 @@ int main( void )
   fprintf(stderr,"Printing COMPLEX8TimeSeries to cTS.dat\n");
 
   LALCCreateVector( &status, &cSequence, 8 );
-  if (status.statusCode != 0) 
+  if (status.statusCode != 0)
   {
     fprintf(stderr,"[%i]: %s [PrintFTSeriesTest:%s]\n",status.statusCode,
 	    status.statusDescription, PRINTFTSERIESTESTC_MSGEFUN);
@@ -210,16 +210,16 @@ int main( void )
   for ( n=cSequence->length, c=cSequence->data; n > 0 ; --n, ++c ) {
     c->re = sinh(9.0*(4-n));
     c->im = - 1 / (1e-30 + c->re);
-  } 
+  }
   strncpy(cTimeSeries.name,"Complex time series",LALNameLength);
   cTimeSeries.sampleUnits = lalDimensionlessUnit;
   cTimeSeries.deltaT = 1.0/1024.0;
   cTimeSeries.f0 = 0;
   cTimeSeries.epoch = t00;
   cTimeSeries.data = cSequence;
- 
+
   LALCPrintTimeSeries(&cTimeSeries, "cTS.dat");
-  if (status.statusCode != 0) 
+  if (status.statusCode != 0)
   {
     fprintf(stderr,"[%i]: %s [PrintFTSeriesTest:%s]\n",status.statusCode,
 	    status.statusDescription, PRINTFTSERIESTESTC_MSGEFUN);
@@ -236,7 +236,7 @@ int main( void )
   cFrequencySeries.data = cSequence;
 
   LALCPrintFrequencySeries(&cFrequencySeries, "cFS.dat");
-  if (status.statusCode != 0) 
+  if (status.statusCode != 0)
   {
     fprintf(stderr,"[%i]: %s [PrintFTSeriesTest:%s]\n",status.statusCode,
 	    status.statusDescription, PRINTFTSERIESTESTC_MSGEFUN);
@@ -248,7 +248,7 @@ int main( void )
   dSequence = NULL;
 
   LALDCreateVector( &status, &dSequence, 8 );
-  if (status.statusCode != 0) 
+  if (status.statusCode != 0)
   {
     fprintf(stderr,"[%i]: %s [PrintFTSeriesTest:%s]\n",status.statusCode,
 	    status.statusDescription, PRINTFTSERIESTESTC_MSGEFUN);
@@ -265,7 +265,7 @@ int main( void )
   dTimeSeries.data = dSequence;
 
   LALDPrintTimeSeries(&dTimeSeries, "dTS.dat");
-  if (status.statusCode != 0) 
+  if (status.statusCode != 0)
   {
     fprintf(stderr,"[%i]: %s [PrintFTSeriesTest:%s]\n",status.statusCode,
 	    status.statusDescription, PRINTFTSERIESTESTC_MSGEFUN);
@@ -287,7 +287,7 @@ int main( void )
   dFrequencySeries.epoch = t00;
   dFrequencySeries.data = dSequence;
   LALDPrintFrequencySeries(&dFrequencySeries, "dFS.dat");
-  if (status.statusCode != 0) 
+  if (status.statusCode != 0)
   {
     fprintf(stderr,"[%i]: %s [PrintFTSeriesTest:%s]\n",status.statusCode,
 	    status.statusDescription, PRINTFTSERIESTESTC_MSGEFUN);
@@ -295,7 +295,7 @@ int main( void )
   }
 
   LALDDestroyVector( &status, &dSequence );
-  if (status.statusCode != 0) 
+  if (status.statusCode != 0)
   {
     fprintf(stderr,"[%i]: %s [PrintFTSeriesTest:%s]\n",status.statusCode,
 	    status.statusDescription, PRINTFTSERIESTESTC_MSGEFUN);
@@ -307,7 +307,7 @@ int main( void )
   sSequence = NULL;
 
   LALSCreateVector( &status, &sSequence, 8 );
-  if (status.statusCode != 0) 
+  if (status.statusCode != 0)
   {
     fprintf(stderr,"[%i]: %s [PrintFTSeriesTest:%s]\n",status.statusCode,
 	    status.statusDescription, PRINTFTSERIESTESTC_MSGEFUN);
@@ -323,7 +323,7 @@ int main( void )
   sTimeSeries.epoch = t10;
   sTimeSeries.data = sSequence;
   LALSPrintTimeSeries(&sTimeSeries, "sTS.dat");
-  if (status.statusCode != 0) 
+  if (status.statusCode != 0)
   {
     fprintf(stderr,"[%i]: %s [PrintFTSeriesTest:%s]\n",status.statusCode,
 	    status.statusDescription, PRINTFTSERIESTESTC_MSGEFUN);
@@ -342,7 +342,7 @@ int main( void )
   sFrequencySeries.epoch = t10;
   sFrequencySeries.data = sSequence;
   LALSPrintFrequencySeries(&sFrequencySeries, "sFS.dat");
-  if (status.statusCode != 0) 
+  if (status.statusCode != 0)
   {
     fprintf(stderr,"[%i]: %s [PrintFTSeriesTest:%s]\n",status.statusCode,
 	    status.statusDescription, PRINTFTSERIESTESTC_MSGEFUN);
@@ -350,7 +350,7 @@ int main( void )
   }
 
   LALSDestroyVector( &status, &sSequence );
-  if (status.statusCode != 0) 
+  if (status.statusCode != 0)
   {
     fprintf(stderr,"[%i]: %s [PrintFTSeriesTest:%s]\n",status.statusCode,
 	    status.statusDescription, PRINTFTSERIESTESTC_MSGEFUN);
@@ -372,7 +372,7 @@ int main( void )
   }
 
   LALCPrintFrequencySeries(&cFrequencySeries, "hFSe.dat");
-  if (status.statusCode != 0) 
+  if (status.statusCode != 0)
   {
     fprintf(stderr,"[%i]: %s [PrintFTSeriesTest:%s]\n",status.statusCode,
 	    status.statusDescription, PRINTFTSERIESTESTC_MSGEFUN);
@@ -380,7 +380,7 @@ int main( void )
   }
 
   LALCDestroyVector( &status, &cSequence );
-  if (status.statusCode != 0) 
+  if (status.statusCode != 0)
   {
     fprintf(stderr,"[%i]: %s [PrintFTSeriesTest:%s]\n",status.statusCode,
 	    status.statusDescription, PRINTFTSERIESTESTC_MSGEFUN);
@@ -390,7 +390,7 @@ int main( void )
   fprintf(stderr,"Printing heterodyned REAL8FrequencySeries to hFSo.dat\n");
 
   LALCCreateVector( &status, &cSequence, 9 );
-  if (status.statusCode != 0) 
+  if (status.statusCode != 0)
   {
     fprintf(stderr,"[%i]: %s [PrintFTSeriesTest:%s]\n",status.statusCode,
 	    status.statusDescription, PRINTFTSERIESTESTC_MSGEFUN);
@@ -409,14 +409,14 @@ int main( void )
   }
 
   LALCPrintFrequencySeries(&cFrequencySeries, "hFSo.dat");
-  if (status.statusCode != 0) 
+  if (status.statusCode != 0)
   {
     fprintf(stderr,"[%i]: %s [PrintFTSeriesTest:%s]\n",status.statusCode,
 	    status.statusDescription, PRINTFTSERIESTESTC_MSGEFUN);
     return PRINTFTSERIESTESTC_EFUN;
   }
   LALCDestroyVector( &status, &cSequence );
-  if (status.statusCode != 0) 
+  if (status.statusCode != 0)
   {
     fprintf(stderr,"[%i]: %s [PrintFTSeriesTest:%s]\n",status.statusCode,
 	    status.statusDescription, PRINTFTSERIESTESTC_MSGEFUN);

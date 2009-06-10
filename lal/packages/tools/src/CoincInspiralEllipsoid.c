@@ -414,7 +414,7 @@ INT2 XLALCompareInspiralsEllipsoid(
       isCoinc = 1;
     }
   }
-  
+
   params->match = isCoinc;
   return isCoinc;
 }
@@ -433,7 +433,7 @@ REAL8 XLALCalculateEThincaParameter(
 
    TriggerErrorList * errorList[2];
 
-   REAL8 travelTime;  
+   REAL8 travelTime;
    INT4 i;
    INT4 ifoANum, ifoBNum;
    fContactWorkSpace    *workSpace;
@@ -473,7 +473,7 @@ REAL8 XLALCalculateEThincaParameter(
   {
     XLALDestroyTriggerErrorList( errorList[0] );
     XLAL_ERROR_REAL8( func, XLAL_EFUNC | XLALClearErrno() );
-  }  
+  }
 
   /* Set up the trigger lists */
   if ( XLALGPSToINT8NS( &(table1->end_time) ) < XLALGPSToINT8NS( &(table2->end_time )) )
@@ -490,7 +490,7 @@ REAL8 XLALCalculateEThincaParameter(
   for (i = 0; i < 2; i++ )
   {
     errorList[i]->position = XLALGetPositionFromSnglInspiral( errorList[i]->trigger );
-    
+
     errorList[i]->err_matrix = XLALGetErrorMatrixFromSnglInspiral( errorList[i]->trigger,
                                  1.0 );
     if ( !errorList[i]->position || !errorList[i]->err_matrix )
@@ -644,8 +644,8 @@ REAL8 XLALMinimizeEThincaParameterOverTravelTime( REAL8 travelTime,
     REAL8               epsilon = 1.0 / 16384.0;
     REAL8               m = 0.0;
     REAL8               a = - travelTime, b = travelTime; /* Upper and lower bounds */
-    REAL8               minEThinca, maxEThinca;      
-    REAL8               midEThinca;                 
+    REAL8               minEThinca, maxEThinca;
+    REAL8               midEThinca;
     gsl_min_fminimizer  *s = gsl_min_fminimizer_alloc( minimizer->workSpace->T );
 
     if ( !s )
@@ -661,7 +661,7 @@ REAL8 XLALMinimizeEThincaParameterOverTravelTime( REAL8 travelTime,
     minEThinca = minimizeEThincaParameterOverTimeDiff( a, minimizer );
     maxEThinca = minimizeEThincaParameterOverTimeDiff( b, minimizer );
     midEThinca = minimizeEThincaParameterOverTimeDiff( m, minimizer );
-    if ( XLAL_IS_REAL8_FAIL_NAN(minEThinca) || XLAL_IS_REAL8_FAIL_NAN(maxEThinca) 
+    if ( XLAL_IS_REAL8_FAIL_NAN(minEThinca) || XLAL_IS_REAL8_FAIL_NAN(maxEThinca)
          || XLAL_IS_REAL8_FAIL_NAN(midEThinca) )
     {
       gsl_min_fminimizer_free( s );
@@ -760,19 +760,19 @@ static REAL8 minimizeEThincaParameterOverTimeDiff( REAL8 timeShift,
   INT8 curTimeANS, curTimeBNS;
   REAL8 originalTimeA;
   REAL8 originalTimeB;
-  REAL8 overlap; 
- 
+  REAL8 overlap;
+
   originalTimeA = gsl_vector_get( params->aPtr->position, 0 );
   originalTimeB = gsl_vector_get( params->bPtr->position, 0 );
- 
+
   curTimeANS = XLALGPSToINT8NS( &(params->aPtr->trigger->end_time) );
   curTimeBNS = XLALGPSToINT8NS( &(params->bPtr->trigger->end_time) );
- 
+
   /* Reset the times to avoid any precision problems */
   XLALSetTimeInPositionVector( params->aPtr->position, timeShift );
   XLALSetTimeInPositionVector( params->bPtr->position,
           (curTimeBNS - curTimeANS) * 1.0e-9 );
- 
+
   /* check for the intersection of the ellipsoids */
   params->workSpace->invQ1 = params->aPtr->err_matrix;
   params->workSpace->invQ2 = params->bPtr->err_matrix;
@@ -789,6 +789,6 @@ static REAL8 minimizeEThincaParameterOverTimeDiff( REAL8 timeShift,
   /* Set the times back to their correct values */
   XLALSetTimeInPositionVector( params->aPtr->position, originalTimeA );
   XLALSetTimeInPositionVector( params->bPtr->position, originalTimeB );
- 
+
   return overlap;
 }

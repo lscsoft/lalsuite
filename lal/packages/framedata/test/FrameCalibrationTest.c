@@ -24,7 +24,7 @@
 
 /**** <lalLaTeX>
  * \subsection{Program \texttt{FrameCalibrationTest.c}}
- * 
+ *
  * Tests the hig-level function to obtain an up-to-date calibration from
  * frame files.
  *
@@ -66,14 +66,14 @@
  * L-CAL_FAC_V03-729273600-5094000.gwf
  * L-CAL_REF_V03-731488397-64.gwf
  * \end{verbatim}
- * 
+ *
  * FIXME: the following test is not yet implemented: waiting for Steve's
  * change to add the return of the actual values used.
  * The returned values of $\alpha$ and $\alpha\beta$ are checked against the
- * values obtained from the files S2 version 3 calibration factor files 
+ * values obtained from the files S2 version 3 calibration factor files
  * \verb+H1AlphaBeta.txt+ and \verb+L1AlphaBeta.txt+ which can be found on the
  * calibration home page.
- * 
+ *
  * \subsubsection*{Exit codes}
  * \begin{tabular}{|c|l|}
  * \hline
@@ -87,7 +87,7 @@
  *
  * \subsubsection*{Uses}
  * \subsubsection*{Notes}
- * 
+ *
  **** </lalLaTeX> */
 
 
@@ -141,14 +141,14 @@ int main( int argc, char *argv[] )
   const REAL4 tiny = 1e-6;
 
   CHAR  ifoCode[][3] = { "H1", "L1" };
-  INT4  calTime[] = { 729331981, 729332039, 729332040, 729332041, 729332099, 
+  INT4  calTime[] = { 729331981, 729332039, 729332040, 729332041, 729332099,
     800000000 };
   CHAR  cacheTime[][21] = { "729273600-734367600", "729273600-734367600" };
-  COMPLEX8 H1AlphaBeta[] = { {0.9883124570783, 0}, {0.9883124570783, 0}, 
+  COMPLEX8 H1AlphaBeta[] = { {0.9883124570783, 0}, {0.9883124570783, 0},
     {1.123396433694, 0}, {1.123396433694, 0}, {1.123396433694, 0}, {0, 0} };
-  COMPLEX8 L1AlphaBeta[] = { {0, 0}, {0, 0}, {0.6041572088741, 0}, 
+  COMPLEX8 L1AlphaBeta[] = { {0, 0}, {0, 0}, {0.6041572088741, 0},
     {0.6041572088741, 0}, {0.6041572088741, 0}, {0, 0} };
-    
+
   static LALStatus      status;
   const CHAR            calCacheName[LALNameLength];
   FrCache              *calCache = NULL;
@@ -174,7 +174,7 @@ int main( int argc, char *argv[] )
   /* loop over the three interferometers */
   for ( j = 0; j < sizeof(ifoCode) / sizeof(*ifoCode); ++j )
   {
-    LALSnprintf( response.name, LALNameLength * sizeof(CHAR), 
+    LALSnprintf( response.name, LALNameLength * sizeof(CHAR),
         CHANNEL, ifoCode[j] );
 
     for ( i = 0; i < sizeof(calTime) / sizeof(*calTime); ++i )
@@ -191,7 +191,7 @@ int main( int argc, char *argv[] )
       }
 
       /* create the response function */
-      LALExtractFrameResponse( &status, &response, calCacheName, ifoCode[j], 
+      LALExtractFrameResponse( &status, &response, calCacheName, ifoCode[j],
           &duration );
       if ( status.statusCode == -1 && status.statusPtr )
       {
@@ -207,7 +207,7 @@ int main( int argc, char *argv[] )
           CLEARSTATUS( status );
         }
         else if ( status.statusPtr->statusCode == CALIBRATIONH_EZERO &&
-            ! strncmp( ifoCode[j], "L1", 2 * sizeof(CHAR) ) && 
+            ! strncmp( ifoCode[j], "L1", 2 * sizeof(CHAR) ) &&
             (calTime[i] == 729331981 || calTime[i] == 729332039) )
         {
           /* alpha is zero at this time */
@@ -237,7 +237,7 @@ int main( int argc, char *argv[] )
         /* test that the response does not contain NaN or Inf */
         for ( k = 0; k < response.data->length; ++k )
         {
-          if ( (! finite( response.data->data[k].re )) || 
+          if ( (! finite( response.data->data[k].re )) ||
               (! finite( response.data->data[k].im )) )
           {
             fprintf( stderr, "ERROR: non-finite value found in response "
@@ -246,7 +246,7 @@ int main( int argc, char *argv[] )
             exit( 1 );
           }
         }
-        
+
         /* print out the response function */
         if ( verbose )
         {

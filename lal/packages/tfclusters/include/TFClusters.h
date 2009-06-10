@@ -23,7 +23,7 @@
  *
  * Author: Julien Sylvestre
  *
- * Revision: $Id$ 
+ * Revision: $Id$
  *
  *-----------------------------------------------------------------------
  *
@@ -167,14 +167,14 @@ typedef struct tagCList
 \item[\texttt{UINT4 sigma}] Threshold $\sigma$ on cluster size.
 \item[\texttt{UINT4* s1,s2}] Size pairs for distance threshold.
 \item[\texttt{UINT4* d}] Vector of distance thresholds $\delta_{s_1,s_2}$. For a certain value of \texttt{i} in $[0,\sigma(\sigma-1)/2-1]$, $\delta_{s_1,s_2} = $\texttt{d[i]} for $s_1 = $\texttt{s1[i]} and $s_2 = $\texttt{s2[i]}.
-\item[\texttt{UINT4 mdist}] Maximum values of \texttt[d]. 
+\item[\texttt{UINT4 mdist}] Maximum values of \texttt[d].
 \item[\texttt{REAL8 alpha}] For white Gaussian noise at input, fraction of clusters that pass the last cut on the total cluster power.
 \end{description}
 ******************************************************* </lalLaTeX> */
 
 typedef struct tagCListDir
 {
-  
+
   REAL8 minf, maxf;
 
   UINT4 sigma;
@@ -193,36 +193,36 @@ typedef struct tagCListDir
 
 /****************Main functions********************/
 
-void 
+void
 LALComputeTFCSpectrogram (
-		       LALStatus *status, 
-		       TFCSpectrogram *out, 
-		       TFPlaneParams *tspec, 
+		       LALStatus *status,
+		       TFCSpectrogram *out,
+		       TFPlaneParams *tspec,
 		       REAL4TimeSeries *tseries
 		       );
 
-void 
+void
 LALComputeXTFCSpectrogram (
-			LALStatus *status, 
-			TFCSpectrogram *out, 
-			TFPlaneParams *tspec, 
+			LALStatus *status,
+			TFCSpectrogram *out,
+			TFPlaneParams *tspec,
 			REAL4TimeVectorSeries *tseries
 			);
 
-void 
+void
 LALGetClusters (
-		LALStatus *status, 
-		CList *clist, 
-		TFCSpectrogram *tpower, 
+		LALStatus *status,
+		CList *clist,
+		TFCSpectrogram *tpower,
 		CListDir *dir
 		);
 
 
-void 
+void
 LALClustersPowerThreshold (
-			   LALStatus *status, 
+			   LALStatus *status,
 			   CList *out,
-			   CList *in, 
+			   CList *in,
 			   CListDir *dir
 			   );
 
@@ -232,20 +232,20 @@ LALClustersPowerThreshold (
 
 void
 LALMergeClusterLists (
-		      LALStatus *status, 
+		      LALStatus *status,
 		      CList *out,
-		      CList *A, 
+		      CList *A,
 		      CList *B
 		      );
 
 void
 LALCopyCList (
-	      LALStatus *status, 
+	      LALStatus *status,
 	      CList *dest,
 	      CList *src
 	      );
 
-void 
+void
 LALPlainTFCSpectrogram(
 		    LALStatus *status,
 		    TFPlaneParams *tspec,
@@ -253,7 +253,7 @@ LALPlainTFCSpectrogram(
 		    REAL8 T
 		    );
 
-void 
+void
 LALPlainTFCSpectrogramWin(
 		    LALStatus *status,
 		    TFPlaneParams *tspec,
@@ -261,7 +261,7 @@ LALPlainTFCSpectrogramWin(
 		    REAL8 T
 		    );
 
-void 
+void
 LALInitCList (
 	      LALStatus *status,
 	      CList *clist,
@@ -269,7 +269,7 @@ LALInitCList (
 	      );
 
 
-void 
+void
 LALFillCListDir (
 		 LALStatus *status,
 		 CListDir *cldir,
@@ -277,16 +277,16 @@ LALFillCListDir (
 		 );
 
 
-void 
+void
 LALFreeCList(
-	     LALStatus *status, 
+	     LALStatus *status,
 	     CList *tlist
 	     );
 
 
-void 
+void
 LALFreeSpecgram(
-		LALStatus *status, 
+		LALStatus *status,
 		TFCSpectrogram *power
 		);
 

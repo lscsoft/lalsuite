@@ -42,13 +42,13 @@ where $F_{+,\times}$ are the amplitude responses of the detectors, $\psi$ is the
 $\iota$ describes the inclination of the pulsar with respect to the line of sight, and $\Psi(t) =
 \phi_{0} + \phi(t)$ describes the phase of the pulsar.
 
-The phase $\Psi(t)$ of the pulsar is calculated as 
+The phase $\Psi(t)$ of the pulsar is calculated as
 \begin{equation}
-\Psi(t) = \phi_{0} +2\pi \left(f_{0}(T - T_{0}) + 
-\frac{1}{2}\dot{f_{0}} (T - T_{0})^{2} + 
+\Psi(t) = \phi_{0} +2\pi \left(f_{0}(T - T_{0}) +
+\frac{1}{2}\dot{f_{0}} (T - T_{0})^{2} +
 \frac{1}{6}\ddot{f_{0}}(T - T_{0})^{3}\right)
 \end{equation}
-where 
+where
 \begin{equation}
 T = t + \delta t= t + \frac{\vec{r} \cdot \vec{n}}{c}  + \Delta_{E\odot}
 \end{equation}
@@ -57,7 +57,7 @@ where {\emph T} is the time in a frame inertial with respect to the pulsar and $
  \texttt{LALBarycenter()}.
 
 The function \texttt{LALCoarseHeterodyne()} heterodynes, averages, and resamples the data at a fixed frequency
-near the signal. 
+near the signal.
 
 Let the calibrated data from the inteferometer be $d(t) = h(t) + n(t)$ where $n(t)$ is the noise.  The first step is to mix the
 time series with $e^{-2\pi if_{h}}$ where $f_{h}$ is a fixed frequency near the signal.
@@ -84,12 +84,12 @@ LALCoarseHeterodyne(        LALStatus                   *status,
                             CoarseHeterodyneOutput      *output,
                             CoarseHeterodyneInput       *input,
                             CoarseHeterodyneParams      *params );
-		     
+
 void
 LALFineHeterodyneToPulsar(  LALStatus                   *status,
                             FineHeterodyneOutput        *output,
                             FineHeterodyneInput         *input,
-                            FineHeterodyneParams        *params );	
+                            FineHeterodyneParams        *params );
 \end{verbatim}
 
 \subsection*{Error conditions}
@@ -101,7 +101,7 @@ LALFineHeterodyneToPulsar(  LALStatus                   *status,
 \idx[Type]{CoarseHeterodyneInput}
 
 \noindent This structure stores the original calibrated gw data.
- 
+
 \begin{description}
 \item[\texttt{REAL4TimeSeries V}] calibrated strain data from detector
 
@@ -156,13 +156,13 @@ LALFineHeterodyneToPulsar(  LALStatus                   *status,
 \noindent This structure stores the input for the fine heterodyne.
 
 \begin{description}
-\item[\texttt{COMPLEX8TimeSeries Vh}]    heterodyned, averaged and resampled data 
+\item[\texttt{COMPLEX8TimeSeries Vh}]    heterodyned, averaged and resampled data
 \item[\texttt{COMPLEX8TimeSeries varh}]   variance of corresponding Vh
-\item[\texttt{REAL4 f0}]  frequency of the signal 
-\item[\texttt{REAL4 f1}]  first time derivative of frequency 
-\item[\texttt{REAL4 f2}] second time derivative of frequency 
+\item[\texttt{REAL4 f0}]  frequency of the signal
+\item[\texttt{REAL4 f1}]  first time derivative of frequency
+\item[\texttt{REAL4 f2}] second time derivative of frequency
 \item[\texttt{REAL8 fEpochGPS}] epoch of the frequency
-\item[\texttt{SkyPosition source}] location of pulsar in sky - equatorial coordinate system 
+\item[\texttt{SkyPosition source}] location of pulsar in sky - equatorial coordinate system
 \item[\texttt{REAL4 pmRA}] proper motion RA (radians / year)
 \item[\texttt{REAL4 pmDEC}] proper motion DEC (radians / year)
 \item[\texttt{REAL8 posEpochGPS}] epoch of RA and DEC
@@ -180,8 +180,8 @@ LALFineHeterodyneToPulsar(  LALStatus                   *status,
 \noindent This structure stores the output of the fine heterodyne.
 
 \begin{description}
-\item[\texttt{COMPLEX8TimeSeries B}] bin value 
-\item[\texttt{COMPLEX8TimeSeries var}]  variance 
+\item[\texttt{COMPLEX8TimeSeries B}] bin value
+\item[\texttt{COMPLEX8TimeSeries var}]  variance
 \item[\texttt{REAL4 phase}] phase
 \end{description}
 
@@ -195,8 +195,8 @@ LALFineHeterodyneToPulsar(  LALStatus                   *status,
 \begin{description}
 \item[\texttt{EphemerisData *edat}]
 \item[\texttt{LALDetector detector}]
-\item[\texttt{REAL4IIRFilter *iirFilterRe}] IIR filter to be applied to real part of complex heterodyned data 
-\item[\texttt{REAL4IIRFilter *iirFilterIm}] IIR filter to be applied to imaginary part of complex heterodyned data 
+\item[\texttt{REAL4IIRFilter *iirFilterRe}] IIR filter to be applied to real part of complex heterodyned data
+\item[\texttt{REAL4IIRFilter *iirFilterIm}] IIR filter to be applied to imaginary part of complex heterodyned data
 \item[\texttt{UINT4 M}]  decimation factor
 \item[\texttt{UINT2 iirFlag}]  1 to apply iir filter, 0 for no iir filter
 \end{description}
@@ -216,7 +216,7 @@ LALFineHeterodyneToPulsar(  LALStatus                   *status,
 #include <lal/IIRFilter.h>
 #include <lal/ZPGFilter.h>
 #include <lal/LALBarycenter.h>
-#include <lal/SkyCoordinates.h> 
+#include <lal/SkyCoordinates.h>
 #include <lal/AVFactories.h>
 #include <lal/BinaryPulsarTiming.h>
 
@@ -257,18 +257,18 @@ typedef struct
 tagCoarseHeterodyneOutput
 {
   COMPLEX8TimeSeries 	Vh;             /* heterodyned, averaged and resampled data */
-  REAL4       		phase;          /* phase of the reference signal f0 at t0 */  
+  REAL4       		phase;          /* phase of the reference signal f0 at t0 */
   COMPLEX16         	varh;           /* variance */
   COMPLEX16 	        avg;  		/* average */
   COMPLEX16	        kurt;		/* kurtosis */
   COMPLEX16             skew;		/* skewness */
   COMPLEX16             covar;          /* covariance */
-  
+
 } CoarseHeterodyneOutput;
 
 typedef struct
 tagCoarseHeterodyneParams
-{  
+{
   UINT4  		boxM;           /* 1st decimation factor */
   REAL4IIRFilter        *iirFilter1Re;   /* IIR filter to be applied to real part of complex heterodyned data */
   REAL4IIRFilter        *iirFilter1Im;   /* IIR filter to be applied to imaginary part of complex heterodyned data */
@@ -312,7 +312,7 @@ tagFineHeterodyneOutput
 
 typedef struct
 tagFineHeterodyneParams
-{  
+{
   EphemerisData *edat;
   LALDetector detector;
   REAL4IIRFilter 	*iirFilterRe;    /* IIR filter to be applied to real part of complex heterodyned data */
@@ -333,7 +333,7 @@ void
 LALFineHeterodyneToPulsar ( LALStatus                   *status,
 		  	    FineHeterodyneOutput        *output,
 		   	    FineHeterodyneInput         *input,
-		   	    FineHeterodyneParams        *params );		     
+		   	    FineHeterodyneParams        *params );
 
 #ifdef  __cplusplus
 }

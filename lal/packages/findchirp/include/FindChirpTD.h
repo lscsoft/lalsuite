@@ -17,14 +17,14 @@
 *  MA  02111-1307  USA
 */
 
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: FindChirpTD.h
  *
  * Author: Brown, D. A., and Creighton, J. D. E.
- * 
+ *
  * Revision: $Id$
- * 
+ *
  *-----------------------------------------------------------------------
  */
 
@@ -32,7 +32,7 @@
 <lalVerbatim file="FindChirpTDHV">
 Author: Brown, D. A., and Creighton, J. D. E.
 $Id$
-</lalVerbatim> 
+</lalVerbatim>
 
 <lalLaTeX>
 \section{Header \texttt{FindChirpTD.h}}
@@ -70,8 +70,8 @@ extern "C" {
 NRCSID (FINDCHIRPTDH, "$Id$");
 
 #if 0
-<lalLaTeX> 
-\subsection*{Error codes} 
+<lalLaTeX>
+\subsection*{Error codes}
 </lalLaTeX>
 #endif
 /* <lalErrTable> */
@@ -119,7 +119,7 @@ None.
 #if 0
 <lalLaTeX>
 \vfill{\footnotesize\input{FindChirpTDHV}}
-</lalLaTeX> 
+</lalLaTeX>
 #endif
 
 #if 0

@@ -23,7 +23,7 @@
  *
  * Author: Julien Sylvestre
  *
- * Revision: $Id$ 
+ * Revision: $Id$
  *
  *-----------------------------------------------------------------------
  *
@@ -38,12 +38,12 @@
  * CALLS
  *
  * NOTES
- * 
+ *
  *-----------------------------------------------------------------------
  */
 
 
-/* <lalLaTeX> 
+/* <lalLaTeX>
 Sample usage of the routines in \texttt{TFClusters.h}.
 
 \subsection*{Usage}
@@ -115,7 +115,7 @@ int main(void) {
   tseries.f0 = 0.0;
   tseries.data = vect;
 
-  /*  
+  /*
   for(i=1024*63;i<1024*63+16;i++) {
     vect->data[i] += (float)(i - 1024*63 + 1) / (float)1.0;
   }
@@ -123,7 +123,7 @@ int main(void) {
     vect->data[i] += (float)(i - 1024*63) / (float)1.0;
   }
   */
-  
+
   /*
   vect->data[1024*64+27] = 5.0;
   vect->data[1024*64+28] = 5.0;
@@ -170,7 +170,7 @@ int main(void) {
   dir.d[2] = 0;
   dir.d[3] = 0; /* 1,4 */
   dir.d[4] = 0; /* 2,2 */
-  dir.d[5] = 0; 
+  dir.d[5] = 0;
   dir.d[6] = 2; /* 2,4 */
   dir.d[7] = 3; /* 3,3 */
   dir.d[8] = 4; /* 3,4 */
@@ -202,17 +202,17 @@ int main(void) {
     for(P=0, j=0; j<clist.sizes[i]; j++) P += clist.P[i][j];
     printf("%i\t\t%i\t\t%g\n",i,clist.sizes[i],P);
   }
-  
+
   /* clean up */
   LALFreeCList(&status, &clist);
   CHKST;
 
-  
+
   LALDestroyVector(&status, &vect);
   CHKST;
 
   LALDestroyVector( &status, &twav.wavelet );
-  
+
   return 0;
 
 }

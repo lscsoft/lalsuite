@@ -17,14 +17,14 @@
 *  MA  02111-1307  USA
 */
 
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: FindChirpSPData.c
  *
  * Author: Santamaria L, Krishnan B, Dias M, Parameswaran A
- * 
+ *
  * Revision: $Id$
- * 
+ *
  *-----------------------------------------------------------------------
  */
 
@@ -122,7 +122,7 @@ void ComputeParamsFromCoeffs(
 			     REAL8        M);
 
 REAL4FrequencySeries *
-XLALHybridP1Amplitude( 
+XLALHybridP1Amplitude(
 		      PhenomParams *params,
 		      REAL8        fLow,
        		      REAL8        df,
@@ -131,7 +131,7 @@ XLALHybridP1Amplitude(
 		      UINT4        len  );
 
 REAL4FrequencySeries *
-XLALHybridP1Phase( 
+XLALHybridP1Phase(
 		  PhenomParams  *params,
 		  REAL8         fLow,
 		  REAL8         df,
@@ -151,15 +151,15 @@ XLALLorentzian (
 
 /* This function contains the coeffs from the matching with the LONG */
 /* Jena waveforms (those are not the ones published in the paper)         */
-void 
+void
 GetPhenomCoeffsLongJena(
-			PhenomCoeffs *co) 
+			PhenomCoeffs *co)
 {
   co->fMerg_a = 6.6389e-01; co->fMerg_b = -1.0321e-01; co->fMerg_c = 1.0979e-01;
   co->fRing_a = 1.3278e+00; co->fRing_b = -2.0642e-01; co->fRing_c = 2.1957e-01;
   co->sigma_a = 1.1383e+00; co->sigma_b = -1.7700e-01; co->sigma_c = 4.6834e-02;
   co->fCut_a = 1.7086e+00; co->fCut_b = -2.6592e-01; co->fCut_c = 2.8236e-01;
-  
+
   co->psi0_x = -1.5829e-01; co->psi0_y = 8.7016e-02; co->psi0_z = -3.3382e-02;
   co->psi2_x = 3.2967e+01; co->psi2_y = -1.9000e+01; co->psi2_z = 2.1345e+00;
   co->psi3_x = -3.0849e+02; co->psi3_y = 1.8211e+02; co->psi3_z = -2.1727e+01;
@@ -176,8 +176,8 @@ XLALLorentzian (
 		REAL8 sigma  )
 {
   REAL8 out;
-  
-  out = sigma / (2 * LAL_PI * ((freq - fRing)*(freq - fRing) 
+
+  out = sigma / (2 * LAL_PI * ((freq - fRing)*(freq - fRing)
 			       + sigma*sigma / 4.0));
 
   return(out);
@@ -185,7 +185,7 @@ XLALLorentzian (
 
 
 REAL4FrequencySeries *
-XLALHybridP1Phase( 
+XLALHybridP1Phase(
 		  PhenomParams  *params,
 		  REAL8         fLow,
 		  REAL8         df,
@@ -216,12 +216,12 @@ XLALHybridP1Phase(
   /* Allocate memory for the frequency series */
   epoch.gpsSeconds = 0;
   epoch.gpsNanoSeconds = 0;
-  Phieff = 
+  Phieff =
     XLALCreateREAL4FrequencySeries("", &epoch, 0, df, &lalDimensionlessUnit, n);
 
   /* We will soften the discontinuities of this function by multiplying it by
      the function (1/4)[1+tanh(k(f-fLow))][1-tanh(k(f-fCut))] with k=1.0.
-     The step function is now a soft step. We estimate its width by requiring 
+     The step function is now a soft step. We estimate its width by requiring
      that the step function at the new boundaries takes the value 0.001
      Solving the eq. with Mathematica leads to a width = 3.45338, we take 3.5 */
 
@@ -247,10 +247,10 @@ XLALHybridP1Phase(
                             psi4 * pow(f*piM , -1./3.) +
                             psi6 * pow(f*piM , 1./3.) +
                             psi7 * pow(f*piM , 2./3.);
-  
+
     Phieff->data->data[k] /= eta;
     }
-    f += df; 
+    f += df;
   }
 
   return Phieff;
@@ -258,7 +258,7 @@ XLALHybridP1Phase(
 
 
 REAL4FrequencySeries *
-XLALHybridP1Amplitude( 
+XLALHybridP1Amplitude(
 		      PhenomParams *params,
 		      REAL8        fLow,
        		      REAL8        df,
@@ -287,19 +287,19 @@ XLALHybridP1Amplitude(
 
   /* Set amplitude of the wave (Ajith et al. Eq. 4.17) */
   cConst = pow(LAL_MTSUN_SI*M, 5./6.)*pow(fMerg,-7./6.)/pow(LAL_PI,2./3.);
-  cConst *= pow(5.*eta/24., 1./2.); 
+  cConst *= pow(5.*eta/24., 1./2.);
 
   /* Allocate memory for the frequency series */
   epoch.gpsSeconds = 0;
   epoch.gpsNanoSeconds = 0;
-  Aeff = 
+  Aeff =
     XLALCreateREAL4FrequencySeries("", &epoch, 0, df, &lalDimensionlessUnit, n);
 
   f = 0.0;
 
   /* We will soften the discontinuities of this function by multiplying it by
      the function (1/4)[1+tanh(k(f-fLow))][1-tanh(k(f-fCut))] with k=1.0.
-     The step function is now a soft step. We estimate its width by requiring 
+     The step function is now a soft step. We estimate its width by requiring
      that the step function at the new boundaries takes the value 0.001
      Solving the eq. with Mathematica leads to a width = 3.45338, we take 3.5 */
 
@@ -313,7 +313,7 @@ XLALHybridP1Amplitude(
     softFact = (1+tanh(sharpNess*(f-fLow)))*(1-tanh(sharpNess*(f-fCut)))/4.;
 
     if ( f <= softfLow || f > softfCut ) {
-       Aeff->data->data[k] = 0.0; 
+       Aeff->data->data[k] = 0.0;
     }
     else if ( f > softfLow && f <= fMerg ) {
       Aeff->data->data[k] = pow (fNorm, -7./6.);
@@ -328,44 +328,44 @@ XLALHybridP1Amplitude(
       Aeff->data->data[k] *= LAL_PI_2*pow(fRing/fMerg,-2./3.)*sigma;
       Aeff->data->data[k] *= softFact;
     }
-    Aeff->data->data[k] *= cConst; 
-    f += df; 
+    Aeff->data->data[k] *= cConst;
+    f += df;
   }
 
   return Aeff;
 }
 
 
-void 
+void
 ComputeParamsFromCoeffs(
 			PhenomParams *params,
 			PhenomCoeffs *coeffs,
 			REAL8        eta,
-			REAL8        M) 
+			REAL8        M)
 {
   REAL8 piM;
   piM = LAL_PI * M * LAL_MTSUN_SI;
-  
-  params->fMerger = (coeffs->fMerg_a * eta * eta + coeffs->fMerg_b * eta + 
+
+  params->fMerger = (coeffs->fMerg_a * eta * eta + coeffs->fMerg_b * eta +
 		     coeffs->fMerg_c)/piM;
-  params->fRing = (coeffs->fRing_a * eta * eta + coeffs->fRing_b * eta + 
+  params->fRing = (coeffs->fRing_a * eta * eta + coeffs->fRing_b * eta +
 		   coeffs->fRing_c)/piM;
-  params->fCut = (coeffs->fCut_a * eta * eta + coeffs->fCut_b * eta + 
+  params->fCut = (coeffs->fCut_a * eta * eta + coeffs->fCut_b * eta +
 		  coeffs->fCut_c)/piM;
-  params->sigma = (coeffs->sigma_a * eta * eta * coeffs->sigma_b * eta + 
+  params->sigma = (coeffs->sigma_a * eta * eta * coeffs->sigma_b * eta +
 		   coeffs->sigma_c)/piM;
 
-  params->psi0 = coeffs->psi0_x * eta * eta + coeffs->psi0_y * eta + 
+  params->psi0 = coeffs->psi0_x * eta * eta + coeffs->psi0_y * eta +
                    coeffs->psi0_z ;
-  params->psi2 = coeffs->psi2_x * eta * eta + coeffs->psi2_y * eta + 
+  params->psi2 = coeffs->psi2_x * eta * eta + coeffs->psi2_y * eta +
                    coeffs->psi2_z ;
-  params->psi3 = coeffs->psi3_x * eta * eta + coeffs->psi3_y * eta + 
+  params->psi3 = coeffs->psi3_x * eta * eta + coeffs->psi3_y * eta +
                    coeffs->psi3_z ;
-  params->psi4 = coeffs->psi4_x * eta * eta + coeffs->psi4_y * eta + 
+  params->psi4 = coeffs->psi4_x * eta * eta + coeffs->psi4_y * eta +
                    coeffs->psi4_z ;
-  params->psi6 = coeffs->psi6_x * eta * eta + coeffs->psi6_y * eta + 
+  params->psi6 = coeffs->psi6_x * eta * eta + coeffs->psi6_y * eta +
                    coeffs->psi6_z ;
-  params->psi7 = coeffs->psi7_x * eta * eta + coeffs->psi7_y * eta + 
+  params->psi7 = coeffs->psi7_x * eta * eta + coeffs->psi7_y * eta +
                    coeffs->psi7_z ;
 
   return;

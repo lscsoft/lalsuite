@@ -313,7 +313,7 @@ LALCache * XLALCacheGlob( const char *dirstr, const char *fnptrn )
 
 	fnptrn = fnptrn ? fnptrn : "*";
 	dirstr = dirstr ? dirstr : ".";
- 
+
 	if (fnptrn[0] && (fnptrn[0] == '/' || (fnptrn[0] == '.' && fnptrn[1] && (fnptrn[1] == '/' || ( fnptrn[1] == '.' && fnptrn[2] == '/')))))
 		glob( fnptrn, globflags, NULL, &g );
 	else { /* prepend path from dirname */
@@ -336,7 +336,7 @@ LALCache * XLALCacheGlob( const char *dirstr, const char *fnptrn )
 		XLALPrintError( "XLAL Error - %s: No matching files found in %s\n", func, fnptrn );
 		XLAL_ERROR_NULL( func, XLAL_EIO );
 	}
- 
+
 	cache = XLALCreateCache( g.gl_pathc );
 	if ( ! cache ) {
 		globfree( &g );
@@ -361,7 +361,7 @@ LALCache * XLALCacheGlob( const char *dirstr, const char *fnptrn )
 	dirstr = NULL;
 	XLALPrintError( "XLAL Error - %s: Glob is unsupported on non-posix system.\n", func );
 	XLAL_ERROR_NULL( func, XLAL_EFAILED );
-#	endif 
+#	endif
 }
 
 int XLALCacheFileWrite( LALFILE *fp, LALCache *cache )

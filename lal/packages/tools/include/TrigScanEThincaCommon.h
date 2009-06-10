@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2007 Craig Robinson 
+*  Copyright (C) 2007 Craig Robinson
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -17,14 +17,14 @@
 *  MA  02111-1307  USA
 */
 
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: TrigScanEThincaCommon.h
  *
  * Author: Robinson, C. A. K.
- * 
+ *
  * Revision: $Id: LIGOMetadataUtils.h,v 1.156 2008/08/29 11:20:58 sfairhur Exp $
- * 
+ *
  *-----------------------------------------------------------------------
  */
 
@@ -34,7 +34,7 @@
 <lalVerbatim file="TrigScanEThincaCommonHV">
 Author: Robinson, C. A. K.
 $Id: LIGOMetadataUtils.h,v 1.156 2008/08/29 11:20:58 sfairhur Exp $
-</lalVerbatim> 
+</lalVerbatim>
 <lalLaTeX>
 \section{Header \texttt{TrigScanEThincaCommon.h}}
 \label{s:TrigScanEThincaCommon.h}

@@ -17,14 +17,14 @@
 *  MA  02111-1307  USA
 */
 
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: FindChirpChisq.h
  *
  * Author: Anderson, W. G., and Brown, D. A.
- * 
+ *
  * Revision: $Id$
- * 
+ *
  *-----------------------------------------------------------------------
  */
 
@@ -32,7 +32,7 @@
 <lalVerbatim file="FindChirpChisqHV">
 Author: Anderson, W. G., and Brown, D. A.
 $Id$
-</lalVerbatim> 
+</lalVerbatim>
 
 <lalLaTeX>
 \section{Header \texttt{FindChirpChisq.h}}
@@ -67,8 +67,8 @@ extern "C" {
 NRCSID (SPFINDCHIRPCHISQH, "$Id$");
 
 #if 0
-<lalLaTeX> 
-\subsection*{Error codes} 
+<lalLaTeX>
+\subsection*{Error codes}
 </lalLaTeX>
 #endif
 /* <lalErrTable> */
@@ -174,11 +174,11 @@ Equals $4 \Delta t / (N segNorm)$.
 
 \item[\texttt{UINT4Vector *chisqBinVec}] A vector containing the boundaries
 of the bins for the chi-squared veto for the stationary phase chirps, or the
-boundaries of the bins for the first sum of the chi-squared veto for the 
+boundaries of the bins for the first sum of the chi-squared veto for the
 BCV templates.
 
 \item[\texttt{UINT4Vector *chisqBinVecBCV}] A vector containing the boundaries
-of the bins for the second part of the chi-squared statistic, for the BCV 
+of the bins for the second part of the chi-squared statistic, for the BCV
 templates.
 
 \item[\texttt{ComplexFFTPlan *plan}] The FFTW plan used by the inverse DFT.
@@ -188,15 +188,15 @@ templates.
 \item[\texttt{COMPLEX8Vector *qtildeBinVecBCV}] ...
 
 \item[\texttt{COMPLEX8Vector **qBinVecPtr}] Pointer to an array of pointers.
-Corresponds to $q^{(1)}_l(t_j)$, which is the contribution of the $l$-th 
-frequency 
+Corresponds to $q^{(1)}_l(t_j)$, which is the contribution of the $l$-th
+frequency
 bin to the signal-to-noise ratio at the time $t_j$ (up to the appropriate
 normalization). It is used for both the stationary phase chirps and the
 BCV templates.
 
 \item[\texttt{COMPLEX8Vector **qBinVecPtrBCV}] Pointer to an array of pointers.
-Corresponds to $q^{(2)}_l(t_j)$, which is the contribution of the $l$-th 
-frequency 
+Corresponds to $q^{(2)}_l(t_j)$, which is the contribution of the $l$-th
+frequency
 bin to the signal-to-noise ratio at the time $t_j$ (up to the appropriate
 normalization). It is used only for the BCV templates.
 
@@ -207,7 +207,7 @@ normalization). It is used only for the BCV templates.
 #if 0
 <lalLaTeX>
 \vfill{\footnotesize\input{FindChirpChisqHV}}
-</lalLaTeX> 
+</lalLaTeX>
 #endif
 
 #if 0

@@ -17,36 +17,36 @@
   *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
   *  MA  02111-1307  USA
   */
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: TfrSp.c
- * 
+ *
  * Author: Chassande-Mottin, E.
  * Maintainer: Torres C,  (Univ TX at Browsville)
- * 
- * Revision: $Id: 
- * 
- *----------------------------------------------------------------------- 
- * 
- * NAME 
+ *
+ * Revision: $Id:
+ *
+ *-----------------------------------------------------------------------
+ *
+ * NAME
  * TfrSp
- * 
- * SYNOPSIS 
+ *
+ * SYNOPSIS
  *
  *
- * DESCRIPTION 
+ * DESCRIPTION
  * Compute the spectrogram of a given signal
- * 
- * DIAGNOSTICS 
+ *
+ * DIAGNOSTICS
  *
  * CALLS
- * 
+ *
  * NOTES
- * 
+ *
  * This code has been inspired from the Time-Frequency Toolbox (originally
  * developed by F. Auger, P. Flandrin, P. Goncalves and O. Lemoine. See
- * http://crttsn.univ-nantes.fr/~auger/tftb.html for details) and its translation 
- * in C (written by M. Davy and E. Leroy). 
+ * http://crttsn.univ-nantes.fr/~auger/tftb.html for details) and its translation
+ * in C (written by M. Davy and E. Leroy).
  *
  *-----------------------------------------------------------------------
  */
@@ -100,13 +100,13 @@ void LALTfrSp (LALStatus *stat, REAL4Vector* sig, TimeFreqRep *tfr, TimeFreqPara
       nf = nf>>1;
 
   ASSERT (nf == 1, stat, TFR_EFROW, TFR_MSGEFROW);
-  
+
   /* Make sure the window length is a odd number */
   ASSERT (param->windowT->length%2 != 0, stat, TFR_EWSIZ, TFR_MSGEWSIZ);
 
   /* Make sure the window length is smaller than the number of freq bins: */
   ASSERT ((INT4)param->windowT->length < tfr->fRow, stat, TFR_EWSIZ, TFR_MSGEWSIZ);
- 
+
   /* Make sure the timeInstant indicates existing time instants */
   for (column=0 ; column<tfr->tCol ; column++)
     {
@@ -127,20 +127,20 @@ void LALTfrSp (LALStatus *stat, REAL4Vector* sig, TimeFreqRep *tfr, TimeFreqPara
     {
       for (row = 0; row < tfr->fRow; row++)
 	windSig->data[row] = 0.0;
-      
+
       time = tfr->timeInstant[column];
-      
+
       taumin = MIN (tfr->fRow / 2, hwl);
       taumin = MIN (taumin, time);
-      
+
       taumax = MIN ((tfr->fRow / 2 - 1), hwl);
       taumax = MIN (taumax, (sig->length - 1.0 - time));
-      
+
       normh = 0.0;
 
       for (row = -taumin; row <= taumax; row++)
 	{
-	  win = param->windowT->data[hwl + row];  
+	  win = param->windowT->data[hwl + row];
 	  normh = normh + win * win;
 	}
       normh = sqrt (normh);
@@ -156,12 +156,12 @@ void LALTfrSp (LALStatus *stat, REAL4Vector* sig, TimeFreqRep *tfr, TimeFreqPara
 
       for (row = 0; row < (tfr->fRow/2 +1); ++row)
 	tfr->map[column][row] =  ptmp->data[row];
-      
+
     }
-  
+
   for (row = 0; row < tfr->fRow/2+1; row++)
     tfr->freqBin[row] = (REAL4) row / tfr->fRow;
-  
+
   TRY(LALDestroyRealFFTPlan(stat->statusPtr, &plan), stat);
   TRY(LALSDestroyVector(stat->statusPtr, &ptmp), stat);
   TRY(LALSDestroyVector(stat->statusPtr, &windSig), stat);

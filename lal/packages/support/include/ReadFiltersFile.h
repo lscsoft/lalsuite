@@ -16,7 +16,7 @@
  * Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA 02111-1307 USA
  */
- 
+
 /*
  * Read the filters file.
  */
@@ -28,7 +28,7 @@
 
 
 /* C++ protection. */
-#ifdef  __cplusplus   
+#ifdef  __cplusplus
 extern "C" {
 #endif
 
@@ -39,6 +39,6 @@ int XLALDestroyFiltersFile(StrainIn *InputData);
   /* C++ protection. */
 #ifdef  __cplusplus
 }
-#endif  
+#endif
 
 #endif  /* LALREADFILTERSFILE_H */

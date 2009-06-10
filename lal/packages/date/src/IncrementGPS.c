@@ -138,7 +138,7 @@ LALIncrementGPS (LALStatus             *status,
   RETURN( status );
 } /* END: LALIncrementGPS() */
 
-
+
 
 /* Decrement a GPS time */
 /* <lalVerbatim file="IncrementGPSCP"> */
@@ -197,7 +197,7 @@ LALDecrementGPS (LALStatus             *status,
   RETURN(status);
 }
 
-
+
 
 /* Return GPS1 - GPS2 */
 /* <lalVerbatim file="IncrementGPSCP"> */
@@ -300,7 +300,7 @@ LALDeltaGPS (LALStatus         *status,
 } /* END: LALDeltaGPS() */
 
 
-
+
 
 /* <lalVerbatim file="IncrementGPSCP"> */
 void
@@ -327,7 +327,7 @@ LALCompareGPS(LALStatus           *status,
   RETURN( status );
 } /* END: LALCompareGPS() */
 
-
+
 
 /* Increment a GPS time by a float-interval */
 /* <lalVerbatim file="IncrementGPSCP"> */

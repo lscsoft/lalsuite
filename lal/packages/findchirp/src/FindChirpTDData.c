@@ -17,22 +17,22 @@
 *  MA  02111-1307  USA
 */
 
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: FindChirpTDData.c
  *
  * Author: Brown D. A., and Creighton, J. D. E.
- * 
+ *
  * Revision: $Id$
- * 
+ *
  *-----------------------------------------------------------------------
  */
 
-#if 0 
+#if 0
 <lalVerbatim file="FindChirpTDDataCV">
 Author: Brown, D. A., and Creighton, J. D. E.
 $Id$
-</lalVerbatim> 
+</lalVerbatim>
 
 <lalLaTeX>
 \subsection{Module \texttt{FindChirpTDData.c}}
@@ -53,7 +53,7 @@ Time domain filtering code.
 \subsubsection*{Notes}
 
 \vfill{\footnotesize\input{FindChirpTDDataCV}}
-</lalLaTeX> 
+</lalLaTeX>
 #endif
 
 #include <lal/LALStdlib.h>
@@ -85,11 +85,11 @@ LALFindChirpTDData (
   INITSTATUS( status, "LALFindChirpTDData", FINDCHIRPTDDATAC );
   ATTATCHSTATUSPTR( status );
 
-  ASSERT( params, status, 
+  ASSERT( params, status,
       FINDCHIRPTDH_ENULL, FINDCHIRPTDH_MSGENULL );
-  ASSERT( params->ampVec, status, 
+  ASSERT( params->ampVec, status,
       FINDCHIRPTDH_ENULL, FINDCHIRPTDH_MSGENULL );
-  ASSERT( params->ampVec->data, status, 
+  ASSERT( params->ampVec->data, status,
       FINDCHIRPTDH_ENULL, FINDCHIRPTDH_MSGENULL );
 
   /* check the approximant */
@@ -125,7 +125,7 @@ LALFindChirpTDData (
   LALFindChirpSPData ( status->statusPtr, fcSegVec, dataSegVec, params );
   CHECKSTATUSPTR( status );
   params->approximant = approx;
-  
+
   for ( i = 0; i < fcSegVec->length; ++i )
   {
     FindChirpSegment *fcSeg = fcSegVec->data + i;
@@ -134,9 +134,9 @@ LALFindChirpTDData (
     fcSeg->approximant = params->approximant;
 
     /* zero the tmpltPower and segNorm vectors as they are incorrect */
-    memset( fcSeg->tmpltPowerVec->data, 0, 
+    memset( fcSeg->tmpltPowerVec->data, 0,
         fcSeg->tmpltPowerVec->length * sizeof(REAL4) );
-    memset( fcSeg->segNorm->data, 0, 
+    memset( fcSeg->segNorm->data, 0,
         fcSeg->segNorm->length * sizeof(REAL4) );
   }
 

@@ -20,7 +20,7 @@
 /**
  * \author Creighton, T. D., Jolien Creighton
  * \date 2000 - 2003
- * \file 
+ * \file
  * \ingroup PulsarMetric
  * \brief Computes the parameter space metric for a coherent pulsar search.
  *
@@ -32,7 +32,7 @@
  constructed from a single time interval \f$\Delta t\f$.  The indecies
  \f$\alpha\f$ and \f$\beta\f$ are assumed to run from 0 to \f$n\f$, where \f$n\f$ is
  the total number of ``shape'' parameters.
- 
+
  The argument \a *metric is normally a vector of length
  \f$(n+1)(n+2)/2\f$ storing all non-redundant coefficients of
  \f$g_{\alpha\beta}\f$.  The indexing scheme is as follows: Let us assume
@@ -45,13 +45,13 @@
  \f$g_{\alpha\beta}=\f$metric->data[\f$2\beta+\alpha(\alpha+1)]\f$,
  and the uncertainty
  \f$s_{\alpha\beta}=\f$metric->data[\f$1+2\beta+\alpha(\alpha+1)]\f$.
- 
+
  The argument \a lambda is another vector, of length \f$n+1\f$,
  storing the components of \f$\mathbf{\lambda}=(\lambda^0,\ldots,\lambda^n)\f$
  for the parameter space point at which the metric is being evaluated.
  The argument \a *params stores the remaining parameters for
  computing the metric, as given in the Structures section of StackMetric.h.
- 
+
  \par Algorithm
 
  This routne simply computes the function given in \ref eq_gab_phi "Eq.(1)"

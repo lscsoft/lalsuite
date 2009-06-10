@@ -26,7 +26,7 @@ $Id$
 
 \subsection{Module \texttt{LALHexagonVertices.c}}
 
-Module to find the vertices of an hexagon inscribed in an ellipse 
+Module to find the vertices of an hexagon inscribed in an ellipse
 given its centre, half side-lengths and orientation angle.
 
 \subsubsection*{Prototypes}
@@ -34,8 +34,8 @@ given its centre, half side-lengths and orientation angle.
 \input{LALRectangleVerticesCP}
 \index{\verb&LALHexagonVertices()&}
 \begin{itemize}
-   \item \texttt{out,} Output. 
-   \item \texttt{in,} Input. 
+   \item \texttt{out,} Output.
+   \item \texttt{in,} Input.
 \end{itemize}
 
 \subsubsection*{Description}
@@ -46,8 +46,8 @@ minimal-match-Hexagons around mesh points in a template bank.
 Used by SpaceCovering in the test directory.
 
 \subsubsection*{Algorithm}
-Given the centre $(x_0,y_0)$ and half-sides $(dx,dy),$ 
-the vertices of a Hexagon in a {\it diagonal} coordinate 
+Given the centre $(x_0,y_0)$ and half-sides $(dx,dy),$
+the vertices of a Hexagon in a {\it diagonal} coordinate
 system are given by
 \begin{eqnarray}
 x_1 & = & x_0 - dx, \ \ y_1 = y_0 - dy, \nonumber \\
@@ -59,11 +59,11 @@ The coordinates of a Hexagon oriented at an angle $\theta$ is
 found by using the formulas
 \begin{eqnarray}
 x' = x \cos(\theta) - y \sin(\theta),\nonumber \\
-y' = y \cos(\theta) + x \sin(\theta).\nonumber 
+y' = y \cos(\theta) + x \sin(\theta).\nonumber
 \end{eqnarray}
-The function returns 7 coordinate points (1,2,3,4,5,6,1), 
-and not just the 6 verticies, to help a plotting programme 
-to complete the Hexagon. 
+The function returns 7 coordinate points (1,2,3,4,5,6,1),
+and not just the 6 verticies, to help a plotting programme
+to complete the Hexagon.
 
 \subsubsection*{Uses}
 None.
@@ -80,12 +80,12 @@ NRCSID(LALHEXAGONVERTICESC, "$Id$");
 
 /*  <lalVerbatim file="LALHexagonVerticesCP"> */
 
-void 
+void
 LALHexagonVertices(
-   LALStatus *status, 
+   LALStatus *status,
    HexagonOut *out,
    RectangleIn *in
-) 
+)
 { /* </lalVerbatim> */
 
    REAL4 x1, x2, x3, x4, y1, y2, y3, y4, x5, y5, x6, y6, x7, y7;
@@ -97,10 +97,10 @@ LALHexagonVertices(
    ASSERT (in,  status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
 
    sca = sqrt(3);
-   
+
    x1 = -in->dx/2;
    y1 = -in->dy/sca/2;
-   x2 = 0; 
+   x2 = 0;
    y2 = -in->dy/sqrt(3);
    x3 = in->dx/2;
    y3 = -in->dy/sca/2;
@@ -110,7 +110,7 @@ LALHexagonVertices(
    y5 = in->dy/sqrt(3);
    x6 = -in->dx/2;
    y6 = in->dy/sca/2;
-   
+
    ctheta=cos(in->theta);
    stheta=sin(in->theta);
 

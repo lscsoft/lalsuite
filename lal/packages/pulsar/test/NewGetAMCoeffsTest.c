@@ -1,5 +1,5 @@
 /*
- * 
+ *
  * Copyright (C) 2006 John Whelan, Reinhard Prix
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -13,24 +13,24 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with with program; see the file COPYING. If not, write to the 
- *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, 
+ *  along with with program; see the file COPYING. If not, write to the
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
  */
 
 /*********************************************************************************/
 /** \author John Whelan (based on code by Reinhard Prix)
- * \file 
+ * \file
  * \brief Test for LALNewGetAMCoeffs(): compare results to older, well-tested
  * (but less efficient, and harder to understand) function LALComputeAM()
- *                                                                          
+ *
  * This routine currently compares LALComputeAM(), LALGetAMCoeffs() and LALNewGetAMCoeffs() to
  * each other, by computing average and maximal relative differences between the respective
  * a's and b's.
- * 
+ *
  * Detector and sky-location are picked at random each time, which allows a minimal
  * Monte-Carlo validation by simply running this script repeatedly.
- *                                                                          
+ *
  *********************************************************************************/
 #include <math.h>
 #include <sys/times.h>
@@ -177,16 +177,16 @@ int main(int argc, char *argv[])
   pickedSite = floor( 5 * (1.0 * rand() / (RAND_MAX + 1.0) ) );  /* int in [0,5) */
 
   /* NOTE: contrary to ComputeAM() and LALGetAMCoffs(), the new function LALNewGetAMCoeffs()
-   * computes 'a * sinzeta' and 'b * sinzeta': for the comparison we therefore need to correct 
-   * for GEO's opening-angle of 94.33degrees [JKS98]: */ 
+   * computes 'a * sinzeta' and 'b * sinzeta': for the comparison we therefore need to correct
+   * for GEO's opening-angle of 94.33degrees [JKS98]: */
   if ( ! strcmp ( sites[pickedSite], "G1" ) )
     sinzeta = 0.997146;
   else
     sinzeta = 1;
 
-  if ( ( det = XLALGetSiteInfo ( sites[pickedSite] )) == NULL ) 
+  if ( ( det = XLALGetSiteInfo ( sites[pickedSite] )) == NULL )
     {
-      LALPrintError ("\nCall to XLALGetSiteInfo() has failed for site = '%s'... \n\n", 
+      LALPrintError ("\nCall to XLALGetSiteInfo() has failed for site = '%s'... \n\n",
 		     sites[pickedSite]);
       return NEWGETAMCOEFFSTEST_ESUB;
     }
@@ -210,17 +210,17 @@ int main(int argc, char *argv[])
   amParams.das = (LALDetAndSource *)LALMalloc(sizeof(LALDetAndSource));
   amParams.das->pSource = (LALSource *)LALMalloc(sizeof(LALSource));
   amParams.baryinput = &baryinput;
-  amParams.earth = &earth; 
+  amParams.earth = &earth;
   amParams.edat = &edat;
   amParams.das->pDetector = det;
   amParams.das->pSource->equatorialCoords.longitude = alpha;
   amParams.das->pSource->equatorialCoords.latitude = delta;
   amParams.das->pSource->orientation = 0.0;
   amParams.das->pSource->equatorialCoords.system = COORDINATESYSTEM_EQUATORIAL;
-  amParams.polAngle = 0; 
+  amParams.polAngle = 0;
   amParams.leapAcc = LALLEAPSEC_STRICT;
 
-  SUB (LALComputeAM ( &status, &AMold, timestamps->data, &amParams), &status); 
+  SUB (LALComputeAM ( &status, &AMold, timestamps->data, &amParams), &status);
 
   /* ===== compute AM-coeffs the 'new way' using LALNewGetAMCoeffs() */
 
@@ -279,10 +279,10 @@ int main(int argc, char *argv[])
   averr02 /= 2.0 * timestamps->length;
   averr12 /= 2.0 * timestamps->length;
 
-  if ( lalDebugLevel ) 
+  if ( lalDebugLevel )
     {
       printf ("Parameters: IFO = %s, skypos = [%g, %g]\n", sites[pickedSite], alpha, delta );
-      printf ("Maximal relative errors: maxerr(0-1) = %g %%, maxerr(0-2) = %g %% maxerr(1-2) = %g %%\n", 
+      printf ("Maximal relative errors: maxerr(0-1) = %g %%, maxerr(0-2) = %g %% maxerr(1-2) = %g %%\n",
 	      100.0 * maxerr01, 100.0 * maxerr02, 100.0 * maxerr12 );
       printf ("Average relative errors: averr(0-1)  = %g %%, averr(0-2)  = %g %% averr(1-2)  = %g %%\n",
 	      100.0 * averr01, 100.0 * averr02, 100.0 * averr12 );
@@ -290,7 +290,7 @@ int main(int argc, char *argv[])
   else
     printf ("%d %g %g \t %g %g %g \t %g %g %g\n", pickedSite, alpha, delta, averr01, averr02, averr12, maxerr01, maxerr02, maxerr12);
 
-  if ( (averr01 > tolerance) || (averr02 > tolerance) || (averr12 > tolerance) 
+  if ( (averr01 > tolerance) || (averr02 > tolerance) || (averr12 > tolerance)
        || (maxerr01 > tolerance) ||(maxerr02 > tolerance) || (maxerr12 > tolerance) )
     {
       LALPrintError ("Maximal error-tolerance of %g %% was exceeded!\n", 100.0 * tolerance );
@@ -298,7 +298,7 @@ int main(int argc, char *argv[])
 	return 1;
     }
 
-  if ( lalDebugLevel ) 
+  if ( lalDebugLevel )
     printf("%d checks left\n", numChecks);
 
   /* ---- Clean up things that were created in this loop ---- */
@@ -318,11 +318,11 @@ int main(int argc, char *argv[])
   XLALDestroyREAL4Vector ( AMnew1.b );
   XLALDestroyREAL4Vector ( AMnew2.a );
   XLALDestroyREAL4Vector ( AMnew2.b );
-  
+
   LALFree(edat.ephemE);
   LALFree(edat.ephemS);
 
-  
+
   LALCheckMemoryLeaks();
 
   return 0;	/* OK */

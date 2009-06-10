@@ -23,7 +23,7 @@ $Id$
 </lalVerbatim>  */
 /* <lalLaTeX>
 \subsection{Module \texttt{LALInspiralWaveNormaliseLSO.c}}
-Module to find the norm of a signal and to return a normaliseLSOd 
+Module to find the norm of a signal and to return a normaliseLSOd
 array. The original signal is left untouched.
 
 \subsubsection*{Prototypes}
@@ -32,28 +32,28 @@ array. The original signal is left untouched.
 \index{\verb&LALInspiralWaveNormaliseLSO()&}
 
 \subsubsection*{Description}
-Given the positive frequency Fourier components 
-$H_k,$ $k=0,\ldots,n-1,$ of a vector 
-and the noise PSD $S_m,$ $m=0,\ldots,n/2,$ 
+Given the positive frequency Fourier components
+$H_k,$ $k=0,\ldots,n-1,$ of a vector
+and the noise PSD $S_m,$ $m=0,\ldots,n/2,$
 this module first computes the norm $H$ of the vector treating
-$S_m$ as the measure: 
-(note that in {\em fftw} notation, the zeroth frequency 
-component is $H_0,$ Nyquist 
+$S_m$ as the measure:
+(note that in {\em fftw} notation, the zeroth frequency
+component is $H_0,$ Nyquist
 is $H_{n/2},$ $H_k,$ $k \ne 0,n/2,$ ($H_{n-k})$ is the real (imaginary)
-part of the $k$th harmonic) 
+part of the $k$th harmonic)
 \begin{equation}
 H = \sum_{k=1}^{n/2-1} \frac{H_k^2 + H^2_{n-k}}{S_k}.
 \label{eq:inspiralnorm}
 \end{equation}
-{\bf The above sum is limited to frequency} {\tt in->fCutoff.} 
-Also, note that the zeroth and Nyquist frequency components 
-are ignored in the computation of the norm. 
-Moreover, {\bf array elements of} {\tt filter} corresponding 
-to frequencies greater than {\tt in->fCutoff} are {\bf set to zero}.  
+{\bf The above sum is limited to frequency} {\tt in->fCutoff.}
+Also, note that the zeroth and Nyquist frequency components
+are ignored in the computation of the norm.
+Moreover, {\bf array elements of} {\tt filter} corresponding
+to frequencies greater than {\tt in->fCutoff} are {\bf set to zero}.
 That is, the code replaces the original vector $H_k$ with {\it normalized
-vector} using: 
+vector} using:
 \begin{eqnarray}
-\widehat H_k & = & \frac {H_k}{\sqrt H}, 
+\widehat H_k & = & \frac {H_k}{\sqrt H},
 \ \ \ {\tt k \times in\rightarrow df} \le {\tt in\rightarrow fCutoff},\nonumber \\
 & = & 0, \ \ \ {\tt k \times in\rightarrow df} > {\tt in\rightarrow fCutoff}.
 \end{eqnarray}
@@ -74,13 +74,13 @@ NRCSID (LALINSPIRALWAVENORMALISEC, "$Id$");
 
 /*  <lalVerbatim file="LALInspiralWaveNormaliseLSOCP"> */
 void
-LALInspiralWaveNormaliseLSO 
+LALInspiralWaveNormaliseLSO
    (
-   LALStatus   *status, 
+   LALStatus   *status,
    REAL4Vector *filter,
    REAL8       *norm,
-   InspiralWaveNormaliseIn *in 
-   ) 
+   InspiralWaveNormaliseIn *in
+   )
 {  /*  </lalVerbatim>  */
 
   INT4 i, n, nby2;
@@ -97,10 +97,10 @@ LALInspiralWaveNormaliseLSO
   *norm = 0;
   nby2 = n/2;
 
-  for (i=1; i<nby2; i++) 
+  for (i=1; i<nby2; i++)
   {
 	  f = i*in->df;
-	  if (f>in->fCutoff) 
+	  if (f>in->fCutoff)
 	  {
 		  /* Since the normalisation is done using power only up to fCutoff
 		   * it is better to terminate the frequency-domain waveform beyond
@@ -112,7 +112,7 @@ LALInspiralWaveNormaliseLSO
 	  else
 	  {
 		  psd = in->psd->data[i];
-		  if (psd) 
+		  if (psd)
 		  {
 			  *norm += (filter->data[i]*filter->data[i] + filter->data[n-i]*filter->data[n-i])/(psd*0.5);
 		  }
@@ -130,9 +130,9 @@ LALInspiralWaveNormaliseLSO
 
   *norm /= ((double) n * in->samplingRate);
   *norm = sqrt(*norm);
-  
+
   for (i=0; i<n; i++)
-  { 
+  {
 	  *(filter->data+i) /= *norm;
   }
 

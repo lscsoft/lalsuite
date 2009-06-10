@@ -493,7 +493,7 @@ LALSignalToSFTs (LALStatus *status,
 
 } /* LALSignalToSFTs() */
 
-
+
 
 /* 07/14/04 gam */
 /**
@@ -873,7 +873,7 @@ LALFastGeneratePulsarSFTs (LALStatus *status,
   RETURN (status);
 } /* LALFastGeneratePulsarSFTs () */
 
-
+
 
 /*--------------- some useful helper-functions ---------------*/
 
@@ -1118,7 +1118,7 @@ checkNoiseSFTs (LALStatus *status, const SFTVector *sfts, REAL8 f0, REAL8 f1, RE
 
 } /* checkNoiseSFTs() */
 
-
+
 
 /*----------------------------------------------------------------------
  * Yousuke's phase-correction function, taken from makefakedata_v2

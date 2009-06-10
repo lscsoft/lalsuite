@@ -5,7 +5,7 @@
 
 \item{(i)Thresholded Spectrogram:} The spectrogram is computed from stacked periodograms, i.e., from the norm square of normalized Fourier transforms of adjacent, non-overlaping segments of data. No window is used to multiply the data before the transform. A threshold (which could be frequency dependent) is applied on the power in the spectrogram, to give a binary map representation of the time-frequency plane. By convention, pixels with power above the threshold will be called {\it black} pixels, and those below will be {\it white} pixels. In general, the threshold on the power should be chosen so that every pixel in the binary map has an equal probability of being black.
 \item{(ii)Clustering Analysis:} The pixels in the time-frequency plane are labelled by two positive integers $(i,j)$ refering respectively to there time and frequency indices. The distance between two pixels is defined by $d_{12} = |i_1 - i_2| + |j_1 - j_2|$. Pixels are said to be {\it nearest neighbours} iif $d_{12} = 1$. A {\it cluster} is a set of one or more black pixels such that each black pixel has at least one black neighbour at a distance of 1, and such that no black pixel outside the set is at a distance of 1 of any pixel in the set. The size of a cluster is the cardinality of the set.
-The first threshold to be applied on clusters is that the size $s \geq \sigma$, with $\sigma \geq 1$. 
+The first threshold to be applied on clusters is that the size $s \geq \sigma$, with $\sigma \geq 1$.
 For $\sigma > 1$, a second set of threshold is applied on clusters with $s < \sigma$: All pairs of clusters are considered. For a pair with sizes $s_1$ and $s_2$, if $d_{12} \leq \delta_{s_1,s_2}$, the two clusters are merged and are called a {\it generalized cluster}. $\delta_{s_1,s_2}$ is an integer; there are $\sigma(\sigma-1)/2$ such numbers. When a given cluster can pair with more than one other cluster and satisfy the distance thresholds, all these clusters are merged together into a single generalized cluster.
 By an abuse of language, `generalized clusters' will often be called simply `clusters' below.
 \item{(iii)Power Threshold:} For a given (generalized) cluster of size $s$, its {\it total power} $P$ is defined as the sum of the power over all its pixels. If the data are Gaussian noise, and if the threshold on the spectrogram power in step (i) above was $T$, then $P-sT \sim \chi^2_{2s}$, i.e., is a chi-square variable with $2s$ degrees of freedom. The third threshold is therefore $Q(P-sT,2s) < \alpha$, with $0<\alpha<1$ and $Q(x,a) = \int_x^\infty e^{-t}t^{a-1} dt / \Gamma(a)$. Any cluster that has survived cuts (i) and (ii) and for which this inequality is true will be called a {\it significant event}.
@@ -38,7 +38,7 @@ By an abuse of language, `generalized clusters' will often be called simply `clu
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \newpage
 \subsection{Module \texttt{TFClusters.c}}
-\label{ss:TFClusters.c} 
+\label{ss:TFClusters.c}
 \input{TFClustersC}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -79,7 +79,7 @@ By an abuse of language, `generalized clusters' will often be called simply `clu
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \newpage
 \subsection{Module \texttt{TFCThresholds.c}}
-\label{ss:TFCThresholds.c} 
+\label{ss:TFCThresholds.c}
 \input{TFCThresholdsC}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%	
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

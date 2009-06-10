@@ -52,11 +52,11 @@ none
 NRCSID (LALADDVECTORSC, "$Id$");
 
 /*  <lalVerbatim file="LALAddVectorsCP"> */
-void 
+void
 LALAddVectors
    (
-   LALStatus   *status, 
-   REAL4Vector *vector, 
+   LALStatus   *status,
+   REAL4Vector *vector,
    AddVectorsIn in
    )
 {  /*  </lalVerbatim>  */

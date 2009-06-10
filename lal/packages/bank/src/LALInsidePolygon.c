@@ -26,16 +26,16 @@ $Id$
 
 \subsection{Module \texttt{LALInsidePolygon.c}}
 
-Module to check whether a point with coordinates (x0,y0) is inside 
-a polygon defined by the vectors (vx, vy), which size (n) must be 
-provided. The functions returns 1 if the point is inside or 0 otherwise. 
+Module to check whether a point with coordinates (x0,y0) is inside
+a polygon defined by the vectors (vx, vy), which size (n) must be
+provided. The functions returns 1 if the point is inside or 0 otherwise.
 
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALInsidePolygonCP}
 \idx{LALInsidePolygon()}
 \begin{itemize}
-   \item \texttt{vx, vy} Input, two arrays of floats defining the polygon. 
+   \item \texttt{vx, vy} Input, two arrays of floats defining the polygon.
    \item \texttt{n} Input, the size of the vectors.
    \item \texttt{x0, y0} Input, the coordinate of the point.
    \item \texttt{valid} Output, 0 if outside and 1 if inside.
@@ -67,14 +67,14 @@ void LALInsidePolygon(  LALStatus          *status,
                         REAL4              y0,
                         INT4               *valid)
 
-                             
+
 {  /*  </lalVerbatim>  */
 
 
    INITSTATUS (status, "LALInsidePolygon", LALINSIDEPOLYGONC);
    ATTATCHSTATUSPTR(status);
    ASSERT (n>=3,  status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
-   
+
    {
      int i, j, c = 0;
      for (i = 0, j = n-1; i < n; j = i++) {
@@ -85,7 +85,7 @@ void LALInsidePolygon(  LALStatus          *status,
      }
      *valid = c;
    }
-   
+
    DETATCHSTATUSPTR(status);
    RETURN(status);
 

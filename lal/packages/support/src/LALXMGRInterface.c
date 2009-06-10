@@ -17,14 +17,14 @@
 *  MA  02111-1307  USA
 */
 
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: LALXMGRInterface.c
  *
  * Author: Brady, P. R., Brown, D. A., and Owen, B. J.
- * 
+ *
  * Revision: $Id$
- * 
+ *
  *-----------------------------------------------------------------------
  */
 
@@ -61,7 +61,7 @@ LALXMGROpenFile (
     CHAR               *fileName
     )
 {
-  const char    xmgrHeader[] = 
+  const char    xmgrHeader[] =
     "# ACE/gr parameter file\n#\n"
     "@version 40102\n"
     "@page layout free\n"
@@ -101,11 +101,11 @@ LALXMGROpenFile (
 
   INITSTATUS( status, "LALXMGROpenFile", LALXMGRINTERFACEC );
 
-  ASSERT( fp, status, 
+  ASSERT( fp, status,
       LALXMGRINTERFACEH_ENULL, LALXMGRINTERFACEH_MSGENULL );
   ASSERT( !(*fp), status,
       LALXMGRINTERFACEH_ENNUL, LALXMGRINTERFACEH_MSGENNUL );
-  ASSERT( fileName, status, 
+  ASSERT( fileName, status,
       LALXMGRINTERFACEH_ENULL, LALXMGRINTERFACEH_MSGENULL );
 
   if ( ! (*fp = fopen( fileName, "w" )) )
@@ -127,7 +127,7 @@ LALXMGROpenFile (
 
 /* ---------------------------------------------------------------------- */
 void
-LALXMGRCloseFile ( 
+LALXMGRCloseFile (
     LALStatus          *status,
     FILE               *fp
     )
@@ -157,13 +157,13 @@ LALXMGRCreateGraph (
   INITSTATUS( status, "LALXMGRCreateGraph", LALXMGRINTERFACEC );
   ATTATCHSTATUSPTR( status );
 
-  ASSERT( graphVec, status, 
+  ASSERT( graphVec, status,
       LALXMGRINTERFACEH_ENULL, LALXMGRINTERFACEH_MSGENULL );
 
   graph = graphVec->data;
 
 
-  /* 
+  /*
    *
    * allocate enough memory in the graph array for the graphs
    *
@@ -175,7 +175,7 @@ LALXMGRCreateGraph (
     ABORT( status, LALXMGRINTERFACEH_ENGRA, LALXMGRINTERFACEH_MSGENGRA );
   }
 
-  graph = (XMGRGraph *) 
+  graph = (XMGRGraph *)
     LALRealloc( graph, ++(graphVec->length) * sizeof(XMGRGraph) );
   if ( ! graphVec->data )
   {
@@ -185,7 +185,7 @@ LALXMGRCreateGraph (
   /* zero the array element we have just created */
   newGraph = graph + graphVec->length - 1;
   memset( newGraph, 0, sizeof(XMGRGraph) );
-  
+
 
   /*
    *
@@ -229,34 +229,34 @@ LALXMGRCreateGraph (
     }
     switch ( graphVec->length )
     {
-      case 1: 
+      case 1:
         graph[0].viewx[0] = 0.06; graph[0].viewy[0] = 0.028;
         w = 0.90;
         h = 0.88;
         break;
-      case 2: 
+      case 2:
         graph[0].viewx[0] = 0.06; graph[0].viewy[0] = 0.026;
-        graph[1].viewx[0] = 0.06; graph[1].viewy[0] = 0.51; 
+        graph[1].viewx[0] = 0.06; graph[1].viewy[0] = 0.51;
         w = 0.90;
         h = 0.42;
         break;
-      case 3: 
-        graph[3].viewx[0] = 0.54; graph[3].viewy[0] = 0.57; 
-      case 4: 
-        graph[0].viewx[0] = 0.04; graph[0].viewy[0] = 0.10; 
+      case 3:
+        graph[3].viewx[0] = 0.54; graph[3].viewy[0] = 0.57;
+      case 4:
+        graph[0].viewx[0] = 0.04; graph[0].viewy[0] = 0.10;
         graph[1].viewx[0] = 0.04; graph[1].viewy[0] = 0.57;
-        graph[2].viewx[0] = 0.54; graph[2].viewy[0] = 0.10; 
+        graph[2].viewx[0] = 0.54; graph[2].viewy[0] = 0.10;
         w = 0.45;
         h = 0.35;
         break;
-      case 5: 
-        graph[5].viewx[0] = 0.56; graph[5].viewy[0] = 0.62; 
-      case 6: 
-        graph[0].viewx[0] = 0.10; graph[0].viewy[0] = 0.02; 
-        graph[1].viewx[0] = 0.10; graph[1].viewy[0] = 0.32; 
-        graph[2].viewx[0] = 0.10; graph[2].viewy[0] = 0.62; 
+      case 5:
+        graph[5].viewx[0] = 0.56; graph[5].viewy[0] = 0.62;
+      case 6:
+        graph[0].viewx[0] = 0.10; graph[0].viewy[0] = 0.02;
+        graph[1].viewx[0] = 0.10; graph[1].viewy[0] = 0.32;
+        graph[2].viewx[0] = 0.10; graph[2].viewy[0] = 0.62;
         graph[3].viewx[0] = 0.56; graph[3].viewy[0] = 0.02;
-        graph[4].viewx[0] = 0.56; graph[4].viewy[0] = 0.32; 
+        graph[4].viewx[0] = 0.56; graph[4].viewy[0] = 0.32;
         w = 0.37;
         h = 0.26;
         break;
@@ -298,13 +298,13 @@ LALXMGRGPSTimeToTitle(
   INITSTATUS( status, "LALXMGRGPSTimeToTitle", LALXMGRINTERFACEC );
   ATTATCHSTATUSPTR( status );
 
-  ASSERT( title, status, 
+  ASSERT( title, status,
       LALXMGRINTERFACEH_ENULL, LALXMGRINTERFACEH_MSGENULL );
-  ASSERT( startGPS, status, 
+  ASSERT( startGPS, status,
       LALXMGRINTERFACEH_ENULL, LALXMGRINTERFACEH_MSGENULL );
-  ASSERT( stopGPS, status, 
+  ASSERT( stopGPS, status,
       LALXMGRINTERFACEH_ENULL, LALXMGRINTERFACEH_MSGENULL );
-  ASSERT( comment, status, 
+  ASSERT( comment, status,
       LALXMGRINTERFACEH_ENULL, LALXMGRINTERFACEH_MSGENULL );
 
   LALCHARCreateVector( status->statusPtr, &startString, (UINT4) 64 );
@@ -322,7 +322,7 @@ LALXMGRGPSTimeToTitle(
   LALDateString( status->statusPtr, stopString, &thisDate );
   CHECKSTATUSPTR( status );
 
-  LALSnprintf( title->data, title->length * sizeof(CHAR), 
+  LALSnprintf( title->data, title->length * sizeof(CHAR),
       "%s from %s to %s", comment, startString->data, stopString->data );
 
   LALCHARDestroyVector( status->statusPtr, &startString );
@@ -360,8 +360,8 @@ void LALXMGRPlotMesh( LALStatus          *status,
     REAL4 y[2];
     mesh->getRange( status->statusPtr, y, x, mesh->rangeParams );
     fprintf( fp, "%e %e\n", x, y[1] );
-    if (i == 0 ) { 
-      xlast = x; 
+    if (i == 0 ) {
+      xlast = x;
       ylast = y[1];
     }
   }

@@ -47,7 +47,7 @@ REAL8 XLALLIGOIPsd(REAL8 f)
 {
 	double f_over_f0 = f / 150;
 
-	return 9e-46 * (pow(4.49 * f_over_f0, -56) + 0.16 * pow(f_over_f0, -4.52) + 0.52 + 0.32 * pow(f_over_f0, 2)); 
+	return 9e-46 * (pow(4.49 * f_over_f0, -56) + 0.16 * pow(f_over_f0, -4.52) + 0.52 + 0.32 * pow(f_over_f0, 2));
 }
 
 
@@ -58,7 +58,7 @@ REAL8 XLALLIGOIPsd(REAL8 f)
  */
 
 
-void LALLIGOIPsd(LALStatus *status, REAL8 *psd, REAL8 f) 
+void LALLIGOIPsd(LALStatus *status, REAL8 *psd, REAL8 f)
 {
 	/* Deprecation warning temporarily commented out to make life
 	 * easier for the nightly build --- please update calling code */

@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2005 Badri Krishnan, Alicia Sintes  
+ *  Copyright (C) 2005 Badri Krishnan, Alicia Sintes
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -12,8 +12,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with with program; see the file COPYING. If not, write to the 
- *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, 
+ *  along with with program; see the file COPYING. If not, write to the
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
  */
 
@@ -30,7 +30,7 @@
  *
  *
 
-\par Description 
+\par Description
 
 This routine produces a phmd at a certain frequency for a given  peak-gram and
 look-up-table.
@@ -53,7 +53,7 @@ containing the frequency bin of this phmd
 the total number of borders of each type Left and Right to be
 marked, the pointers to the borders in the corresponding
 look-up-table, plus border effects of clipping  on a finite
-patch. 
+patch.
 
 \par Uses
 \code
@@ -63,7 +63,7 @@ LALHOUGHPeak2PHMD()
 */
 
 /************************************ <lalVerbatim file="Peak2PHMDCV">
-Author: Sintes, A. M. 
+Author: Sintes, A. M.
 $Id$
 ************************************* </lalVerbatim> */
 
@@ -105,7 +105,7 @@ containing the frequency bin of this {\sc phmd},
 the total number of borders of each type ({\it Left and Right}) to be
 marked, the pointers to the borders in the corresponding
 look-up-table, plus  {\it border} effects of clipping  on a finite
-patch. 
+patch.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsubsection*{Uses}
 %\begin{verbatim}
@@ -138,46 +138,46 @@ void LALHOUGHPeak2PHMD (LALStatus    *status,
   /* --------------------------------------------- */
 
   INITSTATUS (status, "LALHOUGHPeak2PHMD", PEAK2PHMDC);
-  ATTATCHSTATUSPTR (status); 
+  ATTATCHSTATUSPTR (status);
 
-  /** lots of error checking of arguments -- asserts have been 
+  /** lots of error checking of arguments -- asserts have been
       replaced by aborts */
 
-  /*   Make sure the arguments are not NULL: */ 
+  /*   Make sure the arguments are not NULL: */
   if (phmd == NULL) {
     /* fprintf(stderr,"null pointer found [Peak2PHMD.c %d]\n", __LINE__); */
-    ABORT( status, PHMDH_ENULL, PHMDH_MSGENULL); 
+    ABORT( status, PHMDH_ENULL, PHMDH_MSGENULL);
   }
   /* ASSERT (phmd, status, PHMDH_ENULL, PHMDH_MSGENULL); */
 
   if (lut == NULL) {
     /* fprintf(stderr,"null pointer found [Peak2PHMD.c %d]\n", __LINE__); */
-    ABORT( status, PHMDH_ENULL, PHMDH_MSGENULL); 
+    ABORT( status, PHMDH_ENULL, PHMDH_MSGENULL);
   }
   /* ASSERT (lut,  status, PHMDH_ENULL, PHMDH_MSGENULL); */
 
   if (pg == NULL) {
     /* fprintf(stderr,"null pointer found [Peak2PHMD.c %d]\n", __LINE__); */
-    ABORT( status, PHMDH_ENULL, PHMDH_MSGENULL); 
+    ABORT( status, PHMDH_ENULL, PHMDH_MSGENULL);
   }
   /* ASSERT (pg,   status, PHMDH_ENULL, PHMDH_MSGENULL); */
 
   if (phmd->firstColumn == NULL) {
     /* fprintf(stderr,"null pointer found [Peak2PHMD.c %d]\n", __LINE__); */
-    ABORT( status, PHMDH_ENULL, PHMDH_MSGENULL); 
+    ABORT( status, PHMDH_ENULL, PHMDH_MSGENULL);
   }
   /* ASSERT (phmd->firstColumn, status, PHMDH_ENULL, PHMDH_MSGENULL); */
-  
+
   /*  Make sure there are elements in firstColumn */
   if (phmd->ySide == 0) {
     /* fprintf(stderr,"phmd->ySide should be non-zero [Peak2PHMD.c %d]\n", __LINE__); */
-    ABORT( status, PHMDH_ESIZE, PHMDH_MSGESIZE); 
+    ABORT( status, PHMDH_ESIZE, PHMDH_MSGESIZE);
   }
   /* ASSERT (phmd->ySide, status, PHMDH_ESIZE, PHMDH_MSGESIZE); */
 
   /* Make sure peakgram and lut have same frequency discretization */
   if ( fabs((REAL4)lut->deltaF - (REAL4)pg->deltaF) > 1.0e-6) {
-    ABORT( status, PHMDH_EVAL, PHMDH_MSGEVAL); 
+    ABORT( status, PHMDH_EVAL, PHMDH_MSGEVAL);
   }
   /* ASSERT ( fabs((REAL4)lut->deltaF - (REAL4)pg->deltaF) < 1.0e-6,  status, PHMDH_EVAL, PHMDH_MSGEVAL); */
 
@@ -185,7 +185,7 @@ void LALHOUGHPeak2PHMD (LALStatus    *status,
   fBinDif = abs( (phmd->fBin) - (lut->f0Bin) );
   if ( fBinDif > lut->nFreqValid ) {
     /* fprintf(stderr,"fBinDif > nFreqValid [Peak2PHMD.c %d]\n", __LINE__); */
-    ABORT( status, PHMDH_EFREQ, PHMDH_MSGEFREQ); 
+    ABORT( status, PHMDH_EFREQ, PHMDH_MSGEFREQ);
   }
   /* ASSERT (fBinDif < lut->nFreqValid, status, PHMDH_EFREQ, PHMDH_MSGEFREQ); */
 
@@ -200,11 +200,11 @@ void LALHOUGHPeak2PHMD (LALStatus    *status,
   /*   ASSERT ( pgI <= firstBin, status, PHMDH_EINT, PHMDH_MSGEINT); */
   /*   ASSERT ( pgF >= lastBin,  status, PHMDH_EINT, PHMDH_MSGEINT); */
   if (  pgI > firstBin ) {
-    ABORT( status, PHMDH_EINT, PHMDH_MSGEINT); 
+    ABORT( status, PHMDH_EINT, PHMDH_MSGEINT);
   }
-  if (  pgF < lastBin ) { 
-    ABORT( status, PHMDH_EINT, PHMDH_MSGEINT); 
-  } 
+  if (  pgF < lastBin ) {
+    ABORT( status, PHMDH_EINT, PHMDH_MSGEINT);
+  }
 
 
   /* -------------------------------------------------------------------   */
@@ -221,10 +221,10 @@ void LALHOUGHPeak2PHMD (LALStatus    *status,
     *column1P = 0;
     ++column1P;
   }
-  
+
   minPeakBin = firstBin - pgI;
   maxPeakBin =  lastBin - pgI;
-    
+
  /* -------------------------------------------------------------------   */
          /* -------------------------------------------   */
   if(n){  /* only if there are peaks present */
@@ -243,10 +243,10 @@ void LALHOUGHPeak2PHMD (LALStatus    *status,
 
     searchIndex = (n * minPeakBin ) /(pgF-pgI+1);
     if (searchIndex >= n) { searchIndex = n-1;}
-  
+
     /* moving backwards */
     /* -----------------*/
-    
+
     test1=1;
     while (searchIndex >0 && test1) {
       if ( pg->peak[searchIndex -1] >=  minPeakBin ) {
@@ -254,12 +254,12 @@ void LALHOUGHPeak2PHMD (LALStatus    *status,
       }
       else {
         test1=0;
-      } 
+      }
     }
-    
+
     /* moving forwards */
     /* -----------------*/
-    
+
     test1=1;
     while (searchIndex < n-1  && test1) {
       if ( pg->peak[searchIndex] <  minPeakBin ) {
@@ -267,25 +267,25 @@ void LALHOUGHPeak2PHMD (LALStatus    *status,
       }
       else {
         test1=0;
-      } 
+      }
     }
-    
+
     /* -------------------------------------------------------------------   */
     /* for all the interesting peaks (or none) */
     /* -------------------------------------------------------------------   */
-    
+
     test1=1;
-    
+
     while (searchIndex < n  && test1) {
       thisPeak = pg->peak[searchIndex];
-      
+
       if (thisPeak > maxPeakBin) {
         test1=0;
       } else {
         if ( thisPeak >= minPeakBin) { /* we got a peak */
 	  /* relative Index */
 	  relatIndex = thisPeak + shiftPeak;
-	  
+
 	  i = relatIndex;
 	  if( relatIndex < 0 )  i =  nBinPos - relatIndex;
 
@@ -300,84 +300,84 @@ void LALHOUGHPeak2PHMD (LALStatus    *status,
 	  rb1 = lut->bin[i].rightB1;
 	  lb2 = lut->bin[i].leftB2;
 	  rb2 = lut->bin[i].rightB2;
-	  
+
 	  max1 = lut->bin[i].piece1max;
-	  min1 = lut->bin[i].piece1min; 
+	  min1 = lut->bin[i].piece1min;
 	  max2 = lut->bin[i].piece2max;
-	  min2 = lut->bin[i].piece2min; 
-	  
+	  min2 = lut->bin[i].piece2min;
+
 	  /* border selection from lut */
-	  
+
 	  if(lb1){
-	    if (  lut->border + lb1 == NULL ) { 
+	    if (  lut->border + lb1 == NULL ) {
 	      /* fprintf(stderr,"null pointer found [Peak2PHMD.c %d]\n", __LINE__); */
-	      ABORT( status, PHMDH_ENULL, PHMDH_MSGENULL); 
-	    } 
+	      ABORT( status, PHMDH_ENULL, PHMDH_MSGENULL);
+	    }
 	    phmd->leftBorderP[lengthLeft] = &( lut->border[lb1] );
 	    ++lengthLeft;
 	  }
-	  
+
 
 	  if(lb2){
-	    if (  lut->border + lb2 == NULL ) { 
+	    if (  lut->border + lb2 == NULL ) {
 	      /* fprintf(stderr,"null pointer found [Peak2PHMD.c %d]\n", __LINE__); */
-	      ABORT( status, PHMDH_ENULL, PHMDH_MSGENULL); 
-	    } 
+	      ABORT( status, PHMDH_ENULL, PHMDH_MSGENULL);
+	    }
 	    phmd->leftBorderP[lengthLeft] = &( lut->border[lb2] );
 	    ++lengthLeft;
 	  }
-	  
+
 	  if(rb1){
-	    if (  lut->border + rb1 == NULL ) { 
+	    if (  lut->border + rb1 == NULL ) {
 	      /* fprintf(stderr,"null pointer found [Peak2PHMD.c %d]\n", __LINE__); */
-	      ABORT( status, PHMDH_ENULL, PHMDH_MSGENULL); 
-	    } 
+	      ABORT( status, PHMDH_ENULL, PHMDH_MSGENULL);
+	    }
 	    phmd->rightBorderP[lengthRight] = &( lut->border[rb1] );
 	    ++lengthRight;
 	  }
 
 	  if(rb2){
-	    if (  lut->border + rb2 == NULL ) { 
+	    if (  lut->border + rb2 == NULL ) {
 	      /* fprintf(stderr,"null pointer found [Peak2PHMD.c %d]\n", __LINE__); */
-	      ABORT( status, PHMDH_ENULL, PHMDH_MSGENULL); 
-	    } 
+	      ABORT( status, PHMDH_ENULL, PHMDH_MSGENULL);
+	    }
 	    phmd->rightBorderP[lengthRight] = &( lut->border[rb2] );
 	    ++lengthRight;
 	  }
-	  
+
 	  /* correcting 1st column */
-	  for(j=min1; j<=max1; ++j) { 
+	  for(j=min1; j<=max1; ++j) {
 	    if (phmd->firstColumn + j == NULL) {
 	      /* fprintf(stderr,"null pointer found [Peak2PHMD.c %d]\n", __LINE__); */
-	      ABORT( status, PHMDH_ENULL, PHMDH_MSGENULL); 	      
+	      ABORT( status, PHMDH_ENULL, PHMDH_MSGENULL);
 	    }
-	    phmd->firstColumn[j] = 1; 
+	    phmd->firstColumn[j] = 1;
 	  }
 
-	  for(j=min2; j<=max2; ++j) { 
+	  for(j=min2; j<=max2; ++j) {
 	    if (phmd->firstColumn + j == NULL) {
 	      /* fprintf(stderr,"null pointer found [Peak2PHMD.c %d]\n", __LINE__); */
-	      ABORT( status, PHMDH_ENULL, PHMDH_MSGENULL); 	      
+	      ABORT( status, PHMDH_ENULL, PHMDH_MSGENULL);
 	    }
-	    phmd->firstColumn[j] = 1; 
+	    phmd->firstColumn[j] = 1;
 	  }
-	  
+
 	}
         ++searchIndex;
       }
       /* -------------------------------------------------------------------   */
-            
+
     }
   }
-  
+
   /* -------------------------------------------------------------------   */
-  
+
   phmd->lengthLeft = lengthLeft;
   phmd->lengthRight= lengthRight;
   /* -------------------------------------------   */
-  
+
   DETATCHSTATUSPTR (status);
-  
+
   /* normal exit */
   RETURN (status);
 }

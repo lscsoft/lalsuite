@@ -87,7 +87,7 @@ extern "C" {
     {
       quiet, verbose, printFiles, all
     }TSDiagnosticType;
-  
+
 /*   typedef enum tagTSSearchLogic */
 /*     { */
 /*       abortLogic, */
@@ -99,7 +99,7 @@ extern "C" {
    * Structure to hold a collection of data segments which may be
    * overlapped by n points
    */
-  typedef struct 
+  typedef struct
   tagTSSegmentVector
   {
     UINT4               length;  /* Number of segments long */
@@ -108,15 +108,15 @@ extern "C" {
 					  * and after which are buffer
 					  * to remove TFR artifacts.
 					  */
-    REAL4TimeSeries   **dataSeg; /* 
+    REAL4TimeSeries   **dataSeg; /*
 				  * Structure for individual data
-				  * segments 
+				  * segments
 				  */
   }TSSegmentVector;
-  
+
   /*
    * Structure that holds all possible parameters for the tracksearch
-   * library functions collectively not just LALTracksearch 
+   * library functions collectively not just LALTracksearch
    */
   typedef struct
   tagTSSearchParams
@@ -129,11 +129,11 @@ extern "C" {
     UINT4             TimeLengthPoints; /* Product of NumSeg&SegLenthPoints*/
     UINT4             discardTLP;/* Points that need to be
 				  * discarded given
-				  * input map overlap 
+				  * input map overlap
 				  */
     UINT4             SegLengthPoints;/*Data Seg Length*/
     UINT4             colsToClip;/*
-				  * Should be colsToClip before and 
+				  * Should be colsToClip before and
 				  * after region of interest.
 				  */
     UINT4             SegBufferPoints;/*
@@ -171,8 +171,8 @@ extern "C" {
 				   * Number of points to overlap the
 				   * individual data segments by. This
 				   * is apart from implicit Segment
-				   * buffer for TFR clipping option 
-				   */ 
+				   * buffer for TFR clipping option
+				   */
     UINT4             whiten;/*Flags typ of whitening to do*/
     AvgSpecMethod     avgSpecMethod;/*Type of PSD averaging to do*/
     WindowType        avgSpecWindow;/*Type of PSD averaging window*/

@@ -122,7 +122,7 @@ LALFloatToGPS( LALStatus   *stat,
 }  /* END: FloatToGPS() */
 
 
-
+
 
 /* <lalVerbatim file="GPStoFloatCP"> */
 void LALFloatToInterval(LALStatus *status,
@@ -146,7 +146,7 @@ void LALFloatToInterval(LALStatus *status,
 } /* END: FloatToInterval() */
 
 
-
+
 
 /* <lalVerbatim file="GPStoFloatCP"> */
 void LALIntervalToFloat(LALStatus *status,

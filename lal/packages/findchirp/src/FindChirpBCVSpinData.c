@@ -17,22 +17,22 @@
 *  MA  02111-1307  USA
 */
 
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: FindChirpBCVSpinData.c
  *
  * Author: Brown D. A., Spinning BCV-Modifications: Jones, G
- * 
+ *
  * Revision: $Id$
- * 
+ *
  *-----------------------------------------------------------------------
  */
 
-#if 0 
+#if 0
 <lalVerbatim file="FindChirpBCVSpinDataCV">
 Author: Brown, D. A., Spinning BCV-Modifications: Jones, G.
 $Id$
-</lalVerbatim> 
+</lalVerbatim>
 
 <lalLaTeX>
 \subsection{Module \texttt{FindChirpBCVSpinData.c}}
@@ -64,7 +64,7 @@ LALDestroyVector()
 \subsubsection*{Notes}
 
 \vfill{\footnotesize\input{FindChirpBCVSpinDataCV}}
-</lalLaTeX> 
+</lalLaTeX>
 #endif
 
 #include <lal/LALStdlib.h>
@@ -93,7 +93,7 @@ LALFindChirpBCVSpinData (
 
   REAL4                *w;
   REAL4                *amp;
-  REAL4                *ampBCV; 
+  REAL4                *ampBCV;
   COMPLEX8             *wtilde;
   REAL4		       *tmpltPower;
   REAL4		       *tmpltPowerBCV;
@@ -119,7 +119,7 @@ LALFindChirpBCVSpinData (
   char                  suffix[10];*/
   /* REMOVE THIS */
 
-  
+
   /*declaration*/
   INITSTATUS( status, "LALFindChirpBCVSpinData", FINDCHIRPBCVSPINDATAC );
   ATTATCHSTATUSPTR( status );
@@ -139,15 +139,15 @@ LALFindChirpBCVSpinData (
       ": fcSegVec->data->data->data" );
 
   /* check that the parameter structure exists */
-  ASSERT( params, status, 
-	  FINDCHIRPBCVSPINH_ENULL, FINDCHIRPBCVSPINH_MSGENULL 
+  ASSERT( params, status,
+	  FINDCHIRPBCVSPINH_ENULL, FINDCHIRPBCVSPINH_MSGENULL
 	  ": params" );
 
   /* check that the parameter structure is set */
   /* to the correct waveform approximant       */
-  ASSERT( params->approximant == BCVSpin, status, 
+  ASSERT( params->approximant == BCVSpin, status,
       FINDCHIRPBCVSPINH_EMAPX, FINDCHIRPBCVSPINH_MSGEMAPX );
-  
+
   /* check that the workspace vectors exist */
   ASSERT( params->ampVec, status,
       FINDCHIRPBCVSPINH_ENULL, FINDCHIRPBCVSPINH_MSGENULL );
@@ -202,7 +202,7 @@ LALFindChirpBCVSpinData (
   ASSERT( dataSegVec->data->chan->data, status,
       FINDCHIRPBCVSPINH_ENULL, FINDCHIRPBCVSPINH_MSGENULL
       ": dataSegVec->data->chan->data" );
-       	
+
   /*
    *
    * set up local segment independent pointers
@@ -213,8 +213,8 @@ LALFindChirpBCVSpinData (
 
   w             = params->wVec->data;
   amp           = params->ampVec->data;
-  ampBCV        = params->ampVecBCV->data; 
-  wtilde        = params->wtildeVec->data; 
+  ampBCV        = params->ampVecBCV->data;
+  wtilde        = params->wtildeVec->data;
   tmpltPower    = params->tmpltPowerVec->data;
   tmpltPowerBCV = params->tmpltPowerVecBCV->data;
   ampBCVSpin2   = params->ampVecBCVSpin2->data;
@@ -224,20 +224,20 @@ LALFindChirpBCVSpinData (
    * loop over data segments
    *
    */
-  
+
   for ( i = 0; i < dataSegVec->length; ++i )
   {
-         
-	 /* REMOVE THIS */ 
+
+	 /* REMOVE THIS */
 	 /*sprintf (suffix, "%d", i);
          strcpy (filename, "dataSegment.");
          strncat (filename, suffix, 5);
-                                                                                                                                             
+
          {
             fpDataIn     = fopen (filename,"w");
          }*/
          /* REMOVE THIS */
-	 
+
     /*
      	 *
      	 * set up segment dependent pointers
@@ -271,18 +271,18 @@ LALFindChirpBCVSpinData (
 	/* store the waveform approximant in the data segment */
     	fcSeg->approximant = BCVSpin;
 
-	
-       /* REMOVE THIS */	
+
+       /* REMOVE THIS */
        /*{
                 fprintf (stdout, "Writing input data (time domain) to file %s\n", filename );
-                                                                                                                                           
+
                 for ( k = 0; k < dataVec->length; ++k )
                 {
                      fprintf (fpDataIn, "%d\t%e\n",  k, dataVec->data[k]);
                 }
        }*/
        /* REMOVE THIS */
-	
+
     	/*
      	 *
      	 * compute htilde and store in fcSeg
@@ -300,7 +300,7 @@ LALFindChirpBCVSpinData (
    	 	REAL4 q = outputData[k].im;
    	 	REAL4 x = resp[k].re * params->dynRange;
     		REAL4 y = resp[k].im * params->dynRange;
-		
+
     		outputData[k].re =  (p*x) - (q*y);
     		outputData[k].im =  (p*y) + (q*x);
   	}
@@ -308,25 +308,25 @@ LALFindChirpBCVSpinData (
 
      /* set output frequency series parameters */
         strncpy( fcSeg->data->name, dataSeg->chan->name, LALNameLength );
-	                                                                                                                             
+
         fcSeg->data->epoch.gpsSeconds     = dataSeg->chan->epoch.gpsSeconds;
         fcSeg->data->epoch.gpsNanoSeconds = dataSeg->chan->epoch.gpsNanoSeconds;
-			                                                                                                                             
+
         fcSeg->data->f0     = dataSeg->chan->f0;
         fcSeg->data->deltaF = 1.0 /
  	       ( (REAL8) dataSeg->chan->data->length * dataSeg->chan->deltaT ) ;
-						                                                                                                                             
+
 	fcSeg->deltaT       = dataSeg->chan->deltaT;
         fcSeg->number       = dataSeg->number;
         fcSeg->analyzeSegment = dataSeg->analyzeSegment;
-								                                                                                                                             
+
         /* store low frequency cutoff and invSpecTrunc in segment */
         fcSeg->fLow         = params->fLow;
         fcSeg->invSpecTrunc = params->invSpecTrunc;
-										                                                                                                                             
+
   } /* end of loop over data segments */
-  
-	
+
+
     	/*
      	 *
      	 * compute inverse power spectrum
@@ -339,16 +339,16 @@ LALFindChirpBCVSpinData (
 
     	/* set inverse power spectrum to zero */
     	memset( wtilde, 0, params->wtildeVec->length * sizeof(COMPLEX8) );
-	
+
     	/* compute inverse of S_v */
    	for ( k = cut; k < params->wtildeVec->length; ++k )
     	{
       		if ( spec[k] == 0 )
       		{
-        	ABORT( status, FINDCHIRPBCVSPINH_EDIVZ, 
+        	ABORT( status, FINDCHIRPBCVSPINH_EDIVZ,
 		FINDCHIRPBCVSPINH_MSGEDIVZ );
       		}
-		
+
 		wtilde[k].re = 1.0 / spec[k];
     	}
 
@@ -362,7 +362,7 @@ LALFindChirpBCVSpinData (
  	{
       		/* compute square root of inverse power spectrum */
       		fprintf(stdout, "truncating wtilde! \n");
-	       	
+
       		for ( k = cut; k < params->wtildeVec->length; ++k )
       		{
         	wtilde[k].re = sqrt( wtilde[k].re );
@@ -371,10 +371,10 @@ LALFindChirpBCVSpinData (
       		/* set nyquist and dc to zero */
       		wtilde[params->wtildeVec->length - 1].re = 0.0;
       		wtilde[0].re                             = 0.0;
-	
+
       		/* transform to time domain */
-      		LALReverseRealFFT( status->statusPtr, 
-			params->wVec, 
+      		LALReverseRealFFT( status->statusPtr,
+			params->wVec,
 			params->wtildeVec,
 			params->invPlan );
       		CHECKSTATUSPTR (status);
@@ -384,7 +384,7 @@ LALFindChirpBCVSpinData (
           	(params->wVec->length - params->invSpecTrunc) * sizeof(REAL4) );
 
       		/* transform to frequency domain */
-      		LALForwardRealFFT( status->statusPtr, params->wtildeVec, 
+      		LALForwardRealFFT( status->statusPtr, params->wtildeVec,
 			params->wVec,
           		params->fwdPlan );
      	 	CHECKSTATUSPTR (status);
@@ -418,19 +418,19 @@ LALFindChirpBCVSpinData (
 
       		if ( modsqResp == 0 )
       		{
-        		ABORT( status, FINDCHIRPBCVSPINH_EDIVZ, 
+        		ABORT( status, FINDCHIRPBCVSPINH_EDIVZ,
 				FINDCHIRPBCVSPINH_MSGEDIVZ );
       		}
       		invmodsqResp = 1.0 / modsqResp;
 
       		wtilde[k].re *= invmodsqResp;
     	}
-   
+
 	/* REMOVE THIS */
 	/*fclose (fpDataIn);*/
         /* REMOVE THIS */
 
-	
+
   DETATCHSTATUSPTR( status );
   RETURN( status );
 

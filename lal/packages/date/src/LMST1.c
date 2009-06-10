@@ -280,7 +280,7 @@ LALGMST1 (LALStatus     *status,
   RETURN (status);
 } /* END LALGMST1() */
 
-
+
 
 /*
  * Compute GMST1 in requested units given GPS time
@@ -344,7 +344,7 @@ LALGPStoGMST1( LALStatus         *status,
 } /* END: LALGPStoGMST1() */
 
 
-
+
 
 
 /*
@@ -417,7 +417,7 @@ LALLMST1 (LALStatus             *status,
   RETURN (status);
 } /* END LALLMST1() */
 
-
+
 
 /*
  * Compute LMST1 in requested units given GPS time

@@ -32,28 +32,28 @@ $Id$
 \idx{LALInspiralHybridHexagonalBank()}
 
 \subsubsection*{Description}
-This code does almost the same as the standard Hexagonal Bank code. However, 
-once the templates cover both the equal line and an other line ($m_1={\rm mMin}$ 
-or $m_2 ={\rm mMax}$), then there is no need to carry on any square/hexagonal 
-placement. One can simply populate templates along a bissectrice. 
+This code does almost the same as the standard Hexagonal Bank code. However,
+once the templates cover both the equal line and an other line ($m_1={\rm mMin}$
+or $m_2 ={\rm mMax}$), then there is no need to carry on any square/hexagonal
+placement. One can simply populate templates along a bissectrice.
 
 \subsubsection*{Algorithm}
 The algorithm is identical to the hexagonal placement. However, once a template covers
-both the equal mass line and the upper boundary, then the hexagonal placement stops. 
-So, an additional placement is needed to finalise the bank. In principle the placement 
-needs to be completed on bothe side of the template bank, at low mass and high mass. So, 
-we should start from the two templates which covers the two boundaries and populate the 
-parameter space along a bissectrice. 
+both the equal mass line and the upper boundary, then the hexagonal placement stops.
+So, an additional placement is needed to finalise the bank. In principle the placement
+needs to be completed on bothe side of the template bank, at low mass and high mass. So,
+we should start from the two templates which covers the two boundaries and populate the
+parameter space along a bissectrice.
 
 
-The coordinates of the bissectrice at a given $tau_0$ coordinate is estimated by tracing a vertical 
-line in the $\tau_0/tau_3$ plane, estimate the vlue of $tau_3$ on the upper boundary and low 
+The coordinates of the bissectrice at a given $tau_0$ coordinate is estimated by tracing a vertical
+line in the $\tau_0/tau_3$ plane, estimate the vlue of $tau_3$ on the upper boundary and low
 boundary ($\eta=1/4$ line), and finally take the mean of the two values. Although,  is is an approximation
-since we should also take into account the orientation of the ellipse, we 
+since we should also take into account the orientation of the ellipse, we
 think this is good enough.  The vertical line crosses the parameter space on the
 $\eta=1/4$ line and the other parameter space boundary which is define either by (1)
-$m_1=variable$ and $m_2=mMin$ or (2) $m_1=variable$ and $m_2=mMax$. Concerning (1), 
-$\eta=1/4$, this is a trivial computation, since 
+$m_1=variable$ and $m_2=mMin$ or (2) $m_1=variable$ and $m_2=mMax$. Concerning (1),
+$\eta=1/4$, this is a trivial computation, since
 \begin{equation}
 \tau_3 =    \frac{  A3}{\eta}  \left( \frac{\eta \tau_0}{A0} \right)^{2/5},
 \end{equation}
@@ -61,23 +61,23 @@ which in the case of $\eta=1/4$ simply becomes :
 \begin{equation}
 \tau_3 =     4 A3  \left( \frac{\tau_0}{4 A0} \right)^{2/5}.
 \end{equation}
-In the case (2), if $\tau_0$ is provided, if we can extract the total mass and $\eta$ parameter, 
-then $tau_3$ is given by 
+In the case (2), if $\tau_0$ is provided, if we can extract the total mass and $\eta$ parameter,
+then $tau_3$ is given by
 \begin{equation}
 \tau_3 =    \frac{  A3}{\eta}  M^{-2/3}.
 \end{equation}
 So, we need $M$ and $\eta$. Starting from
 \begin{equation}
-\tau_0 =    \frac{  A0}{\eta}  \left( M \right)^{-5/3}, 
+\tau_0 =    \frac{  A0}{\eta}  \left( M \right)^{-5/3},
 \end{equation}
 we can extract a cubic equation
 \begin{equation}
 x^3 - px+q=0
 \end{equation}
-where $x = M^{1/3}$, $p = -\frac{A0}{\tau_0/m_{\rm Extreme}}$ and $q= - m_{\rm Extreme}=0$. $ m_{\rm Extreme}$ 
-is either set to mMin or mMax depending on which side of the parameter space we are. 
+where $x = M^{1/3}$, $p = -\frac{A0}{\tau_0/m_{\rm Extreme}}$ and $q= - m_{\rm Extreme}=0$. $ m_{\rm Extreme}$
+is either set to mMin or mMax depending on which side of the parameter space we are.
 
-The solution for $x$ is standard and takes the expression : 
+The solution for $x$ is standard and takes the expression :
 \begin{equation}
 x =  \left(-\frac{q}{2}-\frac{1}{2}*\sqrt{\frac{27 q^2 + 4 p^3}{27}}\right)^{\frac{1}{3}}
    + \left(-\frac{q}{2}+\frac{1}{2}*\sqrt{\frac{27 q^2 + 4 p^3}{27}}\right)^{\frac{1}{3}};
@@ -91,7 +91,7 @@ x =  \left(-\frac{q}{2}-\frac{1}{2}*\sqrt{\frac{27 q^2 + 4 p^3}{27}}\right)^{\fr
 \caption{Example of hybrid hexagonal placement. Once an ellipse covers the upper and lower boundary, then the hexagonal
 placement stops. This occurs neccesseraly at low and high mass range. }
 \end{figure}
- 
+
 
 \begin{figure}[]
 \begin{center}
@@ -102,7 +102,7 @@ placement stops. This occurs neccesseraly at low and high mass range. }
 tau0=3.6 and tau0=0.4), then the placement is switched from the hexagonal to a placement along the bissectric of the
 upper/lower boundaries as described in the text.}
 \end{figure}
- 
+
 
 \subsubsection*{Uses}
 \begin{verbatim}
@@ -126,15 +126,15 @@ XLALInspiralBissectionLine ()
 
 
 
-  
+
 void
 LALPopulateNarrowEdge(LALStatus       	*status,
 		      InspiralMomentsEtc      *moments,
-		      InspiralCell            **cell, 
+		      InspiralCell            **cell,
 		      INT4                     headId,
 		      InspiralTemplate        *paramsIn,
 		      HexaGridParam           *gridParam,
-		      CellEvolution           *cellEvolution, 
+		      CellEvolution           *cellEvolution,
 		      CellList **cellList,
 		      INT4 flag
 		      );
@@ -143,56 +143,56 @@ LALPopulateNarrowEdge(LALStatus       	*status,
 NRCSID(LALINSPIRALHYBRIDHEXAGONALBANKC, "$Id$");
 
 /*  <lalVerbatim file="LALInspiralHybridHexagonalBankCP"> */
-void 
+void
 LALInspiralCreatePNCoarseBankHybridHexa(
-    LALStatus            *status, 
-    InspiralTemplateList **list, 
+    LALStatus            *status,
+    InspiralTemplateList **list,
     INT4                 *nlist,
     InspiralCoarseBankIn coarseIn
-    ) 
+    )
 {  /*  </lalVerbatim>  */
-  INT4                  i; 
+  INT4                  i;
   INT4 			firstId = 0;
-  REAL4 		A0, A3; 
+  REAL4 		A0, A3;
   REAL4                 piFl;
   InspiralBankParams    bankPars;
   InspiralTemplate      *tempPars;
   InspiralMomentsEtc    moments;
-  InspiralCell          *cells;  
+  InspiralCell          *cells;
   HexaGridParam         gridParam;
   CellEvolution         cellEvolution;
   CellList 		*cellList = NULL;
 
-  INITSTATUS( status, "LALInspiralHybridHexagonalBank", 
+  INITSTATUS( status, "LALInspiralHybridHexagonalBank",
       LALINSPIRALHYBRIDHEXAGONALBANKC );
   ATTATCHSTATUSPTR( status );
 
-  ASSERT( coarseIn.mMin > 0., status, 
+  ASSERT( coarseIn.mMin > 0., status,
       LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE );
-  ASSERT( coarseIn.mMax > 0., status, 
+  ASSERT( coarseIn.mMax > 0., status,
       LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE );
-  ASSERT( coarseIn.MMax >= 2.*coarseIn.mMin, status, 
+  ASSERT( coarseIn.MMax >= 2.*coarseIn.mMin, status,
       LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE );
 
   /* Set the elements of the metric and tempPars structures in  */
-  /* conformity with the coarseIn structure                     */ 
-  if ( !(tempPars = (InspiralTemplate *) 
-  			LALCalloc( 1, sizeof(InspiralTemplate)))) 
+  /* conformity with the coarseIn structure                     */
+  if ( !(tempPars = (InspiralTemplate *)
+  			LALCalloc( 1, sizeof(InspiralTemplate))))
   {
     LALFree(tempPars);
     LALFree(cells);
     ABORT( status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM );
   }
 
-  
+
   LALInspiralSetParams( status->statusPtr, tempPars, coarseIn );
   CHECKSTATUSPTR( status );
-  
+
   /* Identify the boundary of search and parameters for the     */
   /* first lattice point                                        */
   LALInspiralSetSearchLimits( status->statusPtr, &bankPars, coarseIn );
   CHECKSTATUSPTR( status );
-  
+
   tempPars->totalMass   = coarseIn.MMax;
   tempPars->eta         = 0.25;
   tempPars->ieta        = 1.L;
@@ -200,19 +200,19 @@ LALInspiralCreatePNCoarseBankHybridHexa(
   tempPars->massChoice  = m1Andm2;
   tempPars->mass1       = coarseIn.mMin;
   tempPars->mass2       = coarseIn.mMax;
-  
+
   LALInspiralParameterCalc( status->statusPtr, tempPars );
   CHECKSTATUSPTR( status );
-  
+
   /* Get the moments of the PSD integrand and other parameters */
   /* required in the computation of the metric  once for all.   */
-  LALGetInspiralMoments( 
-  		status->statusPtr, 
+  LALGetInspiralMoments(
+  		status->statusPtr,
   		&moments,
    		&coarseIn.shf,
    	 	tempPars );
   CHECKSTATUSPTR( status );
-  
+
   /* Allocate memory for one cell */
   cells = (InspiralCell*)
       LALCalloc(1,   sizeof(InspiralCell) );
@@ -251,10 +251,10 @@ LALInspiralCreatePNCoarseBankHybridHexa(
 
   /* Initialise the first template */
   LALInitHexagonalBank(
-			status->statusPtr, 
-		       	&cells, firstId, 
+			status->statusPtr,
+		       	&cells, firstId,
 		       	&moments, tempPars,
-		       	&gridParam, &cellEvolution, 
+		       	&gridParam, &cellEvolution,
 		       	&cellList);
   CHECKSTATUSPTR( status );
 
@@ -263,10 +263,10 @@ LALInspiralCreatePNCoarseBankHybridHexa(
     INT4 k, kk; /*some indexes*/
     INT4 *list 		= NULL;
     CellList *ptr 	= NULL;
-    INT4 length 	= 1; /* default size of the bank when we 
+    INT4 length 	= 1; /* default size of the bank when we
     						start the bank generation. */
 
-    /* we re-allocate an array which size equals the 
+    /* we re-allocate an array which size equals the
      * template bank size. */
     if (! (list =  LALMalloc(length*sizeof(INT4))))
     {
@@ -274,7 +274,7 @@ LALInspiralCreatePNCoarseBankHybridHexa(
     }
 
     /* while there are cells/template which can propagate, we carry on the loop.*/
-    while (cellEvolution.fertile) 
+    while (cellEvolution.fertile)
     {
       length = LALListLength(cellList);
       /*realloc some memory for the next template*/
@@ -284,25 +284,25 @@ LALInspiralCreatePNCoarseBankHybridHexa(
 		/* freeing memory here ? */
       }
       ptr = cellList;
-      /* we extract the ids which might change within the LALPopulateCell 
-       * function. Indeed the bank might grow and then we will lost track 
+      /* we extract the ids which might change within the LALPopulateCell
+       * function. Indeed the bank might grow and then we will lost track
        * of ids/bank size and so on. */
       for ( k = 0; k < length; k++)
       {
-		list[k] = ptr->id;	
+		list[k] = ptr->id;
 		ptr = ptr->next;
       }
       /* look at all the template/ids in the current bank to search for fertile cells */
       for (kk = 0; kk < length; kk++)
-	  {	
+	  {
 		k = list[kk];
-		if ( cells[k].status == Fertile) 
+		if ( cells[k].status == Fertile)
 		{
           LALPopulateCell(status->statusPtr, &moments, &cells,
-              k,  tempPars, &gridParam, &cellEvolution, &cellList);          
-		  CHECKSTATUSPTR( status );         	 	  
-	  	  /* now the bank might have grown, but we only look at the 
-	  	   * template created before this for loop, when we entered 
+              k,  tempPars, &gridParam, &cellEvolution, &cellList);
+		  CHECKSTATUSPTR( status );
+	  	  /* now the bank might have grown, but we only look at the
+	  	   * template created before this for loop, when we entered
 	  	   * in the while loop
 	  	   * */
         }
@@ -311,63 +311,63 @@ LALInspiralCreatePNCoarseBankHybridHexa(
     LALFree(list);
   }
 
-#if 1 
+#if 1
   {
 
-	
-	
-    INT4 edge1=0, edge2=0; 
-    
+
+
+    INT4 edge1=0, edge2=0;
+
     	gridParam.gridSpacing = Hexagonal;
 
     i=0;
-    while (i<cellEvolution.nTemplate){    
+    while (i<cellEvolution.nTemplate){
       if (cells[i].status == Edge){
 	edge1 = i;
-	cells[i].status = In;   
+	cells[i].status = In;
 	i=cellEvolution.nTemplate;
       }
       i++;
     }
     i=0;
-    while (i<cellEvolution.nTemplate){    
+    while (i<cellEvolution.nTemplate){
       if (cells[i].status == Edge){
 	edge2=i;
-	cells[i].status = In;   
+	cells[i].status = In;
 	i=cellEvolution.nTemplate;
       }
       i++;
     }
-    
-  
-    
+
+
+
     if (cells[edge1].t0 > cells[edge2].t0){
       LALPopulateNarrowEdge(status->statusPtr, &moments, &cells,
-			    edge1,  tempPars, &gridParam, &cellEvolution, &cellList, 0);          
-      CHECKSTATUSPTR( status );          
+			    edge1,  tempPars, &gridParam, &cellEvolution, &cellList, 0);
+      CHECKSTATUSPTR( status );
       LALPopulateNarrowEdge(status->statusPtr, &moments, &cells,
-			    edge2,  tempPars, &gridParam, &cellEvolution, &cellList, 1);          
-      CHECKSTATUSPTR( status );          
+			    edge2,  tempPars, &gridParam, &cellEvolution, &cellList, 1);
+      CHECKSTATUSPTR( status );
     }
     else
     {
       LALPopulateNarrowEdge(status->statusPtr, &moments, &cells,
-			    edge1,  tempPars, &gridParam, &cellEvolution, &cellList, 1);          
-      CHECKSTATUSPTR( status );          
+			    edge1,  tempPars, &gridParam, &cellEvolution, &cellList, 1);
+      CHECKSTATUSPTR( status );
       LALPopulateNarrowEdge(status->statusPtr, &moments, &cells,
-			    edge2,  tempPars, &gridParam, &cellEvolution, &cellList, 0);          
-      CHECKSTATUSPTR( status );               
+			    edge2,  tempPars, &gridParam, &cellEvolution, &cellList, 0);
+      CHECKSTATUSPTR( status );
     }
   }
 
 
 #endif
-  
 
-      
+
+
   if (cellList != NULL)
     ABORT(status, LALINSPIRALBANKH_EHEXAINIT,LALINSPIRALBANKH_MSGEHEXAINIT);
-	/* Here is the current number of template generated. Now, we need 
+	/* Here is the current number of template generated. Now, we need
 	 * to clean some of them which might be redundant.
 	 * */
   *nlist = cellEvolution.nTemplate;
@@ -378,7 +378,7 @@ LALInspiralCreatePNCoarseBankHybridHexa(
     length = cellEvolution.nTemplate;
 
     for ( k = 0; k < length; k++)
-    {  
+    {
       REAL4 a;
       REAL4 b;
       REAL4 x0;
@@ -387,19 +387,19 @@ LALInspiralCreatePNCoarseBankHybridHexa(
       INT4 valid;
 
       PRIN  prin;
-	
+
       tempA3              = pow(A3, -5./2.)/pow(0.25,-1.5);
       tempPars->t0        = cells[k].t0;
       tempPars->t3        = cells[k].t3;
       /* if non physical parameter i.e below eta=0.25*/
-      if(cells[k].RectPosition[0] == Below ) 
-      {	  
+      if(cells[k].RectPosition[0] == Below )
+      {
         INT4 above=0, below=0, in=0, out=0;
-      		  
-		/*first, we define the line which is along the long semi-axis of the 
-		 * ambiguity function, defined by the angle theta and the position of 
+
+		/*first, we define the line which is along the long semi-axis of the
+		 * ambiguity function, defined by the angle theta and the position of
 		 * the template.
-		 * */      		  
+		 * */
 		a = tan(cells[k].metric.theta);
 		b = cells[k].t3 - a * cells[k].t0;
 		/* and call a function to search for a solution along eta=1/4 */
@@ -407,35 +407,35 @@ LALInspiralCreatePNCoarseBankHybridHexa(
 		input.xmin 		= cells[k].t3-1e-3;
 		input.xmax 		= 1000;
 		input.xacc 		= 1e-6;
-	
+
 		prin.ct = a * A0 * tempA3;
 		prin.b = b;
-	
+
 		LALSBisectionFindRoot(status->statusPtr,
 			&x0, &input, (void *)&prin);
-		CHECKSTATUSPTR( status );         
-	
+		CHECKSTATUSPTR( status );
+
 		tempPars->t3 = x0 + 1e-3; /* to be sure it is physical */
 		tempPars->t0 = (tempPars->t3 - b)/a;
-		if (tempPars->t0 > 0) 
+		if (tempPars->t0 > 0)
 		{
 	  	  LALInspiralParameterCalc(status->statusPtr, tempPars);
-	  	  CHECKSTATUSPTR( status );         		  
+	  	  CHECKSTATUSPTR( status );
         	}
-		else 
+		else
 		{
 			LALWarning(status,"HybridHexagonal placement: nothing to be done since t0<=0\n");
 		}
-		
+
 		cells[k].t0  = tempPars->t0;
-		cells[k].t3  = tempPars->t3;    
-		
+		cells[k].t3  = tempPars->t3;
+
 		/* update its position values */
 		valid = 1;
-		GetPositionRectangle(status->statusPtr, &cells, k,  tempPars , 
-			     &gridParam, 
-			     &cellEvolution, 
-			     &cellList, 
+		GetPositionRectangle(status->statusPtr, &cells, k,  tempPars ,
+			     &gridParam,
+			     &cellEvolution,
+			     &cellList,
 			     &valid);
 		{
 
@@ -470,7 +470,7 @@ LALInspiralCreatePNCoarseBankHybridHexa(
 		  {
 		  if (cells[k].child[0] >=0 )
 		   {
-		     cells[cells[k].child[0]].position = Out;	
+		     cells[cells[k].child[0]].position = Out;
 		   }
 		   else
 		   {
@@ -478,28 +478,28 @@ LALInspiralCreatePNCoarseBankHybridHexa(
 		   }
 
 		  }
-		  else 
+		  else
 		  {
 
 		  }
 	}
 	else
 	 {
-	 
+
 	 }
     }
   }
 
   for (i=0; i<cellEvolution.nTemplate; i++) {
     if (cells[i].position == In ) {
-      *nlist = *nlist +1; 
+      *nlist = *nlist +1;
     }
   }
-  
+
 
 
   /* allocate appropriate memory and fill the output bank */
-  *list = (InspiralTemplateList*) 
+  *list = (InspiralTemplateList*)
     LALRealloc( *list, sizeof(InspiralTemplateList) * (*nlist+1) );
   if ( ! *list )
   {
@@ -509,9 +509,9 @@ LALInspiralCreatePNCoarseBankHybridHexa(
   memset( *list + *nlist, 0, sizeof(InspiralTemplateList) );
   {
     *nlist = 0 ;
-    for (i=0; i<cellEvolution.nTemplate; i++) 
+    for (i=0; i<cellEvolution.nTemplate; i++)
     {
-      if (cells[i].position == In & cells[i].t0>0) 
+      if (cells[i].position == In & cells[i].t0>0)
       {
         tempPars->t0  = cells[i].t0;
         tempPars->t3  = cells[i].t3;
@@ -519,23 +519,23 @@ LALInspiralCreatePNCoarseBankHybridHexa(
         tempPars->fLower = coarseIn.fLower;
         LALInspiralParameterCalc( status->statusPtr, tempPars );
         CHECKSTATUSPTR( status );
-	    
-        (*list)[*nlist].ID            = *nlist; 
-        (*list)[*nlist].params        = *tempPars; 
-        (*list)[*nlist].metric        = cells[i].metric; 
-        ++(*nlist); 
+
+        (*list)[*nlist].ID            = *nlist;
+        (*list)[*nlist].params        = *tempPars;
+        (*list)[*nlist].metric        = cells[i].metric;
+        ++(*nlist);
       }
     }
   }
-  
-    
+
+
   LALFree( cells );
   LALFree( tempPars );
-  
+
   DETATCHSTATUSPTR( status );
   RETURN ( status );
 }
-  
+
 
 
 
@@ -552,18 +552,18 @@ XLALInspiralBissectionLine (
 {
   REAL8 piFa;
   REAL8 tau3_a, tau3_b, M, eta, massSep;
-  
+
   /* First we solve for the lower (equal mass) limit */
   tau3_a = XLALInspiralTau3FromTau0AndEqualMassLine( tau0, fL);
 
   /* Figure out the boundary between m1 = mMin and m1 = mMax */
   M = mMin + mMax;
-  eta = (mMin*mMax)/pow(M, 2.0);  
+  eta = (mMin*mMax)/pow(M, 2.0);
   massSep = XLALInspiralTau0FromMEta(M, eta, fL);
-  
+
   /* Next we solve for the upper part */
   if (tau0 >= massSep )
-  { 
+  {
     M = XLALInspiralMFromTau0AndNonEqualMass (tau0,  mMin, fL);
     eta = mMin*(M-mMin)/ pow(M,2.0);
   }
@@ -572,9 +572,9 @@ XLALInspiralBissectionLine (
     M = XLALInspiralMFromTau0AndNonEqualMass (tau0,  mMax, fL);
     eta = mMax*(M-mMax)/ pow(M,2.0);
   }
- 
+
   tau3_b = XLALInspiralTau3FromNonEqualMass(M,eta,fL);
- 
+
   return (0.5 * (tau3_a + tau3_b));
 }
 
@@ -583,16 +583,16 @@ XLALInspiralBissectionLine (
 void
 LALPopulateNarrowEdge(LALStatus               *status,
 		      InspiralMomentsEtc      *moments,
-		      InspiralCell            **cell, 
+		      InspiralCell            **cell,
 		      INT4                     headId,
 		      InspiralTemplate        *paramsIn,
 		      HexaGridParam           *gridParam,
-		      CellEvolution           *cellEvolution, 
-		      CellList **cellList, 
+		      CellEvolution           *cellEvolution,
+		      CellList **cellList,
 		      INT4                    flag
 		      )
 {
-  REAL4 dx0, dx1;  
+  REAL4 dx0, dx1;
   REAL4 theta, ctheta,stheta;
   INT4 offSpring;
   INT4 next, iteration;
@@ -603,8 +603,8 @@ LALPopulateNarrowEdge(LALStatus               *status,
   ATTATCHSTATUSPTR( status );
 
   /* aliases to get the characteristics of the parent template, that we refer
-   * to its ID (headId) */  
-  
+   * to its ID (headId) */
+
   while ( (*cell)[headId].t0 < gridParam->x0Max && (*cell)[headId].t0 > gridParam->x0Min) {
 
     dx0           = (*cell)[headId].dx0/sqrt(2.);
@@ -613,19 +613,19 @@ LALPopulateNarrowEdge(LALStatus               *status,
     ctheta        = cos(theta); /*aliases*/
     stheta        = sin(theta); /*aliases*/
     offSpring     = cellEvolution->nTemplate;
-      
+
     /* reallocate memory by set of 1000 cells if needed*/
     if ( cellEvolution->nTemplate  >= cellEvolution->nTemplateMax){
-      *cell = (InspiralCell*) 
+      *cell = (InspiralCell*)
 	LALRealloc( *cell, sizeof(InspiralCell) * (cellEvolution->nTemplateMax + 1000) );
       if ( ! cell ) {
 	ABORT( status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM );
       }
       cellEvolution->nTemplateMax +=  1000;
     }
-    
+
     next = cellEvolution->nTemplate;
-    
+
     theta_min = 0.+.1 +LAL_PI/2.;
     theta_max = 2*LAL_PI-.1+LAL_PI/2.;
 
@@ -633,14 +633,14 @@ LALPopulateNarrowEdge(LALStatus               *status,
     theta_max = 2*LAL_PI-.1;
 
     /* we will search the intersection between the bissectrice of the parameter space and
-    the ellipse which crosses the center of the ellipses next to this point. Such an ellipse 
+    the ellipse which crosses the center of the ellipses next to this point. Such an ellipse
     has semi axes scaled by sqrt(3).*/
     t0 = (*cell)[headId].t0;
     t3 = (*cell)[headId].t3;
     a  = dx0 * sqrt(3.);
     b  = dx1 * sqrt(3.);
     c = cos(theta);
-    s = sin(theta);    
+    s = sin(theta);
 
 
     iteration = 1;
@@ -651,15 +651,15 @@ LALPopulateNarrowEdge(LALStatus               *status,
 
       xr_int = a*cos(theta_int);
       yr_int = b*sin(theta_int);
-      
+
       /*here are the coordinates of the point we are looking at, which stans on an ellipse of semi axis scaled by sqrt(3)
       (suppose to cross all relevant template center)*/
       x_int = xr_int *c - yr_int * s +t0;
       y_int = xr_int *s + yr_int * c +t3;
-                  
+
       /* how far this point is far away of the bissectrice ? */
       dy = y_int -  XLALInspiralBissectionLine(x_int, gridParam->fLower, gridParam->mMin,gridParam->mMax);
-      /* which direction shall we go for the dichotomy ? */	
+      /* which direction shall we go for the dichotomy ? */
       if (flag==0){
 	if (dy>0 )
 	  theta_max = theta_int;
@@ -676,7 +676,7 @@ LALPopulateNarrowEdge(LALStatus               *status,
     }
 
     /* let us save this new cell coordinate  */
-    
+
     (*cell)[next].t0   = x_int;
     (*cell)[next].t3   = y_int;
 
@@ -697,7 +697,7 @@ LALPopulateNarrowEdge(LALStatus               *status,
     }
 
     /*Finally, we initialise the cell properly*/
-    LALInitHexagonalBank(status->statusPtr,  cell,  next, 
+    LALInitHexagonalBank(status->statusPtr,  cell,  next,
 		moments, paramsIn, gridParam, cellEvolution, cellList);
     /* and change the size of the population accordingly*/
     cellEvolution->nTemplate++;
@@ -707,14 +707,14 @@ LALPopulateNarrowEdge(LALStatus               *status,
     (cellEvolution->fertile)=cellEvolution->fertile-1;
     LALListDelete(cellList, next);
     headId=next;
-    
-    
+
+
   }
 
   /*Similarly fot the first parent. */
  (*cell)[headId].status = Sterile;
  (cellEvolution->fertile)=cellEvolution->fertile-1;
-  LALListDelete(cellList, headId);	
+  LALListDelete(cellList, headId);
   DETATCHSTATUSPTR( status );
   RETURN ( status );
 

@@ -153,7 +153,7 @@ extern INT4 lalDebugLevel;
 
 static LALUnit emptyUnit;
 
-
+
 
 /** Simulate a pulsar signal to best accuracy possible.
  *

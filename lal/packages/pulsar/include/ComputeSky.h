@@ -18,11 +18,11 @@
 */
 
 /************************************ <lalVerbatim file="ComputeSkyHV">
-Author: Berukoff, S.J., Papa, M.A. 
+Author: Berukoff, S.J., Papa, M.A.
 $Id$
 ************************************* </lalVerbatim> */
 
-/* <lalLaTeX> 
+/* <lalLaTeX>
 \section{Header \texttt{ComputeSky.h}}
 \label{s:ComputeSky.h}
 Computes phase coefficients necessary for a correct demodulation.
@@ -34,7 +34,7 @@ Computes phase coefficients necessary for a correct demodulation.
 
 \noindent  This is a short summary of the analytical calculations which form the basis for the code in this routine.
 
-Recall that a demodulated Fourier Transform (DeFT) is given by 
+Recall that a demodulated Fourier Transform (DeFT) is given by
 \begin{equation}
 \hat{x}_b({\vec{\lambda}})=
 \sum_{\alpha =0}^{M-1}\sum_{k=0}^{N-1}\tilde{x}_{\alpha k}\left[\frac{1}{N}\sum_{j=0}^{N-1}e^{-2\pi i(\Phi_{\alpha jb}(\vec{\lambda})-\frac{jk}{N})}\right]
@@ -67,7 +67,7 @@ the phase terms in the above equation are (neglecting constants)
 \begin{eqnarray}
 \Phi(t_{\alpha,1/2})                     & = & f_{0}\Delta T_{\alpha}+\frac{1}{2}f_{1}\Delta T_{\alpha}^{2}
 +\frac{1}{3}f_{2}\Delta T_{\alpha}^{3}+\frac{1}{4}f_{3}\Delta T_{\alpha}^{4}+\frac{1}{5}f_{4}\Delta T_{\alpha}^{5}
-+\frac{1}{6}f_{5}\Delta T_{\alpha}^{6} \nonumber\label{phi} \\ 
++\frac{1}{6}f_{5}\Delta T_{\alpha}^{6} \nonumber\label{phi} \\
                                          &   & \\
 \frac{d\Phi}{dt}(t_{\alpha,1/2})         & = & \dot{T}_{\alpha}\left(f_{0}+ f_{1}\Delta T_{\alpha}
 +f_{2}\Delta T_{\alpha}^{2}+f_{3}\Delta T_{\alpha}^{3}
@@ -105,24 +105,24 @@ B_{s \alpha}=\mathcal{T}_{SFT}\dot{T}_{\alpha}\Delta T_{\alpha}^{s}
 
 #ifndef _COMPUTESKY_H
 #define _COMPUTESKY_H
- 
+
 #include <lal/LALStdlib.h>
 #include "LALBarycenter.h"
- 
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-  
+
   NRCSID (COMPUTESKYH, "$Id: ComputeSky.h");
-  
+
   /* Author-defined error codes */
-  /* <lalLaTeX>  
+  /* <lalLaTeX>
      \subsection*{Error conditions}
      \vspace{0.1in}
      \input{ComputeSkyHErrorTable}
-     
+
      </lalLaTeX> */
-  
+
 /* <lalErrTable file="ComputeSkyHErrorTable"> */
 #define COMPUTESKYH_ENULL 1
 #define COMPUTESKYH_ENNUL 2
@@ -148,7 +148,7 @@ struct CSParams
 \item[\texttt{REAL8 tSFT}] The timescale of one SFT.
 \item[\texttt{LIGOTimeGPS *tGPS}] An array containing the GPS times of the first datum from each SFT.
 \item[\texttt{REAL8 *skyPos}] The array containing the sky patch coordinates.
-\item[\texttt{CHAR *sw}] A switch which turns modulation on/off. 
+\item[\texttt{CHAR *sw}] A switch which turns modulation on/off.
 \item[\texttt{void (*funcName)(REAL8 , REAL8 , REAL8 , REAL8 *, REAL8 *, const CHAR *sw)}] A function pointer, to make the use of different timing routines easy.
 \end{description}
 
@@ -162,7 +162,7 @@ tagCSParams
 	REAL8		tSFT;		/* timescale of SFT */
 	LIGOTimeGPS	*tGPS;		/* GPS time of 1st data sample of each SFT */
 	REAL8 		*skyPos; 	/* array of sky positions */
-	BarycenterInput *baryinput;	
+	BarycenterInput *baryinput;
 	EmissionTime *emit;
 	EarthState *earth;
 	EphemerisData *edat;
@@ -174,11 +174,11 @@ CSParams;
 \newpage\input{ComputeSkyC}
 </lalLaTeX> */
 
-void LALComputeSky (LALStatus *status, 
-			REAL8 		*skyConst, 
+void LALComputeSky (LALStatus *status,
+			REAL8 		*skyConst,
 			INT8 		iSkyCoh,
 			CSParams 	*params);
-		
+
 
 #ifdef __cplusplus
 }

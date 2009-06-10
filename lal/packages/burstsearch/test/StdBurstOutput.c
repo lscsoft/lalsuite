@@ -51,7 +51,7 @@ NRCSID (MAIN, "$Id$");
   static void endian_swap(char * pdata, int dsize, int nelements);
 #endif
 
-INT4 lalDebugLevel = 0; /* set to 2 for full debug, painfully slow with tfclusters */   
+INT4 lalDebugLevel = 0; /* set to 2 for full debug, painfully slow with tfclusters */
 
 
 INT4 main(INT4 argc, CHAR *argv[]) {
@@ -76,7 +76,7 @@ INT4 main(INT4 argc, CHAR *argv[]) {
 
   /* set parameters */
   par = &params;
-  
+
   SetStringParameter(par,channel); /* channel name */
   SetREAL4Parameter(par, 0.08);    /* black pixel probability */
   SetINT4Parameter(par, 1);        /* windowing? */
@@ -210,7 +210,7 @@ INT4 main(INT4 argc, CHAR *argv[]) {
       }
       LALFree(optr->snglTransdataTable);
     }
-    
+
     LALFree(optr->snglBurstTable);
     LALFree(optr);
 

@@ -66,7 +66,7 @@ int XLALReadFiltersFile(const char *filterfile, StrainIn *InputData)
 	fprintf(stderr, "Error parsing data file %s\n", filterfile);
 	return err;
     }
-    
+
     numlines = Filters->lines->nTokens; /* how many lines of data */
 
     /* Check that file is not empty */
@@ -81,7 +81,7 @@ int XLALReadFiltersFile(const char *filterfile, StrainIn *InputData)
     i = 0;                                  /* start with first line */
     thisline = Filters->lines->tokens[i];   /* get line i */
     strncpy(filtercvsinfo, thisline, sizeof(filtercvsinfo));
-  
+
     /**------------------------------------------------------------------**/
     /* Read sensing function info */
     thisline = Filters->lines->tokens[++i];     /* get next line */
@@ -104,17 +104,17 @@ int XLALReadFiltersFile(const char *filterfile, StrainIn *InputData)
     CHECK(thisline, " FILTER_ORDER");
 
     /* Allocate inverse sensing funtion filters */
-    InputData->Cinv = (REAL8IIRFilter *)LALMalloc(sizeof(REAL8IIRFilter)); 
-    
+    InputData->Cinv = (REAL8IIRFilter *)LALMalloc(sizeof(REAL8IIRFilter));
+
     /* Allocate inverse sensing function filter */
     InputData->Cinv->directCoef = XLALCreateREAL8Vector(NCinv);
     InputData->Cinv->recursCoef = XLALCreateREAL8Vector(NCinv);
     InputData->Cinv->history    = XLALCreateREAL8Vector(NCinv-1);
-    
+
     for (l=0; l < NCinv; l++)    InputData->Cinv->directCoef->data[l] = 0.0;
     for (l=0; l < NCinv; l++)    InputData->Cinv->recursCoef->data[l] = 0.0;
     for (l=0; l < NCinv-1; l++)  InputData->Cinv->history->data[l]    = 0.0;
-  
+
     for (n = 0; n < NCinv; n++) {   /* read direct coeffs */
 	thisline = Filters->lines->tokens[++i];   /* get next line */
 	InputData->Cinv->directCoef->data[n] = strtod(thisline, NULL);
@@ -130,9 +130,9 @@ int XLALReadFiltersFile(const char *filterfile, StrainIn *InputData)
     thisline = Filters->lines->tokens[++i];   /* get next line */
     ND = strtol(thisline, &thisline, 10);
     CHECK(thisline, " FILTER_ORDER");
-   
+
     /* Allocate inverse sensing funtion filters */
-    InputData->D = (REAL8IIRFilter *)LALMalloc(sizeof(REAL8IIRFilter)); 
+    InputData->D = (REAL8IIRFilter *)LALMalloc(sizeof(REAL8IIRFilter));
 
     /* Allocate inverse sensing function filter */
     InputData->D->directCoef = XLALCreateREAL8Vector(ND);
@@ -142,7 +142,7 @@ int XLALReadFiltersFile(const char *filterfile, StrainIn *InputData)
     for (l=0; l < ND; l++)    InputData->D->directCoef->data[l] = 0.0;
     for (l=0; l < ND; l++)    InputData->D->recursCoef->data[l] = 0.0;
     for (l=0; l < ND-1; l++)  InputData->D->history->data[l]    = 0.0;
-  
+
     for (n = 0; n < ND; n++) {   /* read direct coeffs */
 	thisline = Filters->lines->tokens[++i];   /* get next line */
 	InputData->D->directCoef->data[n] = strtod(thisline, NULL);
@@ -158,19 +158,19 @@ int XLALReadFiltersFile(const char *filterfile, StrainIn *InputData)
     thisline = Filters->lines->tokens[++i];
     NA = strtol(thisline, &thisline, 10);
     CHECK(thisline, " FILTER_ORDER");
-   
+
     /* Allocate inverse sensing funtion filters */
-    InputData->A = (REAL8IIRFilter *)LALMalloc(sizeof(REAL8IIRFilter)); 
-    
+    InputData->A = (REAL8IIRFilter *)LALMalloc(sizeof(REAL8IIRFilter));
+
     /* Allocate inverse sensing function filter */
     InputData->A->directCoef = XLALCreateREAL8Vector(NA);
     InputData->A->recursCoef = XLALCreateREAL8Vector(NA);
     InputData->A->history    = XLALCreateREAL8Vector(NA-1);
-    
+
     for (l=0; l < NA; l++)    InputData->A->directCoef->data[l] = 0.0;
     for (l=0; l < NA; l++)    InputData->A->recursCoef->data[l] = 0.0;
     for (l=0; l < NA-1; l++)  InputData->A->history->data[l]    = 0.0;
-  
+
     for (n = 0; n < NA; n++) {   /* read direct coeffs */
 	thisline = Filters->lines->tokens[++i];
 	InputData->A->directCoef->data[n] = strtod(thisline, NULL);
@@ -186,9 +186,9 @@ int XLALReadFiltersFile(const char *filterfile, StrainIn *InputData)
     thisline = Filters->lines->tokens[++i];
     NAW = strtol(thisline, &thisline, 10);
     CHECK(thisline, " FILTER_ORDER");
-    
+
     /* Allocate inverse sensing funtion filters */
-    InputData->AW = (REAL8IIRFilter *)LALMalloc(sizeof(REAL8IIRFilter)); 
+    InputData->AW = (REAL8IIRFilter *)LALMalloc(sizeof(REAL8IIRFilter));
 
     /* Allocate inverse sensing function filter */
     InputData->AW->directCoef = XLALCreateREAL8Vector(NAW);
@@ -198,7 +198,7 @@ int XLALReadFiltersFile(const char *filterfile, StrainIn *InputData)
     for (l=0; l < NAW; l++)    InputData->AW->directCoef->data[l] = 0.0;
     for (l=0; l < NAW; l++)    InputData->AW->recursCoef->data[l] = 0.0;
     for (l=0; l < NAW-1; l++)  InputData->AW->history->data[l]    = 0.0;
-  
+
     for (n = 0; n < NAW; n++) {   /* read direct coeffs */
 	thisline = Filters->lines->tokens[++i];   /* get next line */
 	InputData->AW->directCoef->data[n] = strtod(thisline, NULL);

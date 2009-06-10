@@ -121,7 +121,7 @@ This routine simply parses the input arguments, stuffs the data into a
 
 If the \verb@-i@ option is given, the corresponding file is opened and
 read by \verb@LALCHARReadVectorSequence()@, then each line is
-tokenized by \verb@LALCreateTokenList()@.  
+tokenized by \verb@LALCreateTokenList()@.
 
 Output via the \verb@-o@ option is in a custom human-readable format,
 which should be easy to figure out.
@@ -514,7 +514,7 @@ main(int argc, char **argv)
     if ( !strcmp( infile, "stdin" ) )
       fp = stdin;
     else
-      fp = fopen( infile, "r" ); 
+      fp = fopen( infile, "r" );
     if ( fp == NULL ) {
       ERROR( PULSARCATTESTC_EFILE, PULSARCATTESTC_MSGEFILE, infile );
       return PULSARCATTESTC_EFILE;

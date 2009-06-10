@@ -23,7 +23,7 @@
  *
  * Author: Julien Sylvestre
  *
- * Revision: $Id$ 
+ * Revision: $Id$
  *
  *-----------------------------------------------------------------------*/
 
@@ -54,24 +54,24 @@ Implement the SLOPE event trigger generator.
 /* <lalVerbatim> */
 void
 LALSlopeETG(
-	    LALStatus *status, 
-	    EventIDColumn *output, 
-	    REAL4TimeVectorSeries *input, 
+	    LALStatus *status,
+	    EventIDColumn *output,
+	    REAL4TimeVectorSeries *input,
 	    BurstParameter *params
 	    ) {
 /* </lalVerbatim> */
 /******** <lalLaTeX file="SlopeETGC"> ********
 \subsubsection*{Description}
-Description of the parameters: 
+Description of the parameters:
 \begin{center}
 \begin{tabular}{l|l|l}
-parameter index & type & description \\ \hline 
+parameter index & type & description \\ \hline
 1 & string & channel name \\
 2 & REAL4 & threshold (if negative, normalized by -rms) \\
 3 & REAL4Vector & coefficients \\
 4 & INT4 & points in cluster \\
 5 & REAL4 & min frequency to report (Hz) \\
-6 & REAL4 & max frequency to report (Hz) 
+6 & REAL4 & max frequency to report (Hz)
 \end{tabular}
 \end{center}
 
@@ -112,7 +112,7 @@ parameter index & type & description \\ \hline
   if(!(params->type)) {ABORT ( status, STDBURSTSEARCHH_ENULLPI, STDBURSTSEARCHH_MSGENULLPI); } \
   par = *(params->type); \
   params = params->next
-  
+
 #define SetStringParameter(par) if(!params) {ABORT ( status, STDBURSTSEARCHH_ENULLPI, STDBURSTSEARCHH_MSGENULLPI);} \
   if(!(params->char_)) {ABORT(status, STDBURSTSEARCHH_ENULLPI, STDBURSTSEARCHH_MSGENULLPI);} \
   ASSERT ( par, status, STDBURSTSEARCHH_ENULLP, STDBURSTSEARCHH_MSGENULLP); \
@@ -123,9 +123,9 @@ parameter index & type & description \\ \hline
   if(!(params->real4vector_)) {ABORT(status, STDBURSTSEARCHH_ENULLPI, STDBURSTSEARCHH_MSGENULLPI);} \
   par = params->real4vector_; \
   params = params->next
-  
+
   params = params->next;
-  
+
   SetStringParameter(channel);
   strncpy(ifo,channel,2);
 
@@ -145,10 +145,10 @@ parameter index & type & description \\ \hline
   buffer.length = data->length;
   buffer.data = (REAL4 *)LALMalloc(buffer.length * sizeof(REAL4));
   if(!(buffer.data)) {
-    ABORT(status, STDBURSTSEARCHH_EMEM, STDBURSTSEARCHH_MSGEMEM); 
+    ABORT(status, STDBURSTSEARCHH_EMEM, STDBURSTSEARCHH_MSGEMEM);
   }
   memcpy(buffer.data, data->data, buffer.length * sizeof(REAL4));
-  
+
   /* filter */
   {
     REAL4IIRFilter f;
@@ -160,9 +160,9 @@ parameter index & type & description \\ \hline
     zerov.length = 0;
     zerov.data = &r40;
     r40 = 0.0;
-    
+
     f.directCoef = coef;
-    
+
     f.history = NULL;
     LALCreateVector(status->statusPtr, &(f.history), 1+coef->length);
     CHECKSTATUSPTR (status);
@@ -180,7 +180,7 @@ parameter index & type & description \\ \hline
     for(i=0, sum2=0.0; i<buffer.length; i++) {
       sum2 += pow(buffer.data[i],2.0);
     }
-    sum2 /= (REAL8)buffer.length; 
+    sum2 /= (REAL8)buffer.length;
     sum2 = sqrt(sum2); /* RMS */
     thr *= -sum2;
   }
@@ -207,21 +207,21 @@ parameter index & type & description \\ \hline
 	  i--; /* to avoid missing one sample */
 	  break;
 	}
-	
+
 	i++;
       }
 
       /* generate output */
       output->next = (EventIDColumn *)LALCalloc(1,sizeof(EventIDColumn));
       if(!(output->next)) {
-	ABORT(status, STDBURSTSEARCHH_EMEM, STDBURSTSEARCHH_MSGEMEM); 
+	ABORT(status, STDBURSTSEARCHH_EMEM, STDBURSTSEARCHH_MSGEMEM);
       }
 
       output = output->next;
 
       boutput = output->snglBurstTable = (SnglBurstTable *)LALCalloc(1,sizeof(SnglBurstTable));
       if(!(boutput)) {
-	ABORT(status, STDBURSTSEARCHH_EMEM, STDBURSTSEARCHH_MSGEMEM); 
+	ABORT(status, STDBURSTSEARCHH_EMEM, STDBURSTSEARCHH_MSGEMEM);
       }
 
       strncpy(boutput->channel, channel, LIGOMETA_CHANNEL_MAX);

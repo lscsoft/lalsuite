@@ -17,7 +17,7 @@
 *  MA  02111-1307  USA
 */
 
-/* Header file for BCVspin_metric_fit.c   
+/* Header file for BCVspin_metric_fit.c
    ver 3.0   2005/3/8 H.Tagoshi
 ver 3.1   2005/3/21 H.Tagoshi
 ver6.5 2006/2/23  NR functions was replaced with GSL functions H. Takahashi
@@ -156,7 +156,7 @@ int three_metric(/* input */
 	      double metric3[4][4]);
 
 int generate_fit_points(/*input*/double MinMatch, double funcG[7][7][4][4],
-			int ndata, 
+			int ndata,
 			/*output*/ double fit_point[ndata+1][4]);
 
 int generate_metric_data(/* input */double MinMatch,
@@ -225,7 +225,7 @@ int BCVspin_beta_placement(double MinMatch,double beta_min,double beta_max, int 
 		double *Sn,double fmin,double fmax, double *beta_list,int *nbeta);
 
 int BCVspin_beta_placement_effmetric(/* input*/ double MinMatch,double beta_min,double beta_max, int N,
-		double *Sn,double fmin,double fmax, 
+		double *Sn,double fmin,double fmax,
 		/* output */ double effmetric_list[3][3][1001], double *beta_list,int *nbeta);
 
 

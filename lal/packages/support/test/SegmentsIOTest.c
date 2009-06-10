@@ -175,7 +175,7 @@ int main( int argc, char *argv[] )
   /*-------------------------------------------------------------------------*/
   XLALPrintInfo("\n========== LALSegListWrite tests \n");
   /*-------------------------------------------------------------------------*/
-  
+
   LALSegListWrite( &status, &seglist1, "SegmentsOutput1.data", "adi" );
   if ( status.statusCode ) {
     RETFAIL( "LALSegListWrite with standard segment list", status.statusCode );
