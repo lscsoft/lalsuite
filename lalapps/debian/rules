@@ -100,7 +100,7 @@ install: build
 		fi ;                                                     \
 	done
 	set -e; \
-	for i in `find debian/$(PACKAGE)/$(PREFIX)/bin -type f`; do      \
+	for i in `find debian/lalapps/$(PREFIX)/bin -type f`; do      \
 	        echo $$i;                                                \
 	        if head -n1 $$i | grep -q '^#!.*python$$' ; then         \
 	                sed -i '1s/python$$/python2.4/' $$i;             \
