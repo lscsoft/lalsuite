@@ -168,7 +168,6 @@ int XLALTrigScanClusterTriggers( SnglInspiralTable **table,
   {
     XLAL_ERROR( func, XLAL_EFUNC );
   }
-  fprintf( stderr, "List created; tcMax = %e\n", tcMax );
 
   /* Now create the list of clusters. Keep going until errorlist is exhausted */
   while ( errorList )
