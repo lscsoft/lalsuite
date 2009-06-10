@@ -21,7 +21,7 @@
  *
  * File Name: LALTrigScanCluster.c
  *
- * Author: Sengupta, Anand. S. and Gupchup, Jayant A.
+ * Author: Sengupta, Anand. S., Gupchup, Jayant A. and Robinson, C. A. K.
  *
  * $Id: LALTrigScanCluster.c,v 1.13 2007/10/02 13:48:53 spxcar Exp $
  *
@@ -155,8 +155,8 @@ int XLALTrigScanClusterTriggers( SnglInspiralTable **table,
   /* and if not, sort the triggers */
   for ( thisTable = tableHead; thisTable->next; thisTable = thisTable->next )
   {
-    if ( XLALGPStoINT8( &(thisTable->end_time) ) 
-           > XLALGPStoINT8( &(thisTable->next->end_time) ) )
+    if ( XLALGPSToINT8NS( &(thisTable->end_time) ) 
+           > XLALGPSToINT8NS( &(thisTable->next->end_time) ) )
     {
       *table = tableHead = XLALSortSnglInspiral( tableHead, LALCompareSnglInspiralByTime );
       break;
@@ -361,7 +361,7 @@ TrigScanCluster * XLALTrigScanCreateCluster( TriggerErrorList **errorListHead,
     INT8  endTimeB;
     REAL8 originalTimeB;
 
-    endTimeA = XLALGPStoINT8( &(thisClusterList->trigger->end_time) );
+    endTimeA = XLALGPSToINT8NS( &(thisClusterList->trigger->end_time) );
     XLAL_CALLGSL( originalTimeA = gsl_vector_get( thisClusterList->position, 0 ) );
 
     /* Reset the time to avoid precision problems */
@@ -373,7 +373,7 @@ TrigScanCluster * XLALTrigScanCreateCluster( TriggerErrorList **errorListHead,
     while ( thisErrorList )
     {
 
-      endTimeB = XLALGPStoINT8( &(thisErrorList->trigger->end_time) );
+      endTimeB = XLALGPSToINT8NS( &(thisErrorList->trigger->end_time) );
       XLAL_CALLGSL( originalTimeB = gsl_vector_get( thisErrorList->position, 0 ) );
 
       /* If the triggers are more than twice the max time error apart, no need to proceed */

@@ -765,8 +765,8 @@ static REAL8 minimizeEThincaParameterOverTimeDiff( REAL8 timeShift,
   originalTimeA = gsl_vector_get( params->aPtr->position, 0 );
   originalTimeB = gsl_vector_get( params->bPtr->position, 0 );
  
-  curTimeANS = XLALGPStoINT8( &(params->aPtr->trigger->end_time) );
-  curTimeBNS = XLALGPStoINT8( &(params->bPtr->trigger->end_time) );
+  curTimeANS = XLALGPSToINT8NS( &(params->aPtr->trigger->end_time) );
+  curTimeBNS = XLALGPSToINT8NS( &(params->bPtr->trigger->end_time) );
  
   /* Reset the times to avoid any precision problems */
   XLALSetTimeInPositionVector( params->aPtr->position, timeShift );
