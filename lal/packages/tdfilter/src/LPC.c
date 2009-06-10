@@ -91,10 +91,10 @@ Train a FIR filter aout of order p on the data x.
     Hvec->data[i].re = (Hvec->data[i].re*Hvec->data[i].re + Hvec->data[i].im*Hvec->data[i].im)/((REAL4)(npad*(x->length-1)));
     Hvec->data[i].im = 0.0;
   }
- 
+
   LALReverseRealFFT(status->statusPtr, &rv, Hvec, pinv);
   CHECKSTATUSPTR (status);
-  
+
   LALDestroyRealFFTPlan(status->statusPtr, &pinv);
   CHECKSTATUSPTR (status);
 
@@ -111,12 +111,12 @@ Train a FIR filter aout of order p on the data x.
 
   R[p-1] = r[0];
   for(i=0;i<p-1;i++) {
-    R[p-i-2] = R[i+p] = r[i+1]; 
+    R[p-i-2] = R[i+p] = r[i+1];
   }
 
   y = (REAL4 *)LALMalloc(p * sizeof(REAL4));
   if(!y) {ABORT(status, LPCH_EMEM, LPCH_MSGEMEM);}
-  
+
   for(i=0;i<p;i++) {
     y[i] = -r[i+1];
   }
@@ -151,7 +151,7 @@ Train a FIR filter aout of order p on the data x.
     CHECKSTATUSPTR (status);
 
     a0 = aout->data[0];
-	      
+
     for(i=0;i<aout->length;i++) {
       aout->data[0] /= a0;
     }
@@ -202,7 +202,7 @@ Reflects poles and zeroes of a inside the complex unit circle.
 
     rtr = (REAL4 *)LALCalloc(m, sizeof(REAL4));
     if(!rtr) {ABORT(status, LPCH_EMEM, LPCH_MSGEMEM);}
-    
+
     rti = (REAL4 *)LALCalloc(m, sizeof(REAL4));
     if(!rti) {ABORT(status, LPCH_EMEM, LPCH_MSGEMEM);}
 
@@ -254,7 +254,7 @@ Reflects poles and zeroes of a inside the complex unit circle.
     LALFree(ari);
     LALFree(rtr+1);
     LALFree(rti+1);
-       
+
   }
 
   /* Normal exit */
