@@ -18,7 +18,7 @@
 */
 
 /************************* <lalVerbatim file="GeneratePulsarSignalTestCV">
-Author: Mendell, G. 
+Author: Mendell, G.
 $Id$
 **************************************************** </lalVerbatim> */
 
@@ -138,7 +138,7 @@ int main(int argc, char **argv)
   status.statusDescription = NULL;
 
   mainArgc = argc; /* 02/02/05 gam; get rid of warning about unused argc */
-  
+
   /* Actual test are performed by this function */
   /* RunGeneratePulsarSignalTest(&status,argc,argv); */ /* 02/02/05 gam */
   RunGeneratePulsarSignalTest(&status);
@@ -146,16 +146,16 @@ int main(int argc, char **argv)
   if (status.statusCode) {
      fprintf(stderr,"Error: statusCode = %i statusDescription = %s \n", status.statusCode, status.statusDescription);
      return 1;
-  }  
+  }
 
   LALCheckMemoryLeaks();
-  
+
   if ( lalDebugLevel & LALINFO ) {
     LALPrintError( "Info[0]: program %s, file %s, line %d, %s\n"
        "        %s\n", *argv, __FILE__, __LINE__,
        GENERATEPULSARSIGNALTESTC, (GENERATEPULSARSIGNALTESTC_MSGENORM) );
-  }         
-  
+  }
+
   return GENERATEPULSARSIGNALTESTC_ENORM;
 }
 /*********************************************************/
@@ -188,15 +188,15 @@ void RunGeneratePulsarSignalTest(LALStatus *status)
   REAL4 renorm; /* to renormalize SFTs to account for different effective sample rates */
 
   /* containers for detector and ephemeris data */
-  LALDetector cachedDetector;  
+  LALDetector cachedDetector;
   CHAR IFO[6] = "LHO";
   EphemerisData *edat = NULL;
   CHAR sunFile[] = "sun00-04.dat";     /* 02/02/05 gam */
   CHAR earthFile[] = "earth00-04.dat"; /* 02/02/05 gam */
   INT4 leap; /* 2nd arg to LALLeapSecFormatAndAcc is INT4 while edat->leap is INT2. */
-  
+
   /* containers for sky position and spindown data */
-  REAL8 **skyPosData;      
+  REAL8 **skyPosData;
   REAL8 **freqDerivData;
   INT4 numSkyPosTotal = 8;
   INT4 numSpinDown = 1;
@@ -212,20 +212,20 @@ void RunGeneratePulsarSignalTest(LALStatus *status)
   REAL8 DeltaFDeriv3 = 0.0;
   REAL8 DeltaFDeriv4 = 0.0;
   REAL8 DeltaFDeriv5 = 0.0;
-      
+
   /* containers for number of SFTs, times to generate SFTs, reference time, and gap */
   INT4 numSFTs = 4;
   REAL8 f0SFT = 943.12;
   REAL8 bandSFT = 0.5;
   UINT4 gpsStartTimeSec = 765432109; /* GPS start time of data requested seconds; example = Apr 08 2004 04:01:36 UTC */
   UINT4 gpsStartTimeNan = 0;          /* GPS start time of data requested nanoseconds */
-  LIGOTimeGPSVector *timeStamps;  
-  LIGOTimeGPS GPSin;   /* holder for reference-time for pulsar parameters at the detector; will convert to SSB! */  
+  LIGOTimeGPSVector *timeStamps;
+  LIGOTimeGPS GPSin;   /* holder for reference-time for pulsar parameters at the detector; will convert to SSB! */
   REAL8 sftGap = 73.0; /* extra artificial gap between SFTs */
   REAL8 tSFT   = 1800.0;
   REAL8 duration = tSFT + (numSFTs - 1)*(tSFT + sftGap);
   INT4 nBinsSFT = (INT4)(bandSFT*tSFT + 0.5);
-    
+
   /* additional parameters that determine what signals to test; note f0SGNL and bandSGNL must be compatible with f0SFT and bandSFT */
   REAL8 f0SGNL = f0SFT + bandSFT/2.0;
   REAL8 dfSGNL = 1.0/tSFT;
@@ -235,7 +235,7 @@ void RunGeneratePulsarSignalTest(LALStatus *status)
   INT4  Dterms = 3;       /* 09/07/05 gam; use Dterms to fill in SFT bins with fake data as per LALDemod else fill in bin with zero */
   REAL8 h_0 = 7.0e-22;    /* Source amplitude; use arbitrary small number for default */
   REAL8 cosIota;        /* cosine of inclination angle iota of the source */
-  
+
   /* variables for comparing differences */
   REAL4 maxDiffSFTMod, diffAtMaxPower;
   REAL4 overallMaxDiffSFTMod;
@@ -245,14 +245,14 @@ void RunGeneratePulsarSignalTest(LALStatus *status)
   REAL4 tmpDiffSFTMod, sftMod, fastSFTMod;
   REAL4 smallMod = 1.e-30;
   REAL4 epsDiffMod;
-  REAL4 epsBinErrorRate;   /* 10/12/04 gam; Allowed bin error rate */  
+  REAL4 epsBinErrorRate;   /* 10/12/04 gam; Allowed bin error rate */
   INT4  binErrorCount = 0; /* 10/12/04 gam; Count number of bin errors  */
-    
-  /* randval is always set to a default value or given a random value to generate certain signal parameters or mismatch */  
+
+  /* randval is always set to a default value or given a random value to generate certain signal parameters or mismatch */
   REAL4 randval;
-  #ifdef INCLUDE_RANDVAL_MISMATCH  
+  #ifdef INCLUDE_RANDVAL_MISMATCH
    INT4 seed=0;
-   INT4 rndCount;  
+   INT4 rndCount;
    RandomParams *randPar=NULL;
    FILE *fpRandom;
   #endif
@@ -263,12 +263,12 @@ void RunGeneratePulsarSignalTest(LALStatus *status)
   /* generate timeStamps */
   timeStamps = (LIGOTimeGPSVector *)LALMalloc(sizeof(LIGOTimeGPSVector));
   timeStamps->data =(LIGOTimeGPS *)LALMalloc (numSFTs*sizeof(LIGOTimeGPS));
-  timeStamps->length = numSFTs;  
+  timeStamps->length = numSFTs;
   for (i = 0; i < numSFTs; i++) {
       timeStamps->data[i].gpsSeconds = gpsStartTimeSec + (UINT4)(i*(tSFT + sftGap));
       timeStamps->data[i].gpsNanoSeconds = 0;
   } /* for i < numSFTs */
-         
+
   /* generate skyPosData */
   skyPosData=(REAL8 **)LALMalloc(numSkyPosTotal*sizeof(REAL8 *));
   for(iSky=0;iSky<numSkyPosTotal;iSky++)
@@ -304,7 +304,7 @@ void RunGeneratePulsarSignalTest(LALStatus *status)
           skyPosData[iSky][1] = 0.0;
         } /* END if (k == 0) ELSE ... */
   } /* END for(iSky=0;iSky<numSkyPosTotal;iSky++) */
-  
+
   freqDerivData = NULL; /* 02/02/05 gam */
   if (numSpinDown > 0) {
     freqDerivData=(REAL8 **)LALMalloc(numFreqDerivTotal*sizeof(REAL8 *));
@@ -328,9 +328,9 @@ void RunGeneratePulsarSignalTest(LALStatus *status)
   } else {
     numFreqDerivIncludingNoSpinDown = 1;  /* Even if numSpinDown = 0 still need to count case of zero spindown. */
   }  /* END if (numSpinDown > 0) ELSE ... */
-  
+
   /* Initialize ephemeris data */
-  edat = (EphemerisData *)LALCalloc(1, sizeof(EphemerisData)); 
+  edat = (EphemerisData *)LALCalloc(1, sizeof(EphemerisData));
   /* edat->ephiles.sunEphemeris = "../../pulsar/test/sun00-04.dat";
   edat->ephiles.earthEphemeris = "../../pulsar/test/earth00-04.dat"; */
   /* 07/30/04 gam; added this line to Makefile.am: TESTS_ENVIRONMENT = LAL_DATA_PATH=$(top_srcdir)/packages/pulsar/test */
@@ -351,8 +351,8 @@ void RunGeneratePulsarSignalTest(LALStatus *status)
     LALDCreateVector(status->statusPtr, &(pPulsarSignalParams->pulsar.spindown),((UINT4)numSpinDown));
     CHECKSTATUSPTR (status);
   }
-  pPulsarSignalParams->orbit = NULL; 
-  pPulsarSignalParams->transfer = NULL;  
+  pPulsarSignalParams->orbit = NULL;
+  pPulsarSignalParams->transfer = NULL;
   /* Set up pulsar site */
   if (strstr(IFO, "LHO")) {
        cachedDetector = lalCachedDetectors[LALDetectorIndexLHODIFF];
@@ -367,23 +367,23 @@ void RunGeneratePulsarSignalTest(LALStatus *status)
   } else {
       /* "Invalid or null IFO" */
       ABORT( status, GENERATEPULSARSIGNALTESTC_EIFO, GENERATEPULSARSIGNALTESTC_MSGEIFO);
-  }    
-  pPulsarSignalParams->site = &cachedDetector;     
+  }
+  pPulsarSignalParams->site = &cachedDetector;
   pPulsarSignalParams->ephemerides = edat;
   pPulsarSignalParams->startTimeGPS.gpsSeconds = (INT4)gpsStartTimeSec;
   pPulsarSignalParams->startTimeGPS.gpsNanoSeconds = (INT4)gpsStartTimeNan;
   pPulsarSignalParams->duration = (UINT4)duration;
   pPulsarSignalParams->samplingRate = (REAL8)ceil(2.0*bandSFT); /* Make sampleRate an integer so that T*samplingRate = integer for integer T */
-  pPulsarSignalParams->fHeterodyne = f0SFT;  
+  pPulsarSignalParams->fHeterodyne = f0SFT;
 
   GPSin.gpsSeconds = timeStamps->data[0].gpsSeconds;
   GPSin.gpsNanoSeconds = timeStamps->data[0].gpsNanoSeconds;
-    
+
   /* Allocate memory for SFTParams and initialize */
   pSFTParams = (SFTParams *)LALCalloc(1, sizeof(SFTParams));
   pSFTParams->Tsft = tSFT;
   pSFTParams->timestamps = timeStamps;
-  pSFTParams->noiseSFTs = NULL; 
+  pSFTParams->noiseSFTs = NULL;
   pSFTParams->make_v2SFTs = 1;
 
   #ifdef INCLUDE_RANDVAL_MISMATCH
@@ -395,7 +395,7 @@ void RunGeneratePulsarSignalTest(LALStatus *status)
     LALCreateRandomParams(status->statusPtr, &randPar, seed);
     CHECKSTATUSPTR (status);
   #endif
-  
+
   /* allocate memory for structs needed by LALComputeSkyAndZeroPsiAMResponse and LALFastGeneratePulsarSFTs */
   pSkyConstAndZeroPsiAMResponse = (SkyConstAndZeroPsiAMResponse *)LALMalloc(sizeof(SkyConstAndZeroPsiAMResponse));
   pSkyConstAndZeroPsiAMResponse->skyConst = (REAL8 *)LALMalloc((2*numSpinDown*(numSFTs+1)+2*numSFTs+3)*sizeof(REAL8));
@@ -406,7 +406,7 @@ void RunGeneratePulsarSignalTest(LALStatus *status)
   /* pSFTandSignalParams->resTrig = 64; */ /* length sinVal and cosVal; resolution of trig functions = 2pi/resTrig */
   /* pSFTandSignalParams->resTrig = 128; */ /* 10/08/04 gam; length sinVal and cosVal; domain = -2pi to 2pi inclusive; resolution = 4pi/resTrig */
   pSFTandSignalParams->resTrig = 0; /* 10/12/04 gam; turn off using LUTs since this is more typical. */
-  /* 02/02/05 gam; if NOT pSFTandSignalParams->resTrig > 0 should not create trigArg etc... */  
+  /* 02/02/05 gam; if NOT pSFTandSignalParams->resTrig > 0 should not create trigArg etc... */
   if (pSFTandSignalParams->resTrig > 0) {
     pSFTandSignalParams->trigArg = (REAL8 *)LALMalloc((pSFTandSignalParams->resTrig+1)*sizeof(REAL8));
     pSFTandSignalParams->sinVal  = (REAL8 *)LALMalloc((pSFTandSignalParams->resTrig+1)*sizeof(REAL8));
@@ -437,7 +437,7 @@ void RunGeneratePulsarSignalTest(LALStatus *status)
     #endif
     #ifdef INCLUDE_RANDVAL_MISMATCH
        LALUniformDeviate(status->statusPtr, &randval, randPar); CHECKSTATUSPTR (status);
-    #endif    
+    #endif
     pPulsarSignalParams->pulsar.position.latitude = skyPosData[iSky][1] + (((REAL8)randval) - 0.5)*DeltaDec;
     cosTmpDEC = cos(skyPosData[iSky][1]);
     if (cosTmpDEC != 0.0) {
@@ -450,16 +450,16 @@ void RunGeneratePulsarSignalTest(LALStatus *status)
     randval = 0.5; /* Gives default value */
     #ifdef INCLUDE_SEQUENTIAL_MISMATCH
       randval = ( (REAL4)(iSky) )/( (REAL4)(numSkyPosTotal) );
-    #endif    
+    #endif
     #ifdef INCLUDE_RANDVAL_MISMATCH
       LALUniformDeviate(status->statusPtr, &randval, randPar); CHECKSTATUSPTR (status);
-    #endif    
+    #endif
     pPulsarSignalParams->pulsar.position.longitude = skyPosData[iSky][0] + (((REAL8)randval) - 0.5)*tmpDeltaRA;
 
     /* Find reference time in SSB for this sky positions */
     LALConvertGPS2SSB(status->statusPtr,&(pPulsarSignalParams->pulsar.refTime), GPSin, pPulsarSignalParams);
     CHECKSTATUSPTR (status);
-    
+
     /* one per sky position fill in SkyConstAndZeroPsiAMResponse for use with LALFastGeneratePulsarSFTs */
     LALComputeSkyAndZeroPsiAMResponse (status->statusPtr, pSkyConstAndZeroPsiAMResponse, pSFTandSignalParams);
     CHECKSTATUSPTR (status);
@@ -468,7 +468,7 @@ void RunGeneratePulsarSignalTest(LALStatus *status)
     /*                                                       */
     /* START SECTION: LOOP OVER SPINDOWN                     */
     /*                                                       */
-    /*********************************************************/        
+    /*********************************************************/
     for(jDeriv=0;jDeriv<numFreqDerivIncludingNoSpinDown;jDeriv++) {
      /* source spindown parameters */
      if (numSpinDown > 0) {
@@ -502,19 +502,19 @@ void RunGeneratePulsarSignalTest(LALStatus *status)
      /*                                                  */
      /* START SECTION: LOOP OVER FREQUENCIES             */
      /*                                                  */
-     /****************************************************/    
+     /****************************************************/
      for(iFreq=0;iFreq<nBinsSGNL;iFreq++) {
 
        /* set source orientation psi */
        randval = 0.5; /* Gives default value */
        #ifdef INCLUDE_SEQUENTIAL_MISMATCH
             randval = ( (REAL4)(iFreq) )/( (REAL4)(nBinsSGNL) );
-       #endif       
+       #endif
        #ifdef INCLUDE_RANDVAL_MISMATCH
           LALUniformDeviate(status->statusPtr, &randval, randPar); CHECKSTATUSPTR (status);
        #endif
        pPulsarSignalParams->pulsar.psi = (randval - 0.5) * ((REAL4)LAL_PI_2);
-    
+
        /* set angle between source spin axis and direction from source to SSB, cosIota */
        randval = 1.0; /* Gives default value */
        #ifdef INCLUDE_SEQUENTIAL_MISMATCH
@@ -544,11 +544,11 @@ void RunGeneratePulsarSignalTest(LALStatus *status)
        randval = ( (REAL4)(iFreq) )/( (REAL4)(nBinsSGNL) );
        #ifdef INCLUDE_RANDVAL_MISMATCH
           LALUniformDeviate(status->statusPtr, &randval, randPar); CHECKSTATUSPTR (status);
-       #endif      
+       #endif
        pPulsarSignalParams->pulsar.f0 = f0SGNL + iFreq*dfSGNL + (((REAL8)randval) - 0.5)*dfSGNL;
-      
+
        testNumber++; /* Update count of which test we about to do. */
-              
+
        /* FIRST: Use LALGeneratePulsarSignal and LALSignalToSFTs to generate outputSFTs */
        signal = NULL;
        LALGeneratePulsarSignal(status->statusPtr, &signal, pPulsarSignalParams);
@@ -601,7 +601,7 @@ void RunGeneratePulsarSignalTest(LALStatus *status)
             }
           }
        #endif
-              
+
        /* find maximum difference in power */
        epsDiffMod = 0.20; /* maximum allowed percent difference */ /* 10/12/04 gam */
        overallMaxDiffSFTMod = 0.0;
@@ -697,11 +697,11 @@ void RunGeneratePulsarSignalTest(LALStatus *status)
 
        LALDestroySFTVector(status->statusPtr, &outputSFTs);
        CHECKSTATUSPTR (status);
-      
+
        LALFree(signal->data->data);
        LALFree(signal->data);
        LALFree(signal);
-              
+
      } /* END for(iFreq=0;iFreq<nBinsSGNL;iFreq++) */
      /****************************************************/
      /*                                                  */
@@ -714,29 +714,29 @@ void RunGeneratePulsarSignalTest(LALStatus *status)
   /* END SECTION: LOOP OVER SPINDOWN                       */
   /*                                                       */
   /*********************************************************/
-    
+
   } /* END for(iSky=0;iSky<numSkyPosTotal;iSky++) */
   /*********************************************************/
   /*                                                       */
   /* END SECTION: LOOP OVER SKY POSITIONS                  */
   /*                                                       */
   /*********************************************************/
-       
+
   /* 10/12/04 gam; check if too many bin errors */
-  epsBinErrorRate = 0.20;  /* 10/12/04 gam; maximum allowed bin errors */  
+  epsBinErrorRate = 0.20;  /* 10/12/04 gam; maximum allowed bin errors */
   if ( (((REAL4)binErrorCount)/((REAL4)testNumber)) > epsBinErrorRate ) {
             ABORT( status, GENERATEPULSARSIGNALTESTC_EBINS, GENERATEPULSARSIGNALTESTC_MSGEBINS);
   }
-  
+
   #ifdef INCLUDE_RANDVAL_MISMATCH
     LALDestroyRandomParams(status->statusPtr, &randPar);
     CHECKSTATUSPTR (status);
-  #endif  
-  
+  #endif
+
   /* fprintf(stdout,"Total number of tests completed = %i. \n", testNumber);
   fflush(stdout); */
-  
-  LALFree(pSFTParams);      
+
+  LALFree(pSFTParams);
   if (numSpinDown > 0) {
     LALDDestroyVector(status->statusPtr, &(pPulsarSignalParams->pulsar.spindown));
     CHECKSTATUSPTR (status);
@@ -750,21 +750,21 @@ void RunGeneratePulsarSignalTest(LALStatus *status)
   LALFree(pSkyConstAndZeroPsiAMResponse->fPlusZeroPsi);
   LALFree(pSkyConstAndZeroPsiAMResponse->skyConst);
   LALFree(pSkyConstAndZeroPsiAMResponse);
-  /* 02/02/05 gam; if NOT pSFTandSignalParams->resTrig > 0 should not create trigArg etc... */  
+  /* 02/02/05 gam; if NOT pSFTandSignalParams->resTrig > 0 should not create trigArg etc... */
   if (pSFTandSignalParams->resTrig > 0) {
     LALFree(pSFTandSignalParams->trigArg);
     LALFree(pSFTandSignalParams->sinVal);
     LALFree(pSFTandSignalParams->cosVal);
   }
   LALFree(pSFTandSignalParams);
-            
+
   /* deallocate skyPosData */
   for(i=0;i<numSkyPosTotal;i++)
   {
       LALFree(skyPosData[i]);
   }
   LALFree(skyPosData);
-  
+
   if (numSpinDown > 0) {
     /* deallocate freqDerivData */
     for(i=0;i<numFreqDerivTotal;i++)
@@ -780,7 +780,7 @@ void RunGeneratePulsarSignalTest(LALStatus *status)
   LALFree ( edat->ephemE );
   LALFree ( edat->ephemS );
   LALFree ( edat);
-    
+
   CHECKSTATUSPTR (status);
   DETATCHSTATUSPTR (status);
 }

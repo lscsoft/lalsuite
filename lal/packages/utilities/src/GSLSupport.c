@@ -40,7 +40,7 @@
 
 NRCSID(GSLSUPPORTC, "$Id$");
 
-/** 
+/**
  * Convert variable argument list to a gsl_vector
  */
 gsl_vector *XLALGSLVectorFromVAList(
@@ -69,7 +69,7 @@ gsl_vector *XLALGSLVectorFromVAList(
 
 }
 
-/** 
+/**
  * Convert variable argument list to a gsl_vector
  */
 gsl_vector *XLALGSLVectorFromLALStringVector(
@@ -109,11 +109,11 @@ gsl_matrix *XLALResizeGSLMatrix(
 {
 
   gsl_matrix *n = NULL;
-  
+
   /* Allocate memory */
   ALLOC_GSL_MATRIX(n, size1, size2, XLAL_ERROR_NULL);
   gsl_matrix_set_all(n, value);
-  
+
   /* Copy contents if any */
   if (m != NULL) {
     gsl_matrix_view old = gsl_matrix_submatrix(m, 0, 0, GSL_MIN(m->size1, size1), GSL_MIN(m->size2, size2));
@@ -123,7 +123,7 @@ gsl_matrix *XLALResizeGSLMatrix(
   }
 
   return n;
-  
+
 }
 
 /**
@@ -135,13 +135,13 @@ gsl_vector *XLALResizeGSLVector(
 				double value   /**< Default value for new elements */
 				)
 {
-  
+
   gsl_vector *v = NULL;
 
   /* Allocate memory */
   ALLOC_GSL_VECTOR(v, size, XLAL_ERROR_NULL);
   gsl_vector_set_all(v, value);
-  
+
   /* Copy contents if any */
   if (u != NULL) {
     gsl_vector_view old = gsl_vector_subvector(u, 0, GSL_MIN(u->size, size));
@@ -149,7 +149,7 @@ gsl_vector *XLALResizeGSLVector(
     gsl_vector_memcpy(&new.vector, &old.vector);
     FREE_GSL_VECTOR(u);
   }
-  
+
   return v;
 
 }
@@ -163,13 +163,13 @@ gsl_vector_int *XLALResizeGSLVectorInt(
 				       int value          /**< Default value for new elements */
 				       )
 {
-  
+
   gsl_vector_int *v = NULL;
-  
+
   /* Allocate memory */
   ALLOC_GSL_VECTOR_INT(v, size, XLAL_ERROR_NULL);
   gsl_vector_int_set_all(v, value);
-  
+
   /* Copy contents if any */
   if (u != NULL) {
     gsl_vector_int_view old = gsl_vector_int_subvector(u, 0, GSL_MIN(u->size, size));
@@ -177,7 +177,7 @@ gsl_vector_int *XLALResizeGSLVectorInt(
     gsl_vector_int_memcpy(&new.vector, &old.vector);
     FREE_GSL_VECTOR_INT(u);
   }
-  
+
   return v;
-  
+
 }

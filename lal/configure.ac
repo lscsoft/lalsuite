@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_INIT([lal],[5.3],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lal],[6.0],[lal-discuss@gravity.phys.uwm.edu])
 AC_CONFIG_HEADERS([include/config.h] [include/lal/LALConfig.h])
 AC_CONFIG_SRCDIR([include/config.h.in])
 AC_CONFIG_AUX_DIR([misc])
@@ -243,6 +243,9 @@ fi
 # check for c compiler
 m4_pattern_allow([AC_PROG_CC_C99])
 m4_ifdef([AC_PROG_CC_C99], [AC_PROG_CC_C99], [LAL_AC_PROG_CC_C99])
+
+# use silent build rules if appropriate
+m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])],)
 
 dnl Checks for programs.
 AC_PROG_AWK

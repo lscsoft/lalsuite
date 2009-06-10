@@ -51,7 +51,8 @@
 
 #include <gsl/gsl_heapsort.h>
 
-
+/* macro to "use" unused function parameters */
+#define UNUSED(expr) do { (void)(expr); } while (0)
 
 NRCSID (NRWAVEINJECTC, "$Id$");
 
@@ -264,7 +265,7 @@ XLALInterpolateNRWave( REAL4TimeSeries *in,           /**< input strain time ser
 {
 
   REAL4TimeSeries *ret=NULL;
-  REAL8 deltaTin, deltaTout, r, y1, y2;
+  REAL8 deltaTin, deltaTout, r, y_1, y_2;
   REAL8 tObs; /* duration of signal */
   UINT4 k, lo, numPoints;
 
@@ -302,18 +303,18 @@ XLALInterpolateNRWave( REAL4TimeSeries *in,           /**< input strain time ser
 
     lo = (UINT4)( k*deltaTout / deltaTin);
 
-    /* y1 and y2 are the input values at x1 and x2 */
+    /* y_1 and y_2 are the input values at x1 and x2 */
     /* here we need to make sure that we don't exceed
        bounds of input vector */
     if ( lo < in->data->length - 1) {
-      y1 = in->data->data[lo];
-      y2 = in->data->data[lo+1];
+      y_1 = in->data->data[lo];
+      y_2 = in->data->data[lo+1];
 
-      /* we want to calculate y2*r + y1*(1-r) where
+      /* we want to calculate y_2*r + y_1*(1-r) where
 	 r = (x-x1)/(x2-x1) */
       r = k*deltaTout / deltaTin - lo;
 
-      ret->data->data[k] = y2 * r + y1 * (1 - r);
+      ret->data->data[k] = y_2 * r + y_1 * (1 - r);
     }
     else {
       ret->data->data[k] = 0.0;
@@ -910,6 +911,9 @@ void LALInjectStrainGWREAL8( LALStatus                 *status,
 
   INITSTATUS (status, "LALNRInject",  NRWAVEINJECTC);
   ATTATCHSTATUSPTR (status);
+
+  /* dynRange is unused in this function */
+  UNUSED(dynRange);
 
   /* get the detector information */
   memset( &det, 0, sizeof(LALDetector) );

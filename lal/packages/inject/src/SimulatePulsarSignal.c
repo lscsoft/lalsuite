@@ -12,20 +12,20 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with with program; see the file COPYING. If not, write to the 
- *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, 
+ *  along with with program; see the file COPYING. If not, write to the
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
  */
 
 /**
  * \author Reinhard Prix
  * \date 2005
- * \file 
+ * \file
  * \brief Routines to simulate pulsar-signals "exactly".
 
 The motivation for this module is to provide functions to
-simulate pulsar signals <em>with the best possible accuracy</em>, 
-i.e. using no approximations, contrary to LALGeneratePulsarSignal(). 
+simulate pulsar signals <em>with the best possible accuracy</em>,
+i.e. using no approximations, contrary to LALGeneratePulsarSignal().
 
 Obviously this is not meant as a fast code to be used in a Monte-Carlo
 simulation, but rather as a <em>reference</em> to compare other (faster)
@@ -37,23 +37,23 @@ We want to calculate \f$h(t)\f$, given by
 \label{eq:1}
 	h(t) = F_+(t)\, h_+(t) + F_\times(t) \,h_\times(t)\,,
 \f]
-where \f$F_+\f$ and \f$F_x\f$ are called the <em>beam-pattern</em> functions, 
+where \f$F_+\f$ and \f$F_x\f$ are called the <em>beam-pattern</em> functions,
 which depend of the wave polarization \f$\psi\f$,
 the source position \f$\alpha\f$, \f$\delta\f$ and the detector position and
-orientation (\f$\gamma\f$, \f$\lambda\f$, \f$L\f$ and \f$\xi\f$). The expressions for 
+orientation (\f$\gamma\f$, \f$\lambda\f$, \f$L\f$ and \f$\xi\f$). The expressions for
 the beam-pattern functions are given in \ref JKS98 "[JKS98]", which we write as
 \f{eqnarray}
 F_+(t) = \sin \zeta \cos 2\psi \, a(t)  + \sin \zeta \sin 2\psi \, b(t)\,,\\
 F_\times(t) = \sin\zeta  \cos 2\psi \,b(t) - \sin\zeta \sin 2\psi \, a(t) \,,
 \f}
-where \f$\zeta\f$ is the angle between the interferometer arms, and 
+where \f$\zeta\f$ is the angle between the interferometer arms, and
 \f{eqnarray}
 a(t) &=& a_1 \cos[ 2 (\alpha - T)) ] + a_2 \sin[ 2(\alpha - T)]
 + a_3 \cos[ \alpha - T ] + a_4 \sin [ \alpha - T ] + a_5\,,\\
 b(t) &=& b_1 \cos[ 2(\alpha - T)] + b_2 \sin[ 2(\alpha - T) ]
 + b_3 \cos[ \alpha - T ] + b_4 \sin[ \alpha - T]\,,
 \f}
-where \f$T\f$ is the local (mean) sidereal time of the detector, and the 
+where \f$T\f$ is the local (mean) sidereal time of the detector, and the
 time-independent coefficients \f$a_i\f$ and \f$b_i\f$ are given by
 \f{eqnarray}
 a_1 &=& {1\over 16} \sin 2\gamma \,(3- \cos 2\lambda)\,(3 - \cos 2\delta)\,,\\
@@ -62,7 +62,7 @@ a_3 &=& {1\over 4} \sin 2\gamma \,\sin 2\lambda \,\sin 2\delta  \,\\
 a_4 &=& -{1\over2} \cos 2\gamma \,\cos \lambda \,\sin 2 \delta\,,\\
 a_5 &=& {3\over4} \sin 2\gamma \, \cos^2 \lambda \,\cos^2 \delta\,,
 \f}
-and 
+and
 \f{eqnarray}
 b_1 &=& \cos 2\gamma \,\sin \lambda \,\sin \delta\,,\\
 b_2 &=& {1\over 4} \sin 2\gamma \,(3-\cos 2\lambda)\, \sin \delta\,,\\
@@ -89,12 +89,12 @@ detector at UTC-time \f$t\f$, which depends on the source-position
 \f{equation}
   \tau (t) = t + { \vec{r}(t)\cdot\vec{n} \over c}\,,
 \f}
-where \f$\vec{r}(t)\f$ is the vector from SSB to the detector, and \f$\vec{n}\f$ 
+where \f$\vec{r}(t)\f$ is the vector from SSB to the detector, and \f$\vec{n}\f$
 is the unit-vector pointing \emph{to} the source.
 
-This is a standalone "clean-room" implementation using no other 
-outside-functions <em>except</em> for LALGPStoLMST1() to calculate 
-the local (mean) sidereal time at the detector for given GPS-time, 
+This is a standalone "clean-room" implementation using no other
+outside-functions <em>except</em> for LALGPStoLMST1() to calculate
+the local (mean) sidereal time at the detector for given GPS-time,
 (which I double-checked with an independent Mathematica script),
 and and LALBarycenter() to calculate \f$\tau(t)\f$.
 
@@ -163,13 +163,13 @@ static LALUnit emptyUnit;
  *   as we blatently neglect all relativistic timing effects (i.e. using dT=v.n/c)
  *
  * NOTE3: no heterodyning is performed here, the time-series is generated and sampled
- * at the given rate, that's all! ==> the caller needs to make sure about the 
+ * at the given rate, that's all! ==> the caller needs to make sure about the
  * right sampling rate to use (->aliasing) and do the proper post-treatment...
  *
  */
 void
-LALSimulateExactPulsarSignal (LALStatus *status, 
-			      REAL4TimeSeries **timeSeries, 
+LALSimulateExactPulsarSignal (LALStatus *status,
+			      REAL4TimeSeries **timeSeries,
 			      const PulsarSignalParams *params)
 {
   LALFrDetector *site = &(params->site->frDetector);
@@ -205,7 +205,7 @@ LALSimulateExactPulsarSignal (LALStatus *status,
   numSteps = timestamps->length;
 
   TRY(LALGetDetectorStates(status->statusPtr, &detStates,timestamps,params->site,params->ephemerides,0), status );
-  
+
   TRY ( LALDestroyTimestampVector (status->statusPtr, &timestamps), status );
   timestamps = NULL;
 
@@ -237,7 +237,7 @@ LALSimulateExactPulsarSignal (LALStatus *status,
   /* get source skyposition */
   Alpha = params->pulsar.position.longitude;
   Delta = params->pulsar.position.latitude;
-  
+
   vn[0] = cos(Delta) * cos(Alpha);
   vn[1] = cos(Delta) * sin(Alpha);
   vn[2] = sin(Delta);
@@ -272,10 +272,10 @@ LALSimulateExactPulsarSignal (LALStatus *status,
   if ( params->pulsar.refTime.gpsSeconds != 0 )
     {
       REAL8 refTime0 = GPS2REAL8(params->pulsar.refTime);
-      REAL8 deltaRef = startTimeSSB - refTime0; 
+      REAL8 deltaRef = startTimeSSB - refTime0;
       LIGOTimeGPS newEpoch;
       PulsarSpins fkdotOld, fkdotNew;
-      
+
       XLALGPSSetREAL8( &newEpoch, startTimeSSB );
 
       INIT_MEM ( fkdotOld );
@@ -287,10 +287,10 @@ LALSimulateExactPulsarSignal (LALStatus *status,
       TRY ( LALExtrapolatePulsarSpins ( status->statusPtr, fkdotNew, newEpoch, fkdotOld, params->pulsar.refTime ), status );
 
       /* Finally, need to propagate phase */
-      phi0 += LAL_TWOPI * (               f0    * deltaRef 
-			    + (1.0/2.0) * f1dot * deltaRef * deltaRef 
+      phi0 += LAL_TWOPI * (               f0    * deltaRef
+			    + (1.0/2.0) * f1dot * deltaRef * deltaRef
 			    + (1.0/6.0) * f2dot * deltaRef * deltaRef * deltaRef
-			    + (1.0/24.0)* f3dot * deltaRef * deltaRef * deltaRef * deltaRef 
+			    + (1.0/24.0)* f3dot * deltaRef * deltaRef * deltaRef * deltaRef
 			    );
 
       f0    = fkdotNew[0];
@@ -309,7 +309,7 @@ LALSimulateExactPulsarSignal (LALStatus *status,
     REAL8 aPlus  = sinZeta * params->pulsar.aPlus;
     REAL8 aCross = sinZeta * params->pulsar.aCross;
     REAL8 twopsi = 2.0 * params->pulsar.psi;
-  
+
     A1 =  aPlus * cos(phi0) * cos(twopsi) - aCross * sin(phi0) * sin(twopsi);
     A2 =  aPlus * cos(phi0) * sin(twopsi) + aCross * sin(phi0) * cos(twopsi);
     A3 = -aPlus * sin(phi0) * cos(twopsi) - aCross * cos(phi0) * sin(twopsi);
@@ -330,7 +330,7 @@ LALSimulateExactPulsarSignal (LALStatus *status,
       dT = SCALAR(vn, detStates->data[i].rDetector );
       taui = deltati + dT;
 
-      phi_i = LAL_TWOPI * ( f0 * taui 
+      phi_i = LAL_TWOPI * ( f0 * taui
 			    + (1.0/2.0) * f1dot * taui*taui
 			    + (1.0/6.0) * f2dot * taui*taui*taui
 			    + (1.0/24.0)* f3dot * taui*taui*taui*taui
@@ -341,10 +341,10 @@ LALSimulateExactPulsarSignal (LALStatus *status,
 
       ai = amcoe->a->data[i];
       bi = amcoe->b->data[i];
-      
-      hi = A1 * ai * cosphi_i 
-	+  A2 * bi * cosphi_i 
-	+  A3 * ai * sinphi_i 
+
+      hi = A1 * ai * cosphi_i
+	+  A2 * bi * cosphi_i
+	+  A3 * ai * sinphi_i
 	+  A4 * bi * sinphi_i;
 
       (*timeSeries)->data->data[i] = (REAL4)hi;

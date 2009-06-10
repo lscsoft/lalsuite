@@ -36,13 +36,13 @@ refTime = 820000000
 Out= './SFTs'
 
 # Ephemeris Directory 
-Ephem = '/Users/ppatel/lalsuite/install/lal/share/lal'
+Ephem = '/Users/ppatel/home/install/lal/share/lal'
 
 # Ephemeris Year
 EphemYear = '05-09'
 
 # Noise Sh
-Sh = 2*0
+Sh = 2
 
 # Duration of Analysis
 TSpan = 25000
@@ -70,7 +70,7 @@ Delta_max = 1.57
 Fmin = 4
 
 # Band of Analysis
-Band = 2.0
+Band = 0.5
 
 # Injection Frequency
 Finj = 4.9

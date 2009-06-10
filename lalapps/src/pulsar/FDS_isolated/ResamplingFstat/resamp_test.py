@@ -354,8 +354,8 @@ def CreateTimeStampFile(Vars):
 
 def GenFakeDataString(addtonoise,Vars):
     if(Vars['Band'] > 1e-2):
-        CreationBand = Vars['Band']*2
-        CreationFmin = Vars['Fmin']-Vars['Band']/2
+        CreationBand = Vars['Band']*4
+        CreationFmin = Vars['Fmin']-Vars['Band']*2
     else:
         CreationBand = 1
         CreationFmin = Vars['Fmin'] - 0.5

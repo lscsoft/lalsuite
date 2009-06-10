@@ -263,7 +263,7 @@ LALGenerateHyperbolicSpinOrbitCW( LALStatus             *stat,
 
   /* Set up some other constants. */
   twopif0 = f0*LAL_TWOPI;
-  phi0 = params->phi0; 
+  phi0 = params->phi0;
   argument = params->omega;
   a = vp*eccMinusOne*cos( argument ) + ecc;
   b = -vp*sqrt( eccMinusOne/eccPlusOne )*sin( argument );

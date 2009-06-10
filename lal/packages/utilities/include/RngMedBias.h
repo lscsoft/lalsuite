@@ -21,16 +21,16 @@
  *
  * File Name: RngMedBias.h
  *
- * Authors:  Krishnan, B. 
+ * Authors:  Krishnan, B.
  *
  * Revision: $Id$
  *
  * History:   Created by Krishnan Feb 24, 2004
- *           
+ *
  *
  *-----------------------------------------------------------------------
  */
- 
+
 /* *********************************** <lalVerbatim file="RngMedBiasHV">
 Author: Krishnan, B., Itoh, Y.
 $Id$
@@ -74,9 +74,9 @@ $Id$
 #define _RNGMEDBIAS_H
 
 /*
- * 5. Includes. This header may include others; if so, they go immediately 
- *    after include-loop protection. Includes should appear in the following 
- *    order: 
+ * 5. Includes. This header may include others; if so, they go immediately
+ *    after include-loop protection. Includes should appear in the following
+ *    order:
  *    a. Standard library includes
  *    b. LDAS includes
  *    c. LAL includes
@@ -98,37 +98,37 @@ extern "C" {
 #endif
 
  /*
- * 6. Assignment of Id string using NRCSID()  
+ * 6. Assignment of Id string using NRCSID()
  */
-  
+
 NRCSID (RNGMEDBIASH, "$Id$");
-  
+
 /*
- * 7. Error codes and messages. This must be auto-extracted for 
+ * 7. Error codes and messages. This must be auto-extracted for
  *    inclusion in the documentation.
  */
-  
+
 /* <lalErrTable file="RngMedBiasHErrorTable"> */
-  
+
 #define RNGMEDBIASH_ENULL 1
 #define RNGMEDBIASH_EVAL 5
 
 #define RNGMEDBIASH_MSGENULL "Null pointer"
 #define RNGMEDBIASH_MSGEVAL  "Invalid value"
-  
+
 /* </lalErrTable>  */
 
 
 /* ******************************************************
- * 8. Macros. But, note that macros are deprecated. 
- *    They could be moved to the modules where are needed 
+ * 8. Macros. But, note that macros are deprecated.
+ *    They could be moved to the modules where are needed
  */
-  
+
 
 /* *******************************************************
- * 9. Constant Declarations. (discouraged) 
+ * 9. Constant Declarations. (discouraged)
  */
- 
+
 
 
 /* **************************************************************
@@ -136,9 +136,9 @@ NRCSID (RNGMEDBIASH, "$Id$");
  */
 
 /*
- * 11. Extern Global variables. (discouraged) 
+ * 11. Extern Global variables. (discouraged)
  */
-  
+
 
 /*
  * 12. Functions Declarations (i.e., prototypes).
@@ -155,7 +155,7 @@ void LALRngMedBias (LALStatus   *status,
 #endif
 
 #endif     /* Close double-include protection _RNGMEDBIAS_H */
- 
+
 
 
 

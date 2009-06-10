@@ -41,7 +41,7 @@ document any stuff not specific to the module]
 
 \subsection*{Structures}
 
-[Document here any structures defined in the header.  
+[Document here any structures defined in the header.
 Also include any of them in the index; e.g.:]
 % \index{\texttt{LALCorrelationOutput}}
 % \index{\texttt{LALCorrelationInput}}
@@ -72,7 +72,7 @@ NRCSID (LALCORRELATIONH, "$Id$");
 #define LALCORRELATIONH_ESAMPLING     3
 
 #define LALCORRELATIONH_MSGENULLP     "Null pointer"
-#define LALCORRELATIONH_MSGESTART    "Time series do not start simultaneously" 
+#define LALCORRELATIONH_MSGESTART    "Time series do not start simultaneously"
 #define LALCORRELATIONH_MSGESAMPLING "Time series are not sampled with the same rate"
 
 /* *********************************** </lalErrTable> */
@@ -81,7 +81,7 @@ NRCSID (LALCORRELATIONH, "$Id$");
 
 /****** DEFINE NEW STRUCTURES AND TYPES ************/
 
-typedef struct 
+typedef struct
 tagCorrelationParams
 {
   REAL4 maxTimeShiftNan;

@@ -1,3 +1,9 @@
+lalapps (6.0-1lscsoft1) unstable; urgency=low
+
+  * LALapps 6.0 (based on branch 9d93e994822c8dc61f2a62233e017d71866564f9)
+
+ -- Steffen Grunewald <steffen.grunewald@aei.mpg.de>  Tue, 09 Jun 2009 11:30:00 +0200
+
 lalapps (5.3-1lscsoft1) unstable; urgency=low
 
   * 5.3 release for Metaio 8.2

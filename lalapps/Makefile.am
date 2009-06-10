@@ -1,7 +1,8 @@
 ## Process this file with automake to produce Makefile.in
 ACLOCAL_AMFLAGS = -I misc
 SUBDIRS = src doc man misc debian
-EXTRA_DIST = lalapps.spec.in lalapps.spec
+EXTRA_DIST = README README.bugs README.contrib \
+	lalapps.spec.in lalapps.spec
 
 # cvs-clean: more than maintainer-clean, this cleans
 # everything not in the cvs archive.

@@ -19,7 +19,7 @@
 
 /*********************** <lalVerbatim file="SimulateSBHV">
 Author: Sukanta Bose
-$Id$ 
+$Id$
 *********************************************************** </lalVerbatim> */
 
 /********************************************************** <lalLaTeX>
@@ -27,16 +27,16 @@ $Id$
 \label{inject:s:SimulateSB.h}
 
 Provides prototype and error code information for the modules needed
-to simulate a stochastic background signal (whitened, if desired) in a pair of 
-detectors, given the appropriate representations of the 
-detector transfer function in each detector. 
+to simulate a stochastic background signal (whitened, if desired) in a pair of
+detectors, given the appropriate representations of the
+detector transfer function in each detector.
 
 \subsection*{Synopsis}
 \begin{verbatim}
 #include <lal/SimulateSB.h>
 \end{verbatim}
 
-\noindent 
+\noindent
 
 \subsection*{Error conditions}
 \input{SimulateSBHE}
@@ -59,7 +59,7 @@ extern "C" {
 #endif
 
   NRCSID( SIMULATESBH, "$Id$" );
-  
+
 /***************** <lalErrTable file="SimulateSBHE"> */
 
 #define SIMULATESBH_ENULLP          1
@@ -81,10 +81,10 @@ extern "C" {
 #define SIMULATESBH_ENOTYETHETERO 255
 
 #define SIMULATESBH_MSGENULLP         "Null pointer"
-#define SIMULATESBH_MSGENONPOSLEN     "Negative or zero length for data member of time series" 
-#define SIMULATESBH_MSGENONPOSDELTAF  "Negative or zero frequency spacing" 
-#define SIMULATESBH_MSGENONPOSDELTAT  "Negative or zero time spacing" 
-#define SIMULATESBH_MSGENEGFMIN       "Negative start frequency" 
+#define SIMULATESBH_MSGENONPOSLEN     "Negative or zero length for data member of time series"
+#define SIMULATESBH_MSGENONPOSDELTAF  "Negative or zero frequency spacing"
+#define SIMULATESBH_MSGENONPOSDELTAT  "Negative or zero time spacing"
+#define SIMULATESBH_MSGENEGFMIN       "Negative start frequency"
 #define SIMULATESBH_MSGEMMTIME        "Mismatch in epochs"
 #define SIMULATESBH_MSGEMMHETERO      "Mismatch in heterodyning frequencies"
 #define SIMULATESBH_MSGEMMFMIN        "Mismatch in start frequencies"
@@ -109,24 +109,24 @@ extern "C" {
 
 /********************************************************** <lalLaTeX>
 
-\subsubsection*{Structures associated with 
+\subsubsection*{Structures associated with
   \texttt{SimulateSB.c}
   (Sec.~\ref{inject:ss:SimulateSB.c})}
 
 \subsubsection*{\texttt{struct SSSimStochBGOutput}}
 \idx[Type]{SSSimStochBGOutput}
 
-\noindent Contains the output data produced by 
-\texttt{LALSSSimStochBGTimeSeries()}. It comprises of a pair of 
-(real) time-series simulated stochastic background signal in the outputs of 
+\noindent Contains the output data produced by
+\texttt{LALSSSimStochBGTimeSeries()}. It comprises of a pair of
+(real) time-series simulated stochastic background signal in the outputs of
 a given pair of detectors. The fields are:
 
 \begin{description}
 \item[\texttt{REAL4TimeSeries *SSimStochBG1}]
-Simulated stochastic background signal in the output of 
+Simulated stochastic background signal in the output of
 the first detector.
 \item[\texttt{REAL4TimeSeries *SSimStochBG2}]
-Simulated stochastic background signal in the output of 
+Simulated stochastic background signal in the output of
 the second detector.
 \end{description}
 
@@ -136,20 +136,20 @@ the second detector.
     REAL4TimeSeries    *SSimStochBG1;
     REAL4TimeSeries    *SSimStochBG2;
   } SSSimStochBGOutput;
-  
-/*********************************************************** <lalLaTeX> 
-							       
+
+/*********************************************************** <lalLaTeX>
+
 \subsubsection*{\texttt{struct SSSimStochBGInput}}
 \idx[Type]{SSSimStochBGInput}
-							       
-\noindent Contains the input data needed by 
+
+\noindent Contains the input data needed by
 \texttt{LALSSSimStochBGTimeSeries()}
-to calculate the whitened stochastic background signal in the output of 
+to calculate the whitened stochastic background signal in the output of
 a detector.
 The fields are:
 
 \begin{description}
-\item[\texttt{REAL4FrequencySeries *omegaGW}] The spectrum 
+\item[\texttt{REAL4FrequencySeries *omegaGW}] The spectrum
 $\Omega_{\scriptstyle{\rm GW}}(f)$ of the stochastic gravitational-wave
 background.
 \item[\texttt{COMPLEX8FrequencySeries *whiteningFilter1}]
@@ -169,16 +169,16 @@ The frequency-domain response function $\tilde{R}_2(f)$ for the second detector.
   typedef struct tagSSSimStochBGStrainInput {
     REAL4FrequencySeries     *omegaGW;
   } SSSimStochBGStrainInput;
-  
-  
-/*********************************************************** <lalLaTeX> 
+
+
+/*********************************************************** <lalLaTeX>
 
 
 \subsubsection*{\texttt{struct SSSimStochBGParams}}
 \idx[Type]{SSSimStochBGParams}
 
-\noindent Contains the parameters used by \texttt{LALSSSimStochBGTimeSeries()} 
-to compute the whitened stochastic background signal in the output of an 
+\noindent Contains the parameters used by \texttt{LALSSSimStochBGTimeSeries()}
+to compute the whitened stochastic background signal in the output of an
 interferometric detector. The fields are:
 
 \begin{description}
@@ -192,19 +192,19 @@ The temporal spacing of the output time series.
 The random number seed for the stochastic simulation.
 
 \item[\texttt{LALDetector *detector1}]
-The site location and orientation information of first detector involved in 
+The site location and orientation information of first detector involved in
 the stochastic background search.
 
 \item[\texttt{LALDetector *detector2}]
-The site location and orientation information of second detector involved in 
+The site location and orientation information of second detector involved in
 the stochastic background search.
 
 \item[\texttt{LALUnit SSimStochBGTimeSeries1Unit}]
-The unit field of the stochastic background, expressed as a Real4 
+The unit field of the stochastic background, expressed as a Real4
 time series, in detector 1.
 
 \item[\texttt{LALUnit SSimStochBGTimeSeries2Unit}]
-The unit field of the stochastic background, expressed as a Real4 
+The unit field of the stochastic background, expressed as a Real4
 time series, in detector 2.
 
 \end{description}
@@ -214,9 +214,9 @@ time series, in detector 2.
     UINT4        length;   /* time length of output vector data samples */
     REAL8        deltaT;   /* time spacing */
     INT4         seed;     /* for random numbers x, y */
-    LALDetector  detectorOne; 
+    LALDetector  detectorOne;
     LALDetector  detectorTwo;
-    LALUnit      SSimStochBGTimeSeries1Unit;    
+    LALUnit      SSimStochBGTimeSeries1Unit;
     LALUnit      SSimStochBGTimeSeries2Unit;
   } SSSimStochBGParams;
 
@@ -224,35 +224,35 @@ time series, in detector 2.
     UINT4        length1,length2;   /* time length of output vector data samples */
     REAL8        deltaT1, deltaT2;   /* time spacing */
     INT4         seed;     /* for random numbers x, y */
-    LALDetector  detectorOne; 
+    LALDetector  detectorOne;
     LALDetector  detectorTwo;
-    LALUnit      SSimStochBGTimeSeries1Unit;    
+    LALUnit      SSimStochBGTimeSeries1Unit;
     LALUnit      SSimStochBGTimeSeries2Unit;
   } SSSimStochBGStrainParams;
 
 
   void
   LALSSSimStochBGTimeSeries( LALStatus                  *status,
-			     SSSimStochBGOutput           *output, 
+			     SSSimStochBGOutput           *output,
 			     SSSimStochBGInput            *input,
 			     SSSimStochBGParams           *params );
 
   void
   LALSSSimStochBGStrainTimeSeries( LALStatus                  *status,
-			     SSSimStochBGOutput           *output, 
+			     SSSimStochBGOutput           *output,
 			     SSSimStochBGStrainInput            *input,
 			     SSSimStochBGStrainParams           *params );
-  
+
 #ifdef  __cplusplus
 }
 #endif
 
 #endif /* _SIMULATESB_H */
-  
+
 /********************************************************** <lalLaTeX>
-							      
+
 \vfill{\footnotesize\input{SimulateSBHV}}
-							      
+
 \newpage\input{SimulateSBC}
 %\newpage\input{SimulateSBTestC}
 *********************************************************** </lalLaTeX> */

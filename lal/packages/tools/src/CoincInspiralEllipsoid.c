@@ -216,12 +216,12 @@ LALCreateTwoIFOCoincListEllipsoid(
   {
 
     /* calculate the time of the trigger */
-    currentTriggerNS[0] = XLALGPStoINT8(
+    currentTriggerNS[0] = XLALGPSToINT8NS(
                  &(currentError[0]->trigger->end_time) );
 
     /* set next trigger for comparison */
     currentError[1] = currentError[0]->next;
-    currentTriggerNS[1] = XLALGPStoINT8(
+    currentTriggerNS[1] = XLALGPSToINT8NS(
                  &(currentError[1]->trigger->end_time) );
 
     while ( (currentTriggerNS[1] - currentTriggerNS[0]) < maxTimeDiff )
@@ -404,8 +404,8 @@ INT2 XLALCompareInspiralsEllipsoid(
 
     travelTime = params->lightTravelTime[ifoaNum][ifobNum] * 1.0e-9;
 
-    curTimeANS = XLALGPStoINT8( &(aPtr->trigger->end_time) );
-    curTimeBNS = XLALGPStoINT8( &(bPtr->trigger->end_time) );
+    curTimeANS = XLALGPSToINT8NS( &(aPtr->trigger->end_time) );
+    curTimeBNS = XLALGPSToINT8NS( &(bPtr->trigger->end_time) );
 
     /* if analyzing a grb the position and time-delay is KNOWN */
     if (params->exttrig)
@@ -486,7 +486,7 @@ REAL8 XLALCalculateEThincaParameter(
   }
 
   /* Set up the trigger lists */
-  if ( XLALGPStoINT8( &(table1->end_time) ) < XLALGPStoINT8( &(table2->end_time )) )
+  if ( XLALGPSToINT8NS( &(table1->end_time) ) < XLALGPSToINT8NS( &(table2->end_time )) )
   {
      errorList[0].trigger = table1;
      errorList[1].trigger = table2;
@@ -651,7 +651,7 @@ REAL8 XLALEThincaParameterForInjection(
   /* Get the GPS time from the injection*/
   injEndTime = XLALReturnSimInspiralEndTime( injection, trigger->ifo );
 
-  dtC = ( injEndTime - XLALGPStoINT8( &(trigger->end_time) ) ) * 1.0e-9;
+  dtC = ( injEndTime - XLALGPSToINT8NS( &(trigger->end_time) ) ) * 1.0e-9;
   dt0 = injTmplt.t0 - trigger->tau0;
   dt3 = injTmplt.t3 - trigger->tau3;
 
