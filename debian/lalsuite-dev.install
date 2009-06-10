@@ -2,7 +2,6 @@ opt/lscsoft/lalsuite/bin/lal-config
 opt/lscsoft/lalsuite/include/lal*
 opt/lscsoft/lalsuite/lib/*a
 opt/lscsoft/lalsuite/lib/pkgconfig
-#opt/lscsoft/lalsuite/sbin/uninstall-lal.sh
 opt/lscsoft/lalsuite/share/man/man1/lal-config.1*
 opt/lscsoft/lalsuite/share/man/man3/lal.3*
 opt/lscsoft/lalsuite/share/lal
