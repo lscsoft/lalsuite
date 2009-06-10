@@ -76,7 +76,7 @@ int main(int argc, char *argv[])
     printf("%s\n", utc->data);
 
     CHARDestroyVector(status, &utc);
-    
+
     RETURN (status);
 }
 \end{verbatim}
@@ -86,7 +86,7 @@ int main(int argc, char *argv[])
 See the official ISO document at
 \url{http://www.iso.ch/markete/8601.pdf}, and
 an overview of the format at
-\url{http://www.cl.cam.ac.uk/~mgk25/iso-time.html}. 
+\url{http://www.cl.cam.ac.uk/~mgk25/iso-time.html}.
 
 </lalLaTeX> */
 
@@ -199,7 +199,7 @@ LALDateString (LALStatus     *status,
     sprintf(tmpwday, "%c", '\0');
     break;
   }
-  
+
   sprintf(timestamp->data, "%d-%s-%s %s:%s:%s UTC %s",
           date->unixDate.tm_year + 1900,
           tmpmon, tmpmday, tmphour, tmpmin, tmpsec, tmpwday);
@@ -207,4 +207,4 @@ LALDateString (LALStatus     *status,
   RETURN (status);
 } /* END LALDateString() */
 
-    
+

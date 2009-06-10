@@ -50,8 +50,8 @@ Routines to perform arithmetic and comparisons on \texttt{LIGOTimeGPS} and
 
 \subsubsection*{Description}
 
-This module contains a few utility routines to perform comparisons and 
-arithmetic on \texttt{LIGOTimeGPS} GPS times. These routines do not convert 
+This module contains a few utility routines to perform comparisons and
+arithmetic on \texttt{LIGOTimeGPS} GPS times. These routines do not convert
 the GPS times they operate on into a floating point representation.
 
 \begin{itemize}
@@ -153,7 +153,7 @@ LALDecrementGPS (LALStatus             *status,
   LIGOTimeGPS         tmp_gps;    /* tmp so that we can use a call like:
                                      LALDecrementGPS(&stat, &gps, &gps, &interval)*/
   LALGPSCompareResult comparison_result;
-  
+
   INITSTATUS( status, "LALDecrementGPS", INCREMENTGPSC );
   ATTATCHSTATUSPTR(status);
 
@@ -369,7 +369,7 @@ LALDeltaFloatGPS (LALStatus    *status,
   ASSERT(GPS2, status, DATEH_ENULLINPUT, DATEH_MSGENULLINPUT);
 
   XLALPrintDeprecationWarning("LALDeltaFloatGPS", "XLALGPSDiff");
-  
+
   *deltaT = XLALGPSDiff(GPS1, GPS2);
 
   RETURN( status );

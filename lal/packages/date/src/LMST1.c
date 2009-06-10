@@ -48,8 +48,8 @@ by the longitude of the observing post.
 
 \begin{itemize}
 \item \texttt{LALGMST1()} computes GMST1 given a Gregorian date UTC in an
-\texttt{LALDate} structure. 
-\item  \texttt{LALGPStoGMST1()} computes GMST1 given a GPS time. 
+\texttt{LALDate} structure.
+\item  \texttt{LALGPStoGMST1()} computes GMST1 given a GPS time.
 \item  \texttt{LALLMST1()} computes LMST1 given an observing location (in a
   \texttt{LALDetector} structure) and a Gregorian date UTC.
 \item \texttt{LALGPStoLMST1()} computes LMST1 given an observing location
@@ -74,7 +74,7 @@ GMST has been related to UT1 as follows:
 \begin{displaymath}
   \mathrm{GMST\>of}\>0^{h}\mathrm{UT1} = 24110^{s}.54841 +
   8640184^{s}.812866\,T_{u} + 0^{s}.093104\,T^{2}_{u} -
-  6.2\times10^{-6}\,T^{3}_{u} 
+  6.2\times10^{-6}\,T^{3}_{u}
 \end{displaymath}
 %
 where $T_{u} = d_{u} / 36525$, $d_{u}$ is the number of days of
@@ -126,7 +126,7 @@ main(int argc, char *argv[])
     printf("TEST of GMST1 routine\n");
     printf("=====================\n");
 
-    
+
     // Check against the Astronomical Almanac:
     // For 1994-11-16 0h UT - Julian Date 2449672.5, GMST 03h 39m 21.2738s
     date.unixDate.tm_sec  = 0;
@@ -136,7 +136,7 @@ main(int argc, char *argv[])
     date.unixDate.tm_mon  = LALMONTH_NOV;
     date.unixDate.tm_year = 94;
 
-    longitude = 0.; 
+    longitude = 0.;
     LALGMST1(&status, &gmsthours, &date, MST_HRS);
     LALLMST1(&status, &lmsthours, &date, longitude, MST_HRS);
 
@@ -145,7 +145,7 @@ main(int argc, char *argv[])
     strftime(timestamp, 64, "%Hh %Mm %S", &(mstdate.unixDate));
     sprintf(tmpstr, "%fs", mstdate.residualNanoSeconds * 1.e-9);
     strcat(timestamp, tmpstr+1);
-    
+
     printf("gmsthours = %f = %s\n", gmsthours, timestamp);
     printf("    expect: 3.655728 = 03h 39m 20.6222s \n");
 
@@ -169,7 +169,7 @@ From~\cite{esaa:1992}:
   sidereal time by means of a numerical formula.  It does not refer to
   the motion of the Earth and is not precisely related to the hour
   angle of the Sun.
-  
+
   Universal Time at any instant can be derived from observations of
   the diurnal motion of the stars or radio sources.  The uncorrected
   observed rotational timescale, which is dependent on the place of
@@ -177,7 +177,7 @@ From~\cite{esaa:1992}:
   shift in longitude of the observing station caused by polar motion
   produces the UT1 timescale, which is independent of observing
   location, but is influenced by the slightly variable rotation of the
-  Earth. 
+  Earth.
 \end{quote}
 
 A useful resource is \url{http://aa.usno.navy.mil/}.
@@ -191,7 +191,7 @@ A useful resource is \url{http://aa.usno.navy.mil/}.
  *
  * LALGMST1(): Returns LALGMST1 for given date-time
  * LALLMST1(): Returns LALLMST1 given date-time, and longitude
- * 
+ *
  * DESCRIPTION
  *
  * LALGMST1():
@@ -215,7 +215,7 @@ A useful resource is \url{http://aa.usno.navy.mil/}.
  *
  *      Outputs: REAL8  *lmst      -- LALGMST1 in units requested
  *
- * 
+ *
  *----------------------------------------------------------------------- */
 
 #include <lal/LALRCSID.h>
@@ -261,7 +261,7 @@ LALGMST1 (LALStatus     *status,
           DATEH_ENULLOUTPUT, DATEH_MSGENULLOUTPUT);
 
   /*
-   * Compute GMST for UTC on given date in seconds 
+   * Compute GMST for UTC on given date in seconds
    */
 
   UnitsAndAcc.accuracy = LALLEAPSEC_STRICT;
@@ -294,7 +294,7 @@ LALGPStoGMST1( LALStatus         *status,
 { /* </lalVerbatim> */
   INITSTATUS (status, "LALGPStoGMST1", LMST1C);
   ATTATCHSTATUSPTR(status);
-    
+
   /*
    * Check pointer to input variables
    */
@@ -312,7 +312,7 @@ LALGPStoGMST1( LALStatus         *status,
   XLALPrintDeprecationWarning("LALGPStoGMST1", "XLALGreenwichMeanSiderealTime");
 
   /*
-   * Compute GMST for GPS on given date in seconds 
+   * Compute GMST for GPS on given date in seconds
    */
   *p_gmst = fmod(XLALGreenwichMeanSiderealTime(p_gps) / (2.0 * LAL_PI) * SECS_PER_DAY, SECS_PER_DAY);
   if(*p_gmst < 0.0)
@@ -435,7 +435,7 @@ LALGPStoLMST1( LALStatus             *status,
   INITSTATUS (status, "LALGPStoLMST1", LMST1C);
   ATTATCHSTATUSPTR(status);
 
-    
+
   /*
    * Check pointer to input variables
    */
@@ -444,7 +444,7 @@ LALGPStoLMST1( LALStatus             *status,
 
   ASSERT (pUnitsAndAcc != (LALMSTUnitsAndAcc *)NULL, status,
           DATEH_ENULLINPUT, DATEH_MSGENULLINPUT);
-  
+
   /*
    * Check pointer to output variable
    */

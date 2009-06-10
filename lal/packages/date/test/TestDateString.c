@@ -59,12 +59,12 @@ int main(int argc, char **argv)
       }
     if (lalDebugLevel > 2)
       REPORTSTATUS(&stat);
-        
+
     tmpsecs = (24*365 + 8*366 + 2*31 + 28)*86400 - 1;
     gmtime_r(&tmpsecs, &(date.unixDate));
 
     LALDateString(&stat, timestamp, &date);
-    
+
     if (stat.statusCode && lalDebugLevel > 0)
       {
         fprintf(stderr,

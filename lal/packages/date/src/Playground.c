@@ -17,14 +17,14 @@
 *  MA  02111-1307  USA
 */
 
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: Playground.c
  *
  * Author: Brown, D. A.
- * 
+ *
  * Revision: $Id$
- * 
+ *
  *-----------------------------------------------------------------------
  */
 
@@ -49,7 +49,7 @@ Determines if a given time (or segment) is playground data.
 
 \subsubsection*{Description}
 
-This module contains two routines to determine if a given time is in the data 
+This module contains two routines to determine if a given time is in the data
 designated as playground or not. The first routines takes input as
 \texttt{INT8} nanoseconds and the second as a \texttt{LIGOTimeGPS} structure.
 The third routine decides if some or all of a given time interval is
@@ -58,7 +58,7 @@ playground or not.
 \subsubsection*{Algorithm}
 
 The playground algorithm is given in LIGO techincal document T030020-01.
-Briefly, $t$ is playground if 
+Briefly, $t$ is playground if
 \begin{equation}
 t - 729273613 \% 6370 < 600.
 \end{equation}
@@ -115,7 +115,7 @@ LALINT8NanoSecIsPlayground (
 
   XLALPrintDeprecationWarning("LALINT8NanoSecIsPlayground", "XLALINT8NanoSecIsPlayground");
   *playground = XLALINT8NanoSecIsPlayground ( ns );
-  
+
   RETURN( status );
 }
 

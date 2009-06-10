@@ -65,7 +65,7 @@ main(int argc, char *argv[])
     CHAR    timestamp[64], tmpstr[64];
     Status  status = {0};
 
-    
+
     INITSTATUS(&status, "TestLMST", TESTLMSTC);
 
     printf("TEST of GMST1 routine\n");
@@ -83,7 +83,7 @@ main(int argc, char *argv[])
     strftime(timestamp, 64, "%Hh %Mm %S", &(mstdate.unixDate));
     sprintf(tmpstr, "%fs", mstdate.residualNanoSeconds * 1.e-9);
     strcat(timestamp, tmpstr+1);
-    
+
     printf("gmst = %s\n", timestamp);
     printf("    expect: 03h 39m 20.6222s \n");
 
@@ -97,15 +97,15 @@ main(int argc, char *argv[])
 </lalLaTeX> */
 
 
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * SYNOPSIS
  *
  * LALSecsToLALDate(): Converts time in seconds to time in an LALDate
- *                  structure. 
- * 
+ *                  structure.
+ *
  * DESCRIPTION
- * 
+ *
  * LALSecsToLALDate():
  *       Inputs:  REAL8  seconds  -- time in seconds since 0h (midnight)
  *
@@ -114,14 +114,14 @@ main(int argc, char *argv[])
  *                                   set since there is no information on
  *                                   the date, timezone, etc.
  *
- * DIAGNOSTICS 
- * (Abnormal termination conditions, error and warning codes summarized 
+ * DIAGNOSTICS
+ * (Abnormal termination conditions, error and warning codes summarized
  * here. More complete descriptions are found in documentation.)
  *
  * CALLS
- * 
+ *
  * NOTES
- * 
+ *
  *----------------------------------------------------------------------- */
 
 #include <lal/LALRCSID.h>

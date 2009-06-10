@@ -17,14 +17,14 @@
 *  MA  02111-1307  USA
 */
 
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: GPStoINT8.c
  *
  * Author: Brown, D. A., and Creighton, T. D.
- * 
+ *
  * Revision: $Id$
- * 
+ *
  *-----------------------------------------------------------------------
  */
 
@@ -70,10 +70,10 @@ NRCSID( GPSTOINT8C, "$Id$" );
 
 /* <lalVerbatim file="GPStoINT8CP"> */
 void
-LALINT8toGPS ( 
+LALINT8toGPS (
     LALStatus          *status,
-    LIGOTimeGPS        *output, 
-    const INT8         *input 
+    LIGOTimeGPS        *output,
+    const INT8         *input
     )
 /* </lalVerbatim> */
 {
@@ -89,17 +89,17 @@ LALINT8toGPS (
 /*----------------------------------------------------------------------*/
 /* <lalVerbatim file="GPStoINT8CP"> */
 void
-LALGPStoINT8 ( 
+LALGPStoINT8 (
     LALStatus          *status,
-    INT8               *output, 
-    const LIGOTimeGPS  *input 
+    INT8               *output,
+    const LIGOTimeGPS  *input
     )
 /* </lalVerbatim> */
 {
   INITSTATUS( status, "LALGPStoINT8", GPSTOINT8C );
 
   XLALPrintDeprecationWarning("LALGPStoINT8", "XLALGPSToINT8NS");
-  
+
   *output = XLALGPSToINT8NS( input );
 
   RETURN( status );

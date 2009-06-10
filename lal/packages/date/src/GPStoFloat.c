@@ -18,7 +18,7 @@
 */
 
 /* <lalVerbatim file="GPStoFloatCV">
-   
+
 Author: Berukoff, S.J.  <steveb@aei-potsdam.mpg.de>
 $Id$
 
@@ -43,10 +43,10 @@ to/from \texttt{LALTimeInterval} and \texttt{REAL8} formats.
 
 \subsubsection*{Description}
 
-This modules contains two routines, one of which converts from 
-\texttt{LIGOTimeGPS} to \texttt{REAL8}, and the other, from 
+This modules contains two routines, one of which converts from
+\texttt{LIGOTimeGPS} to \texttt{REAL8}, and the other, from
 \texttt{REAL8} to \texttt{LIGOTimeGPS}.  Accuracy is on par with what one
-expects from a typical IEEE-compliant machine epsilon; thus, conversion 
+expects from a typical IEEE-compliant machine epsilon; thus, conversion
 into the \texttt{REAL8} values incurs an error of approximately 1.e-7.
 
 \begin{itemize}
@@ -96,7 +96,7 @@ LALGPStoFloat( LALStatus         *stat,
 
   *p_flt_time = XLALGPSGetREAL8(p_gps_time);
 
-  DETATCHSTATUSPTR(stat);  
+  DETATCHSTATUSPTR(stat);
   RETURN(stat);
 }  /* END: GPStoFloat() */
 
@@ -109,7 +109,7 @@ LALFloatToGPS( LALStatus   *stat,
 {  /* </lalVerbatim> */
   INITSTATUS(stat, "LALFloatToGPS", GPSTOFLOATC);
   ATTATCHSTATUSPTR(stat);
-  
+
   ASSERT(p_flt_time != NULL, stat, DATEH_ENULLINPUT, DATEH_MSGENULLINPUT);
   ASSERT(p_gps_time != NULL, stat, DATEH_ENULLINPUT, DATEH_MSGENULLINPUT);
 
@@ -121,7 +121,7 @@ LALFloatToGPS( LALStatus   *stat,
   RETURN(stat);
 }  /* END: FloatToGPS() */
 
-  
+
 
 
 /* <lalVerbatim file="GPStoFloatCP"> */
@@ -139,8 +139,8 @@ void LALFloatToInterval(LALStatus *status,
   pInterval->nanoSeconds = (INT4)rint((*pDeltaT -
                                        (REAL8)(pInterval->seconds)) *
                                       (REAL8)oneBillion);
-  
-  
+
+
   DETATCHSTATUSPTR(status);
   RETURN(status);
 } /* END: FloatToInterval() */
@@ -161,7 +161,7 @@ void LALIntervalToFloat(LALStatus *status,
 
   *pDeltaT = (REAL8)(pInterval->seconds) +
     ((REAL8)(pInterval->nanoSeconds) / (REAL8)oneBillion);
-  
+
   DETATCHSTATUSPTR(status);
   RETURN(status);
 }

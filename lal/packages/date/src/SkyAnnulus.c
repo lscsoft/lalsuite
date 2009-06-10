@@ -17,14 +17,14 @@
 *  MA  02111-1307  USA
 */
 
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: SkyAnnulus.c
  *
  * Author: Dietz, A.
- * 
+ *
  * Revision: $Id$
- * 
+ *
  *-----------------------------------------------------------------------
  */
 
@@ -32,7 +32,7 @@
 <lalVerbatim file="SkyAnnulusCV">
 Author: Dietz, A.
 $Id$
-</lalVerbatim> 
+</lalVerbatim>
 #endif
 
 #include <math.h>
@@ -54,7 +54,7 @@ NRCSID( SKYANNULUSSC, "$Id$" );
 <lalLaTeX>
 \subsection{Module \texttt{SkyAnnulus.c}}
 
-\noindent 
+\noindent
 Provides methods to calculate the annulus given two or three detectors with a certain time difference.
 
 \subsubsection*{Prototypes}
@@ -76,7 +76,7 @@ Provides methods to calculate the annulus given two or three detectors with a ce
 		       REAL4              dtErr,
 		       INT2               nx,
 		       INT2               ny)}
-\idx{LALExistTripleAnnuli( LALStatus          
+\idx{LALExistTripleAnnuli( LALStatus
 			   *status,
 		     INT2               *exist,
 		     LALPlaceAndGPS     *placetime1,
@@ -90,15 +90,15 @@ Provides methods to calculate the annulus given two or three detectors with a ce
 
 \noident
 \texttt{LALComputeSingleAnnulus} calculates the single annulus when two detectors and two times are given in \texttt{placetime1} and \texttt{placetime2} assuming an error in time resolution of \texttt{dtErr}. The result is a vector \texttt{sky} with dimensions \texttt{nx}x\texttt{ny} representing the whole sky. The index of the vector ($\mathrm{index} = i + j\cdot nx$) represents the coordinates ($\alpha=360^\circ \cdot i / nx$ and $\delta= 180^\circ \cdot i / ny -90$.
-If the desired position lies within the annulus the element of the vector is 1, 0 else. 
-\texttt{LALComputeTripleAnnuli} calculates the annuli when {\em three} detectors and times are given. The result is a vector of four vectors, with the first vector (index 0) containing the complete overlap of all annuli and the next three vectors (indixes 1,2,3) containing the annuli of two of the time intervals each. 
-\texttt{LALExistTripleAnnuli} just checks if there is at least one position in the sky overlapped by all three annuli created with \texttt{LALComputeTripleAnnuli}. 
+If the desired position lies within the annulus the element of the vector is 1, 0 else.
+\texttt{LALComputeTripleAnnuli} calculates the annuli when {\em three} detectors and times are given. The result is a vector of four vectors, with the first vector (index 0) containing the complete overlap of all annuli and the next three vectors (indixes 1,2,3) containing the annuli of two of the time intervals each.
+\texttt{LALExistTripleAnnuli} just checks if there is at least one position in the sky overlapped by all three annuli created with \texttt{LALComputeTripleAnnuli}.
 If that is the case, \texttt{exist} will contain the value 1, 0 else.
 
 
 \subsubsection*{Algorithm}
 
-\noindent 
+\noindent
 
 \subsubsection*{Uses}
 
@@ -114,7 +114,7 @@ If that is the case, \texttt{exist} will contain the value 1, 0 else.
 
 /* <lalVerbatim file="SkyAnnulusCP"> */
 void
-LALComputeSingleAnnulus ( 
+LALComputeSingleAnnulus (
 		   LALStatus          *status,
 		   INT2Vector         *sky,
 		   LALPlaceAndGPS     *placetime1,
@@ -127,7 +127,7 @@ LALComputeSingleAnnulus (
 {
 
 
- 
+
 
   INT4 i,j, myindex;
   REAL4 alpha, delta;
@@ -137,12 +137,12 @@ LALComputeSingleAnnulus (
 
   SkyPosition coords;
   TwoDetsTimeAndASource tdtaas;
-  
+
 
   INITSTATUS( status, "LALComputeSingleAnnulus", SKYANNULUSSC );
 
   /* create vector */
-  LALI2CreateVector( status, &sky, nx*ny); 
+  LALI2CreateVector( status, &sky, nx*ny);
 
   /* calculate allowed area of time difference */
   LALGPStoFloat( status, &time1, placetime1->p_gps );
@@ -154,7 +154,7 @@ LALComputeSingleAnnulus (
   /* loop over sky positions */
   for ( i=0;i<nx;i++ ) {
     for ( j=0;j<ny;j++ ) {
-      
+
       /* create coordinates in units of degrees */
       alpha= ((REAL4) i)*360./((REAL4) nx);
       delta= ((REAL4) j)*180.0/((REAL4) ny)-90.0;
@@ -165,10 +165,10 @@ LALComputeSingleAnnulus (
       tdtaas.p_det_and_time1=placetime1;
       tdtaas.p_det_and_time2=placetime2;
       tdtaas.p_source=&coords;
-      
-      /* check if this coordinate is in position */ 
+
+      /* check if this coordinate is in position */
       LALTimeDelay(status, &deltat, &tdtaas);
-      
+
       /* check if deltat is in range of dt */
       myindex=i+j*nx;
       if ( dtLow<deltat && deltat<dtUpp ) {
@@ -176,10 +176,10 @@ LALComputeSingleAnnulus (
       } else {
 	sky->data[myindex]=0;
       }
-            
+
     }
   }
-  
+
   RETURN( status );
 
 }
@@ -187,7 +187,7 @@ LALComputeSingleAnnulus (
 
 																																																		/* <lalVerbatim file="SkyAnnulusCP">  */
 void
-LALComputeTripleAnnuli ( 
+LALComputeTripleAnnuli (
 		       LALStatus          *status,
 		       INT2Vector         **sky,
 		       LALPlaceAndGPS     *placetime1,
@@ -202,7 +202,7 @@ LALComputeTripleAnnuli (
 
 
 
-  
+
   INT4 i,j, myindex;
 
   INITSTATUS( status, "LALComputeTripleAnnuli", SKYANNULUSSC );
@@ -211,7 +211,7 @@ LALComputeTripleAnnuli (
   LALI2CreateVector( status, &sky[1], nx*ny);
   LALI2CreateVector( status, &sky[2], nx*ny);
   LALI2CreateVector( status, &sky[3], nx*ny);
-  
+
   /* calculate the three sky anulli */
   LALComputeSingleAnnulus( status, sky[1], placetime1, placetime2, dtErr, nx, ny);
   LALComputeSingleAnnulus( status, sky[2], placetime2, placetime3, dtErr, nx, ny);
@@ -227,7 +227,7 @@ LALComputeTripleAnnuli (
       } else {
 	sky[0]->data[myindex]=0;
       }
- 
+
     }
   }
 
@@ -239,7 +239,7 @@ LALComputeTripleAnnuli (
 
 /* <lalVerbatim file="SkyAnnulusCP"> */
 void
-LALExistTripleAnnuli( 
+LALExistTripleAnnuli(
 		     LALStatus          *status,
 		     INT2               *exist,
 		     LALPlaceAndGPS     *placetime1,
@@ -254,30 +254,30 @@ LALExistTripleAnnuli(
 
 
 
-  
+
   INT4 i,j,myindex;
   static INT2Vector* sky[4];
 
   INITSTATUS( status, "LALExistTripleAnnuli", SKYANNULUSSC );
 
   /* compute triple anulli */
-  LALComputeTripleAnnuli( status, sky, placetime1, placetime2, placetime3, 
+  LALComputeTripleAnnuli( status, sky, placetime1, placetime2, placetime3,
 			 dtErr, nx, ny);
 
   *exist=0;
-  
+
   /* check result */
   for ( i=0;i<nx;i++ ) {
     for ( j=0;j<ny;j++ ) {
       myindex=i+j*nx;
-      
+
       if (sky[0]->data[myindex]==1 ) {
 	*exist=1;
 	continue;
       }
-      
+
     }
   }
-  
+
   RETURN( status );
 }

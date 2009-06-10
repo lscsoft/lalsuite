@@ -70,7 +70,7 @@ int main(int argc, char *argv[])
     }
 
   sprintf(refstamp, "1980-01-06 00:00:00 UTC Sun");
-  
+
   if (lalDebugLevel > 0)
     {
       fprintf(stderr, "refstamp  = %s\n", refstamp);
@@ -101,7 +101,7 @@ int main(int argc, char *argv[])
    */
   gpsTime.gpsSeconds = 457574400;
   gpsTime.gpsNanoSeconds = 0;
-  
+
   LALGPStoUTC(&status, &utcDate, &gpsTime, &accuracy);
   if (status.statusCode && lalDebugLevel > 0)
     {
@@ -121,7 +121,7 @@ int main(int argc, char *argv[])
     }
 
   sprintf(refstamp, "1994-07-06 23:59:50 UTC Wed");
-  
+
   if (lalDebugLevel > 0)
     {
       fprintf(stderr, "refstamp  = %s\n", refstamp);
@@ -150,7 +150,7 @@ int main(int argc, char *argv[])
    */
   gpsTime.gpsSeconds = 599184012;
   gpsTime.gpsNanoSeconds = 0;
-  
+
   LALGPStoUTC(&status, &utcDate, &gpsTime, &accuracy);
   if (status.statusCode && lalDebugLevel > 0)
     {
@@ -170,7 +170,7 @@ int main(int argc, char *argv[])
     }
 
   sprintf(refstamp, "1998-12-31 23:59:60 UTC Thu");
-  
+
   if (lalDebugLevel > 0)
     {
       fprintf(stderr, "refstamp  = %s\n", refstamp);
@@ -202,7 +202,7 @@ int main(int argc, char *argv[])
    */
   gpsTime.gpsSeconds     = 835747214; /* use maxtestedGPS + 1 */
   gpsTime.gpsNanoSeconds = 0;
-  
+
   LALGPStoUTC(&status, &utcDate, &gpsTime, &accuracy);
   if (status.statusCode && lalDebugLevel > 0)
     {
@@ -226,7 +226,7 @@ int main(int argc, char *argv[])
   /* UPDATEME */
   /* the date here should be one second after maxtestedGPS */
   sprintf(refstamp, "2006-07-01 00:00:00 UTC Sat");
-  
+
   if (lalDebugLevel > 0)
     {
       fprintf(stderr, "refstamp  = %s\n", refstamp);
@@ -249,14 +249,14 @@ int main(int argc, char *argv[])
       LALCheckMemoryLeaks();
       return 1;
     }
-  
+
 
   /*
    * GPS -100 : should fail
    */
   gpsTime.gpsSeconds     = -100;
   gpsTime.gpsNanoSeconds = 0;
-  
+
   LALGPStoUTC(&status, &utcDate, &gpsTime, &accuracy);
   if (status.statusCode > 0)
     {
@@ -285,7 +285,7 @@ int main(int argc, char *argv[])
    */
   gpsTime.gpsSeconds     = -100;
   gpsTime.gpsNanoSeconds = 0;
-  
+
   LALGPStoUTC(&status, &utcDate, &gpsTime, &accuracy);
   if (status.statusCode > 0)
     {
@@ -349,9 +349,9 @@ int main(int argc, char *argv[])
       REPORTSTATUS(&status);
       return 1;
     }
-  
 
-  
+
+
   /*
    * Cleanup and exit
    */
