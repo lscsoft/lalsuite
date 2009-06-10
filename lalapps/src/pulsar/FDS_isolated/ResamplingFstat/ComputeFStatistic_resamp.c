@@ -382,7 +382,7 @@ int main(int argc,char *argv[])
   UINT4 k;
   ConfigVariables GV = empty_ConfigVariables;		/**< global container for various derived configuration settings */
   REAL8FrequencySeries *fstatVector = Buffer.fstatVector;
-  Resamp_Variables* Vars;
+  Resamp_Variables Vars;
   Buffer.fstatVector = NULL;
 
   lalDebugLevel = 0;
