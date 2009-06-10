@@ -1679,7 +1679,7 @@ XLALCoincRingdownTimeNS (
   {
     if ( coincRingdown->snglRingdown[ifoNumber] )
     {
-      startTime = XLALGPStoINT8(
+      startTime = XLALGPSToINT8NS(
           &(coincRingdown->snglRingdown[ifoNumber]->start_time) );
       return(startTime);
     }

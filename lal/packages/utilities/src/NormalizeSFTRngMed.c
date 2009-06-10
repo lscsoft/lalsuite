@@ -17,31 +17,31 @@
 *  MA  02111-1307  USA
 */
 
-/** 
- * \file 
+/**
+ * \file
  * \ingroup NormalizeSFTRndMed.c
  * \author Badri Krishnan and Alicia Sintes
  * \date $Date$
  * \brief Normalizes SFTs based on their noise floor calculated using the running median
- * 
- * $Id$ 
- * 
+ *
+ * $Id$
+ *
  * History: Created by B. Krishnan Aug, 2004
  *       Taken from SFTbin.c and PeakSelect.c from hough dir in lalapps
- * 
+ *
  *
 
- \par Description 
+ \par Description
 
-This module contains functions for normalizing SFTs.  Currently two normalizations 
-are supported.  Given SFT data \f$\tilde{x}_k \f$ where \f$ k\f$ labels a frequency bin, 
-the normalized SFT is either \f$ \tilde{x}_k/\sqrt{ < |\tilde{x}_k|^2 >} \f$ or 
+This module contains functions for normalizing SFTs.  Currently two normalizations
+are supported.  Given SFT data \f$\tilde{x}_k \f$ where \f$ k\f$ labels a frequency bin,
+the normalized SFT is either \f$ \tilde{x}_k/\sqrt{ < |\tilde{x}_k|^2 >} \f$ or
 \f$ \sqrt{2N} \tilde{x}_k/\sqrt{ < |\tilde{x}_k|^2 >} \f$, where \f$ N \f$ is the number
 of frequency bins in the SFT.   The first normalization
-ensures that the SFT power follows an exponential distribution with unit mean 
-(if the SFT data is distributed normally), while the second normalization is appropriate 
-in the time domain.  In either case, the mean of \f$ |\tilde{x}_k|^2 \f$ is 
-estimated using the median, suitably normalized assuming that the power is 
+ensures that the SFT power follows an exponential distribution with unit mean
+(if the SFT data is distributed normally), while the second normalization is appropriate
+in the time domain.  In either case, the mean of \f$ |\tilde{x}_k|^2 \f$ is
+estimated using the median, suitably normalized assuming that the power is
 distributed is exponentially.
 
 
@@ -52,16 +52,16 @@ LALPeriodoToRngmed ()
 LALNormalizeSFT ()
 LALNormalizeSFTVect ()
 LALNormalizeMultiSFTVect ()
-\endcode				      
+\endcode
 
 
 The function LALNormalizeSFTVect() takes as input a vector of SFTs and normalizes
 them.  This function calls the functions LALNormalizeSFT() which normalizes a
-single SFT, LALSFTtoPeriodogram() which calculates the \f$ |\tilde{x}|^2 \f$ and 
+single SFT, LALSFTtoPeriodogram() which calculates the \f$ |\tilde{x}|^2 \f$ and
 LALPeriodoToRngmed () which applies the running median algorithm to find a vector
-of medians.  The function LALNormalizeMultiSFTVect() normalizes a multi-IFO collection 
+of medians.  The function LALNormalizeMultiSFTVect() normalizes a multi-IFO collection
 of SFT vectors and also returns a collection of power-estimates for these vectors using
-the Running median method. 
+the Running median method.
 
 */
 
@@ -71,12 +71,12 @@ the Running median method.
 NRCSID (NORMALIZESFTRNGMEDC, "$Id$");
 
 
-/** Calculate the "periodogram" of an SFT, ie the modulus-squares of the SFT-data. 
+/** Calculate the "periodogram" of an SFT, ie the modulus-squares of the SFT-data.
  */
-void 
+void
 LALSFTtoPeriodogram (LALStatus    *status,
 		     REAL8FrequencySeries    *periodo,	/**< [out] mod squares of SFT data */
-		     const COMPLEX8FrequencySeries *SFT	/**< [in] input SFT */ 
+		     const COMPLEX8FrequencySeries *SFT	/**< [in] input SFT */
 		     )
 {
   UINT4     length, j;
@@ -87,14 +87,14 @@ LALSFTtoPeriodogram (LALStatus    *status,
   ATTATCHSTATUSPTR (status);
 
   /* check argments are not NULL */
-  ASSERT (periodo, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
-  ASSERT (periodo->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
-  ASSERT (periodo->data->length > 0, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL); 
-  ASSERT (periodo->data->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
-  ASSERT (SFT, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL);  
-  ASSERT (SFT->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
-  ASSERT (SFT->data->length > 0, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL);  
-  ASSERT (SFT->data->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
+  ASSERT (periodo, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL);
+  ASSERT (periodo->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL);
+  ASSERT (periodo->data->length > 0, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL);
+  ASSERT (periodo->data->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL);
+  ASSERT (SFT, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL);
+  ASSERT (SFT->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL);
+  ASSERT (SFT->data->length > 0, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL);
+  ASSERT (SFT->data->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL);
 
   /* copy values from SFT */
   strcpy ( periodo->name, SFT->name );
@@ -105,7 +105,7 @@ LALSFTtoPeriodogram (LALStatus    *status,
 
   /* check lengths are same */
   length = SFT->data->length;
-  ASSERT (length == periodo->data->length, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL);  
+  ASSERT (length == periodo->data->length, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL);
 
   out = periodo->data->data;
   in = SFT->data->data;
@@ -128,7 +128,7 @@ LALSFTtoPeriodogram (LALStatus    *status,
 
 /** Calculates running median over a single periodogram.
 */
-void 
+void
 LALPeriodoToRngmed (LALStatus  *status,
 		    REAL8FrequencySeries  *rngmed,		/**< [out] resulting 'smoothed' periodogram */
 		    const REAL8FrequencySeries  *periodo,	/**< [in] input periodogram */
@@ -146,15 +146,15 @@ LALPeriodoToRngmed (LALStatus  *status,
   ATTATCHSTATUSPTR (status);
 
   /* check argments are not NULL */
-  ASSERT (periodo, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
-  ASSERT (periodo->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
-  ASSERT (periodo->data->length > 0, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL); 
-  ASSERT (periodo->data->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
-  ASSERT (rngmed, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL);  
-  ASSERT (rngmed->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
-  ASSERT (rngmed->data->length > 0, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL);  
-  ASSERT (rngmed->data->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
-  ASSERT (blockSize > 0, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL); 
+  ASSERT (periodo, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL);
+  ASSERT (periodo->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL);
+  ASSERT (periodo->data->length > 0, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL);
+  ASSERT (periodo->data->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL);
+  ASSERT (rngmed, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL);
+  ASSERT (rngmed->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL);
+  ASSERT (rngmed->data->length > 0, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL);
+  ASSERT (rngmed->data->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL);
+  ASSERT (blockSize > 0, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL);
 
 
   /* copy values from the periodogram */
@@ -179,7 +179,7 @@ LALPeriodoToRngmed (LALStatus  *status,
   inputV.length = length;
   inputV.data = periodo->data->data;
   mediansV.length= length - blockSize + 1;
-  mediansV.data = rngmed->data->data + blocks2;    
+  mediansV.data = rngmed->data->data + blocks2;
 
   TRY( LALDRunningMedian2(status->statusPtr, &mediansV, &inputV, rngMedPar), status);
 
@@ -206,7 +206,7 @@ LALPeriodoToRngmed (LALStatus  *status,
 
 /** Calculates a smoothed (running-median) periodogram for the given SFT.
  */
-void 
+void
 LALSFTtoRngmed (LALStatus  *status,
 		REAL8FrequencySeries  *rngmed,		/**< [out] running-median smoothed periodo [must be allocated!] */
 		const COMPLEX8FrequencySeries *sft,	/**< [in]  input SFT */
@@ -220,17 +220,17 @@ LALSFTtoRngmed (LALStatus  *status,
   ATTATCHSTATUSPTR (status);
 
   /* check argments are not NULL */
-  ASSERT (sft, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
-  ASSERT (sft->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
-  ASSERT (sft->data->length > 0, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL); 
-  ASSERT (sft->data->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
-  ASSERT (rngmed, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL);  
-  ASSERT (rngmed->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
-  ASSERT (rngmed->data->length > 0, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL);  
-  ASSERT (rngmed->data->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
+  ASSERT (sft, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL);
+  ASSERT (sft->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL);
+  ASSERT (sft->data->length > 0, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL);
+  ASSERT (sft->data->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL);
+  ASSERT (rngmed, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL);
+  ASSERT (rngmed->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL);
+  ASSERT (rngmed->data->length > 0, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL);
+  ASSERT (rngmed->data->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL);
 
   length = sft->data->length;
-  
+
   periodo.data = NULL;
   if ( (periodo.data = (REAL8Sequence *)LALCalloc(1, sizeof(REAL8Sequence))) == NULL) {
     ABORT( status, NORMALIZESFTRNGMEDH_EMEM, NORMALIZESFTRNGMEDH_MSGEMEM);
@@ -243,7 +243,7 @@ LALSFTtoRngmed (LALStatus  *status,
 
   /* calculate the periodogram */
   LALSFTtoPeriodogram (status->statusPtr, &periodo, sft);
-  BEGINFAIL (status) { 
+  BEGINFAIL (status) {
     LALFree (periodo.data->data);
     LALFree (periodo.data);
   } ENDFAIL (status);
@@ -252,11 +252,11 @@ LALSFTtoRngmed (LALStatus  *status,
   if ( blockSize > 0 )
     {
       LALPeriodoToRngmed (status->statusPtr, rngmed, &periodo, blockSize);
-      BEGINFAIL (status) { 
+      BEGINFAIL (status) {
 	LALFree (periodo.data->data);
 	LALFree (periodo.data);
       } ENDFAIL (status);
-      
+
       /* free memory */
       LALFree(periodo.data->data);
       LALFree(periodo.data);
@@ -278,7 +278,7 @@ void
 LALNormalizeSFT (LALStatus           *status,
 		 REAL8FrequencySeries *rngmed, 	/**< [out] rng-median smoothed periodogram over SFT (Tsft*Sn/2) */
 		 SFTtype              *sft,     /**< SFT to be normalized */
-		 UINT4                blockSize)/**< Running median block size for rngmed calculation */ 
+		 UINT4                blockSize)/**< Running median block size for rngmed calculation */
 {
   UINT4 j;
   REAL8 Tsft_Sn_b2;	/* Wiener-Kinchine: E[|data|^2] = Tsft * Sn / 2 */
@@ -287,29 +287,29 @@ LALNormalizeSFT (LALStatus           *status,
   ATTATCHSTATUSPTR (status);
 
   /* check argments are not NULL and other sanity checks*/
-  ASSERT (sft, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
-  ASSERT (sft->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
-  ASSERT (sft->data->length > 0, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL); 
-  ASSERT (sft->data->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
+  ASSERT (sft, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL);
+  ASSERT (sft->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL);
+  ASSERT (sft->data->length > 0, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL);
+  ASSERT (sft->data->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL);
 
-  ASSERT (rngmed, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
-  ASSERT (rngmed->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
-  ASSERT (rngmed->data->length > 0, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL); 
-  ASSERT (rngmed->data->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
+  ASSERT (rngmed, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL);
+  ASSERT (rngmed->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL);
+  ASSERT (rngmed->data->length > 0, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL);
+  ASSERT (rngmed->data->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL);
 
   /* make sure there is no size mismatch */
   if ( rngmed->data->length != sft->data->length ) {
-    ABORT ( status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL); 
+    ABORT ( status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL);
   }
-  
+
   /* calculate the rngmed */
   TRY (LALSFTtoRngmed (status->statusPtr, rngmed, sft, blockSize), status);
 
   /* loop over sft and normalize */
   for (j = 0; j < sft->data->length; j++) {
-  
-    Tsft_Sn_b2 = rngmed->data->data[j]; 
-    
+
+    Tsft_Sn_b2 = rngmed->data->data[j];
+
     /* frequency domain normalization */
     sft->data->data[j].re /= sqrt(Tsft_Sn_b2);
     sft->data->data[j].im /= sqrt(Tsft_Sn_b2);
@@ -337,11 +337,11 @@ LALNormalizeSFTVect (LALStatus  *status,
   ATTATCHSTATUSPTR (status);
 
   /* check argments are not NULL and other sanity checks*/
-  ASSERT (sftVect, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
-  ASSERT (sftVect->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
-  ASSERT (sftVect->length > 0, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL); 
+  ASSERT (sftVect, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL);
+  ASSERT (sftVect->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL);
+  ASSERT (sftVect->length > 0, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL);
 
-  /* memory allocation of rngmed using length of first sft 
+  /* memory allocation of rngmed using length of first sft
      -- assume all sfts have the same length*/
   lengthsft = sftVect->data->data->length;
 
@@ -359,31 +359,31 @@ LALNormalizeSFTVect (LALStatus  *status,
   if ( (rngmed->data->data = (REAL8 *)LALCalloc( lengthsft, sizeof(REAL8))) == NULL) {
     ABORT( status, NORMALIZESFTRNGMEDH_EMEM, NORMALIZESFTRNGMEDH_MSGEMEM);
   }
-  
+
   /* loop over sfts and normalize them */
   for (j = 0; j < sftVect->length; j++) {
     SFTtype *sft;
-    
+
     if ( (sft = sftVect->data + j) == NULL) {
-      ABORT( status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
+      ABORT( status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL);
     }
 
     if (sft->data == NULL) {
-      ABORT( status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
+      ABORT( status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL);
     }
 
     /* check there is no mismatch in length of sft */
     if (sft->data->length != lengthsft) {
-      ABORT ( status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL); 
+      ABORT ( status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL);
     }
 
     if (sft->data->data == NULL) {
-      ABORT (status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
+      ABORT (status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL);
     }
 
-    /* call sft normalization function */    
+    /* call sft normalization function */
     LALNormalizeSFT (status->statusPtr, rngmed, sft, blockSize);
-    BEGINFAIL (status) { 
+    BEGINFAIL (status) {
       LALFree (rngmed->data->data);
       LALFree (rngmed->data);
       LALFree (rngmed);
@@ -393,8 +393,8 @@ LALNormalizeSFTVect (LALStatus  *status,
 
   /* free memory for psd */
   LALFree(rngmed->data->data);
-  LALFree(rngmed->data); 
-  LALFree(rngmed); 
+  LALFree(rngmed->data);
+  LALFree(rngmed);
 
   DETATCHSTATUSPTR (status);
   /* normal exit */
@@ -404,10 +404,10 @@ LALNormalizeSFTVect (LALStatus  *status,
 
 
 
-/** Function for normalizing a multi vector of SFTs in a multi IFO search and also 
+/** Function for normalizing a multi vector of SFTs in a multi IFO search and also
  * returns the running-median estimates of the power.
  */
-void 
+void
 LALNormalizeMultiSFTVect (LALStatus      *status,
 			  MultiPSDVector **multiRngmed,	/**< [out] multi running-median power estimates of input SFTs */
 			  MultiSFTVector *multsft,	/**< [in/out] multi-vector of SFTs which will be normalized */
@@ -424,12 +424,12 @@ LALNormalizeMultiSFTVect (LALStatus      *status,
   ATTATCHSTATUSPTR (status);
 
   /* check argments are not NULL and other sanity checks*/
-  ASSERT (multsft, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
+  ASSERT (multsft, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL);
   ASSERT (multsft->length, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL);
   ASSERT (multsft->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL);
 
-  ASSERT (multiRngmed, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
-  ASSERT ( *multiRngmed == NULL, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
+  ASSERT (multiRngmed, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL);
+  ASSERT ( *multiRngmed == NULL, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL);
 
   /* first memory allocation for multipsd structure */
   if ( (ret = (MultiPSDVector *)LALCalloc(1, sizeof(MultiPSDVector))) == NULL) {
@@ -443,7 +443,7 @@ LALNormalizeMultiSFTVect (LALStatus      *status,
 
   /* loop over ifos */
   for ( k = 0; k < numifo; k++) {
-   
+
     /* second memory allocation for psd vector */
     if ( (ret->data[k] = (PSDVector *)LALCalloc(1, sizeof(PSDVector))) == NULL) {
       ABORT( status, NORMALIZESFTRNGMEDH_EMEM, NORMALIZESFTRNGMEDH_MSGEMEM);
@@ -459,23 +459,23 @@ LALNormalizeMultiSFTVect (LALStatus      *status,
 
       SFTtype *sft;
       UINT4 lengthsft;
-    
+
       if ( (sft = multsft->data[k]->data + j) == NULL) {
-	ABORT( status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
+	ABORT( status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL);
       }
 
       if (sft->data == NULL) {
-	ABORT( status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
+	ABORT( status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL);
       }
-      
+
       if (sft->data->length == 0) {
-	ABORT( status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL); 
+	ABORT( status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL);
       }
-      
+
       if (sft->data->data == NULL) {
-	ABORT( status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
+	ABORT( status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL);
       }
-      
+
       /* final memory allocation for psd */
       ret->data[k]->data[j].data = NULL;
       if ( (ret->data[k]->data[j].data = (REAL8Sequence *)LALCalloc(1, sizeof(REAL8Sequence))) == NULL) {
@@ -488,7 +488,7 @@ LALNormalizeMultiSFTVect (LALStatus      *status,
       }
 
       LALNormalizeSFT (status->statusPtr, ret->data[k]->data + j, sft, blockSize);
-      BEGINFAIL (status) { 
+      BEGINFAIL (status) {
         /* clean up for this value of k -- note that j and k have not been incremented at this stage*/
 	for ( jCleanUp = 0; jCleanUp < j+1; jCleanUp++) {
 	  LALFree( ret->data[k]->data[jCleanUp].data->data);
@@ -508,7 +508,7 @@ LALNormalizeMultiSFTVect (LALStatus      *status,
 	/* clean up memory allocated outside loop */
 	LALFree(ret->data);
 	LALFree(ret);
-      } ENDFAIL (status);          
+      } ENDFAIL (status);
     } /* loop over sfts ++j */
   } /* loop over ifos ++k */
 
@@ -520,7 +520,7 @@ LALNormalizeMultiSFTVect (LALStatus      *status,
 } /* LALNormalizeMultiSFTVect() */
 
 
-/** Calculate the cross-correlation periodogram from 2 SFTs. 
+/** Calculate the cross-correlation periodogram from 2 SFTs.
  */
 void
 LALSFTstoCrossPeriodogram (LALStatus    *status,
@@ -537,25 +537,25 @@ LALSFTstoCrossPeriodogram (LALStatus    *status,
   ATTATCHSTATUSPTR (status);
 
   /* check argments are not NULL */
-  ASSERT (periodo, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
-  ASSERT (periodo->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
-  ASSERT (periodo->data->length > 0, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL); 
-  ASSERT (periodo->data->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
-  ASSERT (sft1, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL);  
-  ASSERT (sft1->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
-  ASSERT (sft1->data->length > 0, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL);  
-  ASSERT (sft1->data->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
+  ASSERT (periodo, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL);
+  ASSERT (periodo->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL);
+  ASSERT (periodo->data->length > 0, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL);
+  ASSERT (periodo->data->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL);
+  ASSERT (sft1, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL);
+  ASSERT (sft1->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL);
+  ASSERT (sft1->data->length > 0, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL);
+  ASSERT (sft1->data->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL);
 
-  ASSERT (sft2, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL);  
-  ASSERT (sft2->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
-  ASSERT (sft2->data->length > 0, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL);  
-  ASSERT (sft2->data->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
+  ASSERT (sft2, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL);
+  ASSERT (sft2->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL);
+  ASSERT (sft2->data->length > 0, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL);
+  ASSERT (sft2->data->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL);
 
-  /* make sure both sfts are consistent in frequency and freq. band 
+  /* make sure both sfts are consistent in frequency and freq. band
      -- time stamps need not be consistent */
-  ASSERT (sft2->data->length == sft1->data->length, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL);  
-  ASSERT (sft2->f0 == sft1->f0, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL);  
-  ASSERT (sft2->deltaF == sft1->deltaF, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL);  
+  ASSERT (sft2->data->length == sft1->data->length, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL);
+  ASSERT (sft2->f0 == sft1->f0, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL);
+  ASSERT (sft2->deltaF == sft1->deltaF, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL);
 
   /* copy values from SFT */
   /*   periodo->epoch.gpsSeconds = sft1->epoch.gpsSeconds; */
@@ -565,7 +565,7 @@ LALSFTstoCrossPeriodogram (LALStatus    *status,
 
   /* check lengths are same */
   length = sft1->data->length;
-  ASSERT (length == periodo->data->length, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL);  
+  ASSERT (length == periodo->data->length, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL);
 
   out = periodo->data->data;
   in1 = sft1->data->data;

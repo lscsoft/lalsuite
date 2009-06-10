@@ -1970,7 +1970,7 @@ XLALCoincInspiralTimeNS (
   {
     if ( coincInspiral->snglInspiral[ifoNumber] )
     {
-      endTime = XLALGPStoINT8(
+      endTime = XLALGPSToINT8NS(
           &(coincInspiral->snglInspiral[ifoNumber]->end_time) );
       return(endTime);
     }

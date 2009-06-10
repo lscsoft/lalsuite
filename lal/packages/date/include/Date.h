@@ -693,22 +693,11 @@ void LALIntervalToFloat(LALStatus *status,
 /* <lalLaTeX>
 \newpage\input{GPStoINT8C}
 </lalLaTeX> */
-LIGOTimeGPS *
-XLALINT8toGPS ( 
-    LIGOTimeGPS *output,
-    INT8 input
-    );
-
 void
 LALINT8toGPS ( 
     LALStatus          *status,
     LIGOTimeGPS        *output, 
     const INT8         *input 
-    );
-
-INT8
-XLALGPStoINT8 ( 
-    const LIGOTimeGPS *input 
     );
 
 void

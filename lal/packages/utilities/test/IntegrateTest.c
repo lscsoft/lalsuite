@@ -100,7 +100,7 @@ static void f1 (LALStatus *s, REAL4 *y, REAL4 x, void *p)
   INT4  *n;
   INITSTATUS (s, "f1", MAIN);
   ASSERT (p, s, 1, "Null pointer");
-  ++(*(n = (INT4 *)p));  
+  ++(*(n = (INT4 *)p));
   *y = x4*log(x + sqrt(x2 + 1));
   RETURN (s);
 }
@@ -112,7 +112,7 @@ static void ff1 (LALStatus *s, REAL8 *y, REAL8 x, void *p)
   INT4  *n;
   INITSTATUS (s, "ff1", MAIN);
   ASSERT (p, s, 1, "Null pointer");
-  ++(*(n = (INT4 *)p));  
+  ++(*(n = (INT4 *)p));
   *y = x4*log(x + sqrt(x2 + 1));
   RETURN (s);
 }
@@ -460,7 +460,7 @@ int main (int argc, char *argv[])
       fprintf (stderr, "Integration did not achieve desired accuracy!\n");
     return 1;
   }
-  
+
 
   /*
    *

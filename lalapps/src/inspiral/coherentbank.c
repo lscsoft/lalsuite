@@ -499,8 +499,8 @@ int main( int argc, char *argv[] )
    *
    */
 
-  startTimeNS = XLALGPStoINT8( &startTimeGPS );
-  endTimeNS = XLALGPStoINT8( &endTimeGPS );
+  startTimeNS = XLALGPSToINT8NS( &startTimeGPS );
+  endTimeNS = XLALGPSToINT8NS( &endTimeGPS );
 
   if ( startTime < 0 )
   {
@@ -704,8 +704,8 @@ int main( int argc, char *argv[] )
   searchsumm.searchSummaryTable->out_end_time = endTimeGPS;
   searchsumm.searchSummaryTable->nevents = numTmplts;
 
-  startTimeNS = XLALGPStoINT8( &startTimeGPS );
-  endTimeNS = XLALGPStoINT8( &endTimeGPS );
+  startTimeNS = XLALGPSToINT8NS( &startTimeGPS );
+  endTimeNS = XLALGPSToINT8NS( &endTimeGPS );
 
   if ( vrbflg ) fprintf( stdout, "writing output file... " );
 

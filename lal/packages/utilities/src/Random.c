@@ -45,7 +45,7 @@ variables.  The creation routine requires a random number seed \verb+seed+.
 If the seed is zero then a seed is generated using the current time.
 
 The routine \verb+LALUniformDeviate()+ returns a single random deviate
-distributed uniformly between zero and unity.  
+distributed uniformly between zero and unity.
 
 The routine \verb+LALNormalDeviates()+ fills a vector with normal (Gaussian)
      deviates with zero mean and unit variance, whereas the function\verb+XLALNormalDeviate+ just returns one normal distributed random number.

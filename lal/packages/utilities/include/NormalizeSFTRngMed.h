@@ -18,22 +18,22 @@
 */
 
 /**
- * \file 
+ * \file
  * \ingroup NormalizeSFTRngMed.h
  * \author Krishnan, B.
  * \date $Date$
  * \brief Header file for SFT normalization routines
- * 
+ *
  * Revision: $Id$
  *
  * History:   Moved from LALAPPS 31/7/05
- *            
+ *
  *
  *-----------------------------------------------------------------------
  */
 
 /**
- * Routines for cleaning SFT files using known spectral disturbances. 
+ * Routines for cleaning SFT files using known spectral disturbances.
  *
  **/
 
@@ -46,9 +46,9 @@
 #define _NORMALIZESFTRNGMED_H
 
 /*
- * 5. Includes. This header may include others; if so, they go immediately 
- *    after include-loop protection. Includes should appear in the following 
- *    order: 
+ * 5. Includes. This header may include others; if so, they go immediately
+ *    after include-loop protection. Includes should appear in the following
+ *    order:
  *    a. Standard library includes
  *    b. LDAS includes
  *    c. LAL includes
@@ -58,7 +58,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h> 
+#include <string.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 #include <lal/AVFactories.h>
@@ -79,16 +79,16 @@ extern "C" {
 #endif
 
  /*
- * 6. Assignment of Id string using NRCSID()  
+ * 6. Assignment of Id string using NRCSID()
  */
-  
+
 NRCSID (NORMALIZESFTRNGMEDH, "$Id$");
-  
+
 /*
- * 7. Error codes and messages. This must be auto-extracted for 
+ * 7. Error codes and messages. This must be auto-extracted for
  *    inclusion in the documentation.
  */
-  
+
 #define NORMALIZESFTRNGMEDH_ENULL 1
 #define NORMALIZESFTRNGMEDH_EVAL 2
 #define NORMALIZESFTRNGMEDH_EMEM 3
@@ -99,14 +99,14 @@ NRCSID (NORMALIZESFTRNGMEDH, "$Id$");
 
 
 /* ******************************************************
- * 8. Macros. But, note that macros are deprecated. 
- *    They could be moved to the modules where are needed 
- */  
+ * 8. Macros. But, note that macros are deprecated.
+ *    They could be moved to the modules where are needed
+ */
 
 /* *******************************************************
- * 9. Constant Declarations. (discouraged) 
+ * 9. Constant Declarations. (discouraged)
  */
- 
+
 
 
 /* **************************************************************
@@ -115,9 +115,9 @@ NRCSID (NORMALIZESFTRNGMEDH, "$Id$");
 
 
 /*
- * 11. Extern Global variables. (discouraged) 
+ * 11. Extern Global variables. (discouraged)
  */
-  
+
 
 /*
  * 12. Functions Declarations (i.e., prototypes).
