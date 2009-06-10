@@ -24,9 +24,9 @@
 /**** <lalLaTeX>
  * \subsection{Module \texttt{RealFFT.c}}
  * \label{ss:RealFFT.c}
- * 
+ *
  * Functions for performing real FFTs.
- * 
+ *
  * \subsubsection*{Prototypes}
  * \vspace{0.1in}
  * \input{RealFFTCP}
@@ -43,12 +43,12 @@
  * \idx{LALReverseREAL4FFT()}
  * \idx{LALREAL4PowerSpectrum()}
  * \idx{LALREAL4VectorFFT()}
- * 
+ *
  * \subsubsection*{Description}
- * 
+ *
  * This package provides a LAL-style interface with the FFTW fast Fourier
  * transform package~\cite{fj:1998}.
- * 
+ *
  * The routines \texttt{LALCreateForwardRealFFTPlan()} and
  * \texttt{LALCreateReverseRealFFTPlan()} create plans for computing the
  * forward (real-to-complex) and reverse (complex-to-real) FFTs of a specified
@@ -56,7 +56,7 @@
  * flag is zero, or measured (can be time-consuming, but gives better
  * performance) if the measure flag is non-zero.  The routine
  * \texttt{LALDestroyRealFFTPlan()} destroys any of these flavours of plans.
- * 
+ *
  * The routines \texttt{LALForwardRealFFT()} and \texttt{LALReverseRealFFT()}
  * perform the forward (real-to-complex) and reverse (complex-to-real) FFTs
  * using the plans.  The discrete Fourier transform $H_k$,
@@ -72,7 +72,7 @@
  * where $H_k$ for $\lfloor{n/2}\rfloor<k<n$ can be obtained from the relation
  * $H_k=H_{n-k}^\ast$.  The present implementation of the \emph{reverse} FFT
  * omits the factor of $1/n$.
- * 
+ *
  * The routines in this package require that the vector $h_j$, $j=0\ldots n-1$
  * be real; consequently, $H_k=H_{n-k}^\ast$ ($0\le k\le\lfloor n/2\rfloor$),
  * i.e., the negative frequency Fourier components are the complex conjugate of
@@ -80,55 +80,55 @@
  * one need compute and store only the first $\lfloor n/2\rfloor+1$ components
  * of $H_k$; only the values of $H_k$ for $k=0\ldots \lfloor n/2\rfloor$ are
  * returned (integer division is rounded down, e.g., $\lfloor 7/2\rfloor=3$).
- * 
+ *
  * The routine \texttt{LALRealPowerSpectrum()} computes the power spectrum
  * $P_k=2|H_k|^2$, $k=1\ldots \lfloor (n-1)/2\rfloor$,
  * $P_0=|H_0|^2$, and $P_{n/2}=|H_{n/2}|^2$ if $n$ is even, of the data $h_j$,
  * $j=0\ldots n-1$.  The factor of two except at DC and Nyquist accounts for
  * the power in negative frequencies.
- * 
+ *
  * The routine \texttt{LALREAL4VectorFFT()} is essentially a direct calls to
  * FFTW routines without any re-packing of the data.  This routine should not
  * be used unless the user understands the packing used in FFTW.
- * 
+ *
  * \subsubsection*{Operating Instructions}
- * 
+ *
  * \begin{verbatim}
  * const UINT4 n = 32;
- * static LALStatus status; 
+ * static LALStatus status;
  * RealFFTPlan            *pfwd = NULL;
  * RealFFTPlan            *prev = NULL;
  * REAL4Vector            *hvec = NULL;
  * COMPLEX8Vector         *Hvec = NULL;
  * REAL4Vector            *Pvec = NULL;
- * 
+ *
  * LALCreateForwardRealFFTPlan( &status, &pfwd, n );
  * LALCreateReverseRealFFTPlan( &status, &prev, n );
  * LALSCreateVector( &status, &hvec, n );
  * LALCCreateVector( &status, &Hvec, n/2 + 1 );
  * LALSCreateVector( &status, &Pvec, n/2 + 1 );
- * 
+ *
  * <assign data>
  *
  * LALRealPowerSpectrum( &status, Pvec, hvec, pfwd );
  * LALForwardRealFFT( &status, Hvec, hvec, pfwd );
  * LALReverseRealFFT( &status, hvec, Hvec, pinv );
- * 
+ *
  * LALDestroyRealFFTPlan( &status, &pfwd );
  * LALDestroyRealFFTPlan( &status, &pinv );
  * LALSDestroyVector( &status, &hvec );
  * LALCDestroyVector( &status, &Hvec );
  * LALSDestroyVector( &status, &Pvec );
  * \end{verbatim}
- * 
+ *
  * \subsubsection*{Algorithm}
- * 
+ *
  * The FFTW~\cite{fj:1998} is used.
- * 
+ *
  * \subsubsection*{Uses}
- * 
+ *
  * \subsubsection*{Notes}
- * 
+ *
  * \begin{enumerate}
  * \item The sign convention used here is the opposite of
  * \textit{Numerical Recipes}~\cite{ptvf:1992}, but agrees with the one used
@@ -147,9 +147,9 @@
  * \verb+LALREAL4VectorFFT+.)
  * \item LALMalloc() is used by all the fftw routines.
  * \end{enumerate}
- * 
+ *
  * \vfill{\footnotesize\input{RealFFTCV}}
- * 
+ *
  **** </lalLaTeX> */
 
 #include <string.h>
@@ -212,7 +212,7 @@ REAL4FFTPlan * XLALCreateREAL4FFTPlan( UINT4 size, int fwdflg, int measurelvl )
     XLAL_ERROR_NULL( func, XLAL_ENOMEM );
   }
 
-  /* 
+  /*
    * Use a different size for plan creation to avoid current CUDA bug
    * in performing FFT to array with size 1
    */
@@ -226,14 +226,14 @@ REAL4FFTPlan * XLALCreateREAL4FFTPlan( UINT4 size, int fwdflg, int measurelvl )
   /* LAL_FFTW_PTHREAD_MUTEX_UNLOCK; */
   /* check to see success of plan creation */
   if ( ! plan->plan )
-  {  
+  {
     XLALFree( plan );
     XLAL_ERROR_NULL( func, XLAL_EFAILED );
   }
 
   /* Allocate memory in the GPU */
   plan->d_real = XLALCudaMallocReal(size);
-  plan->d_complex = XLALCudaMallocComplex(size/2 + 1);  
+  plan->d_complex = XLALCudaMallocComplex(size/2 + 1);
 
   /* now set remaining plan fields */
   plan->size = size;
@@ -245,7 +245,7 @@ REAL4FFTPlan * XLALCreateREAL4FFTPlan( UINT4 size, int fwdflg, int measurelvl )
 
 REAL4FFTPlan * XLALCreateForwardREAL4FFTPlan( UINT4 size, int measurelvl )
 {
-  static const char *func = "XLALCreateForwardREAL4FFTPlan";  
+  static const char *func = "XLALCreateForwardREAL4FFTPlan";
   REAL4FFTPlan *plan;
   plan = XLALCreateREAL4FFTPlan( size, 1, measurelvl );
   if ( ! plan )
@@ -256,7 +256,7 @@ REAL4FFTPlan * XLALCreateForwardREAL4FFTPlan( UINT4 size, int measurelvl )
 
 REAL4FFTPlan * XLALCreateReverseREAL4FFTPlan( UINT4 size, int measurelvl )
 {
-  static const char *func = "XLALCreateReverseREAL4FFTPlan";  
+  static const char *func = "XLALCreateReverseREAL4FFTPlan";
   REAL4FFTPlan *plan;
   plan = XLALCreateREAL4FFTPlan( size, 0, measurelvl );
   if ( ! plan )
@@ -298,16 +298,16 @@ int XLALREAL4ForwardFFT( COMPLEX8Vector *output, const REAL4Vector *input,
     XLAL_ERROR( func, XLAL_EBADLEN );
 
   /* do the fft */
-  /* 
+  /*
    * Special check for vector with size 1 to avoid CUDA bug
    */
-  if( plan->size == 1 ) 
+  if( plan->size == 1 )
   {
     output->data[0].re = input->data[0];
     output->data[0].im = 0.0;
   }
   else
-    cudafft_execute_r2c( plan->plan, 
+    cudafft_execute_r2c( plan->plan,
     (cufftComplex *)(output->data), (cufftReal *)(input->data),
     (cufftComplex *)plan->d_complex, (cufftReal *)plan->d_real, plan->size );
 
@@ -340,15 +340,15 @@ int XLALREAL4ReverseFFT( REAL4Vector *output, const COMPLEX8Vector *input,
     XLAL_ERROR( func, XLAL_EDOM );  /* imaginary part of Nyquist must be zero */
 
   /* perform the fft */
-  /* 
+  /*
    * Special check to handle array of size 1
    */
-  if( plan->size == 1 ) 
+  if( plan->size == 1 )
   {
     output->data[0] = input->data[0].re;
   }
   else
-    cudafft_execute_c2r( plan->plan, 
+    cudafft_execute_c2r( plan->plan,
     (cufftReal *)(output->data), (cufftComplex *)(input->data),
     (cufftReal *)plan->d_real, (cufftComplex *)plan->d_complex, plan->size );
 
@@ -382,7 +382,7 @@ int XLALREAL4VectorFFT( REAL4Vector *output, const REAL4Vector *input,
     /* do the fft */
     if( plan->sign == -1 )
     {
-      cudafft_execute_r2c( plan->plan, 
+      cudafft_execute_r2c( plan->plan,
 	  (cufftComplex *)tmp, (cufftReal *)(input->data),
 	  (cufftComplex *)plan->d_complex, (cufftReal *)plan->d_real, plan->size );
       output->data[0] = tmp[0].re;
@@ -415,13 +415,13 @@ int XLALREAL4VectorFFT( REAL4Vector *output, const REAL4Vector *input,
 	tmp[plan->size/2].im = 0.0;
       }
 
-      cudafft_execute_c2r( plan->plan, 
+      cudafft_execute_c2r( plan->plan,
 	  (cufftReal *)(output->data), (cufftComplex *)tmp,
 	  (cufftReal *)plan->d_real, (cufftComplex *)plan->d_complex, plan->size );
     }
     XLALFree(tmp);
   }
-  
+
   return 0;
 }
 
@@ -452,7 +452,7 @@ int XLALREAL4PowerSpectrum( REAL4Vector *spec, const REAL4Vector *data,
     tmp[0].re = data->data[0];
   /* transform the data */
   else
-    cudafft_execute_r2c( plan->plan, 
+    cudafft_execute_r2c( plan->plan,
     (cufftComplex *)(tmp), (cufftReal *)(data->data),
     (cufftComplex *)plan->d_complex, (cufftReal *)plan->d_real, plan->size );
 
@@ -500,7 +500,7 @@ REAL8FFTPlan * XLALCreateREAL8FFTPlan( UINT4 size, int fwdflg, int measurelvl )
   if ( ! size )
     XLAL_ERROR_NULL( func, XLAL_EBADLEN );
 
-  /* based on measurement level, set fftw3 flags to perform 
+  /* based on measurement level, set fftw3 flags to perform
    * requested degree of measurement */
   switch ( measurelvl )
   {
@@ -558,7 +558,7 @@ REAL8FFTPlan * XLALCreateREAL8FFTPlan( UINT4 size, int fwdflg, int measurelvl )
 
 REAL8FFTPlan * XLALCreateForwardREAL8FFTPlan( UINT4 size, int measurelvl )
 {
-  static const char *func = "XLALCreateForwardREAL8FFTPlan";  
+  static const char *func = "XLALCreateForwardREAL8FFTPlan";
 
   REAL8FFTPlan *plan;
   plan = XLALCreateREAL8FFTPlan( size, 1, measurelvl );
@@ -570,7 +570,7 @@ REAL8FFTPlan * XLALCreateForwardREAL8FFTPlan( UINT4 size, int measurelvl )
 
 REAL8FFTPlan * XLALCreateReverseREAL8FFTPlan( UINT4 size, int measurelvl )
 {
-  static const char *func = "XLALCreateReverseREAL8FFTPlan";  
+  static const char *func = "XLALCreateReverseREAL8FFTPlan";
 
   REAL8FFTPlan *plan;
   plan = XLALCreateREAL8FFTPlan( size, 0, measurelvl );
@@ -774,7 +774,7 @@ int XLALREAL8PowerSpectrum( REAL8Vector *spec, REAL8Vector *data,
 
 
 
-/* <lalVerbatim file="RealFFTCP"> */  
+/* <lalVerbatim file="RealFFTCP"> */
 void
 LALCreateForwardREAL4FFTPlan(
     LALStatus    *status,
@@ -812,7 +812,7 @@ LALCreateForwardREAL4FFTPlan(
 }
 
 
-/* <lalVerbatim file="RealFFTCP"> */  
+/* <lalVerbatim file="RealFFTCP"> */
 void
 LALCreateReverseREAL4FFTPlan(
     LALStatus    *status,
@@ -848,9 +848,9 @@ LALCreateReverseREAL4FFTPlan(
 
   RETURN( status );
 }
-  
 
-/* <lalVerbatim file="RealFFTCP"> */  
+
+/* <lalVerbatim file="RealFFTCP"> */
 void
 LALDestroyREAL4FFTPlan(
     LALStatus    *status,
@@ -879,7 +879,7 @@ LALDestroyREAL4FFTPlan(
 }
 
 
-/* <lalVerbatim file="RealFFTCP"> */  
+/* <lalVerbatim file="RealFFTCP"> */
 void
 LALForwardREAL4FFT(
     LALStatus      *status,
@@ -942,7 +942,7 @@ LALForwardREAL4FFT(
 }
 
 
-/* <lalVerbatim file="RealFFTCP"> */  
+/* <lalVerbatim file="RealFFTCP"> */
 void
 LALReverseREAL4FFT(
     LALStatus      *status,
@@ -1010,7 +1010,7 @@ LALReverseREAL4FFT(
 }
 
 
-/* <lalVerbatim file="RealFFTCP"> */  
+/* <lalVerbatim file="RealFFTCP"> */
 void
 LALREAL4PowerSpectrum (
     LALStatus   *status,
@@ -1067,7 +1067,7 @@ LALREAL4PowerSpectrum (
 }
 
 
-/* <lalVerbatim file="RealFFTCP"> */  
+/* <lalVerbatim file="RealFFTCP"> */
 void
 LALREAL4VectorFFT(
     LALStatus   *status,
@@ -1136,7 +1136,7 @@ LALREAL4VectorFFT(
  */
 
 
-/* <lalVerbatim file="RealFFTCP"> */  
+/* <lalVerbatim file="RealFFTCP"> */
 void
 LALCreateForwardREAL8FFTPlan(
     LALStatus    *status,
@@ -1173,7 +1173,7 @@ LALCreateForwardREAL8FFTPlan(
 }
 
 
-/* <lalVerbatim file="RealFFTCP"> */  
+/* <lalVerbatim file="RealFFTCP"> */
 void
 LALCreateReverseREAL8FFTPlan(
     LALStatus    *status,
@@ -1208,9 +1208,9 @@ LALCreateReverseREAL8FFTPlan(
   }
   RETURN( status );
 }
-  
 
-/* <lalVerbatim file="RealFFTCP"> */  
+
+/* <lalVerbatim file="RealFFTCP"> */
 void
 LALDestroyREAL8FFTPlan(
     LALStatus    *status,
@@ -1239,7 +1239,7 @@ LALDestroyREAL8FFTPlan(
 }
 
 
-/* <lalVerbatim file="RealFFTCP"> */  
+/* <lalVerbatim file="RealFFTCP"> */
 void
 LALForwardREAL8FFT(
     LALStatus      *status,
@@ -1301,7 +1301,7 @@ LALForwardREAL8FFT(
 }
 
 
-/* <lalVerbatim file="RealFFTCP"> */  
+/* <lalVerbatim file="RealFFTCP"> */
 void
 LALReverseREAL8FFT(
     LALStatus      *status,
@@ -1368,7 +1368,7 @@ LALReverseREAL8FFT(
 }
 
 
-/* <lalVerbatim file="RealFFTCP"> */  
+/* <lalVerbatim file="RealFFTCP"> */
 void
 LALREAL8PowerSpectrum (
     LALStatus   *status,
@@ -1424,7 +1424,7 @@ LALREAL8PowerSpectrum (
 }
 
 
-/* <lalVerbatim file="RealFFTCP"> */  
+/* <lalVerbatim file="RealFFTCP"> */
 void
 LALREAL8VectorFFT(
     LALStatus   *status,
