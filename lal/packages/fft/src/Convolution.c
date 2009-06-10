@@ -153,9 +153,11 @@ REAL4TimeSeries *XLALREAL4Convolution(
     )
 {
   static const char *func = "XLALRespFilt";
+  /*
   REAL4Vector *tmpWave;
   REAL4 normfac;
   UINT4 k;
+  */
 
   if ( ! strain || ! transfer )
       XLAL_ERROR_NULL( func, XLAL_EFAULT );
