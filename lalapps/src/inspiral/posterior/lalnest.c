@@ -34,7 +34,7 @@
 				--XMLfile inputXML --Nruns N [1] --inj injectionXML -F (fake injection) \n \
 				--event trigNum (0) --end_time GPStime --Mmin m --Mmin M --NINJA for ninja data [--approximant (e.g. TaylorF2|TaylorT2)]\n \
 				--timeslide --studentt (use student-t likelihood function)\n \
-      [--RA fixed right ascension degrees --dec fixed declination degrees] --GRB (use GRB prior) \n"
+      [--RA fixed right ascension degrees --dec fixed declination degrees] --GRB (use GRB prior) --skyloc (use trigger masses) \n"
 
 extern CHAR outfile[512];
 extern double etawindow;
@@ -75,6 +75,7 @@ int estimatenoise=1;
 int SkyPatch=0;
 int FakeFlag=0;
 int GRBflag=0;
+int SkyLocFlag=0;
 
 REAL8TimeSeries *readTseries(CHAR *cachefile, CHAR *channel, LIGOTimeGPS start, REAL8 length);
 
@@ -83,6 +84,7 @@ void NestInitManual(LALMCMCParameter *parameter, void *iT);
 void NestInitNINJAManual(LALMCMCParameter *parameter, void *iT);
 void NestInitSkyPatch(LALMCMCParameter *parameter, void *iT);
 void NestInitGRB(LALMCMCParameter *parameter, void *iT);
+void NestInitSkyLoc(LALMCMCParameter *parameter, void *iT);
 
 REAL8TimeSeries *readTseries(CHAR *cachefile, CHAR *channel, LIGOTimeGPS start, REAL8 length)
 {
@@ -143,6 +145,7 @@ void initialise(int argc, char *argv[]){
 		{"studentt",no_argument,0,'l'},
 		{"RA",required_argument,0,'O'},
 		{"dec",required_argument,0,'a'},
+	       	{"skyloc",no_argument,0,13},
 		{0,0,0,0}};
 
 	if(argc<=1) {fprintf(stderr,USAGE); exit(-1);}
@@ -153,6 +156,7 @@ void initialise(int argc, char *argv[]){
 			CacheFileNames[nCache]=malloc(strlen(optarg)+1);
 			strcpy(CacheFileNames[nCache++],optarg);
 			break;
+       	        case 13: SkyLocFlag=1; break;
 	        case 'D':
 	                dataseed=atoi(optarg);
 	                break;
@@ -642,6 +646,7 @@ int main( int argc, char *argv[])
 	if(!strcmp(approx,BBH)) inputMCMC.approximant=IMRPhenomA;
 
 	if(SkyPatch) {inputMCMC.funcInit = NestInitSkyPatch; goto doneinit;}
+	if(SkyLocFlag) {inputMCMC.funcInit = NestInitSkyLoc; goto doneinit;}
 	if(NULL!=inputXMLFile) inputMCMC.funcInit = NestInit2PN;
 	else if(NINJA && NULL==injXMLFile) inputMCMC.funcInit = NestInitNINJAManual;
 		else if(NINJA) inputMCMC.funcInit = NestInitInjNINJA;
@@ -737,6 +742,34 @@ void NestInitGRB(LALMCMCParameter *parameter, void *iT){
   XLALMCMCAddParam(parameter,"iota",LAL_PI*gsl_rng_uniform(RNG),0,LAL_PI,0);
 
 
+  return;
+}
+
+void NestInitSkyLoc(LALMCMCParameter *parameter, void *iT)
+{
+  SimInspiralTable *injTable = (SimInspiralTable *) iT;
+  parameter->param=NULL;
+  parameter->dimension=0;
+  double inM1 = injTable->mass1;
+  double inM2 = injTable->mass2;
+  double inEta = injTable->eta;
+  double inTime = injTable->geocent_end_time.gpsSeconds + 1e-9*injTable->geocent_end_time.gpsNanoSeconds;
+  double inMc = m2mc(inM1,inM2);
+  double deltaM=0.05; double deltaEta=0.01;
+  double etaMin=inEta-0.5*deltaEta; double etaMax=inEta+0.5*deltaEta;
+  etaMin=etaMin<0.0?0.0:etaMin;
+  etaMax=etaMax>0.25?0.25:etaMax;
+  deltaEta=etaMax-etaMin;
+
+  XLALMCMCAddParam(parameter,"mchirp",(gsl_rng_uniform(RNG)-0.5)*deltaM + inMc,inMc-0.5*deltaM,inMc+0.5*deltaM,0);
+  XLALMCMCAddParam(parameter,"eta",(gsl_rng_uniform(RNG))*deltaEta + etaMin,etaMin,etaMax,0);
+  XLALMCMCAddParam(parameter,"time",(gsl_rng_uniform(RNG)-0.5)*timewindow+inTime,inTime-0.5*timewindow,inTime+0.5*timewindow,0);
+  XLALMCMCAddParam(parameter,"phi",		LAL_TWOPI*gsl_rng_uniform(RNG),0.0,LAL_TWOPI,1);
+  XLALMCMCAddParam(parameter,"distMpc", 99.0*gsl_rng_uniform(RNG)+1.0, 1.0, 100.0, 0);
+  XLALMCMCAddParam(parameter,"long",LAL_TWOPI*gsl_rng_uniform(RNG),0,LAL_TWOPI,1);
+  XLALMCMCAddParam(parameter,"lat",LAL_PI*(gsl_rng_uniform(RNG)-0.5),-LAL_PI/2.0,LAL_PI/2.0,0);
+  XLALMCMCAddParam(parameter,"psi",0.5*LAL_PI*gsl_rng_uniform(RNG),0,LAL_PI/2.0,0);
+  XLALMCMCAddParam(parameter,"iota",LAL_PI*gsl_rng_uniform(RNG),0,LAL_PI,0);
   return;
 }
 
