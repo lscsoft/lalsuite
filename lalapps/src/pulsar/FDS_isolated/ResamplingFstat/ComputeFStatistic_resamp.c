@@ -1763,6 +1763,9 @@ void XLALDestroyReSampBuffer ( ReSampBuffer *cfb)
   XLALDestroyMultiFFTWCOMPLEXSeries(cfb->Saved_b);
   cfb->Saved_b = NULL; 
   XLALDestroyMultiREAL8Sequence(cfb->MultiCorrDetTimes);
+  cfb->MultiCorrDetTimes = NULL;
+  XLALDestroyREAL8FrequencySeries(cfb->fstatVector);
+  cfb->fstatVector = NULL;
   return;
 } /* XLALDestroyReSampBuffer() */
 
@@ -2714,6 +2717,8 @@ void ComputeFStat_resamp(LALStatus *status, const PulsarDopplerParams *doppler, 
       /* prepare Fstat-vector over frequencies to hold output results */
       /* Number of Frequency Bins */
       UINT4 numFreqBins = floor(uvar_FreqBand/dF_closest + 0.5);
+      if(Buffer->fstatVector)
+	XLALDestroyREAL8FrequencySeries(Buffer->fstatVector);
       fstatVector = XLALCreateREAL8FrequencySeries ("Fstat vector", &doppler->refTime, uvar_Freq, dF_closest, &empty_Unit, numFreqBins );
       Buffer->fstatVector = fstatVector;
     }
