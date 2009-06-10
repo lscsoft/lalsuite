@@ -52,7 +52,8 @@ lal-user-env.csh: Makefile
 
 .PHONY : gitID
 gitID:
-	if test -f $(top_srcdir)/misc/generateGitID.sh; then \
+	@if test -f $(top_srcdir)/misc/generateGitID.sh; then \
+	echo "creating lalGitID.h"; \
 	$(SHELL) $(top_srcdir)/misc/generateGitID.sh $(top_srcdir) lal; \
 	fi
 
