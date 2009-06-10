@@ -444,10 +444,7 @@ int main( int argc, char *argv[] )
   UINT4  *analyseThisTmplt = NULL;
   INT4    thisTemplateIndex = 0;
   UINT4   analyseTag;
-
-  /* trigScan clustering input parameters */
-  trigScanClusterIn  *condenseIn=NULL;
-
+  
 
   /*
    *
@@ -2121,18 +2118,6 @@ int main( int argc, char *argv[] )
       }
     }
 
-    /* If using trigScan clustering, then init the clustering */
-    /* input parameters before they are freed up in the code. */
-    /* Anand :: We had to put the numTmplts > 0 condition as  */
-    /* trig2tmplt would sometime return an empty template     */
-    /* bank file in the absence of coinc triggers.            */
-    if ( trigScanMethod && numTmplts > 0 )
-    {
-        XLALPopulateTrigScanInput( &condenseIn, fcDataParams,
-                fcTmpltParams, fcFilterParams, bankHead );
-    }
-
-
     /*
      *
      * split the template bank into subbanks for the bank veto
@@ -3159,21 +3144,22 @@ int main( int argc, char *argv[] )
           maximizationInterval);
     }
 
-    /* trigScanClustering */
-    if ( trigScanMethod )
-    {
-        if ( condenseIn && (savedEvents.snglInspiralTable) )
-        {
-            condenseIn->bin_time   = trigScanDeltaEndTime;
-            condenseIn->ts_scaling = trigScanMetricScalingFac;
-            condenseIn->scanMethod = trigScanMethod;
-            condenseIn->n          = XLALCountSnglInspiral ( (savedEvents.snglInspiralTable) );
-            condenseIn->vrbflag    = vrbflg;
-            condenseIn->appendStragglers = trigScanAppendStragglers;
+    /* trigScanClustering */ 
+    if ( trigScanMethod ) 
+    { 
+        if ( savedEvents.snglInspiralTable) 
+        { 
+            
+           /* Call the clustering routine */ 
+           if (XLALTrigScanClusterTriggers( &(savedEvents.snglInspiralTable),
+                                       trigScanMethod,
+                                       trigScanMetricScalingFac,
+                                       trigScanAppendStragglers ) == XLAL_FAILURE )
+           {
+             fprintf( stderr, "New trig scan has failed!!\n" );
+             exit(1);
+           }
 
-            /* Call the clustering routine */
-            LAL_CALL( LALClusterSnglInspiralOverTemplatesAndEndTime ( &status,
-                        &(savedEvents.snglInspiralTable), condenseIn ), &status );
         }
         else
         {
@@ -3261,7 +3247,6 @@ int main( int argc, char *argv[] )
       LALFree( thisInj );
     }
   }
-  if ( condenseIn )  LALFree( condenseIn );
   if ( approximantName) free( approximantName );
   if ( orderName )     free( orderName );
   if ( calCacheName )  free( calCacheName );
