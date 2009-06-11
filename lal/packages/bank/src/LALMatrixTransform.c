@@ -62,10 +62,10 @@ NRCSID(LALMATRIXTRANSFORMC, "$Id$");
 
 /*  <lalVerbatim file="LALMatrixTransformCP"> */
 
-void LALMatrixTransform (LALStatus *status, 
-                         INT4 n, 
-                         REAL8 **data1, 
-                         REAL8 **data2, 
+void LALMatrixTransform (LALStatus *status,
+                         INT4 n,
+                         REAL8 **data1,
+                         REAL8 **data2,
                          REAL8 **data3)
 { /* </lalVerbatim> */
 

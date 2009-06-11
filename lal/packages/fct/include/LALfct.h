@@ -18,15 +18,15 @@
 */
 
 /*  <lalVerbatim file="LALfctHV">
-    Author: Edlund, Jeffrey A. 
+    Author: Edlund, Jeffrey A.
     $Id$
-    </lalVerbatim> 
+    </lalVerbatim>
 */
 
 /* <lalLaTeX>
 
 \section{Header \texttt{LALfct.h}}
-\label{s:LALfct.h} 
+\label{s:LALfct.h}
 
 \subsection*{Synopsis}
 \begin{verbatim}
@@ -49,7 +49,7 @@ extern "C" {            /* Protect against C++ name mangling */
 /* Define the RCS ID string */
   NRCSID(LALFCTH,"$Id$");
 
-/* 
+/*
 <lalLaTeX>
 %\subsection*{Error conditions}
 %\input{LALfctHErrTab}
@@ -113,55 +113,55 @@ correspond to the data types used above.
 #define LALFCTCOMPDestroyArray LALCDestroyArray
 /* </lalVerbatim>
 <lalLaTeX>
-   LALFCT\_FP is a pointer to a function that returns a LALFCTREAL and takes a 
-   LALFCTREAL as an argument.  Your phase functions must match this so that 
-   they can be put in an array inside the LALFCTPlan. 
+   LALFCT\_FP is a pointer to a function that returns a LALFCTREAL and takes a
+   LALFCTREAL as an argument.  Your phase functions must match this so that
+   they can be put in an array inside the LALFCTPlan.
 </lalLaTeX>
 
-<lalVerbatim> 
+<lalVerbatim>
 */
 typedef LALFCTREAL (*LALFCT_FP)(LALFCTREAL);
 
-/* 
-</lalVerbatim> 
+/*
+</lalVerbatim>
 
-<lalLaTeX> 
+<lalLaTeX>
 
 LALFCTPlan is used internally to store information that will
-be used in the calculation of the FCT. 
+be used in the calculation of the FCT.
 
 </lalLaTeX> */
 
 /*The structure of LALFCTPlan is defined in LALfct.c but other programs
   should know that it exists. */
 typedef struct LALFCTPlan LALFCTPlan;
- 
+
 /* <lalLaTeX>
  LALfctInit takes the following structure as one of  it's arguments.
  </lalLaTeX>
  <lalVerbatim>*/
 typedef struct tagLALfctInitParams {
-  UINT4         numOfDataPoints; 
+  UINT4         numOfDataPoints;
   UINT2         numOfDims;
 } LALfctInitParams;
 /* </lalVerbatim>
    <lalLaTeX>
-Where numofDataPoints is the size of the input data array and numOfDims 
+Where numofDataPoints is the size of the input data array and numOfDims
 is the number of phase functions that will be used in the FCT.
 
 LALfctAddPhaseFunc takes the following structure as one of it's
-arguments. 
+arguments.
 </lalLaTeX>
 <lalVerbatim>*/
-typedef struct tagLALfctAddPhaseFuncParams { 
-  UINT2         dim;   
-  UINT4         lengthOfDim; 
+typedef struct tagLALfctAddPhaseFuncParams {
+  UINT2         dim;
+  UINT4         lengthOfDim;
   LALFCT_FP     phaseFuncForDim;
 } LALfctAddPhaseFuncParams;
 /* </lalVerbatim>
-   <lalLaTeX> 
-Where dim is the dimension of the N dimensional 
-output array that you would like to set the phase function for. 
+   <lalLaTeX>
+Where dim is the dimension of the N dimensional
+output array that you would like to set the phase function for.
 </lalLaTeX>
 
 <lalLaTeX>
@@ -170,8 +170,8 @@ LALfctGenRowIndex takes the following structure as one of it's arguments.
  <lalVerbatim> */
 typedef struct tagLALfctGenRowIndexParams {
   LALFCTPlan *fctPlan;
-  UINT4 skipRows;  
-  UINT4 numOfRows; /* This only works if goToEndOfRows is FALSE */  
+  UINT4 skipRows;
+  UINT4 numOfRows; /* This only works if goToEndOfRows is FALSE */
   BOOLEAN goToEndOfRows; /* This means that the function should ignore
 			    numOfRows. */
   BOOLEAN createIndex;
@@ -180,22 +180,22 @@ typedef struct tagLALfctGenRowIndexParams {
  <lalLaTeX>
      Where skipRows is the number of rows in the N-dim space that you want
      to skip over and numOfRows is the number of rows you want the function
-     to output indices for. If goToEndOfRows is true, then the function 
+     to output indices for. If goToEndOfRows is true, then the function
      ignores numOfRows.  If createIndex is FALSE then the function will not
      create the index, it will only the total number of rows after skipRows.
 
      The following is the LALfctCalcOutput structure.
-     </lalLaTeX> 
+     </lalLaTeX>
 <lalVerbatim> */
-typedef struct tagLALfctCalcOutput { 
+typedef struct tagLALfctCalcOutput {
   UINT4Array *rowIndex;
   LALFCTCOMPArray *outputData;
 } LALfctCalcOutput;
   /* </lalVerbatim> */
 
-  /* <lalLaTeX> 
+  /* <lalLaTeX>
      The following structure is returned from the LALfctGenRowIndexOutput.
-     </lalLaTeX> 
+     </lalLaTeX>
 <lalVerbatim>*/
 typedef struct tagLALfctGenRowIndexOutput {
   LALfctCalcOutput *fctCalcOutput;
@@ -203,33 +203,33 @@ typedef struct tagLALfctGenRowIndexOutput {
 }LALfctGenRowIndexOutput;
   /* </lalVerbatim>*/
 
-  /* <lalLaTeX> 
+  /* <lalLaTeX>
      It is possible to replace the standard LALFCTGenRowIndex with your
      own function.  This is useful if you want more control over the selection
      of the rows that you wish calculated. The following is the typedef
-     for that function. 
+     for that function.
 </lalLaTeX>
  <lalVerbatim> */
-     
+
 typedef void (*LALFCTGenRowIndex_FP)(LALStatus *status, \
 		       LALfctGenRowIndexOutput *fctGenRowIndexOutput, \
 		       LALfctGenRowIndexParams *fctGenRowIndexParams);
   /* </lalVerbatim> */
 
-/* <lalLaTeX> 
-The following is the parameter structure for LALfctCalc. 
+/* <lalLaTeX>
+The following is the parameter structure for LALfctCalc.
 </lalLaTeX>
  <lalVerbatim>*/
-typedef struct tagLALfctCalcParams { 
+typedef struct tagLALfctCalcParams {
   LALFCTPlan    *fctPlan;
   LALfctGenRowIndexParams *fctGenRowIndexParams;
-  LALFCTGenRowIndex_FP fctGenRowIndexFunc;  
+  LALFCTGenRowIndex_FP fctGenRowIndexFunc;
 } LALfctCalcParams;
   /* </lalVerbatim> */
 
 
 
-  
+
 /* Include external global variables */
 
        /* Declare global function prototypes */
@@ -241,7 +241,7 @@ void LALfctAddPhaseFunc( LALStatus *status,
 			 LALfctAddPhaseFuncParams *fctAddPhaseFuncParams );
 void LALfctCalc( LALStatus *status,
 		 LALfctCalcOutput *fctCalcOutput,
-		 LALFCTCOMPVector *data, 
+		 LALFCTCOMPVector *data,
 		 LALfctCalcParams *fctCalcParams );
 void LALfctDestroyPlan( LALStatus *status,
 			LALFCTPlan **fctPlan );

@@ -17,14 +17,14 @@
 *  MA  02111-1307  USA
 */
 
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: TrigScanEThincaCommon.c
  *
  * Author: Robinson, C. A. K.
- * 
+ *
  * Revision: $Id: SnglInspiralUtils.c,v 1.74 2007/08/09 17:21:34 dkeppel Exp $
- * 
+ *
  *-----------------------------------------------------------------------
  */
 
@@ -32,7 +32,7 @@
 <lalVerbatim file="TrigScanEThincaCommonCV">
 Author: Robinson, C. A. K.
 $Id: SnglInspiralUtils.c,v 1.74 2007/08/09 17:21:34 dkeppel Exp $
-</lalVerbatim> 
+</lalVerbatim>
 #endif
 
 #include <lal/TrigScanEThincaCommon.h>
@@ -59,7 +59,7 @@ triggers in the list of \texttt{SnglInspiralTable}s will be passed back in
 \texttt{tcMax}.
 
 The function \texttt{XLALDestroyTriggerErrorList()} frees all memory associated
-with the \texttt{TriggerErrorList}, with the exception of the wrapped 
+with the \texttt{TriggerErrorList}, with the exception of the wrapped
 \texttt{SnglInspiralTable}s, which will normally still be required after
 TrigScan and E-thinca have completed.
 
@@ -71,8 +71,8 @@ TrigScan and E-thinca have completed.
 static REAL8 getTimeError(const SnglInspiralTable *table, REAL8 eMatch);
 
 /* <lalVerbatim file="TrigScanEThincaCommonCP"> */
-TriggerErrorList * XLALCreateTriggerErrorList( SnglInspiralTable *tableHead, 
-                                               REAL8             scaleFactor, 
+TriggerErrorList * XLALCreateTriggerErrorList( SnglInspiralTable *tableHead,
+                                               REAL8             scaleFactor,
                                                REAL8             *tcMax )
 /* </lalVerbatim> */
 {
@@ -83,7 +83,7 @@ TriggerErrorList * XLALCreateTriggerErrorList( SnglInspiralTable *tableHead,
 
   TriggerErrorList *errorListHead = NULL;
   TriggerErrorList *thisErrorList = NULL;
-  
+
   SnglInspiralTable *currentTrigger = NULL;
 
 #ifndef LAL_NDEBUG

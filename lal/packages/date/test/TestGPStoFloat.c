@@ -94,7 +94,7 @@ int main(int argc, char *argv[])
               987654321.123456789, realTime);
       return 1;
     }
-      
+
 
   /* 2 */
   realTime = 54321.123456789;
@@ -126,7 +126,7 @@ int main(int argc, char *argv[])
   interval.nanoSeconds = 654;
 
   LALIntervalToFloat(&status, &deltaT, &interval);
-  
+
   if (status.statusCode && lalDebugLevel)
     {
       fprintf(stderr, "TestGPStoFloat: LALIntervalToFloat() failed; line %i, %s\n",

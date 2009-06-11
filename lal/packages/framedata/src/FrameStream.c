@@ -861,7 +861,7 @@ LALFrCacheOpen(
 { /* </lalVerbatim> */
   FrStream *stream;
 
-  INITSTATUS( status, "LALFrCacheOpen", FRAMESTREAMC );  
+  INITSTATUS( status, "LALFrCacheOpen", FRAMESTREAMC );
   ASSERT( cache, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   ASSERT( output, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   ASSERT( ! *output, status, FRAMESTREAMH_ENNUL, FRAMESTREAMH_MSGENNUL );
@@ -897,7 +897,7 @@ LALFrOpen(
 { /* </lalVerbatim> */
   FrCache *cache = NULL;
 
-  INITSTATUS( status, "LALFrOpen", FRAMESTREAMC );  
+  INITSTATUS( status, "LALFrOpen", FRAMESTREAMC );
   ATTATCHSTATUSPTR( status );
   ASSERT( stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   ASSERT( ! *stream, status, FRAMESTREAMH_ENNUL, FRAMESTREAMH_MSGENNUL );
@@ -933,7 +933,7 @@ LALFrClose(
     FrStream  **stream
     )
 { /* </lalVerbatim> */
-  INITSTATUS( status, "LALFrClose", FRAMESTREAMC );  
+  INITSTATUS( status, "LALFrClose", FRAMESTREAMC );
   ASSERT( stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   ASSERT( *stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   XLALFrClose( *stream );
@@ -949,7 +949,7 @@ LALFrSetMode(
     FrStream  *stream
     )
 { /* </lalVerbatim> */
-  INITSTATUS( status, "LALFrSetMode", FRAMESTREAMC );  
+  INITSTATUS( status, "LALFrSetMode", FRAMESTREAMC );
   ASSERT( stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   stream->mode = mode;
   RETURN( status );
@@ -964,7 +964,7 @@ LALFrEnd(
     FrStream  *stream
     )
 { /* </lalVerbatim> */
-  INITSTATUS( status, "LALFrEnd", FRAMESTREAMC );  
+  INITSTATUS( status, "LALFrEnd", FRAMESTREAMC );
   ASSERT( stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   ASSERT( end, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   *end = XLALFrState( stream ) & LAL_FR_END;
@@ -973,12 +973,12 @@ LALFrEnd(
 
 /* <lalVerbatim file="FrameStreamCP"> */
 void
-LALFrRewind( 
+LALFrRewind(
     LALStatus *status,
     FrStream  *stream
     )
 { /* </lalVerbatim> */
-  INITSTATUS( status, "LALFrRewind", FRAMESTREAMC );  
+  INITSTATUS( status, "LALFrRewind", FRAMESTREAMC );
   ASSERT( stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   if ( XLALFrRewind( stream ) )
   {
@@ -1005,7 +1005,7 @@ LALFrNext(
 { /* </lalVerbatim> */
   CHAR frErrMsg[1024];
   int code;
-  INITSTATUS( status, "LALFrNext", FRAMESTREAMC );  
+  INITSTATUS( status, "LALFrNext", FRAMESTREAMC );
   ASSERT( stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
 
   if ( stream->state & LAL_FR_ERR )
@@ -1058,7 +1058,7 @@ LALFrSeek(
 { /* </lalVerbatim> */
   CHAR frErrMsg[1024];
   int code;
-  INITSTATUS( status, "LALFrSeek", FRAMESTREAMC );  
+  INITSTATUS( status, "LALFrSeek", FRAMESTREAMC );
   ASSERT( stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   ASSERT( epoch, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   if ( stream->state & LAL_FR_ERR )
@@ -1092,7 +1092,7 @@ LALFrSeek(
       ABORT( status, FRAMESTREAMH_ETREQ, FRAMESTREAMH_MSGETREQ );
     }
   }
-  
+
   RETURN( status );
 }
 
@@ -1105,7 +1105,7 @@ LALFrTell(
     FrStream    *stream
     )
 { /* </lalVerbatim> */
-  INITSTATUS( status, "LALFrTell", FRAMESTREAMC );  
+  INITSTATUS( status, "LALFrTell", FRAMESTREAMC );
   ASSERT( stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   ASSERT( epoch, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   if ( stream->state & LAL_FR_ERR )
@@ -1125,7 +1125,7 @@ LALFrGetPos(
     FrStream  *stream
     )
 { /* </lalVerbatim> */
-  INITSTATUS( status, "LALFrGetPos", FRAMESTREAMC );  
+  INITSTATUS( status, "LALFrGetPos", FRAMESTREAMC );
   ASSERT( position, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   ASSERT( stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   if ( stream->state & LAL_FR_ERR )
@@ -1145,7 +1145,7 @@ LALFrSetPos(
     FrStream  *stream
     )
 { /* </lalVerbatim> */
-  INITSTATUS( status, "LALFrSetPos", FRAMESTREAMC );  
+  INITSTATUS( status, "LALFrSetPos", FRAMESTREAMC );
   ASSERT( position, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   ASSERT( stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   if ( stream->state & LAL_FR_ERR )

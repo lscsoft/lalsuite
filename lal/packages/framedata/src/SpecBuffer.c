@@ -201,7 +201,7 @@ LALCreateSpectrumBuffer (
 
   /* make sure that buffer does not exist */
   ASSERT (*buffer == NULL, status, SPECBUFFERH_ENNUL, SPECBUFFERH_MSGENNUL);
-  
+
   /* make sure that parameters are reasonable */
   ASSERT (params->numSpec > 0, status, SPECBUFFERH_ESIZE, SPECBUFFERH_MSGESIZE);
   ASSERT (params->numPoints > 0, status, SPECBUFFERH_ESIZE, SPECBUFFERH_MSGESIZE);
@@ -292,7 +292,7 @@ LALDestroySpectrumBuffer (
   /* destroy window */
   LALDestroyVector (status->statusPtr, &(*buffer)->specParams->window);
   CHECKSTATUSPTR (status);
-  
+
   LALFree ((*buffer)->specParams);
 
   LALFree (*buffer);
@@ -320,7 +320,7 @@ LALAddSpectrum (
   /* make sure that arguments are not NULL */
   ASSERT (specBuffer, status, SPECBUFFERH_ENULL, SPECBUFFERH_MSGENULL);
   ASSERT (timeSeries, status, SPECBUFFERH_ENULL, SPECBUFFERH_MSGENULL);
- 
+
   /* the next spectrum to fill */
   whichSpec = specBuffer->specFilled % specBuffer->numSpec;
 

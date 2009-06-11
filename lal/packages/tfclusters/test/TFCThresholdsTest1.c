@@ -30,7 +30,7 @@ int lalDebugLevel = LALMSGLVL3;
 int main(void) {
 
   static LALStatus status;
-  
+
   UINT4 i, nFreq;
   REAL4 *rho;
   RiceThresholdParams params;
@@ -50,7 +50,7 @@ int main(void) {
   params.Q = (REAL8 *)LALMalloc(nFreq * sizeof(REAL8));
   if(!params.Q) return 1;
 
-  
+
   /* set dummy values */
   for(i=0;i<nFreq;i++) {
     params.P0[i] = (REAL4)(i+1);
@@ -62,6 +62,6 @@ int main(void) {
   if(status.statusCode != 0) return 1;
 
   for(i=0;i<nFreq;i++) printf("%g\t%g\t->\t%g\n",params.P0[i], params.Q[i],rho[i]);
-  
+
   return 0;
 }

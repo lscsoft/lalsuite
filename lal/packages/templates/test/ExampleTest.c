@@ -24,7 +24,7 @@
 
 /**** <lalLaTeX>
  * \subsection{Program \texttt{ExampleTest.c}}
- * 
+ *
  * %% One-line description of test program.
  *
  * \subsubsection*{Usage}
@@ -46,7 +46,7 @@
  * %% A description of what the test program does.
  *
  * \subsubsection*{Exit codes}
- * 
+ *
  * %% A table of the possible exit codes and their meanings.
  * %% The program should return exit code 0 on successful completion;
  * %% otherwise it should return some non-zero value.
@@ -64,11 +64,11 @@
  * %% List of any external functions called by this function.
  * \begin{verbatim}
  * \end{verbatim}
- * 
+ *
  * \subsubsection*{Notes}
  *
  * %% Any relevant notes.
- * 
+ *
  * \vfill{\footnotesize\input{ExampleTestCV}}
  **** </lalLaTeX> */
 
@@ -193,9 +193,9 @@ int main( int argc, char *argv[] )
    ** test response to valid data
    **
    ** for example:
-   ** 
+   **
    **   LALExample( &status, &output, &input, &param );
-   **   if ( status.statusCode ) 
+   **   if ( status.statusCode )
    **   {
    **     fprintf( stderr, "received error code %d and message %s\n",
    **         status.statusCode, status.statusDescription );

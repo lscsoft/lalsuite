@@ -20,21 +20,21 @@
 /* <lalVerbatim file="InspiralBCVSpinBankTestCV">
  * Author: Van Den Broeck, C and Jones, G.
  * $Id$
- * </lalVerbatim> */ 
+ * </lalVerbatim> */
 
 /* <lalLaTeX>
  * \subsection{Program \texttt{InspiralBCVSpinBankTest}}
  * \label{s:InspiralBCVSpinBankTest.c}
- * Tests InpsiralBCVSpinBankTest(). 
+ * Tests InpsiralBCVSpinBankTest().
  *
  * \subsubsection*{Usage}
  *
  * \begin{verbatim}
  * InspiralBCVSpinBankTest
- * \end{verbatim} 
+ * \end{verbatim}
  *
  * This program uses InspiralBCVSpinBank() to generate a template bank from
- * command line parameter input.  
+ * command line parameter input.
  *
  * \subsubsection{Command line options}
  * \begin{description}
@@ -80,7 +80,7 @@ int main (void)
 
 void testfunction(LALStatus *status)
 {
-  int i, j; 
+  int i, j;
   float x;
   gsl_matrix *m;
 
@@ -89,7 +89,7 @@ void testfunction(LALStatus *status)
   for (i = 0; i < 10; i++)
     for (j = 0; j < 3; j++)
       CALLGSL ( gsl_matrix_set (m, i, j, 0.23 + 100*i + j), status);
-  
+
   for (i = 0; i < 10; i++)
     for (j = 0; j < 3; j++)
 {

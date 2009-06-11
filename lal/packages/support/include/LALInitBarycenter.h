@@ -29,7 +29,7 @@ $Id$
 
 Provides a routine for reading Earth and Sun position information from
 data files.
- 
+
 
 \subsection*{Synopsis}
 

@@ -20,19 +20,19 @@
 /* <lalVerbatim file="InspiralSpinBankTestCV">
  * Author: Hanna, C.R. and Owen, B. J.
  * $Id$
- * </lalVerbatim> */ 
+ * </lalVerbatim> */
 
 /* <lalLaTeX>
  * \subsection{Program \texttt{InspiralSpinBankTest}}
  * \label{s:InspiralSpinBankTest.c}
  * \providecommand{\MATHEMATICA}{$M\scriptstyle{ATHEMATICA}^{\textrm{{\small\textregistered} }}$}
- * Tests InpsiralSpinBank(). 
+ * Tests InpsiralSpinBank().
  *
  * \subsubsection*{Usage}
  *
  * \begin{verbatim}
  * InspiralSpinBankTest
- * \end{verbatim} 
+ * \end{verbatim}
  *
  * This program uses InspiralSpinBank() to generate a template bank from
  * command line parameter input.  It also has the option to make a
@@ -45,11 +45,11 @@
  * \begin{description}
  * \item[-b]
  * Specifies the XML file to read template bank from. (Only with metaio.)
- * \item[-n] 
+ * \item[-n]
  * Specifies the minimum smaller mass between 0 and 5.0 $M\odot$.
  * \item[-x]
  * Specifies the maximum smaller mass between 0 and 5.0 $M\odot$.
- * \item[-m] 
+ * \item[-m]
  * Specifies the minimum mismatch threshold (typically 0.03) but for the
  * sake of testing it is best to pick a value $O[1]$ to save compiling time.
  * \item[-p]
@@ -141,7 +141,7 @@ int main( int argc, char *argv[] )
   REAL4 F0 = 0;
   REAL4 noiseMin = 1;
   BOOLEAN haveXML = 0;
- 
+
   if( (list = (Math3DPointList *) LALCalloc( 1, sizeof( Math3DPointList )))
       == NULL )
   {
@@ -160,7 +160,7 @@ int main( int argc, char *argv[] )
  /* Parse options. */
   do
   {
-    optflag++;  
+    optflag++;
     switch (opt)
     {
       case 'b':
@@ -175,7 +175,7 @@ int main( int argc, char *argv[] )
 #endif
         break;
       case 'm':
-        coarseIn.mmCoarse = atof( optarg );       
+        coarseIn.mmCoarse = atof( optarg );
         break;
       case 'n':
         coarseIn.mMin = atof( optarg );
@@ -199,14 +199,14 @@ int main( int argc, char *argv[] )
     }
   }
   while( (opt = getopt( argc, argv, "b:n:m:x:ps" )) != -1 );
-  
+
   /* Generate template bank from model noise if not given an XML file. */
   if( !haveXML )
   {
     coarseIn.shf.data = NULL;
     memset( &(coarseIn.shf), 0, sizeof( REAL8FrequencySeries ) );
     coarseIn.shf.f0 = 0;
-    LALDCreateVector( &stat, &psd, coarseIn.fUpper ); 
+    LALDCreateVector( &stat, &psd, coarseIn.fUpper );
     df = 1.0;
     LALNoiseSpectralDensity( &stat, psd, &LALLIGOIPsd, df );
     coarseIn.shf.data = psd;
@@ -214,7 +214,7 @@ int main( int argc, char *argv[] )
     for( loop = 0; loop < psd->length; loop++ )
     {
       if( psd->data[loop] > 0 && psd->data[loop] < noiseMin )
-      { 
+      {
         F0 = (REAL4) coarseIn.shf.deltaF * loop;
         noiseMin = psd->data[loop];
       }
@@ -262,10 +262,10 @@ int main( int argc, char *argv[] )
       list = first;
     }
   }
-  
+
   /* free the last (first?) memory allocated for Math3DPlot. */
-  LALFree( list ); 
- 
+  LALFree( list );
+
   if (stat.statusCode)
     return INSPIRALSPINBANKTESTC_ESUB;
   else

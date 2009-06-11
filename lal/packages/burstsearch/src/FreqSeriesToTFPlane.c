@@ -248,7 +248,7 @@ static SnglBurst *XLALTFTileToBurstEvent(
 	event->search[LIGOMETA_SEARCH_MAX - 1] = '\0';
 	strncpy(event->channel, plane->name, LIGOMETA_CHANNEL_MAX);
 	event->channel[LIGOMETA_CHANNEL_MAX - 1] = '\0';
-	event->start_time = plane->epoch; 
+	event->start_time = plane->epoch;
 	XLALGPSAdd(&event->start_time, tile_start * plane->deltaT);
 	event->duration = tile_length * plane->deltaT;
 	event->peak_time = event->start_time;

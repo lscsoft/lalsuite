@@ -52,7 +52,7 @@ distances on Physical Template Family signal manifold.
 \input{XLALInspiralComputePTFWaveformCP}
 \idx{XLALInspiralComputePTFWaveform()}
 \begin{itemize}
-   \item \texttt{ptfwave,} Output, the waveform at the lattice point defined 
+   \item \texttt{ptfwave,} Output, the waveform at the lattice point defined
    by \texttt{params}
    \item \texttt{params,} Input, the parameters where metric must be computed
    in the computation of the metric.
@@ -61,28 +61,28 @@ distances on Physical Template Family signal manifold.
 \input{XLALInspiralComputePTFWDerivCP}
 \idx{XLALInspiralComputePTFWDeriv()}
 \begin{itemize}
-   \item \texttt{Wderiv,} Output, the time derivative of waveform at the lattice 
+   \item \texttt{Wderiv,} Output, the time derivative of waveform at the lattice
    point defined by \texttt{params}
    \item \texttt{psd,}  Input, the power spectral density of the data
    \item \texttt{params,} Input, the parameters where metric must be computed
    in the computation of the metric
    \item \texttt{paramid,} Input, id of the parameter to take derivative on
    \item \texttt{initdelta,} Input, initial difference in parameters
-   \item \texttt{tolerance,} Input, stop iteration when difference between two 
+   \item \texttt{tolerance,} Input, stop iteration when difference between two
    bisections is smaller than tolerance.
 \end{itemize}
 
 \input{XLALInspiralComputePTFQDerivCP}
 \idx{XLALInspiralComputePTFQDeriv()}
 \begin{itemize}
-   \item \texttt{Qderiv,} Output, the time derivative of Q at the lattice point 
+   \item \texttt{Qderiv,} Output, the time derivative of Q at the lattice point
    defined by \texttt{params}
    \item \texttt{params,} Input, the parameters where metric must be computed
    in the computation of the metric.
 \end{itemize}
 
 \subsubsection*{Description}
-We calculate the components of the metric using the procedure outlined 
+We calculate the components of the metric using the procedure outlined
 by Yi.
 
 \subsubsection*{Algorithm}
@@ -95,7 +95,7 @@ LALFree
 \end{verbatim}
 
 \subsubsection*{Notes}
- 
+
 \vfill{\footnotesize\input{LALInspiralComputePTFMetricCV}}
 
 </lalLaTeX>
@@ -125,7 +125,7 @@ INT4 XLALInspiralComputePTFIntrinsicMetric (
   static const char* func = "XLALInspiralComputePTFIntrinsticMetric";
 
   /* number of points in a time-domain segment */
-  UINT4 N = 2 * (psd->data->length - 1); 
+  UINT4 N = 2 * (psd->data->length - 1);
   UINT4 i, j, k;
 
   /* some useful numbers */
@@ -180,10 +180,10 @@ INT4 XLALInspiralComputePTFIntrinsicMetric (
   REAL8Array                            *IntInt_matrix;
   REAL8Array                            *ExtExt_matrix;
   REAL8Array                            *ExtExt_inverse;
-  REAL8Array                            *IntExt_matrix;  
-  REAL8Array                            *IntExt_transp;  
-  REAL8Array                            *matrix_5_x_4;  
-  REAL8Array                            *matrix_4_x_4;  
+  REAL8Array                            *IntExt_matrix;
+  REAL8Array                            *IntExt_transp;
+  REAL8Array                            *matrix_5_x_4;
+  REAL8Array                            *matrix_4_x_4;
   REAL8                                 *det;
   LALStatus                              status;
 
@@ -202,7 +202,7 @@ INT4 XLALInspiralComputePTFIntrinsicMetric (
   IntExt_transp  = XLALCreateREAL8ArrayL ( 2, 5, 4 );
   matrix_5_x_4   = XLALCreateREAL8ArrayL ( 2, 5, 4 );
   matrix_4_x_4   = XLALCreateREAL8ArrayL ( 2, 4, 4 );
-  
+
   det            = NULL;
 
   memset( &status, 0, sizeof(LALStatus) );
@@ -220,7 +220,7 @@ INT4 XLALInspiralComputePTFIntrinsicMetric (
     Qtilde[i].length = N / 2 + 1;
     Q[i].data        = PTFQ->data + (i * N);
     Qtilde[i].data   = PTFQtilde->data + (i * (N / 2 + 1)) ;
-  }  
+  }
 
   /* evaluate the Q^I factors from the dynamical variables */
   for ( j = 0; j < N; ++j )
@@ -229,7 +229,7 @@ INT4 XLALInspiralComputePTFIntrinsicMetric (
     REAL8 phi       = PTFphi->data[j];
     REAL8 e1x       = PTFe1->data[j];
     REAL8 e1y       = PTFe1->data[N + j];
-    REAL8 e1z       = PTFe1->data[2 * N + j]; 
+    REAL8 e1z       = PTFe1->data[2 * N + j];
     REAL8 e2x       = PTFe2->data[j];
     REAL8 e2y       = PTFe2->data[N + j];
     REAL8 e2z       = PTFe2->data[2 * N + j];
@@ -237,16 +237,16 @@ INT4 XLALInspiralComputePTFIntrinsicMetric (
     Q[0].data[j] = omega_2_3 * onebysqrtoftwo * ( cos(2 * phi) * ( e1x * e1x +
           e2y * e2y - e2x * e2x - e1y * e1y ) + 2 * sin(2 * phi) *
         ( e1x * e2x - e1y * e2y ));
-    Q[1].data[j] = omega_2_3 * sqrtoftwo * ( cos(2 * phi) * ( e1x * e1y - 
+    Q[1].data[j] = omega_2_3 * sqrtoftwo * ( cos(2 * phi) * ( e1x * e1y -
           e2x * e2y ) + sin(2 * phi) * ( e1x * e2y + e1y * e2x ));
-    Q[2].data[j] = omega_2_3 * sqrtoftwo * ( cos(2 * phi) * ( e1x * e1z - 
+    Q[2].data[j] = omega_2_3 * sqrtoftwo * ( cos(2 * phi) * ( e1x * e1z -
           e2x * e2z ) + sin(2 * phi) * ( e1x * e2z + e1z * e2x ));
-    Q[3].data[j] = omega_2_3 * sqrtoftwo * ( cos(2 * phi) * ( e1y * e1z - 
+    Q[3].data[j] = omega_2_3 * sqrtoftwo * ( cos(2 * phi) * ( e1y * e1z -
           e2y * e2z ) + sin(2 * phi) * ( e1y * e2z + e1z * e2y ));
-    Q[4].data[j] = omega_2_3 * onebysqrtofsix * ( cos(2 * phi) * 
-        ( 2 * e2z * e2z - 2 * e1z * e1z + e1x * e1x + e1y * e1y - 
+    Q[4].data[j] = omega_2_3 * onebysqrtofsix * ( cos(2 * phi) *
+        ( 2 * e2z * e2z - 2 * e1z * e1z + e1x * e1x + e1y * e1y -
           e2x * e2x - e2y * e2y ) + 2 * sin(2 * phi) * ( e1x * e2x +
-            e1y * e2y - 2 * e1z * e2z ));                              
+            e1y * e2y - 2 * e1z * e2z ));
   }
 
   /* Fourier transform the Q's into the Qtilde's */
@@ -256,36 +256,36 @@ INT4 XLALInspiralComputePTFIntrinsicMetric (
   }
 
   /* evaluate the P_I factors from the extrinsic parameters */
-  P[0] = -(1 + cos(Theta) * cos(Theta)) * cos(2 * Phi) * cos(Psi) 
+  P[0] = -(1 + cos(Theta) * cos(Theta)) * cos(2 * Phi) * cos(Psi)
     + 2 * cos(Theta) * sin(2 * Phi) * sin(Psi);
-  P[1] = - 2 * cos(Theta) * cos(2 * Phi) * sin(Psi) 
+  P[1] = - 2 * cos(Theta) * cos(2 * Phi) * sin(Psi)
     -(1 + cos(Theta) * cos(Theta)) * sin(2 * Phi) * cos(Psi);
   P[2] = 2 * sin(Theta) * (-sin(Phi) * sin(Psi) + cos(Theta) * cos(Phi) * cos(Psi));
   P[3] = 2 * sin(Theta) * ( cos(Phi) * sin(Psi) + cos(Theta) * sin(Phi) * cos(Psi));
   P[4] = 3 * sin(Theta) * sin(Theta) * cos(Psi);
 
   /* P_I derivative over Theta */
-  PdTh[0] = -(1 - sin(2 * Theta)) * cos(2 * Phi) * cos(Psi) 
+  PdTh[0] = -(1 - sin(2 * Theta)) * cos(2 * Phi) * cos(Psi)
     - 2 * sin(Theta) * sin(2 * Phi) * sin(Psi);
-  PdTh[1] =  2 * sin(Theta) * cos(2 * Phi) * sin(Psi) 
+  PdTh[1] =  2 * sin(Theta) * cos(2 * Phi) * sin(Psi)
     -(1 - sin(2 * Theta)) * sin(2 * Phi) * cos(Psi);
   PdTh[2] = 2 * cos(Theta) * (-sin(Phi) * sin(Psi) - sin(Theta) * cos(Phi) * cos(Psi));
   PdTh[3] = 2 * cos(Theta) * ( cos(Phi) * sin(Psi) - sin(Theta) * sin(Phi) * cos(Psi));
   PdTh[4] = 3 * sin(2 * Theta) * cos(Psi);
 
   /* P_I derivative over Phi */
-  PdPh[0] = - 2 * (1 + cos(Theta) * cos(Theta)) * sin(2 * Phi) * cos(Psi) 
+  PdPh[0] = - 2 * (1 + cos(Theta) * cos(Theta)) * sin(2 * Phi) * cos(Psi)
     + 4 * cos(Theta) * cos(2 * Phi) * sin(Psi);
-  PdPh[1] =   4 * cos(Theta) * sin(2 * Phi) * sin(Psi) 
+  PdPh[1] =   4 * cos(Theta) * sin(2 * Phi) * sin(Psi)
     - 2 * (1 + cos(Theta) * cos(Theta)) * cos(2 * Phi) * cos(Psi);
   PdPh[2] = 2 * sin(Theta) * (-cos(Phi) * sin(Psi) - cos(Theta) * sin(Phi) * cos(Psi));
   PdPh[3] = 2 * sin(Theta) * (-sin(Phi) * sin(Psi) + cos(Theta) * cos(Phi) * cos(Psi));
   PdPh[4] = 0;
 
   /* P_I derivative over Psi */
-  PdPs[0] = (1 + cos(Theta) * cos(Theta)) * cos(2 * Phi) * sin(Psi) 
+  PdPs[0] = (1 + cos(Theta) * cos(Theta)) * cos(2 * Phi) * sin(Psi)
     + 2 * cos(Theta) * sin(2 * Phi) * cos(Psi);
-  PdPs[1] = - 2 * cos(Theta) * cos(2 * Phi) * cos(Psi) 
+  PdPs[1] = - 2 * cos(Theta) * cos(2 * Phi) * cos(Psi)
     + (1 + cos(Theta) * cos(Theta)) * sin(2 * Phi) * sin(Psi);
   PdPs[2] = 2 * sin(Theta) * (-sin(Phi) * cos(Psi) - cos(Theta) * cos(Phi) * sin(Psi));
   PdPs[3] = 2 * sin(Theta) * ( cos(Phi) * cos(Psi) - cos(Theta) * sin(Phi) * sin(Psi));
@@ -388,15 +388,15 @@ INT4 XLALInspiralComputePTFIntrinsicMetric (
   {
     for (j = 0; j < N / 2 + 1; ++j)
     {
-      fprintf( derivsfile, "%f   %f   %f   %f   %f   %f   %f   %f   %f   %f   %f   %f   %f   %f   %f   %f   %f   %f\n", 
-          derivs->data[j].re, derivs->data[j].im, 
-          derivs->data[(N / 2 + 1) + j].re, derivs->data[(N / 2 + 1) + j].im, 
-          derivs->data[2 * (N / 2 + 1) + j].re, derivs->data[2 * (N / 2 + 1) + j].im, 
-          derivs->data[3 * (N / 2 + 1) + j].re, derivs->data[3 * (N / 2 + 1) + j].im, 
-          derivs->data[4 * (N / 2 + 1) + j].re, derivs->data[4 * (N / 2 + 1) + j].im, 
-          derivs->data[5 * (N / 2 + 1) + j].re, derivs->data[5 * (N / 2 + 1) + j].im, 
-          derivs->data[6 * (N / 2 + 1) + j].re, derivs->data[6 * (N / 2 + 1) + j].im, 
-          derivs->data[7 * (N / 2 + 1) + j].re, derivs->data[7 * (N / 2 + 1) + j].im, 
+      fprintf( derivsfile, "%f   %f   %f   %f   %f   %f   %f   %f   %f   %f   %f   %f   %f   %f   %f   %f   %f   %f\n",
+          derivs->data[j].re, derivs->data[j].im,
+          derivs->data[(N / 2 + 1) + j].re, derivs->data[(N / 2 + 1) + j].im,
+          derivs->data[2 * (N / 2 + 1) + j].re, derivs->data[2 * (N / 2 + 1) + j].im,
+          derivs->data[3 * (N / 2 + 1) + j].re, derivs->data[3 * (N / 2 + 1) + j].im,
+          derivs->data[4 * (N / 2 + 1) + j].re, derivs->data[4 * (N / 2 + 1) + j].im,
+          derivs->data[5 * (N / 2 + 1) + j].re, derivs->data[5 * (N / 2 + 1) + j].im,
+          derivs->data[6 * (N / 2 + 1) + j].re, derivs->data[6 * (N / 2 + 1) + j].im,
+          derivs->data[7 * (N / 2 + 1) + j].re, derivs->data[7 * (N / 2 + 1) + j].im,
           derivs->data[8 * (N / 2 + 1) + j].re, derivs->data[8 * (N / 2 + 1) + j].im);
     }
   }
@@ -418,16 +418,16 @@ INT4 XLALInspiralComputePTFIntrinsicMetric (
   for (i = 0; i < 9; ++i)
   {
     for (j = 0; j < i + 1; ++j)
-    { 
+    {
       for (k = 0; k < N / 2 + 1; ++k)
       {
-        tempnormtilde->data[k].re = 
+        tempnormtilde->data[k].re =
           ( derivs->data[i * (N/2+1) + k].re * derivs->data[j * (N/2+1) + k].re
-            + derivs->data[i * (N/2+1) + k].im * derivs->data[j * (N/2+1) + k].im) 
+            + derivs->data[i * (N/2+1) + k].im * derivs->data[j * (N/2+1) + k].im)
           * invpsd->data[k];
-        tempnormtilde->data[k].im = 
+        tempnormtilde->data[k].im =
           ( derivs->data[i * (N/2+1) + k].im * derivs->data[j * (N/2+1) + k].re
-            - derivs->data[i * (N/2+1) + k].re * derivs->data[j * (N/2+1) + k].im) 
+            - derivs->data[i * (N/2+1) + k].re * derivs->data[j * (N/2+1) + k].im)
           * invpsd->data[k];
       }
       /* Inverse Fourier of tempnorm */
@@ -441,17 +441,17 @@ INT4 XLALInspiralComputePTFIntrinsicMetric (
   {
     fullmetric->data[i] /= wavenorm;
   }
-  
+
   /* Calculating the extrinsic-extrinsic block of the metric */
   for (i = 0; i < 5; ++i)
   {
     for (j = 0; j < i + 1; ++j)
-    {  
-      ExtExt_matrix->data[ 5 * i + j] = ExtExt_matrix->data[ 5 * j + i] = 
+    {
+      ExtExt_matrix->data[ 5 * i + j] = ExtExt_matrix->data[ 5 * j + i] =
         fullmetric->data[i * (i + 1) / 2 + j];
-    }  
-  } 
-  
+    }
+  }
+
   /* Calculating the inverse of ext-ext */
   LALDMatrixInverse( &status, det, ExtExt_matrix, ExtExt_inverse );
   if ( status.statusCode )
@@ -459,26 +459,26 @@ INT4 XLALInspiralComputePTFIntrinsicMetric (
     REPORTSTATUS( &status );
     exit( 1 );
   }
-  
+
   /* Calculating the intrinsic-intrinsic block of the metric */
   for (i = 5; i < 9; ++i)
   {
     for (j = 5; j < i + 1; ++j)
-    {  
-      IntInt_matrix->data[ 4 * (i-5) + j - 5] = IntInt_matrix->data[ 4 * (j-5) + i - 5]= 
+    {
+      IntInt_matrix->data[ 4 * (i-5) + j - 5] = IntInt_matrix->data[ 4 * (j-5) + i - 5]=
         fullmetric->data[i * (i + 1) / 2 + j];
-    }  
-  } 
-  
+    }
+  }
+
   /* Calculating the mixed intrinsic-extrinsic block of the metric */
   for (i = 5; i < 9; ++i)
   {
     for (j = 0; j < 5; ++j)
     {
       IntExt_matrix->data[ 5 * (i-5) + j] = fullmetric->data[i * (i + 1) / 2 + j];
-    }  
-  } 
-  
+    }
+  }
+
   /* Calculating the transpose of int-ext */
   LALDMatrixTranspose ( &status, IntExt_transp, IntExt_matrix );
   if ( status.statusCode )
@@ -503,23 +503,23 @@ INT4 XLALInspiralComputePTFIntrinsicMetric (
     REPORTSTATUS( &status );
     exit( 1 );
   }
-  
+
   LALDMatrixMultiply ( &status, matrix_4_x_4, IntExt_matrix, matrix_5_x_4 );
   if ( status.statusCode )
   {
     REPORTSTATUS( &status );
     exit( 1 );
   }
-  
+
   for ( i = 0; i < 4; ++i )
   {
     for ( j = 0; j < i + 1; ++j )
     {
-      params->Gamma[i * (i + 1) / 2 + j] = metric->Gamma[i * (i + 1) / 2 + j] = 
+      params->Gamma[i * (i + 1) / 2 + j] = metric->Gamma[i * (i + 1) / 2 + j] =
         IntInt_matrix->data[i * 4 + j] - matrix_4_x_4->data[i * 4 + j];
     }
   }
-  
+
   /* this memory deallocation code should be moved to a separate function */
   XLALDestroyCOMPLEX16Vector(fsig0);
   XLALDestroyCOMPLEX16Vector(fsig1);
@@ -543,7 +543,7 @@ INT4 XLALInspiralComputePTFIntrinsicMetric (
   XLALDestroyREAL8Array( ExtExt_inverse );
   XLALDestroyREAL8Array( matrix_5_x_4 );
   XLALDestroyREAL8Array( matrix_4_x_4 );
-  
+
   /* normal exit */
   return errcode;
 }
@@ -572,7 +572,7 @@ INT4 XLALInspiralComputePTFWaveform (
   static const char* func = "XLALInspiralComputePTFWaveform";
 
   /* number of points in a time-domain segment */
-  UINT4 N = ptfwave->length; 
+  UINT4 N = ptfwave->length;
   UINT4 i, j;
 
   /* some useful numbers */
@@ -622,7 +622,7 @@ INT4 XLALInspiralComputePTFWaveform (
       params, deltaT);
 
   if ( errcode != XLAL_SUCCESS ) XLAL_ERROR( func, errcode );
-  
+
   /* point the dummy variables Q and Qp to the actual output structures */
   for ( i = 0; i < 5; ++i )
   {
@@ -630,8 +630,8 @@ INT4 XLALInspiralComputePTFWaveform (
     Qp[i].length     = N;
     Q[i].data        = PTFQ->data + (i * N);
     Qp[i].data       = PTFQp->data + (i * N);
-  }  
-  
+  }
+
   /* evaluate the Q^I factors from the dynamical variables */
   for ( j = 0; j < N; ++j )
   {
@@ -639,49 +639,49 @@ INT4 XLALInspiralComputePTFWaveform (
     REAL8 phi       = PTFphi->data[j];
     REAL8 e1x       = PTFe1->data[j];
     REAL8 e1y       = PTFe1->data[N + j];
-    REAL8 e1z       = PTFe1->data[2 * N + j]; 
+    REAL8 e1z       = PTFe1->data[2 * N + j];
     REAL8 e2x       = PTFe2->data[j];
     REAL8 e2y       = PTFe2->data[N + j];
     REAL8 e2z       = PTFe2->data[2 * N + j];
-    
+
     Q[0].data[j] = omega_2_3 * onebysqrtoftwo * ( cos(2 * phi) * ( e1x * e1x +
           e2y * e2y - e2x * e2x - e1y * e1y ) + 2 * sin(2 * phi) *
         ( e1x * e2x - e1y * e2y ));
-    Q[1].data[j] = omega_2_3 * sqrtoftwo * ( cos(2 * phi) * ( e1x * e1y - 
+    Q[1].data[j] = omega_2_3 * sqrtoftwo * ( cos(2 * phi) * ( e1x * e1y -
           e2x * e2y ) + sin(2 * phi) * ( e1x * e2y + e1y * e2x ));
-    Q[2].data[j] = omega_2_3 * sqrtoftwo * ( cos(2 * phi) * ( e1x * e1z - 
+    Q[2].data[j] = omega_2_3 * sqrtoftwo * ( cos(2 * phi) * ( e1x * e1z -
           e2x * e2z ) + sin(2 * phi) * ( e1x * e2z + e1z * e2x ));
-    Q[3].data[j] = omega_2_3 * sqrtoftwo * ( cos(2 * phi) * ( e1y * e1z - 
+    Q[3].data[j] = omega_2_3 * sqrtoftwo * ( cos(2 * phi) * ( e1y * e1z -
           e2y * e2z ) + sin(2 * phi) * ( e1y * e2z + e1z * e2y ));
-    Q[4].data[j] = omega_2_3 * onebysqrtofsix * ( cos(2 * phi) * 
-        ( 2 * e2z * e2z - 2 * e1z * e1z + e1x * e1x + e1y * e1y - 
+    Q[4].data[j] = omega_2_3 * onebysqrtofsix * ( cos(2 * phi) *
+        ( 2 * e2z * e2z - 2 * e1z * e1z + e1x * e1x + e1y * e1y -
           e2x * e2x - e2y * e2y ) + 2 * sin(2 * phi) * ( e1x * e2x +
             e1y * e2y - 2 * e1z * e2z ));
-			
+
 	Qp[0].data[j] = omega_2_3 * onebysqrtoftwo * ( - sin(2 * phi) * ( e1x * e1x +
           e2y * e2y - e2x * e2x - e1y * e1y ) + 2 * cos(2 * phi) *
         ( e1x * e2x - e1y * e2y ));
-	Qp[1].data[j] = omega_2_3 * sqrtoftwo * ( - sin(2 * phi) * ( e1x * e1y - 
+	Qp[1].data[j] = omega_2_3 * sqrtoftwo * ( - sin(2 * phi) * ( e1x * e1y -
           e2x * e2y ) + cos(2 * phi) * ( e1x * e2y + e1y * e2x ));
-	Qp[2].data[j] = omega_2_3 * sqrtoftwo * ( - sin(2 * phi) * ( e1x * e1z - 
+	Qp[2].data[j] = omega_2_3 * sqrtoftwo * ( - sin(2 * phi) * ( e1x * e1z -
           e2x * e2z ) + cos(2 * phi) * ( e1x * e2z + e1z * e2x ));
-	Qp[3].data[j] = omega_2_3 * sqrtoftwo * ( - sin(2 * phi) * ( e1y * e1z - 
+	Qp[3].data[j] = omega_2_3 * sqrtoftwo * ( - sin(2 * phi) * ( e1y * e1z -
           e2y * e2z ) + cos(2 * phi) * ( e1y * e2z + e1z * e2y ));
-	Qp[4].data[j] = omega_2_3 * onebysqrtofsix * ( - sin(2 * phi) * 
-        ( 2 * e2z * e2z - 2 * e1z * e1z + e1x * e1x + e1y * e1y - 
+	Qp[4].data[j] = omega_2_3 * onebysqrtofsix * ( - sin(2 * phi) *
+        ( 2 * e2z * e2z - 2 * e1z * e1z + e1x * e1x + e1y * e1y -
           e2x * e2x - e2y * e2y ) + 2 * cos(2 * phi) * ( e1x * e2x +
             e1y * e2y - 2 * e1z * e2z ));
   }
-  
+
   /* evaluate the P_I factors from the extrinsic parameters */
-  P[0] = -(1 + cos(Theta) * cos(Theta)) * cos(2 * Phi) * cos(Psi) 
+  P[0] = -(1 + cos(Theta) * cos(Theta)) * cos(2 * Phi) * cos(Psi)
 		 + 2 * cos(Theta) * sin(2 * Phi) * sin(Psi);
-  P[1] = - 2 * cos(Theta) * cos(2 * Phi) * sin(Psi) 
+  P[1] = - 2 * cos(Theta) * cos(2 * Phi) * sin(Psi)
 		 -(1 + cos(Theta) * cos(Theta)) * sin(2 * Phi) * cos(Psi);
   P[2] = 2 * sin(Theta) * (-sin(Phi) * sin(Psi) + cos(Theta) * cos(Phi) * cos(Psi));
   P[3] = 2 * sin(Theta) * ( cos(Phi) * sin(Psi) + cos(Theta) * sin(Phi) * cos(Psi));
   P[4] = 3 * sin(Theta) * sin(Theta) * cos(Psi);
-  
+
   /* Build the time domain PTF waveform */
   /* fprintf( stdout, "initial phase: %f\n", phi0); */
   for ( j = 0; j < N; ++j )
@@ -721,11 +721,11 @@ INT4 XLALInspiralComputePTFWDeriv (
   /* XLAL error handling */
   INT4 errcode = XLAL_SUCCESS;
   static const char* func = "XLALInspiralComputePTFWDeriv";
-  
+
   /* number of points in a time-domain segment */
-  UINT4 N = (Wderiv->length - 1) * 2; 
+  UINT4 N = (Wderiv->length - 1) * 2;
   UINT4 j, k;
-    
+
   /* get a local copy of the intrinstic parameters */
   REAL8 totalMass = params->totalMass;
   REAL8 eta = params->eta;
@@ -734,15 +734,15 @@ INT4 XLALInspiralComputePTFWDeriv (
 
   /* bounds on the power spectrum integration for the moments */
   REAL8 deltaT = params->tSampling;
-  
+
   /* deviated template parameters */
   InspiralTemplate pparams = *params;
   InspiralTemplate mparams = *params;
-  
+
   /* Waveform length recorder */
   UINT4 clen, plen, mlen;
   INT4 dlen;
-  
+
   /* local pointers to the waveforms data */
   /* this memory deallocation code should be moved to a separate function */
   REAL8Vector				*cwave;
@@ -777,7 +777,7 @@ INT4 XLALInspiralComputePTFWDeriv (
   memset( &status, 0, sizeof(LALStatus) );
   pparams.massChoice = totalMassAndEta;
   mparams.massChoice = totalMassAndEta;
-  
+
   cwave = XLALCreateREAL8Vector( N );
   pwavenew = XLALCreateREAL8Vector( N );
   mwavenew = XLALCreateREAL8Vector( N );
@@ -796,9 +796,9 @@ INT4 XLALInspiralComputePTFWDeriv (
   derivdiffpowertilde = XLALCreateCOMPLEX16Vector( N / 2 + 1 );
   fwdPlan = XLALCreateForwardREAL8FFTPlan( N, 0 );
   revPlan = XLALCreateReverseREAL8FFTPlan( N, 0 );
-  
+
   /* main loop */
-  
+
   /* Generate central waveform */
   errcode = XLALInspiralComputePTFWaveform(cwave, params);
   if ( errcode != XLAL_SUCCESS )
@@ -807,7 +807,7 @@ INT4 XLALInspiralComputePTFWDeriv (
 	exit( 1 );
   }
   clen = params->tC / deltaT + 0.5;
-  
+
   /* Finite differencing */
   while (relderivdiff > tolerance && iter < maxiter + 1)
   {
@@ -850,7 +850,7 @@ INT4 XLALInspiralComputePTFWDeriv (
       REPORTSTATUS( &status );
       exit( 1 );
 	}
-	
+
 	/* Generate new waveforms */
 	errcode = XLALInspiralComputePTFWaveform(pwavenew, &pparams);
 	errcode = XLALInspiralComputePTFWaveform(mwavenew, &mparams);
@@ -861,7 +861,7 @@ INT4 XLALInspiralComputePTFWDeriv (
 	}
 	plen = pparams.tC / deltaT + 0.5;
 	mlen = mparams.tC / deltaT + 0.5;
-	
+
 	/* Shift deviated waveforms to start the same time as the center waveform */
 	dlen = plen - clen;
 	if (dlen > 0)
@@ -885,13 +885,13 @@ INT4 XLALInspiralComputePTFWDeriv (
 	  memmove(mwavenew->data, mwavenew->data - dlen, (N + dlen) * sizeof(REAL8));
 	  memset(mwavenew->data + (N + dlen), 0, (- dlen) * sizeof(REAL8));
 	}
-	
+
 	/* Calculate waveform derivative using finite differencing formula */
 	if (iter == 1)
 	{
 	  for (j = 0; j < N; ++j)
 	  {
-	    wavederivnew->data[j] = 
+	    wavederivnew->data[j] =
 			(pwavenew->data[j]/2 - mwavenew->data[j]/2) / absdelta;
 		wavederivdiff->data[j] = wavederivnew->data[j];
 		wavederivold->data[j] = wavederivnew->data[j];
@@ -905,8 +905,8 @@ INT4 XLALInspiralComputePTFWDeriv (
 	{
 	  for (j = 0; j < N; ++j)
 	  {
-	    wavederivnew->data[j] = 
-			(- pwaveold->data[j] / 12 + 2 * pwavenew->data[j] / 3 
+	    wavederivnew->data[j] =
+			(- pwaveold->data[j] / 12 + 2 * pwavenew->data[j] / 3
 			 - 2 * mwavenew->data[j] / 3 + mwaveold->data[j] / 12) / absdelta;
 		wavederivdiff->data[j] = wavederivnew->data[j] - wavederivold->data[j];
 		wavederivold->data[j] = wavederivnew->data[j];
@@ -920,8 +920,8 @@ INT4 XLALInspiralComputePTFWDeriv (
 	{
 	  for (j = 0; j < N; ++j)
 	  {
-	    wavederivnew->data[j] = 
-			(pwaveold2->data[j] / 60 - pwaveold->data[j] * 3 / 20 + pwavenew->data[j] * 3 / 4 
+	    wavederivnew->data[j] =
+			(pwaveold2->data[j] / 60 - pwaveold->data[j] * 3 / 20 + pwavenew->data[j] * 3 / 4
 			 - mwavenew->data[j] * 3 / 4 + mwaveold->data[j] * 3 / 20 - mwaveold2->data[j] / 60) / absdelta;
 		wavederivdiff->data[j] = wavederivnew->data[j] - wavederivold->data[j];
 		wavederivold->data[j] = wavederivnew->data[j];
@@ -931,37 +931,37 @@ INT4 XLALInspiralComputePTFWDeriv (
 		mwaveold->data[j] = mwavenew->data[j];
 	  }
 	} */
-	
+
 	/* Fourier transform of derivative and derivative difference of waveforms */
 	XLALREAL8ForwardFFT( derivtilde, wavederivold, fwdPlan);
     XLALREAL8ForwardFFT( derivdifftilde, wavederivdiff, fwdPlan);
-	
+
 	for (k = 0; k < N/2 + 1; ++k)
 	{
 	  if (psd->data->data[k] == 0.)
 	    invpsd = 0.;
 	  else
 		invpsd = 1.0 / psd->data->data[k];
-	  derivpowertilde->data[k].re = 
+	  derivpowertilde->data[k].re =
 				(derivtilde->data[k].re * derivtilde->data[k].re
 				+derivtilde->data[k].im * derivtilde->data[k].im) * invpsd;
 	  derivpowertilde->data[k].im = 0;
-	  derivdiffpowertilde->data[k].re = 
+	  derivdiffpowertilde->data[k].re =
 				(derivdifftilde->data[k].re * derivdifftilde->data[k].re
 				+derivdifftilde->data[k].im * derivdifftilde->data[k].im) * invpsd;
 	  derivdiffpowertilde->data[k].im = 0;
 	}
-	
+
 	/* Inverse Fourier of derivdifftilde */
-    XLALREAL8ReverseFFT( wavederiv_2, derivpowertilde, revPlan);		 
+    XLALREAL8ReverseFFT( wavederiv_2, derivpowertilde, revPlan);
     XLALREAL8ReverseFFT( wavederivdiff_2, derivdiffpowertilde, revPlan);
 	/* I will take the power for now */
 	powerderiv = 4.0 * wavederiv_2->data[0];
 	powerderivdiff = 4.0 * wavederivdiff_2->data[0];
-	
+
 	relderivdiff = powerderivdiff / powerderiv;
 	relderivdifflist[iter-1] = relderivdiff;
-	
+
 	if (relderivdiff < tolerance)
 	{
 	  for (k = 0; k < N / 2 + 1; ++k)
@@ -971,7 +971,7 @@ INT4 XLALInspiralComputePTFWDeriv (
 	  }
 	  break;
 	}
-	
+
 	reldelta *= 0.5;
 	iter += 1;
   }

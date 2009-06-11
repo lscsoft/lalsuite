@@ -23,7 +23,7 @@
  *
  * Author: Julien Sylvestre
  *
- * Revision: $Id$ 
+ * Revision: $Id$
  *
  *-----------------------------------------------------------------------*/
 
@@ -58,18 +58,18 @@ Implement the TFCLUSTERS event trigger generator.
 /* <lalVerbatim> */
 void
 LALTFClustersETG(
-		 LALStatus *status, 
-		 EventIDColumn *output, 
-		 REAL4TimeVectorSeries *input, 
+		 LALStatus *status,
+		 EventIDColumn *output,
+		 REAL4TimeVectorSeries *input,
 		 BurstParameter *params
 	       ) {
 /* </lalVerbatim> */
 /******** <lalLaTeX file="TFClustersETGC"> ********
 \subsubsection*{Description}
-Description of the parameters: 
+Description of the parameters:
 \begin{center}
 \begin{tabular}{l|l|l}
-parameter index & type & description \\ \hline 
+parameter index & type & description \\ \hline
 1 & string & channel name \\
 2 & REAL4 & black pixel probability \\
 3 & INT4 & 1 (0) for (no) windowing \\
@@ -85,7 +85,7 @@ parameter index & type & description \\ \hline
 10 & INT4 & sigma \\
 11 & INT4 & delta(1,1) \\
 ... & ... & ... \\
-10 + sigma*(sigma-1)/2 & INT4 & delta(sigma-1,sigma-1) 
+10 + sigma*(sigma-1)/2 & INT4 & delta(sigma-1,sigma-1)
 \end{tabular}
 \end{center}
 
@@ -131,7 +131,7 @@ parameter index & type & description \\ \hline
   params = params->next
 
   params = params->next;
-  
+
   SetStringParameter(channel);
   strncpy(ifo,channel,2);
 
@@ -177,7 +177,7 @@ parameter index & type & description \\ \hline
     tmp.data = &tv;
     tv.length = input->data->vectorLength;
     tv.data = input->data->data;
-    
+
     if(win) {
       LALPlainTFCSpectrogramWin(status->statusPtr, &tspec, &tmp, T);
       CHECKSTATUSPTR (status);
@@ -234,14 +234,14 @@ parameter index & type & description \\ \hline
       REAL8 Nsigma = 9.5; /* hardcoded !! */
 
       rtp.bpp = p;
-      rtp.eGoal = 1e-3 * p; 
+      rtp.eGoal = 1e-3 * p;
       rtp.nFreq = spower.params->freqBins;
 
       rtp.P0 = (REAL8 *)LALCalloc(rtp.nFreq, sizeof(REAL8));
-      if(!(rtp.P0)) {ABORT(status, STDBURSTSEARCHH_EMEM, STDBURSTSEARCHH_MSGEMEM);} 
+      if(!(rtp.P0)) {ABORT(status, STDBURSTSEARCHH_EMEM, STDBURSTSEARCHH_MSGEMEM);}
 
       rtp.Q = (REAL8 *)LALCalloc(rtp.nFreq, sizeof(REAL8));
-      if(!(rtp.Q)) {ABORT(status, STDBURSTSEARCHH_EMEM, STDBURSTSEARCHH_MSGEMEM);} 
+      if(!(rtp.Q)) {ABORT(status, STDBURSTSEARCHH_EMEM, STDBURSTSEARCHH_MSGEMEM);}
 
       for(i=0; (int)i<(int)spower.params->freqBins; i++) {
 
@@ -256,7 +256,7 @@ parameter index & type & description \\ \hline
 	P2 /= (REAL8)spower.params->timeBins;
 
 	R = 2.0*P*P - P2;
-	    
+
 	if(R>0.0) {
 	  R = sqrt(R);
 	} else {
@@ -282,7 +282,7 @@ parameter index & type & description \\ \hline
 	P2 /= (REAL8)NP;
 
 	R = 2.0*P*P - P2;
-	
+
 	if(R>0.0) {
 	  R = sqrt(R);
 	} else {
@@ -291,23 +291,23 @@ parameter index & type & description \\ \hline
 
 	rtp.Q[i] = R;
 	rtp.P0[i] = P - R;
-	
+
       }
 
       {
 	UINT4 k;
 	REAL4 *rho;
-	
+
 	rho = (REAL4 *)LALMalloc(spower.params->freqBins * sizeof(REAL4));
 	if(!(rho)) {ABORT(status, STDBURSTSEARCHH_EMEM, STDBURSTSEARCHH_MSGEMEM);}
 
 	LALTFCRiceThreshold(status->statusPtr, rho, &rtp);
 	CHECKSTATUSPTR (status);
-      
+
 	for(k=0;(int)k<(int)spower.params->freqBins;k++) {
 	  dir.rho[k] = rho[k];
 	}
-      
+
 	LALFree(rho);
       }
 
@@ -322,7 +322,7 @@ parameter index & type & description \\ \hline
   }
 
   /* run tfclusters */
-  LALInitCList(status->statusPtr, &clist, &tspec); 
+  LALInitCList(status->statusPtr, &clist, &tspec);
   CHECKSTATUSPTR (status);
 
   LALGetClusters(status->statusPtr, &clist, &spower, &dir);
@@ -331,7 +331,7 @@ parameter index & type & description \\ \hline
   LALFreeSpecgram(status->statusPtr, &spower);
   CHECKSTATUSPTR (status);
 
-  LALInitCList(status->statusPtr, &list, &tspec); 
+  LALInitCList(status->statusPtr, &list, &tspec);
   CHECKSTATUSPTR (status);
 
   if(clist.nclusters > 0) { /* this should be fixed in lal */
@@ -348,10 +348,10 @@ parameter index & type & description \\ \hline
   for(i=0; i<list.nclusters; i++) {
 
     SnglBurstTable *boutput;
-    
+
     output->next = (EventIDColumn *)LALCalloc(1,sizeof(EventIDColumn));
     if(!(output->next)) {ABORT(status, STDBURSTSEARCHH_EMEM, STDBURSTSEARCHH_MSGEMEM);}
-    
+
     output = output->next;
 
     boutput = output->snglBurstTable = (SnglBurstTable *)LALCalloc(1,sizeof(SnglBurstTable));
@@ -394,12 +394,12 @@ parameter index & type & description \\ \hline
       strncpy(trans_data->ifo, boutput->ifo, LIGOMETA_IFO_MAX);
       trans_data->ifo[2] = 0;
       strncpy(trans_data->name, boutput->channel, LIGOMETA_TRANSDATA_NAME_MAX);
-      
+
       trans_data->dimensions = 2;
 
       trans_data->x_bins = list.sizes[i];
       trans_data->x_start = (REAL8)(boutput->start_time.gpsSeconds) + 1E-9*(REAL8)(boutput->start_time.gpsNanoSeconds);
-      trans_data->x_end = trans_data->x_start + boutput->duration;      
+      trans_data->x_end = trans_data->x_start + boutput->duration;
       strncpy(trans_data->x_units, "GPS seconds", LIGOMETA_TRANSDATA_UNITS_MAX);
 
       trans_data->y_bins = list.sizes[i];
@@ -409,12 +409,12 @@ parameter index & type & description \\ \hline
 
       strncpy(trans_data->data_type,"tf map", LIGOMETA_TRANSDATA_DATA_MAX);
       strncpy(trans_data->data_units,"arbitrary", LIGOMETA_TRANSDATA_DATA_MAX);
-      
+
       trans_data->transdata_length = sizeof(UINT4) + list.sizes[i] * (2*sizeof(UINT4) + sizeof(REAL8));
 
       /* save cluster shape in trans_data */
       trans_data->trans_data = (UCHAR *)LALMalloc(sizeof(UINT4) + list.sizes[i] * (2*sizeof(UINT4) + sizeof(REAL8)));
-      if(!(trans_data->trans_data)) {ABORT(status, STDBURSTSEARCHH_EMEM, STDBURSTSEARCHH_MSGEMEM);} 
+      if(!(trans_data->trans_data)) {ABORT(status, STDBURSTSEARCHH_EMEM, STDBURSTSEARCHH_MSGEMEM);}
 
       memcpy(trans_data->trans_data, &(list.sizes[i]), sizeof(UINT4));
 
@@ -433,7 +433,7 @@ parameter index & type & description \\ \hline
 #endif
 
       }
-      
+
     }
 
   }

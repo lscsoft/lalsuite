@@ -83,18 +83,18 @@ typedef struct tagTFCWParams {
   REAL4Vector *wavelet;
 } TFCWParams;
 
-void 
+void
 LALWaveletFilter (
 		  LALStatus *status,
 		  TFCWavelet *wave
 		  );
 
 
-void 
+void
 LALComputeWaveletTFCSpectrogram (
-			      LALStatus *status, 
-			      TFCSpectrogram *out, 
-			      TFCWParams *tspec, 
+			      LALStatus *status,
+			      TFCSpectrogram *out,
+			      TFCWParams *tspec,
 			      REAL4TimeSeries *tseries
 			      );
 

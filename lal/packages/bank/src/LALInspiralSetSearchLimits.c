@@ -37,10 +37,10 @@ Function which calculates the minimum and maximum values of $\tau_{0}$ and $\tau
 \end{itemize}
 
 This Function calculates the minimum and maximum values of $\tau_{0}$ and $\tau_{3}$
-as determined by the total mass of the binary $m$ and the symmetric 
+as determined by the total mass of the binary $m$ and the symmetric
 mass ratio $\eta$.  The function also calulates the coordinates of the
 first template in the bank. These coordinates are $\tau_{0}=\tau_{0min}$,
-$\tau_{3}=\tau_{3min}$. 
+$\tau_{3}=\tau_{3min}$.
 
 \subsubsection*{Description}
 
@@ -89,28 +89,28 @@ LALInspiralSetSearchLimits (
     InspiralCoarseBankIn  coarseIn
     )
 /* </lalVerbatim> */
-{  
+{
    InspiralTemplate *Pars1=NULL, *Pars2=NULL, *Pars3=NULL, *Pars4=NULL;
 
-   INITSTATUS( status, "LALInspiralSetSearchLimits", 
+   INITSTATUS( status, "LALInspiralSetSearchLimits",
        LALINSPIRALSETSEARCHLIMITSC );
    ATTATCHSTATUSPTR( status );
 
-   ASSERT( bankParams, status, 
+   ASSERT( bankParams, status,
        LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL );
    ASSERT( coarseIn.space == Tau0Tau2 || coarseIn.space == Tau0Tau3, status,
        LALINSPIRALBANKH_ECHOICE, LALINSPIRALBANKH_MSGECHOICE );
-   ASSERT( coarseIn.mMin > 0, status, 
+   ASSERT( coarseIn.mMin > 0, status,
        LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE );
-   ASSERT( coarseIn.MMax >= 2. * coarseIn.mMin, status, 
+   ASSERT( coarseIn.MMax >= 2. * coarseIn.mMin, status,
        LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE );
-   ASSERT( coarseIn.mmCoarse > 0., status, 
+   ASSERT( coarseIn.mmCoarse > 0., status,
        LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE );
-   ASSERT( coarseIn.mmCoarse < 1., status, 
+   ASSERT( coarseIn.mmCoarse < 1., status,
        LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE );
-   ASSERT( coarseIn.fLower > 0., status, 
+   ASSERT( coarseIn.fLower > 0., status,
        LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE );
-   ASSERT( coarseIn.tSampling > 0., status, 
+   ASSERT( coarseIn.tSampling > 0., status,
        LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE );
 
    Pars1 = (InspiralTemplate *) LALCalloc( 1, sizeof(InspiralTemplate) );
@@ -147,15 +147,15 @@ LALInspiralSetSearchLimits (
      Pars2->mass1 = Pars2->mass2 = coarseIn.MMin/2.;
    }
    else
-   {   
+   {
      Pars2->mass1 = Pars2->mass2 = coarseIn.mMin;
    }
    LALInspiralParameterCalc( status->statusPtr, Pars2 );
    CHECKSTATUSPTR( status );
-   
+
    Pars3->mass1 = coarseIn.mMin;
    Pars3->mass2 = coarseIn.MMax - coarseIn.mMin;
-   LALInspiralParameterCalc( status->statusPtr, Pars3 ); 
+   LALInspiralParameterCalc( status->statusPtr, Pars3 );
    CHECKSTATUSPTR( status );
 
    if ( coarseIn.massRange == MinMaxComponentTotalMass )
@@ -176,22 +176,22 @@ LALInspiralSetSearchLimits (
    bankParams->x0 = bankParams->x0Min = Pars1->t0;
    bankParams->x0Max = (Pars2->t0 > Pars4->t0) ? Pars2->t0 : Pars4->t0;
 
-   switch ( coarseIn.space ) 
+   switch ( coarseIn.space )
    {
      case Tau0Tau2:
        bankParams->x1 = bankParams->x1Min = Pars1->t2;
        bankParams->x1Max = (Pars2->t2 > Pars3->t2) ? Pars2->t2 : Pars3->t2;
        break;
-       
+
      case Tau0Tau3:
        bankParams->x1 = bankParams->x1Min = Pars1->t3;
        bankParams->x1Max = (Pars2->t3 > Pars3->t3) ? Pars2->t3 : Pars3->t3;
        break;
-   
+
      default:
        ABORT( status, LALINSPIRALBANKH_ECHOICE, LALINSPIRALBANKH_MSGECHOICE );
    }
-   
+
    LALFree( Pars1 );
    LALFree( Pars2 );
    LALFree( Pars3 );

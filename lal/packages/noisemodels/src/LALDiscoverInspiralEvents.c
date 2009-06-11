@@ -23,19 +23,19 @@
 
 NRCSID (LALDISCOVERINSPIRALEVENTSC, "$Id$");
 
-static void findValidInspiralEvents (REAL4Vector, REAL4Vector, DiscoverInspiralEventsIn, INT4 *, INT4 *); 
+static void findValidInspiralEvents (REAL4Vector, REAL4Vector, DiscoverInspiralEventsIn, INT4 *, INT4 *);
 static void findMax ( REAL4 *vec, INT4 *ok, INT4 n, REAL4 *mVal, INT4 *mPos);
 static INT4 computeSum (INT4 *ivec, INT4 n);
 
-void  LALDiscoverInspiralEvents ( 
+void  LALDiscoverInspiralEvents (
         LALStatus                    *status,
         INT4                         *nEvents,
         DiscoverInspiralEventsList   **eventlist,
         DiscoverInspiralEventsIn     *findeventsin )
-{ 
+{
     INT4                               i, j, nBegin, nEnd;
     REAL8                              dt, df, distanceNorm, eSec;
-    REAL4Vector                        filter1, filter2, output1, output2, correlation; 
+    REAL4Vector                        filter1, filter2, output1, output2, correlation;
 
     InspiralChisqInput                 chisqin;
     InspiralChisqOutput                *chisqout=NULL;
@@ -59,7 +59,7 @@ void  LALDiscoverInspiralEvents (
     ASSERT (findeventsin->nEnd <= (INT4)output1.length,  status, LALNOISEMODELSH_ECHOICE, LALNOISEMODELSH_MSGECHOICE);
     ASSERT (findeventsin->nBegin >= 0,  status, LALNOISEMODELSH_ECHOICE, LALNOISEMODELSH_MSGECHOICE);
     ASSERT (findeventsin->nBegin <= (INT4)output1.length,  status, LALNOISEMODELSH_ECHOICE, LALNOISEMODELSH_MSGECHOICE);
-    
+
     /* Check for reasonable values of chisqBins - 0 <= chisqBins <= 20 */
     ASSERT (findeventsin->chisqBins >= 0,  status, LALNOISEMODELSH_ECHOICE, LALNOISEMODELSH_MSGECHOICE);
     ASSERT (findeventsin->chisqBins <= 20,  status, LALNOISEMODELSH_ECHOICE, LALNOISEMODELSH_MSGECHOICE);
@@ -108,31 +108,31 @@ void  LALDiscoverInspiralEvents (
         statsBuffer.data   = NULL;
         statsBuffer.data   = (REAL4*) LALMalloc(sizeof(REAL4)*statsBuffer.length);
 
-        for (i=findeventsin->nBegin; i<(findeventsin->signal.length - findeventsin->nEnd); i++) 
+        for (i=findeventsin->nBegin; i<(findeventsin->signal.length - findeventsin->nEnd); i++)
               statsBuffer.data[i-findeventsin->nBegin] = output1.data[i];
         LALStatsREAL4Vector(status->statusPtr, &statsout1, &statsBuffer);
         CHECKSTATUSPTR(status);
 
-        for (i=findeventsin->nBegin; i<(findeventsin->signal.length - findeventsin->nEnd); i++) 
+        for (i=findeventsin->nBegin; i<(findeventsin->signal.length - findeventsin->nEnd); i++)
               statsBuffer.data[i-findeventsin->nBegin] = output2.data[i];
         LALStatsREAL4Vector(status->statusPtr, &statsout2, &statsBuffer);
         CHECKSTATUSPTR(status);
 
-        for (i=findeventsin->nBegin; i<(findeventsin->signal.length - findeventsin->nEnd); i++) 
+        for (i=findeventsin->nBegin; i<(findeventsin->signal.length - findeventsin->nEnd); i++)
               statsBuffer.data[i-findeventsin->nBegin] = ( (output1.data[i]*output1.data[i]) +
                       (output2.data[i]*output2.data[i]) );
         LALStatsREAL4Vector(status->statusPtr, &statsout3, &statsBuffer);
         CHECKSTATUSPTR(status);
 
         fprintf(stderr, "Quad 1     mean=%.5e std=%.5e min=%.5e max=%.5e\n",
-                statsout1.mean, statsout1.stddev, statsout1.min, statsout1.max);   
+                statsout1.mean, statsout1.stddev, statsout1.min, statsout1.max);
         fprintf(stderr, "Quad 2     mean=%.5e std=%.5e min=%.5e max=%.5e\n",
-                statsout2.mean, statsout2.stddev, statsout2.min, statsout2.max);   
+                statsout2.mean, statsout2.stddev, statsout2.min, statsout2.max);
         fprintf(stderr, "Rho square mean=%.5e std=%.5e min=%.5e max=.5%e\n",
                 statsout3.mean, statsout3.stddev, statsout3.min, statsout3.max);
 
         if (statsBuffer.data != NULL) LALFree (statsBuffer.data);
-    } 
+    }
     /*-------------------------------------------------------------------------------------*/
 
     /*************************************************/
@@ -176,15 +176,15 @@ void  LALDiscoverInspiralEvents (
 
         /* Calculate the chisq in one shot for ALL time lags if chisqBins is
          * greaer than zero. If it is equal to zero, it means chisq need not
-         * be calculated. 
+         * be calculated.
          * */
         if (findeventsin->chisqBins) {
             /* Calculate chisquare */
             chisqin.chisqBins    = findeventsin->chisqBins;
             chisqin.flso         = 1.L/(pow(6.L,1.5L)*(findeventsin->param.totalMass*LAL_MTSUN_SI)*LAL_PI);
-            chisqin.findEventsIn = findeventsin; 
-            chisqin.filter1      = filter1; 
-            chisqin.filter2      = filter2; 
+            chisqin.findEventsIn = findeventsin;
+            chisqin.filter1      = filter1;
+            chisqin.filter2      = filter2;
             chisqin.rho1         = output1;
             chisqin.rho2         = output2;
 
@@ -193,10 +193,10 @@ void  LALDiscoverInspiralEvents (
             chisqout->chisqPIbyTWO = NULL; chisqout->chisqPIbyTWO = (REAL8 *) LALCalloc (1, sizeof(REAL8) * output1.length);
             chisqout->chisq        = NULL; chisqout->chisq        = (REAL8 *) LALCalloc (1, sizeof(REAL8) * output1.length);
 
-            LALEvaluateInspiralChisqTest (status->statusPtr, chisqout, &chisqin); 
-            CHECKSTATUSPTR (status); 
+            LALEvaluateInspiralChisqTest (status->statusPtr, chisqout, &chisqin);
+            CHECKSTATUSPTR (status);
         } /* If chisqBins > 0 */
-        
+
         /* This is where we populate the event list */
         for (i=0; i<nTempEvents; i++) {
 
@@ -249,7 +249,7 @@ void  LALDiscoverInspiralEvents (
             }
             (*nEvents)++;
         } /* End of populating the event list */
-       
+
         /* If we calculated chisq, we should free the temporary vectors */
         if (findeventsin->chisqBins) {
             LALFree (chisqout->chisqZERO);
@@ -272,20 +272,20 @@ void  LALDiscoverInspiralEvents (
 
 
 /***************************************************
-  THE FOLLOWING SUBROUTINE CHOSES TC SEPARATED EVENTS 
+  THE FOLLOWING SUBROUTINE CHOSES TC SEPARATED EVENTS
 
-  Given a template, a valid inspiral event is one that 
-  is separated from the others by at least one chirp 
-  time. Input is the zero and pi/2 phase lag correlations. 
-  Output is the number of valid events and a list of 
+  Given a template, a valid inspiral event is one that
+  is separated from the others by at least one chirp
+  time. Input is the zero and pi/2 phase lag correlations.
+  Output is the number of valid events and a list of
   their position (index).
  ****************************************************/
 
-static void findValidInspiralEvents ( REAL4Vector c1, 
-        REAL4Vector c2, 
-        DiscoverInspiralEventsIn in, 
-        INT4 *nEvents, 
-        INT4 *eventIdx ) 
+static void findValidInspiralEvents ( REAL4Vector c1,
+        REAL4Vector c2,
+        DiscoverInspiralEventsIn in,
+        INT4 *nEvents,
+        INT4 *eventIdx )
 {
     INT4      i, events, i1, i2, j, n, unclassified;
     REAL4     x, y, z;
@@ -303,7 +303,7 @@ static void findValidInspiralEvents ( REAL4Vector c1,
         x = c1.data[i];
         y = c2.data[i];
         z = sqrt(x*x + y*y);
-        if (z >= in.Threshold)  n++;      
+        if (z >= in.Threshold)  n++;
     }
 
     if (n>0) {
@@ -323,9 +323,9 @@ static void findValidInspiralEvents ( REAL4Vector c1,
                 rho[j]  = z;
                 bin[j]  = i;
                 Ones[j] = 1;
-                j++;      
+                j++;
             }
-        } 
+        }
 
         /* We rely on the fact that the bin[] is naturally sorted */
         win    = (INT4)(in.param.tC * in.param.tSampling);
@@ -343,9 +343,9 @@ static void findValidInspiralEvents ( REAL4Vector c1,
             eventIdx[(*nEvents)] = bin[mPos];
             (*nEvents) ++;
 
-            for (i=0; i<n; i++) { 
+            for (i=0; i<n; i++) {
                 if ( (bin[i] >= bin[mPos] - win) &&
-                        (bin[i] <= bin[mPos] + win) ) Ones[i] = 0;     
+                        (bin[i] <= bin[mPos] + win) ) Ones[i] = 0;
             }
             unclassified = computeSum(Ones,n);
         }
@@ -357,10 +357,10 @@ static void findValidInspiralEvents ( REAL4Vector c1,
 }
 
 /* ------
-   Given a real vector vec and a int vector ok (containing binary values 0 and 1) 
+   Given a real vector vec and a int vector ok (containing binary values 0 and 1)
    this routine returns the max (vec) over those indices where ok is non zero.
-   The position of the maximum is also returned. 
-   ------*/ 
+   The position of the maximum is also returned.
+   ------*/
 
 static void findMax (REAL4 *vec, INT4 *ok, INT4 n, REAL4 *mVal, INT4 *mPos)
 {
@@ -379,8 +379,8 @@ static void findMax (REAL4 *vec, INT4 *ok, INT4 n, REAL4 *mVal, INT4 *mPos)
 }
 
 /* ------
-   Returns the sum of values an integer vector 
-   ------*/ 
+   Returns the sum of values an integer vector
+   ------*/
 static INT4 computeSum (INT4 *ivec, INT4 n)
 {
     INT4 i;

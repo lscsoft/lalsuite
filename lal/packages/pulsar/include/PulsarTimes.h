@@ -195,7 +195,7 @@ following \verb@epoch@.
 \item[\texttt{REAL8 longitude}] Detector east longitude (i.e.\
 counterclockwise about the north pole), in radians.
 
-\item[\texttt{EphemerisData ephemeris}] Ephemeris data containing positions, 
+\item[\texttt{EphemerisData ephemeris}] Ephemeris data containing positions,
 velocities, etc... of Earth and Sun for the year under consideration.
 
 \item[\texttt{LALDetector site}] The particular detector under consideration.

@@ -23,11 +23,11 @@ $Id$
 </lalVerbatim>  */
 /* <lalLaTeX>
 \subsection{Module \texttt{LALInspiralFindEvents.c}}
-Module to find events in a given data set with an SNR 
+Module to find events in a given data set with an SNR
 larger than a pre-specified threshold. The module uses
-two orthogonal inspiral signals of specified parameters 
+two orthogonal inspiral signals of specified parameters
 with a weight specified in a psd array. The code returns
-the number of events found, and for each event the snr, 
+the number of events found, and for each event the snr,
 the bin number and the phase of the template at that bin.
 
 \subsubsection*{Prototypes}
@@ -56,7 +56,7 @@ NRCSID (LALINSPIRALFINDEVENTSC, "$Id$");
 /*  <lalVerbatim file="LALInspiralFindEventsCP"> */
 
 void
-LALInspiralFindEvents 
+LALInspiralFindEvents
    (
    LALStatus            *status,
    INT4                 *nEvents,
@@ -65,8 +65,8 @@ LALInspiralFindEvents
    )
 {  /*  </lalVerbatim>  */
 
-   /* 
-    * We shall assume that the number of events to be found in 
+   /*
+    * We shall assume that the number of events to be found in
     * each template is no more than 100000.
    */
    INT4 nEventsMax = 100000;
@@ -96,7 +96,7 @@ LALInspiralFindEvents
    REAL4Vector output2;
    REAL4Vector buffer;
 
-	   
+
    StatsREAL4VectorOut statsout1;
    StatsREAL4VectorOut statsout2;
 
@@ -169,9 +169,9 @@ LALInspiralFindEvents
    CHECKSTATUSPTR(status);
    if (findeventsin->displayTemplates)
    {
-      for (i=0;i<(INT4)output1.length;i++) 
+      for (i=0;i<(INT4)output1.length;i++)
          printf("%e %e\n", i*dt, output1.data[i]);printf("&\n");
-      for (i=0;i<(INT4)output1.length;i++) 
+      for (i=0;i<(INT4)output1.length;i++)
          printf("%e %e\n", i*dt, output2.data[i]);printf("&\n");
    }
    LALREAL4VectorFFT(status->statusPtr, &filter1, &output1, findeventsin->fwdp);
@@ -194,32 +194,32 @@ LALInspiralFindEvents
    LALInspiralWaveCorrelate(status->statusPtr, &output2, corrin);
    CHECKSTATUSPTR(status);
 
-	   
-   for (i=nBegin;i<nEnd;i++) 
+
+   for (i=nBegin;i<nEnd;i++)
 	   buffer.data[i-nBegin] = output1.data[i];
    LALStatsREAL4Vector(status->statusPtr, &statsout1, &buffer);
    CHECKSTATUSPTR(status);
 
-	   
-   for (i=nBegin;i<nEnd;i++) 
+
+   for (i=nBegin;i<nEnd;i++)
 	   buffer.data[i-nBegin] = output2.data[i];
    LALStatsREAL4Vector(status->statusPtr, &statsout2, &buffer);
    CHECKSTATUSPTR(status);
 
    if (findeventsin->displayCorrelationStats)
    {
-	   fprintf(stderr, "mean=%e std=%e min=%e max=%e\n", statsout1.mean, statsout1.stddev, statsout1.min, statsout1.max);   
-	   fprintf(stderr, "mean=%e std=%e min=%e max=%e\n", statsout2.mean, statsout2.stddev, statsout2.min, statsout2.max);   
+	   fprintf(stderr, "mean=%e std=%e min=%e max=%e\n", statsout1.mean, statsout1.stddev, statsout1.min, statsout1.max);
+	   fprintf(stderr, "mean=%e std=%e min=%e max=%e\n", statsout2.mean, statsout2.stddev, statsout2.min, statsout2.max);
    }
-   
+
    if (findeventsin->displayCorrelation)
    {
-      for (i=nBegin;i<nEnd;i++) 
+      for (i=nBegin;i<nEnd;i++)
          {
-            x = pow ( pow( output1.data[i], 2.) + pow( output2.data[i], 2.), 0.5); 
+            x = pow ( pow( output1.data[i], 2.) + pow( output2.data[i], 2.), 0.5);
             printf("%e %e\n", i*dt, x);
          }
-         printf("&\n");   
+         printf("&\n");
    }
 
    *nEvents = 0;
@@ -239,7 +239,7 @@ LALInspiralFindEvents
    /*
    printf("FindEvents: %e %e %e %e\n", flso, totalMass/LAL_MTSUN_SI, eta, distanceNorm);
    */
-   
+
    for (i=nBegin; i<nEnd; i++) {
 
        double eSec;
@@ -274,7 +274,7 @@ LALInspiralFindEvents
           (*nEvents)++;
           if (*nEvents > nEventsMax)
           {
-		  
+
 		  goto endAnalysis;
 		  /*
 		   * ABORT (status, LALNOISEMODELSH_EMEM, LALNOISEMODELSH_MSGEMEM);

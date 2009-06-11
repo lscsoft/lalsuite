@@ -20,7 +20,7 @@
 /**
  * \author Jones D. I., Owen, B. J., and Whitbeck, D. M.
  * \date 2001-2005
- * \file 
+ * \file
  * \ingroup PulsarMetric
  * \brief Computes metric components for a pulsar search in the ``Ptolemaic''
  * approximation.  Both the Earth's spin and orbit are included.
@@ -66,7 +66,7 @@
  significant figure or better.  Even using DTEphemeris.c for the true
  Earth's orbit only causes errors in the metric components of order 10\%,
  with (so far) no noticeable effect on the sky coverage.
- 
+
  At present, only one spindown parameter can be included with the sky
  location.  The code contains (commented out) expressions for
  spindown-spindown metric components for an arbitrary number of spindowns,
@@ -153,7 +153,7 @@ void LALPtoleMetric( LALStatus *status,
   REAL8 D_cos_p_o_plus_s;
   REAL8 D_cos_p_o_minus_s;
   /* Quantities related to the short-time Tatlor expansions : */
-  REAL8 D_p_o_crit;       /* The orbital phase BELOW which series used.  */ 
+  REAL8 D_p_o_crit;       /* The orbital phase BELOW which series used.  */
   REAL8 sum1, sum2, sum3;
   REAL8 next1, next2, next3;
   INT2 j_max;  /* Number of terms in series */
@@ -184,7 +184,7 @@ void LALPtoleMetric( LALStatus *status,
 	  PTOLEMETRICH_EPARM, PTOLEMETRICH_MSGEPARM );
   ASSERT( abs(input->site->frDetector.vertexLongitudeRadians) <= LAL_PI, status,
 	  PTOLEMETRICH_EPARM, PTOLEMETRICH_MSGEPARM );
-  
+
   if( input->spindown )
     dim = 2+input->spindown->length;
   else
@@ -200,7 +200,7 @@ void LALPtoleMetric( LALStatus *status,
   /* Apart from normalization, this is just the information matrix. */
   big_metric = NULL;
   LALDCreateVector( status, &big_metric, (dim+2)*(dim+3)/2);
- 
+
   /* Detector location: */
   lat = input->site->frDetector.vertexLatitudeRadians;
   lon = input->site->frDetector.vertexLongitudeRadians;
@@ -249,7 +249,7 @@ void LALPtoleMetric( LALStatus *status,
   phi_o_i = -zero_phases.tAutumn/LAL_YRSID_SI*LAL_TWOPI;
   phi_s_i = -zero_phases.tMidnight/LAL_DAYSID_SI*LAL_TWOPI + lon;
 
-  
+
   /* Quantities involving the orbital phase: */
   phi_o_f   = phi_o_i + omega_o*T;
   D_p_o     = omega_o*T;
@@ -269,17 +269,17 @@ void LALPtoleMetric( LALStatus *status,
   D_cos_p_s  = (cos(phi_s_f) - cos(phi_s_i))/D_p_s;
   D_sin_2p_s = (sin(2*phi_s_f) - sin(2*phi_s_i))/2.0/D_p_s;
   D_cos_2p_s = (cos(2*phi_s_f) - cos(2*phi_s_i))/2.0/D_p_s;
-  
+
   /* Some mixed quantities: */
-  D_sin_p_o_plus_s  
+  D_sin_p_o_plus_s
     = (sin(phi_o_f+phi_s_f) - sin(phi_o_i+phi_s_i))/(D_p_o + D_p_s);
   D_p_o_plus_s      = D_p_o + D_p_s;
-  D_sin_p_o_minus_s 
+  D_sin_p_o_minus_s
     = (sin(phi_o_f-phi_s_f) - sin(phi_o_i-phi_s_i))/(D_p_o - D_p_s);
   D_p_o_minus_s     = D_p_o - D_p_s;
-  D_cos_p_o_plus_s  
+  D_cos_p_o_plus_s
     = (cos(phi_o_f+phi_s_f) - cos(phi_o_i+phi_s_i))/(D_p_o + D_p_s);
-  D_cos_p_o_minus_s 
+  D_cos_p_o_minus_s
     = (cos(phi_o_f-phi_s_f) - cos(phi_o_i-phi_s_i))/(D_p_o - D_p_s);
 
 
@@ -297,30 +297,30 @@ void LALPtoleMetric( LALStatus *status,
   for(j=1; j<=j_max; j++)
     {
       next1 *= -pow(D_p_o,2.0)/(2.0*j+1.0)/(2.0*j+2.0);
-      sum1  += next1; 
+      sum1  += next1;
       next2 *= -pow(D_p_o,2.0)/(2.0*j+2.0)/(2.0*j+3.0);
-      sum2  += next2; 
+      sum2  += next2;
       next3 *= -pow(2.0*D_p_o,2.0)/(2.0*j+1.0)/(2.0*j+2.0);
       sum3  += next3;
     }
- 
+
   if(D_p_o < D_p_o_crit)
     {
       D_sin_p_o = sin(phi_o_f)*sum1 + cos(phi_o_f)*sin(D_p_o)/D_p_o;
       D_cos_p_o = cos(phi_o_f)*sum1 - sin(phi_o_f)*sin(D_p_o)/D_p_o;
-      D_sin_2p_o 
+      D_sin_2p_o
 	= sin(2.0*phi_o_f)*sum3 + cos(2.0*phi_o_f)*sin(2.0*D_p_o)/2.0/D_p_o;
-      D_cos_2p_o 
+      D_cos_2p_o
 	= cos(2.0*phi_o_f)*sum3 - sin(2.0*phi_o_f)*sin(2.0*D_p_o)/2.0/D_p_o;
    }
   /****************************************************************/
 
 
   /* The A[i] quantities: */
-  A[1] = 
+  A[1] =
     R_o*D_sin_p_o + R_s*cos_l*D_sin_p_s;
 
-  A[2] = 
+  A[2] =
     R_o*cos_i*D_cos_p_o + R_s*cos_l*D_cos_p_s;
 
   A[3] =
@@ -409,7 +409,7 @@ void LALPtoleMetric( LALStatus *status,
     A[15]*cos_i*cos_i +2*A[16]*cos_i*cos_l + A[17]*cos_l*cos_l;
 
   B[7] =
-    -A[11]*sin_i + 2*A[18]*sin_l - A[13]*sin_i*cos_l + A[19]*sin_2l; 
+    -A[11]*sin_i + 2*A[18]*sin_l - A[13]*sin_i*cos_l + A[19]*sin_2l;
 
   B[8] =
     A[15]*sin_i*cos_i - 2*A[20]*cos_i*sin_l + A[16]*sin_i*cos_l - A[21]*sin_2l;
@@ -483,24 +483,24 @@ void LALPtoleMetric( LALStatus *status,
   /*The spindown components*/
   if(dim==3) {
     /* g_p1 = */
-    big_metric->data[10] = 
+    big_metric->data[10] =
       T*LAL_PI*f*T/3;
-    
+
     /* g_f1= */
     big_metric->data[11]=
       T*pow(LAL_PI*T,2)*f/2;
 
     /* g_a1 = */
-    big_metric->data[12] = T*2*pow(LAL_PI*f,2)*T*(-cos_d*sin_a*(R_o*I[1] + R_s*cos_l*I[2])+ cos_d*cos_a*(R_o*cos_i*I[3] + R_s*cos_l*I[4]));   
-    
+    big_metric->data[12] = T*2*pow(LAL_PI*f,2)*T*(-cos_d*sin_a*(R_o*I[1] + R_s*cos_l*I[2])+ cos_d*cos_a*(R_o*cos_i*I[3] + R_s*cos_l*I[4]));
+
     /* g_d1 = */
     big_metric->data[13] = T*2*pow(LAL_PI*f,2)*T*(-sin_d*cos_a*(R_o*I[1] + R_s*cos_l*I[2])- sin_d*sin_a*(R_o*cos_i*I[3] + R_s*cos_l*I[4]) + cos_d*(R_o*sin_i*I[3] + R_s*sin_l/3));
-    
+
     /* g_11 = */
     big_metric->data[14] = T*T*pow(LAL_PI*f*T,2)/5;
   }
-    
-  
+
+
   /**********************************************************/
   /* Spin-down stuff not consistent with rest of code - don't uncomment! */
   /* Spindown-spindown metric components, before projection
@@ -542,7 +542,7 @@ void LALPtoleMetric( LALStatus *status,
      temp2*=-pow(LAL_TWOPI*input->maxFreq,2)*R_o*cos_i
      *cos_d/omega_o/(j+1);
      metric->data[1+(j+2)*(j+3)/2]+=temp1+temp2;
-     Spindown-dec: 2+(j+2)*(j+3)/2 
+     Spindown-dec: 2+(j+2)*(j+3)/2
      metric->data[2+(j+2)*(j+3)/2] = 0;
      temp3=0;
      temp4=0;
@@ -583,25 +583,25 @@ void LALPtoleMetric( LALStatus *status,
 /* Project down to 4-dim metric: */
 
 /*f-f component */
-  metric->data[0] =  big_metric->data[2] 
+  metric->data[0] =  big_metric->data[2]
     - big_metric->data[1]*big_metric->data[1]/big_metric->data[0];
   /*f-a component */
-  metric->data[1] =  big_metric->data[4] 
+  metric->data[1] =  big_metric->data[4]
     - big_metric->data[1]*big_metric->data[3]/big_metric->data[0];
   /*a-a component */
-  metric->data[2] =  big_metric->data[5] 
+  metric->data[2] =  big_metric->data[5]
     - big_metric->data[3]*big_metric->data[3]/big_metric->data[0];
   /*f-d component */
-  metric->data[3] =  big_metric->data[7] 
+  metric->data[3] =  big_metric->data[7]
     - big_metric->data[6]*big_metric->data[1]/big_metric->data[0];
   /*a-d component */
-  metric->data[4] =  big_metric->data[8] 
+  metric->data[4] =  big_metric->data[8]
     - big_metric->data[6]*big_metric->data[3]/big_metric->data[0];
   /*d-d component */
-  metric->data[5] =  big_metric->data[9] 
-    - big_metric->data[6]*big_metric->data[6]/big_metric->data[0]; 
+  metric->data[5] =  big_metric->data[9]
+    - big_metric->data[6]*big_metric->data[6]/big_metric->data[0];
   if(dim==3) {
-    
+
     /*f-f1 component */
     metric->data[6] = big_metric->data[11]
       - big_metric->data[1]*big_metric->data[10]/big_metric->data[0];
@@ -619,7 +619,7 @@ void LALPtoleMetric( LALStatus *status,
       - big_metric->data[10]*big_metric->data[10]/big_metric->data[0];
   }
 
-  LALDDestroyVector( status, &big_metric ); 
+  LALDDestroyVector( status, &big_metric );
   /* All done */
   RETURN( status );
 } /* LALPtoleMetric() */
@@ -630,7 +630,7 @@ void LALPtoleMetric( LALStatus *status,
 static int factrl( int arg )
 {
   int ans = 1;
-  
+
   if (arg==0) return 1;
   do {
     ans *= arg;
@@ -640,13 +640,13 @@ static int factrl( int arg )
 } /* factrl() */
 
 
-/** Unified "wrapper" to provide a uniform interface to LALPtoleMetric() 
+/** Unified "wrapper" to provide a uniform interface to LALPtoleMetric()
  * and LALCoherentMetric(), from DopplerScan.c, written by Reinhard Prix.
  *
- * The parameter structure of LALPtoleMetric() was used, because it's more 
+ * The parameter structure of LALPtoleMetric() was used, because it's more
  * compact
  */
-void LALPulsarMetric ( LALStatus *stat, 
+void LALPulsarMetric ( LALStatus *stat,
 		       REAL8Vector **metric,
 		       PtoleMetricIn *input )
 {
@@ -669,7 +669,7 @@ void LALPulsarMetric ( LALStatus *stat,
   }
 
 
-  if ( input->spindown ) 
+  if ( input->spindown )
     nSpin = input->spindown->length;
   else
     nSpin = 0;
@@ -695,7 +695,7 @@ void LALPulsarMetric ( LALStatus *stat,
       baryParams.epoch = input->epoch;
       baryParams.t0 = 0;
       /* FIXME: should be redundant now, with Detector passed */
-      baryParams.latitude = input->site->frDetector.vertexLatitudeRadians;	
+      baryParams.latitude = input->site->frDetector.vertexLatitudeRadians;
       baryParams.longitude = input->site->frDetector.vertexLongitudeRadians;
 
       baryParams.site = input->site;
@@ -724,7 +724,7 @@ void LALPulsarMetric ( LALStatus *stat,
 	  /* Set up constant parameters for spindown transformation. */
 	  spinParams.epoch = input->epoch;
 	  spinParams.t0 = 0;
-	  
+
 	  /* Set up constant parameters for composed transformation. */
 	  compParams.epoch = input->epoch;
 	  compParams.t1 = baryParams.t1;
@@ -759,7 +759,7 @@ void LALPulsarMetric ( LALStatus *stat,
       lambda->data[1] = (REAL8) input->position.longitude;	/* Alpha */
       lambda->data[2] = (REAL8) input->position.latitude;	/* Delta */
 
-      if ( nSpin ) 
+      if ( nSpin )
 	{
 	  for (i=0; i < nSpin; i++)
 	    lambda->data[3 + i] = (REAL8) input->spindown->data[i];
@@ -783,7 +783,7 @@ void LALPulsarMetric ( LALStatus *stat,
       LALPrintError ("Unknown metric type `%d`\n", input->metricType);
       ABORT (stat, PTOLEMETRICH_EMETRIC,  PTOLEMETRICH_MSGEMETRIC);
       break;
-      
+
     } /* switch type */
 
   DETATCHSTATUSPTR (stat);
@@ -811,7 +811,7 @@ XLALFindMetricDim ( const REAL8Vector *metric )
   if ( length == 0 )
     return 0;
 
-  dim=1; 
+  dim=1;
   while ( (trylength = dim * (dim + 1)/2 ) <= length )
     {
       if ( length == trylength )
@@ -819,7 +819,7 @@ XLALFindMetricDim ( const REAL8Vector *metric )
       else
 	dim ++;
     }
-  
+
   /* no fitting dimension found ==> error */
   LALPrintError ("\nInput vector is inconsisten with symmetric quadratic matrix!\n\n");
   XLAL_ERROR ( "XLALFindMetricDim", XLAL_EINVAL);
@@ -847,7 +847,7 @@ gsl_matrix *XLALSpindownMetric(
   for (i = 0; i < metric->size1; ++i) {
     for (j = 0; j < metric->size2; ++j) {
 
-      gsl_matrix_set(metric, i, j, 4 * pow(LAL_PI, 2) * pow(Tspan, 2 + i + j) / 
+      gsl_matrix_set(metric, i, j, 4 * pow(LAL_PI, 2) * pow(Tspan, 2 + i + j) /
 		     (factrl(i) * factrl(j) * (2 + i) * (2 + j) * (3 + i + j)));
 
     }

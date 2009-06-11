@@ -17,14 +17,14 @@
 *  MA  02111-1307  USA
 */
 
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: FindChirpLinkedList.c
  *
  * Author: Brown, D. A.
- * 
+ *
  * Revision: $Id$
- * 
+ *
  *-----------------------------------------------------------------------
  */
 
@@ -99,7 +99,7 @@ LALFindChirpCreateTmpltNode (
   INITSTATUS( status, "LALFindChirpCreateTmpltNode", FINDCHIRPLINKEDLISTC );
   ATTATCHSTATUSPTR( status );
 
-  ASSERT( tmplt, status, 
+  ASSERT( tmplt, status,
       FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
 
 
@@ -114,7 +114,7 @@ LALFindChirpCreateTmpltNode (
   current = *tmpltNode;
 
   /* create memory for the template node */
-  *tmpltNode = (InspiralTemplateNode *) 
+  *tmpltNode = (InspiralTemplateNode *)
     LALCalloc( 1, sizeof(InspiralTemplateNode) );
   if ( !tmpltNode )
   {
@@ -126,7 +126,7 @@ LALFindChirpCreateTmpltNode (
   (*tmpltNode)->tmpltPtr = tmplt;
 
   /* link the list */
-  if ( current ) 
+  if ( current )
   {
     if ( current->next )
     {
@@ -139,12 +139,12 @@ LALFindChirpCreateTmpltNode (
 
   DETATCHSTATUSPTR( status );
   RETURN( status );
-}  
+}
 
 
 /* <lalVerbatim file="FindChirpLinkedListCP"> */
 void
-LALFindChirpDestroyTmpltNode ( 
+LALFindChirpDestroyTmpltNode (
     LALStatus                  *status,
     InspiralTemplateNode      **tmpltNode
     )
@@ -156,7 +156,7 @@ LALFindChirpDestroyTmpltNode (
   INITSTATUS( status, "FindChirpDestroyTmpltNode", FINDCHIRPLINKEDLISTC );
   ATTATCHSTATUSPTR( status );
 
-  ASSERT( tmpltNode, status, 
+  ASSERT( tmpltNode, status,
       FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
 
 
@@ -166,7 +166,7 @@ LALFindChirpDestroyTmpltNode (
    *
    */
 
-  
+
   /* store the previous and next nodes */
   prev = (*tmpltNode)->prev;
   next = (*tmpltNode)->next;
@@ -176,7 +176,7 @@ LALFindChirpDestroyTmpltNode (
 
   /* relink the list */
   if ( next ) next->prev = prev;
-  if ( prev ) 
+  if ( prev )
   {
     prev->next = next;
     *tmpltNode = prev;
@@ -185,7 +185,7 @@ LALFindChirpDestroyTmpltNode (
   {
     *tmpltNode = next;
   }
-  
+
   DETATCHSTATUSPTR( status );
   RETURN( status );
-}  
+}

@@ -21,7 +21,7 @@
  *
  * File Name: TestConstructPLUT.c
  *
- * Authors: Sintes, A.M., 
+ * Authors: Sintes, A.M.,
  *
  * Revision: $Id$
  *
@@ -36,7 +36,7 @@
  */
 
 /************************************ <lalVerbatim file="TestConstructPLUTCV">
-Author: Sintes, A. M. 
+Author: Sintes, A. M.
 $Id$
 ************************************* </lalVerbatim> */
 
@@ -65,7 +65,7 @@ TestConstructPLUT [-d debuglevel] [-o outfile] [-f f0] [-p alpha delta] [-s patc
 
 This program generates a patch grid, calculates the parameters needed for
 building the {\sc LUT}, builds the {\sc LUT} and outputs a partial Hough map
-derivative into a file. The sky patch is set at the south pole, 
+derivative into a file. The sky patch is set at the south pole,
 no spin-down parameters are assumed for the demodulation and
  every third  peak in the spectrum is selected.\\
 
@@ -78,7 +78,7 @@ The \verb@-d@ option sets the debug level to the specified value
 derivative  to the specified data file \verb@outfile@.  The
 \verb@-f@ option sets the intrinsic frequency \verb@f0@ at which build the {\sc
 LUT}.   The \verb@-p@ option sets the velocity orientation of the detector
-\verb@alpha@, \verb@delta@ (in radians). 
+\verb@alpha@, \verb@delta@ (in radians).
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -191,7 +191,7 @@ typedef CHAR HoughDT;
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
 /* vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv------------------------------------ */
-int main(int argc, char *argv[]){ 
+int main(int argc, char *argv[]){
 
   static LALStatus       status;  /* LALStatus pointer */
   static HOUGHptfLUT     lut;     /* the Look Up Table */
@@ -205,11 +205,11 @@ int main(int argc, char *argv[]){
   INT8   f0Bin;           /* freq. bin to construct LUT */
   UINT2  xSide, ySide;
   UINT2  maxNBins, maxNBorders;
-  
+
   /* the Hough derivative map. The patch containing at most
      SIDEX*SIDEY pixels */
   /* HoughDT PHMD[SIDEY][SIDEX+1]; */
-  
+
   HoughDT *PHMD;
 
   HoughDT *pointer;
@@ -240,16 +240,16 @@ int main(int argc, char *argv[]){
 
   parDem.deltaF = DF;
   parDem.skyPatch.alpha = 0.0;
-  parDem.skyPatch.delta = -LAL_PI_2;   
+  parDem.skyPatch.delta = -LAL_PI_2;
 
   alpha = ALPHA;
   delta = DELTA;
   veloMod = VTOT;
-	   
 
-  /********************************************************/  
+
+  /********************************************************/
   /* Parse argument list.  i stores the current position. */
-  /********************************************************/  
+  /********************************************************/
   arg = 1;
   while ( arg < argc ) {
     /* Parse debuglevel option. */
@@ -280,7 +280,7 @@ int main(int argc, char *argv[]){
         arg++;
 	f0 = atof(argv[arg++]);
 	f0Bin = f0*TCOH;
-        parRes.f0Bin =  f0Bin; 
+        parRes.f0Bin =  f0Bin;
       } else {
         ERROR( TESTCONSTRUCTPLUTC_EARG, TESTCONSTRUCTPLUTC_MSGEARG, 0 );
         LALPrintError( USAGE, *argv );
@@ -347,18 +347,18 @@ int main(int argc, char *argv[]){
   patch.yCoor = (REAL8 *)LALMalloc(ySide*sizeof(REAL8));
 
   SUB( LALHOUGHFillPatchGrid( &status, &patch, &parSize ), &status );
- 
+
   /******************************************************************/
   /* memory allocation and settings */
   /******************************************************************/
 
-  lut.maxNBins = maxNBins; 
+  lut.maxNBins = maxNBins;
   lut.maxNBorders = maxNBorders;
-  lut.border = 
+  lut.border =
     (HOUGHBorder *)LALMalloc(maxNBorders*sizeof(HOUGHBorder));
-  lut.bin = 
+  lut.bin =
     (HOUGHBin2Border *)LALMalloc(maxNBins*sizeof(HOUGHBin2Border));
-	      
+
   PHMD = (HoughDT *)LALMalloc((xSide+1)*ySide*sizeof(HoughDT));
 
   for (i=0; i < maxNBorders; ++i){
@@ -375,13 +375,13 @@ int main(int argc, char *argv[]){
   parDem.veloC.y = veloMod*cos(delta)*sin(alpha);
   parDem.veloC.z = veloMod*sin(delta);
 
-  parDem.positC.x = 0.0; 
-  parDem.positC.y = 0.0; 
-  parDem.positC.z = 0.0; 
+  parDem.positC.x = 0.0;
+  parDem.positC.y = 0.0;
+  parDem.positC.z = 0.0;
   parDem.timeDiff = 0.0;
   parDem.spin.length = 0;
   parDem.spin.data = NULL;
-  
+
   /******************************************************************/
   /* calculate parameters needed for buiding the LUT */
   /******************************************************************/
@@ -391,11 +391,11 @@ int main(int argc, char *argv[]){
   /* build the LUT */
   /******************************************************************/
   SUB( LALHOUGHConstructPLUT( &status, &lut, &patch, &parLut ), &status );
-  
+
   /******************************************************************/
   /* construct  PHMD[i][j] accordingly  */
   /*******************************************************/
-  
+
   /* initializing output  space */
   pointer = &( PHMD[0]);
   for ( k=0; k< (xSide+1)*ySide; ++k ){
@@ -407,13 +407,13 @@ int main(int argc, char *argv[]){
 
    /* just as a test examples */
 
-  for( k= lut.iniBin; k < binPoint ; k+=2 ){ 
-  /* this should be for plotting each two bins! 
+  for( k= lut.iniBin; k < binPoint ; k+=2 ){
+  /* this should be for plotting each two bins!
      so one can see all border with +1 or -1 */
 
-  /* for( k= -2; k < 3 ; k+=2 ){ */ 
+  /* for( k= -2; k < 3 ; k+=2 ){ */
         /* now just 3 peaks selected -2,0,+2 */
-   
+
 
     INT2 lb1,rb1,lb2,rb2; /* The border index. If zero means that */
         /* it does not intersect the patch, or nothing to clip */
@@ -434,11 +434,11 @@ int main(int argc, char *argv[]){
     rb2 = lut.bin[i].rightB2;
 
     max1 = lut.bin[i].piece1max;
-    min1 = lut.bin[i].piece1min; 
+    min1 = lut.bin[i].piece1min;
     max2 = lut.bin[i].piece2max;
-    min2 = lut.bin[i].piece2min; 
+    min2 = lut.bin[i].piece2min;
 
-    /* drawing the annuli borders */ 
+    /* drawing the annuli borders */
     if(lb1){
       for(j = lut.border[lb1].yLower;
 	  j <= lut.border[lb1].yUpper; j++ ){
@@ -467,7 +467,7 @@ int main(int argc, char *argv[]){
 	PHMD[j*(xSide+1) + xindex] -= 1;
       }
     }
- 
+
     /* correcting border effects */
 
     /* note: if max1<min1, nothing should be done! */
@@ -480,7 +480,7 @@ int main(int argc, char *argv[]){
 
   /*******************************************************/
   /* printing the results into a particular file         */
-  /* if the -o option was given, or into  FILEOUT        */ 
+  /* if the -o option was given, or into  FILEOUT        */
   /*******************************************************/
 
   if ( fname ) {
@@ -494,7 +494,7 @@ int main(int argc, char *argv[]){
     return TESTCONSTRUCTPLUTC_EFILE;
   }
 
- 
+
   for(j=ySide-1; j>=0; --j){
     for(i=0;i<xSide;++i){
       fprintf( fp ," %d",  PHMD[j*(xSide+1) + i] );
@@ -503,26 +503,26 @@ int main(int argc, char *argv[]){
     fprintf( fp ," \n");
     fflush( fp );
   }
-  
+
   fclose( fp );
 
   /******************************************************************/
   /* Free memory and exit */
   /******************************************************************/
-  
+
   for (i=0; i<maxNBorders; ++i){
     LALFree( lut.border[i].xPixel);
-  } 
-  
+  }
+
   LALFree( lut.border);
   LALFree( lut.bin);
-    
+
   LALFree( PHMD);
-  
+
   LALFree( patch.xCoor);
   LALFree( patch.yCoor);
-  
-  LALCheckMemoryLeaks(); 
+
+  LALCheckMemoryLeaks();
 
   INFO( TESTCONSTRUCTPLUTC_MSGENORM );
   return TESTCONSTRUCTPLUTC_ENORM;

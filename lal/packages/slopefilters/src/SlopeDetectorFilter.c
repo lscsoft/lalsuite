@@ -19,13 +19,13 @@
 
 /********************************** <lalVerbatim file="SlopeDetectorFilterCV">
 Author: Daw, E. J.
-$Id$  
+$Id$
 ************************************* </lalVerbatim> */
 
 /********************************************************** <lalLaTeX>
 \subsection{Module \texttt{SlopeDetectorFilter.c}}
 
-Functions in this code segment implement various time domain 
+Functions in this code segment implement various time domain
 search algorithms for transients and bursts in the LIGO data.
 
 \subsubsection*{Prototypes}
@@ -40,14 +40,14 @@ search algorithms for transients and bursts in the LIGO data.
 
 The three fine fuctions prototyped above implement time domain linear and nonlinear
 filters on input data. The resulting output data is intended to enhance
-sensitivity to burst sources. 
+sensitivity to burst sources.
 
 The first function is \texttt{void LALSlopeDetectorFilter()}, which
 takes input data through its third argument
 \texttt{const REAL4Vector* input\_data}. For
 each element $i$ of the input data ntuple $x_i$, the best fit slope
 the data points $i$ to $i+N-1$ is found, where $N$ is the fourth
-argument \texttt{ntaps} passed to the function. This function 
+argument \texttt{ntaps} passed to the function. This function
 provides no provision for history buffers. The output data is written
 to the address \texttt{REAL4Vector* output\_data} passed as the second
 argument.
@@ -58,7 +58,7 @@ its third argument. For each element $i$ of the
 input data ntuple $x_i$, the best fit slope, $a_i$ , or the best
 fit intercept to the data (vertical) axis, $b_i$, or a particular
 nonlinear combination of $a_i$ and $b_i$ is found. Any of these
-three quantities can be returned to the output address 
+three quantities can be returned to the output address
 \texttt{REAL4Vector* output\_data}, depending on the argument passed
 to \texttt{fparams.function\_select}. Acceptable values for this parameter
 are shown in table \ref{slopetable:fitsettings}.
@@ -66,7 +66,7 @@ are shown in table \ref{slopetable:fitsettings}.
 \begin{table}
 \begin{center}
 \begin{tabular}{|l|c|r|} \hline
-\texttt{fparams.function\_select} & 
+\texttt{fparams.function\_select} &
 value & filter output \\ \hline\hline
 \texttt{FILTER\_OUTPUT\_SLOPE} & 1 & fit to slope $a_i$ over N bins \\ \hline
 \texttt{FILTER\_OUTPUT\_OFFSET} & 2 & fit to offset $b_i$ over N bins \\ \hline
@@ -90,17 +90,17 @@ in table \ref{slopetable:convsettings}.
 \begin{table}
 \begin{center}
 \begin{tabular}{|l|c|r|} \hline
-\texttt{fparams.function\_select} & 
+\texttt{fparams.function\_select} &
 value & filter output \\ \hline\hline
-\texttt{FILTER\_OUTPUT\_BOXCAR} & 4 & 
+\texttt{FILTER\_OUTPUT\_BOXCAR} & 4 &
 set taps to uniform window over N bins \\ \hline
-\texttt{FILTER\_OUTPUT\_GAUSSIAN} 
+\texttt{FILTER\_OUTPUT\_GAUSSIAN}
 & 5 & set taps to Gaussian over N bins \\ \hline
-\texttt{FILTER\_OUTPUT\_SINE} & 6 & 
+\texttt{FILTER\_OUTPUT\_SINE} & 6 &
 set taps to sine wave period over N bins \\ \hline
-\texttt{FILTER\_OUTPUT\_USER} & 7 & 
+\texttt{FILTER\_OUTPUT\_USER} & 7 &
 set taps to user defined \\ \hline
-\texttt{FILTER\_OUTPUT\_CONVOLVE} & 8 & 
+\texttt{FILTER\_OUTPUT\_CONVOLVE} & 8 &
 convolve data with a filter already set up \\ \hline
 \end{tabular}
 \caption{settings for \texttt{fparams.function\_select} used in conjunction
@@ -112,23 +112,23 @@ with function \texttt{LALSlopeConvolutionFilter()}.}
 The \texttt{BOXCAR} option creates N taps that are all set to 1/N.
 The \texttt{GAUSSIAN} option creates taps that represent part of
 a gaussian curve between $\pm 3\sigma$. The \texttt{SINE} option
-sets the taps to be one period of a sine wave. 
-Both the sine and Gaussian tap waveforms are of unity height. If the 
+sets the taps to be one period of a sine wave.
+Both the sine and Gaussian tap waveforms are of unity height. If the
 \texttt{USER} option is set, then the \texttt{input\_data} field
-is used to set the taps. In the latter case, the 
+is used to set the taps. In the latter case, the
 \texttt{input\_data->length} field must be the same as
 \texttt{fparams.forder} field, and equal the number of elements
-in the input data array. In all cases, memory must be allocated 
+in the input data array. In all cases, memory must be allocated
 by the calling function to the \texttt{fparams.taps\_set} field,
 which must be initialized to zero. Once the function is called
 to set the taps, the \texttt{fparams.taps\_set} field is changed to
-one. 
+one.
 
 Once the filter has been initialized, it can be convolved with
 data. History buffering is supported, and works in the same way
 as for the \texttt{LALSlopeLineFitFilter} function described
 above. Note that the \texttt{fparams.function\_select} field
-must be set to \texttt{FILTER\_OUTPUT\_CONVOLVE}. 
+must be set to \texttt{FILTER\_OUTPUT\_CONVOLVE}.
 
 \subsubsection*{Algorithm}
 
@@ -143,13 +143,13 @@ and $b_i$ are used as the basis to form discriminants. The
 data either with a standard set of waveforms, or with waveforms
 set by the user as described above. In all the equations below,
 N is the number of successive data samples used to compute the
-quantities, the filter `order'. 
+quantities, the filter `order'.
 
 For \texttt{LALSlopeDetectionFilter} the output data array is $y_i$:
 
 \begin{equation}
 y_i = \frac{
-\frac{1}{N} \sum_{j=0}^{N-1} x_{i+j} t_{i+j} - 
+\frac{1}{N} \sum_{j=0}^{N-1} x_{i+j} t_{i+j} -
 \left( \frac{1}{N} \sum_{k=0}^{N-1} x_{i+k} \right)
 \left( \frac{1}{N} \sum_{m=0}^{N-1} t_{i+m} \right)
 }{
@@ -160,7 +160,7 @@ y_i = \frac{
 \end{equation}
 
 For
-\texttt{LALSlopeLineFitFilter} with 
+\texttt{LALSlopeLineFitFilter} with
 \texttt{fparams.function\_select} set to \texttt{FILTER\_OUTPUT\_SLOPE},
 the output data $a_i$ is
 
@@ -183,7 +183,7 @@ since we have the following identities:
 Note that slope filters have a mimimum order of 2, since it takes at least 2 points
 to estimate the slope.
 
-For 
+For
 \texttt{LALSlopeLineFitFilter} with
 \texttt{fparams.function\_select} set to \texttt{FILTER\_OUTPUT\_OFFSET},
 $a_i$ is calculated and used to estimate the output $b_i$ given by
@@ -206,7 +206,7 @@ Define $\sigma_a$ and $\sigma_b$:
 \end{eqnarray}
 
 Let $X_a = a_i / \sigma_a$ and $X_b = b_i / \sigma_b$. Then the
-output $c_i$ of the \texttt{ALF} filter is 
+output $c_i$ of the \texttt{ALF} filter is
 
 \begin{equation}
 c_i = \frac{
@@ -224,7 +224,7 @@ where
 }
 \end{equation}
 
-This nonlinear combination was found by the Orsay group to 
+This nonlinear combination was found by the Orsay group to
 be particularly sensitive to bursts in the Zwerger Mueller catalog.
 See \texttt{gr/qc-0010037} for a full description.
 
@@ -268,13 +268,13 @@ elements. After running the filter, the history buffer will contain
 the last \texttt{fparams.forder - 1} elements of the input data sent
 to the filter. By adding these elements to the beginning of the next
 set of input data sent to the filter, a continuous filtered data stream
-with a seamless boundary may be maintained between successive 
+with a seamless boundary may be maintained between successive
 applications of the filter. Note that currently the passing of history
-buffers between successive MPI jobs is not supported under LDAS. 
+buffers between successive MPI jobs is not supported under LDAS.
 
 Both \texttt{LALSlopeLineFitFilter} and \texttt{LALSlopeConvolutionFilter}
 require the field \texttt{fparams.sampling\_period\_s} to contain
-the reciprocal of the sampling frequency for the channel. 
+the reciprocal of the sampling frequency for the channel.
 
 The \texttt{waveform\_offset} field in \texttt{SLOPEFilterParam} is
 there in case you need to offset the filter waveform by a fraction
@@ -284,7 +284,7 @@ this field to $0.5$).
 
 \vfill{\footnotesize\input{SlopeDetectorFilterCV}}
 
-*** </lalLaTeX> */ 
+*** </lalLaTeX> */
 
 /******* INCLUDE STANDARD LIBRARY HEADERS; ************/
 /* note LALStdLib.h already includes stdio.h and stdarg.h */
@@ -311,7 +311,7 @@ CreateGaussianTaps( UINT4 ntaps,
                     REAL4 binoffset,
                     REAL4* tap );
 
-static void 
+static void
 CreatePeriodSineTaps( UINT4 ntaps,
                       REAL4 binoffset,
                       REAL4* tap );
@@ -339,11 +339,11 @@ LALSlopeDetectorFilter( LALStatus          *status,
   /* ATTATCHSTATUSPTR (status); */
 
   if ( input_data == NULL ) {
-    ABORT( status, SLOPEDETECTORFILTERH_EINPUTNULLP, 
+    ABORT( status, SLOPEDETECTORFILTERH_EINPUTNULLP,
 	   SLOPEDETECTORFILTERH_MSGEINPUTNULLP );
   }
   if ( output_data == NULL ) {
-    ABORT( status, SLOPEDETECTORFILTERH_EOUTPUTNULLP, 
+    ABORT( status, SLOPEDETECTORFILTERH_EOUTPUTNULLP,
 	   SLOPEDETECTORFILTERH_MSGEOUTPUTNULLP );
   }
 
@@ -354,22 +354,22 @@ LALSlopeDetectorFilter( LALStatus          *status,
   /******* CHECK VALIDITY OF ARGUMENTS; for example ************/
 
   if ( dataout == NULL ) {
-    ABORT( status, SLOPEDETECTORFILTERH_EINPUTNULLP, 
+    ABORT( status, SLOPEDETECTORFILTERH_EINPUTNULLP,
 	   SLOPEDETECTORFILTERH_MSGEINPUTNULLP );
   }
   if ( datain == NULL ) {
-    ABORT( status, SLOPEDETECTORFILTERH_EOUTPUTNULLP, 
+    ABORT( status, SLOPEDETECTORFILTERH_EOUTPUTNULLP,
 	   SLOPEDETECTORFILTERH_MSGEOUTPUTNULLP );
   }
   if ( datalength < ntaps ) {
-    ABORT( status, SLOPEDETECTORFILTERH_EDATATOOSHORT, 
+    ABORT( status, SLOPEDETECTORFILTERH_EDATATOOSHORT,
 	   SLOPEDETECTORFILTERH_MSGEDATATOOSHORT );
   }
 
   /* printf("CODE: At div by zero point, ntaps is %u\n",ntaps); */
   /* check that the number of taps is not zero */
   if ( ntaps == 0 ) {
-    ABORT( status, SLOPEDETECTORFILTERH_EDIVBYZERO, 
+    ABORT( status, SLOPEDETECTORFILTERH_EDIVBYZERO,
 	   SLOPEDETECTORFILTERH_MSGEDIVBYZERO );
   }
 
@@ -378,8 +378,8 @@ LALSlopeDetectorFilter( LALStatus          *status,
   nreal=(REAL4)ntaps;
   for(i=0;i<(datalength-ntaps+1);++i) {
     meanx=0;
-    meant=0; 
-    meanxt=0; 
+    meant=0;
+    meanxt=0;
     meantsquared=0;
     for(j=0;j<ntaps;++j) {
       tindex = (REAL4)j;
@@ -391,10 +391,10 @@ LALSlopeDetectorFilter( LALStatus          *status,
 
     /* check that the denominator is not zero */
     if ( (meantsquared - meant*meant) == 0 ) {
-      ABORT( status, SLOPEDETECTORFILTERH_EDIVBYZERO, 
+      ABORT( status, SLOPEDETECTORFILTERH_EDIVBYZERO,
 	     SLOPEDETECTORFILTERH_MSGEDIVBYZERO );
     }
-    
+
     dataout[i] = (meanxt - meanx * meant) / ( meantsquared - meant * meant );
 
     /*these lines present for testing purposes only*/
@@ -402,7 +402,7 @@ LALSlopeDetectorFilter( LALStatus          *status,
       i,meanx,meant,meanxt,meantsquared,dataout[i]); */
     /*dataout[i] = datain[i];*/
   }
-  
+
   /* DETATCHSTATUSPTR(status); */
   RETURN(status);
 }
@@ -425,7 +425,7 @@ LALSlopeLineFitFilter( LALStatus                *status,
   UINT4              i,j,datalength;
   REAL4*             datain;
   REAL4*             dataout;
-  REAL4              calculated_slope,calculated_offset,sigmaa,sigmab,alpha; 
+  REAL4              calculated_slope,calculated_offset,sigmaa,sigmab,alpha;
   REAL4              xnorma, xnormb;
   REAL4              nreal;
 
@@ -436,27 +436,27 @@ LALSlopeLineFitFilter( LALStatus                *status,
   /* ATTATCHSTATUSPTR (status); */
 
   if ( input_data == NULL ) {
-    ABORT( status, SLOPEDETECTORFILTERH_EINPUTNULLP, 
+    ABORT( status, SLOPEDETECTORFILTERH_EINPUTNULLP,
 	   SLOPEDETECTORFILTERH_MSGEINPUTNULLP );
   }
   if ( output_data == NULL ) {
-    ABORT( status, SLOPEDETECTORFILTERH_EOUTPUTNULLP, 
+    ABORT( status, SLOPEDETECTORFILTERH_EOUTPUTNULLP,
 	   SLOPEDETECTORFILTERH_MSGEOUTPUTNULLP );
   }
   if ( fparams.history == NULL ) {
-    ABORT( status, SLOPEDETECTORFILTERH_EHISTNULLP, 
+    ABORT( status, SLOPEDETECTORFILTERH_EHISTNULLP,
 	   SLOPEDETECTORFILTERH_MSGEHISTNULLP );
   }
   /* filter order needs to be at least two for slope detector filters */
   /* since you can't fit the slope off one data point */
-  if ( (fparams.forder < 2) || 
+  if ( (fparams.forder < 2) ||
        (fparams.forder > MAX_SLOPE_DETECTOR_FILTER_ORDER ) ) {
-    ABORT( status, SLOPEDETECTORFILTERH_EINVFILTLEN, 
+    ABORT( status, SLOPEDETECTORFILTERH_EINVFILTLEN,
 	   SLOPEDETECTORFILTERH_MSGEINVFILTLEN );
   }
   if ( ( *(fparams.history_allocated) != 0) &&
        ( *(fparams.history_allocated) != 1) ) {
-    ABORT( status, SLOPEDETECTORFILTERH_EHISTNULLP, 
+    ABORT( status, SLOPEDETECTORFILTERH_EHISTNULLP,
 	   SLOPEDETECTORFILTERH_MSGEHISTNULLP );
   }
 
@@ -466,15 +466,15 @@ LALSlopeLineFitFilter( LALStatus                *status,
   nreal = (REAL4)fparams.forder;
 
   if ( dataout == NULL ) {
-    ABORT( status, SLOPEDETECTORFILTERH_EINPUTNULLP, 
+    ABORT( status, SLOPEDETECTORFILTERH_EINPUTNULLP,
 	   SLOPEDETECTORFILTERH_MSGEINPUTNULLP );
   }
   if ( datain == NULL ) {
-    ABORT( status, SLOPEDETECTORFILTERH_EOUTPUTNULLP, 
+    ABORT( status, SLOPEDETECTORFILTERH_EOUTPUTNULLP,
 	   SLOPEDETECTORFILTERH_MSGEOUTPUTNULLP );
   }
   if ( datalength <= fparams.forder ) {
-    ABORT( status, SLOPEDETECTORFILTERH_EDATATOOSHORT, 
+    ABORT( status, SLOPEDETECTORFILTERH_EDATATOOSHORT,
 	   SLOPEDETECTORFILTERH_MSGEDATATOOSHORT );
   }
 
@@ -482,19 +482,19 @@ LALSlopeLineFitFilter( LALStatus                *status,
 
   /******* DO ANALYSIS ************/
 
-  /* run filter */  
+  /* run filter */
 
   /* calculate overall normalization to get output in counts per second */
-  normalization = 12 / (nreal * 
+  normalization = 12 / (nreal *
 			fparams.sampling_period_s *
 			(nreal * nreal - 1));
 
   meant = fparams.sampling_period_s * ( nreal - 1 ) / 2;
-  
+
   /* loop over input data */
   for(i=0;i<(datalength-fparams.forder+1);++i) {
 
-    /* compute sums needed for calculating best fit slope */ 
+    /* compute sums needed for calculating best fit slope */
     sumx=0; sumxt=0;
     for(j=0;j<fparams.forder;++j) {
       sumx += datain[i+j];
@@ -516,9 +516,9 @@ LALSlopeLineFitFilter( LALStatus                *status,
       break;
     case FILTER_OUTPUT_ALF:
       /* output data is a nonlinear function of slope and offset */
-      sigmaa = (1 / fparams.sampling_period_s) * (REAL4)sqrt 
+      sigmaa = (1 / fparams.sampling_period_s) * (REAL4)sqrt
 	( 12 / (    (REAL8)nreal * ( (REAL8)nreal*(REAL8)nreal - 1) )    ) ;
-      sigmab = (REAL4)sqrt ( (4 * (REAL8)nreal + 2) / 
+      sigmab = (REAL4)sqrt ( (4 * (REAL8)nreal + 2) /
 		      ( (REAL8)nreal * ( (REAL8)nreal - 1 ) ) );
       calculated_offset = sumx / nreal - calculated_slope * meant;
       alpha = ( 0 - sqrt( 1.5 * ( (REAL8)nreal + 1) / ( 2*(REAL8)nreal + 1 ) ) );
@@ -528,12 +528,12 @@ LALSlopeLineFitFilter( LALStatus                *status,
 		     ( 1 - alpha * alpha ) );
       break;
     default:
-      ABORT( status, SLOPEDETECTORFILTERH_EINVALIDACTION, 
+      ABORT( status, SLOPEDETECTORFILTERH_EINVALIDACTION,
 	     SLOPEDETECTORFILTERH_MSGEINVALIDACTION );
 
     }
   }
-  
+
   /* set history buffer */
   for(i=0;i<(fparams.forder-1);++i) {
     fparams.history[i] = datain[datalength-(fparams.forder-1)+i];
@@ -570,22 +570,22 @@ LALSlopeConvolutionFilter( LALStatus                *status,
 
   switch( fparams.function_select ) {
   case FILTER_OUTPUT_TAPS_SET_GAUSSIAN:
-    if ( ( fparams.forder < 1) || 
+    if ( ( fparams.forder < 1) ||
 	 ( fparams.forder > MAX_SLOPE_DETECTOR_FILTER_ORDER ) ) {
-      ABORT( status, SLOPEDETECTORFILTERH_EINVFILTLEN, 
+      ABORT( status, SLOPEDETECTORFILTERH_EINVFILTLEN,
 	     SLOPEDETECTORFILTERH_MSGEINVFILTLEN );
     }
     if ( *(fparams.taps_set) != 0 ) {
-      ABORT( status, SLOPEDETECTORFILTERH_EINVALIDTAPSBIT, 
+      ABORT( status, SLOPEDETECTORFILTERH_EINVALIDTAPSBIT,
 	     SLOPEDETECTORFILTERH_MSGEINVALIDTAPSBIT );
     }
     if ( fparams.tap == NULL ) {
-      ABORT( status, SLOPEDETECTORFILTERH_ETAPSNULLP, 
+      ABORT( status, SLOPEDETECTORFILTERH_ETAPSNULLP,
 	     SLOPEDETECTORFILTERH_MSGETAPSNULLP );
     }
-    if ( (fparams.waveform_offset < 0) || 
+    if ( (fparams.waveform_offset < 0) ||
 	 (fparams.waveform_offset > 1) ) {
-      ABORT( status, SLOPEDETECTORFILTERH_EBINOFFINVALID, 
+      ABORT( status, SLOPEDETECTORFILTERH_EBINOFFINVALID,
 	     SLOPEDETECTORFILTERH_MSGEBINOFFINVALID );
     }
     /* create the filter taps */
@@ -594,22 +594,22 @@ LALSlopeConvolutionFilter( LALStatus                *status,
     *(fparams.taps_set) = 1;
     break;
   case FILTER_OUTPUT_TAPS_SET_SINE:
-    if ( ( fparams.forder < 1 ) || 
+    if ( ( fparams.forder < 1 ) ||
 	 ( fparams.forder > MAX_SLOPE_DETECTOR_FILTER_ORDER ) ) {
-      ABORT( status, SLOPEDETECTORFILTERH_EINVFILTLEN, 
+      ABORT( status, SLOPEDETECTORFILTERH_EINVFILTLEN,
 	     SLOPEDETECTORFILTERH_MSGEINVFILTLEN );
     }
     if ( *(fparams.taps_set) != 0 ) {
-      ABORT( status, SLOPEDETECTORFILTERH_EINVALIDTAPSBIT, 
+      ABORT( status, SLOPEDETECTORFILTERH_EINVALIDTAPSBIT,
 	     SLOPEDETECTORFILTERH_MSGEINVALIDTAPSBIT );
     }
     if ( fparams.tap == NULL ) {
-      ABORT( status, SLOPEDETECTORFILTERH_ETAPSNULLP, 
+      ABORT( status, SLOPEDETECTORFILTERH_ETAPSNULLP,
 	     SLOPEDETECTORFILTERH_MSGETAPSNULLP );
     }
-    if ( (fparams.waveform_offset < 0) || 
+    if ( (fparams.waveform_offset < 0) ||
 	 (fparams.waveform_offset > 1) ) {
-      ABORT( status, SLOPEDETECTORFILTERH_EBINOFFINVALID, 
+      ABORT( status, SLOPEDETECTORFILTERH_EBINOFFINVALID,
 	     SLOPEDETECTORFILTERH_MSGEBINOFFINVALID );
     }
     /* create the filter taps */
@@ -618,22 +618,22 @@ LALSlopeConvolutionFilter( LALStatus                *status,
     *(fparams.taps_set) = 1;
     break;
   case FILTER_OUTPUT_TAPS_SET_BOXCAR:
-    if ( ( fparams.forder < 1 ) || 
+    if ( ( fparams.forder < 1 ) ||
 	 ( fparams.forder > MAX_SLOPE_DETECTOR_FILTER_ORDER ) ) {
-      ABORT( status, SLOPEDETECTORFILTERH_EINVFILTLEN, 
+      ABORT( status, SLOPEDETECTORFILTERH_EINVFILTLEN,
 	     SLOPEDETECTORFILTERH_MSGEINVFILTLEN );
     }
     if ( *(fparams.taps_set) != 0 ) {
-      ABORT( status, SLOPEDETECTORFILTERH_EINVALIDTAPSBIT, 
+      ABORT( status, SLOPEDETECTORFILTERH_EINVALIDTAPSBIT,
 	     SLOPEDETECTORFILTERH_MSGEINVALIDTAPSBIT );
     }
     if ( fparams.tap == NULL ) {
-      ABORT( status, SLOPEDETECTORFILTERH_ETAPSNULLP, 
+      ABORT( status, SLOPEDETECTORFILTERH_ETAPSNULLP,
 	     SLOPEDETECTORFILTERH_MSGETAPSNULLP );
     }
-    if ( (fparams.waveform_offset < 0) || 
+    if ( (fparams.waveform_offset < 0) ||
 	 (fparams.waveform_offset > 1) ) {
-      ABORT( status, SLOPEDETECTORFILTERH_EBINOFFINVALID, 
+      ABORT( status, SLOPEDETECTORFILTERH_EBINOFFINVALID,
 	     SLOPEDETECTORFILTERH_MSGEBINOFFINVALID );
     }
     nreal = (REAL4)fparams.forder;
@@ -648,7 +648,7 @@ LALSlopeConvolutionFilter( LALStatus                *status,
     break;
   case FILTER_OUTPUT_TAPS_SET_USER:
     if ( input_data == NULL ) {
-      ABORT( status, SLOPEDETECTORFILTERH_EINPUTNULLP, 
+      ABORT( status, SLOPEDETECTORFILTERH_EINPUTNULLP,
 	     SLOPEDETECTORFILTERH_MSGEINPUTNULLP );
     }
     datalength = input_data->length;
@@ -656,17 +656,17 @@ LALSlopeConvolutionFilter( LALStatus                *status,
     /* check that the data array is of a usable length */
     if ( ((INT4)datalength < 0) ||
 	 (datalength > MAX_SLOPE_DETECTOR_FILTER_ORDER) ) {
-      ABORT( status, SLOPEDETECTORFILTERH_EINVFILTLEN, 
+      ABORT( status, SLOPEDETECTORFILTERH_EINVFILTLEN,
 	     SLOPEDETECTORFILTERH_MSGEINVFILTLEN );
     }
     /* check that the taps bit is set to zero */
     if ( *(fparams.taps_set) != 0 ) {
-      ABORT( status, SLOPEDETECTORFILTERH_EINVALIDTAPSBIT, 
+      ABORT( status, SLOPEDETECTORFILTERH_EINVALIDTAPSBIT,
 	     SLOPEDETECTORFILTERH_MSGEINVALIDTAPSBIT );
     }
     /* check that the taps pointer is not null */
     if ( fparams.tap == NULL ) {
-      ABORT( status, SLOPEDETECTORFILTERH_ETAPSNULLP, 
+      ABORT( status, SLOPEDETECTORFILTERH_ETAPSNULLP,
 	     SLOPEDETECTORFILTERH_MSGETAPSNULLP );
     }
     /* copy the input data array to the filter taps */
@@ -678,11 +678,11 @@ LALSlopeConvolutionFilter( LALStatus                *status,
     break;
   case FILTER_OUTPUT_CONVOLVE:
     if ( input_data == NULL ) {
-      ABORT( status, SLOPEDETECTORFILTERH_EINPUTNULLP, 
+      ABORT( status, SLOPEDETECTORFILTERH_EINPUTNULLP,
 	     SLOPEDETECTORFILTERH_MSGEINPUTNULLP );
     }
     if ( output_data == NULL ) {
-      ABORT( status, SLOPEDETECTORFILTERH_EOUTPUTNULLP, 
+      ABORT( status, SLOPEDETECTORFILTERH_EOUTPUTNULLP,
 	     SLOPEDETECTORFILTERH_MSGEOUTPUTNULLP );
     }
     datalength = input_data->length;
@@ -690,17 +690,17 @@ LALSlopeConvolutionFilter( LALStatus                *status,
     dataout = output_data->data;
     /* check that the taps bit is set to one */
     if ( *(fparams.taps_set) != 1 ) {
-      ABORT( status, SLOPEDETECTORFILTERH_EINVALIDTAPSBIT, 
+      ABORT( status, SLOPEDETECTORFILTERH_EINVALIDTAPSBIT,
 	     SLOPEDETECTORFILTERH_MSGEINVALIDTAPSBIT );
     }
     /* check that the taps pointer is not null */
     if ( fparams.tap == NULL ) {
-      ABORT( status, SLOPEDETECTORFILTERH_ETAPSNULLP, 
+      ABORT( status, SLOPEDETECTORFILTERH_ETAPSNULLP,
 	     SLOPEDETECTORFILTERH_MSGETAPSNULLP );
     }
     /* check that the history buffer pointer is not null */
     if ( (fparams.history) == NULL ) {
-      ABORT( status, SLOPEDETECTORFILTERH_EHISTNULLP, 
+      ABORT( status, SLOPEDETECTORFILTERH_EHISTNULLP,
 	     SLOPEDETECTORFILTERH_MSGEHISTNULLP );
     }
     /* convolve the data with the filter */
@@ -720,7 +720,7 @@ LALSlopeConvolutionFilter( LALStatus                *status,
     *(fparams.history_allocated) = 1;
     break;
   default:
-      ABORT( status, SLOPEDETECTORFILTERH_EINVALIDACTION, 
+      ABORT( status, SLOPEDETECTORFILTERH_EINVALIDACTION,
 	     SLOPEDETECTORFILTERH_MSGEINVALIDACTION );
   }
   /* DETATCHSTATUSPTR(status); */
@@ -737,7 +737,7 @@ static void CreateGaussianTaps(UINT4 ntaps, REAL4 binoffset, REAL4* tap) {
   sigbins = midbin / (REAL8)GAUSSIAN_TAPS_NSIGMA_AT_EDGE;
   for(i=0;i<ntaps;++i) {
     offs = (REAL8)i;
-    tap[i] = (REAL4)exp( - (offs - (midbin+(REAL8)binoffset)) * 
+    tap[i] = (REAL4)exp( - (offs - (midbin+(REAL8)binoffset)) *
 			 (offs - (midbin+(REAL8)binoffset)) /
 			 (2 * sigbins * sigbins) );
   }

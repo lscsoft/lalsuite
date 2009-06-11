@@ -36,7 +36,7 @@
  */
 
 /************************************ <lalVerbatim file="TestDriveHoughCV">
-Author: Sintes, A. M., Krishnan, B. 
+Author: Sintes, A. M., Krishnan, B.
 $Id$
 ************************************* </lalVerbatim> */
 
@@ -50,7 +50,7 @@ $Id$
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Program \ \texttt{TestDriveHough.c}}
 \label{s:TestDriveHough.c}
-Tests the construction 
+Tests the construction
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsubsection*{Usage}
@@ -66,11 +66,11 @@ TestDriveHough [-d debuglevel] [-o outfile] [-f f0] [-p alpha delta]
 
 This program generates  a patch grid, a vector of  {\sc lut}s by changing the
 alpha component of the velocity orientation of the detector by a fixed amount
-in each of them, and a vector of 
+in each of them, and a vector of
 peak-grams (all of them containing the same information). Similar to the previous
 test codes the patch is set at the south pole. \\
 
-Then the program builds the set 
+Then the program builds the set
 of {\sc phmd}, updates the cylinder and computes a Hough map at a given
 frequency using only one horizontal line set of {\sc phmd}, and outputs the
 result into a file. \\
@@ -86,7 +86,7 @@ The \verb@-d@ option sets the debug level to the specified value
 derivative  to the specified data file \verb@outfile@.  The
 \verb@-f@ option sets the intrinsic frequency \verb@f0@ at which build the {\sc
 lut}.   The \verb@-p@ option sets the velocity orientation of the detector
-\verb@alpha@, \verb@delta@ (in radians) for the first {\sc lut} (time-stamp). 
+\verb@alpha@, \verb@delta@ (in radians) for the first {\sc lut} (time-stamp).
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -201,9 +201,9 @@ char *lalWatch;
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
 /* vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv------------------------------------ */
-int main(int argc, char *argv[]){ 
+int main(int argc, char *argv[]){
 
-  static LALStatus           status;  /* LALStatus pointer */ 
+  static LALStatus           status;  /* LALStatus pointer */
   static HOUGHptfLUTVector   lutV; /* the Look Up Table vector*/
   static HOUGHPeakGramVector pgV;
   static PHMDVectorSequence  phmdVS;  /* the partial Hough map derivatives */
@@ -219,34 +219,34 @@ int main(int argc, char *argv[]){
   /* ------------------------------------------------------- */
 
   UINT2  maxNBins, maxNBorders;
-  
+
   INT8   f0Bin;           /* freq. bin to construct LUT */
   INT8   fBin;
 
   UINT2 xSide, ySide;
-  
+
   CHAR *fname = NULL;               /* The output filename */
   FILE *fp=NULL;                    /* Output file */
 
   INT4 arg;                         /* Argument counter */
   UINT4 i,j;                       /* Index counter, etc */
-  INT4 k; 
+  INT4 k;
   REAL8 f0, alpha, delta, veloMod;
   REAL8 patchSizeX, patchSizeY;
- 
+
   /************************************************************/
   /* Set up the default parameters. */
   /* **********************************************************/
-  
-  
+
+
   lutV.length    = MOBSCOH;
   pgV.length     = MOBSCOH;
   phmdVS.length  = MOBSCOH;
   freqInd.length = MOBSCOH;
   phmdVS.nfSize  = NFSIZE;
 
-  freqInd.deltaF = DF; 
-  phmdVS.deltaF  = DF; 
+  freqInd.deltaF = DF;
+  phmdVS.deltaF  = DF;
 
   lutV.lut = NULL;
   pgV.pg = NULL;
@@ -256,7 +256,7 @@ int main(int argc, char *argv[]){
 
   f0 =  F0;
   f0Bin = F0*TCOH;
-  
+
   parRes.f0Bin =  f0Bin;
   parRes.deltaF = DF;
   parRes.patchSkySizeX  = patchSizeX = 1.0/(TCOH*F0*VEPI);
@@ -264,15 +264,15 @@ int main(int argc, char *argv[]){
   parRes.pixelFactor = PIXELFACTOR;
   parRes.pixErr = PIXERR;
   parRes.linErr = LINERR;
-  parRes.vTotC = VTOT; 
-  
- 
+  parRes.vTotC = VTOT;
+
+
   alpha = ALPHA;
   delta = DELTA;
   veloMod = VTOT;
 
 
-  /********************************************************/  
+  /********************************************************/
   /* Parse argument list.  i stores the current position. */
   /********************************************************/
   arg = 1;
@@ -303,9 +303,9 @@ int main(int argc, char *argv[]){
     else if ( !strcmp( argv[arg], "-f" ) ) {
       if ( argc > arg + 1 ) {
         arg++;
-	f0 = atof(argv[arg++]);	
-	f0Bin = f0*TCOH;  
-	parRes.f0Bin =  f0Bin;    
+	f0 = atof(argv[arg++]);
+	f0Bin = f0*TCOH;
+	parRes.f0Bin =  f0Bin;
       } else {
         ERROR( TESTDRIVEHOUGHC_EARG, TESTDRIVEHOUGHC_MSGEARG, 0 );
         LALPrintError( USAGE, *argv );
@@ -357,65 +357,65 @@ int main(int argc, char *argv[]){
   /******************************************************************/
 
   SUB( LALHOUGHComputeSizePar( &status, &parSize, &parRes ),  &status );
- 
+
   xSide = parSize.xSide;
   ySide = parSize.ySide;
   maxNBins = parSize.maxNBins;
   maxNBorders = parSize.maxNBorders;
-  
+
   /* allocate memory based on xSide and ySide */
   patch.xSide = xSide;
   patch.ySide = ySide;
-  
+
   patch.xCoor = NULL;
   patch.yCoor = NULL;
   patch.xCoor = (REAL8 *)LALMalloc(xSide*sizeof(REAL8));
   patch.yCoor = (REAL8 *)LALMalloc(ySide*sizeof(REAL8));
-  
+
   SUB( LALHOUGHFillPatchGrid( &status, &patch, &parSize ), &status );
 
   /******************************************************************/
   /* memory allocation and settings */
   /******************************************************************/
- 
+
   lutV.lut = (HOUGHptfLUT *)LALMalloc(MOBSCOH*sizeof(HOUGHptfLUT));
   pgV.pg = (HOUGHPeakGram *)LALMalloc(MOBSCOH*sizeof(HOUGHPeakGram));
   phmdVS.phmd =(HOUGHphmd *)LALMalloc(MOBSCOH*NFSIZE*sizeof(HOUGHphmd));
   freqInd.data =  ( UINT8 *)LALMalloc(MOBSCOH*sizeof(UINT8));
-  
+
   for(j=0; j<lutV.length; ++j){
     lutV.lut[j].maxNBins = maxNBins;
     lutV.lut[j].maxNBorders = maxNBorders;
-    lutV.lut[j].border = 
+    lutV.lut[j].border =
          (HOUGHBorder *)LALMalloc(maxNBorders*sizeof(HOUGHBorder));
-    lutV.lut[j].bin = 
-         (HOUGHBin2Border *)LALMalloc(maxNBins*sizeof(HOUGHBin2Border));	 
+    lutV.lut[j].bin =
+         (HOUGHBin2Border *)LALMalloc(maxNBins*sizeof(HOUGHBin2Border));
   }
-  
+
   for(j=0; j<phmdVS.length * phmdVS.nfSize; ++j){
     phmdVS.phmd[j].maxNBorders = maxNBorders;
-    phmdVS.phmd[j].leftBorderP = 
+    phmdVS.phmd[j].leftBorderP =
        (HOUGHBorder **)LALMalloc(maxNBorders*sizeof(HOUGHBorder *));
-    phmdVS.phmd[j].rightBorderP = 
+    phmdVS.phmd[j].rightBorderP =
        (HOUGHBorder **)LALMalloc(maxNBorders*sizeof(HOUGHBorder *));
   }
-  
+
 
   ht.xSide = xSide;
   ht.ySide = ySide;
   ht.map   = NULL;
   ht.map   = (HoughTT *)LALMalloc(xSide*ySide*sizeof(HoughTT));
-  
+
   for(j=0; j<phmdVS.length * phmdVS.nfSize; ++j){
     phmdVS.phmd[j].ySide = ySide;
     phmdVS.phmd[j].firstColumn = NULL;
     phmdVS.phmd[j].firstColumn = (UCHAR *)LALMalloc(ySide*sizeof(UCHAR));
   }
-  
+
   for (j=0; j<lutV.length ; ++j){
     for (i=0; i<maxNBorders; ++i){
       lutV.lut[j].border[i].ySide = ySide;
-      lutV.lut[j].border[i].xPixel = 
+      lutV.lut[j].border[i].xPixel =
                             (COORType *)LALMalloc(ySide*sizeof(COORType));
     }
   }
@@ -426,11 +426,11 @@ int main(int argc, char *argv[]){
   /************************************************************/
   parDem.deltaF = DF;
   parDem.skyPatch.alpha = 0.0;
-  parDem.skyPatch.delta = -LAL_PI_2; 
+  parDem.skyPatch.delta = -LAL_PI_2;
 
-  parDem.positC.x = 0.0; 
-  parDem.positC.y = 0.0; 
-  parDem.positC.z = 0.0; 
+  parDem.positC.x = 0.0;
+  parDem.positC.y = 0.0;
+  parDem.positC.z = 0.0;
 
   parDem.timeDiff = 0.0;
   parDem.spin.length = 0;
@@ -446,13 +446,13 @@ int main(int argc, char *argv[]){
 
     /* calculate parameters needed for buiding the LUT */
     SUB( LALHOUGHParamPLUT( &status, &parLut, &parSize, &parDem ),  &status );
-    
+
     /* build the LUT */
-    SUB( LALHOUGHConstructPLUT( &status, &(lutV.lut[j]), &patch, &parLut ), 
+    SUB( LALHOUGHConstructPLUT( &status, &(lutV.lut[j]), &patch, &parLut ),
 	 &status );
   }
 
- 
+
   /******************************************************************/
   /* create Peakgrams for testing                                         */
   /******************************************************************/
@@ -470,7 +470,7 @@ int main(int argc, char *argv[]){
    for (i=0; i< pgV.pg[j].length; ++i){ pgV.pg[j].peak[i] = 3*i; } /* test */
   }
 
- 
+
   /******************************************************************/
   /* build the set of  PHMD  */
   /******************************************************************/
@@ -481,27 +481,27 @@ int main(int argc, char *argv[]){
   /* shift the structure one frequency bin */
   SUB( LALHOUGHupdateSpacePHMDup(&status, &phmdVS, &pgV, &lutV), &status );
 
- 
+
   /******************************************************************/
   /* initializing the Hough map space */
   /******************************************************************/
 
-  SUB( LALHOUGHInitializeHT( &status, &ht, &patch ), &status ); 
+  SUB( LALHOUGHInitializeHT( &status, &ht, &patch ), &status );
 
-  
+
   /******************************************************************/
   /* construction of a total Hough map  */
   /******************************************************************/
 
   for (j=0;j< MOBSCOH;++j){
     freqInd.data[j]= fBin+2;
-  } 
+  }
 
-  SUB( LALHOUGHConstructHMT( &status, &ht, &freqInd, &phmdVS ), &status ); 
+  SUB( LALHOUGHConstructHMT( &status, &ht, &freqInd, &phmdVS ), &status );
 
   /******************************************************************/
   /* printing the results into a particular file                    */
-  /* if the -o option was given, or into  FILEOUT                   */ 
+  /* if the -o option was given, or into  FILEOUT                   */
   /******************************************************************/
 
   if ( fname ) {
@@ -515,7 +515,7 @@ int main(int argc, char *argv[]){
     return TESTDRIVEHOUGHC_EFILE;
   }
 
- 
+
   for(k=ySide-1; k>=0; --k){
     for(i=0;i<xSide;++i){
       fprintf( fp ," %f", ht.map[k*xSide +i]);
@@ -524,18 +524,18 @@ int main(int argc, char *argv[]){
     fprintf( fp ," \n");
     fflush( fp );
   }
-  
+
   fclose( fp );
 
 
   /******************************************************************/
   /* Free memory and exit */
   /******************************************************************/
-  for (j=0;j< MOBSCOH;++j){ 
+  for (j=0;j< MOBSCOH;++j){
     LALFree( pgV.pg[j].peak);  /* All of them */
   }
- 
-   
+
+
   for (j=0; j<lutV.length ; ++j){
     for (i=0; i<maxNBorders; ++i){
       LALFree( lutV.lut[j].border[i].xPixel);
@@ -543,24 +543,24 @@ int main(int argc, char *argv[]){
     LALFree( lutV.lut[j].border);
     LALFree( lutV.lut[j].bin);
   }
-  
+
   for(j=0; j<phmdVS.length * phmdVS.nfSize; ++j){
     LALFree( phmdVS.phmd[j].leftBorderP);
     LALFree( phmdVS.phmd[j].rightBorderP);
     LALFree( phmdVS.phmd[j].firstColumn);
   }
-  
+
   LALFree(lutV.lut);
   LALFree(pgV.pg);
   LALFree(phmdVS.phmd);
   LALFree(freqInd.data);
-  
+
   LALFree(ht.map);
-  
+
   LALFree(patch.xCoor);
   LALFree(patch.yCoor);
-  
-  LALCheckMemoryLeaks(); 
+
+  LALCheckMemoryLeaks();
 
   INFO( TESTDRIVEHOUGHC_MSGENORM );
   return TESTDRIVEHOUGHC_ENORM;

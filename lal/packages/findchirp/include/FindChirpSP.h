@@ -17,14 +17,14 @@
 *  MA  02111-1307  USA
 */
 
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: FindChirpSP.h
  *
  * Author: Brown, D. A.
- * 
+ *
  * Revision: $Id$
- * 
+ *
  *-----------------------------------------------------------------------
  */
 
@@ -32,7 +32,7 @@
 <lalVerbatim file="FindChirpSPHV">
 Author: Brown, D. A.
 $Id$
-</lalVerbatim> 
+</lalVerbatim>
 
 <lalLaTeX>
 \section{Header \texttt{FindChirpSP.h}}
@@ -71,8 +71,8 @@ extern "C" {
 NRCSID (FINDCHIRPSPH, "$Id$");
 
 #if 0
-<lalLaTeX> 
-\subsection*{Error codes} 
+<lalLaTeX>
+\subsection*{Error codes}
 </lalLaTeX>
 #endif
 /* <lalErrTable> */
@@ -118,7 +118,7 @@ None.
 #if 0
 <lalLaTeX>
 \vfill{\footnotesize\input{FindChirpSPHV}}
-</lalLaTeX> 
+</lalLaTeX>
 #endif
 
 #if 0

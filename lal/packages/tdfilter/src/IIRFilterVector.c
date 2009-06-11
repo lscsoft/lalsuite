@@ -293,7 +293,7 @@ LALIIRFilterREAL4Vector( LALStatus      *stat,
     *data=datum;
   }
   for(;i<length;i++,data++){
-    datum=*data;    
+    datum=*data;
     for(j=1;j<recursOrder;j++)
       datum+=data[-j]*recursCoef[j];
     *data=datum;

@@ -46,7 +46,7 @@ none
 
 NRCSID (LALSTATSREAL4VECTORC, "$Id$");
 
-/*  <lalVerbatim file="LALStatsREAL4VectorCP"> */ 
+/*  <lalVerbatim file="LALStatsREAL4VectorCP"> */
 void
 LALStatsREAL4Vector
    (
@@ -81,7 +81,7 @@ LALStatsREAL4Vector
       out->mean+=x;
    }
    out->mean/=(REAL8) n;
-   
+
    for (i=0; i<n; i++)
    {
       x = vector->data[i]-out->mean;

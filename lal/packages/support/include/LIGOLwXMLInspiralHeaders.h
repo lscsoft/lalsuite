@@ -17,14 +17,14 @@
 *  MA  02111-1307  USA
 */
 
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: LIGOLwXMLInspiralHeaders.h
  *
  * Author: Brown, D. A.
- * 
+ *
  * Revision: $Id$
- * 
+ *
  *-----------------------------------------------------------------------
  */
 
@@ -35,7 +35,7 @@
 <lalVerbatim file="LIGOLwXMLInspiralHeadersHV">
 Author: Brown, D. A.
 $Id$
-</lalVerbatim> 
+</lalVerbatim>
 <lalLaTeX>
 \section{Header \texttt{LIGOLwXMLInspiralHeaders.h}}
 \subsection*{Synopsis}
@@ -46,15 +46,15 @@ $Id$
 This header provides provides \verb|#define|s for the inspiral related
 tables of LIGO light weight XML files.  It will need to be kept up to date
 with changes in the LIGO database table definitions.  The quantities which are
-defined in this file are 
+defined in this file are
 
 \begin{itemize}
-\item LIGOLW\_XML\_SNGL\_INSPIRAL 
-\item SNGL\_INSPIRAL\_ROW 
-\item LIGOLW\_XML\_MULTI\_INSPIRAL 
+\item LIGOLW\_XML\_SNGL\_INSPIRAL
+\item SNGL\_INSPIRAL\_ROW
+\item LIGOLW\_XML\_MULTI\_INSPIRAL
 \item MULTI\_INSPIRAL\_ROW
 \item LIGOLW\_XML\_SIM\_INSPIRAL
-\item SIM\_INSPIRAL\_ROW 
+\item SIM\_INSPIRAL\_ROW
 \end{itemize}
 
 \vfill{\footnotesize\input{LIGOLwXMLInspiralHeadersHV}}
@@ -323,7 +323,7 @@ fputs( "      <Column Name=\"sim_inspiralgroup:sim_inspiral:amp_order\" Type=\"i
 fputs( "      <Column Name=\"sim_inspiralgroup:sim_inspiral:taper\" Type=\"lstring\"/>\n", fp ) == EOF || \
 fputs( "      <Column Name=\"sim_inspiralgroup:sim_inspiral:bandpass\" Type=\"int_4s\"/>\n", fp ) == EOF || \
 fputs( "      <Column Name=\"sim_inspiralgroup:sim_inspiral:simulation_id\" Type=\"ilwd:char\"/>\n" , fp ) == EOF || \
-fputs( "      <Stream Name=\"sim_inspiralgroup:sim_inspiral:table\" Type=\"Local\" Delimiter=\",\">\n", fp ) == EOF )  
+fputs( "      <Stream Name=\"sim_inspiralgroup:sim_inspiral:table\" Type=\"Local\" Delimiter=\",\">\n", fp ) == EOF )
 
 #define SIM_INSPIRAL_ROW \
 "         \"process:process_id:0\",\"%s\",%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%22.16e,\"%s\",%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%d,%d,\"%s\",%d,\"%s\",%d,\"sim_inspiral:simulation_id:%" LAL_INT8_FORMAT "\""

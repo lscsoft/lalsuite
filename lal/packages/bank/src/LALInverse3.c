@@ -27,7 +27,7 @@ $Id$
 \subsection{Module \texttt{LALInverse3.c}}
 
 
-Uses $g^{ij} = 1/(2g) e^{ikl} e^{jab} g_{ka} g_{lb}$ to compute the inverse. 
+Uses $g^{ij} = 1/(2g) e^{ikl} e^{jab} g_{ka} g_{lb}$ to compute the inverse.
 
 \subsubsection*{Prototypes}
 \vspace{0.1in}
@@ -41,8 +41,8 @@ Uses $g^{ij} = 1/(2g) e^{ikl} e^{jab} g_{ka} g_{lb}$ to compute the inverse.
 \subsubsection*{Description}
 
 
-Uses $g^{ij} = 1/(2g) e^{ikl} e^{jab} g_{ka} g_{lb}$ to compute 
-the inverse; though not efficient, it is good enough for the 
+Uses $g^{ij} = 1/(2g) e^{ikl} e^{jab} g_{ka} g_{lb}$ to compute
+the inverse; though not efficient, it is good enough for the
 3-d matrix that we have. Prevents the need for having a new library.
 
 \subsubsection*{Algorithm}
@@ -68,9 +68,9 @@ NRCSID(LALINVERSE3C, "$Id$");
 
 /*  <lalVerbatim file="LALInverse3CP"> */
 
-void LALInverse3(LALStatus *status, 
-                 REAL8     **inverse, 
-                 REAL8     **matrix) 
+void LALInverse3(LALStatus *status,
+                 REAL8     **inverse,
+                 REAL8     **matrix)
 { /* </lalVerbatim> */
 
    REAL8 epsilon[Dim][Dim][Dim] = {{
@@ -99,7 +99,7 @@ void LALInverse3(LALStatus *status,
    for (j=0; j<Dim; j++) {
       x = 0;
       for (a=0; a<Dim; a++) { for (b=0; b<Dim; b++) {
-      for (p=0; p<Dim; p++) { for (q=0; q<Dim; q++) { 
+      for (p=0; p<Dim; p++) { for (q=0; q<Dim; q++) {
          x+=epsilon[j][a][p] * epsilon[i][b][q] * matrix[a][b] * matrix[p][q];
       }}}}
       inverse[i][j] = x/(2.*det);

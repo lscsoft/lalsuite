@@ -74,7 +74,7 @@ LALInspiralComputeChisq
   binIndexLength = params->nBins + 1;
   LALI4CreateVector(status->statusPtr, &binIndexes, binIndexLength);
   LALDCreateVector(status->statusPtr, &binSNRs, binIndexLength-1);
-  
+
   flso = 1.0/(pow(6.0,3.0/2.0)*LAL_PI*params->totalMass);
 
   duration = 2.L * (input->psd->length-1)*params->deltaT;
@@ -88,7 +88,7 @@ LALInspiralComputeChisq
   /*
   fprintf(stderr, "%d %d %d\n", n, k_0, k_N);
    */
-  
+
   totalModelSNR = 0.0;
   mSevenBy3 = -7.L/3.L;
   for(k=k_0; k<=k_N; k++)
@@ -119,7 +119,7 @@ LALInspiralComputeChisq
         if (input->psd->data[k]) binSNR += (dSNR=pow( (float)k*df, mSevenBy3) / input->psd->data[k]);
 
            if (binSNR > SNRPerBin)
-	   {  
+	   {
 		   count++;
 		   /* The following is added so that we are as close to the SNRPerBin
 		    * as possible; bug noted by S. Babak on April 22, 2003. Also, instead of
@@ -155,14 +155,14 @@ LALInspiralComputeChisq
   {
 	  if (input->psd->data[k]) binSNR += pow( (float)k*df, mSevenBy3) / input->psd->data[k];
   }
-			   
+
   binIndexes->data[count] = k_N;
   binSNRs->data[count-1] = binSNR;
   /*
   fprintf(stderr, "E%d %d %e\n", count, k, binSNRs->data[count-1]);
   */
 
-  if (count != params->nBins) 
+  if (count != params->nBins)
   {
 	  fprintf(stderr, "count=%d not same as binIndexLength=%d\n", count, binIndexLength);
   }
@@ -171,15 +171,15 @@ LALInspiralComputeChisq
   /*
   for(k=1; k < input->psd->length; k++)
   {
-     if (input->psd->data[k]) 
+     if (input->psd->data[k])
 	     fprintf(stdout, "%e %e \n", (float)k*df, (pow((float)k * df, mSevenBy3) / input->psd->data[k]));
   }
      fprintf(stdout, "&\n");
    for(i=0; i < binIndexLength; i++)
    {
       fprintf(stdout, "%e %d\n", binIndexes->data[i]*df, i);
-   } 
-  
+   }
+
    */
 
   /* Now get the total SNR from the data */
@@ -197,7 +197,7 @@ LALInspiralComputeChisq
   SNRPerBin = totalSNR / (double)params->nBins;
   c2 /= SNRPerBin;
 
-  /* Now we need to sum up the SNR in each of the bins defined and stored in binIndexes->data[k] 
+  /* Now we need to sum up the SNR in each of the bins defined and stored in binIndexes->data[k]
    * Then we take the difference between this figure and the SNRPerBin calculated immediately
    * above, and use this to compute the chi-squared statistic.
    */
@@ -222,7 +222,7 @@ LALInspiralComputeChisq
    /*
    fprintf(stderr, "snr=%e chisq=%e\n", totalSNR, *chisq);
    */
-      
+
   LALI4DestroyVector(status->statusPtr, &binIndexes);
   LALDDestroyVector(status->statusPtr, &binSNRs);
   DETATCHSTATUSPTR(status);

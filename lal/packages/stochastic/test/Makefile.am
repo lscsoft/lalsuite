@@ -67,7 +67,7 @@ TESTS =	  StochasticCrossCorrelationStatisticTest \
           OverlapReductionFunctionTest           StochasticInverseNoiseTest \
           AstroOmegaTest
 
-TESTS_ENVIRONMENT = 1>/dev/null 
+TESTS_ENVIRONMENT = 1>/dev/null
 #    SFalseAlarmTest       SFalseDismissalTest  \
 #           DFalseAlarmTest       SFDismissalVsFAlarmTest \
 #           DFalseDismissalTest   DFDismissalVsFAlarmTest

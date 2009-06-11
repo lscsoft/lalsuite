@@ -39,7 +39,7 @@ The baseline format of a segment list file is described at
 \newline
 \texttt{http://www.lsc-group.phys.uwm.edu/daswg/docs/technical/seglist\_format.html} .
 
-\subsection*{Error codes} 
+\subsection*{Error codes}
 </lalLaTeX> */
 
 /* <lalErrTable> */
@@ -69,7 +69,7 @@ The baseline format of a segment list file is described at
 \vfill{\footnotesize\input{SegmentsIOHV}}
 \newpage\input{SegmentsIOC}
 \newpage\input{SegmentsIOTestC}
-</lalLaTeX> */ 
+</lalLaTeX> */
 
 #ifndef _SEGMENTSIO_H
 #define _SEGMENTSIO_H

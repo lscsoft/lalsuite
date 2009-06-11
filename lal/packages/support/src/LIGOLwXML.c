@@ -17,14 +17,14 @@
 *  MA  02111-1307  USA
 */
 
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: LIGOLwXML.c
  *
  * Author: Brown, D. A.
- * 
+ *
  * Revision: $Id$
- * 
+ *
  *-----------------------------------------------------------------------
  */
 
@@ -32,7 +32,7 @@
 <lalVerbatim file="LIGOLwXMLCV">
 Author: Brown, D. A.
 $Id$
-</lalVerbatim> 
+</lalVerbatim>
 #endif
 
 #include <stdarg.h>
@@ -93,7 +93,7 @@ table to begin is specified by the \verb+table+ argument.  The appropriate
 headers are again contained in LIGOLwXMLHeaders.h and contain the table name as
 well as the names and data types of each of the columns in the table.  In
 addition, it sets \verb+xml->first+ to 1 and \verb+xml->table+ to the requested
-table. 
+table.
 
 The routine \verb+LALEndLIGOLwXMLTable+ prints the table footer.  This is the
 same for all tables, and given by \verb+LIGOLW_XML_TABLE_FOOTER+ in
@@ -103,7 +103,7 @@ The routine \verb+LALWriteLIGOLwXMLTable+ writes the content of the xml table.
 The type of table to be written is specified by \verb+table+.  The contents of
 the table should be stored as a linked list in \verb+tablePtr->table+.  The data
 is written using the row format for the specified table given in
-LIGOLwXMLHeaders.h. 
+LIGOLwXMLHeaders.h.
 
 
 \subsubsection*{Algorithm}
@@ -129,7 +129,7 @@ list of all the files which must be updated.
 
 \begin{enumerate}
 \item  Change the table header written at to the LIGOLwXML file.  This is
-\verb+#define+d in \verb+LIGOLwXMLHeaders.h+.  For example, to change the 
+\verb+#define+d in \verb+LIGOLwXMLHeaders.h+.  For example, to change the
 \verb+sngl_inspiral+ table, you must edit \verb+LIGOLW_XML_SNGL_INSPIRAL+.
 
 \item Change the row format of the LIGOLwXML file.  This is \verb+#define+d in
@@ -137,7 +137,7 @@ list of all the files which must be updated.
 table, you must edit \verb+SNGL_INSPIRAL_ROW+.
 
 \item Change the fprintf command which writes the table rows.  This is contained
-in \verb+LIGOLwXML.c+.  
+in \verb+LIGOLwXML.c+.
 
 \end{enumerate}
 
@@ -810,7 +810,7 @@ LALWriteLIGOLwXMLTable (
               tablePtr.simInspiralTable->theta0,
               tablePtr.simInspiralTable->phi0,
               tablePtr.simInspiralTable->f_lower,
-              tablePtr.simInspiralTable->f_final, 
+              tablePtr.simInspiralTable->f_final,
               tablePtr.simInspiralTable->eff_dist_h,
               tablePtr.simInspiralTable->eff_dist_l,
               tablePtr.simInspiralTable->eff_dist_g,

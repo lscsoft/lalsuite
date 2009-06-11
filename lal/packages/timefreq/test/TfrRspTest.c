@@ -18,31 +18,31 @@
 */
 
 /*-----------------------------------------------------------------------
- * 
+ *
  * File Name: TfrRspTest.c
- * 
+ *
  * Maintainer: Torres C. (Univ of TX at Brownsville)
  * Author: Chassande-Mottin, E.
- * 
- * Revision: $Id: 
- * 
- *----------------------------------------------------------------------- 
- * 
- * NAME 
+ *
+ * Revision: $Id:
+ *
+ *-----------------------------------------------------------------------
+ *
+ * NAME
  *   main()
  *
- * SYNOPSIS 
- * 
- * DESCRIPTION 
+ * SYNOPSIS
+ *
+ * DESCRIPTION
  *   Compute the reassigned spectrogram of a test signal
  *   Test of TfrRsp.c
- * 
+ *
  * DIAGNOSTICS
- * 
+ *
  * CALLS
- * 
+ *
  * NOTES
- * 
+ *
  *----------------------------------------------------------------------- */
 
 
@@ -62,7 +62,7 @@ int main(void)
 
   REAL4Vector  *signal = NULL;
   CreateTimeFreqIn tfrIn;
-  TimeFreqRep  *tfr = NULL; 
+  TimeFreqRep  *tfr = NULL;
   TimeFreqParam *param = NULL;
 
   INT4 column;
@@ -75,7 +75,7 @@ int main(void)
   /*   signal->data[0]=1.0; */
   for (column = 0; column < (INT4)signal->length; column++)
     signal->data[column]=(rand() % 10) / 2.0;
-  
+
   /*     signal->data[column] = 1.0 - signal->data[column-1]; */
   /*     signal->data[column] = 1.0; */
   /*     signal->data[column]=(rand() % 10) / 2.0; */
@@ -84,8 +84,8 @@ int main(void)
   /*--------------------------------------------------------------------*/
 
   tfrIn.type=RSpectrogram;
-  tfrIn.fRow=Nfft;              
-  tfrIn.tCol=Nsignal; 
+  tfrIn.fRow=Nfft;
+  tfrIn.tCol=Nsignal;
   tfrIn.wlengthT=Nwindow;
   tfrIn.wlengthF=0;
 
@@ -94,12 +94,12 @@ int main(void)
   LALCreateTimeFreqRep(&status, &tfr, &tfrIn);
 
   for (column = 0; column < tfr->tCol; column++)
-    tfr->timeInstant[column]=column;    
+    tfr->timeInstant[column]=column;
 
   LALCreateTimeFreqParam(&status, &param, &tfrIn);
 
   for (column = 0; column < (INT4)param->windowT->length; column++)
-    param->windowT->data[column]=1.0;    
+    param->windowT->data[column]=1.0;
 
   /*   for (column = 0; column < param->windowF->length; column++) */
   /*     param->windowF->data[column]=1.0;     */

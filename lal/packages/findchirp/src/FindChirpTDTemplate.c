@@ -17,22 +17,22 @@
 *  MA  02111-1307  USA
 */
 
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: FindChirpTDTemplate.c
  *
  * Author: Brown D. A., and Creighton, J. D. E.
- * 
+ *
  * Revision: $Id$
- * 
+ *
  *-----------------------------------------------------------------------
  */
 
-#if 0 
+#if 0
 <lalVerbatim file="FindChirpTDTemplateCV">
 Author: Brown, D. A., and Creighton, J. D. E.
 $Id$
-</lalVerbatim> 
+</lalVerbatim>
 
 <lalLaTeX>
 \subsection{Module \texttt{FindChirpTDTemplate.c}}
@@ -65,7 +65,7 @@ LALDestroyVector()
 \subsubsection*{Notes}
 
 \vfill{\footnotesize\input{FindChirpTDTemplateCV}}
-</lalLaTeX> 
+</lalLaTeX>
 #endif
 
 #include <math.h>
@@ -115,30 +115,30 @@ LALFindChirpTDTemplate (
    * check that the arguments are reasonable
    *
    */
-  
+
 
   /* check that the output structures exist */
-  ASSERT( fcTmplt, status, 
+  ASSERT( fcTmplt, status,
       FINDCHIRPTDH_ENULL, FINDCHIRPTDH_MSGENULL );
   ASSERT( fcTmplt->data, status,
       FINDCHIRPTDH_ENULL, FINDCHIRPTDH_MSGENULL );
-  ASSERT( fcTmplt->data->data, status, 
+  ASSERT( fcTmplt->data->data, status,
       FINDCHIRPTDH_ENULL, FINDCHIRPTDH_MSGENULL );
 
   /* check that the parameter structure exists */
-  ASSERT( params, status, 
+  ASSERT( params, status,
       FINDCHIRPTDH_ENULL, FINDCHIRPTDH_MSGENULL );
-  ASSERT( params->xfacVec, status, 
+  ASSERT( params->xfacVec, status,
       FINDCHIRPTDH_ENULL, FINDCHIRPTDH_MSGENULL );
-  ASSERT( params->xfacVec->data, status, 
+  ASSERT( params->xfacVec->data, status,
       FINDCHIRPTDH_ENULL, FINDCHIRPTDH_MSGENULL );
 
   /* check we have an fft plan for the template */
-  ASSERT( params->fwdPlan, status, 
+  ASSERT( params->fwdPlan, status,
       FINDCHIRPTDH_ENULL, FINDCHIRPTDH_MSGENULL );
 
   /* check that the timestep is positive */
-  ASSERT( params->deltaT > 0, status, 
+  ASSERT( params->deltaT > 0, status,
       FINDCHIRPTDH_EDELT, FINDCHIRPTDH_MSGEDELT );
 
   /* check that the input exists */
@@ -160,7 +160,7 @@ LALFindChirpTDTemplate (
       ABORT( status, FINDCHIRPTDH_EMAPX, FINDCHIRPTDH_MSGEMAPX );
       break;
   }
-  
+
   /* store deltaT and zero out the time domain waveform vector */
   deltaT = params->deltaT;
   sampleRate = 1.0 / deltaT;
@@ -170,7 +170,7 @@ LALFindChirpTDTemplate (
 
   ASSERT( numPoints == (2 * (fcTmplt->data->length - 1)), status,
       FINDCHIRPTDH_EMISM, FINDCHIRPTDH_MSGEMISM );
-  
+
 
   /* choose the time domain template */
   if ( params->approximant == GeneratePPN )
@@ -193,7 +193,7 @@ LALFindChirpTDTemplate (
       ( ppnParams.mTot * ppnParams.mTot );
     ppnParams.d = 1.0;
     ppnParams.fStartIn = params->fLow;
-    ppnParams.fStopIn = -1.0 / 
+    ppnParams.fStopIn = -1.0 /
       (6.0 * sqrt(6.0) * LAL_PI * ppnParams.mTot * LAL_MTSUN_SI);
 
     /* generate waveform amplitude and phase */
@@ -215,7 +215,7 @@ LALFindChirpTDTemplate (
     /* compute h(t) */
     for ( j = 0; j < waveform.a->data->length; ++j )
     {
-      xfac[j] = 
+      xfac[j] =
         waveform.a->data->data[2*j] * cos( waveform.phi->data->data[j] );
     }
 
@@ -232,12 +232,12 @@ LALFindChirpTDTemplate (
     LALFree( waveform.a );
     LALFree( waveform.f );
     LALFree( waveform.phi );
-    
+
     /* waveform parameters needed for findchirp filter */
     tmplt->approximant = params->approximant;
     tmplt->tC = ppnParams.tc;
     tmplt->fFinal = ppnParams.fStop;
-    
+
     fcTmplt->tmpltNorm = params->dynRange / ( cannonDist * 1.0e6 * LAL_PC_SI );
     fcTmplt->tmpltNorm *= fcTmplt->tmpltNorm;
   }
@@ -321,7 +321,7 @@ LALFindChirpTDTemplate (
     shift = ( numPoints - j ) / 2;
     memmove( xfac + shift, xfac, j * sizeof( *xfac ) );
     memset( xfac, 0, shift * sizeof( *xfac ) );
-    memset( xfac + ( numPoints + j ) / 2, 0, 
+    memset( xfac + ( numPoints + j ) / 2, 0,
          ( numPoints - ( numPoints + j ) / 2 ) * sizeof( *xfac ) );
 
 
@@ -335,7 +335,7 @@ LALFindChirpTDTemplate (
     else if ( j <= 2 * sampleRate && j + 2 * sampleRate <= numPoints )
     {
       bpVector.length = j + 2 * sampleRate;
-      bpVector.data   = params->xfacVec->data 
+      bpVector.data   = params->xfacVec->data
                    + ( numPoints - j ) / 2 - (INT4)sampleRate;
     }
     else
@@ -348,7 +348,7 @@ LALFindChirpTDTemplate (
                  1.02 * tmplt->fFinal, sampleRate ) == XLAL_FAILURE )
     {
       ABORTXLAL( status );
-    } 
+    }
 
     /* Now we need to do the shift to the end. */
     /* Use a temporary vector to avoid mishaps */
@@ -362,18 +362,18 @@ LALFindChirpTDTemplate (
       /* We need to do something slightly different for EOBNR */
       UINT4 endIndx = (UINT4) (tmplt->tC * sampleRate);
 
-      memcpy( tmpxfac->data, xfac + ( numPoints - j ) / 2 + endIndx, 
+      memcpy( tmpxfac->data, xfac + ( numPoints - j ) / 2 + endIndx,
           ( numPoints - ( numPoints - j ) / 2 - endIndx ) * sizeof( *xfac ) );
- 
-      memcpy( tmpxfac->data + numPoints - ( numPoints - j ) / 2 - endIndx, 
+
+      memcpy( tmpxfac->data + numPoints - ( numPoints - j ) / 2 - endIndx,
                   xfac, ( ( numPoints - j ) / 2 + endIndx ) * sizeof( *xfac ) );
     }
-    else 
+    else
     {
-      memcpy( tmpxfac->data, xfac + ( numPoints + j ) / 2, 
+      memcpy( tmpxfac->data, xfac + ( numPoints + j ) / 2,
           ( numPoints - ( numPoints + j ) / 2 ) * sizeof( *xfac ) );
 
-      memcpy( tmpxfac->data + numPoints - ( numPoints + j ) / 2, 
+      memcpy( tmpxfac->data + numPoints - ( numPoints + j ) / 2,
                     xfac, ( numPoints + j ) / 2 * sizeof( *xfac ) );
     }
 
@@ -389,7 +389,7 @@ LALFindChirpTDTemplate (
     {
       ABORTXLAL( status );
     }
-    
+
     /* Set the coalescence index depending on tC */
     j = (UINT4) (tmplt->tC * sampleRate);
     memcpy( tmpxfac->data + numPoints - j, xfac, j * sizeof( *xfac ) );
@@ -413,7 +413,7 @@ LALFindChirpTDTemplate (
    */
 
   /* fft chirp */
-  if ( XLALREAL4ForwardFFT( fcTmplt->data, params->xfacVec, 
+  if ( XLALREAL4ForwardFFT( fcTmplt->data, params->xfacVec,
       params->fwdPlan ) == XLAL_FAILURE )
   {
     ABORTXLAL( status );
@@ -447,22 +447,22 @@ LALFindChirpTDNormalize(
   INITSTATUS( status, "LALFindChirpTDNormalize", FINDCHIRPTDTEMPLATEC );
 
   /* check the required input exists */
-  ASSERT( fcTmplt, status, 
+  ASSERT( fcTmplt, status,
       FINDCHIRPTDH_ENULL, FINDCHIRPTDH_MSGENULL );
-  ASSERT( fcSeg, status, 
-      FINDCHIRPTDH_ENULL, FINDCHIRPTDH_MSGENULL );
-
-  ASSERT( params, status, 
+  ASSERT( fcSeg, status,
       FINDCHIRPTDH_ENULL, FINDCHIRPTDH_MSGENULL );
 
-  ASSERT( params->wtildeVec, status, 
-      FINDCHIRPTDH_ENULL, FINDCHIRPTDH_MSGENULL );
-  ASSERT( params->wtildeVec->data, status, 
+  ASSERT( params, status,
       FINDCHIRPTDH_ENULL, FINDCHIRPTDH_MSGENULL );
 
-  ASSERT( params->tmpltPowerVec, status, 
+  ASSERT( params->wtildeVec, status,
       FINDCHIRPTDH_ENULL, FINDCHIRPTDH_MSGENULL );
-  ASSERT( params->tmpltPowerVec->data, status, 
+  ASSERT( params->wtildeVec->data, status,
+      FINDCHIRPTDH_ENULL, FINDCHIRPTDH_MSGENULL );
+
+  ASSERT( params->tmpltPowerVec, status,
+      FINDCHIRPTDH_ENULL, FINDCHIRPTDH_MSGENULL );
+  ASSERT( params->tmpltPowerVec->data, status,
       FINDCHIRPTDH_ENULL, FINDCHIRPTDH_MSGENULL );
 
   /* check that the parameter structure is set to a time domain approximant */
@@ -487,7 +487,7 @@ LALFindChirpTDNormalize(
 
   memset( tmpltPower, 0, params->tmpltPowerVec->length * sizeof(REAL4) );
   memset( segNorm, 0, fcSeg->segNorm->length * sizeof(REAL4) );
-  
+
   /* re-compute data normalization using template power */
   segNormSum = 0;
   for ( k = 1; k < fcTmplt->data->length; ++k )

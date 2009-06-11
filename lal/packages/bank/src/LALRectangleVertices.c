@@ -34,8 +34,8 @@ half side-lengths and orientation angle.
 \input{LALRectangleVerticesCP}
 \index{\verb&LALRectangleVertices()&}
 \begin{itemize}
-   \item \texttt{out,} Output. 
-   \item \texttt{in,} Input. 
+   \item \texttt{out,} Output.
+   \item \texttt{in,} Input.
 \end{itemize}
 
 \subsubsection*{Description}
@@ -45,8 +45,8 @@ a grid of templates with xmgr, useful when looking at the
 minimal-match-rectangles around mesh points in a template bank.
 
 \subsubsection*{Algorithm}
-Given the centre $(x_0,y_0)$ and half-sides $(dx,dy),$ 
-the vertices of a rectangle in a {\it diagonal} coordinate 
+Given the centre $(x_0,y_0)$ and half-sides $(dx,dy),$
+the vertices of a rectangle in a {\it diagonal} coordinate
 system are given by
 \begin{eqnarray}
 x_1 & = & x_0 - dx, \ \ y_1 = y_0 - dy, \nonumber \\
@@ -58,11 +58,11 @@ The coordinates of a rectangle oriented at an angle $\theta$ is
 found by using the formulas
 \begin{eqnarray}
 x' = x \cos(\theta) - y \sin(\theta),\nonumber \\
-y' = y \cos(\theta) + x \sin(\theta).\nonumber 
+y' = y \cos(\theta) + x \sin(\theta).\nonumber
 \end{eqnarray}
-The function returns five coordinate points (1,2,3,4,1), 
+The function returns five coordinate points (1,2,3,4,1),
 and not just the four verticies, to help
-a plotting programme to complete the rectangle. 
+a plotting programme to complete the rectangle.
 
 \subsubsection*{Uses}
 None.
@@ -79,12 +79,12 @@ NRCSID(LALRECTANGLEVERTICESC, "$Id$");
 
 /*  <lalVerbatim file="LALRectangleVerticesCP"> */
 
-void 
+void
 LALRectangleVertices(
-   LALStatus *status, 
+   LALStatus *status,
    RectangleOut *out,
    RectangleIn *in
-) 
+)
 { /* </lalVerbatim> */
 
    REAL4 x1, x2, x3, x4, myy1, y2, y3, y4;

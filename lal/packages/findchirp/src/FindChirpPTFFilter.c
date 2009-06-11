@@ -17,14 +17,14 @@
 *  MA  02111-1307  USA
 */
 
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: FindChirpPTFFilter.c
  *
  * Author: Brown, D. A. and Fazi, D.
- * 
+ *
  * Revision: $Id$
- * 
+ *
  *-----------------------------------------------------------------------
  */
 
@@ -82,7 +82,7 @@ LALFindChirpPTFFilterSegment (
   COMPLEX8             *PTFQtilde, *qtilde, *PTFq, *inputData;
   COMPLEX8Vector        qVec;
   FindChirpBankVetoData clusterInput;
-  
+
   /*
    *
    * point local pointers to input and output pointers
@@ -111,7 +111,7 @@ LALFindChirpPTFFilterSegment (
   fmin        = (REAL4) input->fcTmplt->tmplt.fLower;
   kmax        = fFinal / deltaF < numPoints/2 ? fFinal / deltaF : numPoints/2;
   kmin        = fmin / deltaF > 1.0 ? fmin/ deltaF : 1;
-  
+
   INITSTATUS( status, "LALFindChirpPTFFilter", FINDCHIRPPTFFILTERC );
   ATTATCHSTATUSPTR( status );
 
@@ -142,11 +142,11 @@ LALFindChirpPTFFilterSegment (
   /* check that the workspace vectors exist */
 
   /* if a rhosqVec vector has been created, check we can store data in it */
-  if ( params->rhosqVec ) 
+  if ( params->rhosqVec )
   {
-    ASSERT( params->rhosqVec->data->data, status, 
+    ASSERT( params->rhosqVec->data->data, status,
         FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
-    ASSERT( params->rhosqVec->data, status, 
+    ASSERT( params->rhosqVec->data, status,
         FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
   }
 
@@ -194,10 +194,10 @@ LALFindChirpPTFFilterSegment (
     LALSnprintf( infomsg, sizeof(infomsg) / sizeof(*infomsg),
         "m1 = %e, m2 = %e, chi = %e, kappa = %e "
         "=> %e seconds => %d points\n"
-        "invSpecTrunc = %d => ignoreIndex = %d\n", 
-        input->fcTmplt->tmplt.mass1, input->fcTmplt->tmplt.mass2, 
-        input->fcTmplt->tmplt.chi, input->fcTmplt->tmplt.kappa, 
-        input->fcTmplt->tmplt.tC , deltaEventIndex, 
+        "invSpecTrunc = %d => ignoreIndex = %d\n",
+        input->fcTmplt->tmplt.mass1, input->fcTmplt->tmplt.mass2,
+        input->fcTmplt->tmplt.chi, input->fcTmplt->tmplt.kappa,
+        input->fcTmplt->tmplt.tC , deltaEventIndex,
         input->segment->invSpecTrunc, ignoreIndex );
     LALInfo( status, infomsg );
   }
@@ -215,7 +215,7 @@ LALFindChirpPTFFilterSegment (
   {
     CHAR infomsg[256];
 
-    LALSnprintf( infomsg, sizeof(infomsg) / sizeof(*infomsg), 
+    LALSnprintf( infomsg, sizeof(infomsg) / sizeof(*infomsg),
         "filtering from %d to %d\n",
         ignoreIndex, numPoints - ignoreIndex );
     LALInfo( status, infomsg );
@@ -230,13 +230,13 @@ LALFindChirpPTFFilterSegment (
   /* clear the snr output vector and workspace*/
   memset( params->PTFsnrVec->data, 0, numPoints * sizeof(COMPLEX8) );
   memset( params->PTFqVec->data, 0, 5 * numPoints * sizeof(COMPLEX8) );
-  
+
   for ( i = 0; i < 5; ++i )
   {
 
     /* compute qtilde using data and Qtilde */
 
-    memset( params->qtildeVec->data, 0, 
+    memset( params->qtildeVec->data, 0,
         params->qtildeVec->length * sizeof(COMPLEX8) );
 
     /* qtilde positive frequency, not DC or nyquist */
@@ -254,36 +254,36 @@ LALFindChirpPTFFilterSegment (
     qVec.data = params->PTFqVec->data + (i * numPoints);
 
     /* inverse fft to get q */
-    LALCOMPLEX8VectorFFT( status->statusPtr, &qVec, params->qtildeVec, 
+    LALCOMPLEX8VectorFFT( status->statusPtr, &qVec, params->qtildeVec,
         params->invPlan );
     CHECKSTATUSPTR( status );
   }
 
   /* now we have PTFqVec which contains <s|Q^I_0> + i <s|Q^I_\pi/2> */
-  
-  /* set the threshold on max eigenvalue to be 48 (~ 7 for snr) */ 
+
+  /* set the threshold on max eigenvalue to be 48 (~ 7 for snr) */
   thresh = 12.0 * N * N;
-   
+
   for ( j = 0; j < numPoints; ++j ) /* beginning of main loop over time */
-  {  
+  {
     for (i = 0; i < 5; i++)
-    { 
+    {
       v1[i] = PTFq[i * numPoints + j].re;
       v2[i] = PTFq[i * numPoints + j].im;
     }
     /* construct the vectors u[i] = B^(-1) v[i] */
     for (i = 0; i < 5; i++)
-    { 
+    {
       u1[i] = 0.0;
       u2[i] = 0.0;
       for ( l = 0; l < 5; l++ )
-      {  
+      {
         u1[i] = u1[i] + Binv[i * 5 + l] * v1[l];
         u2[i] = u2[i] + Binv[i * 5 + l] * v2[l];
       }
     }
 
-    /* Compute SNR */ 
+    /* Compute SNR */
     v1_dot_u1 = v1_dot_u2 = v2_dot_u1 = v2_dot_u2 = max_eigen = 0.0;
     for (i = 0; i < 5; i++)
     {
@@ -296,11 +296,11 @@ LALFindChirpPTFFilterSegment (
           * (v1_dot_u1 - v2_dot_u2) + 4 * v1_dot_u2 * v2_dot_u1 ));
     snr[j].re = 2.0 * sqrt(max_eigen) / N;
   } /* End of main loop over time */
-  
 
-  /* 
+
+  /*
    *
-   * calculate signal to noise squared 
+   * calculate signal to noise squared
    *
    */
 
@@ -310,11 +310,11 @@ LALFindChirpPTFFilterSegment (
     memset( params->rhosqVec->data->data, 0, numPoints * sizeof( REAL4 ) );
 
   /* if full snrsq vector is required, store the snrsq */
-  if ( params->rhosqVec ) 
+  if ( params->rhosqVec )
   {
     memcpy( params->rhosqVec->name, input->segment->data->name,
         LALNameLength * sizeof(CHAR) );
-    memcpy( &(params->rhosqVec->epoch), &(input->segment->data->epoch), 
+    memcpy( &(params->rhosqVec->epoch), &(input->segment->data->epoch),
         sizeof(LIGOTimeGPS) );
     params->rhosqVec->deltaT = input->segment->deltaT;
 
@@ -345,12 +345,12 @@ LALFindChirpPTFFilterSegment (
   params->qVec = params->PTFsnrVec;
   input->fcTmplt->norm = 1.0;
 
-  LALFindChirpClusterEvents( status->statusPtr, eventList, 
+  LALFindChirpClusterEvents( status->statusPtr, eventList,
       input, params, &clusterInput, 0 );
   CHECKSTATUSPTR( status );
 
   params->qVec = NULL;
-  
+
   /* normal exit */
   DETATCHSTATUSPTR( status );
   RETURN( status );

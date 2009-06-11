@@ -17,32 +17,32 @@
 *  MA  02111-1307  USA
 */
 
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: TfrWvTest.c
- * 
+ *
  * Maintainer: Torres C,  (Univ of TX at Brownsville)
  * Author: Chassande-Mottin, E.
- * 
- * Revision: $Id: 
- * 
- *----------------------------------------------------------------------- 
- * 
- * NAME 
+ *
+ * Revision: $Id:
+ *
+ *-----------------------------------------------------------------------
+ *
+ * NAME
  *   main()
  *
- * SYNOPSIS 
- * 
- * DESCRIPTION 
+ * SYNOPSIS
+ *
+ * DESCRIPTION
  *   Compute the Wigner-Ville Distribution of a test signal
  *   Test of TfrWv.c
- * 
+ *
  * DIAGNOSTICS
- * 
+ *
  * CALLS
- * 
+ *
  * NOTES
- * 
+ *
  *-----------------------------------------------------------------------
  */
 
@@ -63,7 +63,7 @@ int main(void)
 
   REAL4Vector  *signal = NULL;
   CreateTimeFreqIn tfrIn;
-  TimeFreqRep  *tfr = NULL; 
+  TimeFreqRep  *tfr = NULL;
   TimeFreqParam *param = NULL;
 
   INT4 column;
@@ -75,12 +75,12 @@ int main(void)
 
   for (column = 0; column < (INT4)signal->length; column++)
     signal->data[column]=(rand() % 10) / 2.0;
- 
+
   /*--------------------------------------------------------------------*/
 
   tfrIn.type=WignerVille;
-  tfrIn.fRow=Nfft;              
-  tfrIn.tCol=Nsignal; 
+  tfrIn.fRow=Nfft;
+  tfrIn.tCol=Nsignal;
   tfrIn.wlengthT=0;
   tfrIn.wlengthF=0;
 
@@ -89,7 +89,7 @@ int main(void)
   LALCreateTimeFreqRep(&status, &tfr, &tfrIn);
 
   for (column = 0; column < tfr->tCol; column++)
-    tfr->timeInstant[column]=column;    
+    tfr->timeInstant[column]=column;
 
   LALCreateTimeFreqParam(&status, &param, &tfrIn);
 

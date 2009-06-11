@@ -228,7 +228,7 @@ LALDR_CrossProd3Vector(LALDR_3Vector * result,
   return;
 } /* END: LALDR_CrossProd3Vector() */
 
-
+
 
 /*
  * Dot product of two 3-vectors
@@ -246,7 +246,7 @@ LALDR_DotProd3Vector(LALDR_3Vector * a,
   return result;
 } /* END: LALDR_DotProd3Vector() */
 
-
+
 
 static void
 LALDR_OuterProd3Vector(LALDR_33Matrix * a,
@@ -263,7 +263,7 @@ LALDR_OuterProd3Vector(LALDR_33Matrix * a,
   return;
 }
 
-
+
 
 /*
  * Scalar product of two 3x3 matrices
@@ -281,7 +281,7 @@ LALDR_DotProd33Matrix(LALDR_33Matrix * a, LALDR_33Matrix * b)
   return result;
 } /* END: LALDR_DotProd33Matrix() */
 
-
+
 
 
 /*
@@ -302,7 +302,7 @@ LALDR_Set33Matrix(LALDR_33Matrix * matrix,
   return;
 } /* END: LALDR_Set33Matrix() */
 
-
+
 
 #if 0 /* NOT USED */
 /*
@@ -321,7 +321,7 @@ LALDR_Copy33Matrix(LALDR_33Matrix * target, LALDR_33Matrix * source)
 } /* END: LALDR_Copy33Matrix() */
 #endif
 
-
+
 
 /*
  * Zero matrix
@@ -336,7 +336,7 @@ LALDR_Zero33Matrix(LALDR_33Matrix * matrix)
   return;
 }
 
-
+
 
 /*
  * Matrix multiply
@@ -368,7 +368,7 @@ LALDR_Multiply33Matrix(LALDR_33Matrix * product,
   return;
 }
 
-
+
 
 /*
  * Scalar multiply
@@ -387,7 +387,7 @@ LALDR_ScalarMult33Matrix(LALDR_33Matrix * result,
   return;
 }
 
-
+
 
 /*
  * Add matrix
@@ -406,7 +406,7 @@ LALDR_Add33Matrix(LALDR_33Matrix * result,
   return;
 }
 
-
+
 
 #if 0 /* NOT USED */
 /*
@@ -427,7 +427,7 @@ LALDR_Subtract33Matrix(LALDR_33Matrix * result,
 }
 #endif
 
-
+
 
 /*
  * Transpose matrix
@@ -453,7 +453,7 @@ LALDR_Transpose33Matrix(LALDR_33Matrix * transpose,
   return;
 }
 
-
+
 
 #if 0 /* NOT USED */
 /*
@@ -476,7 +476,7 @@ LALDR_L2Norm33Matrix(LALDR_33Matrix * matrix)
 #endif
 
 
-
+
 
 #if 1
 /*
@@ -498,7 +498,7 @@ LALDR_RMSNorm33Matrix(LALDR_33Matrix * matrix)
 }
 #endif
 
-
+
 
 #if 0 /* NOT USED */
 /*
@@ -519,7 +519,7 @@ LALDR_InfNorm33Matrix(LALDR_33Matrix * matrix)
 }
 #endif
 
-
+
 
 /*
  * Print out matrix
@@ -597,7 +597,7 @@ LALDR_Print33Matrix(LALDR_33Matrix * matrix,
   return;
 }
 
-
+
 
 static void
 LALDR_Print3Vector(LALDR_3Vector * vector,
@@ -617,7 +617,7 @@ LALDR_Print3Vector(LALDR_3Vector * vector,
 }
 
 
-
+
 
 
 
@@ -666,7 +666,7 @@ LALDR_EulerRotation(LALDR_33Matrix * rotationMatrix,
 }
 #endif
 #endif
-
+
 
 REAL4 skygrid_avg(const skygrid_t response);
 void  skygrid_square(skygrid_t square, const skygrid_t input);
@@ -1825,7 +1825,7 @@ int main(int argc, char *argv[])
   return 0;
 } /* END: main() */
 
-
+
 #if 0 /* NOT USED */
 /*
  * subtracts two REAL4Vectors; user must do all allocation beforehand
@@ -1913,7 +1913,7 @@ PrintLALDetector(LALDetector * const detector)
 }
 
 
-
+
 
 static BOOLEAN matrix_ok_p(LALDR_33Matrix * computed,
                            LALDR_33Matrix * expected,
@@ -1950,7 +1950,7 @@ static BOOLEAN matrix_ok_p(LALDR_33Matrix * computed,
   return retval;
 }
 
-
+
 
 static BOOLEAN vector_ok_p(LALDR_3Vector * computed,
                            LALDR_3Vector * expected,
@@ -1982,7 +1982,7 @@ static BOOLEAN vector_ok_p(LALDR_3Vector * computed,
   return retval;
 }
 
-
+
 
 
 static BOOLEAN vector_relative_ok_p(LALDR_3Vector * computed,
@@ -2011,7 +2011,7 @@ static BOOLEAN vector_relative_ok_p(LALDR_3Vector * computed,
   return retval;
 }
 
-
+
 
 
 static void print_m_results_maybe(const char * title,
@@ -2032,7 +2032,7 @@ static void print_m_results_maybe(const char * title,
     }
 }
 
-
+
 
 static void print_v_results_maybe(const char * title,
                                   LALDR_3Vector * computed,
@@ -2052,7 +2052,7 @@ static void print_v_results_maybe(const char * title,
     }
 }
 
-
+
 static void print_s_results_maybe(const char * title,
                                   REAL8 computed,
                                   REAL8 expected)
@@ -2071,7 +2071,7 @@ static void print_s_results_maybe(const char * title,
     }
 }
 
-
+
 
 static int print_separator_maybe(void)
 {
@@ -2081,7 +2081,7 @@ static int print_separator_maybe(void)
     return 0;
 }
 
-
+
 
 static int print_small_separator_maybe(void)
 {
@@ -2091,7 +2091,7 @@ static int print_small_separator_maybe(void)
     return 0;
 }
 
-
+
 
 static int print_passed_maybe(void)
 {
@@ -2101,7 +2101,7 @@ static int print_passed_maybe(void)
     return 0;
 }
 
-
+
 
 static BOOLEAN almost_equal_real4_p(REAL4 a, REAL4 b, REAL4 tolerance)
 {
@@ -2118,7 +2118,7 @@ static BOOLEAN almost_equal_real4_p(REAL4 a, REAL4 b, REAL4 tolerance)
     return ((REAL4)fabs(a - b) <= tolerance);
 }
 
-
+
 
 static BOOLEAN almost_equal_real8_p(REAL8 a, REAL8 b, REAL8 tolerance)
 {
@@ -2128,7 +2128,7 @@ static BOOLEAN almost_equal_real8_p(REAL8 a, REAL8 b, REAL8 tolerance)
     return ((REAL8)fabs(a - b) <= tolerance);
 }
 
-
+
 
 static BOOLEAN almost_equal_real4_relative_p(REAL4 computed, REAL4 expected,
                                              REAL4 tolerance)
@@ -2149,7 +2149,7 @@ static BOOLEAN almost_equal_real4_relative_p(REAL4 computed, REAL4 expected,
     }
 }
 
-
+
 
 static BOOLEAN detresponse_ok_p(LALStatus * status,
                                 LALDetAndSource * det_and_src,
@@ -2239,7 +2239,7 @@ static BOOLEAN detresponse_ok_p(LALStatus * status,
   return result;
 }
 
-
+
 
 void handle_detresponse_test(BOOLEAN passed_p, int line)
 {
@@ -2255,7 +2255,7 @@ void handle_detresponse_test(BOOLEAN passed_p, int line)
 }
 
 
-
+
 
 static void PrintDetResponse(const LALDetAMResponse * const response,
                              const char * const title)
@@ -2270,7 +2270,7 @@ static void PrintDetResponse(const LALDetAMResponse * const response,
   printf("    scalar = % 15.8e\n", response->scalar);
 }
 
-
+
 
 static BOOLEAN frdetector_ok_p(LALFrDetector * computed,
                                const LALFrDetector * expected)
@@ -2301,7 +2301,7 @@ static BOOLEAN frdetector_ok_p(LALFrDetector * computed,
 }
 
 
-
+
 
 static BOOLEAN detector_ok_p(LALDetector * computed,
                              const LALDetector * expected)
@@ -2333,7 +2333,7 @@ static BOOLEAN detector_ok_p(LALDetector * computed,
           && frdetector_ok_p(&(computed->frDetector), &(expected->frDetector)));
 }
 
-
+
 
 REAL4 skygrid_avg(const skygrid_t response)
 {
@@ -2359,7 +2359,7 @@ REAL4 skygrid_avg(const skygrid_t response)
   return retval;
 }
 
-
+
 
 
 void skygrid_square(skygrid_t square, const skygrid_t input)
@@ -2371,7 +2371,7 @@ void skygrid_square(skygrid_t square, const skygrid_t input)
 
 }
 
-
+
 
 
 void skygrid_sqrt(skygrid_t result, const skygrid_t input)
@@ -2382,7 +2382,7 @@ void skygrid_sqrt(skygrid_t result, const skygrid_t input)
     result[i] = (REAL4)sqrt((double)(input[i]));
 }
 
-
+
 
 REAL4 skygrid_rms(const skygrid_t input)
 {
@@ -2392,7 +2392,7 @@ REAL4 skygrid_rms(const skygrid_t input)
   return (REAL4)(sqrt(skygrid_avg(tmpgrid)));
 }
 
-
+
 
 INT4 skygrid_copy(skygrid_t dest, const skygrid_t src)
 {
@@ -2404,7 +2404,7 @@ INT4 skygrid_copy(skygrid_t dest, const skygrid_t src)
   return i;
 }
 
-
+
 
 void skygrid_print(const char * comments,
                    const skygrid_t input, const char * filename)
@@ -2427,7 +2427,7 @@ void skygrid_print(const char * comments,
   xfclose(outfile);
 }
 
-
+
 
 void skygrid_fabs(skygrid_t absgrid, const skygrid_t input)
 {
@@ -2437,7 +2437,7 @@ void skygrid_fabs(skygrid_t absgrid, const skygrid_t input)
     absgrid[i] = fabs(input[i]);
 }
 
-
+
 
 void skygrid_add(skygrid_t sum, const skygrid_t a, const skygrid_t b)
 {
@@ -2486,7 +2486,7 @@ static void make_me_an_Sarray_sequence(LALStatus *status,
 }
 #endif
 
-
+
 
 #if 0 /* NOT USED */
 static void print_diagnostics(LALStatus * const status,
@@ -2555,7 +2555,7 @@ REAL4 resp_local(REAL8 psi, REAL8 theta, REAL8 phi, GWPolarization pol)
   return (REAL4)retval;
 }
 
-
+
 
 void setup_global_detectors(LALStatus *status)
 {
@@ -2676,7 +2676,7 @@ void setup_global_detectors(LALStatus *status)
   return;
 } /* END: setup_global_detectors() */
 
-
+
 
 BOOLEAN passed_special_locations_tests_p(LALStatus *status)
 {
@@ -2684,7 +2684,7 @@ BOOLEAN passed_special_locations_tests_p(LALStatus *status)
   return TRUE;
 }
 
-
+
 
 char *laldr_strlcpy(char *dst, const char *src, size_t len)
 {
@@ -2701,7 +2701,7 @@ char *laldr_strlcpy(char *dst, const char *src, size_t len)
 }
 
 
-
+
 
 void fudge_factor_test(LALStatus *status)
 {
@@ -2860,7 +2860,7 @@ void fudge_factor_test(LALStatus *status)
   return;
 }
 
-
+
 
 void set_source_params(LALSource * source, const char *name, REAL8 ra_rad,
                        REAL8 dec_rad, REAL8 orien_rad)
@@ -2873,7 +2873,7 @@ void set_source_params(LALSource * source, const char *name, REAL8 ra_rad,
 } /* END: set_source_params() */
 
 
-
+
 void setup_global_sources(void)
 {
   /*
@@ -2918,7 +2918,7 @@ void setup_global_sources(void)
   return;
 } /* END: setup_global_sources */
 
-
+
 void find_zero_gmst(LALStatus * status)
 {
   REAL8             gmst1;
@@ -2959,7 +2959,7 @@ void find_zero_gmst(LALStatus * status)
 }
 
 
-
+
 
 void print_source_maybe(const LALSource * source)
 {
@@ -2974,7 +2974,7 @@ void print_source_maybe(const LALSource * source)
     }
 }
 
-
+
 
 void crab_pulsar_test(LALStatus * status)
 {
@@ -3378,7 +3378,7 @@ BOOLEAN passed_matrix_test_p(void)
   return retval;
 } /* END: pass_matrix_test_p() */
 
-
+
 
 BOOLEAN passed_almost_equal_tests_p(void)
 {
@@ -3492,7 +3492,7 @@ BOOLEAN passed_almost_equal_tests_p(void)
   return TRUE;
 }  /* END: passed_almost_equal_tests_p() */
 
-
+
 
 #if 0
 static int local_strncasecmp(const char * a, const char * b, size_t maxlen)

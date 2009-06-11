@@ -272,7 +272,7 @@ int XLALSetTimeInPositionVector( gsl_vector *position,
 /* </lalVerbatim> */
 {
 #ifndef LAL_NDEBUG
-    if ( !position ) 
+    if ( !position )
       XLAL_ERROR( "XLALSetTimeInPositionVector", XLAL_EFAULT );
 #endif
 

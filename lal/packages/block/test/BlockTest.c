@@ -24,7 +24,7 @@
 
 /**** <lalLaTeX>
  * \subsection{Program \texttt{BlockTest.c}}
- * 
+ *
  * \subsubsection*{Usage}
  *
  * \begin{verbatim}

@@ -24,7 +24,7 @@
 
 /**** <lalLaTeX>
  * \subsection{Program \texttt{ReadLHOData.c}}
- * 
+ *
  * Tests the low-level frame stream routines by reading LHO E5 frame data.
  *
  * \subsubsection*{Usage}
@@ -110,8 +110,8 @@ int main( void )
 
     printf( "%s-%s-%d-%d.gwf\n", outpar.source, outpar.description,
         chan.epoch.gpsSeconds,
-        (int)ceil( 1e-9 * chan.epoch.gpsNanoSeconds 
-          + chan.data->length * chan.deltaT ) );    
+        (int)ceil( 1e-9 * chan.epoch.gpsNanoSeconds
+          + chan.data->length * chan.deltaT ) );
     LALFrWriteREAL4TimeSeries( &status, &chan, &outpar );
     TESTSTATUS( &status );
   }

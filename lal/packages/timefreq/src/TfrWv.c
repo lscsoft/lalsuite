@@ -17,37 +17,37 @@
   *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
   *  MA  02111-1307  USA
   */
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: TfrWv.c
- * 
+ *
  * Author: Chassande-Mottin, E.
  * Maintainer: Torres, C (Univ TX at Browsville)
- * 
- * Revision: $Id: 
- * 
- *----------------------------------------------------------------------- 
- * 
- * NAME 
+ *
+ * Revision: $Id:
+ *
+ *-----------------------------------------------------------------------
+ *
+ * NAME
  * TfrWv
- * 
- * SYNOPSIS 
+ *
+ * SYNOPSIS
  *
  *
- * DESCRIPTION 
+ * DESCRIPTION
  * Compute the spectrogram of a given signal
  * Performs foward and inverse real FFTs on vectors and sequences of vectors.
- * 
- * DIAGNOSTICS 
+ *
+ * DIAGNOSTICS
  *
  * CALLS
- * 
+ *
  * NOTES
- * 
+ *
  * This code has been inspired from the Time-Frequency Toolbox (originally
  * developed by F. Auger, P. Flandrin, P. Goncalves and O. Lemoine. See
- * http://crttsn.univ-nantes.fr/~auger/tftb.html for details) and its translation 
- * in C (written by M. Davy and E. Leroy). 
+ * http://crttsn.univ-nantes.fr/~auger/tftb.html for details) and its translation
+ * in C (written by M. Davy and E. Leroy).
  *
  *-----------------------------------------------------------------------
  */
@@ -72,7 +72,7 @@ void LALTfrWv (LALStatus *stat, REAL4Vector* sig, TimeFreqRep *tfr, TimeFreqPara
 
   INITSTATUS (stat, "LALTfrWv", TFRWVC);
   ATTATCHSTATUSPTR (stat);
-  
+
   /* Make sure the arguments are not NULL: */
   ASSERT (sig, stat, TFR_ENULL, TFR_MSGENULL);
   ASSERT (tfr, stat, TFR_ENULL, TFR_MSGENULL);
@@ -97,7 +97,7 @@ void LALTfrWv (LALStatus *stat, REAL4Vector* sig, TimeFreqRep *tfr, TimeFreqPara
       nf = nf>>1;
 
   ASSERT (nf == 1, stat, TFR_EFROW, TFR_MSGEFROW);
- 
+
   /* Make sure the timeInstant indicates existing time instants */
   for (column=0 ; column<tfr->tCol ; column++)
     {
@@ -111,29 +111,29 @@ void LALTfrWv (LALStatus *stat, REAL4Vector* sig, TimeFreqRep *tfr, TimeFreqPara
 
   TRY(LALSCreateVector(stat->statusPtr, &lacf, tfr->fRow), stat);
   TRY(LALCCreateVector(stat->statusPtr, &vtmp, tfr->fRow/2+1), stat);
-  
+
   for (column = 0; column < tfr->tCol; column++)
     {
 
       for (row = 0; row < tfr->fRow; row++)
 	lacf->data[row] = 0.0;
-      
+
       time = tfr->timeInstant[column];
       taumax = MIN (time, (INT4)(sig->length -1 - time));
       taumax = MIN (taumax, (tfr->fRow / 2 - 1));
-      
+
       for (tau = -taumax; tau <= taumax; tau++)
 	{
 	  row = (tfr->fRow+tau)%tfr->fRow;
 	  lacf->data[row] =   sig->data[time + tau]*sig->data[time - tau];
         }
-      
+
       tau=tfr->fRow/2;
       if ((time<=(INT4)sig->length-tau-1)&(time>=tau))
 	lacf->data[tau] =  sig->data[time+tau]*sig->data[time-tau];
-      
-      LALForwardRealFFT(stat->statusPtr, vtmp, lacf, plan);   
-      
+
+      LALForwardRealFFT(stat->statusPtr, vtmp, lacf, plan);
+
       for (row = 0; row < (tfr->fRow/2+1); row++)
 	tfr->map[column][row] = vtmp->data[row].re;
 
@@ -141,7 +141,7 @@ void LALTfrWv (LALStatus *stat, REAL4Vector* sig, TimeFreqRep *tfr, TimeFreqPara
   /* Reflecting frequency halfing in WV distrob so multiply by 1/2 */
   for (row = 0; row < (tfr->fRow/2+1) ; row++)
     tfr->freqBin[row] = (REAL4) row / (2 *tfr->fRow);
-  
+
   TRY(LALSDestroyVector(stat->statusPtr, &lacf), stat);
   TRY(LALCDestroyVector(stat->statusPtr, &vtmp), stat);
 

@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
-check_PROGRAMS = FilterTest NoisePSDTest RandomInspiralSignalTest 
-FilterTest_SOURCES = FilterTest.c 
+check_PROGRAMS = FilterTest NoisePSDTest RandomInspiralSignalTest
+FilterTest_SOURCES = FilterTest.c
 FilterTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 NoisePSDTest_SOURCES = NoisePSDTest.c
 NoisePSDTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la

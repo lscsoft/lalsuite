@@ -1,12 +1,12 @@
 
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: FindChirpACTD.h
  *
  * Author: McKechan, D. J. A.
- * 
+ *
  * Revision: $Id$
- * 
+ *
  *-----------------------------------------------------------------------
  */
 
@@ -14,13 +14,13 @@
 <lalVerbatim file="FindChirpACTDHV">
 Author: McKechan, D. J. A.
 $Id$
-</lalVerbatim> 
+</lalVerbatim>
 
 <lalLaTeX>
 \section{Header \texttt{FindChirpACTD.h}}
 \label{s:FindChirpACTD.h}
 
-Provides structures and functions for amplitude corrected time domain 
+Provides structures and functions for amplitude corrected time domain
 templates using AmpCorPPN.
 
 \subsection*{Synopsis}
@@ -45,8 +45,8 @@ extern "C" {
 NRCSID (FINDCHIRPACTDH, "$Id$");
 
 #if 0
-<lalLaTeX> 
-\subsection*{Error codes} 
+<lalLaTeX>
+\subsection*{Error codes}
 </lalLaTeX>
 #endif
 /* <lalErrTable> */
@@ -73,7 +73,7 @@ None.
 #if 0
 <lalLaTeX>
 \vfill{\footnotesize\input{FindChirpACTDHV}}
-</lalLaTeX> 
+</lalLaTeX>
 #endif
 
 #if 0
@@ -124,7 +124,7 @@ LALFindChirpACTDFilterSegment (
 </lalLaTeX>
 #endif
 
-REAL4  XLALFindChirpACTDInnerProduct( 
+REAL4  XLALFindChirpACTDInnerProduct(
     COMPLEX8Vector *a,
     COMPLEX8Vector *b,
     COMPLEX8       *wtilde,
@@ -132,7 +132,7 @@ REAL4  XLALFindChirpACTDInnerProduct(
     REAL4           deltaT,
     UINT4           numPoints
     );
-       
+
 
 #ifdef  __cplusplus
 #pragma {

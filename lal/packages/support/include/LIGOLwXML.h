@@ -17,14 +17,14 @@
 *  MA  02111-1307  USA
 */
 
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: LIGOLwXML.h
  *
  * Author: Brown, D. A.
- * 
+ *
  * Revision: $Id$
- * 
+ *
  *-----------------------------------------------------------------------
  */
 
@@ -32,7 +32,7 @@
 <lalVerbatim file="LIGOLwXMLHV">
 Author: Brown, D. A.
 $Id$
-</lalVerbatim> 
+</lalVerbatim>
 <lalLaTeX>
 \section{Header \texttt{LIGOLwXML.h}}
 \label{s:LIGOLwXML.h}
@@ -116,7 +116,7 @@ LIGOLwXMLStream;
 #if 0
 <lalLaTeX>
 This structure contains the file stream and current table type for
-writing to LIGO lightweight XML files. It should not be manipulated 
+writing to LIGO lightweight XML files. It should not be manipulated
 directly, but passed to the \verb+LIGOLwXML+ functions for their use.
 \begin{description}
 \item[\texttt{fp}] The file stream pointer of the XML file.

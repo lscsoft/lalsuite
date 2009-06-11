@@ -58,7 +58,7 @@ NRCSID (LALTRIGSCANCLUSTERC,
 \idx{XLALTrigScanDestroyCluster()}
 \subsubsection*{Description}
 
-\texttt{XLALTrigScanClusterTriggers()} is the main function for invoking 
+\texttt{XLALTrigScanClusterTriggers()} is the main function for invoking
 trigScan clustering. It takes in the \texttt{SnglInspiralTable} to be clustered,
 the method to be applied, the metric scaling factor, and a flag to say whether
 to append stragglers (i.e. clusters of only 1 trigger). Upon success, the
@@ -67,7 +67,7 @@ been clustered. At present, the only clustering method implemented is T0T3Tc.
 
 \texttt{XLALTrigScanCreateCluster()} takes in a \texttt{TriggerErrorList}
 containing the triggers, their position vectors and ellipsoid matrices. It
-creates the cluster by agglomerating triggers by checking for overlap of 
+creates the cluster by agglomerating triggers by checking for overlap of
 ellipsoids. Upon ellipsoid overlap, the trigger is added to the cluster, and
 removed from the unclustered list.
 
@@ -86,12 +86,12 @@ the clustering has been performed, in preparation for returning the clustered
 \texttt{XLALTrigScanDestroyCluster()} frees memory associated with a cluster.
 It has two modes of operation, specified by the \texttt{TrigScanStatus}. If this
 is TRIGSCAN_FAILURE, the SnglInspiralTable will also be freed. If it is
-TRIGSCAN_SUCCESS, the SnglInspiralTable will be kept for returning to the 
+TRIGSCAN_SUCCESS, the SnglInspiralTable will be kept for returning to the
 calling program.
 </lalLaTeX>
-#endif 
+#endif
 
-static int CompareErrorListsBySNR( const void *errorA, const void *errorB);
+/*static int CompareErrorListsBySNR( const void *errorA, const void *errorB);*/
 
 /* <lalVerbatim file="LALTrigScanClusterCP"> */
 int XLALTrigScanClusterTriggers( SnglInspiralTable **table,
@@ -155,7 +155,7 @@ int XLALTrigScanClusterTriggers( SnglInspiralTable **table,
   /* and if not, sort the triggers */
   for ( thisTable = tableHead; thisTable->next; thisTable = thisTable->next )
   {
-    if ( XLALGPSToINT8NS( &(thisTable->end_time) ) 
+    if ( XLALGPSToINT8NS( &(thisTable->end_time) )
            > XLALGPSToINT8NS( &(thisTable->next->end_time) ) )
     {
       *table = tableHead = XLALSortSnglInspiral( tableHead, LALCompareSnglInspiralByTime );
@@ -174,7 +174,7 @@ int XLALTrigScanClusterTriggers( SnglInspiralTable **table,
   while ( errorList )
   {
     TrigScanCluster *newCluster = NULL;
-    
+
     newCluster = XLALTrigScanCreateCluster( &errorList, tcMax );
     /* The next line is to keep track of memory in case of failure */
     if ( errorList )
@@ -194,7 +194,7 @@ int XLALTrigScanClusterTriggers( SnglInspiralTable **table,
          XLALTrigScanDestroyCluster( tmpCluster, TRIGSCAN_ERROR );
       }
       if ( errorList ) XLALDestroyTriggerErrorList( errorList );
-      
+
       XLAL_ERROR( func, XLAL_EFUNC );
     }
     /* Add the cluster to the list */
@@ -205,7 +205,7 @@ int XLALTrigScanClusterTriggers( SnglInspiralTable **table,
     else
     {
       thisCluster = thisCluster->next = newCluster;
-    }    
+    }
   }
 
   /* Remove stragglers if necessary */
@@ -214,14 +214,14 @@ int XLALTrigScanClusterTriggers( SnglInspiralTable **table,
     if ( XLALTrigScanRemoveStragglers( &clusterHead ) == XLAL_FAILURE )
     {
       thisCluster = clusterHead;
- 
+
       while ( thisCluster )
-      { 
+      {
          TrigScanCluster *tmpCluster = thisCluster;
          thisCluster = thisCluster->next;
          XLALTrigScanDestroyCluster( tmpCluster, TRIGSCAN_ERROR );
-      } 
-       
+      }
+
       XLAL_ERROR( func, XLAL_EFUNC );
     }
 
@@ -238,14 +238,14 @@ int XLALTrigScanClusterTriggers( SnglInspiralTable **table,
     if ( XLALTrigScanKeepLoudestTrigger( thisCluster ) == XLAL_FAILURE )
     {
       thisCluster = clusterHead;
-  
-      while ( thisCluster ) 
-      {  
+
+      while ( thisCluster )
+      {
          TrigScanCluster *tmpCluster = thisCluster;
          thisCluster = thisCluster->next;
          XLALTrigScanDestroyCluster( tmpCluster, TRIGSCAN_ERROR );
-      }  
-        
+      }
+
       XLAL_ERROR( func, XLAL_EFUNC );
     }
   }
@@ -261,7 +261,7 @@ int XLALTrigScanClusterTriggers( SnglInspiralTable **table,
        thisCluster = thisCluster->next;
        XLALTrigScanDestroyCluster( tmpCluster, TRIGSCAN_ERROR );
     }
-       
+
     XLAL_ERROR( func, XLAL_EFUNC );
   }
 
@@ -365,7 +365,7 @@ TrigScanCluster * XLALTrigScanCreateCluster( TriggerErrorList **errorListHead,
     XLAL_CALLGSL( originalTimeA = gsl_vector_get( thisClusterList->position, 0 ) );
 
     /* Reset the time to avoid precision problems */
-    XLALSetTimeInPositionVector( thisClusterList->position, 0 ); 
+    XLALSetTimeInPositionVector( thisClusterList->position, 0 );
 
     /* Loop through the list of triggers */
     thisErrorList = *errorListHead;
@@ -382,7 +382,7 @@ TrigScanCluster * XLALTrigScanCreateCluster( TriggerErrorList **errorListHead,
         break;
       }
 
-      XLALSetTimeInPositionVector( thisErrorList->position, 
+      XLALSetTimeInPositionVector( thisErrorList->position,
                 (REAL8) ( ( endTimeB - endTimeA ) * 1.0e-9 ) );
 
 
@@ -457,7 +457,7 @@ TrigScanCluster * XLALTrigScanCreateCluster( TriggerErrorList **errorListHead,
   return cluster;
 }
 
-/* <lalVerbatim file="LALTrigScanClusterCP"> */      
+/* <lalVerbatim file="LALTrigScanClusterCP"> */
 int XLALTrigScanRemoveStragglers( TrigScanCluster **clusters )
 /* </lalVerbatim> */
 {
@@ -573,7 +573,7 @@ int XLALTrigScanReLinkLists( TrigScanCluster *clusterHead )
 {
 
   static const char func[] = "XLALTrigScanReLinkLists";
-  
+
   TrigScanCluster *thisCluster;
 
   if ( ! clusterHead )

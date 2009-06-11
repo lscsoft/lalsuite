@@ -540,7 +540,7 @@ REAL8TimeFrequencyPlane *XLALCreateTFPlane(
 		XLAL_ERROR_NULL(func, XLAL_EFUNC);
 	}
 
-	/* 
+	/*
 	 * Initialize the structure
 	 */
 
@@ -667,7 +667,7 @@ static REAL8 psd_weighted_filter_inner_product(
 			const COMPLEX16 *f2data = &filter2->data->data[k2];
 			const unsigned delta_k = abs(k10 + k1 - k20 - k2);
 			double sksk = (delta_k & 1 ? -1 : +1) * (delta_k < correlation->length ? correlation->data[delta_k] : 0);
-			
+
 			sksk *= sqrt(pdata[k10 + k1] * pdata[k20 + k2]);
 
 			sum.re += sksk * (f1data->re * f2data->re + f1data->im * f2data->im);

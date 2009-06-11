@@ -41,17 +41,17 @@ Matlab Code:
 does the following:
 %
 \begin{enumerate}
-\item 
+\item
 
-\item 
+\item
 
-\item 
+\item
 
 \item
 \end{enumerate}
 
 \subsection*{Uses}
- 
+
 \begin{itemize}
 \item \texttt{LALDDestroyVector}
 \end{itemize}
@@ -184,7 +184,7 @@ void LALBlockRho2 (
 	REAL8			*rpeak,
 	INT4			*myindex,
 	REAL8Sequence		*data,
-	UINT4			*marginOfExclusion			
+	UINT4			*marginOfExclusion
 )
 /*********************************************** </lalVerbatim> */
 {
@@ -413,7 +413,7 @@ const	INT4		two = 2;
 	for( k = 0; k < (INT4)(fomWithoutMargins->length); k++ )
 	  {
 	    fomWithoutMargins->data[k] = exp(fomWithoutMargins->data[k]);
-	  }	
+	  }
 
 	/*  r = sum(fom)  */
 	LALDSum( status->statusPtr, result, fomWithoutMargins);
