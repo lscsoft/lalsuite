@@ -134,7 +134,7 @@ void LALEvaluateInspiralChisqTest ( LALStatus                *status,
         CHECKSTATUSPTR(status);
 
         /* Store it in pBandCorrelation
-	 */
+         */
         for (j=0; j<chisqIn->findEventsIn->signal.length; j++){
             pBandCorrelation1[i][j] = output1.data[j];
             pBandCorrelation2[i][j] = output2.data[j];
