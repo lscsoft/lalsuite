@@ -7,7 +7,8 @@
        *------------------------------------------------------------
        */
 
-      Xalpha_l = Xalpha + k0 - freqIndex0;  /* first frequency-bin in sum */
+    {
+      COMPLEX8 *Xalpha_l = Xalpha + k0 - freqIndex0;  /* first frequency-bin in sum */
 
       /* if no danger of denominator -> 0 */
       if (__builtin_expect((kappa_star > LD_SMALL4) && (kappa_star < 1.0 - LD_SMALL4), (0==0)))
@@ -859,10 +860,11 @@ LIN_SIN_COS_TRIM_P0A(_lambda_alpha)
 #endif
 	} /* if |remainder| <= LD_SMALL4 */
 
-      {
 #ifndef EAH_HOTLOOP_INTERLEAVED
+      {
 	REAL8 _lambda_alpha = -lambda_alpha;
 	SINCOS_TRIM_X (_lambda_alpha,_lambda_alpha);
 	SINCOS_2PI_TRIMMED( &imagQ, &realQ, _lambda_alpha );
-#endif
       }
+#endif
+    }

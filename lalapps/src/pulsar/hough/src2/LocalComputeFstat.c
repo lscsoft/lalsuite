@@ -89,7 +89,7 @@ NRCSID( LOCALCOMPUTEFSTATC, "$Id$");
 
 
 #if EAH_HOUGH_PREFETCH > EAH_HOUGH_PREFETCH_NONE
-#if defined(__INTEL_COMPILER) ||  defined(_MSC_VER)
+#if defined(__INTEL_COMPILER) || defined(_MSC_VER)
 #include "xmmintrin.h"
 #define PREFETCH(a) _mm_prefetch((char *)(void *)(a),_MM_HINT_T0)
 #elif defined(__GNUC__)
@@ -126,8 +126,6 @@ static int
 LocalXLALComputeFaFb (Fcomponents*, const SFTVector*, const PulsarSpins,
 		      const SSBtimes*, const AMCoeffs*, const ComputeFParams*);
 
-static int local_sin_cos_2PI_LUT_trimmed (REAL4 *sinx, REAL4 *cosx, REAL8 x); 
-static void local_sin_cos_2PI_LUT_init (void);
 
 /*==================== FUNCTION DEFINITIONS ====================*/
 
@@ -421,8 +419,8 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
   
   REAL8 norm = OOTWOPI; 
 
-  /* ----- check validity of input */
 #ifndef LAL_NDEBUG
+  /* ----- check validity of input */
   if ( !FaFb ) {
     XLALPrintError ("\nOutput-pointer is NULL !\n\n");
     XLAL_ERROR ( "LocalXLALComputeFaFb", XLAL_EINVAL);
@@ -488,7 +486,6 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
       INT4 k0, k1;
 
       COMPLEX8 *Xalpha = SFT_al->data->data; /* pointer to current SFT-data */
-      COMPLEX8 *Xalpha_l; 	/* pointer to frequency-bin k in current SFT */
       REAL4 s_alpha, c_alpha;	/* sin(2pi kappa_alpha) and (cos(2pi kappa_alpha)-1) */
       REAL4 realQ, imagQ;	/* Re and Im of Q = e^{-i 2 pi lambda_alpha} */
       REAL4 realXP, imagXP;     /* re/im of sum_k X_ak * P_ak */
@@ -540,7 +537,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	/* FIXME: that might be possible to do faster */
 	kstar = (INT4) (Dphi_alpha);	/* k* = floor(Dphi_alpha*chi) for positive Dphi */
 	kappa_star = Dphi_alpha - 1.0 * kstar;	/* remainder of Dphi_alpha: >= 0 ! */
-	kappa_max = kappa_star + Dterms_1f;
+	kappa_max  = kappa_star + Dterms_1f;
 
 	/* ----- check that required frequency-bins are found in the SFTs ----- */
 	k0 = kstar - DTERMS + 1;
@@ -574,7 +571,9 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
       realQXP = realQ * realXP - imagQ * imagXP;
       imagQXP = realQ * imagXP + imagQ * realXP;
       
+
       /* we're done: ==> combine these into Fa and Fb */
+
       a_alpha = (*a_al);
       b_alpha = (*b_al);
 
