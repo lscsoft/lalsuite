@@ -339,7 +339,7 @@ LALTaylorT4WaveformEngine (
    rk4In                 in4;
    expnCoeffs            ak;
    expnFunc              func;
-   DFindRootIn           rootIn;
+   /*DFindRootIn           rootIn;*/
    CHAR message[256];
 
 
