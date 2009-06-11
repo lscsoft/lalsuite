@@ -33,7 +33,8 @@ void LALEvaluateInspiralChisqTest ( LALStatus                *status,
         )
 
 {
-    INT4                      i, j, imax, imin, k;
+    INT4                      i, imax, imin, k;
+    UINT4                     j;
     REAL8                     f, df, sum, powNorm, DeltaT;
     REAL8                     *freqBndry=NULL;
     REAL4Vector               output1, output2;
