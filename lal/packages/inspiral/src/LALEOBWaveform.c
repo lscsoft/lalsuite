@@ -1424,7 +1424,7 @@ LALEOBWaveformEngine (
    INT4       modeM;          /* number of modes required */
    REAL4      inclination;    /* binary inclination       */
    REAL4      coa_phase;      /* binary coalescence phase */
-   REAL8      y1, y2, z1, z2; /* (2,2) and (2,-2) spherical harmonics needed in (h+,hx) */
+   REAL8      y_1, y_2, z1, z2; /* (2,2) and (2,-2) spherical harmonics needed in (h+,hx) */
 
    /* Used for EOBNR */
    COMPLEX8Vector *modefreqs;
@@ -2015,8 +2015,8 @@ LALEOBWaveformEngine (
      ABORTXLAL( status );
    }
 
-   y1 =   MultSphHarmP.re + MultSphHarmM.re;
-   y2 =   MultSphHarmM.im - MultSphHarmP.im;
+   y_1 =   MultSphHarmP.re + MultSphHarmM.re;
+   y_2 =   MultSphHarmM.im - MultSphHarmP.im;
    z1 = - MultSphHarmM.im - MultSphHarmP.im;
    z2 =   MultSphHarmM.re - MultSphHarmP.re;
 
@@ -2033,7 +2033,7 @@ LALEOBWaveformEngine (
      freq->data[i] /= unitHz;
      x1 = sig1->data[i];
      x2 = sig2->data[i];
-     sig1->data[i] = (x1 * y1) + (x2 * y2);
+     sig1->data[i] = (x1 * y_1) + (x2 * y_2);
      sig2->data[i] = (x1 * z1) + (x2 * z2);
      if (x1 || x2)
      {
