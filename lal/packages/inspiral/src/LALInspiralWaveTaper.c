@@ -126,7 +126,7 @@ int XLALInspiralWaveTaper(
 
   static const char *func = "XLALInspiralWaveTaper";
 
-  UINT4 i, start, end, mid, n; /* indices */
+  UINT4 i, start=0, end=0, mid, n=0; /* indices */
   UINT4 flag, safe = 1;
   UINT4 length;
   REAL4 z, sigma;
