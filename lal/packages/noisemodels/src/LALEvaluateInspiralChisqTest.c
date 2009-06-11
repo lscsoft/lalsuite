@@ -20,6 +20,9 @@
 #include <lal/LALStdlib.h>
 #include <lal/LALNoiseModels.h>
 
+/* macro to "use" unused function parameters */
+#define UNUSED(expr) do { (void)(expr); } while (0)
+
 NRCSID( LALEVALUATEINSPIRALCHISQTESTC, "$Id$" );
 
 /* Local Functions used only in this file */
@@ -227,8 +230,12 @@ static REAL4 **matrix(long nrl, long nrh, long ncl, long nch)
 
 
 static void free_matrix(REAL4 **m, long nrl, long nrh, long ncl, long nch)
-    /* free a REAL4 matrix allocated by matrix() */
 {
+    /* nrh and nch are unused in this function */
+    UNUSED(nrh);
+    UNUSED(nch);
+
+    /* free a REAL4 matrix allocated by matrix() */
     LALFree((FREE_ARG) (m[nrl]+ncl-NR_END));
     LALFree((FREE_ARG) (m+nrl-NR_END));
 }
