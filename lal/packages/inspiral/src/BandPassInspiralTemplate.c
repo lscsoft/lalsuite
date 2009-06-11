@@ -58,7 +58,7 @@ int XLALBandPassInspiralTemplate(
 
     static const char *func = "XLALBandPassInspiralTemplate";
 
-    REAL4TimeSeries   *signal = NULL;
+    REAL4TimeSeries   *signalvec = NULL;
     PassBandParamStruc signalHighpassParam;
     PassBandParamStruc signalLowpassParam;
 
@@ -68,11 +68,11 @@ int XLALBandPassInspiralTemplate(
           XLAL_ERROR( func, XLAL_EFAULT );
 
     /* Initialize signal */
-    signal = (REAL4TimeSeries *)
+    signalvec = (REAL4TimeSeries *)
             LALCalloc(1, sizeof(REAL4TimeSeries));
 
-    signal->deltaT = 1.0/fSampling;
-    signal->data   = sequence;
+    signalvec->deltaT = 1.0/fSampling;
+    signalvec->data   = sequence;
 
     /* Now first high pass the time series beyond fSeismic */
     signalHighpassParam.nMax = 10;
@@ -83,9 +83,9 @@ int XLALBandPassInspiralTemplate(
 
     /* Call the Butterworth routine and check its success */
     if ( XLALButterworthREAL4TimeSeries(
-                signal, &signalHighpassParam ) != XLAL_SUCCESS )
+                signalvec, &signalHighpassParam ) != XLAL_SUCCESS )
     {
-        if (signal) LALFree( signal );
+        if (signalvec) LALFree( signalvec );
         XLAL_ERROR(func, XLAL_EFUNC);
     }
 
@@ -98,14 +98,14 @@ int XLALBandPassInspiralTemplate(
 
     /* Call the Butterworth routine and check its success */
     if ( XLALButterworthREAL4TimeSeries(
-                signal, &signalLowpassParam ) != XLAL_SUCCESS)
+                signalvec, &signalLowpassParam ) != XLAL_SUCCESS)
     {
-        if (signal) LALFree( signal );
+        if (signalvec) LALFree( signalvec );
         XLAL_ERROR(func, XLAL_EFUNC);
     }
 
     /* That's it - we are done and can now free the signal */
-    if (signal) LALFree( signal );
+    if (signalvec) LALFree( signalvec );
 
     return XLAL_SUCCESS;
 

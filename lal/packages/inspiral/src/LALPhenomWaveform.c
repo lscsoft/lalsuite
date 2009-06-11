@@ -196,7 +196,7 @@ static void XLALBBHPhenWaveFD ( BBHPhenomParams  *params,
 				InspiralTemplate *insp_template,
 				REAL4Vector *signalvec) {
 
-    REAL8 df, shft, phi, amp0, ampEff, psiEff, fMerg, fNorm;
+    REAL8 df, shft, phi, amp0, ampEff=0, psiEff, fMerg, fNorm;
     REAL8 f, fRing, sigma, totalMass, eta;
     INT4 i, j, n;
 
