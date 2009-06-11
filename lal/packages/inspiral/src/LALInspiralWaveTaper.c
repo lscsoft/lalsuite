@@ -124,7 +124,7 @@ int XLALInspiralWaveTaper(
                    InspiralApplyTaper  bookends)
 { /* </lalVerbatim>  */
 
-  const static char *func = "XLALInspiralWaveTaper";
+  static const char *func = "XLALInspiralWaveTaper";
 
   UINT4 i, start, end, mid, n; /* indices */
   UINT4 flag, safe = 1;
