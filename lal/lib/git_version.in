@@ -39,6 +39,10 @@ try:
 except ImportError:
   sys.exit("Python-2.4, or higher is required")
 
+#
+# class definitions
+#
+
 # version info class
 class git_info:
   def __init__(self):
@@ -49,6 +53,10 @@ class git_info:
     author = None
     committer = None
     status = None
+
+#
+# helper methods
+#
 
 # command line option parsing
 def parse_args():
