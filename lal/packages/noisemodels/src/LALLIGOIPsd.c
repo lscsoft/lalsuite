@@ -22,6 +22,8 @@
 #include <lal/LALAtomicDatatypes.h>
 #include <lal/LALNoiseModels.h>
 
+/* macro to "use" unused function parameters */
+#define UNUSED(expr) do { (void)(expr); } while (0)
 
 NRCSID (LALLIGOIPSDC,"$Id$");
 
@@ -60,6 +62,9 @@ REAL8 XLALLIGOIPsd(REAL8 f)
 
 void LALLIGOIPsd(LALStatus *status, REAL8 *psd, REAL8 f)
 {
+  /* status is unused in this function */
+  UNUSED(status);
+
 	/* Deprecation warning temporarily commented out to make life
 	 * easier for the nightly build --- please update calling code */
 	/*XLALPrintDeprecationWarning("LALLIGOIPsd", "XLALLIGOIPsd");*/
