@@ -1399,30 +1399,31 @@ int XLALWriteLIGOLwXMLSimBurstTable(
  * Creates a XML filename accordingly to document T050017
  */
 
-int XLALCreateLIGOLwXMLFileName(
+int XLALCreateLIGODataFileName(
         char* filename,
+        size_t size,
         const char* dataSource,
         const char* dataDescription,
         const LIGOTimeGPS* gpsStartTime,
         const LIGOTimeGPS* gpsEndTime,
-        INT4 compress
+        const char* extension
 )
 {
-     static const char func[] = "XLALCreateLIGOLwXMLFileName";
+     static const char func[] = "XLALCreateLIGODataFileName";
   
      INT4 gpsDuration;
   
      /* check input structures */
      if (!filename || !dataSource || !dataDescription || 
-	 !gpsStartTime || !gpsEndTime)
+	 !gpsStartTime || !gpsEndTime || !extension)
           XLAL_ERROR(func, XLAL_EFAULT);
   
      /* check the correctnes of the input strings */
      if ( strchr(dataSource, '-') || strchr(dataDescription, '-'))
      {
           filename = NULL;
-          XLALPrintError("the input character strings are not allowed"
-			 " to contain dashes ('-').");
+          XLALPrintError("the input character strings contain invalid"
+			 " dashes ('-').");
           XLAL_ERROR(func, XLAL_EINVAL);
       }
 
@@ -1431,18 +1432,11 @@ int XLALCreateLIGOLwXMLFileName(
       if (gpsEndTime->gpsNanoSeconds > 0) ++gpsDuration;
 
       /* and here put it all together */
-      if (compress)
-      {
-	   LALSnprintf( filename, FILENAME_MAX, "%s-%s-%d-%d.xml.gz",
-			dataSource, dataDescription, gpsStartTime->gpsSeconds, 
-			gpsDuration );
-      } else {
-	   LALSnprintf( filename, FILENAME_MAX, "%s-%s-%d-%d.xml",
-			dataSource, dataDescription, gpsStartTime->gpsSeconds, 
-			gpsDuration );
-      }
+      LALSnprintf( filename, size, "%s-%s-%d-%d.%s",
+		   dataSource, dataDescription, gpsStartTime->gpsSeconds, 
+		   gpsDuration, extension );
 
       /* return success */
-      return 1;
+      return 0;
 }
 

@@ -196,13 +196,14 @@ int XLALWriteLIGOLwXMLSimBurstTable(
 	const SimBurst *
 );
 
-int XLALCreateLIGOLwXMLFileName(
+int XLALCreateLIGODataFileName(
         char* filename,
+        size_t size,
         const char* dataSource,
         const char* dataDescription,
         const LIGOTimeGPS* startTime,
         const LIGOTimeGPS* endTime,
-        INT4 compress
+        const char* extension
 );
 
 
