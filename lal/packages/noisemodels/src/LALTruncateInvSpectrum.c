@@ -78,7 +78,7 @@ void LALTruncateInvSpectrum(
        as it was before (input) --- */
     if (params->ifDebug) {
         FILE  *out=NULL;
-        REAL8 dt;
+        /*REAL8 dt;*/
         /* We should print the frequency domain sqrt (inv spectrum) */
         out = fopen("FB_sqrt_invSpectrum_before.f","w");
         for (i=0; i<Hvec->length; i++){
