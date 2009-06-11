@@ -240,3 +240,5 @@ if git_ok:
 
 # exit
 sys.exit(0)
+
+# vim: syntax=python tw=72 ts=2 et
