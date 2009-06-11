@@ -39,12 +39,20 @@
 /* linking proper functions to the hooks in HierarchicalSearch.c */
 
 /* use a local copy of ComputeFStatFreqBand() and related functions for E@H-specific optimizations */
+#ifdef EAH_CUDA
+#include "HierarchicalSearch.h"
+#include <cuda_fstat.h>
+#define COMPUTEFSTATHOUGHMAP LocalComputeFstatHoughMap
+#define REARRANGE_SFT_DATA   cuda_prepare_sfts (&stackMultiSFT, nStacks, &fstatVector)
+#define COMPUTEFSTATFREQBAND cuda_ComputeFStatFreqBand
+#else
+#define REARRANGE_SFT_DATA
 #ifndef EAH_OPTIMIZATION
-#define COMPUTEFSTATFREQBAND ComputeFStatFreqBand
 #define COMPUTEFSTATHOUGHMAP ComputeFstatHoughMap
+#define COMPUTEFSTATFREQBAND(a,b,c,d,e,f,g,h) ComputeFStatFreqBand(a,b,c,d,e,f,g)
 #else
 #define COMPUTEFSTATHOUGHMAP LocalComputeFstatHoughMap
-#define COMPUTEFSTATFREQBAND LocalComputeFStatFreqBand
+#define COMPUTEFSTATFREQBAND(a,b,c,d,e,f,g,h) LocalComputeFStatFreqBand(a,b,c,d,e,f,g)
 
 #include "HierarchicalSearch.h"
 
@@ -62,10 +70,10 @@ LocalComputeFstatHoughMap ( LALStatus *status,
 			    HOUGHPeakGramVector *pgV, /* peakgram vector */
 			    SemiCoherentParams *params);
 #endif
+#endif
 
 #define SHOW_PROGRESS show_progress
 #define fopen boinc_fopen
-#define REARRANGE_SFT_DATA
 
 #ifndef HS_CHECKPOINTING
 #define HS_CHECKPOINTING 1
