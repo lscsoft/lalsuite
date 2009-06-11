@@ -91,8 +91,6 @@ calling program.
 </lalLaTeX>
 #endif
 
-/*static int CompareErrorListsBySNR( const void *errorA, const void *errorB);*/
-
 /* <lalVerbatim file="LALTrigScanClusterCP"> */
 int XLALTrigScanClusterTriggers( SnglInspiralTable **table,
                                  trigScanType      method,
