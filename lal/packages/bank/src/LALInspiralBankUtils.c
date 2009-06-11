@@ -95,6 +95,7 @@ HybridHexagonal placement. The function LALInspiralHybridHexagonal describes thi
 #include <lal/AVFactories.h>
 #include <lal/SeqFactories.h>
 #include <lal/FindRoot.h>
+#include <lal/LALInspiralBank.h>
 #include <math.h>
 
 
