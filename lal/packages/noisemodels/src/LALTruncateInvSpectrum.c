@@ -29,7 +29,8 @@ void LALTruncateInvSpectrum(
         InvSpecTruncationParams    *params
         )
 {
-    INT4              i, n, trunc_n;
+    INT4              n, trunc_n;
+    UINT4             i;
     REAL8             df;
     COMPLEX8Vector    *Hvec = NULL;
     REAL4Vector       *hvec = NULL;
