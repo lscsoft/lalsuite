@@ -201,7 +201,7 @@ options = parse_args()
 git_ok = (external_command_retcode('git status') != 128)
 
 # generate version information output, if appropriate
-if git_ok is True:
+if git_ok:
   info = generate_git_version_info()
 
   if options.file:
