@@ -44,15 +44,15 @@
 #include <cuda_fstat.h>
 #define COMPUTEFSTATHOUGHMAP LocalComputeFstatHoughMap
 #define REARRANGE_SFT_DATA   cuda_prepare_sfts (&stackMultiSFT, nStacks, &fstatVector)
-#define COMPUTEFSTATFREQBAND cuda_ComputeFStatFreqBand
+#define COMPUTEFSTATFREQBAND(a,b,c,d,e,f,g) cuda_ComputeFStatFreqBand(a,b,c,d,e,f,g,k)
 #else
 #define REARRANGE_SFT_DATA
 #ifndef EAH_OPTIMIZATION
 #define COMPUTEFSTATHOUGHMAP ComputeFstatHoughMap
-#define COMPUTEFSTATFREQBAND(a,b,c,d,e,f,g,h) ComputeFStatFreqBand(a,b,c,d,e,f,g)
+#define COMPUTEFSTATFREQBAND ComputeFStatFreqBand
 #else
 #define COMPUTEFSTATHOUGHMAP LocalComputeFstatHoughMap
-#define COMPUTEFSTATFREQBAND(a,b,c,d,e,f,g,h) LocalComputeFStatFreqBand(a,b,c,d,e,f,g)
+#define COMPUTEFSTATFREQBAND LocalComputeFStatFreqBand
 
 #include "HierarchicalSearch.h"
 

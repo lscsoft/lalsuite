@@ -139,7 +139,7 @@ RCSID( "$Id$");
 #define REARRANGE_SFT_DATA
 #define MAIN  main
 #define FOPEN fopen
-#define COMPUTEFSTATFREQBAND(a,b,c,d,e,f,g,h) ComputeFStatFreqBand(a,b,c,d,e,f,g)
+#define COMPUTEFSTATFREQBAND ComputeFStatFreqBand
 #define COMPUTEFSTATHOUGHMAP ComputeFstatHoughMap
 #endif
 
@@ -1073,9 +1073,9 @@ int MAIN( int argc, char *argv[]) {
 	    
 	    /* this is the most costly function. We here allow for using an architecture-specific optimized
 	       function from e.g. a local file instead of the standard ComputeFStatFreqBand() from LAL */
-	    LAL_CALL( COMPUTEFSTATFREQBAND ( &status, fstatVector.data + k, &thisPoint,
-					     stackMultiSFT.data[k], stackMultiNoiseWeights.data[k],
-					     stackMultiDetStates.data[k], &CFparams, k), &status);
+	    LAL_CALL( COMPUTEFSTATFREQBAND ( &status, fstatVector.data + k, &thisPoint, 
+					     stackMultiSFT.data[k], stackMultiNoiseWeights.data[k], 
+					     stackMultiDetStates.data[k], &CFparams), &status);
 	  }
 	  LogPrintfVerbatim(LOG_DETAIL, "done\n");
 	  
