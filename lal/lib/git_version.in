@@ -79,7 +79,7 @@ def parse_args():
   return opts
 
 #
-# process management method
+# process management methods
 #
 
 # return output from running given command
@@ -200,7 +200,7 @@ options = parse_args()
 # status command has failed
 git_ok = (external_command_retcode('git status') != 128)
 
-# generate sed command file, if appropriate
+# generate version information output, if appropriate
 if git_ok is True:
   info = generate_git_version_info()
 
