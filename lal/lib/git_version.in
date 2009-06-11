@@ -39,9 +39,6 @@ try:
 except ImportError:
   sys.exit("Python-2.4, or higher is required")
 
-# output file
-outfile = 'git_info.sed'
-
 # version info class
 class git_info:
   def __init__(self):
