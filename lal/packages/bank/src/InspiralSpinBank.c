@@ -321,8 +321,8 @@ LALInspiralSpinBank(
   REAL4 xp1, yp1, zp1;       		/* maximum values of xp, yp, zp */
   REAL4 dxp, dyp, dzp;       		/* step sizes in xp, yp, zp */
   REAL4 theta;               		/* angle of rotation for xp and yp */
-  REAL4 m1Min, m1Max;       		/* range of m1 to search */
-  REAL4 m2Min, m2Max;        		/* range of m2 to search */
+  REAL4 m1Min=0, m1Max=0;       		/* range of m1 to search */
+  REAL4 m2Min=0, m2Max=0;        		/* range of m2 to search */
   REAL4 f0 = -1;  			/* frequency of minimum of noise curve */
   INT2 bccFlag = 0;      		/* determines offset for bcc tiling */
   INT4 cnt = 0;				/* loop counter set to value of ntiles */
