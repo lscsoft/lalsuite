@@ -177,14 +177,14 @@ LALInspiralCreatePNCoarseBankHexa(
 
   {
     INT4 k, kk; /*some indexes*/
-    INT4 *list 		= NULL;
+    INT4 *new_list 		= NULL;
     CellList *ptr 	= NULL;
     INT4 length 	= 1; /* default size of the bank when we
     						start the bank generation. */
 
     /* we re-allocate an array which size equals the
      * template bank size. */
-    if (! (list =  LALMalloc(length*sizeof(INT4))))
+    if (! (new_list =  LALMalloc(length*sizeof(INT4))))
     {
       ABORT( status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM );
     }
@@ -194,7 +194,7 @@ LALInspiralCreatePNCoarseBankHexa(
     {
       length = LALListLength(cellList);
       /*realloc some memory for the next template*/
-      if (! (list =  LALRealloc(list, length*sizeof(INT4))))
+      if (! (new_list =  LALRealloc(new_list, length*sizeof(INT4))))
       {
 		ABORT( status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM );
 		/* freeing memory here ? */
@@ -205,13 +205,13 @@ LALInspiralCreatePNCoarseBankHexa(
        * of ids/bank size and so on. */
       for ( k = 0; k < length; k++)
       {
-		list[k] = ptr->id;
+		new_list[k] = ptr->id;
 		ptr = ptr->next;
       }
       /* look at all the template/ids in the current bank to search for fertile cells */
       for (kk = 0; kk < length; kk++)
 	  {
-		k = list[kk];
+		k = new_list[kk];
 		if ( cells[k].status == Fertile)
 		{
           LALPopulateCell(status->statusPtr, &moments, &cells,
@@ -224,7 +224,7 @@ LALInspiralCreatePNCoarseBankHexa(
         }
       }
     }
-    LALFree(list);
+    LALFree(new_list);
   }
 
   if (cellList != NULL)
