@@ -550,7 +550,7 @@ XLALInspiralBissectionLine (
 	REAL8 mMin,
 	REAL8 mMax)
 {
-  REAL8 piFa;
+  /*REAL8 piFa;*/
   REAL8 tau3_a, tau3_b, M, eta, massSep;
 
   /* First we solve for the lower (equal mass) limit */
