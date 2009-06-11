@@ -33,7 +33,8 @@ void  LALDiscoverInspiralEvents (
         DiscoverInspiralEventsList   **eventlist,
         DiscoverInspiralEventsIn     *findeventsin )
 {
-    INT4                               i, j, nBegin, nEnd;
+    UINT4                              i;
+    INT4                               j, k, nBegin, nEnd;
     REAL8                              dt, df, distanceNorm, eSec;
     REAL4Vector                        filter1, filter2, output1, output2, correlation;
 
@@ -198,9 +199,9 @@ void  LALDiscoverInspiralEvents (
         } /* If chisqBins > 0 */
 
         /* This is where we populate the event list */
-        for (i=0; i<nTempEvents; i++) {
+        for (k=0; k<nTempEvents; k++) {
 
-            j = tempEventsIdx[i];
+            j = tempEventsIdx[k];
 
             if (!(*eventlist = (DiscoverInspiralEventsList*) LALRealloc(*eventlist, sizeof(DiscoverInspiralEventsList)*((*nEvents)+1))))
             {
