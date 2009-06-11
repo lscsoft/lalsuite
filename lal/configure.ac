@@ -282,8 +282,8 @@ AC_SUBST(TEXFLAGS)
 dnl Set needed compiler flags
 AC_MSG_CHECKING([for additional compiler flags])
 case "${host_os}" in
-  solaris*) CFLAGS="$CFLAGS -D_POSIX_C_SOURCE=200101L"
-  AC_MSG_RESULT([-D_POSIX_SOURCE=200101L]);;
+  solaris*) CFLAGS="$CFLAGS -D_POSIX_C_SOURCE=200112L"
+  AC_MSG_RESULT([-D_POSIX_C_SOURCE=200112L]);;
   *) AC_MSG_RESULT(none);;
 esac
 
