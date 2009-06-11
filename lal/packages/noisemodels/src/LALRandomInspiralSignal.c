@@ -918,7 +918,7 @@ void GenerateTimeDomainWaveformForInjection (
     {
         REAL8 t, p, s, a1, a2, phi, phi0, shift;
         REAL8 fp, fc, hp, hc;
-        INT4  kk;
+        UINT4 kk;
 
         t = cos(param->sourceTheta);
         p = 2. * param->sourcePhi;
