@@ -194,7 +194,7 @@ NRCSID (LALRANDOMINSPIRALSIGNALC, "$Id$");
 void LALRandomInspiralSignal
 (
  LALStatus              *status,
- REAL4Vector            *signal,
+ REAL4Vector            *signalvec,
  RandomInspiralSignalIn *randIn
  )
 {  /*  </lalVerbatim>  */
@@ -212,14 +212,14 @@ void LALRandomInspiralSignal
     INITSTATUS (status, "LALRandomInspiralSignal", LALRANDOMINSPIRALSIGNALC);
     ATTATCHSTATUSPTR(status);
 
-    ASSERT (signal->data,  status, LALNOISEMODELSH_ENULL, LALNOISEMODELSH_MSGENULL);
+    ASSERT (signalvec->data,  status, LALNOISEMODELSH_ENULL, LALNOISEMODELSH_MSGENULL);
     ASSERT (randIn->psd.data,  status, LALNOISEMODELSH_ENULL, LALNOISEMODELSH_MSGENULL);
     ASSERT (randIn->mMin > 0, status, LALNOISEMODELSH_ESIZE, LALNOISEMODELSH_MSGESIZE);
     ASSERT (randIn->MMax > 2*randIn->mMin, status, LALNOISEMODELSH_ESIZE, LALNOISEMODELSH_MSGESIZE);
     ASSERT (randIn->type >= 0, status, LALNOISEMODELSH_ESIZE, LALNOISEMODELSH_MSGESIZE);
     ASSERT (randIn->type <= 2, status, LALNOISEMODELSH_ESIZE, LALNOISEMODELSH_MSGESIZE);
 
-    buff.length = signal->length;
+    buff.length = signalvec->length;
     if (!(buff.data = (REAL4*) LALCalloc(buff.length, sizeof(REAL4)) )) {
         ABORT (status, LALNOISEMODELSH_EMEM, LALNOISEMODELSH_MSGEMEM);
     }
@@ -538,7 +538,7 @@ void LALRandomInspiralSignal
 
     /* set up the structure for normalising the signal */
     normin.psd          = &(randIn->psd);
-    normin.df           = randIn->param.tSampling / (REAL8) signal->length;
+    normin.df           = randIn->param.tSampling / (REAL8) signalvec->length;
     normin.fCutoff      = randIn->param.fCutoff;
     normin.samplingRate = randIn->param.tSampling;
 
@@ -556,7 +556,7 @@ void LALRandomInspiralSignal
                     randIn->param.approximant == TaylorF2 ||
                     randIn->param.approximant == PadeF1)
             {
-                LALInspiralWave(status->statusPtr, signal, &randIn->param);
+                LALInspiralWave(status->statusPtr, signalvec, &randIn->param);
                 CHECKSTATUSPTR(status);
             }
             else /* Else - generate a time domain waveform */
@@ -586,25 +586,25 @@ void LALRandomInspiralSignal
                 /* Once the time domain waveform has been generated, take its
                  * Fourier transform [i.e buff (t) ---> signal (f)].
                  */
-                LALREAL4VectorFFT(status->statusPtr, signal, &buff, randIn->fwdp);
+                LALREAL4VectorFFT(status->statusPtr, signalvec, &buff, randIn->fwdp);
                 CHECKSTATUSPTR(status);
 
             } /* End of else if time domain waveform */
 
-            /* we might want to know where is the signal injected*/
+            /* we might want to know where is the signalvec injected*/
             maxTemp  = 0;
             iMax     = 0;
-            for ( indice = 0 ; indice< signal->length; indice++)
+            for ( indice = 0 ; indice< signalvec->length; indice++)
             {
-                if (fabs(signal->data[indice]) > maxTemp){
+                if (fabs(signalvec->data[indice]) > maxTemp){
                     iMax = indice;
-                    maxTemp = fabs(signal->data[indice]);
+                    maxTemp = fabs(signalvec->data[indice]);
                 }
             }
             randIn->coalescenceTime = iMax;
 
             normin.fCutoff = randIn->param.fFinal;
-            LALInspiralWaveNormaliseLSO(status->statusPtr, signal, &norm, &normin);
+            LALInspiralWaveNormaliseLSO(status->statusPtr, signalvec, &norm, &normin);
             CHECKSTATUSPTR(status);
             break;
 
@@ -623,16 +623,16 @@ void LALRandomInspiralSignal
             CHECKSTATUSPTR(status);
             LALDestroyRandomParams(status->statusPtr, &randomparams);
             CHECKSTATUSPTR(status);
-            LALREAL4VectorFFT(status->statusPtr, signal, &buff, randIn->fwdp);
+            LALREAL4VectorFFT(status->statusPtr, signalvec, &buff, randIn->fwdp);
             CHECKSTATUSPTR(status);
-            LALColoredNoise(status->statusPtr, signal, randIn->psd);
+            LALColoredNoise(status->statusPtr, signalvec, randIn->psd);
             CHECKSTATUSPTR(status);
 
             /* multiply the noise vector by the correct normalisation factor */
             {
                 double a2 = randIn->NoiseAmp * sqrt (randIn->param.tSampling)/2.L;
                 UINT4 i;
-                for (i=0; i<signal->length; i++) signal->data[i] *= a2;
+                for (i=0; i<signalvec->length; i++) signalvec->data[i] *= a2;
             }
             break;
 
@@ -640,7 +640,7 @@ void LALRandomInspiralSignal
             /*
              * finally deal with the noise+signal only case:
              */
-            noisy.length = signal->length;
+            noisy.length = signalvec->length;
             if (!(noisy.data = (REAL4*) LALMalloc(sizeof(REAL4)*noisy.length)))
             {
                 if (buff.data != NULL) LALFree(buff.data);
@@ -670,13 +670,13 @@ void LALRandomInspiralSignal
             }
             else
             {
-                LALInspiralWave(status->statusPtr, signal, &randIn->param);
+                LALInspiralWave(status->statusPtr, signalvec, &randIn->param);
                 CHECKSTATUSPTR(status);
 
 
                 /* Now convert from time domain signal(t) ---> frequency
                  * domain waveform buff(f) i.e signal(t) -> buff(f)*/
-                LALREAL4VectorFFT(status->statusPtr, &buff, signal, randIn->fwdp);
+                LALREAL4VectorFFT(status->statusPtr, &buff, signalvec, randIn->fwdp);
                 CHECKSTATUSPTR(status);
 
             }
@@ -684,11 +684,11 @@ void LALRandomInspiralSignal
             /* we might want to know where is the signal injected*/
             maxTemp  = 0;
             iMax     = 0;
-            for ( indice = 0 ; indice< signal->length; indice++)
+            for ( indice = 0 ; indice< signalvec->length; indice++)
             {
-                if (fabs(signal->data[indice]) > maxTemp){
+                if (fabs(signalvec->data[indice]) > maxTemp){
                     iMax = indice;
-                    maxTemp = fabs(signal->data[indice]);
+                    maxTemp = fabs(signalvec->data[indice]);
                 }
             }
             randIn->coalescenceTime = iMax;
@@ -705,7 +705,7 @@ void LALRandomInspiralSignal
              * equal to unity; the proof of this is still needed
              */
             addIn.a2 = randIn->NoiseAmp * sqrt (randIn->param.tSampling)/2.L;
-            LALAddVectors(status->statusPtr, signal, addIn);
+            LALAddVectors(status->statusPtr, signalvec, addIn);
             CHECKSTATUSPTR(status);
             if (noisy.data != NULL) LALFree(noisy.data);
             break;
