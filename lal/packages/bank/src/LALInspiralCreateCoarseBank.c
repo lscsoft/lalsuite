@@ -436,7 +436,7 @@ LALNudgeTemplatesToConstantTotalMassLine(
   /* Loop over template list and nudge the templates if required */
   {
       INT4   i;
-      REAL4  P, Q, M, C, ms, t0, t3;
+      REAL4  P, Q, M, C, ms; /*, t0, t3;*/
 
       M = coarseIn.MMax*LAL_MTSUN_SI;
       P = (5./256.)*pow( (LAL_PI*coarseIn.fLower), -8./3. ) ;
