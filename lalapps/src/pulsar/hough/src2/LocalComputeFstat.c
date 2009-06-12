@@ -564,7 +564,57 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 
       /* ---------- calculate the (truncated to DTERMS) sum over k ---------- */
 
-#include "hotloop.ci"
+      /* ---------- ATTENTION: this the "hot-loop", which will be 
+       * executed many millions of times, so anything in here 
+       * has a HUGE impact on the whole performance of the code.
+       * 
+       * DON'T touch *anything* in here unless you really know 
+       * what you're doing !!
+       *------------------------------------------------------------
+       */
+
+      {
+	COMPLEX8 *Xalpha_l = Xalpha + k0 - freqIndex0;  /* first frequency-bin in sum */
+
+	/* if no danger of denominator -> 0 */
+#ifdef __GNUC__
+	/** somehow the branch prediction of gcc-4.1.2 terribly failes
+	    with the current case distinction in the hot-loop,
+	    having a severe impact on runtime of the E@H Linux App.
+	    So let's allow to give gcc a hint which path has a higher probablility */
+	if (__builtin_expect((kappa_star > LD_SMALL4) && (kappa_star < 1.0 - LD_SMALL4), (0==0)))
+#else
+	if ((kappa_star > LD_SMALL4) && (kappa_star < 1.0 - LD_SMALL4)
+#endif
+	  {
+	  /* WARNING: all current optimized loops rely on current implementation of COMPLEX8 type */
+#if (EAH_HOTLOOP_VARIANT == EAH_HOTLOOP_VARIANT_SSE_AKOS08)
+#include "hotloop_precalc.ci"
+#elif (EAH_HOTLOOP_VARIANT == EAH_HOTLOOP_VARIANT_SSE)
+#include "hotloop_sse.ci"
+#elif (EAH_HOTLOOP_VARIANT == EAH_HOTLOOP_VARIANT_ALTIVEC)
+#include "hotloop_altivec.ci"
+#elif (EAH_HOTLOOP_VARIANT == EAH_HOTLOOP_VARIANT_AUTOVECT)
+#include "hotloop_autovect.ci"
+#else /* EAH_HOTLOOP_VARIANT */
+#include "hotloop_generic.ci"
+#endif /* EAH_HOTLOOP_VARIANT */
+	 
+	  } /* if |remainder| > LD_SMALL4 */
+	else
+	  { /* otherwise: lim_{rem->0}P_alpha,k  = 2pi delta_{k,kstar} */
+	    UINT4 ind0;
+	    if ( kappa_star <= LD_SMALL4 )
+	      ind0 = DTERMS - 1;
+	    else
+	      ind0 = DTERMS;
+	    realXP = TWOPI_FLOAT * Xalpha_l[ind0].re;
+	    imagXP = TWOPI_FLOAT * Xalpha_l[ind0].im;
+	    REAL8 _lambda_alpha = -lambda_alpha;
+	    SINCOS_TRIM_X (_lambda_alpha,_lambda_alpha);
+	    SINCOS_2PI_TRIMMED( &imagQ, &realQ, _lambda_alpha );
+	  } /* if |remainder| <= LD_SMALL4 */
+      }
 
       /* real- and imaginary part of e^{-i 2 pi lambda_alpha } */
       
