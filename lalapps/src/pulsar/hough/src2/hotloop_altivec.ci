@@ -58,7 +58,7 @@
 	    STnV    = vec_madd(XaiV, qnV, STnV);
 
 	    VEC_LOOP_RE(4,1,2);
-	    VEC_LOOP_RE_NR(8,2,0);
+	    VEC_LOOP_RE(8,2,0);
 	    VEC_LOOP_RE_NR(12,0,1);
 	    VEC_LOOP_RE_NR(16,1,2);
 	    VEC_LOOP_RE_NR(20,2,0);
