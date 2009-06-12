@@ -59,9 +59,9 @@ LIGOTimeGPS *XLALAggregationFrameStart(LIGOTimeGPS *gps)
     XLAL_ERROR_NULL(func, XLAL_ENOMEM);
   }
 
-  /* determine frame start time, multiple of ONLINE_FRAME_DURATION */
-  start->gpsSeconds = (INT4)floor(gps->gpsSeconds / ONLINE_FRAME_DURATION) * \
-                      ONLINE_FRAME_DURATION;
+  /* determine frame start time, multiple of LAL_ONLINE_FRAME_DURATION */
+  start->gpsSeconds = (INT4)floor(gps->gpsSeconds / LAL_ONLINE_FRAME_DURATION) * \
+                      LAL_ONLINE_FRAME_DURATION;
   start->gpsNanoSeconds = 0;
 
   return start;
@@ -144,7 +144,7 @@ CHAR *XLALAggregationDirectoryPath(CHAR *ifo,
   }
 
   /* determine gps directory name, frame start must be multiple of
-   * ONLINE_FRAME_DURATION */
+   * LAL_ONLINE_FRAME_DURATION */
   frame_start = XLALAggregationFrameStart(gps);
   gps_dir = (INT4)floor(frame_start->gpsSeconds / 100000);
 
@@ -189,7 +189,7 @@ CHAR *XLALAggregationFrameFilename(CHAR *ifo,
 
   /* construct frame filename */
   snprintf(filename, FILENAME_MAX, "%c-%s-%d-%d.gwf", ifo[0], type, \
-      frame_start->gpsSeconds, ONLINE_FRAME_DURATION);
+      frame_start->gpsSeconds, LAL_ONLINE_FRAME_DURATION);
 
   /* free memory */
   XLALFree(frame_start);
@@ -356,9 +356,9 @@ FrCache *XLALAggregationFrameCache(CHAR *ifo,
                        (INT4)((duration - floor(duration)) * pow(10, 9));
   frame_start = XLALAggregationFrameStart(start);
   last_frame_start = XLALAggregationFrameStart(&gps);
-  frame_duration = (last_frame_start->gpsSeconds + ONLINE_FRAME_DURATION) - \
+  frame_duration = (last_frame_start->gpsSeconds + LAL_ONLINE_FRAME_DURATION) - \
                    frame_start->gpsSeconds;
-  num_frames = frame_duration / ONLINE_FRAME_DURATION;
+  num_frames = frame_duration / LAL_ONLINE_FRAME_DURATION;
 
   /* free memory */
   XLALFree(frame_start);
@@ -400,7 +400,7 @@ FrCache *XLALAggregationFrameCache(CHAR *ifo,
     FrStat *file = cache->frameFiles + i;
 
     /* increment gps */
-    gps.gpsSeconds = start->gpsSeconds + (i * ONLINE_FRAME_DURATION);
+    gps.gpsSeconds = start->gpsSeconds + (i * LAL_ONLINE_FRAME_DURATION);
     gps.gpsNanoSeconds = start->gpsNanoSeconds;
 
     /* determine url */
@@ -439,7 +439,7 @@ FrCache *XLALAggregationFrameCache(CHAR *ifo,
     strcpy(file->source, ifo);
     strcpy(file->description, type);
     file->startTime = frame_start->gpsSeconds;
-    file->duration = ONLINE_FRAME_DURATION;
+    file->duration = LAL_ONLINE_FRAME_DURATION;
     strcpy(file->url, url);
 
     /* free memory */
@@ -557,7 +557,7 @@ REAL8TimeSeries *XLALAggregationStrainData(CHAR *ifo,
   {
     /* virgo */
     snprintf(channel, LIGOMETA_CHANNEL_MAX, "%s:%s", ifo, \
-      ONLINE_VIRGO_STRAIN_CHANNEL);
+      LAL_ONLINE_VIRGO_STRAIN_CHANNEL);
   }
   else if ((strncmp(ifo, "H1", LIGOMETA_IFO_MAX) == 0) || \
       (strncmp(ifo, "H2", LIGOMETA_IFO_MAX) == 0) || \
@@ -565,7 +565,7 @@ REAL8TimeSeries *XLALAggregationStrainData(CHAR *ifo,
   {
     /* ligo */
     snprintf(channel, LIGOMETA_CHANNEL_MAX, "%s:%s", ifo, \
-      ONLINE_STRAIN_CHANNEL);
+      LAL_ONLINE_STRAIN_CHANNEL);
   }
   else
   {
@@ -656,7 +656,7 @@ INT4TimeSeries *XLALAggregationDQVector(CHAR *ifo,
   {
     /* virgo */
     snprintf(channel, LIGOMETA_CHANNEL_MAX, "%s:%s", ifo, \
-      ONLINE_VIRGO_DQ_VECTOR);
+      LAL_ONLINE_VIRGO_DQ_VECTOR);
   }
   else if ((strncmp(ifo, "H1", LIGOMETA_IFO_MAX) == 0) || \
       (strncmp(ifo, "H2", LIGOMETA_IFO_MAX) == 0) || \
@@ -664,7 +664,7 @@ INT4TimeSeries *XLALAggregationDQVector(CHAR *ifo,
   {
     /* ligo */
     snprintf(channel, LIGOMETA_CHANNEL_MAX, "%s:%s", ifo, \
-      ONLINE_DQ_VECTOR);
+      LAL_ONLINE_DQ_VECTOR);
   }
   else
   {
@@ -758,7 +758,7 @@ INT4TimeSeries *XLALAggregationStateVector(CHAR *ifo,
   {
     /* ligo */
     snprintf(channel, LIGOMETA_CHANNEL_MAX, "%s:%s", ifo, \
-      ONLINE_STATE_VECTOR);
+      LAL_ONLINE_STATE_VECTOR);
   }
   else
   {
@@ -991,8 +991,8 @@ REAL8TimeSeries *XLALAggregationStrainDataWait(CHAR *ifo,
     else if (series == NULL)
     {
       /* failed to get series, wait */
-      wait += ONLINE_FRAME_DURATION;
-      sleep(ONLINE_FRAME_DURATION);
+      wait += LAL_ONLINE_FRAME_DURATION;
+      sleep(LAL_ONLINE_FRAME_DURATION);
     }
   } while (series == NULL);
 
@@ -1043,8 +1043,8 @@ INT4TimeSeries *XLALAggregationDQVectorWait(CHAR *ifo,
     else if (series == NULL)
     {
       /* failed to get series, wait */
-      wait += ONLINE_FRAME_DURATION;
-      sleep(ONLINE_FRAME_DURATION);
+      wait += LAL_ONLINE_FRAME_DURATION;
+      sleep(LAL_ONLINE_FRAME_DURATION);
     }
   } while (series == NULL);
 
@@ -1095,8 +1095,8 @@ INT4TimeSeries *XLALAggregationStateVectorWait(CHAR *ifo,
     else if (series == NULL)
     {
       /* failed to get series, wait */
-      wait += ONLINE_FRAME_DURATION;
-      sleep(ONLINE_FRAME_DURATION);
+      wait += LAL_ONLINE_FRAME_DURATION;
+      sleep(LAL_ONLINE_FRAME_DURATION);
     }
   } while (series == NULL);
 
