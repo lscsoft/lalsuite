@@ -17,26 +17,19 @@
 
 	  /* 2*DTERMS iterations */
 	  UINT4 l;
-	  for ( l = 1; l < 2*DTERMS; l ++ )
-	    {
-	      Xalpha_l ++;
-	      
+	  for ( l = 1; l < 2*DTERMS; l ++ ) {
+	      Xalpha_l ++;	      
 	      pn = pn - 1.0f;   		  /* p_(n+1) */
 	      Sn = pn * Sn + qn * (*Xalpha_l).re; /* S_(n+1) */
 	      Tn = pn * Tn + qn * (*Xalpha_l).im; /* T_(n+1) */
 	      qn *= pn; 			  /* q_(n+1) */
 	    } /* for l < 2*DTERMS */
 
-#if EAH_HOTLOOP_DIVS == EAH_HOTLOOP_DIVS_RECIPROCAL
-	  { /* could hardly be slower than two divisions */
+	  { /* only one division left */
 	    REAL4 r_qn = 1.0 / qn;
 	    U_alpha = Sn * r_qn;
 	    V_alpha = Tn * r_qn;
 	  }
-#else /* EAH_HOTLOOP_DIVS */
-	  U_alpha = Sn / qn;
-	  V_alpha = Tn / qn;
-#endif /* EAH_HOTLOOP_DIVS */
 
 	  SINCOS_2PI_TRIMMED(&s_alpha, &c_alpha, kappa_star);
 	  c_alpha -= 1.0f;
@@ -45,8 +38,8 @@
  	  imagXP = c_alpha * U_alpha + s_alpha * V_alpha;
 	}
 
-      {
-	REAL8 _lambda_alpha = -lambda_alpha;
-	SINCOS_TRIM_X (_lambda_alpha,_lambda_alpha);
-	SINCOS_2PI_TRIMMED( &imagQ, &realQ, _lambda_alpha );
-      }
+        {
+	  REAL8 _lambda_alpha = -lambda_alpha;
+	  SINCOS_TRIM_X (_lambda_alpha,_lambda_alpha);
+	  SINCOS_2PI_TRIMMED( &imagQ, &realQ, _lambda_alpha );
+        }
