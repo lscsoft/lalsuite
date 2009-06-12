@@ -88,8 +88,8 @@ LALHexagonVertices(
 )
 { /* </lalVerbatim> */
 
-   REAL4 x_1, x_2, x_3, x_4, x_5, x_6, x_7;
-   REAL4 y_1, y_2, y_3, y_4, y_5, y_6, y_7;
+   REAL4 x_1, x_2, x_3, x_4, x_5, x_6;
+   REAL4 y_1, y_2, y_3, y_4, y_5, y_6;
    REAL4 ctheta,stheta, sca;
    INITSTATUS(status, "LALHexagonVertices", LALHEXAGONVERTICESC);
    ATTATCHSTATUSPTR(status);
