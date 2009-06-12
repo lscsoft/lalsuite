@@ -96,7 +96,7 @@ CHAR *XLALAggregationFrameType(CHAR *ifo)
       (strncmp(ifo, "L1", LIGOMETA_IFO_MAX) == 0))
   {
     /* ligo */
-    LALSnprintf(type, LIGOMETA_TYPE_MAX, "%s_DMT_C00_L2", ifo);
+    snprintf(type, LIGOMETA_TYPE_MAX, "%s_DMT_C00_L2", ifo);
   }
   else
   {
@@ -149,7 +149,7 @@ CHAR *XLALAggregationDirectoryPath(CHAR *ifo,
   gps_dir = (INT4)floor(frame_start->gpsSeconds / 100000);
 
   /* construct directory */
-  LALSnprintf(directory, FILENAME_MAX, "%s/%s/%c-%s-%d", base_dir, ifo, \
+  snprintf(directory, FILENAME_MAX, "%s/%s/%c-%s-%d", base_dir, ifo, \
       ifo[0], type, gps_dir);
 
   /* free memory */
@@ -188,7 +188,7 @@ CHAR *XLALAggregationFrameFilename(CHAR *ifo,
   frame_start = XLALAggregationFrameStart(gps);
 
   /* construct frame filename */
-  LALSnprintf(filename, FILENAME_MAX, "%c-%s-%d-%d.gwf", ifo[0], type, \
+  snprintf(filename, FILENAME_MAX, "%c-%s-%d-%d.gwf", ifo[0], type, \
       frame_start->gpsSeconds, ONLINE_FRAME_DURATION);
 
   /* free memory */
@@ -232,7 +232,7 @@ CHAR *XLALAggregationFramePathFilename(CHAR *ifo,
   }
 
   /* construct path */
-  LALSnprintf(path, FILENAME_MAX, "%s/%s", directory, filename);
+  snprintf(path, FILENAME_MAX, "%s/%s", directory, filename);
 
   return path;
 }
@@ -263,7 +263,7 @@ CHAR *XLALAggregationFrameURL(CHAR *ifo,
   }
 
   /* construct url */
-  LALSnprintf(url, FILENAME_MAX, "file://localhost%s", path);
+  snprintf(url, FILENAME_MAX, "file://localhost%s", path);
 
   return url;
 }
@@ -294,7 +294,7 @@ LIGOTimeGPS *XLALAggregationLatestGPS(CHAR *ifo)
   }
 
   /* determine path to latest file */
-  LALSnprintf(path, FILENAME_MAX, "%s/%s/latest", base_dir, ifo);
+  snprintf(path, FILENAME_MAX, "%s/%s/latest", base_dir, ifo);
 
   /* check file status */
   if (stat(path, &file_status) == -1)
@@ -553,7 +553,7 @@ REAL8TimeSeries *XLALAggregationStrainData(CHAR *ifo,
   }
 
   /* get strain data time series */
-  LALSnprintf(channel, LIGOMETA_CHANNEL_MAX, "%s:%s", ifo, \
+  snprintf(channel, LIGOMETA_CHANNEL_MAX, "%s:%s", ifo, \
       ONLINE_STRAIN_CHANNEL);
   series = XLALFrReadREAL8TimeSeries(stream, channel, start, duration, 0);
   if (series == NULL)
@@ -633,7 +633,7 @@ INT4TimeSeries *XLALAggregationDQVector(CHAR *ifo,
   }
 
   /* get data quality vector time series */
-  LALSnprintf(channel, LIGOMETA_CHANNEL_MAX, "%s:%s", ifo, \
+  snprintf(channel, LIGOMETA_CHANNEL_MAX, "%s:%s", ifo, \
       ONLINE_DQ_VECTOR);
   series = XLALFrReadINT4TimeSeries(stream, channel, start, duration, 0);
   if (series == NULL)
@@ -714,7 +714,7 @@ INT4TimeSeries *XLALAggregationStateVector(CHAR *ifo,
   }
 
   /* get state vector time series */
-  LALSnprintf(channel, LIGOMETA_CHANNEL_MAX, "%s:%s", ifo, \
+  snprintf(channel, LIGOMETA_CHANNEL_MAX, "%s:%s", ifo, \
       ONLINE_STATE_VECTOR);
   state = XLALFrReadREAL4TimeSeries(stream, channel, start, duration, 0);
   if (state == NULL)
