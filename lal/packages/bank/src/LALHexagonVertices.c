@@ -88,7 +88,8 @@ LALHexagonVertices(
 )
 { /* </lalVerbatim> */
 
-   REAL4 x1, x2, x3, x4, y1, y2, y3, y4, x5, y5, x6, y6, x7, y7;
+   REAL4 x_1, x_2, x_3, x_4, x_5, x_6, x_7;
+   REAL4 y_1, y_2, y_3, y_4, y_5, y_6, y_7;
    REAL4 ctheta,stheta, sca;
    INITSTATUS(status, "LALHexagonVertices", LALHEXAGONVERTICESC);
    ATTATCHSTATUSPTR(status);
@@ -98,34 +99,34 @@ LALHexagonVertices(
 
    sca = sqrt(3);
 
-   x1 = -in->dx/2;
-   y1 = -in->dy/sca/2;
-   x2 = 0;
-   y2 = -in->dy/sqrt(3);
-   x3 = in->dx/2;
-   y3 = -in->dy/sca/2;
-   x4 = in->dx/2;
-   y4 = in->dy/sca/2;
-   x5 = 0;
-   y5 = in->dy/sqrt(3);
-   x6 = -in->dx/2;
-   y6 = in->dy/sca/2;
+   x_1 = -in->dx/2;
+   y_1 = -in->dy/sca/2;
+   x_2 = 0;
+   y_2 = -in->dy/sqrt(3);
+   x_3 = in->dx/2;
+   y_3 = -in->dy/sca/2;
+   x_4 = in->dx/2;
+   y_4 = in->dy/sca/2;
+   x_5 = 0;
+   y_5 = in->dy/sqrt(3);
+   x_6 = -in->dx/2;
+   y_6 = in->dy/sca/2;
 
    ctheta=cos(in->theta);
    stheta=sin(in->theta);
 
-   out->x1 = in->x0 + x1 * ctheta - y1 * stheta;
-   out->y1 = in->y0 + y1 * ctheta + x1 * stheta;
-   out->x2 = in->x0 + x2 * ctheta - y2 * stheta;
-   out->y2 = in->y0 + y2 * ctheta + x2 * stheta;
-   out->x3 = in->x0 + x3 * ctheta - y3 * stheta;
-   out->y3 = in->y0 + y3 * ctheta + x3 * stheta;
-   out->x4 = in->x0 + x4 * ctheta - y4 * stheta;
-   out->y4 = in->y0 + y4 * ctheta + x4 * stheta;
-   out->x5 = in->x0 + x5 * ctheta - y5 * stheta;
-   out->y5 = in->y0 + y5 * ctheta + x5 * stheta;
-   out->x6 = in->x0 + x6 * ctheta - y6 * stheta;
-   out->y6 = in->y0 + y6 * ctheta + x6 * stheta;
+   out->x1 = in->x0 + x_1 * ctheta - y_1 * stheta;
+   out->y1 = in->y0 + y_1 * ctheta + x_1 * stheta;
+   out->x2 = in->x0 + x_2 * ctheta - y_2 * stheta;
+   out->y2 = in->y0 + y_2 * ctheta + x_2 * stheta;
+   out->x3 = in->x0 + x_3 * ctheta - y_3 * stheta;
+   out->y3 = in->y0 + y_3 * ctheta + x_3 * stheta;
+   out->x4 = in->x0 + x_4 * ctheta - y_4 * stheta;
+   out->y4 = in->y0 + y_4 * ctheta + x_4 * stheta;
+   out->x5 = in->x0 + x_5 * ctheta - y_5 * stheta;
+   out->y5 = in->y0 + y_5 * ctheta + x_5 * stheta;
+   out->x6 = in->x0 + x_6 * ctheta - y_6 * stheta;
+   out->y6 = in->y0 + y_6 * ctheta + x_6 * stheta;
 
    out->x7 = out->x1;
    out->y7 = out->y1;
