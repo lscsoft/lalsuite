@@ -101,7 +101,6 @@ int main (int argc, char *argv[])
   /*set_debug_level("ERROR");*/
   /*set_debug_level("ERROR | WARNING | TRACE");*/
   /*  set_debug_level("ERROR | WARNING | MEMDBG");*/
-  /*set_debug_level("ALLDBG");*/
   memset(&status, 0, sizeof(status));
   lal_errhandler = LAL_ERR_ABRT;
   lal_errhandler = LAL_ERR_DFLT;
@@ -2128,11 +2127,26 @@ LALappsDoTSeriesSearch(LALStatus         *status,
       tfInputs.wlengthF = params.windowsize;
       tfInputs.wlengthT = params.windowsize;
 
-      LAL_CALL(LALCreateTimeFreqParam(status,&autoparams,&tfInputs),
-	       status);
-
-      LAL_CALL(LALCreateTimeFreqRep(status,&tfmap,&tfInputs),
-	       status);
+      errCode=LAL_CALL(LALCreateTimeFreqParam(status,&autoparams,&tfInputs),
+		       status);
+      if (errCode != 0)
+	{
+	  fprintf(stderr,"Error calling LALCreateTimeFreqParam\n");
+	  fprintf(stderr,"Error Code: %s\n",status->statusDescription);
+	  fprintf(stderr,"Function  : %s\n",status->function);
+	  fprintf(stderr,"File      : %s\n",status->file);
+	  fprintf(stderr,"Line      : %i\n",status->line);
+	}
+      errCode=LAL_CALL(LALCreateTimeFreqRep(status,&tfmap,&tfInputs),
+		       status);
+      if (errCode != 0)
+	{
+	  fprintf(stderr,"Error calling LALCreateTimeFreqRep\n");
+	  fprintf(stderr,"Error Code: %s\n",status->statusDescription);
+	  fprintf(stderr,"Function  : %s\n",status->function);
+	  fprintf(stderr,"File      : %s\n",status->file);
+	  fprintf(stderr,"Line      : %i\n",status->line);
+	}
       /*
        * There is an issue with the overlapping of fft windows used to
        * construct the TFR.  Example:

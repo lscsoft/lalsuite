@@ -784,8 +784,8 @@ ConnectLinePoints(LALStatus *status,
 	  /* check whether the pixel is a multiple response*/
 	  nextIndex=label[nextRow][nextCol]-1;
 	  differ=(REAL4)fabs((double)linePoints[index].angle - linePoints[nextIndex].angle);
-	  if(differ>LAL_PI/2.0)
-	    differ=LAL_PI - differ;
+	  /*if(differ>LAL_PI/2.0)
+	    differ=LAL_PI - differ;*/
 	  if(differ<MAX_ANGLE_DIFFERENCE){	
 	    linePoints[nextIndex].flag=0;
 	    /* check if one of the rejected points is the original starting point and if it is not then we
@@ -817,9 +817,11 @@ ConnectLinePoints(LALStatus *status,
 	   * The if(differ>LAL_PI/2.0) IF I think allows for
 	   * connection of zig-zaggy type triggers.  I think this if
 	   * should be removed permanently Lines 787,821
+	   * Comments cause lines to be shortened slight but they
+	   * appear more continuous in appearance.
 	   */
-	  if(differ>LAL_PI/2.0)
-	    differ=LAL_PI - differ;
+	  /*	  if(differ>LAL_PI/2.0)
+		  differ=LAL_PI - differ;*/
 	  if(differ>MAX_ANGLE_DIFFERENCE){
 	    lineFlag[i]=0;
 	  }
