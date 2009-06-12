@@ -32,8 +32,10 @@ extern "C" {
 
 /* frame channels */
 #define ONLINE_STRAIN_CHANNEL "DMT-STRAIN"
+#define ONLINE_VIRGO_STRAIN_CHANNEL "h_16384Hz"
 #define ONLINE_STATE_VECTOR "DMT-STATE_VECTOR"
 #define ONLINE_DQ_VECTOR "DMT-DATA_QUALITY_VECTOR"
+#define ONLINE_VIRGO_DQ_VECTOR "Hrec_Veto_dataQuality"
 
 /* frame metadata */
 #define ONLINE_FRAME_DURATION 16

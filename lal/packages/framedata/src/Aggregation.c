@@ -88,8 +88,8 @@ CHAR *XLALAggregationFrameType(CHAR *ifo)
   }
   else if (strncmp(ifo, "V1", LIGOMETA_IFO_MAX) == 0)
   {
-    /* FIXME virgo - currently undefined */
-    XLAL_ERROR_NULL(func, XLAL_EINVAL);
+    /* virgo */
+    snprintf(type, LIGOMETA_TYPE_MAX, "%s_DMT_HREC", ifo);
   }
   else if ((strncmp(ifo, "H1", LIGOMETA_IFO_MAX) == 0) || \
       (strncmp(ifo, "H2", LIGOMETA_IFO_MAX) == 0) || \
@@ -552,9 +552,28 @@ REAL8TimeSeries *XLALAggregationStrainData(CHAR *ifo,
     XLAL_ERROR_NULL(func, XLAL_EINVAL);
   }
 
-  /* get strain data time series */
-  snprintf(channel, LIGOMETA_CHANNEL_MAX, "%s:%s", ifo, \
+  /* get channel name */
+  if (strncmp(ifo, "V1", LIGOMETA_IFO_MAX) == 0)
+  {
+    /* virgo */
+    snprintf(channel, LIGOMETA_CHANNEL_MAX, "%s:%s", ifo, \
+      ONLINE_VIRGO_STRAIN_CHANNEL);
+  }
+  else if ((strncmp(ifo, "H1", LIGOMETA_IFO_MAX) == 0) || \
+      (strncmp(ifo, "H2", LIGOMETA_IFO_MAX) == 0) || \
+      (strncmp(ifo, "L1", LIGOMETA_IFO_MAX) == 0))
+  {
+    /* ligo */
+    snprintf(channel, LIGOMETA_CHANNEL_MAX, "%s:%s", ifo, \
       ONLINE_STRAIN_CHANNEL);
+  }
+  else
+  {
+    /* unsupported ifo */
+    XLAL_ERROR_NULL(func, XLAL_EINVAL);
+  }
+
+  /* get strain data time series */
   series = XLALFrReadREAL8TimeSeries(stream, channel, start, duration, 0);
   if (series == NULL)
   {
@@ -632,9 +651,28 @@ INT4TimeSeries *XLALAggregationDQVector(CHAR *ifo,
     XLAL_ERROR_NULL(func, XLAL_EINVAL);
   }
 
-  /* get data quality vector time series */
-  snprintf(channel, LIGOMETA_CHANNEL_MAX, "%s:%s", ifo, \
+    /* get channel name */
+  if (strncmp(ifo, "V1", LIGOMETA_IFO_MAX) == 0)
+  {
+    /* virgo */
+    snprintf(channel, LIGOMETA_CHANNEL_MAX, "%s:%s", ifo, \
+      ONLINE_VIRGO_DQ_VECTOR);
+  }
+  else if ((strncmp(ifo, "H1", LIGOMETA_IFO_MAX) == 0) || \
+      (strncmp(ifo, "H2", LIGOMETA_IFO_MAX) == 0) || \
+      (strncmp(ifo, "L1", LIGOMETA_IFO_MAX) == 0))
+  {
+    /* ligo */
+    snprintf(channel, LIGOMETA_CHANNEL_MAX, "%s:%s", ifo, \
       ONLINE_DQ_VECTOR);
+  }
+  else
+  {
+    /* unsupported ifo */
+    XLAL_ERROR_NULL(func, XLAL_EINVAL);
+  }
+
+  /* get data quality vector time series */
   series = XLALFrReadINT4TimeSeries(stream, channel, start, duration, 0);
   if (series == NULL)
   {
@@ -713,9 +751,22 @@ INT4TimeSeries *XLALAggregationStateVector(CHAR *ifo,
     XLAL_ERROR_NULL(func, XLAL_EINVAL);
   }
 
-  /* get state vector time series */
-  snprintf(channel, LIGOMETA_CHANNEL_MAX, "%s:%s", ifo, \
+  /* get channel name */
+  if ((strncmp(ifo, "H1", LIGOMETA_IFO_MAX) == 0) || \
+      (strncmp(ifo, "H2", LIGOMETA_IFO_MAX) == 0) || \
+      (strncmp(ifo, "L1", LIGOMETA_IFO_MAX) == 0))
+  {
+    /* ligo */
+    snprintf(channel, LIGOMETA_CHANNEL_MAX, "%s:%s", ifo, \
       ONLINE_STATE_VECTOR);
+  }
+  else
+  {
+    /* unsupported ifo */
+    XLAL_ERROR_NULL(func, XLAL_EINVAL);
+  }
+
+  /* get state vector time series */
   state = XLALFrReadREAL4TimeSeries(stream, channel, start, duration, 0);
   if (state == NULL)
   {
