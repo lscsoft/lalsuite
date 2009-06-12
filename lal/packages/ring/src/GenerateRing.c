@@ -87,9 +87,9 @@ LALGenerateRing(
     )
 
 { /* </lalVerbatim> */
-  UINT4 n, i;      /* number of and index over samples */
+  UINT4 i;      /* number of and index over samples */
   REAL8 t, dt;         /* time, interval */
-  REAL8 t0, gtime ;    /* central time, decay time */
+  REAL8 gtime ;    /* central time, decay time */
   REAL8 f0, quality;   /* frequency and quality factor */
   REAL8 twopif0;       /* 2*pi*f0 */
   REAL4 h0;            /* peak strain for ringdown */
@@ -98,15 +98,18 @@ LALGenerateRing(
   REAL8 init_phase;    /*initial phase of injection */
   REAL4 *aData;        /* pointer to frequency data */
   LIGOTimeGPS startTime;  /* start time of injection */
+  UINT4 nPointInj; /* number of data points in a block */
+#if 0
+  UINT4 n;
+  REAL8 t0;
   REAL4TimeSeries signalvec; /* start time of block that injection is injected into */
   LALTimeInterval  interval;
-  UINT4 nPointInj; /* number of data points in a block */
   INT8 geoc_tns;       /* geocentric_start_time of the injection in ns */
   INT8 block_tns;      /* start time of block in ns */
   REAL8 deltaTns;
   INT8 inj_diff;       /* time between start of segment and injection */
   LALTimeInterval dummyInterval;
-
+#endif
 
   INITSTATUS( stat, "LALGenerateRing", GENERATERINGC );
   ATTATCHSTATUSPTR( stat );
