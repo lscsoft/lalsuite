@@ -73,6 +73,8 @@ LALSnprintf()
 #include <lal/RealFFT.h>
 #include <lal/TimeFreqFFT.h>
 
+/* macro to "use" unused function parameters */
+#define UNUSED(expr) do { (void)(expr); } while (0)
 
 NRCSID( GENERATERINGC, "$Id$" );
 
@@ -110,6 +112,9 @@ LALGenerateRing(
   INT8 inj_diff;       /* time between start of segment and injection */
   LALTimeInterval dummyInterval;
 #endif
+
+  /* series is unused in this function */
+  UNUSED(series);
 
   INITSTATUS( stat, "LALGenerateRing", GENERATERINGC );
   ATTATCHSTATUSPTR( stat );
