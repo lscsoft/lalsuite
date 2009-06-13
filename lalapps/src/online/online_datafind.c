@@ -79,6 +79,9 @@ static void parse_options(INT4 argc, CHAR *argv[])
       {"output", required_argument, 0, 'g'},
       {"observatory", required_argument, 0, 'h'},
       {"type", required_argument, 0, 'i'},
+      {"url-type", required_argument, 0, 'j'},
+      {"server", required_argument, 0, 'k'},
+      {"lal-cache", no_argument, 0, 'l'},
       {0, 0, 0, 0}
     };
 
@@ -87,8 +90,8 @@ static void parse_options(INT4 argc, CHAR *argv[])
     size_t optarg_len;
 
     /* parse options */
-    c = getopt_long_only(argc, argv, "ab:c:d:e:f:g:h:i:", long_options, \
-        &option_index);
+    c = getopt_long_only(argc, argv, "ab:c:d:e:f:g:h:i:j:k:l", \
+        long_options, &option_index);
 
     if (c == -1)
     {
@@ -193,6 +196,13 @@ static void parse_options(INT4 argc, CHAR *argv[])
         optarg_len = strlen(optarg) + 1;
         frame_type = (CHAR *)calloc(optarg_len, sizeof(CHAR));
         memcpy(frame_type, optarg, optarg_len);
+        break;
+
+      case 'j':
+      case 'k':
+      case 'l':
+        /* url type, server, and lal-cache have no effect, they are just
+         * provided for compatibility with ligo_data_find */
         break;
 
       case '?':
