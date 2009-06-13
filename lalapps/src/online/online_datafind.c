@@ -368,6 +368,8 @@ INT4 main(INT4 argc, CHAR *argv[])
     /* create name for cache file */
     snprintf(output_filename, FILENAME_MAX, "%c-%s-%d-%d.cache", \
         ifo[0], type, gps_start.gpsSeconds, duration);
+    fprintf(stdout, "output filename not specified, using: %s\n", \
+        output_filename);
   }
 
   /* save cache */
