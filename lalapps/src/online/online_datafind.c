@@ -40,6 +40,8 @@
 
 #include <lalapps.h>
 
+extern double round ( double );
+
 /* flags for getopt_long */
 extern int vrbflg;
 
