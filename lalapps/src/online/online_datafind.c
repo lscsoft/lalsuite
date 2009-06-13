@@ -1,5 +1,5 @@
 /*
- * online_cache.c - online frame cache generator
+ * online_datafind.c - online frame cache generator
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -106,7 +106,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
       case 'a':
         /* help */
-        fprintf(stdout, "Usage: lalapps_online_cache [options]\n");
+        fprintf(stdout, "Usage: lalapps_online_datafind [options]\n");
         fprintf(stdout, " --help                 print this message\n");
         fprintf(stdout, " --verbose              run in verbose mode\n");
         fprintf(stdout, " --debug-level N        set lalDebugLevel\n");
