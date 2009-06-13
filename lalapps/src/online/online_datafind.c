@@ -48,6 +48,7 @@ CHAR *ifo = NULL;
 LIGOTimeGPS gps_start = {0, 0};
 LIGOTimeGPS gps_end = {0, 0};
 INT4 timeout = 0;
+CHAR *output_filename = NULL;
 
 /*
  * helper functions
@@ -71,6 +72,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
       {"gps-start-time", required_argument, 0, 'd'},
       {"gps-end-time", required_argument, 0, 'e'},
       {"timeout", required_argument, 0, 'f'},
+      {"output", required_argument, 0, 'g'},
       {0, 0, 0, 0}
     };
 
@@ -79,7 +81,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
     size_t optarg_len;
 
     /* parse options */
-    c = getopt_long_only(argc, argv, "ab:c:d:e:f:", long_options, \
+    c = getopt_long_only(argc, argv, "ab:c:d:e:f:g:", long_options, \
         &option_index);
 
     if (c == -1)
@@ -114,6 +116,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
         fprintf(stdout, " --gps-start-time GPS   start of GPS time range\n");
         fprintf(stdout, " --gps-end-time GPS     end of GPS time range\n");
         fprintf(stdout, " --timeout TIME         set timeout\n");
+        fprintf(stdout, " --output FILE          output to FILE\n");
         exit(0);
         break;
 
@@ -162,6 +165,13 @@ static void parse_options(INT4 argc, CHAR *argv[])
               long_options[option_index].name, timeout);
           exit(1);
         }
+
+      case 'g':
+        /* get filename */
+        optarg_len = strlen(optarg) + 1;
+        output_filename = (CHAR *)calloc(optarg_len, sizeof(CHAR));
+        memcpy(output_filename, optarg, optarg_len);
+        break;
 
       case '?':
         exit(1);
@@ -221,7 +231,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   INT4 duration;
   FrCache *cache;
   CHAR *type;
-  CHAR filename[FILENAME_MAX];
   INT4 wait_time;
   CHAR *ptimeout;
   INT4 total_wait = 0;
@@ -349,15 +358,22 @@ INT4 main(INT4 argc, CHAR *argv[])
     exit(xlalErrno);
   }
 
-  /* create name for cache file */
-  snprintf(filename, FILENAME_MAX, "%c-%s-%d-%d.cache", ifo[0], \
-      type, gps_start.gpsSeconds, duration);
+  if (output_filename == NULL)
+  {
+    /* allocate memory for filename */
+    output_filename = (CHAR *)calloc(FILENAME_MAX, sizeof(CHAR));
+
+    /* create name for cache file */
+    snprintf(output_filename, FILENAME_MAX, "%c-%s-%d-%d.cache", \
+        ifo[0], type, gps_start.gpsSeconds, duration);
+  }
 
   /* save cache */
-  XLALFrExportCache(cache, filename);
+  XLALFrExportCache(cache, output_filename);
 
   /* free memory */
   free(ifo);
+  free(output_filename);
 
   /* check for memory leaks */
   LALCheckMemoryLeaks();
