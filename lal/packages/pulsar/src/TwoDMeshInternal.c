@@ -452,14 +452,14 @@ LALTwoDMesh( LALStatus          *stat,
     column.domain[0] = column.domain[1];
     column.leftRange[0] = column.rightRange[0];
     column.leftRange[1] = column.rightRange[1];
-    if (lalDebugLevel >= 3) 
+    if (lalDebugLevel >= 3)
       {
 	LALPrintError( "\r%16u%16u", params->nOut, columnNo++ );
       }
   }
 
   /* We're done.  Update the *tail pointer and exit. */
-  if (lalDebugLevel >= 3) 
+  if (lalDebugLevel >= 3)
     {
       LALPrintError( "\n" );
     }
@@ -544,7 +544,7 @@ LALTwoDColumn( LALStatus            *stat,
     }
     memset( here->next, 0, sizeof(TwoDMeshNode) );
     params->nOut++;
-    if (lalDebugLevel >= 3) 
+    if (lalDebugLevel >= 3)
       {
 	LALPrintError( "\r%16u", params->nOut );
       }
@@ -588,7 +588,7 @@ LALTwoDColumn( LALStatus            *stat,
       }
       memset( here->next, 0, sizeof(TwoDMeshNode) );
       params->nOut++;
-      if (lalDebugLevel >= 3) 
+      if (lalDebugLevel >= 3)
 	{
 	  LALPrintError( "\r%16u", params->nOut );
 	}

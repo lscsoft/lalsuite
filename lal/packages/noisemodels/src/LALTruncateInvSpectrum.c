@@ -23,13 +23,14 @@
 
 NRCSID (LALTRUNCATEINVSPECTRUMC, "$Id$");
 
-void LALTruncateInvSpectrum( 
+void LALTruncateInvSpectrum(
         LALStatus                *status,
         REAL8Vector              *inputVec,
-        InvSpecTruncationParams    *params 
+        InvSpecTruncationParams    *params
         )
 {
-    INT4              i, n, trunc_n;
+    INT4              n, trunc_n;
+    UINT4             i;
     REAL8             df;
     COMPLEX8Vector    *Hvec = NULL;
     REAL4Vector       *hvec = NULL;
@@ -77,12 +78,12 @@ void LALTruncateInvSpectrum(
        as it was before (input) --- */
     if (params->ifDebug) {
         FILE  *out=NULL;
-        REAL8 dt;
+        /*REAL8 dt;*/
         /* We should print the frequency domain sqrt (inv spectrum) */
         out = fopen("FB_sqrt_invSpectrum_before.f","w");
         for (i=0; i<Hvec->length; i++){
             fprintf (out, "%e %e\n",
-                    params->df*i, 
+                    params->df*i,
                     Hvec->data[i].re);
         }
         fclose(out);
@@ -108,13 +109,13 @@ void LALTruncateInvSpectrum(
         out = fopen("FB_sqrt_invSpectrum.t","w");
         for (i=0; i<hvec->length; i++){
             fprintf (out, "%e %e\n",
-                    dt*i, 
+                    dt*i,
                     hvec->data[i]);
         }
         fclose(out);
     }
 
-    /* truncate in time domain 
+    /* truncate in time domain
      */
     memset( w + trunc_n/2, 0, (hvec->length - trunc_n) * sizeof(REAL4) );
 
@@ -128,7 +129,7 @@ void LALTruncateInvSpectrum(
         out = fopen("FB_sqrt_invSpectrum_pad.t","w");
         for (i=0; i<hvec->length; i++){
             fprintf (out, "%e %e\n",
-                    dt*i, 
+                    dt*i,
                     hvec->data[i]);
         }
         fclose(out);
@@ -157,7 +158,7 @@ void LALTruncateInvSpectrum(
         out = fopen("FB_sqrt_invSpectrum_after.f","w");
         for (i=0; i<Hvec->length; i++){
             fprintf (out, "%e %e\n",
-                    params->df*i, 
+                    params->df*i,
                     sqrt(Hvec->data[i].re));
         }
         fclose(out);
@@ -167,7 +168,7 @@ void LALTruncateInvSpectrum(
      *
      */
     for (i=0; i<Hvec->length; i++){
-        if (Hvec->data[i].re > 0.0) 
+        if (Hvec->data[i].re > 0.0)
               inputVec->data[i] = (REAL8) (1./Hvec->data[i].re);
     }
 
@@ -179,7 +180,7 @@ void LALTruncateInvSpectrum(
     LALSDestroyVector (status->statusPtr, &hvec);
     CHECKSTATUSPTR( status );
 
-    /* normal exit 
+    /* normal exit
      */
     DETATCHSTATUSPTR( status );
     RETURN( status );

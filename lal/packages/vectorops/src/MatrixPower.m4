@@ -41,7 +41,7 @@ The result of this is:
 etc.
 
 \subsection*{Uses}
- 
+
 \begin{itemize}
 \item \texttt{LALDCreateVector}
 \end{itemize}

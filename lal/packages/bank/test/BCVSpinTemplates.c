@@ -66,7 +66,7 @@ main(int argc, char **argv)
 {
   /* top-level status structure */
  UINT4   numPSDpts=8193;
-  static LALStatus status;     
+  static LALStatus status;
   static InspiralCoarseBankIn coarseIn;
   void *noisemodel = LALLIGOIPsd;
   double beta;
@@ -79,7 +79,7 @@ main(int argc, char **argv)
 
   fpr = fopen("BCVSpinTemplates.out", "w");
   nlist1 = 0;
-  coarseIn.HighGM = 6.; 
+  coarseIn.HighGM = 6.;
   coarseIn.LowGM = -4.;
   coarseIn.fLower = 40.L;
   coarseIn.fUpper = 400.L;
@@ -91,7 +91,7 @@ main(int argc, char **argv)
   coarseIn.mMin = 3.0;
   coarseIn.mMax = 20.0;
   coarseIn.MMax = coarseIn.mMax * 2.;
-  coarseIn.massRange = MinMaxComponentMass; 
+  coarseIn.massRange = MinMaxComponentMass;
   /* coarseIn.massRange = MinComponentMassMaxTotalMass;*/
   /* minimum value of eta */
   coarseIn.etamin = coarseIn.mMin * ( coarseIn.MMax - coarseIn.mMin) / pow(coarseIn.MMax,2.);
@@ -118,8 +118,8 @@ main(int argc, char **argv)
 
   coarseIn.approximant = BCVSpin;
   coarseIn.space       = Psi0Psi3;
-  
-  
+
+
   LALInspiralBCVSpinRandomBank (&status, &tiles, &nlist1, &coarseIn);
 /*
   LALInspiralBankGeneration(&status, &coarseIn, &tiles, &nlist1);

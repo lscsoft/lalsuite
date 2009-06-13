@@ -164,7 +164,7 @@ int XLALStrToGPS(LIGOTimeGPS *t, const char *nptr, char **endptr)
 			break;
 		}
 		break;
-	
+
 	case 16:
 		for(len = 0; 1; len++) {
 			if(isxdigit((pconv.cs)[len]))

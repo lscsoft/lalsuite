@@ -70,7 +70,7 @@ void F2 (
         TYPE			*result,
         VTYPE		*data
 )
-{        
+{
 	/*  Variable Declarations  */
         INT4    iterator;
         INT4    length;

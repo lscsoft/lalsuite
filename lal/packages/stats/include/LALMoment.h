@@ -95,7 +95,7 @@ NRCSID( LALMOMENTH, "$Id$");
 \newpage\input{LALMomentC}
 </lalLaTeX>  */
 
-void LALSMoment 
+void LALSMoment
 (
 	LALStatus		*status,
 	REAL4			*result,
@@ -104,7 +104,7 @@ void LALSMoment
 );
 
 
-void LALDMoment 
+void LALDMoment
 (
 	LALStatus		*status,
 	REAL8			*result,

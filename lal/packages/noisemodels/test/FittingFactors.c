@@ -34,9 +34,9 @@ RCSID(  "$Id$");
 
 InspiralCoarseBankIn          bankIn;        /* bank input parameters */
 SnglInspiralTable            *tmplt  = NULL; /* linked list of templates */
-CHAR  			 ifo[3];	     /* two char ifo code (need to make it up for LISA) */			
+CHAR  			 ifo[3];	     /* two char ifo code (need to make it up for LISA) */
 
-int 
+int
 main (INT4 argc, CHAR **argv)
 {
 
@@ -45,7 +45,7 @@ main (INT4 argc, CHAR **argv)
  /* --- Variables ---*/
   INT4 	        i;
   INT4          j;
-  INT4	 	ntrials = 0;    /* number of trial (signals) */	
+  INT4	 	ntrials = 0;    /* number of trial (signals) */
   INT4		length = 0; 	/* duration of the template/signal */
   INT4		psdSize = 0;  	/*size of PSD vector */
   REAL4         match = 0;      /* overlap */
@@ -66,7 +66,7 @@ main (INT4 argc, CHAR **argv)
   InspiralTemplateNode	        *tmpltHead    = NULL;
   InspiralTemplate              bestTemplate;
   REAL4				normT;
- 
+
  /* -- others --*/
   RealFFTPlan 		*fwdp = NULL;
   RealFFTPlan 		*revp = NULL;
@@ -78,14 +78,14 @@ main (INT4 argc, CHAR **argv)
 
 
 /* call the argument parser and check function */
-  
+
   arg_parse_check( argc, argv);
 
 /* Find the maximum length of the template */
 
  UINT4 checkLength = 0;
  GetMaximumTemplateSize(&status, &bankIn , &checkLength);
- 
+
 
 /* Compute noise psd */
 
@@ -97,14 +97,14 @@ main (INT4 argc, CHAR **argv)
  /** add option to read psd from the ascii file */
  GetNoisePSD(&status, bankIn.shf, ifo, df);
 
- 
+
 /***     Generate Bank    ******/
 
  LALInspiralBankGenreation( &status, bankIn, &tmplt, &numTmplts);
 
  if(numTmplts == 0, .....);
 
- 
+
 /*** Now we have read or generate signal ***/
 
 /*** !!! Create structure *signal*  and allocate memories  ***/
@@ -125,16 +125,16 @@ if (readSignal){
 LALCreateForwardRealFFTPlan(&status, &fwdp, signal.length, 0);
 LALCreateReverseRealFFTPlan(&status, &revp, signal.length, 0);
 
- 
+
 /**** Finding fitting factors ****/
 
 /*  Create loop over signals */
 
 for (i=0; i<ntrials; i++){
 
- /** Allocate memory for fSignal */ 
+ /** Allocate memory for fSignal */
  CreateFSignal(&status, &fwdp, signal, &fSignal);
-   
+
  fitfac = 0.0;
  /** loop over templates */
  for (j=0; j<numTmplts; j++){
@@ -144,14 +144,14 @@ for (i=0; i<ntrials; i++){
    CreateFTemplate(&status, &fwdp, bankCurrent, &fTemplate);
 
    ComputeOverlap(&status, &revp, &fSignal, &fTemplate, bankIn.shf, &match);
-   
+
    if (fitfac < match){
        /* record template parameters into 'bestTemplate' */
        fitfac = match;
    }
  }
  if (fifac > 0.0 ){
-   
+
    /* record: best template, signal index, fitting factor */
 
  }
@@ -166,7 +166,7 @@ for (i=0; i<ntrials; i++){
   LALDestroyRealFFTPlan(&status,&fwdp);
   LALDestroyRealFFTPlan(&status,&revp);
 
- 
+
 
 
   return(0);
@@ -298,7 +298,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     int option_index = 0;
     size_t optarg_len;
 
-    c = getopt_long_only( argc, argv, 
+    c = getopt_long_only( argc, argv,
           "-A:B:C:D:E:F:G:H:I:J:K:L:M:N:O:P:Q:R:S:V"
 	  "a:b:c:d:f:g:h:j:k:l:m:n:o:p:q:r:s:t:",
 	  long_options, &options_index);
@@ -334,7 +334,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 
         this_proc_param = this_proc_param->next = (ProcessParamsTable *)
           calloc( 1, sizeof(ProcessParamsTable) );
-        LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
+        LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s",
             PROGRAM_NAME );
         LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "-userTag" );
         LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
@@ -366,7 +366,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "duration must be positive: "
-              "(%f specified)\n", 
+              "(%f specified)\n",
               long_options[option_index].name, duration );
           exit( 1 );
         }
@@ -386,7 +386,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "rate must be positive: "
-              "(%f specified)\n", 
+              "(%f specified)\n",
               long_options[option_index].name, sampleRate );
           exit( 1 );
         }
@@ -400,7 +400,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 			   "(%d specified)]\n",
 		long_options[option_index].name, numInjections);
 	   exit(1);
-	}	
+	}
 	ADD_PROCESS_PARAM("int", "%d", numInjections);
 	break;
       case 'd':
@@ -413,7 +413,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "mass1 must be positive: "
-              "(%f specified)\n", 
+              "(%f specified)\n",
               long_options[option_index].name, injMass1 );
           exit( 1 );
         }
@@ -425,7 +425,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "mass2 must be positive: "
-              "(%f specified)\n", 
+              "(%f specified)\n",
               long_options[option_index].name, injMass2 );
           exit( 1 );
         }
@@ -437,7 +437,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "tau0 must be positive: "
-              "(%f specified)\n", 
+              "(%f specified)\n",
               long_options[option_index].name, injTau0 );
           exit( 1 );
         }
@@ -449,7 +449,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "tau3 must be positive: "
-              "(%f specified)\n", 
+              "(%f specified)\n",
               long_options[option_index].name, injTau3 );
           exit( 1 );
         }
@@ -461,7 +461,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "psi0 must be positive: "
-              "(%f specified)\n", 
+              "(%f specified)\n",
               long_options[option_index].name, injPsi0 );
           exit( 1 );
         }
@@ -524,14 +524,14 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "unknown model specified: "
-              "%s (use --help for model list)\n", 
+              "%s (use --help for model list)\n",
               long_options[option_index].name, optarg );
           exit( 1 );
         }
         haveSignalApprox = 1;
         ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
-    case 'K':	
+    case 'K':
         if ( ! strcmp( "onePointFivePN", optarg ) )
         {
           signalOrder = onePointFivePN;
@@ -555,7 +555,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 	else{
 	  fprintf( stderr, "invalid argument to --%s:\n"
               "unknown order specified: "
-              "%s see help for possible order\n", 
+              "%s see help for possible order\n",
               long_options[option_index].name, optarg );
           exit( 1 );
         }
@@ -563,103 +563,103 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         haveSignalOrder = 1;
         break;
     case 'l':
-        signalMinMass = atof(optarg); 
+        signalMinMass = atof(optarg);
 	if ( signalMinMass <= 0.0 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "min mass must be positive: "
-              "(%f specified)\n", 
+              "(%f specified)\n",
               long_options[option_index].name, signalMinMass );
           exit( 1 );
         }
         ADD_PROCESS_PARAM( "float", "%s", optarg );
         break;
     case 'L':
-        signalMaxMass = atof(optarg); 
+        signalMaxMass = atof(optarg);
 	if ( signalMaxMass <= 0.0 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "max mass must be positive: "
-              "(%f specified)\n", 
+              "(%f specified)\n",
               long_options[option_index].name, signalMaxMass );
           exit( 1 );
         }
         ADD_PROCESS_PARAM( "float", "%s", optarg );
         break;
     case  'm':
-        signalMaxTotMass = atof(optarg); 
+        signalMaxTotMass = atof(optarg);
 	if ( signalMaxTotMass <= 0.0 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "max total mass must be positive: "
-              "(%f specified)\n", 
+              "(%f specified)\n",
               long_options[option_index].name, signalMaxTotMass );
           exit( 1 );
         }
         ADD_PROCESS_PARAM( "float", "%s", optarg );
         break;
     case 'M':
-        signalMaxSpin = atof(optarg); 
+        signalMaxSpin = atof(optarg);
 	if ( signalMaxSpin <= 0.0 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "max spin must be positive: "
-              "(%f specified)\n", 
+              "(%f specified)\n",
               long_options[option_index].name, signalMaxSpin );
           exit( 1 );
         }
         ADD_PROCESS_PARAM( "float", "%s", optarg );
         break;
     case 'n':
-        signalMinSpin = atof(optarg); 
+        signalMinSpin = atof(optarg);
 	if ( signalMinSpin <= 0.0 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "min spin must be positive: "
-              "(%f specified)\n", 
+              "(%f specified)\n",
               long_options[option_index].name, signalMinSpin );
           exit( 1 );
         }
         ADD_PROCESS_PARAM( "float", "%s", optarg );
         break;
     case 'o':
-        signalMaxPsi0 =  atof(optarg); 
+        signalMaxPsi0 =  atof(optarg);
 	if ( signalMaxPsi0 < 0.0 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "Psi0 of injections must be positive: "
-              "(%f specified)\n", 
+              "(%f specified)\n",
               long_options[option_index].name, signalMaxPsi0 );
           exit( 1 );
         }
         ADD_PROCESS_PARAM( "float", "%s", optarg );
         break;
     case 'N':
-        signalMinPsi0 =  atof(optarg); 
+        signalMinPsi0 =  atof(optarg);
 	if ( signalMinPsi0 < 0.0 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "Psi0 of injections must be positive: "
-              "(%f specified)\n", 
+              "(%f specified)\n",
               long_options[option_index].name, signalMinPsi0 );
           exit( 1 );
         }
         ADD_PROCESS_PARAM( "float", "%s", optarg );
         break;
     case 'p':
-        signalMaxPsi3 =  atof(optarg); 
+        signalMaxPsi3 =  atof(optarg);
         ADD_PROCESS_PARAM( "float", "%s", optarg );
         break;
     case 'O':
-        signalMinPsi3 =  atof(optarg); 
+        signalMinPsi3 =  atof(optarg);
         ADD_PROCESS_PARAM( "float", "%s", optarg );
         break;
     case 'P':
-        signalMinBeta =  atof(optarg); 
+        signalMinBeta =  atof(optarg);
         ADD_PROCESS_PARAM( "float", "%s", optarg );
         break;
     case 'q':
-        signalMaxBeta =  atof(optarg); 
+        signalMaxBeta =  atof(optarg);
         ADD_PROCESS_PARAM( "float", "%s", optarg );
         break;
     case 'Q':
@@ -731,14 +731,14 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "unknown template model specified: "
-              "%s (use --help for model list)\n", 
+              "%s (use --help for model list)\n",
               long_options[option_index].name, optarg );
           exit( 1 );
         }
         haveTmpltApprox = 1;
         ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
-    case 's':	
+    case 's':
         if ( ! strcmp( "onePointFivePN", optarg ) )
         {
           tmpltOrder = onePointFivePN;
@@ -762,7 +762,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 	else{
 	  fprintf( stderr, "invalid argument to --%s:\n"
               "unknown order specified: "
-              "%s see help for possible order\n", 
+              "%s see help for possible order\n",
               long_options[option_index].name, optarg );
           exit( 1 );
         }
@@ -794,7 +794,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         ADD_PROCESS_PARAM( "float", "%e", tmpltfFinal );
         break;
     case 'V':
-        fprintf( stdout, "Bank eficiency code\n" 
+        fprintf( stdout, "Bank eficiency code\n"
             "CVS Version: " CVS_ID_STRING "\n"
             "CVS Tag: " CVS_NAME_STRING "\n" );
         exit( 0 );
@@ -823,35 +823,35 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 
   if ( alphConst == 0 )
   {
-    LALSnprintf( procparams.processParamsTable->program, 
+    LALSnprintf( procparams.processParamsTable->program,
         LIGOMETA_PROGRAM_MAX, "%s", PROGRAM_NAME );
     LALSnprintf( procparams.processParamsTable->param,
         LIGOMETA_PARAM_MAX, "--disable-alpha-constraint" );
-    LALSnprintf( procparams.processParamsTable->type, 
+    LALSnprintf( procparams.processParamsTable->type,
         LIGOMETA_TYPE_MAX, "string" );
-    LALSnprintf( procparams.processParamsTable->value, 
+    LALSnprintf( procparams.processParamsTable->value,
         LIGOMETA_VALUE_MAX, " " );
   }
   if ( faithfulness == 1 )
   {
-    LALSnprintf( procparams.processParamsTable->program, 
+    LALSnprintf( procparams.processParamsTable->program,
         LIGOMETA_PROGRAM_MAX, "%s", PROGRAM_NAME );
     LALSnprintf( procparams.processParamsTable->param,
         LIGOMETA_PARAM_MAX, "--faithfullness" );
-    LALSnprintf( procparams.processParamsTable->type, 
+    LALSnprintf( procparams.processParamsTable->type,
         LIGOMETA_TYPE_MAX, "string" );
-    LALSnprintf( procparams.processParamsTable->value, 
+    LALSnprintf( procparams.processParamsTable->value,
         LIGOMETA_VALUE_MAX, " " );
   }
   if ( fastsim == 1 )
   {
-    LALSnprintf( procparams.processParamsTable->program, 
+    LALSnprintf( procparams.processParamsTable->program,
         LIGOMETA_PROGRAM_MAX, "%s", PROGRAM_NAME );
     LALSnprintf( procparams.processParamsTable->param,
         LIGOMETA_PARAM_MAX, "--fast-simulation" );
-    LALSnprintf( procparams.processParamsTable->type, 
+    LALSnprintf( procparams.processParamsTable->type,
         LIGOMETA_TYPE_MAX, "string" );
-    LALSnprintf( procparams.processParamsTable->value, 
+    LALSnprintf( procparams.processParamsTable->value,
         LIGOMETA_VALUE_MAX, " " );
   }
 
@@ -901,7 +901,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
      exit(1);
   }
 
-  
+
  return 0;
 }
 

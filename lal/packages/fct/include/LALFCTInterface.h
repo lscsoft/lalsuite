@@ -106,7 +106,7 @@ typedef struct tagLALFCTPlan LALFCTPlan;
 /*
   Typedef for phase functions.
   All phase functions must have the signature
-  
+
   REAL4 phi(REAL4)
 */
 typedef REAL4 (*LALFCTPhaseFn)(REAL4);
@@ -133,7 +133,7 @@ LALCreateFCTPlanInput;
 
 /*
   Input structure for LALFCTSetOversamplingFactor
-  
+
 */
 typedef struct
 tagLALFCTSetOversamplingFactorInput
@@ -179,9 +179,9 @@ LALFCTSetDataCubesInput;
 
 /*
   Input structure for LALFCTSetUnits
-  
+
   The actual values at which the phase functions will be evaluated are
-  
+
   phi[i] = phi(offset + delta*i);
 */
 typedef struct
@@ -225,7 +225,7 @@ void LALCreateFCTPlan(LALStatus* const status,
 
 /*
   Destroy the given plan.
-  
+
   All memory associated with the plan is freed and the plan pointer
   is set to 0
 */

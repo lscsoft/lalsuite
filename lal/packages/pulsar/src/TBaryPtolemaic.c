@@ -52,10 +52,10 @@ The constant parameter fields used by these routines are
 \verb@constants->latitude@, and \verb@constants->longitude@.
 
 Note that \verb@*variables@ must have a length of at least 3, and can
-be longer, but values beyond the third are ignored.  
-\verb@*dtBary@ must be at least of length 1, and the number of derivatives 
-computed is determined by \verb@*dtBary->length-1@. 
-All elements beyond the fourth will be set to zero. 
+be longer, but values beyond the third are ignored.
+\verb@*dtBary@ must be at least of length 1, and the number of derivatives
+computed is determined by \verb@*dtBary->length-1@.
+All elements beyond the fourth will be set to zero.
 
 \subsubsection*{Algorithm}
 
@@ -272,7 +272,7 @@ LALDTBaryPtolemaic( LALStatus             *stat,
   ASSERT(variables,stat,PULSARTIMESH_ENUL,PULSARTIMESH_MSGENUL);
   ASSERT(variables->data,stat,PULSARTIMESH_ENUL,PULSARTIMESH_MSGENUL);
   ASSERT(constants,stat,PULSARTIMESH_ENUL,PULSARTIMESH_MSGENUL);
-  
+
   /* Make sure array sizes are consistent. */
   ASSERT( dtBary->length >= 1,stat, PULSARTIMESH_EBAD,PULSARTIMESH_MSGEBAD);
   /* need at least (and exactly) [t, alpha, delta] */

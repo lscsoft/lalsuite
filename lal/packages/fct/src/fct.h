@@ -19,12 +19,12 @@
 
 /* -*- mode: c; c-basic-offset: 2; -*- */
 
-/*This is the header file for the official implentation of the 
-  Fast Chirp Transform (FCT). This implementation was written by 
+/*This is the header file for the official implentation of the
+  Fast Chirp Transform (FCT). This implementation was written by
   Fredrick A. Jenet at the Calfornia Institute of Technology.*/
 /*Test Compile line: cc fct.c testcode.c fct_fft.c -lm libfftw.a -o testcode*/
 
-#ifndef FCT_H 
+#ifndef FCT_H
 #define FCT_H
 
 #include <lal/LALRCSID.h>
@@ -43,7 +43,7 @@ NRCSID (FCTH,"$Id$");
 #endif
 
 typedef float    fct_real;
-typedef fct_real (*function_pointer)(fct_real); 
+typedef fct_real (*function_pointer)(fct_real);
 
 /*
   Typedefs for replacing malloc- and free-like functions
@@ -73,22 +73,22 @@ typedef struct data_cube_ {
 /* This structure defines the region
    over which the FCT will be calculated. */
 
-  int               *start_locations;     /*An array with a 
+  int               *start_locations;     /*An array with a
 					    dimensionality equal to
-					    fct_plan.number_of_dimensions -1 
-					    which sets the lower bounds of 
-					    the parameter ranges. */
-				       
-  int               *end_locations;       /*An array with a 
-					    dimensionality equal to
-					    fct_plan.number_of_dimensions -1 
-					    which sets the upper bounds of 
+					    fct_plan.number_of_dimensions -1
+					    which sets the lower bounds of
 					    the parameter ranges. */
 
-  int               *stride;              /*An array with a 
+  int               *end_locations;       /*An array with a
 					    dimensionality equal to
-					    fct_plan.number_of_dimensions -1 
-					    which sets the stride of the 
+					    fct_plan.number_of_dimensions -1
+					    which sets the upper bounds of
+					    the parameter ranges. */
+
+  int               *stride;              /*An array with a
+					    dimensionality equal to
+					    fct_plan.number_of_dimensions -1
+					    which sets the stride of the
 					    parameter ranges. To evalute all points
 					    between start_locations[1] and end_locations[1],
 					    set stride[1] = 1. To evaluate every other point, set
@@ -97,8 +97,8 @@ typedef struct data_cube_ {
   int               *points_per_dimension;/*The number of data points per dimension taking
 					    the stride parameter into account.*/
 
-  unsigned long     total_length;         /*The total length in bytes of the output when the 
-					    FCT is calculated in the region defined 
+  unsigned long     total_length;         /*The total length in bytes of the output when the
+					    FCT is calculated in the region defined
 					    by this data_cube.*/
 
   /*   unsigned long     kernal_length;        The length of the kernal in bytes for this
@@ -108,11 +108,11 @@ typedef struct data_cube_ {
 					    bytes for this data_cube*/
 
   /*   fct_real          *kernal;              A parameter dependent
-					    set of internally calculated 
+					    set of internally calculated
 					    complex numbers. It is calculated
 					    using the phase functions
 					    supplied by the user.*/
-  
+
   fct_real          *mask;                /*A parameter dependent mask
 					    to be applied to the data.
 					    (Not implemented yet)*/
@@ -126,37 +126,37 @@ typedef struct data_cube_ {
 } data_cube;
 
 
-typedef struct fct_plan_ 
-{   
-/*This structure holds the necessary user supplied information 
+typedef struct fct_plan_
+{
+/*This structure holds the necessary user supplied information
   needed in order to calculate the FCT*/
 
 
   int                data_length;              /*Number of complex samples in the
-						 input data set. Currently, this must 
+						 input data set. Currently, this must
 						 be a power of 2.*/
 
 
-  int                number_of_dimensions;     /*Total number of FCT dimensions or 
+  int                number_of_dimensions;     /*Total number of FCT dimensions or
 						 conjugate parameters.*/
 
 
   int                dimension_0_stride;       /*Set the stride of the dimension 0
-						 parameter range. Currently, this number 
+						 parameter range. Currently, this number
 						 must be a power of 2. To calculate all
 						 points, it should be set to 1.*/
 
-  float              offset;                   /*Used in converting from sample number 
+  float              offset;                   /*Used in converting from sample number
 						 to time. If i is the sample number,
-						 the phase functions will be evaluated 
-						 at phase_function(offset + i*dt). The 
+						 the phase functions will be evaluated
+						 at phase_function(offset + i*dt). The
 						 default value is 0. Use fct_set_units() to
 						 change this value.*/
-  
+
   float              dt;                       /*Used in converting from sample number to
 						 time. If i is the sample number,
-						 the phase functions will be evaluated 
-						 at phase_function(offset + i*dt). The 
+						 the phase functions will be evaluated
+						 at phase_function(offset + i*dt). The
 						 default value is 1. Use fct_set_units() to
 						 change this value.*/
 
@@ -168,36 +168,36 @@ typedef struct fct_plan_
                                                   all to 1 for "standard" FCT
 					       */
 
-  data_cube         *parameter_list_start;     /*The start of a linked list of 
+  data_cube         *parameter_list_start;     /*The start of a linked list of
 						 structures defining the region
-						 in FCT parameter space to be 
+						 in FCT parameter space to be
 						 calculated by this FCT.
 						 */
 
   data_cube         *parameter_list_end;       /*A pointer to the last element of
 						 the parameter_list.*/
 
-  fct_fft_plan      *fft_plan;                 /*This structure contains the 
-						 setup information for the 
-						 fft package being used 
+  fct_fft_plan      *fft_plan;                 /*This structure contains the
+						 setup information for the
+						 fft package being used
 						 with the FCT.*/
 
 
   fct_real           *work_space;
 
-  int                max_number_of_segments;   /*This is the maximum number 
+  int                max_number_of_segments;   /*This is the maximum number
 						 of FFT that will be sent
 						 to the FFT engine at any given
 						 time. Setting this number
 						 greater than one can greatly
 						 increase performance.*/
 
-  int                error;                    /*If any errors occur while 
-						 setting up the FCT or while 
-						 processing the data, error 
-						 will be set to a non-zero 
+  int                error;                    /*If any errors occur while
+						 setting up the FCT or while
+						 processing the data, error
+						 will be set to a non-zero
 						 number.*/
-				       
+
 } fct_plan;
 
 
@@ -259,13 +259,13 @@ fct_plan            *fct_init_plan               (int data_length,
 						  int number_of_dimensions,
 						  int dimension_0_stride,
 						  fct_status* const status);
-/*This function partially initializes the FCT. It must be called before 
+/*This function partially initializes the FCT. It must be called before
   any other fct_ function. It generates an fct_plan structure which tells
-  the other fct_ functions how to operate on the data. After calling 
-  fct_init_plan, the user must specify both the phase functions using 
+  the other fct_ functions how to operate on the data. After calling
+  fct_init_plan, the user must specify both the phase functions using
   fct_set_phase_function and the FCT parameters over which to calculate
   the FCT using fct_add_indicies.
-  
+
   The returned value is a pointer to an fct_plan_ structure which is
   allocated on the heap. The pointer is freed by calling fct_destroy_plan */
 
@@ -274,17 +274,17 @@ void                fct_set_units                (fct_plan *plan,
 						  float offset,
 						  float delta,
 						  fct_status* const status);
-/*Sets the conversion from data sample to the argument of the 
-  phase function. For the jth data point, the phase functions are 
-  evaluated at offset + j*delta. The default values are offset = 0 and 
+/*Sets the conversion from data sample to the argument of the
+  phase function. For the jth data point, the phase functions are
+  evaluated at offset + j*delta. The default values are offset = 0 and
   delta = 1.
 */
 
 STORAGE_CLASS
 void                fct_set_max_segments         (fct_plan *plan, int max,
 						  fct_status* const status);
-/*Set the maximum number of FFTs to be sent to 
-  the FFT engine. For certain FFT packages, this 
+/*Set the maximum number of FFTs to be sent to
+  the FFT engine. For certain FFT packages, this
   can increase the efficiency of the FFT calculations.
 */
 
@@ -294,7 +294,7 @@ void                fct_set_phase_function       (fct_plan *plan,
 						  int dimension,
 						  function_pointer func,
 						  fct_status* const status);
-/*This function adds the phase function pointed to by func to the array of 
+/*This function adds the phase function pointed to by func to the array of
   phase functions needed by the FCT. The phase function specified will be used
   to calculate the phase along the dimension speficied by the variable
   dimension. Before adding the function, this routine checks for a valid
@@ -315,8 +315,8 @@ void fct_set_oversampling_factor(fct_plan *plan,
 STORAGE_CLASS
 void                fct_add_data_cube            (fct_plan *const plan,
 						  const int * const start_locations,
-						  const int * const end_locations, 
-						  const int *stride, 
+						  const int * const end_locations,
+						  const int *stride,
 						  const float *const mask,
 						  const int mode,
 						  fct_status* const status);
@@ -324,7 +324,7 @@ void                fct_add_data_cube            (fct_plan *const plan,
 STORAGE_CLASS
 void                fct_remove_data_cube         (fct_plan *plan,
 						  fct_status* const status);
-/*Removes the most recently added member to the 
+/*Removes the most recently added member to the
   data cube list*/
 
 STORAGE_CLASS
@@ -332,8 +332,8 @@ unsigned long       fct_output_data_size         (fct_plan *plan,
 						  fct_status* const status);
 
 STORAGE_CLASS
-void                fct_calculate                (fct_plan *plan, 
-						  const fct_real* const input_data,						  
+void                fct_calculate                (fct_plan *plan,
+						  const fct_real* const input_data,
 						  fct_real* const output_data,
 						  fct_status* const status);
 

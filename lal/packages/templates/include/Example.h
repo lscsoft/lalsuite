@@ -23,7 +23,7 @@
  **** </lalVerbatim> */
 
 /**** <lalLaTeX>
- * 
+ *
  * \section{Header \texttt{Example.h}}
  *
  * %% One sentence briefly defining scope of the header
@@ -32,25 +32,25 @@
  * \begin{verbatim}
  * #include <lal/Example.h>
  * \end{verbatim}
- * 
+ *
  * %% Generic documentation on the header; this is the main place to
  * %% document any stuff not specific to the module
- * 
+ *
  * \subsection*{Error conditions}
  * \input{ExampleHE}
- * 
+ *
  * \subsection*{Structures}
- * 
- * %% Document here any structures defined in the header.  
+ *
+ * %% Document here any structures defined in the header.
  * %% Also include any of them in the index; e.g.:
  * %% \idx[Type]{ExampleOutput}
  * %% \idx[Type]{ExampleInput}
  * %% \idx[Type]{ExampleParams}
- * 
+ *
  * \vfill{\footnotesize\input{ExampleHV}}
  * \newpage\input{ExampleC}
  * \newpage\input{ExampleTestC}
- * 
+ *
  **** </lalLaTeX> */
 
 #ifndef _EXAMPLE_H
@@ -64,7 +64,7 @@ extern "C" {
 #pragma } /** to match the previous brace **/
 #endif
 
-/** DEFINE RCS ID STRING **/  
+/** DEFINE RCS ID STRING **/
 NRCSID( EXAMPLEH, "$Id$" );
 
 /** DEFINE ERROR CODES AND MESSAGES **/
@@ -80,9 +80,9 @@ NRCSID( EXAMPLEH, "$Id$" );
 /**** </lalErrTable> */
 
 /** DEFINE NEW STRUCTURES AND TYPES **/
-typedef struct tagExampleOutput { /** contents **/ } ExampleOutput; 
-typedef struct tagExampleInput  { /** contents **/ } ExampleInput; 
-typedef struct tagExampleParams { /** contents **/ } ExampleParams; 
+typedef struct tagExampleOutput { /** contents **/ } ExampleOutput;
+typedef struct tagExampleInput  { /** contents **/ } ExampleInput;
+typedef struct tagExampleParams { /** contents **/ } ExampleParams;
 
 /** FUNCTION PROTOTYPES **/
 void

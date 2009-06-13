@@ -376,7 +376,7 @@ LALCreateResampleRules( LALStatus          *stat,
       FreeTempRules(tempRules,nSqrt);
       ABORT(stat,RESAMPLEH_EMEM,RESAMPLEH_MSGEMEM);
     }
-  }else if(nPoly==2){ 
+  }else if(nPoly==2){
     if(LinearRules(tempRules,&nRules,&startDiff,&stopDiff,
 		   params->decimate,tRuleStart,tRuleStop,dt,
 		   tBound,t0,poly,nPoly,nSqrt)){

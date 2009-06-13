@@ -71,7 +71,7 @@ LALFree()
 #include <lal/FileIO.h>
 #include <lal/LALBarycenter.h>
 #include <lal/LALInitBarycenter.h>
-		 
+
 NRCSID(LALINITBARYCENTERC,"$Id$");
 
 #define ERRMSGLEN 512
@@ -79,7 +79,7 @@ CHAR errmsg[ERRMSGLEN];	/* string-buffer for more explicit error-messages */
 
 
 /* <lalVerbatim file="LALInitBarycenterCP"> */
-void 
+void
 LALInitBarycenter(LALStatus *stat, EphemerisData *edat)
 { /* </lalVerbatim> */
 
@@ -96,7 +96,7 @@ LALInitBarycenter(LALStatus *stat, EphemerisData *edat)
     ATTATCHSTATUSPTR(stat);
 
     /* open earth file */
-    fp1 = LALOpenDataFile(edat->ephiles.earthEphemeris);  
+    fp1 = LALOpenDataFile(edat->ephiles.earthEphemeris);
 
     /* check that we could open the file */
     if ( fp1 == NULL ) {
@@ -114,7 +114,7 @@ LALInitBarycenter(LALStatus *stat, EphemerisData *edat)
     }
 
     /* allocate memory for ephemeris info */
-    edat->ephemE  = (PosVelAcc *)LALMalloc(edat->nentriesE*sizeof(PosVelAcc)); 
+    edat->ephemE  = (PosVelAcc *)LALMalloc(edat->nentriesE*sizeof(PosVelAcc));
     if (edat->ephemE == NULL) {
       fclose(fp1);
       ABORT(stat, LALINITBARYCENTERH_EMEM, LALINITBARYCENTERH_MSGEMEM);
@@ -122,7 +122,7 @@ LALInitBarycenter(LALStatus *stat, EphemerisData *edat)
 
     /* first column in earth.dat or sun.dat is gps time--one long integer
        giving the number of secs that have ticked since start of GPS epoch
-       +  on 1980 Jan. 6 00:00:00 UTC 
+       +  on 1980 Jan. 6 00:00:00 UTC
     */
 
     /* read the remaining lines */
@@ -149,7 +149,7 @@ LALInitBarycenter(LALStatus *stat, EphemerisData *edat)
 	  fclose(fp1);
 	  LALFree(edat->ephemE);
 	  ABORT(stat, LALINITBARYCENTERH_EEPHFILE, LALINITBARYCENTERH_MSGEEPHFILE);
-	}	  
+	}
       } else {
 	if (edat->ephemE[j].gps != edat->ephemE[j-1].gps + edat->dtEtable) {
 	  LALPrintError("Wrong timestamp in line %d of %s: %le/%le\n",
@@ -217,11 +217,11 @@ LALInitBarycenter(LALStatus *stat, EphemerisData *edat)
     }
 
     /* close earth file */
-    fclose(fp1); 
+    fclose(fp1);
 
 
     /* open sun file */
-    fp2 = LALOpenDataFile(edat->ephiles.sunEphemeris);  
+    fp2 = LALOpenDataFile(edat->ephiles.sunEphemeris);
 
     /* check that we could open the file */
     if ( fp2 == NULL ) {
@@ -230,7 +230,7 @@ LALInitBarycenter(LALStatus *stat, EphemerisData *edat)
       errmsg[ERRMSGLEN-1] = 0;
       ABORT (stat, LALINITBARYCENTERH_EOPEN, errmsg);
     }
-    
+
     /* read first line */
     ret = fscanf(fp2,"%d %le %d\n", &gpsYr, &edat->dtStable, &edat->nentriesS);
     if (ret != 3) {
@@ -239,9 +239,9 @@ LALInitBarycenter(LALStatus *stat, EphemerisData *edat)
       LALPrintError("Couldn't parse first line of %s: %d\n", edat->ephiles.sunEphemeris, ret);
       ABORT(stat, LALINITBARYCENTERH_EEPHFILE, LALINITBARYCENTERH_MSGEEPHFILE);
     }
-    
+
     /* allocate memory for ephemeris info */
-    edat->ephemS  = (PosVelAcc *)LALMalloc(edat->nentriesS*sizeof(PosVelAcc)); 
+    edat->ephemS  = (PosVelAcc *)LALMalloc(edat->nentriesS*sizeof(PosVelAcc));
     if (edat->ephemS == NULL) {
       fclose(fp2);
       LALFree(edat->ephemE);
@@ -274,7 +274,7 @@ LALInitBarycenter(LALStatus *stat, EphemerisData *edat)
 	  LALFree(edat->ephemE);
 	  LALFree(edat->ephemS);
 	  ABORT(stat, LALINITBARYCENTERH_EEPHFILE, LALINITBARYCENTERH_MSGEEPHFILE);
-	}	  
+	}
       } else {
 	if (edat->ephemS[j].gps != edat->ephemS[j-1].gps + edat->dtStable) {
 	  LALPrintError("Wrong timestamp in line %d of %s: %le/%le\n",
@@ -338,10 +338,10 @@ LALInitBarycenter(LALStatus *stat, EphemerisData *edat)
       LALFree(edat->ephemS);
       ABORT(stat, LALINITBARYCENTERH_EEPHFILE, LALINITBARYCENTERH_MSGEEPHFILE);
     }
-       
-    /* close the file */       
-    fclose(fp2);       
-    
+
+    /* close the file */
+    fclose(fp2);
+
     /* successful return */
     DETATCHSTATUSPTR(stat);
     RETURN(stat);

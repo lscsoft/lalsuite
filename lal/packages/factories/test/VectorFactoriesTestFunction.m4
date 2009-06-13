@@ -37,25 +37,25 @@ static void FUNC ( void )
 
   CFUNC ( &status, &vector, length );
   TestStatus( &status, CODES( 0 ), 1 );
-  
+
   if (verbose)
     {
       printf("VFT line %d:\n", __LINE__);
       printf("  vector->length = %d\n", vector->length);
     }
-  
+
   memset( vector->data, 0, length*sizeof( TYPE ) );
 
   if (verbose)
     {
       PRINTVEC ( vector );
     }
-  
+
 
   /* Resize up */
   RFUNC ( &status, &vector, length*3 );
   TestStatus( &status, CODES( 0 ), 1 );
-  
+
   if (verbose)
     {
       printf("VFT line %d:\n", __LINE__);
@@ -64,7 +64,7 @@ static void FUNC ( void )
 
 
   memset( vector->data, 0, length*sizeof( TYPE ) );
-  
+
   if (verbose)
     {
       PRINTVEC ( vector );
@@ -84,7 +84,7 @@ static void FUNC ( void )
   /* Destroy */
   DFUNC ( &status, &vector );
   TestStatus( &status, CODES( 0 ), 1 );
-  
+
   if (verbose)
     {
       printf("VFT line %d:\n", __LINE__);
@@ -92,7 +92,7 @@ static void FUNC ( void )
     }
 
   LALCheckMemoryLeaks();
-  
+
   /* Check the resize function with create/destroy */
   RFUNC ( &status, &vector, length );
   TestStatus( &status, CODES( 0 ), 1 );
@@ -137,13 +137,13 @@ static void FUNC ( void )
         printf("VFT line %d\n", __LINE__);
         printf("  vector = %#x\n", (unsigned int)vector);
       }
-    
+
     CFUNC ( &status, &vector, 0 );
     TestStatus( &status, CODES( AVFACTORIESH_ELENGTH ), 1 );
 
     RFUNC ( &status, &vector, 0 );
     TestStatus( &status, CODES( AVFACTORIESH_ELENGTH ), 1 );
-    
+
     DFUNC ( &status, NULL );
     TestStatus( &status, CODES( AVFACTORIESH_EVPTR ), 1 );
 
@@ -167,6 +167,6 @@ static void FUNC ( void )
 
   LALCheckMemoryLeaks();
   printf( "PASS: tests of CFUNC, RFUNC, and DFUNC \n" );
-          
+
   return;
 }

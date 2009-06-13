@@ -22,9 +22,9 @@
  *  \author Creighton, T. D.
  *  \date $Date$
  *  \brief Converts among Galactic, ecliptic, and equatorial coordinates.
- * 
+ *
  * $Id$
- * 
+ *
 These functions perform the specified coordinate transformation on the
 contents of \a input and store the result in \a *output.  The
 two pointers may point to the same object, in which case the
@@ -98,7 +98,7 @@ transformations are:
 \f}
 In these equations we have defined the orientation of the Galaxy with
 the following parameters (which should eventually be placed in <tt>LALConstants.h</tt>:
-\f[ 
+\f[
 \begin{array}{r@{\quad=\quad}l@{\quad=\quad}l}
 \alpha_\mathrm{NGP} & 192.8594813^\circ &
 \mbox{the right ascension (epoch J2000) of the north Galactic pole} \\

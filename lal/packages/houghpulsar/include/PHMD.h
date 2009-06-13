@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2005 Badri Krishnan, Alicia Sintes  
+ *  Copyright (C) 2005 Badri Krishnan, Alicia Sintes
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -12,17 +12,17 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with with program; see the file COPYING. If not, write to the 
- *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, 
+ *  along with with program; see the file COPYING. If not, write to the
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
  */
 
-/** \file 
+/** \file
  *  \ingroup modukeHoughPulsar
  *  \author Sintes, A. M.
  *  \date $Date$
  *  \brief Conversion from peaks in a spectrum into a partial Hough map derivative
- * 
+ *
  *  $Id$
  *
  * History:   Created by Sintes June 21, 2001
@@ -30,23 +30,23 @@
  *
  *
 
-\par Description 
+\par Description
 
-The Hough map is an histogram, thus additive. It can be seen as the sum of several 
+The Hough map is an histogram, thus additive. It can be seen as the sum of several
 partial Hough maps constructed using just one periodogram, or equivalently, as
 the sum of partial Hough map derivatives phmd and then integrating the
 result.
 
 A phmd can be represented by a set of borders, here called \it
-left and right. They indicate the beginning and the end of the annuli. 
+left and right. They indicate the beginning and the end of the annuli.
 The position of the so-called left borders should be marked with $+1$,
 and
 the position of the right borders should be marked with $-1$ in the {\sc phmd}.
 To obtain a partial Hough map, one needs to integrate each row of the {\sc phmd}
 from left to right.
- 
-The representation of a {\sc phmd} is simplified by considering 
-pointers to the borders in a pre-calculated look-up-table, plus some 
+
+The representation of a {\sc phmd} is simplified by considering
+pointers to the borders in a pre-calculated look-up-table, plus some
 extra information about
 their character and edge effects when clipping on a finite patch.
 
@@ -72,24 +72,24 @@ Conversion from peaks in a spectrum into a partial Hough map derivative.
 #include <lal/PHMD.h>
 \end{verbatim}
 
- The Hough map is an histogram, thus additive. It can be seen as the sum of several 
+ The Hough map is an histogram, thus additive. It can be seen as the sum of several
  partial Hough maps constructed using just one periodogram, or equivalently, as
  the sum of partial Hough map derivatives ({\sc phmd}) and then integrating the
  result.\\
- 
+
   A  {\sc phmd} can be represented by a set of borders, here called {\it
- left} and {\it right}. They indicate the beginning and the end of the annuli. 
+ left} and {\it right}. They indicate the beginning and the end of the annuli.
  The position of the so-called left borders should be marked with $+1$,
   and
 the position of the right borders should be marked with $-1$ in the {\sc phmd}.
 To obtain a partial Hough map, one needs to integrate each row of the {\sc phmd}
 from left to right.\\
- 
- The representation of a  {\sc phmd} is simplified by considering 
+
+ The representation of a  {\sc phmd} is simplified by considering
  pointers to the borders in a pre-calculated look-up-table, plus some extra information about
  their character and edge effects when clipping on a finite patch.
- 
- 
+
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection*{Error conditions}
@@ -128,12 +128,12 @@ struct HOUGHphmd
 \begin{description}
 \item[\texttt{UINT8          fBin }]   Frequency bin of this partial map
 derivative
-\item[\texttt{UINT2          lengthLeft }]  Exact number of {\it Left} borders. 
+\item[\texttt{UINT2          lengthLeft }]  Exact number of {\it Left} borders.
 \item[\texttt{UINT2          lengthRight }]  Exact number of {\it Right} borders.
 \item[\texttt{UINT2          maxNBorders }]  Maximun number of borders of each type (for
      memory allocation purposes), i.e. length of \verb@*leftBorderP@ and \verb@*rightBorderP@.
-\item[\texttt{HOUGHBorder   **leftBorderP }]  Pointers to borders. 
-\item[\texttt{HOUGHBorder   **rightBorderP }]   Pointers to borders. 
+\item[\texttt{HOUGHBorder   **leftBorderP }]  Pointers to borders.
+\item[\texttt{HOUGHBorder   **rightBorderP }]   Pointers to borders.
 \item[\texttt{UINT2          ySide }]  Number of elements of \verb@firstColumn@.
 \item[\texttt{UCHAR         *firstColumn }]  First column border,
 containing the edge effects  when clipping on a finite patch.
@@ -165,9 +165,9 @@ containing the edge effects  when clipping on a finite patch.
 #define _PHMD_H
 
 /*
- * 5. Includes. This header may include others; if so, they go immediately 
- *    after include-loop protection. Includes should appear in the following 
- *    order: 
+ * 5. Includes. This header may include others; if so, they go immediately
+ *    after include-loop protection. Includes should appear in the following
+ *    order:
  *    a. Standard library includes
  *    b. LDAS includes
  *    c. LAL includes
@@ -199,20 +199,20 @@ containing the edge effects  when clipping on a finite patch.
 #ifdef  __cplusplus
 extern "C" {
 #endif
-  
+
 /*
- * 6. Assignment of Id string using NRCSID()  
+ * 6. Assignment of Id string using NRCSID()
  */
-  
+
 NRCSID (PHMDH, "$Id$");
-  
+
 /*
- * 7. Error codes and messages. This must be auto-extracted for 
+ * 7. Error codes and messages. This must be auto-extracted for
  *    inclusion in the documentation.
  */
-  
+
 /* <lalErrTable file="PHMDHErrorTable"> */
-  
+
 #define PHMDH_ENULL 1
 #define PHMDH_ESIZE 2
 #define PHMDH_ESZMM 4
@@ -225,23 +225,23 @@ NRCSID (PHMDH, "$Id$");
 #define PHMDH_MSGESIZE "Invalid input size"
 #define PHMDH_MSGESZMM "Size mismatch"
 #define PHMDH_MSGEINT  "Invalid interval"
-#define PHMDH_MSGESAME "Input/Output data vectors are the same" 
+#define PHMDH_MSGESAME "Input/Output data vectors are the same"
 #define PHMDH_MSGEFREQ "Invalid frequency"
 #define PHMDH_MSGEVAL  "Invalid value"
-  
+
 /* </lalErrTable>  */
 
-  
+
 /* ******************************************************
- * 8. Macros. But, note that macros are deprecated. 
- *    They could be moved to the modules where are needed 
+ * 8. Macros. But, note that macros are deprecated.
+ *    They could be moved to the modules where are needed
  */
-  
+
 
 /* *******************************************************
- * 9. Constant Declarations. (discouraged) 
+ * 9. Constant Declarations. (discouraged)
  */
- 
+
 
 
 /* **************************************************************
@@ -262,7 +262,7 @@ NRCSID (PHMDH, "$Id$");
     UINT4   length;     /**< number of peaks present in the peakgram  */
     INT4    *peak;      /**< the peak indexes relative to fBinIni*/
   } HOUGHPeakGram;
-  
+
   /** partial hough map derivative structure */
 typedef struct tagHOUGHphmd{
   UINT8          fBin;  /**< frequency bin of this partial map derivative */
@@ -278,19 +278,19 @@ typedef struct tagHOUGHphmd{
 
 
 /*
- * 11. Extern Global variables. (discouraged) 
+ * 11. Extern Global variables. (discouraged)
  */
-  
+
 
 /*
  * 12. Functions Declarations (i.e., prototypes).
  */
-  
+
 void LALHOUGHPeak2PHMD (LALStatus    *status,
 			HOUGHphmd    *phmd,
 			HOUGHptfLUT  *lut,
 			HOUGHPeakGram *pg
-			);  
+			);
 
 
 #ifdef  __cplusplus

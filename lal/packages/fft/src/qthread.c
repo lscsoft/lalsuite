@@ -17,14 +17,14 @@
 *  MA  02111-1307  USA
 */
 
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: qthread.c
  *
  * Author: Brown, D. A.
- * 
+ *
  * Revision: $Id$
- * 
+ *
  *-----------------------------------------------------------------------
  */
 
@@ -58,7 +58,7 @@ int pthread_once(pthread_once_t * once_control, void (*init_routine)(void))
 {
   /* call the function init_routine() if once_control is not set to done */
   if ( lalDebugLevel & 4 )
-    fprintf( stdout, "calling pthread_once(%p,%p)\n", 
+    fprintf( stdout, "calling pthread_once(%p,%p)\n",
         once_control, init_routine );
 
   if ( *once_control == DONE ) return 0;
@@ -91,9 +91,9 @@ int pthread_key_create (pthread_key_t * key, destr_function destr)
   if ( lalDebugLevel & 4 )
     fprintf( stdout, "calling pthread_key_create(%p,%p)\n", key, destr );
 
-  for ( i = 0; i < PTHREAD_KEYS_MAX; i++ ) 
+  for ( i = 0; i < PTHREAD_KEYS_MAX; i++ )
   {
-    if (! pthread_keys[i].in_use) 
+    if (! pthread_keys[i].in_use)
     {
       /* Mark key in use */
       pthread_keys[i].in_use = 1;
@@ -115,7 +115,7 @@ int pthread_key_delete(pthread_key_t key)
   if ( lalDebugLevel & 4 )
     fprintf( stdout, "calling pthread_key_delete(%d)\n", key );
 
-  if ( key >= PTHREAD_KEYS_MAX || ! pthread_keys[key].in_use ) 
+  if ( key >= PTHREAD_KEYS_MAX || ! pthread_keys[key].in_use )
   {
     return EINVAL;
   }
@@ -150,7 +150,7 @@ void * pthread_getspecific(pthread_key_t key)
   if ( lalDebugLevel & 4 )
     fprintf( stdout, "calling pthread_getspecific(%d)\n", key );
 
-  if ( key >= PTHREAD_KEYS_MAX || ! pthread_keys[key].in_use ) 
+  if ( key >= PTHREAD_KEYS_MAX || ! pthread_keys[key].in_use )
   {
     return NULL;
   }
@@ -183,7 +183,7 @@ int pthread_create(pthread_t *thread, const pthread_attr_t *attr,
 
 int pthread_join(pthread_t thread_id, void ** thread_return)
 {
-  fprintf( stderr, "attempt to call pthread_join(%ld,%p)\n", 
+  fprintf( stderr, "attempt to call pthread_join(%ld,%p)\n",
       thread_id, thread_return );
   abort();
   return 0;

@@ -23,7 +23,7 @@ Author: Regimbau Tania
 $Id$
 </lalVerbatim> */
 
-/* 
+/*
 <lalLaTeX>
 \subsection{Program \texttt{AstroOmegaTest.c}}
 This programs verifies that the routine LALAstroOmega() gives the expected results (computed separetly with mathematica) for a set of input parameters.
@@ -34,11 +34,11 @@ returns 0 on success, otherwise returns 1.
 \subsubsection*{Uses}
 \begin{verbatim}
 lalDebugLevel
-LALAstroOmega() 
+LALAstroOmega()
 \end{verbatim}
 
 \vfill{\footnotesize\input{AstroOmegaTestCV}}
-</lalLaTeX> 
+</lalLaTeX>
 */
 
 #include <stdio.h>
@@ -51,7 +51,7 @@ LALAstroOmega()
 NRCSID (ASTROOMEGATESTC, "$Id$");
 
 static void SDensity (REAL8 *dEgw, REAL8 nu)
- {  
+ {
   *dEgw=9.27E35 * pow(nu,3.);
   return;
  }
@@ -77,16 +77,16 @@ int main ( void )
   p.cosmoparams = cosmop;
   p.sourceparams = sourcep;
 
-  
-  p.extraparams = &nu; 
+
+  p.extraparams = &nu;
   LALAstroOmega (&status, &test, nu,&p);
   if (fabs(test-1.16E-10) > 1.E-12)
    {
     printf("error! the right value is 1.16E-10 not %.2e\n",test);
    }
   else printf("omega(%f)= %.2e o.k\n", nu,test);
-  
-   /*  
+
+   /*
   for (nu = 0.;nu < sourcep.numax;nu = nu + 10.)
    {
     p.extraparams = &nu;

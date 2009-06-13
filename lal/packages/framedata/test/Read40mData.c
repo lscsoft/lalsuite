@@ -24,7 +24,7 @@
 
 /**** <lalLaTeX>
  * \subsection{Program \texttt{Read40mData.c}}
- * 
+ *
  * Tests the low-level frame stream routines by reading Caltech 40m-prototype
  * data from Nov1994.
  *
@@ -209,7 +209,7 @@ int main( void )
     printf( "%s-%s-%d-%d.gwf\n", outpar.source, outpar.description,
         tser.epoch.gpsSeconds,
         (int)ceil( 1e-9 * tser.epoch.gpsNanoSeconds
-          + tser.data->length * tser.deltaT ) );    
+          + tser.data->length * tser.deltaT ) );
     tser.epoch = dmro.epoch;
     for ( i = 0; i < tser.data->length; ++i )
     {

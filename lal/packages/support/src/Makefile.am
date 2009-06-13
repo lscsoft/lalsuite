@@ -1,18 +1,18 @@
 ## Process this file with automake to produce Makefile.in
 ## $Id$
 LALMETAIOSOURCES = CreateMetaTableDir.c LIGOLwXMLRead.c LIGOLwXMLRingdownRead.c
-LALXMLSOURCES = LALXML.c
+LALXMLSOURCES = LALXML.c LALXMLVOTableCommon.c LALXMLVOTableSerializers.c
 
 if METAIO
 LALMETAIOLIBRARIES = liblalmetaio.la
 else
-LALMETAIOLIBRARIES = 
+LALMETAIOLIBRARIES =
 endif
 
 if XML
 LALXMLLIBRARIES = liblalxml.la
 else
-LALXMLLIBRARIES = 
+LALXMLLIBRARIES =
 endif
 
 lib_LTLIBRARIES = $(LALMETAIOLIBRARIES) $(LALXMLLIBRARIES) liblalsupport.la

@@ -17,14 +17,14 @@
 *  MA  02111-1307  USA
 */
 
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: EllipsoidOverlapTools.c
  *
  * Author: Anand S. Sengupta and Craig Robinson
- * 
+ *
  * Revision: $Id$
- * 
+ *
  *-----------------------------------------------------------------------
  */
 
@@ -32,12 +32,12 @@
 <lalVerbatim file="EllipsoidOverlapToolsCV">
 Author: Anand S. Sengupta and Craig Robinson
 $Id$
-</lalVerbatim> 
+</lalVerbatim>
 #endif
 
 #include <lal/EllipsoidOverlapTools.h>
 
-NRCSID( ELLIPSOIDOVERLAPTOOLSC, 
+NRCSID( ELLIPSOIDOVERLAPTOOLSC,
         "$Id$" );
 
 
@@ -47,12 +47,12 @@ static REAL8 fContact (REAL8 x, void *params);
  * This function return the contact function of two ellipsoids as defined in
  * the paper by Perram & Wertheim, JCP, v58, pp 409-416, eq 3.7 with a
  * negative sign. This is minimised to figure out if the ellipsoids
- * intersect. 
+ * intersect.
  * --------------------------------------------------------------------------*/
 
 
 
-static REAL8 fContact (REAL8 x, void *params) 
+static REAL8 fContact (REAL8 x, void *params)
 {
     fContactWorkSpace *p
             = (fContactWorkSpace *)params;
@@ -74,7 +74,7 @@ static REAL8 fContact (REAL8 x, void *params)
 
     gsl_matrix_add (A, B);
 
-    gsl_linalg_LU_decomp( A, p1, &s1 ); 
+    gsl_linalg_LU_decomp( A, p1, &s1 );
     gsl_linalg_LU_invert( A, p1, C );
 
     /* Evaluate the product C x r_AB */
@@ -97,7 +97,7 @@ static REAL8 fContact (REAL8 x, void *params)
  * set by hand.
  * ------------------------------------------------------------------------*/
 fContactWorkSpace * XLALInitFContactWorkSpace(
-                       INT4                           n,
+                       UINT4                          n,
                        const gsl_matrix              *a,
                        const gsl_matrix              *b,
                        const gsl_min_fminimizer_type *T,
@@ -152,8 +152,8 @@ fContactWorkSpace * XLALInitFContactWorkSpace(
   XLAL_CALLGSL( workSpace->s    = gsl_min_fminimizer_alloc( T ) );
 
   /* Check all of the above were allocated properly */
-  if (!workSpace->tmpA || !workSpace->tmpB || !workSpace->C || 
-      !workSpace->p1 || !workSpace->tmpV || !workSpace->r_AB 
+  if (!workSpace->tmpA || !workSpace->tmpB || !workSpace->C ||
+      !workSpace->p1 || !workSpace->tmpV || !workSpace->r_AB
       || !workSpace->s )
   {
     XLALFreeFContactWorkSpace( workSpace );
@@ -166,9 +166,9 @@ fContactWorkSpace * XLALInitFContactWorkSpace(
   workSpace->n         = n;
 
   return workSpace;
-}  
+}
 
-/* 
+/*
 -------------------------------------------------------------------------
  * This function minimises fContact defined above using the
  * Brent method. It returns the minima with a negative sign (which then
@@ -176,12 +176,12 @@ fContactWorkSpace * XLALInitFContactWorkSpace(
  * to 1 to check if two ellipsoids indeed overlap.
  * ------------------------------------------------------------------------*/
 REAL8 XLALCheckOverlapOfEllipsoids (
-        const gsl_vector   *ra, 
+        const gsl_vector   *ra,
         const gsl_vector   *rb,
         fContactWorkSpace  *workSpace )
 {
     static const char *func = "XLALCheckOverlapOfEllipsoids";
-    
+
     gsl_function        F;
     INT4                min_status;
     INT4                iter = 0, max_iter = 100;
@@ -200,7 +200,7 @@ REAL8 XLALCheckOverlapOfEllipsoids (
     /* Set r_AB to be rb - ra */
     XLAL_CALLGSL( gsl_vector_memcpy( workSpace->r_AB, rb) );
     XLAL_CALLGSL( gsl_vector_sub (workSpace->r_AB, ra) );
- 
+
     if ( gsl_vector_isnull( workSpace->r_AB ))
     {
       XLALPrintWarning("Position vectors ra and rb are identical.\n");
@@ -215,7 +215,7 @@ REAL8 XLALCheckOverlapOfEllipsoids (
       XLAL_ERROR_REAL8( func, XLAL_EFUNC );
 
     do
-    { 
+    {
         iter++;
         XLAL_CALLGSL( min_status = gsl_min_fminimizer_iterate (s) );
         if (min_status != GSL_SUCCESS )
@@ -233,10 +233,10 @@ REAL8 XLALCheckOverlapOfEllipsoids (
         b = gsl_min_fminimizer_x_upper (s);
 
         XLAL_CALLGSL( min_status = gsl_min_test_interval (a, b, workSpace->convParam, 0.0) );
-        if (min_status != GSL_CONTINUE && min_status != GSL_SUCCESS ) 
+        if (min_status != GSL_CONTINUE && min_status != GSL_SUCCESS )
           XLAL_ERROR_REAL8( func, XLAL_EFUNC );
     }
-    while (min_status == GSL_CONTINUE && iter < max_iter && s->f_minimum > -1.0L  );
+    while (min_status == GSL_CONTINUE && iter < max_iter );
     /* End of minimization routine */
 
     /* Throw an error if max iterations would have been exceeded */

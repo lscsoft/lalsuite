@@ -19,20 +19,20 @@
 
 /*
    Parse Command line:
-  
+
    Typical Command line:
 
    laldoc inputFile.c errorFile /home/alice/errorDir/ /home/alice/inputDir/
      -0-     -1-          -2-           -3- (optnl)         -4- (optnl)
-  
+
    Obviously 0,1 and 2 are necessary: The executable, the source input
-   and the error file name.  
+   and the error file name.
 
    Number 3 is the directory where the the error file will appear.
    If this is not specified, the errorFile will be opened the current
    directory.
 
-   Number 4 is the directory where the program will look for the 
+   Number 4 is the directory where the program will look for the
    source input. If this is not specified, the program will look
    in the current directory.
 
@@ -41,7 +41,7 @@
 
 #include "LALDoc.h"
 
-int ParseCommandLine( int  argcount , char **argvector , char *source , 
+int ParseCommandLine( int  argcount , char **argvector , char *source ,
                       FILE **ptrptrInputFile )
 {
         int i,dirLen;
@@ -59,7 +59,7 @@ int ParseCommandLine( int  argcount , char **argvector , char *source ,
         fprintf(stderr ,"You need to specify some command lines options\n");
                 exit(BADEXIT);
         }
-        
+
         if( strcmp(argvector[1], "-h") == 0 ){
                 fprintf(stderr ,"Help: Must specify an input and exception file\n");
                 exit(BADEXIT);
@@ -74,8 +74,8 @@ int ParseCommandLine( int  argcount , char **argvector , char *source ,
         strcpy( ErrFileName   , argvector[2] );
 
 
-        /* 
-         * Opening the error reporting file 
+        /*
+         * Opening the error reporting file
         */
         /* If there is a directory specified for the error file ... */
         dirLen = 0;
@@ -99,12 +99,12 @@ int ParseCommandLine( int  argcount , char **argvector , char *source ,
         }
         /* ... open the error reporting file. */
         ptrLALErrorFile = OpenAFile( FullErrStr , "a" , 1 );
-        fprintf(ptrLALErrorFile,"%%Laldoc: Reporting Errors in: %s\n",source);        
+        fprintf(ptrLALErrorFile,"%%Laldoc: Reporting Errors in: %s\n",source);
 
 
 
-        /* 
-         * Opening the input file 
+        /*
+         * Opening the input file
         */
         /* If there is a directory specified for the input file ... */
         dirLen = 0;
@@ -132,7 +132,7 @@ int ParseCommandLine( int  argcount , char **argvector , char *source ,
         if( (*ptrptrInputFile)==NULL ) {
                fprintf(stderr,"Couldn't find Source file: %s\n",FullSourceStr);
                exit(BADEXIT);
-                
+
         }
 
         return 1 ;

@@ -518,7 +518,7 @@ XLALgetCurrentDopplerPos ( PulsarDopplerParams *pos, const DopplerLatticeScan *s
   return 0;
 } /* XLALgetCurrentDopplerPos() */
 
-
+
 
 /* ------------------------------------------------------------ */
 /* -------------------- INTERNAL functions -------------------- */

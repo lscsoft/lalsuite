@@ -13,7 +13,7 @@ ifelse(TYPECODE,`CHAR',`define(`TYPE',`CHAR')')
 ifelse(TYPECODE,`',`define(`TYPE',`REAL4')')
 define(`STYPE',`format(`%sVectorSequence',TYPE)')
 define(`FUNC',`format(`LAL%sDestroyVectorSequence',TYPECODE)')
-ifelse( TYPECODE, `', `define(`XFUNC',`XLALDestroyVectorSequence')', `define(`XFUNC',`format(`XLALDestroy%s',STYPE)')' ) 
+ifelse( TYPECODE, `', `define(`XFUNC',`XLALDestroyVectorSequence')', `define(`XFUNC',`format(`XLALDestroy%s',STYPE)')' )
 
 void XFUNC ( STYPE *vseq )
 {
@@ -33,19 +33,19 @@ void XFUNC ( STYPE *vseq )
 /* <lalVerbatim file="VectorSequenceFactoriesD"> */
 void FUNC ( LALStatus *status, STYPE **vseq )
 { /* </lalVerbatim> */
-  /* 
+  /*
    * Initialize status
    */
 
   INITSTATUS( status, "FUNC", VECTORSEQUENCEFACTORIESC );
-      
-  /* 
+
+  /*
    * Check vseq: is it non-NULL?
    */
 
-  ASSERT (vseq != NULL, status, SEQFACTORIESH_EVPTR, SEQFACTORIESH_MSGEVPTR); 
+  ASSERT (vseq != NULL, status, SEQFACTORIESH_EVPTR, SEQFACTORIESH_MSGEVPTR);
 
-  /* 
+  /*
    * Check vseq: does it point to non-NULL?
    */
 

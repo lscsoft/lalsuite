@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_INIT([lal],[5.3],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lal],[6.1],[lal-discuss@gravity.phys.uwm.edu])
 AC_CONFIG_HEADERS([include/config.h] [include/lal/LALConfig.h])
 AC_CONFIG_SRCDIR([include/config.h.in])
 AC_CONFIG_AUX_DIR([misc])
@@ -18,6 +18,7 @@ AC_CONFIG_FILES([ \
                  doc/autodoc/Makefile \
                  include/Makefile \
                  include/lal/Makefile \
+                 lib/git_version
                  lib/Makefile \
                  misc/Makefile \
                  packages/Makefile \
@@ -243,6 +244,9 @@ fi
 m4_pattern_allow([AC_PROG_CC_C99])
 m4_ifdef([AC_PROG_CC_C99], [AC_PROG_CC_C99], [LAL_AC_PROG_CC_C99])
 
+# use silent build rules if appropriate
+m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])],)
+
 dnl Checks for programs.
 AC_PROG_AWK
 AC_PROG_CPP
@@ -250,6 +254,7 @@ AC_PROG_INSTALL
 AC_PROG_LN_S
 AM_PROG_CC_C_O
 AM_PROG_LIBTOOL
+AM_PATH_PYTHON([2.4],,[AC_MSG_ERROR([Python-2.4, or higher, is required])])
 AC_CHECK_PROGS(M4, gm4 m4, m4)
 AC_CHECK_PROGS(LATEX, pdflatex latex, echo)
 AC_CHECK_PROGS(MKIND, makeindex, echo)
@@ -277,8 +282,8 @@ AC_SUBST(TEXFLAGS)
 dnl Set needed compiler flags
 AC_MSG_CHECKING([for additional compiler flags])
 case "${host_os}" in
-  solaris*) CFLAGS="$CFLAGS -D_POSIX_C_SOURCE=200101L"
-  AC_MSG_RESULT([-D_POSIX_SOURCE=200101L]);;
+  solaris*) CFLAGS="$CFLAGS -D_POSIX_C_SOURCE=200112L"
+  AC_MSG_RESULT([-D_POSIX_C_SOURCE=200112L]);;
   *) AC_MSG_RESULT(none);;
 esac
 
@@ -367,8 +372,8 @@ AC_CHECK_HEADERS(gsl/gsl_errno.h, , [AC_MSG_ERROR(could not find gsl/gsl_errno.h
 if test "${intelfft}" = "false" ; then
   AC_CHECK_HEADERS(fftw3.h, , [AC_MSG_ERROR(could not find fftw3.h)])
 fi
-AC_CHECK_HEADER(stdint.h, , [AC_MSG_WARN(could not find stdint.h)])
-AC_CHECK_HEADER(inttypes.h, , [AC_MSG_WARN(could not find inttypes.h)])
+AC_CHECK_HEADER(stdint.h, , [AC_MSG_ERROR(could not find stdint.h)])
+AC_CHECK_HEADER(inttypes.h, , [AC_MSG_ERROR(could not find inttypes.h)])
 
 AC_MSG_CHECKING(for gethostname prototype in unistd.h)
 AC_EGREP_HEADER(gethostname, unistd.h,AC_MSG_RESULT(yes)
@@ -433,10 +438,6 @@ AC_C_CONST
 AC_C_STRINGIZE
 AC_TYPE_SIZE_T
 AC_HEADER_TIME
-LAL_CHECK_SIZEOF(short, 2)
-LAL_CHECK_SIZEOF(int, 4)
-LAL_CHECK_SIZEOF(long, 4)
-LAL_CHECK_SIZEOF(long long, 8)
 LAL_CHECK_SIZEOF(float, 4)
 LAL_CHECK_SIZEOF(double, 8)
 
@@ -504,6 +505,7 @@ AC_SUBST_FILE(INCLUDEMKFILE)
 AC_SUBST_FILE(DOCMKFILE)
 AC_SUBST_FILE(DVIMKFILE)
 AC_CONFIG_COMMANDS([default-1],[[chmod +x lal-config]],[[]])
+AC_CONFIG_COMMANDS([default-2],[[chmod +x lib/git_version]],[[]])
 AC_OUTPUT
 frameenabled="`test x${frame} = xtrue && echo "ENABLED" || echo "DISABLED"`"
 metaioenabled="`test x${metaio} = xtrue && echo "ENABLED" || echo "DISABLED"`"

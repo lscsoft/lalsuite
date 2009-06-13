@@ -23,7 +23,7 @@ $Id$
 </lalVerbatim>  */
 /* <lalLaTeX>
 \subsection{Module \texttt{LALInspiralWaveNormalise.c}}
-Module to find the norm of a signal and to return a normalised 
+Module to find the norm of a signal and to return a normalised
 array. The original signal is left untouched.
 
 \subsubsection*{Prototypes}
@@ -32,15 +32,15 @@ array. The original signal is left untouched.
 \index{\verb&LALInspiralWaveNormalise()&}
 
 \subsubsection*{Description}
-Given the positive frequency Fourier components 
-$H_k,$ $k=0,\ldots,n-1,$ of a vector 
-and the noise PSD $S_m,$ $m=0,\ldots,n/2,$ 
+Given the positive frequency Fourier components
+$H_k,$ $k=0,\ldots,n-1,$ of a vector
+and the noise PSD $S_m,$ $m=0,\ldots,n/2,$
 this module first computes the norm $H$ of the vector treating
-$S_m$ as the measure: 
-(note that in {\em fftw} notation, the zeroth frequency 
-component is $H_0,$ Nyquist 
+$S_m$ as the measure:
+(note that in {\em fftw} notation, the zeroth frequency
+component is $H_0,$ Nyquist
 is $H_{n/2},$ $H_k,$ $k \ne 0,n/2,$ ($H_{n-k})$ is the real (imaginary)
-part of the $k$th harmonic) 
+part of the $k$th harmonic)
 \begin{equation}
 H = \sum_{k=1}^{n/2-1} \frac{H_k^2 + H^2_{n-k}}{S_k}.
 \label{eq:inspiralnorm}
@@ -48,7 +48,7 @@ H = \sum_{k=1}^{n/2-1} \frac{H_k^2 + H^2_{n-k}}{S_k}.
 (Note that the zeroth and Nyquist components are ignored in the
 computation of the norm.)
 It then replaces the original vector $H_k$ with normalized
-vector using: 
+vector using:
 \begin{equation}
 \widehat H_k = \frac {H_k}{\sqrt H},\ \ k=0,\ldots n-1.
 \end{equation}
@@ -68,13 +68,13 @@ NRCSID (LALINSPIRALWAVENORMALISEC, "$Id$");
 
 /*  <lalVerbatim file="LALInspiralWaveNormaliseCP"> */
 void
-LALInspiralWaveNormalise 
+LALInspiralWaveNormalise
    (
-   LALStatus   *status, 
-   REAL4Vector *in, 
+   LALStatus   *status,
+   REAL4Vector *in,
    REAL8       *norm,
    REAL8Vector psd
-   ) 
+   )
 {  /*  </lalVerbatim>  */
 
   INT4 i, n, nby2, k;
@@ -91,11 +91,11 @@ LALInspiralWaveNormalise
   *norm = 0;
   nby2 = n/2;
 
-  for (i=1; i<nby2; i++) 
+  for (i=1; i<nby2; i++)
   {
      k = n-i;
      psdvalue = psd.data[i];
-     if (psdvalue) 
+     if (psdvalue)
      {
 	*norm += (in->data[i]*in->data[i] + in->data[k]*in->data[k])/psdvalue;
      }
@@ -115,9 +115,9 @@ LALInspiralWaveNormalise
   in->data[0] = in->data[nby2] = 0.;
 
   *norm = sqrt(*norm);
-  
+
   for (i=0; i<n; i++)
-  { 
+  {
 	  *(in->data+i) /= *norm;
   }
 

@@ -256,6 +256,9 @@ extern INT4 lalDebugLevel;
 #define TRUE   (1==1)
 #define FALSE  (1==0)
 
+/* FIXME: prototype for function in StreamSequenceInput.m4 */
+int XLALCHARReadSequence( CHARSequence **sequence, FILE *stream );
+
 /* local prototypes */
 static void cleanConfig (CHARSequence *text);
 CHAR my_tolower (CHAR in);
@@ -494,7 +497,7 @@ XLALDestroyParsedDataFile (LALParsedDataFile **cfgdata)	/**< [in/out] config-fil
     fprintf(stderr, "Error destroying token list.\n");
     return err;
   }
-  
+
   if ( (*cfgdata)->wasRead )
     LALFree ( (*cfgdata)->wasRead );
 
@@ -622,7 +625,7 @@ LALReadConfigVariable (LALStatus *status,
 
 } /* LALReadConfigVariable() */
 
-
+
 
 /** Type-specialization of generic reading-function LALReadConfigVariable() to BOOLEAN variables.
  */
@@ -793,7 +796,7 @@ LALReadConfigSTRINGVariable (LALStatus *status,
 
 } /* LALReadConfigSTRINGVariable() */
 
-
+
 
 
 /** Type-specialization of generic reading-function LALReadConfigVariable() to
@@ -847,7 +850,7 @@ LALReadConfigSTRINGNVariable (LALStatus *status,
 
 } /* LALReadConfigSTRINGNVariable() */
 
-
+
 
 /** Check if all lines of config-file have been successfully read in
  * and issue a warning or error (depending on strictness) if not.
@@ -892,7 +895,7 @@ LALCheckConfigReadComplete (LALStatus *status,
 
 } /* LALCheckConfigReadComplete() */
 
-
+
 
 /* ----------------------------------------------------------------------
  *   INTERNAL FUNCTIONS FOLLOW HERE

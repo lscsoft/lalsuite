@@ -1,4 +1,4 @@
-% This file is meant to be included in another 
+% This file is meant to be included in another
 \documentclass{article}
 \begin{document}
 \section{TFR package}
@@ -30,7 +30,7 @@ void Dwindow (Status*, REAL4Vector*, REAL4Vector*);
 This package is part of the so-called ``Signal Track Algorithm'' which
 is a time-frequency based detector of unmodeled gravitational wave
 sources. It provides a LAL-style C version of some functions of the
-Time-Frequency toolbox for Matlab \cite{tftb}. 
+Time-Frequency toolbox for Matlab \cite{tftb}.
 
 Four different TFRs are currently available (see
 \cite{flandrin99:tf_ts} for a detailed description of what the
@@ -55,7 +55,7 @@ W_x(t,f)=\int{x(t+s/2)x(t-s/2)e^{-2i\pi sf}\,ds}.
 version of the previous TFR. Its definition reads~:
 \begin{equation}
 \label{pswv}
-PSW_x^{h,g}(t,f)=\int{h(\tau)\int{g(s-t)x(t+s/2)x(t-s/2)\,ds}\:e^{-2i\pi \tau 
+PSW_x^{h,g}(t,f)=\int{h(\tau)\int{g(s-t)x(t+s/2)x(t-s/2)\,ds}\:e^{-2i\pi \tau
 f}\,d\tau}.
 \end{equation}
 \item the reassigned spectrogram (function: \texttt{TfrRsp()}, type:
@@ -88,7 +88,7 @@ Nantes) and E. Leroy which is currently under development.
 A TFR and its associated parameters are thought as a distinct data
 entities. Specific structures have been designed in that purpose. In
 order to create and allocate memory space to these structures, it is
-mandatory to first define and fill the \texttt{CreateTimeFreqIn} input 
+mandatory to first define and fill the \texttt{CreateTimeFreqIn} input
 structure:
 \begin{verbatim}
 typedef struct tagCreateTimeFreqIn {
@@ -144,7 +144,7 @@ spanning from $0$ to $1/2$ (sampling frequency assumed to be $1$).
 
 The result is stored in the structure \texttt{TimeFreqRep} under the
 label \texttt{map}: \texttt{map[column][row]} is a matrix with
-\texttt{tCol} columns and \texttt{fRow} rows. 
+\texttt{tCol} columns and \texttt{fRow} rows.
 
 We summarize the memory allocation and the intput and output of the
 computation stage in Table \ref{tfr_tablea}.
@@ -203,7 +203,7 @@ structures for the memory allocation, before starting the computation
 
 \subsection{Operating Instructions}
 
-% Detailed usage 
+% Detailed usage
 
 \begin{verbatim}
 const INT4 Nsignal=16;
@@ -215,15 +215,15 @@ static Status status;
 
 REAL4Vector*  signal = NULL;
 CreateTimeFreqRepIn tfrIn;
-TimeFreqRep*tfr = NULL; 
+TimeFreqRep*tfr = NULL;
 TimeFreqParam *param = NULL;
 
 INT4 column;
 INT4 row;
 
 tfrIn.type=Spectrogram; /* for ex. the spectrogram */
-tfrIn.fRow=Nfft;              
-tfrIn.tCol=Nsignal; 
+tfrIn.fRow=Nfft;
+tfrIn.tCol=Nsignal;
 tfrIn.wlengthT=NwindowT;
 tfrIn.wlengthF=NwindowF;
 
@@ -255,13 +255,13 @@ DestroyTimeFreqParam(&status,&param);
 \item \texttt{status} is a universal status structure. Its contents are
 assigned by the functions.
 \item  \texttt{signal} is the input signal
-\item \texttt{tfrIn} is the time-frequency input structure (for memory 
+\item \texttt{tfrIn} is the time-frequency input structure (for memory
 allocation).
 \begin{itemize}
 \item \texttt{type} is the type of the chosen TFR (see Table \ref{tfr_tablea}).
 \item \texttt{fRow} is the number of frequency bins.
 \item \texttt{tCol} is the number of time bins.
-\item \texttt{wlengthT} is the (time-smoothing) window length (for Sp, 
+\item \texttt{wlengthT} is the (time-smoothing) window length (for Sp,
 Rsp and Pswv).
 \item \texttt{wlengthF} is the (frequency-smoothing) window length (for Pswv).
 \end{itemize}
@@ -277,16 +277,16 @@ Rsp and Pswv).
 \item \texttt{param} is the time-frequency parameter structure.
 \begin{itemize}
 \item \texttt{type} is the type of the chosen TFR (see Table \ref{tfr_tablea}).
-\item \texttt{windowT} is the (time-smoothing) window (for Sp, 
+\item \texttt{windowT} is the (time-smoothing) window (for Sp,
 Rsp and Pswv).
-\item \texttt{windowF} is the (frequency-smoothing) window length (for 
+\item \texttt{windowF} is the (frequency-smoothing) window length (for
 Pswv).
 \end{itemize}
 \end{itemize}
 
 \subsubsection{Options}
 
-None. 
+None.
 
 \subsubsection{Error conditions}
 
@@ -304,13 +304,13 @@ code    & description     & \\
 \hline
 CREATETFR\_ENULL 1  & Null pointer
 & an argument is NULL or contains a NULL pointer\\
-CREATETFR\_ENNUL 2  & Non-null pointer 
+CREATETFR\_ENNUL 2  & Non-null pointer
 & trying to create a TFR structure that already exists\\
-CREATETFR\_EFROW 4  & Illegal number of freq bins 
+CREATETFR\_EFROW 4  & Illegal number of freq bins
 & the number of frequency bins is not a power of 2\\
-CREATETFR\_ETCOL 8  & Illegal number of time instants 
+CREATETFR\_ETCOL 8  & Illegal number of time instants
 & the number of time bins is not a positive integer\\
-CREATETFR\_EMALL 16 & Malloc failure 
+CREATETFR\_EMALL 16 & Malloc failure
 & Malloc refuses to allocate memory space\\
 \hline
 \hline
@@ -320,13 +320,13 @@ DESTROYTFR\_ENULL 1  & Null pointer
 \hline
 CREATETFP\_ENULL 1  & Null pointer
 & an argument is NULL or contains a NULL pointer\\
-CREATETFP\_ENNUL 2  & Non-null pointer 
+CREATETFP\_ENNUL 2  & Non-null pointer
 & trying to create a TFR parameter structure that already exists\\
 CREATETFP\_ETYPE 4  & Unknown TFR type
 & the chosen TFR type is available\\
 CREATETFP\_EWSIZ 8 & Invalid window size
 & the window length is not a positive odd integer\\
-CREATETFP\_EMALL 16  & Malloc failure 
+CREATETFP\_EMALL 16  & Malloc failure
 & Malloc refuses to allocate memory space\\
 \hline
 \hline
@@ -382,9 +382,9 @@ The resulting TFRs are identical to the ones given by the Time-Frequency Toolbox
 \subsection{Uses}
 % What LAL, other routines does this one call?
 \begin{itemize}
-\item\texttt{SCreateVector()} 
+\item\texttt{SCreateVector()}
 \item\texttt{SDestroyVector()}
-\item\texttt{CCreateVector()} 
+\item\texttt{CCreateVector()}
 \item\texttt{CDestroyVector()}
 \item\texttt{EstimateFwdRealFFTPlan()}
 \item\texttt{DestroyRealFFTPlan()}
@@ -402,9 +402,9 @@ The resulting TFRs are identical to the ones given by the Time-Frequency Toolbox
 
 \bibitem{tftb}
 F.~Auger, P.~Flandrin, P.~Gon\c{c}alv\`es, O.~Lemoine.
-\newblock Time-frequency toolbox for M\textsc{atlab}, 
+\newblock Time-frequency toolbox for M\textsc{atlab},
 user's guide and reference guide.
-\newblock Available on the Internet at the URL 
+\newblock Available on the Internet at the URL
 \texttt{http://iut-saint-nazaire.univ-nantes.fr/ $\tilde{ }$\,auger/tftb.html}.
 
 \bibitem{flandrin99:tf_ts}
@@ -415,8 +415,8 @@ P.~Flandrin.
 
 \end{document}
 
-%%% Local Variables: 
+%%% Local Variables:
 %%% mode: latex
 %%% TeX-master: t
-%%% End: 
+%%% End:
 

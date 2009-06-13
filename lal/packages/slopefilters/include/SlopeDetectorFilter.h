@@ -48,25 +48,25 @@ which has the fields defined in table \ref{slopetable:paramstructure}.
 
 \begin{table}
 \begin{center}
-\begin{tabular}{|l|c|r|} \hline 
+\begin{tabular}{|l|c|r|} \hline
 datatype & parameter & description \\ \hline\hline
 \texttt{UINT4} & \texttt{forder} & number of bins $N$ used in filter \\ \hline
-\texttt{REAL4*} & \texttt{tap} & filter taps \\ \hline 
-\texttt{UINT4*} & \texttt{history\_allocated} & 1 if set, 0 if not. \\ \hline 
-\texttt{UINT4*} & \texttt{taps\_set} & 1 if set, 0 if not. \\ \hline 
-\texttt{REAL4*} & \texttt{history} & history buffer \\ \hline 
-\texttt{UINT4} & \texttt{function\_select} & see function 
-descriptions \\ \hline 
+\texttt{REAL4*} & \texttt{tap} & filter taps \\ \hline
+\texttt{UINT4*} & \texttt{history\_allocated} & 1 if set, 0 if not. \\ \hline
+\texttt{UINT4*} & \texttt{taps\_set} & 1 if set, 0 if not. \\ \hline
+\texttt{REAL4*} & \texttt{history} & history buffer \\ \hline
+\texttt{UINT4} & \texttt{function\_select} & see function
+descriptions \\ \hline
 \texttt{REAL4} & \texttt{waveform\_offset} & offset of waveform
-from bin, $0-1$ \\ \hline 
-\texttt{REAL4} & \texttt{sampling\_period\_s} & sampling period \\ \hline 
+from bin, $0-1$ \\ \hline
+\texttt{REAL4} & \texttt{sampling\_period\_s} & sampling period \\ \hline
 \end{tabular}
 \caption{Fields of the \texttt{SLOPEFilterParams} structure.}
 \label{slopetable:paramstructure}
 \end{center}
-\end{table} 
+\end{table}
 
-%[Document here any structures defined in the header.  
+%[Document here any structures defined in the header.
 %Also include any of them in the index; e.g.:]
 % \index{\texttt{SlopeDetectorFilterOutput}}
 % \index{\texttt{SlopeDetectorFilterInput}}
@@ -164,11 +164,11 @@ LALSlopeLineFitFilter( LALStatus                *status,
 		       const REAL4Vector*       input_data,
 		       const SLOPEFilterParams  fparams );
 
-void 
+void
 LALSlopeConvolutionFilter( LALStatus                *status,
 			   REAL4Vector*             output_data,
 			   const REAL4Vector*       input_data,
-			   const SLOPEFilterParams  fparams ); 
+			   const SLOPEFilterParams  fparams );
 
 
 #ifdef  __cplusplus

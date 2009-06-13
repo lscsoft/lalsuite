@@ -13,35 +13,35 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with with program; see the file COPYING. If not, write to the 
- *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, 
+ *  along with with program; see the file COPYING. If not, write to the
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
  */
 
-/** 
+/**
  * \defgroup moduleGeneratePulsarSignal Pulsar-signal generation
- * \ingroup inject 
+ * \ingroup inject
  * \brief Pulsar signal-generation routines for hardware- and software-injections.
  *
 
  * \par Description
- * 
+ *
  * - The main function LALGeneratePulsarSignal() generates a fake
  * pulsar-signal, either for an isolated or a binary pulsar. It returns a
- * time-series with the generated signal as received by the detector. 
- * 
+ * time-series with the generated signal as received by the detector.
+ *
  * - The time-series can then be turned into a vector of short time-base FFTs
  * (the so-called "SFTs") by using the function LALSignalToSFTs().
  * These SFTs are the data-format used by most frequency-domain pulsar codes,
  * therefore these functions can be directly used in a Monte-Carlo
- * injection driver. 
+ * injection driver.
  *
  * This module also contains a few more general-purpose helper-functions:
- * 
- * 
+ *
+ *
  * - Namely, LALConvertSSB2GPS() and LALConvertGPS2SSB()
  * which convert arrival times for a given source (not necessarily a
- * pulsar!) the detector ("GPS") and the solar-system barycenter ("SSB"). 
+ * pulsar!) the detector ("GPS") and the solar-system barycenter ("SSB").
  * NOTE: only the source-location (<tt>params->pulsar.position</tt>), the
  * detector-site (<tt>params->site</tt>) and the ephemeris-data
  * (<tt>params->ephemerides</tt>)are used from the
@@ -51,39 +51,39 @@
  * \par Algorithm:
  *
  * LALGeneratePulsarSignal() is basically a wrapper for the two
- * LAL-functions GenerateSpinOrbitCW() to produce the source-signal, 
+ * LAL-functions GenerateSpinOrbitCW() to produce the source-signal,
  * and LALSimulateCoherentGW() to turn it into a time-series at the detector.
- * 
- * LALSignalToSFTs() uses LALForwardRealFFT() appropriately on the input-timeseries to 
+ *
+ * LALSignalToSFTs() uses LALForwardRealFFT() appropriately on the input-timeseries to
  * produce the required output-SFTs ( v2-normalization! ).
  *
  *
  * \note
  *
- * LALSignalToSFTs() currently enforces the constraint of 
+ * LALSignalToSFTs() currently enforces the constraint of
  * <tt>Tsft * Band</tt> being an integer, so that the number of
  * time-samples per SFT is even. This follows <tt>makefakedata_v2</tt>.
- * 
+ *
  * Furthermore, if the timestamps for SFT-creation passed to
  * LALSignalToSFTs() do not fit exactly on a time-step of the
  * input time-series, it will be "nudged" to the closest one.
- * If <tt>lalDebugLevel>0</tt> a warning will be printed about this. 
+ * If <tt>lalDebugLevel>0</tt> a warning will be printed about this.
  * The user could also see this effect in the actual timestamps of the
  * SFTs returned.
- * 
- * 
+ *
+ *
  * The FFTW-"plan" is currently created using the \c ESTIMATE flag,
  * which is fast but only yields an approximate plan. Better results
  * might be achieved by using \c MEASURE and an appropriate buffering
  * of the resulting plan (which doesnt change provided the SFT-length is
  * the same). Measuring the plan takes longer but might lead to
  * substantial speedups for many FFTs, which seems the most likely situation.
- * 
- * 
+ *
+ *
  *
  * \par Use of LALFastGeneratePulsarSFTs()
  *
-The functions LALComputeSkyAndZeroPsiAMResponse() and LALFastGeneratePulsarSFTs() 
+The functions LALComputeSkyAndZeroPsiAMResponse() and LALFastGeneratePulsarSFTs()
 use approximate analytic formulas to generate SFTs.  This should be significantly
 faster than LALGeneratePulsarSignal() and LALSignalToSFTs(), which generate the
 time series data and then FFT it.  Simple tests performed by the code in
@@ -97,7 +97,7 @@ The strain of a periodic signal at the detector is given by
 \f[
 h(t) = F_+(t) A_+ {\rm cos}\Phi(t) + F_\times(t) A_\times {\rm sin}\Phi(t),
 \f]
-where \f$F_+\f$ and \f$F_\times\f$ are the usual beam pattern response functions, 
+where \f$F_+\f$ and \f$F_\times\f$ are the usual beam pattern response functions,
 \f$A_+\f$ and \f$A_\times\f$ are the amplitudes of the gravitational wave for the
 plus and cross polarizations, and \f$\Phi\f$ is the phase.  The phase contains modulations
 from doppler shifts due to the relative motion between the source and the
@@ -110,7 +110,7 @@ an SFT and approximate \f$F_+\f$ and \f$F_\times\f$ as constants, for one SFT we
 \f[
 \Phi(t) \approx \Phi_{1/2} + 2\pi f_{1/2}(t - t_{1/2}).
 \f]
-The strain at discrete time \f$t_j\f$, measured from the start of the SFT, can 
+The strain at discrete time \f$t_j\f$, measured from the start of the SFT, can
 thus be approximated as
 \f[
 h_j \approx F_{+ 1/2} A_+ {\rm cos} [\Phi_{1/2} + 2\pi f_{1/2}(t_0 + t_j - t_{1/2})]
@@ -131,8 +131,8 @@ Note that these are the same approximations used by LALDemod().
 
 One can show that the Discrete Fourier Transform (DFT) of \f$h_j\f$ above is:
 \f[
-\tilde{h}_k = e^{i\Phi_0}  { ( F_{+ 1/2} A_+ - i F_{\times 1/2} A_\times) \over 2 } 
-{ 1 - e^{2\pi i (\kappa - k)} \over 1 - e^{2\pi i (\kappa - k)/N} } 
+\tilde{h}_k = e^{i\Phi_0}  { ( F_{+ 1/2} A_+ - i F_{\times 1/2} A_\times) \over 2 }
+{ 1 - e^{2\pi i (\kappa - k)} \over 1 - e^{2\pi i (\kappa - k)/N} }
 \\
 + e^{-i\Phi_0}  { ( F_{+ 1/2} A_+ + i F_{\times 1/2} A_\times) \over 2 }
 { 1 - e^{-2\pi i (\kappa + k)} \over 1 - e^{-2\pi i (\kappa + k)/N} }
@@ -157,7 +157,7 @@ Note that the last factor in square brackets is \f$P_{\alpha k}^*\f$ and
 
 \par Example pseudocode
 
-The structs used by LALComputeSkyAndZeroPsiAMResponse and LALFastGeneratePulsarSFTs 
+The structs used by LALComputeSkyAndZeroPsiAMResponse and LALFastGeneratePulsarSFTs
 are given in previous sections, and make use of those used by
 LALGeneratePulsarSignal and LALSignalToSFTs plus a small number of
 additional parameters.  Thus it is fairly easy to change between the above
@@ -181,7 +181,7 @@ loop over sky positions {
          LALFastGeneratePulsarSFTs();
          ...
       }
-      ...  
+      ...
    }
    ...
 }
@@ -203,7 +203,7 @@ the C math libary \c cos() \c sin() functions are called, else lookup tables (LU
 for calls to trig functions.  There may be a slight speedup in using LUTs.
 
 -# To maximize the speed of SFT generations, LALFastGeneratePulsarSFTs() only generates
-values for the bins in the band <tt>2*Dterms</tt> centered on the signal frequency in each SFT. Dterms must be 
+values for the bins in the band <tt>2*Dterms</tt> centered on the signal frequency in each SFT. Dterms must be
 greater than zero and less than or equal to the number of frequency bins in the output SFTs. Note that
 Dterms is used the same way here as it is in LALDemod(). Nothing is done to the other bins, unless
 \c *outputSFTs is \c NULL; then, since memory is allocates for the output SFTs, the bins
@@ -215,7 +215,7 @@ not in the <tt>2*Dterms</tt> band are initialized to zero.
 /**
  * \author Reinhard Prix, Greg Mendell
  * \date 2005
- * \file 
+ * \file
  * \ingroup moduleGeneratePulsarSignal
  * \brief API for GeneratePulsarSignal.c
  *
@@ -288,18 +288,18 @@ NRCSID( GENERATEPULSARSIGNALH, "$Id$");
 /*@}*/
 
 
-/** Input parameters to GeneratePulsarSignal(), defining the source and the time-series 
+/** Input parameters to GeneratePulsarSignal(), defining the source and the time-series
  */
 typedef struct {
   /* source-parameters */
   PulsarSourceParams pulsar;	/**< the actual pulsar-source */
   BinaryOrbitParams *orbit;	/**< and its binary orbit (NULL if isolated pulsar) */
-  
+
   /* characterize the detector */
-  COMPLEX8FrequencySeries *transfer; /**< detector transfer function (NULL if not used) */	
-  LALDetector *site;		/**< detector location and orientation */  
+  COMPLEX8FrequencySeries *transfer; /**< detector transfer function (NULL if not used) */
+  LALDetector *site;		/**< detector location and orientation */
   EphemerisData *ephemerides;	/**< Earth and Sun ephemerides */
-  
+
   /* characterize the output time-series */
   LIGOTimeGPS startTimeGPS;     /**< start time of output time series */
   UINT4 duration;           	/**< length of time series in seconds */
@@ -322,7 +322,7 @@ typedef struct {
  * \c cosVal on the domain \f$[-2\pi, 2\pi]\f$ inclusive.  See GeneratePulsarSignalTest.c for an example.
  */
 typedef struct {
-   PulsarSignalParams *pSigParams; 
+   PulsarSignalParams *pSigParams;
    SFTParams *pSFTParams;
    INT4  nSamples;  /**< nsample from noise SFT header; 2x this equals effective number of time samples  */
    INT4  Dterms;    /**< use this to fill in SFT bins with fake data as per LALDemod else fill in bin with zero */
@@ -350,10 +350,10 @@ extern const SFTandSignalParams empty_SFTandSignalParams;
 
 
 /* Function prototypes */
-void LALGeneratePulsarSignal (LALStatus *, REAL4TimeSeries **signal, const PulsarSignalParams *params);
+void LALGeneratePulsarSignal (LALStatus *, REAL4TimeSeries **signalvec, const PulsarSignalParams *params);
 void LALSimulateExactPulsarSignal (LALStatus *, REAL4TimeSeries **timeSeries, const PulsarSignalParams *params);
 
-void LALSignalToSFTs (LALStatus *, SFTVector **outputSFTs, const REAL4TimeSeries *signal, const SFTParams *params);
+void LALSignalToSFTs (LALStatus *, SFTVector **outputSFTs, const REAL4TimeSeries *signalvec, const SFTParams *params);
 
 void LALComputeSkyAndZeroPsiAMResponse (LALStatus *, SkyConstAndZeroPsiAMResponse *output, const SFTandSignalParams *params);
 void LALFastGeneratePulsarSFTs (LALStatus *, SFTVector **outputSFTs, const SkyConstAndZeroPsiAMResponse *input, const SFTandSignalParams *params);
@@ -363,7 +363,7 @@ void LALConvertSSB2GPS (LALStatus *, LIGOTimeGPS *GPSout, LIGOTimeGPS GPSin, con
 
 #ifdef  __cplusplus
 }
-#endif  
+#endif
 /* C++ protection. */
 
 #endif  /* Double-include protection. */

@@ -31,19 +31,19 @@ void XFUNC ( VTYPE *vector )
 /* <lalVerbatim file="VectorFactoriesD"> */
 void FUNC ( LALStatus *status, VTYPE **vector )
 { /* </lalVerbatim> */
-  /* 
+  /*
    * Initialize status
    */
 
-  INITSTATUS( status, "FUNC", VECTORFACTORIESC );	
-      
-  /* 
+  INITSTATUS( status, "FUNC", VECTORFACTORIESC );
+
+  /*
    * Check vector: is it non-NULL?
    */
 
   ASSERT( vector != NULL, status, AVFACTORIESH_EVPTR, AVFACTORIESH_MSGEVPTR );
 
-  /* 
+  /*
    * Check vector: does it point to non-NULL?
    */
 

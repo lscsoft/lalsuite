@@ -5,7 +5,7 @@ EXTRA_DIST = fct.h fct.c fct_fft.h fct_fft.c
 if INTELFFT
 libfct_la_SOURCES =
 else
-libfct_la_SOURCES = LALfct.c LALFCTInterface.c 
+libfct_la_SOURCES = LALfct.c LALFCTInterface.c
 endif
 
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include

@@ -12,8 +12,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with with program; see the file COPYING. If not, write to the 
- *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, 
+ *  along with with program; see the file COPYING. If not, write to the
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
  */
 
@@ -28,9 +28,9 @@
  *            Modified by Badri Krishnan Feb 2003
  *-----------------------------------------------------------------------
  *
-\par Description 
+\par Description
 
-This module is the core of the Hough transform. The LAL function 
+This module is the core of the Hough transform. The LAL function
 LALHOUGHConstructPLUT()
 constructs the look up tables that will be used to build the so-called
 partial-Hough maps. Each look up table is valid for a given sky-patch, time, and
@@ -42,25 +42,25 @@ The inputs are:  HOUGHPatchGrid   containing the grid patch
 information. This is independent of the sky location of the
 patch, And  HOUGHParamPLUT  with all the other parameters needed.
 
-The output is the look up table  HOUGHptfLUT  
+The output is the look up table  HOUGHptfLUT
 
 
 \par Uses
 \code
 PLUTInitialize(HOUGHptfLUT  *)
 FillPLUT(HOUGHParamPLUT *, HOUGHptfLUT *, HOUGHPatchGrid *)
-CheckLeftCircle(REAL8, REAL8, REAL8, INT4 *, INT4 *, INT4 *, 
+CheckLeftCircle(REAL8, REAL8, REAL8, INT4 *, INT4 *, INT4 *,
                 HOUGHPatchGrid *)
-CheckRightCircle(REAL8, REAL8, REAL8, INT4 *, INT4 *, INT4 *, 
+CheckRightCircle(REAL8, REAL8, REAL8, INT4 *, INT4 *, INT4 *,
                  HOUGHPatchGrid *)
-DrawRightCircle(REAL8, REAL8, REAL8, INT4, INT4, COORType *, 
+DrawRightCircle(REAL8, REAL8, REAL8, INT4, INT4, COORType *,
                 HOUGHPatchGrid *)
-DrawLeftCircle(REAL8, REAL8, REAL8, INT4, INT4, COORType *, 
+DrawLeftCircle(REAL8, REAL8, REAL8, INT4, INT4, COORType *,
                HOUGHPatchGrid *)
 CheckLineCase(REAL8, REAL8, REAL8, REAL8 *, INT4 *)
 FindExactLine(REAL8, REAL8, REAL8 *, REAL8 *)
 FindLine(REAL8, REAL8, REAL8, REAL8 *, REAL8 *)
-CheckLineIntersection(REAL8, REAL8, REAL8, INT4 *, INT4 *, INT4 *, 
+CheckLineIntersection(REAL8, REAL8, REAL8, INT4 *, INT4 *, INT4 *,
                       HOUGHPatchGrid *)
 DrawLine(REAL8, REAL8, REAL8,INT4, INT4, COORType *, HOUGHPatchGrid *)
 Fill1Column(INT4, INT4*, HOUGHptfLUT *, HOUGHPatchGrid *)
@@ -76,17 +76,17 @@ Fill1ColumnAnor(INT4, HOUGHptfLUT *, HOUGHPatchGrid *)
 FillCaseA1(INT4, INT4, INT4, HOUGHptfLUT *)
 FillCaseA2(INT4, INT4, INT4, HOUGHptfLUT *)
 FillCaseA3(INT4, INT4, INT4, HOUGHptfLUT *, HOUGHPatchGrid *)
-InitialCircleCase(INT4 *,REAL8, REAL8, REAL8, REAL8 *, INT4 *, INT4 *, 
+InitialCircleCase(INT4 *,REAL8, REAL8, REAL8, REAL8 *, INT4 *, INT4 *,
                   HOUGHptfLUT *, HOUGHPatchGrid *)
 SecondCircleCase(INT4, INT4*, REAL8, REAL8, REAL8, INT4, REAL8 *,
                  INT4*,INT4 *,INT4*, HOUGHptfLUT *, HOUGHPatchGrid *)
 FollowCircleCase(INT4,INT4 *,REAL8,REAL8,REAL8,REAL8,REAL8,INT4 *,
                  INT4 *,INT4 *, HOUGHptfLUT *, HOUGHPatchGrid *)
-InitialLineCase(INT4 *, REAL8, REAL8, REAL8, INT4 *, HOUGHptfLUT *, 
+InitialLineCase(INT4 *, REAL8, REAL8, REAL8, INT4 *, HOUGHptfLUT *,
                 HOUGHPatchGrid *)
-SecondLineCase(INT4, INT4 *, REAL8, REAL8, REAL8, INT4 *, HOUGHptfLUT *, 
+SecondLineCase(INT4, INT4 *, REAL8, REAL8, REAL8, INT4 *, HOUGHptfLUT *,
                HOUGHPatchGrid *)
-FollowLineCase(INT4, INT4 *, REAL8, REAL8, REAL8, REAL8, INT4, INT4 *, 
+FollowLineCase(INT4, INT4 *, REAL8, REAL8, REAL8, REAL8, INT4, INT4 *,
                            HOUGHptfLUT *, HOUGHPatchGrid *)
 \endcode
 
@@ -137,18 +137,18 @@ use of the stereographic projection.
 \begin{verbatim}
 static void PLUTInitialize(HOUGHptfLUT  *);
 static void FillPLUT(HOUGHParamPLUT *, HOUGHptfLUT *, HOUGHPatchGrid *);
-static void CheckLeftCircle(REAL8, REAL8, REAL8, INT4 *, INT4 *, INT4 *, 
+static void CheckLeftCircle(REAL8, REAL8, REAL8, INT4 *, INT4 *, INT4 *,
                             HOUGHPatchGrid *);
-static void CheckRightCircle(REAL8, REAL8, REAL8, INT4 *, INT4 *, INT4 *, 
+static void CheckRightCircle(REAL8, REAL8, REAL8, INT4 *, INT4 *, INT4 *,
                              HOUGHPatchGrid *);
-static void DrawRightCircle(REAL8, REAL8, REAL8, INT4, INT4, COORType *, 
+static void DrawRightCircle(REAL8, REAL8, REAL8, INT4, INT4, COORType *,
                             HOUGHPatchGrid *);
-static void DrawLeftCircle(REAL8, REAL8, REAL8, INT4, INT4, COORType *, 
+static void DrawLeftCircle(REAL8, REAL8, REAL8, INT4, INT4, COORType *,
                            HOUGHPatchGrid *);
 static void CheckLineCase(REAL8, REAL8, REAL8, REAL8 *, INT4 *);
 static void FindExactLine(REAL8, REAL8, REAL8 *, REAL8 *);
 static void FindLine(REAL8, REAL8, REAL8, REAL8 *, REAL8 *);
-static void CheckLineIntersection(REAL8, REAL8, REAL8, INT4 *, INT4 *, INT4 *, 
+static void CheckLineIntersection(REAL8, REAL8, REAL8, INT4 *, INT4 *, INT4 *,
                                   HOUGHPatchGrid *);
 static void DrawLine(REAL8, REAL8, REAL8,INT4, INT4, COORType *, HOUGHPatchGrid *);
 static void Fill1Column(INT4, INT4*, HOUGHptfLUT *, HOUGHPatchGrid *);
@@ -164,17 +164,17 @@ static void Fill1ColumnAnor(INT4, HOUGHptfLUT *, HOUGHPatchGrid *);
 static void FillCaseA1(INT4, INT4, INT4, HOUGHptfLUT *);
 static void FillCaseA2(INT4, INT4, INT4, HOUGHptfLUT *);
 static void FillCaseA3(INT4, INT4, INT4, HOUGHptfLUT *, HOUGHPatchGrid *);
-static void InitialCircleCase(INT4 *,REAL8, REAL8, REAL8, REAL8 *, INT4 *, INT4 *, 
+static void InitialCircleCase(INT4 *,REAL8, REAL8, REAL8, REAL8 *, INT4 *, INT4 *,
                               HOUGHptfLUT *, HOUGHPatchGrid *);
 static void SecondCircleCase(INT4, INT4*, REAL8, REAL8, REAL8, INT4, REAL8 *,
                              INT4*,INT4 *,INT4*, HOUGHptfLUT *, HOUGHPatchGrid *);
 static void FollowCircleCase(INT4,INT4 *,REAL8,REAL8,REAL8,REAL8,REAL8,INT4 *,
                              INT4 *,INT4 *, HOUGHptfLUT *, HOUGHPatchGrid *);
-static void InitialLineCase(INT4 *, REAL8, REAL8, REAL8, INT4 *, HOUGHptfLUT *, 
+static void InitialLineCase(INT4 *, REAL8, REAL8, REAL8, INT4 *, HOUGHptfLUT *,
                             HOUGHPatchGrid *);
-static void SecondLineCase(INT4, INT4 *, REAL8, REAL8, REAL8, INT4 *, HOUGHptfLUT *, 
+static void SecondLineCase(INT4, INT4 *, REAL8, REAL8, REAL8, INT4 *, HOUGHptfLUT *,
                            HOUGHPatchGrid *);
-static void FollowLineCase(INT4, INT4 *, REAL8, REAL8, REAL8, REAL8, INT4, INT4 *, 
+static void FollowLineCase(INT4, INT4 *, REAL8, REAL8, REAL8, REAL8, INT4, INT4 *,
                            HOUGHptfLUT *, HOUGHPatchGrid *);
 \end{verbatim}
 
@@ -196,7 +196,7 @@ patch. And  \verb@HOUGHParamPLUT  *par@ with all the other parameters needed.
 The output is:  \verb@HOUGHptfLUT   *lut@. The fields are:
 
 \begin{description}
-\item[\texttt{lut-> timeIndex }]  Time index of the {\sc lut}. 
+\item[\texttt{lut-> timeIndex }]  Time index of the {\sc lut}.
 \item[\texttt{lut->f0Bin }]  Frequency bin for which it has been
 constructed.
 \item[\texttt{lut->deltaF }]  Frequency resolution: \texttt{df=1/TCOH}
@@ -232,7 +232,7 @@ More detailed documentation can be found in the source code itself.
 
 
 /*
- * 3. Includes. These should appear in the following order: 
+ * 3. Includes. These should appear in the following order:
  *    a. Standard library includes
  *    b. LDAS includes
  *    c. LAL includes
@@ -243,7 +243,7 @@ More detailed documentation can be found in the source code itself.
 
 
 /*
- * 4. Assignment of Id string using NRCSID()  
+ * 4. Assignment of Id string using NRCSID()
  */
 
 NRCSID (CONSTRUCTPLUTC, "$Id$");
@@ -285,18 +285,18 @@ NRCSID (CONSTRUCTPLUTC, "$Id$");
 static void PLUTInitialize(HOUGHptfLUT  *);
 static void FillPLUT(HOUGHParamPLUT *, HOUGHptfLUT *, HOUGHPatchGrid *);
 
-static void CheckLeftCircle(REAL8,REAL8,REAL8,INT4 *,INT4 *,INT4 *, 
+static void CheckLeftCircle(REAL8,REAL8,REAL8,INT4 *,INT4 *,INT4 *,
                           HOUGHPatchGrid *);
-static void CheckRightCircle(REAL8,REAL8,REAL8,INT4 *,INT4 *,INT4 *, 
+static void CheckRightCircle(REAL8,REAL8,REAL8,INT4 *,INT4 *,INT4 *,
                            HOUGHPatchGrid *);
-static void DrawRightCircle(REAL8,REAL8,REAL8,INT4,INT4, COORType *, 
+static void DrawRightCircle(REAL8,REAL8,REAL8,INT4,INT4, COORType *,
                           HOUGHPatchGrid *);
-static void DrawLeftCircle(REAL8,REAL8,REAL8,INT4,INT4,COORType *, 
+static void DrawLeftCircle(REAL8,REAL8,REAL8,INT4,INT4,COORType *,
                          HOUGHPatchGrid *);
 static void CheckLineCase(REAL8, REAL8, REAL8,REAL8 *, INT4 *);
 /* static void FindExactLine(REAL8,REAL8,REAL8 *,REAL8 *); */
 static void FindLine(REAL8,REAL8,REAL8,REAL8 *,REAL8 *);
-static void CheckLineIntersection(REAL8,REAL8,REAL8,INT4 *,INT4 *,INT4 *, 
+static void CheckLineIntersection(REAL8,REAL8,REAL8,INT4 *,INT4 *,INT4 *,
                                 HOUGHPatchGrid *);
 static void DrawLine(REAL8, REAL8, REAL8,INT4, INT4, COORType *, HOUGHPatchGrid *);
 static void Fill1Column(INT4, INT4*, HOUGHptfLUT *, HOUGHPatchGrid *);
@@ -313,17 +313,17 @@ static void FillCaseA1(INT4, INT4, INT4, HOUGHptfLUT *);
 static void FillCaseA2(INT4, INT4, INT4, HOUGHptfLUT *);
 static void FillCaseA3(INT4, INT4, INT4, HOUGHptfLUT *, HOUGHPatchGrid *);
 
-static void InitialCircleCase(INT4 *,REAL8, REAL8, REAL8, REAL8 *, INT4 *, INT4 *, 
+static void InitialCircleCase(INT4 *,REAL8, REAL8, REAL8, REAL8 *, INT4 *, INT4 *,
                             HOUGHptfLUT *, HOUGHPatchGrid *);
 static void SecondCircleCase(INT4, INT4*,REAL8,REAL8, REAL8,INT4,REAL8*,
                            INT4*,INT4 *,INT4*, HOUGHptfLUT *, HOUGHPatchGrid *);
 static void FollowCircleCase(INT4,INT4 *,REAL8,REAL8,REAL8,REAL8,REAL8,INT4 *,
                            INT4 *,INT4 *, HOUGHptfLUT *, HOUGHPatchGrid *);
-static void InitialLineCase(INT4 *, REAL8, REAL8, REAL8, INT4 *, HOUGHptfLUT *, 
+static void InitialLineCase(INT4 *, REAL8, REAL8, REAL8, INT4 *, HOUGHptfLUT *,
                           HOUGHPatchGrid *);
-static void SecondLineCase(INT4, INT4 *, REAL8, REAL8, REAL8, INT4 *, HOUGHptfLUT *, 
+static void SecondLineCase(INT4, INT4 *, REAL8, REAL8, REAL8, INT4 *, HOUGHptfLUT *,
                          HOUGHPatchGrid *);
-static void FollowLineCase(INT4, INT4 *,REAL8, REAL8, REAL8,REAL8,INT4,INT4 *, 
+static void FollowLineCase(INT4, INT4 *,REAL8, REAL8, REAL8,REAL8,INT4,INT4 *,
                          HOUGHptfLUT *, HOUGHPatchGrid *);
 
 
@@ -337,34 +337,34 @@ static void FollowLineCase(INT4, INT4 *,REAL8, REAL8, REAL8,REAL8,INT4,INT4 *,
 void LALHOUGHConstructPLUT(LALStatus       *status,
 			   HOUGHptfLUT     *lut,
 			   HOUGHPatchGrid  *patch,
-			   HOUGHParamPLUT  *par)  
+			   HOUGHParamPLUT  *par)
 { /*  ************************************************ </lalVerbatim> */
- 
+
   INT8    f0Bin;
-  
+
   /* --------------------------------------------- */
   INITSTATUS (status, " LALHOUGHConstructPLUT", CONSTRUCTPLUTC);
   /*  ATTATCHSTATUSPTR (status); */
 
-  /*   Make sure the arguments are not NULL: */ 
+  /*   Make sure the arguments are not NULL: */
   /* use aborts instead of asserts */
   if (lut == NULL) {
-    ABORT( status, LUTH_ENULL, LUTH_MSGENULL); 
+    ABORT( status, LUTH_ENULL, LUTH_MSGENULL);
   }
   /* ASSERT (lut, status, LUTH_ENULL, LUTH_MSGENULL); */
 
   if (patch == NULL) {
-    ABORT( status, LUTH_ENULL, LUTH_MSGENULL); 
+    ABORT( status, LUTH_ENULL, LUTH_MSGENULL);
   }
   /* ASSERT (patch, status, LUTH_ENULL, LUTH_MSGENULL); */
 
   if (par == NULL) {
-    ABORT( status, LUTH_ENULL, LUTH_MSGENULL); 
+    ABORT( status, LUTH_ENULL, LUTH_MSGENULL);
   }
   /* ASSERT (par,  status, LUTH_ENULL, LUTH_MSGENULL); */
-  
+
   if (  fabs((REAL4)par->deltaF - (REAL4)patch->deltaF) > 1.0e-6) {
-    ABORT( status, LUTH_EVAL, LUTH_MSGEVAL); 
+    ABORT( status, LUTH_EVAL, LUTH_MSGEVAL);
   }
   /* ASSERT (par->deltaF == patch->deltaF,  status, LUTH_EVAL, LUTH_MSGEVAL); */
 
@@ -374,31 +374,31 @@ void LALHOUGHConstructPLUT(LALStatus       *status,
 
   lut->deltaF = par->deltaF;
   lut->f0Bin  = f0Bin;
-  
+
   lut->nFreqValid = par->nFreqValid;
   /* lut->nFreqValid = PIXERR * f0Bin *VEPI/VTOT; */
 
   /* -------------------------------------------   */
-  
-  PLUTInitialize(lut);  
+
+  PLUTInitialize(lut);
   FillPLUT(par, lut, patch);
- 
-  
+
+
   /* Make sure number of bins makes sense with the dimensions  */
   if (lut->nBin <= 0) {
-    ABORT( status, LUTH_ESIZE, LUTH_MSGESIZE); 
+    ABORT( status, LUTH_ESIZE, LUTH_MSGESIZE);
   }
   /* ASSERT (lut->nBin >0, status, LUTH_ESIZE, LUTH_MSGESIZE); */
 
   if (lut->nBin > lut->maxNBins) {
-    ABORT( status, LUTH_ESIZE, LUTH_MSGESIZE); 
+    ABORT( status, LUTH_ESIZE, LUTH_MSGESIZE);
   }
   /* ASSERT (lut->nBin <= lut->maxNBins, status, LUTH_ESIZE, LUTH_MSGESIZE); */
 
-  
+
   /* -------------------------------------------   */
   /* DETATCHSTATUSPTR (status); */
-  
+
   /* normal exit */
   RETURN (status);
 }
@@ -424,10 +424,10 @@ void LALHOUGHConstructPLUT(LALStatus       *status,
 static void  PLUTInitialize(HOUGHptfLUT  *lut){
   UINT4  i;
   UINT4 maxNBins, maxNBorders;
-  
+
   maxNBins = lut->maxNBins;
   maxNBorders = lut->maxNBorders;
-  
+
   for(i=0;i<maxNBins;++i){
 
     /* check lut->bin is not null */
@@ -439,12 +439,12 @@ static void  PLUTInitialize(HOUGHptfLUT  *lut){
     lut->bin[i].rightB1 = 0;
     lut->bin[i].leftB2  = 0;
     lut->bin[i].rightB2 = 0;
-    lut->bin[i].piece1max = -1; 
+    lut->bin[i].piece1max = -1;
     lut->bin[i].piece1min = 0;
     lut->bin[i].piece2max = -1;
     lut->bin[i].piece2min = 0;
   }
-  
+
   for(i=0;i<maxNBorders;++i){
 
     /* check lut->border is not null */
@@ -476,7 +476,7 @@ static void  PLUTInitialize(HOUGHptfLUT  *lut){
 /*    to calculate xi(t) for a given f0 (and demodulation parameters). */
 /*    Then rotate that vector to our new coordinates, if it was not  */
 /*    constructed in that way. */
-   
+
 /*    We need here |xi|, alpha, delta[-pi/2,pi/2],  on the sphere. */
 /*       or its cartesian coordiantes  */
 
@@ -497,12 +497,12 @@ static void  PLUTInitialize(HOUGHptfLUT  *lut){
 /*       Note  */
 /*         if  [cos(phi)]max = 1,  do  not increase k !!! */
 /*         if  [cos(phi)]min =-1,  do  not decrease k !!! */
-          
+
 /*           [cos(phi)]max(k) = min[ 1, df/|xi|+[cos(phi)]max(k-1) ] */
 /*           [cos(phi)]min(k) = max[ 1, df/|xi|+[cos(phi)]min(k-1) ]  */
 /* ********************************************************************* */
 /*     for a bin,peak or border: */
-        
+
 /*     if cos(phi)=+-1  => nothing to be drawn! */
 /*     otherwise */
 /*         obtain phi in the interval [0, LAL_PI] */
@@ -517,7 +517,7 @@ static void  PLUTInitialize(HOUGHptfLUT  *lut){
 /*    for k>=0, binindex= k                                     */
 /*    for k<0,  binindex= nBin+iniBin-1-k                       */
 /*   f0 corresponds to k=0                                      */
-/* This will be used when reading the peakgram!                 */ 
+/* This will be used when reading the peakgram!                 */
 /* ******************************************************************* */
 
 static void  FillPLUT(HOUGHParamPLUT  *par, HOUGHptfLUT  *lut,
@@ -533,13 +533,13 @@ static void  FillPLUT(HOUGHParamPLUT  *par, HOUGHptfLUT  *lut,
   REAL8 alpha;      /* = xi.alpha in the rotated coordinates                 */
   REAL8 delta;      /* = xi.delta                                            */
   REAL8 epsilon;    /* = 8 * LINERR/(f0Bin * VTOT * patchSize^2)             */
-                   
+
 
   /********************************************************/
   UINT4 maxNBins;
   UINT4 maxNBorders;
-  
-  INT4 lastBorder =0;  /* counter of the last build border */ 
+
+  INT4 lastBorder =0;  /* counter of the last build border */
   INT4 currentBin =0;  /* counter of the bin studied       */
 
   INT4 ifailPlus  = 1; /* =1 (ok, continue to next bin), =0 (stop) */
@@ -552,11 +552,11 @@ static void  FillPLUT(HOUGHParamPLUT  *par, HOUGHptfLUT  *lut,
   INT4 pathology=1;   /* =1 (normal), =0 (anormal case) */
   INT4 lineCase;    /* =1 line Case, =0 circle case */
   INT4 nBinPos;
-  
+
   /********************************************************/
 
   REAL8 rCritic;
-  REAL8 lambda; 
+  REAL8 lambda;
   REAL8 rcOldPlus;
   REAL8 rcOldMinus;
   REAL8 cosPhiMax, cosPhiMin, phi;
@@ -566,45 +566,45 @@ static void  FillPLUT(HOUGHParamPLUT  *par, HOUGHptfLUT  *lut,
   /********************************************************/
   maxNBins = lut->maxNBins;
   maxNBorders = lut->maxNBorders;
-  
+
   alpha = par->xi.alpha;
   delta = par->xi.delta;
   cosDelta = par->cosDelta;
   cosPhiMax0 = par->cosPhiMax0;
-  cosPhiMin0 = par->cosPhiMin0; 
+  cosPhiMin0 = par->cosPhiMin0;
   epsilon = par->epsilon;
 
   /********************************************************/
 
   /* Copy value of offset */
   lut->offset = par->offset;
-  
+
   /********************************************************/
 
   lambda = 2* delta -LAL_PI*0.5;
   rCritic = 2* cos(lambda) /(1 - sin(lambda) );
 
-  /* Initializing variables to irrelevant values, 
+  /* Initializing variables to irrelevant values,
      since these values should never be used */
   rcOldPlus = rCritic;
   rcOldMinus = rCritic;
   /********************************************************/
   /*  starting with the (central) bin corresponding to:   */
   /*            Delta_f(t) =0 (k=0), border cosPhiMax     */
-  /********************************************************/ 
+  /********************************************************/
 
   /* cosPhiMax = MIN(1, cosPhiMax0); */
   cosPhiMax = cosPhiMax0;
-  
+
   if(cosPhiMax > 0.99999999){ /* avoid points or small circles */
     ifailPlus = 0;            /* do not go to the next bin */
     directionPlus = -1;
   } else{
-    
+
     phi  = acos(cosPhiMax);   /* in the interval (0,PI) */
     ang1 = delta + phi;
     ang2 = delta - phi;
-    
+
     /* check for lines, or numerical lines! */
     CheckLineCase(epsilon, ang1, ang2, &eps, &lineCase);
 
@@ -614,11 +614,11 @@ static void  FillPLUT(HOUGHParamPLUT  *par, HOUGHptfLUT  *lut,
       directionPlus = -1;
     } else{
       /* circle case */
-      InitialCircleCase(&lastBorder,alpha, ang1, ang2,  
+      InitialCircleCase(&lastBorder,alpha, ang1, ang2,
 			&rcOldPlus, &directionPlus, &ifailPlus,lut, patch);
-    }    
+    }
   }
-  
+
   directionPlusZero= directionPlus;
 
   /********************************************************/
@@ -632,13 +632,13 @@ static void  FillPLUT(HOUGHParamPLUT  *par, HOUGHptfLUT  *lut,
 
 
   while (ifailPlus){
-   
+
     ++currentBin;
     pathology = 1;
-    
+
     /* Some checks */
     /* #ifdef CHECKHOUGHINDEX */
-    if (currentBin > maxNBins || lastBorder>= maxNBorders ){ 
+    if (currentBin > maxNBins || lastBorder>= maxNBorders ){
       fprintf(stderr,"currentBin=%d not in range 1 to maxNBins=%d\n"
 	      "or lastborder=%d >= maxNBorders=%d [ConstructPLUT.c %d]\n",
 	      currentBin,maxNBins,lastBorder,maxNBorders, __LINE__);
@@ -655,36 +655,36 @@ static void  FillPLUT(HOUGHParamPLUT  *par, HOUGHptfLUT  *lut,
       phi  = acos(cosPhiMax); /* it is in the interval (0,pi) */
       ang1 = delta + phi;
       ang2 = delta - phi;
-      
+
       /* check for lines, or numerical lines! */
       CheckLineCase(epsilon, ang1, ang2, &eps, &lineCase);
-      
+
       if( lineCase ){
  	/* line case */
 	FollowLineCase(currentBin, &lastBorder,alpha,delta,eps,
 		       rcOldPlus, directionPlus, &ifailPlus,lut, patch);
       } else{
 	/* circle case */
-	FollowCircleCase(currentBin, &lastBorder,alpha, ang1, ang2,rCritic, 
-			 rcOldPlus, &pathology, &directionPlus, 
+	FollowCircleCase(currentBin, &lastBorder,alpha, ang1, ang2,rCritic,
+			 rcOldPlus, &pathology, &directionPlus,
 			 &ifailPlus, lut, patch);
-      }    
+      }
     }
-    
+
     if(pathology){
       Fill1Column(currentBin, &lastBorder, lut, patch);
     }else{
-      Fill1ColumnAnor(currentBin, lut, patch); 
+      Fill1ColumnAnor(currentBin, lut, patch);
     }
   }
-  
+
   nBinPos = currentBin;
-  
-  
+
+
   /********************************************************/
   /*  starting with the (central) bin corresponding to:   */
   /*            Delta_f(t) =0 (k=0), border cosPhiMin     */
-  /********************************************************/ 
+  /********************************************************/
 
   /* cosPhiMin = MAX(-1, cosPhiMin0); */
   cosPhiMin = cosPhiMin0;
@@ -696,24 +696,24 @@ static void  FillPLUT(HOUGHParamPLUT  *par, HOUGHptfLUT  *lut,
     phi  = acos(cosPhiMin);   /* in the interval (0,PI) */
     ang1 = delta + phi;
     ang2 = delta - phi;
-    
+
     /* check for lines, or numerical lines! */
     CheckLineCase(epsilon, ang1, ang2, &eps, &lineCase);
-    
+
     if( lineCase ){
       /* line case */
       SecondLineCase(currentBin,&lastBorder,alpha,delta,eps, &ifailMinus,
                      lut, patch);
       directionMinus = -1;
-      pathology = 0;  
+      pathology = 0;
     } else{
       /* circle case */
       pathology = 1; /* provisionally */
-      SecondCircleCase(currentBin, &lastBorder,alpha, ang1, ang2, 
-		       directionPlusZero, &rcOldMinus, 
-		       &pathology, &directionMinus, 
+      SecondCircleCase(currentBin, &lastBorder,alpha, ang1, ang2,
+		       directionPlusZero, &rcOldMinus,
+		       &pathology, &directionMinus,
 		       &ifailMinus, lut, patch);
-    }    
+    }
   }
 
   /********************************************************/
@@ -737,19 +737,19 @@ static void  FillPLUT(HOUGHParamPLUT  *par, HOUGHptfLUT  *lut,
   /********************************************************/
 
   while(ifailMinus){
-   
+
     ++currentBin;
     pathology = 1;
-    
+
     /* Some checks */
     /* #ifdef CHECKHOUGHINDEX */
-    if (currentBin > maxNBins || lastBorder>= maxNBorders ){ 
+    if (currentBin > maxNBins || lastBorder>= maxNBorders ){
       fprintf(stderr,"currentBin=%d not in range 1 to maxNBins=%d\n"
 	      "or lastborder=%d >= maxNBorders=%d [ConstructPLUT.c %d]\n",
 	      currentBin,maxNBins,lastBorder,maxNBorders, __LINE__);
     }
     /* #endif */
-    
+
 
     cosPhiMin = cosPhiMin - cosDelta;
 
@@ -760,29 +760,29 @@ static void  FillPLUT(HOUGHParamPLUT  *par, HOUGHptfLUT  *lut,
       phi  = acos(cosPhiMin); /* it is in the interval (0,pi) */
       ang1 = delta + phi;
       ang2 = delta - phi;
-      
+
       /* check for lines, or numerical lines! */
       CheckLineCase(epsilon, ang1, ang2, &eps, &lineCase);
-      
+
       if( lineCase ){
     	/* line case */
 	FollowLineCase(currentBin, &lastBorder,alpha,delta,eps,
 		       rcOldMinus, directionMinus, &ifailMinus,lut, patch);
       } else{
 	/* circle case */
-	FollowCircleCase(currentBin, &lastBorder,alpha, ang1, ang2,rCritic, 
-			 rcOldMinus, &pathology, &directionMinus, 
+	FollowCircleCase(currentBin, &lastBorder,alpha, ang1, ang2,rCritic,
+			 rcOldMinus, &pathology, &directionMinus,
 			 &ifailMinus, lut, patch);
-      }    
+      }
     }
-    
+
     if(pathology){
       Fill1Column(currentBin, &lastBorder, lut, patch);
     }else{
-      Fill1ColumnAnor(currentBin, lut, patch); 
+      Fill1ColumnAnor(currentBin, lut, patch);
     }
   }
-  
+
   /********************************************************/
   /* set iniBin,nBin  etc */
   /********************************************************/
@@ -813,13 +813,13 @@ static void  FillPLUT(HOUGHParamPLUT  *par, HOUGHptfLUT  *lut,
 
 /****************************************************************/
 
-static void InitialLineCase(INT4  *lastBorderP, REAL8 alpha, REAL8  delta, 
+static void InitialLineCase(INT4  *lastBorderP, REAL8 alpha, REAL8  delta,
 		     REAL8 eps, INT4 *ifailP, HOUGHptfLUT  *lut,
 		     HOUGHPatchGrid  *patch){
 
 
   INT4 lastBorder;
-  
+
 
   REAL8  xA,yA;
   INT4 yymin,yymax;
@@ -887,16 +887,16 @@ static void InitialLineCase(INT4  *lastBorderP, REAL8 alpha, REAL8  delta,
       lut->bin[1].rightB2 = lastBorder;
       lut->border[lastBorder].yCenter = patch->ySide -1;/*or bigger */
     }
-  } 
+  }
   else { /* non- horizontal line */
     xRel = xA + tan(alpha)*yA;
 
-    if( (alpha == 0) || (alpha == LAL_PI) || (alpha == -LAL_PI) ){ 
+    if( (alpha == 0) || (alpha == LAL_PI) || (alpha == -LAL_PI) ){
       /* vertical line */
       slope = +1; /* arbitrary number, just to avoid overflow */
     } else {
       slope = - cot(alpha);
-    } 
+    }
 
     if( xRel < 0 ){
       lut->bin[0].leftB2 = lastBorder;
@@ -911,7 +911,7 @@ static void InitialLineCase(INT4  *lastBorderP, REAL8 alpha, REAL8  delta,
     } else {
       lut->bin[0].rightB1 = lastBorder;
       lut->bin[1].leftB1  = lastBorder;
-      
+
       if ( slope > 0 ){
 	lut->border[lastBorder].yCenter = 0; /*or smaller*/
       } else {
@@ -924,7 +924,7 @@ static void InitialLineCase(INT4  *lastBorderP, REAL8 alpha, REAL8  delta,
   /************************************************/
 
   *lastBorderP =  lastBorder;
- 
+
  return;
 }
 
@@ -946,8 +946,8 @@ static void InitialLineCase(INT4  *lastBorderP, REAL8 alpha, REAL8  delta,
 
 /****************************************************************/
 
-static void SecondLineCase(INT4 currentBin, INT4  *lastBorderP, 
-		    REAL8 alpha, REAL8  delta, 
+static void SecondLineCase(INT4 currentBin, INT4  *lastBorderP,
+		    REAL8 alpha, REAL8  delta,
 		     REAL8 eps, INT4 *ifailP, HOUGHptfLUT *lut,
 		     HOUGHPatchGrid  *patch){
 
@@ -955,7 +955,7 @@ static void SecondLineCase(INT4 currentBin, INT4  *lastBorderP,
      changed accordingly */
 
   INT4 lastBorder;
-  
+
 
   REAL8  xA,yA;
   INT4 yymin,yymax;
@@ -990,7 +990,7 @@ static void SecondLineCase(INT4 currentBin, INT4  *lastBorderP,
     return;
   }
   ++lastBorder;
-  
+
   if (yymin < 0) {
     fprintf(stderr,"WARNING: Fixing yymin (%d -> 0) [ConstructPLUT.c %d]\n",
 	    yymin, __LINE__);
@@ -1009,7 +1009,7 @@ static void SecondLineCase(INT4 currentBin, INT4  *lastBorderP,
 	   &lut->border[lastBorder].xPixel[0], patch );
 
   /************************************************/
-  /* all are pathological cases. The code is similar to the 
+  /* all are pathological cases. The code is similar to the
      InitialLineCase, except for the modifications:
      rightB1 -> rightB2, leftB2 -> leftB1, where marked */
 
@@ -1025,16 +1025,16 @@ static void SecondLineCase(INT4 currentBin, INT4  *lastBorderP,
       lut->bin[currentBin+1].rightB2= lastBorder;
       lut->border[lastBorder].yCenter = patch->ySide -1;/*or bigger */
     }
-  } 
+  }
   else { /* non- horizontal line */
     xRel = xA + tan(alpha)*yA;
 
-    if( (alpha == 0) || (alpha == LAL_PI) || (alpha == -LAL_PI) ){ 
+    if( (alpha == 0) || (alpha == LAL_PI) || (alpha == -LAL_PI) ){
       /* vertical line */
       slope = +1; /* arbitrary number, just to avoid overflow */
     } else {
       slope = - cot(alpha);
-    } 
+    }
 
     if( xRel < 0 ){
       lut->bin[0].leftB1   = lastBorder; /* modified */
@@ -1049,7 +1049,7 @@ static void SecondLineCase(INT4 currentBin, INT4  *lastBorderP,
     } else {
       lut->bin[0].rightB2  = lastBorder; /* modified */
       lut->bin[currentBin+1].leftB1 = lastBorder;
-      
+
       if ( slope > 0 ){
 	lut->border[lastBorder].yCenter = 0; /*or smaller*/
       } else {
@@ -1062,7 +1062,7 @@ static void SecondLineCase(INT4 currentBin, INT4  *lastBorderP,
   /************************************************/
 
   *lastBorderP =  lastBorder;
- 
+
   /************************************************/
  return;
 }
@@ -1087,12 +1087,12 @@ static void SecondLineCase(INT4 currentBin, INT4  *lastBorderP,
 /****************************************************************/
 
 static void FollowLineCase(INT4 currentBin, INT4  *lastBorderP,
-		    REAL8 alpha, REAL8  delta, REAL8 eps,REAL8 rcOld, 
+		    REAL8 alpha, REAL8  delta, REAL8 eps,REAL8 rcOld,
 		    INT4 direction, INT4 *ifailP, HOUGHptfLUT *lut,
 		    HOUGHPatchGrid  *patch){
 
   INT4 lastBorder;
-  
+
 
   REAL8  xA,yA;
   INT4 yymin,yymax;
@@ -1145,7 +1145,7 @@ static void FollowLineCase(INT4 currentBin, INT4  *lastBorderP,
 	   &lut->border[lastBorder].xPixel[0] , patch);
 
   /************************************************/
-  if( direction == 1 ){ 
+  if( direction == 1 ){
     /* This means that the initial case was a circle
        that deformed into a line when increasing radius,
        an old value of rcOld does exist */
@@ -1169,17 +1169,17 @@ static void FollowLineCase(INT4 currentBin, INT4  *lastBorderP,
       } else {
 	lut->border[lastBorder].yCenter = patch->ySide -1;/*or bigger */
       }
-	  
-    } 
+
+    }
     else { /* non- horizontal line */
       xRel = xA + tan(alpha)*(yA -ycOld);
 
-      if( (alpha == 0) || (alpha == LAL_PI) || (alpha == -LAL_PI) ){ 
+      if( (alpha == 0) || (alpha == LAL_PI) || (alpha == -LAL_PI) ){
 	/* vertical line */
 	slope = +1; /* arbitrary number, just to avoid overflow */
       } else {
 	slope = - cot(alpha);
-      } 
+      }
 
       if( xRel < xcOld ){
 	lut->bin[currentBin].leftB1   = lastBorder;
@@ -1225,16 +1225,16 @@ static void FollowLineCase(INT4 currentBin, INT4  *lastBorderP,
 	lut->bin[currentBin+1].rightB2= lastBorder;
 	lut->border[lastBorder].yCenter = patch->ySide -1;/*or bigger */
       }
-    } 
+    }
     else { /* non- horizontal line */
       xRel = xA + tan(alpha)*yA;
 
-      if( (alpha == 0) || (alpha == LAL_PI) || (alpha == -LAL_PI) ){ 
+      if( (alpha == 0) || (alpha == LAL_PI) || (alpha == -LAL_PI) ){
 	/* vertical line */
 	slope = +1; /* arbitrary number, just to avoid overflow */
       } else {
 	slope = - cot(alpha);
-      } 
+      }
 
       if( xRel < 0 ){
 	lut->bin[currentBin].leftB2   = lastBorder;
@@ -1259,12 +1259,12 @@ static void FollowLineCase(INT4 currentBin, INT4  *lastBorderP,
     } /* end non-horizontal line */
 
   }/* end of -1 direction*/
-    
+
 
   /************************************************/
 
   *lastBorderP =  lastBorder;
- 
+
   return;
 }
 
@@ -1284,7 +1284,7 @@ static void FollowLineCase(INT4 currentBin, INT4  *lastBorderP,
 /****************************************************************/
 
 
-/* First version: to be improved thinking about 
+/* First version: to be improved thinking about
    substituting "ceil" and "floor" for the corresponding values
    assuming positive arguments. */
 
@@ -1351,17 +1351,17 @@ static void CheckLineCase(REAL8 epsilon, REAL8 ang1, REAL8 ang2,
 /****************************************************************/
 
 #if 0 /* NOT USED */
-static void FindExactLine(REAL8 alpha, REAL8 delta, 
+static void FindExactLine(REAL8 alpha, REAL8 delta,
 		   REAL8 *xA, REAL8 *yA){
 
   REAL8 lambda, rA;
-  
+
   lambda =  2.*delta -LAL_PI*0.5;
 
   if (fabs(1.-sin(lambda) < 1.0e-6) {
     fprintf(stderr, "warning: possible division by 0 [ConstructPLUT.c %d]\n",__LINE__);
   }
-  rA = 2.* cos(lambda)/(1.-sin(lambda) ); 
+  rA = 2.* cos(lambda)/(1.-sin(lambda) );
   *xA = rA* cos(alpha);
   *yA = rA* sin(alpha);
 
@@ -1375,13 +1375,13 @@ return;
 /*                 y = cotg(alpha) [xA - x ] +yA               */
 /***************************************************************/
 
-static void FindLine(REAL8 alpha, REAL8 delta, REAL8 eps, 
+static void FindLine(REAL8 alpha, REAL8 delta, REAL8 eps,
 	      REAL8 *xA, REAL8 *yA){
 
   REAL8 lambda, rA;
-  
+
   lambda =  2.*delta -LAL_PI*0.5-eps;
-  rA = 2.* cos(lambda)/(1.-sin(lambda) ); 
+  rA = 2.* cos(lambda)/(1.-sin(lambda) );
   *xA = rA* cos(alpha);
   *yA = rA* sin(alpha);
 
@@ -1398,10 +1398,10 @@ return;
 /*          and the y-pixel range of the intersection    */
 /*********************************************************/
 
-static void CheckLineIntersection(REAL8 alpha, REAL8 xA, REAL8 yA, 
+static void CheckLineIntersection(REAL8 alpha, REAL8 xA, REAL8 yA,
 		      INT4 *yyminP, INT4 *yymaxP, INT4 *noInP,
 		      HOUGHPatchGrid  *patch){
- 
+
   INT4 yymin,yymax,noIn;
   volatile REAL4 kkk;
 
@@ -1409,7 +1409,7 @@ static void CheckLineIntersection(REAL8 alpha, REAL8 xA, REAL8 yA,
   yymax = 0;
   noIn = 0;
 
-  if ((alpha == 0) || (alpha == LAL_PI) || (alpha == -LAL_PI) ){ 
+  if ((alpha == 0) || (alpha == LAL_PI) || (alpha == -LAL_PI) ){
     /* vertical line */
     if ((patch->xMin <= xA) && (patch->xMax >= xA)){
       noIn  = 1;
@@ -1433,19 +1433,19 @@ static void CheckLineIntersection(REAL8 alpha, REAL8 xA, REAL8 yA,
 	kkk += patch->ySide*0.5;
 	yymax = floor(kkk);
 	/* Note  yymax < yymin,   to identify an horizontal line!
-	   If the area to mark is above (arriba), mark yymin and higher. 
+	   If the area to mark is above (arriba), mark yymin and higher.
 	   If the area to mark is below (abajo), mark yymax and lower.*/
       }
     }
-    else{ 
+    else{
 	/* generic case */
       REAL8 myy1,y2,slope;
       slope = cot(alpha);
       myy1  = slope*(xA-patch->xMin)+yA;
       y2  = slope*(xA-patch->xMax)+yA;
-      
-      if (  ( (myy1 >= patch->yMin) || (y2 >= patch->yMin) ) 
-	    && ( (myy1 <= patch->yMax) || (y2 <= patch->yMax) ) ){ 
+
+      if (  ( (myy1 >= patch->yMin) || (y2 >= patch->yMin) )
+	    && ( (myy1 <= patch->yMax) || (y2 <= patch->yMax) ) ){
 	REAL8 yupper,ylower;
 	noIn   = 1;
 	yupper = MAX(myy1,y2);
@@ -1465,11 +1465,11 @@ static void CheckLineIntersection(REAL8 alpha, REAL8 xA, REAL8 yA,
       }
     }
   }
-  
+
   *yyminP = yymin;
   *yymaxP = yymax;
   *noInP  = noIn;
-  
+
   return;
 }
 
@@ -1477,20 +1477,20 @@ static void CheckLineIntersection(REAL8 alpha, REAL8 xA, REAL8 yA,
 /*****************************************************************/
 /*   Subroutine to draw non-horizontal lines!                    */
 /*****************************************************************/
-static void DrawLine(REAL8 alpha, REAL8 xA, REAL8 yA, 
+static void DrawLine(REAL8 alpha, REAL8 xA, REAL8 yA,
 	      INT4 yymin, INT4 yymax, COORType  *column,
 	      HOUGHPatchGrid  *patch){
 
   INT4 jj;
   volatile REAL4 kkk;
-  
+
   column[yymin] = patch->xSide;
   column[yymax] = patch->xSide;
 
   /* the if-else, is not really needed, just to avoid repeating
      the ceil when not necessary! */
-     
- if ((alpha == 0) || (alpha == LAL_PI)){ 
+
+ if ((alpha == 0) || (alpha == LAL_PI)){
    /* vertical line */
    INT4  xpixel;
 
@@ -1505,7 +1505,7 @@ static void DrawLine(REAL8 alpha, REAL8 xA, REAL8 yA,
    if (xpixel > patch->xSide) {
      xpixel = patch->xSide;
    }
-   
+
    for(jj=yymin;jj<=yymax;++jj){
      column[jj] = xpixel;
    }
@@ -1515,27 +1515,27 @@ static void DrawLine(REAL8 alpha, REAL8 xA, REAL8 yA,
    REAL8 tanalpha;
    REAL8 xofy;
    INT4  xpixel;
-   
+
    tanalpha = tan(alpha);
 
-   for(jj=yymin;jj<=yymax;++jj){  
-     /* will not be executed in the horizontal case */    
+   for(jj=yymin;jj<=yymax;++jj){
+     /* will not be executed in the horizontal case */
      xofy = xA + tanalpha*( yA- patch->yCoor[jj] );
      kkk =  xofy/patch->deltaX-0.5;
      kkk += patch->xSide*0.5;
      xpixel = ceil(kkk);
-     
+
      if (xpixel < 0) {
        xpixel = 0;
      }
      if (xpixel > patch->xSide) {
        xpixel = patch->xSide;
      }
-     
-     column[jj] = xpixel; 
+
+     column[jj] = xpixel;
    }
  }
-  
+
  return;
 }
 
@@ -1561,20 +1561,20 @@ static void DrawLine(REAL8 alpha, REAL8 xA, REAL8 yA,
 /****************************************************************/
 
 static void InitialCircleCase(INT4  *lastBorderP, REAL8 alpha,
-		      REAL8 ang1, REAL8  ang2,  
-		      REAL8 *rcOldP, INT4 *directionP, 
-		      INT4 *ifailP, HOUGHptfLUT *lut, 
+		      REAL8 ang1, REAL8  ang2,
+		      REAL8 *rcOldP, INT4 *directionP,
+		      INT4 *ifailP, HOUGHptfLUT *lut,
 		      HOUGHPatchGrid  *patch){
 
   INT4 lastBorder;
   INT4 direction;    /* +1, or -1 */
-  
+
 
   REAL8 rho1,rho2,radius;
   REAL8 xc,yc,rc; /* coordinates of the center of the circle */
   INT4 pieces;
 
-    
+
   lastBorder = *lastBorderP;
 
   rho1 = cos(ang1)/(1. -sin(ang1));
@@ -1605,7 +1605,7 @@ static void InitialCircleCase(INT4  *lastBorderP, REAL8 alpha,
   /************************************************/
 
 
-  if( direction == -1){ 
+  if( direction == -1){
     pieces = 0;
 
     /* check left circle */
@@ -1632,7 +1632,7 @@ static void InitialCircleCase(INT4  *lastBorderP, REAL8 alpha,
 
 	lut->border[lastBorder].yUpper = yymax;
 	lut->border[lastBorder].yLower = yymin;
-	lut->border[lastBorder].yCenter = 
+	lut->border[lastBorder].yCenter =
 		floor( yc/patch->deltaY + patch->ySide*0.5);
 	           /*  rint( yc/patch->deltaY + patch->ySide*0.5 -0.5); */
 	DrawLeftCircle(xc,yc,radius,yymin,yymax,
@@ -1641,7 +1641,7 @@ static void InitialCircleCase(INT4  *lastBorderP, REAL8 alpha,
 	lut->bin[1].leftB1 = lastBorder;
       }
     }
-    
+
     /* check right circle */
     if( xc <= patch->xMax){ /* draw ) ? */
       INT4 yymax;
@@ -1666,7 +1666,7 @@ static void InitialCircleCase(INT4  *lastBorderP, REAL8 alpha,
 
 	lut->border[lastBorder].yUpper = yymax;
 	lut->border[lastBorder].yLower = yymin;
-	lut->border[lastBorder].yCenter = 
+	lut->border[lastBorder].yCenter =
 	              floor( yc/patch->deltaY + patch->ySide*0.5);
 		      /*rint( yc/patch->deltaY + patch->ySide*0.5 -0.5); */
 	DrawRightCircle(xc,yc,radius,yymin,yymax,
@@ -1677,7 +1677,7 @@ static void InitialCircleCase(INT4  *lastBorderP, REAL8 alpha,
     }
 
     /* real no intersection case */
-    if( pieces ==0 ){  
+    if( pieces ==0 ){
       *ifailP = 0;
       return;
     }
@@ -1688,7 +1688,7 @@ static void InitialCircleCase(INT4  *lastBorderP, REAL8 alpha,
     /*  This means ( direction == +1)               */
     /************************************************/
     /* no  pathologies   */
-   
+
     pieces = 0;
     /* check left circle */
     if( xc >= patch->xMin ){ /* draw ( ? */
@@ -1714,17 +1714,17 @@ static void InitialCircleCase(INT4  *lastBorderP, REAL8 alpha,
 
 	lut->border[lastBorder].yUpper = yymax;
 	lut->border[lastBorder].yLower = yymin;
-	lut->border[lastBorder].yCenter = 
+	lut->border[lastBorder].yCenter =
 	            floor( yc/patch->deltaY + patch->ySide*0.5);
 		    /* rint( yc/patch->deltaY + patch->ySide*0.5 -0.5); */
 	DrawLeftCircle(xc,yc,radius,yymin,yymax,
 		       &lut->border[lastBorder].xPixel[0] , patch);
-       
+
 	lut->bin[0].leftB1 = lastBorder;
 	lut->bin[1].rightB1= lastBorder;
       }
     }
-    
+
     /* check right circle */
     if( xc <= patch->xMax){ /* draw ) ? */
       INT4 yymax;
@@ -1749,19 +1749,19 @@ static void InitialCircleCase(INT4  *lastBorderP, REAL8 alpha,
 
 	lut->border[lastBorder].yUpper = yymax;
 	lut->border[lastBorder].yLower = yymin;
-	lut->border[lastBorder].yCenter = 
+	lut->border[lastBorder].yCenter =
 	            floor( yc/patch->deltaY + patch->ySide*0.5);
 		    /*  rint( yc/patch->deltaY + patch->ySide*0.5 -0.5); */
 	DrawRightCircle(xc,yc,radius,yymin,yymax,
 		       &lut->border[lastBorder].xPixel[0], patch );
-	
+
 	lut->bin[0].rightB2= lastBorder;
 	lut->bin[1].leftB2 = lastBorder;
       }
     }
 
     /* real no intersection case */
-    if( pieces ==0){  
+    if( pieces ==0){
       *ifailP = 0;
       return;
     }
@@ -1797,17 +1797,17 @@ static void InitialCircleCase(INT4  *lastBorderP, REAL8 alpha,
 
 /****************************************************************/
 
-static void SecondCircleCase(INT4 currentBin, INT4  *lastBorderP, 
-		      REAL8 alpha, REAL8 ang1, REAL8  ang2, 
-		      INT4 directionPlus, REAL8 *rcOldP, 
-		      INT4 *pathologyP,INT4 *directionP, 
-		      INT4 *ifailP, HOUGHptfLUT *lut, 
+static void SecondCircleCase(INT4 currentBin, INT4  *lastBorderP,
+		      REAL8 alpha, REAL8 ang1, REAL8  ang2,
+		      INT4 directionPlus, REAL8 *rcOldP,
+		      INT4 *pathologyP,INT4 *directionP,
+		      INT4 *ifailP, HOUGHptfLUT *lut,
 		      HOUGHPatchGrid  *patch){
 
   INT4 lastBorder;
   INT4 pathology;    /* =1 (normal), =0 (anormal) */
   INT4 direction;    /* +1, or -1 */
-  
+
 
   REAL8 rho1,rho2,radius;
   REAL8 xc,yc,rc; /* coordinates of the center of the circle */
@@ -1874,7 +1874,7 @@ static void SecondCircleCase(INT4 currentBin, INT4  *lastBorderP,
 
 	lut->border[lastBorder].yUpper = yymax;
 	lut->border[lastBorder].yLower = yymin;
-	lut->border[lastBorder].yCenter = 
+	lut->border[lastBorder].yCenter =
 	           floor( yc/patch->deltaY + patch->ySide*0.5);
 		   /*   rint( yc/patch->deltaY + patch->ySide*0.5 -0.5); */
 	DrawLeftCircle(xc,yc,radius,yymin,yymax,
@@ -1887,7 +1887,7 @@ static void SecondCircleCase(INT4 currentBin, INT4  *lastBorderP,
 	lut->bin[currentBin+1].leftB1 = lastBorder;
       }
     }
-    
+
     /* check right circle */
     if( xc <= patch->xMax){ /* draw ) ? */
       INT4 yymax;
@@ -1912,7 +1912,7 @@ static void SecondCircleCase(INT4 currentBin, INT4  *lastBorderP,
 
 	lut->border[lastBorder].yUpper = yymax;
 	lut->border[lastBorder].yLower = yymin;
-	lut->border[lastBorder].yCenter = 
+	lut->border[lastBorder].yCenter =
 	             floor( yc/patch->deltaY + patch->ySide*0.5);
 		     /* rint( yc/patch->deltaY + patch->ySide*0.5 -0.5);*/
 	DrawRightCircle(xc,yc,radius,yymin,yymax,
@@ -1927,7 +1927,7 @@ static void SecondCircleCase(INT4 currentBin, INT4  *lastBorderP,
     }
 
     /* real no intersection case */
-    if( pieces ==0 ){  
+    if( pieces ==0 ){
       *ifailP = 0;
       return;
     }
@@ -1938,7 +1938,7 @@ static void SecondCircleCase(INT4 currentBin, INT4  *lastBorderP,
     /*  This means ( direction == +1)               */
     /************************************************/
     /* no  pathologies   */
-   
+
     pieces = 0;
     /* check left circle */
     if( xc >= patch->xMin ){ /* draw ( ? */
@@ -1964,17 +1964,17 @@ static void SecondCircleCase(INT4 currentBin, INT4  *lastBorderP,
 
 	lut->border[lastBorder].yUpper = yymax;
 	lut->border[lastBorder].yLower = yymin;
-	lut->border[lastBorder].yCenter = 
+	lut->border[lastBorder].yCenter =
 	           floor( yc/patch->deltaY + patch->ySide*0.5);
 		   /*   rint( yc/patch->deltaY + patch->ySide*0.5 -0.5); */
 	DrawLeftCircle(xc,yc,radius,yymin,yymax,
 		       &lut->border[lastBorder].xPixel[0] , patch);
-       
+
 	lut->bin[0].leftB1   = lastBorder;
 	lut->bin[currentBin+1].rightB1= lastBorder;
       }
     }
-    
+
     /* check right circle */
     if( xc <= patch->xMax){ /* draw ) ? */
       INT4 yymax;
@@ -1996,22 +1996,22 @@ static void SecondCircleCase(INT4 currentBin, INT4  *lastBorderP,
 		  yymax, patch->ySide-1, __LINE__);
 	  yymax = patch->ySide - 1;
 	}
- 
+
 	lut->border[lastBorder].yUpper = yymax;
 	lut->border[lastBorder].yLower = yymin;
-	lut->border[lastBorder].yCenter = 
+	lut->border[lastBorder].yCenter =
 	           floor( yc/patch->deltaY + patch->ySide*0.5 );
 		   /*  rint( yc/patch->deltaY + patch->ySide*0.5 -0.5);*/
 	DrawRightCircle(xc,yc,radius,yymin,yymax,
 		       &lut->border[lastBorder].xPixel[0], patch );
-	
+
 	lut->bin[0].rightB2  = lastBorder;
 	lut->bin[currentBin+1].leftB2 = lastBorder;
       }
     }
 
     /* real no intersection case */
-    if( pieces ==0){  
+    if( pieces ==0){
       *ifailP = 0;
       return;
     }
@@ -2051,25 +2051,25 @@ static void SecondCircleCase(INT4 currentBin, INT4  *lastBorderP,
 /****************************************************************/
 
 static void FollowCircleCase(INT4 currentBin, INT4  *lastBorderP, REAL8 alpha,
-		      REAL8 ang1, REAL8  ang2, REAL8 rCritic, 
-		      REAL8 rcOld, INT4 *pathologyP, 
-		      INT4 *directionP, INT4 *ifailP, HOUGHptfLUT *lut, 
+		      REAL8 ang1, REAL8  ang2, REAL8 rCritic,
+		      REAL8 rcOld, INT4 *pathologyP,
+		      INT4 *directionP, INT4 *ifailP, HOUGHptfLUT *lut,
 		      HOUGHPatchGrid  *patch){
 
   INT4 lastBorder;
   INT4 pathology;    /* =1 (normal), =0 (anormal) */
   INT4 direction;    /* +1, or -1 */
-  
+
 
   REAL8 rho1,rho2,radius;
   REAL8 xc,yc,rc; /* coordinates of the center of the circle */
   INT4 pieces;
 
-    
+
   lastBorder = *lastBorderP;
   pathology = *pathologyP;
   direction = *directionP;
-   
+
   rho1 = cos(ang1)/(1. -sin(ang1));
   rho2 = cos(ang2)/(1. -sin(ang2));
   rc   = rho1 + rho2;  /* positive or negative */
@@ -2091,7 +2091,7 @@ static void FollowCircleCase(INT4 currentBin, INT4  *lastBorderP, REAL8 alpha,
   /* possible intersection case:                  */
   /************************************************/
 
-  if( direction == -1){ 
+  if( direction == -1){
     /* no pathological cases can happen */
     pieces = 0;
 
@@ -2105,7 +2105,7 @@ static void FollowCircleCase(INT4 currentBin, INT4  *lastBorderP, REAL8 alpha,
       if(noIn){
 	++pieces;
 	++lastBorder;
-	
+
 	if (yymin < 0) {
 	  fprintf(stderr,"WARNING: Fixing yymin (%d -> 0) [ConstructPLUT.c %d]\n",
 		  yymin, __LINE__);
@@ -2119,7 +2119,7 @@ static void FollowCircleCase(INT4 currentBin, INT4  *lastBorderP, REAL8 alpha,
 
 	lut->border[lastBorder].yUpper = yymax;
 	lut->border[lastBorder].yLower = yymin;
-	lut->border[lastBorder].yCenter = 
+	lut->border[lastBorder].yCenter =
 	           floor( yc/patch->deltaY + patch->ySide*0.5);
 		   /*   rint( yc/patch->deltaY + patch->ySide*0.5 -0.5); */
 	DrawLeftCircle(xc,yc,radius,yymin,yymax,
@@ -2128,7 +2128,7 @@ static void FollowCircleCase(INT4 currentBin, INT4  *lastBorderP, REAL8 alpha,
 	lut->bin[currentBin+1].leftB1 = lastBorder;
       }
     }
-    
+
     /* check right circle */
     if( xc <= patch->xMax){ /* draw ) ? */
       INT4 yymax;
@@ -2150,10 +2150,10 @@ static void FollowCircleCase(INT4 currentBin, INT4  *lastBorderP, REAL8 alpha,
 		  yymax, patch->ySide-1, __LINE__);
 	  yymax = patch->ySide - 1;
 	}
- 
+
 	lut->border[lastBorder].yUpper = yymax;
 	lut->border[lastBorder].yLower = yymin;
-	lut->border[lastBorder].yCenter = 
+	lut->border[lastBorder].yCenter =
 	            floor( yc/patch->deltaY + patch->ySide*0.5 );
 		    /*  rint( yc/patch->deltaY + patch->ySide*0.5 -0.5); */
 	DrawRightCircle(xc,yc,radius,yymin,yymax,
@@ -2164,7 +2164,7 @@ static void FollowCircleCase(INT4 currentBin, INT4  *lastBorderP, REAL8 alpha,
     }
 
     /* real no intersection case */
-    if( pieces ==0 ){  
+    if( pieces ==0 ){
       *ifailP = 0;
       return;
     }
@@ -2177,7 +2177,7 @@ static void FollowCircleCase(INT4 currentBin, INT4  *lastBorderP, REAL8 alpha,
     /* pathologies can happen, i.e. circles can convert into lines
        and the two circles describing the borders of an annulus
        do not need to be concentric but:  ( ) ( ) */
-    
+
     /* check for pathologies */
     if( (rcOld -rCritic)*(rc -rCritic) < 0 ){
       pathology = 0;
@@ -2209,7 +2209,7 @@ static void FollowCircleCase(INT4 currentBin, INT4  *lastBorderP, REAL8 alpha,
 
 	lut->border[lastBorder].yUpper = yymax;
 	lut->border[lastBorder].yLower = yymin;
-	lut->border[lastBorder].yCenter = 
+	lut->border[lastBorder].yCenter =
 	           floor( yc/patch->deltaY + patch->ySide*0.5 );
 		   /*   rint( yc/patch->deltaY + patch->ySide*0.5 -0.5); */
 	DrawLeftCircle(xc,yc,radius,yymin,yymax,
@@ -2223,7 +2223,7 @@ static void FollowCircleCase(INT4 currentBin, INT4  *lastBorderP, REAL8 alpha,
 	}
       }
     }
-    
+
     /* check right circle */
     if( xc <= patch->xMax){ /* draw ) ? */
       INT4 yymax;
@@ -2245,10 +2245,10 @@ static void FollowCircleCase(INT4 currentBin, INT4  *lastBorderP, REAL8 alpha,
 		  yymax, patch->ySide-1, __LINE__);
 	  yymax = patch->ySide - 1;
 	}
- 
+
 	lut->border[lastBorder].yUpper = yymax;
 	lut->border[lastBorder].yLower = yymin;
-	lut->border[lastBorder].yCenter = 
+	lut->border[lastBorder].yCenter =
 	             floor( yc/patch->deltaY + patch->ySide*0.5 );
 		     /*  rint( yc/patch->deltaY + patch->ySide*0.5 -0.5);*/
 	DrawRightCircle(xc,yc,radius,yymin,yymax,
@@ -2264,7 +2264,7 @@ static void FollowCircleCase(INT4 currentBin, INT4  *lastBorderP, REAL8 alpha,
     }
 
     /* real no intersection case */
-    if( pieces ==0){  
+    if( pieces ==0){
       *ifailP = 0;
       return;
     }
@@ -2312,22 +2312,22 @@ static void FollowCircleCase(INT4 currentBin, INT4  *lastBorderP, REAL8 alpha,
 static void CheckLeftCircle(REAL8 xc, REAL8 yc, REAL8 radius,
 		     INT4 *yyminP, INT4 *yymaxP, INT4 *noInP,
 		     HOUGHPatchGrid  *patch){
-  
+
   INT4 yymin,yymax;
   INT4 noIn, noIn1, noIn2;
   REAL8 ylower;
   REAL8 yupper,kkpos;
   volatile REAL4 kkk;
- 
- 
+
+
   /*********************************************************/
   noIn = 0;
   noIn1= 0; /* upper quadrant */
   noIn2= 0; /* lower quadrant */
   *noInP = noIn;
- 
+
   if(xc < patch->xMin) return;  /* non optimized */
-  
+
   /*********************************************************/
   /* Reduction of the interval to look at */
   /*********************************************************/
@@ -2335,12 +2335,12 @@ static void CheckLeftCircle(REAL8 xc, REAL8 yc, REAL8 radius,
   ylower = MAX( patch->yMin, yc-radius);
   yupper = MIN( patch->yMax, yc+radius);
 
-  /* convert to the values of the 'near' y-pixel */  
+  /* convert to the values of the 'near' y-pixel */
   /* yymax  = floor((REAL4) (yupper/patch->deltaY -0.5) + (REAL4) (0.5*patch->ySide)); */
   kkk =  yupper/patch->deltaY -0.5;
   kkk += 0.5*patch->ySide;
   yymax  = floor(kkk);
-  
+
   kkk = ylower/patch->deltaY - 0.5;
   kkk += 0.5*patch->ySide;
   yymin  = ceil(kkk);
@@ -2351,9 +2351,9 @@ static void CheckLeftCircle(REAL8 xc, REAL8 yc, REAL8 radius,
 /*
  *   ylower = patch->yCoor[yymin];
  *   yupper = patch->yCoor[yymax];
- * 
+ *
  */
-  
+
 
   /*********************************************************/
   /* looking at the upper-left quadrant */
@@ -2361,13 +2361,13 @@ static void CheckLeftCircle(REAL8 xc, REAL8 yc, REAL8 radius,
 
   if( yc < patch->yMax ){
     REAL8 x1,myy1;
-    
+
     /* setting the yymax value */
     /* in case of no over-flow problems !!! */
-    
+
     kkpos= (radius-(yupper-yc) )*(radius+(yupper-yc) );
     kkpos= fabs(kkpos);
-    
+
      x1 = xc - sqrt( kkpos);
      /* x1 = xc - sqrt( radius*radius -(yupper-yc)*(yupper-yc)); */
 
@@ -2414,7 +2414,7 @@ static void CheckLeftCircle(REAL8 xc, REAL8 yc, REAL8 radius,
 	myy1 = yc - sqrt(kkpos);
 
 	/* myy1 = yc - sqrt( radius*radius -(patch->xMax-xc)*(patch->xMax-xc));*/
-	
+
 	if( myy1<=patch->yMax ){
 	  noIn2 = 1;
 	  /* yymin = ceil((REAL4) (myy1/patch->deltaY-0.5)+(REAL4)(0.5*patch->ySide)); */
@@ -2430,7 +2430,7 @@ static void CheckLeftCircle(REAL8 xc, REAL8 yc, REAL8 radius,
   /* correcting yymax, yymin values */
   /*********************************************************/
 
-  if ( noIn1 && (!noIn2) ){ 
+  if ( noIn1 && (!noIn2) ){
     REAL8 x1,myy1;
 
     noIn = 1;
@@ -2438,8 +2438,8 @@ static void CheckLeftCircle(REAL8 xc, REAL8 yc, REAL8 radius,
     kkpos= fabs(kkpos);
     x1 = xc - sqrt( kkpos);
     /* x1 = xc - sqrt( radius*radius -(yc-ylower)*(yc-ylower));*/
-    
-    if( x1 < patch->xMin ){    
+
+    if( x1 < patch->xMin ){
       /* the value yymin, needs to be set correctly */
       kkpos = (radius-(patch->xMin-xc))*(radius+(patch->xMin-xc));
       kkpos= fabs(kkpos);
@@ -2454,17 +2454,17 @@ static void CheckLeftCircle(REAL8 xc, REAL8 yc, REAL8 radius,
 
   /*********************************************************/
 
-  if ( (! noIn1) && noIn2 ){ 
+  if ( (! noIn1) && noIn2 ){
     /* the value yymax, needs to be set correctly */
     REAL8 x1,myy1;
- 
-    noIn = 1;   
+
+    noIn = 1;
     kkpos= (radius-(yupper-yc) )*(radius+(yupper-yc) );
     kkpos= fabs(kkpos);
     x1 = xc - sqrt( kkpos);
- 
+
     /* x1 = xc - sqrt( radius*radius -(yupper-yc)*(yupper-yc));*/
-    if( x1 < patch->xMin ){    
+    if( x1 < patch->xMin ){
       /* the value yymin, needs to be set correctly */
       kkpos = (radius-(patch->xMin-xc))*(radius+(patch->xMin-xc));
       kkpos= fabs(kkpos);
@@ -2479,7 +2479,7 @@ static void CheckLeftCircle(REAL8 xc, REAL8 yc, REAL8 radius,
 
   /* we could also set noIn = noIn1+noIn2; */
   /*********************************************************/
-  if ( noIn1 && noIn2 ){ 
+  if ( noIn1 && noIn2 ){
     /* the values yymin, yymax are correct */
     noIn = 1;
   }
@@ -2513,8 +2513,8 @@ static void CheckRightCircle(REAL8 xc, REAL8 yc, REAL8 radius,
   REAL8 ylower;
   volatile REAL4 kkk;
   REAL8 yupper, kkpos;
- 
-  
+
+
  /*********************************************************/
   noIn = 0;
   noIn1= 0; /* upper quadrant */
@@ -2528,27 +2528,27 @@ static void CheckRightCircle(REAL8 xc, REAL8 yc, REAL8 radius,
   ylower = MAX( patch->yMin, yc-radius);
   yupper = MIN( patch->yMax, yc+radius);
 
-  /* convert to the value of the 'near' y-pixel */ 
+  /* convert to the value of the 'near' y-pixel */
   /* yymax = floor((REAL4) (yupper/patch->deltaY -0.5) + (REAL4) (0.5*patch->ySide)); */
   kkk =  yupper/patch->deltaY -0.5;
   kkk += 0.5*patch->ySide;
   yymax = floor(kkk);
- 
+
   /* yymin  = ceil( (ylower/patch->deltaY-0.5) +patch->ySide/2.); */
   kkk = (ylower/patch->deltaY - 0.5);
   kkk += 0.5*patch->ySide;
   yymin  = ceil(kkk);
- 
- 
+
+
   /*********************************************************/
   /* looking at the upper-right quadrant */
   /*********************************************************/
-  
+
   if( yc < patch->yMax ){
     REAL8 x1,myy1;
 
     /* in case of no over-flow problems !!! */
-    
+
     kkpos= (radius-(yupper-yc) )*(radius+(yupper-yc) );
     kkpos= fabs(kkpos);
     x1 = xc + sqrt( kkpos);
@@ -2563,7 +2563,7 @@ static void CheckRightCircle(REAL8 xc, REAL8 yc, REAL8 radius,
         kkpos = (radius-(patch->xMin-xc))*(radius+(patch->xMin-xc));
         kkpos= fabs(kkpos);
         myy1 = yc + sqrt(kkpos);
-     
+
 	/*myy1 = yc + sqrt(radius*radius -(patch->xMin-xc)*(patch->xMin-xc));*/
 	if( myy1>=patch->yMin ){
 	  noIn1  = 1;
@@ -2583,7 +2583,7 @@ static void CheckRightCircle(REAL8 xc, REAL8 yc, REAL8 radius,
 
   if( yc > patch->yMin ){
     REAL8 x1,myy1;
-    
+
     kkpos= (radius-(yc-ylower) )*(radius+(yc-ylower) );
     kkpos= fabs(kkpos);
     x1 = xc + sqrt( kkpos);
@@ -2597,7 +2597,7 @@ static void CheckRightCircle(REAL8 xc, REAL8 yc, REAL8 radius,
         kkpos = (radius-(patch->xMin-xc))*(radius+(patch->xMin-xc));
         kkpos= fabs(kkpos);
         myy1 = yc - sqrt(kkpos);
-	
+
 	/* myy1 = yc - sqrt( radius*radius -(patch->xMin-xc)*(patch->xMin-xc));*/
 	if( myy1<=patch->yMax ){
 	  noIn2  = 1;
@@ -2614,8 +2614,8 @@ static void CheckRightCircle(REAL8 xc, REAL8 yc, REAL8 radius,
   /*********************************************************/
   /* correcting yymax, yymin values */
   /*********************************************************/
-  
-  if ( noIn1 && (!noIn2) ){ 
+
+  if ( noIn1 && (!noIn2) ){
     REAL8 x1,myy1;
 
     noIn = 1;
@@ -2624,7 +2624,7 @@ static void CheckRightCircle(REAL8 xc, REAL8 yc, REAL8 radius,
     x1 = xc + sqrt( kkpos);
 
     /* x1 = xc + sqrt( radius*radius -(yc-ylower)*(yc-ylower));*/
-    if( x1 > patch->xMax ){    
+    if( x1 > patch->xMax ){
       /* the value yymin, needs to be set correctly */
       kkpos = (radius-(patch->xMax-xc))*(radius+(patch->xMax-xc));
       kkpos= fabs(kkpos);
@@ -2641,22 +2641,22 @@ static void CheckRightCircle(REAL8 xc, REAL8 yc, REAL8 radius,
 
   /*********************************************************/
 
-  if ( (! noIn1) && noIn2 ){ 
+  if ( (! noIn1) && noIn2 ){
     /* the value yymax, needs to be set correctly */
     REAL8 x1,myy1;
- 
+
     noIn = 1;
     kkpos= (radius-(yupper-yc) )*(radius+(yupper-yc) );
     kkpos= fabs(kkpos);
     x1 = xc + sqrt( kkpos);
     /* x1 = xc + sqrt( radius*radius -(yupper-yc)*(yupper-yc)); */
-    if( x1 > patch->xMax ){    
+    if( x1 > patch->xMax ){
       /* the value yymin, needs to be set correctly */
       kkpos = (radius-(patch->xMax-xc))*(radius+(patch->xMax-xc));
       kkpos= fabs(kkpos);
       myy1 = yc - sqrt(kkpos);
 
-      /* myy1 = yc - sqrt( radius*radius -(patch->xMax-xc)*(patch->xMax-xc));*/     
+      /* myy1 = yc - sqrt( radius*radius -(patch->xMax-xc)*(patch->xMax-xc));*/
       /* yymax = floor( myy1/patch->deltaY+patch->ySide/2.-0.5 ); */
       /* yymax = floor( (REAL4) (myy1/patch->deltaY-0.5)+ (REAL4)(0.5*patch->ySide)); */
       kkk =  myy1/patch->deltaY-0.5;
@@ -2668,7 +2668,7 @@ static void CheckRightCircle(REAL8 xc, REAL8 yc, REAL8 radius,
 
   /*********************************************************/
 
-  if ( noIn1 && noIn2 ){ 
+  if ( noIn1 && noIn2 ){
     /* the values yymin, yymax are correct */
     noIn = 1;
   }
@@ -2705,7 +2705,7 @@ return;
 /*   to be substitute by the Bresenham algorithm                */
 /****************************************************************/
 
-static void DrawLeftCircle(REAL8 xc, REAL8 yc, REAL8 radius, 
+static void DrawLeftCircle(REAL8 xc, REAL8 yc, REAL8 radius,
 		   INT4 yymin, INT4 yymax, COORType *column,
 		   HOUGHPatchGrid  *patch){
   INT4 jj;
@@ -2718,8 +2718,8 @@ static void DrawLeftCircle(REAL8 xc, REAL8 yc, REAL8 radius,
     kkpos = (radius-(yc-patch->yCoor[jj]) )*(radius+ (yc-patch->yCoor[jj]));
     kkpos= fabs(kkpos);
     realx = xc - sqrt(kkpos);
-    
-    /*realx = xc - sqrt( radius*radius 
+
+    /*realx = xc - sqrt( radius*radius
     	- (yc-patch->yCoor[jj])*(yc-patch->yCoor[jj]) ); */
     /* myindex = ceil((REAL4) (realx/patch->deltaX-0.5)+ (REAL4)(0.5*patch->xSide) ); */
     kkk =  realx/patch->deltaX-0.5;
@@ -2730,7 +2730,7 @@ static void DrawLeftCircle(REAL8 xc, REAL8 yc, REAL8 radius,
 
     column[jj] = myindex;
   }
- 
+
  return;
 }
 
@@ -2753,8 +2753,8 @@ static void DrawRightCircle(REAL8 xc, REAL8 yc, REAL8 radius,
     kkpos = (radius-(yc-patch->yCoor[jj]) )*(radius+ (yc-patch->yCoor[jj]));
     kkpos= fabs(kkpos);
     realx = xc + sqrt(kkpos);
-    
-    /*realx = xc + sqrt( radius*radius 
+
+    /*realx = xc + sqrt( radius*radius
     	- (yc-patch->yCoor[jj])*( yc-patch->yCoor[jj]) ); */
     /* myindex = ceil((REAL4)(realx/patch->deltaX-0.5)+(REAL4)(0.5*patch->xSide)); */
     kkk =  realx/patch->deltaX-0.5;
@@ -2788,7 +2788,7 @@ static void DrawRightCircle(REAL8 xc, REAL8 yc, REAL8 radius,
 /* Normal case: for circles and lines. NOT the pathological one */
 /****************************************************************/
 
-static void Fill1Column(INT4 currentBin, INT4 *lastBorderP, 
+static void Fill1Column(INT4 currentBin, INT4 *lastBorderP,
                       HOUGHptfLUT *lut, HOUGHPatchGrid  *patch){
 
   INT4 lb1,rb1,lb2,rb2; /* The border index. If zero means that */
@@ -2884,7 +2884,7 @@ static void FillCaseN1(INT4 lb1, INT4 rb1, INT4 currentBin,
 
   rb1UpY = lut->border[rb1].yUpper;
   rb1LoY = lut->border[rb1].yLower;
- 
+
   yCl = lut->border[lb1].yCenter;
   yCr = lut->border[rb1].yCenter;
 
@@ -2903,7 +2903,7 @@ static void FillCaseN1(INT4 lb1, INT4 rb1, INT4 currentBin,
     if( rb1UpY < yCr ){
       lut->bin[currentBin].piece1max = rb1UpY;
     }
-    else{ 
+    else{
       lut->bin[currentBin].piece1max = patch->ySide-1;
     }
    }
@@ -2914,7 +2914,7 @@ static void FillCaseN1(INT4 lb1, INT4 rb1, INT4 currentBin,
 /***************************************************************/
 /* case: (lb1 && !(rb1) && !(lb2) ) */
 /***************************************************************/
-static void FillCaseN2(INT4 lb1, INT4 currentBin, 
+static void FillCaseN2(INT4 lb1, INT4 currentBin,
                      HOUGHptfLUT *lut, HOUGHPatchGrid  *patch){
   INT4 lb1UpY,lb1LoY;
   INT4 yCl;
@@ -2960,23 +2960,23 @@ static void FillCaseN3(INT4 lb1, INT4 lb2, INT4 currentBin, INT4 *lastBorderP,
     lut->bin[currentBin].piece2max = lb2LoY-1;
     /*  lut->bin[currentBin].piece2min = 0; */
     return;
-  } 
+  }
 
   if( lb1UpY < yCl ){
     lut->bin[currentBin].piece1max = patch->ySide-1;
     lut->bin[currentBin].piece1min = lb2UpY+1;
     lut->bin[currentBin].piece2max = lb2LoY-1;
-    lut->bin[currentBin].piece2min = lb1UpY+1; 
+    lut->bin[currentBin].piece2min = lb1UpY+1;
     return;
   }
-  
+
   /* adding a ficticious border rb1 to correct the lb1 effects */
-  ++lastBorder;                                      
-  lut->bin[currentBin].rightB1 = lastBorder;  
-  lut->border[lastBorder].yUpper = lb2UpY;              
-  lut->border[lastBorder].yLower = lb2LoY;  
-  for( k=lb2LoY; k<=lb2UpY;++k){          
-    lut->border[lastBorder].xPixel[k] = 0;    
+  ++lastBorder;
+  lut->bin[currentBin].rightB1 = lastBorder;
+  lut->border[lastBorder].yUpper = lb2UpY;
+  lut->border[lastBorder].yLower = lb2LoY;
+  for( k=lb2LoY; k<=lb2UpY;++k){
+    lut->border[lastBorder].xPixel[k] = 0;
   }
   *lastBorderP = lastBorder;
 
@@ -2986,26 +2986,26 @@ static void FillCaseN3(INT4 lb1, INT4 lb2, INT4 currentBin, INT4 *lastBorderP,
 /***************************************************************/
 /* case: (!(lb1) && rb1 && !(rb2) ) */
 /***************************************************************/
-static void FillCaseN4(INT4 rb1, INT4 currentBin, 
+static void FillCaseN4(INT4 rb1, INT4 currentBin,
                      HOUGHptfLUT *lut, HOUGHPatchGrid  *patch){
   INT4 rb1UpY,rb1LoY;
   INT4 yCr;
-  
+
   rb1UpY = lut->border[rb1].yUpper;
   rb1LoY = lut->border[rb1].yLower;
   yCr = lut->border[rb1].yCenter;
-  
+
   if( rb1UpY < yCr ){
     lut->bin[currentBin].piece1max = rb1UpY;
     /*  lut->bin[currentBin].piece1min = 0; */
     return;
   }
-  
+
   if( rb1LoY > yCr ){
     lut->bin[currentBin].piece1max = patch->ySide-1;
     lut->bin[currentBin].piece1min = rb1LoY;
     return;
-  } 
+  }
 
   lut->bin[currentBin].piece1max = patch->ySide-1;
   /*  lut->bin[currentBin].piece1min = 0; */
@@ -3016,12 +3016,12 @@ static void FillCaseN4(INT4 rb1, INT4 currentBin,
 /***************************************************************/
 /* case: (!(lb1) && rb1 && rb2 ) */
 /***************************************************************/
-static void  FillCaseN5(INT4 rb1, INT4 rb2, INT4 currentBin, 
+static void  FillCaseN5(INT4 rb1, INT4 rb2, INT4 currentBin,
                      HOUGHptfLUT *lut){
   INT4 rb1UpY,rb1LoY;
   INT4 rb2UpY,rb2LoY;
   INT4 yCr;
-  
+
   rb1UpY = lut->border[rb1].yUpper;
   rb1LoY = lut->border[rb1].yLower;
   yCr = lut->border[rb1].yCenter;
@@ -3030,15 +3030,15 @@ static void  FillCaseN5(INT4 rb1, INT4 rb2, INT4 currentBin,
 
   if( rb1UpY < yCr ){
     lut->bin[currentBin].piece1max = rb1UpY;
-    lut->bin[currentBin].piece1min = rb2LoY; 
+    lut->bin[currentBin].piece1min = rb2LoY;
     return;
   }
-  
+
   if( rb1LoY > yCr ){
     lut->bin[currentBin].piece1max = rb2UpY;
     lut->bin[currentBin].piece1min = rb1LoY;
     return;
-  } 
+  }
 
   lut->bin[currentBin].piece1max = rb2UpY;
   lut->bin[currentBin].piece1min = rb2LoY;
@@ -3050,7 +3050,7 @@ static void  FillCaseN5(INT4 rb1, INT4 rb2, INT4 currentBin,
 /***************************************************************/
 /* case: (!(lb1) && !(rb1) && lb2 && rb2) */
 /***************************************************************/
-static void  FillCaseN6(INT4 lb2, INT4 rb2, INT4 currentBin, 
+static void  FillCaseN6(INT4 lb2, INT4 rb2, INT4 currentBin,
                      HOUGHptfLUT *lut, HOUGHPatchGrid  *patch){
   INT4 lb2UpY,lb2LoY;
   INT4 rb2UpY,rb2LoY;
@@ -3084,14 +3084,14 @@ static void  FillCaseN6(INT4 lb2, INT4 rb2, INT4 currentBin,
     /*   else{ */
     /*    lut->bin[currentBin].piece2min = 0; } */
   }
-  
+
   return;
 }
 
 /***************************************************************/
 /* case:  (!(lb1) && !(rb1) && lb2 && !(rb2)) */
 /***************************************************************/
-static void FillCaseN7(INT4 lb2, INT4 currentBin, 
+static void FillCaseN7(INT4 lb2, INT4 currentBin,
             HOUGHptfLUT *lut, HOUGHPatchGrid  *patch){
   INT4 lb2UpY,lb2LoY;
   INT4 yCl;
@@ -3116,7 +3116,7 @@ static void FillCaseN7(INT4 lb2, INT4 currentBin,
 /***************************************************************/
 /* case:  (!(lb1) && !(rb1) && !(lb2) && rb2) */
 /***************************************************************/
-static void  FillCaseN8(INT4 rb2, INT4 currentBin, 
+static void  FillCaseN8(INT4 rb2, INT4 currentBin,
                       HOUGHptfLUT *lut, HOUGHPatchGrid  *patch){
   INT4 rb2UpY,rb2LoY;
   INT4 yCr;
@@ -3166,7 +3166,7 @@ static void Fill1ColumnAnor(INT4 currentBin, HOUGHptfLUT *lut,
 
   /* It will be similar to the non-pathological case.
      Note that here  the circles have very large radius.
-     The y.coor of the center is very large or set to the border. 
+     The y.coor of the center is very large or set to the border.
      Logic not defined yet! */
 
 
@@ -3191,7 +3191,7 @@ static void Fill1ColumnAnor(INT4 currentBin, HOUGHptfLUT *lut,
 
 
   /* call the proper case to correct the border effect */
- 
+
  if( rb1 && !(rb2) && !(lb1) ){
     FillCaseN4(rb1,currentBin, lut, patch);
     return;
@@ -3201,7 +3201,7 @@ static void Fill1ColumnAnor(INT4 currentBin, HOUGHptfLUT *lut,
     FillCaseN7(lb2,currentBin, lut, patch);
     return;
   }
- 
+
  if( !(rb1)&& !(lb2) && rb2 ){
     FillCaseN4(rb2,currentBin, lut, patch);
     return;
@@ -3212,7 +3212,7 @@ static void Fill1ColumnAnor(INT4 currentBin, HOUGHptfLUT *lut,
     return;
   }
  /************************************************************/
-   
+
  if( rb1 && rb2 ){
     FillCaseA1(rb1,rb2,currentBin, lut);
     return;
@@ -3222,7 +3222,7 @@ static void Fill1ColumnAnor(INT4 currentBin, HOUGHptfLUT *lut,
     FillCaseA2(lb1,lb2,currentBin, lut);
     return;
   }
- 
+
   if( !(rb2) && lb1 && rb1 ){
     FillCaseA3(lb1,rb1,currentBin, lut, patch);
     return;
@@ -3232,19 +3232,19 @@ static void Fill1ColumnAnor(INT4 currentBin, HOUGHptfLUT *lut,
     FillCaseA3(lb2,rb2,currentBin, lut, patch);
     return;
   }
-  
+
   if(!(currentBin) && !(lb1) && !(rb1) && !(lb2) && !(rb2)){
     lut->bin[0].piece1max = patch->ySide-1;
     return;
   }
-  
+
   return;
 }
 
 /***************************************************************/
 /* case: ( rb1 && rb2 )  */
 /***************************************************************/
-static void FillCaseA1(INT4 rb1, INT4 rb2, INT4 currentBin, 
+static void FillCaseA1(INT4 rb1, INT4 rb2, INT4 currentBin,
                      HOUGHptfLUT *lut){
   INT4 rb1UpY,rb1LoY;
   INT4 rb2UpY,rb2LoY;
@@ -3267,14 +3267,14 @@ static void FillCaseA1(INT4 rb1, INT4 rb2, INT4 currentBin,
     lut->bin[currentBin].piece1max = rb1UpY;
     lut->bin[currentBin].piece1min = rb2LoY;
   }
-  
+
   return;
 }
 
 /***************************************************************/
 /* case: ( !(rb1)&& lb2 && !(rb2) && lb1 )  */
 /***************************************************************/
-static void FillCaseA2(INT4 lb1, INT4 lb2, INT4 currentBin, 
+static void FillCaseA2(INT4 lb1, INT4 lb2, INT4 currentBin,
                      HOUGHptfLUT *lut){
   INT4 lb1UpY,lb1LoY;
   INT4 lb2UpY,lb2LoY;
@@ -3304,7 +3304,7 @@ static void FillCaseA2(INT4 lb1, INT4 lb2, INT4 currentBin,
 /***************************************************************/
 /* case: ( !(rb2) && lb1 && rb1 ) or  ( !(rb1)&& lb2 && rb2 ) */
 /***************************************************************/
-static void FillCaseA3(INT4 lb1, INT4 rb1, INT4 currentBin, 
+static void FillCaseA3(INT4 lb1, INT4 rb1, INT4 currentBin,
                      HOUGHptfLUT *lut, HOUGHPatchGrid  *patch){
 
   /* here we should code all possible cases with no exceptions */

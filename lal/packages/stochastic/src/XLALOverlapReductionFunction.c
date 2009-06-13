@@ -39,25 +39,25 @@ of gravitational wave detectors.
 %
 \begin{equation}
 \gamma(f):={5\over 8\pi}\sum_A\int_{S^2}d\hat\Omega\
-e^{i2\pi f\hat\Omega\cdot\Delta \vec x/c}\ 
+e^{i2\pi f\hat\Omega\cdot\Delta \vec x/c}\
 F_1^A(\hat\Omega)F_2^A(\hat\Omega)\ ,
 \label{stochastic:e:gamma(f)}
 \end{equation}
 %
-where $\hat \Omega$ is a unit vector specifying a direction on the 
-two-sphere, $\Delta\vec x:=\vec x_1-\vec x_2$ is the separation vector 
-between the two detectors, and 
+where $\hat \Omega$ is a unit vector specifying a direction on the
+two-sphere, $\Delta\vec x:=\vec x_1-\vec x_2$ is the separation vector
+between the two detectors, and
 %
 \begin{equation}
 F_i^A(\hat\Omega):=e_{ab}^A(\hat\Omega)\ d_i^{ab}
 % :=
 % e_{ab}^A(\hat\Omega)\ {1\over 2}\left(\hat X_i^a\hat X_i^b-
-% \hat Y_i^a\hat Y_i^b\right)\ 
+% \hat Y_i^a\hat Y_i^b\right)\
 \label{stochastic:e:F_i^A}
 \end{equation}
 %
-is the response of the $i$th detector $(i=1,2)$ to the $A=+,\times$ 
-polarization.  
+is the response of the $i$th detector $(i=1,2)$ to the $A=+,\times$
+polarization.
 Here $d_i^{ab}$ is the response tensor for the $i$th detector, which
 relates the ``strain'' $h$ measured by the detector to the metric
 perturbation $h_{ab}$ due to gravitational waves by
@@ -70,11 +70,11 @@ The Cartesian components of $d_{ab}$ are constant in an earth-fixed
 rotating co\"{o}rdinate system.  $\{e_{ab}^A(\hat\Omega)|A=+,\times\}$
 are the spin-2 polarization tensors for the ``plus'' and ``cross''
 polarization states, normalized so that $e_{ab}^A e^{Bab}=2\delta^{AB}$.
-With this definition, 
+With this definition,
 %
 \begin{equation}
 \gamma(f)=d_{1ab}d_2^{cd}{5\over 4\pi}\int_{S^2}d\hat\Omega\
-e^{i2\pi f\hat\Omega\cdot\Delta \vec x/c}\ 
+e^{i2\pi f\hat\Omega\cdot\Delta \vec x/c}\
 P^{ab}_{cd}(\hat\Omega)
 \end{equation}
 %
@@ -97,9 +97,9 @@ frequencies $f_i=f_0 + i\Delta f$, $i=0,1,\cdots, N-1$.
 
 \subsubsection*{Algorithm}
 
-As shown in Appendix B of \cite{stochastic:Flanagan:1993} and Sec.~III.B of 
-\cite{stochastic:Allen:1999}, the overlap reduction function can be written in 
-closed form in terms of the traceless response tensor 
+As shown in Appendix B of \cite{stochastic:Flanagan:1993} and Sec.~III.B of
+\cite{stochastic:Allen:1999}, the overlap reduction function can be written in
+closed form in terms of the traceless response tensor
 $D_{ab}=d_{ab}-\delta_{ab} d^c_c/3$
 as sum of three spherical Bessel functions:
 %
@@ -113,7 +113,7 @@ as sum of three spherical Bessel functions:
 where
 %
 \begin{equation}
-\left[ 
+\left[
 \begin{array}{c}
 \rho_1\\
 \rho_2\\
@@ -142,45 +142,45 @@ j_2
 $j_0$, $j_1$, and $j_2$ are the standard spherical Bessel functions:
 %
 \begin{eqnarray}
-j_0(\alpha)&=&{\sin\alpha\over\alpha} ,\nonumber\\ 
+j_0(\alpha)&=&{\sin\alpha\over\alpha} ,\nonumber\\
 j_1(\alpha)&=&{\sin\alpha\over\alpha^2}-{\cos\alpha\over\alpha}\ ,
-\label{stochastic:e:closed3}\\ 
+\label{stochastic:e:closed3}\\
 j_2(\alpha)&=&3\ {\sin\alpha\over\alpha^3}-3\ {\cos\alpha\over\alpha^2}
 -{\sin\alpha\over\alpha}\ ,\nonumber
 \end{eqnarray}
 %
-$\vec s$ is a unit vector pointing in the direction of 
+$\vec s$ is a unit vector pointing in the direction of
 $\Delta \vec x:=\vec x_1-\vec x_2$, and $\alpha:=2\pi f|\Delta\vec x|/c$.
 
-{\tt XLALOverlapReductionFunction()\/} calculates the values of $\gamma(f)$ 
+{\tt XLALOverlapReductionFunction()\/} calculates the values of $\gamma(f)$
 as follows:
 
 \begin{enumerate}
-  
+
 \item Gets the locations and response tensors for the two detectors
   from the \texttt{LALDetector} structures in the input.
 
 \item Constructs the traceless parts $D_{iab}$ of the two detector
   response tensors and finds the distance $|\Delta\vec x|$ and
   direction $s^a$ between the sites.
-  
+
 \item Calculates the frequency-independent co\"{e}fficients
   $D_1^{ab}D_{2ab}$, $D_1^{ab}D_{2a}{}^c s_b s_c$, and
   $D_1^{ab}D_2^{cd}s_a s_b s_c s_d$ that appear in
   Eq.~(\ref{stochastic:e:closed1}).
-  
+
 \item Calculates $\gamma(f)$ at each discrete frequency
   $f_i:=f_0+i\Delta f$, $i=0,1,\cdots N-1$, using the power series
   expansion
   \begin{eqnarray}
-    j_0(\alpha)&=& 1 - \frac{\alpha^2}{6} + \frac{\alpha^4}{120} 
+    j_0(\alpha)&=& 1 - \frac{\alpha^2}{6} + \frac{\alpha^4}{120}
     + \mathcal{O}(\alpha^6) \\
     \frac{j_1(\alpha)}{\alpha}
     &=& \frac{1}{3} - \frac{\alpha^2}{30} + \frac{\alpha^4}{840}
     + \mathcal{O}(\alpha^6) \\
     \frac{j_2(\alpha)}{\alpha^2}
     &=& \frac{1}{15} - \frac{\alpha^2}{210} + \frac{\alpha^4}{7560}
-    + \mathcal{O}(\alpha^6) 
+    + \mathcal{O}(\alpha^6)
   \end{eqnarray}
   for the spherical Bessel functions $j_0(\alpha_i)$,
   $j_a(\alpha_i)$, $j_2(\alpha_i)$ when $\alpha_i=2\pi f_i
@@ -200,7 +200,7 @@ strncpy()
 \subsubsection*{Notes}
 
 \begin{itemize}
-  
+
 \item The $\gamma(f)$ here is related to the unnormalized $\Gamma(f)$
   defined by Maggiore
   \cite{stochastic:Maggiore:2000a,stochastic:Maggiore:2000b} by
@@ -216,7 +216,7 @@ strncpy()
   Defining $\gamma(f)$ as we do allows us to use the formul{\ae} from,
   e.g., \cite{stochastic:Allen:1999}, irrespective of the detector
   type in question.
-  
+
 \item While $\gamma(f)$ is usually considered to be dimensionless,
   this routine attaches to it units of strain$^2$.  This is because it
   contains two powers of the response tensor $d^{ab}$, which converts
@@ -227,7 +227,7 @@ strncpy()
 
 \vfill{\footnotesize\input{XLALOverlapReductionFunctionCV}}
 
-******************************************************* </lalLaTeX> */ 
+******************************************************* </lalLaTeX> */
 /**************************************** <lalLaTeX file="XLALOverlapReductionFunctionCB">
 \bibitem{stochastic:Flanagan:1993}
   \'{E}.~\'{E}.~Flanagan, ``The Sensitivity of Ligo to a Stochastic
@@ -237,8 +237,8 @@ strncpy()
 % \bibitem{stochastic:Allen:1997}
 %   B.~Allen
 %   ``The stochastic gravity-wave background: sources and detection''
-%   in \textit{Proceedings of the Les Houches School on Astrophysical Sources of 
-%   Gravitational Waves}, 
+%   in \textit{Proceedings of the Les Houches School on Astrophysical Sources of
+%   Gravitational Waves},
 %   eds. J.~A.~Marck and J.~P.~Lasota, Cambridge, 373 (1997);
 %   \href{http://www.arXiv.org/abs/gr-qc/9604033}{gr-qc/9604033}
 % \bibitem{stochastic:Allen:1999}
@@ -310,7 +310,7 @@ XLALOverlapReductionFunction(
   deltaF = parameters->deltaF;
   ASSERT(deltaF > 0, status, STOCHASTICCROSSCORRELATIONH_ENONPOSDELTAF, \
       STOCHASTICCROSSCORRELATIONH_MSGENONPOSDELTAF);
-         
+
   /* check that minimum frequency is >= 0 */
   f0 = parameters->f0;
   if (f0 < 0)
@@ -415,7 +415,7 @@ XLALOverlapReductionFunction(
       d2[i][i] -= trace2;
     }
   }
-    
+
   /* calculate coefficients c1, c2, c3 for overlap reduction funtion */
 
   /* c1 = d1 : d2 */
@@ -444,7 +444,7 @@ XLALOverlapReductionFunction(
   deltaAlpha = deltaF * distance;
   alpha0 = f0 * distance;
 
-  if (f0 == 0) 
+  if (f0 == 0)
   {
     for (i = 0; i < length; ++i)
     {
@@ -460,7 +460,7 @@ XLALOverlapReductionFunction(
       alpha = alpha0 + deltaAlpha * (REAL4)i;
       evaluateBessels(rho, alpha);
       output->data->data[i] = c1 * rho[0] + c2 * rho[1] + c3 * rho[2];
-    }   
+    }
   }
 
   /* normal exit */
@@ -488,7 +488,7 @@ static void evaluateBessels(REAL4 rho[3], REAL4 alpha)
 	{
 		s = sin(alpha);
     c = cos(alpha);
-    
+
     /* define spherical bessel functions j0, j1, j2 */
 
     b0 = s/alpha; /* = j0 */
@@ -497,7 +497,7 @@ static void evaluateBessels(REAL4 rho[3], REAL4 alpha)
     b1 /= alpha; /* = j1/alpha */
     b2 /= alpha2; /* = j2/alpha2 */
   }
-  
+
   rho[0] = 5.0*b0 - 10.0*b1 + 5.0*b2;
   rho[1] = -10.0*b0 + 40.0*b1 - 50.0*b2;
   rho[2] = 2.5*b0 - 25.0*b1 + 87.5*b2;

@@ -80,7 +80,7 @@ void LALBlockRho2 (
  REAL8			*rpeak,
  INT4			*myindex,
  REAL8Sequence		*data,
- UINT4			*marginOfExclusion			
+ UINT4			*marginOfExclusion
 );
 
 void LALBlockRho3 (

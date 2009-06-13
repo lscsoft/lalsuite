@@ -21,18 +21,18 @@
  *
  * File Name: TestStatistics.c
  *
- * Authors: Krishnan, B., Sintes, A.M., 
+ * Authors: Krishnan, B., Sintes, A.M.,
  *
  * Revision: $Id$
  *
  * History:   Created by Badri Krishnan May 24, 2003
- *        
+ *
  *
  *-----------------------------------------------------------------------
  */
 
 /************************************ <lalVerbatim file="TestStatisticsCV">
-Author: Krishnan, B., Sintes, A.M. 
+Author: Krishnan, B., Sintes, A.M.
 $Id$
 ********************************************************* </lalVerbatim> */
 
@@ -45,7 +45,7 @@ a given total Hough map.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsubsection*{Usage}
 \begin{verbatim}
-TestStatistics [-d debuglevel] [-o outfile] 
+TestStatistics [-d debuglevel] [-o outfile]
 \end{verbatim}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -54,7 +54,7 @@ This program creates a Hough map and ...
 
 The \verb@-d@ option sets the debug level to the specified value
 \verb@debuglevel@.  The \verb@-o@ flag tells the program to print the histogram
-of the Hough number counts to the specified data file \verb@outfile@. 
+of the Hough number counts to the specified data file \verb@outfile@.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsubsection*{Exit codes}
@@ -81,7 +81,7 @@ LALCheckMemoryLeaks()
 
 
 
-#include <lal/Statistics.h> 
+#include <lal/Statistics.h>
 /*#include "./Statistics.h"*/
 
 
@@ -152,9 +152,9 @@ char *lalWatch;
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
 /* vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv------------------------------------ */
-int main(int argc, char *argv[]){ 
+int main(int argc, char *argv[]){
 
-  static LALStatus       status; 
+  static LALStatus       status;
   static HOUGHMapTotal   ht;
   static HoughStats      stats;
   static UINT8Vector     hist;
@@ -162,8 +162,8 @@ int main(int argc, char *argv[]){
   const CHAR   *fname = NULL;               /* The output filename */
   INT4   arg;                         /* Argument counter */
   INT4   i;
-  FILE   *fp=NULL;                    /* Output file */  
-  
+  FILE   *fp=NULL;                    /* Output file */
+
   fname = FILEOUT;
  /********************************************************/
   /* Parse argument list.  i stores the current position. */
@@ -200,7 +200,7 @@ int main(int argc, char *argv[]){
     }
   } /* End of argument parsing loop. */
   /******************************************************************/
-  
+
   /* ------------------------------------------------------- */
 
   /* create a hough map */
@@ -210,8 +210,8 @@ int main(int argc, char *argv[]){
   /* allocate memory for hough map */
   ht.map = (HoughTT *)LALMalloc(ht.xSide * ht.ySide * sizeof(HoughTT));
   /* make up a hough map */
-  for (i = 0; i < floor(ht.xSide * ht.ySide / 2.0); i++) ht.map[i] = 500; 
-  for (i = ceil(ht.xSide * ht.ySide / 2.0); i < ht.xSide * ht.ySide; i++) ht.map[i] = 900; 
+  for (i = 0; i < floor(ht.xSide * ht.ySide / 2.0); i++) ht.map[i] = 500;
+  for (i = ceil(ht.xSide * ht.ySide / 2.0); i < ht.xSide * ht.ySide; i++) ht.map[i] = 900;
   SUB( LALHoughStatistics ( &status, &stats, &ht), &status );
 
   printf(" Maximum number count: %d\n", stats.maxCount);
@@ -220,7 +220,7 @@ int main(int argc, char *argv[]){
   printf(" Location: %d  %d\n", stats.minIndex[0], stats.minIndex[1]);
   printf(" Average number count: %f\n", stats.avgCount);
   printf(" Standard deviation of number count: %f\n", stats.stdDev);
- 
+
   /* allocate memory for histogram */
 
   hist.length = ht.mObsCoh +1;
@@ -238,14 +238,14 @@ int main(int argc, char *argv[]){
   }
 
   for (i=0; i < hist.length; i++){
-    fprintf(fp,"%d  %d\n", i, hist.data[i]); 
+    fprintf(fp,"%d  %d\n", i, hist.data[i]);
   }
 
 
   fclose(fp);
   LALFree(ht.map);
   LALFree(hist.data);
-  LALCheckMemoryLeaks(); 
+  LALCheckMemoryLeaks();
 
   INFO(TESTSTATISTICSC_MSGENORM);
   return TESTSTATISTICSC_ENORM;

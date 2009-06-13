@@ -17,22 +17,22 @@
 *  MA  02111-1307  USA
 */
 
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: FindChirpSimulation.c
  *
  * Author: Brown, D. A., and Creighton, T. D.
- * 
+ *
  * Revision: $Id$
- * 
+ *
  *-----------------------------------------------------------------------
  */
 
-#if 0 
+#if 0
 <lalVerbatim file="FindChirpSimulationCV">
 Author: Brown, D. A. and Creighton, T. D
 $Id$
-</lalVerbatim> 
+</lalVerbatim>
 
 <lalLaTeX>
 \subsection{Module \texttt{FindChirpSimulation.c}}
@@ -68,7 +68,7 @@ LALFree()
 \subsubsection*{Notes}
 
 \vfill{\footnotesize\input{FindChirpSimulationCV}}
-</lalLaTeX> 
+</lalLaTeX>
 #endif
 
 #include <lal/Units.h>
@@ -125,25 +125,25 @@ LALFindChirpInjectSignals (
   CHAR                  warnMsg[512];
   CHAR                  ifo[LIGOMETA_IFO_MAX];
   REAL8                 timeDelay;
-  
+
   INITSTATUS( status, "LALFindChirpInjectSignals", FINDCHIRPSIMULATIONC );
   ATTATCHSTATUSPTR( status );
 
-  ASSERT( chan, status, 
+  ASSERT( chan, status,
       FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
-  ASSERT( chan->data, status, 
+  ASSERT( chan->data, status,
       FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
-  ASSERT( chan->data->data, status, 
-      FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
-
-  ASSERT( events, status, 
+  ASSERT( chan->data->data, status,
       FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
 
-  ASSERT( resp, status, 
+  ASSERT( events, status,
       FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
-  ASSERT( resp->data, status, 
+
+  ASSERT( resp, status,
       FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
-  ASSERT( resp->data->data, status, 
+  ASSERT( resp->data, status,
+      FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
+  ASSERT( resp->data->data, status,
       FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
 
 
@@ -154,7 +154,7 @@ LALFindChirpInjectSignals (
    */
 
 
-  
+
   LALGPStoINT8( status->statusPtr, &chanStartTime, &(chan->epoch) );
   CHECKSTATUSPTR( status );
 
@@ -176,7 +176,7 @@ LALFindChirpInjectSignals (
   memset( &detector, 0, sizeof( DetectorResponse ) );
   detector.transfer = (COMPLEX8FrequencySeries *)
     LALCalloc( 1, sizeof(COMPLEX8FrequencySeries) );
-  if ( ! detector.transfer ) 
+  if ( ! detector.transfer )
   {
     ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
   }
@@ -244,7 +244,7 @@ LALFindChirpInjectSignals (
 
   LALCCreateVector( status->statusPtr, &unity, resp->data->length );
   CHECKSTATUSPTR( status );
-  for ( k = 0; k < resp->data->length; ++k ) 
+  for ( k = 0; k < resp->data->length; ++k )
   {
     unity->data[k].re = 1.0;
     unity->data[k].im = 0.0;
@@ -267,7 +267,7 @@ LALFindChirpInjectSignals (
 
   for ( thisEvent = events; thisEvent; thisEvent = thisEvent->next )
   {
-    /* 
+    /*
      *
      * generate waveform and inject it into the data
      *
@@ -281,35 +281,35 @@ LALFindChirpInjectSignals (
     CHECKSTATUSPTR( status );
 
     LALInfo( status, ppnParams.termDescription );
-    
-    if ( strstr( thisEvent->waveform, "KludgeIMR") || 	 
-         strstr( thisEvent->waveform, "KludgeRingOnly") ) 	 
-     { 	 
-       CoherentGW *wfm; 	 
-       SimRingdownTable *ringEvent; 	 
-       int injectSignalType = imr_inject; 	 
-  	 
-  	 
-       ringEvent = (SimRingdownTable *) 	 
-         LALCalloc( 1, sizeof(SimRingdownTable) ); 	 
-       wfm = XLALGenerateInspRing( &waveform, thisEvent, ringEvent, 	 
-           injectSignalType); 	 
-       LALFree(ringEvent); 	 
-  	 
-       if ( !wfm ) 	 
-       { 	 
-         LALInfo( status, "Unable to generate merger/ringdown, " 	 
-             "injecting inspiral only"); 	 
-         ABORT( status, FINDCHIRPH_EIMRW, FINDCHIRPH_MSGEIMRW ); 	 
-       } 	 
-       waveform = *wfm; 	 
+
+    if ( strstr( thisEvent->waveform, "KludgeIMR") ||
+         strstr( thisEvent->waveform, "KludgeRingOnly") )
+     {
+       CoherentGW *wfm;
+       SimRingdownTable *ringEvent;
+       int injectSignalType = imr_inject;
+
+
+       ringEvent = (SimRingdownTable *)
+         LALCalloc( 1, sizeof(SimRingdownTable) );
+       wfm = XLALGenerateInspRing( &waveform, thisEvent, ringEvent,
+           injectSignalType);
+       LALFree(ringEvent);
+
+       if ( !wfm )
+       {
+         LALInfo( status, "Unable to generate merger/ringdown, "
+             "injecting inspiral only");
+         ABORT( status, FINDCHIRPH_EIMRW, FINDCHIRPH_MSGEIMRW );
+       }
+       waveform = *wfm;
      }
 
 
     if ( thisEvent->geocent_end_time.gpsSeconds )
     {
       /* get the gps start time of the signal to inject */
-      LALGPStoINT8( status->statusPtr, &waveformStartTime, 
+      LALGPStoINT8( status->statusPtr, &waveformStartTime,
           &(thisEvent->geocent_end_time) );
       CHECKSTATUSPTR( status );
       waveformStartTime -= (INT8) ( 1000000000.0 * ppnParams.tc );
@@ -318,18 +318,18 @@ LALFindChirpInjectSignals (
     {
       LALInfo( status, "Waveform start time is zero: injecting waveform "
           "into center of data segment" );
-      
+
       /* center the waveform in the data segment */
-      LALGPStoINT8( status->statusPtr, &waveformStartTime, 
+      LALGPStoINT8( status->statusPtr, &waveformStartTime,
           &(chan->epoch) );
       CHECKSTATUSPTR( status );
 
-      waveformStartTime += (INT8) ( 1000000000.0 * 
+      waveformStartTime += (INT8) ( 1000000000.0 *
           ((REAL8) (chan->data->length - ppnParams.length) / 2.0) * chan->deltaT
           );
     }
 
-    LALSnprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg), 
+    LALSnprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
         "Injected waveform timing:\n"
         "thisEvent->geocent_end_time.gpsSeconds = %d\n"
         "thisEvent->geocent_end_time.gpsNanoSeconds = %d\n"
@@ -347,7 +347,7 @@ LALFindChirpInjectSignals (
     {
       /* clear the signal structure */
       memset( &signal, 0, sizeof(REAL4TimeSeries) );
-      
+
       /* set the start time of the signal vector to the appropriate start time of the injection */
       if ( detector.site )
       {
@@ -364,7 +364,7 @@ LALFindChirpInjectSignals (
       }
       /* Give a little more breathing space to aid band-passing */
       XLALGPSSetREAL8( &(signal.epoch), (waveformStartTime * 1.0e-9) - 0.25 + timeDelay );
-      
+
       /* set the parameters for the signal time series */
       signal.deltaT = chan->deltaT;
       if ( ( signal.f0 = chan->f0 ) != 0 )
@@ -376,25 +376,25 @@ LALFindChirpInjectSignals (
       /* set the start times for injection */
       LALINT8toGPS( status->statusPtr, &(waveform.a->epoch), &waveformStartTime );
       CHECKSTATUSPTR( status );
-      memcpy( &(waveform.f->epoch), &(waveform.a->epoch), 
+      memcpy( &(waveform.f->epoch), &(waveform.a->epoch),
           sizeof(LIGOTimeGPS) );
-      memcpy( &(waveform.phi->epoch), &(waveform.a->epoch), 
+      memcpy( &(waveform.phi->epoch), &(waveform.a->epoch),
           sizeof(LIGOTimeGPS) );
 
       /* simulate the detectors response to the inspiral */
       LALSCreateVector( status->statusPtr, &(signal.data), chan->data->length );
       CHECKSTATUSPTR( status );
 
-      LALSimulateCoherentGW( status->statusPtr, 
+      LALSimulateCoherentGW( status->statusPtr,
           &signal, &waveform, &detector );
       CHECKSTATUSPTR( status );
 
       /* Taper the signal */
       {
-          
+
           if ( ! strcmp( "TAPER_START", thisEvent->taper ) )
           {
-              XLALInspiralWaveTaper( signal.data, INSPIRAL_TAPER_START ); 
+              XLALInspiralWaveTaper( signal.data, INSPIRAL_TAPER_START );
           }
           else if (  ! strcmp( "TAPER_END", thisEvent->taper ) )
           {
@@ -412,42 +412,42 @@ LALFindChirpInjectSignals (
           UINT4 safeToBandPass = 0;
           UINT4 start, end;
           REAL4Vector *bandpassVec = NULL;
-          
+
           safeToBandPass = FindTimeSeriesStartAndEnd (
                   signal.data, &start, &end );
-          
+
           if ( safeToBandPass )
           {
               /* Check if we can grab some padding at the extremeties.
-               * This will make the bandpassing better 
+               * This will make the bandpassing better
                */
-              
-              if (((INT4)start - (int)(0.25/chan->deltaT)) > 0 ) 
+
+              if (((INT4)start - (int)(0.25/chan->deltaT)) > 0 )
                     start -= (int)(0.25/chan->deltaT);
               else
-                    start = 0;              
+                    start = 0;
 
-              if ((end + (int)(0.25/chan->deltaT)) < signal.data->length ) 
+              if ((end + (int)(0.25/chan->deltaT)) < signal.data->length )
                     end += (int)(0.25/chan->deltaT);
               else
                     end = signal.data->length - 1;
 
               bandpassVec = (REAL4Vector *)
                       LALCalloc(1, sizeof(REAL4Vector) );
-           
-              bandpassVec->length = (end - start + 1); 
+
+              bandpassVec->length = (end - start + 1);
               bandpassVec->data = signal.data->data + start;
- 
-              if ( XLALBandPassInspiralTemplate( bandpassVec, 
-                          1.1*thisEvent->f_lower, 
-                          1.05*thisEvent->f_final, 
-                          1./chan->deltaT) != XLAL_SUCCESS ) 
-              { 
+
+              if ( XLALBandPassInspiralTemplate( bandpassVec,
+                          1.1*thisEvent->f_lower,
+                          1.05*thisEvent->f_final,
+                          1./chan->deltaT) != XLAL_SUCCESS )
+              {
                   LALError( status, "Failed to Bandpass signal" );
                   ABORT (status, LALINSPIRALH_EBPERR, LALINSPIRALH_MSGEBPERR);
-              }; 
-            
-              LALFree( bandpassVec ); 
+              };
+
+              LALFree( bandpassVec );
           }
       }
 
@@ -465,26 +465,26 @@ LALFindChirpInjectSignals (
 
       REAL8 dynRange;
       float *x1;
-      
-      LALWarning (status, "Attempting to calculate dynRange: Will break if un-calibrated strain-data is used."); 
+
+      LALWarning (status, "Attempting to calculate dynRange: Will break if un-calibrated strain-data is used.");
       dynRange = 1.0/(resp->data->data[0].re);
-      
+
       /* set the start times for injection */
       LALINT8toGPS( status->statusPtr, &(waveform.h->epoch), &waveformStartTime );
       CHECKSTATUSPTR( status );
-      memcpy( &(waveform.f->epoch), &(waveform.h->epoch), 
+      memcpy( &(waveform.f->epoch), &(waveform.h->epoch),
           sizeof(LIGOTimeGPS) );
-      memcpy( &(waveform.phi->epoch), &(waveform.h->epoch), 
+      memcpy( &(waveform.phi->epoch), &(waveform.h->epoch),
           sizeof(LIGOTimeGPS) );
-      memcpy( &(waveform.a->epoch), &(waveform.a->epoch), 
+      memcpy( &(waveform.a->epoch), &(waveform.a->epoch),
           sizeof(LIGOTimeGPS) );
 
       wfmLength = waveform.h->data->length;
       dataLength = 2*wfmLength;
-      x1 = (float *) LALMalloc(sizeof(x1)*dataLength);     
-      /* 
-       * We are using functions from NRWaveInject which do not take a vector 
-       * with alternating h+ & hx but rather one that stores h+ in the first 
+      x1 = (float *) LALMalloc(sizeof(x1)*dataLength);
+      /*
+       * We are using functions from NRWaveInject which do not take a vector
+       * with alternating h+ & hx but rather one that stores h+ in the first
        * half and hx in the second half.
        *
        * We also must multiply the strain by the distance to be compatible
@@ -499,19 +499,19 @@ LALFindChirpInjectSignals (
       {
             waveform.h->data->data[i] = x1[2*i];
             waveform.h->data->data[wfmLength+i] = x1[2*i+1];
-      }	  
+      }
 
       LALFree(x1);
 
       waveform.h->data->vectorLength = wfmLength;
-     
-      LALInjectStrainGW( status->statusPtr , 
+
+      LALInjectStrainGW( status->statusPtr ,
                                       chan ,
                                 waveform.h ,
                                  thisEvent ,
                                        ifo ,
                                   dynRange  );
-      
+
     }
 
 
@@ -523,7 +523,7 @@ LALFindChirpInjectSignals (
       CHECKSTATUSPTR( status );
       LALFree( waveform.shift );
     }
-    
+
     if( waveform.h )
     {
       LALSDestroyVectorSequence( status->statusPtr, &(waveform.h->data) );
@@ -535,11 +535,11 @@ LALFindChirpInjectSignals (
       LALSDestroyVectorSequence( status->statusPtr, &(waveform.a->data) );
       CHECKSTATUSPTR( status );
       LALFree( waveform.a );
-      /* 
+      /*
        * destroy the signal only if waveform.h is NULL as otherwise it won't
        * be created
        * */
-      if ( waveform.h == NULL ) 
+      if ( waveform.h == NULL )
       {
 	LALSDestroyVector( status->statusPtr, &(signal.data) );
         CHECKSTATUSPTR( status );
@@ -550,7 +550,7 @@ LALFindChirpInjectSignals (
       LALSDestroyVector( status->statusPtr, &(waveform.f->data) );
       CHECKSTATUSPTR( status );
       LALFree( waveform.f );
-    } 
+    }
     if( waveform.phi )
     {
       LALDDestroyVector( status->statusPtr, &(waveform.phi->data) );
@@ -577,7 +577,7 @@ XLALFindChirpSetAnalyzeSegment (
     SimInspiralTable           *injections
     )
 /* </lalVerbatim> */
-{  
+{
   DataSegment      *currentSegment;
   SimInspiralTable *thisInjection;
   INT8              chanStartTime;
@@ -603,9 +603,9 @@ XLALFindChirpSetAnalyzeSegment (
     currentSegment = dataSegVec->data + i;
 
     /* compute the start and end of segment */
-    chanStartTime = XLALGPStoINT8( &currentSegment->chan->epoch );
-    chanEndTime = chanStartTime + 
-      (INT8) (1e9 * currentSegment->chan->data->length * 
+    chanStartTime = XLALGPSToINT8NS( &currentSegment->chan->epoch );
+    chanEndTime = chanStartTime +
+      (INT8) (1e9 * currentSegment->chan->data->length *
               currentSegment->chan->deltaT);
 
     /* look for injection into segment */
@@ -613,7 +613,7 @@ XLALFindChirpSetAnalyzeSegment (
     thisInjection=injections;
     while (thisInjection)
     {
-      INT8 ta = XLALGPStoINT8( &thisInjection->geocent_end_time );
+      INT8 ta = XLALGPSToINT8NS( &thisInjection->geocent_end_time );
 
       if ( ta > chanStartTime && ta <= chanEndTime )
       {
@@ -632,7 +632,7 @@ XLALFindChirpSetAnalyzeSegment (
 }
 
 /* <lalVerbatim file="FindChirpSimulationCP"> */
-INT4 
+INT4
 XLALFindChirpTagTemplateAndSegment (
         DataSegmentVector       *dataSegVec,
         InspiralTemplate        *tmpltHead,
@@ -654,7 +654,7 @@ XLALFindChirpTagTemplateAndSegment (
 
 #ifndef LAL_NDEBUG
     /* Sanity checks on input arguments for debugging */
-    if (!dataSegVec || !tmpltHead || !events || !(*events) || 
+    if (!dataSegVec || !tmpltHead || !events || !(*events) ||
           !ifo || !analyseThisTmplt )
        XLAL_ERROR( func, XLAL_EFAULT );
 
@@ -666,9 +666,9 @@ XLALFindChirpTagTemplateAndSegment (
     (*events) =  XLALIfoCutSingleInspiral( events, ifo);
 
     if ( XLALClearErrno() ) {
-       XLAL_ERROR( func, XLAL_EFUNC ); 
+       XLAL_ERROR( func, XLAL_EFUNC );
     }
-    
+
     /* make sure the sngl inspirals are time ordered */
     *events = XLALSortSnglInspiral(*events, LALCompareSnglInspiralByTime);
 
@@ -678,8 +678,8 @@ XLALFindChirpTagTemplateAndSegment (
     for (thisEvent=*events; thisEvent; thisEvent=thisEvent->next)
     {
         REAL8    g11, g12, g22;
-        
-        tc = XLALGPStoINT8( &thisEvent->end_time );
+
+        tc = XLALGPSToINT8NS( &thisEvent->end_time );
         flag = 0;
 
         /* Loop over segments */
@@ -690,17 +690,17 @@ XLALFindChirpTagTemplateAndSegment (
            currentSegment = dataSegVec->data + s;
 
            /* compute the start and end of segment */
-           chanStartTime = XLALGPStoINT8( &currentSegment->chan->epoch );
+           chanStartTime = XLALGPSToINT8NS( &currentSegment->chan->epoch );
            chanEndTime = chanStartTime +
                 (INT8) (1e9 * currentSegment->chan->data->length *
                 currentSegment->chan->deltaT);
-          
+
            if ( tc > chanStartTime && tc <= chanEndTime )
            {
               flag += (1 << s);
            }
-           
-           
+
+
         } /* loop over segs */
 
         /* Check we haven't gone beyond the time of interest */
@@ -714,17 +714,17 @@ XLALFindChirpTagTemplateAndSegment (
 
 
         /* Projected metric g_ij for this event */
-        g11 = thisEvent->Gamma[3] - 
+        g11 = thisEvent->Gamma[3] -
            thisEvent->Gamma[1] * thisEvent->Gamma[1]/thisEvent->Gamma[0];
 
-        g12 = thisEvent->Gamma[4] - 
+        g12 = thisEvent->Gamma[4] -
            thisEvent->Gamma[1]*thisEvent->Gamma[2]/thisEvent->Gamma[0];
 
-        g22 = thisEvent->Gamma[5] - 
+        g22 = thisEvent->Gamma[5] -
            thisEvent->Gamma[2]*thisEvent->Gamma[2]/thisEvent->Gamma[0];
 
         /* Loop over templates */
-        for ( thisTmplt = tmpltHead, t = 0; thisTmplt; 
+        for ( thisTmplt = tmpltHead, t = 0; thisTmplt;
                   thisTmplt = thisTmplt->next, t++ )
         {
 
@@ -789,7 +789,7 @@ XLALFindChirpSetFollowUpSegment (
     currentSegment = dataSegVec->data + i;
 
     /* compute the start and end of segment */
-    chanStartTime = XLALGPStoINT8( &currentSegment->chan->epoch );
+    chanStartTime = XLALGPSToINT8NS( &currentSegment->chan->epoch );
     chanEndTime = chanStartTime +
       (INT8) (1e9 * currentSegment->chan->data->length *
               currentSegment->chan->deltaT);
@@ -799,7 +799,7 @@ XLALFindChirpSetFollowUpSegment (
     thisEvent = *events;
     while (thisEvent)
     {
-      INT8 ta = XLALGPStoINT8( &thisEvent->end_time );
+      INT8 ta = XLALGPSToINT8NS( &thisEvent->end_time );
 
       if ( ta > chanStartTime && ta <= chanEndTime )
       {
@@ -847,9 +847,9 @@ LALFindChirpSetAnalyseTemplate (
   INITSTATUS( status, "LALFindChirpSetAnalyseTemplate", FINDCHIRPSIMULATIONC );
   ATTATCHSTATUSPTR( status );
 
-  ASSERT( analyseThisTmplt, status, 
+  ASSERT( analyseThisTmplt, status,
       FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
-  ASSERT( fcDataParams->wtildeVec->data, status, 
+  ASSERT( fcDataParams->wtildeVec->data, status,
       FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
 
   /* Go through the next steps only if mmFast is used */
@@ -860,7 +860,7 @@ LALFindChirpSetAnalyseTemplate (
     /* If mmFast option is used, assume NONE of the templates need to be */
     /* analysed to begin with. Thus re-init analyseThisTmplt elements to */
     /* zero                                                              */
-    for ( tmpltCurrent = tmpltHead, kj = 0; tmpltCurrent; 
+    for ( tmpltCurrent = tmpltHead, kj = 0; tmpltCurrent;
         tmpltCurrent = tmpltCurrent->next, kj++ )
     {
       analyseThisTmplt[kj] = 0;
@@ -869,34 +869,34 @@ LALFindChirpSetAnalyseTemplate (
     /* Get the approximant. If the approximant is not BCV or BCVSpin, then */
     /* we try to tag the templates ... the BCV waveforms are not included  */
     /* yet in the scheme of things                                         */
-    LALGetApproximantFromString(status->statusPtr, injections->waveform, 
+    LALGetApproximantFromString(status->statusPtr, injections->waveform,
         &approximant);
     CHECKSTATUSPTR (status);
 
     if (approximant != (UINT4)BCV &&
         approximant != (UINT4)BCVSpin &&
-        approximant != (UINT4)BCVC ) 
-    { 
+        approximant != (UINT4)BCVC )
+    {
       /* Calculate the noise moments here. This is a once and for all     */
       /* thing as the psd won't change                                    */
-      mmFshf = (REAL8FrequencySeries *) 
+      mmFshf = (REAL8FrequencySeries *)
         LALCalloc (1, sizeof(REAL8FrequencySeries));
       mmFshf->f0     = 0.0;
       mmFshf->deltaF = deltaF;
       mmFshf->data   = NULL;
-      LALDCreateVector (status->statusPtr, &mmFshf->data, 
+      LALDCreateVector (status->statusPtr, &mmFshf->data,
           fcDataParams->wtildeVec->length);
       CHECKSTATUSPTR (status);
 
       /* Populate the shf vector from the wtilde vector */
-      for (ki=0; ki<fcDataParams->wtildeVec->length ; ki++) 
+      for (ki=0; ki<fcDataParams->wtildeVec->length ; ki++)
       {
-        if (fcDataParams->wtildeVec->data[ki].re) 
+        if (fcDataParams->wtildeVec->data[ki].re)
         {
-          mmFshf->data->data[ki] = 
+          mmFshf->data->data[ki] =
             1./fcDataParams->wtildeVec->data[ki].re;
         }
-        else 
+        else
         {
           /* Note that we can safely set shf to be zero as this is    */
           /* correctly handled in the LALGetInspiralMoments function  */
@@ -904,17 +904,17 @@ LALFindChirpSetAnalyseTemplate (
         }
       }
       /* Init the template */
-      mmFTemplate = (InspiralTemplate *) 
+      mmFTemplate = (InspiralTemplate *)
         LALCalloc(1, sizeof(InspiralTemplate));
       mmFTemplate->fLower     = fcDataParams->fLow;
       mmFTemplate->fCutoff    = (REAL4)(sampleRate/2) - mmFshf->deltaF;
       mmFTemplate->tSampling  = (REAL4)(sampleRate);
       mmFTemplate->massChoice = m1Andm2;
       mmFTemplate->ieta       = 1.L;
-      LALGetApproximantFromString(status->statusPtr, injections->waveform, 
+      LALGetApproximantFromString(status->statusPtr, injections->waveform,
           &(mmFTemplate->approximant));
       CHECKSTATUSPTR (status);
-      LALGetOrderFromString(status->statusPtr, injections->waveform, 
+      LALGetOrderFromString(status->statusPtr, injections->waveform,
           &(mmFTemplate->order));
       CHECKSTATUSPTR (status);
 
@@ -934,7 +934,7 @@ LALFindChirpSetAnalyseTemplate (
       LALInfo (status, myMsg);
 
       /* Now we are ready to calculate the noise moments */
-      LALGetInspiralMoments( status->statusPtr, &mmFmoments, 
+      LALGetInspiralMoments( status->statusPtr, &mmFmoments,
           mmFshf, mmFTemplate);
       CHECKSTATUSPTR (status);
 
@@ -961,7 +961,7 @@ LALFindChirpSetAnalyseTemplate (
 
         LALSnprintf (myMsg, sizeof(myMsg)/sizeof(*myMsg),
             "%d Injections, m1 = %e, m2 = %e eta = %e\n",
-            numInjections, mmFTemplate->mass1, mmFTemplate->mass2, 
+            numInjections, mmFTemplate->mass1, mmFTemplate->mass2,
             mmFTemplate->eta);
         LALInfo (status, myMsg);
         LALSnprintf (myMsg, sizeof(myMsg)/sizeof(*myMsg),
@@ -969,7 +969,7 @@ LALFindChirpSetAnalyseTemplate (
             numInjections, mmFTemplate->t0, mmFTemplate->t3);
         LALInfo (status, myMsg);
 
-        LALInspiralComputeMetric( status->statusPtr, &mmFmetric, 
+        LALInspiralComputeMetric( status->statusPtr, &mmFmetric,
             mmFTemplate, &mmFmoments );
         CHECKSTATUSPTR (status);
 
@@ -987,7 +987,7 @@ LALFindChirpSetAnalyseTemplate (
         /* by user while running lalapps_inspiral program                */
         kj = 0;
 
-        for ( tmpltCurrent = tmpltHead; tmpltCurrent; 
+        for ( tmpltCurrent = tmpltHead; tmpltCurrent;
             tmpltCurrent = tmpltCurrent->next)
         {
           dt0 = tmpltCurrent->t0 - mmFTemplate->t0;
@@ -1033,16 +1033,16 @@ LALFindChirpSetAnalyseTemplate (
       } /* End of loop over injections */
 
     } /* End of if (approximant is in the OK list) */
-    else 
-    { 
-        LALWarning (status, "Requested --fast option for unsupported family of waveforms"); 
-        LALWarning (status, "Tagging all templates to be analysed"); 
-        
-        for ( tmpltCurrent = tmpltHead, kj = 0; tmpltCurrent; 
-                tmpltCurrent = tmpltCurrent->next, kj++) 
-        { 
-            analyseThisTmplt[kj] = pow(2.0, (double)(numInjections)) - 1 ; 
-        } 
+    else
+    {
+        LALWarning (status, "Requested --fast option for unsupported family of waveforms");
+        LALWarning (status, "Tagging all templates to be analysed");
+
+        for ( tmpltCurrent = tmpltHead, kj = 0; tmpltCurrent;
+                tmpltCurrent = tmpltCurrent->next, kj++)
+        {
+            analyseThisTmplt[kj] = pow(2.0, (double)(numInjections)) - 1 ;
+        }
     }
 
 
@@ -1052,7 +1052,7 @@ LALFindChirpSetAnalyseTemplate (
   {
     /* If mmFast option is used,  BUT the injections pointer is NULL, then */
     /* NONE of the templates need to be analysed.                          */
-    for ( tmpltCurrent = tmpltHead, kj = 0; tmpltCurrent; 
+    for ( tmpltCurrent = tmpltHead, kj = 0; tmpltCurrent;
         tmpltCurrent = tmpltCurrent->next, kj++ )
     {
       analyseThisTmplt[kj] = 0;
@@ -1061,7 +1061,7 @@ LALFindChirpSetAnalyseTemplate (
 
   else /* if the --fast option is not used */
   {
-    for ( tmpltCurrent = tmpltHead, kj = 0; tmpltCurrent; 
+    for ( tmpltCurrent = tmpltHead, kj = 0; tmpltCurrent;
         tmpltCurrent = tmpltCurrent->next, kj++)
     {
       analyseThisTmplt[kj] = pow(2.0, (double)(numInjections)) - 1 ;
@@ -1076,8 +1076,8 @@ LALFindChirpSetAnalyseTemplate (
 /* <lalVerbatim file="FindChirpSimulationCP"> */
 UINT4
 XLALCmprSgmntTmpltFlags (
-    UINT4 numInjections, 
-    UINT4 TmpltFlag, 
+    UINT4 numInjections,
+    UINT4 TmpltFlag,
     UINT4 SgmntFlag
     )
 /* </lalVerbatim> */
@@ -1088,11 +1088,11 @@ XLALCmprSgmntTmpltFlags (
   analyseTag = 0;
 
   /* Loop over all the injections */
-  for (k1=0; k1<numInjections; k1++) 
+  for (k1=0; k1<numInjections; k1++)
   {
     bitTmplt = (TmpltFlag>>k1)&01;
     bitSgmnt = (SgmntFlag>>k1)&01;
-    if (bitSgmnt && (bitTmplt == bitSgmnt)) 
+    if (bitSgmnt && (bitTmplt == bitSgmnt))
     {
       analyseTag = 1;
       break;
@@ -1104,7 +1104,7 @@ XLALCmprSgmntTmpltFlags (
 
 
 /* <lalVerbatim file="FindChirpSimulationCP"> */
-UINT4 
+UINT4
 XLALFindChirpBankSimInitialize (
     REAL4FrequencySeries       *spec,
     COMPLEX8FrequencySeries    *resp,
@@ -1120,7 +1120,7 @@ XLALFindChirpBankSimInitialize (
   /* the value the psd at cut                         */
   cut = fLow / spec->deltaF > 1 ? fLow / spec->deltaF : 1;
 
-  psdMin = spec->data->data[cut] * 
+  psdMin = spec->data->data[cut] *
     ( ( resp->data->data[cut].re * resp->data->data[cut].re +
         resp->data->data[cut].im * resp->data->data[cut].im ) / psdScaleFac );
 
@@ -1138,7 +1138,7 @@ XLALFindChirpBankSimInitialize (
       ( ( respRe * respRe + respIm * respIm ) / psdScaleFac );
   }
 
-  /* set the response function to the sqrt of the inverse */ 
+  /* set the response function to the sqrt of the inverse */
   /* of the psd scale factor since S_h = |R|^2 S_v        */
   for ( k = 0; k < resp->data->length; ++k )
   {
@@ -1172,13 +1172,13 @@ XLALFindChirpBankSimInjectSignal (
 
   if ( injParams && simParams )
   {
-    XLALPrintError( 
+    XLALPrintError(
         "XLAL Error: specify either a sim_inspiral table or sim params\n" );
     XLAL_ERROR_NULL( func, XLAL_EINVAL );
   }
 
   /* create memory for the bank simulation */
-  bankInjection = (SimInspiralTable *) 
+  bankInjection = (SimInspiralTable *)
     LALCalloc( 1, sizeof(SimInspiralTable) );
 
   if ( simParams && simParams->approx == FrameFile )
@@ -1189,12 +1189,12 @@ XLALFindChirpBankSimInjectSignal (
     /* add the waveform from a frame file */
     if ( ! simParams->frameName || ! simParams->frameChan )
     {
-      XLALPrintError( 
+      XLALPrintError(
           "XLAL Error: frame name and channel name must be specified\n" );
       XLAL_ERROR_NULL( func, XLAL_EINVAL );
     }
 
-    fprintf( stderr, "reading data from %s %s\n", 
+    fprintf( stderr, "reading data from %s %s\n",
         simParams->frameName, simParams->frameChan );
     LALSnprintf( bankInjection->waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR),
         "%s", simParams->frameName );
@@ -1205,13 +1205,13 @@ XLALFindChirpBankSimInjectSignal (
     XLALFrSetMode( frStream, LAL_FR_VERBOSE_MODE );
 
     memset( &frameData, 0, sizeof(REAL4TimeSeries) );
-    LALSnprintf( frameData.name, 
+    LALSnprintf( frameData.name,
         sizeof(frameData.name) / sizeof(*(frameData.name)), "%s",
         simParams->frameChan );
-    
-    frameData.data = 
+
+    frameData.data =
       XLALCreateREAL4Vector( dataSegVec->data->chan->data->length );
-    
+
     XLALFrGetREAL4TimeSeries( &frameData, frStream );
     if ( xlalErrno == XLAL_EIO )
     {
@@ -1219,18 +1219,18 @@ XLALFindChirpBankSimInjectSignal (
       /* to be longer than the waveform          */
       xlalErrno = 0;
     }
-    
-    fprintf( stderr, "template frame epoch is %d.%d\n", 
+
+    fprintf( stderr, "template frame epoch is %d.%d\n",
         frameData.epoch.gpsSeconds, frameData.epoch.gpsNanoSeconds );
-    fprintf( stderr, "template frame sampling rate = %le\n", 
+    fprintf( stderr, "template frame sampling rate = %le\n",
         frameData.deltaT );
-    fprintf( stderr, "expected template sampling rate = %le\n", 
+    fprintf( stderr, "expected template sampling rate = %le\n",
         dataSegVec->data->chan->deltaT );
 
     XLALFrClose( frStream );
 
     /* center the waveform in the data segment */
-    waveformStartTime = XLALGPStoINT8( &(dataSegVec->data->chan->epoch) );
+    waveformStartTime = XLALGPSToINT8NS( &(dataSegVec->data->chan->epoch) );
 
     for ( i = 0; i < frameData.data->length; ++i )
     {
@@ -1272,7 +1272,7 @@ XLALFindChirpBankSimInjectSignal (
     else
     {
       /* use simParams so generate our own injection parameters */
-      bankInjection->f_lower = simParams->f_lower; 
+      bankInjection->f_lower = simParams->f_lower;
       /* set up the injection masses */
       if ( simParams->maxMass == simParams->minMass )
       {
@@ -1330,7 +1330,7 @@ XLALFindChirpBankSimInjectSignal (
       }
       else
       {
-        XLALPrintError( 
+        XLALPrintError(
             "error: unknown waveform for bank simulation injection\n" );
         XLAL_ERROR_NULL( func, XLAL_EINVAL );
       }
@@ -1340,12 +1340,12 @@ XLALFindChirpBankSimInjectSignal (
     }
 
     /* inject the signals, preserving the channel name (Tev mangles it) */
-    LALSnprintf( tmpChName, LALNameLength * sizeof(CHAR), "%s", 
+    LALSnprintf( tmpChName, LALNameLength * sizeof(CHAR), "%s",
         dataSegVec->data->chan->name );
 
     /* make sure the injection is hplus with no time delays */
     dataSegVec->data->chan->name[0] = 'P';
-    LALFindChirpInjectSignals( &status, 
+    LALFindChirpInjectSignals( &status,
         dataSegVec->data->chan, bankInjection, resp );
     if ( status.statusCode )
     {
@@ -1354,17 +1354,17 @@ XLALFindChirpBankSimInjectSignal (
     }
 
     /* restore the saved channel name */
-    LALSnprintf( dataSegVec->data->chan->name,  
+    LALSnprintf( dataSegVec->data->chan->name,
         LALNameLength * sizeof(CHAR), "%s", tmpChName );
   }
 
   /* return a pointer to the created sim_inspiral table */
   return bankInjection;
-} 
+}
 
 
 REAL4
-XLALFindChirpBankSimSignalNorm( 
+XLALFindChirpBankSimSignalNorm(
     FindChirpDataParams         *fcDataParams,
     FindChirpSegmentVector      *fcSegVec,
     UINT4                        cut
@@ -1411,7 +1411,7 @@ XLALFindChirpBankSimSignalNorm(
       XLAL_ERROR_REAL4( func, XLAL_EINVAL );
   }
 
-  matchNorm *= ( 4.0 * (REAL4) fcSegVec->data->deltaT ) / 
+  matchNorm *= ( 4.0 * (REAL4) fcSegVec->data->deltaT ) /
     (REAL4) ( 2 * (fcSegVec->data->data->data->length - 1) );
 
   /* square root to get minimal match normalization \sqrt{(s|s)} */
@@ -1449,7 +1449,7 @@ XLALFindChirpBankSimMaxMatch (
 
   /* return the match for the loudest event */
   return XLALFindChirpBankSimComputeMatch( *bestTmplt, matchNorm );
-} 
+}
 
 
 SimInstParamsTable *
@@ -1459,7 +1459,7 @@ XLALFindChirpBankSimComputeMatch (
     )
 {
   SimInstParamsTable    *maxMatch = NULL;
-  
+
   /* create the match output table */
   maxMatch = (SimInstParamsTable *) LALCalloc( 1, sizeof(SimInstParamsTable) );
   LALSnprintf( maxMatch->name, LIGOMETA_SIMINSTPARAMS_NAME_MAX, "match" );
@@ -1480,7 +1480,7 @@ static int FindTimeSeriesStartAndEnd (
   const static char *func = "FindTimeSeriesStartAndEnd";
   UINT4 i, mid, n; /* indices */
   UINT4 flag, safe = 1;
-  UINT4 length;   
+  UINT4 length;
 
 #ifndef LAL_NDEBUG
   if ( !signal )
@@ -1503,7 +1503,7 @@ static int FindTimeSeriesStartAndEnd (
           flag = 1;
       }
       i++;
-  }  
+  }
   if ( flag == 0 )
   {
       return flag;
@@ -1519,7 +1519,7 @@ static int FindTimeSeriesStartAndEnd (
           flag = 1;
       }
       i--;
-  }        
+  }
 
   /* Check we have more than 2 data points */
   if(((*end) - (*start)) <= 1)

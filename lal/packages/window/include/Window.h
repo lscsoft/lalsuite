@@ -92,7 +92,7 @@ typedef enum {
 	Hann,
 	Welch,
 	Bartlett,
-	Parzen, 
+	Parzen,
 	Papoulis,
 	Hamming,
 	Kaiser,

@@ -94,7 +94,7 @@ tagFrStat
 FrStat;
 /**** </lalVerbatim> */
 /**** <lalLaTeX>
- * 
+ *
  * This structure contains a frame file status.  The fields are:
  * \begin{description}
  * \item[\texttt{source}] the source detector(s) of the data in the frame
@@ -120,7 +120,7 @@ tagFrCache
 FrCache;
 /**** </lalVerbatim> */
 /**** <lalLaTeX>
- * 
+ *
  * This structure contains a list of all frame files available.  The fields are:
  * \begin{description}
  * \item[\texttt{numFrameFiles}] the total number of frame files in the list.
@@ -141,7 +141,7 @@ tagFrCacheSieve
 FrCacheSieve;
 /**** </lalVerbatim> */
 /**** <lalLaTeX>
- * 
+ *
  * This structure contains parameters to use to extract those frame files
  * of interest from a cache.  The parameters include regular expressions and
  * time ranges.  The fields are:

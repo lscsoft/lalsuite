@@ -48,16 +48,16 @@ Computes filter components for amplitude demodulation.
 #ifdef __cplusplus
 extern "C" {
 #endif
-  
+
   NRCSID (LALCOMPUTEAMH, "$Id: LALComputeAM.h");
-  
+
   /* Author-defined error codes */
   /* <lalLaTeX>
      \subsection*{Error conditions}
      \vspace{0.1in}
      \input{LALComputeAMHErrorTable}
      </lalLaTeX> */
-  
+
   /* <lalErrTable file="LALComputeAMHErrorTable"> */
 #define LALCOMPUTEAMH_ENOTS        1
 #define LALCOMPUTEAMH_EBCERR       2
@@ -126,7 +126,7 @@ struct AMCoeffsParams
 \item[\texttt{LALDetAndSource *das}]  Detector and source information
 \item[\texttt{LALFrDetector}]  Detector geometry information
 \item[\texttt{REAL4 polAngle}]  Polarization angle
-\item[\texttt{LALLeapSecAccuracy leapAcc}] Leap sec accuracy 
+\item[\texttt{LALLeapSecAccuracy leapAcc}] Leap sec accuracy
 \end{description}
 </lalLaTeX> */
 

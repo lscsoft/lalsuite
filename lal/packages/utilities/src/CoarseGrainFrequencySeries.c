@@ -19,7 +19,7 @@
 
 /************************** <lalVerbatim file="CoarseGrainFrequencySeriesCV">
 Author: UTB Relativity Group; contact whelan@phys.utb.edu (original by S. Drasco)
-$Id$  
+$Id$
 ************************************* </lalVerbatim> */
 
 /********************************************************** <lalLaTeX>
@@ -57,7 +57,7 @@ whose contribution from the $k$th element is\footnote{It is
   maintain reality conditions when dealing with Fourier transforms of
   real quantities.}
 $$
-\int_{f_k-\delta f/2}^{f_k+\delta f/2} g(f)\,h(f)\,df \approx 
+\int_{f_k-\delta f/2}^{f_k+\delta f/2} g(f)\,h(f)\,df \approx
 \delta f g_k h_k
 \ .
 $$
@@ -65,8 +65,8 @@ The central idea in our definitions of coarse graining will thus be
 the correspondence
 \begin{equation}
   \label{utilities:e:coarse}
-  h_k \approx \frac{1}{\delta f} 
-  \int_{f_k-\delta f/2}^{f_k+\delta f/2} h(f)\,df  
+  h_k \approx \frac{1}{\delta f}
+  \int_{f_k-\delta f/2}^{f_k+\delta f/2} h(f)\,df
 \end{equation}
 
 The purpose of this function is to obtain a frequency series $\{h_k\}$
@@ -87,13 +87,13 @@ with this.  (Fig.~\ref{utilities:f:coarse})
       \put(40,40){\framebox(30,20){$\cdots$}}
       \put(70,40){\framebox(20,20){$\ell^{\scriptstyle{\rm max}}_k$}}
       \put(90,40){\framebox(20,20){}}
-      \put(120,50){\vector(-1,0){20}}      
+      \put(120,50){\vector(-1,0){20}}
       \put(130,50){$\ell^{\scriptstyle{\rm min}}_k+1$}
       \put(13,20){\framebox(90,20){$k$}}
       \put(13,0){\framebox(20,20){$\lambda^{\scriptstyle{\rm min}}_k$}}
       \put(83,0){\framebox(20,20){$\lambda^{\scriptstyle{\rm max}}_k$}}
     \end{picture}
-  \end{center}  
+  \end{center}
   \caption{Coarse graining a frequency series}
   \label{utilities:f:coarse}
 \end{figure}
@@ -106,19 +106,19 @@ $\lambda^{\scriptstyle{\rm max}}_k$ which correspond to the locations
 of fine-grained elements which would exactly reach the edges of the
 coarse-grained element with index $k$.  These are defined by
 \begin{eqnarray*}
-  f_0 + \left(k-\frac{1}{2}\right) \delta f 
+  f_0 + \left(k-\frac{1}{2}\right) \delta f
   &=& f'_0 + \left(\lambda^{\scriptstyle{\rm min}}_k-\frac{1}{2}\right)
   \delta f' \\
-  f_0 + \left(k+\frac{1}{2}\right) \delta f 
+  f_0 + \left(k+\frac{1}{2}\right) \delta f
   &=& f'_0 + \left(\lambda^{\scriptstyle{\rm max}}_k+\frac{1}{2}\right)
   \delta f'
 \end{eqnarray*}
 or, defining the offset $\Omega=(f_0-f'_0)/\delta f'$ and the coarse
 graining ratio $\rho = \delta f / \delta f'$,
 \begin{eqnarray*}
-  \lambda^{\scriptstyle{\rm min}}_k &=& 
+  \lambda^{\scriptstyle{\rm min}}_k &=&
   \Omega + \left(k-\frac{1}{2}\right) \rho + \frac{1}{2}\\
-  \lambda^{\scriptstyle{\rm max}}_k &=& 
+  \lambda^{\scriptstyle{\rm max}}_k &=&
   \Omega + \left(k+\frac{1}{2}\right) \rho - \frac{1}{2}
 \ .
 \end{eqnarray*}
@@ -194,24 +194,24 @@ strncpy()
   (The special case $f_0=f'_0=0$ is an
   exception to the condition on the minimum frequency.)
 \item The routines return an error if either minimum frequency
-  ($f_{\scriptstyle{\rm min}}$ or $f'_{\scriptstyle{\rm min}}$) is 
+  ($f_{\scriptstyle{\rm min}}$ or $f'_{\scriptstyle{\rm min}}$) is
   negative (unless $f_0=0$ or $f'_0=0$, respectively).
 \end{itemize}
 
 \vfill{\footnotesize\input{CoarseGrainFrequencySeriesCV}}
 
-******************************************************* </lalLaTeX> */ 
+******************************************************* </lalLaTeX> */
 /**************************** <lalLaTeX file="CoarseGrainFrequencySeriesCB">
 
 % \bibitem{utilities:}
 
-******************************************************* </lalLaTeX> */ 
+******************************************************* </lalLaTeX> */
 #include <lal/LALStdlib.h>
 #include <lal/Units.h>
 #include <lal/CoarseGrainFrequencySeries.h>
 #include <math.h>
 
-NRCSID(COARSEGRAINFREQUENCYSERIESC, 
+NRCSID(COARSEGRAINFREQUENCYSERIESC,
        "$Id$");
 
 /* <lalVerbatim file="CoarseGrainFrequencySeriesCP"> */
@@ -261,17 +261,17 @@ LALSCoarseGrainFrequencySeries(LALStatus                      *status,
          COARSEGRAINFREQUENCYSERIESH_MSGENULLPTR);
 
   /*    data member of input series */
-  ASSERT(input->data != NULL, status, 
+  ASSERT(input->data != NULL, status,
          COARSEGRAINFREQUENCYSERIESH_ENULLPTR,
          COARSEGRAINFREQUENCYSERIESH_MSGENULLPTR);
 
   /*    data member of data member of input series */
-  ASSERT(input->data->data != NULL, status, 
+  ASSERT(input->data->data != NULL, status,
          COARSEGRAINFREQUENCYSERIESH_ENULLPTR,
          COARSEGRAINFREQUENCYSERIESH_MSGENULLPTR);
 
   /*    parameter structure */
-  ASSERT(params != NULL, status, 
+  ASSERT(params != NULL, status,
          COARSEGRAINFREQUENCYSERIESH_ENULLPTR,
          COARSEGRAINFREQUENCYSERIESH_MSGENULLPTR);
 
@@ -330,17 +330,17 @@ LALSCoarseGrainFrequencySeries(LALStatus                      *status,
 
   /*    frequency spacing must be positive */
 
-  ASSERT(deltaFCoarse > 0.0, status, 
+  ASSERT(deltaFCoarse > 0.0, status,
          COARSEGRAINFREQUENCYSERIESH_ENONPOSDELTAF,
          COARSEGRAINFREQUENCYSERIESH_MSGENONPOSDELTAF);
 
-  ASSERT(deltaFFine > 0.0, status, 
+  ASSERT(deltaFFine > 0.0, status,
          COARSEGRAINFREQUENCYSERIESH_ENONPOSDELTAF,
          COARSEGRAINFREQUENCYSERIESH_MSGENONPOSDELTAF);
 
   /* check for length mismatch */
 
-  if (output->data->length != lengthCoarse) 
+  if (output->data->length != lengthCoarse)
   {
     ABORT(status,
          COARSEGRAINFREQUENCYSERIESH_EMMLEN,
@@ -357,7 +357,7 @@ LALSCoarseGrainFrequencySeries(LALStatus                      *status,
 
   /* make sure coarse-grained series is not finer than fine-grained */
   if ( resRatio < 1.0 )
-  {   
+  {
     ABORT( status,
            COARSEGRAINFREQUENCYSERIESH_EOORCOARSE,
            COARSEGRAINFREQUENCYSERIESH_MSGEOORCOARSE );
@@ -366,7 +366,7 @@ LALSCoarseGrainFrequencySeries(LALStatus                      *status,
   /* make sure minimum frequency in coarse-grained series is not
      less than minimum frequency in fine-grained series */
   if ( fMinCoarse < fMinFine )
-  {   
+  {
     ABORT( status,
            COARSEGRAINFREQUENCYSERIESH_EOORCOARSE,
            COARSEGRAINFREQUENCYSERIESH_MSGEOORCOARSE );
@@ -374,18 +374,18 @@ LALSCoarseGrainFrequencySeries(LALStatus                      *status,
 
   /* make sure maximum frequency in coarse-grained series is not
      more than maximum frequency in fine-grained series */
-  if ( offset + resRatio * ( (REAL8) lengthCoarse - 0.5 ) 
+  if ( offset + resRatio * ( (REAL8) lengthCoarse - 0.5 )
        > lengthFine - 0.5 )
   {
     ABORT( status,
            COARSEGRAINFREQUENCYSERIESH_EOORCOARSE,
            COARSEGRAINFREQUENCYSERIESH_MSGEOORCOARSE );
-  } 
+  }
 
-  if (f0Coarse == 0.0) 
+  if (f0Coarse == 0.0)
   {
     /* DC component */
-    
+
     lamMax = (resRatio / 2.0) - 0.5 ;
     lMax = (UINT4) floor(lamMax);
 
@@ -397,7 +397,7 @@ LALSCoarseGrainFrequencySeries(LALStatus                      *status,
       value = 0.0;
     }
 
-    for ( l = 1 ; l <= lMax ; ++l) 
+    for ( l = 1 ; l <= lMax ; ++l)
     {
       value += input->data->data[l];
     }
@@ -407,9 +407,9 @@ LALSCoarseGrainFrequencySeries(LALStatus                      *status,
 
     k = 1;
   }
-  else 
+  else
   {
-    k = 0; 
+    k = 0;
   }
 
   for ( ; k < lengthCoarse ; ++k )
@@ -420,15 +420,15 @@ LALSCoarseGrainFrequencySeries(LALStatus                      *status,
     if ( lamMin != (REAL8) lMin ) {
       value = ( (REAL8) lMin - lamMin ) * input->data->data[lMin-1];
     }
-    else 
+    else
     {
       value = 0.0;
     }
 
     lamMax = offset + ( (REAL8) k + 0.5 ) * resRatio - 0.5 ;
-    lMax = (UINT4) floor(lamMax);    
+    lMax = (UINT4) floor(lamMax);
 
-    for ( l = lMin ; l <= lMax ; ++l) 
+    for ( l = lMin ; l <= lMax ; ++l)
     {
       value += input->data->data[l];
     }
@@ -438,16 +438,16 @@ LALSCoarseGrainFrequencySeries(LALStatus                      *status,
     }
 
     output->data->data[k] = value / resRatio;
-    
+
   }
 
-  /* Set output properties */  
+  /* Set output properties */
   output->sampleUnits = input->sampleUnits;
   strncpy( output->name, input->name, LALNameLength );
   output->f0 = f0Coarse;
   output->deltaF = deltaFCoarse;
   output->epoch = input->epoch;
-  
+
   DETATCHSTATUSPTR(status);
   RETURN(status);
 
@@ -500,17 +500,17 @@ LALDCoarseGrainFrequencySeries(LALStatus                      *status,
          COARSEGRAINFREQUENCYSERIESH_MSGENULLPTR);
 
   /*    data member of input series */
-  ASSERT(input->data != NULL, status, 
+  ASSERT(input->data != NULL, status,
          COARSEGRAINFREQUENCYSERIESH_ENULLPTR,
          COARSEGRAINFREQUENCYSERIESH_MSGENULLPTR);
 
   /*    data member of data member of input series */
-  ASSERT(input->data->data != NULL, status, 
+  ASSERT(input->data->data != NULL, status,
          COARSEGRAINFREQUENCYSERIESH_ENULLPTR,
          COARSEGRAINFREQUENCYSERIESH_MSGENULLPTR);
 
   /*    parameter structure */
-  ASSERT(params != NULL, status, 
+  ASSERT(params != NULL, status,
          COARSEGRAINFREQUENCYSERIESH_ENULLPTR,
          COARSEGRAINFREQUENCYSERIESH_MSGENULLPTR);
 
@@ -569,17 +569,17 @@ LALDCoarseGrainFrequencySeries(LALStatus                      *status,
 
   /*    frequency spacing must be positive */
 
-  ASSERT(deltaFCoarse > 0.0, status, 
+  ASSERT(deltaFCoarse > 0.0, status,
          COARSEGRAINFREQUENCYSERIESH_ENONPOSDELTAF,
          COARSEGRAINFREQUENCYSERIESH_MSGENONPOSDELTAF);
 
-  ASSERT(deltaFFine > 0.0, status, 
+  ASSERT(deltaFFine > 0.0, status,
          COARSEGRAINFREQUENCYSERIESH_ENONPOSDELTAF,
          COARSEGRAINFREQUENCYSERIESH_MSGENONPOSDELTAF);
 
   /* check for length mismatch */
 
-  if (output->data->length != lengthCoarse) 
+  if (output->data->length != lengthCoarse)
   {
     ABORT(status,
          COARSEGRAINFREQUENCYSERIESH_EMMLEN,
@@ -596,7 +596,7 @@ LALDCoarseGrainFrequencySeries(LALStatus                      *status,
 
   /* make sure coarse-grained series is not finer than fine-grained */
   if ( resRatio < 1.0 )
-  {   
+  {
     ABORT( status,
            COARSEGRAINFREQUENCYSERIESH_EOORCOARSE,
            COARSEGRAINFREQUENCYSERIESH_MSGEOORCOARSE );
@@ -605,7 +605,7 @@ LALDCoarseGrainFrequencySeries(LALStatus                      *status,
   /* make sure minimum frequency in coarse-grained series is not
      less than minimum frequency in fine-grained series */
   if ( fMinCoarse < fMinFine )
-  {   
+  {
     ABORT( status,
            COARSEGRAINFREQUENCYSERIESH_EOORCOARSE,
            COARSEGRAINFREQUENCYSERIESH_MSGEOORCOARSE );
@@ -613,18 +613,18 @@ LALDCoarseGrainFrequencySeries(LALStatus                      *status,
 
   /* make sure maximum frequency in coarse-grained series is not
      more than maximum frequency in fine-grained series */
-  if ( offset + resRatio * ( (REAL8) lengthCoarse - 0.5 ) 
+  if ( offset + resRatio * ( (REAL8) lengthCoarse - 0.5 )
        > lengthFine - 0.5 )
   {
     ABORT( status,
            COARSEGRAINFREQUENCYSERIESH_EOORCOARSE,
            COARSEGRAINFREQUENCYSERIESH_MSGEOORCOARSE );
-  } 
+  }
 
-  if (f0Coarse == 0.0) 
+  if (f0Coarse == 0.0)
   {
     /* DC component */
-    
+
     lamMax = (resRatio / 2.0) - 0.5 ;
     lMax = (UINT4) floor(lamMax);
 
@@ -636,7 +636,7 @@ LALDCoarseGrainFrequencySeries(LALStatus                      *status,
       value = 0.0;
     }
 
-    for ( l = 1 ; l <= lMax ; ++l) 
+    for ( l = 1 ; l <= lMax ; ++l)
     {
       value += input->data->data[l];
     }
@@ -646,9 +646,9 @@ LALDCoarseGrainFrequencySeries(LALStatus                      *status,
 
     k = 1;
   }
-  else 
+  else
   {
-    k = 0; 
+    k = 0;
   }
 
   for ( ; k < lengthCoarse ; ++k )
@@ -659,15 +659,15 @@ LALDCoarseGrainFrequencySeries(LALStatus                      *status,
     if ( lamMin != (REAL8) lMin ) {
       value = ( (REAL8) lMin - lamMin ) * input->data->data[lMin-1];
     }
-    else 
+    else
     {
       value = 0.0;
     }
 
     lamMax = offset + ( (REAL8) k + 0.5 ) * resRatio - 0.5 ;
-    lMax = (UINT4) floor(lamMax);    
+    lMax = (UINT4) floor(lamMax);
 
-    for ( l = lMin ; l <= lMax ; ++l) 
+    for ( l = lMin ; l <= lMax ; ++l)
     {
       value += input->data->data[l];
     }
@@ -677,16 +677,16 @@ LALDCoarseGrainFrequencySeries(LALStatus                      *status,
     }
 
     output->data->data[k] = value / resRatio;
-    
+
   }
 
-  /* Set output properties */  
+  /* Set output properties */
   output->sampleUnits = input->sampleUnits;
   strncpy( output->name, input->name, LALNameLength );
   output->f0 = f0Coarse;
   output->deltaF = deltaFCoarse;
   output->epoch = input->epoch;
-  
+
   DETATCHSTATUSPTR(status);
   RETURN(status);
 
@@ -741,17 +741,17 @@ LALCCoarseGrainFrequencySeries(LALStatus                      *status,
          COARSEGRAINFREQUENCYSERIESH_MSGENULLPTR);
 
   /*    data member of input series */
-  ASSERT(input->data != NULL, status, 
+  ASSERT(input->data != NULL, status,
          COARSEGRAINFREQUENCYSERIESH_ENULLPTR,
          COARSEGRAINFREQUENCYSERIESH_MSGENULLPTR);
 
   /*    data member of data member of input series */
-  ASSERT(input->data->data != NULL, status, 
+  ASSERT(input->data->data != NULL, status,
          COARSEGRAINFREQUENCYSERIESH_ENULLPTR,
          COARSEGRAINFREQUENCYSERIESH_MSGENULLPTR);
 
   /*    parameter structure */
-  ASSERT(params != NULL, status, 
+  ASSERT(params != NULL, status,
          COARSEGRAINFREQUENCYSERIESH_ENULLPTR,
          COARSEGRAINFREQUENCYSERIESH_MSGENULLPTR);
 
@@ -803,7 +803,7 @@ LALCCoarseGrainFrequencySeries(LALStatus                      *status,
   }
 
   if (fMinFine < 0.0)
-  { 
+  {
     ABORT( status,
          COARSEGRAINFREQUENCYSERIESH_ENEGFMIN,
          COARSEGRAINFREQUENCYSERIESH_MSGENEGFMIN );
@@ -811,17 +811,17 @@ LALCCoarseGrainFrequencySeries(LALStatus                      *status,
 
   /*    frequency spacing must be positive */
 
-  ASSERT(deltaFCoarse > 0.0, status, 
+  ASSERT(deltaFCoarse > 0.0, status,
          COARSEGRAINFREQUENCYSERIESH_ENONPOSDELTAF,
          COARSEGRAINFREQUENCYSERIESH_MSGENONPOSDELTAF);
 
-  ASSERT(deltaFFine > 0.0, status, 
+  ASSERT(deltaFFine > 0.0, status,
          COARSEGRAINFREQUENCYSERIESH_ENONPOSDELTAF,
          COARSEGRAINFREQUENCYSERIESH_MSGENONPOSDELTAF);
 
   /* check for length mismatch */
 
-  if (output->data->length != lengthCoarse) 
+  if (output->data->length != lengthCoarse)
   {
     ABORT(status,
          COARSEGRAINFREQUENCYSERIESH_EMMLEN,
@@ -838,7 +838,7 @@ LALCCoarseGrainFrequencySeries(LALStatus                      *status,
 
   /* make sure coarse-grained series is not finer than fine-grained */
   if ( resRatio < 1.0 )
-  {   
+  {
     ABORT( status,
            COARSEGRAINFREQUENCYSERIESH_EOORCOARSE,
            COARSEGRAINFREQUENCYSERIESH_MSGEOORCOARSE );
@@ -847,7 +847,7 @@ LALCCoarseGrainFrequencySeries(LALStatus                      *status,
   /* make sure minimum frequency in coarse-grained series is not
      less than minimum frequency in fine-grained series */
   if ( fMinCoarse < fMinFine )
-  {   
+  {
     ABORT( status,
            COARSEGRAINFREQUENCYSERIESH_EOORCOARSE,
            COARSEGRAINFREQUENCYSERIESH_MSGEOORCOARSE );
@@ -855,13 +855,13 @@ LALCCoarseGrainFrequencySeries(LALStatus                      *status,
 
   /* make sure maximum frequency in coarse-grained series is not
      more than maximum frequency in fine-grained series */
-  if ( offset + resRatio * ( (REAL8) lengthCoarse - 0.5 ) 
+  if ( offset + resRatio * ( (REAL8) lengthCoarse - 0.5 )
        > lengthFine - 0.5 )
   {
     ABORT( status,
            COARSEGRAINFREQUENCYSERIESH_EOORCOARSE,
            COARSEGRAINFREQUENCYSERIESH_MSGEOORCOARSE );
-  } 
+  }
 
   /*
   printf("survived checks\n");
@@ -870,10 +870,10 @@ LALCCoarseGrainFrequencySeries(LALStatus                      *status,
   printf("offset (%f-%f)/%f = %f\n",f0Coarse,f0Fine,deltaFFine,offset);
   */
 
-  if (f0Coarse == 0.0) 
+  if (f0Coarse == 0.0)
   {
     /* DC component */
-    
+
     lamMax = (resRatio / 2.0) - 0.5 ;
     lMax = (UINT4) floor(lamMax);
 
@@ -887,7 +887,7 @@ LALCCoarseGrainFrequencySeries(LALStatus                      *status,
       value.re = 0.0;
     }
 
-    for ( l = 1 ; l <= lMax ; ++l) 
+    for ( l = 1 ; l <= lMax ; ++l)
     {
       value.re += input->data->data[l].re;
     }
@@ -900,9 +900,9 @@ LALCCoarseGrainFrequencySeries(LALStatus                      *status,
 
     k = 1;
   }
-  else 
+  else
   {
-    k = 0; 
+    k = 0;
   }
 
   for ( ; k < lengthCoarse ; ++k )
@@ -916,17 +916,17 @@ LALCCoarseGrainFrequencySeries(LALStatus                      *status,
       value.re = ( (REAL8) lMin - lamMin ) * input->data->data[lMin-1].re;
       value.im = ( (REAL8) lMin - lamMin ) * input->data->data[lMin-1].im;
     }
-    else 
+    else
     {
       value.re = value.im = 0.0;
     }
 
     lamMax = offset + ( (REAL8) k + 0.5 ) * resRatio - 0.5 ;
-    lMax = (UINT4) floor(lamMax);    
+    lMax = (UINT4) floor(lamMax);
 
     /*    printf("%f %d %d\n",lamMax,lMax,lengthFine); */
 
-    for ( l = lMin ; l <= lMax ; ++l) 
+    for ( l = lMin ; l <= lMax ; ++l)
     {
       value.re += input->data->data[l].re;
       value.im += input->data->data[l].im;
@@ -939,16 +939,16 @@ LALCCoarseGrainFrequencySeries(LALStatus                      *status,
 
     output->data->data[k].re = value.re / resRatio;
     output->data->data[k].im = value.im / resRatio;
-    
+
   }
 
-  /* Set output properties */  
+  /* Set output properties */
   output->sampleUnits = input->sampleUnits;
   strncpy( output->name, input->name, LALNameLength );
   output->f0 = f0Coarse;
   output->deltaF = deltaFCoarse;
   output->epoch = input->epoch;
-  
+
   DETATCHSTATUSPTR(status);
   RETURN(status);
 
@@ -1003,17 +1003,17 @@ LALZCoarseGrainFrequencySeries(LALStatus                      *status,
          COARSEGRAINFREQUENCYSERIESH_MSGENULLPTR);
 
   /*    data member of input series */
-  ASSERT(input->data != NULL, status, 
+  ASSERT(input->data != NULL, status,
          COARSEGRAINFREQUENCYSERIESH_ENULLPTR,
          COARSEGRAINFREQUENCYSERIESH_MSGENULLPTR);
 
   /*    data member of data member of input series */
-  ASSERT(input->data->data != NULL, status, 
+  ASSERT(input->data->data != NULL, status,
          COARSEGRAINFREQUENCYSERIESH_ENULLPTR,
          COARSEGRAINFREQUENCYSERIESH_MSGENULLPTR);
 
   /*    parameter structure */
-  ASSERT(params != NULL, status, 
+  ASSERT(params != NULL, status,
          COARSEGRAINFREQUENCYSERIESH_ENULLPTR,
          COARSEGRAINFREQUENCYSERIESH_MSGENULLPTR);
 
@@ -1065,7 +1065,7 @@ LALZCoarseGrainFrequencySeries(LALStatus                      *status,
   }
 
   if (fMinFine < 0.0)
-  { 
+  {
     ABORT( status,
          COARSEGRAINFREQUENCYSERIESH_ENEGFMIN,
          COARSEGRAINFREQUENCYSERIESH_MSGENEGFMIN );
@@ -1073,17 +1073,17 @@ LALZCoarseGrainFrequencySeries(LALStatus                      *status,
 
   /*    frequency spacing must be positive */
 
-  ASSERT(deltaFCoarse > 0.0, status, 
+  ASSERT(deltaFCoarse > 0.0, status,
          COARSEGRAINFREQUENCYSERIESH_ENONPOSDELTAF,
          COARSEGRAINFREQUENCYSERIESH_MSGENONPOSDELTAF);
 
-  ASSERT(deltaFFine > 0.0, status, 
+  ASSERT(deltaFFine > 0.0, status,
          COARSEGRAINFREQUENCYSERIESH_ENONPOSDELTAF,
          COARSEGRAINFREQUENCYSERIESH_MSGENONPOSDELTAF);
 
   /* check for length mismatch */
 
-  if (output->data->length != lengthCoarse) 
+  if (output->data->length != lengthCoarse)
   {
     ABORT(status,
          COARSEGRAINFREQUENCYSERIESH_EMMLEN,
@@ -1100,7 +1100,7 @@ LALZCoarseGrainFrequencySeries(LALStatus                      *status,
 
   /* make sure coarse-grained series is not finer than fine-grained */
   if ( resRatio < 1.0 )
-  {   
+  {
     ABORT( status,
            COARSEGRAINFREQUENCYSERIESH_EOORCOARSE,
            COARSEGRAINFREQUENCYSERIESH_MSGEOORCOARSE );
@@ -1109,7 +1109,7 @@ LALZCoarseGrainFrequencySeries(LALStatus                      *status,
   /* make sure minimum frequency in coarse-grained series is not
      less than minimum frequency in fine-grained series */
   if ( fMinCoarse < fMinFine )
-  {   
+  {
     ABORT( status,
            COARSEGRAINFREQUENCYSERIESH_EOORCOARSE,
            COARSEGRAINFREQUENCYSERIESH_MSGEOORCOARSE );
@@ -1117,13 +1117,13 @@ LALZCoarseGrainFrequencySeries(LALStatus                      *status,
 
   /* make sure maximum frequency in coarse-grained series is not
      more than maximum frequency in fine-grained series */
-  if ( offset + resRatio * ( (REAL8) lengthCoarse - 0.5 ) 
+  if ( offset + resRatio * ( (REAL8) lengthCoarse - 0.5 )
        > lengthFine - 0.5 )
   {
     ABORT( status,
            COARSEGRAINFREQUENCYSERIESH_EOORCOARSE,
            COARSEGRAINFREQUENCYSERIESH_MSGEOORCOARSE );
-  } 
+  }
 
   /*
   printf("survived checks\n");
@@ -1132,10 +1132,10 @@ LALZCoarseGrainFrequencySeries(LALStatus                      *status,
   printf("offset (%f-%f)/%f = %f\n",f0Coarse,f0Fine,deltaFFine,offset);
   */
 
-  if (f0Coarse == 0.0) 
+  if (f0Coarse == 0.0)
   {
     /* DC component */
-    
+
     lamMax = (resRatio / 2.0) - 0.5 ;
     lMax = (UINT4) floor(lamMax);
 
@@ -1149,7 +1149,7 @@ LALZCoarseGrainFrequencySeries(LALStatus                      *status,
       value.re = 0.0;
     }
 
-    for ( l = 1 ; l <= lMax ; ++l) 
+    for ( l = 1 ; l <= lMax ; ++l)
     {
       value.re += input->data->data[l].re;
     }
@@ -1162,9 +1162,9 @@ LALZCoarseGrainFrequencySeries(LALStatus                      *status,
 
     k = 1;
   }
-  else 
+  else
   {
-    k = 0; 
+    k = 0;
   }
 
   for ( ; k < lengthCoarse ; ++k )
@@ -1178,17 +1178,17 @@ LALZCoarseGrainFrequencySeries(LALStatus                      *status,
       value.re = ( (REAL8) lMin - lamMin ) * input->data->data[lMin-1].re;
       value.im = ( (REAL8) lMin - lamMin ) * input->data->data[lMin-1].im;
     }
-    else 
+    else
     {
       value.re = value.im = 0.0;
     }
 
     lamMax = offset + ( (REAL8) k + 0.5 ) * resRatio - 0.5 ;
-    lMax = (UINT4) floor(lamMax);    
+    lMax = (UINT4) floor(lamMax);
 
     /*    printf("%f %d %d\n",lamMax,lMax,lengthFine); */
 
-    for ( l = lMin ; l <= lMax ; ++l) 
+    for ( l = lMin ; l <= lMax ; ++l)
     {
       value.re += input->data->data[l].re;
       value.im += input->data->data[l].im;
@@ -1201,16 +1201,16 @@ LALZCoarseGrainFrequencySeries(LALStatus                      *status,
 
     output->data->data[k].re = value.re / resRatio;
     output->data->data[k].im = value.im / resRatio;
-    
+
   }
-  
-  /* Set output properties */  
+
+  /* Set output properties */
   output->sampleUnits = input->sampleUnits;
   strncpy( output->name, input->name, LALNameLength );
   output->f0 = f0Coarse;
   output->deltaF = deltaFCoarse;
   output->epoch = input->epoch;
-  
+
   DETATCHSTATUSPTR(status);
   RETURN(status);
 

@@ -4,10 +4,10 @@
  *  \ingroup inject
  *  \author Creighton, T. D.
  *  \date 2002
- *  
+ *
  *  \brief Module providing routines to convert among various sky coordinate systems.
 \latexonly \newpage \endlatexonly
-Most of these routines are discussed in Sec.5.1 of \ref Lang_K1999; we reproduce here 
+Most of these routines are discussed in Sec.5.1 of \ref Lang_K1999; we reproduce here
 some of the essential elements of this discussion.
 
 \image html inject_lat_long.png "Fig 1: Definition of latitude phi and longitude lambda for an arbitrary coordinate system."
@@ -24,7 +24,7 @@ system.}}
 \end{wrapfigure}
 \endlatexonly
 A general spatial coordinate system is shown in Fig.1.
-It is defined by six parameters: three 
+It is defined by six parameters: three
 positions specifying the location of the origin \f$O\f$, two angles
 specifying the direction of the <em>pole</em> or \f$z\f$-axis, and one
 further angle specifying a <em>reference meridian</em> or \f$x\f$-axis
@@ -78,7 +78,7 @@ horizon coordinate system.}}
 \vspace{-2ex}
 \end{wrapfigure}
 \paragraph*{Horizon coordinates:}
-\endlatexonly 
+\endlatexonly
 \image html inject_horizon.png "Fig 2: Definition of the horizon coordinate system."
 \htmlonly <b>Horizon coordinates:</b> \endhtmlonly
 This is a local coordinate system for
@@ -107,7 +107,7 @@ the geographic (Earth-fixed) coordinate system.}}
 \end{center}
 \end{wrapfigure}
 \paragraph*{Geographic coordinates:}
-\endlatexonly 
+\endlatexonly
 \image html inject_geographic.png "Fig.3: Definition of the geographic (Earth-fixed) coordinate system."
 \htmlonly <b>Geographic coordinates:</b> \endhtmlonly
 This is a planetwide Earth-fixed
@@ -156,17 +156,17 @@ the ecliptic sky-fixed coordinate systems.}}
 \vspace{-2ex}
 \end{wrapfigure}
 \paragraph*{Equatorial coordinates:}
-\endlatexonly 
+\endlatexonly
 \image html inject_ecliptic.png "Fig.4: Definition of the ecliptic sky-fixed coordinate systems."
 \htmlonly <b>Equatorial coordinates:</b> \endhtmlonly
-This is the standard sky-fixed coordinate system.  The \f$z\f$-axis is defined as for geographic 
+This is the standard sky-fixed coordinate system.  The \f$z\f$-axis is defined as for geographic
 coordinates, above; the plane orthogonal to this passing through the
 Earth's centre is called the <em>equator</em>.  The \f$x\f$-axis is defined
 to be the direction, as viewed from the centre of the Earth, where the
 Sun appears to cross the equator moving north in spring.  This is
 called the <em>vernal equinox</em> \f$\Upsilon\f$, and is shown in
-Fig.4.  In this coordinate system, the latitude coordinate is called the 
-<em>declination</em> \f$\delta\f$ and the longitude coordinate is called the 
+Fig.4.  In this coordinate system, the latitude coordinate is called the
+<em>declination</em> \f$\delta\f$ and the longitude coordinate is called the
 <em>right ascension</em> \f$\alpha\f$.
 
 \htmlonly <b>Ecliptic coordinates:</b> \endhtmlonly
@@ -198,7 +198,7 @@ the Galactic coordinate system.}}
 \endlatexonly
 \image html inject_galactic.png "Fig.5: Definition of the Galactic coordinate system."
 \htmlonly <b>Galactic coordinates:</b> \endhtmlonly
-This coordinate system is shown in Fig.5.  
+This coordinate system is shown in Fig.5.
 The \f$z\f$-axis is defined to be the direction
 orthogonal to the plane of our Galaxy and pointing into the northern
 hemisphere of the equatorial coordinate system.  (Unfortunately this

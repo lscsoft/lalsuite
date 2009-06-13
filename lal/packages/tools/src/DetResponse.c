@@ -45,7 +45,7 @@ Computes the response of a detector.
 These routines compute the antenna beam pattern for all supported detector
 types.  \texttt{XLALComputeDetAMResponse()} computes the response at one
 instance in time, and \texttt{XLALComputeDetAMResponseSeries()} computes a
-vector of response for some length of time. 
+vector of response for some length of time.
 
 \subsubsection*{Algorithm}
 
@@ -54,7 +54,7 @@ Anderson, \textit{et al.}~\cite{tools:Anderson:2000}.  We compute the $h$-tensor
 $+$- and $\times$-polarized in the Earth-fixed frame, and then contract
 them (take the scalar product) with the detector response tensors as
 described in the \texttt{DetectorSite.h} section of the \texttt{tools}
-package. 
+package.
 
 \texttt{DetectorSite.h} in the \texttt{tools} package  provides predefined
 \texttt{LALDetector} structures representing most current detectors,
@@ -139,7 +139,7 @@ void XLALComputeDetAMResponse(
 	Y[0] =  sinpsi * singha - cospsi * cosgha * sindec;
 	Y[1] =  sinpsi * cosgha + cospsi * singha * sindec;
 	Y[2] =  cospsi * cosdec;
-	
+
 	/* Now compute Eq. (B7) of [ABCF] for each polarization state, i.e.,
 	 * with s+=1 and sx=0 to get F+, with s+=0 and sx=1 to get Fx */
 	*fplus = *fcross = 0.0;

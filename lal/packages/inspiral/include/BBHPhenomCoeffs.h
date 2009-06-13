@@ -17,14 +17,14 @@
 *  MA  02111-1307  USA
 */
 
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: FindChirpPhenomCoeffs.h
  *
  * Author: Santamaria L, Krishnan B, Whelan JT, Dias M, Parameswaran A
- * 
+ *
  * Revision: $Id$
- * 
+ *
  *-----------------------------------------------------------------------
  */
 
@@ -32,13 +32,13 @@
 <lalVerbatim file="FindChirpPhenomCoeffsHV">
 Author: Santamaria L, Krishnan B, Whelan JT, Dias M, Parameswaran A.
 $Id$
-</lalVerbatim> 
+</lalVerbatim>
 
 <lalLaTeX>
 \section{Header \texttt{FindChirpPhenomCoeffs.h}}
 \label{s:FindChirpPhenomCoeffs.h}
 
-Provides co\"{e}fficients for the phenomenological waveforms 
+Provides co\"{e}fficients for the phenomenological waveforms
 introduced by Ajith et al. in arXiv:0710.2335 [gr-qc]
 
 \subsection*{Synopsis}
@@ -62,7 +62,7 @@ extern "C" {
 NRCSID (BBHPHENOMCOEFFSH, "$Id$");
 
 /* This header contains the coeffs from the matching with the LONG */
-/* Jena waveforms (those are not the ones published in the original paper */ 
+/* Jena waveforms (those are not the ones published in the original paper */
 /* but in the Amaldi 07 proceedings) */
 
 #define BBHPHENOMCOEFFSH_FMERG_A   6.6389e-01
@@ -108,7 +108,7 @@ NRCSID (BBHPHENOMCOEFFSH, "$Id$");
 #if 0
 <lalLaTeX>
 \vfill{\footnotesize\input{FindChirpPhenomCoeffsHV}}
-</lalLaTeX> 
+</lalLaTeX>
 #endif
 
 #ifdef  __cplusplus

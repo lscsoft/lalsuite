@@ -27,7 +27,7 @@ $Id$
 \subsection{Module \texttt{ReadNoiseSpectrum.c}}
 \label{ss:ReadNoiseSpectrum.c}
 
-Function to read in noise spectrum from a formatted ascii file and return the 
+Function to read in noise spectrum from a formatted ascii file and return the
 amplitude noise spectrum in $\textrm{strain}/\sqrt{\textrm{Hz}}$.
 
 \subsubsection*{Prototypes}
@@ -40,16 +40,16 @@ amplitude noise spectrum in $\textrm{strain}/\sqrt{\textrm{Hz}}$.
 \verb@spectrum@ from data read from formatted ascii file with name \verb@fname@.
 The ascii file should have a header (greater than or equal to one line) which is
 indicated by a $\#$ at the start of the line.   The first line of the file must
-contain the number of points at which the spectrum is sampled.  If the spectrum 
+contain the number of points at which the spectrum is sampled.  If the spectrum
 is sampled at 500 different points,  then the first line would be
 \begin{verbatim}
-    # npoints=500   
+    # npoints=500
 \end{verbatim}
-Replace 500 by the number of sample points in your particular data. 
+Replace 500 by the number of sample points in your particular data.
 
-The REAL4FrequencySeries \verb@spectrum@ should be allocated before calling the 
-routine which uses the \verb@length@ and metadata information to determine the 
-evenly sampled output that is reqruired.   The function does nearest neighbor 
+The REAL4FrequencySeries \verb@spectrum@ should be allocated before calling the
+routine which uses the \verb@length@ and metadata information to determine the
+evenly sampled output that is reqruired.   The function does nearest neighbor
 interpolation to get the points in the outpu frequency series.
 
 \subsubsection*{Uses}
@@ -73,12 +73,12 @@ LALFree()
 #include <lal/FileIO.h>
 #include <lal/Interpolate.h>
 #include <lal/ReadNoiseSpectrum.h>
-		 
+
 NRCSID(LALREADNOISESPECTRUMC,"$Id$");
 
 /*********************************************************************
  * STATIC FUNCTION to locate the point nearest to the desired
- * frequency for the interpolation step below 
+ * frequency for the interpolation step below
  *********************************************************************/
 static UINT4 mylocate(REAL8 *farray, REAL8 target, UINT4 n)
 {
@@ -98,7 +98,7 @@ static UINT4 mylocate(REAL8 *farray, REAL8 target, UINT4 n)
          jmin =  i-1;
      }
   }
-   
+
   return jmin;
 }
 
@@ -107,9 +107,9 @@ static UINT4 mylocate(REAL8 *farray, REAL8 target, UINT4 n)
  * MAIN FUNCTION to get populate the amplitude spectrum from the data
  * file specified.
  *********************************************************************/
-		 
+
 /* <lalVerbatim file="ReadNoiseSpectrumCP"> */
-    void 
+    void
 LALReadNoiseSpectrum(LALStatus *stat, REAL4FrequencySeries *spectrum, CHAR *fname)
 { /* </lalVerbatim> */
 
@@ -135,7 +135,7 @@ LALReadNoiseSpectrum(LALStatus *stat, REAL4FrequencySeries *spectrum, CHAR *fnam
 
     /* read in the first line of the file */
     if (fgets(line,sizeof(line),fp) == NULL)
-    { 
+    {
         ABORT(stat, LALREADNOISESPECTRUMH_EPARS, LALREADNOISESPECTRUMH_MSGEPARS);
     }
 
@@ -178,7 +178,7 @@ LALReadNoiseSpectrum(LALStatus *stat, REAL4FrequencySeries *spectrum, CHAR *fnam
             location=mylocate(f,(REAL8)freq,npoints);
             if (location > (npoints-intParams.n)){
                 location = (npoints-intParams.n);
-            } 
+            }
             else if ( location < (intParams.n/2) ){
                 location = 0;
             }
@@ -203,7 +203,7 @@ LALReadNoiseSpectrum(LALStatus *stat, REAL4FrequencySeries *spectrum, CHAR *fnam
     spectrum->sampleUnits.unitNumerator[LALUnitIndexStrain] = 1;
     spectrum->sampleUnits.unitNumerator[LALUnitIndexSecond] = 1;
     spectrum->sampleUnits.unitDenominatorMinusOne[LALUnitIndexSecond] = 1;
-         
+
     /* .... and clean up */
     LALFree( f );
     LALFree( s );

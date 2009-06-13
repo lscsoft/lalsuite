@@ -21,7 +21,7 @@
  * \author Karl Wette
  * \file
  * \brief Some very basic XML output routines, might
-          be useful for debugging or test programs 
+          be useful for debugging or test programs
 */
 
 #include "VeryBasicXMLOutput.h"
@@ -42,7 +42,7 @@ void XLAL_VBXMLO_Header(
 			)
 {
 
-  if (!xml->file) 
+  if (!xml->file)
     return;
 
   /* Print header */
@@ -50,7 +50,7 @@ void XLAL_VBXMLO_Header(
 
   /* Set indent */
   xml->indent = 0;
-  
+
 }
 
 /**
@@ -63,13 +63,13 @@ void XLAL_VBXMLO_Indent(
 
   int i;
 
-  if (!xml->file) 
+  if (!xml->file)
     return;
 
   for (i = 0; i < xml->indent; ++i)
     fprintf(xml->file, "  ");
 
-}  
+}
 
 /**
  * Begin an XML tag
@@ -81,8 +81,8 @@ void XLAL_VBXMLO_BeginTag(
 {
 
   va_list va;
-  
-  if (!xml->file) 
+
+  if (!xml->file)
     return;
 
   XLAL_VBXMLO_Indent(xml);
@@ -101,7 +101,7 @@ void XLAL_VBXMLO_EndTag(
 			)
 {
 
-  if (!xml->file) 
+  if (!xml->file)
     return;
 
   --xml->indent;
@@ -120,10 +120,10 @@ void XLAL_VBXMLO_Tag(
 		     ...                      /**< [in] Attribute and contents arguments */
 		     )
 {
-  
+
   va_list va;
-  
-  if (!xml->file) 
+
+  if (!xml->file)
     return;
 
   XLAL_VBXMLO_BeginTag(xml, name);
@@ -132,7 +132,7 @@ void XLAL_VBXMLO_Tag(
   vfprintf(xml->file, format, va);
   va_end(va);
   fprintf(xml->file, "\n");
-  XLAL_VBXMLO_EndTag(xml, name);  
+  XLAL_VBXMLO_EndTag(xml, name);
 
 }
 
@@ -148,7 +148,7 @@ void XLAL_VBXMLO_Printf(
 
   va_list va;
 
-  if (!xml->file) 
+  if (!xml->file)
     return;
 
   va_start(va, format);
@@ -170,7 +170,7 @@ void XLAL_VBXMLO_gsl_vector(
 
   size_t i;
 
-  if (!xml->file) 
+  if (!xml->file)
     return;
 
   XLAL_VBXMLO_BeginTag(xml, name);
@@ -195,10 +195,10 @@ void XLAL_VBXMLO_gsl_vector_int(
 				gsl_vector_int *v        /**< [in] Vector */
 				)
 {
-  
+
   size_t i;
-  
-  if (!xml->file) 
+
+  if (!xml->file)
     return;
 
   XLAL_VBXMLO_BeginTag(xml, name);
@@ -226,7 +226,7 @@ void XLAL_VBXMLO_gsl_matrix(
 
   size_t i;
 
-  if (!xml->file) 
+  if (!xml->file)
     return;
 
   XLAL_VBXMLO_BeginTag(xml, name);
@@ -248,10 +248,10 @@ void XLAL_VBXMLO_gsl_matrix_int(
 				gsl_matrix_int *m        /**< [in] Matrix */
 				)
 {
-  
+
   size_t i;
 
-  if (!xml->file) 
+  if (!xml->file)
     return;
 
   XLAL_VBXMLO_BeginTag(xml, name);

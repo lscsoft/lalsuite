@@ -38,20 +38,20 @@ Routines for zero-padding and Fourier transforming a time series.
 As described in \ref{stochastic:ss:StochasticCrossCorrelation.c}, data
 streams to be cross-correlated need to be zero-padded to the same
 length as the optimal filter via
-% 
+%
 \begin{equation}
-\bar{h}[k]=\ 
-\left\{ \begin{array}{cl} 
-w[k] h[k]  &    k = 0, \ldots, N-1 \\ 
-0     &    k = N \ldots, M-1 
-\end{array} 
-\right. 
-\end{equation} 
+\bar{h}[k]=\
+\left\{ \begin{array}{cl}
+w[k] h[k]  &    k = 0, \ldots, N-1 \\
+0     &    k = N \ldots, M-1
+\end{array}
+\right.
+\end{equation}
 %
 (where $w[k]$ is a windowing function)
 before being Fourier transformed via
 \begin{equation}
-\widetilde{h}[\ell] := \sum_{\ell=0}^{M-1} 
+\widetilde{h}[\ell] := \sum_{\ell=0}^{M-1}
 \delta t\,h[k]\,e^{-i2\pi k\ell/M}
 \ .
 \end{equation}
@@ -142,7 +142,7 @@ t$ times the discrete Fourier transform.
   \textit{FFTW User's Manual},
   (Massachusetts Institute of Technology, Cambridge, USA, 1998).
   URL: \href{http://www.fftw.org/doc/}{\texttt{http://www.fftw.org/doc/}}
-******************************************************* </lalLaTeX> */ 
+******************************************************* </lalLaTeX> */
 
 #include <lal/LALStdlib.h>
 #include <lal/StochasticCrossCorrelation.h>
@@ -179,20 +179,20 @@ LALSZeroPadAndFFT(
       STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
       STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
-  /* check that pointer to data member of real time series for input is 
+  /* check that pointer to data member of real time series for input is
    * non-null */
   ASSERT(input->data != NULL, status, \
       STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
       STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
-  /* check that length of data member of real time series for input is 
+  /* check that length of data member of real time series for input is
    * not equal to zero */
   length = input->data->length;
   ASSERT(length != 0, status, \
       STOCHASTICCROSSCORRELATIONH_EZEROLEN, \
       STOCHASTICCROSSCORRELATIONH_MSGEZEROLEN);
 
-  /* check that pointer to data-data member of real time series for input 
+  /* check that pointer to data-data member of real time series for input
    * is non-null */
   ASSERT(input->data->data != NULL, status, \
       STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
@@ -251,12 +251,12 @@ LALSZeroPadAndFFT(
         STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
   }
 
-  /* check that pointer to data-data member of complex frequency series 
+  /* check that pointer to data-data member of complex frequency series
    * for output is non-null */
   ASSERT(output->data->data != NULL, status, \
       STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
       STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
-  
+
   /* check that heterodyning frequency of real frequency series for
    * the input is equal to zero */
   if (input->f0 != 0)
@@ -290,7 +290,7 @@ LALSZeroPadAndFFT(
           STOCHASTICCROSSCORRELATIONH_MSGEMEMORY );
     }
   }
-  else 
+  else
   {
     /* window data */
     sStopPtr = input->data->data + input->data->length;
@@ -312,14 +312,14 @@ LALSZeroPadAndFFT(
     ABORT(status, STOCHASTICCROSSCORRELATIONH_EMEMORY, \
         STOCHASTICCROSSCORRELATIONH_MSGEMEMORY);
   }
-  
+
   /* take DFT */
   LALTimeFreqRealFFT(status->statusPtr, output, &hBar, parameters->fftPlan);
 
   /* Can't use TRY because we have memory allocated */
   BEGINFAIL(status)
     TRY(LALSDestroyVector(status->statusPtr, &(hBar.data)), status);
-  ENDFAIL(status); 
+  ENDFAIL(status);
 
   /* fill output parameters */
   strncpy(output->name, "Fourier Transform of Zero-Padded Time Series", \
@@ -338,8 +338,8 @@ LALSZeroPadAndFFT(
 void
 LALCZeroPadAndFFT(
     LALStatus                *status,
-    COMPLEX8FrequencySeries  *output, 
-    const COMPLEX8TimeSeries *input, 
+    COMPLEX8FrequencySeries  *output,
+    const COMPLEX8TimeSeries *input,
     CZeroPadAndFFTParameters *parameters)
 /* </lalVerbatim> */
 {
@@ -360,20 +360,20 @@ LALCZeroPadAndFFT(
       STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
       STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
-  /* check that pointer to data member of real time series for input is 
+  /* check that pointer to data member of real time series for input is
    * non-null */
   ASSERT(input->data != NULL, status, \
       STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
       STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
-  /* check that length of data member of real time series for input is 
+  /* check that length of data member of real time series for input is
    * not equal to zero */
   length = input->data->length;
   ASSERT(length != 0, status, \
       STOCHASTICCROSSCORRELATIONH_EZEROLEN, \
       STOCHASTICCROSSCORRELATIONH_MSGEZEROLEN);
 
-  /* check that pointer to data-data member of real time series for input 
+  /* check that pointer to data-data member of real time series for input
    * is non-null */
   ASSERT(input->data->data != NULL, status, \
       STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
@@ -396,14 +396,14 @@ LALCZeroPadAndFFT(
     ASSERT(parameters->window->data != NULL, status, \
         STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
-    
+
     /* check that window function is same length as input time series */
     if (parameters->window->length != length)
     {
       ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMLEN, \
           STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
     }
-  }    
+  }
 
   /* check that zero-padded output is not shorter than input */
   fullLength = parameters->length;
@@ -418,7 +418,7 @@ LALCZeroPadAndFFT(
       STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
       STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
-  /* check that pointer to data member of complex frequency series for 
+  /* check that pointer to data member of complex frequency series for
    * output is non-null */
   ASSERT(output->data != NULL, status, \
       STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
@@ -432,7 +432,7 @@ LALCZeroPadAndFFT(
         STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
   }
 
-  /* check that pointer to data-data member of complex frequency series 
+  /* check that pointer to data-data member of complex frequency series
    * for output is non-null */
   ASSERT(output->data->data != NULL, status, \
       STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
@@ -453,7 +453,7 @@ LALCZeroPadAndFFT(
   /* allocate memory for zero-padded vector */
   TRY(LALCCreateVector(status->statusPtr, &(hBar.data), fullLength), status);
 
-  if (parameters->window == NULL) 
+  if (parameters->window == NULL)
   {
     cPtr = memcpy(hBar.data->data, input->data->data, \
         length * sizeof(COMPLEX8));
@@ -464,7 +464,7 @@ LALCZeroPadAndFFT(
           STOCHASTICCROSSCORRELATIONH_MSGEMEMORY );
     }
   }
-  else 
+  else
   {
     /* window data */
     cStopPtr = input->data->data + input->data->length;
@@ -492,9 +492,9 @@ LALCZeroPadAndFFT(
   LALTimeFreqComplexFFT(status->statusPtr, output, &hBar, parameters->fftPlan);
 
   /* Can't use TRY because we have memory allocated */
-  BEGINFAIL(status) 
+  BEGINFAIL(status)
     TRY(LALCDestroyVector(status->statusPtr, &(hBar.data)), status);
-  ENDFAIL(status); 
+  ENDFAIL(status);
 
   /* fill output parameters */
   strncpy(output->name, "Fourier Transform of Zero-Padded Time Series", \

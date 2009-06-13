@@ -17,14 +17,14 @@
 *  MA  02111-1307  USA
 */
 
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: FindChirpPTF.h
  *
  * Author: Brown, D. A., and Fazi, D.
- * 
+ *
  * Revision: $Id$
- * 
+ *
  *-----------------------------------------------------------------------
  */
 
@@ -32,7 +32,7 @@
 <lalVerbatim file="FindChirpPTFHV">
 Author: Brown, D. A., and Fazi, D.
 $Id$
-</lalVerbatim> 
+</lalVerbatim>
 
 <lalLaTeX>
 \section{Header \texttt{FindChirpPTF.h}}
@@ -70,8 +70,8 @@ extern "C" {
 NRCSID (FINDCHIRPPTFH, "$Id$");
 
 #if 0
-<lalLaTeX> 
-\subsection*{Error codes} 
+<lalLaTeX>
+\subsection*{Error codes}
 </lalLaTeX>
 #endif
 
@@ -87,7 +87,7 @@ None.
 #if 0
 <lalLaTeX>
 \vfill{\footnotesize\input{FindChirpPTFHV}}
-</lalLaTeX> 
+</lalLaTeX>
 #endif
 
 #if 0
@@ -119,29 +119,29 @@ LALFindChirpPTFNormalize(
 #endif
 
 REAL4Vector*
-XLALPTFOmegaPNCoeffsOrbital( 
-    REAL4                m1, 
+XLALPTFOmegaPNCoeffsOrbital(
+    REAL4                m1,
     REAL4                m2
     );
 
 REAL4Vector*
-XLALPTFOmegaPNCoeffsSpin( 
-    REAL4                m1, 
+XLALPTFOmegaPNCoeffsSpin(
+    REAL4                m1,
     REAL4                m2,
-    REAL4                chi1, 
+    REAL4                chi1,
     REAL4                chi2,
-    REAL4                Q1, 
+    REAL4                Q1,
     REAL4                Q2
     );
 
 REAL4Vector*
-XLALPTFOmegaPNCoeffsEnergy( 
-    REAL4                m1, 
+XLALPTFOmegaPNCoeffsEnergy(
+    REAL4                m1,
     REAL4                m2,
-    REAL4                chi1, 
+    REAL4                chi1,
     REAL4                chi2,
-    REAL4                Q1, 
-    REAL4                Q2 
+    REAL4                Q1,
+    REAL4                Q2
     );
 
 INT4
@@ -154,11 +154,11 @@ XLALFindChirpPTFWaveform(
     REAL8                deltaT
     );
 
-INT4 
+INT4
 XLALPTFWaveformDerivatives(
-              REAL8  t, 
-        const REAL8  y[14], 
-              REAL8  dydt[14], 
+              REAL8  t,
+        const REAL8  y[14],
+              REAL8  dydt[14],
               void  *params );
 
 #if 0

@@ -8,8 +8,7 @@
 .deps
 .dvi-dep
 .libs
-/acinclude.m4
-/aclocal.m4
+aclocal.m4
 Makefile
 Makefile.in
 autom4te.cache/
@@ -47,6 +46,7 @@ lib/.vcsinfo
 lib/LALBuildDate.c
 lib/LALVCSInfo.h
 lib/git_info.sed
+lib/git_version
 lib/lal-version
 libtool
 misc/__lalGitID.h

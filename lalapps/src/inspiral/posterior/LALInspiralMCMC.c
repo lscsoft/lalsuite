@@ -1,6 +1,6 @@
 /*  <lalVerbatim file="LALInspiralMCMCCV">
 Author: Sathyaprakash, B. S.
-$Id$
+$Id: LALInspiralPhase.c,v 1.9 2003/04/14 00:27:22 sathya Exp $
 </lalVerbatim>  */
 
 
@@ -185,10 +185,13 @@ However, you need to point to a function that initializes the parameter structur
 #include <lal/Date.h>
 #include <lal/Random.h>
 #include <lal/AVFactories.h>
+#include <lal/TimeDelay.h>
+#include <lal/DetResponse.h>
+
 
 #define rint(x) floor((x)+0.5)
 
-NRCSID (LALINSPIRALMCMCC, "$Id$"); 
+NRCSID (LALINSPIRALMCMCC, "$Id: LALInspiralPhase.c,v 1.9 2003/04/14 00:27:22 sathya Exp $"); 
 
 /* *****************************
 printMatrix
@@ -814,6 +817,44 @@ vec[2]/=abs;
 return;
 }
 
+INT4 XLALMCMCDifferentialEvolution(
+	LALMCMCInput *inputMCMC,
+	LALMCMCParameter *parameter)
+{
+	static LALStatus status;
+	LALMCMCParameter **Live=inputMCMC->Live;
+	int i=0,j=0,dim=0,same=1;
+	REAL4 randnum;
+	int Nlive = (int)inputMCMC->Nlive;
+	LALMCMCParam *paraHead=NULL;
+	LALMCMCParam *paraA=NULL;
+	LALMCMCParam *paraB=NULL;
+
+	dim = parameter->dimension;
+	if(inputMCMC->randParams==NULL) LALCreateRandomParams(&status,&(inputMCMC->randParams),0);
+	/* Select two other samples A and B*/
+	LALUniformDeviate(&status,&randnum,inputMCMC->randParams);
+	i=(int)(Nlive*randnum);
+	/* Draw two different samples from the basket. Will loop back here if the original sample is chosen*/
+	drawtwo:
+	do {LALUniformDeviate(&status,&randnum,inputMCMC->randParams); j=(int)(Nlive*randnum);} while(j==i);
+	paraHead=parameter->param;
+	paraA=Live[i]->param; paraB=Live[j]->param;
+		/* Add the vector B-A */
+	same=1;
+	while(paraHead)
+	{
+		if(paraHead->value!=paraA->value && paraHead->value!=paraB->value) same=0;
+		paraHead->value+=paraB->value-paraA->value;
+		paraB=paraB->next; paraA=paraA->next;
+		paraHead=paraHead->next;
+	}
+	if(same==1) goto drawtwo;
+	/* Bring the sample back into bounds */
+	XLALMCMCCyclicReflectiveBound(parameter);
+	return(0);
+}
+
 INT4 XLALMCMCReflectDetPlane(
 	LALMCMCInput *inputMCMC,
 	LALMCMCParameter *parameter
@@ -856,7 +897,23 @@ while(IFO3==IFO1
 	IFO3=(IFO3+1) % inputMCMC->numberDataStreams;
 /*fprintf(stderr,"Using %s, %s and %s for plane\n",inputMCMC->ifoID[IFO1],inputMCMC->ifoID[IFO2],inputMCMC->ifoID[IFO3]);*/
 
+longi = XLALMCMCGetParameter(parameter,"long");
+lat = XLALMCMCGetParameter(parameter,"lat");
+
+double deltalong=0;
+
+/* Convert to earth coordinates */
+	SkyPosition geodetic,equatorial;
+	equatorial.longitude=longi;
+	equatorial.latitude=lat;
+	equatorial.system=COORDINATESYSTEM_EQUATORIAL;
+	geodetic.system=COORDINATESYSTEM_GEOGRAPHIC;
+	LALEquatorialToGeographic(&status,&geodetic,&equatorial,&(inputMCMC->epoch));
+	deltalong=geodetic.longitude-equatorial.longitude;
+
+XLALMCMCSetParameter(parameter,"long",deltalong+XLALMCMCGetParameter(parameter,"long"));
 XLALMCMCGetCartesianPos(pos,parameter); /* Get sky position in cartesian coords */
+
 
 /* calculate the unit normal vector of the detector plane */
 for(i=0;i<3;i++){ /* Two vectors in the plane */
@@ -874,7 +931,34 @@ dist=sqrt(dist);
 /* Reflect the point pos across the plane */
 for(i=0;i<3;i++) pos[i]=pos[i]-2.0*dist*normal[i];
 
+
 CartesianToSkyPos(pos,parameter);
+XLALMCMCSetParameter(parameter,"long",XLALMCMCGetParameter(parameter,"long")-deltalong);
+
+	/* Compute change in tgeocentre for this change in sky location */
+	newlong=XLALMCMCGetParameter(parameter,"long");
+	newlat=XLALMCMCGetParameter(parameter,"lat");
+	REAL8 dtold,dtnew,deltat;
+	DetTimeAndASource DTAAS; /* This holds the source and the detector */
+	LALSource source; /* The position and polarisation of the binary */
+	source.equatorialCoords.longitude = longi;
+	source.equatorialCoords.latitude = lat;
+	source.equatorialCoords.system = COORDINATESYSTEM_EQUATORIAL;
+	LALPlaceAndGPS det_gps; /* This will hold the detector site and epoch of observation */
+	det_gps.p_gps=&(inputMCMC->epoch);
+	DTAAS.p_source = &(source.equatorialCoords);
+	DTAAS.p_det_and_time=&det_gps;
+	DTAAS.p_det_and_time->p_detector = inputMCMC->detector[0]; /* Select detector */
+	LALTimeDelayFromEarthCenter(&status,&dtold,&DTAAS); /* Compute time delay */
+	source.equatorialCoords.longitude=newlong;
+	source.equatorialCoords.latitude=newlat;
+	LALTimeDelayFromEarthCenter(&status,&dtnew,&DTAAS); /* Compute time delay */
+	deltat=dtold-dtnew; /* deltat is change in arrival time at geocentre */
+	deltat+=XLALMCMCGetParameter(parameter,"time");
+	XLALMCMCSetParameter(parameter,"time",deltat);
+
+XLALMCMCCyclicReflectiveBound(parameter);
+
 return(0);
 }
 
@@ -897,6 +981,16 @@ void XLALMCMCRotateSky(
 	
 	longi = XLALMCMCGetParameter(parameter,"long");
 	lat = XLALMCMCGetParameter(parameter,"lat");
+	
+	/* Convert the RA/dec to geodetic coordinates, as the detectors use these */
+	SkyPosition geodetic,equatorial;
+	equatorial.longitude=longi;
+	equatorial.latitude=lat;
+	equatorial.system=COORDINATESYSTEM_EQUATORIAL;
+	geodetic.system=COORDINATESYSTEM_GEOGRAPHIC;
+	LALEquatorialToGeographic(&status,&geodetic,&equatorial,&(inputMCMC->epoch));
+	longi=geodetic.longitude;
+	lat=geodetic.latitude;
 	cur[0]=cos(lat)*cos(longi);
 	cur[1]=cos(lat)*sin(longi);
 	cur[2]=sin(lat);
@@ -936,9 +1030,38 @@ void XLALMCMCRotateSky(
 			new[i] += R[i][j]*cur[j];
 	double newlong = atan2(new[1],new[0]);
 	if(newlong<0.0) newlong=LAL_TWOPI+newlong;
-	XLALMCMCSetParameter(parameter,"lat",asin(new[2]));
+	
+	geodetic.longitude=newlong;
+	geodetic.latitude=asin(new[2]);
+	/* Convert back into equatorial (sky) coordinates */
+	LALGeographicToEquatorial(&status,&equatorial,&geodetic,&(inputMCMC->epoch));
+	newlong=equatorial.longitude;
+	double newlat=equatorial.latitude;
+	
+	/* Compute change in tgeocentre for this change in sky location */
+	REAL8 dtold,dtnew,deltat;
+	DetTimeAndASource DTAAS; /* This holds the source and the detector */
+	LALSource source; /* The position and polarisation of the binary */
+	source.equatorialCoords.longitude = longi;
+	source.equatorialCoords.latitude = lat;
+	source.equatorialCoords.system = COORDINATESYSTEM_EQUATORIAL;
+	LALPlaceAndGPS det_gps; /* This will hold the detector site and epoch of observation */
+	det_gps.p_gps=&(inputMCMC->epoch);
+	DTAAS.p_source = &(source.equatorialCoords);
+	DTAAS.p_det_and_time=&det_gps;
+	DTAAS.p_det_and_time->p_detector = inputMCMC->detector[0]; /* Select detector */
+	LALTimeDelayFromEarthCenter(&status,&dtold,&DTAAS); /* Compute time delay */
+	source.equatorialCoords.longitude=newlong;
+	source.equatorialCoords.latitude=newlat;
+	LALTimeDelayFromEarthCenter(&status,&dtnew,&DTAAS); /* Compute time delay */
+	deltat=dtold-dtnew; /* deltat is change in arrival time at geocentre */
+	deltat+=XLALMCMCGetParameter(parameter,"time");
+	XLALMCMCSetParameter(parameter,"time",deltat);	
+	XLALMCMCSetParameter(parameter,"lat",newlat);
 	XLALMCMCSetParameter(parameter,"long",newlong);
 	/*fprintf(stderr,"Skyrotate: new pos = %lf %lf %lf => %lf %lf\n",new[0],new[1],new[2],newlong,asin(new[2]));*/
+	XLALMCMCCyclicReflectiveBound(parameter);
+
 	return;
 }
 
@@ -1024,27 +1147,108 @@ XLALMCMCJump(
       printf("MCMCJUMP: %10s: value: %8.3f  step: %8.3f newVal: %8.3f\n", 
              paraHead->core->name, paraHead->value, step->data[i] , paraHead->value + step->data[i]);*/
     paraHead->value += step->data[i];
-    
-    if (paraHead->core->wrapping) /* For cyclic boundaries */
-    {
-      delta = paraHead->core->maxVal - paraHead->core->minVal;
-      while ( paraHead->value > paraHead->core->maxVal) 
-        paraHead->value -= delta;
-      while ( paraHead->value < paraHead->core->minVal) 
-        paraHead->value += delta;
-    }
-	else /* Use reflective boundaries */
-	{
-	  if(paraHead->core->maxVal < paraHead->value) paraHead->value-=2.0*(paraHead->value - paraHead->core->maxVal);
-	  if(paraHead->core->minVal > paraHead->value) paraHead->value+=2.0*(paraHead->core->minVal - paraHead->value);
 	}
-  }
-
+  
+  XLALMCMCCyclicReflectiveBound(parameter);
   /* destroy the vectors */
   LALSDestroyVector(&status, &step);
   gsl_matrix_free(work);
 }
 
+void 
+XLALMCMCJumpIntrinsic(
+  LALMCMCInput     *inputMCMC,
+  LALMCMCParameter *parameter, 
+  gsl_matrix       *covMat
+  ) 
+{ /* </lalVerbatim>  */
+  static LALStatus status;
+
+  LALMCMCParam *paraHead=NULL;
+  REAL4Vector  *step=NULL;
+  gsl_matrix *work=NULL; 
+  REAL8 aii, aij, ajj, delta;
+  INT4 i, j, dim;
+
+  /* set some values */
+  dim=parameter->dimension;
+
+  /* draw the mutinormal deviates */
+  LALSCreateVector( &status, &step, dim);
+  /* copy matrix into workspace and scale it appriopriately */
+  work =  gsl_matrix_alloc(dim,dim); 
+  gsl_matrix_memcpy( work, covMat );
+  gsl_matrix_scale( work, inputMCMC->annealingTemp);
+  
+  /* check if the matrix if positive definite */
+  while ( !XLALCheckPositiveDefinite( work, dim) ) {
+    printf("WARNING: Matrix not positive definite!\n");
+    /* downweight the off-axis elements */
+    for (i=0; i<dim; ++i)
+    {
+      for (j=0; j<dim; ++j)
+      {
+        aij=gsl_matrix_get( work, i, j);
+        aii=gsl_matrix_get( work, i, i);
+        ajj=gsl_matrix_get( work, j, j);  
+        
+        if ( fabs(aij) > 0.95* sqrt( aii*ajj ) )
+        {
+          aij=aij/fabs(aij)*0.95*sqrt( aii*ajj );
+        }
+        gsl_matrix_set( work, i, j, aij);
+        gsl_matrix_set( work, j, i, aij);
+        printf(" %f", gsl_matrix_get( work, i, j));
+      }
+      printf("\n");
+    }
+    exit(0);
+  }
+
+  /* draw multivariate student distribution with n=2 */
+  XLALMultiStudentDeviates( step, work, dim, 2, inputMCMC->randParams); 
+  
+  /* loop over all parameters */
+  for (paraHead=parameter->param,i=0; paraHead; paraHead=paraHead->next,i++)
+  { 
+	if(!strcmp(paraHead->core->name,"long") || !strcmp(paraHead->core->name,"lat")||!strcmp(paraHead->core->name,"time"))
+	{;}
+  /*  if (inputMCMC->verbose)
+      printf("MCMCJUMP: %10s: value: %8.3f  step: %8.3f newVal: %8.3f\n", 
+             paraHead->core->name, paraHead->value, step->data[i] , paraHead->value + step->data[i]);*/
+    else paraHead->value += step->data[i];
+	}
+  
+  XLALMCMCCyclicReflectiveBound(parameter);
+  /* destroy the vectors */
+  LALSDestroyVector(&status, &step);
+  gsl_matrix_free(work);
+}
+
+void XLALMCMCCyclicReflectiveBound(LALMCMCParameter *parameter)
+/* Map samples back into parameter space using the simple
+cyclic or reflective boundaries - a sampler can use this
+function to keep its proposals inside the parameter space */
+{
+	LALMCMCParam *paraHead=NULL;
+	REAL8 delta;
+	for (paraHead=parameter->param;paraHead;paraHead=paraHead->next)
+	{
+		if(paraHead->core->wrapping) /* For cyclic boundaries */
+		{
+			delta = paraHead->core->maxVal - paraHead->core->minVal;
+			while ( paraHead->value > paraHead->core->maxVal) 
+				paraHead->value -= delta;
+			while ( paraHead->value < paraHead->core->minVal) 
+			paraHead->value += delta;
+		}
+		else /* Use reflective boundaries */
+		{
+			if(paraHead->core->maxVal < paraHead->value) paraHead->value-=2.0*(paraHead->value - paraHead->core->maxVal);
+			if(paraHead->core->minVal > paraHead->value) paraHead->value+=2.0*(paraHead->core->minVal - paraHead->value);
+		}
+	}
+}
 
 
 /* *****************************

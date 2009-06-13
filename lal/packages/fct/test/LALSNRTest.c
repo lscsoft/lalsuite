@@ -111,14 +111,14 @@ int writefct(const REAL4* const out, const int n, const int m,
     {
         /* Write info about endian-ness and local sizeof(*out) */
         write(fd_output, &out_size, sizeof(out_size));
-        
+
         /* Write the dimensions of the fct */
         write(fd_output, &M, sizeof(M));
         write(fd_output, &N, sizeof(N));
 
         /* Write the body of the fct */
         write(fd_output, out, sizeof(*out)*2*n*m);
-        
+
         close(fd_output);
     }
     else
@@ -177,7 +177,7 @@ void generateTimeDomainChirp(LALStatus* const status,
     CoherentGW waveform;
 
     const REAL8 eta = 0.25;
-    
+
     const REAL8 t1 = pow(LAL_PI*f_seismic, 8.0/3.0);
     const REAL8 mTot = pow(256.0*t1*eta*tau0/5.0, -3.0/5.0)/LAL_MTSUN_SI;
 
@@ -202,7 +202,7 @@ void generateTimeDomainChirp(LALStatus* const status,
     params.mTot = mTot;
     params.eta = eta;
     params.inc = 0;
-  
+
     /*
       Tev's code uses a coalescence phase different by a factor of 2
       (so I should use -LAL_PI/4 here instead of -LAL_PI/8) BUT also
@@ -213,12 +213,12 @@ void generateTimeDomainChirp(LALStatus* const status,
     params.d = dist*LAL_PC_SI*1.0e+03;
     params.fStartIn = f_seismic;
     params.fStopIn = NYQUIST;
-    
+
     /* PPN parameter. */
     params.ppn = 0;
     LALSCreateVector(status, &(params.ppn), 1);
     params.ppn->data[0] = 1.0;
-    
+
     /* Output parameters. */
     memset( &waveform, 0, sizeof(waveform) );
 
@@ -258,7 +258,7 @@ REAL4 maxPhi(LALFCTPhaseFn phi, const INT4 N)
 {
     REAL4 max = -LAL_REAL4_MAX;
     INT4 k = 0;
-  
+
     for (k = 0; k < N; ++k)
     {
         const REAL4 f = OFFSET + DELTA*k;
@@ -291,7 +291,7 @@ REAL4 newtPhi(const REAL4 f)
 
 /*
   Inspiral chirp amplitude
-  
+
   At this stage we neglect the overall scaling and just use the
   frequency-dependent part of the amplitude, f^(-7/6).
 */
@@ -347,7 +347,7 @@ REAL4 phi0(const REAL4 f)
   The chirp function h_{tc,lam0}(f) where f is frequency in Hz
 
   Parameters are
-  
+
   tc - coefficient of the linear part of the phase ie. f
   lam0 - coefficient of the first phase function ie. phi0(f)
 */
@@ -361,7 +361,7 @@ generateFrequencyDomainChirp(const REAL8 tc, const REAL8 lam0,
 #endif
 
     UINT8 l = 0;
-    
+
     assert(in != 0);
     assert(in->length > 0);
 
@@ -377,7 +377,7 @@ generateFrequencyDomainChirp(const REAL8 tc, const REAL8 lam0,
         {
             phase_f += LAL_TWOPI;
         }
-    
+
         /* Overall sign of phase function is -1 */
         in->data[l].re =  Amp*cos(phase_f);
         in->data[l].im = -Amp*sin(phase_f);
@@ -405,7 +405,7 @@ generateFCTTemplate(const INT4 k, const INT4 k0,
     const REAL4 N = in->length;
 
     UINT8 n = 0;
-    
+
     assert(in != 0);
     assert(in->length > 0);
 
@@ -422,7 +422,7 @@ generateFCTTemplate(const INT4 k, const INT4 k0,
         {
             phase_f += LAL_TWOPI;
         }
-    
+
         in->data[n].re =  Amp*cos(phase_f);
         in->data[n].im = -Amp*sin(phase_f);
     }
@@ -544,7 +544,7 @@ calculateFCTInner(LALStatus* const status,
 
     assert(gfct_out != 0);
     assert(gfct_out->length % fct_in->length == 0);
- 
+
     FCTCalculate(status, gfct_out, fct_in, &dataCubesIn);
 
     for (l = 0; l < gfct_out->length; ++l)
@@ -560,22 +560,22 @@ calculateFCTInner(LALStatus* const status,
             max_inner_prod_index = l;
         }
     }
-        
+
     /*
       Using the formula
-      
+
       l = K0*data_length + K
-      
+
       we can solve for K and K0
     */
-        
+
     K = max_inner_prod_index % data_length;
     m = (max_inner_prod_index - K)/data_length;
     K0 = m % dim1_data_length;
 
     k  = cube[0].start_locations[0] + K;
     k0 = cube[0].start_locations[1] + K0;
-        
+
     *inner_est = max_inner_prod;
     *tc_est = k;
     *lam0_est = k0;
@@ -610,7 +610,7 @@ calculateDCTInner(LALStatus* const status,
 
     assert(dct_in != 0);
     assert(dct_in->length > 0);
- 
+
     LALCCreateVector(status, &tmp_in, dct_in->length);
     LALCCreateVector(status, &tmp_out, dct_in->length);
 
@@ -618,7 +618,7 @@ calculateDCTInner(LALStatus* const status,
 
     for (k = 0; k < dim1_data_length; ++k)
     {
-        for (l = 0; l < tmp_in->length; ++l) 
+        for (l = 0; l < tmp_in->length; ++l)
         {
             const REAL4 f = OFFSET + DELTA*l;
 
@@ -627,7 +627,7 @@ calculateDCTInner(LALStatus* const status,
             REAL8 phase_f = LAL_TWOPI*(dim1_start + k)*phi0(f);
             REAL8 cos_ph = 0.0;
             REAL8 sin_ph = 0.0;
-      
+
 	    phase_f = fmod(phase_f, LAL_TWOPI);
 	    if (phase_f < 0)
 	    {
@@ -644,14 +644,14 @@ calculateDCTInner(LALStatus* const status,
         }
 
         LALCOMPLEX8VectorFFT(status, tmp_out, tmp_in, plan);
-    
+
         for (l = 0; l < tmp_out->length; ++l)
         {
             inner_prod = 2.0*tmp_out->data[l].re/dct_in->length;
             if (inner_prod > max_inner_prod)
             {
                 max_inner_prod = inner_prod;
-        
+
                 K = l;
                 K0 = dim1_start + k;
             }
@@ -684,7 +684,7 @@ CalculateSNRLoss(LALStatus* const status)
 
     INT4 dct_lam_est = 0;
     INT4 dct_lam0_est = 0;
-    
+
     COMPLEX8Vector* chirp = 0;
     COMPLEX8Vector* template = 0;
 
@@ -751,7 +751,7 @@ CalculateSNRLoss(LALStatus* const status)
 
         printf("DCT parameters:      lambda = %d, lam0 = %d\n",
                dct_lam_est, dct_lam0_est);
-        
+
 	/* Now calculate the SNR's */
 
 	/* FCT SNR */
@@ -760,7 +760,7 @@ CalculateSNRLoss(LALStatus* const status)
         SNR_fct = inner_fct/(chirp_norm*template_norm);
 
 	tmp_inner = inner(chirp, template);
-	
+
 	printf("FCT INNER = %e\n", inner_fct);
 	printf("TMP INNER = %e\n", tmp_inner);
 
@@ -835,7 +835,7 @@ setupGlobals(LALStatus* const status)
 
     dataCubesIn.data_cube = &cube[0];
     dataCubesIn.num_data_cubes = NUM_DATA_CUBES;
-    
+
     /* Get the required output size */
     LALFCTSetDataCubes(status, &dataCubesIn, gfctPlan);
     LALFCTOutputDataSize(status, &output_data_size, gfctPlan);

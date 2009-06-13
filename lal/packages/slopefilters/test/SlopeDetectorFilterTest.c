@@ -99,7 +99,7 @@ NRCSID( SLOPEDETECTORFILTERTESTC, "$Id$" );
 
 int lalDebugLevel = LALMSGLVL3;
 
-/* See the section (currently 7.4.1) of the LSD 
+/* See the section (currently 7.4.1) of the LSD
  * on "Status-reporting objects" for list of predefined debug levels */
 
 int main( void )
@@ -111,17 +111,17 @@ int main( void )
   /** VARIABLES AND DUMMY INPUT DATA FOR TESTING THE ALGORITHM **/
   REAL4  testdata[SLOPEDETECTORFILTERTESTC_INPUTVECTORLENGTH] =
   {-7.3, 2.6, 27.2, 13.0, 12.9, -100.4, -13.2, 4.4};
-  REAL4  slopedetectexpout[SLOPEDETECTORFILTERTESTC_OUTPUTVECTORLENGTH] = 
+  REAL4  slopedetectexpout[SLOPEDETECTORFILTERTESTC_OUTPUTVECTORLENGTH] =
   {8.55, 1.67, -38.29, -19.19, 6.17};
-  REAL4  offsetdetectexpout[SLOPEDETECTORFILTERTESTC_OUTPUTVECTORLENGTH] = 
+  REAL4  offsetdetectexpout[SLOPEDETECTORFILTERTESTC_OUTPUTVECTORLENGTH] =
   {-3.9500, 11.4200, 45.6100, 6.8600, -33.3300};
-  REAL4  alfdetectexpout[SLOPEDETECTORFILTERTESTC_OUTPUTVECTORLENGTH] = 
+  REAL4  alfdetectexpout[SLOPEDETECTORFILTERTESTC_OUTPUTVECTORLENGTH] =
   {1580.035278, 986.760803, 17376.673828, 8603.057617, 1472.700439};
   REAL4  boxcartapsexpout[SLOPEDETECTORFILTERTESTC_NTAPS] = {0.25, 0.25, 0.25, 0.25};
-  REAL4  gaussiantapsexpout[SLOPEDETECTORFILTERTESTC_NTAPS] = 
+  REAL4  gaussiantapsexpout[SLOPEDETECTORFILTERTESTC_NTAPS] =
   {0.011109, 0.606531, 0.606531, 0.011109};
   REAL4  sinetapsexpout[SLOPEDETECTORFILTERTESTC_NTAPS] = {0, -0.866025, 0.866025, 0};
-  REAL4  convfilterexpout[SLOPEDETECTORFILTERTESTC_OUTPUTVECTORLENGTH] = 
+  REAL4  convfilterexpout[SLOPEDETECTORFILTERTESTC_OUTPUTVECTORLENGTH] =
   {18.137936, 24.554724,  14.895966, -53.073654, -68.709694};
   REAL4  sampper = 0.00390625;  /* 1/256 */
   UINT4  i;
@@ -133,7 +133,7 @@ int main( void )
 
   input = NULL;
   /* create an input vector */
-  LALSCreateVector(&status, &input, 
+  LALSCreateVector(&status, &input,
 		   (UINT4)SLOPEDETECTORFILTERTESTC_INPUTVECTORLENGTH);
   /* check that the input vector was created OK */
   if(status.statusCode) {
@@ -149,12 +149,12 @@ int main( void )
   for(i=0; i < (UINT4)SLOPEDETECTORFILTERTESTC_INPUTVECTORLENGTH ; ++i) {
     input->data[i] = testdata[i];
   }
-    
+
   /*******  CREATE A TEST VECTOR FOR DATA OUTPUT  **********/
 
   output = NULL;
   /* create an output vector */
-  LALSCreateVector(&status, &output, 
+  LALSCreateVector(&status, &output,
 		   (UINT4)SLOPEDETECTORFILTERTESTC_OUTPUTVECTORLENGTH);
   /* check that the output vector was created OK */
   if(status.statusCode) {
@@ -211,7 +211,7 @@ int main( void )
   /*******  TEST RESPONSE TO VALID DATA  ************/
 
   LALSlopeDetectorFilter(&status, output, input, ntaps);
-  if ( status.statusCode ) 
+  if ( status.statusCode )
   {
     printf( "Unexpectedly got error code %d and message %s\n",
 	    status.statusCode, status.statusDescription );
@@ -245,7 +245,7 @@ int main( void )
   *(fparams.taps_set) = 0;
   fparams.function_select = FILTER_OUTPUT_TAPS_SET_BOXCAR;
   fparams.waveform_offset = 0;
-   
+
   /* Set taps to boxcar */
   LALSlopeConvolutionFilter(&status,NULL,NULL,fparams);
   if(status.statusCode) {
@@ -254,7 +254,7 @@ int main( void )
 	   status.statusDescription );
     return SLOPEDETECTORFILTERTESTC_EBADFREE;
   }
-  
+
   /* Test that taps come out as expected */
   if(*(fparams.taps_set) != 1) {
     printf("After setting boxcar taps, taps bit not set to one.\n");
@@ -288,7 +288,7 @@ int main( void )
     return SLOPEDETECTORFILTERTESTC_EINCOMPATIBLEOUTPUT;
   }
   for(i=0;i<fparams.forder;++i) {
-    if(fabs((REAL8)fparams.tap[i] - (REAL8)sinetapsexpout[i]) > 
+    if(fabs((REAL8)fparams.tap[i] - (REAL8)sinetapsexpout[i]) >
        SLOPEDETECTORFILTERTESTC_EQUALITYTOLERANCE) {
       printf("Sine tap %u error exceeds tolerance.\n",i);
       return SLOPEDETECTORFILTERTESTC_EINCOMPATIBLEOUTPUT;
@@ -315,7 +315,7 @@ int main( void )
     return SLOPEDETECTORFILTERTESTC_EINCOMPATIBLEOUTPUT;
   }
   for(i=0; i<ntaps; ++i) {
-    if(fabs((REAL8)fparams.tap[i]/(REAL8)gaussiantapsexpout[i]-1) > 
+    if(fabs((REAL8)fparams.tap[i]/(REAL8)gaussiantapsexpout[i]-1) >
        SLOPEDETECTORFILTERTESTC_EQUALITYTOLERANCE) {
       printf("Gaussian tap %u error exceeds tolerance.\n",i);
       return SLOPEDETECTORFILTERTESTC_EINCOMPATIBLEOUTPUT;
@@ -339,7 +339,7 @@ int main( void )
   }
   /* print the output data */
   for(i=0;i<output->length;++i) {
-    if(fabs((REAL8)output->data[i]/(REAL8)convfilterexpout[i]-1) > 
+    if(fabs((REAL8)output->data[i]/(REAL8)convfilterexpout[i]-1) >
        SLOPEDETECTORFILTERTESTC_EQUALITYTOLERANCE) {
       printf("Convolution result error exceeds tolerance at LALSlopeConvolutionFilter. %d\n",i);
       return SLOPEDETECTORFILTERTESTC_EINCOMPATIBLEOUTPUT;
@@ -364,11 +364,11 @@ int main( void )
   /* print filter outputs */
   for(i=0;i<output->length;++i) {
     /* printf("Slope output %u is %f.\n",i,output->data[i]); */
-    if(fabs((REAL8)sampper*(REAL8)output->data[i]/(REAL8)slopedetectexpout[i]-1) > 
+    if(fabs((REAL8)sampper*(REAL8)output->data[i]/(REAL8)slopedetectexpout[i]-1) >
        SLOPEDETECTORFILTERTESTC_EQUALITYTOLERANCE) {
       printf("Convolution result error exceeds tolerance at LALSlopeLineFitFilter (slope). %d\n",i);
       return SLOPEDETECTORFILTERTESTC_EINCOMPATIBLEOUTPUT;
-    } 
+    }
   }
   printf("Slope fit test passed OK.\n");
 
@@ -384,11 +384,11 @@ int main( void )
 
   for(i=0;i<output->length;++i) {
     /* printf("Offset output %u is %f.\n",i,output->data[i]); */
-    if(fabs((REAL8)output->data[i]/(REAL8)offsetdetectexpout[i]-1) > 
+    if(fabs((REAL8)output->data[i]/(REAL8)offsetdetectexpout[i]-1) >
        SLOPEDETECTORFILTERTESTC_EQUALITYTOLERANCE) {
       printf("Convolution error exceeds tolerance at LALSlopeLineFitFilter (offset).\n %d",i);
       return SLOPEDETECTORFILTERTESTC_EINCOMPATIBLEOUTPUT;
-      } 
+      }
   }
   printf("Offset fit test passed OK.\n");
 
@@ -404,11 +404,11 @@ int main( void )
 
   for(i=0;i<output->length;++i) {
     /* printf("ALF output %u is %f.\n",i,output->data[i]); */
-    if(fabs((REAL8)output->data[i]/(REAL8)alfdetectexpout[i]-1) > 
+    if(fabs((REAL8)output->data[i]/(REAL8)alfdetectexpout[i]-1) >
        SLOPEDETECTORFILTERTESTC_EQUALITYTOLERANCE) {
       printf("Convolution error exceeds tolerance at LALSlopeLineFitFilter (alf).\n %d",i);
       return SLOPEDETECTORFILTERTESTC_EINCOMPATIBLEOUTPUT;
-      } 
+      }
   }
   printf("ALF filter test passed OK.\n");
   printf("Output from LALSlopeLineFitFilter() passed tests.\n");

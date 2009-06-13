@@ -68,7 +68,7 @@ h^{\scriptstyle{\rm C}}_i(t-\tau)
 \end{equation}
 which has the simpler frequency-domain representation
 \begin{equation}
-\widetilde{h}_i(f) 
+\widetilde{h}_i(f)
 =  \widetilde{R}_i(f)\, \widetilde{h}_i(f)
 \end{equation}
 If we want to calculate the cross-correlation statistic $Y$ using the
@@ -108,7 +108,7 @@ where the ``uncalibrated optimal filter'' is
 \ ,
 \end{eqnarray}
 where $P^{\scriptstyle{\rm HC}}_i(f)=\widetilde{R}_i(f)\,P^{\scriptstyle{\rm C}}_i(f)$ is the
-``half-calibrated'' PSD.  (The uncalibrated PSD is 
+``half-calibrated'' PSD.  (The uncalibrated PSD is
 $P_i(f)=|\widetilde{R}_i(f)|^2\,P^{\scriptstyle{\rm C}}_i(f)$.)
 
 \texttt{LALStochasticOptimalFilter()} generates a complex frequency
@@ -161,7 +161,7 @@ LALUnitCompare()
     {} [\lambda] &=& 10^{-36}\,\textrm{s}^{-1}\\
     {} [\gamma] &=& \textrm{strain}^{2} \\
     {} [\Omega_{\scriptstyle{\rm GW}}] &=& 1 \\
-    {} [1/P^{\scriptstyle{\rm HC}}_{1,2}] 
+    {} [1/P^{\scriptstyle{\rm HC}}_{1,2}]
     &=& 10^{18}\,\textrm{Hz}\,\textrm{strain}^{-1}\,\textrm{count}^{-1} \\
     {} [\widetilde{Q}] &:=&
     [\lambda] [\gamma][\Omega_{\scriptstyle{\rm GW}}]
@@ -175,14 +175,14 @@ LALUnitCompare()
 
 \vfill{\footnotesize\input{StochasticOptimalFilterCV}}
 
-******************************************************* </lalLaTeX> */ 
+******************************************************* </lalLaTeX> */
 
 /**************************** <lalLaTeX file="StochasticOptimalFilterCB">
 \bibitem{stochastic:Allen:1997}
   B.~Allen
   ``The stochastic gravity-wave background: sources and detection''
-  in \textit{Proceedings of the Les Houches School on Astrophysical Sources of 
-  Gravitational Waves}, 
+  in \textit{Proceedings of the Les Houches School on Astrophysical Sources of
+  Gravitational Waves},
   eds. J.~A.~Marck and J.~P.~Lasota, Cambridge, 373 (1997);
   \href{http://www.arXiv.org/abs/gr-qc/9604033}{gr-qc/9604033}
 \bibitem{stochastic:Allen:1999}
@@ -229,7 +229,7 @@ LALStochasticOptimalFilterCal(
   REAL4 realFactor;
 
   UINT4 length;
-  
+
   RAT4 power;
   LALUnitPair unitPair;
   LALUnit tmpUnit1, tmpUnit2, checkUnit;
@@ -349,56 +349,56 @@ LALStochasticOptimalFilterCal(
 
   /** check for mismatches **/
   /* length */
-  if (input->omegaGW->data->length != length) 
+  if (input->omegaGW->data->length != length)
   {
     ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMLEN, \
         STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
   }
-  if (input->calibratedInverseNoisePSD1->data->length != length) 
+  if (input->calibratedInverseNoisePSD1->data->length != length)
   {
     ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMLEN, \
         STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
   }
-  if (input->calibratedInverseNoisePSD2->data->length != length) 
+  if (input->calibratedInverseNoisePSD2->data->length != length)
   {
     ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMLEN, \
         STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
   }
-  if (optimalFilter->data->length != length) 
+  if (optimalFilter->data->length != length)
   {
     ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMLEN, \
         STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
   }
 
   /* initial frequency */
-  if (input->omegaGW->f0 != f0) 
+  if (input->omegaGW->f0 != f0)
   {
     ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMFMIN, \
         STOCHASTICCROSSCORRELATIONH_MSGEMMFMIN);
   }
-  if (input->calibratedInverseNoisePSD1->f0 != f0) 
+  if (input->calibratedInverseNoisePSD1->f0 != f0)
   {
     ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMFMIN, \
         STOCHASTICCROSSCORRELATIONH_MSGEMMFMIN);
   }
-  if (input->calibratedInverseNoisePSD2->f0 != f0) 
+  if (input->calibratedInverseNoisePSD2->f0 != f0)
   {
     ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMFMIN, \
         STOCHASTICCROSSCORRELATIONH_MSGEMMFMIN);
   }
 
   /* frequency spacing */
-  if (input->omegaGW->deltaF != deltaF) 
+  if (input->omegaGW->deltaF != deltaF)
   {
     ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMDELTAF, \
         STOCHASTICCROSSCORRELATIONH_MSGEMMDELTAF);
   }
-  if (input->calibratedInverseNoisePSD1->deltaF != deltaF) 
+  if (input->calibratedInverseNoisePSD1->deltaF != deltaF)
   {
     ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMDELTAF, \
         STOCHASTICCROSSCORRELATIONH_MSGEMMDELTAF);
   }
-  if (input->calibratedInverseNoisePSD2->deltaF != deltaF) 
+  if (input->calibratedInverseNoisePSD2->deltaF != deltaF)
   {
     ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMDELTAF, \
         STOCHASTICCROSSCORRELATIONH_MSGEMMDELTAF);
@@ -431,7 +431,7 @@ LALStochasticOptimalFilterCal(
 
   unitPair.unitOne = &(input->omegaGW->sampleUnits);
   unitPair.unitTwo = &tmpUnit2;
-  
+
   TRY(LALUnitMultiply(status->statusPtr, &tmpUnit1, &unitPair), status);
 
   /* Now tmpUnit1 has units of Omega/H0^2 */
@@ -476,8 +476,8 @@ LALStochasticOptimalFilterCal(
   /* Done with unit manipulation */
 
   optimalFilter->data->data[0] = 0;
-  
-  /* calculate optimal filter values */  
+
+  /* calculate optimal filter values */
   for (i = (f0 == 0 ? 1 : 0) ; i < length; ++i)
   {
     f = f0 + deltaF * (REAL8)i;
@@ -488,12 +488,12 @@ LALStochasticOptimalFilterCal(
     mygamma = input->overlapReductionFunction->data->data[i];
     p1WInv = input->calibratedInverseNoisePSD1->data->data[i];
     p2WInv = input->calibratedInverseNoisePSD2->data->data[i];
-		
+
 		realFactor = (mygamma * omega * lambda->value) / f3;
 
     optimalFilter->data->data[i] = realFactor * p1WInv * p2WInv;
 	}
-  
+
   DETATCHSTATUSPTR(status);
   RETURN(status);
 } /* LALStochasticOptimalFilterCal() */
@@ -525,7 +525,7 @@ LALStochasticOptimalFilter(
   REAL8 realFactor;
 
   UINT4 length;
-  
+
   RAT4 power;
   LALUnitPair unitPair;
   LALUnit tmpUnit1, tmpUnit2, checkUnit;
@@ -546,7 +546,7 @@ LALStochasticOptimalFilter(
   ASSERT(optimalFilter != NULL, status, \
       STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
       STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
- 
+
   /* overlap member of input */
   ASSERT(input->overlapReductionFunction != NULL, status, \
       STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
@@ -644,56 +644,56 @@ LALStochasticOptimalFilter(
 
   /** check for mismatches **/
   /* length */
-  if (input->omegaGW->data->length != length) 
+  if (input->omegaGW->data->length != length)
   {
     ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMLEN, \
         STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
   }
-  if (input->halfCalibratedInverseNoisePSD1->data->length != length) 
+  if (input->halfCalibratedInverseNoisePSD1->data->length != length)
   {
     ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMLEN, \
         STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
   }
-  if (input->halfCalibratedInverseNoisePSD2->data->length != length) 
+  if (input->halfCalibratedInverseNoisePSD2->data->length != length)
   {
     ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMLEN, \
         STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
   }
-  if (optimalFilter->data->length != length) 
+  if (optimalFilter->data->length != length)
   {
     ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMLEN, \
         STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
   }
 
   /* initial frequency */
-  if (input->omegaGW->f0 != f0) 
+  if (input->omegaGW->f0 != f0)
   {
     ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMFMIN, \
         STOCHASTICCROSSCORRELATIONH_MSGEMMFMIN);
   }
-  if (input->halfCalibratedInverseNoisePSD1->f0 != f0) 
+  if (input->halfCalibratedInverseNoisePSD1->f0 != f0)
   {
     ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMFMIN, \
         STOCHASTICCROSSCORRELATIONH_MSGEMMFMIN);
   }
-  if (input->halfCalibratedInverseNoisePSD2->f0 != f0) 
+  if (input->halfCalibratedInverseNoisePSD2->f0 != f0)
   {
     ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMFMIN, \
         STOCHASTICCROSSCORRELATIONH_MSGEMMFMIN);
   }
 
   /* frequency spacing */
-  if (input->omegaGW->deltaF != deltaF) 
+  if (input->omegaGW->deltaF != deltaF)
   {
     ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMDELTAF, \
         STOCHASTICCROSSCORRELATIONH_MSGEMMDELTAF);
   }
-  if (input->halfCalibratedInverseNoisePSD1->deltaF != deltaF) 
+  if (input->halfCalibratedInverseNoisePSD1->deltaF != deltaF)
   {
     ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMDELTAF, \
         STOCHASTICCROSSCORRELATIONH_MSGEMMDELTAF);
   }
-  if (input->halfCalibratedInverseNoisePSD2->deltaF != deltaF) 
+  if (input->halfCalibratedInverseNoisePSD2->deltaF != deltaF)
   {
     ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMDELTAF, \
         STOCHASTICCROSSCORRELATIONH_MSGEMMDELTAF);
@@ -726,9 +726,9 @@ LALStochasticOptimalFilter(
 
   unitPair.unitOne = &(input->omegaGW->sampleUnits);
   unitPair.unitTwo = &tmpUnit2;
-  
+
   TRY(LALUnitMultiply(status->statusPtr, &tmpUnit1, &unitPair), status);
-  
+
   /* Now tmpUnit1 has units of Omega/H0^2 */
 
   /* Now we need to set the Optimal Filter Units equal to the units of */
@@ -772,30 +772,30 @@ LALStochasticOptimalFilter(
 
   optimalFilter->data->data[0].re = 0;
   optimalFilter->data->data[0].im = 0;
-  
-  /* calculate optimal filter values */  
+
+  /* calculate optimal filter values */
   for (i = (f0 == 0 ? 1 : 0) ; i < length; ++i)
   {
     f = f0 + deltaF * (REAL8)i;
-    
+
     f3 = f * f * f;
-    
+
     omega = input->omegaGW->data->data[i];
     mygamma = input->overlapReductionFunction->data->data[i];
     p1HWInv = input->halfCalibratedInverseNoisePSD1->data->data[i];
     p2HWInv = input->halfCalibratedInverseNoisePSD2->data->data[i];
-    
+
     cPtrOptimalFilter = &(optimalFilter->data->data[i]);
-    
+
     realFactor = (mygamma * omega * lambda->value) / f3;
-    
+
     cPtrOptimalFilter->re = realFactor * ((p1HWInv.re * p2HWInv.re) + \
         (p1HWInv.im * p2HWInv.im));
-    
+
     cPtrOptimalFilter->im = realFactor * ((p1HWInv.re * p2HWInv.im) - \
         (p1HWInv.im * p2HWInv.re));
   }
-  
+
   DETATCHSTATUSPTR(status);
   RETURN(status);
 } /* LALStochasticOptimalFilter() */

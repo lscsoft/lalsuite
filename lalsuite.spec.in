@@ -62,7 +62,6 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 %files
 %defattr(-,root,root)
 %{_bindir}/lal-version
-%{_sbindir}/uninstall-lal.sh
 %{_libdir}/*.so*
 %{_sysconfdir}/lal-user-env.*
 

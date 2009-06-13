@@ -23,14 +23,14 @@
  *
  * Author: Craig Robinson
  *
- * $Id$
+ * $Id: GetErrorMatrixFromSnglInspiral.c,v 1.10 2008/06/18 16:57:02 jclayton Exp $
  *
  *---------------------------------------------------------------------------*/
 
 #if 0
 <lalVerbatim file="GetErrorMatrixFromSnglInspiralCV">
 Author: Craig Robinson
-$Id$
+$Id: GetErrorMatrixFromSnglInspiral.c,v 1.10 2008/06/18 16:57:02 jclayton Exp $
 </lalVerbatim>
 #endif
 
@@ -45,7 +45,7 @@ $Id$
 #include <gsl/gsl_vector.h>
 #include <gsl/gsl_linalg.h>
 
-NRCSID( ERRORMATRIXFROMSNGLINSPIRALC, "$Id$" );
+NRCSID( ERRORMATRIXFROMSNGLINSPIRALC, "$Id: GetErrorMatrixFromSnglInspiral.c,v 1.10 2008/06/18 16:57:02 jclayton Exp $" );
 
 #if 0
 <lalLaTeX>
@@ -67,7 +67,7 @@ NRCSID( ERRORMATRIXFROMSNGLINSPIRALC, "$Id$" );
 a \texttt{gsl\_matrix} containing the the metric scaled appropriately for the
 given e-thinca parameter.
 
-\texttt{XLALGetPositionFromSnglInspiral()} takes in a 
+\texttt{XLALGetPositionFromSnglInspiral()} takes in a
 \texttt{SnglInspiralTable}, and returns the position vector associated with
 the trigger in $(t_C, \tau_0, \tau_3)$ space.
 
@@ -101,7 +101,47 @@ gsl_matrix * XLALGetErrorMatrixFromSnglInspiral(SnglInspiralTable *event,
 /* </lalVerbatim> */
 {
   static const char *func = "XLALGetErrorMatrixFromSnglInspiral";
-  gsl_matrix *shape  = NULL;
+
+  gsl_matrix *shape = NULL;
+
+  int xlalStatus;
+
+#ifndef LAL_NDEBUG
+  if (!event)
+  {
+    XLAL_ERROR_NULL( func, XLAL_EFAULT );
+  }
+#endif
+
+  /* Allocate memory for the various matrices */
+  XLAL_CALLGSL( shape  = gsl_matrix_alloc( 3, 3 ) );
+
+  if ( !shape )
+    XLAL_ERROR_NULL( func, XLAL_ENOMEM );
+
+  /* Fill in the elements of the shape matrix */
+  xlalStatus = XLALSetErrorMatrixFromSnglInspiral( shape, event, eMatch );
+  if (xlalStatus != XLAL_SUCCESS )
+  {
+    gsl_matrix_free( shape );
+    XLAL_ERROR_NULL( func, XLAL_EFUNC );
+  }
+
+  return shape;
+}
+
+
+
+
+int XLALSetErrorMatrixFromSnglInspiral(gsl_matrix        *shape,
+                                       SnglInspiralTable *event,
+                                       REAL8              eMatch
+                                       )
+
+{
+
+  static const char *func = "XLALSetErrorMatrixFromSnglInspiral";
+
   gsl_matrix *fisher = NULL;
   gsl_permutation *p = NULL;
 
@@ -111,22 +151,37 @@ gsl_matrix * XLALGetErrorMatrixFromSnglInspiral(SnglInspiralTable *event,
   REAL8 mtotal = 0.0;
 
   int signum;
+  int gslStatus;
 
-  if (!event)
-  {
-    XLAL_ERROR_NULL( func, XLAL_EINVAL );
-  }
+#ifndef LAL_NDEBUG
+  if ( !event )
+    XLAL_ERROR( func, XLAL_EFAULT );
+
+  if ( !shape )
+    XLAL_ERROR( func, XLAL_EFAULT );
+
+  if ( shape->size1 != 3 || shape->size1 != shape->size2 )
+    XLAL_ERROR( func, XLAL_EBADLEN );
+#endif
 
   if ( !event->Gamma[0] )
   {
     XLALPrintError( "Metric components are not set.\n" );
-    XLAL_ERROR_NULL( func, XLAL_EINVAL );
+    XLAL_ERROR( func, XLAL_EINVAL );
   }
 
-  /* Allocate memory for the various matrices */
-  shape  = gsl_matrix_alloc( 3, 3 );
-  fisher = gsl_matrix_alloc( 3, 3 );
-  p      = gsl_permutation_alloc( 3 );
+  if ( eMatch < 0 )
+    XLAL_ERROR( func, XLAL_EINVAL );
+
+  XLAL_CALLGSL( fisher = gsl_matrix_alloc( 3, 3 ) );
+  XLAL_CALLGSL( p      = gsl_permutation_alloc( 3 ) );
+
+  if ( !fisher || !p )
+  {
+    if ( fisher ) gsl_matrix_free( fisher );
+    if ( p ) gsl_permutation_free( p );
+    XLAL_ERROR( func, XLAL_ENOMEM );
+  }
 
   mtotal = (event->mtotal)*LAL_MTSUN_SI;
   fLow =  5.0 / (256.0 * event->eta * pow(mtotal, 5.0/3.0) * event->tau0 );
@@ -145,15 +200,28 @@ gsl_matrix * XLALGetErrorMatrixFromSnglInspiral(SnglInspiralTable *event,
   gsl_matrix_set( fisher, 2, 1, event->Gamma[4]/(freqRatio0*freqRatio3) );
   gsl_matrix_set( fisher, 2, 2, event->Gamma[5]/(freqRatio3*freqRatio3) );
 
-  gsl_matrix_scale( fisher, 1.0 / eMatch );
+  XLAL_CALLGSL( gslStatus = gsl_matrix_scale( fisher, 1.0 / eMatch ) );
+  if ( gslStatus != GSL_SUCCESS )
+  {
+     gsl_matrix_free( fisher );
+     gsl_permutation_free( p );
+     XLAL_ERROR( func, XLAL_EFUNC );
+  }
 
   /* Now invert to get the matrix we need */
-  gsl_linalg_LU_decomp( fisher, p, &signum );
-  gsl_linalg_LU_invert( fisher, p, shape );
+  XLAL_CALLGSL( gslStatus = gsl_linalg_LU_decomp( fisher, p, &signum ) );
+  if ( gslStatus == GSL_SUCCESS )
+  {
+    XLAL_CALLGSL( gslStatus = gsl_linalg_LU_invert( fisher, p, shape ) );
+  }
 
   gsl_matrix_free( fisher );
   gsl_permutation_free( p );
-  return shape;
+
+  if ( gslStatus != GSL_SUCCESS )
+    XLAL_ERROR( func, XLAL_EFUNC );
+
+  return XLAL_SUCCESS;
 }
 
 
@@ -171,6 +239,11 @@ gsl_vector * XLALGetPositionFromSnglInspiral( SnglInspiralTable *table )
   REAL8 fLow = 0.0;
   REAL8 mtotal = 0.0;
 
+#ifndef LAL_NDEBUG
+  if ( !table )
+    XLAL_ERROR_NULL( func, XLAL_EFAULT );
+#endif
+
   XLAL_CALLGSL( position = gsl_vector_alloc( 3 ) );
   if ( !position )
     XLAL_ERROR_NULL( func, XLAL_ENOMEM );
@@ -182,7 +255,7 @@ gsl_vector * XLALGetPositionFromSnglInspiral( SnglInspiralTable *table )
   fLow =  5.0 / (256.0 * table->eta * pow(mtotal, 5.0/3.0) * table->tau0 );
   fLow = pow(fLow, 3.0/8.0) / LAL_PI;
   freqRatio0 = pow(fLow, 8.0/3.0);
-  freqRatio3 = pow(fLow, 5.0/3.0); 
+  freqRatio3 = pow(fLow, 5.0/3.0);
 
   gsl_vector_set( position, 0, endTime );
   gsl_vector_set( position, 1, freqRatio0*table->tau0 );
@@ -195,10 +268,15 @@ gsl_vector * XLALGetPositionFromSnglInspiral( SnglInspiralTable *table )
 /* Sets the time in the position vector to the given value */
 /* <lalVerbatim file="GetErrorMatrixFromSnglInspiralCP"> */
 int XLALSetTimeInPositionVector( gsl_vector *position,
-                                 REAL8 time)
+                                 REAL8 timeShift)
 /* </lalVerbatim> */
 {
-    gsl_vector_set( position, 0, time );
+#ifndef LAL_NDEBUG
+    if ( !position )
+      XLAL_ERROR( "XLALSetTimeInPositionVector", XLAL_EFAULT );
+#endif
+
+    gsl_vector_set( position, 0, timeShift );
 
     return XLAL_SUCCESS;
 }

@@ -128,20 +128,20 @@ int main(int argc, char *argv[])
     }
 
 
-  
+
   for (i = 1; i < num_data; ++i)
     {
       if (lalDebugLevel > 2)
         {
           printf("TestLeapSecs: BEFORE LEAP SECOND ADDED\n");
         }
-      
+
       gpsTime.gpsSeconds = leapsec_data[i].gps - 1;
       LALLeapSecs(&status, &gps_utc, &gpsTime, &formatAndAcc);
       if (lalDebugLevel > 0)
         printf("\tGPS = %9d;    GPS-UTC = %d\n", gpsTime.gpsSeconds,
                gps_utc);
-            
+
       if (status.statusCode && lalDebugLevel > 0)
         {
           fprintf(stderr, "TestLeapSecs: LALLeapSecs() failed, line %i, %s\n",
@@ -166,7 +166,7 @@ int main(int argc, char *argv[])
         {
           printf("TestLeapSecs: AFTER LEAP SECOND ADDED\n");
         }
-      
+
       gpsTime.gpsSeconds += 2;
       LALLeapSecs(&status, &gps_utc, &gpsTime, &formatAndAcc);
       if (lalDebugLevel > 0)
@@ -230,20 +230,20 @@ int main(int argc, char *argv[])
    * Test TAI-UTC
    */
   formatAndAcc.format = LALLEAPSEC_TAIUTC;
-  
+
   for (i = 1; i < num_data; ++i)
     {
       if (lalDebugLevel > 2)
         {
           printf("TestLeapSecs: BEFORE LEAP SECOND ADDED\n");
         }
-      
+
       gpsTime.gpsSeconds = leapsec_data[i].gps - 1;
       LALLeapSecs(&status, &tai_utc, &gpsTime, &formatAndAcc);
       if (lalDebugLevel > 0)
         printf("\tGPS = %9d;    TAI-UTC = %d\n", gpsTime.gpsSeconds,
                tai_utc);
-            
+
       if (status.statusCode && lalDebugLevel > 0)
         {
           fprintf(stderr, "TestLeapSecs: LALLeapSecs() failed, line %i, %s\n",
@@ -268,7 +268,7 @@ int main(int argc, char *argv[])
         {
           printf("TestLeapSecs: AFTER LEAP SECOND ADDED\n");
         }
-      
+
       gpsTime.gpsSeconds += 2;
       LALLeapSecs(&status, &tai_utc, &gpsTime, &formatAndAcc);
       if (lalDebugLevel > 0)

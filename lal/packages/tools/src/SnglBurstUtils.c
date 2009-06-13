@@ -17,14 +17,14 @@
 *  MA  02111-1307  USA
 */
 
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: SnglBurstUtils.c
  *
  * Author: Brown, D. A.  Brady, P. R. Ray Majumder, S. K. and Cannon, K. C.
- * 
+ *
  * Revision: $Id$
- * 
+ *
  *-----------------------------------------------------------------------
  */
 
@@ -32,7 +32,7 @@
 <lalVerbatim file="SnglBurstUtilsCV">
 Author: Brown, D. A. Brady, P. R. Ray Majumder, S. K and Cannon, K. C.
 $Id$
-</lalVerbatim> 
+</lalVerbatim>
 #endif
 
 #include <string.h>
@@ -74,7 +74,7 @@ NRCSID( SNGLBURSTUTILSC, "$Id$" );
 
 \subsubsection*{Notes}
 %% Any relevant notes.
- 
+
 \vfill{\footnotesize\input{SnglBurstUtilsCV}}
 
 </lalLaTeX>
@@ -88,13 +88,13 @@ NRCSID( SNGLBURSTUTILSC, "$Id$" );
 
 static INT8 start_time(const SnglBurst *x)
 {
-	return(XLALGPStoINT8(&x->start_time));
+	return(XLALGPSToINT8NS(&x->start_time));
 }
 
 
 static INT8 peak_time(const SnglBurst *x)
 {
-	return(XLALGPStoINT8(&x->peak_time));
+	return(XLALGPSToINT8NS(&x->peak_time));
 }
 
 
@@ -105,7 +105,7 @@ static REAL4 lo_freq(const SnglBurst *x)
 
 
 /**
- * Free a sngl_burst 
+ * Free a sngl_burst
  */
 
 
@@ -398,7 +398,7 @@ void XLALStringBurstCluster(
 
 	if(snrb > snra) {
 		a->central_freq =  b->central_freq;
-		a->bandwidth = b->bandwidth; 
+		a->bandwidth = b->bandwidth;
 		a->start_time = b->start_time;
 		a->duration = b->duration;
 		a->amplitude = b->amplitude;

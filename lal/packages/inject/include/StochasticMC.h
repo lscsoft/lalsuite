@@ -22,7 +22,7 @@
 <lalVerbatim file="StochasticMCHV">
 Author: Tania Regimbau, Sukanta Bose, Jeff Noel
 $Id$
-</lalVerbatim> 
+</lalVerbatim>
 
 <lalLaTeX>
 \section{Header \texttt{StochasticMC.h}}
@@ -32,7 +32,7 @@ Routine used by the stochastic DSO to do software injection.
 \begin{verbatim}
 #include <lal/StochasticMC.h>
 \end{verbatim}
-\noindent 
+\noindent
 
 \subsection*{Error conditions}
 \input{StochasticMCHE}
@@ -53,7 +53,7 @@ extern "C" {
 #endif
 
   NRCSID( STOCHASTICMCH, "$Id$" );
-  
+
 /***************** <lalErrTable file="StochasticMCHE"> */
 
 #define STOCHASTICMCH_ENULLP        1
@@ -66,13 +66,13 @@ extern "C" {
 
 
 #define STOCHASTICMCH_MSGENULLP       "Null pointer"
-#define STOCHASTICMCH_MSGENULLLEN     "Negative or zero length for data member of time series" 
-#define STOCHASTICMCH_MSGENULLSEG      "Negative or zero number of segment" 
-#define STOCHASTICMCH_MSGENULLSRATE    "Negative or zero sampling rate" 
+#define STOCHASTICMCH_MSGENULLLEN     "Negative or zero length for data member of time series"
+#define STOCHASTICMCH_MSGENULLSEG      "Negative or zero number of segment"
+#define STOCHASTICMCH_MSGENULLSRATE    "Negative or zero sampling rate"
 #define STOCHASTICMCH_MSGENEGFMIN      "negative start frequency"
 #define STOCHASTICMCH_MSGEMMEPOCH      "Mismatch in epochs"
 #define STOCHASTICMCH_MSGEMMUNITS      "Mismatch in units"
- 
+
 /************************************ </lalErrTable> */
 
   typedef struct tagStochasticMCInput {
@@ -88,7 +88,7 @@ extern "C" {
       CHAR *catalog1;
       CHAR *catalog2;
   } StochasticMCSInput;
-   
+
   typedef struct tagStochasticMCParams {
     UINT4 lengthseg;
     UINT4 numseg;
@@ -100,15 +100,15 @@ extern "C" {
     REAL8 omegaRef;
     REAL8 alpha;
     INT4 site1;
-    INT4 site2; 
-    
+    INT4 site2;
+
   } StochasticMCParams;
 
 
 
  void
  LALStochasticMCDso( LALStatus                  *status,
-		  SSSimStochBGOutput         *output, 
+		  SSSimStochBGOutput         *output,
 		  StochasticMCInput          *input,
 		  StochasticMCParams         *params );
 
@@ -122,4 +122,4 @@ extern "C" {
 #endif
 
 #endif /* _STOCHASTICMC_H */
-  
+

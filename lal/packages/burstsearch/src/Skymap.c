@@ -119,9 +119,9 @@ static void cross(double a[3], double b[3], double c[3])
     a[2] = b[0] * c[1] - b[1] * c[0];
 }
 
-static void set32(double a[3][2], 
-           double v00, double v01, 
-           double v10, double v11, 
+static void set32(double a[3][2],
+           double v00, double v01,
+           double v10, double v11,
            double v20, double v21)
 {
     set2(a[0], v00, v01);
@@ -233,18 +233,18 @@ static double det22(double a[2][2])
  * ever explicitly constructed their exponentials.
  */
 
-/* 
- * FIXME: when the C99 transition is complete, remove log1p declaration 
+/*
+ * FIXME: when the C99 transition is complete, remove log1p declaration
  */
 
-/* 
+/*
  * declare the C99 function log1p to suppress warning
  *
  * log1p(x) = log(1 + x), but is more accurate for |x| << 1
  */
 double log1p(double x);
 
-/* 
+/*
  * XLALSkymapLogSumExp(a, b) computes log(exp(a) + exp(b)) but will not
  * overflow for a or b > ~300
  *
@@ -255,7 +255,7 @@ double log1p(double x);
  *     = a + log(1 + exp(b - a))
  *     = a + log1p(exp(b - a))
  *
- * where b - a < 0 and exp(b - a) cannot overflow (though it may 
+ * where b - a < 0 and exp(b - a) cannot overflow (though it may
  * underflow).
  *
  * And for a < b
@@ -268,8 +268,8 @@ double log1p(double x);
  * If neither a < b nor a > b, we either have equality or both values
  * are (the same) plus or minus infinity.  Forming (a - b) in the case of
  * infinities results in a NaN, so we must use a third expression
- * 
- * log(exp(a) + exp(b)) 
+ *
+ * log(exp(a) + exp(b))
  *     = log(exp(a) + exp(a))
  *     = log(2 * exp(a))
  *     = log(2) + a
@@ -294,7 +294,7 @@ static double* findmax(double* begin, double* end)
     double* m;
     m = begin;
     for (p = begin; p != end; ++p)
-	if (*m < *p) 
+	if (*m < *p)
 	    m = p;
     return m;
 }
@@ -358,13 +358,13 @@ static void construct_pixel(XLALSkymapPixelType* pixel)
 /* properties of a network and a sample rate */
 
 /*
- * These functions convert between integer time delays that index a 
+ * These functions convert between integer time delays that index a
  * conceptual three-dimensional array, and a linear index corresponding
  * to how the array is actually packed in memory
  *
- * For a simple L x M x N array, the indices (i, j, k) map to a linear 
+ * For a simple L x M x N array, the indices (i, j, k) map to a linear
    index
- *     
+ *
  *     p = (M * N) * i + N * j + k
  *
  * To store pixels, we have an array with
@@ -408,12 +408,12 @@ void XLALSkymapDelaysFromDirection(XLALSkymapPlanType* plan, int delays[3], doub
 {
     /* compute the delays rounded to the nearest sample */
     delays[0] = (int) floor((
-        site_time(&plan->site[1], direction) - 
-        site_time(&plan->site[0], direction)) * 
+        site_time(&plan->site[1], direction) -
+        site_time(&plan->site[0], direction)) *
         plan->sampleFrequency + 0.5);
     delays[1] = (int) floor((
-        site_time(&plan->site[2], direction) - 
-        site_time(&plan->site[0], direction)) * 
+        site_time(&plan->site[2], direction) -
+        site_time(&plan->site[0], direction)) *
         plan->sampleFrequency + 0.5);
     delays[2] = dot3(plan->siteNormal, direction) < 0 ? 0 : 1;
 }
@@ -422,7 +422,7 @@ int XLALSkymapIndexFromDirection(XLALSkymapPlanType* plan, double direction[3])
 {
     int i[3];
     XLALSkymapDelaysFromDirection(plan, i, direction);
-    return index_from_delays(plan, i[0], i[1], i[2]); 
+    return index_from_delays(plan, i[0], i[1], i[2]);
 }
 
 XLALSkymapPlanType* XLALSkymapConstructPlanMN(int sampleFrequency, int m, int n)
@@ -435,21 +435,21 @@ XLALSkymapPlanType* XLALSkymapConstructPlanMN(int sampleFrequency, int m, int n)
       XLALPrintError("%s(): invalid sample frequency %d\n", func, sampleFrequency);
       XLAL_ERROR_NULL(func, XLAL_EINVAL);
     }
-    
+
     if(m <= 0 || n <= 0)
     {
         XLALPrintError("%s(): invalid raster size %d x %d\n", func, m, n);
         XLAL_ERROR_NULL(func, XLAL_EINVAL);
     }
-  
+
     plan = (XLALSkymapPlanType*) XLALMalloc(sizeof(*plan));
-    
+
     /* possible runtime error */
     if (!plan)
     {
       XLAL_ERROR_NULL(func, XLAL_EFUNC);
     }
-  
+
     /* define the sample frequency */
     plan->sampleFrequency = sampleFrequency;
     plan->m = m;
@@ -457,7 +457,7 @@ XLALSkymapPlanType* XLALSkymapConstructPlanMN(int sampleFrequency, int m, int n)
 
     /* set up the hanford-livingston-virgo network */
     construct_hlv(plan->site);
-    
+
     {   /* compute the baselines */
         double v_hl[3], v_hv[3], v_lv[3];
         sub3(v_hl, plan->site[1].location, plan->site[0].location);
@@ -467,15 +467,15 @@ XLALSkymapPlanType* XLALSkymapConstructPlanMN(int sampleFrequency, int m, int n)
         div3(v_hv, v_hv, LAL_C_SI);
         div3(v_lv, v_lv, LAL_C_SI);
         cross(plan->siteNormal, v_hl, v_hv);
-        /* compute the maximum delay rounded to nearest sample */ 
+        /* compute the maximum delay rounded to nearest sample */
         plan->hl = (int) floor(nrm3(v_hl) * plan->sampleFrequency + 0.5);
         plan->hv = (int) floor(nrm3(v_hv) * plan->sampleFrequency + 0.5);
         plan->lv = (int) floor(nrm3(v_lv) * plan->sampleFrequency + 0.5);
     }
 
-    plan->pixelCount = (plan->hl * 2 + 1) * (plan->hv * 2 + 1) * 2;    
+    plan->pixelCount = (plan->hl * 2 + 1) * (plan->hv * 2 + 1) * 2;
     plan->pixel = (XLALSkymapPixelType*) XLALMalloc(sizeof(*plan->pixel) * plan->pixelCount);
-    
+
     /* possible runtime error */
     if (!plan->pixel)
     {
@@ -526,9 +526,9 @@ XLALSkymapPlanType* XLALSkymapConstructPlanMN(int sampleFrequency, int m, int n)
                 /* normalize the area */
                 plan->pixel[i].area /= area;
                 for (j = 0; j != 3; ++j)
-                {   
+                {
                     site_response(plan->pixel[i].f[j], &plan->site[j], plan->pixel[i].direction);
-                } 
+                }
             }
             else
             {
@@ -537,7 +537,7 @@ XLALSkymapPlanType* XLALSkymapConstructPlanMN(int sampleFrequency, int m, int n)
             }
         }
     }
-    
+
     return plan;
 }
 
@@ -557,7 +557,7 @@ static void compute_kernel(XLALSkymapPlanType* plan, int index, double sigma, do
     double fiwfsfwa[3][2];
     double wfsfwiwfsfwa[2][2];
     int i, j;
-    
+
     transpose32(f, plan->pixel[index].f);
     for (i = 0; i != 3; ++i)
     {
@@ -566,7 +566,7 @@ static void compute_kernel(XLALSkymapPlanType* plan, int index, double sigma, do
         wfsfw[1][1] += sq(f[1][i] * w[i]);
     }
     wfsfw[1][0] = wfsfw[0][1];
-    
+
     set22(wfsfwa, wfsfw[0][0] + 1/sq(sigma), wfsfw[0][1]    ,
     wfsfw[1][0]    , wfsfw[1][1] + 1/sq(sigma));
     inv22(iwfsfwa, wfsfwa);
@@ -579,7 +579,7 @@ static void compute_kernel(XLALSkymapPlanType* plan, int index, double sigma, do
             kernel[i][j] *= w[i] * w[j];
         }
     }
-    
+
     mul222(wfsfwiwfsfwa, wfsfw, iwfsfwa);
     wfsfwiwfsfwa[0][0] -= 1;
     wfsfwiwfsfwa[1][1] -= 1;
@@ -596,7 +596,7 @@ static void compute_kernel2(XLALSkymapPlanType* plan, int index, double sigma, d
     double wfsfwiwfsfwa[2][2];
     int i, j;
     double w2[2];
-    
+
     /* transpose32(f, plan->pixel[index].f); */
     if (x[0])
     {
@@ -615,7 +615,7 @@ static void compute_kernel2(XLALSkymapPlanType* plan, int index, double sigma, d
         {
             /* we must have virgo data */
             f[0][1] = plan->pixel[index].f[2][0];
-            f[1][1] = plan->pixel[index].f[2][1];            
+            f[1][1] = plan->pixel[index].f[2][1];
             w2[1] = w[2];
         }
     }
@@ -629,7 +629,7 @@ static void compute_kernel2(XLALSkymapPlanType* plan, int index, double sigma, d
         f[1][1] = plan->pixel[index].f[2][1];
         w2[1] = w[2];
     }
-    
+
     for (i = 0; i != 2; ++i)
     {
         wfsfw[0][0] += sq(f[0][i] * w2[i]);
@@ -637,7 +637,7 @@ static void compute_kernel2(XLALSkymapPlanType* plan, int index, double sigma, d
         wfsfw[1][1] += sq(f[1][i] * w2[i]);
     }
     wfsfw[1][0] = wfsfw[0][1];
-    
+
     set22(wfsfwa, wfsfw[0][0] + 1/sq(sigma), wfsfw[0][1]    ,
     wfsfw[1][0]    , wfsfw[1][1] + 1/sq(sigma));
     inv22(iwfsfwa, wfsfwa);
@@ -650,7 +650,7 @@ static void compute_kernel2(XLALSkymapPlanType* plan, int index, double sigma, d
             kernel[i][j] *= w2[i] * w2[j];
         }
     }
-    
+
     mul222(wfsfwiwfsfwa, wfsfw, iwfsfwa);
     wfsfwiwfsfwa[0][0] -= 1;
     wfsfwiwfsfwa[1][1] -= 1;
@@ -666,7 +666,7 @@ static void compute_kernel1(XLALSkymapPlanType* plan, int index, double sigma, d
     double fiwfsfwa[1][2];
     double wfsfwiwfsfwa[2][2];
     int i;
-    
+
     if (x[0])
     {
         i = 0;
@@ -682,24 +682,24 @@ static void compute_kernel1(XLALSkymapPlanType* plan, int index, double sigma, d
             i = 2;
         }
     }
-    
+
     /* transpose32(f, plan->pixel[index].f); */
     f[0][0] = plan->pixel[index].f[i][0];
     f[1][0] = plan->pixel[index].f[i][1];
-    
+
     wfsfw[0][0] += sq(f[0][0] * w[i]);
     wfsfw[0][1] += f[0][0] * f[1][0] * sq(w[i]);
     wfsfw[1][1] += sq(f[1][0] * w[i]);
 
     wfsfw[1][0] = wfsfw[0][1];
-    
+
     set22(wfsfwa, wfsfw[0][0] + 1/sq(sigma), wfsfw[0][1]    ,
     wfsfw[1][0]    , wfsfw[1][1] + 1/sq(sigma));
     inv22(iwfsfwa, wfsfwa);
     mul122(fiwfsfwa, plan->pixel[index].f, iwfsfwa);
     mul121(kernel, fiwfsfwa, f);
     kernel[0][0] *= w[i] * w[i];
-    
+
     mul222(wfsfwiwfsfwa, wfsfw, iwfsfwa);
     wfsfwiwfsfwa[0][0] -= 1;
     wfsfwiwfsfwa[1][1] -= 1;
@@ -711,10 +711,10 @@ int XLALSkymapGlitchHypothesis(XLALSkymapPlanType* plan, double *p, double sigma
     /* static const char func[] = "XLALSkymapGlitchHypothesis"; */
     double* buffer;
     int i;
-    
+
     /* allocate working memory */
     buffer = (double*) XLALMalloc(sizeof(double)* max(max(end[0], end[1]), end[2]));
-        
+
     /* analyze each detector individually */
     for (i = 0; i != 3; ++i)
     {
@@ -743,8 +743,8 @@ int XLALSkymapGlitchHypothesis(XLALSkymapPlanType* plan, double *p, double sigma
             /* if there is no data we draw no conclusion */
             p[i] = 0.0;
         }
-    }    
-    XLALFree(buffer);    
+    }
+    XLALFree(buffer);
     return 0;
 }
 
@@ -760,23 +760,23 @@ int XLALSkymapSignalHypothesis(XLALSkymapPlanType* plan, double* p, double sigma
     delay_limits[1] =  plan->hl;
     delay_limits[2] = -plan->hv;
     delay_limits[3] =  plan->hv;
-    delay_limits[4] = -plan->lv;
-    delay_limits[5] =  plan->lv;    
+    delay_limits[4] = -plan->lv - 1;
+    delay_limits[5] =  plan->lv + 1;
     return XLALSkymapSignalHypothesisWithLimits(plan, p, sigma, w, begin, end, x, counts, modes, delay_limits);
 }
 
 int XLALSkymapSignalHypothesisWithLimits(XLALSkymapPlanType* plan, double* p, double sigma, double w[3], int begin[3], int end[3], double** x, int *counts, int *modes, int delay_limits[6])
 {
     /* static const char func[] = "XLALSkymapSignalHypothesis"; */
-    
+
     double* buffer;
     int hl;
     double total_normalization;
-    
+
     /* double* times[3]; Arrival time posterior for each detector */
-    
+
     total_normalization = 0;
-    
+
     buffer = 0;
     if (x[0])
     {
@@ -784,7 +784,7 @@ int XLALSkymapSignalHypothesisWithLimits(XLALSkymapPlanType* plan, double* p, do
     }
     else
     {
-        if (x[1]) 
+        if (x[1])
         {
             buffer = (double*) XLALMalloc(sizeof(double) * (end[1] - begin[1]));
         }
@@ -799,7 +799,7 @@ int XLALSkymapSignalHypothesisWithLimits(XLALSkymapPlanType* plan, double* p, do
                 return 1;
             }
         }
-    }    
+    }
 
     /* Initialize the arrival time posterior for each detector
     {
@@ -818,17 +818,17 @@ int XLALSkymapSignalHypothesisWithLimits(XLALSkymapPlanType* plan, double* p, do
         }
     }
      */
-    
+
     /* loop over hanford-livingston delay */
-    for (hl = -plan->hl; hl <= plan->hl; ++hl) 
+    for (hl = -plan->hl; hl <= plan->hl; ++hl)
     {
         /* loop over hanford-virgo delay */
         int hv;
-        for (hv = -plan->hv; hv <= plan->hv; ++hv) 
+        for (hv = -plan->hv; hv <= plan->hv; ++hv)
         {
             /* loop over hemisphere */
             int hemisphere;
-            for (hemisphere = 0; hemisphere != 2; ++hemisphere) 
+            for (hemisphere = 0; hemisphere != 2; ++hemisphere)
             {
                 /* compute the index into the buffers from delays */
                 int index = index_from_delays(plan, hl, hv, hemisphere);
@@ -852,33 +852,33 @@ int XLALSkymapSignalHypothesisWithLimits(XLALSkymapPlanType* plan, double* p, do
                     &&
                     ((hv - hl) <= delay_limits[5])
                     )
-                { 
+                {
                     /* compute the begin and end times */
                     int b;
                     int e;
-                    
+
                     if (x[0])
                     { /* if we have hanford data */
                         b = begin[0];
                         e = end[0];
                         if (x[1])
                         { /* if we have livingston data */
-                            if (b + hl < begin[1]) 
+                            if (b + hl < begin[1])
                             {   /* livingston constrains the begin time */
                                 b = begin[1] - hl;
                             }
-                            if (e + hl > end[1]) 
+                            if (e + hl > end[1])
                             {   /* livingston constrains the end time */
                                 e = end[1] - hl;
                             }
-                        } 
+                        }
                         if (x[2])
                         { /* if we have virgo data */
-                            if (b + hv < begin[2]) 
+                            if (b + hv < begin[2])
                             {   /* virgo constrains the begin time */
                                 b = begin[2] - hv;
                             }
-                            if (e + hv > end[2]) 
+                            if (e + hv > end[2])
                             {   /* virgo constrains the end time */
                                 e = end[2] - hv;
                             }
@@ -892,11 +892,11 @@ int XLALSkymapSignalHypothesisWithLimits(XLALSkymapPlanType* plan, double* p, do
                             e = end[1] -hl;
                             if (x[2])
                             { /* if we have virgo data */
-                                if (b + hv < begin[2]) 
+                                if (b + hv < begin[2])
                                 {   /* virgo constrains the begin time */
                                     b = begin[2] - hv;
                                 }
-                                if (e + hv > end[2]) 
+                                if (e + hv > end[2])
                                 {   /* virgo constrains the end time */
                                     e = end[2] - hv;
                                 }
@@ -916,9 +916,9 @@ int XLALSkymapSignalHypothesisWithLimits(XLALSkymapPlanType* plan, double* p, do
                             }
                         }
                     }
-                    
+
                     /* test if there is enough data to analyze */
-                    if (b < e) 
+                    if (b < e)
                     {
                         double log_normalization;
                         double *hr, *lr, *vr, *hi, *li, *vi;
@@ -926,7 +926,7 @@ int XLALSkymapSignalHypothesisWithLimits(XLALSkymapPlanType* plan, double* p, do
                         double* q;
                         double* m;
 
-                        /* create offset pointers to simplify inner loop */                        
+                        /* create offset pointers to simplify inner loop */
                         hr = x[0] + b     ; /* hanford real */
                         lr = x[1] + b + hl; /* livingston real */
                         vr = x[2] + b + hv; /* virgo real */
@@ -935,9 +935,9 @@ int XLALSkymapSignalHypothesisWithLimits(XLALSkymapPlanType* plan, double* p, do
                         vi = x[5] + b + hv; /* virgo imag */
 
                         stop = x[0] + e; /* hanford real stop */
-                        
+
                         q = buffer;
-                        
+
                         if (x[0])
                         {
                             if (x[1])
@@ -947,9 +947,9 @@ int XLALSkymapSignalHypothesisWithLimits(XLALSkymapPlanType* plan, double* p, do
                                     /* hanford-livingston-virgo analysis */
                                     double kernel[3][3];
                                     /* compute the kernel */
-                                    compute_kernel(plan, index, sigma, w, kernel, &log_normalization);   
+                                    compute_kernel(plan, index, sigma, w, kernel, &log_normalization);
                                     /* loop over arrival times */
-                                    for (; hr != stop; ++hr, ++lr, ++vr, ++hi, ++li, ++vi, ++q) 
+                                    for (; hr != stop; ++hr, ++lr, ++vr, ++hi, ++li, ++vi, ++q)
                                     {
                                         *q = 0.5 * (
                                                 kernel[0][0] * (sq(*hr) + sq(*hi)) +
@@ -966,16 +966,16 @@ int XLALSkymapSignalHypothesisWithLimits(XLALSkymapPlanType* plan, double* p, do
                                     /* hanford-livingston analysis */
                                     double kernel[2][2];
                                     /* compute the kernel */
-                                    compute_kernel2(plan, index, sigma, w, kernel, &log_normalization, x);   
+                                    compute_kernel2(plan, index, sigma, w, kernel, &log_normalization, x);
                                     /* loop over arrival times */
-                                    for (; hr != stop; ++hr, ++lr, ++vr, ++hi, ++li, ++vi, ++q) 
+                                    for (; hr != stop; ++hr, ++lr, ++vr, ++hi, ++li, ++vi, ++q)
                                     {
                                         *q = 0.5 * (
                                                 kernel[0][0] * (sq(*hr) + sq(*hi)) +
                                                 kernel[0][1] * (*hr * *lr + *hi * *li) * 2 +
                                                 kernel[1][1] * (sq(*lr) + sq(*li))
                                                 );
-                                    } /* end loop over arrival times */                                   
+                                    } /* end loop over arrival times */
                                 }
                             }
                             else
@@ -985,9 +985,9 @@ int XLALSkymapSignalHypothesisWithLimits(XLALSkymapPlanType* plan, double* p, do
                                     /* hanford-virgo analysis */
                                     double kernel[2][2];
                                     /* compute the kernel */
-                                    compute_kernel2(plan, index, sigma, w, kernel, &log_normalization, x);   
+                                    compute_kernel2(plan, index, sigma, w, kernel, &log_normalization, x);
                                     /* loop over arrival times */
-                                    for (; hr != stop; ++hr, ++lr, ++vr, ++hi, ++li, ++vi, ++q) 
+                                    for (; hr != stop; ++hr, ++lr, ++vr, ++hi, ++li, ++vi, ++q)
                                     {
                                         *q = 0.5 * (
                                                 kernel[0][0] * (sq(*hr) + sq(*hi)) +
@@ -1001,14 +1001,14 @@ int XLALSkymapSignalHypothesisWithLimits(XLALSkymapPlanType* plan, double* p, do
                                     /* hanford analysis */
                                     double kernel[1][1];
                                     /* compute the kernel */
-                                    compute_kernel1(plan, index, sigma, w, kernel, &log_normalization, x);   
+                                    compute_kernel1(plan, index, sigma, w, kernel, &log_normalization, x);
                                     /* loop over arrival times */
-                                    for (; hr != stop; ++hr, ++lr, ++vr, ++hi, ++li, ++vi, ++q) 
+                                    for (; hr != stop; ++hr, ++lr, ++vr, ++hi, ++li, ++vi, ++q)
                                     {
                                         *q = 0.5 * (
                                                 kernel[0][0] * (sq(*hr) + sq(*hi))
                                                 );
-                                    } /* end loop over arrival times */                                   
+                                    } /* end loop over arrival times */
                                 }
                             }
                         }
@@ -1021,9 +1021,9 @@ int XLALSkymapSignalHypothesisWithLimits(XLALSkymapPlanType* plan, double* p, do
                                     /* livingston-virgo analysis */
                                     double kernel[2][2];
                                     /* compute the kernel */
-                                    compute_kernel2(plan, index, sigma, w, kernel, &log_normalization, x);   
+                                    compute_kernel2(plan, index, sigma, w, kernel, &log_normalization, x);
                                     /* loop over arrival times */
-                                    for (; hr != stop; ++hr, ++lr, ++vr, ++hi, ++li, ++vi, ++q) 
+                                    for (; hr != stop; ++hr, ++lr, ++vr, ++hi, ++li, ++vi, ++q)
                                     {
                                         *q = 0.5 * (
                                                 kernel[0][0] * (sq(*lr) + sq(*li)) +
@@ -1037,9 +1037,9 @@ int XLALSkymapSignalHypothesisWithLimits(XLALSkymapPlanType* plan, double* p, do
                                     /* livingston analysis */
                                     double kernel[1][1];
                                     /* compute the kernel */
-                                    compute_kernel1(plan, index, sigma, w, kernel, &log_normalization, x);   
+                                    compute_kernel1(plan, index, sigma, w, kernel, &log_normalization, x);
                                     /* loop over arrival times */
-                                    for (; hr != stop; ++hr, ++lr, ++vr, ++hi, ++li, ++vi, ++q) 
+                                    for (; hr != stop; ++hr, ++lr, ++vr, ++hi, ++li, ++vi, ++q)
                                     {
                                         *q = 0.5 * (
                                                 kernel[0][0] * (sq(*lr) + sq(*li))
@@ -1054,9 +1054,9 @@ int XLALSkymapSignalHypothesisWithLimits(XLALSkymapPlanType* plan, double* p, do
                                     /* virgo analysis */
                                     double kernel[1][1];
                                     /* compute the kernel */
-                                    compute_kernel1(plan, index, sigma, w, kernel, &log_normalization, x);   
+                                    compute_kernel1(plan, index, sigma, w, kernel, &log_normalization, x);
                                     /* loop over arrival times */
-                                    for (; hr != stop; ++hr, ++lr, ++vr, ++hi, ++li, ++vi, ++q) 
+                                    for (; hr != stop; ++hr, ++lr, ++vr, ++hi, ++li, ++vi, ++q)
                                     {
                                         *q = 0.5 * (
                                                 kernel[2][2] * (sq(*vr) + sq(*vi))
@@ -1070,7 +1070,7 @@ int XLALSkymapSignalHypothesisWithLimits(XLALSkymapPlanType* plan, double* p, do
                                 }
                             }
                         }
-                        
+
                         /* compute the plausibility for the direction */
                         m = findmax(buffer, buffer + e - b);
                         p[index] =
@@ -1078,7 +1078,7 @@ int XLALSkymapSignalHypothesisWithLimits(XLALSkymapPlanType* plan, double* p, do
                                 log_normalization * 2 - log(e - b);
                         counts[index] = e - b;
                         modes[index] = b + (m - buffer);
-                        
+
                         /* Compute the arrival time posterior for each detector
                         {
                             int i;
@@ -1089,7 +1089,7 @@ int XLALSkymapSignalHypothesisWithLimits(XLALSkymapPlanType* plan, double* p, do
                                 times[0][i] = XLALSkymapLogSumExp(times[0][i], np);
                                 times[1][i + hl] = XLALSkymapLogSumExp(times[1][i + hl], np);
                                 times[2][i + hv] = XLALSkymapLogSumExp(times[2][i + hv], np);
-                            }                            
+                            }
                         }
                         */
                     } /* end test if there is enough data to analyze */
@@ -1097,31 +1097,31 @@ int XLALSkymapSignalHypothesisWithLimits(XLALSkymapPlanType* plan, double* p, do
             } /* end loop over hemisphere */
         } /* end loop over hanford-virgo delay */
     } /* end loop over hanford-livingston delay */
-        
+
     /* release working memory */
     XLALFree(buffer);
     return 0;
 }
 
-int XLALSkymapEllipticalHypothesis(XLALSkymapPlanType* plan, double* p, double sigma, double w[3], int begin[3], int end[3], double** x, int* bests) 
+int XLALSkymapEllipticalHypothesis(XLALSkymapPlanType* plan, double* p, double sigma, double w[3], int begin[3], int end[3], double** x, int* bests)
 {
     /* indicate that a detector has no data by x[i] == 0 */
-    
+
     /* static const char func[] = "XLALSkymapEllipticalHypothesis"; */
-    
+
     int *counts;
     int *modes;
     double c;
     int i;
-    
+
     counts = (int *) XLALMalloc(sizeof(int) * plan->pixelCount);
     modes = (int *) XLALMalloc(sizeof(int) * plan->pixelCount);
-    
+
     XLALSkymapSignalHypothesis(plan, p, sigma, w, begin, end, x, counts, modes);
-    
+
     /* the prior of each pixel is the product of its area and the length
      * arrival times it represents */
-    
+
     /* compute the normalization factor for the prior */
     c = 0;
     for (i = 0; i != plan->pixelCount; ++i)
@@ -1140,8 +1140,8 @@ int XLALSkymapEllipticalHypothesis(XLALSkymapPlanType* plan, double* p, double s
         }
     }
     /* now the sum over the skymap is the posterior odds of a signal from
-     * any direction */ 
-    
+     * any direction */
+
     if (bests) {
         /* find the most likely arrival times */
         double *a;
@@ -1152,26 +1152,26 @@ int XLALSkymapEllipticalHypothesis(XLALSkymapPlanType* plan, double* p, double s
         printf("i = %d\n", j);
         delays_from_index(plan, j, delays);
         printf("delays[] = { %d, %d, %d}\n", delays[0], delays[1], delays[2]);
-        printf("index_from_delays(delays) = %d\n", index_from_delays(plan, delays[0], delays[1], delays[2])); 
+        printf("index_from_delays(delays) = %d\n", index_from_delays(plan, delays[0], delays[1], delays[2]));
         bests[0] = modes[j];
         bests[1] = bests[0] + delays[0];
         bests[2] = bests[0] + delays[1];
-        bests[3] = delays[2];        
+        bests[3] = delays[2];
     }
-    
+
     XLALFree(modes);
     XLALFree(counts);
-        
+
     return 0;
 }
 
 
-void XLALSkymapSum(XLALSkymapPlanType* plan, double* a, const double* b, const double* c) 
+void XLALSkymapSum(XLALSkymapPlanType* plan, double* a, const double* b, const double* c)
 {
     int i;
-    for (i = 0; i != plan->pixelCount; ++i) 
+    for (i = 0; i != plan->pixelCount; ++i)
     {   /* check to see if the pixel is valid */
-        if (plan->pixel[i].area > 0) 
+        if (plan->pixel[i].area > 0)
         {   /* sum the log-represented values */
             a[i] = XLALSkymapLogSumExp(b[i], c[i]);
         }
@@ -1202,7 +1202,7 @@ int XLALSkymapRender(double* q, XLALSkymapPlanType* plan, double* p)
 {
     static const char func[] = "XLALSkymapRender";
     int i, j;
-    
+
     /* scan over the sky */
     for (i = 0; i != plan->m; ++i)
     {
@@ -1229,17 +1229,17 @@ int XLALSkymapRender(double* q, XLALSkymapPlanType* plan, double* p)
                 else
                 {
                     XLALPrintError("%s(): attempted to render from a pixel with value +inf or nan to (%i, %j)\n", func, i, j);
-                    XLAL_ERROR(func, XLAL_EINVAL);                   
+                    XLAL_ERROR(func, XLAL_EINVAL);
                 }
             }
-            else                
+            else
             {
                 XLALPrintError("%s(): attempted to render from a pixel with zero area to (%i, %j)\n", func, i, j);
                 XLAL_ERROR(func, XLAL_EINVAL);
             }
         }
     }
-    
+
     return 0;
 }
 

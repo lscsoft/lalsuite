@@ -91,6 +91,7 @@ typedef struct
   const EphemerisData *edat;		/**< ephemeris data */
 } intparams_t;
 
+
 /*---------- empty initializers ---------- */
 static LALStatus empty_status;
 static EmissionTime empty_EmissionTime;
@@ -106,6 +107,9 @@ MultiDetectorInfo empty_MultiDetectorInfo;
 NRCSID( UNIVERSALDOPPLERMETRICC, "$Id$");
 
 /*---------- internal prototypes ----------*/
+DopplerMetric* XLALComputeFmetricFromAtoms ( const FmetricAtoms_t *atoms, REAL8 cosi, REAL8 psi );
+gsl_matrix* XLALComputeFisherFromAtoms ( const FmetricAtoms_t *atoms, const PulsarAmplitudeParams *Amp );
+
 double CW_am1_am2_Phi_i_Phi_j ( double tt, void *params );
 double XLALAverage_am1_am2_Phi_i_Phi_j ( const intparams_t *params );
 
@@ -114,7 +118,6 @@ double CWPhase_cov_Phi_ij ( const intparams_t *params );
 
 
 int XLALPtolemaicPosVel ( PosVel3D_t *posvel, const LIGOTimeGPS *tGPS );
-
 
 /*==================== FUNCTION DEFINITIONS ====================*/
 
@@ -149,7 +152,8 @@ XLALAverage_am1_am2_Phi_i_Phi_j ( const intparams_t *params )
   integrand.function = &CW_am1_am2_Phi_i_Phi_j;
   XLAL_CALLGSL ( stat = gsl_integration_qng (&integrand, 0, 1, epsabs, epsrel, &ret, &abserr, &neval) );
   if ( stat != 0 ) {
-    XLALPrintError ( "\n%s: GSL-integration 'gsl_integration_qng()' of <Phi_i Phi_j> failed! abserr=%g, neval=%d\n", fn, abserr, neval);
+    XLALPrintError ( "\n%s: GSL-integration 'gsl_integration_qng()' of <am1_am2_Phi_i Phi_j> failed! Result = %g, abserr=%g, neval=%d\n",
+		     fn, ret, abserr, neval);
     XLAL_ERROR_REAL8( fn, XLAL_EFUNC );
   }
 
@@ -594,191 +598,219 @@ CWPhase_cov_Phi_ij ( const intparams_t *params )
  * multi-detector metric you need to use the full Fstat-metric, as computed
  * by XLALDopplerFstatMetric().
  *
- * Note: The returned DopplerMetric does not set the matrices Fav_ij, or m1_ij, m2_ij, m3_ij.
+ * Note: if this function is called with multiple detectors, we compute the
+ * phase metric using the *first* detector in the list!
  *
- * Note: Reference time is always assumed to be equal to the startTime !
+ * Note2: Reference time is always assumed to be equal to the startTime !
  *
  * Return NULL on error.
  */
-DopplerMetric *
-XLALDopplerPhaseMetric ( const LALStringVector *coords,		/**< names of Doppler-coordinates to compute metric in */
-			 DetectorMotionType detMotionType,	/**< type of detector-motion: full spin+orbit, pure orbital, Ptole, ... */
-			 const PulsarDopplerParams *dopplerPoint,/**< doppler-point to compute metric for */
-			 LIGOTimeGPS startTime,			/**< startTime of the observation */
-			 REAL8 Tspan,				/**< total spanned duration of the observation */
-			 const EphemerisData *edat,		/**< ephemeris data */
-			 const CHAR *detName			/**< detector name 'H1', 'L1', ... */
+gsl_matrix *
+XLALDopplerPhaseMetric ( const DopplerMetricParams *metricParams,  	/**< input parameters determining the metric calculation */
+			 const EphemerisData *edat			/**< ephemeris data */
 			 )
 {
   const CHAR *fn = "XLALDopplerPhaseMetric()";
-  DopplerMetric *ret;
+  gsl_matrix *g_ij = NULL;
   intparams_t intparams = empty_intparams;
   UINT4 i, j;
-  DopplerCoordinateSystem coordSys = empty_DopplerCoordinateSystem;
   REAL8 gg;
-  LALDetector *ifo;
+  const LALDetector *ifo;
+  UINT4 dim;
+  const LIGOTimeGPS *refTime, *startTime;
+  const DopplerCoordinateSystem *coordSys;
 
   /* ---------- sanity/consistency checks ---------- */
-  if ( !coords || !dopplerPoint || !detName || !edat ) {
-    XLALPrintError ("\n%s: Illegal NULL pointer passed!\n\n", fn);
+  if ( !metricParams || !edat ) {
+    XLALPrintError ("\n%s: Illegal NULL pointer passed.\n\n", fn);
     XLAL_ERROR_NULL( fn, XLAL_EINVAL );
   }
 
-  if ( (dopplerPoint->refTime.gpsSeconds != startTime.gpsSeconds) ||
-       (dopplerPoint->refTime.gpsNanoSeconds != startTime.gpsNanoSeconds) ) {
-    XLALPrintError ("\n%s: Sorry, Doppler Reference time must be identical to startTime of observation!\n\n", fn );
+  startTime = &(metricParams->startTime);
+  refTime   = &(metricParams->signalParams.Doppler.refTime);
+  if ( (refTime->gpsSeconds != startTime->gpsSeconds) || (refTime->gpsNanoSeconds != startTime->gpsNanoSeconds) ) {
+    XLALPrintError ("\n%s: Sorry, Doppler Reference time (%d,%d) must be identical to startTime (%d, %d) of observation!\n\n",
+		    fn, refTime->gpsSeconds, refTime->gpsNanoSeconds, startTime->gpsSeconds, startTime->gpsNanoSeconds );
     XLAL_ERROR_NULL( fn, XLAL_EINVAL );
   }
+
+
+  dim = metricParams->coordSys.dim;
+  coordSys = &(metricParams->coordSys);
 
   /* ---------- prepare output metric ---------- */
-  if ( XLALDopplerCoordinateNames2System ( &coordSys, coords ) ) {
-    XLALPrintError ("%s: Call to XLALDopplerCoordinateNames2System() failed!\n\n", fn );
-    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+  if ( (g_ij = gsl_matrix_calloc ( dim, dim )) == NULL ) {
+    XLALPrintError ("%s: gsl_matrix_calloc(%d, %d) failed.\n\n", fn, dim, dim );
+    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
   }
 
-  if ( (ret = XLALCreateDopplerMetric ( coordSys.dim, FALSE )) == NULL ) {
-    XLAL_ERROR_NULL( fn, XLAL_EFUNC );
-  }
-
-  /* set meta-data */
-  ret->meta.fullFmetric = FALSE;
-  ret->meta.coordSys = coordSys;
-  ret->meta.detMotionType = detMotionType;
-  ret->meta.dopplerPoint = (*dopplerPoint);
-  ret->meta.startTime = startTime;
-  ret->meta.Tspan = Tspan;
-  ret->meta.cosi = ret->meta.psi = 0; /* phase metric doesn't depend on those */
-
-  /* parse detector name */
-  if ( ( ifo = XLALGetSiteInfo ( detName ) ) == NULL ) {
-    XLALPrintError ("%s: Failed to get site-info for detector '%s'\n", fn, detName );
-    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
-  }
-  ret->meta.detInfo.length = 1;
-  ret->meta.detInfo.sites[0] = (*ifo);
-  ret->meta.detInfo.detWeights[0] = 1;
+  /* always use first dector in list */
+  ifo = &(metricParams->detInfo.sites[0]);
 
   /* ---------- set up integration parameters ---------- */
   intparams.edat = edat;
-  intparams.startTime = XLALGPSGetREAL8 ( &startTime );
-  intparams.Tspan = Tspan;
-  intparams.dopplerPoint = dopplerPoint;
-  intparams.detMotionType = detMotionType;
+  intparams.startTime = XLALGPSGetREAL8 ( startTime );
+  intparams.Tspan = metricParams->Tspan;
+  intparams.dopplerPoint = &(metricParams->signalParams.Doppler);
+  intparams.detMotionType = metricParams->detMotionType;
   intparams.site = ifo;
   /* deactivate antenna-patterns for phase-metric */
   intparams.amcomp1 = AMCOMP_NONE;
   intparams.amcomp2 = AMCOMP_NONE;
 
   /* ---------- compute components of the phase-metric ---------- */
-  for ( i=0; i < coordSys.dim; i ++ )
+  for ( i=0; i < dim; i ++ )
     {
       for ( j = 0; j <= i; j ++ )
 	{
 	  /* g_ij */
-	  intparams.deriv1 = coordSys.coordIDs[i];
-	  intparams.deriv2 = coordSys.coordIDs[j];
+	  intparams.deriv1 = coordSys->coordIDs[i];
+	  intparams.deriv2 = coordSys->coordIDs[j];
 	  gg = CWPhase_cov_Phi_ij ( &intparams );	/* [Phi_i, Phi_j] */
 	  if ( xlalErrno ) {
-	    XLALPrintError ("\n%s: Integration of g_ij (i=%d, j=%d) failed!\n", fn, i, j );
+	    XLALPrintError ("\n%s: Integration of g_ij (i=%d, j=%d) failed. errno = %d\n", fn, i, j, xlalErrno );
 	    XLAL_ERROR_NULL( fn, XLAL_EFUNC );
 	  }
-	  gsl_matrix_set (ret->g_ij, i, j, gg);
-	  gsl_matrix_set (ret->g_ij, j, i, gg);
+	  gsl_matrix_set (g_ij, i, j, gg);
+	  gsl_matrix_set (g_ij, j, i, gg);
 
 	} /* for j <= i */
 
     } /* for i < dim */
 
-  LALFree ( ifo );
-  return ret;
+  return g_ij;
 
 } /* XLALDopplerPhaseMetric() */
 
 
-/** Calculate the full (multi-IFO) Fstat-metric derived in \ref Prix07.
+/** Calculate the phase-metric, the *full* (multi-IFO) Fstat-metrix
+ *  and the Fisher-matrix derived in \ref Prix07.
  *
- * Note: The returned DopplerMetric does set the matrices Fav_ij, and m1_ij, m2_ij, m3_ij.
+ * Note: The returned DopplerMetric struct contains the matrices
+ * g_ij (the phase metric), gF_ij (the F-metric), gFav_ij (the average F-metric), m1_ij, m2_ij, m3_ij (auxiliary matrices)
+ * and Fisher_ab (the full 4+n dimensional Fisher matrix)
  *
  * Note: Reference time is always assumed to be equal to the startTime !
  *
  * Return NULL on error.
  */
 DopplerMetric *
-XLALDopplerFstatMetric ( const LALStringVector *coords,		/**< names of Doppler-coordinates to compute metric in */
-			 DetectorMotionType detMotionType,	/**< type of detector-motion: full spin+orbit, pure orbital, Ptole, ... */
-			 const PulsarDopplerParams *dopplerPoint,/**< doppler-point to compute metric for */
-			 LIGOTimeGPS startTime,			/**< startTime of the observation */
-			 REAL8 Tspan,				/**< total spanned duration of the observation */
-			 const EphemerisData *edat,		/**< ephemeris data */
-			 const MultiDetectorInfo *detInfo,	/**< detector specifications and noise-weights */
-			 REAL8 cosi,				/**< amplitude-parameters: cos(iota) */
-			 REAL8 psi			        /**< amplitude-parameters: polarization angle psi */
+XLALDopplerFstatMetric ( const DopplerMetricParams *metricParams,  	/**< input parameters determining the metric calculation */
+			 const EphemerisData *edat			/**< ephemeris data */
 			 )
 {
   const CHAR *fn = "XLALDopplerFstatMetric()";
-  DopplerMetric *ret;
-  intparams_t intparams = empty_intparams;
-  UINT4 i, j, X;		/* index counters */
-  DopplerCoordinateSystem coordSys = empty_DopplerCoordinateSystem;
-  REAL8 A, B, C, D;		/* 'standard' antenna-pattern coefficients (gsl-integrated, though) */
-  REAL8 alpha1, alpha2, alpha3, eta2, cos2psi, sin2psi;
-  REAL8 rho2;
+  DopplerMetric *metric = NULL;
+  REAL8 cosi, psi;
+
+  FmetricAtoms_t *atoms;
 
   /* ---------- sanity/consistency checks ---------- */
-  if ( !coords || !dopplerPoint || !detInfo || !edat ) {
+  if ( !metricParams || !edat ) {
+    XLALPrintError ("%s: Illegal NULL pointer passed!\n\n", fn);
+    XLAL_ERROR_NULL( fn, XLAL_EINVAL );
+  }
+
+  /* ---------- compute Fmetric 'atoms', ie the averaged <a^2>, <a b Phi_i>, <a^2 Phi_i Phi_j>, etc ---------- */
+  if ( (atoms = XLALComputeAtomsForFmetric ( metricParams, edat )) == NULL ) {
+    XLALPrintError ("%s: XLALComputeAtomsForFmetric() failed. errno = %d\n\n", fn, xlalErrno );
+    XLAL_ERROR_NULL( fn, XLAL_EFUNC );
+  }
+
+  /* ----- compute the F-metric gF_ij and related matrices ---------- */
+  cosi = metricParams->signalParams.Amp.cosi;
+  psi  = metricParams->signalParams.Amp.psi;
+
+  if ( (metric = XLALComputeFmetricFromAtoms ( atoms, cosi, psi)) == NULL ) {
+    XLALPrintError ("%s: XLALComputeFmetricFromAtoms() failed, errno = %d\n\n", fn, xlalErrno );
+    XLALDestroyFmetricAtoms ( atoms );
+    XLAL_ERROR_NULL( fn, XLAL_EFUNC );
+  }
+
+
+  /* ----- compute the standard phase-metric g_ij ---------- */
+  if ( (metric->g_ij = XLALDopplerPhaseMetric ( metricParams, edat )) == NULL ) {
+    XLALPrintError ("%s: XLALDopplerPhaseMetric() failed, errno = %d.\n\n", fn, xlalErrno );
+    XLALDestroyFmetricAtoms ( atoms );
+    XLALDestroyDopplerMetric ( metric );
+    XLAL_ERROR_NULL( fn, XLAL_EFUNC );
+  }
+
+
+  /* ----- compute the full 4+n dimensional Fisher matrix ---------- */
+  if ( (metric->Fisher_ab = XLALComputeFisherFromAtoms ( atoms, &metricParams->signalParams.Amp )) == NULL ) {
+    XLALPrintError ("%s: XLALComputeFisherFromAtoms() failed. errno = %d\n\n", xlalErrno );
+    XLALDestroyFmetricAtoms ( atoms );
+    XLALDestroyDopplerMetric ( metric );
+    XLAL_ERROR_NULL( fn, XLAL_EFUNC );
+  }
+
+  /*  attach the metricParams struct as 'meta-info' to the output */
+  metric->meta = (*metricParams);
+
+  XLALDestroyFmetricAtoms ( atoms );
+
+  return metric;
+
+} /* XLALDopplerFstatMetric() */
+
+/** Function to the compute the FmetricAtoms_t, from which the F-metric and Fisher-matrix can be computed.
+ */
+FmetricAtoms_t*
+XLALComputeAtomsForFmetric ( const DopplerMetricParams *metricParams,  	/**< input parameters determining the metric calculation */
+			     const EphemerisData *edat			/**< ephemeris data */
+			     )
+{
+  const CHAR *fn = "XLALComputeAtomsForFmetric()";
+
+  FmetricAtoms_t *ret;		/* return struct */
+  intparams_t intparams = empty_intparams;
+
+  UINT4 dim, numDet, i=-1, j=-1, X;		/* index counters */
+  REAL8 A, B, C;			/* antenna-pattern coefficients (gsl-integrated) */
+
+  const LIGOTimeGPS *refTime, *startTime;
+  const DopplerCoordinateSystem *coordSys;
+
+
+  /* ---------- sanity/consistency checks ---------- */
+  if ( !metricParams || !edat ) {
     XLALPrintError ("\n%s: Illegal NULL pointer passed!\n\n", fn);
     XLAL_ERROR_NULL( fn, XLAL_EINVAL );
   }
 
-  if ( (dopplerPoint->refTime.gpsSeconds != startTime.gpsSeconds) ||
-       (dopplerPoint->refTime.gpsNanoSeconds != startTime.gpsNanoSeconds) ) {
-    XLALPrintError ("\n%s: Sorry, Doppler Reference time must be identical to startTime of observation!\n\n", fn );
+  startTime = &(metricParams->startTime);
+  refTime   = &(metricParams->signalParams.Doppler.refTime);
+  if ( (refTime->gpsSeconds != startTime->gpsSeconds) || (refTime->gpsNanoSeconds != startTime->gpsNanoSeconds) ) {
+    XLALPrintError ("\n%s: Sorry, Doppler Reference time (%d,%d) must be identical to startTime (%d, %d) of observation!\n\n",
+		    fn, refTime->gpsSeconds, refTime->gpsNanoSeconds, startTime->gpsSeconds, startTime->gpsNanoSeconds );
     XLAL_ERROR_NULL( fn, XLAL_EINVAL );
   }
 
-  /* ---------- prepare output metric and its various ingredients ---------- */
-  if ( XLALDopplerCoordinateNames2System ( &coordSys, coords ) ) {
-    XLALPrintError ("%s: Call to XLALDopplerCoordinateNames2System() failed!\n\n", fn );
+  dim = metricParams->coordSys.dim;	/* shorthand: number of Doppler dimensions */
+  numDet = metricParams->detInfo.length;
+  coordSys = &(metricParams->coordSys);
+
+  /* ----- create output structure ---------- */
+  if ( (ret = XLALCreateFmetricAtoms ( dim )) == NULL ) {
+    XLALPrintError ("%s: call to XLALCreateFmetricAtoms (%s) failed. errno = %d\n\n", fn, dim, xlalErrno );
     XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
   }
 
-  if ( (ret = XLALCreateDopplerMetric ( coordSys.dim, TRUE )) == NULL ) { /* creates a 'full-Fstat metric' container */
-    XLAL_ERROR_NULL( fn, XLAL_EFUNC );
-  }
-
-  /* set meta-data */
-  ret->meta.fullFmetric = TRUE;
-  ret->meta.coordSys = coordSys;
-  ret->meta.detMotionType = detMotionType;
-  ret->meta.dopplerPoint = (*dopplerPoint);
-  ret->meta.startTime = startTime;
-  ret->meta.Tspan = Tspan;
-  ret->meta.cosi = cosi;
-  ret->meta.psi = psi;
-  ret->meta.detInfo = (*detInfo);
-
-  /* compute amplitude-factors alpha_r intering SNR and Fstat-metric, given in Eq.(69) */
-  eta2 = SQUARE ( cosi );
-  cos2psi = cos ( 2.0 * psi );
-  sin2psi = sin ( 2.0 * psi );
-  alpha1 = 0.25 * SQUARE ( 1.0 + eta2 ) * SQUARE ( cos2psi ) + eta2 * SQUARE ( sin2psi );
-  alpha2 = 0.25 * SQUARE ( 1.0 + eta2 ) * SQUARE ( sin2psi ) + eta2 * SQUARE ( cos2psi );
-  alpha3 = 0.25 * SQUARE ( 1.0 - eta2 ) * sin2psi * cos2psi;
-
   /* ---------- set up integration parameters ---------- */
-  intparams.detMotionType = detMotionType;
-  intparams.dopplerPoint = dopplerPoint;
-  intparams.startTime = XLALGPSGetREAL8 ( &startTime );
-  intparams.Tspan = Tspan;
+  intparams.detMotionType = metricParams->detMotionType;
+  intparams.dopplerPoint = &metricParams->signalParams.Doppler;
+  intparams.startTime = XLALGPSGetREAL8 ( startTime );
+  intparams.Tspan = metricParams->Tspan;
   intparams.edat = edat;
 
   /* ----- integrate antenna-pattern coefficients A, B, C */
-  A = B = C = D = 0;
-  for ( X = 0; X < detInfo->length; X ++ )
+  A = B = C = 0;
+  for ( X = 0; X < numDet; X ++ )
     {
-      REAL8 weight = detInfo->detWeights[X];
+      REAL8 weight = metricParams->detInfo.detWeights[X];
       REAL8 av;
-      intparams.site = &(detInfo->sites[X]);
+      intparams.site = &(metricParams->detInfo.sites[X]);
 
       intparams.deriv1 = DOPPLERCOORD_NONE;
       intparams.deriv2 = DOPPLERCOORD_NONE;
@@ -806,15 +838,12 @@ XLALDopplerFstatMetric ( const LALStringVector *coords,		/**< names of Doppler-c
 
     } /* for X < numDetectors */
 
-  D = A * B - C * C;	/* determinant of [A, C; C, B] */
-  ret->A = A;
-  ret->B = B;
-  ret->C = C;
-
-  rho2 = alpha1 * A + alpha2 * B + 2.0 * alpha3 * C;
+  ret->a_a = A;
+  ret->b_b = B;
+  ret->a_b = C;
 
   /* ---------- compute components of the phase-metric ---------- */
-  for ( i=0; i < coordSys.dim; i ++ )
+  for ( i=0; i < dim; i ++ )
     {
       for ( j = 0; j <= i; j ++ )
 	{
@@ -822,23 +851,19 @@ XLALDopplerFstatMetric ( const LALStringVector *coords,		/**< names of Doppler-c
 	  REAL8 a_a_i, b_b_i, a_b_i;
 	  REAL8 a_a_j, b_b_j, a_b_j;
 
-	  REAL8 P1_ij, P2_ij, P3_ij;	/* ingredients to m_r_ij */
-	  REAL8 Q1_ij, Q2_ij, Q3_ij;	/* ingredients to m_r_ij */
-	  REAL8 gg;
-
 	  a_a_i_j = b_b_i_j = a_b_i_j = 0;
 	  a_a_i = b_b_i = a_b_i = 0;
 	  a_a_j = b_b_j = a_b_j = 0;
 
-	  for ( X = 0; X < detInfo->length; X ++ )
+	  for ( X = 0; X < numDet; X ++ )
 	    {
-	      REAL8 weight = detInfo->detWeights[X];
+	      REAL8 weight = metricParams->detInfo.detWeights[X];
 	      REAL8 av;
-	      intparams.site = &(detInfo->sites[X]);
+	      intparams.site = &(metricParams->detInfo.sites[X]);
 
 	      /* ------------------------------ */
-	      intparams.deriv1 = coordSys.coordIDs[i];
-	      intparams.deriv2 = coordSys.coordIDs[j];
+	      intparams.deriv1 = coordSys->coordIDs[i];
+	      intparams.deriv2 = coordSys->coordIDs[j];
 
 	      /* <a^2 Phi_i Phi_j> */
 	      intparams.amcomp1 = AMCOMP_A;
@@ -862,7 +887,7 @@ XLALDopplerFstatMetric ( const LALStringVector *coords,		/**< names of Doppler-c
 	      a_b_i_j += weight * av;
 
 	      /* ------------------------------ */
-	      intparams.deriv1 = coordSys.coordIDs[i];
+	      intparams.deriv1 = coordSys->coordIDs[i];
 	      intparams.deriv2 = DOPPLERCOORD_NONE;
 
 	      /* <a^2 Phi_i> */
@@ -888,7 +913,7 @@ XLALDopplerFstatMetric ( const LALStringVector *coords,		/**< names of Doppler-c
 
 	      /* ------------------------------ */
 	      intparams.deriv1 = DOPPLERCOORD_NONE;
-	      intparams.deriv2 = coordSys.coordIDs[j];
+	      intparams.deriv2 = coordSys->coordIDs[j];
 
 	      /* <a^2 Phi_j> */
 	      intparams.amcomp1 = AMCOMP_A;
@@ -911,55 +936,21 @@ XLALDopplerFstatMetric ( const LALStringVector *coords,		/**< names of Doppler-c
 	      if ( xlalErrno ) goto failed;
 	      a_b_j += weight * av;
 
-
 	    } /* for X < numDetectors */
 
-	  /* trivial assignments, see Eq.(76) in \ref Prix07 */
-	  P1_ij = a_a_i_j;
-	  P2_ij = b_b_i_j;
-	  P3_ij = a_b_i_j;
-
-	  /* bit more involved, see Eq.(80)-(82) in \ref Prix07 [includes *explicit* index-symmetrization!!] */
-	  Q1_ij = A * a_b_i * a_b_j + B * a_a_i * a_a_j - C * ( a_a_i * a_b_j + a_a_j * a_b_i );	/* (80) symmetrized */
-	  Q1_ij /= D;
-
-	  Q2_ij = A * b_b_i * b_b_j + B * a_b_i * a_b_j - C * ( a_b_i * b_b_j + a_b_j * b_b_i );	/* (81) symmetrized */
-	  Q2_ij /= D;
-
-	  Q3_ij = 0.5 * A * ( a_b_i * b_b_j + a_b_j * b_b_i )
-	    + 0.5 * B * ( a_b_i * a_a_j + a_b_j * a_a_i )
-	    - 0.5 * C * ( b_b_i * a_a_j + b_b_j * a_a_i + 2.0 * a_b_i * a_b_j );	/* (83) symmetrized */
-	  Q3_ij /= D;
-
-	  /* put the pieces together to compute m1_ij, m2_ij and m3_ij according to (85) */
-	  gg = P1_ij  - Q1_ij;
-	  gsl_matrix_set (ret->m1_ij, i, j, gg);
-	  gsl_matrix_set (ret->m1_ij, j, i, gg);
-
-	  gg = P2_ij  - Q2_ij;
-	  gsl_matrix_set (ret->m2_ij, i, j, gg);
-	  gsl_matrix_set (ret->m2_ij, j, i, gg);
-
-	  gg = P3_ij  - Q3_ij;
-	  gsl_matrix_set (ret->m3_ij, i, j, gg);
-	  gsl_matrix_set (ret->m3_ij, j, i, gg);
+	  gsl_vector_set (ret->a_a_i, i, a_a_i);
+	  gsl_vector_set (ret->a_b_i, i, a_b_i);
+	  gsl_vector_set (ret->b_b_i, i, b_b_i);
 
 
-	  /* assemble the 'full' F-stat metric from these ingredients, see Eq.(87) */
-	  gg = alpha1 * gsl_matrix_get (ret->m1_ij, i, j ) + alpha2 * gsl_matrix_get (ret->m2_ij, i, j )
-	    + 2.0 * alpha3 * gsl_matrix_get (ret->m3_ij, i, j );
-	  gg /= rho2;
+	  gsl_matrix_set (ret->a_a_i_j, i, j, a_a_i_j);
+	  gsl_matrix_set (ret->a_a_i_j, j, i, a_a_i_j);
 
-	  gsl_matrix_set (ret->g_ij, i, j, gg);
-	  gsl_matrix_set (ret->g_ij, j, i, gg);
+	  gsl_matrix_set (ret->a_b_i_j, i, j, a_b_i_j);
+	  gsl_matrix_set (ret->a_b_i_j, j, i, a_b_i_j);
 
-	  /* compute 'average' F-stat metric as given by Eq.(93) */
-	  gg = B * gsl_matrix_get (ret->m1_ij, i, j ) + A * gsl_matrix_get (ret->m2_ij, i, j )
-	    - 2.0 * C * gsl_matrix_get (ret->m3_ij, i, j );
-	  gg /= 2.0 * D;
-
-	  gsl_matrix_set (ret->gFav_ij, i, j, gg);
-	  gsl_matrix_set (ret->gFav_ij, j, i, gg);
+	  gsl_matrix_set (ret->b_b_i_j, i, j, b_b_i_j);
+	  gsl_matrix_set (ret->b_b_i_j, j, i, b_b_i_j);
 
 	} /* for j <= i */
 
@@ -968,55 +959,13 @@ XLALDopplerFstatMetric ( const LALStringVector *coords,		/**< names of Doppler-c
   return ret;
 
  failed:
-  XLALPrintError ( "%s: XLALAverage_am1_am2_Phi_i_Phi_j() with am1 = %d, am2 = %d, i = %d, j = %d\n",
-		   fn, intparams.amcomp1,intparams.amcomp2, intparams.deriv1, intparams.deriv2 );
+  XLALDestroyFmetricAtoms ( ret );
+  XLALPrintError ( "%s: XLALAverage_am1_am2_Phi_i_Phi_j() FAILED with errno = %d: am1 = %d, am2 = %d, i = %d : '%s', j = %d : '%s'\n",
+		   fn, xlalErrno, intparams.amcomp1,intparams.amcomp2, i, DopplerCoordinateNames[i], j, DopplerCoordinateNames[j] );
   XLAL_ERROR_NULL( fn, XLAL_EFUNC );
 
-} /* XLALDopplerFstatMetric() */
+} /* XLALComputeAtomsForFmetric() */
 
-
-
-/** Allocate an empty DopplerMetric container for 'dim' dimensions,
- * allocating the matrices Fav_ij, m1_ij, m2_ij, m3_ij ONLY if fullFmetric==TRUE
- */
-DopplerMetric*
-XLALCreateDopplerMetric ( UINT4 dim, BOOLEAN fullFmetric )
-{
-  const CHAR *fn = "XLALCreateDopplerMetric()";
-  DopplerMetric* ret;
-
-  if ( dim == 0 ) {
-    XLALPrintError ("\n%s: Asked for zero dimensional metric!\n\n", fn);
-    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
-  }
-
-  if ( (ret = LALCalloc ( 1, sizeof(*ret))) == NULL ) {
-    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
-  }
-
-  if ( (ret->g_ij = gsl_matrix_calloc ( dim, dim )) == NULL )
-    goto failed;
-
-  if ( fullFmetric )
-    {
-      if ( (ret->gFav_ij = gsl_matrix_calloc ( dim, dim )) == NULL )
-	goto failed;
-
-      if ( (ret->m1_ij = gsl_matrix_calloc ( dim, dim )) == NULL )
-	goto failed;
-      if ( (ret->m2_ij = gsl_matrix_calloc ( dim, dim )) == NULL )
-	goto failed;
-      if ( (ret->m3_ij = gsl_matrix_calloc ( dim, dim )) == NULL )
-	goto failed;
-    }
-
-  return ret;
-
- failed:
-  XLALDestroyDopplerMetric ( ret );
-  XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
-
-} /* XLALCreateDopplerMetric() */
 
 /** Free a DopplerMetric structure */
 void
@@ -1030,7 +979,9 @@ XLALDestroyDopplerMetric ( DopplerMetric *metric )
   if ( metric->m1_ij ) 	gsl_matrix_free ( metric->m1_ij );
   if ( metric->m2_ij ) 	gsl_matrix_free ( metric->m2_ij );
   if ( metric->m3_ij ) 	gsl_matrix_free ( metric->m3_ij );
-  LALFree ( metric );
+  if ( metric->Fisher_ab ) gsl_matrix_free ( metric->Fisher_ab );
+
+  XLALFree ( metric );
 
   return;
 
@@ -1170,7 +1121,7 @@ XLALDopplerCoordinateHelp ( DopplerCoordinateID coordID )
 /** Return a string (allocated here) containing a full name - helpstring listing
  * for all doppler-coordinates DopplerCoordinateID allowed by UniversalDopplerMetric.c
  */
-const CHAR *
+CHAR *
 XLALDopplerCoordinateHelpAll ( void )
 {
   const CHAR *fn = "XLALDopplerCoordinateHelpAll()";
@@ -1182,7 +1133,7 @@ XLALDopplerCoordinateHelpAll ( void )
   CHAR fmt[512];
 
 #define HEADER "Doppler-coordinate names and explanations:\n--------------------------------------------------\n"
-  if ( (helpstr = LALCalloc ( strlen(HEADER)+1, sizeof(CHAR) )) == NULL ) {
+  if ( (helpstr = XLALCalloc ( strlen(HEADER)+1, sizeof(CHAR) )) == NULL ) {
     XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
   }
   strcpy ( helpstr, HEADER );
@@ -1210,7 +1161,7 @@ XLALDopplerCoordinateHelpAll ( void )
 
       LALSnprintf ( buf, sizeof(buf) - 1, fmt, name, help );
       len += strlen ( buf ) + 1;
-      if ( (helpstr = LALRealloc ( helpstr, len )) == NULL ) {
+      if ( (helpstr = XLALRealloc ( helpstr, len )) == NULL ) {
 	XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
       }
 
@@ -1271,7 +1222,7 @@ XLALParseMultiDetectorInfo ( MultiDetectorInfo *detInfo,	/** [out] parsed detect
 	XLAL_ERROR ( fn, XLAL_EINVAL );
       }
       detInfo->sites[X] = (*ifo);
-      LALFree ( ifo );
+      XLALFree ( ifo );
 
       /* parse noise weights if any */
       totalWeight = 0;
@@ -1297,3 +1248,373 @@ XLALParseMultiDetectorInfo ( MultiDetectorInfo *detInfo,	/** [out] parsed detect
   return XLAL_SUCCESS;
 
 } /* XLALParseMultiDetectorInfo() */
+
+
+/** Free a FmetricAtoms_t structure, allowing any pointers to be NULL
+ */
+void
+XLALDestroyFmetricAtoms ( FmetricAtoms_t *atoms )
+{
+  if ( !atoms )
+    return;
+
+  if ( atoms->a_a_i ) gsl_vector_free ( atoms->a_a_i );
+  if ( atoms->a_b_i ) gsl_vector_free ( atoms->a_b_i );
+  if ( atoms->b_b_i ) gsl_vector_free ( atoms->b_b_i );
+
+  if ( atoms->a_a_i_j ) gsl_matrix_free ( atoms->a_a_i_j );
+  if ( atoms->a_b_i_j ) gsl_matrix_free ( atoms->a_b_i_j );
+  if ( atoms->b_b_i_j ) gsl_matrix_free ( atoms->b_b_i_j );
+
+  XLALFree ( atoms );
+
+  return;
+
+} /* XLALDestroyFmetricAtoms() */
+
+
+
+/** Allocate an FmetricAtoms_t structure for given number of dimension.
+ */
+FmetricAtoms_t*
+XLALCreateFmetricAtoms ( UINT4 dim )
+{
+  const CHAR *fn = "XLALCreateFmetricAtoms()";
+
+  FmetricAtoms_t *ret;		/* output structure */
+
+  if ( ( ret = XLALCalloc(1,sizeof(*ret))) == NULL ) {
+    XLALPrintError ( "%s: XLALCalloc(1,%s) failed.\n", fn, sizeof(*ret));
+    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+  }
+
+  if ( ( ret->a_a_i = gsl_vector_calloc (dim)) == NULL ) {
+    XLALPrintError ( "%s: a_a_i = gsl_vector_calloc (%d) failed.\n", fn, dim );
+    XLALDestroyFmetricAtoms ( ret );
+    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+  }
+
+  if ( ( ret->a_b_i = gsl_vector_calloc (dim)) == NULL ) {
+    XLALPrintError ( "%s: a_b_i = gsl_vector_calloc (%d) failed.\n", fn, dim );
+    XLALDestroyFmetricAtoms ( ret );
+    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+  }
+
+  if ( ( ret->b_b_i = gsl_vector_calloc (dim)) == NULL ) {
+    XLALPrintError ( "%s: b_b_i = gsl_vector_calloc (%d) failed.\n", fn, dim );
+    XLALDestroyFmetricAtoms ( ret );
+    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+  }
+
+
+  if ( ( ret->a_a_i_j = gsl_matrix_calloc (dim, dim)) == NULL ) {
+    XLALPrintError ( "%s: a_a_i_j = gsl_matrix_calloc (%d,%d) failed.\n", fn, dim, dim );
+    XLALDestroyFmetricAtoms ( ret );
+    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+  }
+
+  if ( ( ret->a_b_i_j = gsl_matrix_calloc (dim, dim)) == NULL ) {
+    XLALPrintError ( "%s: a_b_i_j = gsl_matrix_calloc (%d,%d) failed.\n", fn, dim, dim );
+    XLALDestroyFmetricAtoms ( ret );
+    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+  }
+
+  if ( ( ret->b_b_i_j = gsl_matrix_calloc (dim, dim)) == NULL ) {
+    XLALPrintError ( "%s: b_b_i_j = gsl_matrix_calloc (%d,%d) failed.\n", fn, dim, dim );
+    XLALDestroyFmetricAtoms ( ret );
+    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+  }
+
+  return ret;
+
+} /* XLALCreateFmetricAtoms() */
+
+
+/** Convert amplitude-params from 'physical' coordinates {h0, cosi, psi, phi0} into
+ * 'canonical' coordinates A^mu = {A1, A2, A3, A4}. The equations are found in
+ * \ref JKS98 or \ref Prix07 Eq.(2).
+ */
+int
+XLALAmplitudeParams2Vect ( PulsarAmplitudeVect *Amu, 		/**< [out] canonical amplitude coordinates A^mu = {A1, A2, A3, A4} */
+			   const PulsarAmplitudeParams *Amp	/**< [in] 'physical' amplitude params {h0, cosi, psi, phi0} */
+			   )
+{
+  const CHAR *fn = "XLALAmplitudeParams2Vect()";
+
+  REAL8 Aplus, Across;
+  REAL8 cosphi, sinphi, cos2psi, sin2psi;
+
+  if ( !Amu || !Amp ) {
+    XLALPrintError ("%s: illegal NULL pointer passed.\n\n", fn );
+    XLAL_ERROR ( fn, XLAL_EINVAL );
+  }
+
+  Aplus  = 0.5 * Amp->h0 * ( 1.0 + SQUARE(Amp->cosi) );
+  Across = Amp->h0 * Amp->cosi;
+
+  cosphi  = cos ( Amp->phi0 );
+  sinphi  = sin ( Amp->phi0 );
+  cos2psi = cos ( 2.0 * Amp->psi );
+  sin2psi = sin ( 2.0 * Amp->psi );
+
+  Amu->A1 =  Aplus * cosphi * cos2psi - Across * sinphi * sin2psi;
+  Amu->A2 =  Aplus * cosphi * sin2psi + Across * sinphi * cos2psi;
+  Amu->A3 = -Aplus * sinphi * cos2psi - Across * cosphi * sin2psi;
+  Amu->A4 = -Aplus * sinphi * sin2psi + Across * cosphi * cos2psi;
+
+  return XLAL_SUCCESS;
+
+} /* XLALAmplitudeParams2Vect() */
+
+
+/** Compute the 'F-metric' gF_ij (and also gFav_ij, m1_ij, m2_ij, m3_ij)
+ * from the given FmetricAtoms and the signal amplitude parameters.
+ *
+ */
+DopplerMetric*
+XLALComputeFmetricFromAtoms ( const FmetricAtoms_t *atoms, REAL8 cosi, REAL8 psi )
+{
+  const CHAR *fn = "XLALComputeFmetricFromAtoms()";
+
+  DopplerMetric *metric;		/* output matrix */
+
+  UINT4 dim, i, j;			/* Doppler index counters */
+  REAL8 A, B, C, D;			/* 'standard' antenna-pattern coefficients (gsl-integrated, though) */
+  REAL8 alpha1, alpha2, alpha3, eta2, cos2psi, sin2psi;
+
+  if ( !atoms ) {
+    XLALPrintError ("%s: illegal NULL input.\n\n", fn );
+    XLAL_ERROR_NULL (fn, XLAL_EINVAL );
+  }
+
+  if ( !atoms->a_a_i || !atoms->a_b_i || !atoms->b_b_i || !atoms->a_a_i_j || !atoms->a_b_i_j || !atoms->b_b_i_j ) {
+    XLALPrintError ("%s: input Fmetric-atoms not fully allocated.\n\n", fn );
+    XLAL_ERROR_NULL (fn, XLAL_EINVAL );
+  }
+
+  dim = atoms->a_a_i->size;
+
+  /* allocate output metric structure */
+  if ( (metric = XLALCalloc ( 1, sizeof(*metric) )) == NULL ) {
+    XLALPrintError ("%s: XLALCalloc ( 1, %d) failed.\n\n", sizeof(*metric) );
+    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+  }
+  metric->gF_ij = gsl_matrix_calloc ( dim, dim );
+  metric->gFav_ij = gsl_matrix_calloc ( dim, dim );
+  metric->m1_ij = gsl_matrix_calloc ( dim, dim );
+  metric->m2_ij = gsl_matrix_calloc ( dim, dim );
+  metric->m3_ij = gsl_matrix_calloc ( dim, dim );
+
+  if ( !metric->gF_ij || !metric->gFav_ij || !metric->m1_ij || !metric->m2_ij || !metric->m3_ij ) {
+    XLALPrintError ("%s: failed to gsl_matrix_calloc(%d,%d) for gF_ij, gFav_ij, m1_ij, m2_ij, m3_ij\n\n", fn, dim, dim );
+    XLALDestroyDopplerMetric ( metric );
+    XLAL_ERROR_NULL (fn, XLAL_ENOMEM );
+  }
+
+  A = atoms->a_a;
+  B = atoms->b_b;
+  C = atoms->a_b;
+
+  D = A * B - C * C;	/* determinant of [A, C; C, B] */
+
+  /* get amplitude-parameter factors alpha_1, alpha_2, alpha_3 */
+  eta2 = SQUARE ( cosi );
+  cos2psi = cos ( 2.0 * psi );
+  sin2psi = sin ( 2.0 * psi );
+  alpha1 = 0.25 * SQUARE ( 1.0 + eta2 ) * SQUARE ( cos2psi ) + eta2 * SQUARE ( sin2psi );
+  alpha2 = 0.25 * SQUARE ( 1.0 + eta2 ) * SQUARE ( sin2psi ) + eta2 * SQUARE ( cos2psi );
+  alpha3 = 0.25 * SQUARE ( 1.0 - eta2 ) * sin2psi * cos2psi;
+
+  metric->rho2 = alpha1 * A + alpha2 * B + 2.0 * alpha3 * C;
+
+  /* ---------- compute components of the metric ---------- */
+  for ( i=0; i < dim; i ++ )
+    {
+      REAL8 a_a_i, b_b_i, a_b_i;
+
+      a_a_i = gsl_vector_get ( atoms->a_a_i, i );
+      a_b_i = gsl_vector_get ( atoms->a_b_i, i );
+      b_b_i = gsl_vector_get ( atoms->b_b_i, i );
+
+      for ( j = 0; j <= i; j ++ )
+	{
+	  REAL8 a_a_i_j, b_b_i_j, a_b_i_j;
+	  REAL8 a_a_j, b_b_j, a_b_j;
+
+	  REAL8 P1_ij, P2_ij, P3_ij;	/* ingredients to m_r_ij */
+	  REAL8 Q1_ij, Q2_ij, Q3_ij;	/* ingredients to m_r_ij */
+	  REAL8 gg;
+
+	  a_a_j = gsl_vector_get ( atoms->a_a_i, j );
+	  a_b_j = gsl_vector_get ( atoms->a_b_i, j );
+	  b_b_j = gsl_vector_get ( atoms->b_b_i, j );
+
+	  a_a_i_j = gsl_matrix_get ( atoms->a_a_i_j, i, j );
+	  a_b_i_j = gsl_matrix_get ( atoms->a_b_i_j, i, j );
+	  b_b_i_j = gsl_matrix_get ( atoms->b_b_i_j, i, j );
+
+	  /* trivial assignments, see Eq.(76) in \ref Prix07 */
+	  P1_ij = a_a_i_j;
+	  P2_ij = b_b_i_j;
+	  P3_ij = a_b_i_j;
+
+	  /* bit more involved, see Eq.(80)-(82) in \ref Prix07 [includes *explicit* index-symmetrization!!] */
+	  Q1_ij = A * a_b_i * a_b_j + B * a_a_i * a_a_j - C * ( a_a_i * a_b_j + a_a_j * a_b_i );	/* (80) symmetrized */
+	  Q1_ij /= D;
+
+	  Q2_ij = A * b_b_i * b_b_j + B * a_b_i * a_b_j - C * ( a_b_i * b_b_j + a_b_j * b_b_i );	/* (81) symmetrized */
+	  Q2_ij /= D;
+
+	  Q3_ij = 0.5 * A * ( a_b_i * b_b_j + a_b_j * b_b_i )
+	    + 0.5 * B * ( a_b_i * a_a_j + a_b_j * a_a_i )
+	    - 0.5 * C * ( b_b_i * a_a_j + b_b_j * a_a_i + 2.0 * a_b_i * a_b_j );	/* (83) symmetrized */
+	  Q3_ij /= D;
+
+	  /* put the pieces together to compute m1_ij, m2_ij and m3_ij according to (85) */
+	  gg = P1_ij  - Q1_ij;
+	  gsl_matrix_set (metric->m1_ij, i, j, gg);
+	  gsl_matrix_set (metric->m1_ij, j, i, gg);
+
+	  gg = P2_ij  - Q2_ij;
+	  gsl_matrix_set (metric->m2_ij, i, j, gg);
+	  gsl_matrix_set (metric->m2_ij, j, i, gg);
+
+	  gg = P3_ij  - Q3_ij;
+	  gsl_matrix_set (metric->m3_ij, i, j, gg);
+	  gsl_matrix_set (metric->m3_ij, j, i, gg);
+
+
+	  /* assemble the 'full' F-stat metric from these ingredients, see Eq.(87) */
+	  gg = alpha1 * gsl_matrix_get (metric->m1_ij, i, j ) + alpha2 * gsl_matrix_get (metric->m2_ij, i, j )
+	    + 2.0 * alpha3 * gsl_matrix_get (metric->m3_ij, i, j );
+	  gg /= metric->rho2;
+
+	  gsl_matrix_set (metric->gF_ij, i, j, gg);
+	  gsl_matrix_set (metric->gF_ij, j, i, gg);
+
+	  /* compute 'average' F-stat metric as given by Eq.(93) */
+	  gg = B * gsl_matrix_get (metric->m1_ij, i, j ) + A * gsl_matrix_get (metric->m2_ij, i, j )
+	    - 2.0 * C * gsl_matrix_get (metric->m3_ij, i, j );
+	  gg /= 2.0 * D;
+
+	  gsl_matrix_set (metric->gFav_ij, i, j, gg);
+	  gsl_matrix_set (metric->gFav_ij, j, i, gg);
+
+	} /* for j <= i */
+
+    } /* for i < dim */
+
+  return metric;
+
+} /* XLALComputeFmetricFromAtoms() */
+
+
+/** Function to compute *full* 4+n dimensional Fisher matric for the
+ *  full CW parameter-space of Amplitude + Doppler parameters !
+ */
+gsl_matrix*
+XLALComputeFisherFromAtoms ( const FmetricAtoms_t *atoms, const PulsarAmplitudeParams *Amp )
+{
+  const CHAR *fn = "XLALComputeFisherFromAtoms()";
+  gsl_matrix *fisher = NULL;	/* output matrix */
+
+  UINT4 dimDoppler, dimFull, i, j;
+  PulsarAmplitudeVect Amu;
+  REAL8 al1, al2, al3;
+
+  /* check input consistency */
+  if ( !atoms || !Amp ) {
+    XLALPrintError ("%s: illegal NULL input.\n\n", fn );
+    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+  }
+
+  if ( !atoms->a_a_i || !atoms->a_b_i || !atoms->b_b_i || !atoms->a_a_i_j || !atoms->a_b_i_j || !atoms->b_b_i_j ) {
+    XLALPrintError ("%s: input Fmetric-atoms not fully allocated.\n\n", fn );
+    XLAL_ERROR_NULL (fn, XLAL_EINVAL );
+  }
+
+  if ( XLALAmplitudeParams2Vect ( &Amu, Amp ) != XLAL_SUCCESS ) {
+    XLALPrintError ( "%s: XLALAmplitudeParams2Vect() failed with errno = %d\n\n", fn, xlalErrno );
+    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+  }
+
+  dimDoppler = atoms->a_a_i->size;
+  dimFull = 4 + dimDoppler;	/* 4 amplitude params + n Doppler params */
+
+  if ( (fisher = gsl_matrix_calloc ( dimFull, dimFull )) == NULL ) {
+    XLALPrintError ("%s: gsl_matric_calloc(%d,%d) failed.\n\n", fn, dimFull, dimFull );
+    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+  }
+
+  /* ----- set pure Amplitude block 4x4: M_mu_nu ---------- */
+  {
+    REAL8 A, B, C;
+    A = atoms->a_a;
+    B = atoms->b_b;
+    C = atoms->a_b;
+
+    gsl_matrix_set ( fisher, 0, 0, A );
+    gsl_matrix_set ( fisher, 2, 2, A );
+
+    gsl_matrix_set ( fisher, 1, 1, B );
+    gsl_matrix_set ( fisher, 3, 3, B );
+
+    gsl_matrix_set ( fisher, 0, 1, C );
+    gsl_matrix_set ( fisher, 1, 0, C );
+    gsl_matrix_set ( fisher, 2, 3, C );
+    gsl_matrix_set ( fisher, 3, 2, C );
+  } /* amplitude-param block M_mu_nu */
+
+
+  /* ----- set Doppler block (4+i,4+j) ---------- */
+  al1 = SQUARE(Amu.A1) + SQUARE(Amu.A3);
+  al2 = Amu.A1 * Amu.A2 + Amu.A3 * Amu.A4;
+  al3 = SQUARE(Amu.A2) + SQUARE(Amu.A4);
+
+  for ( i=0; i < dimDoppler; i ++ )
+    {
+      for ( j=0; j <= i; j ++ )
+	{
+	  REAL8 gg, a_a_i_j, a_b_i_j, b_b_i_j;
+
+	  a_a_i_j = gsl_matrix_get(atoms->a_a_i_j, i, j);
+	  a_b_i_j = gsl_matrix_get(atoms->a_b_i_j, i, j);
+	  b_b_i_j = gsl_matrix_get(atoms->b_b_i_j, i, j);
+
+	  gg = al1 * a_a_i_j + 2.0 * al2 * a_b_i_j + al3 * b_b_i_j;
+
+	  gsl_matrix_set ( fisher, 4 + i, 4 + j, gg );
+	  gsl_matrix_set ( fisher, 4 + j, 4 + i, gg );
+
+	} /* for j <= i */
+    } /* for i < dimDoppler */
+
+
+  /* ----- compute mixed Amplitude-Doppler block ( non-square ) */
+  for ( i=0; i < dimDoppler; i ++ )
+    {
+      REAL8 a_a_i, a_b_i, b_b_i;
+      REAL8 AR[4];
+      UINT4 mu;
+
+      a_a_i = gsl_vector_get ( atoms->a_a_i, i );
+      a_b_i = gsl_vector_get ( atoms->a_b_i, i );
+      b_b_i = gsl_vector_get ( atoms->b_b_i, i );
+
+      AR[0] =  Amu.A3 * a_a_i + Amu.A4 * a_b_i;
+      AR[1] =  Amu.A3 * a_b_i + Amu.A4 * b_b_i;
+      AR[2] = -Amu.A1 * a_a_i - Amu.A2 * a_b_i;
+      AR[3] = -Amu.A1 * a_b_i - Amu.A2 * b_b_i;
+
+      for ( mu = 0; mu < 4; mu ++ )
+	{
+	  gsl_matrix_set ( fisher, mu, 4 + i, AR[mu] );
+	  gsl_matrix_set ( fisher, 4 + i, mu, AR[mu] );
+	}
+
+    } /* for i < dimDoppler */
+
+
+  return fisher;
+
+} /* XLALComputeFisherFromAtoms() */

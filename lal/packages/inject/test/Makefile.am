@@ -3,7 +3,7 @@
 if METAIO
 NEED_METAIO = InjectionInterfaceTest
 else
-NEED_METAIO = 
+NEED_METAIO =
 endif
 
 check_PROGRAMS = 	BasicInjectTest InjectTest GeneratePPNInspiralTest SimulateTaylorCWTest \
@@ -37,7 +37,7 @@ InjectionInterfaceTest_LDADD   = $(top_builddir)/packages/support/src/liblalsupp
 			$(top_builddir)/packages/support/src/liblalmetaio.la
 endif
 
-INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include 
+INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 
 TESTS = BasicInjectTest GeneratePPNInspiralTest SimulateTaylorCWTest SimulateSBTest SkyCoordinatesTest GeocentricGeodeticTest GeneratePulsarSignalTest $(NEED_MEATIO)
 TESTS_ENVIRONMENT = 1>/dev/null LAL_DATA_PATH=$(top_srcdir)/packages/pulsar/test

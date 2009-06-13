@@ -1,6 +1,6 @@
 /*  <lalVerbatim file="LALInspiralMCMCUSERCV">
-Author: A. Dietz, J. Veitch, C. Roever 
-$Id$
+Author: A. Dietz, J. Veitch, C. Roever
+$Id: LALInspiralPhase.c,v 1.9 2003/04/14 00:27:22 sathya Exp $
 </lalVerbatim>  */
 
 
@@ -16,7 +16,7 @@ The file \texttt{LALInspiralMCMCUser} contains user algorithms for the MCMC comp
 
 The only functions called from outside this package are {\tt XLALMCMCMetro}, as well as functions to set up and initialize the parameter structure.
 
-To set a different chain for the parameter estimation, just set another random seed. 
+To set a different chain for the parameter estimation, just set another random seed.
 
 \subsubsection*{Algorithm}
 
@@ -55,8 +55,7 @@ The algorithms used in these functions are explained in detail in [Ref Needed].
 #define rint(x) floor((x)+0.5)
 #define MpcInMeters 3.08568025e22
 
-#define DEBUGMODEL 1
-
+#define DEBUGMODEL 0
 gsl_rng *RNG;
 double timewindow;
 REAL4Vector *model;
@@ -64,7 +63,7 @@ REAL4Vector *Tmodel;
 REAL8Sequence **topdown_sum;
 REAL8 *normalisations;
 
-/*NRCSID (LALINSPIRALMCMCUSERC, "$Id$"); */
+/*NRCSID (LALINSPIRALMCMCUSERC, "$Id: LALInspiralPhase.c,v 1.9 2003/04/14 00:27:22 sathya Exp $"); */
 
 double mc2mass1(double mc, double eta)
 /* mass 1 (the smaller one) for given mass ratio & chirp mass */
@@ -321,6 +320,31 @@ XLALMCMCAddParam(parameter,"iota",LAL_PI*gsl_rng_uniform(RNG),0,LAL_PI,0);
 return;
 }
 
+REAL8 GRBPrior(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter)
+{
+  REAL8 mNS,mComp;
+  REAL8 mc,eta;
+  /* Priors for the GRB component masses */
+#define m1min 1.0
+#define m1max 3.0
+#define m2min 1.0
+#define m2max 35.0
+
+  mc=XLALMCMCGetParameter(parameter,"mchirp");
+  eta=XLALMCMCGetParameter(parameter,"eta");
+  parameter->logPrior+=log(fabs(cos(XLALMCMCGetParameter(parameter,"lat"))));
+  parameter->logPrior+=log(fabs(sin(XLALMCMCGetParameter(parameter,"iota"))));
+  parameter->logPrior-=logJacobianMcEta(mc,eta);
+  parameter->logPrior-=2.0*log(XLALMCMCGetParameter(parameter,"distMpc"));
+  ParamInRange(parameter);
+  /*check GRB component masses */
+  mNS=mc2mass1(mc,eta);
+  mComp=mc2mass2(mc,eta);
+  if(mNS<m1min || mNS>m1max || mComp<m2min || mComp>m2max) parameter->logPrior=-DBL_MAX;
+  return(parameter->logPrior);
+
+}
+
 REAL8 NestPrior(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter)
 {
 	REAL8 m1,m2,logdl,ampli,a=50,b=21;
@@ -338,10 +362,10 @@ REAL8 NestPrior(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter)
 /* Check in range */
 	mc=XLALMCMCGetParameter(parameter,"mchirp");
 	eta=XLALMCMCGetParameter(parameter,"eta");
-	
+
 	parameter->logPrior+=log(fabs(cos(XLALMCMCGetParameter(parameter,"lat"))));
 	parameter->logPrior+=log(fabs(sin(XLALMCMCGetParameter(parameter,"iota"))));
-	parameter->logPrior-=logJacobianMcEta(mc,eta);
+	/*	parameter->logPrior-=logJacobianMcEta(mc,eta);*/
 	ParamInRange(parameter);
 	if(inputMCMC->approximant==IMRPhenomA && mc2mt(mc,eta)>475.0) parameter->logPrior=-DBL_MAX;
 	if(mc2mass1(mc,eta)<minCompMass) parameter->logPrior=-DBL_MAX;
@@ -377,7 +401,7 @@ REAL8 MCMCLikelihood1IFO(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter,int
 	template.massChoice = totalMassAndEta;
 	template.fLower = inputMCMC->fLow;
 	template.distance = XLALMCMCGetParameter(parameter,"distMpc");
-	template.order=twoPN;
+	template.order=LAL_PNORDER_TWO;
 	template.approximant=inputMCMC->approximant;
 	template.tSampling = 1.0/inputMCMC->deltaT;
 	template.fCutoff = 0.5/inputMCMC->deltaT -1.0;
@@ -395,24 +419,24 @@ XLALClearErrno();*/
 
 /* Is this the correct way to set the end time? */
 /*	XLALFloatToGPS((&template.end_time),XLALMCMCGetParameter(parameter,"time"));*/
-/* Fill the rest of the mass/tc parameters in */	
+/* Fill the rest of the mass/tc parameters in */
 	LALInspiralParameterCalc(&status,&template);
 
 	template.startTime-=template.tC;
-	
+
 	LALInspiralRestrictedAmplitude(&status,&template);
-	
+
 /* Find the number of points needed to store the template - disabled */
 	/*LALInspiralWaveLength(&status,&Nmodel,template);*/
 /* Set the number of points in the template from the lengh of the data */
-	
+
 	if(Fdomain) Nmodel=inputMCMC->stilde[idx]->data->length*2; /* *2 for real/imag packing format */
 	else	Nmodel = inputMCMC->segment[idx]->data->length;
-	
+
 	if(model==NULL)	LALCreateVector(&status,&model,Nmodel);
 
 	LALInspiralWave(&status,model,&template); /* Create the model */
-	
+
 	if(inputMCMC->verbose) fprintf(stderr,"duration: %fs\tfinal freq: %f Hz \n",template.tC,template.fFinal);
 /*	FILE *fp=fopen("waveform.txt","w");
 	for(i=0;i<model->length;i++) fprintf(fp,"%e %e\n",i/(Nmodel/template.tSampling),model->data[i]);
@@ -439,8 +463,8 @@ XLALClearErrno();*/
 	} /* end F domain part */
 	else {
 	/* T domain part yet to be written */
-	
-	
+
+
 	}
 
 
@@ -452,13 +476,15 @@ REAL8 MCMCLikelihoodMultiCoherentF(LALMCMCInput *inputMCMC,LALMCMCParameter *par
 in the frequency domain */
 {
 	REAL8 logL=0.0;
-	int det_i;
+	UINT4 det_i;
 	CHAR name[10] = "inspiral";
 	REAL8 TimeFromGC; /* Time delay from geocentre */
 	static LALStatus status;
+	REAL4FFTPlan *likelihoodPlan=NULL;
 	REAL8 resp_r,resp_i,ci;
 	InspiralTemplate template;
 	UINT4 Nmodel; /* Length of the model */
+	UINT4 idx;
 	INT4 i,NtimeModel;
 	LALDetAMResponse det_resp;
 	int Fdomain;
@@ -480,7 +506,7 @@ in the frequency domain */
 	template.massChoice = totalMassAndEta;
 	template.fLower = inputMCMC->fLow;
 	template.distance = XLALMCMCGetParameter(parameter,"distMpc"); /* This must be in Mpc, contrary to the docs */
-	template.order=twoPN;
+	template.order=LAL_PNORDER_TWO;
 	template.approximant=inputMCMC->approximant;
 	template.tSampling = 1.0/inputMCMC->deltaT;
 	template.fCutoff = 0.5/inputMCMC->deltaT -1.0;
@@ -506,12 +532,12 @@ in the frequency domain */
 		LALInspiralWave(&status,Tmodel,&template);
 		float winNorm = sqrt(inputMCMC->window->sumofsquares/inputMCMC->window->data->length);
 		float Norm = winNorm * inputMCMC->deltaT;
-		for(i=0;i<Tmodel->length;i++) Tmodel->data[i]*=(REAL4)inputMCMC->window->data->data[i] * Norm; /* window & normalise */
+		for(idx=0;idx<Tmodel->length;idx++) Tmodel->data[idx]*=(REAL4)inputMCMC->window->data->data[idx] * Norm; /* window & normalise */
 
 		if(likelihoodPlan==NULL) {LALCreateForwardREAL4FFTPlan(&status,&likelihoodPlan,(UINT4) NtimeModel,FFTW_PATIENT); fprintf(stderr,"Created FFTW plan\n");}
 		LALREAL4VectorFFT(&status,model,Tmodel,likelihoodPlan); /* REAL4VectorFFT doesn't normalise like TimeFreqRealFFT, so we do this above in Norm */
-		
-		
+
+
 		/*LALDestroyREAL4FFTPlan(&status,&plan);*/
 	}
 	else{
@@ -545,7 +571,7 @@ in the frequency domain */
 	TimeShiftToGC-=ChirpISCOLength;
 /*	template.nStartPad = (INT4)(TimeShiftToGC/inputMCMC->deltaT);*/
 /*	fprintf(stderr,"ChirpLengthISCO = %lf\n",ChirpISCOLength);*/
-	
+
 	/* Initialise structures for detector response calcs */
 	LALSource source; /* The position and polarisation of the binary */
 	source.equatorialCoords.longitude = XLALMCMCGetParameter(parameter,"long");
@@ -563,7 +589,7 @@ in the frequency domain */
 	DTAAS.p_det_and_time=&det_gps;
 
 	/* This also holds the source and the detector, LAL has two different structs for this! */
-	LALDetAndSource det_source; 
+	LALDetAndSource det_source;
 	det_source.pSource=&source;
 
 	/* The epoch of observation and the accuracy required ( we don't care about a few leap seconds) */
@@ -593,24 +619,24 @@ in the frequency domain */
 		int lowBin = (int)(inputMCMC->fLow / inputMCMC->stilde[det_i]->deltaF);
 		int highBin = (int)(template.fFinal / inputMCMC->stilde[det_i]->deltaF);
 
-		for(i=lowBin;i<Nmodel/2;i++){
-			time_sin = sin(LAL_TWOPI*(TimeFromGC+TimeShiftToGC)*((double) i)*deltaF);
-			time_cos = cos(LAL_TWOPI*(TimeFromGC+TimeShiftToGC)*((double) i)*deltaF);
+		for(idx=lowBin;idx<Nmodel/2;idx++){
+			time_sin = sin(LAL_TWOPI*(TimeFromGC+TimeShiftToGC)*((double) idx)*deltaF);
+			time_cos = cos(LAL_TWOPI*(TimeFromGC+TimeShiftToGC)*((double) idx)*deltaF);
 
 /* Version derived 19/08/08 */
-			REAL8 hc = (REAL8)model->data[i]*time_cos + (REAL8)model->data[Nmodel-i]*time_sin;
-			REAL8 hs = (REAL8)model->data[Nmodel-i]*time_cos - (REAL8)model->data[i]*time_sin;
+			REAL8 hc = (REAL8)model->data[idx]*time_cos + (REAL8)model->data[Nmodel-idx]*time_sin;
+			REAL8 hs = (REAL8)model->data[Nmodel-idx]*time_cos - (REAL8)model->data[idx]*time_sin;
 			resp_r = det_resp.plus * hc - det_resp.cross * hs;
 			resp_i = det_resp.cross * hc + det_resp.plus * hs;
 
-			real=inputMCMC->stilde[det_i]->data->data[i].re - resp_r/deltaF;
-			imag=inputMCMC->stilde[det_i]->data->data[i].im - resp_i/deltaF;
+			real=inputMCMC->stilde[det_i]->data->data[idx].re - resp_r/deltaF;
+			imag=inputMCMC->stilde[det_i]->data->data[idx].im - resp_i/deltaF;
 
 
 /* Gaussian version */
 /* NOTE: The factor deltaF is to make ratio dimensionless, when using the specific definitions of the vectors
 that LAL uses. Please check this whenever any change is made */
-			chisq+=(real*real + imag*imag)*inputMCMC->invspec[det_i]->data->data[i]; 
+			chisq+=(real*real + imag*imag)*inputMCMC->invspec[det_i]->data->data[idx];
 
 /* Student-t version */
 /*			chisq+=log(real*real+imag*imag); */
@@ -651,6 +677,7 @@ in the frequency domain */
 	UINT4 Nmodel; /* Length of the model */
 	INT4 i,NtimeModel;
 	LALDetAMResponse det_resp;
+	REAL4FFTPlan *likelihoodPlan=NULL;
 	int Fdomain;
 	REAL8 chisq=0.0;
 	REAL8 real,imag,f,t;
@@ -670,7 +697,7 @@ in the frequency domain */
 	template.massChoice = totalMassAndEta;
 	template.fLower = inputMCMC->fLow;
 	template.distance = XLALMCMCGetParameter(parameter,"distMpc"); /* This must be in Mpc, contrary to the docs */
-	template.order=twoPN;
+	template.order=LAL_PNORDER_TWO;
 	template.approximant=inputMCMC->approximant;
 	template.tSampling = 1.0/inputMCMC->deltaT;
 	template.fCutoff = 0.5/inputMCMC->deltaT -1.0;
@@ -700,8 +727,8 @@ in the frequency domain */
 
 		if(likelihoodPlan==NULL) {LALCreateForwardREAL4FFTPlan(&status,&likelihoodPlan,(UINT4) NtimeModel,FFTW_PATIENT); fprintf(stderr,"Created FFTW plan\n");}
 		LALREAL4VectorFFT(&status,model,Tmodel,likelihoodPlan); /* REAL4VectorFFT doesn't normalise like TimeFreqRealFFT, so we do this above in Norm */
-		
-		
+
+
 		/*LALDestroyREAL4FFTPlan(&status,&plan);*/
 	}
 	else{
@@ -735,7 +762,7 @@ in the frequency domain */
 	TimeShiftToGC-=ChirpISCOLength;
 /*	template.nStartPad = (INT4)(TimeShiftToGC/inputMCMC->deltaT);*/
 /*	fprintf(stderr,"ChirpLengthISCO = %lf\n",ChirpISCOLength);*/
-	
+
 	/* Initialise structures for detector response calcs */
 	LALSource source; /* The position and polarisation of the binary */
 	source.equatorialCoords.longitude = XLALMCMCGetParameter(parameter,"long");
@@ -753,7 +780,7 @@ in the frequency domain */
 	DTAAS.p_det_and_time=&det_gps;
 
 	/* This also holds the source and the detector, LAL has two different structs for this! */
-	LALDetAndSource det_source; 
+	LALDetAndSource det_source;
 	det_source.pSource=&source;
 
 	/* The epoch of observation and the accuracy required ( we don't care about a few leap seconds) */
@@ -843,7 +870,7 @@ REAL8 MCMCLikelihoodMultiCoherent(LALMCMCInput *inputMCMC,LALMCMCParameter *para
 	REAL4FFTPlan *FFTplan;
 	REAL8 mchirp=0;
 	REAL8 eta=0;
-	
+
 	mchirp=XLALMCMCGetParameter(parameter,"mchirp");
 	eta = XLALMCMCGetParameter(parameter,"eta");
 
@@ -865,14 +892,14 @@ REAL8 MCMCLikelihoodMultiCoherent(LALMCMCInput *inputMCMC,LALMCMCParameter *para
 	PPNparams.ppn=NULL;
 
 	memcpy(&(PPNparams.epoch),&(inputMCMC->epoch),sizeof(LIGOTimeGPS));
-	
+
 	memset(&co_wave,0,sizeof(CoherentGW)); /* Blank the output fields */
 	memset(&det_resp,0,sizeof(DetectorResponse)); /* Only need the detector field in this struct, the rest are left blank */
-	
+
 	/* Create coherent waveform */
 	LALGeneratePPNInspiral(&status,&co_wave,&PPNparams);
-	
-	
+
+
 	/* Adjust time */
 	REAL8 tC=XLALMCMCGetParameter(parameter,"time");
 	tC-=PPNparams.tc; /* tC is now the time the wave reaches the low frequency */
@@ -905,9 +932,9 @@ REAL8 MCMCLikelihoodMultiCoherent(LALMCMCInput *inputMCMC,LALMCMCParameter *para
 			1.0/cur_seg->deltaT,
 			&(inputMCMC->stilde[det_i]->sampleUnits),
 			(size_t)inputMCMC->stilde[det_i]->data->length);
-		
+
 		XLALREAL4TimeFreqFFT(Ftemplate,template,FFTplan);
-/*		
+/*
 		sprintf(filename,"waveF_%sdat",inputMCMC->ifoID[det_i]);
 		fpout=fopen(filename,"w");
 		int N=inputMCMC->stilde[det_i]->data->length;
@@ -933,9 +960,9 @@ REAL8 MCMCLikelihoodMultiCoherent(LALMCMCInput *inputMCMC,LALMCMCParameter *para
 		logL-=chisq;
 	}
 	/* Free co_wave structures */
-	
+
 	XLALDestroyVectorSequence((co_wave.a->data));
-	LALFree(co_wave.a); 
+	LALFree(co_wave.a);
 	XLALDestroyREAL8TimeSeries(co_wave.phi);
 	XLALDestroyREAL4TimeSeries(co_wave.f);
 	LALDestroyREAL4FFTPlan(&status,&FFTplan);
@@ -971,5 +998,5 @@ time=-length;
 	XLALMCMCAddParam(parameter,"time",time,time-0.01,time+0.01,0);
 	XLALMCMCAddParam(parameter,"phi",0.0,0.0,LAL_TWOPI,1);
 	XLALMCMCAddParam(parameter,"logdistance",10.0,1.0,90.0,0);
-	
+
 }

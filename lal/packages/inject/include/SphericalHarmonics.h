@@ -12,8 +12,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with with program; see the file COPYING. If not, write to the 
- *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, 
+ *  along with with program; see the file COPYING. If not, write to the
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
  */
 
@@ -21,13 +21,13 @@
 /** \defgroup SphericalHarmonics
  * \ingroup support
  * \author S.Fairhurst, B. Krishnan, L.Santamaria
- * 
+ *
  * \brief Library of spin-weighted Spherical Harmonic functions
  *
 
  *
  */
- 
+
 
 
 /* includes */

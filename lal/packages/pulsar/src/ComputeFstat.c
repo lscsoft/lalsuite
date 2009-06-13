@@ -152,12 +152,12 @@ void ComputeFStatFreqBand ( LALStatus *status,
       from the fstatvector and from the input doppler point -- they could be inconsistent
       or the user of this function could misunderstand */
 
-  /* a check that the f0 values from thisPoint and fstatVector are 
+  /* a check that the f0 values from thisPoint and fstatVector are
      at least close to each other -- this is only meant to catch
-     stupid errors but not subtle ones */ 
-  ASSERT ( fabs(fstatVector->f0 - doppler->fkdot[0]) < fstatVector->deltaF, 
-	   status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT ); 
-	   
+     stupid errors but not subtle ones */
+  ASSERT ( fabs(fstatVector->f0 - doppler->fkdot[0]) < fstatVector->deltaF,
+	   status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT );
+
 
   /* copy values from 'doppler' to local variable 'thisPoint' */
   thisPoint = *doppler;
@@ -1178,7 +1178,7 @@ LALGetAMCoeffs(LALStatus *status,
   REAL4 delta, alpha;
   REAL4 sin1delta, cos1delta, sin2delta, cos2delta;
 
-  REAL4 gamma, lambda;
+  REAL4 gam, lambda;
   REAL4 norm;
   UINT4 i, numSteps;
 
@@ -1207,7 +1207,7 @@ LALGetAMCoeffs(LALStatus *status,
     REAL8 yAzi = DetectorStates->detector.frDetector.yArmAzimuthRadians;
 
     /* get detector orientation gamma */
-    gamma = LAL_PI_2 - 0.5 * (xAzi + yAzi);
+    gam = LAL_PI_2 - 0.5 * (xAzi + yAzi);
     /* get detector position latitude (lambda) */
     lambda = DetectorStates->detector.frDetector.vertexLatitudeRadians;
     /*
@@ -1222,7 +1222,7 @@ LALGetAMCoeffs(LALStatus *status,
     REAL4 sin1lambda, cos1lambda;
     REAL4 sin2lambda, cos2lambda;
 
-    sin_cos_LUT (&sin2gamma, &cos2gamma, 2.0f * gamma );
+    sin_cos_LUT (&sin2gamma, &cos2gamma, 2.0f * gam );
     sin_cos_LUT (&sin1lambda, &cos1lambda, lambda );
 
     sin2lambda = 2.0f * sin1lambda * cos1lambda;
@@ -1423,7 +1423,7 @@ LALNewGetAMCoeffs(LALStatus *status,
 
 } /* LALNewGetAMCoeffs() */
 
-
+
 
 /** Compute single time-stamp antenna-pattern coefficients a(t), b(t)
  *
@@ -1493,7 +1493,7 @@ XLALComputeAntennaPatternCoeffs ( REAL8 *ai,   			/**< [out] antenna-pattern fun
 } /* XLALComputeAntennaPatternCoeffs() */
 
 
-
+
 
 
 /** For a given OrbitalParams, calculate the time-differences
@@ -1975,7 +1975,7 @@ LALGetMultiAMCoeffs (LALStatus *status,
 } /* LALGetMultiAMCoeffs() */
 
 
-
+
 /* ===== Object creation/destruction functions ===== */
 
 /** Destroy a MultiSSBtimes structure.

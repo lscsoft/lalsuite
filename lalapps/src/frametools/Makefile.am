@@ -15,8 +15,12 @@ else
 FRAMEPROGRAMS =
 endif
 if LALFRAME
+if LALMETAIO
 LALFRAMEPROGRAMS = lalapps_frview
 lalapps_frview_SOURCES = view.c
+else
+LALFRAMEPROGRAMS =
+endif
 else
 LALFRAMEPROGRAMS =
 endif

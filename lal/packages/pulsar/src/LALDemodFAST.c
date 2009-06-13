@@ -100,24 +100,19 @@ None
 NRCSID( LALDEMODFASTC, "$Id$" );
 
 /* <lalVerbatim file="LALDemodCP"> */
-void LALDemodFAST(LALStatus *status, LALFstat *Fstat, FFT **input, DemodPar *params) 
+void LALDemodFAST(LALStatus *status, LALFstat *Fstat, FFT **input, DemodPar *params)
 /* </lalVerbatim> */
-{ 
+{
 
   INT4 alpha,i;                 /* loop indices */
   REAL8	*xSum=NULL, *ySum=NULL;	/* temp variables for computation of fs*as and fs*bs */
   INT4 s;		        /* local variable for spinDwn calcs. */
-  REAL8	xTemp;	                /* temp variable for phase model */
   REAL8	deltaF;	                /* width of SFT band */
-  INT4	k, k1;	                /* defining the sum over which is calculated */
+  INT4	k;	                /* defining the sum over which is calculated */
   REAL8 *skyConst;	        /* vector of sky constants data */
   REAL8 *spinDwn;	        /* vector of spinDwn parameters (maybe a structure? */
   INT4	spOrder;	        /* maximum spinDwn order */
-  REAL8	x;		        /* local variable for holding x */
-  REAL8	realXP, imagXP; 	/* temp variables used in computation of */
-  REAL8	realP, imagP;	        /* real and imaginary parts of P, see CVS */
   INT4	sftIndex;	        /* more temp variables */
-  REAL8	y;		        /* local variable for holding y */
   REAL8 realQ, imagQ;
   INT4 *tempInt1;
   REAL8 FaSq;
@@ -165,7 +160,7 @@ void LALDemodFAST(LALStatus *status, LALFstat *Fstat, FFT **input, DemodPar *par
     xSum[alpha]=0.0;
     ySum[alpha]=0.0;
     for(s=0; s<spOrder;s++) {
-      xSum[alpha] += spinDwn[s] * skyConst[tempInt1[alpha]+2+2*s]; 	
+      xSum[alpha] += spinDwn[s] * skyConst[tempInt1[alpha]+2+2*s];
       ySum[alpha] += spinDwn[s] * skyConst[tempInt1[alpha]+1+2*s];
     }
   }
@@ -175,7 +170,7 @@ void LALDemodFAST(LALStatus *status, LALFstat *Fstat, FFT **input, DemodPar *par
    res=128;
    reso2=res/2;
    sinVal=(REAL8 *)LALMalloc((res+1)*sizeof(REAL8));
-   cosVal=(REAL8 *)LALMalloc((res+1)*sizeof(REAL8)); 
+   cosVal=(REAL8 *)LALMalloc((res+1)*sizeof(REAL8));
    for (k=0; k<=res; k++){
      sinVal[k]=sin((LAL_TWOPI*(k-reso2))/reso2);
      cosVal[k]=cos((LAL_TWOPI*(k-reso2))/reso2);
@@ -191,7 +186,7 @@ void LALDemodFAST(LALStatus *status, LALFstat *Fstat, FFT **input, DemodPar *par
 
   /* minimum frequency index of SFT input data */
   ifmin = (*input)->fft->f0/df;
-  
+
   /* Loop over frequencies to be demodulated */
   for(i=0 ; i< params->imax  ; i++ )
   {
@@ -212,7 +207,6 @@ void LALDemodFAST(LALStatus *status, LALFstat *Fstat, FFT **input, DemodPar *par
     /* Loop over SFTs that contribute to F-stat for a given frequency */
     for(alpha=0;alpha<params->SFTno;alpha++)
       {
-	REAL8 tsin, tcos, tempFreq;
 	REAL8 realQXP;
 	REAL8 imagQXP;
 	REAL4 a = *aptr;
@@ -223,15 +217,15 @@ void LALDemodFAST(LALStatus *status, LALFstat *Fstat, FFT **input, DemodPar *par
 	sftIndex =(INT4) ( (f*skyConst[ no ]+ *xSumptr )*norm - ifmin );
 
 	Xalpha_k=(*inputptr)->fft->data->data[sftIndex];
-		
+
 	/* Here's the LUT version of the phase computation */
 	Y = - f*skyConst[ no - 1 ] - *ySumptr;
-	Y -= (INT4)Y;  
+	Y -= (INT4)Y;
 
 	myindex = (INT4)(Y*reso2+reso2+0.5);
 	realQ = cosVal[myindex];
 	imagQ = sinVal[myindex];
-	  
+
 	realQXP = Xalpha_k.re*realQ-Xalpha_k.im*imagQ;
 	imagQXP = Xalpha_k.re*imagQ+Xalpha_k.im*realQ;
 
@@ -240,7 +234,7 @@ void LALDemodFAST(LALStatus *status, LALFstat *Fstat, FFT **input, DemodPar *par
 	Fa.im += a*imagQXP;
 	Fb.re += b*realQXP;
 	Fb.im += b*imagQXP;
-	
+
 	/* advance pointers that are functions of alpha: a, b,
 	   tempInt1, xSum, ySum, input */
 	inputptr++;
@@ -249,7 +243,7 @@ void LALDemodFAST(LALStatus *status, LALFstat *Fstat, FFT **input, DemodPar *par
 	aptr++;
 	bptr++;
 	tempInt1ptr++;
-      }      
+      }
 
     FaSq = Fa.re*Fa.re+Fa.im*Fa.im;
     FbSq = Fb.re*Fb.re+Fb.im*Fb.im;
@@ -271,7 +265,7 @@ void LALDemodFAST(LALStatus *status, LALFstat *Fstat, FFT **input, DemodPar *par
 
   LALFree(sinVal);
   LALFree(cosVal);
-  
+
   RETURN( status );
 
 } /* LALDemod() */

@@ -19,7 +19,7 @@
 
 /************************************ <lalVerbatim file="StochasticOmegaGWCV">
 Author: UTB Relativity Group; contact whelan@phys.utb.edu
-$Id$  
+$Id$
 ************************************* </lalVerbatim> */
 
 /********************************************************** <lalLaTeX>
@@ -103,12 +103,12 @@ include ``broken'' power law spectra
 
 \vfill{\footnotesize\input{StochasticOmegaGWCV}}
 
-******************************************************* </lalLaTeX> */ 
+******************************************************* </lalLaTeX> */
 /**************************************** <lalLaTeX file="StochasticOmegaGWCB">
 
 % \bibitem{stochastic:}
 
-******************************************************* </lalLaTeX> */ 
+******************************************************* </lalLaTeX> */
 
 #include <lal/LALStdlib.h>
 
@@ -174,7 +174,7 @@ LALStochasticOmegaGW(
       STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
       STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
-  /* check that pointer to data member of real frequency series for 
+  /* check that pointer to data member of real frequency series for
    * output is non-null */
   ASSERT(output->data != NULL, status, \
       STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
@@ -240,7 +240,7 @@ LALStochasticOmegaGW(
   }
   else
   {
-    if (f0 == 0) 
+    if (f0 == 0)
     {
       output->data->data[0] = (alpha>0 ? 0 : LAL_REAL4_MAX);
       for (i=1 ; i < length ; ++i)
@@ -249,7 +249,7 @@ LALStochasticOmegaGW(
         output->data->data[i] = omegaRef * pow(x,alpha);
       }
     }
-    else 
+    else
     {
       for (i=0 ; i < length ; ++i)
       {
@@ -258,6 +258,6 @@ LALStochasticOmegaGW(
       }
     }
   }
-  
+
   RETURN(status);
 }

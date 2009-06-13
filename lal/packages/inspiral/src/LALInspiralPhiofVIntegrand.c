@@ -42,7 +42,7 @@ The function \texttt{LALInspiralPhiofVIntegrandIn} calculates the quantity $v^{3
 
 \subsubsection*{Uses}
 
-This function calls {\tt dEnergy} and {\tt flux} functions that are defined in the 
+This function calls {\tt dEnergy} and {\tt flux} functions that are defined in the
 {\tt expnFunc} structure  and represent $E^{\prime}(v)$ and $\mathcal{F}(v)$, respectively,
 and pointed to the appropriate PN functions with a call to \texttt{LALInspiralChooseModel.}
 
@@ -67,10 +67,10 @@ and pointed to the appropriate PN functions with a call to \texttt{LALInspiralCh
 #include <lal/LALStdlib.h>
 #include <lal/LALInspiral.h>
 
-NRCSID (LALINSPIRALPHIOFVINTEGRANDC, "$Id$"); 
+NRCSID (LALINSPIRALPHIOFVINTEGRANDC, "$Id$");
 
 /*  <lalVerbatim file="LALInspiralPhiofVIntegrandCP"> */
-void 
+void
 LALInspiralPhiofVIntegrand (
    LALStatus  *status,
    REAL8      *integrand,

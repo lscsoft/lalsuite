@@ -87,7 +87,7 @@ LALGSLErrorHandler(
   {
     lalAbortHook( "Abort: function LALGSLErrorHandler, file %s, line %d, %s\n"
                   "       Null global status pointer\n",
-                  __FILE__, __LINE__, LALGSLC ); 
+                  __FILE__, __LINE__, LALGSLC );
   }
   lalGSLGlobalStatusPtr->statusPtr = NULL;
   INITSTATUS( lalGSLGlobalStatusPtr, "LALGSLErrorHandler", LALGSLC );

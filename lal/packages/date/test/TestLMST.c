@@ -56,7 +56,7 @@ int main(int argc, char *argv[])
       lalDebugLevel = atoi(argv[1]);
 
     /** TEST NO. 1 **/
-    
+
     /*
      * Check against the Astronomical Almanac:
      * For 1994-11-16 0h UT - Julian Date 2449672.5, GMST 03h 39m 21.2738s
@@ -94,7 +94,7 @@ int main(int argc, char *argv[])
         REPORTSTATUS(&stat);
         return stat.statusCode;
       }
-    
+
     LALSecsToLALDate(&stat, &mstdate, gmstsecs);
     if (stat.statusCode && lalDebugLevel > 0)
       {
@@ -124,7 +124,7 @@ int main(int argc, char *argv[])
         strcat(refstr, tmpstr+1);
         fprintf(stderr, "  GMST at 0h UTC on 1994-11-16:\n");
         fprintf(stderr, "       get: %s\n", refstr);
-        
+
         sprintf(tmpstr, "  03h 39m 21.2738s");
         fprintf(stderr, "    expect: %s\n", tmpstr);
         fprintf(stderr, "  but since we don't have the equation of equinoxes in, can\n");
@@ -141,7 +141,7 @@ int main(int argc, char *argv[])
         strcat(refstr, tmpstr+1);
         printf("GMST at 0h UTC on 1994-11-16:\n");
         printf("     get: %s\n", refstr);
-        
+
         sprintf(tmpstr, "03h 39m 21.2738s");
         printf("  expect: %s\n", tmpstr);
         printf("but since we don't have the equation of equinoxes in, can\n");
@@ -187,7 +187,7 @@ int main(int argc, char *argv[])
         REPORTSTATUS(&stat);
         return stat.statusCode;
       }
-    
+
     LALSecsToLALDate(&stat, &mstdate, gmstsecs);
     if (stat.statusCode && lalDebugLevel > 0)
       {
@@ -217,7 +217,7 @@ int main(int argc, char *argv[])
         strcat(refstr, tmpstr+1);
         fprintf(stderr, "  GMST at 0h UTC on 1994-08-08:\n");
         fprintf(stderr, "       get: %s\n", refstr);
-        
+
         sprintf(tmpstr, "  21h 05m 05.9812s");
         fprintf(stderr, "    expect: %s\n", tmpstr);
         fprintf(stderr, "  but since we don't have the equation of equinoxes in, can\n");
@@ -235,7 +235,7 @@ int main(int argc, char *argv[])
         printf("GMST at 0h UTC on 1994-08-08:\n");
         strcat(refstr, tmpstr+1);
         printf("     get: %s\n", refstr);
-        
+
         sprintf(tmpstr, "21h 05m 05.9812s");
         printf("  expect: %s\n", tmpstr);
         printf("but since we don't have the equation of equinoxes in, can\n");
@@ -244,7 +244,7 @@ int main(int argc, char *argv[])
 
 
     /** TEST NO. 3 **/
-    
+
     /*** check another date/time ***/
 
     /*
@@ -284,7 +284,7 @@ int main(int argc, char *argv[])
         REPORTSTATUS(&stat);
         return stat.statusCode;
       }
-    
+
     LALSecsToLALDate(&stat, &mstdate, gmstsecs);
     if (stat.statusCode && lalDebugLevel > 0)
       {
@@ -314,7 +314,7 @@ int main(int argc, char *argv[])
         strcat(refstr, tmpstr+1);
         fprintf(stderr, "  GMST at 0h UTC on 2003-01-11:\n");
         fprintf(stderr, "       get: %s\n", refstr);
-        
+
         sprintf(tmpstr, "  07h 20m 21.5980s");
         fprintf(stderr, "    expect: %s\n", tmpstr);
         fprintf(stderr, "  but since we don't have the equation of equinoxes in, can\n");
@@ -334,7 +334,7 @@ int main(int argc, char *argv[])
         printf("\n");
         printf("GMST at 0h UTC on 2003-01-11:\n");
         printf("     get: %s\n", refstr);
-        
+
         sprintf(tmpstr, "07h 20m 21.5980s");
         printf("  expect: %s\n", tmpstr);
         printf("but since we don't have the equation of equinoxes in, can\n");
@@ -344,7 +344,7 @@ int main(int argc, char *argv[])
 
 
     /** TEST NO. 4 **/
-    
+
     /*** check another date/time ***/
 
     /*
@@ -384,7 +384,7 @@ int main(int argc, char *argv[])
         REPORTSTATUS(&stat);
         return stat.statusCode;
       }
-    
+
     LALSecsToLALDate(&stat, &mstdate, gmstsecs);
     if (stat.statusCode && lalDebugLevel > 0)
       {
@@ -399,7 +399,7 @@ int main(int argc, char *argv[])
     /* strcat(refstr, tmpstr+1); / * remove leading 0 */
     /* printf("   get: %s\n", refstr); */
 
-    
+
     expected_mstdate.residualNanoSeconds = 0.6093*1.e9;
     expected_mstdate.unixDate.tm_sec  =  2;
     expected_mstdate.unixDate.tm_min  = 34;
@@ -415,7 +415,7 @@ int main(int argc, char *argv[])
         strcat(refstr, tmpstr+1);
         fprintf(stderr, "  GMST at 0h UTC on 2003-04-01:\n");
         fprintf(stderr, "       get: %s\n", refstr);
-        
+
         sprintf(tmpstr, "  14h 34m 02.6093s ");
         fprintf(stderr, "    expect: %s\n", tmpstr);
         fprintf(stderr, "  but since we don't have the equation of equinoxes in, can\n");
@@ -434,16 +434,16 @@ int main(int argc, char *argv[])
         printf("\n");
         printf("GMST at 0h UTC on 2003-04-01:\n");
         printf("     get: %s\n", refstr);
-        
+
         sprintf(tmpstr, "14h 34m 02.6093s");
         printf("  expect: %s\n", tmpstr);
         printf("but since we don't have the equation of equinoxes in, can\n");
         printf("expect up to one sidereal second disagreement\n");
       }
 
-    
+
     return stat.statusCode;
-    
+
 }
 
 
@@ -459,13 +459,13 @@ static BOOLEAN mstdate_ok_p(const LALDate *p_date,
   expected_secs = (double)((*p_expected_date).unixDate.tm_sec) +
     (*p_expected_date).residualNanoSeconds / 1.e9;
 
-#if 0  
+#if 0
   printf("         secs = % 20.14e\n", secs);
   printf("expected_secs = % 20.14e\n", expected_secs);
-#endif  
+#endif
 
   secs_ok_p = (fabs(secs - expected_secs) < 1.);
-  
+
   return (secs_ok_p &&
           (*p_date).unixDate.tm_min == (*p_expected_date).unixDate.tm_min &&
           (*p_date).unixDate.tm_hour == (*p_expected_date).unixDate.tm_hour);

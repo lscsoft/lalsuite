@@ -23,18 +23,18 @@ $Id$
 </lalVerbatim>  */
 /* <lalLaTeX>
 \subsection{Module \texttt{LALInspiralFindEventsCluster.c}}
-Module to find all `distinct' events in a given data set with an SNR 
+Module to find all `distinct' events in a given data set with an SNR
 larger than a pre-specified threshold. To select `distinct'
 events the code uses two thresholds; all events crossing a first
 {\it lower} threshold are clustered. If at least one of the points
 in the clustered event crosses a second {\it higher} threshold then the clustered
 event is a trigger and what is recorded is the loudest point in the
 clustered event and the number of points above the first threshold in
-the cluster. 
+the cluster.
 
-The module uses two orthogonal inspiral signals of specified parameters 
+The module uses two orthogonal inspiral signals of specified parameters
 with a weight specified in a psd array. The code returns
-the number of events found, and for each event the snr, 
+the number of events found, and for each event the snr,
 the bin number and the phase of the template at that bin.
 
 \subsubsection*{Prototypes}
@@ -62,7 +62,7 @@ NRCSID (LALINSPIRALFINDEVENTSCLUSTERC, "$Id$");
 
 /*  <lalVerbatim file="LALInspiralFindEventsClusterCP"> */
 void
-LALInspiralFindEventsCluster 
+LALInspiralFindEventsCluster
    (
    LALStatus            *status,
    INT4                 *nEvents,
@@ -71,8 +71,8 @@ LALInspiralFindEventsCluster
    )
 {  /*  </lalVerbatim>  */
 
-   /* 
-    * We shall assume that the number of events to be found in 
+   /*
+    * We shall assume that the number of events to be found in
     * each template is no more than 100000.
    */
    INT4 i;
@@ -200,10 +200,10 @@ LALInspiralFindEventsCluster
    CHECKSTATUSPTR(status);
    if (findeventsin->displayTemplates)
    {
-      for (i=0;i<(INT4)output1.length;i++) 
+      for (i=0;i<(INT4)output1.length;i++)
          printf("%e %e\n", i*dt, output1.data[i]);printf("&\n");
       /*
-      for (i=0;i<(INT4)output1.length;i++) 
+      for (i=0;i<(INT4)output1.length;i++)
          printf("%e %e\n", i*dt, output2.data[i]);printf("&\n");
        */
    }
@@ -240,30 +240,30 @@ LALInspiralFindEventsCluster
    CHECKSTATUSPTR(status);
 
 
-   for (i=nBegin;i<nEnd;i++) 
+   for (i=nBegin;i<nEnd;i++)
 	   buffer.data[i-nBegin] = output1.data[i];
    LALStatsREAL4Vector(status->statusPtr, &statsout1, &buffer);
    CHECKSTATUSPTR(status);
-   for (i=nBegin;i<nEnd;i++) 
+   for (i=nBegin;i<nEnd;i++)
 	   buffer.data[i-nBegin] = output2.data[i];
    LALStatsREAL4Vector(status->statusPtr, &statsout2, &buffer);
    CHECKSTATUSPTR(status);
 
    if (findeventsin->displayCorrelationStats)
    {
-	   fprintf(stderr, "mean=%e std=%e min=%e max=%e\n", statsout1.mean, statsout1.stddev, statsout1.min, statsout1.max);   
-   
-	   fprintf(stderr, "mean=%e std=%e min=%e max=%e\n", statsout2.mean, statsout2.stddev, statsout2.min, statsout2.max);   
+	   fprintf(stderr, "mean=%e std=%e min=%e max=%e\n", statsout1.mean, statsout1.stddev, statsout1.min, statsout1.max);
+
+	   fprintf(stderr, "mean=%e std=%e min=%e max=%e\n", statsout2.mean, statsout2.stddev, statsout2.min, statsout2.max);
    }
-   
+
    if (findeventsin->displayCorrelation)
    {
-      for (i=nBegin;i<nEnd;i++) 
+      for (i=nBegin;i<nEnd;i++)
          {
-            x = pow ( pow( output1.data[i], 2.) + pow( output2.data[i], 2.), 0.5); 
+            x = pow ( pow( output1.data[i], 2.) + pow( output2.data[i], 2.), 0.5);
             printf("%16.12e %e\n", findeventsin->currentGPSTime + i*dt+findeventsin->param.tC, x);
          }
-         printf("&\n");   
+         printf("&\n");
    }
    msevenby3 = -7.L/3.L;
    distanceNorm = 0.;
@@ -284,7 +284,7 @@ LALInspiralFindEventsCluster
    cmax = 0.;
    numPoints = 0;
 
-   for (i=nBegin; i<nEnd; i++) 
+   for (i=nBegin; i<nEnd; i++)
    {
        x = output1.data[i];
        y = output2.data[i];
@@ -294,7 +294,7 @@ LALInspiralFindEventsCluster
 	  numPoints++;
 	  if (previous)
 	  {
-	     if (z>cmax) 
+	     if (z>cmax)
 	     {
                 cmax = z ;
 		bin = i;
@@ -313,30 +313,30 @@ LALInspiralFindEventsCluster
        {
 	  if (previous)
 	  {
-	     if (cmax > findeventsin->Threshold) 
+	     if (cmax > findeventsin->Threshold)
 	     {
-          
+
 		if (!(*eventlist = (InspiralEventsList*)
 					     LALRealloc(*eventlist, sizeof(InspiralEventsList)*((*nEvents)+1))))
 		{
 			ABORT(status, LALNOISEMODELSH_EMEM, LALNOISEMODELSH_MSGEMEM);
 		}
-		if ( lalDebugLevel&LALINFO ) 
+		if ( lalDebugLevel&LALINFO )
 		{
 		fprintf(stderr, "Triggering event %d with %d points and max at bin %d\n", (*nEvents)+1, numPoints, bin);
 		}
-   
+
 		/*
 		scanf("%d\n", &numPoints);
-   
+
 		if (numPoints)
 		{
-			for (i=nBegin;i<nEnd;i++) 
+			for (i=nBegin;i<nEnd;i++)
 			{
-				x = pow ( pow( output1.data[i], 2.) + pow( output2.data[i], 2.), 0.5); 
+				x = pow ( pow( output1.data[i], 2.) + pow( output2.data[i], 2.), 0.5);
 				printf("%e %e\n",i*dt, x);
 			}
-			printf("&\n");   
+			printf("&\n");
 		}
 		*/
 
@@ -354,7 +354,7 @@ LALInspiralFindEventsCluster
 		(*eventlist)[*nEvents].endTime = findeventsin->currentGPSTime + (int) eSec;
 		(*eventlist)[*nEvents].endTimeNS = (int) (1.e9 * (eSec - (int) eSec));
 		(*eventlist)[*nEvents].sigmasq = (statsout1.var+statsout2.var)/2.;
-   
+
 		/* Now call the chi-squared code */
 		params.lag = (*eventlist)[*nEvents].bin;
 		params.phase = (*eventlist)[*nEvents].phase;
@@ -367,7 +367,7 @@ LALInspiralFindEventsCluster
 		chisqParams.fLower = findeventsin->param.fLower;
 		chisqParams.deltaT = params.deltaT;
 		chisqParams.nBins = 8;
-		LALInspiralComputeChisq(status->statusPtr, &chisq, &chisqDataVec, &chisqParams); 
+		LALInspiralComputeChisq(status->statusPtr, &chisq, &chisqDataVec, &chisqParams);
 		(*eventlist)[*nEvents].chisq = chisq;
 		(*eventlist)[*nEvents].chisqDOF = 2*(chisqParams.nBins-1);
 		(*nEvents)++;

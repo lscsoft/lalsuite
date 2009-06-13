@@ -17,14 +17,14 @@
 *  MA  02111-1307  USA
 */
 
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: LIGOMetadataUtils.h
  *
  * Author: Brown, D. A. and Fairhurst, S.
- * 
+ *
  * Revision: $Id$
- * 
+ *
  *-----------------------------------------------------------------------
  */
 
@@ -32,7 +32,7 @@
 <lalVerbatim file="LIGOMetadataUtilsHV">
 Author: Brown, D. A. and Fairhurst, S.
 $Id$
-</lalVerbatim> 
+</lalVerbatim>
 <lalLaTeX>
 \section{Header \texttt{LIGOMetadataUtils.h}}
 \label{s:LIGOMetadataItils.h}
@@ -47,9 +47,9 @@ to the LIGO metadata database tables defined in \texttt{LIGOMetadataTables.h}.
 
 \noindent This header provides prototypes for routines that perform processing
 on the LAL structures that correspond to the LIGO metadata database tables
-defined in \texttt{LIGOMetadataTables.h}, such as sorting and eliminating 
-duplictaes. The functions specific to a particular metadata table (e.g. 
-\texttt{sngl\_inspiral}, \texttt{sngl\_burst}, etc.) are all prototyped in 
+defined in \texttt{LIGOMetadataTables.h}, such as sorting and eliminating
+duplictaes. The functions specific to a particular metadata table (e.g.
+\texttt{sngl\_inspiral}, \texttt{sngl\_burst}, etc.) are all prototyped in
 this header.
 
 \subsection*{Types}
@@ -75,8 +75,8 @@ extern "C" {
 NRCSID( LIGOMETADATAUTILSH, "$Id$" );
 
 #if 0
-<lalLaTeX> 
-\subsection*{Error codes} 
+<lalLaTeX>
+\subsection*{Error codes}
 </lalLaTeX>
 #endif
 /* <lalErrTable> */
@@ -117,11 +117,11 @@ NRCSID( LIGOMETADATAUTILSH, "$Id$" );
 \subsubsection*{Type \texttt{LALPlaygroundDataMask}}
 #endif
 /* <lalVerbatim> */
-typedef enum 
+typedef enum
 {
-  unspecified_data_type, 
+  unspecified_data_type,
   playground_only,
-  exclude_play, 
+  exclude_play,
   all_data
 }
 LALPlaygroundDataMask;
@@ -138,7 +138,7 @@ and \texttt{all\_data}.
 
 /*
  *
- * inspiral specific structures 
+ * inspiral specific structures
  *
  */
 
@@ -148,16 +148,16 @@ and \texttt{all\_data}.
 </lalLaTeX>
 #endif
 /* <lalVerbatim> */
-typedef enum 
-{ 
+typedef enum
+{
   unspecified_test,
   no_test,
-  m1_and_m2, 
-  psi0_and_psi3,  
-  mchirp_and_eta, 
+  m1_and_m2,
+  psi0_and_psi3,
+  mchirp_and_eta,
   tau0_and_tau3,
   ellipsoid
-} 
+}
 SnglInspiralParameterTest;
 /*</lalVerbatim> */
 #if 0
@@ -191,11 +191,11 @@ SnglInspiralAccuracy;
 /*</lalVerbatim> */
 #if 0
 <lalLaTeX>
-The \texttt{SnglInspiralAccuracy} structure contains parameters used for 
+The \texttt{SnglInspiralAccuracy} structure contains parameters used for
 testing coincidence between two or more single inspiral tables.  These include
-a timing accuracy \texttt{dt}, five mass accuracies \texttt{dm} (used for 
+a timing accuracy \texttt{dt}, five mass accuracies \texttt{dm} (used for
 testing \texttt{mass1} and \texttt{mass2}), \texttt{deta}, \texttt{dmchirp},
-\texttt{dpsi0} and \texttt{dpsi3}.  It also includes the parameters 
+\texttt{dpsi0} and \texttt{dpsi3}.  It also includes the parameters
 \texttt{kappa} and \texttt{epsilon} which are used for testing consistency of
 effective distance.
 \subsubsection*{Type \texttt{SnglInspiralClusterChoice}}
@@ -243,18 +243,18 @@ CoincInspiralStatParams;
 <lalLaTeX>
 The \texttt{CoincInspiralStatParams} structure contains the bitten L parameter for
 each of the six global interferometers.  These are stored in the
-\texttt{param\_a} and \texttt{param\_b} structure. 
+\texttt{param\_a} and \texttt{param\_b} structure.
 </lalLaTeX>
 #endif
 
 /* <lalVerbatim> */
-typedef enum 
-{ 
+typedef enum
+{
   none,
-  snr_and_chisq, 
-  snrsq_over_chisq, 
-  snr 
-} 
+  snr_and_chisq,
+  snrsq_over_chisq,
+  snr
+}
 SnglInspiralClusterChoice;
 /*</lalVerbatim> */
 #if 0
@@ -268,8 +268,8 @@ with the largest value of snr squared divided by the chi squared.
 </lalLaTeX>
 #endif
 /* <lalVerbatim> */
-typedef enum 
-{ 
+typedef enum
+{
   no_stat,
   snrsq,
   effective_snrsq,
@@ -277,14 +277,14 @@ typedef enum
   bitten_l,
   bitten_lsq,
   ifar
-} 
+}
 CoincInspiralStatistic;
 /*</lalVerbatim> */
 #if 0
 <lalLaTeX>
 The \texttt{CoincInspiralStatistic} provides two choices for clustering
 a single inspiral table.  The\texttt{snrsq} clustering returns the trigger
-with the greatest summed snr$^{2}$ from all instruments.  The 
+with the greatest summed snr$^{2}$ from all instruments.  The
 \texttt{snr\_chi\_stat} replaces selects the trigger
 with the largest value of the snr and chisq statistic and the \texttt{bitten\_l}
 returns the minimum among the summed snr$^{2}$ from all instruments and the
@@ -295,7 +295,7 @@ provided by the user.
 /* <lalVerbatim> */
 typedef struct
 tagSnglInspiralBCVCalphafCut
-{ 
+{
   REAL4       h1_lo;
   REAL4       h1_hi;
   REAL4       h2_lo;
@@ -303,7 +303,7 @@ tagSnglInspiralBCVCalphafCut
   REAL4       l1_lo;
   REAL4       l1_hi;
   REAL4       psi0cut;
-} 
+}
 SnglInspiralBCVCalphafCut;
 /*</lalVerbatim> */
 #if 0
@@ -314,9 +314,9 @@ The \texttt{SnglInspiralBCVCalphafCut} provides entries for cutting single IFO t
 
 
 /*
- * 
+ *
  *  ringdown specific structures
- *    
+ *
  */
 typedef enum
 {
@@ -327,18 +327,18 @@ typedef enum
 }
 SnglRingdownParameterTest;
 
-typedef enum 
-{ 
-  ring_inject, 
-  imr_inject, 
+typedef enum
+{
+  ring_inject,
+  imr_inject,
   imr_ring_inject,
   EOBNR_inject
-} 
+}
 inject_type;
 
 typedef struct
 tagSnglRingdownAccuracy
-{  
+{
   INT4        match;
   REAL4       kappa;
   INT8        dt;
@@ -361,7 +361,7 @@ tagRingdownAccuracyList
   REAL8                     minimizerStep;
 }
 RingdownAccuracyList;
- 
+
 /*
  *
  * general manipulation functions
@@ -380,36 +380,36 @@ SearchSummaryTable *XLALCreateSearchSummaryTableRow(const ProcessTable *);
 void XLALDestroySearchSummaryTableRow(SearchSummaryTable *);
 void XLALDestroySearchSummaryTable(SearchSummaryTable *);
 
-int 
+int
 XLALCountProcessTable(
     ProcessTable *head
     );
 
-int 
+int
 XLALCountProcessParamsTable(
     ProcessParamsTable *head
     );
 
-int 
+int
 XLALCountMultiInspiralTable(
     MultiInspiralTable *head
     );
 
-int 
-XLALIFONumber( 
-    const char *ifo 
+int
+XLALIFONumber(
+    const char *ifo
     );
 
-void 
-XLALReturnIFO( 
+void
+XLALReturnIFO(
     char                *ifo,
-    InterferometerNumber IFONumber 
+    InterferometerNumber IFONumber
     );
 
 void
 XLALReturnDetector(
     LALDetector           *det,
-    InterferometerNumber   IFONumber 
+    InterferometerNumber   IFONumber
     );
 
 
@@ -436,7 +436,7 @@ LALTimeCheckSearchSummary (
     LIGOTimeGPS        *startTime,
     LIGOTimeGPS        *endTime
     );
- 
+
 int
 LALCompareSearchSummaryByInTime (
     const void *a,
@@ -477,12 +477,12 @@ LALIfoScanSearchSummary(
     );
 
 void
-LALDistanceScanSummValue (
+LALDistanceScanSummValueTable (
     LALStatus            *status,
-    SummValueTable       *summList,
+    SummValueTable       *summValueList,
     LIGOTimeGPS          gps,
-    CHAR                 *ifo,
-    REAL4                 distance
+    const CHAR           *ifo,
+    REAL4                *distance
     );
 
 void
@@ -613,7 +613,7 @@ LALClusterSnglInspiralTable (
     SnglInspiralClusterChoice   clusterchoice
     );
 
-REAL4 
+REAL4
 XLALSnglInspiralStat(
     SnglInspiralTable         *snglInspiral,
     SnglInspiralClusterChoice  snglStat
@@ -667,7 +667,7 @@ XLALRsqCutSingleInspiral (
 SnglInspiralTable *
 XLALVetoSingleInspiral (
     SnglInspiralTable          *eventHead,
-    LALSegList                 *vetoSegs, 
+    LALSegList                 *vetoSegs,
     CHAR 		       *ifo
     );
 
@@ -778,14 +778,14 @@ XLALMaxSnglInspiralOverIntervals(
     INT4                       deltaT
     );
 
-INT4 
-XLALCountSnglInspiral( 
-    SnglInspiralTable *head 
+INT4
+XLALCountSnglInspiral(
+    SnglInspiralTable *head
     );
 
-INT4 
-XLALCountCoincInspiral( 
-    CoincInspiralTable *head 
+INT4
+XLALCountCoincInspiral(
+    CoincInspiralTable *head
     );
 
 /* coinc inspiral */
@@ -864,11 +864,11 @@ XLALInspiralIotaCutBCVC(
 
 void
 LALInspiralDistanceCutCleaning(
-    LALStatus *status, 
+    LALStatus                  *status,
     CoincInspiralTable        **coincInspiral,
     InspiralAccuracyList       *accuracyParams,
     REAL4 			snrThreshold,
-    SummValueTable            **summValueList,
+    SummValueTable             *summValueList,
     LALSegList                 *vetoSegsH1,
     LALSegList                 *vetoSegsH2
     );
@@ -933,14 +933,14 @@ LALCoincCutSnglInspiral(
     SnglInspiralTable         **snglPtr
     );
 
-int 
+int
 XLALGenerateCoherentBank(
     SnglInspiralTable         **coherentBank,
     CoincInspiralTable         *coincInput,
     CHAR                       *ifos
     );
 
-INT8 
+INT8
 XLALCoincInspiralTimeNS (
     const CoincInspiralTable         *coincInspiral
     );
@@ -952,12 +952,12 @@ XLALCoincInspiralStat(
     CoincInspiralStatParams    *bittenLParams
     );
 
-int XLALComputeAndStoreEffectiveSNR(   	CoincInspiralTable *head, 
-					CoincInspiralStatistic *stat, 
+int XLALComputeAndStoreEffectiveSNR(   	CoincInspiralTable *head,
+					CoincInspiralStatistic *stat,
 					CoincInspiralStatParams *par
     );
 
-int 
+int
 XLALClusterCoincInspiralTable (
     CoincInspiralTable        **coincList,
     INT8                        dtimeNS,
@@ -995,13 +995,13 @@ XLALSortCoincInspiralByStat (
 int
 XLALCoincInspiralIfos (
     CoincInspiralTable  *coincInspiral,
-    char                *ifos    
+    char                *ifos
     );
 
 int
 XLALCoincInspiralIfosCut(
     CoincInspiralTable **coincHead,
-    char                *ifos    
+    char                *ifos
     );
 
 int
@@ -1018,7 +1018,7 @@ XLALCoincInspiralIdNumber (
 CoincInspiralTable *
 XLALCoincInspiralSlideCut(
     CoincInspiralTable **coincHead,
-    int                  slideNum    
+    int                  slideNum
     );
 
 CoincInspiralTable *
@@ -1117,7 +1117,7 @@ LALGalacticInspiralParamsToSimInspiralTable(
     );
 
 void
-LALInspiralSiteTimeAndDist( 
+LALInspiralSiteTimeAndDist(
     LALStatus         *status,
     SimInspiralTable  *output,
     LALDetector       *detector,
@@ -1135,7 +1135,7 @@ LALPopulateSimInspiralSiteInfo(
 void
 XLALSortSimInspiral(
     SimInspiralTable **head,
-    int (*comparefunc)(const SimInspiralTable * const *, 
+    int (*comparefunc)(const SimInspiralTable * const *,
       const SimInspiralTable * const *)
     );
 
@@ -1294,9 +1294,9 @@ XLALDestroySnglBurstTable(
 	SnglBurst *head
 );
 
-int 
-XLALSnglBurstTableLength( 
-	SnglBurst *head 
+int
+XLALSnglBurstTableLength(
+	SnglBurst *head
 );
 
 long
@@ -1398,8 +1398,8 @@ XLALSimBurstAssignIDs(
 
 /*
  *  ringdown specific functions
- * 
- *  
+ *
+ *
  */
 
 /* sngl ringdown */
@@ -1453,7 +1453,7 @@ LALClusterSnglRingdownTable (
 SnglRingdownTable *
 XLALVetoSingleRingdown (
     SnglRingdownTable          *eventHead,
-    LALSegList                 *vetoSegs, 
+    LALSegList                 *vetoSegs,
     CHAR                       *ifo
     );
 
@@ -1482,7 +1482,7 @@ XLALTimeCutSingleRingdown(
     LIGOTimeGPS                *startTime,
     LIGOTimeGPS                *endTime
     );
- 
+
 void
 LALTimeCutSingleRingdown(
     LALStatus                  *status,
@@ -1528,7 +1528,7 @@ XLALMaxSnglRingdownOverIntervals(
     INT8                       deltaT
     );
 
-INT4 
+INT4
 XLALCountSnglRingdown(
     SnglRingdownTable *head
     );
@@ -1551,7 +1551,7 @@ int
 XLALFreeSimRingdown (
     SimRingdownTable **eventHead
     );
- 
+
 void
 XLALPlayTestSimRingdown(
      SimRingdownTable          **eventHead,
@@ -1565,8 +1565,14 @@ XLALSimRingdownInSearchedData(
     SearchSummaryTable       **summList
     );
 
-INT8  
+INT8
 XLALReturnSimRingdownEndTime (
+    SimRingdownTable *event,
+    CHAR             *ifo
+    );
+
+INT8
+XLALReturnSimRingdownStartTime (
     SimRingdownTable *event,
     CHAR             *ifo
     );
@@ -1675,7 +1681,7 @@ XLALRecreateRingdownCoincFromSngls(
     );
 
 
-INT8 
+INT8
 XLALCoincRingdownTimeNS (
     const CoincRingdownTable         *coincRingdown
     );
@@ -1687,7 +1693,7 @@ XLALCoincRingdownStat(
     CoincInspiralStatParams    *bittenLParams
     );
 
-int 
+int
 XLALClusterCoincRingdownTable (
     CoincRingdownTable        **coincList,
     INT8                        dtimeNS,
@@ -1710,13 +1716,13 @@ XLALSortCoincRingdown (
 int
 XLALCoincRingdownIfos (
     CoincRingdownTable  *coincRingdown,
-    char                *ifos    
+    char                *ifos
     );
 
 int
 XLALCoincRingdownIfosCut(
     CoincRingdownTable **coincHead,
-    char                *ifos    
+    char                *ifos
      );
 
 UINT8
@@ -1727,7 +1733,7 @@ XLALCoincRingdownIdNumber (
 CoincRingdownTable *
 XLALCoincRingdownSlideCut(
     CoincRingdownTable **coincHead,
-    int                  slideNum    
+    int                  slideNum
     );
 
 CoincRingdownTable *

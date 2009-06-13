@@ -40,35 +40,35 @@
  * \idx{LALSSVectorMultiply()}
  * \idx{LALDZVectorMultiply()}
  * \idx{LALDDVectorMultiply()}
- * 
+ *
  * \subsubsection*{Description}
  *
  * Let \texttt{u}, \texttt{v}, and \texttt{w} be objects of type
  * \texttt{COMPLEX8Vector}, and let \texttt{a}, \texttt{b}, and \texttt{c} be
  * objects of type \texttt{REAL4Vector}.
- * 
+ *
  * The \verb:LALCCVectorMultiply( &status, &w, &u, &v ): function computes
  * $\mbox{\texttt{w.data[i]}}=\mbox{\texttt{u.data[i]}}\times\mbox{\texttt{v.data[i]}}$.
- * 
+ *
  * The \verb:LALCCVectorMultiplyConjugate( &status, &w, &u, &v ): function
  * computes
  * $\mbox{\texttt{w.data[i]}}=\mbox{\texttt{u.data[i]}}\times\mbox{\texttt{v.data[i]}}^\ast$.
- * 
+ *
  * The \verb:LALCCVectorDivide( &status, &w, &u, &v ): function computes
  * $\mbox{\texttt{w.data[i]}}=\mbox{\texttt{u.data[i]}}/\mbox{\texttt{v.data[i]}}$.
- * 
+ *
  * The \verb:LALSCVectorMultiply( &status, &w, &a, &v ): function computes
  * $\mbox{\texttt{w.data[i]}}=\mbox{\texttt{a.data[i]}}\times\mbox{\texttt{v.data[i]}}$.
- * 
+ *
  * The \verb:LALSSVectorMultiply( &status, &c, &a, &b ): function computes
  * $\mbox{\texttt{c.data[i]}}=\mbox{\texttt{a.data[i]}}\times\mbox{\texttt{b.data[i]}}$.
- * 
+ *
  * The double-precison multiply routines (with \verb:D: or \verb:Z: names)
  * work similarly.
- *  
+ *
  * \subsubsection*{Algorithm}
- * 
- * 
+ *
+ *
  * The algorithm for complex division is described in
  * Sec.~5.4 of Ref.~\cite{ptvf:1992}.  The formula used is:
  * \[
@@ -79,10 +79,10 @@
  * \end{array}
  * \right.
  * \]
- * 
+ *
  * \vfill{\footnotesize\input{VectorMultiplyCV}}
- * 
- **** </lalLaTeX> */ 
+ *
+ **** </lalLaTeX> */
 
 
 

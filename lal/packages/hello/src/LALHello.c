@@ -90,7 +90,7 @@ LALPrintMessage( LALStatus *status, const CHAR *message, const CHAR *fileName )
   {
     ABORT( status, LALHELLOH_EOPEN, LALHELLOH_MSGEOPEN );
   }
-    
+
   numChar = fprintf( filePtr, message );
 
   if ( numChar < 0 )
@@ -128,7 +128,7 @@ LALHello( LALStatus *status, const CHAR *fileName )
 
   LALPrintMessage( status->statusPtr, "hello, LSC!\n", fileName );
   CHECKSTATUSPTR( status );
-  
+
   DETATCHSTATUSPTR( status );
-  RETURN( status );  
+  RETURN( status );
 }

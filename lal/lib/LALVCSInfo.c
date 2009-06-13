@@ -19,7 +19,7 @@
  * Copyright (C) 2009 Adam Mercer
  */
 
-#include <lal/LALVCSInfo.h>
+#include "LALVCSInfo.h"
 
 /* global variables for vcs information */
 const char *lalVCSId = LAL_VCS_ID;

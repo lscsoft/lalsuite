@@ -17,14 +17,14 @@
 *  MA  02111-1307  USA
 */
 
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: FindChirpChisq.c
  *
  * Author: Anderson, W. G., and Brown, D. A.
- * 
+ *
  * Revision: $Id$
- * 
+ *
  *-----------------------------------------------------------------------
  */
 
@@ -47,7 +47,7 @@ Module to implement the $\chi^2$ veto for the stationary phase chirp.
 
 \subsubsection*{Description}
 
-The function \texttt{LALFindChirpChisqVeto()} perfoms a $\chi^2$ veto on 
+The function \texttt{LALFindChirpChisqVeto()} perfoms a $\chi^2$ veto on
 an entire data segment using the algorithm described below. On exit the
 vector \texttt{chisqVec} contains the value $\chi^2(t_j)$ for the data
 segment.
@@ -111,20 +111,20 @@ LALFindChirpComputeChisqBins(
       FINDCHIRPCHISQH_ECHIZ, FINDCHIRPCHISQH_MSGECHIZ );
   ASSERT( ! chisqBinVec->data, status,
       FINDCHIRPCHISQH_ENNUL, FINDCHIRPCHISQH_MSGENNUL );
-  
+
   ASSERT( fcSeg, status,
       FINDCHIRPCHISQH_ENULL, FINDCHIRPCHISQH_MSGENULL );
-  ASSERT( fcSeg->segNorm, status, 
+  ASSERT( fcSeg->segNorm, status,
       FINDCHIRPCHISQH_ENULL, FINDCHIRPCHISQH_MSGENULL );
-  ASSERT( fcSeg->segNorm->data, status, 
+  ASSERT( fcSeg->segNorm->data, status,
       FINDCHIRPCHISQH_ENULL, FINDCHIRPCHISQH_MSGENULL );
-  ASSERT( fcSeg->segNorm->length, status, 
+  ASSERT( fcSeg->segNorm->length, status,
       FINDCHIRPCHISQH_ENUMZ, FINDCHIRPCHISQH_MSGENUMZ );
-  ASSERT( fcSeg->tmpltPowerVec, status, 
+  ASSERT( fcSeg->tmpltPowerVec, status,
       FINDCHIRPCHISQH_ENULL, FINDCHIRPCHISQH_MSGENULL );
-  ASSERT( fcSeg->tmpltPowerVec->length, status, 
+  ASSERT( fcSeg->tmpltPowerVec->length, status,
       FINDCHIRPCHISQH_ENUMZ, FINDCHIRPCHISQH_MSGENUMZ );
-  ASSERT( fcSeg->tmpltPowerVec->data, status, 
+  ASSERT( fcSeg->tmpltPowerVec->data, status,
       FINDCHIRPCHISQH_ENULL, FINDCHIRPCHISQH_MSGENULL );
 
 
@@ -160,10 +160,10 @@ LALFindChirpComputeChisqBins(
   chisqBin[chisqPt++] = 0;
 
   /* calculate the frequencies of the chi-squared bin boundaries */
-  for ( k = 1; k < incIdx; ++k ) 
+  for ( k = 1; k < incIdx; ++k )
   {
     partSum += tmpltPower[k];
-    if ( partSum >= nextBin ) 
+    if ( partSum >= nextBin )
     {
       chisqBin[chisqPt++] = k;
       nextBin += increment;
@@ -181,7 +181,7 @@ LALFindChirpComputeChisqBins(
 
   /* the last bin boundary is at can be at Nyquist since   */
   /* qtilde is zero above the ISCO of the current template */
-  chisqBin[numChisqBins] = fcSeg->data->data->length; 
+  chisqBin[numChisqBins] = fcSeg->data->data->length;
 
 
   /* normal exit */
@@ -226,46 +226,46 @@ LALFindChirpChisqVeto (
    */
 
 
-  /* check that the output pointer is non-null and has room to store data */ 
-  ASSERT( chisqVec, status, 
+  /* check that the output pointer is non-null and has room to store data */
+  ASSERT( chisqVec, status,
       FINDCHIRPCHISQH_ENULL, FINDCHIRPCHISQH_MSGENULL );
-  ASSERT( chisqVec->data, status, 
+  ASSERT( chisqVec->data, status,
       FINDCHIRPCHISQH_ENULL, FINDCHIRPCHISQH_MSGENULL );
 
   /* check that the parameter structure exists */
   ASSERT( params, status, FINDCHIRPCHISQH_ENULL, FINDCHIRPCHISQH_MSGENULL );
 
   /* check that the chisq bin vector is reasonable */
-  ASSERT( params->chisqBinVec, status, 
+  ASSERT( params->chisqBinVec, status,
       FINDCHIRPCHISQH_ENULL, FINDCHIRPCHISQH_MSGENULL );
-  ASSERT( params->chisqBinVec->data, status, 
+  ASSERT( params->chisqBinVec->data, status,
       FINDCHIRPCHISQH_ENULL, FINDCHIRPCHISQH_MSGENULL );
-  ASSERT( params->chisqBinVec->length > 0, status, 
+  ASSERT( params->chisqBinVec->length > 0, status,
       FINDCHIRPCHISQH_ECHIZ, FINDCHIRPCHISQH_MSGECHIZ );
 
   /* check that the fft plan exists */
-  ASSERT( params->plan, status, 
+  ASSERT( params->plan, status,
       FINDCHIRPCHISQH_ENULL, FINDCHIRPCHISQH_MSGENULL );
 
   /* check that the input exists */
   ASSERT( input, status, FINDCHIRPCHISQH_ENULL, FINDCHIRPCHISQH_MSGENULL );
 
   /* check that the input contains some data */
-  ASSERT( input->qVec, status, 
+  ASSERT( input->qVec, status,
       FINDCHIRPCHISQH_ENULL, FINDCHIRPCHISQH_MSGENULL );
-  ASSERT( input->qVec->data, status, 
+  ASSERT( input->qVec->data, status,
       FINDCHIRPCHISQH_ENULL, FINDCHIRPCHISQH_MSGENULL );
-  ASSERT( input->qtildeVec, status, 
+  ASSERT( input->qtildeVec, status,
       FINDCHIRPCHISQH_ENULL, FINDCHIRPCHISQH_MSGENULL );
-  ASSERT( input->qtildeVec->data, status, 
+  ASSERT( input->qtildeVec->data, status,
       FINDCHIRPCHISQH_ENULL, FINDCHIRPCHISQH_MSGENULL );
 
   /* check that the workspace vectors exist */
-  ASSERT( params->qtildeBinVec, status, 
+  ASSERT( params->qtildeBinVec, status,
       FINDCHIRPCHISQH_ENULL, FINDCHIRPCHISQH_MSGENULL );
-  ASSERT( params->qtildeBinVec->data, status, 
+  ASSERT( params->qtildeBinVec->data, status,
       FINDCHIRPCHISQH_ENULL, FINDCHIRPCHISQH_MSGENULL );
-  ASSERT( params->qtildeBinVec->length > 0, status, 
+  ASSERT( params->qtildeBinVec->length > 0, status,
       FINDCHIRPCHISQH_ECHIZ, FINDCHIRPCHISQH_MSGECHIZ );
 
   /* check that we are using the correct approximant */
@@ -308,27 +308,27 @@ LALFindChirpChisqVeto (
   qtildeBin = params->qtildeBinVec->data;
 
 
-  /* 
+  /*
    *
    * fill the numBins time series vectors for the chi-squared statistic
    *
    */
 
 
-  for ( l = 0; l < numChisqBins; ++l ) 
+  for ( l = 0; l < numChisqBins; ++l )
   {
     memset( qtildeBin, 0, numPoints * sizeof(COMPLEX8) );
 
-    memcpy( qtildeBin + chisqBin[l], qtilde + chisqBin[l], 
+    memcpy( qtildeBin + chisqBin[l], qtilde + chisqBin[l],
         (chisqBin[l+1] - chisqBin[l]) * sizeof(COMPLEX8) );
 
-    LALCOMPLEX8VectorFFT( status->statusPtr, params->qBinVecPtr[l], 
+    LALCOMPLEX8VectorFFT( status->statusPtr, params->qBinVecPtr[l],
         params->qtildeBinVec, params->plan );
     CHECKSTATUSPTR( status );
   }
 
 
-  /* 
+  /*
    *
    * calculate the chi-squared value at each time
    *
@@ -337,9 +337,9 @@ LALFindChirpChisqVeto (
 
   memset( chisq, 0, numPoints * sizeof(REAL4) );
 
-  for ( j = 0; j < numPoints; ++j ) 
+  for ( j = 0; j < numPoints; ++j )
   {
-    for ( l = 0; l < numChisqBins; ++l ) 
+    for ( l = 0; l < numChisqBins; ++l )
     {
       REAL4 Xl = params->qBinVecPtr[l]->data[j].re;
       REAL4 Yl = params->qBinVecPtr[l]->data[j].im;

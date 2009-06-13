@@ -17,14 +17,14 @@
 *  MA  02111-1307  USA
 */
 
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: CoherentInspiralFilterTest.c
  *
  * Author: Seader, S. E., Bose, S.
- * 
+ *
  * Revision: $Id$
- * 
+ *
  *-----------------------------------------------------------------------
  */
 
@@ -61,7 +61,7 @@
 
 NRCSID(MAIN,"$Id$");
 
-static void 
+static void
 ParseOptions (int argc, char *argv[]);
 
 static void
@@ -70,7 +70,7 @@ TestStatus (LALStatus *status, const char *expectedCodes, int exitCode);
 static void
 ClearStatus (LALStatus *status);
 
-static void 
+static void
 Usage (const char *program, int exitflag);
 
 typedef enum{
@@ -105,7 +105,7 @@ UINT4 siteID[6] = {0,1,2,3,4,0}; /*H1 L V G T H2*/
 UINT2 caseID[6] = {0,0,0,0,0,0};
 
 static BOOLEAN          cohSNROut            = 1;
-static BOOLEAN          verbose              = 0; 
+static BOOLEAN          verbose              = 0;
 
 static INT4             numTmplts            = 1;
 static UINT4            numSegments          = 1;
@@ -150,19 +150,19 @@ main (int argc, char *argv[])
    * parse options, allocate memory, init params and set values
    *
    */
-  
+
   ParseOptions (argc, argv);
 
-  
+
   /* override numSegments if outputting coherent SNR */
   if ( cohSNROut )
     {
-      numSegments = 1; 
+      numSegments = 1;
       numTmplts = 1;
       fpcohSNR = fopen ("cohSNR.dat", "w");
     }
-  
-  
+
+
   /* read in the network detectors */
   for (l=0;l<6;l++)
     {
@@ -190,11 +190,11 @@ main (int argc, char *argv[])
    * allocate memory to structures
    *
    */
-  
+
   /* fill the init params structure */
-  cohInspInitParams = (CoherentInspiralInitParams *) 
+  cohInspInitParams = (CoherentInspiralInitParams *)
     LALMalloc (sizeof(CoherentInspiralInitParams));
-  
+
   cohInspInitParams->numDetectors            = numDetectors;
   cohInspInitParams->numSegments             = numSegments;
   cohInspInitParams->numPoints               = numPoints;
@@ -206,18 +206,18 @@ main (int argc, char *argv[])
 					cohInspInitParams);
   TestStatus (&status, "0", 1);
   ClearStatus (&status);
-  
-  
+
+
 
   /*
    * information for calculating chirp time
    */
 
   /* inspiral template structure */
-  tmplt = cohInspFilterInput->tmplt = (InspiralTemplate *) 
+  tmplt = cohInspFilterInput->tmplt = (InspiralTemplate *)
     LALMalloc (sizeof(InspiralTemplate));
   memset( tmplt, 0, sizeof(InspiralTemplate) );
-  
+
   /* generate dummy template parameters */
   {
     REAL4 m1 = mass;
@@ -234,7 +234,7 @@ main (int argc, char *argv[])
 				       cohInspInitParams);
   TestStatus (&status, "0", 1);
   ClearStatus (&status);
- 
+
   cohInspFilterParams->numDetectors            = numDetectors;
   cohInspFilterParams->numSegments             = numSegments;
   cohInspFilterParams->numPoints               = numPoints;
@@ -245,33 +245,33 @@ main (int argc, char *argv[])
   cohInspFilterParams->numTmplts               = numTmplts;
   cohInspFilterParams->fLow                    = fLow;
   cohInspFilterParams->maximiseOverChirp       = maximiseOverChirp;
-  
+
   detIDVec = cohInspFilterParams->detIDVec;
-  
+
   /*assign detIDs to the coincident detectors in the network */
   for ( i=0 ; i < 6 ; i++) {
     detIDVec->data[i] = caseID[i];
   }
-  
+
  /* create and fill the DetectorVector structure of detector IDs*/
-  
+
   detectorVec = cohInspFilterParams->detectorVec;
-  
+
   i=0;
   for ( j=0 ; j < 6 ; j++ ) {
     /*    if (((j != 5) && caseID[j++])) { */
-    if ( caseID[j] ) { 
+    if ( caseID[j] ) {
       detectorVec->detector[i++] = lalCachedDetectors[j];
     }
   }
-  
+
   if (caseID[5]) {
     detectorVec->detector[numDetectors-1] = lalCachedDetectors[0];
   }
 
 
   /* Now read in all the filenames and store them in arrays */
-  /* This will keep the files in the order: 
+  /* This will keep the files in the order:
      H1(0), L1(1), VIRGO(2), GEO(3), TAMA(4), H2(5)*/
 
   if(caseID[0])
@@ -314,12 +314,12 @@ main (int argc, char *argv[])
 
   /* create and fill the CoherentInspiralBeamVector structure of beam-patterns*/
   cohInspBeamVec = cohInspFilterInput->beamVec;
-  
+
   l=0;
   for ( j=0 ; j < 6 ; j++ ) {
-    if ( caseID[j] ) { 
+    if ( caseID[j] ) {
       /*      for (l=0;l<numDetectors;l++) { */
-      
+
       fp2[l] = fopen(namearray2[j], "r");
       if(!fp2[l])
 	{
@@ -336,21 +336,21 @@ main (int argc, char *argv[])
 	}
       fclose(fp2[l++]);
     }
-  } 
+  }
 
-  
+
   /*
    * CREATE the multi-z data structure;
-   * the z=x+iy data from multiple detectors was read above along with 
+   * the z=x+iy data from multiple detectors was read above along with
    * the beam-pattern functions
    */
   cohInspZVec = cohInspFilterInput->multiZData;
-  
-  /* First, the files will be tested for length consistency 
+
+  /* First, the files will be tested for length consistency
      and then the z-data for multiple detectors will be read in */
   l=0;
   for ( j=0 ; j < 6 ; j++ ) {
-    if ( caseID[j] ) {    
+    if ( caseID[j] ) {
       fp[l] = fopen(namearray[j], "r");
       if(!fp[l])
 	{
@@ -361,8 +361,8 @@ main (int argc, char *argv[])
       for (k = 0; k < numPoints; k++)
 	{
 	  fscanf(fp[l],"%f %f", &x, &y);
-	  cohInspZVec->zData[l].data->data[k].re = x; 
-	  cohInspZVec->zData[l].data->data[k].im = y; 
+	  cohInspZVec->zData[l].data->data[k].re = x;
+	  cohInspZVec->zData[l].data->data[k].im = y;
 	}
       fclose(fp[l++]);
     }
@@ -370,10 +370,10 @@ main (int argc, char *argv[])
 
   /*Do the filtering and output events */
   cohInspEvent = NULL;
-  
-  LALCoherentInspiralFilterSegment (&status, &cohInspEvent, cohInspFilterInput, cohInspFilterParams); 
+
+  LALCoherentInspiralFilterSegment (&status, &cohInspEvent, cohInspFilterInput, cohInspFilterParams);
   TestStatus (&status, "0", 1);
-  
+
   if ( cohInspEvent )
 	{
 	  fprintf( stdout, "\nEvents found in segment!\n\n" );
@@ -382,18 +382,18 @@ main (int argc, char *argv[])
 	      CoherentInspiralEvent *thisEvent = cohInspEvent;
 
 	      cohInspEvent = thisEvent->next;
-	      
+
 	      fprintf( stdout, "event id                              = %d\n\n", thisEvent->eventId+1 );
-	      
+
 	      fprintf( stdout, "coherent SNR                         = %.2f\n", thisEvent->cohSNR );
 
 	      fprintf( stdout, "'network' timeIndex                   = %d\n", thisEvent->timeIndex );
-	      
+
 	      fflush( stdout );
-	      
+
 	      LALFree( thisEvent );
 	    }
-	  
+
 	}
       else
 	{
@@ -409,7 +409,7 @@ main (int argc, char *argv[])
     }
 
  cleanexit:
-  
+
   fclose( fpcohSNR);
 
   /* Destroy params structure for coherent filter code */
@@ -424,9 +424,9 @@ main (int argc, char *argv[])
 
 
   LALCheckMemoryLeaks ();
-  
+
   return 0;
-  
+
 } /* end main */
 
 
@@ -441,8 +441,8 @@ main (int argc, char *argv[])
  */
 static void
 TestStatus (
-    LALStatus  *status, 
-    const char *ignored, 
+    LALStatus  *status,
+    const char *ignored,
     int         exitcode
            )
 {
@@ -503,7 +503,7 @@ ClearStatus (
 
 static void
 Usage (
-    const char *program, 
+    const char *program,
     int         exitcode
       )
 {
@@ -516,9 +516,9 @@ Usage (
   fprintf (stderr, "    -o                write coherent SNR output file [1]\n");
   fprintf (stderr, "    -n numPoints      number of points in a segment [1048576]\n");
   fprintf (stderr, "    -b numBeamPoints  number of theta-phi template points \n");
-  fprintf (stderr, "    -c maximiseOverChirp do clustering in chirp time [1]\n"); 
+  fprintf (stderr, "    -c maximiseOverChirp do clustering in chirp time [1]\n");
   fprintf (stderr, "    -N numTmplts      number of mass templates [1]\n");
-  fprintf (stderr, "    -f fLow           low-frequency cut-off [70.0]\n"); 
+  fprintf (stderr, "    -f fLow           low-frequency cut-off [70.0]\n");
   fprintf (stderr, "    -s numSegments    number of data segments [1]\n");
   fprintf (stderr, "    -r sampleRate     sampling rate of the z-data [8192]\n");
   fprintf (stderr, "    -p cohSNRThresh   coherent SNR threshold [10.0]\n");
@@ -541,20 +541,20 @@ Usage (
 /* may want to add a verbose option flag to print out extra info here and there */
 static void
 ParseOptions (
-	      int         argc, 
+	      int         argc,
 	      char       *argv[]
 	      )
 {
   while (1)
     {
       int c = -1;
-      
+
       c = getopt (argc, argv, "whd:""A:""L:""V:""G:""T:""Z:""a:""l:""v:""g:""t:""z:""o:""n:""b:""c:""s:""N:""f:""r:""p:");
       if (c == -1)
 	{
 	  break;
 	}
-      
+
       switch (c)
 	{
 	case 'w': /* set verbosity */
@@ -566,7 +566,7 @@ ParseOptions (
 	case 'd': /* set debuglevel */
 	  lalDebugLevel = atoi (optarg);
 	  break;
-  	case 'A': 
+  	case 'A':
 	  strcpy(H1filename,optarg);
 	  caseID[0] = 1;
 	  break;
@@ -576,21 +576,21 @@ ParseOptions (
 	  break;
 	case 'V':
 	  strcpy(VIRGOfilename,optarg);
-	  caseID[2] = 1;	   
+	  caseID[2] = 1;
 	  break;
 	case 'G':
 	  strcpy(GEOfilename,optarg);
-	  caseID[3] = 1;  
+	  caseID[3] = 1;
 	  break;
 	case 'T':
 	  strcpy(TAMAfilename,optarg);
-	  caseID[4] = 1;      
+	  caseID[4] = 1;
 	  break;
 	case 'Z':
 	  strcpy(H2filename,optarg);
 	  caseID[5] = 1;
 	  break;
-  	case 'a': 
+  	case 'a':
 	  strcpy(H1Beam,optarg);
 	  break;
 	case 'l':
@@ -639,14 +639,14 @@ ParseOptions (
 	  Usage (argv[0], 1);
 	  fprintf( stderr, "unknown error while parsing options\n" );
 	  exit( 1 );
-	  
+
 	}
     }
-  
+
   if (optind < argc)
     {
       Usage (argv[0], 1);
     }
-  
+
   return;
 }

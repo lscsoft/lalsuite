@@ -24,7 +24,7 @@
 
 /**** <lalLaTeX>
  * \subsection{Program \texttt{FrameStreamTest.c}}
- * 
+ *
  * Tests the low-level frame stream routines.
  *
  * \subsubsection*{Usage}

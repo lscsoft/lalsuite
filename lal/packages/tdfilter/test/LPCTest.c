@@ -18,6 +18,7 @@
 */
 
 #include <lal/LPC.h>
+#include <lal/LALStatusMacros.h>
 
 NRCSID (LPCTESTC,"$Id$");
 
@@ -35,7 +36,7 @@ int main() {
   REAL4 matlab[4] = {1.0,-0.6861568,-0.3781715,0.218191};
   REAL4 eps = 1e-3;
   UINT4 p = 3, i;
-  
+
   UINT4 m=5;
   REAL4 ptest1[5] = {1.0,1.0,1.0,1.0,1.0};
   REAL4 ptest2[5] = {1.0,2.0,3.0,4.0,5.0};
@@ -87,7 +88,7 @@ int main() {
 
   LALLPC(&status, &a, &x, p);
   CHKST
-  
+
   for(i=0;i<a.length;i++) {
     printf("%u\t%g\t%g\n",i,a.data[i],matlab[i]);
 

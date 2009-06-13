@@ -16,7 +16,7 @@
 *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
 *  MA  02111-1307  USA
 */
-  
+
 #if 0
 <lalVerbatim file="TestRingdownCV">
 Author: Yi Pan
@@ -74,31 +74,31 @@ int main( int argc, char *argv[] )
 
   memset( &status, 0, sizeof(LALStatus) );
   memset( &tmplt, 0, sizeof(InspiralTemplate) );
-  
+
   tmplt.approximant = EOB;
   tmplt.order = 8;
-  
+
   tmplt.OmegaS = 0.;
   tmplt.Theta = 0.;
   tmplt.ieta = 1;
   tmplt.signalAmplitude = 1.0;
-  
+
   tmplt.massChoice = m1Andm2;
   tmplt.mass1 = 10.0;
   tmplt.mass2 = 10.0;
   tmplt.chi = 0.000001;
   tmplt.kappa = 0.000001;
 
-  tmplt.fLower= 40.0; 
+  tmplt.fLower= 40.0;
   tmplt.fCutoff = 1000;
   tmplt.tSampling = 1.0 / deltaT;
-  
+
   tmplt.sourceTheta = LAL_PI / 3.;
   tmplt.sourcePhi = LAL_PI / 6.;
   tmplt.polarisationAngle = LAL_PI / 4.;
   tmplt.startPhase = 0.;
   tmplt.startTime = 0.;
-  
+
   LALInspiralWaveLength(&status, &N, tmplt);
   LALInspiralParameterCalc(&status, &tmplt);
   if ( status.statusCode )
@@ -106,7 +106,7 @@ int main( int argc, char *argv[] )
     REPORTSTATUS( &status );
     exit( 1 );
   }
-  
+
   /* Create memory for the inspiral waveform */
   REAL4Vector *omega;
   REAL4Vector *inspwave1;
@@ -114,7 +114,7 @@ int main( int argc, char *argv[] )
   omega		= XLALCreateREAL4Vector( N );
   inspwave1 = XLALCreateREAL4Vector( N );
   inspwave2 = XLALCreateREAL4Vector( N );
-  
+
   /* Generate T4pn waveforms
   errcode = XLALInspiralComputePTFWaveform( inspwave1, &tmplt);
   if ( errcode != XLAL_SUCCESS )
@@ -129,10 +129,10 @@ int main( int argc, char *argv[] )
     fprintf( stderr, "XLALInspiralComputePTFWaveform failed\n" );
     exit( 1 );
   } */
-  
+
   /* Generate inspiral waveforms */
   LALEOBWaveformTemplates(&status, omega, inspwave1, inspwave2, &tmplt);
-  
+
   /* Attaching position set by omega_match */
   /* Omega_match is given by Eq.(37) of PRD 76, 104049 (2007) */
   /* -0.01 because the current EOBNR 4PN setting can't reach omega_match */
@@ -146,7 +146,7 @@ int main( int argc, char *argv[] )
 	  break;
 	}
   }
-  
+
   FILE *omegafile;
   omegafile = fopen( "myomega.dat", "w" );
   if( omegafile != NULL )
@@ -157,7 +157,7 @@ int main( int argc, char *argv[] )
 	}
   }
   fclose(omegafile);
-  
+
   /* Create memory for the QNM frequencies */
   COMPLEX8Vector *modefreqs;
   modefreqs = XLALCreateCOMPLEX8Vector( 3 );
@@ -167,12 +167,12 @@ int main( int argc, char *argv[] )
     fprintf( stderr, "XLALGenerateQNMFreq failed\n" );
     exit( 1 );
   }
-  
+
   /* Ringdown signal length: 10 times the decay time of the n=0 mode */
   UINT4 Nrdwave = 10 / modefreqs->data[0].im / deltaT;
   /* Patch length, centered around the matching point "attpos" */
   UINT4 Npatch = 11;
-  
+
   /* Create memory for the ring-down and full waveforms, and derivatives of inspirals */
   REAL4Vector			*rdwave1;
   REAL4Vector			*rdwave2;
@@ -183,7 +183,7 @@ int main( int argc, char *argv[] )
   REAL4Vector			*ddinspwave;
   REAL4VectorSequence	*inspwaves1;
   REAL4VectorSequence	*inspwaves2;
-  
+
   rdwave1 = XLALCreateREAL4Vector( Nrdwave );
   rdwave2 = XLALCreateREAL4Vector( Nrdwave );
   fullwave1 = XLALCreateREAL4Vector( attpos + Nrdwave - 1 );
@@ -199,7 +199,7 @@ int main( int argc, char *argv[] )
   for (j = 0; j < Npatch; j++)
   {
 	inspwave->data[j] = inspwave1->data[attpos - (Npatch + 1) / 2 + j];
-  }	
+  }
   /* Get derivatives of inspwave1 */
   errcode = XLALGenerateWaveDerivatives( dinspwave, ddinspwave, inspwave, &tmplt );
   if ( errcode != XLAL_SUCCESS )
@@ -217,7 +217,7 @@ int main( int argc, char *argv[] )
   for (j = 0; j < Npatch; j++)
   {
 	inspwave->data[j] = inspwave2->data[attpos - (Npatch + 1) / 2 + j];
-  }	
+  }
   /* Get derivatives of inspwave2 */
   errcode = XLALGenerateWaveDerivatives( dinspwave, ddinspwave, inspwave, &tmplt );
   if ( errcode != XLAL_SUCCESS )
@@ -231,10 +231,10 @@ int main( int argc, char *argv[] )
 	inspwaves2->data[j + (Npatch + 1) / 2] = dinspwave->data[j];
 	inspwaves2->data[j + 2 * (Npatch + 1) / 2] = ddinspwave->data[j];
   }
-  
-  
+
+
   /* Generate ring-down waveforms */
-  errcode = XLALInspiralRingdownWave( rdwave1, rdwave2, &tmplt, inspwaves1, inspwaves2, 
+  errcode = XLALInspiralRingdownWave( rdwave1, rdwave2, &tmplt, inspwaves1, inspwaves2,
 								  modefreqs, 3);
   if ( errcode != XLAL_SUCCESS )
   {
@@ -252,8 +252,8 @@ int main( int argc, char *argv[] )
 	fullwave1->data[j + attpos - 1] = rdwave1->data[j];
 	fullwave2->data[j + attpos - 1] = rdwave2->data[j];
   }
-  
-  
+
+
   /* Write waveforms to file */
   FILE *inspfile;
   FILE *rdfile;
@@ -285,7 +285,7 @@ int main( int argc, char *argv[] )
 	}
   }
   fclose(fullfile);
-  
+
   /* Free memory */
   XLALDestroyCOMPLEX8Vector( modefreqs );
   XLALDestroyREAL4Vector( fullwave1 );

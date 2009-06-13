@@ -22,12 +22,12 @@
  **** </lalVerbatim> */
 
 /**** <lalLaTeX>
- * 
+ *
  * \subsection{Program \texttt{RealFFTTest.c}}
  * \label{ss:RealFFTTest.c}
- * 
+ *
  * Tests the routines in \verb+RealFFT.h+.
- * 
+ *
  * \subsection*{Usage}
  * \begin{verbatim}
  * RealFFTTest [options]
@@ -39,12 +39,12 @@
  *   -m trials  set number of random trials
  *   -n size    set size of FFTs
  * \end{verbatim}
- * 
+ *
  * Use the \verb+-n+ option to specify the size of the test transform and
  * the \verb+-m+ option to specify the number of test transforms of that size.
  * (Default is to test transforms of size 1 to 128 in unit steps and then
  * powers of two up to 65536.)
- * 
+ *
  * \subsubsection*{Description}
  * \subsubsection*{Exit codes}
  * \begin{tabular}{|c|l|}
@@ -55,12 +55,12 @@
  * \tt 1 & Subroutine failed.            \\
  * \hline
  * \end{tabular}
- * 
+ *
  * \subsubsection*{Uses}
  * \subsubsection*{Notes}
- * 
+ *
  * \vfill{\footnotesize\input{RealFFTTestCV}}
- * 
+ *
  **** </lalLaTeX> */
 
 #include <stdio.h>
@@ -115,7 +115,7 @@ void LALForwardRealDFT(
 
 int main( int argc, char *argv[] )
 {
-  static LALStatus status; 
+  static LALStatus status;
 
   RealFFTPlan    *fwd = NULL;
   RealFFTPlan    *rev = NULL;
@@ -144,7 +144,7 @@ int main( int argc, char *argv[] )
   m = m_;
   n = n_;
 
-  fp = verbose ? stdout : NULL ;  
+  fp = verbose ? stdout : NULL ;
 
   if ( n == 0 )
   {
@@ -190,7 +190,7 @@ int main( int argc, char *argv[] )
     {
       srand( s++ ); /* seed the random number generator */
 
-      /* 
+      /*
        *
        * Create data and compute error tolerance.
        *
@@ -226,7 +226,7 @@ int main( int argc, char *argv[] )
       fp ?  fprintf( fp, "rfft()\t\trfft(rfft())\trfft(rfft())\n\n"  ) : 0;
       for ( j = 0; j < n; ++j )
       {
-        fp ? fprintf( fp, "%e\t%e\t%e\n", 
+        fp ? fprintf( fp, "%e\t%e\t%e\n",
             rfft->data[j], ans->data[j], ans->data[j] / n ) : 0;
       }
       if ( n < 128 )

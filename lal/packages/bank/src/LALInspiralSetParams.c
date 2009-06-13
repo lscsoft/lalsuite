@@ -40,12 +40,12 @@ based on the values in the \texttt{InspiralCoarseBankIn} structure.
 
 \subsubsection*{Description}
 
-This function takes as an input a structure of type 
+This function takes as an input a structure of type
 \texttt{InspiralCoarseBankIn} and it fills up the
 elements of a structure of type \texttt{InspiralTemplate}.
-The function sets the fields 
+The function sets the fields
 \texttt{massChoice}, \texttt{ieta}, \texttt{signalAmplitude},
-\texttt{tSampling}, \texttt{fLower}, \texttt{fCutoff}, 
+\texttt{tSampling}, \texttt{fLower}, \texttt{fCutoff},
 \texttt{order},
 \texttt{approximant}, \texttt{nStartPad}, \texttt{nEndPad}.
 
@@ -70,9 +70,9 @@ NRCSID (LALINSPIRALSETPARAMSC, "Id: $");
 
 /*  <lalVerbatim file="LALInspiralSetParamsCP"> */
 
-void LALInspiralSetParams(LALStatus            *status, 
-                          InspiralTemplate     *tempPars, 
-                          InspiralCoarseBankIn coarseIn) 
+void LALInspiralSetParams(LALStatus            *status,
+                          InspiralTemplate     *tempPars,
+                          InspiralCoarseBankIn coarseIn)
 {  /*  </lalVerbatim>  */
 
    INITSTATUS (status, "LALInspiralSetParams", LALINSPIRALSETPARAMSC);

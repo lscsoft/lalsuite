@@ -16,7 +16,7 @@
 *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
 *  MA  02111-1307  USA
 */
-  
+
 #if 0
 <lalVerbatim file="MetricTestPTFCV">
 Author: Duncan Brown, Yi Pan
@@ -90,24 +90,24 @@ int main( int argc, char *argv[] )
   tmplt.chi = 0.8;
   tmplt.kappa = 0.5;
 
-  tmplt.fLower=100.0; 
+  tmplt.fLower=100.0;
   tmplt.fCutoff = 1.0 / (2.0 * deltaT);
   tmplt.tSampling = deltaT;
-  
+
   tmplt.sourceTheta = LAL_PI / 3.;
   tmplt.sourcePhi = LAL_PI / 6.;
   tmplt.polarisationAngle = LAL_PI / 4.;
   tmplt.startPhase = 0.;
   tmplt.startTime = 0.;
   tmplt.signalAmplitude = 1.0;
-  
+
   LALInspiralParameterCalc(&status, &tmplt);
   if ( status.statusCode )
   {
     REPORTSTATUS( &status );
     exit( 1 );
   }
-  
+
   /* create memory for the PSD */
   memset( &psd, 0, sizeof(REAL8FrequencySeries) );
   LALDCreateVector( &status, &(psd.data), N / 2 + 1 );
@@ -126,20 +126,20 @@ int main( int argc, char *argv[] )
     REPORTSTATUS( &status );
     exit( 1 );
   }
-  
+
   errcode = XLALInspiralComputePTFIntrinsicMetric( &metric, fullmetric, &psd, &tmplt );
   if ( errcode != XLAL_SUCCESS )
   {
     fprintf( stderr, "XLALInspiralComputePTFIntrinsticMetric failed\n" );
     exit( 1 );
   }
-  
+
   fprintf( stderr, "Printing out components of the projected metric in the intrinsic parameter space\n");
   for ( i = 0; i < 10; ++i )
   {
     fprintf( stderr, "Gamma[%d] = %e\n", i, metric.Gamma[i] );
   }
-  
+
   /* destory memory for the fullmetric */
   XLALDestroyREAL8Vector( fullmetric );
 

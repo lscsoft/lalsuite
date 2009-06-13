@@ -33,7 +33,7 @@ $Id$
 \label{ss:TimeDelay.c}
 
 Computes difference in arrival time of the same signal at two different
-detectors. 
+detectors.
 
 \subsubsection*{Prototypes}
 \vspace{0.1in}

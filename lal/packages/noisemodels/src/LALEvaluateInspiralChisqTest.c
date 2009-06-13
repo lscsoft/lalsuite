@@ -20,6 +20,9 @@
 #include <lal/LALStdlib.h>
 #include <lal/LALNoiseModels.h>
 
+/* macro to "use" unused function parameters */
+#define UNUSED(expr) do { (void)(expr); } while (0)
+
 NRCSID( LALEVALUATEINSPIRALCHISQTESTC, "$Id$" );
 
 /* Local Functions used only in this file */
@@ -33,7 +36,8 @@ void LALEvaluateInspiralChisqTest ( LALStatus                *status,
         )
 
 {
-    INT4                      i, j, imax, imin, k;
+    INT4                      i, imax, imin, k;
+    UINT4                     j;
     REAL8                     f, df, sum, powNorm, DeltaT;
     REAL8                     *freqBndry=NULL;
     REAL4Vector               output1, output2;
@@ -99,7 +103,7 @@ void LALEvaluateInspiralChisqTest ( LALStatus                *status,
         ABORT (status, LALNOISEMODELSH_EMEM, LALNOISEMODELSH_MSGEMEM);
     }
 
-    /* Init the corrin structure except fCutoff and signal2 
+    /* Init the corrin structure except fCutoff and signal2
      */
     corrin.df            = df;
     corrin.psd           = chisqIn->findEventsIn->psd;
@@ -109,10 +113,10 @@ void LALEvaluateInspiralChisqTest ( LALStatus                *status,
 
     /* The correlation time series for p bands will be stored in a 2 dimensional array
      */
-    /* called pBandCorrelation[0][...] to pBandCorrelation[p-1][...] 
+    /* called pBandCorrelation[0][...] to pBandCorrelation[p-1][...]
        Note the fact that pBandCorrelation[0][...] stores the correlation from fmin to freqBndry[0],
-       pBandCorrelation[1][...] stores it from fmin to freqBndry[1] and so on. Thus in order to extract 
-       what is the actual correlation in the band freqBndry[0] to freqBndry[1] you have to subtract 
+       pBandCorrelation[1][...] stores it from fmin to freqBndry[1] and so on. Thus in order to extract
+       what is the actual correlation in the band freqBndry[0] to freqBndry[1] you have to subtract
        pBandCorrelation[1][...] - pBandCorrelation[0][...] term by term.
        First index is chisqbin, Second index is time bin
      */
@@ -134,7 +138,7 @@ void LALEvaluateInspiralChisqTest ( LALStatus                *status,
         CHECKSTATUSPTR(status);
 
         /* Store it in pBandCorrelation
-	 */
+         */
         for (j=0; j<chisqIn->findEventsIn->signal.length; j++){
             pBandCorrelation1[i][j] = output1.data[j];
             pBandCorrelation2[i][j] = output2.data[j];
@@ -152,8 +156,8 @@ void LALEvaluateInspiralChisqTest ( LALStatus                *status,
         pBandRho2[1] = pBandCorrelation2[1][j];
 
         for (i=2; i<=chisqIn->chisqBins; i++) {
-            pBandRho1[i] = pBandCorrelation1[i][j] - pBandCorrelation1[i-1][j]; 
-            pBandRho2[i] = pBandCorrelation2[i][j] - pBandCorrelation2[i-1][j]; 
+            pBandRho1[i] = pBandCorrelation1[i][j] - pBandCorrelation1[i-1][j];
+            pBandRho2[i] = pBandCorrelation2[i][j] - pBandCorrelation2[i-1][j];
         }
 
         chisqOut->chisqZERO[j] = chisqOut->chisqPIbyTWO[j]= 0.0;
@@ -179,14 +183,14 @@ void LALEvaluateInspiralChisqTest ( LALStatus                *status,
     /* Normal exit
      */
     DETATCHSTATUSPTR(status);
-    RETURN(status);	
+    RETURN(status);
 }
 
 
 /*-----------------------------------------------------------
   SUBROUTINES ADAPTED FROM NUMERICAL RECIPES
   Local functions to declare a 2 dimensional array and free it
-  These subroutines have been taken from Numerical Recipes and 
+  These subroutines have been taken from Numerical Recipes and
   modified to suit our purposes.
   ------------------------------------------------------------*/
 
@@ -195,7 +199,7 @@ void LALEvaluateInspiralChisqTest ( LALStatus                *status,
 
 static REAL4 **matrix(long nrl, long nrh, long ncl, long nch)
     /* allocate a REAL4 matrix with subscript range m[nrl..nrh][ncl..nch] */
-{ 
+{
     long i, nrow=nrh-nrl+1, ncol=nch-ncl+1;
     REAL4 **m;
 
@@ -226,8 +230,12 @@ static REAL4 **matrix(long nrl, long nrh, long ncl, long nch)
 
 
 static void free_matrix(REAL4 **m, long nrl, long nrh, long ncl, long nch)
-    /* free a REAL4 matrix allocated by matrix() */
 {
+    /* nrh and nch are unused in this function */
+    UNUSED(nrh);
+    UNUSED(nch);
+
+    /* free a REAL4 matrix allocated by matrix() */
     LALFree((FREE_ARG) (m[nrl]+ncl-NR_END));
     LALFree((FREE_ARG) (m+nrl-NR_END));
 }

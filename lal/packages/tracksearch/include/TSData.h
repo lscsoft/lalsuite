@@ -31,7 +31,7 @@ Author C. Torres
 \label{s:TSData.h}
 
 Provides an intermediate level of functions and structures for testing
-and production use of the tracksearch libraries.  
+and production use of the tracksearch libraries.
 
 \begin{verbatim}
 #include <lal/TSData.h>
@@ -83,7 +83,7 @@ NRCSID (TSDATAH, "$Id$");
 
 #define TSDATA_MSGENULL "Null pointer"
 #define TSDATA_MSGENNUL "Non-null pointer"
-#define TSDATA_MSGEALOC "Memory allocation error"   
+#define TSDATA_MSGEALOC "Memory allocation error"
 #define TSDATA_MSGESEGZ "Invalid number of segments"
 #define TSDATA_MSGENUMZ "Invalid number of points in segment"
 #define TSDATA_MSGESUBR "Condition Data Internal Subroutine Failure"
@@ -122,7 +122,7 @@ tagTSDatagen
 }TSDatagen;
 
 
-/* 
+/*
  * Struture used by the line connection subroutine
  * we want to take all event candidates and match them via param SIGMA
  */
@@ -149,7 +149,7 @@ tagTSWhitenParams
 }TSWhitenParams;
 
 /*
- * Routine to determine the best Lh and set Ll given Lrelative.  
+ * Routine to determine the best Lh and set Ll given Lrelative.
  */
 void
 LALTracksearchFindLambdaMean(
@@ -164,7 +164,7 @@ LALTracksearchFindLambdaMedian(
 			       TSSearchParams           *searchParams
 			       );
 /*
- * Routine to break up time series input and make a collection of 
+ * Routine to break up time series input and make a collection of
  * segments which overlap by the overlap(points) parameter
  */
 void
@@ -183,7 +183,7 @@ LALDestroyTSDataSegmentVector (
 			       TSSegmentVector            *vector
 			       );
 
-/* 
+/*
  * This routine will handle a great deal of data conditioning
  * Whitening and calibration will occur in this function
  */
@@ -244,7 +244,7 @@ LALTrackSearchWhitenREAL4TimeSeries(
  * wasting CPU time on FFTs
  */
 
-void 
+void
 LALTrackSearchWhitenCOMPLEX8FrequencySeries(
 					    LALStatus                *status,
 					    COMPLEX8FrequencySeries  *fSeries,
@@ -286,8 +286,8 @@ LALSVectorPolynomialInterpolation(
 				  REAL4Sequence    *Domain,
 				  REAL4Sequence    *Range
 				  );
-/* 
- * Noncompliant code 
+/*
+ * Noncompliant code
  * Local function not meant for general use
  */
 void connect2Segments(

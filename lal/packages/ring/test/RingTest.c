@@ -24,7 +24,7 @@
 
 /**** <lalLaTeX>
  * \subsection{Program \texttt{RingTest.c}}
- * 
+ *
  * Calls the various routines in \verb+Ring.h+.
  *
  * \subsubsection*{Usage}
@@ -39,7 +39,7 @@
  * \verb+ring.out+, and a black hole ring waveform, which is output to the
  * file \verb+bhring.out+.  The program then generates a template bank,
  * which is written to the file \verb+bank.out+.
- * 
+ *
  * \vfill{\footnotesize\input{RingTestCV}}
  **** </lalLaTeX> */
 
@@ -85,7 +85,7 @@ int main( void )
 
   LALComputeRingTemplate( &status, &ring, &tmplt );
   TestStatus( &status );
-  
+
   fp = fopen( "ring.out", "w" );
   for ( i = 0; i < ring.data->length; ++i )
     fprintf( fp, "%e\t%e\t%e\n", i * ring.deltaT, ring.data->data[i],

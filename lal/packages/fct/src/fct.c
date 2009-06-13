@@ -20,7 +20,7 @@
 /* -*- mode: c; c-basic-offset: 2; -*- */
 
 /*
-  This is the source code for the official implementation of the 
+  This is the source code for the official implementation of the
   Fast Chirp transform.
 */
 
@@ -53,7 +53,7 @@ void* fct_malloc(size_t size)
   {
     return fct_malloc_hook(size);
   }
-  
+
   return malloc(size);
 }
 
@@ -64,7 +64,7 @@ void* fct_calloc(size_t nmemb, size_t size)
   {
     return fct_calloc_hook(nmemb, size);
   }
-  
+
   return calloc(nmemb, size);
 }
 
@@ -76,7 +76,7 @@ void fct_free(void* p)
     fct_free_hook(p);
     return;
   }
-  
+
   free(p);
 }
 
@@ -102,7 +102,7 @@ const char** setup_errstr(void)
   errstr[FCT_EOFAC] = "Oversampling factor must be != 0";
 
   errstr[FCT_EUNKNOWN] = "Unknown error";
-  
+
   return &errstr[0];
 }
 
@@ -110,12 +110,12 @@ STORAGE_CLASS
 const char* fct_strerror(int fct_errno)
 {
   static const char** errstr = 0;
-  
+
   if (errstr == 0)
   {
     errstr = setup_errstr();
   }
-  
+
   if ((fct_errno < 0) || (fct_errno > FCT_EUNKNOWN))
   {
     fct_errno = FCT_EUNKNOWN;
@@ -127,10 +127,10 @@ const char* fct_strerror(int fct_errno)
 STORAGE_CLASS
 fct_plan *fct_init_plan(int data_length,int number_of_dimensions,
 			int dimension_0_stride, fct_status* const status)
-/*This function partially initializes the FCT. It must be called before 
+/*This function partially initializes the FCT. It must be called before
   any other fct_ function. It generates an fct_plan structure which tells
-  the other fct_ functions how to operate on the data. After calling 
-  fct_init_plan, the user must specify both the phase functions using 
+  the other fct_ functions how to operate on the data. After calling
+  fct_init_plan, the user must specify both the phase functions using
   fct_set_phase_function and the FCT parameters over which to calculate
   the FCT using fct_add_indicies.*/
 {
@@ -194,9 +194,9 @@ fct_plan *fct_init_plan(int data_length,int number_of_dimensions,
 STORAGE_CLASS
 void fct_set_units(fct_plan *plan, float offset, float delta,
 		   fct_status* const status)
-/*Sets the conversion from data sample to the argument of the 
-  phase function. For the jth data point, the phase functions are 
-  evaluated at offset + j*delta. The default values are offset = 0 and 
+/*Sets the conversion from data sample to the argument of the
+  phase function. For the jth data point, the phase functions are
+  evaluated at offset + j*delta. The default values are offset = 0 and
   delta = 1.
 */
 {
@@ -213,8 +213,8 @@ void fct_set_units(fct_plan *plan, float offset, float delta,
 
 STORAGE_CLASS
 void fct_set_max_segments(fct_plan *plan, int max, fct_status* const status)
-/*Set the maximum number of FFTs to be sent to 
-  the FFT engine. For certain FFT packages, this 
+/*Set the maximum number of FFTs to be sent to
+  the FFT engine. For certain FFT packages, this
   can increase the efficiency of the FFT calculations.
 */
 {
@@ -233,10 +233,10 @@ void fct_set_phase_function(fct_plan *plan,
 			    int dimension,
 			    function_pointer func,
 			    fct_status* const status)
-/*This function sets the phase function pointed to by func to the array of 
+/*This function sets the phase function pointed to by func to the array of
   phase functions needed by the FCT. The phase function specified will be used
   to calculate the phase along the dimension specified by the variable
-  dimension. Before adding the 
+  dimension. Before adding the
   function, this routine checks for a valid plan pointer and dimension.*/
 {
   /*Check to make sure the plan structure is valid.*/
@@ -298,7 +298,7 @@ void fct_set_oversampling_factor(fct_plan *plan,
 STORAGE_CLASS
 void fct_add_data_cube(fct_plan *const plan,
 		       const int *const start_locations,
-		       const int *const end_locations, 
+		       const int *const end_locations,
 		       const int *stride,
 		       const float *const mask,
 		       const int mode,
@@ -368,7 +368,7 @@ void fct_add_data_cube(fct_plan *const plan,
 
   /*Now use the mode parameter to determine how to initialize the other parameters*/
   switch(mode) {
-    
+
   case FCT_CALCULATE_ALL:
     /*The start and end locations are set to
       their minimal and maximal values.*/
@@ -376,9 +376,9 @@ void fct_add_data_cube(fct_plan *const plan,
       parameters->start_locations[k] = 0;
       parameters->end_locations[k]   = plan->data_length;
     }
-    
+
     break;
-    
+
   case FCT_SPECIFY_RANGES:
     /*The start and end location are user specified.*/
     /*First, check to make sure the user put in valid arrays*/
@@ -386,12 +386,12 @@ void fct_add_data_cube(fct_plan *const plan,
       FCT_ERROR(status, FCT_ENULL_LOC);
       return;
     }
-    
+
     if (end_locations == (int *)NULL){
       FCT_ERROR(status, FCT_ENULL_LOC);
       return;
     }
-    
+
     for (k = 1; k<plan->number_of_dimensions; ++k) {
       if (end_locations[k] <= start_locations[k])
       {
@@ -401,15 +401,15 @@ void fct_add_data_cube(fct_plan *const plan,
       parameters->start_locations[k] = start_locations[k];
       parameters->end_locations[k]   = end_locations[k];
     }
-    
+
     break;
-    
+
   default:
     /*If neither of the above modes were specified, then give an error */
     FCT_ERROR(status, FCT_EDATACUBE_MODE);
     return;
   }
-  
+
 
 /*Calculate the number of points per dimension and the total number of bytes
   needed for the FCT of this data cube.*/
@@ -418,7 +418,7 @@ void fct_add_data_cube(fct_plan *const plan,
 
   for (k=0; k < plan->number_of_dimensions; ++k){
 
-    parameters->points_per_dimension[k] 
+    parameters->points_per_dimension[k]
       = ceil((float)(parameters->end_locations[k]
 		   - parameters->start_locations[k])/(parameters->stride[k]));
     parameters->total_length *= parameters->points_per_dimension[k];
@@ -453,17 +453,17 @@ void fct_add_data_cube(fct_plan *const plan,
 
 STORAGE_CLASS
 void fct_remove_data_cube(fct_plan *plan, fct_status* const status)
-/*Removes the most recently added member to the 
+/*Removes the most recently added member to the
   data cube list*/
 {
   data_cube* end_predecessor = 0;
-  
+
   /*Check to make sure the plan structure is valid.*/
   if (plan == 0) {
     FCT_ERROR(status, FCT_ENULL_PLAN);
     return;
   }
-  
+
   if (plan->parameter_list_start == NULL)
   {
     /* If it's an empty list, just return */
@@ -489,7 +489,7 @@ void fct_remove_data_cube(fct_plan *plan, fct_status* const status)
       Then the "new" last node will be null and dereferencing it will be
       bad. We need to check if the last node is null before referring to
       it's successor. Also, if the last node is null we must also set
-      the first node to null. 
+      the first node to null.
     */
     if (plan->parameter_list_end == 0)
     {
@@ -537,9 +537,9 @@ unsigned long fct_data_cube_size(fct_plan *plan, data_cube *cube,
 
 STORAGE_CLASS
 unsigned long fct_output_data_size(fct_plan *plan, fct_status* const status)
-/*Using the current plan struct, this function calculates how large the 
-  output data array will be in real data points. Note, the FCT output is 
-  a series of complex numbers. This function takes into account the factor 
+/*Using the current plan struct, this function calculates how large the
+  output data array will be in real data points. Note, the FCT output is
+  a series of complex numbers. This function takes into account the factor
   of two conversion to obtain the number of real numbers.*/
 {
   unsigned long total = 0;
@@ -551,22 +551,22 @@ unsigned long fct_output_data_size(fct_plan *plan, fct_status* const status)
     FCT_ERROR(status, FCT_ENULL_PLAN);
     return 0;
   }
-  
+
   /*Check to make sure that a least one data_cube has been added to the list*/
   if (plan->parameter_list_start == (data_cube *)NULL) {
     FCT_ERROR(status, FCT_ENULL_DATACUBE);
     return 0;
   }
 
-  /*Calculate the number of output points that will be 
+  /*Calculate the number of output points that will be
     generated by the first data_cube.*/
   /*total = fct_data_cube_size(plan,plan->parameter_list_start);*/
   total = plan->parameter_list_start->total_length;
 
-  /*Now, scan through the rest of the list and calculate the 
+  /*Now, scan through the rest of the list and calculate the
     total number of data points.*/
   current = plan->parameter_list_start;
-  
+
   while (current->next != NULL) {
     total  += current->next->total_length;
     current = current->next;
@@ -598,7 +598,7 @@ void fct_calculate(fct_plan *plan,
   fct_real      **pk_real;
   fct_real      **pk_imag;
   fct_real      *work_space,*current_workspace;
-  double        wpr,wpi,wtemp,wtempi;  /* wpr, wpi, wtemp(i) used  the trigonometri recurrence */ 
+  double        wpr,wpi,wtemp,wtempi;  /* wpr, wpi, wtemp(i) used  the trigonometri recurrence */
   fct_real      hold;
 
   /*Check to make sure the plan structure is valid.*/
@@ -624,7 +624,7 @@ void fct_calculate(fct_plan *plan,
     FCT_ERROR(status, FCT_EMEM);
     return;
   }
-    
+
   work_space = (fct_real *)fct_malloc(sizeof(fct_real)*
 	       (int)ceil((float)2* plan->max_number_of_segments *
 	       plan->data_length / plan->dimension_0_stride));
@@ -634,7 +634,7 @@ void fct_calculate(fct_plan *plan,
     FCT_ERROR(status, FCT_EMEM);
     return;
   }
-    
+
     /*Calculate the kernal product (K=exp(k1*phi_1)*exp(k2*phi_2)*...*), dot product (h*K), and FFTW (h*k) at the same loop  for each data cube.*/
 
   current        = plan->parameter_list_start;
@@ -645,26 +645,26 @@ void fct_calculate(fct_plan *plan,
   while (current != (data_cube *)NULL)
   {
     /*Zero the workspace.*/
-    for (j=0;j < 2*current->points_per_dimension[0]* 
+    for (j=0;j < 2*current->points_per_dimension[0]*
 	   plan->max_number_of_segments; ++j) {
       work_space[j] = 0;
     }
 
     /*Allocate the memory for this data cube's pre_kernal*/
     pre_kernal = fct_malloc(sizeof(fct_real)*current->pre_kernal_length);
-    
+
     if (pre_kernal == NULL) {
       FCT_ERROR(status, FCT_EMEM);
       return;
     }
 
-    
+
     /*Calculate the index_strides and pre_k_index_offsets arrays*/
     index_strides[0]       = current->points_per_dimension[0];
     pre_k_index_offsets[0] = 0;
     for (dim = 1; dim<plan->number_of_dimensions-1; ++dim) {
       index_strides[dim] = index_strides[dim-1] * current->points_per_dimension[dim];
-      pre_k_index_offsets[dim] = pre_k_index_offsets[dim-1] + 
+      pre_k_index_offsets[dim] = pre_k_index_offsets[dim-1] +
 	plan->data_length * current->points_per_dimension[dim];
     }
 
@@ -680,7 +680,7 @@ void fct_calculate(fct_plan *plan,
 	    numbers, adding 0.5 and copying to an int is equivalent.
 	    Doesn't work properly for negative numbers though.
 	  */
-	  
+
 	  rint_phase = plan->data_length*
 	    (*plan->phase_functions[dim+1])(plan->offset + plan->dt*j) + 0.5;
 
@@ -690,7 +690,7 @@ void fct_calculate(fct_plan *plan,
 	  /* Original function with call to rint()
 
 	  partial_phase = (2.0*M_PI/plan->data_length)*
-	    rint(plan->data_length * 
+	    rint(plan->data_length *
 		 (*plan->phase_functions[dim+1])(plan->offset + plan->dt*j));
 
 	  */
@@ -704,9 +704,9 @@ void fct_calculate(fct_plan *plan,
 */
 	  /* debug */
 	  /*	  printf(" data_length= %i data_length *(phase_functions[dim+1])(plan->offset + dt*j=%f\n", plan->data_length, rint(plan->data_length *(*plan->phase_functions[dim+1])(plan->offset + plan->dt*j))); */
-	  
+
 	  /*  printf("partial phase at j=%i is %g\n", j, partial_phase); */
-	  
+
 	  /* partial_phase here is equivalent to the incrementing theta */
 
 	  pk_real[0] = &pre_kernal[2*(j+pre_k_index_offsets[dim])];
@@ -717,7 +717,7 @@ void fct_calculate(fct_plan *plan,
 	  wtemp=sin(partial_phase/2.*current->stride[dim+1]);
 	  wpr=-2*wtemp*wtemp;
 	  wpi=sin(partial_phase*current->stride[dim+1]);
-	  
+
 	  /* for k=0 , wtemp=theta_old*/
 
 	  *pk_real[0] = cos(current->start_locations[dim+1]*partial_phase);
@@ -730,7 +730,7 @@ void fct_calculate(fct_plan *plan,
 	  pk_imag[0] += 2*plan->data_length;
 
 	  for (k = 1;k < current->points_per_dimension[dim+1]; ++k) {
-	    
+
 	    *pk_real[0]    = wtemp*wpr-wtempi*wpi+wtemp;
 	    *pk_imag[0]    = wtempi*wpr+wtemp*wpi+wtempi;
 
@@ -749,21 +749,21 @@ void fct_calculate(fct_plan *plan,
 	printf("(%lf,%lf)\n",pre_kernal*/
 
       /*Now going through the entire parameter space */
-      
+
       /*Initialize the k_loc array*/
       for (dim = 0; dim < plan->number_of_dimensions; ++dim) {
 	k_loc[dim]=0;
       }
-      
+
       /* merge fct_calculate in */
       kp = 0;
       while (k_loc[plan->number_of_dimensions-1] == 0) {
-	
+
 	seg = kp % plan->max_number_of_segments;
 	current_workspace = &(work_space)[2*seg*current-> points_per_dimension[0]];
-	
+
 	kp++; /* counting # of parameters going through */
-	
+
 	/*	  kernal_loc = 0; */
 	for (dim = 0; dim < plan->number_of_dimensions - 1; ++dim) {
 	  /*	    kernal_loc      += index_strides[dim]*k_loc[dim]; */
@@ -783,31 +783,31 @@ void fct_calculate(fct_plan *plan,
 
 	  /* debug */
 	  /*	    printf("pk[0][j]= %f %f\n",pk_real[0][j],pk_imag[0][j]); */
-	    
+
 	  for (dim=1; dim < plan->number_of_dimensions-1; ++dim) {
 	    hold  = wtemp;
 	    wtemp = wtemp*pk_real[dim][j] - wtempi*pk_imag[dim][j];
-	      
+
 	    wtempi = hold*pk_imag[dim][j] + wtempi*pk_real[dim][j];
 	  }
-	  
+
 	  current_workspace[output_real_loc]
 	    += wtemp*input_data[j] - wtempi*input_data[input_imag_loc];
-	    
+
 	  current_workspace[output_imag_loc]
 	    += wtemp*input_data[input_imag_loc] + wtempi*input_data[j];
-	  
+
 	  /*  debug */
-	  
-	  /*	    	    		printf("output_real_loc= %i current_workspace[output_real_loc]= %f current_workspace[output_imag_loc]= %g\n" , output_real_loc, current_workspace[output_real_loc] , current_workspace[output_imag_loc]); 
+
+	  /*	    	    		printf("output_real_loc= %i current_workspace[output_real_loc]= %f current_workspace[output_imag_loc]= %g\n" , output_real_loc, current_workspace[output_real_loc] , current_workspace[output_imag_loc]);
 	     */
 	  /*	    printf("%f +i%f\n",current_workspace[output_real_loc],current_workspace[output_imag_loc]);  */
-	  
-	  
+
+
 	}
 	if (seg == plan->max_number_of_segments-1) {
 	  /*FFT the data*/
-	  fct_fft(plan, work_space, 
+	  fct_fft(plan, work_space,
 	    &output_data[2*output_location*(current->points_per_dimension[0])],
             plan->max_number_of_segments);
 
@@ -820,7 +820,7 @@ void fct_calculate(fct_plan *plan,
 
 	/*Increment the k_loc array*/
 	++k_loc[0];
-	
+
 	for (dim = 0; dim < plan->number_of_dimensions-1; ++dim) {
 	  if (k_loc[dim] >= current->points_per_dimension[dim+1]) {
 	    k_loc[dim] = 0;
@@ -828,33 +828,33 @@ void fct_calculate(fct_plan *plan,
 	  }
 	}
       }
-      
+
       /*FFT the remaining data segments*/
       if (seg != plan->max_number_of_segments - 1) {
-	fct_fft(plan,work_space, 
+	fct_fft(plan,work_space,
      &output_data[2*output_location*(current->points_per_dimension[0])],seg+1);
 	output_location += seg + 1;
       }
-	
+
       /*Free the previous pre_kernal array*/
       fct_free(pre_kernal);
       current = current->next;
-      
+
     }
 
   /*Delete temporary data arrays.*/
-  
+
   fct_free(k_loc);
   fct_free(pre_k_index_offsets);
   fct_free(index_strides);
   /*  fct_free(pre_kernal);*/
   fct_free(pk_real);
   fct_free(pk_imag);
-  fct_free(work_space); 
+  fct_free(work_space);
 }
-	    
 
-  
+
+
 
 STORAGE_CLASS
 void fct_destroy_plan(fct_plan *plan, fct_status* const status)
@@ -898,7 +898,7 @@ void fct_destroy_data_cube(data_cube *cube, fct_status* const status)
     FCT_ERROR(status, FCT_ENULL_DATACUBE);
     return;
   }
-  
+
   fct_free(cube->start_locations);
   fct_free(cube->end_locations);
   fct_free(cube->stride);
@@ -925,14 +925,14 @@ int writefct(const fct_real* const out, const int n, const int m,
     {
 	/* Write info about endian-ness and local sizeof(*out) */
 	write(fd_output, &out_size, sizeof(out_size));
-	
+
 	/* Write the dimensions of the fct */
 	write(fd_output, &M, sizeof(M));
 	write(fd_output, &N, sizeof(N));
 
 	/* Write the body of the fct */
 	write(fd_output, out, sizeof(*out)*2*n*m);
-	
+
 	close(fd_output);
     }
     else

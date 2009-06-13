@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_INIT([lalapps],[5.3],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lalapps],[6.1],[lal-discuss@gravity.phys.uwm.edu])
 AC_CONFIG_HEADERS([src/config.h])
 AC_CONFIG_SRCDIR([src/config.h.in])
 AC_CONFIG_AUX_DIR([misc])
@@ -41,6 +41,7 @@ AC_CONFIG_FILES([\
   src/pulsar/crosscorr/Makefile \
   src/pulsar/fscan/Makefile \
   src/tracksearch/Makefile \
+  src/online/Makefile \
 ])
 AM_INIT_AUTOMAKE([])
 AC_ARG_VAR(LALSUITE_BUILD,[Set if part of lalsuite build])
@@ -98,6 +99,9 @@ fi
 # check for c compiler
 m4_pattern_allow([AC_PROG_CC_C99])
 m4_ifdef([AC_PROG_CC_C99], [AC_PROG_CC_C99], [LAL_AC_PROG_CC_C99])
+
+# use silent build rules if appropriate
+m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])],)
 
 dnl Checks for programs.
 AC_PROG_AWK

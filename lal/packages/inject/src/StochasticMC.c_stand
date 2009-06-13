@@ -3,7 +3,7 @@
 <lalVerbatim file="StochasticMCCV">
 Author: Tania Regimbau, Sukanta Bose, Jeff Noel
 $Id$
-</lalVerbatim> 
+</lalVerbatim>
 <lalLaTeX>
 \subsection{Module \texttt{StochasticMC.c}}
 \label{ss:StochasticMC.c}
@@ -14,15 +14,15 @@ Routine used by the stochastic DSO to do software injection.
 \input{StochasticMCCP}
 \idx{LALStochasticMCDso()}
 \subsubsection*{Description}
-This routine simulates time-domain signal in a pair 
-of detectors using Sukanta Bose's code SimulateSB.c, whitened with the adequate response function tha can be used in LALwrapper.  
+This routine simulates time-domain signal in a pair
+of detectors using Sukanta Bose's code SimulateSB.c, whitened with the adequate response function tha can be used in LALwrapper.
 \idx{LALStochasticMCStand()}
 \subsubsection*{Description}
 This is a standalone version of the routine described above.
 \idx{LALStochasticMCSplice()}
 \idx{LALStochasticMCDsoSplice()}
 \subsubsection*{Description}
-In these versions, long time-series are constructed by concatenating short segments of simulated data whitened with the adequate response function. Segments are sinusoidally spliced into consecutive segments using Jeff Noel's function SinusoidalSplice, in order to avoid discontinuities in the final time serie.  
+In these versions, long time-series are constructed by concatenating short segments of simulated data whitened with the adequate response function. Segments are sinusoidally spliced into consecutive segments using Jeff Noel's function SinusoidalSplice, in order to avoid discontinuities in the final time serie.
 \subsubsection*{Algorithm}
 
 The following program shows how to use the routines LALStochasticMCDso and LALStochasticMCDsoSplice
@@ -59,7 +59,7 @@ The following program shows how to use the routines LALStochasticMCDso and LALSt
 
 NRCSID(STOCHASTICTESTMCC, "$Id$");
 int main( ){
-  
+
   static LALStatus status;
   SSSimStochBGOutput MCoutput;
   StochasticMCParams MCparams;
@@ -72,39 +72,39 @@ int main( ){
   //input structure
   CalibrationFunctions calfuncs1,calfuncs2;
   CalibrationUpdateParams  calfacts1,calfacts2;
-  COMPLEX8FrequencySeries responseFunction1,responseFunction2,sensingFunction1,sensingFunction2; 
+  COMPLEX8FrequencySeries responseFunction1,responseFunction2,sensingFunction1,sensingFunction2;
   LIGOTimeGPS epoch;
   COMPLEX8TimeSeries oloopfactor1,sfactor1,oloopfactor2,sfactor2;
   COMPLEX8Vector *response[2]={NULL,NULL};
   COMPLEX8Vector *sensing[2]={NULL,NULL};
   COMPLEX8Vector *oloopfactor[2]={NULL,NULL};
   COMPLEX8Vector *sfactor[2]={NULL,NULL};
-  
-  //parameters  
+
+  //parameters
   UINT4 timeref, starttime, caltime;
   UINT4 freqlen,length,lengthseg,caloffset;
   REAL8 sRate,deltaT, deltaF;
 
   INT4 i, j;
   LALUnit countPerStrain = {0,{0,0,0,0,0,-1,1},{0,0,0,0,0,0,0}};
-  
+
   CHAR Outfile1[LALNameLength];
-  CHAR Outfile2[LALNameLength]; 
+  CHAR Outfile2[LALNameLength];
   FILE *pfone, *pftwo;
-  
+
   status.statusPtr = NULL;
   lengthseg = 61440;
   sRate = 1024.;
   starttime = 729331170;
-  
-  //write parameters 
+
+  //write parameters
   MCparams.lengthseg = lengthseg; MCparams.numseg = 3;
   MCparams.sRate = sRate;
   MCparams.starttime = starttime;
   MCparams.seed = 173;
   MCparams.fRef = 100.; MCparams.f0 = 0.;
   MCparams.omegaRef = 1.; MCparams.alpha = 0;
-  MCparams.site1 = 0; MCparams.site2 = 0; 
+  MCparams.site1 = 0; MCparams.site2 = 0;
 
   //set other parameters
   length = MCparams.numseg * lengthseg;
@@ -112,14 +112,14 @@ int main( ){
   freqlen = lengthseg / 2 + 1;
   caloffset =  lengthseg / (2 * sRate);
   deltaF = 1.0/(deltaT*lengthseg);
-  timeref = 0; 
+  timeref = 0;
   caltime = starttime + caloffset;
   for (i=0;i<2;i++)
   {
     LALCCreateVector(&status,&response[i],freqlen);
     LALCCreateVector(&status,&sensing[i],freqlen);
   }
- 
+
  for (i=0;i<2;i++)
   {
     LALCCreateVector(&status,&oloopfactor[i],length);
@@ -128,7 +128,7 @@ int main( ){
 
  for (i=0;i<2;i++)
   {
-    for (j=0; j < freqlen; j++) 
+    for (j=0; j < freqlen; j++)
      {
       response[i]->data[j].re = 1.;
       response[i]->data[j].im = 1.;
@@ -139,7 +139,7 @@ int main( ){
 
   for (i=0;i<2;i++)
   {
-    for (j=0; j < length; j++) 
+    for (j=0; j < length; j++)
      {
       oloopfactor[i]->data[j].re = 1.;
       oloopfactor[i]->data[j].im = 1.;
@@ -147,12 +147,12 @@ int main( ){
       sfactor[i]->data[j].im = 1.;
      }
   }
-    
+
   memset(&responseFunction1,0,sizeof(COMPLEX8FrequencySeries));
   memset(&responseFunction2,0,sizeof(COMPLEX8FrequencySeries));
   memset(&sensingFunction1,0,sizeof(COMPLEX8FrequencySeries));
   memset(&sensingFunction2,0,sizeof(COMPLEX8FrequencySeries));
-  
+
   responseFunction1.epoch.gpsSeconds = timeref;
   responseFunction1.epoch.gpsNanoSeconds = 0;
   responseFunction1.deltaF = deltaF;
@@ -166,7 +166,7 @@ int main( ){
   responseFunction2.f0 = 0;
   responseFunction2.sampleUnits = countPerStrain;
   responseFunction2.data = response[1];
-  
+
   sensingFunction1.epoch.gpsSeconds = timeref;
   sensingFunction1.epoch.gpsNanoSeconds = 0;
   sensingFunction1.deltaF = deltaF;
@@ -180,7 +180,7 @@ int main( ){
   sensingFunction2.f0 = 0;
   sensingFunction2.sampleUnits = countPerStrain;
   sensingFunction2.data = sensing[1];
-   
+
   memset(&oloopfactor1,0,sizeof(COMPLEX8TimeSeries));
   memset(&oloopfactor2,0,sizeof(COMPLEX8TimeSeries));
   memset(&sfactor1,0,sizeof(COMPLEX8TimeSeries));
@@ -203,7 +203,7 @@ int main( ){
   sfactor1.epoch.gpsSeconds = timeref;
   sfactor1.epoch.gpsNanoSeconds = 0;
   sfactor1.deltaT = 1. / sRate;
-  sfactor1.f0 = 0;  
+  sfactor1.f0 = 0;
   sfactor1.sampleUnits = lalADCCountUnit;
   sfactor1.data = sfactor[0];
 
@@ -213,38 +213,38 @@ int main( ){
   sfactor2.f0 = 0;
   sfactor2.sampleUnits = lalADCCountUnit;
   sfactor2.data = sfactor[1];
-  
-  calfuncs1.responseFunction = &responseFunction1; 
-  calfuncs1.sensingFunction = &sensingFunction1; 
+
+  calfuncs1.responseFunction = &responseFunction1;
+  calfuncs1.sensingFunction = &sensingFunction1;
   calfuncs2.responseFunction = &responseFunction2;
   calfuncs2.sensingFunction = &sensingFunction2;
-  
-  calfacts1.openLoopFactor = &oloopfactor1; 
+
+  calfacts1.openLoopFactor = &oloopfactor1;
   calfacts1.sensingFactor = &sfactor1;
   calfacts2.openLoopFactor = &oloopfactor2;
   calfacts2.sensingFactor = &sfactor2;
-  
+
   epoch.gpsSeconds = caltime;
   epoch.gpsNanoSeconds = 0;
   calfacts1.epoch = epoch;calfacts2.epoch = epoch;
 
-  //write input parameters    
-  MCinput.calfuncs1 = calfuncs1; 
+  //write input parameters
+  MCinput.calfuncs1 = calfuncs1;
   MCinput.calfuncs2 = calfuncs2;
-  MCinput.calfacts1 = calfacts1; 
+  MCinput.calfacts1 = calfacts1;
   MCinput.calfacts2 = calfacts2;
-   
+
   SimStochBG1.data = NULL;
   LALSCreateVector(&status, &(SimStochBG1.data), length);
   SimStochBG2.data = NULL;
   LALSCreateVector(&status, &(SimStochBG2.data), length);
-  
+
   MCoutput.SSimStochBG1 = &SimStochBG1;
   MCoutput.SSimStochBG2 = &SimStochBG2;
 
   LALStochasticMCDso (&status,&MCoutput,&MCinput,&MCparams);
 
-  //create output files 
+  //create output files
 
   if (print){
   LALSnprintf( Outfile1, LALNameLength * sizeof(CHAR),
@@ -253,7 +253,7 @@ int main( ){
             "%s_2_%d.ilwd",_IFO2,starttime);
 
   //print output to ilwds
-     
+
    if (print)
     {
      pfone=LALFopen(Outfile1,"w");pftwo=LALFopen(Outfile2,"w");
@@ -264,14 +264,14 @@ int main( ){
      fprintf(pftwo,"<ilwd comment='%s'",Outfile2);
      fprintf(pftwo," name='%s' size='1'>\n",Outfile2);
      fprintf(pftwo," <real_8 dims='%d' name='%s'>",length,Outfile2);
-  
+
      for(i=0;(UINT4)i<length;i++)
        {
         fprintf(pfone,"% e",SimStochBG1.data->data[i]);
         fprintf(pftwo,"% e",SimStochBG2.data->data[i]);
-       } 
+       }
      fprintf(pfone,"</real_8>");fprintf(pftwo,"</real_8>");
-     fprintf(pfone," </ilwd>");fprintf(pftwo," </ilwd>");       
+     fprintf(pfone," </ilwd>");fprintf(pftwo," </ilwd>");
      LALFclose(pfone);LALFclose(pftwo);
     }
   }
@@ -323,7 +323,7 @@ CHAR _IFO2[LALNameLength] = "H1";
 
 int main( ){
 
-  
+
   static LALStatus status;
   SSSimStochBGOutput MCoutput;
   StochasticMCParams MCparams;
@@ -338,7 +338,7 @@ int main( ){
 
   CHAR *ifo1 = "H1";
   CHAR *ifo2 = "H2";
-  
+
   //parameters
   UINT4 timeref, starttime, caltime;
   UINT4 freqlen,length,lengthseg,spliceoffset;
@@ -346,53 +346,53 @@ int main( ){
 
   INT4 i, j;
   LALUnit countPerStrain = {0,{0,0,0,0,0,-1,1},{0,0,0,0,0,0,0}};
-  
-  
+
+
   CHAR Outfile1[LALNameLength];
-  CHAR Outfile2[LALNameLength]; 
+  CHAR Outfile2[LALNameLength];
   FILE *pfone, *pftwo;
-  
+
   status.statusPtr = NULL;
   lengthseg = 61440;
   sRate = 1024.;
   starttime = 729331170;
-  
-  //write parameters 
+
+  //write parameters
   MCparams.lengthseg = lengthseg; MCparams.numseg = 3;
   MCparams.sRate = sRate;
   MCparams.starttime = starttime;
   MCparams.seed = 173;
   MCparams.fRef = 100.; MCparams.f0 = 0.;
   MCparams.omegaRef = 1.; MCparams.alpha = 0;
-  MCparams.site1 = 0; MCparams.site2 = 0; 
+  MCparams.site1 = 0; MCparams.site2 = 0;
 
-  //write input parameters   
-  MCinput.ifo1 = _IFO1; 
+  //write input parameters
+  MCinput.ifo1 = _IFO1;
   MCinput.ifo2 = _IFO2;
-  MCinput.catalog1 = _Catalog1; 
+  MCinput.catalog1 = _Catalog1;
   MCinput.catalog2 = _Catalog2;
 
-  //set other parameters 
-  
+  //set other parameters
+
   length = MCparams.numseg * lengthseg;
   deltaT = 1./sRate;
   freqlen = lengthseg / 2 + 1;
   caloffset =  lengthseg / (2 * sRate);
   deltaF = 1.0/(deltaT*lengthseg);
-  timeref = 0; 
-  caltime = starttime + caloffset; 
- 
+  timeref = 0;
+  caltime = starttime + caloffset;
+
   SimStochBG1.data = NULL;
   LALSCreateVector(&status, &(SimStochBG1.data), length);
   SimStochBG2.data = NULL;
   LALSCreateVector(&status, &(SimStochBG2.data), length);
-  
+
   MCoutput.SSimStochBG1 = &SimStochBG1;
   MCoutput.SSimStochBG2 = &SimStochBG2;
 
   LALStochasticMCStand (&status,&MCoutput,&MCinput,&MCparams);
 
-  //create output files 
+  //create output files
 
   if (print){
   LALSnprintf( Outfile1, LALNameLength * sizeof(CHAR),
@@ -401,7 +401,7 @@ int main( ){
             "%s_2_%d.ilwd",_IFO2,starttime);
 
   //print output to ilwds
-     
+
    if (print)
     {
      pfone=LALFopen(Outfile1,"w");pftwo=LALFopen(Outfile2,"w");
@@ -412,14 +412,14 @@ int main( ){
      fprintf(pftwo,"<ilwd comment='%s'",Outfile2);
      fprintf(pftwo," name='%s' size='1'>\n",Outfile2);
      fprintf(pftwo," <real_8 dims='%d' name='%s'>",length,Outfile2);
-  
+
      for(i=0;(UINT4)i<length;i++)
        {
         fprintf(pfone,"% e",SimStochBG1.data->data[i]);
         fprintf(pftwo,"% e",SimStochBG2.data->data[i]);
-       } 
+       }
      fprintf(pfone,"</real_8>");fprintf(pftwo,"</real_8>");
-     fprintf(pfone," </ilwd>");fprintf(pftwo," </ilwd>");       
+     fprintf(pfone," </ilwd>");fprintf(pftwo," </ilwd>");
      LALFclose(pfone);LALFclose(pftwo);
     }
   }
@@ -478,18 +478,18 @@ void LALStochasticMCStand (LALStatus *status,
 		StochasticMCSInput  *MCinput,
 		StochasticMCParams *MCparams)
 {
-  
+
   /* This stores the parameters of functions used */
   StochasticOmegaGWParameters        parametersOmega;
-  
+
   /* This stores the structures of SimulateSB */
   SSSimStochBGParams                 SBParams;
-  SSSimStochBGInput                  SBInput; 
+  SSSimStochBGInput                  SBInput;
   SSSimStochBGOutput                 SBOutput;
   REAL4TimeSeries                    whitenedSSimStochBG1;
   REAL4TimeSeries                    whitenedSSimStochBG2;
-  
-  
+
+
   REAL4FrequencySeries               omegaGW;
   COMPLEX8FrequencySeries            wFilter1;
   COMPLEX8FrequencySeries            wFilter2;
@@ -497,7 +497,7 @@ void LALStochasticMCStand (LALStatus *status,
 
   /* vector to store response functions of a pair of detectors  */
   COMPLEX8Vector                    *response[2]={NULL,NULL};
-  
+
   /* Counters & output */
   INT4                               i,n,m,k,loop;
   INT4                               seed;
@@ -505,10 +505,10 @@ void LALStochasticMCStand (LALStatus *status,
   REAL8                              totnorm2;
 
   /* files to store response functions  */
- 
+
   CHAR                               Respfile1[LALNameLength];
   CHAR                               Respfile2[LALNameLength];
-  
+
 
   /* various times, frequencies, sample rates */
   UINT4                              starttime,caltime;
@@ -518,79 +518,79 @@ void LALStochasticMCStand (LALStatus *status,
   REAL8                              deltaF, deltaT, sRate;
   INT4 site1, site2;
   REAL8 omegaRef, f0, fRef, alpha;
-  
+
     /*calibration information*/
   CHAR *ifo1;
-  CHAR *ifo2; 
+  CHAR *ifo2;
   CHAR *catalog1;
-  CHAR *catalog2; 
+  CHAR *catalog2;
 
-  LIGOTimeGPS duration;  
+  LIGOTimeGPS duration;
 
   const LALUnit countPerStrain = {0,{0,0,0,0,0,-1,1},{0,0,0,0,0,0,0}};
- 
+
   /* initialize status pointer */
    INITSTATUS(status, "LALStochasticMC", STOCHASTICMCC);
    ATTATCHSTATUSPTR(status);
 
     /* ERROR CHECKING */
-  
+
  /***** check input/output structures exist *****/
 
  /* output structure */
- 
- ASSERT(MCoutput !=NULL,status, 
+
+ ASSERT(MCoutput !=NULL,status,
         STOCHASTICMCH_ENULLP,STOCHASTICMCH_MSGENULLP);
- ASSERT(MCoutput->SSimStochBG1->data !=NULL,status, 
+ ASSERT(MCoutput->SSimStochBG1->data !=NULL,status,
         STOCHASTICMCH_ENULLP,STOCHASTICMCH_MSGENULLP);
- ASSERT(MCoutput->SSimStochBG2->data !=NULL,status, 
+ ASSERT(MCoutput->SSimStochBG2->data !=NULL,status,
         STOCHASTICMCH_ENULLP,STOCHASTICMCH_MSGENULLP);
- ASSERT(MCoutput->SSimStochBG1->data->data !=NULL,status, 
+ ASSERT(MCoutput->SSimStochBG1->data->data !=NULL,status,
         STOCHASTICMCH_ENULLP,STOCHASTICMCH_MSGENULLP);
- ASSERT(MCoutput->SSimStochBG2->data->data !=NULL,status, 
+ ASSERT(MCoutput->SSimStochBG2->data->data !=NULL,status,
  STOCHASTICMCH_ENULLP,STOCHASTICMCH_MSGENULLP);
 
  /* input structure */
- ASSERT(MCinput != NULL, status, 
+ ASSERT(MCinput != NULL, status,
         STOCHASTICMCH_ENULLP,STOCHASTICMCH_MSGENULLP);
-  
+
 
   /************* check parameter structures ***********/
 
   /* lengthseg is non-zero */
-  ASSERT(MCparams->lengthseg > 0, status, 
+  ASSERT(MCparams->lengthseg > 0, status,
          STOCHASTICMCH_ENULLLEN,STOCHASTICMCH_MSGENULLLEN);
 
   /* numseg is non-zero */
-  ASSERT(MCparams->numseg > 0, status, 
+  ASSERT(MCparams->numseg > 0, status,
          STOCHASTICMCH_ENULLSEG,STOCHASTICMCH_MSGENULLSEG);
 
   /* sampling rate is non zero */
-  ASSERT(MCparams->sRate > 0, status, 
+  ASSERT(MCparams->sRate > 0, status,
          STOCHASTICMCH_ENULLSRATE,STOCHASTICMCH_MSGENULLSRATE);
- 
- 
+
+
   /************* done with null pointers *****************/
-  
-  
+
+
   /**** check for legality ****/
-  
+
   /* start frequency must not be negative */
   if (MCparams->f0 < 0)
     {
       ABORT(status,STOCHASTICMCH_ENEGFMIN,STOCHASTICMCH_MSGENEGFMIN );
     }
 
-  
+
   /* read input stracture for calibration info*/
-   
-  ifo1 = MCinput->ifo1; 
-  ifo2 = MCinput->ifo2; 
-  catalog1 = MCinput->catalog1; 
-  catalog2 = MCinput->catalog2; 
+
+  ifo1 = MCinput->ifo1;
+  ifo2 = MCinput->ifo2;
+  catalog1 = MCinput->catalog1;
+  catalog2 = MCinput->catalog2;
 
   /*read parameters*/
-  
+
   fRef = MCparams->fRef;f0 = MCparams->f0;
   omegaRef = MCparams->omegaRef; alpha = MCparams->alpha;
   site1 = MCparams->site1; site2 = MCparams->site2;
@@ -600,36 +600,36 @@ void LALStochasticMCStand (LALStatus *status,
   seed = MCparams->seed;
 
   /*derive other parameters*/
-  
+
   length = lengthseg * numseg;
   freqlen = lengthseg / 2 + 1;
   caliboffset =  lengthseg / (2 * sRate);
-  deltaT = 1.0 / sRate; 
+  deltaT = 1.0 / sRate;
   deltaF = 1.0/(deltaT*lengthseg);
   caltime = starttime + caliboffset;
-  
-  
+
+
   /* Create vectors */
 
 
   omegaGW.data = NULL;
   LALSCreateVector(status->statusPtr, &(omegaGW.data), freqlen);
-  
+
   whitenedSSimStochBG1.data = NULL;
   LALSCreateVector(status->statusPtr, &(whitenedSSimStochBG1.data), lengthseg);
   whitenedSSimStochBG2.data = NULL;
   LALSCreateVector(status->statusPtr, &(whitenedSSimStochBG2.data), lengthseg);
 
-  
+
   /* define SimulateSBParams */
-  SBParams.length         = lengthseg; 
+  SBParams.length         = lengthseg;
   SBParams.deltaT         = 1.0/sRate;
   SBParams.detectorOne    = lalCachedDetectors[site1];
-  SBParams.detectorTwo    = lalCachedDetectors[site2]; 
+  SBParams.detectorTwo    = lalCachedDetectors[site2];
   SBParams.SSimStochBGTimeSeries1Unit = lalADCCountUnit;
   SBParams.SSimStochBGTimeSeries2Unit = lalADCCountUnit;
 
-  
+
   /* find omegaGW */
   parametersOmega.length   = freqlen;
   parametersOmega.f0       = f0;
@@ -638,7 +638,7 @@ void LALStochasticMCStand (LALStatus *status,
   parametersOmega.fRef     = fRef;
   parametersOmega.omegaRef = omegaRef;
   LALStochasticOmegaGW(status->statusPtr, &omegaGW, &parametersOmega);
-    
+
   memset( &wFilter1, 0, sizeof(COMPLEX8FrequencySeries) );
   memset( &wFilter2, 0, sizeof(COMPLEX8FrequencySeries) );
 
@@ -663,18 +663,18 @@ void LALStochasticMCStand (LALStatus *status,
   duration.gpsNanoSeconds = duration.gpsSeconds =  0;
 
   for (loop = 0; loop < numseg; loop ++)
-   
+
    {
      seed = seed + loop*2;
      SBParams.seed = seed;
-         
+
      wFilter1.epoch.gpsSeconds = caltime;
      wFilter2.epoch.gpsSeconds = caltime;
 
      LALExtractFrameResponse( status->statusPtr, &wFilter1,catalog1 ,ifo1,&duration);
      LALExtractFrameResponse( status->statusPtr, &wFilter2,catalog2 ,ifo2,&duration);
 
- 
+
      /* force DC to be 0 and nyquist to be real */
      response[0]->data[0].re = 0.0;
      response[0]->data[0].im = 0.0;
@@ -688,25 +688,25 @@ void LALStochasticMCStand (LALStatus *status,
      SBInput.omegaGW                  = &omegaGW;
      SBInput.whiteningFilter1         = &wFilter1;
      SBInput.whiteningFilter2         = &wFilter2;
-    
+
 
      SBOutput.SSimStochBG1 = &whitenedSSimStochBG1;
      SBOutput.SSimStochBG2 = &whitenedSSimStochBG2;
      /* generate whitened simulated SB data */
-     
+
      LALSSSimStochBGTimeSeries(status->statusPtr, &SBOutput, &SBInput, &SBParams);
-     
-      if ( verbose ) 
+
+      if ( verbose )
        {
 
         /* Mean square */
         totnorm2=0.0;
         for (i=0;(UINT4)i<lengthseg;i++)
         totnorm2+=((whitenedSSimStochBG1.data->data[i])*(whitenedSSimStochBG1.data->data[i]));
-    
+
         totnorm2/=lengthseg;
         printf("Mean square of whitened output is: %e\n",totnorm2);
-  
+
         /* check normalizations */
         totnorm=0.0;
         for (i=1;(UINT4)i<freqlen;i++){
@@ -723,17 +723,17 @@ void LALStochasticMCStand (LALStatus *status,
           MCoutput->SSimStochBG1->data->data[i + loop * lengthseg] = whitenedSSimStochBG1.data->data[i];
 	  MCoutput->SSimStochBG2->data->data[i + loop * lengthseg] = whitenedSSimStochBG2.data->data[i];
         }
-     caltime = caltime + caliboffset;            
+     caltime = caltime + caliboffset;
    }
-   
+
      /* assign parameters and data to output */
-      
+
    MCoutput->SSimStochBG1->f0 = f0;
    MCoutput->SSimStochBG1->deltaT = deltaT;
    MCoutput->SSimStochBG1->epoch.gpsSeconds = starttime;
    MCoutput->SSimStochBG1->epoch.gpsNanoSeconds = 0;
    MCoutput->SSimStochBG1->sampleUnits = lalADCCountUnit;
-   strncpy( MCoutput->SSimStochBG1->name, 
+   strncpy( MCoutput->SSimStochBG1->name,
 	       "Whitened-SimulatedSBOne", LALNameLength );
 
    MCoutput->SSimStochBG2->f0 = f0;
@@ -741,13 +741,13 @@ void LALStochasticMCStand (LALStatus *status,
    MCoutput->SSimStochBG2->epoch.gpsSeconds = starttime;
    MCoutput->SSimStochBG2->epoch.gpsNanoSeconds = 0;
    MCoutput->SSimStochBG2->sampleUnits =lalADCCountUnit;
-   strncpy( MCoutput->SSimStochBG2->name, 
+   strncpy( MCoutput->SSimStochBG2->name,
 	       "Whitened-SimulatedSBTwo", LALNameLength );
-    
-  
-  /* clean up, and exit */  
 
-  /* deallocate memory for output vector */ 
+
+  /* clean up, and exit */
+
+  /* deallocate memory for output vector */
 
   LALSDestroyVector(status->statusPtr, &(omegaGW.data));
   for (i=0;i<2;i++){
@@ -757,7 +757,7 @@ void LALStochasticMCStand (LALStatus *status,
   LALSDestroyVector(status->statusPtr, &(whitenedSSimStochBG1.data));
   LALSDestroyVector(status->statusPtr, &(whitenedSSimStochBG2.data));
 
-  
+
   DETATCHSTATUSPTR(status);
   RETURN(status);
 }
@@ -768,17 +768,17 @@ void LALStochasticMCStandSplice (LALStatus *status,
 		StochasticMCSInput  *MCinput,
 		StochasticMCParams *MCparams)
 {
-  
+
   /* This stores the parameters of functions used */
   StochasticOmegaGWParameters        parametersOmega;
-  
+
   /* This stores the structures of SimulateSB */
   SSSimStochBGParams                 SBParams;
-  SSSimStochBGInput                  SBInput; 
+  SSSimStochBGInput                  SBInput;
   SSSimStochBGOutput                 SBOutput;
   REAL4TimeSeries                    whitenedSSimStochBG1;
   REAL4TimeSeries                    whitenedSSimStochBG2;
-  
+
   REAL4FrequencySeries               omegaGW;
   COMPLEX8FrequencySeries            wFilter1;
   COMPLEX8FrequencySeries            wFilter2;
@@ -787,7 +787,7 @@ void LALStochasticMCStandSplice (LALStatus *status,
   REAL4Vector *output[2] = {NULL,NULL} ;
   /* vector to store response functions of a pair of detectors  */
   COMPLEX8Vector                    *response[2]={NULL,NULL};
-  
+
   /* Counters & output */
   INT4                               i,n,m,k,loop;
   INT4                               seed;
@@ -795,10 +795,10 @@ void LALStochasticMCStandSplice (LALStatus *status,
   REAL8                              totnorm2;
 
   /* files to store response functions  */
- 
+
   CHAR                               Respfile1[LALNameLength];
   CHAR                               Respfile2[LALNameLength];
-  
+
 
   /* various times, frequencies, sample rates */
   UINT4                              starttime,caltime;
@@ -808,80 +808,80 @@ void LALStochasticMCStandSplice (LALStatus *status,
   REAL8                              deltaF, deltaT, sRate;
   INT4 site1, site2;
   REAL8 omegaRef, f0, fRef, alpha;
-  
+
     /*calibration information*/
   CHAR *ifo1;
-  CHAR *ifo2; 
+  CHAR *ifo2;
   CHAR *catalog1;
-  CHAR *catalog2; 
+  CHAR *catalog2;
 
   LIGOTimeGPS duration;
-  
+
 
   const LALUnit countPerStrain = {0,{0,0,0,0,0,-1,1},{0,0,0,0,0,0,0}};
- 
+
   /* initialize status pointer */
    INITSTATUS(status, "LALStochasticMC", STOCHASTICMCC);
    ATTATCHSTATUSPTR(status);
 
     /* ERROR CHECKING */
-  
+
  /***** check input/output structures exist *****/
 
  /* output structure */
- 
- ASSERT(MCoutput !=NULL,status, 
+
+ ASSERT(MCoutput !=NULL,status,
         STOCHASTICMCH_ENULLP,STOCHASTICMCH_MSGENULLP);
- ASSERT(MCoutput->SSimStochBG1->data !=NULL,status, 
+ ASSERT(MCoutput->SSimStochBG1->data !=NULL,status,
         STOCHASTICMCH_ENULLP,STOCHASTICMCH_MSGENULLP);
- ASSERT(MCoutput->SSimStochBG2->data !=NULL,status, 
+ ASSERT(MCoutput->SSimStochBG2->data !=NULL,status,
         STOCHASTICMCH_ENULLP,STOCHASTICMCH_MSGENULLP);
- ASSERT(MCoutput->SSimStochBG1->data->data !=NULL,status, 
+ ASSERT(MCoutput->SSimStochBG1->data->data !=NULL,status,
         STOCHASTICMCH_ENULLP,STOCHASTICMCH_MSGENULLP);
- ASSERT(MCoutput->SSimStochBG2->data->data !=NULL,status, 
+ ASSERT(MCoutput->SSimStochBG2->data->data !=NULL,status,
  STOCHASTICMCH_ENULLP,STOCHASTICMCH_MSGENULLP);
 
  /* input structure */
- ASSERT(MCinput != NULL, status, 
+ ASSERT(MCinput != NULL, status,
         STOCHASTICMCH_ENULLP,STOCHASTICMCH_MSGENULLP);
-  
+
 
   /************* check parameter structures ***********/
 
   /* lengthseg is non-zero */
-  ASSERT(MCparams->lengthseg > 0, status, 
+  ASSERT(MCparams->lengthseg > 0, status,
          STOCHASTICMCH_ENULLLEN,STOCHASTICMCH_MSGENULLLEN);
 
   /* numseg is non-zero */
-  ASSERT(MCparams->numseg > 0, status, 
+  ASSERT(MCparams->numseg > 0, status,
          STOCHASTICMCH_ENULLSEG,STOCHASTICMCH_MSGENULLSEG);
 
   /* sampling rate is non zero */
-  ASSERT(MCparams->sRate > 0, status, 
+  ASSERT(MCparams->sRate > 0, status,
          STOCHASTICMCH_ENULLSRATE,STOCHASTICMCH_MSGENULLSRATE);
- 
- 
+
+
   /************* done with null pointers *****************/
-  
-  
+
+
   /**** check for legality ****/
-  
+
   /* start frequency must not be negative */
   if (MCparams->f0 < 0)
     {
       ABORT(status,STOCHASTICMCH_ENEGFMIN,STOCHASTICMCH_MSGENEGFMIN );
     }
 
-  
+
   /* read input stracture for calibration info*/
-   
-  ifo1 = MCinput->ifo1; 
-  ifo2 = MCinput->ifo2; 
-  catalog1 = MCinput->catalog1; 
-  catalog2 = MCinput->catalog2; 
+
+  ifo1 = MCinput->ifo1;
+  ifo2 = MCinput->ifo2;
+  catalog1 = MCinput->catalog1;
+  catalog2 = MCinput->catalog2;
 
   /*read parameters*/
-  
+
   fRef = MCparams->fRef;f0 = MCparams->f0;
   omegaRef = MCparams->omegaRef; alpha = MCparams->alpha;
   site1 = MCparams->site1; site2 = MCparams->site2;
@@ -891,17 +891,17 @@ void LALStochasticMCStandSplice (LALStatus *status,
   seed = MCparams->seed;
 
   /*derive other parameters*/
-  
+
   length = lengthseg * numseg;
   numsegsplice = numseg - 1;
   numsegtot = numseg + numsegsplice;
   freqlen = lengthseg / 2 + 1;
   spliceoffset =  lengthseg / (2 * sRate);
-  deltaT = 1.0 / sRate; 
+  deltaT = 1.0 / sRate;
   deltaF = 1.0/(deltaT*lengthseg);
   caltime = starttime + spliceoffset;
-  
-  
+
+
   /* Create vectors */
 
   /* allocate memory for longer data train */
@@ -936,22 +936,22 @@ void LALStochasticMCStandSplice (LALStatus *status,
 
   omegaGW.data = NULL;
   LALSCreateVector(status->statusPtr, &(omegaGW.data), freqlen);
-  
+
   whitenedSSimStochBG1.data = NULL;
   LALSCreateVector(status->statusPtr, &(whitenedSSimStochBG1.data), 0);
   whitenedSSimStochBG2.data = NULL;
   LALSCreateVector(status->statusPtr, &(whitenedSSimStochBG2.data), 0);
 
-  
+
   /* define SimulateSBParams */
-  SBParams.length         = lengthseg; 
+  SBParams.length         = lengthseg;
   SBParams.deltaT         = 1.0/sRate;
   SBParams.detectorOne    = lalCachedDetectors[site1];
-  SBParams.detectorTwo    = lalCachedDetectors[site2]; 
+  SBParams.detectorTwo    = lalCachedDetectors[site2];
   SBParams.SSimStochBGTimeSeries1Unit = lalADCCountUnit;
   SBParams.SSimStochBGTimeSeries2Unit = lalADCCountUnit;
 
-  
+
   /* find omegaGW */
   parametersOmega.length   = freqlen;
   parametersOmega.f0       = f0;
@@ -960,7 +960,7 @@ void LALStochasticMCStandSplice (LALStatus *status,
   parametersOmega.fRef     = fRef;
   parametersOmega.omegaRef = omegaRef;
   LALStochasticOmegaGW(status->statusPtr, &omegaGW, &parametersOmega);
-    
+
   memset( &wFilter1, 0, sizeof(COMPLEX8FrequencySeries) );
   memset( &wFilter2, 0, sizeof(COMPLEX8FrequencySeries) );
 
@@ -985,18 +985,18 @@ void LALStochasticMCStandSplice (LALStatus *status,
    duration.gpsNanoSeconds = duration.gpsSeconds =  0;
 
   for (loop = 0; loop < numsegtot; loop ++)
-   
+
    {
      seed = seed + loop*2;
      SBParams.seed = seed;
-         
+
      wFilter1.epoch.gpsSeconds = caltime;
      wFilter2.epoch.gpsSeconds = caltime;
 
      LALExtractFrameResponse( status->statusPtr, &wFilter1,catalog1 ,ifo1,&duration );
      LALExtractFrameResponse( status->statusPtr, &wFilter2,catalog2 ,ifo2, &duration );
 
-    
+
 
      /* force DC to be 0 and nyquist to be real */
      response[0]->data[0].re = 0.0;
@@ -1011,25 +1011,25 @@ void LALStochasticMCStandSplice (LALStatus *status,
      SBInput.omegaGW                  = &omegaGW;
      SBInput.whiteningFilter1         = &wFilter1;
      SBInput.whiteningFilter2         = &wFilter2;
-    
+
 
      SBOutput.SSimStochBG1 = &whitenedSSimStochBG1;
      SBOutput.SSimStochBG2 = &whitenedSSimStochBG2;
      /* generate whitened simulated SB data */
-     
+
      LALSSSimStochBGTimeSeries(status->statusPtr, &SBOutput, &SBInput, &SBParams);
-     
-      if ( verbose ) 
+
+      if ( verbose )
        {
 
         /* Mean square */
         totnorm2=0.0;
         for (i=0;(UINT4)i<lengthseg;i++)
         totnorm2+=((whitenedSSimStochBG1.data->data[i])*(whitenedSSimStochBG1.data->data[i]));
-    
+
         totnorm2/=lengthseg;
         printf("Mean square of whitened output is: %e\n",totnorm2);
-  
+
         /* check normalizations */
         totnorm=0.0;
         for (i=1;(UINT4)i<freqlen;i++){
@@ -1040,22 +1040,22 @@ void LALStochasticMCStandSplice (LALStatus *status,
         totnorm*=0.3*LAL_H0FAC_SI*LAL_H0FAC_SI*sRate/(LAL_PI*LAL_PI*lengthseg);
         printf("Mean square of whitened output should be: %e.  Ratio is %e\n",totnorm,totnorm/totnorm2);
         }
-      
+
       if (loop%2==0)
 	{
 	  m = (UINT4)(loop/2);
           longTrain1[m] =  whitenedSSimStochBG1.data;
           longTrain2[m] =  whitenedSSimStochBG2.data;}
-       else 
+       else
 	 {
 	   m = (UINT4) ((loop-1)/2);
           shortTrain1[m] = whitenedSSimStochBG1.data;
 	  shortTrain2[m] = whitenedSSimStochBG2.data;
-         } 
-     caltime = caltime + spliceoffset;            
+         }
+     caltime = caltime + spliceoffset;
    }
 
-    
+
     /* splice the long and short data trains into the output vector */
     SinusoidalSplice(longTrain1, shortTrain1,MCoutput->SSimStochBG1->data , numsegsplice, spliceoffset);
     SinusoidalSplice(longTrain2, shortTrain2,MCoutput->SSimStochBG2->data, numsegsplice, spliceoffset);
@@ -1065,21 +1065,21 @@ void LALStochasticMCStandSplice (LALStatus *status,
     LALSDestroyVector(status->statusPtr, &longTrain2[i]);}
     LALFree(longTrain1); LALFree(longTrain2);*/
 
-       
+
     /* deallocate memory for shorter data train */
     /*for(i=0; i<numsegsplice; i++){
     LALSDestroyVector(status->statusPtr, &shortTrain1[i]);
     LALSDestroyVector(status->statusPtr, &shortTrain2[i]);}
     LALFree(shortTrain1); LALFree(shortTrain2);*/
-   
+
      /* assign parameters and data to output */
-      
+
    MCoutput->SSimStochBG1->f0 = f0;
    MCoutput->SSimStochBG1->deltaT = deltaT;
    MCoutput->SSimStochBG1->epoch.gpsSeconds = starttime;
    MCoutput->SSimStochBG1->epoch.gpsNanoSeconds = 0;
    MCoutput->SSimStochBG1->sampleUnits = lalADCCountUnit;
-   strncpy( MCoutput->SSimStochBG1->name, 
+   strncpy( MCoutput->SSimStochBG1->name,
 	       "Whitened-SimulatedSBOne", LALNameLength );
 
    MCoutput->SSimStochBG2->f0 = f0;
@@ -1087,13 +1087,13 @@ void LALStochasticMCStandSplice (LALStatus *status,
    MCoutput->SSimStochBG2->epoch.gpsSeconds = starttime;
    MCoutput->SSimStochBG2->epoch.gpsNanoSeconds = 0;
    MCoutput->SSimStochBG2->sampleUnits =lalADCCountUnit;
-   strncpy( MCoutput->SSimStochBG2->name, 
+   strncpy( MCoutput->SSimStochBG2->name,
 	       "Whitened-SimulatedSBTwo", LALNameLength );
-    
-  
-  /* clean up, and exit */  
 
-  /* deallocate memory for output vector */ 
+
+  /* clean up, and exit */
+
+  /* deallocate memory for output vector */
 
   LALSDestroyVector(status->statusPtr, &(omegaGW.data));
   for (i=0;i<2;i++){
@@ -1103,7 +1103,7 @@ void LALStochasticMCStandSplice (LALStatus *status,
   LALSDestroyVector(status->statusPtr, &(whitenedSSimStochBG1.data));
   LALSDestroyVector(status->statusPtr, &(whitenedSSimStochBG2.data));
 
-  
+
   DETATCHSTATUSPTR(status);
   RETURN(status);
 }
@@ -1113,25 +1113,25 @@ void LALStochasticMCDso (LALStatus *status,
 	  	         StochasticMCInput  *MCinput,
 		         StochasticMCParams *MCparams)
 {
-  
+
   /* This stores the parameters of functions used */
   StochasticOmegaGWParameters        parametersOmega;
-  
+
   /* This stores the structures of SimulateSB */
   SSSimStochBGParams                 SBParams;
-  SSSimStochBGInput                  SBInput; 
+  SSSimStochBGInput                  SBInput;
   SSSimStochBGOutput                 SBOutput;
   REAL4TimeSeries                    whitenedSSimStochBG1;
   REAL4TimeSeries                    whitenedSSimStochBG2;
-  
+
   REAL4FrequencySeries               omegaGW;
   COMPLEX8FrequencySeries            wFilter1;
   COMPLEX8FrequencySeries            wFilter2;
 
-  
+
   /* vector to store response functions of a pair of detectors  */
   COMPLEX8Vector                    *response[2]={NULL,NULL};
-  
+
   /* Counters & output */
   INT4                               i,n,m,k,loop;
   INT4                               seed;
@@ -1139,10 +1139,10 @@ void LALStochasticMCDso (LALStatus *status,
   REAL8                              totnorm2;
 
   /* files to store response functions  */
- 
+
   CHAR                               Respfile1[LALNameLength];
   CHAR                               Respfile2[LALNameLength];
-  
+
 
   /* various times, frequencies, sample rates */
   UINT4                              starttime,caltime;
@@ -1152,111 +1152,111 @@ void LALStochasticMCDso (LALStatus *status,
   REAL8                              deltaF, deltaT, sRate;
   INT4 site1, site2;
   REAL8 omegaRef, f0, fRef, alpha;
-  
+
   /*calibration information*/
   CalibrationFunctions          calfuncs1,calfuncs2 ;
-  CalibrationUpdateParams       calfacts1,calfacts2 ; 
+  CalibrationUpdateParams       calfacts1,calfacts2 ;
 
   const LALUnit countPerStrain = {0,{0,0,0,0,0,-1,1},{0,0,0,0,0,0,0}};
- 
+
   /* initialize status pointer */
    INITSTATUS(status, "LALStochasticMC", STOCHASTICMCC);
    ATTATCHSTATUSPTR(status);
 
     /* ERROR CHECKING */
-  
+
  /***** check input/output structures exist *****/
 
  /* output structure */
- 
- ASSERT(MCoutput !=NULL,status, 
+
+ ASSERT(MCoutput !=NULL,status,
         STOCHASTICMCH_ENULLP,STOCHASTICMCH_MSGENULLP);
- ASSERT(MCoutput->SSimStochBG1->data !=NULL,status, 
+ ASSERT(MCoutput->SSimStochBG1->data !=NULL,status,
         STOCHASTICMCH_ENULLP,STOCHASTICMCH_MSGENULLP);
- ASSERT(MCoutput->SSimStochBG2->data !=NULL,status, 
+ ASSERT(MCoutput->SSimStochBG2->data !=NULL,status,
         STOCHASTICMCH_ENULLP,STOCHASTICMCH_MSGENULLP);
- ASSERT(MCoutput->SSimStochBG1->data->data !=NULL,status, 
+ ASSERT(MCoutput->SSimStochBG1->data->data !=NULL,status,
         STOCHASTICMCH_ENULLP,STOCHASTICMCH_MSGENULLP);
- ASSERT(MCoutput->SSimStochBG2->data->data !=NULL,status, 
+ ASSERT(MCoutput->SSimStochBG2->data->data !=NULL,status,
  STOCHASTICMCH_ENULLP,STOCHASTICMCH_MSGENULLP);
 
  /* input structure */
- ASSERT(MCinput != NULL, status, 
+ ASSERT(MCinput != NULL, status,
         STOCHASTICMCH_ENULLP,STOCHASTICMCH_MSGENULLP);
-  
- ASSERT(MCinput->calfuncs1.responseFunction->data !=NULL,status, 
+
+ ASSERT(MCinput->calfuncs1.responseFunction->data !=NULL,status,
          STOCHASTICMCH_ENULLP,STOCHASTICMCH_MSGENULLP);
- ASSERT(MCinput->calfuncs2.responseFunction->data !=NULL,status, 
+ ASSERT(MCinput->calfuncs2.responseFunction->data !=NULL,status,
          STOCHASTICMCH_ENULLP,STOCHASTICMCH_MSGENULLP);
  ASSERT(MCinput->calfuncs1.responseFunction->data->data !=NULL,
          status,STOCHASTICMCH_ENULLP,STOCHASTICMCH_MSGENULLP);
  ASSERT(MCinput->calfuncs2.responseFunction->data->data !=NULL,
         status,STOCHASTICMCH_ENULLP,STOCHASTICMCH_MSGENULLP);
 
- ASSERT(MCinput->calfuncs1.sensingFunction->data !=NULL,status, 
+ ASSERT(MCinput->calfuncs1.sensingFunction->data !=NULL,status,
          STOCHASTICMCH_ENULLP,STOCHASTICMCH_MSGENULLP);
- ASSERT(MCinput->calfuncs2.sensingFunction->data !=NULL,status, 
+ ASSERT(MCinput->calfuncs2.sensingFunction->data !=NULL,status,
          STOCHASTICMCH_ENULLP,STOCHASTICMCH_MSGENULLP);
  ASSERT(MCinput->calfuncs1.sensingFunction->data->data !=NULL,
         status, STOCHASTICMCH_ENULLP,STOCHASTICMCH_MSGENULLP);
  ASSERT(MCinput->calfuncs2.sensingFunction->data->data !=NULL,
         status,STOCHASTICMCH_ENULLP,STOCHASTICMCH_MSGENULLP);
 
-  ASSERT(MCinput->calfacts1.openLoopFactor->data !=NULL,status, 
+  ASSERT(MCinput->calfacts1.openLoopFactor->data !=NULL,status,
          STOCHASTICMCH_ENULLP,STOCHASTICMCH_MSGENULLP);
-  ASSERT(MCinput->calfacts2.openLoopFactor->data !=NULL,status, 
+  ASSERT(MCinput->calfacts2.openLoopFactor->data !=NULL,status,
          STOCHASTICMCH_ENULLP,STOCHASTICMCH_MSGENULLP);
-  ASSERT(MCinput->calfacts1.openLoopFactor->data->data !=NULL, 
+  ASSERT(MCinput->calfacts1.openLoopFactor->data->data !=NULL,
          status,STOCHASTICMCH_ENULLP,STOCHASTICMCH_MSGENULLP);
   ASSERT(MCinput->calfacts2.openLoopFactor->data->data !=NULL,
          status,STOCHASTICMCH_ENULLP,STOCHASTICMCH_MSGENULLP);
 
-  ASSERT(MCinput->calfacts1.sensingFactor->data !=NULL,status, 
+  ASSERT(MCinput->calfacts1.sensingFactor->data !=NULL,status,
          STOCHASTICMCH_ENULLP,STOCHASTICMCH_MSGENULLP);
-  ASSERT(MCinput->calfacts2.sensingFactor->data !=NULL,status, 
+  ASSERT(MCinput->calfacts2.sensingFactor->data !=NULL,status,
          STOCHASTICMCH_ENULLP,STOCHASTICMCH_MSGENULLP);
-  ASSERT(MCinput->calfacts1.sensingFactor->data->data !=NULL, 
+  ASSERT(MCinput->calfacts1.sensingFactor->data->data !=NULL,
          status,STOCHASTICMCH_ENULLP,STOCHASTICMCH_MSGENULLP);
-  ASSERT(MCinput->calfacts2.sensingFactor->data->data !=NULL, 
+  ASSERT(MCinput->calfacts2.sensingFactor->data->data !=NULL,
          status,STOCHASTICMCH_ENULLP,STOCHASTICMCH_MSGENULLP);
 
 
   /************* check parameter structures ***********/
 
   /* lengthseg is non-zero */
-  ASSERT(MCparams->lengthseg > 0, status, 
+  ASSERT(MCparams->lengthseg > 0, status,
          STOCHASTICMCH_ENULLLEN,STOCHASTICMCH_MSGENULLLEN);
 
   /* numseg is non-zero */
-  ASSERT(MCparams->numseg > 0, status, 
+  ASSERT(MCparams->numseg > 0, status,
          STOCHASTICMCH_ENULLSEG,STOCHASTICMCH_MSGENULLSEG);
 
   /* sampling rate is non zero */
-  ASSERT(MCparams->sRate > 0, status, 
+  ASSERT(MCparams->sRate > 0, status,
          STOCHASTICMCH_ENULLSRATE,STOCHASTICMCH_MSGENULLSRATE);
- 
- 
+
+
   /************* done with null pointers *****************/
-  
-  
+
+
   /**** check for legality ****/
-  
+
   /* start frequency must not be negative */
   if (MCparams->f0 < 0)
     {
       ABORT(status,STOCHASTICMCH_ENEGFMIN,STOCHASTICMCH_MSGENEGFMIN );
     }
 
-  
+
   /* read input stracture for calibration info*/
-   
-  calfuncs1 = MCinput->calfuncs1; 
+
+  calfuncs1 = MCinput->calfuncs1;
   calfuncs2 = MCinput->calfuncs2;
-  calfacts1 = MCinput->calfacts1; 
+  calfacts1 = MCinput->calfacts1;
   calfacts2 = MCinput->calfacts2;
 
   /*read parameters*/
-  
+
   fRef = MCparams->fRef;f0 = MCparams->f0;
   omegaRef = MCparams->omegaRef; alpha = MCparams->alpha;
   site1 = MCparams->site1; site2 = MCparams->site2;
@@ -1266,56 +1266,56 @@ void LALStochasticMCDso (LALStatus *status,
   seed = MCparams->seed;
 
   /*derive other parameters*/
-  
+
   length = lengthseg * numseg;
   freqlen = lengthseg / 2 + 1;
   caliboffset =  lengthseg / (2 * sRate);
-  deltaT = 1.0 / sRate; 
+  deltaT = 1.0 / sRate;
   deltaF = 1.0/(deltaT*lengthseg);
   caltime = starttime + caliboffset;
-  
-   
+
+
 /** check for mismatches **/
   /* epoch */
-    
-  if (calfacts1.epoch.gpsSeconds != caltime) 
+
+  if (calfacts1.epoch.gpsSeconds != caltime)
     {
       ABORT(status,STOCHASTICMCH_EMMEPOCH,STOCHASTICMCH_MSGEMMEPOCH);
     }
-  if (calfacts2.epoch.gpsSeconds != caltime) 
+  if (calfacts2.epoch.gpsSeconds != caltime)
     {
       ABORT(status,STOCHASTICMCH_EMMEPOCH,STOCHASTICMCH_MSGEMMEPOCH);
     }
-   if (calfacts1.epoch.gpsNanoSeconds != 0) 
+   if (calfacts1.epoch.gpsNanoSeconds != 0)
     {
       ABORT(status,STOCHASTICMCH_EMMEPOCH,STOCHASTICMCH_MSGEMMEPOCH);
     }
-  if (calfacts2.epoch.gpsNanoSeconds != 0) 
+  if (calfacts2.epoch.gpsNanoSeconds != 0)
     {
       ABORT(status,STOCHASTICMCH_EMMEPOCH,STOCHASTICMCH_MSGEMMEPOCH);
     }
-  
+
 
   /* Create vectors */
-  
+
   omegaGW.data = NULL;
   LALSCreateVector(status->statusPtr, &(omegaGW.data), freqlen);
-  
+
   whitenedSSimStochBG1.data = NULL;
   LALSCreateVector(status->statusPtr, &(whitenedSSimStochBG1.data), lengthseg);
   whitenedSSimStochBG2.data = NULL;
   LALSCreateVector(status->statusPtr, &(whitenedSSimStochBG2.data), lengthseg);
 
-  
+
   /* define SimulateSBParams */
-  SBParams.length         = lengthseg; 
+  SBParams.length         = lengthseg;
   SBParams.deltaT         = 1.0/sRate;
   SBParams.detectorOne    = lalCachedDetectors[site1];
-  SBParams.detectorTwo    = lalCachedDetectors[site2]; 
+  SBParams.detectorTwo    = lalCachedDetectors[site2];
   SBParams.SSimStochBGTimeSeries1Unit = lalADCCountUnit;
   SBParams.SSimStochBGTimeSeries2Unit = lalADCCountUnit;
 
-  
+
   /* find omegaGW */
   parametersOmega.length   = freqlen;
   parametersOmega.f0       = f0;
@@ -1324,7 +1324,7 @@ void LALStochasticMCDso (LALStatus *status,
   parametersOmega.fRef     = fRef;
   parametersOmega.omegaRef = omegaRef;
   LALStochasticOmegaGW(status->statusPtr, &omegaGW, &parametersOmega);
-    
+
   memset( &wFilter1, 0, sizeof(COMPLEX8FrequencySeries) );
   memset( &wFilter2, 0, sizeof(COMPLEX8FrequencySeries) );
 
@@ -1348,24 +1348,24 @@ void LALStochasticMCDso (LALStatus *status,
 
 
   for (loop = 0; loop < numseg; loop ++)
-   
+
    {
     seed = seed + loop*2;
     SBParams.seed = seed;
-         
+
     wFilter1.epoch.gpsSeconds = caltime;
     wFilter2.epoch.gpsSeconds = caltime;
 
-    calfacts1.epoch.gpsSeconds = caltime; 
+    calfacts1.epoch.gpsSeconds = caltime;
     calfacts2.epoch.gpsSeconds = caltime;
-    
+
     /* compute response function from calibration parameters */
     LALUpdateCalibration(status->statusPtr,&calfuncs1,&calfuncs1,&calfacts1);
     LALUpdateCalibration(status->statusPtr,&calfuncs2,&calfuncs2,&calfacts2);
     LALResponseConvert(status->statusPtr,&wFilter1,calfuncs1.responseFunction);
     LALResponseConvert(status->statusPtr,&wFilter2,calfuncs2.responseFunction);
-     
-   
+
+
     /* force DC to be 0 and nyquist to be real */
     response[0]->data[0].re = 0.0;
     response[0]->data[0].im = 0.0;
@@ -1379,23 +1379,23 @@ void LALStochasticMCDso (LALStatus *status,
     SBInput.omegaGW                  = &omegaGW;
     SBInput.whiteningFilter1         = &wFilter1;
     SBInput.whiteningFilter2         = &wFilter2;
-    
+
     SBOutput.SSimStochBG1 = &whitenedSSimStochBG1;
     SBOutput.SSimStochBG2 = &whitenedSSimStochBG2;
 
-    /* generate whitened simulated SB data */     
+    /* generate whitened simulated SB data */
     LALSSSimStochBGTimeSeries(status->statusPtr, &SBOutput, &SBInput, &SBParams);
-     if ( verbose ) 
+     if ( verbose )
        {
 
         /* Mean square */
         totnorm2=0.0;
         for (i=0;(UINT4)i<lengthseg;i++)
         totnorm2+=((whitenedSSimStochBG1.data->data[i])*(whitenedSSimStochBG1.data->data[i]));
-    
+
         totnorm2/=lengthseg;
         printf("Mean square of whitened output is: %e\n",totnorm2);
-  
+
         /* check normalizations */
         totnorm=0.0;
         for (i=1;(UINT4)i<freqlen;i++){
@@ -1412,17 +1412,17 @@ void LALStochasticMCDso (LALStatus *status,
           MCoutput->SSimStochBG1->data->data[i + loop * lengthseg] = whitenedSSimStochBG1.data->data[i];
 	  MCoutput->SSimStochBG2->data->data[i + loop * lengthseg] = whitenedSSimStochBG2.data->data[i];
         }
-     caltime = caltime + caliboffset;            
+     caltime = caltime + caliboffset;
    }
-   
+
      /* assign parameters and data to output */
-      
+
    MCoutput->SSimStochBG1->f0 = f0;
    MCoutput->SSimStochBG1->deltaT = deltaT;
    MCoutput->SSimStochBG1->epoch.gpsSeconds = starttime;
    MCoutput->SSimStochBG1->epoch.gpsNanoSeconds = 0;
    MCoutput->SSimStochBG1->sampleUnits = lalADCCountUnit;
-   strncpy( MCoutput->SSimStochBG1->name, 
+   strncpy( MCoutput->SSimStochBG1->name,
 	       "Whitened-SimulatedSBOne", LALNameLength );
 
    MCoutput->SSimStochBG2->f0 = f0;
@@ -1430,13 +1430,13 @@ void LALStochasticMCDso (LALStatus *status,
    MCoutput->SSimStochBG2->epoch.gpsSeconds = starttime;
    MCoutput->SSimStochBG2->epoch.gpsNanoSeconds = 0;
    MCoutput->SSimStochBG2->sampleUnits =lalADCCountUnit;
-   strncpy( MCoutput->SSimStochBG2->name, 
+   strncpy( MCoutput->SSimStochBG2->name,
 	       "Whitened-SimulatedSBTwo", LALNameLength );
-    
-  
-  /* clean up, and exit */  
 
-  /* deallocate memory for output vector */ 
+
+  /* clean up, and exit */
+
+  /* deallocate memory for output vector */
 
   LALSDestroyVector(status->statusPtr, &(omegaGW.data));
   for (i=0;i<2;i++){
@@ -1446,28 +1446,28 @@ void LALStochasticMCDso (LALStatus *status,
   LALSDestroyVector(status->statusPtr, &(whitenedSSimStochBG1.data));
   LALSDestroyVector(status->statusPtr, &(whitenedSSimStochBG2.data));
 
-  
+
   DETATCHSTATUSPTR(status);
   RETURN(status);
 }
-    
+
 
 void LALStochasticMCDsoSplice (LALStatus *status,
 		         SSSimStochBGOutput *MCoutput,
 	  	         StochasticMCInput  *MCinput,
 		         StochasticMCParams *MCparams)
 {
-  
+
   /* This stores the parameters of functions used */
   StochasticOmegaGWParameters        parametersOmega;
-  
+
   /* This stores the structures of SimulateSB */
   SSSimStochBGParams                 SBParams;
-  SSSimStochBGInput                  SBInput; 
+  SSSimStochBGInput                  SBInput;
   SSSimStochBGOutput                 SBOutput;
   REAL4TimeSeries                    whitenedSSimStochBG1;
   REAL4TimeSeries                    whitenedSSimStochBG2;
-  
+
   REAL4FrequencySeries               omegaGW;
   COMPLEX8FrequencySeries            wFilter1;
   COMPLEX8FrequencySeries            wFilter2;
@@ -1476,7 +1476,7 @@ void LALStochasticMCDsoSplice (LALStatus *status,
   REAL4Vector *output[2] = {NULL,NULL} ;
   /* vector to store response functions of a pair of detectors  */
   COMPLEX8Vector                    *response[2]={NULL,NULL};
-  
+
   /* Counters & output */
   INT4                               i,n,m,k,loop;
   INT4                               seed;
@@ -1484,10 +1484,10 @@ void LALStochasticMCDsoSplice (LALStatus *status,
   REAL8                              totnorm2;
 
   /* files to store response functions  */
- 
+
   CHAR                               Respfile1[LALNameLength];
   CHAR                               Respfile2[LALNameLength];
-  
+
 
   /* various times, frequencies, sample rates */
   UINT4                              starttime,caltime;
@@ -1497,111 +1497,111 @@ void LALStochasticMCDsoSplice (LALStatus *status,
   REAL8                              deltaF, deltaT, sRate;
   INT4 site1, site2;
   REAL8 omegaRef, f0, fRef, alpha;
-  
+
   /*calibration information*/
   CalibrationFunctions          calfuncs1,calfuncs2 ;
-  CalibrationUpdateParams       calfacts1,calfacts2 ; 
+  CalibrationUpdateParams       calfacts1,calfacts2 ;
 
   const LALUnit countPerStrain = {0,{0,0,0,0,0,-1,1},{0,0,0,0,0,0,0}};
- 
+
   /* initialize status pointer */
    INITSTATUS(status, "LALStochasticMC", STOCHASTICMCC);
    ATTATCHSTATUSPTR(status);
 
     /* ERROR CHECKING */
-  
+
  /***** check input/output structures exist *****/
 
  /* output structure */
- 
- ASSERT(MCoutput !=NULL,status, 
+
+ ASSERT(MCoutput !=NULL,status,
         STOCHASTICMCH_ENULLP,STOCHASTICMCH_MSGENULLP);
- ASSERT(MCoutput->SSimStochBG1->data !=NULL,status, 
+ ASSERT(MCoutput->SSimStochBG1->data !=NULL,status,
         STOCHASTICMCH_ENULLP,STOCHASTICMCH_MSGENULLP);
- ASSERT(MCoutput->SSimStochBG2->data !=NULL,status, 
+ ASSERT(MCoutput->SSimStochBG2->data !=NULL,status,
         STOCHASTICMCH_ENULLP,STOCHASTICMCH_MSGENULLP);
- ASSERT(MCoutput->SSimStochBG1->data->data !=NULL,status, 
+ ASSERT(MCoutput->SSimStochBG1->data->data !=NULL,status,
         STOCHASTICMCH_ENULLP,STOCHASTICMCH_MSGENULLP);
- ASSERT(MCoutput->SSimStochBG2->data->data !=NULL,status, 
+ ASSERT(MCoutput->SSimStochBG2->data->data !=NULL,status,
  STOCHASTICMCH_ENULLP,STOCHASTICMCH_MSGENULLP);
 
  /* input structure */
- ASSERT(MCinput != NULL, status, 
+ ASSERT(MCinput != NULL, status,
         STOCHASTICMCH_ENULLP,STOCHASTICMCH_MSGENULLP);
-  
- ASSERT(MCinput->calfuncs1.responseFunction->data !=NULL,status, 
+
+ ASSERT(MCinput->calfuncs1.responseFunction->data !=NULL,status,
          STOCHASTICMCH_ENULLP,STOCHASTICMCH_MSGENULLP);
- ASSERT(MCinput->calfuncs2.responseFunction->data !=NULL,status, 
+ ASSERT(MCinput->calfuncs2.responseFunction->data !=NULL,status,
          STOCHASTICMCH_ENULLP,STOCHASTICMCH_MSGENULLP);
  ASSERT(MCinput->calfuncs1.responseFunction->data->data !=NULL,
          status,STOCHASTICMCH_ENULLP,STOCHASTICMCH_MSGENULLP);
  ASSERT(MCinput->calfuncs2.responseFunction->data->data !=NULL,
         status,STOCHASTICMCH_ENULLP,STOCHASTICMCH_MSGENULLP);
 
- ASSERT(MCinput->calfuncs1.sensingFunction->data !=NULL,status, 
+ ASSERT(MCinput->calfuncs1.sensingFunction->data !=NULL,status,
          STOCHASTICMCH_ENULLP,STOCHASTICMCH_MSGENULLP);
- ASSERT(MCinput->calfuncs2.sensingFunction->data !=NULL,status, 
+ ASSERT(MCinput->calfuncs2.sensingFunction->data !=NULL,status,
          STOCHASTICMCH_ENULLP,STOCHASTICMCH_MSGENULLP);
  ASSERT(MCinput->calfuncs1.sensingFunction->data->data !=NULL,
         status, STOCHASTICMCH_ENULLP,STOCHASTICMCH_MSGENULLP);
  ASSERT(MCinput->calfuncs2.sensingFunction->data->data !=NULL,
         status,STOCHASTICMCH_ENULLP,STOCHASTICMCH_MSGENULLP);
 
-  ASSERT(MCinput->calfacts1.openLoopFactor->data !=NULL,status, 
+  ASSERT(MCinput->calfacts1.openLoopFactor->data !=NULL,status,
          STOCHASTICMCH_ENULLP,STOCHASTICMCH_MSGENULLP);
-  ASSERT(MCinput->calfacts2.openLoopFactor->data !=NULL,status, 
+  ASSERT(MCinput->calfacts2.openLoopFactor->data !=NULL,status,
          STOCHASTICMCH_ENULLP,STOCHASTICMCH_MSGENULLP);
-  ASSERT(MCinput->calfacts1.openLoopFactor->data->data !=NULL, 
+  ASSERT(MCinput->calfacts1.openLoopFactor->data->data !=NULL,
          status,STOCHASTICMCH_ENULLP,STOCHASTICMCH_MSGENULLP);
   ASSERT(MCinput->calfacts2.openLoopFactor->data->data !=NULL,
          status,STOCHASTICMCH_ENULLP,STOCHASTICMCH_MSGENULLP);
 
-  ASSERT(MCinput->calfacts1.sensingFactor->data !=NULL,status, 
+  ASSERT(MCinput->calfacts1.sensingFactor->data !=NULL,status,
          STOCHASTICMCH_ENULLP,STOCHASTICMCH_MSGENULLP);
-  ASSERT(MCinput->calfacts2.sensingFactor->data !=NULL,status, 
+  ASSERT(MCinput->calfacts2.sensingFactor->data !=NULL,status,
          STOCHASTICMCH_ENULLP,STOCHASTICMCH_MSGENULLP);
-  ASSERT(MCinput->calfacts1.sensingFactor->data->data !=NULL, 
+  ASSERT(MCinput->calfacts1.sensingFactor->data->data !=NULL,
          status,STOCHASTICMCH_ENULLP,STOCHASTICMCH_MSGENULLP);
-  ASSERT(MCinput->calfacts2.sensingFactor->data->data !=NULL, 
+  ASSERT(MCinput->calfacts2.sensingFactor->data->data !=NULL,
          status,STOCHASTICMCH_ENULLP,STOCHASTICMCH_MSGENULLP);
 
 
   /************* check parameter structures ***********/
 
   /* lengthseg is non-zero */
-  ASSERT(MCparams->lengthseg > 0, status, 
+  ASSERT(MCparams->lengthseg > 0, status,
          STOCHASTICMCH_ENULLLEN,STOCHASTICMCH_MSGENULLLEN);
 
   /* numseg is non-zero */
-  ASSERT(MCparams->numseg > 0, status, 
+  ASSERT(MCparams->numseg > 0, status,
          STOCHASTICMCH_ENULLSEG,STOCHASTICMCH_MSGENULLSEG);
 
   /* sampling rate is non zero */
-  ASSERT(MCparams->sRate > 0, status, 
+  ASSERT(MCparams->sRate > 0, status,
          STOCHASTICMCH_ENULLSRATE,STOCHASTICMCH_MSGENULLSRATE);
- 
- 
+
+
   /************* done with null pointers *****************/
-  
-  
+
+
   /**** check for legality ****/
-  
+
   /* start frequency must not be negative */
   if (MCparams->f0 < 0)
     {
       ABORT(status,STOCHASTICMCH_ENEGFMIN,STOCHASTICMCH_MSGENEGFMIN );
     }
 
-  
+
   /* read input stracture for calibration info*/
-   
-  calfuncs1 = MCinput->calfuncs1; 
+
+  calfuncs1 = MCinput->calfuncs1;
   calfuncs2 = MCinput->calfuncs2;
-  calfacts1 = MCinput->calfacts1; 
+  calfacts1 = MCinput->calfacts1;
   calfacts2 = MCinput->calfacts2;
 
   /*read parameters*/
-  
+
   fRef = MCparams->fRef;f0 = MCparams->f0;
   omegaRef = MCparams->omegaRef; alpha = MCparams->alpha;
   site1 = MCparams->site1; site2 = MCparams->site2;
@@ -1611,37 +1611,37 @@ void LALStochasticMCDsoSplice (LALStatus *status,
   seed = MCparams->seed;
 
   /*derive other parameters*/
-  
+
   length = lengthseg * numseg;
   numsegsplice = numseg - 1;
   numsegtot = numseg + numsegsplice;
   freqlen = lengthseg / 2 + 1;
   spliceoffset =  lengthseg / (2 * sRate);
-  deltaT = 1.0 / sRate; 
+  deltaT = 1.0 / sRate;
   deltaF = 1.0/(deltaT*lengthseg);
   caltime = starttime + spliceoffset;
-  
-   
+
+
 /** check for mismatches **/
   /* epoch */
-    
-  if (calfacts1.epoch.gpsSeconds != caltime) 
+
+  if (calfacts1.epoch.gpsSeconds != caltime)
     {
       ABORT(status,STOCHASTICMCH_EMMEPOCH,STOCHASTICMCH_MSGEMMEPOCH);
     }
-  if (calfacts2.epoch.gpsSeconds != caltime) 
+  if (calfacts2.epoch.gpsSeconds != caltime)
     {
       ABORT(status,STOCHASTICMCH_EMMEPOCH,STOCHASTICMCH_MSGEMMEPOCH);
     }
-   if (calfacts1.epoch.gpsNanoSeconds != 0) 
+   if (calfacts1.epoch.gpsNanoSeconds != 0)
     {
       ABORT(status,STOCHASTICMCH_EMMEPOCH,STOCHASTICMCH_MSGEMMEPOCH);
     }
-  if (calfacts2.epoch.gpsNanoSeconds != 0) 
+  if (calfacts2.epoch.gpsNanoSeconds != 0)
     {
       ABORT(status,STOCHASTICMCH_EMMEPOCH,STOCHASTICMCH_MSGEMMEPOCH);
     }
-  
+
 
   /* Create vectors */
 
@@ -1675,26 +1675,26 @@ void LALStochasticMCDsoSplice (LALStatus *status,
   for (k=0;k<lengthseg;k++) {shortTrain2[i]->data[k]=0;}
   }
 
-  
-  
+
+
   omegaGW.data = NULL;
   LALSCreateVector(status->statusPtr, &(omegaGW.data), freqlen);
-  
+
   whitenedSSimStochBG1.data = NULL;
   LALSCreateVector(status->statusPtr, &(whitenedSSimStochBG1.data), lengthseg);
   whitenedSSimStochBG2.data = NULL;
   LALSCreateVector(status->statusPtr, &(whitenedSSimStochBG2.data), lengthseg);
 
-  
+
   /* define SimulateSBParams */
-  SBParams.length         = lengthseg; 
+  SBParams.length         = lengthseg;
   SBParams.deltaT         = 1.0/sRate;
   SBParams.detectorOne    = lalCachedDetectors[site1];
-  SBParams.detectorTwo    = lalCachedDetectors[site2]; 
+  SBParams.detectorTwo    = lalCachedDetectors[site2];
   SBParams.SSimStochBGTimeSeries1Unit = lalADCCountUnit;
   SBParams.SSimStochBGTimeSeries2Unit = lalADCCountUnit;
 
-  
+
   /* find omegaGW */
   parametersOmega.length   = freqlen;
   parametersOmega.f0       = f0;
@@ -1703,7 +1703,7 @@ void LALStochasticMCDsoSplice (LALStatus *status,
   parametersOmega.fRef     = fRef;
   parametersOmega.omegaRef = omegaRef;
   LALStochasticOmegaGW(status->statusPtr, &omegaGW, &parametersOmega);
-    
+
   memset( &wFilter1, 0, sizeof(COMPLEX8FrequencySeries) );
   memset( &wFilter2, 0, sizeof(COMPLEX8FrequencySeries) );
 
@@ -1727,24 +1727,24 @@ void LALStochasticMCDsoSplice (LALStatus *status,
 
 
   for (loop = 0; loop < numsegtot; loop ++)
-   
+
    {
     seed = seed + loop*2;
     SBParams.seed = seed;
-         
+
     wFilter1.epoch.gpsSeconds = caltime;
     wFilter2.epoch.gpsSeconds = caltime;
 
-    calfacts1.epoch.gpsSeconds = caltime; 
+    calfacts1.epoch.gpsSeconds = caltime;
     calfacts2.epoch.gpsSeconds = caltime;
-    
+
     /* compute response function from calibration parameters */
     LALUpdateCalibration(status->statusPtr,&calfuncs1,&calfuncs1,&calfacts1);
     LALUpdateCalibration(status->statusPtr,&calfuncs2,&calfuncs2,&calfacts2);
     LALResponseConvert(status->statusPtr,&wFilter1,calfuncs1.responseFunction);
     LALResponseConvert(status->statusPtr,&wFilter2,calfuncs2.responseFunction);
-     
-   
+
+
     /* force DC to be 0 and nyquist to be real */
     response[0]->data[0].re = 0.0;
     response[0]->data[0].im = 0.0;
@@ -1758,26 +1758,26 @@ void LALStochasticMCDsoSplice (LALStatus *status,
     SBInput.omegaGW                  = &omegaGW;
     SBInput.whiteningFilter1         = &wFilter1;
     SBInput.whiteningFilter2         = &wFilter2;
-    
+
     SBOutput.SSimStochBG1 = &whitenedSSimStochBG1;
     SBOutput.SSimStochBG2 = &whitenedSSimStochBG2;
 
-    /* generate whitened simulated SB data */     
+    /* generate whitened simulated SB data */
     LALSSSimStochBGTimeSeries(status->statusPtr, &SBOutput, &SBInput, &SBParams);
      if (loop%2==0)
        {
 	 m = (UINT4)(loop/2);
          longTrain1[m] =  whitenedSSimStochBG1.data;
          longTrain2[m] =  whitenedSSimStochBG2.data;}
-      else 
+      else
 	{
          shortTrain1[m] = whitenedSSimStochBG1.data;
 	 shortTrain2[m] = whitenedSSimStochBG2.data;
-        } 
-     caltime = caltime + spliceoffset;            
+        }
+     caltime = caltime + spliceoffset;
    }
 
-    
+
     /* splice the long and short data trains into the output vector */
     SinusoidalSplice(longTrain1, shortTrain1,MCoutput->SSimStochBG1->data , numsegsplice, spliceoffset);
     SinusoidalSplice(longTrain2, shortTrain2,MCoutput->SSimStochBG2->data, numsegsplice, spliceoffset);
@@ -1787,21 +1787,21 @@ void LALStochasticMCDsoSplice (LALStatus *status,
     LALSDestroyVector(status->statusPtr, &longTrain2[i]);}
     LALFree(longTrain1); LALFree(longTrain2);*/
 
-       
+
     /* deallocate memory for shorter data train */
     /*for(i=0; i<numsegsplice; i++){
     LALSDestroyVector(status->statusPtr, &shortTrain1[i]);
     LALSDestroyVector(status->statusPtr, &shortTrain2[i]);}
     LALFree(shortTrain1); LALFree(shortTrain2);*/
-   
+
      /* assign parameters and data to output */
-      
+
    MCoutput->SSimStochBG1->f0 = f0;
    MCoutput->SSimStochBG1->deltaT = deltaT;
    MCoutput->SSimStochBG1->epoch.gpsSeconds = starttime;
    MCoutput->SSimStochBG1->epoch.gpsNanoSeconds = 0;
    MCoutput->SSimStochBG1->sampleUnits = lalADCCountUnit;
-   strncpy( MCoutput->SSimStochBG1->name, 
+   strncpy( MCoutput->SSimStochBG1->name,
 	       "Whitened-SimulatedSBOne", LALNameLength );
 
    MCoutput->SSimStochBG2->f0 = f0;
@@ -1809,12 +1809,12 @@ void LALStochasticMCDsoSplice (LALStatus *status,
    MCoutput->SSimStochBG2->epoch.gpsSeconds = starttime;
    MCoutput->SSimStochBG2->epoch.gpsNanoSeconds = 0;
    MCoutput->SSimStochBG2->sampleUnits =lalADCCountUnit;
-   strncpy( MCoutput->SSimStochBG2->name, 
+   strncpy( MCoutput->SSimStochBG2->name,
 	       "Whitened-SimulatedSBTwo", LALNameLength );
 
-  /* clean up, and exit */  
+  /* clean up, and exit */
 
-  /* deallocate memory for output vector */ 
+  /* deallocate memory for output vector */
 
   LALSDestroyVector(status->statusPtr, &(omegaGW.data));
   for (i=0;i<2;i++){
@@ -1824,7 +1824,7 @@ void LALStochasticMCDsoSplice (LALStatus *status,
   LALSDestroyVector(status->statusPtr, &(whitenedSSimStochBG1.data));
   LALSDestroyVector(status->statusPtr, &(whitenedSSimStochBG2.data));
 
-  
+
   DETATCHSTATUSPTR(status);
   RETURN(status);
 }
@@ -1836,7 +1836,7 @@ void SinusoidalSplice(REAL4Vector **longData, REAL4Vector **shortData, REAL4Vect
 
   UINT4           segLen, nOutputPts, nSplicePts, lastSpliceIndexPlusOne;
   UINT4           leftOverlap, rightOverlap, i, j, iMod, jMod;
-  REAL4           leftScale, rightScale, phase;     
+  REAL4           leftScale, rightScale, phase;
 
   segLen          = longData[0]->length;
   nOutputPts      = output->length;
@@ -1860,7 +1860,7 @@ void SinusoidalSplice(REAL4Vector **longData, REAL4Vector **shortData, REAL4Vect
     jMod = j % segLen;
 
     /* splice from start to middle of shortData segment */
-    if (iMod < leftOverlap) { 
+    if (iMod < leftOverlap) {
       phase = iMod * leftScale;
 
       output->data[i] = longData[i/segLen]->data[iMod] * sin( phase )
@@ -1874,7 +1874,7 @@ void SinusoidalSplice(REAL4Vector **longData, REAL4Vector **shortData, REAL4Vect
 	+ shortData[j/segLen]->data[jMod] * sin( phase );
     }
   }
-  
+
   for (i=lastSpliceIndexPlusOne; i<nOutputPts; i++)
      output->data[i] = longData[i/segLen]->data[i%segLen];
 

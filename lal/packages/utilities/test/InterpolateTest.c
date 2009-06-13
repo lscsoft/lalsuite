@@ -298,7 +298,7 @@ int main (int argc, char *argv[])
     if ( verbose )
       printf ("Zero divide check passed.\n");
   }
-#endif 
+#endif
 
 
   LALSDestroyVector (&status, &x);

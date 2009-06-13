@@ -86,8 +86,8 @@ LALMersenneRandomVector()
 Pulled from distributed source code:\\
 
 A C-program for MT19937: Real number version  (1998/4/6)
-genrand() generates one pseudorandom real number (double) 
-which is uniformly distributed on [0,1]-interval, for each 
+genrand() generates one pseudorandom real number (double)
+which is uniformly distributed on [0,1]-interval, for each
 call. sgenrand(seed) set initial values to the working area
 of 624 words. Before genrand(), sgenrand(seed) must be called
 once. (seed is any 32-bit integer except for 0).  Integer
@@ -112,7 +112,7 @@ Seed value MAY NOT EQUAL ZERO.
 #define UPPER_MASK 0x80000000   /* most significant w-r bits */
 #define LOWER_MASK 0x7fffffff   /* least significant r bits */
 
-/*  Predefined Macros  */ 
+/*  Predefined Macros  */
 #define TEMPERING_MASK_B 0x9d2c5680
 #define TEMPERING_MASK_C 0xefc60000
 #define TEMPERING_SHIFT_U(y)  (y >> 11)
@@ -309,7 +309,7 @@ void LALMersenneRandomVector
 /* See the GNU Library General Public License for more details.    */
 /* You should have received a copy of the GNU Library General      */
 /* Public License along with this library; if not, write to the    */
-/* Free Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA   */ 
+/* Free Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA   */
 /* 02111-1307  USA                                                 */
 
 /* Copyright (C) 1997 Makoto Matsumoto and Takuji Nishimura.       */

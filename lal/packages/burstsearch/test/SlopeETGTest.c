@@ -74,14 +74,14 @@ INT4 main(INT4 argc, CHAR *argv[]) {
   /* create ramp */
   LALCreateVector(&status, &coef, 10);
   CHKST
-    
+
   for(i=0;i<coef->length;i++) {
     coef->data[i] = (12.0*16384.0/990.0)*((REAL4)i - 4.5);
   }
 
   /* set parameters */
   par = &params;
-  
+
   SetStringParameter(par,channel); /* channel name */
   SetREAL4Parameter(par, 7000.0);     /* threshold */
   SetREAL4VectorParameter(par,coef); /* filter coefficients */
@@ -120,7 +120,7 @@ INT4 main(INT4 argc, CHAR *argv[]) {
   while(optr) {
 
       printf("%s %s\t%s\t%u\t%u\t%g\t%g\t%g\n",optr->snglBurstTable->ifo, optr->snglBurstTable->search, optr->snglBurstTable->channel, optr->snglBurstTable->start_time.gpsSeconds, optr->snglBurstTable->start_time.gpsNanoSeconds, optr->snglBurstTable->duration, optr->snglBurstTable->central_freq, optr->snglBurstTable->bandwidth);
-    
+
     optr = optr->next;
 
   }
@@ -144,7 +144,7 @@ INT4 main(INT4 argc, CHAR *argv[]) {
       }
       LALFree(optr->snglTransdataTable);
     }
-    
+
     LALFree(optr->snglBurstTable);
     LALFree(optr);
 

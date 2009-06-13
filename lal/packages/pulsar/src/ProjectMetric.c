@@ -20,7 +20,7 @@
 /**
  * \author Creighton, T. D.
  * \date 2000
- * \file 
+ * \file
  * \ingroup PulsarMetric
  * \brief Project out the zeroth dimension of a metric.
  *

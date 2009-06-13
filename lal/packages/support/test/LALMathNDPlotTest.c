@@ -28,42 +28,42 @@
 
 /* ------------------------------------ AUTO-DOC ------------------------------------- */
 /* ----------------------------------------------------------------------------------- */
-                                                                                                                                                
+
 /*<lalVerbatim file="LALMathNDPlotTestCV">
   Author: Hanna, C.R.
   $Id$
   </lalVerbatim>*/
-                                                                                                                                                
+
 /*SUBSECTION - PROGRAM - "LALMathNDPlotTest.c" ------------------------------- <lalLaTeX>
   \subsection{Program \texttt{LALMathNDPlotTest.c}}
   \label{s:LALMathNDPlotTest.c}
   \providecommand{\MATHEMATICA}{$M\scriptstyle{ATHEMATICA}^{\textrm{{\small\textregistered} }}$}
 * Tests LALMathNDPlot().
   </lalLaTeX>*/
-                                                                                                                                                
+
   /*SUBSUBSECTION - USAGE - "LALMathNDPlotTest.c" ---------------------------- <lalLaTeX>
     \begin{verbatim}
     LALMathNDPlotTest
     \end{verbatim}
     </lalLaTeX>
     END SUBSUBSECTION - USAGE - "LALMathNDPlotTest.c" -------------------------------- */
-                                                                                                                                                
+
   /*SUBSUBSECTION - DESCRIPTION - "LALMathNDPlotTest.c" ---------------------- <lalLaTeX>
     \subsubsection{Description}
   * This program generates a set of points simulating a 4-D template bank and calls
-  * LALMathNDPlot() to generate a \MATHEMATICA notebook to display the permutations of 
-  * 3D projections of the template bank.  Instructions on how to evaluate the notebook 
+  * LALMathNDPlot() to generate a \MATHEMATICA notebook to display the permutations of
+  * 3D projections of the template bank.  Instructions on how to evaluate the notebook
   * appear when it is opened.
     </lalLaTeX>
     END SUBSUBSECTION - DESCRIPTION - "LALMathNDPlotTest.c" -------------------------- */
-                                                                                                                                                
+
   /*SUBSUBSECTION - EXIT CODES ------------------------------------------------------- */
     /* <lalLaTeX>
     \subsubsection*{Exit codes}
     \input{LALMathNDPlotTestCE}
     </lalLaTeX>
     END - SUBSUBSECTION - EXIT CODES ------------------------------------------------- */
-                                                                                                                                                
+
   /*SUBSUBSECTION - NOTES - "LALMathNDPlotTest.c" ------------------------- <lalLaTeX>
     \subsubsection{Notes}
     \begin{itemize}
@@ -71,15 +71,15 @@
     \end{itemize}
     </lalLaTeX>
     END - SUBSUBSECTION - NOTES - "LALMathNDPlotTest.c" --------------------------- */
-                                                                                                                                                
+
   /*<lalLaTeX>
   \vfill{\footnotesize\input{LALMathNDPlotTestCV}}
   </lalLaTeX>
   END SUBSECTION - PROGRAM - "LALMathNDPlotTest.c" -------------------------------- */
-                                                                                                                                                
+
 /* ----------------------------------------------------------------------------------- */
 /* ----------------------------------- END AUTO-DOC ---------------------------------- */
-                                                                                                                                              
+
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -93,20 +93,20 @@
 #include <lal/LALStatusMacros.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALMathematica.h>
-                                                                                                                                                
+
 /*<lalErrTable file="LALMathNDPlotTestCE">*/
 #define LALMATHNDPLOTTESTC_ENORM        0
 #define LALMATHNDPLOTTESTC_EMEM         1
 #define LALMATHNDPLOTTESTC_ESUB         2
-                                                                                                                                                
-                                                                                                                                                
+
+
 #define LALMATHNDPLOTTESTC_MSGENORM     "Normal exit"
 #define LALMATHNDPLOTTESTC_MSGEMEM      "Memory allocation error"
 #define LALMATHNDPLOTTESTC_MSGESUB      "Subroutine error"
 /*</lalErrTable>*/
-                                                                                                                                                
+
 NRCSID(LALMATHNDPLOTTESTC, "$Id:");
-                                                                                                                                                
+
 int main(){
   static LALStatus stat;
   INT4 loopx = 0;                       /* loop counters */
@@ -126,7 +126,7 @@ int main(){
     return LALMATHNDPLOTTESTC_EMEM;
   }
   first=list;
-                                                                                                                                                
+
   for(loopx=1; loopx <= 20; loopx++){
     for(loopy=1; loopy <= 20; loopy++){
       for(loopz=0; loopz <= 1; loopz++){
@@ -147,7 +147,7 @@ int main(){
         }
       }
     }
-                                                                                                                                                
+
   for(loopx=1; loopx <= 20; loopx++){
     for(loopy=1; loopy <= 20; loopy++){
       for(loopw=0; loopw <= 1; loopw++){
@@ -163,7 +163,7 @@ int main(){
           printf(LALMATHNDPLOTTESTC_MSGEMEM);
           return LALMATHNDPLOTTESTC_EMEM;
           }
-        } 
+        }
       }
     }
 
@@ -198,8 +198,8 @@ int main(){
         }
       }
     }
-                                                                                                                                                
-                                                                                                                                                
+
+
   list->next = NULL;
   printf("\nCalling LALMathNDPlot()......\n");
   LALMathNDPlot(&stat, first, &ntiles, NULL);
@@ -209,13 +209,13 @@ int main(){
     printf(LALMATHNDPLOTTESTC_MSGESUB);
     return LALMATHNDPLOTTESTC_ESUB;
   }
-                                                                                                                                                
-                                                                                                                                                
+
+
   /* Clean Up the memory from the MathPlot3D structure */
   list = first;
   while(list->next){
     first = list->next;
-    if (list->coordinates) 
+    if (list->coordinates)
       LALSDestroyVector(&stat, &list->coordinates);
     if (stat.statusCode){
       LALError(&stat, LALMATHNDPLOTTESTC_MSGESUB);
@@ -230,8 +230,8 @@ int main(){
       }
     list = first;
   }
-                                                                                                                                                
-                                                                                                                                                
+
+
   /* free the last (first?) memory allocated for Math3DPlot. */
   if(list) LALFree(list);
 
@@ -239,6 +239,6 @@ int main(){
     return LALMATHNDPLOTTESTC_ESUB;
   else
     return LALMATHNDPLOTTESTC_ENORM;
-                                                                                                                                                
+
 }
 

@@ -23,7 +23,7 @@
  **** </lalVerbatim> */
 
 /**** <lalLaTeX>
- * 
+ *
  * \section{Header \texttt{VectorOps.h}}
  *
  * Basic vector manipulation operations.
@@ -32,15 +32,15 @@
  * \begin{verbatim}
  * #include <lal/VectorOps.h>
  * \end{verbatim}
- * 
+ *
  * \subsection*{Error conditions}
  * \input{VectorOpsHE}
- * 
+ *
  * \vfill{\footnotesize\input{VectorOpsHV}}
  * \newpage\input{VectorMultiplyC}
  * \newpage\input{VectorPolarC}
  * \newpage\input{VectorOpsTestC}
- * 
+ *
  **** </lalLaTeX> */
 
 #ifndef _VECTOROPS_H
@@ -106,7 +106,7 @@ int XLALREAL8VectorUnwrapAngle( REAL8Vector *out, const REAL8Vector *in );
 void
 LALCCVectorMultiply (
     LALStatus               *,
-    COMPLEX8Vector       *, 
+    COMPLEX8Vector       *,
     const COMPLEX8Vector *,
     const COMPLEX8Vector *
     );
@@ -114,7 +114,7 @@ LALCCVectorMultiply (
 void
 LALCCVectorMultiplyConjugate (
     LALStatus               *,
-    COMPLEX8Vector       *, 
+    COMPLEX8Vector       *,
     const COMPLEX8Vector *,
     const COMPLEX8Vector *
     );
@@ -122,7 +122,7 @@ LALCCVectorMultiplyConjugate (
 void
 LALCCVectorDivide (
     LALStatus               *,
-    COMPLEX8Vector       *, 
+    COMPLEX8Vector       *,
     const COMPLEX8Vector *,
     const COMPLEX8Vector *
     );
@@ -151,7 +151,7 @@ LALUnwrapREAL4Angle (
 void
 LALZZVectorMultiply (
     LALStatus                *,
-    COMPLEX16Vector       *, 
+    COMPLEX16Vector       *,
     const COMPLEX16Vector *,
     const COMPLEX16Vector *
     );
@@ -159,7 +159,7 @@ LALZZVectorMultiply (
 void
 LALZZVectorMultiplyConjugate (
     LALStatus                *,
-    COMPLEX16Vector       *, 
+    COMPLEX16Vector       *,
     const COMPLEX16Vector *,
     const COMPLEX16Vector *
     );
@@ -167,7 +167,7 @@ LALZZVectorMultiplyConjugate (
 void
 LALZZVectorDivide (
     LALStatus                *,
-    COMPLEX16Vector       *, 
+    COMPLEX16Vector       *,
     const COMPLEX16Vector *,
     const COMPLEX16Vector *
     );

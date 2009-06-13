@@ -36,7 +36,7 @@ NRCSID (TFCWAVELETC, "$Id$");
 /* apply one level of wavelet transform */
      /* output vectors must be pre-allocated, and be larger and equal to input length / 2 */
      /* input must be a power of 2 */
-void 
+void
 LALWaveletFilter (
 		  LALStatus *status,
 		  TFCWavelet *wave
@@ -81,7 +81,7 @@ LALWaveletFilter (
   }
 
   /* wrapped around */
-  for(;i<input->length;i+=2) { 
+  for(;i<input->length;i+=2) {
     smooth->data[i>>1] = detail->data[i>>1] = 0.0;
     for(j=0, sig = 1; j<input->length - i; j++, sig *=-1) {
       smooth->data[i>>1] += wavelet->data[j] * input->data[i+j];
@@ -98,16 +98,16 @@ LALWaveletFilter (
   /* Normal exit */
   DETATCHSTATUSPTR (status);
   RETURN (status);
-  
+
 }
 
 
 
-void 
+void
 LALComputeWaveletTFCSpectrogram (
-			      LALStatus *status, 
-			      TFCSpectrogram *out, 
-			      TFCWParams *tspec, 
+			      LALStatus *status,
+			      TFCSpectrogram *out,
+			      TFCWParams *tspec,
 			      REAL4TimeSeries *tseries
 			      )
 {
@@ -144,21 +144,21 @@ LALComputeWaveletTFCSpectrogram (
   params->freqBins = tspec->freqBins;
   params->deltaT = tspec->deltaT;
   params->flow = 1.0 / tspec->maxScale;
-  
+
   /* allocate memory for simple spectrogram */
   spower = (REAL8 *)LALMalloc(tspec->timeBins * tspec->freqBins * sizeof(REAL8));
   if(!spower)
     {ABORT(status, TFCWAVELETH_EMALLOC, TFCWAVELETH_MSGEMALLOC );}
   bzero(spower, tspec->timeBins * tspec->freqBins * sizeof(REAL8));
 
-  for(i=imax=0, max = tspec->wavelet->data[0]; 
+  for(i=imax=0, max = tspec->wavelet->data[0];
       i<tspec->wavelet->length; i++) {
     if(tspec->wavelet->data[i] > max) {
       imax = i;
       max = tspec->wavelet->data[i];
     }
   }
-    
+
 
   /* main construction */
 
@@ -212,13 +212,13 @@ LALComputeWaveletTFCSpectrogram (
 
     if(is) {
       LALSDestroyVector(status->statusPtr, &(twav.input));
-      CHECKSTATUSPTR (status);  
+      CHECKSTATUSPTR (status);
     }
 
     twav.input = twav.smooth;
 
     LALSDestroyVector(status->statusPtr, &detailI);
-    CHECKSTATUSPTR (status);    
+    CHECKSTATUSPTR (status);
   }
 
 
@@ -227,7 +227,7 @@ LALComputeWaveletTFCSpectrogram (
   previousSmooth = (REAL4Vector **)LALMalloc(sizeof(REAL4Vector *));
   if(!previousSmooth)
     {ABORT(status, TFCWAVELETH_EMALLOC, TFCWAVELETH_MSGEMALLOC );}
- 
+
   tmpVect = NULL;
   LALSCreateVector(status->statusPtr, &tmpVect, N);
   CHECKSTATUSPTR (status);
@@ -265,10 +265,10 @@ LALComputeWaveletTFCSpectrogram (
     CHECKSTATUSPTR (status);
 
     for(ip = 0; ip < oldNPrev; ip++) {
-      
+
       REAL4Vector *smooth = NULL;
 
-      /* allocate appropriate memory */    
+      /* allocate appropriate memory */
       LALSCreateVector(status->statusPtr, &smooth, N);
       CHECKSTATUSPTR (status);
 
@@ -345,10 +345,10 @@ LALComputeWaveletTFCSpectrogram (
 
   out->power = spower;
 
-  /* Debug crap 
+  /* Debug crap
      {
      FILE *outfile;
-  
+
      outfile = fopen("test.dat","w");
      fwrite(spower,sizeof(REAL8),out->params->timeBins * out->params->freqBins, outfile);
      fclose(outfile);

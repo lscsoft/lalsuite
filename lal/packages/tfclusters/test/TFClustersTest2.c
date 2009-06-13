@@ -23,7 +23,7 @@
  *
  * Author: Julien Sylvestre
  *
- * Revision: $Id$ 
+ * Revision: $Id$
  *
  *-----------------------------------------------------------------------
  *
@@ -38,12 +38,12 @@
  * CALLS
  *
  * NOTES
- * 
+ *
  *-----------------------------------------------------------------------
  */
 
 
-/* <lalLaTeX> 
+/* <lalLaTeX>
 Sample usage of the routines in \texttt{TFClusters.h}.
 
 \subsection*{Usage}
@@ -60,6 +60,8 @@ Returns 0 on success, otherwise returns 1.
 \subsection*{Notes}
 
 </lalLaTeX> */
+
+#include <stdio.h>
 
 #include "lal/LALRCSID.h"
 
@@ -131,7 +133,7 @@ int main(void) {
   dir.d[2] = 0;
   dir.d[3] = 0; /* 1,4 */
   dir.d[4] = 0; /* 2,2 */
-  dir.d[5] = 0; 
+  dir.d[5] = 0;
   dir.d[6] = 2; /* 2,4 */
   dir.d[7] = 3; /* 3,3 */
   dir.d[8] = 4; /* 3,4 */
@@ -139,7 +141,7 @@ int main(void) {
 
   dir.mdist = 4; /* no need to worry about things that are more than 4 units away from each other */
 
-  
+
   mainlist = NULL;
 
   Nlists = 5;
@@ -177,7 +179,7 @@ int main(void) {
 
   LALInitCList(&status, list + k, &tspec); /* initialize list */
   CHKST;
-  
+
   LALClustersPowerThreshold(&status, list + k, &clist, &dir); /* generate new list */
   CHKST;
 
@@ -203,7 +205,7 @@ int main(void) {
     for(P=0, j=0; j<mainlist->sizes[i]; j++) P += mainlist->P[i][j];
     printf("%i\t\t%i\t\t%g\n",i,mainlist->sizes[i],P);
   }
-  
+
   /* clean up */
   LALFreeCListDir(&status, &dir);
   CHKST;

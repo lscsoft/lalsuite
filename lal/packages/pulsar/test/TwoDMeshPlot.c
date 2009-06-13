@@ -421,7 +421,7 @@ LALMakeMeshMacro( LALStatus           *stat,
 	  TWODMESHPLOTH_MSGENUL );
 
   /* Do nothing if we're beyond the maximum recursion level. */
-  if ( ( rLevel = params->level ) >= params->plotParams->nLevels ) { 
+  if ( ( rLevel = params->level ) >= params->plotParams->nLevels ) {
     DETATCHSTATUSPTR( stat );
     RETURN( stat );
   }
@@ -564,7 +564,7 @@ AdjustBBox( REAL4 x, REAL4 y, TwoDMeshPlotStruc *params )
   if ( !params->clip ||
        ( ( x > params->clipBox[0] ) && ( x < params->clipBox[2] ) &&
 	 ( y > params->clipBox[1] ) && ( y < params->clipBox[3] ) ) ) {
-    REAL4 xp = x*params->xScale*params->cosTheta - 
+    REAL4 xp = x*params->xScale*params->cosTheta -
       y*params->yScale*params->sinTheta;
     REAL4 yp = x*params->xScale*params->sinTheta +
       y*params->yScale*params->cosTheta;

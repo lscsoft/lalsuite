@@ -21,12 +21,12 @@
  *
  * File Name: TestVelocity.c
  *
- * Authors: Krishnan, B., Sintes, A.M., 
+ * Authors: Krishnan, B., Sintes, A.M.,
  *
  * Revision: $Id$
  *
  * History:   Created by Badri Krishnan May 24, 2003
- *        
+ *
  *
  *-----------------------------------------------------------------------
  */
@@ -36,7 +36,7 @@
  */
 
 /************************************ <lalVerbatim file="TestVelocityCV">
-Author: Krishnan, B., Sintes, A.M. 
+Author: Krishnan, B., Sintes, A.M.
 $Id$
 ************************************* </lalVerbatim> */
 
@@ -51,12 +51,12 @@ Tests the calculation of the averaged velocity of a given detector.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsubsection*{Usage}
 \begin{verbatim}
-TestVelocity  [-d debuglevel] [-a accuracy] 
+TestVelocity  [-d debuglevel] [-a accuracy]
 \end{verbatim}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsubsection*{Description}
-This program computes the averaged velocity  of the GEO600 detector 
+This program computes the averaged velocity  of the GEO600 detector
 between the times 730000044 and 730003644 with a default accuracy of 0.01.
 The two ephemeris files (e.g., for data taken in 2003, \verb@sun03.dat@ and
 \verb@earth03.dat@) are assumed to be in the  directory
@@ -88,7 +88,7 @@ LALCheckMemoryLeaks()
 ********************************************</lalLaTeX> */
 
 /* #include "./Velocity.h" */
-#include <lal/Velocity.h> 
+#include <lal/Velocity.h>
 
 NRCSID (TESTVELOCITYC, "$Id$");
 
@@ -115,15 +115,15 @@ NRCSID (TESTVELOCITYC, "$Id$");
 INT4 lalDebugLevel=7;
 
 /* #define T0SEC 714153733 */
-#define T0SEC 730000044 
+#define T0SEC 730000044
 #define T0NSEC 0
 #define TBASE 3600.0
 #define ACCURACY 0.01
 
 /* Locations of the earth and sun ephemeris data */
 
-#define EARTHDATAFILE "earth00-04.dat" 
-#define SUNDATAFILE "sun00-04.dat" 
+#define EARTHDATAFILE "earth00-04.dat"
+#define SUNDATAFILE "sun00-04.dat"
 char EARTHDATA[] = EARTHDATAFILE;
 char SUNDATA[] = SUNDATAFILE;
 
@@ -169,27 +169,27 @@ char *lalWatch;
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
 /* vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv------------------------------------ */
-int main(int argc, char *argv[]){ 
+int main(int argc, char *argv[]){
 
-  static LALStatus       status; 
+  static LALStatus       status;
   static VelocityPar     velPar;
   static REAL8           vel[3];
   static REAL8           pos[3];
   static EphemerisData  *edat = NULL;
-  LIGOTimeGPS   tGPS;   
+  LIGOTimeGPS   tGPS;
   INT4   arg;                         /* Argument counter */
   REAL8  vTol=0.01 ;
   /* INT4   c, errflg=0;*/
   /*  optarg = NULL; */
   /* ------------------------------------------------------- */
 
- 
+
   /* default values */
   velPar.detector = lalCachedDetectors[LALDetectorIndexGEO600DIFF];
   velPar.startTime.gpsSeconds = T0SEC;
   velPar.startTime.gpsNanoSeconds = T0NSEC;
   velPar.tBase = TBASE;
-  velPar.vTol = ACCURACY;  
+  velPar.vTol = ACCURACY;
 
  /********************************************************/
   /* Parse argument list.  i stores the current position. */
@@ -247,11 +247,11 @@ int main(int argc, char *argv[]){
   tGPS.gpsNanoSeconds = T0NSEC;
 
 
-  SUB( LALDetectorVel( &status,  vel,  &tGPS, velPar.detector, velPar.edat), &status); 
+  SUB( LALDetectorVel( &status,  vel,  &tGPS, velPar.detector, velPar.edat), &status);
 
   printf("Detector velocity at %d = %g, %g, %g \n", T0SEC, vel[0],vel[1],vel[2]);
 
-  SUB( LALDetectorPos( &status,  vel,  &tGPS, velPar.detector, velPar.edat), &status); 
+  SUB( LALDetectorPos( &status,  vel,  &tGPS, velPar.detector, velPar.edat), &status);
 
   printf("Detector position at %d = %g, %g, %g \n", T0SEC, vel[0],vel[1],vel[2]);
 
@@ -266,7 +266,7 @@ int main(int argc, char *argv[]){
   LALFree(edat->ephemE);
   LALFree(edat->ephemS);
   LALFree(edat);
-  LALCheckMemoryLeaks(); 
+  LALCheckMemoryLeaks();
 
   INFO(TESTVELOCITYC_MSGENORM);
   return TESTVELOCITYC_ENORM;

@@ -22,7 +22,7 @@ Author: Reinhard Prix
 $Id$
 ************************************* </lalVerbatim> */
 
-/* <lalLaTeX> 
+/* <lalLaTeX>
 
 \subsection{Program \texttt{UserInputTest.c}}
 \label{s:UserInputTest.c}
@@ -31,7 +31,7 @@ Tests the routines in \verb@UserInput.h@.
 
 \subsubsection*{Usage}
 \begin{verbatim}
-UserInputTest 
+UserInputTest
 \end{verbatim}
 
 \subsubsection*{Description}
@@ -103,8 +103,8 @@ do {                                                                 \
 /******************************************************************/
 
 int main(int argc, char *argv[])
-{ 
-  
+{
+
   /* EMPTY STUB */
 /*
   printf ("User said: %d arguments, which are %s %s %s ...\n", argc, argv[0], argv[1], argv[2]);
@@ -113,8 +113,8 @@ int main(int argc, char *argv[])
 
 
   /* sorry, something still should be written here */
-  LALCheckMemoryLeaks(); 
-  
+  LALCheckMemoryLeaks();
+
   return (USERINPUTTESTC_ENORM);
 }
 

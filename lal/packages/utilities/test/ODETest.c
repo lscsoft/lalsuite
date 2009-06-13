@@ -28,7 +28,7 @@
  * Tests the routines in \verb+ODE.h+ by integrating Keplerian orbits.
  * The orbits so integrated are output to files containing the integrated
  * and expected orbits.
- * 
+ *
  * \subsubsection*{Usage}
  * \begin{verbatim}
  * ODETest
