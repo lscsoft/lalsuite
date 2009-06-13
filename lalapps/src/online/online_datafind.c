@@ -111,8 +111,8 @@ static void parse_options(INT4 argc, CHAR *argv[])
         fprintf(stdout, " --verbose              run in verbose mode\n");
         fprintf(stdout, " --debug-level N        set lalDebugLevel\n");
         fprintf(stdout, " --ifo IFO              set IFO\n");
-        fprintf(stdout, " --gps-start-time GPS   set GPS start time\n");
-        fprintf(stdout, " --gps-end-time GPS     set GPS end time\n");
+        fprintf(stdout, " --gps-start-time GPS   start of GPS time range\n");
+        fprintf(stdout, " --gps-end-time GPS     end of GPS time range\n");
         fprintf(stdout, " --timeout TIME         set timeout\n");
         exit(0);
         break;
