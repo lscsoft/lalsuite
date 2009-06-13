@@ -306,8 +306,6 @@ INT4 main(INT4 argc, CHAR *argv[])
     strncpy(ifo, frame_type, 2);
   }
 
-  fprintf(stdout, "ifo = %s\n", ifo);
-
   /* get time of gps time of latest frame */
   latest_time = XLALAggregationLatestGPS(ifo);
   if (latest_time == NULL)
