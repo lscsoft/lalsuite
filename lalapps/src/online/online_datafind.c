@@ -51,6 +51,8 @@ LIGOTimeGPS gps_start = {0, 0};
 LIGOTimeGPS gps_end = {0, 0};
 INT4 timeout = 0;
 CHAR *output_filename = NULL;
+CHAR *observatory = NULL;
+CHAR *frame_type = NULL;
 
 /*
  * helper functions
@@ -75,6 +77,8 @@ static void parse_options(INT4 argc, CHAR *argv[])
       {"gps-end-time", required_argument, 0, 'e'},
       {"timeout", required_argument, 0, 'f'},
       {"output", required_argument, 0, 'g'},
+      {"observatory", required_argument, 0, 'h'},
+      {"type", required_argument, 0, 'i'},
       {0, 0, 0, 0}
     };
 
@@ -83,7 +87,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
     size_t optarg_len;
 
     /* parse options */
-    c = getopt_long_only(argc, argv, "ab:c:d:e:f:g:", long_options, \
+    c = getopt_long_only(argc, argv, "ab:c:d:e:f:g:h:i:", long_options, \
         &option_index);
 
     if (c == -1)
@@ -119,6 +123,8 @@ static void parse_options(INT4 argc, CHAR *argv[])
         fprintf(stdout, " --gps-end-time GPS     end of GPS time range\n");
         fprintf(stdout, " --timeout TIME         set timeout\n");
         fprintf(stdout, " --output FILE          output to FILE\n");
+        fprintf(stdout, " --observatory SITE     set SITE\n");
+        fprintf(stdout, " --type FRAME_TYPE      set FRAME_TYPE\n");
         exit(0);
         break;
 
@@ -175,6 +181,20 @@ static void parse_options(INT4 argc, CHAR *argv[])
         memcpy(output_filename, optarg, optarg_len);
         break;
 
+      case 'h':
+        /* set observatory */
+        optarg_len = strlen(optarg) + 1;
+        observatory = (CHAR *)calloc(optarg_len, sizeof(CHAR));
+        memcpy(observatory, optarg, optarg_len);
+        break;
+
+      case 'i':
+        /* set frame type */
+        optarg_len = strlen(optarg) + 1;
+        frame_type = (CHAR *)calloc(optarg_len, sizeof(CHAR));
+        memcpy(frame_type, optarg, optarg_len);
+        break;
+
       case '?':
         exit(1);
         break;
@@ -199,10 +219,25 @@ static void parse_options(INT4 argc, CHAR *argv[])
    * check for required arguments
    */
 
-  /* ifo */
-  if (ifo == NULL)
+  /* are observatory and type both specifed */
+  if (((observatory != NULL) && (frame_type == NULL)) || \
+      ((observatory == NULL) && (frame_type != NULL)))
   {
-    fprintf(stderr, "--ifo must be specified\n");
+    fprintf(stdout, "both --observatory and --type must be specified\n");
+    exit(1);
+  }
+
+  /* are ifo and observatory both specified */
+  if ((ifo != NULL) && (observatory != NULL))
+  {
+    fprintf(stdout, "--ifo and --observatory are both specified\n");
+    exit(1);
+  }
+
+  /* ifo or observatory */
+  if ((ifo == NULL) && (observatory == NULL))
+  {
+    fprintf(stderr, "--ifo or --observatory and --type must be specified\n");
     exit(1);
   }
 
@@ -250,6 +285,18 @@ INT4 main(INT4 argc, CHAR *argv[])
 
   /* get duration */
   duration = (INT4)round(XLALGPSDiff(&gps_end, &gps_start));
+
+  /* get ifo, if observatory is specified */
+  if (ifo == NULL)
+  {
+    /* allocate memory for ifo */
+    ifo = (CHAR *)calloc(LIGOMETA_IFO_MAX, sizeof(CHAR));
+
+    /* get ifo from frame_type */
+    strncpy(ifo, frame_type, 2);
+  }
+
+  fprintf(stdout, "ifo = %s\n", ifo);
 
   /* get time of gps time of latest frame */
   latest_time = XLALAggregationLatestGPS(ifo);
@@ -367,7 +414,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 
     /* create name for cache file */
     snprintf(output_filename, FILENAME_MAX, "%c-%s-%d-%d.cache", \
-        ifo[0], type, gps_start.gpsSeconds, duration);
+        ifo[0], type, gps_start.gpsSeconds, gps_end.gpsSeconds);
     fprintf(stdout, "output filename not specified, using: %s\n", \
         output_filename);
   }
@@ -376,7 +423,12 @@ INT4 main(INT4 argc, CHAR *argv[])
   XLALFrExportCache(cache, output_filename);
 
   /* free memory */
-  free(ifo);
+  if (ifo)
+    free(ifo);
+  if (observatory)
+    free(observatory);
+  if (frame_type)
+    free(frame_type);
   free(output_filename);
 
   /* check for memory leaks */
