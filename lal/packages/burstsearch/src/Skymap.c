@@ -1059,7 +1059,7 @@ int XLALSkymapSignalHypothesisWithLimits(XLALSkymapPlanType* plan, double* p, do
                                     for (; hr != stop; ++hr, ++lr, ++vr, ++hi, ++li, ++vi, ++q)
                                     {
                                         *q = 0.5 * (
-                                                kernel[2][2] * (sq(*vr) + sq(*vi))
+                                                kernel[0][0] * (sq(*vr) + sq(*vi))
                                                 );
                                     } /* end loop over arrival times */
                                 }
