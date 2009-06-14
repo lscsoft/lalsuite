@@ -358,7 +358,7 @@ class ThincaToCoincJob(InspiralAnalysisJob):
     """
     Adds the simulation argument to the job.
     """
-    self.add_arg('simulation')
+    self.add_opt('simulation', None)
 
 
 class SireJob(InspiralAnalysisJob):
