@@ -28,7 +28,6 @@
 
 	  /* one loop iteration as a macro */
 
-#ifdef EAH_HOTLOOP_INTERLEAVED
 /* Macros to interleave linear sin/cos calculation (in x87 opcodes)
    with SSE hotloop.*/
 
@@ -76,20 +75,6 @@
 		"fstps %[" #cos "] \n\t" /*(*cos)=cosbase[i]+n*cosdiff[i];*/
 
 	
-#else
-#define LIN_SIN_COS_TRIM_P0A(alpha) ""
-#define LIN_SIN_COS_TRIM_P0B(alpha) ""
-#define LIN_SIN_COS_P0(alpha) ""
-#define LIN_SIN_COS_P1 ""
-#define LIN_SIN_COS_P2 "" 
-#define LIN_SIN_COS_P3 ""
-#define LIN_SIN_COS_P4(sin) ""
-#define LIN_SIN_COS_P5(cos) ""		
-
-	  SINCOS_2PI_TRIMMED ( &s_alpha, &c_alpha, kappa_star );
-
-          SINCOS_TRIM_X (_lambda_alpha,_lambda_alpha);
-#endif /* EAH_HOTLOOP_INTERLEAVED */
           __asm __volatile
 	    (
 		"movaps %[D7766],%%xmm0\n\t"
@@ -230,20 +215,4 @@
 	     "xmm0","xmm1","xmm2","xmm3","xmm4","xmm5","xmm6","xmm7","st","st(1)","st(2)","eax","edx","edi","cc"
 	     );
 
-	  /* moved the sin/cos call down here to avoid the store/forward stall of Core2s */
-
-	  /* NOTE: sin[ 2pi (Dphi_alpha - k) ] = sin [ 2pi Dphi_alpha ], therefore
-	   * the trig-functions need to be calculated only once!
-	   * We choose the value sin[ 2pi(Dphi_alpha - kstar) ] because it is the 
-	   * closest to zero and will pose no numerical difficulties !
-	   */
-
 	}
-
-#ifndef EAH_HOTLOOP_INTERLEAVED
-      {
-	REAL8 _lambda_alpha = -lambda_alpha;
-	SINCOS_TRIM_X (_lambda_alpha,_lambda_alpha);
-	SINCOS_2PI_TRIMMED( &imagQ, &realQ, _lambda_alpha );
-      }
-#endif
