@@ -38,7 +38,7 @@ def get_far_threshold_and_segments(zerofname, live_time_program, verbose = False
   dbtables.DBTable_set_connection(connection)
 
   # extract false alarm rate threshold
-  query = 'SELECT MIN(coinc_inspiral.false_alarm_rate) FROM coinc_inspiral JOIN coinc_event ON (coinc_event.coinc_event_id == coinc_inspiral.coinc_event_id) WHERE NOT EXISTS(SELECT * FROM time_slide WHERE time_slide.time_slide_id == coinc_event.time_slide_id AND time_slide.offset != 0);'
+  query = 'SELECT MIN(coinc_inspiral.combined_far) FROM coinc_inspiral JOIN coinc_event ON (coinc_event.coinc_event_id == coinc_inspiral.coinc_event_id) WHERE NOT EXISTS(SELECT * FROM time_slide WHERE time_slide.time_slide_id == coinc_event.time_slide_id AND time_slide.offset != 0);'
   far, = connection.cursor().execute(query).fetchone()
 
   # extract segments.
@@ -133,7 +133,7 @@ SELECT
     WHERE
       mapa.table_name == "sim_inspiral"
       AND mapa.event_id == sim_inspiral.simulation_id
-      AND coinc_inspiral.false_alarm_rate < ?
+      AND coinc_inspiral.combined_far < ?
   )
 FROM
   sim_inspiral
@@ -149,7 +149,7 @@ WHERE
 
     # done
     connection.close()
-    dbtables.discard_connection_filename(zerofname, working_filename, verbose = verbose)
+    dbtables.discard_connection_filename(f, working_filename, verbose = verbose)
     dbtables.DBTable_set_connection(None)
 
   print >>sys.stderr, "\nFound = %d Missed = %d" % (len(found), len(missed))
@@ -161,15 +161,16 @@ def trim_mass_space(eff, twodbin, minthresh=0.0, minM=25.0, maxM=100.0):
   restricts array to only have data within the mass space and sets everything
   outside the mass space to some canonical value, minthresh
   """
-  x = eff.shape[0]
-  y = eff.shape[1]
+  x = eff.array.shape[0]
+  y = eff.array.shape[1]
   c1 = twodbin.centres()[0]
   c2 = twodbin.centres()[1]
   numbins = 0
   for i in range(x):
     for j in range(y):
-      if c1[i] > c2[j] or (c1[i] + c2[j]) > maxM or (c1[i]+c2[j]) < minM: eff[i][j] = minthresh
+      if c1[i] > c2[j] or (c1[i] + c2[j]) > maxM or (c1[i]+c2[j]) < minM: eff.array[i][j] = minthresh
       else: numbins+=1
+  print "found " + str(numbins) + " bins within total mass"
 
 def fix_masses(sims):
   """
@@ -305,6 +306,9 @@ def parse_command_line():
 
   return opts, filenames
 
+# FIXME This should use some lal or pylal official thing
+secs_in_year = 31556926.0
+
 opts, filenames = parse_command_line()
 
 if opts.veto_segments_name is not None:
@@ -339,22 +343,26 @@ Found = cut_distance(Found, 1, 2000)
 Missed = cut_distance(Missed, 1, 2000)
 
 # get a 2D mass binning
-twoDMassBins = get_2d_mass_bins(1, 99, 50)
+twoDMassBins = get_2d_mass_bins(1, 99, 33)
 
 # get log distance bins
 dBin = rate.LogarithmicBins(0.1,2500,100)
 
-gw = rate.gaussian_window2d(3,3,4)
+gw = rate.gaussian_window2d(2,2,8)
 
 #Get derivative of volume with respect to FAR
 dvA = get_volume_derivative(opts.injfnames, twoDMassBins, dBin, FAR, zero_lag_segments, gw)
 
 print >>sys.stderr, "computing volume at FAR " + str(FAR)
-vA, vA2 = twoD_SearchVolume(Found, Missed, twoDMassBins, dBin, gw, float(abs(zero_lag_segments)), opts.bootstrap_iterations)
+vA, vA2 = twoD_SearchVolume(Found, Missed, twoDMassBins, dBin, gw, float(abs(zero_lag_segments)), bootnum=int(opts.bootstrap_iterations))
+
+# FIXME convert to years (use some lal or pylal thing in the future)
+vA.array /= secs_in_year
+vA2.array /= secs_in_year * secs_in_year #two powers for this squared quantity
 
 #Trim the array to have sane values outside the total mass area of interest
 trim_mass_space(dvA, twoDMassBins, minthresh=0.0, minM=25.0, maxM=100.0)
-trim_mass_space(vA, twoDMassBins, vA.min()/10.0, minM=25.0, maxM=100.0)
+trim_mass_space(vA, twoDMassBins, scipy.unique(vA.array)[1]/10.0, minM=25.0, maxM=100.0)
 trim_mass_space(vA2, twoDMassBins, minthresh=0.0, minM=25.0, maxM=100.0)
 
 #output an XML file with the result

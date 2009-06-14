@@ -1,3 +1,4 @@
+#!/usr/bin/python
 import scipy
 import numpy
 import matplotlib
@@ -98,7 +99,7 @@ class Summary(object):
 
     for ifar, end_time, end_time_ns, on_instruments, is_background in connection.cursor().execute("""
 SELECT
-  1.0 / coinc_inspiral.false_alarm_rate,
+  1.0 / coinc_inspiral.combined_far,
   coinc_inspiral.end_time,
   coinc_inspiral.end_time_ns,
   coinc_event.instruments,
@@ -181,8 +182,8 @@ for on_instruments in summary.background_livetime:
   axes.set_xlim(minX, maxX)
   axes.set_ylim(minN, maxN)
   axes.set_title('Zero-lag Events Observed Compared to Background')
-  axes.set_xlabel('IFAR based Rank')
-  axes.set_ylabel(r'Number of Events $\geq$ Rank')
+  axes.set_xlabel('IFAR')
+  axes.set_ylabel(r'Number of Events')
   axes.legend(("zero lag", "expected background, N", r"$\pm 3\sqrt{N}$", r"$\pm 2\sqrt{N}$","$\pm\sqrt{N}$"), loc="lower left")
   fig.savefig(sys.argv[1]+'_'+''.join(sorted(on_instruments))+"_far.png")
   if verbose:

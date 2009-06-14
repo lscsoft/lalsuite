@@ -1004,7 +1004,7 @@ LALFindChirpFilterFinalize (
 /* </lalVerbatim> */
 {
   FindChirpFilterParams        *outputPtr;
-  UINT4 i,j;
+  /*UINT4 i,j;*/
 
   INITSTATUS( status, "LALFindChirpFilterFinalize", FINDCHIRPFILTERINITC );
   ATTATCHSTATUSPTR( status );
