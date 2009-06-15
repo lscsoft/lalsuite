@@ -1750,14 +1750,14 @@ play_jobs.extend(trig_coh_jobs.values())
 if play_data_mask == 'playground_only':
   playground_only = 2
   
-  single_inca_job.add_opt('playground-only',' ')
+  single_inca_job.add_opt('playground-only','')
   for job in play_jobs:
     job.add_opt('data-type','playground_only')
 
 elif play_data_mask == 'exclude_playground':
   playground_only = 0
   
-  single_inca_job.add_opt('no-playground',' ')
+  single_inca_job.add_opt('no-playground','')
   for job in play_jobs:
     job.add_opt('data-type','exclude_play')
 
@@ -1765,7 +1765,7 @@ elif play_data_mask == 'exclude_playground':
 elif play_data_mask == 'all_data':
   playground_only = 0
 
-  single_inca_job.add_opt('all-data',' ')
+  single_inca_job.add_opt('all-data','')
   for job in play_jobs:
     job.add_opt('data-type','all_data')
 
