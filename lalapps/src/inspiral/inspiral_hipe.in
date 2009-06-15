@@ -136,8 +136,8 @@ def analyze_ifo(ifo_name,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
   df_job = the condor job to find the data
   prev_df = the previous LSCdataFind job that was executed
   dag = the DAG to attach the nodes to
-  exttrigInjections = specifies the number of external trigger injections 
-                      in the same data seg.
+  exttrigInjections = a two-element list specifying the range 
+                      of injections for the external trigger case.
   usertag = the usertag to add to the job names
   inspinjNode = the inspinj node to be added as a parent to inspirals
   """
@@ -387,8 +387,8 @@ def thinca_coinc(ifos,single_data_analyzed,coinc_segs,coinc_job,
   dag = the DAG to attach the nodes to
   do_coinc = whether we should add the thinca jobs to the dag
   do_insp  = whether previous inspiral jobs are in the dag
-  exttrigInjections = specifies the number of external trigger injections 
-                      in the same data seg.
+  exttrigInjections = a two-element list specifying the range 
+                      of injections for the external trigger case.
   usertag = the usertag to add to the output file name
   coire_job = coire node to join to the output of each thinca node
   do_coire  = whether we should add the coire jobs to the dag
@@ -472,8 +472,8 @@ def trig_inspiral(ifo_data,ifo_name,coinc_data,coinc_ifos,trig_job,\
   trig_job = the triggered bank job we should use 
   insp_veto_job = the condor job that we should use to analyze data
   dag = the DAG to attach the nodes to
-  exttrigInjections = specifies the number of external trigger injections  
-                      in the same data seg.
+  exttrigInjections = a two-element list specifying the range 
+                      of injections for the external trigger case.
   usertag = the usertag to add to the job names
   """
 
@@ -1488,7 +1488,8 @@ else:
 # create the Condor jobs that will be used in the DAG
 
 # check number of exttrig injections
-try:
+doExtTrig = cp.has_option('pipeline', 'exttrig-inj-start') and cp.has_option('pipeline', 'exttrig-inj-stop')
+if doExtTrig:
   startExttrig=int(cp.get('pipeline','exttrig-inj-start'))
   stopExttrig=int(cp.get('pipeline','exttrig-inj-stop'))
   exttrigInjections=[startExttrig, stopExttrig]
@@ -1501,11 +1502,8 @@ try:
     print >> sys.stderr, "exttrig-inj-stop must be larger than "\
                          "exttrig-inj-start."
     sys.exit(1)
-
-  doExtTrig = True
-except:
+else:
   exttrigInjections=[0,0]
-  doExtTrig = False
 
 
 # datafind:
@@ -1880,16 +1878,16 @@ if not gps_end_time:
 #   Step 2: determine analyzable times
 
 # Select on-source vs off-source (for triggered searches)
-try:
+if doExtTrig:
   exttrig_analyze = cp.get('input', 'exttrig-analyze')
-except:
+else:
   exttrig_analyze = None
 
 # Read segments for external trigger analysis
 exttrig_segments = pipeline.ScienceData()
-try:
+if doExtTrig:
   exttrig_segments.read(cp.get('input', 'exttrig-segments'), 0)
-except:
+else:
   assert (exttrig_analyze == 'all') or (exttrig_analyze is None), \
     "To use exttrig-analyze, exttrig-segments must point to a valid "\
     "segment file."
