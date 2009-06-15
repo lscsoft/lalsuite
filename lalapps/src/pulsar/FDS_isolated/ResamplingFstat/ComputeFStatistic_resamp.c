@@ -2077,7 +2077,7 @@ MultiCOMPLEX8TimeSeries* CalcTimeSeries(MultiSFTVector *multiSFTs,FILE *Out,Resa
 	  /* Keep everything except for the Dirichlet Terms */
 	  Fmin = f0+DtermsWings;
 	  Fmax = f0+((lengthofBand-1)*deltaF)-DtermsWings;
-	  
+
 	  /* Middle of Band */
 	  TSeries->f_het = Fmin + floor(lengthofBand/2.0-uvar_Dterms)*deltaF;
 	  /* Store deltaF */
@@ -2100,8 +2100,13 @@ MultiCOMPLEX8TimeSeries* CalcTimeSeries(MultiSFTVector *multiSFTs,FILE *Out,Resa
 	      Vars->dF_closest = Vars->length*Vars->dF/Vars->new_length;
 	    }
 	  
-	  UserFmin_Closest = TSeries->f_het - floor((TSeries->f_het-uvar_Freq)/Vars->dF_closest+0.5)*Vars->dF_closest;
+	  if(TSeries->f_het > uvar_Freq)
+	    UserFmin_Closest = TSeries->f_het - floor((TSeries->f_het-uvar_Freq)/Vars->dF_closest+0.5)*Vars->dF_closest;
+	  else
+	    UserFmin_Closest = TSeries->f_het + floor((uvar_Freq-TSeries->f_het)/Vars->dF_closest+0.5)*Vars->dF_closest;
+
 	  UserFmin_Diff = uvar_Freq - UserFmin_Closest;
+	  TSeries->f_het += UserFmin_Diff;
 	}
       
       else
@@ -3060,13 +3065,31 @@ void ComputeFStat_resamp(LALStatus *status, const PulsarDopplerParams *doppler, 
 	fprintf(stderr," fstatVector's length is greater than total number of bins calculated. Something went wrong allocating fstatVector \n");
 	exit(1);
       }
-    fmin_index = floor((TSeries->f_het-fstatVector->f0)/dF_closest + 0.5);
-    q = 0;
-    for(r=new_length-fmin_index;r<new_length;r++)
-      fstatVector->data->data[q++] = Fstat_temp->data[r];
-    r = 0;
-    while(q<fstatVectorlength)
-      fstatVector->data->data[q++] = Fstat_temp->data[r++];
+    if(TSeries->f_het > fstatVector->f0 && TSeries->f_het < fstatVector->f0 + uvar_FreqBand)
+      {
+	fmin_index = floor((TSeries->f_het-fstatVector->f0)/dF_closest + 0.5);
+	q = 0;
+	for(r=new_length-fmin_index;r<new_length;r++)
+	  fstatVector->data->data[q++] = Fstat_temp->data[r];
+	r = 0;
+	while(q<fstatVectorlength)
+	  fstatVector->data->data[q++] = Fstat_temp->data[r++];
+      }
+    else if(TSeries->f_het < fstatVector->f0)
+      {
+	fmin_index = floor((fstatVector->f0-TSeries->f_het)/dF_closest + 0.5);
+	q = 0;
+	for(r = fmin_index;r<new_length+fmin_index;r++)
+	  fstatVector->data->data[q++] = Fstat_temp->data[r];
+      }
+    else
+      {
+	fmin_index = floor((TSeries->f_het-fstatVector->f0)/dF_closest + 0.5);
+	q = 0;
+	for(r=new_length-fmin_index;r<new_length-fmin_index+fstatVectorlength;r++)
+	  fstatVector->data->data[q++] = Fstat_temp->data[r];
+	
+      }
   }
   
   XLALDestroyREAL8Sequence(Fa_Real);
