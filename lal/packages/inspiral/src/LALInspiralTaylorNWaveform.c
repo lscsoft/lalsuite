@@ -34,6 +34,7 @@ $Id$
 #include <lal/LALInspiral.h>
 #include <lal/SeqFactories.h>
 #include <lal/FindRoot.h>
+#include <lal/LALConstants.h>
 
 typedef struct tagxiInitIn {
   REAL8 eta, omega, e0;
@@ -206,14 +207,13 @@ void LALTaylorNDerivatives4PN(
 {
    /* The variable xi=GMn/c^3, where omega = n (1 + k) */
    InspiralDerivativesIn *ak;
-   REAL8 xi, xi2, xi23, xi43, xi53, xi73, xi113, eta, eta2, pisq, gamma;
+   REAL8 xi, xi2, xi23, xi43, xi53, xi73, xi113, eta, eta2, pisq;
 
    ak = (InspiralDerivativesIn *) funcParams;
    eta = ak->coeffs->eta;
 
    xi = values->data[1];
    eta2 = eta * eta;
-   gamma = 0.577215664901532;
    xi2 = xi*xi;
    xi23 = pow(xi, 2./3.);
    xi43 = pow(xi, 4./3.);
@@ -236,14 +236,13 @@ void LALTaylorNDerivatives5PN(
 {
    /* The variable xi=GMn/c^3, where omega = n (1 + k) */
    InspiralDerivativesIn *ak;
-   REAL8 xi, xi2, xi23, xi43, xi53, xi73, xi113, eta, eta2, pisq, gamma;
+   REAL8 xi, xi2, xi23, xi43, xi53, xi73, xi113, eta, eta2, pisq;
 
    ak = (InspiralDerivativesIn *) funcParams;
    eta = ak->coeffs->eta;
 
    xi = values->data[1];
    eta2 = eta * eta;
-   gamma = 0.577215664901532;
    xi2 = xi*xi;
    xi23 = pow(xi, 2./3.);
    xi43 = pow(xi, 4./3.);
@@ -267,7 +266,7 @@ void LALTaylorNDerivatives6PN(
 {
    /* The variable xi=GMn/c^3, where omega = n (1 + k) */
    InspiralDerivativesIn *ak;
-   REAL8 xi, xi2, xi13, xi23, xi43, xi53, xi73, xi113, eta, eta2, eta3, pisq, gamma;
+   REAL8 xi, xi2, xi13, xi23, xi43, xi53, xi73, xi113, eta, eta2, eta3, pisq;
 
    ak = (InspiralDerivativesIn *) funcParams;
    eta = ak->coeffs->eta;
@@ -275,7 +274,6 @@ void LALTaylorNDerivatives6PN(
    xi = values->data[1];
    eta2 = eta * eta;
    eta3 = eta2 * eta;
-   gamma = 0.577215664901532;
    xi2 = xi*xi;
    xi13 = pow(xi, 1./3.);
    xi23 = pow(xi, 2./3.);
@@ -292,7 +290,7 @@ void LALTaylorNDerivatives6PN(
 		   + 4.*LAL_PI*xi + (438887./18144. - 49507./2016.*eta + 59./18.*eta2)*xi43
 		   + (20033./672. - 189./8.*eta) * LAL_PI * xi53 + (38047038863./139708800.
 			   + (16./3. + 287./24. * eta)*pisq - 16554367./31104.*eta
-			   + 617285./8064.*eta2 - 5605./2592.*eta3 - 1712./105.*(gamma + log(4*xi13)))*xi2);
+			   + 617285./8064.*eta2 - 5605./2592.*eta3 - 1712./105.*(LAL_GAMMA + log(4*xi13)))*xi2);
 }
 
 void LALTaylorNDerivatives7PN(
@@ -303,7 +301,7 @@ void LALTaylorNDerivatives7PN(
 {
    /* The variable xi=GMn/c^3, where omega = n (1 + k) */
    InspiralDerivativesIn *ak;
-   REAL8 xi, xi2, xi13, xi23, xi43, xi53, xi73, xi113, eta, eta2, eta3, pisq, gamma;
+   REAL8 xi, xi2, xi13, xi23, xi43, xi53, xi73, xi113, eta, eta2, eta3, pisq;
 
    ak = (InspiralDerivativesIn *) funcParams;
    eta = ak->coeffs->eta;
@@ -311,7 +309,6 @@ void LALTaylorNDerivatives7PN(
    xi = values->data[1];
    eta2 = eta * eta;
    eta3 = eta2 * eta;
-   gamma = 0.577215664901532;
    xi2 = xi*xi;
    xi13 = pow(xi, 1./3.);
    xi23 = pow(xi, 2./3.);
@@ -328,7 +325,7 @@ void LALTaylorNDerivatives7PN(
 		   + 4.*LAL_PI*xi + (438887./18144. - 49507./2016.*eta + 59./18.*eta2)*xi43
 		   + (20033./672. - 189./8.*eta) * LAL_PI * xi53 + (38047038863./139708800.
 			   + (16./3. + 287./24. * eta)*pisq - 16554367./31104.*eta
-			   + 617285./8064.*eta2 - 5605./2592.*eta3 - 1712./105.*(gamma + log(4*xi13)))*xi2
+			   + 617285./8064.*eta2 - 5605./2592.*eta3 - 1712./105.*(LAL_GAMMA + log(4*xi13)))*xi2
 		   + (971011./4032. - 1608185./6048.*eta + 91495./1512.*eta2)*LAL_PI*xi73);
 }
 
