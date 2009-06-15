@@ -149,7 +149,6 @@ LALCheckMemoryLeaks()
 ********************************************   </lalLaTeX> */
 
 #include <lal/LALStdlib.h>
-#include <getopt.h>
 
 NRCSID (MAKEFAKEDATAC, "$Id$");
 
@@ -174,8 +173,9 @@ NRCSID (MAKEFAKEDATAC, "$Id$");
 
 /***************************************************/
 
+#include "getopt.h"
+
 #include <time.h>
-#include <unistd.h>
 #include <sys/types.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -340,6 +340,12 @@ COMPLEX8Vector *fvecn = NULL;
 RealFFTPlan *pfwd = NULL;
 
 INT4 lalDebugLevel = 1;
+
+/* Note: apparently including unistd.h leads to a bus-error using getopt() on MacOSX,
+ * most likely due to a header/lib conflict with the included getopt source in LALsuite.
+ * We therefore define the getpid() prototype here and avoid including unistd.h
+ */
+pid_t getpid(void);
 
 /* Prototypes for the functions defined in this file */
 int read_commandline_and_file(LALStatus *, int argc, char *argv[]);
