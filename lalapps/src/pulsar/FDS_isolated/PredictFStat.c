@@ -389,6 +389,8 @@ InitPFS ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
   MultiNoiseWeights *multiNoiseWeights = NULL;
   MultiSFTVector *multiSFTs = NULL;	    	/* multi-IFO SFT-vectors */
   MultiDetectorStateSeries *multiDetStates = NULL; /* pos, vel and LMSTs for detector at times t_i */
+  UINT4 X, i;
+
 
   INITSTATUS (status, "InitPFS", rcsid);
   ATTATCHSTATUSPTR (status);
@@ -483,6 +485,17 @@ InitPFS ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
     duration = GPS2REAL8(endTime) - GPS2REAL8 (startTime);
   }
 
+  { /* ----- load ephemeris-data ----- */
+    CHAR *ephemDir;
+
+    edat = LALCalloc(1, sizeof(EphemerisData));
+    if ( LALUserVarWasSet ( &uvar->ephemDir ) )
+      ephemDir = uvar->ephemDir;
+    else
+      ephemDir = NULL;
+    TRY( InitEphemeris (status->statusPtr, edat, ephemDir, uvar->ephemYear, startTime ), status);
+  }
+
   {/* ----- load the multi-IFO SFT-vectors ----- */
     UINT4 wings = uvar->RngMedWindow/2 + 10;   /* extra frequency-bins needed for rngmed */
     REAL8 fMax = uvar->Freq + 1.0 * wings / Tsft;
@@ -493,6 +506,40 @@ InitPFS ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
     LogPrintfVerbatim (LOG_DEBUG, "done.\n");
     TRY ( LALDestroySFTCatalog ( status->statusPtr, &catalog ), status );
   }
+
+  TRY ( LALNormalizeMultiSFTVect (status->statusPtr, &multiRngmed, multiSFTs, uvar->RngMedWindow ), status);
+  TRY ( LALComputeMultiNoiseWeights (status->statusPtr, &multiNoiseWeights, multiRngmed, uvar->RngMedWindow, 0 ), status );
+
+  /* correctly handle the --SignalOnly case:
+   * set noise-weights to 1, and
+   * set Sh->1 (single-sided)
+   */
+  if ( uvar->SignalOnly )
+    {
+      multiNoiseWeights->Sinv_Tsft = Tsft;
+      for ( X=0; X < multiNoiseWeights->length; X ++ )
+        for ( i=0; i < multiNoiseWeights->data[X]->length; i ++ )
+          multiNoiseWeights->data[X]->data[i] = 1.0;
+    }
+
+  /* ----- obtain the (multi-IFO) 'detector-state series' for all SFTs ----- */
+  TRY (LALGetMultiDetectorStates( status->statusPtr, &multiDetStates, multiSFTs, edat), status );
+
+  /* normalize skyposition: correctly map into [0,2pi]x[-pi/2,pi/2] */
+  skypos.longitude = uvar->Alpha;
+  skypos.latitude = uvar->Delta;
+  skypos.system = COORDINATESYSTEM_EQUATORIAL;
+  TRY (LALNormalizeSkyPosition ( status->statusPtr, &skypos, &skypos), status);
+
+  TRY ( LALGetMultiAMCoeffs ( status->statusPtr, &multiAMcoef, multiDetStates, skypos ), status);
+  /* noise-weighting of Antenna-patterns and compute A,B,C */
+  if ( XLALWeighMultiAMCoeffs ( multiAMcoef, multiNoiseWeights ) != XLAL_SUCCESS ) {
+    LogPrintf (LOG_CRITICAL, "XLALWeighMultiAMCoeffs() failed with error = %d\n\n", xlalErrno );
+    ABORT ( status, COMPUTEFSTATC_EXLAL, COMPUTEFSTATC_MSGEXLAL );
+  }
+
+  /* OK: we only need the antenna-pattern matrix M_mu_nu */
+  cfg->Mmunu = multiAMcoef->Mmunu;
 
   /* ----- produce a log-string describing the data-specific setup ----- */
   {
@@ -524,53 +571,6 @@ InitPFS ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
 
     LogPrintfVerbatim( LOG_DEBUG, cfg->dataSummary );
   } /* write dataSummary string */
-
-  { /* ----- load ephemeris-data ----- */
-    CHAR *ephemDir;
-
-    edat = LALCalloc(1, sizeof(EphemerisData));
-    if ( LALUserVarWasSet ( &uvar->ephemDir ) )
-      ephemDir = uvar->ephemDir;
-    else
-      ephemDir = NULL;
-    TRY( InitEphemeris (status->statusPtr, edat, ephemDir, uvar->ephemYear ), status);
-  }
-
-  /* ----- obtain the (multi-IFO) 'detector-state series' for all SFTs ----- */
-  TRY (LALGetMultiDetectorStates( status->statusPtr, &multiDetStates, multiSFTs, edat), status );
-
-  /* normalize skyposition: correctly map into [0,2pi]x[-pi/2,pi/2] */
-  skypos.longitude = uvar->Alpha;
-  skypos.latitude = uvar->Delta;
-  skypos.system = COORDINATESYSTEM_EQUATORIAL;
-  TRY (LALNormalizeSkyPosition ( status->statusPtr, &skypos, &skypos), status);
-
-  TRY ( LALGetMultiAMCoeffs ( status->statusPtr, &multiAMcoef, multiDetStates, skypos ), status);
-
-  /* correctly handle --SignalOnly case:
-   * we don't use noise-weights.
-   * The SignalOnly case is characterized by
-   * setting Sh->1 (single-sided)
-   */
-  if ( uvar->SignalOnly )
-    {
-      multiNoiseWeights = NULL;
-      multiAMcoef->Mmunu.Sinv_Tsft = Tsft;
-    }
-  else
-    {
-      TRY ( LALNormalizeMultiSFTVect (status->statusPtr, &multiRngmed, multiSFTs, uvar->RngMedWindow ), status);
-      TRY ( LALComputeMultiNoiseWeights (status->statusPtr, &multiNoiseWeights, multiRngmed, uvar->RngMedWindow, 0 ), status );
-    }
-
-  /* noise-weighting of Antenna-patterns and compute A,B,C */
-  if ( XLALWeighMultiAMCoeffs ( multiAMcoef, multiNoiseWeights ) != XLAL_SUCCESS ) {
-    LogPrintf (LOG_CRITICAL, "XLALWeighMultiAMCoeffs() failed with error = %d\n\n", xlalErrno );
-    ABORT ( status, COMPUTEFSTATC_EXLAL, COMPUTEFSTATC_MSGEXLAL );
-  }
-
-  /* OK: we only need the antenna-pattern matrix M_mu_nu */
-  cfg->Mmunu = multiAMcoef->Mmunu;
 
   /* free everything not needed any more */
   TRY ( LALDestroyMultiPSDVector (status->statusPtr, &multiRngmed ), status );
