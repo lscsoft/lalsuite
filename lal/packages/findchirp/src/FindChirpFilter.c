@@ -118,12 +118,12 @@ LALFindChirpFilterSegment (
   REAL8                 deltaF;
   REAL4                 norm;
   REAL4                 modqsqThresh;
-  BOOLEAN               haveEvent     = 0;
+  /*BOOLEAN               haveEvent     = 0;*/
   COMPLEX8             *qtilde        = NULL;
   COMPLEX8             *q             = NULL;
   COMPLEX8             *inputData     = NULL;
   COMPLEX8             *tmpltSignal   = NULL;
-  SnglInspiralTable    *thisEvent     = NULL;
+  /*SnglInspiralTable    *thisEvent     = NULL;*/
 
   INITSTATUS( status, "LALFindChirpFilter", FINDCHIRPFILTERC );
   ATTATCHSTATUSPTR( status );

@@ -117,7 +117,6 @@ if test "x$condor" = "xtrue"; then
   AC_DEFINE(LALAPPS_CONDOR, 1, [LALApps is condor compiled])
 fi
 if test "$GCC" = yes; then
-  CPPFLAGS="$CPPFLAGS -ansi"
   CFLAGS="$CFLAGS -W -Wall $lalapps_gcc_flags"
 fi
 AC_PROG_INSTALL
