@@ -410,7 +410,7 @@ LALFindChirpInjectSignals (
       if ( thisEvent->bandpass )
       {
           UINT4 safeToBandPass = 0;
-          UINT4 start, end;
+          UINT4 start=0, end=0;
           REAL4Vector *bandpassVec = NULL;
 
           safeToBandPass = FindTimeSeriesStartAndEnd (
