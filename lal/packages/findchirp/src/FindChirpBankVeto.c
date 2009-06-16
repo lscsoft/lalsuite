@@ -441,8 +441,8 @@ XLALFindChirpSortTemplatesByLevel( InspiralTemplate *bankHead, UINT4 num)
 
 static int compareTemplateByLevel (const void * a, const void * b)
 {
-  REAL4 mVal1 = (*((const InspiralTemplate**)a))->level;
-  REAL4 mVal2 =   (*((const InspiralTemplate**)b))->level;
+  const REAL4 mVal1 = ((const InspiralTemplate*)a)->level;
+  const REAL4 mVal2 = ((const InspiralTemplate*)b)->level;
 
   if ( mVal1 > mVal2 ) return 1;
   if ( mVal1 == mVal2 ) return 0;
@@ -453,8 +453,8 @@ static int compareTemplateByLevel (const void * a, const void * b)
 
 static int compareTemplateByChirpMass (const void * a, const void * b)
 {
-  REAL4 mVal1 = (*((const InspiralTemplate**)a))->chirpMass;
-  REAL4 mVal2 =   (*((const InspiralTemplate**)b))->chirpMass;
+  const REAL4 mVal1 = ((const InspiralTemplate*)a)->chirpMass;
+  const REAL4 mVal2 = ((const InspiralTemplate*)b)->chirpMass;
 
   if ( mVal1 > mVal2 ) return 1;
   if ( mVal1 == mVal2 ) return 0;
