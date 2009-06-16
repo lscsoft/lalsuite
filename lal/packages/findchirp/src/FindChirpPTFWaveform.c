@@ -97,7 +97,7 @@ INT4 XLALPTFWaveformDerivatives(
    * magnitude given by |S1| = chi1 * m1^2 with 0 \le chi1 \le 1
    */
 
-  static const char* func = "XLALPTFWaveformDerivatives";
+  /*static const char* func = "XLALPTFWaveformDerivatives";*/
   /* post newtonian coeffients which are independent of time */
   ptf_evolution_params_t* pn_params = (ptf_evolution_params_t*) params;
 
