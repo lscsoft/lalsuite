@@ -66,6 +66,9 @@ int isnan(double);
 #define isnan(x) ((isnan)((double)(x)))
 #endif
 
+/* macro to "use" unused function parameters */
+#define UNUSED(expr) do { (void)(expr); } while(0)
+
 NRCSID(FINDCHIRPPTFWAVEFORMC, "$Id$");
 
 /* define a structure so that the ptf waveform parameters */
@@ -186,6 +189,9 @@ INT4 XLALPTFWaveformDerivatives(
   /* phase evolution is purely orbital as we are working in the    */
   /* precessing converion: see the discussion after Eq. (14)       */
   const REAL8 dPhi_dt = omega;
+
+  /* t is unused in this function */
+  UNUSED(t);
 
   /* pass LNhat_dot_back so we can check it's constant */
   pn_params->LNhat_dot_S1 = LNhat_dot_S1;
