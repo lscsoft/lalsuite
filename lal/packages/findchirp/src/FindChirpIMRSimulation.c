@@ -119,8 +119,10 @@ LALFindChirpInjectIMR (
   REAL4TimeSeries       signal;
   COMPLEX8Vector       *unity = NULL;
   CHAR                  warnMsg[512];
+#if 0
   UINT4 n;
   UINT4 i;
+#endif
 
   INITSTATUS( status, "LALFindChirpInjectIMR", FINDCHIRPIMRSIMULATIONC );
   ATTATCHSTATUSPTR( status );
