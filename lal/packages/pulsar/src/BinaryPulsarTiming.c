@@ -163,7 +163,7 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
 
   REAL8 dt=0.; /* binary pulsar deltaT */
   REAL8 x, xdot;	/* x = asini/c */
-  REAL8 w;  /* longitude of periastron */
+  REAL8 w=0;  /* longitude of periastron */
   REAL8 e, edot;  /* eccentricity */
   REAL8 eps1, eps2;
   REAL8 eps1dot, eps2dot;
