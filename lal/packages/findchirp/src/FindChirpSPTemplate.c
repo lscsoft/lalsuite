@@ -276,10 +276,10 @@ LALFindChirpSPTemplate (
 
     for ( k = kmin; k < kmax ; ++k )
     {
-      REAL4 x = x1 * xfac[k];
-      REAL4 psi = c0 * ( x * ( c20 + x * ( c15 + x * (c10 + x * x ) ) )
-                  + c25 - c25Log * log(x) + (1.0/x) * ( c30 - c30Log * log(x)
-                  + (1.0/x) * ( c35 - (1.0/x) * c40P * log(x) ) ) );
+      REAL4 x_0 = x1 * xfac[k];
+      REAL4 psi = c0 * ( x_0 * ( c20 + x_0 * ( c15 + x_0 * (c10 + x_0 * x_0 ) ) )
+                  + c25 - c25Log * log(x_0) + (1.0/x_0) * ( c30 - c30Log * log(x_0)
+                  + (1.0/x_0) * ( c35 - (1.0/x_0) * c40P * log(x_0) ) ) );
       REAL4 psi1 = psi + psi0;
       REAL4 psi2;
 
