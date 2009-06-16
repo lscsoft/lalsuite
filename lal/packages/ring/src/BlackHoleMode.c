@@ -658,7 +658,7 @@ int XLALSpheroidalWaveFunctionNorm( COMPLEX16 *norm, struct tagBlackHoleMode *pa
     XLAL_ERROR( func, XLAL_EFUNC );
   swf = cmul(swf,*norm);
   signneg = ( params->l - ( params->m > params->s ? params->m : params->s ) ) % 2 ? 0 : 1;
-  if ( (signneg && (creal(swf) > 0)) || ! (signneg && (creal(swf) < 0)) )
+  if ( (signneg && (creal(swf) > 0)) || ((! signneg) && (creal(swf) < 0)) )
     *norm = cneg(*norm);
 
   *norm = cdivr(*norm,sqrt(integral));
