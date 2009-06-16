@@ -472,7 +472,7 @@ XLALFindChirpPTFWaveform(
   REAL8 kappa = InspTmplt->kappa;
   REAL8 t, t_next;
   REAL8 step_size;
-  REAL8 dE_dt, dE_dt_n_1, dE_dt_n_2;
+  REAL8 dE_dt, dE_dt_n_1=0, dE_dt_n_2=0;
   REAL8 N_steps;
 
   ptf_evolution_params_t pn_params;
