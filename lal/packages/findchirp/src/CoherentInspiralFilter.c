@@ -1389,7 +1389,7 @@ LALCoherentInspiralFilterSegment (
   REAL4                               cohSNRThreshSq = 0.0;
   double                              inclination = 0.0;
   double                              polarization = 0.0;
-  REAL4                               distanceEstimate = 0.0;
+  /*REAL4                               distanceEstimate = 0.0;*/
   double                              coaPhase      = 0.0;
   REAL4                               cohSNR        = 0.0;
   REAL4                               cohSNRLocal   = 0.0;
