@@ -650,7 +650,7 @@ XLALFindChirpTagTemplateAndSegment (
     InspiralTemplate     *thisTmplt = NULL;
     DataSegment          *currentSegment = NULL;
     UINT4                flag = 0;
-    INT8                 tc, chanStartTime, chanEndTime;
+    INT8                 tc, chanStartTime, chanEndTime=0;
 
 #ifndef LAL_NDEBUG
     /* Sanity checks on input arguments for debugging */
