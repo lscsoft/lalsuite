@@ -76,7 +76,7 @@ LALFindChirpPTFFilterSegment (
   REAL4                 deltaT, max_eigen, r, s, x, y;
   REAL4                 deltaF, fFinal, f_min, length;
   REAL4                 u1[5], u2[5], v1[5], v2[5], *Binv;
-  REAL4                 N, check, thresh;
+  REAL4                 N, thresh;
   REAL4                 v1_dot_u1, v1_dot_u2, v2_dot_u1, v2_dot_u2;
   COMPLEX8             *snr            = NULL;
   COMPLEX8             *PTFQtilde, *qtilde, *PTFq, *inputData;
