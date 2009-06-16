@@ -1479,7 +1479,7 @@ static int FindTimeSeriesStartAndEnd (
         UINT4 *end
         )
 {
-  const static char *func = "FindTimeSeriesStartAndEnd";
+  static const char *func = "FindTimeSeriesStartAndEnd";
   UINT4 i, mid, n; /* indices */
   UINT4 flag, safe = 1;
   UINT4 length;
