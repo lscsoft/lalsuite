@@ -95,6 +95,9 @@ LALFree()
 #include <lal/LALInspiral.h>
 #include <lal/LALError.h>
 
+/* macro to "use" unused function parameters */
+#define UNUSED(expr) do { (void)(expr); } while(0)
+
 NRCSID( FINDCHIRPSIMULATIONC, "$Id$" );
 
 static int FindTimeSeriesStartAndEnd (
@@ -843,6 +846,9 @@ LALFindChirpSetAnalyseTemplate (
   REAL4                 dt0, dt3, metricDist, match;
   CHAR                  myMsg[8192];
   UINT4                 approximant;
+
+  /* numTmplts is unused in this function */
+  UNUSED(numTmplts);
 
   INITSTATUS( status, "LALFindChirpSetAnalyseTemplate", FINDCHIRPSIMULATIONC );
   ATTATCHSTATUSPTR( status );
