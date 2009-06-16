@@ -74,7 +74,7 @@ LALFindChirpPTFFilterSegment (
   UINT4                 deltaEventIndex;
   UINT4                 ignoreIndex;
   REAL4                 deltaT, max_eigen, r, s, x, y;
-  REAL4                 deltaF, fFinal, fmin, length;
+  REAL4                 deltaF, fFinal, f_min, length;
   REAL4                 u1[5], u2[5], v1[5], v2[5], *Binv;
   REAL4                 N, check, thresh;
   REAL4                 v1_dot_u1, v1_dot_u2, v2_dot_u1, v2_dot_u2;
@@ -108,9 +108,9 @@ LALFindChirpPTFFilterSegment (
   deltaT      = (REAL4) params->deltaT;
   deltaF      = 1.0 / ( deltaT * N );
   fFinal      = (REAL4) input->fcTmplt->tmplt.fFinal;
-  fmin        = (REAL4) input->fcTmplt->tmplt.fLower;
+  f_min       = (REAL4) input->fcTmplt->tmplt.fLower;
   kmax        = fFinal / deltaF < numPoints/2 ? fFinal / deltaF : numPoints/2;
-  kmin        = fmin / deltaF > 1.0 ? fmin/ deltaF : 1;
+  kmin        = f_min / deltaF > 1.0 ? f_min/ deltaF : 1;
 
   INITSTATUS( status, "LALFindChirpPTFFilter", FINDCHIRPPTFFILTERC );
   ATTATCHSTATUSPTR( status );
