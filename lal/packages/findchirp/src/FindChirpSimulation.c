@@ -42,7 +42,7 @@ $Id$
 various simulation packages for injecting chirps into data.
 
 \subsubsection*{Prototypes}
-\vspace{0.1in}
+
 \input{FindChirpSimulationCP}
 \idx{LALFindChirpInjectSignals()}
 \idx{LALRandomPPNParamStruc()}
@@ -1162,11 +1162,13 @@ XLALFindChirpBankSimInjectSignal (
   SimInspiralTable     *bankInjection;
   CHAR                  tmpChName[LALNameLength];
   REAL4                 M, mu;
+#if 0
   FrStream             *frStream = NULL;
   REAL4TimeSeries       frameData;
   INT8                  waveformStartTime = 0;
   UINT4                 waveformLengthCtr = 0;
   UINT4                 i;
+#endif
 
   memset( &status, 0, sizeof(LALStatus) );
 
