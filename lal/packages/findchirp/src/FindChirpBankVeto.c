@@ -49,6 +49,9 @@ $Id$
 
 NRCSID (FINDCHIRPBANKVETOC, "$Id$");
 
+/* macro to "use" unused function parameters */
+#define UNUSED(expr) do { (void)(expr); } while(0)
+
 /* Some static function prototypes */
 
 static int compareTemplateByLevel (const void * a, const void * b);
@@ -181,6 +184,10 @@ XLALComputeFullChisq(
   INT4 stIX, fftIX;
   REAL4 fftNorm, powerNorm, signalPower, Sdothsq, chisq;
 
+  /* bankVetoData and i are unused in function */
+  UNUSED(bankVetoData);
+  UNUSED(i);
+
   stIX = input->fcTmplt->tmplt.tC / params->deltaT  + 1.0;
   fftIX = input->segment->dataPower->data->length - 1;
   fftNorm = (REAL4) fftIX;
@@ -227,6 +234,9 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
   UINT4 tmpLen = bankVetoData->fcInputArray[0]->fcTmplt->data->length;
   REAL4 ABr, ABi, Br, Bi, sqResp;
   UINT4 stIX = floor( fLow / deltaF );
+
+  /* deltaT is unused in this function */
+  UNUSED(deltaT);
 
   for ( i = 0; i < iSize; i++ )
   {
