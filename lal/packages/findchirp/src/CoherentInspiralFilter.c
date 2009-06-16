@@ -1396,8 +1396,10 @@ LALCoherentInspiralFilterSegment (
   REAL4                               nullStatistic = 0.0;
   REAL4                               cohSnrRe      = 0.0;
   REAL4                               cohSnrIm      = 0.0;
+#if 0
   REAL4                               nullNumerRe   = 0.0;
   REAL4                               nullNumerIm   = 0.0;
+#endif
   REAL8                              *sigmasq = NULL;
   REAL8                               sigmasq4DArray[4]={0.0,0.0,0.0,0.0};
   REAL8                               deltaT = 0.0;
