@@ -1447,7 +1447,7 @@ LALCoherentInspiralFilterSegment (
   REAL8          gmstInRadians=0.0;
   double         eff_distance0=0.0,eff_distance1=0.0,eff_distance2=0.0;
   double         eff_distanceH1H2=0.0;
-  double         amplitudeConst=1.0,solarMass=1.0,chirpMass=1.0;
+  double         amplitudeConst=1.0,chirpMass=1.0;
   double         aa[4]={0.0,0.0,0.0,0.0};
   double         InvMMAA = 0.0, InvMMBB = 0.0, InvMMCC = 0.0;
   double         determinantMM=1.0;
