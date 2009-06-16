@@ -98,7 +98,7 @@ LALFree()
 NRCSID( FINDCHIRPSIMULATIONC, "$Id$" );
 
 static int FindTimeSeriesStartAndEnd (
-              REAL4Vector *signal,
+              REAL4Vector *signalvec,
               UINT4 *start,
               UINT4 *end
              );
@@ -120,7 +120,7 @@ LALFindChirpInjectSignals (
   CoherentGW            waveform;
   INT8                  waveformStartTime;
   INT8                  chanStartTime;
-  REAL4TimeSeries       signal;
+  REAL4TimeSeries       signalvec;
   COMPLEX8Vector       *unity = NULL;
   CHAR                  warnMsg[512];
   CHAR                  ifo[LIGOMETA_IFO_MAX];
@@ -346,7 +346,7 @@ LALFindChirpInjectSignals (
     if( waveform.h == NULL)
     {
       /* clear the signal structure */
-      memset( &signal, 0, sizeof(REAL4TimeSeries) );
+      memset( &signalvec, 0, sizeof(REAL4TimeSeries) );
 
       /* set the start time of the signal vector to the appropriate start time of the injection */
       if ( detector.site )
@@ -363,15 +363,15 @@ LALFindChirpInjectSignals (
         timeDelay = 0.0;
       }
       /* Give a little more breathing space to aid band-passing */
-      XLALGPSSetREAL8( &(signal.epoch), (waveformStartTime * 1.0e-9) - 0.25 + timeDelay );
+      XLALGPSSetREAL8( &(signalvec.epoch), (waveformStartTime * 1.0e-9) - 0.25 + timeDelay );
 
       /* set the parameters for the signal time series */
-      signal.deltaT = chan->deltaT;
-      if ( ( signal.f0 = chan->f0 ) != 0 )
+      signalvec.deltaT = chan->deltaT;
+      if ( ( signalvec.f0 = chan->f0 ) != 0 )
       {
         ABORT( status, FINDCHIRPH_EHETR, FINDCHIRPH_MSGEHETR );
       }
-      signal.sampleUnits = lalADCCountUnit;
+      signalvec.sampleUnits = lalADCCountUnit;
 
       /* set the start times for injection */
       LALINT8toGPS( status->statusPtr, &(waveform.a->epoch), &waveformStartTime );
@@ -382,11 +382,11 @@ LALFindChirpInjectSignals (
           sizeof(LIGOTimeGPS) );
 
       /* simulate the detectors response to the inspiral */
-      LALSCreateVector( status->statusPtr, &(signal.data), chan->data->length );
+      LALSCreateVector( status->statusPtr, &(signalvec.data), chan->data->length );
       CHECKSTATUSPTR( status );
 
       LALSimulateCoherentGW( status->statusPtr,
-          &signal, &waveform, &detector );
+          &signalvec, &waveform, &detector );
       CHECKSTATUSPTR( status );
 
       /* Taper the signal */
@@ -394,15 +394,15 @@ LALFindChirpInjectSignals (
 
           if ( ! strcmp( "TAPER_START", thisEvent->taper ) )
           {
-              XLALInspiralWaveTaper( signal.data, INSPIRAL_TAPER_START );
+              XLALInspiralWaveTaper( signalvec.data, INSPIRAL_TAPER_START );
           }
           else if (  ! strcmp( "TAPER_END", thisEvent->taper ) )
           {
-              XLALInspiralWaveTaper( signal.data, INSPIRAL_TAPER_END );
+              XLALInspiralWaveTaper( signalvec.data, INSPIRAL_TAPER_END );
           }
           else if (  ! strcmp( "TAPER_STARTEND", thisEvent->taper ) )
           {
-              XLALInspiralWaveTaper( signal.data, INSPIRAL_TAPER_STARTEND );
+              XLALInspiralWaveTaper( signalvec.data, INSPIRAL_TAPER_STARTEND );
           }
       }
 
@@ -414,7 +414,7 @@ LALFindChirpInjectSignals (
           REAL4Vector *bandpassVec = NULL;
 
           safeToBandPass = FindTimeSeriesStartAndEnd (
-                  signal.data, &start, &end );
+                  signalvec.data, &start, &end );
 
           if ( safeToBandPass )
           {
@@ -427,16 +427,16 @@ LALFindChirpInjectSignals (
               else
                     start = 0;
 
-              if ((end + (int)(0.25/chan->deltaT)) < signal.data->length )
+              if ((end + (int)(0.25/chan->deltaT)) < signalvec.data->length )
                     end += (int)(0.25/chan->deltaT);
               else
-                    end = signal.data->length - 1;
+                    end = signalvec.data->length - 1;
 
               bandpassVec = (REAL4Vector *)
                       LALCalloc(1, sizeof(REAL4Vector) );
 
               bandpassVec->length = (end - start + 1);
-              bandpassVec->data = signal.data->data + start;
+              bandpassVec->data = signalvec.data->data + start;
 
               if ( XLALBandPassInspiralTemplate( bandpassVec,
                           1.1*thisEvent->f_lower,
@@ -452,7 +452,7 @@ LALFindChirpInjectSignals (
       }
 
       /* inject the signal into the data channel */
-      LALSSInjectTimeSeries( status->statusPtr, chan, &signal );
+      LALSSInjectTimeSeries( status->statusPtr, chan, &signalvec );
       CHECKSTATUSPTR( status );
     }
     else
@@ -541,7 +541,7 @@ LALFindChirpInjectSignals (
        * */
       if ( waveform.h == NULL )
       {
-	LALSDestroyVector( status->statusPtr, &(signal.data) );
+	LALSDestroyVector( status->statusPtr, &(signalvec.data) );
         CHECKSTATUSPTR( status );
       }
     }
@@ -1472,7 +1472,7 @@ XLALFindChirpBankSimComputeMatch (
 }
 
 static int FindTimeSeriesStartAndEnd (
-        REAL4Vector *signal,
+        REAL4Vector *signalvec,
         UINT4 *start,
         UINT4 *end
         )
@@ -1483,21 +1483,21 @@ static int FindTimeSeriesStartAndEnd (
   UINT4 length;
 
 #ifndef LAL_NDEBUG
-  if ( !signal )
+  if ( !signalvec )
     XLAL_ERROR( func, XLAL_EFAULT );
 
-  if ( !signal->data )
+  if ( !signalvec->data )
     XLAL_ERROR( func, XLAL_EFAULT );
 #endif
 
-  length = signal->length;
+  length = signalvec->length;
 
   /* Search for start and end of signal */
   flag = 0;
   i = 0;
   while(flag == 0 && i < length )
   {
-      if( signal->data[i] != 0.)
+      if( signalvec->data[i] != 0.)
       {
           *start = i;
           flag = 1;
@@ -1513,7 +1513,7 @@ static int FindTimeSeriesStartAndEnd (
   i = length - 1;
   while(flag == 0)
   {
-      if( signal->data[i] != 0.)
+      if( signalvec->data[i] != 0.)
       {
           *end = i;
           flag = 1;
