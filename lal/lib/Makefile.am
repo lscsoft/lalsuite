@@ -31,7 +31,6 @@ liblal_la_DEPENDENCIES = \
 	$(top_builddir)/packages/houghpulsar/src/libhoughpulsar.la \
 	$(top_builddir)/packages/burstsearch/src/libburstsearch.la \
 	$(top_builddir)/packages/tracksearch/src/libtracksearch.la \
-	$(top_builddir)/packages/tfclusters/src/libtfclusters.la \
 	$(top_builddir)/packages/timefreq/src/libtimefreq.la
 liblal_la_LIBADD = $(liblal_la_DEPENDENCIES) @LALLIBADD@
 bin_PROGRAMS = lal-version

@@ -142,11 +142,6 @@ AC_CONFIG_FILES([ \
                  packages/tracksearch/include/Makefile \
                  packages/tracksearch/src/Makefile \
                  packages/tracksearch/test/Makefile \
-                 packages/tfclusters/Makefile \
-                 packages/tfclusters/doc/Makefile \
-                 packages/tfclusters/include/Makefile \
-                 packages/tfclusters/src/Makefile \
-                 packages/tfclusters/test/Makefile \
                  packages/timefreq/Makefile \
                  packages/timefreq/doc/Makefile \
                  packages/timefreq/include/Makefile \

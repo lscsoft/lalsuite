@@ -24,7 +24,6 @@ SUBDIRS = \
 	houghpulsar \
 	burstsearch \
 	tracksearch \
-	tfclusters \
 	timefreq \
 	support \
 	framedata
