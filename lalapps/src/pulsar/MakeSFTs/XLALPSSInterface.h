@@ -9,7 +9,6 @@
 #include "pss_sfc.h"
 #include "pss_snag.h"
 #include "pss_sfdb.h"
-
 #include <lal/LALDatatypes.h>
 
 /* PSS interface datatypes based on PSS datatypes */
@@ -22,6 +21,11 @@ extern PSSEventParams *XLALCreatePSSEventParams(UINT4 length);
 extern PSSTimeseries  *XLALCreatePSSTimeseries(UINT4 length);
 extern void XLALDestroyPSSTimeseries(PSSTimeseries *ts);
 extern void XLALDestroyPSSEventParams(PSSEventParams *ts);
+
+/* open and close a log file */
+/* opening a log file "-" logs to stderr */
+extern FILE* XLALPSSOpenLog(char*name);
+extern void XLALPSSCloseLog(void);
 
 /* LAL <-> PSS timeseries conversion functions */
 extern REAL8TimeSeries

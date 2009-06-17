@@ -3,6 +3,22 @@
 #include "lal/XLALError.h"
 #include "lal/Units.h"
 #include "lal/Date.h"
+#include "pss_serv.h"
+
+extern FILE*LOG_INFO;
+
+FILE* XLALPSSOpenLog(char*name) {
+  if (strcmp(name,"-")==0)
+    LOG_INFO = stderr;
+  else
+    LOG_INFO=logfile_open("crea_sfdb");
+  return LOG_INFO;
+}
+
+void XLALPSSCloseLog(void) {
+  if(LOG_INFO != stderr) 
+    logfile_close(LOG_INFO);
+}
 
 PSSEventParams *XLALCreatePSSEventParams(UINT4 length) { 
   PSSEventParams*ep = NULL;
@@ -65,8 +81,10 @@ void XLALDestroyPSSTimeseries(PSSTimeseries *ts) {
     free(ts->x);
   if(ts->y)
     free(ts->y);
+  /* where does the caption come from if it can't be freed?
   if(ts->capt)
     free(ts->capt);
+  */
   free(ts);
 }
 
