@@ -56,6 +56,8 @@
 
 #include <lalapps.h>
 
+#include "../transientCW_utils.h"
+
 RCSID ("$Id$");
 
 /* Error codes and messages */
@@ -90,23 +92,6 @@ RCSID ("$Id$");
 #define GPS2REAL(gps) (gps.gpsSeconds + 1e-9 * gps.gpsNanoSeconds )
 
 /*----------------------------------------------------------------------*/
-/** Struct to define parameters of a 'transient window' to be applied to obtain transient signals */
-typedef enum {
-  TRANSIENT_NONE = 0,
-  TRANSIENT_RECTANGULAR = 1,
-  TRANSIENT_EXPONENTIAL,
-  TRANSIENT_LAST
-} transientWindowType_t;
-
-
-typedef struct
-{
-  transientWindowType_t type;	/**< window-type: none, rectangular, exponential, .... */
-  REAL8 t0;			/**< GPS start-time 't0' */
-  REAL8 tau;			/**< transient timescale tau in seconds */
-} transientWindow_t;
-
-
 /** configuration-variables derived from user-variables */
 typedef struct
 {
@@ -161,9 +146,6 @@ void LALGenerateLineFeature ( LALStatus *status, REAL4TimeSeries **Tseries, cons
 extern void write_timeSeriesR4 (FILE *fp, const REAL4TimeSeries *series);
 extern void write_timeSeriesR8 (FILE *fp, const REAL8TimeSeries *series);
 BOOLEAN is_directory ( const CHAR *fname );
-
-int XLALApplyTransientWindow ( REAL4TimeSeries *series, transientWindow_t TransientWindowParams );
-
 
 /*----------------------------------------------------------------------*/
 static const ConfigVars_t empty_GV;
@@ -1972,67 +1954,3 @@ LALGenerateLineFeature ( LALStatus *status, REAL4TimeSeries **Tseries, const Pul
   RETURN ( status );
 
 } /* LALGenerateLineFeature() */
-
-int
-XLALApplyTransientWindow ( REAL4TimeSeries *series, transientWindow_t TransientWindowParams )
-{
-  const CHAR *fn = "XLALApplyTransientWindow()";
-  UINT4 i;
-
-  REAL8 ts_t0, ts_dt, ts_T;	/* start-time, stepsize and duration of input timeseries */
-  REAL8 ti;
-  INT4 i0, i1;			/* time-series index corresonding to start-time (and end-time) of transient window */
-
-  if ( !series || !series->data ){
-    XLALPrintError ("%s: Illegal NULL in input timeseries!\n", fn );
-    return XLAL_EINVAL;
-  }
-
-  ts_t0 = GPS2REAL ( series->epoch );
-  ts_dt = series->deltaT;
-  ts_T  = ts_dt * series->data->length;
-
-  i0 = ( TransientWindowParams.t0 - ts_t0 ) / ts_dt;
-  if ( i0 < 0 ) i0 = 0;
-
-  switch ( TransientWindowParams.type )
-    {
-    case TRANSIENT_NONE:
-      return XLAL_SUCCESS;	/* nothing to be done here */
-      break;
-
-    case TRANSIENT_RECTANGULAR:	/* standard 'rectangular window */
-      for ( i = 0; i < (UINT4)i0; i ++ ) {
-	series->data->data[i] = 0;
-      }
-      i1 = (TransientWindowParams.t0 + TransientWindowParams.tau - ts_t0 ) / ts_dt + 1;
-      if ( i1 < 0 ) i1 = 0;
-      if ( (UINT4)i1 >= series->data->length ) i1 = series->data->length - 1;
-
-      for ( i = i1; i < series->data->length; i ++) {
-	series->data->data[i] = 0;
-      }
-      break;
-
-    case TRANSIENT_EXPONENTIAL:
-      for ( i = 0; i < (UINT4)i0; i ++ ) {
-	series->data->data[i] = 0;
-      }
-      ti = 0;
-      for ( i=i0; i < series->data->length; i ++)
-	{
-	  REAL8 fact = exp( - ti / TransientWindowParams.tau );
-	  ti += ts_dt;
-	  series->data->data[i] *= fact;
-	}
-      break;
-
-    default:
-      XLALPrintError("Illegal transient-signal window type specified '%d'\n", TransientWindowParams.type );
-      return XLAL_EINVAL;
-      break;
-    }
-
-  return XLAL_SUCCESS;
-
-} /* XLALApplyTransientWindow() */
