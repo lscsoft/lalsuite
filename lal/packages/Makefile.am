@@ -3,7 +3,6 @@ SUBDIRS = \
 	std \
 	tools \
 	sample \
-	hello \
 	factories \
 	vectorops \
 	utilities \
