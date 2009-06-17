@@ -11,7 +11,7 @@ gitID:
 BUILT_SOURCES = gitID
 
 if FRAME
-frameprogs = lalapps_MakeSFTs lalapps_MakeCleanSFTs
+frameprogs = lalapps_MakeSFTs lalapps_MakeCleanSFTs lalapps_MakePSSCleanSFTs
 else
 frameprogs =
 endif
@@ -22,9 +22,9 @@ if FRAME
 lalapps_MakeSFTs_SOURCES = MakeSFTs.c
 lalapps_MakeCleanSFTs_SOURCES = MakeCleanSFTs.c
 lalapps_MakePSSCleanSFTs_SOURCES = MakePSSCleanSFTs.c XLALPSSInterface.c
+lalapps_MakePSSCleanSFTs_LDADD = -lsfdb -lpss -lastro -lnovas
 endif
 
 lalapps_ConvertToSFTv2_SOURCES = ConvertToSFTv2.c
 
 lalapps_LISAmakeSFTs_SOURCES = LISAmakeSFTs.c readxml.c readxml.h ezxml.c ezxml.h
-
