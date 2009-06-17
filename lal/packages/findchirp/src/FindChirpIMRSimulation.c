@@ -116,11 +116,13 @@ LALFindChirpInjectIMR (
   CoherentGW            waveform, *wfm;
   INT8                  waveformStartTime;
   INT8                  chanStartTime;
-  REAL4TimeSeries       signal;
+  REAL4TimeSeries       signalvec;
   COMPLEX8Vector       *unity = NULL;
   CHAR                  warnMsg[512];
+#if 0
   UINT4 n;
   UINT4 i;
+#endif
 
   INITSTATUS( status, "LALFindChirpInjectIMR", FINDCHIRPIMRSIMULATIONC );
   ATTATCHSTATUSPTR( status );
@@ -329,7 +331,7 @@ LALFindChirpInjectIMR (
     LALInfo( status, warnMsg );
 
     /* clear the signal structure */
-    memset( &signal, 0, sizeof(REAL4TimeSeries) );
+    memset( &signalvec, 0, sizeof(REAL4TimeSeries) );
 
     /* set the start times for injection */
     LALINT8toGPS( status->statusPtr, &(waveform.a->epoch), &waveformStartTime );
@@ -340,22 +342,22 @@ LALFindChirpInjectIMR (
         sizeof(LIGOTimeGPS) );
 
     /* set the start time of the signal vector to the start time of the chan */
-    signal.epoch = chan->epoch;
+    signalvec.epoch = chan->epoch;
 
     /* set the parameters for the signal time series */
-    signal.deltaT = chan->deltaT;
-    if ( ( signal.f0 = chan->f0 ) != 0 )
+    signalvec.deltaT = chan->deltaT;
+    if ( ( signalvec.f0 = chan->f0 ) != 0 )
     {
       ABORT( status, FINDCHIRPH_EHETR, FINDCHIRPH_MSGEHETR );
     }
-    signal.sampleUnits = lalADCCountUnit;
+    signalvec.sampleUnits = lalADCCountUnit;
 
     /* simulate the detectors response to the inspiral */
-    LALSCreateVector( status->statusPtr, &(signal.data), chan->data->length );
+    LALSCreateVector( status->statusPtr, &(signalvec.data), chan->data->length );
     CHECKSTATUSPTR( status );
 
     LALSimulateCoherentGW( status->statusPtr,
-        &signal, &waveform, &detector );
+        &signalvec, &waveform, &detector );
     CHECKSTATUSPTR( status );
 
 /******************************************************************************/
@@ -392,9 +394,9 @@ LALFindChirpInjectIMR (
         thisEvent->geocent_end_time.gpsNanoSeconds,
         thisEvent->waveform );
     fp = fopen( fname, "w" );
-    for( jj = 0; jj < signal.data->length; ++jj )
+    for( jj = 0; jj < signalvec.data->length; ++jj )
     {
-      fprintf(fp, "%d %e %e \n", jj, signal.data->data[jj]);
+      fprintf(fp, "%d %e %e \n", jj, signalvec.data->data[jj]);
     }
     fclose( fp );
 #endif
@@ -403,7 +405,7 @@ LALFindChirpInjectIMR (
 
 
     /* inject the signal into the data channel */
-    LALSSInjectTimeSeries( status->statusPtr, chan, &signal );
+    LALSSInjectTimeSeries( status->statusPtr, chan, &signalvec );
     CHECKSTATUSPTR( status );
 
     /* allocate and go to next SimRingdownTable */
@@ -414,7 +416,7 @@ LALFindChirpInjectIMR (
       thisRingdownEvent->next = NULL;
 
     /* destroy the signal */
-    LALSDestroyVector( status->statusPtr, &(signal.data) );
+    LALSDestroyVector( status->statusPtr, &(signalvec.data) );
     CHECKSTATUSPTR( status );
 
     LALSDestroyVectorSequence( status->statusPtr, &(waveform.a->data) );

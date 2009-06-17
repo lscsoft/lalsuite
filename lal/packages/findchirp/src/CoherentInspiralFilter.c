@@ -49,6 +49,9 @@
 #include <lal/DetResponse.h>
 #include <lal/CoherentInspiral.h>
 
+/* macro to "use" unused function parameters */
+#define UNUSED(expr) do { (void)(expr); } while(0)
+
 #define rint(x) (floor((x)+0.5))
 double modf( double value, double *integerPart );
 int compare( const void* a, const void* b );
@@ -1334,6 +1337,8 @@ LALCoherentInspiralEstimateDistance (
 	      COHERENTINSPIRALFILTERC );
   ATTATCHSTATUSPTR( status );
 
+  /* templateNorm is unused in this function */
+  UNUSED(templateNorm);
 
   /* CHECK: Assume that sigma[0] (sigma[1]) are of H1 (H2) and calculate
      the effective distance for the H1-H2 pair */
@@ -1384,7 +1389,7 @@ LALCoherentInspiralFilterSegment (
   REAL4                               cohSNRThreshSq = 0.0;
   double                              inclination = 0.0;
   double                              polarization = 0.0;
-  REAL4                               distanceEstimate = 0.0;
+  /*REAL4                               distanceEstimate = 0.0;*/
   double                              coaPhase      = 0.0;
   REAL4                               cohSNR        = 0.0;
   REAL4                               cohSNRLocal   = 0.0;
@@ -1396,8 +1401,10 @@ LALCoherentInspiralFilterSegment (
   REAL4                               nullStatistic = 0.0;
   REAL4                               cohSnrRe      = 0.0;
   REAL4                               cohSnrIm      = 0.0;
+#if 0
   REAL4                               nullNumerRe   = 0.0;
   REAL4                               nullNumerIm   = 0.0;
+#endif
   REAL8                              *sigmasq = NULL;
   REAL8                               sigmasq4DArray[4]={0.0,0.0,0.0,0.0};
   REAL8                               deltaT = 0.0;
@@ -1447,7 +1454,7 @@ LALCoherentInspiralFilterSegment (
   REAL8          gmstInRadians=0.0;
   double         eff_distance0=0.0,eff_distance1=0.0,eff_distance2=0.0;
   double         eff_distanceH1H2=0.0;
-  double         amplitudeConst=1.0,solarMass=1.0,chirpMass=1.0;
+  double         amplitudeConst=1.0,chirpMass=1.0;
   double         aa[4]={0.0,0.0,0.0,0.0};
   double         InvMMAA = 0.0, InvMMBB = 0.0, InvMMCC = 0.0;
   double         determinantMM=1.0;
@@ -4695,6 +4702,9 @@ double XLALComputeNullStatCase4a(INT4 caseID[6], double fplus[4], double fcross[
     double nullNumerIm8 = 0.0;
     double nullStatistic = 0.0;
 
+    /* caseID is unused in this function */
+    UNUSED(caseID);
+
     /* Prepare norm for null statistic */
     nullNorm8 = fplus[1]*fcross[2]*fplus[1]*fcross[2]/ sigmasq[1] +
       fplus[2]*fcross[0]*fplus[2]*fcross[0]/ sigmasq[3] +
@@ -4721,6 +4731,9 @@ double XLALComputeNullTimeSeriesCase4a(INT4 caseID[6], double fplus[4], double f
     double nullNumerRe8 = 0.0;
     double nullNumerIm8 = 0.0;
     double nullStatistic = 0.0;
+
+    /* caseID is unused in this function */
+    UNUSED(caseID);
 
     /* Prepare norm for null statistic */
     nullNorm8 = fplus[1]*fcross[2]*fplus[1]*fcross[2]/ sigmasq[1] +
@@ -4784,7 +4797,10 @@ void XLALCoherentCBCEstimateDistanceCase3a(double *eff_distance0,double *eff_dis
 double XLALCoherentCBCParamEstim( double *psi_est, double *iota_est, double *coa_phase_est, double a1, double a2, double a3, double a4, double *eff_distance0,double *eff_distance1,double *eff_distance2,double *eff_distanceH1H2,double amplitudeConst, double chirpTime, double C_Real0, double C_Im0, double C_Real1,double C_Im1, double C_Real2, double C_Im2, REAL8 *sigmasq) {
 
 
- double lum_dist_est,f_a,f_a_sq,g_a,h_a,iota_est_CHECK = 0.0,sine_psi=0.0,sine_coa_phase=0.0,p=0.0;
+  double lum_dist_est,f_a,f_a_sq,g_a,h_a,sine_psi=0.0,sine_coa_phase=0.0,p=0.0;
+
+  /* chirpTime is unused in this function */
+  UNUSED(chirpTime);
 
   p = a1*a4-a2*a3;
   f_a=2*p/(a1*a1+a2*a2+a3*a3+a4*a4);
