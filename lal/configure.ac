@@ -32,11 +32,6 @@ AC_CONFIG_FILES([ \
                  packages/tools/include/Makefile \
                  packages/tools/src/Makefile \
                  packages/tools/test/Makefile \
-                 packages/sample/Makefile \
-                 packages/sample/doc/Makefile \
-                 packages/sample/include/Makefile \
-                 packages/sample/src/Makefile \
-                 packages/sample/test/Makefile \
                  packages/factories/Makefile \
                  packages/factories/doc/Makefile \
                  packages/factories/include/Makefile \
