@@ -152,11 +152,6 @@ AC_CONFIG_FILES([ \
                  packages/slopefilters/include/Makefile \
                  packages/slopefilters/src/Makefile \
                  packages/slopefilters/test/Makefile \
-                 packages/block/Makefile \
-                 packages/block/doc/Makefile \
-                 packages/block/include/Makefile \
-                 packages/block/src/Makefile \
-                 packages/block/test/Makefile \
                  packages/timefreq/Makefile \
                  packages/timefreq/doc/Makefile \
                  packages/timefreq/include/Makefile \
