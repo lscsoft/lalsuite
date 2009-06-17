@@ -264,7 +264,8 @@ int WindowDataHann(struct CommandLineArgsTag CLA);
 int TDCleaning(struct CommandLineArgsTag CLA);
 
 /* Time Domain Cleaning with PSS functions */
-int PSSTDCleaning(struct CommandLineArgsTag CLA);
+int PSSTDCleaningDouble(struct CommandLineArgsTag CLA);
+int PSSTDCleaningSingle(struct CommandLineArgsTag CLA);
 
 /*Initialization of the event paramaters*/
 int EventParamInit(long len, ParamOfEvent *even_param);
@@ -572,7 +573,7 @@ int main(int argc,char *argv[])
     
      /* Time Domain cleaning procedure */
       if (CommandLineArgs.TDcleaningProc==1) {   
-         if(TDCleaning(CommandLineArgs)) return 6;   
+         if(PSSTDCleaningDouble(CommandLineArgs)) return 6;   
       } else {
         /* Continue without cleaning. */
       }      
@@ -2469,6 +2470,8 @@ int PSSTDCleaningREAL8(REAL8TimeSeries *LALTS, REAL4 highpassFrequency) {
   /* number of samples in the original timeseries */
   samples = LALTS->data->length;
 
+  /* open a log file, currently necessary for PSS */
+  XLALPSSOpenLog("-");
 
   /* creation / memory allocation */
   /* there can't be more events than there are samples,
@@ -2524,6 +2527,7 @@ int PSSTDCleaningREAL8(REAL8TimeSeries *LALTS, REAL4 highpassFrequency) {
  PSSTDCleaningREAL8FreeEventParams:
   XLALDestroyPSSEventParams(eventParams);
  PSSTDCleaningREAL8FreeNothing:
+  XLALPSSCloseLog();
   return retval;
 }
 
@@ -2543,6 +2547,9 @@ int PSSTDCleaningREAL4(REAL4TimeSeries *LALTS, REAL4 highpassFrequency) {
 
   /* number of samples in the original timeseries */
   samples = LALTS->data->length;
+
+  /* open a log file, currently necessary for PSS */
+  XLALPSSOpenLog("-");
 
   /* creation / memory allocation */
   /* there can't be more events than there are samples,
@@ -2598,11 +2605,12 @@ int PSSTDCleaningREAL4(REAL4TimeSeries *LALTS, REAL4 highpassFrequency) {
  PSSTDCleaningREAL4FreeEventParams:
   XLALDestroyPSSEventParams(eventParams);
  PSSTDCleaningREAL4FreeNothing:
+  XLALPSSCloseLog();
   return retval;
 }
 
 int PSSTDCleaningSingle(struct CommandLineArgsTag CLA) {
-  return(PSSTDCleaningREAL4(&dataDouble, CLA.fc));
+  return(PSSTDCleaningREAL4(&dataSingle, CLA.fc));
 }
 
 int PSSTDCleaningDouble(struct CommandLineArgsTag CLA) {
