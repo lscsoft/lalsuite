@@ -147,11 +147,6 @@ AC_CONFIG_FILES([ \
                  packages/tfclusters/include/Makefile \
                  packages/tfclusters/src/Makefile \
                  packages/tfclusters/test/Makefile \
-                 packages/slopefilters/Makefile \
-                 packages/slopefilters/doc/Makefile \
-                 packages/slopefilters/include/Makefile \
-                 packages/slopefilters/src/Makefile \
-                 packages/slopefilters/test/Makefile \
                  packages/timefreq/Makefile \
                  packages/timefreq/doc/Makefile \
                  packages/timefreq/include/Makefile \

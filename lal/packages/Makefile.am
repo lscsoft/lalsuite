@@ -25,7 +25,6 @@ SUBDIRS = \
 	burstsearch \
 	tracksearch \
 	tfclusters \
-	slopefilters \
 	timefreq \
 	support \
 	framedata
