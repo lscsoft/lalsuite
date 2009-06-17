@@ -2,7 +2,8 @@
 #ifndef XLALPSSINTERFACE_H
 #define XLALPSSINTERFACE_H
 
-/* PSS has some strange internal dependencies between its headers, don't change the following order */
+/* PSS has some strange internal dependencies between its headers,
+   better don't change the following order */
 #include <stdio.h>
 #include "pss_math.h"
 #include "pss_sfc.h"
@@ -16,7 +17,7 @@ typedef GD           PSSTimeseries;
 typedef EVEN_PARAM   PSSEventParams;
 typedef HEADER_PARAM PSSHeaderParams;
 
-/* constructor & destructor functions */
+/* creator & destructor functions */
 extern PSSEventParams *XLALCreatePSSEventParams(UINT4 length);
 extern PSSTimeseries  *XLALCreatePSSTimeseries(UINT4 length);
 extern void XLALDestroyPSSTimeseries(PSSTimeseries *ts);
