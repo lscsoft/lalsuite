@@ -49,6 +49,8 @@
 
 #include <lalapps.h>
 
+#include "../transientCW_utils.h"
+
 /* local includes */
 
 RCSID( "$Id$");
@@ -130,9 +132,14 @@ typedef struct {
   INT4 minStartTime;	/**< limit start-time of input SFTs to use */
   INT4 maxEndTime;	/**< limit end-time of input SFTs to use */
 
+  CHAR *transient_Name;	/**< name of transient window ('rect', 'exp',...) */
+  REAL8 transient_t0;	/**< GPS start-time of transient window */
+  REAL8 transient_tau;	/**< time-scale of transient window */
+
   REAL8 cosiota;	/* DEPRECATED in favor of cosi */
 
   BOOLEAN version;	/**< output version-info */
+
 } UserInput_t;
 
 static UserInput_t empty_UserInput;
@@ -291,6 +298,10 @@ initUserVars (LALStatus *status, UserInput_t *uvar )
 
   uvar->phi0 = 0;
 
+#define DEFAULT_TRANSIENT "none"
+  uvar->transient_Name = LALMalloc(strlen(DEFAULT_TRANSIENT)+1);
+  strcpy ( uvar->transient_Name, DEFAULT_TRANSIENT );
+
   /* register all our user-variables */
   LALregBOOLUserStruct(status,	help, 		'h', UVAR_HELP,     "Print this message");
 
@@ -320,7 +331,12 @@ initUserVars (LALStatus *status, UserInput_t *uvar )
   LALregBOOLUserStruct(status,	version,        'V', UVAR_SPECIAL,   "Output code version");
 
   LALregINTUserStruct(status,	RngMedWindow,	'k', UVAR_DEVELOPER, "Running-Median window size");
-  LALregREALUserStruct(status,	cosiota,	 0 , UVAR_DEVELOPER,"[DEPRECATED] Use --cosi instead!");
+  LALregREALUserStruct(status,	cosiota,	 0 , UVAR_DEVELOPER, "[DEPRECATED] Use --cosi instead!");
+
+  /* transient signal window properties (name, start, duration) */
+  LALregSTRINGUserStruct(status, transient_Name,  0, UVAR_OPTIONAL, "Name of transient signal window to use. ('none', 'rect', 'exp').");
+  LALregREALUserStruct(status,   transient_t0,    0, UVAR_OPTIONAL, "GPS start-time 't0' of transient signal window.");
+  LALregREALUserStruct(status,   transient_tau,   0, UVAR_OPTIONAL, "Timescale 'tau' of transient signal window in seconds.");
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
@@ -375,6 +391,8 @@ InitEphemeris (LALStatus * status,	/**< pointer to LALStatus structure */
 void
 InitPFS ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
 {
+  static const char *fn = "InitPFS()";
+
   SFTCatalog *catalog = NULL;
   SFTConstraints constraints = empty_SFTConstraints;
   SkyPosition skypos;
@@ -392,7 +410,7 @@ InitPFS ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
   UINT4 X, i;
 
 
-  INITSTATUS (status, "InitPFS", rcsid);
+  INITSTATUS (status, fn, rcsid);
   ATTATCHSTATUSPTR (status);
 
   { /* Check user-input consistency */
@@ -521,6 +539,44 @@ InitPFS ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
         for ( i=0; i < multiNoiseWeights->data[X]->length; i ++ )
           multiNoiseWeights->data[X]->data[i] = 1.0;
     }
+
+  /* ----- handle transient-signal window if given ----- */
+  if ( LALUserVarWasSet ( &uvar->transient_Name ) && strcmp ( uvar->transient_Name, "none") )
+    {
+      transientWindow_t transientWindow;	/**< properties of transient-signal window */
+      MultiLIGOTimeGPSVector *mTS;
+
+      if ( !strcmp ( uvar->transient_Name, "rect" ) )
+        transientWindow.type = TRANSIENT_RECTANGULAR;		/* rectangular window [t0, t0+tau] */
+      else if ( !strcmp ( uvar->transient_Name, "exp" ) )
+        transientWindow.type = TRANSIENT_EXPONENTIAL;		/* exponential decay window e^[-(t-t0)/tau for t>t0, 0 otherwise */
+      else
+	{
+	  XLALPrintError ("Illegal transient window '%s' specified: valid are 'none', 'rect' or 'exp'\n", uvar->transient_Name);
+          ABORT ( status, PREDICTFSTAT_EINPUT, PREDICTFSTAT_MSGEINPUT );
+	}
+
+      if ( LALUserVarWasSet ( &uvar->transient_t0 ) )
+        transientWindow.t0 = uvar->transient_t0;
+      else
+        transientWindow.t0 = XLALGPSGetREAL8( &startTime ); /* if not set, default window startTime == startTime here */
+
+      transientWindow.tau  = uvar->transient_tau;
+
+      if ( (mTS = XLALExtractMultiTimestampsFromSFTs ( multiSFTs )) == NULL ) {
+        XLALPrintError ("%s: failed to XLALExtractMultiTimestampsFromSFTs() from SFTs. xlalErrno = %d.\n", fn, xlalErrno );
+        ABORT ( status, PREDICTFSTAT_EXLAL, PREDICTFSTAT_MSGEXLAL );
+      }
+
+      if ( XLALApplyTransientWindow2NoiseWeights ( multiNoiseWeights, mTS, transientWindow ) != XLAL_SUCCESS ) {
+        XLALPrintError ("%s: XLALApplyTransientWindow2NoiseWeights() failed! xlalErrno = %d\n", fn, xlalErrno );
+        ABORT ( status, PREDICTFSTAT_EXLAL, PREDICTFSTAT_MSGEXLAL );
+      }
+
+      XLALDestroyMultiTimestamps ( mTS );
+
+    } /* apply transient window to noise-weights */
+
 
   /* ----- obtain the (multi-IFO) 'detector-state series' for all SFTs ----- */
   TRY (LALGetMultiDetectorStates( status->statusPtr, &multiDetStates, multiSFTs, edat), status );

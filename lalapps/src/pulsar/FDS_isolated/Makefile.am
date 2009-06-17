@@ -75,7 +75,7 @@ lalapps_ComputeFStatistic_v2_cuda_SOURCES = $(ComputeFStatisticV2Sources) Optimi
 lalapps_ComputeFStatistic_v2_cuda_CPPFLAGS = $(AM_CPPFLAGS) -DUSE_CUDA
 lalapps_ComputeFStatistic_v2_cuda_LDADD = $(LDADD) -lcudart
 
-lalapps_PredictFStat_SOURCES = PredictFStat.c
+lalapps_PredictFStat_SOURCES = PredictFStat.c ../transientCW_utils.c ../transientCW_utils.h
 # force linking in C++ mode for E@H
 eah_PredictFStat_SOURCES = PredictFStat.c ../hough/src2/EinsteinAtHome/win_lib.cpp
 
