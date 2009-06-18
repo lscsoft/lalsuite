@@ -32,6 +32,9 @@
 
 #define pi LAL_PI
 
+/* macro to "use" unused function parameters */
+#define UNUSED(expr) do { (void)(expr); } while(0)
+
 /* functions to handle vectors and matrices with dimensions that are
    (a) small and
    (b) known at compile time */
@@ -711,6 +714,9 @@ int XLALSkymapGlitchHypothesis(XLALSkymapPlanType* plan, double *p, double sigma
     /* static const char func[] = "XLALSkymapGlitchHypothesis"; */
     double* buffer;
     int i;
+
+    /* plan is unused in this function */
+    UNUSED(plan);
 
     /* allocate working memory */
     buffer = (double*) XLALMalloc(sizeof(double)* max(max(end[0], end[1]), end[2]));
