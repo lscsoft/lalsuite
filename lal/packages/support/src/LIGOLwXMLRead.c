@@ -3542,7 +3542,7 @@ XLALReadInspiralTriggerFile (
 {
   const char *func = "XLALReadInspiralTriggerFile";
   INT4 numFileTriggers = 0;
-  INT4 haveSummValue = 0;
+  /*INT4 haveSummValue = 0;*/
   SnglInspiralTable  *inputData = NULL;
   SearchSummaryTable *inputSummary = NULL;
   SearchSummaryTable *thisSearchSumm = NULL;
