@@ -481,7 +481,7 @@ LALTrackSearchApplyThreshold(
 void
 LALTrackSearchWhitenREAL4TimeSeries(
 				    LALStatus              *status,
-				    REAL4TimeSeries        *signal,
+				    REAL4TimeSeries        *signalvec,
 				    REAL4FrequencySeries   *signalPSD,
 				    TSWhitenParams          params
 				    )
@@ -500,7 +500,7 @@ LALTrackSearchWhitenREAL4TimeSeries(
   ATTATCHSTATUSPTR (status);
 
   /*Setup FFT Plans*/
-  planLength=signal->data->length;
+  planLength=signalvec->data->length;
   LALCreateForwardREAL4FFTPlan(status->statusPtr,
 			       &forwardPlan,
 			       planLength,
@@ -516,13 +516,13 @@ LALTrackSearchWhitenREAL4TimeSeries(
   signalFFT = XLALCreateCOMPLEX8FrequencySeries("tmpSegPSD",
 				   &gps_zero,
 				   0,
-				   1/(signal->deltaT*signal->data->length),
+				   1/(signalvec->deltaT*signalvec->data->length),
 				   &lalDimensionlessUnit,
 				   planLength/2+1);
   /* FFT the time series */
   LALForwardREAL4FFT(status->statusPtr,
 		     signalFFT->data,
-		     signal->data,
+		     signalvec->data,
 		     forwardPlan);
   CHECKSTATUSPTR (status);
 
@@ -573,7 +573,7 @@ LALTrackSearchWhitenREAL4TimeSeries(
    * Transform back to time domain
    */
   LALReverseREAL4FFT(status->statusPtr,
-		     signal->data,
+		     signalvec->data,
 		     signalFFT->data,
 		     reversePlan);
   CHECKSTATUSPTR (status);
@@ -581,13 +581,13 @@ LALTrackSearchWhitenREAL4TimeSeries(
    * The 1/n factor need to be applied
    * See lsd-5 p 259 10.1
    */
-  for (i=0;i<signal->data->length;i++)
-    signal->data->data[i]= signal->data->data[i]/signal->data->length;
+  for (i=0;i<signalvec->data->length;i++)
+    signalvec->data->data[i]= signalvec->data->data[i]/signalvec->data->length;
 
   /*
    * Diagnostic code
    */
-  print_real4tseries(signal,"dataSegi.txt");
+  print_real4tseries(signalvec,"dataSegi.txt");
 
   /*
    *Release the temporary memory
@@ -677,7 +677,7 @@ LALTrackSearchWhitenCOMPLEX8FrequencySeries(
 /* Begin calibration routine */
 void
 LALTrackSearchCalibrateREAL4TimeSeries(LALStatus               *status,
-				       REAL4TimeSeries         *signal,
+				       REAL4TimeSeries         *signalvec,
 				       COMPLEX8FrequencySeries *response)
 {
   UINT4                      i=0;
@@ -692,7 +692,7 @@ LALTrackSearchCalibrateREAL4TimeSeries(LALStatus               *status,
   /*
    * Setup FFT plans for FFTing the data segment
    */
-  planLength=signal->data->length;
+  planLength=signalvec->data->length;
   LALCreateForwardREAL4FFTPlan(status->statusPtr,
 			       &forwardPlan,
 			       planLength,
@@ -707,9 +707,9 @@ LALTrackSearchCalibrateREAL4TimeSeries(LALStatus               *status,
    * Allocate RAM for temp Freq series
    */
   signalFFT = XLALCreateCOMPLEX8FrequencySeries("tmpSignalFFT",
-				   &signal->epoch,
+				   &signalvec->epoch,
 				   0,
-				   1/signal->deltaT,
+				   1/signalvec->deltaT,
 				   &lalDimensionlessUnit,
 				   planLength/2+1);
   /*
@@ -717,14 +717,14 @@ LALTrackSearchCalibrateREAL4TimeSeries(LALStatus               *status,
    */
   LALForwardREAL4FFT(status->statusPtr,
 		     signalFFT->data,
-		     signal->data,
+		     signalvec->data,
 		     forwardPlan);
   CHECKSTATUSPTR (status);
   /*
    * Perform the frequency basis calibration as defined in
    * LSD Conventions Eq 23.1 p 601
    */
-  for (i=0;i<signal->data->length;i++)
+  for (i=0;i<signalvec->data->length;i++)
     {
       signalFFT->data->data[i].re=
 	response->data->data[i].re*signalFFT->data->data[i].re;
@@ -736,7 +736,7 @@ LALTrackSearchCalibrateREAL4TimeSeries(LALStatus               *status,
    * this is the calibrated data set
    */
   LALReverseREAL4FFT(status->statusPtr,
-		     signal->data,
+		     signalvec->data,
 		     signalFFT->data,
 		     reversePlan);
   CHECKSTATUSPTR (status);
@@ -744,8 +744,8 @@ LALTrackSearchCalibrateREAL4TimeSeries(LALStatus               *status,
    * The 1/n factor need to be applied
    * See lsd-5 p 259 10.1
    */
-  for (i=0;i<signal->data->length;i++)
-    signal->data->data[i]= signal->data->data[i]/signal->data->length;
+  for (i=0;i<signalvec->data->length;i++)
+    signalvec->data->data[i]= signalvec->data->data[i]/signalvec->data->length;
 
   /*
    * Destroy signalFFT Temp variable
@@ -1156,7 +1156,7 @@ void cleanLinkedList(
  */
 void WriteMap(
 	      TimeFreqRep       map,
-	      REAL4Vector       signal
+	      REAL4Vector       signalvec
 	      )
 
 {
@@ -1194,11 +1194,11 @@ void WriteMap(
 	  k++;
 	};
     };
-  if (&signal != NULL)
+  if (&signalvec != NULL)
     {
-      for (i=0;i < ((INT4) signal.length);i++)
+      for (i=0;i < ((INT4) signalvec.length);i++)
 	{
-	  fprintf(fp3,"%f\n",signal.data[i]);
+	  fprintf(fp3,"%f\n",signalvec.data[i]);
 	};
     };
   fclose(fp);

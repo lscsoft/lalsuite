@@ -234,7 +234,7 @@ LALTrackSearchConnectSigma(
 void
 LALTrackSearchWhitenREAL4TimeSeries(
 				    LALStatus              *status,
-				    REAL4TimeSeries        *signal,
+				    REAL4TimeSeries        *signalvec,
 				    REAL4FrequencySeries   *signalPSD,
 				    TSWhitenParams          params
 				    );
@@ -260,7 +260,7 @@ LALTrackSearchWhitenCOMPLEX8FrequencySeries(
  */
 void
 LALTrackSearchCalibrateREAL4TimeSeries(LALStatus               *status,
-				       REAL4TimeSeries         *signal,
+				       REAL4TimeSeries         *signalvec,
 				       COMPLEX8FrequencySeries *response);
 
 /*
@@ -298,7 +298,7 @@ void connect2Segments(
 
 void WriteMap(
 	      TimeFreqRep       map,
-	      REAL4Vector       signal
+	      REAL4Vector       signalvec
 	      );
 
 void DumpTFImage(
