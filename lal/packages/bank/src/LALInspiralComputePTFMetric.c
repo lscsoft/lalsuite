@@ -728,7 +728,7 @@ INT4 XLALInspiralComputePTFWDeriv (
 {
   /* XLAL error handling */
   INT4 errcode = XLAL_SUCCESS;
-  static const char* func = "XLALInspiralComputePTFWDeriv";
+  /*static const char* func = "XLALInspiralComputePTFWDeriv";*/
 
   /* number of points in a time-domain segment */
   UINT4 N = (Wderiv->length - 1) * 2;
