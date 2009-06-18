@@ -111,6 +111,9 @@ LALFree
 #include <lal/MatrixUtils.h>
 #include <lal/FindChirpPTF.h>
 
+/* macro to "use" unused function parameters */
+#define UNUSED(expr) do { (void)(expr); } while(0)
+
 /* <lalVerbatim file="XLALInspiralComputePTFIntrinsicMetricCP">  */
 INT4 XLALInspiralComputePTFIntrinsicMetric (
     InspiralMetric			   *metric,
@@ -556,6 +559,11 @@ INT4 XLALInspiralComputePTFFullMetric (
     )
 /* </lalVerbatim> */
 {
+  /* metric, psd, and params are unused in this function */
+  UNUSED(metric);
+  UNUSED(psd);
+  UNUSED(params);
+
   return XLAL_SUCCESS;
 }
 
@@ -1007,6 +1015,10 @@ INT4 XLALInspiralComputePTFQDeriv (
     )
 /* </lalVerbatim> */
 {
+  /* Qderiv and params are unused in this function */
+  UNUSED(Qderiv);
+  UNUSED(params);
+
   return XLAL_SUCCESS;
 }
 
