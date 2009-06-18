@@ -33,6 +33,9 @@
 #include <lal/FrameCache.h>
 #include <lal/LALStdlib.h>
 
+/* macro to "use" unused function parameters */
+#define UNUSED(expr) do { (void)(expr); } while(0)
+
 NRCSID (TSDATAC,"$Id$");
 
 /*
@@ -68,7 +71,7 @@ static REAL4 localGauss2(REAL4 lineWidth)
 }
 
 
-
+#if 0
 /*
  *Extra diagnostic code
  */
@@ -124,6 +127,7 @@ static void print_real4tseries(const REAL4TimeSeries *fseries, const char *file)
 /*
  * End diagnostic code
  */
+#endif
 
 void
 LALTracksearchFindLambdaMean(
@@ -499,6 +503,9 @@ LALTrackSearchWhitenREAL4TimeSeries(
   INITSTATUS(status,"LALTrackSearchWhitenREAL4TimeSeries",TSDATAC);
   ATTATCHSTATUSPTR (status);
 
+  /* params is unused in this function */
+  UNUSED(params);
+
   /*Setup FFT Plans*/
   planLength=signalvec->data->length;
   LALCreateForwardREAL4FFTPlan(status->statusPtr,
@@ -530,7 +537,9 @@ LALTrackSearchWhitenREAL4TimeSeries(
    * Diagnostic code
    * Temporary
    */
+#if 0
   print_complex8fseries(signalFFT,"dataFFTComplex.txt");
+#endif
   /*
    * Perform whitening
    * Look at Tech Doc T010095-00  Sec3
@@ -564,10 +573,12 @@ LALTrackSearchWhitenREAL4TimeSeries(
 		  &(signalFFT->sampleUnits),
 		  &tmpUnitPair);
   CHECKSTATUSPTR (status);
+#if 0
   /*
    * Diagnostic code
    */
   print_complex8fseries(signalFFT,"dataFFTComplexPOST.txt");
+#endif
 
   /*
    * Transform back to time domain
@@ -584,10 +595,12 @@ LALTrackSearchWhitenREAL4TimeSeries(
   for (i=0;i<signalvec->data->length;i++)
     signalvec->data->data[i]= signalvec->data->data[i]/signalvec->data->length;
 
+#if 0
   /*
    * Diagnostic code
    */
   print_real4tseries(signalvec,"dataSegi.txt");
+#endif
 
   /*
    *Release the temporary memory
