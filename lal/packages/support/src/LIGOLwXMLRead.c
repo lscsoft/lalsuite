@@ -4165,7 +4165,7 @@ XLALReadMultiInspiralTriggerFile (
 {
   const char *func = "XLALReadMultiInspiralTriggerFile";
   INT4 numFileTriggers = 0;
-  INT4 haveSummValue = 0;
+  /*INT4 haveSummValue = 0;*/
   MultiInspiralTable   *inputData = NULL;
   SearchSummaryTable   *inputSummary = NULL;
   SearchSummaryTable   *thisSearchSumm = NULL;
