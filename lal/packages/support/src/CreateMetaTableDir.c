@@ -354,8 +354,6 @@ LALCreateMetaTableDir(
     )
 /* </lalVerbatim> */
 {
-  INT4 i;
-
   INITSTATUS( status, "LALCreateMetaTableDir", CREATEMETATABLEDIRC );
   ATTATCHSTATUSPTR (status);
 
