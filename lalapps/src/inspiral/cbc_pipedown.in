@@ -1,0 +1,413 @@
+#!/usr/bin/env @PYTHONPROG@
+
+usage = \
+"""
+Program to construct post-processing dag.
+"""
+
+__author__ = 'Collin Capano <cdcapano@physics.syr.edu>'
+__date__ = '$Date$'
+__version__ = '$Revision$'[11:-2]
+
+##############################################################################
+# import standard modules and append the lalapps prefix to the python path
+import os, sys, re
+import ConfigParser
+from optparse import OptionParser
+import tempfile
+sys.path.append('@PYTHONLIBDIR@')
+
+##############################################################################
+# import the modules we need to build the pipeline
+from glue import pipeline
+from glue import lal
+from glue.ligolw import lsctables
+import inspiral
+
+##############################################################################
+#
+#  MAIN PROGRAM
+#
+##############################################################################
+
+##############################################################################
+# parse command-line arguments
+parser = OptionParser( version = "", usage = usage )
+
+parser.add_option( "-u", "--user-tag", action = "store", type = "string",
+  default = None, metavar = " USERTAG",
+  help =
+    "Tag the jobs with USERTAG (overrides value in ini file)."
+  )
+parser.add_option( "", "--hipe-cache", action = "store", type = "string",
+  default = None,
+  help =
+    "Hipe cache containing THINCA_SECOND files."
+  )
+parser.add_option( "", "--config-file", action = "store", type = "string",
+  default = None,
+  help =
+    "ini file to use."
+  )
+parser.add_option( "", "--log-path", action = "store", type = "string",
+  default = None,
+  help =
+    "Directory to write condor log file and perform SQLite operation in. " +
+    "Should be a local directory."
+  )
+parser.add_option( "", "--gps-start-time", action = "store", type = "string",
+  default = None,
+  help =
+    "GPS start time of the ihope run that generated the hipe-cache file."
+  )
+parser.add_option( "", "--gps-end-time", action = "store", type = "string",
+  default = None,
+  help =
+    "GPS end time of the ihope run that generated the hipe-cache file."
+  )
+parser.add_option( "", "--simulation", action = "store", type = "string",
+  default = False,
+  help =
+    "If this is an injection run, set the name of the injection file used."
+  )
+parser.add_option( "", "--plot-playground-only", action = "store_true",
+  default = False,
+  help =
+    "Turn on if want plots of playground data only."
+  )
+
+(options, args) = parser.parse_args()
+
+##############################################################################
+# Sanity check of input arguments
+if not options.hipe_cache:
+  raise ValueError, "A hipe-cache file is required."
+if not options.config_file:
+  raise ValueError, "A config-file is required."
+if not options.log_path:
+  raise ValueError, "A log-path is required."
+
+##############################################################################
+# parse the ini file and initialize
+cp = ConfigParser.ConfigParser()
+cp.read(options.config_file)
+
+experiment_start = options.gps_start_time
+experiment_duration = str(int(options.gps_end_time) - int(options.gps_start_time))
+
+if options.user_tag:
+  user_tag = options.user_tag.strip()
+else:
+  user_tag = ''
+
+# if logs directory not present, create it
+try:
+  os.mkdir('logs/')
+except:
+  pass
+
+##############################################################################
+# create a log file that the Condor jobs will write to
+basename = re.sub(r'\.ini', r'', options.config_file)
+if user_tag:
+  basename = '.'.join([ basename, user_tag ])
+  
+tempfile.tempdir = options.log_path
+tempfile.template = '.'.join([ basename, 'dag.log.' ])
+logfile = tempfile.mktemp()
+fh = open( logfile, "w" )
+fh.close()
+
+##############################################################################
+# create the DAG writing the log to the specified directory
+dag = pipeline.CondorDAG(logfile)
+dag.set_dag_file(basename)
+
+# write the jobs that will be run
+t2c_job = inspiral.ThincaToCoincJob(cp)
+tosql_job = pipeline.LigolwSqliteJob(cp)
+dbsimplify_job = inspiral.DBSimplifyJob(cp)
+cluster_job = inspiral.ClusterCoincsJob(cp)
+cfar_job = inspiral.CFarJob(cp)
+if options.simulation:
+  dbaddinj_job = inspiral.DBAddInjJob(cp)
+else:
+  plotslides_job = inspiral.PlotSlidesJob(cp)
+  plotifar_job = inspiral.PlotIfarJob(cp)
+
+# set better submit file names than the default
+subsuffix = 'sub'
+t2c_job.set_sub_file( '.'.join([ basename, 'thinca_to_coinc', subsuffix ]) )
+tosql_job.set_sub_file( '.'.join([ basename, 'ligolw_sqlite', subsuffix ]) )
+dbsimplify_job.set_sub_file( '.'.join([ basename, 'dbsimplify', subsuffix ]) )
+cluster_job.set_sub_file( '.'.join([ basename, 'cluster_coincs', subsuffix ]) )
+cfar_job.set_sub_file( '.'.join([ basename, 'cfar', subsuffix ]) )
+if options.simulation:
+  dbaddinj_job.set_sub_file ( '.'.join([ basename, 'dbaddinj', subsuffix ]) )
+else:
+  plotslides_job.set_sub_file( '.'.join([ basename, 'plotslides', subsuffix ]) )
+  plotifar_job.set_sub_file( '.'.join([ basename, 'plotifar', subsuffix ]) )
+
+# open the hipe cache file 
+fp = open( options.hipe_cache, 'r' )
+hipe_cache = lal.Cache().fromfile(fp)
+fp.close()
+
+##############################################################################
+# Step 1: Setup thinca_to_coinc nodes
+
+print "Setting up thinca_to_coinc nodes..."
+
+# set job options
+t2c_job.set_experiment_start_time(options.gps_start_time)
+t2c_job.set_experiment_end_time(options.gps_end_time)
+if options.simulation:
+  t2c_job.set_simulation()
+
+# sieve the hipe cache for THINCA_SECOND files
+file_sieve = 'THINCA_SECOND*' + user_tag
+thinca_cache = hipe_cache.sieve( description = file_sieve )
+
+# check that there are files to run on
+if len(thinca_cache) == 0:
+  raise ValueError, "no %s files found in hipe-cache. Check user-tag?" % file_sieve
+
+# get distinct on_instruments in the cache
+distinct_instrument_sets = set([ entry.observatory for entry in thinca_cache ])
+
+t2c_output = []
+cache_start_time = int(experiment_start)
+for on_instruments in distinct_instrument_sets:
+  instrument_cache = thinca_cache.sieve( ifos = on_instruments, exact_match = True )
+  instrument_cache.sort()
+  this_thinca_url_list = []
+  for entry_num, entry in enumerate(instrument_cache):
+    if not this_thinca_url_list:
+      # first entry; store type for cache naming
+      cache_type = entry.description
+    # Add the zero-lag thinca url to the url list
+    this_thinca_url_list.append(entry.url)
+    # check if this is simulation run; if not, add slide file
+    if not options.simulation:
+      # get the name of the slide file
+      slide_url = re.sub('THINCA', 'THINCA_SLIDE', entry.url)
+      this_thinca_url_list.append(slide_url)
+    # if n*20th entry or last remainder, write to cache
+    if entry_num % 19 == 0 or entry_num == len(instrument_cache) - 1:
+      # set duration to be end of this entry - start of first entry in cache
+      cache_duration = entry.segment[1].seconds - cache_start_time
+      this_cache = lal.Cache().from_urls( this_thinca_url_list )
+      this_cache_name = '.'.join([ 
+        '-'.join([on_instruments, cache_type, str(cache_start_time), str(cache_duration)]),
+        'cache' ])
+      this_cache_file = open( this_cache_name, 'w' )
+      this_cache.tofile(this_cache_file)
+      this_cache_file.close()
+      # write node
+      this_t2c_node = inspiral.ThincaToCoincNode(t2c_job)
+      input_instruments = lsctables.ifos_from_instrument_set(
+        lsctables.instrument_set_from_ifos( on_instruments ) )
+      this_t2c_node.set_instruments(input_instruments)
+      this_t2c_node.set_input_cache(this_cache_name)
+      dag.add_node(this_t2c_node)
+      # add output files to t2c_output
+      t2c_output += this_t2c_node.get_output_from_cache()
+      # set end-time of last entry to be start time of next cache
+      cache_start_time = entry.segment[1].seconds
+      this_thinca_url_list = []
+    
+# write output cache
+output_cache = lal.Cache().from_urls(t2c_output)
+# create cache name from what's in the output cache
+all_ifos = set()
+for on_instruments in distinct_instrument_sets:
+  all_ifos |= lsctables.instrument_set_from_ifos(on_instruments)
+all_ifos = ''.join(sorted(all_ifos))
+cache_type = output_cache[0].description
+t2c_output_cache = '.'.join([ 
+  '-'.join([ all_ifos, cache_type, experiment_start, experiment_duration ]), 
+  'cache' ])
+fp = open( t2c_output_cache, 'w' )
+output_cache.tofile( fp )
+fp.close()
+
+##############################################################################
+# Step 2a: Setup a LigolwSqliteNode for putting thinca_to_coincs and veto file
+# into a sql db
+
+print "Setting up node to put thinca_to_coinc files into a SQLite database..."
+
+# set node options
+t2c2sql_node = pipeline.LigolwSqliteNode( tosql_job )
+t2c2sql_node.set_input_cache( t2c_output_cache )
+t2c2sql_node.set_tmp_space( options.log_path )
+# database name has form: 
+# all_ifos-CBC_TRIGDB_RAW-USER_TAG-cache_start-cache_duration.sql
+db_type = 'CBC_TRIGDB_RAW'
+if user_tag:
+  db_type = '-'.join([ db_type, user_tag ])
+raw_result_db = '.'.join([
+  '-'.join([ all_ifos, db_type, experiment_start, experiment_duration ]),
+  'sql' ])
+t2c2sql_node.set_database( raw_result_db )
+
+# set parent nodes to be all the thinca_to_coinc nodes
+[t2c2sql_node.add_parent( node ) for node in dag.get_nodes() \
+  if isinstance(node, inspiral.ThincaToCoincNode)]
+    
+dag.add_node( t2c2sql_node )
+
+##############################################################################
+# Step 2b: Setup a LigolwSqliteNode for putting the veto-segments file 
+# into the raw database
+
+# cache the veto file
+veto_seg_file = cp.get('thinca_to_coinc', 'veto-segments')
+veto_cache = lal.Cache().from_urls( [veto_seg_file] )
+veto_cache_file = re.sub('.xml', '.cache', os.path.basename(veto_seg_file))
+fp = open( veto_cache_file, 'w' )
+veto_cache.tofile( fp )
+fp.close()
+
+# write node to add the veto file
+veto2sql_node = pipeline.LigolwSqliteNode( tosql_job )
+veto2sql_node.set_input_cache( veto_cache_file )
+veto2sql_node.set_tmp_space( options.log_path )
+veto2sql_node.set_database( raw_result_db )
+
+# set parent node
+veto2sql_node.add_parent( t2c2sql_node )
+
+dag.add_node( veto2sql_node )
+
+##############################################################################
+# Step 3: Setup a DBSimplifyNode to clean up the output of the t2c2sql_node 
+
+print "Setting up dbsimplify node to clean the database..."
+
+# set node options
+dbsimplify_node = inspiral.DBSimplifyNode( dbsimplify_job )
+dbsimplify_node.set_tmp_space( options.log_path )
+dbsimplify_node.set_database( raw_result_db )
+
+# set parent node
+dbsimplify_node.add_parent( veto2sql_node )
+if options.simulation:
+  dbsimplify_node.add_parent( inj2sql_node )
+
+dag.add_node( dbsimplify_node )
+
+
+##############################################################################
+# Step 3c: If simulation, add injection file.
+
+if options.simulation:
+  print "Setting up dbaddinj node to add the injection file..."
+
+  # set node options
+  dbaddinj_node = inspiral.DBAddInjNode( dbaddinj_job )
+  dbaddinj_node.set_tmp_space( options.log_path )
+  dbaddinj_node.set_database( raw_result_db )
+  dbaddinj_node.set_injection_file( options.simulation )
+
+  dbaddinj_node.add_parent( dbsimplify_node )
+
+  dag.add_node( dbaddinj_node )
+
+##############################################################################
+# Step 4: Setup a ClusterCoincsNode to cluster the output of dbsimplify_node
+
+print "Setting up cluster node to cluster coincs in the database..."
+
+# set node options
+cluster_node = inspiral.ClusterCoincsNode( cluster_job )
+cluster_node.set_tmp_space( options.log_path )
+cluster_node.set_input( raw_result_db )
+# output database name has form:
+# all_ifos-CBC_TRIGDB_CLUSTERED-USER_TAG-gps_start_time-durations.sql
+db_type = 'CBC_TRIGDB_CLUSTERED'
+if user_tag:
+  db_type = '-'.join([ db_type, user_tag ])
+result_db = '.'.join([
+  '-'.join([ all_ifos, db_type, experiment_start, experiment_duration ]),
+  'sql' ]) 
+cluster_node.set_output(result_db)
+
+# set parent node
+cluster_node.add_parent( dbsimplify_node )
+if options.simulation:
+  cluster_node.add_parent( dbaddinj_node )
+
+dag.add_node( cluster_node )
+
+##############################################################################
+# Step 5: Setup a CfarNode to compute the uncombined and combined
+# false alarm rates
+
+print "Setting up cfar node to compute false alarm rates..."
+
+# set node options: output database is same as input
+cfar_node = inspiral.CFarNode( cfar_job )
+cfar_node.set_tmp_space( options.log_path )
+cfar_node.set_input( result_db )
+cfar_node.set_output( result_db )
+
+# set parent node
+cfar_node.add_parent( cluster_node )
+
+dag.add_node( cfar_node )
+
+##############################################################################
+# Plotting: Generate all result plots
+
+print "Setting up plotting jobs..."
+
+if not options.simulation:
+  print "\tcreating plotslides node..."
+  # set plotslides_job options
+  if options.plot_playground_only:
+    plotslides_job.set_plot_playground_only()
+  # Write plotslides node
+  plotslides_node = inspiral.PlotSlidesNode( plotslides_job )
+  plotslides_node.set_tmp_space( options.log_path )
+  plotslides_node.set_input( result_db )
+  if user_tag:
+    plotslides_node.set_user_tag( user_tag )
+
+  # set parent node
+  plotslides_node.add_parent( cfar_node )
+
+  dag.add_node( plotslides_node )
+
+  # Write plotifar nodes for different datatypes
+  print "\tcreating plotifar node for datatypes:"
+  for datatype in ['all_data', 'playground', 'exclude_play']: 
+    # only create nodes for non-playground if options.plot-playground-only not set
+    if options.plot_playground_only  and datatype != 'playground':
+      continue
+    print "\t\t%s..." % datatype
+    plotifar_node = inspiral.PlotIfarNode( plotifar_job )
+    plotifar_node.set_tmp_space( options.log_path )
+    plotifar_node.set_input( result_db )
+    plotifar_node.set_datatype( datatype )
+    if user_tag:
+      plotifar_node.set_user_tag( user_tag )
+    
+    # set parent node
+    plotifar_node.add_parent( cfar_node )
+
+    dag.add_node( plotifar_node )
+
+
+##############################################################################
+# Final Step: Write the DAG
+
+print "Writing DAG and sub files..."
+
+dag.write_sub_files()
+dag.write_dag()
+
+print "Finished!"
+print "Now run:\n\tcondor_submit_dag %s" % os.path.basename(dag.get_dag_file())
+sys.exit(0)
+
