@@ -166,7 +166,7 @@ lalapps_cbc_pipedown: $(srcdir)/cbc_pipedown.in python_config.sed
 	chmod +x lalapps_cbc_pipedown
 
 
-pkgdata_DATA = BNSMasses.dat inspsrcs100Mpc.complete inspsrcs100Mpc.errors inspiral_pipe.ini inspiral_hipe.ini online.ini online_inject_bbh.ini ihope.ini followup_pipe.ini plot_hipe.ini write_ihope_page.ini write_ihope_style.css
+pkgdata_DATA = BNSMasses.dat inspsrcs100Mpc.complete inspsrcs100Mpc.errors inspiral_pipe.ini inspiral_hipe.ini online.ini online_inject_bbh.ini ihope.ini cbc_pipedown.ini followup_pipe.ini plot_hipe.ini write_ihope_page.ini write_ihope_style.css
 EXTRA_DIST = $(INSPIRALSRC) $(TMPLTBANKSRC) \
              $(SIRESRC) $(COIRESRC) $(SIVASRC) $(MINJSRC) \
              $(INCASRC) $(COHERESRC) $(INSPINJSRC) \
