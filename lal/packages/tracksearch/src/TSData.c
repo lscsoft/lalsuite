@@ -143,7 +143,7 @@ LALTracksearchFindLambdaMean(
   REAL8 upperThresh=0;/* Auto discovered upper curvatuve threshold */
   REAL8 lowerThresh=0;/* Value set from upperThresh */
   REAL8 myGaussian=0;
-  REAL8 myFloor=10e20;/*Lowest value in TFR */
+  /*REAL8 myFloor=10e20; Lowest value in TFR */
   INITSTATUS(status,"LALTracksearchFindLambdaMean", TSDATAC);
   ATTATCHSTATUSPTR (status);
 
