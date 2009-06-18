@@ -774,7 +774,7 @@ INT4 XLALInspiralComputePTFWDeriv (
   UINT4 iter = 1;
   UINT4 maxiter = 20;
   REAL8 reldelta = initdelta;
-  REAL8 absdelta;
+  REAL8 absdelta = 0;
   REAL8 relderivdiff = 1.0;
   REAL8 relderivdifflist[20];
   REAL8 invpsd;
