@@ -114,6 +114,9 @@ NRCSID (DRIVEHOUGHC, "$Id$");
 
 #define rint(x) floor((x)+0.5)
 
+/* macro to "use" unused function parameters */
+#define UNUSED(expr) do { (void)(expr); } while(0)
+
 /*
  * The functions that make up the guts of this module
  */
@@ -943,7 +946,11 @@ void LALHOUGHComputeMultiIFOAMWeights  (LALStatus          *status,
 					REAL8              delta)
 { /*   *********************************************  </lalVerbatim> */
 
-   /* --------------------------------------------- */
+  /* alpha and delta are unused in this function */
+  UNUSED(alpha);
+  UNUSED(delta);
+
+  /* --------------------------------------------- */
   INITSTATUS (status, "LALHOUGHComputeAMWeights", DRIVEHOUGHC);
   ATTATCHSTATUSPTR (status);
 
