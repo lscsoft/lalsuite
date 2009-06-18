@@ -249,6 +249,13 @@ if user_tag:
 raw_result_db = '.'.join([
   '-'.join([ all_ifos, db_type, experiment_start, experiment_duration ]),
   'sql' ])
+# check to make sure the database doesn't already exist
+if os.path.exists( raw_result_db ):
+  raise ValueError, "Raw result database %s already exists. " % raw_result_db + \
+  "Either rm or mv it, then re-run. (If it exists, you may also want to " + \
+  "mv the CLUSTERED database so it doesn't get overwritten by cluster_coincs.)" \
+  
+
 t2c2sql_node.set_database( raw_result_db )
 
 # set parent nodes to be all the thinca_to_coinc nodes
@@ -292,8 +299,6 @@ dbsimplify_node.set_database( raw_result_db )
 
 # set parent node
 dbsimplify_node.add_parent( veto2sql_node )
-if options.simulation:
-  dbsimplify_node.add_parent( inj2sql_node )
 
 dag.add_node( dbsimplify_node )
 
