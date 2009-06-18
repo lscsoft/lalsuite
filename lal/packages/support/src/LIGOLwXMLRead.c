@@ -3488,8 +3488,10 @@ XLALReadSummValueFile (
     )
 /* </lalVerbatim> */
 {
+#if 0
   const char *func = "XLALReadSummValueFile";
   INT4 numFileTriggers = 0;
+#endif
   INT4 haveSummValue = 0;
   SummValueTable  *thisSummValue = NULL;
   SummValueTable  *inputSummValue = NULL;
