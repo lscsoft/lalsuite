@@ -41,6 +41,9 @@ class Summary(object):
     self.playground_ifar = {}
     self.nonplayground_ifar = {}
     self.background_ifar = {}
+    self.playground_snr = {}
+    self.nonplayground_snr = {}
+    self.background_snr = {}
 
   def update_from_db(self, filename, live_time_program = "thinca", vetoes_name = "vetoes", verbose = False):
     working_filename = dbtables.get_connection_filename(filename, tmp_path = None, verbose = verbose)
@@ -64,6 +67,9 @@ class Summary(object):
       self.background_ifar.setdefault(on_instruments, [])
       self.playground_ifar.setdefault(on_instruments, [])
       self.nonplayground_ifar.setdefault(on_instruments, [])
+      self.background_snr.setdefault(on_instruments, [])
+      self.playground_snr.setdefault(on_instruments, [])
+      self.nonplayground_snr.setdefault(on_instruments, [])
     if verbose:
       print >>sys.stderr
 
@@ -97,9 +103,10 @@ class Summary(object):
     if verbose:
       print >>sys.stderr, "collecting false alarm rate ranks ..."
 
-    for ifar, end_time, end_time_ns, on_instruments, is_background in connection.cursor().execute("""
+    for ifar, snr, end_time, end_time_ns, on_instruments, is_background in connection.cursor().execute("""
 SELECT
   1.0 / coinc_inspiral.combined_far,
+  coinc_inspiral.snr,
   coinc_inspiral.end_time,
   coinc_inspiral.end_time_ns,
   coinc_event.instruments,
@@ -121,10 +128,13 @@ FROM
       on_instruments = frozenset(lsctables.instrument_set_from_ifos(on_instruments))
       if is_background:
         self.background_ifar[on_instruments].append(ifar)
+        self.background_snr[on_instruments].append(snr)
       elif lsctables.LIGOTimeGPS(end_time, end_time_ns) in playground_segs:
         self.playground_ifar[on_instruments].append(ifar)
+        self.playground_snr[on_instruments].append(snr)
       else:
         self.nonplayground_ifar[on_instruments].append(ifar)
+        self.nonplayground_snr[on_instruments].append(snr)
 
     if verbose:
       print >>sys.stderr, "done"
@@ -146,6 +156,9 @@ for on_instruments in summary.background_livetime:
   summary.background_ifar[on_instruments].sort(reverse = True)
   summary.playground_ifar[on_instruments].sort(reverse = True)
   summary.nonplayground_ifar[on_instruments].sort(reverse = True)
+  summary.background_snr[on_instruments].sort(reverse = True)
+  summary.playground_snr[on_instruments].sort(reverse = True)
+  summary.nonplayground_snr[on_instruments].sort(reverse = True)
 
   if verbose:
     print >>sys.stderr, "\t%f s background livetime, %f s non-playground zero-lag livetime (%f to 1)" % (summary.background_livetime[on_instruments], summary.nonplayground_livetime[on_instruments], summary.background_livetime[on_instruments] / summary.nonplayground_livetime[on_instruments])
@@ -154,6 +167,7 @@ for on_instruments in summary.background_livetime:
       print >>sys.stderr, "\tno events, skipping"
     continue
 
+  ### NON playground IFAR
   fig = figure.Figure()
   FigureCanvas(fig)
   axes = fig.gca()
@@ -181,10 +195,119 @@ for on_instruments in summary.background_livetime:
   axes.fill(x, sigma_region(N, 1.0).clip(minN, maxN), alpha=0.25, facecolor=[0.25, 0.25, 0.25])
   axes.set_xlim(minX, maxX)
   axes.set_ylim(minN, maxN)
-  axes.set_title('Zero-lag Events Observed Compared to Background')
+  axes.set_title('Non-playground Zero-lag Events Observed Compared to Background')
   axes.set_xlabel('IFAR')
   axes.set_ylabel(r'Number of Events')
   axes.legend(("zero lag", "expected background, N", r"$\pm 3\sqrt{N}$", r"$\pm 2\sqrt{N}$","$\pm\sqrt{N}$"), loc="lower left")
-  fig.savefig(sys.argv[1]+'_'+''.join(sorted(on_instruments))+"_far.png")
+  fig.savefig(sys.argv[1]+'_non_playground'+''.join(sorted(on_instruments))+"_far.png")
   if verbose:
     print >>sys.stderr
+
+  ### Playground IFAR
+  fig = figure.Figure()
+  FigureCanvas(fig)
+  axes = fig.gca()
+  axes.loglog()
+  N = numpy.arange(len(summary.playground_ifar[on_instruments]), dtype = "double") + 1.0
+  if verbose:
+    print >>sys.stderr, "\t%d playground zero-lag events" % max(N)
+  x = numpy.array(summary.playground_ifar[on_instruments], dtype = "double")
+  axes.plot(x.repeat(2)[1:], N.repeat(2)[:-1], 'k', linewidth=2)
+  minX, maxX = min(x), max(x)
+  minN, maxN = min(N), max(N)
+  N = numpy.arange(len(summary.background_ifar[on_instruments]), dtype = "double") + 1.0
+  if verbose:
+    print >>sys.stderr, "\t%d background events" % max(N)
+  N *= summary.playground_livetime[on_instruments] / summary.background_livetime[on_instruments]
+  x = numpy.array(summary.background_ifar[on_instruments], dtype = "double")
+  axes.plot(x.repeat(2)[1:], N.repeat(2)[:-1], 'k--', linewidth=1)
+  minX, maxX = min(minX, min(x)), max(maxX, max(x))
+  minN, maxN = min(minN, min(N)), max(maxN, max(N))
+  x = x.repeat(2)[1:]
+  x = numpy.concatenate((x, x[::-1]))
+  N = N.repeat(2)[:-1]
+  axes.fill(x, sigma_region(N, 3.0).clip(minN, maxN), alpha=0.25, facecolor=[0.75, 0.75, 0.75])
+  axes.fill(x, sigma_region(N, 2.0).clip(minN, maxN), alpha=0.25, facecolor=[0.5, 0.5, 0.5])
+  axes.fill(x, sigma_region(N, 1.0).clip(minN, maxN), alpha=0.25, facecolor=[0.25, 0.25, 0.25])
+  axes.set_xlim(minX, maxX)
+  axes.set_ylim(minN, maxN)
+  axes.set_title('Playground Zero-lag Events Observed Compared to Background')
+  axes.set_xlabel('IFAR')
+  axes.set_ylabel(r'Number of Events')
+  axes.legend(("zero lag", "expected background, N", r"$\pm 3\sqrt{N}$", r"$\pm 2\sqrt{N}$","$\pm\sqrt{N}$"), loc="lower left")
+  fig.savefig(sys.argv[1]+'_playground_'+''.join(sorted(on_instruments))+"_far.png")
+  if verbose:
+    print >>sys.stderr
+
+  ### NON playground effective SNR
+  fig = figure.Figure()
+  FigureCanvas(fig)
+  axes = fig.gca()
+  axes.loglog()
+  N = numpy.arange(len(summary.nonplayground_snr[on_instruments]), dtype = "double") + 1.0
+  if verbose:
+    print >>sys.stderr, "\t%d non-playground zero-lag events" % max(N)
+  x = numpy.array(summary.nonplayground_snr[on_instruments], dtype = "double")
+  axes.plot(x.repeat(2)[1:], N.repeat(2)[:-1], 'k', linewidth=2)
+  minX, maxX = min(x), max(x)
+  minN, maxN = min(N), max(N)
+  N = numpy.arange(len(summary.background_snr[on_instruments]), dtype = "double") + 1.0
+  if verbose:
+    print >>sys.stderr, "\t%d background events" % max(N)
+  N *= summary.nonplayground_livetime[on_instruments] / summary.background_livetime[on_instruments]
+  x = numpy.array(summary.background_snr[on_instruments], dtype = "double")
+  axes.plot(x.repeat(2)[1:], N.repeat(2)[:-1], 'k--', linewidth=1)
+  minX, maxX = min(minX, min(x)), max(maxX, max(x))
+  minN, maxN = min(minN, min(N)), max(maxN, max(N))
+  x = x.repeat(2)[1:]
+  x = numpy.concatenate((x, x[::-1]))
+  N = N.repeat(2)[:-1]
+  axes.fill(x, sigma_region(N, 3.0).clip(minN, maxN), alpha=0.25, facecolor=[0.75, 0.75, 0.75])
+  axes.fill(x, sigma_region(N, 2.0).clip(minN, maxN), alpha=0.25, facecolor=[0.5, 0.5, 0.5])
+  axes.fill(x, sigma_region(N, 1.0).clip(minN, maxN), alpha=0.25, facecolor=[0.25, 0.25, 0.25])
+  axes.set_xlim(minX, maxX)
+  axes.set_ylim(minN, maxN)
+  axes.set_title('Non-playground Zero-lag Events Observed Compared to Background')
+  axes.set_xlabel('Effective SNR')
+  axes.set_ylabel(r'Number of Events')
+  axes.legend(("zero lag", "expected background, N", r"$\pm 3\sqrt{N}$", r"$\pm 2\sqrt{N}$","$\pm\sqrt{N}$"), loc="lower left")
+  fig.savefig(sys.argv[1]+'_non_playground'+''.join(sorted(on_instruments))+"_effsnr.png")
+  if verbose:
+    print >>sys.stderr
+
+  ### Playground effective snr
+  fig = figure.Figure()
+  FigureCanvas(fig)
+  axes = fig.gca()
+  axes.loglog()
+  N = numpy.arange(len(summary.playground_snr[on_instruments]), dtype = "double") + 1.0
+  if verbose:
+    print >>sys.stderr, "\t%d playground zero-lag events" % max(N)
+  x = numpy.array(summary.playground_snr[on_instruments], dtype = "double")
+  axes.plot(x.repeat(2)[1:], N.repeat(2)[:-1], 'k', linewidth=2)
+  minX, maxX = min(x), max(x)
+  minN, maxN = min(N), max(N)
+  N = numpy.arange(len(summary.background_snr[on_instruments]), dtype = "double") + 1.0
+  if verbose:
+    print >>sys.stderr, "\t%d background events" % max(N)
+  N *= summary.playground_livetime[on_instruments] / summary.background_livetime[on_instruments]
+  x = numpy.array(summary.background_snr[on_instruments], dtype = "double")
+  axes.plot(x.repeat(2)[1:], N.repeat(2)[:-1], 'k--', linewidth=1)
+  minX, maxX = min(minX, min(x)), max(maxX, max(x))
+  minN, maxN = min(minN, min(N)), max(maxN, max(N))
+  x = x.repeat(2)[1:]
+  x = numpy.concatenate((x, x[::-1]))
+  N = N.repeat(2)[:-1]
+  axes.fill(x, sigma_region(N, 3.0).clip(minN, maxN), alpha=0.25, facecolor=[0.75, 0.75, 0.75])
+  axes.fill(x, sigma_region(N, 2.0).clip(minN, maxN), alpha=0.25, facecolor=[0.5, 0.5, 0.5])
+  axes.fill(x, sigma_region(N, 1.0).clip(minN, maxN), alpha=0.25, facecolor=[0.25, 0.25, 0.25])
+  axes.set_xlim(minX, maxX)
+  axes.set_ylim(minN, maxN)
+  axes.set_title('Playground Zero-lag Events Observed Compared to Background')
+  axes.set_xlabel('Effective SNR')
+  axes.set_ylabel(r'Number of Events')
+  axes.legend(("zero lag", "expected background, N", r"$\pm 3\sqrt{N}$", r"$\pm 2\sqrt{N}$","$\pm\sqrt{N}$"), loc="lower left")
+  fig.savefig(sys.argv[1]+'_playground_'+''.join(sorted(on_instruments))+"_effsnr.png")
+  if verbose:
+    print >>sys.stderr
+

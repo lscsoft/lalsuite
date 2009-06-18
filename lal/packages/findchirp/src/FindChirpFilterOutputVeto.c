@@ -144,8 +144,8 @@ LALFindChirpFilterOutputVeto(
   UINT4		        eventIndex;         /* store the event as an index */
   UINT4		        windowIndex;        /* r^2 veto window index */
   UINT4                 timeaboversqThresh; /* time above the veto threshold */
-  REAL4                 rsqvetoWindow;      /* the r^2 veto window */
-  REAL4		        rsqvetoThresh;      /* the r^2 veto threshold */
+  /*REAL4                 rsqvetoWindow;       the r^2 veto window */
+  /*REAL4		        rsqvetoThresh;       the r^2 veto threshold */
   SnglInspiralTable    *event = NULL;
   SnglInspiralTable    *lastevent = NULL;
   FindChirpSegment     *segment;

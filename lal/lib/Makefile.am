@@ -33,7 +33,6 @@ liblal_la_DEPENDENCIES = \
 	$(top_builddir)/packages/tracksearch/src/libtracksearch.la \
 	$(top_builddir)/packages/tfclusters/src/libtfclusters.la \
 	$(top_builddir)/packages/slopefilters/src/libslopefilters.la \
-	$(top_builddir)/packages/block/src/libblock.la \
 	$(top_builddir)/packages/timefreq/src/libtimefreq.la
 liblal_la_LIBADD = $(liblal_la_DEPENDENCIES) @LALLIBADD@
 bin_PROGRAMS = lal-version

@@ -497,7 +497,6 @@ static void parse_command_line(int argc, char **argv, struct options_t *options)
 /*void swap4(int n,char *here);
   int readZM(const char* fname,  float **time,  float **amplitude); 
   int readOtt(const char* fname,  float **time,  float **amplitude);*/ 
-  int snprintf(char *str,size_t size,const char *format, ...);
 
 int main(int argc, char **argv)
 {

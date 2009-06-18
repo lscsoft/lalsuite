@@ -163,7 +163,7 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
 
   REAL8 dt=0.; /* binary pulsar deltaT */
   REAL8 x, xdot;	/* x = asini/c */
-  REAL8 w;  /* longitude of periastron */
+  REAL8 w=0;  /* longitude of periastron */
   REAL8 e, edot;  /* eccentricity */
   REAL8 eps1, eps2;
   REAL8 eps1dot, eps2dot;
@@ -173,7 +173,7 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
   REAL8 T0, Tasc, tb=0.; /* time parameters */
 
   REAL8 s, r; /* Shapiro shape and range params */
-  REAL8 gamma; /* time dilation and grav redshift */
+  REAL8 lal_gamma; /* time dilation and grav redshift */
   REAL8 dr, dth;
 
   REAL8 a0, b0;	/* abberation parameters */
@@ -227,7 +227,7 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
   xdot = params->xdot*1.0e-12;
   xpbdot = params->xpbdot*1.0e-12;
 
-  gamma = params->gamma;
+  lal_gamma = params->gamma;
   s = params->s;
   dr = params->dr;
   dth = params->dth*1.0e-6;
@@ -351,18 +351,18 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
       /**********************************************************/
       if( strstr(model, "BTX") != NULL ){
         /* dt += (x*sin(w)*(cos(u)-e) + (x*cos(w)*sqrt(1.0-e*e) +
-          gamma)*sin(u))*(1.0 - params->fb[0]*(x*cos(w)*sqrt(1.0 -
+          lal_gamma)*sin(u))*(1.0 - params->fb[0]*(x*cos(w)*sqrt(1.0 -
           e*e)*cos(u) - x*sin(w)*sin(u))/(1.0 - e*cos(u))); */
         dt += (x*sw*(cu-e) + (x*cw*sqrt(1.0-e*e) +
-          gamma)*su)*(1.0 - LAL_TWOPI*params->fb[0]*(x*cw*sqrt(1.0 -
+          lal_gamma)*su)*(1.0 - LAL_TWOPI*params->fb[0]*(x*cw*sqrt(1.0 -
           e*e)*cu - x*sw*su)/(1.0 - e*cu));
       }
       else{
         /* dt += (x*sin(w)*(cos(u)-e) + (x*cos(w)*sqrt(1.0-e*e) +
-          gamma)*sin(u))*(1.0 - (LAL_TWOPI/Pb)*(x*cos(w)*sqrt(1.0 -
+          lal_gamma)*sin(u))*(1.0 - (LAL_TWOPI/Pb)*(x*cos(w)*sqrt(1.0 -
           e*e)*cos(u) - x*sin(w)*sin(u))/(1.0 - e*cos(u))); */
         dt += (x*sw*(cu-e) + (x*cw*sqrt(1.0-e*e) +
-          gamma)*su)*(1.0 - (LAL_TWOPI/Pb)*(x*cw*sqrt(1.0 -
+          lal_gamma)*su)*(1.0 - (LAL_TWOPI/Pb)*(x*cw*sqrt(1.0 -
           e*e)*cu - x*sw*su)/(1.0 - e*cu));
       }
     /**********************************************************/
@@ -375,7 +375,7 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
     com = cos(w);
     alpha = x*som;
     beta = x*com*sqrt(tt);
-    q = alpha*(cos(u)-e) + (beta+gamma)*sin(u);
+    q = alpha*(cos(u)-e) + (beta+lal_gamma)*sin(u);
     r = -alpha*sin(u) + beta*cos(u);
     s = 1.0/(1.0-e*cos(u));
     dt = -(-q+(LAL_TWOPI/Pb)*q*r*s);*/
@@ -558,7 +558,7 @@ this isn't defined for either of the two pulsars currently using this model */
     cw = cos(w); */
     alpha = x*sw;
     beta = x*sqrt(1.0-eth*eth)*cw;
-    bg = beta + gamma;
+    bg = beta + lal_gamma;
     DRE = alpha*(cu-er)+bg*su;
     DREp = -alpha*su + bg*cu;
     DREpp = -alpha*cu - bg*su;

@@ -145,7 +145,7 @@ LALFindChirpBCVSpinFilterSegment (
 {
   UINT4                 j, k;
   UINT4                 numPoints;
-  UINT4                 deltaEventIndex;
+  UINT4                 deltaEventIndex  = 0;
   UINT4                 ignoreIndex;
   REAL4                 deltaT;
   REAL4                 deltaF;

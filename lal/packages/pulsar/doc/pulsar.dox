@@ -24,7 +24,7 @@
     \brief Contains function LALFoldAmplitudes: folds amplitudes into phase bins.
 
 Periodic sources of gravitational radiation will produce measured
-strains of the following form: 
+strains of the following form:
 \f[
 c[i] = A(t_i,\vec{\lambda}) \sin[\Phi(t_i,\vec{\lambda})] + n(t_i)
 \f]
@@ -33,7 +33,7 @@ detector (perhaps after some data conditioning, such as being
 resampled, narrow banded, or with instrument line noise removed). The
 amplitude, \f$A(t_i,\vec{\lambda})\f$, is assumed roughly constant at the
 gravity wave source, but is modulated by variation in the detector's
-response due to the Earth's motion.  The phase, \f$\Phi(t_i,\vec{\lambda})\f$, 
+response due to the Earth's motion.  The phase, \f$\Phi(t_i,\vec{\lambda})\f$,
 is modulated by both the intrinsic spin down of the source, and the
 changes in relative motion between the source and the detector.  This
 can be calculated for known pulsars.  The vector \f$\vec{\lambda}\f$ is a
@@ -56,12 +56,12 @@ where \f$\Phi_j\f$ is representive of the phase for bin \f$j\f$ (e.g., the
 phase corresponding to the midpoint of the bin). However, because of
 amplitude modulation, the amplitudes that are added to a phase bin are
 not guaranteed to enter with the same sign.  Thus, some sort of
-amplitude demodulation should be done. 
+amplitude demodulation should be done.
 
 If we demodulate \f$A(t_i,\vec{\lambda})\f$ (for example, in a minimum way
 such as multiplying by the sign of the response function) we multiply
 each element of the vector \f$c[i]\f$ by an amplitude demodulation factor
-\f$D(t_i)\f$ 
+\f$D(t_i)\f$
 \f[
 c_{\rm D\, , F} [j] = \sin\Phi_j \sum_{i'} D(t_i) A(t_i,\vec{\lambda}) + \sum_{i'} D(t_i) n(t_i) ,
 \f]
@@ -73,7 +73,7 @@ However, the average value of \f$D(t_i)\f$ is probably not zero.
 The following is a very preliminary suggestion of how to further reduce the noise.
 Consider folding the measured strains, \f$c[i]\f$, again, but this time
 shifting the phase bins by \f$\pi\f$.  Define this phase shifted folded
-amplitude as: 
+amplitude as:
 \f[
 c_{\pi, \, \rm D\, , F} [j] = \sin(\Phi_j + \pi) \sum_{i''} D(t_i) A(t_i,\vec{\lambda}) + \sum_{i''} D(t_i) n(t_i) ,
 \f]
@@ -82,7 +82,7 @@ phase bin \f$j\f$. This will reverse the sign of the sum of the amplitudes
 that enter into each phase bin, but the sum of the noise contributions
 into each bin should be roughly the same. If the signal we are
 searching for is present, then amplitudes, \f$A(t_i,\vec{\lambda})\f$ are
-correlated with \f$D(t_i)\f$ such that 
+correlated with \f$D(t_i)\f$ such that
 \f[
 \sum_{i'} D(t_i) A(t_i,\vec{\lambda}) \approx \bar{A} = {\rm constant}
 \f]
@@ -91,13 +91,13 @@ Thus,
 c_{\rm D\, , F} [j] - c_{\pi, \, \rm D\, , F} [j] \approx 2 \bar{A}\sin\Phi_j ,
 \f]
 plus residual noise.  In practice, one needs to fold the amplitudes
-only once, and then make the replacement 
+only once, and then make the replacement
 \f[
 c_{\rm D\, , F} [j] \rightarrow c_{\rm D\, , F} [j] - c_{\rm D\, , F} [(j + N/2) \, \% \, j] ,
 \f]
 where \f$N\f$ is the number of phase bins.  We can then statistically
 analyze the hypothesis that the demodulated folded amplitudes
-correspond to a sinusoid. 
+correspond to a sinusoid.
 
 */
 
@@ -127,7 +127,7 @@ here <tt>tdb()</tt>.
 /** \defgroup pulsarKnown Time-domain search routines for known pulsars
     \ingroup pulsar
     \brief This package provides routines for a time domain search of
-    gravitational wave signals from known pulsars.  
+    gravitational wave signals from known pulsars.
     The documentation and functionality of this package is <b>incomplete</b>.
 
 */
