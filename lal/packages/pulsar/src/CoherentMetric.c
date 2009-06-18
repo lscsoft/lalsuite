@@ -283,7 +283,7 @@ LALCoherentMetric( LALStatus        *stat,
   }
   /* Integrate to get the metric component. */
   if(params->errors){
-    REAL8 aErr,bErr,cErr;
+    REAL8 aErr=0,bErr=0,cErr=0;
     REAL8 aAvg=Average(a,&aErr);
     REAL8 bAvg=Average(b,&bErr);
     REAL8 cAvg=Average(c,&cErr);
@@ -313,7 +313,7 @@ LALCoherentMetric( LALStatus        *stat,
     }
     /* Integrate to get the metric component. */
     if(params->errors){
-      REAL8 aErr,bErr,cErr;
+      REAL8 aErr=0,bErr=0,cErr=0;
       REAL8 aAvg=Average(a,&aErr);
       REAL8 bAvg=Average(b,&bErr);
       REAL8 cAvg=Average(c,&cErr);
@@ -343,7 +343,7 @@ LALCoherentMetric( LALStatus        *stat,
       }
       /* Integrate to get the metric component. */
       if(params->errors){
-	REAL8 aErr,bErr,cErr;
+	REAL8 aErr=0,bErr=0,cErr=0;
 	REAL8 aAvg=Average(a,&aErr);
 	REAL8 bAvg=Average(b,&bErr);
 	REAL8 cAvg=Average(c,&cErr);

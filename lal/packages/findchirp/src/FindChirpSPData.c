@@ -447,8 +447,8 @@ LALFindChirpSPData (
     fcSeg = &(fcSegVec->data[i]);
     if
     (
-    (fcSeg->dataPower->data->data[fcSeg->dataPower->data->length - 1 ] < PSDsum)    &&
-    (fcSeg->dataPower->data->data[fcSeg->dataPower->data->length - 1 ] > 0)
+    ((fcSeg->dataPower->data->data[fcSeg->dataPower->data->length - 1 ] < PSDsum)    &&
+    (fcSeg->dataPower->data->data[fcSeg->dataPower->data->length - 1 ] > 0))
     ||
     PSDsum == 0
     )

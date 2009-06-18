@@ -66,6 +66,9 @@ int isnan(double);
 #define isnan(x) ((isnan)((double)(x)))
 #endif
 
+/* macro to "use" unused function parameters */
+#define UNUSED(expr) do { (void)(expr); } while(0)
+
 NRCSID(FINDCHIRPPTFWAVEFORMC, "$Id$");
 
 /* define a structure so that the ptf waveform parameters */
@@ -97,7 +100,7 @@ INT4 XLALPTFWaveformDerivatives(
    * magnitude given by |S1| = chi1 * m1^2 with 0 \le chi1 \le 1
    */
 
-  static const char* func = "XLALPTFWaveformDerivatives";
+  /*static const char* func = "XLALPTFWaveformDerivatives";*/
   /* post newtonian coeffients which are independent of time */
   ptf_evolution_params_t* pn_params = (ptf_evolution_params_t*) params;
 
@@ -186,6 +189,9 @@ INT4 XLALPTFWaveformDerivatives(
   /* phase evolution is purely orbital as we are working in the    */
   /* precessing converion: see the discussion after Eq. (14)       */
   const REAL8 dPhi_dt = omega;
+
+  /* t is unused in this function */
+  UNUSED(t);
 
   /* pass LNhat_dot_back so we can check it's constant */
   pn_params->LNhat_dot_S1 = LNhat_dot_S1;
@@ -472,7 +478,7 @@ XLALFindChirpPTFWaveform(
   REAL8 kappa = InspTmplt->kappa;
   REAL8 t, t_next;
   REAL8 step_size;
-  REAL8 dE_dt, dE_dt_n_1, dE_dt_n_2;
+  REAL8 dE_dt, dE_dt_n_1=0, dE_dt_n_2=0;
   REAL8 N_steps;
 
   ptf_evolution_params_t pn_params;

@@ -2,10 +2,10 @@
 
 /* ----- defines the Barycenter-module ----- */
 /**
- * \defgroup moduleBarycenter Barycentering 
+ * \defgroup moduleBarycenter Barycentering
  *  \ingroup pulsarCommon
  *  \brief Provides routines for transforming from arrival time
- * at detector (GPS) to pulse emission time (TDB); ie 
+ * at detector (GPS) to pulse emission time (TDB); ie
  * for ``barycentering'' the measured astronomical time series.
  *
  */

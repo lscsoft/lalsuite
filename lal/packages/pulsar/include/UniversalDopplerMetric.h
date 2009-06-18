@@ -286,7 +286,7 @@ void XLALDestroyDopplerMetric ( DopplerMetric *metric );
 
 DetectorMotionType XLALParseDetectorMotionString ( const CHAR *detMotionString );
 DopplerCoordinateID XLALParseDopplerCoordinateString ( const CHAR *coordName );
-int XLALDopplerCoordinateNames2System ( DopplerCoordinateSystem *system, const LALStringVector *coordNames );
+int XLALDopplerCoordinateNames2System ( DopplerCoordinateSystem *coordSys, const LALStringVector *coordNames );
 
 const CHAR *XLALDetectorMotionName ( DetectorMotionType detType );
 const CHAR *XLALDopplerCoordinateName ( DopplerCoordinateID coordID );
