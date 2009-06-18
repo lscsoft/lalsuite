@@ -78,7 +78,7 @@ LALFindChirpPTFFilterSegment (
   REAL4                 u1[5], u2[5], v1[5], v2[5], *Binv;
   REAL4                 N, thresh;
   REAL4                 v1_dot_u1, v1_dot_u2, v2_dot_u1, v2_dot_u2;
-  COMPLEX8             *snr            = NULL;
+  COMPLEX8             *pft_snr            = NULL;
   COMPLEX8             *PTFQtilde, *qtilde, *PTFq, *inputData;
   COMPLEX8Vector        qVec;
   FindChirpBankVetoData clusterInput;
@@ -93,7 +93,7 @@ LALFindChirpPTFFilterSegment (
   numPoints   = params->PTFqVec->vectorLength;
   N           = (REAL4) numPoints;
   /* workspace vectors */
-  snr         = params->PTFsnrVec->data;
+  pft_snr         = params->PTFsnrVec->data;
   qtilde      = params->qtildeVec->data;
   PTFq        = params->PTFqVec->data;
   qVec.length = numPoints;
@@ -294,7 +294,7 @@ LALFindChirpPTFFilterSegment (
     }
     max_eigen = 0.5 * ( v1_dot_u1 + v2_dot_u2 + sqrt( (v1_dot_u1 - v2_dot_u2)
           * (v1_dot_u1 - v2_dot_u2) + 4 * v1_dot_u2 * v2_dot_u1 ));
-    snr[j].re = 2.0 * sqrt(max_eigen) / N;
+    pft_snr[j].re = 2.0 * sqrt(max_eigen) / N;
   } /* End of main loop over time */
 
 
@@ -320,7 +320,7 @@ LALFindChirpPTFFilterSegment (
 
     for ( j = 0; j < numPoints; ++j )
     {
-      params->rhosqVec->data->data[j] =  snr[j].re * snr[j].re;
+      params->rhosqVec->data->data[j] =  pft_snr[j].re * pft_snr[j].re;
     }
   }
 

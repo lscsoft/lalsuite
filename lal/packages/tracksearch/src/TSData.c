@@ -33,6 +33,9 @@
 #include <lal/FrameCache.h>
 #include <lal/LALStdlib.h>
 
+/* macro to "use" unused function parameters */
+#define UNUSED(expr) do { (void)(expr); } while(0)
+
 NRCSID (TSDATAC,"$Id$");
 
 /*
@@ -68,7 +71,7 @@ static REAL4 localGauss2(REAL4 lineWidth)
 }
 
 
-
+#if 0
 /*
  *Extra diagnostic code
  */
@@ -124,6 +127,7 @@ static void print_real4tseries(const REAL4TimeSeries *fseries, const char *file)
 /*
  * End diagnostic code
  */
+#endif
 
 void
 LALTracksearchFindLambdaMean(
@@ -143,7 +147,7 @@ LALTracksearchFindLambdaMean(
   REAL8 upperThresh=0;/* Auto discovered upper curvatuve threshold */
   REAL8 lowerThresh=0;/* Value set from upperThresh */
   REAL8 myGaussian=0;
-  REAL8 myFloor=10e20;/*Lowest value in TFR */
+  /*REAL8 myFloor=10e20; Lowest value in TFR */
   INITSTATUS(status,"LALTracksearchFindLambdaMean", TSDATAC);
   ATTATCHSTATUSPTR (status);
 
@@ -481,7 +485,7 @@ LALTrackSearchApplyThreshold(
 void
 LALTrackSearchWhitenREAL4TimeSeries(
 				    LALStatus              *status,
-				    REAL4TimeSeries        *signal,
+				    REAL4TimeSeries        *signalvec,
 				    REAL4FrequencySeries   *signalPSD,
 				    TSWhitenParams          params
 				    )
@@ -499,8 +503,11 @@ LALTrackSearchWhitenREAL4TimeSeries(
   INITSTATUS(status,"LALTrackSearchWhitenREAL4TimeSeries",TSDATAC);
   ATTATCHSTATUSPTR (status);
 
+  /* params is unused in this function */
+  UNUSED(params);
+
   /*Setup FFT Plans*/
-  planLength=signal->data->length;
+  planLength=signalvec->data->length;
   LALCreateForwardREAL4FFTPlan(status->statusPtr,
 			       &forwardPlan,
 			       planLength,
@@ -516,13 +523,13 @@ LALTrackSearchWhitenREAL4TimeSeries(
   signalFFT = XLALCreateCOMPLEX8FrequencySeries("tmpSegPSD",
 				   &gps_zero,
 				   0,
-				   1/(signal->deltaT*signal->data->length),
+				   1/(signalvec->deltaT*signalvec->data->length),
 				   &lalDimensionlessUnit,
 				   planLength/2+1);
   /* FFT the time series */
   LALForwardREAL4FFT(status->statusPtr,
 		     signalFFT->data,
-		     signal->data,
+		     signalvec->data,
 		     forwardPlan);
   CHECKSTATUSPTR (status);
 
@@ -530,7 +537,9 @@ LALTrackSearchWhitenREAL4TimeSeries(
    * Diagnostic code
    * Temporary
    */
+#if 0
   print_complex8fseries(signalFFT,"dataFFTComplex.txt");
+#endif
   /*
    * Perform whitening
    * Look at Tech Doc T010095-00  Sec3
@@ -564,16 +573,18 @@ LALTrackSearchWhitenREAL4TimeSeries(
 		  &(signalFFT->sampleUnits),
 		  &tmpUnitPair);
   CHECKSTATUSPTR (status);
+#if 0
   /*
    * Diagnostic code
    */
   print_complex8fseries(signalFFT,"dataFFTComplexPOST.txt");
+#endif
 
   /*
    * Transform back to time domain
    */
   LALReverseREAL4FFT(status->statusPtr,
-		     signal->data,
+		     signalvec->data,
 		     signalFFT->data,
 		     reversePlan);
   CHECKSTATUSPTR (status);
@@ -581,13 +592,15 @@ LALTrackSearchWhitenREAL4TimeSeries(
    * The 1/n factor need to be applied
    * See lsd-5 p 259 10.1
    */
-  for (i=0;i<signal->data->length;i++)
-    signal->data->data[i]= signal->data->data[i]/signal->data->length;
+  for (i=0;i<signalvec->data->length;i++)
+    signalvec->data->data[i]= signalvec->data->data[i]/signalvec->data->length;
 
+#if 0
   /*
    * Diagnostic code
    */
-  print_real4tseries(signal,"dataSegi.txt");
+  print_real4tseries(signalvec,"dataSegi.txt");
+#endif
 
   /*
    *Release the temporary memory
@@ -677,7 +690,7 @@ LALTrackSearchWhitenCOMPLEX8FrequencySeries(
 /* Begin calibration routine */
 void
 LALTrackSearchCalibrateREAL4TimeSeries(LALStatus               *status,
-				       REAL4TimeSeries         *signal,
+				       REAL4TimeSeries         *signalvec,
 				       COMPLEX8FrequencySeries *response)
 {
   UINT4                      i=0;
@@ -692,7 +705,7 @@ LALTrackSearchCalibrateREAL4TimeSeries(LALStatus               *status,
   /*
    * Setup FFT plans for FFTing the data segment
    */
-  planLength=signal->data->length;
+  planLength=signalvec->data->length;
   LALCreateForwardREAL4FFTPlan(status->statusPtr,
 			       &forwardPlan,
 			       planLength,
@@ -707,9 +720,9 @@ LALTrackSearchCalibrateREAL4TimeSeries(LALStatus               *status,
    * Allocate RAM for temp Freq series
    */
   signalFFT = XLALCreateCOMPLEX8FrequencySeries("tmpSignalFFT",
-				   &signal->epoch,
+				   &signalvec->epoch,
 				   0,
-				   1/signal->deltaT,
+				   1/signalvec->deltaT,
 				   &lalDimensionlessUnit,
 				   planLength/2+1);
   /*
@@ -717,14 +730,14 @@ LALTrackSearchCalibrateREAL4TimeSeries(LALStatus               *status,
    */
   LALForwardREAL4FFT(status->statusPtr,
 		     signalFFT->data,
-		     signal->data,
+		     signalvec->data,
 		     forwardPlan);
   CHECKSTATUSPTR (status);
   /*
    * Perform the frequency basis calibration as defined in
    * LSD Conventions Eq 23.1 p 601
    */
-  for (i=0;i<signal->data->length;i++)
+  for (i=0;i<signalvec->data->length;i++)
     {
       signalFFT->data->data[i].re=
 	response->data->data[i].re*signalFFT->data->data[i].re;
@@ -736,7 +749,7 @@ LALTrackSearchCalibrateREAL4TimeSeries(LALStatus               *status,
    * this is the calibrated data set
    */
   LALReverseREAL4FFT(status->statusPtr,
-		     signal->data,
+		     signalvec->data,
 		     signalFFT->data,
 		     reversePlan);
   CHECKSTATUSPTR (status);
@@ -744,8 +757,8 @@ LALTrackSearchCalibrateREAL4TimeSeries(LALStatus               *status,
    * The 1/n factor need to be applied
    * See lsd-5 p 259 10.1
    */
-  for (i=0;i<signal->data->length;i++)
-    signal->data->data[i]= signal->data->data[i]/signal->data->length;
+  for (i=0;i<signalvec->data->length;i++)
+    signalvec->data->data[i]= signalvec->data->data[i]/signalvec->data->length;
 
   /*
    * Destroy signalFFT Temp variable
@@ -1156,7 +1169,7 @@ void cleanLinkedList(
  */
 void WriteMap(
 	      TimeFreqRep       map,
-	      REAL4Vector       signal
+	      REAL4Vector       signalvec
 	      )
 
 {
@@ -1194,11 +1207,11 @@ void WriteMap(
 	  k++;
 	};
     };
-  if (&signal != NULL)
+  if (&signalvec != NULL)
     {
-      for (i=0;i < ((INT4) signal.length);i++)
+      for (i=0;i < ((INT4) signalvec.length);i++)
 	{
-	  fprintf(fp3,"%f\n",signal.data[i]);
+	  fprintf(fp3,"%f\n",signalvec.data[i]);
 	};
     };
   fclose(fp);
