@@ -112,8 +112,6 @@ LALHOUGHIntegrHD2HT()
 
 NRCSID (DRIVEHOUGHC, "$Id$");
 
-#define rint(x) floor((x)+0.5)
-
 /* macro to "use" unused function parameters */
 #define UNUSED(expr) do { (void)(expr); } while(0)
 
