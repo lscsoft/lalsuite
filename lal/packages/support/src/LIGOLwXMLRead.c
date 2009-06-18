@@ -1254,7 +1254,7 @@ MultiInspiralTable    * XLALMultiInspiralTableFromLIGOLw (
       {
         if ( tableDir[j].pos > 0 )
         {
-          UINT8 i8colData;
+          INT8 i8colData;
           if ( column_type == METAIO_TYPE_INT_8S )
             i8colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_8s;
           else
@@ -1731,7 +1731,7 @@ LALSnglInspiralTableFromLIGOLw (
         {
           if ( tableDir[j].pos > 0 )
           {
-            UINT8 i8colData;
+            INT8 i8colData;
             if ( column_type == METAIO_TYPE_INT_8S )
               i8colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_8s;
             else
@@ -2079,7 +2079,7 @@ InspiralTmpltBankFromLIGOLw (
         {
           if ( tableDir[j].pos > 0 )
           {
-            UINT8 i8colData;
+            INT8 i8colData;
             if ( column_type == METAIO_TYPE_INT_8S )
               i8colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_8s;
             else
@@ -4056,7 +4056,7 @@ LALMultiInspiralTableFromLIGOLw (
       {
         if ( tableDir[j].pos > 0 )
         {
-          UINT8 i8colData;
+          INT8 i8colData;
           if ( column_type == METAIO_TYPE_INT_8S )
             i8colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_8s;
           else
