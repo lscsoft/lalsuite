@@ -108,6 +108,7 @@ static INT4 sincosI, sincosN;
    (in x87 opcodes) with SSE hotloop.*/
 /* these actually define only string constants, so they don't harm non-gcc code */
 
+/* handle different register names in AMD64 */
 #if defined(__amd64__) 
 #define RAX "rax"
 #define RDX "rdx"
@@ -163,6 +164,7 @@ static INT4 sincosI, sincosN;
 #define SINCOS_P6(cos) \
   "fadds   ("PDI","PDX",4) \n\t"					\
   "fstps   %[" #cos "]     \n\t" /* (*cos)=cosbase[i]+n*cosdiff[i];*/
+/* list of clobbered registers */
 #define SINCOS_REGISTERS RAX,RDX,RDI,"st","st(1)","st(2)","cc"
 
 /* FUNCTIONS */
