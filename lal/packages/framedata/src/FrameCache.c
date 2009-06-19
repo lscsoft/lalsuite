@@ -362,7 +362,7 @@ FrCache * XLALFrGenerateCache( const CHAR *dirstr, const CHAR *fnptrn )
   FrCache *cache;
   glob_t g;
   int globflags = 0;
-  int i;
+  unsigned int i;
 
   fnptrn = fnptrn ? fnptrn : "*.gwf";
   dirstr = dirstr ? dirstr : ".";
