@@ -784,7 +784,6 @@ int XLALFrameAddREAL4TimeSeriesSimData( FrameH *frame, REAL4TimeSeries *series )
 int XLALFrameAddREAL4TimeSeriesAdcData( FrameH *frame, REAL4TimeSeries *series )
 {
   static const char * func = "XLALFrameAddREAL4TimeSeriesAdcData";
-  LIGOTimeGPS frameEpoch;
   FrAdcData *adc;
   int i;
 
