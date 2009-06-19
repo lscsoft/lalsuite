@@ -334,7 +334,7 @@ void load_data(int detector, const char* file, const char* initial)
     }
 }
 
-#define NSIGMA 11
+#define NSIGMA 3
 
 void analyze(void)
 {
@@ -345,6 +345,8 @@ void analyze(void)
     double* raw;
     double* accumulator;
     int begin[3], end[3];
+    
+    double min_w;
 
     begin[0] = 0;
     begin[1] = begin[0];
@@ -359,19 +361,6 @@ void analyze(void)
      */
 
     /*fprintf(stderr, "w: %e %e %e\n", w[0], w[1], w[2]);*/
-
-    s[0]  =    1;
-    s[1]  =    4;
-    s[2]  =    16;
-    s[3]  =    64;
-    s[4]  =   256;
-    s[5]  =   1024;
-    s[6]  =   1./4;
-    s[7]  =  1./16;
-    s[8]  =  1./64;
-    s[9]  =  1./256;
-    s[10] = 1./1024;
-    
     
     {
         /* Validate the input */
@@ -401,6 +390,42 @@ void analyze(void)
             }
         }
         
+    }
+    
+    {
+        double min_w;
+        
+        min_w = -log(0);
+        
+        for (i = 0; i != 3; ++i)
+        {
+            if (x[i])
+            {
+                if (w[i] < min_w)
+                {
+                    min_w = w[i];
+                }
+            }
+        }
+        
+        s[0] =   sqrt(10.0) / min_w;
+        s[1] =  sqrt(100.0) / min_w;
+        s[2] = sqrt(1000.0) / min_w;
+    }
+    
+    {
+        /* Convert the individually normalized matched filters to a common normalization */
+        for (i = 0; i != 3; ++i)
+        {
+            if (x[i])
+            {
+                for (j = 0; j != samples; ++j)
+                {
+                    x[i][j] *= w[i];
+                    x[i + 3][j] *= w[i];
+                }
+            }
+        }
     }
      
     /*   
