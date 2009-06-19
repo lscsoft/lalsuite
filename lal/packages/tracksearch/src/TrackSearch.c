@@ -119,7 +119,7 @@ LALSignalTrackSearch(LALStatus *status,
 		     const TimeFreqRep *tfMap, /* type defined in TimeFreq.h */
 		     TrackSearchParams *params)
 {
-  INT4 tempmaskcount; /*remove later on temp */
+  /*INT4 tempmaskcount; remove later on temp */
 
   /* Initialize status structure   */
   INITSTATUS(status,"LALSignalTrackSearch",TRACKSEARCHC);
