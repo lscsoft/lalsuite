@@ -77,7 +77,7 @@ files.
 
 \subsubsection*{Description}
 
-The routine \verb+LALOpenLIGOLwXMLFile+ 
+The routine \verb+LALOpenLIGOLwXMLFile+
 
 The routine \verb+XLALCreateLIGOLwXMLFileName+ creates a name for a  LIGO lightweight XML file that is in accordance with the specifications of document T050017.
 
@@ -1322,7 +1322,7 @@ int XLALWriteLIGOLwXMLSimBurstTable(
 	static const char func[] = "XLALWriteLIGOLwXMLSimBurstTable";
 	const char *row_head = "\n\t\t\t";
 
-        
+
 
 	if(xml->table != no_table) {
 		XLALPrintError("a table is still open");
@@ -1410,14 +1410,14 @@ int XLALCreateLIGODataFileName(
 )
 {
      static const char func[] = "XLALCreateLIGODataFileName";
-  
+
      INT4 gpsDuration;
-  
+
      /* check input structures */
-     if (!filename || !dataSource || !dataDescription || 
+     if (!filename || !dataSource || !dataDescription ||
 	 !gpsStartTime || !gpsEndTime || !extension)
           XLAL_ERROR(func, XLAL_EFAULT);
-  
+
      /* check the correctnes of the input strings */
      if ( strchr(dataSource, '-') || strchr(dataDescription, '-'))
      {
@@ -1433,7 +1433,7 @@ int XLALCreateLIGODataFileName(
 
       /* and here put it all together */
       LALSnprintf( filename, size, "%s-%s-%d-%d.%s",
-		   dataSource, dataDescription, gpsStartTime->gpsSeconds, 
+		   dataSource, dataDescription, gpsStartTime->gpsSeconds,
 		   gpsDuration, extension );
 
       /* return success */

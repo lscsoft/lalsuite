@@ -63,7 +63,7 @@ FindLine(REAL8, REAL8, REAL8, REAL8 *, REAL8 *)
 CheckLineIntersection(REAL8, REAL8, REAL8, INT4 *, INT4 *, INT4 *,
                       HOUGHPatchGrid *)
 DrawLine(REAL8, REAL8, REAL8,INT4, INT4, COORType *, HOUGHPatchGrid *)
-Fill1Column(INT4, INT4*, HOUGHptfLUT *, HOUGHPatchGrid *)
+Fill1Column(INT4, UINT4*, HOUGHptfLUT *, HOUGHPatchGrid *)
 FillCaseN1(INT4, INT4, INT4, HOUGHptfLUT *, HOUGHPatchGrid *)
 FillCaseN2(INT4, INT4, HOUGHptfLUT *, HOUGHPatchGrid *)
 FillCaseN3(INT4, INT4, INT4, INT4 *, HOUGHptfLUT *, HOUGHPatchGrid *)
@@ -76,17 +76,17 @@ Fill1ColumnAnor(INT4, HOUGHptfLUT *, HOUGHPatchGrid *)
 FillCaseA1(INT4, INT4, INT4, HOUGHptfLUT *)
 FillCaseA2(INT4, INT4, INT4, HOUGHptfLUT *)
 FillCaseA3(INT4, INT4, INT4, HOUGHptfLUT *, HOUGHPatchGrid *)
-InitialCircleCase(INT4 *,REAL8, REAL8, REAL8, REAL8 *, INT4 *, INT4 *,
+InitialCircleCase(UINT4 *,REAL8, REAL8, REAL8, REAL8 *, INT4 *, INT4 *,
                   HOUGHptfLUT *, HOUGHPatchGrid *)
-SecondCircleCase(INT4, INT4*, REAL8, REAL8, REAL8, INT4, REAL8 *,
+SecondCircleCase(INT4, UINT4*, REAL8, REAL8, REAL8, INT4, REAL8 *,
                  INT4*,INT4 *,INT4*, HOUGHptfLUT *, HOUGHPatchGrid *)
-FollowCircleCase(INT4,INT4 *,REAL8,REAL8,REAL8,REAL8,REAL8,INT4 *,
+FollowCircleCase(INT4,UINT4 *,REAL8,REAL8,REAL8,REAL8,REAL8,INT4 *,
                  INT4 *,INT4 *, HOUGHptfLUT *, HOUGHPatchGrid *)
-InitialLineCase(INT4 *, REAL8, REAL8, REAL8, INT4 *, HOUGHptfLUT *,
+InitialLineCase(UINT4 *, REAL8, REAL8, REAL8, INT4 *, HOUGHptfLUT *,
                 HOUGHPatchGrid *)
-SecondLineCase(INT4, INT4 *, REAL8, REAL8, REAL8, INT4 *, HOUGHptfLUT *,
+SecondLineCase(INT4, UINT4 *, REAL8, REAL8, REAL8, INT4 *, HOUGHptfLUT *,
                HOUGHPatchGrid *)
-FollowLineCase(INT4, INT4 *, REAL8, REAL8, REAL8, REAL8, INT4, INT4 *,
+FollowLineCase(INT4, UINT4 *, REAL8, REAL8, REAL8, REAL8, INT4, INT4 *,
                            HOUGHptfLUT *, HOUGHPatchGrid *)
 \endcode
 
@@ -151,7 +151,7 @@ static void FindLine(REAL8, REAL8, REAL8, REAL8 *, REAL8 *);
 static void CheckLineIntersection(REAL8, REAL8, REAL8, INT4 *, INT4 *, INT4 *,
                                   HOUGHPatchGrid *);
 static void DrawLine(REAL8, REAL8, REAL8,INT4, INT4, COORType *, HOUGHPatchGrid *);
-static void Fill1Column(INT4, INT4*, HOUGHptfLUT *, HOUGHPatchGrid *);
+static void Fill1Column(INT4, UINT4*, HOUGHptfLUT *, HOUGHPatchGrid *);
 static void FillCaseN1(INT4, INT4, INT4, HOUGHptfLUT *, HOUGHPatchGrid *);
 static void FillCaseN2(INT4, INT4, HOUGHptfLUT *, HOUGHPatchGrid *);
 static void FillCaseN3(INT4, INT4, INT4, INT4 *, HOUGHptfLUT *, HOUGHPatchGrid *);
@@ -164,17 +164,17 @@ static void Fill1ColumnAnor(INT4, HOUGHptfLUT *, HOUGHPatchGrid *);
 static void FillCaseA1(INT4, INT4, INT4, HOUGHptfLUT *);
 static void FillCaseA2(INT4, INT4, INT4, HOUGHptfLUT *);
 static void FillCaseA3(INT4, INT4, INT4, HOUGHptfLUT *, HOUGHPatchGrid *);
-static void InitialCircleCase(INT4 *,REAL8, REAL8, REAL8, REAL8 *, INT4 *, INT4 *,
+static void InitialCircleCase(UINT4 *,REAL8, REAL8, REAL8, REAL8 *, INT4 *, INT4 *,
                               HOUGHptfLUT *, HOUGHPatchGrid *);
-static void SecondCircleCase(INT4, INT4*, REAL8, REAL8, REAL8, INT4, REAL8 *,
+static void SecondCircleCase(INT4, UINT4*, REAL8, REAL8, REAL8, INT4, REAL8 *,
                              INT4*,INT4 *,INT4*, HOUGHptfLUT *, HOUGHPatchGrid *);
-static void FollowCircleCase(INT4,INT4 *,REAL8,REAL8,REAL8,REAL8,REAL8,INT4 *,
+static void FollowCircleCase(INT4,UINT4 *,REAL8,REAL8,REAL8,REAL8,REAL8,INT4 *,
                              INT4 *,INT4 *, HOUGHptfLUT *, HOUGHPatchGrid *);
-static void InitialLineCase(INT4 *, REAL8, REAL8, REAL8, INT4 *, HOUGHptfLUT *,
+static void InitialLineCase(UINT4 *, REAL8, REAL8, REAL8, INT4 *, HOUGHptfLUT *,
                             HOUGHPatchGrid *);
-static void SecondLineCase(INT4, INT4 *, REAL8, REAL8, REAL8, INT4 *, HOUGHptfLUT *,
+static void SecondLineCase(INT4, UINT4 *, REAL8, REAL8, REAL8, INT4 *, HOUGHptfLUT *,
                            HOUGHPatchGrid *);
-static void FollowLineCase(INT4, INT4 *, REAL8, REAL8, REAL8, REAL8, INT4, INT4 *,
+static void FollowLineCase(INT4, UINT4 *, REAL8, REAL8, REAL8, REAL8, INT4, INT4 *,
                            HOUGHptfLUT *, HOUGHPatchGrid *);
 \end{verbatim}
 
@@ -299,7 +299,7 @@ static void FindLine(REAL8,REAL8,REAL8,REAL8 *,REAL8 *);
 static void CheckLineIntersection(REAL8,REAL8,REAL8,INT4 *,INT4 *,INT4 *,
                                 HOUGHPatchGrid *);
 static void DrawLine(REAL8, REAL8, REAL8,INT4, INT4, COORType *, HOUGHPatchGrid *);
-static void Fill1Column(INT4, INT4*, HOUGHptfLUT *, HOUGHPatchGrid *);
+static void Fill1Column(INT4, UINT4*, HOUGHptfLUT *, HOUGHPatchGrid *);
 static void FillCaseN1(INT4, INT4, INT4, HOUGHptfLUT *, HOUGHPatchGrid *);
 static void FillCaseN2(INT4, INT4, HOUGHptfLUT *, HOUGHPatchGrid *);
 static void FillCaseN3(INT4, INT4, INT4, INT4 *, HOUGHptfLUT *, HOUGHPatchGrid *);
@@ -313,17 +313,17 @@ static void FillCaseA1(INT4, INT4, INT4, HOUGHptfLUT *);
 static void FillCaseA2(INT4, INT4, INT4, HOUGHptfLUT *);
 static void FillCaseA3(INT4, INT4, INT4, HOUGHptfLUT *, HOUGHPatchGrid *);
 
-static void InitialCircleCase(INT4 *,REAL8, REAL8, REAL8, REAL8 *, INT4 *, INT4 *,
+static void InitialCircleCase(UINT4 *,REAL8, REAL8, REAL8, REAL8 *, INT4 *, INT4 *,
                             HOUGHptfLUT *, HOUGHPatchGrid *);
-static void SecondCircleCase(INT4, INT4*,REAL8,REAL8, REAL8,INT4,REAL8*,
+static void SecondCircleCase(INT4, UINT4*,REAL8,REAL8, REAL8,INT4,REAL8*,
                            INT4*,INT4 *,INT4*, HOUGHptfLUT *, HOUGHPatchGrid *);
-static void FollowCircleCase(INT4,INT4 *,REAL8,REAL8,REAL8,REAL8,REAL8,INT4 *,
+static void FollowCircleCase(INT4,UINT4 *,REAL8,REAL8,REAL8,REAL8,REAL8,INT4 *,
                            INT4 *,INT4 *, HOUGHptfLUT *, HOUGHPatchGrid *);
-static void InitialLineCase(INT4 *, REAL8, REAL8, REAL8, INT4 *, HOUGHptfLUT *,
+static void InitialLineCase(UINT4 *, REAL8, REAL8, REAL8, INT4 *, HOUGHptfLUT *,
                           HOUGHPatchGrid *);
-static void SecondLineCase(INT4, INT4 *, REAL8, REAL8, REAL8, INT4 *, HOUGHptfLUT *,
+static void SecondLineCase(INT4, UINT4 *, REAL8, REAL8, REAL8, INT4 *, HOUGHptfLUT *,
                          HOUGHPatchGrid *);
-static void FollowLineCase(INT4, INT4 *,REAL8, REAL8, REAL8,REAL8,INT4,INT4 *,
+static void FollowLineCase(INT4, UINT4 *,REAL8, REAL8, REAL8,REAL8,INT4,INT4 *,
                          HOUGHptfLUT *, HOUGHPatchGrid *);
 
 
@@ -539,8 +539,8 @@ static void  FillPLUT(HOUGHParamPLUT  *par, HOUGHptfLUT  *lut,
   UINT4 maxNBins;
   UINT4 maxNBorders;
 
-  INT4 lastBorder =0;  /* counter of the last build border */
-  INT4 currentBin =0;  /* counter of the bin studied       */
+  UINT4 lastBorder =0;  /* counter of the last build border */
+  UINT4 currentBin =0;  /* counter of the bin studied       */
 
   INT4 ifailPlus  = 1; /* =1 (ok, continue to next bin), =0 (stop) */
   INT4 ifailMinus = 1; /* =1 (ok, continue to previous bin), =0 (stop) */
@@ -813,7 +813,7 @@ static void  FillPLUT(HOUGHParamPLUT  *par, HOUGHptfLUT  *lut,
 
 /****************************************************************/
 
-static void InitialLineCase(INT4  *lastBorderP, REAL8 alpha, REAL8  delta,
+static void InitialLineCase(UINT4  *lastBorderP, REAL8 alpha, REAL8  delta,
 		     REAL8 eps, INT4 *ifailP, HOUGHptfLUT  *lut,
 		     HOUGHPatchGrid  *patch){
 
@@ -946,7 +946,7 @@ static void InitialLineCase(INT4  *lastBorderP, REAL8 alpha, REAL8  delta,
 
 /****************************************************************/
 
-static void SecondLineCase(INT4 currentBin, INT4  *lastBorderP,
+static void SecondLineCase(INT4 currentBin, UINT4  *lastBorderP,
 		    REAL8 alpha, REAL8  delta,
 		     REAL8 eps, INT4 *ifailP, HOUGHptfLUT *lut,
 		     HOUGHPatchGrid  *patch){
@@ -1086,7 +1086,7 @@ static void SecondLineCase(INT4 currentBin, INT4  *lastBorderP,
 
 /****************************************************************/
 
-static void FollowLineCase(INT4 currentBin, INT4  *lastBorderP,
+static void FollowLineCase(INT4 currentBin, UINT4  *lastBorderP,
 		    REAL8 alpha, REAL8  delta, REAL8 eps,REAL8 rcOld,
 		    INT4 direction, INT4 *ifailP, HOUGHptfLUT *lut,
 		    HOUGHPatchGrid  *patch){
@@ -1560,7 +1560,7 @@ static void DrawLine(REAL8 alpha, REAL8 xA, REAL8 yA,
 
 /****************************************************************/
 
-static void InitialCircleCase(INT4  *lastBorderP, REAL8 alpha,
+static void InitialCircleCase(UINT4  *lastBorderP, REAL8 alpha,
 		      REAL8 ang1, REAL8  ang2,
 		      REAL8 *rcOldP, INT4 *directionP,
 		      INT4 *ifailP, HOUGHptfLUT *lut,
@@ -1797,7 +1797,7 @@ static void InitialCircleCase(INT4  *lastBorderP, REAL8 alpha,
 
 /****************************************************************/
 
-static void SecondCircleCase(INT4 currentBin, INT4  *lastBorderP,
+static void SecondCircleCase(INT4 currentBin, UINT4  *lastBorderP,
 		      REAL8 alpha, REAL8 ang1, REAL8  ang2,
 		      INT4 directionPlus, REAL8 *rcOldP,
 		      INT4 *pathologyP,INT4 *directionP,
@@ -2050,7 +2050,7 @@ static void SecondCircleCase(INT4 currentBin, INT4  *lastBorderP,
 
 /****************************************************************/
 
-static void FollowCircleCase(INT4 currentBin, INT4  *lastBorderP, REAL8 alpha,
+static void FollowCircleCase(INT4 currentBin, UINT4  *lastBorderP, REAL8 alpha,
 		      REAL8 ang1, REAL8  ang2, REAL8 rCritic,
 		      REAL8 rcOld, INT4 *pathologyP,
 		      INT4 *directionP, INT4 *ifailP, HOUGHptfLUT *lut,
@@ -2788,7 +2788,7 @@ static void DrawRightCircle(REAL8 xc, REAL8 yc, REAL8 radius,
 /* Normal case: for circles and lines. NOT the pathological one */
 /****************************************************************/
 
-static void Fill1Column(INT4 currentBin, INT4 *lastBorderP,
+static void Fill1Column(INT4 currentBin, UINT4 *lastBorderP,
                       HOUGHptfLUT *lut, HOUGHPatchGrid  *patch){
 
   INT4 lb1,rb1,lb2,rb2; /* The border index. If zero means that */

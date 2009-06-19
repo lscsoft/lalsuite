@@ -156,6 +156,7 @@ src/pulsar/FDS_isolated/lalapps_uberpolka
 src/pulsar/FDS_isolated/lalapps_zellepolka
 src/pulsar/Injections/lalapps_Makefakedata_v4
 src/pulsar/Injections/lalapps_compareSFTs
+src/pulsar/Injections/lalapps_compareTS
 src/pulsar/Injections/lalapps_dumpSFT
 src/pulsar/Injections/lalapps_makefakedata_test
 src/pulsar/Injections/lalapps_makefakedata_v2

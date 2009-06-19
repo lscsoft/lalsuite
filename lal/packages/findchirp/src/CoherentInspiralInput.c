@@ -95,7 +95,7 @@ LALFindChirpCreateCoherentInput(
   INT4                     cohSegStart = 0;
   INT4                     nonCorruptEnd = 0;
   INT4                     nonCorruptStart = 0;
-  INT4                     overlap         = 0;
+  /*INT4                     overlap         = 0;*/
   INT4                     fullCohSegLength = 0;
   INT4                     eventTimePoint = 0;
 

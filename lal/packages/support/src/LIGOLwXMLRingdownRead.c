@@ -328,7 +328,7 @@ SimRingdownTable* XLALSimRingdownTableFromLIGOLw (
     /* check the injection time is withing the requested inteval */
     if ( tableDir[2].pos < 0 )
     {
-      XLALPrintError( "XLAL Error - bad table directory for element %d\n", j );
+      XLALPrintError( "XLAL Error - bad table directory for element %d\n", i );
       XLAL_CLOBBER_EVENTS;
       XLAL_ERROR_NULL( func, XLAL_EIO );
     }

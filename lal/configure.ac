@@ -32,16 +32,6 @@ AC_CONFIG_FILES([ \
                  packages/tools/include/Makefile \
                  packages/tools/src/Makefile \
                  packages/tools/test/Makefile \
-                 packages/sample/Makefile \
-                 packages/sample/doc/Makefile \
-                 packages/sample/include/Makefile \
-                 packages/sample/src/Makefile \
-                 packages/sample/test/Makefile \
-                 packages/hello/Makefile \
-                 packages/hello/doc/Makefile \
-                 packages/hello/include/Makefile \
-                 packages/hello/src/Makefile \
-                 packages/hello/test/Makefile \
                  packages/factories/Makefile \
                  packages/factories/doc/Makefile \
                  packages/factories/include/Makefile \
@@ -142,21 +132,6 @@ AC_CONFIG_FILES([ \
                  packages/tracksearch/include/Makefile \
                  packages/tracksearch/src/Makefile \
                  packages/tracksearch/test/Makefile \
-                 packages/tfclusters/Makefile \
-                 packages/tfclusters/doc/Makefile \
-                 packages/tfclusters/include/Makefile \
-                 packages/tfclusters/src/Makefile \
-                 packages/tfclusters/test/Makefile \
-                 packages/slopefilters/Makefile \
-                 packages/slopefilters/doc/Makefile \
-                 packages/slopefilters/include/Makefile \
-                 packages/slopefilters/src/Makefile \
-                 packages/slopefilters/test/Makefile \
-                 packages/block/Makefile \
-                 packages/block/doc/Makefile \
-                 packages/block/include/Makefile \
-                 packages/block/src/Makefile \
-                 packages/block/test/Makefile \
                  packages/timefreq/Makefile \
                  packages/timefreq/doc/Makefile \
                  packages/timefreq/include/Makefile \

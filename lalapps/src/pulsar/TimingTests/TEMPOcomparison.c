@@ -244,7 +244,6 @@ void LALRadstoRA(LALStatus *status, CHAR *RA, REAL8 rads);
 void LALRadstoDEC(LALStatus *status, CHAR *DEC, REAL8 rads);
 void GPStoTDBMJD(LALStatus *status,MJDTime *TDBMJD,LIGOTimeGPS GPS);
 void MultiplyInterval(LALStatus *status,LALTimeInterval *newinterval,LALTimeInterval interval,INT4 factor);
-int snprintf(char *str, size_t size, const char *format, ...);
 
 /*============================================================
  * FUNCTION definitions

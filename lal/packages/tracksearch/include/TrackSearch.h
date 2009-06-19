@@ -21,8 +21,8 @@
  *
  * File Name: LALTrackSearch.h
  *
- * New Maintainer: Torres, C.  (Univ TX at Browsville)
- * Origin: Balasubramanian, R. (Cardiff University, UK)
+ * Current Developer: Torres, Cristina V.  (LLO)
+ * Original Developer: Balasubramanian, R. (Cardiff University, UK)
  *
  * Revision: $Id$
  *

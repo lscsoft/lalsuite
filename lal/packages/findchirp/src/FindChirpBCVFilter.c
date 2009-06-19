@@ -67,7 +67,7 @@ LALFindChirpBCVFilterSegment (
 {
   UINT4                 j, k, kFinal/*, kOpt*/;
   UINT4                 numPoints;
-  UINT4                 deltaEventIndex;
+  UINT4                 deltaEventIndex = 0;
   UINT4                 ignoreIndex;
   REAL4                 myfmin;
   REAL4                 deltaT, deltaF;
