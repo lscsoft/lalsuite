@@ -234,7 +234,7 @@ LALTrackSearchConnectSigma(
 void
 LALTrackSearchWhitenREAL4TimeSeries(
 				    LALStatus              *status,
-				    REAL4TimeSeries        *signal,
+				    REAL4TimeSeries        *signalvec,
 				    REAL4FrequencySeries   *signalPSD,
 				    TSWhitenParams          params
 				    );
@@ -260,7 +260,7 @@ LALTrackSearchWhitenCOMPLEX8FrequencySeries(
  */
 void
 LALTrackSearchCalibrateREAL4TimeSeries(LALStatus               *status,
-				       REAL4TimeSeries         *signal,
+				       REAL4TimeSeries         *signalvec,
 				       COMPLEX8FrequencySeries *response);
 
 /*
@@ -295,33 +295,6 @@ void connect2Segments(
 		      Curve          *curveA,
 		      Curve          *curveB
 		      );
-
-void WriteMap(
-	      TimeFreqRep       map,
-	      REAL4Vector       signal
-	      );
-
-void DumpTFImage(
-		 REAL4         **image,
-		 const CHAR           *filename,
-		 INT4           height,
-		 INT4           width,
-		 BOOLEAN        killNeg
-		 );
-
-void DumpTFImageCHAR(
-		 CHAR         **image,
-		 const CHAR           *filename,
-		 INT4           height,
-		 INT4           width,
-		 BOOLEAN        killNeg
-		 );
-
-void DumpREAL8KernelMask(
-			 REAL8      *kernel,
-			 const CHAR       *filename,
-			 INT4        ksize
-			 );
 
 void cleanLinkedList(
 		     TrackSearchOut      *inList,

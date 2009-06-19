@@ -99,7 +99,7 @@ LALFindChirpTDTemplate (
   REAL8         deltaT;
   REAL8         sampleRate;
   const REAL4   cannonDist = 1.0; /* Mpc */
-  CHAR          infomsg[512];
+  /*CHAR          infomsg[512];*/
   PPNParamStruc ppnParams;
   CoherentGW    waveform;
 

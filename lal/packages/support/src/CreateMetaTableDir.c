@@ -41,6 +41,9 @@ $Id$
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOLwXMLRead.h>
 
+/* macro to "use" unused function parameters */
+#define UNUSED(expr) do { (void)(expr); } while(0)
+
 NRCSID( CREATEMETATABLEDIRC, "$Id$" );
 
 #if 0
@@ -354,7 +357,8 @@ LALCreateMetaTableDir(
     )
 /* </lalVerbatim> */
 {
-  INT4 i;
+  /* env is unused in this function */
+  UNUSED(env);
 
   INITSTATUS( status, "LALCreateMetaTableDir", CREATEMETATABLEDIRC );
   ATTATCHSTATUSPTR (status);

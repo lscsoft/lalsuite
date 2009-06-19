@@ -29,7 +29,7 @@ void LALEstimateEffectiveDistance (
         InspiralTemplate        param,
         REAL8                   df,
         REAL8Vector             *psd,
-        REAL8                   snr,
+        REAL8                   lal_nm_snr,
         REAL8                   *effDistance
         )
 {
@@ -68,7 +68,7 @@ void LALEstimateEffectiveDistance (
 
     /* We need to calculate randIn.SignalAmp = distanceNorm / deff (in
      * Mpc)*/
-    (*effDistance) = (distanceNorm / snr);
+    (*effDistance) = (distanceNorm / lal_nm_snr);
 
     /* Normal exit */
     DETATCHSTATUSPTR (status);

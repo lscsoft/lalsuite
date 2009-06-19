@@ -9,8 +9,6 @@ BUILT_SOURCES = LALVCSInfo.h
 liblal_la_DEPENDENCIES = \
 	$(top_builddir)/packages/std/src/libstd.la \
 	$(top_builddir)/packages/tools/src/libtools.la \
-	$(top_builddir)/packages/sample/src/libsample.la \
-	$(top_builddir)/packages/hello/src/libhello.la \
 	$(top_builddir)/packages/factories/src/libfactories.la \
 	$(top_builddir)/packages/vectorops/src/libvectorops.la \
 	$(top_builddir)/packages/utilities/src/libutilities.la \
@@ -31,9 +29,6 @@ liblal_la_DEPENDENCIES = \
 	$(top_builddir)/packages/houghpulsar/src/libhoughpulsar.la \
 	$(top_builddir)/packages/burstsearch/src/libburstsearch.la \
 	$(top_builddir)/packages/tracksearch/src/libtracksearch.la \
-	$(top_builddir)/packages/tfclusters/src/libtfclusters.la \
-	$(top_builddir)/packages/slopefilters/src/libslopefilters.la \
-	$(top_builddir)/packages/block/src/libblock.la \
 	$(top_builddir)/packages/timefreq/src/libtimefreq.la
 liblal_la_LIBADD = $(liblal_la_DEPENDENCIES) @LALLIBADD@
 bin_PROGRAMS = lal-version

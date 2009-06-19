@@ -810,6 +810,9 @@ LALSPAValidPosition(LALStatus *status,
 {
   INT4 below = 0, in = 0, out = 0, above = 0;
 
+  /* moments is unused in this function */
+  UNUSED(moments);
+
   INITSTATUS( status, "LALSPAFindPosition",
 	      LALINSPIRALHEXAGONALBANKC );
   ATTATCHSTATUSPTR( status );

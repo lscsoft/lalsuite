@@ -12,7 +12,6 @@ AC_CONFIG_FILES([\
   misc/Makefile \
   src/Makefile \
   src/lalapps/Makefile \
-  src/example/Makefile \
   src/calibration/Makefile \
   src/frametools/Makefile \
   src/findchirp/Makefile \

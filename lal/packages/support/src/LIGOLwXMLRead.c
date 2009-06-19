@@ -1254,7 +1254,7 @@ MultiInspiralTable    * XLALMultiInspiralTableFromLIGOLw (
       {
         if ( tableDir[j].pos > 0 )
         {
-          UINT8 i8colData;
+          INT8 i8colData;
           if ( column_type == METAIO_TYPE_INT_8S )
             i8colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_8s;
           else
@@ -1731,7 +1731,7 @@ LALSnglInspiralTableFromLIGOLw (
         {
           if ( tableDir[j].pos > 0 )
           {
-            UINT8 i8colData;
+            INT8 i8colData;
             if ( column_type == METAIO_TYPE_INT_8S )
               i8colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_8s;
             else
@@ -2079,7 +2079,7 @@ InspiralTmpltBankFromLIGOLw (
         {
           if ( tableDir[j].pos > 0 )
           {
-            UINT8 i8colData;
+            INT8 i8colData;
             if ( column_type == METAIO_TYPE_INT_8S )
               i8colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_8s;
             else
@@ -3488,8 +3488,10 @@ XLALReadSummValueFile (
     )
 /* </lalVerbatim> */
 {
+#if 0
   const char *func = "XLALReadSummValueFile";
   INT4 numFileTriggers = 0;
+#endif
   INT4 haveSummValue = 0;
   SummValueTable  *thisSummValue = NULL;
   SummValueTable  *inputSummValue = NULL;
@@ -3540,7 +3542,7 @@ XLALReadInspiralTriggerFile (
 {
   const char *func = "XLALReadInspiralTriggerFile";
   INT4 numFileTriggers = 0;
-  INT4 haveSummValue = 0;
+  /*INT4 haveSummValue = 0;*/
   SnglInspiralTable  *inputData = NULL;
   SearchSummaryTable *inputSummary = NULL;
   SearchSummaryTable *thisSearchSumm = NULL;
@@ -4054,7 +4056,7 @@ LALMultiInspiralTableFromLIGOLw (
       {
         if ( tableDir[j].pos > 0 )
         {
-          UINT8 i8colData;
+          INT8 i8colData;
           if ( column_type == METAIO_TYPE_INT_8S )
             i8colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_8s;
           else
@@ -4163,7 +4165,7 @@ XLALReadMultiInspiralTriggerFile (
 {
   const char *func = "XLALReadMultiInspiralTriggerFile";
   INT4 numFileTriggers = 0;
-  INT4 haveSummValue = 0;
+  /*INT4 haveSummValue = 0;*/
   MultiInspiralTable   *inputData = NULL;
   SearchSummaryTable   *inputSummary = NULL;
   SearchSummaryTable   *thisSearchSumm = NULL;

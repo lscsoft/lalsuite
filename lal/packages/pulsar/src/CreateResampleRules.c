@@ -264,12 +264,12 @@ LALCreateResampleRules( LALStatus          *stat,
   REAL8 tPolyStart; /* Start time for the polynomial fits */
   REAL8 tPolyStop;  /* Stop time for the polynomial fits */
   REAL8 startDiff;  /* Offset between tau and t at tRuleStart */
-  REAL8 stopDiff;   /* Offset between tau and t at tRuleStop */
+  REAL8 stopDiff=0; /* Offset between tau and t at tRuleStop */
   REAL8 dt;         /* Resampled time interval */
 
   INT4 n;           /* An index */
   INT4 nSqrt;       /* Square root of number of resampled data */
-  INT4 nRules;      /* Number of resampling rules computed */
+  INT4 nRules=0;    /* Number of resampling rules computed */
   INT4 **tempRules; /* Array of resampling rules */
   INT4 **row;       /* Pointer to a row in tempRules */
   INT4 *tempInterval; /* Pointer to interval elements in tempRules */
