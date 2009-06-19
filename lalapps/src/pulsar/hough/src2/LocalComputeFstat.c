@@ -101,7 +101,7 @@ NRCSID( LOCALCOMPUTEFSTATC, "$Id$");
 #define PREFETCH(a) a
 #endif
 
-#include "sincos.ci"
+#include "EinsteinAtHome/sincos.ci"
 
 /*----- SWITCHES -----*/
 
@@ -589,15 +589,15 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	  {
 	  /* WARNING: all current optimized loops rely on current implementation of COMPLEX8 type */
 #if (EAH_HOTLOOP_VARIANT == EAH_HOTLOOP_VARIANT_SSE_AKOS08)
-#include "hotloop_precalc.ci"
+#include "EinsteinAtHome/hotloop_precalc.ci"
 #elif (EAH_HOTLOOP_VARIANT == EAH_HOTLOOP_VARIANT_SSE)
-#include "hotloop_sse.ci"
+#include "EinsteinAtHome/hotloop_sse.ci"
 #elif (EAH_HOTLOOP_VARIANT == EAH_HOTLOOP_VARIANT_ALTIVEC)
-#include "hotloop_altivec.ci"
+#include "EinsteinAtHome/hotloop_altivec.ci"
 #elif (EAH_HOTLOOP_VARIANT == EAH_HOTLOOP_VARIANT_AUTOVECT)
-#include "hotloop_autovect.ci"
+#include "EinsteinAtHome/hotloop_autovect.ci"
 #else /* EAH_HOTLOOP_VARIANT */
-#include "hotloop_generic.ci"
+#include "EinsteinAtHome/hotloop_generic.ci"
 #endif /* EAH_HOTLOOP_VARIANT */
 	 
 	  } /* if |remainder| > LD_SMALL4 */
