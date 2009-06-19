@@ -2,8 +2,6 @@
 SUBDIRS = \
 	std \
 	tools \
-	sample \
-	hello \
 	factories \
 	vectorops \
 	utilities \
@@ -24,8 +22,6 @@ SUBDIRS = \
 	houghpulsar \
 	burstsearch \
 	tracksearch \
-	tfclusters \
-	slopefilters \
 	timefreq \
 	support \
 	framedata

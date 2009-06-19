@@ -406,7 +406,7 @@ XLALGenerateInspRing(
   {
     phase = *(phi++) = phase + LAL_TWOPI * freq * dt;
     freq = *(f++) = ringInj->frequency - A * exp( - n * dt * lambda );
-    if (((freq == ringInj->frequency) & condt) == 0)
+    if ( freq == ringInj->frequency & condt == 0)
     {
       endMerger = n - 1.0;
       condt = 1.0;
