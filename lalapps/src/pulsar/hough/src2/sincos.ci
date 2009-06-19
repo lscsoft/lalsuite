@@ -49,6 +49,11 @@
   Lookup tables (LUT) data
  */
 
+/* Constants */
+#define SINCOS_ADDS    402653184.0
+#define SINCOS_MASK1   0xFFFFFF
+#define SINCOS_MASK2   0x003FFF
+#define SINCOS_SHIFT   14
 #define SINCOS_LUT_RES 1024 /* should be multiple of 4 */
 
 /* global VARIABLES to be used in (global) macros */
@@ -89,14 +94,6 @@ static void local_sin_cos_2PI_LUT_init (void)
 /*
   LUT evaluation
 */
-
-/* numeric constants */
-#define SINCOS_ADDS  402653184.0
-#define SINCOS_MASK1 0xFFFFFF
-#define SINCOS_MASK2 0x003FFF
-#define SINCOS_SHIFT 14
-
-
 
 /* Variables */
 
