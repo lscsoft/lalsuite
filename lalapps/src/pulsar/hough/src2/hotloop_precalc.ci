@@ -25,128 +25,79 @@
 	  ALIGNED_VECTOR(Dgghh) = {-7.0f, -7.0f, -8.0f, -8.0f};
 
 	  /* hand-coded SSE version from Akos */
-
-	  /* one loop iteration as a macro */
-
-/* Macros to interleave linear sin/cos calculation (in x87 opcodes)
-   with SSE hotloop.*/
-
-/* Version 1 : with trimming of input argument 
-   to [0,2) */ 
-#define LIN_SIN_COS_TRIM_P0A(alpha) \
-		"fldl %[" #alpha "] \n\t"   /* st: alpha */ \
-		"fistpll %[tmp] \n\t"	    /* tmp=(INT8)(round((alpha)) */ \
-		"fld1 \n\t" 	            /* st: 1.0 */ \
-		"fildll %[tmp] \n\t"        /* st: 1.0;(round((alpha))*/ 
-
-#define LIN_SIN_COS_TRIM_P0B(alpha)\
-		"fsubrp %%st,%%st(1) \n\t"  /* st: 1.0 -round(alpha) */  \
-		"faddl %[" #alpha "] \n\t"  /* st: alpha -round(alpha)+1.0*/ \
-		"faddl  %[sincos_adds]  \n\t" /* ..continue lin. sin/cos as lebow */ \
-		"fstpl  %[tmp]    \n\t" 
-/* Version 2 : assumes input argument is already trimmed */ 
-		
-#define LIN_SIN_COS_P0(alpha) \
-		"fldl %[" #alpha "] \n\t"     /*st:alpha */\
-		"faddl  %[sincos_adds]  \n\t" /*st:alpha+A */\
-		"fstpl  %[tmp]    \n\t"
-#define LIN_SIN_COS_P1 \
-		"mov  %[tmp],%%eax \n\t"      /* alpha +A ->eax (ix)*/ \
-                "mov  %%eax,%%edx  \n\t"      /* n  = ix & SINCOS_MASK2 */\
-		"and  $0x3fff,%%eax \n\t"     	
-#define LIN_SIN_COS_P2 \
-		"mov  %%eax,%[tmp] \n\t"     \
-		"mov  %[scd], %%eax \n\t"    \
-		"and  $0xffffff,%%edx \n\t"   /* i  = ix & SINCOS_MASK1;*/
-#define LIN_SIN_COS_P3 \
-		"fildl %[tmp]\n\t" \
-		"sar $0xe,%%edx \n\t"        /*  i  = i >> SINCOS_SHIFT;*/\
-		"fld %%st  \n\t"   	     /* st: n; n; */
-#define LIN_SIN_COS_P4 \
-		"fmuls (%%eax,%%edx,4)   \n\t" \
-		"mov  %[scb], %%edi \n\t" \
-		"fadds (%%edi,%%edx,4)   \n\t" /*st:sincosLUTbase[i]+n*sincosLUTdiff[i]; n*/
-#define LIN_SIN_COS_P5(sin)\
-		"add $0x100,%%edx \n\t"   /*edx+=SINCOS_LUT_RES/4*/\
-		"fstps %[" #sin "] \n\t"  /*(*sin)=sincosLUTbase[i]+n*sincosLUTdiff[i]*/\
-		"fmuls (%%eax,%%edx,4)   \n\t"
-#define LIN_SIN_COS_P6(cos) \
-		"fadds (%%edi,%%edx,4)   \n\t" \
-		"fstps %[" #cos "] \n\t" /*(*cos)=cosbase[i]+n*cosdiff[i];*/
-
 	
           __asm __volatile
 	    (
-		"movaps %[D7766],%%xmm0\n\t"
-		"movaps %[D5544],%%xmm1	\n\t"
-		"movups (%[Xa]),%%xmm2	\n\t"
-		"movups 0x10(%[Xa]),%%xmm3 \n\t"
-		"movss  %[kappa_s],%%xmm7\n\t"
-		"shufps $0x0,%%xmm7,%%xmm7\n\t"
-	LIN_SIN_COS_P0(kappa_star)
-		"addps  %%xmm7,%%xmm0\n\t"
-		"addps  %%xmm7,%%xmm1\n\t"
-		"rcpps  %%xmm0,%%xmm0\n\t"
-		"rcpps  %%xmm1,%%xmm1\n\t"
-		"mulps  %%xmm2,%%xmm0\n\t"
-		"mulps  %%xmm3,%%xmm1\n\t"
-	LIN_SIN_COS_P1
-		"addps  %%xmm1,%%xmm0\n\t"
-		"movaps %[D3322],%%xmm2\n\t"
-		"movaps %[Dccdd],%%xmm3\n\t"
-		"movups 0x20(%[Xa]),%%xmm4\n\t"
-		"movups 0x50(%[Xa]),%%xmm5\n\t"
-	LIN_SIN_COS_P2
-		"addps  %%xmm7,%%xmm2\n\t"
-		"addps  %%xmm7,%%xmm3\n\t"
-		"rcpps  %%xmm2,%%xmm2\n\t"
-		"rcpps  %%xmm3,%%xmm3\n\t"
-		"mulps  %%xmm4,%%xmm2\n\t"
-		"mulps  %%xmm5,%%xmm3\n\t"
-	LIN_SIN_COS_P3
-		"addps  %%xmm3,%%xmm2\n\t"
-		"movaps %[Deeff],%%xmm4\n\t"
-		"movaps %[Dgghh],%%xmm5\n\t"
-		"movups 0x60(%[Xa]),%%xmm1\n\t"
-		"movups 0x70(%[Xa]),%%xmm6\n\t"
-	LIN_SIN_COS_P4
-		"addps  %%xmm7,%%xmm4\n\t"
-		"addps  %%xmm7,%%xmm5\n\t"
-		"rcpps  %%xmm4,%%xmm4\n\t"
-		"rcpps  %%xmm5,%%xmm5\n\t"
-		"mulps  %%xmm1,%%xmm4\n\t"
-		"mulps  %%xmm6,%%xmm5\n\t"
-	LIN_SIN_COS_P5(sin)
-		"addps  %%xmm2,%%xmm0\n\t"
-		"addps  %%xmm5,%%xmm4\n\t"
-		"movaps %[D1100],%%xmm1\n\t"
-		"movaps %[Daabb],%%xmm2\n\t"
-	LIN_SIN_COS_P6(cos)
-		"addps  %%xmm7,%%xmm1\n\t"
-		"addps  %%xmm7,%%xmm2\n\t"
-		"rcpps  %%xmm1,%%xmm5\n\t"
-		"rcpps  %%xmm2,%%xmm6\n\t"
-	LIN_SIN_COS_TRIM_P0A(_lambda_alpha)
-		"addps  %%xmm4,%%xmm0\n\t"
-		"movaps %[D2222],%%xmm3\n\t"
-		"movaps %[D2222],%%xmm4\n\t"
-		"mulps  %%xmm5,%%xmm1\n\t"
-		"mulps  %%xmm6,%%xmm2\n\t"
-	LIN_SIN_COS_TRIM_P0B(_lambda_alpha)
-		"subps  %%xmm1,%%xmm3\n\t"
-		"subps  %%xmm2,%%xmm4\n\t"
-		"mulps  %%xmm3,%%xmm5\n\t"
-		"mulps  %%xmm4,%%xmm6\n\t"
-		"movups 0x30(%[Xa]),%%xmm1\n\t"
-		"movups 0x40(%[Xa]),%%xmm2\n\t"
-	LIN_SIN_COS_P1
-		"mulps  %%xmm5,%%xmm1\n\t"
-		"mulps  %%xmm6,%%xmm2\n\t"
-		"addps  %%xmm1,%%xmm0\n\t"
-		"addps  %%xmm2,%%xmm0\n\t"
-	LIN_SIN_COS_P2
-		"movhlps %%xmm0,%%xmm1\n\t"
-		"addps  %%xmm1,%%xmm0\n\t"
+	     "movaps %[D7766],%%xmm0    \n\t"
+	     "movaps %[D5544],%%xmm1	\n\t"
+	     "movups (%[Xa]),%%xmm2	\n\t"
+	     "movups 0x10(%[Xa]),%%xmm3 \n\t"
+	     "movss  %[kappa_s],%%xmm7  \n\t"
+	     "shufps $0x0,%%xmm7,%%xmm7 \n\t"
+	     SINCOS_P0(kappa_star)
+	     "addps  %%xmm7,%%xmm0      \n\t"
+	     "addps  %%xmm7,%%xmm1      \n\t"
+	     "rcpps  %%xmm0,%%xmm0      \n\t"
+	     "rcpps  %%xmm1,%%xmm1      \n\t"
+	     "mulps  %%xmm2,%%xmm0      \n\t"
+	     "mulps  %%xmm3,%%xmm1      \n\t"
+	     SINCOS_P1
+	     "addps  %%xmm1,%%xmm0      \n\t"
+	     "movaps %[D3322],%%xmm2    \n\t"
+	     "movaps %[Dccdd],%%xmm3    \n\t"
+	     "movups 0x20(%[Xa]),%%xmm4 \n\t"
+	     "movups 0x50(%[Xa]),%%xmm5 \n\t"
+	     SINCOS_P2
+	     "addps  %%xmm7,%%xmm2      \n\t"
+	     "addps  %%xmm7,%%xmm3      \n\t"
+	     "rcpps  %%xmm2,%%xmm2      \n\t"
+	     "rcpps  %%xmm3,%%xmm3      \n\t"
+	     "mulps  %%xmm4,%%xmm2      \n\t"
+	     "mulps  %%xmm5,%%xmm3      \n\t"
+	     SINCOS_P3
+	     "addps  %%xmm3,%%xmm2      \n\t"
+	     "movaps %[Deeff],%%xmm4    \n\t"
+	     "movaps %[Dgghh],%%xmm5    \n\t"
+	     "movups 0x60(%[Xa]),%%xmm1 \n\t"
+	     "movups 0x70(%[Xa]),%%xmm6 \n\t"
+	     SINCOS_P4
+	     "addps  %%xmm7,%%xmm4      \n\t"
+	     "addps  %%xmm7,%%xmm5      \n\t"
+	     "rcpps  %%xmm4,%%xmm4      \n\t"
+	     "rcpps  %%xmm5,%%xmm5      \n\t"
+	     "mulps  %%xmm1,%%xmm4      \n\t"
+	     "mulps  %%xmm6,%%xmm5      \n\t"
+	     SINCOS_P5(sin)
+	     "addps  %%xmm2,%%xmm0      \n\t"
+	     "addps  %%xmm5,%%xmm4      \n\t"
+	     "movaps %[D1100],%%xmm1    \n\t"
+	     "movaps %[Daabb],%%xmm2    \n\t"
+	     SINCOS_P6(cos)
+	     "addps  %%xmm7,%%xmm1      \n\t"
+	     "addps  %%xmm7,%%xmm2      \n\t"
+	     "rcpps  %%xmm1,%%xmm5      \n\t"
+	     "rcpps  %%xmm2,%%xmm6      \n\t"
+	     SINCOS_TRIM_P0A(_lambda_alpha)
+	     "addps  %%xmm4,%%xmm0      \n\t"
+	     "movaps %[D2222],%%xmm3    \n\t"
+	     "movaps %[D2222],%%xmm4    \n\t"
+	     "mulps  %%xmm5,%%xmm1      \n\t"
+	     "mulps  %%xmm6,%%xmm2      \n\t"
+	     SINCOS_TRIM_P0B(_lambda_alpha)
+	     "subps  %%xmm1,%%xmm3      \n\t"
+	     "subps  %%xmm2,%%xmm4      \n\t"
+	     "mulps  %%xmm3,%%xmm5      \n\t"
+	     "mulps  %%xmm4,%%xmm6      \n\t"
+	     "movups 0x30(%[Xa]),%%xmm1 \n\t"
+	     "movups 0x40(%[Xa]),%%xmm2 \n\t"
+	     SINCOS_P1
+	     "mulps  %%xmm5,%%xmm1      \n\t"
+	     "mulps  %%xmm6,%%xmm2      \n\t"
+	     "addps  %%xmm1,%%xmm0      \n\t"
+	     "addps  %%xmm2,%%xmm0      \n\t"
+	     SINCOS_P2
+	     "movhlps %%xmm0,%%xmm1     \n\t"
+	     "addps  %%xmm1,%%xmm0      \n\t"
 
 /*	  
         c_alpha-=1.0f;
@@ -154,33 +105,32 @@
 	  imagXP = c_alpha * XSums.re + s_alpha * XSums.im;
 */
 
-		"movss %[M1],%%xmm5 \n\t"
-		"movaps %%xmm0,%%xmm3 \n\t"
-		"shufps $1,%%xmm3,%%xmm3 \n\t"	
-	LIN_SIN_COS_P3
-		"movss %[cos],%%xmm2 \n\t"
-		"movss %[sin],%%xmm1 \n\t"
-		"addss %%xmm5,%%xmm2 \n\t"	
-		"movss %%xmm2,%%xmm6 \n\t"	
-	LIN_SIN_COS_P4
-		"movss %%xmm1,%%xmm5  \n\t"
-		"mulss %%xmm0,%%xmm1 \n\t"		
-		"mulss %%xmm0,%%xmm2 \n\t"
-
-	LIN_SIN_COS_P5(Qimag)
-		"mulss %%xmm3,%%xmm5 \n\t"
-		"mulss %%xmm3,%%xmm6 \n\t"
-		"addss %%xmm5,%%xmm2 \n\t"
-		"subss %%xmm6,%%xmm1 \n\t"
-	LIN_SIN_COS_P6(Qreal)
-		"MOVSS	%%xmm2,%[XPimag]   	\n\t"	/*  */
-		"MOVSS	%%xmm1,%[XPreal]   	\n\t"	/*  */
+	     "movss %[M1],%%xmm5        \n\t"
+	     "movaps %%xmm0,%%xmm3      \n\t"
+	     "shufps $1,%%xmm3,%%xmm3   \n\t"	
+	     SINCOS_P3
+	     "movss %[cos],%%xmm2       \n\t"
+	     "movss %[sin],%%xmm1       \n\t"
+	     "addss %%xmm5,%%xmm2       \n\t"	
+	     "movss %%xmm2,%%xmm6       \n\t"	
+	     SINCOS_P4
+	     "movss %%xmm1,%%xmm5       \n\t"
+	     "mulss %%xmm0,%%xmm1       \n\t"		
+	     "mulss %%xmm0,%%xmm2       \n\t"
+	     SINCOS_P5(Qimag)
+	     "mulss %%xmm3,%%xmm5       \n\t"
+	     "mulss %%xmm3,%%xmm6       \n\t"
+	     "addss %%xmm5,%%xmm2       \n\t"
+	     "subss %%xmm6,%%xmm1       \n\t"
+	     SINCOS_P6(Qreal)
+	     "movss %%xmm2,%[XPimag]    \n\t"
+	     "MOVSS %%xmm1,%[XPreal]    \n\t"
 
 	     /* interface */
 	     :
 	     /* output  (here: to memory)*/
-	     [XPreal]      "=m" (realXP),
-	     [XPimag]      "=m" (imagXP),
+	     [XPreal]     "=m" (realXP),
+	     [XPimag]     "=m" (imagXP),
 	     [Qreal]      "=m" (realQ),
 	     [Qimag]      "=m" (imagQ),
 	     [sin]	  "=m" (s_alpha),
@@ -189,14 +139,14 @@
 
 	     :
 	     /* input */
-	     [Xa]          "r"  (Xalpha_l),
-	     [kappa_s]     "m"  (kappa_s),
-	     [kappa_star]  "m"  (kappa_star),
+	     [Xa]            "r" (Xalpha_l),
+	     [kappa_s]       "m" (kappa_s),
+	     [kappa_star]    "m" (kappa_star),
 	     [_lambda_alpha] "m" (_lambda_alpha),
-	     [scd]	   "m"  (scd),
-	     [scb]	   "m"  (scb),
-	     [sincos_adds] "m"  (sincos_adds),
-	     [M1]	  "m" (M1),
+	     [scd]	     "m" (scd),
+	     [scb]	     "m" (scb),
+	     [sincos_adds]   "m" (sincos_adds),
+	     [M1]	     "m" (M1),
 
 
 	     /* vector constants */
