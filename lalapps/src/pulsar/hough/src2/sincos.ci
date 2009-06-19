@@ -78,21 +78,21 @@ static INT4 sincosI, sincosN;
 
 /* LUT evaluation */
 
+/* check return value of local_sin_cos_2PI_LUT_trimmed only in DEBUG mode */
 #ifndef LAL_NDEBUG
-#define SINCOS_2PI_TRIMMED(s,c,x)						\
+#define SINCOS_2PI_TRIMMED(s,c,x)					\
   if ( local_sin_cos_2PI_LUT_trimmed(s,c,x) ) {				\
     XLAL_ERROR ( "LocalXLALComputeFaFb", XLAL_EFUNC);			\
   }
 #else
-#define SINCOS_2PI_TRIMMED(s,c,x)			\
+#define SINCOS_2PI_TRIMMED(s,c,x)		\
   local_sin_cos_2PI_LUT_trimmed(s,c,x)
 #endif
 
 
-#ifndef SINCOS_X87_GNU_ASS
-
-
 /* x must already been trimmed to interval [0..2) */
+/* Macros to interleave linear sin/cos calculation
+   in other code (e.g. AltiVec) */
 /* - syntactic sugar -|   |- here is the actual code - */
 #define SINCOS_PROLOG
 #define SINCOS_STEP1(x)   sincosUX.asreal = x + SINCOS_ADDS;
@@ -104,60 +104,66 @@ static INT4 sincosI, sincosN;
 #define SINCOS_EPILOG(s,c,x)
 
 
-
-#else /* the very same in x87 gcc inline assembler */
+/* Macros to interleave linear sin/cos calculation
+   (in x87 opcodes) with SSE hotloop.*/
+/* these actually define only string constants, so they don't harm non-gcc code */
 
-
-#define SINCOS_VARIABLES				\
-    static REAL8 sincos_adds = SINCOS_ADDS;		\
-    static REAL4 *scd 	     = &(sincosLUTdiff[0]);	\
-    static REAL4 *scb 	     = &(sincosLUTbase[0]);	\
-    static REAL8 tmp;
-#define SINCOS_PROLOG        { SINCOS_VARIABLES __asm __volatile (
-#define SINCOS_TRIM1(x)					\
-  "fldl    %[" #x "]      \n\t" /* st: x */			\
-  "fistpll %[tmp]         \n\t" /* tmp=(INT8)(round((x)) */	\
-  "fld1                   \n\t" /* st: 1.0 */			\
-  "fildll  %[tmp]         \n\t" /* st: 1.0;(round((x))*/ 
-#define SINCOS_TRIM2(x)						\
-  "fsubrp  %%st,%%st(1)   \n\t" /* st: 1.0 -round(x) */			\
-  "faddl   %[" #x "]      \n\t" /* st: x -round(x)+1.0*/		\
-  "faddl   %[sincos_adds] \n\t" /* ..continue lin. sin/cos as below */	\
-  "fstpl   %[tmp]         \n\t"
-#define SINCOS_STEP1(x)							\
-  "fldl  %[" #x "]        \n\t" /*st:x */				\
-  "faddl %[sincos_adds]   \n\t" /*st:x+A */				\
-  "fstpl %[tmp]           \n\t"
-#define SINCOS_STEP2							\
-  "mov   %[tmp],%%eax     \n\t" /* x +A ->eax (ix)*/			\
-  "mov   %%eax,%%edx      \n\t"						\
-  "and   $0x3fff,%%eax    \n\t"	/* n  = ix & SINCOS_MASK2 */
-#define SINCOS_STEP3						\
-  "mov   %%eax,%[tmp]     \n\t"					\
-  "mov   %[scd], %%eax    \n\t"					\
-  "and   $0xffffff,%%edx  \n\t" /* i  = ix & SINCOS_MASK1;*/
-#define SINCOS_STEP4							\
-  "fildl %[tmp]           \n\t"						\
-  "sar   $0xe,%%edx       \n\t" /* i  = i >> SINCOS_SHIFT;*/		\
-  "fld   %%st             \n\t" /* st: n; n; */				\
-  "fmuls (%%eax,%%edx,4)  \n\t"
-#define SINCOS_STEP5(s)							\
-  "mov   %[scb], %%edi    \n\t"						\
-  "fadds (%%edi,%%edx,4)  \n\t" /*st:sincosLUTbase[i]+n*sincosLUTdiff[i]; n*/ \
-  "add   $0x100,%%edx     \n\t" /*edx+=SINCOS_LUT_RES/4*/		\
-  "fstps %[" #s "]        \n\t" /*(*sin)=sincosLUTbase[i]+n*sincosLUTdiff[i]*/
-#define SINCOS_STEP6(c)							\
-  "fmuls (%%eax,%%edx,4)  \n\t"						\
-  "fadds (%%edi,%%edx,4)  \n\t"						\
-  "fstps %[" #c "]        \n\t" /*(*cos)=cosbase[i]+n*cosdiff[i];*/
-#define SINCOS_OUTPUT(s,c)   [s] "=m" (s), [c] "=m" (c), [tmp] "=m" (tmp)
-#define SINCOS_INPUT(x)      [scd] "m" (scd), [scb] "m" (scb), [sincos_adds] "m" (sincos_adds), [x] "m" (x)
-#define SINCOS_REGISTERS     "st","st(1)","st(2)","eax","edx","edi","cc"
-#define SINCOS_EPILOG(s,c,x) : SINCOS_OUTPUT(s,c) : SINCOS_INPUT(x) : SINCOS_REGISTERS ); }
-
-
+#if defined(__amd64__) 
+#define RAX "rax"
+#define RDX "rdx"
+#define RDI "rdi"
+#else
+#define RAX "eax"
+#define RDX "edx"
+#define RDI "edi"
 #endif
+#define PAX "%%"RAX
+#define PDX "%%"RDX
+#define PDI "%%"RDI
 
+/* Version 1 : with trimming of input argument to [0,2) */ 
+#define SINCOS_TRIM_P0A(alpha) \
+  "fldl    %[" #alpha "]   \n\t" /* st: alpha */			\
+  "fistpll %[tmp]          \n\t" /* tmp=(INT8)(round((alpha)) */	\
+  "fld1                    \n\t" /* st: 1.0 */				\
+  "fildll  %[tmp]          \n\t" /* st: 1.0;(round((alpha))*/ 
+
+#define SINCOS_TRIM_P0B(alpha)						\
+  "fsubrp  %%st,%%st(1)    \n\t" /* st: 1.0 -round(alpha) */		\
+  "faddl   %[" #alpha "]   \n\t" /* st: alpha -round(alpha)+1.0*/	\
+  "faddl   %[sincos_adds]  \n\t" /* ..continue lin. sin/cos as lebow */ \
+  "fstpl   %[tmp]          \n\t" 
+
+/* Version 2 : assumes input argument is already trimmed */ 
+#define SINCOS_P0(alpha)						\
+  "fldl    %[" #alpha "]   \n\t" /*st:alpha */				\
+  "faddl   %[sincos_adds]  \n\t" /*st:alpha+A */	                \
+  "fstpl   %[tmp]          \n\t"
+
+#define SINCOS_P1							\
+  "mov     %[tmp],"PAX"    \n\t" /* alpha +A ->eax (ix)*/		\
+  "mov     "PAX","PDX"     \n\t" /* n  = ix & SINCOS_MASK2 */		\
+  "and     $0x3fff,"PAX"   \n\t"     	
+#define SINCOS_P2							\
+  "mov     "PAX",%[tmp]    \n\t"					\
+  "mov     %[scd], "PAX"   \n\t"					\
+  "and     $0xffffff,"PDX" \n\t" /* i  = ix & SINCOS_MASK1;*/
+#define SINCOS_P3							\
+  "fildl   %[tmp]          \n\t"					\
+  "sar     $0xe,"PDX"      \n\t" /*  i  = i >> SINCOS_SHIFT;*/		\
+  "fld     %%st            \n\t" /* st: n; n; */
+#define SINCOS_P4							\
+  "fmuls   ("PAX","PDX",4) \n\t"					\
+  "mov     %[scb], "PDI"   \n\t"					\
+  "fadds   ("PDI","PDX",4) \n\t" /* st:sincosLUTbase[i]+n*sincosLUTdiff[i]; n*/
+#define SINCOS_P5(sin)							\
+  "add     $0x100,"PDX"    \n\t" /* edx+=SINCOS_LUT_RES/4*/		\
+  "fstps   %[" #sin "]     \n\t" /* (*sin)=sincosLUTbase[i]+n*sincosLUTdiff[i]*/ \
+  "fmuls   ("PAX","PDX",4) \n\t"
+#define SINCOS_P6(cos) \
+  "fadds   ("PDI","PDX",4) \n\t"					\
+  "fstps   %[" #cos "]     \n\t" /* (*cos)=cosbase[i]+n*cosdiff[i];*/
+#define SINCOS_REGISTERS RAX,RDX,RDI,"st","st(1)","st(2)","cc"
 
 /* FUNCTIONS */
 
@@ -183,6 +189,7 @@ static void local_sin_cos_2PI_LUT_init (void)
 
 static int local_sin_cos_2PI_LUT_trimmed (REAL4 *s, REAL4 *c, REAL8 x) {
 
+  /* check range of input only in DEBUG mode */
 #ifndef LAL_NDEBUG
   if(x > SINCOS_ADDS) {
     LogPrintf(LOG_DEBUG,"sin_cos_LUT: x too large: %22f > %f\n",x,SINCOS_ADDS);
@@ -193,6 +200,7 @@ static int local_sin_cos_2PI_LUT_trimmed (REAL4 *s, REAL4 *c, REAL8 x) {
   }
 #endif
 
+  /* use the macros defined above */
   SINCOS_PROLOG
   SINCOS_STEP1(x)
   SINCOS_STEP2
