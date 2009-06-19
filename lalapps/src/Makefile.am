@@ -1,6 +1,5 @@
 SUBDIRS = \
 	lalapps \
-	example \
 	calibration \
 	frametools \
 	findchirp \
