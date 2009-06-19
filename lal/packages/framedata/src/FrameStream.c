@@ -120,8 +120,6 @@
 int gethostname(char *name, int len);
 #endif
 
-#include <FrameL.h>
-
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
