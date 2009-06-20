@@ -393,6 +393,55 @@ void analyze(void)
     }
     
     {
+        /*
+         * Compute the glitch hypotheses
+         */
+        double pglitches[3];
+        double pglitch;
+        
+        for (i = 0; i != 3; ++i)
+        {
+            pglitches[i] = 0;
+            if (x[i])
+            {
+                for (j = 0; j != samples; ++j)
+                {
+                    int k;
+                    for (k = 0; j != NSIGMA; ++k)
+                    {
+                        /*
+                         * FIXME: exp may overflow
+                         */
+                        double p = pow(s[k], -2) * exp(0.5 * (1.0 - pow(s[k], -2)) * (pow(x[i][j], 2) + pow(x[i + 3][j], 2)));
+                        pglitches[i] += (p / (NSIGMA * samples));
+                    }
+                }
+            }            
+        }
+
+        pglitch = 1.0;
+        for (i = 0; i != 3; ++i)
+        {
+            if (x[i])
+            {
+                pglitch *= pglitches[i];
+            }
+        }
+        
+        /*
+         * FIXME: output pglitch somewhere
+         */
+        
+        /*
+         * FIXME: implications of glitch model
+         */
+    }
+    
+    {
+        /* 
+         * Use the most sensitive detector to set the bottom of the
+         * logarithmic distribution of amplitude scales 
+         */
         double min_w;
         
         min_w = -log(0);
