@@ -879,7 +879,7 @@ void LALInjectStrainGW( LALStatus                 *status,
   ENDFAIL( status );
 
   /* set channel name */
-  LALSnprintf( injData->name, LIGOMETA_CHANNEL_MAX * sizeof( CHAR ),
+  snprintf( injData->name, LIGOMETA_CHANNEL_MAX * sizeof( CHAR ),
     "%s:STRAIN", ifo );
 
   XLALDestroyREAL4Vector ( htData->data);
@@ -952,7 +952,7 @@ void LALInjectStrainGWREAL8( LALStatus                 *status,
   XLALSimAddInjectionREAL8TimeSeries( injData, htData, NULL);
 
   /* set channel name */
-  LALSnprintf( injData->name, LIGOMETA_CHANNEL_MAX * sizeof( CHAR ),
+  snprintf( injData->name, LIGOMETA_CHANNEL_MAX * sizeof( CHAR ),
     "%s:STRAIN", ifo );
 
   XLALDestroyREAL8TimeSeries ( htData);
@@ -993,7 +993,7 @@ CHAR* XLALGetNinjaChannelName(CHAR *polarisation, UINT4 l, INT4 m)
   }
 
   /* set channel name */
-  LALSnprintf(channel, LIGOMETA_CHANNEL_MAX, "h%s_l%d_m%c%d", polarisation, l, sign, abs(m));
+  snprintf(channel, LIGOMETA_CHANNEL_MAX, "h%s_l%d_m%c%d", polarisation, l, sign, abs(m));
 
   /* return channel name */
   return channel;

@@ -221,32 +221,32 @@ XLALReturnIFO(
   switch( IFONumber )
   {
     case LAL_IFO_G1:
-      LALSnprintf( ifo, LIGOMETA_IFO_MAX, "G1");
+      snprintf( ifo, LIGOMETA_IFO_MAX, "G1");
       break;
 
     case LAL_IFO_H1:
-      LALSnprintf( ifo, LIGOMETA_IFO_MAX, "H1");
+      snprintf( ifo, LIGOMETA_IFO_MAX, "H1");
       break;
 
     case LAL_IFO_H2:
-      LALSnprintf( ifo, LIGOMETA_IFO_MAX, "H2");
+      snprintf( ifo, LIGOMETA_IFO_MAX, "H2");
       break;
 
     case LAL_IFO_L1:
-      LALSnprintf( ifo, LIGOMETA_IFO_MAX, "L1");
+      snprintf( ifo, LIGOMETA_IFO_MAX, "L1");
       break;
 
     case LAL_IFO_T1:
-      LALSnprintf( ifo, LIGOMETA_IFO_MAX, "T1");
+      snprintf( ifo, LIGOMETA_IFO_MAX, "T1");
       break;
 
     case LAL_IFO_V1:
-      LALSnprintf( ifo, LIGOMETA_IFO_MAX, "V1");
+      snprintf( ifo, LIGOMETA_IFO_MAX, "V1");
       break;
 
     default:
       /* Invalid Detector Site */
-      LALSnprintf( ifo, LIGOMETA_IFO_MAX, "");
+      snprintf( ifo, LIGOMETA_IFO_MAX, "");
   }
 }
 

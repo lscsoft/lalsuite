@@ -646,7 +646,7 @@ LALUserVarHelpString (LALStatus *status,
       else
 	strcpy (optstr, "   ");
 
-      LALSnprintf (strbuf, UVAR_MAXHELPLINE,  "  %s --%-15s %-6s   %s [%s] \n",
+      snprintf (strbuf, UVAR_MAXHELPLINE,  "  %s --%-15s %-6s   %s [%s] \n",
 		   optstr,
 		   ptr->name ? ptr->name : "-NONE-",
 		   typestr[ptr->type],
@@ -718,7 +718,7 @@ LALUserVarHelpString (LALStatus *status,
 	  else
 	    strcpy (optstr, "   ");
 
-	  LALSnprintf (strbuf, UVAR_MAXHELPLINE,  "  %s --%-15s %-6s   %s [%s] \n",
+	  snprintf (strbuf, UVAR_MAXHELPLINE,  "  %s --%-15s %-6s   %s [%s] \n",
 		       optstr,
 		       ptr->name ? ptr->name : "-NONE-",
 		       typestr[ptr->type],
@@ -1093,10 +1093,10 @@ LALUserVarGetProcParamsTable (LALStatus *status, ProcessParamsTable **out, CHAR 
 	  (ProcessParamsTable *)LALCalloc( 1, sizeof(ProcessParamsTable) );
 
       /* copy the strings into the procparams table */
-      LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, progname );
-      LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", ptr->name );
-      LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, valstr );
-      LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, typestr );
+      snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, progname );
+      snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", ptr->name );
+      snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, valstr );
+      snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, typestr );
 
       LALFree (valstr);
       valstr=NULL;

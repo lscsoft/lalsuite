@@ -174,13 +174,13 @@ int main( int argc, char *argv[] )
   /* loop over the three interferometers */
   for ( j = 0; j < sizeof(ifoCode) / sizeof(*ifoCode); ++j )
   {
-    LALSnprintf( response.name, LALNameLength * sizeof(CHAR),
+    snprintf( response.name, LALNameLength * sizeof(CHAR),
         CHANNEL, ifoCode[j] );
 
     for ( i = 0; i < sizeof(calTime) / sizeof(*calTime); ++i )
     {
       /* set the time of the calibration and the frame cahche file to use */
-      LALSnprintf( calCacheName, LALNameLength * sizeof(CHAR), CAL_CATALOG,
+      snprintf( calCacheName, LALNameLength * sizeof(CHAR), CAL_CATALOG,
           ifoCode[j], cacheTime[i % 2] );
       response.epoch.gpsSeconds = calTime[i];
       if ( verbose )
@@ -255,7 +255,7 @@ int main( int argc, char *argv[] )
         }
         if ( output )
         {
-          LALSnprintf( outFile, LALNameLength * sizeof(CHAR),
+          snprintf( outFile, LALNameLength * sizeof(CHAR),
               "Response-%s-%d.txt", ifoCode[j], response.epoch.gpsSeconds );
           LALCPrintFrequencySeries( &response, outFile );
         }

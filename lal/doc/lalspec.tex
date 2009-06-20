@@ -343,11 +343,10 @@ since there should be no assumptions about the nature of the filesystem.
 LAL is not supposed to assume POSIX.  Furthermore, there should be no
 assumptions about (or dependence on) the environment under which a LAL
 function is called.  This will allow LAL routines to be integrated into
-a wide variety of programming environments: they may be used in stand-alone
-programs or in loadable modules integrated into other run environments.
-Specifically this means that routines in \verb+stdio.h+ are not allowed (except
-for \verb+sprintf+, but there is a LAL replacement for this,
-\verb+LALSnprintf+, which should be used instead), several routines in
+a wide variety of programming environments: they may be used in
+stand-alone programs or in loadable modules integrated into other run
+environments.  Specifically this means that routines in \verb+stdio.h+
+are not allowed (except for \verb+snprintf+), several routines in
 \verb+stdlib.h+ including \verb+rand+ and \verb+srand+ (there are LAL
 replacements for these), \verb+system+, and \verb+getenv+.
 

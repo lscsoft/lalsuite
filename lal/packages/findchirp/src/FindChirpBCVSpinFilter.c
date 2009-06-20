@@ -695,7 +695,7 @@ LALFindChirpBCVSpinFilterSegment (
           		thisEvent->f_final  = (REAL4) input->fcTmplt->tmplt.fFinal ;
 
           		/* set the type of the template used in the analysis */
-          		LALSnprintf( thisEvent->search,
+          		snprintf( thisEvent->search,
 				LIGOMETA_SEARCH_MAX * sizeof(CHAR),
               			"FindChirpBCVSpin" );
 
@@ -798,7 +798,7 @@ LALFindChirpBCVSpinFilterSegment (
         thisEvent->f_final  = (REAL4) input->fcTmplt->tmplt.fFinal ;
 
        /* set the type of the template used in the analysis */
-       LALSnprintf( thisEvent->search,
+       snprintf( thisEvent->search,
                     LIGOMETA_SEARCH_MAX * sizeof(CHAR),
                    "FindChirpBCVSpin" );
 

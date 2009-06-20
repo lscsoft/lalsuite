@@ -334,11 +334,11 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 
         this_proc_param = this_proc_param->next = (ProcessParamsTable *)
           calloc( 1, sizeof(ProcessParamsTable) );
-        LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s",
+        snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s",
             PROGRAM_NAME );
-        LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "-userTag" );
-        LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
-        LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
+        snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "-userTag" );
+        snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+        snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
             optarg );
         break;
       case 'b':
@@ -351,7 +351,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         }
         else
         {
-          LALSnprintf( comment, LIGOMETA_COMMENT_MAX, "%s", optarg);
+          snprintf( comment, LIGOMETA_COMMENT_MAX, "%s", optarg);
         }
         break;
       case 'B':
@@ -823,35 +823,35 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 
   if ( alphConst == 0 )
   {
-    LALSnprintf( procparams.processParamsTable->program,
+    snprintf( procparams.processParamsTable->program,
         LIGOMETA_PROGRAM_MAX, "%s", PROGRAM_NAME );
-    LALSnprintf( procparams.processParamsTable->param,
+    snprintf( procparams.processParamsTable->param,
         LIGOMETA_PARAM_MAX, "--disable-alpha-constraint" );
-    LALSnprintf( procparams.processParamsTable->type,
+    snprintf( procparams.processParamsTable->type,
         LIGOMETA_TYPE_MAX, "string" );
-    LALSnprintf( procparams.processParamsTable->value,
+    snprintf( procparams.processParamsTable->value,
         LIGOMETA_VALUE_MAX, " " );
   }
   if ( faithfulness == 1 )
   {
-    LALSnprintf( procparams.processParamsTable->program,
+    snprintf( procparams.processParamsTable->program,
         LIGOMETA_PROGRAM_MAX, "%s", PROGRAM_NAME );
-    LALSnprintf( procparams.processParamsTable->param,
+    snprintf( procparams.processParamsTable->param,
         LIGOMETA_PARAM_MAX, "--faithfullness" );
-    LALSnprintf( procparams.processParamsTable->type,
+    snprintf( procparams.processParamsTable->type,
         LIGOMETA_TYPE_MAX, "string" );
-    LALSnprintf( procparams.processParamsTable->value,
+    snprintf( procparams.processParamsTable->value,
         LIGOMETA_VALUE_MAX, " " );
   }
   if ( fastsim == 1 )
   {
-    LALSnprintf( procparams.processParamsTable->program,
+    snprintf( procparams.processParamsTable->program,
         LIGOMETA_PROGRAM_MAX, "%s", PROGRAM_NAME );
-    LALSnprintf( procparams.processParamsTable->param,
+    snprintf( procparams.processParamsTable->param,
         LIGOMETA_PARAM_MAX, "--fast-simulation" );
-    LALSnprintf( procparams.processParamsTable->type,
+    snprintf( procparams.processParamsTable->type,
         LIGOMETA_TYPE_MAX, "string" );
-    LALSnprintf( procparams.processParamsTable->value,
+    snprintf( procparams.processParamsTable->value,
         LIGOMETA_VALUE_MAX, " " );
   }
 

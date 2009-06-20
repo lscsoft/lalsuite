@@ -620,10 +620,10 @@ LALSubtractSFTVectors (LALStatus *status,
 	  ret->data[i].data->data[j].im = inVect1->data[i].data->data[j].im - inVect2->data[i].data->data[j].im;
 	}  /* for j < numBins1 */
 
-      LALSnprintf ( name1Trunc, halfNameLength, "%s", inVect1->data[i].name );
-      LALSnprintf ( name2Trunc, halfNameLength, "%s", inVect2->data[i].name );
-      LALSnprintf ( prefix, (strlen("Xn:") + 1), "%s", inVect1->data[i].name );
-      LALSnprintf ( ret->data[i].name, LALNameLength, "%s{%s}-{%s}", prefix, name1Trunc, name2Trunc );
+      snprintf ( name1Trunc, halfNameLength, "%s", inVect1->data[i].name );
+      snprintf ( name2Trunc, halfNameLength, "%s", inVect2->data[i].name );
+      snprintf ( prefix, (strlen("Xn:") + 1), "%s", inVect1->data[i].name );
+      snprintf ( ret->data[i].name, LALNameLength, "%s{%s}-{%s}", prefix, name1Trunc, name2Trunc );
     } /* for i < numSFTs1 */
 
   /* success: */

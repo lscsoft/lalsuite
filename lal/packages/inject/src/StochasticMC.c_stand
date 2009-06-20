@@ -247,9 +247,9 @@ int main( ){
   //create output files
 
   if (print){
-  LALSnprintf( Outfile1, LALNameLength * sizeof(CHAR),
+  snprintf( Outfile1, LALNameLength * sizeof(CHAR),
             "%s_1_%d.ilwd",_IFO1,starttime);
-  LALSnprintf( Outfile2, LALNameLength * sizeof(CHAR),
+  snprintf( Outfile2, LALNameLength * sizeof(CHAR),
             "%s_2_%d.ilwd",_IFO2,starttime);
 
   //print output to ilwds
@@ -395,9 +395,9 @@ int main( ){
   //create output files
 
   if (print){
-  LALSnprintf( Outfile1, LALNameLength * sizeof(CHAR),
+  snprintf( Outfile1, LALNameLength * sizeof(CHAR),
             "%s_1_%d.ilwd",_IFO1,starttime);
-  LALSnprintf( Outfile2, LALNameLength * sizeof(CHAR),
+  snprintf( Outfile2, LALNameLength * sizeof(CHAR),
             "%s_2_%d.ilwd",_IFO2,starttime);
 
   //print output to ilwds

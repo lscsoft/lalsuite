@@ -49,7 +49,6 @@ LALMalloc()                   LALFree()
 LALSCreateVectorSequence()    LALSDestroyVectorSequence()
 LALSCreateVector()            LALSDestroyVector()
 LALDCreateVector()            LALDDestroyVector()
-LALSnprintf()
 \end{verbatim}
 
 \subsubsection*{Notes}
@@ -182,9 +181,9 @@ LALGenerateRing(
   output->a->sampleUnits = lalStrainUnit;
   output->f->sampleUnits = lalHertzUnit;
   output->phi->sampleUnits = lalDimensionlessUnit;
-  LALSnprintf( output->a->name, LALNameLength, "Ring amplitudes" );
-  LALSnprintf( output->f->name, LALNameLength, "Ring frequency" );
-  LALSnprintf( output->phi->name, LALNameLength, "Ring phase" );
+  snprintf( output->a->name, LALNameLength, "Ring amplitudes" );
+  snprintf( output->f->name, LALNameLength, "Ring frequency" );
+  snprintf( output->phi->name, LALNameLength, "Ring phase" );
 
 
   /* Allocate phase and frequency arrays. */
@@ -430,7 +429,7 @@ LALRingInjectSignals(
         FILE *fp;
         char fname[512];
         UINT4 jj, kplus, kcross;
-        LALSnprintf( fname, sizeof(fname) / sizeof(*fname),
+        snprintf( fname, sizeof(fname) / sizeof(*fname),
             "waveform-%d-%d-%s.txt",
             simRingdown->geocent_start_time.gpsSeconds,
             simRingdown->geocent_start_time.gpsNanoSeconds,
@@ -479,7 +478,7 @@ LALRingInjectSignals(
         FILE *fp;
         char fname[512];
         UINT4 jj;
-        LALSnprintf( fname, sizeof(fname) / sizeof(*fname),
+        snprintf( fname, sizeof(fname) / sizeof(*fname),
             "signal-%d-%d-%s.txt",
             simRingdown->geocent_start_time.gpsSeconds,
             simRingdown->geocent_start_time.gpsNanoSeconds,

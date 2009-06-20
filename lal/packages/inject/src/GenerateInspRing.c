@@ -558,7 +558,7 @@ XLALDeriveRingdownParameters(
   /* waveform */
   memcpy( ringInj->waveform, "Ringdown",
       LIGOMETA_WAVEFORM_MAX * sizeof(CHAR));
-  LALSnprintf( ringInj->coordinates, LIGOMETA_COORDINATES_MAX * sizeof(CHAR),
+  snprintf( ringInj->coordinates, LIGOMETA_COORDINATES_MAX * sizeof(CHAR),
       "EQUATORIAL");
 
   /* calculate hrss */

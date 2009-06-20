@@ -235,7 +235,7 @@ LALMalloc()                   LALFree()
 LALSCreateVectorSequence()    LALSDestroyVectorSequence()
 LALSCreateVector()            LALSDestroyVector()
 LALDCreateVector()            LALDDestroyVector()
-LALSBisectionFindRoot()       LALSnprintf()
+LALSBisectionFindRoot()       snprintf()
 \end{verbatim}
 
 \subsubsection*{Notes}
@@ -857,9 +857,9 @@ LALGeneratePPNInspiral( LALStatus     *stat,
   output->a->sampleUnits = lalStrainUnit;
   output->f->sampleUnits = lalHertzUnit;
   output->phi->sampleUnits = lalDimensionlessUnit;
-  LALSnprintf( output->a->name, LALNameLength, "PPN inspiral amplitudes" );
-  LALSnprintf( output->f->name, LALNameLength, "PPN inspiral frequency" );
-  LALSnprintf( output->phi->name, LALNameLength, "PPN inspiral phase" );
+  snprintf( output->a->name, LALNameLength, "PPN inspiral amplitudes" );
+  snprintf( output->f->name, LALNameLength, "PPN inspiral frequency" );
+  snprintf( output->phi->name, LALNameLength, "PPN inspiral phase" );
   a = output->a->data->data;
   f = output->f->data->data;
   phi = output->phi->data->data;

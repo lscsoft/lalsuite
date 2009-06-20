@@ -91,10 +91,10 @@ int XFUNC ( STYPE *series, int frnum )
     XLAL_ERROR( func, XLAL_ETIME );
 
   /* construct file name */
-  c = LALSnprintf( fname, sizeof( fname ), "%c-%s-%d-%d.gwf", site, description, t0, dt );
+  c = snprintf( fname, sizeof( fname ), "%c-%s-%d-%d.gwf", site, description, t0, dt );
   if ( c < 0 || c > (int)sizeof(fname) - 2 )
     XLAL_ERROR( func, XLAL_ENAME );
-  c = LALSnprintf( tmpfname, sizeof( tmpfname ), "%s.tmp", fname );
+  c = snprintf( tmpfname, sizeof( tmpfname ), "%s.tmp", fname );
   if ( c < 0 || c > (int)sizeof(tmpfname) - 2 )
     XLAL_ERROR( func, XLAL_ENAME );
 
@@ -199,10 +199,10 @@ FUNC (
   dt   -= series->epoch.gpsSeconds;
   dt    = dt < 1 ? 1 : dt; /* must be at least one */
 
-  LALSnprintf( tmpfname, sizeof( tmpfname ), "%s-%s-%d-%d.gwf.tmp", source,
+  snprintf( tmpfname, sizeof( tmpfname ), "%s-%s-%d-%d.gwf.tmp", source,
       params->description ? params->description : "UNKNOWN",
       series->epoch.gpsSeconds, dt );
-  LALSnprintf( fname, sizeof( fname ), "%s-%s-%d-%d.gwf", source,
+  snprintf( fname, sizeof( fname ), "%s-%s-%d-%d.gwf", source,
       params->description ? params->description : "UNKNOWN",
       series->epoch.gpsSeconds, dt );
   frfile = FrFileONew( tmpfname, 0 );
@@ -309,10 +309,10 @@ FSFUNC (
   dt   -= series->epoch.gpsSeconds;
   dt    = dt < 1 ? 1 : dt; /* must be at least one */
 
-  LALSnprintf( tmpfname, sizeof( tmpfname ), "%s-%s-%d-%d.gwf.tmp", source,
+  snprintf( tmpfname, sizeof( tmpfname ), "%s-%s-%d-%d.gwf.tmp", source,
       params->description ? params->description : "UNKNOWN",
       series->epoch.gpsSeconds, dt );
-  LALSnprintf( fname, sizeof( fname ), "%s-%s-%d-%d.gwf", source,
+  snprintf( fname, sizeof( fname ), "%s-%s-%d-%d.gwf", source,
       params->description ? params->description : "UNKNOWN",
       series->epoch.gpsSeconds, dt );
   frfile = FrFileONew( tmpfname, 0 );

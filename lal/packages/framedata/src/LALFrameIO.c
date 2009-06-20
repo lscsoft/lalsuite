@@ -1052,7 +1052,7 @@ int XLALFrameWrite(FrameH *frame, const char *fname, int compressLevel)
   int c;
 
   /* set temporary filename */
-  c = LALSnprintf( tmpfname, sizeof( tmpfname ), "%s.tmp", fname );
+  c = snprintf( tmpfname, sizeof( tmpfname ), "%s.tmp", fname );
   if ( c < 0 || c > (int)sizeof(tmpfname) - 2 )
     XLAL_ERROR( func, XLAL_ENAME );
 

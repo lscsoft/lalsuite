@@ -1311,11 +1311,11 @@ LALEOBWaveformForInjection (
       waveform->psi = ppnParams->psi;
 
 
-      LALSnprintf( waveform->a->name,
+      snprintf( waveform->a->name,
 	  	LALNameLength, "EOB inspiral amplitudes");
-      LALSnprintf( waveform->f->name,
+      snprintf( waveform->f->name,
 		  LALNameLength, "EOB inspiral frequency");
-      LALSnprintf( waveform->phi->name,
+      snprintf( waveform->phi->name,
 	  	LALNameLength, "EOB inspiral phase");
 
       /* --- fill some output ---*/
@@ -1344,7 +1344,7 @@ LALEOBWaveformForInjection (
         memcpy(waveform->h->data->data , h->data, 2*count*(sizeof(REAL4)));
         waveform->h->deltaT = 1./params->tSampling;
         waveform->h->sampleUnits = lalStrainUnit;
-        LALSnprintf( waveform->h->name,
+        snprintf( waveform->h->name,
 	  	  LALNameLength, "EOB inspiral polarizations");
         LALSDestroyVector(status->statusPtr, &h);
         CHECKSTATUSPTR(status);
@@ -1453,13 +1453,13 @@ LALEOBWaveformEngine (
    /* Check order is consistent if using EOBNR and EOB */
    if ( params->approximant == EOBNR && params->order != LAL_PNORDER_PSEUDO_FOUR )
    {
-     LALSnprintf( message, 256, "Order must be LAL_PNORDER_PSEUDO_FOUR for approximant EOBNR." );
+     snprintf( message, 256, "Order must be LAL_PNORDER_PSEUDO_FOUR for approximant EOBNR." );
      LALError( status, message );
      ABORT( status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE );
    }
    else if ( params->approximant == EOB && params->order < LAL_PNORDER_TWO )
    {
-     LALSnprintf( message, 256, "Order must be LAL_PNORDER_TWO or greater for approximant EOB." );
+     snprintf( message, 256, "Order must be LAL_PNORDER_TWO or greater for approximant EOB." );
      LALError( status, message );
      ABORT( status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE );
    }
@@ -1507,7 +1507,7 @@ LALEOBWaveformEngine (
    /* Check we get a sensible answer */
    if ( ampl0 == 0.0 )
    {
-     LALSnprintf( message, 256, "Generating waveform of zero amplitude!!" );
+     snprintf( message, 256, "Generating waveform of zero amplitude!!" );
      LALWarning( status, message );
    }
 
@@ -1528,7 +1528,7 @@ LALEOBWaveformEngine (
      if ( params->tSampling < modefreqs->data[0].re / LAL_PI )
      {
        XLALDestroyCOMPLEX8Vector( modefreqs );
-       LALSnprintf( message, 256, "Ringdown freq less than Nyquist freq. "
+       snprintf( message, 256, "Ringdown freq less than Nyquist freq. "
              "Increase sample rate or consider using EOB approximant.\n", r );
        LALError(status->statusPtr, message);
        ABORT( status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
@@ -1616,7 +1616,7 @@ LALEOBWaveformEngine (
        funcParams2 = (void *) &pr3in;
        break;
      default:
-       LALSnprintf(message, 256, "There are no EOB/EOBNR waveforms implemented at order %d\n", params->order);
+       snprintf(message, 256, "There are no EOB/EOBNR waveforms implemented at order %d\n", params->order);
        LALError( status, message );
        LALFree(dummy.data);
        ABORT( status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
@@ -1690,7 +1690,7 @@ LALEOBWaveformEngine (
        in4.function = LALHCapDerivativesP4PN;
        break;
      default:
-       LALSnprintf(message, 256, "There are no EOB/EOBNR waveforms implemented at order %d\n", params->order);
+       snprintf(message, 256, "There are no EOB/EOBNR waveforms implemented at order %d\n", params->order);
        LALError( status, message );
        LALFree(dummy.data);
        ABORT( status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);

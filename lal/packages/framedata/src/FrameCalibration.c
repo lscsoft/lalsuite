@@ -287,7 +287,7 @@ LALExtractFrameResponse(
   }
 
   /* read in the frequency series for the reference calbration */
-  LALSnprintf( channelName, LALNameLength * sizeof(CHAR),
+  snprintf( channelName, LALNameLength * sizeof(CHAR),
       "%s:" RESPONSE_CHAN,  calfacts->ifo );
   LALFrGetCOMPLEX8FrequencySeries( status->statusPtr,
       &R0, &frameChan, refStream );
@@ -299,7 +299,7 @@ LALExtractFrameResponse(
   }
 
   /* read in the reference cavity gain frequency series */
-  LALSnprintf( channelName, LALNameLength * sizeof(CHAR),
+  snprintf( channelName, LALNameLength * sizeof(CHAR),
       "%s:" CAV_GAIN_CHAN,  calfacts->ifo );
   LALFrGetCOMPLEX8FrequencySeries( status->statusPtr,
       &C0, &frameChan, refStream );
@@ -334,7 +334,7 @@ LALExtractFrameResponse(
   do
   {
     /* try and get sensemon frames */
-    LALSnprintf( facDsc, LALNameLength * sizeof(CHAR), SENSEMON_FAC_TYPE );
+    snprintf( facDsc, LALNameLength * sizeof(CHAR), SENSEMON_FAC_TYPE );
     LALFrCacheSieve( status->statusPtr, &facCache, calCache, &sieve );
     BEGINFAIL( status )
     {
@@ -353,7 +353,7 @@ LALExtractFrameResponse(
 
       OPEN_FAC;
 
-      LALSnprintf( channelName, LALNameLength * sizeof(CHAR),
+      snprintf( channelName, LALNameLength * sizeof(CHAR),
           "%s:" CAV_FAC_CHAN ".mean" ,  calfacts->ifo );
 
       /* get the sample rate of the alpha channel */
@@ -427,7 +427,7 @@ LALExtractFrameResponse(
       ENDFAIL( status );
 
       /* get the alpha*beta values */
-      LALSnprintf( channelName, LALNameLength * sizeof(CHAR),
+      snprintf( channelName, LALNameLength * sizeof(CHAR),
           "%s:" OLOOP_FAC_CHAN ".mean",  calfacts->ifo );
       LALFrGetREAL8TimeSeries( status->statusPtr,
           &sensemonTS, &frameChan, facStream );
@@ -495,7 +495,7 @@ LALExtractFrameResponse(
       /* the lalapps frames are complex_8 proc data */
       OPEN_FAC;
 
-      LALSnprintf( channelName, LALNameLength * sizeof(CHAR),
+      snprintf( channelName, LALNameLength * sizeof(CHAR),
           "%s:" CAV_FAC_CHAN,  calfacts->ifo );
 
       /* get the sample rate of the alpha channel */
@@ -560,7 +560,7 @@ LALExtractFrameResponse(
       ENDFAIL( status );
 
       /* get the alpha*beta values */
-      LALSnprintf( channelName, LALNameLength * sizeof(CHAR),
+      snprintf( channelName, LALNameLength * sizeof(CHAR),
           "%s:" OLOOP_FAC_CHAN,  calfacts->ifo );
       LALFrGetCOMPLEX8TimeSeries( status->statusPtr,
           &ab, &frameChan, facStream );

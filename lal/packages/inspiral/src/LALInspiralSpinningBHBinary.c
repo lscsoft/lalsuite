@@ -831,9 +831,9 @@ LALInspiralSpinModulatedWaveForInjection(
     waveform->psi = ppnParams->psi;
 
 
-    LALSnprintf( waveform->a->name, LALNameLength, "Spinning inspiral amplitudes" );
-    LALSnprintf( waveform->f->name, LALNameLength, "Spinning inspiral frequency" );
-    LALSnprintf( waveform->phi->name, LALNameLength, "Spinning inspiral phase" );
+    snprintf( waveform->a->name, LALNameLength, "Spinning inspiral amplitudes" );
+    snprintf( waveform->f->name, LALNameLength, "Spinning inspiral frequency" );
+    snprintf( waveform->phi->name, LALNameLength, "Spinning inspiral phase" );
 
 
     params->tC = count / params->tSampling ;

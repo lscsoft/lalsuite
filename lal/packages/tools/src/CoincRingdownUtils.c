@@ -1474,7 +1474,7 @@ XLALGenerateCoherentBank(
         currentTrigger->next = NULL;
         currentTrigger->event_id = NULL;
         /* set the ifo */
-        LALSnprintf( currentTrigger->ifo, LIGOMETA_IFO_MAX, ifo );
+        snprintf( currentTrigger->ifo, LIGOMETA_IFO_MAX, ifo );
         /* set the event id */
         currentTrigger->event_id = LALCalloc( 1, sizeof(EventIDColumn) );
         if ( !(currentTrigger->event_id) )

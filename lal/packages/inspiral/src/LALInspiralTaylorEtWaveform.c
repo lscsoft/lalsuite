@@ -485,7 +485,7 @@ LALTaylorEtWaveformEngine (
 	   rootIn.function = LALzetaInit7PN;
 	   break;
 	default:
-	   LALSnprintf(message, 256, "There are no Et waveforms at order %d\n", params->order);
+	   snprintf(message, 256, "There are no Et waveforms at order %d\n", params->order);
 	   LALError( status, message );
 	   LALFree(dummy.data);
 	   ABORT( status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
@@ -523,7 +523,7 @@ case LAL_PNORDER_THREE_POINT_FIVE:
 	   in4.function = LALTaylorEtDerivatives7PN;
 	   break;
 	default:
-	   LALSnprintf(message, 256, "There are no Et waveforms at order %d\n", params->order);
+	   snprintf(message, 256, "There are no Et waveforms at order %d\n", params->order);
 	   LALError( status, message );
 	   LALFree(dummy.data);
 	   ABORT( status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);

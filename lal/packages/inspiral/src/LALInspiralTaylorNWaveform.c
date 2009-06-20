@@ -458,7 +458,7 @@ LALTaylorNWaveformEngine (
 	   rootIn.function = LALxiInit7PN;
 	   break;
 	default:
-	   LALSnprintf(message, 256, "There are no Et waveforms at order %d\n", params->order);
+	   snprintf(message, 256, "There are no Et waveforms at order %d\n", params->order);
 	   LALError( status, message );
 	   LALFree(dummy.data);
 	   ABORT( status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
@@ -496,7 +496,7 @@ LALTaylorNWaveformEngine (
 	   in4.function = LALTaylorNDerivatives7PN;
 	   break;
 	default:
-	   LALSnprintf(message, 256, "There are no Et waveforms at order %d\n", params->order);
+	   snprintf(message, 256, "There are no Et waveforms at order %d\n", params->order);
 	   LALError( status, message );
 	   LALFree(dummy.data);
 	   ABORT( status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);

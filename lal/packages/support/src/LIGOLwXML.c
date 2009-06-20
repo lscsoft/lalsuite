@@ -1432,7 +1432,7 @@ int XLALCreateLIGODataFileName(
       if (gpsEndTime->gpsNanoSeconds > 0) ++gpsDuration;
 
       /* and here put it all together */
-      LALSnprintf( filename, size, "%s-%s-%d-%d.%s",
+      snprintf( filename, size, "%s-%s-%d-%d.%s",
 		   dataSource, dataDescription, gpsStartTime->gpsSeconds,
 		   gpsDuration, extension );
 
