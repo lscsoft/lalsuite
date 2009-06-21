@@ -213,9 +213,9 @@ int main (int argc, char* argv[])
 
  /*ilwd*/
  /*
- LALSnprintf(fname,50,POPCORN_FILENAMEOUT0"%d.ilwd",start);
+ snprintf(fname,50,POPCORN_FILENAMEOUT0"%d.ilwd",start);
  pfzero=LALFopen(fname,"w");
- LALSnprintf(fname,50,POPCORN_FILENAMEOUT1"%d.ilwd",start);
+ snprintf(fname,50,POPCORN_FILENAMEOUT1"%d.ilwd",start);
  pfone=LALFopen(fname,"w");
  fprintf(pfzero,"<?ilwd?>\n");fprintf(pfone,"<?ilwd?>\n");
 
@@ -241,9 +241,9 @@ int main (int argc, char* argv[])
 
  /*ascii*/
 
-  LALSnprintf(fname,50,POPCORN_FILENAMEOUT0"%d.dat",start);
+  snprintf(fname,50,POPCORN_FILENAMEOUT0"%d.dat",start);
   pfzero=LALFopen(fname,"w");
-  LALSnprintf(fname,50,POPCORN_FILENAMEOUT1"%d.dat",start);
+  snprintf(fname,50,POPCORN_FILENAMEOUT1"%d.dat",start);
   pfone=LALFopen(fname,"w");
 
    for(i=0;i<n;i++)
@@ -256,9 +256,9 @@ int main (int argc, char* argv[])
 
 /*omega spectrum*/
 
-    LALSnprintf(fname,50,POPCORN_FILENAMEOUT0"%d_omega.dat",start);
+    snprintf(fname,50,POPCORN_FILENAMEOUT0"%d_omega.dat",start);
   pfzero=LALFopen(fname,"w");
-    LALSnprintf(fname,50,POPCORN_FILENAMEOUT1"%d_omega.dat",start);
+    snprintf(fname,50,POPCORN_FILENAMEOUT1"%d_omega.dat",start);
   pfone=LALFopen(fname,"w");
 
    for(i=0;i<n/2;i++)

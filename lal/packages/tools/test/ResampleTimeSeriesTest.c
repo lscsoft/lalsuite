@@ -165,7 +165,7 @@ main (int argc, char *argv[])
     chan.data->data[j] = sin( 2.0 * LAL_PI * sineFreq * j * chan.deltaT );
   }
 
-  LALSnprintf( chan.name, LALNameLength * sizeof(CHAR), "%d_%d_%d_%.2f_%d_in",
+  snprintf( chan.name, LALNameLength * sizeof(CHAR), "%d_%d_%d_%.2f_%d_in",
       inRate, outRate, numPoints, sineFreq, filtType );
   LALFrWriteREAL4TimeSeries( &status, &chan, &in_opar );
   TestStatus (&status, "0", 1);
@@ -173,7 +173,7 @@ main (int argc, char *argv[])
   LALResampleREAL4TimeSeries( &status, &chan, &resampPars );
   TestStatus (&status, "0", 1);
 
-  LALSnprintf( chan.name, LALNameLength * sizeof(CHAR), "%d_%d_%d_%.2f_%d_out",
+  snprintf( chan.name, LALNameLength * sizeof(CHAR), "%d_%d_%d_%.2f_%d_out",
       inRate, outRate, numPoints, sineFreq, filtType );
   LALFrWriteREAL4TimeSeries( &status, &chan, &out_opar );
   TestStatus (&status, "0", 1);

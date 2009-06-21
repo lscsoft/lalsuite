@@ -100,7 +100,7 @@ LALMalloc()                   LALFree()
 LALSCreateVectorSequence()    LALSDestroyVectorSequence()
 LALSCreateVector()            LALSDestroyVector()
 LALDCreateVector()            LALDDestroyVector()
-LALSnprintf()
+snprintf()
 \end{verbatim}
 
 \subsubsection*{Notes}
@@ -202,9 +202,9 @@ LALGenerateTaylorCW( LALStatus          *stat,
   output->a->sampleUnits = lalStrainUnit;
   output->f->sampleUnits = lalHertzUnit;
   output->phi->sampleUnits = lalDimensionlessUnit;
-  LALSnprintf( output->a->name, LALNameLength, "CW amplitudes" );
-  LALSnprintf( output->f->name, LALNameLength, "CW frequency" );
-  LALSnprintf( output->phi->name, LALNameLength, "CW phase" );
+  snprintf( output->a->name, LALNameLength, "CW amplitudes" );
+  snprintf( output->f->name, LALNameLength, "CW frequency" );
+  snprintf( output->phi->name, LALNameLength, "CW phase" );
 
   /* Allocate phase and frequency arrays. */
   LALSCreateVector( stat->statusPtr, &( output->f->data ), n );

@@ -210,7 +210,7 @@ LALGenerateInspiral(
   /* If no waveform has been generated. (AmpCorPPN fills waveform.h) */
   if ( waveform->a == NULL && approximant != AmpCorPPN )
   {
-    LALSnprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
+    snprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
         "No waveform generated (check lower frequency)\n");
     LALInfo( status, warnMsg );
     ABORT( status, LALINSPIRALH_ENOWAVEFORM, LALINSPIRALH_MSGENOWAVEFORM );
@@ -220,7 +220,7 @@ LALGenerateInspiral(
   /* If sampling problem. (AmpCorPPN may not be compatible) */
   if ( ppnParams->dfdt > 2.0 && approximant != AmpCorPPN )
   {
-    LALSnprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
+    snprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
         "Waveform sampling interval is too large:\n"
         "\tmaximum df*dt = %f", ppnParams->dfdt );
     LALInfo( status, warnMsg );
@@ -228,7 +228,7 @@ LALGenerateInspiral(
   }
 
   /* Some info should add everything (spin and so on) */
-  LALSnprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
+  snprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
       "Injected waveform parameters:\n"
       "ppnParams->mTot\t= %"LAL_REAL4_FORMAT"\n"
       "ppnParams->eta\t= %"LAL_REAL4_FORMAT"\n"
@@ -322,7 +322,7 @@ LALGetOrderFromString(
   }
   else
   {
-    LALSnprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
+    snprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
         "Cannot parse order from string: %s\n", thisEvent );
     LALInfo( status, warnMsg );
     ABORT(status, LALINSPIRALH_EORDER, LALINSPIRALH_MSGEORDER);
@@ -398,7 +398,7 @@ LALGetApproximantFromString(
   }
   else
   {
-    LALSnprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
+    snprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
         "Cannot parse approximant from string: %s \n", thisEvent );
     LALInfo( status, warnMsg );
     ABORT( status, LALINSPIRALH_EAPPROXIMANT, LALINSPIRALH_MSGEAPPROXIMANT );
@@ -438,7 +438,7 @@ LALGenerateInspiralPopulatePPN(
   }
   else
   {
-    LALSnprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
+    snprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
         "f_lower must be specified in the injection file generation.\n" );
     LALInfo( status, warnMsg );
     ABORT( status, LALINSPIRALH_EFLOWERINJ, LALINSPIRALH_MSGEFLOWERINJ );

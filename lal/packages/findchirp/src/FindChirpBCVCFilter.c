@@ -287,7 +287,7 @@ LALFindChirpBCVCFilterSegment (
       CHAR newinfomsg[256];
 
 
-      LALSnprintf( newinfomsg, sizeof(newinfomsg) / sizeof(*newinfomsg),
+      snprintf( newinfomsg, sizeof(newinfomsg) / sizeof(*newinfomsg),
           "chirp time = %e seconds => %d points\n"
           "invSpecTrunc = %d => ignoreIndex = %d\n",
           chirpTime, deltaEventIndex,
@@ -309,7 +309,7 @@ LALFindChirpBCVCFilterSegment (
   {
     CHAR newinfomsg[256];
 
-    LALSnprintf( newinfomsg, sizeof(newinfomsg) / sizeof(*newinfomsg),
+    snprintf( newinfomsg, sizeof(newinfomsg) / sizeof(*newinfomsg),
         "filtering from %d to %d\n",
         ignoreIndex, numPoints - ignoreIndex );
     LALInfo( status, newinfomsg );
@@ -336,7 +336,7 @@ LALFindChirpBCVCFilterSegment (
     if ( lalDebugLevel & LALINFO )
     {
        CHAR newinfomsg[256];
-       LALSnprintf( newinfomsg, sizeof(newinfomsg) / sizeof(*newinfomsg),
+       snprintf( newinfomsg, sizeof(newinfomsg) / sizeof(*newinfomsg),
               "a1 = %e b1 = %e b2 = %e\n"
               "fFinal = %e deltaF = %e numPoints = %d => kFinal = %d\n",
                a1, b1, b2, fFinal, deltaF, numPoints, kFinal );
@@ -628,7 +628,7 @@ LALFindChirpBCVCFilterSegment (
   if ( lalDebugLevel & LALINFO )
     {
       CHAR newinfomsg[256];
-      LALSnprintf( newinfomsg, sizeof(newinfomsg) / sizeof(*newinfomsg),
+      snprintf( newinfomsg, sizeof(newinfomsg) / sizeof(*newinfomsg),
 		   "thetab = %e and alphaUnity = %e\n",
 		   thetab, alphaUnity);
       LALInfo( status, newinfomsg );
@@ -674,7 +674,7 @@ LALFindChirpBCVCFilterSegment (
       else
       {
 	CHAR newinfomsg[256];
-	LALSnprintf( newinfomsg, sizeof(newinfomsg) / sizeof(*newinfomsg),
+	snprintf( newinfomsg, sizeof(newinfomsg) / sizeof(*newinfomsg),
 		     "thetab = %e and thetav = %e\n"
 		     "thetav not in the range allowed...V1= %e and V2 = %e\n",
 		     thetab, thetav, V1, V2 );
@@ -697,7 +697,7 @@ LALFindChirpBCVCFilterSegment (
       else
 	{
 	  CHAR newinfomsg[256];
-	  LALSnprintf( newinfomsg, sizeof(newinfomsg) / sizeof(*newinfomsg),
+	  snprintf( newinfomsg, sizeof(newinfomsg) / sizeof(*newinfomsg),
 		       "thetab = %e and thetav = %e\n"
 		       "thetav not in the range allowed...V1= %e and V2 = %e\n",
 		       thetab, thetav, V1, V2 );
@@ -810,7 +810,7 @@ LALFindChirpBCVCFilterSegment (
         thisEvent->f_final  = (REAL4) input->fcTmplt->tmplt.fFinal ;
 
         /* set the type of the template used in the analysis */
-        LALSnprintf( thisEvent->search, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
+        snprintf( thisEvent->search, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
             "FindChirpBCVC" );
 
         thisEvent->chisq     = 0;
@@ -903,7 +903,7 @@ LALFindChirpBCVCFilterSegment (
 
 
     /* set the type of the template used in the analysis */
-    LALSnprintf( thisEvent->search, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
+    snprintf( thisEvent->search, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
         "FindChirpBCVC" );
 
     /* set snrsq, chisq, sigma and effDist for this event */

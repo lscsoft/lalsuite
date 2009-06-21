@@ -120,8 +120,6 @@
 int gethostname(char *name, int len);
 #endif
 
-#include <FrameL.h>
-
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -1030,14 +1028,14 @@ LALFrNext(
     {
       if ( stream->state & LAL_FR_URL ) /* must have failed to open a file */
       {
-        LALSnprintf( frErrMsg, sizeof(frErrMsg)/sizeof(*frErrMsg),
+        snprintf( frErrMsg, sizeof(frErrMsg)/sizeof(*frErrMsg),
             "Could not open URL %s\n", (stream->flist+stream->fnum)->url );
         LALError( status, frErrMsg );
         ABORT( status, FRAMESTREAMH_EOPEN, FRAMESTREAMH_MSGEOPEN );
       }
       if ( stream->state & LAL_FR_TOC ) /* must have failed to read a file */
       {
-        LALSnprintf( frErrMsg, sizeof(frErrMsg)/sizeof(*frErrMsg),
+        snprintf( frErrMsg, sizeof(frErrMsg)/sizeof(*frErrMsg),
             "Could not read TOC from %s\n", (stream->flist+stream->fnum)->url );
         LALError( status, frErrMsg );
         ABORT( status, FRAMESTREAMH_EREAD, FRAMESTREAMH_MSGEREAD );
@@ -1079,14 +1077,14 @@ LALFrSeek(
     {
       if ( stream->state & LAL_FR_URL ) /* must have failed to open a file */
       {
-        LALSnprintf( frErrMsg, sizeof(frErrMsg)/sizeof(*frErrMsg),
+        snprintf( frErrMsg, sizeof(frErrMsg)/sizeof(*frErrMsg),
             "Could not open URL %s\n", (stream->flist+stream->fnum)->url );
         LALError( status, frErrMsg );
         ABORT( status, FRAMESTREAMH_EOPEN, FRAMESTREAMH_MSGEOPEN );
       }
       if ( stream->state & LAL_FR_TOC ) /* must have failed to read a file */
       {
-        LALSnprintf( frErrMsg, sizeof(frErrMsg)/sizeof(*frErrMsg),
+        snprintf( frErrMsg, sizeof(frErrMsg)/sizeof(*frErrMsg),
             "Could not read TOC from %s\n", (stream->flist+stream->fnum)->url );
         LALError( status, frErrMsg );
         ABORT( status, FRAMESTREAMH_EREAD, FRAMESTREAMH_MSGEREAD );

@@ -242,7 +242,7 @@ LALInspiralSpinBankMetric(
   if ( lalDebugLevel & LALINFO )
   {
     CHAR msg[256];
-    LALSnprintf( msg, sizeof(msg) / sizeof(*msg), "metric components:\n"
+    snprintf( msg, sizeof(msg) / sizeof(*msg), "metric components:\n"
                  "psi0-psi0 %e\npsi0-psi3 %e psi3-psi3 %e\npsi0-beta %e "
 		 "psi3-beta %e beta-beta %e\n", metric->data[0] /
 		 pow(*f0,10./3), metric->data[3] / pow(*f0,7./3),
@@ -250,7 +250,7 @@ LALInspiralSpinBankMetric(
 		 pow(*f0,7./3), metric->data[7] / pow(*f0,4./3),
                  metric->data[8] / pow(*f0,4./3) );
     LALInfo( status, msg );
-    LALSnprintf( msg, sizeof(msg) / sizeof(*msg), "f0 = %f j1=%f j4=%f "
+    snprintf( msg, sizeof(msg) / sizeof(*msg), "f0 = %f j1=%f j4=%f "
 		 "j6=%f j9=%f j11=%f j12=%f j14=%f j17=%f", *f0, J1, J4,
                  J6, J9, J11, J12, J14, J17 );
     LALInfo( status, msg );

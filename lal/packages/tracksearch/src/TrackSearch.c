@@ -119,7 +119,7 @@ LALSignalTrackSearch(LALStatus *status,
 		     const TimeFreqRep *tfMap, /* type defined in TimeFreq.h */
 		     TrackSearchParams *params)
 {
-  INT4 tempmaskcount; /*remove later on temp */
+  /*INT4 tempmaskcount; remove later on temp */
 
   /* Initialize status structure   */
   INITSTATUS(status,"LALSignalTrackSearch",TRACKSEARCHC);
@@ -602,7 +602,7 @@ ConnectLinePoints(LALStatus *status,
   INT4 direction; /* the 2 opposite directions to traverse to obtain the complete line */
   INT4 reject[2],check[3],which;/* the list of surrounding points to reject and select */
   REAL4 *eigenVec; /* a pointer defined for convenience; points to a particular element of an array */
-  REAL4 metric[3]; /* a metric defined to choose between 3 different line points */
+  REAL4 metric[3]={0,0,0}; /* a metric defined to choose between 3 different line points */
   REAL4 minimum; /* the minimum of the metric[i]*/
   REAL4 differ; /* the difference between 2 angles */
   REAL4 powerHalfContourA; /* The resulting power of half the contour from tfMap*/

@@ -595,10 +595,10 @@ LALSTPNWaveformForInjection (
     waveform->psi = ppnParams->psi;
 
 
-    LALSnprintf( waveform->a->name, 	LALNameLength, "STPN inspiral amplitudes" );
-    LALSnprintf( waveform->f->name, 	LALNameLength, "STPN inspiral frequency" );
-    LALSnprintf( waveform->phi->name, 	LALNameLength, "STPN inspiral phase" );
-    LALSnprintf( waveform->shift->name, LALNameLength, "STPN inspiral polshift" );
+    snprintf( waveform->a->name, 	LALNameLength, "STPN inspiral amplitudes" );
+    snprintf( waveform->f->name, 	LALNameLength, "STPN inspiral frequency" );
+    snprintf( waveform->phi->name, 	LALNameLength, "STPN inspiral phase" );
+    snprintf( waveform->shift->name, LALNameLength, "STPN inspiral polshift" );
 
 
     /* --- fill some output ---*/

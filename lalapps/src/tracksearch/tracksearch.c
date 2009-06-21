@@ -1953,11 +1953,13 @@ void LALappsDoTrackSearch(
   tsInputs.allocFlag = 2;
   LAL_CALL(  LALSignalTrackSearch(status,&outputCurves,tfmap,&tsInputs),
 	     status);
+#if 0
   /*
    * Write PGM to disk if requested
    */
   if (params.verbosity >= printFiles)
     DumpTFImage(tfmap->map,"DumpMap0",tsInputs.height,tsInputs.width,1);
+#endif
   /*
    * Setup for call to function to do map marking
    * We mark maps is convert Tbin and Fbin to 

@@ -340,9 +340,9 @@ LALInspiralEccentricityForInjection(
       waveform->position = ppnParams->position;
       waveform->psi = ppnParams->psi;
 
-      LALSnprintf( waveform->a->name, LALNameLength,   "T1 inspiral amplitude" );
-      LALSnprintf( waveform->f->name, LALNameLength,   "T1 inspiral frequency" );
-      LALSnprintf( waveform->phi->name, LALNameLength, "T1 inspiral phase" );
+      snprintf( waveform->a->name, LALNameLength,   "T1 inspiral amplitude" );
+      snprintf( waveform->f->name, LALNameLength,   "T1 inspiral frequency" );
+      snprintf( waveform->phi->name, LALNameLength, "T1 inspiral phase" );
 
       /* --- fill some output ---*/
       ppnParams->tc     = (double)(count-1) / params->tSampling ;

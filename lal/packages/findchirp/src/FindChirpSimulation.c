@@ -332,7 +332,7 @@ LALFindChirpInjectSignals (
           );
     }
 
-    LALSnprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
+    snprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
         "Injected waveform timing:\n"
         "thisEvent->geocent_end_time.gpsSeconds = %d\n"
         "thisEvent->geocent_end_time.gpsNanoSeconds = %d\n"
@@ -924,7 +924,7 @@ LALFindChirpSetAnalyseTemplate (
           &(mmFTemplate->order));
       CHECKSTATUSPTR (status);
 
-      LALSnprintf (myMsg, sizeof(myMsg)/sizeof(*myMsg),
+      snprintf (myMsg, sizeof(myMsg)/sizeof(*myMsg),
           "%d Injections, Order = %d, Approx = %d\n\n",
           numInjections, mmFTemplate->order, mmFTemplate->approximant);
       LALInfo (status, myMsg);
@@ -934,7 +934,7 @@ LALFindChirpSetAnalyseTemplate (
       LALInspiralParameterCalc( status->statusPtr, mmFTemplate );
       CHECKSTATUSPTR (status);
 
-      LALSnprintf (myMsg, sizeof(myMsg)/sizeof(*myMsg),
+      snprintf (myMsg, sizeof(myMsg)/sizeof(*myMsg),
           "%d Injections, t0 = %e, t3 = %e\n",
           numInjections, mmFTemplate->t0, mmFTemplate->t3);
       LALInfo (status, myMsg);
@@ -965,12 +965,12 @@ LALFindChirpSetAnalyseTemplate (
         LALInspiralParameterCalc( status->statusPtr, mmFTemplate );
         CHECKSTATUSPTR (status);
 
-        LALSnprintf (myMsg, sizeof(myMsg)/sizeof(*myMsg),
+        snprintf (myMsg, sizeof(myMsg)/sizeof(*myMsg),
             "%d Injections, m1 = %e, m2 = %e eta = %e\n",
             numInjections, mmFTemplate->mass1, mmFTemplate->mass2,
             mmFTemplate->eta);
         LALInfo (status, myMsg);
-        LALSnprintf (myMsg, sizeof(myMsg)/sizeof(*myMsg),
+        snprintf (myMsg, sizeof(myMsg)/sizeof(*myMsg),
             "%d Injections, t0 = %e, t3 = %e\n",
             numInjections, mmFTemplate->t0, mmFTemplate->t3);
         LALInfo (status, myMsg);
@@ -979,7 +979,7 @@ LALFindChirpSetAnalyseTemplate (
             mmFTemplate, &mmFmoments );
         CHECKSTATUSPTR (status);
 
-        LALSnprintf (myMsg, sizeof(myMsg)/sizeof(*myMsg),
+        snprintf (myMsg, sizeof(myMsg)/sizeof(*myMsg),
             "%d Injections, G00 = %e, G01 = %e, G11 = %e\n\n",
             numInjections, mmFmetric.G00, mmFmetric.G01, mmFmetric.G11);
         LALInfo (status, myMsg);
@@ -1012,7 +1012,7 @@ LALFindChirpSetAnalyseTemplate (
           /* Advance kj for the next template */
           kj = kj + 1;
 
-          LALSnprintf (myMsg, sizeof(myMsg)/sizeof(*myMsg),
+          snprintf (myMsg, sizeof(myMsg)/sizeof(*myMsg),
               "%-5d %d %e %e %e %e %e %e %e %e %e %e %e %e %e\n",
               kj-1,
               analyseThisTmplt[kj-1],
@@ -1204,16 +1204,16 @@ XLALFindChirpBankSimInjectSignal (
 
     fprintf( stderr, "reading data from %s %s\n",
         simParams->frameName, simParams->frameChan );
-    LALSnprintf( bankInjection->waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR),
+    snprintf( bankInjection->waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR),
         "%s", simParams->frameName );
-    LALSnprintf( bankInjection->source, LIGOMETA_SOURCE_MAX * sizeof(CHAR),
+    snprintf( bankInjection->source, LIGOMETA_SOURCE_MAX * sizeof(CHAR),
         "%s", simParams->frameChan );
 
     frStream = XLALFrOpen( NULL, simParams->frameName );
     XLALFrSetMode( frStream, LAL_FR_VERBOSE_MODE );
 
     memset( &frameData, 0, sizeof(REAL4TimeSeries) );
-    LALSnprintf( frameData.name,
+    snprintf( frameData.name,
         sizeof(frameData.name) / sizeof(*(frameData.name)), "%s",
         simParams->frameChan );
 
@@ -1308,32 +1308,32 @@ XLALFindChirpBankSimInjectSignal (
       /* set the correct waveform approximant */
       if ( simParams->approx == TaylorT1 )
       {
-        LALSnprintf( bankInjection->waveform, LIGOMETA_WAVEFORM_MAX,
+        snprintf( bankInjection->waveform, LIGOMETA_WAVEFORM_MAX,
             "TaylorT1twoPN" );
       }
       else if ( simParams->approx == TaylorT2 )
       {
-        LALSnprintf( bankInjection->waveform, LIGOMETA_WAVEFORM_MAX,
+        snprintf( bankInjection->waveform, LIGOMETA_WAVEFORM_MAX,
             "TaylorT2twoPN" );
       }
       else if ( simParams->approx == TaylorT3 )
       {
-        LALSnprintf( bankInjection->waveform, LIGOMETA_WAVEFORM_MAX,
+        snprintf( bankInjection->waveform, LIGOMETA_WAVEFORM_MAX,
             "TaylorT3twoPN" );
       }
       else if ( simParams->approx == PadeT1 )
       {
-        LALSnprintf( bankInjection->waveform, LIGOMETA_WAVEFORM_MAX,
+        snprintf( bankInjection->waveform, LIGOMETA_WAVEFORM_MAX,
             "PadeT1twoPN" );
       }
       else if ( simParams->approx == EOB )
       {
-        LALSnprintf( bankInjection->waveform, LIGOMETA_WAVEFORM_MAX,
+        snprintf( bankInjection->waveform, LIGOMETA_WAVEFORM_MAX,
             "EOBtwoPN" );
       }
       else if ( simParams->approx == GeneratePPN )
       {
-        LALSnprintf( bankInjection->waveform, LIGOMETA_WAVEFORM_MAX,
+        snprintf( bankInjection->waveform, LIGOMETA_WAVEFORM_MAX,
             "GeneratePPNtwoPN" );
       }
       else
@@ -1348,7 +1348,7 @@ XLALFindChirpBankSimInjectSignal (
     }
 
     /* inject the signals, preserving the channel name (Tev mangles it) */
-    LALSnprintf( tmpChName, LALNameLength * sizeof(CHAR), "%s",
+    snprintf( tmpChName, LALNameLength * sizeof(CHAR), "%s",
         dataSegVec->data->chan->name );
 
     /* make sure the injection is hplus with no time delays */
@@ -1362,7 +1362,7 @@ XLALFindChirpBankSimInjectSignal (
     }
 
     /* restore the saved channel name */
-    LALSnprintf( dataSegVec->data->chan->name,
+    snprintf( dataSegVec->data->chan->name,
         LALNameLength * sizeof(CHAR), "%s", tmpChName );
   }
 
@@ -1470,7 +1470,7 @@ XLALFindChirpBankSimComputeMatch (
 
   /* create the match output table */
   maxMatch = (SimInstParamsTable *) LALCalloc( 1, sizeof(SimInstParamsTable) );
-  LALSnprintf( maxMatch->name, LIGOMETA_SIMINSTPARAMS_NAME_MAX, "match" );
+  snprintf( maxMatch->name, LIGOMETA_SIMINSTPARAMS_NAME_MAX, "match" );
 
   /* store the match in the sim_inst_params structure */
   maxMatch->value = tmplt->snr / matchNorm;

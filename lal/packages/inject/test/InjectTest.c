@@ -296,7 +296,7 @@ LALStringToS()                  LALStringToD()
 LALGeneratePPNInspiral()        LALGenerateTaylorCW()
 LALGenerateSpinOrbitCW()        LALSimulateCoherentGW()
 LALSSInjectTimeSeries()         LALInitBarycenter()
-LALSnprintf()                   LALPrintError()
+snprintf()                   LALPrintError()
 LALCheckMemoryLeaks()
 \end{verbatim}
 
@@ -595,7 +595,7 @@ main(int argc, char **argv)
 
       /* If line isn't blank, generate a waveform with it. */
       if ( tokens->nTokens > 0 ) {
-	LALSnprintf( msg, MSGLEN, "%s line %i:", sourcefile, lineno );
+	snprintf( msg, MSGLEN, "%s line %i:", sourcefile, lineno );
 	if ( !GenerateWaveform( &stat, &head, tokens, msg,
 				randParams ) )
 	  sourceno++;
@@ -607,7 +607,7 @@ main(int argc, char **argv)
 
     /* Done parsing sourcefile. */
     fclose( fp );
-    LALSnprintf( msg, MSGLEN, "%s: Parsed %i lines, generated %i"
+    snprintf( msg, MSGLEN, "%s: Parsed %i lines, generated %i"
 		 " sources", sourcefile, lineno, sourceno );
     INFO( msg );
   }
@@ -688,7 +688,7 @@ main(int argc, char **argv)
 
     /* If line isn't blank, use it to perform injections. */
     if ( tokens->nTokens ) {
-      LALSnprintf( msg, MSGLEN, "%s line %i:", indxfile, lineno );
+      snprintf( msg, MSGLEN, "%s line %i:", indxfile, lineno );
       if ( !InjectWaveforms( &stat, &head, tokens, msg, randParams,
 			     &detector, &prevResponse ) )
 	seriesno++;
@@ -697,7 +697,7 @@ main(int argc, char **argv)
   }
 
   fclose( fp );
-  LALSnprintf( msg, MSGLEN, "%s: Parsed %i lines, wrote %i time"
+  snprintf( msg, MSGLEN, "%s: Parsed %i lines, wrote %i time"
 	       " series out", indxfile, lineno, seriesno );
   INFO( msg );
 
@@ -782,7 +782,7 @@ GenerateWaveform( LALStatus      *stat,
     memset( &params, 0, sizeof(PPNParamStruc) );
 
     if ( tokens->nTokens < 12 ) {
-      LALSnprintf( msg, MSGLEN, "%s Need at least 11 arguments for"
+      snprintf( msg, MSGLEN, "%s Need at least 11 arguments for"
 		   " generator %s, got %i (skipping line)", tag,
 		   *token, tokens->nTokens - 1 );
       WARNING( msg );
@@ -802,7 +802,7 @@ GenerateWaveform( LALStatus      *stat,
     PARSETOKEN( LALStringToS, &(params.fStartIn) );
     PARSETOKEN( LALStringToS, &(params.fStopIn) );
     if ( !ok ) {
-      LALSnprintf( msg, MSGLEN, "%s Error parsing argument %i"
+      snprintf( msg, MSGLEN, "%s Error parsing argument %i"
 		   " (skipping line)", tag,
 		   (UINT4)( token - tokens->tokens ) );
       WARNING( msg );
@@ -877,7 +877,7 @@ GenerateWaveform( LALStatus      *stat,
     memset( &params, 0, sizeof(PPNParamStruc) );
 
     if ( tokens->nTokens < 11 ) {
-      LALSnprintf( msg, MSGLEN, "%s Need at least 10 arguments for"
+      snprintf( msg, MSGLEN, "%s Need at least 10 arguments for"
 		   " generator %s, got %i (skipping line)", tag,
 		   *token, tokens->nTokens - 1 );
       WARNING( msg );
@@ -905,14 +905,14 @@ GenerateWaveform( LALStatus      *stat,
       PARSETOKEN( LALStringToD, params.f->data + i );
     }
     if ( !ok ) {
-      LALSnprintf( msg, MSGLEN, "%s Error parsing argument %i"
+      snprintf( msg, MSGLEN, "%s Error parsing argument %i"
 		   " (skipping line)", tag,
 		   (UINT4)( token - tokens->tokens ) );
       WARNING( msg );
       return 1;
     }
     if ( t2 <= t1 ) {
-      LALSnprintf( msg, MSGLEN, "%s Stop time precedes start time"
+      snprintf( msg, MSGLEN, "%s Stop time precedes start time"
 		   " (skipping line)", tag );
       WARNING( msg );
       return 1;
@@ -1012,7 +1012,7 @@ GenerateWaveform( LALStatus      *stat,
     memset( &params, 0, sizeof(PPNParamStruc) );
 
     if ( tokens->nTokens < 15 ) {
-      LALSnprintf( msg, MSGLEN, "%s Need at least 14 arguments for"
+      snprintf( msg, MSGLEN, "%s Need at least 14 arguments for"
 		   " generator %s, got %i (skipping line)", tag,
 		   *token, tokens->nTokens - 1 );
       WARNING( msg );
@@ -1044,14 +1044,14 @@ GenerateWaveform( LALStatus      *stat,
     PARSETOKEN( LALStringToD, &(params.rPeriNorm) );
     PARSETOKEN( LALStringToD, &(params.oneMinusEcc) );
     if ( !ok ) {
-      LALSnprintf( msg, MSGLEN, "%s Error parsing argument %i"
+      snprintf( msg, MSGLEN, "%s Error parsing argument %i"
 		   " (skipping line)", tag,
 		   (UINT4)( token - tokens->tokens ) );
       WARNING( msg );
       return 1;
     }
     if ( t2 <= t1 ) {
-      LALSnprintf( msg, MSGLEN, "%s Stop time precedes start time"
+      snprintf( msg, MSGLEN, "%s Stop time precedes start time"
 		   " (skipping line)", tag );
       WARNING( msg );
       return 1;
@@ -1125,7 +1125,7 @@ GenerateWaveform( LALStatus      *stat,
 
   /* Generator method does not match one of the known types. */
   else {
-    LALSnprintf( msg, MSGLEN, "%s Unknown generator %s"
+    snprintf( msg, MSGLEN, "%s Unknown generator %s"
 		 " (skipping line)", tag, *token );
     WARNING( msg );
     return 1;
@@ -1161,7 +1161,7 @@ InjectWaveforms( LALStatus        *stat,
   ok = ( tokens->nTokens == 4 && strcmp( *token, "-" ) )
     || ( tokens->nTokens == 8 && !strcmp( *token, "-" ) );
   if ( !ok ) {
-    LALSnprintf( msg, MSGLEN, "%s Unreognized number of tokens"
+    snprintf( msg, MSGLEN, "%s Unreognized number of tokens"
 		 " (skipping line)", tag );
     WARNING( msg );
     return 1;
@@ -1185,7 +1185,7 @@ InjectWaveforms( LALStatus        *stat,
   else if ( !strcmp( *token, "CIT40" ) )
     site = lalCachedDetectors[LALDetectorIndexCIT40DIFF];
   else {
-    LALSnprintf( msg, MSGLEN, "%s Unreognized detector %s"
+    snprintf( msg, MSGLEN, "%s Unreognized detector %s"
 		 " (skipping line)", tag, *token );
     WARNING( msg );
     return 1;
@@ -1215,7 +1215,7 @@ InjectWaveforms( LALStatus        *stat,
       COMPLEX8Vector *unity = NULL;    /* complex 1's */
       FILE *fp = fopen( *token, "r" ); /* response file */
       if ( !fp ) {
-	LALSnprintf( msg, MSGLEN, "%s Response file %s not found"
+	snprintf( msg, MSGLEN, "%s Response file %s not found"
 		     " (skipping line)", tag, *token );
 	WARNING( msg );
 	return 1;
@@ -1223,13 +1223,13 @@ InjectWaveforms( LALStatus        *stat,
       SUB( LALCReadFSeries( stat, &transfer, fp ), stat );
       fclose( fp );
       if ( transfer.data == NULL ) {
-	LALSnprintf( msg, MSGLEN, "%s Response file %s has no data"
+	snprintf( msg, MSGLEN, "%s Response file %s has no data"
 		     " (skipping line)", tag, *token );
 	WARNING( msg );
 	return 1;
       }
       if ( transfer.deltaF <= 0.0 ) {
-	LALSnprintf( msg, MSGLEN, "%s Response file %s has bad"
+	snprintf( msg, MSGLEN, "%s Response file %s has bad"
 		     " metadata (skipping line)", tag, *token );
 	WARNING( msg );
 	SUB( LALCDestroyVector( stat, &(transfer.data) ), stat );
@@ -1252,7 +1252,7 @@ InjectWaveforms( LALStatus        *stat,
       pair.unitOne = &(transfer.sampleUnits);
       SUB( LALUnitCompare( stat, &unitsOK, &pair ), stat );
       if ( !unitsOK ) {
-	LALSnprintf( msg, MSGLEN, "%s Response file %s has incorrect"
+	snprintf( msg, MSGLEN, "%s Response file %s has incorrect"
 		     " units (ignoring units)", tag, *token );
 	WARNING( msg );
       }
@@ -1283,7 +1283,7 @@ InjectWaveforms( LALStatus        *stat,
     PARSETOKEN( LALStringToD, &(input.deltaT) );
     PARSETOKEN( LALStringToS, &sigma );
     if ( !ok ) {
-      LALSnprintf( msg, MSGLEN, "%s Error parsing noise argument %i"
+      snprintf( msg, MSGLEN, "%s Error parsing noise argument %i"
 		   " (skipping line)", tag,
 		   (UINT4)( token - tokens->tokens - 2 ) );
       WARNING( msg );
@@ -1296,7 +1296,7 @@ InjectWaveforms( LALStatus        *stat,
       input.data->data[i] *= sigma;
     input.sampleUnits = lalADCCountUnit;
     if ( sigma != 0.0 )
-      LALSnprintf( input.name, LALNameLength, "Simulated noise" );
+      snprintf( input.name, LALNameLength, "Simulated noise" );
     else
       input.name[0] = '\0';
   }
@@ -1307,7 +1307,7 @@ InjectWaveforms( LALStatus        *stat,
     LALUnitPair pair; /* input for unit comparison */
     FILE *fp = fopen( *token, "r" );
     if ( !fp ) {
-      LALSnprintf( msg, MSGLEN, "%s Input file %s not found"
+      snprintf( msg, MSGLEN, "%s Input file %s not found"
 		   " (skipping line)", tag, *token );
       WARNING( msg );
       return 1;
@@ -1315,13 +1315,13 @@ InjectWaveforms( LALStatus        *stat,
     SUB( LALSReadTSeries( stat, &input, fp ), stat );
     fclose( fp );
     if ( input.data == NULL ) {
-      LALSnprintf( msg, MSGLEN, "%s Input file %s has no data"
+      snprintf( msg, MSGLEN, "%s Input file %s has no data"
 		   " (skipping line)", tag, *token );
       WARNING( msg );
       return 1;
     }
     if ( input.deltaT <= 0.0 ) {
-      LALSnprintf( msg, MSGLEN, "%s Input file %s has bad metadata"
+      snprintf( msg, MSGLEN, "%s Input file %s has bad metadata"
 		   " (skipping line)", tag, *token );
       WARNING( msg );
       SUB( LALSDestroyVector( stat, &(input.data) ), stat );
@@ -1333,7 +1333,7 @@ InjectWaveforms( LALStatus        *stat,
     pair.unitTwo = &(input.sampleUnits);
     SUB( LALUnitCompare( stat, &unitsOK, &pair ), stat );
     if ( !unitsOK ) {
-      LALSnprintf( msg, MSGLEN, "%s Input file %s has incorrect units"
+      snprintf( msg, MSGLEN, "%s Input file %s has incorrect units"
 		   " (ignoring units)", tag, *token );
       WARNING( msg );
       input.sampleUnits = lalADCCountUnit;
@@ -1343,7 +1343,7 @@ InjectWaveforms( LALStatus        *stat,
 
   /* Simulate and inject signals. */
   here = head->next;
-  LALSnprintf( name, LALNameLength, "%s", input.name );
+  snprintf( name, LALNameLength, "%s", input.name );
   while ( here ) {
     REAL4TimeSeries output = input;
     output.data = NULL;
@@ -1359,19 +1359,19 @@ InjectWaveforms( LALStatus        *stat,
 
   /* Give the output a name. */
   if ( sourceno == 0 ) {
-    LALSnprintf( input.name, LALNameLength, "%s", name );
+    snprintf( input.name, LALNameLength, "%s", name );
   } else if ( sourceno == 1 ) {
     if ( strlen( name ) )
-      LALSnprintf( input.name, LALNameLength,
+      snprintf( input.name, LALNameLength,
 		   "%s + 1 injected signal", name );
     else
-      LALSnprintf( input.name, LALNameLength, "1 injected signal" );
+      snprintf( input.name, LALNameLength, "1 injected signal" );
   } else {
     if ( strlen( name ) )
-      LALSnprintf( input.name, LALNameLength,
+      snprintf( input.name, LALNameLength,
 		   "%s + %i injected signals", name, sourceno );
     else
-      LALSnprintf( input.name, LALNameLength, "%i injected signals",
+      snprintf( input.name, LALNameLength, "%i injected signals",
 		   sourceno );
   }
 
@@ -1382,7 +1382,7 @@ InjectWaveforms( LALStatus        *stat,
   } else {
     FILE *fp = fopen( *token, "w" );
     if ( !fp ) {
-      LALSnprintf( msg, MSGLEN, "%s Output file %s could not be"
+      snprintf( msg, MSGLEN, "%s Output file %s could not be"
 		   " opened (skipping line)", tag, *token );
       WARNING( msg );
       SUB( LALSDestroyVector( stat, &(input.data) ), stat );

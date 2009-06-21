@@ -61,7 +61,7 @@ AC_DEFUN([LALAPPS_WITH_GCC_FLAGS],
         [  --with-gcc-flags        turn on strict gcc warning flags],
         [ if test -n "${with_gcc_flags}"
           then
-            lalapps_gcc_flags="-g3 -O4 -pedantic -Wall -W -Wmissing-prototypes -Wstrict-prototypes -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Waggregate-return -fno-common -Wnested-externs"
+            lalapps_gcc_flags="-g3 -O4 -pedantic -Wall -W -Wmissing-prototypes -Wstrict-prototypes -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Waggregate-return -fno-common -Wnested-externs -Wno-format-zero-length"
           else
             lalapps_gcc_flags=""
           fi

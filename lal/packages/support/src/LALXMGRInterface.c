@@ -322,7 +322,7 @@ LALXMGRGPSTimeToTitle(
   LALDateString( status->statusPtr, stopString, &thisDate );
   CHECKSTATUSPTR( status );
 
-  LALSnprintf( title->data, title->length * sizeof(CHAR),
+  snprintf( title->data, title->length * sizeof(CHAR),
       "%s from %s to %s", comment, startString->data, stopString->data );
 
   LALCHARDestroyVector( status->statusPtr, &startString );

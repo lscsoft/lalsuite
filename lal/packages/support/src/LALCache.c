@@ -325,7 +325,7 @@ LALCache * XLALCacheGlob( const char *dirstr, const char *fnptrn )
 		do {
 			if ( (nextdir = strchr(dirname, ':')) )
 				*nextdir++ = 0;
-			LALSnprintf(path, sizeof(path), "%s/%s", *dirname ? dirname : ".", fnptrn);
+			snprintf(path, sizeof(path), "%s/%s", *dirname ? dirname : ".", fnptrn);
 			glob(path, globflags, NULL, &g);
 			fnptrn = path;
 			globflags |= GLOB_APPEND;

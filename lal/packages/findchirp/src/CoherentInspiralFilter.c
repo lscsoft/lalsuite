@@ -1586,14 +1586,14 @@ LALCoherentInspiralFilterSegment (
     case 2:
       i = indexarray[0];
       j = indexarray[1];
-      LALSnprintf( caseStr, FILENAME_MAX * sizeof(CHAR), "%s%s",idtag[i],idtag[j]);
+      snprintf( caseStr, FILENAME_MAX * sizeof(CHAR), "%s%s",idtag[i],idtag[j]);
       break;
 
     case 3:
       i=indexarray[0];
       j=indexarray[1];
       k=indexarray[2];
-      LALSnprintf( caseStr, FILENAME_MAX * sizeof(CHAR), "%s%s%s",idtag[i],idtag[j],idtag[k]);
+      snprintf( caseStr, FILENAME_MAX * sizeof(CHAR), "%s%s%s",idtag[i],idtag[j],idtag[k]);
       break;
 
     case 4:
@@ -1601,7 +1601,7 @@ LALCoherentInspiralFilterSegment (
       j=indexarray[1];
       k=indexarray[2];
       l=indexarray[3];
-      LALSnprintf( caseStr, FILENAME_MAX * sizeof(CHAR), "%s%s%s%s",idtag[i],idtag[j],idtag[k],idtag[l]);
+      snprintf( caseStr, FILENAME_MAX * sizeof(CHAR), "%s%s%s%s",idtag[i],idtag[j],idtag[k],idtag[l]);
       break;
     }
 

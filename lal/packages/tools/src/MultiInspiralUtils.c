@@ -612,7 +612,7 @@ XLALMultiSimInspiralTest (
 	  */
 
 	  /* read in the first (single) ifo in the multiInspiral network (ifos) */
-	  LALSnprintf( ifo, LIGOMETA_IFO_MAX * sizeof(CHAR),
+	  snprintf( ifo, LIGOMETA_IFO_MAX * sizeof(CHAR),
 		       "%s", thisEvent->ifos );
 
 	  simSiteTime = XLALReturnSimInspiralEndTime( thisSimEvent, ifo );
