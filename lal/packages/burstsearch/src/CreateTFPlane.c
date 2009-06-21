@@ -294,11 +294,8 @@ INT4 XLALEPGetTimingParameters(
 
 
 /**
- * Compute the two-point spectral correlation function for the whitened
+ * Compute the two-point spectral correlation function for a whitened
  * frequency series from the window applied to the original time series.
- * The indices of the output sequence are |k - k'|.  This function assumes
- * the window is an even function of the sample index, so that its Fourier
- * transform is real-valued (contains only cosine components).
  *
  * If x_{j} is a stationary process then the components of its Fourier
  * transform, X_{k}, are independent random variables, and let their mean
@@ -319,7 +316,9 @@ INT4 XLALEPGetTimingParameters(
  * The FFT plan argument must be a forward plan (time to frequency) whose
  * length equals that of the window.  If the window has length N the return
  * value is the address of a newly-allocated sequence of length floor(N/2 +
- * 1), or NULL on error.
+ * 1), or NULL on error.  This function assumes the window is symmetric
+ * about its midpoint (is an even function of the sample index if the
+ * midpoint is index 0), so that its Fourier transform is real-valued.
  */
 
 
@@ -329,8 +328,8 @@ static REAL8Sequence *XLALREAL8WindowTwoPointSpectralCorrelation(
 )
 {
 	static const char func[] = "XLALREAL8WindowTwoPointSpectralCorrelation";
-	REAL8Sequence *w2;
-	COMPLEX16Sequence *tilde_w2;
+	REAL8Sequence *wsquared;
+	COMPLEX16Sequence *tilde_wsquared;
 	REAL8Sequence *correlation;
 	unsigned i;
 
@@ -342,11 +341,11 @@ static REAL8Sequence *XLALREAL8WindowTwoPointSpectralCorrelation(
 	 * and its Fourier transform.
 	 */
 
-	w2 = XLALCopyREAL8Sequence(window->data);
-	tilde_w2 = XLALCreateCOMPLEX16Sequence(window->data->length / 2 + 1);
-	if(!w2 || !tilde_w2) {
-		XLALDestroyREAL8Sequence(w2);
-		XLALDestroyCOMPLEX16Sequence(tilde_w2);
+	wsquared = XLALCopyREAL8Sequence(window->data);
+	tilde_wsquared = XLALCreateCOMPLEX16Sequence(window->data->length / 2 + 1);
+	if(!wsquared || !tilde_wsquared) {
+		XLALDestroyREAL8Sequence(wsquared);
+		XLALDestroyCOMPLEX16Sequence(tilde_wsquared);
 		XLAL_ERROR_NULL(func, XLAL_EFUNC);
 	}
 
@@ -354,27 +353,27 @@ static REAL8Sequence *XLALREAL8WindowTwoPointSpectralCorrelation(
 	 * Compute the normalized square of the window.
 	 */
 
-	for(i = 0; i < w2->length; i++)
-		w2->data[i] *= w2->data[i] / window->sumofsquares;
+	for(i = 0; i < wsquared->length; i++)
+		wsquared->data[i] *= wsquared->data[i] / window->sumofsquares;
 
 	/*
 	 * Fourier transform.
 	 */
 
-	if(XLALREAL8ForwardFFT(tilde_w2, w2, plan)) {
-		XLALDestroyREAL8Sequence(w2);
-		XLALDestroyCOMPLEX16Sequence(tilde_w2);
+	if(XLALREAL8ForwardFFT(tilde_wsquared, wsquared, plan)) {
+		XLALDestroyREAL8Sequence(wsquared);
+		XLALDestroyCOMPLEX16Sequence(tilde_wsquared);
 		XLAL_ERROR_NULL(func, XLAL_EFUNC);
 	}
-	XLALDestroyREAL8Sequence(w2);
+	XLALDestroyREAL8Sequence(wsquared);
 
 	/*
 	 * Create space to hold the two-point correlation function.
 	 */
 
-	correlation = XLALCreateREAL8Sequence(tilde_w2->length);
+	correlation = XLALCreateREAL8Sequence(tilde_wsquared->length);
 	if(!correlation) {
-		XLALDestroyCOMPLEX16Sequence(tilde_w2);
+		XLALDestroyCOMPLEX16Sequence(tilde_wsquared);
 		XLAL_ERROR_NULL(func, XLAL_EFUNC);
 	}
 
@@ -383,8 +382,8 @@ static REAL8Sequence *XLALREAL8WindowTwoPointSpectralCorrelation(
 	 */
 
 	for(i = 0; i < correlation->length; i++)
-		correlation->data[i] = tilde_w2->data[i].re;
-	XLALDestroyCOMPLEX16Sequence(tilde_w2);
+		correlation->data[i] = tilde_wsquared->data[i].re;
+	XLALDestroyCOMPLEX16Sequence(tilde_wsquared);
 
 	/*
 	 * Done.
