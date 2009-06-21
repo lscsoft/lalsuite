@@ -1529,7 +1529,7 @@ LALEOBWaveformEngine (
      {
        XLALDestroyCOMPLEX8Vector( modefreqs );
        snprintf( message, 256, "Ringdown freq less than Nyquist freq. "
-             "Increase sample rate or consider using EOB approximant.\n", r );
+             "Increase sample rate or consider using EOB approximant.\n" );
        LALError(status->statusPtr, message);
        ABORT( status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
      }
