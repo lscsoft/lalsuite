@@ -322,7 +322,7 @@ INT4 XLALEPGetTimingParameters(
  */
 
 
-static REAL8Sequence *XLALREAL8WindowTwoPointSpectralCorrelation(
+REAL8Sequence *XLALREAL8WindowTwoPointSpectralCorrelation(
 	const REAL8Window *window,
 	const REAL8FFTPlan *plan
 )
