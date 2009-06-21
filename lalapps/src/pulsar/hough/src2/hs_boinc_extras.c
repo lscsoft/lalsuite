@@ -794,6 +794,15 @@ static void worker (void) {
       rarg--; rargc--; /* this argument is not passed to the main worker function */
     }
 
+#ifdef EAH_CUDA
+    /* if building a CUDA App, handle --device option given by BOINC client */
+    else if (MATCH_START("--device",argv[arg],l)) {
+      arg++; /* next argument */
+      select_cuda_device(atoi(argv[arg]));
+      rarg--; rargc--; /* this argument is not passed to the main worker function */
+    }
+#endif
+
     /* fire up debugger at breakpoint, solely for testing the debugger (and symbols) */
     else if (MATCH_START("--BreakPoint",argv[arg],l)) {
       breakpoint = -1;
