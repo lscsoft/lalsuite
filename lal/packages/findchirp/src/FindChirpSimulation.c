@@ -1362,7 +1362,7 @@ XLALFindChirpBankSimInjectSignal (
     }
 
     /* restore the saved channel name */
-    sprintf( dataSegVec->data->chan->name,
+    snprintf( dataSegVec->data->chan->name,
         LALNameLength * sizeof(CHAR), "%s", tmpChName );
   }
 
@@ -1470,7 +1470,7 @@ XLALFindChirpBankSimComputeMatch (
 
   /* create the match output table */
   maxMatch = (SimInstParamsTable *) LALCalloc( 1, sizeof(SimInstParamsTable) );
-  sprintf( maxMatch->name, LIGOMETA_SIMINSTPARAMS_NAME_MAX, "match" );
+  snprintf( maxMatch->name, LIGOMETA_SIMINSTPARAMS_NAME_MAX, "match" );
 
   /* store the match in the sim_inst_params structure */
   maxMatch->value = tmplt->snr / matchNorm;
