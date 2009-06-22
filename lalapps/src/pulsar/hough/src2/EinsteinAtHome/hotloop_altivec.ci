@@ -1,3 +1,4 @@
+#include <altivec.h>
 
 	{
 	  SINCOS_2PI_TRIMMED ( &s_alpha, &c_alpha, kappa_star );

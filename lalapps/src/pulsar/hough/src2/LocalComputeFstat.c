@@ -39,15 +39,6 @@
 
 #include "LocalOptimizationFlags.h"
 
-#if defined(_MSC_VER) && (EAH_HOTLOOP_VARIANT == EAH_HOTLOOP_VARIANT_SSE)
-#include "xmmintrin.h"
-#endif
-
-/* necessary for gcc on linux-powerpc, shouldn't hurt on Macs */
-#if (EAH_HOTLOOP_VARIANT == EAH_HOTLOOP_VARIANT_ALTIVEC)
-#include <altivec.h>
-#endif
-
 NRCSID( LOCALCOMPUTEFSTATC, "$Id$");
 
 
@@ -66,8 +57,6 @@ NRCSID( LOCALCOMPUTEFSTATC, "$Id$");
 #define finite _finite
 #endif
 
-/*---------- optimization dependant switches ----------*/
-
 
 /*----- Macros ----- */
 /** fixed DTERMS to allow for loop unrolling */
@@ -76,36 +65,17 @@ NRCSID( LOCALCOMPUTEFSTATC, "$Id$");
 /** square */
 #define SQ(x) ( (x) * (x) )
 
-#ifndef __GNUC__
-/** somehow the branch prediction of gcc-4.1.2 terribly failes
-    with the current case distinction in the hot-loop,
-    having a severe impact on runtime of the E@H Linux App.
-    So let's allow to give gcc a hint which path has a higher probablility */
-#define __builtin_expect(a,b) a
 
-/** currently interleaving the kernel loop doesn't work with MSC */
-#undef EAH_HOTLOOP_INTERLEAVED
-#endif
-
-
-#if EAH_HOUGH_PREFETCH > EAH_HOUGH_PREFETCH_NONE
-#if defined(__INTEL_COMPILER) || defined(_MSC_VER)
-#include "xmmintrin.h"
-#define PREFETCH(a) _mm_prefetch((char *)(void *)(a),_MM_HINT_T0)
-#elif defined(__GNUC__)
-#define PREFETCH(a) __builtin_prefetch(a)
-#else
-#define PREFETCH(a) a
-#endif
-#else
-#define PREFETCH(a) a
-#endif
-
+/*----- SIN/COS Lookup table code inserted here -----*/
+/* In particular this defines
+  - a macro SINCOS_TRIM_X(y,x) which trims the value x to interval [0..2)
+  - a function void local_sin_cos_2PI_LUT_init(void) that inits the lookup tables
+  - a function local_sin_cos_2PI_LUT_trimmed(*sin,*cos,x) that uses the
+    lookup tables to evaluate sin and cos values of 2*Pi*x
+  - macros to be used in "hotloop" variants to interleave hotloop & sincos calculations
+*/
 #include "EinsteinAtHome/sincos.ci"
 
-/*----- SWITCHES -----*/
-
-/*---------- internal types ----------*/
 
 /*---------- Global variables ----------*/
 #define NUM_FACT 6
