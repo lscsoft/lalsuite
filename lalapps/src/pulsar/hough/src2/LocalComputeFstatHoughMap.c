@@ -80,6 +80,10 @@ static int smallerHough(const void *a,const void *b) {
 #define INLINE inline
 #endif
 
+#ifdef __GNUC__
+#define ALWAYS_INLINE __attribute__((always_inline))
+#endif
+
 static void
 LocalHOUGHConstructHMT_W  (LALStatus                  *status, 
 			   HOUGHMapTotal              *ht     , /**< The output hough map */
@@ -99,7 +103,7 @@ LocalHOUGHAddPHMD2HD_Wlr  (LALStatus*    status,
 			   INT4         length,
 			   HoughDT       weight,
 			   INT4         xSide, 
-			   INT4         ySide);
+			   INT4         ySide) ALWAYS_INLINE;
 
 
 /* this function is identical to LALComputeFstatHoughMap() in HierarchicalSearch.c,
@@ -732,9 +736,17 @@ LocalHOUGHAddPHMD2HD_W (LALStatus      *status, /**< the status pointer */
 #endif
 
 
-#if EAH_HOUGH_PREFETCH == EAH_HOUGH_PREFETCH_X87
+#if ( (EAH_HOUGH_PREFETCH == EAH_HOUGH_PREFETCH_X87) || (EAH_HOUGH_PREFETCH == EAH_HOUGH_PREFETCH_AMD64) )
 
-INLINE void
+#if __x86_64__
+#include "EinsteinAtHome/hough_x64.ci"
+#elif __SSE2__
+#include "EinsteinAtHome/hough_sse2.ci"
+#elif __i386__
+#include "EinsteinAtHome/hough_x87.ci"
+#endif
+
+INLINE void __attribute__((always_inline))
 LocalHOUGHAddPHMD2HD_Wlr  (LALStatus*    status,
 			   HoughDT*      map,
 			   HOUGHBorder** pBorderP,
@@ -777,153 +789,10 @@ LocalHOUGHAddPHMD2HD_Wlr  (LALStatus*    status,
       yUpper = ySide - 1;
     }
 
-#ifdef __GNUC__
+    ADDPHMD2HD_WLR_LOOP(xPixel,yLower,yUpper,xSideP1,map,weight)
 
-/* specials for Apples assembler */ 
-#ifdef __APPLE__ 
-#define AD_FLOAT ".single " 
-#define AD_ASCII ".ascii " 
-#define AD_ALIGN16 ".align 4" 
-#define AD_ALIGN32 ".align 5" 
-#define AD_ALIGN64 ".align 6" 
-#else /* x86 gas */ 
-#define AD_FLOAT ".float " 
-#define AD_ASCII ".string " 
-#define AD_ALIGN16 ".align 16" 
-#define AD_ALIGN32 ".align 32" 
-#define AD_ALIGN64 ".align 64" 
-#endif 
-
-/* don't clobber ebx , used for PIC on Mac OS */
-
-__asm __volatile (
-	"push %%ebx				\n\t"
-	"mov %[xPixel], %%eax  			\n\t"
-	"mov %[yLower], %%ebx  			\n\t"
-	"lea (%%eax,%%ebx,0x2), %%esi  		\n\t"
-	"mov %[xSideP1], %%edx   		\n\t"
-
-	"mov %[yUpper] , %%edi  		\n\t"
-	"lea -0x2(%%eax,%%edi,0x2),%%eax  	\n\t"
-	
-	"mov %[map] , %%edi  			\n\t"
-	"mov %%ebx,%%ecx  			\n\t"
-	"imul %%edx, %%ecx  			\n\t"	
-	"lea (%%edi, %%ecx, 0x8), %%edi  	\n\t"
-	"fldl %[w]  				\n\t"
-
-	"cmp  %%eax,%%esi  			\n\t"
-	"jmp  2f 				\n\t"
-
-	AD_ALIGN32                             "\n"
-	"1:  					\n\t"
-	"movzwl (%%esi),%%ebx			\n\t"
-	"movzwl 2(%%esi),%%ecx			\n\t"
-		
-	"lea (%%edi, %%ebx, 0x8) , %%ebx  	\n\t"
-	"fldl (%%ebx)  				\n\t"	
-	"lea (%%edi,%%edx,0x8) , %%edi  	\n\t"
-	"lea (%%edi,%%ecx,0x8) , %%ecx   	\n\t"
-	"fldl (%%ecx)  				\n\t"
-
-	"fxch %%st(1)   			\n\t"
-	"fadd %%st(2),%%st  			\n\t"
-	"fstpl (%%ebx)  			\n\t"
-	"fadd %%st(1),%%st	  		\n\t"	
-	"fstpl (%%ecx)  			\n\t"
-	"lea (%%edi,%%edx,0x8), %%edi   	\n\t"	
-
-	"lea 4(%%esi) , %%esi   		\n\t"
-	"cmp  %%eax,%%esi       		\n"
-
-	"2:	  				\n\t"
-	"jbe 1b	  				\n\t"
-	"add $0x2,%%eax				\n\t"
-	"cmp %%eax,%%esi			\n\t"
-	"jne 3f  				\n\t"
-
-	"movzwl (%%esi) , %%ebx  		\n\t"
-	"lea (%%edi, %%ebx, 0x8) , %%ebx  	\n\t"
-	"fldl (%%ebx)  				\n\t"
-	"fadd %%st(1),%%st  			\n\t"
-	"fstpl (%%ebx)  			\n"
-	
-	"3:  					\n\t"
-	"fstp %%st  				\n\t"
-	"pop %%ebx				\n\t"
-
-	: 
-	:
-	[xPixel]  "m" (xPixel) ,
-	[yLower]  "m" (yLower) ,
-	[yUpper]  "m" (yUpper),
-	[xSideP1] "m" (xSideP1) ,
-	[map]     "m" (map) ,
-	[w]       "m" (weight)
-	:
-	"eax", "ecx", "edx", "esi", "edi", "cc",
-	"st","st(1)", "st(2)", "st(3)", "st(4)", "st(5)", "st(6)", "st(7)" 
-	);
-
-#else 
-
-     _asm{
-	push     ebx 
-	mov      eax, xPixel
-	mov      ebx, yLower
-	lea      esi, DWORD PTR [eax+ebx*2]
-	mov      edx, xSideP1
-	mov      edi, yUpper
-	lea      eax, DWORD PTR [eax+edi*2-2]
-	mov      edi, map
-	mov      ecx, ebx
-	imul     ecx, edx
-	lea      edi, DWORD PTR [edi+ecx*8]
-	fld      QWORD PTR weight
-	cmp      esi, eax
-	jmp      l1_a
-	
-	ALIGN 16 
-	
-	l2_a:
-
-	movzx    ebx, WORD PTR [esi]
-	movzx    ecx, WORD PTR [esi+0x2]
-	lea      ebx, DWORD PTR [edi+ebx*8]
-	fld      QWORD PTR [ebx]
-	lea      edi, DWORD PTR [edi+edx*8]
-	lea      ecx, DWORD PTR [edi+ecx*8]
-	fld      QWORD PTR [ecx]
-	fxch     st(1)
-	fadd     st(0), st(2)
-	fstp     QWORD PTR [ebx]
-	fadd     st(0), st(1)
-	fstp     QWORD PTR [ecx]
-	lea      edi, DWORD PTR [edi+edx*8]
-	lea      esi, DWORD PTR [esi+0x4]
-	cmp      esi, eax
-	
-	l1_a:
-	
-	jbe      l2_a
-	
-	add      eax, 0x2
-	cmp      esi, eax
-	jnz      l_end_a
-	movzx    ebx, WORD PTR [esi]
-	lea      ebx, DWORD PTR [edi+ebx*8]
-	fld      QWORD PTR [ebx]
-	fadd     st(0), st(1)
-	fstp     QWORD PTR [ebx]
-
-	l_end_a:    
-
-	fstp     st(0)
-	pop      ebx 
-	};
-#endif
-
-    };
+  };
+    
 };
 
 
