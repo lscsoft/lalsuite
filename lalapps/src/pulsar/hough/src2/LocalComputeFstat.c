@@ -182,6 +182,9 @@ void LocalComputeFStatFreqBand ( LALStatus *status,
       }
 
       /* write out optimization settings */
+
+#ifdef EAH_OPTIMIZATION
+
       fprintf(stderr,
 	      "\n$Revision$ REV:%s, OPT:%d, "
 	      "SCVAR:%d, SCTRIM:%d, "
@@ -191,6 +194,44 @@ void LocalComputeFStatFreqBand ( LALStatus *status,
 	      EAH_SINCOS_VARIANT,  EAH_SINCOS_ROUND,
 	      EAH_HOTLOOP_VARIANT, EAH_HOTLOOP_DIVS,
 	      EAH_HOUGH_PREFETCH,  EAH_HOUGH_BATCHSIZE_LOG2);
+
+#else /* def EAH_OPTIMIZATION */
+
+      fprintf(stderr,"\nFlags: "
+#ifdef LAL_NDEBUG
+	      "LAL_NDEBUG"
+#else
+	      "LAL_DEBUG"
+#endif
+#ifdef AUTOVECT_HOTLOOP
+	      ", AUTOVECT"
+#endif
+#if __ALTIVEC__
+	      ", ALTIVEC"
+#endif
+#if __SSE__
+	      ", SSE"
+#endif
+#if __SSE2__
+	      ", SSE2"
+#endif
+#if _ARCH_PPC
+	      ", PPC"
+#endif
+#ifdef __BIG_ENDIAN__
+	      ", BIG_ENDIAN"
+#endif
+
+#if __GNUC__
+	      ", GNUC"
+#endif
+#ifdef _MSC_VER
+	      ", _MSC_VER:%d",_MSC_VER
+#endif
+	      );
+
+#endif /* def EAH_OPTIMIZATION */
+
       firstcall = FALSE;
     }
   }
