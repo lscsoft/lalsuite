@@ -866,6 +866,42 @@ static void worker (void) {
   }
 #endif
 
+
+      fprintf(stderr,"Flags: "
+#ifdef LAL_NDEBUG
+	      "LAL_NDEBUG"
+#else
+	      "LAL_DEBUG"
+#endif
+#ifdef AUTOVECT_HOTLOOP
+	      ", AUTOVECT"
+#endif
+#if __ALTIVEC__
+	      ", ALTIVEC"
+#endif
+#if __SSE__
+	      ", SSE"
+#endif
+#if __SSE2__
+	      ", SSE2"
+#endif
+#if _ARCH_PPC
+	      ", PPC"
+#endif
+#ifdef __BIG_ENDIAN__
+	      ", BIG_ENDIAN"
+#endif
+
+#if __GNUC__
+	      ", GNUC"
+#endif
+#ifdef _MSC_VER
+	      ", _MSC_VER:%d",_MSC_VER
+#endif
+	      );
+      fprintf(stderr,"\n");
+
+
 #ifdef __GLIBC__
   /* log the glibc version */
   fprintf(stderr, "glibc version/release: %s/%s\n", gnu_get_libc_version(), gnu_get_libc_release());
