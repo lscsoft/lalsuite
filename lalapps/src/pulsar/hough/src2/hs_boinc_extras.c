@@ -873,8 +873,10 @@ static void worker (void) {
 #else
 	      "LAL_DEBUG"
 #endif
-#ifdef AUTOVECT_HOTLOOP
-	      ", AUTOVECT"
+#if _ARCH_PPC
+	      ", PPC"
+#elif __x86_64__
+	      ", X64"
 #endif
 #if __ALTIVEC__
 	      ", ALTIVEC"
@@ -885,13 +887,13 @@ static void worker (void) {
 #if __SSE2__
 	      ", SSE2"
 #endif
-#if _ARCH_PPC
-	      ", PPC"
-#endif
+
 #ifdef __BIG_ENDIAN__
 	      ", BIG_ENDIAN"
 #endif
-
+#ifdef AUTOVECT_HOTLOOP
+	      ", AUTOVECT"
+#endif
 #if __GNUC__
 	      ", GNUC"
 #endif
