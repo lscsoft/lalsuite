@@ -2,7 +2,7 @@ dnl lalapps.m4
 
 AC_DEFUN([LALAPPS_WITH_EXTRA_CPPFLAGS],
 [AC_ARG_WITH(
-	extra_cppflags, 
+	extra_cppflags,
         [  --with-extra-cppflags=CPPFLAGS  additional C preprocessor flags],
 	[ if test -n "${with_extra_cppflags}"
 	  then
@@ -24,7 +24,7 @@ AC_DEFUN([LALAPPS_WITH_LAL_PREFIX],
 
 AC_DEFUN([LALAPPS_WITH_EXTRA_CFLAGS],
 [AC_ARG_WITH(
-	extra_cflags, 
+	extra_cflags,
         [  --with-extra-cflags=CFLAGS  additional C compiler flags],
 	[ if test -n "${with_extra_cflags}"
 	  then
@@ -35,7 +35,7 @@ AC_DEFUN([LALAPPS_WITH_EXTRA_CFLAGS],
 
 AC_DEFUN([LALAPPS_WITH_EXTRA_LDFLAGS],
 [AC_ARG_WITH(
-	extra_ldflags, 
+	extra_ldflags,
         [  --with-extra-ldflags=LDFLAGS  additional linker flags],
 	[ if test -n "${with_extra_ldflags}"
 	  then
@@ -46,7 +46,7 @@ AC_DEFUN([LALAPPS_WITH_EXTRA_LDFLAGS],
 
 AC_DEFUN([LALAPPS_WITH_EXTRA_LIBS],
 [AC_ARG_WITH(
-	extra_libs, 
+	extra_libs,
         [  --with-extra-libs=LIBS  additional -l and -L linker flags],
 	[ if test -n "${with_extra_libs}"
 	  then
@@ -57,7 +57,7 @@ AC_DEFUN([LALAPPS_WITH_EXTRA_LIBS],
 
 AC_DEFUN([LALAPPS_WITH_GCC_FLAGS],
 [AC_ARG_WITH(
-        [gcc_flags],   
+        [gcc_flags],
         [  --with-gcc-flags        turn on strict gcc warning flags],
         [ if test -n "${with_gcc_flags}"
           then
@@ -70,7 +70,7 @@ AC_DEFUN([LALAPPS_WITH_GCC_FLAGS],
 
 AC_DEFUN([LALAPPS_WITH_CC],
 [AC_ARG_WITH(
-        cc, 
+        cc,
         [  --with-cc=CC            use the CC C compiler],
         [ if test -n "${with_cc}"
           then
@@ -106,7 +106,7 @@ AC_DEFUN([LALAPPS_ENABLE_FRAME],
 AC_DEFUN([LALAPPS_ENABLE_METAIO],
 [AC_ARG_ENABLE(
   [metaio],
-  [  --enable-metaio         compile code that requires metaio/dataflow library 
+  [  --enable-metaio         compile code that requires metaio/dataflow library
 [default=yes] ],
   [ case "${enableval}" in
       yes) metaio=true;;
@@ -131,7 +131,7 @@ AC_DEFUN([LALAPPS_ENABLE_XML],
 AC_DEFUN([LALAPPS_ENABLE_CFITSIO],
 [AC_ARG_ENABLE(
   [cfitsio],
-  [  --enable-cfitsio        compile code that requires cfitsio library 
+  [  --enable-cfitsio        compile code that requires cfitsio library
 [default=yes] ],
   [ case "${enableval}" in
       yes) cfitsio=true;;
@@ -163,7 +163,7 @@ int main( void ) { return 1; }
 ],
 AC_MSG_RESULT([yes])
 [
-if test x$condor != xtrue ; then 
+if test x$condor != xtrue ; then
   echo "**************************************************************"
   echo "*                                                            *"
   echo "* LAL has been compiled with --enable-intelfft=condor but    *"
