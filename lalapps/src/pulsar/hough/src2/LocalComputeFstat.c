@@ -587,7 +587,10 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	if ((kappa_star > LD_SMALL4) && (kappa_star < 1.0 - LD_SMALL4)
 #endif
 	  {
-	  /* WARNING: all current optimized loops rely on current implementation of COMPLEX8 type */
+	  /* WARNING: all current optimized loops rely on current implementation of COMPLEX8 and DTERMS == 8 */
+
+#ifdef EAH_HOTLOOP_VARIANT
+
 #if (EAH_HOTLOOP_VARIANT == EAH_HOTLOOP_VARIANT_SSE_AKOS08)
 #include "EinsteinAtHome/hotloop_precalc.ci"
 #elif (EAH_HOTLOOP_VARIANT == EAH_HOTLOOP_VARIANT_SSE)
@@ -598,7 +601,25 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 #include "EinsteinAtHome/hotloop_autovect.ci"
 #else /* EAH_HOTLOOP_VARIANT */
 #include "EinsteinAtHome/hotloop_generic.ci"
-#endif /* EAH_HOTLOOP_VARIANT */
+#endif /* EAH_HOTLOOP_VARIANT == */
+
+#else /* def EAH_HOTLOOP_VARIANT */
+
+#ifdef AUTOVECT_HOTLOOP
+#include "EinsteinAtHome/hotloop_autovect.ci"
+#elif __ALTIVEC__
+#include "EinsteinAtHome/hotloop_altivec.ci"
+#elif __SSE__
+#ifdef _MSC_VER
+#include "EinsteinAtHome/hotloop_sse_msc.ci"
+#else
+#include "EinsteinAtHome/hotloop_precalc.ci"
+#endif /* MSC_VER */
+#else
+#include "EinsteinAtHome/hotloop_generic.ci"
+#endif
+
+#endif /* def EAH_HOTLOOP_VARIANT */
 	 
 	  } /* if |remainder| > LD_SMALL4 */
 	else
