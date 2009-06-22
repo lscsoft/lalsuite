@@ -329,7 +329,7 @@ for(det_idx=0;det_idx<LAL_NUM_IFO;det_idx++){
 	XLALDestroyCOMPLEX8FrequencySeries(actuationResp);
 
 	/* Output the actuation time series */
-	sprintf(outfilename,"%s_HWINJ_%i_%s_%i.txt",det_name,inj_num,injtype,inj_epoch.gpsSeconds);
+	sprintf(outfilename,"HWINJ_%i_%s_%i_%s.out",inj_num,injtype,inj_epoch.gpsSeconds,det_name);
 	outfile=fopen(outfilename,"w");
 	fprintf(stdout,"Injected signal %i for %s into file %s\n",inj_num,det_name,outfilename);
 	for(i=0;i<actuationTimeSeries->data->length;i++) fprintf(outfile,"%10.10e\n",actuationTimeSeries->data->data[i]);
@@ -390,9 +390,11 @@ calcSNRandwriteFrames:
  NetworkSNR=sqrt(NetworkSNR);
  
  if(targetSNR!=0.0 && repeatLoop==0) { injTable->distance*=(REAL4)(NetworkSNR/targetSNR); rewriteXML=1; repeatLoop=1;} else repeatLoop=0;
- if(targetSNR==0.0 && minSNR>NetworkSNR) {injTable->distance*=(REAL4)(NetworkSNR/minSNR); rewriteXML=1; repeatLoop=1;} else repeatLoop|=0;
- if(targetSNR==0.0 && maxSNR!=0.0 && maxSNR<NetworkSNR) {injTable->distance*=(REAL4)(NetworkSNR/maxSNR); rewriteXML=1; repeatLoop=1;} else repeatLoop|=0;
-
+ if(targetSNR==0.0 && minSNR>NetworkSNR) {injTable->distance*=(REAL4)(NetworkSNR/minSNR); rewriteXML=1; repeatLoop=1;}
+ else {
+   if(targetSNR==0.0 && maxSNR!=0.0 && maxSNR<NetworkSNR) {injTable->distance*=(REAL4)(NetworkSNR/maxSNR); rewriteXML=1; repeatLoop=1;}
+   else repeatLoop|=0;
+ }
  if(repeatLoop==1) fprintf(stderr,"Reinjecting with new distance %f for desired SNR\n\n",injTable->distance);
 
  if(repeatLoop==0){
