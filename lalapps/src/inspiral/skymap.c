@@ -407,7 +407,7 @@ void analyze(void)
                 for (j = 0; j != samples; ++j)
                 {
                     int k;
-                    for (k = 0; j != NSIGMA; ++k)
+                    for (k = 0; k != NSIGMA; ++k)
                     {
                         /*
                          * FIXME: exp may overflow
