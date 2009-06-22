@@ -2,13 +2,13 @@ dnl lalapps.m4
 
 AC_DEFUN([LALAPPS_WITH_EXTRA_CPPFLAGS],
 [AC_ARG_WITH(
-	extra_cppflags,
+  extra_cppflags,
         [  --with-extra-cppflags=CPPFLAGS  additional C preprocessor flags],
-	[ if test -n "${with_extra_cppflags}"
-	  then
-	    CPPFLAGS="$CPPFLAGS ${with_extra_cppflags}";
-	  fi
-	],)
+  [ if test -n "${with_extra_cppflags}"
+    then
+      CPPFLAGS="$CPPFLAGS ${with_extra_cppflags}";
+    fi
+  ],)
 ])
 
 AC_DEFUN([LALAPPS_WITH_LAL_PREFIX],
@@ -24,35 +24,35 @@ AC_DEFUN([LALAPPS_WITH_LAL_PREFIX],
 
 AC_DEFUN([LALAPPS_WITH_EXTRA_CFLAGS],
 [AC_ARG_WITH(
-	extra_cflags,
+  extra_cflags,
         [  --with-extra-cflags=CFLAGS  additional C compiler flags],
-	[ if test -n "${with_extra_cflags}"
-	  then
-	    CFLAGS="$CFLAGS ${with_extra_cflags}";
-	  fi
-	],)
+  [ if test -n "${with_extra_cflags}"
+    then
+      CFLAGS="$CFLAGS ${with_extra_cflags}";
+    fi
+  ],)
 ])
 
 AC_DEFUN([LALAPPS_WITH_EXTRA_LDFLAGS],
 [AC_ARG_WITH(
-	extra_ldflags,
+  extra_ldflags,
         [  --with-extra-ldflags=LDFLAGS  additional linker flags],
-	[ if test -n "${with_extra_ldflags}"
-	  then
-	    LDFLAGS="$LDFLAGS ${with_extra_ldflags}";
-	  fi
-	],)
+  [ if test -n "${with_extra_ldflags}"
+    then
+      LDFLAGS="$LDFLAGS ${with_extra_ldflags}";
+    fi
+  ],)
 ])
 
 AC_DEFUN([LALAPPS_WITH_EXTRA_LIBS],
 [AC_ARG_WITH(
-	extra_libs,
+  extra_libs,
         [  --with-extra-libs=LIBS  additional -l and -L linker flags],
-	[ if test -n "${with_extra_libs}"
-	  then
-	    LIBS="$LIBS ${with_extra_libs}";
-	  fi
-	],)
+  [ if test -n "${with_extra_libs}"
+    then
+      LIBS="$LIBS ${with_extra_libs}";
+    fi
+  ],)
 ])
 
 AC_DEFUN([LALAPPS_WITH_GCC_FLAGS],
@@ -81,12 +81,12 @@ AC_DEFUN([LALAPPS_WITH_CC],
 
 AC_DEFUN([LALAPPS_ENABLE_CONDOR],
 [AC_ARG_ENABLE(
-	condor,
-	[  --enable-condor         compile for use with condor [default=no] ],
-	[ case "${enableval}" in
-	    yes) condor=true;;
-	    no)  condor=false;;
-	    *) AC_MSG_ERROR(bad value ${enableval} for --enable-condor) ;;
+  condor,
+  [  --enable-condor         compile for use with condor [default=no] ],
+  [ case "${enableval}" in
+      yes) condor=true;;
+      no)  condor=false;;
+      *) AC_MSG_ERROR(bad value ${enableval} for --enable-condor) ;;
           esac
         ], [ condor=false ] )
 ])
