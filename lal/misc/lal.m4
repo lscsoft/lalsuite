@@ -3,7 +3,7 @@ dnl lal.m4
 AC_DEFUN([LAL_WITH_GCC_FLAGS],
 [AC_ARG_WITH(
   [gcc_flags],
-  [  --with-gcc-flags        turn on strict gcc warning flags],
+  AC_HELP_STRING([--with-gcc-flags],[turn on strict gcc warning flags]),
   [ if test -n "${with_gcc_flags}"
     then
       lal_gcc_flags="-g3 -O4 -Wall -W -Wmissing-prototypes -Wstrict-prototypes -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -fno-common -Wnested-externs -Wno-format-zero-length"
@@ -20,7 +20,7 @@ AC_DEFUN([LAL_WITH_GCC_FLAGS],
 AC_DEFUN([LAL_WITH_EXTRA_CPPFLAGS],
 [AC_ARG_WITH(
   [extra_cppflags],
-        [  --with-extra-cppflags=CPPFLAGS  additional C preprocessor flags],
+  AC_HELP_STRING([--with-extra-cppflags=CPPFLAGS],[additional C preprocessor flags]),
   [ if test -n "${with_extra_cppflags}"
     then
       CPPFLAGS="$CPPFLAGS ${with_extra_cppflags}";
@@ -31,7 +31,7 @@ AC_DEFUN([LAL_WITH_EXTRA_CPPFLAGS],
 AC_DEFUN([LAL_WITH_CFLAGS],
 [AC_ARG_WITH(
   [cflags],
-        [  --with-cflags=CFLAGS        C compiler flags],
+  AC_HELP_STRING([--with-cflags=CFLAGS],[C compiler flags]),
   [ if test -n "${with_cflags}"
     then
       CFLAGS="${with_cflags}";
@@ -42,7 +42,7 @@ AC_DEFUN([LAL_WITH_CFLAGS],
 AC_DEFUN([LAL_WITH_EXTRA_CFLAGS],
 [AC_ARG_WITH(
   [extra_cflags],
-        [  --with-extra-cflags=CFLAGS  additional C compiler flags],
+  AC_HELP_STRING([--with-extra-cflags=CFLAGS],[additional C compiler flags]),
   [ if test -n "${with_extra_cflags}"
     then
       CFLAGS="$CFLAGS ${with_extra_cflags}";
@@ -53,7 +53,7 @@ AC_DEFUN([LAL_WITH_EXTRA_CFLAGS],
 AC_DEFUN([LAL_WITH_EXTRA_LDFLAGS],
 [AC_ARG_WITH(
   [extra_ldflags],
-        [  --with-extra-ldflags=LDFLAGS  additional linker flags],
+  AC_HELP_STRING([--with-extra-ldflags=LDFLAGS],[additional linker flags]),
   [ if test -n "${with_extra_ldflags}"
     then
       LDFLAGS="$LDFLAGS ${with_extra_ldflags}";
@@ -64,7 +64,7 @@ AC_DEFUN([LAL_WITH_EXTRA_LDFLAGS],
 AC_DEFUN([LAL_WITH_EXTRA_LIBS],
 [AC_ARG_WITH(
   [extra_libs],
-        [  --with-extra-libs=LIBS  additional -l and -L linker flags],
+  AC_HELP_STRING([--with-extra-libs=LIBS],[additional -l and -L linker flags]),
   [ if test -n "${with_extra_libs}"
     then
       LIBS="$LIBS ${with_extra_libs}";
@@ -75,7 +75,7 @@ AC_DEFUN([LAL_WITH_EXTRA_LIBS],
 AC_DEFUN([LAL_WITH_CC],
 [AC_ARG_WITH(
   [cc],
-  [  --with-cc=CC            use the CC C compiler],
+  AC_HELP_STRING([--with-cc=CC],[use the CC C compiler]),
   [ if test -n "${with_cc}"
     then
       CC="${with_cc}";
@@ -86,7 +86,7 @@ AC_DEFUN([LAL_WITH_CC],
 AC_DEFUN([LAL_ENABLE_FRAME],
 [AC_ARG_ENABLE(
   [frame],
-  [  --enable-frame          compile code that requires Frame library [default=yes] ],
+  AC_HELP_STRING([--enable-frame],[compile code that requires Frame library [default=yes]]),
   [ case "${enableval}" in
       yes) frame=true ;;
       no)  frame=false ;;
@@ -98,7 +98,7 @@ AC_DEFUN([LAL_ENABLE_FRAME],
 AC_DEFUN([LAL_ENABLE_METAIO],
 [AC_ARG_ENABLE(
   [metaio],
-  [  --enable-metaio         compile code that requires metaio/dataflow library [default=yes] ],
+  AC_HELP_STRING([--enable-metaio],[compile code that requires metaio/dataflow library [default=yes]]),
   [ case "${enableval}" in
       yes) metaio=true;;
       no)  metaio=false ;;
@@ -110,7 +110,7 @@ AC_DEFUN([LAL_ENABLE_METAIO],
 AC_DEFUN([LAL_ENABLE_XML],
 [AC_ARG_ENABLE(
   [xml],
-  [  --enable-xml         compile code for XML I/O [default=no] ],
+  AC_HELP_STRING([--enable-xml],[compile code for XML I/O [default=no]]),
   [ case "${enableval}" in
       yes) xml=true;;
       no)  xml=false ;;
@@ -122,7 +122,7 @@ AC_DEFUN([LAL_ENABLE_XML],
 AC_DEFUN([LAL_ENABLE_INTELFFT],
 [AC_ARG_ENABLE(
   [intelfft],
-  [  --enable-intelfft       use Intel FFT libraries insted of FFTW [default=no] ],
+  AC_HELP_STRING([--enable-intelfft],[use Intel FFT libraries insted of FFTW [default=no]]),
   [ case "${enableval}" in
       yes) intelfft=true ;;
       no)  intelfft=false ;;
@@ -135,7 +135,7 @@ AC_DEFUN([LAL_ENABLE_INTELFFT],
 AC_DEFUN([LAL_ENABLE_DEBUG],
 [AC_ARG_ENABLE(
   [debug],
-  [  --enable-debug          include standard LAL debugging code [default=yes] ],
+  AC_HELP_STRING([--enable-debug],[include standard LAL debugging code [default=yes]]),
   [ case "${enableval}" in
       yes) ;;
       no) AC_DEFINE(LAL_NDEBUG, 1, Suppress debugging code) ;;
@@ -147,7 +147,7 @@ AC_DEFUN([LAL_ENABLE_DEBUG],
 AC_DEFUN([LAL_ENABLE_MACROS],
 [AC_ARG_ENABLE(
   [macros],
-  [  --enable-macros         use LAL macros [default=yes] ],
+  AC_HELP_STRING([--enable-macros],[use LAL macros [default=yes]]),
   [ case "${enableval}" in
       yes) ;;
       no) AC_DEFINE(NOLALMACROS, 1, Use functions rather than macros) ;;
@@ -159,7 +159,7 @@ AC_DEFUN([LAL_ENABLE_MACROS],
 AC_DEFUN([LAL_ENABLE_NIGHTLY],
 [AC_ARG_ENABLE(
   [nightly],
-  [  --enable-nightly        nightly build [default=no] ],
+  AC_HELP_STRING([--enable-nightly],[nightly build [default=no]]),
   [ case "${enableval}" in
       yes) NIGHTLY_VERSION=`date +"%Y%m%d"`
            VERSION="${VERSION}.${NIGHTLY_VERSION}" ;;
@@ -174,7 +174,7 @@ AC_DEFUN([LAL_ENABLE_NIGHTLY],
 AC_DEFUN([LAL_ENABLE_PTHREAD_LOCK],
 [AC_ARG_ENABLE(
   [pthread_lock],
-  [  --enable-pthread-lock   use pthread mutex lock for threadsafety [default=no] ],
+  AC_HELP_STRING([--enable-pthread-lock],[use pthread mutex lock for threadsafety [default=no]]),
   [ case "${enableval}" in
       yes) lal_pthread_lock=true; AC_DEFINE(LAL_PTHREAD_LOCK, 1, Use pthread mutex lock for threadsafety) ;;
       no) lal_pthread_lock=false ;;
