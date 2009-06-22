@@ -1159,7 +1159,7 @@ XLALDopplerCoordinateHelpAll ( void )
 	XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
       }
 
-      LALSnprintf ( buf, sizeof(buf) - 1, fmt, name, help );
+      snprintf ( buf, sizeof(buf) - 1, fmt, name, help );
       len += strlen ( buf ) + 1;
       if ( (helpstr = XLALRealloc ( helpstr, len )) == NULL ) {
 	XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );

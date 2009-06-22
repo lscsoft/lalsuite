@@ -540,7 +540,7 @@ xmlChar * XLALGetSingleVOTableResourceParamAttribute(const xmlDocPtr xmlDocument
     }
 
     /* prepare XPath search */
-    if(LALSnprintf(
+    if(snprintf(
             xpath,
             XPATHSTR_MAXLEN,
             "//"VOTABLE_NS_PREFIX":RESOURCE[@utype='%s' and @name='%s']/"VOTABLE_NS_PREFIX":PARAM[@name='%s']/@%s",

@@ -510,12 +510,12 @@ main(int argc, char **argv)
   }
 
   /* Print termination information. */
-  LALSnprintf( message, MSGLENGTH, "%d: %s", params.termCode,
+  snprintf( message, MSGLENGTH, "%d: %s", params.termCode,
 	       params.termDescription );
   INFO( message );
 
   /* Print coalescence phase.*/
-  LALSnprintf( message, MSGLENGTH,
+  snprintf( message, MSGLENGTH,
 	       "Waveform ends %.3f cycles before coalescence",
 	       -waveform.phi->data->data[waveform.phi->data->length-1]
 	       / (REAL4)( LAL_TWOPI ) );
@@ -535,7 +535,7 @@ main(int argc, char **argv)
 
   /* Check if sampling interval was too large. */
   if ( params.dfdt > 2.0 ) {
-    LALSnprintf( message, MSGLENGTH,
+    snprintf( message, MSGLENGTH,
 		 "Waveform sampling interval is too large:\n"
 		 "\tmaximum df*dt = %f", params.dfdt );
     WARNING( message );

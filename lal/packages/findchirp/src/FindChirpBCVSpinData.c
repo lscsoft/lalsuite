@@ -229,7 +229,7 @@ LALFindChirpBCVSpinData (
   {
 
 	 /* REMOVE THIS */
-	 /*sprintf (suffix, "%d", i);
+	 /*snprintf (suffix, "%d", i);
          strcpy (filename, "dataSegment.");
          strncat (filename, suffix, 5);
 

@@ -64,7 +64,7 @@ LALMalloc()                   LALFree()
 LALSCreateVectorSequence()    LALSDestroyVectorSequence()
 LALSCreateVector()            LALSDestroyVector()
 LALDCreateVector()            LALDDestroyVector()
-LALSBisectionFindRoot()       LALSnprintf()
+LALSBisectionFindRoot()       snprintf()
 \end{verbatim}
 
 \subsubsection*{Notes}
@@ -1235,12 +1235,12 @@ LALGeneratePPNAmpCorInspiral(
   output->a->sampleUnits = lalStrainUnit;
   output->f->sampleUnits = lalHertzUnit;
   output->phi->sampleUnits = lalDimensionlessUnit;
-  LALSnprintf( output->h->name, LALNameLength,
+  snprintf( output->h->name, LALNameLength,
                "PPN inspiral waveform polarisations" );
-  LALSnprintf( output->a->name, LALNameLength,
+  snprintf( output->a->name, LALNameLength,
                "First three harmonics a1_+, a2_+ & a3_+" );
-  LALSnprintf( output->f->name, LALNameLength, "PPN inspiral frequency" );
-  LALSnprintf( output->phi->name, LALNameLength, "PPN inspiral phase" );
+  snprintf( output->f->name, LALNameLength, "PPN inspiral frequency" );
+  snprintf( output->phi->name, LALNameLength, "PPN inspiral phase" );
   h = output->h->data->data;
   a = output->a->data->data;
   f = output->f->data->data;

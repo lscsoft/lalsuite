@@ -166,7 +166,7 @@ int main( int argc, char *argv[] )
   x.f0 = 0;
   x.deltaT = dt;
   x.sampleUnits = lalMeterUnit;
-  LALSnprintf( x.name, sizeof( x.name ), "x" );
+  snprintf( x.name, sizeof( x.name ), "x" );
   LALNormalDeviates( &status, x.data, randpar );
   TestStatus( &status, CODES( 0 ), 1 );
   for ( j = 0; j < n; ++j ) /* add a 60 Hz line */
@@ -176,7 +176,7 @@ int main( int argc, char *argv[] )
   }
   LALSPrintTimeSeries( &x, "x.out" );
 
-  LALSnprintf( X.name, sizeof( X.name ), "X" );
+  snprintf( X.name, sizeof( X.name ), "X" );
   LALTimeFreqRealFFT( &status, &X, &x, fwdRealPlan );
   TestStatus( &status, CODES( 0 ), 1 );
   LALCPrintFrequencySeries( &X, "X.out" );
@@ -280,7 +280,7 @@ int main( int argc, char *argv[] )
   z.f0 = 0;
   z.deltaT = dt;
   z.sampleUnits = lalVoltUnit;
-  LALSnprintf( z.name, sizeof( z.name ), "z" );
+  snprintf( z.name, sizeof( z.name ), "z" );
   { /* dirty hack */
     REAL4Vector tmp;
     tmp.length = 2 * z.data->length;
@@ -296,7 +296,7 @@ int main( int argc, char *argv[] )
   LALCPrintTimeSeries( &z, "z.out" );
   TestStatus( &status, CODES( 0 ), 1 );
 
-  LALSnprintf( Z.name, sizeof( Z.name ), "Z" );
+  snprintf( Z.name, sizeof( Z.name ), "Z" );
   LALTimeFreqComplexFFT( &status, &Z, &z, fwdComplexPlan );
   TestStatus( &status, CODES( 0 ), 1 );
   LALCPrintFrequencySeries( &Z, "Z.out" );

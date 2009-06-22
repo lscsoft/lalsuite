@@ -67,7 +67,7 @@ void FUNC ( LALStatus* status,
     ABORT(status, READFTSERIESH_EPARSE, READFTSERIESH_MSGEPARSE);
   }
 
-  if (LALSnprintf( series->name, sizeof( series->name ), "%s", line + 2) < 0)
+  if (snprintf( series->name, sizeof( series->name ), "%s", line + 2) < 0)
   {
     ABORT(status, READFTSERIESH_EPARSE, READFTSERIESH_MSGEPARSE);
   }

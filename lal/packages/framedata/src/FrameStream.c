@@ -120,12 +120,11 @@
 int gethostname(char *name, int len);
 #endif
 
-#include <FrameL.h>
-
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <lal/Date.h>
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALFrameIO.h>
@@ -270,7 +269,7 @@ static void free_flist( FrFileInfo *flist )
 
 
 /* create a frame file list from a cache */
-UINT4 create_flist( FrFileInfo **plist, FrCache *cache )
+static UINT4 create_flist( FrFileInfo **plist, FrCache *cache )
 {
   FrFileInfo *list;
   INT4 i, j, n;
@@ -364,7 +363,7 @@ UINT4 create_flist( FrFileInfo **plist, FrCache *cache )
 
 FrStream * XLALFrCacheOpen( FrCache *cache )
 {
-  static const char *func = "XLALFrCacheOpen";
+  static const char func[] = "XLALFrCacheOpen";
   FrStream *stream;
 
   if ( ! cache )
@@ -409,7 +408,7 @@ FrStream * XLALFrCacheOpen( FrCache *cache )
 
 FrStream * XLALFrOpen( const char *dirname, const char *pattern )
 {
-  static const char *func = "XLALFrOpen";
+  static const char func[] = "XLALFrOpen";
   FrStream *stream;
   FrCache *cache;
 
@@ -428,7 +427,7 @@ FrStream * XLALFrOpen( const char *dirname, const char *pattern )
 
 int XLALFrClose( FrStream *stream )
 {
-  static const char *func = "XLALFrClose";
+  static const char func[] = "XLALFrClose";
   if ( ! stream )
     XLAL_ERROR( func, XLAL_EFAULT );
   FrFileIEnd( stream->file );
@@ -440,7 +439,7 @@ int XLALFrClose( FrStream *stream )
 
 int XLALFrSetMode( FrStream *stream, int mode )
 {
-  static const char *func = "XLALFrSetMode";
+  static const char func[] = "XLALFrSetMode";
   if ( ! stream )
     XLAL_ERROR( func, XLAL_EFAULT );
   stream->mode = mode;
@@ -453,7 +452,7 @@ int XLALFrSetMode( FrStream *stream, int mode )
 
 int XLALFrState( FrStream *stream )
 {
-  static const char *func = "XLALFrState";
+  static const char func[] = "XLALFrState";
   if ( ! stream )
     XLAL_ERROR( func, XLAL_EFAULT );
   return stream->state;
@@ -462,7 +461,7 @@ int XLALFrState( FrStream *stream )
 
 int XLALFrClearErr( FrStream *stream )
 {
-  static const char *func = "XLALFrClearErr";
+  static const char func[] = "XLALFrClearErr";
   if ( ! stream )
     XLAL_ERROR( func, XLAL_EFAULT );
   stream->state = LAL_FR_OK;
@@ -472,7 +471,7 @@ int XLALFrClearErr( FrStream *stream )
 
 int XLALFrRewind( FrStream *stream )
 {
-  static const char *func = "XLALFrRewind";
+  static const char func[] = "XLALFrRewind";
   if ( ! stream )
     XLAL_ERROR( func, XLAL_EFAULT );
 
@@ -507,7 +506,7 @@ int XLALFrRewind( FrStream *stream )
 
 int XLALFrNext( FrStream *stream )
 {
-  static const char *func = "XLALFrNext";
+  static const char func[] = "XLALFrNext";
 
   /* timing accuracy: tenth of a sample interval for a 16kHz fast channel */
   const INT8 tacc = (INT8)floor( 0.1 * 1e9 / 16384.0 );
@@ -617,15 +616,11 @@ int XLALFrNext( FrStream *stream )
 
 int XLALFrSeek( FrStream *stream, const LIGOTimeGPS *epoch )
 {
-  static const char *func = "XLALFrSeek";
-  FrFileInfo *file1;
-  FrFileInfo *file2;
-  double twant;
-  UINT4 i;
+  static const char func[] = "XLALFrSeek";
+  FrFileInfo *fileinfo;
+  double twant = XLALGPSGetREAL8( epoch );
 
-  if ( ! stream || ! epoch )
-    XLAL_ERROR( func, XLAL_EFAULT );
-
+  /* close file if one is open */
   if ( stream->file )
   {
     FrFileIEnd( stream->file );
@@ -639,52 +634,59 @@ int XLALFrSeek( FrStream *stream, const LIGOTimeGPS *epoch )
   else
     stream->state = LAL_FR_OK;
 
-  /* if epoch is before first file */
-  file1 = stream->flist;
-  if ( epoch->gpsSeconds < file1->t0 )
+  /* is epoch before first file? */
+  if ( epoch->gpsSeconds < stream->flist->t0 )
   {
     XLALFrRewind( stream );
     stream->state |= LAL_FR_GAP;
+    /* is this reported as an error? */
+    if ( ! ( stream->mode & LAL_FR_IGNORETIME_MODE ) )
+    {
+      /* FIXME:  if this is an error, should the stream state say so? */
+      /*stream->state |= LAL_FR_ERR;*/
+      XLAL_ERROR( func, XLAL_ETIME );
+    }
     if ( stream->mode & LAL_FR_TIMEWARN_MODE )
       XLALPrintWarning( "XLAL Warning - %s: "
           "requested time %d before first frame\n", func, epoch->gpsSeconds );
-    if ( ! ( stream->mode & LAL_FR_IGNORETIME_MODE ) )
-      XLAL_ERROR( func, XLAL_ETIME );
     return 1; /* before first file code */
   }
 
-  /* if epoch is after last file */
-  file2 = stream->flist + stream->nfile - 1;
-  if ( epoch->gpsSeconds > file2->t0 + file2->dt )
-  {
-    stream->fnum   = stream->nfile;
-    stream->state |= LAL_FR_END;
-    if ( stream->mode & LAL_FR_TIMEWARN_MODE )
-      XLALPrintWarning( "XLAL Warning - %s: "
-          "requested time %d after last frame\n", func, epoch->gpsSeconds );
-    if ( ! ( stream->mode & LAL_FR_IGNORETIME_MODE ) )
-      XLAL_ERROR( func, XLAL_ETIME );
-    return 2; /* after last file code */
-  }
-
   /* search for the correct file in the list */
-  twant = epoch->gpsSeconds + 1e-9 * epoch->gpsNanoSeconds;
-  file1 = bsearch( &twant, stream->flist, stream->nfile,
+  fileinfo = bsearch( &twant, stream->flist, stream->nfile,
       sizeof( *stream->flist ), flist_tcompare );
-  if ( ! file1 ) /* no matching file: loop from beginning (should NOT happen) */
-    file1 = stream->flist;
+  if ( ! fileinfo )
+    /* bsearch() failed:  brute-force search from beginning (should only
+     * happen if requested time is past end of cache, but we'll figure that
+     * out below) */
+    fileinfo = stream->flist;
 
   /* find first file after time */
-  for ( i = file1->ind; i < stream->nfile; ++i )
+  while ( 1 )
   {
-    file1 = stream->flist + i;
-    if ( epoch->gpsSeconds >= file1->t0
-        && epoch->gpsSeconds < file1->t0 + file1->dt )
+    if ( fileinfo - stream->flist >= stream->nfile )
     {
-      double tbeg;
-      double tend;
-      stream->fnum = i;
-      stream->file = URLFrFileINew( file1, stream->mode & LAL_FR_CHECKSUM_MODE );
+      /* end of file list, time not yet found */
+      stream->fnum   = stream->nfile;
+      stream->state |= LAL_FR_END;
+      /* is this reported as an error? */
+      if ( ! ( stream->mode & LAL_FR_IGNORETIME_MODE ) )
+      {
+        /* FIXME:  if this is an error, should the stream state say so? */
+        /*stream->state |= LAL_FR_ERR;*/
+        XLAL_ERROR( func, XLAL_ETIME );
+      }
+      if ( stream->mode & LAL_FR_TIMEWARN_MODE )
+        XLALPrintWarning( "XLAL Warning - %s: "
+            "requested time %d after last frame\n", func, epoch->gpsSeconds );
+      return 2; /* after last file code */
+    }
+    if ( epoch->gpsSeconds >= fileinfo->t0
+        && epoch->gpsSeconds < fileinfo->t0 + fileinfo->dt )
+    {
+      /* epoch matches this cache entry, check file contents */
+      stream->fnum = fileinfo - stream->flist;
+      stream->file = URLFrFileINew( fileinfo, stream->mode & LAL_FR_CHECKSUM_MODE );
       if ( ! stream->file )
       {
         stream->state |= LAL_FR_ERR | LAL_FR_URL;
@@ -694,23 +696,23 @@ int XLALFrSeek( FrStream *stream, const LIGOTimeGPS *epoch )
       {
         XLALPrintError(
             "XLAL Error - %s: could not read frame TOC from URL %s\n",
-            func, file1->url );
+            func, fileinfo->url );
         FrFileIEnd( stream->file );
         stream->file   = NULL;
         stream->state |= LAL_FR_ERR | LAL_FR_TOC;
         XLAL_ERROR( func, XLAL_EIO );
       }
+      /* loop over frames */
       for ( stream->pos = 0; stream->pos < stream->file->toc->nFrame;
           ++stream->pos )
       {
-        tbeg  = stream->file->toc->GTimeS[stream->pos];
-        tbeg += 1e-9 * stream->file->toc->GTimeN[stream->pos];
-        tend  = tbeg + stream->file->toc->dt[stream->pos];
-        if ( twant >= tbeg && twant < tend ) /* this is the frame */
+        LIGOTimeGPS tbeg;
+        XLALGPSSet( &tbeg, stream->file->toc->GTimeS[stream->pos], stream->file->toc->GTimeN[stream->pos] );
+        if ( XLALGPSCmp( epoch, &tbeg ) >= 0 && XLALGPSDiff( epoch, &tbeg ) < stream->file->toc->dt[stream->pos] ) /* this is the frame */
         {
           goto found;
         }
-        if ( twant < tbeg ) /* detect a gap */
+        if ( XLALGPSCmp( epoch, &tbeg ) < 0 ) /* detect a gap */
         {
           stream->state |= LAL_FR_GAP;
           goto found;
@@ -721,11 +723,11 @@ int XLALFrSeek( FrStream *stream, const LIGOTimeGPS *epoch )
       stream->file = NULL;
       stream->pos = 0;
     }
-    if ( epoch->gpsSeconds < file1->t0 ) /* detect a gap */
+    else if ( epoch->gpsSeconds < fileinfo->t0 ) /* detect a gap */
     {
       stream->state |= LAL_FR_GAP;
-      stream->fnum   = i;
-      stream->file   = URLFrFileINew( file1, stream->mode & LAL_FR_CHECKSUM_MODE );
+      stream->fnum   = fileinfo - stream->flist;
+      stream->file   = URLFrFileINew( fileinfo, stream->mode & LAL_FR_CHECKSUM_MODE );
       stream->pos    = 0;
       if ( ! stream->file )
       {
@@ -736,7 +738,7 @@ int XLALFrSeek( FrStream *stream, const LIGOTimeGPS *epoch )
       {
         XLALPrintError(
             "XLAL Error - %s: could not read frame TOC from URL %s\n",
-            func, file1->url );
+            func, fileinfo->url );
         FrFileIEnd( stream->file );
         stream->file   = NULL;
         stream->state |= LAL_FR_ERR | LAL_FR_TOC;
@@ -744,14 +746,15 @@ int XLALFrSeek( FrStream *stream, const LIGOTimeGPS *epoch )
       }
       goto found;
     }
+    /* advance to next cache entry */
+    fileinfo++;
   }
 found:
 
   /* set time of stream */
   if ( stream->state & LAL_FR_GAP )
   {
-    stream->epoch.gpsSeconds     = stream->file->toc->GTimeS[stream->pos];
-    stream->epoch.gpsNanoSeconds = stream->file->toc->GTimeN[stream->pos];
+    XLALGPSSet( &stream->epoch, stream->file->toc->GTimeS[stream->pos], stream->file->toc->GTimeN[stream->pos] );
     if ( stream->mode & LAL_FR_TIMEWARN_MODE )
       XLALPrintWarning( "XLAL Warning - %s: "
           "requested time %.6f in gap in frame data\n", func, twant );
@@ -767,7 +770,7 @@ found:
 
 int XLALFrTell( LIGOTimeGPS *epoch, FrStream *stream )
 {
-  static const char *func = "XLALFrTell";
+  static const char func[] = "XLALFrTell";
   if ( ! epoch || ! stream )
     XLAL_ERROR( func, XLAL_EFAULT );
   *epoch = stream->epoch;
@@ -777,7 +780,7 @@ int XLALFrTell( LIGOTimeGPS *epoch, FrStream *stream )
 
 int XLALFrGetpos( FrPos *position, FrStream *stream )
 {
-  static const char *func = "XLALFrGetpos";
+  static const char func[] = "XLALFrGetpos";
   if ( ! position || ! stream )
     XLAL_ERROR( func, XLAL_EFAULT );
   position->epoch = stream->epoch;
@@ -789,7 +792,7 @@ int XLALFrGetpos( FrPos *position, FrStream *stream )
 
 int XLALFrSetpos( FrStream *stream, FrPos *position )
 {
-  static const char *func = "XLALFrSetpos";
+  static const char func[] = "XLALFrSetpos";
   if ( ! stream || ! position )
     XLAL_ERROR( func, XLAL_EFAULT );
   /* clear EOF or GAP states; preserve ERR state */
@@ -1025,14 +1028,14 @@ LALFrNext(
     {
       if ( stream->state & LAL_FR_URL ) /* must have failed to open a file */
       {
-        LALSnprintf( frErrMsg, sizeof(frErrMsg)/sizeof(*frErrMsg),
+        snprintf( frErrMsg, sizeof(frErrMsg)/sizeof(*frErrMsg),
             "Could not open URL %s\n", (stream->flist+stream->fnum)->url );
         LALError( status, frErrMsg );
         ABORT( status, FRAMESTREAMH_EOPEN, FRAMESTREAMH_MSGEOPEN );
       }
       if ( stream->state & LAL_FR_TOC ) /* must have failed to read a file */
       {
-        LALSnprintf( frErrMsg, sizeof(frErrMsg)/sizeof(*frErrMsg),
+        snprintf( frErrMsg, sizeof(frErrMsg)/sizeof(*frErrMsg),
             "Could not read TOC from %s\n", (stream->flist+stream->fnum)->url );
         LALError( status, frErrMsg );
         ABORT( status, FRAMESTREAMH_EREAD, FRAMESTREAMH_MSGEREAD );
@@ -1074,14 +1077,14 @@ LALFrSeek(
     {
       if ( stream->state & LAL_FR_URL ) /* must have failed to open a file */
       {
-        LALSnprintf( frErrMsg, sizeof(frErrMsg)/sizeof(*frErrMsg),
+        snprintf( frErrMsg, sizeof(frErrMsg)/sizeof(*frErrMsg),
             "Could not open URL %s\n", (stream->flist+stream->fnum)->url );
         LALError( status, frErrMsg );
         ABORT( status, FRAMESTREAMH_EOPEN, FRAMESTREAMH_MSGEOPEN );
       }
       if ( stream->state & LAL_FR_TOC ) /* must have failed to read a file */
       {
-        LALSnprintf( frErrMsg, sizeof(frErrMsg)/sizeof(*frErrMsg),
+        snprintf( frErrMsg, sizeof(frErrMsg)/sizeof(*frErrMsg),
             "Could not read TOC from %s\n", (stream->flist+stream->fnum)->url );
         LALError( status, frErrMsg );
         ABORT( status, FRAMESTREAMH_EREAD, FRAMESTREAMH_MSGEREAD );

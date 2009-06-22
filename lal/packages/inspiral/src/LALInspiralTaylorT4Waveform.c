@@ -407,7 +407,7 @@ LALTaylorT4WaveformEngine (
        in4.function = LALTaylorT4Derivatives7PN;
        break;
      default:
-       LALSnprintf(message, 256, "There are no T4 waveforms at order %d\n", params->order);
+       snprintf(message, 256, "There are no T4 waveforms at order %d\n", params->order);
        LALError( status, message );
        LALFree(dummy.data);
        ABORT( status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);

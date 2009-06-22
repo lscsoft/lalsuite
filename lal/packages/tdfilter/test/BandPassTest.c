@@ -81,7 +81,7 @@ description of how these values are interpreted.  If not specified,
 \subsubsection*{Uses}
 \begin{verbatim}
 lalDebugLevel
-LALPrintError()                         LALSnprintf()
+LALPrintError()                         snprintf()
 LALSCreateVector()                      LALSDestroyVector()
 LALSReadTSeries()                       LALSWriteTSeries()
 LALDButterworthREAL4TimeSeries()        LALCheckMemoryLeaks()
@@ -266,7 +266,7 @@ main(int argc, char **argv)
     SUB( LALSReadTSeries( &stat, &series, fp ), &stat );
     fclose( fp );
   } else {
-    LALSnprintf( series.name, LALNameLength, "%s", "Impulse" );
+    snprintf( series.name, LALNameLength, "%s", "Impulse" );
     series.deltaT = dt;
     SUB( LALSCreateVector( &stat, &(series.data), npts ), &stat );
     memset( series.data->data, 0, npts*sizeof(REAL4) );

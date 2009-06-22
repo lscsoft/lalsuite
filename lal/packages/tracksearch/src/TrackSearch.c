@@ -22,8 +22,8 @@
  *
  * File Name: TrackSearch.c
  *
- * New Maintainer: Torres, C (Univ TX at Browsville)
- * Author: R. Balasubramanian
+ * Current Developer: Torres, Cristina V. (LLO)
+ * Original Developer: R. Balasubramanian
  *
  * Revision: $Id$
  *
@@ -119,7 +119,7 @@ LALSignalTrackSearch(LALStatus *status,
 		     const TimeFreqRep *tfMap, /* type defined in TimeFreq.h */
 		     TrackSearchParams *params)
 {
-  INT4 tempmaskcount; /*remove later on temp */
+  /*INT4 tempmaskcount; remove later on temp */
 
   /* Initialize status structure   */
   INITSTATUS(status,"LALSignalTrackSearch",TRACKSEARCHC);
@@ -162,32 +162,6 @@ LALSignalTrackSearch(LALStatus *status,
   /* Compute Convolutions of the image with the Gaussian derivative Kernels */
   ComputeConvolutions(status->statusPtr, &(out->store), tfMap, params);
   CHECKSTATUSPTR(status);
-  /*
-   * Diagnostic code to be extracted later
-   * Want to check the output convolutions and the map here
-   * rather than in the function call itself
-   * Dumping original map also
-   */
-  if (0==1)
-    {
-      DumpTFImage(tfMap->map,"DumpMap0",params->height,params->width,1);
-      DumpTFImage(out->store.k[0],"DumpVar0_Col1Derv",params->height,params->width,0);
-      DumpTFImage(out->store.k[1],"DumpVar1_Row1Derv",params->height,params->width,0);
-      DumpTFImage(out->store.k[2],"DumpVar2_Col2Derv",params->height,params->width,0);
-      DumpTFImage(out->store.k[3],"DumpVar3_Row2Derv",params->height,params->width,0);
-      DumpTFImage(out->store.k[4],"DumpVar4_RC_2Derv",params->height,params->width,0);
-      /* Dumping Out Kernels Collectivly */
-      tempmaskcount=ceil(4*params->sigma);
-      DumpREAL8KernelMask(out->store.gaussMask[0],"DumpVarKernel_0",
-			  ((2*tempmaskcount)+1));
-      DumpREAL8KernelMask(out->store.gaussMask[1],"DumpVarKernel_1",
-			  ((2*tempmaskcount)+1));
-      DumpREAL8KernelMask(out->store.gaussMask[2],"DumpVarKernel_2",
-			  ((2*tempmaskcount)+1));
-    }
-  /*
-   * End diagnotics temporary code
-   */
   /*
    * If automatic \Lambda is enabled must compute that here
    * use Gauss2 and h averaging routine (to be written)
@@ -628,7 +602,7 @@ ConnectLinePoints(LALStatus *status,
   INT4 direction; /* the 2 opposite directions to traverse to obtain the complete line */
   INT4 reject[2],check[3],which;/* the list of surrounding points to reject and select */
   REAL4 *eigenVec; /* a pointer defined for convenience; points to a particular element of an array */
-  REAL4 metric[3]; /* a metric defined to choose between 3 different line points */
+  REAL4 metric[3]={0,0,0}; /* a metric defined to choose between 3 different line points */
   REAL4 minimum; /* the minimum of the metric[i]*/
   REAL4 differ; /* the difference between 2 angles */
   REAL4 powerHalfContourA; /* The resulting power of half the contour from tfMap*/
@@ -979,23 +953,9 @@ static void estimateProfile(REAL4 *myProfile,
       currentSum=0;
       for (j=0;j<Map.tCol;j++)
 	{
-/* 	  fprintf(stdout,"k:%i/%i j:%i/%i \t Map:%f \t CS %f \n", */
-/* 		  k, */
-/* 		  Map.fRow, */
-/* 		  j, */
-/* 		  Map.tCol, */
-/* 		  Map.map[j][k], */
-/* 		  currentSum, */
-/* 	  fflush(stdout); */
 	  currentSum=currentSum+Map.map[j][k];
 	}
       myProfile[k]=currentSum/Map.tCol;
-/*       fprintf(stdout,"Computing myProfile value.\t"); */
-/*       fprintf(stdout," : %i/%i Value: %f\n",  */
-/* 	      k, */
-/* 	      Map.fRow/2+1, */
-/* 	      myProfile[k]); */
-/*       fflush(stdout); */
     }
 }
 
@@ -1167,12 +1127,6 @@ estimateSNR(Curve contourA,
 	  fflush(stderr);
 	}
       curveProfile[contourA.col[n]]=curveProfile[contourA.col[n]]+tfr->map[contourA.row[n]][contourA.col[n]];
-/*       fprintf(stdout,"A -- Row(T) :%i\tCol(F) :%i\tTFR :%20.20f\t CP :%20.20f\n", */
-/* 	      contourA.row[n], */
-/* 	      contourA.col[n], */
-/* 	      tfr->map[contourA.row[n]][contourA.col[n]], */
-/* 	      curveProfile[contourA.row[n]]); */
-/*       fflush(stdout); */
     }
   for (n=1;n<contourB.n;n++)
     {
@@ -1184,15 +1138,7 @@ estimateSNR(Curve contourA,
 	  fflush(stderr);
 	}
     curveProfile[contourB.col[n]]=curveProfile[contourB.col[n]]+tfr->map[contourB.row[n]][contourB.col[n]];
-/*     fprintf(stdout,"B -- Row(T) :%i\tCol(F) :%i\tTFR :%20.20f\t CP :%20.20f\n", */
-/* 	    contourB.row[n], */
-/* 	    contourB.col[n], */
-/* 	    tfr->map[contourB.row[n]][contourB.col[n]], */
-/* 	    curveProfile[contourB.row[n]]); */
-/*     fflush(stdout); */
     }
-/*   fprintf(stdout,"\n\n"); */
-/*   fflush(stdout); */
   /*Compute the SNR (check the normalization) can we GRASP definition P156-160*/
   /*
    * We invoke for our estimate the idea of a SNR measure the ratio of in the
@@ -1206,21 +1152,11 @@ estimateSNR(Curve contourA,
       /*Define my snr estimate as std(energyInCurve)/std(energyInNoise)*/
       tmp=tmp+((curveProfile[n]*curveProfile[n])/
 	(tfrProfile[n]*tfrProfile[n]));
-/*       fprintf(stdout,"Index : %i\tTMP :%10.10f\t CP :%10.10f\t TFR :%10.10f\n", */
-/* 	      n, */
-/* 	      tmp, */
-/* 	      curveProfile[n], */
-/* 	      tfrProfile[n]); */
-/*       fflush(stdout); */
     }
   result=sqrt(tmp);
-/*   fprintf(stdout,"SNR Estimate :%f\n",result); */
-/*   fflush(stdout); */
   LALFree(curveProfile);
   return result;
 }
-
-
 /*End static function estimateSNR*/
 
 /* routine called by qsort
@@ -1282,7 +1218,6 @@ void LALTrackSearchInsertMarkers(
 	  CHECKSTATUSPTR(status);
 	  output->curves[i].gpsStamp[j].gpsSeconds=tmpGPS.gpsSeconds;
 	  output->curves[i].gpsStamp[j].gpsNanoSeconds=tmpGPS.gpsNanoSeconds;
-	  /*memcpy(&(input->mapStartGPS),&(tmpGPS),sizeof(LIGOTimeGPS));*/
 	}
     }
   DETATCHSTATUSPTR (status);

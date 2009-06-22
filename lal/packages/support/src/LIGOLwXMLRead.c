@@ -1098,12 +1098,12 @@ MultiInspiralTable    * XLALMultiInspiralTableFromLIGOLw (
 
       if ( tableDir[j].idx == 0 )
       {
-        LALSnprintf( thisEvent->ifos, LIGOMETA_IFO_MAX * sizeof(CHAR),
+        snprintf( thisEvent->ifos, LIGOMETA_IFO_MAX * sizeof(CHAR),
             "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
       }
       else if ( tableDir[j].idx == 1 )
       {
-        LALSnprintf( thisEvent->search, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
+        snprintf( thisEvent->search, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
             "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
       }
       else if ( tableDir[j].idx == 2 )
@@ -1550,17 +1550,17 @@ LALSnglInspiralTableFromLIGOLw (
 
         if ( tableDir[j].idx == 0 )
         {
-          LALSnprintf( thisEvent->ifo, LIGOMETA_IFO_MAX * sizeof(CHAR),
+          snprintf( thisEvent->ifo, LIGOMETA_IFO_MAX * sizeof(CHAR),
               "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
         }
         else if ( tableDir[j].idx == 1 )
         {
-          LALSnprintf( thisEvent->search, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
+          snprintf( thisEvent->search, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
               "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
         }
         else if ( tableDir[j].idx == 2 )
         {
-          LALSnprintf( thisEvent->channel, LIGOMETA_CHANNEL_MAX * sizeof(CHAR),
+          snprintf( thisEvent->channel, LIGOMETA_CHANNEL_MAX * sizeof(CHAR),
               "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
         }
         else if ( tableDir[j].idx == 3 )
@@ -2098,7 +2098,7 @@ InspiralTmpltBankFromLIGOLw (
         }
         else if ( tableDir[j].idx == 17 )
         {
-          LALSnprintf( thisTmplt->ifo, LIGOMETA_IFO_MAX * sizeof(CHAR),
+          snprintf( thisTmplt->ifo, LIGOMETA_IFO_MAX * sizeof(CHAR),
               "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
         }
         else if ( tableDir[j].idx == 18 )
@@ -2340,7 +2340,7 @@ SimInspiralTableFromLIGOLw (
         INT4  i4colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_4s;
         if ( tableDir[j].idx == 0 )
         {
-          LALSnprintf(thisSim->waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR),
+          snprintf(thisSim->waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR),
               "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data);
         }
         else if ( tableDir[j].idx == 1 )
@@ -2397,7 +2397,7 @@ SimInspiralTableFromLIGOLw (
         }
         else if ( tableDir[j].idx == 14 )
         {
-          LALSnprintf(thisSim->source, LIGOMETA_SOURCE_MAX * sizeof(CHAR),
+          snprintf(thisSim->source, LIGOMETA_SOURCE_MAX * sizeof(CHAR),
               "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data);
         }
         else if ( tableDir[j].idx == 15 )
@@ -2550,7 +2550,7 @@ SimInspiralTableFromLIGOLw (
 	}
 	else if ( tableDir[j].idx == 52 )
 	{
-          LALSnprintf(thisSim->numrel_data, LIGOMETA_STRING_MAX * sizeof(CHAR),
+          snprintf(thisSim->numrel_data, LIGOMETA_STRING_MAX * sizeof(CHAR),
               "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data);
 	}
         else if ( tableDir[j].idx == 53 )
@@ -2559,7 +2559,7 @@ SimInspiralTableFromLIGOLw (
         }
         else if ( tableDir[j].idx == 54 )
         {
-            LALSnprintf(thisSim->taper, LIGOMETA_INSPIRALTAPER_MAX * sizeof(CHAR),
+            snprintf(thisSim->taper, LIGOMETA_INSPIRALTAPER_MAX * sizeof(CHAR),
                     "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data);
         }
         else if ( tableDir[j].idx == 55 )
@@ -2698,7 +2698,7 @@ SummValueTableFromLIGOLw (
 
       if ( tableDir[j].idx == 0 )
       {
-        LALSnprintf( thisValue->program, LIGOMETA_PROGRAM_MAX * sizeof(CHAR),
+        snprintf( thisValue->program, LIGOMETA_PROGRAM_MAX * sizeof(CHAR),
             "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
       }
       else if ( tableDir[j].idx == 1 )
@@ -2719,12 +2719,12 @@ SummValueTableFromLIGOLw (
       }
       else if ( tableDir[j].idx == 5 )
       {
-        LALSnprintf( thisValue->ifo, LIGOMETA_IFO_MAX * sizeof(CHAR),
+        snprintf( thisValue->ifo, LIGOMETA_IFO_MAX * sizeof(CHAR),
             "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
       }
       else if ( tableDir[j].idx == 6 )
       {
-        LALSnprintf( thisValue->name, LIGOMETA_SUMMVALUE_NAME_MAX *
+        snprintf( thisValue->name, LIGOMETA_SUMMVALUE_NAME_MAX *
             sizeof(CHAR), "%s",
             env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
       }
@@ -2734,7 +2734,7 @@ SummValueTableFromLIGOLw (
       }
       else if ( tableDir[j].idx == 8 )
       {
-        LALSnprintf( thisValue->comment, LIGOMETA_SUMMVALUE_NAME_MAX *
+        snprintf( thisValue->comment, LIGOMETA_SUMMVALUE_NAME_MAX *
             sizeof(CHAR), "%s",
             env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
       }
@@ -2867,23 +2867,23 @@ LALStochasticTableFromLIGOLw (
 
       if (tableDir[j].idx == 0)
       {
-        LALSnprintf(thisValue->ifo_one, LIGOMETA_IFO_MAX * sizeof(CHAR), \
+        snprintf(thisValue->ifo_one, LIGOMETA_IFO_MAX * sizeof(CHAR), \
             "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data);
       }
       else if (tableDir[j].idx == 1)
       {
-        LALSnprintf(thisValue->ifo_two, LIGOMETA_IFO_MAX * sizeof(CHAR), \
+        snprintf(thisValue->ifo_two, LIGOMETA_IFO_MAX * sizeof(CHAR), \
             "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data);
       }
       else if ( tableDir[j].idx == 2 )
       {
-        LALSnprintf(thisValue->channel_one, LIGOMETA_CHANNEL_MAX * \
+        snprintf(thisValue->channel_one, LIGOMETA_CHANNEL_MAX * \
             sizeof(CHAR), "%s", \
             env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data);
       }
       else if ( tableDir[j].idx == 3 )
       {
-        LALSnprintf(thisValue->channel_two, LIGOMETA_CHANNEL_MAX * \
+        snprintf(thisValue->channel_two, LIGOMETA_CHANNEL_MAX * \
             sizeof(CHAR), "%s", \
             env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data);
       }
@@ -3048,23 +3048,23 @@ LALStochSummTableFromLIGOLw (
 
       if (tableDir[j].idx == 0)
       {
-        LALSnprintf(thisValue->ifo_one, LIGOMETA_IFO_MAX * sizeof(CHAR), \
+        snprintf(thisValue->ifo_one, LIGOMETA_IFO_MAX * sizeof(CHAR), \
             "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data);
       }
       else if (tableDir[j].idx == 1)
       {
-        LALSnprintf(thisValue->ifo_two, LIGOMETA_IFO_MAX * sizeof(CHAR), \
+        snprintf(thisValue->ifo_two, LIGOMETA_IFO_MAX * sizeof(CHAR), \
             "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data);
       }
       else if ( tableDir[j].idx == 2 )
       {
-        LALSnprintf(thisValue->channel_one, LIGOMETA_CHANNEL_MAX * \
+        snprintf(thisValue->channel_one, LIGOMETA_CHANNEL_MAX * \
             sizeof(CHAR), "%s", \
             env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data);
       }
       else if ( tableDir[j].idx == 3 )
       {
-        LALSnprintf(thisValue->channel_two, LIGOMETA_CHANNEL_MAX * \
+        snprintf(thisValue->channel_two, LIGOMETA_CHANNEL_MAX * \
             sizeof(CHAR), "%s", \
             env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data);
       }
@@ -3274,42 +3274,42 @@ LALExtTriggerTableFromLIGOLw (
 
         if ( tableDir[j].idx == 0 )
         {
-          LALSnprintf( thisEvent->det_alts, LIGOMETA_STD * sizeof(CHAR),
+          snprintf( thisEvent->det_alts, LIGOMETA_STD * sizeof(CHAR),
               "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
         }
         else if ( tableDir[j].idx == 1 )
         {
-          LALSnprintf( thisEvent->det_band, LIGOMETA_STD * sizeof(CHAR),
+          snprintf( thisEvent->det_band, LIGOMETA_STD * sizeof(CHAR),
               "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
         }
         else if ( tableDir[j].idx == 2 )
         {
-          LALSnprintf( thisEvent->det_fluence, LIGOMETA_STD * sizeof(CHAR),
+          snprintf( thisEvent->det_fluence, LIGOMETA_STD * sizeof(CHAR),
               "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
         }
         else if ( tableDir[j].idx == 3 )
         {
-          LALSnprintf( thisEvent->det_fluence_int, LIGOMETA_STD * sizeof(CHAR),
+          snprintf( thisEvent->det_fluence_int, LIGOMETA_STD * sizeof(CHAR),
               "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
         }
         else if ( tableDir[j].idx == 4 )
         {
-          LALSnprintf( thisEvent->det_name, LIGOMETA_STD * sizeof(CHAR),
+          snprintf( thisEvent->det_name, LIGOMETA_STD * sizeof(CHAR),
               "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
         }
         else if ( tableDir[j].idx == 5 )
         {
-          LALSnprintf( thisEvent->det_peak, LIGOMETA_STD * sizeof(CHAR),
+          snprintf( thisEvent->det_peak, LIGOMETA_STD * sizeof(CHAR),
               "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
         }
         else if ( tableDir[j].idx == 6 )
         {
-          LALSnprintf( thisEvent->det_peak_int, LIGOMETA_STD * sizeof(CHAR),
+          snprintf( thisEvent->det_peak_int, LIGOMETA_STD * sizeof(CHAR),
               "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
         }
         else if ( tableDir[j].idx == 7 )
         {
-          LALSnprintf( thisEvent->det_snr, LIGOMETA_STD * sizeof(CHAR),
+          snprintf( thisEvent->det_snr, LIGOMETA_STD * sizeof(CHAR),
               "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
         }
         else if ( tableDir[j].idx == 8 )
@@ -3326,12 +3326,12 @@ LALExtTriggerTableFromLIGOLw (
         }
         else if ( tableDir[j].idx == 11 )
         {
-          LALSnprintf( thisEvent->event_epoch, LIGOMETA_STD * sizeof(CHAR),
+          snprintf( thisEvent->event_epoch, LIGOMETA_STD * sizeof(CHAR),
               "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
         }
         else if ( tableDir[j].idx == 12 )
         {
-          LALSnprintf( thisEvent->event_err_type, LIGOMETA_STD * sizeof(CHAR),
+          snprintf( thisEvent->event_err_type, LIGOMETA_STD * sizeof(CHAR),
               "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
         }
         else if ( tableDir[j].idx == 13 )
@@ -3353,7 +3353,7 @@ LALExtTriggerTableFromLIGOLw (
         }
         else if ( tableDir[j].idx == 17 )
         {
-          LALSnprintf( thisEvent->event_type, LIGOMETA_STD * sizeof(CHAR),
+          snprintf( thisEvent->event_type, LIGOMETA_STD * sizeof(CHAR),
               "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
         }
         else if ( tableDir[j].idx == 18 )
@@ -3366,17 +3366,17 @@ LALExtTriggerTableFromLIGOLw (
         }
         else if ( tableDir[j].idx == 20 )
         {
-          LALSnprintf( thisEvent->notice_comments, LIGOMETA_STD * sizeof(CHAR),
+          snprintf( thisEvent->notice_comments, LIGOMETA_STD * sizeof(CHAR),
               "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
         }
         else if ( tableDir[j].idx == 21 )
         {
-          LALSnprintf( thisEvent->notice_id, LIGOMETA_STD * sizeof(CHAR),
+          snprintf( thisEvent->notice_id, LIGOMETA_STD * sizeof(CHAR),
               "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
         }
         else if ( tableDir[j].idx == 22 )
         {
-          LALSnprintf( thisEvent->notice_sequence, LIGOMETA_STD * sizeof(CHAR),
+          snprintf( thisEvent->notice_sequence, LIGOMETA_STD * sizeof(CHAR),
               "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
         }
         else if ( tableDir[j].idx == 23 )
@@ -3385,12 +3385,12 @@ LALExtTriggerTableFromLIGOLw (
         }
         else if ( tableDir[j].idx == 24 )
         {
-          LALSnprintf( thisEvent->notice_type, LIGOMETA_STD * sizeof(CHAR),
+          snprintf( thisEvent->notice_type, LIGOMETA_STD * sizeof(CHAR),
               "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
         }
         else if ( tableDir[j].idx == 25 )
         {
-          LALSnprintf( thisEvent->notice_url, LIGOMETA_STD * sizeof(CHAR),
+          snprintf( thisEvent->notice_url, LIGOMETA_STD * sizeof(CHAR),
               "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
         }
         else if ( tableDir[j].idx == 26 )
@@ -3439,7 +3439,7 @@ LALExtTriggerTableFromLIGOLw (
         }
         else if ( tableDir[j].idx == 37 )
         {
-          LALSnprintf( thisEvent->event_number_grb, 8 * sizeof(CHAR),
+          snprintf( thisEvent->event_number_grb, 8 * sizeof(CHAR),
               "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
         }
         else if ( tableDir[j].idx == 38 )
@@ -3570,9 +3570,9 @@ XLALReadInspiralTriggerFile (
     thisInputFile = thisInputFile->next = (SearchSummvarsTable *)
       LALCalloc( 1, sizeof(SearchSummvarsTable) );
   }
-  LALSnprintf( thisInputFile->name, LIGOMETA_NAME_MAX,
+  snprintf( thisInputFile->name, LIGOMETA_NAME_MAX,
       "input_file" );
-  LALSnprintf( thisInputFile->string, LIGOMETA_NAME_MAX,
+  snprintf( thisInputFile->string, LIGOMETA_NAME_MAX,
       "%s", fileName );
 
 
@@ -3900,12 +3900,12 @@ LALMultiInspiralTableFromLIGOLw (
       /* dereference the data stored in the table */
       if ( tableDir[j].idx == 0 )
       {
-        LALSnprintf( thisEvent->ifos, LIGOMETA_IFO_MAX * sizeof(CHAR),
+        snprintf( thisEvent->ifos, LIGOMETA_IFO_MAX * sizeof(CHAR),
             "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
       }
       else if ( tableDir[j].idx == 1 )
       {
-        LALSnprintf( thisEvent->search, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
+        snprintf( thisEvent->search, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
             "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
       }
       else if ( tableDir[j].idx == 2 )
@@ -4193,9 +4193,9 @@ XLALReadMultiInspiralTriggerFile (
     thisInputFile = thisInputFile->next = (SearchSummvarsTable *)
       LALCalloc( 1, sizeof(SearchSummvarsTable) );
   }
-  LALSnprintf( thisInputFile->name, LIGOMETA_NAME_MAX,
+  snprintf( thisInputFile->name, LIGOMETA_NAME_MAX,
       "input_file" );
-  LALSnprintf( thisInputFile->string, LIGOMETA_NAME_MAX,
+  snprintf( thisInputFile->string, LIGOMETA_NAME_MAX,
       "%s", fileName );
 
 

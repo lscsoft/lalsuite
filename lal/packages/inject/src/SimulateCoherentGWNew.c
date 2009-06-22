@@ -436,7 +436,7 @@ LALSimulateCoherentGW( LALStatus        *stat,
 			    &pair ), stat );
     } else
       output->sampleUnits = signal->a->sampleUnits;
-    LALSnprintf( output->name, LALNameLength, "response to %s",
+    snprintf( output->name, LALNameLength, "response to %s",
 		 signal->a->name );
   }
 

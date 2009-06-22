@@ -146,7 +146,7 @@ LALSI2InjectTimeSeries( LALStatus       *stat,
     pair.unitOne = &(output->sampleUnits);
     TRY( LALUnitCompare( stat->statusPtr, &unitsOK, &pair ), stat );
     ASSERT( unitsOK, stat, INJECTH_EUNIT, INJECTH_MSGEUNIT );
-    LALSnprintf( newName, LALNameLength, "%s plus %s", output->name,
+    snprintf( newName, LALNameLength, "%s plus %s", output->name,
 		 signalvec->name );
     memcpy( output->name, newName, LALNameLength*sizeof(CHAR) );
   }
@@ -274,7 +274,7 @@ LALSSInjectTimeSeries( LALStatus       *stat,
     pair.unitOne = &(output->sampleUnits);
     TRY( LALUnitCompare( stat->statusPtr, &unitsOK, &pair ), stat );
     ASSERT( unitsOK, stat, INJECTH_EUNIT, INJECTH_MSGEUNIT );
-    LALSnprintf( newName, LALNameLength, "%s plus %s", output->name,
+    snprintf( newName, LALNameLength, "%s plus %s", output->name,
 		 signalvec->name );
     memcpy( output->name, newName, LALNameLength*sizeof(CHAR) );
   }

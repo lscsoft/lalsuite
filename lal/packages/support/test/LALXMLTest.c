@@ -806,7 +806,7 @@ int findFileInLALDataPath(const char *filename, char **validatedPath)
         }
 
         /* build absolute path */
-        n = LALSnprintf(absolutePath, PATH_MAXLEN, "%s/./%s", workingDir, filename);
+        n = snprintf(absolutePath, PATH_MAXLEN, "%s/./%s", workingDir, filename);
         if(n >= PATH_MAXLEN) {
             /* data file name too long */
             fprintf(stderr, "Absolute path exceeds limit of %i characters!\n", PATH_MAXLEN);
@@ -845,7 +845,7 @@ int findFileInLALDataPath(const char *filename, char **validatedPath)
         }
 
         /* build absolute path (required by "file" URI scheme) */
-        n = LALSnprintf(absolutePath,
+        n = snprintf(absolutePath,
                         PATH_MAXLEN,
                         "%s/%s/%s",
                         workingDir,
