@@ -136,7 +136,7 @@ union {
 
 /* these actually define only string constants, so they don't harm non-gcc code */
 /* handle different register names in AMD64 */
-#if defined(__amd64__) 
+#if defined(__x86_64__) 
 #define RAX "rax"
 #define RDX "rdx"
 #define RDI "rdi"
