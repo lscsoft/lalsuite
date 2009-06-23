@@ -208,7 +208,7 @@ INT4 main ( INT4 argc, CHAR *argv[] ) {
   /*  REAL4TimeSeries  *hP = NULL, *hC = NULL;*/
   REAL4FFTPlan     *prevPlus = NULL, *prevCross = NULL;
 
-  REAL4Vector      *Freq = NULL;
+  /*REAL4Vector      *Freq = NULL;*/
 
   UINT4 windowLength;
   INT4 hPLength;
