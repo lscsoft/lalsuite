@@ -145,8 +145,8 @@ int main( int argc, char *argv[] ) {
   BOOLEAN          grace = 0;       /* Whether or not we use xmgrace */
   BOOLEAN          nongrace = 0;    /* Whether or not to output data to file*/
   int              ra, dec, i;      /* Loop variables for xmgrace option */
-  FILE            *pvc;             /* Temporary file for xmgrace option */
-  FILE            *fnongrace;       /* File contaning ellipse coordinates */
+  FILE            *pvc=NULL;        /* Temporary file for xmgrace option */
+  FILE            *fnongrace=NULL;  /* File contaning ellipse coordinates */
 
 
   /* Default values. */

@@ -101,7 +101,7 @@ LALCoarseFitToPulsar    (       LALStatus            *status,
 
         UINT4                   n,i;            /* integer indices */
         REAL8                   psi;
-        REAL8                   h0,h;
+        REAL8                   h0;
         REAL8                   cosIota;
         REAL8                   phase;
         REAL8                   chiSquare;
@@ -384,7 +384,6 @@ int main(void)
   REAL4TimeSeries               Fp, Fc, Fs;
   LALTimeIntervalAndNSample     time_info;
   UINT4                         i;
-  LALGPSandAcc          pGPSandAcc;
 
 
 

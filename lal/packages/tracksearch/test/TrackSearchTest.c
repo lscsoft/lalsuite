@@ -29,8 +29,6 @@
 
 NRCSID (TESTSTSC,"$Id$");
 
-static void OutputInvertedMap(TimeFreqRep, TrackSearchParams);
-
 INT4 lalDebugLevel=0;
 int main( void )
 {
