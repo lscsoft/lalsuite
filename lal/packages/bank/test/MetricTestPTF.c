@@ -62,7 +62,7 @@ NRCSID(METRICTESTC,"$Id$");
 
 int lalDebugLevel = 1;
 
-int main( int argc, char *argv[] )
+int main( void )
 {
   UINT4 i;
   LALStatus status;
