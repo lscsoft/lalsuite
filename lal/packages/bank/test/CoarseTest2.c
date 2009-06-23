@@ -86,7 +86,7 @@ main(int argc, char **argv)
   INT4 nlist1=0;
 
   void (*noisemodel)(LALStatus*,REAL8*,REAL8) = LALLIGOIPsd;
-  UINT4   j, numPSDpts=262144;
+  INT4   j, numPSDpts=262144;
   FILE *fpr;
 
 
@@ -142,7 +142,7 @@ main(int argc, char **argv)
   LALInspiralCreateCoarseBank(&status, &list1, &nlist1, coarseIn);
 
   {
-    UINT4 j;
+    INT4 k;
     UINT4 valid;
 
     static RectangleIn RectIn;
@@ -154,13 +154,13 @@ main(int argc, char **argv)
     RectIn.theta = list1[0].metric.theta;
 
     /* Print out the template parameters */
-    for (j=0; j<nlist1; j++)
+    for (k=0; k<nlist1; k++)
     {
 	/*
 	Retain only those templates that have meaningful masses:
 	*/
-	RectIn.x0 = (REAL8) list1[j].params.t0;
-	RectIn.y0 = (REAL8) list1[j].params.t3;
+	RectIn.x0 = (REAL8) list1[k].params.t0;
+	RectIn.y0 = (REAL8) list1[k].params.t3;
 	/*
 	LALInspiralValidParams(&status, &valid, bankParams, coarseIn);
 	*/
