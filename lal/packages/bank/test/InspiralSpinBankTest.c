@@ -121,7 +121,7 @@ NRCSID(LALINSPIRALSPINBANKTESTC, "$Id$");
 
 int main( int argc, char *argv[] )
 {
-  static LALStatus stat;
+  static LALStatus status;
   INT4 loop = 0; /* loop counter */
   Math3DPointList *list = NULL;    /* structure for mathematica plot */
   Math3DPointList *first = NULL;
@@ -145,7 +145,7 @@ int main( int argc, char *argv[] )
   if( (list = (Math3DPointList *) LALCalloc( 1, sizeof( Math3DPointList )))
       == NULL )
   {
-    LALError( &stat, INSPIRALSPINBANKTESTC_MSGEMEM );
+    LALError( &status, INSPIRALSPINBANKTESTC_MSGEMEM );
     printf( INSPIRALSPINBANKTESTC_MSGEMEM );
     return INSPIRALSPINBANKTESTC_EMEM;
   }
@@ -206,9 +206,9 @@ int main( int argc, char *argv[] )
     coarseIn.shf.data = NULL;
     memset( &(coarseIn.shf), 0, sizeof( REAL8FrequencySeries ) );
     coarseIn.shf.f0 = 0;
-    LALDCreateVector( &stat, &psd, coarseIn.fUpper );
+    LALDCreateVector( &status, &psd, coarseIn.fUpper );
     df = 1.0;
-    LALNoiseSpectralDensity( &stat, psd, &LALLIGOIPsd, df );
+    LALNoiseSpectralDensity( &status, psd, &LALLIGOIPsd, df );
     coarseIn.shf.data = psd;
     coarseIn.shf.deltaF = df;
     for( loop = 0; loop < psd->length; loop++ )
@@ -219,10 +219,10 @@ int main( int argc, char *argv[] )
         noiseMin = psd->data[loop];
       }
     }
-    LALInspiralSpinBank( &stat, &bankHead, &ntiles, &coarseIn );
-    if( stat.statusCode )
+    LALInspiralSpinBank( &status, &bankHead, &ntiles, &coarseIn );
+    if( status.statusCode )
     {
-      LALError( &stat, INSPIRALSPINBANKTESTC_MSGESUB );
+      LALError( &status, INSPIRALSPINBANKTESTC_MSGESUB );
       printf( INSPIRALSPINBANKTESTC_MSGESUB );
       return INSPIRALSPINBANKTESTC_ESUB;
     }
@@ -239,16 +239,16 @@ int main( int argc, char *argv[] )
       list->grayLevel = 1.0*loop/ntiles;
       if( (list = list->next = (Math3DPointList *) LALCalloc( 1, sizeof(
           Math3DPointList ))) == NULL ) {
-        LALError( &stat, INSPIRALSPINBANKTESTC_MSGEMEM );
+        LALError( &status, INSPIRALSPINBANKTESTC_MSGEMEM );
         printf( INSPIRALSPINBANKTESTC_MSGEMEM );
         return INSPIRALSPINBANKTESTC_EMEM;
       }
     }
     list->next = NULL;
-    LALMath3DPlot( &stat, first, &ntiles, NULL );
-    if( stat.statusCode )
+    LALMath3DPlot( &status, first, &ntiles, NULL );
+    if( status.statusCode )
     {
-      LALError( &stat, INSPIRALSPINBANKTESTC_MSGESUB );
+      LALError( &status, INSPIRALSPINBANKTESTC_MSGESUB );
       printf( INSPIRALSPINBANKTESTC_MSGESUB );
       return INSPIRALSPINBANKTESTC_ESUB;
     }
@@ -266,7 +266,7 @@ int main( int argc, char *argv[] )
   /* free the last (first?) memory allocated for Math3DPlot. */
   LALFree( list );
 
-  if (stat.statusCode)
+  if (status.statusCode)
     return INSPIRALSPINBANKTESTC_ESUB;
   else
     return INSPIRALSPINBANKTESTC_ENORM;
