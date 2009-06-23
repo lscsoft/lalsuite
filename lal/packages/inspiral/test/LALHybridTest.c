@@ -210,7 +210,8 @@ INT4 main ( INT4 argc, CHAR *argv[] ) {
 
   REAL4Vector      *Freq = NULL;
 
-  INT4 windowLength, hPLength;
+  UINT4 windowLength;
+  INT4 hPLength;
   REAL8 linearWindow;
 
   /* getopt arguments */
@@ -467,7 +468,7 @@ INT4 main ( INT4 argc, CHAR *argv[] ) {
    * Added by Ajith 6 May 2008 */
 
   hPLength = hP->data->length;
-  windowLength = (INT4) (20.*totalMass * LAL_MTSUN_SI/dt);
+  windowLength = (UINT4) (20.*totalMass * LAL_MTSUN_SI/dt);
   for (i=1; i<= windowLength; i++){
     linearWindow =  (i-1.)/windowLength;
     hP->data->data[hPLength-i] *= linearWindow;
