@@ -73,13 +73,12 @@ INT4 lalDebugLevel=33;
 int
 main(int argc, char **argv)
 {
-  INT4 arg;
   /* top-level status structure */
   static LALStatus status;
   /* Structure specifying the nature of the bank needed */
   static InspiralCoarseBankIn coarseIn;
   void (*noisemodel)(LALStatus*,REAL8*,REAL8) = LALLIGOIPsd;
-  UINT4   j, numPSDpts=262144/4/4; /*Size of the vectors*/
+  UINT4 numPSDpts=262144/4/4; /*Size of the vectors*/
   InspiralTemplate tempPars;
   InspiralMetric metric;
   InspiralMomentsEtc moments;
