@@ -113,3 +113,6 @@ tagIFOData
   LALDetector *detector;
   IFOData *next;
 }IFOData;
+
+#endif
+
