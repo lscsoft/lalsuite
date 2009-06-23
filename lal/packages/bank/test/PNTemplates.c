@@ -187,7 +187,7 @@ main(int argc, char **argv)
   }
   {
     UINT4 j;
-    INT4 valid;
+    INT4 local_valid;
 
     static RectangleIn RectIn;
     static RectangleOut RectOut;
@@ -207,8 +207,8 @@ main(int argc, char **argv)
 	RectIn.x0 = bankParams.x0 = (REAL8) list->data[2*j];
 	RectIn.y0 = bankParams.x1 = (REAL8) list->data[2*j+1];
 	LALInspiralValidParams(&status, &valid, bankParams, coarseIn);
-	valid = 1;
-        if (valid)
+	local_valid = 1;
+        if (local_valid)
 	{
 		LALRectangleVertices(&status, &RectOut, &RectIn);
 		fprintf(fpr, "%e %e\n%e %e\n%e %e\n%e %e\n%e %e\n",
