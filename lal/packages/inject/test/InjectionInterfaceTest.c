@@ -127,6 +127,9 @@ if ( (func), (statusptr)->statusCode )                               \
 }                                                                    \
 while (0)
 
+/* macro to "use" unused function parameters */
+#define UNUSED(expr) do { (void)(expr); } while(0)
+
 char *program;
 
 
@@ -151,6 +154,9 @@ int main(int argc, char **argv)
   FILE		*output;             /* output result*/
   CHAR *filename;
   UINT4 lenfile;
+
+  /* argc is unused in this function */
+  UNUSED(argc);
 
    /* --- for debugging --- */
   lalDebugLevel = 33;
