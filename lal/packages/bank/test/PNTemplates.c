@@ -181,7 +181,7 @@ main(int argc, char **argv)
 	    bankParams.x0 = (REAL8) list->data[2*j];
 	    bankParams.x1 = (REAL8) list->data[2*j+1];
 	    LALInspiralValidParams(&status, &valid, bankParams, coarseIn);
-	    if (valid) fprintf(fpr, "%10.4f %10.4f %10.3f %10.3f\n",
+	    if (valid) fprintf(fpr, "%10.4f %10.4f\n",
 			    bankParams.x0, bankParams.x1);
     }
   }
