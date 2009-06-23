@@ -91,7 +91,7 @@ static void wformfunc (REAL4 *result,REAL4 x)
  }
 
 int lalDebugLevel = 3;
-int main (int argc, char* argv[])
+int main ( void )
 {
   static LALStatus status;
 
