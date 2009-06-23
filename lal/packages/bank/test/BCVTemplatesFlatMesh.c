@@ -162,6 +162,8 @@ main(int argc, char **argv)
   void (*noisemodel)(LALStatus*,REAL8*,REAL8) = LALLIGOIPsd;
   InspiralMomentsEtc moments;
 
+  argc = 0;
+
 /* Number of templates is nlist */
 
   fp = fopen("BCVTemplatesFlatMesh.out", "w");
