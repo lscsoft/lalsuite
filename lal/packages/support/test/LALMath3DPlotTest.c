@@ -117,7 +117,6 @@ int main(void){
   INT4 ntiles = 0;
   Math3DPointList *list = NULL; 	/* Pointer to structure for mathematica plot */
   Math3DPointList *first = NULL;
-  REAL4 pointsize = 0.04;
 
   if ((list = (Math3DPointList *) LALCalloc(1, sizeof(Math3DPointList))) == NULL){
     LALError(&status, LALMATH3DPLOTTESTC_MSGEMEM);
