@@ -161,7 +161,7 @@ int main(int argc, char *argv[]){
 
   const CHAR   *fname = NULL;               /* The output filename */
   INT4   arg;                         /* Argument counter */
-  INT4   i;
+  UINT4   i;
   FILE   *fp=NULL;                    /* Output file */
 
   fname = FILEOUT;
