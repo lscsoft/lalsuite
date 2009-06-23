@@ -110,7 +110,6 @@ main (int argc, char *argv[])
   INT4                          i;
   INT4                          j;
   INT4                          k;
-  INT4                          l;
 
   INT4                          seed = 3;
 
