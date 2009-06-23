@@ -69,16 +69,7 @@ NRCSID( COMPUTEFSTATC, "$Id$");
 #define EA_ACC          1E-9                    /* the timing accuracy of LALGetBinaryTimes in seconds */
 
 /*----- Macros ----- */
-/** convert GPS-time to REAL8 */
-#define GPS2REAL8(gps) (1.0 * (gps).gpsSeconds + 1.e-9 * (gps).gpsNanoSeconds )
-
-#define MYSIGN(x) ( ((x) < 0) ? (-1.0):(+1.0) )
-
-/** Simple Euklidean scalar product for two 3-dim vectors in cartesian coords */
-#define SCALAR(u,v) ((u)[0]*(v)[0] + (u)[1]*(v)[1] + (u)[2]*(v)[2])
-
 #define SQ(x) ( (x) * (x) )
-
 #define REM(x) ( (x) - (INT4)(x) )
 
 /*----- SWITCHES -----*/
@@ -87,7 +78,7 @@ NRCSID( COMPUTEFSTATC, "$Id$");
 
 /*---------- Global variables ----------*/
 #define NUM_FACT 7
-static const REAL8 inv_fact[NUM_FACT] = { 1.0, 1.0, (1.0/2.0), (1.0/6.0), (1.0/24.0), (1.0/120.0), (1.0/720.0) };
+static const REAL4 inv_fact[NUM_FACT] = { 1.0, 1.0, (1.0/2.0), (1.0/6.0), (1.0/24.0), (1.0/120.0), (1.0/720.0) };
 
 /* empty initializers  */
 static const LALStatus empty_status;
@@ -380,7 +371,6 @@ local_ComputeFStat ( LALStatus *status,
  * Compute JKS's Fa and Fb, which are ingredients for calculating the F-statistic.
  *
  * Note: this is a locally optimized version of XLALComputeFaFb(), targeted at GPU parallelization.
- * This version does not use any REAL8 variables.
  *
  */
 int
