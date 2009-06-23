@@ -33,7 +33,7 @@ if [ -z "$LAL_DATA_PATH" ]; then
     fi
 fi
 
-Ftolerance=0.02
+Ftolerance=0.03
 # ---------- fixed parameter of our test-signal
 Tsft=1800;
 startTime=711595934
@@ -45,7 +45,7 @@ mfd_FreqBand=5.0;
 Alpha=2.0
 Delta=-0.5
 
-h0=1
+h0=0.1
 cosi=-0.3
 
 psi=0.6
@@ -57,7 +57,7 @@ mfd_fmin=$(echo $Freq $mfd_FreqBand | awk '{printf "%g", $1 - $2 / 2.0}');
 f1dot=-1e-7;
 f2dot=1e-14
 
-noiseSqrtSh=5
+noiseSqrtSh=1
 
 ## ------------------------------------------------------------
 
@@ -89,9 +89,9 @@ fi
 # this part of the command-line is compatible with SemiAnalyticF:
 saf_CL=" --Alpha=$Alpha --Delta=$Delta --IFO=$IFO --Tsft=$Tsft --startTime=$startTime --duration=$duration --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0"
 # concatenate this with the mfd-specific switches:
-mfd_CL="${saf_CL} --fmin=$mfd_fmin --Band=$mfd_FreqBand --Freq=$Freq --outSFTbname=$SFTdir/testSFT --f1dot=$f1dot --f2dot=$f2dot --refTime=$refTime --outSFTv1"
+mfd_CL="${saf_CL} --fmin=$mfd_fmin --Band=$mfd_FreqBand --Freq=$Freq --outSFTbname=$SFTdir --f1dot=$f1dot --f2dot=$f2dot --refTime=$refTime"
 if [ "$haveNoise" = true ]; then
-    mfd_CL="$mfd_CL --noiseSqrtSh=$sqrtSh";
+    mfd_CL="$mfd_CL --noiseSqrtSh=$sqrtSh --randSeed=1";
 fi
 
 cmdline="$mfd_code $mfd_CL";
@@ -108,7 +108,7 @@ echo "----------------------------------------------------------------------"
 echo
 outfile_orig="Fstat_v2_orig.dat";
 ## common cmdline-options for v1 and v2
-cfs_CL="--IFO=$IFO --Freq=$Freq --Alpha=$Alpha --Delta=$Delta --f1dot=$f1dot --f2dot=$f2dot --DataFiles='$SFTdir/testSFT*' --refTime=$refTime --TwoFthreshold=0"
+cfs_CL="--IFO=$IFO --Freq=$Freq --Alpha=$Alpha --Delta=$Delta --f1dot=$f1dot --f2dot=$f2dot --DataFiles='$SFTdir/*.sft' --refTime=$refTime --TwoFthreshold=0"
 if [ "$haveNoise" = false ]; then
     cfs_CL="$cfs_CL --SignalOnly"
 fi

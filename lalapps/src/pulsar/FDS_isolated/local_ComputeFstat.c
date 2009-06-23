@@ -79,6 +79,8 @@ NRCSID( COMPUTEFSTATC, "$Id$");
 
 #define SQ(x) ( (x) * (x) )
 
+#define REM(x) ( (x) - (INT4)(x) )
+
 /*----- SWITCHES -----*/
 
 /*---------- internal types ----------*/
@@ -475,64 +477,64 @@ local_XLALComputeFaFb ( Fcomponents *FaFb,
       REAL4 realXP, imagXP;	/* Re/Im of sum_k X_ak * P_ak */
       REAL4 realQXP, imagQXP;	/* Re/Im of Q_alpha R_alpha */
 
-      REAL8 lambda_alpha, kappa_max, kappa_star;
+      REAL4 lambda_alpha;
+      REAL4 kappa_max, kappa_star;
 
       /* ----- calculate kappa_max and lambda_alpha */
       {
-	UINT4 s; 		/* loop-index over spindown-order */
 	REAL8 DT_al;
-
-	REAL4 Tas;	/* temporary variable to calculate (DeltaT_alpha)^s */
-        REAL4 f0, df;
-        REAL4 T0, dT;
-        REAL4 Dphi_alpha_int, Dphi_alpha_rem;
-        REAL4 phi_alpha_rem;
-        REAL4 Tdot_al_frac;	/* defined as Tdot_al - 1, *not* the remainder wrt floor ! */
-
-        REAL4 Dphi_alpha;
-
-	DT_al = (*DeltaT_al);
-
-        /* 1st oder: s = 0 */
         REAL8 f = fkdot[0];
 
+	UINT4 s; 		/* loop-index over spindown-order */
+
+	REAL4 Tas;	/* temporary variable to calculate (DeltaT_alpha)^s */
+        REAL4 df;
+        REAL4 f0;
+        REAL4 T0, dT;
+        REAL4 Dphi_alpha_int, Dphi_alpha_rem;
+        REAL4 phi_alpha_int, phi_alpha_rem;
+        REAL4 Tdot_al_frac;	/* defined as Tdot_al - 1, *not* the remainder wrt floor ! */
+
+	DT_al = (*DeltaT_al);
+        Tdot_al_frac = (*Tdot_al) - 1.0;
+
+        /* 1st oder: s = 0 */
         T0 = (INT4)DT_al;
-        dT = DT_al - T0;
+        dT = DT_al - (REAL8)T0;
         f0 = (INT4)f;
-        df = f - f0;
+        df = f - (REAL8)f0;
 
         /* phi_alpha = f * Tas; */
         phi_alpha_rem = f0 * dT + df * T0 + df * dT;
-        Dphi_alpha = f;
+        phi_alpha_rem = REM ( phi_alpha_rem );
+        Dphi_alpha_int = f0;
+        Dphi_alpha_rem = df * (1.0f + Tdot_al_frac) + f0 * Tdot_al_frac;
 
         /* higher-order spindowns */
         Tas = DT_al;
 	for (s=1; s <= spdnOrder; s++)
 	  {
 	    REAL4 fsdot = fkdot[s];
-	    Dphi_alpha += fsdot * Tas * inv_fact[s]; 	/* here: DT^s/s! */
-	    Tas *= DT_al;				/* now: DT^(s+1) */
+	    Dphi_alpha_rem += fsdot * Tas * inv_fact[s]; 	/* here: DT^s/s! */
+	    Tas *= DT_al;					/* now: DT^(s+1) */
 	    phi_alpha_rem += fsdot * Tas * inv_fact[s+1];
 	  } /* for s <= spdnOrder */
 
-	/* Step 3: apply global factors to complete Dphi_alpha */
-        Tdot_al_frac = (*Tdot_al) - 1.0;
+	/* Step 3: apply global factor of Tsft to complete Dphi_alpha */
+        Dphi_alpha_int *= Tsft;
+	Dphi_alpha_rem *= Tsft;
 
-        Dphi_alpha_int = Dphi_alpha * Tsft;
-	Dphi_alpha_rem = Dphi_alpha_int * Tdot_al_frac;		/* guaranteed > 0 ! */
+        REAL4 tmp = REM( 0.5f * Dphi_alpha_int ) + REM ( 0.5f * Dphi_alpha_rem );
+	lambda_alpha = phi_alpha_rem - tmp;
 
-        REAL4 tmp = Dphi_alpha_int + Dphi_alpha_rem;
-	lambda_alpha = phi_alpha_rem - 0.5f * tmp;
+        kstar = (INT4)Dphi_alpha_int + (INT4)Dphi_alpha_rem;
+	kappa_star = REM(Dphi_alpha_int) + REM(Dphi_alpha_rem);
+	kappa_max = kappa_star + 1.0f * Dterms - 1.0f;
 
 	/* real- and imaginary part of e^{-i 2 pi lambda_alpha } */
 	if ( sin_cos_2PI_LUT ( &imagQ, &realQ, - lambda_alpha ) ) {
 	  XLAL_ERROR ( "XLALComputeFaFb", XLAL_EFUNC);
 	}
-
-	kstar = (INT4) (tmp);	/* k* = floor(Dphi_alpha) for positive Dphi */
-	kappa_star = tmp - 1.0f * kstar;	/* remainder of Dphi_alpha: >= 0 ! */
-	kappa_max = kappa_star + 1.0f * Dterms - 1.0f;
-
 
 	/* ----- check that required frequency-bins are found in the SFTs ----- */
 	k0 = kstar - Dterms + 1;
