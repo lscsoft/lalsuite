@@ -406,6 +406,11 @@ local_XLALComputeFaFb ( Fcomponents *FaFb,
 
   REAL4 norm = OOTWOPI;
 
+  REAL4 f0, df;
+
+  f0 = (INT4)fkdot[0];
+  df = fkdot[0] - (REAL8)f0;
+
   /* ----- check validity of input */
 #ifndef LAL_NDEBUG
   if ( !FaFb ) {
@@ -440,11 +445,10 @@ local_XLALComputeFaFb ( Fcomponents *FaFb,
   /* ----- prepare convenience variables */
   numSFTs = sfts->length;
   Tsft = (REAL4)( 1.0 / sfts->data[0].deltaF );
-  {
-    REAL8 dFreq = sfts->data[0].deltaF;
-    freqIndex0 = (UINT4) ( sfts->data[0].f0 / dFreq + 0.5); /* lowest freqency-index */
-    freqIndex1 = freqIndex0 + sfts->data[0].data->length;
-  }
+
+  REAL4 dFreq = sfts->data[0].deltaF;
+  freqIndex0 = (UINT4) ( sfts->data[0].f0 / dFreq + 0.5); /* lowest freqency-index */
+  freqIndex1 = freqIndex0 + sfts->data[0].data->length;
 
   /* find highest non-zero spindown-entry */
   for ( spdnOrder = PULSAR_MAX_SPINS - 1;  spdnOrder > 0 ; spdnOrder --  )
@@ -482,27 +486,21 @@ local_XLALComputeFaFb ( Fcomponents *FaFb,
 
       /* ----- calculate kappa_max and lambda_alpha */
       {
-	REAL8 DT_al;
-        REAL8 f = fkdot[0];
+	REAL8 DT_al = (*DeltaT_al);
 
 	UINT4 s; 		/* loop-index over spindown-order */
 
 	REAL4 Tas;	/* temporary variable to calculate (DeltaT_alpha)^s */
-        REAL4 df;
-        REAL4 f0;
         REAL4 T0, dT;
         REAL4 Dphi_alpha_int, Dphi_alpha_rem;
         REAL4 phi_alpha_int, phi_alpha_rem;
         REAL4 Tdot_al_frac;	/* defined as Tdot_al - 1, *not* the remainder wrt floor ! */
 
-	DT_al = (*DeltaT_al);
-        Tdot_al_frac = (*Tdot_al) - 1.0;
+        Tdot_al_frac = (*Tdot_al) - 1.0f;
 
         /* 1st oder: s = 0 */
         T0 = (INT4)DT_al;
         dT = DT_al - (REAL8)T0;
-        f0 = (INT4)f;
-        df = f - (REAL8)f0;
 
         /* phi_alpha = f * Tas; */
         phi_alpha_rem = f0 * dT + df * T0 + df * dT;
