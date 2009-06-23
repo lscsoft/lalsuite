@@ -71,7 +71,7 @@ NRCSID (GETORIENTATIONELLIPSEC,"$Id$");
 INT4 lalDebugLevel=33;
 
 int
-main(int argc, char **argv)
+main(void)
 {
   /* top-level status structure */
   static LALStatus status;
