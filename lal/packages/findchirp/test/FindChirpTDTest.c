@@ -381,7 +381,7 @@ int TDFilter(
     FindChirpDataParams *dataParams
     )
 {
-  REAL4Vector    *signal = NULL;
+  REAL4Vector    *signalvec = NULL;
   COMPLEX8Vector *stilde = NULL;
   InspiralTemplate tmplt;
   UINT4 segment;
@@ -428,26 +428,26 @@ int TDFilter(
     exit( 1 );
   }
 
-  LALSCreateVector( &status, &signal, numPoints );
+  LALSCreateVector( &status, &signalvec, numPoints );
   TEST_STATUS( &status );
 
   LALCCreateVector( &status, &stilde, numPoints / 2 + 1 );
   TEST_STATUS( &status );
 
-  LALInspiralWave( &status, signal, &tmplt );
+  LALInspiralWave( &status, signalvec, &tmplt );
   TEST_STATUS( &status );
 
   /* shift chirp to end of vector */
   n = numPoints;
-  while ( signal->data[--n] == 0 )
+  while ( signalvec->data[--n] == 0 )
     ;
   ++n;
-  memmove( signal->data + numPoints - n, signal->data,
-      n * sizeof( *signal->data ) );
-  memset( signal->data, 0, ( numPoints - n ) * sizeof( *signal->data ) );
+  memmove( signalvec->data + numPoints - n, signalvec->data,
+      n * sizeof( *signalvec->data ) );
+  memset( signalvec->data, 0, ( numPoints - n ) * sizeof( *signalvec->data ) );
 
   /* fft chirp */
-  LALForwardRealFFT( &status, stilde, signal, dataParams->fwdPlan );
+  LALForwardRealFFT( &status, stilde, signalvec, dataParams->fwdPlan );
   TEST_STATUS( &status );
 
 
@@ -509,7 +509,7 @@ int TDFilter(
     }
   }
 
-  LALSDestroyVector( &status, &signal );
+  LALSDestroyVector( &status, &signalvec );
   TEST_STATUS( &status );
 
   LALCDestroyVector( &status, &stilde );
