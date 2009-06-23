@@ -481,57 +481,57 @@ local_XLALComputeFaFb ( Fcomponents *FaFb,
       {
 	UINT4 s; 		/* loop-index over spindown-order */
 	REAL8 DT_al;
-        REAL8 Dphi_alpha;
-	REAL8 Tas;	/* temporary variable to calculate (DeltaT_alpha)^s */
 
+	REAL4 Tas;	/* temporary variable to calculate (DeltaT_alpha)^s */
         REAL4 f0, df;
-        REAL8 T0, dT;
+        REAL4 T0, dT;
         REAL4 Dphi_alpha_int, Dphi_alpha_rem;
-        REAL4 phi_alpha_int, phi_alpha_rem;
-        REAL4 Tdot_al_int, Tdot_al_rem;
+        REAL4 phi_alpha_rem;
+        REAL4 Tdot_al_frac;	/* defined as Tdot_al - 1, *not* the remainder wrt floor ! */
+
+        REAL4 Dphi_alpha;
 
 	DT_al = (*DeltaT_al);
 
-        /* Frequency: s = 0 */
+        /* 1st oder: s = 0 */
         REAL8 f = fkdot[0];
-        Tas = DT_al;
 
-        T0 = (INT4)Tas;
-        dT = Tas - T0;
+        T0 = (INT4)DT_al;
+        dT = DT_al - T0;
         f0 = (INT4)f;
         df = f - f0;
 
         /* phi_alpha = f * Tas; */
         phi_alpha_rem = f0 * dT + df * T0 + df * dT;
         Dphi_alpha = f;
-        Dphi_alpha_int = f0;
-        Dphi_alpha_rem = df;
 
         /* higher-order spindowns */
+        Tas = DT_al;
 	for (s=1; s <= spdnOrder; s++)
 	  {
-	    REAL8 fsdot = fkdot[s];
+	    REAL4 fsdot = fkdot[s];
 	    Dphi_alpha += fsdot * Tas * inv_fact[s]; 	/* here: DT^s/s! */
 	    Tas *= DT_al;				/* now: DT^(s+1) */
 	    phi_alpha_rem += fsdot * Tas * inv_fact[s+1];
 	  } /* for s <= spdnOrder */
 
 	/* Step 3: apply global factors to complete Dphi_alpha */
-        Tdot_al_int = (INT4)(*Tdot_al);
-        Tdot_al_rem = (*Tdot_al) - Tdot_al_int;
+        Tdot_al_frac = (*Tdot_al) - 1.0;
 
-	Dphi_alpha *= Tsft * Tdot_al_int + Tsft * Tdot_al_rem;		/* guaranteed > 0 ! */
+        Dphi_alpha_int = Dphi_alpha * Tsft;
+	Dphi_alpha_rem = Dphi_alpha_int * Tdot_al_frac;		/* guaranteed > 0 ! */
 
-	lambda_alpha = phi_alpha_rem - 0.5 * Dphi_alpha;
+        REAL4 tmp = Dphi_alpha_int + Dphi_alpha_rem;
+	lambda_alpha = phi_alpha_rem - 0.5f * tmp;
 
 	/* real- and imaginary part of e^{-i 2 pi lambda_alpha } */
 	if ( sin_cos_2PI_LUT ( &imagQ, &realQ, - lambda_alpha ) ) {
 	  XLAL_ERROR ( "XLALComputeFaFb", XLAL_EFUNC);
 	}
 
-	kstar = (INT4) (Dphi_alpha);	/* k* = floor(Dphi_alpha) for positive Dphi */
-	kappa_star = Dphi_alpha - 1.0 * kstar;	/* remainder of Dphi_alpha: >= 0 ! */
-	kappa_max = kappa_star + 1.0 * Dterms - 1.0;
+	kstar = (INT4) (tmp);	/* k* = floor(Dphi_alpha) for positive Dphi */
+	kappa_star = tmp - 1.0f * kstar;	/* remainder of Dphi_alpha: >= 0 ! */
+	kappa_max = kappa_star + 1.0f * Dterms - 1.0f;
 
 
 	/* ----- check that required frequency-bins are found in the SFTs ----- */
