@@ -132,12 +132,10 @@ int main( int argc, char *argv[] )
   INT2 Math3DPlot = 0;             /* option flag for Mathematica plot */
   INT4 opt = 0;                    /* returning value of getopt() */
   INT4 optflag = -1;               /* Command Line option */
-  REAL4 PtSize = 0.02;
   REAL8Vector *psd = NULL;
   REAL8 df = 1.0;
   InspiralTemplate inspiralTemplate;
   INT2 printMoments = 0;
-  InspiralMomentsEtc moments;
   REAL4 F0 = 0;
   REAL4 noiseMin = 1;
   BOOLEAN haveXML = 0;
