@@ -237,7 +237,7 @@ static float s_of_f(float freq) {
   return y;
 }
 
-int main( int argc, char *argv[] ){
+int main( void ){
   static LALStatus status;
 
   /* This stores the parameters of functions used */
