@@ -81,7 +81,6 @@ INT4 lalDebugLevel=33;
 int
 main(int argc, char **argv)
 {
-  INT4 arg;
   /* top-level status structure */
   static LALStatus status;
   /* Structure specifying the nature of the bank needed */
@@ -89,7 +88,7 @@ main(int argc, char **argv)
   /* Template bank lists */
   static InspiralTemplateList *list1, *list2;
   /* Number of templates in list1 and list2 */
-  INT4 nlist1=0, nlist2=0;
+  INT4 nlist1=0;
 
   void (*noisemodel)(LALStatus*,REAL8*,REAL8) = LALLIGOIPsd;
   INT4   j, numPSDpts=16384/2;
