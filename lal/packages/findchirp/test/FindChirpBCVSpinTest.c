@@ -550,7 +550,7 @@ main (int argc, char *argv[])
 
 loopCount = loopCount + 1;
 
- /* } /* end loop over templates */
+ /* } end loop over templates */
  /* }
   }  */
 
