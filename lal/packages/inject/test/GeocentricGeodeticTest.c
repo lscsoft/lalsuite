@@ -205,9 +205,9 @@ main( int argc, char **argv )
   int arg;                      /* command-line argument counter */
   BOOLEAN xyz = 0;              /* whether -x, -y, or -z options were given */
   INT4 verbosity = 0;           /* verbosity level */
-  REAL8 x1 = 0.0, x2 = 0.0, dx; /* range and increment in x */
-  REAL8 y1 = 0.0, y2 = 0.0, dy; /* range and increment in y */
-  REAL8 z1 = 0.0, z2 = 0.0, dz; /* range and increment in z */
+  REAL8 x_1 = 0.0, x_2 = 0.0, dx; /* range and increment in x */
+  REAL8 y_1 = 0.0, y_2 = 0.0, dy; /* range and increment in y */
+  REAL8 z_1 = 0.0, z_2 = 0.0, dz; /* range and increment in z */
   INT4 nx = 1, ny = 1, nz = 1;  /* number of steps in each direction */
   INT4 i, j, k;                 /* index in each direction */
   REAL8 x, y, z, ddx, ddy, ddz; /* position and error in each direction */
@@ -227,8 +227,8 @@ main( int argc, char **argv )
       if ( argc > arg + 3 ) {
 	arg++;
 	xyz = 1;
-	x1 = atof( argv[arg++] );
-	x2 = atof( argv[arg++] );
+	x_1 = atof( argv[arg++] );
+	x_2 = atof( argv[arg++] );
 	nx = atoi( argv[arg++] );
       } else {
 	ERROR( GEOCENTRICGEODETICTESTC_EARG,
@@ -240,8 +240,8 @@ main( int argc, char **argv )
       if ( argc > arg + 3 ) {
 	arg++;
 	xyz = 1;
-	y1 = atof( argv[arg++] );
-	y2 = atof( argv[arg++] );
+	y_1 = atof( argv[arg++] );
+	y_2 = atof( argv[arg++] );
 	ny = atoi( argv[arg++] );
       } else {
 	ERROR( GEOCENTRICGEODETICTESTC_EARG,
@@ -253,8 +253,8 @@ main( int argc, char **argv )
       if ( argc > arg + 3 ) {
 	arg++;
 	xyz = 1;
-	z1 = atof( argv[arg++] );
-	z2 = atof( argv[arg++] );
+	z_1 = atof( argv[arg++] );
+	z_2 = atof( argv[arg++] );
 	nz = atoi( argv[arg++] );
       } else {
 	ERROR( GEOCENTRICGEODETICTESTC_EARG,
@@ -314,20 +314,20 @@ main( int argc, char **argv )
     coslat = sqrt( 1.0 - sinlat*sinlat );
     SUB( LALUniformDeviate( &stat, &rad, rparams ), &stat );
     rad = 1.5*rad + 0.5;
-    x1 = x2 = rad*coslat*cos( lon );
-    y1 = y2 = rad*coslat*sin( lon );
-    z1 = z2 = rad*sinlat;
+    x_1 = x_2 = rad*coslat*cos( lon );
+    y_1 = y_2 = rad*coslat*sin( lon );
+    z_1 = z_2 = rad*sinlat;
     SUB( LALDestroyRandomParams( &stat, &rparams ), &stat );
   }
 
   /* Compute stepsizes. */
   dx = dy = dz = 0.0;
   if ( nx > 1 )
-    dx = ( x2 - x1 )/( nx - 1.0 );
+    dx = ( x_2 - x_1 )/( nx - 1.0 );
   if ( ny > 1 )
-    dy = ( y2 - y1 )/( ny - 1.0 );
+    dy = ( y_2 - y_1 )/( ny - 1.0 );
   if ( nz > 1 )
-    dz = ( z2 - z1 )/( nz - 1.0 );
+    dz = ( z_2 - z_1 )/( nz - 1.0 );
 
   /*******************************************************************
    * PERFORM TEST                                                    *
@@ -335,11 +335,11 @@ main( int argc, char **argv )
 
   /* Loop over each direction. */
   for ( i = 0; i < nx; i++ ) {
-    x = LAL_REARTH_SI*( x1 + i*dx );
+    x = LAL_REARTH_SI*( x_1 + i*dx );
     for ( j = 0; j < ny; j++ ) {
-      y = LAL_REARTH_SI*( y1 + j*dy );
+      y = LAL_REARTH_SI*( y_1 + j*dy );
       for ( k = 0; k < nz; k++ ) {
-	z = LAL_REARTH_SI*( z1 + k*dz );
+	z = LAL_REARTH_SI*( z_1 + k*dz );
 
 	/* Do transformation. */
 	earth.x = x;
