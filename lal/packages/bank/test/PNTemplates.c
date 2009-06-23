@@ -171,7 +171,7 @@ main(int argc, char **argv)
 
   /* Prepare to print result. */
   {
-    UINT4 j;
+    INT4 j;
     /* Print out the template parameters */
     for (j=0; j<nlist; j++)
     {
