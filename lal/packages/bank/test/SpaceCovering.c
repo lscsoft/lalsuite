@@ -92,7 +92,7 @@ main(int argc, char **argv)
   INT4 nlist1=0, nlist2=0;
 
   void (*noisemodel)(LALStatus*,REAL8*,REAL8) = LALLIGOIPsd;
-  UINT4   j, numPSDpts=16384/2;
+  INT4   j, numPSDpts=16384/2;
   FILE *fpr;
   UserParams userParams;
   INT4 i=1;
