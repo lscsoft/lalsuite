@@ -109,7 +109,7 @@
 
 NRCSID(LALMATH3DPLOTTESTC, "$Id:");
 
-int main(){
+int main(void){
   static LALStatus stat;
   INT4 loopx = 0; 			/* loop counters */
   INT4 loopy = 0;
