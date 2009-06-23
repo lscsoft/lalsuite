@@ -111,7 +111,7 @@ typedef struct{
 
 char *program;
 
-void printf_timeseries (FILE *f1, UINT4 n, REAL4 *signal, REAL8 delta) ;
+void printf_timeseries (FILE *f1, UINT4 n, REAL4 *signal1, REAL8 delta) ;
 void printf_timeseries2 (UINT4 n, REAL4 *signal1, REAL4 *signal2, REAL8 delta) ;
 void ParseParameters(UINT4 argc, CHAR **argv, OtherParamIn *otherIn);
 void LALGenerateInspiralWaveformHelp(void);
@@ -436,7 +436,7 @@ void LALGenerateInspiralWaveformHelp(void)
 }
 
 
-void printf_timeseries (FILE *f1, UINT4 n, REAL4 *signal, REAL8 delta)
+void printf_timeseries (FILE *f1, UINT4 n, REAL4 *signal1, REAL8 delta)
 {
   UINT4 i=0;
 
@@ -445,9 +445,9 @@ void printf_timeseries (FILE *f1, UINT4 n, REAL4 *signal, REAL8 delta)
   outfile1=fopen("wave1.dat","w");
   */
   do
-     /* fprintf (outfile1,"%e %e\n", i*delta+t0, *(signal+i)  );
+     /* fprintf (outfile1,"%e %e\n", i*delta+t0, *(signal1+i)  );
       */
-     fprintf (f1,"%e %e\n", i*delta, signal[i]  );
+     fprintf (f1,"%e %e\n", i*delta, signal1[i]  );
   while (n-++i);
 
   /*
