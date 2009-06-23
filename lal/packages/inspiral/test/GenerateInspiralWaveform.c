@@ -136,7 +136,7 @@ int main (int argc , char **argv) {
   char name1[256];
 
   static OtherParamIn otherIn; /* some extra parameters to parse*/
-  FILE *f1, *f2, *f3, *f4;
+  FILE *f1=NULL, *f2=NULL, *f3=NULL, *f4=NULL;
 
   program = *argv;
 
