@@ -142,7 +142,7 @@ main(int argc, char **argv)
     REAL4 tau0 = 0.;
     REAL4 tau3 = 0.;
     INT4 valid = 0;
-    InspiralBankParams bankPars, bankParsOld;
+    InspiralBankParams bankPars;
 
     /* Get the limit of the parameter space*/
     LALInspiralSetSearchLimits( &status, &bankPars, coarseIn );
