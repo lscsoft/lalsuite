@@ -47,7 +47,7 @@ int SPInit(
     REAL4 srate,
     REAL4 f_min,
     REAL4 dynRange,
-    UINT4 trunc
+    UINT4 lal_trunc
     );
 
 int SPFini(
@@ -61,7 +61,7 @@ int TDInit(
     REAL4 srate,
     REAL4 f_min,
     REAL4 dynRange,
-    UINT4 trunc
+    UINT4 lal_trunc
     );
 
 int TDFini(
@@ -75,7 +75,7 @@ int Init(
     REAL4 srate,
     REAL4 f_min,
     REAL4 dynRange,
-    UINT4 trunc
+    UINT4 lal_trunc
     );
 
 int Fini(

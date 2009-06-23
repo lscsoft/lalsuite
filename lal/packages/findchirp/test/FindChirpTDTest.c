@@ -210,7 +210,7 @@ int SPInit(
     REAL4 srate,
     REAL4 f_min,
     REAL4 dynRange,
-    UINT4 trunc
+    UINT4 lal_trunc
     )
 {
   LALFindChirpTemplateInit( &status, spTmpltParams, initParams );
@@ -225,7 +225,7 @@ int SPInit(
 
   (*spDataParams)->fLow         = f_min;
   (*spDataParams)->dynRange     = dynRange;
-  (*spDataParams)->invSpecTrunc = trunc;
+  (*spDataParams)->invSpecTrunc = lal_trunc;
 
   return 0;
 }
@@ -261,7 +261,7 @@ int TDInit(
     REAL4 srate,
     REAL4 f_min,
     REAL4 dynRange,
-    UINT4 trunc
+    UINT4 lal_trunc
     )
 {
   UINT4 i;
@@ -273,7 +273,7 @@ int TDInit(
 
   (*tdDataParams)->fLow         = f_min;
   (*tdDataParams)->dynRange     = dynRange;
-  (*tdDataParams)->invSpecTrunc = trunc;
+  (*tdDataParams)->invSpecTrunc = lal_trunc;
 
   return 0;
 }
