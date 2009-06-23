@@ -33,7 +33,7 @@ if [ -z "$LAL_DATA_PATH" ]; then
     fi
 fi
 
-Ftolerance=0.03
+Ftolerance=0.01
 # ---------- fixed parameter of our test-signal
 Tsft=1800;
 startTime=711595934
@@ -91,7 +91,7 @@ saf_CL=" --Alpha=$Alpha --Delta=$Delta --IFO=$IFO --Tsft=$Tsft --startTime=$star
 # concatenate this with the mfd-specific switches:
 mfd_CL="${saf_CL} --fmin=$mfd_fmin --Band=$mfd_FreqBand --Freq=$Freq --outSFTbname=$SFTdir --f1dot=$f1dot --f2dot=$f2dot --refTime=$refTime"
 if [ "$haveNoise" = true ]; then
-    mfd_CL="$mfd_CL --noiseSqrtSh=$sqrtSh --randSeed=1";
+    mfd_CL="$mfd_CL --noiseSqrtSh=$sqrtSh"; ## --randSeed=1";
 fi
 
 cmdline="$mfd_code $mfd_CL";
