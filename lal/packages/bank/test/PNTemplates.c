@@ -186,7 +186,7 @@ main(int argc, char **argv)
     }
   }
   {
-    UINT4 j;
+    INT4 j;
     INT4 local_valid;
 
     static RectangleIn RectIn;
