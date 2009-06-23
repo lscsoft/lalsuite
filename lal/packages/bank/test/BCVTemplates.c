@@ -63,7 +63,7 @@ NRCSID(FLATMESHTESTC,"$Id$");
 INT4 lalDebugLevel = 0;
 
 int
-main(int argc, char **argv)
+main(void)
 {
   /* top-level status structure */
   static LALStatus status;
