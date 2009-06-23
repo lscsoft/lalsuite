@@ -865,7 +865,7 @@ ParseOptions (
   return;
 }
 
-
+#if 0
 /*
  *
  * graphREAL4 ()
@@ -975,3 +975,4 @@ graphINT4 (
 
 return;
 }
+#endif
