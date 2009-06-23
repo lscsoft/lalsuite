@@ -294,6 +294,19 @@ BOOLEAN XLALCenterIsLocalMax ( const scanlineWindow_t *scanWindow );
 static const ConfigVariables empty_ConfigVariables;
 static const FstatCandidate empty_FstatCandidate;
 
+
+
+void local_ComputeFStat ( LALStatus *status,
+                          Fcomponents *Fstat,
+                          const PulsarDopplerParams *doppler,
+                          const MultiSFTVector *multiSFTs,
+                          const MultiNoiseWeights *multiWeights,
+                          const MultiDetectorStateSeries *multiDetStates,
+                          const ComputeFParams *params,
+                          ComputeFBuffer *cfBuffer );
+
+
+
 /*----------------------------------------------------------------------*/
 /* Function definitions start here */
 /*----------------------------------------------------------------------*/
@@ -436,7 +449,7 @@ int main(int argc,char *argv[])
       dopplerpos.orbit = orbitalParams;		/* temporary solution until binary-gridding exists */
       
       /* main function call: compute F-statistic for this template */
-      LAL_CALL( ComputeFStat(&status, &Fstat, &dopplerpos, GV.multiSFTs, GV.multiNoiseWeights, 
+      LAL_CALL( local_ComputeFStat(&status, &Fstat, &dopplerpos, GV.multiSFTs, GV.multiNoiseWeights, 
 			     GV.multiDetStates, &GV.CFparams, &cfBuffer ), &status );
 
       /* Progress meter */

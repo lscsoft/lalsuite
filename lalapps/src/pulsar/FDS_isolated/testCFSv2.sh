@@ -34,14 +34,14 @@ if [ -z "$LAL_DATA_PATH" ]; then
     fi
 fi
 
-Ftolerance=0.05
+Ftolerance=0.01
 # ---------- fixed parameter of our test-signal
 Tsft=1800;
 startTime=711595934
 refTime=701595833  ## $startTime
 duration=144000		## 40 hours
 
-mfd_FreqBand=2.0;
+mfd_FreqBand=5.0;
 
 Alpha=2.0
 Delta=-0.5
@@ -52,10 +52,11 @@ cosi=-0.3
 psi=0.6
 phi0=1.5
 
-Freq=100.12345
+Freq=1000.12345
 mfd_fmin=$(echo $Freq $mfd_FreqBand | awk '{printf "%g", $1 - $2 / 2.0}');
 
-f1dot=-1e-10;
+f1dot=-1e-7;
+f2dot=1e-14
 
 noiseSqrtSh=5
 
