@@ -255,7 +255,7 @@ main(int argc, char **argv)
   fprintf(fpr, "&\n");
 
   {
-    UINT4 k;
+    INT4 k;
     UINT4 valid;
     static RectangleIn RectIn;
     static RectangleOut RectOut;
