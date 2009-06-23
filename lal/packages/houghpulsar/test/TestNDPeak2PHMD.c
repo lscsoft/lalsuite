@@ -221,7 +221,8 @@ int main(int argc, char *argv[]){
   FILE *fp=NULL;                    /* Output file */
 
   INT4 arg;                         /* Argument counter */
-  INT4 i,j,k;                       /* Index counter, etc */
+  INT4 j;                           /* Index counter, etc */
+  UINT4 i, k;
 
   REAL8 f0, alpha, delta, veloMod;
   REAL8 patchSizeX, patchSizeY;
