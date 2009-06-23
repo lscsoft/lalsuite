@@ -238,7 +238,7 @@ int main(int argc, char *argv[]){
   }
 
   for (i=0; i < hist.length; i++){
-    fprintf(fp,"%d  %d\n", i, hist.data[i]);
+    fprintf(fp,"%d  %llu\n", i, hist.data[i]);
   }
 
 
