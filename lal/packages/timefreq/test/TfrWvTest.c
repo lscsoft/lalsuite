@@ -61,7 +61,7 @@ int main(void)
 
   static LALStatus status;
 
-  REAL4Vector  *signal = NULL;
+  REAL4Vector  *signalvec = NULL;
   CreateTimeFreqIn tfrIn;
   TimeFreqRep  *tfr = NULL;
   TimeFreqParam *param = NULL;
@@ -71,10 +71,10 @@ int main(void)
 
   /*--------------------------------------------------------------------*/
 
-  LALSCreateVector(&status, &signal, Nsignal);
+  LALSCreateVector(&status, &signalvec, Nsignal);
 
-  for (column = 0; column < (INT4)signal->length; column++)
-    signal->data[column]=(rand() % 10) / 2.0;
+  for (column = 0; column < (INT4)signalvec->length; column++)
+    signalvec->data[column]=(rand() % 10) / 2.0;
 
   /*--------------------------------------------------------------------*/
 
@@ -101,14 +101,14 @@ int main(void)
 
   /*--------------------------------------------------------------------*/
 
-  LALTfrWv(&status,signal,tfr,param);
+  LALTfrWv(&status,signalvec,tfr,param);
   REPORTSTATUS(&status);
 
   /*--------------------------------------------------------------------*/
 
   printf("Signal:\n");
-  for (column= 0; column < (INT4)signal->length; column++)
-    printf("%1.1f ",signal->data[column]);
+  for (column= 0; column < (INT4)signalvec->length; column++)
+    printf("%1.1f ",signalvec->data[column]);
   printf("\n\n");
 
   printf("TFR:\n");
@@ -121,7 +121,7 @@ int main(void)
 
   /*--------------------------------------------------------------------*/
 
-  LALSDestroyVector(&status,&signal);
+  LALSDestroyVector(&status,&signalvec);
   LALDestroyTimeFreqRep(&status,&tfr);
   LALDestroyTimeFreqParam(&status,&param);
 
