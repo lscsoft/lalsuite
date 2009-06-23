@@ -73,7 +73,7 @@ NRCSID (COARSETEST2C,"$Id$");
 
 INT4 lalDebugLevel=34;
 int
-main(int argc, char **argv)
+main(void)
 {
   /* top-level status structure */
   static LALStatus status;
