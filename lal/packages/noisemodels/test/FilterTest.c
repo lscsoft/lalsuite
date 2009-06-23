@@ -114,6 +114,7 @@ main (  int argc, char **argv )
 {
    static LALStatus status;
    static INT4 i, approx, tmplt;
+   static UINT4 j;
    static UINT4 psdLength, quietFlag = 0;
    static REAL8 df, norm;
    static REAL4Vector signalvec, correlation;
@@ -318,7 +319,7 @@ main (  int argc, char **argv )
 
    overlapin.ifExtOutput = 0;
    LALInspiralWaveOverlap (&status,&correlation,&overlapout,&overlapin);
-   if (!quietFlag) for (i=0; i<correlation.length; i++) printf("%e\n", correlation.data[i]);
+   if (!quietFlag) for (j=0; j<correlation.length; j++) printf("%e\n", correlation.data[j]);
    fprintf (stdout, "%e %e %e %e %e %e %e %e %e\n",
 		   tmpltParam.psi0,
 		   tmpltParam.psi3,
