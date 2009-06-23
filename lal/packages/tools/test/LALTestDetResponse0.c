@@ -478,7 +478,7 @@ LALDR_L2Norm33Matrix(LALDR_33Matrix * matrix)
 
 
 
-#if 1
+#if 0 /* NOT USED */
 /*
  * The RMS norm of a matrix: RMS sum of all elements.
  */
