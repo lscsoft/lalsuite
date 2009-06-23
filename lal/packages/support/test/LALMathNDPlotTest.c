@@ -116,9 +116,7 @@ int main(void){
   INT4 ntiles = 0;
   MathNDPointList *list = NULL;         /* Pointer to structure for mathematica plot */
   MathNDPointList *first = NULL;
-  REAL4 pointsize = 0.04;
   UINT4 dim = 4;
-  INT4 counter = 0;
 
   if ((list = (MathNDPointList *) LALCalloc(1, sizeof(MathNDPointList))) == NULL){
     LALError(&status, LALMATHNDPLOTTESTC_MSGEMEM);
