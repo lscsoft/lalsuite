@@ -48,8 +48,8 @@ int main( void )
   const REAL4 mass1        = 1.4;    /* solar masses */
   const REAL4 mass2        = 1.4;    /* solar masses */
   const REAL4 srate        = 16384;  /* Hz */
-  const REAL4 fmin         = 100;    /* Hz */
-  const REAL4 fmax         = 1000;   /* Hz */
+  const REAL4 f_min        = 100;    /* Hz */
+  const REAL4 f_max        = 1000;   /* Hz */
   const REAL4 dynRange     = 1;
 
   FindChirpInitParams initParams; /* need to populate this by hand */
@@ -87,17 +87,17 @@ int main( void )
 
 
   /* create some fake data */
-  MakeData( dataSegVec, mass1, mass2, srate, fmin, fmax );
+  MakeData( dataSegVec, mass1, mass2, srate, f_min, f_max );
 
 
   /*
    * initialize the SP- and TD-specific parameters
    */
 
-  SPInit( &spTmpltParams, &spDataParams, &initParams, srate, fmin, dynRange,
+  SPInit( &spTmpltParams, &spDataParams, &initParams, srate, f_min, dynRange,
      invSpecTrunc );
 
-  TDInit( &tdDataParams, &initParams, srate, fmin, dynRange, invSpecTrunc );
+  TDInit( &tdDataParams, &initParams, srate, f_min, dynRange, invSpecTrunc );
 
 
   /*
@@ -109,7 +109,7 @@ int main( void )
   SPFilter( dataSegVec, mass1, mass2, filterInput, filterParams, fcSegVec,
       spTmpltParams, spDataParams );
 
-  TDFilter( dataSegVec, mass1, mass2, fmax, filterInput, filterParams, fcSegVec,
+  TDFilter( dataSegVec, mass1, mass2, f_max, filterInput, filterParams, fcSegVec,
       tdDataParams );
 
 
@@ -208,7 +208,7 @@ int SPInit(
     FindChirpDataParams  **spDataParams,
     FindChirpInitParams     *initParams,
     REAL4 srate,
-    REAL4 fmin,
+    REAL4 f_min,
     REAL4 dynRange,
     UINT4 trunc
     )
@@ -217,13 +217,13 @@ int SPInit(
   TEST_STATUS( &status );
 
   (*spTmpltParams)->deltaT   = 1 / srate;
-  (*spTmpltParams)->fLow     = fmin;
+  (*spTmpltParams)->fLow     = f_min;
   (*spTmpltParams)->dynRange = dynRange;
 
   LALFindChirpDataInit( &status, spDataParams, initParams );
   TEST_STATUS( &status );
 
-  (*spDataParams)->fLow         = fmin;
+  (*spDataParams)->fLow         = f_min;
   (*spDataParams)->dynRange     = dynRange;
   (*spDataParams)->invSpecTrunc = trunc;
 
@@ -259,7 +259,7 @@ int TDInit(
     FindChirpDataParams **tdDataParams,
     FindChirpInitParams    *initParams,
     REAL4 srate,
-    REAL4 fmin,
+    REAL4 f_min,
     REAL4 dynRange,
     UINT4 trunc
     )
@@ -271,7 +271,7 @@ int TDInit(
   for ( i = 0; i < (*tdDataParams)->ampVec->length; ++i )
     (*tdDataParams)->ampVec->data[i] = 1;
 
-  (*tdDataParams)->fLow         = fmin;
+  (*tdDataParams)->fLow         = f_min;
   (*tdDataParams)->dynRange     = dynRange;
   (*tdDataParams)->invSpecTrunc = trunc;
 
@@ -372,7 +372,7 @@ int TDFilter(
     DataSegmentVector *dataSegVec,
     REAL4 mass1,
     REAL4 mass2,
-    REAL4 fmax,
+    REAL4 f_max,
     FindChirpFilterInput *filterInput,
     FindChirpFilterParams *filterParams,
     FindChirpSegmentVector *fcSegVec,
@@ -405,7 +405,7 @@ int TDFilter(
   tmplt.startPhase      = 0;
   tmplt.tSampling       = 1 / fcSegVec->data->deltaT;
   tmplt.fLower          = fcSegVec->data->fLow;
-  tmplt.fCutoff         = fmax;
+  tmplt.fCutoff         = f_max;
   tmplt.signalAmplitude = 1;
   tmplt.nStartPad       = 0;
   tmplt.nEndPad         = 0;
@@ -533,8 +533,8 @@ int MakeData(
     REAL4 mass1,
     REAL4 mass2,
     REAL4 srate,
-    REAL4 fmin,
-    REAL4 fmax
+    REAL4 f_min,
+    REAL4 f_max
     )
 {
   InspiralTemplate tmplt;
@@ -552,8 +552,8 @@ int MakeData(
   tmplt.massChoice      = m1Andm2;
   tmplt.startTime       = 0;
   tmplt.startPhase      = 0;
-  tmplt.fLower          = fmin;
-  tmplt.fCutoff         = fmax;
+  tmplt.fLower          = f_min;
+  tmplt.fCutoff         = f_max;
   tmplt.tSampling       = srate;
   tmplt.signalAmplitude = 1;
   tmplt.nStartPad       = dataSegVec->data->chan->data->length / 2;

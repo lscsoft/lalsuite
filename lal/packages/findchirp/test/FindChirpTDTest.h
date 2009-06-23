@@ -45,7 +45,7 @@ int SPInit(
     FindChirpDataParams  **spDataParams,
     FindChirpInitParams     *initParams,
     REAL4 srate,
-    REAL4 fmin,
+    REAL4 f_min,
     REAL4 dynRange,
     UINT4 trunc
     );
@@ -59,7 +59,7 @@ int TDInit(
     FindChirpDataParams **tdDataParams,
     FindChirpInitParams    *initParams,
     REAL4 srate,
-    REAL4 fmin,
+    REAL4 f_min,
     REAL4 dynRange,
     UINT4 trunc
     );
@@ -73,7 +73,7 @@ int Init(
     FindChirpDataParams  **DataParams,
     FindChirpInitParams   *initParams,
     REAL4 srate,
-    REAL4 fmin,
+    REAL4 f_min,
     REAL4 dynRange,
     UINT4 trunc
     );
@@ -98,7 +98,7 @@ int TDFilter(
     DataSegmentVector *dataSegVec,
     REAL4 mass1,
     REAL4 mass2,
-    REAL4 fmax,
+    REAL4 f_max,
     FindChirpFilterInput *filterInput,
     FindChirpFilterParams *filterParams,
     FindChirpSegmentVector *fcSegVec,
@@ -110,6 +110,6 @@ int MakeData(
     REAL4 mass1,
     REAL4 mass2,
     REAL4 srate,
-    REAL4 fmin,
-    REAL4 fmax
+    REAL4 f_min,
+    REAL4 f_max
     );
