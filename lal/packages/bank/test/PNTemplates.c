@@ -72,7 +72,7 @@ GetInspiralMoments (
 		InspiralTemplate     *params );
 
 int
-main(int argc, char **argv)
+main(void)
 {
   static LALStatus status;     /* top-level status structure */
   static InspiralTemplate params;
