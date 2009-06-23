@@ -594,7 +594,7 @@ void analyze(void)
                 for (i = 0; i != m; ++i)
                 {
                     double dec;
-                    dec = acos(1. - (i + 0.5) * (2. / m));
+                    dec = LAL_PI_2 - acos(1. - (i + 0.5) * (2. / m));
                     gzprintf(h, "%.10e %.10e %.10e\n", ra, dec, (render[i + m * j]));
                 }
             }
