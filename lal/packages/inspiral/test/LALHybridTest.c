@@ -516,7 +516,7 @@ void LALPrintHPlusCross(
 {
   UINT4 i, n;
   FILE *file;
-  REAL8 dt, off;
+  REAL8 dt, off=0;
 
   n = hp->data->length;
   dt = hp->deltaT;
