@@ -122,7 +122,7 @@ NRCSID(LALINSPIRALSPINBANKTESTC, "$Id$");
 int main( int argc, char *argv[] )
 {
   static LALStatus status;
-  INT4 loop = 0; /* loop counter */
+  UINT4 loop = 0; /* loop counter */
   Math3DPointList *list = NULL;    /* structure for mathematica plot */
   Math3DPointList *first = NULL;
   SnglInspiralTable *bankHead = NULL;
