@@ -75,7 +75,6 @@ INT4 lalDebugLevel=34;
 int
 main(int argc, char **argv)
 {
-  INT4 arg;
   /* top-level status structure */
   static LALStatus status;
   /* Structure specifying the nature of the bank needed */
