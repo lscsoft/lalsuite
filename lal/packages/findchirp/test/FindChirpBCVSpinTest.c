@@ -128,8 +128,6 @@ main (int argc, char *argv[])
   REAL4                         deltaT;
   REAL4                         deltaF;
 
-  REAL4                         temp;
-
   REAL4Vector                  *noiseVec = NULL;
 
   FindChirpInitParams          *initParams = NULL;
@@ -370,7 +368,7 @@ main (int argc, char *argv[])
                   &(dataSeg[i].chan->data->data[j]) )) != 1 || flag == EOF )
             && j <  numPoints )
         {
-          fprintf( stdout, "error reading input data %f %d\n" , temp, j);
+          fprintf( stdout, "error reading input data %d\n" , j);
           fflush( stdout );
           fclose( fpData );
           fclose( fpSpec );
