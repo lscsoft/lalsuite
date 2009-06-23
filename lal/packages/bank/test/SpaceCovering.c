@@ -97,6 +97,8 @@ main(int argc, char **argv)
   INT4 i=1;
   double scaling = sqrt(2.);
 
+  /* initiliase userParams.calque */
+  userParams.calque = TaylorT1;
 
   while(i < argc)
     {
