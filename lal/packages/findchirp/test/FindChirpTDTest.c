@@ -268,6 +268,8 @@ int TDInit(
   LALFindChirpDataInit( &status, tdDataParams, initParams );
   TEST_STATUS( &status );
 
+  srate=0;
+
   for ( i = 0; i < (*tdDataParams)->ampVec->length; ++i )
     (*tdDataParams)->ampVec->data[i] = 1;
 
