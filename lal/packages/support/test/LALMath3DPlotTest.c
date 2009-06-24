@@ -109,18 +109,17 @@
 
 NRCSID(LALMATH3DPLOTTESTC, "$Id:");
 
-int main(){
-  static LALStatus stat;
+int main(void){
+  static LALStatus status;
   INT4 loopx = 0; 			/* loop counters */
   INT4 loopy = 0;
   INT4 loopz = 0;
   INT4 ntiles = 0;
   Math3DPointList *list = NULL; 	/* Pointer to structure for mathematica plot */
   Math3DPointList *first = NULL;
-  REAL4 pointsize = 0.04;
 
   if ((list = (Math3DPointList *) LALCalloc(1, sizeof(Math3DPointList))) == NULL){
-    LALError(&stat, LALMATH3DPLOTTESTC_MSGEMEM);
+    LALError(&status, LALMATH3DPLOTTESTC_MSGEMEM);
     printf(LALMATH3DPLOTTESTC_MSGEMEM);
     return LALMATH3DPLOTTESTC_EMEM;
   }
@@ -135,7 +134,7 @@ int main(){
         list->grayLevel = 0.0;
         ntiles++;
         if ((list = list->next = (Math3DPointList *) LALCalloc(1, sizeof(Math3DPointList))) == NULL){
-          LALError(&stat, LALMATH3DPLOTTESTC_MSGEMEM);
+          LALError(&status, LALMATH3DPLOTTESTC_MSGEMEM);
           printf(LALMATH3DPLOTTESTC_MSGEMEM);
           return LALMATH3DPLOTTESTC_EMEM;
         }
@@ -151,7 +150,7 @@ int main(){
       list->grayLevel = 1.0;
       ntiles++;
       if ((list = list->next = (Math3DPointList *) LALCalloc(1, sizeof(Math3DPointList))) == NULL){
-        LALError(&stat, LALMATH3DPLOTTESTC_MSGEMEM);
+        LALError(&status, LALMATH3DPLOTTESTC_MSGEMEM);
         printf(LALMATH3DPLOTTESTC_MSGEMEM);
         return LALMATH3DPLOTTESTC_EMEM;
       }
@@ -173,7 +172,7 @@ int main(){
         list->grayLevel = 0.0;
         ntiles++;
         if ((list = list->next = (Math3DPointList *) LALCalloc(1, sizeof(Math3DPointList))) == NULL){
-          LALError(&stat, LALMATH3DPLOTTESTC_MSGEMEM);
+          LALError(&status, LALMATH3DPLOTTESTC_MSGEMEM);
           printf(LALMATH3DPLOTTESTC_MSGEMEM);
           return LALMATH3DPLOTTESTC_EMEM;
         }
@@ -184,10 +183,10 @@ int main(){
 
   list->next = NULL;
   printf("\nCalling LALMath3DPlot()......\n");
-  LALMath3DPlot(&stat, first, &ntiles, NULL);
-  REPORTSTATUS(&stat);
-  if (stat.statusCode){
-    LALError(&stat, LALMATH3DPLOTTESTC_MSGESUB);
+  LALMath3DPlot(&status, first, &ntiles, NULL);
+  REPORTSTATUS(&status);
+  if (status.statusCode){
+    LALError(&status, LALMATH3DPLOTTESTC_MSGESUB);
     printf(LALMATH3DPLOTTESTC_MSGESUB);
     return LALMATH3DPLOTTESTC_ESUB;
   }
@@ -205,7 +204,7 @@ int main(){
   /* free the last (first?) memory allocated for Math3DPlot. */
   LALFree(list);
 
-  if (stat.statusCode)
+  if (status.statusCode)
     return LALMATH3DPLOTTESTC_ESUB;
   else
     return LALMATH3DPLOTTESTC_ENORM;

@@ -110,7 +110,6 @@ main (int argc, char *argv[])
   INT4                          i;
   INT4                          j;
   INT4                          k;
-  INT4                          l;
 
   INT4                          seed = 3;
 
@@ -128,8 +127,6 @@ main (int argc, char *argv[])
   REAL4                         respIm;
   REAL4                         deltaT;
   REAL4                         deltaF;
-
-  REAL4                         temp;
 
   REAL4Vector                  *noiseVec = NULL;
 
@@ -371,7 +368,7 @@ main (int argc, char *argv[])
                   &(dataSeg[i].chan->data->data[j]) )) != 1 || flag == EOF )
             && j <  numPoints )
         {
-          fprintf( stdout, "error reading input data %f %d\n" , temp, j);
+          fprintf( stdout, "error reading input data %d\n" , j);
           fflush( stdout );
           fclose( fpData );
           fclose( fpSpec );
@@ -550,7 +547,7 @@ main (int argc, char *argv[])
 
 loopCount = loopCount + 1;
 
- /* } /* end loop over templates */
+ /* } end loop over templates */
  /* }
   }  */
 
@@ -868,7 +865,7 @@ ParseOptions (
   return;
 }
 
-
+#if 0
 /*
  *
  * graphREAL4 ()
@@ -978,3 +975,4 @@ graphINT4 (
 
 return;
 }
+#endif

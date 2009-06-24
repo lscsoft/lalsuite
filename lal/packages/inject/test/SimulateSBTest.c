@@ -169,11 +169,13 @@ REAL4 optOmegaRef     = 1.e-5;
 
 CHAR  optFile[LALNameLength] = "";
 
+#if 0
 static void
 Usage (const char *program, int exitflag);
 
 static void
 ParseOptions (int argc, char *argv[]);
+#endif
 
 /***************************** <lalErrTable file="SimulateSBTestCE"> */
 #define SIMULATESBTESTC_ENOM 0
@@ -237,7 +239,7 @@ static float s_of_f(float freq) {
   return y;
 }
 
-int main( int argc, char *argv[] ){
+int main( void ){
   static LALStatus status;
 
   /* This stores the parameters of functions used */
@@ -471,7 +473,7 @@ int main( int argc, char *argv[] ){
 }
 
 
-
+#if 0
 /*
  * Usage ()
  *
@@ -592,3 +594,4 @@ ParseOptions (int argc, char *argv[])
 
   return;
 }
+#endif

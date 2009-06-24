@@ -480,7 +480,11 @@ void analyze(void)
     /*   
      *  the sky tiles implied by the frequency) 
      */
-    plan = XLALSkymapConstructPlanMN(frequency, dec_res, ra_res);  
+    if (!(plan = XLALSkymapConstructPlanMN(frequency, dec_res, ra_res)))
+    {
+        fprintf(stderr, "XLALSkymapConstructPlanMN failed");
+        exit(1);
+    }
     /*
      *  Allocate a chunk of memory tto hold the sky map in the internal 
      *  timing format
@@ -490,11 +494,18 @@ void analyze(void)
     /*
      *  Generate the skymap
      */
-    XLALSkymapEllipticalHypothesis(plan, accumulator, s[0], w, begin, end, x, 0);
+    if (XLALSkymapEllipticalHypothesis(plan, accumulator, s[0], w, begin, end, x, 0))
+    {
+        fprintf(stderr, "XLALSkymapEllipticalHypothesis failed");
+        exit(1);
+    }
     for (i = 1; i != NSIGMA; ++i)
     {
-
-        XLALSkymapEllipticalHypothesis(plan, raw, s[i], w, begin, end, x, 0);
+        if (XLALSkymapEllipticalHypothesis(plan, raw, s[i], w, begin, end, x, 0))
+        {
+            fprintf(stderr, "XLALSkymapEllipticalHypothesis failed");
+            exit(1);
+        }
         XLALSkymapSum(plan, accumulator, accumulator, raw);
     }
 
@@ -594,7 +605,7 @@ void analyze(void)
                 for (i = 0; i != m; ++i)
                 {
                     double dec;
-                    dec = acos(1. - (i + 0.5) * (2. / m));
+                    dec = LAL_PI_2 - acos(1. - (i + 0.5) * (2. / m));
                     gzprintf(h, "%.10e %.10e %.10e\n", ra, dec, (render[i + m * j]));
                 }
             }

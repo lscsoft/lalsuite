@@ -63,7 +63,7 @@ NRCSID(FLATMESHTESTC,"$Id$");
 INT4 lalDebugLevel = 0;
 
 int
-main(int argc, char **argv)
+main(void)
 {
   /* top-level status structure */
   static LALStatus status;
@@ -74,7 +74,7 @@ main(int argc, char **argv)
   static RectangleOut RectOut;
   void (*noisemodel)(LALStatus*,REAL8*,REAL8) = LALLIGOIPsd;
 
-  UINT4   j, valid, numPSDpts=262144;
+  INT4   j, valid, numPSDpts=262144;
   FILE *fpr;
   INT4 nlist1, nlist2;
 /* Number of templates is nlist */

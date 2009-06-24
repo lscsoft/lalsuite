@@ -136,7 +136,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
         duration = atof(optarg);
         if (duration <= 0)
         {
-          fprintf(stderr, "invalid argument to --%s: %d\n", \
+          fprintf(stderr, "invalid argument to --%s: %f\n", \
               long_options[option_index].name, duration);
           exit(1);
         }

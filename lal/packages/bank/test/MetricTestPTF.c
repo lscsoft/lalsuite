@@ -62,9 +62,9 @@ NRCSID(METRICTESTC,"$Id$");
 
 int lalDebugLevel = 1;
 
-int main( int argc, char *argv[] )
+int main( void )
 {
-  UINT4 i, j;
+  UINT4 i;
   LALStatus status;
   INT4 errcode;
   InspiralMetric metric;
@@ -73,7 +73,6 @@ int main( int argc, char *argv[] )
   InspiralTemplate tmplt;
   REAL8FrequencySeries psd;
   void (*noisemodel)(LALStatus*,REAL8*,REAL8) = LALLIGOIPsd;
-  FILE *fp;
   REAL8 deltaT = 1.0/16384.0;
   UINT4 N = 16384;
   REAL8 deltaF = 1.0/((REAL8)N * deltaT);

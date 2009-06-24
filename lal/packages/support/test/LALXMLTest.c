@@ -822,7 +822,7 @@ int findFileInLALDataPath(const char *filename, char **validatedPath)
     /* LAL_DATA_PATH available: scan through all directories in colon-delimited list */
     if((dataPath = LALCalloc(strlen(dataPathEnv)+1, 1)) == NULL)
     {
-        fprintf(stderr, "Can't allocate memory (%i)!\n", strlen(dataPathEnv)+1);
+        fprintf(stderr, "Can't allocate memory (%lu)!\n", strlen(dataPathEnv)+1);
         return XLAL_EFAILED;
     }
 
