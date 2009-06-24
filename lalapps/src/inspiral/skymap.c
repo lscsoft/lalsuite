@@ -280,7 +280,7 @@ void load_metadata(char* file, int detector)
             fprintf(stderr, "error: failed to read single inspiral table from file %s\n", file);
             exit(1);
         }
-        w[detector] = sqrt(a->sigmasq);
+        w[detector] = 1.0 / sqrt(a->sigmasq);
         greenwich = fmod(XLALGreenwichMeanSiderealTime(&(a->end_time)), LAL_TWOPI);
         /*
         fprintf(stderr, "GPS %d -> GMS %e -> RAD %e \n", a->end_time.gpsSeconds, XLALGreenwichMeanSiderealTime(&(a->end_time)), greenwich);
@@ -346,7 +346,14 @@ void analyze(void)
     double* accumulator;
     int begin[3], end[3];
     
-    double min_w;
+    double min_w = w[0];
+
+    for (i = 0; i != 3; ++i)
+    {
+        if (w[i] < min_w) min_w = w[i];
+    }
+
+    for (i = 0; i != 3; ++i) w[i] /= min_w;
 
     begin[0] = 0;
     begin[1] = begin[0];
