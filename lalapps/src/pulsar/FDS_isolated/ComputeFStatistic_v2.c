@@ -71,9 +71,9 @@ int finite(double);
 #include <lalappsGitID.h>
 
 /* local includes */
-
 #include "HeapToplist.h"
 
+#include "ComputeFstatGPU.h"
 
 RCSID( "$Id$");
 
@@ -296,19 +296,6 @@ BOOLEAN XLALCenterIsLocalMax ( const scanlineWindow_t *scanWindow );
 static const ConfigVariables empty_ConfigVariables;
 static const FstatCandidate empty_FstatCandidate;
 
-
-
-void ComputeFStat_REAL4 ( LALStatus *status,
-                          Fcomponents *Fstat,
-                          const PulsarDopplerParams *doppler,
-                          const MultiSFTVector *multiSFTs,
-                          const MultiNoiseWeights *multiWeights,
-                          const MultiDetectorStateSeries *multiDetStates,
-                          UINT4 Dterms,
-                          ComputeFBuffer *cfBuffer );
-
-
-
 /*----------------------------------------------------------------------*/
 /* Function definitions start here */
 /*----------------------------------------------------------------------*/
@@ -324,6 +311,7 @@ int main(int argc,char *argv[])
 
   FILE *fpFstat = NULL;
   ComputeFBuffer cfBuffer = empty_ComputeFBuffer;
+  ComputeFBuffer_REAL4 cfBuffer4 = empty_ComputeFBuffer_REAL4;
   REAL8 numTemplates, templateCounter;
   REAL8 tickCounter;
   time_t clock0;
@@ -453,13 +441,13 @@ int main(int argc,char *argv[])
       /* main function call: compute F-statistic for this template */
       if ( ! uvar.GPUready )
         {
-          LAL_CALL( ComputeFStat(&status, &Fstat, &dopplerpos, GV.multiSFTs, GV.multiNoiseWeights, 
+          LAL_CALL( ComputeFStat(&status, &Fstat, &dopplerpos, GV.multiSFTs, GV.multiNoiseWeights,
                                        GV.multiDetStates, &GV.CFparams, &cfBuffer ), &status );
         }
       else
         {
-          LAL_CALL( ComputeFStat_REAL4(&status, &Fstat, &dopplerpos, GV.multiSFTs, GV.multiNoiseWeights, 
-                                       GV.multiDetStates, GV.CFparams.Dterms, &cfBuffer ), &status );
+          LAL_CALL( ComputeFStat_REAL4(&status, &Fstat, &dopplerpos, GV.multiSFTs, GV.multiNoiseWeights,
+                                       GV.multiDetStates, GV.CFparams.Dterms, &cfBuffer4 ), &status );
         }
 
       /* Progress meter */
@@ -499,15 +487,26 @@ int main(int argc,char *argv[])
 
       /* collect data on current 'Fstat-candidate' */
       thisFCand.doppler = dopplerpos;
-      if ( cfBuffer.multiCmplxAMcoef ) {
-	thisFCand.Mmunu = cfBuffer.multiCmplxAMcoef->Mmunu;
-      } else {
-	thisFCand.Mmunu.Ad = cfBuffer.multiAMcoef->Mmunu.Ad;
-	thisFCand.Mmunu.Bd = cfBuffer.multiAMcoef->Mmunu.Bd;
-	thisFCand.Mmunu.Cd = cfBuffer.multiAMcoef->Mmunu.Cd;
-	thisFCand.Mmunu.Sinv_Tsft = cfBuffer.multiAMcoef->Mmunu.Sinv_Tsft;
-	thisFCand.Mmunu.Ed = 0.0;
-      }
+      if ( !uvar.GPUready )
+        {
+          if ( cfBuffer.multiCmplxAMcoef ) {
+            thisFCand.Mmunu = cfBuffer.multiCmplxAMcoef->Mmunu;
+          } else {
+            thisFCand.Mmunu.Ad = cfBuffer.multiAMcoef->Mmunu.Ad;
+            thisFCand.Mmunu.Bd = cfBuffer.multiAMcoef->Mmunu.Bd;
+            thisFCand.Mmunu.Cd = cfBuffer.multiAMcoef->Mmunu.Cd;
+            thisFCand.Mmunu.Sinv_Tsft = cfBuffer.multiAMcoef->Mmunu.Sinv_Tsft;
+            thisFCand.Mmunu.Ed = 0.0;
+          }
+        }
+      else
+        {
+          thisFCand.Mmunu.Ad = cfBuffer4.multiAMcoef->Mmunu.Ad;
+          thisFCand.Mmunu.Bd = cfBuffer4.multiAMcoef->Mmunu.Bd;
+          thisFCand.Mmunu.Cd = cfBuffer4.multiAMcoef->Mmunu.Cd;
+          thisFCand.Mmunu.Sinv_Tsft = cfBuffer4.multiAMcoef->Mmunu.Sinv_Tsft;
+          thisFCand.Mmunu.Ed = 0.0;
+        }
 
       /* correct normalization in --SignalOnly case:
        * we didn't normalize data by 1/sqrt(Tsft * 0.5 * Sh) in terms of 
@@ -674,6 +673,7 @@ int main(int argc,char *argv[])
   LogPrintfVerbatim ( LOG_DEBUG, "done.\n");
 
   XLALEmptyComputeFBuffer ( &cfBuffer );
+  XLALEmptyComputeFBuffer_REAL4 ( &cfBuffer4 );
 
   LAL_CALL ( Freemem(&status, &GV), &status);
 
