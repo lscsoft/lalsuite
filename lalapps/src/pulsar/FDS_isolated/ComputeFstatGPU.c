@@ -56,17 +56,10 @@
 NRCSID( COMPUTEFSTATC, "$Id$");
 
 /*---------- local DEFINES ----------*/
-#define TRUE (1==1)
-#define FALSE (1==0)
-
-
-#define LD_SMALL4       (2.0e-4)		/**< "small" number for REAL4*/
-#define OOTWOPI         (1.0 / LAL_TWOPI)	/**< 1/2pi */
+#define LD_SMALL4       ((REAL4)2.0e-4)		/**< "small" number for REAL4*/
 
 #define TWOPI_FLOAT     6.28318530717958f  	/**< single-precision 2*pi */
 #define OOTWOPI_FLOAT   (1.0f / TWOPI_FLOAT)	/**< single-precision 1 / (2pi) */
-
-#define EA_ACC          1E-9                    /* the timing accuracy of LALGetBinaryTimes in seconds */
 
 /*----- Macros ----- */
 #define SQ(x) ( (x) * (x) )
@@ -95,7 +88,7 @@ const ComputeFBuffer empty_ComputeFBuffer;
 /*---------- internal prototypes ----------*/
 int finite(double x);
 
-int local_XLALComputeFaFb ( Fcomponents *FaFb,
+int XLALComputeFaFb_REAL4 ( Fcomponents *FaFb,
                             const SFTVector *sfts,
                             const PulsarSpins fkdot,
                             const SSBtimes *tSSB,
@@ -118,28 +111,29 @@ int local_XLALComputeFaFb ( Fcomponents *FaFb,
  * NOTE2: there's a spaceholder for binary-pulsar parameters in \a psPoint, but this
  * it not implemented yet.
  *
+ * NOTE3: This is a special "single-precision" version aimed at GPU optimization
+ *
+ *
  */
 void
-local_ComputeFStat ( LALStatus *status,
-	       Fcomponents *Fstat,                 		/**< [out] Fstatistic + Fa, Fb */
-	       const PulsarDopplerParams *doppler, 		/**< parameter-space point to compute F for */
-	       const MultiSFTVector *multiSFTs,    		/**< normalized (by DOUBLE-sided Sn!) data-SFTs of all IFOs */
-	       const MultiNoiseWeights *multiWeights,		/**< noise-weights of all SFTs */
-	       const MultiDetectorStateSeries *multiDetStates,	/**< 'trajectories' of the different IFOs */
-	       const ComputeFParams *params,       		/**< addition computational params */
-	       ComputeFBuffer *cfBuffer            		/**< CF-internal buffering structure */
-	       )
+ComputeFStat_REAL4 ( LALStatus *status,
+                     Fcomponents *Fstat,                 		/**< [out] Fstatistic + Fa, Fb */
+                     const PulsarDopplerParams *doppler, 		/**< parameter-space point to compute F for */
+                     const MultiSFTVector *multiSFTs,    		/**< normalized (by DOUBLE-sided Sn!) data-SFTs of all IFOs */
+                     const MultiNoiseWeights *multiWeights,		/**< noise-weights of all SFTs */
+                     const MultiDetectorStateSeries *multiDetStates,	/**< 'trajectories' of the different IFOs */
+                     const ComputeFParams *params,       		/**< addition computational params */
+                     ComputeFBuffer *cfBuffer            		/**< CF-internal buffering structure */
+                     )
 {
   Fcomponents retF = empty_Fcomponents;
   UINT4 X, numDetectors;
   MultiSSBtimes *multiSSB = NULL;
-  MultiSSBtimes *multiBinary = NULL;
   MultiAMCoeffs *multiAMcoef = NULL;
-  MultiCmplxAMCoeffs *multiCmplxAMcoef = NULL;
-  REAL8 Ad, Bd, Cd, Dd_inv, Ed;
+  REAL4 Ad, Bd, Cd, Dd_inv, Ed;
   SkyPosition skypos;
 
-  INITSTATUS( status, "ComputeFStat", COMPUTEFSTATC );
+  INITSTATUS( status, "ComputeFStat_REAL4", COMPUTEFSTATC );
   ATTATCHSTATUSPTR (status);
 
   /* check input */
@@ -168,10 +162,6 @@ local_ComputeFStat ( LALStatus *status,
       if ( cfBuffer->multiAMcoef )
 	multiAMcoef = cfBuffer->multiAMcoef;
 
-      /* re-use RAA AM coefficients *only* if bufferedRAA is TRUE !*/
-      if ( params->bufferedRAA && cfBuffer->multiCmplxAMcoef  )
-	multiCmplxAMcoef = cfBuffer->multiCmplxAMcoef;
-
     } /* if have buffered stuff to reuse */
   else
     {
@@ -190,61 +180,7 @@ local_ComputeFStat ( LALStatus *status,
 
     } /* could not reuse previously buffered quantites */
 
-    /* new orbital parameter corrections if not already buffered */
-  if ( doppler->orbit )
-    {
-      /* if already buffered */
-      if ( cfBuffer && cfBuffer->multiBinary )
-	{ /* yes ==> reuse */
-	  multiBinary = cfBuffer->multiBinary;
-	}
-      else
-	{
-	  /* compute binary time corrections to the SSB time delays and SSB time derivitive */
-	  TRY ( LALGetMultiBinarytimes ( status->statusPtr, &multiBinary, multiSSB, multiDetStates, doppler->orbit, doppler->refTime ), status );
-
-	  /* store these in buffer if available */
-	  if ( cfBuffer )
-	    {
-	      XLALDestroyMultiSSBtimes ( cfBuffer->multiBinary );
-	      cfBuffer->multiBinary = multiBinary;
-	    } /* if cfBuffer */
- 	}
-    }
-  else multiBinary = multiSSB;
-  /*
-  printf("multiSSB = %6.12f %6.12f multiBinary = %6.12f %6.12f\n",
-	 multiSSB->data[0]->DeltaT->data[0],
-	 multiSSB->data[0]->Tdot->data[0],
-	 multiBinary->data[0]->DeltaT->data[0],
-	 multiBinary->data[0]->Tdot->data[0]);
-  */
-
-  /* special treatment of AM coefficients */
-  if ( params->useRAA && !multiCmplxAMcoef )
-    {
-      /* compute new RAA AM-coefficients */
-      LALGetMultiCmplxAMCoeffs ( status->statusPtr, &multiCmplxAMcoef, multiDetStates, *doppler );
-      BEGINFAIL ( status ) {
-	XLALDestroyMultiSSBtimes ( multiSSB );
-      } ENDFAIL (status);
-
-      /* noise-weight Antenna-patterns and compute A,B,C */
-      if ( XLALWeighMultiCmplxAMCoeffs ( multiCmplxAMcoef, multiWeights ) != XLAL_SUCCESS ) {
-	LALPrintError("\nXLALWeighMultiCmplxAMCoeffs() failed with error = %d\n\n", xlalErrno );
-	ABORT ( status, COMPUTEFSTATC_EXLAL, COMPUTEFSTATC_MSGEXLAL );
-      }
-
-      /* store in buffer if available */
-      if ( cfBuffer )
-	{
-	  XLALDestroyMultiCmplxAMCoeffs ( cfBuffer->multiCmplxAMcoef );
-	  cfBuffer->multiCmplxAMcoef = multiCmplxAMcoef;
-	}
-
-    } /* if RAA AM coefficients need to be computed */
-
-  if ( !params->useRAA && !multiAMcoef )
+  if ( !multiAMcoef )
     {
       /* compute new AM-coefficients */
       LALGetMultiAMCoeffs ( status->statusPtr, &multiAMcoef, multiDetStates, skypos );
@@ -265,59 +201,24 @@ local_ComputeFStat ( LALStatus *status,
 	  cfBuffer->multiAMcoef = multiAMcoef;
 	} /* if cfBuffer */
 
-    } /* if LWL AM coefficient need to be computed */
+    } /* if AM coefficient need to be computed */
 
-  if ( multiAMcoef )
-    {
-      Ad = multiAMcoef->Mmunu.Ad;
-      Bd = multiAMcoef->Mmunu.Bd;
-      Cd = multiAMcoef->Mmunu.Cd;
-      Dd_inv = 1.0 / multiAMcoef->Mmunu.Dd;
-      Ed = 0;
-    }
-  else if ( multiCmplxAMcoef )
-    {
-      Ad = multiCmplxAMcoef->Mmunu.Ad;
-      Bd = multiCmplxAMcoef->Mmunu.Bd;
-      Cd = multiCmplxAMcoef->Mmunu.Cd;
-      Ed = multiCmplxAMcoef->Mmunu.Ed;
-      Dd_inv = 1.0 / multiCmplxAMcoef->Mmunu.Dd;
-    }
-  else
-    {
-      LALPrintError ( "Programming error: neither 'multiAMcoef' nor 'multiCmplxAMcoef' are available!\n");
-      ABORT ( status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
-    }
+  Ad = multiAMcoef->Mmunu.Ad;
+  Bd = multiAMcoef->Mmunu.Bd;
+  Cd = multiAMcoef->Mmunu.Cd;
+  Dd_inv = 1.0 / multiAMcoef->Mmunu.Dd;
+  Ed = 0;
 
   /* ----- loop over detectors and compute all detector-specific quantities ----- */
   for ( X=0; X < numDetectors; X ++)
     {
       Fcomponents FcX = empty_Fcomponents;	/* for detector-specific FaX, FbX */
 
-      if ( params->useRAA )
-	{
-	  if ( XLALComputeFaFbCmplx (&FcX, multiSFTs->data[X], doppler->fkdot, multiSSB->data[X], multiCmplxAMcoef->data[X], params) != 0)
-	    {
-	      LALPrintError ("\nXALComputeFaFbCmplx() failed\n");
-	      ABORT ( status, COMPUTEFSTATC_EXLAL, COMPUTEFSTATC_MSGEXLAL );
-	    }
-	}
-      else if ( params->upsampling > 1)
-	{
-	  if ( XLALComputeFaFbXavie (&FcX, multiSFTs->data[X], doppler->fkdot, multiBinary->data[X], multiAMcoef->data[X], params) != 0)
-	    {
-	      LALPrintError ("\nXALComputeFaFbXavie() failed\n");
-	      ABORT ( status, COMPUTEFSTATC_EXLAL, COMPUTEFSTATC_MSGEXLAL );
-	    }
-	}
-      else
-	{
-	  if ( local_XLALComputeFaFb (&FcX, multiSFTs->data[X], doppler->fkdot, multiBinary->data[X], multiAMcoef->data[X], params) != 0)
-	    {
-	      LALPrintError ("\nXALComputeFaFb() failed\n");
-	      ABORT ( status, COMPUTEFSTATC_EXLAL, COMPUTEFSTATC_MSGEXLAL );
-	    }
-	}
+      if ( XLALComputeFaFb_REAL4 (&FcX, multiSFTs->data[X], doppler->fkdot, multiSSB->data[X], multiAMcoef->data[X], params) != 0)
+        {
+          LALPrintError ("\nXALComputeFaFb_REAL4() failed\n");
+          ABORT ( status, COMPUTEFSTATC_EXLAL, COMPUTEFSTATC_MSGEXLAL );
+        }
 
 #ifndef LAL_NDEBUG
       if ( !finite(FcX.Fa.re) || !finite(FcX.Fa.im) || !finite(FcX.Fb.re) || !finite(FcX.Fb.im) ) {
@@ -347,39 +248,34 @@ local_ComputeFStat ( LALStatus *status,
 		       + Ad * ( SQ(retF.Fb.re) + SQ(retF.Fb.im) )
 		       - 2.0 * Cd *( retF.Fa.re * retF.Fb.re + retF.Fa.im * retF.Fb.im )
 		       );
-  if ( Ed != 0 ) /* extra term in RAA case */
-    retF.F += - 2.0 * Dd_inv * Ed *( - retF.Fa.re * retF.Fb.im + retF.Fa.im * retF.Fb.re ); /* -2 E Im(Fa Fb^* ) / D */
-
   (*Fstat) = retF;
 
   /* free memory if no buffer was available */
   if ( !cfBuffer )
     {
       XLALDestroyMultiSSBtimes ( multiSSB );
-      XLALDestroyMultiSSBtimes ( multiBinary );
       XLALDestroyMultiAMCoeffs ( multiAMcoef );
-      XLALDestroyMultiCmplxAMCoeffs ( multiCmplxAMcoef );
     } /* if !cfBuffer */
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
 
-} /* ComputeFStat() */
+} /* ComputeFStat_REAL4() */
 
 
 /** Revamped version of LALDemod() (based on TestLALDemod() in CFS).
  * Compute JKS's Fa and Fb, which are ingredients for calculating the F-statistic.
  *
- * Note: this is a locally optimized version of XLALComputeFaFb(), targeted at GPU parallelization.
+ * Note: this is a single-precision version aimed for GPU parallelization.
  *
  */
 int
-local_XLALComputeFaFb ( Fcomponents *FaFb,
-		  const SFTVector *sfts,
-		  const PulsarSpins fkdot,
-		  const SSBtimes *tSSB,
-		  const AMCoeffs *amcoe,
-		  const ComputeFParams *params)       /**< addition computational params */
+XLALComputeFaFb_REAL4 ( Fcomponents *FaFb,
+                        const SFTVector *sfts,
+                        const PulsarSpins fkdot,
+                        const SSBtimes *tSSB,
+                        const AMCoeffs *amcoe,
+                        const ComputeFParams *params)       /**< addition computational params */
 {
   UINT4 alpha;                 	/* loop index over SFTs */
   UINT4 spdnOrder;		/* maximal spindown-orders */
@@ -394,7 +290,7 @@ local_XLALComputeFaFb ( Fcomponents *FaFb,
   SFTtype *SFT_al;		/* SFT alpha  */
   UINT4 Dterms = params->Dterms;
 
-  REAL4 norm = OOTWOPI;
+  REAL4 norm = OOTWOPI_FLOAT;
 
   REAL4 f0, df;
 
@@ -483,7 +379,7 @@ local_XLALComputeFaFb ( Fcomponents *FaFb,
 	REAL4 Tas;	/* temporary variable to calculate (DeltaT_alpha)^s */
         REAL4 T0, dT;
         REAL4 Dphi_alpha_int, Dphi_alpha_rem;
-        REAL4 phi_alpha_int, phi_alpha_rem;
+        REAL4 phi_alpha_rem;
         REAL4 Tdot_al_frac;	/* defined as Tdot_al - 1, *not* the remainder wrt floor ! */
 
         Tdot_al_frac = (*Tdot_al) - 1.0f;

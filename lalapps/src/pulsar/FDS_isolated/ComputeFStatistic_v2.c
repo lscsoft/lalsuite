@@ -251,6 +251,8 @@ typedef struct {
 
   INT4 upsampleSFTs;		/**< use SFT-upsampling by this factor */
 
+  BOOLEAN GPUready;		/**< use special single-precision  'GPU-ready' version */
+
   BOOLEAN version;		/**< output version information */
 } UserInput_t;
 
@@ -296,7 +298,7 @@ static const FstatCandidate empty_FstatCandidate;
 
 
 
-void local_ComputeFStat ( LALStatus *status,
+void ComputeFStat_REAL4 ( LALStatus *status,
                           Fcomponents *Fstat,
                           const PulsarDopplerParams *doppler,
                           const MultiSFTVector *multiSFTs,
@@ -449,8 +451,16 @@ int main(int argc,char *argv[])
       dopplerpos.orbit = orbitalParams;		/* temporary solution until binary-gridding exists */
       
       /* main function call: compute F-statistic for this template */
-      LAL_CALL( local_ComputeFStat(&status, &Fstat, &dopplerpos, GV.multiSFTs, GV.multiNoiseWeights, 
-			     GV.multiDetStates, &GV.CFparams, &cfBuffer ), &status );
+      if ( ! uvar.GPUready )
+        {
+          LAL_CALL( ComputeFStat(&status, &Fstat, &dopplerpos, GV.multiSFTs, GV.multiNoiseWeights, 
+                                       GV.multiDetStates, &GV.CFparams, &cfBuffer ), &status );
+        }
+      else
+        {
+          LAL_CALL( ComputeFStat_REAL4(&status, &Fstat, &dopplerpos, GV.multiSFTs, GV.multiNoiseWeights, 
+                                       GV.multiDetStates, &GV.CFparams, &cfBuffer ), &status );
+        }
 
       /* Progress meter */
       templateCounter += 1.0;
@@ -776,6 +786,8 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
   uvar->minBraking = 0.0;
   uvar->maxBraking = 0.0;
 
+  uvar->GPUready = 0;
+
   /* ---------- register all user-variables ---------- */
   LALregBOOLUserStruct(status, 	help, 		'h', UVAR_HELP,     "Print this message"); 
 
@@ -867,6 +879,8 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
   LALregREALUserStruct(status,  spindownAge,     0,  UVAR_DEVELOPER, "Spindown age for --gridType=9");
   LALregREALUserStruct(status,  minBraking,      0,  UVAR_DEVELOPER, "Minimum braking index for --gridType=9");
   LALregREALUserStruct(status,  maxBraking,      0,  UVAR_DEVELOPER, "Maximum braking index for --gridType=9");
+
+  LALregBOOLUserStruct(status,  GPUready,        0,  UVAR_OPTIONAL,  "Use single-precision 'GPU-ready' core routines");
 
   DETATCHSTATUSPTR (status);
   RETURN (status);

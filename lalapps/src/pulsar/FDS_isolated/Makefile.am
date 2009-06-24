@@ -49,13 +49,13 @@ lalapps_FindSh_SOURCES=FindSh.c FindSh.h clusters.c clusters.h
 
 lalapps_compareFstats_SOURCES = compareFstats.c
 
-lalapps_ComputeFStatistic_v2_SOURCES = 	ComputeFStatistic_v2.c  HeapToplist.c HeapToplist.h local_ComputeFstat.c
+lalapps_ComputeFStatistic_v2_SOURCES = 	ComputeFStatistic_v2.c  HeapToplist.c HeapToplist.h ComputeFstatGPU.c
 
 lalapps_PredictFStat_SOURCES = PredictFStat.c
 
 lalapps_ComputeFStatAnalyticMonteCarloUpperLimit_SOURCES = ComputeFStatAnalyticMonteCarloUpperLimit.c
 
-EXTRA_DIST = testFStat.sh testCFSv2.sh testGridv2.sh Fstats.ref1 Fstats.ref2 testPredictFStat.sh
-TESTS = testFStat.sh testCFSv2.sh testGridv2.sh testPredictFStat.sh
+EXTRA_DIST = testFStat.sh testCFSv2.sh testGridv2.sh Fstats.ref1 Fstats.ref2 testPredictFStat.sh testCFSv2GPU.sh
+TESTS = testFStat.sh testCFSv2.sh testGridv2.sh testPredictFStat.sh testCFSv2GPU.sh
 
 CLEANFILES =
