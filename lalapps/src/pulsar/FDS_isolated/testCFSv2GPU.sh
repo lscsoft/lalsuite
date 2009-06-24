@@ -41,8 +41,8 @@ duration=144000		## 40 hours
 
 mfd_FreqBand=5.0;
 
-Alpha=2.0
-Delta=-0.5
+Alpha=2.1234513
+Delta=-0.541451341
 
 h0=0.1
 cosi=-0.3
