@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2009 Reinhard Prix
  * Copyright (C) 2007 Chris Messenger
  * Copyright (C) 2006 John T. Whelan, Badri Krishnan
  * Copyright (C) 2005, 2006, 2007 Reinhard Prix
@@ -31,27 +32,18 @@
  * ComputSky.[ch] by Jolien Creighton, Reinhard Prix, Steve Berukoff
  * LALComputeAM.[ch] by Jolien Creighton, Maria Alessandra Papa, Reinhard Prix, Steve Berukoff, Xavier Siemens
  *
+ * NOTE: this file contains specialized versions of the central CFSv2 routines, that are aimed at GPU optimization.
+ * At the moment this only means they are internally using only single precision, but still aggree to within 1%
+ * for Tobs ~ 1day and fmax ~ 1kHz.
+ *
  */
 
 /*---------- INCLUDES ----------*/
 #define __USE_ISOC99 1
 #include <math.h>
 
-#include <lal/ExtrapolatePulsarSpins.h>
-#include <lal/FindRoot.h>
-
-/* GSL includes */
-#include <lal/LALGSL.h>
-#include <gsl/gsl_vector.h>
-#include <gsl/gsl_matrix.h>
-#include <gsl/gsl_blas.h>
-#include <gsl/gsl_permutation.h>
-#include <gsl/gsl_linalg.h>
-
-
 #include <lal/AVFactories.h>
 #include <lal/ComputeFstat.h>
-#include <lal/ComplexAM.h>
 
 NRCSID( COMPUTEFSTATC, "$Id$");
 
@@ -68,10 +60,13 @@ NRCSID( COMPUTEFSTATC, "$Id$");
 /*----- SWITCHES -----*/
 
 /*---------- internal types ----------*/
+typedef struct {
+  REAL4 FreqMain;			/**< "main" part of frequency fkdot[0], normally just the integral part */
+  REAL4 fkdot[PULSAR_MAX_SPINS];	/**< remaining spin-parameters, including *fractional* part of Freq = fkdot[0] */
+} PulsarSpins_REAL4;
 
 /*---------- Global variables ----------*/
-#define NUM_FACT 7
-static const REAL4 inv_fact[NUM_FACT] = { 1.0, 1.0, (1.0/2.0), (1.0/6.0), (1.0/24.0), (1.0/120.0), (1.0/720.0) };
+static const REAL4 inv_fact[PULSAR_MAX_SPINS] = { 1.0, 1.0, (1.0/2.0), (1.0/6.0), (1.0/24.0), (1.0/120.0), (1.0/720.0) };
 
 /* empty initializers  */
 static const LALStatus empty_status;
@@ -82,18 +77,18 @@ const MultiSSBtimes empty_MultiSSBtimes;
 const AntennaPatternMatrix empty_AntennaPatternMatrix;
 const MultiAMCoeffs empty_MultiAMCoeffs;
 const Fcomponents empty_Fcomponents;
-const ComputeFParams empty_ComputeFParams;
 const ComputeFBuffer empty_ComputeFBuffer;
+const PulsarSpins_REAL4 empty_PulsarSpins_REAL4;
 
 /*---------- internal prototypes ----------*/
 int finite(double x);
 
 int XLALComputeFaFb_REAL4 ( Fcomponents *FaFb,
                             const SFTVector *sfts,
-                            const PulsarSpins fkdot,
+                            const PulsarSpins_REAL4 spins,
                             const SSBtimes *tSSB,
                             const AMCoeffs *amcoe,
-                            const ComputeFParams *params);
+                            UINT4 Dterms);
 
 
 /*==================== FUNCTION DEFINITIONS ====================*/
@@ -122,7 +117,7 @@ ComputeFStat_REAL4 ( LALStatus *status,
                      const MultiSFTVector *multiSFTs,    		/**< normalized (by DOUBLE-sided Sn!) data-SFTs of all IFOs */
                      const MultiNoiseWeights *multiWeights,		/**< noise-weights of all SFTs */
                      const MultiDetectorStateSeries *multiDetStates,	/**< 'trajectories' of the different IFOs */
-                     const ComputeFParams *params,       		/**< addition computational params */
+                     UINT4 Dterms,       				/**< number of terms to use in Dirichlet kernel interpolation */
                      ComputeFBuffer *cfBuffer            		/**< CF-internal buffering structure */
                      )
 {
@@ -130,7 +125,7 @@ ComputeFStat_REAL4 ( LALStatus *status,
   UINT4 X, numDetectors;
   MultiSSBtimes *multiSSB = NULL;
   MultiAMCoeffs *multiAMcoef = NULL;
-  REAL4 Ad, Bd, Cd, Dd_inv, Ed;
+  REAL4 Ad, Bd, Cd, Dd_inv;
   SkyPosition skypos;
 
   INITSTATUS( status, "ComputeFStat_REAL4", COMPUTEFSTATC );
@@ -141,7 +136,6 @@ ComputeFStat_REAL4 ( LALStatus *status,
   ASSERT ( multiSFTs, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
   ASSERT ( doppler, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
   ASSERT ( multiDetStates, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
-  ASSERT ( params, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
 
   numDetectors = multiSFTs->length;
   ASSERT ( multiDetStates->length == numDetectors, status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT );
@@ -168,7 +162,7 @@ ComputeFStat_REAL4 ( LALStatus *status,
       skypos.system =   COORDINATESYSTEM_EQUATORIAL;
       skypos.longitude = doppler->Alpha;
       skypos.latitude  = doppler->Delta;
-      TRY ( LALGetMultiSSBtimes ( status->statusPtr, &multiSSB, multiDetStates, skypos, doppler->refTime, params->SSBprec ), status );
+      TRY ( LALGetMultiSSBtimes ( status->statusPtr, &multiSSB, multiDetStates, skypos, doppler->refTime, SSBPREC_RELATIVISTIC ), status );
       if ( cfBuffer )
 	{
 	  XLALDestroyMultiSSBtimes ( cfBuffer->multiSSB );
@@ -203,18 +197,24 @@ ComputeFStat_REAL4 ( LALStatus *status,
 
     } /* if AM coefficient need to be computed */
 
-  Ad = multiAMcoef->Mmunu.Ad;
-  Bd = multiAMcoef->Mmunu.Bd;
-  Cd = multiAMcoef->Mmunu.Cd;
-  Dd_inv = 1.0 / multiAMcoef->Mmunu.Dd;
-  Ed = 0;
+  /* ---------- prepare data in REAL4 only quantities.
+   * for the central single-precision routine XLALComputeFaFb_REAL4()
+   */
+  UINT4 s, numSpins = PULSAR_MAX_SPINS;
+  PulsarSpins_REAL4 spins = empty_PulsarSpins_REAL4;
+  spins.FreqMain = (INT4)doppler->fkdot[0];
+  /* fkdot[0] only carries the *remainder* of Freq wrt FreqMain */
+  spins.fkdot[0] = (REAL4)( doppler->fkdot[0] - (REAL8)spins.FreqMain );
+  /* the remaining spins are simply down-cast to REAL4 */
+  for ( s=1; s < numSpins; s ++ )
+    spins.fkdot[s] = (REAL4) doppler->fkdot[s];
 
   /* ----- loop over detectors and compute all detector-specific quantities ----- */
   for ( X=0; X < numDetectors; X ++)
     {
       Fcomponents FcX = empty_Fcomponents;	/* for detector-specific FaX, FbX */
 
-      if ( XLALComputeFaFb_REAL4 (&FcX, multiSFTs->data[X], doppler->fkdot, multiSSB->data[X], multiAMcoef->data[X], params) != 0)
+      if ( XLALComputeFaFb_REAL4 (&FcX, multiSFTs->data[X], spins, multiSSB->data[X], multiAMcoef->data[X], Dterms) != 0)
         {
           LALPrintError ("\nXALComputeFaFb_REAL4() failed\n");
           ABORT ( status, COMPUTEFSTATC_EXLAL, COMPUTEFSTATC_MSGEXLAL );
@@ -239,6 +239,11 @@ ComputeFStat_REAL4 ( LALStatus *status,
     } /* for  X < numDetectors */
 
   /* ----- compute final Fstatistic-value ----- */
+
+  Ad = multiAMcoef->Mmunu.Ad;
+  Bd = multiAMcoef->Mmunu.Bd;
+  Cd = multiAMcoef->Mmunu.Cd;
+  Dd_inv = 1.0f / multiAMcoef->Mmunu.Dd;
 
   /* NOTE: the data MUST be normalized by the DOUBLE-SIDED PSD (using LALNormalizeMultiSFTVect),
    * therefore there is a factor of 2 difference with respect to the equations in JKS, which
@@ -272,10 +277,10 @@ ComputeFStat_REAL4 ( LALStatus *status,
 int
 XLALComputeFaFb_REAL4 ( Fcomponents *FaFb,
                         const SFTVector *sfts,
-                        const PulsarSpins fkdot,
+                        const PulsarSpins_REAL4 spins,
                         const SSBtimes *tSSB,
                         const AMCoeffs *amcoe,
-                        const ComputeFParams *params)       /**< addition computational params */
+                        UINT4 Dterms)
 {
   UINT4 alpha;                 	/* loop index over SFTs */
   UINT4 spdnOrder;		/* maximal spindown-orders */
@@ -288,14 +293,8 @@ XLALComputeFaFb_REAL4 ( Fcomponents *FaFb,
   REAL4 *a_al, *b_al;		/* pointer to alpha-arrays over a and b */
   REAL8 *DeltaT_al, *Tdot_al;	/* pointer to alpha-arrays of SSB-timings */
   SFTtype *SFT_al;		/* SFT alpha  */
-  UINT4 Dterms = params->Dterms;
 
   REAL4 norm = OOTWOPI_FLOAT;
-
-  REAL4 f0, df;
-
-  f0 = (INT4)fkdot[0];
-  df = fkdot[0] - (REAL8)f0;
 
   /* ----- check validity of input */
 #ifndef LAL_NDEBUG
@@ -309,24 +308,13 @@ XLALComputeFaFb_REAL4 ( Fcomponents *FaFb,
     XLAL_ERROR ( "XLALComputeFaFb", XLAL_EINVAL);
   }
 
-  if ( !tSSB || !tSSB->DeltaT || !tSSB->Tdot || !amcoe || !amcoe->a || !amcoe->b || !params)
+  if ( !tSSB || !tSSB->DeltaT || !tSSB->Tdot || !amcoe || !amcoe->a || !amcoe->b )
     {
       LALPrintError ("\nIllegal NULL in input !\n\n");
       XLAL_ERROR ( "XLALComputeFaFb", XLAL_EINVAL);
     }
 
-  if ( PULSAR_MAX_SPINS > NUM_FACT )
-    {
-      LALPrintError ("\nInverse factorials table only up to order s=%d, can't handle %d spin-order\n\n",
-		     NUM_FACT, PULSAR_MAX_SPINS - 1 );
-      XLAL_ERROR ( "XLALComputeFaFb", XLAL_EINVAL);
-    }
 #endif
-
-  if ( params->upsampling > 1 ) {
-    fprintf (stderr, "\n===== WARNING: XLALComputeFaFb() should not be used with upsampled-SFTs!\n");
-    XLAL_ERROR ( "XLALComputeFaFb", XLAL_EINVAL);
-  }
 
   /* ----- prepare convenience variables */
   numSFTs = sfts->length;
@@ -336,9 +324,12 @@ XLALComputeFaFb_REAL4 ( Fcomponents *FaFb,
   freqIndex0 = (UINT4) ( sfts->data[0].f0 / dFreq + 0.5); /* lowest freqency-index */
   freqIndex1 = freqIndex0 + sfts->data[0].data->length;
 
+  REAL4 f0 = spins.FreqMain;
+  REAL4 df = spins.fkdot[0];
+
   /* find highest non-zero spindown-entry */
   for ( spdnOrder = PULSAR_MAX_SPINS - 1;  spdnOrder > 0 ; spdnOrder --  )
-    if ( fkdot[spdnOrder] )
+    if ( spins.fkdot[spdnOrder] )
       break;
 
   Fa.re = 0.0f;
@@ -398,7 +389,7 @@ XLALComputeFaFb_REAL4 ( Fcomponents *FaFb,
         Tas = DT_al;
 	for (s=1; s <= spdnOrder; s++)
 	  {
-	    REAL4 fsdot = fkdot[s];
+	    REAL4 fsdot = spins.fkdot[s];
 	    Dphi_alpha_rem += fsdot * Tas * inv_fact[s]; 	/* here: DT^s/s! */
 	    Tas *= DT_al;					/* now: DT^(s+1) */
 	    phi_alpha_rem += fsdot * Tas * inv_fact[s+1];
@@ -411,14 +402,14 @@ XLALComputeFaFb_REAL4 ( Fcomponents *FaFb,
         REAL4 tmp = REM( 0.5f * Dphi_alpha_int ) + REM ( 0.5f * Dphi_alpha_rem );
 	lambda_alpha = phi_alpha_rem - tmp;
 
-        kstar = (INT4)Dphi_alpha_int + (INT4)Dphi_alpha_rem;
-	kappa_star = REM(Dphi_alpha_int) + REM(Dphi_alpha_rem);
-	kappa_max = kappa_star + 1.0f * Dterms - 1.0f;
-
 	/* real- and imaginary part of e^{-i 2 pi lambda_alpha } */
 	if ( sin_cos_2PI_LUT ( &imagQ, &realQ, - lambda_alpha ) ) {
 	  XLAL_ERROR ( "XLALComputeFaFb", XLAL_EFUNC);
 	}
+
+        kstar = (INT4)Dphi_alpha_int + (INT4)Dphi_alpha_rem;
+	kappa_star = REM(Dphi_alpha_int) + REM(Dphi_alpha_rem);
+	kappa_max = kappa_star + 1.0f * Dterms - 1.0f;
 
 	/* ----- check that required frequency-bins are found in the SFTs ----- */
 	k0 = kstar - Dterms + 1;
@@ -534,4 +525,4 @@ XLALComputeFaFb_REAL4 ( Fcomponents *FaFb,
 
   return XLAL_SUCCESS;
 
-} /* XLALComputeFaFb() */
+} /* XLALComputeFaFb_REAL4() */
