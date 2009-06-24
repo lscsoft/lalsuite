@@ -304,7 +304,7 @@ void ComputeFStat_REAL4 ( LALStatus *status,
                           const MultiSFTVector *multiSFTs,
                           const MultiNoiseWeights *multiWeights,
                           const MultiDetectorStateSeries *multiDetStates,
-                          const ComputeFParams *params,
+                          UINT4 Dterms,
                           ComputeFBuffer *cfBuffer );
 
 
@@ -459,7 +459,7 @@ int main(int argc,char *argv[])
       else
         {
           LAL_CALL( ComputeFStat_REAL4(&status, &Fstat, &dopplerpos, GV.multiSFTs, GV.multiNoiseWeights, 
-                                       GV.multiDetStates, &GV.CFparams, &cfBuffer ), &status );
+                                       GV.multiDetStates, GV.CFparams.Dterms, &cfBuffer ), &status );
         }
 
       /* Progress meter */
