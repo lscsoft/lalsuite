@@ -141,7 +141,7 @@ for tag in set([ entry.description for entry in ihope_cache.sieve( description =
 
 for tag in user_tags:
   
-  print "Writing jobs for %s..." % tag
+  print "Creating jobs for %s..." % tag
   
   # determine whether or not this was an injection run by checking if there
   # is an injection file
@@ -200,7 +200,9 @@ for tag in user_tags:
   # if not an injection run, check that there are an equal number of
   # slide files
   file_sieve = 'THINCA_SLIDE_SECOND*' + tag
-  if not simulation and len( ihope_cache.sieve( description = file_sieve ) != len(thinca_cache):
+  if not simulation and \
+    len(ihope_cache.sieve( description = file_sieve, exact_match = True )) != \
+    len(thinca_cache):
     raise ValueError, "Number of %s slide files doesn't equal number of zero-lag files. " % tag  + \
       "Have all the jobs completed?"
 
@@ -218,8 +220,8 @@ for tag in user_tags:
     cat_num = tag.split('_')[-2]
     veto_file_path = cp.get('input', 'ihope-segments-directory')
     veto_file_name = ''.join([
-      distinct_ifs, '-VETOTIME_CAT_', cat_num, '-', experiment_start, '-', experiment_duration, 
-      '.xml' })
+      distinct_ifos, '-VETOTIME_CAT_', cat_num, '-', experiment_start, '-', experiment_duration, 
+      '.xml' ])
     veto_file = '/'.join([ veto_file_path, veto_file_name ])
     if not os.path.exists( veto_file ):
       raise ValueError, "Veto file %s could not be found." % veto_file
@@ -292,9 +294,7 @@ for tag in user_tags:
   t2c2sql_node.set_tmp_space( options.log_path )
   # database name has form: 
   # distinct_ifos-CBC_TRIGDB_RAW-USER_TAG-cache_start-cache_duration.sql
-  db_type = 'CBC_TRIGDB_RAW'
-  if user_tag:
-    db_type = '-'.join([ db_type, tag ])
+  db_type = 'CBC_TRIGDB_RAW-' + tag
   raw_result_db = '.'.join([
     '-'.join([ distinct_ifos, db_type, experiment_start, experiment_duration ]),
     'sql' ])
@@ -378,9 +378,7 @@ for tag in user_tags:
   cluster_node.set_input( raw_result_db )
   # output database name has form:
   # distinct_ifos-CBC_TRIGDB_CLUSTERED-USER_TAG-gps_start_time-durations.sql
-  db_type = 'CBC_TRIGDB_CLUSTERED'
-  if user_tag:
-    db_type = '-'.join([ db_type, user_tag ])
+  db_type = 'CBC_TRIGDB_CLUSTERED-' + tag
   result_db = '.'.join([
     '-'.join([ distinct_ifos, db_type, experiment_start, experiment_duration ]),
     'sql' ]) 
