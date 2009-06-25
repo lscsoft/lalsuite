@@ -478,7 +478,7 @@ LALDR_L2Norm33Matrix(LALDR_33Matrix * matrix)
 
 
 
-#if 1
+#if 0 /* NOT USED */
 /*
  * The RMS norm of a matrix: RMS sum of all elements.
  */
@@ -2691,9 +2691,9 @@ char *laldr_strlcpy(char *dst, const char *src, size_t len)
   char *retval = strncpy(dst, src, len);
   if (verbose_level & 8)
     {
-      printf("sizeof(dst) = %u\n", sizeof(dst));
-      printf("strlen(src) = %u\n", strlen(src));
-      printf("TESTDR_MIN(len, strlen(src)+1) = %u\n",
+      printf("sizeof(dst) = %lu\n", sizeof(dst));
+      printf("strlen(src) = %lu\n", strlen(src));
+      printf("TESTDR_MIN(len, strlen(src)+1) = %lu\n",
              TESTDR_MIN(len, strlen(src)+1));
     }
   dst[TESTDR_MIN(len, strlen(src) + 1) - 1] = '\0';
@@ -2938,7 +2938,7 @@ void find_zero_gmst(LALStatus * status)
   interval.seconds = 0;
   interval.nanoSeconds =   1;
 
-  printf("2*Pi = % 22.14Le\n", 2. * LAL_PI);
+  printf("2*Pi = % 22.14e\n", 2. * LAL_PI);
 
   for (k = 0; k < 4096; ++k)
     {

@@ -22,8 +22,8 @@
  *
  * File Name: TrackSearch.c
  *
- * New Maintainer: Torres, C (Univ TX at Browsville)
- * Author: R. Balasubramanian
+ * Current Developer: Torres, Cristina V. (LLO)
+ * Original Developer: R. Balasubramanian
  *
  * Revision: $Id$
  *
@@ -119,7 +119,7 @@ LALSignalTrackSearch(LALStatus *status,
 		     const TimeFreqRep *tfMap, /* type defined in TimeFreq.h */
 		     TrackSearchParams *params)
 {
-  INT4 tempmaskcount; /*remove later on temp */
+  /*INT4 tempmaskcount; remove later on temp */
 
   /* Initialize status structure   */
   INITSTATUS(status,"LALSignalTrackSearch",TRACKSEARCHC);
@@ -162,32 +162,6 @@ LALSignalTrackSearch(LALStatus *status,
   /* Compute Convolutions of the image with the Gaussian derivative Kernels */
   ComputeConvolutions(status->statusPtr, &(out->store), tfMap, params);
   CHECKSTATUSPTR(status);
-  /*
-   * Diagnostic code to be extracted later
-   * Want to check the output convolutions and the map here
-   * rather than in the function call itself
-   * Dumping original map also
-   */
-  if (0==1)
-    {
-      DumpTFImage(tfMap->map,"DumpMap0",params->height,params->width,1);
-      DumpTFImage(out->store.k[0],"DumpVar0_Col1Derv",params->height,params->width,0);
-      DumpTFImage(out->store.k[1],"DumpVar1_Row1Derv",params->height,params->width,0);
-      DumpTFImage(out->store.k[2],"DumpVar2_Col2Derv",params->height,params->width,0);
-      DumpTFImage(out->store.k[3],"DumpVar3_Row2Derv",params->height,params->width,0);
-      DumpTFImage(out->store.k[4],"DumpVar4_RC_2Derv",params->height,params->width,0);
-      /* Dumping Out Kernels Collectivly */
-      tempmaskcount=ceil(4*params->sigma);
-      DumpREAL8KernelMask(out->store.gaussMask[0],"DumpVarKernel_0",
-			  ((2*tempmaskcount)+1));
-      DumpREAL8KernelMask(out->store.gaussMask[1],"DumpVarKernel_1",
-			  ((2*tempmaskcount)+1));
-      DumpREAL8KernelMask(out->store.gaussMask[2],"DumpVarKernel_2",
-			  ((2*tempmaskcount)+1));
-    }
-  /*
-   * End diagnotics temporary code
-   */
   /*
    * If automatic \Lambda is enabled must compute that here
    * use Gauss2 and h averaging routine (to be written)
@@ -617,7 +591,7 @@ ConnectLinePoints(LALStatus *status,
   INT4 **label;/*map whose entries point to the approapriate element of the linePoints array*/
   INT4 **mapContour; /* Each Contour is assigned an iteger value and the points of this map depict the contours*/
   INT4 i,j; /* Temporary loop variables */
-  INT4 index,nextIndex; /* used as an indices to the lineStart array */
+  INT4 lal_index,nextIndex; /* used as an indices to the lineStart array */
   INT4 processed; /*the number of line Points processed so far */
   INT4 octant,lastOctant; /* to use in identifying which neighbouring pixels to search for line points */
   INT4 currentRow,currentCol,nextRow,nextCol; /* variables pointing to the current and next location*/
@@ -628,7 +602,7 @@ ConnectLinePoints(LALStatus *status,
   INT4 direction; /* the 2 opposite directions to traverse to obtain the complete line */
   INT4 reject[2],check[3],which;/* the list of surrounding points to reject and select */
   REAL4 *eigenVec; /* a pointer defined for convenience; points to a particular element of an array */
-  REAL4 metric[3]; /* a metric defined to choose between 3 different line points */
+  REAL4 metric[3]={0,0,0}; /* a metric defined to choose between 3 different line points */
   REAL4 minimum; /* the minimum of the metric[i]*/
   REAL4 differ; /* the difference between 2 angles */
   REAL4 powerHalfContourA; /* The resulting power of half the contour from tfMap*/
@@ -667,28 +641,28 @@ ConnectLinePoints(LALStatus *status,
   /* we do not know whether the curve will have a junction so we initialize to zero(no junction)*/
   contour[0].junction=contour[1].junction=0;
   /* Fill up linePoints structure and set label to 0 */
-  index=0;
+  lal_index=0;
   for(i=0;i<params->height;i++){
     for(j=0;j<params->width;j++){
       label[i][j]=0;
       if(store->isLine[i][j]>0){
-	linePoints[index].pValue = store->isLine[i][j];
-	linePoints[index].r = i;
-	linePoints[index].c = j;
-	linePoints[index].flag = 1;
-	linePoints[index].eigen = store->imageTemp[i][j];
+	linePoints[lal_index].pValue = store->isLine[i][j];
+	linePoints[lal_index].r = i;
+	linePoints[lal_index].c = j;
+	linePoints[lal_index].flag = 1;
+	linePoints[lal_index].eigen = store->imageTemp[i][j];
 	eigenVec = store->eigenVec + 4*(params->width*i + j);
 	/* calculate the angles at all the line points (between 0 and PI)*/
-	linePoints[index].angle=GetAngle(eigenVec[1],eigenVec[0]);
+	linePoints[lal_index].angle=GetAngle(eigenVec[1],eigenVec[0]);
 	/* store the subpixel line position */
-	linePoints[index].pRow=eigenVec[2];
-	linePoints[index].pCol=eigenVec[3];
-	index++;
+	linePoints[lal_index].pRow=eigenVec[2];
+	linePoints[lal_index].pCol=eigenVec[3];
+	lal_index++;
       }
     }
   }
   /* check if the number of line start points is the same as found in the previous module */
-  ASSERT(index==store->numLPoints,status,TS_LINE_START,TS_MSG_LINE_START);
+  ASSERT(lal_index==store->numLPoints,status,TS_LINE_START,TS_MSG_LINE_START);
   /* sort the line point structures based on their values (2's come first )
      i.e. The first store->numLStartPoints points are line starting points and the remaining are ordinary points
      Also among the line start points the sorting order is one of decreasing value of linePoint.eigen*/
@@ -722,9 +696,9 @@ ConnectLinePoints(LALStatus *status,
       directionSwitch=1;
       /* loop while there are points to be joined to the current curve */
       while(flag){
-	index=label[currentRow][currentCol]-1;
+	lal_index=label[currentRow][currentCol]-1;
 	/* identify which direction the line is normal to */
-	octant = floor((double)linePoints[index].angle/(LAL_PI/4.0)) + 1;
+	octant = floor((double)linePoints[lal_index].angle/(LAL_PI/4.0)) + 1;
 	/* check if octant is less than or equal to 4 */
 	ASSERT(octant<=4,status,TS_OCTANT,MSG_TS_OCTANT);
 	/* now we have to find whether the octant has changed discontinuously for 1 to 4 or from 4 to 1
@@ -783,7 +757,7 @@ ConnectLinePoints(LALStatus *status,
 	    continue;
 	  /* check whether the pixel is a multiple response*/
 	  nextIndex=label[nextRow][nextCol]-1;
-	  differ=(REAL4)fabs((double)linePoints[index].angle - linePoints[nextIndex].angle);
+	  differ=(REAL4)fabs((double)linePoints[lal_index].angle - linePoints[nextIndex].angle);
 	  if(differ>LAL_PI/2.0)
 	    differ=LAL_PI - differ;
 	  if(differ<MAX_ANGLE_DIFFERENCE){
@@ -811,7 +785,7 @@ ConnectLinePoints(LALStatus *status,
 	  }
 	  /* check if the pixel is a valid continuation */
 	  nextIndex=label[nextRow][nextCol]-1;
-	  differ=(REAL4)fabs((double)linePoints[index].angle-linePoints[nextIndex].angle);
+	  differ=(REAL4)fabs((double)linePoints[lal_index].angle-linePoints[nextIndex].angle);
 	  if(differ>LAL_PI/2.0)
 	    differ=LAL_PI - differ;
 	  if(differ>MAX_ANGLE_DIFFERENCE){
@@ -834,8 +808,8 @@ ConnectLinePoints(LALStatus *status,
 	    }
 	    /* the metric used to select the most plausible adjacent point
 	       d = sqrt((px1-px2)^2 + (py1-py2)^2) + abs(angle1 - angle2)*/
-	    metric[i]=sqrt((linePoints[index].pRow-linePoints[nextIndex].pRow)*(linePoints[index].pRow-linePoints[nextIndex].pRow)+\
-			   (linePoints[index].pCol-linePoints[nextIndex].pCol)*(linePoints[index].pCol-linePoints[nextIndex].pCol)) + differ;
+	    metric[i]=sqrt((linePoints[lal_index].pRow-linePoints[nextIndex].pRow)*(linePoints[lal_index].pRow-linePoints[nextIndex].pRow)+\
+			   (linePoints[lal_index].pCol-linePoints[nextIndex].pCol)*(linePoints[lal_index].pCol-linePoints[nextIndex].pCol)) + differ;
 	  }
 	}
 	/* if none of  the pixels are not a valid continuation, the curve stops here */
@@ -979,23 +953,9 @@ static void estimateProfile(REAL4 *myProfile,
       currentSum=0;
       for (j=0;j<Map.tCol;j++)
 	{
-/* 	  fprintf(stdout,"k:%i/%i j:%i/%i \t Map:%f \t CS %f \n", */
-/* 		  k, */
-/* 		  Map.fRow, */
-/* 		  j, */
-/* 		  Map.tCol, */
-/* 		  Map.map[j][k], */
-/* 		  currentSum, */
-/* 	  fflush(stdout); */
 	  currentSum=currentSum+Map.map[j][k];
 	}
       myProfile[k]=currentSum/Map.tCol;
-/*       fprintf(stdout,"Computing myProfile value.\t"); */
-/*       fprintf(stdout," : %i/%i Value: %f\n",  */
-/* 	      k, */
-/* 	      Map.fRow/2+1, */
-/* 	      myProfile[k]); */
-/*       fflush(stdout); */
     }
 }
 
@@ -1167,12 +1127,6 @@ estimateSNR(Curve contourA,
 	  fflush(stderr);
 	}
       curveProfile[contourA.col[n]]=curveProfile[contourA.col[n]]+tfr->map[contourA.row[n]][contourA.col[n]];
-/*       fprintf(stdout,"A -- Row(T) :%i\tCol(F) :%i\tTFR :%20.20f\t CP :%20.20f\n", */
-/* 	      contourA.row[n], */
-/* 	      contourA.col[n], */
-/* 	      tfr->map[contourA.row[n]][contourA.col[n]], */
-/* 	      curveProfile[contourA.row[n]]); */
-/*       fflush(stdout); */
     }
   for (n=1;n<contourB.n;n++)
     {
@@ -1184,15 +1138,7 @@ estimateSNR(Curve contourA,
 	  fflush(stderr);
 	}
     curveProfile[contourB.col[n]]=curveProfile[contourB.col[n]]+tfr->map[contourB.row[n]][contourB.col[n]];
-/*     fprintf(stdout,"B -- Row(T) :%i\tCol(F) :%i\tTFR :%20.20f\t CP :%20.20f\n", */
-/* 	    contourB.row[n], */
-/* 	    contourB.col[n], */
-/* 	    tfr->map[contourB.row[n]][contourB.col[n]], */
-/* 	    curveProfile[contourB.row[n]]); */
-/*     fflush(stdout); */
     }
-/*   fprintf(stdout,"\n\n"); */
-/*   fflush(stdout); */
   /*Compute the SNR (check the normalization) can we GRASP definition P156-160*/
   /*
    * We invoke for our estimate the idea of a SNR measure the ratio of in the
@@ -1206,21 +1152,11 @@ estimateSNR(Curve contourA,
       /*Define my snr estimate as std(energyInCurve)/std(energyInNoise)*/
       tmp=tmp+((curveProfile[n]*curveProfile[n])/
 	(tfrProfile[n]*tfrProfile[n]));
-/*       fprintf(stdout,"Index : %i\tTMP :%10.10f\t CP :%10.10f\t TFR :%10.10f\n", */
-/* 	      n, */
-/* 	      tmp, */
-/* 	      curveProfile[n], */
-/* 	      tfrProfile[n]); */
-/*       fflush(stdout); */
     }
   result=sqrt(tmp);
-/*   fprintf(stdout,"SNR Estimate :%f\n",result); */
-/*   fflush(stdout); */
   LALFree(curveProfile);
   return result;
 }
-
-
 /*End static function estimateSNR*/
 
 /* routine called by qsort
@@ -1282,7 +1218,6 @@ void LALTrackSearchInsertMarkers(
 	  CHECKSTATUSPTR(status);
 	  output->curves[i].gpsStamp[j].gpsSeconds=tmpGPS.gpsSeconds;
 	  output->curves[i].gpsStamp[j].gpsNanoSeconds=tmpGPS.gpsNanoSeconds;
-	  /*memcpy(&(input->mapStartGPS),&(tmpGPS),sizeof(LIGOTimeGPS));*/
 	}
     }
   DETATCHSTATUSPTR (status);

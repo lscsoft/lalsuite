@@ -21,7 +21,7 @@
  *
  * File Name: TSData.c
  *
- * Author: Torres C  (Univ of TX at Brownsville)
+ * Author: Torres Cristina V. (LLO)
  *
  * Revision: $Id$
  *
@@ -32,6 +32,9 @@
 #include <lal/TSSearch.h>
 #include <lal/FrameCache.h>
 #include <lal/LALStdlib.h>
+
+/* macro to "use" unused function parameters */
+#define UNUSED(expr) do { (void)(expr); } while(0)
 
 NRCSID (TSDATAC,"$Id$");
 
@@ -66,64 +69,7 @@ static REAL4 localGauss2(REAL4 lineWidth)
   result = sum;
   return result;
 }
-
-
-
-/*
- *Extra diagnostic code
- */
-/* Non Compliant code taken from EPSearch.c */
-static void print_real4fseries(const REAL4FrequencySeries *fseries,const char *file)
-{
-#if 0
-  /* FIXME: why can't the linker find this function? */
-  LALSPrintFrequencySeries(fseries, file);
-#else
-  FILE *fp = fopen(file, "w");
-  size_t i;
-
-  if(fp) {
-    for(i = 0; i < fseries->data->length; i++)
-      fprintf(fp, "%f\t%g\n", i * fseries->deltaF, fseries->data->data[i]);
-    fclose(fp);
-  }
-#endif
-}
-static void print_complex8fseries(const COMPLEX8FrequencySeries *fseries, const char *file)
-{
-#if 0
-  /* FIXME: why can't the linker find this function? */
-  LALCPrintFrequencySeries(fseries, file);
-#else
-  FILE *fp = fopen(file, "w");
-  size_t i;
-
-  if(fp) {
-    for(i = 0; i < fseries->data->length; i++)
-      fprintf(fp, "%f\t%g\n", i * fseries->deltaF, sqrt(fseries->data->data[i].re * fseries->data->data[i].re + fseries->data->data[i].im * fseries->data->data[i].im));
-    fclose(fp);
-  }
-#endif
-}
-static void print_real4tseries(const REAL4TimeSeries *fseries, const char *file)
-{
-#if 0
-  /* FIXME: why can't the linker find this function? */
-  LALSPrintTimeSeries(fseries, file);
-#else
-  FILE *fp = fopen(file, "w");
-  size_t i;
-
-  if(fp) {
-    for(i = 0; i < fseries->data->length; i++)
-      fprintf(fp, "%f\t%g\n", i * fseries->deltaT, fseries->data->data[i]);
-    fclose(fp);
-  }
-#endif
-}
-/*
- * End diagnostic code
- */
+/*End local gauss func*/
 
 void
 LALTracksearchFindLambdaMean(
@@ -143,7 +89,7 @@ LALTracksearchFindLambdaMean(
   REAL8 upperThresh=0;/* Auto discovered upper curvatuve threshold */
   REAL8 lowerThresh=0;/* Value set from upperThresh */
   REAL8 myGaussian=0;
-  REAL8 myFloor=10e20;/*Lowest value in TFR */
+  /*REAL8 myFloor=10e20; Lowest value in TFR */
   INITSTATUS(status,"LALTracksearchFindLambdaMean", TSDATAC);
   ATTATCHSTATUSPTR (status);
 
@@ -481,7 +427,7 @@ LALTrackSearchApplyThreshold(
 void
 LALTrackSearchWhitenREAL4TimeSeries(
 				    LALStatus              *status,
-				    REAL4TimeSeries        *signal,
+				    REAL4TimeSeries        *signalvec,
 				    REAL4FrequencySeries   *signalPSD,
 				    TSWhitenParams          params
 				    )
@@ -499,8 +445,11 @@ LALTrackSearchWhitenREAL4TimeSeries(
   INITSTATUS(status,"LALTrackSearchWhitenREAL4TimeSeries",TSDATAC);
   ATTATCHSTATUSPTR (status);
 
+  /* params is unused in this function */
+  UNUSED(params);
+
   /*Setup FFT Plans*/
-  planLength=signal->data->length;
+  planLength=signalvec->data->length;
   LALCreateForwardREAL4FFTPlan(status->statusPtr,
 			       &forwardPlan,
 			       planLength,
@@ -516,21 +465,16 @@ LALTrackSearchWhitenREAL4TimeSeries(
   signalFFT = XLALCreateCOMPLEX8FrequencySeries("tmpSegPSD",
 				   &gps_zero,
 				   0,
-				   1/(signal->deltaT*signal->data->length),
+				   1/(signalvec->deltaT*signalvec->data->length),
 				   &lalDimensionlessUnit,
 				   planLength/2+1);
   /* FFT the time series */
   LALForwardREAL4FFT(status->statusPtr,
 		     signalFFT->data,
-		     signal->data,
+		     signalvec->data,
 		     forwardPlan);
   CHECKSTATUSPTR (status);
 
-  /*
-   * Diagnostic code
-   * Temporary
-   */
-  print_complex8fseries(signalFFT,"dataFFTComplex.txt");
   /*
    * Perform whitening
    * Look at Tech Doc T010095-00  Sec3
@@ -564,16 +508,18 @@ LALTrackSearchWhitenREAL4TimeSeries(
 		  &(signalFFT->sampleUnits),
 		  &tmpUnitPair);
   CHECKSTATUSPTR (status);
+#if 0
   /*
    * Diagnostic code
    */
   print_complex8fseries(signalFFT,"dataFFTComplexPOST.txt");
+#endif
 
   /*
    * Transform back to time domain
    */
   LALReverseREAL4FFT(status->statusPtr,
-		     signal->data,
+		     signalvec->data,
 		     signalFFT->data,
 		     reversePlan);
   CHECKSTATUSPTR (status);
@@ -581,13 +527,15 @@ LALTrackSearchWhitenREAL4TimeSeries(
    * The 1/n factor need to be applied
    * See lsd-5 p 259 10.1
    */
-  for (i=0;i<signal->data->length;i++)
-    signal->data->data[i]= signal->data->data[i]/signal->data->length;
+  for (i=0;i<signalvec->data->length;i++)
+    signalvec->data->data[i]= signalvec->data->data[i]/signalvec->data->length;
 
+#if 0
   /*
    * Diagnostic code
    */
-  print_real4tseries(signal,"dataSegi.txt");
+  print_real4tseries(signalvec,"dataSegi.txt");
+#endif
 
   /*
    *Release the temporary memory
@@ -677,7 +625,7 @@ LALTrackSearchWhitenCOMPLEX8FrequencySeries(
 /* Begin calibration routine */
 void
 LALTrackSearchCalibrateREAL4TimeSeries(LALStatus               *status,
-				       REAL4TimeSeries         *signal,
+				       REAL4TimeSeries         *signalvec,
 				       COMPLEX8FrequencySeries *response)
 {
   UINT4                      i=0;
@@ -692,7 +640,7 @@ LALTrackSearchCalibrateREAL4TimeSeries(LALStatus               *status,
   /*
    * Setup FFT plans for FFTing the data segment
    */
-  planLength=signal->data->length;
+  planLength=signalvec->data->length;
   LALCreateForwardREAL4FFTPlan(status->statusPtr,
 			       &forwardPlan,
 			       planLength,
@@ -707,9 +655,9 @@ LALTrackSearchCalibrateREAL4TimeSeries(LALStatus               *status,
    * Allocate RAM for temp Freq series
    */
   signalFFT = XLALCreateCOMPLEX8FrequencySeries("tmpSignalFFT",
-				   &signal->epoch,
+				   &signalvec->epoch,
 				   0,
-				   1/signal->deltaT,
+				   1/signalvec->deltaT,
 				   &lalDimensionlessUnit,
 				   planLength/2+1);
   /*
@@ -717,14 +665,14 @@ LALTrackSearchCalibrateREAL4TimeSeries(LALStatus               *status,
    */
   LALForwardREAL4FFT(status->statusPtr,
 		     signalFFT->data,
-		     signal->data,
+		     signalvec->data,
 		     forwardPlan);
   CHECKSTATUSPTR (status);
   /*
    * Perform the frequency basis calibration as defined in
    * LSD Conventions Eq 23.1 p 601
    */
-  for (i=0;i<signal->data->length;i++)
+  for (i=0;i<signalvec->data->length;i++)
     {
       signalFFT->data->data[i].re=
 	response->data->data[i].re*signalFFT->data->data[i].re;
@@ -736,7 +684,7 @@ LALTrackSearchCalibrateREAL4TimeSeries(LALStatus               *status,
    * this is the calibrated data set
    */
   LALReverseREAL4FFT(status->statusPtr,
-		     signal->data,
+		     signalvec->data,
 		     signalFFT->data,
 		     reversePlan);
   CHECKSTATUSPTR (status);
@@ -744,8 +692,8 @@ LALTrackSearchCalibrateREAL4TimeSeries(LALStatus               *status,
    * The 1/n factor need to be applied
    * See lsd-5 p 259 10.1
    */
-  for (i=0;i<signal->data->length;i++)
-    signal->data->data[i]= signal->data->data[i]/signal->data->length;
+  for (i=0;i<signalvec->data->length;i++)
+    signalvec->data->data[i]= signalvec->data->data[i]/signalvec->data->length;
 
   /*
    * Destroy signalFFT Temp variable
@@ -1052,6 +1000,7 @@ connect2Segments(
 	  tempCurve.gpsStamp[curveA->n+m].gpsSeconds=0;
 	  tempCurve.gpsStamp[curveA->n+m].gpsNanoSeconds=0;
 	  tempCurve.depth[curveA->n+m]=map.map[tempCurve.col[curveA->n+m]][tempCurve.row[curveA->n+m]];
+	  i++;
 	  if ( m >= intermediateSegment)
 	    {
 	      k=deltaY+1;
@@ -1068,12 +1017,15 @@ connect2Segments(
       tempCurve.gpsStamp[k].gpsSeconds=curveB->gpsStamp[k].gpsSeconds;
       tempCurve.gpsStamp[k].gpsNanoSeconds=curveB->gpsStamp[k].gpsNanoSeconds;
       tempCurve.depth[k]=curveB->depth[k];
+      i++;
       k++;
     };
+  /*Index i tracking elements of tempCurve*/
+  tempCurve.n=i;
   /*Set total sum of power field */
-  for (i=0;i<tempCurve.n;i++)
+  for (k=0;i<tempCurve.n;k++)
     {
-      tempCurve.totalPower=tempCurve.totalPower+tempCurve.depth[i];
+      tempCurve.totalPower=tempCurve.totalPower+tempCurve.depth[k];
     };
   /* Set Used Marker on second curve when returned to calling function
    */
@@ -1149,368 +1101,3 @@ void cleanLinkedList(
     }
   return;
 }
-
-/*
- * Diagnostic function to write a data file of map values and the
- * corresponding time series values to build that map
- */
-void WriteMap(
-	      TimeFreqRep       map,
-	      REAL4Vector       signal
-	      )
-
-{
-  INT4         i;
-  INT4         j;
-  INT4         k;
-  FILE        *fp;
-  FILE        *fp2;
-  FILE        *fp3;
-
-  fp = fopen("OutMap.dat","w");
-  fp2 = fopen("OutMap2.dat","w");
-  fp3 = fopen("OutSignal.dat","w");
-  fprintf(fp,"Number of Time Columns: %i\n",map.tCol);
-  fprintf(fp,"Number of Freq Rows:    %i\n",map.fRow);
-  fprintf(fp,"Time Instants to follow\n");
-  for (i = 0;i < map.tCol;i++)
-    {
-      fprintf(fp,"%d\n",map.timeInstant[i]);
-    }
-  fprintf(fp,"Freq Instants to follow\n");
-  for (i = 0;i < (map.fRow/2+1);i++)
-    {
-      fprintf(fp,"%e\n",map.freqBin[i]);
-    }
-  fprintf(fp,"Raw Map ouput to follow space delimited carriage return marks end of row\n\n");
-  k = 0;
-  i = 0;
-  j = 0;
-  for (i = 0;i < map.tCol;i++)
-    {
-      for (j = 0;j <(map.fRow/2+1);j++)
-	{
-	  fprintf(fp2,"%f\n",(&map)->map[i][j]);
-	  k++;
-	};
-    };
-  if (&signal != NULL)
-    {
-      for (i=0;i < ((INT4) signal.length);i++)
-	{
-	  fprintf(fp3,"%f\n",signal.data[i]);
-	};
-    };
-  fclose(fp);
-  fclose(fp2);
-}
-
-/*
- * Diagnostic code to create greyscale pgms of the map
- */
-void DumpTFImage(
-		 REAL4        **image,
-		 const CHAR    *filename,
-		 INT4           height,
-		 INT4           width,
-		 BOOLEAN        killNeg
-		 )
-{
-  INT4       i;
-  INT4       j;
-  FILE      *fp;
-  REAL4      maxval=0;
-  REAL4      maxnum;
-  REAL4      minval=0;
-  REAL8      meanval=0;
-  INT4       counter=0;
-  REAL8      stdDev=0;
-  REAL8      sumXsqr=0;
-  REAL8      sumX=0;
-  INT4       pgmval;
-  REAL4      temppgm;
-  REAL4      currentval;
-  REAL4      currentabsval;
-  REAL4      temppoint;
-  CHAR*      pgmfilename;
-  CHAR*      datfilename;
-  CHAR*      auxfilename;
-  CHAR       PGM[5]=".pgm";
-  CHAR       DAT[5]=".dat";
-  CHAR       AUX[5]=".aux";
-  CHAR       newFilename[256]="";
-  INT4       scale=255;
-  static INT4 callCounter=0;
-
-  /* Alloc for two filenames dat and pgm */
-  sprintf(newFilename,"%s_%i_",filename,callCounter++);
-  pgmfilename = (CHAR*)LALCalloc((strlen(newFilename)+strlen(PGM)+1),sizeof(CHAR));
-  datfilename = (CHAR*)LALCalloc((strlen(newFilename)+strlen(DAT)+1),sizeof(CHAR));
-  auxfilename = (CHAR*)LALCalloc((strlen(newFilename)+strlen(DAT)+1),sizeof(CHAR));
-  strcat(pgmfilename,newFilename);
-  strcat(pgmfilename,PGM);
-  strcat(datfilename,newFilename);
-  strcat(datfilename,DAT);
-  strcat(auxfilename,newFilename);
-  strcat(auxfilename,AUX);
-
-  /* Getting max image value to normalize to scale */
-  /* Write Space Delimited table */
-  temppoint=0;
-  fp = fopen(datfilename,"w");
-  maxnum = image[0][0]; /* Max Value no abs taken on value */
-  for (i=(width-1);i>-1;i--)
-    {
-      for (j=0;j<height;j++)
-	{
-	  temppoint = image[j][i];
-	  if (killNeg)
-	    {
-	      if (image[j][i] < 0)
-		{
-		  temppoint = 0;
-		}
-	    };
-	  currentval = temppoint;
-	  currentabsval = fabs(temppoint);
-	  /* To figure out mean and stddev*/
-	  sumX=sumX+currentval;
-	  sumXsqr=sumXsqr+(currentval*currentval);
-	  counter++;
-	  if (maxval < currentabsval)
-	    {
-	      maxval = currentabsval;
-	    }
-	  if (maxnum < currentval)
-	    {
-	      maxnum = currentval;
-	    }
-	  if (minval > currentval)
-	    {
-	      minval = currentval;
-	    }
-	  fprintf(fp,"%6.18f ",currentval);
-	}
-      fprintf(fp,"\n");
-    }
-  fclose(fp);
-  /* PGM File Creation */
-  fp = fopen(pgmfilename,"w");
-  fprintf(fp,"P2\n");
-  fprintf(fp,"#Written by ImageDump\n");
-  fprintf(fp,"%i %i\n",height,width);
-  fprintf(fp,"%i\n",scale);
-  for (i=(width-1);i>-1;i--)
-    {
-      for (j=0;j<height;j++)
-	{
-	  temppoint = image[j][i];
-	  if (killNeg)
-	    {
-	      if (image[j][i] < 0)
-		{
-		  temppoint = 0;
-		}
-	    };
-	  currentval = temppoint;
-	  temppgm = ((currentval-minval)*(scale/(maxnum-minval)));
-	  pgmval = floor(temppgm);
-	  /*pgmval = floor(((currentval-minval)*255)/(maxval-minval));*/
-	  /*pgmval = floor((currentval-minval)*(255/(maxval-minval)));*/
-          fprintf(fp,"%i\n",pgmval);
-	}
-    }
-  fclose(fp);
-  /* Writing Aux file for information purpose only */
-  meanval=sumX/counter;
-  stdDev=sqrt((sumXsqr-(sumX*meanval))/counter-1);
-  fp = fopen(auxfilename,"w");
-  fprintf(fp,"Aux Data information\n");
-  fprintf(fp,"Data ABS Max Value Found:%e\n",maxval);
-  fprintf(fp,"Data Max Value Found    :%e\n",maxnum);
-  fprintf(fp,"Data Min Value Found    :%e\n",minval);
-  fprintf(fp,"Data Dim Height %i\n",height);
-  fprintf(fp,"Data Dim Width  %i\n",width);
-  fprintf(fp,"Data Mean    : %e\n",meanval);
-  fprintf(fp,"Data STDDEV  : %e\n",stdDev);
-  fprintf(fp,"Data Elements: %i\n",counter);
-  fclose(fp);
-  LALFree(auxfilename);
-  LALFree(pgmfilename);
-  LALFree(datfilename);
-  return;
-}
-/*
- * Same as above function but can write to specified filename scheme
- */
-void DumpTFImageCHAR(
-		     CHAR         **image,
-		     const CHAR           *filename,
-		     INT4           height,
-		     INT4           width,
-		     BOOLEAN        killNeg
-		     )
-{
-  INT4       i;
-  INT4       j;
-  FILE      *fp;
-  REAL4      maxval;
-  REAL4      maxnum;
-  REAL4      minval;
-  INT4       pgmval;
-  REAL4      temppgm;
-  REAL4      currentval;
-  REAL4      currentabsval;
-  REAL4      temppoint;
-  CHAR*      pgmfilename;
-  CHAR*      datfilename;
-  CHAR*      auxfilename;
-  CHAR       PGM[5]=".pgm";
-  CHAR       DAT[5]=".dat";
-  CHAR       AUX[5]=".aux";
-  INT4       scale=255;
-
-  maxval=0; /* Hold max abs (magnitude) value */
-  minval=0;
-  /* Alloc for two filenames dat and pgm */
-  pgmfilename = (CHAR*)LALCalloc((strlen(filename)+strlen(PGM)+1),sizeof(CHAR));
-  datfilename = (CHAR*)LALCalloc((strlen(filename)+strlen(DAT)+1),sizeof(CHAR));
-  auxfilename = (CHAR*)LALCalloc((strlen(filename)+strlen(DAT)+1),sizeof(CHAR));
-  strcat(pgmfilename,filename);
-  strcat(pgmfilename,PGM);
-  strcat(datfilename,filename);
-  strcat(datfilename,DAT);
-  strcat(auxfilename,filename);
-  strcat(auxfilename,AUX);
-
-  /* Getting max image value to normalize to scale */
-  /* Write Space Delimited table */
-  temppoint=0;
-  fp = fopen(datfilename,"w");
-  maxnum = atof(&image[0][0]); /* Max Value no abs taken on value */
-  for (i=(width-1);i>-1;i--)
-    {
-      for (j=0;j<height;j++)
-	{
-	  temppoint = atof(&image[j][i]);
-	  if (killNeg)
-	    {
-	      if (atof(&image[j][i]) < 0)
-		{
-		  temppoint = 0;
-		}
-	    };
-	  currentval = temppoint;
-	  currentabsval = fabs(temppoint);
-	  if (maxval < currentabsval)
-	    {
-	      maxval = currentabsval;
-	    }
-	  if (maxnum < currentval)
-	    {
-	      maxnum = currentval;
-	    }
-	  if (minval > currentval)
-	    {
-	      minval = currentval;
-	    }
-	  fprintf(fp,"%f ",currentval);
-	}
-      fprintf(fp,"\n");
-    }
-  fclose(fp);
-  /* PGM File Creation */
-  fp = fopen(pgmfilename,"w");
-  fprintf(fp,"P2\n");
-  fprintf(fp,"#Written by ImageDump\n");
-  fprintf(fp,"%i %i\n",height,width);
-  fprintf(fp,"%i\n",scale);
-  for (i=(width-1);i>-1;i--)
-    {
-      for (j=0;j<height;j++)
-	{
-	  temppoint = (atof(&image[j][i]));
-	  if (killNeg)
-	    {
-	      if (atof(&image[j][i]) < 0)
-		{
-		  temppoint = 0;
-		}
-	    };
-	  currentval = temppoint;
-	  temppgm = ((currentval-minval)*(scale/(maxnum-minval)));
-	  pgmval = floor(temppgm);
-	  /*pgmval = floor(((currentval-minval)*255)/(maxval-minval));*/
-	  /*pgmval = floor((currentval-minval)*(255/(maxval-minval)));*/
-          fprintf(fp,"%i\n",pgmval);
-	}
-    }
-  fclose(fp);
-  /* Writing Aux file for information purpose only */
-  fp = fopen(auxfilename,"w");
-  fprintf(fp,"Aux Data information\n");
-  fprintf(fp,"Data ABS Max Value Found:%e\n",maxval);
-  fprintf(fp,"Data Max Value Found    :%e\n",maxnum);
-  fprintf(fp,"Data Min Value Found    :%e\n",minval);
-  fprintf(fp,"Data Dim Height %i\n",height);
-  fprintf(fp,"Data Dim Width  %i\n",width);
-  fclose(fp);
-  LALFree(auxfilename);
-  LALFree(pgmfilename);
-  LALFree(datfilename);
-  return;
-}
-
-/*
- * Creates small text files with a profile of the gaussian kernels and
- * corresponding derivatives
- */
-void DumpREAL8KernelMask(
-			 REAL8      *kernel,
-			 const CHAR       *filename,
-			 INT4        ksize
-			 )
-{
-  INT4       i;
-  CHAR       DAT[5]=".dat";
-  CHAR       AUX[5]=".aux";
-  REAL8      minvalue=0;
-  REAL8      maxvalue=0;
-  CHAR*      datfilename;
-  CHAR*      auxfilename;
-  FILE      *fp;
-
-  datfilename = (CHAR*)LALCalloc((strlen(filename)+strlen(DAT)+1),sizeof(CHAR));
-  auxfilename = (CHAR*)LALCalloc((strlen(filename)+strlen(DAT)+1),sizeof(CHAR));
-  strcat(datfilename,filename);
-  strcat(datfilename,DAT);
-  strcat(auxfilename,filename);
-  strcat(auxfilename,AUX);
-  minvalue=kernel[0];
-  maxvalue=kernel[0];
-  fp = fopen(datfilename,"w");
-  for (i=0;i<ksize;i++)
-    {
-      if (maxvalue < kernel[i])
-	{
-	  maxvalue = kernel[i];
-	}
-      if (minvalue > kernel[i])
-	{
-	  minvalue = kernel[i];
-	}
-      fprintf(fp,"%e\n",kernel[i]);
-    }
-  fclose(fp);
-  /* Write Aux file also */
-  fp =fopen(auxfilename,"w");
-  fprintf(fp,"Aux Data for Kernel\n");
-  fprintf(fp,"Data Min Value .....%e\n",minvalue);
-  fprintf(fp,"Data Max Value .....%e\n",maxvalue);
-  fprintf(fp,"Kernel Length ......%i\n",ksize);
-  fclose(fp);
-  LALFree(auxfilename);
-  LALFree(datfilename);
-  return;
-}
-

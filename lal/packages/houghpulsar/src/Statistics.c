@@ -197,7 +197,7 @@ void LALHoughmapMeanVariance( LALStatus     *status,
 			      HOUGHMapTotal *in)
 { /*-------------------------------------------------</lalVerbatim> */
 
-  INT4   i,j, xSide, ySide, mObsCoh, nPixel;
+  INT4   i,j, xSide, ySide, nPixel;
   REAL8  sum, tempVariance, tempMean, ep, temp;
   /*--------------------------------------------------------------- */
 

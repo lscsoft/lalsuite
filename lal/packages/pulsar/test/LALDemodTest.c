@@ -351,7 +351,7 @@ int main(int argc, char **argv)
 
   /***** PARSE COMMAND LINE OPTIONS *****/
   basicInputsFile=(char *)LALMalloc(50*sizeof(char));
-  LALSnprintf(basicInputsFile, 9, "in.data\0");
+  snprintf(basicInputsFile, 9, "in.data\0");
   arg=1;
   while(arg<argc) {
 

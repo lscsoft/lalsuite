@@ -71,15 +71,14 @@ NRCSID (GETORIENTATIONELLIPSEC,"$Id$");
 INT4 lalDebugLevel=33;
 
 int
-main(int argc, char **argv)
+main(void)
 {
-  INT4 arg;
   /* top-level status structure */
   static LALStatus status;
   /* Structure specifying the nature of the bank needed */
   static InspiralCoarseBankIn coarseIn;
   void (*noisemodel)(LALStatus*,REAL8*,REAL8) = LALLIGOIPsd;
-  UINT4   j, numPSDpts=262144/4/4; /*Size of the vectors*/
+  UINT4 numPSDpts=262144/4/4; /*Size of the vectors*/
   InspiralTemplate tempPars;
   InspiralMetric metric;
   InspiralMomentsEtc moments;
@@ -142,7 +141,7 @@ main(int argc, char **argv)
     REAL4 tau0 = 0.;
     REAL4 tau3 = 0.;
     INT4 valid = 0;
-    InspiralBankParams bankPars, bankParsOld;
+    InspiralBankParams bankPars;
 
     /* Get the limit of the parameter space*/
     LALInspiralSetSearchLimits( &status, &bankPars, coarseIn );

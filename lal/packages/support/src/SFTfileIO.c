@@ -1725,7 +1725,7 @@ XLALshowSFTLocator ( const struct tagSFTLocator *locator )
   if ( !locator )
     return NULL;
 
-  LALSnprintf ( ret, sizeof(ret), "%s : %ld", locator->fname, locator->offset );
+  snprintf ( ret, sizeof(ret), "%s : %ld", locator->fname, locator->offset );
   ret[ sizeof(ret) - 1 ] = 0;
 
   return ret;

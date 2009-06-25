@@ -42,7 +42,7 @@ $Id$
 various simulation packages for injecting chirps into data.
 
 \subsubsection*{Prototypes}
-\vspace{0.1in}
+
 \input{FindChirpSimulationCP}
 \idx{LALFindChirpInjectSignals()}
 \idx{LALRandomPPNParamStruc()}
@@ -95,10 +95,13 @@ LALFree()
 #include <lal/LALInspiral.h>
 #include <lal/LALError.h>
 
+/* macro to "use" unused function parameters */
+#define UNUSED(expr) do { (void)(expr); } while(0)
+
 NRCSID( FINDCHIRPSIMULATIONC, "$Id$" );
 
 static int FindTimeSeriesStartAndEnd (
-              REAL4Vector *signal,
+              REAL4Vector *signalvec,
               UINT4 *start,
               UINT4 *end
              );
@@ -120,7 +123,7 @@ LALFindChirpInjectSignals (
   CoherentGW            waveform;
   INT8                  waveformStartTime;
   INT8                  chanStartTime;
-  REAL4TimeSeries       signal;
+  REAL4TimeSeries       signalvec;
   COMPLEX8Vector       *unity = NULL;
   CHAR                  warnMsg[512];
   CHAR                  ifo[LIGOMETA_IFO_MAX];
@@ -329,7 +332,7 @@ LALFindChirpInjectSignals (
           );
     }
 
-    LALSnprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
+    snprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
         "Injected waveform timing:\n"
         "thisEvent->geocent_end_time.gpsSeconds = %d\n"
         "thisEvent->geocent_end_time.gpsNanoSeconds = %d\n"
@@ -346,7 +349,7 @@ LALFindChirpInjectSignals (
     if( waveform.h == NULL)
     {
       /* clear the signal structure */
-      memset( &signal, 0, sizeof(REAL4TimeSeries) );
+      memset( &signalvec, 0, sizeof(REAL4TimeSeries) );
 
       /* set the start time of the signal vector to the appropriate start time of the injection */
       if ( detector.site )
@@ -363,15 +366,15 @@ LALFindChirpInjectSignals (
         timeDelay = 0.0;
       }
       /* Give a little more breathing space to aid band-passing */
-      XLALGPSSetREAL8( &(signal.epoch), (waveformStartTime * 1.0e-9) - 0.25 + timeDelay );
+      XLALGPSSetREAL8( &(signalvec.epoch), (waveformStartTime * 1.0e-9) - 0.25 + timeDelay );
 
       /* set the parameters for the signal time series */
-      signal.deltaT = chan->deltaT;
-      if ( ( signal.f0 = chan->f0 ) != 0 )
+      signalvec.deltaT = chan->deltaT;
+      if ( ( signalvec.f0 = chan->f0 ) != 0 )
       {
         ABORT( status, FINDCHIRPH_EHETR, FINDCHIRPH_MSGEHETR );
       }
-      signal.sampleUnits = lalADCCountUnit;
+      signalvec.sampleUnits = lalADCCountUnit;
 
       /* set the start times for injection */
       LALINT8toGPS( status->statusPtr, &(waveform.a->epoch), &waveformStartTime );
@@ -382,11 +385,11 @@ LALFindChirpInjectSignals (
           sizeof(LIGOTimeGPS) );
 
       /* simulate the detectors response to the inspiral */
-      LALSCreateVector( status->statusPtr, &(signal.data), chan->data->length );
+      LALSCreateVector( status->statusPtr, &(signalvec.data), chan->data->length );
       CHECKSTATUSPTR( status );
 
       LALSimulateCoherentGW( status->statusPtr,
-          &signal, &waveform, &detector );
+          &signalvec, &waveform, &detector );
       CHECKSTATUSPTR( status );
 
       /* Taper the signal */
@@ -394,15 +397,15 @@ LALFindChirpInjectSignals (
 
           if ( ! strcmp( "TAPER_START", thisEvent->taper ) )
           {
-              XLALInspiralWaveTaper( signal.data, INSPIRAL_TAPER_START );
+              XLALInspiralWaveTaper( signalvec.data, INSPIRAL_TAPER_START );
           }
           else if (  ! strcmp( "TAPER_END", thisEvent->taper ) )
           {
-              XLALInspiralWaveTaper( signal.data, INSPIRAL_TAPER_END );
+              XLALInspiralWaveTaper( signalvec.data, INSPIRAL_TAPER_END );
           }
           else if (  ! strcmp( "TAPER_STARTEND", thisEvent->taper ) )
           {
-              XLALInspiralWaveTaper( signal.data, INSPIRAL_TAPER_STARTEND );
+              XLALInspiralWaveTaper( signalvec.data, INSPIRAL_TAPER_STARTEND );
           }
       }
 
@@ -410,11 +413,11 @@ LALFindChirpInjectSignals (
       if ( thisEvent->bandpass )
       {
           UINT4 safeToBandPass = 0;
-          UINT4 start, end;
+          UINT4 start=0, end=0;
           REAL4Vector *bandpassVec = NULL;
 
           safeToBandPass = FindTimeSeriesStartAndEnd (
-                  signal.data, &start, &end );
+                  signalvec.data, &start, &end );
 
           if ( safeToBandPass )
           {
@@ -427,16 +430,16 @@ LALFindChirpInjectSignals (
               else
                     start = 0;
 
-              if ((end + (int)(0.25/chan->deltaT)) < signal.data->length )
+              if ((end + (int)(0.25/chan->deltaT)) < signalvec.data->length )
                     end += (int)(0.25/chan->deltaT);
               else
-                    end = signal.data->length - 1;
+                    end = signalvec.data->length - 1;
 
               bandpassVec = (REAL4Vector *)
                       LALCalloc(1, sizeof(REAL4Vector) );
 
               bandpassVec->length = (end - start + 1);
-              bandpassVec->data = signal.data->data + start;
+              bandpassVec->data = signalvec.data->data + start;
 
               if ( XLALBandPassInspiralTemplate( bandpassVec,
                           1.1*thisEvent->f_lower,
@@ -452,12 +455,12 @@ LALFindChirpInjectSignals (
       }
 
       /* inject the signal into the data channel */
-      LALSSInjectTimeSeries( status->statusPtr, chan, &signal );
+      LALSSInjectTimeSeries( status->statusPtr, chan, &signalvec );
       CHECKSTATUSPTR( status );
     }
     else
     {
-      INT4 i, dataLength, wfmLength, sampleRate;
+      INT4 i, dataLength, wfmLength; /*, sampleRate;*/
       /* XXX This code will BREAK if the first element of the frequency XXX *
        * XXX series does not contain dynRange. This is the case for     XXX *
        * XXX calibrated strain data, but will not be the case when      XXX *
@@ -541,7 +544,7 @@ LALFindChirpInjectSignals (
        * */
       if ( waveform.h == NULL )
       {
-	LALSDestroyVector( status->statusPtr, &(signal.data) );
+	LALSDestroyVector( status->statusPtr, &(signalvec.data) );
         CHECKSTATUSPTR( status );
       }
     }
@@ -650,7 +653,7 @@ XLALFindChirpTagTemplateAndSegment (
     InspiralTemplate     *thisTmplt = NULL;
     DataSegment          *currentSegment = NULL;
     UINT4                flag = 0;
-    INT8                 tc, chanStartTime, chanEndTime;
+    INT8                 tc, chanStartTime, chanEndTime=0;
 
 #ifndef LAL_NDEBUG
     /* Sanity checks on input arguments for debugging */
@@ -844,6 +847,9 @@ LALFindChirpSetAnalyseTemplate (
   CHAR                  myMsg[8192];
   UINT4                 approximant;
 
+  /* numTmplts is unused in this function */
+  UNUSED(numTmplts);
+
   INITSTATUS( status, "LALFindChirpSetAnalyseTemplate", FINDCHIRPSIMULATIONC );
   ATTATCHSTATUSPTR( status );
 
@@ -918,7 +924,7 @@ LALFindChirpSetAnalyseTemplate (
           &(mmFTemplate->order));
       CHECKSTATUSPTR (status);
 
-      LALSnprintf (myMsg, sizeof(myMsg)/sizeof(*myMsg),
+      snprintf (myMsg, sizeof(myMsg)/sizeof(*myMsg),
           "%d Injections, Order = %d, Approx = %d\n\n",
           numInjections, mmFTemplate->order, mmFTemplate->approximant);
       LALInfo (status, myMsg);
@@ -928,7 +934,7 @@ LALFindChirpSetAnalyseTemplate (
       LALInspiralParameterCalc( status->statusPtr, mmFTemplate );
       CHECKSTATUSPTR (status);
 
-      LALSnprintf (myMsg, sizeof(myMsg)/sizeof(*myMsg),
+      snprintf (myMsg, sizeof(myMsg)/sizeof(*myMsg),
           "%d Injections, t0 = %e, t3 = %e\n",
           numInjections, mmFTemplate->t0, mmFTemplate->t3);
       LALInfo (status, myMsg);
@@ -959,12 +965,12 @@ LALFindChirpSetAnalyseTemplate (
         LALInspiralParameterCalc( status->statusPtr, mmFTemplate );
         CHECKSTATUSPTR (status);
 
-        LALSnprintf (myMsg, sizeof(myMsg)/sizeof(*myMsg),
+        snprintf (myMsg, sizeof(myMsg)/sizeof(*myMsg),
             "%d Injections, m1 = %e, m2 = %e eta = %e\n",
             numInjections, mmFTemplate->mass1, mmFTemplate->mass2,
             mmFTemplate->eta);
         LALInfo (status, myMsg);
-        LALSnprintf (myMsg, sizeof(myMsg)/sizeof(*myMsg),
+        snprintf (myMsg, sizeof(myMsg)/sizeof(*myMsg),
             "%d Injections, t0 = %e, t3 = %e\n",
             numInjections, mmFTemplate->t0, mmFTemplate->t3);
         LALInfo (status, myMsg);
@@ -973,7 +979,7 @@ LALFindChirpSetAnalyseTemplate (
             mmFTemplate, &mmFmoments );
         CHECKSTATUSPTR (status);
 
-        LALSnprintf (myMsg, sizeof(myMsg)/sizeof(*myMsg),
+        snprintf (myMsg, sizeof(myMsg)/sizeof(*myMsg),
             "%d Injections, G00 = %e, G01 = %e, G11 = %e\n\n",
             numInjections, mmFmetric.G00, mmFmetric.G01, mmFmetric.G11);
         LALInfo (status, myMsg);
@@ -1006,7 +1012,7 @@ LALFindChirpSetAnalyseTemplate (
           /* Advance kj for the next template */
           kj = kj + 1;
 
-          LALSnprintf (myMsg, sizeof(myMsg)/sizeof(*myMsg),
+          snprintf (myMsg, sizeof(myMsg)/sizeof(*myMsg),
               "%-5d %d %e %e %e %e %e %e %e %e %e %e %e %e %e\n",
               kj-1,
               analyseThisTmplt[kj-1],
@@ -1162,11 +1168,13 @@ XLALFindChirpBankSimInjectSignal (
   SimInspiralTable     *bankInjection;
   CHAR                  tmpChName[LALNameLength];
   REAL4                 M, mu;
+#if 0
   FrStream             *frStream = NULL;
   REAL4TimeSeries       frameData;
   INT8                  waveformStartTime = 0;
   UINT4                 waveformLengthCtr = 0;
   UINT4                 i;
+#endif
 
   memset( &status, 0, sizeof(LALStatus) );
 
@@ -1196,16 +1204,16 @@ XLALFindChirpBankSimInjectSignal (
 
     fprintf( stderr, "reading data from %s %s\n",
         simParams->frameName, simParams->frameChan );
-    LALSnprintf( bankInjection->waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR),
+    snprintf( bankInjection->waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR),
         "%s", simParams->frameName );
-    LALSnprintf( bankInjection->source, LIGOMETA_SOURCE_MAX * sizeof(CHAR),
+    snprintf( bankInjection->source, LIGOMETA_SOURCE_MAX * sizeof(CHAR),
         "%s", simParams->frameChan );
 
     frStream = XLALFrOpen( NULL, simParams->frameName );
     XLALFrSetMode( frStream, LAL_FR_VERBOSE_MODE );
 
     memset( &frameData, 0, sizeof(REAL4TimeSeries) );
-    LALSnprintf( frameData.name,
+    snprintf( frameData.name,
         sizeof(frameData.name) / sizeof(*(frameData.name)), "%s",
         simParams->frameChan );
 
@@ -1300,32 +1308,32 @@ XLALFindChirpBankSimInjectSignal (
       /* set the correct waveform approximant */
       if ( simParams->approx == TaylorT1 )
       {
-        LALSnprintf( bankInjection->waveform, LIGOMETA_WAVEFORM_MAX,
+        snprintf( bankInjection->waveform, LIGOMETA_WAVEFORM_MAX,
             "TaylorT1twoPN" );
       }
       else if ( simParams->approx == TaylorT2 )
       {
-        LALSnprintf( bankInjection->waveform, LIGOMETA_WAVEFORM_MAX,
+        snprintf( bankInjection->waveform, LIGOMETA_WAVEFORM_MAX,
             "TaylorT2twoPN" );
       }
       else if ( simParams->approx == TaylorT3 )
       {
-        LALSnprintf( bankInjection->waveform, LIGOMETA_WAVEFORM_MAX,
+        snprintf( bankInjection->waveform, LIGOMETA_WAVEFORM_MAX,
             "TaylorT3twoPN" );
       }
       else if ( simParams->approx == PadeT1 )
       {
-        LALSnprintf( bankInjection->waveform, LIGOMETA_WAVEFORM_MAX,
+        snprintf( bankInjection->waveform, LIGOMETA_WAVEFORM_MAX,
             "PadeT1twoPN" );
       }
       else if ( simParams->approx == EOB )
       {
-        LALSnprintf( bankInjection->waveform, LIGOMETA_WAVEFORM_MAX,
+        snprintf( bankInjection->waveform, LIGOMETA_WAVEFORM_MAX,
             "EOBtwoPN" );
       }
       else if ( simParams->approx == GeneratePPN )
       {
-        LALSnprintf( bankInjection->waveform, LIGOMETA_WAVEFORM_MAX,
+        snprintf( bankInjection->waveform, LIGOMETA_WAVEFORM_MAX,
             "GeneratePPNtwoPN" );
       }
       else
@@ -1340,7 +1348,7 @@ XLALFindChirpBankSimInjectSignal (
     }
 
     /* inject the signals, preserving the channel name (Tev mangles it) */
-    LALSnprintf( tmpChName, LALNameLength * sizeof(CHAR), "%s",
+    snprintf( tmpChName, LALNameLength * sizeof(CHAR), "%s",
         dataSegVec->data->chan->name );
 
     /* make sure the injection is hplus with no time delays */
@@ -1354,7 +1362,7 @@ XLALFindChirpBankSimInjectSignal (
     }
 
     /* restore the saved channel name */
-    LALSnprintf( dataSegVec->data->chan->name,
+    snprintf( dataSegVec->data->chan->name,
         LALNameLength * sizeof(CHAR), "%s", tmpChName );
   }
 
@@ -1462,7 +1470,7 @@ XLALFindChirpBankSimComputeMatch (
 
   /* create the match output table */
   maxMatch = (SimInstParamsTable *) LALCalloc( 1, sizeof(SimInstParamsTable) );
-  LALSnprintf( maxMatch->name, LIGOMETA_SIMINSTPARAMS_NAME_MAX, "match" );
+  snprintf( maxMatch->name, LIGOMETA_SIMINSTPARAMS_NAME_MAX, "match" );
 
   /* store the match in the sim_inst_params structure */
   maxMatch->value = tmplt->snr / matchNorm;
@@ -1472,32 +1480,32 @@ XLALFindChirpBankSimComputeMatch (
 }
 
 static int FindTimeSeriesStartAndEnd (
-        REAL4Vector *signal,
+        REAL4Vector *signalvec,
         UINT4 *start,
         UINT4 *end
         )
 {
-  const static char *func = "FindTimeSeriesStartAndEnd";
-  UINT4 i, mid, n; /* indices */
+  static const char *func = "FindTimeSeriesStartAndEnd";
+  UINT4 i; /* mid, n; indices */
   UINT4 flag, safe = 1;
   UINT4 length;
 
 #ifndef LAL_NDEBUG
-  if ( !signal )
+  if ( !signalvec )
     XLAL_ERROR( func, XLAL_EFAULT );
 
-  if ( !signal->data )
+  if ( !signalvec->data )
     XLAL_ERROR( func, XLAL_EFAULT );
 #endif
 
-  length = signal->length;
+  length = signalvec->length;
 
   /* Search for start and end of signal */
   flag = 0;
   i = 0;
   while(flag == 0 && i < length )
   {
-      if( signal->data[i] != 0.)
+      if( signalvec->data[i] != 0.)
       {
           *start = i;
           flag = 1;
@@ -1513,7 +1521,7 @@ static int FindTimeSeriesStartAndEnd (
   i = length - 1;
   while(flag == 0)
   {
-      if( signal->data[i] != 0.)
+      if( signalvec->data[i] != 0.)
       {
           *end = i;
           flag = 1;

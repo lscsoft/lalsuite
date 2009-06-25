@@ -74,11 +74,11 @@ LALFindChirpPTFFilterSegment (
   UINT4                 deltaEventIndex;
   UINT4                 ignoreIndex;
   REAL4                 deltaT, max_eigen, r, s, x, y;
-  REAL4                 deltaF, fFinal, fmin, length;
+  REAL4                 deltaF, fFinal, f_min, length;
   REAL4                 u1[5], u2[5], v1[5], v2[5], *Binv;
-  REAL4                 N, check, thresh;
+  REAL4                 N, thresh;
   REAL4                 v1_dot_u1, v1_dot_u2, v2_dot_u1, v2_dot_u2;
-  COMPLEX8             *snr            = NULL;
+  COMPLEX8             *pft_snr            = NULL;
   COMPLEX8             *PTFQtilde, *qtilde, *PTFq, *inputData;
   COMPLEX8Vector        qVec;
   FindChirpBankVetoData clusterInput;
@@ -93,7 +93,7 @@ LALFindChirpPTFFilterSegment (
   numPoints   = params->PTFqVec->vectorLength;
   N           = (REAL4) numPoints;
   /* workspace vectors */
-  snr         = params->PTFsnrVec->data;
+  pft_snr         = params->PTFsnrVec->data;
   qtilde      = params->qtildeVec->data;
   PTFq        = params->PTFqVec->data;
   qVec.length = numPoints;
@@ -108,9 +108,9 @@ LALFindChirpPTFFilterSegment (
   deltaT      = (REAL4) params->deltaT;
   deltaF      = 1.0 / ( deltaT * N );
   fFinal      = (REAL4) input->fcTmplt->tmplt.fFinal;
-  fmin        = (REAL4) input->fcTmplt->tmplt.fLower;
+  f_min       = (REAL4) input->fcTmplt->tmplt.fLower;
   kmax        = fFinal / deltaF < numPoints/2 ? fFinal / deltaF : numPoints/2;
-  kmin        = fmin / deltaF > 1.0 ? fmin/ deltaF : 1;
+  kmin        = f_min / deltaF > 1.0 ? f_min/ deltaF : 1;
 
   INITSTATUS( status, "LALFindChirpPTFFilter", FINDCHIRPPTFFILTERC );
   ATTATCHSTATUSPTR( status );
@@ -191,7 +191,7 @@ LALFindChirpPTFFilterSegment (
   {
     CHAR infomsg[256];
 
-    LALSnprintf( infomsg, sizeof(infomsg) / sizeof(*infomsg),
+    snprintf( infomsg, sizeof(infomsg) / sizeof(*infomsg),
         "m1 = %e, m2 = %e, chi = %e, kappa = %e "
         "=> %e seconds => %d points\n"
         "invSpecTrunc = %d => ignoreIndex = %d\n",
@@ -215,7 +215,7 @@ LALFindChirpPTFFilterSegment (
   {
     CHAR infomsg[256];
 
-    LALSnprintf( infomsg, sizeof(infomsg) / sizeof(*infomsg),
+    snprintf( infomsg, sizeof(infomsg) / sizeof(*infomsg),
         "filtering from %d to %d\n",
         ignoreIndex, numPoints - ignoreIndex );
     LALInfo( status, infomsg );
@@ -294,7 +294,7 @@ LALFindChirpPTFFilterSegment (
     }
     max_eigen = 0.5 * ( v1_dot_u1 + v2_dot_u2 + sqrt( (v1_dot_u1 - v2_dot_u2)
           * (v1_dot_u1 - v2_dot_u2) + 4 * v1_dot_u2 * v2_dot_u1 ));
-    snr[j].re = 2.0 * sqrt(max_eigen) / N;
+    pft_snr[j].re = 2.0 * sqrt(max_eigen) / N;
   } /* End of main loop over time */
 
 
@@ -320,7 +320,7 @@ LALFindChirpPTFFilterSegment (
 
     for ( j = 0; j < numPoints; ++j )
     {
-      params->rhosqVec->data->data[j] =  snr[j].re * snr[j].re;
+      params->rhosqVec->data->data[j] =  pft_snr[j].re * pft_snr[j].re;
     }
   }
 

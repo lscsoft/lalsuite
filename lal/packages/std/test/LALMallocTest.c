@@ -85,7 +85,7 @@ static int TestRaise( int sig, const char *fmt, ... )
 {
   va_list ap;
   va_start( ap, fmt );
-  LALVsnprintf( caughtMessage, sizeof( caughtMessage ), fmt, ap );
+  vsnprintf( caughtMessage, sizeof( caughtMessage ), fmt, ap );
   va_end( ap );
   longjmp( jump, sig );
   return -1;

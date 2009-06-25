@@ -170,12 +170,12 @@ SnglRingdownTable* XLALSnglRingdownTableFromLIGOLw (
 
       if ( tableDir[j].idx == 0 )
       {
-        LALSnprintf( thisEvent->ifo, LIGOMETA_IFO_MAX * sizeof(CHAR),
+        snprintf( thisEvent->ifo, LIGOMETA_IFO_MAX * sizeof(CHAR),
             "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
       }
       else if ( tableDir[j].idx == 1 )
       {
-        LALSnprintf( thisEvent->channel, LIGOMETA_CHANNEL_MAX * sizeof(CHAR),
+        snprintf( thisEvent->channel, LIGOMETA_CHANNEL_MAX * sizeof(CHAR),
             "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
       }
       else if ( tableDir[j].idx == 2 )
@@ -328,7 +328,7 @@ SimRingdownTable* XLALSimRingdownTableFromLIGOLw (
     /* check the injection time is withing the requested inteval */
     if ( tableDir[2].pos < 0 )
     {
-      XLALPrintError( "XLAL Error - bad table directory for element %d\n", j );
+      XLALPrintError( "XLAL Error - bad table directory for element %d\n", i );
       XLAL_CLOBBER_EVENTS;
       XLAL_ERROR_NULL( func, XLAL_EIO );
     }
@@ -373,13 +373,13 @@ SimRingdownTable* XLALSimRingdownTableFromLIGOLw (
 
         if ( tableDir[j].idx == 0 )
         {
-          LALSnprintf( thisEvent->waveform,
+          snprintf( thisEvent->waveform,
               LIGOMETA_WAVEFORM_MAX * sizeof(CHAR), "%s",
               env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
         }
         else if ( tableDir[j].idx == 1 )
         {
-          LALSnprintf( thisEvent->coordinates,
+          snprintf( thisEvent->coordinates,
               LIGOMETA_COORDINATES_MAX * sizeof(CHAR),
               "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
         }
@@ -548,8 +548,8 @@ INT4 XLALReadRingdownTriggerFile (
     XLAL_ERROR( func, XLAL_ENOMEM );
   }
 
-  LALSnprintf( thisInputFile->name, LIGOMETA_NAME_MAX, "input_file" );
-  LALSnprintf( thisInputFile->string, LIGOMETA_NAME_MAX, "%s", fileName );
+  snprintf( thisInputFile->name, LIGOMETA_NAME_MAX, "input_file" );
+  snprintf( thisInputFile->string, LIGOMETA_NAME_MAX, "%s", fileName );
 
   /* read in the search summary and store */
   XLALPrintInfo( "XLALReadRingdownTriggerFile(): "

@@ -77,7 +77,7 @@ files.
 
 \subsubsection*{Description}
 
-The routine \verb+LALOpenLIGOLwXMLFile+ 
+The routine \verb+LALOpenLIGOLwXMLFile+
 
 The routine \verb+XLALCreateLIGOLwXMLFileName+ creates a name for a  LIGO lightweight XML file that is in accordance with the specifications of document T050017.
 
@@ -337,52 +337,52 @@ LALBeginLIGOLwXMLTable (
       ABORT( status, LIGOLWXMLH_ENTAB, LIGOLWXMLH_MSGENTAB );
       break;
     case process_table:
-      myfprintf( xml->fp, LIGOLW_XML_PROCESS );
+      (void)myfprintf( xml->fp, LIGOLW_XML_PROCESS );
       break;
     case process_params_table:
-      myfprintf( xml->fp, LIGOLW_XML_PROCESS_PARAMS );
+      (void)myfprintf( xml->fp, LIGOLW_XML_PROCESS_PARAMS );
       break;
     case search_summary_table:
-      myfprintf( xml->fp, LIGOLW_XML_SEARCH_SUMMARY );
+      (void)myfprintf( xml->fp, LIGOLW_XML_SEARCH_SUMMARY );
       break;
     case search_summvars_table:
-      myfprintf( xml->fp, LIGOLW_XML_SEARCH_SUMMVARS );
+      (void)myfprintf( xml->fp, LIGOLW_XML_SEARCH_SUMMVARS );
       break;
     case sngl_inspiral_table:
-      myfprintf( xml->fp, LIGOLW_XML_SNGL_INSPIRAL );
+      (void)myfprintf( xml->fp, LIGOLW_XML_SNGL_INSPIRAL );
       break;
     case sngl_inspiral_table_bns:
-      myfprintf( xml->fp, LIGOLW_XML_SNGL_INSPIRAL_BNS );
+      (void)myfprintf( xml->fp, LIGOLW_XML_SNGL_INSPIRAL_BNS );
       break;
     case sngl_inspiral_table_bcv:
-      myfprintf( xml->fp, LIGOLW_XML_SNGL_INSPIRAL_BCV );
+      (void)myfprintf( xml->fp, LIGOLW_XML_SNGL_INSPIRAL_BCV );
       break;
     case sngl_ringdown_table:
-      myfprintf( xml->fp, LIGOLW_XML_SNGL_RINGDOWN );
+      (void)myfprintf( xml->fp, LIGOLW_XML_SNGL_RINGDOWN );
       break;
     case multi_inspiral_table:
-      myfprintf( xml->fp, LIGOLW_XML_MULTI_INSPIRAL );
+      (void)myfprintf( xml->fp, LIGOLW_XML_MULTI_INSPIRAL );
       break;
     case sim_inspiral_table:
-      myfprintf( xml->fp, LIGOLW_XML_SIM_INSPIRAL );
+      (void)myfprintf( xml->fp, LIGOLW_XML_SIM_INSPIRAL );
       break;
     case sim_ringdown_table:
-      myfprintf( xml->fp, LIGOLW_XML_SIM_RINGDOWN );
+      (void)myfprintf( xml->fp, LIGOLW_XML_SIM_RINGDOWN );
       break;
     case summ_value_table:
-      myfprintf( xml->fp, LIGOLW_XML_SUMM_VALUE );
+      (void)myfprintf( xml->fp, LIGOLW_XML_SUMM_VALUE );
       break;
     case sim_inst_params_table:
-      myfprintf( xml->fp, LIGOLW_XML_SIM_INST_PARAMS );
+      (void)myfprintf( xml->fp, LIGOLW_XML_SIM_INST_PARAMS );
       break;
     case stochastic_table:
-      myfprintf( xml->fp, LIGOLW_XML_STOCHASTIC );
+      (void)myfprintf( xml->fp, LIGOLW_XML_STOCHASTIC );
       break;
     case ext_triggers_table:
-      myfprintf( xml->fp, LIGOLW_XML_EXT_TRIGGERS);
+      (void)myfprintf( xml->fp, LIGOLW_XML_EXT_TRIGGERS);
       break;
     case filter_table:
-      myfprintf( xml->fp, LIGOLW_XML_FILTER );
+      (void)myfprintf( xml->fp, LIGOLW_XML_FILTER );
       break;
     default:
       ABORT( status, LIGOLWXMLH_EUTAB, LIGOLWXMLH_MSGEUTAB );
@@ -409,7 +409,7 @@ LALEndLIGOLwXMLTable (
   {
     ABORT( status, LIGOLWXMLH_EENDT, LIGOLWXMLH_MSGEENDT );
   }
-  myfprintf( xml->fp, LIGOLW_XML_TABLE_FOOTER );
+  (void)myfprintf( xml->fp, LIGOLW_XML_TABLE_FOOTER );
   xml->table = no_table;
   RETURN( status );
 }
@@ -1322,7 +1322,7 @@ int XLALWriteLIGOLwXMLSimBurstTable(
 	static const char func[] = "XLALWriteLIGOLwXMLSimBurstTable";
 	const char *row_head = "\n\t\t\t";
 
-        
+
 
 	if(xml->table != no_table) {
 		XLALPrintError("a table is still open");
@@ -1410,14 +1410,14 @@ int XLALCreateLIGODataFileName(
 )
 {
      static const char func[] = "XLALCreateLIGODataFileName";
-  
+
      INT4 gpsDuration;
-  
+
      /* check input structures */
-     if (!filename || !dataSource || !dataDescription || 
+     if (!filename || !dataSource || !dataDescription ||
 	 !gpsStartTime || !gpsEndTime || !extension)
           XLAL_ERROR(func, XLAL_EFAULT);
-  
+
      /* check the correctnes of the input strings */
      if ( strchr(dataSource, '-') || strchr(dataDescription, '-'))
      {
@@ -1432,8 +1432,8 @@ int XLALCreateLIGODataFileName(
       if (gpsEndTime->gpsNanoSeconds > 0) ++gpsDuration;
 
       /* and here put it all together */
-      LALSnprintf( filename, size, "%s-%s-%d-%d.%s",
-		   dataSource, dataDescription, gpsStartTime->gpsSeconds, 
+      snprintf( filename, size, "%s-%s-%d-%d.%s",
+		   dataSource, dataDescription, gpsStartTime->gpsSeconds,
 		   gpsDuration, extension );
 
       /* return success */

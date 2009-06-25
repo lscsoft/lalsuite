@@ -695,7 +695,7 @@ extern "C" {
              InspiralTemplate    param,
              REAL8               df,
              REAL8Vector        *psd,
-             REAL8               snr,
+             REAL8               lal_nm_snr,
              REAL8              *effDistance
             );
 

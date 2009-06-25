@@ -67,7 +67,7 @@ LALFindChirpBCVFilterSegment (
 {
   UINT4                 j, k, kFinal/*, kOpt*/;
   UINT4                 numPoints;
-  UINT4                 deltaEventIndex;
+  UINT4                 deltaEventIndex = 0;
   UINT4                 ignoreIndex;
   REAL4                 myfmin;
   REAL4                 deltaT, deltaF;
@@ -310,14 +310,14 @@ LALFindChirpBCVFilterSegment (
       CHAR newinfomsg[256];
 
 #if 0
-      LALSnprintf( newinfomsg, sizeof(newinfomsg) / sizeof(*newinfomsg),
+      snprintf( newinfomsg, sizeof(newinfomsg) / sizeof(*newinfomsg),
           "m = %e eta = %e => %e seconds => %d points\n"
           "invSpecTrunc = %d => ignoreIndex = %d\n",
           m, eta, chirpTime, deltaEventIndex,
           input->segment->invSpecTrunc, ignoreIndex );
 #endif
 
-      LALSnprintf( newinfomsg, sizeof(newinfomsg) / sizeof(*newinfomsg),
+      snprintf( newinfomsg, sizeof(newinfomsg) / sizeof(*newinfomsg),
           "chirp time = %e seconds => %d points\n"
           "invSpecTrunc = %d => ignoreIndex = %d\n",
           chirpTime, deltaEventIndex,
@@ -339,7 +339,7 @@ LALFindChirpBCVFilterSegment (
   {
     CHAR newinfomsg[256];
 
-    LALSnprintf( newinfomsg, sizeof(newinfomsg) / sizeof(*newinfomsg),
+    snprintf( newinfomsg, sizeof(newinfomsg) / sizeof(*newinfomsg),
         "filtering from %d to %d\n",
         ignoreIndex, numPoints - ignoreIndex );
     LALInfo( status, newinfomsg );
@@ -366,7 +366,7 @@ LALFindChirpBCVFilterSegment (
     if ( lalDebugLevel & LALINFO )
     {
        CHAR newinfomsg[256];
-       LALSnprintf( newinfomsg, sizeof(newinfomsg) / sizeof(*newinfomsg),
+       snprintf( newinfomsg, sizeof(newinfomsg) / sizeof(*newinfomsg),
               "a1 = %e b1 = %e b2 = %e\n"
               "fFinal = %e deltaF = %e numPoints = %d => kFinal = %d\n",
                a1, b1, b2, fFinal, deltaF, numPoints, kFinal );
@@ -748,7 +748,7 @@ LALFindChirpBCVFilterSegment (
           thisEvent->f_final  = (REAL4) input->fcTmplt->tmplt.fFinal ;
 
           /* set the type of the template used in the analysis */
-          LALSnprintf( thisEvent->search, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
+          snprintf( thisEvent->search, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
               "FindChirpBCV" );
 
           /* set snrsq, chisq, sigma and effDist for this event */
@@ -869,7 +869,7 @@ LALFindChirpBCVFilterSegment (
 
 
     /* set the type of the template used in the analysis */
-    LALSnprintf( thisEvent->search, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
+    snprintf( thisEvent->search, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
         "FindChirpBCV" );
 
     /* set snrsq, chisq, sigma and effDist for this event */

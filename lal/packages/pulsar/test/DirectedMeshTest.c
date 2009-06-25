@@ -173,7 +173,7 @@ LALDTComp()                     LALGetEarthTimes()
 LALCreateFlatMesh()             LALRectIntersect()
 LALStackMetric()                LALProjectMetric()
 LALDMatrixDeterminantErr()      LALDMatrixInverse()
-LALDSymmetricEigenVectors()     LALSnprintf()
+LALDSymmetricEigenVectors()     snprintf()
 \end{verbatim}
 
 \subsubsection*{Notes}
@@ -821,11 +821,11 @@ fprintderr( FILE *fp, REAL8 x, REAL8 dx ) {
       return fprintf( fp, "( 0 +/- %.0f )e%+i", dx*norm, lsd );
     }
     if ( lsd <= 0 ) {
-      LALSnprintf( format, MAXLEN, "%%.%if +/- %%.%if", -lsd, -lsd );
+      snprintf( format, MAXLEN, "%%.%if +/- %%.%if", -lsd, -lsd );
       return fprintf( fp, format, 0.0, dx );
     }
     norm = pow( 10.0, -lsd );
-    LALSnprintf( format, MAXLEN, "0 +/- %%.0f%%0%ii", lsd );
+    snprintf( format, MAXLEN, "0 +/- %%.0f%%0%ii", lsd );
     return fprintf( fp, format, dx*norm, 0 );
   }
 
@@ -833,7 +833,7 @@ fprintderr( FILE *fp, REAL8 x, REAL8 dx ) {
   if ( dx <= 0.0 ) {
     if ( abs( gsd ) > 3 )
       return fprintf( fp, "%.16e", x );
-    LALSnprintf( format, MAXLEN, "%%.%if", 16 - gsd );
+    snprintf( format, MAXLEN, "%%.%if", 16 - gsd );
     return fprintf( fp, format, x );
   }
 
@@ -842,16 +842,16 @@ fprintderr( FILE *fp, REAL8 x, REAL8 dx ) {
     gsd = lsd;
   if ( lsd > 3 || gsd < -3 ) {
     norm = pow( 10.0, -gsd );
-    LALSnprintf( format, MAXLEN, "( %%.%if +/- %%.%if )e%+i",
+    snprintf( format, MAXLEN, "( %%.%if +/- %%.%if )e%+i",
 		 gsd - lsd, gsd - lsd, gsd );
     return fprintf( fp, format, x*norm, dx*norm );
   }
   if ( lsd <= 0 ) {
-    LALSnprintf( format, MAXLEN, "%%.%if +/- %%.%if", -lsd, -lsd );
+    snprintf( format, MAXLEN, "%%.%if +/- %%.%if", -lsd, -lsd );
     return fprintf( fp, format, x, dx );
   }
   norm = pow( 10.0, -lsd );
-  LALSnprintf( format, MAXLEN, "%%.0f%%0%ii +/- %%.0f%%0%ii", lsd,
+  snprintf( format, MAXLEN, "%%.0f%%0%ii +/- %%.0f%%0%ii", lsd,
 	       lsd );
   return fprintf( fp, format, x*norm, 0, dx*norm, 0 );
 }

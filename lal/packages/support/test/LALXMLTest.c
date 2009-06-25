@@ -806,7 +806,7 @@ int findFileInLALDataPath(const char *filename, char **validatedPath)
         }
 
         /* build absolute path */
-        n = LALSnprintf(absolutePath, PATH_MAXLEN, "%s/./%s", workingDir, filename);
+        n = snprintf(absolutePath, PATH_MAXLEN, "%s/./%s", workingDir, filename);
         if(n >= PATH_MAXLEN) {
             /* data file name too long */
             fprintf(stderr, "Absolute path exceeds limit of %i characters!\n", PATH_MAXLEN);
@@ -822,7 +822,7 @@ int findFileInLALDataPath(const char *filename, char **validatedPath)
     /* LAL_DATA_PATH available: scan through all directories in colon-delimited list */
     if((dataPath = LALCalloc(strlen(dataPathEnv)+1, 1)) == NULL)
     {
-        fprintf(stderr, "Can't allocate memory (%i)!\n", strlen(dataPathEnv)+1);
+        fprintf(stderr, "Can't allocate memory (%lu)!\n", strlen(dataPathEnv)+1);
         return XLAL_EFAILED;
     }
 
@@ -845,7 +845,7 @@ int findFileInLALDataPath(const char *filename, char **validatedPath)
         }
 
         /* build absolute path (required by "file" URI scheme) */
-        n = LALSnprintf(absolutePath,
+        n = snprintf(absolutePath,
                         PATH_MAXLEN,
                         "%s/%s/%s",
                         workingDir,

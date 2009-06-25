@@ -362,7 +362,7 @@ FrCache * XLALFrGenerateCache( const CHAR *dirstr, const CHAR *fnptrn )
   FrCache *cache;
   glob_t g;
   int globflags = 0;
-  int i;
+  unsigned int i;
 
   fnptrn = fnptrn ? fnptrn : "*.gwf";
   dirstr = dirstr ? dirstr : ".";
@@ -385,7 +385,7 @@ FrCache * XLALFrGenerateCache( const CHAR *dirstr, const CHAR *fnptrn )
       nextdir = strchr( dirname, ':' );
       if ( nextdir )
         *nextdir++ = 0;
-      LALSnprintf( path, sizeof( path ) - 1, "%s/%s",
+      snprintf( path, sizeof( path ) - 1, "%s/%s",
           *dirname ? dirname : ".", fnptrn );
       glob( path, globflags, NULL, &g );
       fnptrn = path;
@@ -441,7 +441,7 @@ FrCache * XLALFrGenerateCache( const CHAR *dirstr, const CHAR *fnptrn )
         XLALFrDestroyCache( cache );
         XLAL_ERROR_NULL( func, XLAL_ENOMEM );
       }
-      LALSnprintf( file->url, urlsz, "file://localhost%s", path );
+      snprintf( file->url, urlsz, "file://localhost%s", path );
     }
     else /* relative path */
     {
@@ -456,7 +456,7 @@ FrCache * XLALFrGenerateCache( const CHAR *dirstr, const CHAR *fnptrn )
         XLALFrDestroyCache( cache );
         XLAL_ERROR_NULL( func, XLAL_ENOMEM );
       }
-      LALSnprintf( file->url, urlsz, "file://localhost%s/%s", cwd, path );
+      snprintf( file->url, urlsz, "file://localhost%s/%s", cwd, path );
     }
 
     /* extract src, dsc, t0, and dt from file name */
@@ -518,13 +518,13 @@ int XLALFrExportCache( FrCache *cache, const CHAR *fname )
     char dt[TMPSTRLEN + 1];
     int c;
     if ( file->startTime > 0 )
-      LALSnprintf( t0, sizeof( t0 ), "%d", file->startTime );
+      snprintf( t0, sizeof( t0 ), "%d", file->startTime );
     else
       strncpy( t0, "-", sizeof( t0 ) );
     if ( file->duration > 0 )
-      LALSnprintf( dt, sizeof( dt ), "%d", file->duration );
+      snprintf( dt, sizeof( dt ), "%d", file->duration );
     else
-      LALSnprintf( dt, sizeof( dt ), "-" );
+      snprintf( dt, sizeof( dt ), "-" );
 
     c = fprintf( fp, "%s %s %s %s %s\n", file->source ? file->source : "-",
         file->description ? file->description : "-", t0, dt,

@@ -58,7 +58,6 @@ INT4 lalDebugLevel = LALMSGLVL3;
 
 void swap4(int n,char *here);
 int readZM(const char* fname,  float **time,  float **amplitude); 
-int snprintf(char *str,size_t size,const char *format, ...);
 
 int main(int argc, char **argv)
 {

@@ -72,7 +72,7 @@ GetInspiralMoments (
 		InspiralTemplate     *params );
 
 int
-main(int argc, char **argv)
+main(void)
 {
   static LALStatus status;     /* top-level status structure */
   static InspiralTemplate params;
@@ -171,7 +171,7 @@ main(int argc, char **argv)
 
   /* Prepare to print result. */
   {
-    UINT4 j;
+    INT4 j;
     /* Print out the template parameters */
     for (j=0; j<nlist; j++)
     {
@@ -181,13 +181,13 @@ main(int argc, char **argv)
 	    bankParams.x0 = (REAL8) list->data[2*j];
 	    bankParams.x1 = (REAL8) list->data[2*j+1];
 	    LALInspiralValidParams(&status, &valid, bankParams, coarseIn);
-	    if (valid) fprintf(fpr, "%10.4f %10.4f %10.3f %10.3f\n",
+	    if (valid) fprintf(fpr, "%10.4f %10.4f\n",
 			    bankParams.x0, bankParams.x1);
     }
   }
   {
-    UINT4 j;
-    INT4 valid;
+    INT4 j;
+    INT4 local_valid;
 
     static RectangleIn RectIn;
     static RectangleOut RectOut;
@@ -207,8 +207,8 @@ main(int argc, char **argv)
 	RectIn.x0 = bankParams.x0 = (REAL8) list->data[2*j];
 	RectIn.y0 = bankParams.x1 = (REAL8) list->data[2*j+1];
 	LALInspiralValidParams(&status, &valid, bankParams, coarseIn);
-	valid = 1;
-        if (valid)
+	local_valid = 1;
+        if (local_valid)
 	{
 		LALRectangleVertices(&status, &RectOut, &RectIn);
 		fprintf(fpr, "%e %e\n%e %e\n%e %e\n%e %e\n%e %e\n",

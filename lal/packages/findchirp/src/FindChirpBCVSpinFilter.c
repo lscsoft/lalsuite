@@ -145,7 +145,7 @@ LALFindChirpBCVSpinFilterSegment (
 {
   UINT4                 j, k;
   UINT4                 numPoints;
-  UINT4                 deltaEventIndex;
+  UINT4                 deltaEventIndex  = 0;
   UINT4                 ignoreIndex;
   REAL4                 deltaT;
   REAL4                 deltaF;
@@ -695,7 +695,7 @@ LALFindChirpBCVSpinFilterSegment (
           		thisEvent->f_final  = (REAL4) input->fcTmplt->tmplt.fFinal ;
 
           		/* set the type of the template used in the analysis */
-          		LALSnprintf( thisEvent->search,
+          		snprintf( thisEvent->search,
 				LIGOMETA_SEARCH_MAX * sizeof(CHAR),
               			"FindChirpBCVSpin" );
 
@@ -798,7 +798,7 @@ LALFindChirpBCVSpinFilterSegment (
         thisEvent->f_final  = (REAL4) input->fcTmplt->tmplt.fFinal ;
 
        /* set the type of the template used in the analysis */
-       LALSnprintf( thisEvent->search,
+       snprintf( thisEvent->search,
                     LIGOMETA_SEARCH_MAX * sizeof(CHAR),
                    "FindChirpBCVSpin" );
 

@@ -100,7 +100,7 @@ LALInitBarycenter(LALStatus *stat, EphemerisData *edat)
 
     /* check that we could open the file */
     if ( fp1 == NULL ) {
-      LALSnprintf (errmsg, ERRMSGLEN, "%s '%s'\n", LALINITBARYCENTERH_MSGEOPEN, edat->ephiles.earthEphemeris);
+      snprintf (errmsg, ERRMSGLEN, "%s '%s'\n", LALINITBARYCENTERH_MSGEOPEN, edat->ephiles.earthEphemeris);
       errmsg[ERRMSGLEN-1] = '\0';
       ABORT (stat, LALINITBARYCENTERH_EOPEN, errmsg);
     }
@@ -226,7 +226,7 @@ LALInitBarycenter(LALStatus *stat, EphemerisData *edat)
     /* check that we could open the file */
     if ( fp2 == NULL ) {
       LALFree(edat->ephemE);
-      LALSnprintf (errmsg, ERRMSGLEN, "%s '%s'\n", LALINITBARYCENTERH_MSGEOPEN, edat->ephiles.sunEphemeris);
+      snprintf (errmsg, ERRMSGLEN, "%s '%s'\n", LALINITBARYCENTERH_MSGEOPEN, edat->ephiles.sunEphemeris);
       errmsg[ERRMSGLEN-1] = 0;
       ABORT (stat, LALINITBARYCENTERH_EOPEN, errmsg);
     }

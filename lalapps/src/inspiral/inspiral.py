@@ -1966,6 +1966,46 @@ class DBSimplifyNode(pipeline.SqliteNode):
     pipeline.SqliteNode.__init__(self, job)
 
 
+class DBAddInjJob(pipeline.SqliteJob):
+  """
+  A DBAddInj job. The static options are read from the section
+  [dbaddinj] in the ini file.
+  """
+  def __init__(self, cp, dax = False):
+    """
+    @cp: ConfigParser object from which options are read.
+    """
+    exec_name = 'dbaddinj'
+    sections = ['dbaddinj']
+    pipeline.SqliteJob.__init__(self, cp, sections, exec_name, dax)
+
+
+class DBAddInjNode(pipeline.SqliteNode):
+  """
+  A DBAddInj node.
+  """
+  def __init__(self, job ):
+    """
+    @job: a DBAddInj job
+    """
+    pipeline.SqliteNode.__init__(self, job)
+    self.__injection_file = None
+
+  def set_injection_file( self, injection_file ):
+    """
+    @injection_file: Injection file for dbaddinj to
+    add to the database.
+    """
+    self.add_file_opt( 'injection-file', injection_file )
+    self.__injection_file = injection_file
+
+  def get_injection_file( self ):
+    """
+    Returns injection file for this node.
+    """
+    return self._injection_file
+
+
 class ClusterCoincsJob(pipeline.SqliteJob):
   """
   A cluster coincs job. The static options are read from the section

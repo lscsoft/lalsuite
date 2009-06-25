@@ -262,7 +262,7 @@ LALFindChirpSPData (
     /* set low frequency cutoff inverse power spectrum */
     cut = params->fLow / dataSeg->spec->deltaF > 1 ?
       params->fLow / dataSeg->spec->deltaF : 1;
-    LALSnprintf( infoMsg, sizeof(infoMsg)/sizeof(*infoMsg),
+    snprintf( infoMsg, sizeof(infoMsg)/sizeof(*infoMsg),
         "low frequency cut off index = %d\n", cut );
     LALInfo( status, infoMsg );
 
@@ -447,8 +447,8 @@ LALFindChirpSPData (
     fcSeg = &(fcSegVec->data[i]);
     if
     (
-    (fcSeg->dataPower->data->data[fcSeg->dataPower->data->length - 1 ] < PSDsum)    &&
-    (fcSeg->dataPower->data->data[fcSeg->dataPower->data->length - 1 ] > 0)
+    ((fcSeg->dataPower->data->data[fcSeg->dataPower->data->length - 1 ] < PSDsum)    &&
+    (fcSeg->dataPower->data->data[fcSeg->dataPower->data->length - 1 ] > 0))
     ||
     PSDsum == 0
     )

@@ -29,7 +29,7 @@ Generates a parametrized post-Newtonian inspiral waveform.
 
 \subsubsection*{Usage}
 \begin{verbatim}
-GeneratePPNAmpCorInspiralTest [-m m1 m2] [-r dist] [-i inc phii psi] [-f fmin fmax]
+GeneratePPNAmpCorInspiralTest [-m m1 m2] [-r dist] [-i inc phii psi] [-f f_min f_max]
                         [-t dt] [-p order amp] [-d debuglevel] [-o outfile] [-g FF FFTfile]
                         [-s taper]
 \end{verbatim}
@@ -98,7 +98,7 @@ int lalDebugLevel = 1;
 #define AMP (5)
 
 /* Usage format string. */
-#define USAGE "Usage: %s [-g FFToutfile] [-m m1 m2] [-r dist] [-i inc phii psi]\n\t[-f fmin fmax] [-t dt] [-p order amp] [-d debuglevel] [-o outfile]\n\t [-s taper]"
+#define USAGE "Usage: %s [-g FFToutfile] [-m m1 m2] [-r dist] [-i inc phii psi]\n\t[-f f_min f_max] [-t dt] [-p order amp] [-d debuglevel] [-o outfile]\n\t [-s taper]"
 
 /* Maximum output message length. */
 #define MSGLENGTH (1024)
@@ -204,7 +204,7 @@ main(int argc, char **argv)
   REAL4 m1 = M1, m2 = M2;       /* binary masses */
   REAL4 dist = DIST;            /* binary distance */
   REAL4 inc = 0.0, phii = 0.0, psi = LAL_PI_2;  /* inclination, coalescence phase, and polarization angle */
-  REAL4 fmin = FMIN, fmax=FMAX; /* start and stop frequencies */
+  REAL4 f_min = FMIN, f_max=FMAX; /* start and stop frequencies */
   REAL8 dt = DT;                /* sampling interval */
   INT4 order = ORDER;           /* PN order */
   INT4 amp = AMP;               /* Amplitude switches */
@@ -281,8 +281,8 @@ main(int argc, char **argv)
     else if ( !strcmp( argv[arg], "-f" ) ) {
       if ( argc > arg + 2 ) {
 	arg++;
-	fmin = atof( argv[arg++] );
-	fmax = atof( argv[arg++] );
+	f_min = atof( argv[arg++] );
+	f_max = atof( argv[arg++] );
       }else{
 	ERROR( GENERATEPPNINSPIRALTESTC_EARG,
 	       GENERATEPPNINSPIRALTESTC_MSGEARG, 0 );
@@ -395,8 +395,8 @@ main(int argc, char **argv)
   params.phi = 0.0;
   params.psi = psi;
   params.d = dist*LAL_PC_SI*1.0e3;
-  params.fStartIn = fmin;
-  params.fStopIn = fmax;
+  params.fStartIn = f_min;
+  params.fStopIn = f_max;
 
   /* Amplitude switches */
   params.ampOrder = amp;
@@ -510,12 +510,12 @@ main(int argc, char **argv)
   }
 
   /* Print termination information. */
-  LALSnprintf( message, MSGLENGTH, "%d: %s", params.termCode,
+  snprintf( message, MSGLENGTH, "%d: %s", params.termCode,
 	       params.termDescription );
   INFO( message );
 
   /* Print coalescence phase.*/
-  LALSnprintf( message, MSGLENGTH,
+  snprintf( message, MSGLENGTH,
 	       "Waveform ends %.3f cycles before coalescence",
 	       -waveform.phi->data->data[waveform.phi->data->length-1]
 	       / (REAL4)( LAL_TWOPI ) );
@@ -535,7 +535,7 @@ main(int argc, char **argv)
 
   /* Check if sampling interval was too large. */
   if ( params.dfdt > 2.0 ) {
-    LALSnprintf( message, MSGLENGTH,
+    snprintf( message, MSGLENGTH,
 		 "Waveform sampling interval is too large:\n"
 		 "\tmaximum df*dt = %f", params.dfdt );
     WARNING( message );

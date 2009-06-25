@@ -23,6 +23,8 @@
 #ifndef _GETOPT_H
 #define _GETOPT_H 1
 
+#pragma GCC system_header
+
 #ifdef	__cplusplus
 extern "C" {
 #endif

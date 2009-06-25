@@ -20,6 +20,8 @@
 #ifndef _LALFRAMEIO_H
 #define _LALFRAMEIO_H
 
+#pragma GCC system_header
+
 #include <FrameL.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LALCalibration.h>
