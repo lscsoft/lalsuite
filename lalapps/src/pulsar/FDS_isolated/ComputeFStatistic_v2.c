@@ -307,6 +307,7 @@ static const FstatCandidate empty_FstatCandidate;
  */
 int main(int argc,char *argv[])
 {
+  static const char *fn = "main()";
   LALStatus status = blank_status;	/* initialize status */
 
   FILE *fpFstat = NULL;
@@ -446,9 +447,18 @@ int main(int argc,char *argv[])
         }
       else
         {
-          LAL_CALL( ComputeFStat_REAL4(&status, &Fstat, &dopplerpos, GV.multiSFTs, GV.multiNoiseWeights,
-                                       GV.multiDetStates, GV.CFparams.Dterms, &cfBuffer4 ), &status );
-        }
+          REAL4 F;
+
+          XLALDriverFstatGPU ( &F, &dopplerpos, GV.multiSFTs, GV.multiNoiseWeights, GV.multiDetStates, GV.CFparams.Dterms, &cfBuffer4 );
+          if ( xlalErrno ) {
+            XLALPrintError ("%s: XLALDriverFstatGPU() failed with errno=%d\n", fn, xlalErrno );
+            return xlalErrno;
+          }
+          /* this function only returns F, not Fa, Fb */
+          Fstat = empty_Fcomponents;
+          Fstat.F = F;
+
+        } /* if GPUready==true */
 
       /* Progress meter */
       templateCounter += 1.0;

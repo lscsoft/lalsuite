@@ -64,10 +64,11 @@ typedef struct {
  * For the first call of ComputeFStat() the pointer-entries should all be NULL.
  */
 typedef struct {
-  REAL8 Alpha, Delta;				/**< skyposition of candidate */
-  MultiDetectorStateSeries *multiDetStates;	/**< buffer for each detStates (store pointer) and skypos */
-  MultiSSBtimes_REAL4 *multiSSB;
-  MultiAMCoeffs *multiAMcoef;
+  REAL8 Alpha, Delta;					/**< target skyposition of previous search */
+  const MultiDetectorStateSeries *multiDetStates;	/**< input detStates series used in previous search */
+
+  MultiSSBtimes_REAL4 *multiSSB;			/**< SSB timings computed in previous search */
+  MultiAMCoeffs *multiAMcoef;				/**< antenna-pattern coeffs computed in previous search */
 } ComputeFBuffer_REAL4;
 
 
@@ -85,21 +86,34 @@ typedef struct {
 extern const ComputeFBuffer_REAL4 empty_ComputeFBuffer_REAL4;
 
 /* ---------- exported API prototypes ---------- */
-void ComputeFStat_REAL4 ( LALStatus *status,
-                          Fcomponents *Fstat,
-                          const PulsarDopplerParams *doppler,
-                          const MultiSFTVector *multiSFTs,
-                          const MultiNoiseWeights *multiWeights,
-                          const MultiDetectorStateSeries *multiDetStates,
-                          UINT4 Dterms,
-                          ComputeFBuffer_REAL4 *cfBuffer );
+int
+XLALDriverFstatGPU ( REAL4 *Fstat,
+                     const PulsarDopplerParams *doppler,
+                     const MultiSFTVector *multiSFTs,
+                     const MultiNoiseWeights *multiWeights,
+                     const MultiDetectorStateSeries *multiDetStates,
+                     UINT4 Dterms,
+                     ComputeFBuffer_REAL4 *cfBuffer
+                     );
 
-int XLALComputeFaFb_REAL4 ( Fcomponents_REAL4 *FaFb,
-                            const SFTVector *sfts,
-                            const PulsarSpins_REAL4 spins,
-                            const SSBtimes_REAL4 *tSSB,
-                            const AMCoeffs *amcoe,
-                            UINT4 Dterms);
+void
+XLALCoreFstatGPU (REAL4 *Fstat,
+                  PulsarSpins_REAL4 *fkdot4,
+                  const MultiSFTVector *multiSFTs,
+                  MultiSSBtimes_REAL4 *multiSSB4,
+                  MultiAMCoeffs *multiAMcoef,
+                  UINT4 Dterms
+                  );
+
+
+void
+XLALComputeFaFb_REAL4 ( Fcomponents_REAL4 *FaFb,
+                        const SFTVector *sfts,
+                        const PulsarSpins_REAL4 *fkdot4,
+                        const SSBtimes_REAL4 *tSSB,
+                        const AMCoeffs *amcoe,
+                        UINT4 Dterms);
+
 
 MultiSSBtimes_REAL4 *
 XLALGetMultiSSBtimes_REAL4 ( const MultiDetectorStateSeries *multiDetStates,
