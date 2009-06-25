@@ -27,7 +27,7 @@ NRCSID (LPCTESTC,"$Id$");
 
 INT4 lalDebugLevel = 2;
 
-int main() {
+int main( void ) {
 
   static LALStatus status;
   REAL4Vector x;

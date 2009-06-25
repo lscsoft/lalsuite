@@ -114,7 +114,7 @@ int main(int argc, char **argv)
   INT4         i;
   INT4         seed=0;
   INT4         verbose=0;
-  INT4Vector   *index=NULL;
+  INT4Vector   *lal_index=NULL;
   REAL4Vector  *data=NULL;
   RandomParams *params=NULL;
 
@@ -141,7 +141,7 @@ int main(int argc, char **argv)
   test_xlal_routines();
 
   /* Create vectors and random parameters. */
-  LALI4CreateVector(&stat,&index,NPTS);
+  LALI4CreateVector(&stat,&lal_index,NPTS);
   if(stat.statusCode){
     LALPrintError("%s: %s\n",argv[0],SORTTEST_MSGESUB);
     REPORTSTATUS(&stat);
@@ -172,7 +172,7 @@ int main(int argc, char **argv)
   }
 
   /* Rank data; print data and ranks. */
-  LALSHeapRank(&stat,index,data);
+  LALSHeapRank(&stat,lal_index,data);
   if(stat.statusCode){
     LALPrintError("%s: %s\n",argv[0],SORTTEST_MSGESUB);
     REPORTSTATUS(&stat);
@@ -182,12 +182,12 @@ int main(int argc, char **argv)
     fprintf(stdout,  " Data    Rank\n");
   for(i=0;i<NPTS;i++)
     if ( verbose )
-      fprintf(stdout," %4.2f     %2i\n",data->data[i],index->data[i]);
+      fprintf(stdout," %4.2f     %2i\n",data->data[i],lal_index->data[i]);
   if ( verbose )
     fprintf(stdout,"\n");
 
   /* Index and sort data; print sorted data and indecies. */
-  LALSHeapIndex(&stat,index,data);
+  LALSHeapIndex(&stat,lal_index,data);
   if(stat.statusCode){
     LALPrintError("%s: %s\n",argv[0],SORTTEST_MSGESUB);
     REPORTSTATUS(&stat);
@@ -203,10 +203,10 @@ int main(int argc, char **argv)
     fprintf(stdout,  "Sorted  Index\n");
   for(i=0;i<NPTS;i++)
     if ( verbose )
-      fprintf(stdout," %4.2f     %2i\n",data->data[i],index->data[i]);
+      fprintf(stdout," %4.2f     %2i\n",data->data[i],lal_index->data[i]);
 
   /* Free and clear. */
-  LALI4DestroyVector(&stat,&index);
+  LALI4DestroyVector(&stat,&lal_index);
   if(stat.statusCode){
     LALPrintError("%s: %s\n",argv[0],SORTTEST_MSGESUB);
     REPORTSTATUS(&stat);

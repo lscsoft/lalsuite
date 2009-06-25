@@ -33,7 +33,7 @@ the model given in Jaranowski, Krolak, and Schutz gr-qc/9804014.
 
 /* Changes:
 05/14/03 gam: Change vertexLongitudeDegrees and vertexLatitudeDegrees to vertexLongitudeRadians vertexLatitudeRadians when using FrDetector structure.
-05/15/03 gam: xArmAzimuthRadians and yArmAzimuthRadians are now measured clockwise from North; gamma is the angle to the bisector of the arms, measured
+05/15/03 gam: xArmAzimuthRadians and yArmAzimuthRadians are now measured clockwise from North; lal_gamma is the angle to the bisector of the arms, measured
               counterclockwise from East.
 05/20/03 gam: Make code compatible with LAL instead of LALapps.
 05/20/03 gam: Last argument in LALGPStoLMST1 changed to type LALMSTUnitsAndAcc.
@@ -53,7 +53,7 @@ the model given in Jaranowski, Krolak, and Schutz gr-qc/9804014.
 10/13/03 gam: Use independent code from Jolien Creighton to convert GPS to Sidereal time.
 10/13/03 gam: Include GEO detector as an option.
 10/13/03 gam: Use constants independent of LAL.
-10/14/04 gam: Update definition of gamma when angle between arms, zeta, != pi/2.
+10/14/04 gam: Update definition of lal_gamma when angle between arms, zeta, != pi/2.
 10/14/04 gam: Change input RA, DEC and orientation angle (polarization angle) in config file to be in radians.
 10/14/04 gam: Use independent detector geometry values when doing independent calculation.
 10/15/04 gam: Fix bug M_PI not defined when configuring lal with --with-gcc-flags.
@@ -689,9 +689,9 @@ void GenerateResponseFuncNotUsingLAL(LALSource *pulsar, REAL8 inputXArmAzimuthRa
 
 void PrintLALDetector(LALDetector *detector)
 {
-  /* REAL8 gamma = detector->frDetector.xArmAzimuthRadians + LAL_PI_4; */ /* 05/15/03 gam */
-  /* REAL8 gamma = LAL_PI_2 + LAL_PI_4 - detector->frDetector.xArmAzimuthRadians; */ /* 10/14/04 gam */
-  REAL8 gamma = ((REAL8)LAL_PI_2) + zeta/2.0 - detector->frDetector.xArmAzimuthRadians;
+  /* REAL8 lal_gamma = detector->frDetector.xArmAzimuthRadians + LAL_PI_4; */ /* 05/15/03 gam */
+  /* REAL8 lal_gamma = LAL_PI_2 + LAL_PI_4 - detector->frDetector.xArmAzimuthRadians; */ /* 10/14/04 gam */
+  REAL8 lal_gamma = ((REAL8)LAL_PI_2) + zeta/2.0 - detector->frDetector.xArmAzimuthRadians;
   REAL8 computedZeta = fabs(detector->frDetector.xArmAzimuthRadians - detector->frDetector.yArmAzimuthRadians); /* 10/14/04 gam */
 
   /* 10/14/04 gam; add in rest of structure and reformat: */
@@ -719,7 +719,7 @@ void PrintLALDetector(LALDetector *detector)
            detector->frDetector.xArmAltitudeRadians,
            detector->frDetector.yArmAltitudeRadians);
 
-  fprintf( stdout, "Detector angle between arms and angle to arm bisector counter-clockwise from east = %.11g, %.11g\n", computedZeta, gamma);
+  fprintf( stdout, "Detector angle between arms and angle to arm bisector counter-clockwise from east = %.11g, %.11g\n", computedZeta, lal_gamma);
   fprintf( stdout, "\n" );
   return;
 }

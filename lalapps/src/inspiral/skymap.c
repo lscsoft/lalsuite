@@ -280,7 +280,7 @@ void load_metadata(char* file, int detector)
             fprintf(stderr, "error: failed to read single inspiral table from file %s\n", file);
             exit(1);
         }
-        w[detector] = sqrt(a->sigmasq);
+        w[detector] = 1.0 / sqrt(a->sigmasq);
         greenwich = fmod(XLALGreenwichMeanSiderealTime(&(a->end_time)), LAL_TWOPI);
         /*
         fprintf(stderr, "GPS %d -> GMS %e -> RAD %e \n", a->end_time.gpsSeconds, XLALGreenwichMeanSiderealTime(&(a->end_time)), greenwich);
@@ -346,7 +346,14 @@ void analyze(void)
     double* accumulator;
     int begin[3], end[3];
     
-    double min_w;
+    double min_w = w[0];
+
+    for (i = 0; i != 3; ++i)
+    {
+        if (w[i] < min_w) min_w = w[i];
+    }
+
+    for (i = 0; i != 3; ++i) w[i] /= min_w;
 
     begin[0] = 0;
     begin[1] = begin[0];
@@ -480,7 +487,11 @@ void analyze(void)
     /*   
      *  the sky tiles implied by the frequency) 
      */
-    plan = XLALSkymapConstructPlanMN(frequency, dec_res, ra_res);  
+    if (!(plan = XLALSkymapConstructPlanMN(frequency, dec_res, ra_res)))
+    {
+        fprintf(stderr, "XLALSkymapConstructPlanMN failed");
+        exit(1);
+    }
     /*
      *  Allocate a chunk of memory tto hold the sky map in the internal 
      *  timing format
@@ -490,11 +501,18 @@ void analyze(void)
     /*
      *  Generate the skymap
      */
-    XLALSkymapEllipticalHypothesis(plan, accumulator, s[0], w, begin, end, x, 0);
+    if (XLALSkymapEllipticalHypothesis(plan, accumulator, s[0], w, begin, end, x, 0))
+    {
+        fprintf(stderr, "XLALSkymapEllipticalHypothesis failed");
+        exit(1);
+    }
     for (i = 1; i != NSIGMA; ++i)
     {
-
-        XLALSkymapEllipticalHypothesis(plan, raw, s[i], w, begin, end, x, 0);
+        if (XLALSkymapEllipticalHypothesis(plan, raw, s[i], w, begin, end, x, 0))
+        {
+            fprintf(stderr, "XLALSkymapEllipticalHypothesis failed");
+            exit(1);
+        }
         XLALSkymapSum(plan, accumulator, accumulator, raw);
     }
 
@@ -594,7 +612,7 @@ void analyze(void)
                 for (i = 0; i != m; ++i)
                 {
                     double dec;
-                    dec = acos(1. - (i + 0.5) * (2. / m));
+                    dec = LAL_PI_2 - acos(1. - (i + 0.5) * (2. / m));
                     gzprintf(h, "%.10e %.10e %.10e\n", ra, dec, (render[i + m * j]));
                 }
             }

@@ -145,7 +145,6 @@ LALInspiralComputeBCVMetric(
 int
 main(int argc, char **argv)
 {
-  INT4 arg;
   UINT4 dim;                 /* dimension of parameter space */
   static LALStatus status;     /* top-level status structure */
   REAL4 mismatch = MISMATCH; /* maximum mismatch level */
@@ -162,6 +161,8 @@ main(int argc, char **argv)
   REAL8 samplingRate;
   void (*noisemodel)(LALStatus*,REAL8*,REAL8) = LALLIGOIPsd;
   InspiralMomentsEtc moments;
+
+  argc = 0;
 
 /* Number of templates is nlist */
 

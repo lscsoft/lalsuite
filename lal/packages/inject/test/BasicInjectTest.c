@@ -454,7 +454,7 @@ main(int argc, char **argv)
     }
 
     /* Read header. */
-    ok &= ( fscanf( fp, "# epoch = %Li\n", &epoch ) == 1 );
+    ok &= ( fscanf( fp, "# epoch = %lld\n", &epoch ) == 1 );
     I8ToLIGOTimeGPS( &( detector.transfer->epoch ), epoch );
     ok &= ( fscanf( fp, "# f0 = %lf\n", &( detector.transfer->f0 ) )
 	    == 1 );
@@ -516,7 +516,7 @@ main(int argc, char **argv)
     }
 
     /* Read header. */
-    ok &= ( fscanf( fp, "# epoch = %Li\n", &epoch ) == 1 );
+    ok &= ( fscanf( fp, "# epoch = %lld\n", &epoch ) == 1 );
     I8ToLIGOTimeGPS( &( output.epoch ), epoch );
     ok &= ( fscanf( fp, "# deltaT = %lf\n", &( output.deltaT ) )
 	    == 1 );
@@ -579,7 +579,7 @@ main(int argc, char **argv)
     PPNParamStruc ppnParams;       /* wave generation parameters */
     REAL4 m1, m2, dist, inc, phic; /* unconverted parameters */
     CoherentGW waveform;           /* amplitude and phase structure */
-    REAL4TimeSeries signal;        /* GW signal */
+    REAL4TimeSeries signalvec;     /* GW signal */
     REAL8 time;                    /* length of GW signal */
     CHAR timeCode;                 /* code for signal time alignment */
     CHAR message[MSGLEN];          /* warning/info messages */
@@ -639,17 +639,17 @@ main(int argc, char **argv)
       waveform.f->epoch = waveform.phi->epoch = waveform.a->epoch;
 
       /* Generate and inject signal. */
-      signal.epoch = waveform.a->epoch;
-      signal.epoch.gpsSeconds -= 1;
-      signal.deltaT = output.deltaT/4.0;
-      signal.f0 = 0;
-      signal.data = NULL;
-      time = ( time + 2.0 )/signal.deltaT;
-      SUB( LALSCreateVector( &stat, &( signal.data ), (UINT4)time ),
+      signalvec.epoch = waveform.a->epoch;
+      signalvec.epoch.gpsSeconds -= 1;
+      signalvec.deltaT = output.deltaT/4.0;
+      signalvec.f0 = 0;
+      signalvec.data = NULL;
+      time = ( time + 2.0 )/signalvec.deltaT;
+      SUB( LALSCreateVector( &stat, &( signalvec.data ), (UINT4)time ),
 	   &stat );
-      SUB( LALSimulateCoherentGW( &stat, &signal, &waveform,
+      SUB( LALSimulateCoherentGW( &stat, &signalvec, &waveform,
 				  &detector ), &stat );
-      SUB( LALSI2InjectTimeSeries( &stat, &output, &signal, params ),
+      SUB( LALSI2InjectTimeSeries( &stat, &output, &signalvec, params ),
 	   &stat );
       SUB( LALSDestroyVectorSequence( &stat, &( waveform.a->data ) ),
 	   &stat );
@@ -658,7 +658,7 @@ main(int argc, char **argv)
       LALFree( waveform.a );
       LALFree( waveform.f );
       LALFree( waveform.phi );
-      SUB( LALSDestroyVector( &stat, &( signal.data ) ), &stat );
+      SUB( LALSDestroyVector( &stat, &( signalvec.data ) ), &stat );
     }
 
     /* If there is no source file, inject only one source. */
@@ -684,7 +684,7 @@ main(int argc, char **argv)
     }
     epoch = 1000000000LL*(INT8)( output.epoch.gpsSeconds );
     epoch += (INT8)( output.epoch.gpsNanoSeconds );
-    fprintf( fp, "# epoch = %Li\n", epoch );
+    fprintf( fp, "# epoch = %lld\n", epoch );
     fprintf( fp, "# deltaT = %23.16e\n", output.deltaT );
     for ( i = 0; i < output.data->length; i++ )
       fprintf( fp, "%8.1f\n", (REAL4)( output.data->data[i] ) );
