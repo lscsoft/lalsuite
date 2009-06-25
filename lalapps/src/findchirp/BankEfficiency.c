@@ -95,6 +95,19 @@ main (INT4 argc, CHAR **argv )
   lal_errhandler = LAL_ERR_EXIT;
   lalDebugLevel = 0;
   templateBank.snglInspiralTable = NULL;
+  memset( &templateBank, 0, sizeof( MetadataTable ) );
+  memset( &randIn, 0, sizeof( RandomInspiralSignalIn ) );
+  memset( &signal, 0, sizeof( REAL4Vector ) );
+  memset( &mybank, 0, sizeof( Mybank ) );
+  memset( &insptmplt, 0, sizeof( InspiralTemplate ) );
+  memset( &coarseBankIn, 0, sizeof( InspiralCoarseBankIn ) );
+  memset( &correlation, 0, sizeof( REAL4Vector ) );
+  memset( &bankefficiencyBCV, 0, sizeof( BankEfficiencyBCV ) );
+  memset( &overlapin, 0, sizeof( InspiralWaveOverlapIn ) );
+  memset( &overlapOutputThisTemplate, 0, sizeof( OverlapOutputIn ) );
+  memset( &overlapOutputBestTemplate, 0, sizeof( OverlapOutputIn ) );
+  memset( &simulation, 0, sizeof( BankEfficiencySimulation ) );
+
 
   /* --- Initialization of structures related to all the user parameters --- */
   BankEfficiencyParametersInitialization(&coarseBankIn, &randIn, &userParam);
