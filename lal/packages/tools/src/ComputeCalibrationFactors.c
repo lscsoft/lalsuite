@@ -132,7 +132,7 @@ void LALComputeCalibrationFactors(
       CALIBRATIONH_ENULL, CALIBRATIONH_MSGENULL );
 
   f0 = params->lineFrequency;
-
+  
   G0 = params->openloop;
   D0 = params->digital;
   W0 = params->whitener;
@@ -161,7 +161,7 @@ void LALComputeCalibrationFactors(
   /* De-whiten DARM_CTRL */
   if(W0.re != 0 && W0.im != 0)
     {
-     cmul( &DARM_CTRL, &DARM_CTRL, &W0);
+     cmul( &DARM_CTRL, &DARM_CTRL, &W0); 
     }
 
   output->darm=DARM_CTRL;
@@ -180,12 +180,12 @@ void LALComputeCalibrationFactors(
     s = b * c + a * s;
     c = tmp;
   }
-
+  
   AS_Q.re *= params->asQ->deltaT;
   AS_Q.im *= -params->asQ->deltaT;
 
   output->asq=AS_Q;
-
+ 
   /* filter EXC against sinusoids at f0 */
   EXC.re = EXC.im = 0;
   a = cos( 2.0 * LAL_PI * f0 * params->exc->deltaT );
@@ -206,7 +206,7 @@ void LALComputeCalibrationFactors(
 
   output->exc=EXC;
 
-  if (( fabs( EXC.re ) < tiny && fabs( EXC.im ) < tiny )) /* check on DARM_CTRL and/or AS_Q too?? */
+  if (( fabs( EXC.re ) < tiny && fabs( EXC.im ) < tiny )) /* check on DARM_CTRL too?? */
   {
     output->alphabeta.re=0.0;
     output->alphabeta.im=0.0;
