@@ -144,6 +144,10 @@ LALTracksearchFindLambdaMean(
   REAL8 lowerThresh=0;/* Value set from upperThresh */
   REAL8 myGaussian=0;
   REAL8 myFloor=10e20;/*Lowest value in TFR */
+  INT4        lowerFRow=-1;
+  INT4        upperFRow=-1;
+  REAL8       binPerHz=0;
+
   INITSTATUS(status,"LALTracksearchFindLambdaMean", TSDATAC);
   ATTATCHSTATUSPTR (status);
   
@@ -152,6 +156,28 @@ LALTracksearchFindLambdaMean(
   sumX=0;
   sumXSqr=0;
   current=0;
+  /*
+   * If there was band passing determine regions of F to 
+   * calculate the Lambda values inside of band passes region
+   */
+  binPerHz=((map.fRow/2+1)/(searchParams->SamplingRate/2.0));
+  if (searchParams->highPass > 0)
+    {
+      lowerFRow=floor(binPerHz*searchParams->highPass); 
+    }
+  else
+    {
+      lowerFRow=0;
+    }
+  if (searchParams->lowPass > 0)
+    {
+      upperFRow=ceil(binPerHz*searchParams->lowPass); 
+    }
+  else
+    {
+      upperFRow=map.fRow/2+1;
+    }
+
   for (i = 0;i < map.tCol;i++)
     { 
       for (j = 0;j <(map.fRow/2+1);j++)
@@ -210,20 +236,49 @@ LALTracksearchFindLambdaMedian(
   REAL8       upperThresh=0;
   REAL8       lowerThresh=0;
   REAL8       myGaussian=0;
+  REAL8       binPerHz=0;
   INT4        count=0;/*Count the number of elements inserted into
 			vector*/
   INT4        i=0;/*Index*/
   INT4        j=0;/*Index*/
   INT4        k=0;/*Index*/
+  INT4        lowerFRow=-1;
+  INT4        upperFRow=-1;
 
   INITSTATUS(status,"LALTracksearchFindLambdaMedian", TSDATAC);
   ATTATCHSTATUSPTR (status);
+  /*
+   * If there was band passing determine regions of F to 
+   * calculate the Lambda values inside of band passes region
+   */
+  binPerHz=((map.fRow/2+1)/(searchParams->SamplingRate/2.0));
+  if (searchParams->highPass > 0)
+    {
+      lowerFRow=floor(binPerHz*searchParams->highPass); 
+    }
+  else
+    {
+      lowerFRow=0;
+    }
+  if (searchParams->lowPass > 0)
+    {
+      upperFRow=ceil(binPerHz*searchParams->lowPass); 
+    }
+  else
+    {
+      upperFRow=map.fRow/2+1;
+    }
+
   /*Read out pixel h from map into vector for sorting*/
   count=((map.tCol)*(map.fRow/2+1));
+  count=(map.tCol*(upperFRow-lowerFRow));
+  if (count < map.tCol)
+    ABORTXLAL(status);
+
   vector=(REAL8*)LALMalloc(count*sizeof(REAL8));
   for (i = 0;i < map.tCol;i++)
     { 
-      for (j = 0;j <(map.fRow/2+1);j++)
+      for (j = lowerFRow;j <(upperFRow);j++)
 	{
 	  /*fprintf(stdout,"%i %i %i %i %f\n",i,j,k,count,map.map[i][j]);*/
 	  vector[k]=map.map[i][j];

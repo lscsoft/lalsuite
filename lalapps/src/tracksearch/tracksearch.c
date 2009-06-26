@@ -1104,6 +1104,8 @@ void LALappsTrackSearchInitialize(
       if ( params->overlapFlag == 0)
 	{
 	  params->NumSeg = floor(params->TimeLengthPoints/params->SegLengthPoints);
+	  params->discardTLP=(params->TimeLengthPoints)%(params->SegLengthPoints);
+	  params->TimeLengthPoints=params->TimeLengthPoints-params->discardTLP;
 	}
       else
 	{
@@ -1694,21 +1696,6 @@ void LALappsGetFrameData(LALStatus*          status,
 	}
       /* End of error for invalid data types in frame file.*/
 
-      if (params->verbosity >= printFiles)
-	{
-	  if (tmpData->data->length > 3690480)
-	    {
-	      print_real4tseries(tmpData,"RawOriginalInputTimeSeries.diag");
-	      print_lalUnit(tmpData->sampleUnits,"RawOriginalInputTimeSeries_Units.diag");
-	    }
-	  else
-	    {
-	      fprintf(stderr,"RawOriginalInputTimeSeries.diag Too Large More that 3690480 points.\n");
-	      fprintf(stderr,"File will not be dumped to disk.\n");
-	      fflush(stderr);
-	    }
-	}
-
       /*
        * Prepare for the resample if needed or just copy the data so send
        * back
@@ -1733,11 +1720,7 @@ void LALappsGetFrameData(LALStatus*          status,
 		fprintf(stdout,"Done Resampling input data.\n");
 		fflush(stdout);
 	    }
-	  if (params->verbosity >= printFiles)
-	    {
-	      print_real4tseries(tmpData,"ResampledOriginalInputTimeSeries.diag");
-	      print_lalUnit(tmpData->sampleUnits,"ResampledlOriginalInputTimeSeries_Units.diag");
-	    }
+
 	  /*
 	   * Copy only the valid data and fill the returnable metadata
 	   */
@@ -1901,7 +1884,7 @@ void LALappsDoTrackSearch(
    * the map and use them to run the analysis
    */
   /*
-   * DO THE AUTO ADJUSTMENTS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   * DO THE AUTO ADJUSTMENTS!!!
    */
   if (params.autoLambda)
     {
