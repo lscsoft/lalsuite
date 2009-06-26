@@ -13,8 +13,9 @@ fi
 
 ##---------- names of codes and input/output files
 mfd_code="${injectdir}lalapps_Makefakedata_v4"
-cfs_code_orig="${builddir}lalapps_ComputeFStatistic_v2_orig"
-cfs_code_test="${builddir}lalapps_ComputeFStatistic_v2"
+saf_code="${builddir}lalapps_SemiAnalyticF"
+cfs_code="${builddir}lalapps_ComputeFStatistic"
+cfsv2_code="${builddir}lalapps_ComputeFStatistic_v2"
 cmp_code="${builddir}lalapps_compareFstats"
 
 SFTdir="./testSFTs"
@@ -33,31 +34,30 @@ if [ -z "$LAL_DATA_PATH" ]; then
     fi
 fi
 
-Ftolerance=0.01
+Ftolerance=0.05
 # ---------- fixed parameter of our test-signal
 Tsft=1800;
 startTime=711595934
 refTime=701595833  ## $startTime
 duration=144000		## 40 hours
 
-mfd_FreqBand=5.0;
+mfd_FreqBand=2.0;
 
 Alpha=2.0
 Delta=-0.5
 
-h0=0.1
+h0=1
 cosi=-0.3
 
 psi=0.6
 phi0=1.5
 
-Freq=1000.12345
+Freq=100.12345
 mfd_fmin=$(echo $Freq $mfd_FreqBand | awk '{printf "%g", $1 - $2 / 2.0}');
 
-f1dot=-1e-7;
-f2dot=1e-14
+f1dot=-1e-10;
 
-noiseSqrtSh=1
+noiseSqrtSh=5
 
 ## ------------------------------------------------------------
 
@@ -89,9 +89,9 @@ fi
 # this part of the command-line is compatible with SemiAnalyticF:
 saf_CL=" --Alpha=$Alpha --Delta=$Delta --IFO=$IFO --Tsft=$Tsft --startTime=$startTime --duration=$duration --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0"
 # concatenate this with the mfd-specific switches:
-mfd_CL="${saf_CL} --fmin=$mfd_fmin --Band=$mfd_FreqBand --Freq=$Freq --outSFTbname=$SFTdir --f1dot=$f1dot --f2dot=$f2dot --refTime=$refTime"
+mfd_CL="${saf_CL} --fmin=$mfd_fmin --Band=$mfd_FreqBand --Freq=$Freq --outSFTbname=$SFTdir/testSFT --f1dot=$f1dot --refTime=$refTime --outSFTv1"
 if [ "$haveNoise" = true ]; then
-    mfd_CL="$mfd_CL --noiseSqrtSh=$sqrtSh"; ## --randSeed=1";
+    mfd_CL="$mfd_CL --noiseSqrtSh=$sqrtSh";
 fi
 
 cmdline="$mfd_code $mfd_CL";
@@ -102,35 +102,55 @@ if ! eval $cmdline; then
 fi
 
 echo
+echo -n "Running '$saf_code' ... "
+cmdline="$saf_code $saf_CL --sqrtSh=$sqrtSh"
+echo $cmdline
+if ! resF=`eval $cmdline 2> /dev/null`; then
+    echo "Error ... something failed running '$saf_code' ..."
+    exit 1;
+fi
+echo  "ok."
+res2F=`echo $resF | awk '{printf "%g", 2.0 * $1}'`
+echo "The SemiAnalyticF calculations predicts: 2F = $res2F"
+
+echo
 echo "----------------------------------------------------------------------"
-echo "STEP 2: run original CFS_v2 with perfect match"
+echo "STEP 2: run CFS_v1 with perfect match"
 echo "----------------------------------------------------------------------"
 echo
-outfile_orig="Fstat_v2_orig.dat";
+outfile_v1="Fstat_v1.dat";
 ## common cmdline-options for v1 and v2
-cfs_CL="--IFO=$IFO --Freq=$Freq --Alpha=$Alpha --Delta=$Delta --f1dot=$f1dot --f2dot=$f2dot --DataFiles='$SFTdir/*.sft' --refTime=$refTime --TwoFthreshold=0"
+cfs_CL="--IFO=$IFO --Freq=$Freq --Alpha=$Alpha --Delta=$Delta --f1dot=$f1dot --DataFiles='$SFTdir/testSFT*' --refTime=$refTime"
 if [ "$haveNoise" = false ]; then
     cfs_CL="$cfs_CL --SignalOnly"
 fi
 
-cmdline="$cfs_code_orig $cfs_CL  --outputFstat=$outfile_orig";
+cmdline="$cfs_code $cfs_CL  --outputFstat=$outfile_v1 --expLALDemod=0 --Fthreshold=0";
 echo $cmdline;
 
 if ! eval $cmdline; then
-    echo "Error.. something failed when running '$cfs_code_orig' ..."
+    echo "Error.. something failed when running '$cfs_code' ..."
     exit 1
 fi
 
 echo
 echo "----------------------------------------------------------------------"
-echo " STEP 3: run REAL4 CFS_v2 with perfect match"
+echo " STEP 3: run CFS_v2 with perfect match"
 echo "----------------------------------------------------------------------"
 echo
-outfile_test="Fstat_v2_test.dat";
-cmdline="$cfs_code_test $cfs_CL --outputFstat=$outfile_test";
-echo $cmdline
-if ! eval $cmdline; then
-    echo "Error.. something failed when running '$cfs_code_test' ..."
+outfile_v2NWon="Fstat_v2NWon.dat";
+cmdlineNoiseWeightsOn="$cfsv2_code $cfs_CL --outputFstat=$outfile_v2NWon --TwoFthreshold=0 --UseNoiseWeights=true $extra_args";
+echo $cmdlineNoiseWeightsOn;
+if ! eval $cmdlineNoiseWeightsOn; then
+    echo "Error.. something failed when running '$cfs_code' ..."
+    exit 1;
+fi
+
+outfile_v2NWoff="Fstat_v2NWoff.dat";
+cmdlineNoiseWeightsOff="$cfsv2_code $cfs_CL --outputFstat=$outfile_v2NWoff --TwoFthreshold=0 --UseNoiseWeights=false $extra_args";
+echo $cmdlineNoiseWeightsOff;
+if ! eval $cmdlineNoiseWeightsOff; then
+    echo "Error.. something failed when running '$cfs_code' ..."
     exit 1;
 fi
 
@@ -139,13 +159,25 @@ echo "----------------------------------------"
 echo " STEP 4: Comparing results: "
 echo "----------------------------------------"
 echo
-echo "----- CFS_v2_orig: "
-cat $outfile_orig | sed -e"/^%.*/{d}"
-echo "----- CFS_v2_test: "
-cat $outfile_test | sed -e"/^%.*/{d}"
+echo "----- CFS v1: "
+cat $outfile_v1 | sed -e"/^%.*/{d}"
+echo "----- CFS v2 WITH noise-weights: "
+cat $outfile_v2NWon | sed -e"/^%.*/{d}"
+echo "----- CFS v2 WITHOUT noise-weights: "
+cat $outfile_v2NWoff | sed -e"/^%.*/{d}"
+
 
 echo
-cmdline="$cmp_code -1 ./$outfile_orig -2 ./$outfile_test --clusterFiles=0 --Ftolerance=$Ftolerance"
+cmdline="$cmp_code -1 ./$outfile_v1 -2 ./$outfile_v2NWoff --clusterFiles=0 --Ftolerance=$Ftolerance"
+echo $cmdline
+if ! eval $cmdline; then
+    echo "OUCH... files differ. Something might be wrong..."
+    exit 2
+else
+    echo "OK."
+fi
+
+cmdline="$cmp_code -1 ./$outfile_v1 -2 ./$outfile_v2NWon --clusterFiles=0 --Ftolerance=$Ftolerance"
 echo $cmdline
 if ! eval $cmdline; then
     echo "OUCH... files differ. Something might be wrong..."
@@ -156,5 +188,5 @@ fi
 
 ## clean up files
 if [ -z "$NOCLEANUP" ]; then
-    rm -rf $SFTdir $outfile_orig $outfile_test Fstats Fstats.log
+    rm -rf $SFTdir $outfile_v1 $outfile_v2NWon $outfile_v2NWoff Fstats Fstats.log
 fi
