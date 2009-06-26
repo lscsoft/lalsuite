@@ -413,6 +413,7 @@ int MAIN( int argc, char *argv[]) {
   CHAR *uvar_skyGridFile=NULL;
   INT4 uvar_numSkyPartitions = 0;
   INT4 uvar_partitionIndex = 0;
+  BOOLEAN uvar_GPUready = 0;
 
   global_status = &status;
 
@@ -497,6 +498,8 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterINTUserVar(    &status, "sftUpsampling",0, UVAR_DEVELOPER, "Upsampling factor for fast LALDemod",  &uvar_sftUpsampling), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "useToplist1",  0, UVAR_DEVELOPER, "Use toplist for 1st stage candidates?", &uvar_useToplist1 ), &status);
   LAL_CALL( LALRegisterREALUserVar (  &status, "df1dotRes",    0,  UVAR_DEVELOPER,"Resolution in residual fdot values (default=df1dot/nf1dotRes)", &uvar_df1dotRes), &status);
+
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "GPUready",     0, UVAR_OPTIONAL,  "Use single-precision 'GPU-ready' core routines", &uvar_printFstat1), &status);
 
   /* read all command line variables */
   LAL_CALL( LALUserVarReadAllInput(&status, argc, argv), &status);
@@ -1064,21 +1067,28 @@ int MAIN( int argc, char *argv[]) {
 	  
 	  /* calculate the Fstatistic for each stack*/
 	  LogPrintf(LOG_DETAIL, "Starting Fstat calculation for each stack...");
-	  for ( k = 0; k < nStacks; k++) {
-	    
-	    /* set spindown value for Fstat calculation */
-	    thisPoint.fkdot[1] = usefulParams.spinRange_midTime.fkdot[1] + ifdot * df1dot;
-	    thisPoint.fkdot[0] = fstatVector.data[k].f0;
-	    /* thisPoint.fkdot[0] = usefulParams.spinRange_midTime.fkdot[0]; */
-	    
-	    /* this is the most costly function. We here allow for using an architecture-specific optimized
-	       function from e.g. a local file instead of the standard ComputeFStatFreqBand() from LAL */
-	    LAL_CALL( COMPUTEFSTATFREQBAND ( &status, fstatVector.data + k, &thisPoint, 
-					     stackMultiSFT.data[k], stackMultiNoiseWeights.data[k], 
-					     stackMultiDetStates.data[k], &CFparams), &status);
-	  }
-	  LogPrintfVerbatim(LOG_DETAIL, "done\n");
-	  
+          if ( !uvar_GPUready )
+            {
+              for ( k = 0; k < nStacks; k++)
+                {
+                  /* set spindown value for Fstat calculation */
+                  thisPoint.fkdot[1] = usefulParams.spinRange_midTime.fkdot[1] + ifdot * df1dot;
+                  thisPoint.fkdot[0] = fstatVector.data[k].f0;
+                  /* thisPoint.fkdot[0] = usefulParams.spinRange_midTime.fkdot[0]; */
+
+                  /* this is the most costly function. We here allow for using an architecture-specific optimized
+                     function from e.g. a local file instead of the standard ComputeFStatFreqBand() from LAL */
+                  LAL_CALL( COMPUTEFSTATFREQBAND ( &status, fstatVector.data + k, &thisPoint, 
+                                                   stackMultiSFT.data[k], stackMultiNoiseWeights.data[k], 
+                                                   stackMultiDetStates.data[k], &CFparams), &status);
+                } /* for k < nStacks */
+            }
+          else	/* run "GPU-ready" REAL4 version aiming at maximum parallelism for GPU optimization */
+            {
+            } /* if GPUready */
+
+          LogPrintfVerbatim(LOG_DETAIL, "done\n");
+
 	  /* print fstat vector if required -- mostly for debugging */
 	  if ( uvar_printFstat1 )
 	    {
