@@ -1896,15 +1896,23 @@ int main( int argc, char *argv[] )
     if ( vrbflg ) fprintf(stdout, "Performing time slide %d\n", slideNum );
     
     /* slide the data for any case */
-    LAL_CALL( LALTimeSlideSingleInspiral( &status, inspiralEventList,
-              &startCoinc, &endCoinc, slideTimes), &status) ;      
+    XLALTimeSlideSingleInspiral( inspiralEventList, &startCoinc, &endCoinc,
+                                 slideTimes);
     LAL_CALL( LALSortSnglInspiral( &status, &(inspiralEventList),
               LALCompareSnglInspiralByTime ), &status );
     
     for ( ifoNumber = 0; ifoNumber< LAL_NUM_IFO; ifoNumber++) 
-    {   
-      LAL_CALL( LALTimeSlideSegList( &status, &(vetoSegs[ifoNumber]),
-                &startCoinc, &endCoinc, &(slideTimes[ifoNumber])), &status) ;
+    {
+      /* FIXME:  this code is executed even if there are no veto segments
+       * (!?), so this function call fails.  It failed in the old code,
+       * too, but there was no error checking so the code would keep
+       * running.  Someone else will have to figure out how to untangle
+       * this, for now I turn off error checking here too and clear the
+       * error flag (this reproduces the old behaviour, but clearly
+       * something else should be done) */
+      if ( XLALTimeSlideSegList( &vetoSegs[ifoNumber], &startCoinc, &endCoinc,
+                                 &slideTimes[ifoNumber] ) < 0 )
+        /*exit(1)*/ XLALClearErrno();
     }
 
     /* don't analyze zero-lag if numSlides>0 */
@@ -2121,8 +2129,8 @@ int main( int argc, char *argv[] )
       {
  
         /* the output triggers should be slid back to original time */
-        LAL_CALL( LALTimeSlideSingleInspiral( &status, slideOutput,
-              &startCoinc, &endCoinc, slideReset), &status) ;
+        XLALTimeSlideSingleInspiral( slideOutput, &startCoinc, &endCoinc,
+                                     slideReset);
         LAL_CALL( LALSortSnglInspiral( &status, &(slideOutput),
               LALCompareSnglInspiralByTime ), &status );
       }

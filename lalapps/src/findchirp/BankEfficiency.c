@@ -95,6 +95,19 @@ main (INT4 argc, CHAR **argv )
   lal_errhandler = LAL_ERR_EXIT;
   lalDebugLevel = 0;
   templateBank.snglInspiralTable = NULL;
+  memset( &templateBank, 0, sizeof( MetadataTable ) );
+  memset( &randIn, 0, sizeof( RandomInspiralSignalIn ) );
+  memset( &signal, 0, sizeof( REAL4Vector ) );
+  memset( &mybank, 0, sizeof( Mybank ) );
+  memset( &insptmplt, 0, sizeof( InspiralTemplate ) );
+  memset( &coarseBankIn, 0, sizeof( InspiralCoarseBankIn ) );
+  memset( &correlation, 0, sizeof( REAL4Vector ) );
+  memset( &bankefficiencyBCV, 0, sizeof( BankEfficiencyBCV ) );
+  memset( &overlapin, 0, sizeof( InspiralWaveOverlapIn ) );
+  memset( &overlapOutputThisTemplate, 0, sizeof( OverlapOutputIn ) );
+  memset( &overlapOutputBestTemplate, 0, sizeof( OverlapOutputIn ) );
+  memset( &simulation, 0, sizeof( BankEfficiencySimulation ) );
+
 
   /* --- Initialization of structures related to all the user parameters --- */
   BankEfficiencyParametersInitialization(&coarseBankIn, &randIn, &userParam);
@@ -1291,7 +1304,7 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
       coarseBankIn.LowGM, coarseBankIn.HighGM);
   if (coarseBankIn.numFcutTemplates>0)
   {
-    ADD_PROCESS_PARAM("float","%f","--bank-number-fcut",
+    ADD_PROCESS_PARAM("int","%d","--bank-number-fcut",
       coarseBankIn.numFcutTemplates);
   }
   ADD_PROCESS_PARAM("float","%d ","--bank-inside-polygon",
@@ -1312,7 +1325,7 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
       BankEfficiencyGetStringFromGridType(coarseBankIn.gridSpacing));
   ADD_2PROCESS_PARAM("float","%f %f","--bank-eccentricity-range",
       userParam.eccentricBank.min, userParam.eccentricBank.max);
-  ADD_PROCESS_PARAM("float","%f","--bank-eccentricity-bins",
+  ADD_PROCESS_PARAM("int","%d","--bank-eccentricity-bins",
       userParam.eccentricBank.bins);
   ADD_PROCESS_PARAM("float","%f","--fl",
       coarseBankIn.fLower);
@@ -1594,7 +1607,6 @@ void BankEfficiencyPrintResultsXml(
   BankEfficiencySimulation     simulation)
 {
   LALStatus             status = blank_status;
-  CHAR                 *dest;
   MetadataTable         templateBank;
   CHAR                  ifo[3];               /* two character ifo code       */
   LIGOLwXMLStream       xmlStream;
@@ -1670,7 +1682,7 @@ void BankEfficiencyPrintResultsXml(
 
     /* finally write sngl inspiral table column's names */
 
-    dest = (CHAR*)(PRINT_LIGOLW_XML_BANKEFFICIENCY(xmlStream.fp->fp));
+    PRINT_LIGOLW_XML_BANKEFFICIENCY(xmlStream.fp->fp);
   }
   else
   {
@@ -1712,7 +1724,7 @@ void BankEfficiencyPrintResultsXml(
   /* --- if we reached the last simulations, we close the file --- */
   if (trigger.ntrial == (UINT4)userParam.ntrials)
   {
-    dest = (CHAR*)(PRINT_LIGOLW_XML_TABLE_FOOTER(xmlStream.fp->fp));
+    PRINT_LIGOLW_XML_TABLE_FOOTER(xmlStream.fp->fp);
     PRINT_LIGOLW_XML_FOOTER(xmlStream.fp->fp);
     XLALFileClose(xmlStream.fp);
     xmlStream.fp = NULL;
@@ -2419,8 +2431,11 @@ void BankEfficiencyBankPrintXML(
   strncpy( ifoName[0], "no", LIGOMETA_IFO_MAX * sizeof(CHAR) );
   strncpy( ifoName[1], "ne", LIGOMETA_IFO_MAX * sizeof(CHAR) );
   memset( ifo, 0, sizeof(ifo) );
+  memset( comment, 0, sizeof( comment ) );
+  memset( &proctable, 0, sizeof( proctable ) );
+  memset( &processParamsTable, 0, sizeof( processParamsTable ) );
   memcpy( ifo, "MC", sizeof(ifo) - 1 );
-
+  
 
   /* --- first we create the filename --- */
   LALSnprintf( fname, sizeof(fname), BANKEFFICIENCY_XMLBANK ,
@@ -2439,12 +2454,12 @@ void BankEfficiencyBankPrintXML(
 
   if (strcmp(CVS_REVISION_C, "$Revi" "sion$"))
   {
-    XLALPopulateProcessTable(templateBank.processTable, \
+    XLALPopulateProcessTable(proctable.processTable, \
     PROGRAM_NAME, CVS_REVISION_C, CVS_SOURCE_C, CVS_DATE_C, 0);
   }
   else
   {
-    XLALPopulateProcessTable(templateBank.processTable, \
+    XLALPopulateProcessTable(proctable.processTable, \
       PROGRAM_NAME, lalappsGitCommitID, lalappsGitGitStatus, \
       lalappsGitCommitDate, 0);
   }
@@ -3633,7 +3648,6 @@ void BankEfficiencyAscii2Xml(void)
   FILE *bank;
   FILE *output;
 
-  CHAR *dest;
 
   SnglInspiralTable     *inputData = NULL;
 
@@ -3669,7 +3683,7 @@ void BankEfficiencyAscii2Xml(void)
     {
       fprintf(stderr,"error while opening input file %s\n", fname);
       fprintf(stderr,"the xml file will not contains parameters information\n");
-      dest = (CHAR*)PRINT_LIGOLW_XML_HEADER(output);
+      PRINT_LIGOLW_XML_HEADER(output);
       fprintf(stderr,"creating the header file -- done\n");
     }
   else
@@ -3699,7 +3713,7 @@ void BankEfficiencyAscii2Xml(void)
 
 
       fprintf(stderr," done %d\n", numFileTriggers);
-      dest = (CHAR*)myfprintf(output, LIGOLW_XML_SNGL_INSPIRAL );
+      myfprintf(output, LIGOLW_XML_SNGL_INSPIRAL );
       while(inputData)
       {
       /*      id = inputData->event_id->id;*/
@@ -3766,11 +3780,11 @@ void BankEfficiencyAscii2Xml(void)
       fprintf(output, "\n");
 
     }
-       dest = (CHAR*)myfprintf(output, LIGOLW_XML_TABLE_FOOTER );
+       myfprintf(output, LIGOLW_XML_TABLE_FOOTER );
 
     }
 
-  dest = (CHAR*)PRINT_LIGOLW_XML_BANKEFFICIENCY(output);
+  PRINT_LIGOLW_XML_BANKEFFICIENCY(output);
   fprintf(stderr,"done\n");
   /* read ascii input and save in xml format */
   fprintf(stderr,"reading the ascii file -- and saving xml file");
@@ -3801,7 +3815,7 @@ void BankEfficiencyAscii2Xml(void)
 
 
   fprintf(stderr,"read %d lines...done\n", countline);
-  dest = (CHAR*)PRINT_LIGOLW_XML_TABLE_FOOTER(output);
+  PRINT_LIGOLW_XML_TABLE_FOOTER(output);
   PRINT_LIGOLW_XML_FOOTER(output);
 
   fclose(output);
