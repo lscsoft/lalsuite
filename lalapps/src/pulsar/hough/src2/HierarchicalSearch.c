@@ -205,7 +205,7 @@ void GetStackVelPos( LALStatus *status, REAL8VectorSequence **velStack, REAL8Vec
 void SetUpSFTs( LALStatus *status, MultiSFTVectorSequence *stackMultiSFT, MultiNoiseWeightsSequence *stackMultiNoiseWeights,
 		MultiDetectorStateSeriesSequence *stackMultiDetStates, UsefulStageVariables *in);
 
-void PrintFstatVec (LALStatus *status, REAL8FrequencySeries *in, FILE *fp, PulsarDopplerParams *thisPoint, 
+void PrintFstatVec (LALStatus *status, REAL4FrequencySeries *in, FILE *fp, PulsarDopplerParams *thisPoint, 
 		    LIGOTimeGPS  refTime, INT4 stackIndex);
 
 void PrintSemiCohCandidates(LALStatus *status, SemiCohCandidateList *in, FILE *fp, LIGOTimeGPS refTime);
@@ -317,7 +317,7 @@ int MAIN( int argc, char *argv[]) {
   UINT4 nf1dot, nf1dotRes; /* coarse and fine grid number of spindown values */
 
   /* LALdemod related stuff */
-  static REAL8FrequencySeriesVector fstatVector; /* Fstatistic vectors for each stack */
+  static REAL4FrequencySeriesVector fstatVector; /* Fstatistic vectors for each stack */
   UINT4 binsFstat1, binsFstatSearch;
   static ComputeFParams CFparams;		   
 
@@ -858,7 +858,7 @@ int MAIN( int argc, char *argv[]) {
   /* allocate some fstat memory */
   fstatVector.length = nStacks;
   fstatVector.data = NULL;
-  fstatVector.data = (REAL8FrequencySeries *)LALCalloc( 1, nStacks * sizeof(REAL8FrequencySeries));
+  fstatVector.data = (REAL4FrequencySeries *)LALCalloc( 1, nStacks * sizeof(REAL4FrequencySeries));
   if ( fstatVector.data == NULL) {
     fprintf(stderr, "error allocating memory [HierarchicalSearch.c %d]\n" , __LINE__);
     return(HIERARCHICALSEARCH_EMEM);
@@ -1014,14 +1014,14 @@ int MAIN( int argc, char *argv[]) {
 	  fstatVector.data[k].deltaF = dFreqStack;
 	  fstatVector.data[k].f0 = usefulParams.spinRange_midTime.fkdot[0] - semiCohPar.extraBinsFstat * dFreqStack;
 	  if (fstatVector.data[k].data == NULL) {
-	    fstatVector.data[k].data = (REAL8Sequence *)LALCalloc( 1, sizeof(REAL8Sequence));
+	    fstatVector.data[k].data = (REAL4Sequence *)LALCalloc( 1, sizeof(REAL4Sequence));
 	    if ( fstatVector.data[k].data == NULL) {
 	      fprintf(stderr, "error allocating memory [HierarchicalSearch.c %d]\n" , __LINE__);
 	      return(HIERARCHICALSEARCH_EMEM);
 	    }
 
 	    fstatVector.data[k].data->length = binsFstat1;
-	    fstatVector.data[k].data->data = (REAL8 *)LALCalloc( 1, binsFstat1 * sizeof(REAL8));
+	    fstatVector.data[k].data->data = (REAL4 *)LALCalloc( 1, binsFstat1 * sizeof(REAL4));
 	    if ( fstatVector.data[k].data->data == NULL) {
 	      fprintf(stderr, "error allocating memory [HierarchicalSearch.c %d]\n" , __LINE__);
 	      return(HIERARCHICALSEARCH_EMEM);
@@ -1029,14 +1029,14 @@ int MAIN( int argc, char *argv[]) {
 
 	  } 
 	  else {
-	    fstatVector.data[k].data = (REAL8Sequence *)LALRealloc( fstatVector.data[k].data, sizeof(REAL8Sequence));
+	    fstatVector.data[k].data = (REAL4Sequence *)LALRealloc( fstatVector.data[k].data, sizeof(REAL4Sequence));
 	    if ( fstatVector.data[k].data == NULL) {
 	      fprintf(stderr, "error allocating memory [HierarchicalSearch.c %d]\n" , __LINE__);
 	      return(HIERARCHICALSEARCH_EMEM);
 	    }
 
 	    fstatVector.data[k].data->length = binsFstat1;
-	    fstatVector.data[k].data->data = (REAL8 *)LALRealloc( fstatVector.data[k].data->data, binsFstat1 * sizeof(REAL8));
+	    fstatVector.data[k].data->data = (REAL4 *)LALRealloc( fstatVector.data[k].data->data, binsFstat1 * sizeof(REAL4));
 	    if ( fstatVector.data[k].data->data == NULL) {
 	      fprintf(stderr, "error allocating memory [HierarchicalSearch.c %d]\n" , __LINE__);
 	      return(HIERARCHICALSEARCH_EMEM);
@@ -1113,7 +1113,7 @@ int MAIN( int argc, char *argv[]) {
 		      meanN, sigmaN, semiCohPar.threshold);
 	    
 	    /* convert fstat vector to peakgrams using the Fstat threshold */
-	    LAL_CALL( FstatVectToPeakGram( &status, &pgV, &fstatVector, uvar_peakThrF), &status);
+	    LAL_CALL( FstatVectToPeakGram( &status, &pgV, &fstatVector, (REAL4)uvar_peakThrF), &status);
 	      
 	    /* get candidates */
 	    /* this is the second most costly function. We here allow for using architecture-specific
@@ -2089,8 +2089,8 @@ void ComputeFstatHoughMap(LALStatus *status,
 */
 void FstatVectToPeakGram (LALStatus *status,
 			  HOUGHPeakGramVector *pgV,
-			  REAL8FrequencySeriesVector *FstatVect,
-			  REAL8  thr)
+                          REAL4FrequencySeriesVector *FstatVect,
+			  REAL4  thr)
 {
   INT4 j, k;
   INT4 nStacks, nSearchBins, nPeaks;
@@ -2129,14 +2129,14 @@ void FstatVectToPeakGram (LALStatus *status,
   /* loop over each stack and set peakgram */
   for (k=0; k<nStacks; k++) {
     INT4 *pInt; /* temporary pointer */
-    REAL8 *pV;  /* temporary pointer */
+    REAL4 *pV;  /* temporary pointer */
     REAL8 f0, deltaF;
     pV = FstatVect->data[k].data->data;
 
     /* loop over Fstat vector, count peaks, and set upg values */
     nPeaks = 0;
     for(j=0; j<nSearchBins; j++) {
-      if ( (REAL4)(pV[j]) > (REAL4)thr ) {
+      if (pV[j] > thr ) {
 	nPeaks++;	
 	upg[j] = 1; 
       }
@@ -2710,7 +2710,7 @@ void PrintSemiCohCandidates(LALStatus *status,
 
 /** Print Fstat vectors */
   void PrintFstatVec (LALStatus *status,
-		      REAL8FrequencySeries *in,
+		      REAL4FrequencySeries *in,
 		      FILE                 *fp,
 		      PulsarDopplerParams  *thisPoint,
 		      LIGOTimeGPS          refTime,
