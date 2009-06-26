@@ -73,6 +73,7 @@ src/frametools/lalapps_frview
 src/inspiral/lalapps_bbhinj
 src/inspiral/lalapps_blindinj
 src/inspiral/lalapps_calcexpsnr
+src/inspiral/lalapps_cbc_pipedown
 src/inspiral/lalapps_check_hipe_times
 src/inspiral/lalapps_coherent_inspiral
 src/inspiral/lalapps_coherentbank
