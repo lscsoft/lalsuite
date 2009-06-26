@@ -107,8 +107,8 @@
 
 NRCSID(LALMATHNDPLOTTESTC, "$Id:");
 
-int main(){
-  static LALStatus stat;
+int main(void){
+  static LALStatus status;
   INT4 loopx = 0;                       /* loop counters */
   INT4 loopy = 0;
   INT4 loopz = 0;
@@ -116,12 +116,10 @@ int main(){
   INT4 ntiles = 0;
   MathNDPointList *list = NULL;         /* Pointer to structure for mathematica plot */
   MathNDPointList *first = NULL;
-  REAL4 pointsize = 0.04;
   UINT4 dim = 4;
-  INT4 counter = 0;
 
   if ((list = (MathNDPointList *) LALCalloc(1, sizeof(MathNDPointList))) == NULL){
-    LALError(&stat, LALMATHNDPLOTTESTC_MSGEMEM);
+    LALError(&status, LALMATHNDPLOTTESTC_MSGEMEM);
     printf(LALMATHNDPLOTTESTC_MSGEMEM);
     return LALMATHNDPLOTTESTC_EMEM;
   }
@@ -131,7 +129,7 @@ int main(){
     for(loopy=1; loopy <= 20; loopy++){
       for(loopz=0; loopz <= 1; loopz++){
         for(loopw=0; loopw <= 1; loopw++){
-          LALSCreateVector(&stat, &list->coordinates, dim);
+          LALSCreateVector(&status, &list->coordinates, dim);
           list->coordinates->data[0] = loopx;
           list->coordinates->data[1] = loopy;
           list->coordinates->data[2] = loopz;
@@ -139,7 +137,7 @@ int main(){
           list->grayLevel = 0.0;
           ntiles++;
           if ((list = list->next = (MathNDPointList *) LALCalloc(1, sizeof(MathNDPointList))) == NULL){
-            LALError(&stat, LALMATHNDPLOTTESTC_MSGEMEM);
+            LALError(&status, LALMATHNDPLOTTESTC_MSGEMEM);
             printf(LALMATHNDPLOTTESTC_MSGEMEM);
             return LALMATHNDPLOTTESTC_EMEM;
             }
@@ -151,7 +149,7 @@ int main(){
   for(loopx=1; loopx <= 20; loopx++){
     for(loopy=1; loopy <= 20; loopy++){
       for(loopw=0; loopw <= 1; loopw++){
-        LALSCreateVector(&stat, &list->coordinates, dim);
+        LALSCreateVector(&status, &list->coordinates, dim);
         list->coordinates->data[0] = loopx;
         list->coordinates->data[1] = loopy;
         list->coordinates->data[2] = 2;
@@ -159,7 +157,7 @@ int main(){
         list->grayLevel = 1.0;
         ntiles++;
         if ((list = list->next = (MathNDPointList *) LALCalloc(1, sizeof(MathNDPointList))) == NULL){
-          LALError(&stat, LALMATHNDPLOTTESTC_MSGEMEM);
+          LALError(&status, LALMATHNDPLOTTESTC_MSGEMEM);
           printf(LALMATHNDPLOTTESTC_MSGEMEM);
           return LALMATHNDPLOTTESTC_EMEM;
           }
@@ -177,9 +175,9 @@ int main(){
           if((loopx>9)&&(loopx<12)&&(((loopy>6)&&(loopy<10))||(loopy==12))) continue;
           if(((loopx==9)||(loopx==12)) && ((loopy>9)&&(loopy<13))) continue;
           if(((loopx==8)||(loopx==13)) && ((loopy>12)&&(loopy<16))) continue;
-          LALSCreateVector(&stat, &list->coordinates, dim);
-          if (stat.statusCode){
-            LALError(&stat, LALMATHNDPLOTTESTC_MSGESUB);
+          LALSCreateVector(&status, &list->coordinates, dim);
+          if (status.statusCode){
+            LALError(&status, LALMATHNDPLOTTESTC_MSGESUB);
             printf(LALMATHNDPLOTTESTC_MSGESUB);
             return LALMATHNDPLOTTESTC_ESUB;
             }
@@ -190,7 +188,7 @@ int main(){
           list->grayLevel = 0.0;
           ntiles++;
           if ((list = list->next = (MathNDPointList *) LALCalloc(1, sizeof(MathNDPointList))) == NULL){
-            LALError(&stat, LALMATHNDPLOTTESTC_MSGEMEM);
+            LALError(&status, LALMATHNDPLOTTESTC_MSGEMEM);
             printf(LALMATHNDPLOTTESTC_MSGEMEM);
             return LALMATHNDPLOTTESTC_EMEM;
             }
@@ -202,10 +200,10 @@ int main(){
 
   list->next = NULL;
   printf("\nCalling LALMathNDPlot()......\n");
-  LALMathNDPlot(&stat, first, &ntiles, NULL);
-  REPORTSTATUS(&stat);
-  if (stat.statusCode){
-    LALError(&stat, LALMATHNDPLOTTESTC_MSGESUB);
+  LALMathNDPlot(&status, first, &ntiles, NULL);
+  REPORTSTATUS(&status);
+  if (status.statusCode){
+    LALError(&status, LALMATHNDPLOTTESTC_MSGESUB);
     printf(LALMATHNDPLOTTESTC_MSGESUB);
     return LALMATHNDPLOTTESTC_ESUB;
   }
@@ -216,15 +214,15 @@ int main(){
   while(list->next){
     first = list->next;
     if (list->coordinates)
-      LALSDestroyVector(&stat, &list->coordinates);
-    if (stat.statusCode){
-      LALError(&stat, LALMATHNDPLOTTESTC_MSGESUB);
+      LALSDestroyVector(&status, &list->coordinates);
+    if (status.statusCode){
+      LALError(&status, LALMATHNDPLOTTESTC_MSGESUB);
       printf(LALMATHNDPLOTTESTC_MSGESUB);
       return LALMATHNDPLOTTESTC_ESUB;
       }
     LALFree(list);
-    if (stat.statusCode){
-      LALError(&stat, LALMATHNDPLOTTESTC_MSGEMEM);
+    if (status.statusCode){
+      LALError(&status, LALMATHNDPLOTTESTC_MSGEMEM);
       printf(LALMATHNDPLOTTESTC_MSGEMEM);
       return LALMATHNDPLOTTESTC_EMEM;
       }
@@ -235,7 +233,7 @@ int main(){
   /* free the last (first?) memory allocated for Math3DPlot. */
   if(list) LALFree(list);
 
-  if (stat.statusCode)
+  if (status.statusCode)
     return LALMATHNDPLOTTESTC_ESUB;
   else
     return LALMATHNDPLOTTESTC_ENORM;

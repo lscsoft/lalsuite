@@ -85,7 +85,7 @@ typedef struct {
 
 
 int XLALXMLFilePrintElements(const char *fname);
-xmlChar * XLALGetSingleNodeContentByXPath(const xmlDocPtr xmlDoc, const char *xpath, const XML_NAMESPACE_VECTOR *xmlNsVector);
+xmlChar * XLALGetSingleNodeContentByXPath(const xmlDocPtr xmlDocument, const char *xpath, const XML_NAMESPACE_VECTOR *xmlNsVector);
 INT4 XLALValidateDocumentByInternalSchema(const xmlDocPtr xmlDocument);
 INT4 XLALValidateDocumentByExternalSchema(const xmlDocPtr xmlDocument, const xmlChar *url);
 INT4 XLALReconcileDefaultNamespace(const xmlNodePtr xmlRootElement, const xmlNsPtr xmlNamespace);

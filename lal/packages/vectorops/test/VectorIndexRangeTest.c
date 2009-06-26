@@ -88,9 +88,10 @@ extern int   optind;
 int lalDebugLevel = 0;
 BOOLEAN verbose_p = FALSE;
 
+#if 0
 static void
 usage(char **argv);
-
+#endif
 
 static void
 test_status(LALStatus *status, const char *expected_codes, int exit_code);
@@ -377,9 +378,11 @@ trail_status_maybe(LALStatus *status)
 }
 
 
+#if 0
 static void
 usage(char **argv)
 {
   fprintf(stderr, "%s: read the code\n", argv[0]);
   exit(0);
 }
+#endif

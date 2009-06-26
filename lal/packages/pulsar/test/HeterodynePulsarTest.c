@@ -107,7 +107,6 @@ int main(void)
 {
   UINT4 		i;
   REAL4 		dt = HETERODYNEPULSARTEST_DT;
-  REAL4 		a0 = HETERODYNEPULSARTEST_A0;
   static LALStatus      status;
   static RandomParams 	*randomParams;
   static REAL4Vector  	*noise;

@@ -761,13 +761,15 @@ int XLALSkymapGlitchHypothesis(XLALSkymapPlanType* plan, double *p, double sigma
 
 int XLALSkymapSignalHypothesis(XLALSkymapPlanType* plan, double* p, double sigma, double w[3], int begin[3], int end[3], double** x, int *counts, int *modes)
 {
-    int delay_limits[6];
+    int delay_limits[8];
     delay_limits[0] = -plan->hl;
     delay_limits[1] =  plan->hl;
     delay_limits[2] = -plan->hv;
     delay_limits[3] =  plan->hv;
     delay_limits[4] = -plan->lv - 1;
     delay_limits[5] =  plan->lv + 1;
+    delay_limits[6] = 0;
+    delay_limits[7] = 1;
     return XLALSkymapSignalHypothesisWithLimits(plan, p, sigma, w, begin, end, x, counts, modes, delay_limits);
 }
 
@@ -857,6 +859,10 @@ int XLALSkymapSignalHypothesisWithLimits(XLALSkymapPlanType* plan, double* p, do
                     ((hv - hl) >= delay_limits[4])
                     &&
                     ((hv - hl) <= delay_limits[5])
+                    &&
+                    (hemisphere >= delay_limits[6])
+                    &&
+                    (hemisphere <= delay_limits[7])
                     )
                 {
                     /* compute the begin and end times */
