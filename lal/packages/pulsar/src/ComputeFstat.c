@@ -118,7 +118,7 @@ int finite(double x);
     they must be correctly set outside this function.
 */
 void ComputeFStatFreqBand ( LALStatus *status,
-			    REAL8FrequencySeries *fstatVector, 		/**< [out] Vector of Fstat values */
+			    REAL4FrequencySeries *fstatVector, 		/**< [out] Vector of Fstat values */
 			    const PulsarDopplerParams *doppler,		/**< parameter-space point to compute F for */
 			    const MultiSFTVector *multiSFTs, 		/**< normalized (by DOUBLE-sided Sn!) data-SFTs of all IFOs */
 			    const MultiNoiseWeights *multiWeights,	/**< noise-weights of all SFTs */
