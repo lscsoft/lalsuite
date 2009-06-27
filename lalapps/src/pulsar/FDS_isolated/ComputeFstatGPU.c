@@ -94,6 +94,87 @@ void init_sin_cos_LUT_REAL4 (void);
 
 /*==================== FUNCTION DEFINITIONS ====================*/
 
+/** REAL4 and GPU-ready version of ComputeFStatFreqBand().
+    Function to compute a vector of Fstatistic values for a number of frequency bins.
+    This function is simply a wrapper for ComputeFstat() which is called repeatedly for
+    every frequency value.  The output, i.e. fstatVector must be properly allocated
+    before this function is called.  The values of the start frequency, the step size
+    in the frequency and the number of frequency values for which the Fstatistic is
+    to be calculated are read from fstatVector.  The other parameters are not checked and
+    they must be correctly set outside this function.
+*/
+int
+XLALComputeFStatFreqBand (   REAL4FrequencySeries *fstatVector, 	/**< [out] Vector of Fstat values */
+                             const PulsarDopplerParams *doppler,	/**< parameter-space point to compute F for */
+                             const MultiSFTVector *multiSFTs, 		/**< normalized (by DOUBLE-sided Sn!) data-SFTs of all IFOs */
+                             const MultiNoiseWeights *multiWeights,	/**< noise-weights of all SFTs */
+                             const MultiDetectorStateSeries *multiDetStates,/**< 'trajectories' of the different IFOs */
+                             const ComputeFParams *params		/**< addition computational params */
+                             )
+{
+  static const char *fn = "XLALComputeFStatFreqBand()";
+
+  UINT4 numIFOs, numBins, k;
+  REAL8 deltaF;
+  REAL4 Fstat;
+  PulsarDopplerParams thisPoint;
+  ComputeFBuffer_REAL4 cfBuffer = empty_ComputeFBuffer_REAL4;
+
+  /* check input consistency */
+  if ( !doppler || !multiSFTs || !multiWeights || !multiDetStates || !params ) {
+    XLALPrintError ("%s: illegal NULL input pointer.\n", fn );
+    XLAL_ERROR ( fn, XLAL_EINVAL );
+  }
+
+  numIFOs = multiSFTs->length;
+  if ( multiDetStates->length != numIFOs ) {
+    XLALPrintError ("%s: number of IFOs inconsisten between multiSFTs (%d) and multiDetStates (%d).\n", fn, numIFOs, multiDetStates->length );
+    XLAL_ERROR (fn, XLAL_EINVAL );
+  }
+
+  if ( !fstatVector || !fstatVector->data || !fstatVector->data->data || !fstatVector->data->length ) {
+    XLALPrintError ("%s: illegal NULL or empty output pointer 'fstatVector'.\n", fn );
+    XLAL_ERROR ( fn, XLAL_EINVAL );
+  }
+
+  /* a check that the f0 values from thisPoint and fstatVector are
+     at least close to each other -- this is only meant to catch
+     stupid errors but not subtle ones */
+  if ( fabs(fstatVector->f0 - doppler->fkdot[0]) >= fstatVector->deltaF ) {
+    XLALPrintError ("%s: fstatVector->f0 = %f differs from doppler->fkdot[0] = %f by more than deltaF = %f\n",
+                    fn, fstatVector->f0, doppler->fkdot[0], fstatVector->deltaF );
+    XLAL_ERROR ( fn, XLAL_EINVAL );
+  }
+
+  /* copy values from 'doppler' to local variable 'thisPoint' */
+  thisPoint = *doppler;
+
+  numBins = fstatVector->data->length;
+  deltaF = fstatVector->deltaF;
+
+  /* loop over frequency values and fill up values in fstatVector */
+  for ( k = 0; k < numBins; k++)
+    {
+      if ( XLALDriverFstatGPU ( &Fstat, &thisPoint, multiSFTs, multiWeights, multiDetStates, params->Dterms, &cfBuffer ) != XLAL_SUCCESS ) {
+        XLALPrintError ("%s: XLALDriverFstatGPU() failed with errno = %d.\n", fn, xlalErrno );
+        XLAL_ERROR ( fn, XLAL_EFUNC );
+      }
+
+      fstatVector->data->data[k] = Fstat;
+
+      thisPoint.fkdot[0] += deltaF;
+    }
+
+  XLALEmptyComputeFBuffer_REAL4 ( &cfBuffer );
+
+  return XLAL_SUCCESS;
+
+} /* XLALComputeFStatFreqBand() */
+
+
+
+
+
 /** Host-bound 'driver' function for the central F-stat computation
  *  of a single F-stat value for one parameter-space point.
  *
@@ -227,7 +308,6 @@ XLALCoreFstatGPU (REAL4 *Fstat,				/**< [out] multi-IFO F-statistic value 'F' */
   static const char *fn = "XLALCoreFstatGPU()";
 
   UINT4 numIFOs, X;
-
   REAL4 Fa_re, Fa_im, Fb_re, Fb_im;
 
 #ifndef LAL_NDEBUG
@@ -282,7 +362,7 @@ XLALCoreFstatGPU (REAL4 *Fstat,				/**< [out] multi-IFO F-statistic value 'F' */
       Fb_re += FcX.Fb.re;
       Fb_im += FcX.Fb.im;
 
-    } /* for  X < numDetectors */
+    } /* for  X < numIFOs */
 
   /* ----- compute final Fstatistic-value ----- */
 

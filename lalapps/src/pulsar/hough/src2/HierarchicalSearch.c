@@ -111,7 +111,7 @@
  */
 
 
-
+#include "../../FDS_isolated/ComputeFstatGPU.h"
 #include"HierarchicalSearch.h"
 
 
@@ -499,7 +499,7 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "useToplist1",  0, UVAR_DEVELOPER, "Use toplist for 1st stage candidates?", &uvar_useToplist1 ), &status);
   LAL_CALL( LALRegisterREALUserVar (  &status, "df1dotRes",    0,  UVAR_DEVELOPER,"Resolution in residual fdot values (default=df1dot/nf1dotRes)", &uvar_df1dotRes), &status);
 
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "GPUready",     0, UVAR_OPTIONAL,  "Use single-precision 'GPU-ready' core routines", &uvar_printFstat1), &status);
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "GPUready",     0, UVAR_OPTIONAL,  "Use single-precision 'GPU-ready' core routines", &uvar_GPUready), &status);
 
   /* read all command line variables */
   LAL_CALL( LALUserVarReadAllInput(&status, argc, argv), &status);
@@ -1085,6 +1085,24 @@ int MAIN( int argc, char *argv[]) {
             }
           else	/* run "GPU-ready" REAL4 version aiming at maximum parallelism for GPU optimization */
             {
+              for ( k = 0; k < nStacks; k++)
+                {
+                  /* set spindown value for Fstat calculation */
+                  thisPoint.fkdot[1] = usefulParams.spinRange_midTime.fkdot[1] + ifdot * df1dot;
+                  thisPoint.fkdot[0] = fstatVector.data[k].f0;
+                  /* thisPoint.fkdot[0] = usefulParams.spinRange_midTime.fkdot[0]; */
+
+                  /* this is the most costly function. We here allow for using an architecture-specific optimized
+                     function from e.g. a local file instead of the standard ComputeFStatFreqBand() from LAL */
+                  if ( XLALComputeFStatFreqBand ( fstatVector.data + k, &thisPoint,
+                                                  stackMultiSFT.data[k], stackMultiNoiseWeights.data[k],
+                                                  stackMultiDetStates.data[k], &CFparams) != XLAL_SUCCESS )
+                    {
+                      LogPrintf (LOG_CRITICAL, "main(): XLALComputeFStatFreqBand() failed with errno = %d\n", xlalErrno );
+                      return XLAL_EFUNC;
+                    }
+                } /* for k < nStacks */
+
             } /* if GPUready */
 
           LogPrintfVerbatim(LOG_DETAIL, "done\n");

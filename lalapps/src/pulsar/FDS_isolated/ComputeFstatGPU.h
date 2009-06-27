@@ -28,6 +28,7 @@ extern "C" {
 /* ---------- includes ---------- */
 #include <lal/LALDatatypes.h>
 #include <lal/DetectorStates.h>
+#include <lal/ComputeFstat.h>
 
 /* ---------- exported defines and macros ---------- */
 
@@ -86,6 +87,15 @@ typedef struct {
 extern const ComputeFBuffer_REAL4 empty_ComputeFBuffer_REAL4;
 
 /* ---------- exported API prototypes ---------- */
+int
+XLALComputeFStatFreqBand (   REAL4FrequencySeries *fstatVector,
+                             const PulsarDopplerParams *doppler,
+                             const MultiSFTVector *multiSFTs,
+                             const MultiNoiseWeights *multiWeights,
+                             const MultiDetectorStateSeries *multiDetStates,
+                             const ComputeFParams *params
+                             );
+
 int
 XLALDriverFstatGPU ( REAL4 *Fstat,
                      const PulsarDopplerParams *doppler,
