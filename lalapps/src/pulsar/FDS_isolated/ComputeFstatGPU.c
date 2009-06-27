@@ -46,6 +46,7 @@
 #include <lal/ComputeFstat.h>
 
 #include "ComputeFstatGPU.h"
+#include "../hough/src2/HierarchicalSearch.h"
 
 NRCSID( COMPUTEFSTATC, "$Id$");
 
@@ -104,74 +105,95 @@ void init_sin_cos_LUT_REAL4 (void);
     they must be correctly set outside this function.
 */
 int
-XLALComputeFStatFreqBand (   REAL4FrequencySeries *fstatVector, 	/**< [out] Vector of Fstat values */
-                             const PulsarDopplerParams *doppler,	/**< parameter-space point to compute F for */
-                             const MultiSFTVector *multiSFTs, 		/**< normalized (by DOUBLE-sided Sn!) data-SFTs of all IFOs */
-                             const MultiNoiseWeights *multiWeights,	/**< noise-weights of all SFTs */
-                             const MultiDetectorStateSeries *multiDetStates,/**< 'trajectories' of the different IFOs */
-                             const ComputeFParams *params		/**< addition computational params */
-                             )
+XLALComputeFStatFreqBandVector (   REAL4FrequencySeriesVector *fstatBandV, 		/**< [out] Vector of Fstat frequency-bands */
+                                   const PulsarDopplerParams *doppler,			/**< parameter-space point to compute F for */
+                                   const MultiSFTVectorSequence *multiSFTsV, 		/**< normalized (by DOUBLE-sided Sn!) data-SFTs of all IFOs */
+                                   const MultiNoiseWeightsSequence *multiWeightsV,	/**< noise-weights of all SFTs */
+                                   const MultiDetectorStateSeriesSequence *multiDetStatesV,/**< 'trajectories' of the different IFOs */
+                                   const ComputeFParams *params				/**< additional computational params */
+                                   )
 {
-  static const char *fn = "XLALComputeFStatFreqBand()";
+  static const char *fn = "XLALComputeFStatFreqBandVector()";
 
-  UINT4 numIFOs, numBins, k;
-  REAL8 deltaF;
+  UINT4 numBins, k;
+  UINT4 numSegments, n;
+  REAL8 f0, deltaF;
   REAL4 Fstat;
   PulsarDopplerParams thisPoint;
   ComputeFBuffer_REAL4 cfBuffer = empty_ComputeFBuffer_REAL4;
 
   /* check input consistency */
-  if ( !doppler || !multiSFTs || !multiWeights || !multiDetStates || !params ) {
+  if ( !doppler || !multiSFTsV || !multiWeightsV || !multiDetStatesV || !params ) {
     XLALPrintError ("%s: illegal NULL input pointer.\n", fn );
     XLAL_ERROR ( fn, XLAL_EINVAL );
   }
 
-  numIFOs = multiSFTs->length;
-  if ( multiDetStates->length != numIFOs ) {
-    XLALPrintError ("%s: number of IFOs inconsisten between multiSFTs (%d) and multiDetStates (%d).\n", fn, numIFOs, multiDetStates->length );
-    XLAL_ERROR (fn, XLAL_EINVAL );
-  }
-
-  if ( !fstatVector || !fstatVector->data || !fstatVector->data->data || !fstatVector->data->length ) {
-    XLALPrintError ("%s: illegal NULL or empty output pointer 'fstatVector'.\n", fn );
+  if ( !fstatBandV || !fstatBandV->length ) {
+    XLALPrintError ("%s: illegal NULL or empty output pointer 'fstatBandV'.\n", fn );
     XLAL_ERROR ( fn, XLAL_EINVAL );
   }
+
+  numSegments = fstatBandV->length;
+
+  if ( (multiSFTsV->length != numSegments) || (multiDetStatesV->length != numSegments ) ) {
+    XLALPrintError ("%s: inconsistent number of segments between fstatBandV (%d), multiSFTsV(%d) and multiDetStatesV (%d)\n",
+                    fn, numSegments, multiSFTsV->length, multiDetStatesV->length );
+    XLAL_ERROR ( fn, XLAL_EINVAL );
+  }
+  if ( multiWeightsV && (multiWeightsV->length != numSegments) ) {
+    XLALPrintError ("%s: inconsistent number of segments between fstatBandV (%d) and multiWeightsV (%d)\n",
+                    fn, numSegments, multiWeightsV->length );
+    XLAL_ERROR ( fn, XLAL_EINVAL );
+  }
+
+
+  numBins = fstatBandV->data[0].data->length;
+  f0      = fstatBandV->data[0].f0;
+  deltaF  = fstatBandV->data[0].deltaF;
 
   /* a check that the f0 values from thisPoint and fstatVector are
      at least close to each other -- this is only meant to catch
      stupid errors but not subtle ones */
-  if ( fabs(fstatVector->f0 - doppler->fkdot[0]) >= fstatVector->deltaF ) {
-    XLALPrintError ("%s: fstatVector->f0 = %f differs from doppler->fkdot[0] = %f by more than deltaF = %f\n",
-                    fn, fstatVector->f0, doppler->fkdot[0], fstatVector->deltaF );
+  if ( fabs(f0 - doppler->fkdot[0]) >= deltaF ) {
+    XLALPrintError ("%s: fstatVector->f0 = %f differs from doppler->fkdot[0] = %f by more than deltaF = %g\n", fn, f0, doppler->fkdot[0], deltaF );
     XLAL_ERROR ( fn, XLAL_EINVAL );
   }
 
-  /* copy values from 'doppler' to local variable 'thisPoint' */
-  thisPoint = *doppler;
-
-  numBins = fstatVector->data->length;
-  deltaF = fstatVector->deltaF;
-
-  /* loop over frequency values and fill up values in fstatVector */
-  for ( k = 0; k < numBins; k++)
+  /* loop over all segments and compute FstatVector over frequencies for each */
+  for ( n = 0; n < numSegments; n ++ )
     {
-      if ( XLALDriverFstatGPU ( &Fstat, &thisPoint, multiSFTs, multiWeights, multiDetStates, params->Dterms, &cfBuffer ) != XLAL_SUCCESS ) {
-        XLALPrintError ("%s: XLALDriverFstatGPU() failed with errno = %d.\n", fn, xlalErrno );
-        XLAL_ERROR ( fn, XLAL_EFUNC );
-      }
 
-      fstatVector->data->data[k] = Fstat;
+      /* copy values from 'doppler' to local variable 'thisPoint' */
+      thisPoint = *doppler;
 
-      thisPoint.fkdot[0] += deltaF;
-    }
+      /* loop over frequency values and fill up values in fstatVector */
+      for ( k = 0; k < numBins; k++)
+        {
+          if ( XLALDriverFstatGPU ( &Fstat,
+                                    &thisPoint,
+                                    multiSFTsV->data[n],
+                                    multiWeightsV->data[n],
+                                    multiDetStatesV->data[n],
+                                    params->Dterms,
+                                    &cfBuffer ) != XLAL_SUCCESS )
+            {
+              XLALPrintError ("%s: XLALDriverFstatGPU() failed with errno = %d.\n", fn, xlalErrno );
+              XLAL_ERROR ( fn, XLAL_EFUNC );
+            }
 
-  XLALEmptyComputeFBuffer_REAL4 ( &cfBuffer );
+          fstatBandV->data[n].data->data[k] = Fstat;
+
+          thisPoint.fkdot[0] += deltaF;
+
+        } /* for k < numBins */
+
+      XLALEmptyComputeFBuffer_REAL4 ( &cfBuffer );
+
+    } /* for n < numSegments */
 
   return XLAL_SUCCESS;
 
-} /* XLALComputeFStatFreqBand() */
-
-
+} /* XLALComputeFStatFreqBandVector() */
 
 
 

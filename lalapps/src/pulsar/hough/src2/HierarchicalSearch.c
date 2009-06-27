@@ -1085,23 +1085,19 @@ int MAIN( int argc, char *argv[]) {
             }
           else	/* run "GPU-ready" REAL4 version aiming at maximum parallelism for GPU optimization */
             {
-              for ( k = 0; k < nStacks; k++)
-                {
-                  /* set spindown value for Fstat calculation */
-                  thisPoint.fkdot[1] = usefulParams.spinRange_midTime.fkdot[1] + ifdot * df1dot;
-                  thisPoint.fkdot[0] = fstatVector.data[k].f0;
-                  /* thisPoint.fkdot[0] = usefulParams.spinRange_midTime.fkdot[0]; */
+              /* set spindown value for Fstat calculation */
+              thisPoint.fkdot[1] = usefulParams.spinRange_midTime.fkdot[1] + ifdot * df1dot;
+              thisPoint.fkdot[0] = fstatVector.data[0].f0;
+              /* thisPoint.fkdot[0] = usefulParams.spinRange_midTime.fkdot[0]; */
 
-                  /* this is the most costly function. We here allow for using an architecture-specific optimized
-                     function from e.g. a local file instead of the standard ComputeFStatFreqBand() from LAL */
-                  if ( XLALComputeFStatFreqBand ( fstatVector.data + k, &thisPoint,
-                                                  stackMultiSFT.data[k], stackMultiNoiseWeights.data[k],
-                                                  stackMultiDetStates.data[k], &CFparams) != XLAL_SUCCESS )
-                    {
-                      LogPrintf (LOG_CRITICAL, "main(): XLALComputeFStatFreqBand() failed with errno = %d\n", xlalErrno );
-                      return XLAL_EFUNC;
-                    }
-                } /* for k < nStacks */
+              /* this is the most costly function. We here allow for using an architecture-specific optimized
+               * function from e.g. a local file instead of the standard ComputeFStatFreqBand() from LAL */
+              if ( XLALComputeFStatFreqBandVector ( &fstatVector, &thisPoint, &stackMultiSFT, &stackMultiNoiseWeights,
+                                                    &stackMultiDetStates, &CFparams) != XLAL_SUCCESS )
+                {
+                  LogPrintf (LOG_CRITICAL, "main(): XLALComputeFStatFreqBandVector() failed with errno = %d\n", xlalErrno );
+                  return XLAL_EFUNC;
+                }
 
             } /* if GPUready */
 
