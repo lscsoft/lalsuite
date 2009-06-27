@@ -128,7 +128,7 @@ void ComputeFStatFreqBand ( LALStatus *status,
 {
 
   UINT4 numDetectors, numBins, k;
-  REAL8 deltaF, fStart;
+  REAL8 deltaF;
   Fcomponents Fstat;
   PulsarDopplerParams thisPoint;
   ComputeFBuffer cfBuffer = empty_ComputeFBuffer;
@@ -164,7 +164,6 @@ void ComputeFStatFreqBand ( LALStatus *status,
 
   numBins = fstatVector->data->length;
   deltaF = fstatVector->deltaF;
-  fStart = thisPoint.fkdot[0];
 
   /* loop over frequency values and fill up values in fstatVector */
   for ( k = 0; k < numBins; k++) {
@@ -174,7 +173,7 @@ void ComputeFStatFreqBand ( LALStatus *status,
 
     fstatVector->data->data[k] = Fstat.F;
 
-    thisPoint.fkdot[0] = fStart + k*deltaF;
+    thisPoint.fkdot[0] += deltaF;
   }
 
   XLALEmptyComputeFBuffer ( &cfBuffer );
