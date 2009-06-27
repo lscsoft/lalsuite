@@ -1629,15 +1629,13 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
        fprintf( stderr, "--gps-start-time must be specified\n" );
        exit( 1 );
      }
-   LAL_CALL( LALINT8toGPS( &status, &gpsStartTime, &gpsStartTimeNS ),
-             &status );
+   XLALINT8NSToGPS( &gpsStartTime, gpsStartTimeNS );
    if ( ! gpsEndTimeNS )
      {
        fprintf( stderr, "--gps-end-time must be specified\n" );
        exit( 1 );
      }
-   LAL_CALL( LALINT8toGPS( &status, &gpsEndTime, &gpsEndTimeNS ), 
-             &status );
+   XLALINT8NSToGPS( &gpsEndTime, gpsEndTimeNS );
    if ( gpsEndTimeNS <= gpsStartTimeNS )
      {
        fprintf( stderr, "invalid gps time range: "

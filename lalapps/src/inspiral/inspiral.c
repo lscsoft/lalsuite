@@ -601,27 +601,23 @@ int main( int argc, char *argv[] )
     searchsumm.searchSummaryTable->out_start_time.gpsSeconds =
       gpsStartTime.gpsSeconds + (numPoints / (4 * sampleRate));
 
-    LAL_CALL( LALGPStoINT8( &status, &outTimeNS,
-          &(searchsumm.searchSummaryTable->out_start_time) ), &status );
+    outTimeNS = XLALGPSToINT8NS( &(searchsumm.searchSummaryTable->out_start_time) );
 
     if ( ! bankSim && ( trigStartTimeNS && (trigStartTimeNS > outTimeNS) ) )
     {
-      LAL_CALL( LALINT8toGPS( &status,
-            &(searchsumm.searchSummaryTable->out_start_time),
-            &trigStartTimeNS ), &status );
+      XLALINT8NSToGPS( &(searchsumm.searchSummaryTable->out_start_time),
+            trigStartTimeNS );
     }
 
     searchsumm.searchSummaryTable->out_end_time.gpsSeconds =
       gpsEndTime.gpsSeconds - (numPoints / (4 * sampleRate));
 
-    LAL_CALL( LALGPStoINT8( &status, &outTimeNS,
-          &(searchsumm.searchSummaryTable->out_end_time) ), &status );
+    outTimeNS = XLALGPSToINT8NS( &(searchsumm.searchSummaryTable->out_end_time) );
 
     if ( ! bankSim && ( trigEndTimeNS && (trigEndTimeNS < outTimeNS) ) )
     {
-      LAL_CALL( LALINT8toGPS( &status,
-            &(searchsumm.searchSummaryTable->out_end_time),
-            &trigEndTimeNS ), &status );
+      XLALINT8NSToGPS( &(searchsumm.searchSummaryTable->out_end_time),
+            trigEndTimeNS );
     }
   }
 
@@ -1080,8 +1076,7 @@ int main( int argc, char *argv[] )
   else
   {
     durationNS = gpsEndTimeNS - gpsStartTimeNS;
-    LAL_CALL( LALINT8toGPS( &status, &(calfacts.duration),
-          &durationNS ), &status );
+    XLALINT8NSToGPS( &(calfacts.duration), durationNS );
   }
 
   if ( calData )
@@ -1296,8 +1291,7 @@ int main( int argc, char *argv[] )
           /* initialize the inj_calfacts */
           memset( &inj_calfacts, 0, sizeof(CalibrationUpdateParams) );
           inj_calfacts.ifo = ifo;
-          LAL_CALL( LALINT8toGPS( &status, &(inj_calfacts.duration),
-                &durationNS ), &status );
+          XLALINT8NSToGPS( &(inj_calfacts.duration), durationNS );
 
           /* create the lal calibration frame cache */
           if ( globCalData )
@@ -1565,15 +1559,13 @@ int main( int argc, char *argv[] )
         &(searchsumm.searchSummaryTable->out_start_time), &tsLength ),
       &status );
 
-  LAL_CALL( LALGPStoINT8( &status, &outTimeNS,
-        &(searchsumm.searchSummaryTable->out_start_time) ), &status );
+  outTimeNS = XLALGPSToINT8NS( &(searchsumm.searchSummaryTable->out_start_time) );
 
   if ( ! bankSim && ( trigStartTimeNS && (trigStartTimeNS > outTimeNS) ) )
   {
     /* override with trigger start time */
-    LAL_CALL( LALINT8toGPS( &status,
-          &(searchsumm.searchSummaryTable->out_start_time),
-          &trigStartTimeNS ), &status );
+    XLALINT8NSToGPS( &(searchsumm.searchSummaryTable->out_start_time),
+          trigStartTimeNS );
   }
 
   LAL_CALL( LALGPStoFloat( &status, &tsLength, &(chan.epoch) ),
@@ -1583,15 +1575,13 @@ int main( int argc, char *argv[] )
         &(searchsumm.searchSummaryTable->out_end_time), &tsLength ),
       &status );
 
-  LAL_CALL( LALGPStoINT8( &status, &outTimeNS,
-        &(searchsumm.searchSummaryTable->out_end_time) ), &status );
+  outTimeNS = XLALGPSToINT8NS( &(searchsumm.searchSummaryTable->out_end_time) );
 
   if ( ! bankSim && ( trigEndTimeNS && (trigEndTimeNS < outTimeNS) ) )
   {
     /* override with trigger end time */
-    LAL_CALL( LALINT8toGPS( &status,
-          &(searchsumm.searchSummaryTable->out_end_time),
-          &trigEndTimeNS ), &status );
+    XLALINT8NSToGPS( &(searchsumm.searchSummaryTable->out_end_time),
+          trigEndTimeNS );
   }
 
   /*
@@ -2315,8 +2305,7 @@ int main( int argc, char *argv[] )
         INT8 fcSegStartTimeNS;
         INT8 fcSegEndTimeNS;
 
-        LAL_CALL( LALGPStoINT8( &status, &fcSegStartTimeNS,
-              &(fcSegVec->data[i].data->epoch) ), &status );
+        fcSegStartTimeNS = XLALGPSToINT8NS( &(fcSegVec->data[i].data->epoch) );
         fcSegEndTimeNS = fcSegStartTimeNS + (INT8)
           ( (REAL8) numPoints * 1e9 * fcSegVec->data[i].deltaT );
 
@@ -3103,8 +3092,7 @@ int main( int argc, char *argv[] )
       while ( event )
       {
         INT8 trigTimeNS;
-        LAL_CALL( LALGPStoINT8( &status, &trigTimeNS, &(event->end_time) ),
-            &status );
+        trigTimeNS = XLALGPSToINT8NS( &(event->end_time) );
 
         if ( trigTimeNS &&
             ((trigStartTimeNS && (trigTimeNS < trigStartTimeNS)) ||
@@ -3552,7 +3540,6 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   INT4 haveClusterMethod = 0;
   INT4 haveBankSimApprox = 0;
   ProcessParamsTable *this_proc_param = procparams.processParamsTable;
-  LALStatus             status = blank_status;
 
 
   /*
@@ -4947,15 +4934,13 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     fprintf( stderr, "--gps-start-time must be specified\n" );
     exit( 1 );
   }
-  LAL_CALL( LALINT8toGPS( &status, &gpsStartTime, &gpsStartTimeNS ),
-      &status );
+  XLALINT8NSToGPS( &gpsStartTime, gpsStartTimeNS );
   if ( ! gpsEndTimeNS )
   {
     fprintf( stderr, "--gps-end-time must be specified\n" );
     exit( 1 );
   }
-  LAL_CALL( LALINT8toGPS( &status, &gpsEndTime, &gpsEndTimeNS ),
-      &status );
+  XLALINT8NSToGPS( &gpsEndTime, gpsEndTimeNS );
   if ( gpsEndTimeNS <= gpsStartTimeNS )
   {
     fprintf( stderr, "invalid gps time range: "

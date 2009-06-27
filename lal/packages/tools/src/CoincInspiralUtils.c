@@ -261,15 +261,11 @@ LALCreateTwoIFOCoincList(
   {
 
     /* calculate the time of the trigger */
-    LALGPStoINT8( status->statusPtr, &currentTriggerNS[0],
-        &(currentTrigger[0]->end_time) );
-    CHECKSTATUSPTR( status );
+    currentTriggerNS[0] = XLALGPSToINT8NS( &(currentTrigger[0]->end_time) );
 
     /* set next trigger for comparison */
     currentTrigger[1] = currentTrigger[0]->next;
-    LALGPStoINT8( status->statusPtr, &currentTriggerNS[1],
-          &(currentTrigger[1]->end_time) );
-    CHECKSTATUSPTR( status );
+    currentTriggerNS[1] = XLALGPSToINT8NS( &(currentTrigger[1]->end_time) );
 
     while ( (currentTriggerNS[1] - currentTriggerNS[0]) < maxTimeDiff )
     {
@@ -314,11 +310,7 @@ LALCreateTwoIFOCoincList(
 
       if ( (currentTrigger[1] = currentTrigger[1]->next) )
       {
-        LALGPStoINT8( status->statusPtr, &currentTriggerNS[1],
-            &(currentTrigger[1]->end_time) );
-	BEGINFAIL (status) {
-	  XLALFreeCoincInspiral( &coincHead );
-	} ENDFAIL (status);
+        currentTriggerNS[1] = XLALGPSToINT8NS( &(currentTrigger[1]->end_time) );
       }
       else
       {
