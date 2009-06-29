@@ -30,6 +30,8 @@ extern "C" {
 #include <lal/DetectorStates.h>
 #include <lal/ComputeFstat.h>
 
+#include "../hough/src2/HierarchicalSearch.h"
+
 /* ---------- exported defines and macros ---------- */
 
 /* ---------- exported types ---------- */
@@ -38,7 +40,7 @@ extern "C" {
 typedef struct {
   REAL4 FreqMain;			/**< "main" part of frequency fkdot[0], normally just the integral part */
   REAL4 fkdot[PULSAR_MAX_SPINS];	/**< remaining spin-parameters, including *fractional* part of Freq = fkdot[0] */
-} PulsarSpins_REAL4;
+} PulsarSpinsREAL4;
 
 
 /** Simple container for REAL4-vectors, holding the SSB-timings DeltaT_alpha  and Tdot_alpha,
@@ -51,14 +53,14 @@ typedef struct {
   REAL4Vector *DeltaT_int;	/**< Integral part of time-difference of SFT-alpha - tau0 in SSB-frame */
   REAL4Vector *DeltaT_rem;	/**< Remainder of time-difference of SFT-alpha - tau0 in SSB-frame */
   REAL4Vector *TdotM1;		/**< dT/dt - 1 : time-derivative of SSB-time wrt local time for SFT-alpha, of order O(1e-4) */
-} SSBtimes_REAL4;
+} SSBtimesREAL4;
 
 
 /** Multi-IFO container for SSB timings in REAL4-representation */
 typedef struct {
   UINT4 length;			/**< number of IFOs */
-  SSBtimes_REAL4 **data;	/**< array of SSBtimes (pointers) */
-} MultiSSBtimes_REAL4;
+  SSBtimesREAL4 **data;		/**< array of SSBtimes (pointers) */
+} MultiSSBtimesREAL4;
 
 /** Struct holding buffered ComputeFStat_REAL4()-internal quantities to avoid unnecessarily
  * recomputing things that depend ONLY on the skyposition and detector-state series (but not on the spins).
@@ -68,9 +70,9 @@ typedef struct {
   REAL8 Alpha, Delta;					/**< target skyposition of previous search */
   const MultiDetectorStateSeries *multiDetStates;	/**< input detStates series used in previous search */
 
-  MultiSSBtimes_REAL4 *multiSSB;			/**< SSB timings computed in previous search */
+  MultiSSBtimesREAL4 *multiSSB;				/**< SSB timings computed in previous search */
   MultiAMCoeffs *multiAMcoef;				/**< antenna-pattern coeffs computed in previous search */
-} ComputeFBuffer_REAL4;
+} ComputeFBufferREAL4;
 
 
 /** Type containing F-statistic proper plus the two complex amplitudes Fa and Fb (for ML-estimators).
@@ -80,22 +82,21 @@ typedef struct {
   REAL4 F;		/**< F-statistic value */
   COMPLEX8 Fa;		/**< complex amplitude Fa */
   COMPLEX8 Fb;		/**< complex amplitude Fb */
-} Fcomponents_REAL4;
+} FcomponentsREAL4;
 
 
 /* ---------- exported global variables ---------- */
-extern const ComputeFBuffer_REAL4 empty_ComputeFBuffer_REAL4;
+extern const ComputeFBufferREAL4 empty_ComputeFBufferREAL4;
 
 /* ---------- exported API prototypes ---------- */
 int
-XLALComputeFStatFreqBand (   REAL4FrequencySeries *fstatVector,
-                             const PulsarDopplerParams *doppler,
-                             const MultiSFTVector *multiSFTs,
-                             const MultiNoiseWeights *multiWeights,
-                             const MultiDetectorStateSeries *multiDetStates,
-                             const ComputeFParams *params
-                             );
-
+XLALComputeFStatFreqBandVector ( REAL4FrequencySeriesVector *fstatBandV,
+                                 const PulsarDopplerParams *doppler,
+                                 const MultiSFTVectorSequence *multiSFTsV,
+                                 const MultiNoiseWeightsSequence *multiWeightsV,
+                                 const MultiDetectorStateSeriesSequence *multiDetStatesV,
+                                 const ComputeFParams *params
+                                 );
 int
 XLALDriverFstatGPU ( REAL4 *Fstat,
                      const PulsarDopplerParams *doppler,
@@ -103,44 +104,44 @@ XLALDriverFstatGPU ( REAL4 *Fstat,
                      const MultiNoiseWeights *multiWeights,
                      const MultiDetectorStateSeries *multiDetStates,
                      UINT4 Dterms,
-                     ComputeFBuffer_REAL4 *cfBuffer
+                     ComputeFBufferREAL4 *cfBuffer
                      );
 
 void
 XLALCoreFstatGPU (REAL4 *Fstat,
-                  PulsarSpins_REAL4 *fkdot4,
+                  PulsarSpinsREAL4 *fkdot4,
                   const MultiSFTVector *multiSFTs,
-                  MultiSSBtimes_REAL4 *multiSSB4,
+                  MultiSSBtimesREAL4 *multiSSB4,
                   MultiAMCoeffs *multiAMcoef,
                   UINT4 Dterms
                   );
 
 
 void
-XLALComputeFaFb_REAL4 ( Fcomponents_REAL4 *FaFb,
-                        const SFTVector *sfts,
-                        const PulsarSpins_REAL4 *fkdot4,
-                        const SSBtimes_REAL4 *tSSB,
-                        const AMCoeffs *amcoe,
-                        UINT4 Dterms);
+XLALComputeFaFbREAL4 ( FcomponentsREAL4 *FaFb,
+                       const SFTVector *sfts,
+                       const PulsarSpinsREAL4 *fkdot4,
+                       const SSBtimesREAL4 *tSSB,
+                       const AMCoeffs *amcoe,
+                       UINT4 Dterms);
 
 
-MultiSSBtimes_REAL4 *
-XLALGetMultiSSBtimes_REAL4 ( const MultiDetectorStateSeries *multiDetStates,
-                             REAL8 Alpha, REAL8 Delta,
-                             LIGOTimeGPS refTime
-                             );
+MultiSSBtimesREAL4 *
+XLALGetMultiSSBtimesREAL4 ( const MultiDetectorStateSeries *multiDetStates,
+                            REAL8 Alpha, REAL8 Delta,
+                            LIGOTimeGPS refTime
+                            );
 
-SSBtimes_REAL4 *
-XLALGetSSBtimes_REAL4 ( const DetectorStateSeries *DetectorStates,
-                        REAL8 Alpha, REAL8 Delta,
-                        LIGOTimeGPS refTime
-                        );
+SSBtimesREAL4 *
+XLALGetSSBtimesREAL4 ( const DetectorStateSeries *DetectorStates,
+                       REAL8 Alpha, REAL8 Delta,
+                       LIGOTimeGPS refTime
+                       );
 
-void XLALDestroySSBtimes_REAL4 ( SSBtimes_REAL4 *tSSB );
-void XLALDestroyMultiSSBtimes_REAL4 ( MultiSSBtimes_REAL4 *multiSSB );
+void XLALDestroySSBtimesREAL4 ( SSBtimesREAL4 *tSSB );
+void XLALDestroyMultiSSBtimesREAL4 ( MultiSSBtimesREAL4 *multiSSB );
 
-void XLALEmptyComputeFBuffer_REAL4 ( ComputeFBuffer_REAL4 *cfb);
+void XLALEmptyComputeFBufferREAL4 ( ComputeFBufferREAL4 *cfb);
 
 
 #ifdef  __cplusplus

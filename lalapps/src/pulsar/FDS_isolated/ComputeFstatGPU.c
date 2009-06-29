@@ -83,9 +83,9 @@ const AntennaPatternMatrix empty_AntennaPatternMatrix;
 const MultiAMCoeffs empty_MultiAMCoeffs;
 const Fcomponents empty_Fcomponents;
 const ComputeFBuffer empty_ComputeFBuffer;
-const PulsarSpins_REAL4 empty_PulsarSpins_REAL4;
-const ComputeFBuffer_REAL4 empty_ComputeFBuffer_REAL4;
-const Fcomponents_REAL4 empty_Fcomponents_REAL4;
+const PulsarSpinsREAL4 empty_PulsarSpinsREAL4;
+const ComputeFBufferREAL4 empty_ComputeFBufferREAL4;
+const FcomponentsREAL4 empty_FcomponentsREAL4;
 
 /*---------- internal prototypes ----------*/
 int finite(double x);
@@ -110,7 +110,7 @@ XLALComputeFStatFreqBandVector (   REAL4FrequencySeriesVector *fstatBandV, 		/**
                                    const MultiSFTVectorSequence *multiSFTsV, 		/**< normalized (by DOUBLE-sided Sn!) data-SFTs of all IFOs */
                                    const MultiNoiseWeightsSequence *multiWeightsV,	/**< noise-weights of all SFTs */
                                    const MultiDetectorStateSeriesSequence *multiDetStatesV,/**< 'trajectories' of the different IFOs */
-                                   const ComputeFParams *params				/**< additional computational params */
+                                   const ComputeFParams *params			/**< additional computational params */
                                    )
 {
   static const char *fn = "XLALComputeFStatFreqBandVector()";
@@ -120,7 +120,7 @@ XLALComputeFStatFreqBandVector (   REAL4FrequencySeriesVector *fstatBandV, 		/**
   REAL8 f0, deltaF;
   REAL4 Fstat;
   PulsarDopplerParams thisPoint;
-  ComputeFBuffer_REAL4 cfBuffer = empty_ComputeFBuffer_REAL4;
+  ComputeFBufferREAL4 cfBuffer = empty_ComputeFBufferREAL4;
 
   /* check input consistency */
   if ( !doppler || !multiSFTsV || !multiWeightsV || !multiDetStatesV || !params ) {
@@ -140,12 +140,11 @@ XLALComputeFStatFreqBandVector (   REAL4FrequencySeriesVector *fstatBandV, 		/**
                     fn, numSegments, multiSFTsV->length, multiDetStatesV->length );
     XLAL_ERROR ( fn, XLAL_EINVAL );
   }
-  if ( multiWeightsV && (multiWeightsV->length != numSegments) ) {
+  if ( multiWeightsV->length != numSegments ) {
     XLALPrintError ("%s: inconsistent number of segments between fstatBandV (%d) and multiWeightsV (%d)\n",
                     fn, numSegments, multiWeightsV->length );
     XLAL_ERROR ( fn, XLAL_EINVAL );
   }
-
 
   numBins = fstatBandV->data[0].data->length;
   f0      = fstatBandV->data[0].f0;
@@ -158,6 +157,71 @@ XLALComputeFStatFreqBandVector (   REAL4FrequencySeriesVector *fstatBandV, 		/**
     XLALPrintError ("%s: fstatVector->f0 = %f differs from doppler->fkdot[0] = %f by more than deltaF = %g\n", fn, f0, doppler->fkdot[0], deltaF );
     XLAL_ERROR ( fn, XLAL_EINVAL );
   }
+#if 0
+  /* make sure sin/cos lookup-tables are initialized */
+  init_sin_cos_LUT_REAL4();
+
+  /* check if for this skyposition and data, the SSB+AMcoefs were already buffered */
+  if ( cfBuffer->Alpha == doppler->Alpha && cfBuffer->Delta == doppler->Delta && multiDetStatesV == cfBuffer->multiDetStatesV )
+    { /* yes ==> reuse */
+      multiSSB4   = cfBuffer->multiSSB;
+      multiAMcoef = cfBuffer->multiAMcoef;
+    }
+  else
+    {
+      /* compute new SSB timings */
+      if ( (multiSSB4 = XLALGetMultiSSBtimesREAL4 ( multiDetStates, doppler->Alpha, doppler->Delta, doppler->refTime)) == NULL ) {
+        XLALPrintError ( "%s: XLALGetMultiSSBtimesREAL4() failed. xlalErrno = %d.\n", fn, xlalErrno );
+	XLAL_ERROR ( fn, XLAL_EFUNC );
+      }
+
+      /* compute new AM-coefficients */
+      SkyPosition skypos;
+      LALStatus status = empty_LALStatus;
+      skypos.system =   COORDINATESYSTEM_EQUATORIAL;
+      skypos.longitude = doppler->Alpha;
+      skypos.latitude  = doppler->Delta;
+
+      LALGetMultiAMCoeffs ( &status, &multiAMcoef, multiDetStates, skypos );
+      if ( status.statusCode ) {
+        XLALPrintError ("%s: LALGetMultiAMCoeffs() failed with statusCode=%d, '%s'\n", fn, status.statusCode, status.statusDescription );
+        XLAL_ERROR ( fn, XLAL_EFAILED );
+      }
+
+      /* apply noise-weights to Antenna-patterns and compute A,B,C */
+      if ( XLALWeighMultiAMCoeffs ( multiAMcoef, multiWeights ) != XLAL_SUCCESS ) {
+	XLALPrintError("%s: XLALWeighMultiAMCoeffs() failed with error = %d\n", fn, xlalErrno );
+	XLAL_ERROR ( fn, XLAL_EFUNC );
+      }
+
+      /* store these in buffer */
+      cfBuffer->Alpha = doppler->Alpha;
+      cfBuffer->Delta = doppler->Delta;
+      cfBuffer->multiDetStates = multiDetStates ;
+
+      XLALDestroyMultiAMCoeffs ( cfBuffer->multiAMcoef );
+      XLALDestroyMultiSSBtimesREAL4 ( cfBuffer->multiSSB );
+
+      cfBuffer->multiSSB = multiSSB4;
+      cfBuffer->multiAMcoef = multiAMcoef;
+
+    } /* if we could NOT reuse previously buffered quantites */
+
+
+  /* ---------- prepare REAL4 version of PulsarSpins to be passed into core functions */
+  PulsarSpinsREAL4 fkdot4 = empty_PulsarSpinsREAL4;
+  UINT4 s;
+  fkdot4.FreqMain = (INT4)doppler->fkdot[0];
+  /* fkdot[0] now only carries the *remainder* of Freq wrt FreqMain */
+  fkdot4.fkdot[0] = (REAL4)( doppler->fkdot[0] - (REAL8)fkdot4.FreqMain );
+  /* the remaining spins are simply down-cast to REAL4 */
+  for ( s=1; s < PULSAR_MAX_SPINS; s ++ )
+    fkdot4.fkdot[s] = (REAL4) doppler->fkdot[s];
+
+
+#endif
+
+
 
   /* loop over all segments and compute FstatVector over frequencies for each */
   for ( n = 0; n < numSegments; n ++ )
@@ -187,7 +251,7 @@ XLALComputeFStatFreqBandVector (   REAL4FrequencySeriesVector *fstatBandV, 		/**
 
         } /* for k < numBins */
 
-      XLALEmptyComputeFBuffer_REAL4 ( &cfBuffer );
+      XLALEmptyComputeFBufferREAL4 ( &cfBuffer );
 
     } /* for n < numSegments */
 
@@ -211,12 +275,12 @@ XLALDriverFstatGPU ( REAL4 *Fstat,	                 		/**< [out] Fstatistic valu
                      const MultiNoiseWeights *multiWeights,		/**< noise-weights of all SFTs */
                      const MultiDetectorStateSeries *multiDetStates,	/**< 'trajectories' of the different IFOs */
                      UINT4 Dterms,       				/**< number of terms to use in Dirichlet kernel interpolation */
-                     ComputeFBuffer_REAL4 *cfBuffer       		/**< CF-internal buffering structure */
+                     ComputeFBufferREAL4 *cfBuffer       		/**< CF-internal buffering structure */
                      )
 {
   static const char *fn = "XLALDriverFstatGPU()";
 
-  MultiSSBtimes_REAL4 *multiSSB4 = NULL;
+  MultiSSBtimesREAL4 *multiSSB4 = NULL;
   MultiAMCoeffs *multiAMcoef = NULL;
 
   /* check input consistency */
@@ -246,8 +310,8 @@ XLALDriverFstatGPU ( REAL4 *Fstat,	                 		/**< [out] Fstatistic valu
   else
     {
       /* compute new SSB timings */
-      if ( (multiSSB4 = XLALGetMultiSSBtimes_REAL4 ( multiDetStates, doppler->Alpha, doppler->Delta, doppler->refTime)) == NULL ) {
-        XLALPrintError ( "%s: XLALGetMultiSSBtimes_REAL4() failed. xlalErrno = %d.\n", fn, xlalErrno );
+      if ( (multiSSB4 = XLALGetMultiSSBtimesREAL4 ( multiDetStates, doppler->Alpha, doppler->Delta, doppler->refTime)) == NULL ) {
+        XLALPrintError ( "%s: XLALGetMultiSSBtimesREAL4() failed. xlalErrno = %d.\n", fn, xlalErrno );
 	XLAL_ERROR ( fn, XLAL_EFUNC );
       }
 
@@ -276,7 +340,7 @@ XLALDriverFstatGPU ( REAL4 *Fstat,	                 		/**< [out] Fstatistic valu
       cfBuffer->multiDetStates = multiDetStates ;
 
       XLALDestroyMultiAMCoeffs ( cfBuffer->multiAMcoef );
-      XLALDestroyMultiSSBtimes_REAL4 ( cfBuffer->multiSSB );
+      XLALDestroyMultiSSBtimesREAL4 ( cfBuffer->multiSSB );
 
       cfBuffer->multiSSB = multiSSB4;
       cfBuffer->multiAMcoef = multiAMcoef;
@@ -285,7 +349,7 @@ XLALDriverFstatGPU ( REAL4 *Fstat,	                 		/**< [out] Fstatistic valu
 
 
   /* ---------- prepare REAL4 version of PulsarSpins to be passed into core functions */
-  PulsarSpins_REAL4 fkdot4 = empty_PulsarSpins_REAL4;
+  PulsarSpinsREAL4 fkdot4 = empty_PulsarSpinsREAL4;
   UINT4 s;
   fkdot4.FreqMain = (INT4)doppler->fkdot[0];
   /* fkdot[0] now only carries the *remainder* of Freq wrt FreqMain */
@@ -320,9 +384,9 @@ XLALDriverFstatGPU ( REAL4 *Fstat,	                 		/**< [out] Fstatistic valu
  */
 void
 XLALCoreFstatGPU (REAL4 *Fstat,				/**< [out] multi-IFO F-statistic value 'F' */
-                  PulsarSpins_REAL4 *fkdot4,		/**< [in] frequency and derivatives in REAL4-safe format */
+                  PulsarSpinsREAL4 *fkdot4,		/**< [in] frequency and derivatives in REAL4-safe format */
                   const MultiSFTVector *multiSFTs,	/**< [in] input multi-IFO data ("SFTs") */
-                  MultiSSBtimes_REAL4 *multiSSB4,	/**< [in] multi-IFO SSB-timings in REAL4-safe format */
+                  MultiSSBtimesREAL4 *multiSSB4,	/**< [in] multi-IFO SSB-timings in REAL4-safe format */
                   MultiAMCoeffs *multiAMcoef,		/**< [in] multi-IFO antenna-pattern functions */
                   UINT4 Dterms				/**< [in] parameter: number of Dterms to use in Dirichlet kernel */
                   )
@@ -360,17 +424,17 @@ XLALCoreFstatGPU (REAL4 *Fstat,				/**< [out] multi-IFO F-statistic value 'F' */
 
   for ( X=0; X < numIFOs; X ++)
     {
-      Fcomponents_REAL4 FcX;
+      FcomponentsREAL4 FcX;
 
-      XLALComputeFaFb_REAL4 (&FcX, multiSFTs->data[X], fkdot4, multiSSB4->data[X], multiAMcoef->data[X], Dterms);
+      XLALComputeFaFbREAL4 (&FcX, multiSFTs->data[X], fkdot4, multiSSB4->data[X], multiAMcoef->data[X], Dterms);
 
 #ifndef LAL_NDEBUG
       if ( xlalErrno ) {
-        XLALPrintError ("%s: XALComputeFaFb_REAL4() failed\n", fn );
+        XLALPrintError ("%s: XALComputeFaFbREAL4() failed\n", fn );
         XLAL_ERROR_VOID ( fn, XLAL_EFUNC );
       }
       if ( !finite(FcX.Fa.re) || !finite(FcX.Fa.im) || !finite(FcX.Fb.re) || !finite(FcX.Fb.im) ) {
-	XLALPrintError("%s: XLALComputeFaFb_REAL4() returned non-finite: Fa_X=(%f,%f), Fb_X=(%f,%f) for X=%d\n",
+	XLALPrintError("%s: XLALComputeFaFbREAL4() returned non-finite: Fa_X=(%f,%f), Fb_X=(%f,%f) for X=%d\n",
                        fn, FcX.Fa.re, FcX.Fa.im, FcX.Fb.re, FcX.Fb.im, X );
 	XLAL_ERROR_VOID ( fn, XLAL_EFPINVAL );
       }
@@ -416,14 +480,14 @@ XLALCoreFstatGPU (REAL4 *Fstat,				/**< [out] multi-IFO F-statistic value 'F' */
  *
  */
 void
-XLALComputeFaFb_REAL4 ( Fcomponents_REAL4 *FaFb,		/**< [out] single-IFO Fa/Fb for this parameter-space point */
-                        const SFTVector *sfts,			/**< [in] single-IFO input data ("SFTs") */
-                        const PulsarSpins_REAL4 *fkdot4,	/**< [in] frequency (and derivatives) in REAL4-safe format */
-                        const SSBtimes_REAL4 *tSSB,		/**< [in] single-IFO SSB-timings in REAL4-safe format */
-                        const AMCoeffs *amcoe,			/**< [in] single-IFO antenna-pattern coefficients */
-                        UINT4 Dterms)				/**< [in] number of Dterms to use in Dirichlet kernel */
+XLALComputeFaFbREAL4 ( FcomponentsREAL4 *FaFb,		/**< [out] single-IFO Fa/Fb for this parameter-space point */
+                       const SFTVector *sfts,		/**< [in] single-IFO input data ("SFTs") */
+                       const PulsarSpinsREAL4 *fkdot4,	/**< [in] frequency (and derivatives) in REAL4-safe format */
+                       const SSBtimesREAL4 *tSSB,	/**< [in] single-IFO SSB-timings in REAL4-safe format */
+                       const AMCoeffs *amcoe,		/**< [in] single-IFO antenna-pattern coefficients */
+                       UINT4 Dterms)			/**< [in] number of Dterms to use in Dirichlet kernel */
 {
-  static const char *fn = "XLALComputeFaFb_REAL4()";
+  static const char *fn = "XLALComputeFaFbREAL4()";
 
   UINT4 alpha;                 	/* loop index over SFTs */
   UINT4 spdnOrder;		/* maximal spindown-orders */
@@ -672,17 +736,17 @@ XLALComputeFaFb_REAL4 ( Fcomponents_REAL4 *FaFb,		/**< [out] single-IFO Fa/Fb fo
 
   return;
 
-} /* XLALComputeFaFb_REAL4() */
+} /* XLALComputeFaFbREAL4() */
 
 
 
-/** Destroy a MultiSSBtimes_REAL4 structure.
+/** Destroy a MultiSSBtimesREAL4 structure.
  *  Note, this is "NULL-robust" in the sense that it will not crash
  *  on NULL-entries anywhere in this struct, so it can be used
  *  for failure-cleanup even on incomplete structs
  */
 void
-XLALDestroyMultiSSBtimes_REAL4 ( MultiSSBtimes_REAL4 *multiSSB )
+XLALDestroyMultiSSBtimesREAL4 ( MultiSSBtimesREAL4 *multiSSB )
 {
   UINT4 X;
 
@@ -693,7 +757,7 @@ XLALDestroyMultiSSBtimes_REAL4 ( MultiSSBtimes_REAL4 *multiSSB )
     {
       for ( X=0; X < multiSSB->length; X ++ )
 	{
-          XLALDestroySSBtimes_REAL4 ( multiSSB->data[X] );
+          XLALDestroySSBtimesREAL4 ( multiSSB->data[X] );
 	} /* for X < numDetectors */
       LALFree ( multiSSB->data );
     }
@@ -702,16 +766,16 @@ XLALDestroyMultiSSBtimes_REAL4 ( MultiSSBtimes_REAL4 *multiSSB )
 
   return;
 
-} /* XLALDestroyMultiSSBtimes_REAL4() */
+} /* XLALDestroyMultiSSBtimesREAL4() */
 
 
-/** Destroy a SSBtimes_REAL4 structure.
+/** Destroy a SSBtimesREAL4 structure.
  *  Note, this is "NULL-robust" in the sense that it will not crash
  *  on NULL-entries anywhere in this struct, so it can be used
  *  for failure-cleanup even on incomplete structs
  */
 void
-XLALDestroySSBtimes_REAL4 ( SSBtimes_REAL4 *tSSB )
+XLALDestroySSBtimesREAL4 ( SSBtimesREAL4 *tSSB )
 {
   if ( ! tSSB )
     return;
@@ -729,23 +793,23 @@ XLALDestroySSBtimes_REAL4 ( SSBtimes_REAL4 *tSSB )
 
   return;
 
-} /* XLALDestroySSBtimes_REAL4() */
+} /* XLALDestroySSBtimesREAL4() */
 
 
-/** Multi-IFO version of LALGetSSBtimes_REAL4().
+/** Multi-IFO version of LALGetSSBtimesREAL4().
  * Get all SSB-timings for all input detector-series in REAL4 representation.
  *
  */
-MultiSSBtimes_REAL4 *
-XLALGetMultiSSBtimes_REAL4 ( const MultiDetectorStateSeries *multiDetStates, 	/**< [in] detector-states at timestamps t_i */
-                             REAL8 Alpha, REAL8 Delta,				/**< source sky-location, in equatorial coordinates  */
-                             LIGOTimeGPS refTime
-                             )
+MultiSSBtimesREAL4 *
+XLALGetMultiSSBtimesREAL4 ( const MultiDetectorStateSeries *multiDetStates, 	/**< [in] detector-states at timestamps t_i */
+                            REAL8 Alpha, REAL8 Delta,				/**< source sky-location, in equatorial coordinates  */
+                            LIGOTimeGPS refTime
+                            )
 {
-  static const char *fn = "XLALGetMultiSSBtimes_REAL4()";
+  static const char *fn = "XLALGetMultiSSBtimesREAL4()";
 
   UINT4 X, numDetectors;
-  MultiSSBtimes_REAL4 *ret;
+  MultiSSBtimesREAL4 *ret;
 
   /* check input */
   if ( !multiDetStates || multiDetStates->length==0 ) {
@@ -769,8 +833,8 @@ XLALGetMultiSSBtimes_REAL4 ( const MultiDetectorStateSeries *multiDetStates, 	/*
 
   for ( X=0; X < numDetectors; X ++ )
     {
-      if ( (ret->data[X] = XLALGetSSBtimes_REAL4 (multiDetStates->data[X], Alpha, Delta, refTime)) == NULL ) {
-        XLALPrintError ("%s: XLALGetSSBtimes_REAL4() failed. xlalErrno = %d\n", fn, xlalErrno );
+      if ( (ret->data[X] = XLALGetSSBtimesREAL4 (multiDetStates->data[X], Alpha, Delta, refTime)) == NULL ) {
+        XLALPrintError ("%s: XLALGetSSBtimesREAL4() failed. xlalErrno = %d\n", fn, xlalErrno );
         goto failed;
       }
 
@@ -780,7 +844,7 @@ XLALGetMultiSSBtimes_REAL4 ( const MultiDetectorStateSeries *multiDetStates, 	/*
 
  failed:
   /* free all memory allocated so far */
-  XLALDestroyMultiSSBtimes_REAL4 ( ret );
+  XLALDestroyMultiSSBtimesREAL4 ( ret );
   XLAL_ERROR_NULL (fn, XLAL_EFAILED );
 
  success:
@@ -793,17 +857,17 @@ XLALGetMultiSSBtimes_REAL4 ( const MultiDetectorStateSeries *multiDetStates, 	/*
 /** XLAL REAL4-version of LALGetSSBtimes()
  *
  */
-SSBtimes_REAL4 *
-XLALGetSSBtimes_REAL4 ( const DetectorStateSeries *DetectorStates,	/**< [in] detector-states at timestamps t_i */
-                        REAL8 Alpha, REAL8 Delta,			/**< source sky-location, in equatorial coordinates  */
-                        LIGOTimeGPS refTime
-                        )
+SSBtimesREAL4 *
+XLALGetSSBtimesREAL4 ( const DetectorStateSeries *DetectorStates,	/**< [in] detector-states at timestamps t_i */
+                       REAL8 Alpha, REAL8 Delta,			/**< source sky-location, in equatorial coordinates  */
+                       LIGOTimeGPS refTime
+                       )
 {
-  static const char *fn = "XLALGetSSBtimes_REAL4()";
+  static const char *fn = "XLALGetSSBtimesREAL4()";
 
   UINT4 numSteps, i;
   REAL8 refTimeREAL8;
-  SSBtimes_REAL4 *ret;
+  SSBtimesREAL4 *ret;
 
   /* check input consistency */
   if ( !DetectorStates || DetectorStates->length==0 ) {
@@ -870,27 +934,27 @@ XLALGetSSBtimes_REAL4 ( const DetectorStateSeries *DetectorStates,	/**< [in] det
   goto success;
 
  failed:
-  XLALDestroySSBtimes_REAL4 ( ret );
+  XLALDestroySSBtimesREAL4 ( ret );
   XLAL_ERROR_NULL ( fn, XLAL_EFAILED );
 
  success:
   return ret;
 
-} /* XLALGetSSBtimes_REAL4() */
+} /* XLALGetSSBtimesREAL4() */
 
 
 
-/** Destruction of a ComputeFBuffer_REAL4 *contents*,
+/** Destruction of a ComputeFBufferREAL4 *contents*,
  * i.e. the multiSSB and multiAMcoeff, while the
  * buffer-container is not freed (which is why it's passed
  * by value and not by reference...) */
 void
-XLALEmptyComputeFBuffer_REAL4 ( ComputeFBuffer_REAL4 *cfb)
+XLALEmptyComputeFBufferREAL4 ( ComputeFBufferREAL4 *cfb)
 {
   if ( !cfb )
     return;
 
-  XLALDestroyMultiSSBtimes_REAL4 ( cfb->multiSSB );
+  XLALDestroyMultiSSBtimesREAL4 ( cfb->multiSSB );
   cfb->multiSSB = NULL;
 
   XLALDestroyMultiAMCoeffs ( cfb->multiAMcoef );
@@ -898,7 +962,7 @@ XLALEmptyComputeFBuffer_REAL4 ( ComputeFBuffer_REAL4 *cfb)
 
   return;
 
-} /* XLALDestroyComputeFBuffer_REAL4() */
+} /* XLALDestroyComputeFBufferREAL4() */
 
 
 

@@ -312,7 +312,7 @@ int main(int argc,char *argv[])
 
   FILE *fpFstat = NULL;
   ComputeFBuffer cfBuffer = empty_ComputeFBuffer;
-  ComputeFBuffer_REAL4 cfBuffer4 = empty_ComputeFBuffer_REAL4;
+  ComputeFBufferREAL4 cfBuffer4 = empty_ComputeFBufferREAL4;
   REAL8 numTemplates, templateCounter;
   REAL8 tickCounter;
   time_t clock0;
@@ -683,7 +683,7 @@ int main(int argc,char *argv[])
   LogPrintfVerbatim ( LOG_DEBUG, "done.\n");
 
   XLALEmptyComputeFBuffer ( &cfBuffer );
-  XLALEmptyComputeFBuffer_REAL4 ( &cfBuffer4 );
+  XLALEmptyComputeFBufferREAL4 ( &cfBuffer4 );
 
   LAL_CALL ( Freemem(&status, &GV), &status);
 
