@@ -218,16 +218,19 @@ for tag in user_tags:
   if 'VETO' in tag:
     # get the category veto (assuming tag has form: *CAT_N_VETO)
     cat_num = tag.split('_')[-2]
-    veto_file_path = cp.get('input', 'ihope-segments-directory')
-    veto_file_name = ''.join([
-      distinct_ifos, '-VETOTIME_CAT_', cat_num, '-', experiment_start, '-', experiment_duration, 
-      '.xml' ])
-    veto_file = '/'.join([ veto_file_path, veto_file_name ])
-    if not os.path.exists( veto_file ):
-      raise ValueError, "Veto file %s could not be found." % veto_file
+  else:
+    # is category 1 veto
+    cat_num = 1
 
-    # get the veto segments name
-    veto_segs_name = get_veto_segments_name( cat_num, cumulative = True )
+  veto_file_path = cp.get('input', 'ihope-segments-directory')
+  veto_file_name = ''.join([
+    distinct_ifos, '-VETOTIME_CAT_', cat_num, '-', experiment_start, '-', experiment_duration, 
+    '.xml' ])
+  veto_file = '/'.join([ veto_file_path, veto_file_name ])
+  if not os.path.exists( veto_file ):
+    raise ValueError, "Veto file %s could not be found." % veto_file
+  # get the veto segments name
+  veto_segs_name = get_veto_segments_name( cat_num, cumulative = True )
 
   t2c_output = []
   cache_start_time = int(experiment_start)
