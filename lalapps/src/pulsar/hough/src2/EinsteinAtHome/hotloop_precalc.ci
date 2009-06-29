@@ -115,7 +115,7 @@
 	     "movss %%xmm2,%%xmm6       \n\t"	
 	     SINCOS_P4
 	     "movss %%xmm1,%%xmm5       \n\t"
-	     "mulss %%xmm0,%%xmm1       \n\t"		
+	     "mulss %%xmm0,%%xmm1       \n\t"
 	     "mulss %%xmm0,%%xmm2       \n\t"
 	     SINCOS_P5(Qimag)
 	     "mulss %%xmm3,%%xmm5       \n\t"
@@ -129,24 +129,24 @@
 	     /* interface */
 	     :
 	     /* output  (here: to memory)*/
-	     [XPreal]     "=m" (realXP),
-	     [XPimag]     "=m" (imagXP),
-	     [Qreal]      "=m" (realQ),
-	     [Qimag]      "=m" (imagQ),
-	     [sin]	  "=m" (s_alpha),
-	     [cos]	  "=m" (c_alpha),
-	     [tmp]        "=m" (tmp)
+	     [XPreal]     "=m" (realXP),  /*REAL4*/
+	     [XPimag]     "=m" (imagXP),  /*REAL4*/
+	     [Qreal]      "=m" (realQ),   /*REAL4 sincos*/
+	     [Qimag]      "=m" (imagQ),   /*REAL4 sincos*/
+	     [sin]	  "=m" (s_alpha), /*REAL4 sincos*/
+	     [cos]	  "=m" (c_alpha), /*REAL4 sincos*/
+	     [tmp]        "=m" (tmp)      /*REAL8 sincos*/
 
 	     :
 	     /* input */
-	     [Xa]            "r" (Xalpha_l),
-	     [kappa_s]       "m" (kappa_s),
-	     [kappa_star]    "m" (kappa_star),
-	     [_lambda_alpha] "m" (_lambda_alpha),
-	     [scd]	     "m" (scd),
-	     [scb]	     "m" (scb),
-	     [sincos_adds]   "m" (sincos_adds),
-	     [M1]	     "m" (M1),
+	     [Xa]            "r" (Xalpha_l),     /*(*REAL4)*/
+	     [kappa_s]       "m" (kappa_s),      /*REAL4*/
+	     [kappa_star]    "m" (kappa_star),   /*REAL8 sincos*/
+	     [_lambda_alpha] "m" (_lambda_alpha),/*REAL8 sincos*/
+	     [scd]	     "m" (scd),          /*(*REAL4) sincos*/
+	     [scb]	     "m" (scb),          /*(*REAL4) sincos*/
+	     [sincos_adds]   "m" (sincos_adds),  /*REAL8 sincos*/
+	     [M1]	     "m" (M1),           /*REAL4*/
 
 
 	     /* vector constants */
