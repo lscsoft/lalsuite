@@ -220,8 +220,7 @@ for tag in user_tags:
     cat_num = tag.split('_')[-2]
   else:
     # is category 1 veto
-    cat_num = 1
-
+    cat_num = '1'
   veto_file_path = cp.get('input', 'ihope-segments-directory')
   veto_file_name = ''.join([
     distinct_ifos, '-VETOTIME_CAT_', cat_num, '-', experiment_start, '-', experiment_duration, 
@@ -249,7 +248,7 @@ for tag in user_tags:
         slide_url = re.sub('THINCA', 'THINCA_SLIDE', entry.url)
         this_thinca_url_list.append(slide_url)
       # if n*20th entry or last remainder, write to cache
-      if entry_num % 19 == 0 or entry_num == len(instrument_cache) - 1:
+      if (entry_num + 1) % 20 == 0 or (entry_num + 1) == len(instrument_cache):
         # set duration to be end of this entry - start of first entry in cache
         cache_duration = entry.segment[1].seconds - cache_start_time
         this_cache = lal.Cache().from_urls( this_thinca_url_list )
