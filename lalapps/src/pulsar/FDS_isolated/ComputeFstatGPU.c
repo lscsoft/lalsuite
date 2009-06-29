@@ -614,8 +614,10 @@ XLALComputeFaFb_REAL4 ( Fcomponents_REAL4 *FaFb,		/**< [out] single-IFO Fa/Fb fo
 	      qn *= pn;				/* q_(n+1) */
 	    } /* for l <= 2*Dterms */
 
-	  U_alpha = Sn / qn;
-	  V_alpha = Tn / qn;
+          REAL4 qn_inv = 1.0f / qn;
+
+	  U_alpha = Sn * qn_inv;
+	  V_alpha = Tn * qn_inv;
 
 #ifndef LAL_NDEBUG
 	  if ( !finite(U_alpha) || !finite(V_alpha) || !finite(pn) || !finite(qn) || !finite(Sn) || !finite(Tn) ) {
