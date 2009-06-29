@@ -72,7 +72,7 @@ NRCSID (LALINSPIRALNEXTTEMPLATEC, "Id: $");
 
 /*  <lalVerbatim file="LALInspiralNextTemplateCP"> */
 
-void LALInspiralNextTemplate(LALStatus          *status, 
+void LALInspiralNextTemplate(LALStatus          *status,
                              InspiralBankParams *bankPars,
                              InspiralMetric     metric)
 { /* </lalVerbatim> */

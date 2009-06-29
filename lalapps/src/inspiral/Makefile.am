@@ -100,10 +100,12 @@ bin_SCRIPTS = lalapps_inspiral_pipe lalapps_inspiral_hipe \
               lalapps_followup_pipe lalapps_plot_hipe \
               lalapps_ihope_status lalapps_write_ihope_page \
 	      lalapps_compare_ini lalapps_link_old_ihope \
-	      lalapps_generate_upper_limits lalapps_followup_page
-
+	      lalapps_generate_upper_limits lalapps_followup_page \
+	      lalapps_cbc_pipedown
 pkgpython_DATA = inspiral.py inspiralutils.py
 endif
+
+dist_bin_SCRIPTS = lalapps_makeblindinj lalapps_makeblindinj_himass
 
 python_config.sed:
 	-rm -f python_config.sed
@@ -159,9 +161,12 @@ lalapps_generate_upper_limits: $(srcdir)/generate_upper_limits.in python_config.
 lalapps_followup_page: $(srcdir)/followup_page.in python_config.sed
 	sed -f python_config.sed $(srcdir)/followup_page.in > lalapps_followup_page
 	chmod +x lalapps_followup_page
+lalapps_cbc_pipedown: $(srcdir)/cbc_pipedown.in python_config.sed
+	sed -f python_config.sed $(srcdir)/cbc_pipedown.in > lalapps_cbc_pipedown
+	chmod +x lalapps_cbc_pipedown
 
 
-pkgdata_DATA = BNSMasses.dat inspsrcs100Mpc.complete inspsrcs100Mpc.errors inspiral_pipe.ini inspiral_hipe.ini online.ini online_inject_bbh.ini ihope.ini followup_pipe.ini plot_hipe.ini write_ihope_page.ini write_ihope_style.css
+pkgdata_DATA = BNSMasses.dat inspsrcs100Mpc.complete inspsrcs100Mpc.errors inspiral_pipe.ini inspiral_hipe.ini online.ini online_inject_bbh.ini ihope.ini cbc_pipedown.ini followup_pipe.ini plot_hipe.ini write_ihope_page.ini write_ihope_style.css
 EXTRA_DIST = $(INSPIRALSRC) $(TMPLTBANKSRC) \
              $(SIRESRC) $(COIRESRC) $(SIVASRC) $(MINJSRC) \
              $(INCASRC) $(COHERESRC) $(INSPINJSRC) \
@@ -171,8 +176,7 @@ EXTRA_DIST = $(INSPIRALSRC) $(TMPLTBANKSRC) \
              inspiral_online_pipe_inject.in check_hipe_times.in \
 	     followup_pipe.in plot_hipe.in  write_ihope_page.in\
 	     compare_ini.in link_old_ihope.in generate_upper_limits.in\
-	     followup_page.in\
-             $(DATA)
+	     followup_page.in cbc_pipedown.in $(DATA)
 
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(top_srcdir)/misc
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la

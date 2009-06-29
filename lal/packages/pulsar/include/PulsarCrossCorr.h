@@ -13,22 +13,22 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with with program; see the file COPYING. If not, write to the 
- *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, 
+ *  along with with program; see the file COPYING. If not, write to the
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
  */
 
 /**
  * \author Christine Chung, Badri Krishnan, John Whelan
  * \date 2008
- * \file 
+ * \file
  * \ingroup pulsar
  * \brief Header-file for LAL routines for CW cross-correlation searches
  *
  * $Id$
  *
  */
- 
+
 /*
  *   Protection against double inclusion (include-loop protection)
  *     Note the naming convention!
@@ -45,9 +45,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#if HAVE_GLOB_H
 #include <glob.h>
+#endif
 #include <time.h>
-#include <errno.h> 
+#include <errno.h>
 
 #include <lal/AVFactories.h>
 #include <lal/Date.h>
@@ -87,7 +89,7 @@ NRCSID (PULSARCROSSCORRH, "$Id$");
 /******************************************************
  *  Error codes and messages.
  */
- 
+
 #define PULSARCROSSCORR_ENULL 1
 #define PULSARCROSSCORR_ENONULL 2
 #define PULSARCROSSCORR_EVAL 3

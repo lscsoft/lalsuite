@@ -1,4 +1,4 @@
-/*----------------------------------------------------------------------- 
+/*-----------------------------------------------------------------------
 
 File Name: VectorFactories.c
 
@@ -13,7 +13,7 @@ Revision: $Id$
 \subsection{Module \texttt{VectorFactories.c}}
 \label{ss:VectorFactories.c}
 
-Create/destroy $\langle\mbox{datatype}\rangle$Vector objects. 
+Create/destroy $\langle\mbox{datatype}\rangle$Vector objects.
 
 \subsubsection*{Prototypes}
 \vspace{0.1in}

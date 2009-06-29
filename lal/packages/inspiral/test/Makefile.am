@@ -1,12 +1,12 @@
 ## Process this file with automake to produce Makefile.in
 if FRAME
 if METAIO
-check_PROGRAMS = GenerateInspiralWaveform LALHybridTest 
+check_PROGRAMS = GenerateInspiralWaveform LALHybridTest
 else
-check_PROGRAMS = GenerateInspiralWaveform 
+check_PROGRAMS = GenerateInspiralWaveform
 endif
 else
-check_PROGRAMS = GenerateInspiralWaveform 
+check_PROGRAMS = GenerateInspiralWaveform
 endif
 
 GenerateInspiralWaveform_SOURCES = GenerateInspiralWaveform.c

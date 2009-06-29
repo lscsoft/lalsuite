@@ -19,19 +19,19 @@
 
 #include "LALDoc.h"
 
-/* 
- *   Routine for parsing a line for the file name or assigning a 
- *   default.  
+/*
+ *   Routine for parsing a line for the file name or assigning a
+ *   default.
  *
  *   Exits via LALDocErr() if there is bad syntax on the line
- *   Returns the output file in Env->fileName if one is found. 
+ *   Returns the output file in Env->fileName if one is found.
  *   Returns Env->fileName = NULL if there is no file name.
  *
  * TO DO: The original parser that patrick wrote was better
- * than this one.  
+ * than this one.
 */
 
-int 
+int
 FindNameOfOutPutFile( char *line , LALEnvironment *Env )
 {
      int sizech,lOfFileName,i;
@@ -46,14 +46,14 @@ FindNameOfOutPutFile( char *line , LALEnvironment *Env )
      shift = strstr(li,Env->OnFlag) + sizech*strlen( Env->OnFlag ) ;
 
      /* If there no closer on line to the right of the flag ... eject   */
-     ptrCloser = strstr(shift , Env->closer); 
+     ptrCloser = strstr(shift , Env->closer);
      if ( !ptrCloser ) {
               LALDocErr("No parsing closer on the line.",
                         Env->sourceFile , __LINE__ , __FILE__ , 1 );
      }
 
-     /* pointer to PHILE (ie "file=") string the input line */ 
-     ptrPHILE  = strstr(shift , PHILE );       
+     /* pointer to PHILE (ie "file=") string the input line */
+     ptrPHILE  = strstr(shift , PHILE );
 
      /* possibly no file requested */
      if ( ptrPHILE==NULL || (ptrPHILE > ptrCloser)  ) {
@@ -69,14 +69,14 @@ FindNameOfOutPutFile( char *line , LALEnvironment *Env )
              return 1;
      }
      else /* dig for the file name */
-     {     
+     {
              /* Squeeze in on the file name ... */
 
              /* ... from the left (take out leading spaces and quotes) */
              ptrFileStr = ptrPHILE + sizech*strlen( PHILE );
-             while((*(ptrFileStr) == ' ')||(*(ptrFileStr)== '\"')) 
+             while((*(ptrFileStr) == ' ')||(*(ptrFileStr)== '\"'))
                     { ptrFileStr = ptrFileStr + sizech ; }
-  
+
              /* from the right  (take out trailing spaces and quotes) */
              mark = ptrCloser;
              while( (*(mark-sizech)==' ')||(*(mark-sizech)=='\"')||
@@ -85,12 +85,12 @@ FindNameOfOutPutFile( char *line , LALEnvironment *Env )
                 LALDocErr("Bad syntax in source. Output file needs to specified.",
                           Env->sourceFile , __LINE__ , __FILE__ , 1 );
              }
-  
+
              /* assign the file name on the line to the Env */
              lOfFileName = strlen(ptrFileStr) - strlen(mark);
              *(ptrFileStr+ lOfFileName) = '\0';
              for(i=0;i<lOfFileName;i++) {
-                     Env->fileName[i] = ptrFileStr[i]; 
+                     Env->fileName[i] = ptrFileStr[i];
              }
              strcat(Env->fileName,Env->suffix);
              if (  strstr(Env->fileName," ")  ) {
@@ -111,14 +111,14 @@ FindNameOfOutPutFile( char *line , LALEnvironment *Env )
 
 
 int
-FindDefaultFileName( LALEnvironment *Env ) 
+FindDefaultFileName( LALEnvironment *Env )
 {
         char *period;
         char c;
         int  i, lensrc , lendot , lensuffix, lenBaseNameStr ;
 
         period = strstr( Env->sourceFile , "." ) ;
-        if( !period ){ 
+        if( !period ){
                 LALDocErr("No dot in in input source file name.",
                         Env->sourceFile , __LINE__ , __FILE__ , 1 );
         }
@@ -140,7 +140,7 @@ FindDefaultFileName( LALEnvironment *Env )
         /* and put on the output file extention (.tex) */
         lensuffix = strlen(Env->suffix);
         i= 0 ;
-        while(i < lensuffix ) { 
+        while(i < lensuffix ) {
               *(Env->dfltFile +lenBaseNameStr + 1  +i  )  = *(Env->suffix+i);
               i++;
         }

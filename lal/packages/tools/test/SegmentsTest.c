@@ -702,7 +702,7 @@ int main( int argc, char *argv[] )
 
   }
 
-  /*------------------------------*/ 
+  /*------------------------------*/
   strcpy( testname, "XLALSegListAppend decimal place record - init" );
   status = XLALSegListInit( &seglist1 );
   if ( status ) {
@@ -717,7 +717,7 @@ int main( int argc, char *argv[] )
     for ( iseg=0; iseg<=9; iseg++ ) {
       XLALSegSet( &seg, dtime+0, dtime+iseg, 0 );
       XLALSegListAppend( &seglist1, &seg );
-      if ( seglist1.dplaces != 3*((iseg+2)/3) ) {
+      if ( seglist1.dplaces != 3*(((UINT4)iseg+2)/3) ) {
 	FUNCFAIL( testname, "Wrong dplaces value after appending segment" );
       }
     }
@@ -755,7 +755,7 @@ int main( int argc, char *argv[] )
       seglist1ok = 0;
     } else if ( seglist1.segs && seglist1.arraySize == SEGMENTSH_ALLOCBLOCK &&
 		seglist1.length == 1 ) {
-      FUNCPASS( testname );      
+      FUNCPASS( testname );
     } else {
       FUNCFAIL( testname, "Failed to store first segment" );
       seglist1ok = 0;
@@ -865,7 +865,7 @@ int main( int argc, char *argv[] )
   } else {
     XLALPrintInfo( "Skip test: %s\n", testname );
   }
-  
+
 
   /*-------------------------------------------------------------------------*/
   XLALPrintInfo("\n========== XLALSegListCoalesce tests \n");
@@ -913,7 +913,7 @@ int main( int argc, char *argv[] )
   } else {
     XLALPrintInfo( "Skip test: %s\n", testname );
   }
-  
+
 
   /*------------------------------*/
   /*-- Add some segments to the existing segment list --*/
@@ -1008,7 +1008,7 @@ int main( int argc, char *argv[] )
   } else {
     XLALPrintInfo( "Skip test: %s\n", testname );
   }
-  
+
 
   /*-------------------------------------------------------------------------*/
   XLALPrintInfo("\n========== XLALSegListSearch tests \n");
@@ -1066,7 +1066,7 @@ int main( int argc, char *argv[] )
   /*------------------------------*/
   /* Loop over segment list length */
 
-  for ( nsegs=1; nsegs<=sizeof(sseg)/sizeof(LALSeg); nsegs++ ) {
+  for ( nsegs=1; nsegs<=(INT4)sizeof(sseg)/(INT4)sizeof(LALSeg); nsegs++ ) {
 
     /* Append a segment */
     sprintf( testname,
@@ -1079,7 +1079,7 @@ int main( int argc, char *argv[] )
     }
 
     /* Loop over test times */
-    for ( itime=0; itime < sizeof(stime)/sizeof(TestTime); itime++ ) {
+    for ( itime=0; itime < (INT4)sizeof(stime)/(INT4)sizeof(TestTime); itime++ ) {
 
       /* Loop over lastFound states */
       for ( ilast = -1; ilast < nsegs; ilast++ ) {

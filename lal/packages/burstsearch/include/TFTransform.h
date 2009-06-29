@@ -134,6 +134,13 @@ typedef struct tagREAL8TimeFrequencyPlane {
 } REAL8TimeFrequencyPlane;
 
 
+
+REAL8Sequence *XLALREAL8WindowTwoPointSpectralCorrelation(
+	const REAL8Window *window,
+	const REAL8FFTPlan *plan
+);
+
+
 REAL8TimeFrequencyPlane *XLALCreateTFPlane(
 	UINT4 tseries_length,
 	REAL8 tseries_deltaT,

@@ -1,48 +1,57 @@
-from pylal import rate
-from pylal import SimInspiralUtils
+#!/usr/bin/python
 import scipy
 from scipy import interpolate
 import numpy
-#import pylab
-from math import *
-import sys
-import glob
-import copy
-from glue.ligolw import ligolw
-from optparse import OptionParser
-
 try:
         import sqlite3
 except ImportError:
         # pre 2.5.x
         from pysqlite2 import dbapi2 as sqlite3
+from math import *
+import sys
+import glob
+import copy
+from optparse import OptionParser
+
+from glue import segments
+from glue.ligolw import ligolw
+from glue.ligolw import lsctables
 from glue.ligolw import dbtables
+from glue.ligolw import utils
+from pylal import db_thinca_rings
+from pylal import llwapp
+from pylal import rate
+from pylal import SimInspiralUtils
+from pylal.xlal.date import LIGOTimeGPS
+
+lsctables.LIGOTimeGPS = LIGOTimeGPS
 
 
-class sim:
-  def __init__(self, distance, mass1, mass2):
-    self.distance = distance
-    self.mass1 = mass1
-    self.mass2 = mass2
-
-def get_zero_lag_far(zerofname, ifos):
-  query = 'SELECT min(false_alarm_rate) FROM coinc_inspiral JOIN coinc_event ON (coinc_event.coinc_event_id == coinc_inspiral.coinc_event_id) WHERE NOT EXISTS(SELECT * FROM time_slide WHERE time_slide.time_slide_id == coinc_event.time_slide_id AND time_slide.offset != 0);'
-  working_filename = dbtables.get_connection_filename(zerofname, tmp_path = None, verbose = True)
+def get_far_threshold_and_segments(zerofname, live_time_program, verbose = False):
+  """
+  return the false alarm rate of the most rare zero-lag coinc, and a
+  dictionary of the thinca segments indexed by instrument.
+  """
+  # open database
+  working_filename = dbtables.get_connection_filename(zerofname, verbose = verbose)
   connection = sqlite3.connect(working_filename)
-  cursor = connection.cursor()
+  dbtables.DBTable_set_connection(connection)
 
-  result = cursor.execute(query)
-  query = 'SELECT sum(in_end_time - in_start_time) FROM search_summary WHERE (ifos == "' + ifos + '");'
-  for r in result:
-    far = r[0]
+  # extract false alarm rate threshold
+  query = 'SELECT MIN(coinc_inspiral.combined_far) FROM coinc_inspiral JOIN coinc_event ON (coinc_event.coinc_event_id == coinc_inspiral.coinc_event_id) WHERE NOT EXISTS(SELECT * FROM time_slide WHERE time_slide.time_slide_id == coinc_event.time_slide_id AND time_slide.offset != 0);'
+  far, = connection.cursor().execute(query).fetchone()
 
-  result = cursor.execute(query)
-  for r in result:
-    time = r[0]
-  cursor.close()
-  return far, time
+  # extract segments.
+  seglists = db_thinca_rings.get_thinca_zero_lag_segments(connection, program_name = live_time_program)
 
-def get_volume_derivative(injfnames, twoDMassBins, dBin, FAR, live_time, ifos, gw):
+  # done
+  connection.close()
+  dbtables.discard_connection_filename(zerofname, working_filename, verbose = verbose)
+  dbtables.DBTable_set_connection(None)
+  return far, seglists
+
+def get_volume_derivative(injfnames, twoDMassBins, dBin, FAR, zero_lag_segments, gw):
+  livetime = float(abs(zero_lag_segments))
   FARh = FAR*100000
   FARl = FAR*0.001
   nbins = 5
@@ -51,14 +60,14 @@ def get_volume_derivative(injfnames, twoDMassBins, dBin, FAR, live_time, ifos, g
   vA = []
   vA2 = []
   for far in FARS.centres():
-    m, f = get_injections(injfnames, far, ifos)
+    m, f = get_injections(injfnames, far, zero_lag_segments)
     print >>sys.stderr, "computing volume at FAR " + str(far)
-    vAt, vA2t = twoD_SearchVolume(f, m, twoDMassBins, dBin, gw, live_time, 1)  
+    vAt, vA2t = twoD_SearchVolume(f, m, twoDMassBins, dBin, gw, livetime, 1)  
     vAt.array = scipy.log10(vAt.array + 0.001)
     vA.append(vAt)
   # the derivitive is calcuated with respect to FAR * t
-  FARS = rate.LogarithmicBins(FARl * live_time, FARh * live_time, nbins)
-  return derivitave_fit(FARS, FAR * live_time, vA, twoDMassBins)
+  FARS = rate.LogarithmicBins(FARl * livetime, FARh * livetime, nbins)
+  return derivitave_fit(FARS, FAR * livetime, vA, twoDMassBins)
   
   
 def derivitave_fit(farts, FARt, vAs, twodbin):
@@ -85,61 +94,83 @@ def derivitave_fit(farts, FARt, vAs, twodbin):
       dA.array[m1][m2] = val # minus the derivitave
   return dA
 
-def get_injections(injfnames, FAR, ifos):
+def get_injections(injfnames, FAR, zero_lag_segments, verbose = False):
   """
   """
+  def injection_was_made(geocent_end_time, geocent_end_time_ns, zero_lag_segments = zero_lag_segments):
+    """
+    return True if injection was made in the given segmentlist
+    """
+    return lsctables.LIGOTimeGPS(geocent_end_time, geocent_end_time_ns) in zero_lag_segments
+
   found = []
   missed = []
-  cnt = 0
   print >>sys.stderr, ""
-  for f in injfnames:
+  for cnt, f in enumerate(injfnames):
     print >>sys.stderr, "getting injections below FAR: " + str(FAR) + ":\t%.1f%%\r" % (100.0 * cnt / len(injfnames),),
-    cnt= cnt+1
-    working_filename = dbtables.get_connection_filename(f, tmp_path = None, verbose = True)
+    working_filename = dbtables.get_connection_filename(f, tmp_path = None, verbose = verbose)
     connection = sqlite3.connect(working_filename)
-    cursor = connection.cursor()
-    #Create a view of the sim table where the intersection of instrument time restricts the injections (i.e. add a WHERE clause to look at only injections that were made during a given ifo time
-    try: cursor.execute('DROP VIEW sims;') 
-    except: pass
-    try: cursor.execute('DROP VIEW found;')
-    except: pass
-    sim_query = 'CREATE TEMPORARY VIEW sims AS SELECT * FROM sim_inspiral WHERE EXISTS (SELECT in_start_time, in_end_time FROM search_summary WHERE (ifos=="'+ifos+'" AND in_start_time < sim_inspiral.geocent_end_time AND in_end_time > sim_inspiral.geocent_end_time));'
-    cursor.execute(sim_query)
-    #cursor.execute('CREATE VIEW sims AS SELECT * FROM sim_inspiral;') 
+    connection.create_function("injection_was_made", 2, injection_was_made)
 
-    #First find injections that were not found even above threshold (these don't participate in coincs)
-    query = 'SELECT distance, mass1, mass2 FROM sims WHERE NOT EXISTS(SELECT * FROM coinc_event_map WHERE (sims.simulation_id == coinc_event_map.event_id AND coinc_event_map.table_name="sim_inspiral"));'
-    for (distance, mass1, mass2) in cursor.execute(query):
-        missed.append( sim(distance,mass1,mass2) )
-    
-    #Now we have to find the found / missed above the loudest event.  
-    query = '''CREATE TEMPORARY VIEW found AS
-                 SELECT *
-                 FROM coinc_event 
-                 JOIN coinc_event_map AS mapa ON (coinc_event.coinc_event_id = mapa.coinc_event_id) 
-                 JOIN sims ON (sims.simulation_id == mapa.event_id)
-                 WHERE (
-                       coinc_event.coinc_def_id == "coinc_definer:coinc_def_id:2" 
-                       AND mapa.table_name == "sim_inspiral"
-                       );'''
+    make_sim_inspiral = lsctables.table.get_table(dbtables.get_xml(connection), lsctables.SimInspiralTable.tableName)._row_from_cols
 
-    cursor.execute(query)
+    for values in connection.cursor().execute("""
+SELECT
+  sim_inspiral.*,
+  -- true if injection matched a coinc below the false alarm rate threshold
+  EXISTS (
+    SELECT
+      *
+    FROM
+      coinc_event_map AS mapa
+      JOIN coinc_event_map AS mapb ON (
+        mapa.coinc_event_id == mapb.coinc_event_id
+      )
+      JOIN coinc_inspiral ON (
+        mapb.table_name == "coinc_event"
+        AND mapb.event_id == coinc_inspiral.coinc_event_id
+      )
+    WHERE
+      mapa.table_name == "sim_inspiral"
+      AND mapa.event_id == sim_inspiral.simulation_id
+      AND coinc_inspiral.combined_far < ?
+  )
+FROM
+  sim_inspiral
+WHERE
+  -- only interested in injections that were injected
+  injection_was_made(sim_inspiral.geocent_end_time, sim_inspiral.geocent_end_time_ns)
+    """, (FAR,)):
+      sim = make_sim_inspiral(values)
+      if values[-1]:
+        found.append(sim)
+      else:
+        missed.append(sim)
 
-    exists_query = '''SELECT * FROM coinc_event_map AS mapa JOIN coinc_event_map AS mapb ON (mapa.coinc_event_id == mapb.coinc_event_id) JOIN coinc_inspiral ON (mapb.table_name == "coinc_event" AND mapb.event_id == coinc_inspiral.coinc_event_id) WHERE mapa.table_name == "sim_inspiral" AND mapa.event_id == found.simulation_id AND coinc_inspiral.false_alarm_rate < ''' + str(FAR)
+    # done
+    connection.close()
+    dbtables.discard_connection_filename(f, working_filename, verbose = verbose)
+    dbtables.DBTable_set_connection(None)
 
-    # The found injections meet the exists query
-    query = 'SELECT distance, mass1, mass2 FROM found WHERE EXISTS(' + exists_query + ');'
-    for (distance, mass1, mass2) in cursor.execute(query):
-        found.append( sim(distance,mass1,mass2) )
-    # The missed injections do not
-    query = 'SELECT distance, mass1, mass2 FROM found WHERE NOT EXISTS(' + exists_query + ');'
-    for (distance, mass1, mass2) in cursor.execute(query):
-        missed.append( sim(distance,mass1,mass2) )
-    cursor.close()
-  print >>sys.stderr, "\nFound = " + str(len(found)) + " Missed = " + str(len(missed))
+  print >>sys.stderr, "\nFound = %d Missed = %d" % (len(found), len(missed))
   return found, missed
 
 
+def trim_mass_space(eff, twodbin, minthresh=0.0, minM=25.0, maxM=100.0):
+  """
+  restricts array to only have data within the mass space and sets everything
+  outside the mass space to some canonical value, minthresh
+  """
+  x = eff.array.shape[0]
+  y = eff.array.shape[1]
+  c1 = twodbin.centres()[0]
+  c2 = twodbin.centres()[1]
+  numbins = 0
+  for i in range(x):
+    for j in range(y):
+      if c1[i] > c2[j] or (c1[i] + c2[j]) > maxM or (c1[i]+c2[j]) < minM: eff.array[i][j] = minthresh
+      else: numbins+=1
+  print "found " + str(numbins) + " bins within total mass"
 
 def fix_masses(sims):
   """
@@ -178,7 +209,7 @@ def scramble_pop(m, f):
 def scramble_dist(dist,relerr):
   """
   function to handle random calibration error.  Individually srambles the distances
-  of injection by a random error (log normal)
+  of injection by an error.
   """
   #return dist * float( scipy.exp( relerr * scipy.random.standard_normal(1) ) )
   return dist * (1-relerr)
@@ -246,65 +277,93 @@ def cut_distance(sims, mnd, mxd):
   """
   Exclude sims outside some distance range to avoid errors when binning
   """
-  for k in range(len(sims)):
-    if sims[k].distance >= mxd or sims[k].distance <= mnd: sims.pop(k)
+  return [sim for sim in sims if mnd <= sim.distance <= mxd]
  
 
 ######################## ACTUAL PROGRAM #######################################
 ###############################################################################
 ###############################################################################
 
-parser = OptionParser(
-                version = "%prog CVS $Id$",
-                usage = "%prog [options] [file ...]",
-                description = "%prog computes mass/mass upperlimit"
-        )
-parser.add_option("-i", "--ifos", default="H1H2L1", metavar = "ifo1ifo2...", help = "Set on instruments to compute upper limit for. Example H1H2L1")
-parser.add_option("-t", "--output-name-tag", default = "", metavar = "name", help = "Set the file output name tag, real name is 2Dsearchvolume-<tag>-<ifos>.xml")
-parser.add_option("-f", "--full-data-file", default = "FULL_DATACAT_3.sqlite", metavar = "pattern", help = "File in which to find the full data, example FULL_DATACAT_3.sqlite")
-parser.add_option("-s", "--inj-data-glob", default = "*INJCAT_3.sqlite", metavar = "pattern", help = "Glob for files to find the inj data, example *INJCAT_3.sqlite")
-parser.add_option("-b", "--bootstrap-iterations", default = 1, metavar = "number", help = "Number of iterations to compute mean and variance of volume MUST BE GREATER THAN 1 TO GET USABLE NUMBERS, a good number is 10000")
+
+def parse_command_line():
+  parser = OptionParser(version = "%prog CVS $Id$", usage = "%prog [options] [file ...]", description = "%prog computes mass/mass upperlimit")
+  parser.add_option("-i", "--instruments", metavar = "name[,name,...]", help = "Set the list of instruments.  Required.  Example \"H1,H2,L1\"")
+  parser.add_option("--live-time-program", default = "thinca", metavar = "name", help = "Set the name of the program whose rings will be extracted from the search_summary table.  Default = \"thinca\".")
+  parser.add_option("-t", "--output-name-tag", default = "", metavar = "name", help = "Set the file output name tag, real name is 2Dsearchvolume-<tag>-<ifos>.xml")
+  parser.add_option("-f", "--full-data-file", default = "FULL_DATACAT_3.sqlite", metavar = "pattern", help = "File in which to find the full data, example FULL_DATACAT_3.sqlite")
+  parser.add_option("-s", "--inj-data-glob", default = "*INJCAT_3.sqlite", metavar = "pattern", help = "Glob for files to find the inj data, example *INJCAT_3.sqlite")
+  parser.add_option("-b", "--bootstrap-iterations", default = 1, metavar = "integer", type = "int", help = "Number of iterations to compute mean and variance of volume MUST BE GREATER THAN 1 TO GET USABLE NUMBERS, a good number is 10000")
+  parser.add_option("--veto-segments-name", help = "Set the name of the veto segments to use from the XML document.")
+  parser.add_option("--verbose", action = "store_true", help = "Be verbose.")
+
+  opts, filenames = parser.parse_args()
+
+  if opts.instruments is None:
+    raise ValueError, "missing required argument --instruments"
+  opts.instruments = lsctables.instrument_set_from_ifos(opts.instruments)
+
+  opts.injfnames = glob.glob(opts.inj_data_glob)
+
+  return opts, filenames
+
+# FIXME This should use some lal or pylal official thing
+secs_in_year = 31556926.0
+
+opts, filenames = parse_command_line()
+
+if opts.veto_segments_name is not None:
+  working_filename = dbtables.get_connection_filename(opts.full_data_file, verbose = opts.verbose)
+  connection = sqlite3.connect(working_filename)
+  dbtables.DBTable_set_connection(connection)
+  veto_segments = db_thinca_rings.get_veto_segments(connection, opts.veto_segments_name)
+  connection.close()
+  dbtables.discard_connection_filename(opts.full_data_file, working_filename, verbose = opts.verbose)
+  dbtables.DBTable_set_connection(None)
+else:
+  veto_segments = segments.segmentlistdict()
 
 
-opts, filenames = parser.parse_args()
+# FIXME:  don't you need to request the min(FAR) for the given "on"
+# instruments?
+FAR, seglists = get_far_threshold_and_segments(opts.full_data_file, opts.live_time_program, verbose = opts.verbose)
 
 
-ifos = opts.ifos #"H1H2L1"
-iters = int(opts.bootstrap_iterations)
+# times when only exactly the required instruments are on
+seglists -= veto_segments
+zero_lag_segments = seglists.intersection(opts.instruments) - seglists.union(set(seglists.keys()) - opts.instruments)
 
-injfnames = glob.glob(opts.inj_data_glob)
-FAR, livetime = get_zero_lag_far(opts.full_data_file, ifos)
-#livetime/=31556926.0 # convert seconds to years
-
-print FAR, livetime
-
-Found, Missed = get_injections(injfnames, FAR, ifos)
-
-#Found = SimInspiralUtils.ReadSimInspiralFromFiles(glob.glob('*FOUND*.xml'),verbose=True)
-#Missed = SimInspiralUtils.ReadSimInspiralFromFiles(glob.glob('*MISSED*.xml'),verbose=True)
+print FAR, float(abs(zero_lag_segments))
 
 
-# replace these with pylal versions ?
-fix_masses(Found)
-fix_masses(Missed)
+Found, Missed = get_injections(opts.injfnames, FAR, zero_lag_segments, verbose = opts.verbose)
+
 
 # restrict the sims to a distance range
-cut_distance(Found, 1, 2000)
-cut_distance(Missed, 1, 2000)
+Found = cut_distance(Found, 1, 2000)
+Missed = cut_distance(Missed, 1, 2000)
 
 # get a 2D mass binning
-twoDMassBins = get_2d_mass_bins(1, 99, 50)
+twoDMassBins = get_2d_mass_bins(1, 99, 33)
+
 # get log distance bins
-dBin = rate.LogarithmicBins(0.1,2500,200)
+dBin = rate.LogarithmicBins(0.1,2500,100)
 
-
-gw = rate.gaussian_window2d(3,3,4)
+gw = rate.gaussian_window2d(2,2,8)
 
 #Get derivative of volume with respect to FAR
-dvA = get_volume_derivative(injfnames, twoDMassBins, dBin, FAR, livetime, ifos, gw)
+dvA = get_volume_derivative(opts.injfnames, twoDMassBins, dBin, FAR, zero_lag_segments, gw)
 
 print >>sys.stderr, "computing volume at FAR " + str(FAR)
-vA, vA2 = twoD_SearchVolume(Found, Missed, twoDMassBins, dBin, gw, livetime, iters)
+vA, vA2 = twoD_SearchVolume(Found, Missed, twoDMassBins, dBin, gw, float(abs(zero_lag_segments)), bootnum=int(opts.bootstrap_iterations))
+
+# FIXME convert to years (use some lal or pylal thing in the future)
+vA.array /= secs_in_year
+vA2.array /= secs_in_year * secs_in_year #two powers for this squared quantity
+
+#Trim the array to have sane values outside the total mass area of interest
+trim_mass_space(dvA, twoDMassBins, minthresh=0.0, minM=25.0, maxM=100.0)
+trim_mass_space(vA, twoDMassBins, scipy.unique(vA.array)[1]/10.0, minM=25.0, maxM=100.0)
+trim_mass_space(vA2, twoDMassBins, minthresh=0.0, minM=25.0, maxM=100.0)
 
 #output an XML file with the result
 xmldoc = ligolw.Document()
@@ -312,4 +371,4 @@ xmldoc.appendChild(ligolw.LIGO_LW())
 xmldoc.childNodes[-1].appendChild(rate.binned_array_to_xml(vA, "2DsearchvolumeFirstMoment"))
 xmldoc.childNodes[-1].appendChild(rate.binned_array_to_xml(vA2, "2DsearchvolumeSecondMoment"))
 xmldoc.childNodes[-1].appendChild(rate.binned_array_to_xml(dvA, "2DsearchvolumeDerivative"))
-xmldoc.write(open("2Dsearchvolume-"+opts.output_name_tag+"-"+opts.ifos+".xml","w"))
+utils.write_filename(xmldoc, "2Dsearchvolume-%s-%s.xml" % (opts.output_name_tag, "".join(sorted(opts.instruments))))

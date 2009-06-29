@@ -13,7 +13,7 @@ Routine to compute various moments of data.
 \input{LALMomentCP}
 
 \subsubsection*{Description}
-The data structure passed in is either a REAL8 or a REAL4 Sequence.  The only parameter is which moment to calculate.  
+The data structure passed in is either a REAL8 or a REAL4 Sequence.  The only parameter is which moment to calculate.
 The function the sums the data, calculates the average and then it returns the average for the first moment, it returns the variance for the second moment, and it returns the n-th moment about the mean for higher order moments.
 
 \subsubsection*{Algorithm}

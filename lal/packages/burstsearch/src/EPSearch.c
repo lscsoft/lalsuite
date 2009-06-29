@@ -58,7 +58,7 @@ SnglBurst *XLALEPSearch(
 	REAL8 maxTileBandwidth,
 	REAL8 maxTileDuration
 )
-{ 
+{
 	static const char func[] = "XLALEPSearch";
 	SnglBurst *head = NULL;
 	int errorcode = 0;

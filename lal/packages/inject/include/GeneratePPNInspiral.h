@@ -352,7 +352,7 @@ See~\verb@SkyCoordinates.h@ for the definition of this quantity.
 \item[\texttt{REAL4 m1, m2}] The masses of the binary components, in
 solar masses.
 
-\item[\texttt{LIGOTimeGPS geocentEndTime}] The geocentric end time of 
+\item[\texttt{LIGOTimeGPS geocentEndTime}] The geocentric end time of
 the inspiral event.
 \end{description}
 
@@ -394,8 +394,8 @@ void
 LALGeneratePPNAmpCorInspiral( LALStatus     *,
 			CoherentGW    *output,
 			PPNParamStruc *params );
-			
-			
+
+
 
 /* <lalLaTeX>
 \newpage\input{GetInspiralParamsC}
@@ -412,7 +412,7 @@ LALGetInspiralParams( LALStatus                  *,
 void
 LALGenerateInspiralSmooth( LALStatus            *,
 		      	   CoherentGW		**output,
-			   PPNParamStruc	*params,		   
+			   PPNParamStruc	*params,
 			   REAL4		*qfactor);
 
 /* <lalLaTeX>

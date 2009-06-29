@@ -37,7 +37,7 @@ the \texttt{lalsupport} library.
 
 \vfill{\footnotesize\input{FileIOHV}}
 \newpage\input{FileIOC}
-</lalLaTeX> */ 
+</lalLaTeX> */
 
 #ifndef _FILEIO_H
 #define _FILEIO_H

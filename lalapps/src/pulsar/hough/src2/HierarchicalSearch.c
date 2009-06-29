@@ -136,6 +136,7 @@ RCSID( "$Id$");
 #define INSERT_INTO_HOUGHFSTAT_TOPLIST insert_into_houghFStat_toplist
 #define SHOW_PROGRESS(rac,dec,tpl_count,tpl_total,freq,fband)
 #define SET_CHECKPOINT
+#define REARRANGE_SFT_DATA
 #define MAIN  main
 #define FOPEN fopen
 #define COMPUTEFSTATFREQBAND ComputeFStatFreqBand
@@ -799,8 +800,7 @@ int MAIN( int argc, char *argv[]) {
   thisPoint.refTime = tMidGPS; 
   /* binary orbit and higher spindowns not considered */
   thisPoint.orbit = NULL;
-  thisPoint.fkdot[2] = 0.0;
-  thisPoint.fkdot[3] = 0.0;
+  INIT_MEM ( thisPoint.fkdot );
 
   /* some compute F params */
   CFparams.Dterms = uvar_Dterms;
@@ -1044,6 +1044,9 @@ int MAIN( int argc, char *argv[]) {
 
 	  } 
 	} /* loop over stacks */
+
+	REARRANGE_SFT_DATA;
+
       } /* fstat memory allocation block */
       
       
@@ -1413,6 +1416,8 @@ void SetUpSFTs( LALStatus *status,
   
   /* get frequency and fdot bands at start time of sfts by extrapolating from reftime */
   in->spinRange_refTime.refTime = refTimeGPS;
+
+
   TRY( LALExtrapolatePulsarSpinRange( status->statusPtr, &in->spinRange_startTime, tStartGPS, &in->spinRange_refTime), status); 
   TRY( LALExtrapolatePulsarSpinRange( status->statusPtr, &in->spinRange_endTime, tEndGPS, &in->spinRange_refTime), status); 
   TRY( LALExtrapolatePulsarSpinRange( status->statusPtr, &in->spinRange_midTime, tMidGPS, &in->spinRange_refTime), status); 

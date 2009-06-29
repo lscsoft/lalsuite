@@ -79,7 +79,7 @@ program is not installed on your system.
 #define PTOLEMETRICTESTC_EMEM 1
 #define PTOLEMETRICTESTC_ESUB 2
 #define PTOLEMETRICTESTC_ESYS 3
- 
+
 #define PTOLEMETRICTESTC_MSGEMEM "memory (de)allocation error"
 #define PTOLEMETRICTESTC_MSGESUB "subroutine failed"
 #define PTOLEMETRICTESTC_MSGESYS "system call failed"
@@ -145,8 +145,8 @@ int main( int argc, char *argv[] ) {
   BOOLEAN          grace = 0;       /* Whether or not we use xmgrace */
   BOOLEAN          nongrace = 0;    /* Whether or not to output data to file*/
   int              ra, dec, i;      /* Loop variables for xmgrace option */
-  FILE            *pvc;             /* Temporary file for xmgrace option */
-  FILE            *fnongrace;       /* File contaning ellipse coordinates */
+  FILE            *pvc=NULL;        /* Temporary file for xmgrace option */
+  FILE            *fnongrace=NULL;  /* File contaning ellipse coordinates */
 
 
   /* Default values. */
@@ -214,7 +214,7 @@ int main( int argc, char *argv[] ) {
   else
     in.spindown = NULL;
 
-  
+
 
   if (test) {
     REAL4 old_duration = in.duration;
@@ -348,7 +348,7 @@ int main( int argc, char *argv[] ) {
     for (dec=80; dec>0; dec-=10) {
       for (ra=0; ra<=90; ra+=15) {
         float gaa, gad, gdd, angle, smaj, smin;
- 
+
         /* Get the metric at this ra, dec. */
         in.position.longitude = ra*LAL_PI_180;
         in.position.latitude = dec*LAL_PI_180;
@@ -360,7 +360,7 @@ int main( int argc, char *argv[] ) {
           return PTOLEMETRICTESTC_ESUB;
         }
 
-	/*  Project metric: */ 
+	/*  Project metric: */
 	LALProjectMetric( &status, metric, 0 );
 	if( status.statusCode )
 	  {
@@ -385,7 +385,7 @@ int main( int argc, char *argv[] ) {
         angle = atan2( gad, mismatch/smaj/smaj-gdd );
         if (angle <= -LAL_PI_2) angle += LAL_PI;
         if (angle > LAL_PI_2) angle -= LAL_PI;
- 
+
         if(grace)
 	  {
 	    /* Print set header. */
@@ -406,11 +406,11 @@ int main( int argc, char *argv[] ) {
 	  if(grace)
 	    fprintf( pvc, "%e %e\n", ra+r*cos(angle-c), dec+r*sin(angle-c) );
 	  if(nongrace)
-	    fprintf( fnongrace, "%e %e\n", ra+r*cos(angle-c), 
+	    fprintf( fnongrace, "%e %e\n", ra+r*cos(angle-c),
 		     dec+r*sin(angle-c) );
 
         } /* for (a...) */
- 
+
       } /* for (ra...) */
     } /* for (dec...) */
     if(grace)

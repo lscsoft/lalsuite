@@ -55,7 +55,7 @@ table of leap seconds is compiled in: this \emph{must} be updated whenever
 a new leap second is introduced.  The latest leap second included is
 2006-Jan-01. % UPDATEME %
 
-The conversion from UTC to GPS is done by counting the amount of elapsed 
+The conversion from UTC to GPS is done by counting the amount of elapsed
 time since the GPS epoch origin, 1980-Jan-06 00:00:00 UTC.  Again, leap
 seconds are accounted for by a static table (different from the one used in
 GPS to UTC) which \emph{must} be updated whenever a new leap second is
@@ -138,8 +138,8 @@ char *asctime_r( const struct tm *, char * );
  *    http://www.iers.org/MainDisp.csl?pid=36-9
  * Another useful web site is at
  *    http://maia.usno.navy.mil/
- * which carries these announcements too.  The latest time for which 
- * this routine will work: 2006-12-31 23:59:59 UTC 
+ * which carries these announcements too.  The latest time for which
+ * this routine will work: 2006-12-31 23:59:59 UTC
  */
 
 /* GPS for maxtestedGPS computed using lalapps_tconvert (part of ligotools) */
@@ -165,8 +165,8 @@ LALGPStoUTC (LALStatus                *status,
   /* What's the funny format? These Unix epoch times are expressed
    * in terms of Julian Day Numbers, i.e. say JD1 = Julian Day number
    * of the day when a leap sec was added, JD0 = Unix epoch origin (i.e. 1970-01-01),
-   * then the Unix epoch time is given by 
-   * (JD1 - JD0) * SECS_PER_DAY 
+   * then the Unix epoch time is given by
+   * (JD1 - JD0) * SECS_PER_DAY
    * FIXME: at some point, we should just dispense with this wacky Julian Day
    * stuff. It's just confusing. */
   /* As of 2005-07-05 08:05 UTC-4, Bulletin C has been released, but the Naval
@@ -234,10 +234,10 @@ LALGPStoUTC (LALStatus                *status,
 
   if (lalDebugLevel & LALINFO)
   {
-    LALSnprintf(infostr, INFOSTR_LEN, "Max. tested GPS is %d\n", maxtestedGPS);
+    snprintf(infostr, INFOSTR_LEN, "Max. tested GPS is %d\n", maxtestedGPS);
     LALInfo(status, infostr);
   }
-      
+
   /* 1998-Dec-31 23:59:60 (if leap seconds are taken into account) */
   tmptime = (22*365 + 7*366)* SECS_PER_DAY + 23;
   gmtime_r(&tmptime, &tmputc);
@@ -245,7 +245,7 @@ LALGPStoUTC (LALStatus                *status,
   if (lalDebugLevel & LALINFO)
   {
     asctime_r(&tmputc, tmpstamp);
-    LALSnprintf(infostr, INFOSTR_LEN, "tmputc = %s\n", tmpstamp);
+    snprintf(infostr, INFOSTR_LEN, "tmputc = %s\n", tmpstamp);
     LALInfo(status, infostr);
   }
 
@@ -276,12 +276,12 @@ LALGPStoUTC (LALStatus                *status,
 
 
 
-  
+
   /* system gmtime does take leap seconds into account */
   if (tmputc.tm_sec == 60)
     {
       LALInfo(status, "gmtime_r() takes leap seconds into account");
-      
+
       /* check that date requested is not later than 2002-Mar-31 23:59:59,
        * which is when the next possible leap second will be. IERS has
        * announced that there will be NO leap second at the end of 2001
@@ -313,7 +313,7 @@ LALGPStoUTC (LALStatus                *status,
 
       if (lalDebugLevel & LALINFO)
       {
-        LALSnprintf(infostr, INFOSTR_LEN, "unixTime = %ld; leaps[%d] = %ld",
+        snprintf(infostr, INFOSTR_LEN, "unixTime = %ld; leaps[%d] = %ld",
             unixTime, i, leaps[i]);
         LALInfo(status, infostr);
       }
@@ -347,7 +347,7 @@ LALGPStoUTC (LALStatus                *status,
           p_utcDate->unixDate.tm_isdst = 0;
         }
     }
-      
+
   /* set residual nanoseconds */
   p_utcDate->residualNanoSeconds = p_gpsTime->gpsNanoSeconds;
 
@@ -407,7 +407,7 @@ static int days_in_month(const LALDate *p_utcDate)
     else
       return 28;
   }
-  
+
   return -1;
 }
 
@@ -489,7 +489,7 @@ LALUTCtoGPS (LALStatus                *status,
 
   if (lalDebugLevel & LALINFO)
   {
-    LALSnprintf(infostr, INFOSTR_LEN, "Date given: %d-%d-%d %d:%d:%d %d\n",
+    snprintf(infostr, INFOSTR_LEN, "Date given: %d-%d-%d %d:%d:%d %d\n",
         p_utcDate->unixDate.tm_year+1900, p_utcDate->unixDate.tm_mon+1,
         p_utcDate->unixDate.tm_mday, p_utcDate->unixDate.tm_hour,
         p_utcDate->unixDate.tm_min, p_utcDate->unixDate.tm_sec,
@@ -560,8 +560,8 @@ LALUTCtoGPS (LALStatus                *status,
           LALWarning(status, "may be missing leap seconds");
         }
     }
-  
-  
+
+
   /* start counting from the origin of GPS */
   tmpdate.unixDate.tm_year = 80;
   tmpdate.unixDate.tm_mon  = LALMONTH_JAN;
@@ -570,7 +570,7 @@ LALUTCtoGPS (LALStatus                *status,
   tmpdate.unixDate.tm_min  =  0;
   tmpdate.unixDate.tm_sec  =  0;
   tmpdate.residualNanoSeconds = 0;
-      
+
   while (tmpdate.unixDate.tm_year < p_utcDate->unixDate.tm_year)
     {
       ddays += days_in_year(&tmpdate);
@@ -600,7 +600,7 @@ LALUTCtoGPS (LALStatus                *status,
       else if (leap_sec_data[i].year == p_utcDate->unixDate.tm_year &&
                leap_sec_data[i].mon <= p_utcDate->unixDate.tm_mon)
         dsecs++;
-          
+
       ++i;
     }
 
@@ -622,7 +622,7 @@ LALUTCtoGPS (LALStatus                *status,
  * second is announced.
 
  ftp://maia.usno.navy.mil/ser7/tai-utc.dat
- 
+
  1961 JAN  1 =JD 2437300.5  TAI-UTC=   1.4228180 S + (MJD - 37300.) X 0.001296 S
  1961 AUG  1 =JD 2437512.5  TAI-UTC=   1.3728180 S + (MJD - 37300.) X 0.001296 S
  1962 JAN  1 =JD 2437665.5  TAI-UTC=   1.8458580 S + (MJD - 37665.) X 0.0011232S
@@ -671,9 +671,9 @@ typedef struct gps_leap_sec {
 void
 LALLeapSecs (LALStatus                    *status,
              INT4                         *p_leapSecs,  /* output - GPS-UTC,
-                                                           i.e. the number of 
+                                                           i.e. the number of
                                                            leap seconds introduced
-                                                           since the GPS epoch 
+                                                           since the GPS epoch
                                                            1980-Jan-06 */
              const LIGOTimeGPS            *p_gpsTime,   /* input - GPS time */
              const LALLeapSecFormatAndAcc *p_formatAndAcc)  /* format and
@@ -701,7 +701,7 @@ LALLeapSecs (LALStatus                    *status,
       {599184013, 32},  /* 1999-Jan-01 */
       {820108814, 33},  /* 2006-Jan-01 */
     };
-  
+
   /* number of times leap seconds occur */
   static const INT4   numleaps = sizeof(gpsLeaps)/sizeof(gps_leap_sec_t);
   char   infostr[256];
@@ -736,7 +736,7 @@ LALLeapSecs (LALStatus                    *status,
 
   if (lalDebugLevel & LALINFO)
   {
-    LALSnprintf(infostr, INFOSTR_LEN, "Max. tested GPS is %d\n", maxtestedGPS);
+    snprintf(infostr, INFOSTR_LEN, "Max. tested GPS is %d\n", maxtestedGPS);
     LALInfo(status, infostr);
   }
 
@@ -781,7 +781,7 @@ LALLeapSecs (LALStatus                    *status,
 
   if (lalDebugLevel & LALINFO)
   {
-    LALSnprintf(infostr, INFOSTR_LEN, "Format = %d\n", p_formatAndAcc->format);
+    snprintf(infostr, INFOSTR_LEN, "Format = %d\n", p_formatAndAcc->format);
     LALInfo(status, infostr);
   }
 

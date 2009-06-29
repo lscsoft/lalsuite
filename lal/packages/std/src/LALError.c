@@ -67,7 +67,7 @@ should use \verb@LALError()@, \verb@LALWarning()@, and
 logging device, as above, and then raises the requested signal.
 Standard LAL routines should \emph{not} terminate execution, but should
 instead return control to the calling routine, reporting errors through their
-\verb@LALStatus@ structure.  Programmers should never 
+\verb@LALStatus@ structure.  Programmers should never
 invoke \verb@LALRaise()@ explicitly.
 A hook to a \verb@LALRaise()@-type function, \verb@lalRaiseHook@, is provided,
 should the user wish to change the default behavior of \verb@LALRaise()@
@@ -253,7 +253,7 @@ LALError( LALStatus *status, const char *statement )
   int n = 0;
   if ( lalDebugLevel & LALERROR )
   {
-    n = LALPrintError( "Error[%d] %d: function %s, file %s, line %d, %s\n" 
+    n = LALPrintError( "Error[%d] %d: function %s, file %s, line %d, %s\n"
         "        %s %s\n", status->level, status->statusCode,
         status->function, status->file, status->line, status->Id,
         statement ? statement : "", status->statusDescription );
@@ -269,7 +269,7 @@ LALWarning( LALStatus *status, const char *warning )
   int n = 0;
   if ( lalDebugLevel & LALWARNING )
   {
-    n = LALPrintError( "Warning[%d]: function %s, file %s, line %d, %s\n" 
+    n = LALPrintError( "Warning[%d]: function %s, file %s, line %d, %s\n"
         "        %s\n", status->level, status->function, status->file,
         status->line, status->Id, warning );
   }
@@ -284,7 +284,7 @@ LALInfo( LALStatus *status, const char *info )
   int n = 0;
   if ( lalDebugLevel & LALINFO )
   {
-    n = LALPrintError( "Info[%d]: function %s, file %s, line %d, %s\n" 
+    n = LALPrintError( "Info[%d]: function %s, file %s, line %d, %s\n"
         "        %s\n", status->level, status->function, status->file,
         status->line, status->Id, info );
   }
@@ -392,7 +392,7 @@ LALAttatchStatusPtr( LALStatus *status, const char *file, const int line )
     if ( !status->statusPtr )
     {
       LALPrepareAbort( status, -4, "ATTATCHSTATUSPTR: memory allocation error",
-                       file, line ); 
+                       file, line );
       exitcode = 1;
     }
     else
@@ -510,22 +510,22 @@ FREESTATUSPTR( LALStatus *status )
 void
 REPORTSTATUS( LALStatus *status )
 { /* </lalVerbatim> */
-  LALStatus *ptr;                                                    
-  for ( ptr = status; ptr ; ptr = ptr->statusPtr )                  
-  {                                                           
-    LALPrintError( "\nLevel %i: %s\n", ptr->level, ptr->Id );    
-    if ( ptr->statusCode )                                    
-    {                                                      
-      LALPrintError( "\tStatus code %i: %s\n", ptr->statusCode,      
-                     ptr->statusDescription );                      
-    }                                                            
-    else                                                        
-    {                                                          
-      LALPrintError( "\tStatus code 0: Nominal\n" );            
-    }                                                        
-    LALPrintError( "\tfunction %s, file %s, line %i\n",      
-                   ptr->function, ptr->file, ptr->line );      
-  }                                                       
+  LALStatus *ptr;
+  for ( ptr = status; ptr ; ptr = ptr->statusPtr )
+  {
+    LALPrintError( "\nLevel %i: %s\n", ptr->level, ptr->Id );
+    if ( ptr->statusCode )
+    {
+      LALPrintError( "\tStatus code %i: %s\n", ptr->statusCode,
+                     ptr->statusDescription );
+    }
+    else
+    {
+      LALPrintError( "\tStatus code 0: Nominal\n" );
+    }
+    LALPrintError( "\tfunction %s, file %s, line %i\n",
+                   ptr->function, ptr->file, ptr->line );
+  }
   return;
 }
 

@@ -39,9 +39,14 @@
    License along with the GNU C Library; if not, write to the Free
    Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
    02111-1307 USA.  */
-
+
 /* This tells Alpha OSF/1 not to define a getopt prototype in <stdio.h>.
    Ditto for AIX 3.2 and <stdlib.h>.  */
+
+/* NOTE: Hacked to get rid of warning messages.
+ * Look for unions "bad" and "wtf" for these hacks.
+ */
+
 #ifndef _NO_PROTO
 # define _NO_PROTO
 #endif
@@ -210,7 +215,7 @@ static enum
 
 /* Value of POSIXLY_CORRECT environment variable.  */
 static char *posixly_correct;
-
+
 #ifdef	__GNU_LIBRARY__
 /* We want to avoid inclusion of string.h with non-GNU libraries
    because there are many ways it can cause trouble.
@@ -233,13 +238,13 @@ static char *posixly_correct;
 /* extern char *getenv (); */
 #endif
 
-static char *
+static const char *
 my_index (const char *str, int chr)
 {
   while (*str)
     {
       if (*str == chr)
-	return (char *) str;
+	return str;
       str++;
     }
   return 0;
@@ -258,7 +263,7 @@ extern int strlen (const char *);
 #endif /* __GNUC__ */
 
 #endif /* not __GNU_LIBRARY__ */
-
+
 /* Handle permutation of arguments.  */
 
 /* Describe the part of ARGV that contains non-options that have
@@ -404,6 +409,8 @@ _getopt_initialize (int argc, char *const *argv, const char *optstring)
   /* Start processing options with ARGV-element 1 (since ARGV-element 0
      is the program name); the sequence of previously skipped
      non-option ARGV-elements is empty.  */
+  argc = 0;
+  argv = NULL;
 
   first_nonopt = last_nonopt = optind;
 
@@ -460,7 +467,7 @@ _getopt_initialize (int argc, char *const *argv, const char *optstring)
 
   return optstring;
 }
-
+
 /* Scan elements of ARGV (whose length is ARGC) for option characters
    given in OPTSTRING.
 
@@ -565,9 +572,10 @@ _getopt_internal (int argc, char *const *argv, const char *optstring,
 	{
 	  /* If we have just processed some options following some non-options,
 	     exchange them so that the options come first.  */
+    union {char * const *pcs; char **ps;} bad = { argv };
 
 	  if (first_nonopt != last_nonopt && last_nonopt != optind)
-	    exchange ((char **) argv);
+	    exchange ((char **) bad.ps);
 	  else if (last_nonopt != optind)
 	    first_nonopt = optind;
 
@@ -586,10 +594,11 @@ _getopt_internal (int argc, char *const *argv, const char *optstring,
 
       if (optind != argc && !strcmp (argv[optind], "--"))
 	{
+    union {char * const *pcs; char **ps;} bad = { argv };
 	  optind++;
 
 	  if (first_nonopt != last_nonopt && last_nonopt != optind)
-	    exchange ((char **) argv);
+	    exchange ((char **) bad.ps);
 	  else if (first_nonopt == last_nonopt)
 	    first_nonopt = optind;
 	  last_nonopt = argc;
@@ -761,6 +770,7 @@ _getopt_internal (int argc, char *const *argv, const char *optstring,
       if (!long_only || argv[optind][1] == '-'
 	  || my_index (optstring, *nextchar) == NULL)
 	{
+    union { const char *cs; char *c; } wtf = { "" };
 	  if (print_errors)
 	    {
 	      if (argv[optind][1] == '-')
@@ -772,7 +782,7 @@ _getopt_internal (int argc, char *const *argv, const char *optstring,
 		fprintf (stderr, _("%s: unrecognized option `%c%s'\n"),
 			 argv[0], argv[optind][0], nextchar);
 	    }
-	  nextchar = (char *) "";
+	  nextchar = wtf.c;
 	  optind++;
 	  optopt = 0;
 	  return '?';
@@ -783,7 +793,7 @@ _getopt_internal (int argc, char *const *argv, const char *optstring,
 
   {
     char c = *nextchar++;
-    char *temp = my_index (optstring, c);
+    const char *temp = my_index (optstring, c);
 
     /* Increment `optind' when we start to process its last character.  */
     if (*nextchar == '\0')
@@ -979,6 +989,8 @@ _getopt_internal (int argc, char *const *argv, const char *optstring,
 }
 
 int
+getopt (int argc, char *const *argv, const char *optstring);
+int
 getopt (int argc, char *const *argv, const char *optstring)
 {
   return _getopt_internal (argc, argv, optstring,
@@ -988,7 +1000,7 @@ getopt (int argc, char *const *argv, const char *optstring)
 }
 
 #endif	/* Not ELIDE_CODE.  */
-
+
 #ifdef TEST
 
 /* Compile with -DTEST to make an executable for use in testing

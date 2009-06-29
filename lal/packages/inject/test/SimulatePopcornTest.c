@@ -91,15 +91,15 @@ static void wformfunc (REAL4 *result,REAL4 x)
  }
 
 int lalDebugLevel = 3;
-int main (int argc, char* argv[])
+int main ( void )
 {
   static LALStatus status;
-  
+
   /* input and output structure declaration */
   SimPopcornInputStruc               PopcornInput;
   SimPopcornOutputStruc              PopcornOutput;
   SimPopcornParamsStruc              PopcornParams;
-  
+
   /* output parameters declaration */
   REAL4TimeSeries                    Popcorn0;
   REAL4TimeSeries                    Popcorn1;
@@ -108,29 +108,29 @@ int main (int argc, char* argv[])
 
   REAL8                              totnorm2zero;
   REAL8                              totnorm2one;
-  
+
   /* vector to store response functions of a pair of detectors  */
   COMPLEX8Vector *response[2]={NULL,NULL};
   COMPLEX8FrequencySeries response0;
   COMPLEX8FrequencySeries response1;
   LIGOTimeGPS t;
-  
-  /*others*/ 
+
+  /*others*/
   UINT4 i, j, n, nfreq, start;
   REAL4 deltat=(1./LALPOPCORN_SRATE);
   REAL4 deltaf=(1./LALPOPCORN_LENGTH);
 
   char fname[50];
-  FILE *pfresp0,*pfresp1,*pfzero,*pfone;
- 
+  FILE *pfzero,*pfone;
+
   /* input parameters */
    PopcornInput.inputwform = &wformfunc;
    PopcornInput.inputduration = LALPOPCORN_WFDURATION;
-   PopcornInput.inputlambda =  LALPOPCORN_LAMBDA; 
+   PopcornInput.inputlambda =  LALPOPCORN_LAMBDA;
    PopcornInput.inputNdataset =  LALPOPCORN_NDATASET;
    PopcornInput.inputsite0 =  LALPOPCORN_SITE0;
    PopcornInput.inputsite1 =  LALPOPCORN_SITE1;
-   
+
    PopcornParams.paramsstarttime =  LALPOPCORN_START;
    PopcornParams.paramslength =  LALPOPCORN_LENGTH;
    PopcornParams.paramssrate =  LALPOPCORN_SRATE;
@@ -139,34 +139,34 @@ int main (int argc, char* argv[])
 
   n = LALPOPCORN_LENGTH*LALPOPCORN_SRATE;
   nfreq = (n/2) +1;
- 
+
   start = LALPOPCORN_START;
   for (i=0;i<2;i++)
-      LALCCreateVector(&status, &response[i],nfreq); 
- 
+      LALCCreateVector(&status, &response[i],nfreq);
+
   t.gpsSeconds = start;
   t.gpsNanoSeconds = 0;
 
-  response0.deltaF = (1./LALPOPCORN_LENGTH); 
+  response0.deltaF = (1./LALPOPCORN_LENGTH);
   response0.epoch = t;
   response0.f0 = 0.;
   response0.data = response[0];
-  
+
   LALCReadFrequencySeries(&status, &response0, LALPOPCORN_RESP0);
-   
+
   response1.deltaF = 1./LALPOPCORN_LENGTH;
   response1.epoch = t;
   response1.f0 = 0.;
   response1.data = response[1];
 
   LALCReadFrequencySeries(&status, &response1, LALPOPCORN_RESP1);
-  
-  
+
+
   PopcornInput.wfilter0 = &response0;
   PopcornInput.wfilter1 = &response1;
-  
- /* TEST INVALID DATA HERE */ 
- 
+
+ /* TEST INVALID DATA HERE */
+
 #ifndef LAL_NDEBUG
   if ( ! lalNoDebug )
     {
@@ -175,26 +175,26 @@ int main (int argc, char* argv[])
      printf("  PASS: null pointer to output series results in error: \n"
              "\"%s\"\n", SIMULATEPOPCORNH_MSGENULLP);
     }
-  
+
 #endif
 
  /* TEST VALID DATA HERE */
-  
+
   Popcorn0.data = NULL;
   LALSCreateVector(&status, &(Popcorn0.data), n);
   Popcorn1.data = NULL;
   LALSCreateVector(&status, &(Popcorn1.data), n);
-   
+
   PopcornOutput.SimPopcorn0 = &Popcorn0;
-  PopcornOutput.SimPopcorn1 = &Popcorn1; 
- 
+  PopcornOutput.SimPopcorn1 = &Popcorn1;
+
   omegagw0.data = NULL;
   LALSCreateVector(&status, &(omegagw0.data), nfreq);
   omegagw1.data = NULL;
   LALSCreateVector(&status, &(omegagw1.data), nfreq);
-   
+
   PopcornOutput.omega0 = &omegagw0;
-  PopcornOutput.omega1 = &omegagw1; 
+  PopcornOutput.omega1 = &omegagw1;
 
   LALSimPopcornTimeSeries (&status,&PopcornOutput,&PopcornInput,&PopcornParams);
  /* Mean square */
@@ -210,25 +210,25 @@ int main (int argc, char* argv[])
   totnorm2one/=n;
   printf("Mean square of whitened output no. 2 is: %e\n",totnorm2one);
 
-  
+
  /*ilwd*/
  /*
- LALSnprintf(fname,50,POPCORN_FILENAMEOUT0"%d.ilwd",start);
+ snprintf(fname,50,POPCORN_FILENAMEOUT0"%d.ilwd",start);
  pfzero=LALFopen(fname,"w");
- LALSnprintf(fname,50,POPCORN_FILENAMEOUT1"%d.ilwd",start);
+ snprintf(fname,50,POPCORN_FILENAMEOUT1"%d.ilwd",start);
  pfone=LALFopen(fname,"w");
  fprintf(pfzero,"<?ilwd?>\n");fprintf(pfone,"<?ilwd?>\n");
- 
- fprintf(pfzero,"<ilwd comment='"POPCORN_FILENAMEOUT0"%d'",start); 
+
+ fprintf(pfzero,"<ilwd comment='"POPCORN_FILENAMEOUT0"%d'",start);
  fprintf(pfzero," name='"POPCORN_FILENAMEOUT0"%d' size='1'>\n",start);
  fprintf(pfzero,
   " <real_8 dims='%d' name='"POPCORN_FILENAMEOUT0"%d'>",n,start);
- 
- fprintf(pfone,"<ilwd comment='"POPCORN_FILENAMEOUT1"%d'",start); 
+
+ fprintf(pfone,"<ilwd comment='"POPCORN_FILENAMEOUT1"%d'",start);
  fprintf(pfone," name='"POPCORN_FILENAMEOUT1"%d' size='1'>\n",start);
  fprintf(pfone,
   " <real_8 dims='%d' name='"POPCORN_FILENAMEOUT1"%d'>",n,start);
- 
+
  for(i=0;(UINT4)i<n;i++)
   {
    fprintf(pfzero,"% e",Popcorn0.data->data[i]);
@@ -240,10 +240,10 @@ int main (int argc, char* argv[])
  */
 
  /*ascii*/
- 
-  LALSnprintf(fname,50,POPCORN_FILENAMEOUT0"%d.dat",start);
+
+  snprintf(fname,50,POPCORN_FILENAMEOUT0"%d.dat",start);
   pfzero=LALFopen(fname,"w");
-  LALSnprintf(fname,50,POPCORN_FILENAMEOUT1"%d.dat",start);
+  snprintf(fname,50,POPCORN_FILENAMEOUT1"%d.dat",start);
   pfone=LALFopen(fname,"w");
 
    for(i=0;i<n;i++)
@@ -251,14 +251,14 @@ int main (int argc, char* argv[])
     fprintf(pfzero,"%f\t%e\n",(i*deltat),Popcorn0.data->data[i]);
     fprintf(pfone,"%f\t%e\n",(i*deltat),Popcorn1.data->data[i]);
     }
- 
+
  LALFclose(pfzero);LALFclose(pfone);
 
 /*omega spectrum*/
- 
-    LALSnprintf(fname,50,POPCORN_FILENAMEOUT0"%d_omega.dat",start);
+
+    snprintf(fname,50,POPCORN_FILENAMEOUT0"%d_omega.dat",start);
   pfzero=LALFopen(fname,"w");
-    LALSnprintf(fname,50,POPCORN_FILENAMEOUT1"%d_omega.dat",start);
+    snprintf(fname,50,POPCORN_FILENAMEOUT1"%d_omega.dat",start);
   pfone=LALFopen(fname,"w");
 
    for(i=0;i<n/2;i++)
@@ -266,9 +266,9 @@ int main (int argc, char* argv[])
     fprintf(pfzero,"%f\t%e\n",(i*deltaf),omegagw0.data->data[i]);
     fprintf(pfone,"%f\t%e\n",(i*deltaf),omegagw1.data->data[i]);
     }
- 
+
  LALFclose(pfzero);LALFclose(pfone);
- 
+
  /* clean up valid data */
  LALSDestroyVector(&status, &(Popcorn0.data));
  LALSDestroyVector(&status, &(Popcorn1.data));
@@ -277,9 +277,9 @@ int main (int argc, char* argv[])
 
  /*LALCheckMemoryLeaks();*/
 
-   
- } 
-  
+
+ }
+
 
 
 

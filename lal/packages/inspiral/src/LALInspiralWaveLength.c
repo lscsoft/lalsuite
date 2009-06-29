@@ -36,23 +36,23 @@ needed to store a waveform.
 \begin{itemize}
 \item {\tt length:} output, number of bins to the nearest power of 2
 greater than the minimum length required to store a wave of parameters as in {\tt params}.
-\item {\tt params:} input, parameters of the binary system. 
+\item {\tt params:} input, parameters of the binary system.
 \end{itemize}
 
 \subsubsection*{Description}
 
 
-This module first calls {\tt LALInspiralChooseModel,} which gives the length of the 
-waveform in seconds. That function returns an estimated waveform length. However, the 
-length might not be appropriate in some extreme cases (large masses and large lower 
-cut-off frequency). It is especially true in the EOB case. Therefore, we introduce 
-two constants namely LALINSPIRAL\_LENGTHOVERESTIMATION (in percentage) which 
+This module first calls {\tt LALInspiralChooseModel,} which gives the length of the
+waveform in seconds. That function returns an estimated waveform length. However, the
+length might not be appropriate in some extreme cases (large masses and large lower
+cut-off frequency). It is especially true in the EOB case. Therefore, we introduce
+two constants namely LALINSPIRAL\_LENGTHOVERESTIMATION (in percentage) which
 overestimate the length of the waveform and LALINSPIRAL\_MINIMALWAVELENGTH which is
-the minimal waveform length in seconds. Multiplying this by the sampling rate 
-{\tt params.tSampling} gives the minimum number of samples needed to hold the waveform. 
-To this are added the number of bins of leading and trailing zeroes requested by the user in 
+the minimal waveform length in seconds. Multiplying this by the sampling rate
+{\tt params.tSampling} gives the minimum number of samples needed to hold the waveform.
+To this are added the number of bins of leading and trailing zeroes requested by the user in
 {\tt params.nStartPad} and {\tt params.nEndPad.} The resulting number is rounded to
-an upward power of 2 and returned in {\tt length}. 
+an upward power of 2 and returned in {\tt length}.
 
 \subsubsection*{Algorithm}
 
@@ -78,12 +78,12 @@ LALInspiralChooseModel
 NRCSID (LALINSPIRALWAVELENGTHC, "$Id$");
 
 /*  <lalVerbatim file="LALInspiralWaveLengthCP"> */
-void 
+void
 LALInspiralWaveLength(
-   LALStatus        *status, 
+   LALStatus        *status,
    UINT4            *length,
    InspiralTemplate  params
-   ) 
+   )
 { /* </lalVerbatim>  */
 
    INT4 ndx;
@@ -102,27 +102,27 @@ LALInspiralWaveLength(
 
    LALInspiralSetup (status->statusPtr, &ak, &params);
    CHECKSTATUSPTR(status);
-   
+
    LALInspiralChooseModel(status->statusPtr, &func, &ak, &params);
-   /* not checkstatus before but we check if everything is fine, 
+   /* not checkstatus before but we check if everything is fine,
       then we return the length otherwise length is zero*/
    if (status->statusPtr->statusCode == 0){
 	   /*we add a minimal value and 10 % of overestimation */
-      	   x	= (1.+ LALINSPIRAL_LENGTHOVERESTIMATION) * (ak.tn + LALINSPIRAL_MINIMALWAVELENGTH ) * params.tSampling 
+      	   x	= (1.+ LALINSPIRAL_LENGTHOVERESTIMATION) * (ak.tn + LALINSPIRAL_MINIMALWAVELENGTH ) * params.tSampling
 	     + params.nStartPad + params.nEndPad;
 	   ndx 	= ceil(log10(x)/log10(2.));
       	   *length = pow(2, ndx);
-     
+
 	DETATCHSTATUSPTR(status);
 	RETURN(status);
    }
-   else { 
+   else {
 	sprintf(message,
 	       	"size is zero for the following waveform: totalMass = %f, fLower = %f, approximant = %d @ %fPN"
 	       , params.mass1 + params.mass2, params.fLower, params.approximant, params.order/2.);
        	LALWarning(status, message);
        	*length = 0;
-       
+
        DETATCHSTATUSPTR(status);
        RETURN(status);
      }

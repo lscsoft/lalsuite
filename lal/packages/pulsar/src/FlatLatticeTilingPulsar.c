@@ -54,14 +54,14 @@ static INT4 factorial(
 		      INT4 i
 		      )
 {
-  
+
   INT4 f = 1;
-  
+
   while (i > 1)
     f *= i--;
-  
+
   return f;
-  
+
 }
 
 /**
@@ -81,7 +81,7 @@ int XLALSetFlatLatticeTilingSpindownFstatMetric(
 {
 
   const int n = tiling->dimensions;
-  
+
   int i, j;
   gsl_matrix *norm_metric = NULL;
   gsl_vector *norm_to_real;
@@ -129,9 +129,9 @@ int XLALSetFlatLatticeTilingSpindownFstatMetric(
  */
 static BOOLEAN AgeBrakingIndexBound(void *data, INT4 dimension, gsl_vector *point, REAL8 *lower, REAL8 *upper)
 {
-  
+  const char *fn = "AgeBrakingIndexBound()";
   double x;
-  
+
   /* Set constant based on dimension */
   switch (dimension) {
   case 0:
@@ -145,14 +145,17 @@ static BOOLEAN AgeBrakingIndexBound(void *data, INT4 dimension, gsl_vector *poin
     x *= x;
     x /= gsl_vector_get(point, 0);
     break;
+  default:
+    XLALPrintError ("%s: invalid dimension %d input, allowed are 0-2.\n", fn, dimension );
+    XLAL_ERROR ( fn, XLAL_EINVAL );
   }
 
   /* Set lower and upper bound */
   *lower = x * gsl_matrix_get((gsl_matrix*)data, dimension, 0);
   *upper = x * gsl_matrix_get((gsl_matrix*)data, dimension, 1);
-  
+
   return TRUE;
-  
+
 }
 static void AgeBrakingIndexFree(void *data)
 {
@@ -172,14 +175,14 @@ int XLALAddFlatLatticeTilingAgeBrakingIndexBounds(
 						  INT4 gap                   /**< Number of dimensions gap netween frequency and first spindown */
 						  )
 {
-  
+
   gsl_matrix *data = NULL;
   UINT8 bound;
 
   /* Check tiling dimension */
   if (tiling->dimensions < (3 + gap))
     XLAL_ERROR("'tiling->dimensions' is too small", XLAL_EINVAL);
-  
+
   /* Allocate memory */
   ALLOC_GSL_MATRIX(data, tiling->dimensions, 2, XLAL_ERROR);
   gsl_matrix_set_zero(data);
@@ -203,7 +206,7 @@ int XLALAddFlatLatticeTilingAgeBrakingIndexBounds(
   if (XLAL_SUCCESS != XLALAddFlatLatticeTilingBound(tiling, bound, AgeBrakingIndexBound,
 						    (void*)data, AgeBrakingIndexFree))
     XLAL_ERROR("XLALAddFlatLatticeTilingBound failed", XLAL_EFAILED);
-  
+
   return XLAL_SUCCESS;
-  
+
 }

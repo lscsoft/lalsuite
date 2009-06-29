@@ -8,9 +8,7 @@
 .deps
 .dvi-dep
 .libs
-/README.install
-/acinclude.m4
-/aclocal.m4
+aclocal.m4
 Makefile
 Makefile.in
 autom4te.cache/
@@ -44,7 +42,11 @@ include/stamp-h1
 lal-*.tar.gz
 lal-config
 lal.spec
+lib/.vcsinfo
 lib/LALBuildDate.c
+lib/LALVCSInfo.h
+lib/git_info.sed
+lib/git_version
 lib/lal-version
 libtool
 misc/__lalGitID.h

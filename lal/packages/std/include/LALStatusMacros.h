@@ -250,7 +250,7 @@ treated as a primer on LAL coding conventions.
 All functions should have return type void.  The first argument of any
 function should be a pointer to a structure of type \verb@LALStatus@.
 Thus:
-\begin{verbatim} 
+\begin{verbatim}
 void MyFunction( LALStatus *stat, ... )
 \end{verbatim}
 Since the function has no return code, it must report all errors or
@@ -771,7 +771,7 @@ package using the autodocumentation utilities, which the
 #define _LALSTATUSMACROS_H
 
 #include <lal/LALConfig.h>
-#ifdef NDEBUG 
+#ifdef NDEBUG
 #ifndef LAL_NDEBUG
 #define LAL_NDEBUG
 #endif
@@ -976,7 +976,7 @@ extern const int lalNoDebug;
 
 #define CHECKSTATUSPTR( statusptr )                                           \
   do { if ( LALCheckStatusPtr( statusptr, "CHECKSTATUSPTR:", __FILE__, __LINE__ ) ) return; } while ( 0 )
-  
+
 #endif /* NOLALMACROS */
 
 /* these just have to be macros... */

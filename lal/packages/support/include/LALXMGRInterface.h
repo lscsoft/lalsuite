@@ -17,14 +17,14 @@
 *  MA  02111-1307  USA
 */
 
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: LALXMGRInterface.h
  *
  * Author: Brady, P.R, and Brown, D. A.
- * 
+ *
  * Revision: $Id$
- * 
+ *
  *-----------------------------------------------------------------------
  */
 
@@ -32,7 +32,7 @@
 <lalVerbatim file="LALXMGRInterfaceHV">
 Author: Brady P., R., and Brown, D. A.
 $Id$
-</lalVerbatim> 
+</lalVerbatim>
 
 <lalLaTeX>
 \section{Header \texttt{LALXMGRInterface.h}}
@@ -66,8 +66,8 @@ extern "C" {
 
 NRCSID (LALXMGRINTERFACEH, "$Id$");
 
-/* <lalLaTeX> 
-\newpage\subsection*{Error codes} 
+/* <lalLaTeX>
+\newpage\subsection*{Error codes}
 </lalLaTeX> */
 /* <lalErrTable> */
 #define LALXMGRINTERFACEH_ENULL 1
@@ -191,8 +191,8 @@ XMGRGraphVector;
  *
  */
 
-void 
-LALXMGROpenFile ( 
+void
+LALXMGROpenFile (
     LALStatus          *status,
     FILE              **fp,
     CHAR               *title,
@@ -200,7 +200,7 @@ LALXMGROpenFile (
     );
 
 void
-LALXMGRCloseFile ( 
+LALXMGRCloseFile (
     LALStatus          *status,
     FILE               *fp
     );

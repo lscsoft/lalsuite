@@ -17,37 +17,37 @@
   *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
   *  MA  02111-1307  USA
   */
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: Dwindow.c
- * 
+ *
  * Maintainer: Torres, C. (Univ TX at Browsville)
  * Author: Chassande-Mottin, E.
- * 
- * Revision: $Id: 
- * 
- *----------------------------------------------------------------------- 
- * 
- * NAME 
+ *
+ * Revision: $Id:
+ *
+ *-----------------------------------------------------------------------
+ *
+ * NAME
  * TfrRsp
- * 
- * SYNOPSIS 
+ *
+ * SYNOPSIS
  *
  *
- * DESCRIPTION 
+ * DESCRIPTION
  * Compute the time derivative of a given window.
  * Used by LALTfrRsp (reassigned spectrogram).
- * 
- * DIAGNOSTICS 
+ *
+ * DIAGNOSTICS
  *
  * CALLS
- * 
+ *
  * NOTES
- * 
+ *
  * This code has been inspired from the Time-Frequency Toolbox (originally
  * developed by F. Auger, P. Flandrin, P. Goncalves and O. Lemoine. See
- * http://www.??.fr/~auger/tftb.html for details) and its translation 
- * in C (written by M. Davy and E. Leroy). 
+ * http://www.??.fr/~auger/tftb.html for details) and its translation
+ * in C (written by M. Davy and E. Leroy).
  *
  *-----------------------------------------------------------------------
  */
@@ -82,7 +82,7 @@ void LALDwindow (LALStatus *stat, REAL4Vector* window, REAL4Vector* dwindow)
   ASSERT (dwindow->length == window->length, stat, TFR_EWSIZ, TFR_MSGEWSIZ);
 
   hwl = (window->length - 1) / 2.0;
- 
+
   step = (window->data[0] + window->data[window->length - 1]) / 2.0;
   ramp = (window->data[window->length - 1] - window->data[0]) / (window->length - 1);
 

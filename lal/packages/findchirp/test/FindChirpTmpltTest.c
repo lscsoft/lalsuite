@@ -17,14 +17,14 @@
 *  MA  02111-1307  USA
 */
 
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: FindChripTmpltTest.c
  *
  * Author: Brown, D. A.
- * 
+ *
  * Revision: $Id$
- * 
+ *
  *-----------------------------------------------------------------------
  */
 
@@ -57,7 +57,7 @@ main ( void )
   const UINT4                   numSegments = 7;
   const UINT4                   numPts = 262144;
   UINT4                         k;
-  
+
   /*
    *
    * create the input and parameters
@@ -147,7 +147,7 @@ main ( void )
     fclose( fp );
   }
 
-  
+
 
   /*
    *
@@ -160,7 +160,7 @@ main ( void )
   REPORTSTATUS( &stat );
   if ( stat.statusCode ) return stat.statusCode;
 
-  PrintInspiralBank( &stat, tmplt, stdout ); 
+  PrintInspiralBank( &stat, tmplt, stdout );
   REPORTSTATUS( &stat );
   if ( stat.statusCode ) return stat.statusCode;
 
@@ -212,9 +212,9 @@ PrintInspiralBank (
 
   for ( current = head; current; current = current->next)
   {
-    fprintf( fp, 
+    fprintf( fp,
         "%p\t%d\t%.16e\t%.16e\t%p\t%p\n",
-        current, current->number, 
+        current, current->number,
         current->mass1, current->mass2,
         current->next, current->fine );
     /*
@@ -240,10 +240,10 @@ PrintInspiralBank (
 
 static void
 graphREAL4 (
-    REAL4      *array, 
+    REAL4      *array,
     INT4        n,
     INT4        spacing
-           ) 
+           )
 {
   FILE *fp;
   INT4 i;
@@ -269,10 +269,10 @@ graphREAL4 (
 
 static void
 graphREAL8 (
-    REAL8      *array, 
+    REAL8      *array,
     INT4        n,
     INT4        spacing
-           ) 
+           )
 {
   FILE *fp;
   INT4 i;

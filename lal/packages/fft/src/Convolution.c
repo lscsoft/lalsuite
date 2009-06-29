@@ -32,7 +32,7 @@
 #include <lal/LALRCSID.h>
 NRCSID (CONVOLUTIONC,"$Id$");
 
-/** 
+/**
  * \addtogroup fft
  * @{
  */
@@ -42,13 +42,13 @@ NRCSID (CONVOLUTIONC,"$Id$");
  * \brief Apply transfer function to time series
  *
  *
- * This function returns the convolution of the time series with 
+ * This function returns the convolution of the time series with
  * the frequency domain transfer function that has been supplied by
  * the user.  It zero pads the input data by a factor of two to
  * alleviate wraparound from the FFT.   This means that the transfer
- * function must have 
+ * function must have
  * \f[
- * \texttt{deltaF} =  1.0 / ( 2.0 \times \texttt{strain->data->length} 
+ * \texttt{deltaF} =  1.0 / ( 2.0 \times \texttt{strain->data->length}
  * \times \texttt{strain->data->deltaT} )
  * \f]
  *
@@ -79,14 +79,14 @@ REAL4TimeSeries *XLALRespFilt(
   inTimeLength = strain->data->length;
   paddedTimeLength = 2 * inTimeLength;
 
-  tmpWave = XLALCreateREAL4Vector( paddedTimeLength ); 
+  tmpWave = XLALCreateREAL4Vector( paddedTimeLength );
   if ( ! tmpWave )
     XLAL_ERROR_NULL( func, XLAL_EFUNC );
-  
-  tmpFFTWave = XLALCreateCOMPLEX8Vector( inTimeLength + 1 ); 
+
+  tmpFFTWave = XLALCreateCOMPLEX8Vector( inTimeLength + 1 );
   if ( ! tmpFFTWave )
     XLAL_ERROR_NULL( func, XLAL_EFUNC );
-  
+
   fwdPlan = XLALCreateForwardREAL4FFTPlan( paddedTimeLength, 0 );
   if ( ! fwdPlan )
     XLAL_ERROR_NULL( func, XLAL_EFUNC );
@@ -106,11 +106,11 @@ REAL4TimeSeries *XLALRespFilt(
   XLALREAL4ForwardFFT( tmpFFTWave, tmpWave, fwdPlan );
 
   /* make sure the transfer function has the right units and df */
-  tmpTransfer = XLALCreateCOMPLEX8FrequencySeries(chname, 
+  tmpTransfer = XLALCreateCOMPLEX8FrequencySeries(chname,
       &strain->epoch, 0.0, 1.0/(paddedTimeLength * strain->deltaT),
       &countPerStrain, tmpFFTWave->length);
   XLALResponseConvert( tmpTransfer, transfer );
-  XLALCCVectorMultiply( tmpFFTWave, tmpFFTWave, tmpTransfer->data ); 
+  XLALCCVectorMultiply( tmpFFTWave, tmpFFTWave, tmpTransfer->data );
   XLALUnitMultiply( &strain->sampleUnits, &tmpTransfer->sampleUnits, &strain->sampleUnits);
   XLALDestroyCOMPLEX8FrequencySeries(tmpTransfer);
 
@@ -128,12 +128,12 @@ REAL4TimeSeries *XLALRespFilt(
 
   for( k=0; k < inTimeLength ; k++)
   {
-    strain->data->data[k] = tmpWave->data[k] / (2 * inTimeLength); 
+    strain->data->data[k] = tmpWave->data[k] / (2 * inTimeLength);
   }
 
   /* Make sure everything I allocated is deallocated below */
-  XLALDestroyREAL4Vector( tmpWave ); 
-  XLALDestroyCOMPLEX8Vector( tmpFFTWave ); 
+  XLALDestroyREAL4Vector( tmpWave );
+  XLALDestroyCOMPLEX8Vector( tmpFFTWave );
   XLALDestroyREAL4FFTPlan( fwdPlan );
   XLALDestroyREAL4FFTPlan( invPlan );
 
@@ -153,9 +153,11 @@ REAL4TimeSeries *XLALREAL4Convolution(
     )
 {
   static const char *func = "XLALRespFilt";
+  /*
   REAL4Vector *tmpWave;
   REAL4 normfac;
   UINT4 k;
+  */
 
   if ( ! strain || ! transfer )
       XLAL_ERROR_NULL( func, XLAL_EFAULT );

@@ -19,7 +19,7 @@
 
 /************************************ <lalVerbatim file="FitToPulsarCV">
 Author: Dupuis, R. J.
-$Id$  
+$Id$
 ************************************* </lalVerbatim> */
 
 /********************************************************** <lalLaTeX>
@@ -41,9 +41,9 @@ LALFineFitToPulsar      (            LALStatus            *status,
 
 \subsubsection*{Description}
 
-This routine calculates the best fit of parameters by minimizing $\chi^2$ by going through 
-fixed grid for $\iota, \psi, \phi_{0}$ and  $h_{0}$.  The best fit parameters 
-returned by \texttt{LALCoarseFitToPulsar()} are then used as initial parameters for 
+This routine calculates the best fit of parameters by minimizing $\chi^2$ by going through
+fixed grid for $\iota, \psi, \phi_{0}$ and  $h_{0}$.  The best fit parameters
+returned by \texttt{LALCoarseFitToPulsar()} are then used as initial parameters for
 \texttt{LALFineFitToPulsar()}.
 
 The function \texttt{LALFineFitToPulsar()} refines the fit using the Levenberg-Marquardt method for nonlinear fitting. This is
@@ -63,7 +63,7 @@ LALComputeDetAMResponse()
 
 \vfill{\footnotesize\input{FitToPulsarCV}}
 
-******************************************************* </lalLaTeX> */ 
+******************************************************* </lalLaTeX> */
 
 /******* INCLUDE STANDARD LIBRARY HEADERS; ************/
 /* note LALStdLib.h already includes stdio.h and stdarg.h */
@@ -94,14 +94,14 @@ LALCoarseFitToPulsar    (       LALStatus            *status,
                                 CoarseFitOutput      *output,
                                 CoarseFitInput       *input,
                                 CoarseFitParams      *params )
-                
+
 /* </lalVerbatim> */
 {
   /******* DECLARE VARIABLES ************/
 
         UINT4                   n,i;            /* integer indices */
         REAL8                   psi;
-        REAL8                   h0,h;
+        REAL8                   h0;
         REAL8                   cosIota;
         REAL8                   phase;
         REAL8                   chiSquare;
@@ -115,29 +115,29 @@ LALCoarseFitToPulsar    (       LALStatus            *status,
         COMPLEX16               Xp, Xc;
         REAL8                   Y, cosIota2;
         COMPLEX16               A,B;
-        REAL8                   sumAA, sumBB, sumAB;    
+        REAL8                   sumAA, sumBB, sumAB;
         REAL8                   h0BestFit=0,phaseBestFit=0, psiBestFit=0, cosIotaBestFit=0;
         REAL8                   minChiSquare;
         COMPLEX16               eh0;
         REAL8 oldMinEh0, oldMaxEh0, weh0;
         UINT4                   iH0, iCosIota, iPhase, iPsi, arg;
         LALGPSandAcc            pGPSandAcc;
-        
-        
+
+
   INITSTATUS(status, "LALCoarseFitToPulsar", FITTOPULSARC);
   ATTATCHSTATUSPTR(status);
 
-  /******* CHECK VALIDITY OF ARGUMENTS  ************/    
+  /******* CHECK VALIDITY OF ARGUMENTS  ************/
   ASSERT(output != (CoarseFitOutput *)NULL, status,
-         FITTOPULSARH_ENULLOUTPUT, FITTOPULSARH_MSGENULLOUTPUT);         
+         FITTOPULSARH_ENULLOUTPUT, FITTOPULSARH_MSGENULLOUTPUT);
 
   ASSERT(params != (CoarseFitParams *)NULL, status,
          FITTOPULSARH_ENULLPARAMS, FITTOPULSARH_MSGENULLPARAMS);
-         
+
   ASSERT(input != (CoarseFitInput *)NULL, status,
          FITTOPULSARH_ENULLINPUT, FITTOPULSARH_MSGENULLINPUT);
 
-  ASSERT(input->B->length == input->var->length, status, 
+  ASSERT(input->B->length == input->var->length, status,
   FITTOPULSARH_EVECSIZE , FITTOPULSARH_MSGEVECSIZE );
 
   /******* EXTRACT INPUTS AND PARAMETERS ************/
@@ -165,7 +165,7 @@ LALCoarseFitToPulsar    (       LALStatus            *status,
 
   var = NULL;
   LALDCreateVector(status->statusPtr, &var, n);
-  var->length = n; 
+  var->length = n;
   /******* INITIALIZE VARIABLES *******************/
 
   minChiSquare = INICHISQU;
@@ -174,7 +174,7 @@ LALCoarseFitToPulsar    (       LALStatus            *status,
 
 
   for (i=0;i<n;i++)
-  {  
+  {
     var->data[i] = input->var->data[i].re + input->var->data[i].im;
   }
   /******* DO ANALYSIS ************/
@@ -185,10 +185,10 @@ LALCoarseFitToPulsar    (       LALStatus            *status,
     pulsar.orientation = psi;
     detAndSource.pSource = &pulsar;
 
-    pGPSandAcc.accuracy = 1.0; 
-   /* create vectors containing amplitude response of detector for specified times */ 
+    pGPSandAcc.accuracy = 1.0;
+   /* create vectors containing amplitude response of detector for specified times */
    for (i=0;i<n;i++)
-   {     
+   {
      pGPSandAcc.gps =   input->t[i];
      LALComputeDetAMResponse(status->statusPtr, &computedResponse,&detAndSource, &pGPSandAcc);
      Fp->data[i] = (REAL8)computedResponse.plus;
@@ -196,22 +196,22 @@ LALCoarseFitToPulsar    (       LALStatus            *status,
    }
 
    for (iPhase = 0; iPhase < params->meshPhase[2]; iPhase++)
-   {   
+   {
      phase = params->meshPhase[0] + iPhase*params->meshPhase[1];
      cos2phase = cos(2.0*phase);
      sin2phase = sin(2.0*phase);
      for (iCosIota = 0; iCosIota < params->meshCosIota[2]; iCosIota++)
      {
        cosIota = params->meshCosIota[0] + iCosIota*params->meshCosIota[1];
-       cosIota2 = 1.0 + cosIota*cosIota; 
+       cosIota2 = 1.0 + cosIota*cosIota;
        Xp.re = cosIota2 * cos2phase;
        Xp.im = cosIota2 * sin2phase;
 
        Y = 2.0*cosIota;
-                
+
        Xc.re = Y*sin2phase;
-       Xc.im = -Y*cos2phase; 
-          
+       Xc.im = -Y*cos2phase;
+
        sumAB = 0.0;
        sumAA = 0.0;
        sumBB = 0.0;
@@ -222,31 +222,31 @@ LALCoarseFitToPulsar    (       LALStatus            *status,
        {
          B.re = input->B->data[i].re;
          B.im = input->B->data[i].im;
-            
+
          A.re = Fp->data[i]*Xp.re + Fc->data[i]*Xc.re;
-         A.im = Fp->data[i]*Xp.im + Fc->data[i]*Xc.im;  
-        
+         A.im = Fp->data[i]*Xp.im + Fc->data[i]*Xc.im;
+
          sumBB += (B.re*B.re + B.im*B.im) / var->data[i];
-         sumAA += (A.re*A.re + A.im*A.im) / var->data[i];   
+         sumAA += (A.re*A.re + A.im*A.im) / var->data[i];
          sumAB += (B.re*A.re + B.im*A.im) / var->data[i];
-          
+
          /**** calculate error on h0 **********/
          eh0.re += (Fp->data[i]*cosIota2*cos2phase
-                + 2.0*Fc->data[i]*cosIota*sin2phase) 
+                + 2.0*Fc->data[i]*cosIota*sin2phase)
                 * (Fp->data[i]*cosIota2*cos2phase
                 + 2.0*Fc->data[i]*cosIota*sin2phase) / input->var->data[i].re;
-           
+
          eh0.im += (Fp->data[i]*cosIota2*sin2phase
                 - 2.0*Fc->data[i]*cosIota*cos2phase)
                 * (Fp->data[i]*cosIota2*sin2phase
-                - 2.0*Fc->data[i]*cosIota*cos2phase) / input->var->data[i].im;    
+                - 2.0*Fc->data[i]*cosIota*cos2phase) / input->var->data[i].im;
         }
 
         for (iH0 = 0; iH0 < params->meshH0[2]; iH0++)
         {
           h0 = params->meshH0[0] + iH0*params->meshH0[1];
           chiSquare = sumBB - 2.0*h0*sumAB + h0*h0*sumAA;
-        
+
           if (chiSquare<minChiSquare)
           {
             minChiSquare = chiSquare;
@@ -256,15 +256,15 @@ LALCoarseFitToPulsar    (       LALStatus            *status,
             phaseBestFit = phase;
             output->eh0[0] = 1.0 /sqrt(sqrt(eh0.re*eh0.re + eh0.im*eh0.im));
           }
-           
+
           weh0 = 1.0 /sqrt(sqrt(eh0.re*eh0.re + eh0.im*eh0.im));
-        
+
           if (weh0>oldMaxEh0)
           {
             output->eh0[2] = weh0;
             oldMaxEh0 = weh0;
           }
-        
+
           if (weh0<oldMinEh0)
           {
             output->eh0[1] = weh0;
@@ -273,7 +273,7 @@ LALCoarseFitToPulsar    (       LALStatus            *status,
           arg = iH0 + params->meshH0[2]*(iCosIota +  params->meshCosIota[2]*(iPhase + params->meshPhase[2]*iPsi));
           output->mChiSquare->data[arg] = chiSquare;
         }
-      }  
+      }
     }
   }
 
@@ -287,7 +287,7 @@ LALCoarseFitToPulsar    (       LALStatus            *status,
 
 
   ASSERT(minChiSquare < INICHISQU,  status,
-  FITTOPULSARH_EMAXCHI , FITTOPULSARH_MSGEMAXCHI); 
+  FITTOPULSARH_EMAXCHI , FITTOPULSARH_MSGEMAXCHI);
 
   LALSDestroyVector(status->statusPtr, &Fp);
   LALSDestroyVector(status->statusPtr, &Fc);
@@ -384,7 +384,6 @@ int main(void)
   REAL4TimeSeries               Fp, Fc, Fs;
   LALTimeIntervalAndNSample     time_info;
   UINT4                         i;
-  LALGPSandAcc          pGPSandAcc;
 
 
 
@@ -426,7 +425,7 @@ int main(void)
   h0 = 5.0;
 
   cos2phase = cos(2.0*phase);
-  sin2phase = sin(2.0*phase); 
+  sin2phase = sin(2.0*phase);
 
   detector = lalCachedDetectors[LALDetectorIndexGEO600DIFF];     /* use GEO 600 detector for tests */
   pulsar.equatorialCoords.longitude = 1.4653;                   /* right ascention of pulsar */
@@ -438,7 +437,7 @@ int main(void)
   detAndSource.pDetector = &detector;
   detAndSource.pSource = &pulsar;
 
-  LALNormalDeviates( &status, noise, randomParams ); 
+  LALNormalDeviates( &status, noise, randomParams );
 
   LALComputeDetAMResponseSeries(&status, &pResponseSeries, &detAndSource, &time_info);
 
@@ -450,13 +449,13 @@ int main(void)
     input.B->data[i].re =  pResponseSeries.pPlus->data->data[i]*h0*(1.0 + cosIota*cosIota)*cos2phase
                          + 2.0*pResponseSeries.pCross->data->data[i]*h0*cosIota*sin2phase;
     input.B->data[i].im =  pResponseSeries.pPlus->data->data[i]*h0*(1.0 + cosIota*cosIota)*sin2phase
-                         - 2.0*pResponseSeries.pCross->data->data[i]*h0*cosIota*cos2phase;                   
+                         - 2.0*pResponseSeries.pCross->data->data[i]*h0*cosIota*cos2phase;
     input.var->data[i].re = noise->data[FITTOPULSARTEST_LENGTH-i-1]*noise->data[FITTOPULSARTEST_LENGTH-i-1];
     input.var->data[i].im = noise->data[i]*noise->data[i];
   }
 
   input.B->length = FITTOPULSARTEST_LENGTH;
-  input.var->length = FITTOPULSARTEST_LENGTH;  
+  input.var->length = FITTOPULSARTEST_LENGTH;
 
   /*******  TEST RESPONSE TO VALID DATA  ************/
 /* Test that valid data generate the correct answers */
@@ -485,7 +484,7 @@ int main(void)
 
   LALCoarseFitToPulsar(&status,&output, &input, &params);
 
-  if(status.statusCode) 
+  if(status.statusCode)
   {
     printf("Unexpectedly got error code %d and message %s\n",
             status.statusCode, status.statusDescription);
@@ -524,7 +523,7 @@ if ( ! lalNoDebug ) {
  LALCoarseFitToPulsar(&status, NULL, &input, &params);
 
   if (status.statusCode != FITTOPULSARH_ENULLOUTPUT
-       || strcmp(status.statusDescription, FITTOPULSARH_MSGENULLOUTPUT)) 
+       || strcmp(status.statusDescription, FITTOPULSARH_MSGENULLOUTPUT))
   {
     printf( "Got error code %d and message %s\n",
             status.statusCode, status.statusDescription);
@@ -536,7 +535,7 @@ if ( ! lalNoDebug ) {
  LALCoarseFitToPulsar(&status, &output, NULL, &params);
 
   if (status.statusCode != FITTOPULSARH_ENULLINPUT
-       || strcmp(status.statusDescription, FITTOPULSARH_MSGENULLINPUT)) 
+       || strcmp(status.statusDescription, FITTOPULSARH_MSGENULLINPUT))
   {
     printf( "Got error code %d and message %s\n",
             status.statusCode, status.statusDescription);
@@ -548,7 +547,7 @@ if ( ! lalNoDebug ) {
  LALCoarseFitToPulsar(&status, &output, &input, NULL);
 
   if (status.statusCode != FITTOPULSARH_ENULLPARAMS
-       || strcmp(status.statusDescription, FITTOPULSARH_MSGENULLPARAMS)) 
+       || strcmp(status.statusDescription, FITTOPULSARH_MSGENULLPARAMS))
   {
     printf( "Got error code %d and message %s\n",
             status.statusCode, status.statusDescription);
@@ -562,7 +561,7 @@ if ( ! lalNoDebug ) {
   LALCoarseFitToPulsar(&status, &output, &input, &params);
 
   if (status.statusCode != FITTOPULSARH_EVECSIZE
-       || strcmp(status.statusDescription, FITTOPULSARH_MSGEVECSIZE)) 
+       || strcmp(status.statusDescription, FITTOPULSARH_MSGEVECSIZE))
   {
     printf( "Got error code %d and message %s\n",
             status.statusCode, status.statusDescription);
@@ -579,13 +578,13 @@ if ( ! lalNoDebug ) {
   /*******  CLEAN UP  ************/
 
   LALZDestroyVector(&status, &input.B);
-  LALZDestroyVector(&status, &input.var); 
-  LALDestroyVector(&status, &noise);  
+  LALZDestroyVector(&status, &input.var);
+  LALDestroyVector(&status, &noise);
   LALDDestroyVector(&status, &output.mChiSquare);
   LALDestroyRandomParams(&status, &randomParams);
   LALSDestroyVector(&status, &(pResponseSeries.pPlus->data));
   LALSDestroyVector(&status, &(pResponseSeries.pCross->data));
-  LALSDestroyVector(&status, &(pResponseSeries.pScalar->data));  
+  LALSDestroyVector(&status, &(pResponseSeries.pScalar->data));
 
   LALCheckMemoryLeaks();
 

@@ -48,35 +48,35 @@ NRCSID (LALTRIGSCANCLUSTERDRIVERC,
 static void LALTrigScan3DMetricCoeff_TcT0T3  (
         LALStatus               *status,
         const SnglInspiralTable **eventHead,
-        trigScanClusterIn       *condenseIn 
+        trigScanClusterIn       *condenseIn
         );
 
 /*---------------------------------------------------------------------------
  * This wrapper function is called from outside world. It is responsible for
- * populating the masterList correctly and  calling the underlying driver 
- * function which actually carries out the trigScan clustering                  
+ * populating the masterList correctly and  calling the underlying driver
+ * function which actually carries out the trigScan clustering
  *--------------------------------------------------------------------------*/
-void LALClusterSnglInspiralOverTemplatesAndEndTime ( 
+void LALClusterSnglInspiralOverTemplatesAndEndTime (
         LALStatus              *status,
         SnglInspiralTable      **eventHead,
         trigScanClusterIn      *condenseIn
         )
-{ 
+{
     INT4                nclusters = 0;
     trigScanClusterOut  *condenseOut=NULL;
     SnglInspiralTable   *clusteredList = NULL;
 
-    INITSTATUS (status, "LALClusterSnglInspiralOverTemplatesAndEndTime", 
+    INITSTATUS (status, "LALClusterSnglInspiralOverTemplatesAndEndTime",
             LALTRIGSCANCLUSTERDRIVERC);
     ATTATCHSTATUSPTR(status);
 
-    ASSERT ((*eventHead), status, 
+    ASSERT ((*eventHead), status,
             LALTRIGSCANCLUSTERH_ENULL, LALTRIGSCANCLUSTERH_MSGENULL);
-    ASSERT (condenseIn, status, 
+    ASSERT (condenseIn, status,
             LALTRIGSCANCLUSTERH_ENULL, LALTRIGSCANCLUSTERH_MSGENULL);
-    ASSERT (condenseIn->n > 0, status, 
+    ASSERT (condenseIn->n > 0, status,
             LALTRIGSCANCLUSTERH_ENULL, LALTRIGSCANCLUSTERH_MSGENULL);
-    ASSERT (condenseIn->scanMethod > 0 && condenseIn->scanMethod <=2, 
+    ASSERT (condenseIn->scanMethod > 0 && condenseIn->scanMethod <=2,
             status, LALTRIGSCANCLUSTERH_ENULL, LALTRIGSCANCLUSTERH_MSGENULL);
 
     if (condenseIn->vrbflag)
@@ -91,7 +91,7 @@ void LALClusterSnglInspiralOverTemplatesAndEndTime (
         SnglInspiralTable   *thisEvent = NULL;
         INT4 k=0;
 
-        for ( thisEvent = (*eventHead); 
+        for ( thisEvent = (*eventHead);
                 thisEvent; thisEvent = thisEvent->next )
         {
             if (condenseIn->scanMethod == T0T3Tc)
@@ -99,21 +99,21 @@ void LALClusterSnglInspiralOverTemplatesAndEndTime (
                 condenseIn->masterList[k].y = thisEvent->tau0;
                 condenseIn->masterList[k].z = thisEvent->tau3;
             }
-            condenseIn->masterList[k].tc_sec = 
+            condenseIn->masterList[k].tc_sec =
                     (thisEvent->end_time).gpsSeconds;
-            condenseIn->masterList[k].tc_ns  = 
+            condenseIn->masterList[k].tc_ns  =
                     (thisEvent->end_time).gpsNanoSeconds;
             condenseIn->masterList[k].rho    = thisEvent->snr;
 
-            condenseIn->masterList[k].clusterID = TRIGSCAN_UNCLASSIFIED; 
+            condenseIn->masterList[k].clusterID = TRIGSCAN_UNCLASSIFIED;
 
             ++k;
         }
     }
 
     /*-- Call the appropriate subroutine to calculate metric and find clusters --*/
-    switch (condenseIn->scanMethod) 
-    { 
+    switch (condenseIn->scanMethod)
+    {
         case  T0T3Tc:
             if (condenseIn->vrbflag)
             {
@@ -122,18 +122,18 @@ void LALClusterSnglInspiralOverTemplatesAndEndTime (
             }
             condenseIn->massChoice = t03;
 
-            LALTrigScan3DMetricCoeff_TcT0T3 (status->statusPtr, 
+            LALTrigScan3DMetricCoeff_TcT0T3 (status->statusPtr,
                     (const SnglInspiralTable **)(eventHead), condenseIn);
             CHECKSTATUSPTR (status);
 
-            if ( condenseIn->vrbflag ) 
+            if ( condenseIn->vrbflag )
             {
-                fprintf (stderr, "Max tc footprint = %e\n",  
+                fprintf (stderr, "Max tc footprint = %e\n",
                         condenseIn->maxTcFootPrint);
             }
 
             /*-- Call the clustering driver --*/
-            LALTrigScanClusterDriver( status->statusPtr, 
+            LALTrigScanClusterDriver( status->statusPtr,
                     condenseIn, &condenseOut, &nclusters );
             CHECKSTATUSPTR( status );
 
@@ -153,14 +153,14 @@ void LALClusterSnglInspiralOverTemplatesAndEndTime (
         case trigScanNone:
         default:
             /* Print a warning message */
-            LALWarning( status->statusPtr, 
+            LALWarning( status->statusPtr,
                     "trigScanCluster is not available for "
                     "this choice of scanMethod." );
             CHECKSTATUSPTR (status);
-            
+
             /* Reset nclusters to 0 */
             nclusters = 0;
-            
+
             break;
     }
 
@@ -170,7 +170,7 @@ void LALClusterSnglInspiralOverTemplatesAndEndTime (
          * elements only. The index is present in condenseOut->master_idx
          */
         clusteredList = NULL;
-        clusteredList = 
+        clusteredList =
                 XLALTrimSnglInspiralTable( eventHead, condenseOut, nclusters );
 
         /* Now del the inspiralEventList and replace it with clusteredList */
@@ -219,18 +219,18 @@ void LALTrigScanClusterDriver (
     INT4                 *list = NULL;
     INT4                 currClusterID = 1;
 
-    INITSTATUS (status, 
+    INITSTATUS (status,
             "LALTrigScanClusterDriver.c", LALTRIGSCANCLUSTERDRIVERC);
     ATTATCHSTATUSPTR(status);
 
-    ASSERT (condenseIn, 
+    ASSERT (condenseIn,
             status, LALTRIGSCANCLUSTERH_ENULL, LALTRIGSCANCLUSTERH_MSGENULL);
-    ASSERT (condenseIn->masterList, 
+    ASSERT (condenseIn->masterList,
             status, LALTRIGSCANCLUSTERH_ENULL, LALTRIGSCANCLUSTERH_MSGENULL);
-    ASSERT (condenseIn->n > 0, status, 
+    ASSERT (condenseIn->n > 0, status,
             LALTRIGSCANCLUSTERH_ECHOICE, LALTRIGSCANCLUSTERH_MSGECHOICE);
-    ASSERT (condenseIn->appendStragglers >= 0 && 
-            condenseIn->appendStragglers <= 1, status, 
+    ASSERT (condenseIn->appendStragglers >= 0 &&
+            condenseIn->appendStragglers <= 1, status,
             LALTRIGSCANCLUSTERH_ECHOICE, LALTRIGSCANCLUSTERH_MSGECHOICE);
 
     n            = condenseIn->n;
@@ -249,7 +249,7 @@ void LALTrigScanClusterDriver (
         if (masterList[i].clusterID == TRIGSCAN_UNCLASSIFIED)
         {
             /* create a list of size 1 */
-            list = (INT4 *) 
+            list = (INT4 *)
                     LALMalloc (sizeof(INT4));
 
             /* assume that this seed point is a cluster */
@@ -263,8 +263,8 @@ void LALTrigScanClusterDriver (
             /*-- noise. Otherwise increment the current clusterID for    --*/
             /*-- the next cluster.                                       --*/
 
-            if (!(XLALTrigScanExpandCluster ( 
-                            list, condenseIn, n, currClusterID, condenseOut 
+            if (!(XLALTrigScanExpandCluster (
+                            list, condenseIn, n, currClusterID, condenseOut
 					)))
             {
                 /* the seed point did not agglomerate into a cluster */
@@ -284,12 +284,12 @@ void LALTrigScanClusterDriver (
     /*---------------------*/
 
     /*--- How many clusters ---*/
-    (*nclusters) = currClusterID-1;  
+    (*nclusters) = currClusterID-1;
 
     /* Append the stragglers if required */
     if ( condenseIn->appendStragglers )
     {
-        LALTrigScanAppendIsolatedTriggers( status->statusPtr, condenseIn, 
+        LALTrigScanAppendIsolatedTriggers( status->statusPtr, condenseIn,
                 condenseOut, nclusters);
         CHECKSTATUSPTR (status);
     }
@@ -307,7 +307,7 @@ void LALTrigScanClusterDriver (
 static void LALTrigScan3DMetricCoeff_TcT0T3  (
         LALStatus               *status,
         const SnglInspiralTable **eventHead,
-        trigScanClusterIn       *condenseIn 
+        trigScanClusterIn       *condenseIn
         )
 {
     INT4                N;
@@ -330,7 +330,7 @@ static void LALTrigScan3DMetricCoeff_TcT0T3  (
     {
         const SnglInspiralTable *thisEvent = NULL;
         INT4  kk;
-        REAL8 a11, a23, a22, a33, a12, a13, tcFootPrint, t0FootPrint, denom;
+        REAL8 a11, a23, a22, a33, a12, a13, tcFootPrint, denom;
 
         if (condenseIn->vrbflag)
               fprintf (stderr, "Input trigger list seems to have the metric ... using it \n");
@@ -339,8 +339,8 @@ static void LALTrigScan3DMetricCoeff_TcT0T3  (
         condenseIn->maxTcFootPrint = 0.0L;
 
         /* Now get the metric at that point */
-        for (kk=0, thisEvent = (*eventHead); 
-                kk<N && thisEvent; kk++, thisEvent = thisEvent->next  ) 
+        for (kk=0, thisEvent = (*eventHead);
+                kk<N && thisEvent; kk++, thisEvent = thisEvent->next  )
         {
             /* Copy out the 3d metric co-effs */
             masterList[kk].Gamma[0] = thisEvent->Gamma[0]/condenseIn->ts_scaling;
@@ -368,14 +368,14 @@ static void LALTrigScan3DMetricCoeff_TcT0T3  (
         }
 
     }
- 
+
     /* Fill-out the Gamma matrix */
     {
         int               kk, i, j, k, s1;
         gsl_permutation   *p1 = NULL;
         gsl_matrix        *GG = NULL;
 
-        for (kk=0; kk<N; kk++) 
+        for (kk=0; kk<N; kk++)
         {
 
             p1 = NULL;
@@ -393,7 +393,7 @@ static void LALTrigScan3DMetricCoeff_TcT0T3  (
             }
 
             p1 = gsl_permutation_alloc( 3 );
-            gsl_linalg_LU_decomp( GG, p1, &s1 ); 
+            gsl_linalg_LU_decomp( GG, p1, &s1 );
 
             masterList[kk].invGamma = NULL;
             masterList[kk].invGamma = gsl_matrix_alloc( 3, 3 );

@@ -29,6 +29,7 @@ libtool
 misc/__lalappsGitID.h
 misc/lalapps-user-env.*sh
 misc/lalappsGitID.h
+src/*/python_config.sed
 src/calibration/lalapps_ComputeFactors
 src/calibration/lalapps_ComputeStrain
 src/calibration/lalapps_ComputeStrainDriver
@@ -42,7 +43,6 @@ src/calibration/lalapps_mkcalref
 src/calibration/lalapps_noise_comp_pipe
 src/calibration/lalapps_readcalframe
 src/calibration/lalapps_strain_pipe
-src/calibration/python_config.sed
 src/config.h
 src/config.h.in
 src/detresponse/lalapps_bar_response
@@ -52,6 +52,7 @@ src/detresponse/lalapps_ifo_skyavg_ts
 src/detresponse/lalapps_test_earth
 src/detresponse/lalapps_test_gridding
 src/example/lalapps_hello
+src/findchirp/lalapps_BankEfficiency
 src/findchirp/lalapps_DistanceVsMass
 src/findchirp/lalapps_InspiralOverlap
 src/findchirp/lalapps_chirplen
@@ -72,6 +73,7 @@ src/frametools/lalapps_frview
 src/inspiral/lalapps_bbhinj
 src/inspiral/lalapps_blindinj
 src/inspiral/lalapps_calcexpsnr
+src/inspiral/lalapps_cbc_pipedown
 src/inspiral/lalapps_check_hipe_times
 src/inspiral/lalapps_coherent_inspiral
 src/inspiral/lalapps_coherentbank
@@ -116,10 +118,10 @@ src/inspiral/lalapps_trigbank
 src/inspiral/lalapps_trigger_hipe
 src/inspiral/lalapps_write_ihope_page
 src/inspiral/posterior/lalapps_inspnest
-src/inspiral/python_config.sed
 src/lalapps/lalapps_cache
 src/lalapps/lalapps_tconvert
 src/lalapps/lalapps_version
+src/online/lalapps_online_datafind
 src/power/lalapps_binj
 src/power/lalapps_power
 src/power/sense_compare
@@ -155,6 +157,7 @@ src/pulsar/FDS_isolated/lalapps_uberpolka
 src/pulsar/FDS_isolated/lalapps_zellepolka
 src/pulsar/Injections/lalapps_Makefakedata_v4
 src/pulsar/Injections/lalapps_compareSFTs
+src/pulsar/Injections/lalapps_compareTS
 src/pulsar/Injections/lalapps_dumpSFT
 src/pulsar/Injections/lalapps_makefakedata_test
 src/pulsar/Injections/lalapps_makefakedata_v2
@@ -218,7 +221,6 @@ src/ring/lalapps_ringdown_waveform
 src/ring/lalapps_ringread
 src/ring/lalapps_rinj
 src/ring/lalapps_spheroidal_harmonic
-src/ring/python_config.sed
 src/stamp-h1
 src/stochastic/lalapps_olapredfcn
 src/stochastic/lalapps_stochastic
@@ -229,8 +231,17 @@ src/stochastic/lalapps_stochastic_preprocess
 src/stochastic/lalapps_stochastic_virgo
 src/stochastic/lalapps_stopp
 src/stochastic/lalapps_stopp_bayes
-src/stochastic/python_config.sed
 src/string/lalapps_StringSearch
+src/tracksearch/lalapps_tracksearch
+src/tracksearch/lalapps_tracksearch_averager
+src/tracksearch/lalapps_tracksearch_cutpipe
+src/tracksearch/lalapps_tracksearch_dat2pgm
+src/tracksearch/lalapps_tracksearch_datagen
+src/tracksearch/lalapps_tracksearch_handler
+src/tracksearch/lalapps_tracksearch_housekeeper
+src/tracksearch/lalapps_tracksearch_mapcachebuilder
+src/tracksearch/lalapps_tracksearch_pipe
+src/tracksearch/lalapps_tracksearch_tune_pipe
 src/zmsearch/lalapps_build_zm_frames
 src/zmsearch/lalapps_zmcompare
 src/zmsearch/lalapps_zmdft

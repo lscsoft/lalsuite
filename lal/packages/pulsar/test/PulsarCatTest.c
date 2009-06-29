@@ -121,7 +121,7 @@ This routine simply parses the input arguments, stuffs the data into a
 
 If the \verb@-i@ option is given, the corresponding file is opened and
 read by \verb@LALCHARReadVectorSequence()@, then each line is
-tokenized by \verb@LALCreateTokenList()@.  
+tokenized by \verb@LALCreateTokenList()@.
 
 Output via the \verb@-o@ option is in a custom human-readable format,
 which should be easy to figure out.
@@ -140,7 +140,7 @@ LALCreateTokenList()            LALDestroyTokenList()
 LALReadPulsarCatHead()          LALReadPulsarCatLine()
 LALStringToD()                  LALStringToI8()
 LALLeapSec()                    LALUpdatePulsarCat()
-LALSnprintf()
+snprintf()
 \end{verbatim}
 
 \subsubsection*{Notes}
@@ -514,7 +514,7 @@ main(int argc, char **argv)
     if ( !strcmp( infile, "stdin" ) )
       fp = stdin;
     else
-      fp = fopen( infile, "r" ); 
+      fp = fopen( infile, "r" );
     if ( fp == NULL ) {
       ERROR( PULSARCATTESTC_EFILE, PULSARCATTESTC_MSGEFILE, infile );
       return PULSARCATTESTC_EFILE;
@@ -560,7 +560,7 @@ main(int argc, char **argv)
 	/* Ignore lines that don't parse, moving on to the next. */
 	LALReadPulsarCatLine( &stat, here->next, list, indx );
 	if ( stat.statusCode ) {
-	  LALSnprintf( msg, MAXLEN, "Error reading line %i of %s:"
+	  snprintf( msg, MAXLEN, "Error reading line %i of %s:"
 		       " skipping", i, infile );
 	  ERROR( 0, msg, 0 );
 	  if ( stat.statusPtr ) {
@@ -575,7 +575,7 @@ main(int argc, char **argv)
       }
       SUB( LALDestroyTokenList( &stat, &list ), &stat );
     }
-    LALSnprintf( msg, MAXLEN, "File %s had %i lines and %i parseable"
+    snprintf( msg, MAXLEN, "File %s had %i lines and %i parseable"
 		 " pulsars", infile, i, n );
     INFO( msg );
     SUB( LALCHARDestroyVectorSequence( &stat, &file ), &stat );
@@ -820,11 +820,11 @@ fprintderr( FILE *fp, REAL8 x, REAL8 dx ) {
       return fprintf( fp, "( 0 +/- %.0f )e%+i", dx*norm, lsd );
     }
     if ( lsd <= 0 ) {
-      LALSnprintf( format, MAXLEN, "%%.%if +/- %%.%if", -lsd, -lsd );
+      snprintf( format, MAXLEN, "%%.%if +/- %%.%if", -lsd, -lsd );
       return fprintf( fp, format, 0.0, dx );
     }
     norm = pow( 10.0, -lsd );
-    LALSnprintf( format, MAXLEN, "0 +/- %%.0f%%0%ii", lsd );
+    snprintf( format, MAXLEN, "0 +/- %%.0f%%0%ii", lsd );
     return fprintf( fp, format, dx*norm, 0 );
   }
 
@@ -832,7 +832,7 @@ fprintderr( FILE *fp, REAL8 x, REAL8 dx ) {
   if ( dx <= 0.0 ) {
     if ( abs( gsd ) > 3 )
       return fprintf( fp, "%.16e", x );
-    LALSnprintf( format, MAXLEN, "%%.%if", 16 - gsd );
+    snprintf( format, MAXLEN, "%%.%if", 16 - gsd );
     return fprintf( fp, format, x );
   }
 
@@ -841,16 +841,16 @@ fprintderr( FILE *fp, REAL8 x, REAL8 dx ) {
     gsd = lsd;
   if ( lsd > 3 || gsd < -3 ) {
     norm = pow( 10.0, -gsd );
-    LALSnprintf( format, MAXLEN, "( %%.%if +/- %%.%if )e%+i",
+    snprintf( format, MAXLEN, "( %%.%if +/- %%.%if )e%+i",
 		 gsd - lsd, gsd - lsd, gsd );
     return fprintf( fp, format, x*norm, dx*norm );
   }
   if ( lsd <= 0 ) {
-    LALSnprintf( format, MAXLEN, "%%.%if +/- %%.%if", -lsd, -lsd );
+    snprintf( format, MAXLEN, "%%.%if +/- %%.%if", -lsd, -lsd );
     return fprintf( fp, format, x, dx );
   }
   norm = pow( 10.0, -lsd );
-  LALSnprintf( format, MAXLEN, "%%.0f%%0%ii +/- %%.0f%%0%ii", lsd,
+  snprintf( format, MAXLEN, "%%.0f%%0%ii +/- %%.0f%%0%ii", lsd,
 	       lsd );
   return fprintf( fp, format, x*norm, 0, dx*norm, 0 );
 }

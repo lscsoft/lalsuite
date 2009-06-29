@@ -1,19 +1,19 @@
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: FindChirpPTFWaveform.c
  *
  * Author: Brown, D. A., and Fazi, D.
- * 
+ *
  * Revision: $Id$
- * 
+ *
  *-----------------------------------------------------------------------
  */
 
-#if 0 
+#if 0
 <lalVerbatim file="FindChirpPTFWaveformCV">
 Author: Brown, D. A., and Fazi, D.
 $Id$
-</lalVerbatim> 
+</lalVerbatim>
 
 <lalLaTeX>
 \subsection{Module \texttt{FindChirpPTFWaveform.c}}
@@ -46,7 +46,7 @@ LALDestroyVector()
 \subsubsection*{Notes}
 
 \vfill{\footnotesize\input{FindChirpPTFWaveformCV}}
-</lalLaTeX> 
+</lalLaTeX>
 #endif
 
 #include <math.h>
@@ -66,9 +66,12 @@ int isnan(double);
 #define isnan(x) ((isnan)((double)(x)))
 #endif
 
+/* macro to "use" unused function parameters */
+#define UNUSED(expr) do { (void)(expr); } while(0)
+
 NRCSID(FINDCHIRPPTFWAVEFORMC, "$Id$");
 
-/* define a structure so that the ptf waveform parameters */ 
+/* define a structure so that the ptf waveform parameters */
 /* can be used by the GSL ODE integrator                  */
 typedef struct
 {
@@ -86,7 +89,7 @@ ptf_evolution_params_t;
 
 /* function that computes the derivatives of the dynamical */
 /* variables for the GSL ODE integrator                    */
-INT4 XLALPTFWaveformDerivatives( 
+INT4 XLALPTFWaveformDerivatives(
     REAL8 t, const REAL8 y[11], REAL8 dydt[11], void* params )
 {
   /* equation numbers in description of variables and algorithms refer to
@@ -94,10 +97,10 @@ INT4 XLALPTFWaveformDerivatives(
    */
 
   /* In this code the first body is the larger, spinning body with spin
-   * magnitude given by |S1| = chi1 * m1^2 with 0 \le chi1 \le 1          
+   * magnitude given by |S1| = chi1 * m1^2 with 0 \le chi1 \le 1
    */
 
-  static const char* func = "XLALPTFWaveformDerivatives";
+  /*static const char* func = "XLALPTFWaveformDerivatives";*/
   /* post newtonian coeffients which are independent of time */
   ptf_evolution_params_t* pn_params = (ptf_evolution_params_t*) params;
 
@@ -142,7 +145,7 @@ INT4 XLALPTFWaveformDerivatives(
   const REAL8 OmegaLz = - LNhat_coeff * S1_spin_orbit_coeff * S1z;
 
   /* dot product of OmegaL and LNhat needed in Eq. (14) */
-  const REAL8 OmegaL_dot_LNhat = 
+  const REAL8 OmegaL_dot_LNhat =
     OmegaLx * LNhatx + OmegaLy * LNhaty + OmegaLz * LNhatz;
 
   /* Omegae as defined by Eq. (14) */
@@ -186,10 +189,13 @@ INT4 XLALPTFWaveformDerivatives(
   /* phase evolution is purely orbital as we are working in the    */
   /* precessing converion: see the discussion after Eq. (14)       */
   const REAL8 dPhi_dt = omega;
-     
+
+  /* t is unused in this function */
+  UNUSED(t);
+
   /* pass LNhat_dot_back so we can check it's constant */
   pn_params->LNhat_dot_S1 = LNhat_dot_S1;
-  
+
   /* copy derivatives into output array */
   dydt[0]  = dPhi_dt;
   dydt[1]  = domega_dt;
@@ -235,27 +241,27 @@ XLALPTFOmegaPNCoeffsOrbital( REAL4 m1, REAL4 m2 )
   c[3] = c[0] * 4.0 * LAL_PI;
 
   /* 2 pN correction */
-  c[4] = c[0] * (34103.0 + 122949.0 * eta + 59472.0 * eta * eta) 
+  c[4] = c[0] * (34103.0 + 122949.0 * eta + 59472.0 * eta * eta)
     / 18144.0;
 
   /* 2.5 pN correction */
   c[5] = c[0] * (-1.0/672.0) * (4159.0 + 15876.0 * eta) * LAL_PI;
 
   /* 3 pN correction excluding log((M omega)^2/3) term */
-  c[6] = c[0] * ( 16447322263.0/139708800.0 
+  c[6] = c[0] * ( 16447322263.0/139708800.0
       - 1712.0/105.0 * LAL_GAMMA
       + 16.0/3.0 * LAL_PI * LAL_PI
-      + ( -273811877.0/1088640.0 + 451.0/48.0 * LAL_PI * LAL_PI 
+      + ( -273811877.0/1088640.0 + 451.0/48.0 * LAL_PI * LAL_PI
         - (88.0 * 1039.0)/(3.0 * 4620.0) ) * eta
       + 541.0/896.0 * eta * eta
-      - 5605.0/2592.0 * eta * eta * eta 
+      - 5605.0/2592.0 * eta * eta * eta
       - 856.0/105.0 * log(16.0) );
 
   /* 3 pN correction of log((M omega)^2/3) term */
   c[7] = c[0] * (-1712.0/315.0);
 
   /* 3.5 pN correction */
-  c[8] = c[0] * (-13245.0 + 717350.0 * eta + 731960.0 * eta * eta) 
+  c[8] = c[0] * (-13245.0 + 717350.0 * eta + 731960.0 * eta * eta)
     * (LAL_PI/12096.0);
 
   return c_vec;
@@ -263,8 +269,8 @@ XLALPTFOmegaPNCoeffsOrbital( REAL4 m1, REAL4 m2 )
 
 
 REAL4Vector*
-XLALPTFOmegaPNCoeffsSpin( REAL4 m1, REAL4 m2, 
-    REAL4 chi1, REAL4 chi2, 
+XLALPTFOmegaPNCoeffsSpin( REAL4 m1, REAL4 m2,
+    REAL4 chi1, REAL4 chi2,
     REAL4 Q1, REAL4 Q2 )
 {
   static const char* func = "XLALPTFOmegaPNCoeffsSpin";
@@ -294,14 +300,14 @@ XLALPTFOmegaPNCoeffsSpin( REAL4 m1, REAL4 m2,
 
   /* 2 pN Kerr quadrupole-monopole coupling for first body */
   if ( chi1 )
-    c[4] = ( -5.0 * Q1 ) 
+    c[4] = ( -5.0 * Q1 )
       / ( 2.0 * m1_5 * chi1 * chi1 * m_total * m_total );
   else
     c[4] = 0;
 
   /* 2 pN Kerr quadrupole-monopole coupling for second body */
   if ( chi2 )
-    c[5] = ( -5.0 * Q2 ) 
+    c[5] = ( -5.0 * Q2 )
       / ( 2.0 * m2_5 * chi2 * chi2 * m_total * m_total );
   else
     c[5] = 0;
@@ -351,22 +357,22 @@ XLALPTFOmegaPNCoeffsEnergy( REAL4 m1, REAL4 m2,
   c[5] = 0;
 
   /* 3 pN correction */
-  c[6] = c[0] * 4.0 
-    * ((-675.0/64.0) 
+  c[6] = c[0] * 4.0
+    * ((-675.0/64.0)
     + ( 34445.0/576.0 - 205*LAL_PI*LAL_PI/96.0 ) * eta
     - 155.0/96.0 * eta * eta
     - 35.0/5184.0 * eta * eta * eta);
 
   /* 2.0 pN quadrupole-monopole coupling term from first body */
   if ( chi1 )
-    c[7] = c[0] * (3.0 * Q1) 
+    c[7] = c[0] * (3.0 * Q1)
       / (2.0 * m1_5 * chi1 * chi1 * m_total * m_total );
   else
     c[7] = 0;
 
   /* 2.0 pN quadrupole-monopole coupling term from second body */
   if ( chi2 )
-    c[8] = c[0] * (3.0 * Q2) 
+    c[8] = c[0] * (3.0 * Q2)
       / (2.0 * m2_5 * chi2 * chi2 * m_total * m_total );
   else
     c[8] = 0;
@@ -375,7 +381,7 @@ XLALPTFOmegaPNCoeffsEnergy( REAL4 m1, REAL4 m2,
 }
 
 
-static REAL4 
+static REAL4
 spin_so_coeff( REAL4 ma, REAL4 mb )
 {
   REAL4 m_total = ma + mb;
@@ -384,7 +390,7 @@ spin_so_coeff( REAL4 ma, REAL4 mb )
 }
 
 
-static REAL4 
+static REAL4
 orbital_coeff( REAL4 m1, REAL4 m2 )
 {
   REAL4 m_total = m1 + m2;
@@ -393,7 +399,7 @@ orbital_coeff( REAL4 m1, REAL4 m2 )
 }
 
 static REAL4 stpn_orbital_energy( REAL8 omega,
-    REAL8 LNhat_dot_S1, REAL8 LNhat_dot_S2, REAL8 S1_dot_S2, 
+    REAL8 LNhat_dot_S1, REAL8 LNhat_dot_S2, REAL8 S1_dot_S2,
     REAL4 m1, REAL4 m2, REAL4 chi1, REAL4 chi2, REAL4Vector* pn_params )
 {
   /* Function which computes the derivative of the orbital energy with     */
@@ -431,16 +437,16 @@ static REAL4 stpn_orbital_energy( REAL8 omega,
     + pn_params->data[5] * omega_4_3                 /* 2.5 */
     + pn_params->data[6] * omega_5_3                 /* 3.0 */
     /* contribution from spin orbit terms at 1.5 pN order */
-    + pn_params->data[0] 
+    + pn_params->data[0]
     * 20.0 * LNhat_dot_Seff * omega_2_3 / (3.0 * m_total * m_total)
     /* XXX contribution from spin spin terms at 2.0 pN order */
-    + (-1.0/2.0) * ( S1_dot_S2 - 3.0 * LNhat_dot_S1 * LNhat_dot_S2 ) 
+    + (-1.0/2.0) * ( S1_dot_S2 - 3.0 * LNhat_dot_S1 * LNhat_dot_S2 )
     * omega_5_3 / (m_total * m_total)
     /* contribution from first quadrupole-monopole coupling at 2.0 pN */
-    + pn_params->data[7] * omega 
+    + pn_params->data[7] * omega
     * ( 3.0 * LNhat_dot_S1 * LNhat_dot_S1 - mag_S1 * mag_S1 )
     /* contribution from second quadrupole-monopole coupling at 2.0 pN */
-    + pn_params->data[8] * omega 
+    + pn_params->data[8] * omega
     * ( 3.0 * LNhat_dot_S2 * LNhat_dot_S2 - mag_S2 * mag_S2 );
 
   return (REAL4) energy;
@@ -451,7 +457,7 @@ static REAL4 stpn_orbital_energy( REAL8 omega,
 /* frequency and the e_i basis vectors in the precessing convention    */
 /* <lalVerbatim file="FindChirpPTFWaveformCP"> */
 INT4
-XLALFindChirpPTFWaveform( 
+XLALFindChirpPTFWaveform(
     REAL4Vector         *PTFphi,
     REAL4Vector         *PTFomega_2_3,
     REAL4VectorSequence *PTFe1,
@@ -470,21 +476,21 @@ XLALFindChirpPTFWaveform(
   REAL8 m2 = InspTmplt->mass2;
   REAL8 chi1 = InspTmplt->chi;
   REAL8 kappa = InspTmplt->kappa;
-  REAL8 t, t_next;                                                       
-  REAL8 step_size;                                                       
-  REAL8 dE_dt, dE_dt_n_1, dE_dt_n_2;
+  REAL8 t, t_next;
+  REAL8 step_size;
+  REAL8 dE_dt, dE_dt_n_1=0, dE_dt_n_2=0;
   REAL8 N_steps;
 
   ptf_evolution_params_t pn_params;
   ptf_evolution_params_t* pn_params_ptr = &pn_params;
 
-  const REAL8 m_total = m1 + m2;  
-  const REAL8 geometrized_m_total = m_total * LAL_MTSUN_SI;  
+  const REAL8 m_total = m1 + m2;
+  const REAL8 geometrized_m_total = m_total * LAL_MTSUN_SI;
   const REAL8 freq_step = geometrized_m_total * LAL_PI;
-  const REAL8 step      = deltaT / geometrized_m_total;                      
-  const REAL8 omegam_to_hz = 1.0 / freq_step;                            
+  const REAL8 step      = deltaT / geometrized_m_total;
+  const REAL8 omegam_to_hz = 1.0 / freq_step;
   const INT4  num_evolution_variables = 11;
-  REAL8       y[11], dydt[11];             
+  REAL8       y[11], dydt[11];
 
   /* Dynamical evolution variables and their derivatives */
   REAL8 Phi ;   /* gravitational wave phase in BCV2 Eq. (18)     */
@@ -508,19 +514,19 @@ XLALFindChirpPTFWaveform(
   /* create the differential equation solver */
   const gsl_odeiv_step_type* solver_type
     = gsl_odeiv_step_rkf45;
-  gsl_odeiv_step* solver_step 
+  gsl_odeiv_step* solver_step
     = gsl_odeiv_step_alloc( solver_type, num_evolution_variables );
   gsl_odeiv_control* solver_control
     = gsl_odeiv_control_standard_new( 1.0e-5, 1.0e-5, 1.0, 1.0 );
-  gsl_odeiv_evolve* solver_evolve 
+  gsl_odeiv_evolve* solver_evolve
     = gsl_odeiv_evolve_alloc( num_evolution_variables );
   gsl_odeiv_system solver_system;
-  
+
   solver_system.function  = XLALPTFWaveformDerivatives;
-  solver_system.jacobian  = NULL; 
-  solver_system.dimension = num_evolution_variables; 
+  solver_system.jacobian  = NULL;
+  solver_system.dimension = num_evolution_variables;
   solver_system.params    = (void*) pn_params_ptr;
-  
+
   /* set up orbital energy and post-Newtonian coefficents needed in evolution */
   orbital_energy_coeffs   = XLALPTFOmegaPNCoeffsEnergy( m1, m2, chi1, 0, 0, 0 );
   pn_params.orbital       = XLALPTFOmegaPNCoeffsOrbital( m1, m2 );
@@ -536,7 +542,7 @@ XLALFindChirpPTFWaveform(
   omega  = y[1]  = f_min / omegam_to_hz;
   S1x    = y[2]  = sqrt( 1 - kappa * kappa ) * pn_params.mag_S1 ;
   S1y    = y[3]  = 0;
-  S1z    = y[4]  = kappa * pn_params.mag_S1 ;  
+  S1z    = y[4]  = kappa * pn_params.mag_S1 ;
   LNhatx = y[5]  = 0.0;
   LNhaty = y[6]  = 0.0;
   LNhatz = y[7]  = 1.0;
@@ -550,14 +556,14 @@ XLALFindChirpPTFWaveform(
   /* start computing the waveform we use a while() loop which we   */
   /* break out of when one of three possible temination conditions */
   /* or two error conditions is reached                            */
-  
+
   /* Zero out the dynamical variables so they don't contain garbage */
   memset ( PTFomega_2_3->data, 0, N * sizeof(REAL4));
   memset ( PTFphi->data, 0, N * sizeof(REAL4));
   memset ( PTFe1->data, 0, 3 * N * sizeof(REAL4));
   memset ( PTFe2->data, 0, 3 * N * sizeof(REAL4));
 
-  i = 0; 
+  i = 0;
   t = 0;
   while ( 1 )
   {
@@ -565,7 +571,7 @@ XLALFindChirpPTFWaveform(
     if ( i >= N  )
     {
       XLALPrintError( "XLAL Error: output too short for PTF waveform\n" );
-      errcode = XLAL_ENOMEM; 
+      errcode = XLAL_ENOMEM;
       break;
     }
 
@@ -578,7 +584,7 @@ XLALFindChirpPTFWaveform(
     PTFe1->data[2 * N + i]   = (REAL4) (e1z);
     PTFe2->data[i]           = (REAL4) (e2x);
     PTFe2->data[N + i]       = (REAL4) (e2y);
-    PTFe2->data[2 * N + i]   = (REAL4) (e2z);     
+    PTFe2->data[2 * N + i]   = (REAL4) (e2z);
 
     /* advance the time (which is in units of total mass) */
     t = i * step;
@@ -586,7 +592,7 @@ XLALFindChirpPTFWaveform(
     step_size = step;
 
     /* call the solver to get the next timestep */
-    errcode = gsl_odeiv_evolve_apply( 
+    errcode = gsl_odeiv_evolve_apply(
         solver_evolve, solver_control, solver_step, &solver_system,
         &t, t_next, &step_size, y );
 
@@ -612,37 +618,37 @@ XLALFindChirpPTFWaveform(
     e2z    = LNhatx * e1y - LNhaty * e1x;
 
     /* exit with an error if any of the dynamical variables contain NaN */
-    if ( isnan( Phi ) || isnan( omega ) || isnan( LNhatx ) || 
-         isnan( LNhaty ) || isnan( LNhatz ) || isnan( e1x ) || 
+    if ( isnan( Phi ) || isnan( omega ) || isnan( LNhatx ) ||
+         isnan( LNhaty ) || isnan( LNhatz ) || isnan( e1x ) ||
          isnan( e1y ) || isnan( e1z ) )
     {
       /* check if we are close to the MECO */
-      N_steps = ((i-2) * dE_dt_n_1 - (i-1) * dE_dt_n_2) / 
+      N_steps = ((i-2) * dE_dt_n_1 - (i-1) * dE_dt_n_2) /
         ( dE_dt_n_1 -  dE_dt_n_2) - i + 1;
 
-      if ( N_steps > 5.0 ) 
+      if ( N_steps > 5.0 )
       {
         fprintf(stderr,"cycle %d\n",i);
         XLALPrintError( "XLAL Error: NaN in PTF dynamical variables\n" );
-        errcode = XLAL_EFAILED;    
-      }   
+        errcode = XLAL_EFAILED;
+      }
       break;
     }
 
     /*  Store the last two values of dE/dt so as to be able to estimate   */
     /* how far from the MECO condition we are in case the code is failing */
     if ( i <= 1 )
-    {  
+    {
       dE_dt_n_1 = stpn_orbital_energy( omega, pn_params.LNhat_dot_S1,
           0, 0, m1, m2, chi1, 0, orbital_energy_coeffs);
       dE_dt_n_2 = dE_dt_n_1 * 1.01;
-    }  
+    }
     else if ( i > 1 )
-    {  
+    {
       dE_dt_n_2 = dE_dt_n_1;
       dE_dt_n_1 = stpn_orbital_energy( omega, pn_params.LNhat_dot_S1,
           0, 0, m1, m2, chi1, 0, orbital_energy_coeffs);
-    } 
+    }
 
     /* terminate if domega_dt is no longer positive as this means that */
     /* the adiabatic approximation has probably broken down            */
@@ -656,10 +662,10 @@ XLALFindChirpPTFWaveform(
 
     /* If all check are ok set the final frequency */
     InspTmplt->fFinal = omega * omegam_to_hz;
-    
-  
+
+
   } /* end of evolution while ( 1 ) loop */
-    
+
   /* free the memory used by the ode solver */
   gsl_odeiv_evolve_free( solver_evolve );
   gsl_odeiv_control_free( solver_control );
@@ -672,11 +678,11 @@ XLALFindChirpPTFWaveform(
 
   /* Set the length of the template */
   InspTmplt->tC     = deltaT * (REAL8) i;
-  
+
   /* shift the waveform so that the coalescence time */
   /* corresponds to the end of the segment           */
   len = N - i;
-  
+
   /* Move the waveform at the end of the segment  */
   memmove( PTFomega_2_3->data + len, PTFomega_2_3->data, i * sizeof(REAL4) );
   memmove( PTFphi->data + len, PTFphi->data, i * sizeof(REAL4) );
@@ -690,7 +696,7 @@ XLALFindChirpPTFWaveform(
   memset ( PTFe2->data, 0, len * sizeof(REAL4));
 
   /* the GSL success code is probably the same as LAL's but just in case... */
-  if ( errcode == GSL_SUCCESS ) 
+  if ( errcode == GSL_SUCCESS )
     errcode = XLAL_SUCCESS;
   else
     XLAL_ERROR( func, errcode );

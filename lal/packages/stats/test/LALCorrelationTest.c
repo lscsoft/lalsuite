@@ -80,7 +80,7 @@ NRCSID( LALCORRELATIONTESTC, "$Id$" );
 /***************************** </lalErrTable> */
 
 
-#define LALCORRELATIONTESTC_TOL    1.0e-6 
+#define LALCORRELATIONTESTC_TOL    1.0e-6
 
 static INT4 readData(InputCorrelation **in, CorrelationParams **p, OutputCorrelation **should);
 static INT4 compareOutputs(OutputCorrelation *is, OutputCorrelation *should);
@@ -110,7 +110,7 @@ int main( void )
 
   LALCorrelation(&status, &outputIs, input, params);
 
-  if ( status.statusCode ) 
+  if ( status.statusCode )
   {
     printf( "Unexpectedly got error code %d and message %s\n",
 	    status.statusCode, status.statusDescription );
@@ -161,12 +161,12 @@ static INT4 readData(InputCorrelation **input, CorrelationParams **p, OutputCorr
   REAL4 dataTwo [] = {-0.357, -0.341, 0.277, -0.218, 0.494, -0.092, 0.436, 0.220, 0.245, -0.187, -0.355, -0.193, -0.494, -0.209, 0.026};
   REAL4 corr [] = {-0.242256, -0.176615, -0.297668, 0.274943, -0.2567, -0.189163, 0.230703};
   INT4 i;
-  
+
 
   InputCorrelation *in;
   CorrelationParams *params;
   OutputCorrelation *should;
-  
+
   in=(InputCorrelation*)LALMalloc(sizeof(InputCorrelation));
   in->one=(REAL4TimeSeries*)LALMalloc(sizeof(REAL4TimeSeries));
   in->two=(REAL4TimeSeries*)LALMalloc(sizeof(REAL4TimeSeries));
@@ -195,7 +195,7 @@ static INT4 readData(InputCorrelation **input, CorrelationParams **p, OutputCorr
   should->start.gpsSeconds=700000000;
   in->one->epoch.gpsSeconds=should->start.gpsSeconds;
   in->two->epoch.gpsSeconds=should->start.gpsSeconds;
-  
+
   should->start.gpsNanoSeconds=394730;
   in->one->epoch.gpsNanoSeconds=should->start.gpsNanoSeconds;
   in->two->epoch.gpsNanoSeconds=should->start.gpsNanoSeconds;
@@ -235,7 +235,7 @@ static INT4 compareOutputs(OutputCorrelation *is, OutputCorrelation *should)
 
   printf("Is:     maxCorrelationValue=%f\n",is->maxCorrelationValue);
   printf("Should: maxCorrelationValue=%f\n\n",should->maxCorrelationValue);
-   
+
   printf("Is:     minCorrelationTimeShift=%d\n", is->minCorrelationTimeShift);
   printf("Should: minCorrelationTimeShift=%d\n\n", should->minCorrelationTimeShift);
 
@@ -286,7 +286,7 @@ static INT4 compareOutputs(OutputCorrelation *is, OutputCorrelation *should)
     }
 
   printf("diff=%d\n",diff);
-     
+
   if(diff>0) return LALCORRELATIONTESTC_EFLS;
   return 0;
 }

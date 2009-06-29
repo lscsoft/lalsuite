@@ -91,7 +91,7 @@ typedef enum{
 \subsubsection*{Structure \texttt{RingParamStruc}}
 
 This structure stores the parameters for constructing a burst gravitational
-waveform 
+waveform
 
 ******************************************************* </lalLaTeX> */
 
@@ -114,18 +114,18 @@ typedef struct tagRingParamStruc {
 \newpage\input{GenerateRingC}
 </lalLaTeX> */
 void
-LALGenerateRing( 
-    LALStatus          *status, 
-    CoherentGW         *output, 
+LALGenerateRing(
+    LALStatus          *status,
+    CoherentGW         *output,
     REAL4TimeSeries    *series,
     SimRingdownTable   *simRingdown,
     RingParamStruc     *params
     );
 
 void
-LALRingInjectSignals( 
-    LALStatus               *status, 
-    REAL4TimeSeries         *series, 
+LALRingInjectSignals(
+    LALStatus               *status,
+    REAL4TimeSeries         *series,
     SimRingdownTable        *injections,
     COMPLEX8FrequencySeries *resp,
     INT4                     calType

@@ -109,8 +109,8 @@ int main( int argc, char *argv[] )
   INT4 nfailures = 0;
   static LALStatus status;
   INT4 xstatus;
-  LALSegList seglist1, seglist2;
-  LALSeg seg, *segp;
+  LALSegList seglist1;
+  LALSeg seg;
   LIGOTimeGPS segstart1 = {710000000, 123456789};
   LIGOTimeGPS segend1 =   {710000234, 555555555};
 
@@ -175,7 +175,7 @@ int main( int argc, char *argv[] )
   /*-------------------------------------------------------------------------*/
   XLALPrintInfo("\n========== LALSegListWrite tests \n");
   /*-------------------------------------------------------------------------*/
-  
+
   LALSegListWrite( &status, &seglist1, "SegmentsOutput1.data", "adi" );
   if ( status.statusCode ) {
     RETFAIL( "LALSegListWrite with standard segment list", status.statusCode );

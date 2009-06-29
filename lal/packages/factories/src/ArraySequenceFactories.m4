@@ -1,4 +1,4 @@
-/*----------------------------------------------------------------------- 
+/*-----------------------------------------------------------------------
 
 File Name: ArraySequenceFactories.c
 
@@ -13,7 +13,7 @@ Revision: $Id$
 \subsection{Module \texttt{ArraySequenceFactories.c}}
 \label{ss:ArraySequenceFactories.c}
 
-Create/destroy $\langle\mbox{datatype}\rangle$ArraySequence objects. 
+Create/destroy $\langle\mbox{datatype}\rangle$ArraySequence objects.
 
 \subsubsection*{Prototypes}
 \vspace{0.1in}

@@ -230,7 +230,7 @@ LALOpenDataFile( const char *fname )
     if ( ! strlen( p0 ) ) /* this directory is empty */
       p0 = LAL_PREFIX "/share/lal"; /* default data directory */
 
-    n = LALSnprintf( fdata, sizeof(fdata), "%s/%s", p0 ? p0 : ".", fname );
+    n = snprintf( fdata, sizeof(fdata), "%s/%s", p0 ? p0 : ".", fname );
     if ( n > (int) sizeof( fdata ) ) /* data file name too long */
     {
       errno = ENAMETOOLONG;
@@ -478,7 +478,7 @@ int XLALFileVPrintf( LALFILE *file, const char *fmt, va_list ap )
 	int c;
 	if ( ! file )
 		XLAL_ERROR( func, XLAL_EFAULT );
-	len = LALVsnprintf( buf, LAL_PRINTF_BUFSIZE, fmt, ap );
+	len = vsnprintf( buf, LAL_PRINTF_BUFSIZE, fmt, ap );
 	if ( len < 0 )
 		XLAL_ERROR( func, XLAL_EFAILED );
 	if ( len >= (int)sizeof(buf) ) { /* buffer is too small */
@@ -486,7 +486,7 @@ int XLALFileVPrintf( LALFILE *file, const char *fmt, va_list ap )
 		s = XLALMalloc( len + 1 );
 		if ( !s )
 			XLAL_ERROR( func, XLAL_ENOMEM );
-		len = LALVsnprintf( s, len + 1, fmt, ap );
+		len = vsnprintf( s, len + 1, fmt, ap );
 		c = XLALFilePuts( s, file );
 		XLALFree( s );
 	} else {

@@ -118,7 +118,6 @@ void free_matrix(float **m)
 }
 
 
-int snprintf(char *str,size_t size,const char *format, ...); 
 int zmnormalise(int n,int n1,float **amp,float rhosq,float **eamplitude,REAL4FrequencySeries *spectrum);
 void zmfft(int n1, float *ampfft, float *ampfftre, float *ampfftim);
 void correl(int num, float *re, float *RE, float *im, float *IM, float *corr);

@@ -230,6 +230,7 @@ LALUnitAsString()
 #include <lal/AVFactories.h>
 #include <lal/StringInput.h>
 #include <lal/StreamOutput.h>
+#include <lal/Date.h>
 
 NRCSID( STREAMSERIESOUTPUTC, "$Id$" );
 

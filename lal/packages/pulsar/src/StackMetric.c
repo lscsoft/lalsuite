@@ -20,7 +20,7 @@
 /**
  * \author Creighton, T. D.
  * \date 2000, 2001
- * \file 
+ * \file
  * \ingroup PulsarMetric
  * \brief Computes the parameter space metric for a coherent pulsar search.
  *
@@ -35,7 +35,7 @@
  length \f$\Delta t\f$.  The indecies \f$\alpha\f$ and \f$\beta\f$ are assumed to
  run from 0 to \f$n\f$, where \f$n\f$ is the total number of ``shape''
  parameters.
- 
+
  This routine has exactly the same calling structure and data storage
  as the LALCoherentMetric() function.  Thus, the argument
  \a *metric is a vector of length \f$(n+1)(n+2)/2\f$ storing all
@@ -47,7 +47,7 @@
  point at which the metric is being evaluated.  The argument
  \a *params stores the remaining parameters for computing the
  metric, as given in the Structures section of StackMetric.h.
- 
+
  \par Algorithm
 
  Most of what this routine does is set up arguments to be passed to the
@@ -112,7 +112,7 @@ LALStackMetric( LALStatus        *stat,
   i=params->n;
   while(i--){
     subParams.start=t;
-    LALCoherentMetric(stat->statusPtr,subMetric,lambda,&subParams);	
+    LALCoherentMetric(stat->statusPtr,subMetric,lambda,&subParams);
     BEGINFAIL(stat)
       TRY(LALDDestroyVector(stat->statusPtr,&subMetric),stat);
     ENDFAIL(stat);

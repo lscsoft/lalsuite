@@ -61,7 +61,7 @@ NRCSID( ELLIPSOIDOVERLAPTOOLSH, "$Id$" );
 typedef struct tagfContactWorkSpace
 {
     /* Dimension of the matrices & vectors */
-    INT4              n;
+    UINT4             n;
 
     /* Vector r_AB = r_B - r_A and           */
     /* shape matrices for ellipsoid centered */
@@ -84,13 +84,13 @@ fContactWorkSpace;
 
 /* Function Prototypes */
 REAL8 XLALCheckOverlapOfEllipsoids (
-        const gsl_vector   *ra, 
+        const gsl_vector   *ra,
         const gsl_vector   *rb,
         fContactWorkSpace  *workSpace );
 
 
 fContactWorkSpace * XLALInitFContactWorkSpace(
-                       INT4                           n,
+                       UINT4                          n,
                        const gsl_matrix              *a,
                        const gsl_matrix              *b,
                        const gsl_min_fminimizer_type *T,

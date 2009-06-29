@@ -252,7 +252,7 @@ if [ 1 ]; then
 
   ########### SET UP INJECTIONS #######
 
-  for injstring in BNS001INJ NSBH001INJ BBH001INJ SPIN001INJ FULLRANGE001INJ; do
+  for injstring in BBHLININJ BBHLOGINJ BBHSPINLININJ BBHSPINLOGINJ BNSLININJ BNSLOGINJ BNSSPINLININJ BNSSPINLOGINJ NSBHLININJ NSBHLOGINJ NSBHSPINLININJ NSBHSPINLOGINJ BNS001INJ; do
 
     #get HL-INJ file
     for file in `ls ../*inj/HL*${injstring}*`; do
@@ -422,7 +422,7 @@ for data in all_data playground_only exclude_play; do
   fi
 done
 
-for injstring in BNS001INJ NSBH001INJ BBH001INJ SPIN001INJ FULLRANGE001INJ; do
+for injstring in BBHLININJ BBHLOGINJ BBHSPINLININJ BBHSPINLOGINJ BNSLININJ BNSLOGINJ BNSSPINLININJ BNSSPINLOGINJ NSBHLININJ NSBHLOGINJ NSBHSPINLININJ NSBHSPINLOGINJ BNS001INJ; do
   if [ ! -d corse_all_data_files/${injstring} ] ; then
     mkdir corse_all_data_files/${injstring}
   fi

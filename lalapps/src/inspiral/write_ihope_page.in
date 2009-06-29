@@ -396,17 +396,20 @@ def write_general(page,opts):
   try:
     # let us give the ihope.ini and log file.
     # we also need to copy some files to the webdir
-    cmd = 'cp '+opts.datadir + '/ihope.pipeline.log  '+opts.physdir
+    cmd = 'cp '+opts.datadir + '/*.pipeline.log  '+opts.physdir
     make_external_call(cmd, opts.debug, opts.debug, False)
-  except:
-    pass
-  
-  try: 
+    pipelinelogs = glob.glob( opts.datadir + '/*.pipeline.log' )
+  except:pass
+
+  try:
     page.add("<li>The configuration parameters are contained within the file ")
     page = add_href(page, href=webdir+"/"+ini, name=ini)
-    page.add(", which was used by lalapps_ihope as reported in the")
-    page = add_href(page, href=webdir + "/ihope.pipeline.log", \
-        name="[ihope.pipeline.log]")
+    page.add(", which was used by lalapps_ihope as reported in the file(s):")
+    page.ul()
+    for file in pipelinelogs:
+      logname = file.replace( opts.datadir, '' )
+      page.li( e.a( logname, href=webdir + "/" + logname, rel="external" ) )
+    page.ul.close()
     page.li.close()
   except:pass
   

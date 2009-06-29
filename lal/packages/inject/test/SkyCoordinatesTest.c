@@ -420,8 +420,8 @@ main( int argc, char **argv )
       testIn.longitude = correct.longitude + 4 * LAL_TWOPI;
       testIn.latitude  = correct.latitude - 7 * LAL_TWOPI;
       SUB (LALNormalizeSkyPosition (&stat, &testOut, &testIn), &stat);
-      if ( (fabs(testOut.longitude - correct.longitude) > 1e-14) 
-	   || (fabs(testOut.latitude-correct.latitude)>1e-14)) 
+      if ( (fabs(testOut.longitude - correct.longitude) > 1e-14)
+	   || (fabs(testOut.latitude-correct.latitude)>1e-14))
 	{
 	  printf ( "1.) LALNormalizeSkyPosition failed: got (%f,%f) instead of (%f,%f)\n",
 		   testOut.longitude, testOut.latitude, correct.longitude, correct.latitude);
@@ -432,19 +432,19 @@ main( int argc, char **argv )
       testIn.latitude = LAL_PI - testIn.latitude;
       testIn.longitude += LAL_PI + 2 * LAL_TWOPI;
       SUB (LALNormalizeSkyPosition (&stat, &testOut, &testIn), &stat);
-      if ( (fabs(testOut.longitude - correct.longitude) > 1e-14) 
-	   || (fabs(testOut.latitude-correct.latitude)>1e-14)) 
+      if ( (fabs(testOut.longitude - correct.longitude) > 1e-14)
+	   || (fabs(testOut.latitude-correct.latitude)>1e-14))
 	{
 	  printf ( "2.) LALNormalizeSkyPosition failed: got (%f,%f) instead of (%f,%f)\n",
 		   testOut.longitude, testOut.latitude, correct.longitude, correct.latitude);
 	  ERROR( SKYCOORDINATESTESTC_ETEST, SKYCOORDINATESTESTC_MSGETEST, 0 );
 	  return SKYCOORDINATESTESTC_ETEST;
 	}
-      
-      
+
+
     } /* testing LALNormalizeSkyPosition() */
     /***********************************************************************/
-    
+
 
     /* Everything's fine, and nothing should have been allocated. */
     LALCheckMemoryLeaks();

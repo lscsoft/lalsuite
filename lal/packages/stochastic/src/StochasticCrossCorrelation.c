@@ -19,14 +19,14 @@
 
 /************************** <lalVerbatim file="StochasticCrossCorrelationCV">
 Author: UTB Relativity Group; contact whelan@phys.utb.edu (original by S. Drasco)
-$Id$  
+$Id$
 ************************************* </lalVerbatim> */
 
 /********************************************************** <lalLaTeX>
 \subsection{Module \texttt{StochasticCrossCorrelation.c}}
 \label{stochastic:ss:StochasticCrossCorrelation.c}
 
-Calculates the value of the standard optimally-filtered 
+Calculates the value of the standard optimally-filtered
 cross-correlation statistic for stochastic background searches.
 
 \subsubsection*{Prototypes}
@@ -42,8 +42,8 @@ cross-correlation statistic for stochastic background searches.
 The default version of the function, for handling non-heterodyned
 data, calculates the value of the standard optimally-filtered
 cross-correlation statistic
-% 
-\begin{eqnarray} 
+%
+\begin{eqnarray}
 Y
 &:=&\int_{t_0}^{t_0+T} dt_1\int_{t_0}^{t_0+T} dt_2\,
 w_1(t_1)\, h_1(t_1)\, Q(t_1-t_2)\, w_2(t_2)\, h_2(t_2) \nonumber \\
@@ -65,16 +65,16 @@ Q[k]\, e^{-i2\pi k\ell/M}
 \end{equation}
 the asterisk indicates complex conjugation, and the overbar indicates
 windowing and zero-padding:
-% 
+%
 \begin{equation}
-\bar{h}[k]=\ 
-\left\{ \begin{array}{cl} 
-w[k]\,h[k]  &    k = 0, \ldots, N-1 \\ 
+\bar{h}[k]=\
+\left\{ \begin{array}{cl}
+w[k]\,h[k]  &    k = 0, \ldots, N-1 \\
 0     &    k = N, \ldots, M-1
-\end{array} 
-\right. 
-\end{equation} 
-% 
+\end{array}
+\right.
+\end{equation}
+%
 which is needed because the range of indices for $h[k]$ and $Q[k]$ do
 not match.  $M$ should be at least $2N-1$, but may be chosen to be,
 \textit{e.g.}, $2M$ for convenience.
@@ -90,21 +90,21 @@ in the frequency series) with the elements corresponding to negative
 frequencies determined by complex conjugation.  This allows $Y$ to be
 computed as
 \begin{equation}
-Y=\ 
-\delta f\ 
-\left( 
-\widetilde{\bar{h}}_{1}[0]\ 
-\widetilde{Q}[0]\ 
-\widetilde{\bar{h}}_{2}[0]+\ 
-2\sum_{\ell=1}^{P-1}\ 
+Y=\
+\delta f\
+\left(
+\widetilde{\bar{h}}_{1}[0]\
+\widetilde{Q}[0]\
+\widetilde{\bar{h}}_{2}[0]+\
+2\sum_{\ell=1}^{P-1}\
 {\mathrm{Re}} \left\{
-\widetilde{\bar{h}}_{1}[\ell]^* \ 
-\widetilde{Q}[\ell]\ 
-\widetilde{\bar{h}}_{2}[\ell] 
-\right\} 
+\widetilde{\bar{h}}_{1}[\ell]^* \
+\widetilde{Q}[\ell]\
+\widetilde{\bar{h}}_{2}[\ell]
+\right\}
 \right)\ .
 \label{stochastic:e:shortcut}
-\end{equation} 
+\end{equation}
 
 The routine \texttt{LALStochasticCrossCorrelationStatistic()} is
 designed for analyzing non-heterodyned data, so if the input FFTed
@@ -121,19 +121,19 @@ as\footnote{Note that the $P$th frequency bin is not treated
   a significant contribution to the cross-correlation statistic from
   the Nyquist frequency, something is wrong.}
 \begin{eqnarray}
-Y&=&\ 
-\delta f\ 
-2\sum_{\ell=0}^{P-1}\ 
+Y&=&\
+\delta f\
+2\sum_{\ell=0}^{P-1}\
 {\mathrm{Re}} \left\{
-\widetilde{\bar{h}}_{1}[\ell]^* \ 
-\widetilde{Q}[\ell]\ 
-\widetilde{\bar{h}}_{2}[\ell] 
+\widetilde{\bar{h}}_{1}[\ell]^* \
+\widetilde{Q}[\ell]\
+\widetilde{\bar{h}}_{2}[\ell]
 \right\} \nonumber
 \\
 &\approx&
-\int_{-f_0-P\delta f}^{-f_0} df\ 
+\int_{-f_0-P\delta f}^{-f_0} df\
 \widetilde{h}_1(f)^*\ \widetilde{Q}(f)\ \widetilde{h}_2(f)
-+ \int_{f_0}^{f_0+P\delta f} df\ 
++ \int_{f_0}^{f_0+P\delta f} df\
 \widetilde{h}_1(f)^*\ \widetilde{Q}(f)\ \widetilde{h}_2(f)
 \label{stochastic:e:bandlimited}
 \end{eqnarray}
@@ -155,9 +155,9 @@ time-shifted data as a control case.
 
 \subsubsection*{\texttt{LALStochasticHeterodynedCrossCorrelationStatistic()}}
 
-In the case of heterodyned data, one wishes to calculate 
-% 
-\begin{eqnarray} 
+In the case of heterodyned data, one wishes to calculate
+%
+\begin{eqnarray}
 Y
 &:=&\int_{t_0}^{t_0+T} dt_1\int_{t_0}^{t_0+T} dt_2\,
 w_1(t_1)\, h_1(t_1)^*\, Q(t_1-t_2)\, w_2(t_2)\, h_2(t_2) \nonumber \\
@@ -173,14 +173,14 @@ In this case, the Fourier transforms of the zero-padded data streams
 have $M$ independent elements, which must all be included in the sum,
 which is calculated as
 \begin{equation}
-Y=\ 
-\sum_{\ell=0}^{M-1}\ 
-\widetilde{\bar{h}}_{1}[\ell]^* \ 
-\widetilde{Q}[\ell]\ 
-\widetilde{\bar{h}}_{2}[\ell] 
+Y=\
+\sum_{\ell=0}^{M-1}\
+\widetilde{\bar{h}}_{1}[\ell]^* \
+\widetilde{Q}[\ell]\
+\widetilde{\bar{h}}_{2}[\ell]
 \ .
 \label{stochastic:e:heterodyned}
-\end{equation} 
+\end{equation}
 While the mean value of the cross-correlation statistic for
 heterodyned data should be real (assuming both series were heterodyned
 with the same phase), the value for an individual stretch of data will
@@ -193,32 +193,32 @@ For diagnostic purposes, this function calculates the integrand of
 \begin{equation}
   \label{stochastic:e:ccspec}
 Y(f)=
-\widetilde{\bar{h}}_{1}(f)^* \ 
-\widetilde{Q}(f)\ 
+\widetilde{\bar{h}}_{1}(f)^* \
+\widetilde{Q}(f)\
 \widetilde{\bar{h}}_{2}(f)=
 Y[\ell]=
-\widetilde{\bar{h}}_{1}[\ell]^* \ 
-\widetilde{Q}[\ell]\ 
-\widetilde{\bar{h}}_{2}[\ell]  
+\widetilde{\bar{h}}_{1}[\ell]^* \
+\widetilde{Q}[\ell]\
+\widetilde{\bar{h}}_{2}[\ell]
 \end{equation}
 and returns it as a frequency series.
- 
+
 \subsubsection*{Algorithm}
 
 The function \texttt{LALStochasticCrossCorrelationSpectrum()}
 calculates the integrand (\ref{stochastic:e:ccspec}) as follows: First
-it calculates $\widetilde{\bar{h}}_{1}[\ell]^* \, 
+it calculates $\widetilde{\bar{h}}_{1}[\ell]^* \,
 \widetilde{\bar{h}}_{2}[\ell]$ with
 \texttt{LALCCVectorMultiplyConjugate()} and matches the resolution of
 the result to that of \verb+input->optimalFilter+ with
 \texttt{LALCCoarseGrainFrequencySeries()}.  Then it uses
 \texttt{LALCCVectorMultiply()} to calculate
 (\ref{stochastic:e:ccspec}) from the input $\widetilde{Q}[\ell]$ and
-the coarse-grained $\widetilde{\bar{h}}_{1}[\ell]^* \ 
+the coarse-grained $\widetilde{\bar{h}}_{1}[\ell]^* \
 \widetilde{\bar{h}}_{2}[\ell]$
 
 The functions \texttt{LALStochasticCrossCorrelationStatistic()} and\\
-\texttt{LALStochasticHeterodynedCrossCorrelationStatistic()} 
+\texttt{LALStochasticHeterodynedCrossCorrelationStatistic()}
 call \\
 \texttt{LALStochasticCrossCorrelationSpectrum()} and then
 integrate over all frequencies to  calculate
@@ -236,7 +236,7 @@ LALCCoarseGrainFrequencySeries()
 LALUnitMultiply()
 \end{verbatim}
 
-\texttt{LALStochasticCrossCorrelationStatistic()} and 
+\texttt{LALStochasticCrossCorrelationStatistic()} and
 \texttt{LALStochasticHeterodynedCrossCorrelationStatistic()}
 call
 \begin{verbatim}
@@ -254,7 +254,7 @@ LALUnitMultiply()
 \item The optimal filter $\widetilde{Q}(f)$ is represented by a
   complex frequency series because it will in general be applied to
   whitened data include the different complex whitening filters for
-  the two streams.  
+  the two streams.
   (cf.\ Sec.~\ref{stochastic:ss:StochasticOptimalFilter.c}.)
 \item The coarse-graining technique produces the same
   cross-correlation statistic as fine-graining the optimal filter by
@@ -265,7 +265,7 @@ LALUnitMultiply()
   \begin{eqnarray}
     {} [\widetilde{Q}] &=& \textrm{count}^{-2} \\
     {} [\widetilde{\bar{h}}_{1,2}] &=& \textrm{count}\,\textrm{Hz}^{-1} \\
-    {} [Y(f)] &:=& [\widetilde{\bar{h}}_1] 
+    {} [Y(f)] &:=& [\widetilde{\bar{h}}_1]
     [\widetilde{Q}]  [\widetilde{\bar{h}}_2]
     = \textrm{s}^2 \\
     {} [Y] &:=& [Y(f)]\, \textrm{Hz}^{-1} = \textrm{s}
@@ -274,12 +274,12 @@ LALUnitMultiply()
 
 \vfill{\footnotesize\input{StochasticCrossCorrelationCV}}
 
-******************************************************* </lalLaTeX> */ 
+******************************************************* </lalLaTeX> */
 /**************************** <lalLaTeX file="StochasticCrossCorrelationCB">
 
 % \bibitem{stochastic:}
 
-******************************************************* </lalLaTeX> */ 
+******************************************************* </lalLaTeX> */
 #include <lal/LALStdlib.h>
 #include <lal/StochasticCrossCorrelation.h>
 #include <lal/CoarseGrainFrequencySeries.h>
@@ -287,7 +287,7 @@ LALUnitMultiply()
 #include <lal/AVFactories.h>
 #include <lal/VectorOps.h>
 
-NRCSID(STOCHASTICCROSSCORRELATIONC, 
+NRCSID(STOCHASTICCROSSCORRELATIONC,
 "$Id$");
 
 void
@@ -429,7 +429,7 @@ LALStochasticCrossCorrelationStatisticCal(
 
   /* check for mismatches */
 
-  if (input->hBarTildeOne->data->length != input->hBarTildeTwo->data->length) 
+  if (input->hBarTildeOne->data->length != input->hBarTildeTwo->data->length)
   {
     ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMLEN, \
         STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
@@ -448,10 +448,10 @@ LALStochasticCrossCorrelationStatisticCal(
     ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMLEN, \
         STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
   }
-  
+
 
   /* start frequency */
-  if (input->hBarTildeOne->f0 != input->hBarTildeTwo->f0) 
+  if (input->hBarTildeOne->f0 != input->hBarTildeTwo->f0)
   {
     ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMFMIN, \
         STOCHASTICCROSSCORRELATIONH_MSGEMMFMIN);
@@ -510,7 +510,7 @@ LALStochasticCrossCorrelationStatisticCal(
   BEGINFAIL(status)
     TRY(LALCDestroyVector(status->statusPtr, &(ccSpec.data)), status);
   ENDFAIL(status);
- 
+
   if (ccSpec.f0 == 0)
   {
     /* DC contribution */
@@ -530,9 +530,9 @@ LALStochasticCrossCorrelationStatisticCal(
     cPtr = ccSpec.data->data;
   }
   cStopPtr = ccSpec.data->data + ccSpec.data->length;
-  
+
   /* contributions from positive and (negative) frequency components */
-  for (; cPtr < cStopPtr; ++cPtr) 
+  for (; cPtr < cStopPtr; ++cPtr)
   {
     output->value += cPtr->re;
   }
@@ -541,13 +541,13 @@ LALStochasticCrossCorrelationStatisticCal(
   output->value *= ccSpec.deltaF * 2.0;
 
   TRY(LALCDestroyVector(status->statusPtr, &(ccSpec.data)), status);
-  
+
   /* Set output units */
   unitPair.unitOne = &ccSpec.sampleUnits;
   unitPair.unitTwo = &lalHertzUnit;
   TRY(LALUnitMultiply(status->statusPtr, &(output->units), &unitPair), \
       status);
-  
+
   DETATCHSTATUSPTR(status);
   RETURN(status);
 } /* LALStochasticCrossCorrelationStatisticCal() */
@@ -693,7 +693,7 @@ LALStochasticHeterodynedCrossCorrelationStatisticCal(
 
   /* check for mismatches */
 
-  if (input->hBarTildeOne->data->length != input->hBarTildeTwo->data->length) 
+  if (input->hBarTildeOne->data->length != input->hBarTildeTwo->data->length)
   {
     ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMLEN, \
         STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
@@ -707,11 +707,11 @@ LALStochasticHeterodynedCrossCorrelationStatisticCal(
   }
 
   if (input->responseFunctionTwo->data->length != \
-      input->optimalFilter->data->length) 
+      input->optimalFilter->data->length)
   {
     ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMLEN, \
         STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
-  }  
+  }
 
   /* start frequency */
   if (input->hBarTildeOne->f0 != input->hBarTildeTwo->f0)
@@ -739,13 +739,13 @@ LALStochasticHeterodynedCrossCorrelationStatisticCal(
         STOCHASTICCROSSCORRELATIONH_MSGEMMDELTAF);
   }
 
-  if (input->responseFunctionOne->deltaF != input->optimalFilter->deltaF) 
+  if (input->responseFunctionOne->deltaF != input->optimalFilter->deltaF)
   {
     ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMDELTAF, \
         STOCHASTICCROSSCORRELATIONH_MSGEMMDELTAF);
   }
 
-  if (input->responseFunctionTwo->deltaF != input->optimalFilter->deltaF) 
+  if (input->responseFunctionTwo->deltaF != input->optimalFilter->deltaF)
   {
     ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMDELTAF, \
         STOCHASTICCROSSCORRELATIONH_MSGEMMDELTAF);
@@ -772,7 +772,7 @@ LALStochasticHeterodynedCrossCorrelationStatisticCal(
 
   BEGINFAIL(status)
     TRY(LALCDestroyVector(status->statusPtr, &(ccSpec.data)), status);
-  ENDFAIL(status); 
+  ENDFAIL(status);
 
   output->value.re = output->value.im = 0.0;
 
@@ -780,26 +780,26 @@ LALStochasticHeterodynedCrossCorrelationStatisticCal(
   cPtr = ccSpec.data->data;
 
   cStopPtr = ccSpec.data->data + ccSpec.data->length;
-  
+
   /* contributions from positive and (negative) frequency components */
-  for (; cPtr < cStopPtr; ++cPtr) 
+  for (; cPtr < cStopPtr; ++cPtr)
   {
     output->value.re += cPtr->re;
     output->value.im += cPtr->im;
   }
-  
+
   /* normalize */
   output->value.re *= ccSpec.deltaF;
   output->value.im *= ccSpec.deltaF;
 
   TRY(LALCDestroyVector(status->statusPtr, &(ccSpec.data)), status);
-  
-  /* Set output units */  
+
+  /* Set output units */
   unitPair.unitOne = &ccSpec.sampleUnits;
   unitPair.unitTwo = &lalHertzUnit;
   TRY(LALUnitMultiply(status->statusPtr, &(output->units), &unitPair), \
       status);
-  
+
   DETATCHSTATUSPTR(status);
   RETURN(status);
 } /* LALStochasticHeterodynedCrossCorrelationStatisticCal() */
@@ -822,7 +822,7 @@ LALStochasticCrossCorrelationSpectrumCal(
   REAL8 streamF0;
   REAL8 streamDF;
   UINT4 streamLength;
-  
+
   INT4 i;
 
   /* initialize status structure */
@@ -1032,7 +1032,7 @@ LALStochasticCrossCorrelationSpectrumCal(
       STOCHASTICCROSSCORRELATIONH_MSGENONPOSDELTAF);
 
   /* check for mismatches */
-  
+
   /* length */
   if (output->data->length != freqParams.length)
   {
@@ -1046,7 +1046,7 @@ LALStochasticCrossCorrelationSpectrumCal(
         STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
   }
 
-  if (input->responseFunctionOne->data->length != freqParams.length) 
+  if (input->responseFunctionOne->data->length != freqParams.length)
   {
     ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMLEN, \
         STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
@@ -1059,7 +1059,7 @@ LALStochasticCrossCorrelationSpectrumCal(
   }
 
   /* start frequency */
-  if (input->hBarTildeTwo->f0 != streamF0) 
+  if (input->hBarTildeTwo->f0 != streamF0)
   {
     ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMFMIN, \
         STOCHASTICCROSSCORRELATIONH_MSGEMMFMIN);
@@ -1071,26 +1071,26 @@ LALStochasticCrossCorrelationSpectrumCal(
         STOCHASTICCROSSCORRELATIONH_MSGEMMFMIN);
   }
 
-  if (input->responseFunctionTwo->f0 != freqParams.f0) 
+  if (input->responseFunctionTwo->f0 != freqParams.f0)
   {
     ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMFMIN, \
         STOCHASTICCROSSCORRELATIONH_MSGEMMFMIN);
   }
 
   /* frequency spacing */
-  if (input->hBarTildeTwo->deltaF != streamDF) 
+  if (input->hBarTildeTwo->deltaF != streamDF)
   {
     ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMDELTAF, \
         STOCHASTICCROSSCORRELATIONH_MSGEMMDELTAF);
   }
 
-  if (input->responseFunctionOne->deltaF != freqParams.deltaF) 
+  if (input->responseFunctionOne->deltaF != freqParams.deltaF)
   {
     ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMDELTAF, \
         STOCHASTICCROSSCORRELATIONH_MSGEMMDELTAF);
   }
 
-  if (input->responseFunctionTwo->deltaF != freqParams.deltaF) 
+  if (input->responseFunctionTwo->deltaF != freqParams.deltaF)
   {
     ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMDELTAF, \
         STOCHASTICCROSSCORRELATIONH_MSGEMMDELTAF);
@@ -1121,25 +1121,25 @@ LALStochasticCrossCorrelationSpectrumCal(
   LALCCVectorMultiplyConjugate(status->statusPtr, h1StarH2.data, \
       input->hBarTildeTwo->data, input->hBarTildeOne->data);
 
-  BEGINFAIL(status) 
+  BEGINFAIL(status)
     TRY(LALCDestroyVector(status->statusPtr, &(h1StarH2.data)), status);
   ENDFAIL(status);
 
   LALCCVectorMultiplyConjugate(status->statusPtr, r1StarR2.data, \
       input->responseFunctionTwo->data, input->responseFunctionOne->data);
 
-  BEGINFAIL(status) 
+  BEGINFAIL(status)
     TRY(LALCDestroyVector(status->statusPtr, &(r1StarR2.data)), status);
-  ENDFAIL(status); 
+  ENDFAIL(status);
 
   h1StarH2Coarse.data = NULL;
 
   LALCCreateVector(status->statusPtr, &(h1StarH2Coarse.data), \
       freqParams.length);
 
-  BEGINFAIL(status) 
+  BEGINFAIL(status)
     TRY(LALCDestroyVector(status->statusPtr, &(h1StarH2.data)), status);
-  ENDFAIL(status); 
+  ENDFAIL(status);
 
   LALCCoarseGrainFrequencySeries(status->statusPtr, &h1StarH2Coarse, \
       &h1StarH2, &freqParams);
@@ -1147,14 +1147,14 @@ LALStochasticCrossCorrelationSpectrumCal(
   BEGINFAIL(status) {
     TRY(LALCDestroyVector(status->statusPtr, &(h1StarH2.data)), status);
     TRY(LALCDestroyVector(status->statusPtr, &(h1StarH2Coarse.data)), status);
-  } ENDFAIL(status); 
+  } ENDFAIL(status);
 
   LALCDestroyVector(status->statusPtr, &(h1StarH2.data));
 
   BEGINFAIL(status) {
     TRY(LALCDestroyVector(status->statusPtr, &(h1StarH2.data)), status);
     TRY(LALCDestroyVector(status->statusPtr, &(h1StarH2Coarse.data)), status);
-  } ENDFAIL(status); 
+  } ENDFAIL(status);
 
 
   hc1StarHc2Coarse.data = NULL;
@@ -1165,14 +1165,14 @@ LALStochasticCrossCorrelationSpectrumCal(
   BEGINFAIL(status) {
     TRY(LALCDestroyVector(status->statusPtr, &(hc1StarHc2Coarse.data)), \
         status);
-  } ENDFAIL(status); 
+  } ENDFAIL(status);
 
   LALCCVectorDivide(status->statusPtr, hc1StarHc2Coarse.data, \
       h1StarH2Coarse.data, r1StarR2.data);
 
-  BEGINFAIL(status) 
+  BEGINFAIL(status)
     TRY(LALCDestroyVector(status->statusPtr, &(h1StarH2Coarse.data)), status);
-  ENDFAIL(status); 
+  ENDFAIL(status);
 
   TRY(LALCDestroyVector(status->statusPtr, &(h1StarH2Coarse.data)), status);
 
@@ -1182,7 +1182,7 @@ LALStochasticCrossCorrelationSpectrumCal(
   BEGINFAIL(status) {
     TRY(LALCDestroyVector(status->statusPtr, &(hc1StarHc2Coarse.data)), \
         status);
-  } ENDFAIL( status ); 
+  } ENDFAIL( status );
 
   TRY(LALCDestroyVector(status->statusPtr, &(hc1StarHc2Coarse.data)), status);
 
@@ -1192,8 +1192,8 @@ LALStochasticCrossCorrelationSpectrumCal(
   output->f0 = input->optimalFilter->f0;
   strncpy(output->name, "Integrand of cross-correlation statistic", \
       LALNameLength );
-  
-  /* Set output units */  
+
+  /* Set output units */
   unitPair.unitOne = &(input->hBarTildeOne->sampleUnits);
   unitPair.unitTwo = &(input->hBarTildeTwo->sampleUnits);
   TRY(LALUnitMultiply(status->statusPtr, &h1H2Units, &unitPair), status);
@@ -1330,7 +1330,7 @@ LALStochasticCrossCorrelationStatistic(
 
   /* check for mismatches */
 
-  if (input->hBarTildeOne->data->length != input->hBarTildeTwo->data->length) 
+  if (input->hBarTildeOne->data->length != input->hBarTildeTwo->data->length)
   {
     ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMLEN, \
         STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
@@ -1369,11 +1369,11 @@ LALStochasticCrossCorrelationStatistic(
   LALStochasticCrossCorrelationSpectrum(status->statusPtr, &ccSpec, \
       input, epochsMatch);
 
-  BEGINFAIL(status) 
+  BEGINFAIL(status)
     TRY(LALCDestroyVector(status->statusPtr, &(ccSpec.data)), status);
-  ENDFAIL(status); 
- 
-  if (ccSpec.f0 == 0) 
+  ENDFAIL(status);
+
+  if (ccSpec.f0 == 0)
   {
     /* DC contribution */
     output->value = ccSpec.data->data->re / 2.0;
@@ -1384,32 +1384,32 @@ LALStochasticCrossCorrelationStatistic(
     /* initialize pointers */
     cPtr = ccSpec.data->data + 1;
   } /* if f0 == 0 */
-  else 
+  else
   {
     output->value = 0.0;
 
     /* initialize pointers */
     cPtr = ccSpec.data->data;
-  }    
+  }
   cStopPtr = ccSpec.data->data + ccSpec.data->length;
 
   /* contributions from positive and (negative) frequency components */
-  for (; cPtr < cStopPtr; ++cPtr) 
+  for (; cPtr < cStopPtr; ++cPtr)
   {
     output->value += cPtr->re;
   }
-  
+
   /* normalize */
   output->value *= ccSpec.deltaF * 2.0;
 
   TRY(LALCDestroyVector(status->statusPtr, &(ccSpec.data)), status);
-  
-  /* Set output units */  
+
+  /* Set output units */
   unitPair.unitOne = &ccSpec.sampleUnits;
   unitPair.unitTwo = &lalHertzUnit;
   TRY(LALUnitMultiply(status->statusPtr, &(output->units), &unitPair), \
       status);
-  
+
   DETATCHSTATUSPTR(status);
   RETURN(status);
 } /* LALStochasticCrossCorrelationStatistic() */
@@ -1519,28 +1519,28 @@ LALStochasticHeterodynedCrossCorrelationStatistic(
   ASSERT(input->hBarTildeOne->deltaF > 0, status, \
       STOCHASTICCROSSCORRELATIONH_ENONPOSDELTAF, \
       STOCHASTICCROSSCORRELATIONH_MSGENONPOSDELTAF);
-  
+
   ASSERT(input->optimalFilter->f0 > 0, status, \
       STOCHASTICCROSSCORRELATIONH_ENONPOSDELTAF, \
       STOCHASTICCROSSCORRELATIONH_MSGENONPOSDELTAF);
 
   /* check for mismatches */
 
-  if (input->hBarTildeOne->data->length != input->hBarTildeTwo->data->length) 
+  if (input->hBarTildeOne->data->length != input->hBarTildeTwo->data->length)
   {
     ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMLEN, \
         STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
   }
 
   /* start frequency */
-  if (input->hBarTildeOne->f0 != input->hBarTildeTwo->f0) 
+  if (input->hBarTildeOne->f0 != input->hBarTildeTwo->f0)
   {
     ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMFMIN, \
          STOCHASTICCROSSCORRELATIONH_MSGEMMFMIN);
   }
 
   /* frequency spacing */
-  if (input->hBarTildeOne->deltaF != input->hBarTildeTwo->deltaF) 
+  if (input->hBarTildeOne->deltaF != input->hBarTildeTwo->deltaF)
   {
     ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMDELTAF, \
          STOCHASTICCROSSCORRELATIONH_MSGEMMDELTAF);
@@ -1567,7 +1567,7 @@ LALStochasticHeterodynedCrossCorrelationStatistic(
 
   BEGINFAIL(status)
     TRY(LALCDestroyVector(status->statusPtr, &(ccSpec.data)), status);
-  ENDFAIL(status); 
+  ENDFAIL(status);
 
   output->value.re = output->value.im = 0.0;
 
@@ -1576,23 +1576,23 @@ LALStochasticHeterodynedCrossCorrelationStatistic(
 
   cStopPtr = ccSpec.data->data + ccSpec.data->length;
   /* contributions from positive and (negative) frequency components */
-  for (; cPtr < cStopPtr; ++cPtr) 
+  for (; cPtr < cStopPtr; ++cPtr)
   {
     output->value.re += cPtr->re;
     output->value.im += cPtr->im;
   }
-  
+
   /* normalize */
   output->value.re *= ccSpec.deltaF;
   output->value.im *= ccSpec.deltaF;
 
   TRY(LALCDestroyVector(status->statusPtr, &(ccSpec.data)), status);
-  
-  /* Set output units */  
+
+  /* Set output units */
   unitPair.unitOne = &ccSpec.sampleUnits;
   unitPair.unitTwo = &lalHertzUnit;
   TRY(LALUnitMultiply(status->statusPtr, &(output->units), &unitPair), status);
-  
+
   DETATCHSTATUSPTR(status);
   RETURN(status);
 
@@ -1780,29 +1780,29 @@ LALStochasticCrossCorrelationSpectrum(
       STOCHASTICCROSSCORRELATIONH_MSGENONPOSDELTAF);
 
   /* check for mismatches */
-  
+
   /* length */
-  if (output->data->length != freqParams.length) 
+  if (output->data->length != freqParams.length)
   {
     ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMLEN, \
         STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
   }
 
-  if (input->hBarTildeTwo->data->length != streamLength) 
+  if (input->hBarTildeTwo->data->length != streamLength)
   {
     ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMLEN, \
         STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
   }
 
   /* start frequency */
-  if (input->hBarTildeTwo->f0 != streamF0) 
+  if (input->hBarTildeTwo->f0 != streamF0)
   {
     ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMFMIN, \
         STOCHASTICCROSSCORRELATIONH_MSGEMMFMIN);
   }
 
   /* frequency spacing */
-  if (input->hBarTildeTwo->deltaF != streamDF) 
+  if (input->hBarTildeTwo->deltaF != streamDF)
   {
     ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMDELTAF, \
         STOCHASTICCROSSCORRELATIONH_MSGEMMDELTAF);
@@ -1829,18 +1829,18 @@ LALStochasticCrossCorrelationSpectrum(
   LALCCVectorMultiplyConjugate(status->statusPtr, h1StarH2.data, \
       input->hBarTildeTwo->data, input->hBarTildeOne->data);
 
-  BEGINFAIL(status) 
+  BEGINFAIL(status)
     TRY(LALCDestroyVector(status->statusPtr, &(h1StarH2.data)), status);
-  ENDFAIL(status); 
+  ENDFAIL(status);
 
   h1StarH2Coarse.data = NULL;
 
   LALCCreateVector(status->statusPtr, &(h1StarH2Coarse.data), \
       freqParams.length);
 
-  BEGINFAIL(status) 
+  BEGINFAIL(status)
     TRY(LALCDestroyVector(status->statusPtr, &(h1StarH2.data)), status);
-  ENDFAIL(status); 
+  ENDFAIL(status);
 
   LALCCoarseGrainFrequencySeries(status->statusPtr, &h1StarH2Coarse, \
       &h1StarH2, &freqParams);
@@ -1848,21 +1848,21 @@ LALStochasticCrossCorrelationSpectrum(
   BEGINFAIL(status) {
     TRY(LALCDestroyVector(status->statusPtr, &(h1StarH2.data)), status);
     TRY(LALCDestroyVector(status->statusPtr, &(h1StarH2Coarse.data)), status);
-  } ENDFAIL(status); 
+  } ENDFAIL(status);
 
   LALCDestroyVector(status->statusPtr, &(h1StarH2.data));
 
   BEGINFAIL(status) {
     TRY(LALCDestroyVector(status->statusPtr, &(h1StarH2.data)), status);
     TRY(LALCDestroyVector(status->statusPtr, &(h1StarH2Coarse.data)), status);
-  } ENDFAIL(status); 
+  } ENDFAIL(status);
 
   LALCCVectorMultiply(status->statusPtr, output->data, \
       h1StarH2Coarse.data, input->optimalFilter->data);
 
-  BEGINFAIL(status) 
+  BEGINFAIL(status)
     TRY(LALCDestroyVector(status->statusPtr, &(h1StarH2Coarse.data)), status);
-  ENDFAIL(status); 
+  ENDFAIL(status);
 
   TRY(LALCDestroyVector(status->statusPtr, &(h1StarH2Coarse.data)), status);
 
@@ -1873,8 +1873,8 @@ LALStochasticCrossCorrelationSpectrum(
   output->f0 = input->optimalFilter->f0;
   strncpy(output->name, "Integrand of cross-correlation statistic", \
       LALNameLength);
-  
-  /* Set output units */  
+
+  /* Set output units */
   unitPair.unitOne = &(input->hBarTildeOne->sampleUnits);
   unitPair.unitTwo = &(input->hBarTildeTwo->sampleUnits);
   TRY(LALUnitMultiply(status->statusPtr, &h1H2Units, &unitPair), status);
@@ -1998,7 +1998,7 @@ LALStochasticCrossCorrelationStatisticStrain(
 
   /* check for mismatches */
 
-  if (input->hBarTildeOne->data->length != input->hBarTildeTwo->data->length) 
+  if (input->hBarTildeOne->data->length != input->hBarTildeTwo->data->length)
   {
     ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMLEN, \
         STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
@@ -2037,11 +2037,11 @@ LALStochasticCrossCorrelationStatisticStrain(
   LALStochasticCrossCorrelationSpectrumStrain(status->statusPtr, &ccSpec, \
       input, epochsMatch);
 
-  BEGINFAIL(status) 
+  BEGINFAIL(status)
     TRY(LALCDestroyVector(status->statusPtr, &(ccSpec.data)), status);
-  ENDFAIL(status); 
- 
-  if (ccSpec.f0 == 0) 
+  ENDFAIL(status);
+
+  if (ccSpec.f0 == 0)
   {
     /* DC contribution */
     output->value = ccSpec.data->data->re / 2.0;
@@ -2052,32 +2052,32 @@ LALStochasticCrossCorrelationStatisticStrain(
     /* initialize pointers */
     cPtr = ccSpec.data->data + 1;
   } /* if f0 == 0 */
-  else 
+  else
   {
     output->value = 0.0;
 
     /* initialize pointers */
     cPtr = ccSpec.data->data;
-  }    
+  }
   cStopPtr = ccSpec.data->data + ccSpec.data->length;
 
   /* contributions from positive and (negative) frequency components */
-  for (; cPtr < cStopPtr; ++cPtr) 
+  for (; cPtr < cStopPtr; ++cPtr)
   {
     output->value += cPtr->re;
   }
-  
+
   /* normalize */
   output->value *= ccSpec.deltaF * 2.0;
 
   TRY(LALCDestroyVector(status->statusPtr, &(ccSpec.data)), status);
-  
-  /* Set output units */  
+
+  /* Set output units */
   unitPair.unitOne = &ccSpec.sampleUnits;
   unitPair.unitTwo = &lalHertzUnit;
   TRY(LALUnitMultiply(status->statusPtr, &(output->units), &unitPair), \
       status);
-  
+
   DETATCHSTATUSPTR(status);
   RETURN(status);
 } /* LALStochasticCrossCorrelationStatisticStrain() */
@@ -2187,28 +2187,28 @@ LALStochasticHeterodynedCrossCorrelationStatisticStrain(
   ASSERT(input->hBarTildeOne->deltaF > 0, status, \
       STOCHASTICCROSSCORRELATIONH_ENONPOSDELTAF, \
       STOCHASTICCROSSCORRELATIONH_MSGENONPOSDELTAF);
-  
+
   ASSERT(input->optimalFilter->f0 > 0, status, \
       STOCHASTICCROSSCORRELATIONH_ENONPOSDELTAF, \
       STOCHASTICCROSSCORRELATIONH_MSGENONPOSDELTAF);
 
   /* check for mismatches */
 
-  if (input->hBarTildeOne->data->length != input->hBarTildeTwo->data->length) 
+  if (input->hBarTildeOne->data->length != input->hBarTildeTwo->data->length)
   {
     ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMLEN, \
         STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
   }
 
   /* start frequency */
-  if (input->hBarTildeOne->f0 != input->hBarTildeTwo->f0) 
+  if (input->hBarTildeOne->f0 != input->hBarTildeTwo->f0)
   {
     ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMFMIN, \
          STOCHASTICCROSSCORRELATIONH_MSGEMMFMIN);
   }
 
   /* frequency spacing */
-  if (input->hBarTildeOne->deltaF != input->hBarTildeTwo->deltaF) 
+  if (input->hBarTildeOne->deltaF != input->hBarTildeTwo->deltaF)
   {
     ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMDELTAF, \
          STOCHASTICCROSSCORRELATIONH_MSGEMMDELTAF);
@@ -2235,7 +2235,7 @@ LALStochasticHeterodynedCrossCorrelationStatisticStrain(
 
   BEGINFAIL(status)
     TRY(LALCDestroyVector(status->statusPtr, &(ccSpec.data)), status);
-  ENDFAIL(status); 
+  ENDFAIL(status);
 
   output->value.re = output->value.im = 0.0;
 
@@ -2244,23 +2244,23 @@ LALStochasticHeterodynedCrossCorrelationStatisticStrain(
 
   cStopPtr = ccSpec.data->data + ccSpec.data->length;
   /* contributions from positive and (negative) frequency components */
-  for (; cPtr < cStopPtr; ++cPtr) 
+  for (; cPtr < cStopPtr; ++cPtr)
   {
     output->value.re += cPtr->re;
     output->value.im += cPtr->im;
   }
-  
+
   /* normalize */
   output->value.re *= ccSpec.deltaF;
   output->value.im *= ccSpec.deltaF;
 
   TRY(LALCDestroyVector(status->statusPtr, &(ccSpec.data)), status);
-  
-  /* Set output units */  
+
+  /* Set output units */
   unitPair.unitOne = &ccSpec.sampleUnits;
   unitPair.unitTwo = &lalHertzUnit;
   TRY(LALUnitMultiply(status->statusPtr, &(output->units), &unitPair), status);
-  
+
   DETATCHSTATUSPTR(status);
   RETURN(status);
 
@@ -2451,29 +2451,29 @@ LALStochasticCrossCorrelationSpectrumStrain(
       STOCHASTICCROSSCORRELATIONH_MSGENONPOSDELTAF);
 
   /* check for mismatches */
-  
+
   /* length */
-  if (output->data->length != freqParams.length) 
+  if (output->data->length != freqParams.length)
   {
     ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMLEN, \
         STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
   }
 
-  if (input->hBarTildeTwo->data->length != streamLength) 
+  if (input->hBarTildeTwo->data->length != streamLength)
   {
     ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMLEN, \
         STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
   }
 
   /* start frequency */
-  if (input->hBarTildeTwo->f0 != streamF0) 
+  if (input->hBarTildeTwo->f0 != streamF0)
   {
     ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMFMIN, \
         STOCHASTICCROSSCORRELATIONH_MSGEMMFMIN);
   }
 
   /* frequency spacing */
-  if (input->hBarTildeTwo->deltaF != streamDF) 
+  if (input->hBarTildeTwo->deltaF != streamDF)
   {
     ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMDELTAF, \
         STOCHASTICCROSSCORRELATIONH_MSGEMMDELTAF);
@@ -2500,18 +2500,18 @@ LALStochasticCrossCorrelationSpectrumStrain(
   LALCCVectorMultiplyConjugate(status->statusPtr, h1StarH2.data, \
       input->hBarTildeTwo->data, input->hBarTildeOne->data);
 
-  BEGINFAIL(status) 
+  BEGINFAIL(status)
     TRY(LALCDestroyVector(status->statusPtr, &(h1StarH2.data)), status);
-  ENDFAIL(status); 
+  ENDFAIL(status);
 
   h1StarH2Coarse.data = NULL;
 
   LALCCreateVector(status->statusPtr, &(h1StarH2Coarse.data), \
       freqParams.length);
 
-  BEGINFAIL(status) 
+  BEGINFAIL(status)
     TRY(LALCDestroyVector(status->statusPtr, &(h1StarH2.data)), status);
-  ENDFAIL(status); 
+  ENDFAIL(status);
 
   LALCCoarseGrainFrequencySeries(status->statusPtr, &h1StarH2Coarse, \
       &h1StarH2, &freqParams);
@@ -2519,21 +2519,21 @@ LALStochasticCrossCorrelationSpectrumStrain(
   BEGINFAIL(status) {
     TRY(LALCDestroyVector(status->statusPtr, &(h1StarH2.data)), status);
     TRY(LALCDestroyVector(status->statusPtr, &(h1StarH2Coarse.data)), status);
-  } ENDFAIL(status); 
+  } ENDFAIL(status);
 
   LALCDestroyVector(status->statusPtr, &(h1StarH2.data));
 
   BEGINFAIL(status) {
     TRY(LALCDestroyVector(status->statusPtr, &(h1StarH2.data)), status);
     TRY(LALCDestroyVector(status->statusPtr, &(h1StarH2Coarse.data)), status);
-  } ENDFAIL(status); 
+  } ENDFAIL(status);
 
   LALSCVectorMultiply(status->statusPtr, output->data, \
       input->optimalFilter->data,h1StarH2Coarse.data);
 
-  BEGINFAIL(status) 
+  BEGINFAIL(status)
     TRY(LALCDestroyVector(status->statusPtr, &(h1StarH2Coarse.data)), status);
-  ENDFAIL(status); 
+  ENDFAIL(status);
 
   TRY(LALCDestroyVector(status->statusPtr, &(h1StarH2Coarse.data)), status);
 
@@ -2544,8 +2544,8 @@ LALStochasticCrossCorrelationSpectrumStrain(
   output->f0 = input->optimalFilter->f0;
   strncpy(output->name, "Integrand of cross-correlation statistic", \
       LALNameLength);
-  
-  /* Set output units */  
+
+  /* Set output units */
   unitPair.unitOne = &(input->hBarTildeOne->sampleUnits);
   unitPair.unitTwo = &(input->hBarTildeTwo->sampleUnits);
   TRY(LALUnitMultiply(status->statusPtr, &h1H2Units, &unitPair), status);

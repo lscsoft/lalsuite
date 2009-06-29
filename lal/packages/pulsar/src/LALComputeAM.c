@@ -46,13 +46,13 @@ search frequency, consequently losing valuable SNR.
 
 \subsubsection*{Algorithm}
 
-The routine is really simple.  From JKS, 
-\begin{eqnarray} 
+The routine is really simple.  From JKS,
+\begin{eqnarray}
 F_{+} = \sin
-\zeta [ a(t) \cos 2 \psi + b(t) \sin 2 \psi ] \\ 
+\zeta [ a(t) \cos 2 \psi + b(t) \sin 2 \psi ] \\
 F_{\times} = \sin
-\zeta [ b(t) \cos 2 \psi - a(t) \sin 2 \psi ] 
-\end{eqnarray} 
+\zeta [ b(t) \cos 2 \psi - a(t) \sin 2 \psi ]
+\end{eqnarray}
 We use the routine \verb@LALComputeDetAMResponse()@ to calculate
 $F_{+}$ and $F_{\times}$ for a given polarization angle, and then
 extract $a(t)$ and $b(t)$, once for each timestamp $t$.  Additionally,
@@ -92,7 +92,7 @@ void LALComputeAM (LALStatus          *status,
 {  /* </lalVerbatim> */
 
   REAL4 zeta;                  /* sine of angle between detector arms        */
-  INT4 i;                      /* temporary loop index                       */ 
+  INT4 i;                      /* temporary loop index                       */
   LALDetAMResponse response;   /* output of LALComputeDetAMResponse          */
   LALGPSandAcc timeAndAcc;     /* parameter structure to LALComputeAMResponse*/
 
@@ -100,10 +100,10 @@ void LALComputeAM (LALStatus          *status,
   REAL4 sumB2=0.0;
   REAL4 sumAB=0.0;             /* variables to store scalar products         */
   INT4 length=coe->a->length;  /* length of input time series                */
-  
+
   REAL4 cos2psi;
   REAL4 sin2psi;               /* temp variables                             */
- 
+
   INITSTATUS(status, "LALComputeAM", LALCOMPUTEAMC);
   ATTATCHSTATUSPTR(status);
 
@@ -114,10 +114,10 @@ void LALComputeAM (LALStatus          *status,
     LALFrDetector det = params->das->pDetector->frDetector;
     zeta = 1.0/(sin(det.xArmAzimuthRadians - det.yArmAzimuthRadians));
     if(params->das->pDetector->type == LALDETECTORTYPE_CYLBAR) zeta=1.0;
-  }  
+  }
 
-  cos2psi = cos(2.0 * params->polAngle); 
-  sin2psi = sin(2.0 * params->polAngle);  
+  cos2psi = cos(2.0 * params->polAngle);
+  sin2psi = sin(2.0 * params->polAngle);
 
 
   timeAndAcc.accuracy=params->leapAcc;
@@ -127,17 +127,17 @@ void LALComputeAM (LALStatus          *status,
     {
       REAL4 *a = coe->a->data;
       REAL4 *b = coe->b->data;
-      
-      timeAndAcc.gps=ts[i];      
+
+      timeAndAcc.gps=ts[i];
       /* Compute F_plus, F_cross */
       LALComputeDetAMResponse(status->statusPtr, &response, params->das, &timeAndAcc);
-      
+
       /*  Compute a, b from JKS eq 10,11
        *  a = zeta * (F_plus*cos(2\psi)-F_cross*sin(2\psi))
        *  b = zeta * (F_cross*cos(2\psi)+Fplus*sin(2\psi))
        */
-      a[i] = zeta * (response.plus*cos2psi-response.cross*sin2psi); 
-      b[i] = zeta * (response.cross*cos2psi+response.plus*sin2psi); 
+      a[i] = zeta * (response.plus*cos2psi-response.cross*sin2psi);
+      b[i] = zeta * (response.cross*cos2psi+response.plus*sin2psi);
 
       /* Compute scalar products */
       sumA2 += SQ(a[i]);                       /*  A  */
@@ -148,7 +148,7 @@ void LALComputeAM (LALStatus          *status,
   {
     /* Normalization factor */
     REAL8 L = 2.0/(REAL8)length;
-    
+
     /* Assign output values and normalise */
     coe->A = L*sumA2;
     coe->B = L*sumB2;
@@ -165,10 +165,10 @@ void LALComputeAM (LALStatus          *status,
 }
 
 
-      
 
-			      
-			      
+
+
+
 
 
 

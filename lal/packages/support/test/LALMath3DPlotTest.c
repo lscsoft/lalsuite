@@ -18,13 +18,13 @@
 */
 
 /*_______________________________________________________________________________________
- * 
+ *
  * File Name: LALMath3DPlotTest.c
  *
  * Author: Hanna C. R.
- * 
+ *
  * Revision: $Id$
- * 
+ *
  *_______________________________________________________________________________________
  */
 
@@ -35,35 +35,35 @@
 /*<lalVerbatim file="LALMath3DPlotTestCV">
   Author: Hanna, C.R.
   $Id$
-  </lalVerbatim>*/ 
+  </lalVerbatim>*/
 
 /*SUBSECTION - PROGRAM - "LALMath3DPlotTest.c" ------------------------------- <lalLaTeX>
   \subsection{Program \texttt{LALMath3DPlotTest.c}}
   \label{s:LALMath3DPlotTest.c}
   \providecommand{\MATHEMATICA}{$M\scriptstyle{ATHEMATICA}^{\textrm{{\small\textregistered} }}$}
-* Tests LALMath3DPlot(). 
+* Tests LALMath3DPlot().
   </lalLaTeX>*/
-  
+
   /*SUBSUBSECTION - USAGE - "LALMath3DPlotTest.c" ---------------------------- <lalLaTeX>
     \begin{verbatim}
     LALMath3DPlotTest
-    \end{verbatim} 
+    \end{verbatim}
     </lalLaTeX>
     END SUBSUBSECTION - USAGE - "LALMath3DPlotTest.c" -------------------------------- */
 
   /*SUBSUBSECTION - DESCRIPTION - "LALMath3DPlotTest.c" ---------------------- <lalLaTeX>
     \subsubsection{Description}
   * This program generates a set of points simulating a template bank and calls
-  * LALMath3DPlot() to generate a \MATHEMATICA notebook to display a 3D image of the 
-  * bank.  Instructions on how to evaluate the notebook appear when it is opened. 
+  * LALMath3DPlot() to generate a \MATHEMATICA notebook to display a 3D image of the
+  * bank.  Instructions on how to evaluate the notebook appear when it is opened.
     </lalLaTeX>
     END SUBSUBSECTION - DESCRIPTION - "LALMath3DPlotTest.c" -------------------------- */
-   
+
   /*SUBSUBSECTION - EXIT CODES ------------------------------------------------------- */
     /* <lalLaTeX>
     \subsubsection*{Exit codes}
     \input{LALMath3DPlotTestCE}
-    </lalLaTeX> 
+    </lalLaTeX>
     END - SUBSUBSECTION - EXIT CODES ------------------------------------------------- */
 
   /*SUBSUBSECTION - NOTES - "LALMath3DPlotTest.c" ------------------------- <lalLaTeX>
@@ -73,8 +73,8 @@
   * the bank package.
     \end{itemize}
     </lalLaTeX>
-    END - SUBSUBSECTION - NOTES - "LALMath3DPlotTest.c" --------------------------- */ 
-  
+    END - SUBSUBSECTION - NOTES - "LALMath3DPlotTest.c" --------------------------- */
+
 /*<lalLaTeX>
   \vfill{\footnotesize\input{LALMath3DPlotTestCV}}
   </lalLaTeX>
@@ -99,9 +99,9 @@
 
 /*<lalErrTable file="LALMath3DPlotTestCE">*/
 #define LALMATH3DPLOTTESTC_ENORM	0
-#define LALMATH3DPLOTTESTC_EMEM		1	
+#define LALMATH3DPLOTTESTC_EMEM		1
 #define LALMATH3DPLOTTESTC_ESUB         2
-                                                                                                                                                              
+
 #define LALMATH3DPLOTTESTC_MSGENORM     "Normal exit"
 #define LALMATH3DPLOTTESTC_MSGEMEM      "Memory allocation error"
 #define LALMATH3DPLOTTESTC_MSGESUB      "Subroutine error"
@@ -109,23 +109,22 @@
 
 NRCSID(LALMATH3DPLOTTESTC, "$Id:");
 
-int main(){
-  static LALStatus stat;
+int main(void){
+  static LALStatus status;
   INT4 loopx = 0; 			/* loop counters */
   INT4 loopy = 0;
   INT4 loopz = 0;
   INT4 ntiles = 0;
   Math3DPointList *list = NULL; 	/* Pointer to structure for mathematica plot */
-  Math3DPointList *first = NULL; 	
-  REAL4 pointsize = 0.04;
- 
+  Math3DPointList *first = NULL;
+
   if ((list = (Math3DPointList *) LALCalloc(1, sizeof(Math3DPointList))) == NULL){
-    LALError(&stat, LALMATH3DPLOTTESTC_MSGEMEM);
+    LALError(&status, LALMATH3DPLOTTESTC_MSGEMEM);
     printf(LALMATH3DPLOTTESTC_MSGEMEM);
     return LALMATH3DPLOTTESTC_EMEM;
   }
   first=list;
-  
+
   for(loopx=1; loopx <= 20; loopx++){
     for(loopy=1; loopy <= 20; loopy++){
       for(loopz=0; loopz <= 1; loopz++){
@@ -135,7 +134,7 @@ int main(){
         list->grayLevel = 0.0;
         ntiles++;
         if ((list = list->next = (Math3DPointList *) LALCalloc(1, sizeof(Math3DPointList))) == NULL){
-          LALError(&stat, LALMATH3DPLOTTESTC_MSGEMEM);
+          LALError(&status, LALMATH3DPLOTTESTC_MSGEMEM);
           printf(LALMATH3DPLOTTESTC_MSGEMEM);
           return LALMATH3DPLOTTESTC_EMEM;
         }
@@ -151,13 +150,13 @@ int main(){
       list->grayLevel = 1.0;
       ntiles++;
       if ((list = list->next = (Math3DPointList *) LALCalloc(1, sizeof(Math3DPointList))) == NULL){
-        LALError(&stat, LALMATH3DPLOTTESTC_MSGEMEM);
+        LALError(&status, LALMATH3DPLOTTESTC_MSGEMEM);
         printf(LALMATH3DPLOTTESTC_MSGEMEM);
         return LALMATH3DPLOTTESTC_EMEM;
       }
     }
   }
-  
+
   /*LAL!*/
   for(loopx=1; loopx <= 20; loopx++){
     for(loopy=1; loopy <= 20; loopy++){
@@ -173,7 +172,7 @@ int main(){
         list->grayLevel = 0.0;
         ntiles++;
         if ((list = list->next = (Math3DPointList *) LALCalloc(1, sizeof(Math3DPointList))) == NULL){
-          LALError(&stat, LALMATH3DPLOTTESTC_MSGEMEM);
+          LALError(&status, LALMATH3DPLOTTESTC_MSGEMEM);
           printf(LALMATH3DPLOTTESTC_MSGEMEM);
           return LALMATH3DPLOTTESTC_EMEM;
         }
@@ -184,15 +183,15 @@ int main(){
 
   list->next = NULL;
   printf("\nCalling LALMath3DPlot()......\n");
-  LALMath3DPlot(&stat, first, &ntiles, NULL);
-  REPORTSTATUS(&stat);
-  if (stat.statusCode){
-    LALError(&stat, LALMATH3DPLOTTESTC_MSGESUB);
+  LALMath3DPlot(&status, first, &ntiles, NULL);
+  REPORTSTATUS(&status);
+  if (status.statusCode){
+    LALError(&status, LALMATH3DPLOTTESTC_MSGESUB);
     printf(LALMATH3DPLOTTESTC_MSGESUB);
     return LALMATH3DPLOTTESTC_ESUB;
   }
- 
-    
+
+
   /* Clean Up the memory from the MathPlot3D structure */
   list = first;
   while(list->next){
@@ -200,12 +199,12 @@ int main(){
     LALFree(list);
     list = first;
   }
-  
-  
+
+
   /* free the last (first?) memory allocated for Math3DPlot. */
-  LALFree(list); 
- 
-  if (stat.statusCode)
+  LALFree(list);
+
+  if (status.statusCode)
     return LALMATH3DPLOTTESTC_ESUB;
   else
     return LALMATH3DPLOTTESTC_ENORM;

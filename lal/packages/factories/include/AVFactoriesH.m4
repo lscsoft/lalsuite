@@ -1,4 +1,4 @@
-/*----------------------------------------------------------------------- 
+/*-----------------------------------------------------------------------
 
 File Name: AVFactories.h
 
@@ -192,12 +192,12 @@ The \verb+XLALResize<type>Array+
 \verb+XLALResize<type>ArrayL+
 \verb+XLALResize<type>ArrayV+
 functions resize the provided array \verb+array+.  The arguments after the
-first are interpreted in the same way as for the 
+first are interpreted in the same way as for the
 \verb+XLALCreate<type>Array+
 \verb+XLALCreate<type>ArrayL+
 \verb+XLALCreate<type>ArrayV+
 functions.  If \verb+array+ is \verb+NULL+, the resize functions are equivalent
-to the corresponding create function.  If \verb+ndim+ is zero for 
+to the corresponding create function.  If \verb+ndim+ is zero for
 \verb+XLALResize<type>ArrayL+ or
 \verb+XLALResize<type>ArrayV+, or if \verb+dimLength+ is \verb+NULL+ for
 \verb+XLALResize<type>Array+, then these functions are equivalent to

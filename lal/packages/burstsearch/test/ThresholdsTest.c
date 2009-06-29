@@ -181,9 +181,9 @@ int main(int argc, char *argv[])
 	ParseOptions(argc, argv);
 
 
-	/* 
-	 *  Check to make sure the functions return the correct values.  
-	 *  First time around 
+	/*
+	 *  Check to make sure the functions return the correct values.
+	 *  First time around
 	 */
 
 	chi2 = 2.3l;
@@ -199,9 +199,9 @@ int main(int argc, char *argv[])
 	CHECKOUTPUT("XLALRhoThreshold(chi2, dof, XLALNoncChisqCdf(chi2, dof, rho * rho))", XLALRhoThreshold(chi2, dof, XLALNoncChisqCdf(chi2, dof, rho * rho)), rho, 1e-5);
 
 
-	/* 
-	 *  Check to make sure the functions return the correct values.  
-	 *  Second time around 
+	/*
+	 *  Check to make sure the functions return the correct values.
+	 *  Second time around
 	 */
 
 	chi2 = 12.3l;

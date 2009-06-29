@@ -20,6 +20,8 @@
 #ifndef _LALFRAMEIO_H
 #define _LALFRAMEIO_H
 
+#pragma GCC system_header
+
 #include <FrameL.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LALCalibration.h>
@@ -36,7 +38,7 @@ struct FrFile * XLALFrOpenURL( const char *url );
 int XLALFrFileCheckSum( FrFile *iFile );
 FrHistory * XLALFrHistoryAdd( FrameH *frame, const char *name, const char *comment );
 FrDetector * XLALFrDetectorNew( int detector );
-FrameH * XLALFrameNew( LIGOTimeGPS *epoch, double duration, 
+FrameH * XLALFrameNew( LIGOTimeGPS *epoch, double duration,
     const char *project, int run, int frnum, int detectorFlags );
 FrVect * XLALFrVectINT4TimeSeries( INT4TimeSeries *series );
 FrVect * XLALFrVectREAL4TimeSeries( REAL4TimeSeries *series );

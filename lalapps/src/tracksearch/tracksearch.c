@@ -1936,11 +1936,6 @@ void LALappsDoTrackSearch(
   LAL_CALL(  LALSignalTrackSearch(status,&outputCurves,tfmap,&tsInputs),
 	     status);
   /*
-   * Write PGM to disk if requested
-   */
-  if (params.verbosity >= printFiles)
-    DumpTFImage(tfmap->map,"DumpMap0",tsInputs.height,tsInputs.width,1);
-  /*
    * Setup for call to function to do map marking
    * We mark maps is convert Tbin and Fbin to 
    * Hz and GPSseconds
@@ -1969,6 +1964,8 @@ void LALappsDoTrackSearch(
 	  fprintf(stdout,"Connecting found tracks.\n");
 	  fflush(stdout);
 	}
+      fprintf(stdout,"Subroutines for segment connection NOT TESTED\n");
+      fprintf(stdout,"as of Fri-Jun-19-2009:200906191018\n");
       lal_errhandler = LAL_ERR_RTRN;
       errCode=LAL_CALL( LALTrackSearchConnectSigma(status,
 						   &outputCurves,

@@ -128,6 +128,18 @@ void SetUpRadiometerSkyPatches(LALStatus *status,
 			       REAL8 dAlpha,
 			       REAL8 dDelta);
 
+void InitDoppParams(LALStatus *status,
+ 		    REAL8Vector *fdots,
+		    PulsarDopplerParams *thisPoint,
+		    LIGOTimeGPS refTime,
+  		    REAL8 f_current,
+ 		    REAL8 q1_current,
+		    REAL8 q2_current,
+	 	    REAL8 n_current,
+		    REAL8 fdot_current,
+		    REAL8 fddot_current);
+
+
 void GetBeamInfo(LALStatus *status, 
 		 CrossCorrBeamFnListElement *beamHead, 
 		 SFTListElement *sftHead, 
@@ -140,8 +152,8 @@ void GetBeamInfo(LALStatus *status,
 void CalculateFdots (LALStatus *status,
 		     REAL8Vector *fdots,
 		     REAL8 f0,
-		     REAL8 epsilon,
-		     REAL8 magfield,
+		     REAL8 q1,
+		     REAL8 q2,
 		     REAL8 n);
 
 void CopySFTFromCatalog(LALStatus *status,

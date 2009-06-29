@@ -1,48 +1,48 @@
 /** \defgroup InspiralInjectionParams
- * \ingroup inject 
+ * \ingroup inject
  * \author D. Brown, J. Creighton, S. Fairhurst, G. Jones, E. Messaritaki
- * 
+ *
  * \brief Module for generating randomly distributed inspiral parameters
  *
 
  *
  */
- 
+
 /** \file InspiralInjecionParams.h
  *  \ingroup InspiralInjectionParams
  * \date $Date$
  *
- * 
+ *
  */
 
-/** enum containing the different ways in which the distance to 
+/** enum containing the different ways in which the distance to
     injections can be distributed */
-typedef enum 
-{ 
+typedef enum
+{
   unknownDistanceDist,
-  distFromSourceFile, 
-  uniformDistance, 
-  uniformLogDistance, 
+  distFromSourceFile,
+  uniformDistance,
+  uniformLogDistance,
   uniformVolume
-} 
+}
 DistanceDistribution;
 
-/** enum containing the different ways in which the sky location of 
+/** enum containing the different ways in which the sky location of
     injections can be distributed */
-typedef enum 
-{ 
+typedef enum
+{
   unknownLocationDist,
-  locationFromSourceFile, 
-  locationFromExttrigFile, 
-  uniformSkyLocation, 
+  locationFromSourceFile,
+  locationFromExttrigFile,
+  uniformSkyLocation,
   fixedSkyLocation
-} 
+}
 SkyLocationDistribution;
 
-/** enum containing the different ways in which the masses of 
+/** enum containing the different ways in which the masses of
     injections can be distributed */
-typedef enum 
-{ 
+typedef enum
+{
   unknownMassDist,
   massFromSourceFile,
   massFromNRFile,
@@ -51,18 +51,18 @@ typedef enum
   logComponentMass,
   gaussianMassDist,
   uniformTotalMassRatio
-} 
+}
 MassDistribution;
 
-/** enum containing the different ways in which the inclinations of 
+/** enum containing the different ways in which the inclinations of
     injections can be distributed */
-typedef enum 
-{ 
+typedef enum
+{
   unknownInclDist,
   uniformInclDist,
   gaussianInclDist,
   fixedInclDist
-} 
+}
 InclDistribution;
 
 /* includes */
@@ -101,7 +101,7 @@ SimInspiralTable* XLALRandomInspiralDistance( SimInspiralTable *inj,
 SimInspiralTable* XLALRandomInspiralSkyLocation( SimInspiralTable *inj,
     RandomParams *randParams);
 
-void XLALRandomInspiralMilkywayLocation( 
+void XLALRandomInspiralMilkywayLocation(
     REAL8 *rightAscension,
     REAL8 *declination,
     REAL8 *distance,
@@ -124,11 +124,11 @@ SimInspiralTable* XLALRandomInspiralMasses( SimInspiralTable *inj,
 
 SimInspiralTable* XLALGaussianInspiralMasses( SimInspiralTable *inj,
     RandomParams *randParams,
-    REAL4  mass1Min,					      
+    REAL4  mass1Min,
     REAL4  mass1Max,
     REAL4  mass1Mean,
     REAL4  mass1Std,
-    REAL4  mass2Min,					      
+    REAL4  mass2Min,
     REAL4  mass2Max,
     REAL4  mass2Mean,
     REAL4  mass2Std);
@@ -151,15 +151,15 @@ SimInspiralTable* XLALRandomInspiralSpins( SimInspiralTable *inj,
     REAL4  abskappa1Min,
     REAL4  abskappa1Max);
 
-SimInspiralTable* XLALRandomNRInjectTotalMass( 
-    SimInspiralTable *inj,  
+SimInspiralTable* XLALRandomNRInjectTotalMass(
+    SimInspiralTable *inj,
     RandomParams *randParams,
     REAL4  minTotalMass,
     REAL4  maxTotalMass,
-    SimInspiralTable *nrInjParams   
+    SimInspiralTable *nrInjParams
     );
 
-SimInspiralTable *XLALInspiralSiteTimeAndDist( 
+SimInspiralTable *XLALInspiralSiteTimeAndDist(
     SimInspiralTable  *inj,
     LALDetector       *detector,
     LIGOTimeGPS       *endTime,
@@ -169,7 +169,7 @@ SimInspiralTable *XLALPopulateSimInspiralSiteInfo(
     SimInspiralTable           *inj );
 
 
-COMPLEX8FrequencySeries *generateActuation( 
+COMPLEX8FrequencySeries *generateActuation(
     COMPLEX8FrequencySeries *resp,
     REAL4                    ETMcal,
     REAL4                    pendF,

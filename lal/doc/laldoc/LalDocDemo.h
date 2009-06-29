@@ -20,52 +20,52 @@
 
 (1)  LaTeX:
 
-/* 
+/*
  * <lalLaTeX file="LalDocDemo_LaTeX_This_File">
- * 
+ *
  * \documentclass[oneside]{book}
  * \setlength{\textheight}{9.0in}
  * \setlength{\textwidth}{6.0in}
  * \setlength{\topmargin}{-0.00in}
  * \setlength{\oddsidemargin}{-0.25in}
  * \sloppy
- * 
+ *
  * \begin{document}
- * 
+ *
  * \chapter{The \LaTeX environment}
- * 
+ *
  * The \LaTeX source that made this file was extracted from the
  * LalDocDemo.h. It was surrounded by the keyword, extracted and stuffed
- * into LalDocDemo\_LaTeX\_This\_File.tex.  
- * 
+ * into LalDocDemo\_LaTeX\_This\_File.tex.
+ *
  * When programming in c, many programmers like to put *'s down the
- * side of their comments. If you look at the input file 
+ * side of their comments. If you look at the input file
  * ({\tt LalDocDemo.h}), you will see that {\tt laldoc} is smart
  * enough to strip them off when in the \LaTeX enviroment.
- * 
+ *
  * \chapter{The Verbatim environment}
- * 
+ *
  * The  following is the result of verbatim extraction.  This was extracted
  * and stored in the default file LalDocDemoH.tex. The name having
  * been constructed from the input file name.  It was then stuffed in
- * with an \verb@\input{}@ command.  
- * 
+ * with an \verb@\input{}@ command.
+ *
  * \input{LalDocDemoH}
- * 
+ *
  * \vspace*{1.5in}
  * The following was also extracted from the input file, but it was
  * stuffed into the file {\tt LalDocDemoHMyVerbatim.tex}
- * 
+ *
  * \vspace*{0.5in}
  * \input{LalDocDemoHMyVerbatim}
- * 
+ *
  * \chapter{A Good Error Table}
  * \input{LalDocDemoHErrCodeGood}
  *
  * \vspace*{0.5in}
  * The caption below the table is also supplied the {\tt laldoc}.
- * 
- * 
+ *
+ *
  * \chapter{A  Not So Good Error Table}
  * \input{LalDocDemoHErrCodeBad}
  *
@@ -76,10 +76,10 @@
  * codes in this table do not follow the naming convention and flagged
  * the problem in the caption.  This problem was also flagged in
  * the error file Error.out.
- * 
+ *
  * \end{document}
- * </lalLaTeX> 
- * 
+ * </lalLaTeX>
+ *
 */
 
 /* ---------------------------------------------------------------------- */
@@ -88,7 +88,7 @@
 
 <lalVerbatim>
 
-This junk was extracted and stuffed into the default file: 
+This junk was extracted and stuffed into the default file:
 {\tt LalDocDemoH.tex}.  Also note the margin par on the right. This
 tells you exactly where this came from.  You can put all the garbage
 you want in here.
@@ -120,7 +120,7 @@ Again, the margin par tells where it came from.
 /* putting the message before the code is ok. */
 #define LALDOCDEMOH_EADIFFERENTERROR  2
 #define LALDOCDEMOH_MSGEALONGERROR "This is very very long error message that
-goes on for several lines.  There is a length limit, but the limit is 
+goes on for several lines.  There is a length limit, but the limit is
 set by {\tt MAXSTR}. Currently it is 1024 characters."
 
 /* </lalErrTable> */

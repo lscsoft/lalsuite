@@ -193,30 +193,55 @@ typedef struct
  */
 typedef struct
 {
-  BOOLEAN fullFmetric;				/**< full Fstat-metric including antenna patterns (TRUE), or simplified "phase-metric" (FALSE) */
   DopplerCoordinateSystem coordSys;		/**< number of dimensions and coordinate-IDs of Doppler-metric */
   DetectorMotionType detMotionType;		/**< the type of detector-motion assumed: full spin+orbit, pure orbital, Ptole, ... */
 
-  PulsarDopplerParams dopplerPoint;		/**< doppler-point to compute metric for */
   LIGOTimeGPS startTime;			/**< startTime of the observation */
   REAL8 Tspan;					/**< total spanned duration of the observation */
   MultiDetectorInfo detInfo;			/**< detectors (and their noise-weights) to compute metric for */
 
-  REAL8 cosi, psi;				/**< amplitude-parameters, only used if fullFmetric == TRUE */
+  PulsarParams signalParams;			/**< parameter-space point to compute metric for (doppler + amplitudes) */
 } DopplerMetricParams;
 
 
-/** struct hold a DopplerMetric, including meta-info on the number of
+
+/** Struct to hold the 'atoms', ie weighted phase-derivative averages like \f$\langle a^2 \partial_i \phi \partial_j \phi\rangle>\f$
+ *  from which the F-metric is computed, but also the full Fisher-matrix. The noise-weighted average is defined as
+ * \f$\langle Q\rangle \equiv \frac{1}{T} \, \sum_X w^X\, \int_0^T Q\, dt \f$, where \f$w^X\f$ is the noise-weight for detector X,
+ * and \f$T\f$ is the observation time, see \ref Prix07 for details.
+ */
+typedef struct
+{
+  REAL8 a_a;		/**< \f$ \langle a^2 \rangle = A \f$ */
+  REAL8 a_b;		/**< \f$ \langle a b \rangle = C \f$ */
+  REAL8 b_b;		/**< \f$ \langle b^2 \rangle = B \f$ */
+
+  gsl_vector *a_a_i;	/**< \f$ \langle a^2 \, \partial_i\phi \rangle \f$ */
+  gsl_vector *a_b_i;	/**< \f$ \langle a\, b \, \partial_i\phi \rangle \f$ */
+  gsl_vector *b_b_i;	/**< \f$ \langle b^2 \, \partial_i\phi \rangle \f$ */
+
+  gsl_matrix *a_a_i_j;	/**< \f$ \langle a^2 \, \partial_i\phi \, \partial_j\phi \rangle \f$ */
+  gsl_matrix *a_b_i_j;	/**< \f$ \langle a\,b \, \partial_i\phi \, \partial_j\phi \rangle \f$ */
+  gsl_matrix *b_b_i_j;	/**< \f$ \langle b^2 \, \partial_i\phi \, \partial_j\phi \rangle \f$ */
+
+} FmetricAtoms_t;
+
+
+/** struct to hold a DopplerMetric, including meta-info on the number of
  * dimensions, the coordinate-system and type of metric.
  */
 typedef struct
 {
   DopplerMetricParams meta;		/**< "meta-info" describing/specifying the type of Doppler metric */
-  gsl_matrix *g_ij;			/**< symmetric matrix holding the Phase- or Fstat-metric (depending on fullFmetric={TRUE|FALSE})*/
 
-  gsl_matrix *gFav_ij;			/**< 'average' Fstat-metric, or NULL (see \ref Prix07): only used if fullFmetric==TRUE */
-  gsl_matrix *m1_ij, *m2_ij, *m3_ij;	/**< Fstat-metric sub components, or NULL (see \ref Prix07): only used if fullFmetric==TRUE */
-  REAL4 A, B, C;			/**< Antenna-pattern coefficients: only used if fullFMetric==TRUE */
+  gsl_matrix *g_ij;			/**< symmetric matrix holding the usual Phase-metric */
+
+  gsl_matrix *gF_ij;			/**< full F-statistic metric gF_ij, including antenna-pattern effects (see \ref Prix07) */
+  gsl_matrix *gFav_ij;			/**< 'average' Fstat-metric */
+  gsl_matrix *m1_ij, *m2_ij, *m3_ij;	/**< Fstat-metric sub components */
+
+  gsl_matrix *Fisher_ab;		/**< Full 4+n dimensional Fisher matrix, ie amplitude + Doppler space */
+  REAL8 rho2;				/**< signal SNR rho^2 = A^mu M_mu_nu A^nu */
 } DopplerMetric;
 
 
@@ -225,27 +250,22 @@ extern DopplerMetricParams empty_DopplerMetricParams;
 extern MultiDetectorInfo empty_MultiDetectorInfo;
 
 /*---------- exported prototypes [API] ----------*/
-DopplerMetric*
-XLALDopplerPhaseMetric ( const LALStringVector *coords,
-			 DetectorMotionType detMotionType,
-			 const PulsarDopplerParams *dopplerPoint,
-			 LIGOTimeGPS startTime,
-			 REAL8 Tspan,
-			 const EphemerisData *edat,
-			 const CHAR *detName
+gsl_matrix *
+XLALDopplerPhaseMetric ( const DopplerMetricParams *metricParams,
+			 const EphemerisData *edat
 			 );
 
 DopplerMetric*
-XLALDopplerFstatMetric ( const LALStringVector *coords,
-			 DetectorMotionType detMotionType,
-			 const PulsarDopplerParams *dopplerPoint,
-			 LIGOTimeGPS startTime,
-			 REAL8 Tspan,
-			 const EphemerisData *edat,
-			 const MultiDetectorInfo *detInfo,
-			 REAL8 cosi,
-			 REAL8 psi
+XLALDopplerFstatMetric ( const DopplerMetricParams *metricParams,
+			 const EphemerisData *edat
 			 );
+
+
+FmetricAtoms_t*
+XLALComputeAtomsForFmetric ( const DopplerMetricParams *metricParams,
+			     const EphemerisData *edat
+			     );
+
 
 int
 XLALDetectorPosVel ( PosVel3D_t *pos_vel3D,
@@ -255,18 +275,23 @@ XLALDetectorPosVel ( PosVel3D_t *pos_vel3D,
 		    DetectorMotionType special
 		    );
 
+int
+XLALAmplitudeParams2Vect ( PulsarAmplitudeVect *Amu, const PulsarAmplitudeParams *Amp );
 
-DopplerMetric* XLALCreateDopplerMetric ( UINT4 dim, BOOLEAN fullFmetric );
+
+FmetricAtoms_t* XLALCreateFmetricAtoms ( UINT4 dim );
+void XLALDestroyFmetricAtoms ( FmetricAtoms_t *atoms );
+
 void XLALDestroyDopplerMetric ( DopplerMetric *metric );
 
 DetectorMotionType XLALParseDetectorMotionString ( const CHAR *detMotionString );
 DopplerCoordinateID XLALParseDopplerCoordinateString ( const CHAR *coordName );
-int XLALDopplerCoordinateNames2System ( DopplerCoordinateSystem *system, const LALStringVector *coordNames );
+int XLALDopplerCoordinateNames2System ( DopplerCoordinateSystem *coordSys, const LALStringVector *coordNames );
 
 const CHAR *XLALDetectorMotionName ( DetectorMotionType detType );
 const CHAR *XLALDopplerCoordinateName ( DopplerCoordinateID coordID );
 const CHAR *XLALDopplerCoordinateHelp ( DopplerCoordinateID coordID );
-const CHAR *XLALDopplerCoordinateHelpAll ( void );
+CHAR *XLALDopplerCoordinateHelpAll ( void );
 int XLALParseMultiDetectorInfo ( MultiDetectorInfo *detInfo, const LALStringVector *detNames, const LALStringVector *detWeights );
 
 

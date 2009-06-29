@@ -12,8 +12,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with with program; see the file COPYING. If not, write to the 
- *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, 
+ *  along with with program; see the file COPYING. If not, write to the
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
  */
 
@@ -21,10 +21,10 @@
 /** \file
  * \ingroup SFTfileIO
  * \author R. Prix, B. Machenschalk, A.M. Sintes
- * 
- * \brief Test-code for SFT-fileIO library 
  *
- * $Id$ 
+ * \brief Test-code for SFT-fileIO library
+ *
+ * $Id$
  *
  */
 
@@ -134,7 +134,7 @@ INT4 lalDebugLevel = 3;
 
 /* ----------------------------------------------------------------------*/
 int main(int argc, char *argv[])
-{ 
+{
   LALStatus status = empty_status;
 
   SFTCatalog *catalog = NULL;
@@ -143,11 +143,11 @@ int main(int argc, char *argv[])
   MultiSFTVector *multsft_vect = NULL;
   CHAR detector[2] = "H1";
   INT4 crc_check;
-  
+
   /* band to read from infile.* SFTs */
   REAL8 fMin = 1008.5;
   REAL8 fMax = 1009.1;
-  
+
   if ( argc == 1)	/* avoid warning */
     argc = 1;
 
@@ -158,7 +158,7 @@ int main(int argc, char *argv[])
   SHOULD_FAIL_WITH_CODE ( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-bad4", NULL ), &status, SFTFILEIO_EMERGEDSFT );
   SHOULD_FAIL_WITH_CODE ( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-bad5", NULL ), &status, SFTFILEIO_EMERGEDSFT );
 
-  /* the following (SFT-bad6) has a wrong CRC64 checksum. However, this is 
+  /* the following (SFT-bad6) has a wrong CRC64 checksum. However, this is
    * not checked in LALSFTdataFind, so it should succeed! */
   SHOULD_WORK( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-bad6", NULL ), &status );
   SUB ( LALDestroySFTCatalog( &status, &catalog), &status );
@@ -185,7 +185,7 @@ int main(int argc, char *argv[])
       LALPrintError ( "\nLALCheckSFTs() failed to catch invalid CRC checksum in SFT-bad6 \n\n");
       return SFTFILEIOTESTC_ESUB;
     }
-  
+
   /* check that proper v2-SFTs are read-in properly */
   SHOULD_WORK ( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-test1", NULL ), &status );
   SUB ( LALDestroySFTCatalog( &status, &catalog), &status );
@@ -318,7 +318,7 @@ int main(int argc, char *argv[])
   SUB ( LALDestroySFTVector (&status, &sft_vect ), &status );
   SUB ( LALDestroySFTCatalog( &status, &catalog), &status );
 
-  LALCheckMemoryLeaks(); 
+  LALCheckMemoryLeaks();
 
   LALPrintError ("\n\n--------------------------------------------------------------------------------\n");
   LALPrintError ("\n    OK. All tests passed correctly ! (error-messages above are OK!)\n");

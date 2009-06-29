@@ -43,7 +43,7 @@ This program tests the function
 \texttt{LALDMoment()}, which calculates the moment
 of a given data set.
 
-First, it tests that the correct error codes 
+First, it tests that the correct error codes
 are generated for the following error conditions (tests in
 \textit{italics} are not performed if \verb+LAL_NEDEBUG+ is set, as
 the corresponding checks in the code are made using the ASSERT macro):
@@ -55,7 +55,7 @@ the corresponding checks in the code are made using the ASSERT macro):
 \item \textit{zero length}
 \end{itemize}
 
-It then verifies that the correct moment (value and units) is 
+It then verifies that the correct moment (value and units) is
 generated for each of the following simple test cases:
 \begin{enumerate}
 \item data set all same value, find moments 2-5.
@@ -122,7 +122,7 @@ BOOLEAN	optVerbose	= LALMOMENTTESTC_FALSE;
 UINT4	optLength	= 0;
 
 
-static void Usage 
+static void Usage
 (
 	const char	*program,
 	int		exitflag
@@ -382,7 +382,7 @@ static void ParseOptions (int argc, char *argv[])
     }
 
     switch (c)
-    {        
+    {
       case 'd': /* set debug level */
         lalDebugLevel = atoi (optarg);
         break;

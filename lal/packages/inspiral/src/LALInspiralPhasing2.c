@@ -26,7 +26,7 @@ $Id$
 
 \subsection{Module \texttt{LALInspiralPhasing2.c}}
 
-The code \texttt{LALInspiralPhasing2.c} calculates the phase of an inspiral 
+The code \texttt{LALInspiralPhasing2.c} calculates the phase of an inspiral
 waveform as a function of the
 instantaneous frequency of the wave, up to $2^{nd}$ post--Newtonian order.
 
@@ -42,7 +42,7 @@ instantaneous frequency of the wave, up to $2^{nd}$ post--Newtonian order.
 
 \subsubsection*{Description}
 
-The phase of the inspiral wave corresponding to the {\tt Approximant} {\tt TaylorT2} 
+The phase of the inspiral wave corresponding to the {\tt Approximant} {\tt TaylorT2}
 as in Equation~{eq:InspiralPhasing2}.
 
 \subsubsection*{Algorithm}
@@ -65,10 +65,10 @@ NRCSID (LALINSPIRALPHASING2C, "$Id$");
 
 /*  <lalVerbatim file="LALInspiralPhasing2CP"> */
 
-void 
+void
 LALInspiralPhasing2_0PN (
    LALStatus  *status,
-   REAL8      *phase, 
+   REAL8      *phase,
    REAL8       v,
    expnCoeffs *ak
    )
@@ -91,10 +91,10 @@ LALInspiralPhasing2_0PN (
 
 /*  <lalVerbatim file="LALInspiralPhasing2CP"> */
 
-void 
+void
 LALInspiralPhasing2_2PN (
    LALStatus  *status,
-   REAL8      *phase, 
+   REAL8      *phase,
    REAL8       v,
    expnCoeffs *ak
    )
@@ -109,7 +109,7 @@ LALInspiralPhasing2_2PN (
   v2 = v*v;
   v5 = v2*v2*v;
   *phase = ak->phiC
-         + ak->pvaN / v5 * ( 1. + 
+         + ak->pvaN / v5 * ( 1. +
          + ak->pva2 * v2);
 
   DETATCHSTATUSPTR(status);
@@ -119,10 +119,10 @@ LALInspiralPhasing2_2PN (
 
 /*  <lalVerbatim file="LALInspiralPhasing2CP"> */
 
-void 
+void
 LALInspiralPhasing2_3PN (
    LALStatus  *status,
-   REAL8      *phase, 
+   REAL8      *phase,
    REAL8       v,
    expnCoeffs *ak
    )
@@ -139,7 +139,7 @@ LALInspiralPhasing2_3PN (
   v5 = v3*v2;
 
   *phase = ak->phiC
-         + ak->pvaN / v5 * ( 1. + 
+         + ak->pvaN / v5 * ( 1. +
          + ak->pva2 * v2
          + ak->pva3 * v3);
 
@@ -150,10 +150,10 @@ LALInspiralPhasing2_3PN (
 
 /*  <lalVerbatim file="LALInspiralPhasing2CP"> */
 
-void 
+void
 LALInspiralPhasing2_4PN (
    LALStatus  *status,
-   REAL8      *phase, 
+   REAL8      *phase,
    REAL8       v,
    expnCoeffs *ak
    )
@@ -170,7 +170,7 @@ LALInspiralPhasing2_4PN (
   v4 = v3*v;
   v5 = v4*v;
   *phase = ak->phiC
-         + ak->pvaN / v5 * ( 1. + 
+         + ak->pvaN / v5 * ( 1. +
          + ak->pva2 * v2
          + ak->pva3 * v3
          + ak->pva4 * v4);
@@ -180,10 +180,10 @@ LALInspiralPhasing2_4PN (
 
 /*  <lalVerbatim file="LALInspiralPhasing2CP"> */
 
-void 
+void
 LALInspiralPhasing2_5PN (
    LALStatus  *status,
-   REAL8      *phase, 
+   REAL8      *phase,
    REAL8       v,
    expnCoeffs *ak
    )
@@ -200,7 +200,7 @@ LALInspiralPhasing2_5PN (
   v4 = v3*v;
   v5 = v4*v;
   *phase = ak->phiC
-         + ak->pvaN / v5 * ( 1. + 
+         + ak->pvaN / v5 * ( 1. +
          + ak->pva2 * v2
          + ak->pva3 * v3
          + ak->pva4 * v4
@@ -213,10 +213,10 @@ LALInspiralPhasing2_5PN (
 
 /*  <lalVerbatim file="LALInspiralPhasing2CP"> */
 
-void 
+void
 LALInspiralPhasing2_6PN (
    LALStatus  *status,
-   REAL8      *phase, 
+   REAL8      *phase,
    REAL8       v,
    expnCoeffs *ak
    )
@@ -234,7 +234,7 @@ LALInspiralPhasing2_6PN (
   v5 = v4*v;
   v6 = v5*v;
   *phase = ak->phiC
-         + ak->pvaN / v5 * ( 1. + 
+         + ak->pvaN / v5 * ( 1. +
          + ak->pva2 * v2
          + ak->pva3 * v3
          + ak->pva4 * v4
@@ -248,10 +248,10 @@ LALInspiralPhasing2_6PN (
 
 /*  <lalVerbatim file="LALInspiralPhasing2CP"> */
 
-void 
+void
 LALInspiralPhasing2_7PN (
    LALStatus  *status,
-   REAL8      *phase, 
+   REAL8      *phase,
    REAL8       v,
    expnCoeffs *ak
    )
@@ -270,7 +270,7 @@ LALInspiralPhasing2_7PN (
   v6 = v5*v;
   v7 = v6*v;
   *phase = ak->phiC
-         + ak->pvaN / v5 * ( 1. + 
+         + ak->pvaN / v5 * ( 1. +
          + ak->pva2 * v2
          + ak->pva3 * v3
          + ak->pva4 * v4

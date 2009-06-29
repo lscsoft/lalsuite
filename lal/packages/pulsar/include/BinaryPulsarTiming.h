@@ -45,27 +45,27 @@
 
 /* LAL code to take into account binary pulsar motion */
 /*  for definitions of different models see Taylor and Weisberg (1989)
-    and TEMPO software documentation 
-    
+    and TEMPO software documentation
+
     Also contains function to read TEMPO .par files to obtain parameters
     and errors on parameters (if available) */
 /* <lalVerbatim file="BinaryPulsarTimingHV">
    Author: Pitkin, M. D.
-   $Id: BinaryPulsarTiming.h,v 1.14 2008/11/12 12:53:30 mpitkin Exp $
+   $Id$
 */
 /* Matt Pitkin 29/04/04 */
 
 /* <lalLaTeX>
    \section{Header \texttt{BinaryPulsarTiming.h}}
    label{ss:BinaryPulsarTiming.h}
-   
+
    Calculates time delay to a signal from a pulsar in a binary system.
-   
+
    \subsection*{Synopsis}
    \begin{verbatim}
    #include <lal/BinaryPulsarTiming.h>
    \end{verbatim}
-   
+
    \noindent This header covers routines for calculating the time delay to a
    signal from a pulsar in a binary system. The are also routines for reading
    pulsar data from TEMPO .par file formats.
@@ -115,28 +115,28 @@ not be in the binary timing routine"
    \idx[Type]{BinaryPulsarParams}
    \idx[Type]{BinaryPulsarInput}
    \idx[Type]{BinaryPulsarOutput}
-   
+
    \begin{verbatim}
    typedef struct tagBinaryPulsarParams BinaryPulsarParams;
    \end{verbatim}
-   
+
    This structure contains all the pulsars parameters. The structure does not
    have to be used for a binary pulsar, but can just contain the parameters for
    an isolated pulsar. All parameters are in the same units as given by TEMPO.
- 
+
    \begin{verbatim}
    typedef struct tagBinaryPulsarInput BinaryPulsarInput;
    \end{verbatim}
-   
+
    This structure contains the input time at which the binary correction needs
    to be calculated.
-   
+
    \begin{verbatim}
    typedef struct tagBinaryPulsarOutput BinaryPulsarOutput;
    \end{verbatim}
-   
+
    This structure contains the binary time delay for the input time.
- 
+
    </lalLaTeX> */
 
 /**** DEFINE STRUCTURES ****/
@@ -145,19 +145,21 @@ typedef struct
 tagBinaryPulsarParams
 {
   CHAR *name;   /**< pulsar name */
-  
+
   CHAR *model;  /**< TEMPO binary model e.g. BT, DD, ELL1 */
 
   REAL8 f0;     /**< spin frequency (Hz) */
   REAL8 f1;     /**< frequency first derivative (Hz/s) */
   REAL8 f2;     /**< frequency second derivative (Hz/s^2) */
   REAL8 f3;     /**< frequency third derivative (Hz/s^3) */
+  REAL8 f4;     /**< frequency fourth derivative (Hz/s^4) */
+  REAL8 f5;     /**< frequency fifth derivative (Hz/s^5) */
 
   REAL8 ra;     /**< right ascension (rads) */
   REAL8 dec;    /**< declination (rads) */
   REAL8 pmra;   /**< proper motion in RA (rads/s) */
   REAL8 pmdec;  /**< proper motion in dec (rads/s) */
-  
+
   REAL8 posepoch; /**< position epoch */
   REAL8 pepoch;   /**< period/frequency epoch */
 
@@ -169,7 +171,7 @@ tagBinaryPulsarParams
   REAL8 w0;     /**< logitude of periastron (deg) */
   REAL8 x;      /**< projected semi-major axis/speed of light (light secs) */
   REAL8 T0;     /**< time of orbital perisastron as measured in TDB (MJD) */
-  
+
   /* add extra parameters for the BT1P and BT2P models which contain two and
      three orbits respectively (only the first one can be relativistic, so the
      others only have the Keplerian parameters) */
@@ -229,10 +231,12 @@ tagBinaryPulsarParams
   REAL8 f1Err;
   REAL8 f2Err;
   REAL8 f3Err;
-  
+  REAL8 f4Err;
+  REAL8 f5Err;
+
   REAL8 pepochErr;
   REAL8 posepochErr;
-  
+
   REAL8 raErr;
   REAL8 decErr;
   REAL8 pmraErr;
@@ -244,7 +248,7 @@ tagBinaryPulsarParams
   REAL8 xErr, x2Err, x3Err;
   REAL8 T0Err, T02Err, T03Err;
 
-  REAL8 xpbdotErr;	
+  REAL8 xpbdotErr;
 
   REAL8 eps1Err;
   REAL8 eps2Err;
@@ -257,9 +261,9 @@ tagBinaryPulsarParams
   REAL8 PbdotErr;
   REAL8 xdotErr;
   REAL8 edotErr;
-  
+
   REAL8 sErr;
-  
+
   /*REAL8 rErr; Shapiro 'range' parameter - defined internally as Gm2/c^3 */
   REAL8 drErr;
   REAL8 dthErr;
@@ -277,14 +281,14 @@ tagBinaryPulsarParams
   REAL8 DM1Err;
 }BinaryPulsarParams;
 
-/** structure containing the input parameters for the binary delay function */ 
+/** structure containing the input parameters for the binary delay function */
 typedef struct
 tagBinaryPulsarInput
 {
   REAL8 tb;    /**< Time of arrival (TOA) at the SSB */
 }BinaryPulsarInput;
 
-/** structure containing the output parameters for the binary delay function */ 
+/** structure containing the output parameters for the binary delay function */
 typedef struct
 tagBinaryPulsarOutput
 {
@@ -296,9 +300,9 @@ tagBinaryPulsarOutput
    </lalLaTeX> */
 
 /**** DEFINE FUNCTIONS ****/
-/** function to calculate the binary system delay 
+/** function to calculate the binary system delay
  */
-void 
+void
 XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
                         BinaryPulsarInput    *input,
                         BinaryPulsarParams   *params );
@@ -309,7 +313,7 @@ LALBinaryPulsarDeltaT( LALStatus            *status,
                        BinaryPulsarInput    *input,
                        BinaryPulsarParams   *params );
 
-/** function to read in a TEMPO parameter file 
+/** function to read in a TEMPO parameter file
  */
 void
 XLALReadTEMPOParFile( BinaryPulsarParams    *output,
@@ -333,7 +337,7 @@ LALDegsToRads(CHAR *degs, const CHAR *coords);
  * secs, this is just the historical factor of 32.184 secs between TT and TAI
  * (International Atomic Time) and the other 19 seconds come from the leap
  * seonds added between the TAI and UTC up to the point of definition of GPS
- * time at UTC 01/01/1980. 
+ * time at UTC 01/01/1980.
  */
 REAL8
 LALTTMJDtoGPS(REAL8 MJD);
@@ -344,7 +348,7 @@ LALTDBMJDtoGPS(REAL8 MJD);
 REAL8
 LALTCBMJDtoGPS(REAL8 MJD);
 
-/** function to print out all the pulsar parameters read in from a par file 
+/** function to print out all the pulsar parameters read in from a par file
  */
 void
 PrintPulsarParameters( BinaryPulsarParams params );

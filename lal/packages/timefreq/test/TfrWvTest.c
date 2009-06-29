@@ -17,32 +17,32 @@
 *  MA  02111-1307  USA
 */
 
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: TfrWvTest.c
- * 
+ *
  * Maintainer: Torres C,  (Univ of TX at Brownsville)
  * Author: Chassande-Mottin, E.
- * 
- * Revision: $Id: 
- * 
- *----------------------------------------------------------------------- 
- * 
- * NAME 
+ *
+ * Revision: $Id:
+ *
+ *-----------------------------------------------------------------------
+ *
+ * NAME
  *   main()
  *
- * SYNOPSIS 
- * 
- * DESCRIPTION 
+ * SYNOPSIS
+ *
+ * DESCRIPTION
  *   Compute the Wigner-Ville Distribution of a test signal
  *   Test of TfrWv.c
- * 
+ *
  * DIAGNOSTICS
- * 
+ *
  * CALLS
- * 
+ *
  * NOTES
- * 
+ *
  *-----------------------------------------------------------------------
  */
 
@@ -61,9 +61,9 @@ int main(void)
 
   static LALStatus status;
 
-  REAL4Vector  *signal = NULL;
+  REAL4Vector  *signalvec = NULL;
   CreateTimeFreqIn tfrIn;
-  TimeFreqRep  *tfr = NULL; 
+  TimeFreqRep  *tfr = NULL;
   TimeFreqParam *param = NULL;
 
   INT4 column;
@@ -71,16 +71,16 @@ int main(void)
 
   /*--------------------------------------------------------------------*/
 
-  LALSCreateVector(&status, &signal, Nsignal);
+  LALSCreateVector(&status, &signalvec, Nsignal);
 
-  for (column = 0; column < (INT4)signal->length; column++)
-    signal->data[column]=(rand() % 10) / 2.0;
- 
+  for (column = 0; column < (INT4)signalvec->length; column++)
+    signalvec->data[column]=(rand() % 10) / 2.0;
+
   /*--------------------------------------------------------------------*/
 
   tfrIn.type=WignerVille;
-  tfrIn.fRow=Nfft;              
-  tfrIn.tCol=Nsignal; 
+  tfrIn.fRow=Nfft;
+  tfrIn.tCol=Nsignal;
   tfrIn.wlengthT=0;
   tfrIn.wlengthF=0;
 
@@ -89,7 +89,7 @@ int main(void)
   LALCreateTimeFreqRep(&status, &tfr, &tfrIn);
 
   for (column = 0; column < tfr->tCol; column++)
-    tfr->timeInstant[column]=column;    
+    tfr->timeInstant[column]=column;
 
   LALCreateTimeFreqParam(&status, &param, &tfrIn);
 
@@ -101,14 +101,14 @@ int main(void)
 
   /*--------------------------------------------------------------------*/
 
-  LALTfrWv(&status,signal,tfr,param);
+  LALTfrWv(&status,signalvec,tfr,param);
   REPORTSTATUS(&status);
 
   /*--------------------------------------------------------------------*/
 
   printf("Signal:\n");
-  for (column= 0; column < (INT4)signal->length; column++)
-    printf("%1.1f ",signal->data[column]);
+  for (column= 0; column < (INT4)signalvec->length; column++)
+    printf("%1.1f ",signalvec->data[column]);
   printf("\n\n");
 
   printf("TFR:\n");
@@ -121,7 +121,7 @@ int main(void)
 
   /*--------------------------------------------------------------------*/
 
-  LALSDestroyVector(&status,&signal);
+  LALSDestroyVector(&status,&signalvec);
   LALDestroyTimeFreqRep(&status,&tfr);
   LALDestroyTimeFreqParam(&status,&param);
 

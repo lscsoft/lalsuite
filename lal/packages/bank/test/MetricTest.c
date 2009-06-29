@@ -67,7 +67,7 @@ GetInspiralMoments (
 		REAL8FrequencySeries *psd,
 		InspiralTemplate     *params );
 
-void 
+void
 LALInspiralComputeBCVMetric(
    LALStatus            *status,
    InspiralMetric       *metric,
@@ -76,7 +76,7 @@ LALInspiralComputeBCVMetric(
 );
 
 int
-main()
+main(void)
 {
   UINT4 dim;                 /* dimension of parameter space */
   static LALStatus status;     /* top-level status structure */
@@ -102,12 +102,12 @@ main()
 
   params.OmegaS = 0.;
   params.Theta = 0.;
-  params.ieta=1; 
-  params.mass1=1.; 
-  params.mass2=1.; 
-  params.startTime=0.0; 
+  params.ieta=1;
+  params.mass1=1.;
+  params.mass2=1.;
+  params.startTime=0.0;
   params.startPhase=0.0;
-  params.fLower=40.0; 
+  params.fLower=40.0;
   params.fCutoff=2000.00;
   params.tSampling=4096.0;
   params.order=4;
@@ -133,7 +133,7 @@ main()
   LALNoiseSpectralDensity (&status, shf.data, noisemodel, shf.deltaF );
 
   /* compute the metric at this point, update bankPars and add the params to the list */
-	  
+
   GetInspiralMoments (&status, &moments, &shf, &params);
   LALInspiralComputeMetric(&status, &metric, &params, &moments);
   fprintf(fpr, "#%e %e %e\n", metric.G00, metric.G01, metric.G11);
@@ -153,11 +153,11 @@ main()
   for ( dp0= dp0min; dp0<=dp0max+d0 ; dp0+=d0)
     {
       for ( dp1= dp1min; dp1<=dp1max+d1 ; dp1+=d1)
-	{  
-	  
+	{
+
 	  MM = 1. - (metric.G00 * dp0 * dp0 +  metric.G01 * dp0 * dp1
 		  +  metric.G01 * dp1 * dp0 +  metric.G11 * dp1 * dp1);
-	  fprintf(fpr, "%f %f %f\n", dp0, dp1, MM);	  
+	  fprintf(fpr, "%f %f %f\n", dp0, dp1, MM);
 	}
               fprintf(fpr,"\n");
     }
@@ -182,7 +182,7 @@ GetInspiralMoments (
 
    INITSTATUS (status, "GetInspiralMoments", METRICTESTC);
    ATTATCHSTATUSPTR(status);
-  
+
    ASSERT (params, status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
    ASSERT (params->fLower>0, status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
    ASSERT (moments, status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
@@ -195,7 +195,7 @@ GetInspiralMoments (
    moments->a41 = 617.L * LAL_PI * LAL_PI / 384.L;
    moments->a42 = 5429.L/5376.L * pow ( 25.L * LAL_PI/2.L, 1.L/3.L);
    moments->a43 = 1.5293365L/1.0838016L * pow(5.L/(4.L*pow(LAL_PI,4.L)), 1.L/3.L);
-   
+
    /* setup the input structure needed in the computation of the moments */
 
    in.shf = psd;
@@ -203,21 +203,21 @@ GetInspiralMoments (
    in.shf->deltaF /= params->fLower;
    in.xmin = params->fLower/params->fLower;
    in.xmax = params->fCutoff/params->fLower;
-	   
+
    /* First compute the norm */
 
    in.norm = 1.L;
-   in.ndx = 7.L/3.L; 
-   LALInspiralMoments(status->statusPtr, &moments->j[7], in); 
+   in.ndx = 7.L/3.L;
+   LALInspiralMoments(status->statusPtr, &moments->j[7], in);
    CHECKSTATUSPTR(status);
    in.norm = moments->j[7];
 
    if (lalDebugLevel & LALINFO)
    {
-	   fprintf (stderr, "a01=%e a21=%e a22=%e a31=%e a41=%e a42=%e a43=%e \n", 
-			   moments->a01, moments->a21, moments->a22, moments->a31, 
+	   fprintf (stderr, "a01=%e a21=%e a22=%e a31=%e a41=%e a42=%e a43=%e \n",
+			   moments->a01, moments->a21, moments->a22, moments->a31,
 			   moments->a41, moments->a42, moments->a43);
-   
+
 	   fprintf(stderr, "j7=%e\n", moments->j[7]);
    }
 
@@ -225,15 +225,15 @@ GetInspiralMoments (
 
    for (k=1; k<=17; k++)
    {
-	   in.ndx = (REAL8) k /3.L; 
-	   LALInspiralMoments(status->statusPtr,&moments->j[k],in);  
+	   in.ndx = (REAL8) k /3.L;
+	   LALInspiralMoments(status->statusPtr,&moments->j[k],in);
 	   CHECKSTATUSPTR(status);
 	   if (lalDebugLevel==1) fprintf(stderr, "j%1i=%e\n", k,moments->j[k]);
    }
    in.shf->deltaF *= params->fLower;
    in.shf->f0 *= params->fLower;
-  
+
    DETATCHSTATUSPTR(status);
    RETURN (status);
 }
-  
+

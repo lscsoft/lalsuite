@@ -265,7 +265,7 @@ static int XLALBlackHoleModeEigenSolveSchwarzschild( COMPLEX16 *omega, int l, in
   while ( status == GSL_CONTINUE && iter < MAXITER );
   if ( iter >= MAXITER )
     XLAL_ERROR( func, XLAL_EMAXITER );
-  
+
   omega->re = gsl_vector_get(solver->x, 0);
   omega->im = gsl_vector_get(solver->x, 1);
 
@@ -285,7 +285,7 @@ static int XLALBlackHoleModeEigenSolveKerr( COMPLEX16 *A, COMPLEX16 *omega, REAL
   gsl_vector *x;
   size_t iter = 0;
   int status;
-  
+
   f.f = &XLALBlackHoleModeEigenSolveKerrResid;
   f.n = ndim;
   f.params = &p;
@@ -314,7 +314,7 @@ static int XLALBlackHoleModeEigenSolveKerr( COMPLEX16 *A, COMPLEX16 *omega, REAL
   while ( status == GSL_CONTINUE && iter < MAXITER );
   if ( iter >= MAXITER )
     XLAL_ERROR( func, XLAL_EMAXITER );
-  
+
   A->re = gsl_vector_get(solver->x, 0);
   A->im = gsl_vector_get(solver->x, 1);
   omega->re = gsl_vector_get(solver->x, 2);
@@ -658,11 +658,11 @@ int XLALSpheroidalWaveFunctionNorm( COMPLEX16 *norm, struct tagBlackHoleMode *pa
     XLAL_ERROR( func, XLAL_EFUNC );
   swf = cmul(swf,*norm);
   signneg = ( params->l - ( params->m > params->s ? params->m : params->s ) ) % 2 ? 0 : 1;
-  if ( signneg && creal(swf) > 0 || ! signneg && creal(swf) < 0 )
+  if ( (signneg && (creal(swf) > 0)) || ((! signneg) && (creal(swf) < 0)) )
     *norm = cneg(*norm);
 
   *norm = cdivr(*norm,sqrt(integral));
-  
+
   return 0;
 }
 
@@ -722,7 +722,7 @@ int XLALBlackHoleRingdownAmplitude(
   XLALSpheroidalWaveFunction( &swf_2, -mu, mode );
 
   /* change from Leaver's conventions to usual conventions */
-  omega = cmulr( mode->omega, 0.5 ); 
+  omega = cmulr( mode->omega, 0.5 );
 
   amp = cexp(cmulr(I, mode->m*azimuthRad));
   amp = cmulr( amp, -4.0*massSolar*sqrt(-1.0*cimag(omega)*0.5*fracMassLoss/cabs2(omega)));

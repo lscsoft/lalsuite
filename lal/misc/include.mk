@@ -6,6 +6,5 @@ include-link:
           if test ! -r $$targetdir/$$file ; then \
 	    rm -f $$targetdir/$$file; \
             $(LN_S) $$sourcedir/$$file $$targetdir; \
-            echo "$(LN_S) $$sourcedir/$$file $$targetdir"; \
           fi; \
         done

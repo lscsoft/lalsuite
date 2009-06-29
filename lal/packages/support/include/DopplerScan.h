@@ -190,7 +190,7 @@ void writeSkyGridFile(LALStatus *, const DopplerSkyGrid *grid, const CHAR *fname
 void ParseSkyRegionString (LALStatus *, SkyRegion *region, const CHAR *input);
 void SkySquare2String (LALStatus *, CHAR **string, REAL8 Alpha, REAL8 Delta, REAL8 AlphaBand, REAL8 DeltaBand);
 
-void getMCDopplerCube (LALStatus *, DopplerRegion *cube, PulsarDopplerParams signal, UINT4 PointsPerDim, const DopplerSkyScanInit *params);
+void getMCDopplerCube (LALStatus *, DopplerRegion *cube, PulsarDopplerParams lal_signal, UINT4 PointsPerDim, const DopplerSkyScanInit *params);
 void getMetricEllipse(LALStatus *, MetricEllipse *ellipse, REAL8 mismatch, const REAL8Vector *metric, UINT4 dim0);
 
 int fprintfDopplerParams ( FILE *fp, const PulsarDopplerParams *params );

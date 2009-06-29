@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2008 Karl Wette
  * Copyright (C) 2005 Reinhard Prix
- * 
+ *
  *  [partially based on the MSG_LOG class in BOINC:
  *  Copyright (C) 2005 University of California]
  *
@@ -16,16 +16,16 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with with program; see the file COPYING. If not, write to the 
- *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, 
+ *  along with with program; see the file COPYING. If not, write to the
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
  */
 
 /**
  * \author Reinhard Prix
  * \date 2005
- * \file 
- * \brief General-purpose log-message handling, controlled by lalDebugLevel 
+ * \file
+ * \brief General-purpose log-message handling, controlled by lalDebugLevel
  *
  * $Id$
  */
@@ -53,7 +53,7 @@ NRCSID( LOGPRINTFH, "$Id$" );
 typedef enum
   {
     LOG_CRITICAL = -1,
-    LOG_NORMAL = 0,	
+    LOG_NORMAL = 0,
     LOG_DEBUG  = 1,
     LOG_DETAIL = 2,
     LOG_LAST		/* don't use */
@@ -76,7 +76,7 @@ char * XLALClearLinebreaks ( const char *str );
 
 #ifdef  __cplusplus
 }
-#endif  
+#endif
 /* C++ protection. */
 
 #endif  /* Double-include protection. */

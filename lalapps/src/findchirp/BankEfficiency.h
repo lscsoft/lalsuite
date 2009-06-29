@@ -45,6 +45,8 @@
 #include <lal/LIGOLwXMLInspiralHeaders.h>
 #include <lal/Date.h>
 #include <lal/Units.h>
+#include <lal/lalGitID.h>
+#include <lalappsGitID.h>
 
 
 
@@ -69,8 +71,8 @@
 /* --- the XML output --- */
 #define PRINT_LIGOLW_XML_BANKEFFICIENCY(fp) (\
 fputs( "   <Table Name=\"bankefficiencygroup:bankefficiency:table\">\n", fp) == EOF || \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:psi0\"               Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:psi3\"               Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:mass1\"               Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:mass2\"               Type=\"real_4\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:psi0_sim\"           Type=\"real_4\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:psi3_sim\"           Type=\"real_4\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:tau0\"               Type=\"real_4\"/>\n", fp) == EOF ||  \
@@ -229,6 +231,9 @@ typedef struct{
   BinaryInjection binaryInjection;  /*injection will be set by the mass-range */
   INT4 printBestOverlap, printBestTemplate, extraFinalPrinting ;
 
+  INT4 BankFromFile;
+  CHAR *BankFile;
+
   INT4 faithfulness;
   INT4 snrAtCoaTime;
   REAL8 m1,m2, psi0,psi3, tau0, tau3;
@@ -286,6 +291,8 @@ typedef struct{
   REAL4 psi3_inject;
   REAL4 fend_trigger;
   REAL4 fend_inject;
+  REAL4 mass1_trigger;
+  REAL4 mass2_trigger;
   REAL4 mass1_inject;
   REAL4 mass2_inject;
   INT4 layer;
@@ -766,3 +773,9 @@ void  BankEfficiencyFinalise(
 void BankEfficiencyInitAmbiguity(gsl_matrix *amb, INT4 sizeBank);
 
  
+void BankEfficiencyReadBankFromFile (
+  LALStatus            *status,
+  SnglInspiralTable    **first,
+  INT4                 *nlist, 
+  InspiralCoarseBankIn *coarseIn,
+  UserParametersIn     userParam);

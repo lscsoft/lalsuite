@@ -35,12 +35,12 @@ Module to calculate the noise power spectral density for the EGO detector.
 
 \subsubsection*{Description}
 
-The module takes as an input a frequency $f$ in Hz, and it 
-calculates the noise spectral density (per Hz) $S_{h}(f)$ 
+The module takes as an input a frequency $f$ in Hz, and it
+calculates the noise spectral density (per Hz) $S_{h}(f)$
 for that frequency. The noise PSD is based on data provided by
 grqc/0607092
 \begin{equation}
-   S_h(f) = 
+   S_h(f) =
    s_0 \left\{  x^{p_1} + a_1x^{p_2} +a_2 \frac{1+b_1x +b_2x^2+b_3x^3+b_4x^4+b_5x^5+b_6x^6}{1+c_1x+c_2x^2+c_3x^3+c_4x^4} \right\}
 \end{equation}
 where $S_0=1.61e-51$\\
@@ -60,7 +60,7 @@ None.
 NRCSID (LALEGOPSDC,"$Id$");
 
 /*  <lalVerbatim file="LALEGOPsdCP"> */
-void LALEGOPsd (LALStatus *status, REAL8 *psd, REAL8 f) 
+void LALEGOPsd (LALStatus *status, REAL8 *psd, REAL8 f)
 { /* </lalVerbatim> */
    REAL8 s0, x, x2, x3, x4, x5, x6;
    REAL8 a1, a2, p1, p2, c1, c2, c3, c4, b1, b2, b3, b4, b5, b6;
@@ -68,7 +68,7 @@ void LALEGOPsd (LALStatus *status, REAL8 *psd, REAL8 f)
 
    status = NULL;
    x = f/200.;
-  
+
    a1 = 185.62;
    a2 = 232.56;
    p1 = -4.05;
@@ -89,10 +89,10 @@ void LALEGOPsd (LALStatus *status, REAL8 *psd, REAL8 f)
    x4 = x2 * x2;
    x5 = x3 * x2;
    x6 = x3 * x3;
-   
+
    num = 1 + b1*x + b2*x2 + b3*x3 + b4*x4 + x5*b5 + x6*b6;
    den = 1 + c1*x + c2*x2 + c3*x3 + c4*x4;
-   
+
    /*new psds from fitted on the Design sensitivity curve from virgo web site*/
    s0 = 1.62e-51;
    *psd = s0*( pow(x,p1) +a1*pow(x,p2) +a2*num/den);

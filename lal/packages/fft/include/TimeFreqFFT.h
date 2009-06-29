@@ -25,26 +25,26 @@
  *
  * \section{Header \texttt{TimeFreqFFT.h}}
  * \label{s:TimeFreqFFT.h}
- * 
+ *
  * Performs real-to-complex, complex-to-real FFTs and average power
  * spectrum estimation.
- * 
+ *
  * \subsection*{Synopsis}
  * \begin{verbatim}
  * #include <lal/TimeFreqFFT.h>
  * \end{verbatim}
- * 
+ *
  * \noindent Perform time-to-frequency and frequency-to-time fast Fourier
  * transforms. Also provides a function to compute mean and median power
  * spectra with user specified windowning.
- * 
+ *
  **** </lalLaTeX> */
 
 /** \defgroup fft Fourier Transform and Spectral Methods
  *
  * Performs real-to-complex, complex-to-real FFTs and average power
  * spectrum estimation.
- * 
+ *
  * Perform time-to-frequency and frequency-to-time fast Fourier
  * transforms. Also provides a function to compute mean and median power
  * spectra with user specified windowning.
@@ -54,8 +54,8 @@
  * \f[
  *  \tilde{h}_k = \sum
  * \f]
- * 
- * 
+ *
+ *
  */
 
 #ifndef _TIMEFREQFFT_H
@@ -123,10 +123,10 @@ spectra and computes the average using one of the following methods:
 \item[\texttt{useUnity}] A constant PSD of value unity will be returned
 independent of the input data given. This is used for testing purposes.
 
-\item[\texttt{useMean}] The arithmetic mean of the individual power spectra 
+\item[\texttt{useMean}] The arithmetic mean of the individual power spectra
 computed will be used to compute the output power spectrum.
 
-\item[\texttt{useMedian}] The median value of the individual power spectra 
+\item[\texttt{useMedian}] The median value of the individual power spectra
 computed will be used to compute the output power spectrum.
 
 \item[\texttt{NumberAvgSpecMethods}] gives the number of defined methods.
@@ -140,7 +140,7 @@ typedef enum
   useMean,
   useMedian,
   NumberAvgSpecMethods
-} 
+}
 AvgSpecMethod;
 
 /* <lalLaTeX>
@@ -183,9 +183,10 @@ AverageSpectrumParams;
 typedef struct
 tagLALPSDRegressor
 {
-  int max_samples;
-  int n_samples;
-  COMPLEX16FrequencySeries *mean;
+  unsigned average_samples;
+  unsigned median_samples;
+  unsigned n_samples;
+  REAL8Sequence **history;
   REAL8FrequencySeries *mean_square;
 }
 LALPSDRegressor;
@@ -202,26 +203,26 @@ LALPSDRegressor;
  */
 
 int XLALREAL4TimeFreqFFT(
-    COMPLEX8FrequencySeries *freq, 
+    COMPLEX8FrequencySeries *freq,
     const REAL4TimeSeries   *tser,
     const REAL4FFTPlan      *plan
     );
 
 int XLALREAL4FreqTimeFFT(
     REAL4TimeSeries               *tser,
-    const COMPLEX8FrequencySeries *freq, 
+    const COMPLEX8FrequencySeries *freq,
     const REAL4FFTPlan            *plan
     );
 
 int XLALREAL8TimeFreqFFT(
-    COMPLEX16FrequencySeries *freq, 
+    COMPLEX16FrequencySeries *freq,
     const REAL8TimeSeries    *tser,
     const REAL8FFTPlan       *plan
     );
 
 int XLALREAL8FreqTimeFFT(
     REAL8TimeSeries                *tser,
-    const COMPLEX16FrequencySeries *freq, 
+    const COMPLEX16FrequencySeries *freq,
     const REAL8FFTPlan             *plan
     );
 
@@ -282,6 +283,8 @@ int XLALREAL8AverageSpectrumWelch(
     );
 
 REAL8 XLALMedianBias( UINT4 nn );
+
+REAL8 XLALLogMedianBiasGeometric( UINT4 nn );
 
 int XLALREAL4AverageSpectrumMedian(
     REAL4FrequencySeries        *spectrum,
@@ -406,7 +409,8 @@ LALFreqTimeComplexFFT(
 
 LALPSDRegressor *
 XLALPSDRegressorNew(
-    int max_samples
+    unsigned average_samples,
+    unsigned median_samples
 );
 
 void
@@ -419,17 +423,29 @@ XLALPSDRegressorReset(
     LALPSDRegressor *r
 );
 
+int XLALPSDRegressorSetAverageSamples(
+    LALPSDRegressor *r,
+    unsigned average_samples
+);
+
+
+unsigned XLALPSDRegressorGetAverageSamples(
+    const LALPSDRegressor *r
+);
+
+int XLALPSDRegressorSetMedianSamples(
+    LALPSDRegressor *r,
+    unsigned median_samples
+);
+
+unsigned XLALPSDRegressorGetMedianSamples(
+    const LALPSDRegressor *r
+);
+
 int
 XLALPSDRegressorAdd(
     LALPSDRegressor *r,
     const COMPLEX16FrequencySeries *sample
-);
-
-COMPLEX16FrequencySeries *
-XLALPSDRegressorGetMean(
-    const LALPSDRegressor *r,
-    const LIGOTimeGPS *epoch,
-    REAL8 min_sigma_sq
 );
 
 REAL8FrequencySeries *
@@ -441,7 +457,7 @@ int
 XLALPSDRegressorSetPSD(
     LALPSDRegressor *r,
     const REAL8FrequencySeries *psd,
-    int weight
+    unsigned weight
 );
 
 #ifdef  __cplusplus

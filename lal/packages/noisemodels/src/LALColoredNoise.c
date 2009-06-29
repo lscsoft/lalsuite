@@ -37,8 +37,8 @@ Given the Fourier transform $N(f)$ of  white noise, the
 Fourier transform of noise of power spectral density $S(f)$ is
 given by ${\cal N}(f) = N(f) \times \sqrt{S(f)}.$
 In the discrete version there is an additional normalisation:
-$${\cal N}_k = N_k \times \sqrt{\frac{2 S_k}{n}},\ \ 
-  {\cal N}_{n-k} = N_{n-k} \times \sqrt{\frac{2 S_k}{n}},\ \ 
+$${\cal N}_k = N_k \times \sqrt{\frac{2 S_k}{n}},\ \
+  {\cal N}_{n-k} = N_{n-k} \times \sqrt{\frac{2 S_k}{n}},\ \
   k=1, \ldots, \frac{n}{2}.$$
 
 \subsubsection*{Algorithm}
@@ -56,18 +56,18 @@ none
 NRCSID (LALCOLOREDNOISEC, "$Id$");
 
 /*  <lalVerbatim file="LALColoredNoiseCP"> */
-void 
-LALColoredNoise 
+void
+LALColoredNoise
    (
    LALStatus   *status,
-   REAL4Vector *noisy, 
+   REAL4Vector *noisy,
    REAL8Vector  psd
-   ) 
+   )
 {  /*  </lalVerbatim>  */
 
    INT4 i, j, n, nby2;
    REAL8 x, length;
-   
+
 
    INITSTATUS (status, "LALColoredNoise", LALCOLOREDNOISEC);
    ATTATCHSTATUSPTR(status);
@@ -80,7 +80,7 @@ LALColoredNoise
    n = length = noisy->length;
    nby2 = n/2;
 
-   for (i=1; i<nby2; i++) 
+   for (i=1; i<nby2; i++)
    {
       j = n-i;
       /* Since fftw requires n and NOT n/2, I presume we

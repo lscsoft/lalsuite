@@ -123,7 +123,7 @@ void InitUserVars (LALStatus *);
 void InitMakefakedata (LALStatus *, ConfigVars_t *cfg, int argc, char *argv[]);
 void AddGaussianNoise (LALStatus *, REAL4TimeSeries *outSeries, REAL4TimeSeries *inSeries, REAL4 sigma, INT4 seed);
 /* void GetOrbitalParams (LALStatus *, BinaryOrbitParams *orbit); */
-void WriteMFDlog (LALStatus *, char *argv[], const char *logfile);
+void WriteMFDlog (LALStatus *, const char *logfile);
 
 
 void LoadTransferFunctionFromActuation(LALStatus *,
@@ -548,7 +548,7 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
 
   /* if requested, log all user-input and code-versions */
   if ( uvar_logfile ) {
-    TRY ( WriteMFDlog(status->statusPtr, argv, uvar_logfile), status);
+    TRY ( WriteMFDlog(status->statusPtr, uvar_logfile), status);
   }
 
   { /* ========== translate user-input into 'PulsarParams' struct ========== */
@@ -1309,7 +1309,7 @@ InitUserVars (LALStatus *status)
   LALregBOOLUserVar(status,   lineFeature,	 0, UVAR_OPTIONAL, "Generate a line-feature amplitude h0 and frequency 'Freq'}");
 
 
-  LALregBOOLUserVar(status,   version,	         'V', UVAR_OPTIONAL, "Output version information");
+  LALregBOOLUserVar(status,   version,	         'V', UVAR_SPECIAL, "Output version information");
 
   LALregINTUserVar(status,    randSeed,           0, UVAR_DEVELOPER, "Specify random-number seed for reproducible noise (use /dev/urandom otherwise).");
 
@@ -1472,10 +1472,9 @@ AddGaussianNoise (LALStatus* status, REAL4TimeSeries *outSeries, REAL4TimeSeries
  * <em>NOTE:</em> Currently this function only logs the user-input and code-versions.
  */
 void
-WriteMFDlog (LALStatus *status, char *argv[], const char *logfile)
+WriteMFDlog (LALStatus *status, const char *logfile)
 {
     CHAR *logstr = NULL;
-    CHAR command[512] = "";
     FILE *fplog;
 
     INITSTATUS (status, "WriteMFDlog", rcsid);

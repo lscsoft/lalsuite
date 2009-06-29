@@ -39,13 +39,13 @@ $Id$
 
 \subsubsection*{Description}
 
-The moments of the noise curve are defined as 
+The moments of the noise curve are defined as
 \begin{equation}
 I(q)  \equiv S_{h}(f_{0}) \int^{f_{c}/f_{0}}_{f_{s}/f_{0}}
-\frac{x^{-q/3}}{S_{h}(x)} \, dx \,.  
+\frac{x^{-q/3}}{S_{h}(x)} \, dx \,.
 \end{equation}
 This function calculates the integrand of this integral, i.e.\ for a given $x$
-it calculates 
+it calculates
 \begin{equation}
 \frac{x^{-q/3}}{S_{h}(x)} \,\,.
 \end{equation}
@@ -77,7 +77,7 @@ LALInspiralMomentsIntegrand(
     void       *params
     )
 /* </lalVerbatim> */
-{ 
+{
    InspiralMomentsIn   *integrandParams;
 
    DInterpolateOut      interpOutput;
@@ -90,21 +90,21 @@ LALInspiralMomentsIntegrand(
    REAL8                deltaF;
    UINT8                freqIndex;
 
-   INITSTATUS( status, "LALInspiralMomentsIntegrand", 
+   INITSTATUS( status, "LALInspiralMomentsIntegrand",
        LALINSPIRALMOMENTSINTEGRANDC );
    ATTATCHSTATUSPTR( status );
 
-   ASSERT( params, status, 
+   ASSERT( params, status,
        LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL );
 
    integrandParams = (InspiralMomentsIn *) params;
 
    /* check that we have a pointer to a frequency series and it has data */
-   ASSERT( integrandParams->shf, status, 
+   ASSERT( integrandParams->shf, status,
        LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL );
-   ASSERT( integrandParams->shf->data, status, 
+   ASSERT( integrandParams->shf->data, status,
        LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL );
-   ASSERT( integrandParams->shf->data->data, status, 
+   ASSERT( integrandParams->shf->data->data, status,
        LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL );
 
    /* the minimum and maximum frequency where we have four points */
@@ -137,7 +137,7 @@ LALInspiralMomentsIntegrand(
    interpParams.n = numInterpPts;
    interpParams.x = f;
    interpParams.y = integrandParams->shf->data->data + freqIndex - 1;
-   
+
    /* perform the interpolation... */
    LALDPolynomialInterpolation( status->statusPtr, &interpOutput, x,
        &interpParams );

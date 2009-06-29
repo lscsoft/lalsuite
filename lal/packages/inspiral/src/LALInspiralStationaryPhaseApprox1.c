@@ -26,13 +26,13 @@
  * %% A one-line description of the function(s) defined in this module.
  * \subsection{Module \texttt{LALInspiralStationaryPhaseApprox1.c}}
  * This module computes the stationary phase approximation to the
- * Fourier transform of a chirp waveform by integrating Eq.~\ref{eq:InspiralFourierPhase}. 
+ * Fourier transform of a chirp waveform by integrating Eq.~\ref{eq:InspiralFourierPhase}.
  *
  * \subsubsection*{Prototypes}
  * \input{LALInspiralStationaryPhaseApprox1CP}
  * \idx{LALInspiralStationaryPhaseApprox1()}
  * \begin{itemize}
- * \item {\tt signal:} Output containing the inspiral waveform.
+ * \item {\tt signalvec:} Output containing the inspiral waveform.
  * \item {\tt params:} Input containing binary chirp parameters.
  * \end{itemize}
  *
@@ -45,12 +45,12 @@
  * the energy and flux functions they are kept in tact and the integral
  * in Eq.~(\ref{eq:InspiralFourierPhase}) is solved numerically.
  * The code returns the Fourier transform packed in the same way as fftw
- * would for the Fourier transform of a real vector.  For a signal vector 
- * of length {\tt n=signal->length} ({\tt n} even):
+ * would for the Fourier transform of a real vector.  For a signal vector
+ * of length {\tt n=signalvec->length} ({\tt n} even):
  * \begin{itemize}
- * \item {\tt signal->data[0]} is the {\it real} 0th frequency component of the Fourier transform.
- * \item {\tt signal->data[n/2]} is the {\it real} Nyquist frequency component of the Fourier transform.
- * \item {\tt signal->data[k]} and {\tt signal->data[n-k],} for {\tt k=1,\ldots, n/2-1,} are
+ * \item {\tt signalvec->data[0]} is the {\it real} 0th frequency component of the Fourier transform.
+ * \item {\tt signalvec->data[n/2]} is the {\it real} Nyquist frequency component of the Fourier transform.
+ * \item {\tt signalvec->data[k]} and {\tt signalvec->data[n-k],} for {\tt k=1,\ldots, n/2-1,} are
  * the real and imaginary parts of the Fourier transform at a frequency $k\Delta f=k/T,$ $T$ being
  * the duration of the signal and $\Delta f=1/T$ is the frequency resolution.
  * \end{itemize}
@@ -58,23 +58,23 @@
  * \subsubsection*{Algorithm}
  *
  * %% A description of the method used to perform the calculation.
- * The lal code {\tt LALDRomberIntegrate} is used to solve the 
+ * The lal code {\tt LALDRomberIntegrate} is used to solve the
  * integral in Eq.~(\ref{eq:InspiralFourierPhase}).
  * The reference points are chosen so that on inverse Fourier transforming
- * the time-domain waveform will 
+ * the time-domain waveform will
  * \begin{itemize}
  * \item be padded with zeroes in the first {\tt params->nStartPad} bins,
  * \item begin with a phase shift of {\tt params->nStartPhase} radians,
- * \item have an amplitude of ${\tt n} v^2.$ 
+ * \item have an amplitude of ${\tt n} v^2.$
  * \end{itemize}
  *
  * \subsubsection*{Uses}
  *
  * %% List of any external functions called by this function.
  * \begin{verbatim}
-   LALInspiralSetup 
+   LALInspiralSetup
    LALInspiralChooseModel
-   LALDRombergIntegrate 
+   LALDRombergIntegrate
  * \end{verbatim}
  * \subsubsection*{Notes}
  *
@@ -82,7 +82,7 @@
  * If it is required to compare the output of this module with a time domain
  * signal one should use an inverse Fourier transform routine that packs data
  * in the same way as fftw. Moreover, one should divide the resulting inverse
- * Fourier transform by a factor ${\tt n}/2$ to be consistent with the 
+ * Fourier transform by a factor ${\tt n}/2$ to be consistent with the
  * amplitude used in time-domain signal models.
  *
  *
@@ -95,11 +95,11 @@
 #include <lal/Integrate.h>
 
 /* a local function to compute the phase of the Fourier transform */
-void 
+void
 LALPsiOfT (
-   LALStatus *stauts, 
-   REAL8     *psioft, 
-   REAL8      v, 
+   LALStatus *stauts,
+   REAL8     *psioft,
+   REAL8      v,
    void      *param
    );
 
@@ -108,12 +108,12 @@ NRCSID (LALINSPIRALSTATIONARYPHASEAPPROX1C, "$Id$");
 /* This is the main function to compute the stationary phase approximation */
 
 /*  <lalVerbatim file="LALInspiralStationaryPhaseApprox1CP"> */
-void 
+void
 LALInspiralStationaryPhaseApprox1 (
-   LALStatus        *status, 
-   REAL4Vector      *signal,
+   LALStatus        *status,
+   REAL4Vector      *signalvec,
    InspiralTemplate *params
-   ) 
+   )
 { /* </lalVerbatim>  */
    REAL8 t, pimmc, f0, fn, f, v, df, shft, phi, amp0, amp, psif, psi, sign;
    INT4 n, i, nby2;
@@ -126,8 +126,8 @@ LALInspiralStationaryPhaseApprox1 (
 
    INITSTATUS (status, "LALInspiralStationaryPhaseApprox1", LALINSPIRALSTATIONARYPHASEAPPROX1C);
    ATTATCHSTATUSPTR(status);
-   ASSERT (signal,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   ASSERT (signal->data,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+   ASSERT (signalvec,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+   ASSERT (signalvec->data,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
    ASSERT (params, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
 
 /* Set up the coefficients in post-Newtonian expansion, vlso, etc. */
@@ -143,9 +143,9 @@ LALInspiralStationaryPhaseApprox1 (
    psiIn.coeffs = &ak;
 
 /* Cast the struct required for computing initial conditions */
-   n = signal->length;
+   n = signalvec->length;
    nby2 = n/2;
-   df = params->tSampling/signal->length;
+   df = params->tSampling/signalvec->length;
    pimmc = LAL_PI * ak.totalmass;
    t = 0.0;
    tofvin.t = t;
@@ -160,7 +160,7 @@ LALInspiralStationaryPhaseApprox1 (
 /* Compute the initial velocity frequency  */
    LALInspiralVelocity(status->statusPtr, &v, &tofvin);
    f0 = pow(v,3.L)/pimmc;
-   fn = (params->fCutoff < ak.fn) ? params->fCutoff : ak.fn; 
+   fn = (params->fCutoff < ak.fn) ? params->fCutoff : ak.fn;
 
    /* If we want to pad with zeroes in the beginning then the instant of
     * coalescence will be the chirp time + the duration for which padding
@@ -170,42 +170,42 @@ LALInspiralStationaryPhaseApprox1 (
    phi =  params->startPhase + LAL_PI/4.L;
    amp0 = params->signalAmplitude * ak.totalmass * pow(LAL_PI/12.L, 0.5L) * df;
 
-   signal->data[0] = 0.;
-   signal->data[nby2] = 0.;
-/* 
-   Compute the standard stationary phase approximation. 
+   signalvec->data[0] = 0.;
+   signalvec->data[nby2] = 0.;
+/*
+   Compute the standard stationary phase approximation.
 */
    funcParams = (void *) &psiIn;
    intinp.function = LALPsiOfT;
    intinp.type = ClosedInterval;
-   for (i=1; i<nby2; i++) 
+   for (i=1; i<nby2; i++)
    {
       f = i * df;
       if (f<f0 || f>fn)
       {
-/* 
-   All frequency components below f0 and above fn are set to zero  
+/*
+   All frequency components below f0 and above fn are set to zero
 */
-         signal->data[i] = 0.;
-         signal->data[n-i] = 0.;
+         signalvec->data[i] = 0.;
+         signalvec->data[n-i] = 0.;
       }
       else
       {
          ak.vf = v = pow(pimmc * f, oneby3);
-         if (v==ak.v0) 
+         if (v==ak.v0)
          {
             psif = 0.;
 
-         } 
-	 else 
+         }
+	 else
          {
-            if (ak.v0 > ak.vf) 
+            if (ak.v0 > ak.vf)
 	    {
                intinp.xmin = ak.vf;
                intinp.xmax = ak.v0;
 	       sign = -1.0;
-            } 
-	    else 
+            }
+	    else
 	    {
                intinp.xmin = ak.v0;
                intinp.xmax = ak.vf;
@@ -216,13 +216,13 @@ LALInspiralStationaryPhaseApprox1 (
 	    psif *= sign;
 	 }
 	 psi = shft * f + phi + psif;
-/* 
+/*
       dEnergybyFlux computes 1/(dv/dt) while what we need is 1/(dF/dt):
       dF/dt=(dF/dv)(dv/dt)=-dEnergybyFlux/(dF/dv)=-dEnergybyFlux 3v^2/(LAL_PI m^2)
 */
 	 amp = amp0 * pow(-func.dEnergy(v,&ak)/func.flux(v,&ak),0.5) * v;
-	 signal->data[i] = (REAL4) (amp * cos(psi));
-	 signal->data[n-i] = -(REAL4) (amp * sin(psi));
+	 signalvec->data[i] = (REAL4) (amp * cos(psi));
+	 signalvec->data[n-i] = -(REAL4) (amp * sin(psi));
       }
    }
    params->fFinal = fn;
@@ -230,13 +230,13 @@ LALInspiralStationaryPhaseApprox1 (
    RETURN(status);
 }
 
-void 
+void
 LALPsiOfT(
-   LALStatus *status, 
-   REAL8     *psioft, 
-   REAL8      v, 
+   LALStatus *status,
+   REAL8     *psioft,
+   REAL8      v,
    void      *param
-   ) 
+   )
 {
    REAL8 vf, dE, F;
    TofVIntegrandIn *par;

@@ -17,36 +17,36 @@
   *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
   *  MA  02111-1307  USA
   */
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: TfrRsp.c
- * 
+ *
  * Author: Chassande-Mottin, E.
  * Maintainer: Torres, C (Univ of TX at Brownsville)
- * 
- * Revision: $Id: 
- * 
- *----------------------------------------------------------------------- 
- * 
- * NAME 
+ *
+ * Revision: $Id:
+ *
+ *-----------------------------------------------------------------------
+ *
+ * NAME
  * TfrRsp
- * 
- * SYNOPSIS 
+ *
+ * SYNOPSIS
  *
  *
- * DESCRIPTION 
+ * DESCRIPTION
  * Compute the spectrogram of a given signal
- * 
- * DIAGNOSTICS 
+ *
+ * DIAGNOSTICS
  *
  * CALLS
- * 
+ *
  * NOTES
- * 
+ *
  * This code has been inspired from the Time-Frequency Toolbox (originally
  * developed by F. Auger, P. Flandrin, P. Goncalves and O. Lemoine. See
- * http://crttsn.univ-nantes.fr/~auger/tftb.html for details) and its translation 
- * in C (written by M. Davy and E. Leroy). 
+ * http://crttsn.univ-nantes.fr/~auger/tftb.html for details) and its translation
+ * in C (written by M. Davy and E. Leroy).
  *
  *-----------------------------------------------------------------------
  */
@@ -90,7 +90,7 @@ void LALTfrRsp (LALStatus *stat, REAL4Vector* sig, TimeFreqRep *tfr, TimeFreqPar
 
   INITSTATUS (stat, "LALTfrRsp", TFRRSPC);
   ATTATCHSTATUSPTR (stat);
-  
+
   /* Make sure the arguments are not NULL: */
   ASSERT (sig, stat, TFR_ENULL, TFR_MSGENULL);
   ASSERT (tfr, stat, TFR_ENULL, TFR_MSGENULL);
@@ -122,7 +122,7 @@ void LALTfrRsp (LALStatus *stat, REAL4Vector* sig, TimeFreqRep *tfr, TimeFreqPar
 
   /* Make sure the window length is smaller than the number of freq bins: */
   ASSERT ((INT4)param->windowT->length < tfr->fRow, stat, TFR_EWSIZ, TFR_MSGEWSIZ);
- 
+
   /* Make sure the timeInstant indicates existing time instants */
   for (column=0 ; column<tfr->tCol ; column++)
     {
@@ -144,9 +144,9 @@ void LALTfrRsp (LALStatus *stat, REAL4Vector* sig, TimeFreqRep *tfr, TimeFreqPar
   TRY(LALSCreateVector(stat->statusPtr, &windSigD, tfr->fRow), stat);
 
   stepTime = tfr->timeInstant[1] - tfr->timeInstant[0];
-  
+
   hwl = (param->windowT->length - 1) / 2.0;
-  
+
   for (column = 0; column < (INT4)param->windowT->length; column++)
     windowT->data[column] = param->windowT->data[column] * (column - hwl);
 
@@ -166,17 +166,17 @@ void LALTfrRsp (LALStatus *stat, REAL4Vector* sig, TimeFreqRep *tfr, TimeFreqPar
 	}
 
       time = tfr->timeInstant[column];
-      
+
       taumin = MIN (tfr->fRow / 2, hwl);
       taumin = MIN (taumin, time);
-      
+
       taumax = MIN ((tfr->fRow / 2 - 1), hwl);
       taumax = MIN (taumax, (sig->length - 1.0 - time));
-      
+
       normH = 0.0;
       for (row = -taumin; row <= taumax; row++)
 	{
-	  win = param->windowT->data[hwl + row];  
+	  win = param->windowT->data[hwl + row];
 	  normH = normH + win * win;
 	}
 
@@ -192,11 +192,11 @@ void LALTfrRsp (LALStatus *stat, REAL4Vector* sig, TimeFreqRep *tfr, TimeFreqPar
 	  windSigD->data[row] = sig->data[time + tau]
 	    * windowD->data[hwl + tau]/normH;
 	}
-      
-      LALForwardRealFFT(stat->statusPtr, vtmpH, windSigH, plan);   
-      LALForwardRealFFT(stat->statusPtr, vtmpT, windSigT, plan);   
-      LALForwardRealFFT(stat->statusPtr, vtmpD, windSigD, plan);   
-      
+
+      LALForwardRealFFT(stat->statusPtr, vtmpH, windSigH, plan);
+      LALForwardRealFFT(stat->statusPtr, vtmpT, windSigT, plan);
+      LALForwardRealFFT(stat->statusPtr, vtmpD, windSigD, plan);
+
       normhatf = tfr->fRow / (2.0 * LAL_PI);
 
       eps = 0.0;
@@ -205,19 +205,19 @@ void LALTfrRsp (LALStatus *stat, REAL4Vector* sig, TimeFreqRep *tfr, TimeFreqPar
       eps = 1.0E-6 * eps / sig->length;
 
       for (row = 0; row < (tfr->fRow/2+1); row++)
-	{ 	
-	  modulus = vtmpH->data[row].re * vtmpH->data[row].re + 
+	{
+	  modulus = vtmpH->data[row].re * vtmpH->data[row].re +
 	    vtmpH->data[row].im * vtmpH->data[row].im;
 	  if  (modulus > eps)
 	    {
-	      
+
 	      hatt =  vtmpT->data[row].re * vtmpH->data[row].re +
 		      vtmpT->data[row].im * vtmpH->data[row].im;
  	      hatt = hatt / modulus / stepTime;
               indext = time + ROUND(hatt);
 	      indext = MAX(indext,0);
 	      indext = MIN(indext,tfr->tCol - 1);
-	      hatf = vtmpD->data[row].re * vtmpH->data[row].im - 
+	      hatf = vtmpD->data[row].re * vtmpH->data[row].im -
 		vtmpD->data[row].im * vtmpH->data[row].re;
 	      hatf = hatf / modulus * normhatf;
 	      indexf = row - ROUND(hatf);
@@ -233,7 +233,7 @@ void LALTfrRsp (LALStatus *stat, REAL4Vector* sig, TimeFreqRep *tfr, TimeFreqPar
 	    }
 	}
     }
-  
+
   for (row = 0; row < tfr->fRow/2 + 1; row++)
     tfr->freqBin[row] = (REAL4) row / tfr->fRow;
 

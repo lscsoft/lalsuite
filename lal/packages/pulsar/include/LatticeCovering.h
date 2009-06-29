@@ -12,8 +12,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with with program; see the file COPYING. If not, write to the 
- *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, 
+ *  along with with program; see the file COPYING. If not, write to the
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
  */
 
@@ -21,16 +21,16 @@
  * \defgroup moduleLatticeCovering Lattice Covering
  * \ingroup coreDA
  *
- * \brief Module implementing a practical (approximate) solution to the "covering problem". 
- *  This is achieved by producing a lattice-covering with the \f$A_n^*\f$ lattice, 
- *  which is the best known covering up to dimension \f$n\le 23\f$ 
+ * \brief Module implementing a practical (approximate) solution to the "covering problem".
+ *  This is achieved by producing a lattice-covering with the \f$A_n^*\f$ lattice,
+ *  which is the best known covering up to dimension \f$n\le 23\f$
  *  (see \ref CS99 for details).
  */
 
 /**
  * \author Reinhard Prix
  * \date 2005
- * \file 
+ * \file
  * \ingroup moduleLatticeCovering
  * \brief Header-file defining the API for the lattice-covering functions.
  *
@@ -111,7 +111,7 @@ extern INT4VectorList empty_INT4VectorList;
 extern REAL8VectorList empty_REAL8VectorList;
 
 /*---------- exported prototypes [API] ----------*/
-void LALLatticeCovering (LALStatus *, REAL8VectorList **covering, REAL8 coveringRadius, 
+void LALLatticeCovering (LALStatus *, REAL8VectorList **covering, REAL8 coveringRadius,
 			 const gsl_matrix *metric, const REAL8Vector *startPoint,
 			 BOOLEAN (*isInside)(const REAL8Vector *point),
 			 LatticeType latticeType);
@@ -124,7 +124,7 @@ int XLALFindCoveringGenerator (gsl_matrix **outmatrix, LatticeType type, REAL8 c
 int XLALReduceGenerator2FullRank(gsl_matrix **outmatrix, const gsl_matrix *inmatrix);
 int XLALGetLatticeGenerator (gsl_matrix **outmatrix, UINT4 dimension, LatticeType type);
 
-REAL8 XLALMetricScalarProduct (const gsl_vector *vector1, const gsl_vector *vector2,	
+REAL8 XLALMetricScalarProduct (const gsl_vector *vector1, const gsl_vector *vector2,
 			       const gsl_matrix *metric);
 
 
@@ -132,7 +132,7 @@ REAL8 XLALMetricScalarProduct (const gsl_vector *vector1, const gsl_vector *vect
 REAL8VectorList* XLALREAL8VectorListAddEntry (REAL8VectorList *head, const REAL8Vector *entry);
 void XLALREAL8VectorListDestroy (REAL8VectorList *head);
 
-/* convert a symmetric gsl_matrix into a 'LAL-encoded' vector containing only 
+/* convert a symmetric gsl_matrix into a 'LAL-encoded' vector containing only
  * the independent symmetric-matrix elements (see PMETRIC_INDEX) */
 REAL8Vector *XLALgsl2LALmetric (const gsl_matrix *gmetric);
 
@@ -141,7 +141,7 @@ gsl_matrix *XLALmetric2gsl (const REAL8Vector *metric);
 
 #ifdef  __cplusplus
 }
-#endif  
+#endif
 /* C++ protection. */
 
 #endif  /* Double-include protection. */

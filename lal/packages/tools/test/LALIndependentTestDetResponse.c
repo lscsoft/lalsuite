@@ -33,7 +33,7 @@ the model given in Jaranowski, Krolak, and Schutz gr-qc/9804014.
 
 /* Changes:
 05/14/03 gam: Change vertexLongitudeDegrees and vertexLatitudeDegrees to vertexLongitudeRadians vertexLatitudeRadians when using FrDetector structure.
-05/15/03 gam: xArmAzimuthRadians and yArmAzimuthRadians are now measured clockwise from North; gamma is the angle to the bisector of the arms, measured
+05/15/03 gam: xArmAzimuthRadians and yArmAzimuthRadians are now measured clockwise from North; lal_gamma is the angle to the bisector of the arms, measured
               counterclockwise from East.
 05/20/03 gam: Make code compatible with LAL instead of LALapps.
 05/20/03 gam: Last argument in LALGPStoLMST1 changed to type LALMSTUnitsAndAcc.
@@ -49,11 +49,11 @@ the model given in Jaranowski, Krolak, and Schutz gr-qc/9804014.
 09/30/03 gam: Always call GenerateResponseFuncUsingLAL
 09/30/03 gam: Removed all other unnecessary code.
 09/30/03 gam: Add code to test difference between independent and LAL values for F_+ and F_x.
-10/13/03 gam: Fix bug - when some output files requested but not others, no output occurs. 
+10/13/03 gam: Fix bug - when some output files requested but not others, no output occurs.
 10/13/03 gam: Use independent code from Jolien Creighton to convert GPS to Sidereal time.
 10/13/03 gam: Include GEO detector as an option.
 10/13/03 gam: Use constants independent of LAL.
-10/14/04 gam: Update definition of gamma when angle between arms, zeta, != pi/2.
+10/14/04 gam: Update definition of lal_gamma when angle between arms, zeta, != pi/2.
 10/14/04 gam: Change input RA, DEC and orientation angle (polarization angle) in config file to be in radians.
 10/14/04 gam: Use independent detector geometry values when doing independent calculation.
 10/15/04 gam: Fix bug M_PI not defined when configuring lal with --with-gcc-flags.
@@ -84,7 +84,7 @@ the model given in Jaranowski, Krolak, and Schutz gr-qc/9804014.
      "      in length in the config file (this is the string length so includes\n" \
      "      the directories in the name as well), but the configFile entered at\n" \
      "      the command line can be as long as you like.\n"
-          
+
 #define usage( program ) fprintf( stdout, usgfmt, program )
 
 /* 10/13/04 gam; independent values for pi/2, pi, and 2pi */
@@ -167,7 +167,7 @@ int main( int argc, char *argv[] )
   REAL8 indXArmAzimuthRadians = 0.0;
   REAL8 indVertexLongitudeRadians = 0.0;
   REAL8 indVertexLatitudeRadians = 0.0;
-  
+
   /* Vectors For Results */
   REAL8Vector *fPlus=NULL, *fCross=NULL;
 
@@ -176,7 +176,7 @@ int main( int argc, char *argv[] )
   REAL8 sampleRate = 0, duration = 0;
   UINT4 lgthDataSet = 0;
   REAL8 phiStart = 0.0;
-  REAL8 phiStartLAL = 0.0;  /* 10/13/04 gam */  
+  REAL8 phiStartLAL = 0.0;  /* 10/13/04 gam */
 
   /* LALMSTUnitsAndAcc uandacc = { MST_RAD, LALLEAPSEC_STRICT}; */ /* 05/20/03 gam */
   LALMSTUnitsAndAcc uandacc; /* 05/20/03 gam */
@@ -315,7 +315,7 @@ int main( int argc, char *argv[] )
       scanf( "%f", &testFrDetector.xArmAzimuthRadians );
 
       /* testFrDetector.xArmAzimuthRadians *= LAL_PI_180; */ /* 05/14/03 gam */
-      /* testFrDetector.yArmAzimuthRadians = testFrDetector.xArmAzimuthRadians + LAL_PI_2; */ /* 05/15/03 gam */      
+      /* testFrDetector.yArmAzimuthRadians = testFrDetector.xArmAzimuthRadians + LAL_PI_2; */ /* 05/15/03 gam */
       /* testFrDetector.yArmAzimuthRadians = testFrDetector.xArmAzimuthRadians - LAL_PI_2; */ /* 10/13/04 gam */
       testFrDetector.yArmAzimuthRadians = testFrDetector.xArmAzimuthRadians - zeta;
       testFrDetector.vertexElevation = 0.0;
@@ -368,7 +368,7 @@ int main( int argc, char *argv[] )
  } else {
     /* 10/13/03 gam; still need to get filenames */
     fgets(lineString->data, lineSize, configFile);
-    fgets(lineString->data, lineSize, configFile);     
+    fgets(lineString->data, lineSize, configFile);
  }
 
   fgets(lineString->data, lineSize, configFile);
@@ -404,9 +404,9 @@ int main( int argc, char *argv[] )
  } else {
     /* 10/13/03 gam; still need to get filenames */
     fgets(lineString->data, lineSize, configFile);
-    fgets(lineString->data, lineSize, configFile);     
+    fgets(lineString->data, lineSize, configFile);
  }
- 
+
 
   fgets(lineString->data, lineSize, configFile);
   strncpy(valueString->data, lineString->data, valueSize);
@@ -442,9 +442,9 @@ int main( int argc, char *argv[] )
  } else {
     /* 10/13/03 gam; still need to get filenames */
     fgets(lineString->data, lineSize, configFile);
-    fgets(lineString->data, lineSize, configFile);     
+    fgets(lineString->data, lineSize, configFile);
  }
- 
+
  fclose(configFile);
 
   /* Echo Parameters */
@@ -463,7 +463,7 @@ int main( int argc, char *argv[] )
       fprintf( stdout, "Ang. Vel. of Earth about the Sun (radians/s) = %e\n", omegaEarthSun );
       fprintf( stdout, "Independent detector vertex longitude: %.11g\n", indVertexLongitudeRadians ); /* 10/14/04 gam */
       fprintf( stdout, "Independent detector vertex latitude: %.11g\n", indVertexLatitudeRadians  );  /* 10/14/04 gam */
-      fprintf( stdout, "Independent detector xArm Azimuth: %.11g\n", indXArmAzimuthRadians );         /* 10/14/04 gam */       
+      fprintf( stdout, "Independent detector xArm Azimuth: %.11g\n", indXArmAzimuthRadians );         /* 10/14/04 gam */
       PrintLALDetector( &detector );
     }
 
@@ -484,15 +484,15 @@ int main( int argc, char *argv[] )
      fprintf(stdout, "Local Mean Sidereal Time from LAL (radians) = %f\n", phiStartLAL);
      fflush(stdout);
   }
-  
-  /****************************************************************************/ 
+
+  /****************************************************************************/
   /* !!! 10/13/03 gam; get Local Mean Sidereal Time from independent code !!! */
   /* Use routine from Jolien Creighton. the last argument is integer TAI - UTC which is the number
      of leap seconds (the difference between atomic time and UTC); assume 32 is accurate enough. */
   /* Also note sidereal time is alway the angle the vernal equinoix is west of the local
      meridian; i.e., between 0 and 2pi in radians. However, the detector longitude is measured
-     + when east of Greenwich and - when west of Greenwich. */ /* 10/14/04 gam; update with ind detector geometry. */    
-  phiStart = greenwich_mean_sidereal_time( (INT4)gpsTime.gpsSeconds, (INT4)gpsTime.gpsNanoSeconds, 32 ); 
+     + when east of Greenwich and - when west of Greenwich. */ /* 10/14/04 gam; update with ind detector geometry. */
+  phiStart = greenwich_mean_sidereal_time( (INT4)gpsTime.gpsSeconds, (INT4)gpsTime.gpsNanoSeconds, 32 );
   if (indVertexLongitudeRadians > 0.0) {
      phiStart = phiStart + indVertexLongitudeRadians; /* convert GMST to LMST for eastern longitude */
   } else {
@@ -503,11 +503,11 @@ int main( int argc, char *argv[] )
     fprintf( stdout, "Local Mean Sidereal Time from independent code (radians) = %f\n", phiStart );
     fflush(stdout);
   }
-  
+
   if ( fabs(phiStart - phiStartLAL)*3600.0*24.0/((REAL8)LALIND_TWOPI) > ((REAL8)LALIND_TIMETOLERANCE)) {
       fprintf(stderr, "\nERROR: Local Mean Sidereal Time from LAL and independent code differ by more than %.6g seconds!\n\n",((REAL8)LALIND_TIMETOLERANCE));
       fflush(stderr);
-      exit(1);      
+      exit(1);
   }
 
   /* Intialize Arrays */
@@ -653,7 +653,7 @@ void GenerateResponseFuncNotUsingLAL(LALSource *pulsar, REAL8 inputXArmAzimuthRa
   /* REAL8 gammaAngle = LAL_PI_2 + LAL_PI_4 - detector->frDetector.xArmAzimuthRadians; */ /* 10/14/04 gam */
   /* REAL8 gammaAngle = ((REAL8)LALIND_PI_2) + zeta/2.0 - detector->frDetector.xArmAzimuthRadians; */ /* 10/14/04 gam */
   REAL8 gammaAngle = ((REAL8)LALIND_PI_2) + zeta/2.0 - inputXArmAzimuthRadians;
-  
+
   /* REAL8 detLatitude = LAL_PI_180*detector->frDetector.vertexLatitudeDegrees; */ /* 05/14/03 gam */
   /* REAL8 detLatitude = detector->frDetector.vertexLatitudeRadians; */ /* 10/14/04 gam */
   REAL8 detLatitude = inputVertexLatitudeRadians;
@@ -689,21 +689,21 @@ void GenerateResponseFuncNotUsingLAL(LALSource *pulsar, REAL8 inputXArmAzimuthRa
 
 void PrintLALDetector(LALDetector *detector)
 {
-  /* REAL8 gamma = detector->frDetector.xArmAzimuthRadians + LAL_PI_4; */ /* 05/15/03 gam */
-  /* REAL8 gamma = LAL_PI_2 + LAL_PI_4 - detector->frDetector.xArmAzimuthRadians; */ /* 10/14/04 gam */
-  REAL8 gamma = ((REAL8)LAL_PI_2) + zeta/2.0 - detector->frDetector.xArmAzimuthRadians;
+  /* REAL8 lal_gamma = detector->frDetector.xArmAzimuthRadians + LAL_PI_4; */ /* 05/15/03 gam */
+  /* REAL8 lal_gamma = LAL_PI_2 + LAL_PI_4 - detector->frDetector.xArmAzimuthRadians; */ /* 10/14/04 gam */
+  REAL8 lal_gamma = ((REAL8)LAL_PI_2) + zeta/2.0 - detector->frDetector.xArmAzimuthRadians;
   REAL8 computedZeta = fabs(detector->frDetector.xArmAzimuthRadians - detector->frDetector.yArmAzimuthRadians); /* 10/14/04 gam */
-  
+
   /* 10/14/04 gam; add in rest of structure and reformat: */
-  
+
   if ( computedZeta > ((REAL8)LAL_PI) ) {
        computedZeta = ((REAL8)LAL_TWOPI) - computedZeta;
   }
-    
+
   fprintf( stdout,"Detector name: %s,\n", detector->frDetector.name);
-  fprintf( stdout,"Detector struct location array  = { %.6e, %.6e, %.6e },\n", detector->location[0], 
+  fprintf( stdout,"Detector struct location array  = { %.6e, %.6e, %.6e },\n", detector->location[0],
            detector->location[1], detector->location[2] );
-  
+
   /* fprintf( stdout, "Location =   %.6g, %.6g, %.6g,\n",
 	   detector->frDetector.vertexLongitudeDegrees,
 	   detector->frDetector.vertexLatitudeDegrees,
@@ -712,14 +712,14 @@ void PrintLALDetector(LALDetector *detector)
 	   detector->frDetector.vertexLongitudeRadians,
 	   detector->frDetector.vertexLatitudeRadians,
 	   detector->frDetector.vertexElevation);
-    
+
   fprintf( stdout, "frDetector struct xarm azimuth, yarm azimuth, xarm altitude (clockwise from north), yarm altitude (all in radians) =  %.11g, %.11g, %.11g, %.11g\n",
            detector->frDetector.xArmAzimuthRadians,
            detector->frDetector.yArmAzimuthRadians,
            detector->frDetector.xArmAltitudeRadians,
            detector->frDetector.yArmAltitudeRadians);
-  
-  fprintf( stdout, "Detector angle between arms and angle to arm bisector counter-clockwise from east = %.11g, %.11g\n", computedZeta, gamma);
+
+  fprintf( stdout, "Detector angle between arms and angle to arm bisector counter-clockwise from east = %.11g, %.11g\n", computedZeta, lal_gamma);
   fprintf( stdout, "\n" );
   return;
 }
@@ -866,7 +866,7 @@ REAL8 greenwich_mean_sidereal_time( INT4 gpssec, INT4 gpsnan, INT4 taiutc )
    t += taiutc - TAIUTC_00h_01_Jan_2000;
 
    /* compute number of days since 12h UT 01 Jan 2000 */
-   dpU  = floor( t / ( 24.0 * 3600.0 ) ); /* full days since 0h UT 01 
+   dpU  = floor( t / ( 24.0 * 3600.0 ) ); /* full days since 0h UT 01
 Jan 2000 */
    dpU += JD_00h_01_Jan_2000 - JD_12h_01_Jan_2000; /* i.e., -0.5 */
 
@@ -887,6 +887,6 @@ Jan 2000 */
    gmst = fmod( gmst / ( 24.0 * 3600.0 ), 1.0 ); /* fraction of day */
    /* gmst *= 2.0 * M_PI; */ /* radians */ /* 10/15/04 gam */
    gmst *= ((REAL8)LALIND_TWOPI); /* radians */
-   
+
    return gmst;
 }

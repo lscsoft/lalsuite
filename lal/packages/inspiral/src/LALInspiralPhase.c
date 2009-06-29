@@ -67,10 +67,10 @@ $\mathcal{F}(v)$.
 #include <lal/LALInspiral.h>
 #include <lal/Integrate.h>
 
-NRCSID (LALINSPIRALPHASEC, "$Id$"); 
+NRCSID (LALINSPIRALPHASEC, "$Id$");
 
 /*  <lalVerbatim file="LALInspiralPhaseCP"> */
-void 
+void
 LALInspiralPhase (
    LALStatus *status,
    REAL8     *phiofv,

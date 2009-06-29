@@ -24,7 +24,7 @@
 
 /**** <lalLaTeX>
  * \subsection{Program \texttt{ReadGEOData.c}}
- * 
+ *
  * Tests the low-level frame stream routines by reading GEO frame data.
  *
  * \subsubsection*{Usage}

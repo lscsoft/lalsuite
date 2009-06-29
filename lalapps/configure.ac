@@ -1,31 +1,57 @@
 dnl Process this file with autoconf to produce a configure script.
-dnl $Id$
-AC_INIT(src/config.h.in)
+AC_INIT([lalapps],[6.1],[lal-discuss@gravity.phys.uwm.edu])
+AC_CONFIG_HEADERS([src/config.h])
+AC_CONFIG_SRCDIR([src/config.h.in])
 AC_CONFIG_AUX_DIR([misc])
-AM_INIT_AUTOMAKE(lalapps, 5.3)
-AM_CONFIG_HEADER(src/config.h)
-AH_TOP([/*
-*  Copyright (C) 2007 Jolien Creighton
-*
-*  This program is free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
-*
-*  This program is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
-*  along with with program; see the file COPYING. If not, write to the
-*  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-*  MA  02111-1307  USA
-*/
-
+AC_CONFIG_FILES([\
+  Makefile \
+  lalapps.spec \
+  debian/Makefile \
+  doc/Makefile \
+  man/Makefile \
+  misc/Makefile \
+  src/Makefile \
+  src/lalapps/Makefile \
+  src/calibration/Makefile \
+  src/frametools/Makefile \
+  src/findchirp/Makefile \
+  src/stochastic/Makefile \
+  src/power/Makefile \
+  src/ring/Makefile \
+  src/string/Makefile \
+  src/pulsar/Makefile \
+  src/pulsar/FDS_isolated/Makefile \
+  src/pulsar/FDS_isolated/ResamplingFstat/Makefile \
+  src/pulsar/Injections/Makefile \
+  src/pulsar/FDS_griphyn/Makefile \
+  src/pulsar/hough/Makefile \
+  src/pulsar/hough/src/Makefile \
+  src/pulsar/FDS_binary/Makefile \
+  src/pulsar/SideBand/Makefile \
+  src/pulsar/templateBanks/Makefile \
+  src/pulsar/TimingTests/Makefile \
+  src/pulsar/TDS_isolated/Makefile \
+  src/inspiral/Makefile \
+  src/inspiral/posterior/Makefile \
+  src/zmsearch/Makefile \
+  src/detresponse/Makefile \
+  src/pulsar/hough/src2/Makefile \
+  src/pulsar/MakeSFTs/Makefile \
+  src/pulsar/crosscorr/Makefile \
+  src/pulsar/fscan/Makefile \
+  src/tracksearch/Makefile \
+  src/online/Makefile \
+])
+AM_INIT_AUTOMAKE([])
+AC_ARG_VAR(LALSUITE_BUILD,[Set if part of lalsuite build])
+AH_TOP([
 #ifndef CONFIG_H
 #define CONFIG_H])
-AH_BOTTOM([#endif /* CONFIG_H */])
+AH_BOTTOM([
+#endif /* CONFIG_H */
+])
+
+AC_CANONICAL_HOST
 
 LALAPPS_WITH_CC
 LALAPPS_WITH_LAL_PREFIX
@@ -69,12 +95,18 @@ else
   allstatic="true"
 fi
 
+# check for c compiler
+m4_pattern_allow([AC_PROG_CC_C99])
+m4_ifdef([AC_PROG_CC_C99], [AC_PROG_CC_C99], [LAL_AC_PROG_CC_C99])
+
+# use silent build rules if appropriate
+m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])],)
+
 dnl Checks for programs.
 AC_PROG_AWK
-AC_PROG_CC
 AC_PROG_CPP
 
-AC_CANONICAL_HOST
+AC_ENABLE_SHARED
 if test "x$condor" = "xtrue"; then
   AC_CHECK_PROGS(CONDOR_COMPILE, condor_compile)
   CC="$CONDOR_COMPILE $CC"
@@ -84,7 +116,6 @@ if test "x$condor" = "xtrue"; then
   AC_DEFINE(LALAPPS_CONDOR, 1, [LALApps is condor compiled])
 fi
 if test "$GCC" = yes; then
-  CPPFLAGS="$CPPFLAGS -ansi"
   CFLAGS="$CFLAGS -W -Wall $lalapps_gcc_flags"
 fi
 AC_PROG_INSTALL
@@ -101,44 +132,38 @@ dnl Checks for libraries.
 AC_CHECK_LIB(m, sin)
 AC_CHECK_LIB(z, compress)
 
-dnl LAL and LALSupport (required unless part of a lal build).
-if test "${LAL_BUILD:="false"}" = "true" ; then
-  AC_MSG_NOTICE([building lalapps as part of lal])
-else
-  if test -n "$LAL_PREFIX" ; then
-    PKG_CONFIG_PATH="$LAL_PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH"
-    LAL_CFLAGS="-I$LAL_PREFIX/include"
-    LAL_LIBS="-L$LAL_PREFIX/lib -llal"
-    LALSUPPORT_CFLAGS="-I$LAL_PREFIX/include"
-    LALSUPPORT_LIBS="-L$LAL_PREFIX/lib -llalsupport"
-  fi
-  PKG_CHECK_MODULES(LAL, lal, [ true ], [ false ])
-  PKG_CHECK_MODULES(LALSUPPORT, lalsupport , [ true ], [ false ])
-  CPPFLAGS="$CPPFLAGS $LAL_CFLAGS $LALSUPPORT_CFLAGS"
-  LIBS="$LALSUPPORT_LIBS $LAL_LIBS $LIBS"
-  AC_CHECK_LIB(lal, LALVersion, , AC_MSG_ERROR(could not find the LAL library))
-  AC_CHECK_LIB(lalsupport, LALOpenDataFile, , AC_MSG_ERROR(could not find the LAL support library))
-  dnl LALFrame, LALMetaIo, and LALXML (optional).
-  lalframe="true"
-  lalmetaio="true"
-  lalxml="true"
-  PKG_CHECK_MODULES(LALFRAME, lalframe, [ true ], [ false ])
-  PKG_CHECK_MODULES(LALMETAIO, lalmetaio, [ true ], [ false ])
-  PKG_CHECK_MODULES(LALXML, lalxml, [ true ], [ false ])
-  CPPFLAGS="$CPPFLAGS $LALFRAME_CFLAGS $LALMETAIO_CFLAGS $LALXML_CFLAGS"
-  LIBS="$LIBS $LALFRAME_LIBS $LALMETAIO_LIBS $LALXML_LIBS"
-  dnl do actual checks for libraries after checking for gsl and FrameL
+PKG_CHECK_MODULES(LAL, lal, [ true ], [ false ])
+PKG_CHECK_MODULES(LALSUPPORT, lalsupport , [ true ], [ false ])
+if test "$LALSUITE_BUILD" != "true" ; then
+	CPPFLAGS="$CPPFLAGS $LAL_CFLAGS $LALSUPPORT_CFLAGS"
+	LIBS="$LALSUPPORT_LIBS $LAL_LIBS $LIBS"
+	AC_CHECK_LIB(lal, LALVersion, , AC_MSG_ERROR(could not find the LAL library))
+	AC_CHECK_LIB(lalsupport, LALOpenDataFile, , AC_MSG_ERROR(could not find the LAL support library))
+fi
+
+dnl LALFrame, LALMetaIo, and LALXML (optional).
+lalframe="true"
+lalmetaio="true"
+lalxml="true"
+PKG_CHECK_MODULES(LALFRAME, lalframe, [ true ], [ false ])
+PKG_CHECK_MODULES(LALMETAIO, lalmetaio, [ true ], [ false ])
+PKG_CHECK_MODULES(LALXML, lalxml, [ true ], [ false ])
+if test "$LALSUITE_BUILD" != "true" ; then
+	CPPFLAGS="$CPPFLAGS $LALFRAME_CFLAGS $LALMETAIO_CFLAGS $LALXML_CFLAGS"
+	LIBS="$LALFRAME_LIBS $LALMETAIO_LIBS $LALXML_LIBS $LIBS"
 fi
 
 dnl cfitsio
 PKG_CHECK_MODULES(CFITSIO, cfitsio, [ true ], [ false ])
 CPPFLAGS="$CPPFLAGS $CFITSIO_CFLAGS"
-LIBS="$LIBS $CFITSIO_LIBS"
+LIBS="$CFITSIO_LIBS $LIBS"
 
 dnl GSL
 PKG_CHECK_MODULES(GSL, gsl, [ true ], [ false ])
 CPPFLAGS="$CPPFLAGS $GSL_CFLAGS"
-LIBS="$LIBS $GSL_LIBS"
+LIBS="$GSL_LIBS $LIBS"
+extra_CPPFLAGS="$extra_CPPFLAGS $GSL_CFLAGS"
+extra_LIBS="$GSL_LIBS $extra_LIBS"
 AC_CHECK_LIB(gslcblas, main)
 AC_CHECK_LIB(gsl, gsl_version)
 
@@ -181,7 +206,7 @@ if test "${cfitsio}" = "true"; then
 fi
 
 dnl Now check for LALFrame and LALMetaIo
-if test "$LAL_BUILD" != "true" ; then
+if test "$LALSUITE_BUILD" != "true" ; then
   AC_CHECK_LIB(lalframe, LALFrOpen, , lalframe="false")
   AC_CHECK_LIB(lalmetaio, LALSnglInspiralTableFromLIGOLw, , lalmetaio="false")
   AC_CHECK_LIB(lalxml, XLALXMLFilePrintElements, , lalxml="false")
@@ -191,8 +216,7 @@ dnl Checks for header files.
 AC_HEADER_STDC
 AC_CHECK_HEADERS(getopt.h)
 AC_CHECK_HEADERS([gsl/gsl_fft_real.h])
-AC_CHECK_HEADERS(mpi.h)
-if test "$LAL_BUILD" != "true" ; then
+if test "$LALSUITE_BUILD" != "true" ; then
   AC_CHECK_HEADERS([lal/LALStdlib.h])
 fi
 AC_CHECK_HEADERS(glob.h)
@@ -243,19 +267,16 @@ AC_MSG_RESULT(no))
 
 AC_CHECK_FUNCS(setenv)
 
-if test "$LAL_BUILD" = "true"; then
-  LIBS="$LALXML_LIBS $LALFRAME_LIBS $LALMETAIO_LIBS $LALSUPPORT_LIBS $LAL_LIBS $CFITSIO_LIBS $LIBS"
-  CPPFLAGS="$CPPFLAGS $CFITSIO_CFLAGS $LAL_CFLAGS $LALSUPPORT_CFLAGS $LALFRAME_CFLAGS $LALMETAIO_CFLAGS $LALXML_LIBS"
+if test "$LALSUITE_BUILD" = "true"; then
+  LIBS="$LALXML_LIBS $LALFRAME_LIBS $LALMETAIO_LIBS $LALSUPPORT_LIBS $LAL_LIBS $LIBS"
+  CPPFLAGS="$CPPFLAGS $LAL_CFLAGS $LALSUPPORT_CFLAGS $LALFRAME_CFLAGS $LALMETAIO_CFLAGS $LALXML_LIBS"
   lalframe="false"
   lalmetaio="false"
   lalxml="false"
-  cfitsio="false"
-  test -z "$LALFRAME_LIBS" && test -z "$LALFRAME_CFLAGS" && lalframe="true"
-  test -z "$LALMETAIO_LIBS" && test -z "$LALMETAIO_CFLAGS" && lalmetaio="true"
-  test -z "$LALXML_LIBS" && test -z "$LALXML_CFLAGS" && lalxml="true"
-  test -z "$CFITSIO_LIBS" && test -z "$CFITSIO_CFLAGS" && cfitsio="true"
+  test -n "$LALFRAME_LIBS" && lalframe="true"
+  test -n "$LALMETAIO_LIBS" && lalmetaio="true"
+  test -n "$LALXML_LIBS" && lalxml="true"
 fi
-AC_ARG_VAR(LAL_BUILD,[set to "true" if lalapps is built as part of a lal build])
 
 AM_CONDITIONAL(FRAME, test x$frame = xtrue)
 AM_CONDITIONAL(LALFRAME, test x$lalframe = xtrue)
@@ -270,45 +291,7 @@ if test "${allstatic}" = "true" ; then
   LDFLAGS="-all-static $LDFLAGS"
 fi
 
-AC_OUTPUT( \
-  Makefile \
-  lalapps.spec \
-  debian/Makefile \
-  doc/Makefile \
-  man/Makefile \
-  misc/Makefile \
-  src/Makefile \
-  src/lalapps/Makefile \
-  src/example/Makefile \
-  src/calibration/Makefile \
-  src/frametools/Makefile \
-  src/findchirp/Makefile \
-  src/stochastic/Makefile \
-  src/power/Makefile \
-  src/ring/Makefile \
-  src/string/Makefile \
-  src/pulsar/Makefile \
-  src/pulsar/FDS_isolated/Makefile \
-  src/pulsar/FDS_isolated/ResamplingFstat/Makefile \
-  src/pulsar/Injections/Makefile \
-  src/pulsar/FDS_griphyn/Makefile \
-  src/pulsar/hough/Makefile \
-  src/pulsar/hough/src/Makefile \
-  src/pulsar/FDS_binary/Makefile \
-  src/pulsar/SideBand/Makefile \
-  src/pulsar/templateBanks/Makefile \
-  src/pulsar/TimingTests/Makefile \
-  src/pulsar/TDS_isolated/Makefile \
-  src/inspiral/Makefile \
-  src/inspiral/posterior/Makefile \
-  src/zmsearch/Makefile \
-  src/detresponse/Makefile \
-  src/pulsar/hough/src2/Makefile \
-  src/pulsar/MakeSFTs/Makefile \
-  src/pulsar/crosscorr/Makefile \
-  src/pulsar/fscan/Makefile \
-  src/tracksearch/Makefile \
-)
+AC_OUTPUT
 
 lalframeenabled="`test x${lalframe} = xtrue && echo "ENABLED" || echo "DISABLED"`"
 lalmetaioenabled="`test x${lalmetaio} = xtrue && echo "ENABLED" || echo "DISABLED"`"

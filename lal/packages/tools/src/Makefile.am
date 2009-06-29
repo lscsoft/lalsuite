@@ -9,7 +9,7 @@ libtools_la_SOURCES = \
   ComputeCalibrationFactors.c LIGOMetadataUtils.c \
   NDTemplateBank.c ComputeStrain.c ComputeStrainDMT.c \
   Sequence.c TimeSeries.c FrequencySeries.c \
-  Segments.c LALTrigScanCluster.c LALTrigScanClusterDriver.c \
+  Segments.c LALTrigScanCluster.c TrigScanEThincaCommon.c \
   EllipsoidOverlapTools.c GetErrorMatrixFromSnglInspiral.c \
   CoincInspiralEllipsoid.c SimRingdownUtils.c \
   FlatLatticeTiling.c ComputeDataQualityVector.c

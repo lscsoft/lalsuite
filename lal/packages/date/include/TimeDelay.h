@@ -22,10 +22,10 @@
 
 Author: David Chin <dwchin@umich.edu> 1-734-709-9119
 $Id$
-   
+
 </lalVerbatim> */
 
-/* 
+/*
 <lalLaTeX>
 
 \section{Header \texttt{TimeDelay.h}}
@@ -101,7 +101,7 @@ tagTwoDetsTimeAndASource
   LALPlaceAndGPS *p_det_and_time2; /* the second detector and detection time */
   SkyPosition    *p_source;        /* source Equatorial location
                                     * (lon=RA, lat=dec) in decimal
-                                    * radians */ 
+                                    * radians */
 }
 TwoDetsTimeAndASource;
 
@@ -124,17 +124,17 @@ fields are:
 \end{description}
 
 </lalLaTeX> */
-  
+
 typedef struct
 tagDetTimeAndASource
 {
   LALPlaceAndGPS *p_det_and_time; /* detector and detection time */
   SkyPosition    *p_source;       /* source Equatorial location
                                    * (lon=RA, lat=dec) in decimal
-                                   * radians */ 
+                                   * radians */
 }
 DetTimeAndASource;
-    
+
 
 /* <lalLaTeX>
 \vfill{\footnotesize\input{TimeDelayHV}}
@@ -164,7 +164,7 @@ LALTimeDelay( LALStatus                   *status,
 
 INT8
 XLALLightTravelTime ( const LALDetector *aDet,
-                      const LALDetector *bDet 
+                      const LALDetector *bDet
                      );
 
 

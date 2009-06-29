@@ -25,7 +25,7 @@ $Id$
 /*  <lalLaTeX>
 
 \subsection{Test program \texttt{LALGenerateInspiralWaveform.c}}
-Test routine for wave generation codes. 
+Test routine for wave generation codes.
 
 To get some help just type the name of the executable and the option --h
 
@@ -111,7 +111,7 @@ typedef struct{
 
 char *program;
 
-void printf_timeseries (FILE *f1, UINT4 n, REAL4 *signal, REAL8 delta) ;
+void printf_timeseries (FILE *f1, UINT4 n, REAL4 *signal1, REAL8 delta) ;
 void printf_timeseries2 (UINT4 n, REAL4 *signal1, REAL4 *signal2, REAL8 delta) ;
 void ParseParameters(UINT4 argc, CHAR **argv, OtherParamIn *otherIn);
 void LALGenerateInspiralWaveformHelp(void);
@@ -136,7 +136,7 @@ int main (int argc , char **argv) {
   char name1[256];
 
   static OtherParamIn otherIn; /* some extra parameters to parse*/
-  FILE *f1, *f2, *f3, *f4;
+  FILE *f1=NULL, *f2=NULL, *f3=NULL, *f4=NULL;
 
   program = *argv;
 
@@ -145,24 +145,24 @@ int main (int argc , char **argv) {
   otherIn.output = 0; /* by default we don't print the parameters */
   ParseParameters(argc, argv, &otherIn);/*let's parse user parameters     */
   SUB( LALInspiralITStructureSetDefault(&status, &params),
-       &status); /*  */ 
-  
-  SUB( LALInspiralITStructureParseParameters(&status, argc, argv, &params), 
+       &status); /*  */
+
+  SUB( LALInspiralITStructureParseParameters(&status, argc, argv, &params),
        &status);/*parse user inspiral template parameters */
 
- 
+
   SUB(  LALInspiralInit(&status, &params, &paramsInit), &status);
   /*  params.signalAmplitude =1;*/
 
   /**************************************************************
-   * The following are used only when the psd is read from a 
+   * The following are used only when the psd is read from a
    * file as, for example, the s5 psd
    *************************************************************/
 
   if (otherIn.psd_data_file)
   {
     n = params.tSampling * 8;
-    if (paramsInit.nbins < n) 
+    if (paramsInit.nbins < n)
     {
       paramsInit.nbins = n;
     }
@@ -172,8 +172,8 @@ int main (int argc , char **argv) {
       exit(0);
     }
   }
-  
-  
+
+
   if(otherIn.output)
   {
     sprintf(name1, "wave-TD-%d.dat", params.approximant); f1 = fopen(name1, "w");
@@ -183,31 +183,31 @@ int main (int argc , char **argv) {
   }
 
 
- 
+
   if (otherIn.PrintParameters){
     fprintf(stderr, "the inspiral structure (your parameters) before the call to the waveform generation:\n");
-      SUB( LALInspiralITStructurePrint(&status, params),  &status); 
+      SUB( LALInspiralITStructurePrint(&status, params),  &status);
   }
-     
+
   /* force those parameters */
 
   dt 	= 1./params.tSampling;
-  n 	= paramsInit.nbins;   
-  nby2 = n/2; 
+  n 	= paramsInit.nbins;
+  nby2 = n/2;
 
   if( params.approximant  == AmpCorPPN )
   {
     n *= pow(1./(1.+params.ampOrder/2.), -8./3.);
   }
-  
+
   if (otherIn.PrintParameters)
   {
     fprintf(stderr, "#Testing Inspiral Signal Generation Codes:\n");
-    fprintf(stderr, "#Signal n=%d, t0=%e, t2=%e, t3=%e\n", n, params.t0, params.t2, params.t3);  
+    fprintf(stderr, "#Signal n=%d, t0=%e, t2=%e, t3=%e\n", n, params.t0, params.t2, params.t3);
     fprintf(stderr,"#size in bins %d\n",n);
     fprintf(stderr,"#size in seconds %f\n",params.tC);
   }
-  
+
   /*
   params.ampOrder = 0;
    */
@@ -216,9 +216,9 @@ int main (int argc , char **argv) {
   SUB( LALCreateForwardRealFFTPlan(&status, &frwd, n, 0), &status);
   SUB( LALCreateReverseRealFFTPlan(&status, &revp, n, 0), &status);
   LALDCreateVector(&status, &psd, (nby2+1));
-     
-  params.ieta = 1;  
-   
+
+  params.ieta = 1;
+
   LALInspiralSetup (&status, &ak, &params);
 
   /*
@@ -226,27 +226,27 @@ int main (int argc , char **argv) {
   {
 	  double lum = paramsInit.func.flux(v, &paramsInit.ak)/(pow(v,10.)*paramsInit.ak.FTaN);
 	  fprintf(stdout, "%e %e\n", v, lum);
-  } 
+  }
   exit(0);
   */
-  
+
   switch (params.approximant)
   {
     case TaylorF1:
     case TaylorF2:
-    case BCV: 
+    case BCV:
     case BCVSpin:
       SUB( LALInspiralWave(&status, signal2, &params), &status);
       SUB( LALREAL4VectorFFT(&status, signal1, signal2, revp), &status);
       break;
     case SpinTaylorT3:
-    case TaylorT1: 
-    case TaylorT2: 
+    case TaylorT1:
+    case TaylorT2:
     case TaylorT3:
     case TaylorT4:
     case TaylorEt:
     case TaylorN:
-    case EOB: 
+    case EOB:
     case EOBNR:
     case PadeT1:
     case AmpCorPPN:
@@ -276,7 +276,7 @@ int main (int argc , char **argv) {
   if(otherIn.output) printf_timeseries (f1, n, signal1->data, dt);
   {
     REAL8 df, f, sSq, sRe, sIm, rho, rhosq=0, rhoDet=8.;
-         
+
     SUB( LALREAL4VectorFFT(&status, signal2, signal1, frwd), &status);
     df = 1./(n * dt);
     if (otherIn.psd_data_file)
@@ -285,7 +285,7 @@ int main (int argc , char **argv) {
     }
     else
     {
-      LALNoiseSpectralDensity(&status, psd, &LALLIGOIPsd, df); 
+      LALNoiseSpectralDensity(&status, psd, &LALLIGOIPsd, df);
     }
     for (i=1; i<nby2; i++)
     {
@@ -294,11 +294,11 @@ int main (int argc , char **argv) {
       if (psd->data[i])
       {
         double hSq;
-	sRe = signal2->data[i]; 
-	sIm = signal2->data[j]; 
-	hSq = (sRe*sRe + sIm*sIm); 
+	sRe = signal2->data[i];
+	sIm = signal2->data[j];
+	hSq = (sRe*sRe + sIm*sIm);
 	sSq = hSq / (psd->data[i]) ;
-	if (f>params.fLower) 
+	if (f>params.fLower)
 	{
           if (params.approximant != EOBNR && params.fFinal > f)
             rhosq += sSq;
@@ -317,14 +317,14 @@ int main (int argc , char **argv) {
 	sSq = 0.;
       }
     }
-    /* The normalization for rho^2 is dt^2 df. dt^2 is for two factors 
-     * of H(f), and df for the SNR integral.  A factor of 4 comes from 
+    /* The normalization for rho^2 is dt^2 df. dt^2 is for two factors
+     * of H(f), and df for the SNR integral.  A factor of 4 comes from
      * the definition of the scalar product.
      */
     rho = sqrt(4. * rhosq *dt*dt*df);
     /* Distance in Mpc at which the SNR is 10 */
     dist = (params.distance/(LAL_PC_SI*1e6))*(rho/rhoDet);
-    fprintf(stdout, "%e %e %e %e %e %d\n", params.mass1, params.mass2, 
+    fprintf(stdout, "%e %e %e %e %e %d\n", params.mass1, params.mass2,
       params.totalMass, rho, dist, signal2->length);
     signal2->data[0] = 0.;
     signal2->data[nby2] = 0.;
@@ -342,7 +342,7 @@ int main (int argc , char **argv) {
   if (otherIn.PrintParameters)
   {
     fprintf(stderr, "the inspiral structure after the call to the waveform generation:\n");
-    SUB( LALInspiralITStructurePrint(&status, params),  &status); 
+    SUB( LALInspiralITStructurePrint(&status, params),  &status);
   }
   /*
   LALCheckMemoryLeaks();
@@ -354,67 +354,67 @@ int main (int argc , char **argv) {
     fclose(f3);
     fclose(f4);
   }
-  if(otherIn.output) 
+  if(otherIn.output)
   {
     unsigned int useed;
     REAL4Vector  *buff=NULL;
     static RandomParams *randomparams;
 
     useed = 1234567890;
-    
+
     SUB( LALSCreateVector(&status, &(buff), n), &status);
     LALCreateRandomParams(&status, &randomparams, useed);
     LALNormalDeviates(&status, buff, randomparams);
     LALDestroyRandomParams(&status, &randomparams);
-    sprintf(name1, "wave-Random-%d.dat", params.approximant); 
+    sprintf(name1, "wave-Random-%d.dat", params.approximant);
     f4 = fopen(name1, "w");
     printf_timeseries (f4, n, buff->data, dt);
     SUB( LALSDestroyVector(&status, &(buff)), &status);
     fclose(f4);
-                
+
   }
 
   return 0;
 }
 
-void 
-ParseParameters(	UINT4 			argc, 
+void
+ParseParameters(	UINT4 			argc,
 			CHAR 			**argv,
 			OtherParamIn    	*otherIn)
 {
   UINT4 		i = 1;
-  
+
   while(i < argc)
     {
-      if ( strcmp(argv[i],	"--verbose") 	== 0 ) 
+      if ( strcmp(argv[i],	"--verbose") 	== 0 )
       {
 	otherIn->PrintParameters = 1;
       }
-      else if ( strcmp(argv[i],	"--output") 	== 0 ) 
+      else if ( strcmp(argv[i],	"--output") 	== 0 )
       {
 	otherIn->output = 1;
       }
-      else if ( strcmp(argv[i],	"--taper") 	== 0 ) 
+      else if ( strcmp(argv[i],	"--taper") 	== 0 )
       {
 	otherIn->taper = atoi(argv[++i]);
       }
-      else if ( strcmp(argv[i],	"--psd-data-file") == 0 ) 
+      else if ( strcmp(argv[i],	"--psd-data-file") == 0 )
       {
 	otherIn->psd_data_file = 1;
       }
-      else if( strcmp(argv[i],	"--h") 	== 0 ) 
-      {
-	LALGenerateInspiralWaveformHelp(); 
-      }
-      else if( strcmp(argv[i],"-h") 	== 0 ) 
+      else if( strcmp(argv[i],	"--h") 	== 0 )
       {
 	LALGenerateInspiralWaveformHelp();
       }
-      else if( strcmp(argv[i],"-help") 	== 0 ) 
+      else if( strcmp(argv[i],"-h") 	== 0 )
       {
 	LALGenerateInspiralWaveformHelp();
-      } 
-      else if( strcmp(argv[i],"--help")	== 0 ) 
+      }
+      else if( strcmp(argv[i],"-help") 	== 0 )
+      {
+	LALGenerateInspiralWaveformHelp();
+      }
+      else if( strcmp(argv[i],"--help")	== 0 )
       {
 	LALGenerateInspiralWaveformHelp();
       }
@@ -436,7 +436,7 @@ void LALGenerateInspiralWaveformHelp(void)
 }
 
 
-void printf_timeseries (FILE *f1, UINT4 n, REAL4 *signal, REAL8 delta) 
+void printf_timeseries (FILE *f1, UINT4 n, REAL4 *signal1, REAL8 delta)
 {
   UINT4 i=0;
 
@@ -444,11 +444,11 @@ void printf_timeseries (FILE *f1, UINT4 n, REAL4 *signal, REAL8 delta)
   FILE *outfile1;
   outfile1=fopen("wave1.dat","w");
   */
-  do 
-     /* fprintf (outfile1,"%e %e\n", i*delta+t0, *(signal+i)  );
+  do
+     /* fprintf (outfile1,"%e %e\n", i*delta+t0, *(signal1+i)  );
       */
-     fprintf (f1,"%e %e\n", i*delta, signal[i]  );
-  while (n-++i); 
+     fprintf (f1,"%e %e\n", i*delta, signal1[i]  );
+  while (n-++i);
 
   /*
   fprintf(outfile1,"&\n");
@@ -458,18 +458,18 @@ void printf_timeseries (FILE *f1, UINT4 n, REAL4 *signal, REAL8 delta)
 
 
 
-void printf_timeseries2 (UINT4 n, REAL4 *signal1, REAL4 *signal2, REAL8 delta) 
+void printf_timeseries2 (UINT4 n, REAL4 *signal1, REAL4 *signal2, REAL8 delta)
 {
   UINT4 i=0;
   FILE *outfile1;
 
   outfile1=fopen("wave2.dat","w");
 
-  do 
+  do
      /* fprintf (outfile1,"%e %e\n", i*delta+t0, *(signal+i)  );
       */
      fprintf (stdout,"%e %e %e\n", i*delta, *(signal1+i), *(signal2+i)  );
-  while (n-++i); 
+  while (n-++i);
 
   fclose(outfile1);
 }
@@ -481,7 +481,7 @@ void readPSD(REAL8 *psd, REAL4 Df, UINT4 length)
   UINT4 i=1, j=0;
   REAL4 f;
   REAL4 x;
- 
+
   psd[0] = 0;
   f1 = fopen("lho4k_070318_strain.txt", "r");
 
