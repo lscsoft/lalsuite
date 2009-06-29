@@ -1052,6 +1052,7 @@ int MAIN( int argc, char *argv[]) {
 
       } /* fstat memory allocation block */
       
+      ComputeFBufferREAL4V cfvBuffer = empty_ComputeFBufferREAL4V;
       
 	/* loop over fdot values
 	   -- spindown range and resolutionhas been set earlier */
@@ -1093,7 +1094,7 @@ int MAIN( int argc, char *argv[]) {
               /* this is the most costly function. We here allow for using an architecture-specific optimized
                * function from e.g. a local file instead of the standard ComputeFStatFreqBand() from LAL */
               if ( XLALComputeFStatFreqBandVector ( &fstatVector, &thisPoint, &stackMultiSFT, &stackMultiNoiseWeights,
-                                                    &stackMultiDetStates, &CFparams) != XLAL_SUCCESS )
+                                                    &stackMultiDetStates, CFparams.Dterms, &cfvBuffer) != XLAL_SUCCESS )
                 {
                   LogPrintf (LOG_CRITICAL, "main(): XLALComputeFStatFreqBandVector() failed with errno = %d\n", xlalErrno );
                   return XLAL_EFUNC;
@@ -1180,6 +1181,7 @@ int MAIN( int argc, char *argv[]) {
 	  
 	} /* end loop over coarse grid fdot values */
 
+      XLALEmptyComputeFBufferREAL4V ( &cfvBuffer );
 
       /* continue forward till the end if uvar_skyPointIndex is set
 	 ---This probably doesn't make sense when checkpointing is turned on */

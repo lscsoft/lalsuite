@@ -62,18 +62,6 @@ typedef struct {
   SSBtimesREAL4 **data;		/**< array of SSBtimes (pointers) */
 } MultiSSBtimesREAL4;
 
-/** Struct holding buffered ComputeFStat_REAL4()-internal quantities to avoid unnecessarily
- * recomputing things that depend ONLY on the skyposition and detector-state series (but not on the spins).
- * For the first call of ComputeFStat() the pointer-entries should all be NULL.
- */
-typedef struct {
-  REAL8 Alpha, Delta;					/**< target skyposition of previous search */
-  const MultiDetectorStateSeries *multiDetStates;	/**< input detStates series used in previous search */
-
-  MultiSSBtimesREAL4 *multiSSB;				/**< SSB timings computed in previous search */
-  MultiAMCoeffs *multiAMcoef;				/**< antenna-pattern coeffs computed in previous search */
-} ComputeFBufferREAL4;
-
 
 /** Type containing F-statistic proper plus the two complex amplitudes Fa and Fb (for ML-estimators).
  * NOTE: this is simply a REAL4 version of Fcomponents.
@@ -84,9 +72,34 @@ typedef struct {
   COMPLEX8 Fb;		/**< complex amplitude Fb */
 } FcomponentsREAL4;
 
+/** Struct holding buffered XLALDriverFstatGPU()-internal quantities
+ * to avoid unnecessarily recomputing things that depend ONLY on the skyposition and detector-state series
+ * (but not on the spins).
+ */
+typedef struct {
+  REAL8 Alpha, Delta;					/**< target skyposition of previous search */
+  const MultiDetectorStateSeries *multiDetStates;	/**< input detStates series used in previous search */
+  MultiSSBtimesREAL4 *multiSSB;				/**< SSB timings computed in previous search */
+  MultiAMCoeffs *multiAMcoef;				/**< antenna-pattern coeffs computed in previous search */
+} ComputeFBufferREAL4;
+
+/** Struct holding buffered XLALComputeFStatFreqBandVector()-internal quantities
+ * to avoid unnecessarily recomputing things that depend ONLY on the skyposition and detector-state series
+ * (but not on the spins).
+ */
+typedef struct {
+  REAL8 Alpha, Delta;						/**< target skyposition of previous search */
+  const MultiDetectorStateSeriesSequence *multiDetStatesV;	/**< input detStates series used in previous search */
+  UINT4 numSegments;						/**< number of segments */
+  MultiSSBtimesREAL4 **multiSSB4V;				/**< array[numSegments] of SSB timings computed in previous search */
+  MultiAMCoeffs **multiAMcoefV;					/**< array[numSegments] of antenna-pattern coeffs computed in previous search */
+} ComputeFBufferREAL4V;
+
+
 
 /* ---------- exported global variables ---------- */
 extern const ComputeFBufferREAL4 empty_ComputeFBufferREAL4;
+extern const ComputeFBufferREAL4V empty_ComputeFBufferREAL4V;
 
 /* ---------- exported API prototypes ---------- */
 int
@@ -95,7 +108,8 @@ XLALComputeFStatFreqBandVector ( REAL4FrequencySeriesVector *fstatBandV,
                                  const MultiSFTVectorSequence *multiSFTsV,
                                  const MultiNoiseWeightsSequence *multiWeightsV,
                                  const MultiDetectorStateSeriesSequence *multiDetStatesV,
-                                 const ComputeFParams *params
+                                 UINT4 Dterms,
+                                 ComputeFBufferREAL4V *cfvBuffer
                                  );
 int
 XLALDriverFstatGPU ( REAL4 *Fstat,
@@ -142,7 +156,7 @@ void XLALDestroySSBtimesREAL4 ( SSBtimesREAL4 *tSSB );
 void XLALDestroyMultiSSBtimesREAL4 ( MultiSSBtimesREAL4 *multiSSB );
 
 void XLALEmptyComputeFBufferREAL4 ( ComputeFBufferREAL4 *cfb);
-
+void XLALEmptyComputeFBufferREAL4V ( ComputeFBufferREAL4V *cfbv);
 
 #ifdef  __cplusplus
 }
