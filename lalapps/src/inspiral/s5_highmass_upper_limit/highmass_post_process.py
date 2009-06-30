@@ -215,7 +215,8 @@ class ligolw_sqlite_node(pipeline.CondorDAGNode):
   def __init__(self, job, dag, database, xml_list, id, p_node=[], replace=True, extract=False):
 
     pipeline.CondorDAGNode.__init__(self,job)
-    cline = job.ligolw_sqlite + ' --database ' + database + ' --tmp-space /tmp --verbose '
+    #FIXME add tmp file space
+    cline = job.ligolw_sqlite + ' --database ' + database + ' --verbose '
     if replace: cline += " --replace "
     if extract: cline += " --extract " 
     for xml in xml_list: cline += xml + " "

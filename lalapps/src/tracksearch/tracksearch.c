@@ -101,7 +101,6 @@ int main (int argc, char *argv[])
   /*set_debug_level("ERROR");*/
   /*set_debug_level("ERROR | WARNING | TRACE");*/
   /*  set_debug_level("ERROR | WARNING | MEMDBG");*/
-  /*set_debug_level("ALLDBG");*/
   memset(&status, 0, sizeof(status));
   lal_errhandler = LAL_ERR_ABRT;
   lal_errhandler = LAL_ERR_DFLT;
@@ -1105,6 +1104,8 @@ void LALappsTrackSearchInitialize(
       if ( params->overlapFlag == 0)
 	{
 	  params->NumSeg = floor(params->TimeLengthPoints/params->SegLengthPoints);
+	  params->discardTLP=(params->TimeLengthPoints)%(params->SegLengthPoints);
+	  params->TimeLengthPoints=params->TimeLengthPoints-params->discardTLP;
 	}
       else
 	{
@@ -1695,21 +1696,6 @@ void LALappsGetFrameData(LALStatus*          status,
 	}
       /* End of error for invalid data types in frame file.*/
 
-      if (params->verbosity >= printFiles)
-	{
-	  if (tmpData->data->length > 3690480)
-	    {
-	      print_real4tseries(tmpData,"RawOriginalInputTimeSeries.diag");
-	      print_lalUnit(tmpData->sampleUnits,"RawOriginalInputTimeSeries_Units.diag");
-	    }
-	  else
-	    {
-	      fprintf(stderr,"RawOriginalInputTimeSeries.diag Too Large More that 3690480 points.\n");
-	      fprintf(stderr,"File will not be dumped to disk.\n");
-	      fflush(stderr);
-	    }
-	}
-
       /*
        * Prepare for the resample if needed or just copy the data so send
        * back
@@ -1734,11 +1720,7 @@ void LALappsGetFrameData(LALStatus*          status,
 		fprintf(stdout,"Done Resampling input data.\n");
 		fflush(stdout);
 	    }
-	  if (params->verbosity >= printFiles)
-	    {
-	      print_real4tseries(tmpData,"ResampledOriginalInputTimeSeries.diag");
-	      print_lalUnit(tmpData->sampleUnits,"ResampledlOriginalInputTimeSeries_Units.diag");
-	    }
+
 	  /*
 	   * Copy only the valid data and fill the returnable metadata
 	   */
@@ -1902,7 +1884,7 @@ void LALappsDoTrackSearch(
    * the map and use them to run the analysis
    */
   /*
-   * DO THE AUTO ADJUSTMENTS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   * DO THE AUTO ADJUSTMENTS!!!
    */
   if (params.autoLambda)
     {
@@ -2125,11 +2107,26 @@ LALappsDoTSeriesSearch(LALStatus         *status,
       tfInputs.wlengthF = params.windowsize;
       tfInputs.wlengthT = params.windowsize;
 
-      LAL_CALL(LALCreateTimeFreqParam(status,&autoparams,&tfInputs),
-	       status);
-
-      LAL_CALL(LALCreateTimeFreqRep(status,&tfmap,&tfInputs),
-	       status);
+      errCode=LAL_CALL(LALCreateTimeFreqParam(status,&autoparams,&tfInputs),
+		       status);
+      if (errCode != 0)
+	{
+	  fprintf(stderr,"Error calling LALCreateTimeFreqParam\n");
+	  fprintf(stderr,"Error Code: %s\n",status->statusDescription);
+	  fprintf(stderr,"Function  : %s\n",status->function);
+	  fprintf(stderr,"File      : %s\n",status->file);
+	  fprintf(stderr,"Line      : %i\n",status->line);
+	}
+      errCode=LAL_CALL(LALCreateTimeFreqRep(status,&tfmap,&tfInputs),
+		       status);
+      if (errCode != 0)
+	{
+	  fprintf(stderr,"Error calling LALCreateTimeFreqRep\n");
+	  fprintf(stderr,"Error Code: %s\n",status->statusDescription);
+	  fprintf(stderr,"Function  : %s\n",status->function);
+	  fprintf(stderr,"File      : %s\n",status->file);
+	  fprintf(stderr,"Line      : %i\n",status->line);
+	}
       /*
        * There is an issue with the overlapping of fft windows used to
        * construct the TFR.  Example:

@@ -746,6 +746,51 @@ class gpsInt:
         return float(self.display())
     #End of getAsFloat method
 #End gpsInt class
+def candidateListProperties():
+    """ 
+    A loose method that gives the text label and character strings
+    to grab information from the candidateList class structure.  This
+    method is outside of the class candidateList to facilitate
+    importing this 2D list into the utilities associated with
+    autotrack!
+    """
+    qualities=[
+        ["curveid","Curve ID","getKurveHeader()[0]"],
+        ["gpsseconds","Uniq GPS Seconds","startGPS().getGPSSeconds()"],
+        ["gpsnanoseconds","Curve GPS NanoSeconds","startGPS().getGPSNanoSeconds()"],
+        ["a","Orientation Angle","getKurveAngle()"],
+        ["b","Bandwidth","getCandidateBandwidth()"],
+        ["c","Variance Brightness","getBrightPixelAndStats()[2]"],
+        ["d","Duration","getCandidateDuration()"],
+        ["e","Relative Freq for Bright Pixel","getRelativeBrightFreq()"],
+        ["f","Start Freq","printStartFreq()"],
+        ["g","Stop Freq","printStopFreq()"],
+        ["h","Bright GPS","getBrightPixelAndStats()[0][2].getAsFloat()"],
+        ["i","Center of Mass Pixel Freq","getCMPixel()[3]"],
+        ["j","Bright Energy","getBrightPixelAndStats()[0][4]"],
+        ["k","Center of Mass Pixel GPS","getCMPixel()[2].getAsFloat()"],
+        ["l","Curve Length","getKurveHeader()[1]"],
+        ["m","Mean Brightness","getBrightPixelAndStats()[1]"],
+        ["n","Curve lowest F","getCandidateBandwidth(bool(True))[1]"],
+        ["o","Center of Mass Pixel Power","getCMPixel()[4]"],
+        ["p","Integrated Power","getKurveHeader()[2]"],
+        ["q","Curve highest F","getCandidateBandwidth(bool(True))[2]"],
+        ["r","Z Score for Bright Pixel","getBrightZScore()"],
+        ["s","Curve Stop GPS","printStopGPS()"],
+        ["t","Curve Start GPS","printStartGPS()"],
+        ["u","Curve central GPS time","getCandidateCentralTime()"],
+        ["v","Bright Freq","getBrightPixelAndStats()[0][3]"],
+        ["w","Relative Time for Bright Pixel","getRelativeBrightTime()"],
+        ["x","Mean Power for Pixels in Curve","__getKurveMeanVar__()[0]"],
+        ["y","Curve central Freq","getCandidateCentralFreq()"],
+        ["z","Variance of Power for Pixels in Curve","__getKurveMeanVar__()[1]"],
+        ["ww","Relative Time for CM Pixel","getRelativeCMTime()"],
+        ["ee","Relative Freq for CM Pixel","getRelativeCMFreq()"],
+        ["rr","Z Score for CM Pixel","getCMZScore()"],
+        ["pp","Estimated SNR for Curve","getKurveSNR()"],
+        ]
+    return qualities
+#end candidateListProperties
 
 def candidateListProperties():
     """ 
@@ -2799,6 +2844,7 @@ class candidateList:
             triggerID=self.__getTraitField__(trait,"curveid")[0]
             triggerLength=self.__getTraitField__(trait,"l")[0]
             triggerIntegratedPower=self.__getTraitField__(trait,"p")[0]
+            kurveAngle=self.__getTraitField__(trait,"a")[0]
             brightPixelTime=self.__getTraitField__(trait,"h")[0]
             brightPixelFreq=self.__getTraitField__(trait,"v")[0]
             brightPixelPower=self.__getTraitField__(trait,"j")[0]
@@ -2838,23 +2884,21 @@ class candidateList:
             #for zScore we have (-inf,inf) to (-inf+10,inf+10)
             unitTraitOffset=2
             zScoreTraitOffset=10
-            ## Cristina continue from here Wed-Apr-22-2009:200904221728 
-            newGlitchDatabaseEntry=[triggerStartString, #0,#1
-                                    snrEstimate,           #2
-                                    triggerCentralFreq,    #3
-                                    triggerBandwidth,      #4
-                                    triggerDuration,       #5
-                                    kurveAngle,            #6
-                                    zScoreBP,              #7
-                                    zScoreCM,              #8
-                                    relativeTimeBP,        #9
-                                    relativeFreqBP,       #10
-                                    relativeTimeCM,       #11
-                                    relativeFreqCM,       #12
-                                    snrEstimate,          #13
-                                    spanTnorm,            #14
-                                    spanFnorm]            #15
-            glitchDatabaseEntry=newGlitchDatabaseEntry
+            ## Matlab script needs revision Mon-May-18-2009:200905181511 
+            glitchDatabaseEntry=[triggerStartString, #0,#1
+                                 snrEstimate,           #2
+                                 triggerCentralFreq,    #3
+                                 triggerBandwidth,      #4
+                                 triggerDuration,       #5
+                                 kurveAngle,            #6
+                                 zScoreBP,              #7
+                                 zScoreCM,              #8
+                                 relativeTimeBP,        #9
+                                 relativeFreqBP,       #10
+                                 relativeTimeCM,       #11
+                                 relativeFreqCM,       #12
+                                 spanTnorm,            #13
+                                 spanFnorm]            #14
             glitchDatabase.append(glitchDatabaseEntry)
         spinner.closeSpinner()
         return glitchDatabase

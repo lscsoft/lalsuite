@@ -1451,6 +1451,9 @@ class tracksearch:
             DLP=tracksearchThreshold_job.initialDir
             tracksearchThreshold_node=tracksearchThresholdNode(tracksearchThreshold_job)
             tracksearchThreshold_node.add_var_opt('file',os.path.normpath(str(DLP+'/*.candidates')))
+        #Only modify our default behavior of we have an ['autotrack']
+        #section in the ini file
+
             if nextJobList!=[]:
                 for parents in nextJobList:
                     tracksearchThreshold_node.add_parent(parents)
