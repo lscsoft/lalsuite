@@ -28,7 +28,6 @@
  * 
  ****/
 
-
 #ifndef _OPT_HOUGH_I686_SSE2_H
 #define _OPT_HOUGH_I686_SSE2_H
 
@@ -45,11 +44,6 @@
 #define AD_ALIGN32 ".align 32" 
 #define AD_ALIGN64 ".align 64" 
 #endif 
-
-
-/* don't clobber ebx , used for PIC on Mac OS */
-
-#if (EAH_HOUGH_PREFETCH == EAH_HOUGH_PREFETCH_X87)
 
 #define ADDPHMD2HD_WLR_LOOP(_XPIXEL,_YLOWER,_YUPPER,_XSIDEP1,_MAP,_WEIGHT)\
 __asm __volatile ( 				      \
@@ -113,6 +107,4 @@ __asm __volatile ( 				      \
 	"memory","eax", "ecx", "edx", "esi", "edi", "cc", \
 	"xmm0","xmm1","xmm2"	 \
 	);	
-#endif
-
 #endif

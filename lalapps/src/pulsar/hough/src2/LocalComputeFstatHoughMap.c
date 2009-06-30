@@ -28,6 +28,19 @@
 #include "HierarchicalSearch.h"
 #include "LocalOptimizationFlags.h"
 
+#if __x86_64__
+#include "EinsteinAtHome/hough_x64.ci"
+#warning including "EinsteinAtHome/hough_x64.ci"
+#elif __SSE2__
+#include "EinsteinAtHome/hough_sse2.ci"
+#warning including "EinsteinAtHome/hough_sse2.ci"
+#elif __i386__
+#include "EinsteinAtHome/hough_x87.ci"
+#warning including "EinsteinAtHome/hough_x87.ci"
+#else
+#warning ADDPHMD2HD_WLR_LOOP unset
+#endif
+
 RCSID( "$Id$");
 
 #define HSMAX(x,y) ( (x) > (y) ? (x) : (y) )
@@ -735,16 +748,7 @@ LocalHOUGHAddPHMD2HD_W (LALStatus      *status, /**< the status pointer */
 #define PREFETCH(a) a
 #endif
 
-
 #if ( (EAH_HOUGH_PREFETCH == EAH_HOUGH_PREFETCH_X87) || (EAH_HOUGH_PREFETCH == EAH_HOUGH_PREFETCH_AMD64) )
-
-#if __x86_64__
-#include "EinsteinAtHome/hough_x64.ci"
-#elif __SSE2__
-#include "EinsteinAtHome/hough_sse2.ci"
-#elif __i386__
-#include "EinsteinAtHome/hough_x87.ci"
-#endif
 
 INLINE void __attribute__((always_inline))
 LocalHOUGHAddPHMD2HD_Wlr  (LALStatus*    status,
