@@ -601,15 +601,19 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	else
 	  { /* otherwise: lim_{rem->0}P_alpha,k  = 2pi delta_{k,kstar} */
 	    UINT4 ind0;
+
+	    /* realQ/imagQ are calculated in the hotloop in the other case; in this case we have to do it too */
+	    REAL8 _lambda_alpha = -lambda_alpha;
+	    SINCOS_TRIM_X (_lambda_alpha,_lambda_alpha);
+	    SINCOS_2PI_TRIMMED( &imagQ, &realQ, _lambda_alpha );
+
 	    if ( kappa_star <= LD_SMALL4 )
 	      ind0 = DTERMS - 1;
 	    else
 	      ind0 = DTERMS;
 	    realXP = TWOPI_FLOAT * Xalpha_l[ind0].re;
 	    imagXP = TWOPI_FLOAT * Xalpha_l[ind0].im;
-	    REAL8 _lambda_alpha = -lambda_alpha;
-	    SINCOS_TRIM_X (_lambda_alpha,_lambda_alpha);
-	    SINCOS_2PI_TRIMMED( &imagQ, &realQ, _lambda_alpha );
+
 	  } /* if |remainder| <= LD_SMALL4 */
       }
 
